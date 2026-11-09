@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Exponential
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Algebra.Order.Floor.Semiring
 
 /-!
@@ -18,6 +19,12 @@ step (`TauCeti.one_add_mul_pow_ceil_div_le_exp`), and a discrete Grönwall bound
 that move in steps paid for by an energy which is bounded below in terms of the distance
 travelled (`TauCeti.sq_le_mul_one_add_div_pow_of_sq_le_mul_sub`).
 
+Conversely, a nonincreasing quantity which drops at least by a factor `q < 1` over every time
+interval of length `T` decays exponentially, at the rate `-log q / T`
+(`TauCeti.le_div_mul_exp_of_antitoneOn`). This is how a differential inequality `E ≤ K (-E')` is
+integrated without differentiating `E`: when `E (s) - E (s + T) = ∫ₛ^{s + T} g` with `E ≤ K g`,
+monotonicity gives `T E (s + T) ≤ K (E s - E (s + T))`, a drop by the factor `K / (K + T)`.
+
 The second estimate is the shape of the a priori bound for implicit Euler schemes of gradient
 flows whose energy is not bounded below. A sequence `D n ≥ 0` with `D 0 = 0` grows by steps
 `D (n + 1) ≤ D n + d n` whose squared lengths are bounded by the energy dissipated,
@@ -29,6 +36,8 @@ flows whose energy is not bounded below. A sequence `D n ≥ 0` with `D 0 = 0` g
 * `TauCeti.one_add_mul_pow_ceil_div_le_exp`: `(1 + aτ) ^ ⌈t / τ⌉₊ ≤ exp (a (t + τ))`.
 * `TauCeti.sq_le_mul_one_add_div_pow_of_sq_le_mul_sub`: the discrete Grönwall bound
   `D n ² ≤ 2τ' (e 0 - A) (1 + 8τ / τ')ⁿ` under coercivity.
+* `TauCeti.le_div_mul_exp_of_antitoneOn`: exponential decay of a nonincreasing function which
+  drops by a fixed factor over every interval of a fixed length.
 
 ## References
 
@@ -108,5 +117,37 @@ theorem sq_le_mul_one_add_div_pow_of_sq_le_mul_sub {D d e : ℕ → ℝ} {τ τ'
           mul_le_mul_of_nonneg_left ih (by positivity)
         _ = _ := by ring
   nlinarith [hQ n]
+
+/-- **Exponential decay from a fixed-step contraction.** Let `E` be nonincreasing on `[s₀, ∞)`,
+with `E s₀ ≥ 0`, and suppose that `E (s + T) ≤ q E s` for every `s ≥ s₀`, where `T > 0` and
+`0 < q ≤ 1`. Then `E s ≤ (E s₀ / q) exp ((log q / T) (s - s₀))` for every `s ≥ s₀`. -/
+theorem le_div_mul_exp_of_antitoneOn {E : ℝ → ℝ} {s₀ T q : ℝ} (hT : 0 < T) (hq : 0 < q)
+    (hq1 : q ≤ 1) (hE : AntitoneOn E (Set.Ici s₀)) (h0 : 0 ≤ E s₀)
+    (hstep : ∀ s, s₀ ≤ s → E (s + T) ≤ q * E s) {s : ℝ} (hs : s₀ ≤ s) :
+    E s ≤ E s₀ / q * Real.exp (Real.log q / T * (s - s₀)) := by
+  have hk (k : ℕ) : E (s₀ + k * T) ≤ q ^ k * E s₀ := by
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      calc E (s₀ + ↑(k + 1) * T) = E (s₀ + k * T + T) := by push_cast; ring_nf
+        _ ≤ q * E (s₀ + k * T) := hstep _ (by nlinarith [k.cast_nonneg (α := ℝ)])
+        _ ≤ q * (q ^ k * E s₀) := mul_le_mul_of_nonneg_left ih hq.le
+        _ = q ^ (k + 1) * E s₀ := by ring
+  set n := ⌊(s - s₀) / T⌋₊
+  have hy : 0 ≤ (s - s₀) / T := div_nonneg (sub_nonneg.2 hs) hT.le
+  have hnT : n * T ≤ s - s₀ := (le_div_iff₀ hT).1 (Nat.floor_le hy)
+  have hn1 : (s - s₀) / T < n + 1 := Nat.lt_floor_add_one _
+  -- The time `s` lies in the `n`-th step, so `E s ≤ qⁿ E s₀ ≤ q ^ ((s - s₀) / T - 1) E s₀`.
+  have hexp : q ^ (n + 1) ≤ Real.exp (Real.log q / T * (s - s₀)) := by
+    rw [← Real.exp_log (pow_pos hq _), Real.exp_le_exp, Real.log_pow, div_mul_eq_mul_div,
+      mul_div_assoc]
+    push_cast
+    nlinarith [Real.log_nonpos hq.le hq1]
+  calc E s ≤ E (s₀ + n * T) := hE (Set.mem_Ici.2 (le_add_of_nonneg_right (by positivity)))
+        (Set.mem_Ici.2 hs) (by linarith)
+    _ ≤ q ^ n * E s₀ := hk n
+    _ = E s₀ / q * q ^ (n + 1) := by field_simp; ring
+    _ ≤ E s₀ / q * Real.exp (Real.log q / T * (s - s₀)) :=
+        mul_le_mul_of_nonneg_left hexp (div_nonneg h0 hq.le)
 
 end TauCeti

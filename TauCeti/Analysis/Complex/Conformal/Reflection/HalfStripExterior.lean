@@ -71,8 +71,9 @@ private theorem im_model_ge {ζ : ℂ} (him : 0 ≤ ζ.im) (hre : 1 ≤ ζ.re) (
     Real.pi + (1 - Real.pi / 4) * ζ.im ≤ (model ζ).im := by
   -- Jordan's inequality `arg ζ ≤ π / 2 * sin (arg ζ)`, with `sin (arg ζ) = im ζ / ‖ζ‖`.
   have harg : ζ.arg ≤ Real.pi / 2 * (ζ.im / ‖ζ‖) :=
-    le_pi_div_two_mul_of_sin_eq (arg_nonneg_iff.mpr him)
-      (abs_le.mp (abs_arg_le_pi_div_two_iff.mpr (zero_le_one.trans hre))).2 (sin_arg ζ)
+    (le_pi_div_two_mul_sin (arg_nonneg_iff.mpr him)
+      (abs_le.mp (abs_arg_le_pi_div_two_iff.mpr (zero_le_one.trans hre))).2).trans_eq
+      (by rw [sin_arg])
   have : ζ.im / ‖ζ‖ ≤ ζ.im / 2 := div_le_div_of_nonneg_left him two_pos hζ
   have := Real.pi_pos
   rw [im_model]
@@ -87,7 +88,7 @@ private theorem im_model_le {ζ : ℂ} (him : 0 ≤ ζ.im) (hre : ζ.re ≤ -1) 
     rwa [not_le, abs_of_nonneg (arg_nonneg_iff.mpr him)] at h
   -- Jordan's inequality for `π - arg ζ ∈ [0, π / 2]`, whose sine is `im ζ / ‖ζ‖`.
   have harg' : Real.pi - ζ.arg ≤ Real.pi / 2 * (ζ.im / ‖ζ‖) :=
-    le_pi_div_two_mul_of_sin_eq (by linarith [arg_le_pi ζ]) (by linarith)
+    (le_pi_div_two_mul_sin (by linarith [arg_le_pi ζ]) (by linarith)).trans_eq
       (by rw [Real.sin_pi_sub, sin_arg])
   have : ζ.im / ‖ζ‖ ≤ ζ.im / 2 := div_le_div_of_nonneg_left him two_pos hζ
   have := Real.pi_pos
