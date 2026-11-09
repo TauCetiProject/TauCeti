@@ -47,50 +47,6 @@ local instance : (mu.restrict (univ : Set E)).IsAddHaarMeasure := by
   rw [Measure.restrict_univ]
   infer_instance
 
-/-- The smooth convolution representative of a zero-extended derivative field. -/
-private def smoothField {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (phi : ContDiffBump (0 : E)) (f : Lp F p (mu.restrict Omega)) : E → F :=
-  phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] (Omega : Set E).indicator (f : E → F)
-
-private theorem contDiff_smoothField {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (phi : ContDiffBump (0 : E)) (f : Lp F p (mu.restrict Omega)) :
-    ContDiff ℝ (⊤ : ℕ∞) (smoothField phi f) := by
-  have hmem := (memLp_indicator_iff_restrict Omega.isOpen.measurableSet.nullMeasurableSet).2
-    (Lp.memLp f)
-  exact phi.hasCompactSupport_normed.contDiff_convolution_left
-    (ContinuousLinearMap.lsmul ℝ ℝ) phi.contDiff_normed (hmem.locallyIntegrable Fact.out)
-
-private theorem fderiv_smoothField (k : ℕ) (u : Wkp mu Omega p (k + 2))
-    (phi : ContDiffBump (0 : E)) (x : E)
-    (hx : Metric.closedBall x phi.rOut ⊆ Omega) :
-    fderiv ℝ (smoothField phi (iteratedGradient k (lowerOrder (k + 1) u))) x =
-      smoothField phi (iteratedGradient (k + 1) u) x := by
-  simpa only [smoothField, convolution_flip] using
-    fderiv_indicator_convolution_normed_iteratedGradient k u phi x hx
-
-private theorem gradient_smoothField (u : Wkp mu Omega p 1)
-    (phi : ContDiffBump (0 : E)) (x : E)
-    (hx : Metric.closedBall x phi.rOut ⊆ Omega) :
-    gradient (smoothField phi (value 1 u)) x =
-      smoothField phi (iteratedGradient 0 u) x := by
-  apply (InnerProductSpace.toDual ℝ E).injective
-  rw [toDual_gradient]
-  have hd := fderiv_indicator_convolution_normed_value u phi x hx
-  rw [convolution_flip, convolution_flip] at hd
-  rw [smoothField, hd]
-  have hmem := (memLp_indicator_iff_restrict Omega.isOpen.measurableSet.nullMeasurableSet).2
-    (Lp.memLp (iteratedGradient 0 u))
-  have hi := (phi.hasCompactSupport_normed (μ := mu)).convolutionExists_left
-    (ContinuousLinearMap.lsmul ℝ ℝ) phi.continuous_normed (hmem.locallyIntegrable Fact.out) x
-  -- Passing the Riesz map through the integral identifies the vector convolution's dual.
-  symm
-  rw [smoothField, convolution_def]
-  refine ((InnerProductSpace.toDual ℝ E).toLinearIsometry.toContinuousLinearMap
-    |>.integral_comp_comm hi).symm.trans ?_
-  apply integral_congr_ae
-  filter_upwards with y
-  by_cases hy : x - y ∈ Omega <;> simp [hy, ContinuousLinearMap.lsmul_apply]
-
 /-- A localized smooth representative, with compact support in the original domain. -/
 private def localTest (chi : 𝓓(Omega, ℝ)) (phi : ContDiffBump (0 : E))
     (k : ℕ) (u : Wkp mu Omega p k) : 𝓓(Omega, ℝ) :=
@@ -152,7 +108,7 @@ private theorem localAverage_ae {F : Type*} [NormedAddCommGroup F] [NormedSpace 
   have he' := he.filter_mono
     (ae_mono (Measure.restrict_mono_set mu (subset_univ (U : Set E))))
   exact (Lp.coeFn_LpToLpOfMeasureLeSMul _ _ _).trans (by
-    simpa only [Measure.restrict_univ, smoothField] using he')
+    simpa only [Measure.restrict_univ, smoothField_def] using he')
 
 /-- The restriction to `U` of the `W^{k,p}(Ω)` element of a test function is represented on `U`
 by that test function. -/

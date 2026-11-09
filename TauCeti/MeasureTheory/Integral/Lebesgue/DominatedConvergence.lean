@@ -16,7 +16,10 @@ amount of small integral: `∫⁻ x, f x - M ∂μ → 0` as `M → ∞`. This i
 the bound `f`, since `f x - M` vanishes for `M ≥ f x` and `f` is almost everywhere finite.
 
 The file also records a squeeze principle: if `f n ≤ g n + h n` and the integrals of `g n` and
-`h n` tend to `0`, so does the integral of `f n`.
+`h n` tend to `0`, so does the integral of `f n`; and the reverse Fatou lemma for integrals over
+sets: the integrals of a function of finite integral over measurable sets `s n` have limit
+superior at most its integral over `limsup s n`, the set of points lying in infinitely many
+`s n`.
 
 ## Main statements
 
@@ -24,6 +27,8 @@ The file also records a squeeze principle: if `f n ≤ g n + h n` and the integr
   tends to `0` as `M → ∞`.
 * `TauCeti.tendsto_lintegral_zero_of_le_add`: the integral of a function bounded by the sum of
   two functions with integrals tending to `0` tends to `0`.
+* `TauCeti.limsup_setLIntegral_le`: `limsup ∫⁻_{s n} f ≤ ∫⁻_{limsup s n} f` when the `s n` lie
+  in a set over which `f` has finite integral.
 -/
 
 public section
@@ -66,5 +71,26 @@ theorem tendsto_lintegral_zero_of_le_add {ι : Type*} {l : Filter ι} {f g h : �
     (fun _ ↦ zero_le) fun i ↦ ?_
   rw [← lintegral_add_left' (hg i)]
   exact lintegral_mono (hfgh i)
+
+/-- **The reverse Fatou lemma for integrals over sets.** Let `f` be measurable, let the sets `s n`
+be measurable and contained in a set `t` over which `f` has finite integral. Then the limit
+superior of the integrals of `f` over `s n` is at most the integral of `f` over `limsup s n`, the
+set of points that lie in `s n` for infinitely many `n`. -/
+theorem limsup_setLIntegral_le {f : α → ℝ≥0∞} {s : ℕ → Set α} {t : Set α} (hf : Measurable f)
+    (hs : ∀ n, MeasurableSet (s n)) (hst : ∀ n, s n ⊆ t) (ht : ∫⁻ x in t, f x ∂μ ≠ ∞) :
+    limsup (fun n ↦ ∫⁻ x in s n, f x ∂μ) atTop ≤ ∫⁻ x in limsup s atTop, f x ∂μ := by
+  simp_rw [← lintegral_indicator (hs _)]
+  refine (limsup_lintegral_le (t.indicator f) (fun n ↦ hf.indicator (hs n))
+    (fun n ↦ ae_of_all _ (Set.indicator_le_indicator_of_subset (hst n) fun _ ↦ zero_le))
+    (ne_top_of_le_ne_top ht (lintegral_indicator_le f t))).trans
+    ((lintegral_mono fun x ↦ ?_).trans (lintegral_indicator_le f _))
+  -- Pointwise, the limit superior of the indicators is at most the indicator of `limsup s n`.
+  by_cases hx : ∃ᶠ n in atTop, x ∈ s n
+  · rw [Set.indicator_of_mem (Filter.mem_limsup_iff_frequently_mem.2 hx)]
+    exact limsup_le_of_le (by isBoundedDefault) (Eventually.of_forall fun n ↦
+      Set.indicator_le_self (s n) f x)
+  · rw [not_frequently] at hx
+    rw [limsup_congr (hx.mono fun n hn ↦ Set.indicator_of_notMem hn f)]
+    simp
 
 end TauCeti
