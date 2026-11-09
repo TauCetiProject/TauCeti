@@ -147,7 +147,7 @@ theorem ae_of_ae_snd {p : β → Prop} (hp : ∀ᵐ y ∂ν, p y) :
 /-- If a separated product `f x * g y` is integrable and `g` is nonzero almost everywhere
 under a nonzero s-finite measure, then `f` is integrable. -/
 theorem integrable_left_of_mul_prod_of_ae_ne_zero [SFinite μ] [SFinite ν] [NeZero ν]
-    {f : α → ℝ} {g : β → ℝ}
+    {L : Type*} [NormedDivisionRing L] {f : α → L} {g : β → L}
     (hfg : Integrable (fun z ↦ f z.1 * g z.2) (μ.prod ν))
     (hg : ∀ᵐ y ∂ν, g y ≠ 0) : Integrable f μ := by
   obtain ⟨y, hgy, hy⟩ := (hg.and hfg.prod_left_ae).exists
