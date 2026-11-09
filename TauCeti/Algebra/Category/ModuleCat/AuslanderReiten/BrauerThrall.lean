@@ -121,8 +121,7 @@ theorem isRepresentationFinite_of_length_le_of_isLeftAlmostSplit [IsArtinianRing
     (LinearMap.toSpanSingleton A M x ∘ₗ (ULift.moduleEquiv (R := A) (M := A)).toLinearMap)
   have ht : e.inv ≫ t ≠ 0 := fun h ↦ hx <| by
     have h₀ : t = 0 := by simpa using congrArg (e.hom ≫ ·) h
-    simpa [t, show ULift.moduleEquiv (R := A) (M := A) (ULift.up 1) = 1 from rfl] using
-      ConcreteCategory.congr_hom h₀ (ULift.up 1 : ULift.{w} A)
+    simpa [t, G] using ConcreteCategory.congr_hom h₀ (ULift.up 1 : ULift.{w} A)
   obtain ⟨j, hj⟩ : ∃ j, biproduct.ι P j ≫ e.inv ≫ t ≠ 0 := by
     by_contra! hzero
     exact ht (biproduct.hom_ext' _ _ fun j ↦ by rw [hzero j, comp_zero])

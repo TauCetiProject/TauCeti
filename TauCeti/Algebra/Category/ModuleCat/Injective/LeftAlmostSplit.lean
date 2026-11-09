@@ -43,11 +43,12 @@ universe v w
 variable {A : Type v} [Ring A] {N : ModuleCat.{w} A} [Injective N]
 
 /-- An injective module with a local endomorphism ring is uniform: two nonzero submodules meet
-nontrivially. If `S` and `U` were disjoint, injectivity would extend the projection of `S ⊕ U` onto
-`S` to an endomorphism `φ` of `N`. Then `φ` vanishes on `U` and `1 - φ` vanishes on `S`, so neither
-is invertible. -/
+nontrivially. -/
 theorem inf_ne_bot_of_isLocalRing_end [IsLocalRing (End N)] {S U : Submodule A N} (hS : S ≠ ⊥)
     (hU : U ≠ ⊥) : S ⊓ U ≠ ⊥ := by
+  -- If `S` and `U` were disjoint, injectivity would extend the projection of `S ⊕ U` onto `S` to an
+  -- endomorphism `φ` of `N`. Then `φ` vanishes on `U` and `1 - φ` vanishes on `S`, so neither is
+  -- invertible.
   intro hSU
   have hdisj : Disjoint S U := disjoint_iff.mpr hSU
   -- The inclusion of `S × U` into `N`, and the projection of `S × U` to `S ⊆ N`.
