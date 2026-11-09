@@ -189,6 +189,18 @@ def secondBlock : graph.toSimpleGraph.BlockVertex := ⟨secondTriangle, isBlock_
 def sharedCutVertex : graph.toSimpleGraph.CutVertex :=
   ⟨vertex 0, (Graph.isCutVertex_iff_toSimpleGraph_isCutVertex _).mp (isCutVertex_iff.mpr rfl)⟩
 
+@[simp]
+theorem coe_firstBlock : (firstBlock : Set V(graph)) = firstTriangle :=
+  (rfl)
+
+@[simp]
+theorem coe_secondBlock : (secondBlock : Set V(graph)) = secondTriangle :=
+  (rfl)
+
+@[simp]
+theorem coe_sharedCutVertex : (sharedCutVertex : V(graph)) = vertex 0 :=
+  (rfl)
+
 private def blockCutVertexOfFin : Fin 3 → graph.toSimpleGraph.BlockCutVertex
   | 0 => .inl firstBlock
   | 1 => .inr sharedCutVertex
@@ -214,7 +226,7 @@ noncomputable def pathGraphIsoBlockCutGraph :
   toEquiv := .ofBijective _ blockCutVertexOfFin_bijective
   map_rel_iff' {a b} := by
     fin_cases a <;> fin_cases b <;>
-      simp [blockCutVertexOfFin, firstBlock, secondBlock, sharedCutVertex, pathGraph_adj]
+      simp [blockCutVertexOfFin, pathGraph_adj]
 
 @[simp]
 theorem pathGraphIsoBlockCutGraph_zero : pathGraphIsoBlockCutGraph 0 = .inl firstBlock :=
