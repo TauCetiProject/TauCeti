@@ -103,6 +103,13 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   `α`-Hölder function on a set inside a ball of radius `r` is at most a multiple of `r^α`.
 * `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
   `(⨍_s ‖g‖)² ≤ ⨍_s ‖g‖²`, bounding the mean oscillation by the square mean oscillation.
+* `TauCeti.laverage_const_mul`: a finite constant factor comes out of the lower average.
+* `TauCeti.laverage_rpow_enorm_rpow_inv_eq`: `(⨍ ‖f‖ ^ p) ^ (1/p)` is the `Lᵖ` seminorm divided by
+  the `p`-th root of the total mass.
+* `TauCeti.setLAverage_enorm_sq_le_of_setIntegral_le`: an estimate between Bochner integrals of
+  squared norms over sets `s` and `t` with `μ t = k μ s`, read between averages in `ℝ≥0∞`.
+* `TauCeti.ofReal_div_sq_mul_setLAverage_eq`: a factor `1 / λ²` in front of the average of `f²`
+  moves inside it as `(f / λ)²`.
 * `TauCeti.rpow_laverage_le_laverage_rpow`: Jensen's inequality `(⨍ u) ^ r ≤ ⨍ u ^ r` for a
   nonnegative function and `r ≥ 1`.
 * `TauCeti.laverage_smul_measure`, `TauCeti.average_smul_measure`,
@@ -394,6 +401,70 @@ theorem sq_setAverage_norm_le_setAverage_norm_sq (hs0 : μ s ≠ 0) (hs : μ s �
     hs0 hs (ae_of_all _ fun _ ↦ Set.mem_univ _) hg.norm hg2
 
 end SquareIntegrable
+
+section LAverage
+
+variable {X : Type*} [MeasurableSpace X] {μ : Measure X}
+
+/-- A finite constant factor comes out of the lower average, as it does out of the average
+(`MeasureTheory.average_const_mul`). -/
+theorem laverage_const_mul {c : ℝ≥0∞} (hc : c ≠ ∞) (f : X → ℝ≥0∞) :
+    ⨍⁻ x, c * f x ∂μ = c * ⨍⁻ x, f x ∂μ := by
+  rw [laverage_eq, laverage_eq, lintegral_const_mul' _ _ hc, mul_div_assoc]
+
+/-- For `0 < p < ∞`, the `p`-th root of the lower average of `‖f‖ₑ ^ p` is the `Lᵖ` seminorm of
+`f` divided by the `p`-th root of the total mass. -/
+theorem laverage_rpow_enorm_rpow_inv_eq {F : Type*} [NormedAddCommGroup F] {f : X → F}
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) (hf : AEStronglyMeasurable f μ) :
+    (⨍⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^ p.toReal⁻¹ = eLpNorm f p μ / μ Set.univ ^ p.toReal⁻¹ := by
+  rw [laverage_eq, ENNReal.div_rpow_of_nonneg _ _ (inv_nonneg.2 ENNReal.toReal_nonneg),
+    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hf, one_div]
+
+/-- An estimate `∫_s ‖g‖² ≤ α ∫_t ‖f‖² + β ∫_t ‖G‖²` between Bochner integrals, read as one
+between averages in `ℝ≥0∞`, when the measure of `t` is finite and `k` times that of `s`. -/
+theorem setLAverage_enorm_sq_le_of_setIntegral_le {V W Y : Type*} [NormedAddCommGroup V]
+    [NormedAddCommGroup W] [NormedAddCommGroup Y] {g : X → V} {f : X → W} {G : X → Y}
+    {s t : Set X} {k : ℝ≥0∞} {α β : ℝ} (hα : 0 ≤ α) (hβ : 0 ≤ β) (hst : μ t = k * μ s)
+    (ht : μ t ≠ ∞) (hg : IntegrableOn (fun x => ‖g x‖ ^ 2) s μ)
+    (hf : IntegrableOn (fun x => ‖f x‖ ^ 2) t μ) (hG : IntegrableOn (fun x => ‖G x‖ ^ 2) t μ)
+    (h : ∫ x in s, ‖g x‖ ^ 2 ∂μ ≤ α * ∫ x in t, ‖f x‖ ^ 2 ∂μ + β * ∫ x in t, ‖G x‖ ^ 2 ∂μ) :
+    ⨍⁻ x in s, ‖g x‖ₑ ^ (2 : ℝ) ∂μ ≤
+      k * (ENNReal.ofReal α * ⨍⁻ x in t, ‖f x‖ₑ ^ (2 : ℝ) ∂μ +
+        ENNReal.ofReal β * ⨍⁻ x in t, ‖G x‖ₑ ^ (2 : ℝ) ∂μ) := by
+  rw [setLAverage_eq]
+  refine ENNReal.div_le_of_le_mul ?_
+  rw [← MeasureTheory.ofReal_setIntegral_norm_sq_eq hg]
+  have hP : 0 ≤ ∫ x in t, ‖f x‖ ^ 2 ∂μ := integral_nonneg fun x => sq_nonneg _
+  have hQ : 0 ≤ ∫ x in t, ‖G x‖ ^ 2 ∂μ := integral_nonneg fun x => sq_nonneg _
+  calc ENNReal.ofReal (∫ x in s, ‖g x‖ ^ 2 ∂μ)
+      ≤ ENNReal.ofReal (α * ∫ x in t, ‖f x‖ ^ 2 ∂μ + β * ∫ x in t, ‖G x‖ ^ 2 ∂μ) :=
+        ENNReal.ofReal_le_ofReal h
+    _ = ENNReal.ofReal α * ENNReal.ofReal (∫ x in t, ‖f x‖ ^ 2 ∂μ)
+          + ENNReal.ofReal β * ENNReal.ofReal (∫ x in t, ‖G x‖ ^ 2 ∂μ) := by
+        rw [ENNReal.ofReal_add (by positivity) (by positivity), ENNReal.ofReal_mul hα,
+          ENNReal.ofReal_mul hβ]
+    _ = ENNReal.ofReal α * (μ t * ⨍⁻ x in t, ‖f x‖ₑ ^ (2 : ℝ) ∂μ)
+          + ENNReal.ofReal β * (μ t * ⨍⁻ x in t, ‖G x‖ₑ ^ (2 : ℝ) ∂μ) := by
+        rw [MeasureTheory.ofReal_setIntegral_norm_sq_eq hf,
+          MeasureTheory.ofReal_setIntegral_norm_sq_eq hG, measure_mul_setLAverage _ ht,
+          measure_mul_setLAverage _ ht]
+    _ = _ := by
+        rw [hst]
+        ring
+
+/-- A factor `1 / λ²` in front of the average of `f²` moves inside it as `(f / λ)²`. -/
+theorem ofReal_div_sq_mul_setLAverage_eq {S : Set X} (f : X → ℝ≥0∞) {lam : ℝ} (hlam : 0 < lam)
+    (c : ℝ) :
+    ENNReal.ofReal (c / lam ^ 2) * ⨍⁻ x in S, f x ^ (2 : ℝ) ∂μ =
+      ENNReal.ofReal c * ⨍⁻ x in S, (f x / ENNReal.ofReal lam) ^ (2 : ℝ) ∂μ := by
+  rw [← laverage_const_mul ENNReal.ofReal_ne_top, ← laverage_const_mul ENNReal.ofReal_ne_top]
+  congr 1
+  funext x
+  rw [ENNReal.div_rpow_of_nonneg _ _ zero_le_two, ENNReal.ofReal_rpow_of_pos hlam, Real.rpow_two,
+    ENNReal.ofReal_div_of_pos (by positivity), div_eq_mul_inv, div_eq_mul_inv]
+  ring
+
+end LAverage
 
 section Jensen
 
