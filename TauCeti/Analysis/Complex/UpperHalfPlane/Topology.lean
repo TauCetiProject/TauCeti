@@ -13,6 +13,7 @@ import Mathlib.Analysis.SpecialFunctions.Log.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Algebra.Module.Cardinality
 import Mathlib.Topology.Bornology.BoundedOperation
+import TauCeti.Logic.Function.Update
 
 /-!
 # Topology of the upper half-plane
@@ -33,7 +34,8 @@ given that limit at `0`, stays continuous there, and now tends at infinity to it
 the function is injective away from its zeros, so is the new one, provided the value at `0` is not
 a nonzero value of the old one. Likewise, for a function `f` continuous on the closed upper
 half-plane and tending to infinity there, the map `w ↦ b / (f (-w⁻¹) - c)` extended by `0` at the
-origin is continuous, and injective when `f` is, on a half-ball where `f (-w⁻¹) ≠ c` at nonzero `w`.
+origin is continuous, and, for `b ≠ 0`, injective when `f` is, on a half-ball where
+`f (-w⁻¹) ≠ c` at nonzero `w`.
 
 A function on the upper half-plane, extended to `ℂ` by `ofComplex`, is periodic with a real
 period exactly when the original function is invariant under the corresponding translation.
@@ -62,7 +64,6 @@ many points, such as the vertices of a tessellation, therefore keeps `ℍ` conne
 * `TauCeti.im_neg_inv_nonneg`.
 * `TauCeti.bijOn_const_sub_inv_upperHalfPlaneSet`.
 * `TauCeti.tendsto_comp_neg_inv_cobounded`, `TauCeti.continuousOn_comp_neg_inv`.
-* `TauCeti.injOn_update_of_injOn_diff`: filling in a map at one point keeps it injective.
 * `TauCeti.continuousOn_update_comp_const_sub_inv`,
   `TauCeti.tendsto_update_comp_const_sub_inv_cobounded`,
   `TauCeti.insert_image_update_comp_const_sub_inv`,
@@ -266,21 +267,6 @@ theorem continuousOn_comp_neg_inv {α : Type*} [TopologicalSpace α] {f : ℂ �
   (hfc _ (im_neg_inv_nonneg.mpr hw.1)).comp (f := fun w : ℂ => -w⁻¹)
     (continuousAt_inv₀ hw.2).neg.continuousWithinAt fun _ hy => im_neg_inv_nonneg.mpr hy.1
 
-/-- A map that is injective off a point `a` of a set `s`, and whose value `L` at `a` is taken
-nowhere else on `s`, stays injective on `s` after being redefined to be `L` at `a`. -/
-theorem injOn_update_of_injOn_diff {α β : Type*} [DecidableEq α] {G : α → β} {s : Set α} {a : α}
-    {L : β} (hG : InjOn G (s \ {a})) (hL : ∀ x ∈ s, x ≠ a → G x ≠ L) :
-    InjOn (Function.update G a L) s := by
-  intro x hx y hy h
-  by_cases h₁ : x = a <;> by_cases h₂ : y = a
-  · rw [h₁, h₂]
-  · rw [h₁, Function.update_self, Function.update_of_ne h₂] at h
-    exact (hL y hy h₂ h.symm).elim
-  · rw [h₂, Function.update_self, Function.update_of_ne h₁] at h
-    exact (hL x hx h₁ h).elim
-  · rw [Function.update_of_ne h₁, Function.update_of_ne h₂] at h
-    exact hG ⟨hx, h₁⟩ ⟨hy, h₂⟩ h
-
 /-- For real `c`, the Möbius map `z ↦ c - z⁻¹` carries the closed upper half-plane near infinity
 to the closed upper half-plane near `c`. -/
 theorem tendsto_const_sub_inv_cobounded (c : ℝ) :
@@ -393,7 +379,7 @@ theorem injOn_update_div_sub_neg_inv {f : ℂ → ℂ} {r : ℝ} {c b : ℂ} (hb
     (hne : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 → f (-w⁻¹) - c ≠ 0) :
     InjOn (Function.update (fun w => b / (f (-w⁻¹) - c)) 0 0)
       (ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) := by
-  refine injOn_update_of_injOn_diff (fun w₁ hw₁ w₂ hw₂ h => ?_) fun w hw hw0 =>
+  refine Set.injOn_update_of_injOn_diff (fun w₁ hw₁ w₂ hw₂ h => ?_) fun w hw hw0 =>
     div_ne_zero hb (hne w hw.1 hw.2 hw0)
   have h' := congrArg (·⁻¹) h
   simp only [inv_div, div_left_inj' hb, sub_left_inj] at h'

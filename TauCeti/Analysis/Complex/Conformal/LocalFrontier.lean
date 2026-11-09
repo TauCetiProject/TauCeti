@@ -11,6 +11,7 @@ public import TauCeti.Topology.ClusterSet
 import Mathlib.Analysis.Complex.Convex
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Logic.Function.Update
 
 /-!
 # Frontiers of local half-planes and sectors
@@ -382,7 +383,7 @@ theorem injOn_update_exp_pi_mul_I_sub {f : ℂ → ℂ} {r : ℝ} {c b : ℂ} (h
       ((f (-w⁻¹) - c) / b).im ∈ Icc 0 Real.pi) :
     InjOn (Function.update (fun w => exp (Real.pi * Complex.I - (f (-w⁻¹) - c) / b)) 0 0)
       (ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) := by
-  refine injOn_update_of_injOn_diff (fun w₁ hw₁ w₂ hw₂ h => ?_) fun w _ _ => exp_ne_zero _
+  refine Set.injOn_update_of_injOn_diff (fun w₁ hw₁ w₂ hw₂ h => ?_) fun w _ _ => exp_ne_zero _
   have hζeq : (f (-w₁⁻¹) - c) / b = (f (-w₂⁻¹) - c) / b :=
     injOn_exp_pi_mul_I_sub (hζ w₁ hw₁.1.1 hw₁.1.2 hw₁.2) (hζ w₂ hw₂.1.1 hw₂.1.2 hw₂.2)
       (by simpa using h)

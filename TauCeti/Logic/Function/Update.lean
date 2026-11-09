@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finset.Insert
+public import Mathlib.Data.Set.Function
 
 /-!
 # Agreement of functions away from a finite set
@@ -25,6 +26,8 @@ finitely many coordinates of a tuple.
 * `Function.forall_notMem_update_eq_iff_of_notMem`: updating `f` at a point `a ∉ S` to `b` agrees
   with `g` away from `S` iff `f` agrees with `g` away from `insert a S` and `b = g a`.
 * `Set.eqOn_update_of_notMem`: updating a function outside a set preserves its values on the set.
+* `Set.injOn_update_of_injOn_diff`: a map injective off a point `a` of a set, whose value `L` at `a`
+  is taken nowhere else on the set, stays injective after being redefined to be `L` at `a`.
 -/
 
 public section
@@ -61,3 +64,18 @@ end Function
 theorem Set.eqOn_update_of_notMem {β : Type*} {f : α → β} {a : α} {s : Set α}
     (ha : a ∉ s) (b : β) : Set.EqOn f (Function.update f a b) s :=
   fun _ hx ↦ (Function.update_of_ne (ne_of_mem_of_not_mem hx ha) _ _).symm
+
+/-- A map that is injective off a point `a` of a set `s`, and whose value `L` at `a` is taken
+nowhere else on `s`, stays injective on `s` after being redefined to be `L` at `a`. -/
+theorem Set.injOn_update_of_injOn_diff {α β : Type*} [DecidableEq α] {G : α → β} {s : Set α}
+    {a : α} {L : β} (hG : Set.InjOn G (s \ {a})) (hL : ∀ x ∈ s, x ≠ a → G x ≠ L) :
+    Set.InjOn (Function.update G a L) s := by
+  intro x hx y hy h
+  by_cases h₁ : x = a <;> by_cases h₂ : y = a
+  · rw [h₁, h₂]
+  · rw [h₁, Function.update_self, Function.update_of_ne h₂] at h
+    exact (hL y hy h₂ h.symm).elim
+  · rw [h₂, Function.update_self, Function.update_of_ne h₁] at h
+    exact (hL x hx h₁ h).elim
+  · rw [Function.update_of_ne h₁, Function.update_of_ne h₂] at h
+    exact hG ⟨hx, h₁⟩ ⟨hy, h₂⟩ h

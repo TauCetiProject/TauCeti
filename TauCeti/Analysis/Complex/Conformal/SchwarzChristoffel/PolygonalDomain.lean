@@ -11,6 +11,7 @@ import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import TauCeti.Analysis.Complex.Conformal.LocalFrontier
 import TauCeti.Analysis.Complex.Conformal.Reflection.HalfStripExterior
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
+import TauCeti.Logic.Function.Update
 
 /-!
 # Conformal maps of the upper half-plane onto polygonal domains
@@ -156,7 +157,7 @@ private theorem exists_eqOn_neg_inv_of_tendsto (hfc : ContinuousOn f {z : ℂ | 
     exact hpf ⟨-w⁻¹, im_neg_inv_nonneg.mpr hw, h.symm⟩
   refine ⟨r, hr, update (fun w => (f (-w⁻¹) - q) / b) 0 ((p - q) / b),
     fun w hw => update_of_ne (hne w hw.2) _ _, ?_, fun w hw hw0 => ?_, fun w hw => ?_,
-    injOn_update_of_injOn_diff (fun w₁ hw₁ w₂ hw₂ h => ?_) fun w hw _ h => ?_⟩
+    Set.injOn_update_of_injOn_diff (fun w₁ hw₁ w₂ hw₂ h => ?_) fun w hw _ h => ?_⟩
   · refine continuousOn_update_iff.mpr ⟨fun w hw => ?_, fun _ => ?_⟩
     · exact (((continuousOn_comp_neg_inv hfc).mono (sdiff_subset_sdiff_left inter_subset_right) w
         hw).sub_const q).div_const b
