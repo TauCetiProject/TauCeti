@@ -103,8 +103,8 @@ theorem ae_le_csSup_of_bddAbove (f : α → ℝ) {k : ℝ} (hk : ¬ ∀ᵐ x ∂
 /-- The essential oscillation `φ ρ` of a function `v` on a ball `B(x₀, ρ)` for an open-positive
 measure is nonnegative and monotone in `ρ ∈ (0, R₁]`, and at most `2 M` at `R₁`, if `|v| ≤ M`
 almost everywhere on `B(x₀, R₁)`. -/
-theorem essSup_sub_essInf_nonneg_monotoneOn_ball {X : Type*} [MetricSpace X] [MeasurableSpace X]
-    {mu : Measure X} [mu.IsOpenPosMeasure] (x₀ : X) {R₁ M : ℝ}
+theorem essSup_sub_essInf_nonneg_monotoneOn_ball {X : Type*} [PseudoMetricSpace X]
+    [MeasurableSpace X] {mu : Measure X} [mu.IsOpenPosMeasure] (x₀ : X) {R₁ M : ℝ}
     {v : X → ℝ} {φ : ℝ → ℝ}
     (hφ : ∀ ρ, φ ρ = essSup v (mu.restrict (Metric.ball x₀ ρ)) -
       essInf v (mu.restrict (Metric.ball x₀ ρ)))
