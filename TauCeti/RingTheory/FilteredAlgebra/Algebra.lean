@@ -126,14 +126,10 @@ theorem toCompletionₐ_apply (x : A) :
     F.toCompletionₐ (R := R) x = F.toCompletion x := (rfl)
 
 /-- The canonical map sends scalars of the algebra to scalars of the completion. -/
+@[simp]
 theorem toCompletion_algebraMap (r : R) :
     F.toCompletion (algebraMap R A r) = algebraMap R F.completion r := by
   rw [← toCompletionₐ_apply (R := R), AlgHom.commutes]
-
-/-- An algebra automorphism of the completion fixes the canonical images of scalars. -/
-theorem algEquiv_toCompletion_algebraMap (e : F.completion ≃ₐ[R] F.completion) (r : R) :
-    e (F.toCompletion (algebraMap R A r)) = F.toCompletion (algebraMap R A r) := by
-  rw [toCompletion_algebraMap, AlgEquiv.commutes]
 
 variable {B : Type*} [Semiring B] [Algebra R B]
 
