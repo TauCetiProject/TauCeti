@@ -30,7 +30,9 @@ in the lower sublevel `M_{c-ε}`. Then `H i` is a homotopy from `α₁ i` to `α
 `i` with `‖x‖ ≤ 1/2` to the point `h i (2x)` of the disc of `i`, and sends a point with
 `1/2 ≤ ‖x‖` to the point `H i (2 - 2‖x‖, x/‖x‖)` of `M_{c-ε}`. These pieces agree on the seam
 `‖x‖ = 1/2`, because `H i (1, ·) = α₀ i ∘ h i` and `h i` preserves the boundary sphere, and on the
-attaching sphere `‖x‖ = 1`, because `H i (0, ·) = α₁ i`.
+attaching sphere `‖x‖ = 1`, because `H i (0, ·) = α₁ i`. When `0 < ε`, any self-map `h i` of the
+disc admitting such a homotopy `K i` preserves the boundary sphere: at the end of `K i` the sphere
+is sent by `χ₀ i ∘ h i` into `M_{c-ε}`, which `χ₀ i` meets exactly on the sphere.
 
 Composed with the handle-to-cell comparison `Φ₀ : M_{c-ε} ∪_{α₀} ⨆ᵢ D^{k i} → M_{c+ε}`
 (`TauCeti.morseCellComparison`), the map `E` reads `K i` along the map
@@ -638,11 +640,13 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 /-- **Milnor's Lemma 3.6 for Morse cells.** Let `f` be smooth and let `ψ₀`, `ψ₁` be two families of
 normal-form charts with the same indices `k i`, each with pairwise disjoint sources, targets
 containing the closed ball of radius `√(2ε)`, and sources covering the critical points of the
-compact band `f⁻¹[c - ε, c + ε]`. Given self-maps `h i` of the disc pairs and homotopies of maps of
+compact band `f⁻¹[c - ε, c + ε]`. Given self-maps `h i` of the discs and homotopies of maps of
 pairs `K i : χ₁ i ≃ χ₀ i ∘ h i` between the characteristic maps of the cells, the reattachment map
 `E : M_{c-ε} ∪_{α₁} ⨆ᵢ D^{k i} → M_{c-ε} ∪_{α₀} ⨆ᵢ D^{k i}` is a homotopy equivalence relative to
 the lower sublevel: it has a homotopy inverse which is the identity on `M_{c-ε}`, and both
-composites are homotopic to the identities relative to `M_{c-ε}`. -/
+composites are homotopic to the identities relative to `M_{c-ε}`. The maps `h i` need not be given
+as maps of pairs: since `0 < ε`, the homotopies `K i` force them to preserve the boundary spheres
+(`TauCeti.mapsTo_range_diskBoundaryInclusion_of_homotopy_morseCharacteristicMap`). -/
 theorem exists_homotopicRel_morseCellReattachment_comp [Finite ι] (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
     (ψ₀ ψ₁ : ι → PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) ∞)
     (hψ₀ : Pairwise (Disjoint on fun i ↦ (ψ₀ i).source))
@@ -655,8 +659,6 @@ theorem exists_homotopicRel_morseCellReattachment_comp [Finite ι] (hfs : ContMD
     (hcrit₀ : criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ ⋃ i, (ψ₀ i).source)
     (hcrit₁ : criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ ⋃ i, (ψ₁ i).source)
     (h : ∀ i, TopCat.disk.{u} (k i) ⟶ TopCat.disk.{u} (k i))
-    (hh : ∀ i, MapsTo (h i) (range (TopCat.diskBoundaryInclusion (k i)))
-      (range (TopCat.diskBoundaryInclusion (k i))))
     (K : ∀ i, ((ψ₁ i).toOpenPartialHomeomorph.morseCharacteristicMap (hk i) hε.le
         ((hball₁ i).trans' (closedBall_subset_closedBall (Real.sqrt_le_sqrt_two_mul ε)))
         (hf₁ i)).hom.Homotopy
@@ -681,7 +683,11 @@ theorem exists_homotopicRel_morseCellReattachment_comp [Finite ι] (hfs : ContMD
           (fun i ↦ (ψ₁ i).toOpenPartialHomeomorph) k hk hε.le
           (fun i ↦ (hball₀ i).trans' (closedBall_subset_closedBall (Real.sqrt_le_sqrt_two_mul ε)))
           (fun i ↦ (hball₁ i).trans' (closedBall_subset_closedBall (Real.sqrt_le_sqrt_two_mul ε)))
-          hf₀ hf₁ h hh K hK ≫ E').hom.HomotopicRel (ContinuousMap.id _)
+          hf₀ hf₁ h
+          (fun i ↦ mapsTo_range_diskBoundaryInclusion_of_homotopy_morseCharacteristicMap (hk i) hε
+            ((hball₀ i).trans' (closedBall_subset_closedBall (Real.sqrt_le_sqrt_two_mul ε)))
+            (hf₀ i) (K i) (hK i))
+          K hK ≫ E').hom.HomotopicRel (ContinuousMap.id _)
         (range (morseCellAttachmentIncl (fun i ↦ (ψ₁ i).toOpenPartialHomeomorph) k hk hε.le
           (fun i ↦ (hball₁ i).trans' (closedBall_subset_closedBall (Real.sqrt_le_sqrt_two_mul ε)))
           hf₁)) ∧
@@ -689,7 +695,11 @@ theorem exists_homotopicRel_morseCellReattachment_comp [Finite ι] (hfs : ContMD
           (fun i ↦ (ψ₁ i).toOpenPartialHomeomorph) k hk hε.le
           (fun i ↦ (hball₀ i).trans' (closedBall_subset_closedBall (Real.sqrt_le_sqrt_two_mul ε)))
           (fun i ↦ (hball₁ i).trans' (closedBall_subset_closedBall (Real.sqrt_le_sqrt_two_mul ε)))
-          hf₀ hf₁ h hh K hK).hom.HomotopicRel (ContinuousMap.id _)
+          hf₀ hf₁ h
+          (fun i ↦ mapsTo_range_diskBoundaryInclusion_of_homotopy_morseCharacteristicMap (hk i) hε
+            ((hball₀ i).trans' (closedBall_subset_closedBall (Real.sqrt_le_sqrt_two_mul ε)))
+            (hf₀ i) (K i) (hK i))
+          K hK).hom.HomotopicRel (ContinuousMap.id _)
         (range (morseCellAttachmentIncl (fun i ↦ (ψ₀ i).toOpenPartialHomeomorph) k hk hε.le
           (fun i ↦ (hball₀ i).trans' (closedBall_subset_closedBall (Real.sqrt_le_sqrt_two_mul ε)))
           hf₀)) := by
@@ -698,7 +708,7 @@ theorem exists_homotopicRel_morseCellReattachment_comp [Finite ι] (hfs : ContMD
   obtain ⟨g₁, hg₁, hΦ₁⟩ :=
     exists_morseCellAttachment_deformation hfs ψ₁ hψ₁ k hk hε hball₁ hf₁ hcompact hcrit₁
   exact exists_homotopicRel_morseCellReattachment_comp_of_leftInverse _ _ k hk hε.le _ _ hf₀ hf₁ h
-    hh K hK g₀ hg₀ g₁ hg₁ hΦ₁
+    _ K hK g₀ hg₀ g₁ hg₁ hΦ₁
 
 end Smooth
 
