@@ -190,7 +190,7 @@ theorem finite_injuryStages_and_ncard_le (e : ℕ) :
       (injuryStages (stage (monitoredSide e)) restraint e).ncard ≤ 2 ^ e - 1 := by
   obtain ⟨hfin, hle⟩ := finite_injurySet_and_ncard_le e
   exact ⟨(finite_injurySet_iff_finite_injuryStages (monotone_stage _)).mp hfin,
-    (ncard_injuryStages_le (monotone_stage _) hfin).trans hle⟩
+    (ncard_injuryStages_le (monotone_stage _)).trans hle⟩
 
 /-- **Quantitative bound on labelled `monitoredInjuryEvents`.** -/
 theorem finite_monitoredInjuryEvents_and_ncard_le (e : ℕ) :
