@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Cotangent
 public import TauCeti.Algebra.Lie.Killing.BaseChange
 public import Mathlib.RingTheory.Bialgebra.TensorProduct
+import Mathlib.RingTheory.Finiteness.Descent
 
 /-!
 # Base change of the tangent Lie algebra
@@ -240,12 +241,6 @@ theorem finrank_lie_baseChange {k K H : Type*} [Field k] [Field K] [Algebra k K]
   (tangentBaseChangeLieEquiv (R := k) (K := K) (H := H)).toLinearEquiv.finrank_eq.symm.trans
     Derivation.finrank_tangent_baseChange
 
-/-- A vector space over a field is finite-dimensional if its scalar extension to a field is. -/
-theorem _root_.Module.Finite.of_baseChange {k K V : Type*} [Field k] [Field K] [Algebra k K]
-    [AddCommGroup V] [Module k V] (h : Module.Finite K (K ⊗[k] V)) : Module.Finite k V := by
-  rw [← Module.rank_lt_aleph0_iff] at h ⊢
-  rwa [Module.rank_baseChange, Cardinal.lift_lt_aleph0] at h
-
 /-- Extension of the ground field preserves and reflects nondegeneracy of the Killing form of the
 Lie algebra of an affine monoid: the Lie algebra of `K ⊗[k] H` has nondegenerate Killing form
 exactly when `Lie(G)` does. When the augmentation cotangent space is infinite-dimensional, neither
@@ -277,7 +272,9 @@ theorem isKilling_lie_baseChange_iff {k K H : Type*} [Field k] [Field K] [Algebr
           ((tangentBaseChangeLieEquiv (R := k) (K := K) (H := H)).toLinearEquiv.symm.trans
             ((Derivation.cotangentLinearEquiv (R := k) (A := H) (B := K)).symm.trans
               (LinearMap.liftBaseChangeEquiv K)))
-      exact Module.Finite.of_baseChange (K := K) ((Module.finite_dual_iff K).1 hdual)
+      have : Module.Finite K (K ⊗[k] Bialgebra.CotangentSpace k H) :=
+        (Module.finite_dual_iff K).1 hdual
+      exact Module.Finite.of_finite_tensorProduct_of_faithfullyFlat K
     · have := finite_of_isKilling (R := k) (L := Derivation k H (Bialgebra.CounitAlgebra k H k))
       exact (Module.finite_dual_iff k).1
         (Module.Finite.equiv Derivation.cotangentDualLieEquiv.symm.toLinearEquiv)
