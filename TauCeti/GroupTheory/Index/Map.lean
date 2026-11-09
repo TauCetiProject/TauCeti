@@ -22,7 +22,7 @@ related to the index of `H`, the index of the image of `f` and the two kernels:
 
 When all these numbers are finite, this says that the cokernel/kernel ratio
 `[G' : f(G)] / #ker f` of `f` is the ratio `[G' : f(H)] / #(H ⊓ ker f)` of its restriction to
-`H`, corrected by `[G : H]`. This is how such a ratio is computed on subgroups of finite index,
+`H`, divided by `[G : H]`. This is how such a ratio is computed on subgroups of finite index,
 for instance the local factor `[E₂(K) : φ E₁(K)] / #E₁(K)[φ]` of an isogeny `φ` over a local field
 `K`, which is computed on deep levels of the formal groups.
 
@@ -69,8 +69,8 @@ variable {G G' : Type*} [Group G] [Group G']
 `[G' : f(G)] · [G : H] · #(H ⊓ ker f) = [G' : f(H)] · #ker f`.
 
 No finiteness is required: infinite orders and indices are read as `0`. When all of them are
-finite, this says that the cokernel/kernel ratio of `f` is that of its restriction to `H`, times
-`[G' : f(H)] / [G' : f(G)]` over `[G : H]`. -/
+finite, this says that the cokernel/kernel ratio of `f` is that of its restriction to `H`, divided
+by `[G : H]`. -/
 @[to_additive AddMonoidHom.index_range_mul_index_mul_card_inf_ker
   /-- **The index of the image of a subgroup**: for a homomorphism `f : G →+ G'` and a subgroup
   `H` of `G`,
@@ -78,8 +78,8 @@ finite, this says that the cokernel/kernel ratio of `f` is that of its restricti
   `[G' : f(G)] · [G : H] · #(H ⊓ ker f) = [G' : f(H)] · #ker f`.
 
   No finiteness is required: infinite orders and indices are read as `0`. When all of them are
-  finite, this says that the cokernel/kernel ratio of `f` is that of its restriction to `H`, times
-  `[G' : f(H)] / [G' : f(G)]` over `[G : H]`. -/]
+  finite, this says that the cokernel/kernel ratio of `f` is that of its restriction to `H`, divided
+  by `[G : H]`. -/]
 theorem index_range_mul_index_mul_card_inf_ker (f : G →* G') (H : Subgroup G) :
     f.range.index * H.index * Nat.card ↥(H ⊓ f.ker) = (H.map f).index * Nat.card f.ker := by
   -- `[G : H] = [H ⊔ ker f : H] · [G : H ⊔ ker f]` and `[H ⊔ ker f : H] = [ker f : H ⊓ ker f]`

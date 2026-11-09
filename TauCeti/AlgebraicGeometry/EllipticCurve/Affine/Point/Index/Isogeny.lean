@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Depth
 
 import TauCeti.Algebra.Group.Primary.Card
+import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.Algebra.Module.Torsion.Int
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FinitePoint
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralReduction
