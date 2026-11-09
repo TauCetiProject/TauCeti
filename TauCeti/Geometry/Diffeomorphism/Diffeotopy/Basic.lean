@@ -35,6 +35,7 @@ bundled smooth embeddings, used for geometric knot presentations, is in
 * `TauCeti.Diffeotopy`: a level-preserving diffeomorphism of `I × M` starting at the identity.
 * `TauCeti.Diffeotopy.timeSlice`: the self-diffeomorphism of `M` at a fixed time.
 * `TauCeti.Diffeotopy.final`: the self-diffeomorphism at time one.
+* `TauCeti.Diffeotopy.cylinderMap`: the motion `(x, t) ↦ Φ (t, x)` on the cylinder `M × I`.
 * `TauCeti.Diffeotopy.refl`, `trans`, and `symm`: the constant, composite, and inverse
   diffeotopies.
 * `TauCeti.Diffeotopy.toAmbientIsotopy`: forget smoothness to obtain a continuous ambient
@@ -204,6 +205,38 @@ theorem mapsTo_final_of_eqOn_compl {K U : Set M} (hKU : K ⊆ U)
     simpa only [final_apply] using hΦK 1 (fun hzK => hz (hKU hzK))
   simpa only [compl_compl] using
     ((Set.surjOn_id Uᶜ).congr hfix.symm).mapsTo_compl Φ.final.injective
+
+/-- The final diffeomorphism of a conjugated diffeotopy is the conjugated final diffeomorphism. -/
+theorem final_transDiffeomorph (f : M ≃ₘ^n⟮J, J⟯ P) :
+    (Φ.transDiffeomorph f).final = (f.symm.trans Φ.final).trans f :=
+  _root_.Diffeomorph.ext fun x ↦ by simp
+
+/-! ### The motion on the cylinder -/
+
+/-- The motion of a diffeotopy read on the cylinder `M × I`, with time as the second
+coordinate: `(x, t) ↦ Φ (t, x)`. This is the order used by `TauCeti.homotopyOperator`. -/
+def cylinderMap : M × I → M :=
+  fun p ↦ Φ (p.2, p.1)
+
+@[simp]
+theorem cylinderMap_apply (p : M × I) : Φ.cylinderMap p = Φ (p.2, p.1) :=
+  (rfl)
+
+theorem contMDiff_cylinderMap : ContMDiff (J.prod (𝓡∂ 1)) J n Φ.cylinderMap :=
+  Φ.contMDiff.comp (contMDiff_snd.prodMk contMDiff_fst)
+
+/-- The cylinder map at time zero is the identity. -/
+theorem cylinderMap_comp_zero : Φ.cylinderMap ∘ (fun x ↦ (x, (0 : I))) = id :=
+  funext Φ.apply_zero
+
+/-- The cylinder map at time one is the final diffeomorphism. -/
+theorem cylinderMap_comp_one : Φ.cylinderMap ∘ (fun x ↦ (x, (1 : I))) = Φ.final :=
+  funext fun x ↦ (Φ.final_apply x).symm
+
+/-- The motion of a conjugated diffeotopy is the conjugated motion. -/
+theorem cylinderMap_transDiffeomorph (f : M ≃ₘ^n⟮J, J⟯ P) :
+    (Φ.transDiffeomorph f).cylinderMap = f ∘ Φ.cylinderMap ∘ Prod.map f.symm id :=
+  funext fun p ↦ by simp
 
 /-- The constant diffeotopy at the identity. -/
 def refl (J : ModelWithCorners ℝ E H) (n : ℕ∞ω) (M : Type*) [TopologicalSpace M]

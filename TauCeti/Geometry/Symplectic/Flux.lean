@@ -77,26 +77,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {J : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   (Φ : Diffeotopy J ∞ M)
 
-/-- The motion of a diffeotopy read on the cylinder `M × [0, 1]`, with time as the second
-coordinate: `(x, t) ↦ φ_t x`. This is the order used by `TauCeti.homotopyOperator`. -/
-def cylinderMap : M × unitInterval → M :=
-  fun p ↦ Φ (p.2, p.1)
-
-@[simp]
-theorem cylinderMap_apply (p : M × unitInterval) : Φ.cylinderMap p = Φ (p.2, p.1) :=
-  (rfl)
-
-theorem contMDiff_cylinderMap : ContMDiff (J.prod (𝓡∂ 1)) J ∞ Φ.cylinderMap :=
-  Φ.contMDiff.comp (contMDiff_snd.prodMk contMDiff_fst)
-
-/-- The cylinder map at time zero is the identity. -/
-theorem cylinderMap_comp_zero : Φ.cylinderMap ∘ (fun x ↦ (x, (0 : unitInterval))) = id :=
-  funext Φ.apply_zero
-
-/-- The cylinder map at time one is the final diffeomorphism. -/
-theorem cylinderMap_comp_one : Φ.cylinderMap ∘ (fun x ↦ (x, (1 : unitInterval))) = Φ.final :=
-  funext fun x ↦ (Φ.final_apply x).symm
-
 variable [IsManifold J ∞ M]
 
 /-- The **flux form** of a smooth diffeotopy `φ_t` with respect to a two-form `σ`: the one-form
@@ -242,9 +222,7 @@ theorem flux_refl (σ : closedForms J M 2)
     (h : (refl J ∞ M).final ∈ SmoothForm.diffeomorphStabilizer σ.1) :
     (refl J ∞ M).flux σ h = 0 := by
   rw [flux_def, deRhamCohomology.mk_eq_zero_iff]
-  change (refl J ∞ M).fluxForm σ.1 ∈ exactForms J M 1
-  rw [fluxForm_refl]
-  exact zero_mem _
+  simp only [fluxForm_refl, zero_mem]
 
 /-! ### Exact forms -/
 
@@ -309,18 +287,6 @@ theorem flux_eq_zero_of_final_eq_refl (σ : closedForms J M 2) (hσ : σ.1 ∈ e
 section Naturality
 
 variable {P : Type*} [TopologicalSpace P] [ChartedSpace H P] [IsManifold J ∞ P]
-
-omit [IsManifold J ∞ M] [IsManifold J ∞ P] in
-/-- The motion of a conjugated diffeotopy is the conjugated motion. -/
-theorem cylinderMap_transDiffeomorph (f : M ≃ₘ⟮J, J⟯ P) :
-    (Φ.transDiffeomorph f).cylinderMap = f ∘ Φ.cylinderMap ∘ Prod.map f.symm id :=
-  funext fun p ↦ by simp
-
-omit [IsManifold J ∞ M] [IsManifold J ∞ P] in
-/-- The final diffeomorphism of a conjugated diffeotopy is the conjugated final diffeomorphism. -/
-theorem final_transDiffeomorph (f : M ≃ₘ⟮J, J⟯ P) :
-    (Φ.transDiffeomorph f).final = (f.symm.trans Φ.final).trans f :=
-  Diffeomorph.ext fun x ↦ by simp
 
 /-- The final diffeomorphism of a diffeotopy conjugated by `f` preserves `σ` exactly when the
 original final diffeomorphism preserves `f^* σ`. -/
