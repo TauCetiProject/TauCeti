@@ -97,6 +97,7 @@ theorem integral_inv_mul_sub_mul_tendsto_neg_integral_lineDeriv_mul {u : E → �
     · rw [hwS hx]
     · simp [lineDeriv_of_notMem_tsupport hx]
   obtain ⟨L, hL⟩ := φ.contDiff.lipschitzWith_of_hasCompactSupport φ.hasCompactSupport (by simp)
+  obtain ⟨M, hφM⟩ := φ.continuous.bounded_above_of_compact_support φ.hasCompactSupport
   -- For small `t`, the translation moves onto the test function.
   have hEq : ∀ᶠ t in 𝓝[≠] (0 : ℝ), ∫ y, (t⁻¹ • (φ (y + t • -v) - φ y)) * w y ∂μ =
       ∫ x, t⁻¹ * (u (x + t • v) - u x) * φ x ∂μ := by
@@ -107,7 +108,7 @@ theorem integral_inv_mul_sub_mul_tendsto_neg_integral_lineDeriv_mul {u : E → �
       · rw [ht x hx, hwS hx]
       · simp [image_eq_zero_of_notMem_tsupport hx]
     simp_rw [hpt]
-    have key := integral_comp_add_sub_mul_eq hw φ.continuous φ.hasCompactSupport (t • v)
+    have key := integral_comp_add_sub_mul_eq hw φ.continuous.measurable hφM (t • v)
     calc ∫ y, (t⁻¹ • (φ (y + t • -v) - φ y)) * w y ∂μ
         = ∫ y, t⁻¹ * ((φ (y - t • v) - φ y) * w y) ∂μ := by
           congr 1 with y

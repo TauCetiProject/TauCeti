@@ -26,13 +26,14 @@ under negation, the centre of a ball is its barycentre.
 For a measure invariant under a group action, an integrand invariant under `g` has the same
 integral, and the same integrability, on `g • V` as on `V`.
 
-The integral of a difference quotient of an integrable function against a compactly supported
-continuous test function can be moved onto the test function, by translation invariance.
+The integral of the difference `w (· + a) - w` of an integrable function against a bounded
+measurable test function equals the integral of `w` against `φ (· - a) - φ`, by translation
+invariance.
 
 ## Main declarations
 
 * `TauCeti.integral_comp_add_sub_mul_eq`: moving a translation of an integrable function
-  onto a compactly supported continuous test function inside an integral.
+  onto a bounded measurable test function inside an integral.
 * `TauCeti.setIntegral_ball_eq_setIntegral_ball_zero_add`: translating a ball integral to the
   origin.
 * `TauCeti.setIntegral_ball_sub_eq_zero`, `TauCeti.setAverage_ball_id`: for a measure invariant
@@ -128,19 +129,18 @@ section Translation
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [BorelSpace E]
   {μ : Measure E} [μ.IsAddRightInvariant]
 
-/-- Moving a translation from the integrable function `w` onto the compactly supported continuous
-test function `φ` inside an integral:
+/-- Moving a translation from the integrable function `w` onto the bounded measurable test
+function `φ` inside an integral:
 `∫ (w (· + a) - w) * φ = ∫ (φ (· - a) - φ) * w`. -/
 theorem integral_comp_add_sub_mul_eq {w φ : E → ℝ} (hw : Integrable w μ)
-    (hφ : Continuous φ) (hφc : HasCompactSupport φ) (a : E) :
+    (hφ : Measurable φ) {M : ℝ} (hM : ∀ x, ‖φ x‖ ≤ M) (a : E) :
     ∫ x, (w (x + a) - w x) * φ x ∂μ = ∫ y, (φ (y - a) - φ y) * w y ∂μ := by
-  obtain ⟨M, hM⟩ := hφ.bounded_above_of_compact_support hφc
   have h1 : Integrable (fun x => w (x + a) * φ x) μ :=
     (hw.comp_add_right a).mul_bdd hφ.aestronglyMeasurable (ae_of_all _ hM)
   have h2 : Integrable (fun x => w x * φ x) μ :=
     hw.mul_bdd hφ.aestronglyMeasurable (ae_of_all _ hM)
   have h3 : Integrable (fun x => w x * φ (x - a)) μ :=
-    hw.mul_bdd (hφ.comp (continuous_id.sub continuous_const)).aestronglyMeasurable
+    hw.mul_bdd (hφ.comp (continuous_sub_right a).measurable).aestronglyMeasurable
       (ae_of_all _ fun x => hM _)
   calc ∫ x, (w (x + a) - w x) * φ x ∂μ
       = ∫ x, w (x + a) * φ x ∂μ - ∫ y, w y * φ y ∂μ := by
