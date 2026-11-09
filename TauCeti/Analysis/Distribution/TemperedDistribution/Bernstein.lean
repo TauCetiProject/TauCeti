@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.Support
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Fourier.ChangeOfVariables
@@ -36,7 +37,7 @@ direction: for an orthonormal basis `b` of `E` there is a constant `C`, dependin
 `‖f‖_p ≤ (C / R) ^ k ∑ᵢ ‖∂_{b_{i₀}} ⋯ ∂_{b_{iₖ₋₁}} f‖_p`
 
 for every `1 ≤ p ≤ ∞`, the sum running over `i : Fin k → ι`
-(`TauCeti.exists_norm_le_div_pow_mul_sum_norm_of_iteratedLineDerivOp_eq`).
+(`OrthonormalBasis.exists_norm_le_div_pow_mul_sum_norm_of_iteratedLineDerivOp_eq`).
 
 These are the basic estimates for functions whose spectrum lies in a ball or an annulus, such as
 the Littlewood–Paley blocks of a tempered distribution: they convert the frequency localization of
@@ -74,9 +75,9 @@ annulus.
 
 * `TauCeti.exists_iteratedLineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier`: Bernstein's
   inequalities.
-* `TauCeti.exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq`,
-  `TauCeti.exists_norm_le_div_pow_mul_sum_norm_of_iteratedLineDerivOp_eq`: the reverse Bernstein
-  inequality on an annulus, for one derivative and for derivatives of every order.
+* `OrthonormalBasis.exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq`,
+  `OrthonormalBasis.exists_norm_le_div_pow_mul_sum_norm_of_iteratedLineDerivOp_eq`: the reverse
+  Bernstein inequality on an annulus, for one derivative and for derivatives of every order.
 
 ## References
 
@@ -323,83 +324,77 @@ theorem exists_iteratedLineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier {p q 
 
 /-! ### The reverse inequality on annuli -/
 
-/-- The bump equal to one on the closed ball of radius `1/4` and vanishing outside the ball of
-radius `1/2`. -/
-private def innerBump : ContDiffBump (0 : E) := ⟨1 / 4, 1 / 2, by norm_num, by norm_num⟩
-
-/-- The bump equal to one on the closed ball of radius `2 B` and vanishing outside the ball of
-radius `3 B`. -/
-private def outerBump {B : ℝ} (hB : 1 ≤ B) : ContDiffBump (0 : E) :=
-  ⟨2 * B, 3 * B, by linarith, by linarith⟩
-
-/-- The annular cutoff `χ_{2B} - χ_{1/4}`: it equals one where `1/2 ≤ ‖ξ‖ ≤ 2 B` and zero on the
-closed ball of radius `1/4`. -/
-private def annularCutoff {B : ℝ} (hB : 1 ≤ B) (ξ : E) : ℝ :=
-  (outerBump hB : ContDiffBump (0 : E)) ξ - (innerBump : ContDiffBump (0 : E)) ξ
+/-- A smooth compactly supported annular cutoff, chosen by
+`TauCeti.exists_contDiff_cutoff_annulus`: it equals one where `1/2 ≤ ‖ξ‖ ≤ 2 B` and vanishes on
+the ball of radius `1/4`. -/
+private def annularCutoff (B : ℝ) : E → ℝ :=
+  (exists_contDiff_cutoff_annulus (E := E) (r := 1 / 2) (by norm_num) (2 * B)).choose
 
 omit [MeasurableSpace E] [BorelSpace E] in
-private theorem annularCutoff_eq_zero {B : ℝ} (hB : 1 ≤ B) {ξ : E} (hξ : ‖ξ‖ ≤ 1 / 4) :
-    annularCutoff hB ξ = 0 := by
-  have hi : ξ ∈ closedBall (0 : E) (innerBump : ContDiffBump (0 : E)).rIn :=
-    mem_closedBall_zero_iff.2 hξ
-  have ho : ξ ∈ closedBall (0 : E) (outerBump (E := E) hB).rIn :=
-    mem_closedBall_zero_iff.2 (show ‖ξ‖ ≤ 2 * B by linarith)
-  rw [annularCutoff, (outerBump hB).one_of_mem_closedBall ho, innerBump.one_of_mem_closedBall hi,
-    sub_self]
+private theorem contDiff_annularCutoff (B : ℝ) : ContDiff ℝ (⊤ : ℕ∞) (annularCutoff (E := E) B) :=
+  (exists_contDiff_cutoff_annulus (E := E) (r := 1 / 2) (by norm_num) (2 * B)).choose_spec.1
 
 omit [MeasurableSpace E] [BorelSpace E] in
-private theorem annularCutoff_eq_one {B : ℝ} (hB : 1 ≤ B) {ξ : E} (h₁ : 1 / 2 ≤ ‖ξ‖)
-    (h₂ : ‖ξ‖ ≤ 2 * B) : annularCutoff hB ξ = 1 := by
-  have hi : (innerBump : ContDiffBump (0 : E)).rOut ≤ dist ξ 0 := by
-    rw [dist_zero_right]
-    exact h₁
-  rw [annularCutoff, (outerBump hB).one_of_mem_closedBall (mem_closedBall_zero_iff.2 h₂),
-    innerBump.zero_of_le_dist hi, sub_zero]
+private theorem hasCompactSupport_annularCutoff (B : ℝ) :
+    HasCompactSupport (annularCutoff (E := E) B) :=
+  (exists_contDiff_cutoff_annulus (E := E) (r := 1 / 2) (by norm_num) (2 * B)).choose_spec.2.1
+
+omit [MeasurableSpace E] [BorelSpace E] in
+private theorem annularCutoff_eq_zero (B : ℝ) {ξ : E} (hξ : ‖ξ‖ < 1 / 4) :
+    annularCutoff B ξ = 0 :=
+  (exists_contDiff_cutoff_annulus (E := E) (r := 1 / 2) (by norm_num) (2 * B)).choose_spec.2.2.1 ξ
+    (by linarith)
+
+omit [MeasurableSpace E] [BorelSpace E] in
+private theorem annularCutoff_eq_one (B : ℝ) {ξ : E} (h₁ : 1 / 2 ≤ ‖ξ‖) (h₂ : ‖ξ‖ ≤ 2 * B) :
+    annularCutoff B ξ = 1 :=
+  (exists_contDiff_cutoff_annulus (E := E) (r := 1 / 2) (by norm_num) (2 * B)).choose_spec.2.2.2.2
+    ξ h₁ h₂
 
 /-- The symbol `ξ ↦ φ (R⁻¹ • ξ) ⟪ξ, m⟫ / ‖ξ‖²`, where `φ` is the annular cutoff. Multiplying by
 `⟪ξ, m⟫` and summing over an orthonormal basis gives back `φ (R⁻¹ • ξ)`. -/
-private def annularSymbol {B : ℝ} (hB : 1 ≤ B) (R : ℝ) (m ξ : E) : ℂ :=
-  ((annularCutoff hB (R⁻¹ • ξ) * (inner ℝ ξ m / ‖ξ‖ ^ 2) : ℝ) : ℂ)
+private def annularSymbol (B : ℝ) (R : ℝ) (m ξ : E) : ℂ :=
+  ((annularCutoff B (R⁻¹ • ξ) * (inner ℝ ξ m / ‖ξ‖ ^ 2) : ℝ) : ℂ)
 
 omit [MeasurableSpace E] [BorelSpace E] in
-private theorem contDiff_annularSymbol {B : ℝ} (hB : 1 ≤ B) {R : ℝ} (hR : 0 < R) (m : E) :
-    ContDiff ℝ (⊤ : ℕ∞) (annularSymbol hB R m) := by
+private theorem contDiff_annularSymbol (B : ℝ) {R : ℝ} (hR : 0 < R) (m : E) :
+    ContDiff ℝ (⊤ : ℕ∞) (annularSymbol B R m) := by
   refine Complex.ofRealCLM.contDiff.comp (contDiff_iff_contDiffAt.2 fun ξ ↦ ?_)
   rcases eq_or_ne ξ 0 with rfl | hξ
   · -- The symbol vanishes on the ball of radius `R / 4`.
     refine contDiffAt_const (c := (0 : ℝ)).congr_of_eventuallyEq ?_
     filter_upwards [ball_mem_nhds (0 : E) (show 0 < R / 4 by positivity)] with η hη
     rw [mem_ball_zero_iff] at hη
-    rw [annularCutoff_eq_zero hB
-      (by rw [norm_smul_of_nonneg (inv_nonneg.2 hR.le), inv_mul_le_iff₀ hR]; linarith)]
+    rw [annularCutoff_eq_zero B
+      (by rw [norm_smul_of_nonneg (inv_nonneg.2 hR.le), inv_mul_lt_iff₀ hR]; linarith)]
     exact zero_mul _
-  · exact (((outerBump hB).contDiff.sub innerBump.contDiff).comp
+  · exact ((contDiff_annularCutoff B).comp
       (contDiff_const_smul _)).contDiffAt.mul ((contDiffAt_id.inner ℝ contDiffAt_const).div
         (contDiff_norm_sq ℝ).contDiffAt (by simpa using hξ))
 
 omit [MeasurableSpace E] [BorelSpace E] in
-private theorem hasCompactSupport_annularSymbol {B : ℝ} (hB : 1 ≤ B) {R : ℝ} (hR : 0 < R)
-    (m : E) : HasCompactSupport (annularSymbol hB R m) :=
-  ((((outerBump hB).hasCompactSupport.sub innerBump.hasCompactSupport).comp_smul
+private theorem hasCompactSupport_annularSymbol (B : ℝ) {R : ℝ} (hR : 0 < R)
+    (m : E) : HasCompactSupport (annularSymbol B R m) :=
+  (((hasCompactSupport_annularCutoff B).comp_smul
     (inv_ne_zero hR.ne')).mul_right).comp_left Complex.ofReal_zero
 
 /-- The annular symbol as a Schwartz function. -/
-private def annularSymbolSchwartz {B : ℝ} (hB : 1 ≤ B) {R : ℝ} (hR : 0 < R) (m : E) :
+private def annularSymbolSchwartz (B : ℝ) {R : ℝ} (hR : 0 < R) (m : E) :
     𝓢(E, ℂ) :=
-  (hasCompactSupport_annularSymbol hB hR m).toSchwartzMap (contDiff_annularSymbol hB hR m)
+  (hasCompactSupport_annularSymbol B hR m).toSchwartzMap (contDiff_annularSymbol B hR m)
 
 omit [MeasurableSpace E] [BorelSpace E] in
-private theorem coe_annularSymbolSchwartz {B : ℝ} (hB : 1 ≤ B) {R : ℝ} (hR : 0 < R) (m : E) :
-    ⇑(annularSymbolSchwartz hB hR m) = annularSymbol hB R m :=
+private theorem coe_annularSymbolSchwartz (B : ℝ) {R : ℝ} (hR : 0 < R) (m : E) :
+    ⇑(annularSymbolSchwartz B hR m) = annularSymbol B R m :=
   rfl
 
 /-- The kernel of the annular symbol at scale `R` has `L¹` norm `R⁻¹` times that at scale `1`. -/
-private theorem toReal_eLpNorm_fourierInv_annularSymbol {B : ℝ} (hB : 1 ≤ B) {R : ℝ}
+private theorem toReal_eLpNorm_fourierInv_annularSymbol (B : ℝ) {R : ℝ}
     (hR : 0 < R) (m : E) :
-    (eLpNorm (𝓕⁻ (annularSymbolSchwartz hB hR m : E → ℂ)) 1 volume).toReal =
-      R⁻¹ * (eLpNorm (𝓕⁻ (annularSymbolSchwartz hB one_pos m : E → ℂ)) 1 volume).toReal := by
-  set S := annularSymbolSchwartz (E := E) hB one_pos m
-  have hscale : ⇑(annularSymbolSchwartz hB hR m) =
+    (eLpNorm (𝓕⁻ (annularSymbolSchwartz B hR m : E → ℂ)) 1 volume).toReal =
+      R⁻¹ * (eLpNorm (𝓕⁻ (annularSymbolSchwartz B one_pos m : E → ℂ)) 1 volume).toReal := by
+  set S := annularSymbolSchwartz (E := E) B one_pos m
+  have hscale : ⇑(annularSymbolSchwartz B hR m) =
       fun ξ ↦ (((R⁻¹ : ℝ) : ℂ) • S) (R⁻¹ • ξ) := by
     ext ξ
     rcases eq_or_ne ξ 0 with rfl | hξ
@@ -420,16 +415,16 @@ private theorem toReal_eLpNorm_fourierInv_annularSymbol {B : ℝ} (hB : 1 ≤ B)
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- Multiplied by the symbols `⟪ξ, bᵢ⟫` of the derivatives along an orthonormal basis and summed,
 the annular symbols give back the annular cutoff `φ (R⁻¹ • ξ)`, since `∑ᵢ ⟪ξ, bᵢ⟫² = ‖ξ‖²`. -/
-private theorem sum_inner_mul_annularSymbol {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E)
-    {B : ℝ} (hB : 1 ≤ B) (R : ℝ) (ξ : E) :
-    ∑ i, ((inner ℝ ξ (b i) : ℝ) : ℂ) * annularSymbol hB R (b i) ξ =
-      ((annularCutoff hB (R⁻¹ • ξ) : ℝ) : ℂ) := by
+private theorem _root_.OrthonormalBasis.sum_inner_mul_annularSymbol {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) (B R : ℝ) (ξ : E) :
+    ∑ i, ((inner ℝ ξ (b i) : ℝ) : ℂ) * annularSymbol B R (b i) ξ =
+      ((annularCutoff B (R⁻¹ • ξ) : ℝ) : ℂ) := by
   rcases eq_or_ne ξ 0 with rfl | hξ
-  · simp [annularCutoff_eq_zero hB (ξ := (0 : E)) (by norm_num)]
-  have hreal : ∑ i, inner ℝ ξ (b i) * (annularCutoff hB (R⁻¹ • ξ) * (inner ℝ ξ (b i) / ‖ξ‖ ^ 2)) =
-      annularCutoff hB (R⁻¹ • ξ) := by
+  · simp [annularCutoff_eq_zero B (ξ := (0 : E)) (by norm_num)]
+  have hreal : ∑ i, inner ℝ ξ (b i) * (annularCutoff B (R⁻¹ • ξ) * (inner ℝ ξ (b i) / ‖ξ‖ ^ 2)) =
+      annularCutoff B (R⁻¹ • ξ) := by
     have hξ2 : ‖ξ‖ ^ 2 ≠ 0 := by positivity
-    calc _ = annularCutoff hB (R⁻¹ • ξ) * (∑ i, inner ℝ ξ (b i) ^ 2) / ‖ξ‖ ^ 2 := by
+    calc _ = annularCutoff B (R⁻¹ • ξ) * (∑ i, inner ℝ ξ (b i) ^ 2) / ‖ξ‖ ^ 2 := by
           rw [Finset.mul_sum, Finset.sum_div]
           exact Finset.sum_congr rfl fun i _ ↦ by ring
       _ = _ := by rw [b.sum_sq_inner_left, mul_div_assoc, div_self hξ2, mul_one]
@@ -441,52 +436,53 @@ omit [CompleteSpace F] in
 the closed ball of radius `B R`, then `u` is recovered from its derivatives along an orthonormal
 basis: `∑ᵢ T_{σᵢ} (∂_{bᵢ} u) = 2πi u`, where `σᵢ` is the annular symbol at scale `R` in the
 direction `bᵢ`. -/
-private theorem sum_fourierMultiplierCLM_annularSymbol_lineDerivOp {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) {B : ℝ} (hB : 1 ≤ B) {R : ℝ} (hR : 0 < R) {u : 𝓢'(E, F)}
+private theorem _root_.OrthonormalBasis.sum_fourierMultiplierCLM_annularSymbol_lineDerivOp
+    {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E) {B : ℝ} (hB : 1 ≤ B) {R : ℝ} (hR : 0 < R)
+    {u : 𝓢'(E, F)}
     (hu : IsVanishingOn (𝓕 u : 𝓢'(E, F)) (ball 0 R ∪ (closedBall 0 (B * R))ᶜ)) :
-    ∑ i, TemperedDistribution.fourierMultiplierCLM F (annularSymbol hB R (b i)) (∂_{b i} u) =
+    ∑ i, TemperedDistribution.fourierMultiplierCLM F (annularSymbol B R (b i)) (∂_{b i} u) =
       (2 * Real.pi * Complex.I) • u := by
   have hinner (i : ι) : (fun ξ : E ↦ ((inner ℝ ξ (b i) : ℝ) : ℂ)).HasTemperateGrowth := by
     fun_prop
-  have hσ (i : ι) : (annularSymbol hB R (b i)).HasTemperateGrowth :=
-    (annularSymbolSchwartz hB hR (b i)).hasTemperateGrowth
-  have hφ : (fun ξ : E ↦ ((annularCutoff hB (R⁻¹ • ξ) : ℝ) : ℂ)).HasTemperateGrowth :=
-    ((((outerBump hB).hasCompactSupport.sub innerBump.hasCompactSupport).comp_smul
+  have hσ (i : ι) : (annularSymbol B R (b i)).HasTemperateGrowth :=
+    (annularSymbolSchwartz B hR (b i)).hasTemperateGrowth
+  have hφ : (fun ξ : E ↦ ((annularCutoff B (R⁻¹ • ξ) : ℝ) : ℂ)).HasTemperateGrowth :=
+    (((hasCompactSupport_annularCutoff B).comp_smul
       (inv_ne_zero hR.ne')).comp_left Complex.ofReal_zero).hasTemperateGrowth
       (Complex.ofRealCLM.contDiff.comp
-        (((outerBump hB).contDiff.sub innerBump.contDiff).comp (contDiff_const_smul _)))
+        ((contDiff_annularCutoff B).comp (contDiff_const_smul _)))
   -- The cutoff `φ (R⁻¹ • ·)` equals one on `R / 2 ≤ ‖ξ‖ ≤ 2 B R`, a neighbourhood of the annulus.
-  have hsupp : Function.support ((fun ξ : E ↦ ((annularCutoff hB (R⁻¹ • ξ) : ℝ) : ℂ)) - 1) ⊆
+  have hsupp : Function.support ((fun ξ : E ↦ ((annularCutoff B (R⁻¹ • ξ) : ℝ) : ℂ)) - 1) ⊆
       closedBall 0 (R / 2) ∪ (ball 0 (2 * B * R))ᶜ := by
     intro ξ hξ
     by_contra h
     simp only [Set.mem_union, mem_closedBall_zero_iff, Set.mem_compl_iff, mem_ball_zero_iff,
       not_or, not_le, not_not] at h
     apply hξ
-    rw [Pi.sub_apply, annularCutoff_eq_one hB
+    rw [Pi.sub_apply, annularCutoff_eq_one B
       (by rw [norm_smul_of_nonneg (inv_nonneg.2 hR.le), le_inv_mul_iff₀ hR]; linarith)
       (by rw [norm_smul_of_nonneg (inv_nonneg.2 hR.le), inv_mul_le_iff₀ hR]; linarith),
       Complex.ofReal_one, Pi.one_apply, sub_self]
   have hBR : B * R < 2 * B * R := by nlinarith
-  have hts : tsupport ((fun ξ : E ↦ ((annularCutoff hB (R⁻¹ • ξ) : ℝ) : ℂ)) - 1) ⊆
+  have hts : tsupport ((fun ξ : E ↦ ((annularCutoff B (R⁻¹ • ξ) : ℝ) : ℂ)) - 1) ⊆
       ball 0 R ∪ (closedBall 0 (B * R))ᶜ :=
     (closure_minimal hsupp (isClosed_closedBall.union isOpen_ball.isClosed_compl)).trans
       (Set.union_subset_union (closedBall_subset_ball (by linarith))
         (Set.compl_subset_compl.2 (closedBall_subset_ball hBR)))
-  calc ∑ i, TemperedDistribution.fourierMultiplierCLM F (annularSymbol hB R (b i)) (∂_{b i} u)
+  calc ∑ i, TemperedDistribution.fourierMultiplierCLM F (annularSymbol B R (b i)) (∂_{b i} u)
       = ∑ i, (2 * Real.pi * Complex.I) • TemperedDistribution.fourierMultiplierCLM F
-          (fun ξ ↦ ((inner ℝ ξ (b i) : ℝ) : ℂ) * annularSymbol hB R (b i) ξ) u := by
+          (fun ξ ↦ ((inner ℝ ξ (b i) : ℝ) : ℂ) * annularSymbol B R (b i) ξ) u := by
         refine Finset.sum_congr rfl fun i _ ↦ ?_
         rw [TemperedDistribution.lineDeriv_eq_fourierMultiplierCLM, map_smul,
           TemperedDistribution.fourierMultiplierCLM_fourierMultiplierCLM_apply (hinner i) (hσ i),
           Pi.mul_def]
     _ = (2 * Real.pi * Complex.I) • TemperedDistribution.fourierMultiplierCLM F
-          (fun ξ ↦ ∑ i, ((inner ℝ ξ (b i) : ℝ) : ℂ) * annularSymbol hB R (b i) ξ) u := by
+          (fun ξ ↦ ∑ i, ((inner ℝ ξ (b i) : ℝ) : ℂ) * annularSymbol B R (b i) ξ) u := by
         rw [← Finset.smul_sum, TemperedDistribution.fourierMultiplierCLM_sum F
-          (g := fun i ξ ↦ ((inner ℝ ξ (b i) : ℝ) : ℂ) * annularSymbol hB R (b i) ξ)
+          (g := fun i ξ ↦ ((inner ℝ ξ (b i) : ℝ) : ℂ) * annularSymbol B R (b i) ξ)
           (fun i _ ↦ (hinner i).mul (hσ i)), sum_apply]
     _ = (2 * Real.pi * Complex.I) • u := by
-        simp_rw [sum_inner_mul_annularSymbol b hB R]
+        simp_rw [b.sum_inner_mul_annularSymbol B R]
         rw [fourierMultiplierCLM_eq_self_of_isVanishingOn hu hφ hts]
 
 /-- **The reverse Bernstein inequality for one derivative.** Let `b` be an orthonormal basis of
@@ -500,8 +496,8 @@ are the `Lᵖ` functions `gᵢ`, then
 So on an annulus differentiation loses at most a factor of order `R`, in both directions:
 Bernstein's inequality `TauCeti.exists_iteratedLineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier`
 bounds `‖∂_{bᵢ} f‖_p` by a constant multiple of `R ‖f‖_p`, and provides the functions `gᵢ`. -/
-theorem exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) (B : ℝ) :
+theorem _root_.OrthonormalBasis.exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq
+    {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E) (B : ℝ) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] {R : ℝ}, 0 < R →
       ∀ (f : Lp F p (volume : Measure E)) (g : ι → Lp F p (volume : Measure E)),
       IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (ball 0 R ∪ (closedBall 0 (B * R))ᶜ) →
@@ -509,7 +505,7 @@ theorem exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq {ι : Type*} [Fintype 
   have hB : 1 ≤ max B 1 := le_max_right _ _
   -- The `L¹` norms of the kernels of the annular symbols at scale `1`.
   set K : ι → ℝ := fun i ↦
-    (eLpNorm (𝓕⁻ (annularSymbolSchwartz hB one_pos (b i) : E → ℂ)) 1 volume).toReal
+    (eLpNorm (𝓕⁻ (annularSymbolSchwartz (max B 1) one_pos (b i) : E → ℂ)) 1 volume).toReal
   have hK (i : ι) : 0 ≤ K i := ENNReal.toReal_nonneg
   refine ⟨(2 * Real.pi)⁻¹ * ∑ i, K i, by positivity, fun {p} _ {R} hR f g hf hg ↦ ?_⟩
   have hf' : IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F))
@@ -518,13 +514,13 @@ theorem exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq {ι : Type*} [Fintype 
       (closedBall_subset_closedBall (by gcongr; exact le_max_left _ _))))
   -- Each `T_{σᵢ} gᵢ` is an `Lᵖ` function `hᵢ` with `‖hᵢ‖ ≤ R⁻¹ Kᵢ ‖gᵢ‖`.
   choose h hh _ hhn using fun i ↦ exists_fourierMultiplierCLM_toTemperedDistribution_eq
-    (annularSymbolSchwartz hB hR (b i)) (g i) (q := p) (r := 1) le_rfl
+    (annularSymbolSchwartz (max B 1) hR (b i)) (g i) (q := p) (r := 1) le_rfl
       (by rw [inv_one, add_comm])
   have hdist : (f : 𝓢'(E, F)) = ((((2 * Real.pi * Complex.I)⁻¹ • ∑ i, h i :
       Lp F p (volume : Measure E))) : 𝓢'(E, F)) := by
     have h2π : (2 * Real.pi * Complex.I) ≠ 0 := by simp [Real.pi_ne_zero]
-    have := sum_fourierMultiplierCLM_annularSymbol_lineDerivOp b hB hR hf'
-    simp_rw [hg, ← coe_annularSymbolSchwartz hB hR, hh] at this
+    have := b.sum_fourierMultiplierCLM_annularSymbol_lineDerivOp hB hR hf'
+    simp_rw [hg, ← coe_annularSymbolSchwartz (max B 1) hR, hh] at this
     rw [← Lp.toTemperedDistributionCLM_apply ((2 * Real.pi * Complex.I)⁻¹ • ∑ i, h i), map_smul,
       map_sum]
     simp only [Lp.toTemperedDistributionCLM_apply]
@@ -538,7 +534,7 @@ theorem exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq {ι : Type*} [Fintype 
     _ ≤ (2 * Real.pi)⁻¹ * ∑ i, R⁻¹ * K i * ‖g i‖ := by
         gcongr
         refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ (hhn i).trans_eq ?_)
-        rw [toReal_eLpNorm_fourierInv_annularSymbol hB hR]
+        rw [toReal_eLpNorm_fourierInv_annularSymbol (max B 1) hR]
     _ ≤ (2 * Real.pi)⁻¹ * ∑ i, R⁻¹ * (∑ j, K j) * ‖g i‖ := by
         gcongr with i
         exact Finset.single_le_sum (fun j _ ↦ hK j) (Finset.mem_univ i)
@@ -556,13 +552,13 @@ outside the closed ball of radius `B R`. If for every `i : Fin k → ι` the der
 
 Bernstein's inequality `TauCeti.exists_iteratedLineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier`
 provides the functions `gᵢ`, and bounds each of them by a constant multiple of `R ^ k ‖f‖_p`. -/
-theorem exists_norm_le_div_pow_mul_sum_norm_of_iteratedLineDerivOp_eq {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) (B : ℝ) :
+theorem _root_.OrthonormalBasis.exists_norm_le_div_pow_mul_sum_norm_of_iteratedLineDerivOp_eq
+    {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ E) (B : ℝ) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (k : ℕ) {R : ℝ}, 0 < R →
       ∀ (f : Lp F p (volume : Measure E)) (g : (Fin k → ι) → Lp F p (volume : Measure E)),
       IsVanishingOn (𝓕 (f : 𝓢'(E, F)) : 𝓢'(E, F)) (ball 0 R ∪ (closedBall 0 (B * R))ᶜ) →
       (∀ i, ∂^{⇑b ∘ i} (f : 𝓢'(E, F)) = g i) → ‖f‖ ≤ (C / R) ^ k * ∑ i, ‖g i‖ := by
-  obtain ⟨C, hC, h₁⟩ := exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq (F := F) b B
+  obtain ⟨C, hC, h₁⟩ := b.exists_norm_le_div_mul_sum_norm_of_lineDerivOp_eq (F := F) B
   refine ⟨C, hC, fun {p} _ k {R} hR f ↦ ?_⟩
   induction k with
   | zero =>
