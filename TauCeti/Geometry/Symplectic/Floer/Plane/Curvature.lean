@@ -112,31 +112,6 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] {p : PSSPlane}
   {H : ℝ → M → ℝ}
 
-/-- The components of the perturbation in real coordinates are `C¹` jointly in the domain point
-and the point of the manifold. -/
-private theorem contMDiff_uncurry_perturbation (hH : Periodic H 1)
-    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) (v : ℂ) :
-    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
-      (uncurry fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x v) :=
-  ((contMDiff_perturbation hH hHs).comp
-    ((Complex.equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
-      contMDiff_snd)).clm_apply contMDiff_const
-
-/-- The components of the perturbation in real coordinates are differentiable in the domain
-point. -/
-private theorem differentiableAt_perturbation_domain (hH : Periodic H 1)
-    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) (z : ℝ × ℝ) (x : M) (v : ℂ) :
-    DifferentiableAt ℝ (fun z' ↦ p.perturbation H (Complex.equivRealProdCLM.symm z') x v) z :=
-  (((contMDiff_uncurry_perturbation hH hHs v).comp
-    (contMDiff_id.prodMk contMDiff_const)).contDiff.differentiable one_ne_zero) z
-
-/-- The components of the perturbation are differentiable in the point of the manifold. -/
-private theorem mdifferentiableAt_perturbation_target (hH : Periodic H 1)
-    (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) (w : ℂ) (x : M) (v : ℂ) :
-    MDifferentiableAt I 𝓘(ℝ) (fun y ↦ p.perturbation H w y v) x :=
-  ((((contMDiff_perturbation hH hHs).comp (contMDiff_const.prodMk contMDiff_id)).clm_apply
-    contMDiff_const) x).mdifferentiableAt one_ne_zero
-
 variable [IsManifold I ⊤ M]
 
 /-- **The curvature in end coordinates.** In the end coordinates `(s, t)` of a PSS plane, the
@@ -222,7 +197,7 @@ point. -/
 private theorem differentiableAt_perturbation_domain (hH : Periodic H 1)
     (hHs : ContDiff ℝ 1 (uncurry H)) (z : ℝ × ℝ) (x : V) (v : ℂ) :
     DifferentiableAt ℝ (fun z' ↦ p.perturbation H (Complex.equivRealProdCLM.symm z') x v) z :=
-  SmoothTwoForm.differentiableAt_perturbation_domain hH
+  PSSPlane.differentiableAt_perturbation_domain hH
     (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff) z x v
 
 omit [FiniteDimensional ℝ V] in
@@ -230,7 +205,7 @@ omit [FiniteDimensional ℝ V] in
 private theorem differentiableAt_perturbation_target (hH : Periodic H 1)
     (hHs : ContDiff ℝ 1 (uncurry H)) (w : ℂ) (x : V) (v : ℂ) :
     DifferentiableAt ℝ (fun y ↦ p.perturbation H w y v) x :=
-  mdifferentiableAt_iff_differentiableAt.1 (SmoothTwoForm.mdifferentiableAt_perturbation_target hH
+  mdifferentiableAt_iff_differentiableAt.1 (PSSPlane.mdifferentiableAt_perturbation_target hH
     (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff) w x v)
 
 /-- The end lift is injective on the band `endStrip p`, whose angular coordinate ranges over one
