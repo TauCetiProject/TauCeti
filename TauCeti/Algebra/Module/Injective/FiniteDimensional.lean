@@ -72,9 +72,9 @@ theorem _root_.Module.Projective.of_finiteDimensional_injective [FiniteDimension
     [IsScalarTower k A M] [FiniteDimensional k M] [Small.{v} A] [Module.Injective A M] :
     Module.Projective A M := by
   -- The left module `D(A_A)`: `(a · φ) x = φ (x * a)`.
-  let : Module A (Module.Dual k A) := Module.compHom _ (dualRightAction k A)
+  let : Module A (Module.Dual k A) := Module.compHom _ (linearMapRightAction k A k)
   have hsmul (a : A) (φ : Module.Dual k A) (x : A) : (a • φ) x = φ (x * a) :=
-    (dualRightAction_apply_apply k A a φ x).trans (by rw [op_smul_eq_mul])
+    (linearMapRightAction_apply_apply k A k a φ x).trans (by rw [op_smul_eq_mul])
   let : Module.Injective Aᵐᵒᵖ A := hA
   have := (LinearEquiv.refl k (Module.Dual k A)).moduleProjective_of_dual_injective (A := A)
     (fun a φ x ↦ (hsmul a φ x).trans (by simp))
@@ -95,9 +95,9 @@ theorem _root_.Module.Finite.exists_injective_linearMap_pi [FiniteDimensional k 
   have : IsScalarTower k A M := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
   have : FiniteDimensional k M := Module.Finite.trans A M
   -- The left module `D(A_A)`: `(a · φ) x = φ (x * a)`.
-  let : Module A (Module.Dual k A) := Module.compHom _ (dualRightAction k A)
+  let : Module A (Module.Dual k A) := Module.compHom _ (linearMapRightAction k A k)
   have hsmul (a : A) (φ : Module.Dual k A) (x : A) : (a • φ) x = φ (x * a) :=
-    (dualRightAction_apply_apply k A a φ x).trans (by rw [op_smul_eq_mul])
+    (linearMapRightAction_apply_apply k A k a φ x).trans (by rw [op_smul_eq_mul])
   have : IsScalarTower k A (Module.Dual k A) :=
     (LinearEquiv.refl k _).isScalarTower_of_dual_regular hsmul
   have : Module.Finite A (Module.Dual k A) := .of_restrictScalars_finite k A _
