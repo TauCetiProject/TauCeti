@@ -35,8 +35,8 @@ Positivity of a top-degree form is a property of an orientation rather than of a
 on two bases differ by their change-of-basis determinant. When `(e₁, f₁, e₂, f₂)` is a basis,
 `ω₀ ∧ β` and the squares along the segment are therefore positive on every basis inducing the
 product orientation (`ContinuousAlternatingMap.pairedWedge_mul_apply_basis_pos_of_cross_eq_zero`
-and `ContinuousAlternatingMap.wedgePow_two_apply_basis_pos_of_mem_segment`), so the hypotheses and
-conclusions are unchanged by orientation-preserving linear changes of coordinates. Pulling all
+and `ContinuousAlternatingMap.wedgePow_two_apply_basis_pos_of_mem_segment`), so these conclusions
+are unchanged by orientation-preserving linear changes of coordinates. Pulling all
 forms back along a linear map commutes with the wedge
 (`ContinuousAlternatingMap.pairedWedge_compContinuousLinearMap`), so the statements may equally be
 read for the pullbacks along a linear map of the vectors.

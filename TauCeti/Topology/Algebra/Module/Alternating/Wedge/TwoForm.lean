@@ -16,10 +16,11 @@ For real two-forms `ω` and `β`, the four-form `ω ∧ β` (the real wedge
 `ω(a, b) β(c, d) - ω(a, c) β(b, d) + ω(a, d) β(b, c)`
 `  + ω(b, c) β(a, d) - ω(b, d) β(a, c) + ω(c, d) β(a, b)`,
 
-one term for each way of splitting `(a, b, c, d)` into an ordered pair for `ω` and an ordered
-pair for `β` (`ContinuousAlternatingMap.pairedWedge_mul_apply_two_two`). The determinant
-normalization of the wedge divides the sum over the `24` permutations by `2! 2! = 4`, which is
-the number of permutations producing each such splitting.
+one term for each of the six ways to choose two of the four vectors for `ω`, leaving the other
+two for `β`, with both pairs kept in their original order
+(`ContinuousAlternatingMap.pairedWedge_mul_apply_two_two`). The determinant normalization of the
+wedge divides the sum over the `24` permutations by `2! 2! = 4`, which is the number of
+permutations producing each such choice.
 
 Taking `β = ω` shows that the square `ω²` is twice the Pfaffian expression
 `ω(a, b) ω(c, d) - ω(a, c) ω(b, d) + ω(a, d) ω(b, c)`
@@ -65,8 +66,8 @@ private theorem apply_comp_natAdd (ω : E [⋀^Fin 2]→L[ℝ] ℝ) (g : Fin 4 �
   fin_cases i <;> rfl
 
 /-- **The wedge of two two-forms on four vectors**: `ω ∧ β` takes on `(a, b, c, d)` the sum,
-over the six splittings of `(a, b, c, d)` into an ordered pair for `ω` followed by an ordered pair
-for `β`, of the signed products of the two values. -/
+over the six ways to choose two of the four vectors for `ω` and leave the other two for `β`, both
+pairs kept in their original order, of the signed products of the two values. -/
 theorem pairedWedge_mul_apply_two_two (ω β : E [⋀^Fin 2]→L[ℝ] ℝ) (a b c d : E) :
     pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ ω β
         ![a, b, c, d] =
