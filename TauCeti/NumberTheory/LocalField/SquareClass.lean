@@ -244,9 +244,7 @@ theorem exists_isSquare_mul_of_integerUnit_residue_not_isSquare
         ((IsLocalRing.mem_maximalIdeal _).2 h2)
       rwa [map_ofNat] at h
     have : CharP 𝓀[K] 2 := CharTwo.of_one_ne_zero_of_two_eq_zero one_ne_zero h20
-    obtain ⟨y, hy⟩ := isSquare_of_charTwo' (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u : 𝓀[K])
-    have hyu : IsUnit y := isUnit_of_mul_isUnit_left (hy ▸ Units.isUnit _)
-    exact ⟨hyu.unit, Units.ext (by simpa using hy)⟩
+    exact Units.isSquare_coe_iff.mp (isSquare_of_charTwo' _)
   apply exists_isSquare_mul_of_isUnit_two h2 hπ
   · rw [normalizedValuation_integerUnits]
     exact ⟨0, by simp⟩
