@@ -24,6 +24,13 @@ then multiplies the smooth representative by a fixed test function equal to one 
 smaller domain. Interior derivative identities identify all its derivatives with mollified
 weak derivative fields.
 
+The mollification itself, `TauCeti.Wkp.smoothField`, is smooth on the whole space
+(`TauCeti.Wkp.contDiff_smoothField`); where the bump ball lies in `Ω` its gradient and higher
+derivatives are the mollified weak derivatives (`TauCeti.Wkp.gradient_smoothField`,
+`TauCeti.Wkp.fderiv_smoothField`), and the mollified fields converge in `Lᵖ(Ω)`
+(`TauCeti.Wkp.tendsto_eLpNorm_smoothField_sub`). These explicit approximants serve arguments
+that need more than norm convergence, such as uniform convergence to a continuous representative.
+
 ## References
 
 L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.3.1. The proof uses the
@@ -47,12 +54,25 @@ local instance : (mu.restrict (univ : Set E)).IsAddHaarMeasure := by
   rw [Measure.restrict_univ]
   infer_instance
 
-/-- The smooth convolution representative of a zero-extended derivative field. -/
-private def smoothField {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+/-- The smooth convolution representative `φ ⋆ (1_Ω f)` of a zero-extended field
+`f ∈ Lᵖ(Ω; F)`, for a normalized bump `φ`. It is smooth on the whole space
+(`TauCeti.Wkp.contDiff_smoothField`), and where the support of the translated bump lies in `Ω`
+its derivatives are the mollified weak derivatives (`TauCeti.Wkp.fderiv_smoothField`,
+`TauCeti.Wkp.gradient_smoothField`). -/
+def smoothField {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     (phi : ContDiffBump (0 : E)) (f : Lp F p (mu.restrict Omega)) : E → F :=
   phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] (Omega : Set E).indicator (f : E → F)
 
-private theorem contDiff_smoothField {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+omit [BorelSpace E] [mu.IsAddHaarMeasure] [Fact (1 ≤ p)] in
+/-- The mollification `φ ⋆ (1_Ω f)` as a convolution. -/
+theorem smoothField_def {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (phi : ContDiffBump (0 : E)) (f : Lp F p (mu.restrict Omega)) :
+    smoothField phi f =
+      phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] (Omega : Set E).indicator (f : E → F) :=
+  (rfl)
+
+/-- The mollification of a zero-extended field is smooth on the whole space. -/
+theorem contDiff_smoothField {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     (phi : ContDiffBump (0 : E)) (f : Lp F p (mu.restrict Omega)) :
     ContDiff ℝ (⊤ : ℕ∞) (smoothField phi f) := by
   have hmem := (memLp_indicator_iff_restrict Omega.isOpen.measurableSet.nullMeasurableSet).2
@@ -60,7 +80,9 @@ private theorem contDiff_smoothField {F : Type*} [NormedAddCommGroup F] [NormedS
   exact phi.hasCompactSupport_normed.contDiff_convolution_left
     (ContinuousLinearMap.lsmul ℝ ℝ) phi.contDiff_normed (hmem.locallyIntegrable Fact.out)
 
-private theorem fderiv_smoothField (k : ℕ) (u : Wkp mu Omega p (k + 2))
+/-- Where the closed ball of the outer bump radius around `x` lies in `Ω`, the derivative of the
+mollified order-`k` weak derivative is the mollified order-`(k + 1)` weak derivative. -/
+theorem fderiv_smoothField (k : ℕ) (u : Wkp mu Omega p (k + 2))
     (phi : ContDiffBump (0 : E)) (x : E)
     (hx : Metric.closedBall x phi.rOut ⊆ Omega) :
     fderiv ℝ (smoothField phi (iteratedGradient k (lowerOrder (k + 1) u))) x =
@@ -68,7 +90,9 @@ private theorem fderiv_smoothField (k : ℕ) (u : Wkp mu Omega p (k + 2))
   simpa only [smoothField, convolution_flip] using
     fderiv_indicator_convolution_normed_iteratedGradient k u phi x hx
 
-private theorem gradient_smoothField (u : Wkp mu Omega p 1)
+/-- Where the closed ball of the outer bump radius around `x` lies in `Ω`, the gradient of the
+mollified value is the mollified weak gradient. -/
+theorem gradient_smoothField (u : Wkp mu Omega p 1)
     (phi : ContDiffBump (0 : E)) (x : E)
     (hx : Metric.closedBall x phi.rOut ⊆ Omega) :
     gradient (smoothField phi (value 1 u)) x =
@@ -153,6 +177,21 @@ private theorem localAverage_ae {F : Type*} [NormedAddCommGroup F] [NormedSpace 
     (ae_mono (Measure.restrict_mono_set mu (subset_univ (U : Set E))))
   exact (Lp.coeFn_LpToLpOfMeasureLeSMul _ _ _).trans (by
     simpa only [Measure.restrict_univ, smoothField] using he')
+
+/-- As the bump radii tend to zero, the mollifications of a zero-extended field
+`f ∈ Lᵖ(Ω; F)`, `p < ∞`, converge to `f` in `Lᵖ(Ω; F)`. -/
+theorem tendsto_eLpNorm_smoothField_sub {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [CompleteSpace F] (hp : p ≠ ∞) {I : Type*} {l : Filter I} {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i => (phi i).rOut) l (𝓝 0)) (f : Lp F p (mu.restrict Omega)) :
+    Tendsto (fun i => eLpNorm (smoothField (phi i) f - (f : E → F)) p (mu.restrict Omega)) l
+      (𝓝 0) := by
+  have h := (Lp.tendsto_Lp_iff_tendsto_eLpNorm' _ _).1
+    (tendsto_normedBumpLp_extendByZero_restrict hp Omega.isOpen.measurableSet subset_rfl hphi f)
+  refine h.congr fun i => eLpNorm_congr_ae ?_
+  filter_upwards [localAverage_ae (U := Omega) hp (phi i) f,
+    Lp.coeFn_LpToLpOfMeasureLeSMul (μ := mu.restrict (Omega : Set E))
+      (ν := mu.restrict (Omega : Set E)) (c := 1) (by simp) (by simp) f] with x h1 h2
+  simp only [Pi.sub_apply, ← h1, h2, localAverage]
 
 /-- The restriction to `U` of the `W^{k,p}(Ω)` element of a test function is represented on `U`
 by that test function. -/

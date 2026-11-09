@@ -20,6 +20,8 @@ everywhere, and its terms tend to `0` there.
 
 ## Main statements
 
+* `TauCeti.exists_strictMono_lintegral_tsum_ne_top_of_tendsto_lintegral`: a subsequence of
+  functions whose integrals tend to `0` has a sum with finite integral.
 * `TauCeti.exists_strictMono_ae_tendsto_zero_of_tendsto_lintegral`: a subsequence of functions
   whose integrals tend to `0` tends to `0` almost everywhere.
 -/
@@ -33,19 +35,28 @@ open scoped ENNReal
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
 
+/-- **A subsequence with summable integrals.** If `F n : α → ℝ≥0∞` are almost everywhere
+measurable and `∫⁻ F n ∂μ → 0`, then along a subsequence the sum `∑ⱼ F (φ j)` has finite
+integral. It dominates every `F (φ j)`, which makes it a common integrable bound for a dominated
+convergence argument along the subsequence. -/
+theorem exists_strictMono_lintegral_tsum_ne_top_of_tendsto_lintegral {F : ℕ → α → ℝ≥0∞}
+    (hF : ∀ n, AEMeasurable (F n) μ) (h : Tendsto (fun n ↦ ∫⁻ a, F n a ∂μ) atTop (𝓝 0)) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∫⁻ a, ∑' j, F (φ j) a ∂μ ≠ ∞ := by
+  -- Along a subsequence with `∫⁻ F (φ j) < 2⁻ʲ`, the sum `∑ⱼ F (φ j) a` has finite integral.
+  obtain ⟨φ, hφ, hlt⟩ := extraction_forall_of_eventually fun j ↦
+    h.eventually (gt_mem_nhds (ENNReal.pow_pos (a := 2⁻¹) (by simp) j))
+  refine ⟨φ, hφ, ?_⟩
+  rw [lintegral_tsum fun j ↦ hF (φ j)]
+  exact ((_root_.tsum_le_tsum fun j ↦ (hlt j).le).trans_lt (by simp)).ne
+
 /-- **A subsequence converging almost everywhere.** If `F n : α → ℝ≥0∞` are almost everywhere
 measurable and `∫⁻ F n ∂μ → 0`, then along a subsequence `F (φ j) a → 0` for almost every `a`. -/
 theorem exists_strictMono_ae_tendsto_zero_of_tendsto_lintegral {F : ℕ → α → ℝ≥0∞}
     (hF : ∀ n, AEMeasurable (F n) μ) (h : Tendsto (fun n ↦ ∫⁻ a, F n a ∂μ) atTop (𝓝 0)) :
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∀ᵐ a ∂μ, Tendsto (fun j ↦ F (φ j) a) atTop (𝓝 0) := by
-  -- Along a subsequence with `∫⁻ F (φ j) < 2⁻ʲ`, the sum `∑ⱼ F (φ j) a` has finite integral.
-  obtain ⟨φ, hφ, hlt⟩ := extraction_forall_of_eventually fun j ↦
-    h.eventually (gt_mem_nhds (ENNReal.pow_pos (a := 2⁻¹) (by simp) j))
+  obtain ⟨φ, hφ, hsum⟩ := exists_strictMono_lintegral_tsum_ne_top_of_tendsto_lintegral hF h
   refine ⟨φ, hφ, ?_⟩
-  have hsum : ∫⁻ a, ∑' j, F (φ j) a ∂μ ≠ ∞ := by
-    rw [lintegral_tsum fun j ↦ hF (φ j)]
-    exact ((_root_.tsum_le_tsum fun j ↦ (hlt j).le).trans_lt (by simp)).ne
-  -- So the sum is finite almost everywhere, and its terms tend to `0` there.
+  -- The sum is finite almost everywhere, and its terms tend to `0` there.
   filter_upwards [ae_lt_top' (AEMeasurable.tsum fun j ↦ hF (φ j)) hsum] with a ha
   exact ENNReal.tendsto_atTop_zero_of_tsum_ne_top ha.ne
 

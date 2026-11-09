@@ -177,6 +177,18 @@ theorem PosSemidef.det_le_trace_div_card_pow {A : Matrix n n ℝ} (hA : A.PosSem
   rw [hdet, htr, ← Real.rpow_inv_natCast_pow hprod (Fintype.card_ne_zero (α := n))]
   exact pow_le_pow_left₀ (Real.rpow_nonneg hprod _) hamgm _
 
+omit [DecidableEq n] in
+/-- The trace of the product of two real positive-semidefinite matrices is nonnegative. -/
+theorem PosSemidef.trace_mul_nonneg {A B : Matrix n n ℝ} (hA : A.PosSemidef)
+    (hB : B.PosSemidef) : 0 ≤ (A * B).trace := by
+  classical
+  have hS : (CFC.sqrt A).IsHermitian :=
+    (Matrix.nonneg_iff_posSemidef.mp (CFC.sqrt_nonneg A)).isHermitian
+  have hN : (CFC.sqrt A * B * CFC.sqrt A).PosSemidef := by
+    simpa only [hS.eq] using hB.mul_mul_conjTranspose_same (CFC.sqrt A)
+  rw [← trace_mul_comm, ← hA.trace_sqrt_mul_mul_sqrt]
+  exact hN.trace_nonneg
+
 /-- **The mixed determinant–trace inequality.** For real positive-semidefinite `n × n` matrices
 `A` and `B`, `det A * det B ≤ (tr (A * B) / n) ^ n`. -/
 theorem PosSemidef.det_mul_det_le_trace_mul_div_card_pow {A B : Matrix n n ℝ}

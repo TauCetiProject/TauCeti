@@ -73,6 +73,7 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
   dimension.
 * `LinearMap.IsPositive.det_nonneg`: a positive operator on a finite-dimensional space has
   nonnegative determinant, the product of its eigenvalues.
+* `LinearMap.IsPositive.abs_det_neg`: on a real space, `|det (-S)| = det S` for positive `S`.
 * `LinearMap.IsPositive.det_pos`: an injective positive operator on a finite-dimensional space has
   positive determinant.
 * `IsStrictlyPositive.det_pos`: a strictly positive continuous linear operator on a
@@ -518,6 +519,15 @@ theorem exists_pos_mul_norm_sq_le_re_inner (hT : T.IsPositive) (hker : LinearMap
       rintro _ ⟨x, rfl⟩
       exact div_nonneg (hT.re_inner_nonneg_left x) (by positivity)⟩ (⟨w, hw⟩ : {x : E // x ≠ 0})
   rwa [le_div_iff₀ (pow_pos (norm_pos_iff.2 hw) 2)] at hle
+
+omit [FiniteDimensional 𝕜 E] in
+/-- The determinant of a positive operator on a finite-dimensional real inner product space is the
+absolute value of the determinant of its negative. -/
+theorem abs_det_neg {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    [FiniteDimensional ℝ F] {S : F →ₗ[ℝ] F} (hS : S.IsPositive) :
+    |LinearMap.det (-S)| = LinearMap.det S := by
+  rw [← neg_one_smul ℝ S, LinearMap.det_smul, abs_mul, abs_pow, abs_neg, abs_one, one_pow,
+    one_mul, abs_of_nonneg hS.det_nonneg]
 
 end LinearMap.IsPositive
 
