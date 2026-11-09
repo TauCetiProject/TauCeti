@@ -114,9 +114,9 @@ theorem _root_.ContDiffOn.firstJetPullback {n : ℕ∞ω} {u : Set X}
     (ContDiff.comp_contDiffOn (g := compL 𝕜 E' F G) (ContinuousLinearMap.contDiff _) ha).clm_comp
       ((ContDiff.comp_contDiffOn (g := (compL 𝕜 E' E F).flip) (ContinuousLinearMap.contDiff _)
         hc).clm_comp contDiffOn_const)
-  refine (ContDiff.comp_contDiffOn (g := prodₗᵢ 𝕜) (LinearIsometryEquiv.contDiff _)
-    (hfst.prodMk (hflip.add hcomp))).congr fun x _ ↦ ContinuousLinearMap.ext fun j ↦ ?_
-  simp [prodₗᵢ, add_comm]
+  refine (ContDiff.comp_contDiffOn (g := prodL 𝕜) (ContinuousLinearEquiv.contDiff _)
+    (hfst.prodMk (hflip.add hcomp))).congr fun x _ ↦ ?_
+  rw [Function.comp_apply, prodL_apply, ContinuousLinearMap.firstJetPullback]
 
 /-- Smooth families of coefficients and jets give smooth transformed first jets. -/
 theorem _root_.ContDiffOn.firstJetPullback_apply {n : ℕ∞ω} {u : Set X}

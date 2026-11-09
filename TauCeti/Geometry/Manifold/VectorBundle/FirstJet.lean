@@ -155,6 +155,23 @@ theorem contDiffWithinAt_fiberCoordChange {n : ℕ∞ω} [IsManifold I n M]
   exact contMDiffWithinAt_iff_contDiffWithinAt.1 (h₁.comp_contMDiffWithinAt _
     (contMDiffWithinAt_extChartAt_symm_range j ((extChartAt I j).map_source hy)))
 
+/-- The coordinate change of `V`, written in a chart, has its chart derivative as a derivative
+when `M` and `V` are `C^1`. -/
+theorem hasFDerivWithinAt_fiberCoordChange [IsManifold I 1 M] [ContMDiffVectorBundle 1 F V I]
+    {i j y : M} (hi : y ∈ (trivializationAt F V i).baseSet) (hj : y ∈ baseSet (H := H) F V j) :
+    HasFDerivWithinAt (fiberCoordChange I F V i j)
+      (fderivWithin 𝕜 (fiberCoordChange I F V i j) (range I) (extChartAt I j y)) (range I)
+      (extChartAt I j y) :=
+  ((contDiffWithinAt_fiberCoordChange (n := 1) hi hj).differentiableWithinAt
+    one_ne_zero).hasFDerivWithinAt
+
+variable (I) in
+/-- A change of extended charts takes values in the range of the model. -/
+theorem mapsTo_extChartAt_comp_extChartAt_symm (j k : M) (s : Set E) :
+    MapsTo (extChartAt I j ∘ (extChartAt I k).symm) s (range I) := fun _ _ ↦ by
+  rw [Function.comp_apply, extChartAt_coe]
+  exact mem_range_self _
+
 variable (I F V) [IsManifold I 1 M]
 
 /-- The change of first-jet coordinates at `y` from the chart and trivialization at `i` to the
@@ -265,16 +282,10 @@ theorem fderivWithin_fiberCoordChange_trans {i j k y : M} (hi : y ∈ baseSet (H
         (fderivWithin 𝕜 (fiberCoordChange I F V i j) (range I) (extChartAt I j y)) (range I)
         ((extChartAt I j ∘ (extChartAt I k).symm) (extChartAt I k y)) := by
       rw [hy]
-      exact ((contDiffWithinAt_fiberCoordChange (n := 1) hi.1 hj).differentiableWithinAt
-        one_ne_zero).hasFDerivWithinAt
+      exact hasFDerivWithinAt_fiberCoordChange hi.1 hj
     exact h.comp _ (hasFDerivWithinAt_tangentCoordChange ⟨hk', hj'⟩)
-      (fun z _ ↦ by rw [Function.comp_apply, extChartAt_coe]; exact mem_range_self _)
-  have hjk : HasFDerivWithinAt (fiberCoordChange I F V j k)
-      (fderivWithin 𝕜 (fiberCoordChange I F V j k) (range I) (extChartAt I k y)) (range I)
-      (extChartAt I k y) :=
-    ((contDiffWithinAt_fiberCoordChange (I := I) (n := 1) hj.1 hk).differentiableWithinAt
-      one_ne_zero).hasFDerivWithinAt
-  have hprod := hjk.clm_comp hij
+      (mapsTo_extChartAt_comp_extChartAt_symm I j k _)
+  have hprod := (hasFDerivWithinAt_fiberCoordChange (I := I) hj.1 hk).clm_comp hij
   rw [fiberCoordChange_extChartAt hk.2, hy, fiberCoordChange_extChartAt hj.2] at hprod
   refine (hprod.congr_of_eventuallyEq ?_ ?_).fderivWithin
     (I.uniqueDiffOn _ (extChartAt_target_subset_range k ((extChartAt I k).map_source hk')))
@@ -502,10 +513,9 @@ theorem coordChange_jet {s : ∀ x, V x} {y : M}
       ((extChartAt I y ∘ (extChartAt I i).symm) (extChartAt I i y)) := by
     rw [Function.comp_apply, (extChartAt I i).left_inv hyi]
     exact (differentiableWithinAt_localRep I F hs hy).hasFDerivWithinAt
-  have hcomp := ((contDiffWithinAt_fiberCoordChange (n := 1) hy.1 hi).differentiableWithinAt
-    one_ne_zero).hasFDerivWithinAt.clm_apply (hrep.comp _
-      (hasFDerivWithinAt_tangentCoordChange ⟨hyi, hyy⟩) fun z _ ↦ by
-        rw [Function.comp_apply, extChartAt_coe]; exact mem_range_self _)
+  have hcomp := (hasFDerivWithinAt_fiberCoordChange hy.1 hi).clm_apply (hrep.comp _
+    (hasFDerivWithinAt_tangentCoordChange ⟨hyi, hyy⟩)
+    (mapsTo_extChartAt_comp_extChartAt_symm I y i _))
   -- Differentiating the transformation law for local representatives by the product and chain
   -- rules gives the jet transformation.
   have hD := (hcomp.congr_of_eventuallyEq
