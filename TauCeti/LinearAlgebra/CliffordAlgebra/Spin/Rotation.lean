@@ -38,6 +38,10 @@ towards `w` when `Q u < 0` (by `z⁻²` when `Q u > 0`), and fixes the orthogona
 * `CliffordAlgebra.spinCircle`: the homomorphism `z ↦ Re z + Im z ι u ι w` from the unit circle
   to the Spin group.
 * `CliffordAlgebra.spinRotation_eq_spinCircle`: `spinRotation` is `spinCircle ∘ Circle.exp`.
+* `CliffordAlgebra.spinCircle_neg_one`: the element `-1` of the circle maps to the canonical
+  scalar `-1`.
+* `QuadraticMap.Isometry.spinGroupMap_spinCircle`: quadratic isometries carry circle subgroups to
+  circle subgroups.
 * `CliffordAlgebra.spinVectorAction_spinCircle_left`,
   `CliffordAlgebra.spinVectorAction_spinCircle_right`,
   `CliffordAlgebra.spinVectorAction_spinCircle_of_isOrtho`: `z` rotates the plane of `u` and `w`
@@ -162,6 +166,13 @@ theorem coe_spinCircle (huw : Q.IsOrtho u w) (h : Q u * Q w = 1) (z : Circle) :
       algebraMap ℝ _ (z : ℂ).re + (z : ℂ).im • (ι Q u * ι Q w) :=
   planeComplex_apply huw h z
 
+/-- At `-1` the circle subgroup is the canonical scalar `-1` of the Spin group. -/
+@[simp]
+theorem spinCircle_neg_one (huw : Q.IsOrtho u w) (h : Q u * Q w = 1) :
+    spinCircle Q u w huw h (-1) = spinGroup.negOne Q (by rintro rfl; simp at h) := by
+  apply Subtype.ext
+  simp [spinGroup.coe_negOne]
+
 /-- For `Q x = Q y = 1`, the Spin rotation at angle `t` is the circle element `exp (i t)`. -/
 theorem spinRotation_eq_spinCircle (hx : Q x = 1) (hy : Q y = 1) (hxy : Q.IsOrtho x y) (t : ℝ) :
     spinRotation Q x y hx hy hxy t =
@@ -232,3 +243,19 @@ end VectorAction
 end
 
 end CliffordAlgebra
+
+namespace QuadraticMap.Isometry
+
+variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W]
+  {Q : QuadraticForm ℝ V} {P : QuadraticForm ℝ W} {u w : V}
+
+/-- **Quadratic isometries carry circle subgroups to circle subgroups**: the Spin-group map
+induced by `f` sends `Re z + Im z ι u ι w` to `Re z + Im z ι (f u) ι (f w)`. -/
+theorem spinGroupMap_spinCircle (f : Q →qᵢ P) (huw : Q.IsOrtho u w) (h : Q u * Q w = 1)
+    (huw' : P.IsOrtho (f u) (f w)) (h' : P (f u) * P (f w) = 1) (z : Circle) :
+    f.spinGroupMap (CliffordAlgebra.spinCircle Q u w huw h z) =
+      CliffordAlgebra.spinCircle P (f u) (f w) huw' h' z := by
+  apply Subtype.ext
+  simp
+
+end QuadraticMap.Isometry
