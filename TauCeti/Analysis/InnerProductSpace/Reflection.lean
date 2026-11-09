@@ -213,12 +213,24 @@ theorem _root_.LinearIsometry.reflection_orthogonal_singleton_map_I (ι : ℂ �
   ring
 
 /-- Both points in the positive half-space are closer to each other than to the image pole. -/
-theorem norm_sub_lt_norm_sub_reflection_orthogonal_singleton {v x y : F} (hv : ‖v‖ = 1)
+theorem norm_sub_lt_norm_sub_reflection_orthogonal_singleton {v x y : F}
     (hx : 0 < ⟪v, x⟫_ℝ) (hy : 0 < ⟪v, y⟫_ℝ) :
     ‖y - x‖ < ‖y - (ℝ ∙ v)ᗮ.reflection x‖ := by
-  have hsq := norm_sub_reflection_orthogonal_singleton_sq hv x y
+  have hv0 : v ≠ 0 := by rintro rfl; simp at hx
+  have hn : 0 < ‖v‖ := norm_pos_iff.2 hv0
+  set w : F := ‖v‖⁻¹ • v
+  have hw : ‖w‖ = 1 := by simp [w, norm_smul, hn.ne']
+  have hspan : ℝ ∙ w = ℝ ∙ v := Submodule.span_singleton_smul_eq (isUnit_iff_ne_zero.2
+    (inv_ne_zero hn.ne')) v
+  have hsq := norm_sub_reflection_orthogonal_singleton_sq hw x y
+  have hrefl : (ℝ ∙ w)ᗮ.reflection x = (ℝ ∙ v)ᗮ.reflection x := by
+    congr! 2
+    rw [hspan]
+  rw [hrefl] at hsq
+  have hxw : 0 < ⟪w, x⟫_ℝ := by simpa [w, inner_smul_left] using mul_pos (inv_pos.2 hn) hx
+  have hyw : 0 < ⟪w, y⟫_ℝ := by simpa [w, inner_smul_left] using mul_pos (inv_pos.2 hn) hy
   nlinarith [norm_nonneg (y - x), norm_nonneg (y - (ℝ ∙ v)ᗮ.reflection x),
-    mul_pos hx hy]
+    mul_pos hxw hyw]
 
 /-- Reflection in the hyperplane orthogonal to a nonzero vector has determinant `-1`. -/
 theorem linearEquiv_det_reflection_orthogonal_singleton [FiniteDimensional ℝ F] {v : F}
@@ -435,13 +447,12 @@ theorem exists_contDiff_path_apply_eq {a b : F} (ha : ‖a‖ = 1) (hb : ‖b‖
     rw [inner_add_left, inner_smul_left, hax, hbx]
     simp
 
-/-- A differentiable path `u` of unit vectors orthogonal to `v`, in a space where the orthogonal
-complement of `v` has dimension at least three, avoids the antipode of some unit vector `p`
-orthogonal to `v`: `u s + p ≠ 0` for every `s`. The cone `(s, r) ↦ -r • u s` over the antipodal
-path is the image of a plane, so it misses a point of the orthogonal complement. -/
+/-- A differentiable path `u`, in a space where the orthogonal complement of `v` has dimension at
+least three, avoids the antipode of some unit vector `p` orthogonal to `v`: `u s + p ≠ 0` for
+every `s`. This auxiliary vector supplies an intermediate direction for smoothly rotating a path
+of unit vectors. -/
 theorem exists_forall_add_ne_zero {v : F}
-    (hF : 2 < Module.finrank ℝ (ℝ ∙ v)ᗮ) {u : ℝ → F} (hu : Differentiable ℝ u)
-    (hv : ∀ s, ⟪u s, v⟫ = 0) :
+    (hF : 2 < Module.finrank ℝ (ℝ ∙ v)ᗮ) {u : ℝ → F} (hu : Differentiable ℝ u) :
     ∃ p : F, ‖p‖ = 1 ∧ ⟪p, v⟫ = 0 ∧ ∀ s, u s + p ≠ 0 := by
   set K := (ℝ ∙ v)ᗮ
   let g : ℝ × ℝ → K := fun q => q.2 • K.orthogonalProjectionOnto (-u q.1)
@@ -451,9 +462,6 @@ theorem exists_forall_add_ne_zero {v : F}
   obtain ⟨q, hq⟩ := (hg.dense_compl_range_of_finrank_lt_finrank (by
     rw [Module.finrank_prod, Module.finrank_self]
     omega)).nonempty
-  have hmem (s : ℝ) : -u s ∈ K :=
-    K.neg_mem (Submodule.mem_orthogonal_singleton_iff_inner_right.2 (by
-      rw [real_inner_comm]; exact hv s))
   have hq0 : (q : F) ≠ 0 := by
     intro h
     exact hq ⟨(0, 0), Subtype.ext (by simp [g, h])⟩
@@ -464,9 +472,12 @@ theorem exists_forall_add_ne_zero {v : F}
     have hqs : (q : F) = ‖(q : F)‖ • -u s := by
       rw [← eq_neg_of_add_eq_zero_right hs, smul_smul,
         mul_inv_cancel₀ (norm_ne_zero_iff.2 hq0), one_smul]
+    have hmem : -u s ∈ K := by
+      rw [← eq_neg_of_add_eq_zero_right hs]
+      exact K.smul_mem _ q.2
     refine Subtype.ext ?_
     simp only [g, Submodule.coe_smul,
-      K.orthogonalProjectionOnto_mem_subspace_eq_self ⟨-u s, hmem s⟩]
+      K.orthogonalProjectionOnto_mem_subspace_eq_self ⟨-u s, hmem⟩]
     exact hqs.symm
 
 /-- **Rotating a path of unit vectors back to its base value.** Let `u` be a `C^k` path, `k ≠ 0`,
@@ -482,7 +493,7 @@ theorem exists_contDiff_linearIsometryEquiv_apply_eq {k : ℕ∞ω}
     (hu : ContDiff ℝ k u) (hu₁ : ∀ s, ‖u s‖ = 1) (hv : ∀ s, ⟪u s, v⟫ = 0) (s₀ : ℝ) :
     ∃ Q : ℝ → F ≃ₗᵢ[ℝ] F, ContDiff ℝ k (fun p : ℝ × F => Q p.1 p.2) ∧ (∀ s, Q s v = v) ∧
       (∀ s, Q s (u s) = u s₀) ∧ ∀ s, u s = u s₀ → ∀ x, Q s x = x := by
-  obtain ⟨p, hp₁, hpv, hup⟩ := exists_forall_add_ne_zero hF (hu.differentiable hk) hv
+  obtain ⟨p, hp₁, hpv, hup⟩ := exists_forall_add_ne_zero hF (hu.differentiable hk)
   have hu₀ (s : ℝ) : u s ≠ 0 := fun h => by simpa [h] using hu₁ s
   let ρ : F → F ≃ₗᵢ[ℝ] F := fun c => (ℝ ∙ c)ᗮ.reflection
   refine ⟨fun s => ((ρ (u s)).trans (ρ (u s + p))).trans ((ρ (u s₀ + p)).trans (ρ (u s₀))),

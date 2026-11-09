@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.LinearAlgebra.Projection
 public import TauCeti.Algebra.Module.Submodule.Pointwise
-public import TauCeti.Algebra.Star.ProjectionFamily
+public import TauCeti.Algebra.Star.Projection.Family
 public import TauCeti.LinearAlgebra.Dimension.DirectSum
 public import TauCeti.RingTheory.Idempotents.Corner.Basic
 import Mathlib.LinearAlgebra.Basis.VectorSpace

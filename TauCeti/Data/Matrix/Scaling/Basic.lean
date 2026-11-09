@@ -1010,16 +1010,29 @@ theorem relEntropyDual_le_relEntropy {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K
   linarith
 
 /-- **Strong duality** for the entropy minimisation: if `P` is the diagonal scaling of a kernel `K`
-with no zero entries by strictly positive factors `u` and `v`, with row sums `a` and column sums
-`b`, the dual objective at the potentials `log u` and `log v` is `relEntropy P K`. With
-`Matrix.relEntropyDual_le_relEntropy`, for a strictly positive `K` these potentials maximise the
-dual objective, and its maximum is the minimum of the relative entropy. -/
+by strictly positive factors `u` and `v`, with row sums `a` and column sums `b`, the dual objective
+at the potentials `log u` and `log v` is `relEntropy P K`. No entry of `K` need be nonzero: `P`
+vanishes where `K` does. With `Matrix.relEntropyDual_le_relEntropy`, for a strictly positive `K`
+these potentials maximise the dual objective, and its maximum is the minimum of the relative
+entropy. -/
 theorem IsDiagonalScaling.relEntropyDual_eq_relEntropy {P K : Matrix ι κ ℝ} {u : ι → ℝ}
-    {v : κ → ℝ} (hP : IsDiagonalScaling P K u v) (hK : ∀ i j, K i j ≠ 0) (hu : ∀ i, 0 < u i)
+    {v : κ → ℝ} (hP : IsDiagonalScaling P K u v) (hu : ∀ i, 0 < u i)
     (hv : ∀ j, 0 < v j) {a : ι → ℝ} {b : κ → ℝ} (hPm : HasMarginals P a b) :
     K.relEntropyDual a b (fun i => Real.log (u i)) (fun j => Real.log (v j)) = relEntropy P K := by
-  have hgap := hP.relEntropy_sub_relEntropyDual hK hu hv hPm
-  linarith [hPm.sum_sum_eq, relEntropy_self P]
+  have hPsum : ∑ i, ∑ j, Real.exp (Real.log (u i)) * K i j * Real.exp (Real.log (v j)) =
+      ∑ i, ∑ j, P i j := by
+    simp only [Real.exp_log (hu _), Real.exp_log (hv _), (isDiagonalScaling_def _ _ _ _).1 hP]
+  -- cell by cell: `P` vanishes where `K` does, and elsewhere `log P = log K + log u + log v`
+  have hrel : relEntropy P K = ∑ i, ∑ j, P i j * (Real.log (u i) + Real.log (v j)) := by
+    rw [relEntropy_def]
+    refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+    by_cases hK : K i j = 0
+    · simp [hP i j, hK]
+    · rw [hP i j, Real.log_mul (mul_ne_zero (hu i).ne' hK) (hv j).ne',
+        Real.log_mul (hu i).ne' hK]
+      ring
+  rw [relEntropyDual_def, hPsum, hrel, hPm.sum_sum_mul_add]
+  linarith [hPm.sum_sum_eq]
 
 /-- For a strictly positive kernel `K` and strictly positive marginals `a` and `b`, a nonnegative
 matrix with row sums `a` and column sums `b` minimises the relative entropy against `K` among all
