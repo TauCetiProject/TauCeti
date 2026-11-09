@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
-import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inv
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -213,12 +213,12 @@ theorem mvfderiv_div_commutator_eq_zero [IsRCLikeNormedField 𝕜] {f : M → �
     (a : (Π x : M, TangentSpace I x) → M → 𝕜)
     (ha : ∀ U, a U = fun x ↦ mvfderiv I f x (U x) / f x)
     {X Y : Π x : M, TangentSpace I x} {p : M} (hf : CMDiffAt 2 f p)
-    (hX : MDiffAt (T% X) p) (hY : MDiffAt (T% Y) p)
-    (hdX : MDiffAt (fun x ↦ mvfderiv I f x (X x)) p)
-    (hdY : MDiffAt (fun x ↦ mvfderiv I f x (Y x)) p) (hp : f p ≠ 0) :
+    (hX : MDiffAt (T% X) p) (hY : MDiffAt (T% Y) p) (hp : f p ≠ 0) :
     a Y p * a X p + mvfderiv I (a Y) p (X p) -
       (a X p * a Y p + mvfderiv I (a X) p (Y p)) - a (mlieBracket I X Y) p = 0 := by
   have hfd := hf.mdifferentiableAt (by simp)
+  have hdX := TauCeti.mdifferentiableAt_mvfderiv_apply hf (by simp) hX
+  have hdY := TauCeti.mdifferentiableAt_mvfderiv_apply hf (by simp) hY
   -- The derivative of `a U` along `Z`, by the quotient rule.
   have hda {U Z : Π x : M, TangentSpace I x}
       (hdU : MDiffAt (fun x ↦ mvfderiv I f x (U x)) p) :
