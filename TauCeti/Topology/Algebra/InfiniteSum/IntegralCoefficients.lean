@@ -116,8 +116,7 @@ theorem norm_evalBoundedSeries_le {R K : Type*} [Semiring R]
     (φ : R →+* K) (hφ : ∃ B : ℝ, ∀ r, ‖φ r‖ ≤ B) (hM : ∀ r, ‖φ r‖ ≤ M)
     (q : K) (hq : ‖q‖ < 1) (f : R⟦X⟧) :
     ‖evalBoundedSeries φ hφ q hq f‖ ≤ M := by
-  have hs := PowerSeries.norm_evalScalar_le (F := f.map φ) (a := q)
-    ((norm_nonneg (φ 0)).trans (hM 0)) fun n ↦ by
+  have hs := PowerSeries.norm_evalScalar_le (F := f.map φ) (a := q) fun n ↦ by
       rw [coeff_map]
       exact (mul_le_of_le_one_left (norm_nonneg _) (pow_le_one₀ (norm_nonneg q) hq.le)).trans
         (hM _)

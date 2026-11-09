@@ -43,6 +43,9 @@ and `K` dominates `a + b` then `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2`.
 Finally, it records a polynomial barrier bound: if `r ≤ M`, `0 < ε`, `1 ≤ c` and `n` is larger
 than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
 
+It also records the power inequality `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n)`
+from `L / (2 r) < m + 1`, which bounds the volume of a convex set containing a ball and a point.
+
 ## Main results
 
 * `TauCeti.le_of_forall_mem_Ioc_mul_le`: if `a ≤ m + ε * C` for every `ε ∈ (0, δ₀]`, then
@@ -64,6 +67,8 @@ than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
   `r - ε * (c * (1 + n ^ 2)) < 0` for `r ≤ M`, `0 < ε`, `1 ≤ c` and `M / ε < n`.
 * `TauCeti.div_mul_add_mul_div_le_half`: `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2` when
   `0 ≤ ε`, `0 < K` and `a + b ≤ K`.
+* `TauCeti.mul_pow_le_two_pow_mul_succ_mul_pow`: `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) *
+  (r / 2) ^ n)` for `0 < r`, `1 ≤ n` and `L / (2 r) < m + 1`.
 -/
 
 public section
@@ -208,6 +213,22 @@ theorem div_mul_add_mul_div_le_half {α : Type*} [Field α] [LinearOrder α]
     _ ≤ ε / (2 * K) * K :=
         mul_le_mul_of_nonneg_left (by linarith) (by positivity)
     _ = ε / 2 := by field_simp
+
+/-- The inequality behind the volume bound for a convex set containing a ball and a point: if
+`L / (2 r) < m + 1` then `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n)`. -/
+theorem mul_pow_le_two_pow_mul_succ_mul_pow {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {L r : α} {m n : ℕ} (hr : 0 < r) (hn : 1 ≤ n)
+    (hm : L / (2 * r) < m + 1) :
+    L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n) := by
+  have hrn : r ^ n = r * r ^ (n - 1) := by rw [← pow_succ', Nat.sub_add_cancel hn]
+  have h2 : (2 : α) ^ (n + 1) * (r / 2) ^ n = 2 * r ^ n := by
+    rw [div_pow, pow_succ]
+    field_simp
+  rw [div_lt_iff₀ (by positivity)] at hm
+  calc L * r ^ (n - 1) ≤ (m + 1) * (2 * r) * r ^ (n - 1) := by gcongr
+    _ = 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n) := by
+      rw [mul_left_comm (2 ^ (n + 1) : α), h2, hrn]
+      ring
 
 end TauCeti
 
