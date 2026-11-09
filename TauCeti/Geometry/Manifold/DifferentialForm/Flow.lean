@@ -206,7 +206,7 @@ theorem hasDerivAt_mpullback_flowOf_zero (y : M)
       (mlieDerivForm Z α y) 0 := by
   have hZ1 := hZ.of_le one_le_two
   refine hasDerivAt_mpullback_of_eq_id (ψ := flowOf Z) (V := Z) y
-    (Eventually.of_forall (flowOf_zero hZ1))
+    (Eventually.of_forall (flowOf_zero Z))
     ((contMDiffOn_flowOf (n := 2) one_le_two hZ).contMDiffAt
       ((isOpen_flowDomain hZ1).mem_nhds (mem_flowDomain_zero hZ1 y)))
     (Eventually.of_forall fun x ↦ ?_) hα
@@ -279,7 +279,7 @@ theorem mpullback_flowOf_apply_eq_exp_integral_smul {g : M → ℝ} (hg : Contin
     rwa [hL, mpullback_fun_smul] at h
   have hP0 : P 0 = α x := by
     have h : mpullback I I (flowOf Z 0) α = α := by
-      rw [show flowOf Z 0 = id from funext (flowOf_zero hZ1), mpullback_id]
+      rw [show flowOf Z 0 = id from funext (flowOf_zero Z), mpullback_id]
     exact congrFun h x
   -- The value at `x` of the pulled-back form is `P t`.
   rw [← hP0]

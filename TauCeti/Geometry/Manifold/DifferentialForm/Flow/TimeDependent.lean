@@ -96,7 +96,7 @@ theorem hasDerivAt_mpullback_timeDependentFlowOf_self (t : ℝ) (y : M)
     (contMDiffOn_timeDependentFlowOf (n := 2) (by norm_num) hX).contMDiffAt
       ((isOpen_timeDependentFlowDomain hX₁).mem_nhds (mem_timeDependentFlowDomain_self hX₁ t y))
   exact hasDerivAt_mpullback_of_eq_id (ψ := timeDependentFlowOf X t) (V := X t) y
-    (Eventually.of_forall (timeDependentFlowOf_self hX₁ t))
+    (Eventually.of_forall (timeDependentFlowOf_self X t))
     (hflow.comp (t, y) (((contMDiff_const (c := t)).prodMk contMDiff_fst).prodMk
       contMDiff_snd).contMDiffAt)
     (Eventually.of_forall fun x ↦
@@ -134,7 +134,7 @@ theorem mpullback_timeDependentFlowOf_eq_self_iff
       ∀ t, mlieDerivForm (X t) α = 0 := by
   have hX₁ := hX.of_le (m := 1) one_le_two
   have hid (s : ℝ) : mpullback I I (timeDependentFlowOf X s s) α = α := by
-    have h : timeDependentFlowOf X s s = id := funext (timeDependentFlowOf_self hX₁ s)
+    have h : timeDependentFlowOf X s s = id := funext (timeDependentFlowOf_self X s)
     rw [h, mpullback_id]
   constructor
   · -- The pullbacks by the flow from `t` are constant, so their velocity at `t` vanishes.

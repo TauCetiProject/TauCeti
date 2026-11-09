@@ -115,7 +115,7 @@ theorem flowOf_notMem (h : IsLiouvilleDomain ω α W) (hZ : RoughForm.interior Z
   have hlt := (isMIntegralCurveOn_flowOf hZs x).lt_apply_of_le_apply hs hIcc
     (hf.comp_continuousOn ((isMIntegralCurveOn_flowOf hZs x).continuousOn.mono hIcc))
     (fun τ _ hτ ↦ ⟨(hfc _ hτ).1.mdifferentiableAt (by simp), (hfc _ hτ).2⟩)
-    (by rwa [flowOf_zero hZs]) ⟨ht, le_rfl⟩
+    (by rwa [flowOf_zero Z]) ⟨ht, le_rfl⟩
   exact not_le.2 hlt
 
 /-- **The Liouville trajectories through the boundary are disjoint.** If the Liouville field `Z`
