@@ -56,7 +56,7 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 * `Matrix.transpose_mul_J_mul_transpose` and `Matrix.mul_J_mul_transpose_apply_self`: the
   congruence transform `C * J * Cᵀ` of `J` by a rectangular matrix is alternating, that is
   antisymmetric with zero diagonal, in every characteristic;
-  `Matrix.transpose_mul_J_mul_transpose_sub_J` and `Matrix.mul_J_mul_transpose_apply_self_sub_J`
+  `Matrix.transpose_mul_J_mul_transpose_sub_J` and `Matrix.mul_J_mul_transpose_sub_J_apply_self`
   say the same of the defect `M * J * Mᵀ - J` of a square matrix `M`.
 * `Matrix.exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero`: the linearized symplectic
   equation `E + X * J + J * Xᵀ = 0` is solvable with entries of `X` in an ideal `I` for every
@@ -203,7 +203,7 @@ theorem transpose_mul_J_mul_transpose_sub_J (M : Matrix (l ⊕ l) (l ⊕ l) R) :
   rw [transpose_sub, transpose_mul_J_mul_transpose, J_transpose, neg_sub_neg, neg_sub]
 
 /-- The defect `M * J * Mᵀ - J` of a matrix has zero diagonal. -/
-theorem mul_J_mul_transpose_apply_self_sub_J (M : Matrix (l ⊕ l) (l ⊕ l) R) (i : l ⊕ l) :
+theorem mul_J_mul_transpose_sub_J_apply_self (M : Matrix (l ⊕ l) (l ⊕ l) R) (i : l ⊕ l) :
     (M * J l R * Mᵀ - J l R) i i = 0 := by
   rw [Matrix.sub_apply, mul_J_mul_transpose_apply_self]
   simpa using mul_J_mul_transpose_apply_self (1 : Matrix (l ⊕ l) (l ⊕ l) R) i

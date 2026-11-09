@@ -85,7 +85,7 @@ theorem map_quotient_mk_surjective_of_sq_eq_bot
       congrFun (congrFun hE_map i) j
   obtain ⟨X, hX_mem, hX⟩ :=
     Matrix.exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero I _ hE_mem
-    (Matrix.transpose_mul_J_mul_transpose_sub_J M) (Matrix.mul_J_mul_transpose_apply_self_sub_J M)
+    (Matrix.transpose_mul_J_mul_transpose_sub_J M) (Matrix.mul_J_mul_transpose_sub_J_apply_self M)
   have hN_mem := one_add_mul_mem_symplecticGroup hI hE.symm hX_mem hX
   let s : Matrix.symplecticGroup l R := ⟨(1 + X) * M, hN_mem⟩
   have hX_map : qMat X = 0 := by
