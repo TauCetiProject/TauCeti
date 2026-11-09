@@ -8,6 +8,8 @@ module
 public import Mathlib.CategoryTheory.Quotient
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Effective
 public import TauCeti.Topology.Algebra.GroupAction.GermKernel
+public import TauCeti.Topology.CategoryTheory.ActionGroupoid.Basic
+public import TauCeti.Topology.CategoryTheory.Groupoid.Effective
 
 /-!
 # The effective quotient of an action groupoid
@@ -32,6 +34,11 @@ nontrivially elsewhere. The two agree when every germ kernel is the kernel of th
 happens for actions by `C¹` maps with torsion stabilizers on a preconnected Hausdorff manifold
 without boundary (`TauCeti.germKernel_eq_ker`).
 
+For a discrete group, `G ⋉ X` is an étale topological groupoid, and these are its ineffective
+arrows and effective quotient in the sense of `TauCeti.ineffectiveArrows` and
+`TauCeti.EffectiveQuotient`: an arrow is ineffective exactly when its label lies in the germ kernel
+at its source, and the two germ relations agree (`TauCeti.germRel_actionCategory`).
+
 ## Main declarations
 
 * `TauCeti.ActionGroupoid.Effective G X`: the effective quotient of `G ⋉ X`, with its projection
@@ -47,6 +54,8 @@ without boundary (`TauCeti.germKernel_eq_ker`).
   classes of the effective quotient are the orbits of the action.
 * `TauCeti.ActionGroupoid.toEffective_faithful_iff`: the projection is faithful exactly when all
   germ kernels are trivial.
+* `TauCeti.germRel_actionCategory`: for a discrete group, the germ relation of the étale groupoid
+  `G ⋉ X` is the germ relation of the action.
 * `TauCeti.ActionGroupoid.Effective.toQuotientKer`: if every germ kernel is the kernel of the
   action, this equivalence identifies the effective quotient with the action groupoid of the
   faithful quotient action.
@@ -266,6 +275,45 @@ instance : (Effective.toQuotientKer hker).Faithful :=
 instance : (Effective.toQuotientKer hker).IsEquivalence where
 
 end Faithful
+
+section Etale
+
+variable [TopologicalSpace G] [DiscreteTopology G]
+
+/-- For a discrete group, an arrow of the étale groupoid `G ⋉ X` is ineffective exactly when its
+label lies in the germ kernel at its source. -/
+theorem _root_.TauCeti.mem_ineffectiveArrows_actionCategory_iff
+    {a : Quiver.Total (ActionCategory G X)} :
+    a ∈ ineffectiveArrows (ActionCategory G X) ↔ (a.hom.hom : G) ∈ germKernel G a.left.back := by
+  -- The arrows with the label of `a` form a local section of the source through `a`.
+  rw [mem_ineffectiveArrows_iff_eventually_right_eq (isLocalHomeomorph_source G X)
+    (σ := (sourceChart G X a.hom.hom).symm)
+    ((sourceChart G X a.hom.hom).continuousAt_symm (by simp))
+    (by simpa using (sourceChart G X a.hom.hom).left_inv (x := a) (by simp))
+    (.of_forall fun y ↦ by
+      rw [sourceChart_symm_apply, arrowHomeomorph_symm_apply,
+        ActionCategory.totalEquiv_symm_apply_left]
+      exact ActionCategory.back_coe y)]
+  refine Iff.trans ?_ mem_germKernel.symm
+  rw [← objectHomeomorph_apply, ← (objectHomeomorph G X).map_nhds_eq, eventually_map]
+  refine eventually_congr (.of_forall fun y ↦ ?_)
+  rw [sourceChart_symm_apply, arrowHomeomorph_symm_apply,
+    ActionCategory.totalEquiv_symm_apply_right, objectHomeomorph_apply]
+  -- The inverse of `objEquiv` is `back`.
+  exact (ActionCategory.objEquiv G X).eq_symm_apply.symm
+
+/-- For a discrete group, the germ relation of the étale groupoid `G ⋉ X` is the germ relation of
+the action. Hence `TauCeti.EffectiveQuotient (ActionCategory G X)` is
+`TauCeti.ActionGroupoid.Effective G X`. -/
+theorem _root_.TauCeti.germRel_actionCategory :
+    _root_.TauCeti.germRel (ActionCategory G X) = germRel G X := by
+  funext a b f f'
+  rw [eq_iff_iff, _root_.TauCeti.germRel_iff, mem_ineffectiveArrows_actionCategory_iff,
+    germRel_iff_mem_germKernel]
+  simp only [ActionCategory.comp_hom, ActionCategory.inv_hom]
+  rw [← inv_mem_iff, mul_inv_rev, inv_inv]
+
+end Etale
 
 variable [ContinuousConstSMul G X]
 
