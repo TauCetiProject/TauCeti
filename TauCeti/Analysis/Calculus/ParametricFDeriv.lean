@@ -45,6 +45,8 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
 * `ContDiffAt.differentiableAt_timeFDeriv`: the parameter-velocity field of a jointly `C²` map is
   differentiable, and `ContDiffAt.differentiableAt_deriv_snd` is the same statement for the
   partial derivative in the second of two scalar variables.
+* `ContDiffAt.contDiffAt_deriv_snd`: the partial derivative in the second of two scalar variables
+  of a jointly `C^(n+1)` map is jointly `C^n`.
 * `TauCeti.hasFDerivAt_fderivWithin_slice`: mixed derivatives for a normed parameter space, with
   spatial derivatives within a set accumulated by its interior, such as the range of a model with
   corners.
@@ -372,15 +374,23 @@ theorem differentiableAt_timeFDeriv {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
     (differentiableAt_const t |>.prodMk differentiableAt_id) |>.clm_apply
       (differentiableAt_const (1, 0))
 
+/-- For a map of two scalar variables which is `C^(n+1)` at `z`, the partial derivative in the
+second variable is jointly `C^n` at `z`. -/
+theorem contDiffAt_deriv_snd {n : ℕ∞ω} {g : 𝕜 × 𝕜 → F'} {z : 𝕜 × 𝕜}
+    (hg : ContDiffAt 𝕜 (n + 1) g z) :
+    ContDiffAt 𝕜 n (fun w : 𝕜 × 𝕜 ↦ _root_.deriv (fun r ↦ g (w.1, r)) w.2) z := by
+  have h : ContDiffAt 𝕜 (n + 1) (Function.uncurry fun (w : 𝕜 × 𝕜) (r : 𝕜) ↦ g (w.1, r))
+      (z, z.2) :=
+    hg.comp (z, z.2) (contDiffAt_fst.fst.prodMk contDiffAt_snd)
+  exact ((h.fderiv contDiffAt_snd le_rfl).clm_apply (contDiffAt_const (c := (1 : 𝕜))))
+    |>.congr_of_eventuallyEq (Eventually.of_forall fun _ ↦ fderiv_apply_one_eq_deriv.symm)
+
 /-- For a map of two scalar variables which is `C²` at `(t, x)`, the partial derivative in the
 second variable at `x` is differentiable in the first variable at `t`. -/
 theorem differentiableAt_deriv_snd {g : 𝕜 × 𝕜 → F'} {t x : 𝕜} (hg : ContDiffAt 𝕜 2 g (t, x)) :
-    DifferentiableAt 𝕜 (fun s ↦ _root_.deriv (fun r ↦ g (s, r)) x) t := by
-  -- Exchange the variables, so that the partial derivative is a parameter-velocity field.
-  have hswap : ContDiffAt 𝕜 2 (fun z : 𝕜 × 𝕜 ↦ g (z.2, z.1)) (x, t) :=
-    hg.comp (x, t) (contDiff_snd.prodMk contDiff_fst).contDiffAt
-  exact hswap.differentiableAt_timeFDeriv.congr_of_eventuallyEq
-    (hswap.of_le (by norm_num)).deriv_parameterCurve_eventuallyEq_timeFDeriv
+    DifferentiableAt 𝕜 (fun s ↦ _root_.deriv (fun r ↦ g (s, r)) x) t :=
+  ((contDiffAt_deriv_snd (n := 1) hg).differentiableAt one_ne_zero).comp (f := fun s ↦ (s, x)) t
+    (differentiableAt_id.prodMk (differentiableAt_const x))
 
 end ContDiffAt
 
