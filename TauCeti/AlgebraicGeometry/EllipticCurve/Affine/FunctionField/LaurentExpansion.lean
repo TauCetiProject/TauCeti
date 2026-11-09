@@ -140,4 +140,18 @@ theorem exists_powerSeries_functionFieldLaurentExpansion_iff (f : W.toAffine.Fun
   rw [← LaurentSeries.val_le_one_iff_eq_coe]
   rw [valuation_functionFieldLaurentExpansion]
 
+/-- A rational function vanishes at infinity exactly when its expansion is a power series
+with zero constant coefficient. -/
+theorem exists_powerSeries_constantCoeff_zero_functionFieldLaurentExpansion_iff
+    (f : W.toAffine.FunctionField) :
+    (∃ g : K⟦X⟧, PowerSeries.constantCoeff g = 0 ∧
+      (g : K⸨X⸩) = W.functionFieldLaurentExpansion f) ↔ W.toAffine.infinityPlace f < 1 := by
+  refine ⟨?_, fun hf ↦ ?_⟩
+  · rintro ⟨g, hg₀, hg⟩
+    rw [← valuation_functionFieldLaurentExpansion, ← hg]
+    exact TauCeti.LaurentSeries.valuation_coe_lt_one_iff.mpr hg₀
+  · obtain ⟨g, hg⟩ := (W.exists_powerSeries_functionFieldLaurentExpansion_iff f).mpr hf.le
+    refine ⟨g, TauCeti.LaurentSeries.valuation_coe_lt_one_iff.mp ?_, hg⟩
+    rwa [hg, valuation_functionFieldLaurentExpansion]
+
 end WeierstrassCurve

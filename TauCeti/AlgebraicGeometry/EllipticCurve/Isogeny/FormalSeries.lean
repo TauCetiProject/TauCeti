@@ -38,21 +38,12 @@ namespace TauCeti.Isogeny
 variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K}
   (φ : Isogeny W₁.toAffine W₂.toAffine)
 
-private theorem isEquiv_comap_expansion :
-    ((Valued.v : Valuation K⸨X⸩ ℤᵐ⁰).comap
-      (W₁.functionFieldLaurentExpansion.comp φ.fieldPullback).toRingHom).IsEquiv
-        W₂.toAffine.infinityPlace :=
-  (W₁.isEquiv_comap_functionFieldLaurentExpansion.comap
-    φ.fieldPullback.toRingHom).trans φ.isEquiv_comap_infinityPlace
-
 private theorem exists_powerSeries_constantCoeff_zero_of_infinityPlace_lt_one
     (f : W₂.toAffine.FunctionField) (hf : W₂.toAffine.infinityPlace f < 1) :
     ∃ g : K⟦X⟧, PowerSeries.constantCoeff g = 0 ∧
       (g : K⸨X⸩) = W₁.functionFieldLaurentExpansion (φ.fieldPullback f) := by
-  have hv : Valued.v (W₁.functionFieldLaurentExpansion (φ.fieldPullback f)) < (1 : ℤᵐ⁰) :=
-    (Valuation.isEquiv_iff_val_lt_one.mp φ.isEquiv_comap_expansion).mpr hf
-  obtain ⟨g, hg⟩ := (LaurentSeries.val_le_one_iff_eq_coe K _).mp hv.le
-  exact ⟨g, LaurentSeries.constantCoeff_eq_zero_of_valuation_coe_lt_one (hg.symm ▸ hv), hg⟩
+  apply (W₁.exists_powerSeries_constantCoeff_zero_functionFieldLaurentExpansion_iff _).mpr
+  exact (Valuation.isEquiv_iff_val_lt_one.mp φ.isEquiv_comap_infinityPlace).mpr hf
 
 private theorem exists_powerSeries_parameter :
     ∃ g : K⟦X⟧, PowerSeries.constantCoeff g = 0 ∧
@@ -132,8 +123,7 @@ theorem coe_subst_formalW_formalSeries :
       LaurentSeries.coe_algebraMap, hw, coe_formalSeries]
     have h := congrArg A (W₂.wEquation_of_equation
       W₂.toAffine.equation_genericX_genericY W₂.toAffine.genericY_ne_zero)
-    simpa only [wEquationRHS_def, map_add, map_mul, map_pow, AlgHom.commutes,
-      neg_div, A, AlgHom.comp_apply] using h
+    simpa only [AlgHom.map_wEquationRHS, neg_div, A, AlgHom.comp_apply] using h
   rw [← eq_subst_formalW_of_wEquation W₂ φ.constantCoeff_formalSeries hw₀ heq]
   exact hw
 
