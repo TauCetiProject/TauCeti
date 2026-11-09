@@ -83,7 +83,7 @@ theorem exists_norm_le_comp_coords (hα : α ≤ 1) {f : E × ℝ → F}
         (∀ p, g p = f ((p : ParabolicSpaceTime E).space - z.1,
           (p : ParabolicSpaceTime E).time - z.2)) ∧ ‖g‖ ≤ C := by
   obtain ⟨fx, fxx, ft, hfx, hsfx, hfxx, hsfxx, hft, hsft, hdx, hdxx, hdt⟩ :=
-    exists_derivative_fields_of_contDiff_three hf hs
+    hf.exists_derivative_fields_of_hasCompactSupport hs
   -- All four field bounds are fixed before translating or selecting a slab.
   obtain ⟨C₀, hC₀, hu⟩ :=
     exists_norm_le_holderSpace_comp_coords hα (hf.of_le (by norm_num)) hs
@@ -100,11 +100,11 @@ theorem exists_norm_le_comp_coords (hα : α ≤ 1) {f : E × ℝ → F}
   have hx (t : Icc a b) (x : E) :
       HasFDerivAt (fun y ↦ u (slabMk y t)) (ux (slabMk x t)) x := by
     simp only [hu, hux, space_slabMk, time_slabMk]
-    exact hasFDerivAt_comp_sub_coords hdx z t x
+    exact (hasFDerivAt_comp_sub z.1).2 (hdx (x - z.1, (t : ℝ) - z.2))
   have hxx (t : Icc a b) (x : E) :
       HasFDerivAt (fun y ↦ ux (slabMk y t)) (uxx (slabMk x t)) x := by
     simp only [hux, huxx, space_slabMk, time_slabMk]
-    exact hasFDerivAt_comp_sub_coords hdxx z t x
+    exact (hasFDerivAt_comp_sub z.1).2 (hdxx (x - z.1, (t : ℝ) - z.2))
   -- On the closed interval the clamped extension agrees with the ordinary time slice,
   -- so its derivative includes the two endpoints.
   have ht (x : E) (t : Icc a b) :

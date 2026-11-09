@@ -19,7 +19,7 @@ the time slices of a homotopy smooth near `s × [0, 1]` are smooth on `s`.
 
 A compactly supported `C³` function on `E × ℝ` has compactly supported spatial first and second
 derivative fields and a time derivative field of lower smoothness, computing its slice derivatives
-at every point (`TauCeti.exists_derivative_fields_of_contDiff_three`).
+at every point (`ContDiff.exists_derivative_fields_of_hasCompactSupport`).
 -/
 
 public section
@@ -38,6 +38,8 @@ theorem contDiffOn_comp_prodMk_left (hH : ∀ p ∈ s ×ˢ I, ContDiffAt 𝕜 n 
     (ht : t ∈ I) : ContDiffOn 𝕜 n (fun x ↦ H (x, t)) s :=
   fun x hx ↦ ((hH (x, t) ⟨hx, ht⟩).comp x (contDiff_prodMk_left t).contDiffAt).contDiffWithinAt
 
+end TauCeti
+
 noncomputable section DerivativeFields
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -52,7 +54,7 @@ private local instance : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] F) := inferIns
 /-- The spatial first and second derivative fields and the time derivative field of a compactly
 supported `C³` function on a product with a real second factor are compactly supported, of the
 expected smoothness, and compute its slice derivatives at every point. -/
-theorem exists_derivative_fields_of_contDiff_three {f : E × ℝ → F}
+theorem ContDiff.exists_derivative_fields_of_hasCompactSupport {f : E × ℝ → F}
     (hf : ContDiff ℝ 3 f) (hs : HasCompactSupport f) :
     ∃ (fx : E × ℝ → E →L[ℝ] F) (fxx : E × ℝ → E →L[ℝ] E →L[ℝ] F) (ft : E × ℝ → F),
       ContDiff ℝ 2 fx ∧ HasCompactSupport fx ∧ ContDiff ℝ 1 fxx ∧ HasCompactSupport fxx ∧
@@ -82,13 +84,11 @@ theorem exists_derivative_fields_of_contDiff_three {f : E × ℝ → F}
     (hs.fderiv ℝ).comp_left (map_zero (ContinuousLinearMap.apply ℝ F ((0, 1) : E × ℝ)))
   refine ⟨fx, fxx, ft, hfx, hsfx, hfxx, hsfxx, hft, hsft, fun p ↦ ?_, fun p ↦ ?_, fun p ↦ ?_⟩
   · simpa [fx, R, ι, Function.comp_def] using
-      hasFDerivAt_slice_fst (hf.differentiable (by norm_num)) p
+      (hf.differentiable (by norm_num) p).hasFDerivAt_slice_fst
   · simpa [fxx, S, ι, Function.comp_def] using
-      hasFDerivAt_slice_fst (hfx.differentiable (by norm_num)) p
+      (hfx.differentiable (by norm_num) p).hasFDerivAt_slice_fst
   · simpa [ft, Function.comp_def] using
       ((hf.differentiable (by simp) _).hasFDerivAt.comp p.2
         ((hasFDerivAt_const p.1 p.2).prodMk (hasFDerivAt_id p.2))).hasDerivAt
 
 end DerivativeFields
-
-end TauCeti
