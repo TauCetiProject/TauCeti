@@ -9,7 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 
 /-!
@@ -179,7 +179,7 @@ theorem coe_rpow_one_sub_toReal_inv_mul_rpow_toReal_inv {p : ℝ≥0∞} (hp : 1
     ((A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ : ℝ≥0) : ℝ≥0∞) =
       (A : ℝ≥0∞) ^ (1 - p.toReal⁻¹) * (B : ℝ≥0∞) ^ p.toReal⁻¹ := by
   have h₀ : 0 ≤ 1 - p.toReal⁻¹ := by
-    simpa only [one_div] using zero_le_one_sub_one_div_toReal hp
+    simpa only [one_div] using ENNReal.zero_le_one_sub_one_div_toReal hp
   rw [ENNReal.coe_mul, ENNReal.coe_rpow_of_nonneg _ h₀,
     ENNReal.coe_rpow_of_nonneg _ (by positivity)]
 

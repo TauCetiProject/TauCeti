@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Integral.Prod
-import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.SchurTest
 
@@ -197,7 +197,7 @@ integrals of `‖K‖`. In particular, a common bound `A` on both gives norm at 
 theorem norm_integralOperatorLp_le_max : ‖integralOperatorLp K p hK hA hB‖ ≤ max A B := by
   refine norm_integralOperatorLp_le.trans ?_
   have h₀ : 0 ≤ 1 - p.toReal⁻¹ := by
-    simpa only [one_div] using zero_le_one_sub_one_div_toReal (Fact.out : 1 ≤ p)
+    simpa only [one_div] using ENNReal.zero_le_one_sub_one_div_toReal (Fact.out : 1 ≤ p)
   have h₁ : 0 ≤ p.toReal⁻¹ := by positivity
   rw [NNReal.coe_le_coe]
   calc A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹

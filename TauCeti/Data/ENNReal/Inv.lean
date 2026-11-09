@@ -24,6 +24,8 @@ plus half of itself is at most `2 b`.
 ## Main declarations
 
 * `ENNReal.toReal_one_sub_div`: `(1 - a / b).toReal = 1 - a.toReal / b.toReal` for `a ≤ b`.
+* `ENNReal.zero_le_one_sub_one_div_toReal`: for `1 ≤ p`, the Hölder exponent `1 - 1 / p.toReal`
+  is nonnegative.
 * `ENNReal.toNNReal_one_sub_div_pos`: `0 < (1 - a / b).toNNReal` for `a < b`.
 * `ENNReal.exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one`: for `r > 1` and `n > 0` with
   `n (2 - r) < 2 r`, a finite exponent `t ≥ 2` with `1/2 - 1/t < 1/n` and `1/r + 1/t ≤ 1`.
@@ -47,6 +49,14 @@ theorem toReal_one_sub_div {a b : ℝ≥0∞} (hab : a ≤ b) :
 theorem toNNReal_one_sub_div_pos {a b : ℝ≥0∞} (hab : a < b) : 0 < (1 - a / b).toNNReal :=
   toNNReal_pos (tsub_pos_of_lt (div_lt_of_lt_mul (by simpa using hab))).ne'
     (sub_ne_top one_ne_top)
+
+/-- For `1 ≤ p`, the Hölder exponent `1 - 1 / p` is nonnegative (with `p = ∞` giving `1`). -/
+theorem zero_le_one_sub_one_div_toReal {p : ℝ≥0∞} (hp : 1 ≤ p) : 0 ≤ 1 - 1 / p.toReal := by
+  rcases eq_or_ne p ∞ with rfl | hp_top
+  · simp
+  · have h1p : (1 : ℝ) ≤ p.toReal := by
+      simpa using ENNReal.toReal_mono hp_top hp
+    exact sub_nonneg.2 (div_le_one_of_le₀ h1p (by positivity))
 
 /-- **Absorption**: a finite quantity bounded by `b` plus half of itself is at most `2 b`. -/
 theorem le_mul_two_of_le_add_div_two {a b : ℝ≥0∞} (ha : a ≠ ∞) (h : a ≤ b + a / 2) :

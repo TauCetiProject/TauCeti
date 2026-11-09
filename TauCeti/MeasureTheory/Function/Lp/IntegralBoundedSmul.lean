@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
-public import TauCeti.MeasureTheory.Function.Lp.Norm
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.Data.ENNReal.Inv
 
 /-!
 # Integrals of `Lᵖ` functions against bounded multipliers on finite-measure sets
@@ -45,7 +45,7 @@ theorem integrable_smul_and_norm_integral_smul_le {k : α → ℝ} {W : Set α} 
     Integrable (fun y => k y • h y) μ ∧
       ‖∫ y, k y • h y ∂μ‖ ≤ B * (μ W ^ (1 - 1 / p.toReal) * eLpNorm h p μ).toReal := by
   have : IsFiniteMeasure (μ.restrict W) := isFiniteMeasure_restrict.2 hμW
-  have hexp := zero_le_one_sub_one_div_toReal hp
+  have hexp := ENNReal.zero_le_one_sub_one_div_toReal hp
   have hhW : IntegrableOn h W μ := (hh.restrict W).integrable hp
   have hbound : ∀ᵐ y ∂μ.restrict W, ‖k y • h y‖ ≤ B * ‖h y‖ := hkB.mono fun y hy => by
     rw [norm_smul]
@@ -83,7 +83,7 @@ theorem tendsto_integral_smul_of_tendsto_eLpNorm_sub {ι : Type*} {l : Filter ι
     (hlim : Tendsto (fun i => eLpNorm (φ i - f) p μ) l (𝓝 0)) :
     Tendsto (fun i => ∫ y, k y • φ i y ∂μ) l (𝓝 (∫ y, k y • f y ∂μ)) := by
   rw [tendsto_iff_norm_sub_tendsto_zero]
-  have hexp := zero_le_one_sub_one_div_toReal hp
+  have hexp := ENNReal.zero_le_one_sub_one_div_toReal hp
   have hlim' : Tendsto (fun i => B * (μ W ^ (1 - 1 / p.toReal) * eLpNorm (φ i - f) p μ).toReal) l
       (𝓝 0) := by
     have h := ENNReal.Tendsto.const_mul hlim (Or.inr (ENNReal.rpow_ne_top_of_nonneg hexp hμW))

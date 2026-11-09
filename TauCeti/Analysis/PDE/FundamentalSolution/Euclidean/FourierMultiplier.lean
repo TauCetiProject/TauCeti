@@ -131,7 +131,7 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le [Complete
   have hpow : (‖x‖ - R₀) ^ (2 - (n : ℝ)) ≤ (R / 2) ^ (2 - (n : ℝ)) :=
     Real.rpow_le_rpow_of_nonpos (by positivity) hxR₀ (by linarith)
   -- Since `1 ≤ R`, the faster decay `(R / 2) ^ (1 - n)` of `Du` is at most `2 (R / 2) ^ (2 - n)`.
-  have hpow₁ := Real.rpow_one_sub_le_two_mul_rpow_two_sub hnℝ hR hxR₀
+  have hpow₁ := Real.rpow_one_sub_le_two_mul_rpow_two_sub (by linarith : (1 : ℝ) ≤ n) hR hxR₀
   have hgrad : ‖∇ χ x‖ ≤ C / R := by
     simpa only [gradient, LinearIsometryEquiv.norm_map] using hχ' x
   rw [indicator_of_mem (mem_closedBall_zero_iff.2 hx2R),
