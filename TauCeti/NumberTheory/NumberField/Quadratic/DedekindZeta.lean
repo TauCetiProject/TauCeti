@@ -12,7 +12,7 @@ public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Character
 public import TauCeti.NumberTheory.NumberField.Discriminant.Basic
 import Mathlib.Tactic.NormNum.RealSqrt
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Basic
-import TauCeti.NumberTheory.EffectiveBounds.Regulator
+import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 import TauCeti.NumberTheory.LSeries.ZetaMul
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import TauCeti.NumberTheory.NumberField.Quadratic.TotalRamification

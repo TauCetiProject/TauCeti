@@ -100,7 +100,6 @@ variable (I) in
 model, `G_ν` is cut out by the continuous equations `(Ad*_g ν) ξ = ν ξ`, one for each `ξ`. -/
 theorem isClosed_stabilizer_coadjointRepresentation (ν : Module.Dual ℝ (GroupLieAlgebra I G)) :
     IsClosed ((coadjointRepresentation ℝ I G).stabilizer ν : Set G) := by
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
   have hset : ((coadjointRepresentation ℝ I G).stabilizer ν : Set G) =
       ⋂ ξ : GroupLieAlgebra I G, {g | coadjointRepresentation ℝ I G g ν ξ = ν ξ} := by
     ext g

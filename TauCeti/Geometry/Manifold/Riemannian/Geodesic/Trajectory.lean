@@ -214,10 +214,9 @@ theorem IsGeodesicCurveOnFrom.eq_maximalGeodesic_of_univ
       (contMDiff_one_geodesicSpray (I := I) (M := M))).2 ⟨_, rfl, hconst⟩
   have hmax : IsMIntegralCurve
       (maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p (0 : TangentSpace I p)))
-      (geodesicSpray I M) := by
-    rw [isMIntegralCurve_iff_isMIntegralCurveOn, ← hdomain]
-    exact isMIntegralCurveOn_maximalIntegralCurve
-      (contMDiff_one_geodesicSpray (I := I) (M := M))
+      (geodesicSpray I M) :=
+    isMIntegralCurve_maximalIntegralCurve_of_eq_univ
+      (contMDiff_one_geodesicSpray (I := I) (M := M)) hdomain
   have heq := isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless
     (contMDiff_one_geodesicSpray (I := I) (M := M)) hmax hconst
     (maximalIntegralCurve_zero (hdomain ▸ mem_univ 0))

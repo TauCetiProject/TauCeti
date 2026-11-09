@@ -203,22 +203,22 @@ theorem monodromyGroup_cyclicPowTriple :
 theorem isConnected_cyclicPowTriple (hn : n ≠ 0) : (cyclicPowTriple n k).IsConnected :=
   isConnected_iff.mpr ⟨hn, isPretransitive_of_finRotate_mem (σ0_mem_monodromyGroup _)⟩
 
-/-- In nonzero degree, each component of `cyclicPowTriple n k` is a single `n`-cycle exactly
-when `k` and `k + 1` are coprime to `n`. -/
-@[simp] theorem cycleData_cyclicPowTriple_iff (hn : n ≠ 0) :
+/-- Each component of `cyclicPowTriple n k` is a single `n`-cycle exactly when `k` and `k + 1`
+are coprime to `n`. -/
+@[simp] theorem cycleData_cyclicPowTriple_iff :
     (cyclicPowTriple n k).cycleData = ({n}, {n}, {n}) ↔
       k.Coprime n ∧ (k + 1).Coprime n := by
+  by_cases hn : n = 0
+  · subst hn
+    simp [Prod.ext_iff, cycleData_σ0]
+    omega
   simp [Prod.ext_iff, parts_partition_finRotate hn, hn]
 
 /-- Each component of `cyclicPowTriple n k` is a single `n`-cycle when `k` and `k + 1` are
 coprime to `n`. -/
 theorem cycleData_cyclicPowTriple (hk : k.Coprime n) (hk' : (k + 1).Coprime n) :
     (cyclicPowTriple n k).cycleData = ({n}, {n}, {n}) := by
-  have hn : n ≠ 0 := by
-    rintro rfl
-    rw [Nat.coprime_zero_right] at hk hk'
-    omega
-  exact (cycleData_cyclicPowTriple_iff hn).mpr ⟨hk, hk'⟩
+  exact cycleData_cyclicPowTriple_iff.mpr ⟨hk, hk'⟩
 
 /-! ### A disconnected triple, and an isomorphic pair -/
 
@@ -430,28 +430,13 @@ the double cover of the sphere branched over `0` and `1` only. -/
 theorem blockQuotient_torusTriple
     (e : orbit torusTriple.monodromyGroup ({0, 2} : Set (Fin 4)) ≃ Fin 2) :
     torusTriple.blockQuotient {0, 2} e = ofTwo (swap 0 1) (swap 0 1) := by
-  have hperm : ∀ σ : Perm (Fin 2), σ ≠ 1 → σ = swap 0 1 := by decide
-  have hB : ({0, 2} : Set (Fin 4)) ∈ orbit torusTriple.monodromyGroup ({0, 2} : Set (Fin 4)) :=
-    mem_orbit_self _
+  -- The rotation, which is both generating component, moves the translate `{0, 2}`.
   have hrot : finRotate 4 '' ({0, 2} : Set (Fin 4)) ≠ {0, 2} := by
     rw [Set.image_pair]
     intro h
     have : (1 : Fin 4) ∈ ({0, 2} : Set (Fin 4)) := h ▸ by simp [finRotate_apply]
     simp at this
-  -- Both generating components move the translate `{0, 2}`, so neither is the identity of
-  -- `Perm (Fin 2)`.
-  have hne (σ : Perm (Fin 2))
-      (hσ : (e.symm (σ (e ⟨_, hB⟩)) : Set (Fin 4)) = finRotate 4 '' {0, 2}) : σ ≠ 1 := by
-    rintro rfl
-    simp only [Perm.one_apply, symm_apply_apply] at hσ
-    exact hrot hσ.symm
-  refine ext_of_two ?_ ?_
-  · rw [ofTwo_σ0]
-    refine hperm _ (hne _ ?_)
-    rw [coe_symm_blockQuotient_σ0, symm_apply_apply, torusTriple_σ0]
-  · rw [ofTwo_σ1]
-    refine hperm _ (hne _ ?_)
-    rw [coe_symm_blockQuotient_σ1, symm_apply_apply, torusTriple_σ1]
+  exact blockQuotient_eq_ofTwo_swap _ _ e hrot hrot
 
 /-! ### A triple with symmetric monodromy -/
 
