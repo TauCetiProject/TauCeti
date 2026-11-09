@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Flow.Periodic
+public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 import TauCeti.Geometry.Manifold.Flow.ShortPeriod
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
@@ -102,7 +103,7 @@ theorem exists_pos_forall_periodicSolutions_smul_eq [CompactSpace M] (h : σ.IsN
     {F : M → ℝ} (hF : ContMDiff I 𝓘(ℝ) 2 F) :
     ∃ ε₀ > (0 : ℝ), ∀ ε, 0 < ε → ε ≤ ε₀ →
       periodicSolutions (fun _ ↦ σ.hamiltonianVectorField (ε • F)) 1 =
-        {γ | ∃ x, mvfderiv I F x = 0 ∧ γ = fun _ ↦ x} := by
+        (fun x _ ↦ x) '' criticalPoints I F := by
   obtain ⟨ε₀, hε₀, hconst⟩ := exists_pos_forall_mem_periodicSolutions_smul_eq_const
     (h.contMDiff_hamiltonianVectorField (n := 1) (by simp) (hF.of_le (by norm_num)))
   refine ⟨ε₀, hε₀, fun ε hε hεε₀ ↦ ?_⟩
@@ -111,17 +112,19 @@ theorem exists_pos_forall_periodicSolutions_smul_eq [CompactSpace M] (h : σ.IsN
       fun _ ↦ ε • σ.hamiltonianVectorField F := by
     funext _ x
     exact hamiltonianVectorField_const_smul ε x
-  have hzero (x : M) : (ε • σ.hamiltonianVectorField F) x = 0 ↔ mvfderiv I F x = 0 := by
-    rw [Pi.smul_apply, smul_eq_zero, or_iff_right hε.ne', h.hamiltonianVectorField_eq_zero_iff]
+  have hzero (x : M) : (ε • σ.hamiltonianVectorField F) x = 0 ↔ x ∈ criticalPoints I F := by
+    rw [Pi.smul_apply, smul_eq_zero, or_iff_right hε.ne', h.hamiltonianVectorField_eq_zero_iff,
+      mem_criticalPoints]
   rw [hX]
   ext γ
-  refine ⟨fun hγ ↦ ⟨γ 0, ?_, hconst ε hε hεε₀ γ hγ⟩, ?_⟩
+  refine ⟨fun hγ ↦ ⟨γ 0, ?_, (hconst ε hε hεε₀ γ hγ).symm⟩, ?_⟩
   · have hγv := (mem_periodicSolutions_const_iff.1 hγ).1
     rw [hconst ε hε hεε₀ γ hγ, isMIntegralCurve_const_iff] at hγv
     exact (hzero _).1 hγv
   · rintro ⟨x, hx, rfl⟩
     exact mem_periodicSolutions_const_iff.2
       ⟨isMIntegralCurve_const_iff.2 ((hzero x).2 hx), fun _ ↦ rfl⟩
+
 /-- **Finiteness of nondegenerate contractible 1-periodic orbits.** Let `σ` be a nondegenerate
 two-form on a compact boundaryless manifold modelled on a finite-dimensional space, and `H` a
 time-dependent Hamiltonian, jointly `C²` and `1`-periodic in time. If every contractible 1-periodic
