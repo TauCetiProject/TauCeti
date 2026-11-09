@@ -144,16 +144,7 @@ theorem _root_.MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self (μ ν :
       ext x
       simp
     have hdiff : s \ Ioi 0 = (s ∩ {0}) ∪ (s ∩ Iio 0) := by
-      ext x
-      simp only [mem_sdiff, mem_Ioi, not_lt, mem_union, mem_inter_iff, mem_singleton_iff, mem_Iio]
-      constructor
-      · rintro ⟨hx, hx0⟩
-        rcases hx0.eq_or_lt with h | h
-        · exact Or.inl ⟨hx, h⟩
-        · exact Or.inr ⟨hx, h⟩
-      · rintro (⟨hx, h⟩ | ⟨hx, h⟩)
-        · exact ⟨hx, h.le⟩
-        · exact ⟨hx, h.le⟩
+      rw [sdiff_eq, compl_Ioi, ← Iio_union_right, inter_union_distrib_left, union_comm]
     rw [← measure_inter_add_sdiff s (measurableSet_Ioi (a := (0 : ℝ))), hdiff,
       measure_union (disjoint_left.2 fun x hx hx' ↦ by
         simp only [mem_inter_iff, mem_singleton_iff, mem_Iio] at hx hx'
