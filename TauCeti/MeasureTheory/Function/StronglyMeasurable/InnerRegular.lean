@@ -54,15 +54,19 @@ strongly measurable as soon as it is a.e. strongly measurable on the σ-finite s
 measurability of `u` to the σ-finite case. -/
 theorem MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_of_restrict {α β γ : Type*}
     {_ : MeasurableSpace α} {μ : Measure α} [TopologicalSpace β] [T2Space β] [Zero β]
-    [TopologicalSpace γ] [PseudoMetrizableSpace γ] [Zero γ] {f : α → β}
+    [TopologicalSpace γ] [Zero γ] {f : α → β}
     (hf : AEFinStronglyMeasurable f μ) {u : α → γ}
     (hu : AEStronglyMeasurable u (μ.restrict hf.sigmaFiniteSet)) (h0 : ∀ x, f x = 0 → u x = 0) :
     AEStronglyMeasurable u μ := by
-  rw [← Measure.restrict_univ (μ := μ), ← union_compl_self hf.sigmaFiniteSet,
-    aestronglyMeasurable_union_iff]
-  refine ⟨hu, (aestronglyMeasurable_const (b := (0 : γ))).congr ?_⟩
-  filter_upwards [hf.ae_eq_zero_compl] with x hx
-  exact (h0 x hx).symm
+  classical
+  have hs := hf.measurableSet
+  refine (hu.piecewise hs.nullMeasurableSet
+    (aestronglyMeasurable_const (b := (0 : γ)))).congr ?_
+  refine ae_of_ae_restrict_of_ae_restrict_compl hf.sigmaFiniteSet ?_ ?_
+  · filter_upwards [ae_restrict_mem hs] with x hx
+    simp [hx]
+  · filter_upwards [hf.ae_eq_zero_compl, ae_restrict_mem hs.compl] with x hx hxs
+    simp [notMem_of_mem_compl hxs, h0 x hx]
 
 variable {α β : Type*} [TopologicalSpace α] [MeasurableSpace α] [R1Space α] [BorelSpace α]
   [TopologicalSpace β] [PseudoMetrizableSpace β] {μ : Measure α} [μ.InnerRegularCompactLTTop]
