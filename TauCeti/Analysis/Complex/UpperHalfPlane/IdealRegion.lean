@@ -28,7 +28,8 @@ angle `0`; in particular the ideal triangle with vertices `-1`, `1` and `∞` ha
 
 `idealRegionAbove c r a b` is the same region for the semicircle of centre `c` and radius
 `r > 0`, obtained from `idealRegion` by the affine map `z ↦ r z + c` (`idealRegionAbove_eq_smul`);
-its area is the same formula in the rescaled endpoints when `c - r ≤ a` and `b ≤ c + r`
+its area is the nonnegative part (`ENNReal.ofReal`) of the same arccos difference in the rescaled
+endpoints when `c - r ≤ a` and `b ≤ c + r`, so it is `0` when `b < a` and the region is empty
 (`volume_idealRegionAbove`). The two one-variable integrals of the computation are
 `TauCeti.lintegral_Ioi_inv_sq` and `TauCeti.integral_one_div_sqrt_one_sub_sq`.
 
