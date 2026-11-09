@@ -7,9 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Zeeman
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Certificate
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Sequence
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Product.Cylinder
-public import TauCeti.Topology.Homotopy.HomotopyEquiv
 import Mathlib.Data.Finset.Grade
 
 /-!
@@ -32,20 +30,20 @@ realizes to the product of the dunce hat with the unit interval, this proves con
 
 ## Main definitions
 
-* `AbstractSimplicialComplex.dunceHatTriangles`: the seventeen triangles.
-* `AbstractSimplicialComplex.dunceHat`: the triangulated dunce hat.
+All declarations are in the namespace `TauCeti`.
+
+* `dunceHatTriangles`: the seventeen triangles, listed by `dunceHatTriangles_def`.
+* `dunceHat`: the triangulated dunce hat.
 
 ## Main results
 
-* `AbstractSimplicialComplex.not_isFreePair_dunceHat`: the dunce hat has no free face.
-* `AbstractSimplicialComplex.not_collapsible_dunceHat`: the dunce hat is not collapsible.
-* `AbstractSimplicialComplex.collapsible_orderedCylinder_dunceHat`: its ordered cylinder is
-  collapsible.
-* `AbstractSimplicialComplex.contractibleSpace_realization_dunceHat`: its realization is
-  contractible.
-* `AbstractSimplicialComplex.contractible2Complex_dunceHat`: it is a contractible 2-complex.
-* `TauCeti.hasCollapsibleTriangulation_orderedCylinder_dunceHat`: the conclusion of Zeeman's
-  conjecture holds for the dunce hat.
+* `not_isFreePair_dunceHat`: the dunce hat has no free face.
+* `not_collapsible_dunceHat`: the dunce hat is not collapsible.
+* `collapsible_orderedCylinder_dunceHat`: its ordered cylinder is collapsible.
+* `contractibleSpace_realization_dunceHat`: its realization is contractible.
+* `contractible2Complex_dunceHat`: it is a contractible 2-complex.
+* `hasCollapsibleTriangulation_orderedCylinder_dunceHat`: the conclusion of Zeeman's conjecture
+  holds for the dunce hat.
 
 ## References
 
@@ -56,9 +54,9 @@ realizes to the product of the dunce hat with the unit interval, this proves con
 
 public section
 
-open PreAbstractSimplicialComplex
+open PreAbstractSimplicialComplex AbstractSimplicialComplex TauCeti.PreAbstractSimplicialComplex
 
-namespace AbstractSimplicialComplex
+namespace TauCeti
 
 /-- The seventeen triangles of the eight-vertex dunce hat. Vertex `0` is the common image of the
 corners of the triangle, `1` and `2` divide the identified side, and `3` to `7` are interior. -/
@@ -66,6 +64,13 @@ def dunceHatTriangles : Finset (Finset (Fin 8)) :=
   {{0, 1, 3}, {0, 1, 4}, {0, 1, 7}, {0, 2, 4}, {0, 2, 5}, {0, 2, 6}, {0, 3, 7}, {0, 5, 6},
     {1, 2, 3}, {1, 2, 5}, {1, 2, 6}, {1, 4, 5}, {1, 6, 7}, {2, 3, 4}, {3, 4, 5}, {3, 5, 6},
     {3, 6, 7}}
+
+/-- The explicit list of the triangles of the dunce hat. -/
+theorem dunceHatTriangles_def : dunceHatTriangles =
+    {{0, 1, 3}, {0, 1, 4}, {0, 1, 7}, {0, 2, 4}, {0, 2, 5}, {0, 2, 6}, {0, 3, 7}, {0, 5, 6},
+      {1, 2, 3}, {1, 2, 5}, {1, 2, 6}, {1, 4, 5}, {1, 6, 7}, {2, 3, 4}, {3, 4, 5}, {3, 5, 6},
+      {3, 6, 7}} :=
+  (rfl)
 
 /-- The **dunce hat**, triangulated with eight vertices: its faces are the nonempty subsets of the
 triangles in `dunceHatTriangles`. -/
@@ -109,14 +114,14 @@ theorem finite_faces_dunceHat : dunceHat.faces.Finite :=
 
 /-- The dunce hat is two-dimensional. -/
 theorem dimension_dunceHat : dimension dunceHat = 2 := by
-  refine le_antisymm (dimension_le_iff.mpr fun σ hσ => ?_) ?_
+  refine le_antisymm (AbstractSimplicialComplex.dimension_le_iff.mpr fun σ hσ => ?_) ?_
   · obtain ⟨-, t, ht, hσt⟩ := mem_dunceHat.mp hσ
     have := Finset.card_le_card hσt
     rw [card_of_mem_dunceHatTriangles ht] at this
     exact_mod_cast (by omega : σ.card - 1 ≤ 2)
   · have ht : ({0, 1, 3} : Finset (Fin 8)) ∈ dunceHatTriangles := by decide
     simpa [card_of_mem_dunceHatTriangles ht] using
-      le_dimension (mem_dunceHat_of_mem_dunceHatTriangles ht)
+      AbstractSimplicialComplex.le_dimension (mem_dunceHat_of_mem_dunceHatTriangles ht)
 
 /-- **The dunce hat has no free face.** Every edge lies in at least two triangles, and the
 triangles are its maximal faces. -/
@@ -185,10 +190,10 @@ private theorem map_orderedCylinder_dunceHat :
     dunceHat.orderedCylinder.toPreAbstractSimplicialComplex.map (finProdFinEquiv : _ ≃ Fin 16) =
       ofMasks 16 dunceHatCylinderMasks := by
   have hfwd : ∀ t ∈ dunceHatTriangles, ∀ k ∈ t, ∃ g ∈ dunceHatCylinderMasks,
-      (cylinderStaircase t k).image (finProdFinEquiv : _ ≃ Fin 16) = maskFace 16 g := by
+      (t.cylinderStaircase k).image (finProdFinEquiv : _ ≃ Fin 16) = maskFace 16 g := by
     decide +kernel
   have hbwd : ∀ g ∈ dunceHatCylinderMasks, ∃ t ∈ dunceHatTriangles, ∃ k ∈ t,
-      maskFace 16 g = (cylinderStaircase t k).image (finProdFinEquiv : _ ≃ Fin 16) := by
+      maskFace 16 g = (t.cylinderStaircase k).image (finProdFinEquiv : _ ≃ Fin 16) := by
     decide +kernel
   apply SetLike.ext
   intro σ
@@ -200,7 +205,7 @@ private theorem map_orderedCylinder_dunceHat :
     obtain ⟨-, t, ht, hVt⟩ := mem_dunceHat.mp hV
     obtain ⟨g, hg, hgt⟩ := hfwd t ht k (hVt hk)
     exact ⟨hne.image _, g, hg, hgt ▸ Finset.image_subset_image
-      (hτV.trans (cylinderStaircase_mono hVt k))⟩
+      (hτV.trans (Finset.cylinderStaircase_mono hVt k))⟩
   · rintro ⟨hne, g, hg, hσg⟩
     obtain ⟨t, ht, k, hk, hgt⟩ := hbwd g hg
     obtain ⟨τ, hτt, rfl⟩ := Finset.subset_image_iff.mp (hgt ▸ hσg)
@@ -220,17 +225,9 @@ theorem collapsible_orderedCylinder_dunceHat :
 /-- **The dunce hat is contractible.** Its ordered cylinder is collapsible, hence has contractible
 realization, and that realization is homeomorphic to the product of the dunce hat with the unit
 interval. -/
-theorem contractibleSpace_realization_dunceHat : ContractibleSpace (Realization dunceHat) := by
-  have huniv : {x : Realization dunceHat.orderedCylinder |
-      x.1.support ∈ dunceHat.orderedCylinder.toPreAbstractSimplicialComplex} = Set.univ :=
-    Set.eq_univ_of_forall fun x => support_mem _ x
-  have := collapsible_orderedCylinder_dunceHat.contractibleSpace le_rfl
-  have : ContractibleSpace (Realization dunceHat.orderedCylinder) :=
-    ((Homeomorph.setCongr huniv).trans (Homeomorph.Set.univ _)).symm.contractibleSpace
-  have : ContractibleSpace unitInterval := (convex_Icc (0 : ℝ) 1).contractibleSpace ⟨0, by simp⟩
-  exact ((ContinuousMap.HomotopyEquiv.prodContractible _ unitInterval).symm.trans
-    (orderedCylinderRealizationHomeomorph dunceHat finite_faces_dunceHat).symm.toHomotopyEquiv)
-      |>.contractibleSpace
+theorem contractibleSpace_realization_dunceHat : ContractibleSpace (Realization dunceHat) :=
+  contractibleSpace_realization_of_collapsible_orderedCylinder dunceHat finite_faces_dunceHat
+    collapsible_orderedCylinder_dunceHat
 
 /-- The dunce hat is a contractible 2-complex in the sense of Zeeman's conjecture. -/
 theorem contractible2Complex_dunceHat : Contractible2Complex dunceHat :=
@@ -244,15 +241,11 @@ theorem exists_contractible2Complex_not_collapsible :
       ¬ PreAbstractSimplicialComplex.Collapsible K.toPreAbstractSimplicialComplex :=
   ⟨dunceHat, contractible2Complex_dunceHat, not_collapsible_dunceHat⟩
 
-end AbstractSimplicialComplex
-
-namespace TauCeti
-
 /-- The conclusion of **Zeeman's conjecture** holds for the dunce hat, already for its staircase
 triangulation of the cylinder. -/
 theorem hasCollapsibleTriangulation_orderedCylinder_dunceHat :
     PreAbstractSimplicialComplex.HasCollapsibleTriangulation.{0}
-      AbstractSimplicialComplex.dunceHat.orderedCylinder.toPreAbstractSimplicialComplex :=
-  AbstractSimplicialComplex.collapsible_orderedCylinder_dunceHat.hasCollapsibleTriangulation
+      dunceHat.orderedCylinder.toPreAbstractSimplicialComplex :=
+  collapsible_orderedCylinder_dunceHat.hasCollapsibleTriangulation
 
 end TauCeti
