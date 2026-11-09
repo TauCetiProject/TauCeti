@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import Mathlib.Topology.Compactness.SigmaCompact
-public import TauCeti.Algebra.Order.BigOperators.Sum.Telescoping
+public import TauCeti.Algebra.Order.BigOperators.Sum.SubSumBound
 
 /-!
 # Smooth limits of sequences stabilizing along a compact exhaustion
@@ -18,6 +18,13 @@ compact exhaustion of `M` from some index on has a `C^n` limit: near every point
 eventually constant, so the pointwise limit is locally one of the maps `F (N + 1)`. No
 convergence argument is needed. This is the gluing step of constructions which correct a map
 successively on the compact sets `L r`.
+
+## Main results
+
+* `ContMDiffMap.exists_eqOn_of_eqOn_compactExhaustion`: the limit of such a sequence is `C^n`.
+* `CompactExhaustion.seminorm_sub_lt_of_stages` and `CompactExhaustion.abs_sub_lt_of_stages`: the
+  limit of real-valued stages stays within a prescribed seminorm bound, respectively pointwise
+  bound, of the first stage, obtained by telescoping weighted per-step bounds.
 -/
 
 public section
@@ -66,10 +73,10 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {n : WithTop ℕ∞}
 
-/-- If the perturbations `F (r + 1) - F r` are supported in `L (r + 2)` and the seminorm
-`q` kills functions which vanish near the compact set `A`, then the limit `g` of the stages is
-within `t` of `f` for `q` as soon as each stage, as long as `A` meets `L (r + 2)`, is within
-`t * w r`. -/
+/-- If the steps `F (r + 1) - F r` are supported in `L (r + 2)`, the seminorm `q` vanishes on
+functions that are zero near the compact set `A`, and `q (F (r + 1) - F r) < t * w r` whenever `A`
+meets `L (r + 2)`, for positive weights `w` with partial sums at most `1`, then the limit `g` of the
+stages satisfies `q (g - F 0) < t`. -/
 theorem seminorm_sub_lt_of_stages (L : CompactExhaustion M)
     (q : Seminorm ℝ C^n⟮I, M; 𝓘(ℝ), ℝ⟯) {A : Set M} (hA : IsCompact A)
     (hq0 : ∀ u : C^n⟮I, M; 𝓘(ℝ), ℝ⟯, (∀ y ∈ A, (u : M → ℝ) =ᶠ[𝓝 y] 0) → q u = 0) {t : ℝ}
