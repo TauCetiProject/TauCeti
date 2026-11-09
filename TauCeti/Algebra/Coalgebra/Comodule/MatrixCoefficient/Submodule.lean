@@ -35,9 +35,9 @@ These are the coordinate descriptions of subcomodules and of the stabilizer of a
 * `Submodule.matrixCoefficient_eq_zero_of_mem_dualAnnihilator`: over any commutative semiring, if
   the coaction of `m` lies in `W ⊗ C`, then `m` has no matrix coefficient against a functional
   vanishing on `W`.
-* `Submodule.apply_matrixCoefficient_comp_mkQ_eq_zero_of_endOfPoint_mem_baseChange`: if a point
-  carries `1 ⊗ m` into `A ⊗ W`, it kills the matrix coefficients of `m` against functionals
-  vanishing on `W`.
+* `Submodule.apply_matrixCoefficient_comp_mkQ_eq_zero_of_endOfPoint_mem_baseChange`: over any
+  commutative ring, if a point carries `1 ⊗ m` into `A ⊗ W`, it kills the matrix coefficients of
+  `m` against functionals vanishing on `W`.
 * `Submodule.mapsTo_endOfPoint_baseChange_iff`: a point preserves `A ⊗ W` exactly when it
   kills those matrix coefficients.
 
@@ -120,9 +120,9 @@ theorem coact_mem_range_of_forall_coactComponent_mem (W : Submodule k M)
 
 end Coalgebra
 
-section Point
+section PointRing
 
-variable {k : Type u} {C : Type v} {M : Type w} {A : Type*} [Field k]
+variable {k : Type u} {C : Type v} {M : Type w} {A : Type*} [CommRing k]
 variable [Ring C] [Algebra k C] [Coalgebra k C]
 variable [AddCommGroup M] [Module k M] [Comodule k C M] [CommRing A] [Algebra k A]
 
@@ -141,6 +141,14 @@ theorem apply_matrixCoefficient_comp_mkQ_eq_zero_of_endOfPoint_mem_baseChange (W
       (R := k) (M := M ⧸ W) (A := A) (1 ⊗ₜ[k] ψ) t) hyq
   rw [map_zero, Module.Dual.baseChangeEvaluation_one_tmul_baseChange] at heval
   simpa only [Comodule.baseChangeEvaluation_endOfPoint_tmul, one_mul] using heval
+
+end PointRing
+
+section Point
+
+variable {k : Type u} {C : Type v} {M : Type w} {A : Type*} [Field k]
+variable [Ring C] [Algebra k C] [Coalgebra k C]
+variable [AddCommGroup M] [Module k M] [Comodule k C M] [CommRing A] [Algebra k A]
 
 /-- An algebra-valued point preserves the scalar extension of `W` exactly when it kills every
 matrix coefficient pairing a vector of `W` with a functional vanishing on `W`. -/
