@@ -408,8 +408,8 @@ private abbrev smallIso (n : ℕ) :
     X.singularCohomology R k M n ≅
       (((X.smallSingularSubcomplex ![U, V] : SSet).chainComplex R).linearYonedaObj k M).homology
         n :=
-  TauCeti.smallSingularCohomologyIso R k M ![U, V] (TauCeti.isOpen_vecCons hU hV)
-    ((TauCeti.iUnion_vecCons U V).trans hUV) n
+  TauCeti.smallSingularCohomologyIso R k M ![U, V] (hU.vecCons hV)
+    ((U.iUnion_vecCons_pair V).trans hUV) n
 
 private lemma smallIso_hom (n : ℕ) :
     (smallIso R k M hU hV hUV n).hom =
@@ -544,8 +544,8 @@ lemma singularCohomologyMayerVietorisδ_naturality (n m : ℕ) (h : n + 1 = m :=
         (smallIso R k M hU hV hUV m).inv := by
     rw [Iso.inv_comp_eq, ← Category.assoc, Iso.eq_comp_inv]
     exact TauCeti.smallSingularCohomologyIso_naturality R k M ![U, V]
-      (TauCeti.isOpen_vecCons hU hV) ((TauCeti.iUnion_vecCons U V).trans hUV) ![U', V'] f id hf
-      (TauCeti.isOpen_vecCons hU' hV') ((TauCeti.iUnion_vecCons U' V').trans hUV') m
+      (hU.vecCons hV) ((U.iUnion_vecCons_pair V).trans hUV) ![U', V'] f id hf
+      (hU'.vecCons hV') ((U'.iUnion_vecCons_pair V').trans hUV') m
   have hnat := SSet.mayerVietorisCochainδ_naturality R k M
     (toSSet.map (ofHom ⟨(hfU.inter_inter hfV).restrict,
       f.hom.continuous.restrict (hfU.inter_inter hfV)⟩))
