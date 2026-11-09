@@ -21,6 +21,10 @@ of a submodule, since a submodule is closed under negation. A unit of a ring sta
 additive subgroup, viewed as a `ℤ`-submodule, exactly when multiplication by the unit and by its
 inverse both preserve it.
 
+Membership in a pointwise translate under a group action is tested by the inverse action.
+For a subalgebra `C`, two translates `s C` and `t C` by ambient units agree exactly when
+`s⁻¹ t` is a unit of `C`.
+
 Let `S` be a subring of a commutative ring `A`, `M` an `A`-module and `M₀` an `S`-submodule of
 `M`. This file collects the elementary facts about the family `rⁿ • M₀`, for `r : S`, in
 Mathlib's pointwise action on submodules.
@@ -32,6 +36,10 @@ this file to restate both.
 
 ## Main results
 
+* `Submodule.mem_pointwise_smul_iff_inv_smul_mem`: membership in `g • N` is equivalent to
+  membership of `g⁻¹ • x` in `N`.
+* `Subalgebra.smul_toSubmodule_eq_smul_toSubmodule_iff`: translates `s C` and `t C` by ambient
+  units agree exactly when `s⁻¹ t` is a unit of `C`.
 * `Submodule.pow_smul_mem_pow_smul`: the ambient-scalar bridge — an element of `M₀` scaled by
   `sⁿ : A` lands in `⟨s, _⟩ⁿ • M₀`, so a consumer speaking `A` needs no coercion plumbing.
 * `Submodule.pow_smul_antitone`: the family is antitone in the exponent.

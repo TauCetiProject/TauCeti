@@ -26,11 +26,12 @@ modulo the completion of the gluing by the image of a global vector that is inte
 other place, using the approximation theorem
 `IsDedekindDomain.HeightOneSpectrum.exists_forall_sub_mem_span_singleton`.
 
-Combined with the fact that submodules are determined by their completions
-(`TauCeti.eq_iff_forall_baseChange_adicCompletionIntegers_eq`), this is the local–global
-correspondence for lattices over a Dedekind domain: lattices are glued from their completions, and
-the glued lattice is the unique one with the prescribed completions. It is the input for the
-lattices `B ∩ ∏_v α_v Λ_v` attached to ideles of an order.
+When `R` is not a field, submodules are determined by their completions
+(`TauCeti.eq_iff_forall_baseChange_adicCompletionIntegers_eq`). Combined with the gluing result,
+this gives the local–global correspondence for lattices over a Dedekind domain that is not a
+field: lattices are glued from their completions, and the glued lattice is the unique one with
+the prescribed completions. It is the input for the lattices `B ∩ ∏_v α_v Λ_v` attached to ideles
+of an order.
 
 ## Main definitions
 
@@ -45,9 +46,10 @@ lattices `B ∩ ∏_v α_v Λ_v` attached to ideles of an order.
   of a vector whose image lies in `N.baseChange 𝒪_w` at every other place `w`.
 * `TauCeti.baseChange_glueCompletions`: if the gluing spans `V`, its completion at every `v` is
   `L v`.
-* `TauCeti.glueCompletions_baseChange`: gluing the completions of a submodule gives it back.
-* `TauCeti.eq_glueCompletions_iff`: if the gluing spans `V`, it is the unique submodule with
-  completions `L v`.
+* `TauCeti.glueCompletions_baseChange`: when `R` is not a field, gluing the completions of a
+  submodule gives it back.
+* `TauCeti.eq_glueCompletions_iff`: when `R` is not a field, if the gluing spans `V`, it is the
+  unique submodule with completions `L v`.
 
 ## References
 
@@ -167,8 +169,8 @@ theorem baseChange_glueCompletions (hspan : span K (glueCompletions K L : Set V)
   rwa [sub_add_cancel] at this
 
 omit [Module K V] [IsScalarTower R K V] in
-/-- Gluing the completions of a submodule gives back the submodule, since submodules are
-determined by their completions. -/
+/-- When `R` is not a field, gluing the completions of a submodule gives back the submodule,
+since submodules are determined by their completions. -/
 @[simp]
 theorem glueCompletions_baseChange (hR : ¬IsField R) (M : Submodule R V) :
     glueCompletions K (fun v ↦ M.baseChange (v.adicCompletionIntegers K)) = M := by
@@ -178,8 +180,8 @@ theorem glueCompletions_baseChange (hR : ¬IsField R) (M : Submodule R V) :
   rw [baseChange_span, Set.image_singleton, span_le, Set.singleton_subset_iff]
   exact mem_glueCompletions.1 hx v
 
-/-- **Uniqueness of the glued lattice.** If the gluing of the `L v` spans `V` over `K`, it is the
-unique `R`-submodule of `V` whose completion at every `v` is `L v`. -/
+/-- **Uniqueness of the glued lattice.** When `R` is not a field, if the gluing of the `L v`
+spans `V` over `K`, it is the unique `R`-submodule of `V` whose completion at every `v` is `L v`. -/
 theorem eq_glueCompletions_iff (hR : ¬IsField R)
     (hspan : span K (glueCompletions K L : Set V) = ⊤) {M : Submodule R V} :
     M = glueCompletions K L ↔

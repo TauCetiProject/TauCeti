@@ -42,6 +42,8 @@ ones, so the public `LinearMap.baseChange` API applies.
 
 ## Main declarations
 
+* `Subalgebra.toSubmodule_baseChange`: the underlying submodule of `C.baseChange T` is
+  `(Subalgebra.toSubmodule C).baseChange T`.
 * `AlgHom.lTensor_toLinearMap_apply`: `f.toLinearMap.lTensor S` is
   `Algebra.TensorProduct.map (AlgHom.id R S) f`.
 * `AlgHom.rTensor_toLinearMap_apply`: `f.toLinearMap.rTensor S` is
