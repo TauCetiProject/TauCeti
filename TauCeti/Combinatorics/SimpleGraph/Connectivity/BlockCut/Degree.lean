@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.BlockCut.Basic
 
 import TauCeti.Combinatorics.SimpleGraph.Connectivity.Connected
+import Mathlib.Combinatorics.SimpleGraph.Ends.Defs
 
 /-!
 # Degrees of cut vertices in the block--cut forest
@@ -116,32 +117,25 @@ private theorem incidentBlockComponent_surjective :
       ((congrArg (ConnectedComponent.map
         (Embedding.induce ({(c : V)}ᶜ : Set V)).toHom) hxC).trans C.2)
   obtain ⟨p⟩ := hreach
-  let S : Set V := (fun z : ↑({(c : V)}ᶜ : Set V) ↦ (z : V)) '' (C.1 : Set _)
-  have hxS : (x : V) ∈ S := ⟨x, by simpa [hxC]⟩
+  let S : Set V := ((C.1 : G.ComponentCompl {(c : V)}) : Set V)
+  have hxS : (x : V) ∈ S := by
+    refine ⟨?_, hxC⟩
+    simpa only [Set.mem_singleton_iff] using hxc
   have hcS : (c : V) ∉ S := by
-    rintro ⟨z, -, hz⟩
-    exact z.property (by simpa using hz)
+    intro hc
+    exact (ComponentCompl.notMem_of_mem hc) (Set.mem_singleton (c : V))
   -- The first edge leaving this deletion component must enter the deleted vertex itself.
   obtain ⟨d, -, hdS, hdnotS⟩ := p.exists_boundary_dart S hxS hcS
-  obtain ⟨z, hzC, hzd⟩ := hdS
   have hdsnd : d.snd = c := by
     by_contra hne
-    have hdfst : d.fst ≠ c := by
-      intro h
-      exact (Set.mem_compl_singleton_iff.mp z.property) (hzd.trans h)
-    let y : ↑({(c : V)}ᶜ : Set V) :=
-      ⟨d.snd, Set.mem_compl_singleton_iff.mpr hne⟩
-    have hadj : (G.induce ({(c : V)}ᶜ : Set V)).Adj z y := by
-      apply induce_adj.mpr
-      simpa only [hzd] using d.adj
     apply hdnotS
-    refine ⟨y, ?_, rfl⟩
-    apply (ConnectedComponent.mem_supp_iff C.1 y).2
-    calc
-      (G.induce ({(c : V)}ᶜ : Set V)).connectedComponentMk y =
-          (G.induce ({(c : V)}ᶜ : Set V)).connectedComponentMk z :=
-        ConnectedComponent.sound hadj.symm.reachable
-      _ = C.1 := (ConnectedComponent.mem_supp_iff C.1 z).1 hzC
+    exact ComponentCompl.mem_of_adj d.fst d.snd hdS (by simpa using hne) d.adj
+  obtain ⟨hdfst, hzCeq⟩ := hdS
+  let z : ↑({(c : V)}ᶜ : Set V) := ⟨d.fst, hdfst⟩
+  have hzC : z ∈ (C.1 : Set _) := by
+    apply (ConnectedComponent.mem_supp_iff C.1 z).2
+    exact hzCeq
+  have hzd : (z : V) = d.fst := rfl
   have hadj : G.Adj c d.fst := by simpa [hdsnd] using d.adj.symm
   obtain ⟨B, ⟨hB, hpair⟩, -⟩ := hadj.existsUnique_isBlock_superset_pair
   let Bc : {B : G.BlockVertex // (c : V) ∈ (B : Set V)} :=
