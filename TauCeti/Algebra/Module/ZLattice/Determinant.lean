@@ -300,10 +300,9 @@ theorem IsIntegral.det_toMatrix_integralForm (h : IsIntegral L) {ι : Type*} [Fi
   -- A full lattice with a finite `ℤ`-basis spans `E` over `ℝ` by finitely many vectors.
   have : FiniteDimensional ℝ E := by
     have : Module.Finite ℤ L := Module.Finite.of_basis b
-    obtain ⟨S, hS⟩ := Module.Finite.iff_fg.mp this
-    refine ⟨⟨S, ?_⟩⟩
-    rw [← Submodule.span_span_of_tower ℤ ℝ, hS]
-    exact IsZLattice.span_top
+    have hfg := Submodule.FG.span (A := ℝ) (Module.Finite.iff_fg.mp this)
+    rw [IsZLattice.span_top] at hfg
+    exact ⟨hfg⟩
   refine Int.cast_injective (α := ℝ) ?_
   rw [Int.cast_natCast, ← h.det_eq_card_discriminantGroup, det_eq_det_gram L b, Int.cast_det]
   congr 1
