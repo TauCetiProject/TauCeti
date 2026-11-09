@@ -88,13 +88,13 @@ field of `R ⧸ (x)` is a direct summand of `𝔪 ⧸ x 𝔪`, so `R ⧸ (x)` is
 regularity lifts along the nonzerodivisor `x`
 (`TauCeti.IsRegularLocalRing.of_quotient_nonZeroDivisor`).
 
-Along a faithfully flat map `A → R` from a Noetherian ring, base change preserves the projective
+Along a faithfully flat map `A → R`, base change preserves the projective
 dimension of finite modules (`ModuleCat.projectiveDimension_tensorProduct`), so the bound over a
 regular ring `R` also bounds the finite `A`-modules. For a flat local
 homomorphism of Noetherian local rings and the residue field of `A`, this is the finite projective
 dimension from which Serre's characterization of regular local rings deduces that `A` is regular
-(H. Matsumura, *Commutative Ring Theory*, Theorem 23.7 (i)). If moreover `R` has finite Krull
-dimension, this bound makes the global dimension of `A` finite, so `A` is a regular ring.
+(H. Matsumura, *Commutative Ring Theory*, Theorem 23.7 (i)); see
+`TauCeti.IsRegularRing.of_faithfullyFlat` in `Descent.lean`.
 
 ## References
 

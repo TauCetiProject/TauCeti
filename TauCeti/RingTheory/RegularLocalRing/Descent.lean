@@ -63,20 +63,11 @@ theorem of_flat_of_isLocalHom [IsLocalRing R] [IsRegularLocalRing S] [Module.Fla
 end TauCeti.IsRegularLocalRing
 
 /-- **Regularity descends along faithfully flat extensions by regular rings.** If a regular ring
-`R` is faithfully flat over a ring `A`, then `A` is a regular ring. Noetherianity of `A` descends
-as well, and no bound on the Krull dimension of `R` is needed: at a prime `p` of `A`, a prime `q`
-of `R` over `p` makes `A_p → R_q` a flat local homomorphism into a regular local ring. -/
+`S` is faithfully flat over a ring `R`, then `R` is a regular ring (in particular Noetherian). -/
 theorem TauCeti.IsRegularRing.of_faithfullyFlat {R : Type u} {S : Type v} [CommRing R] [CommRing S]
     [Algebra R S] [IsRegularRing S] [Module.FaithfullyFlat R S] : IsRegularRing R := by
   have : IsNoetherianRing R := .of_faithfullyFlat S
   refine isRegularRing_iff.mpr fun p _ ↦ ?_
-  obtain ⟨q, hq⟩ := PrimeSpectrum.comap_surjective_of_faithfullyFlat (A := R) (B := S) ⟨p, ‹_›⟩
-  have hqp : p = q.asIdeal.comap (algebraMap R S) := (congrArg PrimeSpectrum.asIdeal hq).symm
-  let : Algebra (Localization.AtPrime p) (Localization.AtPrime q.asIdeal) :=
-    (Localization.localRingHom p q.asIdeal (algebraMap R S) hqp).toAlgebra
-  have : Module.Flat (Localization.AtPrime p) (Localization.AtPrime q.asIdeal) :=
-    RingHom.flat_algebraMap_iff.mp
-      (RingHom.Flat.localRingHom (RingHom.flat_algebraMap_iff.mpr inferInstance) q.asIdeal p hqp)
-  have : IsLocalHom (algebraMap (Localization.AtPrime p) (Localization.AtPrime q.asIdeal)) :=
-    Localization.isLocalHom_localRingHom p q.asIdeal (algebraMap R S) hqp
-  exact TauCeti.IsRegularLocalRing.of_flat_of_isLocalHom (S := Localization.AtPrime q.asIdeal)
+  obtain ⟨q, _, _⟩ := Ideal.exists_isPrime_liesOver_of_faithfullyFlat (B := S) p
+  let := Localization.AtPrime.algebraOfLiesOver p q
+  exact TauCeti.IsRegularLocalRing.of_flat_of_isLocalHom (S := Localization.AtPrime q)

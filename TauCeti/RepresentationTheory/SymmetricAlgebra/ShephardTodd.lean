@@ -127,7 +127,6 @@ theorem exists_bijective_aeval_symmetricAlgebraInvariants_of_faithfullyFlat
     ∃ f : Fin (Module.finrank k M) → ρ.symmetricAlgebraInvariants,
       (∀ i, ∃ d, 0 < d ∧ (f i : SymmetricAlgebra k M) ∈ homogeneousSubmodule k M d) ∧
         Function.Bijective (MvPolynomial.aeval (R := k) f) := by
-  have : IsNoetherianRing ρ.symmetricAlgebraInvariants := Algebra.FiniteType.isNoetherianRing k _
   -- Regularity of `Sym M` descends to `A`, in particular to its vertex.
   have : IsRegularRing ρ.symmetricAlgebraInvariants :=
     TauCeti.IsRegularRing.of_faithfullyFlat (S := SymmetricAlgebra k M)
