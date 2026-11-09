@@ -220,7 +220,7 @@ theorem isProperMap_schwarzChristoffelBoundary (a e : ι → ℝ) (z₀ : UpperH
     IsProperMap (schwarzChristoffelBoundary a e z₀) := by
   refine isProperMap_iff_tendsto_cocompact.mpr ⟨continuousOn_univ.mp ?_, ?_⟩
   · exact continuousOn_schwarzChristoffelBoundary_of_exponent_sum_gt_neg_one a e z₀ fun x _ =>
-      lt_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite x
+      forall_sum_filter_eq_of_forall_apply neg_one_lt_zero hfinite x
   · rw [cocompact_eq_atBot_atTop, ← Metric.cobounded_eq_cocompact]
     exact (tendsto_schwarzChristoffelBoundary_atBot_cobounded a e z₀ hsum).sup
       (tendsto_schwarzChristoffelBoundary_atTop_cobounded a e z₀ hsum)

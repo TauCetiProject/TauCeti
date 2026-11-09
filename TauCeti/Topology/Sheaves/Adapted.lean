@@ -392,15 +392,16 @@ theorem isSheaf_of_isAdapted_of_forall_exists_le (hB : Opens.IsBasis B) (hF : F.
   -- restriction `F(W) ⟶ F(W ⊓ U) = G(W)`, along the counit of the adjunction for `U`
   let α : F ⟶ U.inclusion' _* (U.isOpenEmbedding.functor.op ⋙ F) :=
     Functor.whiskerRight (NatTrans.op U.isOpenEmbedding.isOpenMap.adjunction.counit) F
-  refine Presieve.isSheafFor_of_bijective_app
-    (Functor.whiskerLeft (inducedFunctor (Subtype.val : B → Opens X)).op
-      (Functor.whiskerRight α (coyoneda.obj (op E)))) (fun b' f ↦ ?_) (hG E S hS)
   -- below `U` the restriction is along an isomorphism, as `W ⊓ U = W`
-  have : IsIso (U.isOpenEmbedding.isOpenMap.adjunction.counit.app b'.1) :=
-    ⟨homOfLE fun x hx ↦ ⟨⟨x, hbU (f.hom.le hx)⟩, hx, rfl⟩, Subsingleton.elim _ _,
-      Subsingleton.elim _ _⟩
-  exact (isIso_iff_bijective _).mp ((coyoneda.obj (op E)).map_isIso
-    (F.map (U.isOpenEmbedding.isOpenMap.adjunction.counit.app b'.1).op))
+  have hα : ∀ ⦃b'⦄, (b' ⟶ b) → Function.Bijective
+      ((Functor.whiskerLeft (inducedFunctor (Subtype.val : B → Opens X)).op
+        (Functor.whiskerRight α (coyoneda.obj (op E)))).app (op b')) := fun b' f ↦ by
+    have : IsIso (U.isOpenEmbedding.isOpenMap.adjunction.counit.app b'.1) :=
+      ⟨homOfLE fun x hx ↦ ⟨⟨x, hbU (f.hom.le hx)⟩, hx, rfl⟩, Subsingleton.elim _ _,
+        Subsingleton.elim _ _⟩
+    exact (isIso_iff_bijective _).mp ((coyoneda.obj (op E)).map_isIso
+      (F.map (U.isOpenEmbedding.isOpenMap.adjunction.counit.app b'.1).op))
+  exact Presieve.isSheafFor_of_bijective_app _ (hα (𝟙 b)) (fun _ f _ ↦ (hα f).1) (hG E S hS)
 
 /-! ### Sheaves are adapted to every basis -/
 

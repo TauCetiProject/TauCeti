@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Perm
 public import Mathlib.SetTheory.Cardinal.Finite
 public import Mathlib.Tactic.Group
 public import TauCeti.GroupTheory.Perm.Centralizer
+import TauCeti.GroupTheory.GroupAction.Closure
 import TauCeti.GroupTheory.Perm.Basic
 
 /-!

@@ -117,7 +117,7 @@ public theorem integrableTopForm_iff (φ : RoughForm I M ℝ k) :
 
 section RoughIntegrability
 
-variable [FiniteDimensional ℝ E] [IsManifold I 1 M] {φ : RoughForm I M ℝ k}
+variable [IsManifold I 1 M] {φ : RoughForm I M ℝ k}
 
 /-- Integrability on an open chart cover introduces the intrinsic predicate for rough
 forms. One model basis suffices, and neither form continuity nor an orientation is required. -/
@@ -130,6 +130,8 @@ public theorem RoughForm.integrableTopForm_of_open_cover {J : Type*}
     (hlocal : ∀ i, IntegrableOn (φ.signedInChartAt b (β i) (fun _ ↦ 1))
       ((extChartAt I (β i)) '' u i) b.addHaar) : IntegrableTopForm φ := by
   classical
+  -- The basis of `Fin k` makes the model space finite-dimensional.
+  have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   obtain ⟨t, ht⟩ := hc.elim_finite_subcover u hu hcover
   have hcover' : (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ) ⊆ ⋃ i : t, u i := by
     intro x hx

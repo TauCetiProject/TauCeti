@@ -84,6 +84,28 @@ open IsLocalRing
 
 variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R] {ϖ : R}
 
+omit [IsDiscreteValuationRing R] in
+/-- If `ϖ` is prime, `ϖ ∣ a₁`, `ϖ ∣ a₂`, `ϖ² ∣ a₃`, `ϖ³ ∣ a₆` and `ϖ³ ∣ b₈`, then `ϖ² ∣ a₄`.
+Indeed `b₈ = a₁² a₆ + 4 a₂ a₆ − a₁ a₃ a₄ + a₂ a₃² − a₄²` and every term but `a₄²` is divisible by
+`ϖ³`, so `ϖ³ ∣ a₄²`; then `ϖ ∣ a₄`, and writing `a₄ = ϖ c` gives `ϖ ∣ c²`, so `ϖ ∣ c`. -/
+private theorem dvd_a₄_of_dvd_b₈ (hp : Prime ϖ) (V : WeierstrassCurve R) (h₁ : ϖ ∣ V.a₁)
+    (h₂ : ϖ ∣ V.a₂) (h₃ : ϖ ^ 2 ∣ V.a₃) (h₆ : ϖ ^ 3 ∣ V.a₆) (hb₈ : ϖ ^ 3 ∣ V.b₈) :
+    ϖ ^ 2 ∣ V.a₄ := by
+  have h₄ : ϖ ^ 2 * ϖ ∣ V.a₄ ^ 2 := by
+    obtain ⟨x₁, hx₁⟩ := h₁
+    obtain ⟨x₂, hx₂⟩ := h₂
+    obtain ⟨x₃, hx₃⟩ := h₃
+    obtain ⟨x₆, hx₆⟩ := h₆
+    obtain ⟨y, hy⟩ := hb₈
+    refine ⟨ϖ ^ 2 * x₁ ^ 2 * x₆ + 4 * ϖ * x₂ * x₆ - x₁ * x₃ * V.a₄ + ϖ ^ 2 * x₂ * x₃ ^ 2 - y, ?_⟩
+    have hb := hy
+    rw [b₈, hx₁, hx₂, hx₃, hx₆] at hb
+    linear_combination -hb
+  obtain ⟨c, hc⟩ := hp.dvd_of_dvd_pow (dvd_trans (dvd_mul_left ϖ _) h₄)
+  rw [hc, mul_pow, mul_dvd_mul_iff_left (pow_ne_zero 2 hp.ne_zero)] at h₄
+  rw [hc, sq ϖ]
+  exact mul_dvd_mul_left ϖ (hp.dvd_of_dvd_pow h₄)
+
 /-- **Tate's algorithm, Step 6.** Over a discrete valuation ring with uniformiser `ϖ` and perfect
 residue field, let `W` be a Weierstrass equation over `R` on which Steps 3–5 do not stop:
 `ϖ ∣ b₂`, `ϖ² ∣ a₆`, `ϖ³ ∣ b₈` and `ϖ³ ∣ b₆`. (After Step 2, `ϖ ∣ b₂` says the reduction is
@@ -136,22 +158,7 @@ theorem exists_variableChange_dvd_a₁_a₂_a₃_a₄_a₆ [PerfectField (Residu
   have h₃ : ϖ ^ 2 ∣ V.a₃ := by rw [hV₃, sq]; exact mul_dvd_mul_left ϖ hτ₁
   have h₆ : ϖ ^ 3 ∣ V.a₆ := by rw [hV₆, pow_succ ϖ 2]; exact mul_dvd_mul_left _ hτ₂
   refine ⟨h₁, h₂, h₃, ?_, h₆⟩
-  -- `b₈ = a₁² a₆ + 4 a₂ a₆ − a₁ a₃ a₄ + a₂ a₃² − a₄²`, and every term but `a₄²` is divisible by
-  -- `ϖ³`, so `ϖ³ ∣ a₄²`. Then `ϖ ∣ a₄`, and writing `a₄ = ϖ c` gives `ϖ ∣ c²`, so `ϖ ∣ c`.
-  have h₄ : ϖ ^ 2 * ϖ ∣ V.a₄ ^ 2 := by
-    obtain ⟨x₁, hx₁⟩ := h₁
-    obtain ⟨x₂, hx₂⟩ := h₂
-    obtain ⟨x₃, hx₃⟩ := h₃
-    obtain ⟨x₆, hx₆⟩ := h₆
-    obtain ⟨y, hy⟩ := hb₈
-    refine ⟨ϖ ^ 2 * x₁ ^ 2 * x₆ + 4 * ϖ * x₂ * x₆ - x₁ * x₃ * V.a₄ + ϖ ^ 2 * x₂ * x₃ ^ 2 - y, ?_⟩
-    have hb := hV₈
-    rw [b₈, hy, hx₁, hx₂, hx₃, hx₆] at hb
-    linear_combination -hb
-  obtain ⟨c, hc⟩ := hp.dvd_of_dvd_pow (dvd_trans (dvd_mul_left ϖ _) h₄)
-  rw [hc, mul_pow, mul_dvd_mul_iff_left (pow_ne_zero 2 hp.ne_zero)] at h₄
-  rw [hc, sq ϖ]
-  exact mul_dvd_mul_left ϖ (hp.dvd_of_dvd_pow h₄)
+  exact dvd_a₄_of_dvd_b₈ hp V h₁ h₂ h₃ h₆ (by rw [hV₈]; exact hb₈)
 
 variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 

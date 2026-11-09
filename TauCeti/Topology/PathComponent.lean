@@ -25,6 +25,8 @@ gives local path connectedness of the subspace.
 * `Joined.eq_of_totallyDisconnectedSpace` and
   `ZerothHomotopy.mk_injective_of_totallyDisconnectedSpace`: in a totally disconnected space,
   the path components are the points.
+* `Homeomorph.joined_iff` and `Homeomorph.zerothHomotopyCongr`: a homeomorphism preserves and
+  reflects being joined by a path, so it induces a bijection of path components.
 * `TauCeti.PathComponentBasepoints`: a choice of a basepoint in each path component, with
   `TauCeti.PathComponentBasepoints.choose` giving one.
 
@@ -88,6 +90,33 @@ theorem _root_.Joined.eq_of_totallyDisconnectedSpace [TotallyDisconnectedSpace X
 theorem _root_.ZerothHomotopy.mk_injective_of_totallyDisconnectedSpace
     [TotallyDisconnectedSpace X] : Function.Injective (ZerothHomotopy.mk (X := X)) :=
   fun _ _ h ↦ Joined.eq_of_totallyDisconnectedSpace (Quotient.exact h)
+
+section Homeomorph
+
+variable {Y : Type*} [TopologicalSpace Y] (e : X ≃ₜ Y)
+
+/-- Two points are joined by a path exactly when their images under a homeomorphism are. -/
+@[simp]
+theorem _root_.Homeomorph.joined_iff {a b : X} : Joined (e a) (e b) ↔ Joined a b :=
+  ⟨fun h ↦ by simpa using h.map e.symm.continuous, fun h ↦ h.map e.continuous⟩
+
+/-- A homeomorphism induces a bijection of the sets of path components. -/
+def _root_.Homeomorph.zerothHomotopyCongr : ZerothHomotopy X ≃ ZerothHomotopy Y :=
+  Quotient.congr e.toEquiv fun _ _ ↦ e.joined_iff.symm
+
+@[simp]
+theorem _root_.Homeomorph.zerothHomotopyCongr_mk (a : X) :
+    e.zerothHomotopyCongr (.mk a) = .mk (e a) := by
+  rw [Homeomorph.zerothHomotopyCongr.eq_1]
+  -- `Quotient.congr` computes on the class `ZerothHomotopy.mk a = Quotient.mk _ a`
+  rfl
+
+@[simp]
+theorem _root_.Homeomorph.zerothHomotopyCongr_symm_mk (b : Y) :
+    e.zerothHomotopyCongr.symm (.mk b) = .mk (e.symm b) := by
+  rw [Equiv.symm_apply_eq, Homeomorph.zerothHomotopyCongr_mk, Homeomorph.apply_symm_apply]
+
+end Homeomorph
 
 /-- A choice of a basepoint in each path component of a space: a section of the projection
 `ZerothHomotopy.mk` to the set of path components. -/
