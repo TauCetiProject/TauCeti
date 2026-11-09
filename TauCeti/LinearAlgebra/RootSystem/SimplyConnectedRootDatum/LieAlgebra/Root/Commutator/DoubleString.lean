@@ -63,8 +63,9 @@ theorem two_mul_structureConstant_ediv_two_of_chainBotCoeff_eq_zero
   all_goals rw [hnext] at h
   all_goals norm_num at h ⊢; omega
 
-/-- The second bracket along `β, α + β, 2α + β` has the integral divided-power coefficient
-`N_{α,β} (N_{α,α+β} / 2)`. -/
+/-- The second bracket along `β, α + β, 2α + β` equals
+`2 · N_{α,β} (N_{α,α+β} / 2) • e_{2α+β}`. Thus `N_{α,β} (N_{α,α+β} / 2)` is its integral
+divided-power (halved) coefficient. -/
 theorem lie_lie_chevalleySystem_of_chainBotCoeff_eq_zero
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
