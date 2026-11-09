@@ -5,13 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.TensorAlgebra.Basic
+public import TauCeti.LinearAlgebra.FreeAlgebra
 public import TauCeti.LowDimTopology.Bordered.TypeD
 import Mathlib.Algebra.BigOperators.Intervals
-import Mathlib.Data.List.GetD
 import Mathlib.Data.Matrix.Basic
-import Mathlib.LinearAlgebra.FreeAlgebra
-import Mathlib.RingTheory.TensorProduct.Basic
 
 /-!
 # The box tensor product of a type `A` module with a bounded type `D` structure
@@ -20,9 +17,12 @@ In bordered Heegaard Floer homology a three-manifold with one boundary component
 invariants over the algebra `A` of its boundary: a type `A` module, an `A∞` module over `A`, and a
 type `D` structure. The Floer complex of a closed manifold glued from two such pieces is the box
 tensor product `M ⊠ N` of a type `A` module `M` of one piece with a type `D` structure `N` of the
-other (Lipshitz, Ozsváth and Thurston, Theorem 1.3). This file constructs that box tensor product
-and proves that its differential squares to zero, over an ungraded differential algebra `(A, d)`
-over a ring of characteristic two, where no signs appear.
+other (Lipshitz, Ozsváth and Thurston, Theorem 1.3), formed over the ring of idempotents of `A`.
+This file constructs the box tensor differential over the ground ring `R` and proves that it
+squares to zero, over an ungraded differential algebra `(A, d)` over a ring of characteristic two,
+where no signs appear. It works with row vectors `X → M`, that is with `M ⊗_R N`; the bordered
+pairing is the subcomplex `M ⊗_I N` balanced over the idempotents, and the compatibility of the
+type `A` module with the idempotents needed to restrict the differential to it is not imposed here.
 
 ## Type `A` modules
 
@@ -62,11 +62,12 @@ every type `D` structure, bounded or not (`TauCeti.TypeAModule.boxDifferential_o
 
 Write a word `a₁ ⋯ aₙ` in the free algebra `FreeAlgebra R A`, a bookkeeping device in which
 the letters are not yet multilinear, and let `Δ` split a word into a prefix and a suffix in all
-ways. The `A∞` relations say that `∑ act (v) ∘ act (u)`, summed over the splittings `u ⊗ v` of a
-word, is the action of the bar differential of the word: its letters differentiated one at a time
-plus adjacent letters multiplied. For the matrix `δ'` with letter entries `ι (δ x y)`, splitting
-`δ'^n` gives `∑_{j + k = n} δ'^j ⊗ δ'^k`, so `∂ ∘ ∂` is the action of the bar differential of
-`∑_{n ≤ 2K} δ'^n`. In the tensor algebra the bar differential of `δ'^{n+1}` is
+ways (`TauCeti.FreeAlgebra.deconcat`). The `A∞` relations say that `∑ act (v) ∘ act (u)`, summed
+over the splittings `u ⊗ v` of a word, is the action of the bar differential of the word: its
+letters differentiated one at a time (`TauCeti.FreeAlgebra.diffLetters`) plus adjacent letters
+multiplied (`TauCeti.FreeAlgebra.mergeAdjacent`). For the matrix `δ'` with letter entries
+`ι (δ x y)`, splitting `δ'^n` gives `∑_{j + k = n} δ'^j ⊗ δ'^k`, so `∂ ∘ ∂` is the action of the
+bar differential of `∑_{n ≤ 2K} δ'^n`. In the tensor algebra the bar differential of `δ'^{n+1}` is
 `Q_{n+1} + Q_n`, where `Q_n = ∑_{i < n} δ^i (d δ) δ^{n-1-i}`: the type `D` structure equation
 `d δ = δ * δ` identifies the products of adjacent letters with differentiated letters. These terms
 cancel in pairs in characteristic two, leaving `Q_{2K}`, which vanishes because `δ^K = 0`.
@@ -75,8 +76,6 @@ cancel in pairs in characteristic two, leaving `Q_{2K}`, which vanishes because 
 
 * `TauCeti.TypeAModule`: a type `A` module over an ungraded differential algebra.
 * `TauCeti.TypeAModule.ofDGModule`: the type `A` module of a differential right module.
-* `TauCeti.TypeDStructure.tensorCoeff`: the coefficient matrix with entries in the tensor
-  algebra, whose powers are the iterates `δ^k`.
 * `TauCeti.TypeAModule.boxDifferential`: the differential of the box tensor product `M ⊠ N`.
 
 ## Main results
@@ -101,47 +100,6 @@ noncomputable section
 open Finset TensorProduct MulOpposite
 
 namespace TauCeti
-
-/-! ### Words in the free algebra -/
-
-section Words
-
-variable {R A : Type*} [CommRing R]
-
-/-- The word `ι a₁ * ⋯ * ι aₙ` of the free algebra. -/
-private def wordF (w : List A) : FreeAlgebra R A :=
-  (w.map (FreeAlgebra.ι R)).prod
-
-private theorem wordF_nil : (wordF [] : FreeAlgebra R A) = 1 := (rfl)
-
-private theorem wordF_concat (w : List A) (a : A) :
-    (wordF (w ++ [a]) : FreeAlgebra R A) = wordF w * FreeAlgebra.ι R a := by
-  simp [wordF]
-
-private theorem basisFreeMonoid_apply (w : FreeMonoid A) :
-    FreeAlgebra.basisFreeMonoid R A w = wordF w.toList := by
-  simp [FreeAlgebra.basisFreeMonoid, FreeAlgebra.equivMonoidAlgebraFreeMonoid,
-    FreeMonoid.lift_apply, wordF]
-
-/-- Linear maps out of the free algebra agree when they agree on words. -/
-private theorem linearMap_ext_wordF {P : Type*} [AddCommGroup P] [Module R P]
-    {f g : FreeAlgebra R A →ₗ[R] P} (h : ∀ w, f (wordF w) = g (wordF w)) : f = g :=
-  (FreeAlgebra.basisFreeMonoid R A).ext fun w => by
-    rw [basisFreeMonoid_apply]
-    exact h _
-
-/-- The linear map out of the free algebra with prescribed values on words. -/
-private def ofWords {P : Type*} [AddCommGroup P] [Module R P] (f : List A → P) :
-    FreeAlgebra R A →ₗ[R] P :=
-  (FreeAlgebra.basisFreeMonoid R A).constr R fun w => f w.toList
-
-private theorem ofWords_wordF {P : Type*} [AddCommGroup P] [Module R P] (f : List A → P)
-    (w : List A) : ofWords (R := R) f (wordF w) = f w := by
-  have h := (FreeAlgebra.basisFreeMonoid R A).constr_basis R (fun w => f w.toList)
-    (FreeMonoid.ofList w)
-  rwa [basisFreeMonoid_apply, FreeMonoid.toList_ofList] at h
-
-end Words
 
 variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
 
@@ -171,158 +129,6 @@ structure TypeAModule (d : A →ₗ[R] A) (M : Type*) [AddCommGroup M] [Module R
           TensorAlgebra.ι R (w.getD i 0 * w.getD (i + 1) 0) *
           ((w.drop (i + 2)).map (TensorAlgebra.ι R)).prod) x = 0
 
-namespace TypeDStructure
-
-variable {d : A →ₗ[R] A} {S : Type*} {ι : S → A} {X : Type*} [Fintype X]
-
-/-- The coefficient matrix of a type `D` structure with entries `ι (δ x y)` in the tensor algebra
-of `A` over `R`. The entry at `(x, y)` of its `k`-th power is the coefficient of `y` in the iterate
-`δ^k x ∈ A^{⊗k} ⊗ N`, viewed in the tensor algebra, so `N` is bounded, `δ^k = 0` for large `k`,
-exactly when some power of this matrix vanishes. -/
-def tensorCoeff (N : TypeDStructure d ι X) : Matrix X X (TensorAlgebra R A) :=
-  N.coeff.map (TensorAlgebra.ι R)
-
-@[simp]
-theorem tensorCoeff_apply (N : TypeDStructure d ι X) (x y : X) :
-    N.tensorCoeff x y = TensorAlgebra.ι R (N.coeff x y) :=
-  (rfl)
-
-end TypeDStructure
-
-/-! ### The bar operations on words -/
-
-section Bar
-
-variable (R) in
-/-- The splitting of a word into a prefix and a suffix in all ways. -/
-private def deconcat : FreeAlgebra R A →ₗ[R] FreeAlgebra R A ⊗[R] FreeAlgebra R A :=
-  ofWords fun w => ∑ i ∈ range (w.length + 1), wordF (w.take i) ⊗ₜ[R] wordF (w.drop i)
-
-/-- The letters of a word differentiated one at a time. -/
-private def diffF (d : A →ₗ[R] A) : FreeAlgebra R A →ₗ[R] FreeAlgebra R A :=
-  ofWords fun w => ∑ i ∈ range w.length,
-    wordF (w.take i) * FreeAlgebra.ι R (d (w.getD i 0)) * wordF (w.drop (i + 1))
-
-variable (R) in
-/-- Adjacent letters of a word multiplied, one pair at a time. -/
-private def mergeF : FreeAlgebra R A →ₗ[R] FreeAlgebra R A :=
-  ofWords fun w => ∑ i ∈ range (w.length - 1),
-    wordF (w.take i) * FreeAlgebra.ι R (w.getD i 0 * w.getD (i + 1) 0) * wordF (w.drop (i + 2))
-
-private theorem toTensor_wordF (w : List A) :
-    FreeAlgebra.toTensor (wordF w) = (w.map (TensorAlgebra.ι R)).prod := by
-  simp [wordF, map_list_prod, List.map_map, Function.comp_def, FreeAlgebra.toTensor_ι]
-
-omit [Ring A] [Algebra R A] in
-private theorem deconcat_wordF_concat (w : List A) (a : A) :
-    deconcat R (wordF (w ++ [a])) =
-      deconcat R (wordF w) * (1 ⊗ₜ FreeAlgebra.ι R a) + wordF (w ++ [a]) ⊗ₜ[R] 1 := by
-  simp only [deconcat, ofWords_wordF]
-  rw [List.length_append, List.length_singleton, sum_range_succ, sum_mul]
-  congr 1
-  · refine sum_congr rfl fun i hi => ?_
-    have hi : i ≤ w.length := Nat.lt_succ_iff.1 (mem_range.1 hi)
-    rw [List.take_append_of_le_length hi, List.drop_append_of_le_length hi, wordF_concat,
-      Algebra.TensorProduct.tmul_mul_tmul, mul_one]
-  · rw [List.take_of_length_le (by simp), List.drop_of_length_le (by simp), wordF_nil]
-
-omit [Ring A] [Algebra R A] in
-/-- Splitting a word ending in `a`: the splittings of `w a` are those of `w` with `a` appended to
-the suffix, and the splitting with empty suffix. -/
-private theorem deconcat_mul_ι (s : FreeAlgebra R A) (a : A) :
-    deconcat R (s * FreeAlgebra.ι R a) =
-      deconcat R s * (1 ⊗ₜ FreeAlgebra.ι R a) + (s * FreeAlgebra.ι R a) ⊗ₜ 1 := by
-  have h : (deconcat R).comp (LinearMap.mulRight R (FreeAlgebra.ι R a)) =
-      (LinearMap.mulRight R (1 ⊗ₜ[R] FreeAlgebra.ι R a)).comp (deconcat R) +
-        ((TensorProduct.mk R _ _).flip 1).comp (LinearMap.mulRight R (FreeAlgebra.ι R a)) := by
-    refine linearMap_ext_wordF fun w => ?_
-    simpa [← wordF_concat] using deconcat_wordF_concat (R := R) w a
-  exact LinearMap.congr_fun h s
-
-private theorem diffF_wordF_concat (d : A →ₗ[R] A) (w : List A) (a : A) :
-    diffF d (wordF (w ++ [a])) =
-      diffF d (wordF w) * FreeAlgebra.ι R a + wordF w * FreeAlgebra.ι R (d a) := by
-  simp only [diffF, ofWords_wordF]
-  rw [List.length_append, List.length_singleton, sum_range_succ, sum_mul]
-  congr 1
-  · refine sum_congr rfl fun i hi => ?_
-    have hi : i < w.length := mem_range.1 hi
-    rw [List.take_append_of_le_length hi.le, List.getD_append _ _ _ _ hi,
-      List.drop_append_of_le_length hi, wordF_concat, mul_assoc _ (wordF _)]
-  · rw [List.take_append_of_le_length le_rfl, List.take_length,
-      List.getD_append_right _ _ _ _ le_rfl, Nat.sub_self, List.getD_cons_zero,
-      List.drop_of_length_le (by simp), wordF_nil, mul_one]
-
-omit [Algebra R A] in
-private theorem mergeF_wordF_concat_concat (w : List A) (a b : A) :
-    mergeF R (wordF (w ++ [a] ++ [b])) =
-      mergeF R (wordF (w ++ [a])) * FreeAlgebra.ι R b + wordF w * FreeAlgebra.ι R (a * b) := by
-  simp only [mergeF, ofWords_wordF]
-  simp only [List.length_append, List.length_singleton, Nat.add_sub_cancel]
-  rw [sum_range_succ, sum_mul]
-  congr 1
-  · refine sum_congr rfl fun i hi => ?_
-    have hi : i < w.length := mem_range.1 hi
-    have hi' : i + 1 < (w ++ [a]).length := by simp; omega
-    rw [List.take_append_of_le_length (by simp; omega), List.getD_append _ _ _ _ (by simp; omega),
-      List.getD_append _ _ _ _ hi', List.drop_append_of_le_length (by simp; omega),
-      wordF_concat, mul_assoc _ (wordF _)]
-  · simp only [List.append_assoc, List.singleton_append]
-    rw [List.take_append_of_le_length le_rfl, List.take_length,
-      List.getD_append_right _ _ _ _ le_rfl, List.getD_append_right _ _ _ _ (Nat.le_succ _),
-      Nat.sub_self, Nat.succ_sub (le_refl _), Nat.sub_self, List.getD_cons_zero,
-      List.getD_cons_succ, List.getD_cons_zero, List.drop_of_length_le (by simp), wordF_nil,
-      mul_one]
-
-/-- Differentiating the letters of a word ending in `a`. -/
-private theorem diffF_mul_ι (d : A →ₗ[R] A) (s : FreeAlgebra R A) (a : A) :
-    diffF d (s * FreeAlgebra.ι R a) =
-      diffF d s * FreeAlgebra.ι R a + s * FreeAlgebra.ι R (d a) := by
-  have h : (diffF d).comp (LinearMap.mulRight R (FreeAlgebra.ι R a)) =
-      (LinearMap.mulRight R (FreeAlgebra.ι R a)).comp (diffF d) +
-        LinearMap.mulRight R (FreeAlgebra.ι R (d a)) := by
-    refine linearMap_ext_wordF fun w => ?_
-    simpa [← wordF_concat] using diffF_wordF_concat (R := R) d w a
-  exact LinearMap.congr_fun h s
-
-omit [Algebra R A] in
-/-- Multiplying adjacent letters of a word ending in `a b`. -/
-private theorem mergeF_mul_ι_mul_ι (s : FreeAlgebra R A) (a b : A) :
-    mergeF R (s * FreeAlgebra.ι R a * FreeAlgebra.ι R b) =
-      mergeF R (s * FreeAlgebra.ι R a) * FreeAlgebra.ι R b + s * FreeAlgebra.ι R (a * b) := by
-  have h : (mergeF R).comp
-        ((LinearMap.mulRight R (FreeAlgebra.ι R b)).comp
-          (LinearMap.mulRight R (FreeAlgebra.ι R a))) =
-      ((LinearMap.mulRight R (FreeAlgebra.ι R b)).comp
-          ((mergeF R).comp (LinearMap.mulRight R (FreeAlgebra.ι R a)))) +
-        LinearMap.mulRight R (FreeAlgebra.ι R (a * b)) := by
-    refine linearMap_ext_wordF fun w => ?_
-    simpa [← wordF_concat] using mergeF_wordF_concat_concat (R := R) w a b
-  exact LinearMap.congr_fun h s
-
-omit [Ring A] [Algebra R A] in
-private theorem deconcat_one :
-    deconcat R (1 : FreeAlgebra R A) = (1 : FreeAlgebra R A ⊗[R] FreeAlgebra R A) := by
-  rw [← wordF_nil, deconcat, ofWords_wordF]
-  simp [wordF_nil, Algebra.TensorProduct.one_def]
-
-private theorem diffF_one (d : A →ₗ[R] A) : diffF d (1 : FreeAlgebra R A) = 0 := by
-  rw [← wordF_nil, diffF, ofWords_wordF]
-  simp
-
-omit [Algebra R A] in
-private theorem mergeF_one : mergeF R (1 : FreeAlgebra R A) = 0 := by
-  rw [← wordF_nil, mergeF, ofWords_wordF]
-  simp
-
-omit [Algebra R A] in
-private theorem mergeF_ι (a : A) : mergeF R (FreeAlgebra.ι R a) = 0 := by
-  have h : (FreeAlgebra.ι R a : FreeAlgebra R A) = wordF [a] := by simp [wordF]
-  rw [h, mergeF, ofWords_wordF]
-  simp
-
-end Bar
-
 /-! ### Iterates of a type `D` structure in the free algebra -/
 
 section Iterates
@@ -343,7 +149,7 @@ private theorem toTensor_letterCoeff_pow (N : TypeDStructure d ι X) (n : ℕ) (
   have h : (FreeAlgebra.toTensor (R := R) (M := A)).mapMatrix (letterCoeff N) =
       N.tensorCoeff := by
     ext x y
-    simp [letterCoeff, TypeDStructure.tensorCoeff, FreeAlgebra.toTensor_ι]
+    simp [letterCoeff, FreeAlgebra.toTensor_ι]
   have := congrArg (fun P => P x y)
     (map_pow ((FreeAlgebra.toTensor (R := R) (M := A)).mapMatrix) (letterCoeff N) n)
   simpa [h] using this
@@ -351,7 +157,7 @@ private theorem toTensor_letterCoeff_pow (N : TypeDStructure d ι X) (n : ℕ) (
 /-- **Splitting the iterates.** The splittings of the paths of length `n` from `x` to `z` are the
 pairs of a path of length `j` from `x` to some `y` and a path of length `n - j` from `y` to `z`. -/
 private theorem deconcat_letterCoeff_pow (N : TypeDStructure d ι X) (n : ℕ) (x z : X) :
-    deconcat R ((letterCoeff N ^ n) x z) =
+    FreeAlgebra.deconcat R ((letterCoeff N ^ n) x z) =
       ∑ j ∈ range (n + 1), ∑ y, (letterCoeff N ^ j) x y ⊗ₜ[R] (letterCoeff N ^ (n - j)) y z := by
   induction n generalizing z with
   | zero =>
@@ -359,7 +165,7 @@ private theorem deconcat_letterCoeff_pow (N : TypeDStructure d ι X) (n : ℕ) (
     by_cases h : x = z
     · subst h
       rw [sum_eq_single x (fun y _ hy => by simp [Ne.symm hy]) (by simp)]
-      simp [deconcat_one, Algebra.TensorProduct.one_def]
+      simp [FreeAlgebra.deconcat_one, Algebra.TensorProduct.one_def]
     · simp only [h, ite_false, map_zero]
       refine (sum_eq_zero fun y _ => ?_).symm
       by_cases hy : x = y
@@ -367,12 +173,12 @@ private theorem deconcat_letterCoeff_pow (N : TypeDStructure d ι X) (n : ℕ) (
         simp [h]
       · simp [hy]
   | succ n ih =>
-    have key : ∀ y, deconcat R ((letterCoeff N ^ n) x y * letterCoeff N y z) =
+    have key : ∀ y, FreeAlgebra.deconcat R ((letterCoeff N ^ n) x y * letterCoeff N y z) =
         (∑ j ∈ range (n + 1), ∑ w,
           (letterCoeff N ^ j) x w ⊗ₜ[R] ((letterCoeff N ^ (n - j)) w y * letterCoeff N y z)) +
           ((letterCoeff N ^ n) x y * letterCoeff N y z) ⊗ₜ[R] 1 := by
       intro y
-      rw [letterCoeff_apply, deconcat_mul_ι, ← letterCoeff_apply, ih, sum_mul]
+      rw [letterCoeff_apply, FreeAlgebra.deconcat_mul_ι, ← letterCoeff_apply, ih, sum_mul]
       simp only [sum_mul, Algebra.TensorProduct.tmul_mul_tmul, mul_one]
     rw [pow_succ, Matrix.mul_apply, map_sum]
     simp only [key, sum_add_distrib]
@@ -390,23 +196,23 @@ private theorem deconcat_letterCoeff_pow (N : TypeDStructure d ι X) (n : ℕ) (
 
 /-- The differentiated letters of the iterates, in the tensor algebra. -/
 private def diffMat (N : TypeDStructure d ι X) (n : ℕ) : Matrix X X (TensorAlgebra R A) :=
-  fun x z => FreeAlgebra.toTensor (diffF d ((letterCoeff N ^ n) x z))
+  fun x z => FreeAlgebra.toTensor (FreeAlgebra.diffLetters d ((letterCoeff N ^ n) x z))
 
 /-- The multiplied adjacent letters of the iterates, in the tensor algebra. -/
 private def mergeMat (N : TypeDStructure d ι X) (n : ℕ) : Matrix X X (TensorAlgebra R A) :=
-  fun x z => FreeAlgebra.toTensor (mergeF R ((letterCoeff N ^ n) x z))
+  fun x z => FreeAlgebra.toTensor (FreeAlgebra.mergeAdjacent R ((letterCoeff N ^ n) x z))
 
 private theorem diffMat_zero (N : TypeDStructure d ι X) : diffMat N 0 = 0 := by
   ext x z
-  by_cases h : x = z <;> simp [diffMat, h, diffF_one]
+  by_cases h : x = z <;> simp [diffMat, h, FreeAlgebra.diffLetters_one]
 
 private theorem mergeMat_zero (N : TypeDStructure d ι X) : mergeMat N 0 = 0 := by
   ext x z
-  by_cases h : x = z <;> simp [mergeMat, h, mergeF_one]
+  by_cases h : x = z <;> simp [mergeMat, h, FreeAlgebra.mergeAdjacent_one]
 
 private theorem mergeMat_one (N : TypeDStructure d ι X) : mergeMat N 1 = 0 := by
   ext x z
-  simp [mergeMat, letterCoeff, mergeF_ι]
+  simp [mergeMat, letterCoeff, FreeAlgebra.mergeAdjacent_ι]
 
 /-- `Q_{n+1} = Q_n δ + δ^n (d δ)`, by the Leibniz rule for the differentiated letters. -/
 private theorem diffMat_succ (N : TypeDStructure d ι X) (n : ℕ) :
@@ -414,7 +220,7 @@ private theorem diffMat_succ (N : TypeDStructure d ι X) (n : ℕ) :
       N.tensorCoeff ^ n * (N.coeff.map d).map (TensorAlgebra.ι R) := by
   ext x z
   simp only [diffMat, pow_succ, Matrix.mul_apply, map_sum, letterCoeff_apply, Matrix.map_apply,
-    diffF_mul_ι, map_add, map_mul, sum_add_distrib, FreeAlgebra.toTensor_ι,
+    FreeAlgebra.diffLetters_mul_ι, map_add, map_mul, sum_add_distrib, FreeAlgebra.toTensor_ι,
     toTensor_letterCoeff_pow, Matrix.add_apply, TypeDStructure.tensorCoeff_apply]
 
 /-- `P_{n+2} = P_{n+1} δ + δ^n (δ * δ)`: the new adjacent pair is the last two letters. -/
@@ -428,8 +234,8 @@ private theorem mergeMat_add_two (N : TypeDStructure d ι X) (n : ℕ) :
     rw [pow_succ, Matrix.mul_apply]
     refine sum_congr rfl fun y _ => ?_
     simp only [pow_succ, Matrix.mul_apply, sum_mul, letterCoeff_apply]
-  simp only [mergeMat, hpow, map_sum, mergeF_mul_ι_mul_ι, map_add, map_mul, sum_add_distrib,
-    FreeAlgebra.toTensor_ι, Matrix.add_apply, Matrix.mul_apply, Matrix.map_apply,
+  simp only [mergeMat, hpow, map_sum, FreeAlgebra.mergeAdjacent_mul_ι_mul_ι, map_add, map_mul,
+    sum_add_distrib, FreeAlgebra.toTensor_ι, Matrix.add_apply, Matrix.mul_apply, Matrix.map_apply,
     TypeDStructure.tensorCoeff_apply]
   congr 1
   · refine sum_congr rfl fun y _ => ?_
@@ -480,13 +286,15 @@ private theorem splitAct_tmul (u v : FreeAlgebra R A) :
 /-- **The `A∞` relations on the free algebra.** For every `s`, the action of the splittings of `s`
 plus the action of its bar differential vanishes; on words this is `TypeAModule.relation`. -/
 private theorem splitAct_deconcat_add (s : FreeAlgebra R A) :
-    MM.splitAct (deconcat R s) + MM.act (FreeAlgebra.toTensor (diffF d s + mergeF R s)) = 0 := by
-  have h : MM.splitAct.comp (deconcat R) +
-      MM.act.comp (FreeAlgebra.toTensor.toLinearMap.comp (diffF d + mergeF R)) = 0 := by
-    refine linearMap_ext_wordF fun w => ?_
+    MM.splitAct (FreeAlgebra.deconcat R s) + MM.act (FreeAlgebra.toTensor
+      (FreeAlgebra.diffLetters d s + FreeAlgebra.mergeAdjacent R s)) = 0 := by
+  have h : MM.splitAct.comp (FreeAlgebra.deconcat R) + MM.act.comp
+      (FreeAlgebra.toTensor.toLinearMap.comp
+        (FreeAlgebra.diffLetters d + FreeAlgebra.mergeAdjacent R)) = 0 := by
+    refine FreeAlgebra.linearMap_ext_word fun w => ?_
     ext x
-    simpa [deconcat, diffF, mergeF, ofWords_wordF, splitAct_tmul, toTensor_wordF,
-      FreeAlgebra.toTensor_ι, LinearMap.sum_apply, add_assoc] using MM.relation w x
+    simpa [FreeAlgebra.deconcat_word, FreeAlgebra.diffLetters_word, FreeAlgebra.mergeAdjacent_word,
+      splitAct_tmul, FreeAlgebra.toTensor_ι, LinearMap.sum_apply, add_assoc] using MM.relation w x
   exact LinearMap.congr_fun h s
 
 /-! ### The box tensor product -/
@@ -548,9 +356,10 @@ theorem boxDifferential_boxDifferential [CharP R 2] {N : TypeDStructure d ι X} 
   -- The splittings of the paths of length at most `2 K` give the double sum.
   set s : X → FreeAlgebra R A := fun x => ∑ n ∈ range (2 * K + 1), (letterCoeff N ^ n) x z
     with hs
-  have hsplit : ∀ x, MM.splitAct (deconcat R (s x)) = ∑ j ∈ range K, ∑ k ∈ range K, f j k x := by
+  have hsplit : ∀ x, MM.splitAct (FreeAlgebra.deconcat R (s x)) =
+      ∑ j ∈ range K, ∑ k ∈ range K, f j k x := by
     intro x
-    have h1 : MM.splitAct (deconcat R (s x)) =
+    have h1 : MM.splitAct (FreeAlgebra.deconcat R (s x)) =
         ∑ n ∈ range (2 * K + 1), ∑ j ∈ range (n + 1), f j (n - j) x := by
       simp only [hs, map_sum, deconcat_letterCoeff_pow, splitAct_tmul, toTensor_letterCoeff_pow,
         hf]
@@ -563,7 +372,8 @@ theorem boxDifferential_boxDifferential [CharP R 2] {N : TypeDStructure d ι X} 
     exact (sum_subset (range_subset_range.2 (by omega)) fun k _ hk =>
       hvan j k x (Or.inr (not_lt.1 (mem_range.not.1 hk)))).symm
   -- The bar differential of `s x` acts by zero.
-  have hbar : ∀ x, FreeAlgebra.toTensor (diffF d (s x) + mergeF R (s x)) = 0 := by
+  have hbar : ∀ x, FreeAlgebra.toTensor
+      (FreeAlgebra.diffLetters d (s x) + FreeAlgebra.mergeAdjacent R (s x)) = 0 := by
     intro x
     have h : ∀ n, ∑ m ∈ range (n + 1), (diffMat N m + mergeMat N m) = diffMat N n := by
       intro n

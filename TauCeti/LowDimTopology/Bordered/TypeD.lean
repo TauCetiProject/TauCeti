@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Idempotent
+public import Mathlib.LinearAlgebra.TensorAlgebra.Basic
 public import TauCeti.Algebra.CharP.Two
 public import TauCeti.Algebra.Homology.DG.Ungraded
 import Mathlib.Tactic.Abel
@@ -62,6 +63,8 @@ one and so does not apply to an ungraded differential algebra.
 * `TauCeti.TypeDStructure.morphisms`, `TauCeti.TypeDStructure.morphismDifferential`,
   `TauCeti.TypeDStructure.idMorphism`: morphisms of type `D` structures, their differential and the
   identity morphism.
+* `TauCeti.TypeDStructure.tensorCoeff`: the coefficient matrix with entries in the tensor
+  algebra, whose powers are the iterates `δ^k`.
 * `TauCeti.TypeDStructure.boxTensor`, `TauCeti.TypeDStructure.boxDifferential`: the box tensor
   product with a right module and its differential, and
   `TauCeti.TypeDStructure.boxTensorDifferential`: the differential restricted to `M ⊗ N`.
@@ -113,6 +116,18 @@ structure TypeDStructure where
 namespace TypeDStructure
 
 variable {d ι X} {X' X'' : Type*} [Fintype X'] [Fintype X'']
+
+/-- The coefficient matrix of a type `D` structure with entries `ι (δ x y)` in the tensor algebra
+of `A` over `R`. The entry at `(x, y)` of its `k`-th power is the coefficient of `y` in the iterate
+`δ^k x ∈ A^{⊗k} ⊗ N`, viewed in the tensor algebra, so `N` is bounded, `δ^k = 0` for large `k`,
+exactly when some power of this matrix vanishes. -/
+def tensorCoeff (N : TypeDStructure d ι X) : Matrix X X (TensorAlgebra R A) :=
+  N.coeff.map (TensorAlgebra.ι R)
+
+@[simp]
+theorem tensorCoeff_apply (N : TypeDStructure d ι X) (x y : X) :
+    N.tensorCoeff x y = TensorAlgebra.ι R (N.coeff x y) :=
+  (rfl)
 
 /-! ### Morphisms -/
 
