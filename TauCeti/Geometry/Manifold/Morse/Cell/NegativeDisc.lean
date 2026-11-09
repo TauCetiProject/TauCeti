@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 public import TauCeti.Analysis.Calculus.Morse.NegativeDisc
-public import TauCeti.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Analysis.InnerProductSpace.Polar.Bounded
+public import TauCeti.Analysis.InnerProductSpace.Polar.PiL2
 
 /-!
 # Comparing the small negative discs of two Morse charts
@@ -36,7 +35,9 @@ extended by zero along the first `k` coordinates
 (`OpenPartialHomeomorph.exists_negativeDisc_homotopy_euclidean`). There the polar factor is that of
 the negative block `ι† A ι` of the derivative, where `ι : ℝᵏ → ℝⁿ` is the zero extension. The
 proof splits the coordinates as `ℝⁿ ≃ ℝᵏ × ℝⁿ⁻ᵏ` (`EuclideanSpace.sumComplEquivProd`) and uses the
-naturality of polar factors under conjugation (`ContinuousLinearMap.polarFactor_conj`).
+naturality of polar factors under conjugation, which identifies the polar factor of `ι† A ι`
+with that of the negative block in the split coordinates
+(`EuclideanSpace.polarFactor_adjoint_comp_comp_piLpExtendByZero`).
 
 ## References
 
@@ -105,28 +106,6 @@ section Euclidean
 
 variable {n k : ℕ}
 
-/-- The negative block `ι† A ι` of an operator `A` of `ℝⁿ`, for the zero extension `ι : ℝᵏ → ℝⁿ`,
-is the negative block of `A` read in the splitting of `ℝⁿ` along `j < k`, conjugated back to
-`ℝᵏ`; so is its polar factor. -/
-private theorem polarFactor_adjoint_comp_comp_piLpExtendByZero (hk : k ≤ n)
-    (A : EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)) :
-    (ContinuousLinearMap.adjoint
-        (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk)).toContinuousLinearMap ∘L A ∘L
-          (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk)).toContinuousLinearMap).polarFactor =
-      ((EuclideanSpace.finCastLEEquiv ℝ hk).symm :
-          EuclideanSpace ℝ {j : Fin n // j.val < k} →L[ℝ] EuclideanSpace ℝ (Fin k)) ∘L
-        (ContinuousLinearMap.fst ℝ _ _ ∘L
-          ((EuclideanSpace.sumComplEquivProd ℝ (fun j : Fin n ↦ j.val < k)).toContinuousLinearMap ∘L
-            A ∘L (EuclideanSpace.sumComplEquivProd ℝ
-              (fun j : Fin n ↦ j.val < k)).symm.toContinuousLinearMap) ∘L
-          ContinuousLinearMap.inl ℝ _ _).polarFactor ∘L
-        ((EuclideanSpace.finCastLEEquiv ℝ hk).symm.symm :
-          EuclideanSpace ℝ (Fin k) →L[ℝ] EuclideanSpace ℝ {j : Fin n // j.val < k}) := by
-  rw [← ContinuousLinearMap.polarFactor_conj]
-  congr 1
-  ext1 w
-  simp [← EuclideanSpace.finCastLEEquiv_symm_fst_sumComplEquivProd]
-
 /-- **The small negative discs of two Euclidean Morse charts are homotopic below the critical
 level.** Let `ψ₀` and `ψ₁` be charts with values in `ℝⁿ` and a common centre, in which
 `f = c - Σ_{j < k} yⱼ² + Σ_{j ≥ k} yⱼ²`, and whose transition `ψ₀ ∘ ψ₁⁻¹` is differentiable at the
@@ -179,7 +158,7 @@ theorem exists_negativeDisc_homotopy_euclidean
     (by simpa using h₁) (by simpa using hp) (hTS ▸ S.differentiableAt.comp 0 hT0)
   rw [hTS, S.comp_fderiv, S.symm.comp_right_fderiv, map_zero] at hh
   refine ⟨e.trans (h.trans e.symm), ?_, δ₀, hδ₀, fun δ hδ ↦ ?_⟩
-  · rw [polarFactor_adjoint_comp_comp_piLpExtendByZero]
+  · rw [EuclideanSpace.polarFactor_adjoint_comp_comp_piLpExtendByZero]
     funext w
     exact congrArg e.symm (congrFun hh (e w))
   -- Read the split homotopy through `e`, which preserves norms.
