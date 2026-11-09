@@ -18,10 +18,10 @@ public import TauCeti.LinearAlgebra.TotallyReal.Frame
 Let `γ : V → W` parametrize a submanifold of a normed space `W` and let `J` be a field of
 endomorphisms of `W` with `J² = -1` along `γ`. The adapted normal extension
 `Φ (x, y) = γ x + J (γ x) (Dγ x y)` of `TauCeti.adaptedNormalExtension` has derivative
-`(v, w) ↦ Dγ x v + J (γ x) (Dγ x w)` along the zero section. Over `ℝ` or `ℂ`, this file shows
-that this derivative is invertible exactly when `Dγ x` is injective with maximal totally real
-image, and inverts `Φ` near such a point. The inverse `ψ = Φ⁻¹` is the chart of McDuff–Salamon
-Exercise B.4.10 in the model case `M = W`, `L = γ (V)`.
+`(v, w) ↦ Dγ x v + J (γ x) (Dγ x w)` along the zero section. Between complete spaces, this file
+shows that this derivative is invertible exactly when `Dγ x` is injective with maximal totally
+real image; over `ℝ` or `ℂ` it then inverts `Φ` near such a point. The inverse `ψ = Φ⁻¹` is
+the chart of McDuff–Salamon Exercise B.4.10 in the model case `M = W`, `L = γ (V)`.
 
 The chart is packaged as an `OpenPartialHomeomorph (V × V) W` whose underlying map is `Φ`; the
 coordinates on `V × V` are the model coordinates, with the zero section `V × {0}` playing the
@@ -68,7 +68,9 @@ open scoped Topology ContDiff
 
 namespace TauCeti
 
-variable {𝕜 V W : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+section Invertible
+
+variable {𝕜 V W : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
   [NormedAddCommGroup W] [NormedSpace 𝕜 W] {γ : V → W} {J : W → W →L[𝕜] W}
 
 /-- **The derivative of the adapted extension on the zero section is invertible exactly at
@@ -93,6 +95,13 @@ theorem isInvertible_fderiv_adaptedNormalExtension_zero_iff [CompleteSpace V] [C
   refine ⟨ContinuousLinearMap.IsInvertible.bijective, fun h ↦ ?_⟩
   exact ⟨ContinuousLinearEquiv.ofBijective D (LinearMap.ker_eq_bot.mpr h.1)
     (LinearMap.range_eq_top.mpr h.2), ContinuousLinearEquiv.coe_ofBijective _ _ _⟩
+
+end Invertible
+
+section Chart
+
+variable {𝕜 V W : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [NormedAddCommGroup W] [NormedSpace 𝕜 W] {γ : V → W} {J : W → W →L[𝕜] W}
 
 /-- **Adapted charts exist.** Let `γ` be `C^(ℓ+1)` on an open `U` and `J` be `C^ℓ` on an open `Ω`
 containing `γ (U)`, with `1 ≤ ℓ`. If at `x₀ ∈ U` the tangent map `Dγ x₀` is injective with
@@ -124,6 +133,8 @@ theorem exists_adaptedChart [CompleteSpace V] [CompleteSpace W] {U : Set V} {Ω 
     exact (hsub (e.map_target hy)).2
   · rw [he]
     exact hΦ.mono fun p hp ↦ (hsub hp).1
+
+end Chart
 
 end TauCeti
 
