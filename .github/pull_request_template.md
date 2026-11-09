@@ -8,17 +8,14 @@ Do not infer a roadmap from the TauCeti/ directory being changed.
 Roadmap: <CanonicalAreaName or none>
 
 <!--
-Quality pass. Before you ask for review, run the checks explained at the end of this template
-over every declaration the PR adds or changes. Then replace each `…` below with `changed`,
-`checked` or `n/a`, a dash, and a short note saying what you changed, what you checked, or why
-the check does not apply: for instance `changed — dropped [NeZero n] from foo, which follows
+Quality pass. Before you ask for review, run the checks at the end of this template over every
+declaration the PR adds or changes, then replace each `…` below with `changed`, `checked` or
+`n/a`, a dash, and a short note: for instance `changed — dropped [NeZero n] from foo, which follows
 from hn : 1 < n`, or for Q2 `checked — no change (searched TauCeti/ and the open PRs for the
 defining formula of foo)`. A PR that changes no Lean declaration may answer `n/a` throughout.
-
 When later commits add or change declarations, for instance to answer review findings, run the
 checks again over those and update the lines. The `quality-pass` review angle reads this block.
-Agents: `gh pr create --body` does not apply this template, so copy the block into your
-description yourself.
+Agents: `gh pr create --body` does not apply this template, so copy the block in yourself.
 -->
 Quality pass:
 - Q1 Mathlib duplicates: …
@@ -32,110 +29,67 @@ Quality pass:
 - Q9 Statements re-read: …
 
 <!--
-The checks. Each is a reasonable attempt, not a guarantee: do what is reasonable, then say what
-you did. Keep to the PR's topic. A check that suggests reworking code already on main, such as
-generalising an existing declaration or tidying the rest of a file, is a separate PR.
+Do each check with reasonable effort and your own judgment; beyond them, improve anything you can
+in what the PR adds or changes. Work a check suggests on code already on `main`, such as
+generalising an existing declaration, is a separate PR.
 
-Q1. Mathlib duplicates. For each new public declaration, search Mathlib for the same statement or
-a more general one: by name pattern, and by statement shape (grep the main constants of the
-conclusion, try `exact?` and `apply?`). If one exists, delete yours and use it at every call site.
-A new name for a Mathlib lemma, or a one-line wrapper around one, is a duplicate. A lemma about a
-Tau Ceti definition, or an `instance` registering a Mathlib theorem, is not.
+Q1. Search Mathlib for each new declaration, or a more general one, by name and by shape (`exact?`,
+`apply?`, grepping the conclusion's constants). If it exists, use it. A renamed Mathlib lemma or a
+one-line wrapper is a duplicate; an `instance` built from a Mathlib theorem is not.
 
-Q2. Tau Ceti duplicates, on main and in open PRs. Search `TauCeti/` for the same object or lemma:
-grep the defining formula and the key constants, not only the name. Look for a second construction
-of something another file already builds, a block copied from a sibling file, and a lemma
-re-derived locally that is already imported. Reuse the existing one. If it would first need
-generalising, that is a prerequisite refactor: open it as its own PR and build on it once it has
-merged.
-Then search the open pull requests to Tau Ceti, the work not on main yet: search their titles and
-descriptions for your declarations' names and the key constants of your statements, list the open
-pull requests that touch the same files or directories, and read the diff of any that might add the
-same thing (for instance `gh pr list --repo TauCetiProject/TauCeti --state open --search "<name>
-in:title,body"`, then `gh pr diff` on each candidate). If one adds it, do not add a second copy.
-When it came first or is the better one, drop yours, or build on it once it has merged (never stack
-on it). When yours is the better one, say so on both pull requests, each linking the other, so that
-a person or the reviewers can choose. The note says what you searched, on main and in the open
-pull requests.
+Q2. Search `TauCeti/` for the same object or lemma by its defining formula, not only its name, and
+for blocks copied from sibling files. Reuse what exists; if it first needs generalising, do that
+in its own PR and build on it once merged. Then search the open PRs
+(`gh pr list --repo TauCetiProject/TauCeti --search "<term> in:title,body"`, then `gh pr diff` on
+candidates). If one adds the same thing, do not add a second copy: build on it once it merges, or
+if yours is better, say so on both PRs, each linking the other. The note says what you searched,
+on main and in the open PRs.
 
-Q3. Hypotheses. For every hypothesis and instance binder of every theorem the PR adds or changes,
-including those pulled in from `variable` lines, first delete it and rebuild. Do this before any
-reasoning about whether it is needed.
-- If the proof still works, leave it deleted, after checking the statement is still the intended
-  one: a hypothesis that looks unused can be the symptom of a conclusion weaker than the docstring
-  promises (Q9).
-- If it follows from the other hypotheses (`[NeZero n]` from `1 < n`, `[Finite K]` from a
-  cardinality bound, `[Module.Free k M]` from a basis, `[T2Space G]` from a Lie group structure),
-  derive it inside the proof instead of asking every caller for it. Remove it even when a related
-  lemma, such as the ring-level version, states it: consistency with another lemma is not a reason
-  to keep it.
-- If the proof breaks only in a degenerate case (an empty type, `0`, `⊥`, the zero ring), handle
-  that case and drop the hypothesis when the statement holds there for a real reason (an empty
-  sum, an a.e. statement for the zero measure, contradictory hypotheses). Keep it only when you can
-  show what goes wrong without it: the statement becomes false (give the counterexample), or holds
-  there only through a junk value (`x / 0 = 0`, `(0 : ℝ)⁻¹ = 0`, `ENNReal.toReal ⊤ = 0`, the
-  `finrank` or `Nat.card` of something infinite being `0`).
-- Weaken typeclasses to what the proof uses, at the level Mathlib's conventions use: `Field` to
-  `CommRing` or `IsDomain`, `CommSemiring` to `Semiring`, `NontriviallyNormedField` to
-  `NormedField`.
-- A hypothesis that a definition in the statement takes is needed to state it: leave it.
-Update every caller. The note names each hypothesis you kept after its rebuild failed, and why.
+Q3. Delete each hypothesis and instance argument of each theorem the PR adds or changes, including
+those from `variable` lines, and rebuild, before reasoning about whether it is needed. If the proof
+still works, leave it out, but check the conclusion is not weaker than the docstring promises
+(Q9). If it follows from the others, derive it in the proof: consistency with a related lemma is
+no reason to keep it. If the proof breaks only in a degenerate case (empty, `0`, `⊥`), handle that
+case. Keep a hypothesis only when the statement needs it to make sense, is false without it (give
+the counterexample), or in a degenerate case holds only through a junk value such as `x / 0 = 0`.
+Weaken typeclasses to what the proof uses, at a level Mathlib uses (`Field` to `CommRing`, say).
+The note says what you dropped or weakened, and why any hypothesis kept for a degenerate case
+stays.
 
-Q4. Section variables. No theorem the PR adds or changes carries an instance from a `variable`
-line that it does not use, and no definition takes a binder its body ignores. Use `omit [...] in`,
+Q4. No declaration picks up a `variable` instance or binder it does not use: use `omit [...] in`,
 or restructure the `variable` blocks.
 
-Q5. Proofs of at most 50 lines. Count the code lines of each proof the PR adds or changes, not
-blank lines or comments. For a proof over 50 lines, first look for a shorter route: a Mathlib
-lemma, `grind`, `positivity`, `fun_prop`, a better induction principle. Otherwise split it at its
-natural stages into lemmas of at most 50 lines each: a step that is a reusable result in its own
-right becomes a public, documented lemma in the file where it belongs, and a step specific to this
-proof becomes a `private` lemma. Keep the main statement unchanged. In the rare case where a
-proof cannot be split, keep it, add comments inside it explaining its global structure, and say
-why in the note. Treat long `def` and `instance` bodies the same way (move the proof obligations
-into lemmas), and turn any block repeated within or across the PR's proofs into one lemma.
+Q5. Count each proof's code lines, not blanks or comments. Shorten a proof over 50 lines (a Mathlib
+lemma, `grind`, a better induction) or split it at natural stages: a reusable step becomes a
+public, documented lemma where it belongs, a proof-specific one a `private` lemma. One that cannot
+be split stays, with comments on its structure and the reason in the note. Move proof obligations
+out of long `def` and `instance` bodies into lemmas, and turn a block repeated across proofs into
+one lemma.
 
-Q6. Elaboration speed. Time every declaration the PR adds or changes, for instance with the
-`profiler` option set in a scratch file (`set_option` is not allowed in library code) or by timing
-the file. For anything over about a second, find the cause and fix it, keeping the statement
-unchanged and never raising `maxHeartbeats`. Common causes: a broad `simp` or `simp_all` (use
-`simp only [...]` or a sharper lemma), `decide` or `norm_num` on large terms, instance search
-through long chains (supply the instance), `rfl` or `exact` forcing definitional unfolding (state
-an intermediate `have` with its type, or prove an equation lemma), and `convert` on large terms. In
-a `module` file, check that `#check @f.eq_1` from a non-module file returns at once for each new
-definition.
+Q6. Time the PR's declarations (time the file, or set `profiler` in a scratch file). Fix anything
+over about a second at its cause, often a broad `simp`, `decide`, instance search or unfolding,
+without changing the statement or raising `maxHeartbeats`. In a `module` file, `#check @f.eq_1`
+from a non-module file should return at once for each new definition.
 
-Q7. API for new definitions. Inline a new definition that is used once and has no API, unless the
-roadmap names it. For each other new definition, name the lemma that says what it is: its `_def`,
-`_iff` or `_apply` lemma, or the equation its proofs use. Only the proofs of such lemmas should
-unfold the definition: if another proof in the PR unfolds it by hand, the lemma is missing, so add
-it and use it there. Add the rest of each definition's characteristic lemmas too (`ext`, and
-`@[simp]` lemmas whose left-hand side is in simp normal form, so that they fire), so that callers
-do not re-derive them. Evaluate each new definition on degenerate inputs (empty, zero, the trivial
-ring): if it returns a junk value there, make sure no theorem holds only because of it. The note
-names, for each new definition, the lemma that says what it is.
+Q7. Inline a new definition used once with no API, unless the roadmap names it. For every other
+new definition, name the lemma that says what it is (`_def`, `_iff`, `_apply`, or the equation its
+proofs use). Only such lemmas should unfold it, so a proof that unfolds it by hand shows one is
+missing. Add the `ext` and `@[simp]` lemmas callers need. No theorem should hold only because of a
+junk value the definition takes on degenerate inputs (empty, zero, the trivial ring). The note
+names each definition's lemma.
 
-Q8. Tidy what the PR adds or changes. Leave the rest of an existing file alone.
-- The module docstring of each new file lists the main definitions and results in it, and that of
-  a changed file still matches; neither names roadmap targets or layer numbers.
-- The docstring of each public declaration the PR adds or changes is accurate: it states every
-  hypothesis, does not overclaim, and points to the right mathematical reference. The roadmap is
-  credited only on the roadmap line of the description.
-- The imports the PR adds are needed, and no `public import` is used only in proofs. No unused
-  `open`, `classical`, `noncomputable`, or local instance.
-- No commented-out code, and no double blank lines.
-- `show` and `change` appear only with a comment explaining why, and nothing relies on accidental
-  definitional equality across wrappers or coercions.
-- No `by exact t` (write `t`), no single-use `have` that inlines cleanly, and no non-terminal `simp`
-  without `only`.
-- Names follow Mathlib's conventions: they describe the conclusion and sit in the namespace that
-  dot notation wants. A general helper is public in the file where it belongs, not `private` in a
-  specific one.
+Q8. Docstrings are accurate, state every hypothesis, do not overclaim, and credit the mathematical
+source where there is one. Module docstrings list the file's main results, still match it, and
+name no roadmap targets or layers (the roadmap is credited only on the roadmap line). Each added
+import is needed, and `public` only if a statement uses it. No unused `open`, `classical` or
+`noncomputable`. No commented-out code, `by exact`, single-use `have` that inlines cleanly, or
+non-terminal `simp` without `only`; each `show` or `change` has a comment saying why. Names follow
+Mathlib's conventions, and a general helper is public in the file where it belongs. Leave the rest
+of an existing file alone.
 
-Q9. Statements re-read. Read each new statement as a mathematician would. Write down what its
-docstring promises, part by part, and check that each part appears in the conclusion, with nothing
-moved into the hypotheses. Check the order of the quantifiers the docstring implies: one `x` that
-works for every `n` is `∃ x, ∀ n, …`, not `∀ n, ∃ x, …`. Check that the statement says what the
-source says, and that it is not vacuous: the hypotheses can hold together, and the conclusion does
-not hold for a reason the docstring does not intend. A simple, correct lemma is fine.
+Q9. Read each new statement as a mathematician would. List what its docstring promises and check
+each part is in the conclusion, not moved into the hypotheses, with its quantifiers in the order
+the docstring implies (one `x` for every `n` is `∃ x, ∀ n`). Check it says what the source says
+and is not vacuous: the hypotheses can hold together, and the conclusion is not true for an
+unintended reason. A simple, correct lemma is fine.
 -->
