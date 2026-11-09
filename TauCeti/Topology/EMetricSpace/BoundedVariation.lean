@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Uniform
 public import Mathlib.Topology.EMetricSpace.BoundedVariation
+public import Mathlib.Topology.CompactOpen
 
 /-!
 # Limits of total variation bounds
@@ -16,9 +17,12 @@ This file transfers eventual upper bounds on the total variations of a family of
 composition with an antitone map on an interval, proves stability of bounded variation under
 addition and subtraction, and shows that the variation is unchanged by postcomposition with a map
 that preserves the distances between the values of the function.
+Total variation on continuous maps is lower semicontinuous for the compact-open topology,
+allowing measurable path-space applications.
 
 ## Main results
 
+* `ContinuousMap.lowerSemicontinuous_eVariationOn`: lower semicontinuity on continuous path space.
 * `TauCeti.eVariationOn_le_liminf_of_eventually_le`: an eventual bound on the total variations of
   a family of maps bounds the total variation of a pointwise limit by the `liminf` of the bounds.
 * `eVariationOn.comp_inter_Icc_eq_of_antitoneOn`: the antitone counterpart of Mathlib's
@@ -28,6 +32,15 @@ that preserves the distances between the values of the function.
 -/
 
 public section
+
+/-- Total variation is lower semicontinuous on continuous paths with the compact-open topology.
+The variation is allowed to be infinite. -/
+theorem ContinuousMap.lowerSemicontinuous_eVariationOn
+    {α E : Type*} [LinearOrder α] [TopologicalSpace α] [PseudoEMetricSpace E] (s : Set α) :
+    LowerSemicontinuous (fun f : C(α, E) => eVariationOn f s) := by
+  intro f v hv
+  exact eVariationOn.lowerSemicontinuous_aux
+    (fun x _ => (continuous_eval_const x).continuousAt) hv
 
 open Filter Set
 open scoped ENNReal
