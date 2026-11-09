@@ -23,8 +23,9 @@ There is no orthogonality or constant-speed normalization requirement on the fie
 The statements use derivatives within the parameter set and apply to closed intervals.
 
 The norm itself is also convex, including across zeros of the field, by
-`IsJacobiFieldOn.convexOn_norm_of_sectionalCurvature_nonpos`. At a zero the norm need
-not be differentiable; regularizing by `sqrt (|J|² + ε)` and taking the limit handles
+`IsJacobiFieldOn.convexOn_norm_of_sectionalCurvature_nonpos`. Away from the zeros of the field
+the norm has derivative `⟨DJ, J⟩ / ‖J‖` (`IsJacobiFieldOn.hasDerivWithinAt_norm`), but at a zero
+it need not be differentiable; regularizing by `sqrt (|J|² + ε)` and taking the limit handles
 these points. Norm convexity supplies the expanding estimate for the exponential differential.
 
 A Jacobi field vanishing at two distinct parameters is zero on the interval between them
@@ -97,6 +98,15 @@ theorem IsJacobiFieldOn.convexOn_norm_sq_of_sectionalCurvature_nonpos
     (hK r (interior_subset hr)) (V r) (curveVelocityWithin I γ s r)
   simp only [zero_mul] at hc
   exact mul_nonneg (by norm_num) (sub_nonneg.2 (hc.trans (sq_nonneg _)))
+
+/-- Away from its zeros, the norm of a Jacobi field has derivative `⟨DJ, J⟩ / ‖J‖`. -/
+theorem IsJacobiFieldOn.hasDerivWithinAt_norm (h : IsJacobiFieldOn I γ V s)
+    (ht : t ∈ s) (hV : V t ≠ 0) :
+    HasDerivWithinAt (fun r ↦ ‖V r‖)
+      (⟪alongCurveWithin (leviCivitaConnection I M) γ V s t, V t⟫_ℝ / ‖V t‖) s t := by
+  have hd := (h.hasDerivWithinAt_norm_sq ht).sqrt
+    (pow_ne_zero 2 (norm_ne_zero_iff.mpr hV))
+  simpa only [Real.sqrt_sq (norm_nonneg _), mul_div_mul_left _ _ (two_ne_zero' ℝ)] using hd
 
 private theorem IsJacobiFieldOn.hasDerivWithinAt_regularized_norm
     (h : IsJacobiFieldOn I γ V s) {ε t : ℝ} (hε : 0 < ε) (ht : t ∈ s) :
