@@ -62,6 +62,8 @@ bounded on it by `synthesisBound a m` times the norm (`TauCeti.apply_synthesisCa
 * `TauCeti.SynthesisCarrier hp hpa`: the quotient of `ℓ¹` by the kernel of the synthesis, a
   separable Banach space.
 * `TauCeti.synthesisCarrierMap hp hpa`: the induced injective continuous linear map into `E`.
+* `TauCeti.liftSynthesisCarrier hp hpa f hf`: the descent to the carrier of a continuous linear
+  map `f` on `ℓ¹` vanishing on the kernel of the synthesis.
 
 ## References
 
@@ -345,6 +347,38 @@ theorem toSynthesisCarrier_eq_toSynthesisCarrier_iff {c d : lp (fun _ : ℕ ↦ 
 theorem norm_toSynthesisCarrier_le (c : lp (fun _ : ℕ ↦ ℝ) 1) :
     ‖toSynthesisCarrier hp hpa c‖ ≤ ‖c‖ :=
   Submodule.Quotient.norm_mk_le _ c
+
+section Lift
+
+variable {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+
+/-- A continuous linear map on `ℓ¹` vanishing on the kernel of the weighted synthesis descends to
+the synthesis carrier. -/
+noncomputable def liftSynthesisCarrier (f : lp (fun _ : ℕ ↦ ℝ) 1 →L[ℝ] F)
+    (hf : (weightedSynthesis hp hpa).ker ≤ f.ker) : SynthesisCarrier hp hpa →L[ℝ] F :=
+  (weightedSynthesis hp hpa).ker.liftQL f hf
+
+@[simp]
+theorem liftSynthesisCarrier_toSynthesisCarrier (f : lp (fun _ : ℕ ↦ ℝ) 1 →L[ℝ] F)
+    (hf : (weightedSynthesis hp hpa).ker ≤ f.ker) (c : lp (fun _ : ℕ ↦ ℝ) 1) :
+    liftSynthesisCarrier hp hpa f hf (toSynthesisCarrier hp hpa c) = f c := (rfl)
+
+/-- Two continuous linear maps on the synthesis carrier agreeing after composition with
+`TauCeti.toSynthesisCarrier` are equal. -/
+theorem synthesisCarrier_continuousLinearMap_ext {g₁ g₂ : SynthesisCarrier hp hpa →L[ℝ] F}
+    (h : g₁ ∘L toSynthesisCarrier hp hpa = g₂ ∘L toSynthesisCarrier hp hpa) : g₁ = g₂ :=
+  ContinuousLinearMap.ext fun x ↦ by
+    obtain ⟨c, rfl⟩ := toSynthesisCarrier_surjective hp hpa x
+    exact congr($h c)
+
+/-- `TauCeti.liftSynthesisCarrier f hf` is the unique continuous linear map on the synthesis
+carrier whose composition with `TauCeti.toSynthesisCarrier` is `f`. -/
+theorem liftSynthesisCarrier_unique (f : lp (fun _ : ℕ ↦ ℝ) 1 →L[ℝ] F)
+    (hf : (weightedSynthesis hp hpa).ker ≤ f.ker) {g : SynthesisCarrier hp hpa →L[ℝ] F}
+    (hg : g ∘L toSynthesisCarrier hp hpa = f) : g = liftSynthesisCarrier hp hpa f hf :=
+  synthesisCarrier_continuousLinearMap_ext hp hpa (by rw [hg]; rfl)
+
+end Lift
 
 /-- Every testing element lies in the range of the synthesis carrier. -/
 theorem exists_synthesisCarrierMap_eq (ν : ℕ) : ∃ x, synthesisCarrierMap hp hpa x = e ν := by
