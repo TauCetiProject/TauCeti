@@ -605,7 +605,7 @@ theorem norm_starProjection_orthogonal_comp (hX : Isometry X) [X.range.HasOrthog
   · -- `P_Z y = X x` for some `x` with `‖x‖ = ‖P_Z y‖ ≤ ‖y‖`, since `X` is an isometry.
     refine opNorm_le_bound _ (norm_nonneg _) fun y ↦ ?_
     obtain ⟨x, hx⟩ := LinearMap.mem_range.1 (X.range.starProjection_apply_mem y)
-    replace hx : X x = X.range.starProjection y := hx
+    rw [ContinuousLinearMap.coe_coe] at hx
     have hxy : ‖x‖ ≤ ‖y‖ := by
       rw [← (AddMonoidHomClass.isometry_iff_norm _).1 hX x, hx]
       exact X.range.norm_starProjection_apply_le y
@@ -706,8 +706,7 @@ Adapted from the Kitware DKPS formalization,
 `DavisKahan/FiniteDimensional/TanTheta/RitzResidual.lean` (Jon Crall and GPT 5.6 High;
 Apache-2.0). -/
 theorem adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
-    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection]
-    (X : F →ₗ[𝕜] E) {i : Fin (finrank 𝕜 F)} :
+    (U : Submodule 𝕜 E) (X : F →ₗ[𝕜] E) {i : Fin (finrank 𝕜 F)} :
     X.adjoint
         (LinearMap.leftSingularVector ((Uᗮ.starProjection.toLinearMap ∘ₗ X)) i) =
       (((((Uᗮ.starProjection.toLinearMap ∘ₗ X)).singularValues i : ℝ) : 𝕜) •
