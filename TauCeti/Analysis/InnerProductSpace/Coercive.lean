@@ -32,6 +32,12 @@ bound the change of this form under a perturbation of `A`
 `⟪S (A v), v⟫ - ½ ⟪D v, v⟫` that appears when integrating against a family of quadratic forms
 (`ContinuousLinearMap.neg_mul_norm_sq_le_inner_sub`).
 
+In a real inner product space we also record the quadratic perturbation estimates for a coercive
+symmetric operator `A`: the increment of `F - ⟪·, y + A z⟫` is that of a quadratic centred at
+`x + z` up to the second-order error of `F`
+(`LinearMap.IsSymmetric.increment_sub_quadratic_eq`), and a coercive quadratic of this form
+dominates its perturbation on a sphere (`LinearMap.lt_on_sphere_of_abs_increment_le`).
+
 ## Provenance
 
 Adapted from `ForTauCeti/Analysis/InnerProductSpace/CoerciveUnit.lean`
@@ -222,3 +228,78 @@ theorem le_re_of_mem_spectrum_of_positive_lyapunov
       hRR hRinvR hRRinv hlyap hδ hB) hz'
 
 end ContinuousLinearMap
+
+namespace LinearMap
+
+section Real
+
+open Metric Set
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The increment of `g = F - ⟪·, p⟫` for `p = y + A z` from `x` to `x'` is
+`⟪A (x' - x - z), x' - x - z⟫ / 2 - ⟪A z, z⟫ / 2`, up to the error of the second-order expansion
+of `F` at `x` with gradient `y` and Hessian `A`: for symmetric `A`, the difference of the two
+is exactly that error, where `F x' = a` and `F x = b`. -/
+theorem IsSymmetric.increment_sub_quadratic_eq {A : E →ₗ[ℝ] E} (hA : A.IsSymmetric)
+    {x x' y z : E} {a b : ℝ} :
+    (a - ⟪x', y + A z⟫_ℝ) - (b - ⟪x, y + A z⟫_ℝ) -
+      (⟪A (x' - x - z), x' - x - z⟫_ℝ / 2 - ⟪A z, z⟫_ℝ / 2) =
+      a - b - ⟪y, x' - x⟫_ℝ - ⟪A (x' - x), x' - x⟫_ℝ / 2 := by
+  have hsym : ⟪A z, x' - x⟫_ℝ = ⟪A (x' - x), z⟫_ℝ := by
+    exact (hA z (x' - x)).trans (real_inner_comm _ _)
+  have hexp : ⟪A (x' - x - z), x' - x - z⟫_ℝ =
+      ⟪A (x' - x), x' - x⟫_ℝ - 2 * ⟪A (x' - x), z⟫_ℝ + ⟪A z, z⟫_ℝ := by
+    generalize x' - x = h at hsym ⊢
+    rw [map_sub, inner_sub_left, inner_sub_right, inner_sub_right, hsym]
+    ring
+  have hpx : ⟪x', y + A z⟫_ℝ - ⟪x, y + A z⟫_ℝ = ⟪y, x' - x⟫_ℝ + ⟪A (x' - x), z⟫_ℝ := by
+    rw [← inner_sub_left, inner_add_right, ← hsym, real_inner_comm y, real_inner_comm (A z)]
+  linarith
+
+/-- If `g` has, on `closedBall x r`, the increment from `x` of a quadratic centred at `x + z`, up
+to `δ ‖x' - x‖ ^ 2` with `δ` small relative to the coercivity constant `c` of `A` and `‖z‖ ≤ s * r`
+for `s < 1`, then `g` on the sphere exceeds `g (x + z)`. -/
+theorem lt_on_sphere_of_abs_increment_le {A : E →ₗ[ℝ] E} {g : E → ℝ} {x z : E}
+    {r s c δ : ℝ} (hc : 0 < c) (hcA : ∀ w, c * ‖w‖ ^ 2 ≤ ⟪A w, w⟫_ℝ) (hs : s < 1) (hr : 0 < r)
+    (hδ : δ ≤ c * (1 - s) ^ 2 / 8) (hz : ‖z‖ ≤ s * r)
+    (hincr : ∀ x' ∈ closedBall x r, |g x' - g x - (⟪A (x' - x - z), x' - x - z⟫_ℝ / 2 -
+      ⟪A z, z⟫_ℝ / 2)| ≤ δ * ‖x' - x‖ ^ 2) :
+    ∀ x' ∈ sphere x r, g (x + z) < g x' := by
+  have hη : 0 < 1 - s := sub_pos.2 hs
+  have hsr : s * r ≤ r := by nlinarith [norm_nonneg z]
+  intro x' hx'
+  have hnorm : ‖x' - x‖ = r := by
+    rw [← dist_eq_norm]
+    exact mem_sphere.1 hx'
+  replace hx' := sphere_subset_closedBall hx'
+  have hzr : x + z ∈ closedBall x r := by
+    rw [mem_closedBall, dist_eq_norm, add_sub_cancel_left]
+    exact hz.trans hsr
+  have h₁ := hincr _ hzr
+  have h₂ := hincr x' hx'
+  have hδ0 : 0 ≤ δ := by
+    have := (abs_nonneg _).trans h₂
+    rw [hnorm] at this
+    exact nonneg_of_mul_nonneg_left this (pow_pos hr 2)
+  rw [add_sub_cancel_left, sub_self, map_zero, inner_zero_left, zero_div, zero_sub] at h₁
+  have hηr : (1 - s) * r ≤ ‖x' - x - z‖ := by
+    have := norm_sub_norm_le (x' - x) z
+    rw [hnorm] at this
+    linarith
+  have hq := hcA (x' - x - z)
+  have hq' : c * ((1 - s) * r) ^ 2 ≤ c * ‖x' - x - z‖ ^ 2 :=
+    mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (mul_pos hη hr).le hηr 2) hc.le
+  have hzr' : ‖z‖ ^ 2 ≤ r ^ 2 := pow_le_pow_left₀ (norm_nonneg _) (hz.trans hsr) 2
+  have hδz : δ * ‖z‖ ^ 2 ≤ δ * r ^ 2 := mul_le_mul_of_nonneg_left hzr' hδ0
+  have hδr : δ * r ^ 2 ≤ c * ((1 - s) * r) ^ 2 / 8 := by
+    have := mul_le_mul_of_nonneg_right hδ (sq_nonneg r)
+    linarith [this, show c * (1 - s) ^ 2 / 8 * r ^ 2 = c * ((1 - s) * r) ^ 2 / 8 by ring]
+  have hpos : 0 < c * ((1 - s) * r) ^ 2 := by positivity
+  rw [abs_le] at h₁ h₂
+  rw [hnorm] at h₂
+  linarith [h₁.2, h₂.1]
+
+end Real
+
+end LinearMap
