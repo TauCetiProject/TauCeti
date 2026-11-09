@@ -72,13 +72,16 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-- Sections of open neighbourhoods along a unit vector `e`: if `x` is within `r` of `p`, then
-for some `ρ > |⟪e, x - p⟫|` the open `ρ`-neighbourhood of the section of `s` through `p`, shifted
-by `⟪e, x - p⟫`, lies in the section of `thickening r s` through `x`. -/
-theorem exists_thickening_section_subset_section_thickening (e : E) (he : ‖e‖ = 1) (s : Set E)
-    {x p : E} {r : ℝ} (hxp : dist x p < r) :
-    ∃ ρ, |⟪e, x - p⟫| < ρ ∧ thickening ρ {t : ℝ | p + t • e ∈ s} ⊆
-      (· + -⟪e, x - p⟫) ⁻¹' {t : ℝ | x + t • e ∈ thickening r s} := by
+/-- Line sections of open neighbourhoods along a unit vector `e`: write `c = ⟪e, x - p⟫` for the
+component of `x - p` along `e`. If `0 ≤ r` and `ρ ^ 2 + ‖x - p‖ ^ 2 ≤ r ^ 2 + c ^ 2`, then the
+open `ρ`-neighbourhood of the line section of `s` through `p` lies in the preimage under
+`t ↦ t - c` of the line section of `thickening r s` through `x`. In other words, its translate
+by `-c` lies in the line section of `thickening r s` through `x`. -/
+theorem thickening_lineSection_subset_preimage_sub_lineSection_thickening (e : E)
+    (he : ‖e‖ = 1) (s : Set E) {x p : E} {r ρ : ℝ} (hr : 0 ≤ r)
+    (hρ : ρ ^ 2 + ‖x - p‖ ^ 2 ≤ r ^ 2 + ⟪e, x - p⟫ ^ 2) :
+    thickening ρ {t : ℝ | p + t • e ∈ s} ⊆
+      (· - ⟪e, x - p⟫) ⁻¹' {t : ℝ | x + t • e ∈ thickening r s} := by
   -- Split the displacement `x - p` into its components along and orthogonal to `e`.
   set c := ⟪e, x - p⟫
   set q := x - p - c • e
@@ -88,20 +91,17 @@ theorem exists_thickening_section_subset_section_thickening (e : E) (he : ‖e�
   have hnorm (σ : ℝ) : ‖q + σ • e‖ ^ 2 = ‖q‖ ^ 2 + σ ^ 2 := by
     rw [norm_add_sq_real, inner_smul_right, hqe, norm_smul, he]
     simp
-  have hxp' : ‖q‖ ^ 2 + c ^ 2 < r ^ 2 := by
-    rw [← hnorm c, show q + c • e = x - p by simp [q], ← dist_eq_norm]
-    exact pow_lt_pow_left₀ hxp dist_nonneg two_ne_zero
-  refine ⟨√(r ^ 2 - ‖q‖ ^ 2), Real.lt_sqrt (abs_nonneg c) |>.2 (by rw [sq_abs]; linarith), ?_⟩
+  have hxp : ‖x - p‖ ^ 2 = ‖q‖ ^ 2 + c ^ 2 := by
+    rw [← hnorm c, show q + c • e = x - p by simp [q]]
   intro σ hσ
   obtain ⟨a, ha, hσa⟩ := mem_thickening_iff.1 hσ
   refine mem_thickening_iff.2 ⟨p + a • e, ha, ?_⟩
-  have hsq : (σ - a) ^ 2 < √(r ^ 2 - ‖q‖ ^ 2) ^ 2 := by
+  have hsq : (σ - a) ^ 2 < ρ ^ 2 := by
     rw [← sq_abs, ← Real.dist_eq]
     exact pow_lt_pow_left₀ hσa dist_nonneg two_ne_zero
-  rw [Real.sq_sqrt (by nlinarith [sq_nonneg c])] at hsq
-  rw [dist_eq_norm, show x + (σ + -c) • e - (p + a • e) = q + (σ - a) • e by
+  rw [dist_eq_norm, show x + (σ - c) • e - (p + a • e) = q + (σ - a) • e by
     simp only [q]; module]
-  exact lt_of_pow_lt_pow_left₀ 2 (dist_nonneg.trans hxp.le) (by rw [hnorm]; linarith)
+  exact lt_of_pow_lt_pow_left₀ 2 hr (by rw [hnorm]; linarith)
 
 /-- The open `r`-neighbourhood of a Steiner symmetral lies in the symmetral of the open
 `r`-neighbourhood. No measurability or finiteness hypothesis is needed. -/
@@ -110,7 +110,15 @@ theorem thickening_steinerSymmetrization_subset (e : E) (he : ‖e‖ = 1) (s : 
       steinerSymmetrization e he (thickening r s) := by
   intro x hx
   obtain ⟨p, hp, hxp⟩ := mem_thickening_iff.1 hx
-  obtain ⟨ρ, hcρ, hsub⟩ := exists_thickening_section_subset_section_thickening e he s hxp
+  have hr : 0 ≤ r := dist_nonneg.trans hxp.le
+  have hxp' : ‖x - p‖ ^ 2 < r ^ 2 := by
+    rw [← dist_eq_norm]; exact pow_lt_pow_left₀ hxp dist_nonneg two_ne_zero
+  set ρ := √(r ^ 2 - ‖x - p‖ ^ 2 + ⟪e, x - p⟫ ^ 2)
+  have hρsq : ρ ^ 2 = r ^ 2 - ‖x - p‖ ^ 2 + ⟪e, x - p⟫ ^ 2 :=
+    Real.sq_sqrt (by nlinarith [sq_nonneg ⟪e, x - p⟫])
+  have hcρ : |⟪e, x - p⟫| < ρ := Real.lt_sqrt (abs_nonneg _) |>.2 (by rw [sq_abs]; linarith)
+  have hsub := thickening_lineSection_subset_preimage_sub_lineSection_thickening e he s hr
+    (ρ := ρ) (by linarith)
   rw [mem_steinerSymmetrization_iff, mem_eball, edist_zero_right,
     Real.enorm_eq_ofReal_abs] at hp ⊢
   have hρ : 0 < ρ := (abs_nonneg _).trans_lt hcρ
@@ -130,8 +138,8 @@ theorem thickening_steinerSymmetrization_subset (e : E) (he : ‖e‖ = 1) (s : 
         gcongr
         exact Real.volume_add_le_volume_thickening hA hρ
     _ ≤ volume {t : ℝ | x + t • e ∈ thickening r s} / 2 :=
-        ENNReal.div_le_div_right ((measure_mono hsub).trans_eq
-          (measure_preimage_add_right _ _ _)) 2
+        ENNReal.div_le_div_right ((measure_mono hsub).trans_eq <| by
+          simpa only [sub_eq_add_neg] using measure_preimage_add_right _ _ _) 2
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
