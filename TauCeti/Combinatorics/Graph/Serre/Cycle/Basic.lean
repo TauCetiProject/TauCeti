@@ -65,6 +65,13 @@ noncomputable def modTwoCycleSpace : Submodule (ZMod 2) (O →₀ ZMod 2) :=
 
 variable {Γ O}
 
+/-- The integral cycle lattice is the kernel of the integral incidence boundary. -/
+theorem cycleLattice_def : Γ.cycleLattice O = (Γ.incidenceBoundary O ℤ).ker := (rfl)
+
+/-- The binary cycle space is the kernel of incidence over `ZMod 2`. -/
+theorem modTwoCycleSpace_def :
+    Γ.modTwoCycleSpace O = (Γ.incidenceBoundary O (ZMod 2)).ker := (rfl)
+
 @[simp] theorem incidenceBoundary_single (R : Type*) [Ring R] (e : O) (r : R) :
     Γ.incidenceBoundary O R (Finsupp.single e r) =
       r • (Finsupp.single (Γ.tgt e.1) 1 - Finsupp.single (Γ.src e.1) 1) := by
