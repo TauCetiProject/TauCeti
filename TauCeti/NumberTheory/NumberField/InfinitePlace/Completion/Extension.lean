@@ -120,11 +120,8 @@ theorem prod_completionNormalizedAbsValue_completionMap
         (@LiesOver.completionMap K L _ _ _ v w.1 w.2 x) =
       completionNormalizedAbsValue v x ^ Module.finrank K L := by
   classical
-  have hinj := (algebraMap K L).injective
   have : CharZero K := (algebraMap K L).charZero
-  have : FiniteDimensional ℚ K :=
-    Module.Finite.of_injective (algebraMap K L).toRatAlgHom.toLinearMap hinj
-  have : NumberField K := ⟨⟩
+  have : NumberField K := NumberField.of_tower ℚ L K
   have h (w : {w : InfinitePlace L // w.LiesOver v}) :
       completionNormalizedAbsValue w.1
         (@LiesOver.completionMap K L _ _ _ v w.1 w.2 x) =
