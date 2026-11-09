@@ -189,13 +189,11 @@ theorem injective_closedOrbit_iff : Injective (closedOrbit φ h) ↔ minimalPeri
     rw [closedOrbit_coe, closedOrbit_coe, mk_eq_mk_iff_sub_mem_zmultiples, hd] at hθ
     exact (QuotientAddGroup.eq_iff_sub_mem).mpr hθ
 
-include h in
-/-- For a positive period `d`, the closed orbit meets the fibre `x ↦ [t, x]` exactly in the points
-`[t, φ^[j] x]` with `j` below the least period of `x`. -/
-theorem mk_preimage_range_closedOrbit (hd : 0 < d) (t : ℝ) :
-    mk φ t ⁻¹' range (closedOrbit φ h) = (fun j ↦ φ^[j] x) '' Iio (minimalPeriod φ x) := by
+/-- The closed orbit meets the fibre `x ↦ [t, x]` exactly in the points `[t, (φ ^ k) x]` with
+`k ∈ ℤ`. -/
+theorem mk_preimage_range_closedOrbit_eq_range_zpow (t : ℝ) :
+    mk φ t ⁻¹' range (closedOrbit φ h) = range fun k : ℤ ↦ (φ ^ k) x := by
   ext y
-  have hx : x ∈ periodicPts φ := ⟨d, hd, h⟩
   have hrange : mk φ t y ∈ range (closedOrbit φ h) ↔ ∃ s : ℝ, mk φ s x = mk φ t y := by
     constructor
     · rintro ⟨θ, hθ⟩
@@ -203,16 +201,39 @@ theorem mk_preimage_range_closedOrbit (hd : 0 < d) (t : ℝ) :
       | H s => exact ⟨s, by rwa [closedOrbit_coe] at hθ⟩
     · rintro ⟨s, hs⟩
       exact ⟨s, by rwa [closedOrbit_coe]⟩
-  rw [mem_preimage, hrange, exists_mk_eq_mk_iff, Diffeomorph.exists_zpow_apply_eq_iff hx]
+  rw [mem_preimage, hrange, exists_mk_eq_mk_iff]
+  rfl
+
+/-- For a periodic point `x`, the closed orbit meets the fibre `x ↦ [t, x]` exactly in the points
+`[t, φ^[j] x]` with `j` below the least period of `x`. -/
+theorem mk_preimage_range_closedOrbit (hx : x ∈ periodicPts φ) (t : ℝ) :
+    mk φ t ⁻¹' range (closedOrbit φ h) = (fun j ↦ φ^[j] x) '' Iio (minimalPeriod φ x) := by
+  ext y
+  rw [mk_preimage_range_closedOrbit_eq_range_zpow h, mem_range,
+    Diffeomorph.exists_zpow_apply_eq_iff hx]
   simp
 
-include h in
-/-- For a positive period `d`, the closed orbit meets each fibre of the mapping torus in exactly as
-many points as the least period of `x`. -/
-theorem ncard_mk_preimage_range_closedOrbit (hd : 0 < d) (t : ℝ) :
+/-- The closed orbit meets each fibre of the mapping torus in exactly as many points as the least
+period of `x`, which is zero when `x` is not periodic (and `Set.ncard` of an infinite set is
+zero). -/
+theorem ncard_mk_preimage_range_closedOrbit (t : ℝ) :
     (mk φ t ⁻¹' range (closedOrbit φ h)).ncard = minimalPeriod φ x := by
-  rw [mk_preimage_range_closedOrbit h hd, iterate_injOn_Iio_minimalPeriod.ncard_image,
-    Set.ncard_Iio_nat]
+  by_cases hx : x ∈ periodicPts φ
+  · rw [mk_preimage_range_closedOrbit h hx, iterate_injOn_Iio_minimalPeriod.ncard_image,
+      Set.ncard_Iio_nat]
+  · -- The powers `(φ ^ k) x` are pairwise distinct, so the fibre is infinite.
+    have hinj : Injective fun k : ℤ ↦ (φ ^ k) x := fun a b hab ↦ by
+      have hfix : IsFixedPt (φ ^ (a - b)) x := by
+        have hab' : φ ^ a • x = φ ^ b • x := hab
+        calc φ ^ (a - b) • x = φ ^ (-b) • φ ^ a • x := by
+              rw [smul_smul, ← zpow_add, neg_add_eq_sub]
+          _ = x := by rw [hab', smul_smul, ← zpow_add, neg_add_cancel, zpow_zero, one_smul]
+      rw [Diffeomorph.isFixedPt_zpow_iff_minimalPeriod_dvd,
+        minimalPeriod_eq_zero_of_notMem_periodicPts hx] at hfix
+      simp only [Nat.cast_zero, zero_dvd_iff] at hfix
+      omega
+    rw [minimalPeriod_eq_zero_of_notMem_periodicPts hx,
+      mk_preimage_range_closedOrbit_eq_range_zpow h, (Set.infinite_range_of_injective hinj).ncard]
 
 section Topology
 
@@ -228,7 +249,7 @@ of `x` under `φ`. -/
 theorem mk_mem_range_closedOrbit_iff {t : ℝ} {y : M} :
     mk φ t y ∈ range (closedOrbit φ h) ↔ ∃ j : ℕ, (⇑φ)^[j] x = y := by
   have hd : 0 < d := Nat.cast_pos.1 (Fact.out : (0 : ℝ) < d)
-  rw [← Set.mem_preimage, mk_preimage_range_closedOrbit h hd]
+  rw [← Set.mem_preimage, mk_preimage_range_closedOrbit h ⟨d, hd, h⟩]
   refine Iff.trans ?_ (mem_periodicOrbit_iff ⟨d, hd, h⟩)
   simp only [periodicOrbit, Cycle.mem_coe_iff, List.mem_map, List.mem_range, Set.mem_image,
     Set.mem_Iio]
@@ -248,13 +269,15 @@ theorem range_closedOrbit_inter_preimage_proj (t : ℝ) :
   · rintro ⟨j, rfl⟩
     exact ⟨(mk_mem_range_closedOrbit_iff h).2 ⟨j, rfl⟩, mem_range_self _⟩
 
-/-- The closed orbit of `x` meets each fibre of the projection to the circle in exactly as many
-points as the minimal period of `x`. -/
+omit [Fact (0 < (d : ℝ))] in
+/-- The `Set.ncard` of the intersection of the closed orbit of `x` with a fibre of the projection
+to the circle is the minimal period of `x`. For periodic `x` this is the number of intersection
+points; a nonperiodic `x` (possible only when `d = 0`) has minimal period zero and meets the fibre
+in an infinite set, whose `Set.ncard` is also zero. -/
 theorem ncard_range_closedOrbit_inter_preimage_proj (t : ℝ) :
     (range (closedOrbit φ h) ∩ proj φ ⁻¹' {(t : UnitAddCircle)}).ncard = minimalPeriod φ x := by
-  rw [range_closedOrbit_inter_preimage_proj, ncard_range_of_injective, Nat.card_eq_fintype_card,
-    Fintype.card_fin]
-  exact (mk_injective φ t).comp fun i j h ↦ Fin.ext (iterate_injOn_Iio_minimalPeriod i.2 j.2 h)
+  rw [← range_mk, ← image_preimage_eq_inter_range, ncard_image_of_injective _ (mk_injective φ t),
+    ncard_mk_preimage_range_closedOrbit h]
 
 variable {y : M} {e : ℕ} (hy : IsPeriodicPt φ e y)
 
