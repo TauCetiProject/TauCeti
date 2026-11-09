@@ -41,6 +41,7 @@ theorem LocallyBoundedVariationOn.exists_continuousOn_monotoneOn_sub_monotoneOn
   have hv : ContinuousOn (variationOnFromTo f s a) s :=
     fun x hx ↦ (hf.continuousWithinAt_variationOnFromTo_iff ha hx).mpr (hc x hx)
   have hpc : ContinuousOn p s := by
+    -- On s, p y = (variationOnFromTo f s a y + f y + p a + q a) / 2.
     apply ((((hv.add hc).add (continuousOn_const (c := p a))).add
         (continuousOn_const (c := q a))).div_const 2).congr
     intro y hy
@@ -74,9 +75,6 @@ theorem continuousOn_and_locallyBoundedVariationOn_iff
     exact ⟨p, q, hp, hq, hpm, hqm, fun y _ ↦ congrFun heq y⟩
   · rintro ⟨p, q, hp, hq, hpm, hqm, heq⟩
     refine ⟨(hp.sub hq).congr heq, ?_⟩
-    intro a b ha hb
-    unfold BoundedVariationOn
-    rw [eVariationOn.congr (heq.mono inter_subset_left)]
-    exact (hpm.locallyBoundedVariationOn.sub hqm.locallyBoundedVariationOn) a b ha hb
+    exact (hpm.locallyBoundedVariationOn.sub hqm.locallyBoundedVariationOn).congr heq.symm
 
 end TauCeti
