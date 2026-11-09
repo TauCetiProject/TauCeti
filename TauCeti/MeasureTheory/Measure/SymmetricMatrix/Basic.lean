@@ -435,6 +435,13 @@ theorem measurable_coe_apply {p : ℕ} (i j : Fin p) :
       (A : Matrix (Fin p) (Fin p) ℝ) i j :=
   (continuous_coe_apply i j).measurable
 
+/-- Forgetting symmetry is a measurable embedding of the symmetric matrices into all matrices:
+the symmetric matrices form a closed subset carrying the subspace measurable structure. -/
+theorem measurableEmbedding_coe {p : ℕ} :
+    MeasurableEmbedding fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) =>
+      (A : Matrix (Fin p) (Fin p) ℝ) :=
+  MeasurableEmbedding.subtype_coe (isClosed_eq continuous_star continuous_id).measurableSet
+
 /-- The exponential of a scalar multiple of the trace pairing is continuous. This is the
 measurability side condition of the exponential-moment computations on the symmetric
 subspace. -/
