@@ -14,7 +14,8 @@ public import Mathlib.Order.SupIndep
 Products of submodules commute with indexed suprema, and a family of products is independent
 exactly when both families of factors are. The two coordinate copies `Submodule.fst` and
 `Submodule.snd` of the factors of a product module are cut out by the vanishing of the other
-coordinate and are complementary.
+coordinate and are complementary. The kernel of a product map `f.prodMap g` is the product of the
+kernels, as a module.
 
 ## Main declarations
 
@@ -24,6 +25,8 @@ coordinate and are complementary.
 * `Submodule.mem_fst_iff`, `Submodule.mem_snd_iff`: membership in the coordinate copies of the
   factors.
 * `Submodule.isCompl_fst_snd`: the coordinate copies of the two factors are complementary.
+* `LinearMap.kerProdMapEquiv`: the kernel of `f.prodMap g` is linearly equivalent to
+  `ker f × ker g`.
 -/
 
 public section
@@ -52,6 +55,35 @@ theorem isCompl_fst_snd : IsCompl (Submodule.fst R M N) (Submodule.snd R M N) :=
   .of_eq (fst_inf_snd R M N) (fst_sup_snd R M N)
 
 end Submodule
+
+namespace LinearMap
+
+variable {R M N M' N' : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+  [Module R N] [AddCommMonoid M'] [Module R M'] [AddCommMonoid N'] [Module R N']
+
+/-- The kernel of the product map `f.prodMap g` is the product of the kernels of `f` and `g`
+(`LinearMap.ker_prodMap`), here as a linear equivalence `ker (f.prodMap g) ≃ ker f × ker g`
+through `Submodule.prodEquiv`. -/
+def kerProdMapEquiv (f : M →ₗ[R] N) (g : M' →ₗ[R] N') :
+    ker (f.prodMap g) ≃ₗ[R] ker f × ker g :=
+  (LinearEquiv.ofEq _ _ (ker_prodMap f g)).trans (Submodule.prodEquiv _ _)
+
+@[simp]
+theorem coe_kerProdMapEquiv_apply_fst (f : M →ₗ[R] N) (g : M' →ₗ[R] N') (x : ker (f.prodMap g)) :
+    ((kerProdMapEquiv f g x).1 : M) = (x : M × M').1 := by
+  simp [kerProdMapEquiv]
+
+@[simp]
+theorem coe_kerProdMapEquiv_apply_snd (f : M →ₗ[R] N) (g : M' →ₗ[R] N') (x : ker (f.prodMap g)) :
+    ((kerProdMapEquiv f g x).2 : M') = (x : M × M').2 := by
+  simp [kerProdMapEquiv]
+
+@[simp]
+theorem coe_kerProdMapEquiv_symm_apply (f : M →ₗ[R] N) (g : M' →ₗ[R] N') (x : ker f × ker g) :
+    ((kerProdMapEquiv f g).symm x : M × M') = ((x.1 : M), (x.2 : M')) := by
+  simp [kerProdMapEquiv]
+
+end LinearMap
 
 namespace TauCeti
 

@@ -18,11 +18,14 @@ The quotient by a product submodule is the product of the two quotients:
 Mathlib has the additive-group form of this statement,
 `QuotientAddGroup.prodAddEquiv`; `quotientProdEquiv` below records the analogous scalar-compatible
 equivalence, which is the form module-theoretic consumers need. There is no submodule form upstream.
+In particular the cokernel of a product map `f.prodMap g` is the product of the cokernels.
 
 ## Main declarations
 
 * `Submodule.quotientProdEquiv`: `(M × N) ⧸ p.prod q ≃ₗ (M ⧸ p) × (N ⧸ q)`.
 * `Submodule.finrank_quotient_prod`: the ranks of the quotients add.
+* `LinearMap.quotientRangeProdMapEquiv`: the cokernel of `f.prodMap g` is linearly equivalent to
+  the product of the cokernels of `f` and `g`.
 
 ## Implementation notes
 
@@ -75,3 +78,29 @@ theorem finrank_quotient_prod [StrongRankCondition R] (p : Submodule R M) (q : S
 end Quotient
 
 end Submodule
+
+namespace LinearMap
+
+variable {R M N M' N' : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup N]
+  [Module R N] [AddCommGroup M'] [Module R M'] [AddCommGroup N'] [Module R N']
+
+/-- The cokernel of the product map `f.prodMap g` is the product of the cokernels of `f` and `g`:
+`(N × N') ⧸ range (f.prodMap g) ≃ (N ⧸ range f) × (N' ⧸ range g)`. -/
+def quotientRangeProdMapEquiv (f : M →ₗ[R] N) (g : M' →ₗ[R] N') :
+    ((N × N') ⧸ range (f.prodMap g)) ≃ₗ[R] (N ⧸ range f) × (N' ⧸ range g) :=
+  (Submodule.quotEquivOfEq _ _ (range_prodMap f g)).trans (Submodule.quotientProdEquiv _ _)
+
+@[simp]
+theorem quotientRangeProdMapEquiv_apply_mk (f : M →ₗ[R] N) (g : M' →ₗ[R] N') (x : N × N') :
+    quotientRangeProdMapEquiv f g (Submodule.Quotient.mk x) =
+      (Submodule.Quotient.mk x.1, Submodule.Quotient.mk x.2) := by
+  simp [quotientRangeProdMapEquiv]
+
+@[simp]
+theorem quotientRangeProdMapEquiv_symm_apply_mk (f : M →ₗ[R] N) (g : M' →ₗ[R] N') (x : N)
+    (y : N') :
+    (quotientRangeProdMapEquiv f g).symm (Submodule.Quotient.mk x, Submodule.Quotient.mk y) =
+      Submodule.Quotient.mk (x, y) := by
+  rw [LinearEquiv.symm_apply_eq, quotientRangeProdMapEquiv_apply_mk]
+
+end LinearMap
