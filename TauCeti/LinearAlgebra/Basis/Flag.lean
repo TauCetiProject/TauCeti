@@ -177,6 +177,19 @@ theorem finrank_flag [StrongRankCondition R] (b : Basis (Fin n) R M) (k : Fin (n
   simp [Fintype.card_subtype, Fin.lt_def, Fin.card_filter_val_lt]
   omega
 
+/-- A vector in the span of the first `k` coordinates of a basis indexed by `Fin n`, listed by an
+embedding `e : Fin k → Fin n` into the indices below `k`, has nonzero coordinates only at indices
+below `k`. -/
+theorem lt_of_mem_support_repr_of_mem_span_range {k : ℕ} (b : Basis (Fin n) R M)
+    (e : Fin k → Fin n) (he : ∀ j, (e j).val < k) {x : M}
+    (hx : x ∈ Submodule.span R (Set.range fun j ↦ b (e j))) {i : Fin n}
+    (hi : i ∈ (b.repr x).support) : i.val < k := by
+  have hsupp := b.repr_support_subset_of_mem_span (Set.range e)
+    (by simpa only [← Set.range_comp, Function.comp_def] using hx)
+  rcases hsupp hi with ⟨i', hi'⟩
+  rw [← hi']
+  exact he i'
+
 end Semiring
 
 section CommSemiring

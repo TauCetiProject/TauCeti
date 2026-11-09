@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Represented.Flag.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.PointAction
 public import TauCeti.LinearAlgebra.Span.Basic
+import TauCeti.LinearAlgebra.Basis.Flag
 
 /-!
 # Scalar-extended coordinate spans of the represented modular F4 flag
@@ -433,19 +434,6 @@ local instance f4ShortRootCotangentAdjointComodule :
   Derivation.adjointComodule
     (R := 𝔽₂) (H := GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26)
 
-omit [CommRing A] [Algebra 𝔽₂ A] in
-/-- A vector in the span of the first `k` coordinates of a basis has nonzero coordinates only at
-indices below `k`. -/
-private theorem lt_of_mem_support_repr_of_mem_span_range {R M : Type*} [Semiring R]
-    [AddCommMonoid M] [Module R M] {N k : ℕ} (b : Module.Basis (Fin N) R M) (e : Fin k → Fin N)
-    (he : ∀ j, (e j).val < k) {x : M} (hx : x ∈ Submodule.span R (Set.range fun j => b (e j)))
-    {i : Fin N} (hi : i ∈ (b.repr x).support) : i.val < k := by
-  have hsupp := b.repr_support_subset_of_mem_span (Set.range e)
-    (by simpa only [← Set.range_comp, Function.comp_def] using hx)
-  rcases hsupp hi with ⟨i', hi'⟩
-  rw [← hi']
-  exact he i'
-
 /-- A point acts block triangularly on the adapted flag if it preserves its two nontrivial steps. -/
 theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
     (g : HopfAlgebra.points
@@ -476,7 +464,7 @@ theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
       exact f4ShortRootCotangentFlagBasis_mem_ideal j'
     apply Finsupp.notMem_support_iff.mp
     intro hcoord
-    have hiIdeal := lt_of_mem_support_repr_of_mem_span_range
+    have hiIdeal := Module.Basis.lt_of_mem_support_repr_of_mem_span_range
       (f4ShortRootCotangentFlagBasis.baseChange A)
       (fun i : Fin f4ShortRootRepresentedIdealRank =>
         Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i))
@@ -494,7 +482,7 @@ theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
         exact f4ShortRootCotangentFlagBasis_mem_range j'
       apply Finsupp.notMem_support_iff.mp
       intro hcoord
-      have hiRange := lt_of_mem_support_repr_of_mem_span_range
+      have hiRange := Module.Basis.lt_of_mem_support_repr_of_mem_span_range
         (f4ShortRootCotangentFlagBasis.baseChange A)
         (fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>
           Fin.castAdd f4ShortRootRepresentedComplementRank i)
