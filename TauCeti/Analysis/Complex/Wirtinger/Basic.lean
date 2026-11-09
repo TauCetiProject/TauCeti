@@ -275,6 +275,14 @@ theorem _root_.DifferentiableAt.wirtingerDeriv_eq_fderiv {g : V → W} {x : V}
   simp only [ContinuousLinearMap.coe_restrictScalars', map_smul, smul_smul, I_mul_I]
   module
 
+/-- The Wirtinger derivative of the identity is the identity: `∂z = 1`. -/
+theorem wirtingerDeriv_id : wirtingerDeriv (id : V → V) x = ContinuousLinearMap.id ℂ V := by
+  rw [(differentiableAt_id (𝕜 := ℂ)).wirtingerDeriv_eq_fderiv, fderiv_id]
+
+/-- The conjugate Wirtinger derivative of the identity vanishes: `\bar∂z = 0`. -/
+theorem conjWirtingerDeriv_id : conjWirtingerDeriv (id : V → V) x = 0 :=
+  (differentiableAt_id (𝕜 := ℂ)).conjWirtingerDeriv_eq_zero
+
 /-- For a real function, the conjugate Wirtinger derivative is the complex conjugate of the
 Wirtinger derivative. -/
 theorem conjWirtingerDeriv_ofReal_comp_apply (f : V → ℝ) (x v : V) :
@@ -390,6 +398,16 @@ theorem fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv {f : ℂ
       v • wirtingerDeriv f x 1 + conj v • conjWirtingerDeriv f x 1 := by
   rw [← wirtingerDeriv_add_conjWirtingerDeriv f x v,
     wirtingerDeriv_apply_eq_smul_apply_one, conjWirtingerDeriv_apply_eq_conj_smul_apply_one]
+
+/-- In one variable the real derivative is controlled by its two Wirtinger parts:
+`‖Df(x)‖ ≤ ‖∂f(x)‖ + ‖bar∂f(x)‖`. -/
+theorem norm_fderiv_le_norm_wirtingerDeriv_add_norm_conjWirtingerDeriv (f : ℂ → W) (x : ℂ) :
+    ‖fderiv ℝ f x‖ ≤ ‖wirtingerDeriv f x 1‖ + ‖conjWirtingerDeriv f x 1‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
+  rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv]
+  refine (norm_add_le _ _).trans_eq ?_
+  rw [norm_smul, norm_smul, Complex.norm_conj]
+  ring
 
 /-- In one variable the conjugate Wirtinger derivative vanishes exactly when its value
 at `1` vanishes, since it is complex-antilinear. -/

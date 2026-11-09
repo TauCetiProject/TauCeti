@@ -97,7 +97,7 @@ private lemma tsum_sampleGraph_homDensityFin_tail_ne_top_of_card_pos {V : Type*}
     have hn' : 2 * (Fintype.card V : ℝ) ^ 2 ≤ ε * ((n + 1 : ℕ) : ℝ) := by
       simpa only [q, Nat.cast_add, Nat.cast_one] using hn
     dsimp only [a, b]
-    convert sampleGraph_homDensityFin_concentration F W hε hn' using 1
+    convert sampleGraph_homDensityFin_concentration F W hn' using 1
     dsimp only [c, q]
     push_cast
     ring_nf

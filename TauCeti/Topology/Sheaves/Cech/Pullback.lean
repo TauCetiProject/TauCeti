@@ -17,7 +17,9 @@ For a continuous map `f : X ⟶ Y` and a morphism of presheaves `α : P ⟶ f_* 
 complex of `Q` for the inverse-image family. It uses the native tuple complex,
 including repeated indices and empty intersections. No covering condition is needed.
 
-The map commutes with actual refinement functions and with coefficient morphisms.
+The map commutes with actual refinement functions, with the homotopies between the maps
+induced by two refinement functions, and with coefficient morphisms, and it is an isomorphism when
+the coefficient morphism is (`TopCat.Hom.isIso_cechComplexPullback`).
 Consequently, restriction to an open subspace can be performed before or after a
 refinement. `TopologicalSpace.Opens.cechComplexRestrict` is this restriction map, with the
 presheaf on the subspace obtained by evaluating on its open subsets regarded as opens of the
@@ -94,6 +96,12 @@ theorem cechComplexPullback_f_π
   exact ((Category.assoc _ _ _).trans <| (Pi.π _ a ≫=
     ((Category.assoc _ _ _).trans ((α.app _ ≫= hc).trans (Category.comp_id _))))).symm
 
+/-- Pullback along an isomorphism of coefficients is an isomorphism of Čech complexes. -/
+instance isIso_cechComplexPullback (α : P ⟶ (TopCat.Presheaf.pushforward A f).obj Q) [IsIso α] :
+    IsIso (cechComplexPullback f U α) := by
+  rw [cechComplexPullback]
+  infer_instance
+
 /-- Pullback commutes with every actual refinement, not just with its induced cohomology map. -/
 @[reassoc]
 theorem cechComplexMap_comp_cechComplexPullback {κ : Type u} {V : κ → Opens Y}
@@ -111,6 +119,27 @@ theorem cechComplexMap_comp_cechComplexPullback {κ : Type u} {V : κ → Opens 
   exact (cechComplexMap_naturality P α φ).symm.trans <|
     ((cechComplexPullback_comp_comparison f V α =≫ _).symm.trans <|
       (Category.assoc _ _ _).trans (cechComplexPullback f V α ≫= h.symm))
+
+/-- Pullback carries the homotopy between the maps induced by two actual refinements
+(`TauCeti.CategoryTheory.cechComplexMapHomotopy`) to the homotopy between the maps induced by the
+inverse-image refinements. -/
+@[reassoc]
+theorem cechComplexPullback_f_comp_cechComplexMapHomotopy_hom {κ : Type u} {V : κ → Opens Y}
+    (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (α : P ⟶ (TopCat.Presheaf.pushforward A f).obj Q) (i j : ℕ) :
+    (cechComplexPullback f V α).f i ≫
+        (cechComplexMapHomotopy Q
+          (⟨φ.f, fun i ↦ (Opens.map f).map (φ.φ i)⟩ :
+            FormalCoproduct.mk _ (fun i ↦ (Opens.map f).obj (U i)) ⟶
+              FormalCoproduct.mk _ (fun i ↦ (Opens.map f).obj (V i)))
+          ⟨ψ.f, fun i ↦ (Opens.map f).map (ψ.φ i)⟩).hom i j =
+      (cechComplexMapHomotopy P φ ψ).hom i j ≫ (cechComplexPullback f U α).f j := by
+  rw [← cancel_mono ((cechComplexCompIso (Opens.map f) U Q (preimageProduct f U)).hom.f j),
+    Category.assoc, Category.assoc,
+    cechComplexMapHomotopy_hom_comp_cechComplexCompIso_hom _ _ _ _ _ _ (preimageProduct f V),
+    ← Category.assoc, ← HomologicalComplex.comp_f, ← HomologicalComplex.comp_f,
+    cechComplexPullback_comp_comparison, cechComplexPullback_comp_comparison]
+  exact cechComplexMapHomotopy_hom_naturality P α φ ψ i j
 
 /-- A commutative square of coefficient maps induces a commutative square of pullback maps. -/
 @[reassoc]
@@ -181,6 +210,21 @@ theorem cechComplexMap_comp_cechComplexRestrict (W : Opens X) (U : ι → Opens 
             FormalCoproduct.mk _ (fun i ↦ (Opens.map W.inclusion').obj (U i)) ⟶
               FormalCoproduct.mk _ (fun i ↦ (Opens.map W.inclusion').obj (V i))) :=
   cechComplexMap_comp_cechComplexPullback W.inclusion' U φ _
+
+/-- Restricting a cover commutes with the homotopy between the maps induced by two actual
+refinements. -/
+@[reassoc]
+theorem cechComplexRestrict_f_comp_cechComplexMapHomotopy_hom (W : Opens X) (U : ι → Opens X)
+    (P : X.Presheaf A) {κ : Type u} {V : κ → Opens X}
+    (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (i j : ℕ) :
+    (cechComplexRestrict W V P).f i ≫
+        (cechComplexMapHomotopy (W.isOpenEmbedding.isOpenMap.functor.op ⋙ P)
+          (⟨φ.f, fun i ↦ (Opens.map W.inclusion').map (φ.φ i)⟩ :
+            FormalCoproduct.mk _ (fun i ↦ (Opens.map W.inclusion').obj (U i)) ⟶
+              FormalCoproduct.mk _ (fun i ↦ (Opens.map W.inclusion').obj (V i)))
+          ⟨ψ.f, fun i ↦ (Opens.map W.inclusion').map (ψ.φ i)⟩).hom i j =
+      (cechComplexMapHomotopy P φ ψ).hom i j ≫ (cechComplexRestrict W U P).f j :=
+  cechComplexPullback_f_comp_cechComplexMapHomotopy_hom W.inclusion' U φ ψ _ i j
 
 end TopologicalSpace.Opens
 

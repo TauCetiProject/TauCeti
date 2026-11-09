@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.TangentCone.Prod
+import Mathlib.Analysis.Normed.Operator.Prod
 
 /-!
 # Derivative lemmas on products
@@ -35,6 +36,10 @@ one order higher for the first derivative, and more generally along any line `r 
 A function whose partial derivative in the first variable vanishes everywhere is constant along
 every horizontal line.
 
+The product `η (t) * u (t, x)` of a function of time and a function of time and space has the
+expected derivative, with a norm bound in terms of bounds on the factors and their derivatives
+(`TauCeti.hasFDerivAt_mul_fst`, `TauCeti.norm_fderiv_mul_fst_le`).
+
 ## Main declarations
 
 * `HasFDerivAt.comp_fst_add_comp_snd`: the derivative of a separated sum is the coproduct of the
@@ -46,6 +51,8 @@ every horizontal line.
 * `TauCeti.hasDerivAt_fderiv_apply_line`: the derivative of a first derivative along a line.
 * `TauCeti.apply_eq_apply_zero_of_fderiv_fst_eq_zero`: a function with vanishing partial
   derivative in its real first variable is constant along horizontal lines.
+* `TauCeti.eq_zero_of_fderiv_fst_eq_zero_of_tendsto`: such a function which decays as `s → +∞`
+  along each horizontal line vanishes.
 * `TauCeti.fderiv_comp_fst_add_comp_snd`: the same for the totalized derivative.
 * `TauCeti.fderiv_comp_fst_add_comp_snd_eq_zero_iff`: a separated sum of differentiable functions
   is critical at `(a, b)` exactly when both summands are critical at `a` and `b`.
@@ -331,6 +338,46 @@ theorem fderivWithin_prodMk_fst_clm_apply_snd {s : Set X} {a₀ : X} {F : X → 
   rw [hfst_app, hsnd_app, add_comm]
 
 end FstClmApplySnd
+
+/-- A differentiable function on `ℝ × F` whose partial derivative in the first variable vanishes
+everywhere and which tends to `0` as `s → +∞` along each horizontal line vanishes identically. -/
+theorem eq_zero_of_fderiv_fst_eq_zero_of_tendsto {F G : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G] {u : ℝ × F → G}
+    (hu : Differentiable ℝ u) (h : ∀ z, fderiv ℝ u z (1, 0) = 0)
+    (hdecay : ∀ t, Filter.Tendsto (fun r ↦ u (r, t)) Filter.atTop (nhds 0)) :
+    u = 0 := by
+  funext ⟨s, t⟩
+  have hc := apply_eq_apply_zero_of_fderiv_fst_eq_zero hu h
+  have hlim := hdecay t
+  simp only [hc] at hlim
+  rw [Pi.zero_apply, hc s t]
+  exact tendsto_nhds_unique tendsto_const_nhds hlim
+
+/-- The product `η (t) * u (t, x)` of a `C¹` function of time and a `C¹` function of time and space
+has the expected derivative. -/
+theorem hasFDerivAt_mul_fst {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {η : ℝ → ℝ}
+    {u : ℝ × E → ℝ} {q : ℝ × E} (hηd : DifferentiableAt ℝ η q.1) (hud : DifferentiableAt ℝ u q) :
+    HasFDerivAt (fun p : ℝ × E ↦ η p.1 * u p)
+      (η q.1 • fderiv ℝ u q + u q • (fderiv ℝ η q.1).comp (ContinuousLinearMap.fst ℝ ℝ E)) q :=
+  (hηd.hasFDerivAt.comp q hasFDerivAt_fst).mul hud.hasFDerivAt
+
+/-- A bound for the derivative at `q` of the product `η (t) * u (t, x)` from bounds on `η` and
+`deriv η` at `q.1` and on `u` and `fderiv ℝ u` at `q`. -/
+theorem norm_fderiv_mul_fst_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {η : ℝ → ℝ}
+    {u : ℝ × E → ℝ} {q : ℝ × E} (hηd : DifferentiableAt ℝ η q.1) (hud : DifferentiableAt ℝ u q)
+    {A A' M M' : ℝ} (hA : ‖η q.1‖ ≤ A) (hA' : ‖deriv η q.1‖ ≤ A') (huM : ‖u q‖ ≤ M)
+    (hDu : ‖fderiv ℝ u q‖ ≤ M') :
+    ‖fderiv ℝ (fun p : ℝ × E ↦ η p.1 * u p) q‖ ≤ A * M' + M * A' := by
+  have hA0 : 0 ≤ A := (norm_nonneg _).trans hA
+  have hM : 0 ≤ M := (norm_nonneg _).trans huM
+  rw [(hasFDerivAt_mul_fst hηd hud).fderiv]
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul]
+  · exact mul_le_mul hA hDu (norm_nonneg _) hA0
+  · refine mul_le_mul huM ((ContinuousLinearMap.opNorm_comp_le _ _).trans
+      (mul_le_of_le_one_right (norm_nonneg _) (ContinuousLinearMap.norm_fst_le ℝ ℝ E)) |>.trans ?_)
+      (norm_nonneg _) hM
+    rw [← norm_deriv_eq_norm_fderiv]
+    exact hA'
 
 end TauCeti
 
