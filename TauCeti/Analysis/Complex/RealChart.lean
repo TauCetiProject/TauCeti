@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Topology.Algebra.Module.Determinant
+import TauCeti.LinearAlgebra.Complex.Determinant
 
 /-!
 # Maps of the complex plane in real coordinates
@@ -18,7 +20,9 @@ A map `f : ℂ → ℂ` of the plane, read in the real coordinates `ℝ × ℝ �
 `f'`, the real derivative of its real chart is multiplication by `f'`
 (`TauCeti.Complex.hasFDerivAt_realChart`, `TauCeti.Complex.fderiv_realChart_apply`), and a map
 that is `C^n` over `ℂ` is `C^n` over `ℝ` in real coordinates (`TauCeti.Complex.contDiff_realChart`).
-The real chart of an injective map is injective (`TauCeti.Complex.realChart_injective`).
+The real chart of an injective map is injective (`TauCeti.Complex.realChart_injective`), and the
+real chart of a complex differentiable map preserves orientation: its Jacobian determinant is
+nonnegative (`TauCeti.Complex.det_fderiv_realChart_nonneg`).
 -/
 
 public section
@@ -32,6 +36,12 @@ noncomputable def realChart (f : ℂ → ℂ) : ℝ × ℝ → ℝ × ℝ :=
 theorem realChart_apply (f : ℂ → ℂ) (z : ℝ × ℝ) :
     realChart f z = Complex.equivRealProdCLM (f (Complex.equivRealProdCLM.symm z)) :=
   (rfl)
+
+/-- In complex coordinates, the real chart of `f` is `f`. -/
+@[simp]
+theorem equivRealProdCLM_symm_realChart (f : ℂ → ℂ) (z : ℝ × ℝ) :
+    Complex.equivRealProdCLM.symm (realChart f z) = f (Complex.equivRealProdCLM.symm z) := by
+  rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
 
 /-- In real coordinates, the derivative of a map with complex derivative `f'` is multiplication
 by `f'`. -/
@@ -50,6 +60,15 @@ theorem fderiv_realChart_apply {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ}
       Complex.equivRealProdCLM (f' * Complex.equivRealProdCLM.symm v) := by
   rw [(hasFDerivAt_realChart hf).fderiv]
   simp [mul_comm]
+
+/-- **A holomorphic map preserves orientation.** In real coordinates, the Jacobian determinant of
+a map that is complex differentiable at a point is nonnegative there. -/
+theorem det_fderiv_realChart_nonneg {f : ℂ → ℂ} {w : ℝ × ℝ}
+    (hf : DifferentiableAt ℂ f (Complex.equivRealProdCLM.symm w)) :
+    0 ≤ (fderiv ℝ (realChart f) w).det := by
+  rw [(hasFDerivAt_realChart hf.hasDerivAt).fderiv]
+  simpa [ContinuousLinearMap.det] using LinearMap.det_restrictScalars_nonneg (E := ℂ)
+    (LinearMap.toSpanSingleton ℂ ℂ (deriv f (Complex.equivRealProdCLM.symm w)))
 
 /-- A map that is `C^n` over `ℂ` is `C^n` over `ℝ` in real coordinates. -/
 theorem contDiff_realChart {f : ℂ → ℂ} {n : WithTop ℕ∞} (hf : ContDiff ℂ n f) :
