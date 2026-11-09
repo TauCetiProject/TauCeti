@@ -13,8 +13,9 @@ import TauCeti.Analysis.BoundedVariation.Convolution
 import TauCeti.Analysis.Convex.Exhaustion
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Basic
 import TauCeti.MeasureTheory.Integral.Average
-import TauCeti.MeasureTheory.Integral.Lebesgue.BiUnion
+import TauCeti.MeasureTheory.Integral.Lebesgue.Exhaustion
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # The Poincaré inequality for functions of bounded variation
@@ -308,26 +309,6 @@ private theorem setLIntegral_enorm_sub_setAverage_le_of_closure_subset {U T : Se
       (𝓝 (0 + M * 0 + C * totalVariationOn μ Ω u)) :=
     (he.add (ENNReal.Tendsto.const_mul he (Or.inr hM))).add tendsto_const_nhds
   simpa using ge_of_tendsto hlim (hvar.mono hbound)
-
-/-- The bounds `K / m n * T + M * ‖s n - a‖` converge to `K / m₀ * T` when `m n → m₀ > 0` and
-`s n → a`, for finite `M`. -/
-private theorem tendsto_ofReal_div_mul_add_mul_enorm_sub {K a m₀ : ℝ} {m s : ℕ → ℝ}
-    {T M : ℝ≥0∞} (hK : 0 ≤ K) (hm₀ : 0 < m₀) (hm : Tendsto m atTop (𝓝 m₀))
-    (hs : Tendsto s atTop (𝓝 a)) (hM : M ≠ ∞) :
-    Tendsto (fun n => ENNReal.ofReal (K / m n) * T + M * ‖s n - a‖ₑ) atTop
-      (𝓝 (ENNReal.ofReal (K / m₀) * T)) := by
-  have h0 : Tendsto (fun n ↦ s n - a) atTop (𝓝 0) := by simpa using hs.sub_const a
-  have h1 : Tendsto (fun n => ENNReal.ofReal (K / m n) * T) atTop
-      (𝓝 (ENNReal.ofReal (K / m₀) * T)) := by
-    rcases eq_or_ne K 0 with hK₀ | hK₀
-    · simp [hK₀]
-    refine ENNReal.Tendsto.mul_const
-      (ENNReal.tendsto_ofReal (tendsto_const_nhds.div hm hm₀.ne')) (Or.inl ?_)
-    exact (ENNReal.ofReal_pos.2 (div_pos (lt_of_le_of_ne hK hK₀.symm) hm₀)).ne'
-  have h2 : Tendsto (fun n => M * ‖s n - a‖ₑ) atTop (𝓝 0) := by
-    simpa [Function.comp_def] using
-      (ENNReal.Tendsto.const_mul ((continuous_enorm.tendsto (0 : ℝ)).comp h0) (Or.inr hM))
-  simpa using h1.add h2
 
 /-- The inequality for a measurable `S`, from the inequality on an exhaustion of `Ω` by convex
 open sets with compact closures in `Ω`. -/
