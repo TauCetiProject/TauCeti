@@ -91,6 +91,36 @@ private theorem exists_primitive_inChartAt [IsManifold I ∞ M] {r : ℕ∞} (hr
   obtain ⟨α, hα, -, hdα⟩ := hconv.exists_contDiffOn_forall_extDerivWithin_eq hsu hxs hr hω hcl
   exact ⟨ε, hε, α, hα, hdα⟩
 
+omit [CompleteSpace F] in
+/-- A `C^r` form `α` on an open set `s` intersected with the model range, pulled back along the
+chart at `x` and cut off by a `C^r` function supported where the chart lands in `s`, is a `C^r`
+form on all of `M`. -/
+theorem isSmoothForm_smul_mpullback_extChartAt {r : ℕ∞} [IsManifold I 1 M]
+    [IsManifold I ((r : WithTop ℕ∞) + 1) M] {x : M} {s : Set E} (hs : IsOpen s)
+    {α : E → E [⋀^Fin k]→L[ℝ] F} (hα : ContDiffOn ℝ r α (s ∩ range I)) {χ : M → ℝ}
+    (hχ : ContMDiff I 𝓘(ℝ) r χ)
+    (hχs : tsupport χ ⊆ (chartAt H x).source ∩ extChartAt I x ⁻¹' s) :
+    IsSmoothForm I r
+      (fun y ↦ χ y • mpullback I 𝓘(ℝ, E) (extChartAt I x) (α : RoughForm 𝓘(ℝ, E) E F k) y) := by
+  rw [isSmoothForm_def]
+  refine hχ.contMDiffOn.smul_section_of_tsupport (isOpen_extChartAt_preimage x hs) hχs
+    fun y hy ↦ ContMDiffAt.contMDiffWithinAt ?_
+  have hys : y ∈ (extChartAt I x).source := by rw [extChartAt_source]; exact hy.1
+  have hyr := extChartAt_target_subset_range x ((extChartAt I x).map_source hys)
+  exact contMDiffAt_mpullback_extChartAt hys ((hα _ ⟨hy.2, hyr⟩).mono_of_mem_nhdsWithin
+    (inter_mem (mem_nhdsWithin_of_mem_nhds (hs.mem_nhds hy.2)) self_mem_nhdsWithin))
+
+omit [CompleteSpace F] in
+/-- If the chart expression at `x` of a `C¹` form `ψ` agrees with `α` near `z` within the model
+range, then the chart expression of `mextDeriv ψ` at `z` is the flat derivative of `α` within the
+model range. -/
+theorem IsSmoothForm.inChartAt_mextDeriv_eq_of_eventuallyEq [IsManifold I 2 M]
+    {ψ : RoughForm I M F k} (hψ : IsSmoothForm I 1 ψ) {α : E → E [⋀^Fin k]→L[ℝ] F} {x : M}
+    {z : E} (hz : z ∈ (extChartAt I x).target) (h : ψ.inChartAt x =ᶠ[𝓝[range I] z] α) :
+    (mextDeriv ψ).inChartAt x z = extDerivWithin α (range I) z := by
+  rw [hψ.inChartAt_mextDeriv_eq x hz,
+    h.extDerivWithin_eq (h.self_of_nhdsWithin (extChartAt_target_subset_range x hz))]
+
 /-- **The Poincaré lemma on manifolds.** A `C^r` form of positive degree, `r ≥ 1`, that is closed
 near a point `x` is, on a neighbourhood of `x`, the exterior derivative of a `C^r` form defined on
 the whole manifold. The manifold may have boundary or corners.
@@ -108,35 +138,19 @@ theorem exists_mextDeriv_eq_nhds [FiniteDimensional ℝ E] [T2Space M] [IsManifo
   -- `p` is the pullback of the flat primitive along the chart; its chart expression is `α`.
   let p : RoughForm I M F k :=
     mpullback I 𝓘(ℝ, E) (extChartAt I x) (α : RoughForm 𝓘(ℝ, E) E F k)
-  have hp (z : E) (hz : z ∈ (extChartAt I x).target) : p.inChartAt x z = α z :=
-    RoughForm.inChartAt_mpullback_extChartAt _ x hz
-  let u := (chartAt H x).source ∩ extChartAt I x ⁻¹' ball (extChartAt I x x) ε
-  have hu : IsOpen u := isOpen_extChartAt_preimage x isOpen_ball
-  have hmem {y : M} (hy : y ∈ u) : y ∈ (extChartAt I x).source ∧
-      extChartAt I x y ∈ ball (extChartAt I x x) ε ∩ range I := by
-    rw [extChartAt_source]
-    exact ⟨hy.1, hy.2, extChartAt_target_subset_range x ((extChartAt I x).map_source
-      (by rw [extChartAt_source]; exact hy.1))⟩
-  -- On `u` the pullback is `C^r`, since its chart expression `α` is.
-  have hpu (y : M) (hy : y ∈ u) : ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) r
-      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (p y)) y := by
-    obtain ⟨hys, hyb⟩ := hmem hy
-    exact contMDiffAt_mpullback_extChartAt hys ((hα _ hyb).mono_of_mem_nhdsWithin
-      (inter_mem (mem_nhdsWithin_of_mem_nhds (isOpen_ball.mem_nhds hyb.1)) self_mem_nhdsWithin))
-  obtain ⟨χ, -, hχu⟩ :=
-    (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.mp (hu.mem_nhds
+  obtain ⟨χ, -, hχu⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.mp
+    ((isOpen_extChartAt_preimage x (isOpen_ball (x := extChartAt I x x) (ε := ε))).mem_nhds
       ⟨mem_chart_source H x, mem_ball_self hε⟩)
-  have hψ : IsSmoothForm I r (fun y ↦ χ y • p y) := by
-    rw [isSmoothForm_def]
-    exact (χ.contMDiff.of_le (by exact_mod_cast le_top)).contMDiffOn.smul_section_of_tsupport hu
-      hχu fun y hy ↦ (hpu y hy).contMDiffWithinAt
+  have hψ : IsSmoothForm I r (fun y ↦ χ y • p y) := isSmoothForm_smul_mpullback_extChartAt
+    isOpen_ball hα (χ.contMDiff.of_le (by exact_mod_cast le_top)) hχu
   have hψ₁ : IsSmoothForm I 1 (fun y ↦ χ y • p y) :=
     hψ.of_le (by exact_mod_cast hr)
-  refine ⟨interior {y | χ y = 1}, interior_mem_nhds.mpr χ.eventuallyEq_one, _, hψ, ?_⟩
-  intro y hy
+  refine ⟨interior {y | χ y = 1}, interior_mem_nhds.mpr χ.eventuallyEq_one, _, hψ, fun y hy ↦ ?_⟩
   have hχy : χ y = 1 := interior_subset hy
-  obtain ⟨hys, hyb⟩ :=
-    hmem (hχu (subset_tsupport _ (Function.mem_support.mpr (by rw [hχy]; exact one_ne_zero))))
+  have hyu := hχu (subset_tsupport _ (Function.mem_support.mpr (by rw [hχy]; exact one_ne_zero)))
+  have hys : y ∈ (extChartAt I x).source := by rw [extChartAt_source]; exact hyu.1
+  have hyb : extChartAt I x y ∈ ball (extChartAt I x x) ε ∩ range I :=
+    ⟨hyu.2, extChartAt_target_subset_range x ((extChartAt I x).map_source hys)⟩
   -- Near the chart point of `y` the bump is `1`, so the chart expression of the cut-off
   -- pullback is the flat primitive `α`.
   have hone : ∀ᶠ w in 𝓝[range I] extChartAt I x y, χ ((extChartAt I x).symm w) = 1 := by
@@ -146,12 +160,12 @@ theorem exists_mextDeriv_eq_nhds [FiniteDimensional ℝ E] [T2Space M] [IsManifo
   have hψα : RoughForm.inChartAt (I := I) (fun y ↦ χ y • p y) x =ᶠ[𝓝[range I] extChartAt I x y]
       α := by
     filter_upwards [extChartAt_target_mem_nhdsWithin' hys, hone] with w hw hw₁
-    rw [RoughForm.inChartAt_fun_smul, hw₁, one_smul, hp w hw]
+    rw [RoughForm.inChartAt_fun_smul, hw₁, one_smul]
+    exact RoughForm.inChartAt_mpullback_extChartAt _ x hw
   have hset : ball (extChartAt I x x) ε ∩ range I =ᶠ[𝓝 (extChartAt I x y)] range I :=
     inter_eventuallyEqSet_right.mpr (eventually_of_mem (isOpen_ball.mem_nhds hyb.1) fun _ h _ ↦ h)
   rw [← RoughForm.inChartAt_chart_eq_iff hys,
-    hψ₁.inChartAt_mextDeriv_eq x ((extChartAt I x).map_source hys), ← hdα _ hyb,
+    hψ₁.inChartAt_mextDeriv_eq_of_eventuallyEq ((extChartAt I x).map_source hys) hψα, ← hdα _ hyb,
     extDerivWithin_congr_set hset]
-  exact hψα.extDerivWithin_eq (hψα.self_of_nhdsWithin hyb.2)
 
 end TauCeti
