@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
+public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
 # Primitive additive characters
@@ -20,6 +21,8 @@ the shift by `1`. Over a field the converse is Mathlib's `AddChar.IsPrimitive.of
 
 * `AddChar.IsPrimitive.ne_one`: a primitive additive character on a nontrivial ring is
   nontrivial.
+* `AddChar.IsPrimitive.natCast_ne_zero`: the level of a primitive additive character of `ZMod n`
+  with values in a domain is nonzero in that domain.
 -/
 
 public section
@@ -31,5 +34,18 @@ variable {R R' : Type*} [CommRing R] [Nontrivial R] [CommMonoid R']
 /-- A primitive additive character on a nontrivial ring is nontrivial. -/
 theorem IsPrimitive.ne_one {ψ : AddChar R R'} (hψ : ψ.IsPrimitive) : ψ ≠ 1 := by
   simpa only [mulShift_one] using hψ one_ne_zero
+
+/-- The level of a primitive additive character of `ZMod n` with values in a domain is nonzero in
+that domain. This is the level hypothesis needed to show that Gauss sums against primitive
+additive characters are nonzero. -/
+theorem IsPrimitive.natCast_ne_zero {S : Type*} [CommRing S] [IsDomain S] {n : ℕ} [NeZero n]
+    {e : AddChar (ZMod n) S} (he : e.IsPrimitive) : (n : S) ≠ 0 := by
+  have hroot : IsPrimitiveRoot (e 1) n :=
+    { pow_eq_one := by
+        rw [← map_nsmul_eq_pow, nsmul_eq_mul, mul_one, ZMod.natCast_self, map_zero_eq_one]
+      dvd_of_pow_eq_one := fun l hl ↦ by
+        rw [← map_nsmul_eq_pow, he.zmod_char_eq_one_iff n, nsmul_eq_mul, mul_one] at hl
+        exact (ZMod.natCast_eq_zero_iff l n).1 hl }
+  exact hroot.neZero'.out
 
 end AddChar

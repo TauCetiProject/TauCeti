@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.ForwardDiff
 public import Mathlib.Analysis.Normed.Field.UnitBall
 public import Mathlib.Analysis.Normed.Ring.Ultra
 public import TauCeti.Algebra.Order.BigOperators.ProdSubProd
+import TauCeti.Algebra.Group.ForwardDiff
 import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
@@ -22,7 +24,8 @@ when its terms are `1`-Lipschitz. The rational functions `t / (1 - t)²`, `t / (
 `t² / (1 - t)³` are Lipschitz on the open unit ball of an ultrametric field.
 
 Integer casts have norm at most `‖1‖`, without requiring the seminorm to be normalized. When
-`‖1‖ = 1`, arbitrarily large natural numbers have norm exactly one.
+`‖1‖ = 1`, arbitrarily large natural numbers have norm exactly one. Since the forward differences
+of a monomial are divisible by `k!`, their norms carry the factor `‖k!‖`.
 
 ## Main results
 
@@ -56,6 +59,8 @@ Integer casts have norm at most `‖1‖`, without requiring the seminorm to be 
 * `TauCeti.norm_pow_sub_one_le_norm_sub_one`: a power of an element `x` of norm at most one is
   no farther from `1` than `x`.
 * `TauCeti.norm_prod_sub_prod_le`: a uniform perturbation bound for finite products.
+* `TauCeti.norm_fwdDiff_iter_pow_mul_pow_le`: for `‖x‖, ‖h‖ ≤ c`, the `k`-th forward difference
+  of `y ↦ yᵐ` with step `h` at `x` satisfies `‖Δₕᵏ (y ↦ yᵐ)(x)‖ cᵏ ≤ ‖k!‖ ‖h‖ᵏ cᵐ`.
 -/
 
 public section
@@ -358,5 +363,52 @@ theorem norm_prod_sub_prod_le {ι R : Type*} [SeminormedCommRing R] [NormOneClas
       _ = ε * M ^ s.card := by
         have hcard : s.card - 1 + 1 = s.card := Nat.sub_add_cancel (Finset.card_pos.mpr hs)
         rw [mul_left_comm M ε, ← pow_succ', hcard, max_self]
+
+section FwdDiff
+
+open Finset
+open scoped fwdDiff
+
+variable {A : Type*} [SeminormedCommRing A] [NormOneClass A] [IsUltrametricDist A] {c : ℝ}
+  {h x : A}
+
+/-- **Forward differences of powers.** In an ultrametric seminormed commutative ring with
+`‖1‖ = 1`,
+for a point `x` and a step `h` with `‖x‖ ≤ c` and `‖h‖ ≤ c`,
+`‖Δₕᵏ (y ↦ yᵐ)(x)‖ cᵏ ≤ ‖k!‖ ‖h‖ᵏ cᵐ`. -/
+theorem norm_fwdDiff_iter_pow_mul_pow_le (hh : ‖h‖ ≤ c) (hx : ‖x‖ ≤ c) (k m : ℕ) :
+    ‖Δ_[h]^[k] (fun y : A ↦ y ^ m) x‖ * c ^ k ≤ ‖(k.factorial : A)‖ * ‖h‖ ^ k * c ^ m := by
+  have hc : 0 ≤ c := (norm_nonneg h).trans hh
+  rw [fwdDiff_iter_pow_eq_sum]
+  rcases lt_or_ge m k with hmk | hkm
+  · rw [sum_eq_zero fun l hl ↦ by
+      rw [Nat.stirlingSecond_eq_zero_of_lt (by grind), Nat.cast_zero, mul_zero, mul_zero]]
+    simp only [norm_zero, zero_mul]
+    positivity
+  rw [← pow_sub_mul_pow c hkm, ← mul_assoc]
+  refine mul_le_mul_of_nonneg_right
+    (IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun l hl ↦ ?_)
+    (by positivity)
+  rcases lt_or_ge l k with hlk | hkl
+  · rw [Nat.stirlingSecond_eq_zero_of_lt hlk, Nat.cast_zero, mul_zero, mul_zero, norm_zero]
+    positivity
+  have hlm : l ≤ m := Nat.lt_succ_iff.mp (mem_range.mp hl)
+  calc ‖x ^ (m - l) * h ^ l * (m.choose l : A) * ((k.factorial : A) * l.stirlingSecond k)‖
+      ≤ ‖x‖ ^ (m - l) * ‖h‖ ^ l * 1 * (‖(k.factorial : A)‖ * 1) := by
+        refine (norm_mul_le _ _).trans (mul_le_mul ?_ ((norm_mul_le _ _).trans ?_)
+          (norm_nonneg _) (by positivity))
+        · refine (norm_mul_le _ _).trans (mul_le_mul ((norm_mul_le _ _).trans ?_)
+            (IsUltrametricDist.norm_natCast_le_one A _) (norm_nonneg _) (by positivity))
+          exact mul_le_mul (norm_pow_le _ _) (norm_pow_le _ _) (norm_nonneg _) (by positivity)
+        · exact mul_le_mul_of_nonneg_left (IsUltrametricDist.norm_natCast_le_one A _)
+            (norm_nonneg _)
+    _ ≤ c ^ (m - l) * (‖h‖ ^ k * c ^ (l - k)) * 1 * (‖(k.factorial : A)‖ * 1) := by
+        rw [← pow_mul_pow_sub ‖h‖ hkl]
+        gcongr
+    _ = ‖(k.factorial : A)‖ * ‖h‖ ^ k * c ^ (m - k) := by
+        rw [← Nat.sub_add_sub_cancel hlm hkl, pow_add]
+        ring
+
+end FwdDiff
 
 end TauCeti

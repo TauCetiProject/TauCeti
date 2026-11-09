@@ -146,13 +146,9 @@ private theorem _root_.IsCompactOperator.exists_eq_succ_of_chain (hK : IsCompact
     have hrw : K (f m) - K (f n) = f m - ((f m - K (f m)) + f n - (f n - K (f n))) := by abel
     rw [hrw]
     exact hfsep m _ hy
-  obtain ⟨m, n, hmn, hlt⟩ := IsCompactOperator.exists_dist_lt_of_norm_le hK hfnorm one_pos
+  obtain ⟨m, n, hmn, hlt⟩ := hK.exists_dist_lt_of_norm_le hfnorm one_pos
   rw [dist_eq_norm] at hlt
-  rcases hmn.lt_or_gt with h | h
-  · exact (key m n h).not_gt hlt
-  · exact (key n m h).not_gt (by rwa [norm_sub_rev])
-
-variable [CompleteSpace 𝕜]
+  exact (key m n hmn).not_gt hlt
 
 variable [IsRCLikeNormedField 𝕜] [CompleteSpace X]
 
@@ -160,6 +156,9 @@ variable [IsRCLikeNormedField 𝕜] [CompleteSpace X]
 theorem _root_.IsCompactOperator.isClosed_range_pow_one_sub
     (hK : IsCompactOperator K) (n : ℕ) :
     IsClosed (LinearMap.range (((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) ^ n) : Set X) := by
+  have : CompleteSpace 𝕜 := by
+    let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+    infer_instance
   have h := ((1 - K) ^ n).isClosed_range_of_compact_estimate
     (hK.isCompactOperator_one_sub_pow n) (C := 1)
     (fun x ↦ by simpa using norm_le_norm_add_norm_sub' x (((1 - K) ^ n) x))
@@ -183,6 +182,9 @@ theorem _root_.IsCompactOperator.exists_range_pow_succ_eq_one_sub
 theorem _root_.IsCompactOperator.finiteDimensional_quotient_range_one_sub
     (hK : IsCompactOperator K) :
     FiniteDimensional 𝕜 (X ⧸ LinearMap.range ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X)) := by
+  have : CompleteSpace 𝕜 := by
+    let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+    infer_instance
   set A : X →L[𝕜] X := 1 - K with hA
   obtain ⟨p, hp⟩ := hK.exists_range_pow_succ_eq_one_sub
   -- Then `ker (A ^ p)`, which is finite dimensional, together with `range A` spans `X`.

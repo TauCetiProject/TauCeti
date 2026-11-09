@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The real volume of the unit ball
@@ -16,7 +17,7 @@ the unit ball in the form `π ^ (d / 2) / Γ(d / 2 + 1)`, where `d` is the dimen
 form used in normalizing constants. It also shows that every finite-dimensional real inner
 product space has a closed ball of volume one about the origin, that a closed ball of
 radius `r` in a one-dimensional space has volume `2 * r`, and that a disc of radius `r` in `ℂ` has
-real volume `π * r ^ 2`.
+real volume `π * r ^ 2`, so that a constant `c` on it has `L²` norm `‖c‖ r √π`.
 -/
 
 public section
@@ -34,9 +35,7 @@ theorem volume_real_unitBall :
     volume.real (ball (0 : V) 1) =
       π ^ ((finrank ℝ V : ℝ) / 2) / Gamma (finrank ℝ V / 2 + 1) := by
   rw [measureReal_def, InnerProductSpace.volume_ball, ENNReal.ofReal_one, one_pow, one_mul,
-    ENNReal.toReal_ofReal (by positivity), Real.sqrt_eq_rpow, ← Real.rpow_natCast,
-    ← Real.rpow_mul pi_pos.le]
-  ring_nf
+    ENNReal.toReal_ofReal (by positivity), Real.pow_sqrt_eq_rpow pi_pos.le]
 
 omit [Nontrivial V] in
 /-- There is a closed ball about the origin of volume one. -/
@@ -77,5 +76,20 @@ open MeasureTheory Metric Real
 /-- A disc of radius `r ≥ 0` in `ℂ` has real volume `π * r ^ 2`. -/
 theorem volume_real_ball (a : ℂ) {r : ℝ} (hr : 0 ≤ r) : volume.real (ball a r) = π * r ^ 2 := by
   simp [Measure.real, Complex.volume_ball, ENNReal.toReal_ofReal hr, mul_comm]
+
+/-- The `L²` norm of a constant `c` on the closed disc of radius `R` in `ℂ` is `‖c‖ R √π`, the
+square root of the disc area `π R²` times `‖c‖`. -/
+theorem eLpNorm_two_indicator_closedBall_const {E : Type*} [NormedAddCommGroup E] (a : ℂ)
+    (c : E) {R : ℝ} (hR : 0 ≤ R) :
+    eLpNorm ((closedBall a R).indicator fun _ ↦ c) 2 volume = ‖c‖ₑ * ENNReal.ofReal (R * √π) := by
+  rw [eLpNorm_indicator_const measurableSet_closedBall.nullMeasurableSet two_ne_zero
+    ENNReal.ofNat_ne_top, Complex.volume_closedBall]
+  congr 1
+  -- The area `R² π` is the square of `R √π`.
+  have harea : ENNReal.ofReal R ^ 2 * NNReal.pi = ENNReal.ofReal (R * √π) ^ 2 := by
+    rw [ENNReal.ofReal_mul hR, mul_pow, ← ENNReal.ofReal_pow (Real.sqrt_nonneg π),
+      Real.sq_sqrt Real.pi_pos.le, ← ENNReal.ofReal_coe_nnreal, NNReal.coe_real_pi]
+  rw [harea, ENNReal.toReal_ofNat, ← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
+  norm_num
 
 end Complex

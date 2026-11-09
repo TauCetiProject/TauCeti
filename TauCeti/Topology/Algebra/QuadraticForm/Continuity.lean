@@ -27,7 +27,7 @@ theorem QuadraticMap.continuous
     {R M N : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
     [AddCommGroup M] [Module R M] [Module.Finite R M]
     [TopologicalSpace M] [IsModuleTopology R M]
-    [AddCommGroup N] [Module R N] [TopologicalSpace N]
+    [AddCommMonoid N] [Module R N] [TopologicalSpace N]
     [ContinuousAdd N] [ContinuousSMul R N] (Q : QuadraticMap R M N) : Continuous Q := by
   classical
   obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R M
@@ -38,17 +38,15 @@ theorem QuadraticMap.continuous
   have hs (s : Finset (Fin n)) :
       Continuous (fun x : Fin n → R => Q (∑ i ∈ s, x i • v i)) := by
     induction s using Finset.induction_on with
-    | empty => simpa using (continuous_const : Continuous (fun _ : Fin n → R => (0 : N)))
+    | empty => simpa using continuous_const
     | @insert i s hi ih =>
-      have hlin := IsModuleTopology.continuous_of_linearMap (B (v i))
-      have hsum : Continuous (fun x : Fin n → R => ∑ j ∈ s, x j • v j) := by fun_prop
+      have := IsModuleTopology.continuous_of_linearMap (B (v i))
       simp_rw [Finset.sum_insert hi, hB, Q.map_smul, map_smul, LinearMap.smul_apply]
-      exact (((continuous_apply i).fun_mul (continuous_apply i)).fun_smul
-        continuous_const).fun_add ih |>.fun_add
-          ((continuous_apply i).fun_smul (hlin.comp hsum))
+      exact ((by fun_prop : Continuous fun x : Fin n → R => (x i * x i) • Q (v i)).add ih).add
+        (by fun_prop)
   -- The coordinate surjection is a quotient map for the module topology.
-  rw [Topology.IsQuotientMap.continuous_iff (IsModuleTopology.isQuotientMap_of_surjective hf)]
-  exact (hs Finset.univ).congr (fun x => congrArg Q (f.pi_apply_eq_sum_univ x).symm)
+  rw [(IsModuleTopology.isQuotientMap_of_surjective hf).continuous_iff]
+  exact (hs Finset.univ).congr fun x => congrArg Q (f.pi_apply_eq_sum_univ x).symm
 
 /-- Endomorphisms preserving a continuous quadratic map form a closed subset of the
 endomorphism space when the codomain is Hausdorff. -/
@@ -60,9 +58,6 @@ theorem QuadraticMap.isClosed_setOfPred_forall_map_app
     [AddCommMonoid N] [Module R N] [TopologicalSpace N] [T2Space N]
     (Q : QuadraticMap R M N) (hQ : Continuous Q) :
     IsClosed {f : Module.End R M | ∀ x : M, Q (f x) = Q x} := by
-  have h (x : M) : IsClosed {f : Module.End R M | Q (f x) = Q x} := by
-    have hev : Continuous (fun f : Module.End R M => f x) :=
-      IsModuleTopology.continuous_of_linearMap ((LinearMap.applyₗ :
-        M →ₗ[R] Module.End R M →ₗ[R] M) x)
-    exact isClosed_eq (hQ.comp hev) continuous_const
-  simpa only [Set.ofPred_forall] using isClosed_iInter h
+  rw [Set.ofPred_forall]
+  exact isClosed_iInter fun x => isClosed_eq
+    (hQ.comp (IsModuleTopology.continuous_of_linearMap (LinearMap.applyₗ x))) continuous_const

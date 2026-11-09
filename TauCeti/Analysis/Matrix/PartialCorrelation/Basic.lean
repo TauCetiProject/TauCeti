@@ -298,6 +298,39 @@ theorem det_partialCorrelationGram {z : strictLowerTriangle p → ℝ}
   exact Finset.prod_fiberwise Finset.univ (fun ij : strictLowerTriangle p ↦ ij.1.1)
     (fun ij ↦ 1 - z ij ^ 2)
 
+/-- Changing signs of the coordinate axes conjugates the partial-correlation triangular factor
+by the diagonal sign matrix. No restriction on the partial correlations is needed. -/
+theorem partialCorrelationCholesky_signChange (z : strictLowerTriangle p → ℝ)
+    {s : Fin p → ℝ} (hs : ∀ i, |s i| = 1) (i j : Fin p) :
+    partialCorrelationCholesky (fun ij ↦ s ij.1.1 * s ij.1.2 * z ij) i j =
+      s i * partialCorrelationCholesky z i j * s j := by
+  have hsq : ∀ i, s i ^ 2 = 1 := fun i ↦ by
+    nlinarith [sq_abs (s i), hs i]
+  rcases lt_trichotomy i j with hij | rfl | hij
+  · simp [partialCorrelationCholesky_apply_of_lt _ hij]
+  · simp only [partialCorrelationCholesky_apply_self, mul_pow, hsq, one_mul]
+    rw [mul_right_comm, ← pow_two, hsq, one_mul]
+  · simp only [partialCorrelationCholesky_apply_of_gt _ hij, mul_pow, hsq, one_mul]
+    ring
+
+/-- The Gram construction respects diagonal sign conjugation, including the totalized
+square-root branches outside the closed cube. -/
+theorem partialCorrelationGram_signChange (z : strictLowerTriangle p → ℝ)
+    {s : Fin p → ℝ} (hs : ∀ i, |s i| = 1) (i j : Fin p) :
+    partialCorrelationGram (fun ij ↦ s ij.1.1 * s ij.1.2 * z ij) i j =
+      s i * partialCorrelationGram z i j * s j := by
+  have hsq : ∀ k, s k ^ 2 = 1 := fun k ↦ by
+    nlinarith [sq_abs (s k), hs k]
+  simp only [partialCorrelationGram_def, Matrix.mul_apply, Matrix.transpose_apply,
+    partialCorrelationCholesky_signChange z hs]
+  rw [Finset.mul_sum, Finset.sum_mul]
+  apply Finset.sum_congr rfl
+  intro k _
+  calc
+    _ = s i * (partialCorrelationCholesky z i k * partialCorrelationCholesky z j k) *
+        s j * s k ^ 2 := by ring
+    _ = _ := by rw [hsq, mul_one]
+
 /-- The triangular construction is injective on the open partial-correlation cube. -/
 theorem injOn_partialCorrelationCholesky :
     Set.InjOn (partialCorrelationCholesky (p := p)) {z | ∀ ij, |z ij| < 1} := by

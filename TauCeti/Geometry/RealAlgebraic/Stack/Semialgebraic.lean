@@ -42,6 +42,25 @@ namespace TauCeti
 variable {A : Type*} [CommRing A] {n : ℕ} {φ : A →+* ℝ}
   {F : Finset (MvPolynomial (Fin n) A)[X]} {C : Set (Fin n → ℝ)}
 
+open scoped Classical in
+/-- Over a point `x` of the base, the shared root set of the images in `ℝ` of the family members
+is the set of roots of the delineation. -/
+private lemma Delineation.biUnion_image_map_roots_toFinset_eq
+    (D : Delineation fun (p : F) (x : C) ↦ p.1.map (eval₂Hom φ x.1)) (x : C) :
+    (F.image fun p ↦ p.map (MvPolynomial.map φ)).biUnion
+        (fun p ↦ (p.map (MvPolynomial.eval x.1)).roots.toFinset) =
+      Finset.univ.image (fun i ↦ D.root i x) := by
+  have hmap (p : (MvPolynomial (Fin n) A)[X]) (x : Fin n → ℝ) :
+      (p.map (MvPolynomial.map φ)).map (MvPolynomial.eval x) = p.map (eval₂Hom φ x) := by
+    ext j
+    simp [Polynomial.coeff_map, MvPolynomial.eval_map]
+  ext t
+  simp only [Finset.image_biUnion, hmap, Finset.mem_biUnion,
+    Multiset.mem_toFinset, Polynomial.mem_roots', Finset.mem_image, Finset.mem_univ,
+    true_and]
+  simpa only [mem_range, mem_ofPred_eq, Subtype.exists, exists_prop] using
+    (Set.ext_iff.1 (D.range_root x) t).symm
+
 /-- A delineation of a finite polynomial family over a semialgebraic base is a semialgebraic
 stack. The family need not be closed under differentiation. Nullified members are allowed. -/
 theorem Delineation.isSemialgebraicStack (hC : IsSemialgebraic C)
@@ -50,19 +69,9 @@ theorem Delineation.isSemialgebraicStack (hC : IsSemialgebraic C)
   classical
   -- Pass the coefficients to ℝ; the homomorphism may identify different family members.
   let G := F.image fun p ↦ p.map (MvPolynomial.map φ)
-  have hmap (p : (MvPolynomial (Fin n) A)[X]) (x : Fin n → ℝ) :
-      (p.map (MvPolynomial.map φ)).map (MvPolynomial.eval x) = p.map (eval₂Hom φ x) := by
-    ext j
-    simp [Polynomial.coeff_map, MvPolynomial.eval_map]
   have hroots (x : C) :
       G.biUnion (fun p ↦ (p.map (MvPolynomial.eval x.1)).roots.toFinset) =
-        Finset.univ.image (fun i ↦ D.root i x) := by
-    ext t
-    simp only [G, Finset.image_biUnion, hmap, Finset.mem_biUnion,
-      Multiset.mem_toFinset, Polynomial.mem_roots', Finset.mem_image, Finset.mem_univ,
-      true_and]
-    simpa only [mem_range, mem_ofPred_eq, Subtype.exists, exists_prop] using
-      (Set.ext_iff.1 (D.range_root x) t).symm
+        Finset.univ.image (fun i ↦ D.root i x) := D.biUnion_image_map_roots_toFinset_eq x
   -- Identify the ambient cells with the shared-root rank formulas on the base.
   have hsection (i : Fin D.count) : cylinder C '' sectionSet D.root i =
       {y : Fin (n + 1) → ℝ | Fin.tail y ∈ C} ∩ {y : Fin (n + 1) → ℝ |
