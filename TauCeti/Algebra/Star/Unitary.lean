@@ -17,6 +17,9 @@ unitary exactly when its adjoint is its inverse.
 
 ## Main definitions and results
 
+* `TauCeti.coe_unitarySubgroupUnitsEquiv_symm_apply`: the inverse unitary equivalence
+  agrees with `Unitary.toUnits` after coercion to units.
+
 * `Unitary.prodEquiv`: `unitary (A × B)` is multiplicatively equivalent to
   `unitary A × unitary B`.
 * `Units.mem_unitary_iff_star_eq_inv`: a unit `u` is unitary if and only if `star u = u⁻¹`
@@ -73,5 +76,17 @@ theorem star_sub_inv_of_mem_unitary {R : Type*} [Ring R] [StarRing R] {u : Rˣ}
   rw [star_sub, mem_unitary_iff_star_eq_inv.1 h, star_inv_eq_of_mem_unitary h]
 
 end Units
+
+namespace TauCeti
+
+/-- The inverse unitary equivalence, viewed in the units, is the canonical unitary inclusion. -/
+@[simp]
+theorem coe_unitarySubgroupUnitsEquiv_symm_apply {M : Type*} [Monoid M] [StarMul M]
+    (u : unitary M) : (unitarySubgroupUnitsEquiv.symm u : Mˣ) = Unitary.toUnits u := by
+  apply Units.ext
+  exact (val_unitarySubgroupUnitsEquiv_symm_apply_coe u).trans
+    (Unitary.val_toUnits_apply u).symm
+
+end TauCeti
 
 end

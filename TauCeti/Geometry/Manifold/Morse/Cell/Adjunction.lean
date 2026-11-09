@@ -193,7 +193,7 @@ theorem IsMorse.exists_homotopyEquiv_sigmaDiskAdjunctionSpace (hf : IsMorse I f)
           ContinuousMap.ext hr] }
   obtain ⟨E, -, hE⟩ := er.exists_homotopyEquiv_relCWAdjunctionSpace
     (univ.sigma fun p ↦ (univ : Set (TopCat.disk.{u} (k p)))) (sigmaDiskAttachingMap α)
-  rw [sigmaDiskAttachingMap_comp]
+  rw [ContinuousMap.sigmaDiskAttachingMap_comp]
   refine ⟨E.symm.trans (e₁.trans e₂), fun z ↦ ?_⟩
   rw [ContinuousMap.HomotopyEquiv.trans_apply, ContinuousMap.HomotopyEquiv.trans_apply, hE, he₂,
     he₁]

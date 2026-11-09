@@ -21,6 +21,9 @@ Let `C` be a classical relative CW complex with base `D` in a Hausdorff space, a
 (`TauCeti.relCWAdjunctionSpace`) is the pushout in `TopCat` of the inclusion `D → C` and `a`, with
 its quotient topology. This file shows:
 
+* the inclusion `D → C` is an embedding whose image has the homotopy extension property
+  (`TauCeti.isEmbedding_relCWBaseInclusion`,
+  `TauCeti.hasHomotopyExtensionProperty_range_relCWBaseInclusion`);
 * the map `Z → Z ∪_a C` is a closed embedding
   (`TauCeti.isClosedEmbedding_pushout_inr_relCWBaseInclusion`);
 * `Z ∪_a C` is Hausdorff when `Z` is (`TauCeti.t2Space_relCWAdjunctionSpace`);
@@ -51,6 +54,9 @@ space along maps of their boundary spheres keeps the cells and their characteris
 
 ## Main results
 
+* `TauCeti.isEmbedding_relCWBaseInclusion` and
+  `TauCeti.hasHomotopyExtensionProperty_range_relCWBaseInclusion`: the inclusion `D → C` is an
+  embedding whose image has the homotopy extension property.
 * `TauCeti.isClosedEmbedding_pushout_inr_relCWBaseInclusion`: `Z → Z ∪_a C` is a closed embedding.
 * `TauCeti.t2Space_relCWAdjunctionSpace`: `Z ∪_a C` is Hausdorff when `Z` is.
 * `TauCeti.relativeCWPushout_map_apply`: the characteristic maps of `Z ∪_a C` are those of `C`,
@@ -87,6 +93,23 @@ morphism of `TopCat`. -/
 abbrev relCWBaseInclusion (C : Set X) {D : Set X} [RelCWComplex C D] :
     TopCat.of D ⟶ TopCat.of C :=
   TopCat.ofHom (ContinuousMap.inclusion (base_subset_complex (C := C)))
+
+omit [T2Space X] in
+variable (C) in
+/-- The inclusion of the base `D` of a classical relative CW complex into the complex `C` is an
+embedding. -/
+theorem isEmbedding_relCWBaseInclusion : IsEmbedding (relCWBaseInclusion C) :=
+  IsEmbedding.inclusion base_subset_complex
+
+variable (C) in
+/-- **The base of a relative CW complex is a cofibration.** The image of the inclusion of the base
+`D` into the relative CW complex `C` has the homotopy extension property. -/
+theorem hasHomotopyExtensionProperty_range_relCWBaseInclusion :
+    HasHomotopyExtensionProperty (range (relCWBaseInclusion C)) := by
+  have hr : range (relCWBaseInclusion C) = Subtype.val ⁻¹' D :=
+    range_inclusion base_subset_complex
+  rw [hr]
+  exact hasHomotopyExtensionProperty_base
 
 variable (C) in
 /-- The adjunction space `Z ∪_a C` of a relative CW complex `C` with base `D` and a map
@@ -173,19 +196,14 @@ theorem exists_homotopyEquiv_relCWAdjunctionSpace (e : Z ≃ₕ Z') (C : Set X) 
   have h' := IsPushout.of_hasPushout (relCWBaseInclusion C) (TopCat.ofHom (e.toFun.comp a))
   have ha : TopCat.ofHom a ≫ TopCat.ofHom e.toFun = TopCat.ofHom (e.toFun.comp a) :=
     (TopCat.ofHom_comp _ _).symm
-  -- The base `D` is a cofibration in `C`.
-  have hA : HasHomotopyExtensionProperty (range (relCWBaseInclusion C)) := by
-    have hr : range (relCWBaseInclusion C) = Subtype.val ⁻¹' D :=
-      range_inclusion base_subset_complex
-    rw [hr]
-    exact hasHomotopyExtensionProperty_base
   -- The map of attachments which is `e` on `Z` and the identity on `C`.
   let F : relCWAdjunctionSpace C a ⟶ relCWAdjunctionSpace C (e.toFun.comp a) :=
     h.desc (pushout.inl _ _) (TopCat.ofHom e.toFun ≫ pushout.inr _ _) (by
       rw [← Category.assoc, ha]
       exact h'.w)
   obtain ⟨G, hG, hFG, hGF⟩ := h.exists_homotopic_id_of_homotopic_id h'
-    (IsEmbedding.inclusion base_subset_complex) hA ha (g := TopCat.ofHom e.invFun)
+    (isEmbedding_relCWBaseInclusion C) (hasHomotopyExtensionProperty_range_relCWBaseInclusion C)
+    ha (g := TopCat.ofHom e.invFun)
     (by simpa using e.left_inv) (by simpa using e.right_inv) (h.inl_desc _ _ _)
     (h.inr_desc _ _ _)
   refine ⟨⟨F.hom, G.hom, by rw [← TopCat.hom_comp]; exact hFG,

@@ -49,6 +49,8 @@ the normalized adic place of the maximal ideal `(X - x, Y - y)`.
   every place other than the place at infinity, for an arbitrary Weierstrass curve.
 * `TauCeti.Place.exists_one_lt_valuation_algebraMap_iff_eq_infinity`: a place is infinite on the
   coordinate ring exactly when it is the place at infinity.
+* `WeierstrassCurve.Affine.setOf_exists_notMem_integers_eq_singleton_infinity`: the same fact as an
+  equality of sets.
 * `TauCeti.Place.degree_infinity`: the place at infinity has degree one.
 
 ## Roadmap
@@ -180,22 +182,20 @@ theorem valuation_algebraMap_le_one_of_ne_infinity {Q : Place F W.FunctionField}
     hQ (Q.eq_of_isEquiv (W.isEquiv_infinityPlace_of_one_lt (v := Q.valuation) hx))) r
 
 /-- **A place is infinite on the coordinate ring exactly when it is the place at infinity.** -/
--- Forwards, a place that is not the place at infinity is the place of a height-one prime, and
--- such a place contains the whole coordinate ring; backwards, `x` has a pole at infinity.
+-- Forwards, a place that is not the place at infinity is regular on the whole coordinate ring
+-- (`valuation_algebraMap_le_one_of_ne_infinity`); backwards, `x` has a pole at infinity.
 -- Stated as `1 < Q.valuation …` rather than `… ∉ Q.integers`: `Place.mem_integers_iff` and
 -- `not_le` are both `@[simp]` and already carry the latter phrasing to this one, so only this one
 -- is in simp normal form. A `@[simp]` rule stated with `∉ Q.integers` never fires.
 @[simp]
-theorem exists_one_lt_valuation_algebraMap_iff_eq_infinity [IsDedekindDomain W.CoordinateRing]
+theorem exists_one_lt_valuation_algebraMap_iff_eq_infinity
     (Q : Place F W.FunctionField) :
     (∃ r : W.CoordinateRing, 1 < Q.valuation (algebraMap W.CoordinateRing W.FunctionField r)) ↔
       Q = infinity W := by
   constructor
   · rintro ⟨r, hr⟩
-    rcases eq_infinity_or_existsUnique_eq_ofPrime (W := W) Q with h | ⟨𝔭, h𝔭, -⟩
-    · exact h
-    · exact absurd ((exists_eq_ofPrime_iff F W.FunctionField Q).mp ⟨𝔭, h𝔭⟩ r)
-        (by simpa using hr)
+    by_contra hQ
+    exact absurd (valuation_algebraMap_le_one_of_ne_infinity hQ r) (not_le.mpr hr)
   · rintro rfl
     refine ⟨algebraMap F[X] W.CoordinateRing X, ?_⟩
     rw [valuation_infinity,
@@ -387,6 +387,22 @@ theorem pointEquivDegreeOnePlace_symm_ofPrime {x y : F} (h : W.Equation x y) :
   apply (pointEquivDegreeOnePlace W).injective
   apply Subtype.ext
   simp
+
+end WeierstrassCurve.Affine
+
+namespace WeierstrassCurve.Affine
+
+open TauCeti
+
+variable {F : Type*} [Field F] (W : WeierstrassCurve.Affine F)
+
+/-- **The place at infinity is the only place infinite on the coordinate ring**, as an equality of
+sets, the shape `Divisor.degreeZeroClassGroupEquiv`
+consumes. -/
+theorem setOf_exists_notMem_integers_eq_singleton_infinity :
+    {Q : Place F W.FunctionField | ∃ r : W.CoordinateRing,
+        algebraMap W.CoordinateRing W.FunctionField r ∉ Q.integers} = {Place.infinity W} :=
+  Set.ext fun _ ↦ by simp
 
 end WeierstrassCurve.Affine
 

@@ -107,7 +107,7 @@ theorem IsWarpedProduct.ricciTensor_horizontal_vertical
       (e.symm (0, w)) (e.symm (u, 0)) (e.symm (0, v)) (e.symm (0, w))
     rw [h.inner_eq, h.inner_eq] at hc
     simp only [e, ContinuousLinearEquiv.apply_symm_apply,
-      h.tangentSpaceProdEquiv_curvatureTensor_vertical hf p hp,
+      h.tangentSpaceProdEquiv_curvatureTensor_vertical hf p,
       inner_zero_right, inner_zero_left, zero_add, mul_zero, add_zero] at hc
     rw [real_inner_comm] at hc
     simpa only [e, cov] using (mul_eq_zero.mp hc).resolve_left (pow_ne_zero 2 hp)
@@ -141,7 +141,7 @@ theorem IsWarpedProduct.ricciTensor_vertical
   rw [ricciTensor_eq_sum_factor_basis, ricciTensor_eq_sum_inner _ p.2 c,
     laplaceBeltrami_eq_sum_hessian I f p.1 b]
   simp only [← he, hh]
-  simp only [he, h.tangentSpaceProdEquiv_curvatureTensor_vertical hf p hp,
+  simp only [he, h.tangentSpaceProdEquiv_curvatureTensor_vertical hf p,
     inner_sub_right, inner_smul_right]
   simp only [← hb, ← hc, c.inner_eq_one, mul_one]
   simp only [Finset.sum_sub_distrib, ← Finset.mul_sum, ← Finset.sum_mul,
