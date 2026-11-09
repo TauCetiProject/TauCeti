@@ -150,12 +150,6 @@ theorem coe_deepUnitExpLogEquiv_symm_apply (hi : absoluteRamificationIndex K p <
     (((deepUnitExpLogEquiv K hi).symm x : Kˣ) : K) = exp ((x.toAdd : 𝒪[K]) : K) :=
   coe_deepUnitExp hi x.toAdd
 
-/-- Every depth `j` above the ramification index `e` satisfies `e < (p - 1) * j`, the bound
-under which the exponential and logarithm are inverse isometries on `𝓂[K] ^ j`. -/
-theorem absoluteRamificationIndex_lt_sub_one_mul_of_lt {j : ℕ}
-    (h : absoluteRamificationIndex K p < j) : absoluteRamificationIndex K p < (p - 1) * j :=
-  h.trans_le <| Nat.le_mul_of_pos_left _ (Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt)
-
 variable (p i) in
 /-- **Deep logarithms in every direction.** For every depth `i` and every `z` in `K`, some nonzero
 `ℚ_p`-scalar multiple of `z` is the logarithm of a unit in `U(K,i)`. No hypothesis relates `i` to
