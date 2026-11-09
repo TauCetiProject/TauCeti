@@ -39,7 +39,7 @@ Extension of scalars along a ring homomorphism `f : Λ →+* Λ'`, for instance 
 
 ## Main definitions
 
-* `TauCeti.LocallyFree.classOf Λ M n`: the class `[M] - n[Λ]` in `K₀(Λ)`.
+* `TauCeti.FiniteProjectiveModules.classOf Λ M n`: the class `[M] - n[Λ]` in `K₀(Λ)`.
 * `TauCeti.LocallyFree.classGroup A K Λ`: the locally free class group `Cl(Λ)`.
 * `TauCeti.LocallyFree.classGroupMap A K f`: extension of scalars `Cl(Λ) → K₀(Λ')` along
   `f : Λ →+* Λ'`.
@@ -47,12 +47,13 @@ Extension of scalars along a ring homomorphism `f : Λ →+* Λ'`, for instance 
 
 ## Main results
 
-* `TauCeti.LocallyFree.classOf_eq_zero_iff`: `[M] - n[Λ] = 0` if and only if
+* `TauCeti.FiniteProjectiveModules.classOf_eq_zero_iff`: `[M] - n[Λ] = 0` if and only if
   `M × Λᵏ ≃ Λⁿ⁺ᵏ` for some `k`.
-* `TauCeti.LocallyFree.classOf_eq_classOf_iff`: two modules have the same class in the same rank
-  if and only if they are stably equivalent.
-* `TauCeti.LocallyFree.classOf_prod` and `TauCeti.LocallyFree.classOf_free`: classes add on
-  products and vanish on free modules.
+* `TauCeti.FiniteProjectiveModules.classOf_eq_classOf_iff`: two modules have the same class
+  in the same rank if and only if they are stably equivalent.
+* `TauCeti.FiniteProjectiveModules.classOf_prod` and
+  `TauCeti.FiniteProjectiveModules.classOf_free`: classes add on products and vanish on free
+  modules.
 * `TauCeti.LocallyFree.classOf_mem_classGroup` and `TauCeti.LocallyFree.classGroup_le_iff`: if
   `A` is not a field, the classes of locally free lattices lie in `Cl(Λ)` and generate it.
 * `TauCeti.LocallyFree.classGroup_eq_bot`: over a field, `Cl(Λ)` is trivial.
@@ -79,69 +80,7 @@ namespace TauCeti.LocallyFree
 
 universe u
 
-section ClassOf
-
-variable (Λ : Type u) [Ring Λ]
-  (M : Type u) [AddCommGroup M] [Module Λ M] [Module.Finite Λ M] [Module.Projective Λ M]
-  {N : Type u} [AddCommGroup N] [Module Λ N] [Module.Finite Λ N] [Module.Projective Λ N]
-
-/-- A finitely generated projective module as an object of the subcategory of finitely generated
-projective modules. -/
-private abbrev obj (P : Type u) [AddCommGroup P] [Module Λ P] [Module.Finite Λ P]
-    [Module.Projective Λ P] : (finiteProjectiveModules Λ).FullSubcategory :=
-  ⟨ModuleCat.of Λ P, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
-
-/-- The class `[M] - n[Λ]` of a finitely generated projective `Λ`-module `M` in the split `K₀` of
-finitely generated projective `Λ`-modules. For a locally free `Λ`-lattice of rank `n` this is its
-class in the locally free class group. -/
-noncomputable def classOf (n : ℕ) : SplitK0.{u} (finiteProjectiveModules Λ).FullSubcategory :=
-  SplitK0.of ⟨ModuleCat.of Λ M, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩ -
-    n • SplitK0.of ⟨ModuleCat.of Λ Λ, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩
-
-theorem classOf_def (n : ℕ) :
-    classOf Λ M n =
-      SplitK0.of ⟨ModuleCat.of Λ M, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩ -
-        n • SplitK0.of
-          ⟨ModuleCat.of Λ Λ, finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩ :=
-  (rfl)
-
-variable {Λ M}
-
-/-- Isomorphic modules have the same class. -/
-theorem classOf_congr (e : M ≃ₗ[Λ] N) (n : ℕ) : classOf Λ M n = classOf Λ N n := by
-  rw [classOf, classOf, SplitK0.of_congr.{u} (X := obj Λ M) (Y := obj Λ N)
-    (ObjectProperty.isoMk _ e.toModuleIso)]
-
-/-- **Stably free classes.** The class `[M] - n[Λ]` vanishes if and only if `M` is stably free of
-rank `n`: `M × Λᵏ ≃ Λⁿ⁺ᵏ` for some `k`. -/
-theorem classOf_eq_zero_iff (n : ℕ) :
-    classOf Λ M n = 0 ↔ ∃ k : ℕ, Nonempty ((M × (Fin k → Λ)) ≃ₗ[Λ] (Fin (n + k) → Λ)) := by
-  rw [classOf, sub_eq_zero, ← SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := obj Λ (Fin n → Λ))
-    (.refl _ _) (.refl _ _)]
-  exact SplitK0.of_eq_of_iff_exists_prod_linearEquiv_fin (.refl _ _)
-
-/-- Two finitely generated projective modules have the same class in the same rank if and only if
-they are stably equivalent. -/
-theorem classOf_eq_classOf_iff (n : ℕ) :
-    classOf Λ M n = classOf Λ N n ↔ StableEquivalent Λ M N := by
-  rw [classOf, classOf, sub_left_inj]
-  exact SplitK0.of_eq_of_iff_stableEquivalent
-
-/-- The class of a product is the sum of the classes, the ranks adding. -/
-theorem classOf_prod (n m : ℕ) : classOf Λ (M × N) (n + m) = classOf Λ M n + classOf Λ N m := by
-  rw [classOf, classOf, classOf, SplitK0.of_eq_add_of_linearEquiv_prod (X := obj Λ (M × N))
-    (P := obj Λ M) (Q := obj Λ N) (.refl _ _), add_nsmul]
-  abel
-
-variable (Λ) in
-/-- The class of the free module `Λⁿ` in rank `n` vanishes. -/
-@[simp]
-theorem classOf_free (n : ℕ) : classOf Λ (Fin n → Λ) n = 0 := by
-  rw [classOf, sub_eq_zero]
-  exact SplitK0.of_eq_nsmul_of_linearEquiv_fin (X := obj Λ (Fin n → Λ)) (R' := obj Λ Λ)
-    (.refl _ _) (.refl _ _)
-
-end ClassOf
+open FiniteProjectiveModules
 
 section ClassGroup
 
@@ -205,24 +144,17 @@ theorem classGroupMap_apply (x : classGroup A K Λ) :
 
 variable {A K}
 
-variable {f} in
-/-- The class of `Λ' ⊗_Λ P` is the class of any module isomorphic to it. -/
-private theorem of_extendScalars_obj {P : (finiteProjectiveModules Λ).FullSubcategory}
-    {Q : (finiteProjectiveModules Λ').FullSubcategory}
-    (θ : BalancedExtension f P.obj ≃ₗ[Λ'] Q.obj) :
-    SplitK0.of.{u} (f.finiteProjectiveModulesExtendScalars.obj P) = SplitK0.of.{u} Q :=
-  SplitK0.of_congr (ObjectProperty.isoMk _
-    (eqToIso (f.finiteProjectiveModulesExtendScalars_obj_obj P) ≪≫ θ.toModuleIso))
-
 /-- If `A` is not a field, extension of scalars sends `[M] - n[Λ]` to `[Λ' ⊗_Λ M] - n[Λ']`. -/
 theorem classGroupMap_classOf (hA : ¬IsField A) (h : IsLocallyFreeOfRank A K Λ M n) :
     classGroupMap A K f ⟨classOf Λ M n, classOf_mem_classGroup hA h⟩ =
       classOf Λ' (BalancedExtension f M) n := by
   rw [classGroupMap_apply, Subtype.coe_mk, classOf_def, classOf_def, map_sub, map_nsmul,
     SplitK0.map_of, SplitK0.map_of,
-    of_extendScalars_obj (Q := obj Λ' (BalancedExtension f M)) (.refl _ _),
+    SplitK0.of_extendScalars_obj (Q := ⟨ModuleCat.of Λ' (BalancedExtension f M),
+      finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩) (.refl _ _),
     -- `Λ' ⊗_Λ Λ ≃ Λ'`, through `Λ ≃ Λ¹` and `Λ' ⊗_Λ Λ¹ ≃ Λ'¹`.
-    of_extendScalars_obj (Q := obj Λ' Λ')
+    SplitK0.of_extendScalars_obj (Q := ⟨ModuleCat.of Λ' Λ',
+      finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩)
       ((BalancedExtension.congr f (LinearEquiv.funUnique (Fin 1) Λ Λ).symm).trans
         ((BalancedExtension.piScalarRight f (Fin 1)).trans (LinearEquiv.funUnique (Fin 1) Λ' Λ')))]
 
