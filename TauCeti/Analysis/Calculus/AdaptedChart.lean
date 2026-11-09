@@ -33,9 +33,9 @@ freely.
 * Intertwining: along the submanifold, the derivative of `ψ` turns `J` into the standard
   structure.
 * Pushforward: the field `e.pullbackEnd J p = Dψ (e p) ∘ J (e p) ∘ De p`, the structure
-  `ψ_* J` in model coordinates, is `C^n` whenever the chart is `C^(n+1)` and `J` is `C^n`; so for a `C^ℓ`
-  structure and a `C^(ℓ+1)` parametrization it is `C^(ℓ-1)`. It equals the standard structure
-  on the zero section.
+  `ψ_* J` in model coordinates, is `C^n` whenever the chart is `C^(n+1)` and `J` is `C^n`;
+  so for a `C^ℓ` structure and a `C^(ℓ+1)` parametrization it is `C^(ℓ-1)`. It equals the
+  standard structure on the zero section.
 
 ## Main declarations
 
