@@ -353,7 +353,7 @@ theorem complexDerivationEquivComplexifiedVectorField_apply
   simp [complexDerivationEquivComplexifiedVectorField]
 
 /-- The real part of the complexified vector field of `δ` is the vector field of `δ.re`. -/
-theorem realPart_complexDerivationEquivComplexifiedVectorField
+theorem _root_.Derivation.realPart_complexDerivationEquivComplexifiedVectorField
     (δ : Derivation ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
     realPart Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯
         (complexDerivationEquivComplexifiedVectorField δ) =
@@ -361,7 +361,7 @@ theorem realPart_complexDerivationEquivComplexifiedVectorField
   simp
 
 /-- The imaginary part of the complexified vector field of `δ` is the vector field of `δ.im`. -/
-theorem imaginaryPart_complexDerivationEquivComplexifiedVectorField
+theorem _root_.Derivation.imaginaryPart_complexDerivationEquivComplexifiedVectorField
     (δ : Derivation ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
     imaginaryPart Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯
         (complexDerivationEquivComplexifiedVectorField δ) =
