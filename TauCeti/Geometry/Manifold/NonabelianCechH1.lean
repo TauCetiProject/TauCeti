@@ -43,7 +43,8 @@ The classification of principal bundles by this set is in
 * `TauCeti.IsContMDiffGroupCocycle`: `C^n` group-valued cocycles on a cover.
 * `TauCeti.IsContMDiffCohomologous`: cocycles differing by a `C^n` `0`-cochain.
 * `TauCeti.NonabelianCechH1`: the nonabelian Čech `H¹` of a cover, with
-  `TauCeti.NonabelianCechH1.refine` its refinement maps.
+  `TauCeti.NonabelianCechH1.refine` its refinement maps and `TauCeti.NonabelianCechH1.lift`
+  descending cohomology-invariant functions of cocycles to it.
 
 ## References
 
@@ -215,6 +216,28 @@ theorem mk_eq_mk_iff {c c' : ι → ι → B → G} {hc : IsContMDiffGroupCocycl
 theorem ind {motive : NonabelianCechH1 IB IG n G U → Prop}
     (mk : ∀ c hc, motive (mk c hc)) (x : NonabelianCechH1 IB IG n G U) : motive x :=
   Quotient.ind (fun c ↦ mk c.1 c.2) x
+
+/-- Descend a function of `C^n` cocycles which is invariant under being `C^n`-cohomologous to a
+function on the nonabelian Čech `H¹`. -/
+def lift {α : Sort*} (f : ∀ c : ι → ι → B → G, IsContMDiffGroupCocycle IB IG n U c → α)
+    (hf : ∀ c c' hc hc', IsContMDiffCohomologous IB IG n U c c' → f c hc = f c' hc') :
+    NonabelianCechH1 IB IG n G U → α :=
+  Quotient.lift (fun c ↦ f c.1 c.2) fun c c' ↦ hf c.1 c'.1 c.2 c'.2
+
+@[simp]
+theorem lift_mk {α : Sort*} (f : ∀ c : ι → ι → B → G, IsContMDiffGroupCocycle IB IG n U c → α)
+    (hf : ∀ c c' hc hc', IsContMDiffCohomologous IB IG n U c c' → f c hc = f c' hc')
+    (c : ι → ι → B → G) (hc : IsContMDiffGroupCocycle IB IG n U c) :
+    lift f hf (mk c hc) = f c hc :=
+  (rfl)
+
+/-- `TauCeti.NonabelianCechH1.lift f hf` is the unique function on classes which is `f` on the
+class of every cocycle. -/
+theorem lift_unique {α : Sort*} (f : ∀ c : ι → ι → B → G, IsContMDiffGroupCocycle IB IG n U c → α)
+    (hf : ∀ c c' hc hc', IsContMDiffCohomologous IB IG n U c c' → f c hc = f c' hc')
+    (g : NonabelianCechH1 IB IG n G U → α) (hg : ∀ c hc, g (mk c hc) = f c hc) :
+    g = lift f hf :=
+  funext <| ind hg
 
 /-- The base point of the nonabelian Čech `H¹`: the class of the constant cocycle `1`. -/
 instance instOne : One (NonabelianCechH1 IB IG n G U) :=
