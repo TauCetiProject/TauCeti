@@ -8,6 +8,7 @@ module
 public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Precomp
 
 /-!
 # Restricting a continuous representation to an invariant submodule
@@ -185,22 +186,9 @@ continuity argument that `matrixCoeff` and the rest of the continuous-representa
 explicitly, so a subrepresentation can be used wherever a continuous representation is expected. -/
 theorem continuous_subrepresentation (hπ : Continuous π) :
     Continuous (subrepresentation π W hW) := by
-  -- Precomposition by `W.subtypeL` is continuous for the topology of bounded convergence; this is
-  -- the argument of `ContinuousLinearMap.precomp`, without the bundling that needs
-  -- `ContinuousConstSMul`.
-  have hprecomp : Continuous fun f : V →L[𝕜] V ↦ f.comp W.subtypeL := by
-    let : UniformSpace V := IsTopologicalAddGroup.rightUniformSpace V
-    have : IsUniformAddGroup V := isUniformAddGroup_of_addCommGroup
-    refine (UniformConvergenceCLM.isEmbedding_coeFn (σ := RingHom.id 𝕜)
-      (E := W) (F := V) { S | Bornology.IsVonNBounded 𝕜 S }).continuous_iff.2 ?_
-    have hmaps : Set.MapsTo (W.subtypeL '' ·) { S | Bornology.IsVonNBounded 𝕜 S }
-        { S | Bornology.IsVonNBounded 𝕜 S } := fun _ hS ↦ hS.image W.subtypeL
-    exact (UniformOnFun.precomp_uniformContinuous hmaps).continuous.comp
-      (UniformConvergenceCLM.isEmbedding_coeFn (σ := RingHom.id 𝕜) (E := V) (F := V)
-        { S | Bornology.IsVonNBounded 𝕜 S }).continuous
   rw [(ContinuousLinearMap.isInducing_postcomp W.subtypeL
     Topology.IsInducing.subtypeVal).continuous_iff]
-  exact hprecomp.comp hπ
+  exact (ContinuousLinearMap.continuous_precomp W.subtypeL).comp hπ
 
 end Continuity
 
