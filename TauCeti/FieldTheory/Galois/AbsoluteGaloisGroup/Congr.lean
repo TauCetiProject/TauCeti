@@ -299,11 +299,13 @@ theorem fixingSubgroup_separableClosureCongr :
   ext g
   rw [mem_fixingSubgroup_iff, Subgroup.mem_comap, mem_fixingSubgroup_iff]
   refine ⟨fun h x hx ↦ ?_, fun h y hy ↦ ?_⟩
-  · change e.absoluteGaloisGroupCongr g x = x
+  · -- `toMonoidHom` of a continuous equivalence has the same underlying function
+    change e.absoluteGaloisGroupCongr g x = x
     rw [RingEquiv.absoluteGaloisGroupCongr_apply, h _ (by simpa using hx),
       RingEquiv.apply_symm_apply]
   · apply e.separableClosureCongr.injective
     have := h (e.separableClosureCongr y) hy
+    -- as above, unfold the `toMonoidHom` coercion
     change e.absoluteGaloisGroupCongr g (e.separableClosureCongr y) = _ at this
     rwa [RingEquiv.absoluteGaloisGroupCongr_apply, RingEquiv.symm_apply_apply] at this
 
