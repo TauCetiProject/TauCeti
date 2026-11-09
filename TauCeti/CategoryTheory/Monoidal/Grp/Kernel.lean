@@ -5,8 +5,8 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Grp
 public import Mathlib.CategoryTheory.Limits.Shapes.Kernels
+public import TauCeti.CategoryTheory.Monoidal.Grp.Basic
 
 /-!
 # Kernels from torsor squares of group objects
@@ -34,9 +34,8 @@ theorem comp_eq_zero_of_commSq
       (fst G.X N.X * (snd G.X N.X ≫ i.hom.hom)) q.hom.hom q.hom.hom) :
     i ≫ q = 0 := by
   apply Grp.hom_ext
-  have hw := congrArg (fun f ↦ lift (1 : N.X ⟶ G.X) (𝟙 N.X) ≫ f) h.w
-  simp only [← Category.assoc, MonObj.comp_mul, lift_fst, lift_snd,
-    Category.id_comp, one_mul, MonObj.one_comp] at hw
+  have hw := congrArg (lift (1 : N.X ⟶ G.X) (𝟙 N.X) ≫ ·) h.w
+  simp only [← Category.assoc, MonObj.comp_mul, lift_fst, one_mul] at hw
   simpa [Hom.one_def] using hw.symm
 
 /-- The subgroup in a torsor kernel-pair square is the categorical kernel of the
@@ -45,30 +44,19 @@ noncomputable def isLimitKernelForkOfIsPullback
     (h : IsPullback (fst G.X N.X)
       (fst G.X N.X * (snd G.X N.X ≫ i.hom.hom)) q.hom.hom q.hom.hom) :
     IsLimit (KernelFork.ofι i (comp_eq_zero_of_commSq i q h.toCommSq)) := by
-  have hi : Mono i.hom.hom := ⟨fun {T} a b hab ↦ by
-    have he : lift (1 : T ⟶ G.X) a = lift (1 : T ⟶ G.X) b := by
-      apply h.hom_ext
-      · simp
-      · simpa [MonObj.comp_mul] using hab
-    simpa using congrArg (fun f ↦ f ≫ snd G.X N.X) he⟩
-  have : Mono i := ⟨fun {T} a b hab ↦ Grp.hom_ext _ _
-    ((cancel_mono i.hom.hom).mp (congrArg (fun f ↦ f.hom.hom) hab))⟩
-  apply KernelFork.IsLimit.ofι'
-  intro T f hf
-  have hf' : f.hom.hom ≫ q.hom.hom = 1 := by
-    simpa [Hom.one_def] using congrArg (fun f ↦ f.hom.hom) hf
-  let l := h.lift (1 : T.X ⟶ G.X) f.hom.hom (by simp [hf'])
+  have : Mono i.hom.hom := ⟨fun {T} a b hab ↦ by
+    have he : lift (1 : T ⟶ G.X) a = lift (1 : T ⟶ G.X) b :=
+      h.hom_ext (by simp) (by simpa [MonObj.comp_mul] using hab)
+    simpa using congrArg (· ≫ snd G.X N.X) he⟩
+  refine KernelFork.IsLimit.ofι' _ _ fun {T} f hf ↦ ?_
+  have hw : (1 : T.X ⟶ G.X) ≫ q.hom.hom = f.hom.hom ≫ q.hom.hom := by
+    simpa [Hom.one_def] using (congrArg (fun f ↦ f.hom.hom) hf).symm
+  let l := h.lift 1 f.hom.hom hw
   have hl : (l ≫ snd G.X N.X) ≫ i.hom.hom = f.hom.hom := by
-    have hs := h.lift_snd (1 : T.X ⟶ G.X) f.hom.hom (by simp [hf'])
-    simpa [l, MonObj.comp_mul, ← Category.assoc] using hs
-  let : IsMonHom (l ≫ snd G.X N.X) := {
-    one_hom := by
-      apply (cancel_mono i.hom.hom).mp
-      simp [Category.assoc, hl]
-    mul_hom := by
-      apply (cancel_mono i.hom.hom).mp
-      simp only [Category.assoc, hl, IsMonHom.mul_hom]
-      rw [← Category.assoc, tensorHom_comp_tensorHom, hl] }
+    simpa [l, MonObj.comp_mul, ← Category.assoc] using h.lift_snd 1 f.hom.hom hw
+  have : IsMonHom (l ≫ snd G.X N.X) :=
+    { one_hom := (cancel_mono i.hom.hom).mp (by simp [hl])
+      mul_hom := (cancel_mono i.hom.hom).mp (by simp [hl]) }
   exact ⟨Grp.homMk (l ≫ snd G.X N.X), Grp.hom_ext _ _ hl⟩
 
 end CategoryTheory.Grp

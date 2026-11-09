@@ -437,4 +437,26 @@ theorem map_spinAction_spinMinus_le_spinPlus (hline : P.line = ⊥) {x : Cliffor
   rw [spinPlus_def, ← hparity]
   exact spinAction_mem_evenOdd P hline hx hs
 
+/-- The even half-spin subrepresentation acts as the even half-spin action of the even part. -/
+theorem spinPlusSubrep_toRepresentation_apply_eq_spinPlusAction
+    (P : SpinPolarizationData Q) (hline : P.line = ⊥) (g : spinGroup Q) (p : spinPlus Q P) :
+    (LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm).symm
+      ((spinPlusSubrep P hline).toRepresentation g
+        (LinearEquiv.ofEq _ _ (toSubmodule_spinPlusSubrep P hline).symm p)) =
+      spinPlusAction Q P hline (spinGroupToEven Q g) p := by
+  apply Subtype.ext
+  exact (coe_spinPlusAction_spinGroupToEven_apply P hline g p).symm
+
+/-- The odd half-spin subrepresentation acts as the odd half-spin action of the even part. -/
+theorem spinMinusSubrep_toRepresentation_apply_eq_spinMinusAction
+    (P : SpinPolarizationData Q) (hline : P.line = ⊥) (g : spinGroup Q)
+    (s : (spinMinusSubrep P hline).toSubmodule) :
+    (LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm).symm
+      ((spinMinusSubrep P hline).toRepresentation g s) =
+      spinMinusAction Q P hline (spinGroupToEven Q g)
+        ((LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm).symm s) := by
+  apply Subtype.ext
+  simpa using (coe_spinMinusAction_spinGroupToEven_apply P hline g
+    ((LinearEquiv.ofEq _ _ (toSubmodule_spinMinusSubrep P hline).symm).symm s)).symm
+
 end TauCeti

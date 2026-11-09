@@ -210,6 +210,15 @@ theorem map_compoundPoissonMeasure [MeasurableAdd₂ α] {β : Type*} [Measurabl
     Measure.map_bind Measurable.of_discrete.aemeasurable hf.aemeasurable]
   exact congrArg _ (funext (Measure.map_convolutionPower μ f hf))
 
+/-- Negating a compound Poisson sum negates its jump law and keeps its rate. -/
+theorem map_neg_compoundPoissonMeasure {G : Type*} [MeasurableSpace G] [AddCommGroup G]
+    [MeasurableAdd₂ G] [MeasurableNeg G] (r : ℝ≥0) (μ : Measure G) [SFinite μ] :
+    (compoundPoissonMeasure r μ).map (fun x ↦ -x) =
+      compoundPoissonMeasure r (μ.map (fun x ↦ -x)) := by
+  have hmap := map_compoundPoissonMeasure r μ (negAddMonoidHom : G →+ G)
+  rw [coe_negAddMonoidHom] at hmap
+  exact hmap measurable_neg
+
 /-- The sum of two independent random variables with compound Poisson laws of rates `r` and `s`
 and a common jump law `μ` is compound Poisson with rate `r + s` and jump law `μ`. -/
 theorem _root_.ProbabilityTheory.IndepFun.hasLaw_add_compoundPoissonMeasure {Ω : Type*}

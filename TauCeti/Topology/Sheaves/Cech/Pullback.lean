@@ -18,7 +18,8 @@ complex of `Q` for the inverse-image family. It uses the native tuple complex,
 including repeated indices and empty intersections. No covering condition is needed.
 
 The map commutes with actual refinement functions, with the homotopies between the maps
-induced by two refinement functions, and with coefficient morphisms.
+induced by two refinement functions, and with coefficient morphisms, and it is an isomorphism
+when the coefficient morphism is (`TopCat.Hom.isIso_cechComplexPullback`).
 Consequently, restriction to an open subspace can be performed before or after a
 refinement. `TopologicalSpace.Opens.cechComplexRestrict` is this restriction map, with the
 presheaf on the subspace obtained by evaluating on its open subsets regarded as opens of the
@@ -94,6 +95,12 @@ theorem cechComplexPullback_f_π
     rw [← Q.map_comp, ← op_comp, IsIso.hom_inv_id, op_id, Q.map_id]
   exact ((Category.assoc _ _ _).trans <| (Pi.π _ a ≫=
     ((Category.assoc _ _ _).trans ((α.app _ ≫= hc).trans (Category.comp_id _))))).symm
+
+/-- Pullback along an isomorphism of coefficients is an isomorphism of Čech complexes. -/
+instance isIso_cechComplexPullback (α : P ⟶ (TopCat.Presheaf.pushforward A f).obj Q) [IsIso α] :
+    IsIso (cechComplexPullback f U α) := by
+  rw [cechComplexPullback]
+  infer_instance
 
 /-- Pullback commutes with every actual refinement, not just with its induced cohomology map. -/
 @[reassoc]

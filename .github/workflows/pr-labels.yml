@@ -20,9 +20,12 @@ on:
         required: true
         type: string
 
-# The default GITHUB_TOKEN is used only for checkout; all label writes go through the scoped App token.
+# Lifecycle label writes use the scoped App token; the workflow token reconciles PR-CI routing.
 permissions:
   contents: read
+  statuses: write
+  issues: write
+  actions: write
 
 jobs:
   # Manual re-sync of one PR: validate the untrusted input down to digits in `resolve`, so that
@@ -46,6 +49,9 @@ jobs:
       - id: r
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
+          SELF_TESTED_TEAM_TOKEN: ${{ steps.app-token.outputs.token }}
+          SELF_TESTED_WRITE_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           INPUT_PR: ${{ github.event.inputs.pr }}
         run: |
@@ -78,6 +84,7 @@ jobs:
           permission-issues: write
           permission-pull-requests: write
           permission-contents: read
+          permission-members: read
       # The trusted base checkout: the labels script that runs is the one on the target branch, never
       # the version proposed by the PR.
       - uses: actions/checkout@v4
@@ -88,10 +95,10 @@ jobs:
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
           project-directory: .
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
@@ -99,6 +106,9 @@ jobs:
       - name: Reconcile status label
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
+          SELF_TESTED_TEAM_TOKEN: ${{ steps.app-token.outputs.token }}
+          SELF_TESTED_WRITE_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           PR: ${{ needs.resolve.outputs.pr }}
         run: python3 scripts/pr_status/labels.py reconcile "$PR"
@@ -125,6 +135,7 @@ jobs:
           permission-issues: write
           permission-pull-requests: write
           permission-contents: read
+          permission-members: read
       - uses: actions/checkout@v4
         with:
           # The policy checkout below is a local action, so it must come from this trusted checkout.
@@ -133,10 +144,10 @@ jobs:
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
           project-directory: .
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
@@ -144,6 +155,9 @@ jobs:
       - name: Reconcile open PRs
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
+          SELF_TESTED_TEAM_TOKEN: ${{ steps.app-token.outputs.token }}
+          SELF_TESTED_WRITE_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           REPO: ${{ github.repository }}
         run: python3 scripts/pr_status/labels.py reconcile-all

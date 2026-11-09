@@ -53,6 +53,18 @@ theorem UniversallyClosed.of_universally_isHomeomorph
     (hf : (topologically @IsHomeomorph).universally f) : UniversallyClosed f :=
   ⟨universally_mono (fun _ _ _ ↦ IsHomeomorph.isClosedMap) _ hf⟩
 
+/-- If `f ≫ g` is universally injective and `f` is surjective, then `g` is universally
+injective. -/
+theorem UniversallyInjective.of_comp_surjective {Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
+    [UniversallyInjective (f ≫ g)] [Surjective f] : UniversallyInjective g := by
+  constructor
+  intro X' Y' i₁ i₂ g' H
+  have := UniversallyInjective.universally_injective _ _ _
+    ((IsPullback.of_hasPullback i₁ f).paste_horiz H)
+  have hs : Surjective (pullback.fst i₁ f) :=
+    MorphismProperty.of_isPullback (IsPullback.of_hasPullback i₁ f).flip ‹_›
+  exact Function.Injective.of_comp_right (f := g'.base) (g := (pullback.fst i₁ f).base) this hs.1
+
 end AlgebraicGeometry
 
 namespace TauCeti.AlgebraicGeometry
@@ -168,6 +180,20 @@ theorem isUniversalHomeomorphism_iff_isIntegralHom_universallyInjective_surjecti
   let := hint
   exact (isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective f).mpr
     ⟨inferInstance, hinj, hsurj⟩
+
+/-- Being a universal homeomorphism is local on the target. -/
+instance isUniversalHomeomorphism_isZariskiLocalAtTarget :
+    IsZariskiLocalAtTarget @IsUniversalHomeomorphism.{u} := by
+  have : @IsUniversalHomeomorphism.{u} = (@UniversallyClosed.{u} ⊓ @UniversallyInjective.{u} ⊓
+      @Surjective.{u} : MorphismProperty Scheme.{u}) := by
+    ext X Y f
+    exact (isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective f).trans
+      and_assoc.symm
+  rw [this]
+  -- Instance search does not find the infimum instance unaided, so the precoverage is given.
+  have := MorphismProperty.IsLocalAtTarget.inf (K := Scheme.zariskiPrecoverage)
+    @UniversallyClosed.{u} @UniversallyInjective.{u}
+  exact MorphismProperty.IsLocalAtTarget.inf (K := Scheme.zariskiPrecoverage) _ _
 
 /-- `Spec.map φ` is a universal homeomorphism iff `φ` is integral, precomposition by `φ` is
 injective on maps from `S` into every field, and `PrimeSpectrum.comap φ.hom` is surjective. -/

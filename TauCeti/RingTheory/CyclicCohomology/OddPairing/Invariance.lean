@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.Multilinear.Polynomial
 public import TauCeti.RingTheory.CyclicCohomology.OddPairing.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 
+import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Data.Fin.Basic
 import TauCeti.Data.Fin.Tuple.Basic
 
@@ -172,11 +173,8 @@ private theorem apply_update_alternating_zero_eq_apply_update_alternating_one
     simp only [hg, Fin.val_succ, Fin.val_castSucc, pow_succ, mul_neg_one, neg_smul, smul_neg,
       smul_add]
     abel
-  have htel : ∑ i : Fin (2 * m + 1), (g i.castSucc - g i.succ) = g 0 - g (Fin.last _) := by
-    have hs := Fin.sum_univ_succ g
-    rw [Fin.sum_univ_castSucc] at hs
-    rw [Finset.sum_sub_distrib]
-    linear_combination (norm := abel) hs
+  have htel : ∑ i : Fin (2 * m + 1), (g i.castSucc - g i.succ) = g 0 - g (Fin.last _) :=
+    Fin.sum_univ_castSucc_sub_succ g
   have hg0 : g 0 = φ (Function.update a 0 z) := by
     simp only [hg, Fin.val_zero, pow_zero, one_smul, Fin.removeNth_zero]
     congr 1
@@ -329,6 +327,27 @@ private theorem apply_units_mul_eq_of_val_eq_one_add
     eval_C, eval_X, map_zero, mul_zero, add_zero, sub_zero, mul_one, one_mul] at h
   simpa only [mul_inv_rev, Units.val_mul, he, he'] using h
 
+omit [CharZero R] in
+/-- On a block diagonal invertible `a ⊕ b`, the matrix extension of `φ` evaluates on its alternating
+tuple to the sum of the values of `φ` on those of `a` and `b`. -/
+private theorem matrixCochainExtension_apply_units_blockDiagonal
+    (φ : MultilinearMap R (fun _ : Fin (2 * m + 2) ↦ A) M) (a b : Aˣ)
+    (D : (Matrix (Fin 2) (Fin 2) A)ˣ) (hD : (D : Matrix (Fin 2) (Fin 2) A) = !![(a : A), 0; 0, b])
+    (hD' : (↑D⁻¹ : Matrix (Fin 2) (Fin 2) A) = !![(↑a⁻¹ : A), 0; 0, ↑b⁻¹]) :
+    matrixCochainExtension (Fin 2) (2 * m + 1) φ
+        (fun k ↦ if Even (k : ℕ) then ↑D⁻¹ - 1 else ↑D - 1) =
+      φ (fun k ↦ if Even (k : ℕ) then ↑a⁻¹ - 1 else ↑a - 1) +
+        φ (fun k ↦ if Even (k : ℕ) then ↑b⁻¹ - 1 else ↑b - 1) := by
+  have h : (fun k : Fin (2 * m + 2) ↦ if Even (k : ℕ)
+      then (↑D⁻¹ : Matrix (Fin 2) (Fin 2) A) - 1 else ↑D - 1) =
+      fun k : Fin (2 * m + 2) ↦ Matrix.diagonal ![if Even (k : ℕ) then (↑a⁻¹ : A) - 1
+        else ↑a - 1, if Even (k : ℕ) then (↑b⁻¹ : A) - 1 else ↑b - 1] := by
+    funext k
+    ext i j
+    fin_cases i <;> fin_cases j <;> split_ifs <;> simp [hD, hD']
+  rw [h, matrixCochainExtension_diagonal, Fin.sum_univ_two]
+  rfl
+
 /-- **Multiplicativity.** For a cyclic cocycle `φ` of odd degree `2m + 1`, the value
 `f(u) = φ(u⁻¹ - 1, u - 1, …, u⁻¹ - 1, u - 1)` satisfies `f(uv) = f(u) + f(v)`. -/
 theorem apply_units_mul (hφ : φ ∈ cyclicCochains R A M (2 * m + 1))
@@ -348,20 +367,11 @@ theorem apply_units_mul (hφ : φ ∈ cyclicCochains R A M (2 * m + 1))
       inv := !![(↑a⁻¹ : A), 0; 0, ↑b⁻¹]
       val_inv := by simp [Matrix.one_fin_two]
       inv_val := by simp [Matrix.one_fin_two] }
-  -- On block diagonal invertibles, the value of `ψ` is the sum of the values of `φ`.
   have hdiag (a b : Aˣ) :
       ψ (fun k ↦ if Even (k : ℕ) then ↑(diag a b)⁻¹ - 1 else ↑(diag a b) - 1) =
         φ (fun k ↦ if Even (k : ℕ) then ↑a⁻¹ - 1 else ↑a - 1) +
-          φ (fun k ↦ if Even (k : ℕ) then ↑b⁻¹ - 1 else ↑b - 1) := by
-    have h : (fun k : Fin (2 * m + 2) ↦ if Even (k : ℕ)
-        then (↑(diag a b)⁻¹ : Matrix (Fin 2) (Fin 2) A) - 1 else ↑(diag a b) - 1) =
-        fun k : Fin (2 * m + 2) ↦ Matrix.diagonal ![if Even (k : ℕ) then (↑a⁻¹ : A) - 1
-          else ↑a - 1, if Even (k : ℕ) then (↑b⁻¹ : A) - 1 else ↑b - 1] := by
-      funext k
-      ext i j
-      fin_cases i <;> fin_cases j <;> split_ifs <;> simp [diag]
-    rw [h, matrixCochainExtension_diagonal, Fin.sum_univ_two]
-    rfl
+          φ (fun k ↦ if Even (k : ℕ) then ↑b⁻¹ - 1 else ↑b - 1) :=
+    matrixCochainExtension_apply_units_blockDiagonal φ a b (diag a b) rfl rfl
   -- The square-zero unipotents `1 + N` with `N` strictly upper or lower triangular.
   let upper (c : A) : (Matrix (Fin 2) (Fin 2) A)ˣ :=
     { val := !![1, c; 0, 1]

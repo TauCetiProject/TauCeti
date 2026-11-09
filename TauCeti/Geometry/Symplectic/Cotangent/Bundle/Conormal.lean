@@ -96,13 +96,9 @@ theorem mpullback_liouvilleForm_apply_eq_zero_of_conormal (hproj : ∀ x, (ψ x)
     (hann : (ψ x).2 ∘L mfderiv J I i (g x) = 0) :
     mpullback K (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ψ (liouvilleForm I M).1 x = 0 := by
   ext v
-  rw [mpullback_apply, liouvilleForm_apply]
-  have hπ : π (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) ∘ ψ = i ∘ g := funext hproj
-  -- The derivative of `π ∘ ψ = i ∘ g` is computed in two ways by the chain rule.
-  have hπψ := mfderiv_comp_apply x
-    ((Bundle.contMDiff_proj (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) _).mdifferentiableAt
-      one_ne_zero) hψ (v 0)
-  rw [← hπψ, hπ, mfderiv_comp_apply x hi hg]
+  -- `ψ` lies over `i ∘ g`, whose derivative is computed by the chain rule.
+  rw [mpullback_liouvilleForm_apply_of_proj_comp_eq (g := i ∘ g) hproj hψ,
+    mfderiv_comp_apply x hi hg]
   exact DFunLike.congr_fun hann _
 
 /-- **The Liouville form vanishes on conormal covectors.** If `ψ : X → T*M` lies over `i ∘ g`,

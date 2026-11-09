@@ -64,6 +64,55 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [ContMDiffCovariantDerivative cov ∞]
   {f : ℝ → ℝ → M} {W : ∀ q r, TangentSpace I (f q r)} {u v : ℝ}
 
+/-- **The inner covariant derivatives read in the chart.** Near `u`, the covariant derivative
+along the second-parameter curve of a `C²` field on a parametrized surface, read in the chart at
+`f u v`, is given by the coordinate formula. -/
+private theorem sectionCoord_alongCurve_eventuallyEq
+    (hW : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I.tangent 2
+      (fun z : ℝ × ℝ ↦ TotalSpace.mk' E (f z.1 z.2) (W z.1 z.2)) (u, v))
+    {φ w : ℝ × ℝ → E} (hφdef : φ = fun z ↦ extChartAt I (f u v) (f z.1 z.2))
+    (hwdef : w = fun z ↦ (trivializationAt E (TangentSpace I) (f u v)).continuousLinearMapAt ℝ
+      (f z.1 z.2) (W z.1 z.2)) :
+    letI e := trivializationAt E (TangentSpace I) (f u v)
+    letI Γ := christoffelMap (finBasis ℝ E) (cov.isCovariantDerivativeOn (s := e.baseSet))
+    sectionCoord (F := E) (fun q ↦ f q v) (fun q ↦ alongCurve cov (f q) (W q) v)
+      (f u v) =ᶠ[𝓝 u]
+      fun q ↦ deriv (fun r ↦ w (q, r)) v + Γ (f q v) (w (q, v)) (deriv (fun r ↦ φ (q, r)) v) := by
+  set e := trivializationAt E (TangentSpace I) (f u v)
+  have hcov := cov.isCovariantDerivativeOn (s := e.baseSet)
+  set Γ := christoffelMap (finBasis ℝ E) hcov
+  have : ContMDiffCovariantDerivativeOn E ∞ cov.toFun e.baseSet :=
+    contMDiffCovariantDerivativeOn_of_isOpen (n := ⊤) cov e.open_baseSet
+  have : IsManifold I (∞ + 1 + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  have : ContMDiffVectorBundle (∞ + 1) E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  have hbase : f u v ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) _
+  have hf : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2 (fun z : ℝ × ℝ ↦ f z.1 z.2) (u, v) :=
+    (contMDiff_proj (TangentSpace I)).contMDiffAt.comp (u, v) hW
+  -- Near `u`, the field is `C²` at the points `(q, v)`, which lie over the chart at `f u v`.
+  have hslice : ∀ᶠ q in 𝓝 u, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I.tangent 2
+      (fun z : ℝ × ℝ ↦ TotalSpace.mk' E (f z.1 z.2) (W z.1 z.2)) (q, v) ∧ f q v ∈ e.baseSet :=
+    ((continuous_id.prodMk continuous_const).tendsto u).eventually
+      (((contMDiffAt_iff_contMDiffAt_nhds (by simp)).mp hW).and
+        (hf.continuousAt.preimage_mem_nhds (e.open_baseSet.mem_nhds hbase)))
+  have hcoord (q : ℝ) : sectionCoord (F := E) (f q) (W q) (f u v) = fun r ↦ w (q, r) :=
+    funext fun r ↦ by rw [sectionCoord_apply, hwdef]
+  filter_upwards [hslice] with q ⟨hq, hqb⟩
+  have hcurve : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2
+      (fun r ↦ TotalSpace.mk' E (f q r) (W q r)) v :=
+    hq.comp v (contMDiff_iff_contDiff.mpr (contDiff_prodMk_right (n := 2) q)).contMDiffAt
+  have hfq : MDifferentiableAt 𝓘(ℝ, ℝ) I (f q) v :=
+    ((contMDiff_proj (TangentSpace I)).contMDiffAt.comp v hcurve).mdifferentiableAt
+      (by norm_num)
+  have hV : DifferentiableAt ℝ (sectionCoord (F := E) (f q) (W q) (f q v)) v :=
+    differentiableAt_sectionCoord (f q) (W q) (hcurve.mdifferentiableAt (by norm_num))
+      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) _)
+  rw [sectionCoord_apply, ← alongCurveWithin_univ,
+    ← symmL_alongCurveInChartWithin cov (f q) (W q) hqb uniqueDiffWithinAt_univ
+      hfq.mdifferentiableWithinAt hV.differentiableWithinAt,
+    e.continuousLinearMapAt_symmL (R := ℝ) hqb, alongCurveInChartWithin_apply,
+    derivWithin_univ, derivWithin_univ, Function.comp_def, hcoord q, hφdef]
+
 /-- **The mixed covariant derivative in the chart at the point.** For a `C²` vector field `W`
 along a parametrized surface `f`, the covariant derivative along the first-parameter curve of the
 covariant derivatives along the second-parameter curves, read in the chart at `f u v`. -/
@@ -102,33 +151,8 @@ private theorem alongCurve_alongCurve_eq_symmL
     ((contMDiffAt_extChartAt' (mem_chart_source H (f u v))).comp (u, v) hf)
   have hw : ContDiffAt ℝ 2 w (u, v) :=
     hwdef ▸ hW.contDiffAt_continuousLinearMapAt_trivializationAt
-  -- Near `u`, the field is `C²` at the points `(q, v)`, which lie over the chart at `f u v`.
-  have hslice : ∀ᶠ q in 𝓝 u, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I.tangent 2
-      (fun z : ℝ × ℝ ↦ TotalSpace.mk' E (f z.1 z.2) (W z.1 z.2)) (q, v) ∧ f q v ∈ e.baseSet :=
-    ((continuous_id.prodMk continuous_const).tendsto u).eventually
-      (((contMDiffAt_iff_contMDiffAt_nhds (by simp)).mp hW).and
-        (hf.continuousAt.preimage_mem_nhds (e.open_baseSet.mem_nhds hbase)))
-  -- There the inner covariant derivatives read in the chart at `f u v` by the coordinate formula.
-  have hinner : sectionCoord (F := E) (fun q ↦ f q v) (fun q ↦ alongCurve cov (f q) (W q) v)
-      (f u v) =ᶠ[𝓝 u]
-      fun q ↦ deriv (fun r ↦ w (q, r)) v + Γ (f q v) (w (q, v)) (deriv (fun r ↦ φ (q, r)) v) := by
-    have hcoord (q : ℝ) : sectionCoord (F := E) (f q) (W q) (f u v) = fun r ↦ w (q, r) :=
-      funext fun r ↦ by rw [sectionCoord_apply, hwdef]
-    filter_upwards [hslice] with q ⟨hq, hqb⟩
-    have hcurve : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent 2
-        (fun r ↦ TotalSpace.mk' E (f q r) (W q r)) v :=
-      hq.comp v (contMDiff_iff_contDiff.mpr (contDiff_prodMk_right (n := 2) q)).contMDiffAt
-    have hfq : MDifferentiableAt 𝓘(ℝ, ℝ) I (f q) v :=
-      ((contMDiff_proj (TangentSpace I)).contMDiffAt.comp v hcurve).mdifferentiableAt
-        (by norm_num)
-    have hV : DifferentiableAt ℝ (sectionCoord (F := E) (f q) (W q) (f q v)) v :=
-      differentiableAt_sectionCoord (f q) (W q) (hcurve.mdifferentiableAt (by norm_num))
-        (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) _)
-    rw [sectionCoord_apply, ← alongCurveWithin_univ,
-      ← symmL_alongCurveInChartWithin cov (f q) (W q) hqb uniqueDiffWithinAt_univ
-        hfq.mdifferentiableWithinAt hV.differentiableWithinAt,
-      e.continuousLinearMapAt_symmL (R := ℝ) hqb, alongCurveInChartWithin_apply,
-      derivWithin_univ, derivWithin_univ, Function.comp_def, hcoord q, hφdef]
+  -- Near `u`, the inner covariant derivatives read in the chart by the coordinate formula.
+  have hinner := sectionCoord_alongCurve_eventuallyEq cov hW hφdef hwdef
   -- The derivative in `q` of the coordinate formula, by the product rule.
   have hfu : MDifferentiableAt 𝓘(ℝ, ℝ) I (fun q ↦ f q v) u :=
     (hf.comp u (contMDiff_iff_contDiff.mpr (contDiff_prodMk_left (n := 2) v)).contMDiffAt)

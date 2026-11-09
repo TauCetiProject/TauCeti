@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
+import TauCeti.Geometry.Manifold.Orientation.Pullback
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 
@@ -37,6 +38,8 @@ a composite of differentiable maps is the product of the signs.
   differentiable maps is the product of the orientation signs.
 * `TauCeti.Manifold.Orientation.orientationSign_eq_one_or_eq_neg_one_of_isRegularPoint`: at a
   regular point the orientation sign is `1` or `-1`.
+* `TauCeti.Manifold.Orientation.eventually_orientationSign_eq`: the orientation sign is constant
+  near a point where the map is `C¹` with invertible derivative.
 
 ## References
 
@@ -51,7 +54,7 @@ public section
 noncomputable section
 
 open Function
-open scoped Manifold
+open scoped Manifold Topology
 
 namespace TauCeti
 
@@ -195,6 +198,20 @@ theorem orientationSign_comp (hg : MDifferentiableAt J K g (f x))
     rcases not_and_or.1 hinv with h | h
     · rw [orientationSign_of_not_isInvertible h, mul_zero]
     · rw [orientationSign_of_not_isInvertible h, zero_mul]
+
+/-- The orientation sign is locally constant near a point where the map is `C¹` with invertible
+derivative. -/
+theorem eventually_orientationSign_eq (hf : ContMDiffAt I J 1 f x)
+    (hd : (mfderiv I J f x).IsInvertible) :
+    ∀ᶠ z in 𝓝 x, orientationSign o o' f z = orientationSign o o' f x := by
+  obtain ⟨e, he⟩ := hd
+  rcases isOrientationPreservingAt_or_isOrientationReversingAt o o' f x e he with h | h
+  · filter_upwards [eventually_isOrientationPreservingAt hf h] with z hz
+    rw [orientationSign_of_isOrientationPreservingAt hz,
+      orientationSign_of_isOrientationPreservingAt h]
+  · filter_upwards [eventually_isOrientationReversingAt hf h] with z hz
+    rw [orientationSign_of_isOrientationReversingAt hz,
+      orientationSign_of_isOrientationReversingAt h]
 
 @[simp]
 theorem orientationSign_congrModel_left {I₁ I₂ : ModelWithCorners ℝ E H} (h : I₁ = I₂)

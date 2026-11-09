@@ -15,6 +15,8 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.Topology.MetricSpace.Lipschitz
+import TauCeti.Analysis.Normed.Field.Lipschitz
 
 /-!
 # Uniform ellipticity for divergence-form PDE coefficients
@@ -53,6 +55,11 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   `C¹` entries on an open set has locally Lipschitz bilinear forms there.
 * `TauCeti.PDE.lipschitzOnWith_matrixBilinearForm_apply_apply`: the entries `⟪p, a(x) q⟫` of a
   coefficient field with Lipschitz bilinear forms are Lipschitz.
+* `TauCeti.PDE.exists_lipschitzOnWith_inv_matrixBilinearForm_self`: for a uniformly elliptic
+  coefficient field with Lipschitz bilinear forms, the reciprocal of the quadratic form of a
+  nonzero vector is bounded and Lipschitz.
+* `TauCeti.PDE.exists_lipschitzWith_matrixBilinearForm_eqOn`: a coefficient field with
+  Lipschitz bilinear forms on a set agrees there with one that is Lipschitz on the whole space.
 * `TauCeti.PDE.matrixBilinearFormLinear`: the coefficient matrix-to-bilinear-form map as a
   continuous linear map.
 * `TauCeti.PDE.matrixBilinearForm_opNorm_le_of_upper_bound`: a pointwise bilinear upper
@@ -951,6 +958,67 @@ theorem lipschitzOnWith_matrixBilinearForm_apply_apply {X : Type*} [PseudoEMetri
     (ContinuousLinearMap.lipschitzWith_apply p)).comp_lipschitzOnWith hK
   have hc : ‖q‖₊ * ‖p‖₊ * K = K * ‖p‖₊ * ‖q‖₊ := by ring
   rwa [hc] at h
+
+/-- If `a` is uniformly elliptic and bounded on `s` and `x ↦ a(x)` is Lipschitz on `s` as a bilinear
+form, then for `w ≠ 0` the form `a(x)(w, w)` is nonzero on `s` and its reciprocal is bounded and
+Lipschitz on `s`. -/
+theorem exists_lipschitzOnWith_inv_matrixBilinearForm_self {X : Type*} [PseudoMetricSpace X]
+    [DecidableEq n] {a : X → Matrix n n ℝ} {s : Set X} {K : ℝ≥0} {lam Lam : ℝ}
+    (ha : UniformlyEllipticOn s a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) s)
+    {w : EuclideanSpace ℝ n} (hw : w ≠ 0) :
+    ∃ (L : ℝ≥0) (B : ℝ),
+      LipschitzOnWith L (fun x => (matrixBilinearForm (a x) w w)⁻¹) s ∧
+      (∀ x ∈ s, ‖(matrixBilinearForm (a x) w w)⁻¹‖ ≤ B) ∧
+      ∀ x ∈ s, matrixBilinearForm (a x) w w ≠ 0 := by
+  have hβL := lipschitzOnWith_matrixBilinearForm_apply_apply hK
+  set m : ℝ := lam * ‖w‖ ^ 2
+  have hm : 0 < m := mul_pos ha.pos (pow_pos (norm_pos_iff.2 hw) 2)
+  have hcm : ∀ x ∈ s, m ≤ matrixBilinearForm (a x) w w :=
+    fun x hx => by simpa only [m, matrixBilinearForm_self] using ha.lower_bound hx w
+  have hrL : LipschitzOnWith (K * ‖w‖₊ * ‖w‖₊ / ⟨m, hm.le⟩ ^ 2)
+      (fun x => (matrixBilinearForm (a x) w w)⁻¹) s :=
+    (hβL w w).inv_of_le_norm hm fun x hx =>
+      (hcm x hx).trans (Real.le_norm_self (matrixBilinearForm (a x) w w))
+  refine ⟨_, m⁻¹, hrL, fun x hx => ?_, fun x hx => (hm.trans_le (hcm x hx)).ne'⟩
+  have hx' := hm.trans_le (hcm x hx)
+  rw [Real.norm_eq_abs, abs_inv, abs_of_pos hx']
+  exact inv_anti₀ hm (hcm x hx)
+
+/-- **A field that is Lipschitz on a set extends to a Lipschitz field on the whole space.** If
+`x ↦ a x` is Lipschitz on `S` in the operator norm of its bilinear forms, then `a` agrees on `S`
+with a field `abar` on the whole space whose bilinear forms are Lipschitz, with some constant
+`K'`. -/
+theorem exists_lipschitzWith_matrixBilinearForm_eqOn {X : Type*} [PseudoMetricSpace X]
+    {a : X → Matrix n n ℝ} {K : ℝ≥0} {S : Set X}
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) S) :
+    ∃ (abar : X → Matrix n n ℝ) (K' : ℝ≥0), EqOn abar a S ∧
+      LipschitzWith K' (fun x => matrixBilinearForm (abar x)) := by
+  classical
+  -- Extend the entries of `a` from `S` to Lipschitz functions on the whole space.
+  have hent : ∀ i j, LipschitzOnWith (K * ‖EuclideanSpace.single i (1 : ℝ)‖₊ *
+      ‖EuclideanSpace.single j (1 : ℝ)‖₊) (fun x => a x i j) S := fun i j => by
+    simpa [matrixBilinearForm_apply] using lipschitzOnWith_matrixBilinearForm_apply_apply hK
+      (EuclideanSpace.single i (1 : ℝ)) (EuclideanSpace.single j 1)
+  choose g hgL hgS using fun i j => (hent i j).extend_real
+  have habar : EqOn (fun x => Matrix.of fun i j => g i j x) a S := fun x hx => by
+    ext i j
+    exact (hgS i j hx).symm
+  -- The bilinear forms of `ā` are Lipschitz, with the sum of the entrywise constants.
+  have hLbar : LipschitzWith (∑ i : n, ∑ j : n, K * ‖EuclideanSpace.single i (1 : ℝ)‖₊ *
+      ‖EuclideanSpace.single j (1 : ℝ)‖₊)
+      (fun x => matrixBilinearForm (Matrix.of fun i j => g i j x)) := by
+    refine LipschitzWith.of_dist_le_mul fun y z => ?_
+    rw [dist_eq_norm, ← matrixBilinearForm_sub]
+    refine (norm_matrixBilinearForm_le_sum_abs _).trans ?_
+    push_cast
+    rw [Finset.sum_mul]
+    refine Finset.sum_le_sum fun i _ => ?_
+    rw [Finset.sum_mul]
+    refine Finset.sum_le_sum fun j _ => ?_
+    rw [Matrix.sub_apply, ← Real.dist_eq]
+    exact (hgL i j).dist_le_mul y z
+  exact ⟨_, _, habar, hLbar⟩
 
 /-- The conormal component of a gradient, for a possibly variable coefficient field, is
 supported where the function is. -/

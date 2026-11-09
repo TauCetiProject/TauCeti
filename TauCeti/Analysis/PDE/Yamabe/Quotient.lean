@@ -48,7 +48,9 @@ that `u ^ (4 / (n - 2)) g` has constant scalar curvature `λ`
 (`TauCeti.Yamabe.scalarCurvature_rescale_eq_iff_conformalLaplacian_eq`).
 
 The quotient is defined for every function, through the Riemannian gradient and Bochner integrals;
-its classical meaning, and every result here, concern differentiable functions. The metric is the
+its classical meaning and variational results concern differentiable functions, while scale
+invariance (`yamabeQuotient_smul`) and nonnegativity under nonnegative scalar curvature hold for
+every function. The metric is the
 `RiemannianBundle` instance of the tangent bundle and the volume is `TauCeti.riemannianVolume`, as
 for `TauCeti.Yamabe.conformalLaplacian`.
 
@@ -57,7 +59,10 @@ for `TauCeti.Yamabe.conformalLaplacian`.
 All in the namespace `TauCeti.Yamabe`.
 
 * `yamabeQuotient`: the Yamabe quotient `Q_g(u)`.
+* `yamabeQuotient_nonneg_of_scalarCurvature_nonneg`: nonnegative scalar curvature gives
+  nonnegative quotients, without regularity assumptions on `u`.
 * `yamabeQuotient_smul`: `Q_g(c u) = Q_g(u)` for `c ≠ 0`.
+* `yamabeQuotient_one`: on a compact manifold, `Q_g(1) = (∫ Scal_g dV_g) / Vol(g) ^ (2 / pₙ)`.
 * `hasDerivAt_yamabeQuotient_add_smul`: the first variation of `Q_g`.
 * `forall_hasDerivAt_yamabeQuotient_add_smul_iff_exists_conformalLaplacian_eq`: the Euler–Lagrange
   equation `L_g u = λ |u| ^ (pₙ - 2) u` characterizes the critical points of `Q_g`.
@@ -113,10 +118,20 @@ theorem yamabeQuotient_def (u : M → ℝ) :
 
 variable {I}
 
+/-- Nonnegative scalar curvature makes the total Yamabe quotient nonnegative in dimension
+`n > 2`, even without regularity or integrability assumptions on the function. -/
+theorem yamabeQuotient_nonneg_of_scalarCurvature_nonneg (hn : 2 < finrank ℝ E) (u : M → ℝ)
+    (hS : ∀ x, 0 ≤ (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x) :
+    0 ≤ yamabeQuotient I u := by
+  rw [yamabeQuotient_def]
+  exact div_nonneg (integral_nonneg fun x ↦ add_nonneg
+    (mul_nonneg (conformalCoefficient_pos hn).le (sq_nonneg _))
+    (mul_nonneg (hS x) (sq_nonneg _)))
+    (Real.rpow_nonneg (integral_nonneg fun x ↦ Real.rpow_nonneg (abs_nonneg _) _) _)
+
 /-- **Scale invariance of the Yamabe quotient.** In dimension `n > 2`, multiplying a
-differentiable function by a nonzero constant does not change its Yamabe quotient. -/
-theorem yamabeQuotient_smul (hn : 2 < finrank ℝ E) {u : M → ℝ} (hu : MDifferentiable I 𝓘(ℝ) u)
-    {c : ℝ} (hc : c ≠ 0) :
+function by a nonzero constant does not change its Yamabe quotient. -/
+theorem yamabeQuotient_smul (hn : 2 < finrank ℝ E) {u : M → ℝ} {c : ℝ} (hc : c ≠ 0) :
     yamabeQuotient I (c • u) = yamabeQuotient I u := by
   have hp := criticalExponent_pos hn
   have hnum : ∀ x, conformalCoefficient (finrank ℝ E) * ‖mgradient I (c • u) x‖ ^ 2 +
@@ -124,7 +139,7 @@ theorem yamabeQuotient_smul (hn : 2 < finrank ℝ E) {u : M → ℝ} (hu : MDiff
       c ^ 2 * (conformalCoefficient (finrank ℝ E) * ‖mgradient I u x‖ ^ 2 +
         (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * u x ^ 2) := by
     intro x
-    rw [mgradient_smul c hu, Pi.smul_apply, Pi.smul_apply, norm_smul, Real.norm_eq_abs, mul_pow,
+    rw [mgradient_smul c, Pi.smul_apply, Pi.smul_apply, norm_smul, Real.norm_eq_abs, mul_pow,
       sq_abs, smul_eq_mul]
     ring
   have hden : ∀ x, |(c • u) x| ^ criticalExponent (finrank ℝ E) =
@@ -138,6 +153,16 @@ theorem yamabeQuotient_smul (hn : 2 < finrank ℝ E) {u : M → ℝ} (hu : MDiff
   rw [Real.mul_rpow (Real.rpow_nonneg (abs_nonneg _) _)
       (integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _), hc2,
     mul_div_mul_left _ _ (pow_ne_zero 2 hc)]
+
+/-- On a compact manifold of dimension `n`, the Yamabe quotient of the constant function `1` is
+the volume-normalized total scalar curvature `(∫ Scal_g dV_g) / Vol(g) ^ (2 / pₙ)`. -/
+@[simp]
+theorem yamabeQuotient_one [CompactSpace M] :
+    yamabeQuotient I (fun _ : M ↦ (1 : ℝ)) =
+      (∫ x, (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x
+        ∂riemannianVolume I M) /
+        riemannianTotalVolume I M ^ (2 / criticalExponent (finrank ℝ E)) := by
+  simp [yamabeQuotient_def, mgradient_const, riemannianTotalVolume_def]
 
 /-! ### The first variation -/
 
@@ -171,25 +196,19 @@ private theorem hasDerivAt_integral_energy_add_smul {u v : M → ℝ} (hu : Cont
   set eu : M → ℝ := fun x ↦ a * ‖mgradient I u x‖ ^ 2 + S x * u x ^ 2
   set b : M → ℝ := fun x ↦ a * inner ℝ (mgradient I v x) (mgradient I u x) + S x * (v x * u x)
   set ev : M → ℝ := fun x ↦ a * ‖mgradient I v x‖ ^ 2 + S x * v x ^ 2
-  have hgrad (t : ℝ) : mgradient I (u + t • v) = mgradient I u + t • mgradient I v := by
-    rw [mgradient_add (hu.mdifferentiable one_ne_zero)
-      ((hv.mdifferentiable one_ne_zero).const_smul t), mgradient_smul t
-      (hv.mdifferentiable one_ne_zero)]
   have hpt (t : ℝ) (x : M) : a * ‖mgradient I (u + t • v) x‖ ^ 2 + S x * (u + t • v) x ^ 2 =
       eu x + 2 * t * b x + t ^ 2 * ev x := by
-    simp only [hgrad, Pi.add_apply, Pi.smul_apply, smul_eq_mul, eu, b, ev, norm_add_sq_real,
-      norm_smul, inner_smul_right, Real.norm_eq_abs, mul_pow, sq_abs, real_inner_comm]
+    rw [norm_sq_mgradient_add_smul (hu.mdifferentiable one_ne_zero)
+      (hv.mdifferentiable one_ne_zero)]
+    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, eu, b, ev]
     ring
-  have hnorm (w : M → ℝ) (hw : ContMDiff I 𝓘(ℝ) 1 w) :
-      Continuous fun x ↦ ‖mgradient I w x‖ ^ 2 := by
-    simpa only [real_inner_self_eq_norm_sq] using continuous_inner_mgradient hw hw
   have heu : Integrable eu μ := integrable_of_continuous
-    ((continuous_const.mul (hnorm u hu)).add (hS.mul (hu.continuous.pow 2)))
+    ((continuous_const.mul (continuous_norm_sq_mgradient hu)).add (hS.mul (hu.continuous.pow 2)))
   have hb : Integrable b μ := integrable_of_continuous
     ((continuous_const.mul (continuous_inner_mgradient hv hu)).add
       (hS.mul (hv.continuous.mul hu.continuous)))
   have hev : Integrable ev μ := integrable_of_continuous
-    ((continuous_const.mul (hnorm v hv)).add (hS.mul (hv.continuous.pow 2)))
+    ((continuous_const.mul (continuous_norm_sq_mgradient hv)).add (hS.mul (hv.continuous.pow 2)))
   have hEt (t : ℝ) : ∫ x, (a * ‖mgradient I (u + t • v) x‖ ^ 2 + S x * (u + t • v) x ^ 2) ∂μ =
       (∫ x, eu x ∂μ) + 2 * t * (∫ x, b x ∂μ) + t ^ 2 * ∫ x, ev x ∂μ := by
     simp only [hpt]

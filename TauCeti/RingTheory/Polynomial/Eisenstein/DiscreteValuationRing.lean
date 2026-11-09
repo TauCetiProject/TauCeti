@@ -100,10 +100,12 @@ variable {S : Type*} [CommRing S] [Algebra R S] {f : R[X]} {x : S}
 
 /-- If `x` is a root of a monic polynomial `f` which is Eisenstein at the maximal ideal of a
 discrete valuation ring, then `x ^ deg f = -f(0) g(x)` for some `g` with `g(0) = 1`. -/
-theorem exists_pow_natDegree_eq [Nontrivial S] (hf : f.IsEisensteinAt (maximalIdeal R))
+theorem exists_pow_natDegree_eq (hf : f.IsEisensteinAt (maximalIdeal R))
     (hmo : f.Monic) (hx : aeval x f = 0) :
     ∃ g : R[X], g.coeff 0 = 1 ∧
       x ^ f.natDegree = -(algebraMap R S (f.coeff 0) * aeval x g) := by
+  obtain hS | _ := subsingleton_or_nontrivial S
+  · exact ⟨1, coeff_one_zero, Subsingleton.elim _ _⟩
   obtain ⟨g, hg0, hg⟩ := hf.exists_eq_X_pow_add_C_coeff_zero_mul hmo
     (hmo.natDegree_pos.mpr (by rintro rfl; simp at hx))
   refine ⟨g, hg0, eq_neg_of_add_eq_zero_left ?_⟩
