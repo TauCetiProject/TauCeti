@@ -35,6 +35,12 @@ relative chains (`TauCeti/AlgebraicTopology/Singular/AlexanderWhitney/RelativeCu
   preimages of `A` and `B`.  It is natural in both pairs and maps to the absolute cross product
   `TauCeti.singularCross`.  When `A` and `B` are the complements of the zero sections of two
   vector bundles, this is the pairing on the cohomology of their Thom pairs.
+* **Relative cup product of pulled-back classes.**  For maps `f₁ : X ⟶ Y₁`, `f₂ : X ⟶ Y₂` and open
+  `A₁ ⊆ Y₁`, `A₂ ⊆ Y₂`, `TopCat.singularRelativeCupPullback` pairs `Hᵖ(Y₁, A₁)` and `H^q(Y₂, A₂)`
+  into `Hⁿ(X, Z)` for any `Z ⊆ f₁⁻¹(A₁) ∪ f₂⁻¹(A₂)`, by the relative cup product of the
+  pull-backs.  It specializes to the relative cross product, and to the product of classes of the
+  Thom pairs of two vector bundles over a common base, a class of the Thom pair of their direct
+  sum.
 
 ## Main definitions and results
 
@@ -52,6 +58,11 @@ relative chains (`TauCeti/AlgebraicTopology/Singular/AlexanderWhitney/RelativeCu
 * `TauCeti.singularRelativeCross`, with `TauCeti.singularRelativeCross_apply`,
   `TauCeti.singularCohomologyπ_singularRelativeCross` and
   `TauCeti.singularRelativeCross_naturality`.
+* `TopCat.singularRelativeCupPullback`, the relative cup product of classes pulled back along two
+  maps `f₁ : X ⟶ Y₁` and `f₂ : X ⟶ Y₂`, restricted to a subset of the union of the preimages, with
+  its naturality in the source (`TopCat.singularCohomologyMap_singularRelativeCupPullback`) and
+  the targets (`TopCat.singularRelativeCupPullback_singularCohomologyMap`) and its image in
+  absolute cohomology (`TopCat.singularCohomologyπ_singularRelativeCupPullback`).
 
 ## References
 
@@ -396,6 +407,173 @@ lemma singularRelativeCup_naturality (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) {U
     ConcreteCategory.comp_apply, homologyMap_cochainComplexMap_singularRelativeCup]
   exact TauCeti.ChainComplex.cup_naturality _ μ _ _ _ _
     (relativeAlexanderWhitneyDiagonal_naturality f hfU hfV u) p q n h a b
+
+/-! ### Relative cup products of pulled-back classes -/
+
+section Pullback
+
+variable {X' Y₁ Y₂ Y₁' Y₂' : TopCat.{w}}
+
+/-- For `Z ⊆ S`, the identity of `X` maps `Z` into `S`. -/
+lemma mapsTo_id_of_subset {Z S : Set X} (h : Z ⊆ S) : Set.MapsTo (𝟙 X) Z S :=
+  fun _ hx ↦ h hx
+
+/-- **The relative cup product of pulled-back classes.** For continuous maps `f₁ : X ⟶ Y₁` and
+`f₂ : X ⟶ Y₂`, open sets `A₁ ⊆ Y₁` and `A₂ ⊆ Y₂`, and a subset `Z ⊆ X` contained in
+`f₁⁻¹(A₁) ∪ f₂⁻¹(A₂)`, this is the pairing
+`Hᵖ(Y₁, A₁; R, M) × H^q(Y₂, A₂; S, N) ⟶ Hⁿ(X, Z; T, L)`, `p + q = n`, sending `(a, b)` to the
+restriction to `(X, Z)` of the relative cup product (`TopCat.singularRelativeCup`) of
+`f₁^* a ∈ Hᵖ(X, f₁⁻¹(A₁))` and `f₂^* b ∈ H^q(X, f₂⁻¹(A₂))`. The preimages are open, so the
+relative cup product applies. For the two projections of a product and `Z` the union of the
+preimages, this is the relative cross product `TauCeti.singularRelativeCross`; for the two
+projections of the direct sum of two vector bundles and `Z` its nonzero vectors, it is the
+product of classes of the two Thom pairs. -/
+def singularRelativeCupPullback (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) (f₁ : X ⟶ Y₁) (f₂ : X ⟶ Y₂)
+    {A₁ : Set Y₁} {A₂ : Set Y₂} (hA₁ : IsOpen A₁) (hA₂ : IsOpen A₂) {Z : Set X}
+    (hZ : Z ⊆ f₁ ⁻¹' A₁ ∪ f₂ ⁻¹' A₂) (p q n : ℕ) (h : p + q = n) :
+    (TopPair.ofSubset A₁).singularCohomology R k M p →ₗ[k]
+      (TopPair.ofSubset A₂).singularCohomology S k N q →ₗ[k]
+        (TopPair.ofSubset Z).singularCohomology T k L n :=
+  ((singularRelativeCup k u μ (f₁ ⁻¹' A₁) (f₂ ⁻¹' A₂)
+    ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtype_val)
+    ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtype_val) p q n h).compl₁₂
+    (TopPair.singularCohomologyMap (TopPair.ofSubsetMap f₁ (Set.mapsTo_preimage _ _)) p).hom
+    (TopPair.singularCohomologyMap (TopPair.ofSubsetMap f₂ (Set.mapsTo_preimage _ _)) q).hom
+    ).compr₂
+    (TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_of_subset hZ)) n).hom
+
+/-- The relative cup product of pulled-back classes is the restriction of the relative cup product
+of the pull-backs. -/
+lemma singularRelativeCupPullback_apply (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) (f₁ : X ⟶ Y₁)
+    (f₂ : X ⟶ Y₂) {A₁ : Set Y₁} {A₂ : Set Y₂} (hA₁ : IsOpen A₁) (hA₂ : IsOpen A₂) {Z : Set X}
+    (hZ : Z ⊆ f₁ ⁻¹' A₁ ∪ f₂ ⁻¹' A₂) (p q n : ℕ) (h : p + q = n)
+    (a : (TopPair.ofSubset A₁).singularCohomology R k M p)
+    (b : (TopPair.ofSubset A₂).singularCohomology S k N q) :
+    singularRelativeCupPullback k u μ f₁ f₂ hA₁ hA₂ hZ p q n h a b =
+      TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_of_subset hZ)) n
+        (singularRelativeCup k u μ (f₁ ⁻¹' A₁) (f₂ ⁻¹' A₂)
+          ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtype_val)
+          ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtype_val) p q n h
+          (TopPair.singularCohomologyMap (TopPair.ofSubsetMap f₁ (Set.mapsTo_preimage _ _)) p a)
+          (TopPair.singularCohomologyMap (TopPair.ofSubsetMap f₂ (Set.mapsTo_preimage _ _)) q
+            b)) :=
+  (rfl)
+
+/-- The relative cup product of pulled-back classes depends only on the two maps: equal maps give
+equal products, whatever the proofs that `Z` lies in the union of the preimages. -/
+lemma singularRelativeCupPullback_congr (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) {f₁ f₁' : X ⟶ Y₁}
+    {f₂ f₂' : X ⟶ Y₂} (h₁ : f₁ = f₁') (h₂ : f₂ = f₂') {A₁ : Set Y₁} {A₂ : Set Y₂}
+    (hA₁ : IsOpen A₁) (hA₂ : IsOpen A₂) {Z : Set X} (hZ : Z ⊆ f₁ ⁻¹' A₁ ∪ f₂ ⁻¹' A₂)
+    (hZ' : Z ⊆ f₁' ⁻¹' A₁ ∪ f₂' ⁻¹' A₂) (p q n : ℕ) (h : p + q = n) :
+    singularRelativeCupPullback k u μ f₁ f₂ hA₁ hA₂ hZ p q n h =
+      singularRelativeCupPullback k u μ f₁' f₂' hA₁ hA₂ hZ' p q n h := by
+  subst h₁ h₂
+  rfl
+
+/-- **Naturality in the source**: pulling back the relative cup product of pulled-back classes
+along a map `φ : (X', Z') ⟶ (X, Z)` gives the relative cup product of the classes pulled back
+along `φ ≫ f₁` and `φ ≫ f₂`. -/
+lemma singularCohomologyMap_singularRelativeCupPullback (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L)
+    (f₁ : X ⟶ Y₁) (f₂ : X ⟶ Y₂) {A₁ : Set Y₁} {A₂ : Set Y₂} (hA₁ : IsOpen A₁) (hA₂ : IsOpen A₂)
+    {Z : Set X} (hZ : Z ⊆ f₁ ⁻¹' A₁ ∪ f₂ ⁻¹' A₂) (φ : X' ⟶ X) {Z' : Set X'}
+    (hφ : Set.MapsTo φ Z' Z) (hZ' : Z' ⊆ (φ ≫ f₁) ⁻¹' A₁ ∪ (φ ≫ f₂) ⁻¹' A₂) (p q n : ℕ)
+    (h : p + q = n)
+    (a : (TopPair.ofSubset A₁).singularCohomology R k M p)
+    (b : (TopPair.ofSubset A₂).singularCohomology S k N q) :
+    TopPair.singularCohomologyMap (TopPair.ofSubsetMap φ hφ) n
+        (singularRelativeCupPullback k u μ f₁ f₂ hA₁ hA₂ hZ p q n h a b) =
+      singularRelativeCupPullback k u μ (φ ≫ f₁) (φ ≫ f₂) hA₁ hA₂ hZ' p q n h a b := by
+  have hφ₁ : Set.MapsTo φ ((φ ≫ f₁) ⁻¹' A₁) (f₁ ⁻¹' A₁) := fun _ hx ↦ hx
+  have hf₁ : TopPair.ofSubsetMap (φ ≫ f₁) (Set.mapsTo_preimage _ A₁) =
+      TopPair.ofSubsetMap φ hφ₁ ≫ TopPair.ofSubsetMap f₁ (Set.mapsTo_preimage _ _) :=
+    TopPair.ofSubsetMap_comp _ _ _ _ _
+  have hφ₂ : Set.MapsTo φ ((φ ≫ f₂) ⁻¹' A₂) (f₂ ⁻¹' A₂) := fun _ hx ↦ hx
+  have hf₂ : TopPair.ofSubsetMap (φ ≫ f₂) (Set.mapsTo_preimage _ A₂) =
+      TopPair.ofSubsetMap φ hφ₂ ≫ TopPair.ofSubsetMap f₂ (Set.mapsTo_preimage _ _) :=
+    TopPair.ofSubsetMap_comp _ _ _ _ _
+  rw [singularRelativeCupPullback_apply, singularRelativeCupPullback_apply, hf₁, hf₂,
+    TopPair.singularCohomologyMap_comp_apply, TopPair.singularCohomologyMap_comp_apply,
+    singularRelativeCup_naturality k u μ
+      ((hA₁.preimage (φ ≫ f₁).hom.continuous).preimage continuous_subtype_val)
+      ((hA₂.preimage (φ ≫ f₂).hom.continuous).preimage continuous_subtype_val)
+      ((hA₁.preimage f₁.hom.continuous).preimage continuous_subtype_val)
+      ((hA₂.preimage f₂.hom.continuous).preimage continuous_subtype_val) φ hφ₁ hφ₂,
+    ← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply]
+  congr 3
+  exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _
+    (by rw [Category.comp_id, Category.id_comp])
+
+/-- **Naturality in the targets**: the relative cup product of pulled-back classes of
+`g₁^* a` and `g₂^* b`, for maps `g₁ : (Y₁', A₁') ⟶ (Y₁, A₁)` and `g₂ : (Y₂', A₂') ⟶ (Y₂, A₂)`, is
+the relative cup product of `a` and `b` pulled back along `f₁ ≫ g₁` and `f₂ ≫ g₂`. -/
+lemma singularRelativeCupPullback_singularCohomologyMap (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L)
+    (f₁ : X ⟶ Y₁') (f₂ : X ⟶ Y₂') (g₁ : Y₁' ⟶ Y₁) (g₂ : Y₂' ⟶ Y₂) {A₁ : Set Y₁} {A₂ : Set Y₂}
+    {A₁' : Set Y₁'} {A₂' : Set Y₂'} (hA₁ : IsOpen A₁) (hA₂ : IsOpen A₂) (hA₁' : IsOpen A₁')
+    (hA₂' : IsOpen A₂') (hg₁ : Set.MapsTo g₁ A₁' A₁) (hg₂ : Set.MapsTo g₂ A₂' A₂) {Z : Set X}
+    (hZ : Z ⊆ f₁ ⁻¹' A₁' ∪ f₂ ⁻¹' A₂') (hZ' : Z ⊆ (f₁ ≫ g₁) ⁻¹' A₁ ∪ (f₂ ≫ g₂) ⁻¹' A₂)
+    (p q n : ℕ) (h : p + q = n)
+    (a : (TopPair.ofSubset A₁).singularCohomology R k M p)
+    (b : (TopPair.ofSubset A₂).singularCohomology S k N q) :
+    singularRelativeCupPullback k u μ f₁ f₂ hA₁' hA₂' hZ p q n h
+        (TopPair.singularCohomologyMap (TopPair.ofSubsetMap g₁ hg₁) p a)
+        (TopPair.singularCohomologyMap (TopPair.ofSubsetMap g₂ hg₂) q b) =
+      singularRelativeCupPullback k u μ (f₁ ≫ g₁) (f₂ ≫ g₂) hA₁ hA₂ hZ' p q n h a b := by
+  have hU : Set.MapsTo (𝟙 X) (f₁ ⁻¹' A₁') ((f₁ ≫ g₁) ⁻¹' A₁) := fun _ hx ↦ hg₁ hx
+  have hV : Set.MapsTo (𝟙 X) (f₂ ⁻¹' A₂') ((f₂ ≫ g₂) ⁻¹' A₂) := fun _ hx ↦ hg₂ hx
+  have hf₁ : TopPair.ofSubsetMap f₁ (Set.mapsTo_preimage _ A₁') ≫ TopPair.ofSubsetMap g₁ hg₁ =
+      TopPair.ofSubsetMap (𝟙 X) hU ≫ TopPair.ofSubsetMap (f₁ ≫ g₁) (Set.mapsTo_preimage _ _) :=
+    TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ (by simp)
+  have hf₂ : TopPair.ofSubsetMap f₂ (Set.mapsTo_preimage _ A₂') ≫ TopPair.ofSubsetMap g₂ hg₂ =
+      TopPair.ofSubsetMap (𝟙 X) hV ≫ TopPair.ofSubsetMap (f₂ ≫ g₂) (Set.mapsTo_preimage _ _) :=
+    TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ (by simp)
+  rw [singularRelativeCupPullback_apply, singularRelativeCupPullback_apply,
+    ← TopPair.singularCohomologyMap_comp_apply, ← TopPair.singularCohomologyMap_comp_apply, hf₁,
+    hf₂, TopPair.singularCohomologyMap_comp_apply, TopPair.singularCohomologyMap_comp_apply,
+    singularRelativeCup_naturality k u μ
+      ((hA₁'.preimage f₁.hom.continuous).preimage continuous_subtype_val)
+      ((hA₂'.preimage f₂.hom.continuous).preimage continuous_subtype_val)
+      ((hA₁.preimage (f₁ ≫ g₁).hom.continuous).preimage continuous_subtype_val)
+      ((hA₂.preimage (f₂ ≫ g₂).hom.continuous).preimage continuous_subtype_val) (𝟙 X) hU hV,
+    ← TopPair.singularCohomologyMap_comp_apply]
+  congr 3
+  exact TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (Category.comp_id _)
+
+omit [MonoidalCategory C] [MonoidalPreadditive C] [MonoidalLinear k C] in
+/-- The image in absolute cohomology of a class pulled back along a map of pairs induced by a
+continuous map is the pull-back of its image. -/
+private lemma singularCohomologyπ_singularCohomologyMap_ofSubsetMap {Y : TopCat.{w}}
+    {A : Set Y} {B : Set X} (g : X ⟶ Y) (hg : Set.MapsTo g B A) (i : ℕ)
+    (x : (TopPair.ofSubset A).singularCohomology R k M i) :
+    (TopPair.ofSubset B).singularCohomologyπ R k M i
+        (TopPair.singularCohomologyMap (TopPair.ofSubsetMap g hg) i x) =
+      TopCat.singularCohomologyMap g i ((TopPair.ofSubset A).singularCohomologyπ R k M i x) := by
+  have h := ConcreteCategory.congr_hom (TopPair.singularCohomologyπ_naturality (R := R) (k := k)
+    (M := M) (TopPair.ofSubsetMap g hg) i) x
+  rw [TopPair.ofSubsetMap_fst] at h
+  simp only [ConcreteCategory.comp_apply] at h
+  exact h.symm
+
+/-- **Compatibility with the absolute cup product**: the image in `Hⁿ(X)` of the relative cup
+product of pulled-back classes of `a` and `b` is the cup product of the pull-backs along `f₁` and
+`f₂` of the images of `a` and `b` in absolute cohomology. -/
+@[simp]
+lemma singularCohomologyπ_singularRelativeCupPullback (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L)
+    (f₁ : X ⟶ Y₁) (f₂ : X ⟶ Y₂) {A₁ : Set Y₁} {A₂ : Set Y₂} (hA₁ : IsOpen A₁) (hA₂ : IsOpen A₂)
+    {Z : Set X} (hZ : Z ⊆ f₁ ⁻¹' A₁ ∪ f₂ ⁻¹' A₂) (p q n : ℕ) (h : p + q = n)
+    (a : (TopPair.ofSubset A₁).singularCohomology R k M p)
+    (b : (TopPair.ofSubset A₂).singularCohomology S k N q) :
+    (TopPair.ofSubset Z).singularCohomologyπ T k L n
+        (singularRelativeCupPullback k u μ f₁ f₂ hA₁ hA₂ hZ p q n h a b) =
+      X.singularCup k u μ p q n h
+        (TopCat.singularCohomologyMap f₁ p ((TopPair.ofSubset A₁).singularCohomologyπ R k M p a))
+        (TopCat.singularCohomologyMap f₂ q
+          ((TopPair.ofSubset A₂).singularCohomologyπ S k N q b)) := by
+  rw [singularRelativeCupPullback_apply, singularCohomologyπ_singularCohomologyMap_ofSubsetMap,
+    singularCohomologyπ_singularRelativeCup, singularCohomologyπ_singularCohomologyMap_ofSubsetMap,
+    singularCohomologyπ_singularCohomologyMap_ofSubsetMap, TopCat.singularCohomologyMap_id]
+  rfl
+
+end Pullback
 
 end TopCat
 
