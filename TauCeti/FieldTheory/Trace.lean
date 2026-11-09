@@ -49,8 +49,7 @@ theorem trace_eq_zero_of_sq_algebraMap_of_not_mem_range {F L : Type*} [Field F] 
     Algebra.trace F L x = 0 := by
   by_cases hfd : FiniteDimensional F L
   swap
-  · rw [Algebra.trace_eq_zero_of_not_exists_basis F ?_]
-    · rfl
+  · rw [Algebra.trace_eq_zero_of_not_exists_basis F ?_, LinearMap.zero_apply]
     · rintro ⟨s, ⟨b⟩⟩
       exact hfd (Module.Finite.of_basis b)
   have haeval : aeval x (X ^ 2 - C r : F[X]) = 0 := by simp [hx2]
