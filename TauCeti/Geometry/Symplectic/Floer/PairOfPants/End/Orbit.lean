@@ -177,7 +177,8 @@ private theorem lintegral_floerEnergyDensity_signedEndChart_ne_top (ω : Symplec
     have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
     rw [lintegral_image_eq_lintegral_abs_det_fderiv_mul volume hs
       (fun ζ _ ↦ ((contDiff_signedEndChart q 1).differentiable one_ne_zero ζ).hasFDerivAt
-        |>.hasFDerivWithinAt) (injOn_signedEndChart q)]
+        |>.hasFDerivWithinAt)
+      ((injOn_signedEndChart q 0).mono (prod_mono (subset_univ _) (by norm_num)))]
     refine setLIntegral_congr_fun hs fun ζ hζ ↦ ?_
     rw [ω.floerEnergyDensity_signedEndChart hH hHs hu hζ.1.le,
       abs_of_nonneg (det_fderiv_signedEndChart_nonneg q ζ),

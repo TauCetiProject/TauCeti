@@ -59,8 +59,9 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
   along the end chart is its component in the end coordinates.
 * `TauCeti.Floer.isComplexLinearMap_fderiv_signedEndChart`,
   `TauCeti.Floer.injOn_signedEndChart`, `TauCeti.Floer.perturbationPullback_signedEndChart`: the
-  signed end chart is holomorphic and injective on the half-strip `s > 2`, `t ∈ [0, 1)`, and there
-  the pair-of-pants perturbation pulls back to the cylindrical datum `±H_q(±t) dt`.
+  signed end chart is holomorphic and injective on every band of angular width one, and on the
+  half-cylinder `s ≥ 2` the pair-of-pants perturbation pulls back to the cylindrical datum
+  `±H_q(±t) dt`.
 
 ## References
 
@@ -361,9 +362,9 @@ theorem signedEndChart_mem_thricePuncturedSphereReal {q : Puncture} {ζ : ℝ ×
     (hζ : 0 < ζ.1) : signedEndChart q ζ ∈ thricePuncturedSphereReal :=
   endChart_mem_thricePuncturedSphereReal (by rwa [endSign_mul_fst_smul])
 
-/-- The signed end chart is injective on the half-strip `s > 2`, `t ∈ [0, 1)`. -/
-theorem injOn_signedEndChart (q : Puncture) :
-    InjOn (signedEndChart q) (Ioi 2 ×ˢ Ico 0 1) := by
+/-- The signed end chart is injective on every band `t ∈ [t₀, t₀ + 1)` of angular width one. -/
+theorem injOn_signedEndChart (q : Puncture) (t₀ : ℝ) :
+    InjOn (signedEndChart q) (univ ×ˢ Ico t₀ (t₀ + 1)) := by
   intro a ha b hb hab
   -- The angular coordinates of `±a` and `±b` differ by less than one period.
   have hlt : |(q.endSign • a).2 - (q.endSign • b).2| < 1 := by
