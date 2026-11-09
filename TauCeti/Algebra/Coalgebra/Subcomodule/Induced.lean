@@ -137,6 +137,12 @@ theorem subtype_toLinearMap : (Subcomodule.subtype N).toLinearMap = SMulMemClass
 theorem subtype_apply (n : N) : Subcomodule.subtype N n = n :=
   (rfl)
 
+/-- The range of the subcomodule inclusion is its underlying submodule. -/
+theorem range_subtype_toLinearMap : LinearMap.range N.subtype.toLinearMap = N.toSubmodule := by
+  rw [subtype_toLinearMap]
+  -- The underlying submodule has the same carrier and linear inclusion.
+  exact Submodule.range_subtype N.toSubmodule
+
 end Subcomodule
 
 namespace Comodule.Hom
