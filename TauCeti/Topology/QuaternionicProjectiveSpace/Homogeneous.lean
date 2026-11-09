@@ -132,6 +132,11 @@ basis vector. -/
 def basePoint : QuaternionicProjectiveSpace n :=
   mk n ⟨WithLp.toLp 2 (Pi.single 0 1), by simp⟩
 
+variable (n) in
+/-- The base point of `HPⁿ` is the class of the first standard basis vector `e₀`. -/
+theorem basePoint_def : basePoint n = mk n ⟨WithLp.toLp 2 (Pi.single 0 1), by simp⟩ :=
+  (rfl)
+
 /-- **The compact symplectic group acts transitively on `HPⁿ`**: every point is `[A e₀]` for some
 quaternionic unitary matrix `A`. -/
 instance instIsPretransitiveUnitary :
@@ -143,7 +148,7 @@ instance instIsPretransitiveUnitary :
     obtain ⟨A, hA⟩ := exists_quaternionUnitaryIsometry_apply_single_eq 0
       (mem_sphere_zero_iff_norm.1 x.2)
     refine ⟨A, ?_⟩
-    rw [basePoint, smul_mk]
+    rw [basePoint_def, smul_mk]
     exact congrArg (mk n) (Subtype.ext ((LinearIsometryEquiv.coe_smul_unitSphere _ _).trans hA))
 
 /-- **The stabilizer of `[e₀]`**: a quaternionic unitary matrix fixes the base point of `HPⁿ`
@@ -152,12 +157,15 @@ quaternionic multiple of `e₀`. -/
 theorem mem_stabilizer_basePoint_iff {A : unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ)} :
     A ∈ MulAction.stabilizer (unitary (Matrix (Fin (n + 1)) (Fin (n + 1)) ℍ)) (basePoint n) ↔
       ∀ i : Fin n, A.1 i.succ 0 = 0 := by
-  rw [MulAction.mem_stabilizer_iff, basePoint, smul_mk, mk_eq_mk_iff]
+  rw [MulAction.mem_stabilizer_iff, basePoint_def, smul_mk, mk_eq_mk_iff]
   constructor
   · rintro ⟨q, hq⟩ i
     have h := congrArg (fun v : sphere (0 : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) 1 ↦
       WithLp.ofLp (v : PiLp 2 fun _ : Fin (n + 1) ↦ ℍ) i.succ) hq
-    simpa [Matrix.mulVec, dotProduct, Pi.single_apply, Fin.succ_ne_zero, eq_comm] using h
+    simp only [Sphere.coe_op_sphere_smul, LinearIsometryEquiv.coe_smul_unitSphere,
+      quaternionUnitaryIsometry_apply, WithLp.ofLp_smul, WithLp.ofLp_toLp,
+      Matrix.mulVec_single_one] at h
+    simpa [Fin.succ_ne_zero] using h.symm
   · intro hA
     -- The image of `e₀` is its column `0`, the multiple `e₀ A₀₀`, and `A₀₀` is a unit quaternion.
     obtain ⟨⟨q, B⟩, hqB⟩ := Matrix.mem_range_unitaryProdBlockSucc_iff.2 hA

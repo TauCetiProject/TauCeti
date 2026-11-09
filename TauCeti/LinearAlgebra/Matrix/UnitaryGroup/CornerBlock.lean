@@ -33,6 +33,8 @@ is invertible on both sides.
 
 ## Main results
 
+* `Matrix.ext_fin_succ`: matrices indexed by `Fin (m + 1)` and `Fin (n + 1)` are equal when their
+  four blocks agree.
 * `Matrix.cornerBlockSucc_mul`, `Matrix.star_cornerBlockSucc`: `diag(c, B)` is multiplicative and
   commutes with the star operation, blockwise.
 * `Matrix.coe_unitaryProdBlockSucc`: the embedding sends `(c, B)` to `cornerBlockSucc c B`.
@@ -48,6 +50,18 @@ open scoped Matrix
 namespace Matrix
 
 variable {α : Type*} {m : ℕ}
+
+/-- Two matrices indexed by `Fin (m + 1)` and `Fin (n + 1)` are equal when their four blocks
+agree: the corner `(0, 0)`, the rest of row `0`, the rest of column `0`, and the indices
+`(Fin.succ, Fin.succ)`. -/
+theorem ext_fin_succ {n : ℕ} {M N : Matrix (Fin (m + 1)) (Fin (n + 1)) α}
+    (h₀₀ : M 0 0 = N 0 0) (h₀ₛ : ∀ j : Fin n, M 0 j.succ = N 0 j.succ)
+    (hₛ₀ : ∀ i : Fin m, M i.succ 0 = N i.succ 0)
+    (hₛₛ : ∀ (i : Fin m) (j : Fin n), M i.succ j.succ = N i.succ j.succ) :
+    M = N := by
+  ext p q
+  induction p using Fin.cases <;> induction q using Fin.cases
+  exacts [h₀₀, h₀ₛ _, hₛ₀ _, hₛₛ _ _]
 
 section Semiring
 
@@ -80,25 +94,25 @@ theorem cornerBlockSucc_succ_succ (c : α) (B : Matrix (Fin m) (Fin m) α) (i j 
   (rfl)
 
 /-- Block-diagonal matrices `diag(c, B)` multiply blockwise. -/
+@[simp]
 theorem cornerBlockSucc_mul (c c' : α) (B B' : Matrix (Fin m) (Fin m) α) :
     cornerBlockSucc c B * cornerBlockSucc c' B' = cornerBlockSucc (c * c') (B * B') := by
-  ext p q
-  refine Fin.cases ?_ (fun i ↦ ?_) p <;> refine Fin.cases ?_ (fun j ↦ ?_) q <;>
+  refine ext_fin_succ ?_ (fun j ↦ ?_) (fun i ↦ ?_) (fun i j ↦ ?_) <;>
     simp [Matrix.mul_apply, Fin.sum_univ_succ]
 
 /-- The block-diagonal matrix `diag(1, 1)` is the identity matrix. -/
+@[simp]
 theorem cornerBlockSucc_one : cornerBlockSucc (1 : α) (1 : Matrix (Fin m) (Fin m) α) = 1 := by
-  ext p q
-  refine Fin.cases ?_ (fun i ↦ ?_) p <;> refine Fin.cases ?_ (fun j ↦ ?_) q <;>
+  refine ext_fin_succ ?_ (fun j ↦ ?_) (fun i ↦ ?_) (fun i j ↦ ?_) <;>
     simp [Matrix.one_apply, Fin.succ_ne_zero, (Fin.succ_ne_zero _).symm]
 
 variable [StarRing α]
 
 /-- The conjugate transpose of `diag(c, B)` is `diag(star c, star B)`. -/
+@[simp]
 theorem star_cornerBlockSucc (c : α) (B : Matrix (Fin m) (Fin m) α) :
     star (cornerBlockSucc c B) = cornerBlockSucc (star c) (star B) := by
-  ext p q
-  refine Fin.cases ?_ (fun i ↦ ?_) p <;> refine Fin.cases ?_ (fun j ↦ ?_) q <;>
+  refine ext_fin_succ ?_ (fun j ↦ ?_) (fun i ↦ ?_) (fun i j ↦ ?_) <;>
     simp [star_eq_conjTranspose, conjTranspose_apply]
 
 /-- The block-diagonal matrix `diag(c, B)` is unitary when `c` and `B` are. -/
@@ -191,10 +205,7 @@ theorem mem_range_unitaryProdBlockSucc_iff {A : unitary (Matrix (Fin (m + 1)) (F
     calc A.1 0 j.succ = A.1 0 0 * star (A.1 0 0) * A.1 0 j.succ := by rw [hc', one_mul]
       _ = 0 := by rw [mul_assoc, h, mul_zero]
   let B : Matrix (Fin m) (Fin m) α := fun i j ↦ A.1 i.succ j.succ
-  have hAB : A.1 = cornerBlockSucc (A.1 0 0) B := by
-    ext p q
-    refine Fin.cases ?_ (fun i ↦ ?_) p <;> refine Fin.cases ?_ (fun j ↦ ?_) q <;>
-      first | rfl | exact hrow j | exact hA i
+  have hAB : A.1 = cornerBlockSucc (A.1 0 0) B := ext_fin_succ rfl hrow hA fun _ _ ↦ rfl
   have hB : B ∈ unitary (Matrix (Fin m) (Fin m) α) := by
     have h₁ := A.2.1
     have h₂ := A.2.2

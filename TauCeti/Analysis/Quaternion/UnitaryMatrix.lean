@@ -11,6 +11,8 @@ public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.Topology.Algebra.Star.Unitary
 public import Mathlib.Topology.Instances.Matrix
+import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Householder
 
 /-!
 # The compact symplectic group `Sp(n)` of quaternionic unitary matrices
@@ -183,33 +185,6 @@ section Transitive
 
 variable [DecidableEq ι]
 
-/-- **A quaternionic Householder reflection is unitary.** If `vᴴ v = s` and `c² s = 2 c`, then
-`H = 1 - c v vᴴ` is a Hermitian involution, hence unitary. -/
-private theorem one_sub_smul_vecMulVec_mem_unitary {v : ι → ℍ} {s c : ℝ}
-    (hvv : star v ⬝ᵥ v = s) (hc : c * c * s = 2 * c) :
-    1 - c • Matrix.vecMulVec v (star v) ∈ unitary (Matrix ι ι ℍ) := by
-  set P : Matrix ι ι ℍ := Matrix.vecMulVec v (star v) with hP
-  have hPP : P * P = s • P := by
-    rw [hP, Matrix.vecMulVec_mul_vecMulVec, hvv, ← Matrix.vecMulVec_smul]
-    congr 1
-    funext k
-    exact coe_mul_eq_smul _ _
-  have hPstar : star P = P := by
-    rw [hP, Matrix.star_eq_conjTranspose, Matrix.conjTranspose_vecMulVec, star_star]
-  have hHstar : star (1 - c • P) = 1 - c • P := by
-    rw [star_sub, star_one]
-    congr 1
-    refine Matrix.ext fun k l ↦ ?_
-    rw [Matrix.star_apply, Matrix.smul_apply, Quaternion.star_smul, ← Matrix.star_apply, hPstar,
-      Matrix.smul_apply]
-  have hHH : (1 - c • P) * (1 - c • P) = 1 := by
-    calc (1 - c • P) * (1 - c • P) = 1 - (2 * c - c * c * s) • P := by
-          rw [sub_mul, mul_sub, mul_sub, mul_one, one_mul, mul_one, smul_mul_smul_comm, hPP,
-            smul_smul]
-          module
-      _ = 1 := by rw [hc, sub_self, zero_smul, sub_zero]
-  exact ⟨by rw [hHstar, hHH], by rw [hHstar, hHH]⟩
-
 /-- **A quaternionic Householder reflection.** If a unit vector `y` has a real `i`-th coordinate,
 the reflection `H = 1 - (2 / |v|²) v vᴴ` in `v = eᵢ - y` is a unitary matrix with `H eᵢ = y`. -/
 private theorem exists_mem_unitary_mulVec_single_eq {y : ι → ℍ}
@@ -233,14 +208,18 @@ private theorem exists_mem_unitary_mulVec_single_eq {y : ι → ℍ}
     linarith
   have hcs : 2 / s * (2 / s) * s = 2 * (2 / s) := by
     field_simp
-  refine ⟨_, one_sub_smul_vecMulVec_mem_unitary hvv hcs, ?_⟩
+  -- Mathlib has no global `StarModule ℝ ℍ` instance.
+  let : StarModule ℝ ℍ := ⟨fun r q ↦ Quaternion.star_smul r q⟩
+  refine ⟨_, Matrix.one_sub_smul_vecMulVec_mem_unitary
+    (by rw [hvv, Quaternion.algebraMap_def]) hcs, ?_⟩
   rw [Matrix.sub_mulVec, Matrix.one_mulVec, Matrix.smul_mulVec, Matrix.vecMulVec_mulVec, hvi]
+  -- The real scalar `1 - r` acts the same on either side of `v`.
   have hv' : op ((1 - r : ℝ) : ℍ) • v = (1 - r) • v := by
     funext k
-    exact mul_coe_eq_smul _ _
-  rw [hv', smul_smul, hs2, show 2 / (2 * (1 - r)) * (1 - r) = 1 by
-    have : 1 - r ≠ 0 := fun h ↦ hs0 (by rw [hs2, h, mul_zero])
-    field_simp, one_smul, hv, sub_sub_cancel]
+    rw [Pi.smul_apply, Pi.smul_apply, op_smul_eq_mul, mul_coe_eq_smul]
+  have hr : 1 - r ≠ 0 := fun h ↦ hs0 (by rw [hs2, h, mul_zero])
+  rw [hv', smul_smul, hs2, show 2 / (2 * (1 - r)) * (1 - r) = 1 by field_simp, one_smul, hv,
+    sub_sub_cancel]
 
 /-- **The compact symplectic group acts transitively on the unit sphere of `ℍⁿ`**: every unit
 vector `x` is the image `A eᵢ` of the basis vector `eᵢ` under a quaternionic unitary matrix
@@ -265,18 +244,15 @@ theorem exists_quaternionUnitaryIsometry_apply_single_eq (i : ι)
     simp
   obtain ⟨H, hH, hHy⟩ := exists_mem_unitary_mulVec_single_eq hy (i := i) hr
   -- The diagonal unitary matrix with `ū` in position `i` corrects the phase.
-  set d : ι → ℍ := Function.update 1 i (star u) with hd
-  have hdd (k : ι) : star (d k) * d k = 1 ∧ d k * star (d k) = 1 := by
-    rcases eq_or_ne k i with rfl | hk
-    · simp [hd, self_mul_star, star_mul_self, hu]
-    · simp [hd, Function.update_of_ne hk]
-  have hDu : Matrix.diagonal d ∈ unitary (Matrix ι ι ℍ) :=
-    Matrix.diagonal_mem_unitary.2 (Pi.mem_unitary_iff.2 hdd)
-  refine ⟨⟨H * Matrix.diagonal d, mul_mem hH hDu⟩, ?_⟩
-  rw [quaternionUnitaryIsometry_apply, ← Matrix.mulVec_mulVec, Matrix.diagonal_mulVec_single,
-    Matrix.mulVec_single, ← Matrix.mulVec_single_one, hHy]
-  rw [hd, Function.update_self, mul_one, WithLp.ofLp_smul, smul_smul, ← op_mul, self_mul_star, hu]
-  simp
+  have hDu : Matrix.diagonal (Function.update 1 i (star u)) ∈ unitary (Matrix ι ι ℍ) :=
+    Matrix.diagonal_update_one_mem_unitary_iff.2 <| Unitary.star_mem
+      ⟨by rw [star_mul_self, hu, coe_one], by rw [self_mul_star, hu, coe_one]⟩
+  refine ⟨⟨H * Matrix.diagonal (Function.update 1 i (star u)), mul_mem hH hDu⟩, ?_⟩
+  have hsingle : Pi.single i (star u) = op (star u) • (Pi.single i 1 : ι → ℍ) := by
+    rw [← Pi.single_smul', op_smul_eq_mul, one_mul]
+  rw [quaternionUnitaryIsometry_apply, WithLp.ofLp_toLp, ← Matrix.mulVec_mulVec,
+    Matrix.diagonal_mulVec_single, Function.update_self, mul_one, hsingle, Matrix.mulVec_smul, hHy]
+  simp [smul_smul, -MulOpposite.op_star, ← op_mul, self_mul_star, hu]
 
 end Transitive
 
