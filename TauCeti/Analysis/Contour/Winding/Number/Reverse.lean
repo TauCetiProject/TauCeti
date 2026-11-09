@@ -22,9 +22,8 @@ concatenation and orientation reversal.
 
 * `Contour.windingNumber_symm` — the generalized winding number changes sign when the interval is
   reversed.
-* `Contour.IsNullHomologous.symm`, `Contour.IsNullHomologous.symm_of_avoidance` — null-homology is
-  preserved by reversing orientation, under the same honest principal-value existence hypotheses
-  used elsewhere in the winding-number API.
+* `Contour.windingNumber_eq_zero_symm`, `Contour.IsNullHomologous.symm` — vanishing of the winding
+  number, and hence null-homology, is preserved by reversing orientation.
 
 ## Provenance
 
@@ -54,34 +53,18 @@ theorem windingNumber_symm (h : CauchyPVExistsAt γ a b κ[z₀] z₀) :
     windingNumber_eq_of_hasCauchyPVAt h.hasCauchyPVAt_cauchyPVAt]
   ring
 
-/-- Pointwise vanishing of a winding number is preserved by reversing the interval orientation,
-under the principal-value existence hypothesis that makes the two winding-number values honest. -/
-theorem windingNumber_eq_zero_symm (hzero : windingNumber γ a b z₀ = 0)
-    (hpv : CauchyPVExistsAt γ a b κ[z₀] z₀) :
+/-- Pointwise vanishing of a winding number is preserved by reversing the interval orientation.
+No existence hypothesis is needed: if the principal value does not exist, both winding numbers are
+the junk value of `limUnder`. -/
+theorem windingNumber_eq_zero_symm (hzero : windingNumber γ a b z₀ = 0) :
     windingNumber γ b a z₀ = 0 := by
-  rw [windingNumber_symm hpv, hzero, neg_zero]
+  rw [windingNumber_eq_cauchyPVAt, mul_eq_zero] at hzero ⊢
+  exact hzero.imp_right cauchyPVAt_eq_zero_symm
 
-/-- Null-homology is preserved by reversing orientation, provided the pointwise principal values
-defining the exterior winding numbers exist. -/
-theorem IsNullHomologous.symm (h : IsNullHomologous γ a b Ω)
-    (hpv : ∀ z ∉ Ω, CauchyPVExistsAt γ a b κ[z] z) :
-    IsNullHomologous γ b a Ω := by
+/-- Null-homology is preserved by reversing orientation. -/
+theorem IsNullHomologous.symm (h : IsNullHomologous γ a b Ω) : IsNullHomologous γ b a Ω := by
   rw [isNullHomologous_iff] at h ⊢
-  intro z hz
-  exact windingNumber_eq_zero_symm (h z hz) (hpv z hz)
-
-/-- Null-homology is preserved by reversing orientation in the ordinary avoided-pole case. If the
-curve lies in `Ω`, every exterior point is avoided, so the required principal values are ordinary
-integrals. -/
-theorem IsNullHomologous.symm_of_avoidance (h : IsNullHomologous γ a b Ω)
-    (hγ : ∀ t ∈ Set.uIcc a b, γ t ∈ Ω) (hcont : ContinuousOn γ (Set.uIcc a b)) (hint : ∀ z ∉ Ω,
-      IntervalIntegrable (fun t => (γ t - z)⁻¹ * deriv γ t) MeasureTheory.volume a b) :
-    IsNullHomologous γ b a Ω := by
-  refine h.symm ?_
-  intro z hz
-  refine cauchyPVExistsAt_of_avoidance hcont ?_ (hint z hz)
-  intro t ht htz
-  exact hz (htz ▸ hγ t ht)
+  exact fun z hz ↦ windingNumber_eq_zero_symm (h z hz)
 
 end TauCeti.Contour
 

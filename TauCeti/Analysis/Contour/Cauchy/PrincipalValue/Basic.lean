@@ -775,6 +775,30 @@ theorem cauchyPVAt_symm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ :
     cauchyPVAt γ b a f z₀ = -cauchyPVAt γ a b f z₀ :=
   h.hasCauchyPVAt_cauchyPVAt.symm.cauchyPVAt_eq
 
+/-- Vanishing of the principal value is invariant under reversing the interval orientation, with
+no existence hypothesis: if the limit does not exist for either orientation, both values are the
+junk value of `limUnder`. -/
+theorem cauchyPVAt_eq_zero_symm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}
+    (h : cauchyPVAt γ a b f z₀ = 0) : cauchyPVAt γ b a f z₀ = 0 := by
+  have key : ∀ G : ℝ → ℂ, limUnder (𝓝[>] (0 : ℝ)) G = 0 →
+      limUnder (𝓝[>] (0 : ℝ)) (fun ε ↦ -G ε) = 0 := by
+    intro G hG
+    by_cases hex : ∃ L, Tendsto G (𝓝[>] (0 : ℝ)) (𝓝 L)
+    · obtain ⟨L, hL⟩ := hex
+      rw [hL.limUnder_eq] at hG
+      rw [hG] at hL
+      simpa using hL.neg.limUnder_eq
+    · have hex' : ¬ ∃ L, Tendsto (fun ε ↦ -G ε) (𝓝[>] (0 : ℝ)) (𝓝 L) :=
+        fun ⟨L, hL⟩ ↦ hex ⟨-L, by simpa using hL.neg⟩
+      refine Eq.trans ?_ hG
+      unfold limUnder lim
+      congr 1
+      ext x
+      exact ⟨fun hx ↦ (hex' ⟨x, hx⟩).elim, fun hx ↦ (hex ⟨x, hx⟩).elim⟩
+  unfold cauchyPVAt at h ⊢
+  simpa only [intervalIntegral.integral_symm a b] using
+    key (fun ε ↦ ∫ t in a..b, if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0) h
+
 /-- Existence form of `HasCauchyPVAt.concat`. -/
 theorem CauchyPVExistsAt.concat {γ : ℝ → ℂ} {a b c : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}
     (h_ab : CauchyPVExistsAt γ a b f z₀) (h_bc : CauchyPVExistsAt γ b c f z₀) :
