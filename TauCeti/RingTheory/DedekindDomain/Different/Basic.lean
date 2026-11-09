@@ -88,6 +88,7 @@ theorem coe_dual_one_of_isDomain [IsDomain S] :
 
 end FractionalIdeal
 
+omit [IsFractionRing S L] in
 /-- **The trace dual of `S` is the inverse of the different ideal, elementwise**: an element of
 `L` has integral traces against `S` exactly when it multiplies the different ideal of `S / R`
 into `S`. -/
@@ -95,6 +96,7 @@ theorem mem_traceDual_one_iff_forall_mem_differentIdeal [IsDedekindDomain S]
     [IsTorsionFree R S] {x : L} :
     x ∈ Submodule.traceDual R K (1 : Submodule S L) ↔
       ∀ y ∈ differentIdeal R S, x * algebraMap S L y ∈ (1 : Submodule S L) := by
+  have := IsIntegralClosure.isFractionRing_of_finite_extension R K L S
   rw [← FractionalIdeal.coe_dual_one (A := R) (K := K), FractionalIdeal.mem_coe,
     ← inv_inv (FractionalIdeal.dual R K _),
     FractionalIdeal.mem_inv_iff (inv_ne_zero (FractionalIdeal.dual_ne_zero R K one_ne_zero)),
@@ -106,9 +108,11 @@ theorem mem_traceDual_one_iff_forall_mem_differentIdeal [IsDedekindDomain S]
     exact (FractionalIdeal.mem_one_iff _).mpr (Submodule.mem_one.mp (h y hy))
 
 include K L in
+omit [IsFractionRing S L] in
 /-- The different is nonzero when the chosen fraction-field extension is finite separable. -/
 theorem differentIdeal_ne_bot_of_isSeparable [IsDedekindDomain S] [IsTorsionFree R S] :
     differentIdeal R S ≠ ⊥ := by
+  have := IsIntegralClosure.isFractionRing_of_finite_extension R K L S
   rw [ne_eq, ← FractionalIdeal.coeIdeal_inj (K := L),
     coeIdeal_differentIdeal (K := K)]
   simp
@@ -122,6 +126,7 @@ theorem algebraMap_ne_zero_of_differentIdeal_eq_span
   rintro rfl
   exact differentIdeal_ne_bot_of_isSeparable (K := K) (L := L) (by simpa using hδ)
 
+omit [IsFractionRing S L] in
 /-- For a principal different, membership in the complementary module is tested by
 multiplication by its generator. -/
 theorem mem_traceDual_one_iff_mul_of_differentIdeal_eq_span
@@ -182,6 +187,7 @@ theorem equivTraceDualOfDifferentIdealEqSpan_symm_apply
   rw [equivTraceDualOfDifferentIdealEqSpan_apply] at h
   exact (div_eq_iff (algebraMap_ne_zero_of_differentIdeal_eq_span (K := K) hδ)).mp h
 
+omit [IsFractionRing S L] in
 /-- **The different ideal is the inverse of the trace dual of `S`, elementwise**: an element of
 `S` lies in the different ideal of `S / R` exactly when it multiplies the trace dual of `S` into
 `S`. -/
@@ -190,6 +196,7 @@ theorem mem_differentIdeal_iff_forall_mem_traceDual [IsDedekindDomain S] [IsTors
     y ∈ differentIdeal R S ↔
       ∀ x ∈ Submodule.traceDual R K (1 : Submodule S L), x * algebraMap S L y ∈
         (1 : Submodule S L) := by
+  have := IsIntegralClosure.isFractionRing_of_finite_extension R K L S
   refine ⟨fun hy x hx ↦ ?_, fun h ↦ ?_⟩
   · have hmem : algebraMap S L y ∈ 1 / Submodule.traceDual R K (1 : Submodule S L) := by
       rw [← coeSubmodule_differentIdeal (A := R) (K := K)]
@@ -221,6 +228,7 @@ theorem apply_mem_traceDual_one_iff {σ : Gal(L/K)} {x : L} :
     ← algebraMap_galRestrict'_apply R S S (τ.symm : L →ₐ[K] L)]
   exact Submodule.mem_traceDual.mp hz _ (Submodule.mem_one.mpr ⟨_, rfl⟩)
 
+omit [IsFractionRing S L] in
 /-- **The different ideal is stable under the automorphisms of `L / K`**, acting on `S` through
 their restrictions `galRestrict`. -/
 @[simp]

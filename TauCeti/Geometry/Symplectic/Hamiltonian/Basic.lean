@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Duality
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.FDeriv.Prod
@@ -27,6 +28,9 @@ identity used to show that Hamiltonian flows preserve the symplectic form.
 A Lipschitz bound `‖X_G(z) - X_G(y₀)‖ ≤ L ‖z - y₀‖` on a ball gives the second-order Taylor bound
 `|G(y) - G(y₀) - dG(y₀)(y - y₀)| ≤ ‖ω‖ L ‖y - y₀‖²` there
 (`TauCeti.SymplecticForm.abs_sub_sub_fderiv_le_of_norm_hamiltonianVectorField_sub_le`).
+A compactly supported `C²` Hamiltonian has a globally Lipschitz Hamiltonian vector field
+(`TauCeti.SymplecticForm.exists_lipschitzWith_hamiltonianVectorField`), so its flow is defined
+for all times.
 
 For an almost complex structure `J` preserving `ω`, the field `J X_H` is the gradient of `H` for
 the bilinear form `g = ω(·, J ·)`
@@ -139,6 +143,19 @@ theorem contDiff_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
   ω.toBilinForm.toContinuousBilinearMap.inverse.contDiff.comp
     (hH.fderiv_right le_rfl)
 
+/-- A `C²` Hamiltonian with compact support has a globally Lipschitz Hamiltonian vector field, so
+its flow `TauCeti.SymplecticForm.hamiltonianFlow` is defined for all times. -/
+theorem exists_lipschitzWith_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
+    (hH : ContDiff ℝ 2 H) (hc : HasCompactSupport H) :
+    ∃ K, LipschitzWith K (ω.hamiltonianVectorField H) := by
+  refine (ω.contDiff_hamiltonianVectorField (n := 1)
+    (by simpa only [one_add_one_eq_two] using hH)).lipschitzWith_of_hasCompactSupport ?_
+    one_ne_zero
+  have h : ω.hamiltonianVectorField H =
+      ω.toBilinForm.toContinuousBilinearMap.inverse ∘ fderiv ℝ H :=
+    funext (ω.hamiltonianVectorField_def H)
+  exact h ▸ (hc.fderiv ℝ).comp_left (map_zero _)
+
 /-- Contracting the linearization of the Hamiltonian vector field gives the Hessian. -/
 theorem apply_fderiv_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
     {x : V} (hH : DifferentiableAt ℝ (fderiv ℝ H) x) (u v : V) :
@@ -181,6 +198,14 @@ theorem hamiltonianVectorField_apply_left (ω : SymplecticForm V) (a x : V) :
   rw [eq_comm, eq_hamiltonianVectorField_iff, h.fderiv]
   intro v
   exact (LinearMap.toContinuousBilinearMap_apply _ a v).symm
+
+/-- Adding a constant to a Hamiltonian does not change its Hamiltonian vector field. No
+differentiability is needed: `H` and `H + c` are differentiable at the same points. -/
+@[simp]
+theorem hamiltonianVectorField_add_const (ω : SymplecticForm V) (H : V → ℝ) (c : ℝ) :
+    ω.hamiltonianVectorField (fun x ↦ H x + c) = ω.hamiltonianVectorField H := by
+  funext x
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, fderiv_add_const]
 
 /-- The Hamiltonian vector field is linear in Hamiltonians differentiable at the point:
 `X_{aF + bG} = a X_F + b X_G`. -/
@@ -347,6 +372,18 @@ theorem poissonBracket_const_left (ω : SymplecticForm V) (c : ℝ) (G : V → �
 @[simp]
 theorem poissonBracket_const_right (ω : SymplecticForm V) (F : V → ℝ) (c : ℝ) (x : V) :
     ω.poissonBracket F (fun _ ↦ c) x = 0 := by
+  simp [poissonBracket_def]
+
+/-- Adding a constant to the first Hamiltonian does not change the Poisson bracket. -/
+@[simp]
+theorem poissonBracket_add_const_left (ω : SymplecticForm V) (F : V → ℝ) (c : ℝ) (G : V → ℝ)
+    (x : V) : ω.poissonBracket (fun y ↦ F y + c) G x = ω.poissonBracket F G x := by
+  simp [poissonBracket_def]
+
+/-- Adding a constant to the second Hamiltonian does not change the Poisson bracket. -/
+@[simp]
+theorem poissonBracket_add_const_right (ω : SymplecticForm V) (F G : V → ℝ) (c : ℝ) (x : V) :
+    ω.poissonBracket F (fun y ↦ G y + c) x = ω.poissonBracket F G x := by
   simp [poissonBracket_def]
 
 /-- The Poisson bracket is homogeneous in its first argument: `{c F, G} = c {F, G}`. -/

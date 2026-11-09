@@ -17,6 +17,7 @@ import Mathlib.Algebra.BigOperators.ModEq
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
@@ -201,10 +202,7 @@ theorem _root_.IsLocalDiffeomorphAt.mem_criticalPoints_comp_iff
       ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at this
   -- Near `π x`, `f` is `f ∘ π` after a local inverse of `π`, so `f ∘ π` is not differentiable at
   -- `x` either, and both derivatives vanish by convention.
-  have hfπ : ¬MDifferentiableAt I 𝓘(ℝ) (f ∘ π) x := fun h ↦ hf <|
-    (h.comp_of_eq (π x) (hπ.mdifferentiableAt_localInverse hn0)
-      (hπ.localInverse_left_inv hπ.localInverse_mem_target)).congr_of_eventuallyEq
-      (hπ.localInverse_eventuallyEq_right.fun_comp f).symm
+  have hfπ : ¬MDifferentiableAt I 𝓘(ℝ) (f ∘ π) x := (hπ.mdifferentiableAt_comp_iff hn0).not.mpr hf
   simp only [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hfπ]
 
 end LocalDiffeomorph
@@ -324,7 +322,7 @@ theorem mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero :
     x ∈ criticalPoints I f ↔
       fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 := by
   by_cases hf : MDifferentiableAt I 𝓘(ℝ) f x
-  · rw [mem_criticalPoints, hf.mvfderiv_eq_fderiv_comp_extChartAt_symm]
+  · rw [mem_criticalPoints, TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
     -- The two sides differ only in reading the zero map on the tangent space or on `E`.
     exact Iff.rfl
   · rw [mem_criticalPoints_iff_mfderiv_eq_zero, mfderiv_zero_of_not_mdifferentiableAt hf,

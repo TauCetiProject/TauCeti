@@ -43,6 +43,12 @@ and `K` dominates `a + b` then `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2`.
 Finally, it records a polynomial barrier bound: if `r ≤ M`, `0 < ε`, `1 ≤ c` and `n` is larger
 than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
 
+It also records the power inequality `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n)`
+from `L / (2 r) < m + 1`, which bounds the volume of a convex set containing a ball and a point.
+
+It also records how to bound a sum `U + Y` from `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`:
+solve the second estimate for `Y` and substitute it into the first.
+
 ## Main results
 
 * `TauCeti.le_of_forall_mem_Ioc_mul_le`: if `a ≤ m + ε * C` for every `ε ∈ (0, δ₀]`, then
@@ -64,6 +70,10 @@ than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
   `r - ε * (c * (1 + n ^ 2)) < 0` for `r ≤ M`, `0 < ε`, `1 ≤ c` and `M / ε < n`.
 * `TauCeti.div_mul_add_mul_div_le_half`: `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2` when
   `0 ≤ ε`, `0 < K` and `a + b ≤ K`.
+* `TauCeti.mul_pow_le_two_pow_mul_succ_mul_pow`: `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) *
+  (r / 2) ^ n)` for `0 < r`, `1 ≤ n` and `L / (2 r) < m + 1`.
+* `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
+  `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
 -/
 
 public section
@@ -208,6 +218,38 @@ theorem div_mul_add_mul_div_le_half {α : Type*} [Field α] [LinearOrder α]
     _ ≤ ε / (2 * K) * K :=
         mul_le_mul_of_nonneg_left (by linarith) (by positivity)
     _ = ε / 2 := by field_simp
+
+/-- The inequality behind the volume bound for a convex set containing a ball and a point: if
+`L / (2 r) < m + 1` then `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n)`. -/
+theorem mul_pow_le_two_pow_mul_succ_mul_pow {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {L r : α} {m n : ℕ} (hr : 0 < r) (hn : 1 ≤ n)
+    (hm : L / (2 * r) < m + 1) :
+    L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n) := by
+  have hrn : r ^ n = r * r ^ (n - 1) := by rw [← pow_succ', Nat.sub_add_cancel hn]
+  have h2 : (2 : α) ^ (n + 1) * (r / 2) ^ n = 2 * r ^ n := by
+    rw [div_pow, pow_succ]
+    field_simp
+  rw [div_lt_iff₀ (by positivity)] at hm
+  calc L * r ^ (n - 1) ≤ (m + 1) * (2 * r) * r ^ (n - 1) := by gcongr
+    _ = 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n) := by
+      rw [mul_left_comm (2 ^ (n + 1) : α), h2, hrn]
+      ring
+
+/-- If `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`, where `a, b ≥ 0`, `c > 0` and `Z, W ≥ 0`,
+then `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)`. -/
+theorem add_le_mul_add_mul_of_le_of_le {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {U Y Z W M a b c : α} (hc : 0 < c)
+    (ha : 0 ≤ a) (hb : 0 ≤ b) (hZ : 0 ≤ Z) (hW : 0 ≤ W)
+    (hX : U ≤ 2 * Z + 2 * M ^ 2 * Y) (hY : c / 2 * Y ≤ a * Z + b * W) :
+    U + Y ≤ (2 + (2 * M ^ 2 + 1) * (2 / c) * (a + b)) * Z +
+      (2 + (2 * M ^ 2 + 1) * (2 / c) * (a + b)) * W := by
+  have hY' : Y ≤ 2 / c * (a * Z + b * W) := by
+    rw [div_mul_eq_mul_div, le_div_iff₀ hc]
+    linarith
+  have hk : 0 ≤ (2 * M ^ 2 + 1) * (2 / c) := by positivity
+  nlinarith [mul_le_mul_of_nonneg_left hY' (by positivity : (0 : α) ≤ 2 * M ^ 2 + 1),
+    mul_nonneg (mul_nonneg hk hb) hZ, mul_nonneg (mul_nonneg hk ha) hW,
+    mul_nonneg (mul_nonneg hk ha) hZ, mul_nonneg (mul_nonneg hk hb) hW]
 
 end TauCeti
 
