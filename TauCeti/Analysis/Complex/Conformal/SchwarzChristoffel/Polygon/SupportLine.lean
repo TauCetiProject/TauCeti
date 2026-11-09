@@ -134,8 +134,9 @@ private lemma im_exp_neg_mul_sub_schwarzChristoffelVertex_nonneg (a e : Fin (n +
       (fun k ↦ (he k).1) hsum
   have hhoriz {x y : ℂ} (hxy : x < y) :
       ∃ r, 0 ≤ r ∧ (u * (y - w)).im - (u * (x - w)).im = r * Real.sin (-φ i) := by
-    rw [hθ]
-    exact Complex.im_exp_neg_mul_sub_sub_eq_of_le θ w hxy.le
+    obtain ⟨hre, him⟩ := Complex.lt_def.mp hxy
+    rw [hθ, ← Complex.sub_im, ← mul_sub, sub_sub_sub_cancel_right]
+    exact ⟨(y - x).re, sub_nonneg.mpr hre.le, Complex.im_exp_neg_mul_mul_sub θ him⟩
   have hVn : V n = schwarzChristoffelVertex a e z₀ (Fin.last n) := by
     simpa only [Fin.val_last] using hV (Fin.last n)
   have hV0 : V 0 = schwarzChristoffelVertex a e z₀ 0 := hV 0
