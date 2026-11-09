@@ -54,7 +54,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- The tangent-space exponential obtained by evaluating the canonical invariant curve at time
 one. This is the tangent-vector precursor of the roadmap's derivation-based `lieExp`. -/
 noncomputable def mulInvariantExp [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) : G :=
   mulInvariantOneParameterSubgroup v (Multiplicative.ofAdd 1)
 
@@ -129,7 +129,7 @@ theorem mulInvariantExp_neg [CompleteSpace E]
 
 section LieAlgebra
 
-variable [FiniteDimensional ℝ E] [LieGroup I ∞ G] [IsManifold I 1 G] [T2Space G]
+variable [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G]
   [BoundarylessManifold I G]
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
