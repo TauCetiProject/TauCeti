@@ -44,10 +44,8 @@ relating the compatibility of the cup product with connecting maps in its two va
   `TauCeti.TateCohomology.isZero_X₃_of_isZero_X₂_of_isZero_X₁`,
   `TauCeti.TateCohomology.isZero_X₁_of_isZero_X₃_of_isZero_X₂`: two-out-of-three for the
   vanishing of Tate cohomology along a short exact sequence.
-* `TauCeti.TateCohomology.natCard_tateCohomology_dvd_of_shortExact`,
-  `TauCeti.TateCohomology.finite_tateCohomology_X₃_of_shortExact`: the order of the middle Tate
-  group divides the product of the orders of the outer ones, and the third Tate group is finite
-  when the adjacent ones are.
+* `TauCeti.TateCohomology.natCard_tateCohomology_dvd_of_shortExact`: the order of the middle Tate
+  group divides the product of the orders of the outer ones.
 * `TauCeti.TateCohomology.isIso_map_τ₁_of_isIso_δ`: a morphism of short exact sequences inducing
   isomorphisms on the third terms in degree `n` and on the connecting maps induces an isomorphism
   on the first terms in degree `n + 1`.
@@ -217,14 +215,5 @@ theorem natCard_tateCohomology_dvd_of_shortExact (n : ℤ) :
   have hx' : x ∈ LinearMap.ker (ModuleCat.Hom.hom ((tateCohomologyFunctor n).map S.g)) := hx
   rw [← h] at hx'
   exact hx'
-
-include hS in
-/-- For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of representations of a finite group, if the
-degree `n + 1` Tate cohomology of `X₁` and the degree `n` Tate cohomology of `X₂` are finite, then
-so is the degree `n` Tate cohomology of `X₃`. -/
-theorem finite_tateCohomology_X₃_of_shortExact (n : ℤ) [Finite (tateCohomology S.X₁ (n + 1))]
-    [Finite (tateCohomology S.X₂ n)] : Finite (tateCohomology S.X₃ n) := by
-  have h := (_root_.TateCohomology.exact₃ hS n).moduleCat_range_eq_ker
-  exact Function.Exact.finite (LinearMap.exact_iff.2 h.symm)
 
 end TauCeti.TateCohomology
