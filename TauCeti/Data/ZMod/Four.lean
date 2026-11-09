@@ -42,12 +42,8 @@ theorem carryFour_zero : carryFour 0 = 0 := by
 /-- **The carry identity in `ℤ/4`**: `⌊(u + v)/2⌋ = ⌊u/2⌋ + ⌊v/2⌋ + (u mod 2)(v mod 2)` in `𝔽₂`. -/
 @[simp]
 theorem carryFour_add (u v : ZMod 4) :
-    carryFour (u + v) =
-      carryFour u + carryFour v +
-        castHom (by decide : (2 : ℕ) ∣ 4) (ZMod 2) u *
-          castHom (by decide : (2 : ℕ) ∣ 4) (ZMod 2) v := by
-  revert u v
-  decide
+    carryFour (u + v) = carryFour u + carryFour v + (cast u : ZMod 2) * cast v := by
+  decide +revert
 
 /-- **The lift `(u, s) ↦ u + 2s` of two residues modulo two to `ℤ/4` is additive up to the
 carry**: `(u + v) + 2 (s + t - u v) = (u + 2 s) + (v + 2 t)` in `ℤ/4`, where the residues are
@@ -56,14 +52,12 @@ cup square into a character `G → ℤ/4`. -/
 theorem cast_add_two_mul_cast_sub_mul (u v s t : ZMod 2) :
     (cast (u + v) : ZMod 4) + 2 * cast (s + t - u * v) =
       (cast u + 2 * cast s) + (cast v + 2 * cast t) := by
-  revert u v s t
-  decide
+  decide +revert
 
 /-- The lift `u + 2s` of a pair of residues modulo two reduces to `u` modulo `2`. -/
 @[simp]
 theorem cast_cast_add_two_mul_cast (u s : ZMod 2) :
     (cast ((cast u : ZMod 4) + 2 * cast s) : ZMod 2) = u := by
-  revert u s
-  decide
+  decide +revert
 
 end ZMod

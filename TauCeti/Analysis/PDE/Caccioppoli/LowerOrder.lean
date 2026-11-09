@@ -76,6 +76,119 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
   {c : EuclideanSpace ℝ ι → ℝ} {lam Lam beta gamma : ℝ}
 
+/-- Moving the drift and mass terms to the right-hand side: a weak subsolution of the full
+equation with forcing `f` is a weak subsolution of the principal part with the effective forcing
+`f - c u - ⟪b, ∇u⟫`. -/
+private theorem UniformlyEllipticOn.energyFormH1_zero_zero_le_of_lowerOrder
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2}
+    (hu : ∀ v : W1p0 mu Omega 2,
+      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
+        energyFormH1 a b c u (v : W1p mu Omega 2) ≤
+          ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu)
+    (hg : MemLp (fun x => f x - c x * W1p.value u x - ⟪b x, W1p.gradient u x⟫_ℝ) 2
+      (mu.restrict Omega))
+    (v : W1p0 mu Omega 2) (hv : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) :
+    energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤
+      ∫ x in Omega, hg.toLp _ x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
+  have hvLp := Lp.memLp (W1p.value (v : W1p mu Omega 2))
+  have hE := h.integrable_energyIntegrand_jetField (b := 0) (c := 0) (beta := 0)
+    (gamma := 0) ha aestronglyMeasurable_const aestronglyMeasurable_const
+    (fun _ _ => by simp) (fun _ _ => by simp) u v
+  have hfv : Integrable (fun x => f x * W1p.value (v : W1p mu Omega 2) x)
+      (mu.restrict Omega) := (Lp.memLp f).integrable_mul hvLp
+  have hBC : Integrable (fun x => ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value (v : W1p mu Omega 2) x
+      + c x * W1p.value u x * W1p.value (v : W1p mu Omega 2) x) (mu.restrict Omega) :=
+    (hfv.sub (hg.integrable_mul hvLp)).congr (.of_forall fun x => by
+      simp only [Pi.sub_apply, Pi.mul_apply]; ring)
+  have hsplit : energyFormH1 a b c u (v : W1p mu Omega 2) =
+      energyFormH1 a 0 0 u (v : W1p mu Omega 2) + ∫ x in Omega,
+        (⟪b x, W1p.gradient u x⟫_ℝ * W1p.value (v : W1p mu Omega 2) x
+          + c x * W1p.value u x * W1p.value (v : W1p mu Omega 2) x) ∂mu := by
+    have hlower : Integrable (fun x => energyIntegrand 0 (b x) (c x) (jetField u x)
+        (jetField (v : W1p mu Omega 2) x)) (mu.restrict Omega) := by
+      simpa [energyIntegrand_apply, jetField_apply] using hBC
+    -- Split off the lower-order part with `energyFormIntegral_principal_add_lowerOrder`, after
+    -- writing the `H¹` form as `energyFormIntegral` and its vanishing coefficients as
+    -- `fun _ => 0`, the form the split lemma uses.
+    have hH1 : ∀ b' c', energyFormH1 a b' c' u (v : W1p mu Omega 2) =
+        energyFormIntegral (mu.restrict Omega) a b' c' (jetField u)
+          (jetField (v : W1p mu Omega 2)) := fun b' c' => by
+      rw [energyFormH1_def, energyFormIntegral_def]
+    rw [hH1, hH1, Pi.zero_def, Pi.zero_def, energyFormIntegral_principal_add_lowerOrder _ a b c
+      _ _ (by simpa using hE) hlower, add_right_inj, energyFormIntegral_def]
+    simp [energyIntegrand_apply, jetField_apply]
+  have hforce : ∫ x in Omega, hg.toLp _ x * W1p.value (v : W1p mu Omega 2) x ∂mu =
+      ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu - ∫ x in Omega,
+        (⟪b x, W1p.gradient u x⟫_ℝ * W1p.value (v : W1p mu Omega 2) x
+          + c x * W1p.value u x * W1p.value (v : W1p mu Omega 2) x) ∂mu := by
+    rw [← integral_sub hfv hBC]
+    refine integral_congr_ae ?_
+    filter_upwards [hg.coeFn_toLp] with x hx
+    rw [hx]
+    ring
+  linarith [hu v hv]
+
+omit [DecidableEq ι] in
+/-- Young's inequality for the drift: for `w = (u - k)⁺` and `‖b‖ ≤ β` on `Ω`, the drift part of
+the forcing `F - ⟪b, ∇u⟫`, tested against `ψ² w`, is at most `λ/4 · ∫ ψ² ‖∇w‖² + β²/λ · ∫ ψ² w²`
+above the `F` part. -/
+private theorem setIntegral_sq_mul_sub_inner_mul_posPartAbove_le (hlam : 0 < lam)
+    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
+    {F : EuclideanSpace ℝ ι → ℝ} (hF : MemLp F 2 (mu.restrict Omega)) {u : W1p mu Omega 2}
+    (hg : MemLp (fun x => F x - ⟪b x, W1p.gradient u x⟫_ℝ) 2 (mu.restrict Omega)) {k : ℝ}
+    (hwLp : MemLp (fun x => max (W1p.value u x - k) 0) 2 (mu.restrict Omega))
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hcpt : HasCompactSupport ψ) :
+    let w := W1p.posPartAboveOfMemLp (by norm_num) k u hwLp
+    ∫ x in Omega, ψ x ^ 2 * hg.toLp _ x * W1p.value w x ∂mu ≤
+      ∫ x in Omega, ψ x ^ 2 * F x * W1p.value w x ∂mu
+        + (lam / 4 * ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu
+          + beta ^ 2 / lam * ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu) := by
+  intro w
+  obtain ⟨M, -, hψM, -⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
+  have hψ2 : AEStronglyMeasurable (fun x => ψ x ^ 2) (mu.restrict Omega) :=
+    (hψ.continuous.pow 2).aestronglyMeasurable
+  have hψ2M : ∀ᵐ x ∂mu.restrict Omega, ‖ψ x ^ 2‖ ≤ M ^ 2 := Eventually.of_forall fun x => by
+    rw [Real.norm_eq_abs, abs_pow]
+    exact pow_le_pow_left₀ (abs_nonneg _) (hψM x) 2
+  have hX : Integrable (fun x => ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) (mu.restrict Omega) :=
+    (W1p.integrable_norm_gradient_sq w).bdd_mul hψ2 hψ2M
+  have hZ : Integrable (fun x => ψ x ^ 2 * W1p.value w x ^ 2) (mu.restrict Omega) :=
+    (Lp.memLp (W1p.value w)).integrable_sq.bdd_mul hψ2 hψ2M
+  have hFw : Integrable (fun x => ψ x ^ 2 * F x * W1p.value w x) (mu.restrict Omega) :=
+    ((hF.integrable_mul (Lp.memLp (W1p.value w))).bdd_mul hψ2 hψ2M).congr
+      (Eventually.of_forall fun x => by simp only [Pi.mul_apply]; ring)
+  have hG : Integrable (fun x => ψ x ^ 2 * hg.toLp _ x * W1p.value w x) (mu.restrict Omega) :=
+    (((Lp.memLp (hg.toLp _)).integrable_mul (Lp.memLp (W1p.value w))).bdd_mul hψ2
+      hψ2M).congr (Eventually.of_forall fun x => by simp only [Pi.mul_apply]; ring)
+  have hR : Integrable (fun x => lam / 4 * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2)
+      + beta ^ 2 / lam * (ψ x ^ 2 * W1p.value w x ^ 2)) (mu.restrict Omega) :=
+    (hX.const_mul _).add (hZ.const_mul _)
+  refine (integral_mono_ae hG (hFw.add hR) ?_).trans_eq (by
+    simp only [Pi.add_apply]
+    rw [integral_add hFw hR, integral_add (hX.const_mul _) (hZ.const_mul _), integral_const_mul,
+      integral_const_mul])
+  -- On the active set `∇w = ∇u`; off it, `w` vanishes.
+  filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet, hg.coeFn_toLp,
+    W1p.gradient_posPartAboveOfMemLp_ae (by norm_num) k u hwLp,
+    W1p.value_posPartAboveOfMemLp_ae (by norm_num) k u hwLp] with x hx hgx hwg hwv
+  have hactive : ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value w x =
+      ⟪b x, W1p.gradient w x⟫_ℝ * W1p.value w x := by
+    by_cases hxu : k < W1p.value u x
+    · have hxmem : x ∈ {y : EuclideanSpace ℝ ι | k < W1p.value u y} := hxu
+      rw [hwg, Set.indicator_of_mem hxmem]
+    · rw [hwv, max_eq_right (sub_nonpos.mpr (le_of_not_gt hxu)), mul_zero, mul_zero]
+  have hyoung := two_mul_real_inner_le_add_mul_norm_sq (-(ψ x * W1p.value w x) • b x)
+    (ψ x • W1p.gradient w x) (by positivity : (0 : ℝ) < 2 / lam)
+  simp only [real_inner_smul_left, real_inner_smul_right, norm_smul, mul_pow, Real.norm_eq_abs,
+    sq_abs, inv_div] at hyoung
+  have hb2 : (ψ x * W1p.value w x) ^ 2 * ‖b x‖ ^ 2 ≤ (ψ x * W1p.value w x) ^ 2 * beta ^ 2 :=
+    mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) (hb_bound x hx) 2)
+      (sq_nonneg _)
+  rw [hgx, Pi.add_apply]
+  linear_combination (hyoung + 2 / lam * hb2) / 2 - ψ x ^ 2 * hactive
+
 /-- **The Caccioppoli inequality for a positive truncation of a weak subsolution with
 lower-order terms.** Let `a` be measurable and uniformly elliptic on `Ω` with constants
 `0 < λ ≤ Λ`, and let `b` and `c` be measurable with `‖b‖ ≤ β` and `‖c‖ ≤ γ` on `Ω`. Let
@@ -113,13 +226,11 @@ theorem
         + (2 * beta / lam) ^ 2 * ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu
         + 4 / lam * ∫ x in Omega, ψ x ^ 2 * (f x - c x * W1p.value u x) * W1p.value w x ∂mu := by
   -- With the drift and mass terms moved to the right-hand side, `u` is a weak subsolution of
-  -- the principal part with the effective forcing `g = f - ⟪b, ∇u⟫ - c u`, so the
+  -- the principal part with the effective forcing `g = f - c u - ⟪b, ∇u⟫`, so the
   -- principal-part inequality applies. The drift part of `∫ ψ² g w` is then bounded by Young's
   -- inequality and its gradient share absorbed into the left-hand side.
   dsimp only
   have hlam := h.pos
-  have hmem : ∀ᵐ x ∂mu.restrict Omega, x ∈ (Omega : Set (EuclideanSpace ℝ ι)) :=
-    ae_restrict_mem Omega.isOpen.measurableSet
   have hB : MemLp (fun x => ⟪b x, W1p.gradient u x⟫_ℝ) 2 (mu.restrict Omega) :=
     MemLp.of_bilin (inner ℝ) 1 (memLp_top_of_bound hb beta
       (ae_restrict_of_forall_mem Omega.isOpen.measurableSet hb_bound)) (Lp.memLp _)
@@ -128,108 +239,16 @@ theorem
   have hC : MemLp (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) :=
     (memLp_top_of_bound hc gamma (ae_restrict_of_forall_mem Omega.isOpen.measurableSet
       hc_bound)).fun_mul (Lp.memLp _)
-  set g := fun x => f x - ⟪b x, W1p.gradient u x⟫_ℝ - c x * W1p.value u x
-  have hg : MemLp g 2 (mu.restrict Omega) := ((Lp.memLp f).sub hB).sub hC
-  have hu' : ∀ v : W1p0 mu Omega 2,
-      (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
-        energyFormH1 a 0 0 u (v : W1p mu Omega 2) ≤
-          ∫ x in Omega, hg.toLp g x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
-    intro v hv
-    have hvLp := Lp.memLp (W1p.value (v : W1p mu Omega 2))
-    have hE := h.integrable_energyIntegrand_jetField (b := 0) (c := 0) (beta := 0)
-      (gamma := 0) ha aestronglyMeasurable_const aestronglyMeasurable_const
-      (fun _ _ => by simp) (fun _ _ => by simp) u v
-    have hfv : Integrable (fun x => f x * W1p.value (v : W1p mu Omega 2) x)
-        (mu.restrict Omega) := (Lp.memLp f).integrable_mul hvLp
-    have hBC : Integrable (fun x => ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value (v : W1p mu Omega 2) x
-        + c x * W1p.value u x * W1p.value (v : W1p mu Omega 2) x) (mu.restrict Omega) :=
-      (hB.integrable_mul hvLp).add (hC.integrable_mul hvLp)
-    have hsplit : energyFormH1 a b c u (v : W1p mu Omega 2) =
-        energyFormH1 a 0 0 u (v : W1p mu Omega 2) + ∫ x in Omega,
-          (⟪b x, W1p.gradient u x⟫_ℝ * W1p.value (v : W1p mu Omega 2) x
-            + c x * W1p.value u x * W1p.value (v : W1p mu Omega 2) x) ∂mu := by
-      have hlower : Integrable (fun x => energyIntegrand 0 (b x) (c x) (jetField u x)
-          (jetField (v : W1p mu Omega 2) x)) (mu.restrict Omega) := by
-        simpa [energyIntegrand_apply, jetField_apply] using hBC
-      -- Split off the lower-order part with `energyFormIntegral_principal_add_lowerOrder`, after
-      -- writing the `H¹` form as `energyFormIntegral` and its vanishing coefficients as
-      -- `fun _ => 0`, the form the split lemma uses.
-      have hH1 : ∀ b' c', energyFormH1 a b' c' u (v : W1p mu Omega 2) =
-          energyFormIntegral (mu.restrict Omega) a b' c' (jetField u)
-            (jetField (v : W1p mu Omega 2)) := fun b' c' => by
-        rw [energyFormH1_def, energyFormIntegral_def]
-      rw [hH1, hH1, Pi.zero_def, Pi.zero_def, energyFormIntegral_principal_add_lowerOrder _ a b c
-        _ _ (by simpa using hE) hlower, add_right_inj, energyFormIntegral_def]
-      simp [energyIntegrand_apply, jetField_apply]
-    have hforce : ∫ x in Omega, hg.toLp g x * W1p.value (v : W1p mu Omega 2) x ∂mu =
-        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu - ∫ x in Omega,
-          (⟪b x, W1p.gradient u x⟫_ℝ * W1p.value (v : W1p mu Omega 2) x
-            + c x * W1p.value u x * W1p.value (v : W1p mu Omega 2) x) ∂mu := by
-      rw [← integral_sub hfv hBC]
-      refine integral_congr_ae ?_
-      filter_upwards [hg.coeFn_toLp] with x hx
-      rw [hx]
-      simp only [g]
-      ring
-    linarith [hu v hv]
-  have hcacc := h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_memLp ha hu' hwLp hψ
-    hcpt hts
-  dsimp only at hcacc
-  set w := W1p.posPartAboveOfMemLp (by norm_num) k u hwLp
-  -- Integrability of the weighted squares and of the forcing terms.
-  obtain ⟨M, -, hψM, -⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
-  have hψ2 : AEStronglyMeasurable (fun x => ψ x ^ 2) (mu.restrict Omega) :=
-    (hψ.continuous.pow 2).aestronglyMeasurable
-  have hψ2M : ∀ᵐ x ∂mu.restrict Omega, ‖ψ x ^ 2‖ ≤ M ^ 2 := Eventually.of_forall fun x => by
-    rw [Real.norm_eq_abs, abs_pow]
-    exact pow_le_pow_left₀ (abs_nonneg _) (hψM x) 2
-  have hX : Integrable (fun x => ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) (mu.restrict Omega) :=
-    (W1p.integrable_norm_gradient_sq w).bdd_mul hψ2 hψ2M
-  have hZ : Integrable (fun x => ψ x ^ 2 * W1p.value w x ^ 2) (mu.restrict Omega) :=
-    (W1p.integrable_value_sq w).bdd_mul hψ2 hψ2M
-  have hF : Integrable (fun x => ψ x ^ 2 * (f x - c x * W1p.value u x) * W1p.value w x)
-      (mu.restrict Omega) := by
-    refine ((((Lp.memLp f).sub hC).integrable_mul (Lp.memLp (W1p.value w))).bdd_mul hψ2
-      hψ2M).congr (Eventually.of_forall fun x => ?_)
-    simp only [Pi.sub_apply, Pi.mul_apply]
-    ring
-  have hG : Integrable (fun x => ψ x ^ 2 * hg.toLp g x * W1p.value w x) (mu.restrict Omega) := by
-    refine (((Lp.memLp (hg.toLp g)).integrable_mul (Lp.memLp (W1p.value w))).bdd_mul hψ2
-      hψ2M).congr (Eventually.of_forall fun x => ?_)
-    simp only [Pi.mul_apply]
-    ring
-  have hR : Integrable (fun x => lam / 4 * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2)
-      + beta ^ 2 / lam * (ψ x ^ 2 * W1p.value w x ^ 2)) (mu.restrict Omega) :=
-    (hX.const_mul _).add (hZ.const_mul _)
-  -- On the active set the truncation gradient is `∇u`; off it, `w` vanishes. So the drift
-  -- part of the forcing is `-⟪b, ∇w⟫ ψ² w`, which Young's inequality bounds.
-  have hdrift : ∫ x in Omega, ψ x ^ 2 * hg.toLp g x * W1p.value w x ∂mu ≤
-      ∫ x in Omega, (ψ x ^ 2 * (f x - c x * W1p.value u x) * W1p.value w x
-        + (lam / 4 * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2)
-          + beta ^ 2 / lam * (ψ x ^ 2 * W1p.value w x ^ 2))) ∂mu := by
-    refine integral_mono_ae hG (hF.add hR) ?_
-    filter_upwards [hmem, hg.coeFn_toLp,
-      W1p.gradient_posPartAboveOfMemLp_ae (by norm_num) k u hwLp,
-      W1p.value_posPartAboveOfMemLp_ae (by norm_num) k u hwLp] with x hx hgx hwg hwv
-    have hactive : ⟪b x, W1p.gradient u x⟫_ℝ * W1p.value w x =
-        ⟪b x, W1p.gradient w x⟫_ℝ * W1p.value w x := by
-      by_cases hxu : k < W1p.value u x
-      · have hxmem : x ∈ {y : EuclideanSpace ℝ ι | k < W1p.value u y} := hxu
-        rw [hwg, Set.indicator_of_mem hxmem]
-      · rw [hwv, max_eq_right (sub_nonpos.mpr (le_of_not_gt hxu)), mul_zero, mul_zero]
-    have hyoung := two_mul_real_inner_le_add_mul_norm_sq (-(ψ x * W1p.value w x) • b x)
-      (ψ x • W1p.gradient w x) (by positivity : (0 : ℝ) < 2 / lam)
-    simp only [real_inner_smul_left, real_inner_smul_right, norm_smul, mul_pow, Real.norm_eq_abs,
-      sq_abs, inv_div] at hyoung
-    have hb2 : (ψ x * W1p.value w x) ^ 2 * ‖b x‖ ^ 2 ≤ (ψ x * W1p.value w x) ^ 2 * beta ^ 2 :=
-      mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) (hb_bound x hx) 2)
-        (sq_nonneg _)
-    rw [hgx]
-    simp only [g]
-    linear_combination (hyoung + 2 / lam * hb2) / 2 - ψ x ^ 2 * hactive
-  rw [integral_add hF hR, integral_add (hX.const_mul _) (hZ.const_mul _), integral_const_mul,
-    integral_const_mul] at hdrift
+  have hF : MemLp (fun x => f x - c x * W1p.value u x) 2 (mu.restrict Omega) :=
+    (Lp.memLp f).sub hC
+  have hg : MemLp (fun x => f x - c x * W1p.value u x - ⟪b x, W1p.gradient u x⟫_ℝ) 2
+      (mu.restrict Omega) := hF.sub hB
+  have hcacc := h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_memLp ha
+    (h.energyFormH1_zero_zero_le_of_lowerOrder ha hu hg) hwLp hψ hcpt hts
+  have hdrift := setIntegral_sq_mul_sub_inner_mul_posPartAbove_le hlam hb_bound hF hg hwLp hψ hcpt
+  dsimp only at hcacc hdrift
   -- Absorb the drift's quarter of the gradient term into the left-hand side.
+  set w := W1p.posPartAboveOfMemLp (by norm_num) k u hwLp
   set X := ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu
   set Z := ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu
   set F := ∫ x in Omega, ψ x ^ 2 * (f x - c x * W1p.value u x) * W1p.value w x ∂mu

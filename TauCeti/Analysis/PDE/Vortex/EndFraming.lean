@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.Reconstruction
-import Mathlib.Analysis.Polynomial.Basic
+import TauCeti.Analysis.Polynomial.AtInfinity
 
 /-!
 # End framing of reconstructed polynomial vortices
@@ -21,7 +21,7 @@ All limits use the cocompact filter on the whole complex plane: they are uniform
 angular variable, not merely limits along individual rays. No derivative decay, Sobolev tail,
 finite energy, or existence of a scalar solution is asserted here.
 
-The polynomial input is Mathlib's `Polynomial.isEquivalent_cobounded_leading_monomial`.
+The polynomial input is `Polynomial.Monic.tendsto_eval_div_pow_natDegree_cocompact`.
 The reconstruction is `Vortex.amplitudeField`.
 
 ## References
@@ -47,14 +47,9 @@ private theorem exists_amplitudeField_end_factor
       (fun z ↦ ((Real.exp (u z) * ‖z‖ ^ P.natDegree : ℝ) : ℂ) * q z) := by
   have hz : ∀ᶠ z : ℂ in cocompact ℂ, z ≠ 0 :=
     (isCompact_singleton (x := (0 : ℂ))).compl_mem_cocompact
-  have hq : Tendsto (fun z ↦ P.eval z / z ^ P.natDegree) (cocompact ℂ) (𝓝 1) := by
-    have he := Polynomial.isEquivalent_cobounded_leading_monomial (P := P)
-    simp only [hP.leadingCoeff, one_mul, Metric.cobounded_eq_cocompact] at he
-    exact (Asymptotics.isEquivalent_iff_tendsto_one
-      (hz.mono fun z hz ↦ pow_ne_zero _ hz)).mp he
   -- The winding phase cancels the leading monomial, leaving a positive radial factor
   -- times the polynomial's quotient by that monomial.
-  refine ⟨fun z ↦ P.eval z / z ^ P.natDegree, hq, ?_⟩
+  refine ⟨fun z ↦ P.eval z / z ^ P.natDegree, hP.tendsto_eval_div_pow_natDegree_cocompact, ?_⟩
   filter_upwards [hz] with z hz
   simp only [sectionValue_amplitudeField, ofReal_mul, ofReal_pow, div_pow, inv_div]
   field_simp
