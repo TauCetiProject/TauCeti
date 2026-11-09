@@ -113,7 +113,7 @@ end RelativelyCompact
 
 section OpenCover
 
-variable [FiniteDimensional ℝ E] [OpensMeasurableSpace E] [CompleteSpace F]
+variable [OpensMeasurableSpace E] [CompleteSpace F]
 
 /-- A fixed candidate weak directional derivative can be checked on open neighborhoods of
 each point. Neither the measure nor the neighborhoods need be finite. -/
@@ -135,6 +135,13 @@ theorem hasWeakLineDerivOn_iff_locally :
       have hi := hV.locallyIntegrableOn_deriv x hxV
       rw [V.isOpen.nhdsWithin_eq hxV] at hi
       exact hi.filter_mono nhdsWithin_le_nhds
+    by_cases hfd : FiniteDimensional ℝ E
+    swap
+    · -- Without finite dimension there are no nonzero test functions.
+      refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hu, hu', fun φ ↦ ?_⟩
+      have hφ : (φ : E → ℝ) = 0 :=
+        (φ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ φ.continuous).resolve_right hfd
+      simp [hφ]
     let T : 𝓓(Ω, ℝ) →+ F := AddMonoidHom.ofClass (
       (TestFunction.integralAgainstBilinCLM (ContinuousLinearMap.lsmul ℝ ℝ) μ u).comp
         (TestFunction.lineDerivCLM ℝ v : 𝓓(Ω, ℝ) →L[ℝ] 𝓓(Ω, ℝ)) +
@@ -227,6 +234,7 @@ theorem exists_hasWeakFDerivOn_iSup {ι : Type*} (V : ι → Opens E)
   obtain ⟨U, hU⟩ := hex
   exact ⟨U, hU, fun i ↦ (hU.mono (le_iSup V i)).ae_eq (h i)⟩
 
+omit [FiniteDimensional ℝ E] in
 /-- Existence of a weak Fréchet derivative is local. Local fields are not required to agree
 pointwise, and no candidate global derivative needs to be chosen in advance. -/
 theorem exists_hasWeakFDerivOn_iff_locally :
@@ -237,15 +245,27 @@ theorem exists_hasWeakFDerivOn_iff_locally :
   · rintro ⟨U, hU⟩ x hx
     exact ⟨Ω, hx, U, hU⟩
   · intro h
-    choose V hxV W hW using fun x : Ω ↦ h x x.2
-    obtain ⟨U, hU, -⟩ := exists_hasWeakFDerivOn_iSup V W hW
-    refine ⟨U, hU.mono fun x hx ↦ ?_⟩
-    exact (le_iSup V ⟨x, hx⟩) (hxV ⟨x, hx⟩)
+    by_cases hfd : FiniteDimensional ℝ E
+    · choose V hxV W hW using fun x : Ω ↦ h x x.2
+      obtain ⟨U, hU, -⟩ := exists_hasWeakFDerivOn_iSup V W hW
+      refine ⟨U, hU.mono fun x hx ↦ ?_⟩
+      exact (le_iSup V ⟨x, hx⟩) (hxV ⟨x, hx⟩)
+    · -- Without finite dimension there are no nonzero test functions, so `0` works.
+      refine ⟨0, hasWeakFDerivOn_iff_locally.2 fun x hx ↦ ?_⟩
+      obtain ⟨V, hxV, U, hU⟩ := h x hx
+      refine ⟨V, hxV, hasWeakFDerivOn_iff.2 fun v ↦ ?_⟩
+      have hv := hU.hasWeakLineDerivOn v
+      refine hasWeakLineDerivOn_iff_testFunction.2
+        ⟨hv.completeSpace, hv.locallyIntegrableOn,
+          (integrable_zero E F μ).locallyIntegrable.locallyIntegrableOn _, fun φ ↦ ?_⟩
+      have hφ : (φ : E → ℝ) = 0 :=
+        (φ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ φ.continuous).resolve_right hfd
+      simp [hφ]
 
 end Gluing
 
 /-- Weak directional derivatives on two open sets glue on their union. -/
-theorem HasWeakLineDerivOn.sup [FiniteDimensional ℝ E] [OpensMeasurableSpace E]
+theorem HasWeakLineDerivOn.sup [OpensMeasurableSpace E]
     {V : Opens E} (hΩ : HasWeakLineDerivOn μ Ω u u' v)
     (hV : HasWeakLineDerivOn μ V u u' v) : HasWeakLineDerivOn μ (Ω ⊔ V) u u' v := by
   have := hΩ.completeSpace
@@ -255,7 +275,7 @@ theorem HasWeakLineDerivOn.sup [FiniteDimensional ℝ E] [OpensMeasurableSpace E
   · exact ⟨V, hx, hV⟩
 
 /-- Weak Fréchet derivatives on two open sets glue on their union. -/
-theorem HasWeakFDerivOn.sup [FiniteDimensional ℝ E] [OpensMeasurableSpace E]
+theorem HasWeakFDerivOn.sup [OpensMeasurableSpace E]
     {V : Opens E} {U : E → E →L[ℝ] F} (hΩ : HasWeakFDerivOn μ Ω u U)
     (hV : HasWeakFDerivOn μ V u U) : HasWeakFDerivOn μ (Ω ⊔ V) u U := by
   exact hasWeakFDerivOn_iff.2 fun v ↦ (hΩ.hasWeakLineDerivOn v).sup (hV.hasWeakLineDerivOn v)
