@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Triangulated.Orthogonal
+public import TauCeti.CategoryTheory.Localization.EssSurj
 
 /-!
 # Verdier quotients computed by orthogonal subcategories
@@ -16,7 +17,8 @@ class of objects right orthogonal to `P`: no nonzero morphisms from `P` to `Q`. 
 `CategoryTheory.ObjectProperty.rightOrthogonal.map_bijective_of_isTriangulated` shows that `L` is
 bijective on morphisms into objects of `Q`, so the restriction `Q.ι ⋙ L` is fully faithful. If
 moreover every object `X` has a morphism `X ⟶ Y` in `P.trW` with `Y` in `Q` (a resolution by `Q`),
-then `Q.ι ⋙ L` is essentially surjective, hence an equivalence `Q ≌ D`.
+then `Q.ι ⋙ L` is essentially surjective, by the general
+`CategoryTheory.ObjectProperty.essSurj_ι_comp_of_exists_to`, hence an equivalence `Q ≌ D`.
 
 The dual statement holds for left orthogonal classes with morphisms `Y ⟶ X` in `P.trW`.
 
@@ -26,10 +28,6 @@ unbounded derived categories.
 
 ## Main results
 
-* `CategoryTheory.ObjectProperty.essSurj_ι_comp_of_exists_to` and
-  `CategoryTheory.ObjectProperty.essSurj_ι_comp_of_exists_from`: for any localization with respect
-  to a class of morphisms `W`, resolutions by a class of objects through morphisms in `W` make the
-  restricted localization functor essentially surjective. No triangulated structure is needed.
 * `CategoryTheory.ObjectProperty.isEquivalence_ι_comp_of_le_rightOrthogonal`: resolutions by a right
   orthogonal class give an equivalence with the localization.
 * `CategoryTheory.ObjectProperty.isEquivalence_ι_comp_of_le_leftOrthogonal`: the dual statement.
@@ -46,33 +44,6 @@ public section
 namespace CategoryTheory.ObjectProperty
 
 open Limits Pretriangulated
-
-section Localization
-
-variable {C D : Type*} [Category* C] [Category* D] (W : MorphismProperty C) (L : C ⥤ D)
-  [L.IsLocalization W] {Q : ObjectProperty C}
-
-/-- If every object has a morphism in `W` to an object of `Q`, then `Q.ι ⋙ L` is essentially
-surjective for a localization `L` with respect to `W`. -/
-theorem essSurj_ι_comp_of_exists_to
-    (hs : ∀ X : C, ∃ (Y : C) (s : X ⟶ Y), Q Y ∧ W s) : (Q.ι ⋙ L).EssSurj where
-  mem_essImage Z := by
-    obtain ⟨X, ⟨e⟩⟩ := (Localization.essSurj L W).mem_essImage Z
-    obtain ⟨Y, s, hY, hs⟩ := hs X
-    have := Localization.inverts L W s hs
-    exact ⟨⟨Y, hY⟩, ⟨(asIso (L.map s)).symm ≪≫ e⟩⟩
-
-/-- If every object has a morphism in `W` from an object of `Q`, then `Q.ι ⋙ L` is essentially
-surjective for a localization `L` with respect to `W`. -/
-theorem essSurj_ι_comp_of_exists_from
-    (hs : ∀ X : C, ∃ (Y : C) (s : Y ⟶ X), Q Y ∧ W s) : (Q.ι ⋙ L).EssSurj where
-  mem_essImage Z := by
-    obtain ⟨X, ⟨e⟩⟩ := (Localization.essSurj L W).mem_essImage Z
-    obtain ⟨Y, s, hY, hs⟩ := hs X
-    have := Localization.inverts L W s hs
-    exact ⟨⟨Y, hY⟩, ⟨asIso (L.map s) ≪≫ e⟩⟩
-
-end Localization
 
 variable {C D : Type*} [Category* C] [Category* D] [HasZeroObject C] [HasShift C ℤ]
   [Preadditive C] [∀ n : ℤ, (shiftFunctor C n).Additive] [Pretriangulated C] [IsTriangulated C]

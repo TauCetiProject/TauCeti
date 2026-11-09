@@ -168,6 +168,23 @@ noncomputable def shift {K : CochainComplex C ℤ} (h : E.AcyclicData K) (a : �
       Category.assoc, key (n + a + 1) (n + 1 + a) (by lia), reassoc_of% (h.fac (n + a)),
       key' _ _ (by lia)]
 
+section descZ
+
+variable {K : CochainComplex C ℤ} (h : E.AcyclicData K)
+
+/-- The morphism out of the cycles `Zⁿ⁺¹` induced by a morphism out of `Kⁿ` killing `Zⁿ ↣ Kⁿ`. -/
+noncomputable def descZ {T : C} (n : ℤ) (k : K.X n ⟶ T) (hk : h.i n ≫ k = 0) : h.Z (n + 1) ⟶ T :=
+  (E.isKernelCokernelPair _ (h.conflation n)).desc k hk
+
+@[reassoc (attr := simp)]
+theorem p_descZ {T : C} (n : ℤ) (k : K.X n ⟶ T) (hk : h.i n ≫ k = 0) :
+    h.p n ≫ h.descZ n k hk = k :=
+  (E.isKernelCokernelPair _ (h.conflation n)).g_desc k hk
+
+instance (n : ℤ) : Epi (h.p n) := (E.isDeflation_g (h.conflation n)).epi
+
+end descZ
+
 end AcyclicData
 
 /-- An acyclic complex stays acyclic under isomorphism of complexes. -/
@@ -312,6 +329,7 @@ theorem acyclic_mappingCone_of_isPushout {K L : CochainComplex C ℤ} (φ : K �
     fac m := ?_ }⟩
   · refine E.conflation_of_iso ?_
       (E.conflation_shortComplex_of_isPushout_of_isInflation (hj m) (sq m))
+    -- The middle isomorphism is given as an anonymous structure, so its endpoints are stated.
     exact ShortComplex.isoMk (Iso.refl _)
       (show L.X m ⊞ K.X (m + 1) ≅ (CochainComplex.mappingCone φ).X m from
       { hom := biprod.desc ((inr φ).f m) ((inl φ).v (m + 1) m (by lia))
@@ -330,6 +348,15 @@ theorem acyclic_mappingCone_of_isPushout {K L : CochainComplex C ℤ} (φ : K �
     · simp [d_snd_v φ m (m + 1) rfl, hφ]
     · simp [huq]
     · simp [hd]
+
+/-- Acyclicity of mapping cones is invariant under isomorphisms of arrows, through Mathlib's
+`HomologicalComplex.homotopyCofiber.mapArrowIso`. -/
+theorem acyclic_mappingCone_of_iso {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} {φ₁ : K₁ ⟶ L₁}
+    {φ₂ : K₂ ⟶ L₂} (a : K₁ ≅ K₂) (b : L₁ ≅ L₂) (comm : φ₁ ≫ b.hom = a.hom ≫ φ₂)
+    (h : E.acyclic (CochainComplex.mappingCone φ₂)) :
+    E.acyclic (CochainComplex.mappingCone φ₁) :=
+  E.acyclic.prop_of_iso (HomologicalComplex.homotopyCofiber.mapArrowIso φ₂ φ₁
+    (fun j ↦ ⟨j - 1, by simp⟩) (Arrow.isoMk a b comm.symm).symm) h
 
 end ExactStructure
 

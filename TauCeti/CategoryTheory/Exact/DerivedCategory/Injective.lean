@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Exact.DerivedCategory.Plus
-public import TauCeti.CategoryTheory.Exact.HomologicalComplex.Injective
-public import TauCeti.CategoryTheory.Exact.HomologicalComplex.InjectiveResolution
-public import TauCeti.CategoryTheory.Triangulated.OrthogonalLocalization
+public import TauCeti.CategoryTheory.Exact.HomologicalComplex.Injective.Basic
+public import TauCeti.CategoryTheory.Exact.HomologicalComplex.Injective.Resolution
+public import TauCeti.CategoryTheory.Triangulated.Orthogonal.Localization
 
 /-!
 # The bounded below derived category via injectives
@@ -57,13 +57,6 @@ universe v u
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
   (E : ExactStructure C)
-
-/-- The terms of the mapping cone of a map between complexes of injectives are injective. -/
-theorem isInjective_mappingCone_X {K L : CochainComplex C ℤ} (f : K ⟶ L)
-    (hK : ∀ n, E.isInjective (K.X n)) (hL : ∀ n, E.isInjective (L.X n)) (n : ℤ) :
-    E.isInjective ((CochainComplex.mappingCone f).X n) :=
-  E.isInjective.prop_of_iso (HomologicalComplex.homotopyCofiber.XIsoBiprod f n (n + 1) rfl).symm
-    (isInjective_biprod (hK _) (hL _))
 
 /-- The objects of the homotopy category isomorphic to the class of a bounded below complex of
 `E`-injective objects. -/

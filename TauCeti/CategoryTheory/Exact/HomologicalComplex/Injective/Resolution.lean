@@ -49,27 +49,6 @@ universe v u
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
   {E : ExactStructure C}
 
-/-- Acyclicity of mapping cones is invariant under isomorphisms of arrows. -/
-theorem acyclic_mappingCone_of_iso {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} {φ₁ : K₁ ⟶ L₁}
-    {φ₂ : K₂ ⟶ L₂} (a : K₁ ≅ K₂) (b : L₁ ≅ L₂) (comm : φ₁ ≫ b.hom = a.hom ≫ φ₂)
-    (h : E.acyclic (CochainComplex.mappingCone φ₂)) :
-    E.acyclic (CochainComplex.mappingCone φ₁) := by
-  open CochainComplex.mappingCone in
-  have comm' : φ₂ ≫ b.inv = a.inv ≫ φ₁ := by
-    rw [Iso.eq_inv_comp, ← Category.assoc, ← comm, Category.assoc, Iso.hom_inv_id,
-      Category.comp_id]
-  refine E.acyclic.prop_of_iso
-    { hom := map φ₂ φ₁ a.inv b.inv comm'
-      inv := map φ₁ φ₂ a.hom b.hom comm
-      hom_inv_id := ?_
-      inv_hom_id := ?_ } h
-  · rw [← map_comp]
-    simp only [Iso.inv_hom_id]
-    exact map_id φ₂
-  · rw [← map_comp]
-    simp only [Iso.hom_inv_id]
-    exact map_id φ₁
-
 namespace EnoughInjectives
 
 variable (hE : E.EnoughInjectives) (X : CochainComplex C ℤ)
@@ -173,13 +152,13 @@ private theorem isPushout (m : ℤ) :
   | Int.negSucc 0 => by
     have : IsIso (j hE X (Int.negSucc 0)) := inferInstanceAs (IsIso (𝟙 _))
     have : IsIso (v hE X (Int.negSucc 0 + 1)) := inferInstanceAs (IsIso (𝟙 _))
-    exact IsPushout.of_horiz_isIso ⟨by change _ ≫ 0 = 0 ≫ _; simp⟩
+    exact IsPushout.of_horiz_isIso ⟨by simp [u, q]⟩
   | Int.negSucc (k + 1) => by
     have : IsIso (j hE X (Int.negSucc (k + 1))) := inferInstanceAs (IsIso (𝟙 _))
     have : IsIso (v hE X (Int.negSucc (k + 1) + 1)) :=
       isIso_of_source_target_iso_zero _
         (X.isZero_of_isStrictlyGE 0 (Int.negSucc k) (by lia)).isoZero (Iso.refl 0)
-    exact IsPushout.of_horiz_isIso ⟨by change _ ≫ 0 = 0 ≫ _; simp⟩
+    exact IsPushout.of_horiz_isIso ⟨by simp [u, q]⟩
 /-- The complex of injectives, with differential `Iᵐ ⟶ Bᵐ⁺¹ ↣ Iᵐ⁺¹`. -/
 private noncomputable def complex : CochainComplex C ℤ :=
   CochainComplex.of (objI hE X) (fun m ↦ u hE X m ≫ j hE X (m + 1)) fun m ↦ by

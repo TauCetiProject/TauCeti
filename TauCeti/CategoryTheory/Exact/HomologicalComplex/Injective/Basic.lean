@@ -31,6 +31,8 @@ difference `φⁿ⁺² - hⁿ⁺¹ ≫ d` again vanishes on `Zⁿ⁺²`, since `
 
 ## Main results
 
+* `TauCeti.ExactStructure.isInjective_mappingCone_X`: the mapping cone of a map between complexes
+  of injectives is a complex of injectives.
 * `TauCeti.ExactStructure.AcyclicData.quotient_map_eq_zero`: a map from an acyclic complex to a
   bounded below complex of injectives vanishes in the homotopy category.
 
@@ -51,20 +53,17 @@ universe v u
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
   {E : ExactStructure C}
 
+variable (E) in
+/-- The terms of the mapping cone of a map between complexes of injectives are injective. -/
+theorem isInjective_mappingCone_X {K L : CochainComplex C ℤ} (f : K ⟶ L)
+    (hK : ∀ n, E.isInjective (K.X n)) (hL : ∀ n, E.isInjective (L.X n)) (n : ℤ) :
+    E.isInjective ((CochainComplex.mappingCone f).X n) :=
+  E.isInjective.prop_of_iso (HomologicalComplex.homotopyCofiber.XIsoBiprod f n (n + 1) rfl).symm
+    (isInjective_biprod (hK _) (hL _))
+
 namespace AcyclicData
 
 variable {A I : CochainComplex C ℤ} (hA : E.AcyclicData A)
-
-/-- The morphism out of the cycles `Zⁿ⁺¹` induced by a morphism out of `Aⁿ` killing `Zⁿ ↣ Aⁿ`. -/
-noncomputable def descZ {T : C} (n : ℤ) (k : A.X n ⟶ T) (hk : hA.i n ≫ k = 0) : hA.Z (n + 1) ⟶ T :=
-  (E.isKernelCokernelPair _ (hA.conflation n)).desc k hk
-
-@[reassoc (attr := simp)]
-theorem p_descZ {T : C} (n : ℤ) (k : A.X n ⟶ T) (hk : hA.i n ≫ k = 0) :
-    hA.p n ≫ hA.descZ n k hk = k :=
-  (E.isKernelCokernelPair _ (hA.conflation n)).g_desc k hk
-
-instance (n : ℤ) : Epi (hA.p n) := (E.isDeflation_g (hA.conflation n)).epi
 
 variable (hI : ∀ n, E.isInjective (I.X n)) (φ : A ⟶ I)
 
