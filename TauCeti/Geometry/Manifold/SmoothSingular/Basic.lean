@@ -48,6 +48,8 @@ singular cohomology. Only a charted space is required for the definitions.
 * `TauCeti.SmoothSimplex.toContinuousMap`, `TauCeti.SmoothSimplex.mk`: a smooth simplex as a
   continuous map on `Δᵖ`, and back.
 * `TauCeti.SmoothSimplex.extension`: a smooth simplex extended to `ℝᵖ`, smooth within `Δᵖ`.
+* `TauCeti.SmoothSimplex.toContinuousMap_δ`: the `i`-th face of a smooth simplex is the simplex
+  composed with the `i`-th face inclusion `Δᵖ → Δᵖ⁺¹`.
 * `TauCeti.SmoothSimplex.toContinuousMap_smoothSingularSubcomplexMap_app`: a smooth map acts on
   smooth simplices by composition.
 
@@ -184,6 +186,14 @@ theorem extension_coe (σ : SmoothSimplex I M p) (x : fullSimplex p) :
 theorem contMDiffOn_extension (σ : SmoothSimplex I M p) :
     ContMDiffOn 𝓘(ℝ, EuclideanSpace ℝ (Fin p)) I ∞ σ.extension (fullSimplex p) :=
   σ.contMDiffOnSubset_toContinuousMap.contMDiffOn σ.extension_coe
+
+/-- The `i`-th face of a smooth simplex, read on `Δᵖ`, is the simplex composed with the `i`-th face
+inclusion `Δᵖ → Δᵖ⁺¹`. -/
+theorem toContinuousMap_δ (σ : SmoothSimplex I M (p + 1)) (i : Fin (p + 2)) (x : fullSimplex p) :
+    toContinuousMap ((smoothSingularSubcomplex I M : SSet).δ i σ) x =
+      σ.toContinuousMap (simplexFace p i x) := by
+  rw [toContinuousMap_apply, toContinuousMap_apply, fullSimplexEquivStdSimplex_simplexFace]
+  rfl
 
 end SmoothSimplex
 
