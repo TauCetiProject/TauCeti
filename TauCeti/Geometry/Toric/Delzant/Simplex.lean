@@ -164,7 +164,6 @@ private theorem exists_activeSet_simplex_eq_compl_singleton (ha : 0 < a)
       (simplexNormal n) (simplexSupport n a)).extremePoints ℝ) :
     ∃ j, activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin n)) (simplexNormal n))
       (simplexSupport n a) x = {j}ᶜ := by
-  obtain ⟨-, hker⟩ := mem_extremePoints_facetPolyhedron_iff.1 hx
   -- Not every constraint is active: adding all the active equations would give `0 = a`.
   obtain ⟨j, hj⟩ : ∃ j, j ∉ activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin n))
       (simplexNormal n)) (simplexSupport n a) x := by
@@ -177,9 +176,8 @@ private theorem exists_activeSet_simplex_eq_compl_singleton (ha : 0 < a)
   refine ⟨j, Set.ext fun m ↦ ⟨fun hm hmj ↦ hj (hmj ▸ hm), fun hmj ↦ ?_⟩⟩
   by_contra hm
   obtain ⟨w, hw, hwl⟩ := exists_ne_zero_facetPairing_simplex_eq_zero (Ne.symm hmj)
-  refine hw (hker w fun l hl ↦ ?_)
-  rw [← facetPairing_apply]
-  exact hwl l (fun h ↦ hj (h ▸ hl)) fun h ↦ hm (h ▸ hl)
+  exact not_activeSet_subset_of_mem_extremePoints hx hw (s := {l | l ≠ j ∧ l ≠ m})
+    (fun l hl ↦ hwl l hl.1 hl.2) fun l hl ↦ ⟨fun h ↦ hj (h ▸ hl), fun h ↦ hm (h ▸ hl)⟩
 
 /-- Any `n` of the `n + 1` simplex normals generate the lattice `ℤⁿ`. -/
 private theorem span_image_simplexNormal_compl_singleton (j : Option (Fin n)) :
@@ -326,13 +324,10 @@ of size `a` in the lattice `ℤⁿ`, with facet normals `e_1, …, e_n, -(e_1 + 
 polytope. -/
 theorem isDelzant_simplex (hn : n ≠ 0) (ha : 0 < a) :
     IsDelzant ((Int.castAddHom ℝ).compLeft (Fin n)) (simplexNormal n) (simplexSupport n a) := by
-  refine ⟨?_, fun x hx ↦ ?_, exists_activeSet_simplex_eq_singleton hn ha⟩
+  refine ⟨isBounded_facetPolyhedron_of_norm_le (Pi.basisFun ℝ (Fin n)) (M := a)
+    fun x hx k ↦ ?_, fun x hx ↦ ?_, exists_activeSet_simplex_eq_singleton hn ha⟩
   · -- Every value `x(e_k)` at a point of the simplex lies in `[0, a]`.
-    obtain ⟨C, -, hC⟩ := (Pi.basisFun ℝ (Fin n)).exists_opNorm_le (F := ℝ)
-    refine (Metric.isBounded_iff_subset_closedBall 0).2 ⟨C * a, fun x hx ↦ ?_⟩
     obtain ⟨h0, hsum⟩ := mem_facetPolyhedron_simplex_iff.1 hx
-    rw [Metric.mem_closedBall, dist_zero_right]
-    refine hC ha.le fun k ↦ ?_
     rw [Pi.basisFun_apply, Real.norm_of_nonneg (h0 k)]
     exact (Finset.single_le_sum (fun l _ ↦ h0 l) (Finset.mem_univ k)).trans hsum
   · -- All but one of the `n + 1` constraints are active, and those normals form a basis.

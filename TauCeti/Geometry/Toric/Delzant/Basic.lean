@@ -169,6 +169,16 @@ theorem isClosed_facetPolyhedron : IsClosed (facetPolyhedron i u c) := by
   exact isClosed_iInter fun j ↦
     isClosed_le continuous_const (ContinuousLinearMap.apply ℝ ℝ (i (u j))).continuous
 
+/-- A facet polyhedron is bounded when, for a basis `b` of `V`, the values `x (b k)` at its
+points are bounded. -/
+theorem isBounded_facetPolyhedron_of_norm_le {κ : Type*} [Finite κ] (b : Module.Basis κ ℝ V)
+    {M : ℝ} (h : ∀ x ∈ facetPolyhedron i u c, ∀ k, ‖x (b k)‖ ≤ M) :
+    Bornology.IsBounded (facetPolyhedron i u c) := by
+  obtain ⟨C, -, hC⟩ := b.exists_opNorm_le (F := ℝ)
+  refine (Metric.isBounded_iff_subset_closedBall 0).2 ⟨C * max M 0, fun x hx ↦ ?_⟩
+  rw [Metric.mem_closedBall, dist_zero_right]
+  exact hC (le_max_right _ _) fun k ↦ (h x hx k).trans (le_max_left _ _)
+
 /-- **Vertices of a facet polyhedron.** A point `x` of the polyhedron is a vertex exactly when
 no nonzero point of `V*` vanishes on all the normals active at `x`. -/
 theorem mem_extremePoints_facetPolyhedron_iff [Finite ι] {x : StrongDual ℝ V} :
@@ -176,6 +186,14 @@ theorem mem_extremePoints_facetPolyhedron_iff [Finite ι] {x : StrongDual ℝ V}
       ∀ w : StrongDual ℝ V, (∀ j ∈ activeSet (facetPairing i u) c x, w (i (u j)) = 0) → w = 0 := by
   unfold facetPolyhedron
   exact mem_extremePoints_polyhedron_iff
+
+/-- At a vertex `x`, the active constraints do not all lie in a set `s` of constraints whose
+normals are killed by a nonzero `w ∈ V*`. -/
+theorem not_activeSet_subset_of_mem_extremePoints [Finite ι] {x : StrongDual ℝ V}
+    (hx : x ∈ (facetPolyhedron i u c).extremePoints ℝ) {s : Set ι} {w : StrongDual ℝ V}
+    (hw : w ≠ 0) (hws : ∀ j ∈ s, facetPairing i u j w = 0) :
+    ¬activeSet (facetPairing i u) c x ⊆ s :=
+  fun hsub ↦ hw ((mem_extremePoints_facetPolyhedron_iff.1 hx).2 w fun j hj ↦ hws j (hsub hj))
 
 /-- Exactly `rank N` facets meet at a smooth vertex. -/
 theorem IsSmoothVertex.ncard_activeSet {x : StrongDual ℝ V} (hx : IsSmoothVertex i u c x) :

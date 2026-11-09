@@ -226,16 +226,14 @@ private theorem exists_activeSet_hirzebruch_subset_pair (hb : 0 < b) (ha : 0 < a
 private theorem isBounded_facetPolyhedron_hirzebruch (hb : 0 < b) (ha : 0 < a) :
     Bornology.IsBounded (facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin 2))
       (hirzebruchNormal k) (hirzebruchSupport a b)) := by
-  obtain ⟨C, -, hC⟩ := (Pi.basisFun ℝ (Fin 2)).exists_opNorm_le (F := ℝ)
-  refine (Metric.isBounded_iff_subset_closedBall 0).2 ⟨C * (a + |(k : ℝ)| * b + b),
-    fun x hx ↦ ?_⟩
+  refine isBounded_facetPolyhedron_of_norm_le (Pi.basisFun ℝ (Fin 2))
+    (M := a + |(k : ℝ)| * b + b) fun x hx ↦ ?_
   obtain ⟨hp₀, hq₀, hqb, hpq⟩ := mem_facetPolyhedron_hirzebruch_iff.1 hx
   have hkq : -(k * x (Pi.single 1 1)) ≤ |(k : ℝ)| * b := by
     calc -(k * x (Pi.single 1 1)) ≤ |k * x (Pi.single 1 1)| := neg_le_abs _
       _ = |(k : ℝ)| * x (Pi.single 1 1) := by rw [abs_mul, abs_of_nonneg hq₀]
       _ ≤ |(k : ℝ)| * b := mul_le_mul_of_nonneg_left hqb (abs_nonneg _)
-  rw [Metric.mem_closedBall, dist_zero_right]
-  refine hC (by positivity) (Fin.forall_fin_two.2 ⟨?_, ?_⟩)
+  refine Fin.forall_fin_two.2 ⟨?_, ?_⟩
   · rw [Pi.basisFun_apply, Real.norm_of_nonneg hp₀]
     linarith
   · rw [Pi.basisFun_apply, Real.norm_of_nonneg hq₀]
@@ -255,46 +253,43 @@ private theorem exists_activeSet_hirzebruch_eq_singleton (hb : 0 < b) (ha : 0 < 
     p • ContinuousLinearMap.proj 0 + q • ContinuousLinearMap.proj 1
   have hp (p q : ℝ) : pt p q (Pi.single 0 1) = p := by simp [pt]
   have hq (p q : ℝ) : pt p q (Pi.single 1 1) = q := by simp [pt]
+  -- Each constraint active at `pt p q` gives an equation in `p` and `q`.
+  have hact {p q : ℝ} {l : Fin 4} (hl : l ∈ activeSet (facetPairing
+      ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k)) (hirzebruchSupport a b)
+        (pt p q)) :
+      (l = 0 → p = 0) ∧ (l = 1 → q = 0) ∧ (l = 2 → q = b) ∧ (l = 3 → p + k * q = a) := by
+    refine ⟨?_, ?_, ?_, ?_⟩ <;> rintro rfl
+    · simpa only [hp] using zero_mem_activeSet_hirzebruch_iff.1 hl
+    · simpa only [hq] using one_mem_activeSet_hirzebruch_iff.1 hl
+    · simpa only [hq] using two_mem_activeSet_hirzebruch_iff.1 hl
+    · simpa only [hp, hq] using three_mem_activeSet_hirzebruch_iff.1 hl
   fin_cases j
   · refine ⟨pt 0 (b / 2), mem_facetPolyhedron_hirzebruch_iff.2 ?_, eq_singleton_iff_unique_mem.2
       ⟨zero_mem_activeSet_hirzebruch_iff.2 (hp _ _), fun l hl ↦ ?_⟩⟩
     · rw [hp, hq]
       exact ⟨le_rfl, by positivity, by linarith, by linarith⟩
-    fin_cases l
-    · rfl
-    · linarith [hq 0 (b / 2) ▸ one_mem_activeSet_hirzebruch_iff.1 hl]
-    · linarith [hq 0 (b / 2) ▸ two_mem_activeSet_hirzebruch_iff.1 hl]
-    · linarith [hp 0 (b / 2) ▸ hq 0 (b / 2) ▸ three_mem_activeSet_hirzebruch_iff.1 hl]
+    obtain ⟨-, h₁, h₂, h₃⟩ := hact hl
+    fin_cases l <;> simp at h₁ h₂ h₃ ⊢ <;> linarith
   · refine ⟨pt (a / 2) 0, mem_facetPolyhedron_hirzebruch_iff.2 ?_, eq_singleton_iff_unique_mem.2
       ⟨one_mem_activeSet_hirzebruch_iff.2 (hq _ _), fun l hl ↦ ?_⟩⟩
     · rw [hp, hq]
       exact ⟨by positivity, le_rfl, hb.le, by linarith⟩
-    fin_cases l
-    · linarith [hp (a / 2) 0 ▸ zero_mem_activeSet_hirzebruch_iff.1 hl]
-    · rfl
-    · linarith [hq (a / 2) 0 ▸ two_mem_activeSet_hirzebruch_iff.1 hl]
-    · linarith [hp (a / 2) 0 ▸ hq (a / 2) 0 ▸ three_mem_activeSet_hirzebruch_iff.1 hl]
+    obtain ⟨h₀, -, h₂, h₃⟩ := hact hl
+    fin_cases l <;> simp at h₀ h₂ h₃ ⊢ <;> linarith
   · refine ⟨pt ((a - k * b) / 2) b, mem_facetPolyhedron_hirzebruch_iff.2 ?_,
       eq_singleton_iff_unique_mem.2 ⟨two_mem_activeSet_hirzebruch_iff.2 (hq _ _), fun l hl ↦ ?_⟩⟩
     · rw [hp, hq]
       exact ⟨by linarith, hb.le, le_rfl, by linarith⟩
-    fin_cases l
-    · linarith [hp ((a - k * b) / 2) b ▸ zero_mem_activeSet_hirzebruch_iff.1 hl]
-    · linarith [hq ((a - k * b) / 2) b ▸ one_mem_activeSet_hirzebruch_iff.1 hl]
-    · rfl
-    · linarith [hp ((a - k * b) / 2) b ▸ hq ((a - k * b) / 2) b ▸
-        three_mem_activeSet_hirzebruch_iff.1 hl]
+    obtain ⟨h₀, h₁, -, h₃⟩ := hact hl
+    fin_cases l <;> simp at h₀ h₁ h₃ ⊢ <;> linarith
   · refine ⟨pt (a - k * (b / 2)) (b / 2), mem_facetPolyhedron_hirzebruch_iff.2 ?_,
       eq_singleton_iff_unique_mem.2 ⟨three_mem_activeSet_hirzebruch_iff.2 ?_, fun l hl ↦ ?_⟩⟩
     · rw [hp, hq]
       exact ⟨by linarith, by positivity, by linarith, by linarith⟩
     · rw [hp, hq]
       ring
-    fin_cases l
-    · linarith [hp (a - k * (b / 2)) (b / 2) ▸ zero_mem_activeSet_hirzebruch_iff.1 hl]
-    · linarith [hq (a - k * (b / 2)) (b / 2) ▸ one_mem_activeSet_hirzebruch_iff.1 hl]
-    · linarith [hq (a - k * (b / 2)) (b / 2) ▸ two_mem_activeSet_hirzebruch_iff.1 hl]
-    · rfl
+    obtain ⟨h₀, h₁, h₂, -⟩ := hact hl
+    fin_cases l <;> simp at h₀ h₁ h₂ ⊢ <;> linarith
 
 /-- **Hirzebruch trapezoids are Delzant polytopes.** For an integer `k` and reals with `0 < b`,
 `0 < a` and `k b < a`, the trapezoid `{0 ≤ x(e₁), 0 ≤ x(e₂) ≤ b, x(e₁) + k x(e₂) ≤ a}` in the
@@ -307,7 +302,6 @@ theorem isDelzant_hirzebruch (hb : 0 < b) (ha : 0 < a) (hab : k * b < a) :
     exists_activeSet_hirzebruch_eq_singleton hb ha hab⟩
   -- At a vertex the active constraints are exactly a pair of adjacent facets, since a single
   -- normal does not span the plane.
-  obtain ⟨-, hker⟩ := mem_extremePoints_facetPolyhedron_iff.1 hx
   obtain ⟨i, j, hij, hsub⟩ :=
     exists_activeSet_hirzebruch_subset_pair hb ha hab (extremePoints_subset hx)
   have hmem {l m : Fin 4} (hsub' : activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin 2))
@@ -316,10 +310,11 @@ theorem isDelzant_hirzebruch (hb : 0 < b) (ha : 0 < a) (hab : k * b < a) :
         (hirzebruchSupport a b) x := by
     by_contra hl
     obtain ⟨w, hw, hwm⟩ := exists_ne_zero_facetPairing_hirzebruch_eq_zero (k := k) m
-    refine hw (hker w fun n hn ↦ ?_)
+    refine not_activeSet_subset_of_mem_extremePoints hx hw (s := {m}) (by rintro _ rfl; exact hwm)
+      fun n hn ↦ ?_
     rcases hsub' hn with rfl | rfl
     · exact absurd hn hl
-    · rwa [← facetPairing_apply]
+    · rfl
   have hA : activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin 2)) (hirzebruchNormal k))
       (hirzebruchSupport a b) x = {i, j} :=
     hsub.antisymm (insert_subset (hmem hsub)
