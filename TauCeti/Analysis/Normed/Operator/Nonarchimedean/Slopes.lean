@@ -107,6 +107,7 @@ theorem IsPrCompact.newtonSlopeMultiplicity_charPowerSeries_smul {M : Type u}
       u.charPowerSeries.newtonSlopeMultiplicity v σ := by
   rw [hu.charPowerSeries_smul a, PowerSeries.newtonSlopeMultiplicity_rescale _ ha]
 
+omit [NormOneClass R] in
 /-- On a finitely generated module with property (Pr), the multiplicity of a slope in the
 Fredholm polygon is its multiplicity in the finite slope multiset of the finite projective
 determinant `det (1 - X u)`. -/
