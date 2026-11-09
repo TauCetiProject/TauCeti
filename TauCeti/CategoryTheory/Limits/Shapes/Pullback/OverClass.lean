@@ -23,8 +23,9 @@ over `Spec K` are the pairs of `K`-points of the factors.
 
 ## Main declarations
 
-* `CategoryTheory.homIsOver_snd_of_comm`: in a commuting square of two structure morphisms over
-  `S`, the second projection is a morphism over `S` once the first one is.
+* `CategoryTheory.CommSq.homIsOver_snd`: in a commutative square of two structure morphisms over
+  `S`, the second projection is a morphism over `S` once the first one is. Through dot notation
+  it applies to pullback squares as well.
 * `CategoryTheory.IsPullback.homIsOverEquiv`: morphisms over `S` into the fibre product are pairs
   of morphisms over `S` into the factors.
 -/
@@ -38,17 +39,12 @@ namespace CategoryTheory
 variable {C : Type u} [Category.{v} C] {S P X Y : C} [OverClass P S] [OverClass X S]
   [OverClass Y S] {fst : P ⟶ X} {snd : P ⟶ Y} [HomIsOver fst S]
 
-/-- In a commuting square of two structure morphisms over `S`, the second projection is a
+/-- In a commutative square of two structure morphisms over `S`, the second projection is a
 morphism over `S` once the first one is. -/
-theorem homIsOver_snd_of_comm (h : fst ≫ (X ↘ S) = snd ≫ (Y ↘ S)) : HomIsOver snd S :=
-  ⟨by rw [← h, comp_over]⟩
+theorem CommSq.homIsOver_snd (h : CommSq fst snd (X ↘ S) (Y ↘ S)) : HomIsOver snd S :=
+  ⟨by rw [← h.w, comp_over]⟩
 
 namespace IsPullback
-
-/-- In a pullback square of two structure morphisms over `S`, the second projection is a
-morphism over `S` once the first one is. -/
-theorem homIsOver_snd (h : IsPullback fst snd (X ↘ S) (Y ↘ S)) : HomIsOver snd S :=
-  homIsOver_snd_of_comm h.w
 
 variable (T : C) [OverClass T S]
 
@@ -64,7 +60,7 @@ noncomputable def homIsOverEquiv (h : IsPullback fst snd (X ↘ S) (Y ↘ S)) :
   invFun ab :=
     have := ab.1.2
     have := ab.2.2
-    ⟨h.lift ab.1.1 ab.2.1 (by rw [comp_over, comp_over]),
+    ⟨h.lift ab.1.1 ab.2.1 (by simp),
       ⟨by rw [← comp_over fst S, h.lift_fst_assoc, comp_over]⟩⟩
   left_inv p := Subtype.ext (h.hom_ext (h.lift_fst _ _ _) (h.lift_snd _ _ _))
   right_inv ab := Prod.ext (Subtype.ext (h.lift_fst _ _ _)) (Subtype.ext (h.lift_snd _ _ _))
@@ -87,7 +83,7 @@ theorem coe_homIsOverEquiv_apply_snd (p : {p : T ⟶ P // HomIsOver p S}) :
 theorem coe_homIsOverEquiv_symm_apply
     (ab : {a : T ⟶ X // HomIsOver a S} × {b : T ⟶ Y // HomIsOver b S}) :
     ((homIsOverEquiv T h).symm ab : T ⟶ P) =
-      h.lift ab.1.1 ab.2.1 (by have := ab.1.2; have := ab.2.2; rw [comp_over, comp_over]) :=
+      h.lift ab.1.1 ab.2.1 (by have := ab.1.2; have := ab.2.2; simp) :=
   (rfl)
 
 end IsPullback

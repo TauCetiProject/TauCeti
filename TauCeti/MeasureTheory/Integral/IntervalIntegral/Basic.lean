@@ -130,6 +130,19 @@ theorem norm_sub_sub_integral_le {E : Type*} [NormedAddCommGroup E] [NormedSpace
 
 end intervalIntegral
 
+/-- A function vanishing on `(-∞, a]` and on a ball around `a` has zero integral on `a..t` for
+every `t < a + ε`, where `ε` is the radius of that ball. -/
+lemma integral_eq_zero_of_lt_add {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {μ : Measure ℝ} {a ε t : ℝ} {φ : ℝ → E} (hφ0 : ∀ x, x ≤ a → φ x = 0)
+    (hφa : ∀ ⦃y⦄, dist y a < ε → φ y = 0) (ht : t < a + ε) : ∫ s in a..t, φ s ∂μ = 0 := by
+  refine (intervalIntegral.integral_congr (g := fun _ ↦ (0 : E)) fun s hs ↦ ?_).trans
+    intervalIntegral.integral_zero
+  rcases le_or_gt s a with hsa | hsa
+  · exact hφ0 s hsa
+  · refine hφa ?_
+    rw [Real.dist_eq, abs_of_pos (sub_pos.mpr hsa)]
+    linarith [(le_max_iff.1 hs.2).resolve_left hsa.not_ge]
+
 /-- The primitive of a step velocity corrected by its average defect reaches the prescribed
 endpoint. -/
 theorem add_integral_add_inv_smul_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]

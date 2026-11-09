@@ -15,13 +15,16 @@ public import Mathlib.GroupTheory.Submonoid.Center
 of the `f i` times the product of the `g i`, in a commutative monoid. The same splitting holds in
 any monoid as soon as the second factors are central, since each `g i` can then be moved past the
 remaining first factors. Erasing an entry whose image is `1` does not change the product of the
-images, in any monoid.
+images, in any monoid. Two orderings of a list have the same product of images when every pair of
+entries whose relative order differs has commuting images.
 
 ## Main results
 
 * `List.prod_map_mul_of_mem_center`: `∏ (f i * g i) = (∏ f i) * (∏ g i)` along a list, when
   `g i` lies in the center for every entry `i` of the list.
 * `List.prod_map_erase_of_eq_one`: `∏_{i ∈ l.erase a} f i = ∏_{i ∈ l} f i` when `f a = 1`.
+* `List.prod_map_eq_of_perm`: two orderings of the same entries have the same product of images if
+  the images of every inverted pair commute.
 -/
 
 public section
@@ -51,5 +54,28 @@ theorem prod_map_erase_of_eq_one [DecidableEq ι] (l : List ι) (f : ι → M) {
   · obtain ⟨l₁, l₂, -, rfl, he⟩ := exists_erase_eq h
     simp [he, ha]
   · rw [erase_of_not_mem h]
+
+/-- Two orderings of the same entries have the same product of images if every pair of entries whose
+relative order differs has commuting images. -/
+theorem prod_map_eq_of_perm (f : ι → M) {l l' : List ι} (hp : l.Perm l')
+    (h : ∀ x y, [x, y].Sublist l → [y, x].Sublist l' → Commute (f x) (f y)) :
+    (l.map f).prod = (l'.map f).prod := by
+  induction l generalizing l' with
+  | nil => rw [nil_perm.1 hp]
+  | cons a t ih =>
+    obtain ⟨u, v, rfl⟩ := append_of_mem (hp.subset mem_cons_self)
+    have hp' : t.Perm (u ++ v) := (hp.trans perm_middle).cons_inv
+    have hcomm : ∀ x ∈ u.map f, Commute (f a) x := by
+      intro x hx
+      obtain ⟨y, hy, rfl⟩ := mem_map.1 hx
+      have hyt : y ∈ t := hp'.symm.subset (mem_append_left v hy)
+      refine h a y (cons_sublist_cons.2 (singleton_sublist.2 hyt)) ?_
+      exact (singleton_sublist.2 hy).append (singleton_sublist.2 mem_cons_self)
+    have key : ((u ++ a :: v).map f).prod = f a * ((u ++ v).map f).prod := by
+      simp only [map_append, map_cons, prod_append, prod_cons]
+      rw [← mul_assoc, ← (Commute.list_prod_right _ _ hcomm).eq, mul_assoc]
+    rw [map_cons, prod_cons, key,
+      ih hp' fun x y hxy hyx => h x y (hxy.trans (sublist_cons_self a t))
+        (hyx.trans ((sublist_cons_self a v).append_left u))]
 
 end List
