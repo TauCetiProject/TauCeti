@@ -323,9 +323,17 @@ theorem isDeltaMove_iff_of_isSimple_insertVertex (hq : (poly.insertVertex i c).I
 
 end Boundary
 
+omit [PartialOrder R] in
+include V in
+/-- A ring acting on a space with two distinct points is nontrivial. -/
+private theorem nontrivial_of_ne {a b : P} (hab : a ≠ b) : Nontrivial R := by
+  by_contra hR
+  have : Subsingleton R := not_nontrivial_iff_subsingleton.1 hR
+  exact hab (((AddTorsor.subsingleton_iff V P).1 (Module.subsingleton R V)).elim a b)
+
 section Simplicity
 
-variable [IsOrderedRing R] [Nontrivial R]
+variable [IsOrderedRing R]
 
 namespace IsDeltaMove
 
@@ -336,6 +344,7 @@ include h
 was simple before. -/
 theorem isSimple_of_isSimple_insertVertex (hq : (poly.insertVertex i c).IsSimple R) :
     poly.IsSimple R := by
+  have := nontrivial_of_ne (R := R) (V := V) (hq.hasNondegenerateEdges 0)
   refine ⟨fun k => ?_, fun k₁ k₂ x hne hx₁ hx₂ => ?_⟩
   · by_cases hk : k = i
     · exact hk ▸ h.left_ne_right
@@ -371,8 +380,9 @@ theorem isSimple_of_isSimple_insertVertex (hq : (poly.insertVertex i c).IsSimple
 
 /-- **A Δ-move keeps a polygon simple.** -/
 theorem isSimple_insertVertex (hp : poly.IsSimple R) :
-    (poly.insertVertex i c).IsSimple R :=
-  hp.insertVertex h.left_ne_apex h.apex_ne_right h.affineSegment_inter_affineSegment
+    (poly.insertVertex i c).IsSimple R := by
+  have := nontrivial_of_ne (R := R) (V := V) (hp.hasNondegenerateEdges i)
+  exact hp.insertVertex h.left_ne_apex h.apex_ne_right h.affineSegment_inter_affineSegment
     (fun _ hk _ hx ↦ h.edgeSet_inter_closedInterior_subset hk
       ⟨hx.1, hx.2.elim (fun hx ↦ h.affineSegment_left_subset_closedInterior hx)
         (fun hx ↦ h.affineSegment_right_subset_closedInterior hx)⟩)
@@ -554,7 +564,7 @@ namespace TauCeti
 
 namespace SimplePolygon
 
-variable {R V P : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R] [Nontrivial R]
+variable {R V P : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
   [AddCommGroup V] [Module R V] [AddTorsor V P]
 
 /-- The simple polygon obtained from `p` by the Δ-move inserting `c` after vertex `i`. -/
