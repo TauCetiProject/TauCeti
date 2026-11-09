@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
+import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 import Mathlib.Analysis.Normed.Operator.NNNorm
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
@@ -20,8 +21,9 @@ interior and its norms on `U` itself, matching `TauCeti.MemWkpLoc`. On an open s
 derivatives are unique almost everywhere, so the minimum is attained by every weak derivative.
 
 This is the quantity in which interior estimates of elliptic equations are stated. The file
-supplies its unfolding, monotonicity in the set, invariance under almost-everywhere change, the
-triangle inequality and the operator-norm bound under a continuous linear map of the codomain.
+supplies its unfolding, its value through a given weak derivative on an open set, monotonicity
+in the set, invariance under almost-everywhere change, the triangle inequality and the
+operator-norm bound under a continuous linear map of the codomain.
 
 ## References
 
@@ -98,6 +100,15 @@ theorem eLpNormWkp_congr_ae (hfg : f =ᵐ[volume.restrict U] g) :
     · exact hD.congr_ae (Filter.EventuallyEq.symm hint)
     · exact hD.congr_ae hint
 
+/-- On an open set, every weak derivative realizes the successor-order norm. -/
+theorem eLpNormWkp_succ_eq_of_hasWeakFDerivOn {Ω : Opens ℂ} {D : ℂ → ℂ →L[ℝ] F}
+    (hD : HasWeakFDerivOn volume Ω f D) :
+    eLpNormWkp p Ω (k + 1) f = eLpNorm f p (volume.restrict Ω) + eLpNormWkp p Ω k D := by
+  refine le_antisymm (eLpNormWkp_succ_le (by rwa [Opens.interior_coe])) ?_
+  rw [eLpNormWkp_succ, Opens.interior_coe]
+  gcongr
+  exact le_iInf₂ fun D' hD' => (eLpNormWkp_congr_ae (hD.ae_eq hD')).le
+
 /-- The zero function has zero `W^{k,p}` norm. -/
 @[simp]
 theorem eLpNormWkp_zero_fun [CompleteSpace F] : eLpNormWkp p U k (0 : ℂ → F) = 0 := by
@@ -119,27 +130,12 @@ theorem eLpNormWkp_add_le (hp : 1 ≤ p) :
     · exact ENNReal.le_iInf_add_iInf fun D D' => ENNReal.le_iInf_add_iInf fun hD hD' =>
         iInf₂_le_of_le (D + D') (hD.add hD') ih
 
-/-- A continuous linear map of the codomain scales the `Lᵖ` norm by at most its operator norm,
-with no measurability assumption. -/
-private theorem eLpNorm_clm_comp_le {μ : Measure ℂ} (A : F →L[ℝ] G) :
-    eLpNorm (fun z => A (f z)) p μ ≤ ‖A‖ₑ * eLpNorm f p μ := by
-  by_cases hf : AEStronglyMeasurable f μ
-  · exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul' (A.continuous.comp_aestronglyMeasurable hf)
-      (Filter.Eventually.of_forall fun z => by
-        simpa only [enorm_eq_nnnorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] using
-          A.le_opNNNorm (f z)) p
-  · by_cases hA : A = 0
-    · simp [hA]
-    · rw [eLpNorm_of_not_aestronglyMeasurable hf, ENNReal.mul_top (by
-        rw [enorm_eq_nnnorm]; exact ENNReal.coe_ne_zero.2 (nnnorm_ne_zero_iff.2 hA))]
-      exact le_top
-
 /-- A continuous linear map of the codomain scales the `W^{k,p}` norm by at most its operator
 norm. -/
 theorem eLpNormWkp_clm_comp_le [CompleteSpace G] (A : F →L[ℝ] G) :
     eLpNormWkp p U k (fun z => A (f z)) ≤ ‖A‖ₑ * eLpNormWkp p U k f := by
   induction k generalizing F G with
-  | zero => exact eLpNorm_clm_comp_le A
+  | zero => exact MeasureTheory.eLpNorm_clm_comp_le A
   | succ k ih =>
     by_cases hA : A = 0
     · subst hA
@@ -151,7 +147,7 @@ theorem eLpNormWkp_clm_comp_le [CompleteSpace G] (A : F →L[ℝ] G) :
     have hA_top : ‖A‖ₑ ≠ ⊤ := enorm_ne_top
     rw [eLpNormWkp_succ, eLpNormWkp_succ, mul_add]
     gcongr ?_ + ?_
-    · exact eLpNorm_clm_comp_le A
+    · exact MeasureTheory.eLpNorm_clm_comp_le A
     · rw [ENNReal.mul_iInf_of_ne hA₀ hA_top]
       refine le_iInf fun D => ?_
       rw [ENNReal.mul_iInf_of_ne hA₀ hA_top]

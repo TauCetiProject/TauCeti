@@ -13,7 +13,9 @@ public import Mathlib.Analysis.Complex.OperatorNorm
 The values on `1` and `I` control a real-linear map on every complex vector. This
 estimate turns a Cauchy--Riemann equation into a bound on the full differential: if
 `L I = A (L 1)` with `‖A‖ ≤ M`, then `‖L a‖ ≤ (1 + M) * ‖L 1‖ * ‖a‖`
-(`ContinuousLinearMap.norm_apply_le_of_apply_I_eq`).
+(`ContinuousLinearMap.norm_apply_le_of_apply_I_eq`). Such a map is the sum of its values at `1`
+and `I` weighted by the real and imaginary parts
+(`ContinuousLinearMap.eq_reCLM_smulRight_add_imCLM_smulRight`).
 -/
 
 public section
@@ -46,6 +48,17 @@ theorem norm_apply_le_of_apply_I_eq {V : Type*} [SeminormedAddCommGroup V] [Norm
     (mul_le_mul_of_nonneg_right ?_ (norm_nonneg a))
   rw [hL]
   linarith [A.le_of_opNorm_le hA (L 1)]
+
+/-- A real-linear map out of `ℂ` is determined by its values at `1` and `I`:
+`L = re ⬝ L 1 + im ⬝ L I`. -/
+theorem eq_reCLM_smulRight_add_imCLM_smulRight {V : Type*} [SeminormedAddCommGroup V]
+    [NormedSpace ℝ V] (L : ℂ →L[ℝ] V) :
+    L = Complex.reCLM.smulRight (L 1) + Complex.imCLM.smulRight (L Complex.I) := by
+  ext z
+  have hz : z = z.re • (1 : ℂ) + z.im • Complex.I := by
+    simp [Complex.real_smul]
+  conv_lhs => rw [hz, map_add, map_smul, map_smul]
+  simp
 
 end ContinuousLinearMap
 

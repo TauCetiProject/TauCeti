@@ -12,7 +12,7 @@ public import TauCeti.Analysis.Sobolev.TestFunctionLp.Representation
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
-import Mathlib.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.Complex.OperatorNorm
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
@@ -64,106 +64,6 @@ namespace TauCeti
 open MeasureTheory TopologicalSpace ContinuousLinearMap Complex Set Filter LineDeriv
 open scoped ContDiff Distributions ENNReal NNReal
 
-section Differentiated
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
-  {μ : Measure ℂ} {Ω : Opens ℂ} {u f u' f' : ℂ → F} {v : ℂ}
-
-/-- A weak directional derivative of a solution of `\bar∂u = f` solves the differentiated
-equation `\bar∂(∂ᵥu) = ∂ᵥf`. No other derivative of `u` or `f` is assumed. -/
-theorem HasWeakConjWirtingerDerivOn.weakLineDeriv (h : HasWeakConjWirtingerDerivOn μ Ω u f)
-    (hu : HasWeakLineDerivOn μ Ω u u' v) (hf : HasWeakLineDerivOn μ Ω f f' v) :
-    HasWeakConjWirtingerDerivOn μ Ω u' f' := by
-  refine hasWeakConjWirtingerDerivOn_iff.2
-    ⟨h.completeSpace, hu.locallyIntegrableOn_deriv, hf.locallyIntegrableOn_deriv, fun φ => ?_⟩
-  have hw (w : ℂ) : ∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z w • u' z ∂μ =
-      -∫ z, lineDeriv ℝ (∂_{v} φ : 𝓓(Ω, ℝ)) z w • u z ∂μ := by
-    calc ∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z w • u' z ∂μ
-        = ∫ z, (∂_{w} φ : 𝓓(Ω, ℝ)) z • u' z ∂μ := by
-          simp only [TestFunction.lineDerivOp_apply]
-      _ = -∫ z, lineDeriv ℝ (∂_{w} φ : 𝓓(Ω, ℝ)) z v • u z ∂μ := by
-          rw [hu.integral_lineDeriv_smul_eq_neg_integral_smul, neg_neg]
-      _ = _ := by simp only [TestFunction.lineDeriv_lineDerivOp_comm φ w v]
-  have hfv : ∫ z, (∂_{v} φ : 𝓓(Ω, ℝ)) z • f z ∂μ = -∫ z, (φ : ℂ → ℝ) z • f' z ∂μ := by
-    simpa only [TestFunction.lineDerivOp_apply] using
-      hf.integral_lineDeriv_smul_eq_neg_integral_smul φ
-  have hφ := h.integral_lineDeriv_smul_add_I_smul_eq_neg_two_smul_integral_smul (∂_{v} φ)
-  rw [hw 1, hw I, smul_neg, ← neg_add, hφ, hfv]
-  module
-
-end Differentiated
-
-/-- Coordinatewise `Lᵖ` representation of a directional distributional derivative with a
-conjugate `Lᵠ` test bound, for finite-dimensional real coefficients. The constant depends only
-on the coefficient space and the exponents. -/
-private theorem exists_hasWeakLineDerivOn_eLpNorm_le {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [FiniteDimensional ℝ E] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
-    [p.HolderConjugate q] (hq : 1 < q) (hq_top : q ≠ ⊤) :
-    ∃ C : ℝ≥0, ∀ (V : Opens ℂ) (u : ℂ → E), LocallyIntegrableOn u V volume →
-      ∀ (v : ℂ) (M : ℝ≥0∞), M ≠ ⊤ →
-      (∀ φ : 𝓓(V, ℝ), ‖∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z v • u z‖ₑ ≤
-        M * eLpNorm (φ : ℂ → ℝ) q volume) →
-      ∃ g : ℂ → E, HasWeakLineDerivOn volume V u g v ∧
-        eLpNorm g p (volume.restrict V) ≤ C * M := by
-  classical
-  have := FiniteDimensional.complete ℝ E
-  let b := Module.finBasis ℝ E
-  let c : Fin (Module.finrank ℝ E) → E →L[ℝ] ℝ := fun i => LinearMap.toContinuousLinearMap
-    (b.coord i)
-  refine ⟨∑ i, ‖c i‖₊ * ‖b i‖₊, fun V u hu v M hM hbound => ?_⟩
-  have hcu (i) : LocallyIntegrableOn (fun z => c i (u z)) V volume :=
-    (c i).locallyIntegrableOn_comp hu
-  have hscalar (i) : ∃ g : Lp ℝ p (volume.restrict (V : Set ℂ)), ‖g‖ ≤ ‖c i‖ * M.toReal ∧
-      HasWeakLineDerivOn volume V (fun z => c i (u z)) g v := by
-    refine exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le_eLpNorm hq hq_top
-      (hcu i) v (by positivity) fun φ => ?_
-    have hφ : eLpNorm (φ : ℂ → ℝ) q volume ≠ ⊤ :=
-      (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).eLpNorm_ne_top
-    have hint : ∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z v * c i (u z) =
-        c i (∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z v • u z) := by
-      rw [← (c i).integral_comp_comm (integrable_lineDeriv_smul_of_locallyIntegrableOn hu φ v)]
-      simp only [map_smul, smul_eq_mul]
-    have hreal : ‖∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z v • u z‖ ≤
-        M.toReal * (eLpNorm (φ : ℂ → ℝ) q volume).toReal := by
-      rw [← ENNReal.toReal_mul, ← toReal_enorm]
-      exact ENNReal.toReal_mono (ENNReal.mul_ne_top hM hφ) (hbound φ)
-    rw [hint, ← Real.norm_eq_abs, mul_assoc]
-    exact ((c i).le_opNorm _).trans (mul_le_mul_of_nonneg_left hreal (norm_nonneg _))
-  choose g hgn hg using hscalar
-  let G : ℂ → E := fun z => ∑ i, (g i : ℂ → ℝ) z • b i
-  refine ⟨G, ?_, ?_⟩
-  · refine (hasWeakLineDerivOn_iff_coordinates b).2 fun i => ?_
-    refine (hg i).congr_ae_deriv (Eventually.of_forall fun z => ?_)
-    simp [G, Finsupp.single_apply]
-  · have hG : G = ∑ i, fun z => (g i : ℂ → ℝ) z • b i := by
-      funext z
-      simp [G, Finset.sum_apply]
-    rw [hG]
-    refine (eLpNorm_sum_le Fact.out).trans ?_
-    push_cast
-    rw [Finset.sum_mul]
-    refine Finset.sum_le_sum fun i _ => ?_
-    have hmeas : AEStronglyMeasurable (fun z => (g i : ℂ → ℝ) z • b i)
-        (volume.restrict (V : Set ℂ)) :=
-      (Lp.aestronglyMeasurable (g i)).smul_const _
-    calc eLpNorm (fun z => (g i : ℂ → ℝ) z • b i) p (volume.restrict (V : Set ℂ))
-        ≤ ‖b i‖₊ * eLpNorm (g i : ℂ → ℝ) p (volume.restrict (V : Set ℂ)) :=
-          eLpNorm_le_mul_eLpNorm_of_ae_le_mul' hmeas
-            (Eventually.of_forall fun z => by rw [enorm_smul, mul_comm]; rfl) p
-      _ ≤ ‖b i‖₊ * (‖c i‖₊ * M) := by
-          gcongr
-          rw [← Lp.enorm_def, ← ofReal_norm, ← ENNReal.ofReal_toReal hM,
-            ← ENNReal.ofReal_coe_nnreal (p := ‖c i‖₊), ← ENNReal.ofReal_mul (by positivity)]
-          exact ENNReal.ofReal_le_ofReal (hgn i)
-      _ = ↑(‖c i‖₊ * ‖b i‖₊) * M := by push_cast; ring
-
-/-- Membership in `Lᵖ` on an open set with compact closure inside `Ω`, from local membership. -/
-private theorem MemLpLoc.memLp_of_closure_subset {r : ℝ≥0∞} {Ω W : Set ℂ} {E : Type*}
-    [NormedAddCommGroup E] {u : ℂ → E}
-    (hu : MemLpLoc r Ω u) (hWc : IsCompact (closure W)) (hWΩ : closure W ⊆ Ω) :
-    MemLp u r (volume.restrict W) :=
-  (memLpLoc_iff.1 hu _ hWΩ hWc).mono_measure (Measure.restrict_mono subset_closure le_rfl)
-
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
   {p : ℝ≥0∞}
 
@@ -189,7 +89,8 @@ theorem exists_hasWeakFDerivOn_eLpNorm_le_of_hasWeakConjWirtingerDerivOn_of_le
   obtain ⟨V, hKV, hVc, hVU, C, hC⟩ :=
     exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_eq_of_le
       (F := F) (q := p.conjExponent) hp hp_top hpr hK hKU
-  obtain ⟨C₀, hC₀⟩ := exists_hasWeakLineDerivOn_eLpNorm_le (E := F) (p := p) hq hq_top
+  obtain ⟨C₀, hC₀⟩ := exists_eLpNorm_le_hasWeakLineDerivOn_of_enorm_integral_lineDeriv_smul_le
+    (μ := volume) (Ω := V) (G := F) (p := p) hq hq_top
   refine ⟨V, hKV, hVc, hVU, 2 * (C₀ * C), fun u f hu hf h => ?_⟩
   set A := eLpNorm f p (volume.restrict U) + eLpNorm u r (volume.restrict U)
   have hA : (C : ℝ≥0∞) * A ≠ ⊤ :=
@@ -199,13 +100,16 @@ theorem exists_hasWeakFDerivOn_eLpNorm_le_of_hasWeakConjWirtingerDerivOn_of_le
       (∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z 1 • u z) +
         I • (∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z I • u z) =
           -(2 : ℝ) • (∫ z, (φ : ℂ → ℝ) z • f z) := by
+    -- The test bound states the equation with the real scalar `-2`; the weak predicate uses
+    -- its complex cast, so the two agree by `Complex.coe_smul`.
     rw [h.integral_lineDeriv_smul_add_I_smul_eq_neg_two_smul_integral_smul φ,
-      show (-(2 : ℂ)) = ((-(2 : ℝ) : ℝ) : ℂ) by push_cast; rfl, Complex.coe_smul]
+      ← Complex.coe_smul]
+    norm_num
   have hVU' : (V : Set ℂ) ⊆ U := subset_closure.trans hVU
   have hloc : LocallyIntegrableOn u V volume := h.locallyIntegrableOn.mono_set hVU'
   have hdir (v : ℂ) (hv : ‖v‖ₑ = 1) : ∃ g : ℂ → F, HasWeakLineDerivOn volume V u g v ∧
       eLpNorm g p (volume.restrict V) ≤ C₀ * (C * A) :=
-    hC₀ V u hloc v _ hA fun φ => (hC u f hu hf hUeq φ v).trans_eq (by rw [hv, mul_one])
+    hC₀ u hloc v _ hA fun φ => (hC u f hu hf hUeq φ v).trans_eq (by rw [hv, mul_one])
   obtain ⟨g₁, hg₁, hg₁n⟩ := hdir 1 (by simp)
   obtain ⟨gI, hgI, hgIn⟩ := hdir I (by simp [enorm_eq_nnnorm])
   let D : ℂ → ℂ →L[ℝ] F := fun z => reCLM.smulRight (g₁ z) + imCLM.smulRight (gI z)
@@ -261,12 +165,6 @@ theorem HasWeakConjWirtingerDerivOn.memWkpLoc_one (hp : 1 < p) (hp_top : p ≠ �
   exact (hD'p.ae_eq ((hD.mono hVΩ).ae_eq hD').symm).mono_measure
     (Measure.restrict_mono hKV le_rfl)
 
-/-- A real-linear map on `ℂ` is determined by its values at `1` and `I`. -/
-private theorem eq_smulRightL_add {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (L : ℂ →L[ℝ] E) : L = smulRightL ℝ ℂ E reCLM (L 1) + smulRightL ℝ ℂ E imCLM (L I) := by
-  refine ContinuousLinearMap.coe_injective (Complex.basisOneI.ext fun i => ?_)
-  fin_cases i <;> simp
-
 /-- **Local `W^{k+1,p}` regularity for `\bar∂`.** For `1 < p < ∞` and every `k`, a locally `Lᵖ`
 function whose distributional `\bar∂` derivative lies in `W^{k,p}_loc` on an open set lies in
 `W^{k+1,p}_loc` there. Each weak derivative of the solution solves the differentiated
@@ -285,7 +183,10 @@ theorem HasWeakConjWirtingerDerivOn.memWkpLoc_succ (hp : 1 < p) (hp_top : p ≠ 
       ih ((memWkpLoc_zero_iff.1 hDp).clm_comp (apply ℝ F w)) (hDfk.clm_comp (apply ℝ F w))
         (h.weakLineDeriv (hD.hasWeakLineDerivOn w) (hDf.hasWeakLineDerivOn w))
     have hDeq : D = fun z => smulRightL ℝ ℂ F reCLM (D z 1) + smulRightL ℝ ℂ F imCLM (D z I) :=
-      funext fun z => eq_smulRightL_add (D z)
+      funext fun z => by
+        conv_lhs => rw [(D z).eq_reCLM_smulRight_add_imCLM_smulRight]
+        ext w
+        simp
     refine memWkpLoc_succ_iff_of_isOpen.2 ⟨hu, D, hD, ?_⟩
     rw [hDeq]
     exact ((hv 1).clm_comp _).add ((hv I).clm_comp _)
@@ -435,7 +336,10 @@ theorem exists_eLpNormWkp_le_of_hasWeakConjWirtingerDerivOn (hp : 1 < p) (hp_top
             exact le_self_add
         _ = ‖a w‖ₑ * (C₁ * (1 + C₀) * (X + Y)) := by ring
     have hDeq : D = (fun z => L₁ (D z 1)) + fun z => L₂ (D z I) :=
-      funext fun z => eq_smulRightL_add (D z)
+      funext fun z => by
+        conv_lhs => rw [(D z).eq_reCLM_smulRight_add_imCLM_smulRight]
+        ext w
+        simp [L₁, L₂]
     calc eLpNormWkp p K (k + 1 + 1) u
         ≤ eLpNorm u p (volume.restrict K) + eLpNormWkp p K (k + 1) D :=
           eLpNormWkp_succ_le (hD.mono hint)
