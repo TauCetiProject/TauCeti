@@ -375,23 +375,32 @@ namespace RingHom
 
 open scoped nonZeroDivisors
 
-/-- If `A` and `B` are flat domains over `R` and a ring map `ψ` out of `A ⊗[R] B` has kernel
-disjoint from the nonzerodivisors, then `ψ` is injective on both tensor factors. -/
-theorem injective_comp_include_of_disjoint_nonZeroDivisors {R A B L : Type*} [CommRing R]
-    [CommRing A] [CommRing B] [IsDomain A] [IsDomain B] [Algebra R A] [Algebra R B]
-    [Module.Flat R A] [Module.Flat R B] [Ring L] (ψ : A ⊗[R] B →+* L)
+/-- If `A` is a domain, `B` is flat over `R`, and a ring map `ψ` out of `A ⊗[R] B` has kernel
+disjoint from the nonzerodivisors, then `ψ` is injective on the left tensor factor. -/
+theorem injective_comp_includeLeftRingHom_of_disjoint_nonZeroDivisors {R A B L : Type*}
+    [CommRing R] [CommRing A] [CommRing B] [IsDomain A] [Algebra R A] [Algebra R B]
+    [Module.Flat R B] [Ring L] (ψ : A ⊗[R] B →+* L)
     (hdisj : Disjoint (ker ψ : Set (A ⊗[R] B)) (nonZeroDivisors (A ⊗[R] B))) :
-    Function.Injective (ψ.comp Algebra.TensorProduct.includeLeftRingHom) ∧
-      Function.Injective
-        (ψ.comp (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B).toRingHom) := by
-  refine ⟨(injective_iff_map_eq_zero _).mpr fun b hb ↦ by_contra fun hb0 ↦ ?_,
-    (injective_iff_map_eq_zero _).mpr fun c hc ↦ by_contra fun hc0 ↦ ?_⟩
-  · exact Set.disjoint_left.mp hdisj hb
+    Function.Injective (ψ.comp Algebra.TensorProduct.includeLeftRingHom) :=
+  (injective_iff_map_eq_zero _).mpr fun _ hb ↦ by_contra fun hb0 ↦
+    Set.disjoint_left.mp hdisj hb
       (Module.Flat.algebraMap_mem_nonZeroDivisors (mem_nonZeroDivisors_of_ne_zero hb0))
-  · have hc' := Module.Flat.algebraMap_mem_nonZeroDivisors (A := B ⊗[R] A)
-      (mem_nonZeroDivisors_of_ne_zero hc0)
-    exact Set.disjoint_left.mp hdisj hc
-      (mem_nonZeroDivisors_of_injective (f := Algebra.TensorProduct.comm R A B)
-        (AlgEquiv.injective _) (by simpa using hc'))
+
+/-- If `B` is a domain, `A` is flat over `R`, and a ring map `ψ` out of `A ⊗[R] B` has kernel
+disjoint from the nonzerodivisors, then `ψ` is injective on the right tensor factor. -/
+theorem injective_comp_includeRight_of_disjoint_nonZeroDivisors {R A B L : Type*}
+    [CommRing R] [CommRing A] [CommRing B] [IsDomain B] [Algebra R A] [Algebra R B]
+    [Module.Flat R A] [Ring L] (ψ : A ⊗[R] B →+* L)
+    (hdisj : Disjoint (ker ψ : Set (A ⊗[R] B)) (nonZeroDivisors (A ⊗[R] B))) :
+    Function.Injective
+      (ψ.comp (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B).toRingHom) := by
+  have h := injective_comp_includeLeftRingHom_of_disjoint_nonZeroDivisors
+    (ψ.comp (Algebra.TensorProduct.comm R B A).toRingEquiv.toRingHom) <|
+    Set.disjoint_left.mpr fun x hx hx' ↦ Set.disjoint_left.mp hdisj hx
+      (mem_nonZeroDivisors_of_injective (f := (Algebra.TensorProduct.comm R B A).symm)
+        (AlgEquiv.injective _) (by simpa using hx'))
+  convert h using 2
+  ext
+  simp
 
 end RingHom
