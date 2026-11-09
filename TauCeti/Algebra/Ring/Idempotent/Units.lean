@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Units.Equiv
 public import Mathlib.Algebra.Ring.Idempotent
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.Ring.Idempotent.Basic
 
 /-!
 # Inverting one component of a unit
@@ -21,7 +22,7 @@ first component and keeping the second is the automorphism
 
 of the unit group `Rˣ`, written here without reference to the product decomposition: since
 `e² = e` and `e (1 - e) = 0`, products of elements of the form `e x + (1 - e) y` are computed
-componentwise.
+componentwise (`IsIdempotentElem.mul_add_one_sub_mul`).
 
 The automorphism is an involution. At `e = 0` it is the identity and at `e = 1` it is inversion.
 For the idempotent of `ZMod N` attached to an exact divisor `Q` of `N` it is the automorphism of
@@ -34,9 +35,9 @@ the Atkin–Lehner operator `W_Q` shifts the nebentypus of a modular form.
 
 ## Main results
 
-* `IsIdempotentElem.mul_unitsInvPart`, `IsIdempotentElem.one_sub_mul_unitsInvPart`: its two
-  components are `e u⁻¹` and `(1 - e) u`.
-* `IsIdempotentElem.unitsInvPart_symm`: it is an involution.
+* `IsIdempotentElem.mul_unitsInvPart`, `IsIdempotentElem.one_sub_mul_unitsInvPart`: the two
+  components of `unitsInvPart u` are `e u⁻¹` and `(1 - e) u`.
+* `IsIdempotentElem.unitsInvPart_symm`: `unitsInvPart` is an involution.
 * `IsIdempotentElem.unitsInvPart_zero`, `IsIdempotentElem.unitsInvPart_one`: at `e = 0` and
   `e = 1` it is the identity and inversion.
 -/
@@ -47,31 +48,21 @@ namespace IsIdempotentElem
 
 variable {R : Type*} [CommRing R] {e : R}
 
-/-- Elements of the form `e x + (1 - e) y` multiply componentwise. -/
-private theorem mul_add_one_sub_mul (he : IsIdempotentElem e) (x y x' y' : R) :
-    (e * x + (1 - e) * y) * (e * x' + (1 - e) * y') = e * (x * x') + (1 - e) * (y * y') := by
-  linear_combination (x * x' - x * y' - y * x' + y * y') * he.eq
-
 /-- **Inverting the `e`-component of a unit**: for an idempotent `e` of a commutative ring `R`,
 the automorphism `u ↦ e u⁻¹ + (1 - e) u` of `Rˣ`. Under `R ≅ e R × (1 - e) R` it inverts the first
 component and fixes the second. It is its own inverse (`unitsInvPart_symm`). -/
-def unitsInvPart (he : IsIdempotentElem e) : Rˣ ≃* Rˣ where
-  toFun u := ⟨e * ↑u⁻¹ + (1 - e) * u, e * u + (1 - e) * ↑u⁻¹,
-    by rw [he.mul_add_one_sub_mul]; simp, by rw [he.mul_add_one_sub_mul]; simp⟩
-  invFun u := ⟨e * ↑u⁻¹ + (1 - e) * u, e * u + (1 - e) * ↑u⁻¹,
-    by rw [he.mul_add_one_sub_mul]; simp, by rw [he.mul_add_one_sub_mul]; simp⟩
-  left_inv u := Units.ext <| by
-    simp only [Units.inv_mk]
-    linear_combination 2 * (↑u - ↑u⁻¹ : R) * he.eq
-  right_inv u := Units.ext <| by
-    simp only [Units.inv_mk]
-    linear_combination 2 * (↑u - ↑u⁻¹ : R) * he.eq
-  map_mul' u v := Units.ext <| by
-    simp only [Units.val_mul, mul_inv_rev, he.mul_add_one_sub_mul]
+def unitsInvPart (he : IsIdempotentElem e) : Rˣ ≃* Rˣ :=
+  have hinv : Function.Involutive fun u : Rˣ ↦ (⟨e * ↑u⁻¹ + (1 - e) * u, e * u + (1 - e) * ↑u⁻¹,
+      by rw [he.mul_add_one_sub_mul]; simp, by rw [he.mul_add_one_sub_mul]; simp⟩ : Rˣ) :=
+    fun u ↦ Units.ext <| by
+      simp only [Units.inv_mk]
+      linear_combination 2 * (↑u - ↑u⁻¹ : R) * he.eq
+  .mk' (hinv.toPerm _) fun u v ↦ Units.ext <| by
+    simp only [Function.Involutive.coe_toPerm, Units.val_mul, mul_inv_rev, he.mul_add_one_sub_mul]
     ring
 
 /-- The value of `unitsInvPart` at a unit `u` is `e u⁻¹ + (1 - e) u`. -/
-theorem coe_unitsInvPart (he : IsIdempotentElem e) (u : Rˣ) :
+theorem val_unitsInvPart (he : IsIdempotentElem e) (u : Rˣ) :
     (he.unitsInvPart u : R) = e * ↑u⁻¹ + (1 - e) * u := (rfl)
 
 /-- **`unitsInvPart` is an involution**: it is its own inverse. -/
@@ -89,26 +80,26 @@ theorem unitsInvPart_unitsInvPart (he : IsIdempotentElem e) (u : Rˣ) :
 @[simp]
 theorem mul_unitsInvPart (he : IsIdempotentElem e) (u : Rˣ) :
     e * (he.unitsInvPart u : R) = e * ↑u⁻¹ := by
-  rw [coe_unitsInvPart]
+  rw [val_unitsInvPart]
   linear_combination (↑u⁻¹ - ↑u : R) * he.eq
 
 /-- **The `(1 - e)`-component of `unitsInvPart u`** is the `(1 - e)`-component of `u`. -/
 @[simp]
 theorem one_sub_mul_unitsInvPart (he : IsIdempotentElem e) (u : Rˣ) :
     (1 - e) * (he.unitsInvPart u : R) = (1 - e) * u := by
-  rw [coe_unitsInvPart]
+  rw [val_unitsInvPart]
   linear_combination (↑u - ↑u⁻¹ : R) * he.eq
 
 /-- At the idempotent `0` nothing is inverted: `unitsInvPart` is the identity. -/
 @[simp]
 theorem unitsInvPart_zero : (IsIdempotentElem.zero : IsIdempotentElem (0 : R)).unitsInvPart =
     MulEquiv.refl Rˣ :=
-  MulEquiv.ext fun u ↦ Units.ext <| by simp [coe_unitsInvPart]
+  MulEquiv.ext fun u ↦ Units.ext <| by simp [val_unitsInvPart]
 
 /-- At the idempotent `1` everything is inverted: `unitsInvPart` is inversion. -/
 @[simp]
 theorem unitsInvPart_one : (IsIdempotentElem.one : IsIdempotentElem (1 : R)).unitsInvPart =
     MulEquiv.inv Rˣ :=
-  MulEquiv.ext fun u ↦ Units.ext <| by simp [coe_unitsInvPart]
+  MulEquiv.ext fun u ↦ Units.ext <| by simp [val_unitsInvPart]
 
 end IsIdempotentElem

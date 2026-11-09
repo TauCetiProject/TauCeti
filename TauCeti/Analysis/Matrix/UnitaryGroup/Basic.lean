@@ -22,10 +22,6 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
 ## Main results
 
 * `Circle.coe_mem_unitary`: a point of the circle is a unitary complex number.
-* `Matrix.diagonal_mem_unitaryGroup_iff`: a diagonal matrix is unitary exactly when its diagonal
-  entries are.
-* `Matrix.diagonal_update_one_mem_unitaryGroup`: a diagonal matrix with one unitary diagonal entry
-  and all other entries `1` is unitary.
 * `Matrix.exists_circle_smul_mem_specialUnitaryGroup`: every complex unitary matrix becomes
   special unitary after multiplication by a suitable scalar of modulus one.
 * `Matrix.mem_unitaryGroup_of_star_mul_self_eq_scalar`: over `ℝ` or `ℂ`, a matrix `A` for which
@@ -42,24 +38,13 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
 
 public section
 
+/-- A point of the circle is a unitary complex number. -/
+theorem Circle.coe_mem_unitary (z : Circle) : (z : ℂ) ∈ unitary ℂ :=
+  Unitary.mem_iff_star_mul_self.mpr <| by simp [← Complex.normSq_eq_conj_mul_self]
+
 namespace Matrix
 
-variable {n α : Type*} [Fintype n] [DecidableEq n] [CommRing α] [StarRing α]
-
-/-- A diagonal matrix is unitary exactly when each of its diagonal entries is unitary. -/
-theorem diagonal_mem_unitaryGroup_iff {d : n → α} :
-    diagonal d ∈ unitaryGroup n α ↔ ∀ i, d i ∈ unitary α := by
-  simp only [mem_unitaryGroup_iff, star_eq_conjTranspose, diagonal_conjTranspose,
-    diagonal_mul_diagonal, ← diagonal_one, diagonal_eq_diagonal_iff, Pi.star_apply,
-    Unitary.mem_iff_self_mul_star]
-
-/-- A diagonal matrix with one diagonal entry a unitary scalar and the others `1` is unitary. -/
-theorem diagonal_update_one_mem_unitaryGroup {a : α} (ha : a ∈ unitary α) (i : n) :
-    diagonal (Function.update (1 : n → α) i a) ∈ unitaryGroup n α :=
-  diagonal_mem_unitaryGroup_iff.mpr fun j ↦ by
-    rcases eq_or_ne j i with rfl | h
-    · simpa using ha
-    · simp [Function.update_of_ne h]
+variable {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- **Recognizing unitary matrices.** If `Aᴴ A` is a scalar matrix and the determinant of `A` has
 norm one, then `A` is unitary: the scalar is the squared norm of a column of `A`, a nonnegative
@@ -91,47 +76,28 @@ theorem mem_unitaryGroup_of_star_mul_self_eq_scalar {𝕜 : Type*} [RCLike 𝕜]
     Fintype.card_ne_zero).mp hpow]
   simp
 
-end Matrix
-
-namespace TauCeti
-
-variable {n : Type*} [Fintype n] [DecidableEq n]
-
-/-- A point of the circle is a unitary complex number. -/
-theorem _root_.Circle.coe_mem_unitary (z : Circle) : (z : ℂ) ∈ unitary ℂ :=
-  Unitary.mem_iff_star_mul_self.mpr <| by
-    rw [Complex.star_def, ← Complex.normSq_eq_conj_mul_self, Circle.normSq_coe, Complex.ofReal_one]
-
 /-- `U(n) = Circle · SU(n)`: every complex unitary matrix becomes special unitary after
 multiplication by a suitable scalar of modulus one. The scalar is a `card n`-th root of the inverse
 of the determinant, which has modulus one; the root is taken through `Circle.exp`. -/
-theorem _root_.Matrix.exists_circle_smul_mem_specialUnitaryGroup (U : Matrix.unitaryGroup n ℂ) :
-    ∃ c : Circle, ((c : ℂ) • (U : Matrix n n ℂ)) ∈ Matrix.specialUnitaryGroup n ℂ := by
+theorem exists_circle_smul_mem_specialUnitaryGroup (U : unitaryGroup n ℂ) :
+    ∃ c : Circle, (c : ℂ) • (U : Matrix n n ℂ) ∈ specialUnitaryGroup n ℂ := by
   -- Rescaling by a scalar of modulus one keeps the matrix unitary, whatever the scalar.
-  have hunit : ∀ c : Circle, ((c : ℂ) • (U : Matrix n n ℂ)) ∈ Matrix.unitaryGroup n ℂ := fun c =>
+  have hunit (c : Circle) : (c : ℂ) • (U : Matrix n n ℂ) ∈ unitaryGroup n ℂ :=
     Unitary.smul_mem_of_mem c.coe_mem_unitary U.2
   rcases isEmpty_or_nonempty n with hn | hn
   · -- With no indices at all every determinant is one and there is nothing to rescale.
-    exact ⟨1, Matrix.mem_specialUnitaryGroup_iff.mpr ⟨hunit 1, Matrix.det_isEmpty⟩⟩
-  · have hcard : (Fintype.card n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
-    have hnorm : ‖(U : Matrix n n ℂ).det‖ = 1 :=
-      CStarRing.norm_of_mem_unitary (Matrix.det_of_mem_unitary U.2)
-    obtain ⟨θ, hθ⟩ := Circle.exp_surjective
-      (⟨(U : Matrix n n ℂ).det, mem_sphere_zero_iff_norm.mpr hnorm⟩ : Circle)
-    have hdetU : (U : Matrix n n ℂ).det = Complex.exp ((θ : ℂ) * Complex.I) := by
-      have := congrArg (fun z : Circle => (z : ℂ)) hθ
-      rw [Circle.coe_exp] at this
-      exact this.symm
-    refine ⟨Circle.exp (-(θ / Fintype.card n)), Matrix.mem_specialUnitaryGroup_iff.mpr
-      ⟨hunit _, ?_⟩⟩
-    rw [Matrix.det_smul, Circle.coe_exp, hdetU, ← Complex.exp_nat_mul, ← Complex.exp_add,
-      ← Complex.exp_zero]
-    congr 1
-    push_cast
-    field_simp
-    ring
+    exact ⟨1, mem_specialUnitaryGroup_iff.mpr ⟨hunit 1, det_isEmpty⟩⟩
+  obtain ⟨θ, hθ⟩ := Circle.exp_surjective (⟨(U : Matrix n n ℂ).det,
+    mem_sphere_zero_iff_norm.mpr (CStarRing.norm_of_mem_unitary (det_of_mem_unitary U.2))⟩ :
+      Circle)
+  refine ⟨Circle.exp (-(θ / Fintype.card n)), mem_specialUnitaryGroup_iff.mpr ⟨hunit _, ?_⟩⟩
+  -- `c ^ card n` is the inverse of the determinant, viewed as a point of the circle.
+  rw [det_smul, ← Circle.coe_pow, ← Circle.exp_natCast_mul, mul_neg,
+    mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero), Circle.exp_neg,
+    Circle.coe_inv, hθ]
+  exact inv_mul_cancel₀ (Circle.coe_ne_zero _)
 
-end TauCeti
+end Matrix
 
 namespace Matrix.UnitaryGroup
 
