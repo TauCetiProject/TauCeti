@@ -81,9 +81,13 @@ theorem _root_.IsPrimitiveRoot.map_eq_pow {n j : ℕ} [NeZero n] {ζ : R} (hζ :
 extension is the image of that root under a `K`-algebra automorphism. -/
 theorem _root_.IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime
     {K L : Type*} [Field K] [Field L] [Algebra K L] [Normal K L]
-    {n j : ℕ} [NeZero n] {ζ : L} (hζ : IsPrimitiveRoot ζ n) (hj : n.Coprime j)
+    {n j : ℕ} {ζ : L} (hζ : IsPrimitiveRoot ζ n) (hj : n.Coprime j)
     (hirr : Irreducible (Polynomial.cyclotomic n K)) :
     ∃ σ : L ≃ₐ[K] L, σ ζ = ζ ^ j := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · obtain rfl : j = 1 := by simpa using hj
+    exact ⟨AlgEquiv.refl, by simp⟩
+  have : NeZero n := ⟨hn.ne'⟩
   have := hζ.neZero'
   have : NeZero (n : K) := ⟨fun hn ↦
     (NeZero.ne (n : L)) (by simpa using congrArg (algebraMap K L) hn)⟩

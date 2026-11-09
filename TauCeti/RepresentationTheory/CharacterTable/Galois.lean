@@ -198,8 +198,11 @@ theorem character_pow_eq_character_of_mem_range (X : FDRep ℂ G) {n : ℕ} [NeZ
 /-- **Rational characters are invariant under coprime power maps.** A representation defined over
 `ℚ` has `χ(g ^ j) = χ(g)` whenever `g ^ n = 1` and `j` is coprime to `n`. -/
 theorem character_pow_eq_character_of_coprime (X : FDRep ℚ G) {g : G} {n j : ℕ}
-    [NeZero n] (hg : g ^ n = 1) (hj : n.Coprime j) :
+    (hg : g ^ n = 1) (hj : n.Coprime j) :
     X.character (g ^ j) = X.character g := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · rw [Nat.coprime_zero_left] at hj; rw [hj, pow_one]
+  have : NeZero n := ⟨hn⟩
   let K := AlgebraicClosure ℚ
   let Y : FDRep K G := FDRep.of (Representation.baseChange K X.ρ)
   obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K n
@@ -229,7 +232,6 @@ theorem character_eq_of_zpowers_eq {G : Type u} [Group G] [Finite G]
     rw [orderOf_pow] at hord
     exact Nat.coprime_iff_gcd_eq_one.mpr <|
       (Nat.div_eq_self.mp hord).resolve_left (orderOf_pos g).ne'
-  let _ : NeZero (orderOf g) := ⟨(orderOf_pos g).ne'⟩
   exact X.character_pow_eq_character_of_coprime (pow_orderOf_eq_one g) hcop
 
 end FDRep
