@@ -139,10 +139,10 @@ variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableS
   {μ : Measure X}
 
 /-- **Balls maximise integrals of radially nonincreasing kernels.** If `f` is antitone and the
-measurable set `Ω` has measure at most that of the closed ball `closedBall x R`, which is finite,
-then `∫_Ω f (dist x y) dy ≤ ∫_{closedBall x R} f (dist x y) dy`. -/
+measurable set `Ω` has measure at most that of the closed ball `closedBall x R`, then
+`∫_Ω f (dist x y) dy ≤ ∫_{closedBall x R} f (dist x y) dy`. -/
 theorem setLIntegral_le_setLIntegral_closedBall_of_antitone {f : ℝ → ℝ≥0∞} (hf : Antitone f)
-    {Ω : Set X} (hΩ : MeasurableSet Ω) (x : X) {R : ℝ} (hR : μ (closedBall x R) ≠ ∞)
+    {Ω : Set X} (hΩ : MeasurableSet Ω) (x : X) {R : ℝ}
     (hΩR : μ Ω ≤ μ (closedBall x R)) :
     ∫⁻ y in Ω, f (dist x y) ∂μ ≤ ∫⁻ y in closedBall x R, f (dist x y) ∂μ := by
   set B := closedBall x R
@@ -157,6 +157,23 @@ theorem setLIntegral_le_setLIntegral_closedBall_of_antitone {f : ℝ → ℝ≥0
     rw [← setLIntegral_const]
     exact lintegral_mono_ae (ae_restrict_of_ae_restrict_of_subset sdiff_subset
       (ae_restrict_of_forall_mem hB fun y hy => hf (mem_closedBall'.1 hy)))
+  -- The kernel is at least `f R` on `B`, so if `B` has infinite measure and `f R ≠ 0`, the
+  -- integral over `B` is infinite.
+  have hB' : f R * μ B ≤ ∫⁻ y in B, f (dist x y) ∂μ := by
+    rw [← setLIntegral_const]
+    exact lintegral_mono_ae (ae_restrict_of_forall_mem hB fun y hy => hf (mem_closedBall'.1 hy))
+  by_cases hR : μ B = ∞
+  · by_cases h0 : f R = 0
+    · -- Off `B` the kernel vanishes, so the integral over `Ω` is that over `Ω ∩ B ⊆ B`.
+      calc ∫⁻ y in Ω, f (dist x y) ∂μ
+          = ∫⁻ y in Ω ∩ B, f (dist x y) ∂μ + ∫⁻ y in Ω \ B, f (dist x y) ∂μ :=
+            (lintegral_inter_add_sdiff _ Ω hB).symm
+        _ ≤ ∫⁻ y in B, f (dist x y) ∂μ + 0 := by
+            refine add_le_add (lintegral_mono_set inter_subset_right) ?_
+            simpa [h0] using hout
+        _ = _ := add_zero _
+    · rw [hR, ENNReal.mul_top h0] at hB'
+      exact le_top.trans hB'
   -- The part of `Ω` outside `B` is no larger than the part of `B` outside `Ω`.
   have hmeas : μ (Ω \ B) ≤ μ (B \ Ω) := by
     have h₁ := measure_inter_add_sdiff (μ := μ) Ω hB
@@ -178,7 +195,7 @@ end Rearrangement
 section FiniteMeasure
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [Nontrivial E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
   {Ω : Set E}
 
 /-- **The kernel bound for Riesz potentials.** For `0 < κ ≤ 1`, a measurable `Ω` and any pole
@@ -188,6 +205,23 @@ theorem setLIntegral_enorm_sub_rpow_le {κ : ℝ} (hκ : 0 < κ) (hκ1 : κ ≤ 
     (hΩ : MeasurableSet Ω) (x : E) :
     ∫⁻ y in Ω, ‖x - y‖ₑ ^ ((finrank ℝ E : ℝ) * (κ - 1)) ∂μ ≤
       ENNReal.ofReal (κ⁻¹ * μ.real (ball 0 1) ^ (1 - κ)) * μ Ω ^ κ := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- In the trivial space the kernel is `1` and `Ω` is empty or the whole space.
+    have hball : ball (0 : E) 1 = univ := eq_univ_of_forall fun y ↦ by
+      rw [Subsingleton.elim y 0]; exact mem_ball_self one_pos
+    have hω : 0 < μ.real (ball (0 : E) 1) := ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne'
+      measure_ball_lt_top.ne
+    rw [finrank_zero_of_subsingleton, Nat.cast_zero, zero_mul]
+    simp_rw [ENNReal.rpow_zero]
+    rcases Ω.eq_empty_or_nonempty with rfl | hne
+    · simp
+    · rw [Subsingleton.eq_univ_of_nonempty hne, setLIntegral_univ, lintegral_const, one_mul, hball,
+        ← ofReal_measureReal (hball ▸ measure_ball_lt_top.ne), ← hball,
+        ENNReal.ofReal_rpow_of_nonneg measureReal_nonneg hκ.le,
+        ← ENNReal.ofReal_mul (by positivity)]
+      refine ENNReal.ofReal_le_ofReal ?_
+      rw [mul_assoc, ← Real.rpow_add hω, sub_add_cancel, Real.rpow_one]
+      exact le_mul_of_one_le_left hω.le ((one_le_inv₀ hκ).2 hκ1)
   set n := finrank ℝ E
   have hn : (0 : ℝ) < n := by exact_mod_cast finrank_pos
   set ω := μ.real (ball (0 : E) 1)
@@ -218,8 +252,7 @@ theorem setLIntegral_enorm_sub_rpow_le {κ : ℝ} (hκ : 0 < κ) (hκ1 : κ ≤ 
     ∫⁻ y in Ω, ‖x - y‖ₑ ^ ((n : ℝ) * (κ - 1)) ∂μ
         ≤ ∫⁻ y in closedBall x R, ‖x - y‖ₑ ^ ((n : ℝ) * (κ - 1)) ∂μ := by
       simp_rw [hkernel]
-      exact setLIntegral_le_setLIntegral_closedBall_of_antitone hanti hΩ x (hball ▸ hΩt)
-        hball.ge
+      exact setLIntegral_le_setLIntegral_closedBall_of_antitone hanti hΩ x hball.ge
     _ = ENNReal.ofReal (n * ω * (R ^ ((n : ℝ) + n * (κ - 1)) / (n + n * (κ - 1)))) :=
       setLIntegral_closedBall_enorm_sub_rpow (by nlinarith) hR x
     _ = ENNReal.ofReal (κ⁻¹ * ω ^ (1 - κ)) * μ Ω ^ κ := by
@@ -323,7 +356,6 @@ theorem eLpNorm_setLIntegral_enorm_sub_rpow_mul_le {p q : ℝ≥0} {κ δ : ℝ}
     _ = _ := by
       rw [ofReal_mul_rpow_rpow_one_sub_eq hω.le hκ.le hδ1, mul_assoc]
 
-omit [Nontrivial E] in
 /-- The integral of the Riesz kernel `‖y - x‖ ^ (1 - n)` in `x` over a measurable set `A` is at
 most `n μ(B(0, 1)) ^ (1 - 1/n) μ(A) ^ (1/n)`, where `n` is the dimension. In dimension zero both
 sides vanish. -/

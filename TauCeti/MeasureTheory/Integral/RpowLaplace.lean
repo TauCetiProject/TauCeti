@@ -107,11 +107,14 @@ theorem integrableOn_rpow_smul_integral_exp_neg_mul_smul (hα : -1 < α)
 half-line integral is a power-weighted integral of Laplace transforms:
 `∫ x in Ioi 0, x ^ (-(α + 1)) • g x =
   Γ(α + 1)⁻¹ • ∫ s in Ioi 0, s ^ α • ∫ x in Ioi 0, exp (-(x * s)) • g x`. -/
-theorem integral_Ioi_rpow_neg_smul [CompleteSpace E] (hα : -1 < α)
+theorem integral_Ioi_rpow_neg_smul (hα : -1 < α)
     (hint : IntegrableOn (fun x ↦ x ^ (-(α + 1)) • g x) (Ioi 0)) :
     ∫ x in Ioi (0 : ℝ), x ^ (-(α + 1)) • g x =
       (Gamma (α + 1))⁻¹ •
         ∫ s in Ioi (0 : ℝ), s ^ α • ∫ x in Ioi (0 : ℝ), exp (-(x * s)) • g x := by
+  by_cases hE : CompleteSpace E
+  swap
+  · simp [integral_of_not_completeSpace hE]
   have hΓ : 0 < Gamma (α + 1) := Gamma_pos_of_pos (by linarith)
   calc
     _ = ∫ x in Ioi (0 : ℝ), (Gamma (α + 1))⁻¹ •
