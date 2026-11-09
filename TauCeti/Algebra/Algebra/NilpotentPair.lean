@@ -241,10 +241,10 @@ private theorem span_pair_pow_succ_le_span_quarticWords (hx : x ^ 2 = 0) (hy : y
   exact span_pow_succ_le_span_of_forall_mul_mem subset_span hS t
 
 /-- The reduced words `quarticWords x y` of lengths one to three lie in the commutator submodule,
-given `x ^ 2 = 0`, `y ^ 3 = 0`, `(x + y) ^ 4 = 0`, that `2` and `3` are units, and that `x`, `y`,
-`y ^ 2`, `(x + y) ^ 2` and `(x + y) ^ 3` lie in the commutator submodule. -/
+given `x ^ 2 = 0`, `y ^ 3 = 0`, that `2` and `3` are units, and that `x`, `y`, `y ^ 2`,
+`(x + y) ^ 2` and `(x + y) ^ 3` lie in the commutator submodule. -/
 private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_one_to_three {k : Type*}
-    [Semiring k] [Module k A] (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 4 = 0)
+    [Semiring k] [Module k A] (hx : x ^ 2 = 0) (hy : y ^ 3 = 0)
     (h2 : IsUnit (2 : k)) (h3 : IsUnit (3 : k)) (hx₀ : x ∈ commutatorSubmodule k A)
     (hy₀ : y ∈ commutatorSubmodule k A) (hy₁ : y ^ 2 ∈ commutatorSubmodule k A)
     (hs : (x + y) ^ 2 ∈ commutatorSubmodule k A) (hc : (x + y) ^ 3 ∈ commutatorSubmodule k A) :
@@ -252,9 +252,9 @@ private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_one_to_three
     (∀ b ∈ quarticWords x y 1, b ∈ commutatorSubmodule k A) ∧
     (∀ b ∈ quarticWords x y 2, b ∈ commutatorSubmodule k A) := by
   let C := commutatorSubmodule k A
-  obtain ⟨r₀, r₁, -⟩ := quartic_rewriting_rules hx hy hxy
+  have r₀ (a : A) : a * x * x = 0 := by rw [mul_assoc, ← sq, hx, mul_zero]
   have hxx : x * x = 0 := by simpa only [one_mul] using r₀ 1
-  have hyyy : y * y * y = 0 := by simpa only [one_mul] using r₁ 1
+  have hyyy : y * y * y = 0 := by rw [← pow_three', hy]
   -- The expansion of `(x + y) ^ 3` with the words containing `x x` or `y y y` removed.
   have hcube : (x + y) ^ 3 = x * y * x + x * y * y + y * x * y + y * y * x := by
     simp only [pow_succ, pow_zero, one_mul, mul_add, add_mul, hxx, hyyy, r₀, zero_add, add_zero]
@@ -438,7 +438,7 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_four {B : Type*}
     (hs : (x + y) ^ 2 ∈ commutatorSubmodule k B) (hc : (x + y) ^ 3 ∈ commutatorSubmodule k B)
     {t : ℕ} {w : B} (hw : w ∈ span ℤ {x, y} ^ (t + 1)) : w ∈ commutatorSubmodule k B := by
   obtain ⟨l₁, l₂, l₃⟩ :=
-    forall_mem_commutatorSubmodule_quarticWords_lengths_one_to_three (k := k) hx hy hxy h2 h3 hx₀
+    forall_mem_commutatorSubmodule_quarticWords_lengths_one_to_three (k := k) hx hy h2 h3 hx₀
       hy₀ hy₁ hs hc
   have l₄ := forall_mem_commutatorSubmodule_quarticWords_length_four (k := k) hx hy hxy h2
   obtain ⟨l₅, l₆⟩ :=
@@ -621,18 +621,19 @@ theorem span_pair_pow_fifteen_eq_bot (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x
   simpa only [span_pow, span_eq_bot] using h15
 
 /-- The reduced words `quinticWords x y` of lengths one to three are killed by an additive map `f`
-that is invariant under rotation, given `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, that `2` and
-`3` cancel in `f`, and that `f` vanishes on `x`, `y`, `y * y`, `(x + y) ^ 2` and `(x + y) ^ 3`. -/
+that is invariant under rotation, given `x ^ 2 = 0` and `y ^ 3 = 0`, that `2` and `3` cancel in
+`f`, and that `f` vanishes on `x`, `y`, `y * y`, `(x + y) ^ 2` and `(x + y) ^ 3`. -/
 private theorem map_quinticWords_eq_zero_lengths_one_to_three {Q : Type*} [AddCommGroup Q]
-    (f : A →+ Q) (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 5 = 0)
+    (f : A →+ Q) (hx : x ^ 2 = 0) (hy : y ^ 3 = 0)
     (hrot : ∀ a b : A, f (a * b) = f (b * a)) (hdiv₂ : ∀ {a : A}, ((2 : ℕ) : ℤ) • f a = 0 → f a = 0)
     (hdiv₃ : ∀ {a : A}, ((3 : ℕ) : ℤ) • f a = 0 → f a = 0) (hx₀ : f x = 0) (hy₀ : f y = 0)
     (hy₁ : f (y * y) = 0) (hs : f ((x + y) ^ 2) = 0) (hc : f ((x + y) ^ 3) = 0) :
     (∀ b ∈ quinticWords x y 0, f b = 0) ∧
     (∀ b ∈ quinticWords x y 1, f b = 0) ∧
     (∀ b ∈ quinticWords x y 2, f b = 0) := by
-  obtain ⟨r₀, r₁, _, _, _, _⟩ := quintic_rewriting_rules hx hy hxy
-  obtain ⟨r₀', r₁', -, -, -, -⟩ := quintic_rewriting_rules_one hx hy hxy
+  have r₀ (a : A) : a * x * x = 0 := by rw [mul_assoc, ← sq, hx, mul_zero]
+  have r₀' : x * x = 0 := by rw [← sq, hx]
+  have r₁' : y * y * y = 0 := by rw [← pow_three', hy]
   -- Length 1.
   have l₁ : ∀ b ∈ quinticWords x y 0, f b = 0 := by
     have w₁ : f x = 0 := hx₀
@@ -966,7 +967,7 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_five {B : Type*}
   have u2 : IsUnit ((2 : ℕ) : k) := by exact_mod_cast h2
   have u3 : IsUnit ((3 : ℕ) : k) := by exact_mod_cast h3
   have u5 : IsUnit ((5 : ℕ) : k) := by exact_mod_cast h5
-  obtain ⟨l₁, l₂, l₃⟩ := map_quinticWords_eq_zero_lengths_one_to_three f hx hy hxy hrot
+  obtain ⟨l₁, l₂, l₃⟩ := map_quinticWords_eq_zero_lengths_one_to_three f hx hy hrot
     (hdiv u2) (hdiv u3) (hf hx₀) (hf hy₀) (hf (by rwa [← sq])) (hf hs) (hf hc)
   obtain ⟨l₄, l₅⟩ := map_quinticWords_eq_zero_lengths_four_five f hx hy hxy hrot (hdiv u2)
     (hdiv u5) (hf hq)
