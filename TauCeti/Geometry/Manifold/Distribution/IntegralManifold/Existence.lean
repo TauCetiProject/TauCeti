@@ -105,12 +105,16 @@ theorem _root_.PartialDiffeomorph.exists_isIntegralManifold
     let q : U → Φ.target := fun w ↦ ⟨p w, w.2⟩
     have hq : Topology.IsEmbedding q :=
       (hpEmb.comp Topology.IsEmbedding.subtypeVal).codRestrict _ _
+    -- The underlying partial homeomorphism has source Φ.target and map Φ.symm,
+    -- so its restriction composed with q is definitionally the parametrization f.
     exact Φ.symm.toOpenPartialHomeomorph.toPartialHomeomorph.isEmbedding_restrict.comp hq
   · apply isSliceChart_iff.mpr
     intro y hy
     constructor
     · rintro ⟨w, rfl⟩
-      exact ⟨w, (Φ.right_inv w.2).symm⟩
+      refine ⟨w, ?_⟩
+      simpa only [f, p, PartialDiffeomorph.toFun'_toOpenPartialHomeomorph,
+        PartialDiffeomorph.symm_toPartialEquiv] using (Φ.right_inv w.2).symm
     · rintro ⟨w, hw⟩
       have hw' : p w = Φ y := by
         simpa only [p, PartialDiffeomorph.toFun'_toOpenPartialHomeomorph] using hw
