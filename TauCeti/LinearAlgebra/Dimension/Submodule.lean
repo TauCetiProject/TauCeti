@@ -135,26 +135,26 @@ theorem isCompl_of_codisjoint_of_finrank_le {V S : Submodule 𝕜 E} [FiniteDime
   have : φ ⟨x, hxS⟩ = φ 0 := by simpa [φ] using hxV
   simpa using congrArg Subtype.val (hinj this)
 
+/-- A subspace with more dimensions than a finite set has elements contains a vector outside the
+span of the set. -/
+theorem exists_mem_notMem_span_of_ncard_lt {V : Submodule 𝕜 E} {s : Set E} (hs : s.Finite)
+    (h : s.ncard < finrank 𝕜 V) : ∃ z ∈ V, z ∉ span 𝕜 s := by
+  by_contra! hz
+  have : Module.Finite 𝕜 V := Module.finite_of_finrank_pos (by omega)
+  have : FiniteDimensional 𝕜 (span 𝕜 s) := FiniteDimensional.span_of_finite 𝕜 hs
+  have h1 := Submodule.finrank_mono (fun u hu ↦ hz u hu : V ≤ span 𝕜 s)
+  have h2 := finrank_span_le_ncard (R := 𝕜) s hs
+  omega
+
 /-- A subspace of dimension at least three contains a vector `x` outside `𝕜 ∙ a` and a vector `z`
 outside `span {a, x}`. -/
 theorem exists_mem_notMem_span_pair {V : Submodule 𝕜 E} (a : E) (h : 3 ≤ finrank 𝕜 V) :
     ∃ x ∈ V, x ∉ 𝕜 ∙ a ∧ ∃ z ∈ V, z ∉ span 𝕜 {a, x} := by
-  have : Module.Finite 𝕜 V := Module.finite_of_finrank_pos (by omega)
-  obtain ⟨x, hxV, hxa⟩ : ∃ x ∈ V, x ∉ 𝕜 ∙ a := by
-    by_contra! hx
-    have hle : V ≤ 𝕜 ∙ a := fun u hu ↦ hx u hu
-    have h1 := Submodule.finrank_mono hle
-    have h2 := finrank_span_le_card (R := 𝕜) ({a} : Set E)
-    simp only [Set.toFinset_singleton, Finset.card_singleton] at h2
-    omega
-  refine ⟨x, hxV, hxa, ?_⟩
-  by_contra! hz
-  have : FiniteDimensional 𝕜 (span 𝕜 {a, x}) :=
-    FiniteDimensional.span_of_finite 𝕜 (Set.toFinite _)
-  have hle : V ≤ span 𝕜 {a, x} := fun u hu ↦ hz u hu
-  have h1 := Submodule.finrank_mono hle
-  have hpair := finrank_range_le_card (R := 𝕜) ![a, x]
-  rw [Matrix.range_cons_cons_empty, Fintype.card_fin, Set.finrank] at hpair
+  obtain ⟨x, hxV, hxa⟩ := exists_mem_notMem_span_of_ncard_lt (V := V) (Set.finite_singleton a)
+    (by rw [Set.ncard_singleton]; omega)
+  refine ⟨x, hxV, hxa, exists_mem_notMem_span_of_ncard_lt (Set.toFinite _) ?_⟩
+  have := Set.ncard_insert_le a ({x} : Set E)
+  rw [Set.ncard_singleton] at this
   omega
 
 end DivisionRing
