@@ -51,7 +51,8 @@ partitions other than the finest and the coarsest, the partition
 `Finpartition.pairPartition` with one pair part and singletons elsewhere, the partition
 `Finpartition.splitPartition` into a subset and its complement, the position of the parts of
 `Finpartition.atomise`, and of its common refinements with other partitions, relative to the sets
-it cuts along, and the pullback `Finpartition.comap`
+it cuts along, together with the bound `Finpartition.card_parts_inf_atomise_le` on the number of
+parts of such a common refinement, and the pullback `Finpartition.comap`
 of a finite partition of the image `f '' s` to a finite partition of `s`, which is an order
 embedding whose image consists of the partitions coarser than the partition of `s` into the fibres
 of `f`, each of which is the pullback of its pushforward `Finpartition.pushforward`, a left inverse
