@@ -21,10 +21,12 @@ supplies the part of that argument which precedes Brown's generalized Schoenflie
 
 The compact set `X \ V` lies in `U`, so its coordinates are bounded: `‖eU x‖ < R` for some `R ≥ 0`
 (`TauCeti.exists_nonneg_forall_notMem_norm_lt`). Every point of `U` with coordinates of norm at
-least `R` then lies in `V`. The radial map `(x, t) ↦ eU⁻¹ ((R + exp t) • x)` on the product of the
-unit sphere of `E` with the real line is an open embedding into `V`
-(`TauCeti.coordinateSphereBicollar`), so it is a bicollar of the coordinate sphere of radius
-`R + 1`, its slice `t = 0` (`TauCeti.isBicollar_coordinateSphereBicollar`).
+least `R` then lies in `V`, so the exterior of the open coordinate ball of radius `R` lies in `V`
+(`TauCeti.ballExterior_subset_of_forall_notMem_norm_lt`). The radial map
+`(x, t) ↦ eU⁻¹ ((R + exp t) • x)` on the product of the unit sphere of `E` with the real line is
+an open embedding into `V`
+(`Homeomorph.coordinateSphereBicollar`), so it is a bicollar of the coordinate sphere of radius
+`R + 1`, its slice `t = 0` (`Homeomorph.isBicollar_coordinateSphereBicollar`).
 
 Now let `j : V → Sᵐ` be an open embedding into the unit sphere of a real normed space of dimension
 `dim E + 1`, such as the inclusion of `V ≃ₜ E` into its one-point compactification. The image `Σ`
@@ -34,7 +36,7 @@ of `V` outside the closed coordinate ball of radius `R + 1`, and the complement 
 points of `V` outside the open coordinate ball, which contains the points of `Sᵐ` outside `j(V)`.
 The closure of the first component is the image under `j` of the complement `C` in `X` of the open
 coordinate ball, its exterior `TauCeti.ballExterior` under `Subtype.val ∘ eU.symm`, a compact subset
-of `V` (`TauCeti.closure_connectedComponentIn_compl_range_coordinateSphereBicollar`).
+of `V` (`Homeomorph.closure_connectedComponentIn_compl_range_coordinateSphereBicollar`).
 
 Brown's theorem, applied to the bicollar of `Σ` in `Sᵐ`, identifies that closure with a closed
 `m`-cell whose boundary sphere is `Σ`. The closed coordinate ball of radius `R + 1` is another
@@ -46,14 +48,16 @@ along their common boundary, which is a sphere by
 
 * `TauCeti.exists_nonneg_forall_notMem_norm_lt`: the coordinates of the points of `U` outside `V`
   are bounded.
-* `TauCeti.coordinateSphereBicollar`: the radial bicollar `(x, t) ↦ eU⁻¹ ((R + exp t) • x)` of the
-  coordinate sphere of radius `R + 1`, as a map into `V`.
-* `TauCeti.isBicollar_coordinateSphereBicollar`: it is a bicollar.
-* `TauCeti.range_coordinateSphereBicollar_mk_zero`: its zero slice is the coordinate sphere.
-* `TauCeti.connectedComponentIn_compl_range_coordinateSphereBicollar_of_mem` and
-  `TauCeti.connectedComponentIn_compl_range_coordinateSphereBicollar_of_notMem`: the two connected
-  components of the complement of the coordinate sphere in `Sᵐ`.
-* `TauCeti.closure_connectedComponentIn_compl_range_coordinateSphereBicollar`: the closure of the
+* `TauCeti.ballExterior_subset_of_forall_notMem_norm_lt`: the exterior of a coordinate ball
+  containing those coordinates lies in `V`.
+* `Homeomorph.coordinateSphereBicollar`: the radial bicollar `(x, t) ↦ eU⁻¹ ((R + exp t) • x)`
+  of the coordinate sphere of radius `R + 1`, as a map into `V`.
+* `Homeomorph.isBicollar_coordinateSphereBicollar`: it is a bicollar.
+* `Homeomorph.range_coordinateSphereBicollar_mk_zero`: its zero slice is the coordinate sphere.
+* `Homeomorph.connectedComponentIn_compl_range_coordinateSphereBicollar_of_mem` and
+  `Homeomorph.connectedComponentIn_compl_range_coordinateSphereBicollar_of_notMem`: the two
+  connected components of the complement of the coordinate sphere in `Sᵐ`.
+* `Homeomorph.closure_connectedComponentIn_compl_range_coordinateSphereBicollar`: the closure of the
   outer component is the image of the exterior of the open coordinate ball.
 
 ## References
@@ -87,10 +91,29 @@ theorem exists_nonneg_forall_notMem_norm_lt [CompactSpace X] (hV : IsOpen V)
   obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn eU.continuous.continuousOn
   exact ⟨max C 0 + 1, by positivity, fun x hx ↦ (hC x hx).trans_lt (by linarith [le_max_left C 0])⟩
 
+omit [NormedSpace ℝ E] in
+/-- In a space covered by `U` and `V`, if `r` bounds the coordinates of the points of `U` outside
+`V` in `eU : U ≃ₜ E`, then the exterior of the open coordinate ball of radius `r` lies in `V`. -/
+theorem ballExterior_subset_of_forall_notMem_norm_lt (hUV : U ∪ V = univ) {eU : U ≃ₜ E} {r : ℝ}
+    (hr : ∀ x : U, (x : X) ∉ V → ‖eU x‖ < r) : ballExterior (Subtype.val ∘ eU.symm) r ⊆ V :=
+  fun x hx ↦ by
+    by_contra hxV
+    have hxU : x ∈ U := (eq_univ_iff_forall.1 hUV x).resolve_right hxV
+    exact mem_ballExterior.1 hx ⟨eU ⟨x, hxU⟩, mem_ball_zero_iff.2 (hr ⟨x, hxU⟩ hxV), by simp⟩
+
+end TauCeti
+
+namespace Homeomorph
+
+open TauCeti
+
+variable {X E F : Type*} [TopologicalSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {U V : Set X} {R : ℝ}
+
 /-- The radial bicollar of a coordinate sphere. Let `eU : U ≃ₜ E` and let `R` bound the
 coordinates of the points of `U` outside `V`. Then `(x, t) ↦ eU⁻¹ ((R + exp t) • x)`, for `x` in
 the unit sphere of `E`, takes values in `V`. For `R ≥ 0` it is a bicollar of the coordinate sphere
-of radius `R + 1` (`TauCeti.isBicollar_coordinateSphereBicollar`). -/
+of radius `R + 1` (`Homeomorph.isBicollar_coordinateSphereBicollar`). -/
 noncomputable def coordinateSphereBicollar (eU : U ≃ₜ E)
     (hR : ∀ x : U, (x : X) ∉ V → ‖eU x‖ < R) (p : sphere (0 : E) 1 × ℝ) : V :=
   ⟨eU.symm ((R + Real.exp p.2) • (p.1 : E)), by
@@ -215,13 +238,9 @@ lies in `V`. -/
 private theorem isCompact_image_preimage_ballExterior [CompactSpace X] (hU : IsOpen U)
     (hUV : U ∪ V = univ) (hj : Continuous j) :
     IsCompact (j '' (Subtype.val ⁻¹' ballExterior (Subtype.val ∘ eU.symm) (R + 1))) := by
-  have hsub : ballExterior (Subtype.val ∘ eU.symm) (R + 1) ⊆ V := fun x hx ↦ by
-    by_contra hxV
-    have hxU : x ∈ U := (eq_univ_iff_forall.1 hUV x).resolve_right hxV
-    exact mem_ballExterior.1 hx
-      ⟨eU ⟨x, hxU⟩, mem_ball_zero_iff.2 ((hR ⟨x, hxU⟩ hxV).trans (by linarith)), by simp⟩
   refine IsCompact.image ?_ hj
-  rw [Subtype.isCompact_iff, Subtype.image_preimage_coe, inter_eq_right.2 hsub]
+  rw [Subtype.isCompact_iff, Subtype.image_preimage_coe, inter_eq_right.2
+    (ballExterior_subset_of_forall_notMem_norm_lt hUV fun x hx ↦ (hR x hx).trans (by linarith))]
   exact (hU.isOpenEmbedding_subtypeVal.comp eU.symm.isOpenEmbedding).isCompact_ballExterior
 
 omit [TopologicalSpace Y] in
@@ -324,4 +343,4 @@ theorem closure_connectedComponentIn_compl_range_coordinateSphereBicollar {y : s
 
 end Sphere
 
-end TauCeti
+end Homeomorph
