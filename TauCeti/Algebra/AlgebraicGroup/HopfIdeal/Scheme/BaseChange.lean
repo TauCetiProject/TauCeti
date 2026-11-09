@@ -24,7 +24,7 @@ identification, the base change of `Spec (H ⧸ I)` is the closed subgroup schem
 
 ## Main results
 
-* `TauCeti.CommHopfAlgCat.mapIso_baseChange_quotientClosedSubgroup`: the base change of the closed
+* `CommHopfAlgCat.mapIso_baseChange_quotientClosedSubgroup`: the base change of the closed
   subgroup scheme cut out by `I` is the closed subgroup scheme cut out by `I_S`.
 
 ## References
@@ -48,7 +48,8 @@ variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
 `H` and an `R`-algebra `S`, the base change of the closed subgroup scheme `Spec (H ⧸ I)` of
 `Spec H` along `Spec S ⟶ Spec R` is, under the identification of the base change of `Spec H` with
 `Spec (S ⊗[R] H)`, the closed subgroup scheme cut out by the base change of `I`. -/
-theorem mapIso_baseChange_quotientClosedSubgroup (H : _root_.CommHopfAlgCat.{u} R)
+theorem _root_.CommHopfAlgCat.mapIso_baseChange_quotientClosedSubgroup
+    (H : _root_.CommHopfAlgCat.{u} R)
     (I : HopfIdeal R H) :
     ClosedSubgroupScheme.mapIso (AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso (S := S) H)
         ((quotientClosedSubgroup H I).baseChange

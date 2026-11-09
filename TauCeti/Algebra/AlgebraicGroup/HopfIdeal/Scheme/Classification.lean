@@ -37,7 +37,7 @@ ideals of `H`.
   criterion for factoring through a quotient closed subgroup.
 * `TauCeti.CommHopfAlgCat.quotientClosedSubgroup_commonKernel_le_iff`: the minimality of the
   quotient closed subgroup cut out by a common-kernel Hopf ideal.
-* `TauCeti.CommHopfAlgCat.mk_eq_quotientClosedSubgroup_kerOfSurjective`: a closed subgroup
+* `CommHopfAlgCat.mk_eq_quotientClosedSubgroup_kerOfSurjective`: a closed subgroup
   scheme presented by a surjective map of Hopf algebras is cut out by its kernel.
 * `TauCeti.CommHopfAlgCat.mapIso_quotientClosedSubgroup`: transport of quotient closed subgroups
   along isomorphisms of Hopf algebras.
@@ -85,7 +85,8 @@ noncomputable def quotientClosedSubgroup (H : _root_.CommHopfAlgCat.{u} R)
 
 /-- `quotientClosedSubgroup H I` is the closed subgroup scheme represented by the quotient closed
 immersion `Spec (H ⧸ I) ⟶ Spec H`. -/
-lemma quotientClosedSubgroup_def (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
+lemma _root_.CommHopfAlgCat.quotientClosedSubgroup_def
+    (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
     quotientClosedSubgroup H I = ClosedSubgroupScheme.mk (quotientSpecι H I) :=
   (rfl)
 
@@ -380,7 +381,8 @@ theorem quotientClosedSubgroup_commonKernel_le_iff
 immersion of group schemes, and suppose that `X ≅ Spec K` identifies `i` with the morphism induced
 by a surjective map of Hopf algebras `f : H ⟶ K`. Then the closed subgroup scheme represented by
 `i` is the one cut out by the kernel of `f`. -/
-theorem mk_eq_quotientClosedSubgroup_kerOfSurjective (H K : _root_.CommHopfAlgCat.{u} R)
+theorem _root_.CommHopfAlgCat.mk_eq_quotientClosedSubgroup_kerOfSurjective
+    (H K : _root_.CommHopfAlgCat.{u} R)
     {X : Grp (Over (Spec (CommRingCat.of R)))}
     (i : X ⟶ (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H))
     [IsClosedImmersion i.hom.hom.left]
