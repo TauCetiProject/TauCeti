@@ -22,8 +22,8 @@ For square-integrable real functions `f` and `g`,
 for real integrals with real exponents and roots
 (`MeasureTheory.integral_mul_le_Lp_mul_Lq_of_nonneg`); this is the squared form for `p = q = 2`,
 without roots or sign conditions, as it is used in energy estimates. For classes `f` and `g` in
-real `L²` it gives `∫ |f| |g| ≤ ‖f‖ ‖g‖`
-(`MeasureTheory.Lp.integral_abs_mul_abs_le_norm_mul_norm`).
+real `L²`, the product `|f| |g|` is integrable (`MeasureTheory.Lp.integrable_abs_mul_abs`) and
+`∫ |f| |g| ≤ ‖f‖ ‖g‖` (`MeasureTheory.Lp.integral_abs_mul_abs_le_norm_mul_norm`).
 -/
 
 public section
@@ -57,6 +57,12 @@ theorem sq_integral_mul_le_integral_sq_mul_integral_sq {α : Type*} [MeasurableS
 end TauCeti
 
 namespace MeasureTheory
+
+/-- For `f` and `g` in real `L²`, the product `|f| |g|` is integrable. -/
+theorem Lp.integrable_abs_mul_abs {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    (f g : Lp ℝ 2 μ) : Integrable (fun x ↦ |f x| * |g x|) μ := by
+  simpa only [Real.norm_eq_abs, Pi.mul_def] using
+    (Lp.memLp f).norm.integrable_mul (Lp.memLp g).norm
 
 /-- **The Cauchy–Schwarz inequality on real `L²`**: `∫ |f| |g| ≤ ‖f‖ ‖g‖`. -/
 theorem Lp.integral_abs_mul_abs_le_norm_mul_norm {α : Type*} [MeasurableSpace α]

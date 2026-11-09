@@ -24,8 +24,6 @@ measure space.
 
 * `MeasureTheory.MemLp.integrable_sqrt_one_add_sq_sub_one`: the modular of a square-integrable
   function is integrable.
-* `MeasureTheory.Lp.integrable_abs_mul_abs`: for `f` and `g` in real `L²`, `|f| |g|` is
-  integrable.
 * `MeasureTheory.Lp.abs_setIntegral_sqrt_one_add_sq_sub_le`: the modular is locally Lipschitz on
   `L²`, `|∫_t (√(1 + f²) - 1) - ∫_t (√(1 + g²) - 1)| ≤ ‖f - g‖ (‖f‖ + ‖g‖)`.
 * `MeasureTheory.continuous_setIntegral_sqrt_one_add_sq_sub_one`: the modular
@@ -52,11 +50,6 @@ theorem MemLp.integrable_sqrt_one_add_sq_sub_one {f : α → ℝ} (hf : MemLp f 
       |>.sqrt.sub_const 1).aestronglyMeasurable
   · rw [Real.norm_eq_abs, abs_of_nonneg (sub_nonneg.2 (Real.one_le_sqrt_one_add_sq _))]
     exact Real.sqrt_one_add_sq_sub_one_le_sq_div_two _
-
-/-- For `f` and `g` in real `L²`, the product `|f| |g|` is integrable. -/
-theorem Lp.integrable_abs_mul_abs (f g : Lp ℝ 2 ν) : Integrable (fun x ↦ |f x| * |g x|) ν := by
-  simpa only [Real.norm_eq_abs, Pi.mul_def] using
-    (Lp.memLp f).norm.integrable_mul (Lp.memLp g).norm
 
 /-- The modular is locally Lipschitz on `L²`:
 `|∫_t (√(1 + f²) - 1) - ∫_t (√(1 + g²) - 1)| ≤ ‖f - g‖ (‖f‖ + ‖g‖)`. -/

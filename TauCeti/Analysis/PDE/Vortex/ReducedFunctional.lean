@@ -563,15 +563,11 @@ private theorem convex_sublevel (hm : 0 < P.natDegree) (t : ℝ) :
     integral_const_mul] at hE
   have hG : ‖W1p.gradient (a • u + b • v)‖ ^ 2 ≤
       a * ‖W1p.gradient u‖ ^ 2 + b * ‖W1p.gradient v‖ ^ 2 := by
-    have hn : ‖W1p.gradient (a • u + b • v)‖ ≤ a * ‖W1p.gradient u‖ + b * ‖W1p.gradient v‖ := by
-      have hlin : W1p.gradient (a • u + b • v) = a • W1p.gradient u + b • W1p.gradient v := by
-        simp only [← W1p.gradientL_apply, map_add, map_smul]
-      rw [hlin]
-      refine (norm_add_le _ _).trans ?_
-      rw [norm_smul, norm_smul, Real.norm_of_nonneg ha, Real.norm_of_nonneg hb]
-    have h0 : 0 ≤ ‖W1p.gradient (a • u + b • v)‖ := norm_nonneg _
-    nlinarith [mul_nonneg ha hb, sq_nonneg (‖W1p.gradient u‖ - ‖W1p.gradient v‖),
-      norm_nonneg (W1p.gradient u), norm_nonneg (W1p.gradient v)]
+    have hlin : W1p.gradient (a • u + b • v) = a • W1p.gradient u + b • W1p.gradient v := by
+      simp only [← W1p.gradientL_apply, map_add, map_smul]
+    simpa only [hlin, Pi.pow_apply, smul_eq_mul] using
+      ((convexOn_norm convex_univ).pow (fun _ _ ↦ norm_nonneg _) 2).2 (mem_univ _)
+        (mem_univ _) ha hb hab
   have hL : ∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
         (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value (a • u + b • v) z =
       a * (∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
