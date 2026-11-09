@@ -175,10 +175,13 @@ theorem exists_abs_pow_mul_norm_fourierCoeff_le {f : AddCircle T → ℂ} {k : �
           field_simp
       _ ≤ T ^ k / (2 * π) ^ k * M := by gcongr
 
+omit hT in
 /-- The Fourier monomial `z ↦ e^{2πinz/T}`, extended to all of `ℂ`, is `T`-periodic. -/
 theorem periodic_cexp_two_pi_mul_I_mul_div (n : ℤ) :
     Function.Periodic (fun z : ℂ ↦ cexp (2 * π * I * n * z / T)) T := fun z ↦ by
-  have hTc : (T : ℂ) ≠ 0 := ofReal_ne_zero.2 hT.out.ne'
+  rcases eq_or_ne T 0 with rfl | hT0
+  · simp
+  have hTc : (T : ℂ) ≠ 0 := ofReal_ne_zero.2 hT0
   dsimp only
   rw [show 2 * π * I * n * (z + T) / T = 2 * π * I * n * z / T + n * (2 * π * I) by
     field_simp, exp_add, exp_int_mul_two_pi_mul_I, mul_one]
