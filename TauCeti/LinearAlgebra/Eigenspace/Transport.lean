@@ -13,7 +13,8 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 If a linear equivalence `e : U ≃ₗ[R] W` intertwines endomorphisms `f` of `U` and `g` of `W`,
 then every eigenspace of `f` is the preimage under `e` of the corresponding eigenspace of `g`.
 Mathlib's `Module.End.map_genEigenspace_le` gives only the inclusion of the image; this file
-records the equality available for an equivalence.
+records the equality available for an equivalence, and its analogue for an injective map, whose
+image of an eigenspace of `f` consists of the eigenvectors of `g` in its range.
 
 Over a domain, a surjective intertwining map into a torsion-free module carries each maximal
 generalized eigenspace of `f` onto the corresponding one of `g`, provided `U` is the sum of the
@@ -24,6 +25,8 @@ algebraically closed field). In particular, taking generalized eigenspaces is ex
 
 * `TauCeti.eigenspace_eq_comap_of_intertwine`: an intertwining linear equivalence identifies the
   eigenspaces of the two endomorphisms.
+* `TauCeti.map_eigenspace_eq_of_intertwine`: an injective intertwining map carries the eigenspaces
+  of `f` onto the eigenvectors of `g` in its range.
 * `TauCeti.map_maxGenEigenspace_eq_of_intertwine`: a surjective intertwining map carries the
   maximal generalized eigenspaces of `f` onto those of `g`.
 -/
@@ -53,6 +56,18 @@ theorem eigenspace_eq_comap_of_intertwine {e : U ≃ₗ[R] W} {f : U →ₗ[R] U
       e (f x) = g (e x) := h x
       _ = μ • e x := hx
       _ = e (μ • x) := (map_smul e μ x).symm
+
+/-- An injective linear map intertwining `f` and `g` carries each eigenspace of `f` onto the
+eigenvectors of `g` for the same eigenvalue that lie in its range. -/
+theorem map_eigenspace_eq_of_intertwine {e : U →ₗ[R] W} (he : Function.Injective e)
+    {f : Module.End R U} {g : Module.End R W} (h : ∀ x, e (f x) = g (e x)) (μ : R) :
+    (f.eigenspace μ).map e = LinearMap.range e ⊓ g.eigenspace μ := by
+  rw [← Submodule.map_comap_eq]
+  congr 1
+  ext x
+  simp only [Module.End.mem_eigenspace_iff, Submodule.mem_comap]
+  rw [← h, ← map_smul]
+  exact he.eq_iff.symm
 
 /-- A surjective linear map intertwining `f` and `g` carries each maximal generalized eigenspace
 of `f` onto the maximal generalized eigenspace of `g` for the same eigenvalue, provided the
