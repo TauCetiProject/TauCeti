@@ -66,6 +66,8 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.eq_castSucc_last_or_eq_last`: an index `≥ n` of `Fin (n + 2)` is the penultimate or the
   last one.
 * `Fin.exists_succ_succ_eq`: the indices `> 1` of `Fin (n + 2)` are the double successors.
+* `Fin.exists_orderHom_succAbove_eq`: each `l.succAbove` has a monotone retraction on the
+  indices different from `l`.
 * `Fin.last_ne_zero`, `Fin.castSucc_last_ne_zero`, `Fin.castSucc_last_ne_one`, `Fin.last_ne_one`:
   the last and penultimate indices differ from `0` and `1` in the nondegenerate cases.
 * `Fin.sum_univ_eq_zero_add_last_add_sum_erase`: a sum over `Fin (n + 1)` with its first and last
@@ -690,6 +692,20 @@ theorem Ioo_eq_empty_of_le_two {n : ℕ} (hn : n ≤ 2) (a b : Fin n) : Finset.I
 theorem eq_empty_of_subset_Ioo_of_le_two {n : ℕ} (hn : n ≤ 2) {a b : Fin n}
     {s : Finset (Fin n)} (hs : s ⊆ Finset.Ioo a b) : s = ∅ :=
   Finset.subset_empty.1 (hs.trans (Ioo_eq_empty_of_le_two hn a b).subset)
+
+/-- Each face map `l.succAbove : Fin (m + 1) → Fin (m + 2)` has a monotone retraction: there is an
+order homomorphism `ρ` with `l.succAbove (ρ v) = v` for every `v ≠ l`. -/
+theorem exists_orderHom_succAbove_eq {m : ℕ} (l : Fin (m + 2)) :
+    ∃ ρ : Fin (m + 2) →o Fin (m + 1), ∀ v, v ≠ l → l.succAbove (ρ v) = v := by
+  by_cases hl : l = Fin.last (m + 1)
+  · subst hl
+    refine ⟨(Fin.last m).predAboveOrderHom, fun v hv ↦ ?_⟩
+    rw [← Fin.succ_last] at hv ⊢
+    exact Fin.succ_succAbove_predAbove hv
+  · refine ⟨(l.castPred hl).predAboveOrderHom, fun v hv ↦ ?_⟩
+    have := Fin.succAbove_predAbove (p := l.castPred hl) (i := v)
+      (by rwa [Fin.castSucc_castPred])
+    rwa [Fin.castSucc_castPred] at this
 
 end Fin
 
