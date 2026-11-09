@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Boundary
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.GlobalTurning
+import TauCeti.Analysis.Complex.Angle
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Image
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.ClosingSide
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.LongTurn
-import TauCeti.Analysis.Complex.HorizontalStep
 import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.TurningChain
 
