@@ -53,11 +53,8 @@ theorem det_polarFactor_mul_det_modulus : T.polarFactor.det * T.modulus.det = T.
 /-- The polar factor of an injective endomorphism is an isometry, so its determinant has
 absolute value one. -/
 theorem abs_det_polarFactor (hT : Injective T) : |T.polarFactor.det| = 1 := by
-  let U : E →ₗᵢ[ℝ] E :=
-    { toLinearMap := T.polarFactor.toLinearMap
-      norm_map' := T.norm_polarFactor_apply_of_injective hT }
-  rw [ContinuousLinearMap.det, ← LinearMap.normDet_eq_abs_det]
-  exact U.normDet_eq_one
+  rw [ContinuousLinearMap.det, ← LinearMap.normDet_eq_abs_det, ← T.polarIsometry_toLinearMap hT]
+  exact (T.polarIsometry hT).normDet_eq_one
 
 /-- The determinant of the polar factor of an endomorphism is the sign of its determinant. -/
 theorem det_polarFactor_eq_sign : T.polarFactor.det = SignType.sign T.det := by

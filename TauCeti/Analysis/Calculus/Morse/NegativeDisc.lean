@@ -76,13 +76,6 @@ private theorem continuous_polarFactor_fst_comp (C : C(X, E →L[ℝ] E × F))
     (ContinuousLinearMap.isStrictlyPositive_modulus_of_forall_norm_le _ (hC x)).isUnit).comp
       (f := fun x ↦ (ContinuousLinearMap.fst ℝ E F).comp (C x)) hN.continuousAt
 
-/-- The polar factor of an operator which expands norms, as a linear isometry. -/
-private noncomputable def polarFactorIsometry (N : E →L[ℝ] E) (hN : ∀ u, ‖u‖ ≤ ‖N u‖) :
-    E →ₗᵢ[ℝ] E where
-  toLinearMap := N.polarFactor
-  norm_map' := N.norm_polarFactor_apply_of_injective
-    (ContinuousLinearMap.injective_of_forall_norm_le (M := 1) fun x ↦ by simpa using hN x)
-
 end Linear
 
 section Homotopy
@@ -204,9 +197,12 @@ theorem _root_.HasFDerivAt.exists_negativeDisc_homotopy
   -- The negative column of `A` pulls `Q` back to `-‖u‖²`, so its negative block expands norms,
   -- and its polar factor is a linear isometry.
   have hC (u : E) := norm_sq_sub_comp_inl hT hT0 hU h0U hQ u
-  refine ⟨polarFactorIsometry _
-    ((A.comp (ContinuousLinearMap.inl ℝ E F)).norm_le_norm_fst_of_norm_sq_sub hC), rfl, δ₀, hδ₀,
-    fun δ hδ ↦ ?_⟩
+  have hN (u : E) := (A.comp (ContinuousLinearMap.inl ℝ E F)).norm_le_norm_fst_of_norm_sq_sub hC u
+  have hinj : Function.Injective ((ContinuousLinearMap.fst ℝ E F).comp
+      (A.comp (ContinuousLinearMap.inl ℝ E F))) :=
+    ContinuousLinearMap.injective_of_forall_norm_le (M := 1) fun u ↦ by simpa using hN u
+  refine ⟨ContinuousLinearMap.polarIsometry _ hinj,
+    ContinuousLinearMap.coe_polarIsometry _ hinj, δ₀, hδ₀, fun δ hδ ↦ ?_⟩
   have hw {w : E} (hw : w ∈ closedBall (0 : E) δ) : (w, (0 : F)) ∈ closedBall (0 : E × F) δ₀ := by
     simpa [Prod.norm_def] using (mem_closedBall_zero_iff.mp hw).trans hδ.2
   let ι : C(closedBall (0 : E) δ, E) := ⟨Subtype.val, continuous_subtype_val⟩
@@ -214,7 +210,8 @@ theorem _root_.HasFDerivAt.exists_negativeDisc_homotopy
     ι (fun _ ↦ hT0) (fun _ ↦ hC) (hcont.comp continuous_snd.continuousOn fun _ hq ↦ hq.2)
     (fun _ s hs y hy ↦ (hbound s hs y hy).2) (fun w ↦ (mem_closedBall_zero_iff.mp w.2).trans hδ.2)
     (fun _ ↦ hAL) hL.le hδV
-  exact ⟨fun w hw' ↦ hδU (hw hw'), H, hH₀, hH₁, hH⟩
+  exact ⟨fun w hw' ↦ hδU (hw hw'), H, hH₀,
+    fun w ↦ by rw [hH₁, ContinuousLinearMap.coe_polarIsometry]; rfl, hH⟩
 
 section Parametric
 
@@ -259,8 +256,11 @@ theorem exists_parametric_negativeDisc_homotopy
   have hC (p : P) (u : E) : ‖(C p u).1‖ ^ 2 - ‖(C p u).2‖ ^ 2 = ‖u‖ ^ 2 :=
     norm_sq_sub_comp_inl (hT p 0 h0U) (hT0 p) hU h0U (hQ p) u
   have hN (p : P) (u : E) : ‖u‖ ≤ ‖(C p u).1‖ := (C p).norm_le_norm_fst_of_norm_sq_sub (hC p) u
-  refine ⟨fun p ↦ polarFactorIsometry ((ContinuousLinearMap.fst ℝ E F).comp (C p)) (hN p),
-    fun p ↦ rfl, continuous_polarFactor_fst_comp C hN, δ₀, hδ₀, fun δ hδ ↦ ?_⟩
+  have hinj (p : P) : Function.Injective ((ContinuousLinearMap.fst ℝ E F).comp (C p)) :=
+    ContinuousLinearMap.injective_of_forall_norm_le (M := 1) fun u ↦ by simpa using hN p u
+  refine ⟨fun p ↦ ContinuousLinearMap.polarIsometry _ (hinj p),
+    fun p ↦ ContinuousLinearMap.coe_polarIsometry _ (hinj p), continuous_polarFactor_fst_comp C hN,
+    δ₀, hδ₀, fun δ hδ ↦ ?_⟩
   have hw {w : E} (hw : w ∈ closedBall (0 : E) δ) : (w, (0 : F)) ∈ closedBall (0 : E × F) δ₀ := by
     simpa [Prod.norm_def] using (mem_closedBall_zero_iff.mp hw).trans hδ.2
   let ι : C(P × closedBall (0 : E) δ, E) := ⟨fun x ↦ x.2, by fun_prop⟩
@@ -273,8 +273,8 @@ theorem exists_parametric_negativeDisc_homotopy
   obtain ⟨H, hH₀, hH₁, hH⟩ := exists_negativeDiscHomotopy (fun x ↦ T x.1) A ι (fun x ↦ hT0 x.1)
     (fun x ↦ hC x.1) hcont' (fun x s hs y hy ↦ (hbound x.1 s hs y hy).2)
     (fun x ↦ (mem_closedBall_zero_iff.mp x.2.2).trans hδ.2) (fun x ↦ hDL x.1) hL.le hδV
-  exact ⟨fun w hw' ↦ hδU (hw hw'), H, fun p w ↦ hH₀ (p, w), fun p w ↦ hH₁ (p, w),
-    fun t p w ↦ hH t (p, w)⟩
+  exact ⟨fun w hw' ↦ hδU (hw hw'), H, fun p w ↦ hH₀ (p, w),
+    fun p w ↦ by rw [hH₁, ContinuousLinearMap.coe_polarIsometry]; rfl, fun t p w ↦ hH t (p, w)⟩
 
 end Parametric
 
