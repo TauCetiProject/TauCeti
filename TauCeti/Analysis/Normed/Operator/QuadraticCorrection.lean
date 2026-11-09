@@ -31,11 +31,14 @@ gluing constructions, with explicit radii.
 
 * The solutions in the range of `Q` are the fixed points of `x ↦ -Q (e + N x)`
   (`TauCeti.mem_range_and_add_add_eq_zero_iff`).
-* **A priori estimate.** A solution `x` in the range of `Q` is within `C` times the residual of
-  every other point `y` of the range:
+* **A priori estimate.** A solution `x` in the range of `Q` satisfies a weighted comparison
+  estimate with every other point `y` of the range:
   `(1 - C L (‖x‖ + ‖y‖) / 2) ‖x - y‖ ≤ C ‖e + D y + N y‖`
-  (`TauCeti.one_sub_mul_norm_sub_le_mul_norm_add_add`). In particular solutions depend
-  Lipschitz-continuously on the residual `e` (`TauCeti.one_sub_mul_norm_sub_le_mul_norm_sub`).
+  (`TauCeti.one_sub_mul_norm_sub_le_mul_norm_add_add`). The analogous weighted estimate compares
+  solutions for two residuals `e` and `e'` (`TauCeti.one_sub_mul_norm_sub_le_mul_norm_sub`). The
+  weight only controls the distance when it is positive: if `x` and `y` lie in a common ball of
+  radius `r ≤ δ` with `C L r < 1`, then `‖x - y‖ ≤ C / (1 - C L r)` times the residual of `y`, resp.
+  `‖e - e'‖`, so on such a ball solutions depend Lipschitz-continuously on the residual.
 * **Uniqueness.** Two solutions in the range of `Q` of norm at most `r ≤ δ` coincide as soon as
   `C L r < 1` (`TauCeti.eq_of_add_add_eq_zero`). The radius `r` may be much larger than the
   radius `2 C ‖e‖` where the solution is constructed.
@@ -44,7 +47,8 @@ gluing constructions, with explicit radii.
   solution `x` in the range of `Q` with `‖x‖ ≤ 2 C ‖e‖`
   (`TauCeti.exists_mem_range_norm_le_add_add_eq_zero`).
 
-No linearity of `D`, and no topology or completeness of `F`, is needed. The right inverse `Q` is
+No linearity of `D` and no completeness of `F` is needed; the fixed-point characterization needs
+no norms at all, and the estimates only need seminorms on `E` and `F`. The right inverse `Q` is
 only assumed additive, so that it applies to bounded linear maps over any normed field.
 
 Mathlib's `ApproximatesLinearOn.surjOn_closedBall_of_nonlinearRightInverse` gives existence of
@@ -70,8 +74,11 @@ open scoped NNReal
 
 namespace TauCeti
 
-variable {E F G : Type*} [NormedAddCommGroup E] [SeminormedAddCommGroup F] [FunLike G F E]
-  [AddMonoidHomClass G F E] {Q : G} {D N : E → F} {e : F} {C L : ℝ≥0} {δ : ℝ}
+variable {E F G : Type*} [FunLike G F E] {Q : G} {D N : E → F} {e : F} {C L : ℝ≥0} {δ : ℝ}
+
+section AddCommGroup
+
+variable [AddCommGroup E] [AddCommGroup F] [AddMonoidHomClass G F E]
 
 /-- A point of the range of a right inverse `Q` of `D` solves `e + D x + N x = 0` exactly when it
 is a fixed point of `x ↦ -Q (e + N x)`. -/
@@ -91,14 +98,20 @@ theorem mem_range_and_add_add_eq_zero_iff (hDQ : ∀ y, D (Q y) = y) {x : E} :
     rw [hDx]
     abel
 
-variable (hDQ : ∀ y, D (Q y) = y) (hQ : ∀ y, ‖Q y‖ ≤ C * ‖y‖)
+end AddCommGroup
+
+section Seminormed
+
+variable [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [AddMonoidHomClass G F E]
+  (hDQ : ∀ y, D (Q y) = y) (hQ : ∀ y, ‖Q y‖ ≤ C * ‖y‖)
   (hN : ∀ x ∈ closedBall (0 : E) δ, ∀ y ∈ closedBall (0 : E) δ,
     ‖N x - N y‖ ≤ L / 2 * (‖x‖ + ‖y‖) * ‖x - y‖)
 include hDQ hQ hN
 
 /-- **A priori estimate.** A solution `x` of `e + D x + N x = 0` in the range of the right inverse
-`Q` is close to every point `y` of the range with small residual: the distance is at most `C`
-times the residual of `y`, up to the factor `1 - C L (‖x‖ + ‖y‖) / 2`. -/
+`Q` satisfies a weighted comparison estimate with every point `y` of the range: the distance,
+weighted by `1 - C L (‖x‖ + ‖y‖) / 2`, is at most `C` times the residual of `y`. When the weight is
+positive, this bounds the distance by a multiple of the residual. -/
 theorem one_sub_mul_norm_sub_le_mul_norm_add_add {x y : E} (hx : x ∈ closedBall 0 δ)
     (hy : y ∈ closedBall 0 δ) (hxQ : x ∈ range Q) (hxe : e + D x + N x = 0)
     (hyQ : y ∈ range Q) :
@@ -120,8 +133,10 @@ theorem one_sub_mul_norm_sub_le_mul_norm_add_add {x y : E} (hx : x ∈ closedBal
       _ = _ := by ring
   linarith
 
-/-- Solutions of `e + D x + N x = 0` and `e' + D y + N y = 0` in the range of `Q` depend
-Lipschitz-continuously on the residual. -/
+/-- Solutions `x` of `e + D x + N x = 0` and `y` of `e' + D y + N y = 0` in the range of `Q`
+satisfy a weighted comparison estimate: the distance, weighted by `1 - C L (‖x‖ + ‖y‖) / 2`, is at
+most `C ‖e - e'‖`. On a common ball of radius `r ≤ δ` with `C L r < 1`, solutions thus depend
+Lipschitz-continuously on the residual, with constant `C / (1 - C L r)`. -/
 theorem one_sub_mul_norm_sub_le_mul_norm_sub {e' : F} {x y : E} (hx : x ∈ closedBall 0 δ)
     (hy : y ∈ closedBall 0 δ) (hxQ : x ∈ range Q) (hxe : e + D x + N x = 0)
     (hyQ : y ∈ range Q) (hye : e' + D y + N y = 0) :
@@ -130,6 +145,16 @@ theorem one_sub_mul_norm_sub_le_mul_norm_sub {e' : F} {x y : E} (hx : x ∈ clos
     rw [← sub_eq_zero, ← hye]
     abel
   simpa only [h] using one_sub_mul_norm_sub_le_mul_norm_add_add hDQ hQ hN hx hy hxQ hxe hyQ
+
+end Seminormed
+
+section Normed
+
+variable [NormedAddCommGroup E] [SeminormedAddCommGroup F] [AddMonoidHomClass G F E]
+  (hDQ : ∀ y, D (Q y) = y) (hQ : ∀ y, ‖Q y‖ ≤ C * ‖y‖)
+  (hN : ∀ x ∈ closedBall (0 : E) δ, ∀ y ∈ closedBall (0 : E) δ,
+    ‖N x - N y‖ ≤ L / 2 * (‖x‖ + ‖y‖) * ‖x - y‖)
+include hDQ hQ hN
 
 /-- **Uniqueness.** Two solutions of `e + D x + N x = 0` in the range of `Q`, both of norm at most
 `r ≤ δ`, coincide when `C L r < 1`. -/
@@ -199,5 +224,7 @@ theorem exists_mem_range_norm_le_add_add_eq_zero [CompleteSpace E] (hN0 : N 0 = 
     (mem_closedBall_self hR0) (edist_ne_top _ _)
   obtain ⟨hxQ, hxe⟩ := (mem_range_and_add_add_eq_zero_iff hDQ).2 hfix.symm
   exact ⟨x, hxQ, mem_closedBall_zero_iff.1 hxs, hxe⟩
+
+end Normed
 
 end TauCeti
