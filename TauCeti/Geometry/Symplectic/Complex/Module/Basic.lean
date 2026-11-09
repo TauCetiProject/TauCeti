@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.RestrictScalars
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.LinearAlgebra.Complex.Module
 
-import Mathlib.Tactic.FastInstance
 import TauCeti.LinearAlgebra.Complex.Orientation
 
 /-!
@@ -194,13 +192,6 @@ end AlmostComplexStructure
 
 end TauCeti
 
-/-- The restricted real module at the additive-group parent used by almost complex structures.
-This normalizes the inherited additive-monoid instance of the scalar-restriction type alias. -/
-@[expose, instance_reducible]
-noncomputable def RestrictScalars.realModule (M : Type*) [AddCommGroup M] [Module ℂ M] :
-    @Module ℝ (RestrictScalars ℝ ℂ M) Real.semiring
-      (instAddCommGroupRestrictScalars ℝ ℂ M).toAddCommMonoid :=
-  fast_instance% RestrictScalars.module ℝ ℂ M
 
 namespace TauCeti.AlmostComplexStructure
 
