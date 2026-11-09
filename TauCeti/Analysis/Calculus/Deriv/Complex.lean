@@ -20,8 +20,10 @@ public section
 
 namespace HasFDerivAt
 
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
 /-- A real Fréchet derivative gives the derivative of the horizontal coordinate slice. -/
-theorem hasDerivAt_re_slice {P : ℂ → ℝ} {L : ℂ →L[ℝ] ℝ} {z : ℂ}
+theorem hasDerivAt_re_slice {P : ℂ → F} {L : ℂ →L[ℝ] F} {z : ℂ}
     (hP : HasFDerivAt P L z) :
     HasDerivAt (fun x : ℝ ↦ P ⟨x, z.im⟩) (L 1) z.re := by
   have hp := Complex.equivRealProdCLM.symm.hasFDerivAt (x := (z.re, z.im)) |>.comp_hasDerivAt z.re
@@ -34,7 +36,7 @@ theorem hasDerivAt_re_slice {P : ℂ → ℝ} {L : ℂ →L[ℝ] ℝ} {z : ℂ}
   · simp [Complex.equivRealProdCLM_symm_apply]
 
 /-- A real Fréchet derivative gives the derivative of the vertical coordinate slice. -/
-theorem hasDerivAt_im_slice {P : ℂ → ℝ} {L : ℂ →L[ℝ] ℝ} {z : ℂ}
+theorem hasDerivAt_im_slice {P : ℂ → F} {L : ℂ →L[ℝ] F} {z : ℂ}
     (hP : HasFDerivAt P L z) :
     HasDerivAt (fun y : ℝ ↦ P ⟨z.re, y⟩) (L Complex.I) z.im := by
   have hp := Complex.equivRealProdCLM.symm.hasFDerivAt (x := (z.re, z.im)) |>.comp_hasDerivAt z.im
