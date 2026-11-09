@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Holder.Normed
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
+import TauCeti.Topology.MetricSpace.Bounded
+import TauCeti.Topology.MetricSpace.Holder
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
 import Mathlib.Topology.MetricSpace.Equicontinuity
@@ -20,9 +22,12 @@ if `d(x, y) ≤ D` on `X` then `d(x, y)^α ≤ D^(α - β) d(x, y)^β`. This fil
 inclusion `C^{0,α}(X) → C^{0,β}(X)` as a bounded linear map, of norm at most
 `max 1 (D^(α - β))` with `D` the diameter of `X`.
 
-For `β < α` and compact `X` the inclusion is a compact operator. A bounded set of
-`C^{0,α}(X)` is uniformly bounded and equicontinuous, so by the Arzelà–Ascoli theorem it is
-totally bounded for the supremum norm. The interpolation inequality
+For `β < α`, compact `X` and a proper codomain `Y` the inclusion is a compact operator. A bounded
+set of `C^{0,α}(X, Y)` is uniformly bounded and equicontinuous. Since `Y` is proper, uniform
+boundedness puts the values at each point in a compact ball of `Y`, which is the pointwise relative
+compactness needed by the Arzelà–Ascoli theorem, so the set is totally bounded for the supremum
+norm. For an infinite-dimensional codomain both this and the compactness of the inclusion fail.
+The interpolation inequality
 
 `[f]_β ≤ [f]_α^(β/α) (2 ‖f‖_∞)^(1 - β/α)`
 
@@ -34,6 +39,7 @@ the identity of an infinite-dimensional Banach space is never compact.
 
 * `TauCeti.HolderSpace.inclusionL`: the inclusion `C^{0,α}(X) → C^{0,β}(X)` for `β ≤ α` on a
   bounded space.
+* `TauCeti.HolderSpace.norm_inclusionL_le`: the inclusion has norm at most `max 1 (D^(α - β))`.
 * `TauCeti.HolderSpace.nnHolderNorm_le_interpolate`: the interpolation inequality for the Hölder
   seminorms.
 * `TauCeti.HolderSpace.isCompactOperator_inclusionL`: the inclusion is compact for `β < α` on a
@@ -62,20 +68,12 @@ section Inclusion
 
 variable [BoundedSpace X]
 
-omit [NormedSpace ℝ Y] in
-/-- On a bounded space, every pair of points is within the diameter. -/
-private theorem edist_le_diam (x y : X) :
-    edist x y ≤ ((diam (univ : Set X)).toNNReal : ℝ≥0∞) := by
-  rw [edist_dist]
-  exact ENNReal.ofReal_le_ofReal
-    (dist_le_diam_of_mem (Bornology.isBounded_univ.2 inferInstance) (mem_univ x) (mem_univ y))
-
 /-- On a bounded space, an `α`-Hölder function is `β`-Hölder for every `β ≤ α`, with the
 seminorm growing by at most the factor `D^(α - β)` for `D` the diameter. -/
 theorem nnHolderNorm_le_of_le (hβα : β ≤ α) (f : HolderSpace α X Y) :
     nnHolderNorm β (f : X → Y) ≤
       nnHolderNorm α (f : X → Y) * (diam (univ : Set X)).toNNReal ^ ((α : ℝ) - β) :=
-  (f.holderWith.of_le edist_le_diam hβα).nnholderNorm_le
+  (f.holderWith.of_le Metric.edist_le_diam_univ hβα).nnholderNorm_le
 
 /-- **The inclusion of Hölder spaces.** On a bounded space, a bounded `α`-Hölder function is
 `β`-Hölder for every `β ≤ α`, and the inclusion is a bounded linear map. -/
@@ -83,7 +81,7 @@ def inclusionL (hβα : β ≤ α) : HolderSpace α X Y →L[ℝ] HolderSpace β
   LinearMap.mkContinuous
     { toFun f := ofBoundedContinuousFunction f.toBoundedContinuousFunction (by
         simpa only [coe_toBoundedContinuousFunction] using
-          (f.holderWith.of_le edist_le_diam hβα).memHolder)
+          (f.holderWith.of_le Metric.edist_le_diam_univ hβα).memHolder)
       map_add' f g := ext fun x ↦ by simp
       map_smul' c f := ext fun x ↦ by simp }
     (max 1 (((diam (univ : Set X)).toNNReal : ℝ) ^ ((α : ℝ) - β))) fun f ↦ by
@@ -101,6 +99,13 @@ def inclusionL (hβα : β ≤ α) : HolderSpace α X Y →L[ℝ] HolderSpace β
         coe_toBoundedContinuousFunction]
       nlinarith [norm_nonneg f.toBoundedContinuousFunction]
 
+/-- The inclusion of Hölder spaces has norm at most `max 1 (D^(α - β))`, with `D` the diameter of
+the space. -/
+theorem norm_inclusionL_le (hβα : β ≤ α) :
+    ‖inclusionL (X := X) (Y := Y) hβα‖ ≤
+      max 1 (((diam (univ : Set X)).toNNReal : ℝ) ^ ((α : ℝ) - β)) :=
+  LinearMap.mkContinuous_norm_le _ (zero_le_one.trans (le_max_left _ _)) _
+
 @[simp]
 theorem inclusionL_apply (hβα : β ≤ α) (f : HolderSpace α X Y) (x : X) :
     inclusionL hβα f x = f x := by
@@ -117,15 +122,6 @@ theorem inclusionL_injective (hβα : β ≤ α) :
   ext fun x ↦ by simpa using congrArg (fun k : HolderSpace β X Y ↦ k x) h
 
 end Inclusion
-
-omit [NormedSpace ℝ Y] in
-/-- A function bounded by `M` has oscillation at most `2 M`, which is its Hölder bound of
-exponent zero. -/
-private theorem holderWith_zero_of_nnnorm_le {f : X → Y} {M : ℝ≥0} (hf : ∀ x, ‖f x‖₊ ≤ M) :
-    HolderWith (2 * M) 0 f := fun x y ↦ by
-  rw [NNReal.coe_zero, ENNReal.rpow_zero, mul_one, edist_nndist, ENNReal.coe_le_coe,
-    nndist_eq_nnnorm, two_mul]
-  exact (nnnorm_sub_le _ _).trans (add_le_add (hf x) (hf y))
 
 /-- **Interpolation of Hölder seminorms.** For `β ≤ α` with `α ≠ 0`, the `β`-Hölder seminorm of a
 bounded `α`-Hölder function is at most `[f]_α^(β/α) (2 ‖f‖_∞)^(1 - β/α)`. -/
@@ -224,9 +220,7 @@ theorem isCompactOperator_inclusionL [CompactSpace X] [ProperSpace Y] (hβα : �
   have hlt := hΦδ (x := ‖(f - g).toBoundedContinuousFunction‖)
     (by rwa [Real.dist_eq, sub_zero, abs_norm])
   rw [hΦ0, Real.dist_eq, sub_zero] at hlt
-  rw [mem_ball, dist_eq_norm]
-  change ‖inclusionL hβα.le f - inclusionL hβα.le g‖ < ε
-  rw [← map_sub]
+  rw [mem_ball, dist_eq_norm, ContinuousLinearMap.coe_coe, ← map_sub]
   exact (norm_inclusionL_le_of_norm_le_two hβα.le hα hfg).trans_lt ((le_abs_self _).trans_lt hlt)
 
 end HolderSpace

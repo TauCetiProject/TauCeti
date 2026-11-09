@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Holder.Inclusion
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
 public import TauCeti.Analysis.Sobolev.W1p.SupercriticalMultiplication
+public import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Morrey's embedding on bounded Lipschitz domains
@@ -36,7 +37,6 @@ values at almost every point of `Ω`, so the maps below do not depend on the ext
   `C^{0,β}(closure Ω)` is compact for `β < 1 - n/p`.
 * `TauCeti.W1p.exists_mulL_of_isLipschitzDomainWith`: multiplication on `W^{1,p}(Ω)` as a bounded
   bilinear map.
-* `IsOpen.ext_closure_of_ae_eq`: uniqueness of the continuous representative on the closure.
 
 ## References
 
@@ -51,30 +51,6 @@ noncomputable section
 
 open Bornology MeasureTheory Module Set TopologicalSpace
 open scoped ENNReal NNReal
-
-/-- A continuous function on the closure of an open set `U` is determined by its values at almost
-every point of `U`, for a measure which charges every nonempty open set. -/
-theorem IsOpen.ext_closure_of_ae_eq {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X]
-    {μ : Measure X} [μ.IsOpenPosMeasure] [TopologicalSpace Y] [T2Space Y] {U : Set X}
-    (hU : IsOpen U) {f g : closure U → Y} (hf : Continuous f) (hg : Continuous g)
-    (h : ∀ᵐ x ∂μ, ∀ hx : x ∈ U, f ⟨x, subset_closure hx⟩ = g ⟨x, subset_closure hx⟩) :
-    f = g := by
-  by_contra hne
-  obtain ⟨y, hy⟩ := Function.ne_iff.1 hne
-  obtain ⟨V, hV, hVS⟩ := isOpen_induced_iff.1 (isOpen_ne_fun hf hg)
-  have hyV : (y : X) ∈ V := by
-    have : y ∈ (Subtype.val ⁻¹' V : Set (closure U)) := hVS ▸ hy
-    exact this
-  have hne' : (V ∩ U).Nonempty := mem_closure_iff.1 y.2 V hV hyV
-  have hpos : 0 < μ (V ∩ U) := (hV.inter hU).measure_pos μ hne'
-  have hnull : μ (V ∩ U) = 0 := by
-    refine measure_mono_null (fun x hx ↦ ?_) (ae_iff.1 h)
-    simp only [not_forall]
-    refine ⟨hx.2, ?_⟩
-    have : (⟨x, subset_closure hx.2⟩ : closure U) ∈ (Subtype.val ⁻¹' V : Set (closure U)) := hx.1
-    rw [hVS] at this
-    exact this
-  exact hpos.ne' hnull
 
 namespace TauCeti
 
