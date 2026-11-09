@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Geometry.Manifold.MFDeriv.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
 
 /-!
 # Möbius transformations of the projective line are analytic
@@ -58,8 +59,10 @@ surface, and in the affine coordinate the transformation of `!![a, b; c, d]` has
 * `OnePoint.instContMDiffConstSMulPSL`: `PSL(2, 𝕜)` acts on `OnePoint 𝕜` by analytic maps.
 * `OnePoint.instContMDiffConstSMulGLReal`, `OnePoint.instContMDiffConstSMulPSLReal`: `GL(2, ℂ)`
   and `PSL(2, ℂ)` act on the Riemann sphere by smooth maps of the underlying real surface.
-* `OnePoint.mfderiv_smul_coe_apply`: the derivative of a Möbius transformation in the affine
-  coordinate.
+* `Matrix.GeneralLinearGroup.mfderiv_smul_coe`: the derivative of a Möbius transformation at a
+  finite point with finite image, read in the affine charts.
+* `OnePoint.mfderiv_smul_coe_apply`: the same derivative on the Riemann sphere regarded as a real
+  surface.
 
 ## References
 
@@ -241,6 +244,43 @@ instance instContMDiffConstSMulPSLReal {n : WithTop ℕ∞} :
     simpa only [modelWithCornersSelf_restrictScalars] using
       ((contMDiff_const_smul (I := 𝓘(ℂ)) (n := ω) g).restrictScalars ℝ).of_le le_top
 
+end OnePoint
+
+namespace Matrix.GeneralLinearGroup
+
+open OnePoint
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜] [ProperSpace 𝕜]
+
+/-- **The derivative of a Möbius transformation.** At a finite point `z` that is not a pole,
+`z ↦ (a z + b) / (c z + d)` has derivative `(a d - b c) / (c z + d) ^ 2`, read in the affine
+charts at `z` and at its image. -/
+theorem mfderiv_smul_coe (g : GL (Fin 2) 𝕜) {z : 𝕜} (hz : g 1 0 * z + g 1 1 ≠ 0) (v : 𝕜) :
+    mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ g • x) z v =
+      ((g : Matrix (Fin 2) (Fin 2) 𝕜).det / (g 1 0 * z + g 1 1) ^ 2 * v : 𝕜) := by
+  have hq : Continuous fun w : 𝕜 ↦ g 1 0 * w + g 1 1 := by fun_prop
+  have hgz : g • (z : OnePoint 𝕜) = (((g 0 0 * z + g 0 1) / (g 1 0 * z + g 1 1) : 𝕜) :
+      OnePoint 𝕜) := by
+    rw [smul_some_eq_ite, ite_eq_right_iff.2 fun h ↦ absurd h hz]
+  refine mfderiv_apply_eq_of_hasDerivAt
+    ((contMDiff_const_smul (I := 𝓘(𝕜)) (n := ⊤) g).mdifferentiable (by simp) _) ?_ ?_ v
+    (φ := fun w ↦ (g 0 0 * w + g 0 1) / (g 1 0 * w + g 1 1))
+  · rw [hgz, chartAt_coe, chartAt_coe, affineChart_coe]
+    filter_upwards [hq.continuousAt.eventually_ne hz] with w hw
+    simp [smul_some_eq_ite, hw]
+  · rw [chartAt_coe, affineChart_coe, det_fin_two]
+    have hp : HasDerivAt (fun w : 𝕜 ↦ g 0 0 * w + g 0 1) (g 0 0) z := by
+      simpa using ((hasDerivAt_id z).const_mul (g 0 0)).add_const (c := g 0 1)
+    have hq' : HasDerivAt (fun w : 𝕜 ↦ g 1 0 * w + g 1 1) (g 1 0) z := by
+      simpa using ((hasDerivAt_id z).const_mul (g 1 0)).add_const (c := g 1 1)
+    convert HasDerivAt.div hp hq' hz using 1
+    ring
+
+
+end Matrix.GeneralLinearGroup
+
+namespace OnePoint
+
 /-- **The derivative of a Möbius transformation in the affine coordinate.** At a finite point `z`
 which `g = !![a, b; c, d]` does not send to `∞`, the derivative of `g` on the Riemann sphere,
 read in the affine charts, is multiplication by `det g / (c * z + d) ^ 2`. -/
@@ -248,30 +288,10 @@ theorem mfderiv_smul_coe_apply (g : GL (Fin 2) ℂ) {z : ℂ} (hz : g 1 0 * z + 
     (v : ℂ) :
     mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (g • · : OnePoint ℂ → OnePoint ℂ) z v =
       (g : Matrix (Fin 2) (Fin 2) ℂ).det / (g 1 0 * z + g 1 1) ^ 2 * v := by
-  -- Near `z`, the transformation read in the affine charts is `w ↦ (a w + b) / (c w + d)`.
-  have hq : ContinuousAt (fun w : ℂ ↦ g 1 0 * w + g 1 1) z := by fun_prop
-  have hev : (fun w : ℂ ↦ affineChart (g • (w : OnePoint ℂ)))
-      =ᶠ[𝓝 z] fun w ↦ (g 0 0 * w + g 0 1) / (g 1 0 * w + g 1 1) := by
-    filter_upwards [hq.eventually_ne hz] with w hw
-    simp [smul_some_eq_ite, hw]
-  have hd : HasDerivAt (fun w ↦ (g 0 0 * w + g 0 1) / (g 1 0 * w + g 1 1))
-      ((g : Matrix (Fin 2) (Fin 2) ℂ).det / (g 1 0 * z + g 1 1) ^ 2) z := by
-    refine ((((hasDerivAt_id' z).const_mul (g 0 0)).add_const (g 0 1)).div
-      (((hasDerivAt_id' z).const_mul (g 1 0)).add_const (g 1 1)) hz).congr_deriv ?_
-    rw [det_fin_two]
-    ring
-  have hF := (hd.hasFDerivAt.restrictScalars ℝ).congr_of_eventuallyEq hev
-  have hgz : g • (z : OnePoint ℂ) =
-      (((g 0 0 * z + g 0 1) / (g 1 0 * z + g 1 1) : ℂ) : OnePoint ℂ) := by
-    simp [smul_some_eq_ite, hz]
-  have hmd : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (g • · : OnePoint ℂ → OnePoint ℂ) z :=
-    (contMDiff_const_smul (I := 𝓘(ℝ, ℂ)) (n := 1) g).mdifferentiableAt one_ne_zero
-  rw [hmd.mfderiv]
-  simp only [writtenInExtChartAt, hgz, chartAt_coe, affineChart_symm_apply, affineChart_coe,
-    fderivWithin_univ, Function.comp_def, mfld_simps]
-  rw [hF.fderiv]
-  -- The casts `tangentSpaceCastModel` between the tangent spaces and `ℂ` are identities.
-  change ContinuousLinearMap.toSpanSingleton ℂ (_ : ℂ) v = _
-  rw [ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul, mul_comm]
+  have hmd : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (g • · : OnePoint ℂ → OnePoint ℂ) z :=
+    (contMDiff_const_smul (I := 𝓘(ℂ)) (n := ω) g).mdifferentiableAt (by simp)
+  -- The real derivative is the complex one, computed by `mfderiv_smul_coe`; the casts
+  -- `tangentSpaceCastModel` between the tangent spaces and `ℂ` are identities.
+  exact (DFunLike.congr_fun (hmd.mfderiv_restrictScalars ℝ) v).trans (g.mfderiv_smul_coe hz v)
 
 end OnePoint

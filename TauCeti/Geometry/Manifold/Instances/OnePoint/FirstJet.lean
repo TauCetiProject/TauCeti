@@ -9,8 +9,6 @@ public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Moebius
 public import TauCeti.Topology.Compactification.OnePoint.Stabilizer
-import Mathlib.Analysis.Calculus.Deriv.Add
-import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Geometry.Manifold.LocalDiffeomorph
 
@@ -26,7 +24,8 @@ Möbius transformation is determined by its first jet at `0` together with its v
 
 * At a finite point `z` with finite image, the derivative of `z ↦ (a z + b) / (c z + d)` is
   multiplication by `(a d - b c) / (c z + d) ^ 2`
-  (`Matrix.GeneralLinearGroup.mfderiv_smul_coe`).
+  (`Matrix.GeneralLinearGroup.mfderiv_smul_coe`, in
+  `TauCeti.Geometry.Manifold.Instances.OnePoint.Moebius`).
 * The subgroup of `PGL(2, 𝕜)` fixing `0` and `∞` is the group `𝕜ˣ` of dilations
   (`OnePoint.pglFixingZeroInftyEquiv`), and this coordinate is the first jet at `0`: an element
   fixing `0` and `∞` has derivative `a` at `0`, where `a` is its coordinate
@@ -48,8 +47,6 @@ direction at one of them, in the way that ordered triples normalize three marked
 
 ## Main results
 
-* `Matrix.GeneralLinearGroup.mfderiv_smul_coe`: the derivative of a Möbius transformation at a
-  finite point with finite image.
 * `OnePoint.mfderiv_pglFixingZeroInftyEquiv_symm_zero` and
   `OnePoint.mfderiv_pglFixingZeroInftyEquiv_symm_infty`: the dilation `z ↦ a z` has derivative `a`
   at `0` and `a⁻¹` at `∞`.
@@ -96,38 +93,6 @@ theorem mfderiv_pgl_smul_ne_zero (g : PGL(2, 𝕜)) (x : OnePoint 𝕜) {v : �
   exact hv (e.map_eq_zero_iff.1 h)
 
 end OnePoint
-
-namespace Matrix.GeneralLinearGroup
-
-open OnePoint
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜] [ProperSpace 𝕜]
-
-/-- **The derivative of a Möbius transformation.** At a finite point `z` that is not a pole,
-`z ↦ (a z + b) / (c z + d)` has derivative `(a d - b c) / (c z + d) ^ 2`, read in the affine
-charts at `z` and at its image. -/
-theorem mfderiv_smul_coe (g : GL (Fin 2) 𝕜) {z : 𝕜} (hz : g 1 0 * z + g 1 1 ≠ 0) (v : 𝕜) :
-    mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ g • x) z v =
-      ((g : Matrix (Fin 2) (Fin 2) 𝕜).det / (g 1 0 * z + g 1 1) ^ 2 * v : 𝕜) := by
-  have hq : Continuous fun w : 𝕜 ↦ g 1 0 * w + g 1 1 := by fun_prop
-  have hgz : g • (z : OnePoint 𝕜) = (((g 0 0 * z + g 0 1) / (g 1 0 * z + g 1 1) : 𝕜) :
-      OnePoint 𝕜) := by
-    rw [smul_some_eq_ite, ite_eq_right_iff.2 fun h ↦ absurd h hz]
-  refine mfderiv_apply_eq_of_hasDerivAt
-    ((contMDiff_const_smul (I := 𝓘(𝕜)) (n := ⊤) g).mdifferentiable (by simp) _) ?_ ?_ v
-    (φ := fun w ↦ (g 0 0 * w + g 0 1) / (g 1 0 * w + g 1 1))
-  · rw [hgz, chartAt_coe, chartAt_coe, affineChart_coe]
-    filter_upwards [hq.continuousAt.eventually_ne hz] with w hw
-    simp [smul_some_eq_ite, hw]
-  · rw [chartAt_coe, affineChart_coe, det_fin_two]
-    have hp : HasDerivAt (fun w : 𝕜 ↦ g 0 0 * w + g 0 1) (g 0 0) z := by
-      simpa using ((hasDerivAt_id z).const_mul (g 0 0)).add_const (c := g 0 1)
-    have hq' : HasDerivAt (fun w : 𝕜 ↦ g 1 0 * w + g 1 1) (g 1 0) z := by
-      simpa using ((hasDerivAt_id z).const_mul (g 1 0)).add_const (c := g 1 1)
-    convert HasDerivAt.div hp hq' hz using 1
-    ring
-
-end Matrix.GeneralLinearGroup
 
 namespace OnePoint
 
