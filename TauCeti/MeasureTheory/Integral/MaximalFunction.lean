@@ -88,6 +88,8 @@ Here `c = d = 2⁻¹`, so the low part is bounded by `t / 2`, its maximal functi
   **maximal inequality**, in product and in quotient form.
 * `TauCeti.ae_maximalFunction_lt_top`: the maximal function of an `L¹` function is finite almost
   everywhere.
+* `TauCeti.setLAverage_ball_le_two_pow_mul_maximalFunction`: averages over balls of radius `r`
+  centred within distance `r` of `x` are at most `2 ^ n` times the maximal function at `x`.
 * `TauCeti.lintegral_rpow_maximalFunction_le`, `TauCeti.eLpNorm_maximalFunction_le`: the
   **strong type `(p, p)` maximal inequality** for `1 < p < ∞`, with an explicit constant.
 * `TauCeti.eLpNorm_maximalFunction_lt_top`,
@@ -405,6 +407,32 @@ theorem ae_maximalFunction_lt_top (μ : Measure E) [μ.IsAddHaarMeasure] (f : E 
       exact absurd hle (not_le.2 (ENNReal.lt_add_right hC one_ne_zero))
   rw [ae_iff]
   simpa only [not_lt, top_le_iff] using hm
+
+/-- **Averages over nearby balls.** The average of `‖f‖ₑ` over a ball `B(c, r)` whose centre lies
+within distance `r` of `x` is at most `2 ^ n` times the maximal function of `f` at `x`, `n` being
+the dimension: `B(c, r)` lies in `B(x, 2 r)`, which has `2 ^ n` times its measure. -/
+theorem setLAverage_ball_le_two_pow_mul_maximalFunction (μ : Measure E) [μ.IsAddHaarMeasure]
+    (f : E → F) {x c : E} {r : ℝ} (hr : 0 < r) (hx : dist x c ≤ r) :
+    ⨍⁻ y in ball c r, ‖f y‖ₑ ∂μ ≤ 2 ^ finrank ℝ E * maximalFunction μ f x := by
+  have hsub : ball c r ⊆ ball x (2 * r) := fun y hy => by
+    rw [mem_ball] at hy ⊢
+    linarith [dist_triangle y c x, dist_comm x c]
+  have hvol : μ (ball x (2 * r)) = 2 ^ finrank ℝ E * μ (ball c r) := by
+    rw [Measure.addHaar_ball_of_pos μ x (by positivity : (0 : ℝ) < 2 * r),
+      Measure.addHaar_ball_of_pos μ c hr, ← mul_assoc, mul_pow,
+      ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ 2 ^ finrank ℝ E),
+      ENNReal.ofReal_pow zero_le_two]
+    norm_num
+  have h0 : (2 : ℝ≥0∞) ^ finrank ℝ E ≠ 0 := pow_ne_zero _ two_ne_zero
+  have htop : (2 : ℝ≥0∞) ^ finrank ℝ E ≠ ∞ := ENNReal.pow_ne_top ENNReal.ofNat_ne_top
+  calc ⨍⁻ y in ball c r, ‖f y‖ₑ ∂μ ≤ (∫⁻ y in ball x (2 * r), ‖f y‖ₑ ∂μ) / μ (ball c r) := by
+        rw [setLAverage_eq]
+        gcongr
+    _ = 2 ^ finrank ℝ E * ⨍⁻ y in ball x (2 * r), ‖f y‖ₑ ∂μ := by
+        rw [setLAverage_eq, hvol, ← ENNReal.mul_div_mul_left _ _ h0 htop, mul_div_assoc]
+    _ ≤ 2 ^ finrank ℝ E * maximalFunction μ f x := by
+        gcongr
+        exact setLAverage_le_maximalFunction μ f x (by positivity)
 
 section StrongType
 

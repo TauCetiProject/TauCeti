@@ -24,6 +24,8 @@ non-divergence-form operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` with constant coe
 * `Matrix.contraction_one`: contraction with the identity matrix is the trace.
 * `Matrix.abs_contraction_le`: if every entry of `M` is at most `ε` in absolute value,
   then the contraction of `H` with `M` is at most `n² ε ‖H‖` in absolute value.
+* `Matrix.enorm_contraction_le`: the contraction of `H` with `M` is at most
+  `n² (∑ᵢⱼ ‖Mᵢⱼ‖ₑ) ‖H‖ₑ` in extended norm.
 * `Matrix.abs_sum_sum_mul_apply_single_single_le`: the same bound for the contraction
   `∑ᵢⱼ Mᵢⱼ B eᵢ eⱼ` of a continuous bilinear form `B`, such as a second derivative.
 -/
@@ -103,6 +105,26 @@ theorem abs_contraction_le {M : Matrix (Fin n) (Fin n) ℝ} {ε : ℝ}
     _ = n ^ 2 * ε * ‖H‖ := by
         simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
         ring
+
+/-- The contraction of `H` with `M` is at most `n² (∑ᵢⱼ ‖Mᵢⱼ‖ₑ) ‖H‖ₑ` in extended norm: the bound
+`Matrix.abs_contraction_le` with the sum of the absolute values of the entries as the entrywise
+bound. -/
+theorem enorm_contraction_le (M : Matrix (Fin n) (Fin n) ℝ)
+    (H : EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)) :
+    ‖contraction M H‖ₑ ≤ ENNReal.ofReal (n ^ 2) * (∑ i, ∑ j, ‖M i j‖ₑ) * ‖H‖ₑ := by
+  have h := abs_contraction_le (ε := ∑ i, ∑ j, |M i j|) (fun i j =>
+    (Finset.single_le_sum (f := fun j => |M i j|) (fun _ _ => abs_nonneg _)
+      (Finset.mem_univ j)).trans (Finset.single_le_sum (f := fun i => ∑ j, |M i j|)
+        (fun _ _ => Finset.sum_nonneg fun _ _ => abs_nonneg _) (Finset.mem_univ i))) H
+  rw [Real.enorm_eq_ofReal_abs]
+  refine (ENNReal.ofReal_le_ofReal h).trans_eq ?_
+  rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity), ofReal_norm]
+  congr 2
+  rw [ENNReal.ofReal_sum_of_nonneg (f := fun i => ∑ j, |M i j|)
+    fun _ _ => Finset.sum_nonneg fun _ _ => abs_nonneg _]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [ENNReal.ofReal_sum_of_nonneg (f := fun j => |M i j|) fun _ _ => abs_nonneg _]
+  exact Finset.sum_congr rfl fun j _ => (Real.enorm_eq_ofReal_abs _).symm
 
 /-- If every entry of `M` is at most `ε` in absolute value, then for a continuous bilinear form
 `B` on `EuclideanSpace ℝ ι`, `|∑ᵢⱼ Mᵢⱼ B eᵢ eⱼ| ≤ (card ι)² ε ‖B‖`. Applied to the second

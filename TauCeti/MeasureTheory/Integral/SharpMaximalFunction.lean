@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Topology.Semicontinuity.Defs
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
@@ -74,6 +75,11 @@ Calderón–Zygmund cubes at height `t`.
   by the sharp maximal function.
 * `TauCeti.lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow` and
   `TauCeti.eLpNorm_le_eLpNorm_sharpMaximalFunction`: the **Fefferman–Stein inequality**.
+* `TauCeti.exists_lintegral_enorm_rpow_le_mul_lintegral_sharpMaximalFunction_rpow`: the
+  Fefferman–Stein inequality on `EuclideanSpace ℝ ι`, for the sharp maximal function over
+  Euclidean balls. The coordinate map to `ι → ℝ` preserves volume and sends each sup-distance
+  ball into a Euclidean ball of comparable volume, so the oscillation over the former is controlled
+  by the oscillation over the latter.
 
 ## References
 
@@ -612,5 +618,122 @@ theorem eLpNorm_le_eLpNorm_sharpMaximalFunction [Nonempty ι] {f : (ι → ℝ) 
     lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow hf hpr
 
 end FeffermanStein
+
+section Euclidean
+
+open scoped NNReal
+
+variable {ι : Type*} [Fintype ι] [Nonempty ι] {F : Type*} [NormedAddCommGroup F]
+  [NormedSpace ℝ F] [CompleteSpace F]
+
+/-- The coordinate map `ℝⁿ → EuclideanSpace ℝ ι` maps the sup-distance ball `ball c r` into the
+Euclidean ball of radius `√n r` about the image of `c`. -/
+private theorem toLp_mem_ball_sqrt_card_mul {c z : ι → ℝ} {r : ℝ} (hz : z ∈ ball c r) :
+    WithLp.toLp 2 z ∈ ball (WithLp.toLp 2 c) (√(Fintype.card ι) * r) := by
+  rw [mem_ball] at hz ⊢
+  have h := (PiLp.lipschitzWith_toLp 2 (fun _ : ι => ℝ)).dist_le_mul z c
+  have hc : (((Fintype.card ι : ℝ≥0) ^ (1 / (2 : ℝ≥0∞)).toReal : ℝ≥0) : ℝ) =
+      √(Fintype.card ι) := by
+    simp [Real.sqrt_eq_rpow]
+  rw [hc] at h
+  exact h.trans_lt (mul_lt_mul_of_pos_left hz (Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)))
+
+/-- The ratio of the volume of the Euclidean ball of radius `√n r` to that of the sup-distance ball
+of radius `r` does not depend on `r`. -/
+private theorem volume_ball_sqrt_card_mul_div_volume_ball (c : ι → ℝ) (c' : EuclideanSpace ℝ ι)
+    {r : ℝ} (hr : 0 < r) :
+    volume (ball c' (√(Fintype.card ι) * r)) / volume (ball c r) =
+      ENNReal.ofReal (√(Fintype.card ι) ^ Fintype.card ι) *
+        volume (ball (0 : EuclideanSpace ℝ ι) 1) / volume (ball (0 : ι → ℝ) 1) := by
+  rw [Measure.addHaar_ball _ _ (by positivity), Measure.addHaar_ball _ _ hr.le]
+  simp only [finrank_euclideanSpace, Module.finrank_fintype_fun_eq_card, mul_pow]
+  rw [ENNReal.ofReal_mul (by positivity), mul_comm (ENNReal.ofReal (√_ ^ _)), mul_assoc,
+    ENNReal.mul_div_mul_left _ _ (ENNReal.ofReal_pos.2 (pow_pos hr _)).ne' ENNReal.ofReal_ne_top,
+    mul_div_assoc]
+
+/-- The sharp maximal function of `f` read in coordinates, for sup-distance balls, is at most a
+fixed multiple of the sharp maximal function of `f` for Euclidean balls. -/
+private theorem sharpMaximalFunction_comp_toLp_le {f : EuclideanSpace ℝ ι → F} (hf : Integrable f)
+    (y : ι → ℝ) :
+    sharpMaximalFunction volume (fun z => f (WithLp.toLp 2 z)) y ≤
+      2 * (ENNReal.ofReal (√(Fintype.card ι) ^ Fintype.card ι) *
+        volume (ball (0 : EuclideanSpace ℝ ι) 1) / volume (ball (0 : ι → ℝ) 1)) *
+        sharpMaximalFunction volume f (WithLp.toLp 2 y) := by
+  set T : (ι → ℝ) → EuclideanSpace ℝ ι := WithLp.toLp 2
+  have hT : MeasurePreserving T := PiLp.volume_preserving_toLp ι
+  have hTe : MeasurableEmbedding T := (MeasurableEquiv.toLp 2 (ι → ℝ)).measurableEmbedding
+  refine sharpMaximalFunction_le fun c r hy => ?_
+  have hr : 0 < r := dist_nonneg.trans_lt (mem_ball.1 hy)
+  set B := ball (T c) (√(Fintype.card ι) * r)
+  set S : Set (EuclideanSpace ℝ ι) := WithLp.ofLp ⁻¹' ball c r
+  have hS : MeasurableSet S := measurableSet_ball.preimage (PiLp.continuous_ofLp 2 _).measurable
+  have hTS : T ⁻¹' S = ball c r := rfl
+  have hSB : S ⊆ B := fun x hx => by
+    simpa [B, T] using toLp_mem_ball_sqrt_card_mul (show x.ofLp ∈ ball c r from hx)
+  have hB0 : volume B ≠ 0 := (measure_ball_pos _ _
+    (mul_pos (Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)) hr)).ne'
+  have hBtop : volume B ≠ ∞ := measure_ball_lt_top.ne
+  have hQ : volume (ball c r) = volume S := by rw [← hTS, hT.measure_preimage hS.nullMeasurableSet]
+  -- Compare with the oscillation about the Euclidean average `f_B`.
+  have hint : IntegrableOn (fun z => f (T z)) (ball c r) :=
+    (hT.integrable_comp_of_integrable hf).integrableOn
+  refine (setLAverage_enorm_sub_setAverage_le hint (⨍ x in B, f x)).trans ?_
+  have hchange : ∫⁻ z in ball c r, ‖f (T z) - ⨍ x in B, f x‖ₑ =
+      ∫⁻ x in S, ‖f x - ⨍ x in B, f x‖ₑ :=
+    hT.setLIntegral_comp_preimage_emb hTe (fun x => ‖f x - ⨍ x in B, f x‖ₑ) S
+  rw [setLAverage_eq, hchange, hQ, mul_assoc]
+  gcongr 2 * ?_
+  calc (∫⁻ x in S, ‖f x - ⨍ x in B, f x‖ₑ) / volume S
+      ≤ (∫⁻ x in B, ‖f x - ⨍ x in B, f x‖ₑ) / volume (ball c r) := by
+        rw [← hQ]
+        gcongr
+    _ = volume B / volume (ball c r) * ⨍⁻ x in B, ‖f x - ⨍ x in B, f x‖ₑ := by
+        rw [setLAverage_eq, ENNReal.div_eq_inv_mul, ENNReal.div_eq_inv_mul,
+          ENNReal.div_eq_inv_mul, ← mul_assoc, mul_assoc _ (volume B),
+          ENNReal.mul_inv_cancel hB0 hBtop, mul_one]
+    _ ≤ _ := by
+        rw [volume_ball_sqrt_card_mul_div_volume_ball c (T c) hr]
+        gcongr
+        exact setLAverage_enorm_sub_setAverage_le_sharpMaximalFunction volume f
+          (toLp_mem_ball_sqrt_card_mul hy)
+
+/-- **The Fefferman–Stein inequality for Euclidean balls.** For `1 < p < ∞` there is a constant
+`C`, depending only on `ι` and `p`, such that every integrable `f` on `EuclideanSpace ℝ ι`,
+`ι` nonempty, satisfies
+
+`∫ ‖f‖^p ≤ C ∫ (f^#)^p`,
+
+where `f^#` is the sharp maximal function for the balls of the Euclidean distance. -/
+theorem exists_lintegral_enorm_rpow_le_mul_lintegral_sharpMaximalFunction_rpow {p : ℝ}
+    (hp : 1 < p) :
+    ∃ C : ℝ≥0, ∀ f : EuclideanSpace ℝ ι → F, Integrable f →
+      ∫⁻ x, ‖f x‖ₑ ^ p ≤ C * ∫⁻ x, sharpMaximalFunction volume f x ^ p := by
+  have hp0 : 0 ≤ p := zero_le_one.trans hp.le
+  set T : (ι → ℝ) → EuclideanSpace ℝ ι := WithLp.toLp 2
+  have hT : MeasurePreserving T := PiLp.volume_preserving_toLp ι
+  have hTe : MeasurableEmbedding T := (MeasurableEquiv.toLp 2 (ι → ℝ)).measurableEmbedding
+  set K : ℝ≥0∞ := 2 * (ENNReal.ofReal (√(Fintype.card ι) ^ Fintype.card ι) *
+    volume (ball (0 : EuclideanSpace ℝ ι) 1) / volume (ball (0 : ι → ℝ) 1))
+  have hK : K ≠ ∞ := ENNReal.mul_ne_top (by simp) (ENNReal.div_ne_top
+    (ENNReal.mul_ne_top ENNReal.ofReal_ne_top measure_ball_lt_top.ne)
+    (measure_ball_pos _ _ one_pos).ne')
+  set C₀ : ℝ≥0∞ := ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p))
+  refine ⟨(C₀ * K ^ p).toNNReal, fun f hf => ?_⟩
+  rw [ENNReal.coe_toNNReal (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+    (ENNReal.rpow_ne_top_of_nonneg hp0 hK))]
+  calc ∫⁻ x, ‖f x‖ₑ ^ p
+      = ∫⁻ y, ‖f (T y)‖ₑ ^ p := (hT.lintegral_comp_emb hTe (fun x => ‖f x‖ₑ ^ p)).symm
+    _ ≤ C₀ * ∫⁻ y, sharpMaximalFunction volume (fun z => f (T z)) y ^ p :=
+        lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow
+          (hT.integrable_comp_of_integrable hf) hp
+    _ ≤ C₀ * ∫⁻ y, (K * sharpMaximalFunction volume f (T y)) ^ p := by
+        gcongr with y
+        exact sharpMaximalFunction_comp_toLp_le hf y
+    _ = C₀ * K ^ p * ∫⁻ x, sharpMaximalFunction volume f x ^ p := by
+        simp_rw [ENNReal.mul_rpow_of_nonneg _ _ hp0]
+        rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg hp0 hK), mul_assoc,
+          hT.lintegral_comp_emb hTe (fun x => sharpMaximalFunction volume f x ^ p)]
+
+end Euclidean
 
 end TauCeti
