@@ -8,6 +8,8 @@ module
 public import Mathlib.Probability.BrownianMotion.Basic
 public import Mathlib.Probability.Process.Adapted
 import TauCeti.Probability.Independence.Filtration
+import TauCeti.Probability.Distributions.Gaussian.Moments
+import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
 
 /-!
 # Pre-Brownian motion relative to a filtration
@@ -31,6 +33,10 @@ produce a new Brownian motion.
   filtration.
 * `ProbabilityTheory.IsPreBrownianReal.hasLaw_sub_of_le`: for `s ≤ t`, the increment
   `W_t - W_s` has law `N(0, t - s)`.
+* `ProbabilityTheory.IsPreBrownianReal.integral_sq_increment` and
+  `ProbabilityTheory.IsPreBrownianReal.integral_pow_four_increment`: second and fourth moments
+  of increments; the centered square is square integrable with mean zero and second moment
+  twice the squared interval length.
 * `MeasureTheory.Adapted.isFilteredPreBrownianReal`: the characterization by Gaussian increments
   independent of the past.
 
@@ -89,6 +95,75 @@ theorem hasLaw_sub_of_le (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst : s �
   convert hB.hasLaw_sub t s using 2
   ext
   simp [Real.nndist_eq, hst]
+
+/-- Every natural power of a pre-Brownian increment is integrable. -/
+theorem integrable_pow_increment (hB : IsPreBrownianReal B P)
+    {s t : ℝ≥0} (hst : s ≤ t) (n : ℕ) :
+    Integrable (fun ω ↦ (B t ω - B s ω) ^ n) P := by
+  simpa only [Function.comp_def, Pi.sub_apply] using
+    (hB.hasLaw_sub_of_le hst).integrable_comp
+      (TauCeti.integrable_pow_gaussianReal 0 (t - s) n)
+
+/-- The second moment of a pre-Brownian increment is its interval length. -/
+theorem integral_sq_increment (hB : IsPreBrownianReal B P)
+    {s t : ℝ≥0} (hst : s ≤ t) :
+    (∫ ω, (B t ω - B s ω) ^ 2 ∂P) = (t : ℝ) - s := by
+  have h := (hB.hasLaw_sub_of_le hst).integral_comp
+    (f := fun x : ℝ ↦ x ^ 2) (by fun_prop)
+  simpa [Function.comp_def, Pi.sub_def, integral_sq_gaussianReal, NNReal.coe_sub hst] using h
+
+/-- The fourth moment of a pre-Brownian increment is three times its squared interval length. -/
+theorem integral_pow_four_increment (hB : IsPreBrownianReal B P)
+    {s t : ℝ≥0} (hst : s ≤ t) :
+    (∫ ω, (B t ω - B s ω) ^ 4 ∂P) = 3 * ((t : ℝ) - s) ^ 2 := by
+  have h := (hB.hasLaw_sub_of_le hst).integral_comp
+    (f := fun x : ℝ ↦ x ^ 4) (by fun_prop)
+  have hm := integral_sub_pow_two_mul_gaussianReal 0 (t - s) 2
+  norm_num [NNReal.coe_sub hst] at hm
+  simpa only [Function.comp_def, Pi.sub_apply, hm, mul_comm] using h
+
+/-- The centered square of a Brownian increment is square integrable. -/
+theorem memLp_centered_sq_increment (hB : IsPreBrownianReal B P)
+    {s t : ℝ≥0} (hst : s ≤ t) :
+    MemLp (fun ω ↦ (B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) 2 P := by
+  have := (hB.hasLaw_eval 0).isProbabilityMeasure
+  have hlaw := hB.hasLaw_sub_of_le hst
+  have h2 : MemLp (fun ω ↦ (B t ω - B s ω) ^ 2) 2 P :=
+    (memLp_two_iff_integrable_sq
+      ((hlaw.aemeasurable.pow_const 2).aestronglyMeasurable)).2
+      (by simpa only [← pow_mul, Pi.sub_def] using hB.integrable_pow_increment hst 4)
+  exact h2.sub (memLp_const _)
+
+/-- The centered square of a Brownian increment has mean zero. -/
+theorem integral_centered_sq_increment (hB : IsPreBrownianReal B P)
+    {s t : ℝ≥0} (hst : s ≤ t) :
+    (∫ ω, (B t ω - B s ω) ^ 2 - ((t : ℝ) - s) ∂P) = 0 := by
+  have := (hB.hasLaw_eval 0).isProbabilityMeasure
+  rw [integral_sub (hB.integrable_pow_increment hst 2) (integrable_const _),
+    hB.integral_sq_increment hst, integral_const]
+  simp
+
+/-- The second moment of a centered squared Brownian increment is twice the squared
+length of its time interval. -/
+theorem integral_sq_centered_sq_increment (hB : IsPreBrownianReal B P)
+    {s t : ℝ≥0} (hst : s ≤ t) :
+    (∫ ω, ((B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) ^ 2 ∂P) =
+      2 * ((t : ℝ) - s) ^ 2 := by
+  have := (hB.hasLaw_eval 0).isProbabilityMeasure
+  have h4i := hB.integrable_pow_increment hst 4
+  have h2i := hB.integrable_pow_increment hst 2
+  have hexp : ∀ ω, ((B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) ^ 2 =
+      (B t ω - B s ω) ^ 4 - 2 * ((t : ℝ) - s) * (B t ω - B s ω) ^ 2 +
+        ((t : ℝ) - s) ^ 2 := fun ω ↦ by ring
+  simp_rw [hexp]
+  have hsub : Integrable (fun ω ↦ (B t ω - B s ω) ^ 4 -
+      2 * ((t : ℝ) - s) * (B t ω - B s ω) ^ 2) P := by
+    simpa only [Pi.sub_def] using h4i.sub (h2i.const_mul (2 * ((t : ℝ) - s)))
+  rw [integral_add hsub (integrable_const _),
+    integral_sub h4i (h2i.const_mul _), integral_const_mul,
+    hB.integral_pow_four_increment hst, hB.integral_sq_increment hst, integral_const]
+  simp only [smul_eq_mul, probReal_univ, one_mul]
+  ring
 
 end ProbabilityTheory.IsPreBrownianReal
 

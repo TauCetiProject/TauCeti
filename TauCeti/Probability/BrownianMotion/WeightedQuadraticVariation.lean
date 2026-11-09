@@ -44,72 +44,6 @@ namespace TauCeti.Probability.IsFilteredPreBrownianReal
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {B : ℝ≥0 → Ω → ℝ}
 
-private theorem integrable_pow_increment (hB : IsFilteredPreBrownianReal ℱ B P)
-    {s t : ℝ≥0} (hst : s ≤ t) (n : ℕ) :
-    Integrable (fun ω ↦ (B t ω - B s ω) ^ n) P := by
-  simpa only [Function.comp_def, Pi.sub_apply] using
-    (hB.toIsPreBrownianReal.hasLaw_sub_of_le hst).integrable_comp
-      (integrable_pow_gaussianReal 0 (t - s) n)
-
-private theorem integral_sq_increment (hB : IsFilteredPreBrownianReal ℱ B P)
-    {s t : ℝ≥0} (hst : s ≤ t) :
-    (∫ ω, (B t ω - B s ω) ^ 2 ∂P) = (t : ℝ) - s := by
-  have h := (hB.toIsPreBrownianReal.hasLaw_sub_of_le hst).integral_comp
-    (f := fun x : ℝ ↦ x ^ 2) (by fun_prop)
-  simpa [Function.comp_def, Pi.sub_def, integral_sq_gaussianReal, NNReal.coe_sub hst] using h
-
-private theorem integral_pow_four_increment (hB : IsFilteredPreBrownianReal ℱ B P)
-    {s t : ℝ≥0} (hst : s ≤ t) :
-    (∫ ω, (B t ω - B s ω) ^ 4 ∂P) = 3 * ((t : ℝ) - s) ^ 2 := by
-  have h := (hB.toIsPreBrownianReal.hasLaw_sub_of_le hst).integral_comp
-    (f := fun x : ℝ ↦ x ^ 4) (by fun_prop)
-  have hm := integral_sub_pow_two_mul_gaussianReal 0 (t - s) 2
-  norm_num [NNReal.coe_sub hst] at hm
-  simpa only [Function.comp_def, Pi.sub_apply, hm, mul_comm] using h
-
-/-- The centered square of a Brownian increment is square integrable. -/
-theorem memLp_centered_sq_increment (hB : IsFilteredPreBrownianReal ℱ B P)
-    {s t : ℝ≥0} (hst : s ≤ t) :
-    MemLp (fun ω ↦ (B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) 2 P := by
-  have := (hB.toIsPreBrownianReal.hasLaw_eval 0).isProbabilityMeasure
-  have hlaw := hB.toIsPreBrownianReal.hasLaw_sub_of_le hst
-  have h2 : MemLp (fun ω ↦ (B t ω - B s ω) ^ 2) 2 P :=
-    (memLp_two_iff_integrable_sq
-      ((hlaw.aemeasurable.pow_const 2).aestronglyMeasurable)).2
-      (by simpa only [← pow_mul, Pi.sub_def] using hB.integrable_pow_increment hst 4)
-  exact h2.sub (memLp_const _)
-
-/-- The centered square of a Brownian increment has mean zero. -/
-theorem integral_centered_sq_increment (hB : IsFilteredPreBrownianReal ℱ B P)
-    {s t : ℝ≥0} (hst : s ≤ t) :
-    (∫ ω, (B t ω - B s ω) ^ 2 - ((t : ℝ) - s) ∂P) = 0 := by
-  have := (hB.toIsPreBrownianReal.hasLaw_eval 0).isProbabilityMeasure
-  rw [integral_sub (hB.integrable_pow_increment hst 2) (integrable_const _),
-    hB.integral_sq_increment hst, integral_const]
-  simp
-
-/-- The second moment of a centered squared Brownian increment is twice the squared
-length of its time interval. -/
-theorem integral_sq_centered_sq_increment (hB : IsFilteredPreBrownianReal ℱ B P)
-    {s t : ℝ≥0} (hst : s ≤ t) :
-    (∫ ω, ((B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) ^ 2 ∂P) =
-      2 * ((t : ℝ) - s) ^ 2 := by
-  have := (hB.toIsPreBrownianReal.hasLaw_eval 0).isProbabilityMeasure
-  have h4i := hB.integrable_pow_increment hst 4
-  have h2i := hB.integrable_pow_increment hst 2
-  have hexp : ∀ ω, ((B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) ^ 2 =
-      (B t ω - B s ω) ^ 4 - 2 * ((t : ℝ) - s) * (B t ω - B s ω) ^ 2 +
-        ((t : ℝ) - s) ^ 2 := fun ω ↦ by ring
-  simp_rw [hexp]
-  have hsub : Integrable (fun ω ↦ (B t ω - B s ω) ^ 4 -
-      2 * ((t : ℝ) - s) * (B t ω - B s ω) ^ 2) P := by
-    simpa only [Pi.sub_def] using h4i.sub (h2i.const_mul (2 * ((t : ℝ) - s)))
-  rw [integral_add hsub (integrable_const _),
-    integral_sub h4i (h2i.const_mul _), integral_const_mul,
-    hB.integral_pow_four_increment hst, hB.integral_sq_increment hst, integral_const]
-  simp only [smul_eq_mul, probReal_univ, one_mul]
-  ring
-
 private theorem indepFun_centered_sq_increment (hB : IsFilteredPreBrownianReal ℱ B P)
     {s t : ℝ≥0} (hst : s ≤ t) {Y : Ω → ℝ} (hY : Measurable[ℱ s] Y) :
     IndepFun Y (fun ω ↦ (B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) P := by
@@ -125,8 +59,9 @@ theorem integral_mul_centered_sq_increment (hB : IsFilteredPreBrownianReal ℱ B
     (hYi : Integrable Y P) :
     (∫ ω, Y ω * ((B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) ∂P) = 0 := by
   rw [(indepFun_centered_sq_increment hB hst hY).integral_fun_mul_eq_mul_integral
-    hYi.aestronglyMeasurable (hB.memLp_centered_sq_increment hst).aestronglyMeasurable,
-    hB.integral_centered_sq_increment hst,
+    hYi.aestronglyMeasurable
+      (hB.toIsPreBrownianReal.memLp_centered_sq_increment hst).aestronglyMeasurable,
+    hB.toIsPreBrownianReal.integral_centered_sq_increment hst,
     mul_zero]
 
 /-- A square-integrable past height times a centered squared Brownian increment is
@@ -134,7 +69,7 @@ square integrable. -/
 theorem memLp_mul_centered_sq_increment (hB : IsFilteredPreBrownianReal ℱ B P)
     {s t : ℝ≥0} (hst : s ≤ t) {Y : Ω → ℝ} (hY : Measurable[ℱ s] Y) (hYi : MemLp Y 2 P) :
     MemLp (fun ω ↦ Y ω * ((B t ω - B s ω) ^ 2 - ((t : ℝ) - s))) 2 P := by
-  have hD := hB.memLp_centered_sq_increment hst
+  have hD := hB.toIsPreBrownianReal.memLp_centered_sq_increment hst
   refine (memLp_two_iff_integrable_sq (hYi.aestronglyMeasurable.mul
     hD.aestronglyMeasurable)).2 ?_
   simpa only [mul_pow, Function.comp_def, id_eq, Pi.mul_def] using
@@ -153,8 +88,8 @@ theorem integral_sq_mul_centered_sq_increment (hB : IsFilteredPreBrownianReal �
     (indepFun_centered_sq_increment hB hst hY).comp (measurable_id.pow_const 2)
       (measurable_id.pow_const 2)
   rw [hind.integral_fun_mul_eq_mul_integral hYi.integrable_sq.aestronglyMeasurable
-    (hB.memLp_centered_sq_increment hst).integrable_sq.aestronglyMeasurable,
-    hB.integral_sq_centered_sq_increment hst]
+    (hB.toIsPreBrownianReal.memLp_centered_sq_increment hst).integrable_sq.aestronglyMeasurable,
+    hB.toIsPreBrownianReal.integral_sq_centered_sq_increment hst]
   ring
 
 /-- Exact mean-square identity for a finite centered quadratic sum with arbitrary
