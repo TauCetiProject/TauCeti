@@ -286,7 +286,7 @@ theorem hasFDerivAt_extChartAt_lieExp_zero
 `Y` has initial derivative `X + Y`. -/
 theorem hasFDerivAt_extChartAt_mulInvariantExp_smul_mul_mulInvariantExp_smul_zero
     [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G]
+    [LieGroup I (minSmoothness ℝ 3) G]
     (X Y : GroupLieAlgebra I G) :
     let _ : ContMDiffMul I 1 G :=
       ContMDiffMul.of_le (m := 1) (n := minSmoothness ℝ 3) (by simp)
@@ -352,7 +352,7 @@ theorem hasFDerivAt_extChartAt_mulInvariantExp_smul_mul_mulInvariantExp_smul_zer
 
 section LieExp
 
-variable [FiniteDimensional ℝ E] [LieGroup I ∞ G] [IsManifold I 1 G] [T2Space G]
+variable [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G]
   [BoundarylessManifold I G]
 
 namespace LeftInvariantDerivation

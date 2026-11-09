@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Group.Arithmetic
 public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Real
 public import Mathlib.MeasureTheory.Measure.WithDensity
+public import Mathlib.Topology.EMetricSpace.Defs
 
 /-!
 # Marginal masses and sections of product measures
@@ -36,6 +37,10 @@ coordinate according to the sign of the first preserves the product measure
 (`MeasureTheory.Measure.measurePreserving_prod_skew_neg`), and the quotient `z.1 / z.2` has the
 same law as `z.1 / |z.2|` when the numerator's law is reflection invariant
 (`MeasureTheory.Measure.map_div_prod_eq_map_div_abs`).
+
+A coupling that moves almost every point by less than `r` and is carried in its second marginal
+by a set `s` gives no first-marginal mass to a point at distance at least `r` from every point of
+`s` (`MeasureTheory.measure_fst_singleton_eq_zero_of_ae_edist_lt`).
 -/
 
 public section
@@ -174,7 +179,35 @@ theorem map_div_prod_eq_map_div_abs {μ ν : Measure ℝ} [SFinite μ] [SFinite 
       · simp only [twist, hz, ↓reduceIte, Function.comp_apply,
           abs_of_nonneg (le_of_not_gt hz)]
 
+open scoped symmDiff in
+/-- Swapping the coordinates of an approximant of a swap-invariant set does not change the
+measure of the symmetric difference. -/
+theorem measure_symmDiff_preimage_swap_of_preimage_swap_eq {X : Type*} [MeasurableSpace X]
+    (μ : Measure X) [SFinite μ] {u s : Set (X × X)} (hsymm : Prod.swap ⁻¹' s = s) :
+    (μ.prod μ) ((Prod.swap ⁻¹' u) ∆ s) = (μ.prod μ) (u ∆ s) := by
+  calc
+    (μ.prod μ) ((Prod.swap ⁻¹' u) ∆ s) = (μ.prod μ) (Prod.swap ⁻¹' (u ∆ s)) := by
+      rw [Set.preimage_symmDiff, hsymm]
+    _ = (μ.prod μ) (u ∆ s) :=
+      (measurePreserving_swap (μ := μ) (ν := μ)).measure_preimage_emb
+        MeasurableEquiv.prodComm.measurableEmbedding _
+
 end MeasureTheory.Measure
+
+namespace MeasureTheory
+
+/-- A coupling `π` that moves almost every point by less than `r` and is carried in its second
+marginal by a set `s` has no first-marginal mass at a point `a` lying at distance at least `r`
+from every point of `s`. -/
+theorem measure_fst_singleton_eq_zero_of_ae_edist_lt {α : Type*} [PseudoEMetricSpace α]
+    [MeasurableSpace α] [MeasurableSingletonClass α] {π : Measure (α × α)} {r : ℝ≥0∞}
+    {s : Set α} {a : α} (hdist : ∀ᵐ z ∂π, edist z.1 z.2 < r) (hsnd : ∀ᵐ z ∂π, z.2 ∈ s)
+    (ha : ∀ x ∈ s, r ≤ edist a x) : π.fst {a} = 0 := by
+  rw [Measure.fst_apply (MeasurableSet.singleton _), measure_eq_zero_iff_ae_notMem]
+  filter_upwards [hdist, hsnd] with z hzdist hzs hz
+  exact (not_lt_of_ge (ha _ hzs)) ((Set.mem_singleton_iff.mp hz) ▸ hzdist)
+
+end MeasureTheory
 
 /-- Almost every section of an almost-everywhere measurable function on `μ.prod ν` is
 almost-everywhere measurable. This is the counterpart for `AEMeasurable` of
