@@ -43,9 +43,9 @@ Write `⟨ξ⟩ = (1 + ‖ξ‖ ^ 2) ^ (1 / 2)`. A function `u ∈ L²` lies in 
 `⟨ξ⟩ ^ s 𝓕u ∈ L²`, and for `s > n / 2` Cauchy–Schwarz against `⟨ξ⟩ ^ (-s) ∈ L²` makes `𝓕u` an
 `L¹` function `v` (`TemperedDistribution.MemSobolev.fourier_memL1`), with
 `‖v‖₁ ≤ ‖⟨·⟩ ^ (-s)‖₂ ‖u‖_{H^s}` and `‖⟨·⟩ ^ s v‖₂ = ‖u‖_{H^s}`
-(`TauCeti.eLpNorm_one_le_eLpNorm_mul_eLpNorm_rpow_one_add_norm_sq_smul`,
-`TemperedDistribution.MemSobolev.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm`). So `u = 𝓕⁻ v` almost
-everywhere and the product of two such functions is
+(`TemperedDistribution.MemSobolev.eLpNorm_one_le_mul_enorm_toBesselPotentialSpace` and
+`MemSobolev.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialSpace`, in the same
+namespace). So `u = 𝓕⁻ v` almost everywhere and the product of two such functions is
 
 `u₁ u₂ = 𝓕⁻ v₁ · 𝓕⁻ v₂ = 𝓕⁻ (v₁ ⋆ v₂)`
 
@@ -131,6 +131,22 @@ private theorem fourier_toLp_mul_eq {s : ℝ} (hs : finrank ℝ E < 2 * s)
     rw [hx, hx₁, hx₂, Real.fourierInv_mul_convolution_eq hi₁ hi₂]
   rw [hP, FourierTransform.fourier_fourierInv_eq]
 
+/-- The `H^s` norm on the Fourier side, with the weight acting by complex multiplication. -/
+private theorem MemSobolev.eLpNorm_one_add_norm_sq_rpow_mul_eq_enorm_toBesselPotentialSpace
+    {s : ℝ} {f : 𝓢'(E, ℂ)} (hf : MemSobolev s 2 f) {v : Lp ℂ 1 (volume : Measure E)}
+    (hv : 𝓕 f = v) :
+    eLpNorm (fun ξ => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * v ξ) 2 volume =
+      ‖hf.toBesselPotentialSpace‖ₑ := by
+  simpa only [Complex.real_smul] using
+    hf.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialSpace hv
+
+/-- The weight times the Fourier transform of an `H^s` function is square integrable. -/
+private theorem MemSobolev.memLp_one_add_norm_sq_rpow_mul {s : ℝ} {f : 𝓢'(E, ℂ)}
+    (hf : MemSobolev s 2 f) {v : Lp ℂ 1 (volume : Measure E)} (hv : 𝓕 f = v) :
+    MemLp (fun ξ => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * v ξ) 2 :=
+  memLp_iff.2
+    (hf.eLpNorm_one_add_norm_sq_rpow_mul_eq_enorm_toBesselPotentialSpace hv ▸ enorm_lt_top)
+
 /-- **The Sobolev spaces `H^s(E)`, `s > dim E / 2`, are algebras.** The pointwise product of two
 `L²` functions in `H^s`, `s > dim E / 2`, lies in `H^s`. -/
 theorem MemSobolev.mul {s : ℝ} (hs : finrank ℝ E < 2 * s)
@@ -142,19 +158,14 @@ theorem MemSobolev.mul {s : ℝ} (hs : finrank ℝ E < 2 * s)
     linarith
   obtain ⟨v₁, h₁⟩ := hu.fourier_memL1 hs
   obtain ⟨v₂, h₂⟩ := hv.fourier_memL1 hs
-  -- The weight times each Fourier transform is square integrable, with norm the `H^s` norm.
-  have hw {f : 𝓢'(E, ℂ)} (hf : MemSobolev s 2 f) {w : Lp ℂ 1 (volume : Measure E)}
-      (h : 𝓕 f = w) : MemLp (fun ξ => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * w ξ) 2 := by
-    have he := hf.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm h
-    simp only [Complex.real_smul] at he
-    exact memLp_iff.2 (he ▸ enorm_lt_top)
   have hW := (L1.integrable_coeFn v₁).integrable_convolution (ContinuousLinearMap.mul ℂ ℂ)
     (L1.integrable_coeFn v₂)
   set R := hW.toL1 _
   -- The weighted convolution estimate puts the weight times `𝓕 (u v) = v₁ ⋆ v₂` in `L²`.
   have hmem : MemLp (fun ξ => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * R ξ) 2 := by
     refine (TauCeti.memLp_one_add_norm_sq_rpow_mul_convolution hs0 (L1.integrable_coeFn v₁)
-      (L1.integrable_coeFn v₂) (hw hu h₁) (hw hv h₂)).ae_eq ?_
+      (L1.integrable_coeFn v₂) (hu.memLp_one_add_norm_sq_rpow_mul h₁)
+      (hv.memLp_one_add_norm_sq_rpow_mul h₂)).ae_eq ?_
     filter_upwards [hW.coeFn_toL1] with ξ hξ
     rw [hξ]
   have hwg : (fun ξ : E => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
@@ -177,30 +188,20 @@ theorem exists_norm_toBesselPotentialSpace_mul_le {s : ℝ} (hs : finrank ℝ E 
   have hs0 : 0 ≤ s := by
     have := (finrank ℝ E).cast_nonneg (α := ℝ)
     linarith
-  have hHolder := TauCeti.eLpNorm_one_le_eLpNorm_mul_eLpNorm_rpow_one_add_norm_sq_smul
-    (F := ℂ) (volume : Measure E) s
   set K := eLpNorm (fun ξ : E => (1 + ‖ξ‖ ^ 2) ^ (-s / 2)) 2 volume
   have hK : K ≠ ∞ := (TauCeti.memLp_rpow_neg_one_add_norm_sq volume hs).ne
   refine ⟨2 ^ s * (2 * K.toReal), by positivity, fun {u v} hu hv => ?_⟩
   obtain ⟨v₁, h₁⟩ := hu.fourier_memL1 hs
   obtain ⟨v₂, h₂⟩ := hv.fourier_memL1 hs
-  -- The three `H^s` norms on the Fourier side, with complex multiplication by the weight.
-  have hnorm {f : 𝓢'(E, ℂ)} (hf : MemSobolev s 2 f) {w : Lp ℂ 1 (volume : Measure E)}
-      (h : 𝓕 f = w) : eLpNorm (fun ξ => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * w ξ) 2 volume =
-        ‖hf.toBesselPotentialSpace‖ₑ := by
-    simpa only [Complex.real_smul] using hf.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm h
-  -- Each Fourier transform has `L¹` norm at most `K` times the `H^s` norm.
-  have hL1 {f : 𝓢'(E, ℂ)} (hf : MemSobolev s 2 f) {w : Lp ℂ 1 (volume : Measure E)}
-      (h : 𝓕 f = w) : eLpNorm w 1 volume ≤ K * ‖hf.toBesselPotentialSpace‖ₑ := by
-    have := hHolder w
-    rwa [hf.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm h] at this
   have hW := (L1.integrable_coeFn v₁).integrable_convolution (ContinuousLinearMap.mul ℂ ℂ)
     (L1.integrable_coeFn v₂)
-  have hP := hnorm (hu.mul hs hv) (fourier_toLp_mul_eq hs hu h₁ h₂)
+  have hP := (hu.mul hs hv).eLpNorm_one_add_norm_sq_rpow_mul_eq_enorm_toBesselPotentialSpace
+    (fourier_toLp_mul_eq hs hu h₁ h₂)
   rw [eLpNorm_congr_ae (by filter_upwards [hW.coeFn_toL1] with ξ hξ; rw [hξ])] at hP
   have hconv := TauCeti.eLpNorm_one_add_norm_sq_rpow_mul_convolution_le hs0
     (Lp.aestronglyMeasurable v₁) (Lp.aestronglyMeasurable v₂)
-  rw [hnorm hu h₁, hnorm hv h₂, hP] at hconv
+  rw [hu.eLpNorm_one_add_norm_sq_rpow_mul_eq_enorm_toBesselPotentialSpace h₁,
+    hv.eLpNorm_one_add_norm_sq_rpow_mul_eq_enorm_toBesselPotentialSpace h₂, hP] at hconv
   -- Combine in `ℝ≥0∞`, then pass to real norms.
   rw [← ENNReal.ofReal_le_ofReal_iff (by positivity), ofReal_norm]
   calc ‖(hu.mul hs hv).toBesselPotentialSpace‖ₑ
@@ -208,8 +209,8 @@ theorem exists_norm_toBesselPotentialSpace_mul_le {s : ℝ} (hs : finrank ℝ E 
           K * ‖hu.toBesselPotentialSpace‖ₑ * ‖hv.toBesselPotentialSpace‖ₑ) := by
         refine hconv.trans ?_
         gcongr
-        · exact hL1 hv h₂
-        · exact hL1 hu h₁
+        · exact hv.eLpNorm_one_le_mul_enorm_toBesselPotentialSpace h₂
+        · exact hu.eLpNorm_one_le_mul_enorm_toBesselPotentialSpace h₁
     _ = ENNReal.ofReal (2 ^ s * (2 * K.toReal) * ‖hu.toBesselPotentialSpace‖ *
           ‖hv.toBesselPotentialSpace‖) := by
         rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity),

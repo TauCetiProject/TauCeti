@@ -20,10 +20,10 @@ Cauchy–Schwarz inequality gives
 
 `‖v‖₁ ≤ ‖(1 + ‖·‖ ^ 2) ^ (-s / 2)‖₂ ‖(1 + ‖·‖ ^ 2) ^ (s / 2) v‖₂`
 
-(`TauCeti.eLpNorm_one_le_eLpNorm_mul_eLpNorm_rpow_one_add_norm_sq_smul`). Together these bound
-the `L¹` norm of a function by a weighted `L²` norm when `2s > d`. Applied to the Fourier
-transform of a function in the Bessel-potential space `H^s`, whose `H^s` norm is the weighted
-`L²` norm of its Fourier transform, this is the estimate behind the Sobolev embedding
+(`TauCeti.eLpNorm_one_le_eLpNorm_one_add_norm_sq_rpow_neg_mul_eLpNorm_one_add_norm_sq_rpow_smul`).
+Together these bound the `L¹` norm of a function by a weighted `L²` norm when `2s > d`. Applied
+to the Fourier transform of a function in the Bessel-potential space `H^s`, whose `H^s` norm is
+the weighted `L²` norm of its Fourier transform, this is the estimate behind the Sobolev embedding
 `H^s ⊆ C₀` and the algebra property of `H^s` for `s > d / 2`.
 
 ## References
@@ -60,8 +60,8 @@ theorem memLp_rpow_neg_one_add_norm_sq [NormedSpace ℝ V] [FiniteDimensional �
 /-- **The `L¹` norm is bounded by a weighted `L²` norm.** For every `s` and every function `v`,
 `‖v‖₁ ≤ ‖(1 + ‖·‖ ^ 2) ^ (-s / 2)‖₂ ‖(1 + ‖·‖ ^ 2) ^ (s / 2) v‖₂`. The first factor is finite
 when `2s > dim V` (`TauCeti.memLp_rpow_neg_one_add_norm_sq`). -/
-theorem eLpNorm_one_le_eLpNorm_mul_eLpNorm_rpow_one_add_norm_sq_smul (μ : Measure V) (s : ℝ)
-    (v : V → F) :
+theorem eLpNorm_one_le_eLpNorm_one_add_norm_sq_rpow_neg_mul_eLpNorm_one_add_norm_sq_rpow_smul
+    (μ : Measure V) (s : ℝ) (v : V → F) :
     eLpNorm v 1 μ ≤ eLpNorm (fun x : V => (1 + ‖x‖ ^ 2) ^ (-s / 2)) 2 μ *
       eLpNorm (fun x => (1 + ‖x‖ ^ 2) ^ (s / 2) • v x) 2 μ := by
   have h : v = (fun x : V => (1 + ‖x‖ ^ 2) ^ (-s / 2)) •
