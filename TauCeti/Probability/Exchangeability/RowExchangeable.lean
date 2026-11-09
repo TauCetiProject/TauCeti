@@ -9,6 +9,8 @@ public import TauCeti.Probability.DeFinetti.Theorem
 public import TauCeti.Probability.Exchangeability.FullyExchangeable
 public import TauCeti.Probability.Process.Array
 public import TauCeti.Algebra.GroupAction.FiniteSupportPerm
+-- Non-public: two finite-valued functions with equal second and mixed moments are a.e. equal.
+import TauCeti.MeasureTheory.Function.AEEqOfLIntegral.Mul
 -- Non-public: evaluating a random probability measure at a fixed measurable set is measurable.
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Ext
 -- Non-public: equality of process laws is reduced to their finite-dimensional laws.
@@ -354,199 +356,48 @@ theorem RowExchangeable.ae_apply_pi_union [IsFiniteMeasure μ] (h : RowExchangea
     simpa only [arrayCol_apply] using (hlam.aemeasurable p.2).eval p.1
   set C : Set (ι → α) := Set.pi (↑F) B with hC
   set D : Set (ι → α) := Set.pi (↑G) B with hD
-  have hCm : MeasurableSet C := MeasurableSet.pi F.countable_toSet fun a ha =>
-    hB a (Or.inl ha)
-  have hDm : MeasurableSet D := MeasurableSet.pi G.countable_toSet fun a ha =>
-    hB a (Or.inr ha)
-  have hCDm : MeasurableSet (C ∩ D) := hCm.inter hDm
-  have hunion : Set.pi (↑F ∪ ↑G) B = C ∩ D := Set.union_pi
-  simp only [hunion]
-  have hmem : ∀ (H : Finset ι) (k : ℕ) (ω : Ω),
-      arrayCol Y k ω ∈ Set.pi (↑H : Set ι) B ↔ ∀ a ∈ H, Y (a, k) ω ∈ B a := by
-    intro H k ω; simp [Set.mem_pi]
-  -- Every mixed moment of `lam` on these boxes is the probability of an array event.
-  have hblock : ∀ {r : ℕ} (k : Fin r → ℕ), Function.Injective k → ∀ E : Fin r → Set (ι → α),
-      (∀ j, MeasurableSet (E j)) →
-        ∫⁻ ω, ∏ j, (lam ω : Measure (ι → α)) (E j) ∂μ =
-          μ {ω | ∀ j, arrayCol Y (k j) ω ∈ E j} := by
-    intro r k hk E hE
-    rw [← hlam.blockLaw_univ_pi k hk E hE,
-      blockLaw_apply_rectangle μ (arrayCol Y) k (fun j => hlam.aemeasurable (k j)) E hE]
+  have hCm : MeasurableSet C := .pi F.countable_toSet fun a ha => hB a (Or.inl ha)
+  have hDm : MeasurableSet D := .pi G.countable_toSet fun a ha => hB a (Or.inr ha)
+  have hm : ∀ S, MeasurableSet S → Measurable fun ω => (lam ω : Measure (ι → α)) S := fun _ hS =>
+    (TauCeti.MeasureTheory.measurable_probabilityMeasure_toMeasure_apply hS).comp
+      hlam.measurable_mixingRepresentative
   set T : ℝ≥0∞ := μ {ω | (∀ a ∈ F, Y (a, 0) ω ∈ B a ∧ Y (a, 1) ω ∈ B a) ∧
     ∀ a ∈ G, Y (a, 0) ω ∈ B a ∧ Y (a, 1) ω ∈ B a} with hT
-  have hinj2 : Function.Injective (![0, 1] : Fin 2 → ℕ) := by
-    intro i j hij; fin_cases i <;> fin_cases j <;> simp_all
-  have hinj3 : Function.Injective (![0, 1, 2] : Fin 3 → ℕ) := by
-    intro i j hij; fin_cases i <;> fin_cases j <;> simp_all
-  have hinj4 : Function.Injective (![0, 1, 2, 3] : Fin 4 → ℕ) := by
-    intro i j hij; fin_cases i <;> fin_cases j <;> simp_all
-  -- First pattern: the whole box twice, read at times `0` and `1`.
-  have hT1 : ∫⁻ ω, (lam ω : Measure (ι → α)) (C ∩ D) *
-      (lam ω : Measure (ι → α)) (C ∩ D) ∂μ = T := by
-    have key := hblock ![0, 1] hinj2 ![C ∩ D, C ∩ D] (fun j => by fin_cases j <;> exact hCDm)
-    have hprod : ∀ ω : Ω, (lam ω : Measure (ι → α)) (C ∩ D) * (lam ω : Measure (ι → α)) (C ∩ D) =
-          ∏ j : Fin 2, (lam ω : Measure (ι → α)) (![C ∩ D, C ∩ D] j) := by
-      intro ω; simp [Fin.prod_univ_two]
-    simp_rw [hprod]
-    rw [key, hT]
-    congr 1
-    ext ω
-    simp only [Set.mem_ofPred_eq, Fin.forall_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-      Set.mem_inter_iff, hC, hD, hmem]
-    exact ⟨fun ⟨⟨hF0, hG0⟩, hF1, hG1⟩ =>
-        ⟨fun a ha => ⟨hF0 a ha, hF1 a ha⟩, fun a ha => ⟨hG0 a ha, hG1 a ha⟩⟩,
-      fun ⟨hF, hG⟩ => ⟨⟨fun a ha => (hF a ha).1, fun a ha => (hG a ha).1⟩,
-        fun a ha => (hF a ha).2, fun a ha => (hG a ha).2⟩⟩
-  -- Second pattern: the whole box and then each half, at times `0, 1` in `F` and `0, 2` in `G`.
-  have hT2 : ∫⁻ ω, (lam ω : Measure (ι → α)) (C ∩ D) * (lam ω : Measure (ι → α)) C *
-      (lam ω : Measure (ι → α)) D ∂μ = T := by
-    have key := hblock ![0, 1, 2] hinj3 ![C ∩ D, C, D]
-      (fun j => by fin_cases j <;> [exact hCDm; exact hCm; exact hDm])
-    have hprod : ∀ ω : Ω, (lam ω : Measure (ι → α)) (C ∩ D) * (lam ω : Measure (ι → α)) C *
-        (lam ω : Measure (ι → α)) D =
-          ∏ j : Fin 3, (lam ω : Measure (ι → α)) (![C ∩ D, C, D] j) := by
-      intro ω; simp [Fin.prod_univ_three]
-    simp_rw [hprod]
-    rw [key, hT, ← h.measure_setOf_two_blocks_eq hY hFG hB (m := 0) (n := 1) (m' := 0) (n' := 2)
-      (by norm_num) (by norm_num)]
-    congr 1
-    ext ω
-    simp only [Set.mem_ofPred_eq, Fin.forall_fin_succ, IsEmpty.forall_iff, and_true, Fin.isValue,
-      Matrix.cons_val_zero, Matrix.cons_val_succ, Set.mem_inter_iff, hC, hD, hmem]
-    exact ⟨fun ⟨⟨hF0, hG0⟩, hF1, hG2⟩ =>
-        ⟨fun a ha => ⟨hF0 a ha, hF1 a ha⟩, fun a ha => ⟨hG0 a ha, hG2 a ha⟩⟩,
-      fun ⟨hF, hG⟩ => ⟨⟨fun a ha => (hF a ha).1, fun a ha => (hG a ha).1⟩,
-        fun a ha => (hF a ha).2, fun a ha => (hG a ha).2⟩⟩
-  -- Third pattern: each half twice, at times `0, 1` in `F` and `2, 3` in `G`.
-  have hT3 : ∫⁻ ω, (lam ω : Measure (ι → α)) C * (lam ω : Measure (ι → α)) C *
-      (lam ω : Measure (ι → α)) D * (lam ω : Measure (ι → α)) D ∂μ = T := by
-    have key := hblock ![0, 1, 2, 3] hinj4 ![C, C, D, D]
-      (fun j => by fin_cases j <;> [exact hCm; exact hCm; exact hDm; exact hDm])
-    have hprod : ∀ ω : Ω, (lam ω : Measure (ι → α)) C * (lam ω : Measure (ι → α)) C *
-        (lam ω : Measure (ι → α)) D * (lam ω : Measure (ι → α)) D =
-          ∏ j : Fin 4, (lam ω : Measure (ι → α)) (![C, C, D, D] j) := by
-      intro ω; simp [Fin.prod_univ_four]
-    simp_rw [hprod]
-    rw [key, hT, ← h.measure_setOf_two_blocks_eq hY hFG hB (m := 0) (n := 1) (m' := 2) (n' := 3)
-      (by norm_num) (by norm_num)]
-    congr 1
-    ext ω
-    simp only [Set.mem_ofPred_eq, Fin.forall_fin_succ, IsEmpty.forall_iff, and_true, Fin.isValue,
-      Matrix.cons_val_zero, Matrix.cons_val_succ, hC, hD, hmem]
-    exact ⟨fun ⟨hF0, hF1, hG2, hG3⟩ =>
-        ⟨fun a ha => ⟨hF0 a ha, hF1 a ha⟩, fun a ha => ⟨hG2 a ha, hG3 a ha⟩⟩,
-      fun ⟨hF, hG⟩ => ⟨fun a ha => (hF a ha).1, fun a ha => (hF a ha).2,
-        fun a ha => (hG a ha).1, fun a ha => (hG a ha).2⟩⟩
-  -- The mean square of the difference is `T - 2T + T = 0`.
-  have hlam_meas := hlam.measurable_mixingRepresentative
-  have hprob : ∀ (ω : Ω) (S : Set (ι → α)), (lam ω : Measure (ι → α)) S ≤ 1 := fun _ _ =>
-    prob_le_one
-  have hle1 : ∀ (ω : Ω) (S : Set (ι → α)), ((lam ω : Measure (ι → α)) S).toReal ≤ 1 := by
-    intro ω S
-    simpa using ENNReal.toReal_mono ENNReal.one_ne_top (hprob ω S)
-  have hmC : Measurable fun ω => (lam ω : Measure (ι → α)) C :=
-    (TauCeti.MeasureTheory.measurable_probabilityMeasure_toMeasure_apply hCm).comp hlam_meas
-  have hmD : Measurable fun ω => (lam ω : Measure (ι → α)) D :=
-    (TauCeti.MeasureTheory.measurable_probabilityMeasure_toMeasure_apply hDm).comp hlam_meas
-  have hmCD : Measurable fun ω => (lam ω : Measure (ι → α)) (C ∩ D) :=
-    (TauCeti.MeasureTheory.measurable_probabilityMeasure_toMeasure_apply hCDm).comp hlam_meas
-  set f : Ω → ℝ := fun ω => ((lam ω : Measure (ι → α)) (C ∩ D)).toReal with hf
-  set g : Ω → ℝ := fun ω =>
-    ((lam ω : Measure (ι → α)) C).toReal * ((lam ω : Measure (ι → α)) D).toReal with hg
-  have hfm : Measurable f := ENNReal.measurable_toReal.comp hmCD
-  have hgm : Measurable g :=
-    (ENNReal.measurable_toReal.comp hmC).mul (ENNReal.measurable_toReal.comp hmD)
-  have hf1 : ∀ ω, |f ω| ≤ 1 := fun ω => by
-    rw [hf, abs_of_nonneg ENNReal.toReal_nonneg]; exact hle1 ω _
-  have hg1 : ∀ ω, |g ω| ≤ 1 := fun ω => by
-    rw [hg]
-    simpa [Real.norm_eq_abs] using norm_mul_le_of_le
-      (a₁ := ((lam ω : Measure (ι → α)) C).toReal)
-      (a₂ := ((lam ω : Measure (ι → α)) D).toReal) (r₁ := 1) (r₂ := 1)
-      (by rw [Real.norm_eq_abs, abs_of_nonneg ENNReal.toReal_nonneg]; exact hle1 ω _)
-      (by rw [Real.norm_eq_abs, abs_of_nonneg ENNReal.toReal_nonneg]; exact hle1 ω _)
-  have hI1 : ∫ ω, f ω * f ω ∂μ = T.toReal := by
-    have hrw : (fun ω => f ω * f ω) = fun ω =>
-        ((lam ω : Measure (ι → α)) (C ∩ D) * (lam ω : Measure (ι → α)) (C ∩ D)).toReal := by
-      funext ω; rw [ENNReal.toReal_mul]
-    rw [hrw, integral_toReal
-      (f := fun ω => (lam ω : Measure (ι → α)) (C ∩ D) *
-        (lam ω : Measure (ι → α)) (C ∩ D)) (hmCD.mul hmCD).aemeasurable
-      (.of_forall fun ω => (ENNReal.mul_ne_top
-        (measure_ne_top (lam ω : Measure (ι → α)) _)
-        (measure_ne_top (lam ω : Measure (ι → α)) _)).lt_top), hT1]
-  have hI2 : ∫ ω, f ω * g ω ∂μ = T.toReal := by
-    have hrw : (fun ω => f ω * g ω) = fun ω =>
-        ((lam ω : Measure (ι → α)) (C ∩ D) * (lam ω : Measure (ι → α)) C *
-          (lam ω : Measure (ι → α)) D).toReal := by
-      funext ω; rw [ENNReal.toReal_mul, ENNReal.toReal_mul, hf, hg, mul_assoc]
-    rw [hrw, integral_toReal
-      (f := fun ω => (lam ω : Measure (ι → α)) (C ∩ D) *
-        (lam ω : Measure (ι → α)) C * (lam ω : Measure (ι → α)) D)
-      ((hmCD.mul hmC).mul hmD).aemeasurable
-      (.of_forall fun ω => (ENNReal.mul_ne_top (ENNReal.mul_ne_top
-        (measure_ne_top (lam ω : Measure (ι → α)) _)
-        (measure_ne_top (lam ω : Measure (ι → α)) _))
-        (measure_ne_top (lam ω : Measure (ι → α)) _)).lt_top), hT2]
-  have hI3 : ∫ ω, g ω * g ω ∂μ = T.toReal := by
-    have hrw : (fun ω => g ω * g ω) = fun ω =>
-        ((lam ω : Measure (ι → α)) C * (lam ω : Measure (ι → α)) C *
-          (lam ω : Measure (ι → α)) D * (lam ω : Measure (ι → α)) D).toReal := by
-      funext ω
-      rw [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_mul, hg]
-      ring
-    rw [hrw, integral_toReal
-      (f := fun ω => (lam ω : Measure (ι → α)) C * (lam ω : Measure (ι → α)) C *
-        (lam ω : Measure (ι → α)) D * (lam ω : Measure (ι → α)) D)
-      (((hmC.mul hmC).mul hmD).mul hmD).aemeasurable
-      (.of_forall fun ω => (ENNReal.mul_ne_top (ENNReal.mul_ne_top
-        (ENNReal.mul_ne_top (measure_ne_top (lam ω : Measure (ι → α)) _)
-          (measure_ne_top (lam ω : Measure (ι → α)) _))
-        (measure_ne_top (lam ω : Measure (ι → α)) _))
-        (measure_ne_top (lam ω : Measure (ι → α)) _)).lt_top), hT3]
-  have e1 : Integrable (fun ω => f ω * f ω) μ :=
-    Integrable.of_bound (hfm.mul hfm).aestronglyMeasurable 1
-      (.of_forall fun ω => by
-        simpa [Real.norm_eq_abs] using norm_mul_le_of_le
-          (a₁ := f ω) (a₂ := f ω) (r₁ := 1) (r₂ := 1)
-          (by simpa only [Real.norm_eq_abs] using hf1 ω)
-          (by simpa only [Real.norm_eq_abs] using hf1 ω))
-  have e2 : Integrable (fun ω => f ω * g ω) μ :=
-    Integrable.of_bound (hfm.mul hgm).aestronglyMeasurable 1
-      (.of_forall fun ω => by
-        simpa [Real.norm_eq_abs] using norm_mul_le_of_le
-          (a₁ := f ω) (a₂ := g ω) (r₁ := 1) (r₂ := 1)
-          (by simpa only [Real.norm_eq_abs] using hf1 ω)
-          (by simpa only [Real.norm_eq_abs] using hg1 ω))
-  have e3 : Integrable (fun ω => g ω * g ω) μ :=
-    Integrable.of_bound (hgm.mul hgm).aestronglyMeasurable 1
-      (.of_forall fun ω => by
-        simpa [Real.norm_eq_abs] using norm_mul_le_of_le
-          (a₁ := g ω) (a₂ := g ω) (r₁ := 1) (r₂ := 1)
-          (by simpa only [Real.norm_eq_abs] using hg1 ω)
-          (by simpa only [Real.norm_eq_abs] using hg1 ω))
-  have hexp : (fun ω => (f ω - g ω) ^ 2)
-      = fun ω => f ω * f ω - 2 * (f ω * g ω) + g ω * g ω := by funext ω; ring
-  have e2' : Integrable (fun ω => 2 * (f ω * g ω)) μ := e2.const_mul 2
-  have e12 : Integrable (fun ω => f ω * f ω - 2 * (f ω * g ω)) μ := e1.sub e2'
-  have hsq : Integrable (fun ω => (f ω - g ω) ^ 2) μ := by
-    rw [hexp]; exact e12.add e3
-  have hzero : ∫ ω, (f ω - g ω) ^ 2 ∂μ = 0 := by
-    rw [hexp, integral_add e12 e3, integral_sub e1 e2', integral_const_mul, hI1, hI2, hI3]
-    ring
-  have hae : (fun ω => (f ω - g ω) ^ 2) =ᵐ[μ] 0 :=
-    (integral_eq_zero_iff_of_nonneg (fun ω => sq_nonneg _) hsq).mp hzero
-  filter_upwards [hae] with ω hω
-  have hfg : f ω = g ω := by
-    have h0 : f ω - g ω = 0 := by
-      have : (f ω - g ω) ^ 2 = 0 := hω
-      exact pow_eq_zero_iff two_ne_zero |>.mp this
-    linarith
-  rw [← ENNReal.toReal_eq_toReal_iff' (measure_ne_top (lam ω : Measure (ι → α)) _)
-      (ENNReal.mul_ne_top (measure_ne_top (lam ω : Measure (ι → α)) _)
-        (measure_ne_top (lam ω : Measure (ι → α)) _)),
-    ENNReal.toReal_mul]
-  simpa [hf, hg] using hfg
+  -- Every mixed moment of `lam` on these boxes is the probability of an array event in which each
+  -- row of `F` and of `G` is tested at two distinct times, so by the two-block lemma it is `T`.
+  have hpat : ∀ {r : ℕ} (k : Fin r → ℕ) (E : Fin r → Set (ι → α)) {m n m' n' : ℕ},
+      Function.Injective k → (∀ j, MeasurableSet (E j)) → m ≠ n → m' ≠ n' →
+      (∀ ω, (∀ j, arrayCol Y (k j) ω ∈ E j) ↔ (∀ a ∈ F, Y (a, m) ω ∈ B a ∧ Y (a, n) ω ∈ B a) ∧
+        ∀ a ∈ G, Y (a, m') ω ∈ B a ∧ Y (a, n') ω ∈ B a) →
+      ∫⁻ ω, ∏ j, (lam ω : Measure (ι → α)) (E j) ∂μ = T := by
+    intro r k E m n m' n' hk hE hmn hmn' hiff
+    rw [← hlam.blockLaw_univ_pi k hk E hE, blockLaw_apply_rectangle μ (arrayCol Y) k
+      (fun j => hlam.aemeasurable (k j)) E hE, hT,
+      ← h.measure_setOf_two_blocks_eq hY hFG hB hmn hmn']
+    exact congrArg μ (Set.ext hiff)
+  have hT1 := hpat ![0, 1] ![C ∩ D, C ∩ D] (m := 0) (n := 1) (m' := 0) (n' := 1) (by decide)
+    (by simp [Fin.forall_fin_two, hCm.inter hDm]) zero_ne_one zero_ne_one fun ω => by
+      simp only [Fin.forall_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one, Set.mem_inter_iff,
+        hC, hD, Set.mem_pi, Finset.mem_coe, arrayCol_apply, imp_and, forall_and]
+      tauto
+  have hT2 := hpat ![0, 1, 2] ![C ∩ D, C, D] (m := 0) (n := 1) (m' := 0) (n' := 2) (by decide)
+    (by simp [Fin.forall_fin_succ, hCm.inter hDm, hCm, hDm]) zero_ne_one (by norm_num) fun ω => by
+      simp only [Fin.forall_fin_succ, IsEmpty.forall_iff, and_true, Matrix.cons_val_zero,
+        Matrix.cons_val_succ, Set.mem_inter_iff, hC, hD, Set.mem_pi, Finset.mem_coe,
+        arrayCol_apply, imp_and, forall_and]
+      tauto
+  have hT3 := hpat ![0, 2, 1, 3] ![C, D, C, D] (m := 0) (n := 1) (m' := 2) (n' := 3) (by decide)
+    (by simp [Fin.forall_fin_succ, hCm, hDm]) zero_ne_one (by norm_num) fun ω => by
+      simp only [Fin.forall_fin_succ, IsEmpty.forall_iff, and_true, Matrix.cons_val_zero,
+        Matrix.cons_val_succ, hC, hD, Set.mem_pi, Finset.mem_coe, arrayCol_apply, imp_and,
+        forall_and]
+      tauto
+  simp only [Fin.prod_univ_succ, Fin.prod_univ_zero, mul_one, Matrix.cons_val_zero,
+    Matrix.cons_val_succ] at hT1 hT2 hT3
+  rw [Set.union_pi]
+  exact ae_eq_of_lintegral_mul_eq (hm _ (hCm.inter hDm)).aemeasurable
+    ((hm _ hCm).mul (hm _ hDm)).aemeasurable (measure_ne_top μ _) hT1 hT2
+    (by simpa only [mul_assoc] using hT3)
 
 /-- **The directing measure of a row exchangeable array factors over the rows.** For a finite set
 `F` of rows and measurable target sets `B`, the mass that the mixing representative of the columns
@@ -593,82 +444,42 @@ theorem RowExchangeable.measure_setOf_forall_mem_eq_lintegral_prod [IsFiniteMeas
       ∫⁻ ω, ∏ t : Fin r, (lam ω : Measure (ι → α)) {v : ι → α | v (c t).1 ∈ B t} ∂μ := by
   classical
   -- A horizon past every column the cells occupy, and the cells' columns inside it.
-  have hcm : ∀ t : Fin r, (c t).2 < (Finset.univ.sup fun t : Fin r => (c t).2) + 1 := fun t =>
-    Nat.lt_succ_of_le (Finset.le_sup (f := fun t : Fin r => (c t).2) (Finset.mem_univ t))
   set m : ℕ := (Finset.univ.sup fun t : Fin r => (c t).2) + 1
-  set g : Fin r → Fin m := fun t => ⟨(c t).2, hcm t⟩
-  have hcell : ∀ t : Fin r, ((c t).1, ((g t : ℕ))) = c t := fun t => Prod.mk.eta
-  have hd : Function.Injective fun t : Fin r => ((c t).1, g t) := by
-    intro s t hst
-    simp only [Prod.mk.injEq] at hst
-    exact hc (Prod.ext hst.1 (congrArg Fin.val hst.2))
-  -- The target set a row is constrained to inside a given column, and the box it cuts out.
-  set target : ι → Fin m → Set α := fun a j =>
-    ⋂ t ∈ Finset.univ.filter fun t : Fin r => ((c t).1, g t) = (a, j), B t with htarget_def
+  set g : Fin r → Fin m := fun t => ⟨(c t).2, Nat.lt_succ_of_le
+    (Finset.le_sup (f := fun t : Fin r => (c t).2) (Finset.mem_univ t))⟩
+  -- The target set a row is constrained to inside a given column, and the rows a column constrains.
+  set target : ι → Fin m → Set α := fun a j => ⋂ t ∈ {t | c t = (a, (j : ℕ))}, B t
   set F : Fin m → Finset ι :=
-    fun j => (Finset.univ.filter fun t : Fin r => g t = j).image fun t => (c t).1 with hF_def
-  have htarget_eq : ∀ t : Fin r, target ((c t).1) (g t) = B t := by
-    intro t
-    have hfilter : (Finset.univ.filter fun s : Fin r => ((c s).1, g s) = ((c t).1, g t)) = {t} := by
-      ext s
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_singleton]
-      exact hd.eq_iff
-    rw [htarget_def]
-    simp only [hfilter, Finset.mem_singleton, Set.iInter_iInter_eq_left]
-  have htarget_meas : ∀ (a : ι) (j : Fin m), MeasurableSet (target a j) := fun a j =>
-    Finset.measurableSet_biInter _ fun t _ => hB t
-  have hD_meas : ∀ j : Fin m, MeasurableSet (Set.pi (↑(F j)) fun a => target a j) := fun j =>
-    MeasurableSet.pi (F j).countable_toSet fun a _ => htarget_meas a j
+    fun j => (Finset.univ.filter fun t : Fin r => g t = j).image fun t => (c t).1
+  -- Injectivity: the cell `c t` is the only one constraining its row in its column. The `rfl`
+  -- below holds by definitional unfolding: `c t = ((c t).1, ↑(g t))` is Prod eta together with
+  -- `↑(g t) = (c t).2`, which is how `g` is defined.
+  have htarget : ∀ t, target (c t).1 (g t) = B t := fun t => Set.ext fun _ =>
+    Set.mem_iInter₂.trans ⟨fun hx => hx t rfl, fun hx s hs => by rwa [@hc s t hs]⟩
+  have hmeas : ∀ j : Fin m, MeasurableSet (Set.pi (↑(F j)) fun a => target a j) := fun j =>
+    .pi (F j).countable_toSet fun _ _ => .biInter (Set.to_countable _) fun t _ => hB t
   -- The cell event is the event that every column lands in its box.
   have hset : {ω | ∀ t, Y (c t) ω ∈ B t} =
       {ω | ∀ j : Fin m, arrayCol Y (j : ℕ) ω ∈ Set.pi (↑(F j)) fun a => target a j} := by
     ext ω
-    simp only [Set.mem_ofPred_eq, Set.mem_pi]
-    constructor
-    · intro hω j a _
-      simp only [htarget_def, Set.mem_iInter, Finset.mem_filter, Finset.mem_univ, true_and]
-      intro t ht
-      have h1 : (c t).1 = a := congrArg Prod.fst ht
-      have h2 : g t = j := congrArg Prod.snd ht
-      have hval : arrayCol Y (j : ℕ) ω a = Y (c t) ω := by
-        rw [arrayCol_apply, ← hcell t, h1, h2]
-      rw [hval]
-      exact hω t
-    · intro hω t
-      have hmem : (c t).1 ∈ F (g t) :=
-        Finset.mem_image_of_mem _ (by simp)
-      have := hω (g t) ((c t).1) (Finset.mem_coe.2 hmem)
-      rw [htarget_eq t] at this
-      rwa [arrayCol_apply, hcell t] at this
+    simp only [Set.mem_ofPred_eq, Set.mem_pi, Finset.mem_coe, arrayCol_apply, target,
+      Set.mem_iInter₂]
+    -- Again `rfl` is the definitional equation `c t = ((c t).1, ↑(g t))` (Prod eta, `g` unfolded).
+    refine ⟨fun hω j a _ t ht => ht ▸ hω t, fun hω t => hω (g t) _ ?_ t rfl⟩
+    exact Finset.mem_image_of_mem _ (Finset.mem_filter.2 ⟨Finset.mem_univ _, rfl⟩)
   rw [hset, ← blockLaw_apply_rectangle μ (arrayCol Y) (fun j : Fin m => (j : ℕ))
-      (fun j => hlam.aemeasurable (j : ℕ)) _ hD_meas,
-    hlam.blockLaw_univ_pi (fun j : Fin m => (j : ℕ)) Fin.val_injective _ hD_meas]
+      (fun j => hlam.aemeasurable (j : ℕ)) _ hmeas,
+    hlam.blockLaw_univ_pi (fun j : Fin m => (j : ℕ)) Fin.val_injective _ hmeas]
   -- Split each column's mass into one factor per constrained row, then merge the two products.
   refine lintegral_congr_ae ?_
-  have hfac : ∀ᵐ ω ∂μ, ∀ j : Fin m,
-      (lam ω : Measure (ι → α)) (Set.pi (↑(F j)) fun a => target a j) =
-        ∏ a ∈ F j, (lam ω : Measure (ι → α)) {v : ι → α | v a ∈ target a j} := by
-    rw [ae_all_iff]
-    exact fun j => h.ae_apply_pi_eq_prod hlam (B := fun a => target a j) (F j)
-      fun a _ => htarget_meas a j
-  filter_upwards [hfac] with ω hω
-  calc ∏ j : Fin m, (lam ω : Measure (ι → α)) (Set.pi (↑(F j)) fun a => target a j)
-      = ∏ j : Fin m, ∏ a ∈ F j, (lam ω : Measure (ι → α)) {v : ι → α | v a ∈ target a j} :=
-        Finset.prod_congr rfl fun j _ => hω j
-    _ = ∏ j : Fin m, ∏ t ∈ Finset.univ.filter fun t : Fin r => g t = j,
-          (lam ω : Measure (ι → α)) {v : ι → α | v (c t).1 ∈ B t} := by
-        refine Finset.prod_congr rfl fun j _ => ?_
-        rw [hF_def, Finset.prod_image ?_]
-        · refine Finset.prod_congr rfl fun t ht => ?_
-          have hgt : g t = j := (Finset.mem_filter.1 ht).2
-          rw [← hgt, htarget_eq t]
-        · intro s hs t ht hst
-          -- Both cells sit in the fibre over `j`, so their column indices agree.
-          have hgs : g s = j := (Finset.mem_filter.1 (Finset.mem_coe.1 hs)).2
-          have hgt : g t = j := (Finset.mem_filter.1 (Finset.mem_coe.1 ht)).2
-          exact hd (Prod.ext hst (hgs.trans hgt.symm))
-    _ = ∏ t : Fin r, (lam ω : Measure (ι → α)) {v : ι → α | v (c t).1 ∈ B t} :=
-        Finset.prod_fiberwise Finset.univ g _
+  filter_upwards [ae_all_iff.2 fun j => h.ae_apply_pi_eq_prod hlam (B := fun a => target a j)
+    (F j) fun _ _ => .biInter (Set.to_countable _) fun t _ => hB t] with ω hω
+  refine (Finset.prod_congr rfl fun j _ => ?_).trans (Finset.prod_fiberwise Finset.univ g _)
+  -- Both cells sit in the fibre over `j`, so their column indices agree.
+  rw [hω j, Finset.prod_image fun s hs t ht hst => hc (Prod.ext hst (congrArg Fin.val
+    ((Finset.mem_filter.1 hs).2.trans (Finset.mem_filter.1 ht).2.symm)))]
+  refine Finset.prod_congr rfl fun t ht => ?_
+  rw [← (Finset.mem_filter.1 ht).2, htarget t]
 
 /-- **De Finetti for a row exchangeable array.** Over a countable row index and a nonempty standard
 Borel state space, the columns of a row exchangeable array are conditionally i.i.d., and their
