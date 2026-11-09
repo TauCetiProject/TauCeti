@@ -38,6 +38,8 @@ Near the frontier of a bounded proper subset `Ω`, a function continuous on `clo
 any bound for its frontier values, up to an arbitrarily small error, on a whole boundary layer
 `{y ∈ Ω : dist(y, Ωᶜ) < ρ}`. This is how boundary values enter maximum principles proved on inner
 subdomains.
+Its complement in `Ω`, the set of points at distance at least `ρ` from `Ωᶜ`, is compact when `Ω`
+is bounded.
 
 ## Main results
 
@@ -58,6 +60,9 @@ subdomains.
   into a given ball around the origin.
 * `TauCeti.exists_pos_forall_infDist_compl_lt_le_add`: a function continuous on the closure of a
   bounded proper subset is almost bounded by its frontier bound on a boundary layer.
+* `TauCeti.setOf_le_infDist_compl_subset` and
+  `Bornology.IsBounded.isCompact_setOf_le_infDist_compl`: for `s > 0`, the points at distance at
+  least `s` from `Ωᶜ` form a subset of `Ω`, compact when `Ω` is bounded.
 -/
 
 public section
@@ -189,6 +194,20 @@ theorem exists_pos_forall_infDist_compl_lt_le_add (hΩb : Bornology.IsBounded Ω
   have h := hvρ y (subset_closure hy) z (frontier_subset_closure hz) (hyz ▸ hyρ)
   rw [Real.dist_eq] at h
   linarith [hm z hz, (abs_lt.1 h).2]
+
+/-- For `s > 0`, the points at distance at least `s` from `Ωᶜ` lie in `Ω`. -/
+theorem setOf_le_infDist_compl_subset {X : Type*} [PseudoMetricSpace X] {Ω : Set X} {s : ℝ}
+    (hs : 0 < s) : {y | s ≤ infDist y Ωᶜ} ⊆ Ω := fun y hy => by
+  by_contra h
+  exact (hs.trans_le hy).ne' (infDist_zero_of_mem h)
+
+/-- For `s > 0`, the points at distance at least `s` from the complement of a bounded set in a
+proper space form a compact set. -/
+theorem _root_.Bornology.IsBounded.isCompact_setOf_le_infDist_compl {X : Type*}
+    [PseudoMetricSpace X] [ProperSpace X] {Ω : Set X} (hΩ : Bornology.IsBounded Ω) {s : ℝ}
+    (hs : 0 < s) : IsCompact {y | s ≤ infDist y Ωᶜ} :=
+  isCompact_of_isClosed_isBounded (isClosed_le continuous_const (continuous_infDist_pt _))
+    (hΩ.subset (setOf_le_infDist_compl_subset hs))
 
 end BoundaryLayer
 

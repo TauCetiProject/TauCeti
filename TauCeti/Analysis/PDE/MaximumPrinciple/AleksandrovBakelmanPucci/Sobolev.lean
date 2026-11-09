@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Ellipticity.Basic
 public import TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Calculus.Morse.Linearization
+import TauCeti.Analysis.Matrix.Contraction
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Sobolev.Wkp.Local.UniformApproximation
 
@@ -41,7 +42,7 @@ Krylov–Safonov Harnack inequality for strong solutions.
 The estimate for `C²` functions is `TauCeti.PDE.le_add_mul_eLpNorm_negPart_div_det_rpow`. Its
 differential inequality is required at every point of the upper contact set, which may be a null
 set; `TauCeti.PDE.le_add_mul_eLpNorm_negPart_div_det_rpow_of_ae` first relaxes this to an
-inequality almost everywhere in `Ω`, keeping the `Lⁿ` norm over the upper contact set, by
+inequality almost everywhere on the upper contact set, keeping the `Lⁿ` norm over it, by
 replacing `f` with `min f (∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu)`.
 
 For a strong solution, fix `ε > 0`. Since `v` is uniformly continuous on the compact set
@@ -89,14 +90,14 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {Ω : Set (EuclideanSpace �
 
 /-- **The Aleksandrov–Bakelman–Pucci estimate with an almost-everywhere inequality.** Let `Ω` be
 bounded and open, let `u` be continuous on `closure Ω` and `C²` in `Ω`, and let `m` bound `u` on
-`frontier Ω`. Suppose that the matrices `a y` are positive definite on `Ω`, that
-`f y ≤ ∑ᵢⱼ aⁱʲ(y) ∂ᵢ∂ⱼu(y)` for almost every `y ∈ Ω`, and that `f⁻ / D*`, with
-`D* = (det a)^{1/n}`, lies in `Lⁿ(Γ⁺)` on the upper contact set `Γ⁺`. Then on `Ω`,
+`frontier Ω`. Suppose that on the upper contact set `Γ⁺` the matrices `a y` are positive
+definite and `f y ≤ ∑ᵢⱼ aⁱʲ(y) ∂ᵢ∂ⱼu(y)` for almost every `y`, and that `f⁻ / D*`, with
+`D* = (det a)^{1/n}`, lies in `Lⁿ(Γ⁺)`. Then on `Ω`,
 `u ≤ m + diam Ω / (n ωₙ^{1/n}) ‖f⁻ / D*‖_{Lⁿ(Γ⁺)}`. -/
 theorem le_add_mul_eLpNorm_negPart_div_det_rpow_of_ae [Nonempty ι]
     (hΩb : Bornology.IsBounded Ω) (hΩ : IsOpen Ω) (hcont : ContinuousOn u (closure Ω))
-    (hu : ContDiffOn ℝ 2 u Ω) (ha : ∀ y ∈ Ω, (a y).PosDef)
-    (hf : ∀ᵐ y ∂volume.restrict Ω, f y ≤ ∑ i, ∑ j, a y i j *
+    (hu : ContDiffOn ℝ 2 u Ω) (ha : ∀ y ∈ upperContactSet u Ω, (a y).PosDef)
+    (hf : ∀ᵐ y ∂volume.restrict (upperContactSet u Ω), f y ≤ ∑ i, ∑ j, a y i j *
       fderiv ℝ (fderiv ℝ u) y (EuclideanSpace.single i 1) (EuclideanSpace.single j 1))
     (hg : MemLp (fun y => (f y)⁻ / (a y).det ^ (Fintype.card ι : ℝ)⁻¹) (Fintype.card ι)
       (volume.restrict (upperContactSet u Ω)))
@@ -105,18 +106,15 @@ theorem le_add_mul_eLpNorm_negPart_div_det_rpow_of_ae [Nonempty ι]
         (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal ^ (Fintype.card ι : ℝ)⁻¹) *
       (eLpNorm (fun y => (f y)⁻ / (a y).det ^ (Fintype.card ι : ℝ)⁻¹) (Fintype.card ι)
         (volume.restrict (upperContactSet u Ω))).toReal := by
-  have hμ : volume.restrict (upperContactSet u Ω) ≤ volume.restrict Ω :=
-    Measure.restrict_mono (fun y hy => upperContactSet_subset hy) le_rfl
   -- Replacing `f` by its minimum with the principal part changes it only on a null set.
   have hae : (fun y => (min (f y) (∑ i, ∑ j, a y i j * fderiv ℝ (fderiv ℝ u) y
       (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)))⁻ /
         (a y).det ^ (Fintype.card ι : ℝ)⁻¹) =ᵐ[volume.restrict (upperContactSet u Ω)]
       fun y => (f y)⁻ / (a y).det ^ (Fintype.card ι : ℝ)⁻¹ := by
-    filter_upwards [ae_mono hμ hf] with y hy
+    filter_upwards [hf] with y hy
     rw [min_eq_left hy]
-  have h := le_add_mul_eLpNorm_negPart_div_det_rpow hΩb hΩ hcont hu
-    (fun y hy => ha y (upperContactSet_subset hy)) (fun y _ => min_le_right _ _)
-    (MemLp.ae_eq hae.symm hg) hm hx
+  have h := le_add_mul_eLpNorm_negPart_div_det_rpow hΩb hΩ hcont hu ha
+    (fun y _ => min_le_right _ _) (MemLp.ae_eq hae.symm hg) hm hx
   rwa [eLpNorm_congr_ae hae] at h
 
 /-- The pointwise comparison between the principal parts of two Hessians `H₁` and `H₂`: if
@@ -130,27 +128,14 @@ private theorem neg_mul_le_sum_mul_inner {A : Matrix ι ι ℝ}
     -((t⁻ / D + Fintype.card ι ^ 2 * Lam / lam * ‖H₁ - H₂‖) * D) ≤
       ∑ i, ∑ j, A i j * ⟪H₁ (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ := by
   have hD0 : 0 < D := hlam.trans_le hD
-  -- Each entry of `H₁ - H₂` is bounded by its operator norm.
-  have hentry (i j : ι) : |A i j * ⟪H₁ (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ -
-      A i j * ⟪H₂ (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ| ≤
-        Lam * ‖H₁ - H₂‖ := by
-    rw [← mul_sub, ← inner_sub_left, ← sub_apply, abs_mul]
-    refine mul_le_mul (hA i j) ?_ (abs_nonneg _) hLam
-    refine (abs_real_inner_le_norm _ _).trans ?_
-    simpa using (H₁ - H₂).le_opNorm (EuclideanSpace.single i 1)
-  have herr : |∑ i, ∑ j, A i j * ⟪H₁ (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ -
-      ∑ i, ∑ j, A i j * ⟪H₂ (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ| ≤
-        Fintype.card ι ^ 2 * Lam * ‖H₁ - H₂‖ := by
-    have hrow (i : ι) : |∑ j, A i j * ⟪H₁ (EuclideanSpace.single i 1),
-        EuclideanSpace.single j 1⟫_ℝ - ∑ j, A i j * ⟪H₂ (EuclideanSpace.single i 1),
-          EuclideanSpace.single j 1⟫_ℝ| ≤ Fintype.card ι * (Lam * ‖H₁ - H₂‖) := by
-      rw [← Finset.sum_sub_distrib]
-      exact (Finset.abs_sum_le_sum_abs _ _).trans
-        ((Finset.sum_le_sum fun j _ => hentry i j).trans_eq (by simp))
-    rw [← Finset.sum_sub_distrib]
-    refine (Finset.abs_sum_le_sum_abs _ _).trans ((Finset.sum_le_sum fun i _ => hrow i).trans_eq ?_)
-    simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
-    ring
+  -- The two principal parts differ by the contraction of the form `⟪(H₁ - H₂) ·, ·⟫`.
+  have herr := Matrix.abs_sum_sum_mul_apply_single_single_le hA ((innerSL ℝ).comp (H₁ - H₂))
+  simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, sub_apply,
+    inner_sub_left, mul_sub, Finset.sum_sub_distrib] at herr
+  have hB : Fintype.card ι ^ 2 * Lam * ‖(innerSL ℝ).comp (H₁ - H₂)‖ ≤
+      Fintype.card ι ^ 2 * Lam * ‖H₁ - H₂‖ :=
+    mul_le_mul_of_nonneg_left ((ContinuousLinearMap.opNorm_comp_le _ _).trans
+      (mul_le_of_le_one_left (norm_nonneg _) (norm_innerSL_le ℝ))) (by positivity)
   have hK : Fintype.card ι ^ 2 * Lam * ‖H₁ - H₂‖ ≤
       Fintype.card ι ^ 2 * Lam / lam * ‖H₁ - H₂‖ * D := by
     rw [div_mul_eq_mul_div, div_mul_eq_mul_div, le_div_iff₀ hlam]
@@ -160,7 +145,7 @@ private theorem neg_mul_le_sum_mul_inner {A : Matrix ι ι ℝ}
       t⁻ + Fintype.card ι ^ 2 * Lam / lam * ‖H₁ - H₂‖ * D := by
     field_simp
   rw [hexp]
-  linarith [neg_le.1 (neg_le_negPart t), (abs_le.1 herr).1]
+  linarith [neg_le.1 (neg_le_negPart t), (abs_le.1 herr).1, hB]
 
 /-- **One approximation step.** Let `a` be symmetric and uniformly elliptic on the bounded set `Ω`
 with `f⁻ / D* ∈ Lⁿ(Ω)`, let `V ⊆ Ω` be open, and suppose that `f ≤ ∑ᵢⱼ aⁱʲ ⟪H eᵢ, eⱼ⟫` almost
@@ -209,7 +194,8 @@ private theorem le_add_mul_add_mul_eLpNorm_iteratedGradientChain_sub [Nonempty �
       mul_div_cancel_right₀ _ hD0.ne']
   have h := le_add_mul_eLpNorm_negPart_div_det_rpow_of_ae (f := fun y => -(G y * D y))
     (hΩb.subset hVΩ) hV hw.continuous.continuousOn hw.contDiffOn
-    (fun y hy => ha.posDef (hVΩ hy) (ha_symm y (hVΩ hy))) ?_
+    (fun y hy => ha.posDef (hVΩ (upperContactSet_subset hy))
+      (ha_symm y (hVΩ (upperContactSet_subset hy)))) (ae_mono hμc ?_)
     (MemLp.ae_eq (hGeq.filter_mono (ae_mono hμc)).symm
       (((hg.mono_measure hμ).add (he.norm.const_mul Kc)).mono_measure hμc)) hm hx
   · rw [eLpNorm_congr_ae (hGeq.filter_mono (ae_mono hμc))] at h
@@ -274,13 +260,6 @@ theorem le_add_mul_eLpNorm_negPart_div_det_rpow_of_wkp [Nonempty ι]
     (by positivity : 0 < ε / 4)
   have hxd : 0 < infDist x Ωᶜ :=
     (hΩ.isClosed_compl.notMem_iff_infDist_pos (nonempty_compl.2 hΩu)).1 (notMem_compl_iff.2 hx)
-  -- `{dist(·, Ωᶜ) ≥ s}` is a compact subset of `Ω` for every `s > 0`.
-  have hsub {s : ℝ} (hs : 0 < s) : {y | s ≤ infDist y Ωᶜ} ⊆ Ω := fun y hy => by
-    by_contra h
-    exact (hs.trans_le hy).ne' (infDist_zero_of_mem h)
-  have hcpt {s : ℝ} (hs : 0 < s) : IsCompact {y | s ≤ infDist y Ωᶜ} :=
-    isCompact_of_isClosed_isBounded (isClosed_le continuous_const (continuous_infDist_pt _))
-      (hΩb.subset (hsub hs))
   -- `V = {dist(·, Ωᶜ) > r}` contains `x`, and its closure lies in the compact `K ⊆ Ω`.
   set r := min (ρ / 2) (infDist x Ωᶜ / 2)
   have hr : 0 < r := lt_min (half_pos hρ) (half_pos hxd)
@@ -288,20 +267,26 @@ theorem le_add_mul_eLpNorm_negPart_div_det_rpow_of_wkp [Nonempty ι]
   set K : Set (EuclideanSpace ℝ ι) := {y | r ≤ infDist y Ωᶜ}
   have hV : IsOpen V := isOpen_lt continuous_const (continuous_infDist_pt _)
   have hKc' : IsClosed K := isClosed_le continuous_const (continuous_infDist_pt _)
-  have hKΩ : K ⊆ Ω := hsub hr
-  have hK : IsCompact K := hcpt hr
-  have hVK : V ⊆ K := fun y hy => (show r < _ from hy).le
+  have hKΩ : K ⊆ Ω := setOf_le_infDist_compl_subset hr
+  have hK : IsCompact K := hΩb.isCompact_setOf_le_infDist_compl hr
+  have hVK : V ⊆ K := ofPred_subset_ofPred.2 fun _ => le_of_lt
   have hxV : x ∈ V := (min_le_right _ _).trans_lt (half_lt_self hxd)
   -- The Sobolev hypothesis on `W = {dist(·, Ωᶜ) > r / 2}`, whose closure is compact in `Ω`.
-  let W : Opens (EuclideanSpace ℝ ι) :=
-    ⟨{y | r / 2 < infDist y Ωᶜ}, isOpen_lt continuous_const (continuous_infDist_pt _)⟩
-  have hWcl : closure (W : Set (EuclideanSpace ℝ ι)) ⊆ {y | r / 2 ≤ infDist y Ωᶜ} :=
-    closure_minimal (fun y hy => (show r / 2 < infDist y Ωᶜ from hy).le)
+  set W₀ : Set (EuclideanSpace ℝ ι) := {y | r / 2 < infDist y Ωᶜ}
+  let W : Opens (EuclideanSpace ℝ ι) := ⟨W₀, isOpen_lt continuous_const (continuous_infDist_pt _)⟩
+  have hW : (W : Set (EuclideanSpace ℝ ι)) = W₀ := Opens.coe_mk
+  have hWcl : closure (W : Set (EuclideanSpace ℝ ι)) ⊆ {y | r / 2 ≤ infDist y Ωᶜ} := by
+    rw [hW]
+    exact closure_minimal (ofPred_subset_ofPred.2 fun _ => le_of_lt)
       (isClosed_le continuous_const (continuous_infDist_pt _))
-  have hWΩ : closure (W : Set (EuclideanSpace ℝ ι)) ⊆ Ω := hWcl.trans (hsub (half_pos hr))
-  obtain ⟨uW, huW, hfW⟩ :=
-    hu W ((hcpt (half_pos hr)).of_isClosed_subset isClosed_closure hWcl) hWΩ
-  have hKW : K ⊆ W := fun y hy => (half_lt_self hr).trans_le hy
+  have hWΩ : closure (W : Set (EuclideanSpace ℝ ι)) ⊆ Ω :=
+    hWcl.trans (setOf_le_infDist_compl_subset (half_pos hr))
+  obtain ⟨uW, huW, hfW⟩ := hu W
+    ((hΩb.isCompact_setOf_le_infDist_compl (half_pos hr)).of_isClosed_subset isClosed_closure hWcl)
+    hWΩ
+  have hKW : K ⊆ W := by
+    rw [hW]
+    exact ofPred_subset_ofPred.2 fun _ => (half_lt_self hr).trans_le
   -- Mollifiers `w j` of `v`, uniformly close to `v` on `K`, with Hessians close in `Lⁿ(K)`.
   obtain ⟨w, hw, hwv, hwe⟩ :=
     Wkp.exists_contDiff_tendstoUniformlyOn_tendsto_eLpNorm_iteratedGradientChain_sub

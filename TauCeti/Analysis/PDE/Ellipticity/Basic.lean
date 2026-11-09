@@ -670,12 +670,9 @@ lemma pow_card_le_det (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈
     refine Matrix.PosSemidef.of_dotProduct_mulVec_nonneg
       (isHermitian_iff_isSymm.2 (hs.sub (isSymm_one.smul lam))) fun ξ => ?_
     have hq := h.lower_bound hx (WithLp.toLp 2 ξ)
-    simp only [toQuadraticForm', EuclideanSpace.norm_sq_eq,
-      LinearMap.BilinMap.toQuadraticMap_apply, toLinearMap₂'_apply', Real.norm_eq_abs,
-      sq_abs] at hq
-    simp only [star_trivial, sub_mulVec, dotProduct_sub, smul_mulVec, one_mulVec, dotProduct_smul,
-      smul_eq_mul, sub_nonneg]
-    simpa [dotProduct, sq] using hq
+    rw [toQuadraticForm'_apply, EuclideanSpace.norm_sq_eq] at hq
+    simpa [sub_mulVec, smul_mulVec, dotProduct, mul_sub, Finset.mul_sum, sq, mul_left_comm] using
+      hq
   simpa [det_smul] using (PosSemidef.one.smul h.pos.le).det_le_det hle
 
 /-- On the domain, the bilinear forms attached to a uniformly elliptic coefficient field form a
