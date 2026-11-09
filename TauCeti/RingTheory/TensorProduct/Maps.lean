@@ -42,6 +42,8 @@ ones, so the public `LinearMap.baseChange` API applies.
 
 ## Main declarations
 
+* `Subalgebra.toSubmodule_baseChange`: the underlying submodule of `C.baseChange T` is
+  `(Subalgebra.toSubmodule C).baseChange T`.
 * `AlgHom.lTensor_toLinearMap_apply`: `f.toLinearMap.lTensor S` is
   `Algebra.TensorProduct.map (AlgHom.id R S) f`.
 * `AlgHom.rTensor_toLinearMap_apply`: `f.toLinearMap.rTensor S` is
@@ -82,6 +84,15 @@ ones, so the public `LinearMap.baseChange` API applies.
 public section
 
 open TensorProduct
+
+/-- The underlying submodule of a base-changed subalgebra is the base change of its
+underlying submodule. -/
+theorem Subalgebra.toSubmodule_baseChange {R S : Type*} [CommSemiring R] [Semiring S]
+    [Algebra R S] (T : Type*) [CommSemiring T] [Algebra R T] (C : Subalgebra R S) :
+    Subalgebra.toSubmodule (C.baseChange T) = (Subalgebra.toSubmodule C).baseChange T :=
+  -- Both ranges use the tensor map induced by the identity on `T` and the inclusion of `C`.
+  -- The algebra tensor map and the base change of the linear inclusion have the same function.
+  rfl
 
 /-- Base change of the underlying linear map of an algebra map is the base change of the
 algebra map. -/
