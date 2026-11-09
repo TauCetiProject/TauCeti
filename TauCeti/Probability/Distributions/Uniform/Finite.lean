@@ -210,11 +210,9 @@ theorem map_uniformOn_univ (e : α ≃ β) :
   by_cases hα : Finite α
   · have he : Measurable e := .of_discrete
     ext t ht
-    rw [Measure.map_apply he ht, uniformOn, cond_apply .univ, uniformOn, cond_apply .univ,
-      Measure.count_apply .univ, Measure.count_apply .univ,
-      Measure.count_apply (MeasurableSet.univ.inter ht),
-      Measure.count_apply (MeasurableSet.univ.inter (he ht))]
-    simp only [_root_.Set.univ_inter]
+    rw [Measure.map_apply he ht]
+    simp only [uniformOn, cond_apply .univ, _root_.Set.univ_inter, Measure.count_apply .univ,
+      Measure.count_apply ht, Measure.count_apply (he ht)]
     rw [Set.encard_univ, Set.encard_univ, ENat.card_congr e,
       Set.encard_preimage_of_injective_subset_range e.injective (by simp)]
   · have hα' : Infinite α := not_finite_iff_infinite.mp hα
