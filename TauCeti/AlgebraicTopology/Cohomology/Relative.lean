@@ -224,6 +224,13 @@ lemma singularCohomologyMap_comp {P P' P'' : TopPair.{w}} (f : P ⟶ P') (g : P'
   simp [TopPair.singularCohomologyMap, singularCochainComplexMap_comp,
     HomologicalComplex.homologyMap_comp]
 
+/-- An isomorphism of pairs induces an isomorphism on relative singular cohomology. -/
+instance isIso_singularCohomologyMap_of_isIso {P P' : TopPair.{w}} (f : P ⟶ P') [IsIso f] (n : ℕ) :
+    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) f n) :=
+  ⟨TopPair.singularCohomologyMap (inv f) n, by
+    rw [← singularCohomologyMap_comp, IsIso.inv_hom_id, singularCohomologyMap_id], by
+    rw [← singularCohomologyMap_comp, IsIso.hom_inv_id, singularCohomologyMap_id]⟩
+
 /-- `TopPair.singularCohomologyMap_comp` evaluated at a class: the map induced by a composite of
 maps of pairs is the composite of the induced maps. -/
 lemma singularCohomologyMap_comp_apply {P P' P'' : TopPair.{w}} (f : P ⟶ P') (g : P' ⟶ P'')
