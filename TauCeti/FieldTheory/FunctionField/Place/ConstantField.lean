@@ -8,7 +8,6 @@ module
 public import TauCeti.FieldTheory.FunctionField.Place.Basic
 public import TauCeti.FieldTheory.FunctionField.ConstantField
 import Mathlib.FieldTheory.FinTrdeg
-import TauCeti.RingTheory.AlgebraicIndependent.TranscendenceBasis
 
 /-!
 # A rational place forces exact constants
