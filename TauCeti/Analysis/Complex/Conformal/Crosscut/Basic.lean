@@ -126,15 +126,18 @@ variable {c ζ z : ℂ} {r ρ : ℝ}
 /-! ## The inversion at a boundary point -/
 
 /-- **The inversion at a boundary point carries a disc to a half-plane.** If `ζ` lies on the circle
-`sphere c r`, then a point `z ≠ ζ` lies in `ball c r` exactly when its image `(z - ζ)⁻¹` under the
+`sphere c r`, then a point `z` lies in `ball c r` exactly when its image `(z - ζ)⁻¹` under the
 inversion centred at `ζ` lies in the open half-plane `{w | 1 < 2 * ((c - ζ) * w).re}`.
 
 This is the classical fact that a Möbius map sends a circle through the centre of the inversion to
 a line, in the form the crosscut decomposition needs: which *side* of that line the disc goes to.
 Multiplied by `normSq (z - ζ)`, the half-plane condition becomes
 `normSq (z - c) < normSq (c - ζ) = r ^ 2`. -/
-theorem mem_ball_iff_one_lt_two_mul_re_mul_inv (hζ : dist ζ c = r) (hz : z ≠ ζ) :
+theorem mem_ball_iff_one_lt_two_mul_re_mul_inv (hζ : dist ζ c = r) :
     z ∈ ball c r ↔ 1 < 2 * ((c - ζ) * (z - ζ)⁻¹).re := by
+  -- at `z = ζ` both sides are false
+  obtain rfl | hz := eq_or_ne z ζ
+  · simp [hζ]
   have hns : 0 < normSq (z - ζ) := normSq_pos.mpr (sub_ne_zero.mpr hz)
   -- the half-plane condition, cleared of the denominator `normSq (z - ζ)`
   have key : (2 * ((c - ζ) * (z - ζ)⁻¹).re - 1) * normSq (z - ζ) =
@@ -230,13 +233,13 @@ private lemma image_add_inv_halfPlane_inter_ball (hζ : dist ζ c = r) (hρ : 0 
   · rintro ⟨w, ⟨hw1, hw2⟩, rfl⟩
     have hw0 : w ≠ 0 := ne_zero_of_one_lt_two_mul_re_mul hw1
     have hne : ζ + w⁻¹ ≠ ζ := by simpa using hw0
-    refine ⟨by rwa [mem_ball_iff_one_lt_two_mul_re_mul_inv hζ hne, add_sub_cancel_left, inv_inv],
+    refine ⟨by rwa [mem_ball_iff_one_lt_two_mul_re_mul_inv hζ, add_sub_cancel_left, inv_inv],
       ?_⟩
     rw [mem_ball_zero_iff, lt_inv_comm₀ (norm_pos_iff.mpr hw0) hρ, ← norm_inv] at hw2
     simpa [dist_eq_norm] using hw2
   · rintro ⟨hy1, hy2⟩
     have hyne : y ≠ ζ := by rintro rfl; exact hy2 (mem_closedBall_self hρ.le)
-    refine ⟨(y - ζ)⁻¹, ⟨(mem_ball_iff_one_lt_two_mul_re_mul_inv hζ hyne).mp hy1, ?_⟩, by simp⟩
+    refine ⟨(y - ζ)⁻¹, ⟨(mem_ball_iff_one_lt_two_mul_re_mul_inv hζ).mp hy1, ?_⟩, by simp⟩
     rw [mem_closedBall, not_le, dist_eq_norm] at hy2
     rwa [mem_ball_zero_iff, norm_inv, inv_lt_inv₀ (hρ.trans hy2) hρ]
 
@@ -261,8 +264,28 @@ of `TauCeti.connectedComponentIn_ball_diff_sphere_eq_ball_inter_ball` of
 `TauCeti.isConnected_ball_diff_closedBall` rather than convexity, which is why this half is stated
 in the plane. -/
 theorem connectedComponentIn_ball_diff_sphere_eq_ball_diff_closedBall
-    (hζ : dist ζ c = r) (hρ : 0 < ρ) (hρ' : ρ < 2 * r) (hz : z ∈ ball c r \ closedBall ζ ρ) :
+    (hζ : dist ζ c = r) (hz : z ∈ ball c r \ closedBall ζ ρ) :
     connectedComponentIn (ball c r \ sphere ζ ρ) z = ball c r \ closedBall ζ ρ := by
+  -- the crosscut radius is positive, since `z` is off `closedBall ζ ρ` and in the disc, and below
+  -- `2 * r`, since otherwise the disc lies inside `closedBall ζ ρ`
+  have hρ' : ρ < 2 * r := by
+    have h1 := dist_triangle z c ζ
+    rw [Set.mem_sdiff, mem_ball, mem_closedBall, not_le] at hz
+    rw [dist_comm c ζ, hζ] at h1
+    linarith [hz.1, hz.2]
+  rcases lt_or_ge 0 ρ with hρ | hρ
+  swap
+  · -- a degenerate crosscut misses the disc, which is its own component
+    have hdisj : ball c r \ sphere ζ ρ = ball c r := by
+      refine sdiff_eq_left.mpr (disjoint_left.mpr fun w hw hws => ?_)
+      have : w = ζ := dist_le_zero.mp (by rw [mem_sphere.mp hws]; exact hρ)
+      exact absurd (mem_ball.mp (this ▸ hw)) (by rw [hζ]; exact lt_irrefl _)
+    have hdisj' : ball c r \ closedBall ζ ρ = ball c r := by
+      refine sdiff_eq_left.mpr (disjoint_left.mpr fun w hw hws => ?_)
+      have : w = ζ := dist_le_zero.mp (mem_closedBall.mp hws |>.trans hρ)
+      exact absurd (mem_ball.mp (this ▸ hw)) (by rw [hζ]; exact lt_irrefl _)
+    rw [hdisj, hdisj']
+    exact (convex_ball c r).isPreconnected.connectedComponentIn (hdisj' ▸ hz)
   have hsub : ball c r \ closedBall ζ ρ ⊆ ball c r \ sphere ζ ρ :=
     sdiff_sphere_eq_inter_ball_union_sdiff_closedBall (x := ζ) (s := ball c r) ▸ subset_union_right
   refine Subset.antisymm ?_ ((isConnected_ball_diff_closedBall hζ hρ hρ').isPreconnected
