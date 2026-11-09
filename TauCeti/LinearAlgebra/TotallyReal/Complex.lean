@@ -20,7 +20,9 @@ import TauCeti.RingTheory.TensorProduct.IsBaseChange
 This file gives an elementary example of a totally real real subspace of a complex module and
 develops the complex-linear algebra of maximal totally real subspaces. A real basis of such a
 subspace is a complex basis of the ambient space. Complex-linear automorphisms act transitively on
-these subspaces, and an endomorphism preserving one has real determinant.
+these subspaces, and an endomorphism preserving one has real determinant. An injective real-linear
+map onto a maximal totally real subspace exhibits the ambient module as its complexification, and
+that subspace is exactly the fixed locus of a unique conjugate-linear involution.
 
 ## Main declarations
 
@@ -34,6 +36,13 @@ these subspaces, and an endomorphism preserving one has real determinant.
   transitively on maximal totally real subspaces.
 * `TauCeti.IsMaximalTotallyReal.isMaximalTotallyReal_prod`: a direct sum of maximal totally real
   subspaces is maximal totally real in the product of the ambient complex modules.
+* `LinearMap.isBaseChange_complex_of_isMaximalTotallyReal`: an injective real-linear map onto a
+  maximal totally real subspace is a complexification.
+* `LinearMap.conjugationOfMaximalTotallyReal`: the conjugate-linear involution whose fixed locus
+  is exactly that subspace, with `LinearMap.conjugationOfMaximalTotallyReal_eq_self_iff`,
+  `LinearMap.conjugationOfMaximalTotallyReal_unique`,
+  `LinearMap.conjugationOfMaximalTotallyReal_congr_range` and
+  `LinearMap.conjugationOfMaximalTotallyReal_natural`.
 -/
 
 public section

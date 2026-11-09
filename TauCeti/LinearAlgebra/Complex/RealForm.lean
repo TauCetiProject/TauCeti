@@ -41,6 +41,8 @@ leading examples are the Lie algebras `𝔲(n)` and `𝔰𝔲(n)` of skew-Hermit
 
 ## Main results
 
+* `LinearMap.liftBaseChange_complex_apply`: the canonical map `ℂ ⊗[ℝ] W → V` sends `u` to the image
+  of its real part plus `I` times the image of its imaginary part.
 * `LinearMap.mem_range_liftBaseChange_complex_iff`: the image of `ℂ ⊗[ℝ] W → V` consists of the
   vectors `f x + I • f y`.
 * `LinearMap.liftBaseChange_complex_injective_iff`: the map `ℂ ⊗[ℝ] W → V` is injective exactly

@@ -27,7 +27,8 @@ For any real `C^n` vector bundle `E : B → Type*` with model fibre `F` whose co
 `TauCeti.complexificationTotalSpaceDiffeomorphProd`, `ContMDiffSection.complexificationEquiv`,
 `ContMDiffSection.complexificationEquivProd`, and `ContMDiffSection.conjEquiv`.
 The canonical complex-linear extension of any smooth real bundle map is smooth on the actual
-complexification total space, with no injectivity, maximality or finite-rank assumption.
+complexification total space (`TauCeti.contMDiff_liftBaseChangeComplex_totalSpace`), with no
+injectivity, maximality or finite-rank assumption.
 
 ## References
 

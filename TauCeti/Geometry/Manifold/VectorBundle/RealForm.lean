@@ -19,6 +19,21 @@ identification gives the smooth fiber involution fixing exactly the given real f
 Maximality is essential: the fixed vectors of a conjugate-linear involution span the complex
 fiber. The base is a real charted space, and real and complex scalar structures are explicit.
 
+## Main declarations
+
+* `TauCeti.maximalRealFormComplexificationEquiv`: the fiberwise continuous complex-linear
+  equivalence `ℂ ⊗[ℝ] W x ≃L[ℂ] V x` of a maximal totally real inclusion.
+* `TauCeti.maximalRealFormComplexificationDiffeomorph`: these equivalences as a `C^n`
+  diffeomorphism of total spaces.
+* `TauCeti.maximalRealFormConjugationDiffeomorph`: the smooth fiber conjugation, with
+  `TauCeti.maximalRealFormConjugationDiffeomorph_apply` (its fiber action),
+  `TauCeti.maximalRealFormConjugationDiffeomorph_eq_self_iff` (its fixed locus is the given real
+  range), `TauCeti.maximalRealFormConjugationDiffeomorph_unique`,
+  `TauCeti.maximalRealFormConjugationDiffeomorph_congr_range` and
+  `TauCeti.maximalRealFormConjugationDiffeomorph_natural`.
+* `TauCeti.maximalRealFormConjugationDiffeomorph_subtype_eq_self_iff`: the case of a subbundle
+  given by submodules.
+
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS

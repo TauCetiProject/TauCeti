@@ -50,6 +50,8 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
   complexification, bundled as `TauCeti.complexificationLinearEquivProd`;
   `TauCeti.one_tmul_realPart_add_I_tmul_imaginaryPart` reassembles it, and
   `TauCeti.complexification_ext` says the two coordinates determine the vector.
+* `LinearEquiv.conjugationOfComplexification`: the tensor conjugation transported through a
+  complexification equivalence `ℂ ⊗[ℝ] W ≃ₗ[ℂ] V`.
 
 ## Main statements
 
@@ -76,6 +78,11 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
   tensor conjugation with `K`.
 * `TauCeti.tmulConj_baseChange`: that conjugation commutes with every base-changed map, which is
   what makes it equivariant for a base-changed action.
+* `LinearEquiv.conjugationOfComplexification_eq_self_iff`,
+  `LinearEquiv.conjugationOfComplexification_unique` and
+  `LinearEquiv.conjugationOfComplexification_natural`: the transported conjugation fixes exactly
+  the image of the real inclusion, is the only conjugate-linear map doing so, and commutes with
+  complex-linear maps carrying one real inclusion to another.
 
 ## Implementation notes
 
