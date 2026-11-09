@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Process.Predictable.Basic
 public import TauCeti.Probability.Process.TimeMeasure
 public import TauCeti.MeasureTheory.Function.Lp.Iterated
-public import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
 
 /-!
@@ -25,11 +24,9 @@ Product-almost-everywhere replacement by predictable processes preserves the exp
 domain, and, for s-finite `P`, the pathwise-energy domain. A finite initial-measurable random
 variable, held constant in time, belongs to the pathwise domain without any moment assumption.
 
-Time measure on `(0,T]` is written as the pullback of restricted real Lebesgue measure under
-`ℝ≥0 → ℝ`. By the native measurable-embedding restriction identity this is also the restriction
-of the pullback Lebesgue measure to `(0,T]`. Pathwise membership uses native `MemLp`, so square
-energy means a finite nonnegative lower integral, never the default value of a divergent
-Bochner integral.
+Time measure on `(0,T]` is `TauCeti.Probability.timeMeasure T`. Pathwise membership uses
+native `MemLp`, so square energy means a finite nonnegative lower integral, never the default
+value of a divergent Bochner integral.
 
 ## References
 
@@ -57,7 +54,7 @@ structure BrownianIntegrable (ℱ : Filtration ℝ≥0 mΩ) (P : Measure Ω)
   isStronglyPredictable : IsStronglyPredictable ℱ H
   /-- Finite expected square energy on each finite horizon. -/
   memLp : ∀ T : ℝ≥0, MemLp (Function.uncurry H) 2
-    (((volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ)).prod P)
+    ((Probability.timeMeasure T).prod P)
 
 /-- Predictable Brownian integrands with finite pathwise square energy on every finite
 horizon outside one common null set. This does not require finite expected energy. -/
@@ -67,14 +64,13 @@ structure LocallyBrownianIntegrable (ℱ : Filtration ℝ≥0 mΩ) (P : Measure 
   isStronglyPredictable : IsStronglyPredictable ℱ H
   /-- Almost every path is square integrable on every finite horizon. -/
   ae_memLp : ∀ᵐ ω ∂P, ∀ T : ℝ≥0, MemLp (fun t ↦ H t ω) 2
-    ((volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ))
+    (Probability.timeMeasure T)
 
 /-- A single a.e. statement for all finite horizons is equivalent to a separate a.e.
 statement for each integer horizon, together with predictability. -/
 theorem locallyBrownianIntegrable_iff_nat : LocallyBrownianIntegrable ℱ P H ↔
     IsStronglyPredictable ℱ H ∧ ∀ n : ℕ, ∀ᵐ ω ∂P,
-      MemLp (fun t ↦ H t ω) 2
-        ((volume.restrict (Ioc 0 (n : ℝ))).comap ((↑) : ℝ≥0 → ℝ)) := by
+      MemLp (fun t ↦ H t ω) 2 (Probability.timeMeasure (n : ℝ≥0)) := by
   constructor
   · intro h
     exact ⟨h.isStronglyPredictable, fun n ↦ h.ae_memLp.mono fun ω hω ↦ hω n⟩
@@ -83,11 +79,8 @@ theorem locallyBrownianIntegrable_iff_nat : LocallyBrownianIntegrable ℱ P H �
     filter_upwards [ae_all_iff.2 hn] with ω hω
     intro T
     obtain ⟨n, hn⟩ := exists_nat_ge (T : ℝ)
-    have hmeasure :
-        (volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ) ≤
-          (volume.restrict (Ioc 0 (n : ℝ))).comap ((↑) : ℝ≥0 → ℝ) := by
-      rw [NNReal.comap_volume_restrict_Ioc T,
-        ← NNReal.coe_natCast n, NNReal.comap_volume_restrict_Ioc]
+    have hmeasure : Probability.timeMeasure T ≤ Probability.timeMeasure (n : ℝ≥0) := by
+      rw [Probability.timeMeasure_def, Probability.timeMeasure_def]
       exact Measure.restrict_mono_set _ (Ioc_subset_Ioc_right (by exact_mod_cast hn))
     exact (hω n).mono_measure hmeasure
 
@@ -130,17 +123,16 @@ theorem LocallyBrownianIntegrable.const_mul (h : LocallyBrownianIntegrable ℱ P
 representative is predictable. -/
 theorem BrownianIntegrable.congr (h : BrownianIntegrable ℱ P H)
     (hK : IsStronglyPredictable ℱ K)
-    (heq : ∀ T : ℝ≥0, Function.uncurry H =ᵐ[
-      ((volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ)).prod P]
-        Function.uncurry K) : BrownianIntegrable ℱ P K :=
+    (heq : ∀ T : ℝ≥0, Function.uncurry H =ᵐ[(Probability.timeMeasure T).prod P]
+      Function.uncurry K) : BrownianIntegrable ℱ P K :=
   ⟨hK, fun T ↦ (h.memLp T).ae_eq (heq T)⟩
 
 /-- A.e.-in-time replacement on almost every path preserves the pathwise-energy domain,
 provided the new representative is predictable. No s-finiteness assumption is needed. -/
 theorem LocallyBrownianIntegrable.congr (h : LocallyBrownianIntegrable ℱ P H)
     (hK : IsStronglyPredictable ℱ K)
-    (heq : ∀ᵐ ω ∂P, ∀ T : ℝ≥0, (fun t ↦ H t ω) =ᵐ[
-      (volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ)] (fun t ↦ K t ω)) :
+    (heq : ∀ᵐ ω ∂P, ∀ T : ℝ≥0,
+      (fun t ↦ H t ω) =ᵐ[Probability.timeMeasure T] (fun t ↦ K t ω)) :
     LocallyBrownianIntegrable ℱ P K := by
   refine ⟨hK, ?_⟩
   filter_upwards [h.ae_memLp, heq] with ω hω heqω
@@ -150,9 +142,8 @@ theorem LocallyBrownianIntegrable.congr (h : LocallyBrownianIntegrable ℱ P H)
 provided the new representative is predictable. -/
 theorem LocallyBrownianIntegrable.congr_prod [SFinite P] (h : LocallyBrownianIntegrable ℱ P H)
     (hK : IsStronglyPredictable ℱ K)
-    (heq : ∀ T : ℝ≥0, Function.uncurry H =ᵐ[
-      ((volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ)).prod P]
-        Function.uncurry K) : LocallyBrownianIntegrable ℱ P K := by
+    (heq : ∀ T : ℝ≥0, Function.uncurry H =ᵐ[(Probability.timeMeasure T).prod P]
+      Function.uncurry K) : LocallyBrownianIntegrable ℱ P K := by
   refine locallyBrownianIntegrable_iff_nat.2 ⟨hK, fun n ↦ ?_⟩
   have heq' := Measure.ae_ae_of_ae_prod
     ((Measure.measurePreserving_swap (μ := P) (ν := _)).quasiMeasurePreserving.ae_eq_comp
@@ -185,17 +176,11 @@ theorem brownianIntegrable_const_iff [SFinite P] {ξ : Ω → ℝ} :
   · intro h
     refine ⟨h.isStronglyPredictable.stronglyAdapted 0, ?_⟩
     -- A unit time interval has positive mass, so an a.e. square-integrable section exists.
-    have hmass : (volume.restrict (Ioc 0 (1 : ℝ))).comap
-        ((↑) : ℝ≥0 → ℝ) univ = 1 := by
-      rw [← NNReal.coe_one, NNReal.comap_volume_restrict_Ioc]
-      simpa only [Probability.timeMeasure_def, ENNReal.coe_one] using
-        Probability.timeMeasure_univ 1
-    have : NeZero ((volume.restrict (Ioc 0 (1 : ℝ))).comap ((↑) : ℝ≥0 → ℝ)) :=
+    have hmass : Probability.timeMeasure 1 univ = 1 := by simp
+    have : NeZero (Probability.timeMeasure 1) :=
       ⟨fun hz ↦ by simp [hz] at hmass⟩
-    have hsec : ∀ᵐ _ ∂(volume.restrict (Ioc 0 (1 : ℝ))).comap
-        ((↑) : ℝ≥0 → ℝ), MemLp ξ 2 P := by
-      simpa only [NNReal.coe_one, Function.uncurry_apply_pair] using
-        (h.memLp 1).ae_memLp_prod_right
+    have hsec : ∀ᵐ _ ∂Probability.timeMeasure 1, MemLp ξ 2 P := by
+      simpa only [Function.uncurry_apply_pair] using (h.memLp 1).ae_memLp_prod_right
     obtain ⟨_, hξ⟩ := hsec.exists
     exact hξ
   · rintro ⟨hξ, hξ₂⟩
