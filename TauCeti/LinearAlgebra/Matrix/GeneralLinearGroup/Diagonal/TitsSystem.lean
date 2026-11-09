@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.TitsSystem.Bruhat.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Bruhat
 
 import TauCeti.Data.Fin.Basic
+import TauCeti.GroupTheory.TitsSystem.Parabolic.Classification
 
 /-!
 # The standard Tits systems of the general linear groups
@@ -34,6 +35,9 @@ system.
   represented by the permutation matrices of the adjacent transpositions.
 * `TauCeti.glTitsSystem_simple_eq_preimage`: under the Weyl-group identification, the simple
   reflections are the adjacent transpositions.
+* `TauCeti.bruhatCell_glTitsSystemSimpleRep_subset_iff`: a subgroup containing the
+  upper-triangular group contains a simple Bruhat cell exactly when it contains the
+  corresponding adjacent transposition.
 
 ## References
 
@@ -329,6 +333,21 @@ theorem glTitsSystemWeylGroupMulEquivPerm_symm_apply (σ : Equiv.Perm (Fin (n + 
         by simpa only [glTitsSystem_subgroupN] using permutationGL_mem_normalizer σ⟩ := by
   apply (glTitsSystemWeylGroupMulEquivPerm k n).injective
   simp
+
+variable {n} in
+/-- A subgroup of `GLₙ₊₁(k)` containing the upper-triangular group contains the Bruhat cell of
+the `i`-th simple reflection exactly when it contains the permutation matrix of the
+transposition of `i` and `i + 1`. -/
+theorem bruhatCell_glTitsSystemSimpleRep_subset_iff {H : Subgroup (GL (Fin (n + 1)) k)}
+    (hB : (glTitsSystem k n).subgroupB ≤ H) (i : Fin n) :
+    (glTitsSystem k n).bruhatCell (QuotientGroup.mk (glTitsSystemSimpleRep k n i)) ⊆ H ↔
+      permutationGL (k := k) (Equiv.swap i.castSucc i.succ) ∈ H := by
+  have hrep : (glTitsSystemSimpleRep k n i : GL (Fin (n + 1)) k) ∈
+      (glTitsSystem k n).bruhatCell (QuotientGroup.mk (glTitsSystemSimpleRep k n i)) := by
+    rw [TitsSystem.bruhatCell_mk]
+    exact DoubleCoset.mem_doubleCoset_self _ _ _
+  rw [coe_glTitsSystemSimpleRep] at hrep
+  exact ⟨fun h ↦ h hrep, (glTitsSystem k n).bruhatCell_subset_of_mem hB hrep⟩
 
 end TitsSystem
 

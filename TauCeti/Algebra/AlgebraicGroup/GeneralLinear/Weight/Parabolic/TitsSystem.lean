@@ -27,14 +27,6 @@ The comparison uses `TitsSystem.standardParabolic_eq_of_subgroupB_le`, the class
 of subgroups containing the upper-triangular group. The final cell criterion transfers
 the Bruhat decomposition to the concrete weight-parabolic subgroup.
 
-## Main declarations
-
-* `TauCeti.GeneralLinear.bruhatCell_glTitsSystemSimpleRep_subset_iff`: a subgroup containing
-  the upper-triangular group contains a simple Bruhat cell exactly when it contains the
-  corresponding adjacent transposition.
-* `TauCeti.GeneralLinear.standardParabolic_weightParabolicSimple`: the points of a decreasing
-  weight parabolic form the standard parabolic of its equal-weight adjacent transpositions.
-
 ## References
 
 * J. E. Humphreys, *Linear Algebraic Groups*, §§28–29.
@@ -102,20 +94,6 @@ def weightParabolicSimple : Set (glTitsSystem k n).simple :=
   {s | ∃ i : Fin n, w i.castSucc = w i.succ ∧
     (s : (glTitsSystem k n).WeylGroup) =
       QuotientGroup.mk (glTitsSystemSimpleRep k n i)}
-
-/-- A subgroup of `GLₙ₊₁(k)` containing the upper-triangular group contains the Bruhat cell of
-the `i`-th simple reflection exactly when it contains the permutation matrix of the
-transposition of `i` and `i + 1`. -/
-theorem bruhatCell_glTitsSystemSimpleRep_subset_iff {H : Subgroup (GL (Fin (n + 1)) k)}
-    (hB : (glTitsSystem k n).subgroupB ≤ H) (i : Fin n) :
-    (glTitsSystem k n).bruhatCell (QuotientGroup.mk (glTitsSystemSimpleRep k n i)) ⊆ H ↔
-      permutationGL (k := k) (Equiv.swap i.castSucc i.succ) ∈ H := by
-  have hrep : (glTitsSystemSimpleRep k n i : GL (Fin (n + 1)) k) ∈
-      (glTitsSystem k n).bruhatCell (QuotientGroup.mk (glTitsSystemSimpleRep k n i)) := by
-    rw [TitsSystem.bruhatCell_mk]
-    exact DoubleCoset.mem_doubleCoset_self _ _ _
-  rw [coe_glTitsSystemSimpleRep] at hrep
-  exact ⟨fun h ↦ h hrep, (glTitsSystem k n).bruhatCell_subset_of_mem hB hrep⟩
 
 /-- A selected simple reflection is an adjacent transposition of equal-weight coordinates.
 This constructor description is a named rewrite; the Bruhat-cell criterion gives its
