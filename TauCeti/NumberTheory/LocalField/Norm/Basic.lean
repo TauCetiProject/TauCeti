@@ -17,6 +17,7 @@ public import Mathlib.RingTheory.IntegralClosure.IntegralRestrict
 import Mathlib.RingTheory.Norm.Transitivity
 import Mathlib.RingTheory.Trace.Basic
 import Mathlib.RingTheory.Valuation.Integral
+import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Map
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Pow.Basic
 import TauCeti.RingTheory.Norm.Quotient
@@ -63,6 +64,8 @@ Herbrand shift instead.
   `𝓂[K] ^ (f(L/K) m)`.
 * `TauCeti.irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible`: the norm of an irreducible
   integer is irreducible exactly when the residue degree is one.
+* `TauCeti.irreducible_and_inertiaDegree_eq_one_of_norm`: an integer whose norm is irreducible is
+  irreducible, and the extension then has residue degree one.
 * `TauCeti.addVal_norm`: the additive valuation of the norm of an integer is multiplied by the
   inertia degree.
 * `TauCeti.comap_zmultiples_inertiaDegree_le_normGroup`: if the units of `K` are norms, the norm
@@ -450,6 +453,45 @@ theorem irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible {ξ : 𝒪[L]}
 theorem IsTotallyRamified.irreducible_norm (h : IsTotallyRamified K L) {π : 𝒪[L]}
     (hπ : Irreducible π) : Irreducible (Algebra.norm 𝒪[K] π) :=
   (irreducible_norm_iff_inertiaDegree_eq_one_of_irreducible hπ).2 h.inertiaDegree_eq_one
+
+/-- An element of `𝒪[L]` whose norm to `K` is an irreducible element of `𝒪[K]` is a uniformizer
+of `𝒪[L]`, and `L/K` has inertia degree one. -/
+theorem irreducible_and_inertiaDegree_eq_one_of_norm (ξ : 𝒪[L]) (c : 𝒪[K])
+    (hnormirr : Irreducible c)
+    (hnorm : Algebra.norm K (ξ : L) = (c : K)) :
+    Irreducible ξ ∧ inertiaDegree K L = 1 := by
+  have : Module.Finite K L := finite_of_valuativeExtension K L
+  have hξ0 : ξ ≠ 0 := by
+    rintro rfl
+    have h0 : (c : K) = 0 := by rw [← hnorm]; simp
+    exact hnormirr.ne_zero (Subtype.ext h0)
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
+  obtain ⟨m, u, hξ⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hξ0 hϖ
+  have hξL : (ξ : L) ≠ 0 := fun h ↦ hξ0 (Subtype.ext h)
+  have hϖL : (ϖ : L) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
+  let x : Lˣ := Units.mk0 (ξ : L) hξL
+  have hx : x = Units.map (Subring.subtype 𝒪[L] : 𝒪[L] →* L) u *
+      (Units.mk0 (ϖ : L) hϖL) ^ m := by
+    apply Units.ext
+    simpa [x] using congrArg ((↑·) : 𝒪[L] → L) hξ
+  have hxval : (normalizedValuation L x).toAdd = (m : ℤ) := by
+    rw [hx, map_mul, map_pow, normalizedValuation_integerUnits,
+      normalizedValuation_irreducible hϖ, one_mul, toAdd_pow, toAdd_ofAdd,
+      nsmul_eq_mul, mul_one]
+  have hnormval : (normalizedValuation K (Algebra.normUnits K x)).toAdd = 1 := by
+    have hc0 : (c : K) ≠ 0 := fun h ↦ hnormirr.ne_zero (Subtype.ext h)
+    have heq : Algebra.normUnits K x = Units.mk0 (c : K) hc0 := by
+      apply Units.ext
+      simp [x, hnorm]
+    rw [heq, normalizedValuation_irreducible hnormirr, toAdd_ofAdd]
+  have hfm : inertiaDegree K L * m = 1 := by
+    have h := toAdd_normalizedValuation_norm (K := K) x
+    rw [hnormval, hxval] at h
+    exact_mod_cast h.symm
+  have hm_one : m = 1 := (mul_eq_one.mp hfm).2
+  refine ⟨?_, (mul_eq_one.mp hfm).1⟩
+  subst m
+  exact Associated.irreducible ⟨u, by simpa [mul_comm] using hξ.symm⟩ hϖ
 
 /-- **The valuation of a norm**: `v_K(N_{L/K}(z)) = f(L/K) v_L(z)` for every `z ∈ 𝒪[L]`, read on
 the additive valuations of the discrete valuation rings `𝒪[K]` and `𝒪[L]`. -/
