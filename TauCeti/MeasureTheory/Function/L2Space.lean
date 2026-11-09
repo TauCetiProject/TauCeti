@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
@@ -31,6 +32,12 @@ since their indicators are nonzero and pairwise orthogonal. In particular `L²` 
 locally finite measure restricted to a nonempty open subset of a nontrivial real normed space is
 infinite-dimensional (`MeasureTheory.L2.not_finiteDimensional_restrict_of_isOpen`), which applies
 to Lebesgue measure on a nonempty open subset of `ℝⁿ`, `n ≥ 1`.
+
+For a complex inner product space `F` regarded as a real one (`InnerProductSpace.complexToReal`),
+the real inner product on `L²(α, F)` is the real part of the complex one
+(`MeasureTheory.L2.real_inner_eq_re_inner`). For a family of inner product spaces `G i`, evaluating
+coordinate `i` of an `L²(α, ℓ²(G))` function is adjoint to placing an `L²(α, G i)` function in
+coordinate `i` (`MeasureTheory.L2.inner_evalCLM_compLpL`).
 -/
 
 public section
@@ -140,6 +147,30 @@ theorem L2.not_finiteDimensional_restrict_of_isOpen {E : Type*} [NormedAddCommGr
     have hjk' : (j : ℝ) + 2 ≤ k + 1 := by
       exact_mod_cast Nat.add_le_add_right (Nat.succ_le_of_lt hlt) 1
     exact div_le_div_of_nonneg_left hr.le (by positivity) hjk'
+
+/-- For a complex inner product space `F` with its induced real structure, the real inner product
+on `L²(α, F)` is the real part of the complex one. -/
+theorem L2.real_inner_eq_re_inner {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+    (f g : Lp F 2 μ) :
+    letI : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+    inner ℝ f g = Complex.re (inner ℂ f g) := by
+  let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+  rw [L2.inner_def, L2.inner_def]
+  exact integral_re (L2.integrable_inner (𝕜 := ℂ) f g)
+
+/-- Evaluating coordinate `i` of an `L²(α, ℓ²(G))` function is adjoint to placing an
+`L²(α, G i)` function in coordinate `i`. -/
+theorem L2.inner_evalCLM_compLpL {ι : Type*} [DecidableEq ι] {G : ι → Type*}
+    [∀ i, NormedAddCommGroup (G i)] [∀ i, InnerProductSpace 𝕜 (G i)] (i : ι)
+    (g : Lp (lp G 2) 2 μ) (u : Lp (G i) 2 μ) :
+    ⟪(lp.evalCLM 𝕜 G 2 i).compLpL 2 μ g, u⟫_𝕜 =
+      ⟪g, (lp.singleContinuousLinearMap 𝕜 G 2 i).compLpL 2 μ u⟫_𝕜 := by
+  rw [L2.inner_def, L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [(lp.evalCLM 𝕜 G 2 i).coeFn_compLpL g,
+    (lp.singleContinuousLinearMap 𝕜 G 2 i).coeFn_compLpL u] with x h₁ h₂
+  rw [h₁, h₂, lp.singleContinuousLinearMap_apply, lp.inner_single_right]
+  rfl
 
 end MeasureTheory
 
