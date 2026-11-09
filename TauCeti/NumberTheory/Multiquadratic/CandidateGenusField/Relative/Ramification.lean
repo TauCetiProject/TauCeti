@@ -76,7 +76,7 @@ theorem isUnramifiedIn_candidateGenusField (hd : Squarefree d) (hnsq : ¬ IsSqua
   have := hlies
   have hp : (primeDiscriminantPrime P.val).Prime := prime_primeDiscriminantPrime (hs P.val P.2)
   have hdvd : ((primeDiscriminantPrime P.val : ℕ) : ℤ) ∣ fundamentalDiscriminant d :=
-    (primeDiscriminantPrime_dvd (hs P.val P.2)).trans
+    (primeDiscriminantPrime_dvd P.val).trans
       (hprod ▸ Finset.dvd_prod_of_mem _ P.property)
   exact ramificationIdx_eq_two_of_dvd_fundamentalDiscriminant
     (minpoly_candidateGenusFieldBaseGen hd hnsq)

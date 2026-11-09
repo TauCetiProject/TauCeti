@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.ModularForms.CuspFormSubmodule
 public import Mathlib.NumberTheory.ModularForms.QExpansion
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Translation
 import Mathlib.Analysis.Normed.Group.Tannery
@@ -24,7 +25,8 @@ series are bounded at `i∞`; and as `im τ → ∞` every term tends to `0`, ex
 vector `v = -γ`, which is constantly `1` and exists only when `γ ∈ L`. By dominated convergence,
 `Θ_L(τ) → 1`, while `θ_{γ+L}(τ) → 0` for `γ ∉ L`. Together with holomorphy and periodicity this
 identifies the constant term of the `q`-expansion of `Θ_L`: it is `1`, in `q = exp (2 π i τ)` for
-an even lattice and in `exp (π i τ)` for an integral one.
+an even lattice and in `exp (π i τ)` for an integral one. It also shows that `Θ_L` is never a cusp
+form, for any group having `∞` as a cusp.
 
 On the imaginary axis `τ = i y` every term is the positive real number `exp (-π y ‖γ + v‖²)`, so
 `θ_{γ+L}(i y)` is a positive real number and `Θ_L(i y) ≥ 1`. In particular `Θ_L` does not vanish
@@ -39,6 +41,9 @@ divisible by `8`.
   series are bounded at `i∞`.
 * `ZLattice.tendsto_thetaSeries_atImInfty`, `ZLattice.valueAtInfty_thetaSeries`: `Θ_L(τ) → 1` as
   `im τ → ∞`.
+* `ZLattice.not_isZeroAtImInfty_thetaSeries`, `ZLattice.coe_ne_thetaSeries`,
+  `ZLattice.not_isCuspForm_of_coe_eq_thetaSeries`: `Θ_L` does not vanish at `∞`, so it is not a
+  cusp form on any group having `∞` as a cusp.
 * `ZLattice.isZeroAtImInfty_thetaCoset`: `θ_{γ+L}(τ) → 0` as `im τ → ∞` when `γ ∉ L`.
 * `ZLattice.IsEven.qExpansion_thetaSeries_coeff_zero`: for even `L` the constant term of the
   `q`-expansion of `Θ_L` is `1`; `ZLattice.IsIntegral.qExpansion_two_thetaSeries_coeff_zero` is
@@ -128,6 +133,28 @@ theorem tendsto_thetaSeries_atImInfty : Tendsto (thetaSeries L) atImInfty (𝓝 
 @[simp]
 theorem valueAtInfty_thetaSeries : valueAtInfty (thetaSeries L) = 1 :=
   (tendsto_thetaSeries_atImInfty L).limUnder_eq
+
+/-- The theta series of a discrete subgroup does not vanish at `i∞`, since it tends to `1`. -/
+@[simp]
+theorem not_isZeroAtImInfty_thetaSeries : ¬ IsZeroAtImInfty (thetaSeries L) := fun h =>
+  one_ne_zero <| tendsto_nhds_unique (tendsto_thetaSeries_atImInfty L) h
+
+/-- **The theta series is never a cusp form.** For a subgroup `Γ` of `GL(2, ℝ)` having `∞` as
+a cusp, no cusp form on `Γ`, of any weight, has `Θ_L` as its underlying function, because `Θ_L`
+does not vanish at `∞`. -/
+theorem coe_ne_thetaSeries {F : Type*} [FunLike F ℍ ℂ] {Γ : Subgroup (GL (Fin 2) ℝ)} {k : ℤ}
+    [CuspFormClass F Γ k] [Fact (IsCusp OnePoint.infty Γ)] (f : F) :
+    ⇑f ≠ thetaSeries L := fun h =>
+  not_isZeroAtImInfty_thetaSeries L (h ▸ CuspFormClass.zero_at_infty f)
+
+/-- A modular form whose underlying function is `Θ_L`, on a subgroup `Γ` of `GL(2, ℝ)` having
+`∞` as a cusp, is not a cusp form. -/
+theorem not_isCuspForm_of_coe_eq_thetaSeries {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.HasDetOne]
+    [Fact (IsCusp OnePoint.infty Γ)] {k : ℤ} {f : ModularForm Γ k}
+    (hf : ⇑f = thetaSeries L) : ¬ ModularForm.IsCuspForm f := by
+  rintro ⟨g, rfl⟩
+  exact coe_ne_thetaSeries L g <| funext fun z =>
+    (CuspForm.toModularFormₗ_apply g z).symm.trans (congrFun hf z)
 
 /-- For `γ ∉ L` the theta series of the translate `γ + L` tends to `0` at `i∞`, since no vector
 of `γ + L` is zero. -/
