@@ -192,20 +192,6 @@ section RightAlmostSplit
 
 variable {Y Z : C} {g : Y ⟶ Z}
 
-/-- A right almost split morphism is radical. -/
-theorem IsRightAlmostSplit.mem_jacobsonRadical (hg : IsRightAlmostSplit g) :
-    g ∈ jacobsonRadical Y Z :=
-  have := hg.isLocalRing_end
-  mem_jacobsonRadical_iff_not_isSplitEpi.2 hg.not_isSplitEpi
-
-/-- If `End Z` is local, then `g : Y ⟶ Z` is right almost split exactly when it is radical and every
-radical morphism into `Z` factors through it: the morphisms factoring through `g` are the radical
-morphisms into `Z`. -/
-theorem isRightAlmostSplit_iff_mem_jacobsonRadical_and_forall [IsLocalRing (End Z)] :
-    IsRightAlmostSplit g ↔ g ∈ jacobsonRadical Y Z ∧
-      ∀ ⦃W : C⦄ (h : W ⟶ Z), h ∈ jacobsonRadical W Z → ∃ u : W ⟶ Y, u ≫ g = h := by
-  simp only [isRightAlmostSplit_iff, mem_jacobsonRadical_iff_not_isSplitEpi]
-
 /-- The map `(-, Y) ⟶ rad(-, Z)` induced by a radical `g` is an epimorphism exactly when every
 radical morphism into `Z` factors through `g`. -/
 theorem epi_radicalFunctorLift_iff (hg : g ∈ jacobsonRadical Y Z) :
