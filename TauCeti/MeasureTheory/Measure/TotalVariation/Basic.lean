@@ -32,6 +32,8 @@ estimates into total-variation estimates.
 
 ## Main declarations
 
+* `MeasureTheory.abs_measureReal_sub_le_tvDist`: the real masses of a measurable event
+  differ by at most `tvDist μ ν`;
 * `MeasureTheory.etvDist_eq_posPart_univ_add_negPart_univ`: `etvDist μ ν` is the total mass of
   the positive part of the Jordan decomposition of `μ - ν` plus that of its negative part;
 * `MeasureTheory.etvDist_eq_iSup_sub_add_iSup_sub`: `etvDist μ ν` is the largest excess of `μ`
@@ -54,6 +56,16 @@ open scoped ENNReal
 namespace MeasureTheory
 
 variable {α : Type*} [MeasurableSpace α] {μ ν : Measure α} [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+
+/-- Total variation bounds the difference of the masses of each measurable event. -/
+theorem abs_measureReal_sub_le_tvDist {s : Set α} (hs : MeasurableSet s) :
+    |μ.real s - ν.real s| ≤ tvDist μ ν := by
+  have h := (VectorMeasure.enorm_measure_le_variation
+    (μ.toSignedMeasure - ν.toSignedMeasure) s).trans (measure_mono (subset_univ s))
+  rw [← VectorMeasure.etvDist, ← etvDist_eq_etvDist_toSignedMeasure] at h
+  have hr := ENNReal.toReal_mono (etvDist_ne_top μ ν) h
+  simpa only [_root_.sub_apply, Measure.toSignedMeasure_apply_measurable hs,
+    toReal_enorm, Real.norm_eq_abs, tvDist] using hr
 
 /-- The total variation distance between finite measures is the total mass of the positive part
 of the Jordan decomposition of `μ - ν` plus the total mass of its negative part. -/

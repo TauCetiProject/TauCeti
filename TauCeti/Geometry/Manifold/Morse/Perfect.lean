@@ -5,179 +5,213 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
 public import TauCeti.Geometry.Manifold.Morse.Inequalities
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
-import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.FundamentalGroup.Basic
-import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Projectivization
 import TauCeti.Geometry.Manifold.Morse.Reeb
 
 /-!
 # Perfect Morse functions
 
-A Morse function `f` on a compact manifold `M` is **perfect** over a division ring `k`
-(`TauCeti.IsPerfectMorse`) when, for every `j`, its number of critical points of index `j` is the
-Betti number `dim_k Hⱼ(M; k)`. By the weak Morse inequalities
-(`TauCeti.IsMorse.finrank_singularHomology_le`) the number of critical points of index `j` is
-always at least `dim_k Hⱼ(M; k)`, so a perfect Morse function has as few critical points as the
-homology of `M` over `k` allows: their number is the total Betti number
-(`TauCeti.IsPerfectMorse.totalCriticalCount_eq`). Whether a Morse function is perfect depends on
-the coefficients.
+A Morse function `f` on a manifold `M` is **perfect** with coefficients in a division ring `k`
+(`TauCeti.IsPerfectMorse`) if, in every degree `n`, its number `cₙ` of critical points of index `n`
+equals the dimension `bₙ` of the singular homology `Hₙ(M; k)`. By the weak Morse inequalities
+`bₙ ≤ cₙ`, a perfect Morse function has the fewest critical points of each index among all Morse
+functions on a compact manifold (`TauCeti.IsPerfectMorse.criticalCount_le`), and so the fewest
+critical points altogether (`TauCeti.IsPerfectMorse.totalCriticalCount_le`): their number is the
+total Betti number (`TauCeti.IsPerfectMorse.totalCriticalCount_eq`). Whether a perfect
+Morse function exists depends on the coefficients, as projective spaces show.
 
-By the lacunary principle, a Morse function no two of whose critical points have indices differing
-by one is perfect over every division ring
-(`TauCeti.IsMorse.isPerfectMorse_of_forall_ne_add_one`). This applies to the moment function on
-complex projective space `ℂℙⁿ`, whose indices `0, 2, …, 2n` are all even
-(`TauCeti.isPerfectMorse_projectiveMomentFunction_complex`).
-
-On real projective space `ℝℙⁿ` the moment function with distinct weights has one critical point
-of each index `0, …, n`. Over a division ring of characteristic two, such as `ZMod 2`, every Betti
-number `dim Hⱼ(ℝℙⁿ; k)` with `j ≤ n` is one, so this function is perfect
-(`TauCeti.isPerfectMorse_projectiveMomentFunction_real`). Over a division ring in which `2 ≠ 0`,
-such as `ℚ`, no Morse function on `ℝℙⁿ` with `n ≥ 2` is perfect
-(`TauCeti.not_isPerfectMorse_projectivization_real`). Indeed, the Betti numbers over `k` are
-`1` in degree `0`, `1` in degree `n` when `n` is odd, and `0` otherwise, so a perfect Morse
-function would have at most two critical points. A function on a compact manifold with at least two
-points has at least two critical points, and by Reeb's theorem
-(`TauCeti.IsMorse.nonempty_homeomorph_sphere_of_totalCriticalCount_eq_two`) a Morse function with
-exactly two makes `ℝℙⁿ` homeomorphic to the sphere `Sⁿ`. This is impossible for `n ≥ 2`, since
-`Sⁿ` is simply connected and `ℝℙⁿ` is not. For `ℝℙ²` the moment function has three critical
-points while the rational Betti numbers are `1, 0, 0`.
-
-The homology of `ℝℙⁿ` is computed on the antipodal quotient of the sphere
-(`TauCeti.RealProjectiveSpace`), and transported to the projectivization
-`ℙ ℝ (Fin (n + 1) → ℝ)`, which carries the smooth structure, along
-`TauCeti.RealProjectiveSpace.homeomorphProjectivization`.
+* **The lacunary principle.** A Morse function on a compact manifold no two of whose critical
+  points have indices differing by one is perfect for every choice of coefficients
+  (`TauCeti.IsMorse.isPerfectMorse_of_forall_ne_add_one`). On `ℂℙⁿ` the moment function
+  `[z] ↦ (∑ⱼ wⱼ |zⱼ|²) / ∑ⱼ |zⱼ|²` with pairwise distinct weights has only even indices, so it is
+  perfect for every division ring of coefficients
+  (`TauCeti.isPerfectMorse_projectiveMomentFunction_complex`).
+* **Real projective space in characteristic two.** On `ℝPᴺ` the same moment function has one
+  critical point of each index `0, …, N`, and `Hⱼ(ℝPᴺ; k)` is one-dimensional for `j ≤ N` when
+  `2 = 0` in `k`. So the moment function is perfect over `ℤ/2`
+  (`TauCeti.isPerfectMorse_projectiveMomentFunction_real`).
+* **No perfect Morse function over `ℚ`.** Every Morse function on a nonempty compact manifold of
+  dimension `m` has a critical point of index `m`, at a point of maximum
+  (`TauCeti.IsMorse.criticalCount_finrank_ne_zero`), so a perfect Morse function forces the top
+  homology to be nonzero (`TauCeti.IsPerfectMorse.finrank_singularHomology_finrank_ne_zero`).
+  For `N ≥ 2`, no Morse function on `ℝPᴺ` is perfect over `ℚ`, or over any division ring in
+  which `2 ≠ 0` (`TauCeti.not_isPerfectMorse_projectivization_real`). Over such a ring the Betti
+  numbers of `ℝPᴺ` are `1` in degree `0`, `1` in degree `N` for odd `N`, and `0` otherwise, so a
+  perfect Morse function would have at most two critical points. A function on a compact manifold
+  with at least two points has at least two critical points, and by Reeb's theorem
+  (`TauCeti.IsMorse.nonempty_homeomorph_sphere_of_totalCriticalCount_eq_two`) a Morse function
+  with exactly two makes `ℝPᴺ` homeomorphic to the sphere `Sᴺ`. This is impossible for `N ≥ 2`,
+  since `Sᴺ` is simply connected and `ℝPᴺ` is not. On `ℝP²` the moment function with three
+  distinct weights has three critical points, of indices `0`, `1` and `2`; the Betti numbers are
+  `1, 1, 1` over `ℤ/2` but `1, 0, 0` over `ℚ`.
 
 ## Main declarations
 
 * `TauCeti.IsPerfectMorse`: a Morse function whose critical counts are the Betti numbers.
 * `TauCeti.IsPerfectMorse.totalCriticalCount_eq`: the number of critical points of a perfect Morse
   function is the total Betti number.
-* `TauCeti.IsMorse.isPerfectMorse_of_forall_ne_add_one`: the lacunary principle gives perfect Morse
-  functions.
-* `TauCeti.isPerfectMorse_projectiveMomentFunction_complex`: the moment function on `ℂℙⁿ` is
-  perfect over every division ring.
-* `TauCeti.isPerfectMorse_projectiveMomentFunction_real`: the moment function on `ℝℙⁿ` is perfect
-  in characteristic two.
-* `TauCeti.not_isPerfectMorse_projectivization_real`: for `n ≥ 2` no Morse function on `ℝℙⁿ` is
+* `TauCeti.IsMorse.isPerfectMorse_of_forall_ne_add_one`: the lacunary principle.
+* `TauCeti.isPerfectMorse_projectiveMomentFunction_complex` and
+  `TauCeti.isPerfectMorse_projectiveMomentFunction_real`: perfect moment functions on `ℂℙⁿ`, and on
+  `ℝPⁿ` in characteristic two.
+* `TauCeti.not_isPerfectMorse_projectivization_real`: for `N ≥ 2` no Morse function on `ℝPᴺ` is
   perfect over a division ring in which `2 ≠ 0`.
 
 ## References
 
-* R. Bott, *Lectures on Morse theory, old and new*, Bull. Amer. Math. Soc. 7 (1982), 331–358, §1.
+* R. Bott, *Lectures on Morse theory, old and new*, Bull. Amer. Math. Soc. (N.S.) 7 (1982),
+  331–358, §1 (perfect Morse functions and the lacunary principle).
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
-  §§4–5.
+  §5 (the Morse inequalities) and §4 (the example of `ℂℙⁿ`).
 -/
 
 public section
 
-noncomputable section
-
-open Function Module Set
+open CategoryTheory Limits Module Set
 open scoped ContDiff Manifold LinearAlgebra.Projectivization
 
 universe u
 
 namespace TauCeti
 
-section General
-
 variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {f : M → ℝ}
-  {k : Type u} [DivisionRing k]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {f g : M → ℝ}
 
-variable (I k) in
-/-- A function `f : M → ℝ` is a **perfect Morse function** over the division ring `k` when it is a
-Morse function whose number of critical points of index `j` is the Betti number
-`dim_k Hⱼ(M; k)` of singular homology, for every `j`. Both sides are counted in `ℕ∞`, the Betti
-number being `⊤` when `Hⱼ(M; k)` is infinite-dimensional. -/
-structure IsPerfectMorse (f : M → ℝ) : Prop where
+/-! ### Perfect Morse functions -/
+
+variable (I) in
+/-- A **perfect Morse function** with coefficients in a division ring `k`: a Morse function `f`
+on `M` such that, in every degree `n`, the singular homology `Hₙ(M; k)` is finite-dimensional and
+its dimension is the number of critical points of `f` of index `n`. -/
+structure IsPerfectMorse (k : Type u) [DivisionRing k] (f : M → ℝ) : Prop where
   /-- A perfect Morse function is a Morse function. -/
   isMorse : IsMorse I f
-  /-- The number of critical points of index `j` is the `j`-th Betti number over `k`. -/
-  criticalCount_eq (j : ℕ) : criticalCount I f j =
-    (Module.rank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) j).obj
-      (ModuleCat.of k k)).obj (TopCat.of M))).toENat
+  /-- The singular homology of `M` with coefficients in `k` is finite-dimensional. -/
+  finite_singularHomology (n : ℕ) : Module.Finite k
+    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj (ModuleCat.of k k)).obj
+      (TopCat.of M))
+  /-- The number of critical points of index `n` is the dimension of `Hₙ(M; k)`. -/
+  criticalCount_eq (n : ℕ) : criticalCount I f n =
+    finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj
+      (ModuleCat.of k k)).obj (TopCat.of M))
 
-/-- A perfect Morse function is a Morse function whose critical counts are the Betti numbers. -/
-theorem isPerfectMorse_iff : IsPerfectMorse I k f ↔ IsMorse I f ∧ ∀ j, criticalCount I f j =
-    (Module.rank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) j).obj
-      (ModuleCat.of k k)).obj (TopCat.of M))).toENat :=
-  ⟨fun h ↦ ⟨h.1, h.2⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+section Compact
 
+variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [CompactSpace M]
+  {k : Type u} [DivisionRing k]
+
+/-- On a compact manifold, a perfect Morse function is a Morse function whose number of critical
+points of each index `n` is the dimension of `Hₙ(M; k)`; the finite-dimensionality of homology is
+then automatic. -/
+theorem isPerfectMorse_iff : IsPerfectMorse I k f ↔ IsMorse I f ∧ ∀ n, criticalCount I f n =
+    finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj
+      (ModuleCat.of k k)).obj (TopCat.of M)) :=
+  ⟨fun h ↦ ⟨h.isMorse, h.criticalCount_eq⟩,
+    fun h ↦ ⟨h.1, h.1.finite_singularHomology (ModuleCat.of k k), h.2⟩⟩
+
+/-- **A perfect Morse function has the fewest critical points of each index.** If `f` is a perfect
+Morse function on a compact manifold, every Morse function `g` has at least as many critical
+points of each index as `f`. -/
+theorem IsPerfectMorse.criticalCount_le (hf : IsPerfectMorse I k f) (hg : IsMorse I g) (n : ℕ) :
+    criticalCount I f n ≤ criticalCount I g n := by
+  have h := hg.finrank_singularHomology_le (ModuleCat.of k k) n
+  rw [ModuleCat.finrank_of_self, mul_one] at h
+  rw [hf.criticalCount_eq]
+  exact (Nat.cast_le.2 h).trans (ENat.natCast_toNat_le_self _)
+
+/-- **A perfect Morse function has the fewest critical points.** If `f` is a perfect Morse
+function on a compact manifold, every Morse function `g` has at least as many critical points
+as `f`. -/
+theorem IsPerfectMorse.totalCriticalCount_le (hf : IsPerfectMorse I k f) (hg : IsMorse I g) :
+    totalCriticalCount I f ≤ totalCriticalCount I g := by
+  rw [← sum_criticalCount_eq_totalCriticalCount, ← sum_criticalCount_eq_totalCriticalCount]
+  exact Finset.sum_le_sum fun n _ ↦ hf.criticalCount_le hg n
+
+omit [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [CompactSpace M] in
 /-- **The number of critical points of a perfect Morse function** is the total Betti number
-`∑ⱼ dim_k Hⱼ(M; k)`, the sum running over the degrees `j ≤ dim M`. -/
-theorem IsPerfectMorse.totalCriticalCount_eq [FiniteDimensional ℝ E] (hf : IsPerfectMorse I k f) :
-    totalCriticalCount I f = ∑ j ∈ Finset.range (finrank ℝ E + 1),
-      (Module.rank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) j).obj
-        (ModuleCat.of k k)).obj (TopCat.of M))).toENat := by
+`∑ₙ dim_k Hₙ(M; k)`, the sum running over the degrees `n ≤ dim M`. -/
+theorem IsPerfectMorse.totalCriticalCount_eq (hf : IsPerfectMorse I k f) :
+    totalCriticalCount I f = ∑ n ∈ Finset.range (finrank ℝ E + 1),
+      (finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj
+        (ModuleCat.of k k)).obj (TopCat.of M)) : ℕ∞) := by
   rw [← sum_criticalCount_eq_totalCriticalCount]
-  exact Finset.sum_congr rfl fun j _ ↦ hf.criticalCount_eq j
+  exact Finset.sum_congr rfl fun n _ ↦ hf.criticalCount_eq n
 
-/-- **The lacunary principle gives perfect Morse functions.** A Morse function on a compact
-boundaryless manifold, no two of whose critical points have indices differing by one, is perfect
-over every division ring. -/
-theorem IsMorse.isPerfectMorse_of_forall_ne_add_one [FiniteDimensional ℝ E] [I.Boundaryless]
-    [IsManifold I ∞ M] [T2Space M] [CompactSpace M] (hf : IsMorse I f)
+/-- **The lacunary principle.** A Morse function on a compact manifold such that no two critical
+points have indices differing by one is perfect, for every division ring of coefficients. -/
+theorem IsMorse.isPerfectMorse_of_forall_ne_add_one (hf : IsMorse I f)
     (hind : ∀ x ∈ criticalPoints I f, ∀ y ∈ criticalPoints I f,
       manifoldMorseIndex I f x ≠ manifoldMorseIndex I f y + 1) :
-    IsPerfectMorse I k f where
-  isMorse := hf
-  criticalCount_eq j := by
-    rw [hf.toENat_rank_singularHomology (ModuleCat.of k k),
-      hf.finrank_singularHomology_eq_of_forall_ne_add_one (ModuleCat.of k k) hind j]
-    simpa using (ENat.natCast_toNat (hf.criticalCount_ne_top j)).symm
+    IsPerfectMorse I k f := by
+  refine isPerfectMorse_iff.2 ⟨hf, fun n ↦ ?_⟩
+  rw [hf.finrank_singularHomology_eq_of_forall_ne_add_one (ModuleCat.of k k) hind n,
+    ModuleCat.finrank_of_self, mul_one,
+    ENat.natCast_toNat_eq_self.2 (hf.criticalCount_ne_top n)]
 
-end General
+omit [IsManifold I ∞ M] [T2Space M] in
+/-- **A perfect Morse function forces nonzero top homology.** If a nonempty compact manifold of
+dimension `m` carries a perfect Morse function with coefficients in `k`, then `Hₘ(M; k) ≠ 0`:
+the maximum is a critical point of index `m`. -/
+theorem IsPerfectMorse.finrank_singularHomology_finrank_ne_zero [Nonempty M]
+    (hf : IsPerfectMorse I k f) :
+    finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) (finrank ℝ E)).obj
+      (ModuleCat.of k k)).obj (TopCat.of M)) ≠ 0 := by
+  have h := hf.isMorse.criticalCount_finrank_ne_zero
+  rw [hf.criticalCount_eq] at h
+  exact_mod_cast h
+
+end Compact
 
 /-! ### Projective spaces -/
 
-open Projectivization
+section Projective
 
-variable {n : ℕ}
+variable {n : ℕ} {w : Fin (n + 1) → ℝ}
 
-/-- **The moment function on `ℂℙⁿ` is perfect.** For pairwise distinct weights, the moment function
-on complex projective space is a perfect Morse function over every division ring `k`: its
-critical points have the even indices `0, 2, …, 2n`, one each, and no two of them differ by one. -/
-theorem isPerfectMorse_projectiveMomentFunction_complex (k : Type) [DivisionRing k]
-    {w : Fin (n + 1) → ℝ} (hw : Injective w) :
+/-- **The moment function on `ℂℙⁿ` is perfect.** For pairwise distinct weights, the moment
+function on `ℂℙⁿ` is a perfect Morse function for every division ring of coefficients: its
+critical points all have even index. -/
+theorem isPerfectMorse_projectiveMomentFunction_complex (hw : Function.Injective w) (k : Type)
+    [DivisionRing k] :
     IsPerfectMorse 𝓘(ℝ, Fin n → ℂ) k (projectiveMomentFunction ℂ w) := by
   refine (isMorse_projectiveMomentFunction hw).isPerfectMorse_of_forall_ne_add_one ?_
   rw [criticalPoints_projectiveMomentFunction hw]
-  rintro - ⟨i, rfl⟩ - ⟨j, rfl⟩
-  simp only [manifoldMorseIndex_projectiveMomentFunction, Complex.finrank_real_complex]
+  rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩
+  rw [manifoldMorseIndex_projectiveMomentFunction, manifoldMorseIndex_projectiveMomentFunction,
+    Complex.finrank_real_complex]
   omega
 
-/-- **The moment function on `ℝℙⁿ` is perfect in characteristic two.** For pairwise distinct
-weights, the moment function on real projective space is a perfect Morse function over every
-division ring `k` in which `2 = 0`, such as `ZMod 2`: it has one critical point of each index
-`j ≤ n`, and `Hⱼ(ℝℙⁿ; k)` is one-dimensional for each `j ≤ n`. -/
-theorem isPerfectMorse_projectiveMomentFunction_real {k : Type} [DivisionRing k] (h2 : (2 : k) = 0)
-    {w : Fin (n + 1) → ℝ} (hw : Injective w) :
-    IsPerfectMorse 𝓘(ℝ, Fin n → ℝ) k (projectiveMomentFunction ℝ w) where
-  isMorse := isMorse_projectiveMomentFunction hw
-  criticalCount_eq j := by
-    rw [criticalCount_projectiveMomentFunction_real hw,
-      (isMorse_projectiveMomentFunction hw).toENat_rank_singularHomology (ModuleCat.of k k),
-      RealProjectiveSpace.finrank_singularHomology_projectivization,
-      RealProjectiveSpace.finrank_singularHomology_of_two_eq_zero h2]
-    split_ifs <;> simp
+/-- **The moment function on `ℝPⁿ` is perfect in characteristic two.** For pairwise distinct
+weights, the moment function on `ℝPⁿ` has one critical point of each index `0, …, n`, and it is a
+perfect Morse function with coefficients in every division ring in which `2 = 0`, such as
+`ZMod 2`. -/
+theorem isPerfectMorse_projectiveMomentFunction_real (hw : Function.Injective w) {k : Type}
+    [DivisionRing k] (h2 : (2 : k) = 0) :
+    IsPerfectMorse 𝓘(ℝ, Fin n → ℝ) k (projectiveMomentFunction ℝ w) := by
+  refine isPerfectMorse_iff.2 ⟨isMorse_projectiveMomentFunction hw, fun j ↦ ?_⟩
+  rw [criticalCount_projectiveMomentFunction_real hw,
+    RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_eq_zero h2 j]
+  simp
 
-/-- **No Morse function on `ℝℙⁿ` is perfect away from characteristic two.** For `n ≥ 2` and a
-division ring `k` in which `2 ≠ 0`, such as `ℚ`, no function on real projective space
-`ℙ ℝ (Fin (n + 1) → ℝ)` is a perfect Morse function over `k`. -/
-theorem not_isPerfectMorse_projectivization_real {k : Type} [DivisionRing k] (h2 : (2 : k) ≠ 0)
-    (hn : 2 ≤ n) (f : ℙ ℝ (Fin (n + 1) → ℝ) → ℝ) : ¬ IsPerfectMorse 𝓘(ℝ, Fin n → ℝ) k f := by
+/-- **No perfect Morse function on `ℝPᴺ` outside characteristic two.** For `N ≥ 2`, no Morse
+function on `ℝPᴺ` is perfect with coefficients in a division ring in which `2 ≠ 0`, such as `ℚ`.
+Its Betti numbers add up to at most two, so a perfect Morse function would have exactly two
+critical points, and Reeb's theorem would make `ℝPᴺ` homeomorphic to the simply connected sphere
+`Sᴺ`. In particular `ℝP²` admits no perfect Morse function over `ℚ`. -/
+theorem not_isPerfectMorse_projectivization_real (hn : 2 ≤ n) {k : Type} [DivisionRing k]
+    (h2 : (2 : k) ≠ 0) (f : ℙ ℝ (Fin (n + 1) → ℝ) → ℝ) :
+    ¬ IsPerfectMorse 𝓘(ℝ, Fin n → ℝ) k f := by
   intro hf
   have : Nontrivial (Fin (n + 1)) := Fin.nontrivial_iff_two_le.2 (by omega)
-  -- Over `k` the Betti numbers of `ℝℙⁿ` add up to at most two, so `f` has two critical points.
+  -- Over `k` the Betti numbers of `ℝPⁿ` add up to at most two, so `f` has two critical points.
   have hle : totalCriticalCount 𝓘(ℝ, Fin n → ℝ) f ≤ 2 := by
     rw [hf.totalCriticalCount_eq, finrank_fin_fun]
-    simp only [hf.isMorse.toENat_rank_singularHomology (ModuleCat.of k k),
-      RealProjectiveSpace.finrank_singularHomology_projectivization,
-      RealProjectiveSpace.finrank_singularHomology_of_two_ne_zero h2]
+    simp only [RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_ne_zero h2]
     refine (Finset.sum_le_sum (g := fun j ↦ ((if j = 0 then 1 else 0) + if j = n then 1 else 0 :
       ℕ∞)) fun j _ ↦ ?_).trans ?_
     · split_ifs <;> simp_all
@@ -185,10 +219,12 @@ theorem not_isPerfectMorse_projectivization_real {k : Type} [DivisionRing k] (h2
   obtain ⟨e⟩ := hf.isMorse.nonempty_homeomorph_sphere_of_totalCriticalCount_eq_two
     (le_antisymm hle (two_le_totalCriticalCount hf.isMorse.contMDiff.continuous))
   rw [finrank_fin_fun] at e
-  -- By Reeb's theorem `ℝℙⁿ` would be homeomorphic to the simply connected sphere `Sⁿ`.
+  -- By Reeb's theorem `ℝPⁿ` would be homeomorphic to the simply connected sphere `Sⁿ`.
   have := simplyConnectedSpace_sphere_euclideanSpace hn
   exact RealProjectiveSpace.not_simplyConnectedSpace n hn <|
     ((RealProjectiveSpace.homeomorphProjectivization n).trans e).toHomotopyEquiv
       |>.simplyConnectedSpace
+
+end Projective
 
 end TauCeti

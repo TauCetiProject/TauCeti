@@ -36,15 +36,19 @@ computes the singular homology of `RPᴺ`. The undetermined units do not affect 
 * `TauCeti.RealProjectiveSpace.isZero_singularHomology_of_lt`: `Hₖ(RPᴺ; R) = 0` for `k > N`.
 * `TauCeti.RealProjectiveSpace.isZero_singularHomology_of_even`: `Hₖ(RPᴺ; R) = 0` for even
   `k > 0` when right multiplication by `2` is injective on `R`.
-* `TauCeti.RealProjectiveSpace.finrank_singularHomology_of_two_eq_zero` and
-  `TauCeti.RealProjectiveSpace.finrank_singularHomology_of_two_ne_zero`: over a division ring `F`,
-  the Betti numbers `dim Hₖ(RPᴺ; F)` are `1` for every `k ≤ N` when `2 = 0` in `F`, and `1` only in
-  degree `0` and, for odd `N`, in degree `N` when `2 ≠ 0` in `F`.
-* `TauCeti.RealProjectiveSpace.finrank_singularHomology_projectivization`: the projectivization
-  `ℙ ℝ (Fin (N + 1) → ℝ)` has the same Betti numbers as `RPᴺ`.
 * `TauCeti.RealProjectiveSpace.singularHomologyIntLinearEquivOfOdd` and
   `TauCeti.RealProjectiveSpace.isZero_singularHomology_int_of_even`: integrally, `Hₖ(RPᴺ; ℤ)` is
   `ℤ/2` for odd `k < N` and vanishes for even `k > 0`.
+* `TauCeti.RealProjectiveSpace.finrank_singularHomology_of_two_eq_zero`: over a division ring in
+  which `2 = 0`, `Hₖ(RPᴺ; R)` is one-dimensional for `k ≤ N` and zero above.
+* `TauCeti.RealProjectiveSpace.finrank_singularHomology_of_two_ne_zero`: over a division ring in
+  which `2 ≠ 0`, `Hₖ(RPᴺ; R)` is one-dimensional for `k = 0` and, for odd `N`, for `k = N`, and
+  zero otherwise.
+* `TauCeti.RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_eq_zero`,
+  `TauCeti.RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_ne_zero` and
+  `TauCeti.RealProjectiveSpace.isZero_singularHomology_projectivization_of_even`: the same
+  statements on the projectivization `ℙ ℝ (Fin (N + 1) → ℝ)`, transported along
+  `TauCeti.RealProjectiveSpace.homeomorphProjectivization`.
 
 ## References
 
@@ -262,62 +266,90 @@ theorem isZero_singularHomology_int_of_even (hk : Even k) (hk0 : k ≠ 0) :
       (ModuleCat.of ℤ ℤ)).obj (TopCat.of (RealProjectiveSpace N))) :=
   isZero_singularHomology_of_even ℤ (isRegular_iff_ne_zero.2 two_ne_zero).right hk hk0
 
-section Field
-
-variable {F : Type} [DivisionRing F]
-
-/-- **Betti numbers of real projective space in characteristic two.** If `2 = 0` in the division
-ring `F`, for instance `F = ZMod 2`, then `Hₖ(RPᴺ; F)` is one-dimensional for every `k ≤ N` and
-vanishes above `N`. -/
-theorem finrank_singularHomology_of_two_eq_zero (h2 : (2 : F) = 0) (k : ℕ) :
-    Module.finrank F (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} F) k).obj
-      (ModuleCat.of F F)).obj (TopCat.of (RealProjectiveSpace N))) = if k ≤ N then 1 else 0 := by
+/-- **Homology of real projective space in characteristic two.** If `2 = 0` in the division ring
+`R`, then `Hₖ(RPᴺ; R)` is one-dimensional for `k ≤ N` and zero for `k > N`. -/
+theorem finrank_singularHomology_of_two_eq_zero {R : Type} [DivisionRing R] (h2 : (2 : R) = 0)
+    (k : ℕ) :
+    Module.finrank R (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
+      (ModuleCat.of R R)).obj (TopCat.of (RealProjectiveSpace N))) = if k ≤ N then 1 else 0 := by
   split_ifs with hkN
-  · rcases k.even_or_odd with hk | hk
+  · rcases Nat.even_or_odd k with hk | hk
     · rcases eq_or_ne k 0 with rfl | hk0
-      · rw [(singularHomologyZeroLinearEquiv F).finrank_eq, Module.finrank_self]
-      · have h : LinearMap.toSpanSingleton F F 2 = 0 := by ext; simp [h2]
-        rw [(singularHomologyLinearEquivOfEven F hk hk0 hkN).finrank_eq, h, LinearMap.ker_zero,
-          finrank_top, Module.finrank_self]
-    · rcases hkN.lt_or_eq with hlt | rfl
-      · rw [(singularHomologyLinearEquivOfOdd F hk hlt).finrank_eq,
-          (Submodule.quotEquivOfEqBot _ (by simp [h2])).finrank_eq, Module.finrank_self]
-      · rw [(singularHomologyTopLinearEquivOfOdd F hk).finrank_eq, Module.finrank_self]
-  · exact ModuleCat.finrank_eq_zero_of_isZero (isZero_singularHomology_of_lt F (not_le.1 hkN))
+      · exact (singularHomologyZeroLinearEquiv R).finrank_eq.trans (Module.finrank_self R)
+      · have hker : LinearMap.ker (LinearMap.toSpanSingleton R R 2) = ⊤ := by
+          rw [h2, LinearMap.toSpanSingleton_zero, LinearMap.ker_zero]
+        exact ((singularHomologyLinearEquivOfEven R hk hk0 hkN).trans
+          (LinearEquiv.ofTop _ hker)).finrank_eq.trans (Module.finrank_self R)
+    · rcases hkN.lt_or_eq with hkN | rfl
+      · have hspan : R ∙ (2 : R) = ⊥ := by rw [h2, Submodule.span_singleton_eq_bot]
+        exact ((singularHomologyLinearEquivOfOdd R hk hkN).trans
+          (Submodule.quotEquivOfEqBot _ hspan)).finrank_eq.trans (Module.finrank_self R)
+      · exact (singularHomologyTopLinearEquivOfOdd R hk).finrank_eq.trans (Module.finrank_self R)
+  · have := ModuleCat.isZero_iff_subsingleton.1
+      (isZero_singularHomology_of_lt (N := N) R (Nat.lt_of_not_le hkN))
+    exact Module.finrank_zero_of_subsingleton
 
-/-- **Betti numbers of real projective space away from characteristic two.** If `2 ≠ 0` in the
-division ring `F`, for instance `F = ℚ`, then `H₀(RPᴺ; F)` is one-dimensional, so is `H_N(RPᴺ; F)`
-for odd `N`, and every other `Hₖ(RPᴺ; F)` vanishes. -/
-theorem finrank_singularHomology_of_two_ne_zero (h2 : (2 : F) ≠ 0) (k : ℕ) :
-    Module.finrank F (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} F) k).obj
-      (ModuleCat.of F F)).obj (TopCat.of (RealProjectiveSpace N))) =
+/-- **Homology of real projective space away from characteristic two.** If `2 ≠ 0` in the
+division ring `R`, for instance `R = ℚ`, then `H₀(RPᴺ; R)` is one-dimensional, so is
+`H_N(RPᴺ; R)` for odd `N`, and every other `Hₖ(RPᴺ; R)` vanishes. -/
+theorem finrank_singularHomology_of_two_ne_zero {R : Type} [DivisionRing R] (h2 : (2 : R) ≠ 0)
+    (k : ℕ) :
+    Module.finrank R (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
+      (ModuleCat.of R R)).obj (TopCat.of (RealProjectiveSpace N))) =
       if k = 0 ∨ k = N ∧ Odd N then 1 else 0 := by
   rcases eq_or_ne k 0 with rfl | hk0
-  · simp [(singularHomologyZeroLinearEquiv F).finrank_eq]
-  rcases k.even_or_odd with hk | hk
-  · rw [ModuleCat.finrank_eq_zero_of_isZero (isZero_singularHomology_of_even F
+  · simp [(singularHomologyZeroLinearEquiv R).finrank_eq]
+  rcases Nat.even_or_odd k with hk | hk
+  · rw [ModuleCat.finrank_eq_zero_of_isZero (isZero_singularHomology_of_even R
       (isRegular_iff_ne_zero.2 h2).right hk hk0)]
     grind
-  rcases lt_trichotomy k N with hlt | rfl | hlt
-  · have : Subsingleton (F ⧸ F ∙ (2 : F)) := by
-      rw [IsSimpleModule.span_singleton_eq_top F h2]
+  rcases lt_trichotomy k N with hkN | rfl | hkN
+  · have : Subsingleton (R ⧸ R ∙ (2 : R)) := by
+      rw [IsSimpleModule.span_singleton_eq_top R h2]
       infer_instance
-    rw [(singularHomologyLinearEquivOfOdd F hk hlt).finrank_eq, Module.finrank_zero_of_subsingleton]
+    rw [(singularHomologyLinearEquivOfOdd R hk hkN).finrank_eq,
+      Module.finrank_zero_of_subsingleton]
     grind
-  · simp [(singularHomologyTopLinearEquivOfOdd F hk).finrank_eq, hk]
-  · rw [ModuleCat.finrank_eq_zero_of_isZero (isZero_singularHomology_of_lt F hlt)]
+  · simp [(singularHomologyTopLinearEquivOfOdd R hk).finrank_eq, hk]
+  · rw [ModuleCat.finrank_eq_zero_of_isZero (isZero_singularHomology_of_lt R hkN)]
     grind
 
-end Field
+/-! ### The projectivization carrier -/
 
-/-- The Betti numbers of the projectivization `ℙ ℝ (Fin (N + 1) → ℝ)` are those of the antipodal
-quotient `RPᴺ` of the sphere, along `TauCeti.RealProjectiveSpace.homeomorphProjectivization`. -/
-theorem finrank_singularHomology_projectivization (A : ModuleCat.{0} R) (k : ℕ) :
-    Module.finrank R (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj A).obj
-      (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ)))) =
-    Module.finrank R (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj A).obj
-      (TopCat.of (RealProjectiveSpace N))) :=
-  (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj A).mapIso
-    (TopCat.isoOfHomeo (homeomorphProjectivization N))).toLinearEquiv.finrank_eq.symm
+/-- **Homology of `ℙ ℝ (Fin (N + 1) → ℝ)` in characteristic two.** If `2 = 0` in the division ring
+`R`, then `Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); R)` is one-dimensional for `k ≤ N` and zero for `k > N`. -/
+theorem finrank_singularHomology_projectivization_of_two_eq_zero {R : Type} [DivisionRing R]
+    (h2 : (2 : R) = 0) (k : ℕ) :
+    Module.finrank R (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
+      (ModuleCat.of R R)).obj (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ)))) =
+      if k ≤ N then 1 else 0 :=
+  (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
+    (ModuleCat.of R R)).mapIso (TopCat.isoOfHomeo (X := TopCat.of (RealProjectiveSpace N))
+      (homeomorphProjectivization N))).toLinearEquiv.finrank_eq.symm.trans
+    (finrank_singularHomology_of_two_eq_zero h2 k)
+
+/-- **Homology of `ℙ ℝ (Fin (N + 1) → ℝ)` away from characteristic two.** If `2 ≠ 0` in the
+division ring `R`, then `Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); R)` is one-dimensional for `k = 0` and, when
+`N` is odd, for `k = N`, and zero otherwise. -/
+theorem finrank_singularHomology_projectivization_of_two_ne_zero {R : Type} [DivisionRing R]
+    (h2 : (2 : R) ≠ 0) (k : ℕ) :
+    Module.finrank R (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
+      (ModuleCat.of R R)).obj (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ)))) =
+      if k = 0 ∨ k = N ∧ Odd N then 1 else 0 :=
+  (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
+    (ModuleCat.of R R)).mapIso (TopCat.isoOfHomeo (X := TopCat.of (RealProjectiveSpace N))
+      (homeomorphProjectivization N))).toLinearEquiv.finrank_eq.symm.trans
+    (finrank_singularHomology_of_two_ne_zero h2 k)
+
+/-- If right multiplication by `2` is injective on `R`, then `Hₖ(ℙ ℝ (Fin (N + 1) → ℝ); R)`
+vanishes for every even `k > 0`. -/
+theorem isZero_singularHomology_projectivization_of_even (h2 : IsRightRegular (2 : R))
+    (hk : Even k) (hk0 : k ≠ 0) :
+    IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
+      (ModuleCat.of R R)).obj (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ)))) :=
+  (isZero_singularHomology_of_even (N := N) R h2 hk hk0).of_iso
+    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
+      (ModuleCat.of R R)).mapIso (TopCat.isoOfHomeo (X := TopCat.of (RealProjectiveSpace N))
+        (homeomorphProjectivization N))).symm
 
 end TauCeti.RealProjectiveSpace
