@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Function.BoundedVariation
 public import TauCeti.Probability.Process.Predictable.Basic
-public import Mathlib.Topology.EMetricSpace.VariationOnFromTo
+public import TauCeti.Topology.EMetricSpace.VariationOnFromTo
 
 /-!
 # Adapted variation processes
@@ -27,13 +27,13 @@ remain adapted to an incomplete filtration.
 
 public section
 
-open MeasureTheory Set Filter
-open scoped NNReal Topology
+open MeasureTheory Set
+open scoped NNReal
 
 namespace MeasureTheory.StronglyAdapted
 
 variable {Ω E : Type*} {m : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 m}
-  [PseudoMetricSpace E] [SecondCountableTopology E]
+  [PseudoEMetricSpace E] [SecondCountableTopology E]
   {X : ℝ≥0 → Ω → E}
 
 /-- Extended accumulated variation of a continuous adapted process is adapted, without any
@@ -51,8 +51,8 @@ theorem eVariationOn_Icc (hX : StronglyAdapted ℱ X)
       (fun ω => (hc ω).continuousOn)
   exact hm.stronglyMeasurable
 
-/-- The real accumulated variation of a continuous adapted process is adapted. For paths
-of locally bounded variation this is the finite total variation, not an infinite-value fallback. -/
+/-- The real accumulated variation of a continuous adapted process is adapted. When the variation
+on `[0, t]` is infinite the value is `0`; it is the actual variation only when that is finite. -/
 theorem variationOnFromTo (hX : StronglyAdapted ℱ X)
     (hc : ∀ ω, Continuous (fun t => X t ω)) :
     StronglyAdapted ℱ (fun t ω => variationOnFromTo (fun s => X s ω) univ 0 t) := by
@@ -68,25 +68,8 @@ theorem isStronglyPredictable_variationOnFromTo (hX : StronglyAdapted ℱ X)
     (hc : ∀ ω, Continuous (fun t => X t ω))
     (hv : ∀ ω, LocallyBoundedVariationOn (fun t => X t ω) univ) :
     IsStronglyPredictable ℱ
-      (fun t ω => _root_.variationOnFromTo (fun s => X s ω) univ 0 t) := by
-  apply (hX.variationOnFromTo hc).isStronglyPredictable_of_continuous
-  intro ω
-  apply continuous_iff_continuousAt.mpr
-  intro t
-  let T := t + 1
-  have hT : t < T := lt_add_one t
-  have hnb : Icc 0 T ∈ 𝓝 t :=
-    Filter.mem_of_superset (Iio_mem_nhds hT) (fun s hs => ⟨bot_le, hs.le⟩)
-  have hb : BoundedVariationOn (fun s => X s ω) (Icc 0 T) := by
-    simpa only [univ_inter] using hv ω 0 T (mem_univ _) (mem_univ _)
-  have hl := hb.continuousWithinAt_variationOnFromTo_iff
-    (left_mem_Icc.mpr bot_le) (⟨bot_le, hT.le⟩ : t ∈ Icc 0 T)
-  have hlocal := (hl.mpr (hc ω |>.continuousAt.continuousWithinAt)).continuousAt hnb
-  apply hlocal.congr_of_eventuallyEq
-  filter_upwards [hnb] with s hs
-  have hs0 : (0 : ℝ≥0) ≤ s := bot_le
-  rw [_root_.variationOnFromTo.eq_of_le _ _ hs0,
-    _root_.variationOnFromTo.eq_of_le _ _ hs0, univ_inter,
-    inter_eq_right.mpr (Icc_subset_Icc le_rfl hs.2)]
+      (fun t ω => _root_.variationOnFromTo (fun s => X s ω) univ 0 t) :=
+  (hX.variationOnFromTo hc).isStronglyPredictable_of_continuous fun ω =>
+    (hv ω).continuous_variationOnFromTo (hc ω) 0
 
 end MeasureTheory.StronglyAdapted

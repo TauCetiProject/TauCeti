@@ -29,7 +29,7 @@ namespace Measurable
 
 variable {Ω α E : Type*} [MeasurableSpace Ω] [LinearOrder α] [TopologicalSpace α]
   [SecondCountableTopology α] [LocallyCompactSpace α]
-  [PseudoMetricSpace E] [SecondCountableTopology E] [MeasurableSpace E] [BorelSpace E]
+  [PseudoEMetricSpace E] [SecondCountableTopology E] [MeasurableSpace E] [BorelSpace E]
   {X : α → Ω → E}
 
 /-- Total variation of a continuous random path is measurable, even when it is infinite. -/
@@ -52,11 +52,9 @@ theorem eVariationOn_Icc [OrderClosedTopology α] {a b : α}
   have he (ω : Ω) :
       _root_.eVariationOn (fun t : Icc a b => X t ω) univ =
         _root_.eVariationOn (fun t => X t ω) (Icc a b) := by
-    convert _root_.eVariationOn.comp_eq_of_monotoneOn (t := univ) (fun t => X t ω)
-      (Subtype.val : Icc a b → α) (fun _ _ _ _ h => h) using 1
-    · rfl
-    · congr 1
-      exact (Subtype.coe_image_univ _).symm
+    simpa only [Function.comp_def, Subtype.coe_image_univ] using
+      _root_.eVariationOn.comp_eq_of_monotoneOn (t := univ) (fun t => X t ω)
+        (Subtype.val : Icc a b → α) (fun _ _ _ _ h => h)
   simpa only [he] using hm
 
 end Measurable

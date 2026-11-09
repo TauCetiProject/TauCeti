@@ -16,6 +16,9 @@ Cumulative signed variation controls distances between values of a metric-valued
 In particular, the function is constant on each fibre of cumulative variation, allowing an
 arclength factorization even when the original curve has pauses.
 
+For continuous paths of locally bounded variation, cumulative signed variation is continuous
+(`LocallyBoundedVariationOn.continuous_variationOnFromTo`).
+
 The file also records that cumulative variation only depends on the function on `s`
 (`variationOnFromTo.eq_of_eqOn`), and the antitone counterpart
 `variationOnFromTo.comp_eq_of_antitoneOn` of Mathlib's `variationOnFromTo.comp_eq_of_monotoneOn`.
@@ -23,7 +26,8 @@ The file also records that cumulative variation only depends on the function on 
 
 public section
 
-open Set
+open Set Filter
+open scoped Topology
 
 namespace variationOnFromTo
 
@@ -53,6 +57,31 @@ protected theorem comp_eq_of_antitoneOn (f : α → E) {t : Set β} (φ : β →
 end variationOnFromTo
 
 namespace LocallyBoundedVariationOn
+
+/-- The signed variation clock of a continuous path with locally bounded variation is continuous
+for any base point. -/
+theorem continuous_variationOnFromTo {α E : Type*} [LinearOrder α] [TopologicalSpace α]
+    [OrderTopology α] [PseudoEMetricSpace E] {f : α → E}
+    (hf : LocallyBoundedVariationOn f univ) (hc : Continuous f) (a : α) :
+    Continuous (variationOnFromTo f univ a) := by
+  apply continuous_iff_continuousAt.mpr
+  intro t
+  obtain ⟨l, u, ht, hnb, _⟩ := exists_Icc_mem_subset_of_mem_nhds (univ_mem : univ ∈ 𝓝 t)
+  let s := Icc (min a l) (max a u)
+  have ha : a ∈ s := ⟨min_le_left _ _, le_max_left _ _⟩
+  have hsub : Icc l u ⊆ s := Icc_subset_Icc (min_le_right _ _) (le_max_right _ _)
+  have hb : BoundedVariationOn f s := by
+    simpa only [univ_inter] using hf (min a l) (max a u) (mem_univ _) (mem_univ _)
+  have hlocal := ((hb.continuousWithinAt_variationOnFromTo_iff ha (hsub ht)).mpr
+    hc.continuousAt.continuousWithinAt).continuousAt (mem_of_superset hnb hsub)
+  apply hlocal.congr_of_eventuallyEq
+  filter_upwards [hnb] with y hy
+  have hy' := hsub hy
+  rcases le_total a y with hay | hya
+  · rw [variationOnFromTo.eq_of_le _ _ hay, variationOnFromTo.eq_of_le _ _ hay,
+      univ_inter, inter_eq_right.mpr (Icc_subset_Icc ha.1 hy'.2)]
+  · rw [variationOnFromTo.eq_of_ge _ _ hya, variationOnFromTo.eq_of_ge _ _ hya,
+      univ_inter, inter_eq_right.mpr (Icc_subset_Icc hy'.1 ha.2)]
 
 variable {α X : Type*} [LinearOrder α] [TopologicalSpace X] [WeakPseudoEMetricSpace X]
   {f : α → X} {s : Set α}
