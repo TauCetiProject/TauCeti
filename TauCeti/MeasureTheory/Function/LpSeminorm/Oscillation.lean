@@ -114,17 +114,17 @@ theorem eLpNorm_restrict_sub_le_of_enorm_sub_le (hp : 1 ≤ p) {U : Set X}
           (ENNReal.rpow_ne_top_of_nonneg (by positivity) htop)]
         ring
 
-/-- **Constants on overlapping open sets are uniformly close.** If `V i` and `V j` are open and
-overlap, then `‖a j - a i‖ ≤ D * G` for a constant `D` depending only on `C i`, `C j` and the
-overlap, whenever `f` is `Lᵖ`-close to `a i` on `V i` and to `a j` on `V j` at scales `C i * G`
-and `C j * G`. -/
-theorem exists_enorm_sub_le_mul_of_isOpen_inter_nonempty [μ.IsOpenPosMeasure]
-    (hp : 1 ≤ p) {ι : Type*} {V : ι → Set X} {i j : ι} (hi : IsOpen (V i)) (hj : IsOpen (V j))
-    (hij : (V i ∩ V j).Nonempty) (hfin : μ (V i ∩ V j) ≠ ∞) (C : ι → ℝ≥0) :
+omit [TopologicalSpace X] in
+/-- **Constants on overlapping sets are uniformly close.** If the overlap of `V i` and `V j` has
+positive finite measure, then `‖a j - a i‖ ≤ D * G` for a constant `D` depending only on `C i`,
+`C j` and the overlap, whenever `f` is `Lᵖ`-close to `a i` on `V i` and to `a j` on `V j` at scales
+`C i * G` and `C j * G`. -/
+theorem exists_enorm_sub_le_mul_of_measure_inter_ne_zero
+    (hp : 1 ≤ p) {ι : Type*} {V : ι → Set X} {i j : ι}
+    (h0 : μ (V i ∩ V j) ≠ 0) (hfin : μ (V i ∩ V j) ≠ ∞) (C : ι → ℝ≥0) :
     ∃ D : ℝ≥0, ∀ (f : X → F) (a : ι → F) (G : ℝ≥0∞),
       eLpNorm (fun x ↦ f x - a i) p (μ.restrict (V i)) ≤ C i * G →
       eLpNorm (fun x ↦ f x - a j) p (μ.restrict (V j)) ≤ C j * G → ‖a j - a i‖ₑ ≤ D * G := by
-  have h0 : μ (V i ∩ V j) ≠ 0 := (hi.inter hj).measure_ne_zero μ hij
   refine ⟨((C i + C j : ℝ≥0∞) / μ (V i ∩ V j) ^ (1 / p.toReal)).toNNReal,
     fun f a G hPi hPj ↦ ?_⟩
   have hm0 : μ (V i ∩ V j) ^ (1 / p.toReal) ≠ 0 :=
@@ -148,6 +148,8 @@ theorem exists_eLpNorm_sub_const_le_of_isOpen_cover [PreconnectedSpace X] [IsFin
   rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
   · exact ⟨0, fun _ _ _ _ ↦ ⟨0, by simp [Measure.eq_zero_of_isEmpty μ]⟩⟩
   obtain ⟨i₀, hi₀, hx₀⟩ := hcover x₀
+  have hU : (⋃ j ∈ t, V j) = univ :=
+    eq_univ_of_forall fun x ↦ by simpa only [mem_iUnion₂, exists_prop] using hcover x
   -- The hypothesis on `(f, a, G)`.
   let P : (X → F) → (ι → F) → ℝ≥0∞ → Prop := fun f a G ↦
     ∀ i ∈ t, eLpNorm (fun x ↦ f x - a i) p (μ.restrict (V i)) ≤ C i * G
@@ -160,16 +162,15 @@ theorem exists_eLpNorm_sub_const_le_of_isOpen_cover [PreconnectedSpace X] [IsFin
     obtain ⟨D, hD⟩ := exists_enorm_sub_le_mul_of_reflTransGen P (R := fun i j ↦
       i ∈ t ∧ j ∈ t ∧ (V i ∩ V j).Nonempty)
       (fun i j ⟨hi, hj, hij⟩ ↦
-        (exists_enorm_sub_le_mul_of_isOpen_inter_nonempty hp (hV i hi) (hV j hj) hij
-          (measure_ne_top _ _) C).imp
+        (exists_enorm_sub_le_mul_of_measure_inter_ne_zero hp
+          (((hV i hi).inter (hV j hj)).measure_ne_zero μ hij) (measure_ne_top _ _) C).imp
           fun _ hD f a G hP ↦ hD f a G (hP i hi) (hP j hj))
-      (reflTransGen_inter_nonempty_of_isOpen_cover (t := (t : Set ι)) hV hcover hi₀ hx₀ hj hVj)
+      (reflTransGen_inter_nonempty_of_isOpen_cover (t := (t : Set ι))
+        (by simpa only [Finset.mem_coe, hU] using isPreconnected_univ) hV hi₀ ⟨x₀, hx₀⟩ hj hVj)
     exact ⟨_, fun f a G hP ↦ eLpNorm_restrict_sub_le_of_enorm_sub_le hp
       (measure_ne_top _ _) (hP j hj) (hD f a G hP)⟩
   choose! D hD using hpiece
   refine ⟨∑ j ∈ t, D j, fun f a G hP ↦ ⟨a i₀, ?_⟩⟩
-  have hU : (⋃ j ∈ t, V j) = univ :=
-    eq_univ_of_forall fun x ↦ by simpa only [mem_iUnion₂, exists_prop] using hcover x
   calc eLpNorm (fun x ↦ f x - a i₀) p μ
       = eLpNorm (fun x ↦ f x - a i₀) p (μ.restrict (⋃ j ∈ t, V j)) := by
         rw [hU, Measure.restrict_univ]
