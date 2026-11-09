@@ -274,7 +274,7 @@ by the cutoff. -/
 private theorem integrable_truncation_mul (T : ℝ) {F : ℝ × ℝ → ℝ}
     (hF : ContinuousOn F thricePuncturedSphereReal) : Integrable fun z ↦ truncation T z * F z :=
   (contDiff_truncation T).continuous.integrable_mul_of_continuousOn
-    (hasCompactSupport_truncation T) isOpen_thricePuncturedSphereReal
+    (hasCompactSupport_truncation T)
     (fun _ hz ↦ mem_tsupport_truncation hz) hF
 
 /-- A function continuous on the thrice-punctured sphere becomes integrable after multiplication
@@ -284,7 +284,7 @@ private theorem integrable_fderiv_truncation_mul (T : ℝ) (v : ℝ × ℝ) {F :
     Integrable fun z ↦ fderiv ℝ (truncation T) z v * F z :=
   (((contDiff_truncation T).continuous_fderiv one_ne_zero).clm_apply
     continuous_const).integrable_mul_of_continuousOn
-    ((hasCompactSupport_truncation T).fderiv_apply (𝕜 := ℝ) v) isOpen_thricePuncturedSphereReal
+    ((hasCompactSupport_truncation T).fderiv_apply (𝕜 := ℝ) v)
     (fun _ hz ↦ mem_tsupport_truncation (tsupport_fderiv_apply_subset ℝ v hz)) hF
 
 /-- The two-form `dχ ∧ α` for the cutoff `χ` at height `T` and the one-form `α = K(u) + λ(u)`,

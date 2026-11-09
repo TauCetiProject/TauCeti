@@ -156,8 +156,7 @@ private theorem exists_inverted_coordinate_of_polygonal_ends {ι : Type*} [Finit
     by_cases hv : ∃ i, w = v i
     · obtain ⟨i, rfl⟩ := hv
       obtain ⟨ρ, hρ, b, hb, hU⟩ := hcorner i
-      exact isPreconnectedApproachAt_of_forall_mem_iff_abs_arg_lt hρ hb
-        (by nlinarith [Real.pi_pos, (he i).2]) hU
+      exact isPreconnectedApproachAt_of_forall_mem_iff_abs_arg_lt hρ hb hU
     · obtain ⟨ρ, hρ, p, b, -, hU⟩ := hside w hw fun i hi => hv ⟨i, hi⟩
       exact isPreconnectedApproachAt_of_forall_mem_iff_im_div_pos hρ hU
   obtain ⟨f, g, -, hfU, hgc, hgd, hgf, hgne, -, hgr, hginf, hgi, hwg⟩ :=

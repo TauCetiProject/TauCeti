@@ -23,6 +23,10 @@ of that of the middle term, so the outer terms are exact wherever the middle ter
 
 ## Main results
 
+* `CategoryTheory.ShortComplex.Splitting.binaryBicone`,
+  `CategoryTheory.ShortComplex.Splitting.isBilimitBinaryBicone` and
+  `CategoryTheory.ShortComplex.Splitting.isLimitBinaryFan`: the middle term of a split short
+  complex is a binary biproduct, in particular a binary product, of the outer terms.
 * `CategoryTheory.ShortComplex.Splitting.f_isoBinaryBiproduct_hom`: the inclusion under the
   canonical biproduct comparison.
 * `CategoryTheory.ShortComplex.Splitting.isoBinaryBiproduct_hom_snd`: the projection under
@@ -68,6 +72,30 @@ theorem comp_r_f_eq_of_comp_g_eq_zero (s : S.Splitting) {Y : C} (k : Y ⟶ S.X�
     (hk : k ≫ S.g = 0) : k ≫ s.r ≫ S.f = k := by
   rw [s.r_f, Preadditive.comp_sub, Category.comp_id, ← Category.assoc, hk, zero_comp, sub_zero]
 
+
+/-- The binary bicone of a split short complex: `S.X₂` with the inclusions `S.f`, `s.s` and the
+projections `s.r`, `S.g`. It is exposed so that its `simps` lemmas are definitional. -/
+@[expose, simps]
+def binaryBicone (s : S.Splitting) : BinaryBicone S.X₁ S.X₃ where
+  pt := S.X₂
+  fst := s.r
+  snd := S.g
+  inl := S.f
+  inr := s.s
+  inl_fst := s.f_r
+  inl_snd := S.zero
+  inr_fst := s.s_r
+  inr_snd := s.s_g
+
+/-- The bicone of a splitting is a binary bilimit: `S.X₂` is a biproduct of `S.X₁` and `S.X₃`
+through `S.f`, `s.s`, `s.r` and `S.g`, because `s.r ≫ S.f + S.g ≫ s.s = 𝟙 S.X₂`. -/
+def isBilimitBinaryBicone (s : S.Splitting) : s.binaryBicone.IsBilimit :=
+  isBinaryBilimitOfTotal _ s.id
+
+/-- The middle term of a split short complex, with the projections `s.r` and `S.g`, is a binary
+product of the outer terms. -/
+def isLimitBinaryFan (s : S.Splitting) : IsLimit (BinaryFan.mk s.r S.g) :=
+  s.isBilimitBinaryBicone.isLimit
 
 variable [HasBinaryBiproduct S.X₁ S.X₃]
 

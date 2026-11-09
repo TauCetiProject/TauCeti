@@ -32,6 +32,7 @@ This is how an almost-everywhere Hölder estimate becomes a Hölder continuous r
 of full measure for a measure that is positive on open sets is dense.
 
 Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants.
+Postcomposition with an isometry keeps the constant and the exponent.
 
 Finally, on a metric space the infimum defining Mathlib's extended Hölder seminorm `eHolderNorm r f`
 is attained, so the seminorm is the best constant in the Hölder inequality. Equivalently, it is the
@@ -56,6 +57,8 @@ points, the form in which Hölder seminorms are written in analysis texts.
   constant `C` and exponent `r` stays within `C ρ^r` of its value at the centre.
 * `HolderOnWith.extend_of_dense`: a Hölder function on a dense set extends to a Hölder
   function on the whole space.
+* `Isometry.comp_holderOnWith`, `Isometry.comp_holderWith`: postcomposition with an isometry
+  preserves Hölder bounds.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `HolderOnWith.add`: sums of Hölder functions on a set.
 * `IsCompact.exists_holderOnWith_thickening_and_norm_le`: a function which is Hölder on a ball
@@ -133,6 +136,20 @@ theorem holderOnWith_iff_dist_le {X Y : Type*} [PseudoMetricSpace X] [PseudoMetr
     HolderOnWith C r f s ↔ ∀ x ∈ s, ∀ y ∈ s, dist (f x) (f y) ≤ C * dist x y ^ (r : ℝ) :=
   ⟨fun hf _ hx _ hy => hf.dist_le hx hy, HolderOnWith.of_dist_le⟩
 
+/-- Postcomposition with an isometry preserves a Hölder bound on a set, with the same constant
+and exponent. -/
+theorem Isometry.comp_holderOnWith {X Y Z : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    [PseudoEMetricSpace Z] {g : Y → Z} (hg : Isometry g) {C r : ℝ≥0} {f : X → Y} {s : Set X}
+    (hf : HolderOnWith C r f s) : HolderOnWith C r (g ∘ f) s := fun x hx y hy => by
+  simpa only [Function.comp_apply, hg.edist_eq] using hf x hx y hy
+
+/-- Postcomposition with an isometry preserves a global Hölder bound, with the same constant and
+exponent. -/
+theorem Isometry.comp_holderWith {X Y Z : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    [PseudoEMetricSpace Z] {g : Y → Z} (hg : Isometry g) {C r : ℝ≥0} {f : X → Y}
+    (hf : HolderWith C r f) : HolderWith C r (g ∘ f) :=
+  holderOnWith_univ.mp (hg.comp_holderOnWith (hf.holderOnWith univ))
+
 /-- A function that satisfies the Hölder bound with constant `K` and exponent `r` between points of
 `s` at distance less than `δ > 0`, and whose values on `s` lie within distance `D` of each other,
 is Hölder on `s` with constant `K + D δ^(-r)`. This passes from Hölder bounds on the pieces of a
@@ -190,7 +207,7 @@ theorem HolderOnWith.dist_le_mul_rpow_of_mem_ball {X Y : Type*} [PseudoMetricSpa
 /-- A bounded Lipschitz map is Hölder for every exponent at most one, without a bounded-domain
 assumption. The scale-one estimate uses the Lipschitz constant plus twice the value bound. -/
 theorem LipschitzOnWith.holderOnWith_of_norm_le {X F : Type*}
-    [PseudoMetricSpace X] [NormedAddCommGroup F]
+    [PseudoMetricSpace X] [SeminormedAddCommGroup F]
     {s : Set X} {f : X → F}
     {L M α : ℝ≥0} (h : LipschitzOnWith L f s) (hb : ∀ x ∈ s, ‖f x‖ ≤ M) (hα : α ≤ 1) :
     HolderOnWith (L + 2 * M) α f s := by
@@ -222,9 +239,9 @@ theorem HolderWith.sum {ι X Y : Type*} [PseudoMetricSpace X] [SeminormedAddComm
 the sum of the constants. Compare Mathlib's `HolderWith.add`. -/
 theorem HolderOnWith.add {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
     {C C' r : ℝ≥0} {f g : X → Y} {s : Set X} (hf : HolderOnWith C r f s)
-    (hg : HolderOnWith C' r g s) : HolderOnWith (C + C') r (fun x => f x + g x) s :=
+    (hg : HolderOnWith C' r g s) : HolderOnWith (C + C') r (f + g) s :=
   HolderOnWith.of_dist_le fun x hx y hy => by
-    push_cast
+    simp only [Pi.add_apply, NNReal.coe_add]
     linarith [dist_add_add_le (f x) (g x) (f y) (g y), hf.dist_le hx hy, hg.dist_le hx hy]
 
 /-- **Local Hölder bounds near a compact set are uniform on a thickening.** If `f` is `α`-Hölder on

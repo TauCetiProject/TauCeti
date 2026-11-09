@@ -192,41 +192,35 @@ theorem StronglyContinuousSemigroup.existsGrowthBound_ge
 
 /-! ## Joint strong continuity -/
 
-/-- **Joint strong continuity**: if `f i → r` through nonnegative values and `g i → z`, then
-`S (f i) (g i) → S r z`.
-
-A C₀-semigroup is strongly, not uniformly, continuous, so this does not follow from continuity
-of `u ↦ S.realOperator u` alone; the proof combines strong continuity at `r` with the uniform
-operator bound supplied by a growth bound. -/
+/-- **Joint strong continuity**: if `f i → r` and `g i → z`, then `S (f i) (g i) → S r z`. Times
+before `0` act as the identity, so no sign hypothesis is needed. -/
 theorem StronglyContinuousSemigroup.tendsto_realOperator_apply {ι : Type*} {l : Filter ι}
     (S : StronglyContinuousSemigroup X) {f : ι → ℝ} {g : ι → X} {r : ℝ} {z : X}
-    (hf : Filter.Tendsto f l (𝓝 r)) (hf0 : ∀ᶠ i in l, 0 ≤ f i) (hr : 0 ≤ r)
-    (hg : Filter.Tendsto g l (𝓝 z)) :
+    (hf : Filter.Tendsto f l (𝓝 r)) (hg : Filter.Tendsto g l (𝓝 z)) :
     Filter.Tendsto (fun i => S.realOperator (f i) (g i)) l (𝓝 (S.realOperator r z)) := by
+  -- A C₀-semigroup is strongly, not uniformly, continuous, so this does not follow from continuity
+  -- of `u ↦ S.realOperator u` alone: combine strong continuity at `r` with the uniform operator
+  -- bound supplied by a growth bound, applied to the nonnegative parts `max (f i) 0` of the times.
   obtain ⟨omega, M, hb⟩ := S.existsGrowthBound
-  have hM : (0 : ℝ) < M := lt_of_lt_of_le zero_lt_one hb.one_le
   -- A single operator-norm bound valid for all times eventually visited by `f`.
-  have hbound : ∀ᶠ i in l, ‖S.realOperator (f i)‖ ≤ M * Real.exp (|omega| * (r + 1)) := by
-    filter_upwards [hf0, hf.eventually_lt_const (lt_add_one r)] with i hi0 hi1
-    refine (hb.bound (f i) hi0).trans ?_
-    refine mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr ?_) hM.le
-    calc omega * f i ≤ |omega| * f i := mul_le_mul_of_nonneg_right (le_abs_self omega) hi0
-      _ ≤ |omega| * (r + 1) := mul_le_mul_of_nonneg_left hi1.le (abs_nonneg omega)
+  have hbound : ∀ᶠ i in l, ‖S.realOperator (f i)‖ ≤ M * Real.exp (max omega 0 * (max r 0 + 1)) := by
+    filter_upwards [hf.eventually_lt_const (lt_of_le_of_lt (le_max_left r 0) (lt_add_one _))]
+      with i hi1
+    have hi2 : max (f i) 0 < max r 0 + 1 := max_lt hi1 (by linarith [le_max_right r 0])
+    rw [← S.realOperator_max_zero]
+    exact hb.norm_le_mul_exp_max_zero_mul_of_le (le_max_right _ _) hi2.le
   -- The time moves: this is strong continuity of the orbit of the fixed vector `z`.
-  have h2 : Filter.Tendsto (fun i => S.realOperator (f i) z) l (𝓝 (S.realOperator r z)) := by
-    have hfw : Filter.Tendsto f l (𝓝[Set.Ici 0] r) :=
-      tendsto_nhdsWithin_iff.mpr ⟨hf, hf0⟩
-    simpa [Function.comp_def] using (S.realOperator_continuousWithinAt z r hr).tendsto.comp hfw
+  have h2 : Filter.Tendsto (fun i => S.realOperator (f i) z) l (𝓝 (S.realOperator r z)) :=
+    ((S.continuous_realOperator_apply z).tendsto r).comp hf
   exact ContinuousLinearMap.tendsto_apply_of_eventually_norm_le hbound h2 hg
 
-/-- The `ContinuousOn` form of joint strong continuity: a continuous nonnegative time
-reparametrization applied to a continuous vector-valued map gives a continuous orbit. -/
+/-- The `ContinuousOn` form of joint strong continuity: a continuous time reparametrization
+applied to a continuous vector-valued map gives a continuous orbit. -/
 theorem StronglyContinuousSemigroup.continuousOn_realOperator_apply
     (S : StronglyContinuousSemigroup X) {Y : Type*} [TopologicalSpace Y] {s : Set Y}
-    {f : Y → ℝ} {g : Y → X} (hf : ContinuousOn f s) (hf0 : ∀ u ∈ s, 0 ≤ f u)
-    (hg : ContinuousOn g s) :
+    {f : Y → ℝ} {g : Y → X} (hf : ContinuousOn f s) (hg : ContinuousOn g s) :
     ContinuousOn (fun u => S.realOperator (f u) (g u)) s := fun u hu =>
-  S.tendsto_realOperator_apply (hf u hu) (eventually_nhdsWithin_of_forall hf0) (hf0 u hu) (hg u hu)
+  S.tendsto_realOperator_apply (hf u hu) (hg u hu)
 
 end TauCeti.Semigroups
 
