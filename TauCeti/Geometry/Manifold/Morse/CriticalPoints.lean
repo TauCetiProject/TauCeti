@@ -16,7 +16,7 @@ import Mathlib.Algebra.BigOperators.ModEq
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
 
@@ -426,6 +426,36 @@ theorem IsMorse.eventually_eq_of_mem_criticalPoints (hf : IsMorse I f) (x : M) :
 theorem IsMorse.finite_criticalPoints [CompactSpace M] (hf : IsMorse I f) :
     (criticalPoints I f).Finite := by
   simpa using hf.finite_criticalPoints_inter isCompact_univ
+
+/-- **Levels separating the critical values.** For a Morse function on a compact manifold and
+`a < b`, there are levels `a < c₂ < c₁ < b` such that every critical value strictly between `a`
+and `b` lies strictly between `c₂` and `c₁`. -/
+theorem IsMorse.exists_lt_lt_forall_mem_Ioo [CompactSpace M] (hf : IsMorse I f) {a b : ℝ}
+    (hab : a < b) :
+    ∃ c₁ c₂, a < c₂ ∧ c₂ < c₁ ∧ c₁ < b ∧
+      ∀ x ∈ criticalPoints I f, f x ∈ Ioo a b → f x ∈ Ioo c₂ c₁ := by
+  -- The critical values in `(a, b)`, together with the midpoint, form a nonempty finite set.
+  have hfin : (insert ((a + b) / 2) (f '' (criticalPoints I f ∩ f ⁻¹' Ioo a b))).Finite :=
+    ((hf.finite_criticalPoints.inter_of_left _).image f).insert _
+  set T := hfin.toFinset
+  have hT : T.Nonempty := ⟨(a + b) / 2, by simp [T]⟩
+  have hTab : ∀ v ∈ T, v ∈ Ioo a b := by
+    intro v hv
+    simp only [T, Finite.mem_toFinset, mem_insert_iff, mem_image] at hv
+    rcases hv with rfl | ⟨x, ⟨-, hx⟩, rfl⟩
+    · constructor <;> linarith
+    · exact hx
+  have hmem {x : M} (hx : x ∈ criticalPoints I f) (hxab : f x ∈ Ioo a b) : f x ∈ T := by
+    simp only [T, Finite.mem_toFinset]
+    exact mem_insert_of_mem _ ⟨x, ⟨hx, hxab⟩, rfl⟩
+  have hmin := hTab _ (T.min'_mem hT)
+  have hmax := hTab _ (T.max'_mem hT)
+  have hle := T.min'_le _ (T.max'_mem hT)
+  refine ⟨(T.max' hT + b) / 2, (a + T.min' hT) / 2, by linarith [hmin.1], by linarith,
+    by linarith [hmax.2], fun x hx hxab ↦ ?_⟩
+  have h₁ := T.min'_le _ (hmem hx hxab)
+  have h₂ := T.le_max' _ (hmem hx hxab)
+  constructor <;> linarith [hmin.1, hmax.2]
 
 /-- A proper Morse function bounded below has finitely many critical points in each sublevel
 set. -/

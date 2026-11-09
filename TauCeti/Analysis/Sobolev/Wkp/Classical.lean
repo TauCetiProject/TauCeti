@@ -294,7 +294,6 @@ theorem Wkp.exists_value_ae_eq_of_contDiffOn :
           (.of_forall fun x => (norm_iteratedGradientChain f (k + 1) x).symm)
       have hweak : HasWeakFDerivOn mu Omega (iteratedGradient k u) (hD.toLp _) :=
         ((hasWeakFDerivOn_of_differentiableOn
-          (hs.continuousOn.locallyIntegrableOn Omega.isOpen.measurableSet)
           (hc'.locallyIntegrableOn Omega.isOpen.measurableSet)
           fun x hx => (hs.contDiffAt (Omega.isOpen.mem_nhds hx)).differentiableAt
             (by simp)).congr_ae

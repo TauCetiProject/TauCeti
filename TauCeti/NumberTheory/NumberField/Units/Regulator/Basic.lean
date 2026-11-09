@@ -261,4 +261,13 @@ theorem regulator_le_prod_sum_mult_mul_abs_log {ε : Fin (rank K) → (𝓞 K)ˣ
   (regOfFamily_eq_regulator_iff.mpr hε).symm.trans_le <|
     regOfFamily_le_prod_sum_mult_mul_abs_log ε
 
+open scoped Classical in
+/-- In a number field of unit rank one, the norm of the logarithmic embedding of a unit `v` is the
+index of `⟨v⟩ ⊔ torsion` in the unit group times the regulator. -/
+theorem norm_logEmbedding_eq_index_mul_regulator (hr : rank K = 1) (v : (𝓞 K)ˣ) :
+    ‖logEmbedding K (Additive.ofMul v)‖ =
+      ((Subgroup.closure {v} ⊔ torsion K).index : ℝ) * regulator K := by
+  rw [norm_logEmbedding_eq_mult_abs_log hr v NumberField.Units.dirichletUnitTheorem.w₀,
+    mult_abs_log_eq_index_mul_regulator hr v NumberField.Units.dirichletUnitTheorem.w₀]
+
 end TauCeti.NumberField.Units

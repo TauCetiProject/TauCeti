@@ -182,16 +182,17 @@ theorem ramifiedPrimes_eq_image (hmin : minpoly ℤ θ = X ^ 2 - C d)
 discriminant.** This is the `t` of genus theory: the exponent in the degree `2 ^ t` of the candidate
 genus field, and the `t` of the `2`-rank formula `t - 1`. Distinct prime-discriminant factors give
 distinct ramified primes because only the three even prime discriminants share a prime, and `s`
-contains at most one of them. -/
+contains at most one of them, since its product is a fundamental discriminant. -/
 theorem ncard_ramifiedPrimes_eq_card (hmin : minpoly ℤ θ = X ^ 2 - C d)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d)
     (hs : ∀ P ∈ s, IsPrimeDiscriminant P)
-    (heven : ∀ P ∈ s, ∀ Q ∈ s, IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q)
     (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d) :
     (ramifiedPrimes K).ncard = s.card := by
   classical
   rw [ramifiedPrimes_eq_image hmin hgen hsf hs hprod, Set.ncard_coe_finset,
-    Finset.card_image_of_injOn (injOn_primeDiscriminantPrime hs heven)]
+    Finset.card_image_of_injOn (injOn_primeDiscriminantPrime hs fun _ hP _ hQ ↦
+      eq_of_isEvenPrimeDiscriminant_of_prod_eq (isFundamentalDiscr_fundamentalDiscriminant hsf)
+        hprod hP hQ)]
 
 /-- **The ramified primes of `ℚ(√d)`, counted by a prime-discriminant factorization of the
 discriminant.** Packages `ncard_ramifiedPrimes_eq_card` with the existence of the factorization, so
@@ -200,9 +201,9 @@ theorem exists_finset_primeDiscriminant_ncard_ramifiedPrimes (hmin : minpoly ℤ
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) (hsf : Squarefree d) :
     ∃ s : Finset ℤ, (∀ P ∈ s, IsPrimeDiscriminant P) ∧
       ∏ P ∈ s, P = fundamentalDiscriminant d ∧ (ramifiedPrimes K).ncard = s.card := by
-  obtain ⟨s, hs, heven, hprod⟩ :=
+  obtain ⟨s, hs, -, hprod⟩ :=
     (isFundamentalDiscr_fundamentalDiscriminant hsf).exists_finset_primeDiscriminant
-  exact ⟨s, hs, hprod, ncard_ramifiedPrimes_eq_card hmin hgen hsf hs heven hprod⟩
+  exact ⟨s, hs, hprod, ncard_ramifiedPrimes_eq_card hmin hgen hsf hs hprod⟩
 
 /-! ### Total ramification
 
