@@ -23,7 +23,8 @@ pivotal identification.
 `RigidObject.ofWord` realizes every winding word by an expression, and
 `RigidObject.normalize_ofWord` proves that normalization is surjective. These are
 combinatorial object constructions, not categorical comparison isomorphisms or a
-coherence theorem. `RigidObject.ofMonoidal` includes Mathlib's structural object syntax.
+coherence theorem. `CategoryTheory.FreeMonoidalCategory.toRigidObject` includes Mathlib's
+structural object syntax.
 
 The integer-level convention is that of Joyal and Street, *Planar diagrams and tensor
 algebra*, §2: the right dual of a letter at level n is at level n + 1.
@@ -209,39 +210,57 @@ def subst (f : α → RigidObject β) : RigidObject α → RigidObject β
 @[simp] theorem subst_self (X : RigidObject α) : subst of X = X := by
   induction X <;> simp_all
 
+end RigidObject
+
+end TauCeti
+
+namespace CategoryTheory.FreeMonoidalCategory
+
+open TauCeti (RigidObject)
+
+variable {α : Type u}
+
 /-- Include Mathlib's parenthesized monoidal objects into the rigid object syntax. -/
-def ofMonoidal : CategoryTheory.FreeMonoidalCategory α → RigidObject α
+def toRigidObject : FreeMonoidalCategory α → RigidObject α
   | .of a => .of a
   | .unit => .unit
-  | .tensor X Y => (ofMonoidal X).tensor (ofMonoidal Y)
+  | .tensor X Y => (toRigidObject X).tensor (toRigidObject Y)
 
-@[simp] theorem ofMonoidal_of (a : α) : ofMonoidal (.of a) = .of a := by rfl
+@[simp] theorem toRigidObject_of (a : α) : toRigidObject (.of a) = .of a := by rfl
 
-@[simp] theorem ofMonoidal_unit :
-    ofMonoidal (𝟙_ (CategoryTheory.FreeMonoidalCategory α)) = .unit := by rfl
+@[simp] theorem toRigidObject_unit :
+    toRigidObject (𝟙_ (FreeMonoidalCategory α)) = .unit := by rfl
 
-@[simp] theorem ofMonoidal_tensor (X Y : CategoryTheory.FreeMonoidalCategory α) :
-    ofMonoidal (X ⊗ Y) = (ofMonoidal X).tensor (ofMonoidal Y) := by rfl
+@[simp] theorem toRigidObject_tensor (X Y : FreeMonoidalCategory α) :
+    toRigidObject (X ⊗ Y) = (toRigidObject X).tensor (toRigidObject Y) := by rfl
 
 /-- The inclusion of monoidal object expressions preserves their raw syntax faithfully. -/
-theorem ofMonoidal_injective : Function.Injective (ofMonoidal (α := α)) := by
+theorem toRigidObject_injective : Function.Injective (toRigidObject (α := α)) := by
   intro X Y h
   induction X generalizing Y with
-  | of a => cases Y <;> simp_all [ofMonoidal]
-  | unit => cases Y <;> simp_all [ofMonoidal]
+  | of a => cases Y <;> simp_all [toRigidObject]
+  | unit => cases Y <;> simp_all [toRigidObject]
   | tensor X Z ihX ihZ =>
     cases Y with
     | of a => cases h
     | unit => cases h
     | tensor Y W =>
-      exact congrArg₂ CategoryTheory.FreeMonoidalCategory.tensor
-        (ihX (tensor.inj h).1) (ihZ (tensor.inj h).2)
+      exact congrArg₂ FreeMonoidalCategory.tensor
+        (ihX (RigidObject.tensor.inj h).1) (ihZ (RigidObject.tensor.inj h).2)
 
 /-- Every letter in the normalization of a monoidal object has dual level zero. -/
-theorem normalize_ofMonoidal (X : CategoryTheory.FreeMonoidalCategory α) :
-    ∀ p ∈ normalize (ofMonoidal X), p.2 = 0 := by
-  induction X <;> simp_all [ofMonoidal]
+theorem snd_eq_zero_of_mem_normalize_toRigidObject (X : FreeMonoidalCategory α) :
+    ∀ p ∈ RigidObject.normalize X.toRigidObject, p.2 = 0 := by
+  induction X <;> simp_all [toRigidObject]
   aesop
+
+end CategoryTheory.FreeMonoidalCategory
+
+namespace TauCeti
+
+namespace RigidObject
+
+variable {α : Type u}
 
 /-- An atom at an integer level, expressed using only the two formal dual constructors. -/
 def atLevel (a : α) : ℤ → RigidObject α
