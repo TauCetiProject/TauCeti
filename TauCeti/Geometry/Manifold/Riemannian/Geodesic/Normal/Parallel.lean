@@ -132,12 +132,8 @@ def radialParallelLinearMap (h : IsNormalDomain I M p U)
     TangentSpace I p →ₗ[ℝ] TangentSpace I (riemannianExp I M p (t • v)) where
   toFun a := b.normalFrameExpansion (U := U) (riemannianExp I M p (t • v))
     (radialParallelCoefficients (U := U) h b v hlr hseg t a)
-  map_add' a a' := by
-    simp [OrthonormalBasis.normalFrameExpansion_apply, map_add, inner_add_right, add_smul,
-      Finset.sum_add_distrib]
-  map_smul' c a := by
-    simp [OrthonormalBasis.normalFrameExpansion_apply, map_smul, real_inner_smul_right, smul_smul,
-      Finset.smul_sum]
+  map_add' a a' := by simp
+  map_smul' c a := by simp
 
 /-- The radial transport map reconstructs the Dyson solution in the moving orthonormal frame.
 This is parallel transport only at parameters of a prescribed segment containing `0`. -/

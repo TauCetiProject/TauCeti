@@ -74,7 +74,29 @@ theorem _root_.OrthonormalBasis.normalFrameExpansion_apply
     b.normalFrameExpansion (U := U) q a =
       ∑ i, ⟪b i, a⟫_ℝ • normalOrthonormalFrame I M p U b i q := by rfl
 
-variable [I.Boundaryless] [T2Space M]
+/-- Frame reconstruction sends zero to zero. -/
+@[simp]
+theorem _root_.OrthonormalBasis.normalFrameExpansion_zero
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (q : M) :
+    b.normalFrameExpansion (U := U) q 0 = 0 := by
+  simp [OrthonormalBasis.normalFrameExpansion_apply]
+
+/-- Frame reconstruction is additive. -/
+@[simp]
+theorem _root_.OrthonormalBasis.normalFrameExpansion_add
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (q : M) (a a' : TangentSpace I p) :
+    b.normalFrameExpansion (U := U) q (a + a') =
+      b.normalFrameExpansion (U := U) q a + b.normalFrameExpansion (U := U) q a' := by
+  simp [OrthonormalBasis.normalFrameExpansion_apply, inner_add_right, add_smul,
+    Finset.sum_add_distrib]
+
+/-- Frame reconstruction commutes with scalar multiplication. -/
+@[simp]
+theorem _root_.OrthonormalBasis.normalFrameExpansion_smul
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (q : M) (c : ℝ) (a : TangentSpace I p) :
+    b.normalFrameExpansion (U := U) q (c • a) = c • b.normalFrameExpansion (U := U) q a := by
+  simp [OrthonormalBasis.normalFrameExpansion_apply, real_inner_smul_right, mul_smul,
+    Finset.smul_sum]
 
 namespace IsNormalDomain
 
@@ -119,25 +141,6 @@ theorem isLocalFrameOn_normalOrthonormalFrame (h : IsNormalDomain I M p U)
       (TauCeti.finrank_tangentSpace (I := I) x).symm
   contMDiffOn := h.contMDiffOn_normalOrthonormalFrame b
 
-/-- At its centre, the normal orthonormal frame recovers the prescribed orthonormal basis. -/
-@[simp]
-theorem normalOrthonormalFrame_self (h : IsNormalDomain I M p U)
-    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (i : ι) :
-    normalOrthonormalFrame I M p U b i p = b i := by
-  simp only [normalOrthonormalFrame_def, h.normalCoordinateField_self,
-    gramSchmidtNormed, gramSchmidt_of_orthogonal ℝ b.orthonormal.2,
-    b.orthonormal.1 i, RCLike.ofReal_real_eq_id, id_eq, inv_one, one_smul]
-
-/-- The normal orthonormal frame is parallel at its centre in every tangent direction. -/
-@[simp]
-theorem leviCivitaConnection_normalOrthonormalFrame_self (h : IsNormalDomain I M p U)
-    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (i : ι) :
-    leviCivitaConnection I M (normalOrthonormalFrame I M p U b i) p = 0 := by
-  exact (isMetricCompatible_leviCivitaConnection I).apply_gramSchmidtNormed_eq_zero
-    (fun j ↦ h.mdifferentiableAt_normalCoordinateField (b j) h.self_mem_image)
-    (h.linearIndependent_normalCoordinateField b.orthonormal.linearIndependent h.self_mem_image)
-    (fun j ↦ h.leviCivitaConnection_normalCoordinateField_self (b j)) i
-
 /-- The moving-frame components of a reconstructed vector are its original components. -/
 @[simp]
 theorem inner_normalFrameExpansion (h : IsNormalDomain I M p U)
@@ -158,6 +161,27 @@ theorem inner_normalFrameExpansion_pair (h : IsNormalDomain I M p U)
   rw [b.normalFrameExpansion_apply q a, sum_inner]
   simp only [real_inner_smul_left, h.inner_normalFrameExpansion b hq]
   simpa only [real_inner_comm a] using b.sum_inner_mul_inner a a'
+
+variable [I.Boundaryless] [T2Space M]
+
+/-- At its centre, the normal orthonormal frame recovers the prescribed orthonormal basis. -/
+@[simp]
+theorem normalOrthonormalFrame_self (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (i : ι) :
+    normalOrthonormalFrame I M p U b i p = b i := by
+  simp only [normalOrthonormalFrame_def, h.normalCoordinateField_self,
+    gramSchmidtNormed, gramSchmidt_of_orthogonal ℝ b.orthonormal.2,
+    b.orthonormal.1 i, RCLike.ofReal_real_eq_id, id_eq, inv_one, one_smul]
+
+/-- The normal orthonormal frame is parallel at its centre in every tangent direction. -/
+@[simp]
+theorem leviCivitaConnection_normalOrthonormalFrame_self (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (i : ι) :
+    leviCivitaConnection I M (normalOrthonormalFrame I M p U b i) p = 0 := by
+  exact (isMetricCompatible_leviCivitaConnection I).apply_gramSchmidtNormed_eq_zero
+    (fun j ↦ h.mdifferentiableAt_normalCoordinateField (b j) h.self_mem_image)
+    (h.linearIndependent_normalCoordinateField b.orthonormal.linearIndependent h.self_mem_image)
+    (fun j ↦ h.leviCivitaConnection_normalCoordinateField_self (b j)) i
 
 /-- At the centre, frame reconstruction is the identity. -/
 @[simp]
