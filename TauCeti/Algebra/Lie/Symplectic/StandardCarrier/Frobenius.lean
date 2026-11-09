@@ -128,11 +128,8 @@ theorem frobenius_weightTorusPoints (s : Fin (n + 1) → Aˣ) :
 of the standard symplectic carrier. The statement holds over every commutative value ring of
 exponential characteristic `p`, including the zeroth iterate. -/
 theorem isCharacterMap_frobenius :
-    IsCharacterMap (weightTorusPoints n A) (frobenius n p k A) ((p ^ k : ℕ) • 1) := by
-  rw [isCharacterMap_iff]
-  intro s
-  rw [frobenius_weightTorusPoints, torusPointMap_nsmul, torusPointMap_one,
-    MonoidHom.pow_apply, MonoidHom.id_apply]
+    IsCharacterMap (weightTorusPoints n A) (frobenius n p k A) ((p ^ k : ℕ) • 1) :=
+  IsCharacterMap.of_map_eq_pow (fun s => frobenius_weightTorusPoints n p k A s)
 
 /-- The zeroth Frobenius iterate is the identity on the type-`C_(n+1)` point group. -/
 @[simp]
