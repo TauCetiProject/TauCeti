@@ -56,6 +56,7 @@ families arise, for instance, from continuous homotopies of symbols.
 
 * `TauCeti.Symbol.exists_norm_mixedDeriv_cutoff_smul_le`: the estimates of the cut-off symbols
   `χ(ξ / t) a(x, ξ)`, uniform in `t ≥ 1`.
+* `TauCeti.Symbol.dilatedCutoff`: the dilated cutoff `χ(ξ / t)`, `t ≥ 1`, as a symbol of order `0`.
 * `TauCeti.Symbol.IsAsymptoticSum`: `b` is an asymptotic sum of the symbols `aⱼ`.
 * `TauCeti.Symbol.IsAsymptoticSum.isAsymptoticSum_iff_isSmoothing_sub`: asymptotic sums are unique
   modulo smoothing symbols.
@@ -172,7 +173,7 @@ theorem exists_norm_mixedDeriv_cutoff_smul_le (χ : FrequencyCutoff (CoordinateS
 
 /-- The dilated cutoff `χ(ξ / t)`, `t ≥ 1`, as the scalar symbol `χ(ξ / t) id` of order `0`.
 Composing with it cuts a symbol off below the frequency radius `t`. -/
-private def dilatedCutoff (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ} (ht : 1 ≤ t) :
+def dilatedCutoff (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ} (ht : 1 ≤ t) :
     Symbol n W W 0 where
   coefficient p :=
     χ (t⁻¹ • p.2) • (const (ContinuousLinearMap.id ℂ W) : Symbol n W W 0).coefficient p
@@ -182,10 +183,18 @@ private def dilatedCutoff (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ} (
       |>.exists_norm_mixedDeriv_cutoff_smul_le χ hK α β
     exact ⟨C, hC0, fun x hx ξ => by simpa using hC t ht 0 le_rfl x hx ξ⟩
 
-private theorem coefficient_dilatedCutoff_comp (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ}
+/-- The coefficient of the dilated cutoff is `χ(ξ / t) id`. -/
+@[simp]
+theorem coefficient_dilatedCutoff (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ} (ht : 1 ≤ t)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    (dilatedCutoff χ ht).coefficient p = χ (t⁻¹ • p.2) • ContinuousLinearMap.id ℂ W := by
+  simp [dilatedCutoff]
+
+/-- Composing with the dilated cutoff multiplies a symbol by `χ(ξ / t)`. -/
+theorem coefficient_dilatedCutoff_comp (χ : FrequencyCutoff (CoordinateSpace n)) {t : ℝ}
     (ht : 1 ≤ t) {μ : ℝ} (a : Symbol n V W μ) :
     ((dilatedCutoff χ ht).comp a).coefficient = fun p => χ (t⁻¹ • p.2) • a.coefficient p :=
-  funext fun p => by simp [dilatedCutoff]
+  funext fun p => by simp
 
 /-- For large `t`, the cut-off terms `χ(ξ / t) a_τ(x, ξ)` of a continuous family `a` of symbols of
 order `μ` over a compact space of parameters `τ` are at most `2^{-j}` in the estimates of order
@@ -217,26 +226,27 @@ private theorem eventually_norm_mixedDeriv_cutoff_smul_le
     (α.sublists'.revzip.map fun s => C s.1 s'.1 * M s.2 s'.2).sum).sum * 2 ^ j)]
     with t ht1 htB τ x hx ξ
   have ht0 : 0 < t := one_pos.trans_le ht1
-  have hcomp := norm_mixedDeriv_comp_le (m' := 1) (m := μ)
-    ((const (ContinuousLinearMap.id ℂ W) : Symbol n W W 0).contDiff_cutoff_smul_coefficient χ t)
-    (a τ).contDiff_coefficient (C := fun s s' => t⁻¹ * C s s') (D := M)
-    (fun s s' => by
+  -- As a symbol of order `1`, the dilated cutoff has seminorms at most `C t⁻¹`.
+  let c : Symbol n W W 1 := inclusion zero_le_one (dilatedCutoff χ ht1)
+  have hc : ∀ s s', Symbol.seminorm K s s' c ≤ t⁻¹ * C s s' := fun s s' =>
+    seminorm_le_bound K s s' c (mul_nonneg (inv_nonneg.2 ht0.le) (hC0 s s')) fun x hx ξ => by
       have h := hC s s' t ht1 1 zero_le_one x hx ξ
-      rwa [zero_sub, Real.rpow_neg_one, mul_comm (C s s')] at h)
-    (fun s s' => (le_seminorm K s s' (a τ) hx ξ).trans (mul_le_mul_of_nonneg_right
-      (hM' s s' τ) (rpow_weight_pos ξ _).le)) α β
-  have hfun : (fun p => χ (t⁻¹ • p.2) • (a τ).coefficient p) = fun p =>
-      (χ (t⁻¹ • p.2) • (const (ContinuousLinearMap.id ℂ W) : Symbol n W W 0).coefficient p).comp
-        ((a τ).coefficient p) :=
-    funext fun p => by simp
+      rw [zero_sub, Real.rpow_neg_one, mul_comm (C s s')] at h
+      rw [coefficient_inclusion]
+      exact h
+  have hca : (c.comp (a τ)).coefficient = fun p => χ (t⁻¹ • p.2) • (a τ).coefficient p :=
+    funext fun p => by simp [c]
   have hsum : (β.sublists'.revzip.map fun s' => (α.sublists'.revzip.map fun s =>
       t⁻¹ * C s.1 s'.1 * M s.2 s'.2).sum).sum = t⁻¹ * (β.sublists'.revzip.map fun s' =>
         (α.sublists'.revzip.map fun s => C s.1 s'.1 * M s.2 s'.2).sum).sum := by
     simp only [mul_assoc, List.sum_map_mul_left]
-  rw [hfun]
-  refine hcomp.trans (le_of_eq_of_le (by rw [hsum, add_comm (1 : ℝ) μ]) ?_)
-  gcongr
-  rw [inv_mul_le_iff₀ ht0, one_div, inv_pow, ← div_eq_mul_inv, le_div_iff₀ (by positivity)]
+  rw [← hca, add_comm μ 1]
+  refine (le_seminorm K α β (c.comp (a τ)) hx ξ).trans (mul_le_mul_of_nonneg_right
+    ((seminorm_comp_le K α β c (a τ)).trans ?_) (rpow_weight_pos ξ _).le)
+  refine (List.sum_le_sum fun s' _ => List.sum_le_sum fun s _ =>
+    mul_le_mul (hc s.1 s'.1) (hM' s.2 s'.2 τ) (apply_nonneg _ _)
+      (mul_nonneg (inv_nonneg.2 ht0.le) (hC0 _ _))).trans ?_
+  rw [hsum, inv_mul_le_iff₀ ht0, one_div, inv_pow, ← div_eq_mul_inv, le_div_iff₀ (by positivity)]
   exact htB
 
 /-- The Borel sum `∑ⱼ χ(ξ / tⱼ) aⱼ(x, ξ)` of a sequence of symbols with cutoff radii `tⱼ`. -/
@@ -466,23 +476,6 @@ private theorem norm_mixedDeriv_borelSum_sub_sub_le (χ : FrequencyCutoff (Coord
     (add_le_add (norm_sum_le _ _) (norm_sum_le _ _))) ((norm_sub_le _ _).trans ?_))
   linarith [hT a htail, hT a' htail']
 
-/-- Along a continuous family `F` of symbols of order `μ`, every mixed derivative converges
-uniformly for positions in a compact set `K`, after division by the weight: near `τ₀` it is within
-`ε ⟨ξ⟩^(μ - |β|)` of its value at `τ₀`. -/
-private theorem eventually_norm_mixedDeriv_sub_le {T : Type*} [TopologicalSpace T] {μ : ℝ}
-    {F : T → Symbol n V W μ} (hF : Continuous F) (τ₀ : T) (K : Compacts (CoordinateSpace n))
-    (α β : List (Fin n)) {ε : ℝ} (hε : 0 < ε) :
-    ∀ᶠ τ in 𝓝 τ₀, ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β (F τ).coefficient x ξ -
-      mixedDeriv α β (F τ₀).coefficient x ξ‖ ≤ ε * (1 + ‖ξ‖ ^ 2) ^ ((μ - β.length) / 2) := by
-  filter_upwards [(withSeminorms.tendsto_nhds F (F τ₀)).1 (hF.tendsto τ₀) (K, α, β) ε hε]
-    with τ hτ x hx ξ
-  have h := (mixedDerivCLM n V W μ α β x ξ).map_sub (F τ) (F τ₀)
-  simp only [mixedDerivCLM_apply] at h
-  rw [seminormFamily_apply] at hτ
-  rw [← h]
-  exact (le_seminorm K α β (F τ - F τ₀) hx ξ).trans
-    (mul_le_mul_of_nonneg_right hτ.le (rpow_weight_pos ξ _).le)
-
 /-- For `t ≥ 1`, the removed cutoffs `(χ(ξ / t) - 1) a_τ(x, ξ)` of a continuous family `a` of
 symbols form a continuous family of symbols of every order `μ'`: they vanish for `‖ξ‖ ≥ 2t`. -/
 private theorem exists_continuous_cutoff_smul_sub (χ : FrequencyCutoff (CoordinateSpace n))
@@ -628,32 +621,33 @@ theorem IsAsymptoticSum.isAsymptoticSum_iff_isSmoothing_sub {m : ℕ → ℝ}
 
 /-- **Asymptotic summation with parameters** (Borel). Let `m₀ ≥ m₁ ≥ ⋯` be real orders tending to
 `-∞`, let `T` be a compact space, and let `aⱼ : T → S^{mⱼ}` be continuous families of symbols.
-Then there is a continuous family `b : T → S^{m₀}` such that for every `N` the remainders
-`b(τ) - ∑_{j < N} aⱼ(τ)` form a continuous family of symbols of order `m_N`. -/
+Then there is a continuous family `b : T → S^{m₀}` of asymptotic sums `b(τ) ∼ ∑ⱼ aⱼ(τ)` such that
+for every `N` the remainders `b(τ) - ∑_{j < N} aⱼ(τ)` form a continuous family of symbols of
+order `m_N`. -/
 theorem exists_continuous_asymptoticSum {T : Type*} [TopologicalSpace T] [CompactSpace T]
     {m : ℕ → ℝ} (hm : Antitone m) (hm' : Tendsto m atTop atBot)
     {a : ∀ j, T → Symbol n V W (m j)} (ha : ∀ j, Continuous (a j)) :
-    ∃ b : T → Symbol n V W (m 0), Continuous b ∧ ∀ N, ∃ r : T → Symbol n V W (m N),
-      Continuous r ∧ ∀ τ, (b τ).coefficient - ∑ j ∈ Finset.range N, (a j τ).coefficient =
-        (r τ).coefficient := by
+    ∃ b : T → Symbol n V W (m 0), Continuous b ∧ (∀ τ, (b τ).IsAsymptoticSum fun j => a j τ) ∧
+      ∀ N, ∃ r : T → Symbol n V W (m N), Continuous r ∧
+        ∀ τ, (b τ).coefficient - ∑ j ∈ Finset.range N, (a j τ).coefficient = (r τ).coefficient := by
   let χ : FrequencyCutoff (CoordinateSpace n) := default
   choose t ht using fun j : ℕ => ((eventually_ge_atTop ((j : ℝ) + 1)).and
     (eventually_norm_mixedDeriv_cutoff_smul_le χ (ha j) j)).exists
   choose r hrc hr using exists_continuous_borelSum_sub χ hm hm' ha (fun j => (ht j).1)
     fun j => (ht j).2
-  refine ⟨r 0, hrc 0, fun N => ⟨r N, hrc N, fun τ => ?_⟩⟩
-  rw [hr 0 τ, hr N τ, Finset.sum_range_zero, sub_zero]
+  have hrem : ∀ N τ, (r 0 τ).coefficient - ∑ j ∈ Finset.range N, (a j τ).coefficient =
+      (r N τ).coefficient := fun N τ => by
+    rw [hr 0 τ, hr N τ, Finset.sum_range_zero, sub_zero]
+  exact ⟨r 0, hrc 0, fun τ N => ⟨r N τ, hrem N τ⟩, fun N => ⟨r N, hrc N, hrem N⟩⟩
 
 /-- **Asymptotic summation** (Borel). Let `m₀ ≥ m₁ ≥ ⋯` be real orders tending to `-∞`, and let
 `aⱼ` be symbols of order `mⱼ`. Then there is a symbol `b` of order `m₀` such that for every `N` the
 remainder `b - ∑_{j < N} aⱼ` is a symbol of order `m_N`. -/
 theorem exists_asymptoticSum {m : ℕ → ℝ} (hm : Antitone m) (hm' : Tendsto m atTop atBot)
     (a : ∀ j, Symbol n V W (m j)) : ∃ b : Symbol n V W (m 0), b.IsAsymptoticSum a := by
-  obtain ⟨b, -, hb⟩ := exists_continuous_asymptoticSum (T := Unit) hm hm' (a := fun j _ => a j)
+  obtain ⟨b, -, hb, -⟩ := exists_continuous_asymptoticSum (T := Unit) hm hm' (a := fun j _ => a j)
     fun _ => continuous_const
-  refine ⟨b (), fun N => ?_⟩
-  obtain ⟨r, -, hr⟩ := hb N
-  exact ⟨r (), hr ()⟩
+  exact ⟨b (), hb ()⟩
 
 end Symbol
 

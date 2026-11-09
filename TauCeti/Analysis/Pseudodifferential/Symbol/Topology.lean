@@ -41,6 +41,8 @@ The main results are:
   `TauCeti.Symbol.spatialDerivCLM`: these operations as continuous linear maps;
 * `TauCeti.Symbol.mixedDerivCLM`, `TauCeti.Symbol.continuous_mixedDeriv`: every mixed derivative
   at a point is a continuous linear function of the symbol;
+* `TauCeti.Symbol.eventually_norm_mixedDeriv_sub_le`: along a continuous family of symbols, every
+  mixed derivative converges uniformly for positions in a compact set after division by the weight;
 * `TauCeti.Symbol.isUniform_iff_bddAbove_seminorm`: a symbol is uniform exactly when its seminorms
   are bounded independently of the compact set.
 * `TauCeti.Symbol.seminorm_comp_le`: the Leibniz estimate bounding the seminorms of a composition
@@ -397,6 +399,24 @@ symbol `a`; in particular so is the value `a(x, ξ)`. -/
 theorem continuous_mixedDeriv (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     Continuous fun a : Symbol n V W m => mixedDeriv α β a.coefficient x ξ :=
   (mixedDerivCLM n V W m α β x ξ).continuous
+
+open Filter Topology in
+/-- Along a continuous family `F` of symbols of order `m`, every mixed derivative converges
+uniformly for positions in a compact set `K`, after division by the weight: near `τ₀` it is within
+`ε ⟨ξ⟩^(m - |β|)` of its value at `τ₀`. -/
+theorem eventually_norm_mixedDeriv_sub_le {T : Type*} [TopologicalSpace T]
+    {F : T → Symbol n V W m} (hF : Continuous F) (τ₀ : T) (K : Compacts (CoordinateSpace n))
+    (α β : List (Fin n)) {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ τ in 𝓝 τ₀, ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β (F τ).coefficient x ξ -
+      mixedDeriv α β (F τ₀).coefficient x ξ‖ ≤ ε * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+  filter_upwards [(withSeminorms.tendsto_nhds F (F τ₀)).1 (hF.tendsto τ₀) (K, α, β) ε hε]
+    with τ hτ x hx ξ
+  have h := (mixedDerivCLM n V W m α β x ξ).map_sub (F τ) (F τ₀)
+  simp only [mixedDerivCLM_apply] at h
+  rw [seminormFamily_apply] at hτ
+  rw [← h]
+  exact (le_seminorm K α β (F τ - F τ₀) hx ξ).trans
+    (mul_le_mul_of_nonneg_right hτ.le (rpow_weight_pos ξ _).le)
 
 end Topology
 
