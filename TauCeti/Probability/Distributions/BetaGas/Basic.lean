@@ -5,20 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
+public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import Mathlib.MeasureTheory.Integral.Pi
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 /-!
 # The finite beta gas
 
-The weight uses the convention `exp (-(β n / 4) ∑ xᵢ²) ∏_{i<j} |xᵢ - xⱼ|^β`, corresponding
-to the potential `V x = x² / 2` in `exp (-(β n / 2) ∑ V(xᵢ))`.
+For a potential `V : ℝ → ℝ`, the weight is
+`exp (-(β n / 2) ∑ V(xᵢ)) ∏_{i<j} |xᵢ - xⱼ|^β`. The Gaussian beta gas is the specialization
+`V x = x² / 2`, giving the convention `exp (-(β n / 4) ∑ xᵢ²) ∏_{i<j} |xᵢ - xⱼ|^β`.
 
 ## References
 
 * G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*, Cambridge
-  University Press (2010), (2.6.1)–(2.6.2). Their potential is `β V / 2` in this convention.
+  University Press (2010), (2.6.1)–(2.6.2). The potential term here is `β V / 2`.
 -/
 
 public section
