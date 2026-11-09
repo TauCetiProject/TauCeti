@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 /-!
@@ -240,16 +241,13 @@ private theorem abs_inv_pow_le_mul_weight {R : ℝ} {k : ℕ} {ξ : CoordinateSp
   have hξ : ‖ξ‖ < 2 * |R| := by
     have := (inv_mul_lt_iff₀ (abs_pos.2 hR)).1 hlt
     linarith
-  have h1 : 1 + ‖ξ‖ ^ 2 ≤ 1 + 4 * R ^ 2 := by
-    nlinarith [norm_nonneg ξ, sq_abs R, abs_nonneg R]
-  have hk0 : ((0 : ℝ) - k) / 2 ≤ 0 := by
-    have := k.cast_nonneg (α := ℝ)
-    linarith
+  have hw := one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow hξ.le ((0 : ℝ) - k)
+  rw [zero_sub, abs_neg, Nat.abs_cast, mul_pow, sq_abs, ← zero_sub] at hw
+  norm_num only at hw
   calc (1 : ℝ) = (1 + 4 * R ^ 2) ^ ((k : ℝ) / 2) * (1 + 4 * R ^ 2) ^ (((0 : ℝ) - k) / 2) := by
         rw [← Real.rpow_add (by positivity), show (k : ℝ) / 2 + (0 - k) / 2 = 0 by ring,
           Real.rpow_zero]
-    _ ≤ _ := mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_nonpos (by positivity) h1 hk0)
-        (by positivity)
+    _ ≤ _ := mul_le_mul_of_nonneg_left hw (by positivity)
 
 /-- The rescaled cutoff `(x, ξ) ↦ χ(ξ / R)` satisfies the symbol estimates of order `0`: every
 mixed derivative `∂_x^α ∂_ξ^β` is bounded by a multiple of `⟨ξ⟩^(-|β|)`. -/

@@ -116,35 +116,6 @@ theorem iteratedFDerivAlong_eq_zero_of_eventuallyEq_zero {f : E → F} {x : E}
 
 variable {n : ℕ∞ω}
 
-/-- Differentiating a `C^n` map along `k` directions gives a `C^m` map whenever `m + k ≤ n`. -/
-theorem _root_.ContDiff.iteratedFDerivAlong {m : ℕ∞ω} {f : E → F} (hf : ContDiff 𝕜 n f)
-    (vs : List E) (hvs : m + vs.length ≤ n) : ContDiff 𝕜 m (iteratedFDerivAlong 𝕜 vs f) := by
-  induction vs generalizing m with
-  | nil => exact hf.of_le (by simpa using hvs)
-  | cons v vs ih =>
-    refine ((ih (m := m + 1) ?_).fderiv_right le_rfl).clm_apply contDiff_const
-    rwa [List.length_cons, Nat.cast_succ, add_comm (vs.length : ℕ∞ω), ← add_assoc] at hvs
-
-theorem _root_.ContDiff.differentiable_iteratedFDerivAlong {f : E → F} (hf : ContDiff 𝕜 n f)
-    (vs : List E) (hvs : vs.length < n) : Differentiable 𝕜 (iteratedFDerivAlong 𝕜 vs f) :=
-  (hf.iteratedFDerivAlong (m := 1) vs (by
-    rw [add_comm]
-    exact_mod_cast ENat.add_one_natCast_le_withTop_of_lt hvs)).differentiable one_ne_zero
-
-theorem iteratedFDerivAlong_add {f g : E → F} (hf : ContDiff 𝕜 n f) (hg : ContDiff 𝕜 n g)
-    (vs : List E) (hvs : vs.length ≤ n) :
-    iteratedFDerivAlong 𝕜 vs (f + g) = iteratedFDerivAlong 𝕜 vs f + iteratedFDerivAlong 𝕜 vs g := by
-  induction vs with
-  | nil => rfl
-  | cons v vs ih =>
-    have hlt : (vs.length : ℕ∞ω) < n :=
-      lt_of_lt_of_le (by exact_mod_cast Nat.lt_succ_self _) hvs
-    funext x
-    rw [iteratedFDerivAlong_cons_apply, ih hlt.le,
-      fderiv_add (hf.differentiable_iteratedFDerivAlong vs hlt x)
-        (hg.differentiable_iteratedFDerivAlong vs hlt x)]
-    rfl
-
 /-- Differentiating a map which is `C^n` on an open set `s` along `k` directions gives a map which
 is `C^m` on `s` whenever `m + k ≤ n`. -/
 theorem _root_.ContDiffOn.iteratedFDerivAlong {m : ℕ∞ω} {f : E → F} {s : Set E}
@@ -184,6 +155,21 @@ theorem iteratedFDerivAlong_add_apply_of_isOpen {f g : E → F} {s : Set E}
         (hs.mem_nhds hx)) ((hg.differentiableOn_iteratedFDerivAlong hs vs hlt).differentiableAt
         (hs.mem_nhds hx))]
     rfl
+
+/-- Differentiating a `C^n` map along `k` directions gives a `C^m` map whenever `m + k ≤ n`. -/
+theorem _root_.ContDiff.iteratedFDerivAlong {m : ℕ∞ω} {f : E → F} (hf : ContDiff 𝕜 n f)
+    (vs : List E) (hvs : m + vs.length ≤ n) : ContDiff 𝕜 m (iteratedFDerivAlong 𝕜 vs f) :=
+  contDiffOn_univ.1 (hf.contDiffOn.iteratedFDerivAlong isOpen_univ vs hvs)
+
+theorem _root_.ContDiff.differentiable_iteratedFDerivAlong {f : E → F} (hf : ContDiff 𝕜 n f)
+    (vs : List E) (hvs : vs.length < n) : Differentiable 𝕜 (iteratedFDerivAlong 𝕜 vs f) :=
+  differentiableOn_univ.1 (hf.contDiffOn.differentiableOn_iteratedFDerivAlong isOpen_univ vs hvs)
+
+theorem iteratedFDerivAlong_add {f g : E → F} (hf : ContDiff 𝕜 n f) (hg : ContDiff 𝕜 n g)
+    (vs : List E) (hvs : vs.length ≤ n) :
+    iteratedFDerivAlong 𝕜 vs (f + g) = iteratedFDerivAlong 𝕜 vs f + iteratedFDerivAlong 𝕜 vs g :=
+  funext fun _ => iteratedFDerivAlong_add_apply_of_isOpen hf.contDiffOn hg.contDiffOn isOpen_univ
+    vs hvs (Set.mem_univ _)
 
 theorem iteratedFDerivAlong_neg (f : E → F) (vs : List E) :
     iteratedFDerivAlong 𝕜 vs (-f) = -iteratedFDerivAlong 𝕜 vs f := by
