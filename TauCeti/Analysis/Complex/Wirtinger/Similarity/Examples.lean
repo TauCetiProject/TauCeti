@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Wirtinger.Similarity
+public import TauCeti.Analysis.Complex.Wirtinger.Similarity.Basic
 public import TauCeti.Analysis.Sobolev.Local.Basic
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.Analytic.Order
@@ -28,18 +28,20 @@ reads `2 bar∂ξ + C ξ = 0`.
   factorization near `0` into two holomorphic factors at all, since `ξ` is not holomorphic at any
   nonzero point.
 * The coefficient hypothesis is used. `ξ z = exp (-1 / ‖z‖²)`, with `ξ 0 = 0`, is smooth,
-  is `o(‖z‖ⁿ)` at `0` for every `n`, and vanishes nowhere else. It solves `2 bar∂ξ + C ξ = 0`
-  exactly for `C z = -2 z / ‖z‖⁴`, of size `2 ‖z‖⁻³`, which is not locally `Lᵖ` near `0` for any
-  `p ≥ 1`. So unique continuation fails without a coefficient in `L^p_loc`.
+  is `o(‖z‖ⁿ)` at `0` for every `n`, and vanishes nowhere else. Away from the origin it solves
+  `2 bar∂ξ + C ξ = 0` exactly for `C z = -2 z / ‖z‖⁴`; at the origin both `ξ` and `bar∂ξ` vanish,
+  and the chosen extension is `C 0 = 0`. This coefficient has size `2 ‖z‖⁻³` and is not locally
+  `Lᵖ` near `0` for any `p ≥ 1`. So unique continuation fails without a coefficient in
+  `L^p_loc`.
 * `J` need not be constant. For a differentiable family `Φ` of real-linear automorphisms of a
   complex normed space, `J = Φ i Φ⁻¹` is a complex structure with `J Φ = Φ i`, and with
   `C = -(∂_s Φ + J ∂_t Φ) Φ⁻¹` every `ξ = Φ σ` with `σ` holomorphic solves the equation.
-  For `C¹` families with continuous inverse, `C` is continuous, hence locally `Lᵖ`. The
-  opposite normalization is excluded: if `J' Φ = -Φ i` at `z₀`, then `ξ w = Φ w ((w - z₀) v)`,
-  `v ≠ 0`, fails `∂_s ξ + J' ∂_t ξ + C' ξ = 0` at `z₀` for every `C'`.
-* Orders of zeros. `z²` has an isolated zero of order `2` at `0`, and for `Φ` continuous and
-  nonzero at a point and `σ` holomorphic, the exponent of every local factorization
-  `Φ σ = (w - z)ᵐ v`, with `v` continuous and nonzero at `z`, is the order of `σ`.
+  For families `C¹` on an open set with continuous inverse there, `C` is continuous on that set,
+  hence locally `Lᵖ`. The opposite normalization is excluded: if `J' Φ = -Φ i` at `z₀`, then
+  `ξ w = Φ w ((w - z₀) v)`, `v ≠ 0`, fails `∂_s ξ + J' ∂_t ξ + C' ξ = 0` at `z₀` for every `C'`.
+* Orders of zeros. `z²` has an isolated zero of order `2` at `0`, and by
+  `TauCeti.eq_of_eventually_mul_eq_sub_pow_mul` the exponent of every local factorization
+  `e^{-conj z} z² = zᵐ v`, with `v` continuous and nonzero at `0`, is `2`.
 
 ## Main declarations
 
@@ -50,12 +52,14 @@ reads `2 bar∂ξ + C ξ = 0`.
   nowhere holomorphic, and no holomorphic factorization of `z e^{-conj z}` exists near `0`.
 * `TauCeti.expNegInvNormSq_isLittleO_pow`, `TauCeti.expNegInvNormSq_ne_zero`: the flat function
   vanishes to infinite order at `0` and nowhere else.
-* `TauCeti.two_mul_conjWirtingerDeriv_expNegInvNormSq_add_eq_zero_iff`: the coefficient is forced.
+* `TauCeti.two_mul_conjWirtingerDeriv_expNegInvNormSq_add_eq_zero_iff`: the coefficient is forced
+  away from the origin.
 * `TauCeti.not_memLpLoc_expNegInvNormSqCoeff`: it is locally `Lᵖ` near `0` for no `p ≥ 1`.
 * `TauCeti.fderiv_apply_add_transportedComplexStructure_add_eq_zero`: `Φ σ` solves the equation
   for `J = Φ i Φ⁻¹`.
 * `TauCeti.fderiv_apply_smul_add_ne_zero`: the normalization `J' Φ = -Φ i` fails.
-* `TauCeti.eq_of_eventually_mul_eq_sub_pow_mul`: zero orders of `Φ σ` are those of `σ`.
+* `TauCeti.eq_two_of_eventually_cexp_neg_conj_mul_sq_eq`: `e^{-conj z} z²` has a zero of order
+  `2`.
 
 ## References
 
@@ -93,7 +97,6 @@ theorem conjWirtingerDeriv_mul_cexp_neg_conj (z : ℂ) :
     ((differentiableAt_fun_id (𝕜 := ℂ) (x := z)).restrictScalars ℝ)
     (hasFDerivAt_cexp_neg_conj z).differentiableAt]
   simp [conjWirtingerDeriv_cexp_neg_conj]
-
 
 /-- `ξ = z e^{-conj z}` solves `∂_s ξ + i ∂_t ξ + 2 ξ = 0`. -/
 theorem fderiv_mul_cexp_neg_conj_add_eq_zero (z : ℂ) :
@@ -137,37 +140,10 @@ theorem memWkpLoc_cexp_neg_conj (p : ENNReal) (U : Set ℂ) (k : ℕ) :
 
 /-! ### Order of zeros -/
 
-/-- If `Φ` is continuous and nonzero at `z` and `σ` is analytic with a zero of order `n` at `z`,
-then `Φ σ` factors near `z` as `(w - z) ^ n` times a function continuous and nonzero at `z`. -/
-theorem exists_eventually_mul_eq_sub_pow_mul {Φ σ : ℂ → ℂ} {z : ℂ} {n : ℕ}
-    (hΦ : ContinuousAt Φ z) (hΦ₀ : Φ z ≠ 0) (hσ : AnalyticAt ℂ σ z)
-    (hn : analyticOrderAt σ z = n) :
-    ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧ ∀ᶠ w in 𝓝 z, Φ w * σ w = (w - z) ^ n * v w := by
-  obtain ⟨g, hg, hg₀, hgσ⟩ := hσ.analyticOrderAt_eq_natCast.mp hn
-  refine ⟨fun w ↦ Φ w * g w, hΦ.mul hg.continuousAt, mul_ne_zero hΦ₀ hg₀, ?_⟩
-  filter_upwards [hgσ] with w hw
-  rw [hw, smul_eq_mul]
-  ring
-
-/-- The zero orders of `Φ σ` are those of `σ`: for `Φ` continuous and nonzero at `z` and `σ`
-analytic with a zero of order `n` at `z`, every local factorization `Φ σ = (w - z) ^ m v`, with `v`
-continuous and nonzero at `z`, has `m = n`. -/
-theorem eq_of_eventually_mul_eq_sub_pow_mul {Φ σ v : ℂ → ℂ} {z : ℂ} {m n : ℕ}
-    (hΦ : ContinuousAt Φ z) (hΦ₀ : Φ z ≠ 0) (hσ : AnalyticAt ℂ σ z)
-    (hn : analyticOrderAt σ z = n) (hv : ContinuousAt v z) (hv₀ : v z ≠ 0)
-    (h : ∀ᶠ w in 𝓝 z, Φ w * σ w = (w - z) ^ m * v w) : m = n := by
-  obtain ⟨u, hu, hu₀, hσu⟩ := exists_eventually_mul_eq_sub_pow_mul hΦ hΦ₀ hσ hn
-  exact eq_of_eventually_sub_pow_mul_eq hv hv₀ hu hu₀ <| by
-    filter_upwards [h, hσu] with w hw hw'
-    rw [← hw, hw']
-
-/-- `z²` has a zero of order `2` at `0`. -/
-theorem analyticOrderAt_sq_zero : analyticOrderAt (fun w : ℂ ↦ w ^ 2) 0 = 2 := by
-  simpa [Pi.pow_def] using analyticOrderAt_centeredMonomial (z₀ := (0 : ℂ)) (n := 2)
-
-/-- The zero of `z²` at `0` is isolated. -/
-theorem eventually_sq_ne_zero : ∀ᶠ w in 𝓝[≠] (0 : ℂ), w ^ 2 ≠ 0 :=
-  eventually_mem_nhdsWithin.mono fun _ hw ↦ pow_ne_zero 2 hw
+/-- `z²` has an isolated zero of order `2` at `0`. -/
+example : analyticOrderAt (fun w : ℂ ↦ w ^ 2) 0 = 2 ∧ ∀ᶠ w in 𝓝[≠] (0 : ℂ), w ^ 2 ≠ 0 :=
+  ⟨by simpa [Pi.pow_def] using analyticOrderAt_centeredMonomial (z₀ := (0 : ℂ)) (n := 2),
+    eventually_mem_nhdsWithin.mono fun _ hw ↦ pow_ne_zero 2 hw⟩
 
 /-- `e^{-conj z} z²` has a zero of order `2` at `0`: the exponent of every local factorization
 `wᵐ v w`, with `v` continuous and nonzero at `0`, is `2`. -/
@@ -175,26 +151,42 @@ theorem eq_two_of_eventually_cexp_neg_conj_mul_sq_eq {v : ℂ → ℂ} {m : ℕ}
     (hv₀ : v 0 ≠ 0) (h : ∀ᶠ w in 𝓝 0, cexp (-conj w) * w ^ 2 = w ^ m * v w) : m = 2 :=
   eq_of_eventually_mul_eq_sub_pow_mul (Φ := fun w ↦ cexp (-conj w)) (σ := fun w ↦ w ^ 2)
     (by fun_prop) (exp_ne_zero _)
-    (analyticAt_id.pow 2) analyticOrderAt_sq_zero hv hv₀ (by simpa using h)
+    (analyticAt_id.pow 2)
+    (by simpa [Pi.pow_def] using analyticOrderAt_centeredMonomial (z₀ := (0 : ℂ)) (n := 2))
+    hv hv₀ (by simpa using h)
 
 /-! ### A flat solution with a non-integrable coefficient -/
 
 /-- `exp (-1 / ‖z‖²)`, extended by `0` at the origin. -/
 def expNegInvNormSq (z : ℂ) : ℂ := expNegInvGlue (‖z‖ ^ 2)
 
+/-- `expNegInvNormSq` is Mathlib's `expNegInvGlue` evaluated at `‖z‖²`. -/
+theorem expNegInvNormSq_def (z : ℂ) : expNegInvNormSq z = expNegInvGlue (‖z‖ ^ 2) := (rfl)
+
+/-- Away from the origin, `expNegInvNormSq z = exp (-1 / ‖z‖²)`. -/
+theorem expNegInvNormSq_of_ne_zero {z : ℂ} (hz : z ≠ 0) :
+    expNegInvNormSq z = cexp (-1 / (‖z‖ : ℂ) ^ 2) := by
+  rw [expNegInvNormSq_def, expNegInvGlue,
+    ite_eq_right (not_le.mpr (pow_pos (norm_pos_iff.mpr hz) 2)), ofReal_exp]
+  push_cast
+  ring_nf
+
 /-- `exp (-1 / ‖z‖²)` is smooth, across the origin. -/
 theorem contDiff_expNegInvNormSq : ContDiff ℝ ∞ expNegInvNormSq :=
   ofRealCLM.contDiff.comp (expNegInvGlue.contDiff.comp (contDiff_norm_sq ℝ))
 
-/-- `exp (-1 / ‖z‖²)` vanishes at the origin. -/
+/-- `exp (-1 / ‖z‖²)` vanishes exactly at the origin. -/
 @[simp]
-theorem expNegInvNormSq_zero : expNegInvNormSq 0 = 0 := by
-  simp [expNegInvNormSq, expNegInvGlue.zero]
+theorem expNegInvNormSq_eq_zero_iff {z : ℂ} : expNegInvNormSq z = 0 ↔ z = 0 := by
+  simp [expNegInvNormSq_def]
+
+/-- `exp (-1 / ‖z‖²)` vanishes at the origin. -/
+theorem expNegInvNormSq_zero : expNegInvNormSq 0 = 0 :=
+  expNegInvNormSq_eq_zero_iff.mpr rfl
 
 /-- `exp (-1 / ‖z‖²)` vanishes nowhere except at the origin. -/
-theorem expNegInvNormSq_ne_zero {z : ℂ} (hz : z ≠ 0) : expNegInvNormSq z ≠ 0 := by
-  rw [expNegInvNormSq, ofReal_ne_zero]
-  exact (expNegInvGlue.pos_of_pos (by positivity)).ne'
+theorem expNegInvNormSq_ne_zero {z : ℂ} (hz : z ≠ 0) : expNegInvNormSq z ≠ 0 :=
+  mt expNegInvNormSq_eq_zero_iff.mp hz
 
 /-- `exp (-1 / ‖z‖²)` vanishes to infinite order at the origin. -/
 theorem expNegInvNormSq_isLittleO_pow (n : ℕ) :
@@ -207,13 +199,12 @@ theorem expNegInvNormSq_isLittleO_pow (n : ℕ) :
   refine Asymptotics.isLittleO_iff.mpr fun c hc ↦ ?_
   filter_upwards [hlim (ge_mem_nhds hc), closedBall_mem_nhds (0 : ℂ) one_pos] with z hz hz1
   rw [mem_closedBall_zero_iff] at hz1
-  rw [expNegInvNormSq, norm_real, Real.norm_of_nonneg (expNegInvGlue.nonneg _), norm_pow,
+  rw [expNegInvNormSq_def, norm_real, Real.norm_of_nonneg (expNegInvGlue.nonneg _), norm_pow,
     norm_norm]
   rcases eq_or_ne z 0 with rfl | hz0
   · simpa [expNegInvGlue.zero] using mul_nonneg hc.le (pow_nonneg le_rfl n)
   have hpos : 0 < (‖z‖ ^ 2) ^ n := by positivity
-  replace hz : ((‖z‖ ^ 2) ^ n)⁻¹ * expNegInvGlue (‖z‖ ^ 2) ≤ c := hz
-  rw [inv_mul_le_iff₀ hpos] at hz
+  rw [mem_preimage, mem_ofPred_eq, inv_mul_le_iff₀ hpos] at hz
   calc expNegInvGlue (‖z‖ ^ 2) ≤ (‖z‖ ^ 2) ^ n * c := hz
     _ ≤ ‖z‖ ^ n * c := by
       rw [← pow_mul]
@@ -221,21 +212,18 @@ theorem expNegInvNormSq_isLittleO_pow (n : ℕ) :
         (pow_le_pow_of_le_one (norm_nonneg z) hz1 (by omega)) hc.le
     _ = c * ‖z‖ ^ n := mul_comm _ _
 
-/-- The real derivative of `z ↦ exp (-1 / ‖z‖²)`, as a real function, including at `0`. -/
-theorem hasFDerivAt_expNegInvGlue_norm_sq (z : ℂ) :
-    HasFDerivAt (fun w : ℂ ↦ expNegInvGlue (‖w‖ ^ 2))
-      ((((‖z‖ ^ 2)⁻¹ ^ 2 * expNegInvGlue (‖z‖ ^ 2)) • (2 • innerSL ℝ z))) z := by
-  have h := expNegInvGlue.hasDerivAt_polynomial_eval_inv_mul 1 (‖z‖ ^ 2)
-  simp only [Polynomial.eval_one, one_mul, Polynomial.derivative_one, sub_zero, mul_one,
-    Polynomial.eval_pow, Polynomial.eval_X] at h
-  exact h.comp_hasFDerivAt z (hasStrictFDerivAt_norm_sq z).hasFDerivAt
-
 /-- `bar∂ exp (-1 / ‖z‖²) = z / ‖z‖⁴ · exp (-1 / ‖z‖²)`, both sides vanishing at `0`. -/
 theorem conjWirtingerDeriv_expNegInvNormSq (z : ℂ) :
     conjWirtingerDeriv expNegInvNormSq z 1 = z / (‖z‖ : ℂ) ^ 4 * expNegInvNormSq z := by
-  have hf : expNegInvNormSq = fun w : ℂ ↦ ((expNegInvGlue (‖w‖ ^ 2) : ℝ) : ℂ) := rfl
-  rw [conjWirtingerDeriv_apply, hf]
-  simp only [fderiv_ofReal_comp_apply, (hasFDerivAt_expNegInvGlue_norm_sq z).fderiv,
+  -- The real derivative of `z ↦ exp (-1 / ‖z‖²)`, as a real function, including at `0`.
+  have hD : HasFDerivAt (fun w : ℂ ↦ expNegInvGlue (‖w‖ ^ 2))
+      ((((‖z‖ ^ 2)⁻¹ ^ 2 * expNegInvGlue (‖z‖ ^ 2)) • (2 • innerSL ℝ z))) z := by
+    have h := expNegInvGlue.hasDerivAt_polynomial_eval_inv_mul 1 (‖z‖ ^ 2)
+    simp only [Polynomial.eval_one, one_mul, Polynomial.derivative_one, sub_zero, mul_one,
+      Polynomial.eval_pow, Polynomial.eval_X] at h
+    exact h.comp_hasFDerivAt z (hasStrictFDerivAt_norm_sq z).hasFDerivAt
+  rw [conjWirtingerDeriv_apply, funext expNegInvNormSq_def]
+  simp only [fderiv_ofReal_comp_apply, hD.fderiv,
     smul_apply, innerSL_apply_apply, Complex.inner, smul_eq_mul, mul_one]
   simp only [one_mul, conj_re, mul_re, I_re, I_im, conj_im, zero_mul, one_mul, neg_neg,
     zero_sub, nsmul_eq_mul]
@@ -245,15 +233,25 @@ theorem conjWirtingerDeriv_expNegInvNormSq (z : ℂ) :
   conv_rhs => rw [← re_add_im z]
   ring
 
-/-- The coefficient `C z = -2 z / ‖z‖⁴` forced by `2 bar∂ξ + C ξ = 0` for
-`ξ = exp (-1 / ‖z‖²)`, with value `0` at the origin. -/
+/-- The coefficient `C z = -2 z / ‖z‖⁴` forced away from the origin by `2 bar∂ξ + C ξ = 0` for
+`ξ = exp (-1 / ‖z‖²)`. Any value at the origin solves the equation there; the chosen extension
+is `C 0 = 0`. -/
 def expNegInvNormSqCoeff (z : ℂ) : ℂ := -2 * z / (‖z‖ : ℂ) ^ 4
+
+/-- The defining formula `C z = -2 z / ‖z‖⁴`; division by zero gives `C 0 = 0`. -/
+theorem expNegInvNormSqCoeff_def (z : ℂ) : expNegInvNormSqCoeff z = -2 * z / (‖z‖ : ℂ) ^ 4 :=
+  (rfl)
+
+/-- The coefficient vanishes at the origin. -/
+@[simp]
+theorem expNegInvNormSqCoeff_zero : expNegInvNormSqCoeff 0 = 0 := by
+  simp [expNegInvNormSqCoeff_def]
 
 /-- `ξ = exp (-1 / ‖z‖²)` solves `2 bar∂ξ + C ξ = 0` for `C z = -2 z / ‖z‖⁴`. -/
 theorem two_mul_conjWirtingerDeriv_expNegInvNormSq_add_eq_zero (z : ℂ) :
     2 * conjWirtingerDeriv expNegInvNormSq z 1 + expNegInvNormSqCoeff z * expNegInvNormSq z =
       0 := by
-  rw [conjWirtingerDeriv_expNegInvNormSq, expNegInvNormSqCoeff]
+  rw [conjWirtingerDeriv_expNegInvNormSq, expNegInvNormSqCoeff_def]
   ring
 
 /-- Away from the origin, `-2 z / ‖z‖⁴` is the only value of the coefficient for which
@@ -268,11 +266,10 @@ theorem two_mul_conjWirtingerDeriv_expNegInvNormSq_add_eq_zero_iff {z : ℂ} (hz
 /-- The coefficient `-2 z / ‖z‖⁴` has size `2 ‖z‖⁻³`; both sides vanish at `0`. -/
 theorem norm_expNegInvNormSqCoeff (z : ℂ) : ‖expNegInvNormSqCoeff z‖ = 2 * ‖z‖ ^ (-3 : ℝ) := by
   rcases eq_or_ne z 0 with rfl | hz
-  · simp [expNegInvNormSqCoeff]
+  · simp
   have h : 0 < ‖z‖ := norm_pos_iff.mpr hz
-  rw [expNegInvNormSqCoeff, norm_div, norm_mul, norm_neg, norm_pow, norm_real, norm_norm,
-    Real.rpow_neg h.le]
-  norm_num
+  rw [expNegInvNormSqCoeff_def, norm_div, norm_mul, norm_neg, norm_pow, norm_real, norm_norm,
+    Real.rpow_neg h.le, Real.rpow_ofNat, Complex.norm_two]
   field_simp
 
 /-- The coefficient `-2 z / ‖z‖⁴` is not locally `Lᵖ` on any neighbourhood of `0`, for any
@@ -315,10 +312,21 @@ def transportedCoeff (Φ : ℂ → V ≃L[ℝ] V) (z : ℂ) : V →L[ℝ] V :=
 
 variable {Φ : ℂ → V ≃L[ℝ] V}
 
+/-- `J v = Φ (i Φ⁻¹ v)`. -/
+theorem transportedComplexStructure_apply (z : ℂ) (v : V) :
+    transportedComplexStructure Φ z v = Φ z (I • (Φ z).symm v) := (rfl)
+
+/-- `C v = -(∂_s Φ (Φ⁻¹ v) + J ∂_t Φ (Φ⁻¹ v))`. -/
+theorem transportedCoeff_apply (z : ℂ) (v : V) :
+    transportedCoeff Φ z v = -(fderiv ℝ (fun w ↦ (Φ w : V →L[ℝ] V)) z 1 ((Φ z).symm v) +
+      transportedComplexStructure Φ z (fderiv ℝ (fun w ↦ (Φ w : V →L[ℝ] V)) z I ((Φ z).symm v))) :=
+  (rfl)
+
 /-- `J Φ = Φ i`. -/
+@[simp]
 theorem transportedComplexStructure_apply_apply (z : ℂ) (v : V) :
     transportedComplexStructure Φ z (Φ z v) = Φ z (I • v) := by
-  simp [transportedComplexStructure]
+  rw [transportedComplexStructure_apply, ContinuousLinearEquiv.symm_apply_apply]
 
 /-- `J² = -1`. -/
 theorem transportedComplexStructure_comp_self (z : ℂ) :
@@ -337,11 +345,14 @@ theorem fderiv_apply_add_transportedComplexStructure_add_eq_zero {σ : ℂ → V
         transportedComplexStructure Φ z (fderiv ℝ (fun w ↦ Φ w (σ w)) z I) +
       transportedCoeff Φ z (Φ z (σ z)) = 0 := by
   have hD := hΦ.hasFDerivAt.clm_apply (hσ.restrictScalars ℝ).hasFDerivAt
-  rw [show (fun w ↦ Φ w (σ w)) = fun w ↦ (Φ w : V →L[ℝ] V) (σ w) from rfl, hD.fderiv]
+  simp only [ContinuousLinearEquiv.coe_coe] at hD
+  rw [hD.fderiv]
   have hI : fderiv ℝ σ z I = I • fderiv ℝ σ z 1 := by
     rw [hσ.fderiv_restrictScalars ℝ, ContinuousLinearMap.coe_restrictScalars', ← map_smul,
       smul_eq_mul, mul_one]
-  simp [transportedCoeff, transportedComplexStructure, hI, smul_smul]
+  simp only [add_apply, comp_apply, ContinuousLinearEquiv.coe_coe, flip_apply, hI,
+    transportedComplexStructure_apply, map_add, ContinuousLinearEquiv.symm_apply_apply,
+    smul_smul, I_mul_I, neg_smul, one_smul, map_neg, transportedCoeff_apply, neg_add_rev]
   abel
 
 /-- The normalization `Φ⁻¹ J' Φ = -i` is wrong: if `J' Φ = -Φ i` at `z₀` and `v ≠ 0`, then
@@ -355,28 +366,33 @@ theorem fderiv_apply_smul_add_ne_zero {z₀ : ℂ}
   have hσ : HasFDerivAt (fun w : ℂ ↦ (w - z₀) • v) ((ContinuousLinearMap.id ℝ ℂ).smulRight v) z₀ :=
     ((hasFDerivAt_id z₀).sub_const z₀).smul_const v
   have hD := hΦ.hasFDerivAt.clm_apply hσ
-  rw [show (fun w ↦ Φ w ((w - z₀) • v)) = fun w ↦ (Φ w : V →L[ℝ] V) ((w - z₀) • v) from rfl,
-    hD.fderiv]
+  simp only [ContinuousLinearEquiv.coe_coe] at hD
+  rw [hD.fderiv]
   simp only [sub_self, zero_smul, map_zero, add_zero, comp_apply, smulRight_apply, id_apply,
     one_smul, ContinuousLinearEquiv.coe_coe, hJ', smul_smul, I_mul_I, neg_smul, map_neg, neg_neg,
     ne_eq]
   rw [← two_smul ℝ]
   exact smul_ne_zero two_ne_zero ((Φ z₀).map_ne_zero_iff.mpr hv)
 
-/-- For a `C¹` family with continuous inverse, the coefficient `C` is continuous. -/
-theorem continuous_transportedCoeff (hΦ : ContDiff ℝ 1 fun w ↦ (Φ w : V →L[ℝ] V))
-    (hΨ : Continuous fun w ↦ ((Φ w).symm : V →L[ℝ] V)) : Continuous (transportedCoeff Φ) := by
-  have hD := hΦ.continuous_fderiv one_ne_zero
-  have hJ : Continuous (transportedComplexStructure Φ) :=
-    hΦ.continuous.clm_comp (continuous_const.clm_comp hΨ)
-  exact ((hD.clm_apply continuous_const).add (hJ.clm_comp (hD.clm_apply continuous_const))).clm_comp
-    hΨ |>.neg
+/-- For a family `C¹` on an open set `U` with inverse continuous on `U`, the coefficient `C` is
+continuous on `U`. -/
+theorem continuousOn_transportedCoeff {U : Set ℂ} (hU : IsOpen U)
+    (hΦ : ContDiffOn ℝ 1 (fun w ↦ (Φ w : V →L[ℝ] V)) U)
+    (hΨ : ContinuousOn (fun w ↦ ((Φ w).symm : V →L[ℝ] V)) U) :
+    ContinuousOn (transportedCoeff Φ) U := by
+  have hD := hΦ.continuousOn_fderiv_of_isOpen hU le_rfl
+  have hJ : ContinuousOn (transportedComplexStructure Φ) U :=
+    hΦ.continuousOn.clm_comp (continuousOn_const.clm_comp hΨ)
+  exact ((hD.clm_apply continuousOn_const).add
+    (hJ.clm_comp (hD.clm_apply continuousOn_const))).clm_comp hΨ |>.neg
 
-/-- For a `C¹` family with continuous inverse, the coefficient `C` is locally `Lᵖ` everywhere. -/
-theorem memLpLoc_transportedCoeff (hΦ : ContDiff ℝ 1 fun w ↦ (Φ w : V →L[ℝ] V))
-    (hΨ : Continuous fun w ↦ ((Φ w).symm : V →L[ℝ] V)) (p : ENNReal) (U : Set ℂ) :
+/-- For a family `C¹` on an open set `U` with inverse continuous on `U`, the coefficient `C` is
+locally `Lᵖ` on `U`. -/
+theorem memLpLoc_transportedCoeff {U : Set ℂ} (hU : IsOpen U)
+    (hΦ : ContDiffOn ℝ 1 (fun w ↦ (Φ w : V →L[ℝ] V)) U)
+    (hΨ : ContinuousOn (fun w ↦ ((Φ w).symm : V →L[ℝ] V)) U) (p : ENNReal) :
     MemLpLoc p U (transportedCoeff Φ) :=
-  (continuous_transportedCoeff hΦ hΨ).continuousOn.memLpLoc
+  (continuousOn_transportedCoeff hU hΦ hΨ).memLpLoc
 
 end Transported
 

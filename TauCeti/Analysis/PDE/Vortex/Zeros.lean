@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.Deformation
-public import TauCeti.Analysis.Complex.Wirtinger.Similarity
+public import TauCeti.Analysis.Complex.Wirtinger.Similarity.Basic
 
 /-!
 # Isolated zeros and local multiplicities of plane vortex sections
