@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Integrable
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Kepler.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Torus
+import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.RungeLenz
 import TauCeti.Geometry.Symplectic.Hamiltonian.Complete
 import TauCeti.Geometry.Symplectic.Manifold.Opens
 import TauCeti.Topology.Compactness.Compact
@@ -176,20 +177,13 @@ theorem isRegularPoint_centralForceEnergyMomentum_kepler (hm : m ≠ 0) {x : V �
       centralForceHamiltonian m (fun r ↦ -κ / r) x) :
     IsRegularPoint 𝓘(ℝ, V × V) 𝓘(ℝ, Fin 2 → ℝ)
       (centralForceEnergyMomentum b m (fun r ↦ -κ / r)) x := by
-  have hr : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
-  rw [isRegularPoint_centralForceEnergyMomentum_iff b hm (hasDerivAt_kepler_potential κ hr) hq]
-  rintro ⟨h0, hU'⟩
-  -- A critical point lies on the circular orbit `‖q‖ = ℓ² / (m κ)` and has the circular energy.
-  have hcirc : angularMomentum (b 0) (b 1) x ^ 2 - m * κ * ‖x.1‖ = 0 := by
-    field_simp at hU'
-    linear_combination -hU'
-  have hH := (centralForceHamiltonian_eq_effectivePotential_iff (U := fun r ↦ -κ / r) hm hq
-    (sq_angularMomentum b x)).2
-    (radialMomentum_eq_zero_iff.2 h0)
-  have hmin := effectivePotential_kepler_sub_min (κ := κ) hm hℓ hr
-  rw [hcirc, ← hH, zero_pow two_ne_zero, zero_div] at hmin
-  rw [neg_div] at hE
-  linarith
+  refine isRegularPoint_centralForceEnergyMomentum_kepler_of_rungeLenz_ne_zero b hm hq fun hA ↦ ?_
+  -- A vanishing Runge–Lenz vector forces the circular energy, since
+  -- `‖A‖² = (m κ)² + 2 m H ℓ²`.
+  have h := norm_rungeLenz_sq_of_orthonormalBasis b hm κ hq
+  rw [hA, norm_zero, zero_pow two_ne_zero] at h
+  refine hE.ne' ((eq_div_iff (by positivity)).2 (mul_left_cancel₀ hm ?_))
+  linear_combination -h
 
 /-! ### The bound phase space -/
 
