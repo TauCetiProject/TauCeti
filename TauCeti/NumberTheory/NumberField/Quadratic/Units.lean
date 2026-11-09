@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Quadratic.Radicand
 public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
 import TauCeti.Algebra.Squarefree
 import TauCeti.Data.Nat.Totient
-import TauCeti.NumberTheory.EffectiveBounds.Regulator
+import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
 import TauCeti.NumberTheory.NumberField.Units.Torsion
 import TauCeti.RingTheory.RootsOfUnity.FourthAndSixth
