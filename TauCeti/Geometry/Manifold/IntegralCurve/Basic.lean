@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.ODE.Basic
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import Mathlib.Analysis.ODE.ExistUnique
@@ -33,6 +34,8 @@ the field.
   field.
 * `TauCeti.isMIntegralCurve_congr_vectorField`: being an integral curve only depends on the values
   of the vector field along the curve.
+* `TauCeti.isMIntegralCurveOn_iff_isIntegralCurveOn`: in a vector space, integral curves of a
+  vector field are the solutions of the autonomous differential equation it defines.
 * `IsMIntegralCurveAt.of_extChartAt_symm`: a coordinate solution gives a manifold integral curve.
   Conversely, `HasMFDerivAt.hasDerivAt_extChartAt_comp` shows that a curve read in a fixed
   extended chart has the coordinate expression of its velocity as velocity, so an integral curve
@@ -146,6 +149,16 @@ theorem isMIntegralCurve_congr_vectorField {M : Type*} [TopologicalSpace M] [Cha
     {γ : ℝ → M} {v w : (x : M) → TangentSpace I x} (hvw : ∀ t, v (γ t) = w (γ t)) :
     IsMIntegralCurve γ v ↔ IsMIntegralCurve γ w :=
   ⟨fun hγ t ↦ hvw t ▸ hγ t, fun hγ t ↦ (hvw t).symm ▸ hγ t⟩
+
+/-- **Integral curves in a vector space.** For the model `𝓘(ℝ, E)` of `E` on itself, a curve is an
+integral curve of a vector field on a set exactly when it solves, on that set, the autonomous
+differential equation `γ' = v ∘ γ` in the sense of Mathlib's `IsIntegralCurveOn`. -/
+theorem isMIntegralCurveOn_iff_isIntegralCurveOn {γ : ℝ → E}
+    {v : (x : E) → TangentSpace 𝓘(ℝ, E) x} {s : Set ℝ} :
+    IsMIntegralCurveOn γ v s ↔ IsIntegralCurveOn γ (fun _ x ↦ v x) s := by
+  -- `smulRight 1 w` is `toSpanSingleton ℝ w` by definition (`ContinuousLinearMap.smulRight_id`).
+  exact forall₂_congr fun t _ ↦ hasMFDerivWithinAt_iff_hasFDerivWithinAt.trans
+    (hasDerivWithinAt_iff_hasFDerivWithinAt (f := γ) (f' := (v (γ t) : E))).symm
 
 end TauCeti
 
