@@ -107,11 +107,8 @@ private theorem HasCompactSpatialSupport.exists_norm_fourier_slice_sub_le
   rw [abs_abs] at hscale
   -- The bracket `⟨θ⟩ ^ |m|` is at most `(1 + ‖θ‖) ^ k`.
   have hbr : (1 + ‖θ‖ ^ 2) ^ (|m| / 2) ≤ t ^ k := by
-    calc (1 + ‖θ‖ ^ 2) ^ (|m| / 2) ≤ (t ^ 2) ^ (|m| / 2) :=
-          Real.rpow_le_rpow (by positivity) (by nlinarith [norm_nonneg θ]) (by positivity)
-      _ = t ^ |m| := by
-          rw [← Real.rpow_natCast, ← Real.rpow_mul ht.le]
-          ring_nf
+    calc (1 + ‖θ‖ ^ 2) ^ (|m| / 2) ≤ t ^ |m| :=
+          one_add_norm_sq_rpow_le_one_add_norm_rpow θ (abs_nonneg m)
       _ ≤ t ^ (k : ℝ) := Real.rpow_le_rpow_of_exponent_le h1 (Nat.le_ceil _)
       _ = t ^ k := Real.rpow_natCast t k
   have hF := hdecay θ (ξ - (2 * π) • θ)

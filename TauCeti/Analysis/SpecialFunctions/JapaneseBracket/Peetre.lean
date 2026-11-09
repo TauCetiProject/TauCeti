@@ -46,6 +46,8 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
 * `TauCeti.one_add_norm_add_sq_rpow_le`: the subadditive form
   `⟨x + y⟩ ^ s ≤ 2 ^ s (⟨x⟩ ^ s + ⟨y⟩ ^ s)` for `s ≥ 0`, which splits the weight of a convolution
   between its two factors.
+* `TauCeti.one_add_norm_sq_rpow_le_one_add_norm_rpow`: the bracket is at most the
+  inhomogeneous norm, `⟨x⟩ ^ r ≤ (1 + ‖x‖) ^ r` for `r ≥ 0`.
 * `TauCeti.one_add_norm_sq_rpow_le_two_pow_mul_one_add_norm_pow`: the comparison
   `⟨x⟩ ^ N ≤ 2 ^ N (1 + ‖x‖ ^ N)` of a natural power of the bracket with a power of the norm.
 
@@ -193,17 +195,24 @@ theorem one_add_norm_add_sq_rpow_le {s : ℝ} (hs : 0 ≤ s) (x y : E) :
       gcongr
       exact max_le_add_of_nonneg (by positivity) (by positivity)
 
+/-- The Japanese bracket is at most the inhomogeneous norm: for `r ≥ 0`,
+`(1 + ‖x‖ ^ 2) ^ (r / 2) ≤ (1 + ‖x‖) ^ r`. -/
+theorem one_add_norm_sq_rpow_le_one_add_norm_rpow (x : E) {r : ℝ} (hr : 0 ≤ r) :
+    (1 + ‖x‖ ^ 2) ^ (r / 2) ≤ (1 + ‖x‖) ^ r :=
+  calc (1 + ‖x‖ ^ 2) ^ (r / 2) ≤ ((1 + ‖x‖) ^ 2) ^ (r / 2) :=
+        Real.rpow_le_rpow (by positivity)
+          (by rw [add_sq, one_pow, mul_one]; linarith [norm_nonneg x]) (by positivity)
+    _ = (1 + ‖x‖) ^ r := by
+        rw [← Real.rpow_natCast (1 + ‖x‖) 2, ← Real.rpow_mul (by positivity)]
+        ring_nf
+
 /-- A natural power of the Japanese bracket is comparable to the same power of the norm:
 `(1 + ‖x‖ ^ 2) ^ (N / 2) ≤ 2 ^ N (1 + ‖x‖ ^ N)`. -/
 theorem one_add_norm_sq_rpow_le_two_pow_mul_one_add_norm_pow (x : E) (N : ℕ) :
     (1 + ‖x‖ ^ 2) ^ ((N : ℝ) / 2) ≤ 2 ^ N * (1 + ‖x‖ ^ N) :=
-  calc (1 + ‖x‖ ^ 2) ^ ((N : ℝ) / 2) ≤ ((1 + ‖x‖) ^ 2) ^ ((N : ℝ) / 2) :=
-        Real.rpow_le_rpow (by positivity)
-          (by rw [add_sq, one_pow, mul_one]; linarith [norm_nonneg x]) (by positivity)
-    _ = (1 + ‖x‖) ^ N := by
-        rw [← Real.rpow_natCast (1 + ‖x‖) 2, ← Real.rpow_mul (by positivity),
-          ← Real.rpow_natCast]
-        ring_nf
+  calc (1 + ‖x‖ ^ 2) ^ ((N : ℝ) / 2) ≤ (1 + ‖x‖) ^ (N : ℝ) :=
+        one_add_norm_sq_rpow_le_one_add_norm_rpow x N.cast_nonneg
+    _ = (1 + ‖x‖) ^ N := Real.rpow_natCast _ N
     _ ≤ 2 ^ (N - 1) * (1 ^ N + ‖x‖ ^ N) := add_pow_le zero_le_one (norm_nonneg x) N
     _ ≤ 2 ^ N * (1 + ‖x‖ ^ N) := by
         rw [one_pow]

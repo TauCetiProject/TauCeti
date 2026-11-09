@@ -325,13 +325,8 @@ private theorem rpow_mul_norm_fourier_apply_le {s C₀ : ℝ} {N : ℕ} (hC₀ :
   have hscale := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) m ζ
   have hpeetre := one_add_norm_sq_rpow_le_mul_sub (s - m) ξ ζ
   -- The bracket `⟨η⟩ ^ |s - m|` is at most `(1 + ‖η‖) ^ |s - m|`.
-  have hbr : (1 + ‖ξ - ζ‖ ^ 2) ^ (|s - m| / 2) ≤ t ^ |s - m| := by
-    calc (1 + ‖ξ - ζ‖ ^ 2) ^ (|s - m| / 2) ≤ (t ^ 2) ^ (|s - m| / 2) :=
-          Real.rpow_le_rpow (by positivity) (by nlinarith [norm_nonneg (ξ - ζ)]) (by positivity)
-      _ = t ^ |s - m| := by
-          rw [← Real.rpow_natCast, ← Real.rpow_mul ht.le]
-          norm_num
-          ring_nf
+  have hbr : (1 + ‖ξ - ζ‖ ^ 2) ^ (|s - m| / 2) ≤ t ^ |s - m| :=
+    one_add_norm_sq_rpow_le_one_add_norm_rpow _ (abs_nonneg _)
   have hk : t ^ |s - m| * (t ^ N)⁻¹ = t ^ (-((N : ℝ) - |s - m|)) := by
     rw [← Real.rpow_natCast, ← Real.rpow_neg ht.le, ← Real.rpow_add ht]
     ring_nf
