@@ -50,8 +50,9 @@ admissible functions through their boundary traces:
   `‖T₀‖ ^ (1 - θ) * ‖T₁‖ ^ θ` (`ComplexMethodSpace.opNorm_map_le_opNorm`). The construction
   preserves identities and composition (`ComplexMethodSpace.map_id`, `ComplexMethodSpace.map_comp`)
   and commutes with the inclusions of the intersections (`ComplexMethodSpace.map_ofInter`). Thus
-  the complex method is an exact interpolation functor of exponent `θ`;
-* `ComplexMethodSpace.norm_refl`: for the couple `(X, X)`, the map `[X, X]_θ → X` is an isometry.
+  the complex method is an exact interpolation functor of exponent `θ`.
+* `ComplexMethodSpace.norm_refl`: for the couple `(X, X)`, the complex method gives back the norm
+  of `X`.
 
 ## References
 
@@ -607,22 +608,21 @@ theorem opNorm_ofInter_le {θ : ℝ} (hθ : θ ∈ Icc 0 1) :
     ‖(ofInter θ : C.inter →L[ℂ] C.ComplexMethodSpace θ)‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x => by simpa using norm_ofInter_le hθ x
 
-/-- For the couple `(X, X)` and `0 ≤ θ ≤ 1`, the complex interpolation norm is the norm of `X`:
-the map `u ↦ sumSpaceEmbed (toSum u)` from `[X, X]_θ` to `X` is an isometry. -/
+/-- For the couple `(X, X)`, the norm of `[X, X]_θ` is the norm of `X`: the inclusion into the sum
+space, which is `X`, is an isometry. -/
 theorem norm_refl {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ}
-    (hθ : θ ∈ Icc 0 1) (u : (refl ℂ X).ComplexMethodSpace θ) :
-    ‖u‖ = ‖(refl ℂ X).sumSpaceEmbed (toSum u)‖ := by
-  set v := (refl ℂ X).sumSpaceEmbed (toSum u)
-  let x : (refl ℂ X).inter := ⟨(v, v), (refl ℂ X).mem_inter_iff.2 (by simp)⟩
-  have hx : ofInter θ x = u := ext <| by
-    rw [toSum_ofInter hθ, interFst_apply]
-    exact refl_fstToSum_sumSpaceEmbed (toSum u)
-  refine le_antisymm ?_ ?_
-  · calc ‖u‖ = ‖ofInter θ x‖ := by rw [hx]
-      _ ≤ ‖x‖ := norm_ofInter_le hθ x
-      _ = ‖v‖ := by rw [norm_refl_inter, interFst_apply]
-  · rw [norm_refl_sumSpaceEmbed]
-    exact norm_toSum_le u
+    (u : (refl ℂ X).ComplexMethodSpace θ) : ‖u‖ = ‖toSum u‖ := by
+  by_cases hθ : θ ∈ Icc 0 1
+  · refine le_antisymm ?_ (norm_toSum_le u)
+    set x := (refl ℂ X).sumSpaceEmbed (toSum u)
+    have hx : (x, x) ∈ (refl ℂ X).inter := by simp
+    have hu : ofInter θ ⟨(x, x), hx⟩ = u := by
+      ext
+      simp [x, toSum_ofInter hθ]
+    calc ‖u‖ = ‖ofInter θ ⟨(x, x), hx⟩‖ := by rw [hu]
+      _ ≤ ‖(⟨(x, x), hx⟩ : (refl ℂ X).inter)‖ := norm_ofInter_le hθ _
+      _ = ‖toSum u‖ := by simp [x, norm_refl_sumSpaceEmbed]
+  · simp [eq_zero_of_notMem hθ u]
 
 end ComplexMethodSpace
 

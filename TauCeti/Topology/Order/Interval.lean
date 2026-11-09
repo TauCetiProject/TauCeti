@@ -27,6 +27,7 @@ by its value at the finite endpoint and its limit at infinity.  The endpoint at 
 when the limit is finite.
 A continuous strictly increasing real function on a compact interval has a continuous inverse on
 its range, extended to the whole line by clamping.
+A path that starts in an open set and leaves it has a first exit time.
 
 ## Main results
 
@@ -41,12 +42,16 @@ its range, extended to the whole line by clamping.
   a closed interval contained in `Ioo a b`.
 * `Set.OrdConnected.eq_Ici_or_eq_Iic_or_eq_univ` — classification of nonempty closed unbounded
   order-connected sets.
+* `ContinuousOn.apply_ne_apply_of_injOn_Ico` — a continuous function injective on `[a, b)` takes
+  different values at `a` and `b`.
 * `ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto` — a continuous strictly
   increasing map
   on `Ici p` with a finite limit at `+∞` maps that interval to the half-open interval between its
   endpoint value and its limit.
 * `TauCeti.exists_continuous_projIcc_inverse` — a continuous strictly increasing real function on
   `[a, b]` has a continuous inverse on its range, clamped to be constant outside it.
+* `IsOpen.exists_first_exit` — a path continuous on `[a, b]` that starts in an open set and leaves
+  it has a first exit time.
 -/
 
 public section
@@ -186,6 +191,30 @@ theorem exists_continuous_projIcc_inverse {f : ℝ → ℝ} {a b c d : ℝ} (hab
       Subtype.ext (by rw [hF, projIcc_of_mem]; exact (F ⟨s, hs⟩).2)
     simp only [this, Homeomorph.symm_apply_apply]
 
+/-- **First exit from an open set.** A path continuous on `[a, b]` that starts in an open set `V`
+and leaves it has a first exit time `T > a`: the path stays in `V` on `[a, T)`, and `γ T` lies in
+the closure of `V` but not in `V`. -/
+theorem _root_.IsOpen.exists_first_exit {α X : Type*} [ConditionallyCompleteLinearOrder α]
+    [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α] [TopologicalSpace X] {V : Set X}
+    (hV : IsOpen V) {γ : α → X} {a b : α} (hγ : ContinuousOn γ (Icc a b)) (ha : γ a ∈ V)
+    (hex : ∃ t ∈ Icc a b, γ t ∉ V) :
+    ∃ T ∈ Icc a b, a < T ∧ γ T ∉ V ∧ γ T ∈ closure V ∧ ∀ t ∈ Ico a T, γ t ∈ V := by
+  obtain ⟨t₀, ht₀, ht₀V⟩ := hex
+  have hA_closed : IsClosed (Icc a b ∩ γ ⁻¹' Vᶜ) :=
+    hγ.preimage_isClosed_of_isClosed isClosed_Icc hV.isClosed_compl
+  obtain ⟨T, hTA, hT⟩ := (isCompact_Icc.of_isClosed_subset hA_closed fun t ht ↦ ht.1).exists_isLeast
+    ⟨t₀, ht₀, ht₀V⟩
+  have hbefore : ∀ t ∈ Ico a T, γ t ∈ V := by
+    intro t ht
+    by_contra hnot
+    exact (not_le.mpr ht.2) (hT ⟨⟨ht.1, ht.2.le.trans hTA.1.2⟩, hnot⟩)
+  have hTpos : a < T := lt_of_le_of_ne hTA.1.1 fun h ↦ hTA.2 (h ▸ ha)
+  have := right_nhdsWithin_Ioo_neBot hTpos
+  have htend : Tendsto γ (𝓝[Ioo a T] T) (𝓝 (γ T)) :=
+    ((hγ T hTA.1).mono (Ioo_subset_Icc_self.trans (Icc_subset_Icc le_rfl hTA.1.2))).tendsto
+  exact ⟨T, hTA.1, hTpos, hTA.2, mem_closure_of_tendsto htend
+    (eventually_nhdsWithin_of_forall fun t ht ↦ hbefore t ⟨ht.1.le, ht.2⟩), hbefore⟩
+
 /-- The curve `δ ↦ b - δ` tends to `b` within `[a, b]` as `δ → 0⁺`. -/
 theorem tendsto_sub_nhdsGT_nhdsWithin_Icc {G : Type*} [AddCommGroup G] [LinearOrder G]
     [IsOrderedAddMonoid G] [TopologicalSpace G] [OrderTopology G] {a b : G} (hab : a < b) :
@@ -196,5 +225,41 @@ theorem tendsto_sub_nhdsGT_nhdsWithin_Icc {G : Type*} [AddCommGroup G] [LinearOr
     exact this.mono_left nhdsWithin_le_nhds
   · filter_upwards [Ioo_mem_nhdsGT (sub_pos.2 hab)] with δ hδ
     exact ⟨le_sub_comm.1 hδ.2.le, sub_le_self _ hδ.1.le⟩
+
+/-- A continuous function on `[a, b]` that is injective on `[a, b)` takes different values at the
+two endpoints. -/
+theorem _root_.ContinuousOn.apply_ne_apply_of_injOn_Ico {α δ : Type*}
+    [ConditionallyCompleteLinearOrder α] [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α]
+    [LinearOrder δ] [TopologicalSpace δ] [OrderClosedTopology δ] {f : α → δ}
+    {a b : α} (hf : ContinuousOn f (Icc a b)) (hab : a < b) (hinj : InjOn f (Ico a b)) :
+    f a ≠ f b := by
+  have ha : a ∈ Ico a b := ⟨le_rfl, hab⟩
+  intro hab'
+  obtain ⟨m, hm⟩ := exists_between hab
+  have hfm : f m ≠ f a := fun h ↦ hm.1.ne' (hinj ⟨hm.1.le, hm.2⟩ ha h)
+  -- A value strictly between `f a` and `f m` would be attained on both `[a, m]` and `[m, b]`.
+  obtain ⟨v, hv, hva, hvm⟩ : ∃ v ∈ uIcc (f a) (f m), v ≠ f a ∧ v ≠ f m := by
+    obtain ⟨m', hm'⟩ := exists_between hm.1
+    have ham' : a ∈ Icc a m := ⟨le_rfl, hm.1.le⟩
+    have hm'm : m' ∈ Icc a m := ⟨hm'.1.le, hm'.2.le⟩
+    have hmm : m ∈ Icc a m := ⟨hm.1.le, le_rfl⟩
+    rcases (hf.mono (Icc_subset_Icc le_rfl hm.2.le)).strictMonoOn_of_injOn_Icc' hm.1.le
+      (hinj.mono (Icc_subset_Ico_right hm.2)) with h | h
+    · exact ⟨f m', mem_uIcc.2 (Or.inl ⟨(h ham' hm'm hm'.1).le, (h hm'm hmm hm'.2).le⟩),
+        (h ham' hm'm hm'.1).ne', (h hm'm hmm hm'.2).ne⟩
+    · exact ⟨f m', mem_uIcc.2 (Or.inr ⟨(h hm'm hmm hm'.2).le, (h ham' hm'm hm'.1).le⟩),
+        (h ham' hm'm hm'.1).ne, (h hm'm hmm hm'.2).ne'⟩
+  obtain ⟨s, hs, hsv⟩ := intermediate_value_uIcc
+    (hf.mono (by rw [uIcc_of_le hm.1.le]; exact Icc_subset_Icc le_rfl hm.2.le)) hv
+  obtain ⟨t, ht, htv⟩ := intermediate_value_uIcc
+    (hf.mono (by rw [uIcc_of_le hm.2.le]; exact Icc_subset_Icc hm.1.le le_rfl))
+    (by simpa only [← hab', uIcc_comm] using hv)
+  rw [uIcc_of_le hm.1.le] at hs
+  rw [uIcc_of_le hm.2.le] at ht
+  have htb : t ≠ b := by rintro rfl; exact hva (htv.symm.trans hab'.symm)
+  have hst : s = t := hinj ⟨hs.1, hs.2.trans_lt hm.2⟩ ⟨hm.1.le.trans ht.1, ht.2.lt_of_ne htb⟩
+    (hsv.trans htv.symm)
+  have hsm : s = m := le_antisymm hs.2 (hst ▸ ht.1)
+  exact hvm (hsv.symm.trans (congrArg f hsm))
 
 end TauCeti

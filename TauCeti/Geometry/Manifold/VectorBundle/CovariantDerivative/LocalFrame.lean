@@ -73,8 +73,6 @@ derivative, and they give the classical coordinate formula for `∇ σ` along a 
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf–Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "Regularity of the Levi-Civita connection".
 * M. P. do Carmo, *Riemannian Geometry*, Birkhäuser, 1992, Ch. 2, §2.
 * J. M. Lee, *Introduction to Riemannian Manifolds*, GTM 176, 2018, Ch. 4.
 -/

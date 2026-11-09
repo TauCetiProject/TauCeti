@@ -196,6 +196,12 @@ theorem pglFixingZeroInftyEquiv_symm_smul_coe (a : Kˣ) (z : K) :
       ((a * z : K) : OnePoint K) :=
   unitsToPGL_smul_coe a z
 
+/-- The element fixing `0` and `∞` attached to a unit fixes `∞`. -/
+@[simp]
+theorem pglFixingZeroInftyEquiv_symm_smul_infty (a : Kˣ) :
+    (pglFixingZeroInftyEquiv.symm a : PGL(2, K)) • (∞ : OnePoint K) = ∞ :=
+  affineToPGL_smul_infty _
+
 /-- An element fixing `0` and `∞` acts as the dilation by the attached unit. -/
 @[simp]
 theorem coe_pglFixingZeroInftyEquiv_mul
