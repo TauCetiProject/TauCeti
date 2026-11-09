@@ -299,6 +299,7 @@ theorem pow_five_lt_of_mul_div_le {α : Type*} [Field α] [LinearOrder α]
   have hε4 : 0 < ε ^ 2 * ε ^ 2 := by positivity
   nlinarith
 
+
 end TauCeti
 
 /-- If `w` is bounded above on `K` and every positive `ε` admits a point `z ∈ K` with
