@@ -336,8 +336,8 @@ theorem sum_mul_tmul_eq_sum_tmul_mul {ι : Type*} [Fintype ι] (φ : A →ₗ[k]
 
 end Casimir
 
-/-- A module that splits off the target of a map whose base change to `κ` is zero has zero base
-change to `κ`. -/
+/-- If `c : M →ₗ[R] N` has a left inverse `l` and `c.lTensor κ = 0`, then `κ ⊗[R] M` is
+trivial. -/
 theorem subsingleton_tensor_of_lTensor_eq_zero {R M N κ : Type*} [CommSemiring R]
     [AddCommMonoid κ] [Module R κ] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
     (c : M →ₗ[R] N) (l : N →ₗ[R] M) (hl : l ∘ₗ c = LinearMap.id) (h : c.lTensor κ = 0) :

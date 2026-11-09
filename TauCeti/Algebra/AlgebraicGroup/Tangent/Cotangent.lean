@@ -141,6 +141,18 @@ lemma cotangentMap_mul (a b : A) :
     simp only [_root_.Bialgebra.counit_mul, Algebra.smul_def, map_mul]
     ring
 
+/-- The preimage of the augmentation ideal of `K` under a bialgebra map `f : H → K` is the
+augmentation ideal of `H`, because `f` commutes with the counits. -/
+@[simp]
+theorem _root_.BialgHom.comap_augmentationIdeal {k H K : Type*} [CommRing k] [CommRing H]
+    [CommRing K] [Bialgebra k H] [Bialgebra k K] (f : H →ₐc[k] K) :
+    (TauCeti.Bialgebra.AugmentationIdeal k K).comap f =
+      TauCeti.Bialgebra.AugmentationIdeal k H := by
+  ext x
+  simp only [Ideal.mem_comap, TauCeti.Bialgebra.AugmentationIdeal, RingHom.mem_ker]
+  exact ⟨fun hx ↦ (CoalgHomClass.counit_comp_apply f x).symm.trans hx,
+    fun hx ↦ (CoalgHomClass.counit_comp_apply f x).trans hx⟩
+
 section Map
 
 variable {R A} {A' : Type*} [CommRing A'] [Bialgebra R A']
@@ -168,21 +180,6 @@ end Map
 end Bialgebra
 
 end TauCeti
-
-namespace BialgHom
-
-/-- The preimage of the augmentation ideal of `K` under a bialgebra map `f : H → K` is the
-augmentation ideal of `H`, because `f` commutes with the counits. -/
-theorem comap_augmentationIdeal {k H K : Type*} [CommRing k] [CommRing H] [CommRing K]
-    [Bialgebra k H] [Bialgebra k K] (f : H →ₐc[k] K) :
-    (TauCeti.Bialgebra.AugmentationIdeal k K).comap f.toAlgHom.toRingHom =
-      TauCeti.Bialgebra.AugmentationIdeal k H := by
-  ext x
-  simp only [Ideal.mem_comap, TauCeti.Bialgebra.AugmentationIdeal, RingHom.mem_ker]
-  exact ⟨fun hx ↦ (CoalgHomClass.counit_comp_apply f x).symm.trans hx,
-    fun hx ↦ (CoalgHomClass.counit_comp_apply f x).trans hx⟩
-
-end BialgHom
 
 namespace Derivation
 

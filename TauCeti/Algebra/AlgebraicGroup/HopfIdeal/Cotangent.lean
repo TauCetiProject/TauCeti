@@ -106,16 +106,6 @@ theorem conormalSubspace_mono {I J : HopfIdeal k H} (hIJ : I ≤ J) :
   exact Submodule.map_mono (Submodule.restrictScalars_mono k
     (HopfIdeal.toIdeal_le_toIdeal.mpr hIJ))
 
-/-- The quotient map carries the augmentation ideal of `H` into the augmentation ideal of
-`H/I`. -/
-private theorem augmentationIdeal_le_comap_quotient (I : HopfIdeal k H) :
-    Bialgebra.AugmentationIdeal k H ≤
-      (Bialgebra.AugmentationIdeal k (H ⧸ I.toIdeal)).comap
-        (algebraMap H (H ⧸ I.toIdeal)) := by
-  intro x hx
-  rw [Bialgebra.AugmentationIdeal, Ideal.mem_comap, RingHom.mem_ker]
-  simpa [Bialgebra.AugmentationIdeal, RingHom.mem_ker] using hx
-
 /-- The map on augmentation cotangent spaces induced by the quotient `H ⟶ H/I`: the cotangent
 map of the quotient bialgebra morphism. -/
 noncomputable def quotientCotangentMap (I : HopfIdeal k H) :
@@ -173,7 +163,8 @@ private theorem quotientCotangentMap_eq_mapCotangent (I : HopfIdeal k H) :
         (by
           intro x hx
           rw [Ideal.mem_comap, Algebra.ofId_apply]
-          exact augmentationIdeal_le_comap_quotient I hx)).restrictScalars k := by
+          exact (BialgHom.comap_augmentationIdeal
+            (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal)).ge hx)).restrictScalars k := by
   ext x
   obtain ⟨x, rfl⟩ := (Bialgebra.AugmentationIdeal k H).toCotangent_surjective x
   rw [quotientCotangentMap_toCotangent, LinearMap.restrictScalars_apply,
@@ -181,17 +172,6 @@ private theorem quotientCotangentMap_eq_mapCotangent (I : HopfIdeal k H) :
   apply (Bialgebra.AugmentationIdeal k (H ⧸ I.toIdeal)).toCotangent.congr_arg
   ext
   exact (Algebra.ofId_apply (H ⧸ I.toIdeal) (x : H)).symm
-
-/-- The augmentation ideal of the quotient pulls back to the augmentation ideal of `H`. -/
-private theorem comap_augmentationIdeal_quotient (I : HopfIdeal k H) :
-    (Bialgebra.AugmentationIdeal k (H ⧸ I.toIdeal)).comap
-        (algebraMap H (H ⧸ I.toIdeal)) =
-      Bialgebra.AugmentationIdeal k H := by
-  apply le_antisymm
-  · intro x hx
-    rw [Bialgebra.AugmentationIdeal, RingHom.mem_ker]
-    simpa [Bialgebra.AugmentationIdeal, Ideal.mem_comap, RingHom.mem_ker] using hx
-  · exact augmentationIdeal_le_comap_quotient I
 
 /-- The map from the ambient cotangent space to the closed subgroup's cotangent space is
 surjective. -/
@@ -201,7 +181,10 @@ theorem quotientCotangentMap_surjective (I : HopfIdeal k H) :
   exact Ideal.mapCotangent_surjective_of_comap_eq
     (Ideal.Quotient.mkₐ_surjective H I.toIdeal)
     (by
-      rw [comap_augmentationIdeal_quotient, Ideal.Quotient.algebraMap_eq, Ideal.mk_ker]
+      rw [show (Bialgebra.AugmentationIdeal k (H ⧸ I.toIdeal)).comap
+          (algebraMap H (H ⧸ I.toIdeal)) = Bialgebra.AugmentationIdeal k H from
+        BialgHom.comap_augmentationIdeal (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal),
+        Ideal.Quotient.algebraMap_eq, Ideal.mk_ker]
       exact (sup_eq_right.mpr (toIdeal_le_augmentationIdeal I)).symm)
 
 /-- The kernel of the quotient cotangent map is exactly the conormal subspace, giving the
@@ -212,7 +195,10 @@ theorem ker_quotientCotangentMap (I : HopfIdeal k H) :
   rw [Ideal.mapCotangent_ker_of_surjective
     (Ideal.Quotient.mkₐ_surjective H I.toIdeal)
     (by
-      rw [comap_augmentationIdeal_quotient, Ideal.Quotient.algebraMap_eq, Ideal.mk_ker]
+      rw [show (Bialgebra.AugmentationIdeal k (H ⧸ I.toIdeal)).comap
+          (algebraMap H (H ⧸ I.toIdeal)) = Bialgebra.AugmentationIdeal k H from
+        BialgHom.comap_augmentationIdeal (Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal),
+        Ideal.Quotient.algebraMap_eq, Ideal.mk_ker]
       exact (sup_eq_right.mpr (toIdeal_le_augmentationIdeal I)).symm)]
   apply le_antisymm
   · rintro _ ⟨x, hx, rfl⟩
