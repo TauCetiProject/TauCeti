@@ -53,6 +53,7 @@ variable {E M ι : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [FiniteDimensional ℂ E] [TopologicalSpace M] [ChartedSpace E M]
   [IsManifold 𝓘(ℂ, E) 2 M] [NormalSpace M] [ParacompactSpace M]
 
+omit [IsManifold 𝓘(ℂ, E) 2 M] in
 /-- A strongly `q`-pseudoconvex real `C²` function admits a single positive continuous perturbation
 tolerance for all charts in any locally finite closed chart family. At a point of an assigned
 closed set, controlling the second derivative in that chart suffices; the perturbing function

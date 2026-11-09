@@ -280,7 +280,7 @@ end Pullback
 
 section Chart
 
-variable [IsManifold 𝓘(ℂ, E) 2 M] {e : OpenPartialHomeomorph M E}
+variable {e : OpenPartialHomeomorph M E}
 
 /-- **The Levi form in an arbitrary holomorphic chart.** Let `e` be a chart of the `C²` maximal
 atlas of the complex manifold `M`, with `x` in its source, and let `f` be `C²` at `x`. The Levi
@@ -299,10 +299,16 @@ theorem leviForm_comp_symm_apply_of_mem_maximalAtlas
   set φ : E → E := e ∘ (chartAt E x).symm
   have hφy : φ y = e x := by simp only [φ, comp_apply, hy]
   have hφ : ContDiffAt ℂ 2 φ y := by
-    have h := (contMDiffAt_of_mem_maximalAtlas he hx).comp_of_eq
-      (contMDiffAt_symm_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas x)
-        (mem_chart_target E x)) hy
-    exact contMDiffAt_iff_contDiffAt.mp h
+    -- Membership in the maximal atlas makes the transition from the atlas chart at `x` smooth.
+    have hG := (mem_maximalAtlas_iff.1 he (chartAt E x) (chart_mem_atlas E x)).2
+    rw [contDiffGroupoid, mem_groupoid_of_pregroupoid] at hG
+    have hy' : y ∈ ((chartAt E x).symm ≫ₕ e).source := by
+      refine ⟨mem_chart_target E x, ?_⟩
+      change (chartAt E x).symm y ∈ e.source
+      rwa [hy]
+    have hn := ((chartAt E x).symm ≫ₕ e).open_source.mem_nhds hy'
+    exact hG.1.contDiffAt (by simpa only [modelWithCornersSelf_coe,
+      modelWithCornersSelf_coe_symm, preimage_id, range_id, inter_univ] using hn)
   have hDφ : fderiv ℂ φ y = mfderiv 𝓘(ℂ, E) 𝓘(ℂ, E) e x := by
     rw [(mdifferentiableAt_of_mem_maximalAtlas
       (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx).mfderiv_abuse]
@@ -491,7 +497,7 @@ theorem IsManifoldStronglyPseudoconvexAt.comp [FiniteDimensional ℂ E] [FiniteD
 
 end Pullback
 
-variable [IsManifold 𝓘(ℂ, E) 2 M] {e : OpenPartialHomeomorph M E}
+variable {e : OpenPartialHomeomorph M E}
 
 /-- **Strict plurisubharmonicity in an arbitrary holomorphic chart.** For `f` real `C²` at `x` and
 a chart `e` at `x` of the holomorphic `C²` maximal atlas, `f` is strictly plurisubharmonic at `x`
