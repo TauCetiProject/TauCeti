@@ -233,26 +233,22 @@ real `0 ≤ t ≤ 1`, and its derivative kills `v` there, then `g` takes the sam
 theorem apply_add_eq_of_fderiv_apply_eq_zero {g : F → G} {z v : F}
     (hg : ∀ t ∈ Set.Icc (0 : ℝ) 1, DifferentiableAt 𝕂 g (z + (t : 𝕂) • v))
     (hv : ∀ t ∈ Set.Icc (0 : ℝ) 1, fderiv 𝕂 g (z + (t : 𝕂) • v) v = 0) : g (z + v) = g z := by
-  -- The points of the real segment from `0` to `1` in `𝕂` are the real numbers in `[0, 1]`.
-  have hs : ∀ t ∈ segment ℝ (0 : 𝕂) 1, ∃ r ∈ Set.Icc (0 : ℝ) 1, (r : 𝕂) = t := by
-    rintro _ ⟨a, b, ha, hb, hab, rfl⟩
-    refine ⟨b, ⟨hb, ?_⟩, by simp [RCLike.real_smul_eq_coe_mul]⟩
-    linarith
-  -- The restriction of `g` to the line through `z` in direction `v` has zero derivative on this
-  -- segment, which is convex and contains `0` and `1`.
-  have hq : ∀ t ∈ segment ℝ (0 : 𝕂) 1, HasFDerivWithinAt (fun t : 𝕂 ↦ g (z + t • v))
-      ((fderiv 𝕂 g (z + t • v)).comp ((ContinuousLinearMap.id 𝕂 𝕂).smulRight v))
-      (segment ℝ (0 : 𝕂) 1) t := fun t ht ↦ by
-    obtain ⟨r, hr, rfl⟩ := hs t ht
-    exact ((hg r hr).hasFDerivAt.comp (r : 𝕂)
-      ((hasFDerivAt_id _).smul_const v |>.const_add z)).hasFDerivWithinAt
-  have h := (convex_segment (0 : 𝕂) 1).norm_image_sub_le_of_norm_hasFDerivWithin_le hq
-    (C := 0) (fun t ht ↦ by
-      obtain ⟨r, hr, rfl⟩ := hs t ht
-      rw [norm_le_zero_iff]
-      ext
-      simp [hv r hr])
-    (left_mem_segment ℝ (0 : 𝕂) 1) (right_mem_segment ℝ (0 : 𝕂) 1)
+  let : NormedSpace ℝ F := .restrictScalars ℝ 𝕂 F
+  -- The real segment from `z` to `z + v` consists of the points `z + t • v`, `t ∈ [0, 1]`.
+  have hs : ∀ w ∈ segment ℝ z (z + v), ∃ t ∈ Set.Icc (0 : ℝ) 1, w = z + (t : 𝕂) • v := by
+    intro w hw
+    rw [segment_eq_image', add_sub_cancel_left] at hw
+    obtain ⟨t, ht, rfl⟩ := hw
+    exact ⟨t, ht, rfl⟩
+  have h := (convex_segment z (z + v)).norm_image_sub_le_of_norm_hasFDerivWithin_apply_le
+    (f' := fderiv 𝕂 g) (C := 0)
+    (fun w hw ↦ by
+      obtain ⟨t, ht, rfl⟩ := hs w hw
+      exact (hg t ht).hasFDerivAt.hasFDerivWithinAt)
+    (fun w hw ↦ by
+      obtain ⟨t, ht, rfl⟩ := hs w hw
+      rw [add_sub_cancel_left, hv t ht, norm_zero])
+    (left_mem_segment ℝ z (z + v)) (right_mem_segment ℝ z (z + v))
   simpa [sub_eq_zero] using h
 
 /-- Let `π` be a continuous projection of `F`. If `g` is differentiable on the ball of radius `r`
