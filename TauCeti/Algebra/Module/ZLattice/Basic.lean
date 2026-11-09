@@ -44,8 +44,6 @@ equivalence.
   full lattice, along a linear isometry equivalence is again one.
 * `ZLattice.finiteDimensional_of_isZLattice`: a finitely generated full lattice in a real normed
   space forces the space to be finite-dimensional.
-* `ZLattice.module_free_of_injective`: an injective map into a finite-dimensional real normed
-  space with discrete range has a free source.
 * `TauCeti.discreteTopology_span_one`: the integer span of `1` in `ℝ` is discrete.
 -/
 
@@ -198,13 +196,6 @@ theorem finiteDimensional_of_isZLattice {E : Type*} [NormedAddCommGroup E] [Norm
   have := FiniteDimensional.span_of_finite ℝ S.finite_toSet
   rw [h] at this
   exact Module.Finite.equiv Submodule.topEquiv
-
-/-- An injective `ℤ`-linear map from `Λ` to a finite-dimensional real normed space whose range is
-discrete makes `Λ` a free `ℤ`-module: `Λ` is isomorphic to its range, a discrete subgroup. -/
-theorem module_free_of_injective {Λ E : Type*} [AddCommGroup Λ] [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [FiniteDimensional ℝ E] (f : Λ →ₗ[ℤ] E) (hf : Function.Injective f)
-    [DiscreteTopology (LinearMap.range f)] : Module.Free ℤ Λ :=
-  Module.Free.of_equiv (LinearEquiv.ofInjective f hf).symm
 
 variable (K : Type*) [NormedField K] [LinearOrder K] [IsStrictOrderedRing K] [HasSolidNorm K]
   [FloorRing K] {E : Type u} [NormedAddCommGroup E] [NormedSpace K E] [FiniteDimensional K E]
