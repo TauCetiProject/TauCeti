@@ -69,8 +69,7 @@ theorem IsJacobiFieldOn.hasDerivWithinAt_norm_sq (h : IsJacobiFieldOn I γ V s)
     HasDerivWithinAt (fun r ↦ ‖V r‖ ^ 2)
       (2 * inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ V s t) (V t)) s t := by
   have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
-  have hd := hm.hasDerivWithinAt_inner_alongCurveWithin (h.uniqueDiffOn t ht)
-    (h.isGeodesicCurveOn.mdifferentiableOn t ht)
+  have hd := hm.hasDerivWithinAt_inner_alongCurveWithin (h.isGeodesicCurveOn.mdifferentiableOn t ht)
     (h.differentiableWithinAt_sectionCoord ht) (h.differentiableWithinAt_sectionCoord ht)
   simpa only [real_inner_self_eq_norm_sq, real_inner_comm (V t), two_mul] using hd
 
@@ -88,7 +87,7 @@ theorem IsJacobiFieldOn.hasDerivWithinAt_norm_sq_add_norm_sq (h : IsJacobiFieldO
   have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
   have hγ := h.isGeodesicCurveOn.mdifferentiableOn t ht
   have hV := h.hasDerivWithinAt_norm_sq ht
-  have hD := hm.hasDerivWithinAt_inner_alongCurveWithin (h.uniqueDiffOn t ht) hγ
+  have hD := hm.hasDerivWithinAt_inner_alongCurveWithin hγ
     (h.differentiableWithinAt_sectionCoord_alongCurveWithin ht)
     (h.differentiableWithinAt_sectionCoord_alongCurveWithin ht)
   simp only [real_inner_self_eq_norm_sq] at hD
