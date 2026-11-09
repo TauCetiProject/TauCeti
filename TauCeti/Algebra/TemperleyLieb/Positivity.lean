@@ -18,7 +18,8 @@ For a real loop value `δ`, the analytic adjoint and a Markov trace `tr` give th
 `δ > 0` all of these forms are positive semidefinite exactly when `δ` lies in
 `{2 cos (π / m) : m ≥ 3} ∪ [2, ∞)`, the set `TauCeti.TemperleyLieb.jonesLoopParameters`; its
 squares are the Jones index values `4 cos² (π / m)` and `[4, ∞)`. This file proves that
-positivity forces `δ` into this set, and locates the first level at which it fails.
+positivity forces `δ` into this set: at an inadmissible `δ > 0`, the form takes a negative value
+on every number `n ≥ ⌊π / arccos (δ / 2)⌋` of strands.
 
 Write `δ = 2 cos θ` with `θ = arccos (δ / 2)` and put `k = ⌊π / θ⌋`. When `0 < δ` is not
 admissible, `π / θ` is not an integer, so the quantum integers `[1], …, [k]` are positive and
@@ -50,7 +51,7 @@ hypothesis `Fact (IsSelfAdjoint (δ : ℂ))` holds for every real `δ` by `Compl
 * `TauCeti.TemperleyLieb.IsMarkovTrace.mem_jonesLoopParameters_of_forall_nonneg`: **Jones's
   restriction**, the necessity half of Jones's positivity theorem.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.lt_floor_of_forall_nonneg`: the form on `n` strands can
-  only be positive semidefinite below the first bad level `⌊π / θ⌋`.
+  only be positive semidefinite below level `⌊π / θ⌋`.
 
 ## References
 
@@ -160,7 +161,7 @@ open scoped ComplexOrder
 variable {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))]
   {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ}
 
-/-- **The first bad level.** Let `0 < δ` be an inadmissible loop parameter and
+/-- **Failure of positivity from level `k` on.** Let `0 < δ` be an inadmissible loop parameter and
 `k = ⌊π / arccos (δ / 2)⌋`. On every number `n ≥ k` of strands the Hermitian form of a Markov
 trace takes a negative value: the witness is the Jones–Wenzl projection `f_k`, of norm
 `δ ^ (n - k) * [k + 1] < 0` once `n - k` straight strands are added. -/
@@ -192,7 +193,7 @@ theorem mem_jonesLoopParameters_of_forall_nonneg (htr : IsMarkovTrace ℂ (δ : 
   exact (h _ x).not_gt hx
 
 /-- At an inadmissible loop parameter `δ > 0`, the Hermitian form of a Markov trace on `n` strands
-can be positive semidefinite only below the first bad level `⌊π / arccos (δ / 2)⌋`. -/
+can be positive semidefinite only below level `⌊π / arccos (δ / 2)⌋`. -/
 theorem lt_floor_of_forall_nonneg (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (hδ : 0 < δ)
     (hδJ : δ ∉ jonesLoopParameters) {n : ℕ}
     (h : ∀ x : TemperleyLieb ℂ (δ : ℂ) n, 0 ≤ tr n (star x * x)) :
