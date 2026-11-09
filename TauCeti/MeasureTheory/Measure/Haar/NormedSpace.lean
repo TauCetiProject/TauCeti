@@ -89,7 +89,8 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
 * `MeasureTheory.Measure.map_affine_addHaar_eq_smul`: an invertible affine map `x ↦ c + A x` pushes
   an additive Haar measure to its multiple by `|det A|⁻¹`.
 * `MeasureTheory.Measure.eLpNorm_ball_le_mul_rpow`: Hölder's inequality on a ball, with the volume
-  of the ball written through that of the unit ball.
+  of a ball of radius `R > 0` written through that of the unit ball (for `R ≤ 0` the ball is
+  empty).
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
 * `ContinuousLinearMap.norm_det_le_opNorm_pow`: `‖det f‖ ≤ ‖f‖ ^ n` in dimension `n` over an
   `RCLike` field.
@@ -112,16 +113,19 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_ball_of_pos
     ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
 
 /-- Hölder's inequality on a ball: for `p₀ ≤ p`, the `L^{p₀}` norm on `B(x₀, R)` is at most the
-`L^p` norm times `|B(x₀, R)|^{1/p₀ - 1/p} = (Rⁿ |B(0, 1)|)^{1/p₀ - 1/p}`, where `n` is the
-dimension. -/
+`L^p` norm times `(Rⁿ |B(0, 1)|)^{1/p₀ - 1/p}`, where `n` is the dimension. For `R > 0` this
+factor is `|B(x₀, R)|^{1/p₀ - 1/p}`; for `R ≤ 0` the ball is empty, so the inequality holds
+trivially and the factor need not be the volume. -/
 theorem _root_.MeasureTheory.Measure.eLpNorm_ball_le_mul_rpow
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
-    {F : Type*} [NormedAddCommGroup F] {f : E → F} {p₀ p R : ℝ} {x₀ : E} (hR : 0 < R)
+    {F : Type*} [NormedAddCommGroup F] {f : E → F} {p₀ p R : ℝ} {x₀ : E}
     (hp₀0 : 0 < p₀) (hp₀p : p₀ ≤ p) (hf : AEStronglyMeasurable f (mu.restrict (ball x₀ R))) :
     eLpNorm f (ENNReal.ofReal p₀) (mu.restrict (ball x₀ R)) ≤
       eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball x₀ R)) *
         ENNReal.ofReal ((R ^ finrank ℝ E * mu.real (ball (0 : E) 1)) ^ (1 / p₀ - 1 / p)) := by
+  rcases le_or_gt R 0 with hR | hR
+  · simp [Metric.ball_eq_empty.2 hR]
   have he : 0 ≤ 1 / p₀ - 1 / p := sub_nonneg.2 (one_div_le_one_div_of_le hp₀0 hp₀p)
   have hV : mu (ball (0 : E) 1) = ENNReal.ofReal (mu.real (ball (0 : E) 1)) :=
     (ENNReal.ofReal_toReal measure_ball_lt_top.ne).symm
@@ -136,13 +140,16 @@ theorem _root_.MeasureTheory.Measure.eLpNorm_ball_le_mul_rpow
 /-- For a ball of radius `r > 0` in dimension `n`, `n / r` times its real measure is
 `n rⁿ⁻¹` times the real measure of the unit ball, the derivative in `r` of its measure. -/
 theorem _root_.MeasureTheory.Measure.finrank_div_mul_addHaar_real_ball
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
     (x : E) {r : ℝ} (hr : 0 < r) :
     finrank ℝ E / r * mu.real (ball x r) =
       finrank ℝ E * r ^ (finrank ℝ E - 1) * mu.real (ball 0 1) := by
+  rcases (finrank ℝ E).eq_zero_or_pos with h0 | hpos
+  · simp [h0]
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos hpos
   rw [mu.addHaar_real_ball_of_pos x hr]
-  cases finrank ℝ E with
+  cases hn : finrank ℝ E with
   | zero => simp
   | succ k =>
     simp only [Nat.cast_add, Nat.cast_one, add_tsub_cancel_right]
@@ -266,15 +273,20 @@ theorem _root_.MeasureTheory.Measure.exists_nonneg_addHaar_ball_eq
     ENNReal.ofReal_toReal (ENNReal.div_ne_top hm hω0),
     ENNReal.div_mul_cancel hω0 measure_ball_lt_top.ne]
 
-/-- In a nontrivial finite-dimensional real normed space, the points whose centered norm-radius
+/-- In a finite-dimensional real normed space, the points whose centered norm-radius
 ball has measure strictly below that of the centered radius-`r` ball form exactly that ball.
 No sign condition on `r` is needed. -/
 theorem _root_.MeasureTheory.Measure.setOf_addHaar_ball_norm_lt_addHaar_ball
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    [Nontrivial E] [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
     (r : ℝ) :
     {x : E | mu (ball (0 : E) ‖x‖) < mu (ball 0 r)} = ball 0 r := by
   ext x
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · obtain rfl : x = 0 := Subsingleton.elim _ _
+    rcases le_or_gt r 0 with hr | hr
+    · simp [Metric.ball_eq_empty.2 hr]
+    · simp [measure_ball_pos mu 0 hr, hr]
   rw [Set.mem_ofPred_eq, mu.addHaar_ball_lt_addHaar_ball_iff 0 (norm_nonneg x),
     mem_ball_zero_iff]
 

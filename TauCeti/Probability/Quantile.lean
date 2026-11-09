@@ -1031,131 +1031,15 @@ theorem cdf_quantile_ae (ν : Measure ℝ) [IsProbabilityMeasure ν] [NullSingle
   have h1 : u < 1 := lt_of_le_of_ne huIcc.2 hu1
   exact cdf_quantile_of_noAtoms ν h0 h1
 
-/-- The part of the plateau of `cdf ν` that lies strictly to the right of a point `y` whose
-level `cdf ν y` is still below `1` is null. Equivalently: the atom of a real law sits at the *left*
-end of its plateau and never strictly inside one, so above a point of level `< 1` the cumulative
-function is not constant on a set of positive mass. -/
-private theorem ae_not_of_lt_of_cdf_eq {ν : Measure ℝ} [IsProbabilityMeasure ν] {y : ℝ}
-    (hy : cdf ν y < 1) : ∀ᶠ x in ae ν, ¬ (y < x ∧ cdf ν y = cdf ν x) := by
-  -- `S` is the plateau of `cdf ν` at the level `cdf ν y`, cut off at `y`. The goal is `ν S = 0`,
-  -- once `ae_iff` and `hnotMem` below have turned it into a measure-zero statement.
-  set S : Set ℝ := {z | y < z ∧ cdf ν y = cdf ν z} with hSdef
-  -- `cdf ν` rises to `1 > cdf ν y`, so it eventually leaves the level `cdf ν y` for good, and no
-  -- plateau point can lie above the bound that this produces.
-  have hbdd : BddAbove S := by
-    obtain ⟨M, hM⟩ :=
-      eventually_atTop.mp ((tendsto_cdf_atTop ν).eventually (eventually_gt_nhds hy))
-    refine ⟨M, fun z hz ↦ le_of_not_gt fun hzM ↦ ?_⟩
-    exact absurd (hM z (le_of_lt hzM)) (not_lt_of_ge hz.2.symm.le)
-  have hnotMem : {z : ℝ | ¬ ¬ (y < z ∧ cdf ν y = cdf ν z)} = S := by
-    ext z
-    simp only [Set.mem_ofPred_eq, not_not, hSdef]
-  -- Case split on whether the plateau has any points at all. If it has none it is null outright.
-  -- If it does, let `b` be its top point: `hle` below puts all of `S` inside `(y, b]`, and `hstab`
-  -- shows the cumulative function is still exactly `cdf ν y` at every point of the open interval
-  -- `(y, b)`. Each subcase of the next split then makes `S` null, and `measure_mono_null` turns
-  -- that into the goal.
-  by_cases hSne : S.Nonempty
-  · set b : ℝ := sSup S with hbdef
-    have hle : ∀ z : ℝ, z ∈ S → z ≤ b := fun z hz ↦ le_csSup hbdd hz
-    have hstab : ∀ z : ℝ, y < z → z < b → cdf ν y = cdf ν z := by
-      rintro z hz1 hz2
-      obtain ⟨w, hw, hzw⟩ := exists_lt_of_lt_csSup (s := S) (b := z) hSne (hbdef ▸ hz2)
-      have hupper : cdf ν z ≤ cdf ν y :=
-        (monotone_cdf ν hzw.le).trans (le_of_eq ((hSdef ▸ hw).2).symm)
-      exact le_antisymm (monotone_cdf ν hz1.le) hupper
-    -- If the top of the plateau has the same level as `y`, the plateau is precisely the atom at
-    -- `b`, whose mass is the increment `cdf ν b - cdf ν y = 0`; `S ⊆ Ioc y b` is then null as well.
-    by_cases hb : cdf ν b = cdf ν y
-    · have hnull : ν (Ioc y b) = 0 := by
-        rw [← measure_cdf ν, StieltjesFunction.measure_Ioc, hb, sub_self, ENNReal.ofReal_zero]
-      refine ae_iff.mpr ?_
-      rw [hnotMem]
-      exact measure_mono_null (s := S) (t := Ioc y b) (fun z hz ↦ ⟨hz.1, hle z hz⟩) hnull
-    -- Otherwise `b` is above the level of the plateau, so `b` itself is no plateau point (`hne`
-    -- below) while every point of `(y, b)` still sits at the level `cdf ν y` by `hstab`. The
-    -- interval `(y, b)` would therefore carry the whole atom at `b`, which a constant interval
-    -- cannot do. The countable cover below is what rules it out: the half-open intervals
-    -- `Ioc y (b - (b - y) / (n + 2))` climb towards `b` while staying inside `(y, b)`, so each has
-    -- the null increment `cdf ν y - cdf ν y = 0`, and together they cover `(y, b)`. Since
-    -- `S ⊆ Ioo y b` by `hle` and `hne`, `measure_mono_null` then finishes.
-    · have hyb : y < b := by
-        obtain ⟨z, hzS⟩ := hSne
-        exact lt_of_lt_of_le hzS.1 (hle z hzS)
-      have hneS : (0 : ℝ) < b - y := sub_pos.2 hyb
-      have hne : ∀ z : ℝ, z ∈ S → z ≠ b := by
-        rintro z hz rfl
-        exact hb ((hSdef ▸ hz).2).symm
-      -- The cover: given `z` in `(y, b)`, take `n` with `(b - y) / (b - z) < n`, which pushes the
-      -- right endpoint `b - (b - y) / (n + 2)` strictly between `z` and `b`, so `z` belongs to the
-      -- `n`-th interval.
-      have hsub : Ioo y b ⊆ ⋃ n : ℕ, Ioc y (b - (b - y) / (n + 2)) := by
-        intro z hz
-        obtain ⟨n, hn⟩ := exists_nat_gt ((b - y) / (b - z))
-        have h1 : (b - y) / (b - z) < n + 1 := by linarith
-        have h2pos : (0 : ℝ) < b - z := sub_pos.2 hz.2
-        have h2 : (b - y) / (n + 2) < b - z := by
-          rw [div_lt_iff₀ (by positivity : (0 : ℝ) < n + 2)]
-          rw [div_lt_iff₀ h2pos] at h1
-          linarith
-        have hmem : y < z ∧ z < b - (b - y) / (n + 2) := ⟨hz.1, by linarith [h2, hz.1]⟩
-        exact mem_iUnion.2 ⟨n, hmem.1, le_of_lt hmem.2⟩
-      refine ae_iff.mpr ?_
-      rw [hnotMem]
-      refine measure_mono_null (s := S) (t := Ioo y b)
-        (fun z hz ↦ ⟨hz.1, lt_of_le_of_ne (hle z hz) (hne z hz)⟩) ?_
-      refine le_antisymm ?_ bot_le
-      -- Countable subadditivity bounds the interval by the sum of the increments of the covering
-      -- intervals, and each increment vanishes because `hstab` makes the cumulative function
-      -- constant at the level `cdf ν y` throughout `(y, b)`.
-      calc ν (Ioo y b) ≤ ν (⋃ n : ℕ, Ioc y (b - (b - y) / (n + 2))) := measure_mono hsub
-        _ ≤ ∑' n : ℕ, ν (Ioc y (b - (b - y) / (n + 2))) := measure_iUnion_le _
-        _ = 0 := tsum_eq_zero_iff.2 fun n ↦ by
-          have h1div : (1 : ℝ) / (n + 2) < 1 :=
-            (div_lt_iff₀ (by positivity : (0 : ℝ) < n + 2)).2 (by
-              have _h : (1 : ℝ) ≤ n + 1 := by
-                exact_mod_cast (Nat.succ_le_succ (Nat.zero_le n))
-              linarith)
-          have hlow : (b - y) / (n + 2) < b - y := by
-            rw [div_eq_mul_one_div]
-            simpa using mul_lt_mul_of_pos_left h1div hneS
-          have hpos : (0 : ℝ) < (b - y) / (n + 2) := div_pos hneS (by positivity)
-          have hmem : y < b - (b - y) / (n + 2) ∧ b - (b - y) / (n + 2) < b :=
-            ⟨by linarith, by simpa using sub_lt_sub_left hpos b⟩
-          rw [← measure_cdf ν, StieltjesFunction.measure_Ioc, (hstab _ hmem.1 hmem.2).symm,
-            sub_self, ENNReal.ofReal_zero]
-  · refine ae_iff.mpr ?_
-    rw [hnotMem, not_nonempty_iff_eq_empty.mp hSne, measure_empty]
-
 /-- The quantile of the CDF is the identity almost everywhere, for every real probability measure.
 The cumulative distribution function of a law with atoms has plateaus, but the part of a plateau
 strictly to the right of a point whose cumulative mass is below `1` is null, so almost every
 point is the least point reaching its own level. -/
 theorem quantile_cdf_ae (ν : Measure ℝ) [IsProbabilityMeasure ν] :
     (fun x => ν.quantile (cdf ν x)) =ᵐ[ν] id := by
-  have hplat : ∀ q : ℚ, cdf ν q < 1 → ∀ᵐ (x : ℝ) ∂ν, ¬ (q < x ∧ cdf ν q = cdf ν x) :=
-    fun q hq ↦ ae_not_of_lt_of_cdf_eq hq
-  have htop : ∀ q : ℚ, cdf ν q = 1 → ∀ᵐ (x : ℝ) ∂ν, ¬ (q < x ∧ cdf ν q = cdf ν x) := by
-    intro q hq
-    have hnull : ν (Ioi (q : ℝ)) = 0 := by
-      have hIic : ν (Iic (q : ℝ)) = 1 := by rw [← ofReal_cdf ν q, hq]; simp
-      rw [← compl_Iic, measure_compl measurableSet_Iic (by rw [hIic]; simp), hIic]
-      simp
-    have hmem : ∀ᶠ (x : ℝ) in ae ν, x ∉ Ioi (q : ℝ) := by
-      refine ae_iff.2 ?_
-      have hset : {a : ℝ | ¬ a ∉ Ioi (q : ℝ)} = Ioi (q : ℝ) := by
-        ext a
-        simp
-      rw [hset]
-      exact hnull
-    filter_upwards [hmem] with x hx
-    exact fun hqx ↦ hx hqx.1
   have hplateau : ∀ᵐ (x : ℝ) ∂ν, ∀ q : ℚ, ¬ (q < x ∧ cdf ν q = cdf ν x) :=
     (eventually_countable_forall (l := ae ν) (ι := ℚ) (α := ℝ)
-      (p := fun x q ↦ ¬ (q < x ∧ cdf ν q = cdf ν x))).2 fun q ↦ by
-        by_cases hq : cdf ν q < 1
-        · exact hplat q hq
-        · exact htop q (le_antisymm (cdf_le_one ν q) (le_of_not_gt hq))
+      (p := fun x q ↦ ¬ (q < x ∧ cdf ν q = cdf ν x))).2 fun q ↦ ae_not_of_lt_of_cdf_eq ν q
   have hpos : ∀ᵐ (x : ℝ) ∂ν, 0 < cdf ν x := by
     filter_upwards [hplateau] with x hx
     have hne0 : cdf ν x ≠ 0 := by
