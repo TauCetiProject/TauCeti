@@ -51,6 +51,8 @@ bar constructions.
   determined by the coalgebra part of its coaction and its counit component.
 * `TauCeti.Comodule.IsLeftGradedCoderivationOver.square_commutes_coact_of_negOnePow_eq_neg_one`: the
   square of an odd coderivation over a square-zero operator commutes with the coaction.
+* `TauCeti.Comodule.IsLeftGradedCoderivationOver.commutator_coact`: the graded commutator
+  with coderivations preserves signed left-comodule maps.
 * `TauCeti.Comodule.IsLeftGradedCoderivationOver.comp_eq_comp_of_counit_comp_eq`: coderivations
   over the same operator are determined by their counit components after a compatible map into a
   cofree left comodule.
@@ -482,6 +484,43 @@ theorem IsLeftGradedCoderivationOver.square_commutes_coact_of_negOnePow_eq_neg_o
     module
   rw [← LinearMap.comp_assoc D D δ, h', LinearMap.comp_assoc D δ, h', ← LinearMap.comp_assoc δ,
     hstep]
+
+/-- The graded commutator of a twisted left-comodule map with two coderivations over the
+same homogeneous coalgebra operator is again a twisted left-comodule map. -/
+theorem IsLeftGradedCoderivationOver.commutator_coact
+    {Y : Type*} [AddCommGroup Y] [Module R Y]
+    {δ' : Y →ₗ[R] C ⊗[R] Y} {E : Y →ₗ[R] Y} {p : ℤ}
+    (hD : IsLeftGradedCoderivationOver δ G r b D)
+    (hE : IsLeftGradedCoderivationOver δ' G r b E)
+    (hb : LinearMap.IsHomogeneous b G.piece G.piece r)
+    (F : X →ₗ[R] Y)
+    (hF : δ' ∘ₗ F = TensorProduct.map (G.koszulTwist p) F ∘ₗ δ) :
+    δ' ∘ₗ (E ∘ₗ F - (((p * r).negOnePow : ℤ) : R) • (F ∘ₗ D)) =
+      TensorProduct.map (G.koszulTwist (p + r))
+        (E ∘ₗ F - (((p * r).negOnePow : ℤ) : R) • (F ∘ₗ D)) ∘ₗ δ := by
+  let _ : AddCommGroup (C ⊗[R] Y) := Module.addCommMonoidToAddCommGroup R
+  have hτb := hb.koszulTwist_comp_eq_smul p
+  have hEF : δ' ∘ₗ (E ∘ₗ F) =
+      TensorProduct.map (b ∘ₗ G.koszulTwist p) F ∘ₗ δ +
+        TensorProduct.map (G.koszulTwist (p + r)) (E ∘ₗ F) ∘ₗ δ := by
+    rw [← LinearMap.comp_assoc, hE]
+    simp only [LinearMap.add_comp, LinearMap.comp_assoc, hF]
+    simp only [← LinearMap.comp_assoc, LinearMap.rTensor_comp_map,
+      ← TensorProduct.map_comp, G.koszulTwist_comp, add_comm r p]
+  have hFD : δ' ∘ₗ (F ∘ₗ D) =
+      TensorProduct.map (G.koszulTwist p ∘ₗ b) F ∘ₗ δ +
+        TensorProduct.map (G.koszulTwist (p + r)) (F ∘ₗ D) ∘ₗ δ := by
+    rw [← LinearMap.comp_assoc, hF, LinearMap.comp_assoc, hD]
+    simp only [LinearMap.comp_add, ← LinearMap.comp_assoc,
+      LinearMap.map_comp_rTensor, ← TensorProduct.map_comp, G.koszulTwist_comp]
+  rw [LinearMap.comp_sub, LinearMap.comp_smul, hEF, hFD, hτb,
+    TensorProduct.map_smul_left, LinearMap.smul_comp]
+  rw [← TensorProduct.mapBilinear_apply (G.koszulTwist (p + r))
+    (E ∘ₗ F - (((p * r).negOnePow : ℤ) : R) • (F ∘ₗ D)), map_sub, map_smul]
+  simp only [TensorProduct.mapBilinear_apply, LinearMap.sub_comp, LinearMap.smul_comp,
+    smul_add, smul_smul, ← Int.cast_mul, ← Units.val_mul, Int.units_mul_self,
+    Units.val_one, Int.cast_one, one_smul]
+  abel
 
 /-! ### Coderivations into cofree left comodules -/
 

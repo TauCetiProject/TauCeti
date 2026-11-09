@@ -7,56 +7,60 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.LinearAlgebra.Isomorphisms
-public import TauCeti.Analysis.Pseudodifferential.CutoffSymbol
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Homogeneous
 
 /-!
-# Classical symbols and the principal symbol
+# Classical symbols
 
-A symbol `a` of order `m` is *classical* (or *polyhomogeneous*) if it has an asymptotic expansion
+A *classical* (one-step polyhomogeneous) symbol of order `m` on `ℝⁿ` is a symbol `a ∈ S^m_{1,0}`
+with an asymptotic expansion `a ∼ ∑ⱼ χ(ξ) a_{m-j}(x, ξ)` into homogeneous terms: each `a_{m-j}`
+is smooth away from `ξ = 0` and positively homogeneous of degree `m - j` in `ξ`, `χ` is a frequency
+cutoff, and for every `N` the remainder `a - ∑_{j<N} χ(ξ) a_{m-j}` is a symbol of order `m - N`.
+The leading term `a_m` is the principal symbol. Differential operators with smooth coefficients
+and their parametrices have classical symbols, and the principal symbol of a classical symbol is
+what ellipticity, the symbol calculus and index theory are phrased in.
 
-`a ∼ ∑ⱼ χ(ξ) aₘ₋ⱼ(x, ξ)`
+The homogeneous terms enter the expansion through their cut-off terms
+`TauCeti.HomogeneousSymbol.cutoffSymbol χ a`, the symbols `χ(ξ) a(x, ξ)` of
+`TauCeti/Analysis/Pseudodifferential/Symbol/Homogeneous.lean`. This file defines the carrier
+`TauCeti.ClassicalSymbol n V W m` of classical symbols, with an actual remainder symbol
+`TauCeti.ClassicalSymbol.remainder χ N` of order `m - N` after `N` terms, and proves:
 
-into homogeneous symbols `aₘ₋ⱼ` of the degrees `m - j`, `j ∈ ℕ`, made smooth at the zero
-frequency by a frequency cutoff `χ`: for every `N`, the remainder `a - ∑_{j < N} χ(ξ) aₘ₋ⱼ(x, ξ)`
-is a symbol of order `m - N`. The remainders are actual symbols, not an unspecified asymptotic
-relation. The steps of the expansion are integers, so a classical symbol of order `m` is classical
-of order `m + k` for every natural number `k`, while orders with a non-integer difference are not
-comparable in the classical calculus.
-
-This file develops the classical symbols of a fixed order as a subspace of the symbols:
-
-* `TauCeti.Symbol.HasClassicalExpansion χ a p`: `a` has the expansion with the terms `p j` of
-  degree `m - j` and the cutoff `χ`;
-* `TauCeti.Symbol.HasClassicalExpansion.congr_cutoff`: the expansion does not depend on the cutoff;
-* `TauCeti.Symbol.HasClassicalExpansion.unique`: the homogeneous terms are determined by the
+* `TauCeti.ClassicalSymbol.exists_remainder`: the expansion holds for every frequency cutoff, not
+  only for the one used to define the symbol;
+* `TauCeti.ClassicalSymbol.term_eq_of_toSymbol_eq` and `TauCeti.ClassicalSymbol.ext`: the
+  homogeneous terms are determined by the symbol, so a classical symbol is determined by its full
   symbol;
-* `TauCeti.Symbol.classical n V W m`: the subspace of classical symbols of order `m`, with the
-  linear maps `TauCeti.Symbol.classicalTerm j` to the homogeneous terms;
-* `TauCeti.Symbol.HasClassicalExpansion.inclusion`: a classical symbol of order `m - k`, `k ∈ ℕ`,
-  is classical of order `m`, with `k` leading terms equal to zero; the injective linear map
-  `TauCeti.Symbol.classicalInclusion` includes the classical symbols of order `m - k`;
-* `TauCeti.Symbol.principalSymbol`: the leading term `aₘ`, a linear map onto the homogeneous
-  symbols of degree `m` (`TauCeti.Symbol.principalSymbol_surjective`, with the right inverse
-  `TauCeti.HomogeneousSymbol.toClassical`) whose kernel is the image of the classical symbols of
-  order `m - 1` (`TauCeti.Symbol.ker_principalSymbol`). This is the exact sequence
-  `0 → S^{m-1}_cl → S^m_cl → H^m → 0`, and `TauCeti.Symbol.principalSymbolEquiv` identifies the
-  quotient by the classical symbols of order `m - 1` with the homogeneous symbols of degree `m`.
-
-The smoothing symbols are exactly the symbols whose classical expansion has all homogeneous terms
-zero (`TauCeti.Symbol.hasClassicalExpansion_zero_iff_isSmoothing`).
-
-Classical symbols are closed under the pointwise composition `(x, ξ) ↦ b(x, ξ) ∘ a(x, ξ)`
-(`TauCeti.Symbol.HasClassicalExpansion.comp`, `TauCeti.Symbol.classicalComp`): if `b ∼ ∑ᵢ χ qᵢ`
-and `a ∼ ∑ⱼ χ pⱼ`, then `b ∘ a ∼ ∑ₖ χ cₖ` with `cₖ = ∑_{i + j = k} qᵢ ∘ pⱼ`
-(`TauCeti.Symbol.compTerms`), so classical orders add and the principal symbol is multiplicative
-for the pointwise product (`TauCeti.Symbol.principalSymbol_classicalComp`). This is not the
-composition of the operators: the lower order terms of the symbol of a composition of operators
-also involve derivatives of the symbols.
+* the classical symbols of order `m` form a complex vector space, termwise;
+* `TauCeti.ClassicalSymbol.principal`, the principal symbol, with
+  `TauCeti.ClassicalSymbol.exists_sub_cutoffSymbol_principal`: the full symbol and its cut-off
+  principal symbol differ by a symbol of order `m - 1`;
+* `TauCeti.ClassicalSymbol.isSmoothing_toSymbol_iff`: a classical symbol is smoothing exactly when
+  all of its homogeneous terms vanish; `TauCeti.ClassicalSymbol.ofIsSmoothing` makes every
+  smoothing symbol classical;
+* `TauCeti.ClassicalSymbol.ofHomogeneous`: the classical symbol `χ(ξ) a(x, ξ)` of a single
+  homogeneous term, whose principal symbol is `a`;
+* `TauCeti.ClassicalSymbol.inclusion`: a classical symbol of order `m - k`, `k ∈ ℕ`, is classical
+  of order `m`, with `k` leading terms equal to zero;
+* `TauCeti.ClassicalSymbol.tail`: the remainder `a - χ(ξ) a_m` after the principal term, a
+  classical symbol of order `m - 1`;
+* the exact sequence `0 → S^{m-1}_cl → S^m_cl → H^m → 0`: the principal symbol is surjective
+  (`TauCeti.ClassicalSymbol.principal_surjective`), its kernel is the image of the classical
+  symbols of order `m - 1` (`TauCeti.ClassicalSymbol.ker_principalLinearMap`), and
+  `TauCeti.ClassicalSymbol.principalEquiv` identifies the quotient by them with the homogeneous
+  symbols of degree `m`;
+* `TauCeti.ClassicalSymbol.comp`: the pointwise composition `(x, ξ) ↦ b(x, ξ) ∘ a(x, ξ)` of
+  classical symbols of orders `m'` and `m` is classical of order `m' + m`, with the terms
+  `cₖ = ∑_{i + j = k} bᵢ ∘ aⱼ` (`TauCeti.ClassicalSymbol.compTerms`), so the principal symbol is
+  multiplicative (`TauCeti.ClassicalSymbol.principal_comp`). This is not the composition of the
+  operators, whose lower order terms also involve derivatives of the symbols.
 
 ## References
 
-* M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, (1.17).
-* L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Definition 18.1.5.
+* L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Definition 18.1.5
+  and Proposition 18.1.3.
+* M. E. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI*, September 2008,
+  Lecture I, (1.17).
 * R. B. Melrose, *Introduction to Microlocal Analysis*, Chapter 2, §2.9, Lemma 2.5.
 -/
 
@@ -64,418 +68,493 @@ public section
 
 noncomputable section
 
+open Filter Topology
+open scoped ContDiff
+
 namespace TauCeti
+
+variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
+  [NormedSpace ℂ W] {m : ℝ}
 
 open HomogeneousSymbol
 
-namespace Symbol
-
-variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
-  [NormedSpace ℂ W] {m m' : ℝ}
-
-/-! ### Classical expansions -/
-
-/-- The symbol `a` of order `m` has the classical expansion `a ∼ ∑ⱼ χ(ξ) pⱼ(x, ξ)` with the
-homogeneous terms `pⱼ` of degree `m - j` and the frequency cutoff `χ`: for every `N`, the
-remainder `a - ∑_{j < N} χ(ξ) pⱼ(x, ξ)` is a symbol of order `m - N`. -/
-def HasClassicalExpansion (χ : FrequencyCutoff (CoordinateSpace n)) (a : Symbol n V W m)
-    (p : (j : ℕ) → HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j)) :
-    Prop :=
-  ∀ N : ℕ, ∃ r : Symbol n V W (m - N),
-    r.coefficient = a.coefficient - ∑ j ∈ Finset.range N, (toSymbol χ (p j)).coefficient
-
-variable {χ : FrequencyCutoff (CoordinateSpace n)} {a b : Symbol n V W m}
-  {p q : (j : ℕ) → HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j)}
-
-/-- Unfolding `TauCeti.Symbol.HasClassicalExpansion`. -/
-theorem hasClassicalExpansion_iff :
-    HasClassicalExpansion χ a p ↔ ∀ N : ℕ, ∃ r : Symbol n V W (m - N),
-      r.coefficient = a.coefficient - ∑ j ∈ Finset.range N, (toSymbol χ (p j)).coefficient :=
-  Iff.rfl
-
-/-- **Independence of the cutoff.** A classical expansion for one frequency cutoff is a classical
-expansion, with the same homogeneous terms, for every other frequency cutoff. -/
-theorem HasClassicalExpansion.congr_cutoff (h : HasClassicalExpansion χ a p)
-    (χ' : FrequencyCutoff (CoordinateSpace n)) : HasClassicalExpansion χ' a p := fun N => by
-  obtain ⟨r, hr⟩ := h N
-  -- The two remainders agree for `‖ξ‖ ≥ 2`, where both cutoffs equal `1`.
-  refine exists_coefficient_eq_of_forall_le_norm (a.contDiff_coefficient.sub
-    (contDiff_sum_coefficient _ fun j => toSymbol χ' (p j))) r 2 fun x ξ hξ => ?_
-  simp [hr, χ.apply_eq_one_of_two_le_norm hξ, χ'.apply_eq_one_of_two_le_norm hξ]
-
-/-- **Uniqueness of the homogeneous terms.** Two classical expansions of the same symbol, possibly
-for different cutoffs, have the same homogeneous terms. -/
-theorem HasClassicalExpansion.unique {χ' : FrequencyCutoff (CoordinateSpace n)}
-    (hp : HasClassicalExpansion χ a p) (hq : HasClassicalExpansion χ' a q) : p = q := by
-  replace hq := hq.congr_cutoff χ
-  funext j
-  induction j using Nat.strong_induction_on with
-  | _ j ih =>
-    -- The remainders after `j + 1` terms differ by `χ(ξ) (pⱼ - qⱼ)`, of order `m - (j + 1)`, so
-    -- `pⱼ = qⱼ` by the uniqueness of homogeneous terms.
-    obtain ⟨r, hr⟩ := hp (j + 1)
-    obtain ⟨s, hs⟩ := hq (j + 1)
-    have hsum : ∑ i ∈ Finset.range j, (toSymbol χ (p i)).coefficient =
-        ∑ i ∈ Finset.range j, (toSymbol χ (q i)).coefficient :=
-      Finset.sum_congr rfl fun i hi => by rw [ih i (Finset.mem_range.1 hi)]
-    rw [← sub_eq_zero]
-    refine eq_zero_of_coefficient_toSymbol_eq χ (p j - q j) (by push_cast; linarith) (s - r) ?_
-    rw [map_sub, coefficient_sub, coefficient_sub, hr, hs, Finset.sum_range_succ,
-      Finset.sum_range_succ, hsum]
-    abel
-
-/-- The zero symbol has the classical expansion with all terms zero. -/
-theorem hasClassicalExpansion_zero (χ : FrequencyCutoff (CoordinateSpace n)) :
-    HasClassicalExpansion χ (0 : Symbol n V W m) 0 :=
-  fun _ => ⟨0, by simp⟩
-
-/-- The terms of a sum are the sums of the terms. -/
-theorem HasClassicalExpansion.add (ha : HasClassicalExpansion χ a p)
-    (hb : HasClassicalExpansion χ b q) : HasClassicalExpansion χ (a + b) (p + q) := fun N => by
-  obtain ⟨r, hr⟩ := ha N
-  obtain ⟨s, hs⟩ := hb N
-  refine ⟨r + s, ?_⟩
-  simp only [coefficient_add, hr, hs, Pi.add_apply, map_add, Finset.sum_add_distrib]
-  abel
-
-/-- The terms of a scalar multiple are the scalar multiples of the terms. -/
-theorem HasClassicalExpansion.smul (ha : HasClassicalExpansion χ a p) (c : ℂ) :
-    HasClassicalExpansion χ (c • a) (c • p) := fun N => by
-  obtain ⟨r, hr⟩ := ha N
-  exact ⟨c • r, by simp only [coefficient_smul, hr, Pi.smul_apply, map_smul, smul_sub,
-    Finset.smul_sum]⟩
-
-theorem HasClassicalExpansion.neg (ha : HasClassicalExpansion χ a p) :
-    HasClassicalExpansion χ (-a) (-p) := by
-  simpa using ha.smul (-1)
-
-theorem HasClassicalExpansion.sub (ha : HasClassicalExpansion χ a p)
-    (hb : HasClassicalExpansion χ b q) : HasClassicalExpansion χ (a - b) (p - q) := by
-  simpa [sub_eq_add_neg] using ha.add hb.neg
-
-/-- A smoothing symbol has the classical expansion whose homogeneous terms are all zero. -/
-theorem IsSmoothing.hasClassicalExpansion_zero (ha : a.IsSmoothing)
-    (χ : FrequencyCutoff (CoordinateSpace n)) : HasClassicalExpansion χ a 0 := fun N => by
-  obtain ⟨r, hr⟩ := isSmoothing_iff.1 ha (m - N)
-  exact ⟨r, by simp [hr]⟩
-
-/-- Smoothing symbols are exactly the symbols with the classical expansion whose homogeneous
-terms are all zero. -/
-theorem hasClassicalExpansion_zero_iff_isSmoothing :
-    HasClassicalExpansion χ a 0 ↔ a.IsSmoothing := by
-  refine ⟨fun h => isSmoothing_iff.2 fun m'' => ?_, fun ha => ha.hasClassicalExpansion_zero χ⟩
-  -- The remainder after `N ≥ m - m''` zero terms is `a` itself, of order `m - N ≤ m''`.
-  obtain ⟨N, hN⟩ := exists_nat_ge (m - m'')
-  obtain ⟨r, hr⟩ := h N
-  exact ⟨Symbol.inclusion (by linarith) r, by simp [hr]⟩
-
-/-- The remainder `a - χ(ξ) p₀` after the leading term of a classical expansion of a symbol `a` of
-order `m` is a symbol of order `m - 1`. -/
-theorem HasClassicalExpansion.exists_sub_leading (ha : HasClassicalExpansion χ a p) :
-    ∃ r : Symbol n V W (m - 1), r.coefficient = a.coefficient - (toSymbol χ (p 0)).coefficient := by
-  obtain ⟨r, hr⟩ := ha 1
-  exact ⟨Symbol.inclusion (le_of_eq (by simp)) r, by simp [hr]⟩
-
-/-- **Removing the leading term.** If `a` has the classical expansion with the terms
-`p₀, p₁, …` and `r = a - χ(ξ) p₀` has order `m - 1`, then `r` has the classical expansion with the
-terms `p₁, p₂, …`. -/
-theorem HasClassicalExpansion.sub_leading (ha : HasClassicalExpansion χ a p)
-    {r : Symbol n V W (m - 1)}
-    (hr : r.coefficient = a.coefficient - (toSymbol χ (p 0)).coefficient) :
-    HasClassicalExpansion χ r fun j => (p (j + 1)).castDegree (by push_cast; ring) := fun N => by
-  obtain ⟨s, hs⟩ := ha (N + 1)
-  refine ⟨Symbol.inclusion (le_of_eq (by push_cast; ring)) s, ?_⟩
-  rw [coefficient_inclusion, hs, hr, Finset.sum_range_succ']
-  simp only [coefficient_toSymbol_castDegree]
-  abel
-
-/-- **Inclusion of orders.** A symbol of order `m' = m - k` with a classical expansion, `k ∈ ℕ`,
-has as a symbol of order `m` the classical expansion whose first `k` terms are zero, followed by
-the terms of the original expansion. -/
-theorem HasClassicalExpansion.inclusion {b : Symbol n V W m'}
-    {q : (j : ℕ) → HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m' - j)}
-    (hb : HasClassicalExpansion χ b q) (k : ℕ) (hk : m' = m - k) :
-    HasClassicalExpansion χ (Symbol.inclusion (hk.le.trans (sub_le_self m k.cast_nonneg)) b)
-      fun j => if h : k ≤ j then (q (j - k)).castDegree (by rw [hk, Nat.cast_sub h]; ring)
-        else 0 := by
-  intro N
-  rcases le_or_gt k N with hN | hN
-  · -- After `N = k + M` terms the remainder is the remainder of `b` after `M` terms.
-    obtain ⟨M, rfl⟩ := Nat.exists_eq_add_of_le hN
-    obtain ⟨s, hs⟩ := hb M
-    refine ⟨Symbol.inclusion (le_of_eq (by rw [hk]; push_cast; ring)) s, ?_⟩
-    rw [coefficient_inclusion, hs, coefficient_inclusion, Finset.sum_range_add,
-      Finset.sum_eq_zero (s := Finset.range k) fun j hj => ?_, zero_add]
-    · congr 1
-      refine Finset.sum_congr rfl fun i _ => ?_
-      simp only [Nat.le_add_right, ↓reduceDIte, coefficient_toSymbol_castDegree]
-      funext z
-      rw [coefficient_toSymbol, coefficient_toSymbol,
-        coefficient_congr_index q (Nat.add_sub_cancel_left k i)]
-    · simp [show ¬k ≤ j by simpa using hj]
-  · -- Before the `k`-th term all terms vanish, and `b` has order `m - k ≤ m - N`.
-    refine ⟨Symbol.inclusion (by rw [hk]; gcongr) b, ?_⟩
-    rw [coefficient_inclusion, coefficient_inclusion, Finset.sum_eq_zero fun j hj => ?_, sub_zero]
-    simp [show ¬k ≤ j by simp at hj; omega]
-
-/-! ### Classical symbols -/
-
 variable (n V W m) in
-/-- The classical symbols of order `m`: the symbols with a classical expansion
-`a ∼ ∑ⱼ χ(ξ) aₘ₋ⱼ(x, ξ)` into homogeneous terms of the degrees `m - j`, `j ∈ ℕ`, a subspace of the
-symbols of order `m`. The cutoff does not matter (`TauCeti.Symbol.mem_classical_iff`). -/
-def classical : Submodule ℂ (Symbol n V W m) where
-  carrier := {a | ∃ (χ : FrequencyCutoff (CoordinateSpace n))
-    (p : (j : ℕ) → HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j)),
-    HasClassicalExpansion χ a p}
-  zero_mem' := ⟨default, 0, hasClassicalExpansion_zero default⟩
-  add_mem' := by
-    rintro a b ⟨χ, p, hp⟩ ⟨χ', q, hq⟩
-    exact ⟨χ, p + q, hp.add (hq.congr_cutoff χ)⟩
-  smul_mem' c := by
-    rintro a ⟨χ, p, hp⟩
-    exact ⟨χ, c • p, hp.smul c⟩
+/-- A classical symbol of order `m` on `ℝⁿ`: a symbol `a` of order `m` together with homogeneous
+terms `a_{m-j}` of degree `m - j` for `j = 0, 1, 2, …`, such that for some frequency cutoff `χ` and
+every `N`, the remainder `a - ∑_{j<N} χ(ξ) a_{m-j}` is a symbol of order `m - N`. The expansion
+then holds for every cutoff (`TauCeti.ClassicalSymbol.exists_remainder`), and the terms are
+determined by the symbol (`TauCeti.ClassicalSymbol.ext`). -/
+structure ClassicalSymbol where
+  /-- The full symbol. -/
+  toSymbol : Symbol n V W m
+  /-- The homogeneous term `a_{m-j}` of degree `m - j`. -/
+  term : (j : ℕ) → HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j)
+  /-- For some frequency cutoff `χ`, every remainder `a - ∑_{j<N} χ(ξ) a_{m-j}` has order `m - N`;
+  use `TauCeti.ClassicalSymbol.exists_remainder` for an arbitrary cutoff. -/
+  exists_remainder' : ∃ χ : FrequencyCutoff (CoordinateSpace n), ∀ N : ℕ,
+    ∃ r : Symbol n V W (m - N), ∀ p,
+      r.coefficient p =
+        toSymbol.coefficient p - ∑ j ∈ Finset.range N, χ p.2 • (term j).coefficient p
 
-/-- A symbol is classical exactly when it has a classical expansion for a given cutoff. -/
-theorem mem_classical_iff (χ : FrequencyCutoff (CoordinateSpace n)) :
-    a ∈ classical n V W m ↔ ∃ p, HasClassicalExpansion χ a p :=
-  ⟨fun ⟨_, p, h⟩ => ⟨p, h.congr_cutoff χ⟩, fun ⟨p, h⟩ => ⟨χ, p, h⟩⟩
+namespace ClassicalSymbol
 
-theorem HasClassicalExpansion.mem_classical (h : HasClassicalExpansion χ a p) :
-    a ∈ classical n V W m :=
-  ⟨χ, p, h⟩
+section Remainder
 
-/-- Smoothing symbols are classical. -/
-theorem IsSmoothing.mem_classical (ha : a.IsSmoothing) : a ∈ classical n V W m :=
-  (ha.hasClassicalExpansion_zero default).mem_classical
+variable (a : ClassicalSymbol n V W m) (χ : FrequencyCutoff (CoordinateSpace n))
 
-/-- A classical symbol of order `m' = m - k`, `k ∈ ℕ`, is classical of order `m`. -/
-theorem inclusion_mem_classical {b : Symbol n V W m'} (hb : b ∈ classical n V W m') (k : ℕ)
-    (hk : m' = m - k) :
-    Symbol.inclusion (hk.le.trans (sub_le_self m k.cast_nonneg)) b ∈ classical n V W m :=
-  let ⟨_, _, h⟩ := hb
-  (h.inclusion k hk).mem_classical
+/-- **Independence of the cutoff.** For every frequency cutoff `χ` and every `N`, the remainder
+`a - ∑_{j<N} χ(ξ) a_{m-j}` of a classical symbol is a symbol of order `m - N`. -/
+theorem exists_remainder (N : ℕ) :
+    ∃ r : Symbol n V W (m - N), ∀ p, r.coefficient p =
+      a.toSymbol.coefficient p - ∑ j ∈ Finset.range N, χ p.2 • (a.term j).coefficient p := by
+  obtain ⟨χ₀, h₀⟩ := a.exists_remainder'
+  obtain ⟨r₀, hr₀⟩ := h₀ N
+  -- The truncated expansions for `χ₀` and `χ` differ by `∑_{j<N} (χ₀ - χ)(ξ) a_{m-j}`, a sum of
+  -- smoothing symbols.
+  choose s hs using fun j =>
+    Symbol.isSmoothing_iff.1 (isSmoothing_cutoffSymbol_sub_cutoffSymbol χ₀ χ (a.term j)) (m - N)
+  refine ⟨r₀ + ∑ j ∈ Finset.range N, s j, fun p => ?_⟩
+  have hsum : (∑ j ∈ Finset.range N, s j).coefficient p =
+      ∑ j ∈ Finset.range N, (s j).coefficient p :=
+    map_sum (AddMonoidHom.mk' (fun b : Symbol n V W (m - N) => b.coefficient p) fun _ _ => rfl) _ _
+  simp only [Symbol.coefficient_add, Pi.add_apply, hsum, hr₀, hs, Symbol.coefficient_sub,
+    Pi.sub_apply, coefficient_cutoffSymbol, Finset.sum_sub_distrib]
+  abel
 
-/-- The inclusion of the classical symbols of order `m' = m - k`, `k ∈ ℕ`, into the classical
-symbols of order `m`, the restriction of `TauCeti.Symbol.inclusion`. -/
-def classicalInclusion (k : ℕ) (hk : m' = m - k) : classical n V W m' →ₗ[ℂ] classical n V W m :=
-  (Symbol.inclusion (hk.le.trans (sub_le_self m k.cast_nonneg))).restrict
-    fun _ hb => inclusion_mem_classical hb k hk
+/-- The remainder `a - ∑_{j<N} χ(ξ) a_{m-j}` of a classical symbol after `N` terms, a symbol of
+order `m - N`. -/
+def remainder (N : ℕ) : Symbol n V W (m - N) :=
+  (a.exists_remainder χ N).choose
 
 @[simp]
-theorem coe_classicalInclusion (k : ℕ) (hk : m' = m - k) (b : classical n V W m') :
-    (classicalInclusion k hk b : Symbol n V W m) =
-      Symbol.inclusion (hk.le.trans (sub_le_self m k.cast_nonneg)) (b : Symbol n V W m') :=
-  (rfl)
+theorem coefficient_remainder (N : ℕ) (p : CoordinateSpace n × CoordinateSpace n) :
+    (a.remainder χ N).coefficient p =
+      a.toSymbol.coefficient p - ∑ j ∈ Finset.range N, χ p.2 • (a.term j).coefficient p :=
+  (a.exists_remainder χ N).choose_spec p
 
-theorem classicalInclusion_injective (k : ℕ) (hk : m' = m - k) :
-    Function.Injective (classicalInclusion (n := n) (V := V) (W := W) k hk) := fun _ _ h =>
-  Subtype.ext (inclusion_injective _ (congrArg Subtype.val h))
+end Remainder
 
-/-- The homogeneous terms of a classical symbol, chosen once; `classicalTerm` bundles them. -/
-private def terms (a : classical n V W m) :
-    (j : ℕ) → HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j) :=
-  ((mem_classical_iff default).1 a.2).choose
+section Uniqueness
 
-private theorem hasClassicalExpansion_terms (a : classical n V W m)
-    (χ : FrequencyCutoff (CoordinateSpace n)) : HasClassicalExpansion χ a (terms a) :=
-  ((mem_classical_iff default).1 a.2).choose_spec.congr_cutoff χ
+/-- **Uniqueness of the homogeneous terms.** Two classical symbols with the same full symbol have
+the same homogeneous terms. -/
+theorem term_eq_of_toSymbol_eq {a b : ClassicalSymbol n V W m} (h : a.toSymbol = b.toSymbol)
+    (j : ℕ) : a.term j = b.term j := by
+  obtain ⟨χ, -⟩ := a.exists_remainder'
+  induction j using Nat.strong_induction_on with
+  | _ j ih =>
+    -- Given the equality of the earlier terms, the difference of the remainders after `j + 1`
+    -- terms is the cut-off term of `b_{m-j} - a_{m-j}`, of order `m - (j + 1) < m - j`.
+    refine (sub_eq_zero.1 <| eq_zero_of_coefficient_eq_cutoffSymbol χ (m' := m - (j + 1 : ℕ))
+      (by push_cast; linarith) (a.remainder χ (j + 1) - b.remainder χ (j + 1)) ?_).symm
+    funext p
+    have hsum : ∑ i ∈ Finset.range j, χ p.2 • (a.term i).coefficient p =
+        ∑ i ∈ Finset.range j, χ p.2 • (b.term i).coefficient p :=
+      Finset.sum_congr rfl fun i hi => by rw [ih i (Finset.mem_range.1 hi)]
+    simp only [Symbol.coefficient_sub, Pi.sub_apply, coefficient_remainder,
+      Finset.sum_range_succ, hsum, h, coefficient_cutoffSymbol, HomogeneousSymbol.coefficient_sub,
+      smul_sub]
+    abel
 
-/-- The homogeneous term `aₘ₋ⱼ` of degree `m - j` in the expansion `a ∼ ∑ⱼ χ(ξ) aₘ₋ⱼ(x, ξ)` of a
-classical symbol `a` of order `m`. It is determined by `a`
-(`TauCeti.Symbol.HasClassicalExpansion.classicalTerm_eq`) and does not depend on the cutoff. -/
-def classicalTerm (j : ℕ) :
-    classical n V W m →ₗ[ℂ]
-      HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j) where
-  toFun a := terms a j
-  map_add' a b := congrFun ((hasClassicalExpansion_terms (a + b) default).unique
-    ((hasClassicalExpansion_terms a default).add (hasClassicalExpansion_terms b default))) j
-  map_smul' c a := congrFun ((hasClassicalExpansion_terms (c • a) default).unique
-    ((hasClassicalExpansion_terms a default).smul c)) j
+/-- A classical symbol is determined by its full symbol. -/
+@[ext]
+theorem ext {a b : ClassicalSymbol n V W m} (h : a.toSymbol = b.toSymbol) : a = b := by
+  have ht : a.term = b.term := funext (term_eq_of_toSymbol_eq h)
+  cases a
+  cases b
+  cases h
+  cases ht
+  rfl
 
-/-- A classical symbol has the classical expansion with its homogeneous terms, for every cutoff. -/
-theorem hasClassicalExpansion_classicalTerm (a : classical n V W m)
-    (χ : FrequencyCutoff (CoordinateSpace n)) :
-    HasClassicalExpansion χ a fun j => classicalTerm j a :=
-  hasClassicalExpansion_terms a χ
+theorem toSymbol_injective :
+    Function.Injective (toSymbol : ClassicalSymbol n V W m → Symbol n V W m) :=
+  fun _ _ => ext
 
-/-- The terms of any classical expansion of a classical symbol are its homogeneous terms. -/
-theorem HasClassicalExpansion.classicalTerm_eq {a : classical n V W m}
-    (h : HasClassicalExpansion χ (a : Symbol n V W m) p) (j : ℕ) : classicalTerm j a = p j :=
-  congrFun ((hasClassicalExpansion_classicalTerm a χ).unique h) j
+end Uniqueness
 
-/-- A classical symbol has a classical expansion exactly with its homogeneous terms. -/
-theorem hasClassicalExpansion_iff_eq_classicalTerm (a : classical n V W m) :
-    HasClassicalExpansion χ (a : Symbol n V W m) p ↔ p = fun j => classicalTerm j a :=
-  ⟨fun h => funext fun j => (h.classicalTerm_eq j).symm,
-    fun h => h ▸ hasClassicalExpansion_classicalTerm a χ⟩
+/-! ### The vector space of classical symbols of order `m` -/
+
+section Module
+
+instance : Zero (ClassicalSymbol n V W m) where
+  zero :=
+    { toSymbol := 0
+      term _ := 0
+      exists_remainder' := ⟨default, fun _ => ⟨0, fun p => by simp⟩⟩ }
+
+instance : Add (ClassicalSymbol n V W m) where
+  add a b :=
+    { toSymbol := a.toSymbol + b.toSymbol
+      term j := a.term j + b.term j
+      exists_remainder' := ⟨default, fun N => ⟨a.remainder default N + b.remainder default N,
+        fun p => by
+          simp only [Symbol.coefficient_add, Pi.add_apply, coefficient_remainder,
+            HomogeneousSymbol.coefficient_add, smul_add, Finset.sum_add_distrib]
+          abel⟩⟩ }
+
+instance : SMul ℂ (ClassicalSymbol n V W m) where
+  smul c a :=
+    { toSymbol := c • a.toSymbol
+      term j := c • a.term j
+      exists_remainder' := ⟨default, fun N => ⟨c • a.remainder default N, fun p => by
+        simp only [Symbol.coefficient_smul, Pi.smul_apply, coefficient_remainder,
+          HomogeneousSymbol.coefficient_smul, smul_sub, Finset.smul_sum, smul_comm c]⟩⟩ }
+
+instance : Neg (ClassicalSymbol n V W m) where
+  neg a :=
+    { toSymbol := -a.toSymbol
+      term j := -a.term j
+      exists_remainder' := ⟨default, fun N => ⟨-a.remainder default N, fun p => by
+        simp only [Symbol.coefficient_neg, Pi.neg_apply, coefficient_remainder,
+          HomogeneousSymbol.coefficient_neg, smul_neg, Finset.sum_neg_distrib]
+        abel⟩⟩ }
+
+instance : Sub (ClassicalSymbol n V W m) where
+  sub a b := a + -b
+
+instance : SMul ℕ (ClassicalSymbol n V W m) where
+  smul k a := (k : ℂ) • a
+
+instance : SMul ℤ (ClassicalSymbol n V W m) where
+  smul k a := (k : ℂ) • a
+
+variable (a b : ClassicalSymbol n V W m) (c : ℂ) (j : ℕ)
+
+@[simp]
+theorem toSymbol_zero : (0 : ClassicalSymbol n V W m).toSymbol = 0 := (rfl)
+
+@[simp]
+theorem toSymbol_add : (a + b).toSymbol = a.toSymbol + b.toSymbol := (rfl)
+
+@[simp]
+theorem toSymbol_smul : (c • a).toSymbol = c • a.toSymbol := (rfl)
+
+@[simp]
+theorem toSymbol_neg : (-a).toSymbol = -a.toSymbol := (rfl)
+
+@[simp]
+theorem toSymbol_sub : (a - b).toSymbol = a.toSymbol - b.toSymbol :=
+  (sub_eq_add_neg _ _).symm
+
+@[simp]
+theorem toSymbol_nsmul (k : ℕ) : (k • a).toSymbol = k • a.toSymbol :=
+  Nat.cast_smul_eq_nsmul ℂ k a.toSymbol
+
+@[simp]
+theorem toSymbol_zsmul (k : ℤ) : (k • a).toSymbol = k • a.toSymbol :=
+  Int.cast_smul_eq_zsmul ℂ k a.toSymbol
+
+@[simp]
+theorem term_zero : (0 : ClassicalSymbol n V W m).term j = 0 := (rfl)
+
+@[simp]
+theorem term_add : (a + b).term j = a.term j + b.term j := (rfl)
+
+@[simp]
+theorem term_smul : (c • a).term j = c • a.term j := (rfl)
+
+@[simp]
+theorem term_neg : (-a).term j = -a.term j := (rfl)
+
+@[simp]
+theorem term_sub : (a - b).term j = a.term j - b.term j :=
+  (sub_eq_add_neg _ _).symm
+
+instance : AddCommGroup (ClassicalSymbol n V W m) :=
+  toSymbol_injective.addCommGroup _ toSymbol_zero toSymbol_add toSymbol_neg toSymbol_sub
+    (fun a k => toSymbol_nsmul a k) (fun a k => toSymbol_zsmul a k)
+
+instance : Module ℂ (ClassicalSymbol n V W m) :=
+  toSymbol_injective.module ℂ ⟨⟨toSymbol, toSymbol_zero⟩, toSymbol_add⟩
+    fun c a => toSymbol_smul a c
+
+end Module
 
 /-! ### The principal symbol -/
 
-/-- The principal symbol of a classical symbol `a ∼ ∑ⱼ χ(ξ) aₘ₋ⱼ(x, ξ)` of order `m`: its leading
-homogeneous term `aₘ`, of degree `m`. -/
-def principalSymbol :
-    classical n V W m →ₗ[ℂ] HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m where
-  toFun a := (classicalTerm 0 a).castDegree (by simp)
-  map_add' a b := by simp
-  map_smul' c a := by simp
+section Principal
 
-theorem principalSymbol_apply (a : classical n V W m) :
-    principalSymbol a = (classicalTerm 0 a).castDegree (by simp) :=
-  (rfl)
+variable (a b : ClassicalSymbol n V W m)
+
+/-- The principal symbol of a classical symbol of order `m`: its leading homogeneous term `a_m`,
+of degree `m`. -/
+def principal : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m :=
+  (a.term 0).castDegree (by simp)
 
 @[simp]
-theorem coefficient_principalSymbol (a : classical n V W m) :
-    (principalSymbol a).coefficient = (classicalTerm 0 a).coefficient := by
-  rw [principalSymbol_apply, coefficient_castDegree]
+theorem coefficient_principal : a.principal.coefficient = (a.term 0).coefficient :=
+  coefficient_castDegree _ _
 
-/-- The principal symbol is the leading term of any classical expansion. -/
-theorem HasClassicalExpansion.principalSymbol_eq {a : classical n V W m}
-    (h : HasClassicalExpansion χ (a : Symbol n V W m) p) :
-    principalSymbol a = (p 0).castDegree (by simp) := by
-  rw [principalSymbol_apply, h.classicalTerm_eq]
-
-/-- A classical symbol of order `m` minus the cut-off principal symbol is a symbol of order
-`m - 1`. -/
-theorem exists_coefficient_eq_sub_principalSymbol (a : classical n V W m)
-    (χ : FrequencyCutoff (CoordinateSpace n)) :
+/-- A classical symbol and its cut-off principal symbol differ by a symbol of order `m - 1`. -/
+theorem exists_sub_cutoffSymbol_principal (χ : FrequencyCutoff (CoordinateSpace n)) :
     ∃ r : Symbol n V W (m - 1),
-      r.coefficient =
-        (a : Symbol n V W m).coefficient - (toSymbol χ (principalSymbol a)).coefficient := by
-  obtain ⟨r, hr⟩ := (hasClassicalExpansion_classicalTerm a χ).exists_sub_leading
-  exact ⟨r, by rw [hr, principalSymbol_apply, coefficient_toSymbol_castDegree]⟩
-
-end Symbol
-
-namespace HomogeneousSymbol
-
-open Symbol
-
-variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
-  [NormedSpace ℂ W] {m : ℝ}
-
-/-- The cut-off term `χ(ξ) h(x, ξ)` of a homogeneous symbol `h` of degree `m` has the classical
-expansion with the single term `h`. -/
-theorem hasClassicalExpansion_toSymbol (χ : FrequencyCutoff (CoordinateSpace n))
-    (h : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
-    HasClassicalExpansion χ (toSymbol χ h) (Pi.single 0 (h.castDegree (by simp))) := by
-  rintro (_ | N)
-  · exact ⟨Symbol.inclusion (le_of_eq (by simp)) (toSymbol χ h), by simp⟩
-  · refine ⟨0, ?_⟩
-    rw [Finset.sum_range_succ', Finset.sum_eq_zero fun j _ => ?_, Pi.single_eq_same,
-      coefficient_toSymbol_castDegree, zero_add, Symbol.coefficient_zero, sub_self]
-    rw [Pi.single_eq_of_ne (Nat.succ_ne_zero j), map_zero, Symbol.coefficient_zero]
-
-/-- The cut-off term `χ(ξ) h(x, ξ)` of a homogeneous symbol `h` of degree `m` as a classical
-symbol of order `m`. Its principal symbol is `h` (`TauCeti.Symbol.principalSymbol_toClassical`). -/
-def toClassical (χ : FrequencyCutoff (CoordinateSpace n)) :
-    HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m →ₗ[ℂ] classical n V W m :=
-  (toSymbol χ).codRestrict _ fun h => (hasClassicalExpansion_toSymbol χ h).mem_classical
+      r.coefficient = (a.toSymbol - cutoffSymbol χ a.principal).coefficient :=
+  ⟨Symbol.inclusion (by simp) (a.remainder χ 1), funext fun p => by simp⟩
 
 @[simp]
-theorem coe_toClassical (χ : FrequencyCutoff (CoordinateSpace n))
-    (h : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
-    (toClassical χ h : Symbol n V W m) = toSymbol χ h :=
+theorem principal_zero : (0 : ClassicalSymbol n V W m).principal = 0 :=
+  castDegree_zero _
+
+@[simp]
+theorem principal_add : (a + b).principal = a.principal + b.principal :=
+  castDegree_add _ _ _
+
+@[simp]
+theorem principal_smul (c : ℂ) : (c • a).principal = c • a.principal :=
+  castDegree_smul _ _ _
+
+@[simp]
+theorem principal_neg : (-a).principal = -a.principal :=
+  castDegree_neg _ _
+
+@[simp]
+theorem principal_sub : (a - b).principal = a.principal - b.principal := by
+  simp [principal, castDegree_sub]
+
+end Principal
+
+/-! ### Smoothing symbols and single homogeneous terms -/
+
+section Examples
+
+/-- A smoothing symbol is a classical symbol, all of whose homogeneous terms vanish. -/
+def ofIsSmoothing (a : Symbol n V W m) (ha : a.IsSmoothing) : ClassicalSymbol n V W m where
+  toSymbol := a
+  term _ := 0
+  exists_remainder' := ⟨default, fun N => ⟨(Symbol.isSmoothing_iff.1 ha (m - N)).choose, fun p => by
+    simp [(Symbol.isSmoothing_iff.1 ha (m - N)).choose_spec]⟩⟩
+
+@[simp]
+theorem toSymbol_ofIsSmoothing (a : Symbol n V W m) (ha : a.IsSmoothing) :
+    (ofIsSmoothing a ha).toSymbol = a :=
   (rfl)
 
-end HomogeneousSymbol
-
-namespace Symbol
-
-variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
-  [NormedSpace ℂ W] {m : ℝ}
-
-/-- The homogeneous terms of the cut-off term `χ(ξ) h(x, ξ)`: `h` and then zeros. -/
 @[simp]
-theorem classicalTerm_toClassical (χ : FrequencyCutoff (CoordinateSpace n))
-    (h : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) (j : ℕ) :
-    classicalTerm j (toClassical χ h) =
-      (Pi.single 0 (h.castDegree (by simp)) :
-        (j : ℕ) → HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j)) j :=
-  (hasClassicalExpansion_toSymbol χ h).classicalTerm_eq (a := toClassical χ h) j
+theorem term_ofIsSmoothing (a : Symbol n V W m) (ha : a.IsSmoothing) (j : ℕ) :
+    (ofIsSmoothing a ha).term j = 0 :=
+  (rfl)
 
-/-- The principal symbol of the cut-off term `χ(ξ) h(x, ξ)` is `h`. -/
+/-- A classical symbol is smoothing exactly when all of its homogeneous terms vanish. -/
+theorem isSmoothing_toSymbol_iff (a : ClassicalSymbol n V W m) :
+    a.toSymbol.IsSmoothing ↔ ∀ j, a.term j = 0 := by
+  refine ⟨fun ha j => ?_, fun ha => Symbol.isSmoothing_iff.2 fun m' => ?_⟩
+  · exact (term_eq_of_toSymbol_eq (a := a) (b := ofIsSmoothing a.toSymbol ha) rfl j).trans
+      (term_ofIsSmoothing _ _ j)
+  · -- With vanishing terms the remainder after `N` terms is the symbol itself, of order `m - N`.
+    obtain ⟨N, hN⟩ := exists_nat_ge (m - m')
+    exact ⟨Symbol.inclusion (by linarith) (a.remainder default N), funext fun p => by simp [ha]⟩
+
+/-- The classical symbol `χ(ξ) a(x, ξ)` of a single homogeneous term `a` of degree `m`: its
+principal symbol is `a` and its other homogeneous terms vanish. -/
+def ofHomogeneous (χ : FrequencyCutoff (CoordinateSpace n))
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
+    ClassicalSymbol n V W m where
+  toSymbol := cutoffSymbol χ a
+  term
+    | 0 => a.castDegree (by simp)
+    | _ + 1 => 0
+  exists_remainder' := ⟨χ, fun
+    | 0 => ⟨Symbol.inclusion (by simp) (cutoffSymbol χ a), fun p => by simp⟩
+    | N + 1 => ⟨0, fun p => by simp [Finset.sum_range_succ']⟩⟩
+
+variable (χ : FrequencyCutoff (CoordinateSpace n))
+  (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m)
+
 @[simp]
-theorem principalSymbol_toClassical (χ : FrequencyCutoff (CoordinateSpace n))
-    (h : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
-    principalSymbol (toClassical χ h) = h := by
-  rw [(hasClassicalExpansion_toSymbol χ h).principalSymbol_eq (a := toClassical χ h),
-    Pi.single_eq_same, castDegree_castDegree, castDegree_rfl]
+theorem toSymbol_ofHomogeneous : (ofHomogeneous χ a).toSymbol = cutoffSymbol χ a :=
+  (rfl)
+
+@[simp]
+theorem principal_ofHomogeneous : (ofHomogeneous χ a).principal = a :=
+  castDegree_castDegree _ _ _ |>.trans (castDegree_rfl a)
+
+@[simp]
+theorem term_ofHomogeneous_succ (j : ℕ) : (ofHomogeneous χ a).term (j + 1) = 0 :=
+  (rfl)
+
+end Examples
+
+/-! ### Inclusion of orders -/
+
+section Inclusion
+
+variable {m' : ℝ}
+
+/-- **Inclusion of orders.** A classical symbol of order `m' = m - k`, `k ∈ ℕ`, is a classical
+symbol of order `m` whose first `k` homogeneous terms vanish, followed by the terms of the original
+expansion. The steps of an expansion are integers, so orders with a non-integer difference are not
+comparable in the classical calculus. -/
+def inclusion (k : ℕ) (hk : m' = m - k) :
+    ClassicalSymbol n V W m' →ₗ[ℂ] ClassicalSymbol n V W m where
+  toFun b :=
+    { toSymbol := Symbol.inclusion (hk.le.trans (sub_le_self m k.cast_nonneg)) b.toSymbol
+      term j := if h : k ≤ j then (b.term (j - k)).castDegree (by rw [hk, Nat.cast_sub h]; ring)
+        else 0
+      exists_remainder' := ⟨default, fun N => by
+        rcases le_or_gt k N with hN | hN
+        · -- After `N = k + M` terms the remainder is the remainder of `b` after `M` terms.
+          obtain ⟨M, rfl⟩ := Nat.exists_eq_add_of_le hN
+          refine ⟨Symbol.inclusion (le_of_eq (by rw [hk]; push_cast; ring))
+            (b.remainder default M), fun p => ?_⟩
+          rw [Symbol.coefficient_inclusion, coefficient_remainder, Symbol.coefficient_inclusion,
+            Finset.sum_range_add, Finset.sum_eq_zero (s := Finset.range k) fun j hj => ?_,
+            zero_add]
+          · congr 1
+            refine Finset.sum_congr rfl fun i _ => ?_
+            simp only [Nat.le_add_right, ↓reduceDIte, coefficient_castDegree]
+            rw [coefficient_congr_index b.term (Nat.add_sub_cancel_left k i)]
+          · simp [show ¬k ≤ j by simpa using hj]
+        · -- Before the `k`-th term all terms vanish, and `b` has order `m - k ≤ m - N`.
+          refine ⟨Symbol.inclusion (by rw [hk]; gcongr) b.toSymbol, fun p => ?_⟩
+          rw [Symbol.coefficient_inclusion, Symbol.coefficient_inclusion,
+            Finset.sum_eq_zero fun j hj => ?_, sub_zero]
+          simp [show ¬k ≤ j by simp at hj; omega]⟩ }
+  map_add' a b := ext (map_add (Symbol.inclusion _) a.toSymbol b.toSymbol)
+  map_smul' c a := ext (map_smul (Symbol.inclusion _) c a.toSymbol)
+
+variable (k : ℕ) (hk : m' = m - k) (b : ClassicalSymbol n V W m')
+
+@[simp]
+theorem toSymbol_inclusion :
+    (inclusion k hk b).toSymbol =
+      Symbol.inclusion (hk.le.trans (sub_le_self m k.cast_nonneg)) b.toSymbol :=
+  (rfl)
+
+theorem term_inclusion (j : ℕ) :
+    (inclusion k hk b).term j =
+      if h : k ≤ j then (b.term (j - k)).castDegree (by rw [hk, Nat.cast_sub h]; ring) else 0 :=
+  (rfl)
+
+@[simp]
+theorem term_inclusion_of_lt {j : ℕ} (hj : j < k) : (inclusion k hk b).term j = 0 := by
+  simp [term_inclusion, show ¬k ≤ j by omega]
+
+theorem inclusion_injective :
+    Function.Injective (inclusion (n := n) (V := V) (W := W) k hk) := fun _ _ h =>
+  ext (Symbol.inclusion_injective _ (congrArg toSymbol h))
+
+end Inclusion
+
+/-! ### Removing the leading term -/
+
+section Tail
+
+variable (χ : FrequencyCutoff (CoordinateSpace n)) (a : ClassicalSymbol n V W m)
+
+/-- **Removing the leading term.** The remainder `a - χ(ξ) a_m` of a classical symbol of order `m`
+after its principal term, as a classical symbol of order `m - 1` with the homogeneous terms
+`a_{m-1}, a_{m-2}, …`. -/
+def tail : ClassicalSymbol n V W (m - 1) where
+  toSymbol := Symbol.inclusion (le_of_eq (by simp)) (a.remainder χ 1)
+  term j := (a.term (j + 1)).castDegree (by push_cast; ring)
+  exists_remainder' := ⟨χ, fun N =>
+    ⟨Symbol.inclusion (le_of_eq (by push_cast; ring)) (a.remainder χ (N + 1)), fun p => by
+      rw [Symbol.coefficient_inclusion, Symbol.coefficient_inclusion, coefficient_remainder,
+        coefficient_remainder, Finset.sum_range_succ', Finset.sum_range_one]
+      simp only [coefficient_castDegree]
+      abel⟩⟩
+
+@[simp]
+theorem coefficient_toSymbol_tail (p : CoordinateSpace n × CoordinateSpace n) :
+    (a.tail χ).toSymbol.coefficient p =
+      a.toSymbol.coefficient p - χ p.2 • (a.term 0).coefficient p := by
+  simp [tail]
+
+@[simp]
+theorem term_tail (j : ℕ) :
+    (a.tail χ).term j = (a.term (j + 1)).castDegree (by push_cast; ring) :=
+  (rfl)
+
+end Tail
+
+/-! ### The principal symbol sequence
+
+The principal symbol fits into the exact sequence `0 → S^{m-1}_cl → S^m_cl → H^m → 0`: it is
+surjective onto the homogeneous symbols of degree `m`, and its kernel is the image of the classical
+symbols of order `m - 1`. -/
+
+section PrincipalSequence
+
+variable (n V W m) in
+/-- The principal symbol as a linear map. -/
+def principalLinearMap :
+    ClassicalSymbol n V W m →ₗ[ℂ] HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m
+    where
+  toFun := principal
+  map_add' := principal_add
+  map_smul' c a := principal_smul a c
+
+@[simp]
+theorem principalLinearMap_apply (a : ClassicalSymbol n V W m) :
+    principalLinearMap n V W m a = a.principal :=
+  (rfl)
 
 /-- Every homogeneous symbol of degree `m` is the principal symbol of a classical symbol of
 order `m`. -/
-theorem principalSymbol_surjective :
-    Function.Surjective (principalSymbol : classical n V W m →ₗ[ℂ] _) :=
-  fun h => ⟨toClassical default h, principalSymbol_toClassical default h⟩
+theorem principal_surjective :
+    Function.Surjective (principal : ClassicalSymbol n V W m → _) :=
+  fun a => ⟨ofHomogeneous default a, principal_ofHomogeneous default a⟩
 
 /-- **The kernel of the principal symbol.** A classical symbol of order `m` has principal symbol
 zero exactly when it is a classical symbol of order `m - 1`. -/
-theorem principalSymbol_eq_zero_iff (a : classical n V W m) :
-    principalSymbol a = 0 ↔
-      ∃ b ∈ classical n V W (m - 1), Symbol.inclusion (sub_one_lt m).le b = a := by
-  obtain ⟨p, hp⟩ : ∃ p, HasClassicalExpansion default (a : Symbol n V W m) p :=
-    ⟨_, hasClassicalExpansion_classicalTerm a default⟩
-  rw [hp.principalSymbol_eq]
-  constructor
-  · intro h0
-    have hp0 : p 0 = 0 := by
-      ext1
-      simpa using congrArg HomogeneousSymbol.coefficient h0
-    -- The remainder after the leading term is `a` itself, with the remaining terms.
-    obtain ⟨b, hb⟩ := hp.exists_sub_leading
-    exact ⟨b, (hp.sub_leading hb).mem_classical, Symbol.ext (by simp [hb, hp0])⟩
-  · rintro ⟨b, hb, hba⟩
-    obtain ⟨q, hq⟩ := (mem_classical_iff default).1 hb
-    have h := hq.inclusion (m := m) 1 (by simp)
-    rw [hba] at h
-    rw [← hp.classicalTerm_eq 0, h.classicalTerm_eq 0]
+theorem principal_eq_zero_iff (a : ClassicalSymbol n V W m) :
+    a.principal = 0 ↔ ∃ b : ClassicalSymbol n V W (m - 1), inclusion 1 (by simp) b = a := by
+  refine ⟨fun h => ⟨a.tail default, ext ?_⟩, ?_⟩
+  · -- With a vanishing leading term, the remainder after it is `a` itself.
+    have h0 : (a.term 0).coefficient = 0 := by
+      simpa using congrArg HomogeneousSymbol.coefficient h
+    ext1
+    funext p
+    simp [h0]
+  · rintro ⟨b, rfl⟩
+    ext1
     simp
 
 variable (n V W m) in
 /-- **The kernel of the principal symbol** is the image of the classical symbols of order
 `m - 1`. -/
-theorem ker_principalSymbol :
-    LinearMap.ker (principalSymbol : classical n V W m →ₗ[ℂ] _) =
-      LinearMap.range (classicalInclusion (m' := m - 1) 1 (by simp)) := by
+theorem ker_principalLinearMap :
+    LinearMap.ker (principalLinearMap n V W m) =
+      LinearMap.range (inclusion (n := n) (V := V) (W := W) (m' := m - 1) 1 (by simp)) := by
   ext a
-  rw [LinearMap.mem_ker, principalSymbol_eq_zero_iff, LinearMap.mem_range]
-  constructor
-  · rintro ⟨b, hb, hba⟩
-    exact ⟨⟨b, hb⟩, Subtype.ext hba⟩
-  · rintro ⟨b, rfl⟩
-    exact ⟨b, b.2, rfl⟩
+  simp only [LinearMap.mem_ker, principalLinearMap_apply, principal_eq_zero_iff,
+    LinearMap.mem_range]
 
 variable (n V W m) in
 /-- The principal symbol identifies the quotient of the classical symbols of order `m` by the
-classical symbols of order `m - 1` (`TauCeti.Symbol.ker_principalSymbol`) with the homogeneous
-symbols of degree `m`. -/
-def principalSymbolEquiv :
-    (classical n V W m ⧸ LinearMap.range (classicalInclusion (m' := m - 1) 1 (by simp))) ≃ₗ[ℂ]
+classical symbols of order `m - 1` (`TauCeti.ClassicalSymbol.ker_principalLinearMap`) with the
+homogeneous symbols of degree `m`. -/
+def principalEquiv :
+    (ClassicalSymbol n V W m ⧸
+        LinearMap.range (inclusion (n := n) (V := V) (W := W) (m' := m - 1) 1 (by simp))) ≃ₗ[ℂ]
       HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m :=
-  (Submodule.quotEquivOfEq _ _ (ker_principalSymbol n V W m).symm).trans
-    (LinearMap.quotKerEquivOfSurjective _ principalSymbol_surjective)
+  (Submodule.quotEquivOfEq _ _ (ker_principalLinearMap n V W m).symm).trans
+    (LinearMap.quotKerEquivOfSurjective _ principal_surjective)
 
 @[simp]
-theorem principalSymbolEquiv_mk (a : classical n V W m) :
-    principalSymbolEquiv n V W m (Submodule.Quotient.mk a) = principalSymbol a :=
+theorem principalEquiv_mk (a : ClassicalSymbol n V W m) :
+    principalEquiv n V W m (Submodule.Quotient.mk a) = a.principal :=
   (rfl)
 
-/-! ### Products -/
+end PrincipalSequence
+
+/-! ### Pointwise composition -/
 
 section Comp
 
 variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m' : ℝ}
-  {χ : FrequencyCutoff (CoordinateSpace n)}
 
 /-- The homogeneous terms `cₖ = ∑_{i + j = k} qᵢ ∘ pⱼ` of the pointwise composition
-`(x, ξ) ↦ b(x, ξ) ∘ a(x, ξ)` of two classical expansions, with the terms `qᵢ` of degree `m' - i`
-and `pⱼ` of degree `m - j`. The term `cₖ` has degree `m' + m - k`. -/
+`(x, ξ) ↦ b(x, ξ) ∘ a(x, ξ)` of two classical symbols, with the terms `qᵢ` of degree `m' - i` and
+`pⱼ` of degree `m - j`. The term `cₖ` has degree `m' + m - k`. -/
 def compTerms
     (q : (i : ℕ) → HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) W U (m' - i))
     (p : (j : ℕ) → HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j))
     (k : ℕ) : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V U (m' + m - k) :=
   ∑ i ∈ Finset.range (k + 1),
     if h : i ≤ k then ((q i).comp (p (k - i))).castDegree (by rw [Nat.cast_sub h]; ring) else 0
+
+section CompTerms
 
 variable (q : (i : ℕ) → HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) W U (m' - i))
   (p : (j : ℕ) → HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j))
@@ -504,74 +583,75 @@ theorem coefficient_compTerms_succ (k : ℕ) (z : CoordinateSpace n × Coordinat
   refine Finset.sum_congr rfl fun i _ => ?_
   rw [coefficient_castDegree, coefficient_congr_index p (Nat.add_sub_add_right k 1 i)]
 
-variable {q p} in
-/-- **Pointwise product of classical expansions.** The pointwise composition
-`(x, ξ) ↦ b(x, ξ) ∘ a(x, ξ)` of symbols with classical expansions has the classical expansion whose
-terms `cₖ = ∑_{i + j = k} qᵢ ∘ pⱼ` collect the products of the terms of total degree drop `k`. This
-is not the expansion of the symbol of a composition of operators. -/
-theorem HasClassicalExpansion.comp {b : Symbol n W U m'} (hb : HasClassicalExpansion χ b q)
-    (ha : HasClassicalExpansion χ a p) : HasClassicalExpansion χ (b.comp a) (compTerms q p) := by
-  intro N
+end CompTerms
+
+/-- The remainders of the pointwise composition of classical symbols after `N` terms have
+order `m' + m - N`. -/
+private theorem exists_remainder_comp (χ : FrequencyCutoff (CoordinateSpace n))
+    (a : ClassicalSymbol n V W m) (N : ℕ) :
+    ∀ {m' : ℝ} (b : ClassicalSymbol n W U m'), ∃ r : Symbol n V U (m' + m - N), ∀ p,
+      r.coefficient p = (b.toSymbol.comp a.toSymbol).coefficient p -
+        ∑ k ∈ Finset.range N, χ p.2 • (compTerms b.term a.term k).coefficient p := by
   -- Induct on the number `N` of terms, removing the leading term of `b` at each step.
-  induction N generalizing m' b q with
-  | zero => exact ⟨Symbol.inclusion (le_of_eq (by simp)) (b.comp a), by simp⟩
+  induction N with
+  | zero => exact fun b => ⟨Symbol.inclusion (le_of_eq (by simp)) (b.toSymbol.comp a.toSymbol),
+      fun p => by simp⟩
   | succ N ih =>
-    -- Split `b = χ(ξ) q₀ + b₁`, where `b₁` has order `m' - 1` and the terms `q₁, q₂, …`.
-    obtain ⟨b₁, hb₁⟩ := hb.exists_sub_leading
-    -- Then `b ∘ a - ∑_{k ≤ N} χ cₖ = χ q₀ ∘ (a - ∑_{j ≤ N} χ pⱼ) + (b₁ ∘ a - ∑_{k < N} χ cₖ')` for
+    intro m' b
+    -- Split `b = χ(ξ) b₀ + b₁`, where `b₁` has order `m' - 1` and the terms `b₁, b₂, …`. Then
+    -- `b ∘ a - ∑_{k ≤ N} χ cₖ = χ b₀ ∘ (a - ∑_{j ≤ N} χ aⱼ) + (b₁ ∘ a - ∑_{k < N} χ cₖ')` for
     -- `‖ξ‖ ≥ 2`, where `cₖ'` are the terms of `b₁ ∘ a`, and both summands have order
     -- `m' + m - (N + 1)`.
-    obtain ⟨R, hR⟩ := ih (hb.sub_leading hb₁)
-    obtain ⟨s, hs⟩ := ha (N + 1)
-    refine exists_coefficient_eq_of_forall_le_norm ((b.comp a).contDiff_coefficient.sub
-      (contDiff_sum_coefficient _ fun k => toSymbol χ (compTerms q p k)))
-      (Symbol.inclusion (le_of_eq (by push_cast; ring)) ((toSymbol χ (q 0)).comp s) +
-        Symbol.inclusion (le_of_eq (by push_cast; ring)) R) 2 fun x ξ hξ => ?_
-    have hχ := χ.apply_eq_one_of_two_le_norm hξ
-    simp only [Pi.sub_apply, Pi.add_apply, Finset.sum_apply, coefficient_add, coefficient_inclusion,
-      coefficient_comp, hs, hR, hb₁, coefficient_toSymbol, hχ, one_smul,
-      Finset.sum_range_succ' _ N, coefficient_compTerms_succ, coefficient_compTerms_zero,
-      ContinuousLinearMap.comp_sub, ContinuousLinearMap.sub_comp, ContinuousLinearMap.comp_add,
-      ContinuousLinearMap.comp_finsetSum, Finset.sum_add_distrib]
-    abel
+    obtain ⟨R, hR⟩ := ih (b.tail χ)
+    have ht : (b.tail χ).term = fun i => (b.term (i + 1)).castDegree (by push_cast; ring) := rfl
+    obtain ⟨r, hr⟩ := Symbol.exists_coefficient_eq_of_forall_le_norm
+      ((b.toSymbol.comp a.toSymbol).contDiff_coefficient.sub
+        (Symbol.contDiff_sum_coefficient (Finset.range (N + 1))
+          fun k => cutoffSymbol χ (compTerms b.term a.term k)))
+      (Symbol.inclusion (le_of_eq (by push_cast; ring))
+          ((cutoffSymbol χ b.principal).comp (a.remainder χ (N + 1))) +
+        Symbol.inclusion (le_of_eq (by push_cast; ring)) R : Symbol n V U (m' + m - (N + 1 : ℕ)))
+      2 fun x ξ hξ => by
+      have hχ := χ.apply_eq_one_of_two_le_norm hξ
+      simp only [Finset.sum_apply, Symbol.coefficient_add, Pi.add_apply,
+        Symbol.coefficient_inclusion, Symbol.coefficient_comp, hR, ht, coefficient_remainder,
+        coefficient_toSymbol_tail, coefficient_cutoffSymbol, coefficient_principal, hχ,
+        one_smul, Finset.sum_range_succ' _ N, coefficient_compTerms_succ,
+        coefficient_compTerms_zero, ContinuousLinearMap.comp_sub, ContinuousLinearMap.sub_comp,
+        ContinuousLinearMap.comp_add, ContinuousLinearMap.comp_finsetSum, Finset.sum_add_distrib]
+      abel
+    exact ⟨r, fun p => by simp [hr, Finset.sum_apply]⟩
 
-/-- The pointwise composition `(x, ξ) ↦ b(x, ξ) ∘ a(x, ξ)` of classical symbols of orders `m'` and
-`m` is a classical symbol of order `m' + m`. -/
-theorem comp_mem_classical {b : Symbol n W U m'} (hb : b ∈ classical n W U m')
-    (ha : a ∈ classical n V W m) : b.comp a ∈ classical n V U (m' + m) := by
-  obtain ⟨q, hq⟩ := (mem_classical_iff default).1 hb
-  obtain ⟨p, hp⟩ := (mem_classical_iff default).1 ha
-  exact (hq.comp hp).mem_classical
+/-- **Pointwise composition.** The pointwise composition `(x, ξ) ↦ b(x, ξ) ∘ a(x, ξ)` of classical
+symbols of orders `m'` and `m` is a classical symbol of order `m' + m`, whose terms
+`cₖ = ∑_{i + j = k} bᵢ ∘ aⱼ` collect the products of the terms of total degree drop `k`. This is
+not the composition of the operators: the lower order terms of the symbol of a composition of
+operators also involve derivatives of the symbols. -/
+def comp (b : ClassicalSymbol n W U m') (a : ClassicalSymbol n V W m) :
+    ClassicalSymbol n V U (m' + m) where
+  toSymbol := b.toSymbol.comp a.toSymbol
+  term := compTerms b.term a.term
+  exists_remainder' := ⟨default, fun N => exists_remainder_comp default a N b⟩
 
-/-- The pointwise composition `(x, ξ) ↦ b(x, ξ) ∘ a(x, ξ)` of classical symbols of orders `m'` and
-`m`, as a classical symbol of order `m' + m`. -/
-def classicalComp (b : classical n W U m') (a : classical n V W m) : classical n V U (m' + m) :=
-  ⟨(b : Symbol n W U m').comp a, comp_mem_classical b.2 a.2⟩
+variable (b : ClassicalSymbol n W U m') (a : ClassicalSymbol n V W m)
 
 @[simp]
-theorem coe_classicalComp (b : classical n W U m') (a : classical n V W m) :
-    (classicalComp b a : Symbol n V U (m' + m)) = (b : Symbol n W U m').comp a :=
+theorem toSymbol_comp : (b.comp a).toSymbol = b.toSymbol.comp a.toSymbol :=
   (rfl)
 
-/-- The homogeneous terms of the pointwise composition of classical symbols are
-`cₖ = ∑_{i + j = k} bᵢ ∘ aⱼ`. -/
-theorem classicalTerm_classicalComp (b : classical n W U m') (a : classical n V W m) (k : ℕ) :
-    classicalTerm k (classicalComp b a) =
-      compTerms (fun i => classicalTerm i b) (fun j => classicalTerm j a) k :=
-  ((hasClassicalExpansion_classicalTerm b default).comp
-    (hasClassicalExpansion_classicalTerm a default)).classicalTerm_eq k
-
-/-- **The principal symbol is multiplicative.** The principal symbol of the pointwise composition
-of classical symbols is the composition of their principal symbols. -/
 @[simp]
-theorem principalSymbol_classicalComp (b : classical n W U m') (a : classical n V W m) :
-    principalSymbol (classicalComp b a) = (principalSymbol b).comp (principalSymbol a) := by
+theorem term_comp (k : ℕ) : (b.comp a).term k = compTerms b.term a.term k :=
+  (rfl)
+
+/-- **The principal symbol is multiplicative** for the pointwise composition. -/
+@[simp]
+theorem principal_comp : (b.comp a).principal = b.principal.comp a.principal := by
   ext1
   funext z
-  simp [classicalTerm_classicalComp]
+  simp
 
 end Comp
 
-end Symbol
+end ClassicalSymbol
 
 end TauCeti

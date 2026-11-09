@@ -9,8 +9,8 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Algebra.Module.ProjectiveCover.Basic
 public import TauCeti.RingTheory.CompositionSeries.Additivity
-import TauCeti.Algebra.Module.LinearMap.Finite
 import TauCeti.Algebra.Module.Projective.LinearMap
+import TauCeti.RingTheory.Noetherian.LinearMap
 import TauCeti.RingTheory.Semisimple.Schur
 
 /-!
@@ -143,7 +143,6 @@ theorem IsProjectiveCover.finrank_linearMap_eq_jordanHolderMultiplicity_mul_finr
     have : Subsingleton (P →ₗ[A] M) := ⟨fun _ _ => LinearMap.ext fun _ => Subsingleton.elim _ _⟩
     exact Module.finrank_zero_of_subsingleton
   · intro M _ _ N _ _ ih _ _ _ _ _
-    have : FiniteDimensional k (P →ₗ[A] M) := Module.Finite.linearMap_of_isNoetherian
     have : FiniteDimensional k N :=
       Module.Finite.of_injective ((N.subtype).restrictScalars k) N.injective_subtype
     have : FiniteDimensional k (M ⧸ N) :=

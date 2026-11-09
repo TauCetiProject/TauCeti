@@ -13,6 +13,8 @@ import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Principal complex powers: scaling, sector inversion, and holomorphic products
@@ -26,6 +28,10 @@ raising the result back to the power `r` returns `u` — but only as long as the
 argument stays inside the principal range `(-π, π]`, which is where `Complex.cpow_mul` may be
 applied.  For a positive real exponent `r` that range is reached exactly on the sector
 `-(r * π) < arg u ≤ r * π`.
+
+Rescaling the principal `k`-th root, `z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ)`, gives a `k`-th root
+function that is complex differentiable at a nonzero `z₀` and takes there any prescribed `k`-th
+root `c` of `z₀`, since `z / z₀` stays in the slit plane near `z₀`.
 
 Products `∏ i, (1 - a i * w) ^ e i` are holomorphic near zero, with derivative
 `-∑ i, e i * a i` and second derivative
@@ -59,6 +65,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `TauCeti.ofReal_exp_cpow` -- a principal power of a positive real exponential is an exponential.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
   base on a suitable sector.
+* `TauCeti.exists_differentiableAt_pow_eq` -- near a nonzero point, a prescribed `k`-th root
+  extends to a `k`-th root function complex differentiable at that point.
 * `TauCeti.cpow_mul_inv`, `TauCeti.cpow_add_one'` -- multiplying a principal power by `w⁻¹` or `w`
   lowers or raises the exponent by one, including at the base `0`.
 * `TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow`, `TauCeti.exists_norm_ofReal_add_cpow_le`,
@@ -183,6 +191,16 @@ theorem cpow_inv_cpow_of_arg_mem_Ioc {u : ℂ} {r : ℝ} (hr : 0 < r)
     calc
       u.arg * r⁻¹ ≤ (r * Real.pi) * r⁻¹ := mul_le_mul_of_nonneg_right harg.2 (inv_nonneg.mpr hr.le)
       _ = Real.pi := by field_simp
+
+/-- **A local holomorphic branch of the `k`-th root.** Near a nonzero `z₀` with a chosen `k`-th
+root `c`, there is a `k`-th root function which is complex differentiable at `z₀` and takes the
+value `c` there, namely `z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ)`. -/
+theorem exists_differentiableAt_pow_eq {z₀ c : ℂ} {k : ℕ} (hk : k ≠ 0) (hz₀ : z₀ ≠ 0)
+    (hc : c ^ k = z₀) :
+    ∃ f : ℂ → ℂ, DifferentiableAt ℂ f z₀ ∧ f z₀ = c ∧ ∀ z, f z ^ k = z := by
+  refine ⟨fun z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ), ?_, by simp [div_self hz₀], fun z ↦ ?_⟩
+  · exact ((differentiableAt_id.div_const _).cpow_const (by simp [div_self hz₀])).const_mul c
+  · rw [mul_pow, cpow_nat_inv_pow _ hk, hc, mul_div_cancel₀ _ hz₀]
 
 /-- The reciprocal-coordinate product of principal powers is holomorphic at zero,
 where every base equals one. -/
@@ -360,18 +378,10 @@ theorem exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow {z : ℂ} (hz :
     exact hlow w hw_ball ⟨t, ht⟩
   -- Upper bound `‖(t : ℂ) + w‖ ≤ M * (1 + t)` from the triangle inequality on `ball z c`.
   have hupper : ‖(t : ℂ) + w‖ ≤ M * (1 + t) := by
-    have hwz : ‖w - z‖ < c := by simpa [dist_eq_norm] using hw_ball
-    have hw_norm : ‖w‖ ≤ ‖z‖ + c := by
-      calc ‖w‖ = ‖(w - z) + z‖ := by ring_nf
-        _ ≤ ‖w - z‖ + ‖z‖ := norm_add_le _ _
-        _ ≤ c + ‖z‖ := by linarith
-        _ = ‖z‖ + c := add_comm _ _
-    calc ‖(t : ℂ) + w‖ ≤ ‖(t : ℂ)‖ + ‖w‖ := norm_add_le _ _
-      _ = t + ‖w‖ := by rw [Complex.norm_real, Real.norm_of_nonneg ht]
-      _ ≤ t + (‖z‖ + c) := by linarith
-      _ ≤ M * (1 + t) := by
-        have : 0 ≤ (‖z‖ + c) * t := mul_nonneg (by positivity) ht
-        linarith
+    have h := one_add_norm_add_le (t : ℂ) w
+    rw [Complex.norm_real, Real.norm_of_nonneg ht] at h
+    have hw_norm : ‖w‖ ≤ ‖z‖ + c := (norm_lt_of_mem_ball hw_ball).le
+    nlinarith [norm_nonneg w, mul_le_mul_of_nonneg_right hw_norm h1t.le]
   -- Bound the radial factor `‖(t : ℂ) + w‖ ^ s.re` according to the sign of `s.re`.
   have hrpow : ‖(t : ℂ) + w‖ ^ s.re ≤ max (c ^ s.re) (M ^ s.re) * (1 + t) ^ s.re := by
     rcases le_or_gt s.re 0 with hs | hs
@@ -388,15 +398,7 @@ theorem exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow {z : ℂ} (hz :
           gcongr
           exact le_max_right _ _
   -- Bound the angular factor `1 / exp (arg * s.im) ≤ exp (π * |s.im|)`.
-  have hexp : (Real.exp (((t : ℂ) + w).arg * s.im))⁻¹ ≤ Real.exp (Real.pi * |s.im|) := by
-    rw [← Real.exp_neg]
-    apply Real.exp_le_exp.mpr
-    calc -(((t : ℂ) + w).arg * s.im)
-        ≤ |((t : ℂ) + w).arg * s.im| := neg_le_abs _
-      _ = |((t : ℂ) + w).arg| * |s.im| := abs_mul _ _
-      _ ≤ Real.pi * |s.im| := by
-        gcongr
-        exact Complex.abs_arg_le_pi _
+  have hexp := Complex.inv_exp_arg_mul_le_exp_pi_mul_abs ((t : ℂ) + w) s.im
   calc ‖((t : ℂ) + w) ^ s‖
       ≤ ‖(t : ℂ) + w‖ ^ s.re / Real.exp (((t : ℂ) + w).arg * s.im) :=
         Complex.norm_cpow_le _ _

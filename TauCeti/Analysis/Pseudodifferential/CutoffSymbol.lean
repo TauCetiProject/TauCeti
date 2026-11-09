@@ -127,13 +127,6 @@ variable (χ : FrequencyCutoff (CoordinateSpace n))
 theorem coefficient_toSymbol (p : CoordinateSpace n × CoordinateSpace n) :
     (toSymbol χ a).coefficient p = χ p.2 • a.coefficient p := (rfl)
 
-/-- Transporting the degree does not change the cut-off term. -/
-@[simp]
-theorem coefficient_toSymbol_castDegree {m' : ℝ} (h : m = m') :
-    (toSymbol χ (a.castDegree h)).coefficient = (toSymbol χ a).coefficient := by
-  funext p
-  simp
-
 /-- For `‖ξ‖ ≥ 2` the cut-off term is the homogeneous symbol itself. -/
 theorem coefficient_toSymbol_of_two_le_norm (x : CoordinateSpace n) {ξ : CoordinateSpace n}
     (hξ : 2 ≤ ‖ξ‖) : (toSymbol χ a).coefficient (x, ξ) = a.coefficient (x, ξ) := by

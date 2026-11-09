@@ -58,16 +58,16 @@ namespace CodimensionOnePoint
 variable {k : Type u} [Field k] {X : Scheme.{u}} [IsIntegral X] [X.Over (Spec (.of k))]
   [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))]
 
-/-- **The closed point of a lift is the centre of the place.** If a morphism `l : Spec 𝒪_P ⟶ X`
-from the spectrum of the valuation ring of a place `P` of `k(X)` restricts to the generic point on
-`Spec k(X)`, then on a scheme of dimension at most one the image of the closed point of `Spec 𝒪_P`
-is a codimension-one point whose place is `P`. -/
-theorem exists_toPlace_eq_of_lift (hdim : ∀ x : X, coheight x ≤ 1)
-    (P : Place k X.functionField) (l : Spec (.of P.integers) ⟶ X)
+omit [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))] in
+/-- The lift `l` factors the inclusion of the stalk at the image `x` of the closed point into the
+function field through the valuation ring of `P`. -/
+private lemma algebraMap_stalk_mem_integers_of_lift (P : Place k X.functionField)
+    (l : Spec (.of P.integers) ⟶ X)
     (hlK : Spec.map (CommRingCat.ofHom (algebraMap P.integers X.functionField)) ≫ l =
-      X.fromSpecStalk (genericPoint X)) :
-    ∃ y : CodimensionOnePoint X, (y : X) = l (IsLocalRing.closedPoint P.integers) ∧
-      X.toPlace (k := k) (y : X) = P := by
+      X.fromSpecStalk (genericPoint X))
+    (a : X.presheaf.stalk (l (IsLocalRing.closedPoint P.integers))) :
+    algebraMap (X.presheaf.stalk (l (IsLocalRing.closedPoint P.integers))) X.functionField a ∈
+      P.integers := by
   let x : X := l (IsLocalRing.closedPoint P.integers)
   have hg :
       Spec.map (CommRingCat.ofHom
@@ -87,30 +87,48 @@ theorem exists_toPlace_eq_of_lift (hdim : ∀ x : X, coheight x ≤ 1)
           (algebraMap P.integers X.functionField) =
         CommRingCat.ofHom (algebraMap (X.presheaf.stalk x) X.functionField) :=
     Spec.map_injective hspec
-  -- The lift factors the inclusion of the stalk at `x` into the function field through the
-  -- valuation ring of `P`; this is the only consequence of `hmap` used below.
+  have ha : algebraMap P.integers X.functionField (Scheme.stalkClosedPointTo l a) =
+      algebraMap (X.presheaf.stalk x) X.functionField a := by
+    simpa only [CommRingCat.hom_comp, RingHom.coe_comp, Function.comp_apply,
+      CommRingCat.hom_ofHom] using
+      congrArg (fun g : X.presheaf.stalk x →+* X.functionField ↦ g a)
+        (CommRingCat.hom_ext_iff.mp hmap)
+  rw [← ha, ValuationSubring.algebraMap_apply]
+  exact (Scheme.stalkClosedPointTo l a).property
+
+omit [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))] in
+/-- If the stalk at `x` maps into the valuation ring of a place, then `x` is not the generic point:
+there the stalk is the whole function field. -/
+private lemma ne_genericPoint_of_algebraMap_mem_integers (P : Place k X.functionField) {x : X}
+    (hmem : ∀ a : X.presheaf.stalk x, algebraMap (X.presheaf.stalk x) X.functionField a ∈
+      P.integers) : x ≠ genericPoint X := by
+  intro hx
+  -- At the generic point the stalk is the whole function field, so `hmem` would make the
+  -- valuation ring of `P` everything.
+  let e : X.presheaf.stalk x ≅ X.functionField := X.presheaf.stalkCongr (.of_eq hx)
+  have halg (b : X.presheaf.stalk x) :
+      algebraMap (X.presheaf.stalk x) X.functionField b = e.hom b := by
+    rw [RingHom.algebraMap_toAlgebra]
+    simp [e]
+  refine P.integers_ne_top (le_antisymm le_top fun f _ ↦ ?_)
+  have h := hmem (e.inv f)
+  rwa [halg, Iso.inv_hom_id_apply (C := CommRingCat) e f] at h
+
+/-- **The closed point of a lift is the centre of the place.** If a morphism `l : Spec 𝒪_P ⟶ X`
+from the spectrum of the valuation ring of a place `P` of `k(X)` restricts to the generic point on
+`Spec k(X)`, then on a scheme of dimension at most one the image of the closed point of `Spec 𝒪_P`
+is a codimension-one point whose place is `P`. -/
+theorem exists_toPlace_eq_of_lift (hdim : ∀ x : X, coheight x ≤ 1)
+    (P : Place k X.functionField) (l : Spec (.of P.integers) ⟶ X)
+    (hlK : Spec.map (CommRingCat.ofHom (algebraMap P.integers X.functionField)) ≫ l =
+      X.fromSpecStalk (genericPoint X)) :
+    ∃ y : CodimensionOnePoint X, (y : X) = l (IsLocalRing.closedPoint P.integers) ∧
+      X.toPlace (k := k) (y : X) = P := by
+  let x : X := l (IsLocalRing.closedPoint P.integers)
   have hmem (a : X.presheaf.stalk x) :
-      algebraMap (X.presheaf.stalk x) X.functionField a ∈ P.integers := by
-    have ha : algebraMap P.integers X.functionField (Scheme.stalkClosedPointTo l a) =
-        algebraMap (X.presheaf.stalk x) X.functionField a := by
-      simpa only [CommRingCat.hom_comp, RingHom.coe_comp, Function.comp_apply,
-        CommRingCat.hom_ofHom] using
-        congrArg (fun g : X.presheaf.stalk x →+* X.functionField ↦ g a)
-          (CommRingCat.hom_ext_iff.mp hmap)
-    rw [← ha, ValuationSubring.algebraMap_apply]
-    exact (Scheme.stalkClosedPointTo l a).property
-  have hx_ne : x ≠ genericPoint X := by
-    intro hx
-    -- At the generic point the stalk is the whole function field, so `hmem` would make the
-    -- valuation ring of `P` everything.
-    let e : X.presheaf.stalk x ≅ X.functionField := X.presheaf.stalkCongr (.of_eq hx)
-    have halg (b : X.presheaf.stalk x) :
-        algebraMap (X.presheaf.stalk x) X.functionField b = e.hom b := by
-      rw [RingHom.algebraMap_toAlgebra]
-      simp [e]
-    refine P.integers_ne_top (le_antisymm le_top fun f _ ↦ ?_)
-    have h := hmem (e.inv f)
-    rwa [halg, Iso.inv_hom_id_apply (C := CommRingCat) e f] at h
+      algebraMap (X.presheaf.stalk x) X.functionField a ∈ P.integers :=
+    algebraMap_stalk_mem_integers_of_lift P l hlK a
+  have hx_ne : x ≠ genericPoint X := ne_genericPoint_of_algebraMap_mem_integers P hmem
   have hx_pos : 0 < coheight x := by
     rw [coheight_pos]
     intro hxmax

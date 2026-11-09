@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.Reduced
+import Mathlib.Tactic.Module
 
 /-!
 # A symmetry criterion for reduced root pairings
@@ -21,9 +22,11 @@ This criterion is useful for root data presented in dual coordinate bases. Their
 coroots need not be equal as coordinate vectors, while the pairing can still visibly be the
 symmetric form of a simply-laced Cartan matrix.
 
-## Main result
+## Main results
 
 * `RootPairing.isReduced_of_pairing_comm`: a root pairing with symmetric pairings is reduced.
+* `RootPairing.ne_neg_of_root_eq_add_nsmul`: in a reduced root pairing, a root string through a
+  root `j ≠ -s` in the direction `s` never reaches `-s`.
 -/
 
 public section
@@ -49,5 +52,25 @@ theorem isReduced_of_pairing_comm
   · exact .inl (smul_right_injective M two_ne_zero (htwo ▸ hi))
   · rw [hnegTwo, neg_smul, neg_eq_iff_eq_neg, ← smul_neg] at hi
     exact .inr (smul_right_injective M two_ne_zero hi)
+
+omit [IsDomain R] [NeZero (2 : R)] [Module.IsTorsionFree R M] in
+/-- A root `k = j + n • s` with `j ≠ -s` is not `-s`: otherwise `-j` would be a positive multiple
+of `s`, which a reduced root pairing excludes. -/
+lemma ne_neg_of_root_eq_add_nsmul [CharZero R] [HasUniqueDiv M] [P.IsReduced] (s : ι) {j k : ι}
+    (hj : let _i := P.indexNeg; j ≠ -s) {n : ℕ} (hkroot : P.root k = P.root j + n • P.root s) :
+    let _i := P.indexNeg; k ≠ -s := by
+  intro _i
+  rintro rfl
+  replace hkroot : P.root (-j) = (n + 1) • P.root s := by
+    simp only [indexNeg_neg, root_reflectionPerm, reflection_apply_self,
+      neg_eq_iff_add_eq_zero, add_smul, one_smul] at hkroot ⊢
+    rw [← hkroot]
+    module
+  rcases n.eq_zero_or_pos with rfl | hn
+  · apply hj
+    rw [zero_add, one_smul, EmbeddingLike.apply_eq_iff_eq] at hkroot
+    simp [← hkroot, -indexNeg_neg]
+  · have _i : (n + 1).AtLeastTwo := ⟨by omega⟩
+    exact P.nsmul_notMem_range_root (n := n + 1) (i := s) ⟨-j, hkroot⟩
 
 end RootPairing
