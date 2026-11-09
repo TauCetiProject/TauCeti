@@ -53,9 +53,9 @@ primes.** -/
 theorem card_genusPrimeDiscriminants_eq_ncard_ramifiedPrimes
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hd : Squarefree d) :
-    (genusPrimeDiscriminants hd).card = (ramifiedPrimes K).ncard :=
-  have ⟨hs, heven, hprod⟩ := genusPrimeDiscriminants_spec hd
-  (ncard_ramifiedPrimes_eq_card hmin hgen hd hs heven hprod).symm
+    (genusPrimeDiscriminants hd).card = (ramifiedPrimes K).ncard := by
+  obtain ⟨hs, -, hprod⟩ := genusPrimeDiscriminants_spec hd
+  exact (ncard_ramifiedPrimes_eq_card hmin hgen hd hs hprod).symm
 
 /-- **The candidate genus field of `ℚ(√d)` has degree `2 ^ t` over `ℚ`**, where `t` is the number of
 rational primes ramifying in `ℚ(√d)`. -/

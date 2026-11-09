@@ -17,9 +17,9 @@ Herbrand quotient of a finite cyclic group uses: a finite representation has Her
 not change the quotient (`TauCeti.TateCohomology.herbrandQuotient_eq_of_shortExact_of_finite_X₁`
 and its relatives).
 
-Along a short exact sequence, the connecting map also makes `Ĥⁿ⁺¹(G, X₁)` finite when
-`Ĥⁿ(G, X₃)` is finite and `Ĥⁿ⁺¹(G, X₂)` vanishes
-(`TauCeti.TateCohomology.finite_tateCohomology_X₁_of_shortExact_of_isZero_X₂`).
+Along a short exact sequence, `tateCohomology X₁ (n + 1)` is finite whenever
+`tateCohomology X₃ n` and `tateCohomology X₂ (n + 1)` are
+(`TauCeti.TateCohomology.finite_tateCohomology_X₁_of_shortExact`).
 -/
 
 public section
@@ -39,26 +39,28 @@ instance finite_tateCohomology (M : Rep R G) [Finite M] (n : ℤ) : Finite (tate
   -- `(Fin n → G) → M` or `(Fin n → G) →₀ M` (the gluing lemmas `CochainComplex.ConnectData.X_ofNat`
   -- and `X_negSucc` are `rfl`). Mathlib states no lemma naming these carriers, so `change` is
   -- what exposes them.
-  have : Finite ((tateComplex M).sc n).X₂ := by
+  have : Finite ((tateComplex M).X n) := by
     rcases n with n | n
     · change Finite ((Fin n → G) → M)
       infer_instance
     · change Finite ((Fin n → G) →₀ M)
       exact Finite.of_injective _ DFunLike.coe_injective
-  have : Finite (LinearMap.ker ((tateComplex M).sc n).g.hom) :=
-    Finite.of_injective _ Subtype.val_injective
-  have : Finite ((tateComplex M).sc n).moduleCatLeftHomologyData.H :=
-    Finite.of_surjective _ (Submodule.mkQ_surjective _)
-  exact ((tateComplex M).sc n).moduleCatHomologyIso.toLinearEquiv.toEquiv.finite_iff.mpr this
+  have : Finite ((tateComplex M).cycles n) :=
+    .of_injective _ <| (ModuleCat.mono_iff_injective ((tateComplex M).iCycles n)).1 inferInstance
+  exact .of_surjective _ <| (ModuleCat.epi_iff_surjective ((tateComplex M).homologyπ n)).1
+    inferInstance
 
-/-- In a short exact sequence, if `Ĥⁿ(G, X₃)` is finite and `Ĥⁿ⁺¹(G, X₂)` vanishes, then
-`Ĥⁿ⁺¹(G, X₁)` is finite, since the connecting map onto it is surjective. -/
-theorem finite_tateCohomology_X₁_of_shortExact_of_isZero_X₂ {S : ShortComplex (Rep R G)}
-    (hS : S.ShortExact) (n : ℤ) (hzero : IsZero (tateCohomology S.X₂ (n + 1)))
-    [Finite (tateCohomology S.X₃ n)] : Finite (tateCohomology S.X₁ (n + 1)) := by
-  have hepi := (_root_.TateCohomology.map_tateComplexFunctor_shortExact hS).epi_δ
-    n (n + 1) rfl hzero
-  exact Finite.of_surjective (_root_.TateCohomology.δ hS n)
-    ((ModuleCat.epi_iff_surjective _).1 hepi)
+/-- For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of representations and `m = n + 1`, if
+`tateCohomology X₃ n` and `tateCohomology X₂ m` are finite, then so is `tateCohomology X₁ m`. -/
+theorem finite_tateCohomology_X₁_of_shortExact {S : ShortComplex (Rep R G)}
+    (hS : S.ShortExact) (n m : ℤ) (hnm : n + 1 = m) [Finite (tateCohomology S.X₃ n)]
+    [Finite (tateCohomology S.X₂ m)] : Finite (tateCohomology S.X₁ m) := by
+  subst hnm
+  have := Fintype.ofFinite (tateCohomology S.X₃ n)
+  have := Fintype.ofFinite (tateCohomology S.X₂ (n + 1))
+  have := AddGroup.fintypeOfKerLeRange (_root_.TateCohomology.δ hS n).hom.toAddMonoidHom
+    ((tateCohomologyFunctor (n + 1)).map S.f).hom.toAddMonoidHom
+    ((ShortComplex.moduleCat_exact_iff_ker_sub_range _).1 (_root_.TateCohomology.exact₁ hS n))
+  infer_instance
 
 end TauCeti.TateCohomology
