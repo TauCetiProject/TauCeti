@@ -57,8 +57,9 @@ Interval integrals of elementary functions in closed form or as series, continui
   `b ≥ 0`.
 * `Real.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{κ cos θ} exp (n θ i)` as the
   sum of the termwise integrals of the exponential series of `e^{κ cos θ}`.
-* `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`: the integral
-  from `0` of an integrand `θ ↦ G (sin² θ)` is odd and quasi-periodic in its upper limit.
+* `TauCeti.integral_comp_sin_sq_neg`, `TauCeti.integral_comp_sin_sq_add_int_mul_pi`,
+  `TauCeti.integral_comp_sin_sq_int_mul_pi`: the integral from `0` of an integrand
+  `θ ↦ G (sin² θ)` is odd and quasi-periodic in its upper limit.
 -/
 
 public section
@@ -380,31 +381,45 @@ theorem integral_comp_sin_sq_neg (G : ℝ → ℝ) (x : ℝ) :
   simp only [Real.sin_neg, neg_sq, neg_zero] at h
   rw [h, intervalIntegral.integral_symm]
 
-/-- The integral of a continuous integrand depending only on `sin² θ` over a half-period
-`[-π/2, π/2]` is twice its integral over `[0, π/2]`. -/
+open MeasureTheory Set in
+/-- If `θ ↦ G (sin² θ)` is interval integrable on `[0, π/2]`, it is interval integrable on every
+interval. -/
+theorem intervalIntegrable_comp_sin_sq (G : ℝ → ℝ)
+    (hG : IntervalIntegrable (fun θ ↦ G (Real.sin θ ^ 2)) volume 0 (Real.pi / 2)) (a b : ℝ) :
+    IntervalIntegrable (fun θ ↦ G (Real.sin θ ^ 2)) volume a b := by
+  have hper : Function.Periodic (fun θ ↦ G (Real.sin θ ^ 2)) Real.pi := fun θ ↦ by
+    simp only [Real.sin_add_pi, neg_sq]
+  have h2 : IntervalIntegrable (fun θ ↦ G (Real.sin θ ^ 2)) volume (Real.pi / 2) Real.pi := by
+    have h := hG.comp_sub_left Real.pi
+    simp only [Real.sin_pi_sub, sub_zero] at h
+    rwa [show Real.pi - Real.pi / 2 = Real.pi / 2 by ring, IntervalIntegrable.symm_iff] at h
+  refine hper.intervalIntegrable₀ Real.pi_ne_zero ?_ a b
+  simpa using hG.trans h2
+
+open MeasureTheory in
+/-- The integral of an integrand depending only on `sin² θ` over a half-period `[-π/2, π/2]` is
+twice its integral over `[0, π/2]`. -/
 theorem integral_comp_sin_sq_neg_pi_div_two (G : ℝ → ℝ)
-    (hG : Continuous fun θ ↦ G (Real.sin θ ^ 2)) :
+    (hG : IntervalIntegrable (fun θ ↦ G (Real.sin θ ^ 2)) volume 0 (Real.pi / 2)) :
     ∫ θ in -(Real.pi / 2)..Real.pi / 2, G (Real.sin θ ^ 2) =
       2 * ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
-  rw [← intervalIntegral.integral_add_adjacent_intervals (b := 0) (hG.intervalIntegrable _ _)
-    (hG.intervalIntegrable _ _), intervalIntegral.integral_symm 0 (-(Real.pi / 2)),
-    integral_comp_sin_sq_neg G, neg_neg]
+  have hint := intervalIntegrable_comp_sin_sq G hG
+  rw [← intervalIntegral.integral_add_adjacent_intervals (b := 0) (hint _ _) (hint _ _),
+    intervalIntegral.integral_symm 0 (-(Real.pi / 2)), integral_comp_sin_sq_neg G, neg_neg]
   ring
 
-/-- **Quasi-periodicity** of the integral from `0` of a continuous integrand depending only on
+open MeasureTheory in
+/-- **Quasi-periodicity** of the integral from `0` of an integrand depending only on
 `sin² θ`: adding `n` half-turns to the upper limit adds `2 n` times the integral over
 `[0, π/2]`. -/
 theorem integral_comp_sin_sq_add_int_mul_pi (G : ℝ → ℝ)
-    (hG : Continuous fun θ ↦ G (Real.sin θ ^ 2)) (x : ℝ) (n : ℤ) :
+    (hG : IntervalIntegrable (fun θ ↦ G (Real.sin θ ^ 2)) volume 0 (Real.pi / 2)) (x : ℝ) (n : ℤ) :
     ∫ θ in (0 : ℝ)..x + n * Real.pi, G (Real.sin θ ^ 2) =
       (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
         2 * n * ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
   have hper : Function.Periodic (fun θ ↦ G (Real.sin θ ^ 2)) Real.pi := fun θ ↦ by
     simp only [Real.sin_add_pi, neg_sq]
-  have hint : ∀ a b : ℝ, IntervalIntegrable (fun θ ↦ G (Real.sin θ ^ 2)) MeasureTheory.volume a b :=
-    fun a b ↦ hG.intervalIntegrable a b
-  -- Split off `[x, x + n π]`, which consists of `n` periods; each period integral equals the
-  -- one over the half-period `[-π/2, π/2]`, which is twice the integral over `[0, π/2]`.
+  have hint := intervalIntegrable_comp_sin_sq G hG
   calc ∫ θ in (0 : ℝ)..x + n * Real.pi, G (Real.sin θ ^ 2)
       = (∫ θ in (0 : ℝ)..x, G (Real.sin θ ^ 2)) +
           ∫ θ in x..x + n * Real.pi, G (Real.sin θ ^ 2) :=
@@ -432,6 +447,33 @@ theorem integral_add_rpow_le_of_lt_neg_one {r β S : ℝ} (hr : 0 < r) (hS : S <
   rw [intervalIntegral.integral_comp_sub_left (fun x : ℝ => x ^ S) (r + β)] at h
   rw [intervalIntegral.integral_comp_add_left (fun x : ℝ => x ^ S) r]
   convert h using 2 <;> ring
+
+open MeasureTheory Set in
+/-- The integral from `0` to `n π` of an integrand depending only on `sin² θ` is `2 n` times its
+integral over `[0, π/2]`, without any integrability assumption: if the integrand is not integrable
+on `[0, π/2]`, it is not integrable on any interval from `0` to a nonzero multiple of `π`, and
+both sides are `0`. -/
+theorem integral_comp_sin_sq_int_mul_pi (G : ℝ → ℝ) (n : ℤ) :
+    ∫ θ in (0 : ℝ)..n * Real.pi, G (Real.sin θ ^ 2) =
+      2 * n * ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
+  by_cases hG : IntervalIntegrable (fun θ ↦ G (Real.sin θ ^ 2)) volume 0 (Real.pi / 2)
+  · simpa using integral_comp_sin_sq_add_int_mul_pi G hG 0 n
+  · rw [intervalIntegral.integral_undef hG, mul_zero]
+    rcases eq_or_ne n 0 with rfl | hn
+    · simp
+    · refine intervalIntegral.integral_undef fun h ↦ hG ?_
+      have hπ := Real.pi_pos
+      rcases lt_or_gt_of_ne hn with hn | hn
+      · -- negative multiple: use evenness
+        have hn1 : (n : ℝ) ≤ -1 := by exact_mod_cast (by omega : n ≤ -1)
+        have h1 : IntervalIntegrable (fun θ ↦ G (Real.sin θ ^ 2)) volume (-(Real.pi / 2)) 0 :=
+          h.symm.mono_set (uIcc_subset_uIcc (mem_uIcc.2 (Or.inl ⟨by nlinarith, by linarith⟩))
+            right_mem_uIcc)
+        have h2 := h1.comp_sub_left 0
+        simpa using h2.symm
+      · have hn1 : (1 : ℝ) ≤ n := by exact_mod_cast (by omega : 1 ≤ n)
+        exact h.mono_set (uIcc_subset_uIcc left_mem_uIcc
+          (mem_uIcc.2 (Or.inl ⟨by positivity, by nlinarith⟩)))
 
 end TauCeti
 
