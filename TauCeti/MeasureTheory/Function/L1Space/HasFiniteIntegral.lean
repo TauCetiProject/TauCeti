@@ -8,34 +8,29 @@ module
 public import Mathlib.MeasureTheory.Function.L1Space.HasFiniteIntegral
 
 /-!
-# Lower bounds for lower Lebesgue integrals of norms of differences
+# A triangle inequality for lower Lebesgue integrals of norms
 
-If the lower Lebesgue integral of `‖g‖ₑ` exceeds `ε` while that of `‖f‖ₑ` is at most `ε / 2`,
-then the lower Lebesgue integral of `‖g - f‖ₑ` exceeds `ε / 2`
-(`TauCeti.MeasureTheory.half_lt_lintegral_enorm_sub`). This is the triangle inequality
-`MeasureTheory.lintegral_edist_triangle` combined with `ENNReal.add_halves`; applied to a
+For an a.e.-strongly measurable `f`, the lower Lebesgue integral of `‖g‖ₑ` is at most the sum of
+those of `‖g - f‖ₑ` and `‖f‖ₑ`
+(`TauCeti.MeasureTheory.lintegral_enorm_le_lintegral_enorm_sub_add`). This is the pointwise
+triangle inequality integrated with `MeasureTheory.lintegral_enorm_add_right`; applied to a
 restricted measure it gives the corresponding estimate for set integrals.
 -/
 
 public section
 
 open MeasureTheory
-open scoped ENNReal
 
 namespace TauCeti.MeasureTheory
 
-/-- If `‖g‖ₑ` has lower Lebesgue integral more than `ε` and `‖f‖ₑ` has lower Lebesgue integral at
-most `ε / 2`, then `‖g - f‖ₑ` has lower Lebesgue integral more than `ε / 2`. -/
-theorem half_lt_lintegral_enorm_sub {α E : Type*} {m : MeasurableSpace α} {μ : Measure α}
-    [NormedAddCommGroup E] {f g : α → E} (hf : AEStronglyMeasurable f μ) {ε : ℝ≥0∞}
-    (hg : ε < ∫⁻ x, ‖g x‖ₑ ∂μ) (hfε : ∫⁻ x, ‖f x‖ₑ ∂μ ≤ ε / 2) :
-    ε / 2 < ∫⁻ x, ‖g x - f x‖ₑ ∂μ := by
-  by_contra! hle
-  have hsplit := lintegral_edist_triangle (μ := μ) (f := fun _ : α ↦ (0 : E)) (g := g)
-    (h := f) aestronglyMeasurable_zero hf
-  simp only [edist_eq_enorm_sub, zero_sub, enorm_neg] at hsplit
-  have := hg.trans_le (hsplit.trans (add_le_add hfε hle))
-  rw [ENNReal.add_halves] at this
-  exact lt_irrefl _ this
+/-- The lower Lebesgue integral of `‖g‖ₑ` is at most the sum of the lower Lebesgue integrals of
+`‖g - f‖ₑ` and `‖f‖ₑ`, provided `f` is a.e.-strongly measurable. -/
+theorem lintegral_enorm_le_lintegral_enorm_sub_add {α E : Type*} {m : MeasurableSpace α}
+    {μ : Measure α} [NormedAddCommGroup E] {f : α → E} (hf : AEStronglyMeasurable f μ)
+    (g : α → E) :
+    ∫⁻ x, ‖g x‖ₑ ∂μ ≤ ∫⁻ x, ‖g x - f x‖ₑ ∂μ + ∫⁻ x, ‖f x‖ₑ ∂μ := by
+  rw [← lintegral_enorm_add_right _ hf]
+  refine lintegral_mono fun x ↦ ?_
+  simpa only [sub_add_cancel] using enorm_add_le (g x - f x) (f x)
 
 end TauCeti.MeasureTheory

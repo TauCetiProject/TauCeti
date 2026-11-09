@@ -180,9 +180,12 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
   obtain ⟨K, hK⟩ := eventually_atTop.1 (ENNReal.tendsto_nhds_zero.1
     (tendsto_setLIntegral_zero (L1.integrable_coeFn f).2.ne hμsτ) (ε / 2)
       (ENNReal.half_pos hε.ne'))
-  have hbig' (k : ℕ) (hk : K ≤ k) : ε / 2 < ∫⁻ x in s (τ k), ‖h k x‖ₑ ∂μ :=
-    TauCeti.MeasureTheory.half_lt_lintegral_enorm_sub (L1.integrable_coeFn f).1.restrict
-      (hbig (τ k)) (hK k hk)
+  have hbig' (k : ℕ) (hk : K ≤ k) : ε / 2 < ∫⁻ x in s (τ k), ‖h k x‖ₑ ∂μ := by
+    by_contra! hle
+    have := (hbig (τ k)).trans_le ((TauCeti.MeasureTheory.lintegral_enorm_le_lintegral_enorm_sub_add
+      (L1.integrable_coeFn f).1.restrict _).trans (add_le_add hle (hK k hk)))
+    rw [ENNReal.add_halves] at this
+    exact lt_irrefl _ this
   -- Shrink the small sets to disjoint ones and apply the gliding hump lemma.
   obtain ⟨σ, hσ, B, hBm, hB, -, hσB⟩ := exists_strictMono_pairwise_disjoint_lintegral_le
     (f := fun j x ↦ ‖h (j + K) x‖ₑ) (s := fun j ↦ s (τ (j + K)))
