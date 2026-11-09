@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Fourier.Continuous
 
 /-!
@@ -89,10 +90,11 @@ variable [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 /-- An `Lᵖ` function is almost everywhere equal to any locally integrable function with the same
 pairings against Schwartz functions. The two functions need not lie in the same `Lᵖ` space. -/
 theorem ae_eq_of_toTemperedDistribution_apply_eq {μ : Measure E} [μ.HasTemperateGrowth]
-    [IsLocallyFiniteMeasure μ] {p : ENNReal} [hp : Fact (1 ≤ p)] (u : Lp F p μ) {g : E → F}
+    {p : ENNReal} [hp : Fact (1 ≤ p)] (u : Lp F p μ) {g : E → F}
     (hg : LocallyIntegrable g μ)
     (h : ∀ φ : 𝓢(E, ℂ), (u : 𝓢'(E, F)) φ = ∫ x, φ x • g x ∂μ) :
     u =ᵐ[μ] g := by
+  have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
   refine ae_eq_of_integral_contDiff_smul_eq ((Lp.memLp u).locallyIntegrable hp.out) hg
     fun ψ hψ hψc => ?_
   -- A smooth compactly supported real function is a complex Schwartz function.
@@ -169,8 +171,7 @@ theorem fourierInv_toTemperedDistribution_apply (v : Lp F 1 (volume : Measure E)
     fun_prop
   have h := VectorFourier.integral_fourierIntegral_smul_eq_flip Real.continuous_fourierChar hL
     (φ.integrable (μ := volume)) (L1.integrable_coeFn v)
-  rw [hflip] at h
-  exact h
+  rwa [hflip] at h
 
 /-- **The representative of an `Lᵖ` function with integrable Fourier transform.** If the
 distributional Fourier transform of `u ∈ Lᵖ` is an `L¹` function `v`, then `u` agrees almost
@@ -181,8 +182,7 @@ theorem ae_eq_fourierInv_of_fourier_eq {p : ENNReal} [Fact (1 ≤ p)]
     u =ᵐ[volume] 𝓕⁻ (v : E → F) := by
   have hcont : Continuous (𝓕⁻ (v : E → F)) := (L1.integrable_coeFn v).continuous_fourierInv
   have hu : (u : 𝓢'(E, F)) = 𝓕⁻ (v : 𝓢'(E, F)) := by
-    rw [← h]
-    exact (FourierTransform.fourierInv_fourier_eq _).symm
+    rw [← h, FourierTransform.fourierInv_fourier_eq]
   refine ae_eq_of_toTemperedDistribution_apply_eq u hcont.locallyIntegrable fun φ => ?_
   rw [hu, fourierInv_toTemperedDistribution_apply]
 
@@ -219,22 +219,24 @@ variable {E F : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E]
   [CompleteSpace F]
 
 /-- **Extension from Schwartz functions.** Let `T` be a continuous linear map from `Lᵖ`,
-`p < ∞`, to tempered distributions, which on Schwartz functions `φ` is given by an operator
-`M` on Schwartz functions with `‖M φ‖_p ≤ C ‖φ‖_p`. Then `T` takes values in `Lᵖ`: every `T f`
-is the tempered distribution of some `g ∈ Lᵖ` with `‖g‖_p ≤ C ‖f‖_p`.
+`p < ∞`, to tempered distributions, which on Schwartz functions `φ` is given by a linear
+operator `M` on Schwartz functions, not necessarily continuous, with `‖M φ‖_p ≤ C ‖φ‖_p`. Then
+`T` takes values in `Lᵖ`: every `T f` is the tempered distribution of some `g ∈ Lᵖ` with
+`‖g‖_p ≤ C ‖f‖_p`.
 
 The function `g` is the value at `f` of the bounded extension of `φ ↦ M φ` from the dense
 Schwartz functions to `Lᵖ`; it agrees with `T f` because both sides are continuous in `f` with
 values in the Hausdorff space of tempered distributions. -/
 theorem exists_apply_eq_toTemperedDistribution_and_norm_le {μ : Measure E}
-    [μ.HasTemperateGrowth] [IsFiniteMeasureOnCompacts μ] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (hp : p ≠ ∞) (T : Lp F p μ →L[ℂ] 𝓢'(E, F)) (M : 𝓢(E, F) →L[ℂ] 𝓢(E, F)) {C : ℝ}
+    [μ.HasTemperateGrowth] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp : p ≠ ∞) (T : Lp F p μ →L[ℂ] 𝓢'(E, F)) (M : 𝓢(E, F) →ₗ[ℂ] 𝓢(E, F)) {C : ℝ}
     (hT : ∀ φ : 𝓢(E, F), T (φ.toLp p μ) = ((M φ).toLp p μ : 𝓢'(E, F)))
     (hM : ∀ φ : 𝓢(E, F), ‖(M φ).toLp p μ‖ ≤ C * ‖φ.toLp p μ‖) (f : Lp F p μ) :
     ∃ g : Lp F p μ, T f = g ∧ ‖g‖ ≤ C * ‖f‖ := by
+  have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
   set e : 𝓢(E, F) →ₗ[ℂ] Lp F p μ := (SchwartzMap.toLpCLM ℂ F p μ).toLinearMap
   have he : DenseRange e := SchwartzMap.denseRange_toLpCLM (F := F) (μ := μ) hp
-  set S : 𝓢(E, F) →ₗ[ℂ] Lp F p μ := e ∘ₗ M.toLinearMap
+  set S : 𝓢(E, F) →ₗ[ℂ] Lp F p μ := e ∘ₗ M
   have hSe : ∀ φ, ‖S φ‖ ≤ C * ‖e φ‖ := fun φ ↦ by
     simpa only [S, e, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
       SchwartzMap.toLpCLM_apply] using hM φ
