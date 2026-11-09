@@ -82,8 +82,16 @@ theorem IsGorensteinProjective.exists_copresentation_horseshoe
   have hsnd : sp.isoBinaryBiproduct.hom ≫ biprod.snd = cobaseChangeπ S sq.flip := by
     simp
   -- After splitting the pushout, insert the prescribed copresentation of the right end.
-  obtain ⟨hzero, hnext⟩ := sp.isoBinaryBiproduct.conflation_hom_comp_biprod_map E
-    ((ExactStructure.abelian_conflation _).mpr hTZ)
+  have hz : biprod.map (𝟙 PX) iZ ≫ biprod.map (0 : PX ⟶ 0) pZ = 0 := by
+    apply biprod.hom_ext' <;> simp [reassoc_of% hZ]
+  have hbip : E.Conflation (ShortComplex.mk (biprod.map (𝟙 PX) iZ)
+      (biprod.map (0 : PX ⟶ 0) pZ) hz) :=
+    E.conflation_biprod (E.conflation_id_zero PX)
+      ((ExactStructure.abelian_conflation _).mpr hTZ)
+  have hnext : E.Conflation (ShortComplex.mk
+      (sp.isoBinaryBiproduct.hom ≫ biprod.map (𝟙 PX) iZ)
+      (biprod.map (0 : PX ⟶ 0) pZ) (by rw [Category.assoc, hz, comp_zero])) :=
+    E.conflation_iso_hom_comp sp.isoBinaryBiproduct hbip
   rw [cobaseChange_def] at hmiddle
   -- Noether's conflations give the middle copresentation and the extension of cokernels.
   obtain ⟨K, p, a, b, hip, hab, hK, hC, hcomm, hright⟩ :=

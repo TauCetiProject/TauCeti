@@ -30,8 +30,8 @@ so the componentwise short complex `CategoryTheory.ShortComplex.biprod` itself i
 * `TauCeti.ExactStructure.isInflation_biprod`: binary direct sums preserve inflations.
 * `TauCeti.ExactStructure.isDeflation_biprod`: binary direct sums preserve deflations.
 * `TauCeti.ExactStructure.conflation_biprod`: binary direct sums preserve conflations.
-* `CategoryTheory.Iso.conflation_hom_comp_biprod_map`: an isomorphism followed by the identity
-  summand and a conflation gives a conflation.
+* `TauCeti.ExactStructure.conflation_iso_hom_comp`: precomposing the inflation of a conflation
+  with an isomorphism gives a conflation.
 
 ## References
 
@@ -128,31 +128,14 @@ theorem conflation_biprod (E : ExactStructure C) {S₁ S₂ : ShortComplex C}
       rw [ShortComplex.biprod_f]
       exact E.isInflation_biprod (E.isInflation_f hS₁) (E.isInflation_f hS₂))
 
+/-- Precomposing the inflation of a conflation with an isomorphism onto its first object gives a
+conflation. -/
+theorem conflation_iso_hom_comp (E : ExactStructure C) {S : ShortComplex C} {M : C}
+    (e : M ≅ S.X₁) (hS : E.Conflation S) :
+    E.Conflation (ShortComplex.mk (e.hom ≫ S.f) S.g (by simp)) :=
+  E.conflation_of_iso (ShortComplex.isoMk e.symm (Iso.refl _) (Iso.refl _)
+    (by simp) (by simp)) hS
+
 end ExactStructure
 
 end TauCeti
-
-namespace CategoryTheory.Iso
-
-open CategoryTheory Limits TauCeti ZeroObject
-
-variable {C : Type*} [Category C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
-
-/-- If `M ≅ P ⊞ N` and `N ⟶ Q ⟶ K` is a conflation of `E`, then `M ⟶ P ⊞ Q ⟶ 0 ⊞ K`,
-with the first map the isomorphism followed by `𝟙 P ⊞ i`, is a conflation of `E`. -/
-theorem conflation_hom_comp_biprod_map {P N Q K M : C} (e : M ≅ P ⊞ N) (E : ExactStructure C)
-    {i : N ⟶ Q} {p : Q ⟶ K} {hi : i ≫ p = 0} (hT : E.Conflation (ShortComplex.mk i p hi)) :
-    ∃ h : (e.hom ≫ biprod.map (𝟙 P) i) ≫ biprod.map (0 : P ⟶ 0) p = 0,
-      E.Conflation
-        (ShortComplex.mk (e.hom ≫ biprod.map (𝟙 P) i) (biprod.map (0 : P ⟶ 0) p) h) := by
-  have hz : biprod.map (𝟙 P) i ≫ biprod.map (0 : P ⟶ 0) p = 0 := by
-    apply biprod.hom_ext' <;> simp [reassoc_of% hi]
-  have hbip : E.Conflation (ShortComplex.mk (biprod.map (𝟙 P) i)
-      (biprod.map (0 : P ⟶ 0) p) hz) :=
-    E.conflation_biprod (E.conflation_id_zero P) hT
-  refine ⟨by rw [Category.assoc, hz, comp_zero], E.conflation_of_iso ?_ hbip⟩
-  exact ShortComplex.isoMk e.symm (Iso.refl _) (Iso.refl _)
-    (by simp only [Iso.symm_hom, Iso.refl_hom, Iso.inv_hom_id_assoc, Category.comp_id])
-    (by simp only [Iso.refl_hom, Category.id_comp, Category.comp_id])
-
-end CategoryTheory.Iso
