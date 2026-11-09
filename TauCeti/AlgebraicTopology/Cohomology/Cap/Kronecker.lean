@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Homology.Monoidal.Cap.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
-public import TauCeti.CategoryTheory.Monoidal.Limits
 
 /-!
 # The Kronecker pairing of singular cap and cup products
