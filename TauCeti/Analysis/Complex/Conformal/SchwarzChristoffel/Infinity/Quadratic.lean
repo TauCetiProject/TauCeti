@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.EdgeIntersection
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
-import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Asymptotic
 import TauCeti.Analysis.Calculus.DSlope.Continuous
-import TauCeti.Analysis.Complex.UpperHalfPlane.Primitive
+import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Asymptotic
+import TauCeti.Analysis.Complex.HasPrimitives
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
@@ -137,7 +137,9 @@ private theorem exists_differentiableOn_eq_schwarzChristoffelPrimitive_sub_comp_
     rw [hD₃w w (fun h => by simpa [h] using hw.2)]
     exact hasDerivAt_schwarzChristoffelPrimitive_sub_comp_neg_inv a e z₀ q M C hw.2
       (hint w hw.2)
-  obtain ⟨H, hH, heq⟩ := exists_hasDerivAt_eqOn_ball_inter_upperHalfPlane hD₃.neg hderiv
+  obtain ⟨H, hH, heq⟩ :=
+    hD₃.neg.exists_hasDerivAt_eqOn_ball_inter (convex_halfSpace_im_gt 0)
+      fun z hz ↦ (hderiv z hz).hasDerivWithinAt
   refine ⟨H, r, hr, fun w hw => (hH w hw).differentiableAt.differentiableWithinAt, ?_⟩
   intro z hz hzr
   simpa using (heq ⟨by simpa [mem_ball_zero_iff] using hzr, im_neg_inv_pos.mpr hz⟩).symm

@@ -32,7 +32,9 @@ on:
 
 permissions:
   contents: read
-  actions: read
+  statuses: write
+  issues: write
+  actions: write
 
 jobs:
   reconcile:
@@ -82,6 +84,7 @@ jobs:
           permission-issues: write
           permission-pull-requests: write
           permission-contents: read
+          permission-members: read
           # No `actions` permission: the App does not hold it, and the run listings batch.py reads
           # are public for this public repository.
       # The trusted base checkout: the scripts that run are the ones on the target branch, never the
@@ -94,10 +97,10 @@ jobs:
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@338a3b2b622e88787a91a6dffaece3a8adf85206
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 338a3b2b622e88787a91a6dffaece3a8adf85206
+          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
           project-directory: .
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
@@ -160,6 +163,9 @@ jobs:
       - name: Reconcile labels and Zulip posts
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
+          SELF_TESTED_TEAM_TOKEN: ${{ steps.app-token.outputs.token }}
+          SELF_TESTED_WRITE_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           ZULIP_API_KEY: ${{ secrets.ZULIP_API_KEY }}
           ZULIP_EMAIL: ${{ secrets.ZULIP_EMAIL }}

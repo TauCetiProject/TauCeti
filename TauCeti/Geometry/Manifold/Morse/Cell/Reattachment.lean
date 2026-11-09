@@ -105,16 +105,8 @@ private theorem continuous_diskRadial : Continuous (diskRadial.{u} (k := k)) :=
 
 private theorem coe_diskRadial_of_norm_le {w : TopCat.disk.{u} k} (hw : ‖w.down.1‖ ≤ 1 / 2) :
     (diskRadial w).down.1 = (2 : ℝ) • w.down.1 := by
-  simp only [diskRadial, TopCat.coe_diskRadialPush_apply_down, radialPush_one,
-    radialRetraction_of_norm_le hw]
+  rw [diskRadial, TopCat.coe_diskRadialPush_one_of_norm_le _ hw]
   norm_num
-
-private theorem coe_diskRadial_of_le_norm {w : TopCat.disk.{u} k} (hw : 1 / 2 ≤ ‖w.down.1‖) :
-    (diskRadial w).down.1 = ‖w.down.1‖⁻¹ • w.down.1 := by
-  simp only [diskRadial, TopCat.coe_diskRadialPush_apply_down, radialPush_one,
-    radialRetraction_of_le_norm hw, smul_smul]
-  congr 1
-  field_simp
 
 private theorem norm_diskRadial_of_le_norm {w : TopCat.disk.{u} k} (hw : 1 / 2 ≤ ‖w.down.1‖) :
     ‖(diskRadial w).down.1‖ = 1 :=
@@ -360,7 +352,8 @@ theorem morseCellReattachment_morseCellAttachmentCell_of_le_norm (i : ι)
         ⟨K i (t, TopCat.diskBoundaryInclusion (k i) s), hK i t s⟩ := by
   have ht' : diskTime w = t := Subtype.ext ((coe_diskTime_of_le_norm hw).trans ht.symm)
   have hs' : diskRadialSphere ⟨w, hw⟩ = s :=
-    ULift.ext (Subtype.ext ((coe_diskRadial_of_le_norm hw).trans hs.symm))
+    ULift.ext (Subtype.ext ((TopCat.coe_diskRadialPush_one_of_le_norm (by norm_num) hw).trans
+      hs.symm))
   subst ht' hs'
   rw [morseCellReattachment_morseCellAttachmentCell, morseCellReattachmentFun, dite_eq_left hw]
 

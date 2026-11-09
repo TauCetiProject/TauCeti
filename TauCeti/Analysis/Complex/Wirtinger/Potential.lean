@@ -207,12 +207,11 @@ theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eventually_eq_with_param 
     (hf : ContDiffOn ℝ n ↿f (s ×ˢ U)) :
     ∃ u : P → ℂ → F, ContDiffOn ℝ n ↿u (s ×ˢ univ) ∧
       ∀ᶠ z in 𝓝ˢ K, ∀ p ∈ s, conjWirtingerDeriv (u p) z 1 = f p z := by
-  obtain ⟨χ, hχ, -, hχK, hχc, hχU⟩ := hK.exists_contDiff_cutoff hU hKU
+  obtain ⟨χ, hχ, -, hχK, hχc, hχU⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one hU hKU
   have hχn : ContDiff ℝ n χ := hχ.of_le (by exact_mod_cast le_top)
   refine ⟨cutoffTransform χ f, contDiffOn_cutoffTransform hs hU hχn hχc hχU hf, ?_⟩
-  filter_upwards [isOpen_interior.mem_nhdsSet.mpr hχK] with z hz p hp
-  have hz1 : χ z = 1 := interior_subset hz
-  simp [conjWirtingerDeriv_cutoffTransform hn hs hU hχn hχc hχU hf hp, hz1]
+  filter_upwards [eventually_nhdsSet_iff_forall.2 hχK] with z hz p hp
+  simp [conjWirtingerDeriv_cutoffTransform hn hs hU hχn hχc hχU hf hp, hz]
 
 /-- **Local solutions of `bar∂ u = f` with smooth and holomorphic parameters.** Let `f` be a
 family of maps `ℂ → F` indexed by `P × Q`, for a real normed space `P` and a complex normed space
@@ -229,12 +228,11 @@ theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eventually_eq_with_holomo
     ∃ u : P × Q → ℂ → F, ContDiffOn ℝ n ↿u (s ×ˢ univ) ∧
       (∀ᶠ z in 𝓝ˢ K, ∀ x ∈ s, conjWirtingerDeriv (u x) z 1 = f x z) ∧
       ∀ x ∈ s, ∀ w, DifferentiableAt ℂ (fun q ↦ u (x.1, q) w) x.2 := by
-  obtain ⟨χ, hχ, -, hχK, hχc, hχU⟩ := hK.exists_contDiff_cutoff hU hKU
+  obtain ⟨χ, hχ, -, hχK, hχc, hχU⟩ := hK.exists_contDiff_cutoff_eventuallyEq_one hU hKU
   have hχn : ContDiff ℝ n χ := hχ.of_le (by exact_mod_cast le_top)
   refine ⟨cutoffTransform χ f, contDiffOn_cutoffTransform hs hU hχn hχc hχU hf, ?_, ?_⟩
-  · filter_upwards [isOpen_interior.mem_nhdsSet.mpr hχK] with z hz x hx
-    have hz1 : χ z = 1 := interior_subset hz
-    simp [conjWirtingerDeriv_cutoffTransform hn hs hU hχn hχc hχU hf hx, hz1]
+  · filter_upwards [eventually_nhdsSet_iff_forall.2 hχK] with z hz x hx
+    simp [conjWirtingerDeriv_cutoffTransform hn hs hU hχn hχc hχU hf hx, hz]
   · -- Freeze the smooth parameter `p` and apply the holomorphic statement to the slice.
     rintro ⟨p, q⟩ hx w
     have hι : ContDiff ℝ n fun y : Q × ℂ ↦ ((p, y.1), y.2) :=

@@ -161,8 +161,6 @@ lemma coprime_prod_primePowDiag_diagOrdCompl (p : ℕ) (hp : p.Prime)
 
 end DiagOrdCompl
 
-variable [NeZero n]
-
 /-- **Binary prime splitting** (Shimura, §3.2): every diagonal Hecke operator with entrywise
 nonzero entries factors into its `p`-power component and its `p`-free component, for any
 prime `p`. The hypothesis is essential, not cosmetic: on a tuple with a zero entry `natDiagGL`

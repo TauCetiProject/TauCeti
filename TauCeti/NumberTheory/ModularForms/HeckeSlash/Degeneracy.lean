@@ -137,7 +137,7 @@ theorem heckeTCuspNat_levelRaise (hdvd : d * M ∣ N) (hp : p.Prime)
     CuspForm.diamondOpCusp_levelRaise hdvd k (ZMod.unitOfCoprime p hpN) f, hunits,
     SlashAction.add_slash, smul_add, heckeSlashUpperTri_smul, hscale]
   refine congrArg₂ (· + ·) ?_ ?_
-  · rw [heckeSlashUpperTri_slash_scaleRep_comm k p hdpos hp.pos hpd.symm (slash_mapGL_T k hf)]
+  · rw [heckeSlashUpperTri_slash_scaleRep_comm k p hdpos hpd.symm (slash_mapGL_T k hf)]
   · rw [ModularForm.rat_smul_slash_of_det_pos k (det_scaleRep_pos p), ← SlashAction.slash_mul,
       ← SlashAction.slash_mul, scaleRep_def, scaleRep_def, natDiagGL_comm]
 

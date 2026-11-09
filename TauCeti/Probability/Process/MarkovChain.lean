@@ -274,7 +274,8 @@ theorem markovChainLaw_map_prefix_succ_eq_compProd [SFinite ν] (n : ℕ) :
         · rfl
     _ = (((markovChainLaw ν κ).map (frestrictLe n)) ⊗ₘ markovStep κ n).map
           (Prod.map (iicEquivFin α n) id) := by
-        rw [markovChainLaw, Kernel.map_frestrictLe_trajMeasure_compProd_of_sFinite]
+        rw [markovChainLaw,
+          Kernel.map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure_of_sFinite]
     _ = ((markovChainLaw ν κ).map (frestrictLe n)).map (iicEquivFin α n) ⊗ₘ
           κ.comap (fun w : Fin (n + 1) → α => w (Fin.last n))
             (measurable_pi_apply (Fin.last n)) := by
@@ -353,6 +354,31 @@ theorem _root_.MeasureTheory.Measure.markovChainLaw_setOf_apply_eq_comp
     (measurableSet_singleton y)]
   simp only [Set.preimage, Set.mem_singleton_iff]
 
+omit [IsMarkovKernel κ] in
+/-- The section at `v` of the singleton of a pair `(Fin.init w, a)`, measured by the kernel `κ`
+read off the last coordinate of `v`, is the indicator of `v = Fin.init w` times the transition
+weight from the last coordinate of `Fin.init w` to `a`. -/
+private theorem comap_apply_prodMk_preimage_singleton {n : ℕ}
+    (w : Fin (n + 2) → α) (v : Fin (n + 1) → α) :
+    (κ.comap (fun y : Fin (n + 1) → α => y (Fin.last n)) (measurable_pi_apply (Fin.last n))) v
+        (Prod.mk v ⁻¹' ({(Fin.init w, w (Fin.last (n + 1)))} :
+          Set ((Fin (n + 1) → α) × α)))
+      = Set.indicator {Fin.init w}
+          (fun _ => κ (w (Fin.last n).castSucc) {w (Fin.last (n + 1))}) v := by
+  by_cases hv : v = Fin.init w
+  · subst hv
+    have hfibre : (Prod.mk (Fin.init w) ⁻¹'
+        ({(Fin.init w, w (Fin.last (n + 1)))} : Set ((Fin (n + 1) → α) × α)))
+        = {w (Fin.last (n + 1))} := by
+      ext c; simp
+    rw [hfibre, Kernel.comap_apply]
+    simp [Fin.init]
+  · have hfibre : (Prod.mk v ⁻¹'
+        ({(Fin.init w, w (Fin.last (n + 1)))} : Set ((Fin (n + 1) → α) × α))) = ∅ := by
+      ext c; simp [hv]
+    rw [hfibre]
+    simp [hv]
+
 /-- **The finite path masses of the chain.** On a state space with measurable singletons the mass a
 homogeneous Markov chain gives to a finite path is the initial weight of its first state times the
 product of the transition weights along it. This is the defining product form of the
@@ -390,27 +416,7 @@ theorem markovChainLaw_map_prefix_apply_singleton [SFinite ν]
       ← Measure.map_apply hprod (measurableSet_singleton _),
       markovChainLaw_map_prefix_succ_eq_compProd, Measure.compProd_apply
         (measurableSet_singleton _)]
-    have hint : ∀ v : Fin (n + 1) → α,
-        (κ.comap (fun y : Fin (n + 1) → α => y (Fin.last n))
-            (measurable_pi_apply (Fin.last n))) v
-          (Prod.mk v ⁻¹' ({(Fin.init w, w (Fin.last (n + 1)))} :
-            Set ((Fin (n + 1) → α) × α)))
-        = Set.indicator {Fin.init w}
-            (fun _ => κ (w (Fin.last n).castSucc) {w (Fin.last (n + 1))}) v := by
-      intro v
-      by_cases hv : v = Fin.init w
-      · subst hv
-        have hfibre : (Prod.mk (Fin.init w) ⁻¹'
-            ({(Fin.init w, w (Fin.last (n + 1)))} : Set ((Fin (n + 1) → α) × α)))
-            = {w (Fin.last (n + 1))} := by
-          ext c; simp
-        rw [hfibre, Kernel.comap_apply]
-        simp [Fin.init]
-      · have hfibre : (Prod.mk v ⁻¹'
-            ({(Fin.init w, w (Fin.last (n + 1)))} : Set ((Fin (n + 1) → α) × α))) = ∅ := by
-          ext c; simp [hv]
-        rw [hfibre]
-        simp [hv]
+    have hint := comap_apply_prodMk_preimage_singleton κ w
     rw [lintegral_congr hint, lintegral_indicator (measurableSet_singleton _),
       setLIntegral_const, ih (Fin.init w), Fin.prod_univ_castSucc]
     have hsucc : (Fin.last n).succ = Fin.last (n + 1) := Fin.succ_last n

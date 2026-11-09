@@ -217,7 +217,9 @@ theorem exists_sublevelDeformation (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hab : a �
         ((sublevelInclusion f a b hab).comp r)
         (ContinuousMap.id _) {x | f x ≤ a}) := by
   obtain ⟨φ, -, -, -, hφ⟩ := exists_flow_apply_eq_sub hf hcompact hreg
-  exact exists_sublevelDeformation_of_apply_eq_sub hf.continuous hab φ φ.cont' φ.map_zero_apply hφ
+  obtain ⟨r, -, hr, hH⟩ :=
+    exists_sublevelDeformation_of_apply_eq_sub hf.continuous hab φ φ.cont' φ.map_zero_apply hφ
+  exact ⟨r, hr, hH⟩
 
 /-- **The sublevels on either side of a band without critical points are homotopy equivalent.**
 Under the hypotheses of `TauCeti.exists_sublevelDeformation`, the inclusion of `{f ≤ a}` into

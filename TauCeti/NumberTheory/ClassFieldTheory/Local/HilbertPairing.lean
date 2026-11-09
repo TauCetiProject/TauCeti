@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.LocalField.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.CyclicClass
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.NumberTheory.ClassFieldTheory.Brauer.LocalH2Bound
 import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 
@@ -70,7 +70,7 @@ theorem forall_localSymbol_kummerClass_eq_zero_iff (b : Kˣ) :
   have : FiniteDimensional K K⟮s⟯ :=
     adjoin.finiteDimensional (Algebra.IsIntegral.isIntegral s)
   have ht : AdjoinSimple.gen K s ^ n = algebraMap K K⟮s⟯ b := Subtype.ext (by simpa using hs)
-  have htop := adjoin_adjoinSimple_gen_eq_top (K := K) s
+  have htop := adjoin_adjoinSimple_gen_eq_top (F := K) s
   -- every `a ∈ Kˣ` is a norm from `E`
   have hnorm : normGroup K K⟮s⟯ = ⊤ := eq_top_iff.2 fun a _ ↦
     (localSymbol_eq_zero_iff_mem_normGroup hζ tr hn a b ht htop).1 (h a)

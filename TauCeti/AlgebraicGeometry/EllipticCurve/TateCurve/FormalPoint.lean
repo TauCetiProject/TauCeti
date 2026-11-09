@@ -596,29 +596,8 @@ private theorem eq_zero_of_swap_eq_self {G : ℚ⟦X⟧⟦X⟧} (hT : PowerSerie
     rw [← LaurentPolynomial.invert_apply, h]
   have hswap (a b : ℕ) : coeff a (coeff b G) = coeff b (coeff a G) := by
     rw [← PowerSeries.coeff_coeff_swap, hT]
-  have key (N : ℕ) : ∀ m : ℕ, 0 < m → (L N).coeff m = 0 := by
-    induction N using Nat.strong_induction_on with
-    | _ N ih =>
-      intro m hm
-      rw [← hsymm, hcoe]
-      split_ifs with h
-      · rfl
-      · have hmN : m ≤ N := by omega
-        have h' := ih (N - m) (by omega) m hm
-        rw [hcoe, ite_eq_right (by omega)] at h'
-        have e₁ : (-(m : ℤ) + N).natAbs = N - m := by omega
-        have e₂ : ((m : ℤ) + (N - m : ℕ)).natAbs = N := by omega
-        rw [e₁, hswap]
-        rwa [e₂] at h'
-  have hconst (N : ℕ) : L N = LaurentPolynomial.C ((L N).coeff 0) := by
-    refine LaurentPolynomial.ext fun k ↦ ?_
-    rw [LaurentPolynomial.C_apply]
-    rcases lt_trichotomy k 0 with hk | rfl | hk
-    · obtain ⟨m, rfl⟩ : ∃ m : ℕ, k = -m := ⟨k.natAbs, by omega⟩
-      rw [hsymm, key N m (by omega), ite_eq_right (by omega)]
-    · simp
-    · obtain ⟨m, rfl⟩ : ∃ m : ℕ, k = m := ⟨k.natAbs, by omega⟩
-      rw [key N m (by omega), ite_eq_right (by omega)]
+  have hconst (N : ℕ) : L N = LaurentPolynomial.C ((L N).coeff 0) :=
+    LaurentPolynomial.eq_C_coeff_zero_of_coeff_swap hcoe hsymm hswap N
   have hzero (N : ℕ) : L N = 0 := by
     set ev := LaurentPolynomial.eval₂ (RingHom.id ℚ) (1 : ℚˣ)
     have hw : ev (symmHom wP) = 0 := by
