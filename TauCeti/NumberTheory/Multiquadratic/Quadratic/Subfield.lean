@@ -83,35 +83,23 @@ theorem adjoin_prod_root_injective [NeZero (2 : K)]
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i)) :
     Function.Injective fun S : Finset ι => IntermediateField.adjoin K {∏ i ∈ S, root i} := by
   classical
-  have key {S T : Finset ι} (hS : S.Nonempty) (hST : IntermediateField.adjoin K
-      {∏ i ∈ S, root i} = IntermediateField.adjoin K {∏ i ∈ T, root i}) : S = T := by
-    -- The subset-product root of `S` generates a quadratic field, so it lies outside `K`.
-    have hxb : (∏ i ∈ S, root i) ∉ (⊥ : IntermediateField K L) :=
-      IntermediateField.finrank_adjoin_simple_eq_one_iff.not.mp <| by
-        rw [finrank_adjoin_simple_eq_two_of_not_isSquare (prod_root_sq hroot S) (hindep S hS)]
-        omega
-    -- Sharing a quadratic field puts the two subset products in one square class.
-    have hsq : IsSquare ((∏ i ∈ S, d i) * ∏ i ∈ T, d i) :=
-      isSquare_mul_of_adjoin_simple_eq (prod_root_sq hroot S) (prod_root_sq hroot T) hxb hST
-    -- That product is the product over `S ∆ T` times the square of the product over `S ∩ T`,
-    -- which is nonzero since every radicand is.
-    have hfact : (∏ i ∈ S, d i) * ∏ i ∈ T, d i
-        = (∏ i ∈ S ∆ T, d i) * (∏ i ∈ S ∩ T, d i) ^ 2 := by
-      rw [symmDiff_eq_sup_sdiff_inf,
-        ← Finset.prod_union_inter, ← Finset.prod_sdiff Finset.inter_subset_union]
-      ring
-    have hne : (∏ i ∈ S ∩ T, d i) ≠ 0 := Finset.prod_ne_zero_iff.mpr fun i _ h =>
-      hindep {i} (Finset.singleton_nonempty i) (by simp [h])
-    -- So the product over `S ∆ T` is a square, which forces `S ∆ T` to be empty.
-    rw [← symmDiff_eq_bot, Finset.bot_eq_empty, ← Finset.not_nonempty_iff_eq_empty]
-    refine fun hE => hindep _ hE ?_
-    have := hsq.div (IsSquare.sq (∏ i ∈ S ∩ T, d i))
-    rwa [hfact, mul_div_cancel_right₀ _ (pow_ne_zero 2 hne)] at this
   intro S T hST
-  rcases S.eq_empty_or_nonempty with rfl | hS
-  · rcases T.eq_empty_or_nonempty with rfl | hT
-    · rfl
-    · exact (key hT hST.symm).symm
-  · exact key hS hST
+  -- Sharing a quadratic field puts the two subset products in one square class.
+  have hsq : IsSquare ((∏ i ∈ S, d i) * ∏ i ∈ T, d i) :=
+    isSquare_mul_of_adjoin_simple_eq (prod_root_sq hroot S) (prod_root_sq hroot T) hST
+  -- That product is the product over `S ∆ T` times the square of the product over `S ∩ T`,
+  -- which is nonzero since every radicand is.
+  have hfact : (∏ i ∈ S, d i) * ∏ i ∈ T, d i
+      = (∏ i ∈ S ∆ T, d i) * (∏ i ∈ S ∩ T, d i) ^ 2 := by
+    rw [symmDiff_eq_sup_sdiff_inf,
+      ← Finset.prod_union_inter, ← Finset.prod_sdiff Finset.inter_subset_union]
+    ring
+  have hne : (∏ i ∈ S ∩ T, d i) ≠ 0 := Finset.prod_ne_zero_iff.mpr fun i _ h =>
+    hindep {i} (Finset.singleton_nonempty i) (by simp [h])
+  -- So the product over `S ∆ T` is a square, which forces `S ∆ T` to be empty.
+  rw [← symmDiff_eq_bot, Finset.bot_eq_empty, ← Finset.not_nonempty_iff_eq_empty]
+  refine fun hE => hindep _ hE ?_
+  have := hsq.div (IsSquare.sq (∏ i ∈ S ∩ T, d i))
+  rwa [hfact, mul_div_cancel_right₀ _ (pow_ne_zero 2 hne)] at this
 
 end TauCeti.Multiquadratic
