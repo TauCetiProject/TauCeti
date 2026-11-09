@@ -38,6 +38,9 @@ quadratic forms with the subgroup preserving both summands.
   basis `(b × c) × d` to `b × (c × d)`, up to relabelling the index.
 * `LinearEquiv.det_skewProd`: the same determinant formula for block triangular
   automorphisms, independently of the off-diagonal block.
+* `LinearMap.axes_of_commute_neg_snd`: a linear endomorphism of `R × R × R` preserving the third
+  coordinate and commuting with `(x, y, z) ↦ (x, -y, 0)` preserves the first two coordinate axes
+  and fixes the third basis vector.
 * `TauCeti.LinearMap.lsmul_restrictScalars_prodMap`: multiplication by a scalar on a product of
   complex modules is the product map of the two multiplications.
 -/
@@ -171,6 +174,39 @@ theorem map_prodAssoc_prod {R E F G : Type*} [Semiring R] [AddCommMonoid E] [Mod
     simp [Basis.prod_apply, h]
 
 end Module.Basis
+
+namespace LinearMap
+
+variable {R : Type*} [CommRing R] [NoZeroDivisors R] [CharZero R]
+
+/-- A linear endomorphism of `R × R × R` that preserves the third coordinate and intertwines the
+map `(x, y, z) ↦ (x, -y, 0)` with itself preserves the first two coordinate axes and fixes the
+third basis vector. -/
+theorem axes_of_commute_neg_snd (A : R × R × R →ₗ[R] R × R × R) (hz : ∀ u, (A u).2.2 = u.2.2)
+    (hc : ∀ u : R × R × R, A (u.1, -u.2.1, 0) = ((A u).1, -(A u).2.1, 0)) :
+    A (1, 0, 0) = ((A (1, 0, 0)).1, 0, 0) ∧ A (0, 1, 0) = (0, (A (0, 1, 0)).2.1, 0) ∧
+      A (0, 0, 1) = (0, 0, 1) := by
+  have h₁ : A (1, 0, 0) = ((A (1, 0, 0)).1, 0, 0) := by
+    have h := congrArg (fun v : R × R × R => v.2.1) (hc (1, 0, 0))
+    simp only [neg_zero] at h
+    exact Prod.ext rfl (Prod.ext (self_eq_neg.1 h) (hz (1, 0, 0)))
+  have h₂ : A (0, 1, 0) = (0, (A (0, 1, 0)).2.1, 0) := by
+    have h := congrArg Prod.fst (hc (0, 1, 0))
+    have hneg : A (0, -1, 0) = -A (0, 1, 0) := by
+      simpa using A.map_neg (0, 1, 0)
+    rw [hneg] at h
+    simp only [Prod.fst_neg] at h
+    exact Prod.ext (neg_eq_self.1 h) (Prod.ext rfl (hz (0, 1, 0)))
+  have h₃ : A (0, 0, 1) = (0, 0, 1) := by
+    have h := hc (0, 0, 1)
+    simp only [neg_zero] at h
+    have hzero : A (0, 0, 0) = 0 := A.map_zero
+    rw [hzero] at h
+    exact Prod.ext (congrArg Prod.fst h).symm
+      (Prod.ext (neg_eq_zero.1 (congrArg (fun v : R × R × R => v.2.1) h).symm) (hz (0, 0, 1)))
+  exact ⟨h₁, h₂, h₃⟩
+
+end LinearMap
 
 namespace TauCeti
 
