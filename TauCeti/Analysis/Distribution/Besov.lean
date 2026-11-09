@@ -250,8 +250,9 @@ theorem besovENorm_le_eLpNorm_mul_besovENorm_top (s' s : ℝ) (q : ℝ≥0∞) (
   refine eLpNorm_mono_enorm .of_discrete fun j ↦ ?_
   simp only [enorm_eq_self]
   -- `2^{js'} = 2^{j(s' - s)} 2^{js}`, and `2^{js} ‖Δⱼ u‖_p` is at most the supremum over `j`.
-  rw [← sub_add_cancel s' s, ENNReal.rpow_add _ _ two_ne_zero ENNReal.ofNat_ne_top, mul_pow,
-    sub_add_cancel, mul_assoc, mul_comm]
+  have h : (2 : ℝ≥0∞) ^ s' = 2 ^ (s' - s) * 2 ^ s := by
+    rw [← ENNReal.rpow_add _ _ two_ne_zero ENNReal.ofNat_ne_top, sub_add_cancel]
+  rw [h, mul_pow, mul_assoc, mul_comm _ ((2 ^ (s' - s) : ℝ≥0∞) ^ j)]
   gcongr
   exact le_iSup (fun j : ℕ ↦ (2 ^ s : ℝ≥0∞) ^ j * (littlewoodPaleyBlock F φ j u).eLpNorm p) j
 
