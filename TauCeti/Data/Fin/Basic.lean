@@ -129,6 +129,10 @@ range, so the value is a `dite` rather than a plain application.
   consecutive entries.
 * `TauCeti.exists_mem_Icc_castSucc_succ`: consecutive closed intervals cover the interval
   between the first and last values of any `Fin` family with at least two entries.
+* `TauCeti.univ_eq_Iic_union_Ici_union_iUnion_Icc_castSucc_succ`: in a linear order, the two outer
+  rays of a `Fin` family and the consecutive closed intervals cover the whole order.
+* `TauCeti.apply_zero_le_of_forall_mem_range`, `TauCeti.le_apply_last_of_forall_mem_range`: points
+  that lie in the range of a monotone `Fin` family lie between its first and last values.
 -/
 
 public section
@@ -785,6 +789,45 @@ theorem exists_mem_Icc_castSucc_succ {β : Type*} [LinearOrder β] {n : ℕ}
   | succ i =>
     exact (not_le.mp (Fin.find_min h (j := i.castSucc)
       (by rw [hi]; exact i.castSucc_lt_succ))).le
+
+/-- In a linear order, the two outer rays of a `Fin (n + 1)` family and the consecutive closed
+intervals between its values cover the whole order. The family need not be monotone. -/
+theorem univ_eq_Iic_union_Ici_union_iUnion_Icc_castSucc_succ {β : Type*} [LinearOrder β] {n : ℕ}
+    (b : Fin (n + 1) → β) :
+    (univ : Set β) =
+      (Iic (b 0) ∪ Ici (b (Fin.last n))) ∪ ⋃ j : Fin n, Icc (b j.castSucc) (b j.succ) := by
+  ext x
+  simp only [mem_univ, mem_union, mem_iUnion, mem_Iic, mem_Ici, true_iff]
+  by_cases hl : x ≤ b 0
+  · exact Or.inl (Or.inl hl)
+  by_cases hr : b (Fin.last n) ≤ x
+  · exact Or.inl (Or.inr hr)
+  have hn : n ≠ 0 := by
+    rintro rfl
+    simp only [Fin.last_zero] at hr
+    exact hr (le_of_not_ge hl)
+  exact Or.inr (exists_mem_Icc_castSucc_succ b hn
+    ⟨(le_of_not_ge hl), (le_of_not_ge hr)⟩)
+
+/-- Points of a family lying in the range of a monotone `Fin (n + 1)` family are at least its
+first value. -/
+theorem apply_zero_le_of_forall_mem_range {β : Type*} [Preorder β] {n : ℕ} {b : Fin (n + 1) → β}
+    (hb : Monotone b) {ι : Type*} {p : ι → Prop} {a : ι → β} (h : ∀ i, p i → a i ∈ range b) :
+    ∀ i, p i → b 0 ≤ a i := by
+  intro i hi
+  obtain ⟨j, hj⟩ := h i hi
+  rw [← hj]
+  exact hb j.zero_le
+
+/-- Points of a family lying in the range of a monotone `Fin (n + 1)` family are at most its last
+value. -/
+theorem le_apply_last_of_forall_mem_range {β : Type*} [Preorder β] {n : ℕ} {b : Fin (n + 1) → β}
+    (hb : Monotone b) {ι : Type*} {p : ι → Prop} {a : ι → β} (h : ∀ i, p i → a i ∈ range b) :
+    ∀ i, p i → a i ≤ b (Fin.last n) := by
+  intro i hi
+  obtain ⟨j, hj⟩ := h i hi
+  rw [← hj]
+  exact hb j.le_last
 
 /-- **Adding one in `Fin n` never returns to the same element** when `2 ≤ n`. -/
 theorem add_one_ne_self {n : ℕ} [NeZero n] (hn : 2 ≤ n) (i : Fin n) : i + 1 ≠ i := by
