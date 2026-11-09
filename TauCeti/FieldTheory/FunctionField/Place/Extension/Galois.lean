@@ -211,17 +211,15 @@ omit [Algebra k F] [IsScalarTower k F F'] in
 @[simp]
 theorem valuation_decompositionSubgroup_apply (x : F') :
     P.valuation ((g : F' ≃ₐ[F] F') x) = P.valuation x := by
-  obtain ⟨σ, hσ⟩ := g
-  have hstab : σ • P.integers = P.integers := hσ
   -- the valuation `v_P ∘ σ` has the same valuation ring as `v_P`, and is normalized as `σ` is onto
-  have hint (y : F') : P.valuation (σ y) ≤ 1 ↔ P.valuation y ≤ 1 := by
-    rw [← mem_integers_iff, ← mem_integers_iff, ← hstab,
-      ValuationSubring.mem_pointwise_smul_iff_inv_smul_mem, hstab]
-    simp
-  have hsurj : Function.Surjective (P.valuation.comap (σ : F' →+* F')) := by
+  have hint (y : F') : P.valuation ((g : F' ≃ₐ[F] F') y) ≤ 1 ↔ P.valuation y ≤ 1 := by
+    simpa only [mem_integers_iff] using
+      ValuationSubring.decompositionSubgroup_apply_mem_iff P.integers g (x := y)
+  have hsurj : Function.Surjective
+      (P.valuation.comap (((g : F' ≃ₐ[F] F') : F' →+* F'))) := by
     intro w
     obtain ⟨y, rfl⟩ := P.valuation_surjective w
-    exact ⟨σ.symm y, by simp⟩
+    exact ⟨(g : F' ≃ₐ[F] F').symm y, by simp⟩
   exact DFunLike.congr_fun (Valuation.eq_of_isEquiv_of_surjective hsurj P.valuation_surjective
     (Valuation.isEquiv_iff_val_le_one.mpr fun {y} ↦ hint y)) x
 
