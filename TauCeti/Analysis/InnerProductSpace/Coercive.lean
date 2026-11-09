@@ -35,8 +35,8 @@ bound the change of this form under a perturbation of `A`
 In a real inner product space we also record the quadratic perturbation estimates for a coercive
 symmetric operator `A`: the increment of `F - ⟪·, y + A z⟫` is that of a quadratic centred at
 `x + z` up to the second-order error of `F`
-(`increment_sub_quadratic_eq`), and a coercive quadratic of this form dominates its
-perturbation on a sphere (`lt_on_sphere_of_abs_increment_le`).
+(`LinearMap.IsSymmetric.increment_sub_quadratic_eq`), and a coercive quadratic of this form
+dominates its perturbation on a sphere (`LinearMap.lt_on_sphere_of_abs_increment_le`).
 
 ## Provenance
 
@@ -229,7 +229,7 @@ theorem le_re_of_mem_spectrum_of_positive_lyapunov
 
 end ContinuousLinearMap
 
-namespace ContinuousLinearMap
+namespace LinearMap
 
 section Real
 
@@ -241,7 +241,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 `⟪A (x' - x - z), x' - x - z⟫ / 2 - ⟪A z, z⟫ / 2`, up to the error of the second-order expansion
 of `F` at `x` with gradient `y` and Hessian `A`: for symmetric `A`, the difference of the two
 is exactly that error, where `F x' = a` and `F x = b`. -/
-theorem increment_sub_quadratic_eq {A : E →L[ℝ] E} (hA : (A : E →ₗ[ℝ] E).IsSymmetric)
+theorem IsSymmetric.increment_sub_quadratic_eq {A : E →ₗ[ℝ] E} (hA : A.IsSymmetric)
     {x x' y z : E} {a b : ℝ} :
     (a - ⟪x', y + A z⟫_ℝ) - (b - ⟪x, y + A z⟫_ℝ) -
       (⟪A (x' - x - z), x' - x - z⟫_ℝ / 2 - ⟪A z, z⟫_ℝ / 2) =
@@ -260,9 +260,9 @@ theorem increment_sub_quadratic_eq {A : E →L[ℝ] E} (hA : (A : E →ₗ[ℝ] 
 /-- If `g` has, on `closedBall x r`, the increment from `x` of a quadratic centred at `x + z`, up
 to `δ ‖x' - x‖ ^ 2` with `δ` small relative to the coercivity constant `c` of `A` and `‖z‖ ≤ s * r`
 for `s < 1`, then `g` on the sphere exceeds `g (x + z)`. -/
-theorem lt_on_sphere_of_abs_increment_le {A : E →L[ℝ] E} {g : E → ℝ} {x z : E}
+theorem lt_on_sphere_of_abs_increment_le {A : E →ₗ[ℝ] E} {g : E → ℝ} {x z : E}
     {r s c δ : ℝ} (hc : 0 < c) (hcA : ∀ w, c * ‖w‖ ^ 2 ≤ ⟪A w, w⟫_ℝ) (hs : s < 1) (hr : 0 < r)
-    (hδ0 : 0 ≤ δ) (hδ : δ ≤ c * (1 - s) ^ 2 / 8) (hz : ‖z‖ ≤ s * r)
+    (hδ : δ ≤ c * (1 - s) ^ 2 / 8) (hz : ‖z‖ ≤ s * r)
     (hincr : ∀ x' ∈ closedBall x r, |g x' - g x - (⟪A (x' - x - z), x' - x - z⟫_ℝ / 2 -
       ⟪A z, z⟫_ℝ / 2)| ≤ δ * ‖x' - x‖ ^ 2) :
     ∀ x' ∈ sphere x r, g (x + z) < g x' := by
@@ -278,6 +278,10 @@ theorem lt_on_sphere_of_abs_increment_le {A : E →L[ℝ] E} {g : E → ℝ} {x 
     exact hz.trans hsr
   have h₁ := hincr _ hzr
   have h₂ := hincr x' hx'
+  have hδ0 : 0 ≤ δ := by
+    have := (abs_nonneg _).trans h₂
+    rw [hnorm] at this
+    exact nonneg_of_mul_nonneg_left this (pow_pos hr 2)
   rw [add_sub_cancel_left, sub_self, map_zero, inner_zero_left, zero_div, zero_sub] at h₁
   have hηr : (1 - s) * r ≤ ‖x' - x - z‖ := by
     have := norm_sub_norm_le (x' - x) z
@@ -298,4 +302,4 @@ theorem lt_on_sphere_of_abs_increment_le {A : E →L[ℝ] E} {g : E → ℝ} {x 
 
 end Real
 
-end ContinuousLinearMap
+end LinearMap
