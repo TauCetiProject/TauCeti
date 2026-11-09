@@ -5,16 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.KerReduction
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Index
 import TauCeti.Algebra.Module.Torsion.Int
--- Proof-only: multiplication by `n` on the filtration of the formal group.
-import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Filtration
--- Proof-only: `E₀(F_u)` has finite index, by Tate's algorithm.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Bound
--- Proof-only: the reduced curve over a finite residue field has finitely many points.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FinitePoint
--- Proof-only: the residue field of `O_u` is finite, and `O_u` is Henselian.
-import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 -- Proof-only: the ratio of `(G : nG)` to `#G[n]` is unchanged on a finite-index subgroup.
 import TauCeti.GroupTheory.Index.NSmul
 -- Proof-only: multiplication by `n` is injective on one side of an additive equivalence.
@@ -60,8 +52,6 @@ finite group, since they meet the level trivially.
 
 ## Main results
 
-* `WeierstrassCurve.finiteIndex_kerReduction`: the kernel of reduction of a minimal equation over
-  `O_u` has finite index in `E(F_u)` when the residue field is finite.
 * `WeierstrassCurve.exists_finiteIndex_injective_nsmul`: `E(F_u)` has a subgroup `U` of finite
   index without `n`-torsion, with `[U : n U] = #(O_u ⧸ n O_u)`.
 * `WeierstrassCurve.index_range_nsmul_eq_natCard_torsionBy_mul`: the index of `n E(F_u)` is
@@ -92,42 +82,6 @@ variable {A : Type*} [CommRing A] [IsDedekindDomain A]
 
 local notation "O_u" => u.adicCompletionIntegers F
 local notation "F_u" => u.adicCompletion F
-local notation "R_u" =>
-  Valuation.valuationSubring
-    (Valued.v : Valuation (u.adicCompletion F) (WithZero (Multiplicative ℤ)))
-
-section KerReduction
-
-variable (C : WeierstrassCurve (u.adicCompletionIntegers F))
-  [(C.baseChange (u.adicCompletion F)).IsElliptic]
-
-open scoped Classical in
-/-- **`E₁(F_u)` has finite index in `E(F_u)`**: the kernel of reduction of a minimal equation over
-`O_u` has finite index in the points over `F_u` when the residue field is finite. -/
-instance finiteIndex_kerReduction [IsMinimal O_u (C.baseChange F_u)] :
-    (C.kerReduction u).FiniteIndex := by
-  have : IsDiscreteValuationRing R_u := inferInstanceAs (IsDiscreteValuationRing O_u)
-  have : HenselianLocalRing R_u := inferInstanceAs (HenselianLocalRing O_u)
-  have : Finite (ResidueField R_u) := inferInstanceAs (Finite (ResidueField O_u))
-  have : IsMinimal R_u (C.baseChange F_u) := inferInstanceAs (IsMinimal O_u (C.baseChange F_u))
-  let W := (C.baseChange F_u).toAffine
-  have hle : C.kerReduction u ≤ W.nonsingularReduction Valued.v := by
-    intro P hP
-    rcases (Affine.Point.reduction_eq_zero_iff Valued.v P).mp ((C.mem_kerReduction_iff u).mp hP)
-      with rfl | hP
-    · exact zero_mem _
-    · exact Affine.mem_nonsingularReduction_of_one_lt Valued.v hP
-  have hker : (C.kerReduction u).addSubgroupOf (W.nonsingularReduction Valued.v) =
-      (W.nonsingularReductionHom Valued.v).ker := by
-    ext P
-    rw [AddSubgroup.mem_addSubgroupOf, Affine.mem_ker_nonsingularReductionHom_iff,
-      C.mem_kerReduction_iff u, Affine.Point.reduction_eq_zero_iff]
-  refine ⟨?_⟩
-  rw [← AddSubgroup.relIndex_mul_index hle, AddSubgroup.relIndex, hker, AddSubgroup.index_ker]
-  exact mul_ne_zero Nat.card_pos.ne' AddSubgroup.FiniteIndex.index_ne_zero
-
-end KerReduction
-
 section DividingN
 
 local notation "m_u" => maximalIdeal O_u
@@ -156,14 +110,13 @@ private theorem exists_finiteIndex_injective_nsmul_of_isMinimal
   let V := FormalGroupPoint.filtration C m_u (e + 1)
   let ι := C.formalPointHomAdicCompletion u
   have hι : Function.Injective ι := C.formalPointHomAdicCompletion_injective u
-  let φ : V ≃+ V.map ι := V.equivMapOfInjective ι hι
-  refine ⟨V.map ι, ⟨?_⟩, ?_, ?_⟩
-  · -- `[E(F_u) : V] = [Ê(𝔪_u) : Ê(𝔪_u ^ (e + 1))] · [E(F_u) : E₁(F_u)]`
-    have h1 := TauCeti.IsDiscreteValuationRing.relIndex_maximalIdeal_pow_add (S := O_u) 1 e
-    rw [pow_one, add_comm] at h1
-    rw [AddSubgroup.index_map_of_injective V hι, range_formalPointHomAdicCompletion_eq_kerReduction,
-      FormalGroupPoint.index_filtration (Nat.succ_ne_zero e), h1]
-    exact mul_ne_zero (pow_ne_zero _ Nat.card_pos.ne') AddSubgroup.FiniteIndex.index_ne_zero
+  have hmap : V.map ι = C.formalPointFiltration u (e + 1) := by
+    ext P
+    simp only [V, ι, AddSubgroup.mem_map, FormalGroupPoint.mem_filtration,
+      C.mem_formalPointFiltration_iff u]
+  let φ : V ≃+ C.formalPointFiltration u (e + 1) :=
+    (V.equivMapOfInjective ι hι).trans (AddEquiv.addSubgroupCongr hmap)
+  refine ⟨C.formalPointFiltration u (e + 1), inferInstance, ?_, ?_⟩
   · exact (φ.injective_nsmul_iff n).mp
       (FormalGroupPoint.nsmul_filtration_injective hne (Nat.lt_succ_self e))
   · rw [← AddEquiv.index_range_nsmulAddMonoidHom φ,
