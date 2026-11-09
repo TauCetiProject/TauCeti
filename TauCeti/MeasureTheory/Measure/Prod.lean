@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Group.Arithmetic
 public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Real
+public import Mathlib.MeasureTheory.Measure.WithDensity
 
 /-!
 # Marginal masses and sections of product measures
@@ -18,6 +19,9 @@ over `x`, when `β` is finite, and symmetrically for the second marginal. Mathli
 the extended masses (`MeasureTheory.measure_preimage_fst_singleton_eq_sum`); this file states it
 for the real masses `Measure.real`. A set of zero first-marginal mass carries no mass in any
 rectangle over it (`MeasureTheory.Measure.measure_prod_eq_zero_of_fst_eq_zero`).
+For a probability measure `μ`, the pairs with a coordinate in a set `s` have `μ.prod μ`-measure
+at most `2 * μ s` (`MeasureTheory.Measure.prod_self_union_le_two_mul`). Weighting by a function
+of the first coordinate commutes with taking the first marginal (`fst_withDensity`).
 
 It also records that almost every section of an almost-everywhere measurable function on a
 product `μ.prod ν` is almost-everywhere measurable (`AEMeasurable.prodMk_left`), the counterpart of
@@ -40,6 +44,30 @@ open scoped ENNReal
 
 namespace MeasureTheory.Measure
 
+/-- Weighting a joint measure by a function of its first coordinate weights its first marginal
+by the same function. No finiteness assumption is needed. -/
+@[simp]
+theorem fst_withDensity {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    (ρ : Measure (α × β)) {f : α → ℝ≥0∞} (hf : Measurable f) :
+    (ρ.withDensity (fun p ↦ f p.1)).fst = ρ.fst.withDensity f := by
+  apply Measure.ext_of_lintegral
+  intro g hg
+  rw [Measure.fst, lintegral_map hg measurable_fst,
+    lintegral_withDensity_eq_lintegral_mul ρ (f := fun p ↦ f p.1)
+      (by fun_prop) (by fun_prop), lintegral_withDensity_eq_lintegral_mul _ hf hg,
+    Measure.fst, lintegral_map (hf.mul hg) measurable_fst]
+  simp only [Pi.mul_apply]
+
+/-- An integrable nonnegative weight on the first marginal makes the weighted joint measure
+finite. -/
+theorem isFiniteMeasure_withDensity_fst {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    (ρ : Measure (α × β)) {f : α → ℝ≥0∞} (hf : Measurable f)
+    (hint : ∫⁻ x, f x ∂ρ.fst < ∞) :
+    IsFiniteMeasure (ρ.withDensity (fun p ↦ f p.1)) := by
+  apply isFiniteMeasure_withDensity
+  rw [Measure.fst, lintegral_map hf measurable_fst] at hint
+  exact hint.ne
+
 /-- A set of zero first-marginal mass carries no mass in any rectangle over it: if
 `σ.fst t = 0`, then `σ (t ×ˢ s) = 0` for every `s`. Neither set needs to be measurable. -/
 theorem measure_prod_eq_zero_of_fst_eq_zero {α β : Type*} [MeasurableSpace α]
@@ -47,6 +75,17 @@ theorem measure_prod_eq_zero_of_fst_eq_zero {α β : Type*} [MeasurableSpace α]
     σ (t ×ˢ s) = 0 :=
   measure_mono_null (Set.prod_subset_preimage_fst t s)
     (preimage_null_of_map_null measurable_fst.aemeasurable ht)
+
+/-- For a probability measure `μ` and any set `s`, the pairs having a first or a second coordinate
+in `s` have `μ.prod μ`-measure at most twice `μ s`. No measurability is needed. -/
+theorem prod_self_union_le_two_mul {α : Type*} [MeasurableSpace α] (μ : Measure α)
+    [IsProbabilityMeasure μ] (s : Set α) :
+    (μ.prod μ) ((s ×ˢ (Set.univ : Set α)) ∪ ((Set.univ : Set α) ×ˢ s)) ≤ 2 * μ s := by
+  calc _ ≤ (μ.prod μ) (s ×ˢ (Set.univ : Set α)) + (μ.prod μ) ((Set.univ : Set α) ×ˢ s) :=
+        measure_union_le _ _
+    _ = μ s + μ s := by
+        rw [Measure.prod_prod, Measure.prod_prod, measure_univ, mul_one, one_mul]
+    _ = 2 * μ s := (two_mul _).symm
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [MeasurableSpace β]
   [MeasurableSingletonClass β] {π : Measure (α × β)}

@@ -176,10 +176,12 @@ theorem mem_quadraticLieSubalgebra_iff_mem_even_and_reverse_eq_neg_and_lie_ι_me
 
 /-- Over the zero space the intrinsic quadratic conditions force a Clifford element to vanish. -/
 theorem mem_even_and_reverse_eq_neg_and_commutator_mem_iff_eq_zero [Subsingleton V]
-    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (x : CliffordAlgebra Q) :
+    (Q : QuadraticForm K V) (x : CliffordAlgebra Q) :
     (x ∈ even Q ∧ reverse x = -x ∧ ∀ v, x * ι Q v - ι Q v * x ∈ LinearMap.range (ι Q)) ↔
       x = 0 := by
   refine ⟨fun hx ↦ ?_, by rintro rfl; simp⟩
+  have hQ : Q.Nondegenerate :=
+    QuadraticMap.nondegenerate_iff_radical_eq_bot.2 (Subsingleton.elim _ _)
   have hxq : x ∈ quadraticLieSubalgebra Q :=
     (mem_quadraticLieSubalgebra_iff_mem_even_and_reverse_eq_neg_and_lie_ι_mem_range_ι Q
       hQ).mpr (by simpa only [Ring.lie_def] using hx)

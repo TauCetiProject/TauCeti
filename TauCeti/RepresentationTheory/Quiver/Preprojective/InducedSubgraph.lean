@@ -261,6 +261,55 @@ private theorem inducedSubgraphPathAlgebraHom_backtrackElem {i j : V} (h : G.Adj
   · rw [← map_mul, ofArrow_symm_mul_ofArrow]
   all_goals simp
 
+/-- The restricted backtrack elements at a vertex of `S` sum to zero. -/
+private theorem sum_inducedSubgraphPathAlgebraHom_backtrackElem_eq_zero {v : V} (hv : v ∈ S)
+    [Fintype (G.neighborSet v)] :
+    ∑ w : G.neighborSet v,
+      inducedSubgraphPathAlgebraHom k G S (backtrackElem G k w.2) = 0 := by
+  classical
+  let f : G.neighborSet v → InducedAlgebra k G S := fun w =>
+    inducedSubgraphPathAlgebraHom k G S (backtrackElem G k w.2)
+  have hsum := Fintype.sum_subtype_add_sum_subtype
+    (fun w : G.neighborSet v => (w : V) ∈ S) f
+  have hcompl : ∑ w : {w : G.neighborSet v // (w : V) ∉ S}, f w = 0 := by
+    apply Finset.sum_eq_zero
+    intro w _
+    simp only [f]
+    rw [inducedSubgraphPathAlgebraHom_backtrackElem
+      (k := k) (G := G) (S := S) w.1.2]
+    simp [w.property]
+  rw [hcompl, add_zero] at hsum
+  rw [← hsum]
+  calc
+    ∑ w : {w : G.neighborSet v // (w : V) ∈ S}, f w =
+        ∑ w : {w : G.neighborSet v // (w : V) ∈ S},
+          signlessPreprojectiveMk k _
+            (backtrackElem (G.induce S) k
+              (inducedAdj G S hv w.2 w.1.2)) := by
+      apply Finset.sum_congr rfl
+      intro w _
+      simp only [f]
+      rw [inducedSubgraphPathAlgebraHom_backtrackElem
+        (k := k) (G := G) (S := S) w.1.2]
+      simp [hv, w.property]
+    _ = ∑ w : (G.induce S).neighborSet ⟨v, hv⟩,
+          signlessPreprojectiveMk k _ (backtrackElem (G.induce S) k w.2) := by
+      let e : {w : G.neighborSet v // (w : V) ∈ S} ≃ (G.induce S).neighborSet ⟨v, hv⟩ :=
+        (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ G.neighborSet v) (· ∈ S)).trans
+          ((Equiv.subtypeEquivRight fun _ ↦ and_comm).trans
+            (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ S) (G.Adj v ·)).symm)
+      apply Fintype.sum_equiv e
+      intro w
+      rfl
+    _ = 0 := by
+      rw [← map_sum, ← signlessPreprojectiveRelator_vertex]
+      rw [signlessPreprojectiveRelator_congr k (vertex (G.induce S) ⟨v, hv⟩)
+        (DoubledQuiver.instFintypeStarVertex (G.induce S) ⟨v, hv⟩)
+        (DoubledQuiver.instFintypeStar (G := G.induce S)
+          (vertex (G.induce S) ⟨v, hv⟩))]
+      exact signlessPreprojectiveMk_signlessPreprojectiveRelator k
+        (vertex (G.induce S) ⟨v, hv⟩)
+
 /-- The path-algebra restriction kills every signless relation. -/
 private theorem inducedSubgraphPathAlgebraHom_signlessPreprojectiveRelator
     (v : DoubledQuiver G) :
@@ -270,48 +319,7 @@ private theorem inducedSubgraphPathAlgebraHom_signlessPreprojectiveRelator
   rw [signlessPreprojectiveRelator_congr k (vertex G v) _ inferInstance,
     signlessPreprojectiveRelator_vertex, map_sum]
   by_cases hv : v ∈ S
-  · let f : G.neighborSet v → InducedAlgebra k G S := fun w =>
-      inducedSubgraphPathAlgebraHom k G S (backtrackElem G k w.2)
-    have hsum := Fintype.sum_subtype_add_sum_subtype
-      (fun w : G.neighborSet v => (w : V) ∈ S) f
-    have hcompl : ∑ w : {w : G.neighborSet v // (w : V) ∉ S}, f w = 0 := by
-      apply Finset.sum_eq_zero
-      intro w _
-      simp only [f]
-      rw [inducedSubgraphPathAlgebraHom_backtrackElem
-        (k := k) (G := G) (S := S) w.1.2]
-      simp [w.property]
-    rw [hcompl, add_zero] at hsum
-    rw [← hsum]
-    calc
-      ∑ w : {w : G.neighborSet v // (w : V) ∈ S}, f w =
-          ∑ w : {w : G.neighborSet v // (w : V) ∈ S},
-            signlessPreprojectiveMk k _
-              (backtrackElem (G.induce S) k
-                (inducedAdj G S hv w.2 w.1.2)) := by
-        apply Finset.sum_congr rfl
-        intro w _
-        simp only [f]
-        rw [inducedSubgraphPathAlgebraHom_backtrackElem
-          (k := k) (G := G) (S := S) w.1.2]
-        simp [hv, w.property]
-      _ = ∑ w : (G.induce S).neighborSet ⟨v, hv⟩,
-            signlessPreprojectiveMk k _ (backtrackElem (G.induce S) k w.2) := by
-        let e : {w : G.neighborSet v // (w : V) ∈ S} ≃ (G.induce S).neighborSet ⟨v, hv⟩ :=
-          (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ G.neighborSet v) (· ∈ S)).trans
-            ((Equiv.subtypeEquivRight fun _ ↦ and_comm).trans
-              (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ S) (G.Adj v ·)).symm)
-        apply Fintype.sum_equiv e
-        intro w
-        rfl
-      _ = 0 := by
-        rw [← map_sum, ← signlessPreprojectiveRelator_vertex]
-        rw [signlessPreprojectiveRelator_congr k (vertex (G.induce S) ⟨v, hv⟩)
-          (DoubledQuiver.instFintypeStarVertex (G.induce S) ⟨v, hv⟩)
-          (DoubledQuiver.instFintypeStar (G := G.induce S)
-            (vertex (G.induce S) ⟨v, hv⟩))]
-        exact signlessPreprojectiveMk_signlessPreprojectiveRelator k
-          (vertex (G.induce S) ⟨v, hv⟩)
+  · exact sum_inducedSubgraphPathAlgebraHom_backtrackElem_eq_zero k G S hv
   · apply Finset.sum_eq_zero
     intro w _
     rw [inducedSubgraphPathAlgebraHom_backtrackElem

@@ -412,15 +412,11 @@ private lemma pathVal_subpath_trans {x y : X} (γ : Path x y) (i : ι) {lo hi : 
     hγ _ ⟨Icc.le_convexComb hlohi t, Icc.convexComb_le hlohi t⟩⟩,
     g.continuous.codRestrict _⟩
   let p : Path (g' 0) (g' 1) := Path.id.map g'.continuous
-  have hpa : (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i) = p a' := by
-    apply Subtype.ext
-    rfl
-  have hpb : (⟨γ (Icc.convexComb lo hi b'), hbU⟩ : U i) = p b' := by
-    apply Subtype.ext
-    rfl
-  have hpc : (⟨γ (Icc.convexComb lo hi c'), hcU⟩ : U i) = p c' := by
-    apply Subtype.ext
-    rfl
+  -- `p` parametrises `γ` on `[lo, hi]`: this holds by unfolding `Path.map`, `codRestrict`, `comp`
+  have hp : ∀ t, (p t : X) = γ (Icc.convexComb lo hi t) := fun _ ↦ rfl
+  have hpa : (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i) = p a' := Subtype.ext (hp a').symm
+  have hpb : (⟨γ (Icc.convexComb lo hi b'), hbU⟩ : U i) = p b' := Subtype.ext (hp b').symm
+  have hpc : (⟨γ (Icc.convexComb lo hi c'), hcU⟩ : U i) = p c' := Subtype.ext (hp c').symm
   let qab : Path (⟨γ (Icc.convexComb lo hi a'), haU⟩ : U i)
       ⟨γ (Icc.convexComb lo hi b'), hbU⟩ :=
     (γ.subpath (Icc.convexComb lo hi a') (Icc.convexComb lo hi b')).codRestrict
@@ -433,29 +429,12 @@ private lemma pathVal_subpath_trans {x y : X} (γ : Path x y) (i : ι) {lo hi : 
       ⟨γ (Icc.convexComb lo hi c'), hcU⟩ :=
     (γ.subpath (Icc.convexComb lo hi a') (Icc.convexComb lo hi c')).codRestrict
       (Path.subpath_apply_mem hγ ha hc)
-  have cast_subpath_eq_codRestrict (r s : I)
-      (hrU : γ (Icc.convexComb lo hi r) ∈ U i) (hsU : γ (Icc.convexComb lo hi s) ∈ U i)
-      (hr : (⟨γ (Icc.convexComb lo hi r), hrU⟩ : U i) = p r)
-      (hs : (⟨γ (Icc.convexComb lo hi s), hsU⟩ : U i) = p s)
-      (hrs : ∀ t, γ.subpath (Icc.convexComb lo hi r) (Icc.convexComb lo hi s) t ∈ U i) :
-      (p.subpath r s).cast hr hs =
-        (γ.subpath (Icc.convexComb lo hi r) (Icc.convexComb lo hi s)).codRestrict hrs := by
-    apply Path.ext
-    funext t
-    apply Subtype.ext
-    simp only [Path.cast_coe, Path.codRestrict_coe, Path.subpath, p, Path.map_coe, g', g]
-    have hcomb : Icc.convexComb (Icc.convexComb lo hi r) (Icc.convexComb lo hi s) t =
-        Icc.convexComb lo hi (Icc.convexComb r s t) := by
-      ext
-      simp only [Icc.coe_convexComb]
-      ring
-    exact congrArg γ hcomb.symm
   have hab' : (p.subpath a' b').cast hpa hpb = qab :=
-    cast_subpath_eq_codRestrict a' b' haU hbU hpa hpb (Path.subpath_apply_mem hγ ha hb)
+    Path.cast_subpath_eq_codRestrict γ p hp a' b'
   have hbc' : (p.subpath b' c').cast hpb hpc = qbc :=
-    cast_subpath_eq_codRestrict b' c' hbU hcU hpb hpc (Path.subpath_apply_mem hγ hb hc)
+    Path.cast_subpath_eq_codRestrict γ p hp b' c'
   have hac' : (p.subpath a' c').cast hpa hpc = qac :=
-    cast_subpath_eq_codRestrict a' c' haU hcU hpa hpc (Path.subpath_apply_mem hγ ha hc)
+    Path.cast_subpath_eq_codRestrict γ p hp a' c'
   have hquot : Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk qab)
       (Path.Homotopic.Quotient.mk qbc) = Path.Homotopic.Quotient.mk qac := by
     rw [← hab', ← hbc', ← hac']

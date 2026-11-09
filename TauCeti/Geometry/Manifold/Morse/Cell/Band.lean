@@ -144,7 +144,7 @@ theorem IsMorse.isZero_singularHomology_of_compactSpace_of_manifoldMorseIndex_le
     (fun p hp ↦ hd p hp.1) R hn).of_iso (singularHomologyIsoSublevelPair hab
       (fun x ↦ (hf' x).1) (fun x ↦ (hf' x).2) R n)
 
-omit [FiniteDimensional ℝ E] [T2Space M] in
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
 /-- **Homology along a regular sublevel exhaustion.** A proper Morse function `f`, bounded below,
 has increasing regular values `a 0 ≤ a 1 ≤ ⋯` with compact sublevels `{f ≤ a j}` along which
 singular homology is continuous: for every coefficient object `R` of an abelian category with
