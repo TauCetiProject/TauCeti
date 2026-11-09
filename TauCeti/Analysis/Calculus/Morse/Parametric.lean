@@ -17,10 +17,34 @@ zero section and transforms the function into its vertical Hessian quadratic for
 coordinate change and its local inverse are jointly smooth in base and fiber.
 
 The construction follows the operator-square-root proof of the Morse--Palais lemma, as formalized
-in `TauCeti.Analysis.Calculus.Morse.NormalForm`: apply its varying-reference congruence theorem to
-the integral average of the vertical Hessian, then invert the map `(b, v) ↦ (b, R (b, v) v)`.
-The Hessian convention is the second derivative itself, so the quadratic formula has a factor
-`1 / 2`. This is a local theorem on a product of Banach spaces; no bundle gluing is asserted.
+in `TauCeti.Analysis.Calculus.Morse.NormalForm`. The fiber coordinate is the **parametric Morse
+coordinate** `TauCeti.parametricMorseCoord f (b, v) = R (b, v) v`, where `R (b, v)` is the Palais
+congruence (`TauCeti.palaisCongruence`) of the integral average of the vertical Hessian of
+`f (b, ·)` along the segment from `0` to `v`, with respect to the vertical Hessian at `0`; the
+chart then inverts the map `(b, v) ↦ (b, R (b, v) v)`. The Hessian convention is the second
+derivative itself, so the quadratic formula has a factor `1 / 2`.
+
+The parametric Morse coordinate is a function of the family, with no choice involved. Hence it is
+compatible with linear changes of fiber coordinates depending continuously on the base point
+(`TauCeti.eventually_apply_parametricMorseCoord_comp_clm`): if `f (b, v) = g (b, L b v)`, then
+`L b` carries the coordinate of `f` at `(b, v)` to that of `g` at `(b, L b v)`. For a function on
+the total space of a vector bundle near its zero section, read in two local trivializations, this
+says that the coordinates of the two trivializations define the same map near the zero section.
+The theorems here remain local theorems on a product of Banach spaces.
+
+## Main declarations
+
+* `TauCeti.parametricMorseCoord`: the parametric Morse coordinate of a family.
+* `TauCeti.eventually_contDiffAt_parametricMorseCoord`: it is `C^n` near the zero section for a
+  `C^{n+2}` family.
+* `TauCeti.eventually_eq_add_parametricMorseCoord`: in it, the family is its vertical Hessian
+  quadratic form.
+* `TauCeti.hasFDerivAt_parametricMorseCoord`: its derivative on the zero section is the projection
+  onto the fiber.
+* `TauCeti.eventually_apply_parametricMorseCoord_comp_clm`: its compatibility with linear changes
+  of fiber coordinates.
+* `TauCeti.exists_parametric_morse_normal_form` and `TauCeti.exists_parametric_morse_chart`: the
+  parametric Morse lemma, as a fiber coordinate change and as a local chart.
 
 ## References
 
@@ -42,14 +66,105 @@ variable {P E : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {f : P × E → ℝ} {a : P} {n : ℕ∞}
 
+/-- The **parametric Morse coordinate** of a family `f (b, v)`: the fiber vector `v`, moved by the
+Palais congruence (`TauCeti.palaisCongruence`) of the averaged vertical Hessian of `f (b, ·)` on
+the segment from `0` to `v` with respect to the vertical Hessian at `0`. Near a point of a critical
+zero section with invertible vertical Hessian, it is a smooth fiber coordinate in which the family
+is its vertical Hessian quadratic form (`TauCeti.eventually_eq_add_parametricMorseCoord`). It
+involves no choice, so it is compatible with linear changes of fiber coordinates
+(`TauCeti.eventually_apply_parametricMorseCoord_comp_clm`). -/
+def parametricMorseCoord (f : P × E → ℝ) (z : P × E) : E :=
+  palaisCongruence (fderiv ℝ (fderiv ℝ fun v ↦ f (z.1, v)) 0)
+    (hessianAverage (fun v ↦ f (z.1, v)) 0 z.2) z.2
+
+omit [NormedAddCommGroup P] [NormedSpace ℝ P] in
+/-- The parametric Morse coordinate vanishes on the zero section. -/
+@[simp]
+theorem parametricMorseCoord_zero (f : P × E → ℝ) (b : P) : parametricMorseCoord f (b, 0) = 0 := by
+  simp [parametricMorseCoord]
+
+omit [CompleteSpace E] in
+/-- The two forms compared by the parametric Morse coordinate depend `C^n` on the base point and
+the fiber vector for a `C^{n+2}` family. -/
+private theorem contDiff_verticalHessian_prod (hf : ContDiff ℝ (n + 2) f) :
+    ContDiff ℝ n (fun z : P × E ↦ (fderiv ℝ (fderiv ℝ fun v ↦ f (z.1, v)) 0,
+      hessianAverage (fun v ↦ f (z.1, v)) 0 z.2)) := by
+  have hB := contDiff_hessianAverage_param hf 0
+  refine ContDiff.prodMk ?_ hB
+  simp only [← hessianAverage_zero]
+  exact hB.comp (contDiff_fst.prodMk contDiff_const)
+
+omit [CompleteSpace E] in
+/-- At a point `(a, 0)` of the zero section, both forms compared by the parametric Morse coordinate
+are the vertical Hessian. -/
+private theorem tendsto_verticalHessian_prod (hf : ContDiff ℝ 2 f) :
+    Tendsto (fun z : P × E ↦ (fderiv ℝ (fderiv ℝ fun v ↦ f (z.1, v)) 0,
+      hessianAverage (fun v ↦ f (z.1, v)) 0 z.2)) (𝓝 (a, 0))
+      (𝓝 (fderiv ℝ (fderiv ℝ fun v ↦ f (a, v)) 0, fderiv ℝ (fderiv ℝ fun v ↦ f (a, v)) 0)) := by
+  simpa using ((contDiff_verticalHessian_prod (n := 0) (by simpa using hf)).continuous.tendsto
+    (a, (0 : E)))
+
+/-- **The parametric Morse coordinate is smooth.** For a `C^{n+2}` family whose vertical Hessian
+at `(a, 0)` is invertible, the parametric Morse coordinate is `C^n` near `(a, 0)`. -/
+theorem eventually_contDiffAt_parametricMorseCoord (hf : ContDiff ℝ (n + 2) f)
+    (hH : (fderiv ℝ (fderiv ℝ fun v ↦ f (a, v)) 0).IsInvertible) :
+    ∀ᶠ z in 𝓝 (a, (0 : E)), ContDiffAt ℝ n (parametricMorseCoord f) z := by
+  have hp := contDiff_verticalHessian_prod hf
+  filter_upwards [(tendsto_verticalHessian_prod (hf.of_le le_add_self)).eventually
+    (eventually_contDiffAt_palaisCongruence (n := n) hH)] with z hz
+  exact (hz.comp z hp.contDiffAt).clm_apply contDiffAt_snd
+
+/-- **The parametric Morse normal form in the parametric Morse coordinate.** If the zero section
+of a `C²` family is critical near `a` and its vertical Hessian at `(a, 0)` is invertible, then near
+`(a, 0)` the family is its value on the zero section plus half its vertical Hessian quadratic form,
+evaluated at the parametric Morse coordinate. -/
+theorem eventually_eq_add_parametricMorseCoord (hf : ContDiff ℝ 2 f)
+    (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ (fun v ↦ f (b, v)) 0 = 0)
+    (hH : (fderiv ℝ (fderiv ℝ fun v ↦ f (a, v)) 0).IsInvertible) :
+    ∀ᶠ z in 𝓝 (a, (0 : E)), f z = f (z.1, 0) + (2 : ℝ)⁻¹ *
+      fderiv ℝ (fderiv ℝ fun v ↦ f (z.1, v)) 0 (parametricMorseCoord f z)
+        (parametricMorseCoord f z) := by
+  have hslice (b : P) : ContDiff ℝ 2 (fun v ↦ f (b, v)) :=
+    hf.comp (contDiff_const.prodMk contDiff_id)
+  filter_upwards [(tendsto_verticalHessian_prod hf).eventually
+    (eventually_palaisCongruence_apply_apply hH),
+    (continuous_fst.tendsto (a, (0 : E))).eventually hcrit] with z hz hzcrit
+  have hc := hz (fun w w' ↦ by simpa using hessianAverage_symm (hslice z.1) 0 0 w w')
+    (hessianAverage_symm (hslice z.1) 0 z.2) z.2 z.2
+  have ht := map_add_eq_add_hessianAverage (hslice z.1) 0 z.2
+  simpa only [zero_add, hzcrit, zero_apply, add_zero, smul_eq_mul, ← hc,
+    Prod.mk.eta, parametricMorseCoord] using ht
+
+/-- At a point `(a, 0)` of the zero section with invertible vertical Hessian, the parametric Morse
+coordinate of a `C^{n+2}` family, `n ≠ 0`, has derivative the projection onto the fiber. -/
+theorem hasFDerivAt_parametricMorseCoord (hf : ContDiff ℝ (n + 2) f)
+    (hH : (fderiv ℝ (fderiv ℝ fun v ↦ f (a, v)) 0).IsInvertible) (hn : n ≠ 0) :
+    HasFDerivAt (parametricMorseCoord f) (ContinuousLinearMap.snd ℝ P E) (a, 0) := by
+  have hp := contDiff_verticalHessian_prod hf
+  have hRa : ContDiffAt ℝ n (fun z : P × E ↦ palaisCongruence
+      (fderiv ℝ (fderiv ℝ fun v ↦ f (z.1, v)) 0) (hessianAverage (fun v ↦ f (z.1, v)) 0 z.2))
+      (a, 0) := by
+    have e : (fun z : P × E ↦ (fderiv ℝ (fderiv ℝ fun v ↦ f (z.1, v)) 0,
+        hessianAverage (fun v ↦ f (z.1, v)) 0 z.2)) (a, 0) =
+        (fderiv ℝ (fderiv ℝ fun v ↦ f (a, v)) 0, fderiv ℝ (fderiv ℝ fun v ↦ f (a, v)) 0) := by
+      simp
+    have h := (eventually_contDiffAt_palaisCongruence (n := n) hH).self_of_nhds
+    rw [← e] at h
+    exact h.comp (a, 0) hp.contDiffAt
+  have hd := (hRa.differentiableAt (by simpa using hn)).hasFDerivAt.clm_apply
+    (hasFDerivAt_snd (p := ((a, 0) : P × E)))
+  unfold parametricMorseCoord
+  simpa [palaisCongruence_self hH, ContinuousLinearMap.one_def] using hd
+
 /-- **Parametric Morse normal form.** A jointly `C^{n+2}` family with a critical zero section
 near `a` and invertible vertical Hessian at `(a, 0)` has a jointly `C^n` fiber coordinate change
 on a product neighborhood. It fixes the zero section, preserves the parameter, and has identity
 derivative at `(a, 0)`. The reference quadratic form is the vertical Hessian at each `(b, 0)`.
-The base space need not be complete for this forward coordinate construction. -/
+The base space need not be complete for this forward coordinate construction. The coordinate
+change is `z ↦ (z.1, TauCeti.parametricMorseCoord f z)`. -/
 theorem exists_parametric_morse_normal_form (hf : ContDiff ℝ (n + 2) f)
     (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ (fun v ↦ f (b, v)) 0 = 0)
-    (hH : (fderiv ℝ (fderiv ℝ (fun v ↦ f (a, v))) 0).IsInvertible) (hn : n ≠ 0) :
+    (hH : (fderiv ℝ (fderiv ℝ fun v ↦ f (a, v)) 0).IsInvertible) (hn : n ≠ 0) :
     ∃ (Φ : P × E → P × E) (U : Set P) (V : Set E),
       IsOpen U ∧ IsOpen V ∧ a ∈ U ∧ (0 : E) ∈ V ∧
       (∀ z, (Φ z).1 = z.1) ∧ (∀ b, Φ (b, 0) = (b, 0)) ∧
@@ -58,40 +173,55 @@ theorem exists_parametric_morse_normal_form (hf : ContDiff ℝ (n + 2) f)
       ∀ z ∈ U ×ˢ V,
         f z = f (z.1, 0) + (2 : ℝ)⁻¹ *
           fderiv ℝ (fderiv ℝ (fun v ↦ f (z.1, v))) 0 (Φ z).2 (Φ z).2 := by
-  have hf₂ : ContDiff ℝ 2 f := hf.of_le le_add_self
-  have hslice (b : P) : ContDiff ℝ 2 (fun v ↦ f (b, v)) :=
-    hf₂.comp (contDiff_const.prodMk contDiff_id)
-  let B : P × E → E →L[ℝ] E →L[ℝ] ℝ :=
-    fun z ↦ hessianAverage (fun v ↦ f (z.1, v)) 0 z.2
-  obtain ⟨R, U, V, hU, hV, haU, h0V, hR0, hR, _, _, hReq⟩ :=
-    exists_parametric_congruence_of_symmetric_family
-      (B := B) (a := a) (contDiff_hessianAverage_param hf 0)
-      (fun z w w' ↦ hessianAverage_symm (hslice z.1) 0 z.2 w w')
-      (by simpa only [B, hessianAverage_zero] using hH)
-  obtain ⟨W, hWsub, hW, haW⟩ := mem_nhds_iff.mp hcrit
-  let Φ : P × E → P × E := fun z ↦ (z.1, R z z.2)
-  have hΦ : ContDiffOn ℝ n Φ (U ×ˢ V) :=
-    contDiffOn_fst.prodMk (hR.clm_apply contDiffOn_snd)
-  have hRa : ContDiffAt ℝ n R (a, 0) :=
-    (hR (a, 0) ⟨haU, h0V⟩).contDiffAt ((hU.prod hV).mem_nhds ⟨haU, h0V⟩)
-  have hd : HasFDerivAt (fun z : P × E ↦ R z z.2)
-      ((R (a, 0)).comp (ContinuousLinearMap.snd ℝ P E) +
-        (fderiv ℝ R (a, 0)).flip 0) (a, 0) :=
-    (hRa.differentiableAt (by simpa using hn)).hasFDerivAt.clm_apply
-      hasFDerivAt_snd
-  have hΦd : HasFDerivAt Φ (ContinuousLinearMap.id ℝ (P × E)) (a, 0) := by
-    convert hasFDerivAt_fst.prodMk hd using 1
-    ext z <;> simp [hR0 a haU]
-  refine ⟨Φ, U ∩ W, V, hU.inter hW, hV, ⟨haU, haW⟩, h0V,
-    fun _ ↦ rfl, fun _ ↦ by simp [Φ], hΦ.mono (by intro z hz; exact ⟨hz.1.1, hz.2⟩),
-    hΦd, ?_⟩
-  intro z hz
-  have ht := map_add_eq_add_hessianAverage (hslice z.1) 0 z.2
-  have hc := hReq z ⟨hz.1.1, hz.2⟩ z.2 z.2
-  simp only [B, hessianAverage_zero] at hc
-  have hzcrit : fderiv ℝ (fun v ↦ f (z.1, v)) 0 = 0 := hWsub hz.1.2
-  simpa only [zero_add, hzcrit, zero_apply, add_zero, smul_eq_mul, ← hc, Φ,
-    Prod.mk.eta] using ht
+  obtain ⟨U, V, hU, haU, hV, h0V, hUV⟩ := mem_nhds_prod_iff'.mp
+    ((eventually_contDiffAt_parametricMorseCoord hf hH).and
+      (eventually_eq_add_parametricMorseCoord (hf.of_le le_add_self) hcrit hH))
+  refine ⟨fun z ↦ (z.1, parametricMorseCoord f z), U, V, hU, hV, haU, h0V, fun _ ↦ rfl,
+    fun b ↦ by simp, fun z hz ↦ (contDiffAt_fst.prodMk (hUV hz).1).contDiffWithinAt, ?_,
+    fun z hz ↦ (hUV hz).2⟩
+  simpa using hasFDerivAt_fst.prodMk (hasFDerivAt_parametricMorseCoord hf hH hn)
+
+/-- **The parametric Morse coordinate is compatible with linear changes of fiber coordinates.**
+Let `g (b, u)` be a `C²` family on `P × F` whose vertical Hessian at `(a, 0)` is invertible, and
+let `L b : E →L[ℝ] F` be continuous at `a` with `L a` invertible, as for the coordinate changes of
+a vector bundle. Read the family in the other fiber coordinates as `f (b, v) = g (b, L b v)`.
+Then near `(a, 0)`, the map `L b` carries the parametric Morse coordinate of `f` at `(b, v)` to
+that of `g` at `(b, L b v)`. -/
+theorem eventually_apply_parametricMorseCoord_comp_clm {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [CompleteSpace F] {g : P × F → ℝ} (hg : ContDiff ℝ 2 g)
+    {L : P → E →L[ℝ] F} (hL : ContinuousAt L a) (hLa : (L a).IsInvertible)
+    (hH : (fderiv ℝ (fderiv ℝ fun u ↦ g (a, u)) 0).IsInvertible) :
+    ∀ᶠ z in 𝓝 (a, (0 : E)), L z.1 (parametricMorseCoord (fun z ↦ g (z.1, L z.1 z.2)) z) =
+      parametricMorseCoord g (z.1, L z.1 z.2) := by
+  have hslice (b : P) : ContDiff ℝ 2 (fun u ↦ g (b, u)) :=
+    hg.comp (contDiff_const.prodMk contDiff_id)
+  -- In the fiber coordinates `v`, both forms are those of `g` pulled back by `L b`.
+  have hBf (z : P × E) : hessianAverage (fun v ↦ g (z.1, L z.1 v)) 0 z.2 =
+      (hessianAverage (fun u ↦ g (z.1, u)) 0 (L z.1 z.2)).bilinearComp (L z.1) (L z.1) := by
+    simpa [Function.comp_def] using hessianAverage_comp_clm (hslice z.1) (L z.1) 0 z.2
+  have hHf (b : P) : fderiv ℝ (fderiv ℝ fun v ↦ g (b, L b v)) 0 =
+      (fderiv ℝ (fderiv ℝ fun u ↦ g (b, u)) 0).bilinearComp (L b) (L b) := by
+    simpa using hBf (b, 0)
+  -- The data of the Palais congruence of `g` converge to `(L a, H, H)`.
+  have hB : Continuous (fun p : P × F ↦ hessianAverage (fun u ↦ g (p.1, u)) 0 p.2) :=
+    (contDiff_hessianAverage_param (n := 0) (by simpa using hg) 0).continuous
+  have hLz : ContinuousAt (fun z : P × E ↦ ((z.1, L z.1 z.2) : P × F)) (a, 0) :=
+    continuousAt_fst.prodMk ((hL.comp continuousAt_fst).clm_apply continuousAt_snd)
+  have hq : Tendsto (fun z : P × E ↦ (L z.1, fderiv ℝ (fderiv ℝ fun u ↦ g (z.1, u)) 0,
+      hessianAverage (fun u ↦ g (z.1, u)) 0 (L z.1 z.2))) (𝓝 (a, 0))
+      (𝓝 (L a, fderiv ℝ (fderiv ℝ fun u ↦ g (a, u)) 0,
+        fderiv ℝ (fderiv ℝ fun u ↦ g (a, u)) 0)) := by
+    have h := ((hL.comp continuousAt_fst).prodMk
+      ((hB.comp (continuous_fst.prodMk
+        (continuous_const : Continuous fun _ : P × E ↦ (0 : F)))).continuousAt.prodMk
+        (hB.continuousAt.comp hLz))).tendsto
+    simpa using h
+  filter_upwards [hq.eventually (eventually_palaisCongruence_bilinearComp hLa hH),
+    (continuous_fst.tendsto (a, (0 : E))).eventually (hL.eventually hLa.eventually_nhds)]
+    with z hz hinv
+  simp only [parametricMorseCoord, hHf, hBf]
+  rw [hz]
+  simp [hinv.self_apply_inverse]
 
 /-- **The parametric Morse lemma, as a local chart.** The chart has a product source containing
 `(a, 0)`, preserves the base parameter in both directions, and fixes the zero section. Its

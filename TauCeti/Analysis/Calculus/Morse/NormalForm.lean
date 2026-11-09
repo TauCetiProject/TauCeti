@@ -47,12 +47,19 @@ needed here.  The averaged Hessian and its Taylor formula are stated for a map i
 Banach space, nothing in them being special to real-valued functions; only the congruence and the
 Morse lemma itself need `f` real-valued.
 
-The family `R` is manufactured from a square root: the operator `C v = (B 0)⁻¹ ∘ B v` is close to
-the identity for `v` close to `0`, so it has a unique square root there
-(`TauCeti.sqrtNearOne`), and that square root is automatically self-adjoint for the pairing
-`B 0`, because the adjoint of a square root is a square root of the adjoint and the two are close
-to the identity.  Self-adjointness is exactly what turns `R v * R v = C v` into the congruence
-identity.
+The family `R` is manufactured from a square root, the **Palais congruence**
+`TauCeti.palaisCongruence`: the operator `C v = (B 0)⁻¹ ∘ B v` is close to the identity for `v`
+close to `0`, so it has a unique square root there (`TauCeti.sqrtNearOne`), and that square root
+is automatically self-adjoint for the pairing `B 0`, because the adjoint of a square root is a
+square root of the adjoint and the two are close to the identity.  Self-adjointness is exactly
+what turns `R v * R v = C v` into the congruence identity.
+
+The Palais congruence `TauCeti.palaisCongruence B₀ B = sqrtNearOne (B₀⁻¹ ∘ B)` is a function of
+the pair of forms, defined without any choice. It is smooth near every pair `(B₀, B₀)` with `B₀`
+invertible, so the reference form may vary as well, and it is natural: pulling both forms back
+by an invertible map `L` conjugates it by `L`. Naturality is what lets constructions built from it
+in local coordinates agree under changes of linear coordinates, such as the transition maps of a
+vector bundle.
 
 The Morse lemma supplies the local model of a Morse function: the index of the critical point,
 the local handle structure, and the local form of the gradient flow are all read off it.  The
@@ -75,6 +82,14 @@ order, including order zero.
 * `TauCeti.hessianAverage`: the averaged Hessian along a segment, normalised so that
   `TauCeti.hessianAverage_zero` identifies its value at `0` with the Hessian.
 * `TauCeti.map_add_eq_add_hessianAverage`: the second-order Taylor formula it satisfies.
+* `TauCeti.palaisCongruence`: the Palais congruence `sqrtNearOne (B₀⁻¹ ∘ B)` of two forms.
+* `TauCeti.eventually_contDiffAt_palaisCongruence`: it is smooth in both forms near `(B₀, B₀)`.
+* `TauCeti.eventually_palaisCongruence_apply_apply`: for symmetric forms near `(B₀, B₀)` it is a
+  congruence, `B₁ (R w) (R w') = B w w'`.
+* `TauCeti.eventually_palaisCongruence_bilinearComp`: it is natural under pulling both forms back
+  by an invertible map.
+* `TauCeti.hessianAverage_comp_clm`: the averaged Hessian of a composite with a continuous linear
+  map.
 * `TauCeti.exists_congruence_of_symmetric_family`: a `C^n` family of symmetric continuous
   bilinear forms whose value at a basepoint is invertible is, near that point, the congruence of
   that value by a `C^n` family of operators equal to the identity at the basepoint.
@@ -228,6 +243,21 @@ theorem map_add_eq_add_hessianAverage (hf : ContDiff ℝ 2 f) (x v : E) :
   congr 1
   ring
 
+/-- The averaged Hessian of a composite with a continuous linear map `L` is the averaged Hessian
+of the outer function along the image segment, with both arguments moved by `L`. -/
+theorem hessianAverage_comp_clm {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {g : G → F} (hg : ContDiff ℝ 2 g) (L : E →L[ℝ] G) (x v : E) :
+    hessianAverage (g ∘ L) x v = (hessianAverage g (L x) (L v)).bilinearComp L L := by
+  ext w w'
+  rw [hessianAverage_apply (hg.comp L.contDiff), ContinuousLinearMap.bilinearComp_apply,
+    hessianAverage_apply hg]
+  refine intervalIntegral.integral_congr fun t _ ↦ ?_
+  have h := congrArg (fun m ↦ m ![w, w'])
+    (L.iteratedFDeriv_comp_right hg (x + t • v) (i := 2) (by norm_num))
+  simp only [iteratedFDeriv_two_apply, ContinuousMultilinearMap.compContinuousLinearMap_apply,
+    Matrix.cons_val_zero, Matrix.cons_val_one] at h
+  rw [h, map_add, map_smul]
+
 end HessianAverage
 
 section Congruence
@@ -236,58 +266,201 @@ open Set
 
 variable [CompleteSpace E]
 
+/-! ### The Palais congruence -/
+
+/-- The **Palais congruence** of a bilinear form `B` with respect to a reference form `B₀`: the
+square root near the identity (`TauCeti.sqrtNearOne`) of the operator `B₀⁻¹ ∘ B`, where `B₀` is
+read as a map from `E` to its dual. For symmetric forms, with `B₀` invertible and `B` close to
+`B₀`, it is a congruence: `B₀ (R w) (R w') = B w w'`
+(`TauCeti.eventually_palaisCongruence_apply_apply`). It is defined without any choice, so it is
+natural under linear changes of coordinates (`TauCeti.eventually_palaisCongruence_bilinearComp`).
+-/
+def palaisCongruence (B₀ B : E →L[ℝ] E →L[ℝ] ℝ) : E →L[ℝ] E :=
+  sqrtNearOne (E →L[ℝ] E) (B₀.inverse ∘L B)
+
+/-- The Palais congruence of an invertible form with respect to itself is the identity. -/
+@[simp]
+theorem palaisCongruence_self {B₀ : E →L[ℝ] E →L[ℝ] ℝ} (hB₀ : B₀.IsInvertible) :
+    palaisCongruence B₀ B₀ = 1 := by
+  rw [palaisCongruence, hB₀.inverse_comp_self, ← ContinuousLinearMap.one_def, sqrtNearOne_one]
+
+variable {B₀ : E →L[ℝ] E →L[ℝ] ℝ}
+
+/-- The comparison operator `B₀⁻¹ ∘ B` tends to the identity as both forms tend to an invertible
+form. -/
+private theorem tendsto_inverse_comp (hB₀ : B₀.IsInvertible) :
+    Tendsto (fun p : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E →L[ℝ] ℝ) ↦ p.1.inverse ∘L p.2)
+      (𝓝 (B₀, B₀)) (𝓝 1) := by
+  have h : ContDiffAt ℝ 0
+      (fun p : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E →L[ℝ] ℝ) ↦ p.1.inverse ∘L p.2) (B₀, B₀) :=
+    (ContDiffAt.comp (g := ContinuousLinearMap.inverse) (B₀, B₀) hB₀.contDiffAt_map_inverse
+      contDiffAt_fst).clm_comp contDiffAt_snd
+  rw [← hB₀.inverse_comp_self.trans ContinuousLinearMap.one_def.symm]
+  exact h.continuousAt.tendsto
+
+/-- **The Palais congruence is smooth**, jointly in the reference form and the compared form, on a
+neighbourhood of `(B₀, B₀)` for every invertible `B₀`. -/
+theorem eventually_contDiffAt_palaisCongruence {n : ℕ∞ω} (hB₀ : B₀.IsInvertible) :
+    ∀ᶠ p in 𝓝 (B₀, B₀), ContDiffAt ℝ n
+      (fun p : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E →L[ℝ] ℝ) ↦ palaisCongruence p.1 p.2) p := by
+  filter_upwards [(continuous_fst.tendsto (B₀, B₀)).eventually hB₀.eventually_nhds,
+    (tendsto_inverse_comp hB₀).eventually
+      ((isOpen_analyticAt ℝ (sqrtNearOne (E →L[ℝ] E))).mem_nhds analyticAt_sqrtNearOne)]
+    with p hp hA
+  exact hA.contDiffAt.comp p
+    (((ContinuousLinearMap.IsInvertible.contDiffAt_map_inverse hp).comp p contDiffAt_fst).clm_comp
+      contDiffAt_snd)
+
+/-- The adjoint of an operator `T` for the pairing given by a form `B`. When `B` is invertible it
+is characterized by `B (adj T w) w' = B w (T w')`. -/
+private def pairingAdjoint (B : E →L[ℝ] E →L[ℝ] ℝ) (T : E →L[ℝ] E) : E →L[ℝ] E :=
+  B.inverse ∘L ((ContinuousLinearMap.compL ℝ E E ℝ).flip T ∘L B)
+
+omit [CompleteSpace E] in
+private theorem apply_pairingAdjoint_apply {B : E →L[ℝ] E →L[ℝ] ℝ} (hB : B.IsInvertible)
+    (T : E →L[ℝ] E) (w w' : E) : B (pairingAdjoint B T w) w' = B w (T w') := by
+  simp [pairingAdjoint, hB.self_apply_inverse]
+
+omit [CompleteSpace E] in
+/-- An operator is determined by the pairing of its values against an invertible form. -/
+private theorem ext_of_apply_apply {B : E →L[ℝ] E →L[ℝ] ℝ} (hB : B.IsInvertible)
+    {T₁ T₂ : E →L[ℝ] E} (h : ∀ w w', B (T₁ w) w' = B (T₂ w) w') : T₁ = T₂ :=
+  ContinuousLinearMap.ext fun w ↦ hB.injective (ContinuousLinearMap.ext (h w))
+
+/-- **The Palais congruence is a congruence.** Near `(B₀, B₀)`, for an invertible `B₀`, any two
+symmetric forms `B₁` and `B` satisfy `B₁ (R w) (R w') = B w w'`, where `R` is their Palais
+congruence: `R` squares to `B₁⁻¹ ∘ B`, and it is self-adjoint for the pairing `B₁` because its
+adjoint is another square root of the self-adjoint operator `B₁⁻¹ ∘ B` close to the identity. -/
+theorem eventually_palaisCongruence_apply_apply (hB₀ : B₀.IsInvertible) :
+    ∀ᶠ p : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E →L[ℝ] ℝ) in 𝓝 (B₀, B₀),
+      (∀ w w', p.1 w w' = p.1 w' w) → (∀ w w', p.2 w w' = p.2 w' w) →
+        ∀ w w', p.1 (palaisCongruence p.1 p.2 w) (palaisCongruence p.1 p.2 w') = p.2 w w' := by
+  have hR : ContDiffAt ℝ 0
+      (fun p : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E →L[ℝ] ℝ) ↦ palaisCongruence p.1 p.2) (B₀, B₀) :=
+    (eventually_contDiffAt_palaisCongruence hB₀).self_of_nhds
+  -- The adjoint of the Palais congruence for the pairing `p.1` tends to the identity.
+  have hadj : Tendsto (fun p : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E →L[ℝ] ℝ) ↦
+      pairingAdjoint p.1 (palaisCongruence p.1 p.2)) (𝓝 (B₀, B₀)) (𝓝 1) := by
+    have h : ContinuousAt (fun p : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E →L[ℝ] ℝ) ↦
+        pairingAdjoint p.1 (palaisCongruence p.1 p.2)) (B₀, B₀) := by
+      simp only [pairingAdjoint]
+      exact ((hB₀.contDiffAt_map_inverse.comp _ contDiffAt_fst).clm_comp
+          (((ContinuousLinearMap.compL ℝ E E ℝ).flip.contDiff.contDiffAt.comp _ hR).clm_comp
+            contDiffAt_fst)).continuousAt
+    have h1 : pairingAdjoint B₀ (palaisCongruence B₀ B₀) = 1 :=
+      ext_of_apply_apply hB₀ fun w w' ↦ by
+        rw [apply_pairingAdjoint_apply hB₀, palaisCongruence_self hB₀]
+        simp
+    simpa [h1] using h.tendsto
+  filter_upwards [(continuous_fst.tendsto (B₀, B₀)).eventually hB₀.eventually_nhds,
+    (tendsto_inverse_comp hB₀).eventually eventually_mul_self_sqrtNearOne,
+    hadj.eventually eventually_sqrtNearOne_mul_self] with p hp hRR hadjR hs₁ hs w w'
+  set R := palaisCongruence p.1 p.2 with hRdef
+  set C := p.1.inverse ∘L p.2
+  have hRR' : R * R = C := by rw [hRdef, palaisCongruence]; exact hRR
+  have hC (w w' : E) : p.1 (C w) w' = p.2 w w' := by simp [C, hp.self_apply_inverse]
+  -- `C` is self-adjoint for `p.1`, and the adjoint reverses products.
+  have hCadj : pairingAdjoint p.1 C = C := ext_of_apply_apply hp fun w w' ↦ by
+    rw [apply_pairingAdjoint_apply hp, hs₁, hC, hs, hC]
+  have hmul : pairingAdjoint p.1 R * pairingAdjoint p.1 R = pairingAdjoint p.1 (R * R) :=
+    ext_of_apply_apply hp fun w w' ↦ by
+      simp only [mul_apply_eq_comp, apply_pairingAdjoint_apply hp]
+  -- So the adjoint of `R` is a square root of `C` close to the identity, hence equals `R`.
+  have hfix : pairingAdjoint p.1 R = R := by
+    rw [← hadjR, hmul, hRR', hCadj, hRdef, palaisCongruence]
+  calc p.1 (R w) (R w') = p.1 (pairingAdjoint p.1 R w) (R w') := by rw [hfix]
+    _ = p.1 w ((R * R) w') := by rw [apply_pairingAdjoint_apply hp, mul_apply_eq_comp]
+    _ = p.2 w w' := by rw [hRR', hs₁, hC, hs]
+
+omit [CompleteSpace E] in
+/-- The comparison operator of two forms pulled back by an invertible map `L` is the comparison
+operator of the forms, conjugated by `L`. -/
+private theorem inverse_bilinearComp_comp_bilinearComp
+    {B₀ B : F →L[ℝ] F →L[ℝ] ℝ} (hB₀ : B₀.IsInvertible) {L : E →L[ℝ] F} (hL : L.IsInvertible) :
+    (B₀.bilinearComp L L).inverse ∘L B.bilinearComp L L = L.inverse ∘L (B₀.inverse ∘L B) ∘L L := by
+  obtain ⟨e, rfl⟩ := hL
+  obtain ⟨D, rfl⟩ := hB₀
+  -- The pulled-back reference form is the continuous linear equivalence `D'`.
+  let D' : E ≃L[ℝ] (E →L[ℝ] ℝ) :=
+    e.trans (D.trans (e.symm.arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ)))
+  have hD' : ((D : F →L[ℝ] F →L[ℝ] ℝ).bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F)) =
+      (D' : E →L[ℝ] E →L[ℝ] ℝ) := by
+    ext w w'
+    simp [D']
+  rw [hD', ContinuousLinearMap.inverse_equiv, ContinuousLinearMap.inverse_equiv,
+    ContinuousLinearMap.inverse_equiv]
+  ext w : 1
+  apply D'.injective
+  ext w'
+  simp [D']
+
+/-- **The Palais congruence is natural.** For forms `B₁`, `B` on `F` close to an invertible `B₀`
+and a map `L : E → F` close to an invertible `L₀`, the Palais congruence of the pulled-back forms
+`B₁ (L ·) (L ·)` and `B (L ·) (L ·)` is that of `B₁` and `B`, conjugated by `L`. This is the
+compatibility of the Palais congruence with changes of linear coordinates. -/
+theorem eventually_palaisCongruence_bilinearComp [CompleteSpace F] {L₀ : E →L[ℝ] F}
+    (hL₀ : L₀.IsInvertible) {B₀ : F →L[ℝ] F →L[ℝ] ℝ} (hB₀ : B₀.IsInvertible) :
+    ∀ᶠ q : (E →L[ℝ] F) × (F →L[ℝ] F →L[ℝ] ℝ) × (F →L[ℝ] F →L[ℝ] ℝ) in 𝓝 (L₀, B₀, B₀),
+      palaisCongruence (q.2.1.bilinearComp q.1 q.1) (q.2.2.bilinearComp q.1 q.1) =
+        q.1.inverse ∘L palaisCongruence q.2.1 q.2.2 ∘L q.1 := by
+  have hsnd : Tendsto (fun q : (E →L[ℝ] F) × (F →L[ℝ] F →L[ℝ] ℝ) × (F →L[ℝ] F →L[ℝ] ℝ) ↦ q.2)
+      (𝓝 (L₀, B₀, B₀)) (𝓝 (B₀, B₀)) := continuous_snd.tendsto _
+  have hR : ContDiffAt ℝ 0 (fun q : (E →L[ℝ] F) × (F →L[ℝ] F →L[ℝ] ℝ) × (F →L[ℝ] F →L[ℝ] ℝ) ↦
+      palaisCongruence q.2.1 q.2.2) (L₀, B₀, B₀) :=
+    ContDiffAt.comp (f := Prod.snd) (L₀, B₀, B₀)
+      (eventually_contDiffAt_palaisCongruence hB₀).self_of_nhds contDiffAt_snd
+  -- The conjugated congruence tends to the identity.
+  have hy : Tendsto (fun q : (E →L[ℝ] F) × (F →L[ℝ] F →L[ℝ] ℝ) × (F →L[ℝ] F →L[ℝ] ℝ) ↦
+      q.1.inverse ∘L palaisCongruence q.2.1 q.2.2 ∘L q.1) (𝓝 (L₀, B₀, B₀)) (𝓝 1) := by
+    have h : ContinuousAt (fun q : (E →L[ℝ] F) × (F →L[ℝ] F →L[ℝ] ℝ) × (F →L[ℝ] F →L[ℝ] ℝ) ↦
+        q.1.inverse ∘L palaisCongruence q.2.1 q.2.2 ∘L q.1) (L₀, B₀, B₀) :=
+      ((ContDiffAt.comp (g := ContinuousLinearMap.inverse) (L₀, B₀, B₀)
+        hL₀.contDiffAt_map_inverse contDiffAt_fst).clm_comp
+          (hR.clm_comp contDiffAt_fst)).continuousAt
+    have h1 : L₀.inverse ∘L palaisCongruence B₀ B₀ ∘L L₀ = 1 := by
+      rw [palaisCongruence_self hB₀]
+      ext w
+      simp [hL₀.inverse_apply_self]
+    rw [← h1]
+    exact h.tendsto
+  filter_upwards [(continuous_fst.tendsto (L₀, B₀, B₀)).eventually hL₀.eventually_nhds,
+    (hsnd.eventually ((continuous_fst.tendsto (B₀, B₀)).eventually hB₀.eventually_nhds)),
+    hsnd.eventually ((tendsto_inverse_comp hB₀).eventually eventually_mul_self_sqrtNearOne),
+    hy.eventually eventually_sqrtNearOne_mul_self] with q hL hB hRR hy'
+  rw [palaisCongruence, inverse_bilinearComp_comp_bilinearComp hB hL, ← hy']
+  congr 1
+  ext w
+  have hRR' := congrArg (fun T : F →L[ℝ] F ↦ T (q.1 w)) hRR
+  simp only [mul_apply_eq_comp] at hRR'
+  simp [palaisCongruence, hL.self_apply_inverse, hRR']
+
 /-- A `C^n` family `B` of symmetric continuous bilinear forms on a Banach space whose value at
 `a` is invertible is, near `a`, the congruence of that value by a `C^n` family of continuous
 linear operators equal to the identity at `a`: there is `R` with `R a = 1` and
 `B₀ (R v w) (R v w') = B v w w'`. The parameter space `F` is independent of the Banach
 space `E` on which the forms act. In particular, continuity of the family suffices to obtain
-continuous congruences. -/
+continuous congruences. The family `R` is the Palais congruence `TauCeti.palaisCongruence` of
+`B v` with respect to `B₀`. -/
 theorem exists_congruence_of_symmetric_family
     {n : ℕ∞ω} {a : F} {B : F → E →L[ℝ] E →L[ℝ] ℝ} (hB : ContDiff ℝ n B)
     (hsymm : ∀ v w w', B v w w' = B v w' w)
     (B₀ : E ≃L[ℝ] (E →L[ℝ] ℝ)) (hB₀ : (B₀ : E →L[ℝ] E →L[ℝ] ℝ) = B a) :
     ∃ (R : F → (E →L[ℝ] E)) (U : Set F), IsOpen U ∧ a ∈ U ∧ R a = 1 ∧
       ContDiffOn ℝ n R U ∧ ∀ v ∈ U, ∀ w w', B₀ (R v w) (R v w') = B v w w' := by
-  -- the adjoint of an operator for the pairing given by `B₀`
-  set adj : (E →L[ℝ] E) →L[ℝ] (E →L[ℝ] E) :=
-    (ContinuousLinearMap.compL ℝ E (E →L[ℝ] ℝ) E (B₀.symm : (E →L[ℝ] ℝ) →L[ℝ] E)).comp
-      (((ContinuousLinearMap.compL ℝ E (E →L[ℝ] ℝ) (E →L[ℝ] ℝ)).flip
-          (G' := E →L[ℝ] E →L[ℝ] ℝ) (B₀ : E →L[ℝ] E →L[ℝ] ℝ)).comp
-        ((ContinuousLinearMap.compL ℝ E E ℝ).flip)) with hadjdef
-  have adj_spec (T : E →L[ℝ] E) (w w' : E) : B₀ (adj T w) w' = B₀ w (T w') := by simp [hadjdef]
-  have hdet (T₁ T₂ : E →L[ℝ] E) (h : ∀ w w', B₀ (T₁ w) w' = B₀ (T₂ w) w') : T₁ = T₂ :=
-    ContinuousLinearMap.ext fun w ↦ B₀.injective (ContinuousLinearMap.ext (h w))
-  have adj_one : adj 1 = 1 := hdet _ _ fun w w' ↦ by simp [adj_spec]
-  have adj_mul (S T : E →L[ℝ] E) : adj (S * T) = adj T * adj S := hdet _ _ fun w w' ↦ by
-    rw [adj_spec, mul_apply_eq_comp, mul_apply_eq_comp, adj_spec, adj_spec]
-  have hB₀symm (w w' : E) : B₀ w w' = B₀ w' w := by simpa [← hB₀] using hsymm a w w'
-  -- the comparison operator `B₀⁻¹ ∘ B v`
-  set C : F → (E →L[ℝ] E) := fun v ↦ (B₀.symm : (E →L[ℝ] ℝ) →L[ℝ] E).comp (B v) with hCdef
-  have hCapply (v : F) (w w' : E) : B₀ (C v w) w' = B v w w' := by simp [hCdef]
-  have hCa : C a = 1 := hdet _ _ fun w w' ↦ by simp [hCapply, ← hB₀]
-  have hCsmooth : ContDiff ℝ n C := by
-    exact (ContinuousLinearMap.compL ℝ E (E →L[ℝ] ℝ) E
-      (B₀.symm : (E →L[ℝ] ℝ) →L[ℝ] E)).contDiff.comp hB
-  have hCadj (v : F) : adj (C v) = C v :=
-    hdet _ _ fun w w' ↦ by rw [adj_spec, hCapply, hB₀symm, hCapply, hsymm]
-  have hten : Filter.Tendsto C (𝓝 (a : F)) (𝓝 1) := hCa ▸ hCsmooth.continuous.continuousAt
-  have hspec : ∀ᶠ v in 𝓝 (a : F), ∀ w w', B₀ (sqrtNearOne (E →L[ℝ] E) (C v) w)
-      (sqrtNearOne (E →L[ℝ] E) (C v) w') = B v w w' := by
-    filter_upwards [hten.eventually (eventually_mul_self_sqrtNearOne (A := E →L[ℝ] E)),
-      hten.eventually (eventually_sqrtNearOne_fixed adj.continuous.continuousAt adj_one adj_mul)]
-      with v h1 h2 w w'
-    set R := sqrtNearOne (E →L[ℝ] E) (C v)
-    -- `R` is self-adjoint for `B₀` since `C v` is, `R * R = C v`, and `B₀ (C v ·) = B v`.
-    calc B₀ (R w) (R w') = B₀ (adj R w) (R w') := by rw [h2 (hCadj v)]
-      _ = B₀ w ((R * R) w') := by rw [adj_spec, mul_apply_eq_comp]
-      _ = B v w w' := by rw [h1, hB₀symm, hCapply, hsymm]
-  obtain ⟨W, hWsub, hWopen, haW⟩ := mem_nhds_iff.1 hspec
-  refine ⟨fun v ↦ sqrtNearOne (E →L[ℝ] E) (C v),
-    W ∩ C ⁻¹' {a | AnalyticAt ℝ (sqrtNearOne (E →L[ℝ] E)) a},
-    hWopen.inter ((isOpen_analyticAt ℝ _).preimage hCsmooth.continuous),
-    ⟨haW, by simpa [hCa] using analyticAt_sqrtNearOne⟩, by simp [hCa],
-    fun v hv ↦ (hv.2.contDiffAt.comp v hCsmooth.contDiffAt).contDiffWithinAt,
-    fun v hv ↦ hWsub hv.1⟩
+  have hinv : (B₀ : E →L[ℝ] E →L[ℝ] ℝ).IsInvertible := ⟨B₀, rfl⟩
+  have hten : Tendsto (fun v ↦ ((B₀ : E →L[ℝ] E →L[ℝ] ℝ), B v)) (𝓝 a)
+      (𝓝 ((B₀ : E →L[ℝ] E →L[ℝ] ℝ), (B₀ : E →L[ℝ] E →L[ℝ] ℝ))) := by
+    rw [hB₀]
+    exact tendsto_const_nhds.prodMk_nhds (hB.continuous.tendsto a)
+  obtain ⟨W, hWsub, hWopen, haW⟩ := mem_nhds_iff.1 (hten.eventually
+    ((eventually_palaisCongruence_apply_apply hinv).and
+      (eventually_contDiffAt_palaisCongruence (n := n) hinv)))
+  refine ⟨fun v ↦ palaisCongruence B₀ (B v), W, hWopen, haW, by simp [← hB₀, hinv],
+    fun v hv ↦ ?_, fun v hv w w' ↦ ?_⟩
+  · exact (ContDiffAt.comp (g := fun p : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E →L[ℝ] ℝ) ↦
+      palaisCongruence p.1 p.2) v (hWsub hv).2
+        (contDiffAt_const.prodMk hB.contDiffAt)).contDiffWithinAt
+  · simpa using (hWsub hv).1 (fun w w' ↦ by simpa [hB₀] using hsymm a w w') (hsymm v) w w'
 
 variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
 
