@@ -18,8 +18,10 @@ including the left exactness of `Hom` over a noncommutative ring
 the short exact sequence of kernels `TauCeti.exact_ker_comp` attached to a surjection and a
 further map, the exact sequence `G ⊓ P → G → G ⧸ (G ⊓ P)` for submodules `G` and `P`
 (`Submodule.exists_exact_codRestrict_mkQ`), the short exact sequence `0 → ker f → M → range f → 0`
-of a linear map (`LinearMap.exact_subtype_rangeRestrict`), the isomorphisms on kernels and
-cokernels induced by a map of two-term complexes whose cone `K₀ → C₀ × K₁ → C₁` is short exact
+of a linear map (`LinearMap.exact_subtype_rangeRestrict`), the linearly independent family
+adapted to a short exact sequence (`Function.Exact.linearIndependent_append`), the isomorphisms
+on kernels and cokernels induced by a map of two-term complexes whose cone `K₀ → C₀ × K₁ → C₁` is
+short exact
 (`Function.Exact.bijective_restrict_ker_of_prod_coprod`,
 `Function.Exact.bijective_mapQ_range_of_prod_coprod`), the exact sequence
 `0 → ker f → ker (g ∘ f) → ker g → coker f → coker (g ∘ f) → coker g → 0` of a composition, with
@@ -109,6 +111,28 @@ theorem _root_.Function.Exact.finrank_eq_add {k M N P : Type*} [DivisionRing k] 
     Module.finrank k N = Module.finrank k M + Module.finrank k P := by
   rw [← g.finrank_range_add_finrank_ker, LinearMap.range_eq_top.2 hg, finrank_top,
     h.linearMap_ker_eq, LinearMap.finrank_range_of_inj hf, add_comm]
+
+/-- If `M --f--> N --g--> P` is exact at `N` and `f` is injective, then the images under `f` of a
+linearly independent family `u` of `M`, followed by a family `v` of `N` whose images under `g` are
+linearly independent, form a linearly independent family of `N`. When `u` is a basis of `M` and
+`g ∘ v` a basis of `P`, with `g` surjective, this is the basis of `N` adapted to the short exact
+sequence `0 → M → N → P → 0`. -/
+theorem _root_.Function.Exact.linearIndependent_append {R M N P : Type*} [Ring R]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [AddCommGroup P] [Module R P]
+    {f : M →ₗ[R] N} {g : N →ₗ[R] P} (h : Function.Exact f g) (hf : Function.Injective f)
+    {m n : ℕ} {u : Fin m → M} {v : Fin n → N} (hu : LinearIndependent R u)
+    (hv : LinearIndependent R (g ∘ v)) : LinearIndependent R (Fin.append (f ∘ u) v) := by
+  refine Fintype.linearIndependent_iff.2 fun t ht ↦ ?_
+  simp only [Fin.sum_univ_add, Fin.append_left, Fin.append_right, Function.comp_apply] at ht
+  -- Applying `g` kills the first block and leaves a relation among the `g (v j)`.
+  have htv : ∀ j, t (Fin.natAdd m j) = 0 := by
+    refine Fintype.linearIndependent_iff.1 hv _ ?_
+    simpa [h.apply_apply_eq_zero] using congrArg g ht
+  simp only [htv, zero_smul, Finset.sum_const_zero, add_zero] at ht
+  -- What remains is the image under the injective `f` of a relation among the `u i`.
+  have htu : ∀ i, t (Fin.castAdd n i) = 0 :=
+    Fintype.linearIndependent_iff.1 hu _ (hf (by simpa using ht))
+  exact fun i ↦ Fin.addCases htu htv i
 
 section FiniteDimensionalExact
 
