@@ -167,6 +167,31 @@ private theorem exists_pos_forall_lt_norm_of_isClosed_inter_closedBall {C : Set 
   rw [mem_preimage, toWeakDual_toStrongDual] at this
   exact this ⟨hg, mem_closedBall_zero_iff.2 (hgδ.trans (min_le_right _ _))⟩
 
+/-- A continuous linear functional `Λ` on `c₀` over a discrete index type, read along a null
+family `v` of points of a Banach space, is the real part of evaluation at a single point `x`:
+`re (f x) = Λ g` whenever `g` is the family of the real parts of `f` along `v`. -/
+private theorem exists_forall_re_apply_eq_of_tendsto [CompleteSpace E] {ι : Type*}
+    [TopologicalSpace ι] [DiscreteTopology ι] {v : ι → E} (hv : Tendsto v cofinite (𝓝 0))
+    (Λ : StrongDual ℝ C₀(ι, ℝ)) :
+    ∃ x : E, ∀ (f : StrongDual 𝕜 E) (g : C₀(ι, ℝ)), (∀ i, g i = re (f (v i))) →
+      re (f x) = Λ g := by
+  classical
+  -- The coefficients of `Λ` are absolutely summable and `v` is bounded, so they define a point
+  -- `∑' i, a i • v i` of `E`.
+  set a := fun i ↦ Λ (ZeroAtInftyContinuousMap.single i 1)
+  have hvM : Tendsto (‖v ·‖) cofinite (𝓝 0) := by simpa using hv.norm
+  obtain ⟨M, hM⟩ := hvM.bddAbove_range_of_cofinite
+  have hsum : Summable fun i ↦ (a i : 𝕜) • v i :=
+    .of_norm_bounded ((ZeroAtInftyContinuousMap.summable_norm_apply_single_one Λ).mul_right M)
+      fun i ↦ by
+        rw [norm_smul, norm_ofReal, ← Real.norm_eq_abs]
+        exact mul_le_mul_of_nonneg_left (hM ⟨i, rfl⟩) (norm_nonneg _)
+  refine ⟨∑' i, (a i : 𝕜) • v i, fun f g hg ↦ ?_⟩
+  have h₁ := (hsum.hasSum.mapL f).mapL reCLM
+  have h₂ := ZeroAtInftyContinuousMap.hasSum_apply_single_one_mul Λ g
+  simp only [hg, reCLM_apply, map_smul, smul_eq_mul, re_ofReal_mul] at h₁ h₂
+  exact h₁.unique h₂
+
 namespace Convex
 
 /-- If every functional in a convex set `C` has real part at least one somewhere along a null
@@ -191,8 +216,7 @@ theorem exists_forall_one_le_re_apply_of_tendsto [CompleteSpace E] {C : Set (Wea
   have hTC : Convex ℝ (T '' C) := by
     rintro _ ⟨f, hf, rfl⟩ _ ⟨g, hg, rfl⟩ a b ha hb hab
     refine ⟨a • f + b • g, hC hf hg ha hb hab, ZeroAtInftyContinuousMap.ext fun i ↦ ?_⟩
-    simp only [hT, _root_.add_apply, _root_.smul_apply,
-      smul_eq_mul]
+    simp only [hT, _root_.add_apply, _root_.smul_apply, smul_eq_mul]
     -- Mathlib has no apply lemma for sums in `WeakDual 𝕜 E`, so evaluate through `toStrongDual`;
     -- `simp` then splits the sum and applies `WeakDual.real_smul_apply`.
     rw [← toStrongDual_apply]
@@ -208,24 +232,11 @@ theorem exists_forall_one_le_re_apply_of_tendsto [CompleteSpace E] {C : Set (Wea
   obtain ⟨Λ, u, hΛ, hΛC⟩ :=
     _root_.geometric_hahn_banach_open (convex_ball 0 1) isOpen_ball hTC hdisj
   have hu : 0 < u := by simpa using hΛ 0 (mem_ball_self one_pos)
-  -- The coefficients of `Λ` are absolutely summable and `v` is bounded, so they define a point
-  -- `∑' i, a i • v i` of `E`.
-  set a := fun i ↦ Λ (ZeroAtInftyContinuousMap.single i 1)
-  have hvM : Tendsto (‖v ·‖) cofinite (𝓝 0) := by simpa using hv.norm
-  obtain ⟨M, hM⟩ := hvM.bddAbove_range_of_cofinite
-  have hsum : Summable fun i ↦ (a i : 𝕜) • v i :=
-    .of_norm_bounded ((ZeroAtInftyContinuousMap.summable_norm_apply_single_one Λ).mul_right M)
-      fun i ↦ by
-        rw [norm_smul, norm_ofReal, ← Real.norm_eq_abs]
-        exact mul_le_mul_of_nonneg_left (hM ⟨i, rfl⟩) (norm_nonneg _)
-  -- The real part of `f` at this point is the value of `Λ` at `T f`.
-  have hΛT (f : WeakDual 𝕜 E) : re (f (∑' i, (a i : 𝕜) • v i)) = Λ (T f) := by
-    have h₁ := (hsum.hasSum.mapL (toStrongDual f)).mapL reCLM
-    have h₂ := ZeroAtInftyContinuousMap.hasSum_apply_single_one_mul Λ (T f)
-    simp only [hT, reCLM_apply, map_smul, smul_eq_mul, re_ofReal_mul, toStrongDual_apply] at h₁ h₂
-    exact h₁.unique h₂
-  refine ⟨((u⁻¹ : ℝ) : 𝕜) • ∑' i, (a i : 𝕜) • v i, fun f hfC ↦ ?_⟩
-  rw [map_smul, smul_eq_mul, re_ofReal_mul, hΛT, le_inv_mul_iff₀ hu, mul_one]
+  -- `Λ` is evaluation at a point `x` of `E`, which after rescaling separates `C` from zero.
+  obtain ⟨x, hx⟩ := exists_forall_re_apply_eq_of_tendsto (𝕜 := 𝕜) hv Λ
+  refine ⟨((u⁻¹ : ℝ) : 𝕜) • x, fun f hfC ↦ ?_⟩
+  rw [map_smul, smul_eq_mul, re_ofReal_mul, ← toStrongDual_apply,
+    hx _ (T f) fun i ↦ by rw [hT, toStrongDual_apply], le_inv_mul_iff₀ hu, mul_one]
   exact hΛC _ ⟨f, hfC, rfl⟩
 
 /-- **Separation lemma of the Krein–Šmulian theorem.** Let `C` be a convex set of functionals on
