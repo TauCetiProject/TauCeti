@@ -8,22 +8,23 @@ module
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RepresentationTheory.Maschke
-public import Mathlib.RingTheory.Localization.FractionRing
+public import Mathlib.RingTheory.Flat.Basic
 import Mathlib.LinearAlgebra.TensorProduct.Prod
-import Mathlib.RingTheory.Flat.Localization
 import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
 
 /-!
-# Exact sequences of group-algebra modules split over the field of fractions
+# Exact sequences of group-algebra modules split after a flat division-ring extension
 
-Let `R` be a domain with field of fractions `Q` and let `G` be a finite group whose order is
-nonzero in `R`. A short exact sequence `0 → M → N → P → 0` of `R[G]`-modules need not split, but
-it does after tensoring with `Q`: this is Maschke's theorem for `Q[G]`. This file proves it in the
-form used for integral representations, where the rationalizations are written `M ⊗[R] Q` and
-remain modules over `R[G]` rather than over `Q[G]`.
+Let `R` be a commutative ring, `Q` a division ring that is a flat `R`-algebra, and `G` a finite
+group whose order is nonzero in `Q`. A short exact sequence `0 → M → N → P → 0` of
+`R[G]`-modules need not split, but it does after tensoring with `Q`: this is Maschke's theorem
+over `Q`. This file proves it in the form used for integral representations, where the
+rationalizations are written `M ⊗[R] Q` and remain modules over `R[G]` rather than over `Q[G]`.
+The main example is a domain `R` with field of fractions `Q`, where the order of `G` is nonzero
+in `Q` as soon as it is nonzero in `R`.
 
 No finiteness or projectivity is needed. Since `Q` is flat over `R`, the sequence stays exact
-after tensoring with `Q`, and `P ⊗[R] Q` is a `Q`-vector space, so `N ⊗ Q → P ⊗ Q` has an
+after tensoring with `Q`, and `P ⊗[R] Q` is a free `Q`-module, so `N ⊗ Q → P ⊗ Q` has an
 `R`-linear section `s`. Averaged over `G`, `t = ∑_g g⁻¹ s g` is `R[G]`-linear and satisfies
 `g ∘ t = #G`. As `#G` is invertible on `P ⊗[R] Q`, the map `(m, x) ↦ f m + t x` from
 `(M ⊗ Q) × (P ⊗ Q)` to `N ⊗ Q` is then an `R[G]`-linear bijection.
@@ -33,8 +34,8 @@ For `R = ℤ_p` and `Q = ℚ_p` this computes the rational representation of an 
 
 ## Main results
 
-* `TauCeti.IsFractionRing.nonempty_tensor_linearEquiv_prod_of_exact`: for an exact sequence
-  `0 → M → N → P → 0` of `R[G]`-modules, the rationalization `N ⊗[R] Q` is `R[G]`-linearly
+* `TauCeti.MonoidAlgebra.nonempty_tensor_linearEquiv_prod_of_exact`: for an exact sequence
+  `0 → M → N → P → 0` of `R[G]`-modules, the scalar extension `N ⊗[R] Q` is `R[G]`-linearly
   isomorphic to `(M × P) ⊗[R] Q`.
 
 ## References
@@ -44,12 +45,12 @@ For `R = ℤ_p` and `Q = ℚ_p` this computes the rational representation of an 
 
 public section
 
-namespace TauCeti.IsFractionRing
+namespace TauCeti.MonoidAlgebra
 
 open scoped TensorProduct
 
-variable {R : Type*} [CommRing R] (Q : Type*) [Field Q] [Algebra R Q]
-  [IsFractionRing R Q] {G : Type*} [Group G] [Finite G]
+variable {R : Type*} [CommRing R] (Q : Type*) [DivisionRing Q] [Algebra R Q]
+  [Module.Flat R Q] {G : Type*} [Group G] [Finite G]
   {M N P : Type*} [AddCommGroup M] [Module R M] [Module (MonoidAlgebra R G) M]
   [IsScalarTower R (MonoidAlgebra R G) M]
   [AddCommGroup N] [Module R N] [Module (MonoidAlgebra R G) N]
@@ -57,17 +58,16 @@ variable {R : Type*} [CommRing R] (Q : Type*) [Field Q] [Algebra R Q]
   [AddCommGroup P] [Module R P] [Module (MonoidAlgebra R G) P]
   [IsScalarTower R (MonoidAlgebra R G) P]
 
-/-- **Short exact sequences of group-algebra modules split over the field of fractions.** Let `R`
-be a domain with field of fractions `Q` and `G` a finite group whose order is nonzero in `R`. For
-an exact sequence `0 → M → N → P → 0` of `R[G]`-modules, the rationalization `N ⊗[R] Q` is
-`R[G]`-linearly isomorphic to `(M × P) ⊗[R] Q`. -/
-theorem nonempty_tensor_linearEquiv_prod_of_exact [NeZero (Nat.card G : R)]
+/-- **Short exact sequences of group-algebra modules split after a flat division-ring
+extension.** Let `Q` be a division ring that is a flat `R`-algebra and `G` a finite group whose
+order is nonzero in `Q`. For an exact sequence `0 → M → N → P → 0` of `R[G]`-modules, the scalar
+extension `N ⊗[R] Q` is `R[G]`-linearly isomorphic to `(M × P) ⊗[R] Q`. -/
+theorem nonempty_tensor_linearEquiv_prod_of_exact [NeZero (Nat.card G : Q)]
     {f : M →ₗ[MonoidAlgebra R G] N} {g : N →ₗ[MonoidAlgebra R G] P}
     (hfg : Function.Exact f g) (hf : Function.Injective f) (hg : Function.Surjective g) :
     Nonempty ((N ⊗[R] Q) ≃ₗ[MonoidAlgebra R G] ((M × P) ⊗[R] Q)) := by
   have := Fintype.ofFinite G
   -- `Q` is flat over `R`, so `0 → M ⊗ Q → N ⊗ Q → P ⊗ Q → 0` is exact.
-  have := _root_.IsLocalization.flat Q (nonZeroDivisors R)
   set f' := TensorProduct.AlgebraTensorModule.rTensor R Q f
   set g' := TensorProduct.AlgebraTensorModule.rTensor R Q g
   have hf' : Function.Injective f' :=
@@ -87,8 +87,7 @@ theorem nonempty_tensor_linearEquiv_prod_of_exact [NeZero (Nat.card G : R)]
     rw [← MonoidAlgebra.one_def, one_smul]
   -- Multiplication by `#G` is invertible on `P ⊗ Q`.
   obtain ⟨u, hu⟩ : ∃ u : P ⊗[R] Q →ₗ[R] P ⊗[R] Q, ∀ x, (Nat.card G : R) • u x = x :=
-    TensorProduct.exists_smul_linearMap_eq_self Q
-      (((map_ne_zero_iff _ (IsFractionRing.injective R Q)).mpr (NeZero.ne _)).isUnit)
+    TensorProduct.exists_smul_linearMap_eq_self Q (by rw [map_natCast]; exact (NeZero.ne _).isUnit)
   -- So `(m, x) ↦ f' m + t x` is bijective.
   let Φ : (M ⊗[R] Q) × (P ⊗[R] Q) →ₗ[MonoidAlgebra R G] N ⊗[R] Q :=
     f' ∘ₗ LinearMap.fst _ _ _ + t ∘ₗ LinearMap.snd _ _ _
@@ -104,4 +103,4 @@ theorem nonempty_tensor_linearEquiv_prod_of_exact [NeZero (Nat.card G : R)]
       exact ⟨(m, u (g' n)), by simp [Φ, hm]⟩
   exact ⟨(LinearEquiv.ofBijective Φ hΦ).symm ≪≫ₗ (TensorProduct.prodLeft _ _ _ _ _).symm⟩
 
-end TauCeti.IsFractionRing
+end TauCeti.MonoidAlgebra
