@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.CartanExists
 public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
+import TauCeti.Algebra.Lie.Subalgebra.Engel
 
 /-!
 # A semisimple element lies in a Cartan subalgebra
@@ -58,13 +59,8 @@ theorem exists_isCartanSubalgebra_mem_of_isSemisimple_ad [Infinite K] [FiniteDim
     rwa [← hinj hw]
   -- `x` is central in its Engel subalgebra, because the generalized kernel of `ad x` is its kernel
   have hxE : x ∈ E := self_mem_engel K x
-  have hcentral (w : E) : ⁅(⟨x, hxE⟩ : E), w⁆ = 0 := by
-    have hw : (w : L) ∈ (ad K L x).maxGenEigenspace 0 := by
-      obtain ⟨n, hn⟩ := (mem_engel_iff K x w).mp w.2
-      exact (Module.End.mem_maxGenEigenspace _ _ _).mpr ⟨n, by simpa using hn⟩
-    rw [hx.isFinitelySemisimple.maxGenEigenspace_eq_eigenspace, Module.End.mem_eigenspace_iff,
-      zero_smul] at hw
-    exact Subtype.ext hw
+  have hcentral (w : E) : ⁅(⟨x, hxE⟩ : E), w⁆ = 0 :=
+    Subtype.ext ((mem_engel_iff_lie_eq_zero hx.isFinitelySemisimple).1 w.2)
   have hxC : (⟨x, hxE⟩ : E) ∈ C := by
     rw [← hC.self_normalizing, mem_normalizer_iff]
     intro w _

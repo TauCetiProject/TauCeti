@@ -6,55 +6,31 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
-public import Mathlib.Analysis.Complex.Circle
-public import Mathlib.Analysis.Calculus.Deriv.Basic
-public import Mathlib.Topology.Algebra.ConstMulAction
-import Mathlib.Analysis.Calculus.Deriv.Add
-import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # Basic API for the complex unit disc
 
-This file collects small API lemmas for Mathlib's `Complex.UnitDisc`. It covers the transport
-between a self-map of the bundled disc and a scalar representative `ℂ → ℂ` of it — such a
-representative maps `Metric.ball 0 1` into itself, and bijectively onto itself when the bundled
-map is an equivalence — together with the basic properties of the `Circle` action on the disc: the
-disc is nontrivial, a rotation is determined by its value at any one nonzero point, and hence the
-circle acts faithfully. It also records the slit-plane criterion
-`TauCeti.one_sub_div_mem_slitPlane` for a disc point and a circle point.
-It also records that a point of the open disc differs from every point of norm one.
+This file collects small API lemmas for Mathlib's `Complex.UnitDisc`.
+
+* The `Circle` action on the disc: it fixes the origin and preserves nonzero points
+  (`Complex.UnitDisc.circle_smul_zero`, `Complex.UnitDisc.circle_smul_eq_zero`), it is jointly
+  continuous, a rotation is determined by its value at any one nonzero point
+  (`Complex.UnitDisc.circle_smul_left_injective`), and hence the circle acts faithfully on the
+  disc, which is nontrivial.
+* Compactness of the disc points of Euclidean norm at most `ρ < 1`
+  (`Complex.UnitDisc.isCompact_setOf_norm_le`).
+* Transport between a self-map of the bundled disc and a scalar representative `ℂ → ℂ` of it:
+  such a representative maps `Metric.ball 0 1` into itself
+  (`TauCeti.mapsTo_ball_of_forall_unitDisc_coe_eq`), and bijectively onto itself when the bundled
+  map is an equivalence (`TauCeti.bijOn_ball_of_unitDiscEquiv`).
+* The slit-plane criterion `TauCeti.one_sub_div_mem_slitPlane` for a disc point and a circle
+  point.
 -/
 
 public section
 
-namespace TauCeti
-
-open Complex Metric
-
-/-- The derivative of the affine factor `1 - ξ / w` for a complex number `w`. -/
-theorem hasDerivAt_one_sub_div (w ζ : ℂ) :
-    HasDerivAt (fun ξ : ℂ => 1 - ξ / w) (-w⁻¹) ζ := by
-  simpa [div_eq_mul_inv] using ((hasDerivAt_id ζ).div_const w).const_sub 1
-
-/-- A point of the open unit disc differs from every point of norm one. -/
-theorem ne_of_mem_ball_of_norm_eq_one {ζ w : ℂ} (hζ : ζ ∈ ball (0 : ℂ) 1)
-    (hw : ‖w‖ = 1) : ζ ≠ w := by
-  intro h
-  have hnorm := congrArg norm h
-  rw [hw] at hnorm
-  exact (mem_ball_zero_iff.mp hζ).ne hnorm
-
-/-- For `w` on the unit circle and `ζ` in the open unit disc, `1 - ζ / w` lies in the slit plane,
-since `ζ / w` has norm less than one. -/
-theorem one_sub_div_mem_slitPlane (w : Circle) {ζ : ℂ} (hζ : ζ ∈ ball (0 : ℂ) 1) :
-    1 - ζ / w ∈ slitPlane := by
-  rw [sub_eq_add_neg]
-  apply mem_slitPlane_of_norm_lt_one
-  rw [norm_neg, norm_div, Circle.norm_coe, div_one]
-  exact mem_ball_zero_iff.mp hζ
-
-
-open Complex
+open Metric Set
+open scoped Complex.UnitDisc
 
 namespace Complex.UnitDisc
 
@@ -62,99 +38,74 @@ namespace Complex.UnitDisc
 normalization for Mathlib's `Circle` action on `Complex.UnitDisc`, which is a bare
 `MulAction` and so does not get the generic `smul_zero` simp lemma. -/
 @[simp]
-lemma circle_smul_zero (u : Circle) : u • (0 : _root_.Complex.UnitDisc) = 0 := by
+lemma circle_smul_zero (u : Circle) : u • (0 : 𝔻) = 0 := by
   ext
   simp
 
 /-- A circle rotation of a disc point vanishes exactly when the point does. This is the
 `smul_eq_zero` normalization for Mathlib's `Circle` action on `Complex.UnitDisc`. -/
 @[simp]
-lemma circle_smul_eq_zero_iff (u : Circle) {z : _root_.Complex.UnitDisc} :
-    u • z = 0 ↔ z = 0 := by
-  rw [← _root_.Complex.UnitDisc.coe_eq_zero, _root_.Complex.UnitDisc.coe_circle_smul, mul_eq_zero]
-  simp
+lemma circle_smul_eq_zero (u : Circle) {z : 𝔻} : u • z = 0 ↔ z = 0 := by
+  simp [← coe_eq_zero]
 
-/-- The set of unit-disc points of Euclidean norm at most `ρ < 1` is compact: it is carried by
-the embedding into `ℂ` onto the closed Euclidean ball of radius `ρ`, which the hypothesis
-`ρ < 1` places inside the open disc. -/
-lemma isCompact_setOf_norm_le {ρ : ℝ} (hρ : ρ < 1) :
-    IsCompact {z : _root_.Complex.UnitDisc | ‖(z : ℂ)‖ ≤ ρ} := by
-  rw [_root_.Complex.UnitDisc.isEmbedding_coe.isCompact_iff]
-  have himg : ((↑) : _root_.Complex.UnitDisc → ℂ) ''
-      {z : _root_.Complex.UnitDisc | ‖(z : ℂ)‖ ≤ ρ} = Metric.closedBall (0 : ℂ) ρ := by
-    ext w
-    simp only [Set.mem_image, Set.mem_ofPred_eq, Metric.mem_closedBall, dist_zero_right]
-    exact ⟨fun ⟨_, hz, hzw⟩ => hzw ▸ hz, fun hw =>
-      ⟨_root_.Complex.UnitDisc.mk w (lt_of_le_of_lt hw hρ), by simpa using hw, by simp⟩⟩
-  rw [himg]
-  exact isCompact_closedBall _ _
+/-- The set of unit-disc points of Euclidean norm at most `ρ < 1` is compact: it is the preimage
+of the closed Euclidean ball of radius `ρ`, which the hypothesis `ρ < 1` places inside the open
+disc. -/
+lemma isCompact_setOf_norm_le {ρ : ℝ} (hρ : ρ < 1) : IsCompact {z : 𝔻 | ‖(z : ℂ)‖ ≤ ρ} := by
+  convert isEmbedding_coe.isInducing.isCompact_preimage' (isCompact_closedBall (0 : ℂ) ρ) _
+  · simp
+  · exact fun w hw => ⟨mk w ((mem_closedBall_zero_iff.1 hw).trans_lt hρ), rfl⟩
 
-end Complex.UnitDisc
-
-open Metric Set in
-/-- A scalar representative of a self-map of the disc maps the open unit ball into itself. -/
-lemma mapsTo_ball_of_forall_unitDisc_coe_eq {e : Complex.UnitDisc → Complex.UnitDisc} {f : ℂ → ℂ}
-    (hf : ∀ z : Complex.UnitDisc, (e z : ℂ) = f z) :
-    MapsTo f (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) := by
-  intro w hw
-  have hw' : ‖w‖ < 1 := by simpa [mem_ball_zero_iff] using hw
-  have := (e (Complex.UnitDisc.mk w hw')).norm_lt_one
-  rw [hf (Complex.UnitDisc.mk w hw')] at this
-  simpa [mem_ball_zero_iff] using this
-
-open Metric Set in
-/-- A self-equivalence of `Complex.UnitDisc`, read through a scalar representative, is a bijection
-of `Metric.ball 0 1` onto itself. -/
-lemma bijOn_ball_of_unitDiscEquiv (E : Complex.UnitDisc ≃ Complex.UnitDisc) {φ : ℂ → ℂ}
-    (hφ : ∀ z : Complex.UnitDisc, (E z : ℂ) = φ z) :
-    BijOn φ (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) := by
-  have mem : ∀ z : Complex.UnitDisc, (z : ℂ) ∈ ball (0 : ℂ) 1 := fun z => by
-    simpa [mem_ball_zero_iff] using z.norm_lt_one
-  have exists_coe : ∀ w ∈ ball (0 : ℂ) 1, ∃ z : Complex.UnitDisc, (z : ℂ) = w := fun w hw =>
-    ⟨Complex.UnitDisc.mk w (by simpa [mem_ball_zero_iff] using hw), Complex.UnitDisc.coe_mk _ _⟩
-  refine ⟨mapsTo_ball_of_forall_unitDisc_coe_eq hφ, fun w₁ h₁ w₂ h₂ h => ?_, fun v hv => ?_⟩
-  · obtain ⟨z₁, rfl⟩ := exists_coe w₁ h₁
-    obtain ⟨z₂, rfl⟩ := exists_coe w₂ h₂
-    rw [← hφ z₁, ← hφ z₂] at h
-    exact congrArg _ (E.injective (Complex.UnitDisc.coe_injective h))
-  · obtain ⟨v', rfl⟩ := exists_coe v hv
-    exact ⟨(E.symm v' : ℂ), mem _, by rw [← hφ (E.symm v'), Equiv.apply_symm_apply]⟩
-
-/-- A fixed circle rotation is continuous on the bundled open disc. -/
-lemma continuous_circle_smul_unitDisc (u : Circle) :
-    Continuous fun z : Complex.UnitDisc => u • z := by
-  rw [Complex.UnitDisc.isEmbedding_coe.continuous_iff]
-  exact ((continuous_const (y := (u : ℂ))).mul Complex.UnitDisc.continuous_coe).congr fun z => by
-    simp only [Function.comp_def, Complex.UnitDisc.coe_circle_smul, Pi.mul_apply]
-
-/-- Circle rotations act continuously on the bundled open unit disc. -/
-instance instContinuousConstSMulCircleUnitDisc :
-    ContinuousConstSMul Circle Complex.UnitDisc where
-  continuous_const_smul := continuous_circle_smul_unitDisc
+/-- Circle rotations act jointly continuously on the bundled open unit disc. -/
+instance instContinuousSMulCircle : ContinuousSMul Circle 𝔻 :=
+  inferInstanceAs <| ContinuousSMul (sphere (0 : ℂ) 1) (ball (0 : ℂ) 1)
 
 /-- The open unit disc has more than one point: `0` and `1 / 2` are both in it. -/
-instance instNontrivialUnitDisc : Nontrivial Complex.UnitDisc := by
-  have h : ‖(2⁻¹ : ℂ)‖ < 1 := by
-    rw [norm_inv, Complex.norm_ofNat]
-    norm_num
-  exact ⟨⟨Complex.UnitDisc.mk (2⁻¹ : ℂ) h, 0, by simp⟩⟩
+instance instNontrivial : Nontrivial 𝔻 :=
+  ⟨⟨mk 2⁻¹ (by norm_num), 0, by simp⟩⟩
 
 /-- **A rotation is determined by its value at a single nonzero point of the disc.** Multiplication
 by a nonzero complex number is injective, and the disc inherits that from `ℂ`. -/
-theorem circle_smul_left_injective {z : Complex.UnitDisc} (hz : z ≠ 0) :
-    Function.Injective fun u : Circle => u • z := by
-  intro u v h
-  have hz' : (z : ℂ) ≠ 0 := fun hc => hz (Complex.UnitDisc.coe_eq_zero.1 hc)
-  have h' : (u : ℂ) * (z : ℂ) = (v : ℂ) * (z : ℂ) := by
-    simpa only [Complex.UnitDisc.coe_circle_smul] using
-      congrArg (fun w : Complex.UnitDisc => (w : ℂ)) h
-  exact Circle.ext (mul_right_cancel₀ hz' h')
+theorem circle_smul_left_injective {z : 𝔻} (hz : z ≠ 0) :
+    Function.Injective fun u : Circle => u • z := fun u v h => by
+  simpa [← coe_inj, ← Circle.coe_inj, hz] using h
 
 /-- **The circle acts faithfully on the unit disc.** Only the trivial rotation fixes the whole
 disc, because the disc contains a nonzero point. -/
-instance instFaithfulSMulCircleUnitDisc : FaithfulSMul Circle Complex.UnitDisc where
+instance instFaithfulSMulCircle : FaithfulSMul Circle 𝔻 where
   eq_of_smul_eq_smul h := by
-    obtain ⟨z, hz⟩ := exists_ne (0 : Complex.UnitDisc)
+    obtain ⟨z, hz⟩ := exists_ne (0 : 𝔻)
     exact circle_smul_left_injective hz (h z)
+
+end Complex.UnitDisc
+
+namespace TauCeti
+
+open Complex
+
+/-- For `w` on the unit circle and `ζ` in the open unit disc, `1 - ζ / w` lies in the slit plane,
+since `ζ / w` has norm less than one. -/
+theorem one_sub_div_mem_slitPlane (w : Circle) {ζ : ℂ} (hζ : ζ ∈ ball (0 : ℂ) 1) :
+    1 - ζ / w ∈ slitPlane := by
+  rw [sub_eq_add_neg]
+  apply mem_slitPlane_of_norm_lt_one
+  simpa using hζ
+
+/-- A scalar representative of a self-map of the disc maps the open unit ball into itself. -/
+lemma mapsTo_ball_of_forall_unitDisc_coe_eq {e : 𝔻 → 𝔻} {f : ℂ → ℂ}
+    (hf : ∀ z : 𝔻, (e z : ℂ) = f z) : MapsTo f (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) := fun w hw => by
+  lift w to 𝔻 using mem_ball_zero_iff.1 hw
+  simpa [← hf] using (e w).norm_lt_one
+
+/-- A self-equivalence of `Complex.UnitDisc`, read through a scalar representative, is a bijection
+of `Metric.ball 0 1` onto itself. -/
+lemma bijOn_ball_of_unitDiscEquiv (E : 𝔻 ≃ 𝔻) {φ : ℂ → ℂ} (hφ : ∀ z : 𝔻, (E z : ℂ) = φ z) :
+    BijOn φ (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) := by
+  refine ⟨mapsTo_ball_of_forall_unitDisc_coe_eq hφ, fun w₁ h₁ w₂ h₂ h => ?_, fun v hv => ?_⟩
+  · lift w₁ to 𝔻 using mem_ball_zero_iff.1 h₁
+    lift w₂ to 𝔻 using mem_ball_zero_iff.1 h₂
+    simpa [← hφ] using h
+  · lift v to 𝔻 using mem_ball_zero_iff.1 hv
+    exact ⟨E.symm v, by simpa using (E.symm v).norm_lt_one, by simp [← hφ]⟩
 
 end TauCeti

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Set.Lattice.Indexed
 public import Mathlib.Logic.Equiv.PartialEquiv
 
 /-!
@@ -24,6 +25,9 @@ compositions `e.trans e'`, source restrictions `e.restr u`, and coordinate trans
 * `PartialEquiv.image_symm_trans_source_inter` and
   `PartialEquiv.image_restr_symm_trans_source_inter`: transport of `e '' (e.source ∩ s)` onto
   `e' '' (e'.source ∩ s)` intersected with the transition target.
+* `PartialEquiv.preimage_eq_iUnion_symm_image`: if every point of `f ⁻¹' P` lies in the source of
+  one of a family of partial equivalences `e x`, the preimage is the union of the images under
+  `(e x).symm` of the sets of coordinates which `f ∘ (e x).symm` carries into `P`.
 -/
 
 public section
@@ -70,5 +74,25 @@ theorem image_restr_symm_trans_source_inter (e : PartialEquiv α β) (e' : Parti
     Set.inter_subset_left
   rw [(e.symm.trans e').image_restr_source_inter u, e.image_symm_trans_source_inter e',
     ← Set.inter_assoc, Set.inter_eq_self_of_subset_left hsub]
+
+/-- **A preimage as a union of chart images.** Let `e x` be partial equivalences with
+`T x ⊆ (e x).target` such that a coordinate `w ∈ (e x).target` lies in `T x` exactly when its
+image under `f ∘ (e x).symm` lies in `P`. If every point of `f ⁻¹' P` lies in some source
+`(e x).source`, then `f ⁻¹' P` is the union of the sets `(e x).symm '' T x`. -/
+theorem preimage_eq_iUnion_symm_image {ι δ : Type*} {f : α → δ}
+    {e : ι → PartialEquiv α β} {P : Set δ} {T : ι → Set β} (hT : ∀ x, T x ⊆ (e x).target)
+    (hiff : ∀ x, ∀ w ∈ (e x).target, w ∈ T x ↔ f ((e x).symm w) ∈ P)
+    (hfull : ∀ z, f z ∈ P → z ∈ ⋃ x, (e x).source) :
+    f ⁻¹' P = ⋃ x, (e x).symm '' T x := by
+  ext z
+  constructor
+  · intro hz
+    obtain ⟨x, hx⟩ := Set.mem_iUnion.mp (hfull z hz)
+    refine Set.mem_iUnion.mpr
+      ⟨x, e x z, (hiff x _ ((e x).map_source hx)).2 ?_, (e x).left_inv hx⟩
+    rwa [(e x).left_inv hx]
+  · intro hz
+    obtain ⟨x, w, hw, rfl⟩ := Set.mem_iUnion.mp hz
+    exact (hiff x w (hT x hw)).1 hw
 
 end PartialEquiv
