@@ -162,7 +162,8 @@ theorem exists_disjoint_span_singleton_sup_eq (hd : d ≠ 0)
     rw [show y = a • t + (y - a • t) by abel]
     exact Submodule.add_mem_sup (Submodule.mem_span_singleton.mpr ⟨a, rfl⟩) hrest
 
-/-- **Noetherian induction step.** Let `L` be a homogeneous submodule killed by `X ^ N`. An
+/-- **Extending an admissible family across a homogeneous complement.** Let `L` be a submodule
+killed by `X ^ N`. An
 admissible family of homogeneous generators (with annihilators `(X ^ m)`, `m ≠ 0`, and independent
 cyclic submodules) spanning `S`, together with a homogeneous complement `K` of `S` in `L`, extends
 to an admissible family spanning `L`. -/
