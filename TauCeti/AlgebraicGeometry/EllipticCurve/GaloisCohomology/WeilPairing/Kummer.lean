@@ -90,24 +90,6 @@ attribute [local instance] WeierstrassCurve.Affine.isIntegrallyClosedIn_function
 
 variable {n : ℤ} (hn : (n : K) ≠ 0)
 
-/-- **The translate of a difference of Weil-pairing divisors.** -/
-private theorem translation_smul_weilPairingDivisor_sub (X T₁ T₂ : (W⁄K).toAffine.Point) :
-    Affine.translation (W⁄K).toAffine (Affine.Point.equivBaseChangeSelf _ X) •
-        (weilPairingDivisor (W⁄K) (psiFunctionField_ne_zero (W⁄K) hn) T₁ -
-          weilPairingDivisor (W⁄K) (psiFunctionField_ne_zero (W⁄K) hn) T₂) =
-      weilPairingDivisor (W⁄K) (psiFunctionField_ne_zero (W⁄K) hn) (T₁ - n • X) -
-        weilPairingDivisor (W⁄K) (psiFunctionField_ne_zero (W⁄K) hn) (T₂ - n • X) := by
-  obtain ⟨R₁, hR₁⟩ := (W⁄K).toAffine.zsmul_surjective hn T₁
-  obtain ⟨R₂, hR₂⟩ := (W⁄K).toAffine.zsmul_surjective hn T₂
-  have h₁ : n • (R₁ - X) = T₁ - n • X := by rw [smul_sub]; exact congrArg (· - n • X) hR₁
-  have h₂ : n • (R₂ - X) = T₂ - n • X := by rw [smul_sub]; exact congrArg (· - n • X) hR₂
-  rw [weilPairingDivisor_eq_sum (W⁄K) hn hR₁, weilPairingDivisor_eq_sum (W⁄K) hn hR₂,
-    weilPairingDivisor_eq_sum (W⁄K) hn h₁, weilPairingDivisor_eq_sum (W⁄K) hn h₂,
-    ← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib, Finset.smul_sum]
-  refine Finset.sum_congr rfl fun S _ ↦ ?_
-  simp only [sub_sub_sub_cancel_right, smul_sub, WeilDivisor.smul_ofPoint,
-    translation_smul_pointEquivDegreeOnePlace, sub_add_eq_add_sub]
-
 /-- The divisor of the auxiliary function of the lift attached to `R`. -/
 private abbrev liftDivisor (R : (W⁄K).toAffine.Point) : Divisor K (W⁄K).toAffine.FunctionField :=
   weilPairingDivisor (W⁄K) (psiFunctionField_ne_zero (W⁄K) hn) (-(n • R)) -
@@ -118,20 +100,7 @@ private abbrev liftDivisor (R : (W⁄K).toAffine.Point) : Divisor K (W⁄K).toAf
 private theorem exists_principal_eq_liftDivisor (R : (W⁄K).toAffine.Point) :
     ∃ f : (W⁄K).toAffine.FunctionFieldˣ,
       Divisor.principal (W⁄K).toAffine.isFunctionField f = liftDivisor W hn R := by
-  have hR : n • -R = -(n • R) := smul_neg n R
-  rw [liftDivisor, weilPairingDivisor_eq_sum (W⁄K) hn hR]
-  set s₀ := (finite_setOf_zsmul_eq (W⁄K) (psiFunctionField_ne_zero (W⁄K) hn) 0).toFinset with hs₀
-  let D : (Divisor.degree (k := K) (F := (W⁄K).toAffine.FunctionField)).ker :=
-    ∑ S ∈ s₀, ⟨_, (W⁄K).toAffine.ofPoint_sub_ofPoint_mem_ker_degree (-R + S) S⟩ -
-      ⟨_, (W⁄K).toAffine.ofPoint_sub_ofPoint_mem_ker_degree (-(n • n • R)) 0⟩
-  have hσ : (W⁄K).toAffine.divisorSum D = 0 := by
-    simp only [D, map_sub, map_sum, divisorSum_ofPoint_sub_ofPoint, add_sub_cancel_right,
-      Finset.sum_const, sub_zero, sub_neg_eq_add]
-    rw [hs₀, ← Nat.card_eq_card_finite_toFinset, (W⁄K).toAffine.natCard_setOf_zsmul_eq_zero hn,
-      ← natCast_zsmul, Nat.cast_pow, Int.natAbs_sq, sq, mul_smul, smul_neg, smul_neg,
-      neg_add_cancel]
-  obtain ⟨z, hz⟩ := (W⁄K).toAffine.divisorSum_eq_zero_iff.mp hσ
-  exact ⟨z, hz.trans (by simp [D])⟩
+  simpa only [smul_neg] using exists_principal_eq_weilPairingDivisor_sub (W⁄K) hn (-(n • R))
 
 /-- **The lift of a Kummer cocycle to functions**: `σ ↦ τ_{-R}^* (σ f / f)`. -/
 private def lift (f : (W⁄K).toAffine.FunctionFieldˣ) (R : (W⁄K).toAffine.Point) (σ : K ≃ₐ[F] K) :
@@ -173,7 +142,8 @@ private theorem principal_lift {f : (W⁄K).toAffine.FunctionFieldˣ} {R : (W⁄
   have h₂ : -(n • R) - n • -R = 0 := by
     rw [smul_neg, sub_neg_eq_add, neg_add_cancel]
   rw [lift, Divisor.principal_smul, Divisor.principal_div, divisorGaloisAction_principal, hf, hgal,
-    liftDivisor, sub_sub_sub_cancel_right, translation_smul_weilPairingDivisor_sub W hn, h₁, h₂,
+    liftDivisor, sub_sub_sub_cancel_right, smul_sub, translation_smul_weilPairingDivisor (W⁄K) hn,
+    translation_smul_weilPairingDivisor (W⁄K) hn, sub_sub_sub_cancel_right, h₁, h₂,
     weilPairingDivisor_zero, sub_zero]
 
 omit [IsSepClosed K] in
@@ -219,6 +189,143 @@ variable {F K : Type*} [Field F] [Field K] [DecidableEq K] [Algebra F K] [IsSepC
 
 attribute [local instance] WeierstrassCurve.Affine.isIntegrallyClosedIn_functionField
 
+/-- **The cocycle identity of the comparison constant.** Let `g₁`, `g₂`, `g₃` be the lifts
+attached to `P`, `R` and `P + R`, with `g₁ = c₁` constant and `g₁ g₂ = c g₃`. If `S = σ P - P`
+and `σ(g₂(τ))` has divisor `[N]^* (T) - [N]^* (O)`, then `c(σ) σ(c(τ)) = c(σ τ) e_N(S, T)`.
+
+The cocycle identities (`lift_mul`) of `g₁` and `g₂` at `(σ, τ)` compute `g₁ g₂` at `σ τ`; that
+of `g₃`, conjugated and translated from `c₁(τ) g₂(τ) = c(τ) g₃(τ)`, computes `c g₃` at `σ τ`. They
+differ by translating `σ(g₂(τ))` by `S`, which multiplies it by `e_N(S, T)`. -/
+private theorem mul_apply_eq_mul_weilPairing {f₁ f₂ f₃ : (W⁄K).toAffine.FunctionFieldˣ}
+    {P R : (W⁄K).toAffine.Point} {c₁ c : (K ≃ₐ[F] K) → Kˣ}
+    (hc₁ : ∀ σ : K ≃ₐ[F] K, (lift W f₁ P σ : (W⁄K).toAffine.FunctionField) =
+      algebraMap K (W⁄K).toAffine.FunctionField (c₁ σ))
+    (hc : ∀ σ : K ≃ₐ[F] K, (lift W f₁ P σ * lift W f₂ R σ : (W⁄K).toAffine.FunctionField) =
+      algebraMap K (W⁄K).toAffine.FunctionField (c σ) * lift W f₃ (P + R) σ)
+    {σ τ : K ≃ₐ[F] K} {S T : Submodule.torsionBy ℤ (W⁄K).toAffine.Point (N : ℤ)}
+    (hS : (S : (W⁄K).toAffine.Point) = Multiplicative.toAdd (W.pointGaloisAction σ) P - P)
+    {hψ : psiFunctionField (W⁄K) N ≠ 0}
+    (hT : Divisor.principal (W⁄K).toAffine.isFunctionField
+        (Units.map (MonoidHom.ofClass (W.functionFieldGaloisAction σ)) (lift W f₂ R τ)) =
+      weilPairingDivisor (W⁄K) hψ T) :
+    (c σ : K) * σ (c τ) = (c (σ * τ) : K) * (((weilPairing (W⁄K) N hN S T).toMul : Kˣ) : K) := by
+  set e : (K ≃ₐ[F] K) → (W⁄K).toAffine.Point ≃+ (W⁄K).toAffine.Point :=
+    fun σ ↦ Multiplicative.toAdd (W.pointGaloisAction σ) with he
+  have hcommute (Z : (W⁄K).toAffine.Point) (x : K) :
+      Affine.translation (W⁄K).toAffine (Affine.Point.equivBaseChangeSelf _ Z)
+        (algebraMap K (W⁄K).toAffine.FunctionField x) =
+        algebraMap K (W⁄K).toAffine.FunctionField x :=
+    (Affine.translation (W⁄K).toAffine _).commutes x
+  set E := algebraMap K (W⁄K).toAffine.FunctionField
+    (((weilPairing (W⁄K) N hN S T).toMul : Kˣ) : K) with hE_def
+  have hSH : Affine.translation (W⁄K).toAffine (Affine.Point.equivBaseChangeSelf _ S)
+      (W.functionFieldGaloisAction σ (lift W f₂ R τ)) =
+      E * W.functionFieldGaloisAction σ (lift W f₂ R τ) := by
+    have hE := algebraMap_weilPairing (W⁄K) N hN hT (S := S)
+    rw [← hE_def, eq_div_iff (Units.ne_zero _)] at hE
+    exact hE.symm
+  -- the translate of `σ(g₂(τ))` by `σ R - R`
+  have hX : Affine.translation (W⁄K).toAffine (Affine.Point.equivBaseChangeSelf _ (e σ R - R))
+      (W.functionFieldGaloisAction σ (lift W f₂ R τ)) ≠ 0 := by simp
+  have h3H : Affine.translation (W⁄K).toAffine
+      (Affine.Point.equivBaseChangeSelf _ (e σ (P + R) - (P + R)))
+        (W.functionFieldGaloisAction σ (lift W f₂ R τ)) =
+      E * Affine.translation (W⁄K).toAffine (Affine.Point.equivBaseChangeSelf _ (e σ R - R))
+        (W.functionFieldGaloisAction σ (lift W f₂ R τ)) := by
+    have hS' : e σ (P + R) - (P + R) = S + (e σ R - R) := by
+      rw [hS, map_add]
+      abel
+    rw [hS', map_add, Affine.translation_add, AlgEquiv.trans_apply, hSH, map_mul, hE_def,
+      hcommute]
+  -- the three cocycle identities at `(σ, τ)`
+  have m₁ : (lift W f₁ P (σ * τ) : (W⁄K).toAffine.FunctionField) =
+      lift W f₁ P σ * algebraMap K (W⁄K).toAffine.FunctionField (σ (c₁ τ)) := by
+    rw [lift_mul, hc₁ τ, functionFieldGaloisAction_algebraMap, hcommute]
+  have m₂ : (lift W f₂ R (σ * τ) : (W⁄K).toAffine.FunctionField) =
+      lift W f₂ R σ * Affine.translation (W⁄K).toAffine
+        (Affine.Point.equivBaseChangeSelf _ (e σ R - R))
+          (W.functionFieldGaloisAction σ (lift W f₂ R τ)) :=
+    lift_mul W f₂ R σ τ
+  have m₃ : (lift W f₃ (P + R) (σ * τ) : (W⁄K).toAffine.FunctionField) *
+        algebraMap K (W⁄K).toAffine.FunctionField (σ (c τ)) =
+      lift W f₃ (P + R) σ * (algebraMap K (W⁄K).toAffine.FunctionField (σ (c₁ τ)) * E *
+        Affine.translation (W⁄K).toAffine (Affine.Point.equivBaseChangeSelf _ (e σ R - R))
+          (W.functionFieldGaloisAction σ (lift W f₂ R τ))) := by
+    -- conjugate and translate `c₁(τ) g₂(τ) = c(τ) g₃(τ)`
+    have h := congrArg (fun z ↦ Affine.translation (W⁄K).toAffine
+      (Affine.Point.equivBaseChangeSelf _ (e σ (P + R) - (P + R)))
+        (W.functionFieldGaloisAction σ z)) (hc τ)
+    simp only [map_mul, hc₁ τ, functionFieldGaloisAction_algebraMap, hcommute, h3H] at h
+    rw [lift_mul, mul_assoc, mul_comm (Affine.translation _ _ _), ← h]
+    ring
+  have key := hc (σ * τ)
+  rw [m₁, m₂] at key
+  apply (algebraMap K (W⁄K).toAffine.FunctionField).injective
+  simp only [map_mul]
+  have hG : (lift W f₃ (P + R) σ : (W⁄K).toAffine.FunctionField) ≠ 0 := Units.ne_zero _
+  have hD : algebraMap K (W⁄K).toAffine.FunctionField (σ (c₁ τ)) ≠ 0 := by simp
+  have hzero : (algebraMap K (W⁄K).toAffine.FunctionField (c σ) *
+        algebraMap K (W⁄K).toAffine.FunctionField (σ (c τ)) -
+      algebraMap K (W⁄K).toAffine.FunctionField (c (σ * τ)) * E) *
+      ((lift W f₃ (P + R) σ : (W⁄K).toAffine.FunctionField) *
+        algebraMap K (W⁄K).toAffine.FunctionField (σ (c₁ τ)) *
+        Affine.translation (W⁄K).toAffine (Affine.Point.equivBaseChangeSelf _ (e σ R - R))
+          (W.functionFieldGaloisAction σ (lift W f₂ R τ))) = 0 := by
+    linear_combination (-(algebraMap K (W⁄K).toAffine.FunctionField (σ (c₁ τ)) *
+        Affine.translation (W⁄K).toAffine (Affine.Point.equivBaseChangeSelf _ (e σ R - R))
+          (W.functionFieldGaloisAction σ (lift W f₂ R τ)) *
+        algebraMap K (W⁄K).toAffine.FunctionField (σ (c τ)))) * hc σ +
+      algebraMap K (W⁄K).toAffine.FunctionField (σ (c τ)) * key +
+      algebraMap K (W⁄K).toAffine.FunctionField (c (σ * τ)) * m₃
+  rcases mul_eq_zero.1 hzero with h | h
+  · exact sub_eq_zero.1 h
+  · exact absurd h (mul_ne_zero (mul_ne_zero hG hD) hX)
+
+/-- **The comparison constant is constant on cosets.** If `g₁ g₂ = c g₃` for the lifts attached
+to `P`, `R` and `P + R`, `N • P` is fixed by every automorphism, and `c` satisfies the cocycle
+identity twisted by `e_N(σ P - P, σ (τ Q - Q))`, then `c (σ u) = c σ` whenever `u` fixes `Q`
+and the auxiliary functions `f₁`, `f₂`, `f₃`: such a `u` fixes the three lifts, so `c u = 1`, and
+the twist vanishes at `(σ, u)`. -/
+private theorem exists_finset_mul_eq {f₁ f₂ f₃ : (W⁄K).toAffine.FunctionFieldˣ}
+    {P Q R : (W⁄K).toAffine.Point} {c : (K ≃ₐ[F] K) → Kˣ}
+    (hP : ∀ σ : K ≃ₐ[F] K, Multiplicative.toAdd (W.pointGaloisAction σ) (N • P) = N • P)
+    (hc : ∀ σ : K ≃ₐ[F] K, (lift W f₁ P σ * lift W f₂ R σ : (W⁄K).toAffine.FunctionField) =
+      algebraMap K (W⁄K).toAffine.FunctionField (c σ) * lift W f₃ (P + R) σ)
+    (hid : ∀ (σ τ : K ≃ₐ[F] K) (S T : Submodule.torsionBy ℤ (W⁄K).toAffine.Point (N : ℤ)),
+      (S : (W⁄K).toAffine.Point) = Multiplicative.toAdd (W.pointGaloisAction σ) P - P →
+      (T : (W⁄K).toAffine.Point) = Multiplicative.toAdd (W.pointGaloisAction σ)
+        (Multiplicative.toAdd (W.pointGaloisAction τ) Q - Q) →
+      (c σ : K) * σ (c τ) =
+        (c (σ * τ) : K) * (((weilPairing (W⁄K) N hN S T).toMul : Kˣ) : K)) :
+    ∃ s : Finset K, ∀ σ u : K ≃ₐ[F] K, (∀ x ∈ s, u x = x) → c (σ * u) = c σ := by
+  classical
+  set e : (K ≃ₐ[F] K) → (W⁄K).toAffine.Point ≃+ (W⁄K).toAffine.Point :=
+    fun σ ↦ Multiplicative.toAdd (W.pointGaloisAction σ) with he
+  obtain ⟨sP, hsP⟩ := W.exists_finset_pointGaloisAction_eq_self P
+  obtain ⟨sQ, hsQ⟩ := W.exists_finset_pointGaloisAction_eq_self Q
+  obtain ⟨s₁, hs₁⟩ :=
+    W.exists_finset_functionFieldGaloisAction_eq_self (f₁ : (W⁄K).toAffine.FunctionField)
+  obtain ⟨s₂, hs₂⟩ :=
+    W.exists_finset_functionFieldGaloisAction_eq_self (f₂ : (W⁄K).toAffine.FunctionField)
+  obtain ⟨s₃, hs₃⟩ :=
+    W.exists_finset_functionFieldGaloisAction_eq_self (f₃ : (W⁄K).toAffine.FunctionField)
+  refine ⟨sP ∪ sQ ∪ s₁ ∪ s₂ ∪ s₃, fun σ u hu ↦ ?_⟩
+  simp only [Finset.mem_union, or_imp, forall_and] at hu
+  obtain ⟨⟨⟨⟨huP, huQ⟩, hu₁⟩, hu₂⟩, hu₃⟩ := hu
+  have hcu : c u = 1 := by
+    have h := hc u
+    rw [lift_eq_one W (hs₁ u hu₁), lift_eq_one W (hs₂ u hu₂), lift_eq_one W (hs₃ u hu₃),
+      Units.val_one, mul_one, mul_one, eq_comm, ← map_one (algebraMap K _)] at h
+    exact Units.ext ((algebraMap K _).injective h)
+  have hS : N • (e σ P - P) = 0 := by
+    rw [smul_sub, ← map_nsmul, hP, sub_self]
+  have h := hid σ u ⟨e σ P - P, (Submodule.mem_torsionBy_iff _ _).2 (by
+      rw [natCast_zsmul]; exact hS)⟩ 0 rfl (by
+      rw [Submodule.coe_zero, hsQ u huQ, sub_self, map_zero])
+  rw [hcu, Units.val_one, map_one, mul_one, map_zero, toMul_zero, OneMemClass.coe_one,
+    Units.val_one, mul_one] at h
+  exact Units.ext h.symm
+
 /-- **The cup cocycle of two Kummer cocycles is a coboundary in `Kˣ`.** If `N • P` and `N • Q` are
 fixed by every automorphism, there is a cochain `c` with
 `c(σ) · σ(c(τ)) = c(σ τ) · e_N(σ P - P, σ (τ Q - Q))`, constant on the cosets of the subgroup
@@ -236,7 +343,8 @@ private theorem exists_cochain (P Q : (W⁄K).toAffine.Point)
       ∃ s : Finset K, ∀ σ u : K ≃ₐ[F] K, (∀ x ∈ s, u x = x) → c (σ * u) = c σ := by
   -- Structure: lift the points `P`, `R` (with `N R = -Q`) and `P + R` to functions `g₁, g₂, g₃`
   -- (`lift`), compute their divisors, define `c` by `g₁ g₂ = c g₃`, derive the cocycle identity
-  -- `hid` from the three `lift_mul` identities, and finally show `c` is locally constant.
+  -- `hid` (`mul_apply_eq_mul_weilPairing`), and show `c` is locally constant
+  -- (`exists_finset_mul_eq`).
   classical
   have hn : ((N : ℤ) : K) ≠ 0 := by exact_mod_cast hN
   set e : (K ≃ₐ[F] K) → (W⁄K).toAffine.Point ≃+ (W⁄K).toAffine.Point :=
@@ -300,108 +408,11 @@ private theorem exists_cochain (P Q : (W⁄K).toAffine.Point)
       (hS : (S : (W⁄K).toAffine.Point) = e σ P - P)
       (hT : (T : (W⁄K).toAffine.Point) = e σ (e τ Q - Q)) :
       (c σ : K) * σ (c τ) =
-        (c (σ * τ) : K) * (((weilPairing (W⁄K) N hN S T).toMul : Kˣ) : K) := by
-    have hcommute (Z : (W⁄K).toAffine.Point) (x : K) :
-        Affine.translation (W⁄K).toAffine (Affine.Point.equivBaseChangeSelf _ Z)
-          (algebraMap K (W⁄K).toAffine.FunctionField x) =
-          algebraMap K (W⁄K).toAffine.FunctionField x :=
-      (Affine.translation (W⁄K).toAffine _).commutes x
-    -- the conjugate `H` of the second lift at `τ` has divisor `[N]^* (T) - [N]^* (O)`
-    set Hu := Units.map (MonoidHom.ofClass (W.functionFieldGaloisAction σ)) (lift W f₂ R τ)
-    have hHu : Divisor.principal (W⁄K).toAffine.isFunctionField Hu =
-        weilPairingDivisor (W⁄K) (psiFunctionField_ne_zero (W⁄K) hn) T := by
-      rw [divisorGaloisAction_principal, hd₂, divisorGaloisAction_weilPairingDivisor W σ hn, hT]
-    set E := algebraMap K (W⁄K).toAffine.FunctionField
-      (((weilPairing (W⁄K) N hN S T).toMul : Kˣ) : K) with hE_def
-    have hSH : Affine.translation (W⁄K).toAffine (Affine.Point.equivBaseChangeSelf _ S)
-        (W.functionFieldGaloisAction σ (lift W f₂ R τ)) =
-        E * W.functionFieldGaloisAction σ (lift W f₂ R τ) := by
-      have hE := algebraMap_weilPairing (W⁄K) N hN hHu (S := S)
-      rw [← hE_def, eq_div_iff (Units.ne_zero Hu)] at hE
-      exact hE.symm
-    -- `X` is the translate by `σ R - R` of `H`
-    have hX : Affine.translation (W⁄K).toAffine (Affine.Point.equivBaseChangeSelf _ (e σ R - R))
-        (W.functionFieldGaloisAction σ (lift W f₂ R τ)) ≠ 0 := by simp
-    have h3H : Affine.translation (W⁄K).toAffine
-        (Affine.Point.equivBaseChangeSelf _ (e σ (P + R) - (P + R)))
-          (W.functionFieldGaloisAction σ (lift W f₂ R τ)) =
-        E * Affine.translation (W⁄K).toAffine (Affine.Point.equivBaseChangeSelf _ (e σ R - R))
-          (W.functionFieldGaloisAction σ (lift W f₂ R τ)) := by
-      have hS' : e σ (P + R) - (P + R) = S + (e σ R - R) := by
-        rw [hS, map_add]
-        abel
-      rw [hS', map_add, Affine.translation_add, AlgEquiv.trans_apply, hSH, map_mul, hE_def,
-        hcommute]
-    -- the three cocycle identities at `(σ, τ)`
-    have m₁ : (lift W f₁ P (σ * τ) : (W⁄K).toAffine.FunctionField) =
-        lift W f₁ P σ * algebraMap K (W⁄K).toAffine.FunctionField (σ (c₁ τ)) := by
-      rw [lift_mul, hc₁ τ, functionFieldGaloisAction_algebraMap, hcommute]
-    have m₂ : (lift W f₂ R (σ * τ) : (W⁄K).toAffine.FunctionField) =
-        lift W f₂ R σ * Affine.translation (W⁄K).toAffine
-          (Affine.Point.equivBaseChangeSelf _ (e σ R - R))
-            (W.functionFieldGaloisAction σ (lift W f₂ R τ)) :=
-      lift_mul W f₂ R σ τ
-    have m₃ : (lift W f₃ (P + R) (σ * τ) : (W⁄K).toAffine.FunctionField) *
-          algebraMap K (W⁄K).toAffine.FunctionField (σ (c τ)) =
-        lift W f₃ (P + R) σ * (algebraMap K (W⁄K).toAffine.FunctionField (σ (c₁ τ)) * E *
-          Affine.translation (W⁄K).toAffine (Affine.Point.equivBaseChangeSelf _ (e σ R - R))
-            (W.functionFieldGaloisAction σ (lift W f₂ R τ))) := by
-      -- conjugate and translate `c₁(τ) g₂(τ) = c(τ) g₃(τ)`
-      have h := congrArg (fun z ↦ Affine.translation (W⁄K).toAffine
-        (Affine.Point.equivBaseChangeSelf _ (e σ (P + R) - (P + R)))
-          (W.functionFieldGaloisAction σ z)) (hc τ)
-      simp only [map_mul, hc₁ τ, functionFieldGaloisAction_algebraMap, hcommute, h3H] at h
-      rw [lift_mul, mul_assoc, mul_comm (Affine.translation _ _ _), ← h]
-      ring
-    have key := hc (σ * τ)
-    rw [m₁, m₂] at key
-    apply (algebraMap K (W⁄K).toAffine.FunctionField).injective
-    simp only [map_mul]
-    have hG : (lift W f₃ (P + R) σ : (W⁄K).toAffine.FunctionField) ≠ 0 := Units.ne_zero _
-    have hD : algebraMap K (W⁄K).toAffine.FunctionField (σ (c₁ τ)) ≠ 0 := by simp
-    have hzero : (algebraMap K (W⁄K).toAffine.FunctionField (c σ) *
-          algebraMap K (W⁄K).toAffine.FunctionField (σ (c τ)) -
-        algebraMap K (W⁄K).toAffine.FunctionField (c (σ * τ)) * E) *
-        ((lift W f₃ (P + R) σ : (W⁄K).toAffine.FunctionField) *
-          algebraMap K (W⁄K).toAffine.FunctionField (σ (c₁ τ)) *
-          Affine.translation (W⁄K).toAffine (Affine.Point.equivBaseChangeSelf _ (e σ R - R))
-            (W.functionFieldGaloisAction σ (lift W f₂ R τ))) = 0 := by
-      linear_combination (-(algebraMap K (W⁄K).toAffine.FunctionField (σ (c₁ τ)) *
-          Affine.translation (W⁄K).toAffine (Affine.Point.equivBaseChangeSelf _ (e σ R - R))
-            (W.functionFieldGaloisAction σ (lift W f₂ R τ)) *
-          algebraMap K (W⁄K).toAffine.FunctionField (σ (c τ)))) * hc σ +
-        algebraMap K (W⁄K).toAffine.FunctionField (σ (c τ)) * key +
-        algebraMap K (W⁄K).toAffine.FunctionField (c (σ * τ)) * m₃
-    rcases mul_eq_zero.1 hzero with h | h
-    · exact sub_eq_zero.1 h
-    · exact absurd h (mul_ne_zero (mul_ne_zero hG hD) hX)
-  refine ⟨c, hid, ?_⟩
-  -- `c` is trivial on the automorphisms fixing `P`, `Q`, `R` and the three auxiliary functions,
-  -- and the cocycle identity then makes it constant on their cosets
-  obtain ⟨sP, hsP⟩ := W.exists_finset_pointGaloisAction_eq_self P
-  obtain ⟨sQ, hsQ⟩ := W.exists_finset_pointGaloisAction_eq_self Q
-  obtain ⟨s₁, hs₁⟩ :=
-    W.exists_finset_functionFieldGaloisAction_eq_self (f₁ : (W⁄K).toAffine.FunctionField)
-  obtain ⟨s₂, hs₂⟩ :=
-    W.exists_finset_functionFieldGaloisAction_eq_self (f₂ : (W⁄K).toAffine.FunctionField)
-  obtain ⟨s₃, hs₃⟩ :=
-    W.exists_finset_functionFieldGaloisAction_eq_self (f₃ : (W⁄K).toAffine.FunctionField)
-  refine ⟨sP ∪ sQ ∪ s₁ ∪ s₂ ∪ s₃, fun σ u hu ↦ ?_⟩
-  simp only [Finset.mem_union, or_imp, forall_and] at hu
-  obtain ⟨⟨⟨⟨huP, huQ⟩, hu₁⟩, hu₂⟩, hu₃⟩ := hu
-  have hcu : c u = 1 := by
-    have h := hc u
-    rw [lift_eq_one W (hs₁ u hu₁), lift_eq_one W (hs₂ u hu₂), lift_eq_one W (hs₃ u hu₃),
-      Units.val_one, mul_one, mul_one, eq_comm, ← map_one (algebraMap K _)] at h
-    exact Units.ext ((algebraMap K _).injective h)
-  have hS : N • (e σ P - P) = 0 := by
-    rw [smul_sub, ← map_nsmul, hP, sub_self]
-  have h := hid σ u ⟨e σ P - P, (Submodule.mem_torsionBy_iff _ _).2 (by
-      rw [natCast_zsmul]; exact hS)⟩ 0 rfl (by
-      rw [Submodule.coe_zero, hsQ u huQ, sub_self, map_zero])
-  rw [hcu, Units.val_one, map_one, mul_one, map_zero, toMul_zero, OneMemClass.coe_one,
-    Units.val_one, mul_one] at h
-  exact Units.ext h.symm
+        (c (σ * τ) : K) * (((weilPairing (W⁄K) N hN S T).toMul : Kˣ) : K) :=
+    -- the conjugate of the second lift at `τ` has divisor `[N]^* (T) - [N]^* (O)`
+    mul_apply_eq_mul_weilPairing W N hN hc₁ hc hS (by
+      rw [divisorGaloisAction_principal, hd₂, divisorGaloisAction_weilPairingDivisor W σ hn, hT])
+  exact ⟨c, hid, exists_finset_mul_eq W N hN hP hc hid⟩
 
 end Cochain
 
@@ -442,15 +453,8 @@ theorem torsionH1WeilPairing_kummerMap_kummerMap_eq_zero (P Q : W.toAffine.Point
   rw [map_zero, explicitCoeff2_mk, H2pi_eq_zero_iff, mem_B2_iff']
   refine ⟨fun σ ↦ Additive.ofMul (c σ), ?_, fun σ τ ↦ ?_⟩
   · -- `c` is constant on the cosets of the open subgroup fixing the finite set `s`
-    refine continuous_discrete_rng.2 fun b ↦ isOpen_iff_forall_mem_open.2 fun σ hσ ↦ ?_
-    let V : Set (AbsoluteGaloisGroup K) :=
-      ⋂ x ∈ s, (MulAction.stabilizer (AbsoluteGaloisGroup K) x : Set (AbsoluteGaloisGroup K))
-    have hV : IsOpen V := isOpen_biInter_finset fun x _ ↦ stabilizer_isOpen_of_isIntegral x
-    refine ⟨σ • V, ?_, hV.leftCoset σ, ⟨1, by simp [V], mul_one σ⟩⟩
-    rintro _ ⟨u, hu, rfl⟩
-    simp only [V, Set.mem_iInter, SetLike.mem_coe, MulAction.mem_stabilizer_iff,
-      AlgEquiv.smul_def] at hu
-    simpa [smul_eq_mul, hs σ u hu] using hσ
+    exact (IsLocallyConstant.of_mul_eq_of_fixes s (fun x _ ↦ Algebra.IsIntegral.isIntegral x)
+      (f := fun σ ↦ Additive.ofMul (c σ)) fun σ u hu ↦ by rw [hs σ u hu]).continuous
   · have h := hc σ τ
       ((AddEquiv.torsionByCongr W.pointCoeffEquiv m).symm (kummerCocycle hP₁' σ))
       ((AddEquiv.torsionByCongr W.pointCoeffEquiv m).symm (σ • kummerCocycle hQ₁' τ))
