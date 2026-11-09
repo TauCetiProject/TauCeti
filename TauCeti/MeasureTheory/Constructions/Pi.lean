@@ -310,7 +310,7 @@ theorem measurePreserving_update_update (μ : ∀ i, Measure (α i))
         (splitEquiv w.1).2) = update (update w.1 a w.2.1) b w.2.2
   rw [Function.update_eq_updateFinset, Function.update_eq_updateFinset,
     Function.updateFinset_updateFinset hdis]
-  exact TauCeti.MeasureTheory.piEquivPiSubtypeProd_symm_apply_updateFinset (s ∪ t) w.1
+  exact Finset.measurableEquiv_piEquivPiSubtypeProd_symm_apply_eq_updateFinset (s ∪ t) w.1
     (Equiv.piFinsetUnion α hdis (singleA w.2.1, singleB w.2.2))
 
 section FinArrow
