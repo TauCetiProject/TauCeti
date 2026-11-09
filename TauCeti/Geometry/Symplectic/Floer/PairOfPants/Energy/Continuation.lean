@@ -31,10 +31,9 @@ the energy bound `E(u) ≤ a_0 + a_1 - a_∞ + ∑ q, (B_q + D_q)`
 (`SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_le`) and the
 action bound `a_∞ ≤ a_0 + a_1 + ∑ q, (B_q + D_q)`
 (`SymplecticForm.le_add_add_sum_of_tendsto_hamiltonianAction_pairOfPantsContinuationPerturbation`),
-uniformly in the neck positions although the necks become arbitrarily long. These are the bounds
-that confine the one-parameter families of pairs of pants with moving necks, whose broken ends are
-the compositions of continuation maps with pair-of-pants products, to finitely many classes below
-each energy level.
+uniformly in the neck positions although the necks become arbitrarily long. These are the energy
+estimates that compactness for the one-parameter families of pairs of pants with moving necks,
+whose broken ends are the compositions of continuation maps with pair-of-pants products, will need.
 
 ## References
 
