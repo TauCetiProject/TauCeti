@@ -86,13 +86,18 @@ lemma eulerDegreeHom_apply (a : Additive (LineBundleClass X)) :
     eulerDegreeHom k X a = eulerDegree k a.toMul :=
   (rfl)
 
+omit [AlgebraicGeometry.IsNoetherian X] in
 /-- The Euler-characteristic degree of an integer tensor power is the integer multiple of the
 original degree, on a proper integral curve over `k` whose codimension-one local rings are
 discrete valuation rings and whose `H¹(X, 𝒪_X)` is finite-dimensional. -/
 @[simp]
 theorem eulerDegree_zpow (a : LineBundleClass X) (n : ℤ) :
     eulerDegree k (a ^ n) = n * eulerDegree k a := by
-  simpa using (eulerDegreeHom k X).map_zsmul n (Additive.ofMul a)
+  have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
+  let f : Additive (LineBundleClass X) →+ ℤ :=
+    AddMonoidHom.mk' (fun a ↦ eulerDegree k a.toMul) fun a b ↦
+      eulerDegree_mul k hX.out a.toMul b.toMul
+  simpa [f] using f.map_zsmul n (Additive.ofMul a)
 
 variable (X) in
 /-- **`Pic⁰ X`**, the degree-zero part of the Picard group of a proper curve over `k`: the kernel
