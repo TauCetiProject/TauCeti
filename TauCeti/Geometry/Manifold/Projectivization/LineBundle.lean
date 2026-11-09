@@ -190,9 +190,10 @@ vector-bundle core with model fibre `𝕜`. The chart `i` is trivial over the st
     simp only [ContinuousLinearMap.lsmul_apply, smul_eq_mul, ← mul_assoc]
     rw [twistTransition_mul_twistTransition k i l hx.1.2]
 
+/-- The chart `i` of `𝒪(k)` is trivial over the standard affine open `U_i`. -/
 @[simp]
-theorem twistCore_baseSet (k : ℤ) (i : Fin (n + 1)) :
-    (twistCore (𝕜 := 𝕜) k).baseSet i = affineOpen i :=
+theorem twistCore_localTriv_baseSet (k : ℤ) (i : Fin (n + 1)) :
+    ((twistCore (𝕜 := 𝕜) k).localTriv i).baseSet = affineOpen i :=
   rfl
 
 /-- The preferred chart of `𝒪(k)` at `x` is the chart of the manifold structure at `x`. -/
