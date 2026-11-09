@@ -40,6 +40,9 @@ descriptions.
   every natural `k` and `1 < p < ∞`.
 * `TemperedDistribution.fderiv_apply_mem_realSobolevFunctions`: the classical directional
   derivatives of a real `C¹` function in `H^{s+1,p}`, `s ≥ 0`, lie in `H^{s,p}`.
+* `TemperedDistribution.mem_realSobolevFunctions_add_one_of_fderiv_apply`: conversely, a real `C¹`
+  function in `H^{s,p}` whose classical directional derivatives lie in `H^{s,p}` lies in
+  `H^{s+1,p}`.
 
 ## References
 
@@ -171,5 +174,30 @@ theorem fderiv_apply_mem_realSobolevFunctions {p : ℝ≥0∞} [Fact (1 ≤ p)] 
   have hae := hline.ae_eq_lineDeriv hint fun x _ ↦ (hdiff x).lineDifferentiableAt
   refine mem_realSobolevFunctions.2 ⟨u', ?_, hu' ▸ hd⟩
   simpa only [Opens.coe_top, Measure.restrict_univ, (hdiff _).lineDeriv_eq_fderiv] using hae
+
+/-- **Sobolev regularity from classical derivatives.** For `1 < p < ∞`, a real `C¹` function in
+`H^{s,p}` whose classical directional derivatives all lie in `H^{s,p}` lies in `H^{s+1,p}`: the
+classical derivatives are weak derivatives, hence the distributional ones. This is the converse of
+`fderiv_apply_mem_realSobolevFunctions`. -/
+theorem mem_realSobolevFunctions_add_one_of_fderiv_apply {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : 1 < p)
+    (hp_top : p ≠ ∞) {s : ℝ} {f : E → ℝ} (hf : ContDiff ℝ 1 f)
+    (hmem : f ∈ realSobolevFunctions E s p)
+    (hd : ∀ v, (fun x ↦ fderiv ℝ f x v) ∈ realSobolevFunctions E s p) :
+    f ∈ realSobolevFunctions E (s + 1) p := by
+  obtain ⟨u, huf, hu⟩ := mem_realSobolevFunctions.1 hmem
+  refine mem_realSobolevFunctions.2
+    ⟨u, huf, (memSobolev_add_one_iff hp hp_top).2 ⟨hu, fun v ↦ ?_⟩⟩
+  obtain ⟨u', hu'f, hu'⟩ := mem_realSobolevFunctions.1 (hd v)
+  have hcont : Continuous fun x ↦ fderiv ℝ f x v :=
+    (hf.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  have hline : HasWeakLineDerivOn volume ⊤ f (fun x ↦ fderiv ℝ f x v) v :=
+    hasWeakLineDerivOn_of_hasLineDerivAt (hf.continuous.locallyIntegrable.locallyIntegrableOn _)
+      (hcont.locallyIntegrable.locallyIntegrableOn _)
+      fun x _ ↦ (hf.differentiable one_ne_zero x).hasFDerivAt.hasLineDerivAt v
+  have hline' : HasWeakLineDerivOn volume ⊤ u u' v :=
+    (hline.congr_ae (by simpa only [Opens.coe_top, Measure.restrict_univ] using huf.symm))
+      |>.congr_ae_deriv (by simpa only [Opens.coe_top, Measure.restrict_univ] using hu'f.symm)
+  rw [(hasWeakLineDerivOn_iff_lineDerivOp_toTemperedDistribution_ofReal_eq u u' v).1 hline']
+  exact hu'
 
 end TemperedDistribution

@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.EilenbergMacLane.WeakHomotopyEquivalence
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Product
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
+public import TauCeti.RepresentationTheory.Homological.GroupHomology.Functoriality
 
 /-!
 # The classifying space of a product of groups
@@ -50,6 +51,8 @@ product of copies of `ℤ[1/2]` and of finite cyclic groups of odd order.
   commutative semisimple ring.
 * `TauCeti.subsingleton_classifyingSpace_prod_singularHomology` and
   `TauCeti.subsingleton_groupHomology_prod`: products of acyclic groups are acyclic.
+* `TauCeti.subsingleton_groupHomology_multiplicative_prod`: the same for products of abelian
+  groups, written additively.
 
 ## References
 
@@ -215,6 +218,16 @@ theorem subsingleton_groupHomology_prod
     n
   (classifyingSpaceSingularHomologyIsoGroupHomology k (G × H) (n + 1)).symm.toLinearEquiv
     |>.toEquiv.subsingleton
+
+/-- The additive form of `TauCeti.subsingleton_groupHomology_prod`: over a commutative semisimple
+ring `k`, a product of abelian groups that are acyclic with trivial coefficients `k` is acyclic. -/
+theorem subsingleton_groupHomology_multiplicative_prod {M N : Type u} [AddCommGroup M]
+    [AddCommGroup N]
+    (hM : ∀ n, Subsingleton (groupHomology (Rep.trivial k (Multiplicative M) k) (n + 1)))
+    (hN : ∀ n, Subsingleton (groupHomology (Rep.trivial k (Multiplicative N) k) (n + 1)))
+    (n : ℕ) : Subsingleton (groupHomology (Rep.trivial k (Multiplicative (M × N)) k) (n + 1)) :=
+  have := subsingleton_groupHomology_prod (Multiplicative M) (Multiplicative N) k hM hN n
+  (MulEquiv.prodMultiplicative M N).subsingleton_groupHomology
 
 end Semisimple
 
