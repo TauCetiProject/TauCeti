@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Probability.Process.LocalProperty
 public import Mathlib.MeasureTheory.Constructions.Polish.StronglyMeasurable
+import TauCeti.Probability.Process.Stopping
 
 /-!
-# Adapted representatives of local processes
+# Adapted representatives of local processes and filtration enlargement
 
 A native local property controls the stopped processes
 `stoppedProcess (fun t ↦ {ω | ⊥ < τ n ω}.indicator (X t)) (τ n)`.
@@ -26,6 +27,9 @@ therefore gives the adapted representative. Any almost-sure path property, such 
 continuity, transfers along this simultaneous-time equality. This does not by itself
 assert that the new representative satisfies the original local property: stopping a
 merely adapted replacement at a general stopping time requires additional measurability.
+
+Enlarging a filtration preserves its localizing sequences. The stopping-time property
+transports to the larger filtration, while monotonicity and divergence are unchanged.
 
 ## References
 
@@ -95,3 +99,18 @@ theorem Locally.exists_stronglyAdapted_ae_eq [TopologicalSpace E]
     simp only [Y, ite_eq_left hex, hlim.limUnder_eq]
 
 end ProbabilityTheory
+
+namespace ProbabilityTheory.IsLocalizingSequence
+
+open MeasureTheory
+
+/-- A localizing sequence for a filtration also localizes any larger filtration. -/
+theorem mono_filtration {ι Ω : Type*} [Preorder ι] [TopologicalSpace ι] [OrderTopology ι]
+    {mΩ : MeasurableSpace Ω} {μ : Measure Ω} {ℱ 𝒢 : Filtration ι mΩ}
+    {τ : ℕ → Ω → WithTop ι} (hτ : IsLocalizingSequence ℱ τ μ) (h : ℱ ≤ 𝒢) :
+    IsLocalizingSequence 𝒢 τ μ where
+  isStoppingTime n := (hτ.isStoppingTime n).mono_filtration h
+  tendsto_top := hτ.tendsto_top
+  mono := hτ.mono
+
+end ProbabilityTheory.IsLocalizingSequence
