@@ -386,10 +386,8 @@ theorem bijOn_flow_levelCrossingTime
     exact h'
   · obtain ⟨t, ht⟩ := hex y hy.1
     refine ⟨φ t y, ⟨isInvariant_unstableSet_inter_stableSet φ p q _ hy.1, ht⟩, ?_⟩
-    simp only
-    rw [levelCrossingTime_flow (hanti y hy.1) (hex' y hy.1),
-      (levelCrossingTime_eq_zero_iff (hanti y hy.1) (hex' y hy.1)).2 hy.2, ← φ.map_add,
-      zero_sub, neg_add_cancel, φ.map_zero_apply]
+    exact (flow_levelCrossingTime_flow (hanti y hy.1) (s := 0)
+      (by rw [φ.map_zero_apply]; exact hy.2) t).trans (φ.map_zero_apply y)
 
 end Connecting
 
