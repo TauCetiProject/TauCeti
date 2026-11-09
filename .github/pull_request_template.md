@@ -50,11 +50,11 @@ those from `variable` lines, and rebuild, before reasoning about whether it is n
 still works, leave it out, but check the conclusion is not weaker than the docstring promises
 (Q9). If it follows from the others, derive it in the proof: consistency with a related lemma is
 no reason to keep it. If the proof breaks only in a degenerate case (empty, `0`, `⊥`), handle that
-case. Keep a hypothesis only when the statement needs it to make sense, is false without it (give
-the counterexample), or in a degenerate case holds only through a junk value such as `x / 0 = 0`.
-Weaken typeclasses to what the proof uses, at a level Mathlib uses (`Field` to `CommRing`, say).
-The note says what you dropped or weakened, and why any hypothesis kept for a degenerate case
-stays.
+case. As in Mathlib, a statement that still holds there by convention, through a junk value such as
+`x / 0 = 0`, needs no hypothesis: keep one only when the statement is false without it (give the
+counterexample) or needs it to make sense. Weaken typeclasses to what the proof uses, at a level
+Mathlib uses (`Field` to `CommRing`, say). The note says what you dropped or weakened, and the
+counterexample for any hypothesis kept for a degenerate case.
 
 Q4. No declaration picks up a `variable` instance or binder it does not use: use `omit [...] in`,
 or restructure the `variable` blocks.
@@ -91,8 +91,6 @@ delivers each strong word (*exactly*, *iff*, *unique*, *strictly*, *for every*, 
 quantifiers in the docstring's order (one `x` for every `n` is `∃ x, ∀ n`). A docstring that
 describes the hypotheses must also state the conclusion. Fix whichever of the two is wrong. Check
 the statement says what the source says and is not vacuous: the hypotheses can hold together, and
-the conclusion is not true for an unintended reason; a simple, correct lemma is fine. Evaluate it
-on degenerate inputs (empty, infinite, zero, the trivial ring): if it holds there only through a
-junk value, add the hypothesis that excludes the case, or say in the note why the junk case is
-intended.
+the conclusion is not true for an unintended reason, such as a junk value on the inputs it is meant
+for (in a degenerate case, junk is fine: Q3). A simple, correct lemma is fine.
 -->
