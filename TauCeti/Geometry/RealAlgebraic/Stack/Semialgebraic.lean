@@ -56,7 +56,7 @@ private lemma Delineation.biUnion_image_map_roots_toFinset_eq
     simp [Polynomial.coeff_map, MvPolynomial.eval_map]
   rw [Finset.image_biUnion]
   simp_rw [hmap]
-  rw [← Finset.attach_biUnion]
+  rw [← Finset.attach_biUnion, ← Finset.univ_eq_attach]
   exact D.biUnion_roots_toFinset_eq x
 
 /-- A delineation of a finite polynomial family over a semialgebraic base is a semialgebraic
