@@ -205,10 +205,24 @@ theorem orderAt_sup (I J : Ideal R) (p : PrimeSpectrum R) :
     (I ⊔ J).orderAt p = min (I.orderAt p) (J.orderAt p) := by
   simp [orderAt, map_sup]
 
+/-- At a prime, the order of a supremum of ideals is the infimum of their orders. -/
+@[simp]
+theorem orderAt_iSup {ι : Sort*} (I : ι → Ideal R) (p : PrimeSpectrum R) :
+    (⨆ i, I i).orderAt p = ⨅ i, (I i).orderAt p := by
+  simp [orderAt, map_iSup]
+
+/-- At a prime, the order of a generated ideal is the infimum of the orders of the
+principal ideals of its generators. The empty infimum is `∞`. -/
+theorem orderAt_span (s : Set R) (p : PrimeSpectrum R) :
+    (span s).orderAt p = ⨅ x ∈ s, (span {x}).orderAt p := by
+  apply ENat.eq_of_forall_natCast_le_iff
+  intro n
+  simp [map_le_iff_le_comap, span_le, Set.subset_def]
+
 /-- At a prime, generator orders compute the ideal order, including for an empty family. -/
 theorem orderAt_span_range {ι : Type*} (f : ι → R) (p : PrimeSpectrum R) :
     (span (Set.range f)).orderAt p = ⨅ i, (span {f i}).orderAt p := by
-  simp only [orderAt, span_range_eq_iSup, map_iSup, localOrder_iSup]
+  rw [span_range_eq_iSup, orderAt_iSup]
 
 end AtPrime
 
