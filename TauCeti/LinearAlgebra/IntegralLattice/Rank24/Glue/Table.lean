@@ -131,6 +131,17 @@ word itself in the additive mode, and its three nonzero `𝔽₄` multiples `w, 
 theorem self_mem_scalarOrbit (m : GlueSpanMode) (w : List ℕ) : w ∈ m.scalarOrbit w := by
   cases m <;> simp
 
+/-- The words contributed by a word under a span mode are natural under permutations of the
+positions. -/
+theorem ofFn_comp_mem_scalarOrbit_ofFn_comp_iff (m : GlueSpanMode) {n : ℕ}
+    (g : Equiv.Perm (Fin n)) (d e : Fin n → ℕ) :
+    List.ofFn (d ∘ g) ∈ m.scalarOrbit (List.ofFn (e ∘ g)) ↔
+      List.ofFn d ∈ m.scalarOrbit (List.ofFn e) := by
+  have hg : Function.Injective fun f : Fin n → ℕ ↦ f ∘ g := g.surjective.injective_comp_right
+  cases m <;>
+    simp only [scalarOrbit_additive, scalarOrbit_f4Linear, Finset.mem_insert,
+      Finset.mem_singleton, List.map_ofFn, List.ofFn_inj, ← Function.comp_assoc, hg.eq_iff]
+
 end GlueSpanMode
 
 namespace RootfulNiemeierType
@@ -237,6 +248,29 @@ theorem replicate_two_mem_glueWords_d4Sixth : List.replicate 6 2 ∈ d4Sixth.glu
 theorem mem_glueWords_of_mem_expand {r : RootfulNiemeierType} {p : GluePattern}
     (hp : p ∈ r.gluePatterns) {w : List ℕ} (hw : w ∈ p.expand) : w ∈ r.glueWords :=
   mem_glueWords_iff.mpr ⟨p, hp, w, hw, GlueSpanMode.self_mem_scalarOrbit _ _⟩
+
+/-- Every pattern of a row has one digit per component. -/
+theorem length_eq_of_mem_gluePatterns {r : RootfulNiemeierType} {p : GluePattern}
+    (hp : p ∈ r.gluePatterns) :
+    p.length = r.components.length := by
+  revert p
+  cases r <;> decide
+
+/-- A digit word of a row is a scalar multiple, in the row's span mode, of an expanded word of
+one of its patterns, written by its digits. -/
+theorem mem_glueWords_iff_exists_ofFn {r : RootfulNiemeierType} {l : List ℕ} :
+    l ∈ r.glueWords ↔ ∃ p ∈ r.gluePatterns, ∃ e : Fin r.components.length → ℕ,
+      List.ofFn e ∈ p.expand ∧ l ∈ r.spanMode.scalarOrbit (List.ofFn e) := by
+  rw [mem_glueWords_iff]
+  constructor
+  · rintro ⟨p, hp, w, hw, hl⟩
+    have hlen : w.length = r.components.length :=
+      (p.length_of_mem_expand hw).trans (length_eq_of_mem_gluePatterns hp)
+    have hw' : List.ofFn (fun i : Fin r.components.length ↦ w[i.val]) = w :=
+      List.ext_getElem (by simp [hlen]) (by simp)
+    exact ⟨p, hp, _, by rwa [hw'], by rwa [hw']⟩
+  · rintro ⟨p, hp, e, he, hl⟩
+    exact ⟨p, hp, _, he, hl⟩
 
 /-! ### The glue subgroup -/
 

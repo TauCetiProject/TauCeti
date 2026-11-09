@@ -42,7 +42,9 @@ It also provides radial cutoffs between two concentric closed balls of radii `r 
 gradient is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a
 universal constant `c`, the quantitative form needed by iteration arguments over families of balls
 with shrinking gaps. On the line, a smooth cutoff of the identity equals `s` on `[-r, r]` and
-vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`), and smooth plateaus supported
+vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`). On an inner product space, a
+smooth, even, compactly supported cutoff equals one on the annulus `r ≤ ‖ξ‖ ≤ R` and vanishes on
+the ball of radius `r / 2` (`TauCeti.exists_contDiff_cutoff_annulus`). Smooth plateaus supported
 in `[c - r - 1, c + r + 1]` have `L²` mass at least `2 r` and derivative energy bounded
 independently of `c` and `r` (`TauCeti.exists_forall_contDiff_plateau`). The squared gradient of a
 function supported in a closed ball with bounded gradient there has integral at most the squared
@@ -553,6 +555,49 @@ theorem exists_contDiff_cutoff_id {r R : ℝ} (hr : 0 < r) (hrR : r < R) :
   · refine (hasDerivAt_id s).congr_of_eventuallyEq ?_
     filter_upwards [(isOpen_lt continuous_abs continuous_const).mem_nhds hs] with x hx
     exact hsmall x hx.le
+
+open Metric in
+/-- **A smooth cutoff of an annulus.** For `0 < r` and any `R`, some smooth, even, compactly
+supported `χ : E → ℝ` equals `1` on the annulus `r ≤ ‖ξ‖ ≤ R` and vanishes on the ball of radius
+`r / 2`. It is a bump function of `‖ξ‖²`. -/
+theorem exists_contDiff_cutoff_annulus [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] {r : ℝ}
+    (hr : 0 < r) (R : ℝ) :
+    ∃ χ : E → ℝ, ContDiff ℝ ∞ χ ∧ HasCompactSupport χ ∧ (∀ ξ, ‖ξ‖ < r / 2 → χ ξ = 0) ∧
+      (∀ ξ, χ (-ξ) = χ ξ) ∧ ∀ ξ, r ≤ ‖ξ‖ → ‖ξ‖ ≤ R → χ ξ = 1 := by
+  set a : ℝ := r ^ 2
+  set b : ℝ := (|R| + 2 * r) ^ 2
+  have ha : 0 < a := by positivity
+  have hab : a < b := pow_lt_pow_left₀ (by linarith [abs_nonneg R]) hr.le two_ne_zero
+  let ρ : ContDiffBump ((a + b) / 2) := ⟨(b - a) / 2, b / 2, by linarith, by linarith⟩
+  refine ⟨fun ξ ↦ ρ (‖ξ‖ ^ 2), ρ.contDiff.comp (contDiff_norm_sq ℝ), ?_, fun ξ hξ ↦ ?_,
+    fun ξ ↦ by simp, fun ξ h₁ h₂ ↦ ?_⟩
+  · refine HasCompactSupport.intro (isCompact_closedBall (0 : E) (2 * (|R| + 2 * r)))
+      fun ξ hξ ↦ ρ.zero_of_le_dist ?_
+    have hξ' : 2 * (|R| + 2 * r) < ‖ξ‖ := by simpa using hξ
+    have : 4 * b < ‖ξ‖ ^ 2 := by
+      have := pow_lt_pow_left₀ hξ' (by positivity) two_ne_zero
+      simp only [b]
+      nlinarith
+    rw [Real.dist_eq, le_abs]
+    left
+    simp only [ρ]
+    linarith
+  · refine ρ.zero_of_le_dist ?_
+    have : ‖ξ‖ ^ 2 < a / 4 := by
+      have := pow_lt_pow_left₀ hξ (norm_nonneg _) two_ne_zero
+      simp only [a]
+      nlinarith
+    rw [Real.dist_eq, le_abs]
+    right
+    simp only [ρ]
+    nlinarith [sq_nonneg ‖ξ‖]
+  · refine ρ.one_of_mem_closedBall ?_
+    have hlo : a ≤ ‖ξ‖ ^ 2 := pow_le_pow_left₀ hr.le h₁ 2
+    have hhi : ‖ξ‖ ^ 2 ≤ b :=
+      pow_le_pow_left₀ (norm_nonneg _) (h₂.trans ((le_abs_self R).trans (by linarith))) 2
+    rw [mem_closedBall, Real.dist_eq, abs_le]
+    simp only [ρ]
+    constructor <;> linarith
 
 
 open MeasureTheory Metric in
