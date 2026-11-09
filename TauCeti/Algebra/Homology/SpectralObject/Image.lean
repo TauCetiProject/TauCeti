@@ -48,6 +48,9 @@ objects as images and of the differentials as connecting maps on representatives
 * `CategoryTheory.Abelian.SpectralObject.toCycles_πE`,
   `CategoryTheory.Abelian.SpectralObject.ιE_fromOpcycles`: `X.toE` and `X.fromE` through Mathlib's
   `toCycles`, `πE`, `ιE` and `fromOpcycles`.
+* `CategoryTheory.Abelian.SpectralObject.toE_descE`,
+  `CategoryTheory.Abelian.SpectralObject.liftE_fromE`: Mathlib's `X.descE` and `X.liftE` factor
+  through `X.toE` and `X.fromE`.
 * `CategoryTheory.Abelian.SpectralObject.toE_fromE`: `X.toE ≫ X.fromE` is the map
   `H^n(f₁ ≫ f₂) ⟶ H^n(f₂ ≫ f₃)`.
 * `CategoryTheory.Abelian.SpectralObject.toE_d`, `CategoryTheory.Abelian.SpectralObject.d_fromE`:
@@ -97,6 +100,15 @@ instance (hn₁ : n₀ + 1 = n₁) (hn₂ : n₁ + 1 = n₂) :
   rw [toE]
   infer_instance
 
+/-- Mathlib's `X.descE` is the factorization of a morphism through the epimorphism `X.toE`. -/
+@[reassoc (attr := simp)]
+lemma toE_descE {A : C} (x : (X.H n₁).obj (mk₁ f₁₂) ⟶ A)
+    (h : (X.H n₁).map (twoδ₂Toδ₁ f₁ f₂ f₁₂ h₁₂) ≫ x = 0) (hn₁ : n₀ + 1 = n₁)
+    (h' : X.δ f₁₂ f₃ n₀ n₁ hn₁ ≫ x = 0) (hn₂ : n₁ + 1 = n₂ := by lia) :
+    X.toE f₁ f₂ f₃ f₁₂ h₁₂ n₀ n₁ n₂ hn₁ hn₂ ≫
+      X.descE f₁ f₂ f₃ f₁₂ h₁₂ n₀ n₁ n₂ x h hn₁ h' hn₂ = x := by
+  simp [toE]
+
 /-- The monomorphism `E^{n₁}(f₁, f₂, f₃) ⟶ H^{n₁}(f₂₃)` for `f₂₃ = f₂ ≫ f₃`. It is the first map
 of Mathlib's exact sequence `X.kernelSequenceE`, named here as a morphism in its own right. -/
 noncomputable def fromE (hn₁ : n₀ + 1 = n₁ := by lia) (hn₂ : n₁ + 1 = n₂ := by lia) :
@@ -114,6 +126,15 @@ instance (hn₁ : n₀ + 1 = n₁) (hn₂ : n₁ + 1 = n₂) :
     Mono (X.fromE f₁ f₂ f₃ f₂₃ h₂₃ n₀ n₁ n₂ hn₁ hn₂) := by
   rw [fromE]
   infer_instance
+
+/-- Mathlib's `X.liftE` is the factorization of a morphism through the monomorphism `X.fromE`. -/
+@[reassoc (attr := simp)]
+lemma liftE_fromE {A : C} (x : A ⟶ (X.H n₁).obj (mk₁ f₂₃))
+    (h : x ≫ (X.H n₁).map (twoδ₁Toδ₀ f₂ f₃ f₂₃ h₂₃) = 0) (hn₂ : n₁ + 1 = n₂)
+    (h' : x ≫ X.δ f₁ f₂₃ n₁ n₂ hn₂ = 0) (hn₁ : n₀ + 1 = n₁ := by lia) :
+    X.liftE f₁ f₂ f₃ f₂₃ h₂₃ n₀ n₁ n₂ x h hn₂ h' hn₁ ≫
+      X.fromE f₁ f₂ f₃ f₂₃ h₂₃ n₀ n₁ n₂ hn₁ hn₂ = x := by
+  simp [fromE]
 
 /-- The epimorphism `X.toE` followed by the monomorphism `X.fromE` is the map
 `H^{n₁}(f₁₂) ⟶ H^{n₁}(f₂₃)` induced by the morphism of arrows `(f₁, f₃) : f₁₂ ⟶ f₂₃`. -/
