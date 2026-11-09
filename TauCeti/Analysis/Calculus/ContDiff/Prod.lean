@@ -19,6 +19,8 @@ For a family `F : P × E → X` smooth at `(p, x)`, the spatial differential
 along a graph over the parameter (`ContDiffAt.eventually_contDiffAt_graph`), and the vertical part
 of the derivative of a `C¹` map is continuous along a continuous graph
 (`ContDiffAt.continuousAt_fderiv_comp_inr`).
+The partial derivative in the second variable, applied to a fixed vector, is then `C^m` jointly
+whenever `m + 1 ≤ n` (`ContDiffAt.fderiv_snd_apply`).
 -/
 
 public section
@@ -71,5 +73,12 @@ theorem continuousAt_fderiv_comp_inr {G : P × E → X} {ψ : P → E}
   ((hG.continuousAt_fderiv (by norm_num)).comp_of_eq
     (f := fun q ↦ (q, ψ q)) (continuousAt_id.prodMk hψ) rfl).clm_comp
     continuousAt_const
+
+/-- The partial derivative in the second variable of a function of `(r.1, z)`, applied to a fixed
+vector, is as differentiable in `r` as the function allows. -/
+theorem fderiv_snd_apply {n m : WithTop ℕ∞} {f : P × E → X} {r : P × E}
+    (hf : ContDiffAt 𝕜 n f r) (hmn : m + 1 ≤ n) (v : E) :
+    ContDiffAt 𝕜 m (fun r : P × E ↦ fderiv 𝕜 (fun z ↦ f (r.1, z)) r.2 v) r :=
+  (hf.fderiv_slice hmn).clm_apply contDiffAt_const
 
 end ContDiffAt

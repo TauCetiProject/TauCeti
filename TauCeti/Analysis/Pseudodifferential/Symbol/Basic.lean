@@ -32,6 +32,9 @@ space, and develop the first operations of the symbol calculus:
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
   of multiplication by `f`, has order `0`; in particular so does a constant
   (`TauCeti.Symbol.const`);
+* `TauCeti.Symbol.ofFrequency`: a smooth coefficient `b(ξ)` independent of the position with
+  `‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩^(m - k)` has order `m`, with estimates uniform in the position
+  (`TauCeti.Symbol.isUniform_ofFrequency`);
 * `TauCeti.Symbol.comp`: the pointwise composition `b(x, ξ) ∘ a(x, ξ)` (for matrices, the matrix
   product) of symbols of orders `m'` and `m` has order `m' + m`. By the Leibniz rule
   `ContinuousLinearMap.mixedDeriv_of_bilinear`, `∂_x^α ∂_ξ^β (b ∘ a)` is a sum of terms
@@ -321,6 +324,16 @@ theorem HasCompactSpatialSupport.smul {a : Symbol n V W m} (ha : a.HasCompactSpa
   obtain ⟨K, hK, hKa⟩ := ha
   exact ⟨K, hK, fun x hx ξ => by simp [hKa x hx ξ]⟩
 
+theorem HasCompactSpatialSupport.neg {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport) :
+    (-a).HasCompactSpatialSupport := by
+  obtain ⟨K, hK, hKa⟩ := ha
+  exact ⟨K, hK, fun x hx ξ => by simp [hKa x hx ξ]⟩
+
+theorem HasCompactSpatialSupport.sub {a b : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) : (a - b).HasCompactSpatialSupport := by
+  rw [sub_eq_add_neg]
+  exact ha.add hb.neg
+
 end Module
 
 section Inclusion
@@ -356,6 +369,14 @@ theorem HasCompactSpatialSupport.inclusion {a : Symbol n V W m} (ha : a.HasCompa
     (h : m ≤ m') : (inclusion h a).HasCompactSpatialSupport := by
   obtain ⟨K, hK, hKa⟩ := ha
   exact ⟨K, hK, fun x hx ξ => by rw [coefficient_inclusion, hKa x hx ξ]⟩
+
+/-- A symbol whose coefficient is that of a symbol with compact spatial support, possibly of a
+different order, has compact spatial support. -/
+theorem HasCompactSpatialSupport.of_coefficient_eq {a : Symbol n V W m} {b : Symbol n V W m'}
+    (ha : a.HasCompactSpatialSupport) (h : b.coefficient = a.coefficient) :
+    b.HasCompactSpatialSupport := by
+  obtain ⟨K, hK, hKa⟩ := ha
+  exact ⟨K, hK, fun x hx ξ => by rw [h, hKa x hx ξ]⟩
 
 end Inclusion
 
@@ -602,6 +623,51 @@ theorem isUniform_const (T : V →L[ℂ] W) : (const T : Symbol n V W 0).IsUnifo
   · simp [coordinateDeriv_const T hα]
 
 end Spatial
+
+section Frequency
+
+variable {b : CoordinateSpace n → V →L[ℂ] W}
+
+/-- The frequency-only estimates hold with constants uniform in the position. -/
+private theorem exists_bound_comp_snd (hb : ContDiff ℝ ∞ b)
+    (hbound : ∀ k : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k b ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2))
+    (α β : List (Fin n)) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ξ,
+      ‖mixedDeriv α β (fun p => b p.2) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+  rcases eq_or_ne α [] with rfl | hα
+  · obtain ⟨C, hC⟩ := hbound β.length
+    refine ⟨max C 0, le_max_right _ _, fun x ξ => ?_⟩
+    rw [mixedDeriv_nil_comp_snd]
+    calc ‖coordinateDeriv β b ξ‖ ≤ ‖iteratedFDeriv ℝ β.length b ξ‖ :=
+          norm_coordinateDeriv_le β (hb.of_le (mod_cast le_top)) ξ
+      _ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := hC ξ
+      _ ≤ max C 0 * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
+          mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
+  · exact ⟨0, le_rfl, fun x ξ => by simp [mixedDeriv_comp_snd b hα]⟩
+
+/-- A smooth frequency-only coefficient `a(x, ξ) = b(ξ)` whose derivatives satisfy
+`‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩ ^ (m - k)` is a symbol of order `m`. Its quantization is the Fourier
+multiplier `b(D)` (`TauCeti.Symbol.quantizeSchwartzValue_ofFrequency`). -/
+def ofFrequency (b : CoordinateSpace n → V →L[ℂ] W) (hb : ContDiff ℝ ∞ b)
+    (hbound : ∀ k : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k b ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2)) :
+    Symbol n V W m where
+  coefficient p := b p.2
+  contDiff_coefficient := hb.comp contDiff_snd
+  exists_bound _ _ α β :=
+    (exists_bound_comp_snd hb hbound α β).imp fun _ hC => ⟨hC.1, fun x _ ξ => hC.2 x ξ⟩
+
+variable (hb : ContDiff ℝ ∞ b)
+  (hbound : ∀ k : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k b ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2))
+
+@[simp]
+theorem coefficient_ofFrequency (p : CoordinateSpace n × CoordinateSpace n) :
+    (ofFrequency b hb hbound).coefficient p = b p.2 := (rfl)
+
+/-- A frequency-only symbol satisfies its estimates uniformly in the position. -/
+theorem isUniform_ofFrequency : (ofFrequency b hb hbound).IsUniform :=
+  isUniform_iff.2 (exists_bound_comp_snd hb hbound)
+
+end Frequency
 
 section Comp
 
