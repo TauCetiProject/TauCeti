@@ -11,9 +11,7 @@ public import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
 # Frontiers of annuli in pseudo-metric spaces
 
 The frontier of the closed annulus `closedBall y R \ ball y r` lies on its two boundary spheres
-(`TauCeti.frontier_closedBall_sdiff_ball_subset`). In a real normed space its interior is the
-open annulus (`TauCeti.interior_closedBall_sdiff_ball`, in
-`TauCeti/Analysis/Normed/Module/Ball.lean`).
+(`TauCeti.frontier_closedBall_sdiff_ball_subset`).
 -/
 
 public section

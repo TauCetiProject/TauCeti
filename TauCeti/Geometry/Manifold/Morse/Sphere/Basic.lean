@@ -183,8 +183,7 @@ space. -/
 theorem morseIndex_stereographicHeight_zero [FiniteDimensional ℝ F] :
     morseIndex stereographicHeight (0 : F) = finrank ℝ F := by
   have := FiniteDimensional.complete ℝ F
-  have h := isNondegenerateCriticalPoint_stereographicHeight_zero (F := F)
-  rw [← h.neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank]
+  rw [← neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank]
   intro w hw
   rw [neg_apply, hessianQuadraticForm_stereographicHeight_zero, neg_neg]
   positivity
@@ -278,6 +277,14 @@ theorem sphereHeight_self (v : sphere (0 : E) 1) : sphereHeight v v = 1 := by
 /-- The height of the south pole is `-1`. -/
 theorem sphereHeight_neg_self (v : sphere (0 : E) 1) : sphereHeight v (-v) = -1 := by
   simp [inner_neg_left, norm_eq_of_mem_sphere]
+
+/-- The height function is at most `1`, its value at the north pole. -/
+theorem sphereHeight_le_one (v x : sphere (0 : E) 1) : sphereHeight v x ≤ 1 :=
+  real_inner_le_one_of_norm_eq_one (norm_eq_of_mem_sphere x) (norm_eq_of_mem_sphere v)
+
+/-- The height function is at least `-1`, its value at the south pole. -/
+theorem neg_one_le_sphereHeight (v x : sphere (0 : E) 1) : -1 ≤ sphereHeight v x :=
+  neg_one_le_real_inner_of_norm_eq_one (norm_eq_of_mem_sphere x) (norm_eq_of_mem_sphere v)
 
 /-- The north pole is the only point of height `1`. -/
 theorem sphereHeight_eq_one_iff {v x : sphere (0 : E) 1} : sphereHeight v x = 1 ↔ x = v := by

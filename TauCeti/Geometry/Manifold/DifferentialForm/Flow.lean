@@ -113,56 +113,18 @@ theorem hasDerivAt_mpullback_of_eq_id {ψ : ℝ → M → M} {V : (x : M) → Ta
   set W := VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I y).symm V (range I) with hW
   have hGsmooth : ContDiffAt ℝ 2 G (t, extChartAt I y y) :=
     Manifold.contDiffAt_extChartAt_family hid.self_of_nhds hsmooth
-  have hdiff : ∀ᶠ p in 𝓝 (t, extChartAt I y y), DifferentiableAt ℝ G p :=
-    (hGsmooth.eventually (by simp)).mono fun p hp ↦ hp.differentiableAt (by simp)
-  have hGt_nhds : (fun z ↦ G (t, z)) =ᶠ[𝓝 (extChartAt I y y)] id := by
-    have hid' : ∀ᶠ z in 𝓝 (extChartAt I y y), ψ t ((extChartAt I y).symm z) =
-        (extChartAt I y).symm z :=
-      (continuousAt_extChartAt_symm y).tendsto.eventually (p := fun x ↦ ψ t x = x)
-        (by rwa [extChartAt_to_inv])
-    filter_upwards [extChartAt_target_mem_nhds y, hid'] with z hz hz'
-    simp only [G, hz', id_eq]
-    exact (extChartAt I y).right_inv hz
+  have hGt_nhds : (fun z ↦ G (t, z)) =ᶠ[𝓝 (extChartAt I y y)] id :=
+    Manifold.eventuallyEq_extChartAt_family_of_eq_id hid
   have hGt : G (t, extChartAt I y y) = extChartAt I y y := hGt_nhds.self_of_nhds
-  -- Read in the chart at `y`, the points near `y` move at time `t` with the coordinate velocity
-  -- `W` of `V`.
-  have hvel' : ∀ᶠ z in 𝓝 (extChartAt I y y), HasDerivAt (fun u ↦ G (u, z)) (W z) t := by
-    have h : ∀ᶠ z in 𝓝 (extChartAt I y y),
-        HasMFDerivAt 𝓘(ℝ, ℝ) I (fun u ↦ ψ u ((extChartAt I y).symm z)) t
-            ((1 : ℝ →L[ℝ] ℝ).smulRight (V (ψ t ((extChartAt I y).symm z)))) ∧
-          ψ t ((extChartAt I y).symm z) = (extChartAt I y).symm z :=
-      (continuousAt_extChartAt_symm y).tendsto.eventually
-        (p := fun x ↦ HasMFDerivAt 𝓘(ℝ, ℝ) I (fun u ↦ ψ u x) t
-          ((1 : ℝ →L[ℝ] ℝ).smulRight (V (ψ t x))) ∧ ψ t x = x)
-        (by rw [extChartAt_to_inv]; exact hvel.and hid)
-    filter_upwards [extChartAt_target_mem_nhds y, h] with z hz ⟨hzv, hzid⟩
-    have hsrc : ψ t ((extChartAt I y).symm z) ∈ (extChartAt I y).source :=
-      hzid.symm ▸ (extChartAt I y).map_target hz
-    refine (hzv.hasDerivAt_extChartAt_comp hsrc).congr_deriv ?_
-    rw [hW]
-    conv_rhs => rw [← (extChartAt I y).right_inv hz, ← hzid]
-    rw [VectorField.mpullbackWithin_extChartAt_symm_apply V hsrc]
-    -- `tangentCoordChange` is by definition this fibre coordinate of the trivialization
-    -- (`TangentBundle.trivializationAt_apply`, `tangentCoordChange_def`).
-    rfl
-  -- The spatial derivative of the coordinate family solves the variational equation at time `t`:
-  -- by symmetry of second derivatives, it differentiates to the derivative of the velocity `W`.
-  have htime : timeFDeriv G t =ᶠ[𝓝 (extChartAt I y y)] W := by
-    have hd : ∀ᶠ z in 𝓝 (extChartAt I y y), DifferentiableAt ℝ G (t, z) :=
-      ((continuous_const.prodMk continuous_id).tendsto (extChartAt I y y)).eventually hdiff
-    filter_upwards [hvel', hd] with z hz hdz
-    exact (hasDerivAt_parameterCurve hdz).unique hz
+  have hvel' : ∀ᶠ z in 𝓝 (extChartAt I y y), HasDerivAt (fun u ↦ G (u, z)) (W z) t :=
+    eventually_hasDerivAt_extChartAt_family hid hvel
+  -- The spatial derivative of the coordinate family solves the variational equation at time `t`.
   have hspatial : HasDerivAt (fun u ↦ fderiv ℝ (fun z ↦ G (u, z)) (extChartAt I y y))
       (fderiv ℝ W (G (t, extChartAt I y y)) ∘L
         fderiv ℝ (fun z ↦ G (t, z)) (extChartAt I y y)) t := by
-    have h := hasDerivAt_spatialFDeriv (F := G) (t := t) (x := extChartAt I y y)
-      (by simpa only [minSmoothness_of_isRCLikeNormedField] using hGsmooth)
-    rw [hGt, hGt_nhds.fderiv_eq, fderiv_id, ContinuousLinearMap.comp_id, ← htime.fderiv_eq]
-    refine h.congr_of_eventuallyEq ?_
-    have hd : ∀ᶠ u in 𝓝 t, DifferentiableAt ℝ G (u, extChartAt I y y) :=
-      ((continuous_id.prodMk continuous_const).tendsto t).eventually hdiff
-    filter_upwards [hd] with u hu
-    exact fderiv_timeSlice hu
+    rw [hGt, hGt_nhds.fderiv_eq, fderiv_id, ContinuousLinearMap.comp_id]
+    exact ContDiffAt.hasDerivAt_fderiv_slice_of_eventually_hasDerivAt
+      (by simpa only [minSmoothness_of_isRCLikeNormedField] using hGsmooth) hvel'
   have hflat := hasDerivAt_compContinuousLinearMap_fderiv («ω» := fun _ ↦ α.inChartAt y)
     (ψ := fun u z ↦ G (u, z)) (X := fun _ ↦ W) (x := extChartAt I y y) (t := t)
     (by
@@ -171,32 +133,10 @@ theorem hasDerivAt_mpullback_of_eq_id {ψ : ℝ → M → M} {V : (x : M) → Ta
         differentiableAt_snd)
     (by rw [hGt]; exact hvel'.self_of_nhds)
     hspatial
-  -- Near time `t`, the maps `ψᵤ` are differentiable at `y` and keep `y` in the chart at `y`.
-  have hψ : ∀ᶠ u in 𝓝 t, MDifferentiableAt I I (ψ u) y := by
-    have h := ((continuous_id.prodMk continuous_const).tendsto t).eventually
-      ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hsmooth)
-    filter_upwards [h] with u hu
-    exact (hu.comp_of_eq (contMDiffAt_const.prodMk contMDiffAt_id) rfl).mdifferentiableAt
-      (by norm_num)
-  have hcont : ContinuousAt (fun u ↦ ψ u y) t :=
-    hsmooth.continuousAt.comp (f := fun u : ℝ ↦ (u, y))
-      (continuous_id.prodMk continuous_const).continuousAt
-  -- Near time `t`, the pullback at `y` is the flat pullback in the chart at `y`.
-  have hsrc : ∀ᶠ u in 𝓝 t, ψ u y ∈ (extChartAt I y).source :=
-    hcont.preimage_mem_nhds (by
-      rw [hid.self_of_nhds]
-      exact (isOpen_extChartAt_source y).mem_nhds (mem_extChartAt_source y))
-  have heq : (fun u ↦ mpullback I I (ψ u) α y) =ᶠ[𝓝 t]
-      fun u ↦ (α.inChartAt y (G (u, extChartAt I y y))).compContinuousLinearMap
-        (fderiv ℝ (fun z ↦ G (u, z)) (extChartAt I y y)) := by
-    filter_upwards [hsrc, hψ] with u hu hψu
-    have hGu : G (u, extChartAt I y y) = extChartAt I y (ψ u y) := by
-      simp only [G, extChartAt_to_inv]
-    rw [hGu, RoughForm.mpullback_eq_compContinuousLinearMap α y hψu hu, I.range_eq_univ,
-      fderivWithin_univ]
-    -- The two coordinate expressions of `ψᵤ` differ only by unfolding `Function.comp`.
-    rfl
-  refine (hflat.congr_of_eventuallyEq heq).congr_deriv ?_
+  refine (hflat.congr_of_eventuallyEq
+    (RoughForm.eventuallyEq_mpullback_compContinuousLinearMap α y
+      (by rw [hid.self_of_nhds]; exact mem_extChartAt_source y)
+      (hsmooth.of_le (by norm_num)))).congr_deriv ?_
   rw [deriv_const, zero_add, hGt, hGt_nhds.fderiv_eq, fderiv_id, mlieDerivForm_def,
     ← hW, I.range_eq_univ]
   -- `W` takes values in the tangent spaces of the model, which are `E` only up to unfolding.

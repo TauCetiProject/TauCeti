@@ -48,9 +48,8 @@ step of Hopf's boundary-point lemma.
 * `TauCeti.fderiv_fderiv_self_nonpos_of_isLocalMax` /
   `TauCeti.fderiv_fderiv_self_nonneg_of_isLocalMin`: the Hessian is negative (resp. positive)
   semidefinite on the diagonal at a local maximum (resp. minimum).
-* `TauCeti.le_fderiv_of_le_sub`, `TauCeti.le_fderiv_of_mul_le_sub`: a lower bound on the
-  difference quotients `(f x - f (x - t • e)) / t` for small `t > 0` bounds the directional
-  derivative `fderiv ℝ f x e` below.
+* `TauCeti.le_fderiv_of_le_sub`: a lower bound `g t ≤ f x - f (x - t • e)` for small `t > 0`
+  bounds the directional derivative `fderiv ℝ f x e` below by the right derivative of `g` at `0`.
 -/
 
 public section
@@ -222,15 +221,6 @@ theorem le_fderiv_of_le_sub {g : ℝ → ℝ} {e : E} {κ δ : ℝ} (hδ : 0 < �
       linarith [hle t ⟨ht0, ht.2⟩]
   have h := hmin.hasDerivWithinAt_Ici_nonneg ((hray.const_sub (f x)).hasDerivWithinAt.sub hg)
   linarith
-
-/-- **A linear lower bound on difference quotients bounds the directional derivative.** If `f` is
-differentiable at `x` and `κ t ≤ f x - f (x - t • e)` for `0 < t ≤ δ`, then
-`κ ≤ fderiv ℝ f x e`. -/
-theorem le_fderiv_of_mul_le_sub {e : E} {κ δ : ℝ} (hδ : 0 < δ) (hf : DifferentiableAt ℝ f x)
-    (hκ : ∀ t ∈ Set.Ioc 0 δ, κ * t ≤ f x - f (x - t • e)) :
-    κ ≤ fderiv ℝ f x e :=
-  le_fderiv_of_le_sub (g := fun t ↦ κ * t) hδ hf
-    (by simpa using (hasDerivWithinAt_id (0 : ℝ) (Set.Ici 0)).const_mul κ) (mul_zero κ) hκ
 
 end NormedSpace
 
