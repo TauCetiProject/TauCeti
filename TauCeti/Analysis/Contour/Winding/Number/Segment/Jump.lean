@@ -293,8 +293,9 @@ theorem exists_forall_windingNumber_eq_add_one_of_eqOn_segment {Γ : ℝ → ℂ
         (1 : ℂ) < 1 :=
     h_tend (Metric.ball_mem_nhds (1 : ℂ) one_pos)
   obtain ⟨h, hh_near, hh_pos, hh_lt⟩ := (h_near.and h_small).exists
-  have h_jump := windingNumber_eq_add_one_of_dist_lt hΓ.absolutelyContinuousOnInterval hclosed
-    (h_off_add h hh_pos hh_lt) (h_off_sub h hh_pos hh_lt) hh_near
+  have h_jump := windingNumber_eq_add_intCast_of_dist_lt (k := 1)
+    hΓ.absolutelyContinuousOnInterval hclosed (h_off_add h hh_pos hh_lt) (h_off_sub h hh_pos hh_lt)
+    (by simpa using hh_near)
   intro w₁ hw₁ w₂ hw₂ h₁ h₂
   have hmem_add : v * (s + h * I) + z₀ ∈ ball (v * s + z₀) r := by
     rwa [Metric.mem_ball, dist_add_right, TauCeti.dist_add_mul_I]
@@ -306,6 +307,6 @@ theorem exists_forall_windingNumber_eq_add_one_of_eqOn_segment {Γ : ℝ → ℂ
   have e₂ := windingNumber_eq_of_mem_ball_of_im_pos hΓ hclosed hoff (-1) w₂ hw₂ _ hmem_sub
     (by simpa using h₂)
     (by rw [add_sub_add_right_eq_sub, TauCeti.im_div_sub_mul_I_sub hv]; simpa using hh_pos)
-  rw [e₁, e₂, h_jump]
+  rw [e₁, e₂, h_jump, Int.cast_one]
 
 end TauCeti.Contour

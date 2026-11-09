@@ -192,22 +192,19 @@ theorem exists_ball_windingNumber_zero {γ : ℝ → ℂ} {w : ℂ} {a b : ℝ} 
     exact hw_zero
 
 /-- A closed absolutely continuous curve whose winding numbers about two points off the curve differ
-by less than `1` from `1` has winding numbers differing by exactly `1`. -/
-theorem windingNumber_eq_add_one_of_dist_lt {Γ : ℝ → ℂ} {w₁ w₂ : ℂ}
+by less than `1` from an integer `k` has winding numbers differing by exactly `k`. -/
+theorem windingNumber_eq_add_intCast_of_dist_lt {Γ : ℝ → ℂ} {w₁ w₂ : ℂ}
     (hΓ : AbsolutelyContinuousOnInterval Γ a c) (hclosed : Γ a = Γ c)
-    (h₁ : w₁ ∉ Γ '' uIcc a c) (h₂ : w₂ ∉ Γ '' uIcc a c)
-    (hdist : dist (windingNumber Γ a c w₁ - windingNumber Γ a c w₂) (1 : ℂ) < 1) :
-    windingNumber Γ a c w₁ = windingNumber Γ a c w₂ + 1 := by
+    (h₁ : w₁ ∉ Γ '' uIcc a c) (h₂ : w₂ ∉ Γ '' uIcc a c) {k : ℤ}
+    (hdist : dist (windingNumber Γ a c w₁ - windingNumber Γ a c w₂) (k : ℂ) < 1) :
+    windingNumber Γ a c w₁ = windingNumber Γ a c w₂ + k := by
   obtain ⟨m, hm⟩ := hΓ.exists_int_windingNumber hclosed h₁
   obtain ⟨n, hn⟩ := hΓ.exists_int_windingNumber hclosed h₂
-  have hcast : ((n + 1 : ℤ) : ℂ) = (n : ℂ) + 1 := by
-    push_cast
-    ring
-  have hmn : m = n + 1 :=
-    eq_of_dist_intCast_lt_one (n := n + 1) (by
+  have hmn : m = n + k :=
+    eq_of_dist_intCast_lt_one (n := n + k) (by
       rw [hm, hn] at hdist
-      rw [hcast]
-      have : dist ((m : ℂ) - (n : ℂ)) 1 = dist (m : ℂ) ((n : ℂ) + 1) := by
+      push_cast
+      have : dist ((m : ℂ) - (n : ℂ)) (k : ℂ) = dist (m : ℂ) ((n : ℂ) + (k : ℂ)) := by
         simp only [dist_eq_norm]
         ring_nf
       linarith)
