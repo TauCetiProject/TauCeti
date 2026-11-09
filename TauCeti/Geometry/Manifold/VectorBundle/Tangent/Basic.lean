@@ -274,7 +274,6 @@ theorem inTangentCoordinates_eq_self_of_eq {E' H' M' N : Type*} [NormedAddCommGr
 
 /-- A linear map between tangent spaces, read in the canonical trivializations at its own base
 points, is unchanged. -/
-@[simp]
 theorem inCoordinates_tangentSpace_self {E' H' M' : Type*} [NormedAddCommGroup E']
     [NormedSpace 𝕜 E'] [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
     [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 1 M'] (x : M) (y : M')
