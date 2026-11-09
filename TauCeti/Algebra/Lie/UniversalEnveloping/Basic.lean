@@ -120,6 +120,12 @@ is the adjoint action, since `LieAlgebra.ad R L` is `LieModule.toEnd R L L`. -/
 noncomputable def representation : U →ₐ[R] Module.End R M :=
   _root_.UniversalEnvelopingAlgebra.lift R (LieModule.toEnd R L M)
 
+/-- The representation of `U(L)` on a Lie module is the lift of `LieModule.toEnd`. -/
+theorem representation_def :
+    representation R L M = _root_.UniversalEnvelopingAlgebra.lift R (LieModule.toEnd R L M) := by
+  unfold representation
+  rfl
+
 -- Neither this lemma nor its pointwise form below is a `simp` lemma: `simp` unfolds `ι` through
 -- Mathlib's `UniversalEnvelopingAlgebra.ι_apply`, so a left-hand side mentioning `ι` is not in
 -- simp-normal form. This is why Mathlib's own `lift_ι_apply` is not a `simp` lemma either;
