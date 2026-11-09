@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Coarsening
-public import TauCeti.Combinatorics.Hypergraph.Polyad.Energy
+public import TauCeti.Combinatorics.Hypergraph.Polyad.Energy.Basic
 public import TauCeti.Combinatorics.Hypergraph.Polyad.TopRegular
 
 /-!

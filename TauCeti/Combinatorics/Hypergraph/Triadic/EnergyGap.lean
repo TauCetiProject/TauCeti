@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Hypergraph.Polyad.EnergyGap
+public import TauCeti.Combinatorics.Hypergraph.Polyad.Energy.Gap
 public import TauCeti.Combinatorics.Hypergraph.Triadic.Basic
 
 /-!
