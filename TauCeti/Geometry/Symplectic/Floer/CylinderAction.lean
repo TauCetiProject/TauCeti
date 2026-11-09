@@ -33,8 +33,9 @@ rewrites the right-hand side as a difference of actions of the two loops, in thr
   `A_H(γ_a, w # v) - A_H(γ_b, v)` for the action `A_H(γ, u) = ∫ u^* ω - ∫₀¹ H(t, γ(t)) dt` of
   `γ` measured against `u` (`TauCeti.cylinderAction`), where `w` is `u` on `[a, b] × ℝ` rescaled
   to `[0, 1] × ℝ`
-  (`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub`). When `v`
-  is a cap of `γ_b`, `w # v` is a cap of `γ_a`, and the energy is the drop of the capped action.
+  (`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub`). When
+  moreover `u` is `C²` and `1`-periodic in `t` and `v` is a cap of `γ_b`, `w # v` is a cap of
+  `γ_a` (`TauCeti.IsLoopCylinder.trans`), and the energy is the drop of the capped action.
 * For a weakly exact form (`TauCeti.IsWeaklyExact`, the area half of symplectic asphericity) and
   a `C²` cylinder whose loop `γ_b` bounds a cap, the energy is `A_H(γ_a) - A_H(γ_b)` for the
   action `A_H(γ) = ∫ v^* ω - ∫₀¹ H(t, γ(t)) dt` of contractible loops
@@ -133,9 +134,10 @@ and `u` a `C¹` map. Let `v` be an arbitrary `C¹` map with `v (0, ·) = γ_b`, 
 `γ_b`, which is glued to `v` as `w # v` (`TauCeti.rectangleTrans`). The Floer energy of `u` over
 `[a, b] × [0, 1]` for the cylindrical perturbation `K = H_t dt` is
 `A_H(γ_a, w # v) - A_H(γ_b, v)`, for the action `TauCeti.cylinderAction` of a loop measured
-against a map. When `v` is a cap of `γ_b`, `w # v` is a cap of `γ_a`, and this is the energy
-identity for capped loops: the energy is the drop of the capped action. Neither weak exactness nor
-closedness of `ω` is needed, and neither `u` nor `v` needs to be periodic. -/
+against a map. Neither weak exactness nor closedness of `ω` is needed, and neither `u` nor `v`
+needs to be periodic. When moreover `u` is `C²` and `1`-periodic in `t` and `v` is a cap of `γ_b`,
+`w # v` is a cap of `γ_a` (`TauCeti.IsLoopCylinder.trans`), and this is the energy identity for
+capped loops: the energy is the drop of the capped action. -/
 theorem IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub
     (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
     (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {a b : ℝ} (hab : a ≤ b) {v : ℝ × ℝ → M}
@@ -196,8 +198,9 @@ theorem IsNondegenerate.integral_floerEnergyDensity_eq_contractibleLoopAction_su
 `u` solves the Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` on `[a, b] × [0, 1]` for
 almost complex structures `J z` on `T_{u z} M` tamed by `ω`, then the action of the loop at
 `s = b` measured against the arbitrary `C¹` map `v` is at most the action of the loop at `s = a`
-measured against the glued map. When `v` is a cap of the loop at `s = b`, the glued map is a cap
-of the loop at `s = a`, and this says that the capped action decreases. -/
+measured against the glued map. When moreover `u` is `C²` and `1`-periodic in `t` and `v` is a
+cap of the loop at `s = b`, the glued map is a cap of the loop at `s = a`, and this says that the
+capped action decreases. -/
 theorem IsNondegenerate.cylinderAction_le_cylinderAction
     (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
     (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {a b : ℝ} (hab : a ≤ b) {v : ℝ × ℝ → M}
