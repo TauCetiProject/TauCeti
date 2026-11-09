@@ -101,19 +101,22 @@ theorem measure_setOf_lt_min_indep (hindep : iIndepFun X P)
     (hlaw i).measure_eq (p := fun y => x < y) measurableSet_Ioi
 
 /-- The real-valued lower-tail formula for the maximum of a finite independent family. -/
-theorem measureReal_setOf_max_le_indep [∀ i, IsProbabilityMeasure (μs i)]
+theorem measureReal_setOf_max_le_indep
     (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) (μs i) P) (x : ℝ) :
     P.real {ω | (Finset.univ.sup' Finset.univ_nonempty fun i => X i ω) ≤ x} =
       ∏ i, cdf (μs i) x := by
+  have := hindep.isProbabilityMeasure
+  have _ i : IsProbabilityMeasure (μs i) := (hlaw i).isProbabilityMeasure_iff.1 this
   rw [measureReal_def, measure_setOf_max_le_indep hindep hlaw x, ENNReal.toReal_prod]
   exact Finset.prod_congr rfl fun i _ => by rw [← measureReal_def, ← cdf_eq_real]
 
 /-- The real-valued upper-tail formula for the minimum of a finite independent family. -/
-theorem measureReal_setOf_lt_min_indep [∀ i, IsProbabilityMeasure (μs i)]
+theorem measureReal_setOf_lt_min_indep
     (hindep : iIndepFun X P) (hlaw : ∀ i, HasLaw (X i) (μs i) P) (x : ℝ) :
     P.real {ω | x < Finset.univ.inf' Finset.univ_nonempty fun i => X i ω} =
       ∏ i, (1 - cdf (μs i) x) := by
-  have _ : IsProbabilityMeasure P := (hlaw (Classical.arbitrary ι)).isProbabilityMeasure
+  have := hindep.isProbabilityMeasure
+  have _ i : IsProbabilityMeasure (μs i) := (hlaw i).isProbabilityMeasure_iff.1 this
   rw [measureReal_def, measure_setOf_lt_min_indep hindep hlaw x, ENNReal.toReal_prod]
   exact Finset.prod_congr rfl fun i _ => by
     rw [← measureReal_def, ← compl_Iic, measureReal_compl measurableSet_Iic, probReal_univ,
