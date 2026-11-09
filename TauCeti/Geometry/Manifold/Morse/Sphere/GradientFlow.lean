@@ -89,6 +89,14 @@ private theorem sphereHeight_maximalIntegralCurve_neg_mgradient_le {t : ℝ} (ht
   mapsTo_maximalIntegralCurve_neg_mgradient_preimage_Iic (contMDiff_sphereHeight (n := n) v)
     ⟨Ici_subset_maximalIntegralCurveInterval_neg_mgradient_sphereHeight ht, ht⟩
 
+/-- Forward in time, a negative gradient trajectory through a point other than the north pole
+stays strictly below height `1`. -/
+private theorem sphereHeight_maximalIntegralCurve_neg_mgradient_lt_one (hx : x ≠ v) {t : ℝ}
+    (ht : 0 ≤ t) :
+    sphereHeight v (maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t) < 1 :=
+  (sphereHeight_maximalIntegralCurve_neg_mgradient_le ht).trans_lt
+    ((sphereHeight_lt_self hx).trans_eq (sphereHeight_self v))
+
 /-- **Negative gradient trajectories of the height function converge to the south pole.** For any
 `C¹` Riemannian metric on the sphere, the trajectory of `-grad h` through any point other than the
 north pole converges to the south pole. -/
@@ -165,17 +173,14 @@ theorem one_add_sphereHeight_div_one_sub_maximalIntegralCurve_neg_mgradient (hx 
     Ici_subset_maximalIntegralCurveInterval_neg_mgradient_sphereHeight (n := n) (v := v) (x := x)
   have h0 : h 0 = sphereHeight v x := by
     simp only [h_def, maximalIntegralCurve_zero (hint self_mem_Ici)]
-  -- Forward in time the height stays at most `h x < 1`.
-  have hlt : ∀ s, 0 ≤ s → h s < 1 := fun s hs ↦
-    (sphereHeight_maximalIntegralCurve_neg_mgradient_le hs).trans_lt
-      ((sphereHeight_lt_self hx).trans_eq (sphereHeight_self v))
   -- `g = (1 + h) / (1 - h) * exp (2 s)` has derivative zero on `[0, ∞)`.
   set g : ℝ → ℝ := fun s ↦ (1 + h s) / (1 - h s) * Real.exp (2 * s) with g_def
   have hg : ∀ s, 0 ≤ s → HasDerivAt g 0 s := by
     intro s hs
     have hd : HasDerivAt h (-(1 - h s ^ 2)) s :=
       hasDerivAt_sphereHeight_maximalIntegralCurve (n := n) (v := v) (x := x) hs
-    have hne : 1 - h s ≠ 0 := (sub_pos.2 (hlt s hs)).ne'
+    have hne : 1 - h s ≠ 0 :=
+      (sub_pos.2 (sphereHeight_maximalIntegralCurve_neg_mgradient_lt_one hx hs)).ne'
     refine (((hd.const_add 1).div (hd.const_sub 1) hne).mul
       ((hasDerivAt_id' s).const_mul 2).exp).congr_deriv ?_
     simp only [Pi.div_apply]
@@ -186,6 +191,18 @@ theorem one_add_sphereHeight_div_one_sub_maximalIntegralCurve_neg_mgradient (hx 
     (fun s hs ↦ (hg s hs.1).hasDerivWithinAt) t ⟨ht, le_rfl⟩
   simp only [g_def, h0, mul_zero, Real.exp_zero, mul_one] at hconst
   rw [← hconst, mul_assoc, ← Real.exp_add, add_neg_cancel, Real.exp_zero, mul_one]
+
+/-- The energy law in product form: `1 + h (γ t) = R exp (-t)² (1 - h (γ t))` with
+`R = (1 + h x) / (1 - h x)`, for every `t ≥ 0`. -/
+private theorem one_add_sphereHeight_maximalIntegralCurve_neg_mgradient_eq (hx : x ≠ v) {t : ℝ}
+    (ht : 0 ≤ t) :
+    1 + sphereHeight v (maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t) =
+      (1 + sphereHeight v x) / (1 - sphereHeight v x) * Real.exp (-t) ^ 2 *
+        (1 - sphereHeight v (maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t)) := by
+  rw [← Real.exp_nat_mul, show ((2 : ℕ) : ℝ) * -t = -(2 * t) by push_cast; ring,
+    ← one_add_sphereHeight_div_one_sub_maximalIntegralCurve_neg_mgradient (n := n) hx ht,
+    div_mul_cancel₀ _
+      (sub_pos.2 (sphereHeight_maximalIntegralCurve_neg_mgradient_lt_one hx ht)).ne']
 
 /-- **The distance to the south pole decays like `exp (-t)`.** For the round metric, the
 Riemannian distance from the trajectory of `-grad h` through a point other than the north pole to
@@ -208,22 +225,16 @@ theorem exists_riemannianEDist_le_mul_exp_neg_maximalIntegralCurve_neg_mgradient
   rw [sphereHeight_neg_self, sub_neg_eq_add, add_comm, mul_assoc]
   gcongr
   -- `1 + h = R exp (-2 t) (1 - h) ≤ 2 R exp (-2 t)`, whose square root is `√(2 R) exp (-t)`.
-  have hlaw := one_add_sphereHeight_div_one_sub_maximalIntegralCurve_neg_mgradient (n := n) hx ht
-  have hlt : sphereHeight v (γ t) < 1 :=
-    (sphereHeight_maximalIntegralCurve_neg_mgradient_le ht).trans_lt
-      ((sphereHeight_lt_self hx).trans_eq (sphereHeight_self v))
   have hge := neg_one_le_sphereHeight v (γ t)
   have hR : 0 ≤ R :=
     div_nonneg (by linarith [neg_one_le_sphereHeight v x]) (by linarith [sphereHeight_le_one v x])
-  have heq : 1 + sphereHeight v (γ t) = R * Real.exp (-(2 * t)) * (1 - sphereHeight v (γ t)) := by
-    rw [← hlaw, div_mul_cancel₀ _ (sub_pos.2 hlt).ne']
-  have hexp : Real.exp (-(2 * t)) = Real.exp (-t) ^ 2 := by
-    rw [← Real.exp_nat_mul]; ring_nf
+  have heq : 1 + sphereHeight v (γ t) = R * Real.exp (-t) ^ 2 * (1 - sphereHeight v (γ t)) :=
+    one_add_sphereHeight_maximalIntegralCurve_neg_mgradient_eq hx ht
   rw [show √(2 * R) * Real.exp (-t) = √(2 * R * Real.exp (-t) ^ 2) by
     rw [Real.sqrt_mul' _ (sq_nonneg _), Real.sqrt_sq (Real.exp_pos _).le]]
   refine Real.sqrt_le_sqrt ?_
-  rw [heq, ← hexp]
-  have : 0 ≤ R * Real.exp (-(2 * t)) := by positivity
+  rw [heq]
+  have : 0 ≤ R * Real.exp (-t) ^ 2 := by positivity
   nlinarith
 
 /-- **The distance to the south pole decays no faster than `exp (-t)`.** For the round metric, if
@@ -248,19 +259,14 @@ theorem exists_mul_exp_neg_le_riemannianEDist_maximalIntegralCurve_neg_mgradient
   refine le_trans ?_ (edist_le_riemannianEDist_sphere (γ t) (-v))
   rw [Subtype.edist_eq, edist_dist, coe_neg_sphere, dist_eq_norm, sub_neg_eq_add]
   refine ENNReal.ofReal_le_ofReal (le_of_pow_le_pow_left₀ two_ne_zero (norm_nonneg _) ?_)
-  have hlaw := one_add_sphereHeight_div_one_sub_maximalIntegralCurve_neg_mgradient (n := n) hx ht
-  have hle : sphereHeight v (γ t) ≤ sphereHeight v x :=
-    sphereHeight_maximalIntegralCurve_neg_mgradient_le (n := n) ht
-  have heq : 1 + sphereHeight v (γ t) = R * Real.exp (-(2 * t)) * (1 - sphereHeight v (γ t)) := by
-    rw [← hlaw, div_mul_cancel₀ _ (sub_pos.2 (hle.trans_lt h₀lt)).ne']
+  have heq : 1 + sphereHeight v (γ t) = R * Real.exp (-t) ^ 2 * (1 - sphereHeight v (γ t)) :=
+    one_add_sphereHeight_maximalIntegralCurve_neg_mgradient_eq hx ht
   have hnorm : ‖((γ t : sphere (0 : E) 1) : E) + v‖ ^ 2 = 2 * (1 + sphereHeight v (γ t)) := by
     rw [norm_add_sq_real, norm_eq_of_mem_sphere, norm_eq_of_mem_sphere v, sphereHeight_apply]
     ring
-  have hexp : Real.exp (-(2 * t)) = Real.exp (-t) ^ 2 := by
-    rw [← Real.exp_nat_mul]; ring_nf
-  rw [hnorm, heq, mul_pow, Real.sq_sqrt hc.le, ← hexp]
-  have : 0 ≤ R * Real.exp (-(2 * t)) := by positivity
-  nlinarith
+  rw [hnorm, heq, mul_pow, Real.sq_sqrt hc.le]
+  have : 0 ≤ R * Real.exp (-t) ^ 2 := by positivity
+  nlinarith [sphereHeight_maximalIntegralCurve_neg_mgradient_le (n := n) (v := v) (x := x) ht]
 
 /-- **No exponential rate faster than `exp (-t)`.** For the round metric, if `x` is neither pole,
 then for every `μ > 1` the Riemannian distance from the trajectory of `-grad h` through `x` to the
