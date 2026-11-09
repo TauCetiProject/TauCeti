@@ -40,8 +40,10 @@ that `A ∈ C` imply `Hₙ₊₁(K(A, 1)) ∈ C`.
   (`TauCeti.isTorsion_classifyingSpace_singularHomology`): a torsion abelian group is locally
   finite.
 * For the class `AddCommGrpCat.isKilledBySomePower d` it holds for finite `A`
-  (`TauCeti.isKilledBySomePower_classifyingSpace_singularHomology`): the order of `A` then divides
-  a power of `d`.
+  (`TauCeti.isKilledBySomePower_classifyingSpace_singularHomology_of_finite`): the order of `A`
+  then divides a power of `d`. Over a hereditary ring such as `ℤ` it holds for every `A`, since
+  the exponent of `A` kills the positive-degree homology of `K(A, 1)`; this is proved in
+  `TauCeti.AlgebraicTopology.ClassifyingSpace.Exponent`.
 
 If the order of every element of `A` is a unit of `k`, then the positive-degree `k`-homology of
 `K(A, 1)` vanishes
@@ -60,8 +62,8 @@ all of whose elements have odd order.
   `Hₙ₊₁(BG; k) = 0` for locally finite `G` when the order of every element is a unit of `k`.
 * `TauCeti.isTorsion_classifyingSpace_singularHomology`: if `A` is a torsion abelian group, so is
   `Hₙ₊₁(K(A, 1); k)`.
-* `TauCeti.isKilledBySomePower_classifyingSpace_singularHomology`: if a finite abelian group `A`
-  is annihilated by some power of `d`, so is `Hₙ₊₁(K(A, 1); k)`.
+* `TauCeti.isKilledBySomePower_classifyingSpace_singularHomology_of_finite`: if a finite abelian
+  group `A` is annihilated by some power of `d`, so is `Hₙ₊₁(K(A, 1); k)`.
 * `TauCeti.subsingleton_classifyingSpace_singularHomology_of_forall_isUnit_addOrderOf`:
   `Hₙ₊₁(K(A, 1); k) = 0` when the order of every element of `A` is a unit of `k`.
 
@@ -161,8 +163,8 @@ theorem subsingleton_classifyingSpace_singularHomology_of_forall_isUnit_addOrder
 finite abelian group `A` is annihilated by some power of `d`, then so is the positive-degree
 homology of the Eilenberg--MacLane space `K(A, 1) = B(Multiplicative A)`, with coefficients in
 any commutative ring. -/
-theorem isKilledBySomePower_classifyingSpace_singularHomology {d : ℕ} {A : AddCommGrpCat.{u}}
-    [Finite A] (hA : AddCommGrpCat.isKilledBySomePower d A) (n : ℕ) :
+theorem isKilledBySomePower_classifyingSpace_singularHomology_of_finite {d : ℕ}
+    {A : AddCommGrpCat.{u}} [Finite A] (hA : AddCommGrpCat.isKilledBySomePower d A) (n : ℕ) :
     AddCommGrpCat.isKilledBySomePower d (AddCommGrpCat.of
       (((singularChains k).obj (TopCat.of (classifyingSpace (Multiplicative A)))).homology
         (n + 1))) := by
