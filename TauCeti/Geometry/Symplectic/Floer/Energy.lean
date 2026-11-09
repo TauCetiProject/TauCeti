@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
+import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 
 /-!
 # Curvature of Hamiltonian perturbations and the Floer energy identity
@@ -69,6 +70,8 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
 * `SymplecticForm.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity` and
   `SymplecticForm.setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le`: the energy controls the
   perturbed derivative, pointwise and in `L²`.
+* `SymplecticForm.norm_fderiv_stdComplexLineReal_sq_le`: the energy density and the Hamiltonian
+  vector field control `‖∂_s u‖²`.
 * `SymplecticForm.integral_floerEnergyDensity`: the energy identity on a rectangle.
 * `SymplecticForm.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero`: the energy minus
   the symplectic area plus the integrated curvature does not change when a compact domain is shrunk
@@ -264,6 +267,18 @@ theorem hamiltonianOneForm_apply (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ →
     ω.hamiltonianOneForm Ks Kt z x v =
       v.1 • ω.hamiltonianVectorField (Ks z) x + v.2 • ω.hamiltonianVectorField (Kt z) x :=
   (rfl)
+
+/-- On an open set of `(ℝ × ℝ) × V`, the Hamiltonian one-form of a jointly `C^(n+1)` perturbation
+is jointly `Cⁿ`. -/
+theorem contDiffOn_hamiltonianOneForm (ω : SymplecticForm V) {Ks Kt : ℝ × ℝ → V → ℝ}
+    {W : Set ((ℝ × ℝ) × V)} {n : WithTop ℕ∞} (hW : IsOpen W)
+    (hKs : ContDiffOn ℝ (n + 1) (uncurry Ks) W) (hKt : ContDiffOn ℝ (n + 1) (uncurry Kt) W) :
+    ContDiffOn ℝ n (fun p : (ℝ × ℝ) × V ↦ ω.hamiltonianOneForm Ks Kt p.1 p.2) W := by
+  have hX {K : ℝ × ℝ → V → ℝ} (hK : ContDiffOn ℝ (n + 1) (uncurry K) W) :
+      ContDiffOn ℝ n (fun p : (ℝ × ℝ) × V ↦ ω.hamiltonianVectorField (K p.1) p.2) W :=
+    fun p hp ↦ (ω.contDiffAt_hamiltonianVectorField_uncurry
+      ((hK p hp).contDiffAt (hW.mem_nhds hp))).contDiffWithinAt
+  exact (contDiffOn_const.smulRight (hX hKs)).add (contDiffOn_const.smulRight (hX hKt))
 
 /-- The perturbed derivative is `du - X_K(u)`. -/
 theorem perturbedFDeriv_eq_sub (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V)
@@ -467,6 +482,32 @@ theorem mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity
       h.apply_stdComplexLineImag, ← mul_pow]
     exact pow_le_pow_left₀ (norm_nonneg _) (hJM a) 2
   nlinarith [hJc a, mul_le_mul_of_nonneg_left hM hc, sq_nonneg M, sq_nonneg ‖a‖]
+
+/-- **The energy density bounds the derivative.** Let `u` solve the Floer equation at `z` for an
+almost complex structure `J` with `c ‖v‖² ≤ ω(v, J v)` and `‖J v‖ ≤ M ‖v‖` for all `v`, where
+`0 < c`. Then `∂_s u` is controlled by the energy density and the Hamiltonian vector field:
+`‖∂_s u‖² ≤ 2 (1 + M²) / c · ω(∂_s u - X_{K_s}, ∂_t u - X_{K_t}) + 2 ‖X_{K_s}(u)‖²`. -/
+theorem norm_fderiv_stdComplexLineReal_sq_le (ω : SymplecticForm V)
+    {J : AlmostComplexStructure V} {c M : ℝ} (hc : 0 < c)
+    (hJc : ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J v)) (hJM : ∀ v, ‖J v‖ ≤ M * ‖v‖)
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+      (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 ≤
+      2 * (1 + M ^ 2) / c * ω.floerEnergyDensity Ks Kt u z +
+        2 * ‖ω.hamiltonianVectorField (Ks z) (u z)‖ ^ 2 := by
+  have hco := ω.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity hc.le hJc hJM h
+  rw [perturbedFDeriv_apply_stdComplexLineReal] at hco
+  set a := fderiv ℝ u z stdComplexLineReal
+  set X := ω.hamiltonianVectorField (Ks z) (u z)
+  -- `‖a‖ ≤ ‖a - X‖ + ‖X‖`, and `c ‖a - X‖²` is at most `(1 + M²)` times the energy density.
+  have htri : ‖a‖ ≤ ‖a - X‖ + ‖X‖ := norm_le_norm_sub_add a X
+  have hsq : ‖a‖ ^ 2 ≤ 2 * ‖a - X‖ ^ 2 + 2 * ‖X‖ ^ 2 := by
+    nlinarith [norm_nonneg a, norm_nonneg (a - X), norm_nonneg X, sq_nonneg (‖a - X‖ - ‖X‖)]
+  have hle : ‖a - X‖ ^ 2 ≤ (1 + M ^ 2) / c * ω.floerEnergyDensity Ks Kt u z := by
+    rw [div_mul_eq_mul_div, le_div_iff₀ hc]
+    nlinarith [sq_nonneg ‖ω.perturbedFDeriv Ks Kt u z stdComplexLineImag‖]
+  rw [mul_div_assoc, mul_assoc]
+  linarith
 
 /-- **The energy density plus the curvature is exact.** For a `C²` map `u` into a symplectic
 vector space and a perturbation `K = K_s ds + K_t dt`, the Floer energy density plus the
