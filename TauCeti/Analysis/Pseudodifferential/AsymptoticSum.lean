@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.FrequencyCutoff
+public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
 import Mathlib.Algebra.Order.Field.GeomSum
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
