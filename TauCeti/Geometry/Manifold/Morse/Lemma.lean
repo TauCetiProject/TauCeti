@@ -160,6 +160,11 @@ theorem mdifferentiableAt_toChart {y : M} (hy : y ∈ φ.toChart.source) :
     MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y :=
   mdifferentiableAt_of_mem_maximalAtlas φ.mem_maximalAtlas_one hy
 
+include φ in
+/-- A space with a Morse chart is finite-dimensional. -/
+theorem finiteDimensional : FiniteDimensional ℝ E :=
+  Module.Finite.equiv φ.coord.symm
+
 /-- A coordinate of a Morse chart has weight different from `1` exactly when it has negative
 weight. -/
 theorem weight_ne_one_iff (i : Fin (Module.finrank ℝ E)) : ¬φ.weight i = 1 ↔ φ.weight i < 0 := by
