@@ -13,11 +13,12 @@ public import Mathlib.Topology.CWComplex.Classical.Basic
 Let `W 0, W 1, …` be subsets of a space `X`, each a CW complex relative to a common base `D`, and
 suppose each stage is a subcomplex of the next with the same cells: a map
 `ι k n : cell (W k) n → cell (W (k + 1)) n` labels the `n`-cells of `W k` among those of
-`W (k + 1)`, and preserves characteristic maps. If the union `⋃ k, W k` carries the final topology
-of its stages, meaning that a subset of the union is closed as soon as its intersection with every
-stage is closed, then the union is a CW complex relative to `D`
-(`TauCeti.relCWComplexTowerUnion`). With `D = ∅`, `Topology.RelCWComplex.toCWComplex` turns it into
-an absolute CW complex.
+`W (k + 1)`, and preserves characteristic maps. Suppose that a subset of the union `⋃ k, W k` is
+closed in `X` as soon as its intersection with every stage is closed in `X`. Closedness is meant in
+`X` throughout, not in the union: when the stages are closed in `X`, this asks that the union carry
+the final topology of its stages and be closed in `X`. Then the union is a CW complex relative to
+`D` (`TauCeti.relCWComplexTowerUnion`). With `D = ∅`, `Topology.RelCWComplex.toCWComplex` turns it
+into an absolute CW complex.
 
 An `n`-cell of the union is born at a definite stage: it is an `n`-cell of `W 0`, or an `n`-cell of
 `W (k + 1)` outside the image of `ι k n` (`TauCeti.towerNewCells`). So the `n`-cells of the union
@@ -32,13 +33,13 @@ later stage with the same characteristic map, so the open cells of two new cells
 `j ≤ k`, can be compared inside `W k`, where the earlier one is not new. Closure-finiteness of a
 cell born at stage `k` is closure-finiteness in `W k`, since every cell of `W k` has the same
 closed cell as the cell of the union at which it was born. The weak topology of the union follows
-from that of each stage together with the final topology of the union.
+from that of each stage together with the closedness hypothesis on the union.
 
 The hypothesis on the topology holds, for instance, when `X` is the colimit of a sequence of
-closed embeddings and `W k` is the image of the `k`-th space: the colimit topology is the final
-topology of the stages. So the colimit of a sequence of cell attachments of arbitrary dimensions,
-each stage a CW complex having the previous one as a subcomplex, is a CW complex once every stage
-is identified with its image in the colimit.
+closed embeddings and `W k` is the image of the `k`-th space: the union of the stages is all of
+`X`, and the colimit topology is the final topology of the stages. So the colimit of a sequence of
+cell attachments of arbitrary dimensions, each stage a CW complex having the previous one as a
+subcomplex, is a CW complex once every stage is identified with its image in the colimit.
 
 ## Main definitions
 
@@ -145,9 +146,11 @@ private lemma disjoint_image_ball_of_le (hι : ∀ k n i, map n (ι k n i) = map
 variable (ι) in
 /-- **The union of a tower of CW complexes.** Let each `W k` be a CW complex relative to `D`, and
 let `ι k n` send the `n`-cells of `W k` to `n`-cells of `W (k + 1)` with the same characteristic
-maps. If a subset of `⋃ k, W k` is closed as soon as its intersection with every `W k` is closed,
-then `⋃ k, W k` is a CW complex relative to `D`. Its `n`-cells are the new `n`-cells of the stages
-(`TauCeti.towerNewCells`), with their characteristic maps in their stage.
+maps. If a subset of `⋃ k, W k` is closed in `X` as soon as its intersection with every `W k` is
+closed in `X`, then `⋃ k, W k` is a CW complex relative to `D`. When the stages are closed in `X`,
+this hypothesis asks that the union carry the final topology of its stages and be closed in `X`.
+Its `n`-cells are the new `n`-cells of the stages (`TauCeti.towerNewCells`), with their
+characteristic maps in their stage.
 
 The structure is not an instance: it depends on the labels `ι`. -/
 @[instance_reducible]
