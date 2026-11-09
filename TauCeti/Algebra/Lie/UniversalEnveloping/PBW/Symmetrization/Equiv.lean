@@ -87,6 +87,7 @@ theorem pbwSymmetrizationCoalgEquiv_apply (p : SymmetricAlgebra R L) :
 
 /-- An element of the symmetric algebra has word degree at most `k` exactly when its symmetrization
 has PBW degree at most `k`. -/
+@[simp]
 theorem pbwSymmetrizationMap_mem_pbwFiltration_iff {k : ℕ} {p : SymmetricAlgebra R L} :
     pbwSymmetrizationMap R L p ∈ pbwFiltration R L k ↔ p ∈ F k := by
   refine ⟨fun h => ?_, pbwSymmetrizationMap_mem_pbwFiltration R L⟩

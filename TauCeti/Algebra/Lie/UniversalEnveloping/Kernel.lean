@@ -55,16 +55,17 @@ theorem ker_map_of_surjective (f : L →ₗ⁅R⁆ M) (hf : Function.Surjective 
         map_add' := fun y y' => by
           obtain ⟨a, rfl⟩ := hf y
           obtain ⟨b, rfl⟩ := hf y'
-          rw [← map_add, hg, hg, hg, map_add, map_add]
+          rw [← map_add f a b, hg]
+          simp only [hg, map_add]
         map_smul' := fun c y => by
           obtain ⟨a, rfl⟩ := hf y
-          rw [← map_smul, hg, hg, map_smul, map_smul]
-          rfl
+          rw [← map_smul f c a, hg]
+          simp only [hg, map_smul, RingHom.id_apply]
         map_lie' := fun {y y'} => by
           obtain ⟨a, rfl⟩ := hf y
           obtain ⟨b, rfl⟩ := hf y'
-          rw [← LieHom.map_lie, hg, hg, hg, LieHom.map_lie, Ring.lie_def, Ring.lie_def, map_sub,
-            map_mul, map_mul] }
+          rw [← LieHom.map_lie f a b, hg, LieHom.map_lie]
+          simp only [hg, Ring.lie_def, map_sub, map_mul] }
     have hθ : ∀ a, θ (f a) = q (_root_.UniversalEnvelopingAlgebra.ι R a) := hg
     have hcomp : (_root_.UniversalEnvelopingAlgebra.lift R θ).comp (map R f) = q := by
       apply _root_.UniversalEnvelopingAlgebra.hom_ext
