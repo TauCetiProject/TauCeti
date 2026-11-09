@@ -77,9 +77,9 @@ theorem mapsTo_closedBall_of_forall_norm_le {α F : Type*} [SeminormedAddCommGro
 
 /-- Constants joined by a chain of related indices are uniformly close, if constants at related
 indices are. -/
-theorem exists_enorm_sub_le_mul_of_reflTransGen {X F ι : Type*} [SeminormedAddCommGroup F]
+theorem exists_enorm_sub_le_mul_of_reflTransGen {β F ι : Type*} [SeminormedAddCommGroup F]
     {R : ι → ι → Prop} {i₀ : ι}
-    (P : (X → F) → (ι → F) → ℝ≥0∞ → Prop)
+    (P : β → (ι → F) → ℝ≥0∞ → Prop)
     (hadj : ∀ i j, R i j → ∃ D : ℝ≥0, ∀ f a G, P f a G → ‖a j - a i‖ₑ ≤ D * G) {j : ι}
     (hj : Relation.ReflTransGen R i₀ j) :
     ∃ D : ℝ≥0, ∀ f a G, P f a G → ‖a j - a i₀‖ₑ ≤ D * G := by
