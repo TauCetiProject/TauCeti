@@ -15,7 +15,7 @@ The **nilradical** of a Lie algebra `L` is the supremum of its ideals that are n
 algebras*, built here as `TauCeti.LieAlgebra.nilradical R L`, the supremum of the ideals `I` with
 `LieRing.IsNilpotent I`.  As soon as `L` is Noetherian that supremum is itself nilpotent, so it is
 then a largest element: the largest nilpotent ideal.  It sits between the centre and the solvable
-radical, and, again for Noetherian `L`, every one of its elements is `ad`-nilpotent.
+radical, and every one of its elements is `ad`-nilpotent.
 
 Mathlib's `LieAlgebra.maxNilpotentIdeal R L` is a *different* ideal: the largest ideal on which the
 ambient algebra `L` acts nilpotently.  It is contained in the nilradical
