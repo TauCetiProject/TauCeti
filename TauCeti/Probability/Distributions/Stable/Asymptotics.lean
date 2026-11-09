@@ -81,7 +81,7 @@ theorem tendsto_rpow_mul_stableMeasure_real_Ioi
   rw [hconstant] at hlim
   apply hlim.congr
   intro x
-  rw [← stableMeasure_one_zero_map_affine (pos_iff_ne_zero.mpr hs),
+  rw [← stableMeasure_one_zero_map_affine (s := s) (m := m),
     map_measureReal_apply (by fun_prop) measurableSet_Ioi]
   congr 2
   ext y
