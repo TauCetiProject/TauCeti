@@ -88,6 +88,28 @@ theorem isCyclicallyMonotone_norm_sub_sq_div_two_iff_forall_sum_inner_le {S : Se
   rw [isCyclicallyMonotone_norm_sub_sq_div_two_iff, isCyclicallyMonotone_pairingCost_iff]
   simp only [innerₗ_apply_apply]
 
+/-- **Interpolating the targets of two cyclically monotone sets.** If `S₀` and `S₁` are
+cyclically monotone for the quadratic cost and `s ∈ [0, 1]`, then so is the set of pairs
+`(x, (1 - s) • y₀ + s • y₁)` with `(x, y₀) ∈ S₀` and `(x, y₁) ∈ S₁`: the classical condition
+`∑ i, ⟪x i, y (σ i)⟫ ≤ ∑ i, ⟪x i, y i⟫` is linear in the targets. -/
+theorem isCyclicallyMonotone_norm_sub_sq_div_two_image_smul_add_smul {S₀ S₁ : Set (E × E)}
+    (h₀ : IsCyclicallyMonotone (fun p : E × E => ‖p.1 - p.2‖ ^ 2 / 2) S₀)
+    (h₁ : IsCyclicallyMonotone (fun p : E × E => ‖p.1 - p.2‖ ^ 2 / 2) S₁) {s : ℝ}
+    (hs : s ∈ Set.Icc (0 : ℝ) 1) :
+    IsCyclicallyMonotone (fun p : E × E => ‖p.1 - p.2‖ ^ 2 / 2)
+      ((fun w : E × E × E => (w.1, (1 - s) • w.2.1 + s • w.2.2)) ''
+        {w | (w.1, w.2.1) ∈ S₀ ∧ (w.1, w.2.2) ∈ S₁}) := by
+  rw [isCyclicallyMonotone_norm_sub_sq_div_two_iff_forall_sum_inner_le] at h₀ h₁ ⊢
+  intro n x y hmem σ
+  simp only [Set.mem_image, Set.mem_ofPred_eq, Prod.mk.injEq] at hmem
+  choose w hw hx hy using hmem
+  have e₀ := h₀ n x (fun i => (w i).2.1) (fun i => hx i ▸ (hw i).1) σ
+  have e₁ := h₁ n x (fun i => (w i).2.2) (fun i => hx i ▸ (hw i).2) σ
+  simp only [← hy, inner_add_right, real_inner_smul_right, Finset.sum_add_distrib,
+    ← Finset.mul_sum]
+  exact add_le_add (mul_le_mul_of_nonneg_left e₀ (sub_nonneg.2 hs.2))
+    (mul_le_mul_of_nonneg_left e₁ hs.1)
+
 end TauCeti
 
 namespace TauCeti
