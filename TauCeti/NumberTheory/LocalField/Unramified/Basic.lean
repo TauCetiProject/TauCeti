@@ -62,6 +62,7 @@ computational input to the norm and trace of an unramified extension.
   stays a uniformizer of `L`.
 * `TauCeti.isUnramified_iff_inertiaDegree_eq_finrank`: `L/K` is unramified exactly when
   `f(L/K) = [L : K]`.
+* `TauCeti.isUnramified_of_finrank_eq_one`: a degree-one extension is unramified.
 * `TauCeti.IsUnramified.isTamelyRamified`: an unramified extension is tamely ramified.
 * `TauCeti.isUnramified_tower_iff`, `TauCeti.IsUnramified.trans`,
   `TauCeti.IsUnramified.tower_bot` and `TauCeti.IsUnramified.tower_top`: `M/K` is unramified
@@ -210,6 +211,10 @@ theorem isUnramified_iff_inertiaDegree_eq_finrank :
   rw [isUnramified_iff_ramificationIndex_eq_one, ← ramificationIndex_mul_inertiaDegree]
   refine ⟨fun h ↦ by rw [h, one_mul], fun h ↦ ?_⟩
   exact Nat.eq_of_mul_eq_mul_right inertiaDegree_pos (by rw [← h, one_mul])
+
+/-- A degree-one extension of nonarchimedean local fields is unramified. -/
+theorem isUnramified_of_finrank_eq_one (h : Module.finrank K L = 1) : IsUnramified K L :=
+  ⟨(mul_eq_one.mp ((ramificationIndex_mul_inertiaDegree K L).trans h)).1⟩
 
 /-- In an unramified extension the residue degree is the degree of the extension. -/
 @[simp]
