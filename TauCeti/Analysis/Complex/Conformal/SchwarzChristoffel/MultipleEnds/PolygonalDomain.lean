@@ -156,7 +156,7 @@ private theorem exists_inverted_coordinate_of_polygonal_ends {ι : Type*} [Finit
     by_cases hv : ∃ i, w = v i
     · obtain ⟨i, rfl⟩ := hv
       obtain ⟨ρ, hρ, b, hb, hU⟩ := hcorner i
-      exact isPreconnectedApproachAt_of_forall_mem_iff_abs_arg_lt hρ hb hU
+      exact isPreconnectedApproachAt_of_forall_mem_iff_abs_arg_lt hρ hU
     · obtain ⟨ρ, hρ, p, b, -, hU⟩ := hside w hw fun i hi => hv ⟨i, hi⟩
       exact isPreconnectedApproachAt_of_forall_mem_iff_im_div_pos hρ hU
   obtain ⟨f, g, -, hfU, hgc, hgd, hgf, hgne, -, hgr, hginf, hgi, hwg⟩ :=
@@ -317,7 +317,7 @@ private theorem exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygon
     · obtain ⟨ρ', hρ', n, hn, hU'⟩ := hcorner i
       rw [← (hga i).2] at hU'
       obtain ⟨r, hr, h₁, h₂, h₃, h₄⟩ :=
-        exists_ball_corner_of_inverted_coordinate hgc hgi hgU (hga i).1 hρ' hn hU'
+        exists_ball_corner_of_inverted_coordinate hgc hgi hgU (hga i).1 hρ' hU'
       exact Or.inl ⟨he i, r, hr, n, hn, h₁, h₂, h₃, h₄⟩
     · exact Or.inr (exists_ball_end_of_inverted_coordinate hgc hgd rfl hgf hgne hgi (hga' k)
         (hb k) (hE k) (hgU ▸ hEU k) (hfa' k))
