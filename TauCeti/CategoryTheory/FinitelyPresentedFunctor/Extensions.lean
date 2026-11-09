@@ -117,40 +117,35 @@ private theorem exact_horseshoe [Mono S.f] {X' Y' X'' Y'' : C} {f' : X' ⟶ Y'} 
           X' ⊞ X'' ⟶ Y' ⊞ Y'') ≫
       (preadditiveYoneda.map biprod.fst ≫ p' ≫ S.f + preadditiveYoneda.map biprod.snd ≫ s) = 0) :
     (ShortComplex.mk _ _ hP).Exact := by
-  have hS' := (ShortComplex.exact_iff_evaluation _).1 hE'
-  have hS'' := (ShortComplex.exact_iff_evaluation _).1 hE''
-  rw [ShortComplex.exact_iff_evaluation]
-  intro Z
-  rw [ShortComplex.ab_exact_iff]
-  intro (y : Z.unop ⟶ Y' ⊞ Y'') hy
-  have hy : S.f.app Z (p'.app Z (y ≫ biprod.fst)) + s.app Z (y ≫ biprod.snd) = 0 :=
-    (biprod_comp_add_app_apply p' S.f s Z y).symm.trans hy
+  have hS' := (exact_preadditiveYoneda_map_iff f' p' hfp').1 hE'
+  have hS'' := (exact_preadditiveYoneda_map_iff f'' p'' hfp'').1 hE''
+  rw [exact_preadditiveYoneda_map_iff]
+  intro V y hy
+  have hy : S.f.app (op V) (p'.app (op V) (y ≫ biprod.fst)) + s.app (op V) (y ≫ biprod.snd) = 0 :=
+    (biprod_comp_add_app_apply p' S.f s (op V) y).symm.trans hy
   -- Applying `S.g` shows that `p'' (y ≫ snd) = 0`, so `y ≫ snd = c ≫ f''` for some `c`.
-  have h₃ : p''.app Z (y ≫ biprod.snd) = 0 := by
-    have h0 : S.g.app Z (S.f.app Z (p'.app Z (y ≫ biprod.fst))) = 0 :=
-      (S.map ((evaluation _ _).obj Z)).ab_zero_apply _
-    calc _ = (s ≫ S.g).app Z (y ≫ biprod.snd) := by rw [hs]
-      _ = S.g.app Z (S.f.app Z (p'.app Z (y ≫ biprod.fst)) + s.app Z (y ≫ biprod.snd)) := by
+  have h₃ : p''.app (op V) (y ≫ biprod.snd) = 0 := by
+    have h0 : S.g.app (op V) (S.f.app (op V) (p'.app (op V) (y ≫ biprod.fst))) = 0 :=
+      (S.map ((evaluation _ _).obj (op V))).ab_zero_apply _
+    calc _ = (s ≫ S.g).app (op V) (y ≫ biprod.snd) := by rw [hs]
+      _ = S.g.app (op V)
+          (S.f.app (op V) (p'.app (op V) (y ≫ biprod.fst)) + s.app (op V) (y ≫ biprod.snd)) := by
         rw [map_add, h0, zero_add, NatTrans.comp_app]
         exact ConcreteCategory.comp_apply _ _ _
       _ = 0 := by rw [hy, map_zero]
-  obtain ⟨(c : Z.unop ⟶ X''), hc⟩ := (ShortComplex.ab_exact_iff _).1 (hS'' Z) _ h₃
-  have hc : c ≫ f'' = y ≫ biprod.snd := (preadditiveYoneda_map_app_apply f'' Z c).symm.trans hc
+  obtain ⟨c, hc⟩ := hS'' _ h₃
   -- Then `s (y ≫ snd) = S.f (p' (c ≫ w))`, so `S.f (p' (y ≫ fst + c ≫ w)) = 0`; as `S.f` is
   -- injective, `y ≫ fst + c ≫ w = d ≫ f'` for some `d`.
-  have hcw : s.app Z (y ≫ biprod.snd) = S.f.app Z (p'.app Z (c ≫ w)) := by
+  have hcw : s.app (op V) (y ≫ biprod.snd) = S.f.app (op V) (p'.app (op V) (c ≫ w)) := by
     rw [← hc]
-    exact (ConcreteCategory.congr_hom (NatTrans.congr_app hwf Z) c).symm
-  have h₁ : p'.app Z (y ≫ biprod.fst + c ≫ w) = 0 := by
-    refine (AddCommGrpCat.mono_iff_injective (S.f.app Z)).1 inferInstance ?_
+    exact (ConcreteCategory.congr_hom (NatTrans.congr_app hwf (op V)) c).symm
+  have h₁ : p'.app (op V) (y ≫ biprod.fst + c ≫ w) = 0 := by
+    refine (AddCommGrpCat.mono_iff_injective (S.f.app (op V))).1 inferInstance ?_
     rw [map_zero, ← hy, hcw]
-    exact (congrArg (S.f.app Z) (map_add (p'.app Z).hom _ _)).trans (map_add _ _ _)
-  obtain ⟨(d : Z.unop ⟶ X'), hd⟩ := (ShortComplex.ab_exact_iff _).1 (hS' Z) _ h₁
-  have hd : d ≫ f' = y ≫ biprod.fst + c ≫ w :=
-    (preadditiveYoneda_map_app_apply f' Z d).symm.trans hd
-  refine ⟨(biprod.lift d c : Z.unop ⟶ X' ⊞ X''), ?_⟩
-  -- `(-, g)` sends `(d, c)` to `(d, c) ≫ g`, whose components are read off from `hd` and `hc`.
-  refine (preadditiveYoneda_map_app_apply _ Z _).trans (biprod.hom_ext _ _ ?_ ?_) <;>
+    exact (congrArg (S.f.app (op V)) (map_add (p'.app (op V)).hom _ _)).trans (map_add _ _ _)
+  obtain ⟨d, hd⟩ := hS' _ h₁
+  -- The components of `(d, c) ≫ g` are read off from `hd` and `hc`.
+  refine ⟨biprod.lift d c, biprod.hom_ext _ _ ?_ ?_⟩ <;>
     simp [Preadditive.comp_sub, hd, hc]
 
 /-- The functor `F` in a short exact sequence `0 ⟶ F' ⟶ F ⟶ F'' ⟶ 0` with `F'` and `F''` finitely
