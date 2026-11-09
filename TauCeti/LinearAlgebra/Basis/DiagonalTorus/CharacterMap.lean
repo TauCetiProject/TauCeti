@@ -106,6 +106,18 @@ theorem torusPointMap_apply (φ : (ι → ℤ) →ₗ[ℤ] (κ → ℤ)) (s : κ
     torusPointMap φ s i = torusCharacter s (φ (Pi.single i 1)) :=
   torusCharacterHom_apply _ s i
 
+omit [Fintype κ] [DecidableEq ι] in
+/-- Precomposition of characters with an equivalence relabels torus coordinates by its inverse. -/
+@[simp]
+theorem torusPointMap_funCongrLeft [Fintype ι] [DecidableEq κ] (σ : ι ≃ κ) (s : ι → Rˣ) :
+    torusPointMap (LinearEquiv.funCongrLeft ℤ ℤ σ).toLinearMap s = fun i => s (σ.symm i) := by
+  classical
+  funext i
+  have hsingle : (LinearMap.funLeft ℤ ℤ σ) (Pi.single i 1) = Pi.single (σ.symm i) 1 :=
+    Pi.single_comp_equiv σ i 1
+  rw [torusPointMap_apply, LinearEquiv.coe_coe, LinearEquiv.funCongrLeft_apply,
+    hsingle, torusCharacter_single, zpow_one]
+
 /-- **Characters pull back along `torusPointMap φ` by `φ`.** The value of a character `χ` at the
 image of `s` is the value of `φ χ` at `s`. -/
 @[simp]
@@ -115,6 +127,18 @@ theorem torusCharacter_torusPointMap [Fintype ι] (φ : (ι → ℤ) →ₗ[ℤ]
   rw [torusCharacter_def]
   refine Finset.prod_congr rfl fun i _ => ?_
   rw [map_zsmul, torusCharacter_zsmul, torusPointMap_apply]
+
+/-- A torus point is in the kernel of the dual map exactly when it evaluates to one on the
+image of the lattice map. -/
+theorem mem_ker_torusPointMap_iff [Finite ι] (φ : (ι → ℤ) →ₗ[ℤ] (κ → ℤ)) (s : κ → Rˣ) :
+    s ∈ (torusPointMap φ).ker ↔ ∀ μ, torusCharacter s (φ μ) = 1 := by
+  let := Fintype.ofFinite ι
+  rw [MonoidHom.mem_ker]
+  constructor
+  · intro hs μ
+    rw [← torusCharacter_torusPointMap, hs, torusCharacter_one]
+  · intro hs
+    exact funext fun i => (torusPointMap_apply φ s i).trans (hs (Pi.single i 1))
 
 /-- The identity of the character lattice gives the identity of the torus. -/
 @[simp]
@@ -234,6 +258,14 @@ theorem isCharacterMap_iff :
     IsCharacterMap T F φ ↔ ∀ s, F (T s) = T (torusPointMap φ s) :=
   Iff.rfl
 
+/-- Raising every torus parameter to the `n`-th power pulls characters back by `n • id`. -/
+theorem IsCharacterMap.of_map_eq_pow {n : ℕ} (h : ∀ s, F (T s) = T (s ^ n)) :
+    IsCharacterMap T F (n • LinearMap.id) := by
+  rw [isCharacterMap_iff]
+  intro s
+  simpa only [torusPointMap_nsmul, torusPointMap_id, MonoidHom.pow_apply,
+    MonoidHom.id_apply] using h s
+
 /-- A character map as an equation of homomorphisms out of the torus. -/
 theorem isCharacterMap_iff_comp :
     IsCharacterMap T F φ ↔ F.comp T = T.comp (torusPointMap φ) := by
@@ -255,6 +287,17 @@ pulling back along `F`. -/
 theorem IsCharacterMap.comp (hF : IsCharacterMap T F φ) (hF' : IsCharacterMap T F' ψ) :
     IsCharacterMap T (F.comp F') (ψ * φ) := fun s => by
   rw [MonoidHom.comp_apply, hF', hF, torusPointMap_mul, MonoidHom.comp_apply]
+
+/-- The pullback of an iterate is the corresponding power of the character map. -/
+theorem IsCharacterMap.pow {F : Monoid.End G} (hF : IsCharacterMap T F φ) (n : ℕ) :
+    IsCharacterMap T (HPow.hPow (α := Monoid.End G) F n) (φ ^ n) := by
+  -- In `Monoid.End G`, the unit is `MonoidHom.id` and multiplication is `MonoidHom.comp`
+  -- by definition, so the identity and composition lemmas apply directly in both cases.
+  induction n with
+  | zero => exact isCharacterMap_id T
+  | succ n ih =>
+      rw [pow_succ', pow_succ]
+      exact hF.comp ih
 
 /-- **Uniqueness of character maps over an infinite field.** If the torus parametrization is
 injective, an endomorphism has at most one character map. Over a finite field this fails, which

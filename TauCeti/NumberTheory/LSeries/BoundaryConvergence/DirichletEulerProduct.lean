@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LSeries.BoundaryConvergence.Endpoint
 public import TauCeti.NumberTheory.LSeries.BoundaryConvergence.OrderedEulerProduct
+public import TauCeti.NumberTheory.LSeries.BoundaryConvergence.PrimeSum
 public import TauCeti.NumberTheory.LSeries.DirichletEulerLog
 import Mathlib.NumberTheory.MulChar.Lemmas
 
@@ -58,6 +59,11 @@ conjugated limit (`DirichletCharacter.tendsto_prod_primesLE_filter_notMem_inv_in
   factors at a finite set of primes deleted.
 * `DirichletCharacter.tendsto_prod_primesLE_filter_notMem_inv_inv_iff`: conjugation of the
   ordered Euler products.
+* `DirichletCharacter.exists_tendsto_sum_primesLE_div`: the ordered prime sums
+  `∑ p ≤ B, χ p / p` converge to a limit `ℓ` with `exp (ℓ + T) = L(χ, 1)`, where `T` is the
+  absolutely convergent higher-prime-power tail. This removes that tail from the ordered sums of
+  `χ.eulerLogCoeff n / n` with
+  `TauCeti.LSeries.tendsto_sum_Icc_div_iff_tendsto_sum_primesLE_div`.
 
 ## References
 
@@ -140,5 +146,23 @@ theorem tendsto_prod_primesLE_filter_notMem_inv_inv_iff (S : Finset ℕ) (L : �
   rw [hconj]
   refine ⟨fun h ↦ ?_, fun h ↦ (continuous_conj.tendsto L).comp h⟩
   simpa only [Function.comp_def, conj_conj] using (continuous_conj.tendsto (conj L)).comp h
+
+/-- **The ordered prime sums of a Dirichlet character at `s = 1`.** For a nontrivial Dirichlet
+character `χ` of positive level, the ordered sums `∑ p ≤ B, χ p / p` over the primes up to `B`
+converge. Their limit `ℓ` satisfies `exp (ℓ + T) = L(χ, 1)`, where `T` is the absolutely
+convergent sum of the higher-prime-power terms `χ p ^ (k + 2) / ((k + 2) * p ^ (k + 2))`.
+
+This is a limit of ordered cutoffs; no unconditional sum of `χ p / p` over the primes is
+asserted. -/
+theorem exists_tendsto_sum_primesLE_div [NeZero N] (hχ : χ ≠ 1) :
+    ∃ ℓ : ℂ, Tendsto (fun B : ℕ ↦ ∑ p ∈ Nat.primesLE B, χ p / (p : ℂ)) atTop (𝓝 ℓ) ∧
+      exp (ℓ + ∑' q : Nat.Primes × ℕ,
+        χ q.1 ^ (q.2 + 2) / (((q.2 + 2 : ℕ) : ℂ) * (q.1 : ℂ) ^ (q.2 + 2))) = LFunction χ 1 := by
+  obtain ⟨L, hL, hexp⟩ := χ.exists_tendsto_sum_Icc_eulerLogCoeff_div hχ
+  refine ⟨_, (TauCeti.LSeries.tendsto_sum_Icc_div_iff_tendsto_sum_primesLE_div
+    (c := fun n ↦ χ n) (fun p _ ↦ χ.norm_le_one p)
+    (fun _ hn ↦ χ.eulerLogCoeff_eq_zero_of_not_isPrimePow hn)
+    (fun _ _ hp hk ↦ χ.eulerLogCoeff_prime_pow hp hk)).mp hL, ?_⟩
+  rwa [sub_add_cancel]
 
 end DirichletCharacter

@@ -37,6 +37,8 @@ and so separate points.
   basis of `ker f`.
 * `Submodule.exists_dual_ker_eq_of_finrank_quotient_eq_one`: every codimension-one subspace
   is the kernel of a nonzero functional.
+* `Submodule.exists_dual_apply_eq_one_of_ne_top`: if a subspace `p` is not everything, some
+  functional vanishes on `p` and equals one at some vector.
 * `Module.Finite.of_finite_end`: a vector space is finite-dimensional once its endomorphism
   algebra is.
 * `LinearIndependent.exists_dual_forall_apply_eq_ite`: a linearly independent family of vectors
@@ -138,6 +140,30 @@ theorem span_sub_div_smul_eq_ker [FiniteDimensional K V] (f : Dual K V) {ι : Ty
 
 end DivisionRing
 
+section Field
+
+variable {K V ι : Type*} [Field K] [AddCommGroup V] [Module K V]
+
+/-- The rank of a family of forms restricted to a finite-dimensional subspace is the
+codimension, in that subspace, of their common kernel. -/
+theorem finrank_span_restrict_add_finrank_inf_iInf_ker (L : ι → Dual K V)
+    (U : Submodule K V) [FiniteDimensional K U] (s : Set ι) :
+    finrank K (Submodule.span K ((fun i ↦ (L i).comp U.subtype) '' s)) +
+      finrank K ↥(U ⊓ ⨅ i ∈ s, LinearMap.ker (L i)) = finrank K U := by
+  let A := Submodule.span K ((fun i ↦ (L i).comp U.subtype) '' s)
+  have hA : A.dualCoannihilator =
+      (U ⊓ ⨅ i ∈ s, LinearMap.ker (L i)).comap U.subtype := by
+    dsimp only [A]
+    rw [SetLike.ext'_iff, Submodule.coe_dualCoannihilator_span]
+    ext x
+    simp
+  have h := Subspace.finrank_add_finrank_dualCoannihilator_eq A
+  rw [hA, (Submodule.comapSubtypeEquivOfLe
+    (inf_le_left : U ⊓ ⨅ i ∈ s, LinearMap.ker (L i) ≤ U)).finrank_eq] at h
+  exact h
+
+end Field
+
 end Module.Dual
 
 namespace Submodule
@@ -159,6 +185,17 @@ theorem exists_dual_ker_eq_of_finrank_quotient_eq_one (W : Submodule K V)
     simp [h] at hv
   · ext v
     simp
+
+/-- If a subspace `p` is not the whole space, some linear functional vanishes on `p` and takes the
+value `1` at some vector. -/
+theorem exists_dual_apply_eq_one_of_ne_top {p : Submodule K V} (hp : p ≠ ⊤) :
+    ∃ (f : Module.Dual K V) (z : V), f z = 1 ∧ p ≤ LinearMap.ker f := by
+  obtain ⟨z, hz⟩ := SetLike.exists_notMem_of_ne_top p hp rfl
+  obtain ⟨f, hfz, hfp⟩ := exists_dual_map_eq_bot_of_notMem hz inferInstance
+  refine ⟨f, (f z)⁻¹ • z, by simp [hfz], fun x hx ↦ ?_⟩
+  have hxmap : f x ∈ p.map f := ⟨x, hx, rfl⟩
+  rw [hfp, mem_bot] at hxmap
+  exact hxmap
 
 end Submodule
 

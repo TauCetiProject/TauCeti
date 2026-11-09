@@ -78,6 +78,14 @@ theorem closedRegionBetween_self (f : α → ℝ) (s : Set α) :
   ext ⟨x, t⟩
   simp [le_antisymm_iff, and_comm]
 
+/-- The closed region between two constant functions over a set `s` is the prism
+`s ×ˢ Icc y₁ y₂`. -/
+@[simp]
+theorem closedRegionBetween_const (s : Set α) (y₁ y₂ : ℝ) :
+    closedRegionBetween (Function.const α y₁) (Function.const α y₂) s = s ×ˢ Icc y₁ y₂ := by
+  ext ⟨x, t⟩
+  simp
+
 /-- The region between two functions only depends on their values on the base set. -/
 theorem regionBetween_congr {f f' g g' : α → ℝ} {s : Set α} (hf : EqOn f f' s)
     (hg : EqOn g g' s) : regionBetween f g s = regionBetween f' g' s := by
@@ -90,6 +98,24 @@ theorem closedRegionBetween_congr {f f' g g' : α → ℝ} {s : Set α} (hf : Eq
   ext ⟨x, t⟩
   simp only [mem_closedRegionBetween]
   exact and_congr_right fun hx ↦ by rw [hf hx, hg hx]
+
+/-- The closed region between two ordered functions is the union of the open region and the two
+graphs. -/
+theorem closedRegionBetween_eq_union {f g : α → ℝ} {s : Set α} (h : ∀ x ∈ s, f x ≤ g x) :
+    closedRegionBetween f g s = s.graphOn f ∪ regionBetween f g s ∪ s.graphOn g := by
+  ext ⟨x, t⟩
+  simp only [mem_closedRegionBetween, mem_union, mem_graphOn, regionBetween, mem_ofPred_eq]
+  constructor
+  · rintro ⟨hx, h₁, h₂⟩
+    rcases h₁.eq_or_lt with h₁ | h₁
+    · exact .inl (.inl ⟨hx, h₁⟩)
+    rcases h₂.eq_or_lt with h₂ | h₂
+    · exact .inr ⟨hx, h₂.symm⟩
+    · exact .inl (.inr ⟨hx, h₁, h₂⟩)
+  · rintro ((⟨hx, rfl⟩ | ⟨hx, h₁, h₂⟩) | ⟨hx, rfl⟩)
+    · exact ⟨hx, le_rfl, h x hx⟩
+    · exact ⟨hx, h₁.le, h₂.le⟩
+    · exact ⟨hx, h x hx, le_rfl⟩
 
 /-- The closed region between two functions continuous on a closed set is closed. -/
 theorem isClosed_closedRegionBetween [TopologicalSpace α] {f g : α → ℝ} {s : Set α}
@@ -322,6 +348,31 @@ theorem bijOn_regionBetweenMap_regionBetween (h : InvOn g' g s t) (hg : MapsTo g
     (regionBetween_subset_closedRegionBetween φ φ' s)
     (regionBetween_subset_closedRegionBetween ψ ψ' t)).bijOn
     (mapsTo_regionBetweenMap_regionBetween hg hψ) (mapsTo_regionBetweenMap_regionBetween hg' hφ)
+
+/-- Interpolation with unchanged endpoints is the identity on every closed fibre,
+including a collapsed fibre. -/
+theorem regionBetweenMap_id {a b : X → ℝ} {p : X × ℝ}
+    (hp : p.2 ∈ Icc (a p.1) (b p.1)) :
+    regionBetweenMap id a b a b p = p := by
+  rcases p with ⟨x, r⟩
+  by_cases h : a x = b x
+  · have hr : b x = r := le_antisymm (h ▸ hp.1) hp.2
+    simp [h, hr]
+  · simp [regionBetweenMap_apply, div_mul_cancel₀ _ (sub_ne_zero.mpr (Ne.symm h))]
+
+/-- Successive band interpolations compose to the direct interpolation. A collapsed
+intermediate fibre must also collapse in the final band; no converse is needed. -/
+theorem regionBetweenMap_comp {Z : Type*} (g : X → Y) (h : Y → Z)
+    (a b : X → ℝ) (c d : Y → ℝ) (u v : Z → ℝ) (p : X × ℝ)
+    (hcollapse : c (g p.1) = d (g p.1) → u (h (g p.1)) = v (h (g p.1))) :
+    regionBetweenMap h c d u v (regionBetweenMap g a b c d p) =
+      regionBetweenMap (h ∘ g) a b u v p := by
+  rcases p with ⟨x, r⟩
+  by_cases hc : c (g x) = d (g x)
+  · simp [regionBetweenMap_apply, hc, hcollapse hc]
+  · simp only [regionBetweenMap_apply, Function.comp_apply, add_sub_cancel_left, Prod.mk.injEq,
+      true_and]
+    field_simp
 
 variable [TopologicalSpace X] [TopologicalSpace Y]
 

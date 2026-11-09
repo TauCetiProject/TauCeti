@@ -82,16 +82,17 @@ binomial dimension. -/
 @[simp]
 theorem finrank_exteriorPowerImage (W : Subcomodule k H M)
     [Module.Finite k W.toSubmodule] (n : ℕ) :
-    Module.finrank k (W.exteriorPowerImage n).toSubmodule =
+    Module.finrank k (W.exteriorPowerImage n) =
       (Module.finrank k W.toSubmodule).choose n := by
+  change Module.finrank k (W.exteriorPowerImage n).toSubmodule = _
   rw [exteriorPowerImage_toSubmodule,
     exteriorPower.finrank_range_map W.toSubmodule.injective_subtype]
 
 /-- The top exterior image of a finite-dimensional subrepresentation is a line. -/
 theorem finrank_exteriorPowerImage_finrank (W : Subcomodule k H M)
     [Module.Finite k W.toSubmodule] :
-    Module.finrank k (W.exteriorPowerImage (Module.finrank k W.toSubmodule)).toSubmodule = 1 := by
-  simp [finrank_exteriorPowerImage]
+    Module.finrank k (W.exteriorPowerImage (Module.finrank k W.toSubmodule)).toSubmodule = 1 :=
+  (finrank_exteriorPowerImage W _).trans (Nat.choose_self _)
 
 variable {K : Type*} [CommSemiring K] [Bialgebra k K]
 

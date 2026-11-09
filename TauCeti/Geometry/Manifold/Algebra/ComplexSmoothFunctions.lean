@@ -337,9 +337,7 @@ theorem mvfderiv_re (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (hn : n ≠ 0) (x :
   have hre : ⇑f.re = Complex.reCLM ∘ f := by ext y; simp
   rw [hre]
   ext v
-  have h := TauCeti.mvfderiv_comp_apply_of_differentiableAt Complex.reCLM.differentiableAt
-    (f.contMDiff.mdifferentiable hn).mdifferentiableAt v
-  simpa only [ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply] using h
+  exact Complex.reCLM.mvfderiv_comp_apply (f.contMDiff.mdifferentiable hn).mdifferentiableAt v
 
 /-- Differentiation of a complex-valued real-smooth function commutes with taking imaginary
 parts. -/
@@ -349,9 +347,7 @@ theorem mvfderiv_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (hn : n ≠ 0) (x :
   have him : ⇑f.im = Complex.imCLM ∘ f := by ext y; simp
   rw [him]
   ext v
-  have h := TauCeti.mvfderiv_comp_apply_of_differentiableAt Complex.imCLM.differentiableAt
-    (f.contMDiff.mdifferentiable hn).mdifferentiableAt v
-  simpa only [ContinuousLinearMap.fderiv, ContinuousLinearMap.comp_apply] using h
+  exact Complex.imCLM.mvfderiv_comp_apply (f.contMDiff.mdifferentiable hn).mdifferentiableAt v
 
 /-- The differential of a complex function vanishes exactly when the differentials of both
 real components vanish. -/

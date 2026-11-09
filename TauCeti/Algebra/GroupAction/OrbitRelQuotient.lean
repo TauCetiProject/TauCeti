@@ -51,7 +51,7 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   quotient by `H`-orbits.
 * `TauCeti.MulAction.normalizerQuotientOrbitRelQuotientPermHom`: the descended action of
   `N(H) / H` on the quotient by `H`-orbits.
-* `TauCeti.MulAction.normalizerQuotientOrbitRelQuotientIsPretransitive`: if the normalizer
+* `Subgroup.normalizerQuotient_isPretransitive_orbitRelQuotient`: if the normalizer
   acts transitively, then the descended `N(H) / H` action on the `H`-orbit quotient is
   transitive.
 * `TauCeti.MulAction.normalizerQuotientOrbitRelQuotient_smul_eq_smul_iff`: if the normalizer
@@ -67,7 +67,8 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   (`TauCeti.MulAction.eq_orbitRelQuotientRec_iff`), and every section of `V` is the descent of its
   pullback (`TauCeti.MulAction.orbitRelQuotientRec_apply_mk`).
 * `MulActionHom.orbitRelQuotientMap`: an equivariant map induces a map of orbit spaces,
-  functorially, and descent is natural along it
+  functorially. An injection induces an injection when the acting-group map is surjective;
+  its image consists of the orbits meeting the image upstairs. Descent is natural along it
   (`MulActionHom.orbitRelQuotientLift_comp_orbitRelQuotientMap`).
 * `SubMulAction.orbitRelQuotientMap`: for an `H`-invariant subset `S` of `X`, the map
   `S / H → X / G` sending an `H`-orbit to its `G`-orbit; it is injective when `S` is a slice for
@@ -187,6 +188,22 @@ lemma MulAction.orbitRel_le_of_subgroup_le {H K : Subgroup G} (hHK : H ≤ K) :
   rw [MulAction.orbitRel_apply] at h ⊢
   rcases h with ⟨g, hg⟩
   exact ⟨⟨g.1, hHK g.2⟩, hg⟩
+
+/-- Translating by elements of `G` that agree modulo the normal subgroup `H` sends points in the
+same `H`-orbit to points in the same `H`-orbit. -/
+@[to_additive
+/-- Translating by elements of `G` that agree modulo the normal subgroup `H` sends points in the
+same `H`-orbit to points in the same `H`-orbit. -/]
+theorem _root_.Subgroup.orbitRel_smul_smul_of_inv_mul_mem (H : Subgroup G) [H.Normal]
+    {g g' : G} {p q : X} (hg : g⁻¹ * g' ∈ H) (hpq : MulAction.orbitRel H X p q) :
+    MulAction.orbitRel H X (g • p) (g' • q) := by
+  rw [MulAction.orbitRel_apply, MulAction.mem_orbit_iff] at hpq ⊢
+  obtain ⟨⟨h, hh⟩, rfl⟩ := hpq
+  refine ⟨⟨g * h * g'⁻¹, ?_⟩, ?_⟩
+  · have hk : g * (h * (g⁻¹ * g')⁻¹) * g⁻¹ ∈ H :=
+      ‹H.Normal›.conj_mem _ (H.mul_mem hh (H.inv_mem hg)) g
+    simpa [mul_assoc] using hk
+  · simp [MulAction.subgroup_smul_def, smul_smul, mul_assoc]
 
 /-- **Every point of an orbit is a translate of its chosen representative.** This is Mathlib's
 `MulAction.orbitRel.Quotient.orbit_eq_orbit_out` in existential form. -/
@@ -601,7 +618,7 @@ lemma MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal_symm_mul_inv
 
 /-- If the normalizer of `H` acts transitively on `X`, then the descended `N(H) / H` action on
 the quotient by `H`-orbits is transitive. -/
-theorem MulAction.normalizerQuotientOrbitRelQuotientIsPretransitive (H : Subgroup G)
+theorem _root_.Subgroup.normalizerQuotient_isPretransitive_orbitRelQuotient (H : Subgroup G)
     [MulAction.IsPretransitive (Subgroup.normalizer (H : Set G)) X] :
     letI := MulAction.normalizerQuotientOrbitRelQuotientMulAction (X := X) H
     MulAction.IsPretransitive
@@ -618,7 +635,7 @@ theorem MulAction.normalizerQuotientOrbitRelQuotientIsPretransitive (H : Subgrou
 
 /-- If `H` is normal and `G` acts transitively on `X`, then the descended `N(H) / H` action
 on the quotient by `H`-orbits is transitive. -/
-theorem MulAction.normalizerQuotientOrbitRelQuotientIsPretransitiveOfNormal
+theorem _root_.Subgroup.normalizerQuotient_isPretransitive_orbitRelQuotient_of_normal
     [MulAction.IsPretransitive G X] (H : Subgroup G) [H.Normal] :
     letI := MulAction.normalizerQuotientOrbitRelQuotientMulAction (X := X) H
     MulAction.IsPretransitive
@@ -628,7 +645,7 @@ theorem MulAction.normalizerQuotientOrbitRelQuotientIsPretransitiveOfNormal
       obtain ⟨g, hg⟩ := MulAction.exists_smul_eq G x y
       refine ⟨⟨g, by simp [H.normalizer_eq_top]⟩, ?_⟩
       simpa using hg
-  exact MulAction.normalizerQuotientOrbitRelQuotientIsPretransitive (X := X) H
+  exact H.normalizerQuotient_isPretransitive_orbitRelQuotient (X := X)
 
 /-- Equality after the descended `N(H) / H` action on an `H`-orbit quotient is equality of
 normalizer-quotient elements, provided the normalizer of `H` acts freely. -/
@@ -695,6 +712,14 @@ theorem MulAction.orbitRelQuotientCongr_symm_mk (φ : G ≃* H) (e : X ≃ Y)
   (rfl)
 
 end Congr
+
+/-- An equivariant injection preserves point stabilizers. -/
+theorem MulAction.stabilizer_eq_of_injective {Y : Type*} [MulAction G Y]
+    (f : X → Y) (hf : Function.Injective f)
+    (he : ∀ (g : G) (x : X), f (g • x) = g • f x) (x : X) :
+    _root_.MulAction.stabilizer G (f x) = _root_.MulAction.stabilizer G x := by
+  ext g
+  simp only [_root_.MulAction.mem_stabilizer_iff, ← he, hf.eq_iff]
 
 section Sum
 
@@ -918,26 +943,12 @@ namespace MulAction.orbitRel.Quotient
 
 variable {G P : Type*} [Group G] (H : Subgroup G) [MulAction G P] [H.Normal]
 
-/-- Translating by elements of `G` that agree modulo the normal subgroup `H` sends points in the
-same `H`-orbit to points in the same `H`-orbit. -/
-@[to_additive /-- Translating by elements of `G` that agree modulo the normal subgroup `H` sends
-points in the same `H`-orbit to points in the same `H`-orbit. -/]
-theorem orbitRel_smul_smul {g g' : G} {p q : P} (hg : g⁻¹ * g' ∈ H)
-    (hpq : orbitRel H P p q) : orbitRel H P (g • p) (g' • q) := by
-  rw [orbitRel_apply, mem_orbit_iff] at hpq ⊢
-  obtain ⟨⟨h, hh⟩, rfl⟩ := hpq
-  refine ⟨⟨g * h * g'⁻¹, ?_⟩, ?_⟩
-  · have hk : g * (h * (g⁻¹ * g')⁻¹) * g⁻¹ ∈ H :=
-      ‹H.Normal›.conj_mem _ (H.mul_mem hh (H.inv_mem hg)) g
-    simpa [mul_assoc] using hk
-  · simp [subgroup_smul_def, smul_smul, mul_assoc]
-
 /-- The quotient group `G ⧸ H` acts on the space of `H`-orbits by translating representatives. -/
 @[to_additive /-- The quotient group `G ⧸ H` acts on the space of `H`-orbits by translating
 representatives. -/]
 instance instSMulQuotientGroup : SMul (G ⧸ H) (orbitRel.Quotient H P) where
   smul := Quotient.map₂ (· • ·) fun _ _ hg _ _ hpq =>
-    orbitRel_smul_smul H (QuotientGroup.leftRel_apply.1 hg) hpq
+    H.orbitRel_smul_smul_of_inv_mul_mem (QuotientGroup.leftRel_apply.1 hg) hpq
 
 /-- The action of `G ⧸ H` on `H`-orbits is computed on representatives. -/
 @[to_additive (attr := simp) /-- The action of `G ⧸ H` on `H`-orbits is computed on
@@ -991,6 +1002,21 @@ theorem orbitRelQuotientMap_comp_mk (φ : X →ₑ[σ] Y) :
     orbitRelQuotientMap φ ∘ Quotient.mk (MulAction.orbitRel G X) =
       Quotient.mk (MulAction.orbitRel H Y) ∘ φ :=
   (rfl)
+
+/-- An injective equivariant map induces an injection of orbit spaces if the map of acting
+groups is surjective. -/
+theorem orbitRelQuotientMap_injective (φ : X →ₑ[σ] Y) (hφ : Function.Injective φ)
+    (hσ : Function.Surjective σ) : Function.Injective φ.orbitRelQuotientMap := by
+  rintro ⟨x⟩ ⟨y⟩ h
+  obtain ⟨g, hg⟩ := MulAction.orbitRel_apply.1 (Quotient.exact h)
+  obtain ⟨g, rfl⟩ := hσ g
+  exact Quotient.sound (MulAction.orbitRel_apply.2 ⟨g, hφ (by rwa [map_smulₛₗ])⟩)
+
+/-- The image of the induced map consists of the orbits meeting the image upstairs. -/
+theorem range_orbitRelQuotientMap (φ : X →ₑ[σ] Y) :
+    Set.range φ.orbitRelQuotientMap =
+      Quotient.mk (MulAction.orbitRel H Y) '' Set.range φ := by
+  rw [← Quotient.mk_surjective.range_comp, orbitRelQuotientMap_comp_mk, Set.range_comp]
 
 /-- The identity map induces the identity of the orbit space. -/
 @[simp]

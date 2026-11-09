@@ -21,13 +21,16 @@ nontrivially. Dually, the preimage of a subspace `W` under a linear map out of a
 `m`-dimensional space has codimension at most the codimension of `W`. A set spans a subspace of
 dimension at least `n` exactly when it contains `n` linearly independent vectors. Two disjoint
 subspaces of a finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
+A finite-dimensional subspace spanning the whole space together with `V`, of dimension at most the
+codimension of `V`, is a complement of `V`; here `V` itself may be infinite-dimensional.
 
 The rank of a product `V.prod W` of free submodules is the sum of their ranks over any
 semiring satisfying the strong rank condition. Consequently, the rank of a product map
 `f.prodMap g` with free ranges is the sum of the ranks of `f` and `g`. The dimension of the range
 of a linear map is unchanged by composing on the left with an injective map and on the right with a
-surjective one. Conjugating an endomorphism by a linear equivalence preserves the dimension of its
-kernel.
+surjective one, and composing on the left with a map that does not lower the dimension of the range
+does not enlarge the kernel. Conjugating an endomorphism by a linear equivalence preserves the
+dimension of its kernel.
 -/
 
 public section
@@ -43,6 +46,19 @@ variable {𝕜 : Type*}
 section DivisionRing
 
 variable [DivisionRing 𝕜] {E : Type*} [AddCommGroup E] [Module 𝕜 E]
+
+/-- Intersecting with a fixed subspace gives a supermodular dimension function. -/
+theorem finrank_inf_add_finrank_inf_le (U V H : Submodule 𝕜 E) [FiniteDimensional 𝕜 H] :
+    finrank 𝕜 ↥(U ⊓ H) + finrank 𝕜 ↥(V ⊓ H) ≤
+      finrank 𝕜 ↥((U ⊓ V) ⊓ H) + finrank 𝕜 ↥((U ⊔ V) ⊓ H) := by
+  have hdim := finrank_sup_add_finrank_inf_eq (U ⊓ H) (V ⊓ H)
+  have hsub : (U ⊓ H) ⊔ (V ⊓ H) ≤ (U ⊔ V) ⊓ H :=
+    sup_le (inf_le_inf_right H le_sup_left) (inf_le_inf_right H le_sup_right)
+  have hle := finrank_mono hsub
+  have hinf : (U ⊓ H) ⊓ (V ⊓ H) = (U ⊓ V) ⊓ H := by
+    simp only [inf_assoc, inf_left_comm, inf_idem]
+  rw [hinf] at hdim
+  omega
 
 /-- Two subspaces whose dimensions sum to more than the dimension of the ambient
 space have nontrivial intersection. -/
@@ -102,6 +118,23 @@ theorem le_finrank_span_iff_exists_linearIndependent {s : Set E} [Module.Finite 
   · have := finrank_mono (span_mono (R := 𝕜) (Set.range_subset_iff.2 hvs))
     rwa [finrank_span_eq_card hv, Fintype.card_fin] at this
 
+/-- A finite-dimensional subspace `S` which spans the whole space together with `V`, and whose
+dimension is at most the codimension of `V`, is a complement of `V`. Indeed `S` maps onto
+`E ⧸ V`, so the two dimensions agree and the map is injective. -/
+theorem isCompl_of_codisjoint_of_finrank_le {V S : Submodule 𝕜 E} [FiniteDimensional 𝕜 S]
+    (h : Codisjoint V S) (hrank : finrank 𝕜 S ≤ finrank 𝕜 (E ⧸ V)) : IsCompl V S := by
+  let φ : S →ₗ[𝕜] E ⧸ V := V.mkQ ∘ₗ S.subtype
+  have hφ : Function.Surjective φ := by
+    rw [← LinearMap.range_eq_top, LinearMap.range_comp, range_subtype, map_mkQ_eq_top]
+    exact h.eq_top
+  have : FiniteDimensional 𝕜 (E ⧸ V) := Module.Finite.of_surjective φ hφ
+  have hinj : Function.Injective φ :=
+    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+      (hrank.antisymm (LinearMap.finrank_le_finrank_of_surjective hφ))).mpr hφ
+  refine ⟨disjoint_def.mpr fun x hxV hxS ↦ ?_, h⟩
+  have : φ ⟨x, hxS⟩ = φ 0 := by simpa [φ] using hxV
+  simpa using congrArg Subtype.val (hinj this)
+
 end DivisionRing
 
 /-- A submodule meeting the kernel of `f` trivially has rank at most the rank of `f`, since `f`
@@ -143,6 +176,26 @@ theorem finrank_range_comp_comp {V : Type*} [AddCommMonoid V] [Module 𝕜 V] (A
     finrank 𝕜 (range (A ∘ₗ L ∘ₗ B)) = finrank 𝕜 (range L) := by
   rw [range_comp, range_comp_of_range_eq_top _ (range_eq_top.2 hB)]
   exact (Submodule.equivMapOfInjective _ hA _).finrank_eq.symm
+
+/-- If composing a map `A` of finite rank on the left with `P` does not lower the dimension of its
+range, then it does not enlarge its kernel: `ker (P ∘ A) = ker A`. Indeed `P` is then injective on
+the range of `A`. -/
+theorem ker_comp_eq_of_finrank_range_le {K V V₂ V₃ : Type*} [DivisionRing K] [AddCommGroup V]
+    [Module K V] [AddCommGroup V₂] [Module K V₂] [AddCommGroup V₃] [Module K V₃]
+    (A : V →ₗ[K] V₂) (P : V₂ →ₗ[K] V₃) [FiniteDimensional K (range A)]
+    (h : finrank K (range A) ≤ finrank K (range (P ∘ₗ A))) : ker (P ∘ₗ A) = ker A := by
+  refine le_antisymm (fun v hv ↦ ?_) (ker_le_ker_comp A P)
+  -- The restriction of `P` to the range of `A` has the same range as `P ∘ A`, hence trivial kernel.
+  set P' := P ∘ₗ (range A).subtype
+  have hrange : range P' = range (P ∘ₗ A) := by
+    rw [range_comp, range_comp, Submodule.range_subtype]
+  have hP' := P'.finrank_range_add_finrank_ker
+  rw [hrange] at hP'
+  have hker : ker P' = ⊥ := Submodule.finrank_eq_zero.1 (by omega)
+  have hAv : (⟨A v, mem_range_self A v⟩ : range A) ∈ ker P' := by
+    simpa [P'] using mem_ker.1 hv
+  rw [hker, Submodule.mem_bot] at hAv
+  exact congrArg Subtype.val hAv
 
 end LinearMap
 

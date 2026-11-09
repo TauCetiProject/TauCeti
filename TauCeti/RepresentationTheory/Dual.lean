@@ -47,6 +47,7 @@ Applied to `Dual X ⊗ Y`, whose invariants are the intertwiners `X → Y` and w
   pointwise, then `ρ.dual g` moves every linear form by a multiple of `ℓ`; by
   `Representation.forall_sub_dual_apply_mem_span_singleton_iff`, this characterizes the elements
   fixing `ker ℓ` pointwise.
+* `Representation.dual_comp`: restricting along a group homomorphism commutes with taking duals.
 * `Representation.dual_apply_eq_one_iff`: over a field, `g` acts trivially on the dual exactly
   when it acts trivially on the space, so `Representation.dual_injective_iff`: the dual is
   faithful exactly when the representation is.
@@ -83,6 +84,23 @@ theorem generalLinearEquiv_dual_asGroupHom_symm
   simp only [LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv,
     asGroupHom_apply, dual_apply, inv_inv, Module.Dual.transpose_apply,
     LinearEquiv.dualMap_apply, LinearMap.comp_apply]
+
+/-- The dual of a representation restricted along `f` is the restriction of the dual along `f`. -/
+@[simp]
+theorem dual_comp {R G H V : Type*} [CommSemiring R] [Group G] [Group H] [AddCommMonoid V]
+    [Module R V] (ρ : Representation R G V) (f : H →* G) :
+    dual (ρ.comp f) = ρ.dual.comp f := by
+  ext
+  simp
+
+/-- An element acting trivially on a module also acts trivially on its dual. -/
+theorem ker_le_ker_dual {R G V : Type*} [CommSemiring R] [Group G] [AddCommMonoid V]
+    [Module R V] (ρ : Representation R G V) : ρ.ker ≤ ρ.dual.ker := by
+  intro g hg
+  rw [MonoidHom.mem_ker]
+  have hinv := MonoidHom.mem_ker.mp (ρ.ker.inv_mem hg)
+  ext ℓ x
+  simp [dual_apply, hinv, Module.End.one_eq_id, Module.Dual.transpose_apply]
 
 section Field
 
@@ -130,6 +148,12 @@ theorem dual_apply_eq_one_iff : ρ.dual g = 1 ↔ ρ g = 1 := by
   simp only [Submodule.span_singleton_eq_bot.2 rfl, Submodule.mem_bot, sub_eq_zero] at h
   rw [← h, LinearMap.ext_iff]
   exact forall_congr' fun φ ↦ eq_comm
+
+/-- A representation over a field and its dual have the same kernel. -/
+@[simp]
+theorem ker_dual : ρ.dual.ker = ρ.ker := by
+  ext g
+  simp only [MonoidHom.mem_ker, dual_apply_eq_one_iff]
 
 /-- Over a field, the dual representation is faithful exactly when the representation is. -/
 theorem dual_injective_iff : Function.Injective ρ.dual ↔ Function.Injective ρ := by

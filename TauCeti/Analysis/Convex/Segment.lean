@@ -54,6 +54,8 @@ an affine parametrization with a segment whose terminal endpoint is removed.
   product space.
 * `TauCeti.image_add_smul_Ico` — the affine image of `Ico 0 D` is a segment with its terminal
   endpoint removed.
+* `TauCeti.image_eq_segment_sdiff_of_forall_eq_add_smul` — a map equal to `c + d x • u` on a set
+  where `d` takes exactly the values in `Ico 0 D` has the half-open segment as its image.
 * `TauCeti.mem_segment_lineMap_of_one_le` — a point `x` lies on the segment from `a` to any point
   `lineMap a x T` with `1 ≤ T`, at or beyond `x` on the ray from `a` through `x`.
 * `TauCeti.exists_lineMap_endpoint` — the overlap of `[0, 1]` with its image under an affine map
@@ -171,6 +173,20 @@ theorem eq_of_mem_segment_zero_left_of_norm_eq {m₁ m₂ : E} (h₁ : m₁ ∈ 
   · exact norm_injOn_ray_right hw (mem_segment_zero_left_iff_sameRay_and_norm_le.mp h₁).1
       (mem_segment_zero_left_iff_sameRay_and_norm_le.mp h₂).1 h
 
+/-- The broken path from `x` to `y'` through the meeting point of the segments `[x, x']` and
+`[y, y']` at time `t` is at most as long as the two pieces:
+`‖x - y'‖ ≤ t ‖x - x'‖ + (1 - t) ‖y - y'‖`. -/
+theorem norm_sub_le_of_smul_add_smul_eq {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : 0 ≤ 1 - t) {x x' y y' : E}
+    (he : (1 - t) • x + t • x' = (1 - t) • y + t • y') :
+    ‖x - y'‖ ≤ t * ‖x - x'‖ + (1 - t) * ‖y - y'‖ := by
+  have h₁ : x - ((1 - t) • x + t • x') = t • (x - x') := by module
+  have h₂ : ((1 - t) • x + t • x') - y' = (1 - t) • (y - y') := by rw [he]; module
+  calc ‖x - y'‖ = ‖(x - ((1 - t) • x + t • x')) + (((1 - t) • x + t • x') - y')‖ := by
+        rw [sub_add_sub_cancel]
+    _ ≤ ‖x - ((1 - t) • x + t • x')‖ + ‖((1 - t) • x + t • x') - y'‖ := norm_add_le _ _
+    _ = t * ‖x - x'‖ + (1 - t) * ‖y - y'‖ := by
+      rw [h₁, h₂, norm_smul, norm_smul, Real.norm_of_nonneg ht₀, Real.norm_of_nonneg ht₁]
+
 end Normed
 
 /-! ### Half-open affine segments -/
@@ -214,6 +230,16 @@ theorem image_add_smul_Ico {x y u : E} {D : 𝕜} (hDpos : 0 < D) (hu : u ≠ 0)
     · nlinarith [ht.2, hDpos]
     · rw [hdir]
       simp only [smul_smul]
+
+/-- **A map running along a nonzero ray is a half-open segment.** If `B x = c + d x • u` on `s` with
+`u ≠ 0`, where `d` maps `s` onto `Ico 0 D` with `0 < D` and `V - c = D • u`, then `B` maps `s` onto
+the segment from `c` to `V` with its endpoint `V` removed. -/
+theorem image_eq_segment_sdiff_of_forall_eq_add_smul {α : Type*} {s : Set α} {B : α → E}
+    {d : α → 𝕜} {D : 𝕜} {c u V : E} (hD : 0 < D) (hu : u ≠ 0) (hdimage : d '' s = Ico 0 D)
+    (hB : ∀ x ∈ s, B x = c + d x • u) (hV : V - c = D • u) :
+    B '' s = segment 𝕜 c V \ {V} := by
+  rw [← image_add_smul_Ico hD hu hV, ← hdimage, image_image]
+  exact image_congr hB
 
 /-- A point `x` lies on the segment from `a` to any point `lineMap a x T` with `1 ≤ T`, that is,
 to any point at or beyond `x` on the ray from `a` through `x`. -/

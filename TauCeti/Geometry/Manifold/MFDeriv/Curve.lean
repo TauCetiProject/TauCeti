@@ -67,13 +67,16 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   chain rule under reparametrization, with `MDifferentiableAt.curveVelocity_comp_mfderiv` for a
   curve through a normed space and `TauCeti.Manifold.curveVelocity_comp` for scalar
   reparametrizations.
+* `Function.Periodic.curveVelocity_add`: the velocity of a periodic curve is periodic.
 * `TauCeti.Manifold.curveVelocity_eq_mfderiv_snd` and
   `TauCeti.Manifold.curveVelocity_eq_mfderiv_fst`: the two partial velocities of a two-parameter
   family `f : 𝕜 → 𝕜 → M` are the differential of the uncurried family in the coordinate
-  directions.
+  directions, and `TauCeti.Manifold.hasMFDerivAt_apply_fst` gives the corresponding derivative
+  of the curve `q ↦ w (q, t)` of a map `w : 𝕜 × 𝕜 → M`.
 * `HasMFDerivAt.fst_curve` and `HasMFDerivAt.snd_curve`:
   the components of a curve in a product move with the components of its velocity.
-* `HasMFDerivAt.hasDerivAt_extChartAt_comp`: a curve read in any fixed extended chart containing
+* `HasMFDerivWithinAt.hasDerivWithinAt_extChartAt_comp` and
+  `HasMFDerivAt.hasDerivAt_extChartAt_comp`: a curve read in any fixed extended chart containing
   its value has the coordinate expression of its velocity as velocity.
 * `TauCeti.Manifold.variationField`: the variation field `V(t) = ∂F/∂s (0, t)` of a two-parameter
   family `F : 𝕜 → 𝕜 → M`, the transverse velocity at `s = 0`; it vanishes where the curves near
@@ -297,6 +300,17 @@ theorem curveVelocity_eq_mfderiv_fst
   hf.curveVelocity_comp_mfderiv (g := fun q : 𝕜 ↦ (q, t))
     ((hasDerivAt_id u).prodMk (hasDerivAt_const u t))
 
+/-- The curve `q ↦ w (q, t)` of a map `w` of the plane has velocity `∂_s w (u, t)`, the
+differential of `w` in the direction of the first coordinate. -/
+theorem hasMFDerivAt_apply_fst {w : 𝕜 × 𝕜 → M}
+    (hw : MDifferentiableAt 𝓘(𝕜, 𝕜 × 𝕜) I w (u, t)) :
+    HasMFDerivAt 𝓘(𝕜, 𝕜) I (fun q ↦ w (q, t)) u
+      ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I w (u, t) (1, 0))) := by
+  have hc : MDifferentiableAt 𝓘(𝕜, 𝕜) I (fun q ↦ w (q, t)) u :=
+    hw.comp u (differentiableAt_id.prodMk (differentiableAt_const t)).mdifferentiableAt
+  have h := hasMFDerivAt_curveVelocity hc
+  rwa [curveVelocity_eq_mfderiv_fst (f := fun a b ↦ w (a, b)) hw] at h
+
 end Surface
 
 /-- The velocity of a reparametrized curve is the velocity of the original curve multiplied by
@@ -327,6 +341,15 @@ theorem curveVelocity_comp {φ : 𝕜 → 𝕜} {c : 𝕜} (hφ : HasDerivAt φ 
     curveVelocityWithin_comp (s := Set.univ) (u := Set.univ) hφ.hasDerivWithinAt
       (Set.mapsTo_univ φ Set.univ) hγ.mdifferentiableWithinAt
       (uniqueDiffOn_univ t (Set.mem_univ t))
+
+/-- The velocity of a `c`-periodic curve is `c`-periodic: at a point where the curve is
+differentiable, its velocity at `t + c` is its velocity at `t`. -/
+theorem _root_.Function.Periodic.curveVelocity_add {c : 𝕜} (h : Function.Periodic γ c)
+    (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (t + c)) :
+    curveVelocity I γ (t + c) = curveVelocity I γ t := by
+  have h' := curveVelocity_comp (c := 1) ((hasDerivAt_id' t).add_const c) hγ
+  rw [one_smul, show (γ ∘ fun t ↦ t + c) = γ from funext h] at h'
+  exact h'.symm
 
 /-- On a parameter set which is a neighbourhood of `t`, the restricted velocity is the
 unrestricted one. -/
@@ -675,6 +698,34 @@ end TauCeti.Manifold
 
 end
 
+namespace HasMFDerivWithinAt
+
+open TauCeti.Manifold
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {γ : 𝕜 → M} {s : Set 𝕜} {t : 𝕜} {x : M} {w : TangentSpace I (γ t)}
+
+/-- Reading a curve in a fixed extended chart converts its within-set velocity to its
+coordinate expression. This includes derivatives at interval endpoints. -/
+theorem hasDerivWithinAt_extChartAt_comp
+    (hγ : HasMFDerivWithinAt 𝓘(𝕜, 𝕜) I γ s t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w))
+    (hsrc : γ t ∈ (extChartAt I x).source) :
+    HasDerivWithinAt ((extChartAt I x) ∘ γ)
+      (tangentCoordChange I (γ t) x (γ t) w) s t := by
+  replace hsrc := extChartAt_source I x ▸ hsrc
+  have hderiv := TauCeti.Manifold.hasDerivWithinAt_comp_curve
+    (mdifferentiableAt_extChartAt (I := I) hsrc) hγ
+  convert hderiv using 1
+  simp only [mvfderiv]
+  rw [(hasMFDerivAt_extChartAt (I := I) hsrc).mfderiv,
+    mfderiv_chartAt_eq_tangentCoordChange hsrc]
+  rfl
+
+end HasMFDerivWithinAt
+
 namespace HasMFDerivAt
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -713,15 +764,8 @@ that, read in the chart, it solves the coordinate equation of the field. -/
 theorem hasDerivAt_extChartAt_comp [IsManifold I 1 M] {γ : 𝕜 → M} {x : M}
     {w : TangentSpace I (γ t)} (hγ : HasMFDerivAt 𝓘(𝕜, 𝕜) I γ t ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w))
     (hsrc : γ t ∈ (extChartAt I x).source) :
-    HasDerivAt ((extChartAt I x) ∘ γ) (tangentCoordChange I (γ t) x (γ t) w) t := by
-  replace hsrc := extChartAt_source I x ▸ hsrc
-  have hderiv := TauCeti.Manifold.hasDerivAt_comp_curve
-    (mdifferentiableAt_extChartAt (I := I) hsrc) hγ
-  convert hderiv using 1
-  simp only [mvfderiv]
-  rw [(hasMFDerivAt_extChartAt (I := I) hsrc).mfderiv,
-    mfderiv_chartAt_eq_tangentCoordChange hsrc]
-  rfl
+    HasDerivAt ((extChartAt I x) ∘ γ) (tangentCoordChange I (γ t) x (γ t) w) t :=
+  (hγ.hasMFDerivWithinAt.hasDerivWithinAt_extChartAt_comp hsrc).hasDerivAt Filter.univ_mem
 
 end HasMFDerivAt
 

@@ -26,6 +26,9 @@ remainders. For `0 < p` the pair of remainders, valued in `Fin p`, and quotients
 * `Finsupp.nsmul_mapRange_div_add_mapRange_mod`: `p • (α / p) + α % p = α` entrywise.
 * `Finsupp.modDivEquiv_nsmul_add`: adding `p • γ` keeps the remainders and adds `γ` to the
   quotients.
+* `Finsupp.nsmul_add_eq_nsmul_add_iff`: `p • μ + ν` determines `μ` and `ν` when the entries of `ν`
+  are below `p`.
+* `Finsupp.nsmul_add_injective`: for `p ≠ 0`, `μ ↦ p • μ + ν` is injective.
 -/
 
 public section
@@ -40,9 +43,28 @@ theorem nsmul_mapRange_div_add_mapRange_mod (α : σ →₀ ℕ) :
   ext i
   simp [Nat.div_add_mod]
 
+/-- An exponent `p • μ + ν` whose entries of `ν` are all below `p` determines its entrywise
+quotient `μ` and remainder `ν` by `p`. -/
+theorem nsmul_add_eq_nsmul_add_iff {μ μ' ν ν' : σ →₀ ℕ} (hν : ∀ i, ν i < p) (hν' : ∀ i, ν' i < p) :
+    p • μ + ν = p • μ' + ν' ↔ μ = μ' ∧ ν = ν' := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h.1, h.2]⟩
+  have hi (i : σ) : p * μ i + ν i = p * μ' i + ν' i := by simpa using DFunLike.congr_fun h i
+  have hνν' : ν = ν' := by
+    ext i
+    simpa [Nat.mul_add_mod, Nat.mod_eq_of_lt (hν i), Nat.mod_eq_of_lt (hν' i)] using
+      congrArg (· % p) (hi i)
+  subst hνν'
+  refine ⟨Finsupp.ext fun i ↦ ?_, rfl⟩
+  have hp : 0 < p := Nat.zero_lt_of_lt (hν i)
+  exact Nat.eq_of_mul_eq_mul_left hp (by simpa using hi i)
+
 section ModDivEquiv
 
 variable [NeZero p]
+
+/-- Adding a fixed exponent after scaling by `p ≠ 0` is injective on exponents. -/
+theorem nsmul_add_injective (ν : σ →₀ ℕ) : Function.Injective fun μ : σ →₀ ℕ ↦ p • μ + ν :=
+  (add_left_injective ν).comp (nsmul_right_injective (NeZero.ne p))
 
 /-- For `0 < p`, an exponent `α` is determined by its entrywise remainders by `p`, valued in
 `Fin p`, and its entrywise quotients by `p`: `α = p • (α / p) + α % p`. -/

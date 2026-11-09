@@ -102,17 +102,15 @@ variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
   {K : Type*} [Field K] [Algebra K L] [Algebra ℚ_[p] K] [IsScalarTower ℚ_[p] K L] [IsGalois K L]
 
 variable (L K) in
-/-- **An integral lattice of full rank in `A(L)`.** Over a finite Galois layer `L/K` of a finite
-extension `L` of `ℚ_p`, with `G = Gal(L/K)` and `N = [K : ℚ_p]`, there is an injective
-`ℤ_p[G]`-linear map `ℤ_p[G]^N × ℤ_p[G] ⧸ I_G → A(L)`: the `k`-th basis vector goes to the class of
-a deep unit `u_k` whose logarithm is a nonzero multiple of `b_k α`, for a `ℚ_p`-basis `b` of `K`
-and a normal basis generator `α` of `L/K`, and `1` goes to the class of `p`. -/
-private theorem exists_injective_linearMap_padicCompletionUnits :
-    ∃ Φ : ((Fin (Module.finrank ℚ_[p] K) → MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) ×
-        (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L) ⧸
-          RingHom.ker (MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L))))
-        →ₗ[MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)] Additive ↑(padicCompletionUnits p L),
-      Function.Injective Φ := by
+/-- **Linearly independent classes in `A(L)`.** Over a finite Galois layer `L/K` of a finite
+extension `L` of `ℚ_p` with `N = [K : ℚ_p]`, there are deep units `u_k` (`k < N`), obtained from a
+`ℚ_p`-basis of `K` and a normal basis of `L/K`, such that the classes in `A(L)` of `p` and of the
+conjugates `σ(u_k)` for `σ ∈ Gal(L/K)` are linearly independent over `ℤ_p`. -/
+private theorem exists_linearIndependent_padicCompletionUnitsOf_conj :
+    ∃ (u : Fin (Module.finrank ℚ_[p] K) → Lˣ) (ϖ : Lˣ), (ϖ : L) = p ∧
+      LinearIndependent ℤ_[p] fun o : Option (Fin (Module.finrank ℚ_[p] K) × (L ≃ₐ[K] L)) ↦
+        Additive.ofMul (padicCompletionUnitsOf p L
+          (o.elim ϖ fun j ↦ Units.map j.2.toRingEquiv.toMonoidHom (u j.1))) := by
   have hi : absoluteRamificationIndex L p < (p - 1) * (absoluteRamificationIndex L p + 1) :=
     (Nat.lt_succ_self _).trans_le
       (Nat.le_mul_of_pos_left _ (Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt))
@@ -147,11 +145,30 @@ private theorem exists_injective_linearMap_padicCompletionUnits :
   -- The classes of `p` and of the `σ (u k)` are linearly independent over `ℤ_p` in `A(L)`.
   set ϖ : Lˣ := Units.mk0 (p : L) hp0
   have hlin := linearIndependent_padicCompletionUnitsOf p hi hv hind (ϖ := ϖ) rfl
+  exact ⟨u, ϖ, rfl, hlin⟩
+
+variable (L K) in
+/-- **An integral lattice of full rank in `A(L)`.** Over a finite Galois layer `L/K` of a finite
+extension `L` of `ℚ_p`, with `G = Gal(L/K)` and `N = [K : ℚ_p]`, there is an injective
+`ℤ_p[G]`-linear map `ℤ_p[G]^N × ℤ_p[G] ⧸ I_G → A(L)`: the `k`-th basis vector goes to the class of
+a deep unit `u_k` whose logarithm is a nonzero multiple of `b_k α`, for a `ℚ_p`-basis `b` of `K`
+and a normal basis generator `α` of `L/K`, and `1` goes to the class of `p`. -/
+private theorem exists_injective_linearMap_padicCompletionUnits :
+    ∃ Φ : ((Fin (Module.finrank ℚ_[p] K) → MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) ×
+        (MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L) ⧸
+          RingHom.ker (MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L))))
+        →ₗ[MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)] Additive ↑(padicCompletionUnits p L),
+      Function.Injective Φ := by
+  obtain ⟨u, ϖ, hϖ, hlin⟩ := exists_linearIndependent_padicCompletionUnitsOf_conj p L K
+  have : Module.Finite ℚ_[p] K := .left ℚ_[p] K L
+  have : Module.Finite K L := .right ℚ_[p] K L
+  set v : Fin (Module.finrank ℚ_[p] K) × (L ≃ₐ[K] L) → Lˣ :=
+    fun j ↦ Units.map j.2.toRingEquiv.toMonoidHom (u j.1)
   -- The class of `p` is fixed by `G`, so `ℤ_p[G]` acts on it through the augmentation.
   set y : Additive ↑(padicCompletionUnits p L) := Additive.ofMul (padicCompletionUnitsOf p L ϖ)
   have hy (r : MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) :
       r • y = MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L) r • y :=
-    r.smul_padicCompletionUnitsOf_of_forall_eq p fun σ ↦ Units.ext (by simp [ϖ])
+    r.smul_padicCompletionUnitsOf_of_forall_eq p fun σ ↦ Units.ext (by simp [hϖ])
   have hI : RingHom.ker (MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L)) ≤
       LinearMap.ker (LinearMap.toSpanSingleton _ _ y) := fun r hr ↦ by
     rw [LinearMap.mem_ker, LinearMap.toSpanSingleton_apply, hy, RingHom.mem_ker.mp hr, zero_smul]

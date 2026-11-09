@@ -13,7 +13,8 @@ import TauCeti.Order.SymmDiff
 
 For sets of finite outer measure, the mass of a set changes by at most the mass of its symmetric
 difference with another set. The intersection estimate follows by containing its symmetric
-difference in the union of the two input symmetric differences.
+difference in the union of the two input symmetric differences. Consequently, sets of a common
+mass `c` that converge to `s` in symmetric-difference mass force `s` to have mass `c`.
 
 These statements use only monotonicity and subadditivity, so they are stated for
 `OuterMeasureClass`, which covers both outer measures and measures without requiring a measurable
@@ -24,12 +25,13 @@ space. They supply the approximation estimates for the Hewitt–Savage zero-one 
 
 * `TauCeti.MeasureTheory.abs_toReal_sub_le_toReal_symmDiff`
 * `TauCeti.MeasureTheory.abs_toReal_inter_sub_le_toReal_symmDiff_add`
+* `TauCeti.MeasureTheory.measure_eq_of_tendsto_measure_symmDiff`
 -/
 
 public section
 
-open MeasureTheory Set
-open scoped ENNReal symmDiff
+open Filter MeasureTheory Set
+open scoped ENNReal symmDiff Topology
 
 namespace TauCeti.MeasureTheory
 
@@ -68,5 +70,19 @@ theorem abs_toReal_inter_sub_le_toReal_symmDiff_add {A B s : Set Ω}
     _ ≤ (μ (A ∆ s)).toReal + (μ (B ∆ s)).toReal :=
       ENNReal.toReal_le_add
         ((measure_mono inf_symmDiff_le_symmDiff_sup_symmDiff).trans (measure_union_le _ _)) hA hB
+
+/-- If the sets `t i` eventually have mass `c` and converge to `s` in symmetric-difference mass,
+then `s` has mass `c`. -/
+theorem measure_eq_of_tendsto_measure_symmDiff {ι : Type*} {l : Filter ι} [l.NeBot]
+    {t : ι → Set Ω} {s : Set Ω} {c : ℝ≥0∞} (ht : ∀ᶠ i in l, μ (t i) = c)
+    (h : Tendsto (fun i ↦ μ (t i ∆ s)) l (𝓝 0)) : μ s = c := by
+  have hle (a b : Set Ω) : μ a ≤ μ (a ∆ b) + μ b :=
+    (measure_mono (le_symmDiff_sup_right a b)).trans (measure_union_le _ _)
+  refine le_antisymm (ge_of_tendsto (by simpa using h.add_const c) (ht.mono fun i hi => ?_))
+    (ge_of_tendsto (by simpa using h.add_const (μ s)) (ht.mono fun i hi => ?_))
+  · rw [← hi, symmDiff_comm]
+    exact hle s (t i)
+  · rw [← hi]
+    exact hle (t i) s
 
 end TauCeti.MeasureTheory

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Defs
 public import Mathlib.Algebra.Order.Pi
+public import TauCeti.Algebra.Group.AddSubgroup.NonnegativeCoset
 public import TauCeti.GroupTheory.Perm.Basic
 public import TauCeti.LowDimTopology.Heegaard.Generator
 import Mathlib.Tactic.Abel
@@ -254,29 +255,13 @@ theorem boundary_boundary_eq_zero (D : Region → ℤ) :
 that is, constant along each `α`-curve. -/
 theorem alphaArcBoundary_eq_zero_iff (c : Point → ℤ) :
     H.alphaArcBoundary c = 0 ↔ ∃ a : Fin n → ℤ, ∀ p, c p = a (H.alpha p) := by
-  simp only [funext_iff, alphaArcBoundary_apply, Pi.zero_apply, sub_eq_zero]
-  constructor
-  · intro hc
-    obtain ⟨a, ha⟩ := (Function.factorsThrough_iff _).mp
-      (H.alphaNext.factorsThrough_of_forall_isCycleOn H.alphaNext_isCycleOn fun p => by
-        simpa using (hc (H.alphaNext p)).symm)
-    exact ⟨a, congrFun ha⟩
-  · rintro ⟨a, ha⟩ q
-    rw [ha, ha, alpha_alphaNext_symm]
+  simpa [funext_iff] using H.alphaNext.forall_comp_symm_sub_eq_zero_iff H.alphaNext_isCycleOn c
 
 /-- A `1`-chain on the `β`-arcs is a cycle exactly when it is a combination of whole `β`-curves,
 that is, constant along each `β`-curve. -/
 theorem betaArcBoundary_eq_zero_iff (c : Point → ℤ) :
     H.betaArcBoundary c = 0 ↔ ∃ b : Fin n → ℤ, ∀ p, c p = b (H.beta p) := by
-  simp only [funext_iff, betaArcBoundary_apply, Pi.zero_apply, sub_eq_zero]
-  constructor
-  · intro hc
-    obtain ⟨b, hb⟩ := (Function.factorsThrough_iff _).mp
-      (H.betaNext.factorsThrough_of_forall_isCycleOn H.betaNext_isCycleOn fun p => by
-        simpa using (hc (H.betaNext p)).symm)
-    exact ⟨b, congrFun hb⟩
-  · rintro ⟨b, hb⟩ q
-    rw [hb, hb, beta_betaNext_symm]
+  simpa [funext_iff] using H.betaNext.forall_comp_symm_sub_eq_zero_iff H.betaNext_isCycleOn c
 
 end Boundary
 
@@ -402,21 +387,8 @@ def WeaklyAdmissible : Prop :=
 
 /-- A diagram is weakly admissible exactly when its only nonnegative periodic domain is zero. -/
 theorem weaklyAdmissible_iff :
-    H.WeaklyAdmissible ↔ ∀ P ∈ H.periodicDomains, 0 ≤ P → P = 0 := by
-  constructor
-  · intro h P hP hnonneg
-    by_contra hne
-    obtain ⟨r, hr⟩ := (h P hP hne).2
-    exact (hnonneg r).not_gt hr
-  · intro h P hP hne
-    refine ⟨?_, ?_⟩
-    · by_contra hpos
-      push Not at hpos
-      refine hne (neg_eq_zero.mp (h (-P) (neg_mem hP) fun r => ?_))
-      simpa using hpos r
-    · by_contra hneg
-      push Not at hneg
-      exact hne (h P hP hneg)
+    H.WeaklyAdmissible ↔ ∀ P ∈ H.periodicDomains, 0 ≤ P → P = 0 :=
+  H.periodicDomains.forall_exists_pos_and_neg_iff_forall_nonneg_eq_zero
 
 end Domain
 
