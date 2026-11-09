@@ -71,13 +71,21 @@ theorem commute_of_conjugate_le [NonUnitalCStarAlgebra A] [PartialOrder A] [Star
 
 /-- Compression of a positive element by a projection lies below that element exactly when
 the projection commutes with it. Positivity is needed only for the reverse implication. -/
-theorem conjugate_le_iff_commute [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+theorem conjugate_le_iff_commute [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
     {p a : A} (hp : IsStarProjection p) (ha : 0 ≤ a) : p * a * p ≤ a ↔ Commute p a := by
   constructor
   · exact hp.commute_of_conjugate_le
   · intro h
-    have hcorner : (1 - p) * a * (1 - p) = a - p * a * p := by
-      noncomm_ring [hp.isIdempotentElem.eq, h.eq]
-    exact sub_nonneg.mp (hcorner ▸ hp.one_sub.isSelfAdjoint.conjugate_nonneg ha)
+    have hcorner : star (sqrt a - sqrt a * p) * (sqrt a - sqrt a * p) =
+        a - p * a * p := by
+      calc
+        _ = sqrt a * sqrt a - (sqrt a * sqrt a) * p - p * (sqrt a * sqrt a) +
+            p * (sqrt a * sqrt a) * p := by
+          rw [star_sub, star_mul, (sqrt_nonneg a).star_eq, hp.isSelfAdjoint.star_eq]
+          noncomm_ring
+        _ = a - p * a * p := by
+          rw [sqrt_mul_sqrt_self a ha]
+          noncomm_ring [hp.isIdempotentElem.eq, h.eq]
+    exact sub_nonneg.mp (hcorner ▸ star_mul_self_nonneg _)
 
 end IsStarProjection
