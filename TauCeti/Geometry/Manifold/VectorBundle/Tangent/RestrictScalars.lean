@@ -33,8 +33,6 @@ always be installed locally using `IsManifold.restrictScalars`.
 
 ## Main results
 
-* `TangentBundle.restrictScalarsHomeomorph_mk`: the fibrewise linear equivalence agrees with
-  the existing tangent-bundle homeomorphism.
 * `TangentBundle.restrictScalarsHomeomorph` and `TangentBundle.restrictScalarsDiffeomorph`:
   the topological and smooth total-space comparisons.
 * `TangentBundle.restrictScalarsHomeomorph_tangentMap`: compatibility with tangent maps.
@@ -143,14 +141,6 @@ theorem restrictScalarsHomeomorph_apply (x : M) (v : TangentSpace 𝓘(𝕜', E)
       ⟨x, (tangentSpaceCastModel 𝓘(𝕜, E) x).symm
         (tangentSpaceCastModel 𝓘(𝕜', E) x v)⟩ := (rfl)
 
-/-- On each fibre, the total-space homeomorphism is the canonical linear scalar comparison. -/
--- The coordinate application lemma already simplifies this left-hand side.
-theorem restrictScalarsHomeomorph_mk (x : M)
-    (v : RestrictScalars 𝕜 𝕜' (TangentSpace 𝓘(𝕜', E) x)) :
-    restrictScalarsHomeomorph 𝕜 M ⟨x, RestrictScalars.addEquiv 𝕜 𝕜' _ v⟩ =
-      ⟨x, TangentSpace.restrictScalarsSelfLinearEquiv 𝕜 (A := 𝕜') x v⟩ := by
-  rw [restrictScalarsHomeomorph_apply, TangentSpace.restrictScalarsSelfLinearEquiv_apply]
-
 /-- The inverse scalar comparison reads the tangent vector in the same model coordinates. -/
 @[simp]
 theorem restrictScalarsHomeomorph_symm_apply (x : M) (v : TangentSpace 𝓘(𝕜, E) x) :
@@ -250,7 +240,7 @@ theorem restrictScalarsHomeomorph_tangentMap {f : M → N}
   have h := hf.mfderiv_restrictScalarsSelf_apply 𝕜
     ((RestrictScalars.addEquiv 𝕜 𝕜' _).symm v)
   simp only [AddEquiv.apply_symm_apply,
-    TangentSpace.restrictScalarsSelfLinearEquiv_apply] at h
+    TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv_apply] at h
   simpa only [tangentMap, restrictScalarsHomeomorph_apply] using
     congrArg (fun w : TangentSpace 𝓘(𝕜, E') (f x) ↦
       (⟨f x, w⟩ : TangentBundle 𝓘(𝕜, E') N)) h

@@ -49,7 +49,7 @@ theorem MDifferentiableAt.restrictScalars_vectorField
     (hV : MDifferentiableAt 𝓘(A, E) 𝓘(A, E).tangent
       (fun y ↦ (V y : TangentBundle 𝓘(A, E) M)) x) :
     MDifferentiableAt 𝓘(R, E) 𝓘(R, E).tangent
-      (fun y ↦ (⟨y, TangentSpace.restrictScalarsSelfLinearEquiv R (A := A) (E := E) y
+      (fun y ↦ (⟨y, TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv R (A := A) (E := E) y
         ((RestrictScalars.addEquiv R A _).symm (V y))⟩ : TangentBundle 𝓘(R, E) M)) x := by
   have hVR : MDifferentiableAt 𝓘(R, E) 𝓘(R, E).tangent
       (fun y ↦ (V y : TangentBundle 𝓘(A, E) M)) x := by
@@ -61,7 +61,7 @@ theorem MDifferentiableAt.restrictScalars_vectorField
   apply h.congr_of_eventuallyEq
   filter_upwards with y
   simp only [Function.comp_apply, TangentBundle.restrictScalarsHomeomorph_apply,
-    TangentSpace.restrictScalarsSelfLinearEquiv_apply, AddEquiv.apply_symm_apply]
+    TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv_apply, AddEquiv.apply_symm_apply]
 
 namespace VectorField
 
@@ -77,12 +77,12 @@ theorem mlieBracket_restrictScalars
       (fun y ↦ (V y : TangentBundle 𝓘(A, E) M)) x)
     (hW : MDifferentiableAt 𝓘(A, E) 𝓘(A, E).tangent
       (fun y ↦ (W y : TangentBundle 𝓘(A, E) M)) x) :
-    TangentSpace.restrictScalarsSelfLinearEquiv R x
+    TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv R x
         ((RestrictScalars.addEquiv R A _).symm (mlieBracket 𝓘(A, E) V W x)) =
       mlieBracket 𝓘(R, E)
-        (fun y ↦ TangentSpace.restrictScalarsSelfLinearEquiv R y
+        (fun y ↦ TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv R y
           ((RestrictScalars.addEquiv R A _).symm (V y)))
-        (fun y ↦ TangentSpace.restrictScalarsSelfLinearEquiv R y
+        (fun y ↦ TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv R y
           ((RestrictScalars.addEquiv R A _).symm (W y))) x := by
   apply TauCeti.eq_mlieBracket_of_mvfderiv_extChartAt
     (hV.restrictScalars_vectorField R) (hW.restrictScalars_vectorField R)
@@ -94,7 +94,7 @@ theorem mlieBracket_restrictScalars
       (extChartAt 𝓘(A, E) x) x := contMDiffAt_extChartAt
   have hnear (U : ∀ y : M, TangentSpace 𝓘(A, E) y) :
       (fun y ↦ mvfderiv 𝓘(R, E) (extChartAt 𝓘(A, E) x) y
-        (TangentSpace.restrictScalarsSelfLinearEquiv R y
+        (TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv R y
           ((RestrictScalars.addEquiv R A _).symm (U y)))) =ᶠ[𝓝 x]
       (fun y ↦ mvfderiv 𝓘(A, E) (extChartAt 𝓘(A, E) x) y (U y)) := by
     filter_upwards [extChartAt_source_mem_nhds (I := 𝓘(A, E)) x] with y hy

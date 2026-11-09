@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.Transport
 
 /-!
-# Complex-linear real maps are exactly `ℂ`-linear maps
+# Complex-linear maps and transported complex structures
 
 `TauCeti.AlmostComplexStructure.complexModule` turns an almost complex structure `J` on a real
 module `V` (a real-linear `J` with `J ∘ J = -1`) into a genuine complex vector space structure,
@@ -24,7 +24,13 @@ manifolds is `J`-holomorphic precisely when its differential is `ℂ`-linear: th
 differential is a real-linear map, and `J`-holomorphicity is exactly `ℂ`-linearity of that
 differential for the fiberwise complex structures.
 
+A commuting square with a `ℂ`-linear map intertwines the canonical structures transported along
+real-linear equivalences from scalar-restricted complex modules.
+
 ## Main declarations
+
+* `TauCeti.AlmostComplexStructure.ofRestrictScalars_transport_naturality`: transport naturality
+  through a commuting square of arbitrary modules.
 
 * `TauCeti.IsComplexLinearMap.map_complexModule_smul`: a complex-linear real map respects the
   induced complex scalar action, `F (z • v) = z • F v`.

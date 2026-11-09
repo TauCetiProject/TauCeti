@@ -37,7 +37,7 @@ fields and intertwines their manifold and vector-valued derivatives.
 
 ## Main results
 
-* `TangentSpace.restrictScalarsSelfLinearEquiv` and its `_apply`/`_symm_apply` formulas:
+* `TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv` and its `_apply`/`_symm_apply` formulas:
   the comparison into the native smaller-field self-model tangent fibre.
 * `MDifferentiableAt.mfderiv_restrictScalarsSelf_apply` and
   `MDifferentiableAt.mvfderiv_restrictScalarsSelf_apply`: derivative comparison through this
@@ -255,7 +255,7 @@ end TauCeti
 
 noncomputable section
 
-namespace TangentSpace
+namespace TauCeti
 
 variable (R : Type*) {A : Type*}
   [NontriviallyNormedField R] [NontriviallyNormedField A] [NormedAlgebra R A]
@@ -264,7 +264,7 @@ variable (R : Type*) {A : Type*}
 
 /-- Scalar restriction identifies a self-model tangent fibre with the native self-model
 fibre over the smaller field. -/
-def restrictScalarsSelfLinearEquiv (x : M) :
+def tangentSpaceRestrictScalarsSelfLinearEquiv (x : M) :
     RestrictScalars R A (TangentSpace 𝓘(A, E) x) ≃ₗ[R] TangentSpace 𝓘(R, E) x where
   toFun v := (tangentSpaceCastModel 𝓘(R, E) x).symm
     (tangentSpaceCastModel 𝓘(A, E) x (RestrictScalars.addEquiv R A _ v))
@@ -278,21 +278,21 @@ def restrictScalarsSelfLinearEquiv (x : M) :
 
 /-- Native self-model scalar restriction preserves preferred tangent coordinates. -/
 @[simp]
-theorem restrictScalarsSelfLinearEquiv_apply (x : M)
+theorem tangentSpaceRestrictScalarsSelfLinearEquiv_apply (x : M)
     (v : RestrictScalars R A (TangentSpace 𝓘(A, E) x)) :
-    restrictScalarsSelfLinearEquiv R x v = (tangentSpaceCastModel 𝓘(R, E) x).symm
+    tangentSpaceRestrictScalarsSelfLinearEquiv R x v = (tangentSpaceCastModel 𝓘(R, E) x).symm
       (tangentSpaceCastModel 𝓘(A, E) x (RestrictScalars.addEquiv R A _ v)) := by
   rfl
 
 /-- The inverse native self-model comparison preserves preferred tangent coordinates. -/
 @[simp]
-theorem restrictScalarsSelfLinearEquiv_symm_apply (x : M) (v : TangentSpace 𝓘(R, E) x) :
-    (restrictScalarsSelfLinearEquiv R (A := A) x).symm v =
+theorem tangentSpaceRestrictScalarsSelfLinearEquiv_symm_apply (x : M) (v : TangentSpace 𝓘(R, E) x) :
+    (tangentSpaceRestrictScalarsSelfLinearEquiv R (A := A) x).symm v =
       (RestrictScalars.addEquiv R A _).symm
         ((tangentSpaceCastModel 𝓘(A, E) x).symm (tangentSpaceCastModel 𝓘(R, E) x v)) := by
   rfl
 
-end TangentSpace
+end TauCeti
 
 namespace MDifferentiableAt
 
@@ -307,15 +307,15 @@ variable (R : Type*) {A : Type*}
 theorem mfderiv_restrictScalarsSelf_apply {f : M → N} {x : M}
     (hf : MDifferentiableAt 𝓘(A, E) 𝓘(A, F) f x)
     (v : RestrictScalars R A (TangentSpace 𝓘(A, E) x)) :
-    TangentSpace.restrictScalarsSelfLinearEquiv R (f x)
+    TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv R (f x)
         ((RestrictScalars.addEquiv R A _).symm
           (mfderiv 𝓘(A, E) 𝓘(A, F) f x (RestrictScalars.addEquiv R A _ v))) =
       mfderiv 𝓘(R, E) 𝓘(R, F) f x
-        (TangentSpace.restrictScalarsSelfLinearEquiv R x v) := by
+        (TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv R x v) := by
   have h := DFunLike.congr_fun (hf.mfderiv_restrictScalars R)
     (tangentSpaceCastModel 𝓘(A, E) x (RestrictScalars.addEquiv R A _ v))
   apply (tangentSpaceCastModel 𝓘(R, F) (f x)).injective
-  simp only [TangentSpace.restrictScalarsSelfLinearEquiv_apply, AddEquiv.apply_symm_apply]
+  simp only [TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv_apply, AddEquiv.apply_symm_apply]
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
     ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply] at h
   exact h.symm
@@ -324,15 +324,15 @@ theorem mfderiv_restrictScalarsSelf_apply {f : M → N} {x : M}
 theorem mvfderiv_restrictScalarsSelf_apply {f : M → F} {x : M}
     (hf : MDifferentiableAt 𝓘(A, E) 𝓘(A, F) f x)
     (v : RestrictScalars R A (TangentSpace 𝓘(A, E) x)) :
-    mvfderiv 𝓘(R, E) f x (TangentSpace.restrictScalarsSelfLinearEquiv R x v) =
+    mvfderiv 𝓘(R, E) f x (TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv R x v) =
       mvfderiv 𝓘(A, E) f x (RestrictScalars.addEquiv R A _ v) := by
   -- For a vector-space target, the model cast is the standard tangent-space identification.
   have h := congrArg (tangentSpaceCastModel 𝓘(R, F) (f x))
     (hf.mfderiv_restrictScalarsSelf_apply R v)
-  simp only [TangentSpace.restrictScalarsSelfLinearEquiv_apply,
+  simp only [TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv_apply,
     AddEquiv.apply_symm_apply, ContinuousLinearEquiv.apply_symm_apply] at h
   simp only [mvfderiv, NormedSpace.fromTangentSpace,
-    TangentSpace.restrictScalarsSelfLinearEquiv_apply]
+    TauCeti.tangentSpaceRestrictScalarsSelfLinearEquiv_apply]
   rw [ContinuousLinearMap.comp_apply]
   exact h.symm
 

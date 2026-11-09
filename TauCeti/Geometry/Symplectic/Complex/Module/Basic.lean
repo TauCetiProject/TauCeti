@@ -28,9 +28,6 @@ structure induced from `ofComplexModule` recovers the original complex module st
 
 ## Main declarations
 
-* `TauCeti.AlmostComplexStructure.ofRestrictScalars`: the canonical structure on a complex module
-  with scalars restricted to the reals, using the normalized module `RestrictScalars.realModule`.
-
 * `TauCeti.AlmostComplexStructure.complexModule`: the `Module ℂ V` with
   `(a + b·i) • v = a • v + b • J v`.
 * `TauCeti.AlmostComplexStructure.complexModule_smul_def`: the defining scalar action.
@@ -39,7 +36,7 @@ structure induced from `ofComplexModule` recovers the original complex module st
   original real action.
 * `TauCeti.AlmostComplexStructure.complexModule_isScalarTower`: `ℝ`, `ℂ`, `V` form a scalar tower.
 * `TauCeti.AlmostComplexStructure.ofRestrictScalars`: the canonical almost complex structure
-  on a complex module with scalars restricted to the reals.
+  on a complex module with scalars restricted to the reals, using `RestrictScalars.realModule`.
 * `TauCeti.AlmostComplexStructure.ofComplexModule`: the almost complex structure `v ↦ i • v` on a
   complex module.
 * `TauCeti.AlmostComplexStructure.ofComplexModule_complexModule`: the round trip recovers `J`.
