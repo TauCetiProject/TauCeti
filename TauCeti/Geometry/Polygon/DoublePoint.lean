@@ -406,35 +406,6 @@ private theorem IsRegularProjection.subsingleton_setOf_mem_edgeSet_of_ne
   by_contra hne
   exact hxy_ne (hπ.eq_of_two_edgePairs hx hy hxy hx' hy' hxy' hne).1
 
-omit [IsStrictOrderedRing R] in
-/-- If the points of edge `i` at the parameters `h u` lie over the points of edge `j` at the
-parameters `u` under a regular projection, then at a parameter `u` where `u` or `h u` is an end of
-`[0, 1]`, the two points coincide, so they are a common point of the two edges. -/
-private theorem IsRegularProjection.lineMap_mem_edgeSet_inter (hπ : poly.IsRegularProjection R π)
-    {i j : Fin n} {h : R → R}
-    (hrel : ∀ u, π (lineMap (poly i) (poly (finRotate n i)) (h u)) =
-      π (lineMap (poly j) (poly (finRotate n j)) u))
-    {u : R} (hu : u ∈ Icc (0 : R) 1) (hhu : h u ∈ Icc (0 : R) 1)
-    (hend : u = 0 ∨ u = 1 ∨ h u = 0 ∨ h u = 1) :
-    lineMap (poly i) (poly (finRotate n i)) (h u) ∈ poly.edgeSet R i ∩ poly.edgeSet R j := by
-  have hX : lineMap (poly i) (poly (finRotate n i)) (h u) ∈ poly.edgeSet R i := ⟨_, hhu, rfl⟩
-  have hY : lineMap (poly j) (poly (finRotate n j)) u ∈ poly.edgeSet R j := ⟨_, hu, rfl⟩
-  have hXb := mem_iUnion.2 ⟨i, hX⟩
-  have hYb := mem_iUnion.2 ⟨j, hY⟩
-  suffices lineMap (poly i) (poly (finRotate n i)) (h u) =
-      lineMap (poly j) (poly (finRotate n j)) u from ⟨hX, this ▸ hY⟩
-  rcases hend with rfl | rfl | h0 | h1
-  · rw [lineMap_apply_zero]
-    exact hπ.eq_vertex_of_apply_eq j hXb (by simpa only [lineMap_apply_zero] using hrel 0)
-  · rw [lineMap_apply_one]
-    exact hπ.eq_vertex_of_apply_eq _ hXb (by simpa only [lineMap_apply_one] using hrel 1)
-  · rw [h0, lineMap_apply_zero]
-    exact (hπ.eq_vertex_of_apply_eq i hYb
-      ((hrel u).symm.trans (by rw [h0, lineMap_apply_zero]))).symm
-  · rw [h1, lineMap_apply_one]
-    exact (hπ.eq_vertex_of_apply_eq _ hYb
-      ((hrel u).symm.trans (by rw [h1, lineMap_apply_one]))).symm
-
 /-- **Two distinct edges cross at most once.** For an affine regular projection `π` of a simple
 polygon, two distinct edges contain at most one pair of points with the same image under `π`. For
 consecutive edges this pair is their common vertex, taken twice. -/
@@ -443,51 +414,12 @@ theorem IsRegularProjection.subsingleton_setOf_mem_edgeSet (hs : poly.IsSimple R
     {p : P × P | p.1 ∈ poly.edgeSet R i ∧ p.2 ∈ poly.edgeSet R j ∧ π p.1 = π p.2}.Subsingleton := by
   rintro ⟨x, y⟩ ⟨hx, hy, hxy⟩ ⟨x', y'⟩ ⟨hx', hy', hxy'⟩
   dsimp only at hx hy hxy hx' hy' hxy'
-  suffices hxx : x = x' by
-    subst hxx
+  by_cases hxx : x = x'
+  · subst x'
     rw [hπ.injOn_edgeSet j hy hy' (hxy.symm.trans hxy')]
-  by_contra hne
-  obtain ⟨s, hsI, rfl⟩ := hx
-  obtain ⟨s', hsI', rfl⟩ := hx'
-  obtain ⟨t, ht, rfl⟩ := hy
-  obtain ⟨t', ht', rfl⟩ := hy'
-  have hss' : s ≠ s' := by rintro rfl; exact hne rfl
-  have htt' : t ≠ t' := by
-    rintro rfl
-    exact hne (hπ.injOn_edgeSet i ⟨s, hsI, rfl⟩ ⟨s', hsI', rfl⟩ (hxy.trans hxy'.symm))
-  have htt'₀ : t' - t ≠ 0 := sub_ne_zero.2 htt'.symm
-  -- Under `π`, edge `j` at the parameter `u` lies over edge `i` at the parameter `h u`, an
-  -- affine function of `u`.
-  set h : R → R := fun u ↦ lineMap s s' ((u - t) / (t' - t)) with h_def
-  have hh (u : R) : h u = lineMap (h 0) (h 1) u := by
-    simp only [h_def, lineMap_apply_ring']
-    field_simp
-    ring
-  have hrel (u : R) : π (lineMap (poly i) (poly (finRotate n i)) (h u)) =
-      π (lineMap (poly j) (poly (finRotate n j)) u) := by
-    have hu : lineMap t t' ((u - t) / (t' - t)) = u := by
-      rw [lineMap_apply_ring']
-      field_simp
-      ring
-    conv_rhs => rw [← hu]
-    simp only [h_def, AffineMap.apply_lineMap, hxy, hxy']
-  have ht₀ : h t = s := by simp [h_def]
-  have ht₁ : h t' = s' := by simp [h_def, div_self htt'₀]
-  -- The overlap of the two edges under `π` has two distinct ends.
-  obtain ⟨u₁, u₂, hne₁₂, hu⟩ := TauCeti.exists_lineMap_endpoint ht ht'
-    (by rw [← hh, ht₀]; exact hsI) (by rw [← hh, ht₁]; exact hsI')
-    (by rw [← hh, ← hh, ht₀, ht₁]; exact hss')
-  -- By regularity, each end of the overlap is a common point of the two edges.
-  have hcommon (u : R) (hu' : u ∈ ({u₁, u₂} : Set R)) :
-      lineMap (poly i) (poly (finRotate n i)) (h u) ∈ poly.edgeSet R i ∩ poly.edgeSet R j := by
-    obtain ⟨hu, hhu, hend⟩ := hu u hu'
-    rw [← hh] at hhu hend
-    exact hπ.lineMap_mem_edgeSet_inter hrel hu hhu hend
-  -- Two distinct common points of two distinct edges contradict simplicity.
-  refine hne₁₂ ?_
-  rw [← hh, ← hh]
-  exact lineMap_injective R (hs.hasNondegenerateEdges i)
-    (hs.subsingleton_edgeSet_inter hij (hcommon u₁ (.inl rfl)) (hcommon u₂ (.inr rfl)))
+  · obtain ⟨hxy₀, hxy₁⟩ := hπ.eq_of_two_edgePairs hx hy hxy hx' hy' hxy' hxx
+    exact False.elim (hxx (hs.subsingleton_edgeSet_inter hij
+      ⟨hx, hxy₀ ▸ hy⟩ ⟨hx', hxy₁ ▸ hy'⟩))
 
 /-- **An affine regular projection has finitely many double points.** Each double point has a
 distinct partner, and for any two edges there is at most one pair of distinct points with the same
