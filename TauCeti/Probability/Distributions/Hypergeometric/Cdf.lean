@@ -48,7 +48,7 @@ theorem cdf_map_cast_hypergeometricMeasure {N K n : ℕ} (hK : K ≤ N) (hn : n 
         else 0 := by
   let _ := isProbabilityMeasure_hypergeometricMeasure hK hn
   rw [Measure.cdf_map_natCast _ hx, ← Set.Iic_def,
-    hypergeometricMeasure_real_Iic_eq_sum hK hn]
+    hypergeometricMeasure_real_Iic_eq_sum hK]
 
 /-- Below the origin, the cdf of the real cast hypergeometric law vanishes. -/
 theorem cdf_map_cast_hypergeometricMeasure_of_neg {N K n : ℕ} (hK : K ≤ N) (hn : n ≤ N)
@@ -65,7 +65,7 @@ theorem hypergeometricMeasure_real_Iic_eq_zero_of_lt_lower
   rw [← Set.Iic_def, hypergeometricMeasure_real_Iic]
   apply Finset.sum_eq_zero
   intro j hj
-  rw [measureReal_eq_zero_iff, hypergeometricMeasure_singleton hK hn]
+  rw [measureReal_eq_zero_iff, hypergeometricMeasure_singleton hK]
   apply not_ne_iff.mp
   intro hjne
   have hsupp := (hypergeometricWeight_ne_zero_iff N K n j).mp hjne
@@ -83,7 +83,7 @@ theorem hypergeometricMeasure_real_Iic_eq_one_of_upper_le
     rw [ae_iff_of_countable (μ := hypergeometricMeasure N K n)]
     intro j hj
     have hweight : hypergeometricWeight N K n j ≠ 0 := by
-      rwa [hypergeometricMeasure_singleton hK hn] at hj
+      rwa [hypergeometricMeasure_singleton hK] at hj
     have hsupp := (hypergeometricWeight_ne_zero_iff N K n j).mp hweight
     omega
   filter_upwards [hle] with j hj

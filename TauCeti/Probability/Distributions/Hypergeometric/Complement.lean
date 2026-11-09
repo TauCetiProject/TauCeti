@@ -40,8 +40,8 @@ theorem map_sub_hypergeometricMeasure {N K n : ℕ} (hK : K ≤ N) :
     (hypergeometricMeasure N K n).map (fun k ↦ n - k) =
       hypergeometricMeasure N (N - K) n := by
   by_cases hn : n ≤ N
-  · rw [hypergeometricMeasure_eq_sum_dirac hK hn,
-      hypergeometricMeasure_eq_sum_dirac (Nat.sub_le N K) hn,
+  · rw [hypergeometricMeasure_eq_sum_dirac hK,
+      hypergeometricMeasure_eq_sum_dirac (Nat.sub_le N K),
       Measure.map_finset_sum Measurable.of_discrete.aemeasurable]
     simp_rw [Measure.map_smul _ Measurable.of_discrete.aemeasurable,
       Measure.map_dirac' Measurable.of_discrete]
@@ -61,17 +61,14 @@ theorem map_sub_map_cast_hypergeometricMeasure {N K n : ℕ} (hK : K ≤ N) :
     ((hypergeometricMeasure N K n).map (Nat.cast : ℕ → ℝ)).map
         (fun x ↦ (n : ℝ) - x) =
       (hypergeometricMeasure N (N - K) n).map (Nat.cast : ℕ → ℝ) := by
-  by_cases hn : n ≤ N
-  · rw [← map_sub_hypergeometricMeasure hK,
-      Measure.map_map (by fun_prop) Measurable.of_discrete,
-      Measure.map_map Measurable.of_discrete (by fun_prop)]
-    apply Measure.map_congr
-    apply ae_iff_of_countable.mpr
-    intro k hk
-    have hsupp := (hypergeometricMeasure_singleton_ne_zero_iff hK hn k).mp hk
-    exact (Nat.cast_sub hsupp.2.1).symm
-  · rw [hypergeometricMeasure_eq_zero_of_invalid (by omega), Measure.map_zero,
-      Measure.map_zero, hypergeometricMeasure_eq_zero_of_invalid (by omega), Measure.map_zero]
+  rw [← map_sub_hypergeometricMeasure hK,
+    Measure.map_map (by fun_prop) Measurable.of_discrete,
+    Measure.map_map Measurable.of_discrete (by fun_prop)]
+  apply Measure.map_congr
+  apply ae_iff_of_countable.mpr
+  intro k hk
+  have hsupp := (hypergeometricMeasure_singleton_ne_zero_iff hK k).mp hk
+  exact (Nat.cast_sub hsupp.2.1).symm
 
 end TauCeti.Probability
 
