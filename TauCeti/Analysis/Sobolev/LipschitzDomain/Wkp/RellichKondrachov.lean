@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-import TauCeti.Analysis.Sobolev.GraphStep.ScalarProjection
-import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
-import TauCeti.Analysis.Normed.Operator.Compact.Basic
+import TauCeti.Analysis.Sobolev.Wkp.Compactness
 
 /-!
 # Higher-order Rellich–Kondrachov on bounded Lipschitz domains
@@ -22,9 +20,10 @@ contained subdomain is needed: the estimate holds up to the boundary.
 The proof follows the interior induction. At order zero this is the first-order theorem
 `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`. At every further order the
 lower-order component is compact by induction, and the highest retained derivative field is a
-finite-dimensional vector-valued Sobolev field on `Ω`. Its compactness follows from the scalar
-first-order theorem applied to its coordinates in a finite basis, through the scalar projections
-`TauCeti.WeakDerivStep.toW1pL`. The graph norm of `W^{k+1,p}(Ω)` combines the two components.
+finite-dimensional vector-valued Sobolev field on `Ω`, compact by
+`TauCeti.WeakDerivStep.isCompactOperator_comp_prevL_of_isLipschitzDomainWith`. The componentwise
+criterion `TauCeti.Wkp.isCompactOperator_of_isCompactOperator_lowerOrderL_iteratedGradientL`
+combines the two components in the graph norm of `W^{k+1,p}(Ω)`.
 
 ## Main declarations
 
@@ -52,80 +51,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
   {Ω : Opens (WithLp 2 (ℝ × E))} {L : ℝ≥0} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-namespace WeakDerivStep
-
-variable {F X : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  [SeminormedAddCommGroup X] [NormedSpace ℝ X]
-
-/-- On a bounded Lipschitz domain, the field selected by `base` is compact as a map from the
-weak-derivative graph space into `Lᵖ(Ω; F)`, for finite-dimensional `F` and `1 ≤ p < ∞`. -/
-private theorem isCompactOperator_comp_prevL_of_isLipschitzDomainWith
-    (base : X →L[ℝ] Lp F p (volume.restrict (Ω : Set (WithLp 2 (ℝ × E))))) (hp : p ≠ ∞)
-    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
-    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) :
-    IsCompactOperator (base.comp (prevL base)) := by
-  classical
-  let b := Module.finBasis ℝ F
-  let ℓ := fun i ↦ (b.coord i).toContinuousLinearMap
-  let C := fun i ↦ ((ContinuousLinearMap.toSpanSingleton ℝ (b i)).compLpL
-    p (volume.restrict (Ω : Set (WithLp 2 (ℝ × E))))).comp
-      ((W1p.valueL (mu := volume) (Omega := Ω) (p := p)).comp (toW1pL base (ℓ i)))
-  have hC (i) : IsCompactOperator (C i) :=
-    ((W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hp hΩ hb).comp_clm
-      (toW1pL base (ℓ i))).clm_comp
-        ((ContinuousLinearMap.toSpanSingleton ℝ (b i)).compLpL p
-          (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))))
-  have heq : base.comp (prevL base) = ∑ i, C i := by
-    apply ContinuousLinearMap.ext
-    intro u
-    simpa only [sum_apply, C, ContinuousLinearMap.comp_apply,
-      W1p.valueL_apply, value_toW1pL, prevL_apply, ℓ] using
-      eq_sum_basis_compLpL b (base (prev base u))
-  rw [heq]
-  -- Compact operators form a submodule, so finite coordinate reconstruction preserves compactness.
-  exact (compactOperator (RingHom.id ℝ) _ _).sum_mem fun i _ ↦ hC i
-
-end WeakDerivStep
-
 namespace Wkp
-
-/-- An operator into `W^{k+1,p}` is compact as soon as its lower-order part and its highest
-derivative field are compact, since the graph norm is controlled by these two components. -/
-private theorem isCompactOperator_of_isCompactOperator_lowerOrderL_iteratedGradientL
-    {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] (k : ℕ)
-    (T : X →L[ℝ] Wkp volume Ω p (k + 1))
-    (hlo : IsCompactOperator ((lowerOrderL k).comp T))
-    (hD : IsCompactOperator ((iteratedGradientL k).comp T)) : IsCompactOperator T := by
-  let J := (lowerOrderL (mu := volume) (Omega := Ω) (p := p) k).prod (iteratedGradientL k)
-  have hj : AntilipschitzWith 2 J := J.antilipschitz_of_bound fun u => by
-    have h := norm_le_norm_lowerOrder_add_norm_iteratedGradient k u
-    have hJu : J u = (lowerOrder k u, iteratedGradient k u) := by
-      dsimp only [J]
-      rw [ContinuousLinearMap.prod_apply, lowerOrderL_apply k u, iteratedGradientL_apply k u]
-    have h₁ : ‖lowerOrder k u‖ ≤ ‖J u‖ := by
-      rw [hJu, Prod.norm_def]
-      exact le_max_left _ _
-    have h₂ : ‖iteratedGradient k u‖ ≤ ‖J u‖ := by
-      rw [hJu, Prod.norm_def]
-      exact le_max_right _ _
-    norm_num only [NNReal.coe_ofNat]
-    linarith
-  have hJT : IsCompactOperator (J.comp T) := by
-    have heq : J.comp T =
-        (ContinuousLinearMap.inl ℝ _ _).comp ((lowerOrderL k).comp T) +
-          (ContinuousLinearMap.inr ℝ _ _).comp ((iteratedGradientL k).comp T) := by
-      apply ContinuousLinearMap.ext
-      intro u
-      simp [J]
-    rw [heq]
-    simpa only [FunLike.coe_add, ContinuousLinearMap.coe_comp] using
-      (hlo.clm_comp (ContinuousLinearMap.inl ℝ _ _)).add
-        (hD.clm_comp (ContinuousLinearMap.inr ℝ _ _))
-  apply (isCompactOperator_iff_totallyBounded_image_closedBall _ zero_lt_one).mpr
-  apply (totallyBounded_image_iff (hj.isUniformInducing J.uniformContinuous)).mp
-  simpa only [Set.image_image, ContinuousLinearMap.coe_coe,
-    ContinuousLinearMap.coe_comp, Function.comp_def] using
-    hJT.totallyBounded_image_closedBall 1
 
 /-- **Higher-order Rellich–Kondrachov on bounded Lipschitz domains.** If `Ω` is a bounded
 Lipschitz domain and `1 ≤ p < ∞`, forgetting the highest weak derivative is a compact operator
