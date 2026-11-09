@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Distributions.BetaGas.Normalizability
+public import TauCeti.Probability.Distributions.BetaGas.Normalizability.Basic
 
 /-!
 # Beta-gas normalizability tests
@@ -35,5 +35,13 @@ example : 0 < betaGasPartitionFunction n β V :=
 
 example : IsProbabilityMeasure (betaGasMeasure n β V) :=
   isProbabilityMeasure_betaGasMeasure_of_log_growth n hβ hβ' hββ' hV hliminf
+
+example : (∫ x, betaGasDensity n β V x
+    ∂Measure.pi fun _ : Fin n => (volume : Measure ℝ)) = 1 :=
+  integral_betaGasDensity_eq_one n β V
+    (betaGasPartitionFunction_pos_of_log_growth n hβ hβ' hββ' hV hliminf)
+
+example : IsProbabilityMeasure (gaussianBetaGasMeasure 0 β) :=
+  isProbabilityMeasure_gaussianBetaGasMeasure 0 hβ
 
 end TauCeti.Probability

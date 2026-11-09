@@ -19,7 +19,8 @@ For a potential `V : ℝ → ℝ`, the weight is
 ## References
 
 * G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*, Cambridge
-  University Press (2010), (2.6.1)–(2.6.2). The potential term here is `β V / 2`.
+  University Press (2010), (2.6.1)–(2.6.2). Their potential is `β V / 2` in this
+  convention; the Gaussian case takes `V x = x² / 2`.
 -/
 
 public section
@@ -128,7 +129,7 @@ theorem integrable_betaGasDensity (n : ℕ) (β : ℝ) (V : ℝ → ℝ)
   hint.div_const _
 
 /-- A positive partition function normalizes the integral of the density. -/
-theorem integral_betaGasDensity (n : ℕ) (β : ℝ) (V : ℝ → ℝ)
+theorem integral_betaGasDensity_eq_one (n : ℕ) (β : ℝ) (V : ℝ → ℝ)
     (hpos : 0 < betaGasPartitionFunction n β V) :
     (∫ x, betaGasDensity n β V x
       ∂Measure.pi fun _ : Fin n => (volume : Measure ℝ)) = 1 := by
@@ -160,7 +161,8 @@ theorem betaGasMeasure_apply (n : ℕ) (β : ℝ) (V : ℝ → ℝ) {s : Set (Fi
     (ae_of_all _ (betaGasDensity_nonneg n β V))).symm
 
 /-- Integrals against the beta-gas measure are weighted integrals against product volume. -/
-theorem integral_betaGasMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+theorem integral_betaGasMeasure_eq_integral_smul {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E]
     (n : ℕ) (β : ℝ) (V : ℝ → ℝ)
     (hdens : AEMeasurable (betaGasDensity n β V)
       (Measure.pi fun _ : Fin n => (volume : Measure ℝ)))
@@ -183,7 +185,7 @@ theorem isProbabilityMeasure_betaGasMeasure (n : ℕ) (β : ℝ) (V : ℝ → �
   rw [betaGasMeasure, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
   rw [← ofReal_integral_eq_lintegral_ofReal hdens
     (ae_of_all _ (betaGasDensity_nonneg n β V))]
-  rw [integral_betaGasDensity n β V hpos]
+  rw [integral_betaGasDensity_eq_one n β V hpos]
   norm_num
 
 /-- The unnormalized Gaussian beta-gas weight with quadratic potential `V x = x² / 2`. -/
@@ -194,8 +196,8 @@ def gaussianBetaGasWeight (n : ℕ) (β : ℝ) (x : Fin n → ℝ) : ℝ :=
 theorem gaussianBetaGasWeight_eq_betaGasWeight (n : ℕ) (β : ℝ) :
     gaussianBetaGasWeight n β = betaGasWeight n β (fun t => t ^ 2 / 2) := (rfl)
 
-/-- The defining formula for the Gaussian beta-gas weight. -/
-theorem gaussianBetaGasWeight_def (n : ℕ) (β : ℝ) (x : Fin n → ℝ) :
+/-- The Gaussian beta-gas weight as an exponential times a product of pairwise distances. -/
+theorem gaussianBetaGasWeight_eq_exp_mul_prod (n : ℕ) (β : ℝ) (x : Fin n → ℝ) :
     gaussianBetaGasWeight n β x =
       exp (-(β * (n : ℝ) / 4) * ∑ i, x i ^ 2) *
         ∏ p ∈ betaGasPairs n,

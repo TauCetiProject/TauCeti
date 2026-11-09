@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.BetaGas.Basic
-import TauCeti.Analysis.SpecialFunctions.Pow.PairwiseProd
-import TauCeti.Analysis.SpecialFunctions.Gaussian.Integrable
+import Mathlib.MeasureTheory.Integral.Asymptotics
 
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
@@ -24,7 +23,7 @@ The Gaussian results are recovered as a specialization.
 public section
 noncomputable section
 
-open MeasureTheory Real Set
+open Asymptotics MeasureTheory Real Set
 
 namespace TauCeti.Probability
 
@@ -135,54 +134,33 @@ private lemma integrable_betaGas_oneDim_of_log_growth {p a c : ℝ} {V : ℝ →
     have hbase : Continuous (fun x : ℝ => 1 + |x|) := by fun_prop
     have hexp : Continuous (fun x : ℝ => exp (-a * V x)) := by fun_prop
     exact (hbase.rpow_const (fun x => Or.inl (by positivity))).mul hexp
-  have hcenter : IntegrableOn (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x))
-      (Icc (-R') R') volume := hg.integrableOn_Icc
-  have hpos : IntegrableOn (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x))
-      (Ioi R') volume := by
-    apply Integrable.mono' (hpowPos.const_mul (2 ^ p)) hg.aestronglyMeasurable
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with x hx
-    change R' < x at hx
-    have hxge1 : 1 ≤ x := le_of_lt (lt_of_le_of_lt hR' hx)
-    have habs : |x| = x := abs_of_nonneg (le_trans zero_le_one hxge1)
-    have hnonneg : 0 ≤ (1 + |x|) ^ p * exp (-a * V x) :=
-      mul_nonneg (le_of_lt (Real.rpow_pos_of_pos (by positivity) _))
-        (le_of_lt (Real.exp_pos _))
-    calc
-      ‖(1 + |x|) ^ p * exp (-a * V x)‖ =
-          (1 + |x|) ^ p * exp (-a * V x) := norm_of_nonneg hnonneg
-      _ ≤ 2 ^ p * x ^ q := by
-        simpa [habs] using hpoint x (by rw [habs]; exact hxge1)
-          (hRbound x (by rw [habs]; exact le_of_lt hx))
-  have hneg : IntegrableOn (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x))
-      (Iio (-R')) volume := by
-    apply Integrable.mono' (hpowNeg.const_mul (2 ^ p)) hg.aestronglyMeasurable
-    filter_upwards [ae_restrict_mem measurableSet_Iio] with x hx
-    change x < -R' at hx
+  have hneg : (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) =O[Filter.atBot]
+      (fun x : ℝ => (-x) ^ q) := by
+    apply Asymptotics.IsBigO.of_bound (2 ^ p)
+    filter_upwards [Filter.eventually_lt_atBot (-R')] with x hx
     have hnegx : R' < -x := by linarith
     have habs : |x| = -x := abs_of_nonpos (by linarith)
-    have hnonneg : 0 ≤ (1 + |x|) ^ p * exp (-a * V x) :=
-      mul_nonneg (le_of_lt (Real.rpow_pos_of_pos (by positivity) _))
-        (le_of_lt (Real.exp_pos _))
-    calc
-      ‖(1 + |x|) ^ p * exp (-a * V x)‖ =
-          (1 + |x|) ^ p * exp (-a * V x) := norm_of_nonneg hnonneg
-      _ ≤ 2 ^ p * (-x) ^ q := by
-        simpa [habs] using hpoint x (by rw [habs]; linarith [hnegx, hR'])
-          (hRbound x (by rw [habs]; exact le_of_lt hnegx))
-  have hcover : (Set.univ : Set ℝ) = Iio (-R') ∪ Icc (-R') R' ∪ Ioi R' := by
-    ext x
-    simp only [Set.mem_univ, Set.mem_union, Set.mem_Iio, Set.mem_Icc, Set.mem_Ioi]
-    constructor
-    · intro _
-      by_cases hleft : x < -R'
-      · exact Or.inl (Or.inl hleft)
-      · by_cases hright : x ≤ R'
-        · exact Or.inl (Or.inr ⟨le_of_not_gt hleft, hright⟩)
-        · exact Or.inr (lt_of_not_ge hright)
-    · intro _
-      trivial
-  rw [← integrableOn_univ, hcover, integrableOn_union, integrableOn_union]
-  exact ⟨⟨hneg, hcenter⟩, hpos⟩
+    have hnonneg : 0 ≤ (1 + |x|) ^ p * exp (-a * V x) := by positivity
+    have hbound := hpoint x (by rw [habs]; linarith [hnegx, hR'])
+      (hRbound x (by rw [habs]; exact le_of_lt hnegx))
+    rw [Real.norm_eq_abs, abs_of_nonneg hnonneg, Real.norm_eq_abs,
+      abs_of_nonneg (Real.rpow_nonneg (by linarith : 0 ≤ -x) q)]
+    simpa only [habs] using hbound
+  have hpos : (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) =O[Filter.atTop]
+      (fun x : ℝ => x ^ q) := by
+    apply Asymptotics.IsBigO.of_bound (2 ^ p)
+    filter_upwards [Filter.eventually_gt_atTop R'] with x hx
+    have hxge1 : 1 ≤ x := le_of_lt (lt_of_le_of_lt hR' hx)
+    have habs : |x| = x := abs_of_nonneg (by linarith)
+    have hnonneg : 0 ≤ (1 + |x|) ^ p * exp (-a * V x) := by positivity
+    have hbound := hpoint x (by rw [habs]; exact hxge1)
+      (hRbound x (by rw [habs]; exact le_of_lt hx))
+    rw [Real.norm_eq_abs, abs_of_nonneg hnonneg, Real.norm_eq_abs,
+      abs_of_nonneg (Real.rpow_nonneg (by linarith : 0 ≤ x) q)]
+    simpa only [habs] using hbound
+  exact hg.locallyIntegrable.integrable_of_isBigO_atBot_atTop hneg
+    ⟨Iio (-R'), Filter.Iio_mem_atBot _, hpowNeg⟩ hpos
+    ⟨Ioi R', Filter.Ioi_mem_atTop _, hpowPos⟩
 
 private lemma betaGasWeight_le_coord_prod (n : ℕ) {β : ℝ} (hβ : 0 ≤ β)
     (V : ℝ → ℝ)
@@ -239,8 +217,8 @@ private lemma eventually_quadratic_log_ratio (c : ℝ) (hc : 0 < c) :
   rw [← sq_abs, hxt, lt_div_iff₀ hlogpos]
   exact (mul_le_mul_of_nonneg_left hlogle hc.le).trans_lt hquad
 
-/-- A continuous potential with supercritical logarithmic growth gives an integrable beta-gas
-weight. The liminf is taken in the extended reals along `|x| → ∞`. -/
+/-- For a continuous potential and `0 < β ≤ β'` with `1 < β'`, the beta-gas weight is
+integrable if eventually as `|x| → ∞`, `2 * β' / β < V x / log |x|`. -/
 theorem integrable_betaGasWeight_of_eventual_log_growth (n : ℕ) {β β' : ℝ}
     (hβ : 0 < β)
     (hβ' : 1 < β') (hββ' : β ≤ β') {V : ℝ → ℝ} (hV : Continuous V)
@@ -274,10 +252,7 @@ theorem integrable_betaGasWeight_of_eventual_log_growth (n : ℕ) {β β' : ℝ}
         mul_nonpos_of_nonneg_of_nonpos (by positivity) hdiff
       linarith
     have hlarge : ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop, 1 < |x| := by
-      rw [Filter.eventually_comap]
-      exact Filter.eventually_atTop.2 ⟨(2 : ℝ), fun b hb x hxb => by
-        rw [hxb]
-        linarith⟩
+      exact Filter.tendsto_comap.eventually (Filter.eventually_gt_atTop 1)
     have hGrowth :
         ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop, c * log |x| ≤ V x := by
       filter_upwards [hRatio, hlarge] with x hratio hx
@@ -297,8 +272,9 @@ theorem integrable_betaGasWeight_of_eventual_log_growth (n : ℕ) {β β' : ℝ}
         0 ≤ ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * V (x i))))] using
       betaGasWeight_le_coord_prod n hβ.le V x
 
-/-- A continuous potential with supercritical logarithmic growth gives an integrable beta-gas
-weight. The liminf is taken in the extended reals along `|x| → ∞`. -/
+/-- For a continuous potential and `0 < β ≤ β'` with `1 < β'`, the beta-gas weight is
+integrable if the liminf of `V x / log |x|` as `|x| → ∞` exceeds `2 * β' / β`.
+The liminf is taken in the extended reals. -/
 theorem integrable_betaGasWeight_of_log_growth (n : ℕ) {β β' : ℝ} (hβ : 0 < β)
     (hβ' : 1 < β') (hββ' : β ≤ β') {V : ℝ → ℝ} (hV : Continuous V)
     (hliminf :
@@ -316,14 +292,10 @@ theorem integrable_betaGasWeight_of_log_growth (n : ℕ) {β β' : ℝ} (hβ : 0
     exact EReal.coe_lt_coe_iff.mp hx
   exact integrable_betaGasWeight_of_eventual_log_growth n hβ hβ' hββ' hV hRatio
 
-/-- Under the same logarithmic-growth condition, the beta-gas partition function is finite and
-strictly positive. -/
-theorem betaGasPartitionFunction_pos_of_log_growth (n : ℕ) {β β' : ℝ} (hβ : 0 < β)
-    (hβ' : 1 < β') (hββ' : β ≤ β') {V : ℝ → ℝ} (hV : Continuous V)
-    (hliminf :
-      ((2 * β' / β : ℝ) : EReal) <
-        Filter.liminf (fun x : ℝ => ((V x / log |x| : ℝ) : EReal))
-          (Filter.comap (fun x : ℝ => |x|) Filter.atTop)) :
+private lemma betaGasPartitionFunction_pos_of_integrable (n : ℕ) {β : ℝ} (hβ : 0 ≤ β)
+    {V : ℝ → ℝ} (hV : Continuous V)
+    (hint : Integrable (betaGasWeight n β V)
+      (Measure.pi fun _ : Fin n => (volume : Measure ℝ))) :
     0 < betaGasPartitionFunction n β V := by
   let x₀ : Fin n → ℝ := fun i => (i : ℝ)
   have hx₀ : 0 < betaGasWeight n β V x₀ := by
@@ -333,9 +305,22 @@ theorem betaGasPartitionFunction_pos_of_log_growth (n : ℕ) {β β' : ℝ} (hβ
     exact Fin.ext (by exact_mod_cast hij)
   rw [betaGasPartitionFunction_def]
   exact integral_pos_of_integrable_nonneg_ne_zero
-    (continuous_betaGasWeight n hβ.le hV)
-    (integrable_betaGasWeight_of_log_growth n hβ hβ' hββ' hV hliminf)
+    (continuous_betaGasWeight n hβ hV)
+    hint
     (betaGasWeight_nonneg n β V) hx₀.ne'
+
+
+/-- Under the same logarithmic-growth condition, the beta-gas partition function is finite and
+strictly positive. -/
+theorem betaGasPartitionFunction_pos_of_log_growth (n : ℕ) {β β' : ℝ} (hβ : 0 < β)
+    (hβ' : 1 < β') (hββ' : β ≤ β') {V : ℝ → ℝ} (hV : Continuous V)
+    (hliminf :
+      ((2 * β' / β : ℝ) : EReal) <
+        Filter.liminf (fun x : ℝ => ((V x / log |x| : ℝ) : EReal))
+          (Filter.comap (fun x : ℝ => |x|) Filter.atTop)) :
+    0 < betaGasPartitionFunction n β V := by
+  exact betaGasPartitionFunction_pos_of_integrable n hβ.le hV
+    (integrable_betaGasWeight_of_log_growth n hβ hβ' hββ' hV hliminf)
 
 /-- The beta-gas density is integrable under the logarithmic-growth condition. -/
 theorem integrable_betaGasDensity_of_log_growth (n : ℕ) {β β' : ℝ} (hβ : 0 < β)
@@ -362,18 +347,6 @@ theorem isProbabilityMeasure_betaGasMeasure_of_log_growth (n : ℕ) {β β' : �
     (integrable_betaGasWeight_of_log_growth n hβ hβ' hββ' hV hliminf)
     (betaGasPartitionFunction_pos_of_log_growth n hβ hβ' hββ' hV hliminf)
 
-private lemma gaussianBetaGasWeight_le_prod (n : ℕ) {β : ℝ} (hβ : 0 < β)
-    (x : Fin n → ℝ) :
-    gaussianBetaGasWeight n β x ≤
-      ∏ i : Fin n, ((1 + |x i|) ^ (β * ((n - 1 : ℕ) : ℝ)) *
-        exp (-(β * (n : ℝ) / 4) * x i ^ 2)) := by
-  rw [gaussianBetaGasWeight_eq_betaGasWeight]
-  convert (betaGasWeight_le_coord_prod n hβ.le (fun t => t ^ 2 / 2) x) using 1
-  apply Finset.prod_congr rfl
-  intro i hi
-  congr 1
-  ring_nf
-
 /-- The Gaussian beta-gas weight is integrable for every positive inverse temperature. -/
 theorem integrable_gaussianBetaGasWeight (n : ℕ) {β : ℝ} (hβ : 0 < β) :
     Integrable (gaussianBetaGasWeight n β)
@@ -392,28 +365,10 @@ theorem integrable_gaussianBetaGasWeight (n : ℕ) {β : ℝ} (hβ : 0 < β) :
 /-- The Gaussian beta-gas partition function is strictly positive. -/
 theorem gaussianBetaGasPartitionFunction_pos (n : ℕ) {β : ℝ} (hβ : 0 < β) :
     0 < gaussianBetaGasPartitionFunction n β := by
-  let β' : ℝ := max β 2
-  have hβ' : 1 < β' := by
-    dsimp [β']
-    exact lt_of_lt_of_le one_lt_two (le_max_right _ _)
-  have hββ' : β ≤ β' := le_max_left _ _
-  have hc : 0 < 2 * β' / β := by positivity
-  have hRatio := eventually_quadratic_log_ratio (2 * β' / β) hc
-  let V : ℝ → ℝ := fun t => t ^ 2 / 2
-  have hV : Continuous V := by fun_prop
-  let x₀ : Fin n → ℝ := fun i => (i : ℝ)
-  have hx₀ : 0 < betaGasWeight n β V x₀ := by
-    apply betaGasWeight_pos
-    intro i j hij
-    dsimp [x₀] at hij
-    exact Fin.ext (by exact_mod_cast hij)
   rw [gaussianBetaGasPartitionFunction_eq_betaGasPartitionFunction]
-  rw [betaGasPartitionFunction_def]
-  exact integral_pos_of_integrable_nonneg_ne_zero
-    (continuous_betaGasWeight n hβ.le hV)
-    (integrable_betaGasWeight_of_eventual_log_growth n hβ hβ' hββ' hV (by
-      simpa [V, β'] using hRatio))
-    (betaGasWeight_nonneg n β V) hx₀.ne'
+  apply betaGasPartitionFunction_pos_of_integrable n hβ.le (by fun_prop)
+  rw [← gaussianBetaGasWeight_eq_betaGasWeight]
+  exact integrable_gaussianBetaGasWeight n hβ
 
 /-- The Gaussian beta-gas density is integrable for positive inverse temperature. -/
 theorem integrable_gaussianBetaGasDensity (n : ℕ) {β : ℝ} (hβ : 0 < β) :
@@ -426,11 +381,11 @@ theorem integrable_gaussianBetaGasDensity (n : ℕ) {β : ℝ} (hβ : 0 < β) :
 
 /-- The Gaussian beta-gas density integrates to one for positive inverse temperature. -/
 @[simp]
-theorem integral_gaussianBetaGasDensity (n : ℕ) {β : ℝ} (hβ : 0 < β) :
+theorem integral_gaussianBetaGasDensity_eq_one (n : ℕ) {β : ℝ} (hβ : 0 < β) :
     (∫ x, gaussianBetaGasDensity n β x
       ∂Measure.pi fun _ : Fin n => (volume : Measure ℝ)) = 1 := by
   rw [gaussianBetaGasDensity_eq_betaGasDensity]
-  apply integral_betaGasDensity
+  apply integral_betaGasDensity_eq_one
   rw [← gaussianBetaGasPartitionFunction_eq_betaGasPartitionFunction]
   exact gaussianBetaGasPartitionFunction_pos n hβ
 
@@ -456,13 +411,14 @@ theorem gaussianBetaGasMeasure_apply (n : ℕ) {β : ℝ} (hβ : 0 < β)
   exact integrable_gaussianBetaGasWeight n hβ
 
 /-- Integrate a function against the Gaussian beta-gas measure. -/
-theorem integral_gaussianBetaGasMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+theorem integral_gaussianBetaGasMeasure_eq_integral_smul {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E]
     (n : ℕ) (β : ℝ) (f : (Fin n → ℝ) → E) :
     ∫ x, f x ∂gaussianBetaGasMeasure n β =
       ∫ x, gaussianBetaGasDensity n β x • f x
         ∂Measure.pi fun _ : Fin n => (volume : Measure ℝ) := by
   rw [gaussianBetaGasMeasure_eq_betaGasMeasure, gaussianBetaGasDensity_eq_betaGasDensity]
-  apply integral_betaGasMeasure
+  apply integral_betaGasMeasure_eq_integral_smul
   exact (measurable_betaGasDensity n β (by fun_prop)).aemeasurable
 
 end TauCeti.Probability
