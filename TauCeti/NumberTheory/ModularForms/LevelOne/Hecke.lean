@@ -133,40 +133,6 @@ theorem heckeSlashLevelOne_smul (c : ℂ) (f : ℍ → ℂ) :
 
 /-! ### Invariance under `SL(2, ℤ)` -/
 
-/-- A matrix of `SL(2, ℤ)` moving the right translate `A γ⁻¹` back into `reps n`. -/
-private noncomputable def repsRightMulFactor (γ : SL(2, ℤ)) (A : reps (n : ℤ)) : SL(2, ℤ) :=
-  (exists_smul_mem_reps (natCast_ne_zero n) (traceFormulaMatrixRight γ A.1)).choose
-
-/-- **Right multiplication by `γ⁻¹` on `SL(2, ℤ) \ ℳₙ`**, read on the representatives `reps n`:
-the representative of the coset `SL(2, ℤ) A γ⁻¹`. -/
-private noncomputable def repsRightMul (γ : SL(2, ℤ)) (A : reps (n : ℤ)) : reps (n : ℤ) :=
-  ⟨repsRightMulFactor n γ A • traceFormulaMatrixRight γ A.1,
-    (exists_smul_mem_reps (natCast_ne_zero n) (traceFormulaMatrixRight γ A.1)).choose_spec⟩
-
-private theorem coe_repsRightMul (γ : SL(2, ℤ)) (A : reps (n : ℤ)) :
-    (repsRightMul n γ A).1 = repsRightMulFactor n γ A • traceFormulaMatrixRight γ A.1 := (rfl)
-
-private theorem toGL_repsRightMul (hn : (n : ℤ) ≠ 0) (γ : SL(2, ℤ)) (A : reps (n : ℤ)) :
-    toGL hn (repsRightMul n γ A).1 =
-      mapGL ℚ (repsRightMulFactor n γ A) * (toGL hn A.1 * mapGL ℚ γ⁻¹) := by
-  rw [coe_repsRightMul, toGL_smul, toGL_traceFormulaMatrixRight]
-
-/-- Right multiplication by `γ⁻¹` permutes `SL(2, ℤ) \ ℳₙ`: distinct cosets have distinct right
-translates. -/
-private theorem repsRightMul_injective (γ : SL(2, ℤ)) :
-    Function.Injective (repsRightMul n γ) := by
-  intro A B h
-  have hn := natCast_ne_zero n
-  have hGL := congrArg (fun C : reps (n : ℤ) ↦ toGL hn C.1) h
-  simp only [toGL_repsRightMul] at hGL
-  -- cancel `γ` on the right and move the left factors across: `A = g • B` for some `g`
-  have hAB : toGL hn A.1 =
-      toGL hn (((repsRightMulFactor n γ A)⁻¹ * repsRightMulFactor n γ B) • B.1) := by
-    rw [toGL_smul, map_mul, map_inv]
-    simpa [mul_assoc] using
-      congrArg (fun x ↦ (mapGL ℚ (repsRightMulFactor n γ A))⁻¹ * x * (mapGL ℚ γ⁻¹)⁻¹) hGL
-  exact (Subtype.ext (eq_of_smul_eq_of_mem_reps B.2 A.2 (toGL_injective hn hAB).symm)).symm
-
 /-- **The slash sum of an `SL(2, ℤ)`-invariant function is `SL(2, ℤ)`-invariant.** Right
 multiplication by `γ ∈ SL(2, ℤ)` permutes the cosets `SL(2, ℤ) A`, `A ∈ ℳₙ`, and the slash of an
 invariant function by `A` depends only on the coset of `A`. -/
@@ -178,13 +144,16 @@ theorem heckeSlashLevelOne_slash_eq {f : ℍ → ℂ} (hf : ∀ γ ∈ 𝒮ℒ, 
     rw [ModularForm.rat_slash_mapGL]
     exact hf _ ⟨g, rfl⟩
   -- slashing the summand of `A` by `σ` gives the summand of the representative of `A σ`, which
-  -- is `repsRightMul n σ⁻¹ A`
+  -- is `repsRightMul hn σ⁻¹ A`
   have hperm (A : reps (n : ℤ)) :
       (f ∣[k] toGL hn A.1) ∣[k] (mapGL ℚ σ : GL (Fin 2) ℚ) =
-        f ∣[k] toGL hn (repsRightMul n σ⁻¹ A).1 := by
+        f ∣[k] toGL hn (repsRightMul hn σ⁻¹ A.1) := by
     rw [toGL_repsRightMul, inv_inv, SlashAction.slash_mul, SlashAction.slash_mul, hfσ,
       ← SlashAction.slash_mul]
-  let e := Equiv.ofBijective _ (repsRightMul_injective n σ⁻¹).bijective_of_finite
+  have hmaps : Set.MapsTo (repsRightMul hn σ⁻¹) (reps (n : ℤ)) (reps (n : ℤ)) :=
+    fun A _ ↦ repsRightMul_mem_reps hn σ⁻¹ A
+  let e := Equiv.ofBijective _
+    ((hmaps.restrict_inj).2 (repsRightMul_injOn hn σ⁻¹)).bijective_of_finite
   rw [← ModularForm.rat_slash_mapGL, heckeSlashLevelOne_def, SlashAction.sum_slash]
   exact Fintype.sum_equiv e _ _ hperm
 

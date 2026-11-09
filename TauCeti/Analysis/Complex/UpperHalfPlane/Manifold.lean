@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Basic
+public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 
 import Mathlib.Analysis.Complex.LocallyUniformLimit
+import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Analysis.Polynomial.SymmetricPower
 import TauCeti.Topology.DiscreteSeparation
 
 /-!
@@ -21,7 +24,8 @@ analytic at every point of the open upper half-plane, and a locally uniform limi
 functions on `ℍ` is holomorphic. Holomorphy on `ℍ` is also invariant under the Möbius action of
 a positive-determinant real matrix, the biholomorphism `UpperHalfPlane.mdifferentiable_smul`
 exhibits. Polynomial functions of the coordinate, such as `z ↦ P(z, 1)` for a binary form `P`,
-are holomorphic.
+are holomorphic, and so are the coefficients of a product `∏ (X - aᵢ(τ))` of linear factors
+whose roots `aᵢ` are holomorphic.
 
 ## Main declarations
 
@@ -30,6 +34,8 @@ are holomorphic.
 * `TauCeti.UpperHalfPlane.analyticAt_comp_ofComplex`.
 * `MvPolynomial.mdifferentiable_aeval_coe` — `z ↦ P(z, 1)` is holomorphic for a polynomial `P`
   in two variables.
+* `TauCeti.UpperHalfPlane.mdifferentiable_coeff_prod_X_sub_C` — the coefficients of
+  `∏ (X - aᵢ(τ))` are holomorphic when every `aᵢ` is.
 * `TauCeti.UpperHalfPlane.mdifferentiable_comp_smul_iff` — `τ ↦ f (g • τ)` is holomorphic
   exactly when `f` is, for `g : GL (Fin 2) ℝ` of positive determinant.
 * `TauCeti.UpperHalfPlane.not_accPt_zeros_comp_ofComplex` and
@@ -75,6 +81,20 @@ lemma _root_.MvPolynomial.mdifferentiable_aeval_coe {R : Type*} [CommSemiring R]
     fin_cases i
     · simpa using mdifferentiable_coe
     · simpa using mdifferentiable_const
+
+open _root_.Polynomial in
+/-- The coefficients of `∏ (X - C (aᵢ τ))` are holomorphic functions of `τ` when every `aᵢ` is. -/
+theorem mdifferentiable_coeff_prod_X_sub_C {ι : Type*} (s : Finset ι) {a : ι → ℍ → ℂ}
+    (ha : ∀ i ∈ s, MDiff (a i)) (k : ℕ) :
+    MDiff fun τ : ℍ ↦ ((∏ i ∈ s, (X - C (a i τ))).coeff k : ℂ) := by
+  -- index the roots by `s`: the coefficient is an analytic function of the tuple of roots
+  have hv : MDifferentiable 𝓘(ℂ) 𝓘(ℂ, s → ℂ) fun τ : ℍ ↦ fun i : s ↦ a i τ :=
+    mdifferentiable_pi_space_iff.2 fun i ↦ ha i i.2
+  have hg : Differentiable ℂ fun v : s → ℂ ↦ (∏ i : s, (X - C (v i))).coeff k := fun v ↦
+    (TauCeti.Polynomial.analyticAt_coeff_prod_X_sub_C Finset.univ k v).differentiableAt
+  convert Differentiable.comp_mdifferentiable hg hv using 1
+  ext τ
+  rw [Function.comp_apply, Finset.prod_coe_sort s fun i ↦ X - C (a i τ)]
 
 /-- A function holomorphic on `ℍ` composes with `ofComplex` to a function analytic at
 every point of the open upper half-plane. -/
