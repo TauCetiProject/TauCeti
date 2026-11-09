@@ -81,6 +81,23 @@ end IsNormMulUnit
 
 end NormOneRing
 
+section Ultrametric
+
+variable {A : Type*} [NormedRing A] [IsUltrametricDist A]
+
+/-- In an ultrametric normed ring, multiplication by a perturbation `1 + a` of one with
+`‖a‖ < 1` preserves norms. -/
+theorem norm_one_add_mul_of_norm_lt_one {a : A} (ha : ‖a‖ < 1) (x : A) :
+    ‖(1 + a) * x‖ = ‖x‖ := by
+  rw [add_mul, one_mul]
+  by_cases hx : x = 0
+  · simp [hx]
+  have hax : ‖a * x‖ < ‖x‖ :=
+    (norm_mul_le _ _).trans_lt (by simpa using mul_lt_mul_of_pos_right ha (norm_pos_iff.mpr hx))
+  rw [IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm hax.ne', max_eq_left hax.le]
+
+end Ultrametric
+
 section Perturbation
 
 variable {A : Type*} [NormedRing A] [NormOneClass A]
@@ -95,12 +112,8 @@ theorem isNormMulUnit_one_add [HasSummableGeomSeries A] [IsUltrametricDist A] {a
     rw [IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (by simpa using ha.ne'),
       norm_one, max_eq_left ha.le]
   intro x
-  rw [hnorm, one_mul, add_mul, one_mul]
-  by_cases hx : x = 0
-  · simp [hx]
-  have hax : ‖a * x‖ < ‖x‖ :=
-    (norm_mul_le _ _).trans_lt (by simpa using mul_lt_mul_of_pos_right ha (norm_pos_iff.mpr hx))
-  rw [IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm hax.ne', max_eq_left hax.le]
+  rw [hnorm, one_mul]
+  exact norm_one_add_mul_of_norm_lt_one ha x
 
 omit [NormOneClass A] in
 /-- The factorization `f = u * (1 - u⁻¹ * (u - f))` behind the Neumann series criterion. -/

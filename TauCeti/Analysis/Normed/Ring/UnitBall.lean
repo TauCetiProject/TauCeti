@@ -172,12 +172,7 @@ ultrametric norm, `‖(1 - x)⁻¹ - 1‖ = ‖x‖` whenever `‖x‖ < 1`. -/
 theorem norm_inverse_one_sub_sub_one (hx : ‖x‖ < 1) : ‖Ring.inverse (1 - x) - 1‖ = ‖x‖ := by
   -- multiplication by `1 - x` preserves norms
   have key (w : R) : ‖(1 - x) * w‖ = ‖w‖ := by
-    rcases eq_or_ne w 0 with rfl | hw
-    · simp
-    have hxw : ‖x * w‖ < ‖w‖ :=
-      (norm_mul_le _ _).trans_lt (by simpa using mul_lt_mul_of_pos_right hx (norm_pos_iff.mpr hw))
-    rw [sub_mul, one_mul, sub_eq_add_neg, IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm
-      (by rw [norm_neg]; exact hxw.ne'), norm_neg, max_eq_left hxw.le]
+    simpa [sub_eq_add_neg] using norm_one_add_mul_of_norm_lt_one (a := -x) (by simpa using hx) w
   obtain ⟨u, hu⟩ := IsUnit.one_sub_of_norm_lt_one hx
   rw [← hu, Ring.inverse_unit]
   -- `u⁻¹ - 1 = u⁻¹ - u⁻¹ * (1 - x) = u⁻¹ * x`
