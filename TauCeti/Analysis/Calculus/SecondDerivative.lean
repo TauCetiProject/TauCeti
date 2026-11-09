@@ -71,6 +71,8 @@ Morse-theoretic definitions that use them.
   second derivative along the differential of the inner function.
 * `TauCeti.fderiv_fderiv_slice_right_apply`: the second derivative of the restriction of a map on
   a product to a fibre is its second derivative on fibre directions.
+* `TauCeti.contDiffAt_fderiv_fderiv_slice_right`: the fibre second derivatives of a `C^{n+2}`
+  map on a product form a `C^n` family over the base.
 * `TauCeti.fderiv_fderiv_apply_inl_eq_zero`: along a critical zero section of a map on a
   product, the second derivative vanishes on base directions.
 * `TauCeti.fderiv_fderiv_comp_fst_add_comp_snd`: the second derivative of a separated sum on a
@@ -194,6 +196,28 @@ theorem fderiv_fderiv_slice_right_apply {f : E × F → G} {a : E} {b : F}
     funext fun y ↦ (hasFDerivAt_prodMk_right a y).fderiv
   simpa [Function.comp_def, hD] using fderiv_fderiv_comp_apply (φ := fun y : F ↦ (a, y)) hf
     (contDiffAt_const.prodMk contDiffAt_id) v w
+
+/-- **The fibre second derivatives of a `C^{n+2}` map form a `C^n` family.** If `f` is `C^{n+2}`
+at `(a, b)`, then `x ↦ D²(f (x, ·))(b)`, the second derivative at `b` of the restriction of `f`
+to the fibre over `x`, is `C^n` at `a`. -/
+theorem contDiffAt_fderiv_fderiv_slice_right {n : WithTop ℕ∞} {f : E × F → G} {a : E} {b : F}
+    (hf : ContDiffAt 𝕜 (n + 2) f (a, b)) :
+    ContDiffAt 𝕜 n (fun x ↦ fderiv 𝕜 (fderiv 𝕜 (fun y ↦ f (x, y))) b) a := by
+  -- Near `a` the family is the second derivative of `f` restricted to fibre directions.
+  let C : (E × F →L[𝕜] G) →L[𝕜] F →L[𝕜] G :=
+    (ContinuousLinearMap.compL 𝕜 F (E × F) G).flip (ContinuousLinearMap.inr 𝕜 E F)
+  have hD : ContDiffAt 𝕜 n (fderiv 𝕜 (fderiv 𝕜 f)) (a, b) :=
+    (hf.fderiv_right (m := n + 1) (by rw [add_assoc]; rfl)).fderiv_right le_rfl
+  have hC2 : ∀ᶠ x in 𝓝 a, ContDiffAt 𝕜 2 f (x, b) :=
+    (continuous_id.prodMk continuous_const).continuousAt.eventually
+      ((hf.of_le le_add_self).eventually (by simp))
+  refine ContDiffAt.congr_of_eventuallyEq (f := fun x ↦
+    C.comp ((fderiv 𝕜 (fderiv 𝕜 f) (x, b)).comp (ContinuousLinearMap.inr 𝕜 E F))) ?_ ?_
+  · exact contDiffAt_const.clm_comp ((hD.comp a (contDiffAt_id.prodMk contDiffAt_const)).clm_comp
+      contDiffAt_const)
+  · filter_upwards [hC2] with x hx
+    ext v w
+    simp [C, fderiv_fderiv_slice_right_apply hx v w]
 
 /-- **Base directions of a critical zero section are null for the second derivative.** If `f` is
 `C²` at `(a, 0)` and every point `(b, 0)` with `b` near `a` is a critical point of `f`, then the
