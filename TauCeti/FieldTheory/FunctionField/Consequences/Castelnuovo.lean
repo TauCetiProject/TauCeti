@@ -409,41 +409,6 @@ private theorem constantCompositum_subfield {k' F' : Type*} [Field k'] [Field F'
     Module.finite_of_finrank_pos (hn ▸ Module.finrank_pos), hn,
     genus_eq_genus_of_constantCompositum_eq_top hF₁ hex₁ hcc⟩
 
-omit [Algebra k F₂] [Algebra F₂ F] [IsScalarTower k F₂ F] [FiniteDimensional F₂ F] in
-/-- A primitive element `y` of `F / F₁` keeps its minimal polynomial over the constant field
-extension `F₁ · k'`, and the separability of the reduction at `P₁` carries over to a place `P₁'`
-of `F₁ · k'` above it. -/
-private theorem map_eq_minpoly_and_separable_of_constantCompositum_eq_top {k' F' : Type*}
-    [Field k'] [Field F'] [Algebra k k'] [Algebra k F'] [Algebra k' F'] [Algebra F F']
-    [IsScalarTower k k' F'] [IsScalarTower k F F'] [Algebra.IsSeparable k k'] [Algebra F₁ F']
-    [IsScalarTower F₁ F F'] [IsScalarTower k F₁ F'] [Algebra k' (constantCompositum F₁ k' F')]
-    [IsScalarTower k k' (constantCompositum F₁ k' F')]
-    [FiniteDimensional F₁ (constantCompositum F₁ k' F')] (hex : IsIntegrallyClosedIn k F)
-    (h : constantCompositum F k' F' = ⊤) {y : F} (hy : F₁⟮y⟯ = ⊤)
-    {P₁' : Place k' (constantCompositum F₁ k' F')} {φ : (P₁'.restrict k F₁).integers[X]}
-    (hmin : φ.map (algebraMap (P₁'.restrict k F₁).integers F₁) = minpoly F₁ y)
-    (hsep : (φ.map (IsLocalRing.residue (P₁'.restrict k F₁).integers)).Separable) :
-    (φ.map (algebraMap (P₁'.restrict k F₁).integers P₁'.integers)).map
-        (algebraMap P₁'.integers (constantCompositum F₁ k' F')) =
-      minpoly (constantCompositum F₁ k' F') (algebraMap F F' y) ∧
-    ((φ.map (algebraMap (P₁'.restrict k F₁).integers P₁'.integers)).map
-      (IsLocalRing.residue P₁'.integers)).Separable := by
-  constructor
-  · have hcomp : (algebraMap P₁'.integers (constantCompositum F₁ k' F')).comp
-        (algebraMap (P₁'.restrict k F₁).integers P₁'.integers) =
-        (algebraMap F₁ (constantCompositum F₁ k' F')).comp
-          (algebraMap (P₁'.restrict k F₁).integers F₁) :=
-      RingHom.ext fun x ↦ Subtype.ext (by simp [IsScalarTower.algebraMap_apply F₁ F F'])
-    rw [Polynomial.map_map, hcomp, ← Polynomial.map_map, hmin,
-      minpoly_algebraMap_eq_map_of_constantCompositum_eq_top hex h hy]
-  · have hcomp : (IsLocalRing.residue P₁'.integers).comp
-        (algebraMap (P₁'.restrict k F₁).integers P₁'.integers) =
-        (algebraMap (P₁'.restrict k F₁).ResidueField P₁'.ResidueField).comp
-          (IsLocalRing.residue (P₁'.restrict k F₁).integers) :=
-      RingHom.ext fun x ↦ (IsLocalRing.ResidueField.algebraMap_residue x).symm
-    rw [Polynomial.map_map, hcomp, ← Polynomial.map_map]
-    exact hsep.map
-
 /-- Castelnuovo's inequality after a constant field extension. Let `F' = F · k'` for a finite Galois
 extension `k' / k`, let `P₁` be a place of `F₁` at which a primitive element `y = ∑ cᵢ zᵢ` of
 `F / F₁` has separable reduction, with `cᵢ ∈ F₁` regular at `P₁` and `zᵢ ∈ F₂` regular above `P₁`.
@@ -503,9 +468,14 @@ private theorem genus_le_of_constantCompositum_eq_top {k' F' : Type*} [Field k']
   have hdeg' (R' : Place k' F') (hR' : R'.restrict k' F₁' = P₁') : R'.degree = 1 :=
     (hembR _ (hover R' hR')).elim fun φR ↦
       Place.degree_eq_one_of_constantCompositum_eq_top hF hex h R' φR
-  -- `y` stays a primitive element over `F₁ · k'`, with the same minimal polynomial.
-  obtain ⟨hmin', hsep'⟩ :=
-    map_eq_minpoly_and_separable_of_constantCompositum_eq_top (F₁ := F₁) hex h hy hmin hsep
+  -- `y` stays a primitive element over `F₁ · k'`, with the same minimal polynomial, and its
+  -- reduction at `P₁'` stays separable.
+  have hmin' :=
+    Place.map_map_algebraMap_integers_eq_minpoly_of_constantCompositum_eq_top hex h hy hmin
+  have hsep' : ((φ.map (algebraMap (P₁'.restrict k F₁).integers P₁'.integers)).map
+      (IsLocalRing.residue P₁'.integers)).Separable := by
+    rw [Polynomial.map_map, ← IsLocalRing.ResidueField.map_comp_residue, ← Polynomial.map_map]
+    exact hsep.map
   -- The places of `F₂ · k'` over the chosen places of `F₂` are rational.
   have : Algebra.IsAlgebraic F₂ F := Algebra.IsAlgebraic.of_finite F₂ F
   have hF₂ : IsFunctionField k F₂ := hF.of_isAlgebraic_top

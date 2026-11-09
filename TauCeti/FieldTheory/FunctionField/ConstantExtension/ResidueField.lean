@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.FunctionField.ConstantExtension.IntegralBasis
 public import TauCeti.FieldTheory.FunctionField.Place.Degree
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.Embeddings
+import TauCeti.FieldTheory.FunctionField.ConstantExtension.Degree
 
 /-!
 # Residue fields in a constant field extension
@@ -49,6 +50,9 @@ place when `k` is perfect.
 * `TauCeti.Place.card_le_encard_setOf_degree_eq_one_of_constantCompositum_eq_top`: `F' / k'`
   has at least as many rational places as there are places of `F` whose residue fields embed
   into `k'`.
+* `TauCeti.Place.map_map_algebraMap_integers_eq_minpoly_of_constantCompositum_eq_top`: a
+  polynomial over the valuation ring of the restriction that models the minimal polynomial of a
+  primitive element of `F / E` still models it over `E · k'`.
 * `TauCeti.Place.exists_constantCompositum_eq_top_and_forall_degree_eq_one`: a place with
   separable residue field becomes rational after a finite separable extension of constants.
 * `TauCeti.Place.exists_constantCompositum_eq_top_nonempty_algHom`: finitely many residue fields
@@ -262,6 +266,30 @@ theorem card_le_encard_setOf_degree_eq_one_of_constantCompositum_eq_top [Normal 
   rintro _ ⟨P, hP, rfl⟩
   obtain ⟨φ⟩ := hT P hP
   exact degree_eq_one_of_constantCompositum_eq_top hF hex h (R P) (by rw [hR P]; exact φ)
+
+/-- **An integral model of a minimal polynomial survives a constant field extension**: let `y`
+generate `F` over a subfield `E` containing `k`, over which `F` is finite, and let `φ` be a
+polynomial over `𝒪_P` whose image over `E` is the minimal polynomial of `y`, where `P` is the
+restriction to `E` of a place `P'` of `E · k'`. Carried to `𝒪_{P'}`, `φ` maps to the minimal
+polynomial of `y` over `E · k'`. -/
+theorem map_map_algebraMap_integers_eq_minpoly_of_constantCompositum_eq_top {E : Type*}
+    [Field E] [Algebra k E] [Algebra E F] [IsScalarTower k E F] [FiniteDimensional E F]
+    [Algebra E F'] [IsScalarTower E F F'] [IsScalarTower k E F']
+    [Algebra k' (constantCompositum E k' F')] [IsScalarTower k k' (constantCompositum E k' F')]
+    [FiniteDimensional E (constantCompositum E k' F')] (hex : IsIntegrallyClosedIn k F)
+    (h : constantCompositum F k' F' = ⊤) {y : F} (hy : E⟮y⟯ = ⊤)
+    {P' : Place k' (constantCompositum E k' F')} {φ : (P'.restrict k E).integers[X]}
+    (hφ : φ.map (algebraMap (P'.restrict k E).integers E) = minpoly E y) :
+    (φ.map (algebraMap (P'.restrict k E).integers P'.integers)).map
+        (algebraMap P'.integers (constantCompositum E k' F')) =
+      minpoly (constantCompositum E k' F') (algebraMap F F' y) := by
+  have hcomp : (algebraMap P'.integers (constantCompositum E k' F')).comp
+      (algebraMap (P'.restrict k E).integers P'.integers) =
+      (algebraMap E (constantCompositum E k' F')).comp
+        (algebraMap (P'.restrict k E).integers E) :=
+    RingHom.ext fun x ↦ Subtype.ext (by simp [IsScalarTower.algebraMap_apply E F F'])
+  rw [Polynomial.map_map, hcomp, ← Polynomial.map_map, hφ,
+    minpoly_algebraMap_eq_map_of_constantCompositum_eq_top hex h hy]
 
 omit [Field k'] [Field F'] [Algebra k k'] [Algebra k F'] [Algebra k' F'] [Algebra F F']
   [IsScalarTower k k' F'] [IsScalarTower k F F'] [Algebra.IsSeparable k k'] in
