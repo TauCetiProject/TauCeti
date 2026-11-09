@@ -16,9 +16,10 @@ the braiding of two quotient objects is the image of their original braiding. Na
 by lifting the morphisms to the original category, and the hexagons are the images of the
 original hexagons. No faithfulness of the quotient functor is required.
 
-The quotient functor is braided. A braided functor identifying related morphisms factors as a
-braided functor through the quotient, using the existing monoidal structure on
-`CategoryTheory.Quotient.lift`. Symmetry also descends when the original braiding is symmetric.
+The quotient functor is braided. A lax braided or braided functor identifying related morphisms
+factors as a lax braided or braided functor through the quotient, using the existing monoidal
+structure on `CategoryTheory.Quotient.lift`. Symmetry also descends when the original braiding
+is symmetric.
 
 In particular, these constructions give the descended braiding for quotients by tensor ideals,
 including quotients of braided diagram categories by negligible morphisms.
@@ -30,8 +31,9 @@ including quotients of braided diagram categories by negligible morphisms.
 * `CategoryTheory.Quotient.braiding_hom` and `CategoryTheory.Quotient.braiding_inv`:
   the braiding and its inverse on classes are the images of the original morphisms.
 * `CategoryTheory.Quotient.functorBraided`: the quotient functor is braided.
-* `CategoryTheory.Quotient.liftBraided`: a braided functor identifying related morphisms
-  factors through a braided functor.
+* `CategoryTheory.Quotient.liftLaxBraided` and `CategoryTheory.Quotient.liftBraided`: a lax
+  braided or braided functor identifying related morphisms factors through a lax braided or
+  braided functor.
 
 ## References
 
@@ -102,13 +104,19 @@ noncomputable instance symmetricCategory [SymmetricCategory C] :
 section lift
 
 variable [BraidedCategory C] {D : Type u'} [Category.{v'} D]
-  [MonoidalCategory D] [BraidedCategory D] (F : C ⥤ D) [F.Braided]
+  [MonoidalCategory D] [BraidedCategory D] (F : C ⥤ D)
   (H : ∀ (X Y : C) (f₁ f₂ : X ⟶ Y), r f₁ f₂ → F.map f₁ = F.map f₂)
+
+/-- The factorization of a lax braided functor identifying related morphisms is lax braided for
+the descended braiding and the existing lax monoidal factorization. -/
+noncomputable instance liftLaxBraided [F.LaxBraided] : (lift r F H).LaxBraided where
+  braided X Y := Functor.LaxBraided.braided (F := F) X.as Y.as
 
 /-- The factorization of a braided functor identifying related morphisms is braided for the
 descended braiding and the existing monoidal factorization. -/
-noncomputable instance liftBraided : (lift r F H).Braided where
-  braided X Y := Functor.LaxBraided.braided (F := F) X.as Y.as
+noncomputable instance liftBraided [F.Braided] : (lift r F H).Braided where
+  __ := liftMonoidal F H
+  __ := liftLaxBraided r F H
 
 end lift
 
