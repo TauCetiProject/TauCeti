@@ -31,6 +31,9 @@ the paired wedge `ContinuousAlternatingMap.pairedWedge` of the one-form `α` wit
 ## Main declarations
 
 * `TestFunction.smulLeftCLM`: multiplication `φ ↦ f φ` of test functions by a smooth function.
+* `TestFunction.exists_coe_eq_clm_apply_of_tsupport_inter_subset`: the pairing `x ↦ A x (φ x)`
+  of a test function on `Ω'` with a smooth operator field is a test function on any open `Ω`
+  containing `tsupport A ∩ Ω'`.
 * `TestFunction.oneFormWedgeCLM`: the wedge `ω ↦ α ∧ ω` of test forms with a smooth one-form.
 * `TestFunction.norm_oneFormWedgeCLM_apply_le`: the pointwise bound
   `‖(α ∧ ω) x‖ ≤ (k + 1) ‖α x‖ ‖ω x‖`, with its extended-norm form
@@ -97,6 +100,29 @@ theorem smulLeftCLM_monoCLM (hf : ContDiff ℝ n f) (φ : 𝓓^{n}(Ω', F)) :
   by_cases h : Ω' ≤ Ω <;> simp [monoCLM_apply, h]
 
 end SmulLeft
+
+section ClmApply
+
+open Function Set
+open scoped ContDiff
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+
+/-- **Pairing a test function with a `C^n` operator field from a smaller open set.** If
+`A : E → F →L[ℝ] G` is `C^n` with `tsupport A ∩ Ω' ⊆ Ω` and `φ` is a `C^n` test function on `Ω'`,
+then `x ↦ A x (φ x)` is a `C^n` test function on `Ω`, whether or not `Ω' ≤ Ω`. This covers a
+scalar multiple `f φ` (take `A x = f x • id`) and the pairing `Df φ` with a derivative. -/
+theorem exists_coe_eq_clm_apply_of_tsupport_inter_subset {A : E → F →L[ℝ] G}
+    (hA : ContDiff ℝ n A) (h : tsupport A ∩ Ω' ⊆ Ω) (φ : 𝓓^{n}(Ω', F)) :
+    ∃ ψ : 𝓓^{n}(Ω, G), ⇑ψ = fun x => A x (φ x) := by
+  have hsupp : support (fun x => A x (φ x)) ⊆ support A ∩ support φ :=
+    fun x hx => ⟨fun h0 => hx (by simp [h0]), fun h0 => hx (by simp [h0])⟩
+  exact ⟨⟨fun x => A x (φ x), hA.clm_apply φ.contDiff,
+    φ.hasCompactSupport.mono fun x hx => (hsupp hx).2,
+    (closure_mono hsupp |>.trans (closure_inter_subset_inter_closure _ _)).trans
+      ((inter_subset_inter_right _ φ.tsupport_subset).trans h)⟩, rfl⟩
+
+end ClmApply
 
 section OneFormWedge
 

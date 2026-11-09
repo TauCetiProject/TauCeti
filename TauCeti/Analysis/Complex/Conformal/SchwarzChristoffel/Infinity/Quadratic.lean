@@ -515,8 +515,9 @@ private theorem neg_le_im_quadratic_log_of_re_nonneg {M C η : ℝ} {z : ℂ} (h
     (hratio : -C * (Real.pi / 2 * (z.im / ‖z‖)) < η) :
     -η ≤ (z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z).im := by
   rw [im_quadratic_log]
-  have hJ := le_pi_div_two_mul_of_sin_eq (arg_nonneg_iff.mpr hz.le)
-    (arg_le_pi_div_two_iff.mpr (Or.inl hx)) (sin_arg z)
+  have hJ := le_pi_div_two_mul_sin (arg_nonneg_iff.mpr hz.le)
+    (arg_le_pi_div_two_iff.mpr (Or.inl hx))
+  rw [sin_arg] at hJ
   have hsx : 0 < z.re - M := by
     rw [abs_of_nonneg hx] at hnorm
     linarith [le_abs_self M]
@@ -536,8 +537,9 @@ private theorem im_quadratic_log_le_of_re_neg {M C η : ℝ} {z : ℂ} (hC : C <
     · linarith
     · linarith
     · simp [h] at hz
-  have hJ := le_pi_div_two_mul_of_sin_eq (by linarith [arg_le_pi z]) (by linarith)
-    (by rw [Real.sin_pi_sub, sin_arg] : Real.sin (Real.pi - arg z) = z.im / ‖z‖)
+  have hJ := le_pi_div_two_mul_sin (θ := Real.pi - arg z) (by linarith [arg_le_pi z])
+    (by linarith)
+  rw [Real.sin_pi_sub, sin_arg] at hJ
   have hsx : z.re - M < 0 := by
     rw [abs_of_neg hx] at hnorm
     linarith [neg_abs_le M]

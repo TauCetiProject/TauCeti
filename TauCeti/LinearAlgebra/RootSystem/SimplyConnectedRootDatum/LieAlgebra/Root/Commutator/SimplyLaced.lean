@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SimplyLaced
 import TauCeti.LinearAlgebra.RootSystem.InvariantForm.RootString
@@ -17,7 +17,7 @@ The root subgroups `DynkinType.chevalleyRootSubgroup` of a Kostant-stable lattic
 Steinberg's commutator formula in types A, D and E over every commutative value ring. If
 `γ = α + β` is a root, the commutator is `x_γ(N_{α,β}uv)`, with the integer and sign supplied by
 `DynkinType.structureConstant`. The type-independent commuting case is recorded as
-`DynkinType.commute_chevalleyRootSubgroup_of_add_notMem` in the root-subgroup module.
+`DynkinType.commute_chevalleyRootSubgroup` in the basic commutator module.
 
 The root-string conditions are consequences of the pinned datum, not additional Lie-bracket
 hypotheses on the representation. In a simply-laced type, a root sum has Cartan pairing `-1`,
