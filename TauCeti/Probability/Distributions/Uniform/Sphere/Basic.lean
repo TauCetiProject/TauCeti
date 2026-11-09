@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Module.Normalize.Measurable
 public import TauCeti.Geometry.Euclidean.Volume.Sphere
 public import TauCeti.MeasureTheory.Constructions.HaarToSphere
+public import TauCeti.MeasureTheory.Measure.Support
 public import TauCeti.Probability.Distributions.Chi.Gaussian
 public import TauCeti.Probability.Distributions.Gaussian.Density
 
@@ -40,6 +41,7 @@ The radial factorization comes from the polar-coordinate formula
 
 ## Main results
 
+* `TauCeti.Probability.support_uniformSphereMeasure`: the uniform sphere law has full support.
 * `LinearIsometryEquiv.map_uniformSphereMeasure`: invariance under linear isometric
   equivalences.
 * `TauCeti.Probability.integral_coe_uniformSphereMeasure`: the embedded mean is zero.
@@ -100,6 +102,19 @@ instance isProbabilityMeasure_uniformSphereMeasure [Nontrivial E] :
     rw [uniformSphereMeasure_def, _root_.smul_apply, smul_eq_mul]
     exact ENNReal.inv_mul_cancel (Measure.measure_univ_ne_zero.2 (Measure.toSphere_ne_zero _))
       (measure_ne_top _ _)
+
+/-- The uniform sphere measure has full topological support. In dimension zero both the sphere
+and its universal set are empty. -/
+@[simp]
+theorem support_uniformSphereMeasure :
+    (uniformSphereMeasure E).support = Set.univ := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · have hzero : uniformSphereMeasure E = 0 := Subsingleton.elim _ _
+    rw [hzero, Measure.support_zero]
+    exact Set.eq_univ_iff_forall.mpr fun x ↦ isEmptyElim x
+  · rw [uniformSphereMeasure_def,
+      Measure.support_smul_measure _ _ (ENNReal.inv_ne_zero.mpr (measure_ne_top _ _))]
+    exact Measure.support_eq_univ
 
 instance isFiniteMeasure_uniformSphereMeasure : IsFiniteMeasure (uniformSphereMeasure E) := by
   rcases subsingleton_or_nontrivial E with hE | hE
