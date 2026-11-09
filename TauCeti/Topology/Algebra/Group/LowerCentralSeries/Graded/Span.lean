@@ -210,6 +210,54 @@ theorem linearMap_ext_gradedPiece_one {M : Type*} [AddCommMonoid M]
   · exact hpow x hx
   · exact hbr x hx y hy
 
+/-- **Continuous linear maps out of `gr_1(G)` are determined by their values on `p`-powers and
+brackets**, with no openness assumption on `λ_2`: the locus where two maps into a Hausdorff group
+agree on `λ_1` is a closed subgroup, and a closed subgroup containing the `p`-th powers and
+commutators of `G` contains `λ_1`. -/
+theorem linearMap_ext_gradedPiece_one_of_continuous {M : Type*} [AddCommGroup M]
+    [Module (ZMod p) M] [TopologicalSpace M] [T2Space M] {f₁ f₂ : gradedPiece p G 1 →ₗ[ZMod p] M}
+    (h₁ : Continuous fun y : pLowerCentralSeries p G 1 ↦ f₁ (gradedMk p G 1 y))
+    (h₂ : Continuous fun y : pLowerCentralSeries p G 1 ↦ f₂ (gradedMk p G 1 y))
+    (hpow : ∀ x : G, f₁ (gradedPow p G 0 (gradedMkZero p G x)) =
+      f₂ (gradedPow p G 0 (gradedMkZero p G x)))
+    (hbr : ∀ x y : G, f₁ (gradedBracket p G 0 0 (gradedMkZero p G x) (gradedMkZero p G y)) =
+      f₂ (gradedBracket p G 0 0 (gradedMkZero p G x) (gradedMkZero p G y))) : f₁ = f₂ := by
+  -- The agreement locus in `G`, as a subgroup.
+  let U : Subgroup G :=
+    { carrier := {g | ∃ h : g ∈ pLowerCentralSeries p G 1,
+        f₁ (gradedMk p G 1 ⟨g, h⟩) = f₂ (gradedMk p G 1 ⟨g, h⟩)}
+      one_mem' := ⟨one_mem _, by
+        have : (⟨1, one_mem _⟩ : pLowerCentralSeries p G 1) = 1 := rfl
+        rw [this, gradedMk_one, map_zero, map_zero]⟩
+      mul_mem' := by
+        rintro a b ⟨ha, hab⟩ ⟨hb, hbb⟩
+        refine ⟨mul_mem ha hb, ?_⟩
+        have : (⟨a * b, mul_mem ha hb⟩ : pLowerCentralSeries p G 1) = ⟨a, ha⟩ * ⟨b, hb⟩ := rfl
+        rw [this, gradedMk_mul, map_add, map_add, hab, hbb]
+      inv_mem' := by
+        rintro a ⟨ha, hab⟩
+        refine ⟨inv_mem ha, ?_⟩
+        have : (⟨a⁻¹, inv_mem ha⟩ : pLowerCentralSeries p G 1) = ⟨a, ha⟩⁻¹ := rfl
+        rw [this, gradedMk_inv, map_neg, map_neg, hab] }
+  have hUclosed : IsClosed (U : Set G) := by
+    have hE : IsClosed {y : pLowerCentralSeries p G 1 |
+        f₁ (gradedMk p G 1 y) = f₂ (gradedMk p G 1 y)} := isClosed_eq h₁ h₂
+    have himg := (isClosed_pLowerCentralSeries (p := p) (G := G) 1).isClosedEmbedding_subtypeVal
+      |>.isClosedMap _ hE
+    convert himg using 1
+    ext g
+    exact ⟨fun ⟨h, e⟩ ↦ ⟨⟨g, h⟩, e, rfl⟩, fun ⟨y, e, hy⟩ ↦ ⟨hy ▸ y.2, by subst hy; exact e⟩⟩
+  have hlam : pLowerCentralSeries p G 1 ≤ U := by
+    rw [pLowerCentralSeries_succ, pLowerCentralSeries_zero]
+    refine (pLowerCentralStep_le_iff hUclosed).mpr ⟨fun g _ ↦ ?_, commutator_le.mpr
+      fun g _ h _ ↦ ?_⟩
+    · exact ⟨_, by simpa using hpow g⟩
+    · exact ⟨_, by simpa using hbr g h⟩
+  refine LinearMap.ext fun ρ ↦ ?_
+  obtain ⟨y, rfl⟩ := gradedMk_surjective 1 ρ
+  obtain ⟨h, e⟩ := hlam y.2
+  exact e
+
 /-! ### Higher degrees -/
 
 /-- **The `p`-powers and the brackets with degree-zero classes span the next graded piece**: when
