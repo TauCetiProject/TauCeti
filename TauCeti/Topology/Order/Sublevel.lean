@@ -262,6 +262,7 @@ variable {X : Type*} [TopologicalSpace X] {β : Type*} [AddCommGroup β] [Partia
 
 omit [TopologicalSpace X] in
 /-- The band `(-f)⁻¹[-b, -a]` of `-f` is the band `f⁻¹[a, b]` of `f`. -/
+@[simp]
 theorem preimage_neg_Icc_neg (a b : β) : (-f) ⁻¹' Icc (-b) (-a) = f ⁻¹' Icc a b := by
   ext x
   simp only [mem_preimage, Pi.neg_apply, mem_Icc, neg_le_neg_iff]

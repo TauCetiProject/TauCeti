@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.Singular.Triple.Finrank
 public import TauCeti.Geometry.Manifold.Morse.Cell.Homology
 public import TauCeti.Geometry.Manifold.Morse.Deformation.Homology
 import TauCeti.Algebra.BigOperators.AlternatingSum
+import TauCeti.Algebra.BigOperators.Finset.Fiber
 
 /-!
 # The Morse inequalities
@@ -92,7 +93,7 @@ equality.
   `TauCeti.IsMorse.exists_sum_range_monomial_upperBandPair_eq_add_mul`: the same statements for
   the cobordism relative to its outgoing boundary `f⁻¹(b)`, with critical points counted by their
   complementary index.
-* `TauCeti.IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_upperBandPair_eq_bandPair`:
+* `IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_upperBandPair_eq_neg_one_pow_mul`:
   the Euler characteristics of the cobordism relative to its two boundaries agree up to the sign
   `(-1)^(dim M)`.
 * `TauCeti.IsMorse.finrank_singularHomology_le`,
@@ -723,7 +724,7 @@ function on a manifold of dimension `m`, and `a ≤ b` regular values with compa
 `W = f⁻¹[a, b]`, with incoming boundary `∂₋W = f⁻¹(a)` and outgoing boundary `∂₊W = f⁻¹(b)`. Then
 for every `n ≥ m`, `∑ᵢ₌₀ⁿ (-1)ⁱ dim Hᵢ(W, ∂₊W; V) = (-1)ᵐ ∑ᵢ₌₀ⁿ (-1)ⁱ dim Hᵢ(W, ∂₋W; V)`: the
 Euler characteristics of `(W, ∂₊W)` and `(W, ∂₋W)` agree up to the sign `(-1)ᵐ`. -/
-theorem IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_upperBandPair_eq_bandPair
+theorem IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_upperBandPair_eq_neg_one_pow_mul
     (hf : IsMorse I f) {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
     (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) {n : ℕ}
     (hn : finrank ℝ E ≤ n) :
@@ -740,17 +741,7 @@ theorem IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_upperBandPair
   -- lies on the regular levels `a` and `b`; a critical point of index `λ` contributes `(-1)^λ`
   -- to the second count and `(-1)^(m - λ)` to the first.
   set S := (hf.finite_criticalPoints_inter hcompact).toFinset
-  rw [isRegularValue_iff_notMem_image_criticalPoints] at ha hb
-  have hIco : criticalPoints I f ∩ f ⁻¹' Ico a b = S := by
-    ext x
-    simp only [S, Finite.coe_toFinset, mem_inter_iff, mem_preimage, mem_Ico, mem_Icc]
-    exact ⟨fun h ↦ ⟨h.1, h.2.1, h.2.2.le⟩,
-      fun h ↦ ⟨h.1, h.2.1, h.2.2.lt_of_ne fun he ↦ hb ⟨x, h.1, he⟩⟩⟩
-  have hIoc : criticalPoints I f ∩ f ⁻¹' Ioc a b = S := by
-    ext x
-    simp only [S, Finite.coe_toFinset, mem_inter_iff, mem_preimage, mem_Ioc, mem_Icc]
-    exact ⟨fun h ↦ ⟨h.1, h.2.1.le, h.2.2⟩,
-      fun h ↦ ⟨h.1, h.2.1.lt_of_ne fun he ↦ ha ⟨x, h.1, he.symm⟩, h.2.2⟩⟩
+  have hS : criticalPoints I f ∩ f ⁻¹' Icc a b = S := (Finite.coe_toFinset _).symm
   have hind (x : M) : manifoldMorseIndex I f x ≤ finrank ℝ E := manifoldMorseIndex_le_finrank
   have hco (i : ℕ) : {x ∈ (S : Set M) | manifoldMorseIndex I f x + i = finrank ℝ E} =
       ↑({x ∈ S | finrank ℝ E - manifoldMorseIndex I f x = i} : Finset M) := by
@@ -761,13 +752,13 @@ theorem IsMorse.sum_range_neg_one_pow_mul_finrank_singularHomology_upperBandPair
   have hfib (g : M → ℕ) (hg : ∀ x ∈ S, g x ≤ n) :
       ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * ({x ∈ S | g x = i} : Finset M).card =
         ∑ x ∈ S, (-1 : ℤ) ^ g x := by
-    rw [← Finset.sum_fiberwise_of_maps_to' (t := Finset.range (n + 1))
-      fun x hx ↦ Finset.mem_range.2 (Nat.lt_succ_of_le (hg x hx))]
+    rw [← sum_card_filter_nsmul_eq_sum_comp fun x hx ↦
+      Finset.mem_range.2 (Nat.lt_succ_of_le (hg x hx))]
     simp [mul_comm]
   have hind' (i : ℕ) : {x ∈ (S : Set M) | manifoldMorseIndex I f x = i} =
       ↑({x ∈ S | manifoldMorseIndex I f x = i} : Finset M) :=
     (Finset.coe_filter _ _).symm
-  rw [hIoc, hIco]
+  rw [criticalPoints_inter_preimage_Ioc_eq_Icc ha, criticalPoints_inter_preimage_Ico_eq_Icc hb, hS]
   simp only [hco, hind', ncard_coe_finset]
   rw [hfib _ fun _ _ ↦ (Nat.sub_le _ _).trans hn, hfib _ fun x _ ↦ (hind x).trans hn,
     Finset.mul_sum]
