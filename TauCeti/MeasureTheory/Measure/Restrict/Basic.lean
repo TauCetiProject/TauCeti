@@ -24,8 +24,6 @@ sets of positive mass, scaled by the smallest mass over their number, sum to at 
 * `MeasureTheory.Measure.smul_sum_inv_smul_restrict_le`: the normalized restrictions of a measure
   to finitely many sets, scaled by the smallest mass over their number, sum to at most the
   measure.
-* `MeasureTheory.Measure.pos_of_smul_le_smul`: if `a μ ≤ b μ` for a nonzero measure `μ`, with
-  `a > 0`, then `b > 0`.
 * `MeasureTheory.ae_restrict_compl_eq_zero_of_tsupport_subset`: if `tsupport f ⊆ s`, then
   `f =ᵐ[μ.restrict sᶜ] 0`.
 -/
@@ -81,15 +79,6 @@ theorem smul_sum_inv_smul_restrict_le {α : Type*} [MeasurableSpace α] {π : Me
     _ = π s := by
         rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul, ← mul_assoc,
           ENNReal.mul_inv_cancel (Nat.cast_ne_zero.2 hn) (ENNReal.natCast_ne_top n), one_mul]
-
-/-- If `a μ ≤ b μ` for a nonzero measure `μ`, with `a > 0`, then `b > 0`. -/
-theorem pos_of_smul_le_smul {α : Type*} [MeasurableSpace α] {μ : Measure α} {a b : ℝ≥0∞}
-    (ha : 0 < a) (h : a • μ ≤ b • μ) (hμ : μ ≠ 0) : 0 < b := by
-  refine pos_iff_ne_zero.2 fun h0 => hμ ?_
-  rw [h0, zero_smul, Measure.nonpos_iff_eq_zero'] at h
-  rw [← Measure.measure_univ_eq_zero]
-  have := congr($h univ)
-  simpa [ha.ne'] using this
 
 end Measure
 

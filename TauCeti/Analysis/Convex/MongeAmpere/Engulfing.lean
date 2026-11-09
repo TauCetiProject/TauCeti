@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.MongeAmpere.Section
-import TauCeti.MeasureTheory.Measure.Restrict.Basic
+import TauCeti.MeasureTheory.Measure.Smul
 
 /-!
 # The engulfing property of sections of Monge–Ampère solutions
