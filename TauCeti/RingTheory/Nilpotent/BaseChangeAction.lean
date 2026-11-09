@@ -249,6 +249,12 @@ noncomputable def baseChangeExp (x : A) (M : S)
   ∑ n ∈ range (nilpotencyClass x),
     t ^ n • (integralDividedPower x M n (hM n)).baseChange R
 
+/-- The finite exponential of an element that is not nilpotent is the junk value `0`. -/
+theorem baseChangeExp_of_not_isNilpotent {x : A} (hx : ¬ IsNilpotent x) (M : S)
+    (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M) (t : R) :
+    baseChangeExp x M hM t = 0 := by
+  simp [baseChangeExp, Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hx)]
+
 /-- The finite base-changed divided-power exponentials of commuting elements commute.
 This commutation identity does not require either element to be nilpotent. -/
 theorem commute_baseChangeExp {x y : A} (M : S) (hxy : Commute x y)
@@ -511,8 +517,7 @@ theorem baseChangeExp_neg (x : A) (M : S)
   swap
   · -- both sides take the junk value `0`: neither `x` nor `-x` is nilpotent
     have hx' : ¬ IsNilpotent (-x) := fun h ↦ hx (by simpa using h.neg)
-    simp [baseChangeExp, Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hx),
-      Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hx')]
+    rw [baseChangeExp_of_not_isNilpotent hx' M hM', baseChangeExp_of_not_isNilpotent hx M hM]
   obtain ⟨k, hk⟩ := id hx
   have hk' : (-x) ^ k = 0 := by rw [neg_pow, hk, mul_zero]
   refine LinearMap.ext fun z => ?_
@@ -567,8 +572,8 @@ theorem baseChange_integralUnitRestrict_conj_baseChangeExp (x : A) (M : S) (u : 
   · -- both sides take the junk value `0`: neither `x` nor its conjugate is nilpotent
     have hx' : ¬ IsNilpotent ((u : A) * x * ↑u⁻¹) := fun ⟨k, hk⟩ ↦
       hx ⟨k, by simpa [Units.conj_pow] using hk⟩
-    simp [baseChangeExp, Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hx),
-      Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hx')]
+    rw [baseChangeExp_of_not_isNilpotent hx' M hM', baseChangeExp_of_not_isNilpotent hx M hM,
+      mul_zero, zero_mul]
   obtain ⟨k, hk⟩ := id hx
   have hk' : ((u : A) * x * ↑u⁻¹) ^ k = 0 := by rw [Units.conj_pow, hk, mul_zero, zero_mul]
   refine LinearMap.ext fun z => ?_
