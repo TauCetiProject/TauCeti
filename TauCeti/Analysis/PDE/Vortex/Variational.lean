@@ -215,7 +215,7 @@ theorem taubesFunctional_zero : taubesFunctional μ h k 0 = 0 := by
 variable [BorelSpace E]
 
 /-- The first-order term of the expansion is integrable. -/
-private theorem integrable_firstVariation [μ.IsAddHaarMeasure] (hh : Continuous h)
+private theorem integrable_firstVariation [IsFiniteMeasureOnCompacts μ] (hh : Continuous h)
     (hk : Continuous k) (hw : ContDiff ℝ 1 w) (hv : ContDiff ℝ 1 v) (hvc : HasCompactSupport v) :
     Integrable (fun x ↦ ⟪∇ w x, ∇ v x⟫_ℝ + (h x * (Real.exp (2 * w x) - 1) / 8 + k x) * v x)
       μ := by
@@ -227,7 +227,7 @@ private theorem integrable_firstVariation [μ.IsAddHaarMeasure] (hh : Continuous
   exact hvc.mono_of_forall_gradient fun x hx hgx ↦ by simp [hx, hgx]
 
 /-- The remainder of the expansion is integrable. -/
-private theorem integrable_secondVariation [μ.IsAddHaarMeasure] (hh : Continuous h)
+private theorem integrable_secondVariation [IsFiniteMeasureOnCompacts μ] (hh : Continuous h)
     (hw : Continuous w) (hv : ContDiff ℝ 1 v) (hvc : HasCompactSupport v) :
     Integrable (fun x ↦ ‖∇ v x‖ ^ 2 / 2 + h x * Real.exp (2 * w x) * taubesPotential (v x))
       μ := by
@@ -239,7 +239,7 @@ private theorem integrable_secondVariation [μ.IsAddHaarMeasure] (hh : Continuou
 /-- **The exact second-order expansion of Taubes's functional.** For continuous coefficients, a
 `C¹` function `w` with integrable density and a compactly supported `C¹` perturbation `v`,
 `𝒜(w + v) = 𝒜(w) + ∫ (⟪∇w, ∇v⟫ + (h φ'(w) + k) v) + ∫ (‖∇v‖² / 2 + h exp (2w) φ(v))`. -/
-theorem taubesFunctional_add [μ.IsAddHaarMeasure] (hh : Continuous h) (hk : Continuous k)
+theorem taubesFunctional_add [IsFiniteMeasureOnCompacts μ] (hh : Continuous h) (hk : Continuous k)
     (hw : ContDiff ℝ 1 w) (hwi : Integrable (taubesDensity h k w) μ) (hv : ContDiff ℝ 1 v)
     (hvc : HasCompactSupport v) :
     taubesFunctional μ h k (w + v) = taubesFunctional μ h k w +
@@ -254,9 +254,9 @@ theorem taubesFunctional_add [μ.IsAddHaarMeasure] (hh : Continuous h) (hk : Con
     taubesDensity_add (hw.differentiable one_ne_zero x) (hv.differentiable one_ne_zero x))
 
 /-- A compactly supported perturbation preserves the integrability of the density. -/
-theorem integrable_taubesDensity_add [μ.IsAddHaarMeasure] (hh : Continuous h) (hk : Continuous k)
-    (hw : ContDiff ℝ 1 w) (hwi : Integrable (taubesDensity h k w) μ) (hv : ContDiff ℝ 1 v)
-    (hvc : HasCompactSupport v) : Integrable (taubesDensity h k (w + v)) μ :=
+theorem integrable_taubesDensity_add [IsFiniteMeasureOnCompacts μ] (hh : Continuous h)
+    (hk : Continuous k) (hw : ContDiff ℝ 1 w) (hwi : Integrable (taubesDensity h k w) μ)
+    (hv : ContDiff ℝ 1 v) (hvc : HasCompactSupport v) : Integrable (taubesDensity h k (w + v)) μ :=
   ((hwi.add (integrable_firstVariation hh hk hw hv hvc)).add
     (integrable_secondVariation hh hw.continuous hv hvc)).congr
       (ae_of_all _ fun x ↦ (taubesDensity_add (hw.differentiable one_ne_zero x)
@@ -264,8 +264,8 @@ theorem integrable_taubesDensity_add [μ.IsAddHaarMeasure] (hh : Continuous h) (
 
 /-- For continuous coefficients, the density of a compactly supported `C¹` function is
 integrable, so Taubes's functional is finite on such functions. -/
-theorem integrable_taubesDensity_of_hasCompactSupport [μ.IsAddHaarMeasure] (hh : Continuous h)
-    (hk : Continuous k) (hw : ContDiff ℝ 1 w) (hwc : HasCompactSupport w) :
+theorem integrable_taubesDensity_of_hasCompactSupport [IsFiniteMeasureOnCompacts μ]
+    (hh : Continuous h) (hk : Continuous k) (hw : ContDiff ℝ 1 w) (hwc : HasCompactSupport w) :
     Integrable (taubesDensity h k w) μ := by
   simpa using integrable_taubesDensity_add (μ := μ) (w := 0) hh hk contDiff_zero_fun
     (by simp) hw hwc
@@ -273,7 +273,7 @@ theorem integrable_taubesDensity_of_hasCompactSupport [μ.IsAddHaarMeasure] (hh 
 /-- Along a compactly supported `C¹` direction `v`, the remainder
 `∫ (t² ‖∇v‖² / 2 + h exp (2w) φ(t v))` of the expansion of `𝒜(w + t v)` is `O(t²)` as `t → 0`:
 near `t = 0`, `φ(t v) ≤ t² v² / 4`. -/
-private theorem isBigO_remainder_taubesFunctional [μ.IsAddHaarMeasure] (hh : Continuous h)
+private theorem isBigO_remainder_taubesFunctional [IsFiniteMeasureOnCompacts μ] (hh : Continuous h)
     (hw : Continuous w) (hv : ContDiff ℝ 1 v) (hvc : HasCompactSupport v) :
     (fun t : ℝ ↦ ∫ x, (t ^ 2 * (‖∇ v x‖ ^ 2 / 2) +
       h x * Real.exp (2 * w x) * taubesPotential (t * v x)) ∂μ) =O[𝓝 0] fun t ↦ t ^ 2 := by
@@ -319,7 +319,7 @@ private theorem isBigO_remainder_taubesFunctional [μ.IsAddHaarMeasure] (hh : Co
 /-- **The first variation of Taubes's functional.** For continuous coefficients, a `C¹` function
 `w` with integrable density and a compactly supported `C¹` direction `v`, the function
 `t ↦ 𝒜(w + t v)` has derivative `∫ (⟪∇w, ∇v⟫ + (h (exp (2w) - 1) / 8 + k) v)` at `t = 0`. -/
-theorem hasDerivAt_taubesFunctional_add_smul [μ.IsAddHaarMeasure] (hh : Continuous h)
+theorem hasDerivAt_taubesFunctional_add_smul [IsFiniteMeasureOnCompacts μ] (hh : Continuous h)
     (hk : Continuous k) (hw : ContDiff ℝ 1 w) (hwi : Integrable (taubesDensity h k w) μ)
     (hv : ContDiff ℝ 1 v) (hvc : HasCompactSupport v) :
     HasDerivAt (fun t : ℝ ↦ taubesFunctional μ h k (w + t • v))
@@ -419,7 +419,7 @@ theorem forall_hasDerivAt_taubesFunctional_add_smul_iff [μ.IsAddHaarMeasure] (h
 /-- **Convexity of Taubes's functional.** For continuous coefficients with `h ≥ 0`, `𝒜` lies above
 its tangent line at a `C¹` function `w` with integrable density, in every compactly supported `C¹`
 direction `v`. -/
-theorem taubesFunctional_add_integral_le [μ.IsAddHaarMeasure] (hh₀ : ∀ x, 0 ≤ h x)
+theorem taubesFunctional_add_integral_le [IsFiniteMeasureOnCompacts μ] (hh₀ : ∀ x, 0 ≤ h x)
     (hh : Continuous h) (hk : Continuous k) (hw : ContDiff ℝ 1 w)
     (hwi : Integrable (taubesDensity h k w) μ) (hv : ContDiff ℝ 1 v)
     (hvc : HasCompactSupport v) :
