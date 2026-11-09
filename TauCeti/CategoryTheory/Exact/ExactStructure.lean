@@ -150,6 +150,13 @@ theorem conflation_iff_of_iso (E : ConflationClass C) {S T : ShortComplex C} (e 
     E.Conflation S ↔ E.Conflation T :=
   E.Conflation.prop_iff_of_iso e
 
+/-- Precomposing the inflation of a conflation with an isomorphism onto its first object gives a
+conflation. -/
+theorem conflation_iso_hom_comp (E : ConflationClass C) {S : ShortComplex C} {M : C}
+    (e : M ≅ S.X₁) (hS : E.Conflation S) :
+    E.Conflation (ShortComplex.mk (e.hom ≫ S.f) S.g (by simp)) :=
+  E.conflation_of_iso (ShortComplex.isoMk e.symm (Iso.refl _) (Iso.refl _) (by simp) (by simp)) hS
+
 /-- The negation of an inflation is an inflation: negating the source of a conflation is an
 isomorphism of short complexes. -/
 theorem IsInflation.neg {E : ConflationClass C} {X Y : C} {i : X ⟶ Y}
@@ -214,8 +221,7 @@ witnessing conflation transports along the isomorphism. -/
 instance (E : ConflationClass C) : E.inflations.RespectsIso := by
   apply MorphismProperty.RespectsIso.mk
   · rintro X Y Z e i ⟨W, p, zero, hS⟩
-    refine ⟨W, p, by simp [zero], E.conflation_of_iso (S := ShortComplex.mk i p zero)
-      (ShortComplex.isoMk e.symm (Iso.refl _) (Iso.refl _) (by simp) (by simp)) hS⟩
+    exact ⟨W, p, by simp [zero], E.conflation_iso_hom_comp (S := ShortComplex.mk i p zero) e hS⟩
   · rintro X Y Z e i ⟨W, p, zero, hS⟩
     refine ⟨W, e.inv ≫ p, by simp [zero], E.conflation_of_iso (S := ShortComplex.mk i p zero)
       (ShortComplex.isoMk (Iso.refl _) e (Iso.refl _) (by simp) (by simp)) hS⟩
