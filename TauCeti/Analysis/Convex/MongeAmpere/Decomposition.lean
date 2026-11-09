@@ -411,7 +411,7 @@ private theorem exists_mongeAmpereMeasure_withDensity_eq_add_withDensity
       exact and_congr_right fun hx => by rw [hHS x hx.2]
     rw [restrict_apply hs, mongeAmpereMeasure_apply ν hf hbot hν ht, himage,
       withDensity_apply _ hs, restrict_restrict hs]
-    exact withDensity_image_gradient_eq_setLIntegral μ hf ht
+    exact withDensity_image_gradient_eq_setLIntegral μ hf (t := s ∩ S)
       (htZ ▸ ht.inter ((measurableSet_singleton 0).compl.preimage hdet))
       (fun x hx => hS x hx.2) g
   -- Off `S`, the Monge–Ampère measure is carried by the `μ`-null set `D \ S`.
