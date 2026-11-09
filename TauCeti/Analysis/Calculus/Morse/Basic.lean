@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.DiscreteSubset
+public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 public import TauCeti.Analysis.Calculus.Bilinear
 public import TauCeti.Analysis.Calculus.SecondDerivative
 public import TauCeti.Topology.Algebra.Module.BilinearForm
@@ -13,8 +14,9 @@ public import TauCeti.Topology.Algebra.Module.BilinearForm
 -- inside the proof of `TauCeti.IsNondegenerateCriticalPoint.neg`.
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Add
--- Private: invariance of criticality is used only inside the proof of
--- `TauCeti.isNondegenerateCriticalPoint_comp_iff`.
+-- Private: invariance of criticality is used only inside the proofs of
+-- `TauCeti.isNondegenerateCriticalPoint_comp_iff` and
+-- `TauCeti.HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const`.
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 
 /-!
@@ -96,6 +98,9 @@ the notion be read off in any chart.
   nondegeneracy is invariant under negating the function.
 * `TauCeti.isNondegenerateCriticalPoint_add_const_iff`: nondegeneracy is invariant under adding a
   constant.
+* `TauCeti.HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const`: a function equal to a function
+  with nondegenerate critical points composed with a `C²` chart of invertible differential, plus a
+  constant, has nondegenerate critical points on the source of the chart.
 * `ContinuousLinearMap.isNondegenerateCriticalPoint_apply_self`: the local model. A
   continuous bilinear form `B` whose polarization `B.flip + B` is invertible makes `z ↦ B z z` a
   function with a nondegenerate critical point at the origin.
@@ -181,8 +186,7 @@ theorem isNondegenerateCriticalPoint_iff_separatingLeft [FiniteDimensional ℝ E
         (fderiv ℝ (fderiv ℝ f) x).toBilinForm.SeparatingLeft := by
   refine ⟨fun h ↦ ⟨h.contDiffAt, h.fderiv_eq_zero, h.separatingLeft⟩,
     fun ⟨hd, h0, hnd⟩ ↦ ⟨hd, h0, ?_⟩⟩
-  exact ContinuousLinearMap.isInvertible_of_injective
-    ((ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective _).1 hnd)
+  exact ContinuousLinearMap.isInvertible_iff_separatingLeft.2 hnd
 
 /-- Nondegeneracy at a point depends only on the germ of the function there. -/
 theorem IsNondegenerateCriticalPoint.congr_of_eventuallyEq {g : E → ℝ}
@@ -308,6 +312,32 @@ theorem isNondegenerateCriticalPoint_add_const_iff (c : ℝ) :
   · simpa [hfun] using h.isInvertible
   · simpa [hfun] using h.fderiv_eq_zero
   · simpa [hfun] using h.isInvertible
+
+/-- **Nondegenerate critical points pull back through a chart.** If `k` has nondegenerate critical
+points on the target of an open partial homeomorphism `Φ`, is `C²` there, and `Φ` is `C²` with
+invertible differential on its source, then every function that equals `k ∘ Φ + r` on the source
+has nondegenerate critical points on the source. -/
+theorem HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const
+    {Φ : OpenPartialHomeomorph F E} {k : E → ℝ} {h : F → ℝ} {r : ℝ}
+    (hk : HasNondegenerateCriticalPointsOn k Φ.target)
+    (hkd : ∀ w ∈ Φ.target, ContDiffAt ℝ 2 k w)
+    (hΦ : ∀ u ∈ Φ.source, ContDiffAt ℝ 2 Φ u ∧ (fderiv ℝ Φ u).IsInvertible)
+    (hev : ∀ u ∈ Φ.source, h u = k (Φ u) + r) :
+    HasNondegenerateCriticalPointsOn h Φ.source := by
+  refine hasNondegenerateCriticalPointsOn_iff.2 fun u hu hcrit ↦ ?_
+  obtain ⟨hΦu, hinv⟩ := hΦ u hu
+  have hev' : h =ᶠ[𝓝 u] (fun w ↦ k w + r) ∘ Φ :=
+    eventually_of_mem (Φ.open_source.mem_nhds hu) hev
+  -- Criticality passes to `k` at `Φ u`, since the differential of `Φ` there is invertible.
+  have hkcrit : fderiv ℝ k (Φ u) = 0 := by
+    rw [hev'.fderiv_eq, fderiv_comp_eq_zero_iff_of_isInvertible
+      (((hkd _ (Φ.map_source hu)).add contDiffAt_const).differentiableAt (by norm_num))
+      (hΦu.differentiableAt (by norm_num)) hinv] at hcrit
+    simpa [fderiv_add_const] using hcrit
+  have hnd : IsNondegenerateCriticalPoint (fun w ↦ k w + r) (Φ u) :=
+    (isNondegenerateCriticalPoint_add_const_iff _).2
+      (hasNondegenerateCriticalPointsOn_iff.1 hk (Φ.map_source hu) hkcrit)
+  exact (hnd.comp hΦu hinv).congr_of_eventuallyEq hev'.symm
 
 end Morse
 

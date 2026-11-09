@@ -306,7 +306,7 @@ section Even
 
 variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
-  [Invertible (2 : K)] [FiniteDimensional K V]
+  [FiniteDimensional K V]
 
 
 /-! ### Invariant-subspace dichotomies and inequivalence of the two half-spin actions -/
@@ -381,7 +381,7 @@ section SpinGroup
 
 variable {K : Type u} [Field K]
   {V : Type v} [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
-  [Invertible (2 : K)] [FiniteDimensional K V] (P : SpinPolarizationData Q)
+  [FiniteDimensional K V] (P : SpinPolarizationData Q)
 
 /-- **The even half-spin representation of the Spin group is irreducible** when the Spin group
 linearly spans the even Clifford algebra. -/
@@ -474,6 +474,8 @@ theorem isEmpty_equiv_spinPlusSubrep_spinMinusSubrep_of_span
       congrArg ((spinMinusSubrep P hline).toRepresentation g) (hef s)
     _ = eMinus ((spinGroupRepresentation (spinMinusAction Q P hline)) g (f s)) :=
       (hMinus (f s)).symm
+
+variable [Invertible (2 : K)]
 
 /-- **The even half-spin representation of the Spin group is irreducible** when anisotropic pairs
 admit the square normalization needed to span the even Clifford algebra. -/

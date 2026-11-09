@@ -55,6 +55,11 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
   derivative of the parameter-velocity field.
 * `deriv_deriv_comm`: for a map of two scalar variables, the two iterated partial derivatives
   agree.
+* `TauCeti.contDiffAt_deriv_slice_left`: the partial derivative in the first variable of a
+  `C^(n+1)` map is `C^n`.
+* `TauCeti.deriv_deriv_slice_left`: **symmetry of the mixed partial derivatives**, the derivative
+  in the second variable of the partial derivative in the first variable is the mixed second
+  derivative in the directions `(1, 0)` and `(0, 1)`.
 
 ## References
 
@@ -69,7 +74,7 @@ public section
 noncomputable section
 
 open Filter ContinuousLinearMap
-open scoped Topology
+open scoped ContDiff Topology
 
 variable {𝕜 E F' : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -409,3 +414,34 @@ theorem deriv_deriv_comm {g : 𝕜 × 𝕜 → F'} {t x : 𝕜}
   have h₂ := (hg.of_le (le_trans (by norm_num) le_minSmoothness))
     |>.deriv_parameterCurve_eventuallyEq_timeFDeriv
   rw [h₁.deriv_eq, h₂.deriv_eq, deriv_spatialFDeriv_apply hg, fderiv_apply_one_eq_deriv]
+
+namespace TauCeti
+
+/-- If `u` is `C^(n+1)` at `(a, b)`, then its partial derivative in the first variable along the
+vertical line through `a` is `C^n` at `b`. -/
+theorem contDiffAt_deriv_slice_left {n : ℕ∞ω} {u : 𝕜 × E → F'} {a : 𝕜} {b : E}
+    (hu : ContDiffAt 𝕜 (n + 1) u (a, b)) :
+    ContDiffAt 𝕜 n (fun y ↦ _root_.deriv (fun s ↦ u (s, y)) a) b := by
+  refine ContDiffAt.congr_of_eventuallyEq ?_
+    (hu.of_le le_add_self).deriv_parameterCurve_eventuallyEq_timeFDeriv
+  rw [timeFDeriv_eq]
+  exact ((hu.fderiv_right le_rfl).comp b (contDiff_prodMk_right a).contDiffAt).clm_apply
+    contDiffAt_const
+
+/-- **Symmetry of the mixed partial derivatives.** Near a point where `u` is `C²` (`C^ω` over a
+field other than `ℝ` or `ℂ`), the derivative in the second variable of the partial derivative of
+`u` in the first variable is the second derivative of `u` in the directions `(1, 0)` and
+`(0, 1)`. -/
+theorem deriv_deriv_slice_left {n : ℕ∞ω} {u : 𝕜 × 𝕜 → F'} {a t : 𝕜}
+    (hu : ContDiffAt 𝕜 n u (a, t)) (hn : minSmoothness 𝕜 2 ≤ n) :
+    _root_.deriv (fun r ↦ _root_.deriv (fun s ↦ u (s, r)) a) t =
+      fderiv 𝕜 (fderiv 𝕜 u) (a, t) (1, 0) (0, 1) := by
+  have h2 : ContDiffAt 𝕜 2 u (a, t) := hu.of_le (le_minSmoothness.trans hn)
+  have hD : DifferentiableAt 𝕜 (fderiv 𝕜 u) (a, t) :=
+    (h2.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero
+  have h := hasDerivAt_fderiv_apply_snd hD ((1 : 𝕜), (0 : 𝕜))
+  rw [(h.congr_of_eventuallyEq
+      (h2.of_le one_le_two).deriv_parameterCurve_eventuallyEq_timeFDeriv).deriv,
+    hu.isSymmSndFDerivAt hn]
+
+end TauCeti

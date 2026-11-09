@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.SL2Tilde.Curvature
-import Mathlib.Analysis.Calculus.MeanValue
-import Mathlib.Analysis.Calculus.Deriv.Prod
+
+import TauCeti.Analysis.Calculus.FDeriv.ConstantDirection
 import Mathlib.Topology.Connected.TotallyDisconnected
 -- The derivative bridge reads the inherited global model-space atlas.
 import all TauCeti.Geometry.Manifold.Riemannian.SL2Tilde.Basic
@@ -124,38 +124,20 @@ theorem exists_apply_vertical_eq (Φ : Isom J SL2Tilde) :
     ∃ ε : ℝ, (ε = 1 ∨ ε = -1) ∧ ∀ (p : SL2Tilde) (t : ℝ),
       Φ (mk p.x p.y (p.z + t)) = mk (Φ p).x (Φ p).y ((Φ p).z + ε * t) := by
   obtain ⟨ε, hε, hd⟩ := exists_mfderiv_vertical_eq Φ
-  refine ⟨ε, hε, fun p => ?_⟩
-  let c : ℝ → P := fun t => (p.x, p.y, p.z + t)
-  have hc (t : ℝ) : HasDerivAt c (0, 0, 1) t := by
-    simpa [c] using (hasDerivAt_const t p.x).prodMk
-      ((hasDerivAt_const t p.y).prodMk ((hasDerivAt_id t).const_add p.z))
-  have hf (t : ℝ) : HasDerivAt (coordinateMap Φ ∘ c) (0, 0, ε) t := by
-    have h := hd (toProd.symm (c t)) 1
+  refine ⟨ε, hε, fun p t => toProd.injective ?_⟩
+  have hder (q : P) : fderiv ℝ (coordinateMap Φ) q (0, 0, 1) = (0, 0, ε) := by
+    have h := hd (toProd.symm q) 1
     rw [← coordinate_derivative] at h
-    simp only [constantField_apply, ContinuousLinearEquiv.apply_symm_apply,
-      Equiv.apply_symm_apply, mul_one] at h
-    simpa only [h] using
-      ((contDiff_coordinateMap Φ).differentiable (by simp) (c t)).hasFDerivAt.comp_hasDerivAt
-        t (hc t)
-  let g : ℝ → P := fun t => ((Φ p).x, (Φ p).y, (Φ p).z + ε * t)
-  have hg (t : ℝ) : HasDerivAt g (0, 0, ε) t := by
-    simpa [g] using (hasDerivAt_const t (Φ p).x).prodMk
-      ((hasDerivAt_const t (Φ p).y).prodMk
-        (((hasDerivAt_id t).const_mul ε).const_add (Φ p).z))
-  have heq := eq_of_fderiv_eq (fun t => (hf t).differentiableAt)
-    (fun t => (hg t).differentiableAt)
-    (fun t => (hf t).hasFDerivAt.fderiv.trans (hg t).hasFDerivAt.fderiv.symm)
-    0 (by
-      simp only [coordinateMap, c, g, Function.comp_apply, add_zero, mul_zero]
-      rw [← toProd_mk p.x p.y p.z, mk_x_y_z, Equiv.symm_apply_apply]
-      exact Prod.ext (fst_toProd (Φ p))
-        (Prod.ext (fst_snd_toProd (Φ p)) (snd_snd_toProd (Φ p))))
-  intro t
-  apply toProd.injective
-  have ht := congrFun heq t
-  simp only [coordinateMap, c, g, Function.comp_apply] at ht
-  rw [← toProd_mk p.x p.y (p.z + t), Equiv.symm_apply_apply] at ht
-  simpa only [toProd_mk] using ht
+    simpa only [constantField_apply, ContinuousLinearEquiv.apply_symm_apply,
+      Equiv.apply_symm_apply, mul_one] using h
+  have h := apply_add_smul_eq_of_fderiv_apply_eq
+    ((contDiff_coordinateMap Φ).differentiable (by simp)) hder (toProd p) t
+  have hq : toProd.symm (toProd p + t • ((0, 0, 1) : P)) = mk p.x p.y (p.z + t) := by
+    rw [Equiv.symm_apply_eq, toProd_mk]
+    ext <;> simp [fst_toProd, fst_snd_toProd, snd_snd_toProd]
+  simp only [coordinateMap, Function.comp_apply, hq, Equiv.symm_apply_apply] at h
+  rw [h]
+  ext <;> simp [fst_toProd, fst_snd_toProd, snd_snd_toProd, mul_comm]
 
 /-- The image of a whole vertical fibre is the whole fibre through the image of any
 one of its points, including for isometries that reverse the fibre orientation. -/
