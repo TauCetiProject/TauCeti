@@ -100,20 +100,19 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 /-- Replacing the outer normal `ν_s` by `ν = ν_s x` in the pairing of `Dχ_s` with a bounded field
 `ψ` that vanishes off `S` and satisfies `⟪ψ, ν⟫ ≥ 0` costs at most `M ∫_S ‖ν_s - ν‖ d|Dχ_s|`. -/
 private theorem neg_mul_setIntegral_le_integral_inner_outerNormal
-    (hx : x ∈ reducedBoundary μ Ω s) {ψ : 𝓓(Ω, E)} {S : Set Ω} (hSm : MeasurableSet S)
+    {ψ : 𝓓(Ω, E)} {S : Set Ω} (hSm : MeasurableSet S)
     (hSfin : variationMeasure μ Ω (s.indicator 1) S ≠ ∞) {M : ℝ} (hM : ∀ y, ‖ψ y‖ ≤ M)
     (hψν : ∀ y, 0 ≤ ⟪ψ y, outerNormal μ Ω s x⟫) (hψS : ∀ y : Ω, y ∉ S → ψ y = 0) :
     -(M * ∫ y in S, ‖outerNormal μ Ω s y - outerNormal μ Ω s x‖
         ∂variationMeasure μ Ω (s.indicator 1)) ≤
       ∫ y, ⟪ψ y, outerNormal μ Ω s y⟫ ∂variationMeasure μ Ω (s.indicator 1) := by
-  obtain ⟨hu, hfin⟩ := locallyIntegrableOn_and_totalVariationOn_ne_top_of_mem_reducedBoundary hx
   set ν := outerNormal μ Ω s x
   have hg : IntegrableOn (fun y : Ω => -(M * ‖outerNormal μ Ω s y - ν‖)) S
       (variationMeasure μ Ω (s.indicator 1)) :=
     (((integrableOn_outerNormal hSfin).sub (integrableOn_const hSfin)).norm.const_mul M).neg
   rw [← integral_const_mul, ← integral_neg, ← integral_indicator hSm]
   refine integral_mono (hg.integrable_indicator hSm) ?_ fun y => ?_
-  · refine (integrable_inner_polarDensity hu hfin ψ.continuous ψ.hasCompactSupport
+  · refine (integrable_inner_polarDensity ψ.continuous ψ.hasCompactSupport
       ψ.tsupport_subset).neg.congr ?_
     filter_upwards [ae_outerNormal_eq] with y hy
     simp [hy, inner_neg_right]
@@ -217,7 +216,7 @@ theorem eventually_neg_le_integral_divergenceCLM_mul_indicator_preimage
     have h := ENNReal.toReal_mono (by finiteness) h2
     rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)] at h
   -- Replacing `ν_s` by `ν` in the pairing costs at most `M' ∫_S ‖ν_s - ν‖ d|Dχ_s|`.
-  have hlow := neg_mul_setIntegral_le_integral_inner_outerNormal hx hSm hSfin (M := M')
+  have hlow := neg_mul_setIntegral_le_integral_inner_outerNormal hSm hSfin (M := M')
     (fun y => by rw [hψ]; exact (hM _).trans (le_max_left _ _)) (fun y => by rw [hψ]; exact hφ _)
     hψS
   have hrn : r / r ^ n * (R' * r) ^ (n - 1) = R' ^ m := by
