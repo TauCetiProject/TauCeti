@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Group.Basic
 public import Mathlib.Topology.FiberBundle.Trivialization
+public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 
 /-!
 # Local trivializations of orbit maps
@@ -47,16 +48,6 @@ namespace TauCeti
 
 variable {G X : Type*} [Group G] [MulAction G X] {x₀ : X}
 
-/-- If `s z • x₀ = z`, then `s(z)⁻¹ * g` fixes `x₀` whenever `g • x₀ = z`. -/
-private theorem inv_mul_mem_stabilizer {s : X → G} {z : X} (hs : s z • x₀ = z) {g : G}
-    (hg : g • x₀ = z) : (s z)⁻¹ * g ∈ MulAction.stabilizer G x₀ := by
-  rw [MulAction.mem_stabilizer_iff, mul_smul, hg, inv_smul_eq_iff, hs]
-
-/-- If `s z • x₀ = z` and `h` fixes `x₀`, then `s(z) * h` carries `x₀` to `z`. -/
-private theorem mul_smul_eq_of_mem_stabilizer {s : X → G} {z : X} (hs : s z • x₀ = z)
-    (h : MulAction.stabilizer G x₀) : (s z * h) • x₀ = z := by
-  rw [mul_smul, MulAction.mem_stabilizer_iff.1 h.2, hs]
-
 variable [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G] [TopologicalSpace X]
 
 /-- **The local trivialization of an orbit map defined by a continuous local section.** Let
@@ -71,7 +62,7 @@ noncomputable def orbitMapTrivialization (hx₀ : Continuous fun g : G ↦ g •
   classical
   refine
     { toFun := fun g ↦ (g • x₀, if hg : g • x₀ ∈ U then
-        ⟨(s (g • x₀))⁻¹ * g, inv_mul_mem_stabilizer (hsec _ hg) rfl⟩ else 1)
+        ⟨(s (g • x₀))⁻¹ * g, inv_mul_mem_stabilizer_of_smul_eq _ _ (hsec _ hg) rfl⟩ else 1)
       invFun := fun zh ↦ if zh.1 ∈ U then s zh.1 * zh.2 else 1
       source := (fun g : G ↦ g • x₀) ⁻¹' U
       target := U ×ˢ univ
@@ -93,18 +84,19 @@ noncomputable def orbitMapTrivialization (hx₀ : Continuous fun g : G ↦ g •
         intro g hg
         rfl }
   · rintro ⟨z, h⟩ ⟨hz, -⟩
-    simp only [mem_preimage, hz, ↓reduceIte, mul_smul_eq_of_mem_stabilizer (hsec z hz) h]
+    simp only [mem_preimage, hz, ↓reduceIte,
+      (mul_smul_eq_of_mem_stabilizer (s z) h.2).trans (hsec z hz)]
   · intro g hg
     simp only [mem_preimage] at hg
     simp [hg]
   · rintro ⟨z, h⟩ ⟨hz, -⟩
-    have hgz := mul_smul_eq_of_mem_stabilizer (hsec z hz) h
+    have hgz := (mul_smul_eq_of_mem_stabilizer (s z) h.2).trans (hsec z hz)
     simp only [hz, ↓reduceIte, hgz, ↓reduceDIte]
     exact Prod.ext rfl (Subtype.ext (by simp))
   · refine hx₀.continuousOn.prodMk ?_
     -- On the source the fibre coordinate is `s(g • x₀)⁻¹ * g`.
     have hcarrier : ContinuousOn (fun g : G ↦ ((if hg : g • x₀ ∈ U then
-        ⟨(s (g • x₀))⁻¹ * g, inv_mul_mem_stabilizer (hsec _ hg) rfl⟩ else 1 :
+        ⟨(s (g • x₀))⁻¹ * g, inv_mul_mem_stabilizer_of_smul_eq _ _ (hsec _ hg) rfl⟩ else 1 :
           MulAction.stabilizer G x₀) : G)) ((fun g : G ↦ g • x₀) ⁻¹' U) := by
       refine (((hs.comp hx₀.continuousOn fun _ hg ↦ hg).inv).mul continuousOn_id).congr
         fun g hg ↦ ?_
@@ -130,7 +122,7 @@ open Classical in
 coordinate is `s(g • x₀)⁻¹ * g` on the source. -/
 private theorem orbitMapTrivialization_apply (g : G) :
     orbitMapTrivialization hx₀ U hU s hs hsec g = (g • x₀, if hg : g • x₀ ∈ U then
-      ⟨(s (g • x₀))⁻¹ * g, inv_mul_mem_stabilizer (hsec _ hg) rfl⟩ else 1) := (rfl)
+      ⟨(s (g • x₀))⁻¹ * g, inv_mul_mem_stabilizer_of_smul_eq _ _ (hsec _ hg) rfl⟩ else 1) := (rfl)
 
 open Classical in
 /-- The inverse of the orbit-map trivialization, unfolded. -/
@@ -158,7 +150,7 @@ theorem orbitMapTrivialization_apply_mul {g : G} (hg : g • x₀ ∈ U)
     (h : MulAction.stabilizer G x₀) :
     orbitMapTrivialization hx₀ U hU s hs hsec (g * h) =
       (g • x₀, (orbitMapTrivialization hx₀ U hU s hs hsec g).2 * h) := by
-  have hgh : (g * h) • x₀ = g • x₀ := by rw [mul_smul, MulAction.mem_stabilizer_iff.1 h.2]
+  have hgh : (g * h) • x₀ = g • x₀ := mul_smul_eq_of_mem_stabilizer g h.2
   refine Prod.ext hgh (Subtype.ext ?_)
   rw [orbitMapTrivialization_fiberCoordinate (hgh ▸ hg), Subgroup.coe_mul,
     orbitMapTrivialization_fiberCoordinate hg, hgh, mul_assoc]

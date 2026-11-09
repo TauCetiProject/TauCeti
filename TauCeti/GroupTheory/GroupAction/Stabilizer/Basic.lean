@@ -75,6 +75,9 @@ normality of it is equivalent to freeness of the action of the image.
 
 * `TauCeti.conj_smul_eq_conj_smul_of_smul_eq`: if the stabilizer of `a` normalizes `T`, then the
   conjugate `g T g⁻¹` depends only on `g • a`.
+* `TauCeti.inv_mul_mem_stabilizer_of_smul_eq` and `TauCeti.mul_smul_eq_of_mem_stabilizer`: two
+  elements carrying `x` to the same point differ on the right by an element of the stabilizer of
+  `x`, and right multiplication by such an element does not move the image of `x`.
 * `TauCeti.mem_stabilizer_set_iff_mapsTo`: an element stabilizes a set if and only if it and its
   inverse map the set into itself.
 * `TauCeti.stabilizer_finset_eq_bot_of_prime_card`: a group of prime order acts freely by
@@ -224,6 +227,17 @@ theorem mem_stabilizer_set_iff_mapsTo {a : G} {s : Set α} :
 theorem mul_inv_mem_stabilizer_of_smul_eq (g h : G) {x y : α}
     (hg : g • x = y) (hh : h • x = y) : g * h⁻¹ ∈ MulAction.stabilizer G y := by
   rw [MulAction.mem_stabilizer_iff, mul_smul, inv_smul_eq_iff.mpr hh.symm, hg]
+
+/-- Two group elements carrying `x` to the same point differ, on the right, by an element
+stabilizing `x`. -/
+theorem inv_mul_mem_stabilizer_of_smul_eq (g h : G) {x y : α}
+    (hg : g • x = y) (hh : h • x = y) : g⁻¹ * h ∈ MulAction.stabilizer G x := by
+  rw [MulAction.mem_stabilizer_iff, mul_smul, hh, inv_smul_eq_iff, hg]
+
+/-- Right multiplication by an element stabilizing `x` does not change the image of `x`. -/
+theorem mul_smul_eq_of_mem_stabilizer (g : G) {h : G} {x : α}
+    (hh : h ∈ MulAction.stabilizer G x) : (g * h) • x = g • x := by
+  rw [mul_smul, MulAction.mem_stabilizer_iff.1 hh]
 
 open scoped Pointwise in
 /-- If the stabilizer of `a` normalizes a subgroup `T`, then the conjugate `g T g⁻¹` depends only
