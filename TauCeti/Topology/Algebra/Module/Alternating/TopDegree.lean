@@ -33,16 +33,6 @@ theorem apply_eq_det_mul (ω : E [⋀^ι]→L[R] R) (b : Module.Basis ι R E) (v
   simpa only [coe_toAlternatingMap, _root_.smul_apply, smul_eq_mul, mul_comm] using h
 
 omit [Fintype ι] [DecidableEq ι] in
-/-- Pullback of a top-degree coefficient multiplies by the determinant. -/
-theorem compContinuousLinearMap_apply_basis [Finite ι] (ω : E [⋀^ι]→L[R] R)
-    (b : Module.Basis ι R E) (A : E →L[R] E) :
-    (ω.compContinuousLinearMap A) b = A.toLinearMap.det * ω b := by
-  classical
-  let : Fintype ι := Fintype.ofFinite ι
-  rw [compContinuousLinearMap_apply, apply_eq_det_mul ω b]
-  simp only [← ContinuousLinearMap.coe_coe A, b.det_comp, b.det_self, mul_one]
-
-omit [Fintype ι] [DecidableEq ι] in
 /-- Pullback of a top-degree alternating form by a linear endomorphism multiplies it by the
 determinant: `ω (A ∘ v) = det A * ω v`. -/
 theorem apply_comp_eq_det_mul [Finite ι] (ω : E [⋀^ι]→L[R] R) (b : Module.Basis ι R E)
@@ -50,6 +40,13 @@ theorem apply_comp_eq_det_mul [Finite ι] (ω : E [⋀^ι]→L[R] R) (b : Module
   classical
   let : Fintype ι := Fintype.ofFinite ι
   rw [apply_eq_det_mul ω b, apply_eq_det_mul ω b v, b.det_comp, mul_assoc]
+
+omit [Fintype ι] [DecidableEq ι] in
+/-- Pullback of a top-degree coefficient multiplies by the determinant. -/
+theorem compContinuousLinearMap_apply_basis [Finite ι] (ω : E [⋀^ι]→L[R] R)
+    (b : Module.Basis ι R E) (A : E →L[R] E) :
+    (ω.compContinuousLinearMap A) b = A.toLinearMap.det * ω b :=
+  ω.apply_comp_eq_det_mul b A.toLinearMap b
 
 omit [Fintype ι] [DecidableEq ι] in
 /-- A top-degree alternating form vanishes on a basis exactly when it is zero. -/

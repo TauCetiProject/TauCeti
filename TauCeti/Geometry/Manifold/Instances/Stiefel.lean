@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Data.Sym.Card
 public import Mathlib.Geometry.Manifold.Instances.Sphere
+import TauCeti.LinearAlgebra.LinearIndependent.Kernel
 
 /-!
 # Stiefel manifolds of orthonormal frames
@@ -62,6 +63,8 @@ manifold structure.
   range of the differential of the inclusion, is the kernel of the derivative of the Gram map.
 * `TauCeti.finrank_stiefelTwoModel`: the manifold of orthonormal two-frames of a space of
   dimension `m + 2` has dimension `2 m + 1`.
+* `TauCeti.linearIndependent_stiefelTwo_normal_cons`: at `(u, v)`, the normals `(u, 0)`,
+  `(v, u)`, `(0, v)` followed by the image of a tangent basis are linearly independent.
 * `TauCeti.stiefelTwoReflection`: the frame reflection `(u, v) ↦ (u, -v)`, an involution
   (`TauCeti.stiefelTwoReflection_stiefelTwoReflection`), smooth by
   `TauCeti.contMDiff_stiefelTwoReflection`.
@@ -333,6 +336,51 @@ theorem finrank_stiefelTwoModel {m : ℕ} [Fact (finrank ℝ E = m + 1 + 1)] :
   rw [Module.finrank_fin_fun, (Fact.out : finrank ℝ E = m + 1 + 1)]
   simp only [Nat.choose, Nat.reduceAdd]
   omega
+
+/-- **The normals and a tangent frame span `Fin 2 → E`.** At a frame `w = (u, v)`, the normals
+`(u, 0)`, `(v, u)`, `(0, v)` followed by the image of a tangent basis of the Stiefel manifold are
+linearly independent. The derivative of the Gram map kills the tangent vectors and sends the
+normals to twice the coordinate functions at `s(0, 0)`, `s(0, 1)` and `s(1, 1)`. -/
+theorem linearIndependent_stiefelTwo_normal_cons [FiniteDimensional ℝ E] {m : ℕ}
+    (w : stiefel E 2)
+    (b : Basis (Fin (2 * m + 1)) ℝ
+      (TangentSpace 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) w)) :
+    LinearIndependent ℝ (Fin.cons ![w.1 0, 0] (Fin.cons ![w.1 1, w.1 0] (Fin.cons ![0, w.1 1]
+      fun i ↦ mfderiv 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) 𝓘(ℝ, Fin 2 → E)
+        ((↑) : stiefel E 2 → Fin 2 → E) w (b i))) :
+        Fin (2 * m + 1 + 1 + 1 + 1) → Fin 2 → E) := by
+  obtain ⟨hu, hv, huv⟩ := mem_stiefel_two_iff.1 w.2
+  set ι := mfderiv 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) 𝓘(ℝ, Fin 2 → E)
+    ((↑) : stiefel E 2 → Fin 2 → E) w
+  have hker (t : TangentSpace 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) w) :
+      gramSym2Deriv E 2 w.1 (ι t) = 0 := by
+    have h : ι t ∈ LinearMap.range ι.toLinearMap := ⟨t, rfl⟩
+    rwa [range_mfderiv_coe_stiefel] at h
+  have hvu : ⟪w.1 1, w.1 0⟫ = 0 := by rw [real_inner_comm, huv]
+  have hli := linearIndependent_sumElim_of_map (gramSym2Deriv E 2 w.1).toLinearMap
+    (u := ![![w.1 0, 0], ![w.1 1, w.1 0], ![0, w.1 1]]) ?_
+    ((b.linearIndependent.map' _ (LinearMap.ker_eq_bot.2 (injective_mfderiv_coe_stiefel w))))
+    (fun i ↦ hker (b i))
+  · -- Reindex the normals followed by the tangent frame along `Fin 3 ⊕ Fin (2 * m + 1)`.
+    refine (linearIndependent_equiv' (finSumFinEquiv.trans (finCongr (by omega))) ?_).1 hli
+    funext i
+    rcases i with i | i
+    · fin_cases i <;> rfl
+    · have : (finCongr (by omega) (Fin.natAdd 3 i) : Fin (2 * m + 1 + 1 + 1 + 1)) =
+          i.succ.succ.succ := by
+        ext; simp
+      simp only [Function.comp_apply, Equiv.trans_apply, finSumFinEquiv_apply_right, this]
+      rfl
+  -- The images of the normals take the values `2, 0, 0`, `0, 2, 0` and `0, 0, 2` at the pairs
+  -- `s(0, 0)`, `s(0, 1)` and `s(1, 1)`.
+  rw [Fintype.linearIndependent_iff]
+  intro c hc
+  have h00 := congrFun hc s(0, 0)
+  have h01 := congrFun hc s(0, 1)
+  have h11 := congrFun hc s(1, 1)
+  simp [Fin.sum_univ_three, huv, hvu, hu, hv] at h00 h01 h11
+  intro i
+  fin_cases i <;> assumption
 
 /-- The **frame reflection** `(u, v) ↦ (u, -v)` of the Stiefel manifold of orthonormal
 two-frames. -/
