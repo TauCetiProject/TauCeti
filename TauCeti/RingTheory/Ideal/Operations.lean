@@ -106,6 +106,20 @@ the ideal. -/
 theorem mul_pow_mem_pow {ϖ : R} (hϖ : ϖ ∈ I) (n : ℕ) (c : R) : c * ϖ ^ n ∈ I ^ n :=
   (I ^ n).mul_mem_left c (Ideal.pow_mem_pow hϖ n)
 
+/-- A product of three elements of a left ideal lies in its third power. -/
+theorem mul_mul_mem_pow_three {a b c : R} (ha : a ∈ I) (hb : b ∈ I) (hc : c ∈ I) :
+    a * b * c ∈ I ^ 3 := by
+  simpa only [show (3 : ℕ) = 2 + 1 from rfl, Submodule.pow_succ, show (2 : ℕ) = 1 + 1 from rfl,
+    Submodule.pow_zero, Ideal.one_eq_top, Ideal.top_mul] using
+    Ideal.mul_mem_mul (Ideal.mul_mem_mul ha hb) hc
+
+/-- A product of four elements of a left ideal lies in its fourth power. -/
+theorem mul_mul_mul_mem_pow_four {a b c d : R} (ha : a ∈ I) (hb : b ∈ I) (hc : c ∈ I)
+    (hd : d ∈ I) : a * b * c * d ∈ I ^ 4 := by
+  simpa only [show (4 : ℕ) = 3 + 1 from rfl, Submodule.pow_succ, show (3 : ℕ) = 2 + 1 from rfl,
+    show (2 : ℕ) = 1 + 1 from rfl, Submodule.pow_zero, Ideal.one_eq_top, Ideal.top_mul] using
+    Ideal.mul_mem_mul (Ideal.mul_mem_mul (Ideal.mul_mem_mul ha hb) hc) hd
+
 end Mul
 
 section CommSemiring
