@@ -273,7 +273,7 @@ private theorem stasheffTerm_eq_zero
     (hx : ∀ i < n, x i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i)))
     (hab : ¬ IsComposableString a b n) (hs : 1 ≤ s) (hps : p + s ≤ n) :
     stasheffTerm (𝒞.inducedOperation F) d x p s (n - p - s) = 0 := by
-  rcases not_isComposableString_block_or_replaceBlock hab hps with h | h
+  rcases not_isComposableString_block_or_replaceBlock hab with h | h
   · rw [stasheffTerm_def,
       evalNat_inducedOperation_eq_zero (fun i hi ↦ hx (p + i) (by omega)) h, evalNat_def,
       (MultilinearMap.map_coord_zero _ (⟨p, by omega⟩ : Fin (p + 1 + (n - p - s))) (by simp)),

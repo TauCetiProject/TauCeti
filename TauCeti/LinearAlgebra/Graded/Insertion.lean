@@ -206,10 +206,9 @@ theorem replaceBlock_of_gt {α : Type*} (x : ℕ → α) (p s : ℕ) (v : α) {i
   · exact absurd h₂ (by omega)
   · rfl
 
-/-- Replacing a nonempty block of a family of length `n` by its last entry leaves the last entry
+/-- Replacing a block of a family of length `n` by its last entry leaves the last entry
 of the family unchanged. -/
-theorem replaceBlock_last {α : Type*} (a : ℕ → α) {n p d : ℕ} (hd : 0 < d)
-    (hpd : p + d ≤ n) :
+theorem replaceBlock_last {α : Type*} (a : ℕ → α) {n p d : ℕ} (hpd : p + d ≤ n) :
     replaceBlock a p d (a (p + d - 1)) (p + 1 + (n - p - d) - 1) = a (n - 1) := by
   rcases Nat.eq_or_lt_of_le (show p ≤ p + 1 + (n - p - d) - 1 by omega) with he | hlt
   · rw [← he, replaceBlock_self, show p + d - 1 = n - 1 by omega]
@@ -268,7 +267,7 @@ theorem IsComposableString.replaceBlock {a b : ℕ → α} {n p s : ℕ} (h : Is
 of length `s` at `p` is not composable, or replacing it by a single arrow leaves a string which is
 not composable. -/
 theorem not_isComposableString_block_or_replaceBlock {a b : ℕ → α} {n p s : ℕ}
-    (h : ¬ IsComposableString a b n) (hps : p + s ≤ n) :
+    (h : ¬ IsComposableString a b n) :
     ¬ IsComposableString (fun j ↦ a (p + j)) (fun j ↦ b (p + j)) s ∨
       ¬ IsComposableString (replaceBlock a p s (a (p + s - 1))) (replaceBlock b p s (b p))
         (p + 1 + (n - p - s)) := by
