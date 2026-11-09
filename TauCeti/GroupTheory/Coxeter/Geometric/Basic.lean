@@ -100,9 +100,10 @@ The second simple root is handled without a second induction: `σᵢ' σᵢ` is 
 
 Tits' theorem proper -- that the geometric representation is *faithful*, so that a Coxeter group
 is a reflection group -- is a strictly stronger statement, proved by the "root bookkeeping"
-argument that tracks which simple roots a reduced word makes negative. It is not proved here, and
-none of the results above needs it: the exact order of a product of two simple reflections only
-needs the representation to be nontrivial on a single rank-two plane.
+argument that tracks which simple roots a reduced word makes negative. It is proved in
+`TauCeti/GroupTheory/Coxeter/Geometric/Sign.lean`, and none of the results above needs it: the
+exact order of a product of two simple reflections only needs the representation to be nontrivial
+on a single rank-two plane.
 
 ## References
 
@@ -185,6 +186,11 @@ theorem geometricReflection_apply_pair (i j : B) (a b : ℝ) :
   simp only [geometricReflection_apply, map_add, map_smul, geometricForm_single_single,
     diagonal, Nat.cast_one, div_one, cos_pi]
   module
+
+/-- **A simple reflection changes only the coefficient of its own simple root.** -/
+theorem geometricReflection_apply_apply_of_ne {i j : B} (h : j ≠ i) (v : B →₀ ℝ) :
+    M.geometricReflection i v j = v j := by
+  simp [h.symm]
 
 /-- A vector orthogonal to the `i`-th simple root is fixed by the `i`-th simple reflection. -/
 theorem geometricReflection_apply_of_eq_zero {i : B} {v : B →₀ ℝ}
