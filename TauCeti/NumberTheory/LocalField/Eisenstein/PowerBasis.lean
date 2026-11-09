@@ -10,7 +10,6 @@ public import TauCeti.RingTheory.Valuation.Orthogonality
 public import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
-import TauCeti.NumberTheory.LocalField.MultiplicativeGroup
 
 /-!
 # Valuations in an Eisenstein power basis of a local field
