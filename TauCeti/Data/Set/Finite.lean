@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Data.Set.Card
 public import Mathlib.Basic.Finite.Sigma
+import Mathlib.Data.Set.Finite.Lemmas
+import Mathlib.Data.Set.Finite.Range
 
 /-!
 # Finite subsets of a set as finsets of the subtype
@@ -16,6 +18,9 @@ number of elements (`Set.Finite.exists_finset_subtype_image_val_eq`). This is th
 finite set of elements of a subgroup, a submodule or any other set-like structure as a `Finset` of
 that structure, which is the form the generation and rank statements over a `Finset` of a subgroup
 take.
+
+A finite family of functions on finite types into a type factors through one injective
+enumeration of the values (`TauCeti.exists_embedding_fin_comp_eq`).
 -/
 
 public section
@@ -48,3 +53,15 @@ theorem Set.exists_enumeration_finite_family {ι A : Type*} [Finite ι] (T : ι 
   exact ⟨m, fun j ↦ (e.symm j).1, fun j ↦ (e.symm j).2, fun j ↦ (e.symm j).2.2,
     fun i a ha ↦ ⟨e ⟨i, a, ha⟩, by simp,
       congrArg (fun x : (i : ι) × T i ↦ (x.2 : A)) (e.symm_apply_apply _)⟩⟩
+
+namespace TauCeti
+
+/-- A function from a finite type factors through an injective enumeration `b : Fin m ↪ γ` of a
+finite subset of `γ`. -/
+theorem exists_embedding_fin_comp_eq {δ γ : Type*} [Finite δ] (h : δ → γ) :
+    ∃ (m : ℕ) (b : Fin m ↪ γ) (g : δ → Fin m), b ∘ g = h := by
+  obtain ⟨m, b, hb⟩ := (Set.finite_range h).fin_embedding
+  obtain ⟨g, hg⟩ := Set.range_subset_range_iff_exists_comp.mp hb.ge
+  exact ⟨m, b, g, hg.symm⟩
+
+end TauCeti
