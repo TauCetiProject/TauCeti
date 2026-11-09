@@ -32,6 +32,8 @@ below it, which is finite.
 
 public section
 
+namespace TauCeti
+
 open Filter Set
 
 /-- **Nondecreasing enumeration.** If `f : ι → α` has finite sublevel sets on an infinite type
@@ -76,3 +78,5 @@ theorem tendsto_comp_atTop_of_finite_setOf_le {ι α : Type*} [LinearOrder α] {
   rw [← Nat.cofinite_eq_atTop]
   refine tendsto_atTop.2 fun a ↦ eventually_cofinite.2 ?_
   exact ((hf a).preimage he.injOn).subset fun k hk ↦ le_of_lt (not_le.1 hk)
+
+end TauCeti
