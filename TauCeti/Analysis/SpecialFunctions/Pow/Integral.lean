@@ -67,6 +67,8 @@ used, and it is why the statement needs no finiteness hypothesis on `u`.
 * `TauCeti.lintegral_ofReal_pow_Ioo`: `∫⁻ t in (0, a), t ^ k = a ^ (k + 1) / (k + 1)` for a natural
   number `k` and `0 ≤ a`.
 * `TauCeti.lintegral_ofReal_rpow_Ioi`: `∫⁻ t in (0, ∞), t ^ s = ∞`, for every `s`.
+* `TauCeti.lintegral_ofReal_rpow_Ioi_of_lt`: `∫⁻ t in (c, ∞), t ^ s = -c ^ (s + 1) / (s + 1)` for
+  `s < -1` and `0 < c`.
 * `TauCeti.lintegral_indicator_ofReal_rpow_Ioi`: the same integral truncated at the height where
   `c * t` reaches `a : ℝ≥0∞`, evaluated to `c ^ (-(s + 1)) / (s + 1) * a ^ (s + 1)`.
 * `TauCeti.lintegral_indicator_le_ofReal_rpow_Ioi`: the integral over the complementary region,
@@ -138,6 +140,17 @@ theorem lintegral_ofReal_rpow_Ioi (s : ℝ) :
     exact Real.rpow_nonneg ht.le s
   exact not_integrableOn_Ioi_rpow s
     ((lintegral_ofReal_ne_top_iff_integrable (by fun_prop) hnn).1 hne)
+
+/-- The lower integral of `t ^ s` over a half-line `(c, ∞)`, for `s < -1` and `0 < c`: the power
+is integrable at infinity and the value is `-c ^ (s + 1) / (s + 1)`, as for the Bochner integral
+`integral_Ioi_rpow_of_lt`. -/
+theorem lintegral_ofReal_rpow_Ioi_of_lt (hs : s < -1) {c : ℝ} (hc : 0 < c) :
+    ∫⁻ t in Ioi c, ENNReal.ofReal (t ^ s) = ENNReal.ofReal (-c ^ (s + 1) / (s + 1)) := by
+  have hnn : 0 ≤ᵐ[volume.restrict (Ioi c)] fun t : ℝ => t ^ s := by
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+    exact Real.rpow_nonneg (hc.trans ht).le s
+  rw [← ofReal_integral_eq_lintegral_ofReal (integrableOn_Ioi_rpow_of_lt hs hc) hnn,
+    integral_Ioi_rpow_of_lt hs hc]
 
 /-- **A finite threshold on `c * t` cuts `(0, ∞)` down to a bounded interval.** For `0 < c` and
 `a ≠ ∞`, the indicator of `{t | ENNReal.ofReal (c * t) < a}` agrees at every positive `t` with the
@@ -248,9 +261,6 @@ theorem lintegral_indicator_le_ofReal_rpow_Ioi (hs : s < -1) {c : ℝ} (hc : 0 <
   have hb0 : 0 < b := ENNReal.toReal_pos ha0 ha
   have hbc : 0 < b / c := by positivity
   have hab : a = ENNReal.ofReal b := (ENNReal.ofReal_toReal ha).symm
-  have hnn : 0 ≤ᵐ[volume.restrict (Ioi (b / c))] fun t : ℝ => t ^ s := by
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-    exact Real.rpow_nonneg (hbc.trans ht).le s
   -- The elementary real identity behind the constant `c ^ (-(s + 1))`.
   have hreal : -(b / c) ^ (s + 1) / (s + 1) = c ^ (-(s + 1)) / (-(s + 1)) * b ^ (s + 1) := by
     have hcp : c ^ (s + 1) ≠ 0 := (Real.rpow_pos_of_pos hc _).ne'
@@ -258,10 +268,8 @@ theorem lintegral_indicator_le_ofReal_rpow_Ioi (hs : s < -1) {c : ℝ} (hc : 0 <
     field_simp
   rw [lintegral_indicator measurableSet_Ici, Measure.restrict_restrict measurableSet_Ici,
     Set.inter_eq_self_of_subset_left (Set.Ici_subset_Ioi.2 hbc),
-    ← setLIntegral_congr Ioi_ae_eq_Ici,
-    ← ofReal_integral_eq_lintegral_ofReal (integrableOn_Ioi_rpow_of_lt hs hbc) hnn,
-    integral_Ioi_rpow_of_lt hs hbc, hreal, hab, ENNReal.ofReal_rpow_of_pos hb0,
-    ← ENNReal.ofReal_mul hconst.le]
+    ← setLIntegral_congr Ioi_ae_eq_Ici, lintegral_ofReal_rpow_Ioi_of_lt hs hbc, hreal, hab,
+    ENNReal.ofReal_rpow_of_pos hb0, ← ENNReal.ofReal_mul hconst.le]
 
 /-- The kernel `t ^ (-s - 1)`, integrated against the weight `a * r` over those `t ∈ (0, ∞)` with
 `r ≤ t * D`, is at most `D ^ s / s * a * r ^ (1 - s)`, for `0 < s` and `0 ≤ r`. For `0 < D` and

@@ -70,7 +70,8 @@ Here `c = d = 2⁻¹`, so the low part is bounded by `t / 2`, its maximal functi
 
 * `TauCeti.maximalFunction`: the centred Hardy–Littlewood maximal function, with
   `TauCeti.setLAverage_le_maximalFunction`, `TauCeti.maximalFunction_le` and
-  `TauCeti.lt_maximalFunction_iff` as its interface.
+  `TauCeti.lt_maximalFunction_iff` as its interface, and
+  `TauCeti.setLIntegral_ball_le_measure_mul_maximalFunction` bounding ball integrals.
 * `TauCeti.maximalFunction_const`: the maximal function of a constant is that constant, so the
   normalisation is the intended one.
 * `TauCeti.maximalFunction_mono_ae`, `TauCeti.maximalFunction_congr_ae`: `M` is monotone in `‖f‖ₑ`
@@ -134,6 +135,17 @@ theorem setLAverage_le_maximalFunction (μ : Measure X) (f : X → F) (x : X) (h
     ⨍⁻ y in ball x r, ‖f y‖ₑ ∂μ ≤ maximalFunction μ f x := by
   rw [maximalFunction_def]
   exact le_iSup₂ (f := fun r (_ : 0 < r) => ⨍⁻ y in ball x r, ‖f y‖ₑ ∂μ) r hr
+
+/-- A ball of finite measure about `x` carries at most `μ(B(x, r)) M f(x)` of `‖f‖ₑ`: the
+introduction rule `TauCeti.setLAverage_le_maximalFunction` with the average cleared. -/
+theorem setLIntegral_ball_le_measure_mul_maximalFunction (μ : Measure X) (f : X → F) (x : X)
+    (hr : 0 < r) (hμ : μ (ball x r) ≠ ∞) :
+    ∫⁻ y in ball x r, ‖f y‖ₑ ∂μ ≤ μ (ball x r) * maximalFunction μ f x := by
+  rcases eq_or_ne (μ (ball x r)) 0 with h0 | h0
+  · simp [Measure.restrict_eq_zero.2 h0]
+  have h := setLAverage_le_maximalFunction μ f x hr
+  rw [setLAverage_eq, ENNReal.div_le_iff_le_mul (Or.inl h0) (Or.inl hμ)] at h
+  rwa [mul_comm]
 
 /-- A bound holding for every ball average bounds the maximal function: the elimination rule. -/
 theorem maximalFunction_le (h : ∀ r > 0, ⨍⁻ y in ball x r, ‖f y‖ₑ ∂μ ≤ a) :
