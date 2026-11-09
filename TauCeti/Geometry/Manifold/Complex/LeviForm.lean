@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Pseudoconvex
 public import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
 public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 
 /-!
@@ -75,7 +76,8 @@ index is at most `dim_ℂ E + q`.
 * `TauCeti.isManifoldStrictlyPlurisubharmonicAt_iff_of_mem_maximalAtlas` and
   `TauCeti.isManifoldStronglyPseudoconvexAt_iff_of_mem_maximalAtlas`: for `f` real `C²` at `x`,
   these positivity conditions may be checked in any holomorphic chart.
-* `TauCeti.IsManifoldStronglyPseudoconvexAt.manifoldMorseIndex_le` and
+* `TauCeti.IsManifoldStronglyPseudoconvexAt.manifoldMorseIndex_le`,
+  `TauCeti.IsManifoldStronglyPseudoconvexAt.manifoldMorseIndex_le_of_mem_criticalPoints`, and
   `TauCeti.IsManifoldStrictlyPlurisubharmonicAt.manifoldMorseIndex_le`: the manifold Morse index
   bounds `λ ≤ n + q` and `λ ≤ n` at critical points.
 
@@ -246,11 +248,7 @@ theorem manifoldLeviForm_comp_apply (hu : ContMDiffAt 𝓘(ℝ, F) 𝓘(ℝ) 2 u
   let G : E → F := chartAt F (g x) ∘ g ∘ (chartAt E x).symm
   have hx' : (chartAt E x).symm (chartAt E x x) = x :=
     (chartAt E x).left_inv (mem_chart_source E x)
-  have hG : ContDiffAt ℂ 2 G (chartAt E x x) := by
-    rw [← contDiffWithinAt_univ]
-    simpa only [G, extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
-      modelWithCornersSelf_coe_symm, id_comp, comp_id, Set.range_id] using
-      (contMDiffAt_iff.mp hg).2
+  have hG : ContDiffAt ℂ 2 G (chartAt E x x) := hg.contDiffAt_writtenInExtChartAt
   have hGx : G (chartAt E x x) = chartAt F (g x) (g x) := by
     simp only [G, Function.comp_apply, hx']
   have hD : fderiv ℂ G (chartAt E x x) = mfderiv 𝓘(ℂ, E) 𝓘(ℂ, F) g x := by
@@ -636,6 +634,15 @@ theorem IsManifoldStronglyPseudoconvexAt.manifoldMorseIndex_le [IsManifold 𝓘(
   simpa only [OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
     modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, id_comp, comp_id] using
     IsStronglyPseudoconvexAt.morseIndex_le h
+
+/-- A version of `TauCeti.IsManifoldStronglyPseudoconvexAt.manifoldMorseIndex_le` taking membership
+in `TauCeti.criticalPoints` and smoothness of order `r ≥ 2`. -/
+theorem IsManifoldStronglyPseudoconvexAt.manifoldMorseIndex_le_of_mem_criticalPoints
+    [IsManifold 𝓘(ℂ, E) 2 M] {q : ℕ} {r : ℕ∞ω}
+    (h : IsManifoldStronglyPseudoconvexAt E q f x) (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) r f x)
+    (hx : x ∈ criticalPoints 𝓘(ℝ, E) f) (hr : 2 ≤ r := by simp) :
+    manifoldMorseIndex 𝓘(ℝ, E) f x ≤ finrank ℂ E + q :=
+  h.manifoldMorseIndex_le (hf.of_le hr) (mem_criticalPoints.1 hx)
 
 /-- **The index bound for strictly plurisubharmonic functions on a complex manifold.** At a
 critical point `x` of a function `f` which is `C²` at `x` and strictly plurisubharmonic at `x`, the

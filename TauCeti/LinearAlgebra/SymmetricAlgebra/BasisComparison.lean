@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.Data.Sym.NatCard
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
 public import TauCeti.RingTheory.MvPolynomial.Finrank
+import Mathlib.Data.Sym.Card
 import TauCeti.Algebra.MvPolynomial.Division
 import TauCeti.Algebra.MvPolynomial.Monomial
 
@@ -46,6 +47,8 @@ another only through the remaining factor.
 * `TauCeti.SymmetricAlgebra.instModuleFreeHomogeneousSubmodule`,
   `TauCeti.SymmetricAlgebra.instModuleFiniteHomogeneousSubmodule`: the homogeneous components of
   the symmetric algebra of a finite free module are finite free.
+* `TauCeti.SymmetricAlgebra.finrank_homogeneousSubmodule`: the rank of its degree-`n` component
+  is `(Module.finrank R M).multichoose n`.
 -/
 
 public section
@@ -295,5 +298,20 @@ monomial basis is indexed by the degree-`n` multisets of a finite basis. -/
 instance instModuleFiniteHomogeneousSubmodule [Module.Free R M] [Module.Finite R M] (n : ℕ) :
     Module.Finite R (homogeneousSubmodule R M n) :=
   .of_basis ((Module.Free.chooseBasis R M).symmetricAlgebraHomogeneous n)
+
+variable [StrongRankCondition R] [Module.Free R M] [Module.Finite R M]
+
+/-- The rank of the degree-`n` symmetric power of a finite free module is the number
+of degree-`n` multisets of its basis indices. The multichoose expression also applies
+when the module has rank zero. -/
+@[simp]
+theorem finrank_homogeneousSubmodule (n : ℕ) :
+    Module.finrank R (homogeneousSubmodule R M n) =
+      (Module.finrank R M).multichoose n := by
+  classical
+  rw [Module.finrank_eq_card_basis
+    ((Module.Free.chooseBasis R M).symmetricAlgebraHomogeneous n),
+    Sym.card_sym_eq_multichoose,
+    ← Module.finrank_eq_card_basis (Module.Free.chooseBasis R M)]
 
 end TauCeti.SymmetricAlgebra

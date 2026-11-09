@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Prod
 public import TauCeti.Algebra.Lie.Schur
 public import TauCeti.Algebra.Lie.Submodule.DirectSum
 
@@ -59,7 +60,9 @@ enveloping-algebra dictionary lives,
 ## Main results
 
 * `LieModule.isotypicMultiplicity_eq_sum_of_isInternal`: **the multiplicity is additive over a
-  finite decomposition of `M` into Lie submodules.**
+  finite decomposition of `M` into Lie submodules.** `LieModule.isotypicMultiplicity_directSum` is
+  the same for a finite external direct sum, and `LieModule.isotypicMultiplicity_prod` for a binary
+  product.
 * `LieModule.isotypicMultiplicity_eq_zero_of_subsingleton`: the zero module occurs with
   multiplicity zero.
 * `LieModule.isotypicMultiplicity_eq_zero_of_subsingleton_codomain`: everything occurs in the zero
@@ -105,6 +108,8 @@ universe u v w w₁ w₂ w₃
 namespace LieModule
 
 open Module (finrank)
+
+open scoped DirectSum
 
 /-! ### The multiplicity of an irreducible module -/
 
@@ -200,7 +205,31 @@ theorem isotypicMultiplicity_eq_sum_of_isInternal (N : ι → LieSubmodule K L M
     TauCeti.LieModule.finrank_lieModuleHom_eq_sum_of_isInternal S N h hfin]
   simp_rw [isotypicMultiplicity_def]
 
+omit [DecidableEq ι] [LieModule K L S] in
+/-- **Multiplicity is additive over a finite external direct sum.** -/
+theorem isotypicMultiplicity_directSum (P : ι → Type w₃) [∀ i, AddCommGroup (P i)]
+    [∀ i, Module K (P i)] [∀ i, LieRingModule L (P i)] [∀ i, LieModule K L (P i)]
+    (hfin : ∀ i, FiniteDimensional K (S →ₗ⁅K,L⁆ P i)) :
+    isotypicMultiplicity K L (⨁ i, P i) S = ∑ i, isotypicMultiplicity K L (P i) S := by
+  classical
+  let _ : ∀ i, FiniteDimensional K (S →ₗ⁅K,L⁆ P i) := hfin
+  rw [isotypicMultiplicity_def,
+    (TauCeti.LieModule.lieModuleHomDirectSumEquiv K L S P).finrank_eq, Module.finrank_pi_fintype]
+  simp_rw [isotypicMultiplicity_def]
+
 end Additivity
+
+omit [LieModule K L S] in
+/-- **Multiplicity is additive over a binary product.** A morphism into `M × N` is the pair of its
+two components. Unlike `LieModule.isotypicMultiplicity_directSum`, the two factors may live in
+different universes. -/
+theorem isotypicMultiplicity_prod (N : Type w₃) [AddCommGroup N] [Module K N] [LieRingModule L N]
+    [LieModule K L N] (hM : FiniteDimensional K (S →ₗ⁅K,L⁆ M))
+    (hN : FiniteDimensional K (S →ₗ⁅K,L⁆ N)) :
+    isotypicMultiplicity K L (M × N) S =
+      isotypicMultiplicity K L M S + isotypicMultiplicity K L N S := by
+  rw [isotypicMultiplicity_def, ← (TauCeti.LieModuleHom.prodEquiv K L M N S).finrank_eq,
+    Module.finrank_prod, isotypicMultiplicity_def, isotypicMultiplicity_def]
 
 /-- **An irreducible module occurs in itself with multiplicity one.** -/
 @[simp]

@@ -8,6 +8,7 @@ module
 public import Mathlib.SetTheory.Cardinal.NatCard
 public import TauCeti.GroupTheory.Perm.Partition
 import Mathlib.Logic.Equiv.Option
+import TauCeti.GroupTheory.GroupAction.Closure
 import TauCeti.GroupTheory.Perm.Basic
 
 /-!
@@ -79,7 +80,8 @@ The two cross-type results, `TauCeti.orbitCount_add_one_eq_of_semiconj` and
 bijectively onto the orbits of `τ` other than a fixed point `p` of `τ`. Its `SameCycle` hypothesis
 comes from Mathlib's `Equiv.Perm.sameCycle_extendDomain` for adjoining a point. For splicing a
 point into an orbit, a one-step statement is propagated over all integer powers by the private
-lemma `sameCycle_zpow_of_forall_sameCycle_apply`. `TauCeti.orbitCount_add_one_of_merge` does not
+lemma `sameCycle_zpow_of_forall_sameCycle_apply`, whose public form is
+`Equiv.Perm.SameCycle.map_of_forall_sameCycle_apply`. `TauCeti.orbitCount_add_one_of_merge` does not
 go through that lemma: it exhibits the orbits of `τ` as the orbits of `σ` with one class removed
 and finishes through `Equiv.optionSubtypeNe`.
 -/
@@ -279,12 +281,19 @@ private theorem sameCycle_zpow_of_forall_sameCycle_apply {π : Equiv.Perm α}
     rw [sub_eq_add_neg, zpow_add, hneg, Equiv.Perm.mul_apply]
     exact (hinv x).trans (ih (σ⁻¹ x))
 
+/-- If a map `g` carries every point and its image under `σ` into one cycle of `π`, then it carries
+each cycle of `σ` into a cycle of `π`. -/
+theorem _root_.Equiv.Perm.SameCycle.map_of_forall_sameCycle_apply {π : Equiv.Perm α}
+    {σ : Equiv.Perm β} {g : β → α} (h : ∀ x, π.SameCycle (g x) (g (σ x))) {x y : β}
+    (hxy : σ.SameCycle x y) : π.SameCycle (g x) (g y) := by
+  obtain ⟨i, rfl⟩ := hxy
+  exact sameCycle_zpow_of_forall_sameCycle_apply h i x
+
 /-- If `τ` moves every point within its cycle of `π`, then each cycle of `τ` lies in a cycle of
 `π`. -/
 theorem _root_.Equiv.Perm.SameCycle.of_forall_sameCycle_apply {π τ : Equiv.Perm α}
-    (h : ∀ x, π.SameCycle x (τ x)) {x y : α} (hxy : τ.SameCycle x y) : π.SameCycle x y := by
-  obtain ⟨i, rfl⟩ := hxy
-  exact sameCycle_zpow_of_forall_sameCycle_apply (g := id) h i x
+    (h : ∀ x, π.SameCycle x (τ x)) {x y : α} (hxy : τ.SameCycle x y) : π.SameCycle x y :=
+  hxy.map_of_forall_sameCycle_apply (g := id) h
 
 /-- If every permutation in a subgroup `H` moves every point within its cycle of `π`, then `H` has
 at least as many orbits as `π`: each orbit of `H` lies in a cycle of `π`. -/

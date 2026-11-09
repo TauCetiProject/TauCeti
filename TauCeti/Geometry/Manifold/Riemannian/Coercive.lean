@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Analysis.Normed.Operator.Coercive
 
 /-!
 # Riemannian metrics on a vector space from coercive bilinear forms
@@ -55,25 +56,19 @@ def coerciveRiemannianMetric (g : F → F →L[ℝ] F →L[ℝ] ℝ) (hg : ContD
   symm x v w := by
     simpa [ContinuousLinearEquiv.arrowCongr_apply] using symm x _ _
   pos x v hv := by
-    obtain ⟨C, hC, h⟩ := coercive x
-    have : 0 < ‖tangentSpaceCastModel 𝓘(ℝ, F) x v‖ := by simpa using hv
     simpa [ContinuousLinearEquiv.arrowCongr_apply] using
-      lt_of_lt_of_le (by positivity) (h (tangentSpaceCastModel 𝓘(ℝ, F) x v))
+      (coercive x).apply_self_pos (v := tangentSpaceCastModel 𝓘(ℝ, F) x v) (by simpa using hv)
   isVonNBounded x := by
     obtain ⟨C, hC, h⟩ := coercive x
     let e := tangentSpaceCastModel 𝓘(ℝ, F) x
-    refine ((NormedSpace.isVonNBounded_closedBall ℝ F (1 + C⁻¹)).image
+    refine ((NormedSpace.isVonNBounded_ball ℝ F √(1 / C)).image
       e.symm.toContinuousLinearMap).subset ?_
     intro v hv
     refine ⟨e v, ?_, e.symm_apply_apply v⟩
-    have hv : g x (e v) (e v) < 1 := by
+    replace hv : g x (e v) (e v) < 1 := by
       simpa [ContinuousLinearEquiv.arrowCongr_apply, e] using hv
-    rw [mem_closedBall_zero_iff]
-    by_contra! hlt
-    have h1 : 1 < ‖e v‖ := lt_of_le_of_lt (le_add_of_nonneg_right (by positivity)) hlt
-    have h2 : C * (1 + C⁻¹) < C * ‖e v‖ := mul_lt_mul_of_pos_left hlt hC
-    rw [mul_add, mul_inv_cancel₀ hC.ne'] at h2
-    nlinarith [h (e v)]
+    rw [mem_ball_zero_iff, Real.lt_sqrt (norm_nonneg _), lt_div_iff₀' hC]
+    linarith [h (e v), sq ‖e v‖]
   contMDiff := by
     intro x
     rw [contMDiffAt_section]

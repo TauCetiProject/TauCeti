@@ -87,7 +87,8 @@ noncomputable section
 
 namespace TauCeti.WeierstrassHopfAlgebroid
 
-open MvPolynomial WeierstrassCurve TauCeti.WeierstrassChange TauCeti.WeierstrassChange.ChangeRing
+open MvPolynomial _root_.WeierstrassCurve TauCeti.WeierstrassChange
+open TauCeti.WeierstrassChange.ChangeRing
 
 variable {R : Type*} [CommRing R]
 
@@ -317,6 +318,28 @@ theorem pushoutLift_id_counit_comp_coproduct :
   rw [universalChange_map_comp_coproduct]
   simp [← VariableChange.map_map]
 
+/-- The map `Δ ⊗ id` into the triple tensor product, composing the first two arrows. -/
+def coproductLeft : ChangeRing ArrowRing →+* ChangeRing (ChangeRing ArrowRing) :=
+  pushoutLift rightUnit
+    ⟨((algebraMap (ChangeRing ArrowRing) _).comp coproduct,
+      ChangeRing.map ((ChangeRing.map rightUnit).comp rightUnit)), by
+      dsimp only
+      rw [RingHom.comp_assoc, coproduct_comp_rightUnit, map_comp_algebraMap]⟩
+
+/-- Restricting `Δ ⊗ id` to the first factor gives the coproduct. -/
+@[simp]
+theorem coproductLeft_comp_algebraMap :
+    coproductLeft.comp (algebraMap ArrowRing _) =
+      (algebraMap (ChangeRing ArrowRing) _).comp coproduct :=
+  pushoutLift_comp_algebraMap _ _
+
+/-- Restricting `Δ ⊗ id` to the second factor gives the last arrow. -/
+@[simp]
+theorem coproductLeft_comp_map :
+    coproductLeft.comp (ChangeRing.map rightUnit) =
+      ChangeRing.map ((ChangeRing.map rightUnit).comp rightUnit) :=
+  pushoutLift_comp_map _ _
+
 /-- **Coassociativity** `(Δ ⊗ id) Δ = (id ⊗ Δ) Δ` of the coproduct: composition of changes of
 variables is associative. Both sides take values in the triple tensor product
 `Γ ⊗_A Γ ⊗_A Γ = (Γ ⊗_A Γ)[u, u⁻¹, r, s, t]`, the pushout of `Γ ⊗_A Γ` along the target
@@ -324,18 +347,14 @@ variables is associative. Both sides take values in the triple tensor product
 `pushoutLift (algebraMap ∘ Δ, map ρ)`, and `id ⊗ Δ` is `pushoutLift (algebraMap ∘ algebraMap,
 map (map η_R) ∘ Δ)`, where `map (map η_R)` is the inclusion of the last two factors. -/
 theorem coproduct_coassoc :
-    (pushoutLift rightUnit
-        ⟨((algebraMap (ChangeRing ArrowRing) _).comp coproduct,
-          ChangeRing.map ((ChangeRing.map rightUnit).comp rightUnit)), by
-          dsimp only
-          rw [RingHom.comp_assoc, coproduct_comp_rightUnit, map_comp_algebraMap]⟩).comp
-        coproduct =
+    coproductLeft.comp coproduct =
       (pushoutLift rightUnit
         ⟨((algebraMap (ChangeRing ArrowRing) _).comp (algebraMap ArrowRing _),
           (ChangeRing.map (ChangeRing.map rightUnit)).comp coproduct),
           RingHom.ext fun x ↦ by
             simp only [RingHom.comp_apply, coproduct_algebraMap, map_algebraMap]⟩).comp
         coproduct := by
+  simp only [coproductLeft]
   refine ChangeRing.ringHom_ext ?_ ?_
   · exact RingHom.ext fun x ↦ by
       simp only [RingHom.comp_apply, coproduct_algebraMap, pushoutLift_algebraMap]

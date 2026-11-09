@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.PolynomialCurve
 public import TauCeti.RingTheory.Derivation.Flow
 import TauCeti.Data.Nat.Choose.Cast
 import Mathlib.Algebra.Polynomial.Bivariate
@@ -69,6 +70,10 @@ noncomputable def expPointAt {B : Type*} [CommRing B] [Algebra R B] (t : B) :
     WithConv (H →ₐ[R] B) :=
   WithConv.toConv ((aeval t).comp (expPointPolynomial d hd))
 
+/-- The exponential point is obtained by evaluating the polynomial coordinate map. -/
+theorem expPointAt_def {B : Type*} [CommRing B] [Algebra R B] (t : B) :
+    expPointAt d hd t = WithConv.toConv ((aeval t).comp (expPointPolynomial d hd)) := (rfl)
+
 /-- Evaluation of the polynomial-valued point gives the exponential curve. -/
 @[simp]
 theorem expPointAt_apply {B : Type*} [CommRing B] [Algebra R B] (t : B) (h : H) :
@@ -103,11 +108,49 @@ theorem expPointAt_zero {B : Type*} [CommRing B] [Algebra R B] :
   simp [expPointAt_apply, ← Polynomial.coeff_zero_eq_aeval_zero',
     coeff_expPointPolynomial]
 
+/-- Evaluating the polynomial exponential curve at zero recovers the identity point. -/
+@[simp]
+theorem aeval_zero_comp_expPointPolynomial :
+    (aeval (0 : R)).comp (expPointPolynomial d hd) = _root_.Bialgebra.counitAlgHom R H := by
+  ext h
+  rw [AlgHom.comp_apply, ← Polynomial.coeff_zero_eq_aeval_zero']
+  simp [coeff_expPointPolynomial]
+
+/-- The velocity at zero of the intrinsic exponential curve is its tangent vector. -/
+@[simp]
+theorem curveVelocity_expPointPolynomial
+    {hzero : (aeval (0 : R)).comp (expPointPolynomial d hd) =
+      _root_.Bialgebra.counitAlgHom R H} :
+    curveVelocity (expPointPolynomial d hd) hzero = d := by
+  ext h
+  apply (CounitAlgebra.algEquivSelf R H R).injective
+  rw [algEquivSelf_curveVelocity_apply, coeff_one_expPointPolynomial]
+
+/-- After a bialgebra morphism, the velocity of an intrinsic exponential curve is the
+image of its tangent vector under the differential. -/
+@[simp]
+theorem curveVelocity_expPointPolynomial_comp {K : Type*} [CommRing K]
+    [_root_.Bialgebra R K] (f : K →ₐc[R] H)
+    {hzero : (aeval (0 : R)).comp ((expPointPolynomial d hd).comp f.toAlgHom) =
+      _root_.Bialgebra.counitAlgHom R K} :
+    curveVelocity ((expPointPolynomial d hd).comp f.toAlgHom) hzero =
+      derivationComp f d := by
+  ext h
+  apply (CounitAlgebra.algEquivSelf R K R).injective
+  rw [algEquivSelf_curveVelocity_apply, AlgHom.comp_apply,
+    coeff_one_expPointPolynomial, algEquivSelf_derivationComp_apply]
+
 /-- At parameter one, the curve recovers the invariant-vector-field exponential. -/
 theorem expPointAt_one : expPointAt d hd (1 : R) = WithConv.toConv (expPoint d hd) := by
   apply WithConv.ext
   ext h
   rw [expPointAt_apply_eq_counit_taylorExpAt, expPoint_apply, Derivation.taylorExpAt_one]
+
+/-- Evaluating the polynomial exponential curve at one recovers the exponential point. -/
+theorem aeval_one_comp_expPointPolynomial :
+    (aeval (1 : R)).comp (expPointPolynomial d hd) = expPoint d hd := by
+  apply WithConv.toConv_injective
+  simpa only [expPointAt_def] using expPointAt_one d hd
 
 /-- The polynomial flow of an invariant vector field is translation by its
 exponential curve. -/
@@ -207,6 +250,15 @@ theorem expPointAt_add {B : Type*} [CommRing B] [Algebra R B] (r s : B) :
   ext h
   rw [← eval_expPointAddPolynomial, expPointAddPolynomial_eq_expPointMulPolynomial,
     eval_expPointMulPolynomial]
+
+/-- Evaluation of the polynomial exponential coordinate map respects addition in every
+commutative value algebra. -/
+theorem aeval_comp_expPointPolynomial_add {B : Type*} [CommRing B] [Algebra R B]
+    (r s : B) :
+    WithConv.toConv ((aeval (r + s)).comp (expPointPolynomial d hd)) =
+      WithConv.toConv ((aeval r).comp (expPointPolynomial d hd)) *
+        WithConv.toConv ((aeval s).comp (expPointPolynomial d hd)) := by
+  simpa only [expPointAt_def] using expPointAt_add d hd r s
 
 /-- The exponential curve as a one-parameter homomorphism on any value algebra. -/
 noncomputable def expPointHom (B : Type*) [CommRing B] [Algebra R B] :

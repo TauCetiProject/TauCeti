@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Sheaves.Functors
 public import Mathlib.Topology.Sheaves.Limits
+public import Mathlib.Topology.Sheaves.LocallySurjective
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Carrier
 public import TauCeti.AlgebraicGeometry.StructureSheaf
 public import TauCeti.RingTheory.AdicCompletion.Limit
@@ -46,7 +47,8 @@ maps `TauCeti.AdicRing.CompletedAway.restrict` of completed localisations.
 For any ideal of definition `K`, some power `I ^ (n + 1)` lies in `K`, and composing the
 projection `O_{Spf A} → O_{I ^ (n + 1)}` with the reduction map `O_{I ^ (n + 1)} → O_K` gives a
 projection `O_{Spf A} → O_K`, independent of `n`. This is the sheaf map of the closed immersion
-`Spec (A ⧸ K) → Spf A` (EGA I, Ch. I, 10.3.2).
+`Spec (A ⧸ K) → Spf A` (EGA I, Ch. I, 10.3.2). These projections are surjective on
+basic opens, and hence locally surjective as morphisms of presheaves.
 
 The construction is made with a chosen ideal of definition `I`; another ideal of definition gives a
 canonically isomorphic sheaf (EGA I, Ch. I, 10.1.1).
@@ -103,6 +105,12 @@ canonically isomorphic sheaf (EGA I, Ch. I, 10.1.1).
   on `D(f)` the reduction map `O_J → O_K` is the quotient map `A_f ⧸ J A_f → A_f ⧸ K A_f`.
 * `TauCeti.FormalScheme.Spf.basicOpenSectionsAdicCompletionIso_hom_comp_evalₐ`: a section over
   `D(f)` evaluates in `A_f ⧸ I ^ (n + 1) A_f` to its projection to the `n`-th thickening.
+* `TauCeti.FormalScheme.Spf.quotientProjection_app_basicOpen_surjective`,
+  `TauCeti.FormalScheme.Spf.quotientTransition_app_basicOpen_surjective`,
+  `TauCeti.FormalScheme.Spf.toQuotientSheaf_app_basicOpen_surjective`: the projections and
+  reduction maps are surjective on basic opens.
+* `TauCeti.FormalScheme.Spf.toQuotientSheaf_isLocallySurjective`: projection to an
+  ideal-of-definition quotient is locally surjective.
 * `TauCeti.FormalScheme.Spf.globalSectionsIso_inv_comp_basicOpenSectionsAdicCompletionIso_hom`,
   `TauCeti.FormalScheme.Spf.globalSectionsIso_inv_comp_basicOpenSectionsIso_hom`: the global
   section corresponding to `a ∈ A` restricts on `D(f)` to the image of `a`.
@@ -220,6 +228,12 @@ theorem quotientTransition_comp (hJ : IsAdic J) (hK : IsAdic K) (hL : IsAdic L) 
 noncomputable def quotientSheafGlobalSectionsIso (hJ : IsAdic J) :
     (quotientSheaf hJ).obj.obj (op ⊤) ≅ CommRingCat.of (A ⧸ J) :=
   (StructureSheaf.globalSectionsIso (A ⧸ J)).symm
+
+/-- The inverse of the identification of the global sections of `O_J` with `A ⧸ J` is the
+canonical map from `A ⧸ J` to the global sections of the structure sheaf of `Spec (A ⧸ J)`. -/
+theorem quotientSheafGlobalSectionsIso_inv (hJ : IsAdic J) :
+    (quotientSheafGlobalSectionsIso hJ).inv = CommRingCat.ofHom (algebraMap _ _) :=
+  (rfl)
 
 /-- On global sections, the reduction map `O_J → O_K` is the quotient map `A ⧸ J → A ⧸ K`. -/
 @[reassoc]
@@ -500,6 +514,19 @@ theorem quotientTransition_app_basicOpen_comp_quotientSheafBasicOpenIso_hom
   ext x
   simp [-Ideal.Quotient.mk_algebraMap]
 
+/-- Reduction between two ideals of definition is surjective on every basic open. -/
+theorem quotientTransition_app_basicOpen_surjective (hJ : IsAdic J) (hK : IsAdic K)
+    (hJK : J ≤ K) (f : A) :
+    Function.Surjective ((quotientTransition hJ hK hJK).hom.app (op (basicOpen f))) := by
+  have h : Function.Surjective ((quotientSheafBasicOpenIso hJ f).hom ≫
+      CommRingCat.ofHom (Ideal.Quotient.factor (Ideal.map_mono hJK))) :=
+    (Ideal.Quotient.factor_surjective (Ideal.map_mono hJK)).comp
+      (ConcreteCategory.bijective_of_isIso (quotientSheafBasicOpenIso hJ f).hom).surjective
+  rw [← quotientTransition_app_basicOpen_comp_quotientSheafBasicOpenIso_hom hJ hK hJK f] at h
+  intro s
+  obtain ⟨x, hx⟩ := h ((quotientSheafBasicOpenIso hK f).hom s)
+  exact ⟨x, (ConcreteCategory.bijective_of_isIso (quotientSheafBasicOpenIso hK f).hom).injective hx⟩
+
 end QuotientSheafBasicOpen
 
 section BasicOpenSections
@@ -552,6 +579,43 @@ theorem basicOpenSectionsAdicCompletionIso_hom_comp_evalₐ (hI : IsAdic I) (f :
   calc _ = (preservesLimitIso _ _).hom ≫ (HasLimit.isoOfNatIso _).hom ≫ limit.π _ (op n) :=
         congrArg (_ ≫ _ ≫ ·) hc
     _ = _ := (congrArg (_ ≫ ·) hb).trans ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) ha))
+
+/-- Projection to an infinitesimal thickening is surjective on every basic open. -/
+theorem quotientProjection_app_basicOpen_surjective (hI : IsAdic I) (f : A) (n : ℕ) :
+    Function.Surjective ((quotientProjection hI n).hom.app (op (basicOpen f))) := by
+  have h : Function.Surjective
+      ((basicOpenSectionsAdicCompletionIso hI f).hom ≫ CommRingCat.ofHom
+        (AdicCompletion.evalₐ (I.map (algebraMap A (Localization.Away f))) (n + 1)).toRingHom) :=
+    (AdicCompletion.surjective_evalₐ _ _).comp
+      (ConcreteCategory.bijective_of_isIso (basicOpenSectionsAdicCompletionIso hI f).hom).surjective
+  simp only [AlgHom.toRingHom_eq_coe] at h
+  rw [basicOpenSectionsAdicCompletionIso_hom_comp_evalₐ] at h
+  intro s
+  obtain ⟨x, hx⟩ := h ((Ideal.quotEquivOfEq (Ideal.map_pow _ I (n + 1)))
+    ((quotientSheafBasicOpenIso (is_ideal_adic_pow hI n.succ_pos) f).hom s))
+  refine ⟨x, ?_⟩
+  apply (ConcreteCategory.bijective_of_isIso
+    (quotientSheafBasicOpenIso (is_ideal_adic_pow hI n.succ_pos) f).hom).injective
+  exact (Ideal.quotEquivOfEq (Ideal.map_pow _ I (n + 1))).injective hx
+
+/-- The projection to the structure sheaf modulo any ideal of definition is surjective on
+basic opens. This does not assert surjectivity on arbitrary opens. -/
+theorem toQuotientSheaf_app_basicOpen_surjective (hI : IsAdic I) (hJ : IsAdic J) (f : A) :
+    Function.Surjective ((toQuotientSheaf hI hJ).hom.app (op (basicOpen f))) := by
+  obtain ⟨n, hn⟩ := hI.exists_pow_succ_le (by simpa using hJ.isOpen_pow 1)
+  rw [toQuotientSheaf_eq hI hJ hn]
+  exact (quotientTransition_app_basicOpen_surjective _ hJ hn f).comp
+    (quotientProjection_app_basicOpen_surjective hI f n)
+
+/-- The structure-sheaf projection to an ideal-of-definition quotient is locally surjective. -/
+theorem toQuotientSheaf_isLocallySurjective (hI : IsAdic I) (hJ : IsAdic J) :
+    TopCat.Presheaf.IsLocallySurjective (toQuotientSheaf hI hJ).hom := by
+  rw [TopCat.Presheaf.isLocallySurjective_iff]
+  intro U s p hp
+  obtain ⟨V, ⟨f, rfl⟩, hpf, hfU⟩ := (Opens.isBasis_iff_nbhd.mp isBasis_basicOpen) hp
+  obtain ⟨t, ht⟩ := toQuotientSheaf_app_basicOpen_surjective hI hJ f
+    ((quotientSheaf hJ).obj.map (homOfLE hfU).op s)
+  exact ⟨basicOpen f, hfU, ⟨t, ht⟩, hpf⟩
 
 variable [IsAdicComplete I A]
 

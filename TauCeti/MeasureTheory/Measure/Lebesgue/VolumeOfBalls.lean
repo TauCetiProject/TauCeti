@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The real volume of the unit ball
@@ -14,8 +15,9 @@ Mathlib computes the volume of a ball in a finite-dimensional real inner product
 extended nonnegative real (`InnerProductSpace.volume_ball`). This file records the real volume of
 the unit ball in the form `π ^ (d / 2) / Γ(d / 2 + 1)`, where `d` is the dimension, which is the
 form used in normalizing constants. It also shows that every finite-dimensional real inner
-product space has a closed ball of volume one about the origin, and that a closed ball of
-radius `r` in a one-dimensional space has volume `2 * r`.
+product space has a closed ball of volume one about the origin, that a closed ball of
+radius `r` in a one-dimensional space has volume `2 * r`, and that a disc of radius `r` in `ℂ` has
+real volume `π * r ^ 2`.
 -/
 
 public section
@@ -33,9 +35,7 @@ theorem volume_real_unitBall :
     volume.real (ball (0 : V) 1) =
       π ^ ((finrank ℝ V : ℝ) / 2) / Gamma (finrank ℝ V / 2 + 1) := by
   rw [measureReal_def, InnerProductSpace.volume_ball, ENNReal.ofReal_one, one_pow, one_mul,
-    ENNReal.toReal_ofReal (by positivity), Real.sqrt_eq_rpow, ← Real.rpow_natCast,
-    ← Real.rpow_mul pi_pos.le]
-  ring_nf
+    ENNReal.toReal_ofReal (by positivity), Real.pow_sqrt_eq_rpow pi_pos.le]
 
 omit [Nontrivial V] in
 /-- There is a closed ball about the origin of volume one. -/
@@ -68,3 +68,13 @@ theorem volume_real_closedBall_of_finrank_eq_one (h : finrank ℝ V = 1) (x : V)
   simp [ENNReal.toReal_ofReal hr, mul_comm]
 
 end TauCeti
+
+namespace Complex
+
+open MeasureTheory Metric Real
+
+/-- A disc of radius `r ≥ 0` in `ℂ` has real volume `π * r ^ 2`. -/
+theorem volume_real_ball (a : ℂ) {r : ℝ} (hr : 0 ≤ r) : volume.real (ball a r) = π * r ^ 2 := by
+  simp [Measure.real, Complex.volume_ball, ENNReal.toReal_ofReal hr, mul_comm]
+
+end Complex

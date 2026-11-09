@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Sard.Projection
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Trans
+import TauCeti.Geometry.Manifold.SmoothIsotopy.Extension
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.Deriv.Projection
 import TauCeti.Analysis.Calculus.Deriv.EqLine
@@ -41,22 +42,26 @@ The isotopy is the concatenation of two explicit straight-line motions.
   intermediate times, and where the arc is the line the velocity is `e` plus a multiple of `d`.
 
 The projection step is Whitney's projection argument (Hirsch, Chapter 1, §3). By the isotopy
-extension theorem (`TauCeti.SmoothIsotopy.exists_diffeotopy_apply_eq`), the isotopy is realized on
-every compact part of the line by a compactly supported ambient diffeotopy; this is how an arc in a
-manifold of dimension at least four, read in a chart, is moved onto a straight arc. In dimension
-three the theorem fails: an arc with a knot tied in a compact region is not isotopic to a straight
-line by an isotopy fixed near infinity.
+extension theorem, in the form keeping fixed the part of the line that the isotopy does not move
+(`TauCeti.SmoothIsotopy.exists_diffeotopy_apply_eq_of_forall_notMem`), the isotopy is realized by a
+compactly supported ambient diffeomorphism carrying the arc onto the line
+(`TauCeti.exists_diffeomorph_apply_eq_line_of_four_le_finrank`); this is how an arc in a manifold
+of dimension at least four, read in a chart, is moved onto a straight arc. In dimension three the
+theorem fails: an arc with a knot tied in a compact region is not isotopic to a straight line by an
+isotopy fixed near infinity.
 
 ## Main results
 
 * `TauCeti.exists_smoothIsotopy_line_of_four_le_finrank`: an injective `C^n` immersion of the
   line in a real normed space of dimension at least four, agreeing with an affine line outside a
   compact set, is smoothly isotopic to it by an isotopy fixed outside a compact set.
+* `TauCeti.exists_diffeomorph_apply_eq_line_of_four_le_finrank`: such an arc is carried onto the
+  line by a diffeomorphism of the ambient space equal to the identity outside a compact set.
 
 ## References
 
 * M. W. Hirsch, *Differential Topology*, Graduate Texts in Mathematics 33, Springer (1976),
-  Chapter 1, §3 (projections of embeddings).
+  Chapter 1, §3 (projections of embeddings), and Chapter 8, §1 (isotopy extension).
 * H. Whitney, *Differentiable manifolds*, Ann. of Math. 37 (1936), 645–680.
 -/
 
@@ -64,10 +69,10 @@ public section
 
 noncomputable section
 
-namespace TauCeti
-
 open Function Module Set Topology Filter Manifold
 open scoped Manifold ContDiff
+
+namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
@@ -166,6 +171,66 @@ private theorem straightening_velocity_ne_zero {g' d e : V} {φ : V →L[ℝ] �
   · rw [mul_one, ← add_smul] at h
     exact hg' (by simpa using h)
 
+/-- For `0 < r` there is a radius `L > 0` exceeding `R` with `C ≤ L * r`. -/
+private theorem exists_radius_lt_and_le_mul {r : ℝ} (hr : 0 < r) (R C : ℝ) :
+    ∃ L : ℝ, 0 < L ∧ R < L ∧ C ≤ L * r := by
+  have h1 := le_max_left R 1
+  have h2 := le_max_right R 1
+  have h3 := le_max_left (max R 1) (C / r)
+  have h4 := le_max_right (max R 1) (C / r)
+  refine ⟨max (max R 1) (C / r) + 1, by linarith, by linarith, ?_⟩
+  exact (div_le_iff₀ hr).1 (by linarith)
+
+omit [FiniteDimensional ℝ V] in
+/-- Away from the compact set where `g` leaves the line, the hyperplane component of the
+straightening motion is `s • e`. -/
+private theorem hyperplane_component_of_line {g : ℝ → V} {p e : V} {R : ℝ}
+    (hline : ∀ s, R ≤ |s| → g s = p + s • e) (u s : ℝ) (hs : R ≤ |s|) :
+    (1 - u) • (g s - p) + (u * s) • e = s • e := by
+  rw [hline s hs, add_sub_cancel_left, smul_smul, ← add_smul]
+  congr 1
+  ring
+
+omit [FiniteDimensional ℝ V] in
+/-- The hyperplane component of the straightening motion at times `u ∈ [0, 1]` has norm at most
+`L * ‖e‖` for `|s| ≤ L`, when `‖g s - p‖ ≤ C ≤ L * ‖e‖` on the compact set `[-R, R]`. -/
+private theorem norm_hyperplane_component_le {g : ℝ → V} {p e : V} {R C L : ℝ}
+    (hline : ∀ s, R ≤ |s| → g s = p + s • e) (hC : ∀ s ∈ Icc (-R) R, ‖g s - p‖ ≤ C)
+    (hCL : C ≤ L * ‖e‖) {u : ℝ} (hu : u ∈ Icc (0 : ℝ) 1) {s : ℝ} (hs : |s| ≤ L) :
+    ‖(1 - u) • (g s - p) + (u * s) • e‖ ≤ L * ‖e‖ := by
+  by_cases hRs : R ≤ |s|
+  · rw [hyperplane_component_of_line hline u s hRs, norm_smul, Real.norm_eq_abs]
+    exact mul_le_mul_of_nonneg_right hs (norm_nonneg e)
+  · have hsR : s ∈ Icc (-R) R := abs_le.1 (not_le.1 hRs).le
+    have h1 : ‖(1 - u) • (g s - p)‖ ≤ (1 - u) * (L * ‖e‖) := by
+      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (by linarith [hu.2])]
+      exact mul_le_mul_of_nonneg_left ((hC s hsR).trans hCL) (by linarith [hu.2])
+    have h2 : ‖(u * s) • e‖ ≤ u * (L * ‖e‖) := by
+      rw [norm_smul, Real.norm_eq_abs, abs_mul, abs_of_nonneg hu.1, mul_assoc]
+      exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hs (norm_nonneg e)) hu.1
+    calc ‖(1 - u) • (g s - p) + (u * s) • e‖
+        ≤ ‖(1 - u) • (g s - p)‖ + ‖(u * s) • e‖ := norm_add_le _ _
+      _ ≤ (1 - u) * (L * ‖e‖) + u * (L * ‖e‖) := add_le_add h1 h2
+      _ = L * ‖e‖ := by ring
+
+omit [FiniteDimensional ℝ V] in
+/-- The hyperplane component of the straightening motion is injective at the times `u` where the
+coefficient `4 * u * (1 - u)` of the `d`-component vanishes. -/
+private theorem injective_hyperplane_component_of_eq_zero {g : ℝ → V} {p e : V} (he : e ≠ 0)
+    (hinj : Injective g) {u : ℝ} (hc : 4 * u * (1 - u) = 0) :
+    Injective fun s => (1 - u) • (g s - p) + (u * s) • e := by
+  rcases mul_eq_zero.1 hc with h2 | h2
+  · have hu0 : u = 0 := by linarith [mul_eq_zero.1 h2]
+    subst hu0
+    intro s s' h
+    simp only [sub_zero, one_smul, zero_mul, zero_smul, add_zero, sub_left_inj] at h
+    exact hinj h
+  · have hu1 : u = 1 := by linarith
+    subst hu1
+    intro s s' h
+    simp only [sub_self, zero_smul, one_mul, zero_add] at h
+    exact smul_left_injective ℝ he h
+
 /-- **Straightening an arc in a hyperplane.** Let `φ d = 1` and `φ e = 0`, and let `g` be an
 injective `C^n` immersion of the line into the hyperplane `p + ker φ` which is the line `ℓ` for
 `|s| ≥ R`. Then `g` is smoothly isotopic to `ℓ`, by
@@ -187,20 +252,7 @@ private theorem exists_smoothIsotopy_line_of_map_sub_eq_zero {n : ℕ∞ω} (hn�
   /- The constants: `‖g s - p‖ ≤ C` for `|s| ≤ R`, and `R < L` with `C ≤ L * ‖e‖`. -/
   obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
     ((hgc.continuous.sub continuous_const).continuousOn (s := Icc (-R) R))
-  set L := max (max R 1) (C / ‖e‖) + 1 with hL
-  have hL0 : 0 < L := by
-    have := le_max_right R 1
-    have := le_max_left (max R 1) (C / ‖e‖)
-    linarith
-  have hRL : R < L := by
-    have := le_max_left R 1
-    have := le_max_left (max R 1) (C / ‖e‖)
-    linarith
-  have hCL : C ≤ L * ‖e‖ := by
-    have h1 : C / ‖e‖ ≤ L := by
-      have := le_max_right (max R 1) (C / ‖e‖)
-      linarith
-    exact (div_le_iff₀ (norm_pos_iff.2 he)).1 h1
+  obtain ⟨L, hL0, hRL, hCL⟩ := exists_radius_lt_and_le_mul (norm_pos_iff.2 he) R C
   obtain ⟨k, hk, hksmall, hkbig, hkd⟩ := exists_contDiff_cutoff_id hL0 (lt_add_one L)
   replace hk : ContDiff ℝ n k := hk.of_le hn
   /- The hyperplane component `H` of the motion. -/
@@ -208,27 +260,10 @@ private theorem exists_smoothIsotopy_line_of_map_sub_eq_zero {n : ℕ∞ω} (hn�
   have hφH : ∀ u s, φ (H u s) = 0 := by
     intro u s
     simp [H, hφg, hφe]
-  have hHbig : ∀ u s, R ≤ |s| → H u s = s • e := by
-    intro u s hs
-    simp only [H]
-    rw [hline s hs, add_sub_cancel_left, smul_smul, ← add_smul]
-    congr 1
-    ring
-  have hHsmall : ∀ u ∈ Icc (0 : ℝ) 1, ∀ s, |s| ≤ L → ‖H u s‖ ≤ L * ‖e‖ := by
-    intro u hu s hs
-    by_cases hRs : R ≤ |s|
-    · rw [hHbig u s hRs, norm_smul, Real.norm_eq_abs]
-      exact mul_le_mul_of_nonneg_right hs (norm_nonneg e)
-    · have hsR : s ∈ Icc (-R) R := abs_le.1 (not_le.1 hRs).le
-      have h1 : ‖(1 - u) • (g s - p)‖ ≤ (1 - u) * (L * ‖e‖) := by
-        rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (by linarith [hu.2])]
-        exact mul_le_mul_of_nonneg_left ((hC s hsR).trans hCL) (by linarith [hu.2])
-      have h2 : ‖(u * s) • e‖ ≤ u * (L * ‖e‖) := by
-        rw [norm_smul, Real.norm_eq_abs, abs_mul, abs_of_nonneg hu.1, mul_assoc]
-        exact mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hs (norm_nonneg e)) hu.1
-      calc ‖H u s‖ ≤ ‖(1 - u) • (g s - p)‖ + ‖(u * s) • e‖ := norm_add_le _ _
-        _ ≤ (1 - u) * (L * ‖e‖) + u * (L * ‖e‖) := add_le_add h1 h2
-        _ = L * ‖e‖ := by ring
+  have hHbig : ∀ u s, R ≤ |s| → H u s = s • e := fun u s hs =>
+    hyperplane_component_of_line hline u s hs
+  have hHsmall : ∀ u ∈ Icc (0 : ℝ) 1, ∀ s, |s| ≤ L → ‖H u s‖ ≤ L * ‖e‖ := fun u hu s hs =>
+    norm_hyperplane_component_le hline hC hCL hu hs
   /- The motion `B`, with `φ`-coordinate `4 u (1 - u) k s`. -/
   let B : ℝ × ℝ → V := fun q => p + H q.1 q.2 + (4 * q.1 * (1 - q.1) * k q.2) • d
   have hB : ContDiff ℝ n B := by
@@ -252,18 +287,8 @@ private theorem exists_smoothIsotopy_line_of_map_sub_eq_zero {n : ℕ∞ω} (hn�
       (hBline u)
     · simp only [B]
       refine injective_add_add_smul hφd (hφH u) he hksmall
-        (fun s hs => hHbig u s (hRL.trans hs).le) (hHsmall u hu) fun hc => ?_
-      rcases mul_eq_zero.1 hc with h2 | h2
-      · have hu0 : u = 0 := by linarith [mul_eq_zero.1 h2]
-        subst hu0
-        intro s s' h
-        simp only [H, sub_zero, one_smul, zero_mul, zero_smul, add_zero, sub_left_inj] at h
-        exact hinj h
-      · have hu1 : u = 1 := by linarith
-        subst hu1
-        intro s s' h
-        simp only [H, sub_self, zero_smul, one_mul, zero_add] at h
-        exact smul_left_injective ℝ he h
+        (fun s hs => hHbig u s (hRL.trans hs).le) (hHsmall u hu)
+        (injective_hyperplane_component_of_eq_zero he hinj)
     · by_cases hs : R < |s|
       · exact Or.inr (hasDerivAt_of_eq_line hline hs).deriv
       · exact Or.inl (hkd s (by linarith [not_lt.1 hs])).deriv
@@ -330,5 +355,73 @@ theorem exists_smoothIsotopy_line_of_four_le_finrank {n : ℕ∞ω} (hn₂ : 2 �
   refine SmoothIsotopy.trans_apply_mem F₁ F₂ hn (s := {ℓ s}) (fun t => ?_) (fun t => ?_) t
   · exact (hF₁ t s ((le_max_left _ _).trans hs)).trans (hline s ((le_max_left _ _).trans hs))
   · exact hF₂ t s ((le_max_right _ _).trans hs)
+
+/-- **Ambient unknotting of smooth arcs in dimension at least four.** Let `V` be a
+finite-dimensional real normed space of dimension at least four, and `γ : ℝ → V` an injective `C^n`
+immersion which agrees with the affine line `ℓ : s ↦ p + s • e` for `|s| ≥ R`. Then some `C^m`
+diffeomorphism `Φ` of `V`, equal to the identity outside a compact set, carries `γ` onto `ℓ`:
+`Φ (γ s) = p + s • e` for every `s`. Here `1 ≤ m` and `m + 1 ≤ n`.
+
+The isotopy of `TauCeti.exists_smoothIsotopy_line_of_four_le_finrank` is extended to an ambient
+diffeotopy by `TauCeti.SmoothIsotopy.exists_diffeotopy_apply_eq_of_forall_notMem`, which keeps
+the far part of the line, where the isotopy does not move, fixed. -/
+theorem exists_diffeomorph_apply_eq_line_of_four_le_finrank {n m : ℕ∞} (hm : 1 ≤ m)
+    (hmn : m + 1 ≤ n) (hV : 4 ≤ finrank ℝ V) (γ : C^n⟮𝓘(ℝ, ℝ), ℝ; 𝓘(ℝ, V), V⟯) {p e : V}
+    (hinj : Injective γ) (hγ' : ∀ s, deriv γ s ≠ 0) {R : ℝ}
+    (hline : ∀ s, R ≤ |s| → γ s = p + s • e) :
+    ∃ (Φ : V ≃ₘ^m⟮𝓘(ℝ, V), 𝓘(ℝ, V)⟯ V) (K : Set V), IsCompact K ∧ (∀ y ∉ K, Φ y = y) ∧
+      ∀ s, Φ (γ s) = p + s • e := by
+  have hn₂ : (2 : ℕ∞ω) ≤ n := by
+    have h2 : (2 : ℕ∞) ≤ m + 1 := by
+      calc (2 : ℕ∞) = 1 + 1 := by norm_num
+        _ ≤ m + 1 := by gcongr
+    exact WithTop.coe_le_coe.mpr (h2.trans hmn)
+  let ℓ : C^n⟮𝓘(ℝ, ℝ), ℝ; 𝓘(ℝ, V), V⟯ :=
+    ⟨fun s => p + s • e, (contDiff_const.add (contDiff_id.smul contDiff_const)).contMDiff⟩
+  have hℓ : ∀ s, ℓ s = p + s • e := fun s => rfl
+  obtain ⟨H, R', hH⟩ := exists_smoothIsotopy_line_of_four_le_finrank hn₂
+    (by exact_mod_cast le_top) hV γ ℓ hℓ hinj hγ' (R := R) fun s hs => hline s hs
+  have hRs : R < |(|R| + 1)| := by
+    rw [abs_of_pos (by positivity)]
+    linarith [le_abs_self R]
+  have he : e ≠ 0 := by
+    have := hγ' (|R| + 1)
+    rwa [(hasDerivAt_of_eq_line hline hRs).deriv] at this
+  -- Outside `[-c, c]` the isotopy is the line at all times, so `γ` is the line there too.
+  set c := max R' 0
+  have hHc : ∀ t s, c ≤ |s| → H (t, s) = p + s • e := fun t s hs =>
+    hH t s ((le_max_left _ _).trans hs)
+  have hγc : ∀ s, c ≤ |s| → γ s = p + s • e := fun s hs => by
+    rw [← H.apply_zero]
+    exact hHc 0 s hs
+  /- Extend the isotopy, keeping fixed the part `C` of the line beyond `c + 1 / 2`, which the
+  motion of `[-c, c]` never meets because every time slice is injective. -/
+  have hC : IsClosed ((fun s : ℝ => p + s • e) '' {s | c + 1 / 2 ≤ |s|}) :=
+    ((Homeomorph.addLeft p).isClosedMap.comp (isClosedEmbedding_smul_left he).isClosedMap) _
+      (isClosed_le continuous_const continuous_abs)
+  obtain ⟨Φ, K, hK, hΦK, hΦ, hΦC⟩ := H.exists_diffeotopy_apply_eq_of_forall_notMem
+    (A₀ := Icc (-c) c) (A := Icc (-(c + 1)) (c + 1)) isCompact_Icc isCompact_Icc hC
+    (fun t x hx => by
+      rintro ⟨s, hs, hxs⟩
+      have hs' : c ≤ |s| := by linarith [show c + 1 / 2 ≤ |s| from hs]
+      have hxs' : x = s :=
+        (H.isSmoothEmbedding t).isEmbedding.injective (hxs.symm.trans (hHc t s hs').symm)
+      have : |x| ≤ c := abs_le.2 hx
+      linarith [show c + 1 / 2 ≤ |x| from hxs' ▸ hs])
+    (fun t x _ hx => by
+      have hcx : c ≤ |x| := by
+        by_contra h
+        exact hx (abs_le.1 (not_le.1 h).le)
+      rw [hHc t x hcx, hγc x hcx])
+    hm hmn
+  refine ⟨Φ.final, K, hK, fun y hy => by rw [Diffeotopy.final_apply, hΦK 1 y hy], fun s => ?_⟩
+  rw [Diffeotopy.final_apply]
+  by_cases hs : |s| ≤ c + 1
+  · have h₁ : (⟨Real.smoothTransition ((1 : unitInterval) : ℝ), Real.smoothTransition.nonneg _,
+        Real.smoothTransition.le_one _⟩ : unitInterval) = 1 := Subtype.ext (by simp)
+    rw [hΦ 1 s (abs_le.1 hs), h₁, H.apply_one, hℓ]
+  · have hcs : c ≤ |s| := by linarith
+    rw [hγc s hcs]
+    exact hΦC 1 _ ⟨s, (by linarith : c + 1 / 2 ≤ |s|), rfl⟩
 
 end TauCeti

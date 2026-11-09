@@ -6,12 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.QuadraticForm.Global.IdeleCharacter
+import Mathlib.Algebra.Field.Shrink
 import Mathlib.Algebra.QuadraticAlgebra.Basic
 import Mathlib.Algebra.QuadraticAlgebra.IsQuadraticExtension
+import Mathlib.Algebra.Ring.Shrink
+import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.NumberTheory.ClassFieldTheory.Global.IdeleClass.FirstInequality
 import TauCeti.NumberTheory.ClassFieldTheory.Global.Kummer.Index
 import TauCeti.NumberTheory.QuadraticForm.Global.Nonsquare
 import TauCeti.NumberTheory.QuadraticForm.Global.ProductFormula
+import TauCeti.NumberTheory.QuadraticForm.Global.Transport
 
 /-!
 # Hilbert sign prescription
@@ -39,9 +43,9 @@ This file proves the kernel description and sign prescription from Hilbert recip
 (`hilbertSymbol_productFormula`) and the index bound for one `L`. The index bound is the Kummer
 case of the second fundamental inequality, the bound `[C_F : N_{L/F}(C_L)] ≤ p` for Galois
 extensions `L/F` of prime degree `p` with `μ_p ⊆ F`: at `p = 2`, together with the first
-inequality, it gives the norm index of `K(√b)/K`. So sign prescription holds over every number
-field. Finally, choosing `b` by weak approximation gives the version in which `b` is not prescribed
-(O'Meara 71:19).
+inequality, it gives the norm index of `K(√b)/K` in `Type`, and `Shrink.ringEquiv K` transports
+sign prescription to number fields in any universe. Finally, choosing `b` by weak approximation
+gives the version in which `b` is not prescribed (O'Meara 71:19).
 
 ## Main results
 
@@ -69,7 +73,7 @@ open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField NumberField
 
 namespace TauCeti.NumberField.QuadraticForm
 
-variable {K : Type} [Field K] [NumberField K]
+variable {K : Type*} [Field K] [NumberField K]
 
 open scoped Classical in
 /-- With no place prescribed, `a = 1` has the prescribed symbols. -/
@@ -147,6 +151,40 @@ end Kernel
 section Prescription
 
 open scoped Classical in
+/-- Hilbert sign prescription in `Type`, where the Kummer case of the second inequality applies. -/
+private theorem exists_hilbertSymbol_eq_ite_zero {K₀ : Type} [Field K₀] [NumberField K₀] (b : K₀ˣ)
+    (S : Finset (HeightOneSpectrum (𝓞 K₀))) (T : Finset {w : InfinitePlace K₀ // w.IsReal})
+    (hS : ∀ v ∈ S, ¬IsSquare (v.unitAtFinitePlace b))
+    (hT : ∀ w ∈ T, embedding_of_isReal w.2 (b : K₀) < 0) (hST : Even (S.card + T.card)) :
+    ∃ a : K₀ˣ,
+      (∀ v : HeightOneSpectrum (𝓞 K₀),
+        hilbertSymbol (v.unitAtFinitePlace a) (v.unitAtFinitePlace b) = if v ∈ S then -1 else 1) ∧
+      ∀ w : {w : InfinitePlace K₀ // w.IsReal},
+        hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) = if w ∈ T then -1 else 1 := by
+  by_cases hsq : IsSquare (b : K₀)
+  · -- A square of `K₀` is a square at every place, so no place can be prescribed.
+    have hsq' : IsSquare b := Units.isSquare_coe_iff.mp hsq
+    obtain rfl : S = ∅ := Finset.eq_empty_of_forall_notMem fun v hv ↦
+      hS v hv (hsq'.map v.unitAtFinitePlace)
+    obtain rfl : T = ∅ := Finset.eq_empty_of_forall_notMem fun w hw ↦
+      (hT w hw).not_ge (hsq.map (embedding_of_isReal w.2)).nonneg
+    exact exists_hilbertSymbol_eq_ite_empty b
+  -- Otherwise `L = K₀(√b)` is a quadratic extension, whose norm index is `2`.
+  have : Fact (¬IsSquare (b : K₀)) := ⟨hsq⟩
+  let L := QuadraticAlgebra K₀ (b : K₀) 0
+  have : NumberField L := NumberField.of_module_finite K₀ L
+  have : HasEnoughRootsOfUnity K₀ 2 :=
+    ⟨⟨-1, IsPrimitiveRoot.neg_one 0 (by decide)⟩, inferInstance⟩
+  have hfin : Module.finrank K₀ L = 2 := QuadraticAlgebra.finrank_eq_two _ _
+  -- The Kummer case of the second inequality and the first inequality give the norm index.
+  have hidx : (GlobalNumberFields.ideleClassNormMap K₀ L).range.index = 2 :=
+    le_antisymm (ClassFieldTheory.index_range_ideleClassNormMap_le_of_finrank_prime K₀ L 2 hfin)
+      (hfin ▸ ClassFieldTheory.finrank_le_index_range_ideleClassNormMap K₀ L)
+  have hb : IsSquare (algebraMap K₀ L b) := ⟨QuadraticAlgebra.omega, by
+    rw [QuadraticAlgebra.omega_mul_omega_eq_algebraMap, map_zero, zero_mul, add_zero]⟩
+  exact exists_hilbertSymbol_eq_ite_of_index_dvd_two hb (hidx ▸ dvd_rfl) S T hS hT hST
+
+open scoped Classical in
 /-- **Hilbert sign prescription** (O'Meara 71:19a). Let `S` be a finite set of finite places at
 which `b ∈ Kˣ` is a nonsquare and `T` a finite set of real places at which `b` is negative, with
 `#S + #T` even. Then some `a ∈ Kˣ` has Hilbert symbol `(a, b)_v = -1` at the places of `S` and of
@@ -160,28 +198,32 @@ theorem exists_hilbertSymbol_eq_ite (b : Kˣ)
         hilbertSymbol (v.unitAtFinitePlace a) (v.unitAtFinitePlace b) = if v ∈ S then -1 else 1) ∧
       ∀ w : {w : InfinitePlace K // w.IsReal},
         hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w b) = if w ∈ T then -1 else 1 := by
-  by_cases hsq : IsSquare (b : K)
-  · -- A square of `K` is a square at every place, so no place can be prescribed.
-    have hsq' : IsSquare b := Units.isSquare_coe_iff.mp hsq
-    obtain rfl : S = ∅ := Finset.eq_empty_of_forall_notMem fun v hv ↦
-      hS v hv (hsq'.map v.unitAtFinitePlace)
-    obtain rfl : T = ∅ := Finset.eq_empty_of_forall_notMem fun w hw ↦
-      (hT w hw).not_ge (hsq.map (embedding_of_isReal w.2)).nonneg
-    exact exists_hilbertSymbol_eq_ite_empty b
-  -- Otherwise `L = K(√b)` is a quadratic extension, whose norm index is `2`.
-  have : Fact (¬IsSquare (b : K)) := ⟨hsq⟩
-  let L := QuadraticAlgebra K (b : K) 0
-  have : NumberField L := NumberField.of_module_finite K L
-  have : HasEnoughRootsOfUnity K 2 :=
-    ⟨⟨-1, IsPrimitiveRoot.neg_one 0 (by decide)⟩, inferInstance⟩
-  have hfin : Module.finrank K L = 2 := QuadraticAlgebra.finrank_eq_two _ _
-  -- The Kummer case of the second inequality and the first inequality give the norm index.
-  have hidx : (GlobalNumberFields.ideleClassNormMap K L).range.index = 2 :=
-    le_antisymm (ClassFieldTheory.index_range_ideleClassNormMap_le_of_finrank_prime K L 2 hfin)
-      (hfin ▸ ClassFieldTheory.finrank_le_index_range_ideleClassNormMap K L)
-  have hb : IsSquare (algebraMap K L b) := ⟨QuadraticAlgebra.omega, by
-    rw [QuadraticAlgebra.omega_mul_omega_eq_algebraMap, map_zero, zero_mul, add_zero]⟩
-  exact exists_hilbertSymbol_eq_ite_of_index_dvd_two hb (hidx ▸ dvd_rfl) S T hS hT hST
+  have : Small.{0} K := Module.Finite.small.{0} ℚ K
+  let e : Shrink.{0} K ≃+* K := Shrink.ringEquiv K
+  have : NumberField (Shrink.{0} K) := .of_ringEquiv K (Shrink.{0} K) e.symm
+  let ev := HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e)
+  let ew := InfinitePlace.realEquivOfRingEquiv e
+  let b₀ : (Shrink.{0} K)ˣ := Units.map (e.symm : K →* Shrink.{0} K) b
+  have hb₀ : Units.map (e : Shrink.{0} K →* K) b₀ = b := Units.ext (e.apply_symm_apply b)
+  let S₀ : Finset (HeightOneSpectrum (𝓞 (Shrink.{0} K))) := S.map ev.symm.toEmbedding
+  let T₀ : Finset {w : InfinitePlace (Shrink.{0} K) // w.IsReal} := T.map ew.symm.toEmbedding
+  have hS₀ (v₀ : HeightOneSpectrum (𝓞 (Shrink.{0} K))) (hv₀ : v₀ ∈ S₀) :
+      ¬IsSquare (v₀.unitAtFinitePlace b₀) := by
+    rw [← isSquare_unitAtFinitePlace_equivOfRingEquiv e v₀ b₀, hb₀]
+    exact hS (ev v₀) (by simpa [S₀, ev] using hv₀)
+  have hT₀ (w₀ : {w : InfinitePlace (Shrink.{0} K) // w.IsReal}) (hw₀ : w₀ ∈ T₀) :
+      embedding_of_isReal w₀.2 (b₀ : Shrink.{0} K) < 0 := by
+    simpa [ew, b₀] using hT (ew w₀) (by simpa [T₀, ew] using hw₀)
+  obtain ⟨a₀, haS₀, haT₀⟩ :=
+    exists_hilbertSymbol_eq_ite_zero b₀ S₀ T₀ hS₀ hT₀ (by simpa [S₀, T₀] using hST)
+  refine ⟨Units.map (e : Shrink.{0} K →* K) a₀, fun v ↦ ?_, fun w ↦ ?_⟩
+  · obtain ⟨v₀, rfl⟩ := ev.surjective v
+    rw [← hb₀, hilbertSymbol_unitAtFinitePlace_equivOfRingEquiv e v₀ a₀ b₀, haS₀ v₀]
+    simp [S₀, ev]
+  · obtain ⟨w₀, rfl⟩ := ew.surjective w
+    rw [← hb₀, unitAtRealPlace_realEquivOfRingEquiv_units_map e w₀ a₀,
+      unitAtRealPlace_realEquivOfRingEquiv_units_map e w₀ b₀, haT₀ w₀]
+    simp [T₀, ew]
 
 open scoped Classical in
 /-- **Hilbert sign prescription with a free second argument** (O'Meara 71:19). For a finite set

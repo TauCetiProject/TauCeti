@@ -8,9 +8,10 @@ module
 public import TauCeti.Topology.Instances.AddCircle.Cover
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
 
 /-!
-# Covering maps between circles
+# Covering maps of circles and cylinders
 
 When the period `p` is an integer multiple of the period `q`, the classes modulo `p` refine the
 classes modulo `q`, so reducing modulo `q` descends to an additive map
@@ -30,6 +31,9 @@ used when a periodic curve parametrized by `AddCircle q` is traversed several ti
 parametrized by the longer circle `AddCircle p`. Its pullback of the time form and its orientation
 behaviour are recorded with the time form (`AddCircle.mpullback_coverMap_timeForm`) and the
 orientation of the circle (`AddCircle.isOrientationPreservingAt_coverMap`).
+
+The product quotient map `ℝ × ℝ → AddCircle p × ℝ` is also a local diffeomorphism,
+with derivative the identity in the real tangent coordinates.
 
 ## Main definitions
 
@@ -89,5 +93,35 @@ theorem isLocalDiffeomorph_coverMap (n : ℕ∞ω) :
 /-- The covering map `AddCircle p → AddCircle q` is a covering map in the topological sense. -/
 theorem isCoveringMap_coverMap : IsCoveringMap (coverMap h) :=
   isLocalHomeomorph_iff_isCoveringMap.mp (isLocalDiffeomorph_coverMap h 1).isLocalHomeomorph
+
+section Cylinder
+
+variable (p : ℝ) [Fact (0 < p)]
+
+/-- The quotient map on the first factor of the real plane is a local diffeomorphism onto the
+circle cylinder, for every differentiability order. -/
+theorem isLocalDiffeomorph_prodMap_coe_id (n : ℕ∞ω) :
+    IsLocalDiffeomorph 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ)) n
+      (Prod.map ((↑) : ℝ → AddCircle p) (id : ℝ → ℝ)) := by
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+  exact (isLocalDiffeomorph_coe p n).prodMap
+    (Diffeomorph.refl 𝓘(ℝ) ℝ n).isLocalDiffeomorph
+
+/-- The product quotient map onto the circle cylinder has derivative the identity in the real
+plane model of its tangent spaces. -/
+@[simp]
+theorem mfderiv_prodMap_coe_id (x : ℝ × ℝ) :
+    mfderiv 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
+      (Prod.map ((↑) : ℝ → AddCircle p) (id : ℝ → ℝ)) x =
+      ContinuousLinearMap.id ℝ (ℝ × ℝ) := by
+  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+  rw [mfderiv_prodMap (hasMFDerivAt_coe p x.1).mdifferentiableAt
+    mdifferentiableAt_id, mfderiv_coe, mfderiv_id]
+  -- The product tangent model is the real plane; both factor derivatives are identities.
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  exact Prod.ext (ContinuousLinearMap.id_apply (R₁ := ℝ) (v.1 : ℝ))
+    (ContinuousLinearMap.id_apply (R₁ := ℝ) (v.2 : ℝ))
+
+end Cylinder
 
 end AddCircle

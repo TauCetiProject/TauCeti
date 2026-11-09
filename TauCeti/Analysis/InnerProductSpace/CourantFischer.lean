@@ -28,6 +28,8 @@ form domination and Weyl's perturbation bound.
 * `LinearMap.IsSymmetric.exists_unit_vector_re_inner_le_eigenvalue` and
   `LinearMap.IsSymmetric.exists_submodule_forall_unit_eigenvalue_le_re_inner`:
   the two min–max directions.
+* `LinearMap.IsSymmetric.exists_unit_vector_re_inner_le_eigenvalue_of_le_finrank`:
+  the upper direction for subspaces of dimension at least `k + 1`.
 * `LinearMap.IsSymmetric.eigenvalues_eq_iSup_iInf_re_inner`:
   the Courant–Fischer equality.
 * `LinearMap.IsSymmetric.eigenvalue_mono`:
@@ -38,6 +40,9 @@ form domination and Weyl's perturbation bound.
 * `LinearMap.IsSymmetric.eigenvalues_add_le` and `LinearMap.IsSymmetric.le_eigenvalues_add`:
   Weyl's additive inequalities comparing the sorted eigenvalues of `T + S` with those of `T`
   and `S`.
+* `LinearMap.IsSymmetric.eigenvalues_le_eigenvalues_of_isometry` and
+  `LinearMap.IsSymmetric.eigenvalues_le_eigenvalues_of_isometry'`: eigenvalue bounds for a
+  symmetric compression along a linear isometry.
 
 ## References
 
@@ -215,6 +220,21 @@ theorem exists_unit_vector_re_inner_le_eigenvalue
         hT.re_inner_apply_self_le_of_mem_spanIndices hn
           (fun _ hik => hT.eigenvalues_antitone hn (by simpa using hik)) hxW
     _ = hT.eigenvalues hn k := by rw [hnx]; ring
+
+/-- **Courant–Fischer, upper direction, for large subspaces.** On any subspace `V` of dimension
+at least `k + 1` there is a unit vector `x` with `re ⟪T x, x⟫ ≤ λₖ(T)`. -/
+theorem exists_unit_vector_re_inner_le_eigenvalue_of_le_finrank
+    (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n) (k : Fin n)
+    (V : Submodule 𝕜 E) (hV : (k : ℕ) + 1 ≤ finrank 𝕜 V) :
+    ∃ x ∈ V, ‖x‖ = 1 ∧ RCLike.re ⟪T x, x⟫_𝕜 ≤ hT.eigenvalues hn k := by
+  obtain ⟨v, hv⟩ := exists_linearIndependent_of_le_finrank hV
+  have hv' := hv.map' V.subtype (Submodule.ker_subtype _)
+  have hsub : Submodule.span 𝕜 (Set.range (V.subtype ∘ v)) ≤ V :=
+    Submodule.span_le.mpr (by rintro _ ⟨j, rfl⟩; exact (v j).2)
+  obtain ⟨x, hxW, hx1, hxle⟩ := hT.exists_unit_vector_re_inner_le_eigenvalue hn k
+    (Submodule.span 𝕜 (Set.range (V.subtype ∘ v)))
+    (by rw [finrank_span_eq_card hv']; simp)
+  exact ⟨x, hsub hxW, hx1, hxle⟩
 
 /-- **Courant–Fischer, lower direction.** There is a subspace `V` of dimension
 `k + 1` on which every unit vector `x` satisfies `λₖ(T) ≤ re ⟪T x, x⟫`, where
@@ -562,6 +582,48 @@ theorem le_eigenvalues_add (hT : T.IsSymmetric) (hS : S.IsSymmetric) (hn : finra
     (fun _ h ↦ hS.eigenvalues_antitone hn (by simpa using h)) hxS
   rw [LinearMap.add_apply, inner_add_left, map_add] at hup
   exact (mul_le_mul_iff_left₀ (pow_pos (norm_pos_iff.mpr hx0) 2)).mp (by linarith)
+
+end LinearMap.IsSymmetric
+
+namespace LinearMap.IsSymmetric
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
+  {n m : ℕ} {T : E →ₗ[𝕜] E} {S : F →ₗ[𝕜] F}
+
+/-- **Cauchy interlacing for a compression, upper bound.** If `S` is the compression of the
+symmetric operator `T` along a linear isometry `ι`, then `λₖ(S) ≤ λₖ(T)`. -/
+theorem eigenvalues_le_eigenvalues_of_isometry (hT : T.IsSymmetric) (hS : S.IsSymmetric)
+    (hE : finrank 𝕜 E = n) (hF : finrank 𝕜 F = m) (ι : F →ₗᵢ[𝕜] E)
+    (hST : ∀ x, ⟪S x, x⟫_𝕜 = ⟪T (ι x), ι x⟫_𝕜) (hmn : m ≤ n) (k : Fin m) :
+    hS.eigenvalues hF k ≤ hT.eigenvalues hE (Fin.castLE hmn k) := by
+  obtain ⟨V, hVdim, hVlow⟩ := hS.exists_submodule_forall_unit_eigenvalue_le_re_inner hF k
+  obtain ⟨y, hyV, hy1, hyle⟩ := hT.exists_unit_vector_re_inner_le_eigenvalue hE
+    (Fin.castLE hmn k) (V.map ι.toLinearMap)
+    (by rw [← (Submodule.equivMapOfInjective _ ι.injective V).finrank_eq, hVdim]; simp)
+  obtain ⟨x, hxV, rfl⟩ := Submodule.mem_map.mp hyV
+  calc _ ≤ RCLike.re ⟪S x, x⟫_𝕜 := hVlow x hxV (by simpa using hy1)
+    _ = RCLike.re ⟪T (ι x), ι x⟫_𝕜 := congrArg RCLike.re (hST x)
+    _ ≤ _ := hyle
+
+/-- **Cauchy interlacing for a compression, lower bound.** If `S` is the compression of the
+symmetric operator `T` along a linear isometry `ι`, then `λ_{k + (n - m)}(T) ≤ λₖ(S)`. -/
+theorem eigenvalues_le_eigenvalues_of_isometry' (hT : T.IsSymmetric) (hS : S.IsSymmetric)
+    (hE : finrank 𝕜 E = n) (hF : finrank 𝕜 F = m) (ι : F →ₗᵢ[𝕜] E)
+    (hST : ∀ x, ⟪S x, x⟫_𝕜 = ⟪T (ι x), ι x⟫_𝕜) (hmn : m ≤ n) (k : Fin m) :
+    hT.eigenvalues hE (Fin.cast (Nat.add_sub_of_le hmn) (k.addNat (n - m))) ≤
+      hS.eigenvalues hF k := by
+  obtain ⟨V, hVdim, hVlow⟩ := hT.exists_submodule_forall_unit_eigenvalue_le_re_inner hE
+    (Fin.cast (Nat.add_sub_of_le hmn) (k.addNat (n - m)))
+  have hU : (k : ℕ) + 1 ≤ finrank 𝕜 (V.comap ι.toLinearMap) := by
+    have := Submodule.finrank_add_finrank_le_finrank_comap_add_finrank ι.toLinearMap V
+    simp only [hE, hF, hVdim, Fin.val_cast, Fin.val_addNat] at this
+    omega
+  obtain ⟨x, hxW, hx1, hxle⟩ :=
+    hS.exists_unit_vector_re_inner_le_eigenvalue_of_le_finrank hF k _ hU
+  calc _ ≤ RCLike.re ⟪T (ι x), ι x⟫_𝕜 := hVlow _ hxW (by simpa using hx1)
+    _ = RCLike.re ⟪S x, x⟫_𝕜 := congrArg RCLike.re (hST x).symm
+    _ ≤ _ := hxle
 
 end LinearMap.IsSymmetric
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.MellinTransform
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.MeasureTheory.Function.JacobianOneDim
@@ -16,7 +17,8 @@ public import Mathlib.MeasureTheory.Measure.Haar.Unique
 `TauCeti.multHaar` is the measure `dt / t` on `ℝ`, concentrated on `(0, ∞)`: Lebesgue measure on
 `(0, ∞)` with density `t⁻¹`. It is the image of Lebesgue measure under `Real.exp`
 (`TauCeti.map_volume_exp`), so it is invariant under every dilation `t ↦ c t` with `c > 0`
-(`TauCeti.map_multHaar_mul_left`) and gives the interval `[1, e]` mass one.
+(`TauCeti.map_multHaar_mul_left`), is invariant under inversion (`TauCeti.map_multHaar_inv`),
+and gives the interval `[1, e]` mass one.
 
 It is the Haar measure of the multiplicative group `(0, ∞)` up to a scalar, and the scalar is
 read off `[1, e]`: a measure on `ℝ` that does not charge `(-∞, 0]`, is invariant under the
@@ -25,6 +27,12 @@ positive dilations and is finite on `[1, e]` is its mass on `[1, e]` times `dt /
 on `ℝ`, Mathlib's `MeasureTheory.Measure.isAddLeftInvariant_eq_smul`. It is the form in which a
 radial coordinate is split off a multiplicative Haar measure, as in the decomposition
 `dy / y = d*x × dt / t` of the archimedean parameters of a number field.
+
+Integrating against `dt / t` is integrating `t⁻¹ f(t)` over `(0, ∞)`
+(`TauCeti.integral_multHaar_eq_setIntegral`, `TauCeti.integrable_multHaar_iff`). In particular the
+Mellin transform `mellin f s = ∫_0^∞ t^(s-1) f(t) dt` is the integral of `t^s f(t)` against
+`dt / t` (`TauCeti.integral_multHaar_cpow_smul`), and Mathlib's `MellinConvergent` is the
+integrability of `t^s f(t)` against `dt / t` (`TauCeti.integrable_multHaar_cpow_smul_iff`).
 -/
 
 public section
@@ -86,6 +94,18 @@ theorem multHaar_Iic_zero : multHaar (Iic 0) = 0 := by
   convert measure_empty (μ := (volume : Measure ℝ))
   exact eq_empty_of_forall_notMem fun u hu ↦ (Real.exp_pos u).not_ge hu
 
+/-- `dt / t`-almost every point is positive. -/
+theorem ae_pos_multHaar : ∀ᵐ t ∂multHaar, 0 < t :=
+  ae_iff.2 (by simp only [not_lt]; exact multHaar_Iic_zero)
+
+/-- A function continuous on `(0, ∞)` is almost everywhere strongly measurable for `dt / t`. -/
+theorem _root_.ContinuousOn.aestronglyMeasurable_multHaar {β : Type*} [TopologicalSpace β]
+    [TopologicalSpace.PseudoMetrizableSpace β] {f : ℝ → β} (hf : ContinuousOn f (Ioi 0)) :
+    AEStronglyMeasurable f multHaar := by
+  rw [multHaar_def]
+  exact (hf.aestronglyMeasurable measurableSet_Ioi).mono_ac
+    (withDensity_absolutelyContinuous _ _)
+
 /-- `dt / t` is invariant under the dilations `t ↦ c t`, `c > 0`. -/
 theorem map_multHaar_mul_left {c : ℝ} (hc : 0 < c) : multHaar.map (c * ·) = multHaar := by
   have hcomp : (c * ·) ∘ Real.exp = Real.exp ∘ (Real.log c + ·) := by
@@ -93,6 +113,14 @@ theorem map_multHaar_mul_left {c : ℝ} (hc : 0 < c) : multHaar.map (c * ·) = m
     simp [Real.exp_add, Real.exp_log hc]
   rw [← map_volume_exp, map_map (measurable_const_mul c) Real.measurable_exp, hcomp,
     ← map_map Real.measurable_exp (measurable_const_add _), map_add_left_eq_self]
+
+/-- `dt / t` is invariant under inversion on `(0, ∞)`. -/
+theorem map_multHaar_inv : multHaar.map Inv.inv = multHaar := by
+  have hcomp : Inv.inv ∘ Real.exp = Real.exp ∘ Neg.neg := by
+    ext u
+    simp [Real.exp_neg]
+  rw [← map_volume_exp, map_map measurable_inv Real.measurable_exp, hcomp,
+    ← map_map Real.measurable_exp measurable_neg, map_neg_eq_self]
 
 /-- **Uniqueness of `dt / t`.** A measure on `ℝ` that does not charge `(-∞, 0]`, is invariant
 under the dilations `t ↦ c t` for `c > 0`, and is finite on `[1, e]` is its mass on `[1, e]` times
@@ -137,5 +165,57 @@ theorem eq_smul_multHaar {ρ : Measure ℝ} (h0 : ρ (Iic 0) = 0)
   conv_lhs => rw [hρτ, hτ_eq]
   rw [Measure.map_smul, map_volume_exp, hτ_Icc]
   exact Real.measurable_exp.aemeasurable
+
+/-! ### Integrals against `dt / t` -/
+
+section Integral
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A function is integrable against `dt / t` exactly when `t⁻¹ • f t` is integrable on
+`(0, ∞)`. -/
+theorem integrable_multHaar_iff {f : ℝ → E} :
+    Integrable f multHaar ↔ IntegrableOn (fun t ↦ t⁻¹ • f t) (Ioi 0) := by
+  rw [multHaar_def, integrable_withDensity_iff_integrable_smul'
+    measurable_inv.ennreal_ofReal (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top), IntegrableOn]
+  refine integrable_congr ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
+  rw [ENNReal.toReal_ofReal (inv_nonneg.mpr ht.le)]
+
+/-- The integral against `dt / t` is the integral of `t⁻¹ • f t` over `(0, ∞)`. -/
+theorem integral_multHaar_eq_setIntegral (f : ℝ → E) :
+    ∫ t, f t ∂multHaar = ∫ t in Ioi 0, t⁻¹ • f t := by
+  rw [multHaar_def, integral_withDensity_eq_integral_toReal_smul
+    measurable_inv.ennreal_ofReal (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
+  refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
+  rw [ENNReal.toReal_ofReal (inv_nonneg.mpr ht.le)]
+
+end Integral
+
+section Mellin
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- On `(0, ∞)`, `t⁻¹ • (t ^ s • v) = t ^ (s - 1) • v`. -/
+private theorem inv_smul_cpow_smul {t : ℝ} (ht : 0 < t) (s : ℂ) (v : E) :
+    t⁻¹ • ((t : ℂ) ^ s • v) = (t : ℂ) ^ (s - 1) • v := by
+  rw [← Complex.coe_smul, smul_smul, Complex.cpow_sub _ _ (Complex.ofReal_ne_zero.mpr ht.ne'),
+    Complex.cpow_one, Complex.ofReal_inv, inv_mul_eq_div]
+
+/-- **The Mellin transform is an integral against `dt / t`:**
+`mellin f s = ∫ t ^ s f(t) dt / t`. -/
+theorem integral_multHaar_cpow_smul (f : ℝ → E) (s : ℂ) :
+    ∫ t, (t : ℂ) ^ s • f t ∂multHaar = mellin f s := by
+  rw [integral_multHaar_eq_setIntegral, mellin]
+  exact setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ inv_smul_cpow_smul ht s (f t)
+
+/-- The Mellin transform of `f` converges at `s` exactly when `t ^ s f(t)` is integrable against
+`dt / t`. -/
+theorem integrable_multHaar_cpow_smul_iff {f : ℝ → E} {s : ℂ} :
+    Integrable (fun t : ℝ ↦ (t : ℂ) ^ s • f t) multHaar ↔ MellinConvergent f s := by
+  rw [integrable_multHaar_iff, MellinConvergent]
+  exact integrableOn_congr_fun (fun t ht ↦ inv_smul_cpow_smul ht s (f t)) measurableSet_Ioi
+
+end Mellin
 
 end TauCeti

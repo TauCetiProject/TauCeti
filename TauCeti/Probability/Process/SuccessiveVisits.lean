@@ -21,8 +21,12 @@ the state space is required; measurability of the singleton of `a` suffices.
 The finite-value characterization connects these stopping times to the combinatorial
 `visitTime`, whose value at nonexistent visits is zero. The next-visit identity uses
 `hittingAfter` starting strictly after the current visit, including when there is no
-next visit. For realized consecutive visits, the return gap is the excursion length
-plus one. These identities allow stopping-time arguments to be applied to excursions.
+next visit. The natural-valued `returnGap` is the difference of consecutive
+combinatorial visit times; for realized consecutive visits it is the excursion length
+plus one. Up to any existing visit, summing these gaps recovers the elapsed time
+since the first entrance. Missing visits leave only default gap values, not finite
+return durations. These identities connect stopping-time and excursion
+arguments with sums of return cycles.
 
 ## References
 
@@ -110,6 +114,40 @@ theorem successiveVisit_eq_top_iff :
     by_contra ht
     obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp ht
     exact h ⟨n, successiveVisit_eq_coe_iff.mp hn.symm⟩
+
+/-- For finitely many visits, the visit indexed by `k` exists exactly when `k` is below
+the total number of visits. -/
+theorem successiveVisit_ne_top_iff_lt_ncard (hf : {n | X n ω = a}.Finite) :
+    successiveVisit X a k ω ≠ ⊤ ↔ k < {n | X n ω = a}.ncard := by
+  classical
+  simp only [ne_eq, successiveVisit_eq_top_iff, not_not]
+  constructor
+  · rintro ⟨n, hn, hk⟩
+    rw [← hk, Set.ncard_eq_toFinset_card _ hf]
+    exact visitCount_lt_card hf hn
+  · intro hk
+    have hcard : ∀ h : {n | X n ω = a}.Finite, k < h.toFinset.card := by
+      intro h
+      rwa [← Set.ncard_eq_toFinset_card _ h]
+    -- `visitTime` and `visitCount` are the `Nat.nth` and `Nat.count` wrappers for visits.
+    refine ⟨visitTime (fun n => X n ω) a k, ?_, ?_⟩
+    · simpa only [visitTime_def] using Nat.nth_mem k hcard
+    · simpa only [visitCount_eq_count, visitTime_def] using Nat.count_nth hcard
+
+/-- For a path starting at `a` with finitely many visits to `a`, the total visit count is
+one plus the positive-time visit count. -/
+theorem ncard_setOf_eq_eq_ncard_setOf_succ_add_one {x : ℕ → α} {a : α}
+    (hx : {n | x n = a}.Finite) (h0 : x 0 = a) :
+    {n | x n = a}.ncard = {n | x (n + 1) = a}.ncard + 1 := by
+  have hset : {n | x n = a} = insert 0 (Nat.succ '' {n | x (n + 1) = a}) := by
+    ext n
+    cases n with
+    | zero => simp [h0]
+    | succ n => simp
+  have hsucc : (Nat.succ '' {n | x (n + 1) = a}).Finite :=
+    hx.subset (by rw [hset]; exact Set.subset_insert _ _)
+  rw [hset, Set.ncard_insert_of_notMem (by simp) hsucc,
+    Set.ncard_image_of_injective _ Nat.succ_injective]
 
 /-- At an existing visit, the stopping time agrees with the combinatorial enumeration. -/
 theorem successiveVisit_eq_visitTime
@@ -253,7 +291,77 @@ theorem successiveVisit_gap_eq_length_excursion_add_one
   rw [length_excursion, hn, hm]
   omega
 
+/-- The gap between visits `k` and `k + 1`, using the combinatorial visit times.
+This is a positive return duration when both visits exist. If a visit is missing, the
+value is only a default inherited from `visitTime` and must not be used as a return time. -/
+def returnGap (X : ℕ → Ω → α) (a : α) (k : ℕ) (ω : Ω) : ℕ :=
+  visitTime (fun i => X i ω) a (k + 1) - visitTime (fun i => X i ω) a k
+
+/-- Evaluation of the gap in terms of the enumerated visit times. -/
+theorem returnGap_def (X : ℕ → Ω → α) (a : α) (k : ℕ) (ω : Ω) :
+    returnGap X a k ω =
+      visitTime (fun i => X i ω) a (k + 1) - visitTime (fun i => X i ω) a k := (rfl)
+
+/-- Return gaps commute with a change of sample space. -/
+@[simp]
+theorem returnGap_comp {Ω' : Type*} (X : ℕ → Ω → α) (f : Ω' → Ω) (a : α) (k : ℕ) :
+    returnGap (fun n => X n ∘ f) a k = returnGap X a k ∘ f := (rfl)
+
+/-- If the next visit exists, the gap is the excursion length plus one. -/
+theorem returnGap_eq_length_excursion_add_one
+    (h : ∃ n, X n ω = a ∧ visitCount (fun i => X i ω) a n = k + 1) :
+    returnGap X a k ω = (excursion (fun i => X i ω) a k).length + 1 := by
+  exact successiveVisit_gap_eq_length_excursion_add_one
+    (successiveVisit_eq_visitTime (exists_visitCount_of_le h (Nat.le_succ k)))
+    (successiveVisit_eq_visitTime h)
+
+/-- The gap between two existing visits is strictly positive. -/
+theorem returnGap_pos
+    (h : ∃ n, X n ω = a ∧ visitCount (fun i => X i ω) a n = k + 1) :
+    0 < returnGap X a k ω := by
+  rw [returnGap_eq_length_excursion_add_one h]
+  exact Nat.succ_pos _
+
+/-- A process that stays at its base state has a return gap of one, not zero. -/
+@[simp]
+theorem returnGap_const (a : α) (k : ℕ) (ω : Ω) :
+    returnGap (fun _ (_ : Ω) => a) a k ω = 1 := by
+  simp [returnGap_def, visitTime_def]
+
+/-- If visit `n` exists, the first `n` return gaps sum to the time from the first visit
+(index zero) to visit `n`. -/
+theorem sum_returnGap
+    (h : ∃ m, X m ω = a ∧ visitCount (fun i => X i ω) a m = n) :
+    ∑ k ∈ Finset.range n, returnGap X a k ω =
+      visitTime (fun i => X i ω) a n - visitTime (fun i => X i ω) a 0 := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Finset.sum_range_succ, ih (exists_visitCount_of_le h (Nat.le_succ n)), returnGap_def]
+    have hnext := visitTime_lt_visitTime_of_le h (Nat.lt_succ_self n) le_rfl
+    have hfirst : visitTime (fun i => X i ω) a 0 ≤ visitTime (fun i => X i ω) a n := by
+      cases n with
+      | zero => rfl
+      | succ n => exact (visitTime_lt_visitTime_of_le h (Nat.zero_lt_succ n)
+          (Nat.le_succ _)).le
+    exact (add_comm _ _).trans (tsub_add_tsub_cancel hnext.le hfirst)
+
+/-- Starting at `a`, each existing successive visit is a partial sum of the return gaps. -/
+theorem successiveVisit_eq_sum_returnGap
+    (h : ∃ m, X m ω = a ∧ visitCount (fun i => X i ω) a m = n) (h0 : X 0 ω = a) :
+    successiveVisit X a n ω = (∑ k ∈ Finset.range n, returnGap X a k ω : ℕ) := by
+  rw [sum_returnGap h, visitTime_zero_of_eq h0, Nat.sub_zero]
+  exact successiveVisit_eq_visitTime h
+
 variable [MeasurableSpace Ω] [MeasurableSpace α]
+
+/-- Measurable coordinates give measurable return gaps, including their default values. -/
+@[fun_prop]
+theorem measurable_returnGap (hX : ∀ n, Measurable (X n))
+    (ha : MeasurableSet ({a} : Set α)) (k : ℕ) : Measurable (returnGap X a k) := by
+  have hp : Measurable fun ω n => X n ω := Measurable.of_eval hX
+  exact ((measurable_visitTime a (k + 1) ha).comp hp).sub
+    ((measurable_visitTime a k ha).comp hp)
 
 /-- Successive visits are stopping times for any filtration to which the process is adapted. -/
 theorem _root_.MeasureTheory.Adapted.isStoppingTime_successiveVisit

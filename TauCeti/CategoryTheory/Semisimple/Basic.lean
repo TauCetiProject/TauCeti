@@ -10,13 +10,17 @@ public import Mathlib.CategoryTheory.Adjunction.Limits
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.Schur
 public import Mathlib.CategoryTheory.Simple
+public import TauCeti.CategoryTheory.Abelian.Injective.Basic
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 
 /-!
 # Finite semisimple categories
 
 An abelian category is finite semisimple when every object is isomorphic to a finite biproduct of
 simple objects. This file introduces that property and proves that it is invariant under
-equivalence of categories.
+equivalence of categories. In a finite semisimple category every object is injective, so every
+monomorphism splits: a monomorphism out of a simple object splits by Schur's lemma, and a finite
+biproduct of injective objects is injective.
 
 The decomposition condition is independent of a choice of coefficient field. Linearity and
 finite-dimensionality of morphism spaces are separate hypotheses when they are needed.
@@ -26,6 +30,10 @@ finite-dimensionality of morphism spaces are separate hypotheses when they are n
 * `TauCeti.IsFiniteSemisimpleCategory`: every object is a finite biproduct of simple objects.
 * `TauCeti.IsFiniteSemisimpleCategory.of_equivalence`: transport finite semisimplicity across an
   equivalence.
+* `TauCeti.IsFiniteSemisimpleCategory.exists_biproduct_simples_of_isZero`,
+  `TauCeti.IsFiniteSemisimpleCategory.exists_biproduct_simples_of_simple` and
+  `TauCeti.IsFiniteSemisimpleCategory.exists_biproduct_simples_biprod`: zero objects and simple
+  objects are finite biproducts of simple objects, and such decompositions combine along `⊞`.
 * `TauCeti.isSplitMono_of_nonzero_from_simple` and `TauCeti.isSplitEpi_of_nonzero_to_simple`: a
   nonzero morphism out of (resp. into) a simple object is a split monomorphism (resp. split
   epimorphism).
@@ -34,6 +42,10 @@ finite-dimensionality of morphism spaces are separate hypotheses when they are n
 * `TauCeti.biproduct_ι_comp_inv_ne_zero`: the inclusion of a simple summand is nonzero.
 * `TauCeti.exists_simple_hom_ne_zero`: a nonzero object receives a nonzero morphism from a simple
   object.
+* `TauCeti.IsFiniteSemisimpleCategory.injective`: every object of a finite semisimple category is
+  injective.
+* `TauCeti.IsFiniteSemisimpleCategory.splitMonoCategory`: every monomorphism of a finite
+  semisimple category splits.
 * `CategoryTheory.Functor.hom_ext_of_simple`: a morphism out of the image of an object under an
   additive functor is determined by its composites with the images of morphisms from simple
   objects.
@@ -59,6 +71,8 @@ class IsFiniteSemisimpleCategory (C : Type u) [Category.{v} C] [Abelian C] : Pro
     (_ : ∀ i, Simple (f i)) (_ : HasBiproduct f), Nonempty (X ≅ ⨁ f)
 
 namespace IsFiniteSemisimpleCategory
+
+section Abelian
 
 variable {C : Type u} [Category.{v} C] [Abelian C]
 variable {D : Type u'} [Category.{v'} D] [Abelian D]
@@ -88,6 +102,55 @@ theorem iff_of_equivalence (e : C ≌ D) :
   · intro h
     let _ := h
     exact of_equivalence e.symm
+
+end Abelian
+
+section Biproducts
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
+
+/-- A zero object is the biproduct of the empty family of simple objects. -/
+theorem exists_biproduct_simples_of_isZero {X : C} (hX : IsZero X) :
+    ∃ (ι : Type) (_ : Fintype ι) (f : ι → C) (_ : ∀ i, Simple (f i)) (_ : HasBiproduct f),
+      Nonempty (X ≅ ⨁ f) := by
+  -- The zero object `X` itself is a biproduct of the empty family.
+  have : HasBiproduct (Empty.elim : Empty → C) := HasBiproduct.mk
+    { bicone := { pt := X, π := fun i ↦ i.elim, ι := fun i ↦ i.elim, ι_π := fun i ↦ i.elim }
+      isBilimit :=
+        { isLimit :=
+            { lift := fun s ↦ hX.from_ s.pt
+              fac := fun _ j ↦ j.as.elim
+              uniq := fun _ _ _ ↦ hX.eq_of_tgt _ _ }
+          isColimit :=
+            { desc := fun s ↦ hX.to_ s.pt
+              fac := fun _ j ↦ j.as.elim
+              uniq := fun _ _ _ ↦ hX.eq_of_src _ _ } } }
+  refine ⟨Empty, inferInstance, Empty.elim, fun i ↦ i.elim, this, ⟨hX.iso ?_⟩⟩
+  exact (IsZero.iff_id_eq_zero _).2 (biproduct.hom_ext _ _ fun i ↦ i.elim)
+
+/-- A simple object is the biproduct of the family consisting of itself. -/
+theorem exists_biproduct_simples_of_simple (X : C) [Simple X] :
+    ∃ (ι : Type) (_ : Fintype ι) (f : ι → C) (_ : ∀ i, Simple (f i)) (_ : HasBiproduct f),
+      Nonempty (X ≅ ⨁ f) := by
+  exact ⟨Unit, inferInstance, fun _ ↦ X, fun _ ↦ inferInstance, inferInstance,
+    ⟨(biproductUniqueIso fun _ : Unit ↦ X).symm⟩⟩
+
+/-- Decompositions of `X` and `Y` into finite biproducts of simple objects combine to one of
+`X ⊞ Y`. -/
+theorem exists_biproduct_simples_biprod [HasFiniteBiproducts C] {X Y : C} [HasBinaryBiproduct X Y]
+    (hX : ∃ (ι : Type) (_ : Fintype ι) (f : ι → C) (_ : ∀ i, Simple (f i)) (_ : HasBiproduct f),
+      Nonempty (X ≅ ⨁ f))
+    (hY : ∃ (ι : Type) (_ : Fintype ι) (f : ι → C) (_ : ∀ i, Simple (f i)) (_ : HasBiproduct f),
+      Nonempty (Y ≅ ⨁ f)) :
+    ∃ (ι : Type) (_ : Fintype ι) (f : ι → C) (_ : ∀ i, Simple (f i)) (_ : HasBiproduct f),
+      Nonempty (X ⊞ Y ≅ ⨁ f) := by
+  obtain ⟨ι, hι, f, hf, hbf, ⟨e⟩⟩ := hX
+  obtain ⟨κ, hκ, g, hg, hbg, ⟨d⟩⟩ := hY
+  have := hasBinaryBiproducts_of_finite_biproducts C
+  refine ⟨ι ⊕ κ, inferInstance, Sum.elim f g, fun | .inl i => hf i | .inr j => hg j,
+    inferInstance, ⟨biprod.mapIso e d ≪≫ (biproductSumIso f g).symm⟩⟩
+
+end Biproducts
 
 end IsFiniteSemisimpleCategory
 
@@ -153,6 +216,27 @@ theorem exists_simple_hom_ne_zero {C : Type u} [Category.{v} C] [Abelian C]
     have : IsEmpty ι := not_nonempty_iff.mp h
     exact hY (((IsZero.iff_id_eq_zero _).2 (by ext i; exact isEmptyElim i)).of_iso e)
   exact ⟨a i, ha i, _, biproduct_ι_comp_inv_ne_zero e i⟩
+
+namespace IsFiniteSemisimpleCategory
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [IsFiniteSemisimpleCategory C]
+
+/-- Every object of a finite semisimple category is injective. -/
+instance injective (X : C) : Injective X := by
+  obtain ⟨ι, hι, f, hf, hbf, ⟨e⟩⟩ := exists_biproduct_simples X
+  -- A monomorphism out of a simple object is nonzero, hence split.
+  have (i : ι) : Injective (f i) := by
+    have := hf i
+    exact (injective_iff_forall_isSplitMono _).2 fun Y g _ ↦
+      isSplitMono_of_nonzero_from_simple fun hg ↦
+        Simple.not_isZero (f i) (IsZero.of_mono_eq_zero g hg)
+  exact Injective.of_iso e.symm inferInstance
+
+/-- Every monomorphism of a finite semisimple category splits. -/
+instance splitMonoCategory : SplitMonoCategory C :=
+  ⟨fun f _ ↦ (injective_iff_forall_isSplitMono _).1 inferInstance f⟩
+
+end IsFiniteSemisimpleCategory
 
 /-- In a finite semisimple category, the images under an additive functor of the morphisms from
 simple objects into `X` are jointly epimorphic: two morphisms out of `F.obj X` agreeing after

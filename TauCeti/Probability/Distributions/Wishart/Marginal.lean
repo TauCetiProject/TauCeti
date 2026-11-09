@@ -33,7 +33,7 @@ scale: the Wishart family is closed under marginalisation.
 The two statements are proved together, by reducing an arbitrary full-row-rank congruence to a
 coordinate selection at the standard scale. Write `S = R * Rᵀ` and `M * S * Mᵀ = T * Tᵀ` with `R`
 and `T` invertible. Then `M * R` has Gram matrix `T * Tᵀ`, so by its `LQ` decomposition
-`Matrix.exists_mul_transpose_eq_one_and_eq_mul_submatrix_castLE` it equals `T * (E * Q)`, where
+`Matrix.exists_mul_conjTranspose_eq_one_and_eq_mul_submatrix` it equals `T * (E * Q)`, where
 `Q` is orthogonal and `E` is the row selection. Congruence by an invertible matrix is already
 understood, and congruence by `Q` fixes the standard law, which leaves the coordinate selection
 at the standard scale. There the Bartlett coordinates make it transparent: the leading block of
@@ -187,19 +187,9 @@ theorem map_symmetricCongruenceLinearMap_nonsingularWishartMeasure
       _ = M * Rm * (M * Rm)ᵀ := by
           rw [Matrix.transpose_mul]
           simp only [Matrix.mul_assoc]
-  obtain ⟨Q, hQ, hQfac⟩ := Matrix.exists_mul_transpose_eq_one_and_eq_mul_submatrix_castLE (M * Rm)
-    hqp (Matrix.GeneralLinearGroup.det_ne_zero T) hMRT
-  have hMR : M * Rm = Tm * (E * Q) := by
-    have hsel : (1 : Matrix (Fin p) (Fin p) ℝ).submatrix (Fin.castLE hqp) id * Q =
-        Q.submatrix (Fin.castLE hqp) id := by
-      simpa using Matrix.one_submatrix_mul (Fin.castLE hqp) (Equiv.refl (Fin p)) Q
-    rw [hE, hsel, hQfac]
-  have hQdet : Q.det ≠ 0 := by
-    have hdet : Q.det * Q.det = 1 := by
-      simpa [Matrix.det_transpose] using congrArg Matrix.det hQ
-    intro h
-    rw [h, mul_zero] at hdet
-    exact zero_ne_one hdet
+  obtain ⟨Q, hQ, hQdet, hMR'⟩ := Matrix.exists_orthogonal_mul_eq_mul_submatrix_one
+    (Fin.castLE_injective hqp) (M * Rm) Tm (Matrix.GeneralLinearGroup.det_ne_zero T) hMRT
+  have hMR : M * Rm = Tm * (E * Q) := hMR'
   -- The four congruences: by `Rm`, which builds the scale `S`; by the orthogonal `Q`, which fixes
   -- the standard law; by `E`, which selects coordinates; and by `Tm`, which builds the new scale.
   have hmeas : ∀ {a b : ℕ} (N : Matrix (Fin a) (Fin b) ℝ),

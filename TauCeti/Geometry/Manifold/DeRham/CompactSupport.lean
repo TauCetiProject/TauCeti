@@ -112,6 +112,13 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
   (I : ModelWithCorners ℝ E H) {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I 2 M]
 
+/-- The exterior derivative of a compactly supported smooth form is compactly supported. -/
+theorem mextDerivₗ_mem_compactlySupportedForms {k : ℕ} {φ : SmoothForm I M ℝ k}
+    (hφ : φ ∈ compactlySupportedForms I M k) :
+    mextDerivₗ I k φ ∈ compactlySupportedForms I M (k + 1) := by
+  rw [mem_compactlySupportedForms, mextDerivₗ_apply]
+  exact RoughForm.isCompact_tsupport_mextDeriv hφ
+
 namespace compactlySupportedForms
 
 variable (M) in
@@ -119,9 +126,8 @@ variable (M) in
 supports. -/
 def mextDerivₗ (k : ℕ) :
     compactlySupportedForms I M k →ₗ[ℝ] compactlySupportedForms I M (k + 1) :=
-  (TauCeti.mextDerivₗ I (M := M) (F := ℝ) k).restrict fun φ hφ ↦ by
-    rw [mem_compactlySupportedForms, mextDerivₗ_apply]
-    exact RoughForm.isCompact_tsupport_mextDeriv hφ
+  (TauCeti.mextDerivₗ I (M := M) (F := ℝ) k).restrict fun _ ↦
+    mextDerivₗ_mem_compactlySupportedForms I
 
 /-- The exterior derivative of a compactly supported form is its exterior derivative as a smooth
 form. -/
@@ -257,6 +263,21 @@ theorem compactlySupportedClosedForms_le_compactlySupportedForms (k : ℕ) :
 theorem compactlySupportedClosedForms_le_closedForms (k : ℕ) :
     compactlySupportedClosedForms I M k ≤ closedForms I M k :=
   inf_le_right
+
+/-- In degree at least the model dimension, every compactly supported form is closed. -/
+def compactlySupportedForms.toClosedOfFinrankLe [FiniteDimensional ℝ E] {k : ℕ}
+    (h : Module.finrank ℝ E ≤ k) :
+    compactlySupportedForms I M k →ₗ[ℝ] compactlySupportedClosedForms I M k :=
+  LinearMap.codRestrict _ (compactlySupportedForms I M k).subtype fun φ ↦
+    (mem_compactlySupportedClosedForms I).mpr
+      ⟨φ.2, mem_closedForms_of_finrank_le I h φ.1⟩
+
+/-- Viewing a top-degree compactly supported form as closed does not change the smooth form. -/
+@[simp]
+theorem compactlySupportedForms.coe_toClosedOfFinrankLe [FiniteDimensional ℝ E] {k : ℕ}
+    (h : Module.finrank ℝ E ≤ k) (φ : compactlySupportedForms I M k) :
+    (toClosedOfFinrankLe I h φ : SmoothForm I M ℝ k) = φ :=
+  (rfl)
 
 variable (M) in
 /-- Compactly supported exact forms are exterior derivatives of compactly supported forms in

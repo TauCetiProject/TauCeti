@@ -48,14 +48,13 @@ caveat about its relation to the Hecke ring's structure constants, as on the for
 At level `Γ₁(N)` the single-coset criterion is applied to the upper-triangular representatives
 `!![1, j; 0, n]`: at indices `n`, `m` supported on the level (every prime factor dividing `N`)
 they multiply into the representatives at `n m`, so `T_{n m} = T_n T_m` on `𝕄_w(Γ₁(N); R)`
-(`heckeTSymbol_mul_of_primeFactors_subset`), such operators commute, and `T_{n^r} = T_n ^ r`.
+(`heckeTSymbol_mul_of_primeFactors_subset`) and `T_{n^r} = T_n ^ r`.
 At coprime indices `m`, `n`, with no condition relating them to the level, the double coset of
 `diag(1, m n)` is the product of those of `diag(1, m)` and `diag(1, n)`, and products of
 right-coset representatives do not collide (`Gamma1/CoprimeMul.lean`), so again
-`T_{m n} = T_m T_n` (`heckeTSymbol_mul_of_coprime`) and such operators commute. This is the
-commutativity of the Hecke action on symbols that the passage from the period pairing to the
-integrality of Hecke eigenvalues needs, since the transpose of a composite reverses its order,
-except between two indices sharing a prime factor outside the level.
+`T_{m n} = T_m T_n` (`heckeTSymbol_mul_of_coprime`). That any two Hecke operators commute,
+at every pair of indices, is `TauCeti.ModularSymbols.commute_heckeTSymbol`, from the
+multiplicity-weighted law and the Atkin–Lehner anti-involution.
 
 ## Main results
 
@@ -71,10 +70,9 @@ except between two indices sharing a prime factor outside the level.
   composition law `T_{D₁} ∘ T_{D₂} = ∑_D m(D₁, D₂; D) • T_D`.
 * `TauCeti.ModularSymbols.heckeTSymbol_mul_of_primeFactors_subset`: `T_{n m} = T_n T_m` on
   `𝕄_w(Γ₁(N); R)` at indices supported on the level, with
-  `TauCeti.ModularSymbols.commute_heckeTSymbol_of_primeFactors_subset` and
   `TauCeti.ModularSymbols.heckeTSymbol_pow_of_primeFactors_subset`.
 * `TauCeti.ModularSymbols.heckeTSymbol_mul_of_coprime`: `T_{m n} = T_m T_n` on `𝕄_w(Γ₁(N); R)`
-  at coprime indices, with `TauCeti.ModularSymbols.commute_heckeTSymbol_of_coprime`.
+  at coprime indices.
 
 ## References
 
@@ -115,7 +113,7 @@ generate the right coset `Γ₁' x`, then `∑ᵢ [aᵢ · x] = m • T_D [x]`.
 Covering is not a hypothesis: a right coset named by no member forces `m = 0`, and then both sides
 vanish. This is the shape in which the products `aᵢ bⱼ` of two families of representatives arrive
 once they are grouped by the double coset they lie in. -/
-theorem sum_mk_symbolIntRep_eq_nsmul_heckeSymbol_mk {ι : Type*} [Fintype ι]
+theorem sum_mk_symbolIntRep_eq_nsmul_heckeSymbol_mk {ι : Type*} [Finite ι]
     (a : ι → GL (Fin 2) ℚ) (m : ℕ)
     (hmem : ∀ i, a i ∈ doubleCoset (D.out : GL (Fin 2) ℚ) (Γ₁.map (mapGL ℚ)) (Γ₂.map (mapGL ℚ)))
     (hcard : ∀ x ∈ doubleCoset (D.out : GL (Fin 2) ℚ) (Γ₁.map (mapGL ℚ)) (Γ₂.map (mapGL ℚ)),
@@ -187,7 +185,7 @@ matrices are integral, `HeckeRing.GLn.mem_intEntries_of_cover` —
 This is Shimura's computation in §3.4 on the way to Proposition 3.37, on the symbol side. No
 invariance hypothesis appears, in contrast to the slash sums: the classes in the coinvariants are
 already invariant, which is what `heckeSymbol_mk_eq_sum_of_rightCosets` records. -/
-theorem heckeSymbol_heckeSymbol_mk_eq_sum_of_rightCosets [Fintype ι] [Fintype κ]
+theorem heckeSymbol_heckeSymbol_mk_eq_sum_of_rightCosets [Finite ι] [Finite κ]
     (x : degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w) :
     heckeSymbol Γ₁ Γ₂ D₁ hD₁ (heckeSymbol Γ₂ Γ₃ D₂ hD₂ (Coinvariants.mk _ x)) =
       ∑ i, ∑ j, (Coinvariants.mk _ : degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w →ₗ[R]
@@ -293,8 +291,8 @@ theorem heckeSymbol_comp_heckeSymbol_eq_sum_nsmul :
             (rightCosetRep_mem D₂ hD₂ (map_mapGL_le_intEntries 2 Γ₃) q.2)⟩ x),
     ← Finset.sum_attach (Finset.univ.image (pairCoset D₁ D₂))]
   refine Finset.sum_congr rfl fun D _ ↦ ?_
-  exact sum_mk_symbolIntRep_eq_nsmul_heckeSymbol_mk Γ₁ Γ₃ D.1
-    (mem_intEntries_of_mem_image_pairCoset Γ₁ Γ₂ Γ₃ D₁ D₂ hD₁ hD₂ D.2) _ _
+  convert sum_mk_symbolIntRep_eq_nsmul_heckeSymbol_mk (ι := {q // pairCoset D₁ D₂ q = D.1})
+    Γ₁ Γ₃ D.1 (mem_intEntries_of_mem_image_pairCoset Γ₁ Γ₂ Γ₃ D₁ D₂ hD₁ hD₂ D.2) _ _
     (fun i ↦ pairCoset_eq_iff.mp i.2)
     (fun _ hx ↦ card_pairs_pairCoset_rightCoset_eq_multiplicity hx) x
 
@@ -338,15 +336,6 @@ theorem heckeTSymbol_mul_of_primeFactors_subset {n m : ℕ} [NeZero n] [NeZero m
   · intro p q h
     simp only [upperTriRep_mul_upperTriRep, Prod.mk.eta] at h
     exact finProdFinEquiv.injective (op_upperTriRep_smul_injective h)
-
-/-- **The Hecke operators on modular symbols at indices supported on the level commute.** Both
-orders compute the operator at the product index. -/
-theorem commute_heckeTSymbol_of_primeFactors_subset {n m : ℕ} [NeZero n] [NeZero m]
-    (hn : n.primeFactors ⊆ N.primeFactors) (hm : m.primeFactors ⊆ N.primeFactors) :
-    Commute (heckeTSymbol R w N n) (heckeTSymbol R w N m) := by
-  rw [commute_iff_eq, ← heckeTSymbol_mul_of_primeFactors_subset N hn hm,
-    ← heckeTSymbol_mul_of_primeFactors_subset N hm hn]
-  exact heckeTSymbol_congr N (mul_comm n m)
 
 /-- **`T_{n^r} = T_n ^ r` on modular symbols, at an index supported on the level.** -/
 @[simp]
@@ -394,14 +383,6 @@ theorem heckeTSymbol_mul_of_coprime {m n : ℕ} [NeZero m] [NeZero n] (hmn : m.C
     refine Prod.ext (op_rightCosetRep_smul_injective _ ?_) rfl
     rw [rightCoset_eq_iff] at h ⊢
     simpa only [_root_.mul_inv_rev, mul_assoc, mul_inv_cancel_left] using h
-
-/-- **The Hecke operators on modular symbols at coprime indices commute.** Both orders compute
-the operator at the product index. -/
-theorem commute_heckeTSymbol_of_coprime {m n : ℕ} [NeZero m] [NeZero n] (hmn : m.Coprime n) :
-    Commute (heckeTSymbol R w N m) (heckeTSymbol R w N n) := by
-  rw [commute_iff_eq, ← heckeTSymbol_mul_of_coprime N hmn,
-    ← heckeTSymbol_mul_of_coprime N hmn.symm]
-  exact heckeTSymbol_congr N (mul_comm m n)
 
 end Gamma1
 

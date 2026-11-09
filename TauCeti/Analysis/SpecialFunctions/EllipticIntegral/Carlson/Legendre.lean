@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Carlson.Basic
-public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Carlson.RJ
+public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Carlson.RG
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Legendre
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Pow
@@ -15,6 +14,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 import Mathlib.MeasureTheory.Function.JacobianOneDim
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Algebra.Order.Group.EvenFunction
+import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Elementary
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arcsin
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
@@ -31,13 +31,14 @@ Every Legendre integral is a combination of Carlson's symmetric integrals (DLMF 
 and at `φ = π / 2` (DLMF 19.25.1, 19.25.2, and 19.25.7 at `φ = π / 2`)
 
 * `K(k) = R_F(0, 1 - k², 1)`;
-* `E(k) = R_F(0, 1 - k², 1) - (k² / 3) R_D(0, 1 - k², 1)`;
+* `E(k) = R_F(0, 1 - k², 1) - (k² / 3) R_D(0, 1 - k², 1) = 2 R_G(0, 1 - k², 1)`;
 * `Π(k, α²) = R_F(0, 1 - k², 1) + (α² / 3) R_J(0, 1 - k², 1, 1 - α²)`.
 
 The Carlson integrals are evaluated at real arguments coerced to `ℂ`, and each identity is an
 equation in `ℂ` whose left side is the real Legendre integral; in particular the right side is
 real. The incomplete identities hold under `k² sin² φ < 1` (and `α² sin² φ < 1` for the third
-kind), which is `k ^ 2 < 1` (and `α2 < 1`) in the complete case.
+kind), which is `k ^ 2 < 1` (and `α2 < 1`) in the complete case; the `R_G` identity
+`E(k) = 2 R_G(0, 1 - k², 1)` extends to `k ^ 2 ≤ 1`.
 
 The dictionary transfers statements about Carlson's symmetric integrals to Legendre's integrals,
 and conversely.
@@ -49,6 +50,7 @@ and conversely.
   `TauCeti.Real.ofReal_legendrePi_eq_carlsonRF_add_carlsonRJ`: the incomplete integrals;
 * `TauCeti.Real.ofReal_legendreK_eq_carlsonRF`,
   `TauCeti.Real.ofReal_legendreEc_eq_carlsonRF_sub_carlsonRD`,
+  `TauCeti.Real.ofReal_legendreEc_eq_carlsonRG`,
   `TauCeti.Real.ofReal_legendrePic_eq_carlsonRF_add_carlsonRJ`: the complete integrals.
 
 ## Implementation notes
@@ -64,10 +66,11 @@ of the three Carlson integrands into `(1 - k² sin² θ)^(-1/2) dθ / s`; under 
 * B. C. Carlson, *Special Functions of Applied Mathematics*, Academic Press, 1977, Chapter 9.
 
 B. Braams' `lean-codes` (<https://github.com/bjbraams/lean-codes>) proves these identities
-(`Carlson.legendreF_eq_of_mul_lt` in `Carlson/Elliptic/Standard.lean`, and its companions in
-`Carlson/Elliptic/LegendreStandard.lean` and `Carlson/Elliptic/LegendreThird.lean`) on top of
-Carlson's general `R`-function; the statements here follow its form, with real Carlson arguments
-coerced to `ℂ` and the hypothesis `k² sin² φ < 1`. The proofs here work directly from the integral
+(`Carlson.legendreF_eq_of_mul_lt` and `Carlson.legendreEc_eq` in `Carlson/Elliptic/Standard.lean`,
+and their companions in `Carlson/Elliptic/LegendreStandard.lean` and
+`Carlson/Elliptic/LegendreThird.lean`) on top of Carlson's general `R`-function; the statements here
+follow its form, with real Carlson arguments coerced to `ℂ` and the hypothesis `k² sin² φ < 1`
+(`k² ≤ 1` for the `R_G` evaluation of `E(k)`). The proofs here work directly from the integral
 definitions of `TauCeti.Real.legendreF` and `Complex.carlsonRF` and are not ported from it.
 -/
 
@@ -76,10 +79,62 @@ public section
 namespace TauCeti.Real
 
 open _root_.Real MeasureTheory Set
-open Complex (carlsonRF carlsonRD carlsonRJ carlsonRF_def carlsonRD_def carlsonRJ_def ofReal_cpow
-  ofReal_neg ofReal_one real_smul)
+open Complex (carlsonRF carlsonRD carlsonRG carlsonRJ carlsonRF_def carlsonRD_def carlsonRJ_def
+  ofReal_cpow ofReal_neg ofReal_one real_smul)
 
 /-! ### The substitution `t = sin² φ / sin² θ - 1` -/
+
+/-- The pointwise identity behind the substitution `t = sin² φ / sin² θ - 1`: the absolute value of
+the derivative times Carlson's integrand at `t = sin² φ / sin² θ - 1`, with the extra factor `H`
+equal to the real `G`, is `2 / sin φ` times the integrand of `F(φ, k)` with the factor `G`. -/
+private theorem abs_deriv_smul_carlson_integrand_eq {φ k θ : ℝ} {H : ℂ} {G : ℝ}
+    (hφ0 : 0 < φ) (hφ : φ ≤ π / 2) (hk : k ^ 2 * sin φ ^ 2 < 1) (hθ0 : 0 < θ) (hθ : θ < φ)
+    (hH : H = G) :
+    |(-(2 * sin φ ^ 2 * cos θ / sin θ ^ 3))| •
+      ((((sin φ ^ 2 / sin θ ^ 2 - 1 : ℝ) : ℂ) + ((cos φ ^ 2 : ℝ) : ℂ)) ^ (-(1 / 2) : ℂ) *
+            (((sin φ ^ 2 / sin θ ^ 2 - 1 : ℝ) : ℂ) + ((1 - k ^ 2 * sin φ ^ 2 : ℝ) : ℂ)) ^
+              (-(1 / 2) : ℂ) *
+          (((sin φ ^ 2 / sin θ ^ 2 - 1 : ℝ) : ℂ) + 1) ^ (-(1 / 2) : ℂ) * H) =
+    ((2 / sin φ * ((1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) * G) : ℝ) : ℂ) := by
+  set s := sin φ with hs_def
+  have hs : 0 < s := sin_pos_of_pos_of_lt_pi hφ0 (by linarith [pi_pos])
+  have hu : 0 < sin θ := sin_pos_of_pos_of_lt_pi hθ0 (by linarith [pi_pos])
+  have hc : 0 < cos θ := cos_pos_of_mem_Ioo ⟨by linarith [pi_pos], by linarith⟩
+  have hus : sin θ < s := sin_lt_sin_of_lt_of_le_pi_div_two (by linarith [pi_pos]) hφ hθ
+  have hku : 0 < 1 - k ^ 2 * sin θ ^ 2 :=
+    sub_pos.mpr (mul_sin_sq_lt_one_of_le hk hθ0.le hθ.le hφ)
+  -- The three arguments of the square roots are perfect squares up to `1 - k² sin² θ`.
+  have hA : s ^ 2 / sin θ ^ 2 - 1 + cos φ ^ 2 = (s * cos θ / sin θ) ^ 2 := by
+    rw [cos_sq', ← hs_def, div_pow, mul_pow, cos_sq' θ]
+    field_simp
+    ring
+  have hB : s ^ 2 / sin θ ^ 2 - 1 + (1 - k ^ 2 * s ^ 2) =
+      (s / sin θ) ^ 2 * (1 - k ^ 2 * sin θ ^ 2) := by
+    field_simp
+    ring
+  have hC : s ^ 2 / sin θ ^ 2 - 1 + 1 = (s / sin θ) ^ 2 := by ring
+  have hpos : 0 < s / sin θ := div_pos hs hu
+  -- At real arguments the principal powers are real inverse square roots.
+  have ofReal_add_cpow_neg_half {t w : ℝ} (h : 0 < t + w) :
+      ((t : ℂ) + (w : ℂ)) ^ (-(1 / 2) : ℂ) = (((√(t + w))⁻¹ : ℝ) : ℂ) := by
+    rw [sqrt_eq_rpow, ← rpow_neg h.le, ofReal_cpow h.le]
+    push_cast
+    rfl
+  have hAc := ofReal_add_cpow_neg_half (t := s ^ 2 / sin θ ^ 2 - 1) (w := cos φ ^ 2)
+    (by rw [hA]; positivity)
+  have hBc := ofReal_add_cpow_neg_half (t := s ^ 2 / sin θ ^ 2 - 1) (w := 1 - k ^ 2 * s ^ 2)
+    (by rw [hB]; positivity)
+  have hCc := ofReal_add_cpow_neg_half (t := s ^ 2 / sin θ ^ 2 - 1) (w := 1)
+    (by rw [hC]; positivity)
+  rw [ofReal_one] at hCc
+  rw [hA, sqrt_sq (by positivity)] at hAc
+  rw [hB, sqrt_mul (sq_nonneg _), sqrt_sq hpos.le] at hBc
+  rw [hC, sqrt_sq hpos.le] at hCc
+  rw [abs_neg, abs_of_pos (by positivity), real_smul, hAc, hBc, hCc, hH,
+    legendreF_integrand_eq_inv_sqrt]
+  have hsq := sqrt_pos.mpr hku
+  norm_cast
+  field_simp
 
 /-- **The substitution `t = sin² φ / sin² θ - 1`.** For `0 < φ ≤ π / 2` and `k² sin² φ < 1`, it
 turns the common factor of Carlson's integrands at `(cos² φ, 1 - k² sin² φ, 1)` into the integrand
@@ -119,43 +174,7 @@ private theorem integral_carlson_eq_integral_legendre {φ k : ℝ} (hφ0 : 0 < �
     intervalIntegral.integral_of_le hφ0.le, integral_Ioc_eq_integral_Ioo, ← integral_const_mul,
     ← integral_complex_ofReal]
   refine setIntegral_congr_fun measurableSet_Ioo fun θ ⟨hθ0, hθ⟩ ↦ ?_
-  have hu : 0 < sin θ := sin_pos_of_pos_of_lt_pi hθ0 (by linarith [pi_pos])
-  have hc : 0 < cos θ := cos_pos_of_mem_Ioo ⟨by linarith [pi_pos], by linarith⟩
-  have hus : sin θ < s := sin_lt_sin_of_lt_of_le_pi_div_two (by linarith [pi_pos]) hφ hθ
-  have hku : 0 < 1 - k ^ 2 * sin θ ^ 2 :=
-    sub_pos.mpr (mul_sin_sq_lt_one_of_le hk hθ0.le hθ.le hφ)
-  -- The three arguments of the square roots are perfect squares up to `1 - k² sin² θ`.
-  have hA : s ^ 2 / sin θ ^ 2 - 1 + cos φ ^ 2 = (s * cos θ / sin θ) ^ 2 := by
-    rw [cos_sq', ← hs_def, div_pow, mul_pow, cos_sq' θ]
-    field_simp
-    ring
-  have hB : s ^ 2 / sin θ ^ 2 - 1 + (1 - k ^ 2 * s ^ 2) =
-      (s / sin θ) ^ 2 * (1 - k ^ 2 * sin θ ^ 2) := by
-    field_simp
-    ring
-  have hC : s ^ 2 / sin θ ^ 2 - 1 + 1 = (s / sin θ) ^ 2 := by ring
-  have hpos : 0 < s / sin θ := div_pos hs hu
-  -- At real arguments the principal powers are real inverse square roots.
-  have ofReal_add_cpow_neg_half {t w : ℝ} (h : 0 < t + w) :
-      ((t : ℂ) + (w : ℂ)) ^ (-(1 / 2) : ℂ) = (((√(t + w))⁻¹ : ℝ) : ℂ) := by
-    rw [sqrt_eq_rpow, ← rpow_neg h.le, ofReal_cpow h.le]
-    push_cast
-    rfl
-  have hAc := ofReal_add_cpow_neg_half (t := s ^ 2 / sin θ ^ 2 - 1) (w := cos φ ^ 2)
-    (by rw [hA]; positivity)
-  have hBc := ofReal_add_cpow_neg_half (t := s ^ 2 / sin θ ^ 2 - 1) (w := 1 - k ^ 2 * s ^ 2)
-    (by rw [hB]; positivity)
-  have hCc := ofReal_add_cpow_neg_half (t := s ^ 2 / sin θ ^ 2 - 1) (w := 1)
-    (by rw [hC]; positivity)
-  rw [ofReal_one] at hCc
-  rw [hA, sqrt_sq (by positivity)] at hAc
-  rw [hB, sqrt_mul (sq_nonneg _), sqrt_sq hpos.le] at hBc
-  rw [hC, sqrt_sq hpos.le] at hCc
-  rw [abs_neg, abs_of_pos (by positivity), real_smul, hAc, hBc, hCc, hg θ ⟨hθ0, hθ⟩,
-    legendreF_integrand_eq_inv_sqrt]
-  have hsq := sqrt_pos.mpr hku
-  norm_cast
-  field_simp
+  exact abs_deriv_smul_carlson_integrand_eq hφ0 hφ hk hθ0 hθ (hg θ ⟨hθ0, hθ⟩)
 
 /-! ### Carlson's integrals at `(cos² φ, 1 - k² sin² φ, 1)` for `0 < φ ≤ π / 2` -/
 
@@ -297,6 +316,23 @@ theorem ofReal_legendreEc_eq_carlsonRF_sub_carlsonRD {k : ℝ} (hk : k ^ 2 < 1) 
       carlsonRF 0 (1 - k ^ 2 : ℝ) 1 - (k : ℂ) ^ 2 / 3 * carlsonRD 0 (1 - k ^ 2 : ℝ) 1 := by
   simpa [legendreEc_def] using ofReal_legendreE_eq_carlsonRF_sub_carlsonRD (φ := π / 2)
     (by rw [abs_of_pos (by positivity)]) (by simpa using hk)
+
+/-- **The complete integral of the second kind as a single `R_G` value** (DLMF 19.25.1): for
+`k² ≤ 1`, `E(k) = 2 R_G(0, 1 - k², 1)`. Unlike `ofReal_legendreEc_eq_carlsonRF_sub_carlsonRD`,
+this identity also holds at `k = ±1`, where `R_F(0, 0, 1)` and `R_D(0, 0, 1)` diverge while
+`R_G(0, 0, 1) = 1 / 2`. -/
+theorem ofReal_legendreEc_eq_carlsonRG {k : ℝ} (hk : k ^ 2 ≤ 1) :
+    (legendreEc k : ℂ) = 2 * carlsonRG 0 (1 - k ^ 2 : ℝ) 1 := by
+  rcases hk.lt_or_eq with hlt | heq
+  · have hRG := Complex.two_mul_carlsonRG_eq (x := 0) (y := (1 - k ^ 2 : ℝ)) (z := 1)
+      (Or.inr rfl) (Complex.ofReal_mem_slitPlane.mpr (sub_pos.mpr hlt))
+      Complex.one_mem_slitPlane
+    rw [hRG, ofReal_legendreEc_eq_carlsonRF_sub_carlsonRD hlt,
+      Complex.zero_cpow (by norm_num)]
+    push_cast
+    ring
+  · rcases sq_eq_one_iff.mp heq with rfl | rfl <;>
+      norm_num [Complex.carlsonRG_zero_zero (Or.inl Complex.one_mem_slitPlane)]
 
 /-- **The complete integral of the third kind in Carlson's form** (DLMF 19.25.2): for `k² < 1`
 and `α² < 1`, `Π(k, α²) = R_F(0, 1 - k², 1) + (α² / 3) R_J(0, 1 - k², 1, 1 - α²)`. -/

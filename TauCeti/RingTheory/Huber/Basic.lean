@@ -7,12 +7,12 @@ module
 
 public import Mathlib.RingTheory.AdicCompletion.Topology
 public import Mathlib.RingTheory.Finiteness.Ideal
-public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import TauCeti.RingTheory.Huber.PowerBounded
 import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 import TauCeti.Algebra.Group.Pow
-import TauCeti.RingTheory.Subring.SpanSingleton
+import TauCeti.RingTheory.Subsemiring.SpanSingleton
 public import TauCeti.Topology.Algebra.Group.FirstCountable
 public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 
@@ -92,6 +92,8 @@ Huber ring is nonarchimedean, which is exactly the hypothesis under which
   norm, such as nonarchimedean normed fields, are recognised.
 * `TauCeti.Huber.IsHuberRing.of_discreteTopology`: a discrete ring is Huber, the first of the
   roadmap's Layer-0 examples.
+* `TauCeti.Huber.PairOfDefinition.exists_pow_idealOfDefinition_eq_bot`: every ideal
+  of definition of a discrete ring is nilpotent.
 * `TauCeti.Huber.exists_sum_eq_of_mem_span_mul`: pure algebra, stated here because it is what
   finite generation of an ideal of definition is used through — an element of `(G) * K`, for a
   finite family `G`, is a `K`-linear combination of `G` itself.
@@ -752,6 +754,17 @@ theorem PairOfDefinition.discrete_ringOfDefinition :
 theorem PairOfDefinition.discrete_idealOfDefinition :
     (PairOfDefinition.discrete A).idealOfDefinition = ⊥ := (rfl)
 
+variable {A} in
+/-- **The ideal of definition of a discrete ring is nilpotent.** The singleton `{0}` is a
+neighbourhood of zero, so it contains the image of some power `Iⁿ` of the ideal of definition, and
+the inclusion `A₀ → A` is injective. -/
+theorem PairOfDefinition.exists_pow_idealOfDefinition_eq_bot (P : PairOfDefinition A) :
+    ∃ n : ℕ, P.idealOfDefinition ^ n = ⊥ := by
+  obtain ⟨n, -, hn⟩ := P.hasBasis_nhds_zero.mem_iff.mp
+    ((isOpen_discrete ({0} : Set A)).mem_nhds rfl)
+  refine ⟨n, (Submodule.eq_bot_iff _).mpr fun x hx ↦ Subtype.ext ?_⟩
+  simpa using hn ((P.mem_idealImage n).mpr ⟨x, hx, rfl⟩)
+
 /-- A discrete ring is Huber, with `(A, 0)` as a pair of definition. This is the first of the
 roadmap's Layer-0 examples, and the witness that `IsHuberRing` is not vacuous. -/
 instance (priority := 100) IsHuberRing.of_discreteTopology [IsTopologicalRing A] :
@@ -877,13 +890,13 @@ theorem _root_.Subring.isAdic_span_singleton_of_isOpen_of_isBounded :
     IsAdic (Ideal.span {(⟨ϖ, hϖA₀⟩ : A₀)}) := by
   rw [isAdic_iff]
   refine ⟨fun n ↦ ?_, fun s hs ↦ ?_⟩
-  · rw [A₀.coe_span_singleton_pow hϖA₀]
+  · rw [SubsemiringClass.coe_span_singleton_pow A₀ hϖA₀]
     exact (hA₀.smul (hϖ.isUnit.pow n).unit).preimage continuous_subtype_val
   · rw [IsInducing.subtypeVal.nhds_eq_comap, ZeroMemClass.coe_zero, Filter.mem_comap] at hs
     obtain ⟨t, ht, hts⟩ := hs
     obtain ⟨n, hn⟩ := hb.exists_pow_mul_subset hϖ.isTopologicallyNilpotent ht
     refine ⟨n, ?_⟩
-    rw [A₀.coe_span_singleton_pow hϖA₀]
+    rw [SubsemiringClass.coe_span_singleton_pow A₀ hϖA₀]
     refine fun x hx ↦ hts (hn ?_)
     rw [Set.singleton_mul]
     exact hx
@@ -913,7 +926,7 @@ theorem mem_ofIsPseudoUniformizer_idealOfDefinition
     x ∈ (ofIsPseudoUniformizer A₀ hA₀ hb hϖ hϖA₀).idealOfDefinition ↔
       ∃ y ∈ A₀, ϖ * y = x := by
   -- the ideal of definition is `Ideal.span {ϖ}` by construction, and `x` is an element of `A₀`
-  exact A₀.mem_span_singleton_iff hϖA₀
+  exact SubsemiringClass.mem_span_singleton_iff A₀ hϖA₀
 
 end PairOfDefinition
 
@@ -947,7 +960,7 @@ theorem PairOfDefinition.isAdicComplete_span_singleton {A : Type*} [CommRing A]
     ext x
     rw [← Ideal.comap_symm, Ideal.mem_comap,
       PairOfDefinition.mem_ofIsPseudoUniformizer_idealOfDefinition,
-      P.ringOfDefinition.mem_span_singleton_iff ϖ.property]
+      SubsemiringClass.mem_span_singleton_iff _ ϖ.property]
     simp only [e, RingEquiv.subringCongr_symm, RingEquiv.coe_subringCongr_apply]
   rw [← hI]
   exact (IsAdicComplete.congr_ringEquiv Q.idealOfDefinition e).mpr

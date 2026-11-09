@@ -192,13 +192,24 @@ def smulLinearMap (f : C^n⟮I, M; 𝕜⟯) : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] C
   map_add' s t := by ext x; simp [smul_add]
   map_smul' c s := by ext x; simp [smul_smul, mul_comm]
 
+-- The pointwise action reuses the smoothness proof in `smulLinearMap`.
+/-- Scalar-valued `C^n` functions act on `C^n` sections by pointwise multiplication. -/
+instance instSMulContMDiffMap : SMul C^n⟮I, M; 𝕜⟯ Cₛ^n⟮I; F, V⟯ :=
+  ⟨fun f s ↦ smulLinearMap f s⟩
+
+/-- Evaluation of smooth-function multiplication is fibrewise scalar multiplication. -/
 @[simp]
-theorem smulLinearMap_apply (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯) (x : M) :
-    smulLinearMap f s x = f x • s x := (rfl)
+theorem smul_apply (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯) (x : M) :
+    (f • s) x = f x • s x := (rfl)
+
+/-- The scalar-localization linear map agrees with smooth-function multiplication. -/
+@[simp]
+theorem smulLinearMap_eq_smul (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯) :
+    smulLinearMap f s = f • s := (rfl)
 
 /-- Scalar localization is supported in both the scalar support and the section support. -/
-theorem tsupport_smulLinearMap_subset (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯) :
-    (smulLinearMap f s).tsupport ⊆ _root_.tsupport f ∩ s.tsupport := by
+theorem tsupport_smul_function_subset (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯) :
+    (f • s).tsupport ⊆ _root_.tsupport f ∩ s.tsupport := by
   apply (tsupport_subset_iff ((_root_.isClosed_tsupport f).inter s.isClosed_tsupport)).2
   intro x hx
   by_cases hf : x ∈ _root_.tsupport f
@@ -207,29 +218,29 @@ theorem tsupport_smulLinearMap_subset (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I;
   · simp [_root_.image_eq_zero_of_notMem_tsupport hf]
 
 /-- Smooth multiplication preserves each fixed-support stage. -/
-theorem smulLinearMap_mem_supportedIn (f : C^n⟮I, M; 𝕜⟯) {s : Cₛ^n⟮I; F, V⟯}
+theorem smul_function_mem_supportedIn (f : C^n⟮I, M; 𝕜⟯) {s : Cₛ^n⟮I; F, V⟯}
     {K : Set M} (hs : s ∈ supportedIn I F n V K) :
-    smulLinearMap f s ∈ supportedIn I F n V K :=
-  (tsupport_smulLinearMap_subset f s).trans (inter_subset_right.trans hs)
+    f • s ∈ supportedIn I F n V K :=
+  (tsupport_smul_function_subset f s).trans (inter_subset_right.trans hs)
 
 /-- Smooth multiplication preserves compact support of the section. -/
-theorem smulLinearMap_mem_compactlySupported (f : C^n⟮I, M; 𝕜⟯) {s : Cₛ^n⟮I; F, V⟯}
+theorem smul_function_mem_compactlySupported (f : C^n⟮I, M; 𝕜⟯) {s : Cₛ^n⟮I; F, V⟯}
     (hs : s ∈ compactlySupported I F n V) :
-    smulLinearMap f s ∈ compactlySupported I F n V :=
-  hs.of_isClosed_subset (isClosed_tsupport _) ((tsupport_smulLinearMap_subset f s).trans
+    f • s ∈ compactlySupported I F n V :=
+  hs.of_isClosed_subset (isClosed_tsupport _) ((tsupport_smul_function_subset f s).trans
     inter_subset_right)
 
 /-- A compactly supported smooth scalar function localizes any smooth section to compact
 support, even when the original section is not compactly supported. -/
-theorem smulLinearMap_mem_compactlySupported_of_hasCompactSupport (f : C^n⟮I, M; 𝕜⟯)
+theorem smul_function_mem_compactlySupported_of_hasCompactSupport (f : C^n⟮I, M; 𝕜⟯)
     (hf : HasCompactSupport f) (s : Cₛ^n⟮I; F, V⟯) :
-    smulLinearMap f s ∈ compactlySupported I F n V :=
-  hf.of_isClosed_subset (isClosed_tsupport _) ((tsupport_smulLinearMap_subset f s).trans
+    f • s ∈ compactlySupported I F n V :=
+  hf.of_isClosed_subset (isClosed_tsupport _) ((tsupport_smul_function_subset f s).trans
     inter_subset_left)
 
 /-- A cutoff equal to one on a section's closed support leaves that section unchanged. -/
-theorem smulLinearMap_eq_self (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯)
-    (hf : EqOn f 1 s.tsupport) : smulLinearMap f s = s := by
+theorem smul_function_eq_self (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯)
+    (hf : EqOn f 1 s.tsupport) : f • s = s := by
   ext x
   by_cases hx : x ∈ s.tsupport
   · simp [hf hx]

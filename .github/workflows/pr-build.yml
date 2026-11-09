@@ -1,5 +1,5 @@
 name: pr-build
-run-name: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format('bors branch={0} batch={1} head={2} base={3}', github.event.client_payload.base_ref || 'unknown', github.event.client_payload.batch_id, github.event.client_payload.head_sha, github.event.client_payload.base_sha) || (github.event_name == 'pull_request_target' || github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-pr-approved') && format('pr-build pr={0} head={1}', github.event.pull_request.number || github.event.client_payload.pr, github.event.pull_request.head.sha || github.event.client_payload.head_sha) || format('pr-build {0}', github.event.pull_request.number || inputs.pr || github.event.client_payload.pr || github.event.merge_group.head_sha || github.run_id) }}
+run-name: ${{ (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'self-tested' && !(contains(github.event.pull_request.labels.*.name, 'self-tested') && contains(fromJSON('["full-lint", "lint-repair"]'), github.event.label.name)) && format('Ignored label event {0}', github.run_id) || github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && format('bors branch={0} batch={1} head={2} base={3}', github.event.client_payload.base_ref || 'unknown', github.event.client_payload.batch_id, github.event.client_payload.head_sha, github.event.client_payload.base_sha) || (github.event_name == 'pull_request_target' || github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-pr-approved') && format('pr-build pr={0} head={1}', github.event.pull_request.number || github.event.client_payload.pr, github.event.pull_request.head.sha || github.event.client_payload.head_sha) || format('pr-build {0}', github.event.pull_request.number || inputs.pr || github.event.client_payload.pr || github.event.merge_group.head_sha || github.run_id) }}
 
 # Builds a deterministic integration of immutable PR head H with main B captured once
 # by the existing dispatch. Scope, review and approval remain bound to raw H and its
@@ -22,7 +22,7 @@ run-name: ${{ github.event_name == 'repository_dispatch' && github.event.action 
 
 on:
   pull_request_target:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   # The merge queue tests a batch (one or more PRs combined onto current main) before it lands. We
   # build the COMBINED merge-group commit exactly as GitHub synthesized it and post the `build`
   # status on it so the queue's required check is satisfied. A combined diff that reaches outside
@@ -50,7 +50,7 @@ concurrency:
   # Bors batch IDs identify one base branch. Incomplete dispatch identities use
   # the run ID so they cannot displace another candidate.
   group: >-
-    pr-build-${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && (
+    pr-build-${{ (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'self-tested' && !(contains(github.event.pull_request.labels.*.name, 'self-tested') && contains(fromJSON('["full-lint", "lint-repair"]'), github.event.label.name)) && format('irrelevant-label-{0}', github.run_id) || github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && (
       github.event.client_payload.batch_id && github.event.client_payload.head_sha &&
       github.event.client_payload.base_sha && github.event.client_payload.base_ref &&
       format('bors-staging-{0}-{1}-{2}-{3}-{4}', github.repository_id, github.event.client_payload.batch_id,
@@ -73,23 +73,38 @@ jobs:
   # The existing picker applies class-specific preferences and shared build caps.
   # Merge groups and manual PR requests without an immutable head use cloud pools.
   pick-runner:
+    if: >-
+      (github.event.action != 'labeled' && github.event.action != 'unlabeled') ||
+      github.event.label.name == 'self-tested' || (contains(github.event.pull_request.labels.*.name, 'self-tested') && contains(fromJSON('["full-lint", "lint-repair"]'), github.event.label.name))
     uses: ./.github/workflows/pick-runner.yml
     with:
+      pr-number: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.number || github.event_name == 'workflow_dispatch' && fromJSON(inputs.pr) || 0 }}
       fleet-staging: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' }}
       fleet-pr: ${{ github.event_name == 'pull_request_target' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-pr-approved') }}
       pr-head: ${{ github.event.pull_request.head.sha || github.event.client_payload.head_sha || '' }}
     permissions:
+      issues: write
+      statuses: write
+      pull-requests: read
       actions: read
       contents: read  # immutable fleet selector checkout
     secrets:
+      SELF_TESTED_APP_ID: ${{ secrets.APP_ID }}
+      SELF_TESTED_APP_KEY: ${{ secrets.APP_PRIVATE_KEY }}
       FLEET_READ_TOKEN: ${{ secrets.FLEET_READ_TOKEN }}
       TAUCETI_GITHUB_STATE_TOKEN: ${{ secrets.TAUCETI_GITHUB_STATE_TOKEN }}
 
   # Name kept distinct from `build` on purpose — see the header note. The required merge check is the
   # `build` commit STATUS posted in the final step, not this job's auto-created check-run.
   sandboxed-build:
+    permissions:
+      contents: read
+      pull-requests: read
+      statuses: write
+      actions: read
+      id-token: write  # telemetry-only grant stays outside candidate namespaces
     needs: pick-runner
-    if: ${{ !cancelled() }}
+    if: ${{ !cancelled() && needs.pick-runner.result != 'skipped' && needs.pick-runner.outputs.skip-pr-build != 'true' }}
     # Exact fleet labels bind placement to one machine and guest. A failed picker
     # or failed-jobs-only rerun queues on GitHub: stale picker output must never
     # send another attempt to an ephemeral guest that has already retired.
@@ -104,6 +119,14 @@ jobs:
     # builds keep the picker's choice. The labels must be served in this organisation
     # before the variable is set: an unserved label queues the required build until
     # it expires. Clear the variable to return staging to the picker.
+    # Nineteen native concurrency groups cap all hosted bulk builds across
+    # workflows, leaving one of the organization's 20 slots for small jobs and
+    # roadmap merge builds. Waiting here consumes no runner. Other pools retain
+    # their existing concurrency; failed pickers share conservative slot zero.
+    concurrency:
+      group: ${{ contains(fromJSON('["ubuntu-latest","ubuntu-24.04","ubuntu-22.04"]'), (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && vars.STAGING_RUNS_ON != '') && fromJSON(vars.STAGING_RUNS_ON) || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"'))) && format('tauceti-hosted-bulk-{0}', needs.pick-runner.outputs.hosted-slot || '0') || format('unlimited-sandboxed-build-{0}', github.run_id) }}
+      queue: max
+      cancel-in-progress: false
     runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' && vars.STAGING_RUNS_ON != '') && fromJSON(vars.STAGING_RUNS_ON) || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"')) }}
     outputs:
       status-sha: ${{ steps.pr.outputs.status_sha }}
@@ -123,6 +146,7 @@ jobs:
       LAKE_ARTIFACT_CACHE: ""
       LAKE_RESTORE_ARTIFACTS: ""
       LAKE_CACHE_DIR: ""
+      CI_SOURCE_OBJECTS: ""
       # Enabled only for a merge-group commit when the upload service is configured. The
       # sandbox then stages the fully audited root-package outputs for the isolated publisher.
       STAGE_LAKE_CACHE: ""
@@ -149,16 +173,22 @@ jobs:
           path: gate
           persist-credentials: false
           fetch-depth: 1
+          # Trusted setup consumes project configuration, scripts, and local actions.
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/
+            /scripts/
+            /tauceti.toml
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@4d2579da7cdb5679ab523d281f61c73ffb502f75
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -263,16 +293,33 @@ jobs:
       # dependents. The cache step below limits how many ancestors it reads. The checkout is the
       # immutable raw event head. Scope/config/bump authorization runs on it before
       # preparing the prospective integration below.
+      - name: Fetch complete immutable source histories
+        id: source_fetch
+        if: ${{ env.INFRA != '1' }}
+        # Two repository transfers, each with three ten-minute attempts, plus
+        # checkout-equivalent retry backoff and local connectivity validation.
+        timeout-minutes: 80
+        env:
+          CI_GIT_TOKEN: ${{ steps.ci-api.outputs.read-token }}
+          SOURCE_REPOSITORY: ${{ github.repository }}
+          SOURCE_HEAD_REPOSITORY: ${{ steps.pr.outputs.repo }}
+          SOURCE_HEAD: ${{ steps.pr.outputs.sha }}
+          SOURCE_BASE: ${{ steps.pr.outputs.base_sha }}
+          SOURCE_MERGEBASE: ${{ steps.pr.outputs.mergebase }}
+        run: |
+          set -euo pipefail
+          exec python3 gate/scripts/ci_checkout.py fetch --workspace "$GITHUB_WORKSPACE" \
+            --repository "$SOURCE_REPOSITORY" --head-repository "$SOURCE_HEAD_REPOSITORY" \
+            --head "$SOURCE_HEAD" --base "$SOURCE_BASE" --mergebase "$SOURCE_MERGEBASE" \
+            --github-env "$GITHUB_ENV"
+
       - name: Checkout the exact candidate head (untrusted contents, no credentials)
         if: ${{ env.INFRA != '1' }}
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ steps.pr.outputs.repo }}
-          ref: ${{ steps.pr.outputs.sha }}
-          path: pr
-          persist-credentials: false
-          fetch-depth: 0
-          allow-unsafe-pr-checkout: true
+        env:
+          SOURCE_COMMIT: ${{ steps.pr.outputs.sha }}
+        run: |
+          python3 gate/scripts/ci_checkout.py materialize --workspace "$GITHUB_WORKSPACE" \
+            --role head --commit "$SOURCE_COMMIT"
 
       - name: Scope guard — allow TauCeti sources and validated pins
         env:
@@ -482,23 +529,19 @@ jobs:
       # immutable checkout. Main advancing later does not restart or invalidate this run.
       - name: Checkout current base policy input (trusted)
         if: ${{ env.INFRA != '1' }}
-        uses: actions/checkout@v4
-        with:
-          ref: "${{ steps.pr.outputs.base_sha }}"
-          path: base
-          persist-credentials: false
-          # Ordinary integration needs B's ancestry even for an old fork whose
-          # object database does not contain any recent main commits.
-          fetch-depth: ${{ env.IS_BATCH == 'true' && 1 || 0 }}
+        env:
+          SOURCE_COMMIT: ${{ steps.pr.outputs.base_sha }}
+        run: |
+          python3 gate/scripts/ci_checkout.py materialize --workspace "$GITHUB_WORKSPACE" \
+            --role base --commit "$SOURCE_COMMIT"
 
       - name: Checkout the PR merge base (trusted historical configuration)
         if: ${{ env.INFRA != '1' }}
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ steps.pr.outputs.mergebase }}
-          path: mergebase
-          persist-credentials: false
-          fetch-depth: 1
+        env:
+          SOURCE_COMMIT: ${{ steps.pr.outputs.mergebase }}
+        run: |
+          python3 gate/scripts/ci_checkout.py materialize --workspace "$GITHUB_WORKSPACE" \
+            --role mergebase --commit "$SOURCE_COMMIT"
 
       # `.lake` sits inside a checkout whose contents the candidate controls, and a symlink
       # committed there gets followed by everything that later writes to that path, each of
@@ -625,6 +668,13 @@ jobs:
             echo "BASE_SHIM_REGISTRY=$base_shims" >> "$GITHUB_ENV"
             echo "BASE_SHIM_ROOT=$(realpath base)" >> "$GITHUB_ENV"
             echo "SHIM_CHECK=1" >> "$GITHUB_ENV"
+            # Integration sources outside the ordinary PR's complete diff are the base's, which
+            # passed the full scan, so only changed sources and dropped registry entries are
+            # rescanned. Batches and Lake-pin bumps keep the full scan.
+            if [ "${{ env.IS_BATCH }}" != "true" ] && [ "${BUMP:-0}" != "1" ] \
+               && [ -f "$RUNNER_TEMP/scope-files" ]; then
+              echo "SHIM_SCOPE_FILES=$RUNNER_TEMP/scope-files" >> "$GITHUB_ENV"
+            fi
           elif [ -f pr/TauCeti/mathlib-shims.json ]; then
             # A PR that introduces the registry has no inherited obligations, but its entries are
             # all new and must still be checked. An older PR containing neither copy predates the
@@ -663,6 +713,7 @@ jobs:
           [ -z "${BASE_SHIM_REGISTRY:-}" ] || args+=(
             --base-manifest "$BASE_SHIM_REGISTRY" --base-root "$BASE_SHIM_ROOT"
           )
+          [ -z "${SHIM_SCOPE_FILES:-}" ] || args+=(--changed-paths "$SHIM_SCOPE_FILES")
           python3 gate/scripts/check-expired-mathlib-shims.py \
             --repo-root pr --manifest pr/TauCeti/mathlib-shims.json "${args[@]}"
           rc=$?
@@ -680,8 +731,11 @@ jobs:
           ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
           ELAN_VER: v4.2.3
         run: |
-          curl -sSL -H "Accept: application/octet-stream" \
-            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          if ! curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz?download=1" -o elan.tar.gz; then
+            curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+              "https://api.github.com/repos/leanprover/elan/releases/assets/441516216" -o elan.tar.gz
+          fi
           echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
           tar -xzf elan.tar.gz elan-init
           ./elan-init -y --default-toolchain none
@@ -870,14 +924,6 @@ jobs:
             exit 1
           fi
 
-      - name: Hydrate optional trusted local dependency prefill
-        if: ${{ env.INFRA != '1' && env.IS_BATCH != 'true' && startsWith(runner.name, 'fleet-') }}
-        # Missing/mismatched payloads leave normal setup intact. Configuration has
-        # already passed the exact-head and integrated attestation above.
-        timeout-minutes: 2
-        continue-on-error: true
-        run: python3 gate/scripts/dependency_prefill.py pr
-
       # Restore only Mathlib's compressed, content-addressed `.ltar` download store from a
       # trusted main publisher. This workflow never writes that GitHub Actions cache. The keys
       # hash the exact candidate pins, so an exact historical or new-pin snapshot is preferred. A
@@ -988,20 +1034,33 @@ jobs:
         run: |
           set -euo pipefail
           if [ -n "${LINT_ONLY_MODULES:-}" ] && [ "${{ env.IS_BATCH }}" != "true" ] \
-             && [ "${BUMP:-0}" != "1" ] && [ ! -s "$LINT_SCOPE_DIR/unmatched.txt" ]; then
+             && [ "${BUMP:-0}" != "1" ] && [ -f "$LINT_ONLY_MODULES" ] \
+             && [ -f "$LINT_SCOPE_DIR/unmatched.txt" ] && [ ! -s "$LINT_SCOPE_DIR/unmatched.txt" ]; then
+            echo "LINT_CHANGED_ONLY=1" >> "$GITHUB_ENV"
             echo "AXIOMS_ONLY_MODULES=$LINT_ONLY_MODULES" >> "$GITHUB_ENV"
             echo "DOT_ONLY_MODULES=$LINT_ONLY_MODULES" >> "$GITHUB_ENV"
             echo "audit scope: the $(grep -c . "$LINT_ONLY_MODULES" || true) changed module(s)"
           else
+            echo "LINT_CHANGED_ONLY=0" >> "$GITHUB_ENV"
             echo "AXIOMS_ONLY_MODULES=" >> "$GITHUB_ENV"
             echo "DOT_ONLY_MODULES=" >> "$GITHUB_ENV"
             echo "audit scope: the whole library"
           fi
 
+      - name: Restore dot-notation parsing context
+        if: ${{ env.INFRA != '1' }}
+        continue-on-error: true
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .ci-dot-notation-context
+          key: dot-notation-context-v1-${{ hashFiles('gate/scripts/lean_source.py') }}-${{ steps.pr.outputs.base_sha }}
+          restore-keys: dot-notation-context-v1-${{ hashFiles('gate/scripts/lean_source.py') }}-
+
       - name: Dot-notation namespace lint (Mathlib type namespaces stay at root)
         if: ${{ env.INFRA != '1' }}
         run: |
           python3 gate/scripts/lint-dot-notation.py \
+            --context-cache ".ci-dot-notation-context/context.json" \
             --baseline gate/scripts/lint-dot-notation-baseline.txt \
             --mathlib-root pr/.lake/packages/mathlib/Mathlib \
             --source-root pr/TauCeti \
@@ -1070,7 +1129,34 @@ jobs:
           # at the merge base and the head, and leaves it unset whenever it could not read them,
           # so unknown falls through to the walk rather than to the single lookup.
           LAKE_CACHE_MAX_REVS: ${{ env.TOOLCHAIN_CHANGED == '1' && '1' || '1000' }}
+          # Ask for the base revision's outputs exactly before walking. A large staging batch
+          # can sit more than LAKE_CACHE_MAX_REVS first-parent commits above its base, so the
+          # walk alone misses main's published outputs; only a miss here falls back to the walk.
+          LAKE_CACHE_BASE_REV: ${{ steps.pr.outputs.base_sha }}
         run: bash gate/scripts/lake-cache-get.sh pr
+
+      # A Bors/queue staging candidate is usually a tip the queue's repair worker built green on
+      # its host (under the same bwrap sandbox) and published to the repair cache
+      # ([services.repair_cache] in tauceti.toml), or that tip replayed onto a newer main, which
+      # changes every commit SHA but hardly any module's inputs. Lake reuses outputs by content
+      # trace, never by commit, so the trusted script tries several candidate revisions in order:
+      # the exact staging head, then the revisions the queue lists in the dispatch payload's
+      # `repair_outputs_revs` (the batch's earlier published tips; absent means none), then the
+      # base, and fetches the outputs of each that has them, on top of the base cache, so the
+      # offline build below reuses them. Lake still checks every trace and recompiles what
+      # differs, and the audits and lints run as for any build, so the verdict is this job's. No
+      # outputs for any candidate is the normal case for an unrepaired head: the script logs it
+      # and leaves the base cache exactly as the step above restored it, as it does for a fetch
+      # that never completes. The payload list reaches the script only through the environment,
+      # and the script skips any entry that is not a full SHA. Anonymous reads; no token, no PR
+      # code.
+      - name: Fetch the repair worker's outputs for the staging candidates (network, no token; no PR code)
+        id: repair_cache
+        if: ${{ env.INFRA != '1' && env.TAUCETI_CACHE_ENABLED == '1' && github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' }}
+        env:
+          STAGING_HEAD: ${{ steps.pr.outputs.sha }}
+          REPAIR_OUTPUTS_REVS: ${{ format('{0} {1} {2}', steps.pr.outputs.sha, join(github.event.client_payload.repair_outputs_revs || fromJSON('[]'), ' '), steps.pr.outputs.base_sha) }}
+        run: bash gate/scripts/repair-cache-get.sh pr "$STAGING_HEAD"
 
       - name: Save verified Lake archive records before candidate code runs
         if: ${{ env.INFRA != '1' && env.STAGE_LAKE_CACHE == '1' }}
@@ -1133,10 +1219,13 @@ jobs:
           # T borrows immutable Git objects from H and B. Expose only their object
           # databases read-only so Lake's Git queries see the same commit inside
           # the sandbox. Neither checkout's config/hooks nor its scripts are mounted.
-          object_mounts=()
+          # Frozen candidates also borrow the complete source store. Bind only
+          # objects, at the canonical paths recorded by the trusted Git helpers.
+          object_mounts=(--ro-bind "$CI_SOURCE_OBJECTS" "$CI_SOURCE_OBJECTS")
           if [ "${{ env.IS_BATCH }}" != "true" ]; then
-            object_mounts=(--ro-bind "$PWD/pr-raw-head/.git/objects" "$PWD/pr-raw-head/.git/objects"
-                           --ro-bind "$PWD/base/.git/objects" "$PWD/base/.git/objects")
+            for objects in "$(realpath "$PWD/pr-raw-head/.git/objects")" "$(realpath "$PWD/base/.git/objects")"; do
+              object_mounts+=(--ro-bind "$objects" "$objects")
+            done
           fi
           # `env -i` and `--remount-ro /` are both load-bearing. `--clearenv` clears the child's
           # environment but bwrap keeps its own and is PID 1 here, so the launcher's environment
@@ -1146,7 +1235,11 @@ jobs:
           # would let candidate code drop a `lake` or `bash` earlier on PATH than the real one and
           # have the later audits run it. The explicit PATH below is the other half of that: it
           # never contains a directory the sandbox can write.
-          python3 gate/scripts/ci_host_resources.py --out "$RUNNER_TEMP/ci-host-resources.json" -- \
+          progress_observer=()
+          if [ -f gate/scripts/ci_live_progress.py ]; then
+            progress_observer=(python3 gate/scripts/ci_live_progress.py --telemetry "$PWD/pr/.lake/telemetry" --)
+          fi
+          "${progress_observer[@]}" python3 gate/scripts/ci_host_resources.py --out "$RUNNER_TEMP/ci-host-resources.json" -- \
             env -i /usr/bin/bwrap --tmpfs / \
             --ro-bind /usr /usr --ro-bind /etc /etc \
             --symlink usr/bin /bin --symlink usr/sbin /sbin \
@@ -1168,6 +1261,7 @@ jobs:
             --setenv LAKE_CACHE_DIR "${LAKE_CACHE_DIR:-}" \
             --setenv WATCHDOG_TOOLCHAIN "${WATCHDOG_TOOLCHAIN:-}" \
             --setenv LINT_DRIVER_EXE "$LINT_DRIVER_DIR/lint-env-driver" \
+            --setenv LINT_CHANGED_ONLY "${LINT_CHANGED_ONLY:-0}" \
             --setenv LINT_ONLY_MODULES "${LINT_ONLY_MODULES:-}" \
             --setenv AXIOMS_ONLY_MODULES "${AXIOMS_ONLY_MODULES:-}" \
             --setenv STAGE_LAKE_CACHE "${STAGE_LAKE_CACHE:-}" \
@@ -1227,8 +1321,37 @@ jobs:
             args+=(--base-manifest "$BASE_SHIM_REGISTRY" --base-root "$BASE_SHIM_ROOT")
             [ "${BUMP:-0}" = "1" ] || args+=(--only-new)
           fi
-          python3 gate/scripts/check-expired-mathlib-shims.py \
-            --repo-root pr --manifest pr/TauCeti/mathlib-shims.json "${args[@]}"
+          [ -z "${SHIM_SCOPE_FILES:-}" ] || args+=(--changed-paths "$SHIM_SCOPE_FILES")
+          # The build can change .lake/package artifacts. Any later Lake/Lean
+          # execution stays in a fresh PID/network namespace with no host grants.
+          probe_mounts=(--ro-bind "$CI_SOURCE_OBJECTS" "$CI_SOURCE_OBJECTS")
+          if [ "${{ env.IS_BATCH }}" != "true" ]; then
+            for objects in "$(realpath "$PWD/pr-raw-head/.git/objects")" "$(realpath "$PWD/base/.git/objects")"; do
+              probe_mounts+=(--ro-bind "$objects" "$objects")
+            done
+          fi
+          if [ -n "${BASE_SHIM_REGISTRY:-}" ]; then
+            probe_mounts+=(--ro-bind "$BASE_SHIM_REGISTRY" "$BASE_SHIM_REGISTRY"
+                           --ro-bind "$BASE_SHIM_ROOT" "$BASE_SHIM_ROOT")
+          fi
+          if [ -n "${SHIM_SCOPE_FILES:-}" ]; then
+            probe_mounts+=(--ro-bind "$SHIM_SCOPE_FILES" "$SHIM_SCOPE_FILES")
+          fi
+          env -i /usr/bin/bwrap --tmpfs / \
+            --ro-bind /usr /usr --ro-bind /etc /etc \
+            --symlink usr/bin /bin --symlink usr/sbin /sbin \
+            --symlink usr/lib /lib --symlink usr/lib64 /lib64 \
+            --dev /dev --proc /proc --tmpfs /tmp \
+            --ro-bind "$HOME/.elan" "$HOME/.elan" \
+            --ro-bind "$PWD/gate" "$PWD/gate" \
+            --ro-bind "$PWD/pr" "$PWD/pr" --bind "$PWD/pr/.lake" "$PWD/pr/.lake" \
+            "${probe_mounts[@]}" --remount-ro / \
+            --setenv PATH "$HOME/.elan/bin:/usr/bin:/bin" --setenv HOME "$HOME" \
+            --chdir "$PWD" \
+            --unshare-user --unshare-ipc --unshare-pid --unshare-net --unshare-uts \
+            --unshare-cgroup --disable-userns --die-with-parent --new-session \
+            -- python3 "$PWD/gate/scripts/check-expired-mathlib-shims.py" \
+            --repo-root "$PWD/pr" --manifest "$PWD/pr/TauCeti/mathlib-shims.json" "${args[@]}"
           rc=$?
           echo "SHIM_EXPIRY_RC=$rc" >> "$GITHUB_ENV"
           exit "$rc"
@@ -1238,7 +1361,7 @@ jobs:
       - name: Refresh CI reporting credentials after the build
         id: report-ci-api
         if: always()
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@4d2579da7cdb5679ab523d281f61c73ffb502f75
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1317,7 +1440,7 @@ jobs:
           # status from its result here rather than from a separate workflow. BUMP_BAD is set
           # only when a manifest/toolchain change failed that validator; anything else (no pin
           # change, or a validated forward bump) is a pass. Posting it from this job also means
-          # both required statuses land together, before the auto-merge workflow_run fires.
+          # both required statuses land together for the queue service's admission policy.
           if [ "${{ env.BUMP_BAD }}" = "1" ]; then
             bg_state=failure; bg_desc="Lake pin change is not a validated forward bump — needs human review"
           elif [ "${{ env.BUMP }}" = "1" ] && [ "${{ env.BUMP_VALIDATED }}" != "1" ]; then
@@ -1355,6 +1478,8 @@ jobs:
           elif [ "${{ env.BUMP_BAD }}" = "1" ] || [ "${{ env.INFRA }}" = "1" ] \
              || [ "${{ env.TOO_LARGE }}" = "1" ] || [ "${{ env.DIFF_UNKNOWN }}" = "1" ]; then
             state=failure; desc="build not run — see the scope check"
+          elif [ "${{ steps.source_fetch.outcome }}" = "failure" ]; then
+            state=failure; desc="build not run — complete source fetch failed; re-run pr-build"
           elif [ "$identity_ok" != 1 ]; then
             state=failure; desc="build not run — tested H/B/T identity missing or invalid"
           elif [ "${{ steps.import_headers.outcome }}" = "failure" ]; then
@@ -1381,6 +1506,13 @@ jobs:
           else
             state=failure; desc="sandboxed build, audit, or simp-NF lint failed"
           fi
+          # Say whether the build started from the repair worker's outputs (staging only; the
+          # fetch step above sets these). Every description stays well under GitHub's 140.
+          case "${REPAIR_OUTPUTS_STATE:-}" in
+            used) desc="$desc; reused ${REPAIR_OUTPUTS_REUSED:-0} repair outputs" ;;
+            absent) desc="$desc; no repair outputs" ;;
+            failed) desc="$desc; repair outputs incomplete, not used" ;;
+          esac
           {
             echo "build-state=$state"
             echo "build-description=$desc"
@@ -1593,14 +1725,14 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@4d2579da7cdb5679ab523d281f61c73ffb502f75
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}

@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Multilinear.FiniteDimensional
 public import Mathlib.Topology.Algebra.Module.Alternating.Basic
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
 public import Mathlib.Topology.Algebra.Ring.Ideal
+public import Mathlib.Topology.Algebra.ContinuousAffineMap
 
 /-!
 # Finite-dimensional topological vector spaces
@@ -19,6 +20,8 @@ The linear-map conversion API preserves composition and recovers a continuous li
 forgetting continuity. `LinearMap.toContinuousLinearMap_coe` only needs finite dimension on the
 source. `LinearMap.toContinuousLinearMap_comp` needs finite dimension on the source and
 intermediate space; the target may be any topological vector space.
+`Module.End.toContinuousLinearMap_apply` identifies the values of an endomorphism and its
+continuous version.
 
 A multilinear map `f : MultilinearMap 𝕜 M N` on finitely many finite-dimensional Hausdorff
 topological vector spaces over a complete nontrivially normed field is continuous when addition
@@ -61,6 +64,10 @@ vector space is surjective, since its range is finite-dimensional and therefore 
 `LinearMap.surjective_of_denseRange`. For an algebra map `f : A → B` with dense range into a
 topological `K`-algebra, this makes `A ⧸ (J ∩ A) → B ⧸ J` bijective whenever `B ⧸ J` is Hausdorff
 and `A ⧸ (J ∩ A)` is finite over `K`: `Ideal.quotientMapₐ_bijective_of_denseRange`.
+
+An injective continuous affine map with finite-dimensional domain is a closed embedding, hence
+proper: `ContinuousAffineMap.isClosedEmbedding_of_injective`, the affine companion of Mathlib's
+`LinearMap.isClosedEmbedding_of_injective`.
 -/
 
 public section
@@ -91,6 +98,19 @@ theorem toContinuousLinearMap_comp (g : F →ₗ[𝕜] G) (f : E →ₗ[𝕜] F)
   ContinuousLinearMap.ext fun _ ↦ rfl
 
 end LinearMap
+
+namespace Module.End
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+
+/-- An endomorphism and its continuous version have the same values. -/
+@[simp]
+theorem toContinuousLinearMap_apply (f : E →ₗ[𝕜] E) (v : E) :
+    toContinuousLinearMap E f v = f v :=
+  rfl
+
+end Module.End
 
 namespace MultilinearMap
 
@@ -277,6 +297,33 @@ theorem surjective_of_denseRange {f : E →ₗ[𝕜] F} (hf : DenseRange f) :
     (LinearMap.coe_range f).ge (hf y)
 
 end LinearMap
+
+namespace ContinuousAffineMap
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+  [Module 𝕜 E] [ContinuousSMul 𝕜 E] [FiniteDimensional 𝕜 E]
+  [AddCommGroup F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [Module 𝕜 F] [ContinuousSMul 𝕜 F] [T2Space F]
+
+/-- An injective continuous affine map with finite-dimensional domain is a closed embedding: it is
+the translate of its linear part, which is an injective linear map, by `f 0`. This is the affine
+companion of `LinearMap.isClosedEmbedding_of_injective`. -/
+theorem isClosedEmbedding_of_injective {f : E →ᴬ[𝕜] F} (hf : Function.Injective f) :
+    Topology.IsClosedEmbedding f := by
+  have : T2Space E := T2Space.of_injective_continuous hf f.cont
+  have hker : LinearMap.ker (f.contLinear : E →ₗ[𝕜] F) = ⊥ :=
+    LinearMap.ker_eq_bot.2 (f.toAffineMap.linear_injective_iff.2 hf)
+  have hf' : ⇑f = (· + f 0) ∘ f.contLinear := by
+    ext x
+    have h := (f : E →ᵃ[𝕜] F).linear_apply_vsub x 0
+    rw [vsub_eq_sub, vsub_eq_sub, sub_zero] at h
+    simp [h]
+  rw [hf']
+  exact (Homeomorph.addRight (f 0)).isClosedEmbedding.comp
+    (LinearMap.isClosedEmbedding_of_injective hker)
+
+end ContinuousAffineMap
 
 /-- **Finite quotients along a dense algebra map.** Let `f : A → B` be a `K`-algebra map with dense
 range into a topological `K`-algebra, and `J` an ideal of `B` with `B ⧸ J` Hausdorff. If

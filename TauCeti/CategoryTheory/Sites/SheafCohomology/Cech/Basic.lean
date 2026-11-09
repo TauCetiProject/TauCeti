@@ -79,6 +79,8 @@ be added or removed.
   natural in `P`.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_iff_of_iso`: acyclicity of a family is
   invariant under isomorphisms of presheaves.
+* `TauCeti.CategoryTheory.quasiIso_cechAugmentation_of_retract`: acyclicity of a family passes to
+  retracts of presheaves.
 * `TauCeti.CategoryTheory.cechComplexFunctor_map_f`: a morphism of presheaves acts on the Čech
   complexes factorwise; in particular `CategoryTheory.cechComplexFunctor U` is additive.
 
@@ -348,7 +350,7 @@ formal coproducts. -/
 private abbrev cechArrowHom {X Y : FormalCoproduct.{w} C} (φ : X ⟶ Y) :
     Arrow.mk ((FormalCoproduct.isTerminalIncl _ terminalIsTerminal).from X) ⟶
       Arrow.mk ((FormalCoproduct.isTerminalIncl _ terminalIsTerminal).from Y) :=
-  Arrow.homMk φ (𝟙 _) ((FormalCoproduct.isTerminalIncl _ terminalIsTerminal).hom_ext _ _)
+  Arrow.homMk' φ (𝟙 _)
 
 /-- Under the identification of the Čech object of a formal coproduct with the Čech nerve of its
 map to the terminal object, the map induced by `φ` is `Arrow.mapCechNerve`. -/
@@ -690,5 +692,16 @@ theorem quasiIso_cechAugmentation_iff_of_iso {Q : Cᵒᵖ ⥤ A} (e : P ≅ Q) :
     QuasiIso (cechAugmentation U hT P) ↔ QuasiIso (cechAugmentation U hT Q) := by
   rw [← quasiIso_iff_comp_right _ ((cechComplexFunctor U).map e.hom), cechAugmentation_naturality]
   exact quasiIso_iff_comp_left _ _
+
+/-- **Acyclicity passes to retracts of presheaves.** If `P` is a retract of `Q` and the augmented
+Čech complex of `Q` for `U` is exact, then so is the one of `P`: by naturality, the augmentation of
+`P` is a retract of the augmentation of `Q`. -/
+theorem quasiIso_cechAugmentation_of_retract {Q : Cᵒᵖ ⥤ A} (h : Retract P Q)
+    (hQ : QuasiIso (cechAugmentation U hT Q)) : QuasiIso (cechAugmentation U hT P) :=
+  -- the augmentation is natural in the presheaf, so retracts of presheaves give retracts of arrows
+  quasiIso_of_retractArrow (NatTrans.retractArrowApp
+    (F := (evaluation Cᵒᵖ A).obj (op T) ⋙ CochainComplex.single₀ A) (G := cechComplexFunctor U)
+    { app R := cechAugmentation U hT R
+      naturality _ _ α := (cechAugmentation_naturality U hT _ α).symm } h)
 
 end TauCeti.CategoryTheory

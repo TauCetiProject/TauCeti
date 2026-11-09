@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 public import Mathlib.LinearAlgebra.Trace
+public import TauCeti.Order.Hom.PowersetCard
 
 /-!
 # Action and trace formulas in exterior-power bases
@@ -72,12 +73,8 @@ theorem _root_.Module.Basis.map_exteriorPower_of_apply (b : Module.Basis I R M) 
     (a : I → R) (hf : ∀ i, f (b i) = a i • b i) (d : ℕ) (s : Set.powersetCard I d) :
     map d f (b.exteriorPower d s) = (∏ i ∈ (s : Finset I), a i) • b.exteriorPower d s := by
   have hprod : ∏ j : Fin d, a (Set.powersetCard.ofFinEmbEquiv.symm s j)
-      = ∏ i ∈ (s : Finset I), a i := by
-    rw [← Finset.prod_coe_sort s.1 a]
-    apply Fintype.prod_equiv (s.1.orderIsoOfFin s.2).toEquiv
-    intro j
-    rw [Set.powersetCard.ofFinEmbEquiv_symm_apply]
-    exact congrArg a (Finset.coe_orderIsoOfFin_apply s.1 s.2 j)
+      = ∏ i ∈ (s : Finset I), a i :=
+    Set.powersetCard.prod_comp_ofFinEmbEquiv_symm s a
   have hfun :
       (f ∘ b) ∘ Set.powersetCard.ofFinEmbEquiv.symm s =
         fun j => a (Set.powersetCard.ofFinEmbEquiv.symm s j) •
@@ -198,6 +195,13 @@ lemma _root_.Module.Basis.exteriorPowerTopEquiv_symm_apply (b : Module.Basis (Fi
     b.exteriorPowerTopEquiv.symm r = r • ιMulti R n ⇑b := by
   simp [Module.Basis.exteriorPowerTopEquiv]
 
+/-- For a basis indexed by `Fin n`, every element of the degree-`n` exterior power is a multiple
+of the exterior product of the basis. -/
+lemma _root_.Module.Basis.exists_smul_ιMulti_eq (b : Module.Basis (Fin n) R M) (x : ⋀[R]^n M) :
+    ∃ r : R, r • ιMulti R n ⇑b = x :=
+  ⟨b.exteriorPowerTopEquiv x, by
+    rw [← Module.Basis.exteriorPowerTopEquiv_symm_apply, LinearEquiv.symm_apply_apply]⟩
+
 /-- For a basis indexed by `Fin n`, the trace of the induced endomorphism on the degree-`n`
 exterior power is the determinant. -/
 theorem _root_.Module.Basis.trace_map_exteriorPower_top
@@ -218,16 +222,16 @@ end exteriorPower
 
 namespace Module.Basis
 
-variable {R M I : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-  [LinearOrder I] [Fintype I]
+variable {R M N I J : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] [LinearOrder I] [Fintype I] [LinearOrder J] [Finite J]
 
 /-- The matrix of an exterior-power map consists of the corresponding minors. -/
 @[simp]
-theorem toMatrix_exteriorPower_map (b : Basis I R M) (n : ℕ) (f : M →ₗ[R] M)
-    (s t : Set.powersetCard I n) :
-    LinearMap.toMatrix (b.exteriorPower n) (b.exteriorPower n) (exteriorPower.map n f) s t =
+theorem toMatrix_exteriorPower_map (b : Basis I R M) (c : Basis J R N) (n : ℕ) (f : M →ₗ[R] N)
+    (s : Set.powersetCard J n) (t : Set.powersetCard I n) :
+    LinearMap.toMatrix (b.exteriorPower n) (c.exteriorPower n) (exteriorPower.map n f) s t =
       (Matrix.of fun i j : Fin n ↦
-        LinearMap.toMatrix b b f (Set.powersetCard.ofFinEmbEquiv.symm s j)
+        LinearMap.toMatrix b c f (Set.powersetCard.ofFinEmbEquiv.symm s j)
           (Set.powersetCard.ofFinEmbEquiv.symm t i)).det := by
   simp [LinearMap.toMatrix_apply, exteriorPower.basis_repr_apply,
     exteriorPower.basis_apply, exteriorPower.ιMulti_family,

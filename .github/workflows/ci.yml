@@ -33,7 +33,11 @@ env:
 jobs:
   # Infrastructure regression suites run separately in infrastructure-tests.yml.
   build:
-    runs-on: ubuntu-latest
+    # Publish fresh dot-notation context before library execution. GitHub's hosted
+    # pool can queue this serialized publisher behind hours of ordinary PR work.
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1
+      - namespace-features:container.privileged=true;github.run-id=${{ github.run_id }}
     # Read by publish-lake-cache below, the only job that ever holds the upload secret.
     # Neither output reveals the secret's value or whether it is set, and neither is trusted
     # there: `staged` only decides whether that job runs at all, and `reported-toolchain` is
@@ -68,10 +72,10 @@ jobs:
           fetch-depth: 0
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@76688a6c293967d60ed0c33a154104f6e8313984
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: f55cc9c29f9e9d124c9ce571efd8df3c15aef3de
+          tools-ref: 76688a6c293967d60ed0c33a154104f6e8313984
           project-directory: .
       # Prevent library imports from inheriting sorried roadmap/review declarations.
       - name: Import-boundary guard (TauCeti/ and TauCeti.lean ⊬ roadmap/review)
@@ -114,8 +118,11 @@ jobs:
           ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
           ELAN_VER: v4.2.3
         run: |
-          curl -sSL -H "Accept: application/octet-stream" \
-            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          if ! curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz?download=1" -o elan.tar.gz; then
+            curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+              "https://api.github.com/repos/leanprover/elan/releases/assets/441516216" -o elan.tar.gz
+          fi
           echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
           tar -xzf elan.tar.gz elan-init
           ./elan-init -y --default-toolchain none
@@ -153,6 +160,22 @@ jobs:
         with:
           path: ${{ steps.mathlib_ltar_restore.outputs.cache-path }}
           key: ${{ steps.mathlib_ltar_restore.outputs.cache-primary-key }}
+
+      # Main checks from fresh parsing; only PRs consume cached parsing context.
+      # Generate and publish before any candidate Lean code executes. Bump the v1 key
+      # in both workflows to abandon a bad cache snapshot.
+      - name: Dot-notation namespace lint (Mathlib type namespaces stay at root)
+        run: |
+          rm -rf .ci-dot-notation-context
+          python3 scripts/lint-dot-notation.py --context-cache ".ci-dot-notation-context/context.json"
+
+      - name: Save main's dot-notation parsing context
+        if: github.ref_name == github.event.repository.default_branch
+        continue-on-error: true
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .ci-dot-notation-context
+          key: dot-notation-context-v1-${{ hashFiles('scripts/lean_source.py') }}-${{ github.sha }}
 
       # --- Lake artifact-cache restore (dormant until configured) --------------------
       # Restore TauCeti's OWN oleans before building, exactly as pr-build.yml does. Without
@@ -267,9 +290,6 @@ jobs:
         env:
           LAKE_NO_CACHE: "true"
         run: bash scripts/lint-env.sh
-
-      - name: Dot-notation namespace lint (Mathlib type namespaces stay at root)
-        run: python3 scripts/lint-dot-notation.py
 
       # Source style lint. The wrapper validates one complete TauCeti/** source list, applies
       # Mathlib's copyright/Authors checks directly (the empty TauCeti.lean root is exempt), and

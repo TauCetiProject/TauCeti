@@ -26,6 +26,9 @@ Over a normal extension of `ℚ`, every coprime power of a primitive root is att
 automorphism. Indeed the two primitive roots have the same cyclotomic minimal polynomial, and
 normality extends that conjugacy to the ambient field.
 
+Every character of a group of order `n` takes values whose `n`-th power is `1`; for `n = p` prime
+it therefore sends each element outside its kernel to a primitive `p`-th root of unity.
+
 Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th root of unity gives
 `n` distinct `n`-th roots of `a`, and these are all of them.
 
@@ -43,6 +46,10 @@ Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th
   abelianization agree on every root of unity.
 * `IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime`: every coprime power of a primitive
   root in a normal extension of `ℚ` is realized by an automorphism.
+* `MonoidHom.apply_pow_eq_one_of_card_eq`: a character of a group of order `n` takes values whose
+  `n`-th power is `1`.
+* `MonoidHom.isPrimitiveRoot_apply_of_card_eq_prime`: a character of a group of prime order `p`
+  sends every element outside its kernel to a primitive `p`-th root of unity.
 * `IsPrimitiveRoot.card_nthRootsFinset_of_pow_eq`: in the presence of a primitive `n`-th root of
   unity, a nonzero element with one `n`-th root has exactly `n` of them.
 
@@ -73,16 +80,32 @@ theorem _root_.IsPrimitiveRoot.map_eq_pow {n j : ℕ} [NeZero n] {ζ : R} (hζ :
 under a `ℚ`-algebra automorphism. -/
 theorem _root_.IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime
     {K : Type*} [Field K] [CharZero K] [Normal ℚ K]
-    {n j : ℕ} [NeZero n] {ζ : K} (hζ : IsPrimitiveRoot ζ n) (hj : n.Coprime j) :
+    {n j : ℕ} {ζ : K} (hζ : IsPrimitiveRoot ζ n) (hj : n.Coprime j) :
     ∃ σ : K ≃ₐ[ℚ] K, σ ζ = ζ ^ j := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · obtain rfl : j = 1 := by simpa using hj
+    exact ⟨AlgEquiv.refl, by simp⟩
+  have : NeZero n := ⟨hn.ne'⟩
   have hpow : IsPrimitiveRoot (ζ ^ j) n := hζ.pow_of_coprime j hj.symm
   have hconj : IsConjRoot ℚ (ζ ^ j) ζ := by
     rw [isConjRoot_def,
       (hpow.minpoly_eq_cyclotomic_of_irreducible
-        (Polynomial.cyclotomic.irreducible_rat (NeZero.pos n))).symm,
+        (Polynomial.cyclotomic.irreducible_rat hn)).symm,
       (hζ.minpoly_eq_cyclotomic_of_irreducible
-        (Polynomial.cyclotomic.irreducible_rat (NeZero.pos n))).symm]
+        (Polynomial.cyclotomic.irreducible_rat hn)).symm]
   exact hconj.exists_algEquiv
+
+/-- A character of a group of order `n` takes values whose `n`-th power is `1`. -/
+theorem _root_.MonoidHom.apply_pow_eq_one_of_card_eq {n : ℕ} {G M : Type*} [Group G] [Monoid M]
+    (χ : G →* M) (hG : Nat.card G = n) (g : G) : χ g ^ n = 1 := by
+  rw [← map_pow, ← hG, pow_card_eq_one', map_one]
+
+/-- A character of a group of prime order `p` sends every element outside its kernel to a
+primitive `p`-th root of unity. -/
+theorem _root_.MonoidHom.isPrimitiveRoot_apply_of_card_eq_prime {p : ℕ} [Fact p.Prime]
+    {G M : Type*} [Group G] [CommMonoid M] (χ : G →* M) (hG : Nat.card G = p) {g : G}
+    (hg : χ g ≠ 1) : IsPrimitiveRoot (χ g) p :=
+  IsPrimitiveRoot.iff_orderOf.2 <| orderOf_eq_prime (χ.apply_pow_eq_one_of_card_eq hG g) hg
 
 open Polynomial in
 /-- If `R` has a primitive `n`-th root of unity, then a nonzero `a` with one `n`-th root `α` has
