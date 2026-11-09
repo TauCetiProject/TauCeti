@@ -61,7 +61,6 @@ private theorem riemannianVolume_eq_zero_iff_image_of_measurableSet {α : M} {s 
       ((continuousOn_extChartAt_symm α).mono (image_mono hsub |>.trans e.image_source_eq_target.le))
     rintro y ⟨x, hx, rfl⟩
     rw [TangentBundle.trivializationAt_baseSet, ← extChartAt_source I α]
-    change e.symm (e x) ∈ e.source
     rw [e.left_inv (hsub hx)]
     exact hsub hx
   rw [riemannianVolume_apply_of_subset (by simpa only [extChartAt_source] using hsub),

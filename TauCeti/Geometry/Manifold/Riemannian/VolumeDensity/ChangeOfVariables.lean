@@ -116,6 +116,10 @@ theorem riemannianJacobian_changeBasis (b c : Module.Basis ι ℝ F) (f : F → 
     rw [← LinearMap.BilinForm.toMatrix_mul_basis_toMatrix b c B,
       Matrix.det_mul, Matrix.det_mul, Matrix.det_transpose, Module.Basis.det_apply]
     ring
+  rw [riemannianJacobian_eq_sqrt_det_gram, riemannianJacobian_eq_sqrt_det_gram]
+  -- `D` is `mfderiv 𝓘(ℝ, F) I f x` with its domain `TangentSpace 𝓘(ℝ, F) x` read as `F`. Mathlib
+  -- implements this identification definitionally, so no rewrite lemma restates the Gram matrices
+  -- in terms of `D`, and `rw [hgram]` cannot see through the two domain types.
   change Real.sqrt (Matrix.gram ℝ (fun i ↦ D (c i))).det =
     |b.det c| * Real.sqrt (Matrix.gram ℝ (fun i ↦ D (b i))).det
   rw [hgram, hgram, hdet, Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs]
@@ -130,8 +134,10 @@ theorem riemannianJacobian_comp_continuousLinearEquiv {G : Type*} [NormedAddComm
   rw [riemannianJacobian_eq_sqrt_det_gram, riemannianJacobian_eq_sqrt_det_gram]
   congr 2
   ext i j
-  rw [Matrix.gram_apply, Matrix.gram_apply, mfderiv_comp x hf A.differentiableAt.mdifferentiableAt,
-    mfderiv_eq_fderiv, A.hasFDerivAt.fderiv]
+  rw [Matrix.gram_apply, Matrix.gram_apply,
+    (hf.hasMFDerivAt.comp x A.hasFDerivAt.hasMFDerivAt).mfderiv]
+  -- The composite acts on `TangentSpace 𝓘(ℝ, G) x`, which Mathlib identifies with `G` only
+  -- definitionally, so `ContinuousLinearMap.comp_apply` does not match; evaluate it by `change`.
   change ⟪mfderiv 𝓘(ℝ, F) I f (A x) (A (b i)),
     mfderiv 𝓘(ℝ, F) I f (A x) (A (b j))⟫_ℝ = _
   simp only [Module.Basis.map_apply, ContinuousLinearEquiv.coe_toLinearEquiv]
@@ -164,15 +170,13 @@ theorem setLIntegral_riemannianJacobian_changeBasis (b c : Module.Basis ι ℝ F
   have hd : b.det c ≠ 0 := (b.isUnit_det c).ne_zero
   have hμ : c.addHaar = (|b.det c|⁻¹).toNNReal • b.addHaar := by
     rw [Module.Basis.addHaar_eq_iff, smul_apply, Module.Basis.coe_parallelepiped,
-      Measure.addHaar_parallelepiped]
-    change ENNReal.ofReal |b.det c|⁻¹ * ENNReal.ofReal |b.det c| = 1
-    rw [← ENNReal.ofReal_mul (by positivity)]
+      Measure.addHaar_parallelepiped, ENNReal.smul_def, smul_eq_mul, ← ENNReal.ofReal.eq_1,
+      ← ENNReal.ofReal_mul (by positivity)]
     simp [hd]
   rw [hμ, Measure.restrict_smul, lintegral_smul_measure]
   simp only [riemannianJacobian_changeBasis b c, ENNReal.ofReal_mul (abs_nonneg _), mul_assoc]
-  rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-  change _ = ENNReal.ofReal |b.det c|⁻¹ * (ENNReal.ofReal |b.det c| * _)
-  rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity)]
+  rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, ENNReal.smul_def, smul_eq_mul,
+    ← ENNReal.ofReal.eq_1, ← mul_assoc, ← ENNReal.ofReal_mul (by positivity)]
   simp [hd]
 
 end Integral
@@ -237,6 +241,9 @@ theorem riemannianJacobian_finBasis_eq_abs_det_mul_chartVolumeDensity
       LinearMap.BilinForm.toMatrix_comp bα b, hmat, Matrix.det_mul, Matrix.det_mul,
       Matrix.det_transpose, LinearMap.det_toMatrix, ContinuousLinearMap.det]
     ring
+  rw [riemannianJacobian_eq_sqrt_det_gram]
+  -- As in `riemannianJacobian_changeBasis`: `D` is the differential with its domain
+  -- `TangentSpace 𝓘(ℝ, E) x` read as `E`, an identification Mathlib makes definitionally.
   change Real.sqrt (Matrix.gram ℝ (fun i ↦ D (b i))).det = _
   rw [hdet, Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs, chartVolumeDensity_def]
 
@@ -324,15 +331,11 @@ theorem setLIntegral_riemannianVolume_image_of_subset_chart
     (hinj.comp A.injective.injOn (fun _ hx ↦ hx))
     (fun x hx ↦ hmap hx) (fun x hx ↦ (hf (A x) hx).comp x A.differentiableAt.mdifferentiableAt) φ
   rw [him] at hcov
-  rw [hcov, ← hμ]
-  let e := A.toHomeomorph.toMeasurableEquiv
-  change _ = ∫⁻ x, ENNReal.ofReal (riemannianJacobian (I := I) b f x) * φ (f x)
-    ∂((Measure.map e c.addHaar).restrict s)
-  rw [e.restrict_map, lintegral_map_equiv]
+  have hA : MeasurableEmbedding A := A.toHomeomorph.measurableEmbedding
+  rw [hcov, ← hμ, hA.restrict_map, hA.lintegral_map]
   apply setLIntegral_congr_fun (hs.preimage A.continuous.measurable)
   intro x hx
-  change ENNReal.ofReal (riemannianJacobian (I := I) c (f ∘ A) x) * φ (f (A x)) =
-    ENNReal.ofReal (riemannianJacobian (I := I) b f (A x)) * φ (f (A x))
+  simp only [Function.comp_apply]
   rw [riemannianJacobian_comp_continuousLinearEquiv A c (hf _ hx), hcb]
 
 /-- A `C¹` partial diffeomorphism `Φ` from `F` to `M` carries the Haar measure of `b` on its
