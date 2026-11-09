@@ -23,6 +23,8 @@ a function field.
   factors all have degree at most one splits.
 * `Polynomial.Splits.eval₂_eq_prod_roots`: evaluated along any ring homomorphism, a split
   polynomial is its leading coefficient times the product of the linear factors over its roots.
+* `Polynomial.Splits.eq_prod_roots_of_coeff_zero_eq_one`: a split polynomial with constant
+  coefficient `1` is the product of the factors `1 - α⁻¹ X` over its roots `α`.
 -/
 
 public section
@@ -51,5 +53,30 @@ theorem Splits.eval₂_eq_prod_roots {R S : Type*} [CommRing R] [IsDomain R] [Co
     f.eval₂ φ x = φ f.leadingCoeff * (f.roots.map fun a ↦ x - φ a).prod := by
   conv_lhs => rw [hf.eq_prod_roots]
   simp [eval₂_multiset_prod]
+
+/-- **A split polynomial with constant coefficient `1`** is the product of the factors
+`1 - α⁻¹ X` over its roots `α`, counted with multiplicity. This is the normalisation of
+`Polynomial.Splits.eq_prod_roots` at `0` rather than at the leading coefficient. -/
+theorem Splits.eq_prod_roots_of_coeff_zero_eq_one {f : K[X]} (hf : f.Splits)
+    (h0 : f.coeff 0 = 1) : f = (f.roots.map fun α ↦ 1 - C α⁻¹ * X).prod := by
+  have hne : ∀ α ∈ f.roots, α ≠ 0 := by
+    rintro α hα rfl
+    have h := (mem_roots'.mp hα).2
+    rw [IsRoot.def, ← coeff_zero_eq_eval_zero, h0] at h
+    exact one_ne_zero h
+  -- `1 - α⁻¹ X = (-α⁻¹) (X - α)`, and evaluating `f` at `0` determines the leading coefficient.
+  have hfac : (f.roots.map fun α ↦ 1 - C α⁻¹ * X) =
+      f.roots.map fun α ↦ C (-α)⁻¹ * (X - C α) :=
+    Multiset.map_congr rfl fun α hα ↦ by
+      rw [inv_neg, C_neg, neg_mul, mul_sub, ← C_mul, inv_mul_cancel₀ (hne α hα), C_1]
+      ring
+  have hlc : f.leadingCoeff = (f.roots.map fun α ↦ (-α)⁻¹).prod := by
+    have h := hf.eval_eq_prod_roots 0
+    rw [← coeff_zero_eq_eval_zero, h0] at h
+    simp only [zero_sub] at h
+    rw [Multiset.prod_map_inv]
+    exact eq_inv_of_mul_eq_one_left h.symm
+  rw [hfac, Multiset.prod_map_mul, Multiset.prod_hom' _ C, ← hlc]
+  exact hf.eq_prod_roots
 
 end Polynomial

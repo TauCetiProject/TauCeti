@@ -13,7 +13,9 @@ public import TauCeti.RingTheory.PowerSeries.Map
 public import TauCeti.RingTheory.PowerSeries.MulDistinguished
 public import TauCeti.RingTheory.PowerSeries.Restricted.Taylor
 public import TauCeti.RingTheory.PowerSeries.RootBound
+public import TauCeti.RingTheory.PowerSeries.Weierstrass.DiscPreparation
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
+import TauCeti.Algebra.Polynomial.Splits
 
 /-!
 # Multiplicities and numbers of zeros of restricted power series
@@ -72,6 +74,8 @@ boundary zeros.
   closed disc, is the only multiset there with the multiplicities of `f`, and has them.
 * `PowerSeries.IsRestricted.mem_zeroMultiset_iff`: its points are exactly the zeros of `f` in the
   closed disc.
+* `PowerSeries.IsRestricted.filter_zeroMultiset_eq`: the zero multiset on a smaller disc consists
+  of the points of the zero multiset on a larger disc lying in the smaller one.
 * `TauCeti.PowerSeries.IsDistinguished.zeroMultiset_eq_roots_map`: the zero multiset is the
   multiset of roots in `L` of any monic preparation polynomial.
 * `TauCeti.PowerSeries.IsDistinguished.card_zeroMultiset_le`,
@@ -86,6 +90,13 @@ boundary zeros.
   `TauCeti.PowerSeries.IsLowestDominant.card_filter_zeroMultiset_norm_lt_eq` and
   `TauCeti.PowerSeries.card_filter_zeroMultiset_norm_eq_eq`: the same counts over an
   algebraically closed `L`.
+* `TauCeti.PowerSeries.IsDiscPreparation.zeroMultiset_eq_roots_map`,
+  `TauCeti.PowerSeries.IsDiscPreparation.map_eq_prod_zeroMultiset` and
+  `TauCeti.PowerSeries.IsDiscPreparation.eq_prod_zeroMultiset`: the zeros on a closed disc are the
+  roots of the polynomial factor `P` of the normalised preparation `f = P * U`, and when `P` splits
+  it is the product of the factors `1 - α⁻¹ X` over them.
+* `PowerSeries.IsRestricted.exists_isDiscPreparation_prod_zeroMultiset`: over an algebraically
+  closed field, that product is the polynomial factor of a normalised disc preparation.
 
 ## References
 
@@ -368,6 +379,65 @@ theorem _root_.PowerSeries.IsRestricted.mem_zeroMultiset_iff (hfr : f.IsRestrict
   · exact iff_of_false (fun h ↦ hx (_root_.PowerSeries.norm_le_of_mem_zeroMultiset h))
       fun h ↦ hx h.1
 
+/-- **Nested zero multisets.** Let `f` be a nonzero power series over a complete ultrametric normed
+field `K`, restricted at `s > 0`. In any complete normed field extension `L`, for `r ≤ s` the zero
+multiset of `f` on the closed disc of radius `r` consists of the points of norm at most `r` of its
+zero multiset on the closed disc of radius `s`. -/
+theorem _root_.PowerSeries.IsRestricted.filter_zeroMultiset_eq {s : ℝ} (hfs : f.IsRestricted s)
+    (hs : 0 < s) (hf0 : f ≠ 0) (hrs : r ≤ s) :
+    (f.zeroMultiset s L).filter (‖·‖ ≤ r) = f.zeroMultiset r L := by
+  classical
+  refine (_root_.PowerSeries.zeroMultiset_eq_of_order_taylor_eq
+    (fun z hz ↦ (Multiset.mem_filter.mp hz).2) fun x hx ↦ ?_).symm
+  rw [Multiset.count_filter_of_pos (p := (‖·‖ ≤ r)) hx,
+    hfs.order_taylor_eq_count_zeroMultiset hs hf0 (hx.trans hrs)]
+
+namespace IsDiscPreparation
+
+variable {U : PowerSeries K}
+
+/-- **The zero multiset of a normalised disc preparation.** If `f = P * U` is the normalised
+preparation of `f` on the closed disc of radius `r > 0` over a complete ultrametric normed field
+`K`, then in any complete normed field extension `L` the zero multiset of `f` on that disc is the
+multiset of roots of `P` in `L`. -/
+theorem zeroMultiset_eq_roots_map (h : IsDiscPreparation r d f P U) (hr : 0 < r) :
+    f.zeroMultiset r L = (P.map (algebraMap K L)).roots := by
+  -- Normalise `P` to the monic polynomial `a⁻¹ • P` and move the scalar `a` into the unit.
+  set a := P.leadingCoeff
+  have ha : a ≠ 0 := Polynomial.leadingCoeff_ne_zero.mpr h.ne_zero
+  have hω : (Polynomial.C a⁻¹ * P).IsMonicOfDegree d :=
+    ⟨by rw [Polynomial.natDegree_C_mul (inv_ne_zero ha), h.natDegree_eq],
+      Polynomial.monic_C_mul_of_mul_leadingCoeff_eq_one (inv_mul_cancel₀ ha)⟩
+  have he : IsUnit (algebraMap K (PowerSeries.IsRestricted.subring (R := K) r) a *
+      ⟨U, h.isRestricted⟩) :=
+    ((isUnit_iff_ne_zero.mpr ha).map _).mul (h.isUnit hr)
+  have hfa : ((algebraMap K (PowerSeries.IsRestricted.subring (R := K) r) a *
+      ⟨U, h.isRestricted⟩ : PowerSeries.IsRestricted.subring (R := K) r) : PowerSeries K) *
+        (Polynomial.C a⁻¹ * P : Polynomial K) = f := by
+    have ha1 : _root_.PowerSeries.C a * _root_.PowerSeries.C a⁻¹ = (1 : PowerSeries K) := by
+      rw [← map_mul, mul_inv_cancel₀ ha, map_one]
+    simp only [Subring.coe_mul, coe_algebraMap_isRestrictedSubring,
+      Algebra.algebraMap_self_apply, Polynomial.coe_mul, Polynomial.coe_C]
+    conv_rhs => rw [h.eq_mul]
+    linear_combination ((U : PowerSeries K) * P) * ha1
+  rw [h.isDistinguished.zeroMultiset_eq_roots_map hr he hω hfa, Polynomial.map_mul,
+    Polynomial.map_C, Polynomial.roots_C_mul _ ((map_ne_zero _).mpr (inv_ne_zero ha))]
+
+/-- **The disc polynomial is the product over the zeros.** If `f = P * U` is the normalised
+preparation of `f` on the closed disc of radius `r > 0` over a complete ultrametric normed field
+`K`, and `P` splits over a complete normed field extension `L`, then `P` is the product of the
+factors `1 - α⁻¹ X` over the zeros `α` of `f` in the closed disc of `L`, counted with
+multiplicity. -/
+theorem map_eq_prod_zeroMultiset (h : IsDiscPreparation r d f P U) (hr : 0 < r)
+    (hs : (P.map (algebraMap K L)).Splits) :
+    P.map (algebraMap K L) =
+      ((f.zeroMultiset r L).map fun α ↦ 1 - Polynomial.C α⁻¹ * Polynomial.X).prod := by
+  rw [h.zeroMultiset_eq_roots_map hr]
+  exact hs.eq_prod_roots_of_coeff_zero_eq_one
+    (by rw [Polynomial.coeff_map, h.coeff_zero_eq_one, map_one])
+
+end IsDiscPreparation
+
 /-- **At most `d` zeros in the closed disc.** Let `f` be a power series over a complete ultrametric
 normed field, restricted at `r > 0` and distinguished of degree `d` there. In any complete normed
 field extension, the zeros of `f` in the closed disc of radius `r`, counted with multiplicity,
@@ -425,5 +495,30 @@ theorem card_filter_zeroMultiset_norm_eq_eq (hd : IsDistinguished r d f)
   obtain ⟨e, P, he, hP, hf⟩ :=
     hd.exists_isUnit_isMonicOfDegree_mul_eq (isUnit_iff_ne_zero.mpr hd.coeff_ne_zero) hr hfr
   exact card_filter_zeroMultiset_norm_eq_eq_of_splits hd hl hr he hP hf (IsAlgClosed.splits _)
+
+/-- **The disc polynomial over an algebraically closed field.** If `f = P * U` is the normalised
+preparation of `f` on the closed disc of radius `r > 0` over an algebraically closed complete
+ultrametric normed field `K`, then `P` is the product of the factors `1 - α⁻¹ X` over the zeros
+`α` of `f` in that disc, counted with multiplicity. -/
+theorem IsDiscPreparation.eq_prod_zeroMultiset [IsAlgClosed K] {U : PowerSeries K}
+    (h : IsDiscPreparation r d f P U) (hr : 0 < r) :
+    P = ((f.zeroMultiset r K).map fun α ↦ 1 - Polynomial.C α⁻¹ * Polynomial.X).prod := by
+  simpa using h.map_eq_prod_zeroMultiset (L := K) hr (IsAlgClosed.splits _)
+
+/-- **Normalised disc preparation by the zeros.** Let `f` be a power series with constant
+coefficient `1` over an algebraically closed complete ultrametric normed field `K`, restricted at
+`r > 0`. Then the product of the factors `1 - α⁻¹ X` over the zeros `α` of `f` in the closed disc
+of radius `r`, counted with multiplicity, is the polynomial factor of the normalised preparation
+of `f` on that disc. -/
+theorem _root_.PowerSeries.IsRestricted.exists_isDiscPreparation_prod_zeroMultiset [IsAlgClosed K]
+    (hfr : f.IsRestricted r) (hr : 0 < r) (h0 : _root_.PowerSeries.constantCoeff f = 1) :
+    ∃ (d : ℕ) (U : PowerSeries K), IsDiscPreparation r d f
+      ((f.zeroMultiset r K).map fun α ↦ 1 - Polynomial.C α⁻¹ * Polynomial.X).prod U := by
+  have hf0 : f ≠ 0 := by
+    rintro rfl
+    simp at h0
+  obtain ⟨d, hd⟩ := exists_isDistinguished hr hfr hf0
+  obtain ⟨P, U, h⟩ := hd.exists_isDiscPreparation hr hfr h0
+  exact ⟨d, U, h.eq_prod_zeroMultiset hr ▸ h⟩
 
 end TauCeti.PowerSeries
