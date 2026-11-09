@@ -123,6 +123,22 @@ theorem _root_.IsCompact.finite_of_forall_isClosed {K S : Set X}
       ⟨T, hS T hT, Set.inter_eq_left.2 hT⟩
   exact (hK.of_isClosed_subset (hS S subset_rfl) hSK).finite hd
 
+section TubeLemma
+
+variable {α E P : Type*} [TopologicalSpace α] [CompactSpace α] [TopologicalSpace E]
+  [TopologicalSpace P] {ι : α → P} {W : Set (E × P)}
+
+/-- If `W` is open and `ι` is continuous on a compact space, the set of parameters `x` with
+`{x} × ι(α) ⊆ W` is open. -/
+theorem isOpen_forall_prodMk_mem (hι : Continuous ι) (hW : IsOpen W) :
+    IsOpen {x : E | ∀ y, (x, ι y) ∈ W} :=
+  isOpen_iff_eventually.2 fun _ hx₀ ↦
+    ((isCompact_range hι).eventually_forall_of_forall_eventually (P := fun x p ↦ (x, p) ∈ W)
+      (Set.forall_mem_range.2 fun y ↦ hW.mem_nhds (hx₀ y))).mono
+        fun _ h y ↦ h _ (Set.mem_range_self y)
+
+end TubeLemma
+
 end TauCeti
 
 end
