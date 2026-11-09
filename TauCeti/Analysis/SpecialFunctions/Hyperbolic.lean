@@ -220,24 +220,6 @@ theorem one_add_tanh_le (x : ℝ) : 1 + Real.tanh x ≤ 2 * Real.exp (2 * x) := 
 theorem one_sub_tanh_le (x : ℝ) : 1 - Real.tanh x ≤ 2 * Real.exp (-(2 * x)) := by
   simpa [Real.tanh_neg, sub_eq_add_neg] using Real.one_add_tanh_le (-x)
 
-end Real
-
-namespace Complex
-
-/-- `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2` for complex `α`, `θ`
-with `cosh α ≠ 0` and `cosh θ ≠ 0`: both sides are
-`(cosh α * cosh θ - sinh α * sinh θ) / (2 * cosh α * cosh θ)` by `Complex.cosh_sub`. -/
-theorem cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two {α θ : ℂ}
-    (hα : Complex.cosh α ≠ 0) (hθ : Complex.cosh θ ≠ 0) :
-    Complex.cosh (α - θ) / (2 * Complex.cosh α * Complex.cosh θ) =
-      (1 - Complex.tanh α * Complex.tanh θ) / 2 := by
-  rw [Complex.cosh_sub, Complex.tanh_eq_sinh_div_cosh, Complex.tanh_eq_sinh_div_cosh]
-  field_simp
-
-end Complex
-
-namespace Real
-
 /-- The square of `sinh (r / 2)` in terms of `exp (± r / 2)`:
 `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`. -/
 theorem four_mul_sinh_half_sq (r : ℝ) :
@@ -325,3 +307,17 @@ theorem tendsto_cosh_sub_div_cosh_add_atTop (a : ℝ) :
   exact hg.tendsto.comp Real.tendsto_exp_neg_atTop_nhds_zero
 
 end Real
+
+namespace Complex
+
+/-- `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2` for complex `α`, `θ`
+with `cosh α ≠ 0` and `cosh θ ≠ 0`: both sides are
+`(cosh α * cosh θ - sinh α * sinh θ) / (2 * cosh α * cosh θ)` by `Complex.cosh_sub`. -/
+theorem cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two {α θ : ℂ}
+    (hα : Complex.cosh α ≠ 0) (hθ : Complex.cosh θ ≠ 0) :
+    Complex.cosh (α - θ) / (2 * Complex.cosh α * Complex.cosh θ) =
+      (1 - Complex.tanh α * Complex.tanh θ) / 2 := by
+  rw [Complex.cosh_sub, Complex.tanh_eq_sinh_div_cosh, Complex.tanh_eq_sinh_div_cosh]
+  field_simp
+
+end Complex
