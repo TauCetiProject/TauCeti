@@ -154,6 +154,7 @@ theorem exchangeTruncation_subset (c R : ℝ) : exchangeTruncation c R ⊆ {w | 
   intro w hw
   obtain ⟨h₀, h₁, -⟩ := mem_exchangeTruncation.1 hw
   have hr : 0 < Real.exp (-(2 * π * R)) / 2 := by positivity
-  exact ⟨fun h ↦ by simp [h] at h₀; linarith, fun h ↦ by simp [h] at h₁; linarith⟩
+  exact ⟨fun h ↦ by rw [h, norm_zero] at h₀; linarith,
+    fun h ↦ by rw [h, sub_self, norm_zero] at h₁; linarith⟩
 
 end TauCeti.ThricePuncturedSphere

@@ -84,8 +84,8 @@ open scoped Topology
 
 namespace TauCeti
 
-/-- For the constants `h_q = ∓B_q`, the one-sided constant `∑ q, ε_q ∫₀¹ h_q` of the action
-bounds is `-(B_0 + B_1 + B_∞)`. -/
+/-- For the constants `h_q = ∓B_q`, the signed sum `∑ q, ε_q ∫₀¹ h_q`, the negative of the
+one-sided constant `-∫₀¹ h_0 - ∫₀¹ h_1 + ∫₀¹ h_∞` of the action bounds, is `-(B_0 + B_1 + B_∞)`. -/
 theorem ThricePuncturedSphere.Puncture.sum_endSign_mul_integral_neg_endSign_mul
     (B : Puncture → ℝ) :
     ∑ q, q.endSign * ∫ _ in (0 : ℝ)..1, -(q.endSign * B q) = -∑ q, B q := by

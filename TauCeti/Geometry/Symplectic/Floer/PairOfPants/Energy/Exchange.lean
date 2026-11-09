@@ -53,7 +53,7 @@ pair of pants, the constant can be replaced by the one-sided constant
 Hamiltonians (`SymplecticForm.hamiltonianAction_le_add_add_sub_sum_of_exchangePerturbation`,
 `SymplecticForm.le_add_add_sub_sum_of_tendsto_hamiltonianAction_exchangePerturbation`).
 
-The member `c` of the family is the pullback of the pair-of-pants datum `K_0` along an
+The pair-of-pants datum `K_0` is the pullback `Φ_c^* K_c` of the member `c` of the family along an
 orientation-preserving diffeomorphism `Φ_c` of the plane, `Φ_c(s, t) = (s + c (1 - μ(|w|)), t)` for
 `w = s + i t` and a smooth radial cutoff `μ` equal to `1` for `|w| ≤ 3` and to `0` for `|w| ≥ 8`,
 with slope at most `1/4`. It is the identity near the input ends, where `K_c = K_0`, the
@@ -275,7 +275,7 @@ private theorem exchangeMap_of_le_norm (hy : 8 ≤ ‖Complex.equivRealProdCLM.s
     exchangeMap c y = y + (c, 0) := by
   ext <;> simp [exchangeMap, exchangeShift_of_le_norm hy]
 
-/-! ### The family as a pullback of the pair-of-pants datum -/
+/-! ### The pair-of-pants datum as a pullback of the family -/
 
 section Datum
 
@@ -285,7 +285,8 @@ variable {M : Type*} {H : Puncture → ℝ → M → ℝ}
 private theorem fourteen_le_two_mul_exp_two_pi : 14 ≤ 2 * Real.exp (2 * π) := by
   nlinarith [Real.quadratic_le_exp_of_nonneg (by positivity : 0 ≤ 2 * π), Real.two_le_pi]
 
-/-- **The member `c` of the family is the pullback of the pair-of-pants datum along `Φ_c`.** -/
+/-- **The pair-of-pants datum is the pullback of the member `c` of the family along `Φ_c`:**
+`Φ_c^* K_c = K_0`. -/
 private theorem perturbationPullback_exchangeMap (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) (v y : ℝ × ℝ)
     (x : M) :
     perturbationPullback (exchangeMap c)
@@ -323,8 +324,9 @@ private theorem perturbationPullback_exchangeMap (hc₀ : 0 ≤ c) (hc₁ : c �
       (by rw [hw]; linarith) (by rw [hw]; linarith)
     have h0' : pairOfPantsPerturbation H (e y) x = 0 := by
       rw [← exchangePerturbation_zero]
-      exact exchangePerturbation_eq_zero le_rfl zero_le_one (by simpa using by linarith)
-        (by simpa using by linarith) x
+      exact exchangePerturbation_eq_zero le_rfl zero_le_one
+        (by rw [Complex.ofReal_zero, sub_zero]; linarith)
+        (by rw [Complex.ofReal_zero, sub_zero]; linarith) x
     simp [h0, h0']
   · -- Near the output end `Φ_c` is the translation by `c` and the data are translates.
     rw [(exchangeMap_eventuallyEq_add h₈).fderiv_eq, fderiv_add_const,
