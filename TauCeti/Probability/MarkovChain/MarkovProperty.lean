@@ -123,31 +123,51 @@ theorem _root_.MeasureTheory.Measure.markovChainLaw_restrict_map_shift_iterate [
   rw [hL, hR, markovChainLaw_map_prefix_succ_eq_compProd, ← Measure.compProd_restrict_left _ _ hπA,
     hκ, Measure.map_prodMap_compProd_comap]
 
-/-- **The future path is a chain started from the time-`n` law.** For a finite initial measure,
+/-- **The future path is a chain started from the time-`n` law.** For every initial measure,
 the path `(X (n + k))ₖ` seen from time `n` has law `markovChainLaw ((κ ^ n) ∘ₘ ν) κ`. -/
-theorem _root_.MeasureTheory.Measure.markovChainLaw_map_shift_iterate [IsFiniteMeasure ν]
-    (n : ℕ) :
+theorem _root_.MeasureTheory.Measure.markovChainLaw_map_shift_iterate (n : ℕ) :
     (markovChainLaw ν κ).map (shift α)^[n] = markovChainLaw ((κ ^ n : Kernel α α) ∘ₘ ν) κ := by
-  simpa [Measure.markovChainLaw_map_eval] using
-    Measure.markovChainLaw_restrict_map_shift_iterate ν κ n MeasurableSet.univ
+  have hK : AEMeasurable (fun x => κ.markovChainKernel x) ν := (Kernel.aemeasurable _)
+  rw [Measure.markovChainLaw_eq_comp ν κ,
+    Measure.markovChainLaw_eq_comp ((κ ^ n : Kernel α α) ∘ₘ ν) κ,
+    Measure.map_bind hK (measurable_shift_iterate n).aemeasurable,
+    Measure.bind_bind (Kernel.aemeasurable _) (Kernel.aemeasurable _)]
+  congr 1
+  funext a
+  rw [Kernel.markovChainKernel_apply, ← Measure.markovChainLaw_eq_comp]
+  simpa [Measure.markovChainLaw_map_eval, Measure.dirac_bind (Kernel.measurable _)] using
+    Measure.markovChainLaw_restrict_map_shift_iterate (Measure.dirac a) κ n MeasurableSet.univ
 
 /-- **The one-step Markov property, for events.** For an event `B` of the history `X 0, …, X n` and
 a measurable set `C` of states, `ℙ(B ∩ {X (n + 1) ∈ C}) = ∫_B κ (X n) C`. -/
-theorem _root_.MeasureTheory.Measure.markovChainLaw_inter_preimage_eval_succ [SFinite ν] (n : ℕ)
+theorem _root_.MeasureTheory.Measure.markovChainLaw_inter_preimage_eval_succ (n : ℕ)
     {B : Set (ℕ → α)} (hB : MeasurableSet[Filtration.piLE n] B) {C : Set α}
     (hC : MeasurableSet C) :
     markovChainLaw ν κ (B ∩ (fun x => x (n + 1)) ⁻¹' C) =
       ∫⁻ x in B, κ (x n) C ∂markovChainLaw ν κ := by
-  rw [Filtration.piLE_eq_comap_prefix] at hB
-  obtain ⟨A, hA, rfl⟩ := hB
-  have hpre : Measurable fun x : ℕ → α => fun i : Fin (n + 1) => x i.1 := by fun_prop
-  have hfib : (fun (x : ℕ → α) (i : Fin (n + 1)) => x i.1) ⁻¹' A ∩
-      (fun x : ℕ → α => x (n + 1)) ⁻¹' C =
-      (fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.1), x (n + 1))) ⁻¹' (A ×ˢ C) := rfl
-  rw [hfib, ← Measure.map_apply (hpre.prodMk (measurable_pi_apply _)) (hA.prod hC),
-    markovChainLaw_map_prefix_succ_eq_compProd, Measure.compProd_apply_prod hA hC,
-    setLIntegral_map hA (Kernel.measurable_coe _ hC) hpre]
-  simp [Kernel.comap_apply]
+  have hB' : MeasurableSet B := Filtration.piLE.le n _ hB
+  have hf : Measurable fun x : ℕ → α => κ (x n) C :=
+    (Kernel.measurable_coe κ hC).comp (measurable_pi_apply n)
+  -- The identity at a fixed starting state.
+  have key : ∀ a : α, κ.markovChainKernel a (B ∩ (fun x => x (n + 1)) ⁻¹' C) =
+      ∫⁻ x in B, κ (x n) C ∂κ.markovChainKernel a := by
+    intro a
+    rw [Kernel.markovChainKernel_apply]
+    rw [Filtration.piLE_eq_comap_prefix] at hB
+    obtain ⟨A, hA, rfl⟩ := hB
+    have hpre : Measurable fun x : ℕ → α => fun i : Fin (n + 1) => x i.1 := by fun_prop
+    have hfib : (fun (x : ℕ → α) (i : Fin (n + 1)) => x i.1) ⁻¹' A ∩
+        (fun x : ℕ → α => x (n + 1)) ⁻¹' C =
+        (fun x : ℕ → α => ((fun i : Fin (n + 1) => x i.1), x (n + 1))) ⁻¹' (A ×ˢ C) := rfl
+    rw [hfib, ← Measure.map_apply (hpre.prodMk (measurable_pi_apply _)) (hA.prod hC),
+      markovChainLaw_map_prefix_succ_eq_compProd, Measure.compProd_apply_prod hA hC,
+      setLIntegral_map hA (Kernel.measurable_coe _ hC) hpre]
+    simp [Kernel.comap_apply]
+  rw [Measure.markovChainLaw_eq_comp, Measure.bind_apply (hB'.inter (hC.preimage
+    (measurable_pi_apply _))) (Kernel.aemeasurable _), ← lintegral_indicator hB',
+    Measure.lintegral_bind (Kernel.aemeasurable _) (hf.indicator hB').aemeasurable]
+  refine lintegral_congr fun a => ?_
+  rw [key a, lintegral_indicator hB']
 
 /-- **The Markov property at time `n`, as a joint law.** Under `markovChainLaw ν κ`, the prefix
 `(X 0, …, X n)` and the future path `(X (n + k))ₖ` have joint law the prefix law composed with the
@@ -297,31 +317,44 @@ variable {S γ : Type*} [MeasurableSpace S] [MeasurableSpace γ]
 `η s` is `κ (f s)`, so that the next value of `f` depends on the current state only through
 `f s`, then the image under `f` of the chain of `η` started from `ν` is the chain of `κ` started
 from `ν.map f`. -/
-theorem _root_.MeasureTheory.Measure.markovChainLaw_map_comp (ν : Measure S) [IsFiniteMeasure ν]
+theorem _root_.MeasureTheory.Measure.markovChainLaw_map_comp (ν : Measure S)
     (η : Kernel S S) [IsMarkovKernel η] (κ : Kernel γ γ) [IsMarkovKernel κ] {f : S → γ}
     (hf : Measurable f) (h : ∀ s, (η s).map f = κ (f s)) :
     (markovChainLaw ν η).map (fun ω n => f (ω n)) = markovChainLaw (ν.map f) κ := by
-  set P := markovChainLaw ν η
-  have hX : ∀ n, Measurable fun ω : ℕ → S => f (ω n) := fun n => hf.comp (measurable_pi_apply n)
-  refine ((hasLaw_markovChainLaw_iff (ν.map f) κ (X := fun n (ω : ℕ → S) => f (ω n))
-    fun n => (hX n).aemeasurable).2 ⟨?_, fun n => ?_⟩).map_eq
-  · rw [← markovChainLaw_map_eval_zero ν η, Measure.map_map hf (measurable_pi_apply 0)]
-    rfl
-  refine Measure.ext_prod fun {A C} hA hC => ?_
-  have hpre : Measurable fun (ω : ℕ → S) (i : Fin (n + 1)) => f (ω i.1) :=
-    measurable_pi_iff.2 fun i => hX i
-  have hB : MeasurableSet[Filtration.piLE n]
-      ((fun (ω : ℕ → S) (i : Fin (n + 1)) => f (ω i.1)) ⁻¹' A) := by
-    rw [Filtration.piLE_eq_comap_prefix]
-    exact ⟨(fun (w : Fin (n + 1) → S) i => f (w i)) ⁻¹' A,
-      hA.preimage (measurable_pi_iff.2 fun i => hf.comp (measurable_pi_apply i)), rfl⟩
-  rw [prefixLaw_compProd_apply_prod κ hX n hA hC, Measure.map_apply (hpre.prodMk (hX _))
-    (hA.prod hC)]
-  have hfib : (fun (ω : ℕ → S) => ((fun i : Fin (n + 1) => f (ω i.1)), f (ω (n + 1)))) ⁻¹'
-      (A ×ˢ C) = (fun (ω : ℕ → S) (i : Fin (n + 1)) => f (ω i.1)) ⁻¹' A ∩
-        (fun ω : ℕ → S => ω (n + 1)) ⁻¹' (f ⁻¹' C) := rfl
-  rw [hfib, Measure.markovChainLaw_inter_preimage_eval_succ ν η n hB (hf hC)]
-  refine lintegral_congr fun ω => ?_
-  rw [← Measure.map_apply hf hC, h]
+  -- The chain started at a fixed state, where the initial measure is finite.
+  have key : ∀ (ν : Measure S) [IsFiniteMeasure ν],
+      (markovChainLaw ν η).map (fun ω n => f (ω n)) = markovChainLaw (ν.map f) κ := by
+    intro ν _
+    set P := markovChainLaw ν η
+    have hX : ∀ n, Measurable fun ω : ℕ → S => f (ω n) := fun n => hf.comp (measurable_pi_apply n)
+    refine ((hasLaw_markovChainLaw_iff (ν.map f) κ (X := fun n (ω : ℕ → S) => f (ω n))
+      fun n => (hX n).aemeasurable).2 ⟨?_, fun n => ?_⟩).map_eq
+    · rw [← markovChainLaw_map_eval_zero ν η, Measure.map_map hf (measurable_pi_apply 0)]
+      rfl
+    refine Measure.ext_prod fun {A C} hA hC => ?_
+    have hpre : Measurable fun (ω : ℕ → S) (i : Fin (n + 1)) => f (ω i.1) :=
+      measurable_pi_iff.2 fun i => hX i
+    have hB : MeasurableSet[Filtration.piLE n]
+        ((fun (ω : ℕ → S) (i : Fin (n + 1)) => f (ω i.1)) ⁻¹' A) := by
+      rw [Filtration.piLE_eq_comap_prefix]
+      exact ⟨(fun (w : Fin (n + 1) → S) i => f (w i)) ⁻¹' A,
+        hA.preimage (measurable_pi_iff.2 fun i => hf.comp (measurable_pi_apply i)), rfl⟩
+    rw [prefixLaw_compProd_apply_prod κ hX n hA hC, Measure.map_apply (hpre.prodMk (hX _))
+      (hA.prod hC)]
+    have hfib : (fun (ω : ℕ → S) => ((fun i : Fin (n + 1) => f (ω i.1)), f (ω (n + 1)))) ⁻¹'
+        (A ×ˢ C) = (fun (ω : ℕ → S) (i : Fin (n + 1)) => f (ω i.1)) ⁻¹' A ∩
+          (fun ω : ℕ → S => ω (n + 1)) ⁻¹' (f ⁻¹' C) := rfl
+    rw [hfib, Measure.markovChainLaw_inter_preimage_eval_succ ν η n hB (hf hC)]
+    refine lintegral_congr fun ω => ?_
+    rw [← Measure.map_apply hf hC, h]
+  have hg : Measurable fun ω : ℕ → S => fun n => f (ω n) := measurable_pi_iff.2 fun n =>
+    hf.comp (measurable_pi_apply n)
+  rw [Measure.markovChainLaw_eq_comp ν η, Measure.map_bind (Kernel.aemeasurable _) hg.aemeasurable,
+    Measure.markovChainLaw_eq_comp (ν.map f) κ, Measure.bind_map hf.aemeasurable
+      (Kernel.aemeasurable _)]
+  congr 1
+  funext s
+  rw [Kernel.markovChainKernel_apply, key, Measure.map_dirac' hf s,
+    Kernel.markovChainKernel_apply]
 
 end TauCeti.Probability

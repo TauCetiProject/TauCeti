@@ -130,7 +130,7 @@ variable {S : Type*} [MeasurableSpace S] {s : Set S}
 
 /-- Including paths of the restricted chain into the ambient space recovers the ambient
 chain law, with the initial measure pushed forward by inclusion. -/
-theorem markovChainLaw_map_subtype (ν : Measure s) [IsFiniteMeasure ν] :
+theorem markovChainLaw_map_subtype (ν : Measure s) :
     (markovChainLaw ν (κ.subtype hs)).map (fun ω n => (ω n).val) =
       markovChainLaw (ν.map Subtype.val) κ := by
   apply Measure.markovChainLaw_map_comp ν (κ.subtype hs) κ measurable_subtype_coe
@@ -142,7 +142,7 @@ theorem markovChainLaw_map_subtype (ν : Measure s) [IsFiniteMeasure ν] :
 include hs hκs in
 /-- A chain whose initial measure is carried by a closed subtype stays in that set at all
 natural times, on one event of full measure. -/
-theorem ae_forall_mem_markovChainLaw_map_subtype (ν : Measure s) [IsFiniteMeasure ν] :
+theorem ae_forall_mem_markovChainLaw_map_subtype (ν : Measure s) :
     ∀ᵐ ω ∂markovChainLaw (ν.map Subtype.val) κ, ∀ n, ω n ∈ s := by
   rw [← markovChainLaw_map_subtype κ hs ν]
   have hi : Measurable (fun ω : ℕ → s => fun n => (ω n).val) :=
@@ -155,7 +155,7 @@ theorem ae_forall_mem_markovChainLaw_map_subtype (ν : Measure s) [IsFiniteMeasu
 /-- Entrance-time laws are preserved by restriction to a closed set. The target is pulled
 back along inclusion; the lower index `m` may be zero (entrance) or one (positive return).
 Nonentrance retains its value `⊤`. -/
-theorem map_hittingAfter_markovChainLaw_subtype (ν : Measure s) [IsFiniteMeasure ν]
+theorem map_hittingAfter_markovChainLaw_subtype (ν : Measure s)
     {t : Set S} (ht : MeasurableSet t) (m : ℕ) :
     (markovChainLaw ν (κ.subtype hs)).map
         (hittingAfter (fun n ω => ω n) (Subtype.val ⁻¹' t) m) =
@@ -171,7 +171,7 @@ theorem map_hittingAfter_markovChainLaw_subtype (ν : Measure s) [IsFiniteMeasur
 
 /-- Extended mean entrance times are preserved by restriction. In particular `m = 1` and
 `t = {x.val}` compare positive-return means at `x`; nonreturn contributes infinite mean. -/
-theorem lintegral_hittingAfter_markovChainLaw_subtype (ν : Measure s) [IsFiniteMeasure ν]
+theorem lintegral_hittingAfter_markovChainLaw_subtype (ν : Measure s)
     {t : Set S} (ht : MeasurableSet t) (m : ℕ) :
     (∫⁻ ω, (hittingAfter (fun n ω => ω n) (Subtype.val ⁻¹' t) m ω).recTopCoe ⊤
       (fun n => (n : ℝ≥0∞)) ∂markovChainLaw ν (κ.subtype hs)) =

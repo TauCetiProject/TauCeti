@@ -175,7 +175,6 @@ variable {α : Type*} [MeasurableSpace α] {β : Type*} [MeasurableSpace β]
 `κ p.1` and `κ' p.2`, the first coordinates of the chain of `η` form the chain of `κ` started from
 the first marginal of the initial law. -/
 theorem markovChainLaw_map_fst_of_isCoupling [IsMarkovKernel κ] (ρ : Measure (α × β))
-    [IsFiniteMeasure ρ]
     (hη : ∀ p, IsCoupling (η p) (κ p.1) (κ' p.2)) :
     (markovChainLaw ρ η).map (fun ω n => (ω n).1) = markovChainLaw ρ.fst κ :=
   markovChainLaw_map_comp ρ η κ measurable_fst fun p => (hη p).fst_eq
@@ -184,7 +183,6 @@ theorem markovChainLaw_map_fst_of_isCoupling [IsMarkovKernel κ] (ρ : Measure (
 `κ p.1` and `κ' p.2`, the second coordinates of the chain of `η` form the chain of `κ'` started
 from the second marginal of the initial law. -/
 theorem markovChainLaw_map_snd_of_isCoupling [IsMarkovKernel κ'] (ρ : Measure (α × β))
-    [IsFiniteMeasure ρ]
     (hη : ∀ p, IsCoupling (η p) (κ p.1) (κ' p.2)) :
     (markovChainLaw ρ η).map (fun ω n => (ω n).2) = markovChainLaw ρ.snd κ' :=
   markovChainLaw_map_comp ρ η κ' measurable_snd fun p => (hη p).snd_eq
