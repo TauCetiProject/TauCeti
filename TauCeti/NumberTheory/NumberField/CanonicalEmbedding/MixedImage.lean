@@ -32,6 +32,8 @@ is finitely generated, and it spans over `ℝ` exactly when `Λ` spans over `K`.
 
 * `NumberField.mixedEmbedding.mem_span_pi_latticeBasis`: the `ℤ`-span of
   `Pi.basis fun _ ↦ latticeBasis K` is the coordinatewise image of `ι → 𝓞 K`.
+* `NumberField.mixedEmbedding.mem_span_pi_fractionalIdealLatticeBasis`: the same for products of
+  the lattice bases of invertible fractional ideals `J i`, with the coefficients in `J i`.
 * `NumberField.mixedEmbedding.finrank_pi`, `NumberField.mixedEmbedding.linearIndependent_pi`:
   `ι → mixedSpace K` has real dimension `[K : ℚ] * #ι`, and tuples independent over `ℚ` have
   coordinatewise mixed embeddings independent over `ℝ`.
@@ -68,6 +70,7 @@ and a discrete subgroup of a finite-dimensional real space is finitely generated
 public section
 
 open Module NumberField NumberField.mixedEmbedding
+open scoped nonZeroDivisors
 
 variable {K : Type*} [Field K] {ι : Type*}
 
@@ -85,6 +88,27 @@ theorem mem_span_pi_latticeBasis [NumberField K] [Fintype ι] {z : ι → mixedS
   refine ⟨fun h ↦ ?_, fun ⟨x, hx⟩ i ↦ ⟨x i, by simp [← hx]⟩⟩
   choose x hx using h
   exact ⟨x, funext fun i ↦ by simpa using hx i⟩
+
+open scoped Classical in
+/-- The `ℤ`-span of the product of the lattice bases of invertible fractional ideals `J i` consists
+of the images `(mixedEmbedding K (c i))ᵢ` of the families `c` with `c i ∈ J i`; the coordinatewise
+form of `NumberField.mixedEmbedding.mem_span_fractionalIdealLatticeBasis`. -/
+theorem mem_span_pi_fractionalIdealLatticeBasis [NumberField K] [Fintype ι]
+    {J : ι → (FractionalIdeal (𝓞 K)⁰ K)ˣ} (z : ι → mixedSpace K) :
+    z ∈ Submodule.span ℤ (Set.range (Pi.basis fun i ↦ fractionalIdealLatticeBasis K (J i))) ↔
+      ∃ c : ι → K, (∀ i, c i ∈ (J i : Set K)) ∧ (fun i ↦ mixedEmbedding K (c i)) = z := by
+  have hU (i : ι) (x : mixedSpace K) :
+      (∀ k, (fractionalIdealLatticeBasis K (J i)).repr x k ∈ Set.range (algebraMap ℤ ℝ)) ↔
+        ∃ c ∈ (J i : Set K), mixedEmbedding K c = x := by
+    rw [← Basis.mem_span_iff_repr_mem, mem_span_fractionalIdealLatticeBasis]
+    simp
+  rw [(Pi.basis fun i ↦ fractionalIdealLatticeBasis K (J i)).mem_span_iff_repr_mem ℤ]
+  simp only [Pi.basis_repr, Sigma.forall, hU]
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · choose c hc hcz using h
+    exact ⟨c, hc, funext hcz⟩
+  · rintro ⟨c, hc, rfl⟩ i
+    exact ⟨c i, hc i, rfl⟩
 
 /-- The real dimension of `ι → mixedSpace K` is `[K : ℚ] * #ι`. -/
 theorem finrank_pi [NumberField K] [Fintype ι] :

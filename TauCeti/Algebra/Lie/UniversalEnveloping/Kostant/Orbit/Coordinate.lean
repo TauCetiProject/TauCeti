@@ -72,13 +72,7 @@ theorem existsUnique_highestWeightCoordinate
       exact ⟨n, Subtype.ext (Subtype.ext hn.symm)⟩
   let c := (LinearEquiv.ofBijective s hs).symm
   have hc (n : ℤ) : c (n • vW) = n := c.apply_symm_apply n
-  have hM : DirectSum.IsInternal W := by
-    apply isInternal_weightSublattice b.rootGenerator b.h ρ M
-    · intro u hu x hx
-      rw [← b.kostantForm_def] at hu
-      exact Subring.apply_mem_orbitOfRep_of_mem _ _ _ hu hx
-    · intro x
-      exact b.orbitOfRep_kostantForm_le_iSup_jointWeightSpace hv hve x.property
+  have hM : DirectSum.IsInternal W := b.isInternal_weightSublattice_orbitOfRep hv hve
   -- Project the integral weight decomposition onto that line and read its coefficient.
   let d := (LinearEquiv.ofBijective (DirectSum.coeLinearMap W) hM).symm
   let f : M →ₗ[ℤ] ℤ := c.toLinearMap.comp

@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Generation
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.CategoryTheory.Localization.Triangulated
 public import Mathlib.CategoryTheory.Triangulated.Generators
+import TauCeti.CategoryTheory.ObjectProperty.Retract
 
 /-!
 # The singularity category
@@ -118,8 +119,6 @@ theorem perfect_le_inverseImage_ι (Q : ObjectProperty (_root_.DerivedCategory C
     [Q.IsClosedUnderIsomorphisms] [Q.IsTriangulated] [Q.IsStableUnderRetracts]
     (hQ : ∀ P : C, Projective P → Q ((_root_.DerivedCategory.singleFunctor C 0).obj P)) :
     perfect C ≤ Q.inverseImage _root_.DerivedCategory.Bounded.ι := by
-  have : (Q.inverseImage _root_.DerivedCategory.Bounded.ι).IsStableUnderRetracts :=
-    ⟨fun r h ↦ Q.prop_of_retract (r.map _root_.DerivedCategory.Bounded.ι) h⟩
   rw [perfect_eq, ObjectProperty.triangEnvelope_le_iff]
   intro Y hY
   obtain ⟨P, hP, ⟨e⟩⟩ := (projectiveSingle_iff C Y).1 hY

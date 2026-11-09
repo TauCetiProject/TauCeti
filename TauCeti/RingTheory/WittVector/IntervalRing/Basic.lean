@@ -139,6 +139,25 @@ theorem gaussValuationAway_mk' (hv : v.Integers O) (hϖ : ϖ ≠ 0) {ρ : ℝ≥
       gaussValuation p hv ρ hρ.2 x * (gaussValuation p hv ρ hρ.2 s)⁻¹ :=
   Valuation.extendToLocalization_mk' _ _ _ x s
 
+variable (B) in
+/-- The Gauss valuation at radius `ρ` of the numerator `y` of the fraction `y / (p [ϖ]) ^ m` is
+the norm of the fraction at radius `ρ`, times `(ρ v(ϖ)) ^ m`. -/
+theorem gaussValuation_eq_mul_gaussValuationAway_mk' (hv : v.Integers O) (hϖ : ϖ ≠ 0) {m : ℕ}
+    {s : Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)}
+    (hm : ((p : 𝕎 O) * teichmuller p ϖ) ^ m = s) {ρ : ℝ≥0} (hρ : ρ ∈ Set.Ioo 0 1) (y : 𝕎 O) :
+    (gaussValuation p hv ρ hρ.2 y : ℝ) =
+      gaussValuationAway p hv hϖ ρ hρ B (IsLocalization.mk' B y s) *
+        (ρ ^ m * v (algebraMap O K ϖ) ^ m) := by
+  have := hv.isDomain
+  have hw : 0 < (v (algebraMap O K ϖ) : ℝ) :=
+    NNReal.coe_pos.mpr (hv.valuation_pos_iff_ne_zero.mpr hϖ)
+  have hρ0 : (0 : ℝ) < ρ := hρ.1
+  rw [gaussValuationAway_mk', ← hm]
+  simp only [map_pow, map_mul, gaussValuation_p, gaussValuation_teichmuller, NNReal.coe_mul,
+    NNReal.coe_inv, NNReal.coe_pow]
+  field_simp
+  ring
+
 /-- The extended Gauss valuation vanishes only at zero. -/
 @[simp]
 theorem gaussValuationAway_eq_zero_iff (hv : v.Integers O) (hϖ : ϖ ≠ 0) {ρ : ℝ≥0}

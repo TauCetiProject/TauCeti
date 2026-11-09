@@ -43,7 +43,7 @@ open set.
   `C^n` chart of the model space with `C^n` inverse is again in the maximal atlas.
 * `TauCeti.mfderiv_eq_zero_iff_of_eqOn`: on the source of `e`, the differential of `f` vanishes at
   `y` if and only if the Fréchet derivative of `h` vanishes at `e y`.
-* `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm`: the differential of a differentiable
+* `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm`: the differential of
   `f` vanishes at `x` if and only if the Fréchet derivative of its coordinate expression in the
   preferred chart vanishes at `extChartAt 𝓘(𝕜, E) x x`.
 * `TauCeti.isOpen_setOf_mfderiv_ne_zero`: the points where the differential of a `C^1` map is
@@ -65,17 +65,29 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
   {f : M → F} {e : OpenPartialHomeomorph M E} {h : E → F}
 
-/-- If `f = h ∘ e` on the source of a chart `e` of the `C^1` maximal atlas, with `h` differentiable,
-then `df_y = dh_{e y} ∘ de_y`. -/
+/-- If `f = h ∘ e` on the source of a chart `e` of the `C^1` maximal atlas, then
+`df_y = dh_{e y} ∘ de_y`. -/
 theorem mfderiv_eq_fderiv_comp_of_eqOn (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) 1 M)
-    (hfh : EqOn f (h ∘ e) e.source) {y : M} (hy : y ∈ e.source)
-    (hh : DifferentiableAt 𝕜 h (e y)) :
+    (hfh : EqOn f (h ∘ e) e.source) {y : M} (hy : y ∈ e.source) :
     mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) f y =
       (fderiv 𝕜 h (e y) : E →L[𝕜] F).comp (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E) e y) := by
   have hev : f =ᶠ[𝓝 y] h ∘ e := Filter.eventuallyEq_of_mem (e.open_source.mem_nhds hy) hfh
-  rw [hev.mfderiv_eq,
-    mfderiv_comp y hh.mdifferentiableAt (mdifferentiableAt_of_mem_maximalAtlas he hy),
-    mfderiv_eq_fderiv]
+  by_cases hh : DifferentiableAt 𝕜 h (e y)
+  · rw [hev.mfderiv_eq,
+      mfderiv_comp y hh.mdifferentiableAt (mdifferentiableAt_of_mem_maximalAtlas he hy),
+      mfderiv_eq_fderiv]
+    rfl
+  -- If `h` is not differentiable at `e y`, then `f` is not differentiable at `y` either, and both
+  -- sides vanish by convention.
+  have hf : ¬MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) f y := fun hfd ↦ hh <| by
+    have hsymm := mdifferentiableAt_symm_of_mem_maximalAtlas he (e.map_source hy)
+    have hfd' : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) f (e.symm (e y)) := by rwa [e.left_inv hy]
+    refine (mdifferentiableAt_iff_differentiableAt.1
+      (hfd'.comp (e y) hsymm)).congr_of_eventuallyEq ?_
+    filter_upwards [e.open_target.mem_nhds (e.map_source hy)] with w hw
+    simp only [comp_apply]
+    exact (congrArg h (e.right_inv hw)).symm.trans (hfh (e.map_target hw)).symm
+  rw [mfderiv_zero_of_not_mdifferentiableAt hf, fderiv_zero_of_not_differentiableAt hh]
   rfl
 
 /-- `isInvertible_mfderiv_extend` for a chart of the `C^1` maximal atlas of a manifold modelled on
@@ -89,10 +101,9 @@ theorem isInvertible_mfderiv_chart (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜
 /-- Where `f = h ∘ e` on the source of a chart `e` of the `C^1` maximal atlas, the differential of
 `f` vanishes at `y` in the source if and only if the Fréchet derivative of `h` vanishes at `e y`. -/
 theorem mfderiv_eq_zero_iff_of_eqOn (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) 1 M)
-    (hfh : EqOn f (h ∘ e) e.source) {y : M} (hy : y ∈ e.source)
-    (hh : DifferentiableAt 𝕜 h (e y)) :
+    (hfh : EqOn f (h ∘ e) e.source) {y : M} (hy : y ∈ e.source) :
     mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) f y = 0 ↔ fderiv 𝕜 h (e y) = 0 := by
-  rw [mfderiv_eq_fderiv_comp_of_eqOn he hfh hy hh]
+  rw [mfderiv_eq_fderiv_comp_of_eqOn he hfh hy]
   have hinv := isInvertible_mfderiv_chart he hy
   constructor
   · intro h0
@@ -238,22 +249,17 @@ theorem contDiffOn_comp_chartAt_symm {n : WithTop ℕ∞} [IsManifold 𝓘(𝕜,
 
 variable [IsManifold 𝓘(𝕜, E) 1 M]
 
-/-- The differential of a differentiable `f` vanishes at `x` if and only if the Fréchet derivative
-of the coordinate expression of `f` in the preferred extended chart at `x` vanishes at
+/-- The differential of `f` vanishes at `x` if and only if the Fréchet derivative of the
+coordinate expression of `f` in the preferred extended chart at `x` vanishes at
 `extChartAt 𝓘(𝕜, E) x x`. -/
-theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm {x : M}
-    (hf : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) f x) :
+theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm {x : M} :
     mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) f x = 0 ↔
       fderiv 𝕜 (f ∘ (extChartAt 𝓘(𝕜, E) x).symm) (extChartAt 𝓘(𝕜, E) x x) = 0 := by
   have hext : ((extChartAt 𝓘(𝕜, E) x).symm : E → M) = (chartAt E x).symm := by ext; simp
   have hext' : extChartAt 𝓘(𝕜, E) x x = chartAt E x x := by simp
   rw [hext, hext']
-  have hsymm : (chartAt E x).symm (chartAt E x x) = x :=
-    (chartAt E x).left_inv (mem_chart_source E x)
   exact mfderiv_eq_zero_iff_of_eqOn (IsManifold.chart_mem_maximalAtlas x)
     (eqOn_comp_chartAt_symm x) (mem_chart_source E x)
-    (((hsymm.symm ▸ hf).comp _
-      (mdifferentiableAt_atlas_symm (chart_mem_atlas E x) (mem_chart_target E x))).differentiableAt)
 
 /-- The points where the differential of a `C^1` function is nonzero form an open set. -/
 theorem isOpen_setOf_mfderiv_ne_zero (hf : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F) 1 f) :
@@ -262,13 +268,10 @@ theorem isOpen_setOf_mfderiv_ne_zero (hf : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F)
   set c := chartAt E y₀
   have hcont : ContinuousOn (fderiv 𝕜 (f ∘ c.symm)) c.target :=
     (contDiffOn_comp_chartAt_symm hf y₀).continuousOn_fderiv_of_isOpen c.open_target le_rfl
-  have hdiff : ∀ y ∈ c.source, DifferentiableAt 𝕜 (f ∘ c.symm) (c y) := fun y hy ↦
-    ((contDiffOn_comp_chartAt_symm hf y₀).contDiffAt (c.open_target.mem_nhds
-      (c.map_source hy))).differentiableAt one_ne_zero
   have hmem : y₀ ∈ c.source := mem_chart_source E y₀
   have hiff : ∀ y ∈ c.source, mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) f y = 0 ↔ fderiv 𝕜 (f ∘ c.symm) (c y) = 0 :=
     fun y hy ↦ mfderiv_eq_zero_iff_of_eqOn (IsManifold.chart_mem_maximalAtlas y₀)
-      (eqOn_comp_chartAt_symm y₀) hy (hdiff y hy)
+      (eqOn_comp_chartAt_symm y₀) hy
   have h0 : fderiv 𝕜 (f ∘ c.symm) (c y₀) ≠ 0 := fun h ↦ hy₀ ((hiff y₀ hmem).2 h)
   have hca : ContinuousAt (fderiv 𝕜 (f ∘ c.symm)) (c y₀) :=
     hcont.continuousAt (c.open_target.mem_nhds (c.map_source hmem))

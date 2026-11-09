@@ -83,11 +83,11 @@ theorem reaches_of_pos {x y : S} (h : 0 < κ x {y}) : κ.Reaches x y := by
   simpa [pow_one] using h
 
 /-- Reachability is transitive. -/
-theorem Reaches.trans [MeasurableSingletonClass S] {x y z : S}
+theorem Reaches.trans {x y z : S}
     (hxy : κ.Reaches x y) (hyz : κ.Reaches y z) : κ.Reaches x z := by
   obtain ⟨n, hn⟩ := hxy
   obtain ⟨m, hm⟩ := hyz
-  exact ⟨n + m, pow_add_apply_pos (measurableSet_singleton z) hn hm⟩
+  exact ⟨n + m, pow_add_apply_pos hn hm⟩
 
 /-- Every state communicates with itself. -/
 @[simp] theorem Communicates.refl (x : S) : κ.Communicates x x :=
@@ -98,7 +98,7 @@ theorem Communicates.symm {x y : S} (h : κ.Communicates x y) : κ.Communicates 
   ⟨h.2, h.1⟩
 
 /-- Communication is transitive. -/
-theorem Communicates.trans [MeasurableSingletonClass S] {x y z : S}
+theorem Communicates.trans {x y z : S}
     (hxy : κ.Communicates x y) (hyz : κ.Communicates y z) : κ.Communicates x z :=
   ⟨hxy.1.trans hyz.1, hyz.2.trans hxy.2⟩
 
@@ -108,7 +108,7 @@ theorem communicates_comm (x y : S) : κ.Communicates x y ↔ κ.Communicates y 
   ⟨fun h => h.symm, fun h => h.symm⟩
 
 /-- Communication is an equivalence relation on the state space. -/
-theorem communicates_equivalence [MeasurableSingletonClass S] :
+theorem communicates_equivalence :
     Equivalence κ.Communicates := by
   refine ⟨?_, ?_, ?_⟩
   · intro x

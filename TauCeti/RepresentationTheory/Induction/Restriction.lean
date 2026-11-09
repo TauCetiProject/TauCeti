@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.Subrepresentation
 public import TauCeti.CategoryTheory.Action.Restriction
 public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 public import TauCeti.RepresentationTheory.Simple.Basic
+import TauCeti.RepresentationTheory.Quotient
 
 /-!
 # Restriction of representations
@@ -80,10 +81,8 @@ theorem _root_.Representation.isIrreducible_ofQuotient_iff {V : Type*} [AddCommG
     [Module k V] (ρ : Representation k G V) (S : Subgroup G) [S.Normal]
     [Representation.IsTrivial (ρ.comp S.subtype)] :
     (ρ.ofQuotient S).IsIrreducible ↔ ρ.IsIrreducible := by
-  have h : (ρ.ofQuotient S).comp (QuotientGroup.mk' S) = ρ :=
-    MonoidHom.ext fun g ↦ LinearMap.ext fun v ↦ ρ.ofQuotient_coe_apply S g v
   rw [← MonoidHom.isIrreducible_comp_surjective_iff (QuotientGroup.mk' S)
-    (QuotientGroup.mk'_surjective S), h]
+    (QuotientGroup.mk'_surjective S), ρ.ofQuotient_comp_mk']
 
 /-- An object of `Rep k G` on which a normal subgroup `S` acts trivially is simple exactly when the
 object of `Rep k (G ⧸ S)` it factors through is simple. In particular simplicity of

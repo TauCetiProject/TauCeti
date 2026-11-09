@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Tensoriality
 public import TauCeti.Geometry.Manifold.VectorField.LieBracket
 public import TauCeti.Geometry.Symplectic.Complex.Complexification
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
@@ -411,8 +412,8 @@ theorem nijenhuis_apply_eq_fderivWithin_inChart (v w : TangentSpace I x) :
   have hs : UniqueDiffWithinAt ℝ (Set.range I) (extChartAt I x x) :=
     I.uniqueDiffOn _ (Set.mem_range_self _)
   -- The vector fields with constant coordinates `v` and `w` near `x`, and their images under `J`.
-  have hmdiff := VectorField.mdifferentiableAt_trivializationAt_symm_apply (I := I) x
-  have hself := VectorField.trivializationAt_symm_apply_self (I := I) x
+  have hmdiff := TangentBundle.mdifferentiableAt_trivializationAt_symm_apply (I := I) x
+  have hself := TangentBundle.trivializationAt_symm_apply_self (I := I) x
   -- Lie brackets at `x` are Lie brackets of the pullbacks to the model space.
   have hbr {V W : Π y : M, TangentSpace I y} {V' W' : E → E}
       (hV : VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I x).symm V (Set.range I)
