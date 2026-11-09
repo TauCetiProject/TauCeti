@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.BasisSpan
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 public import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
@@ -75,15 +76,6 @@ private theorem sum_sq_norm_repr_eq_sq_norm (b : OrthonormalBasis (Fin n) 𝕜 E
   exact b.sum_sq_norm_inner_right x
 
 
-/-- The coordinates of `S x` in an orthonormal eigenbasis of `S` are the coordinates of `x`
-scaled by the eigenvalues. -/
-private theorem repr_apply_of_eigenbasis
-    (S : E →ₗ[𝕜] E) (w : OrthonormalBasis (Fin n) 𝕜 E) {μ : Fin n → 𝕜}
-    (hw : ∀ i, S (w i) = μ i • w i) (x : E) (i : Fin n) :
-    w.repr (S x) i = μ i * w.repr x i := by
-  conv_lhs => rw [← w.sum_repr x]
-  simp [map_sum, hw, smul_smul, mul_comm, Pi.single_apply]
-
 /-- The squared norm in any orthonormal eigenbasis: if `S (w i) = μ i • w i` for all `i`, then
 `‖S x‖ ^ 2 = ∑ i, ‖μ i‖ ^ 2 * ‖w.repr x i‖ ^ 2`. -/
 theorem LinearMap.sq_norm_apply_eq_sum_of_eigenbasis
@@ -91,7 +83,7 @@ theorem LinearMap.sq_norm_apply_eq_sum_of_eigenbasis
     (hw : ∀ i, S (w i) = μ i • w i) (x : E) :
     ‖S x‖ ^ 2 = ∑ i : Fin n, ‖μ i‖ ^ 2 * ‖w.repr x i‖ ^ 2 := by
   rw [← sum_sq_norm_repr_eq_sq_norm w (S x)]
-  simp_rw [repr_apply_of_eigenbasis S w hw, norm_mul, mul_pow]
+  simp_rw [w.repr_apply_of_eigenbasis S hw, norm_mul, mul_pow]
 
 /-- Diagonalization of the quadratic form in any orthonormal eigenbasis: if
 `S (w i) = μ i • w i` for all `i`, then
@@ -104,7 +96,7 @@ theorem LinearMap.re_inner_apply_self_eq_sum_of_eigenbasis
     rw [← w.repr.inner_map_map (S x) x, PiLp.inner_apply]
     push_cast
     refine Finset.sum_congr rfl fun i _ => ?_
-    rw [RCLike.inner_apply, repr_apply_of_eigenbasis S w (μ := fun i => (μ i : 𝕜)) hw x i,
+    rw [RCLike.inner_apply, w.repr_apply_of_eigenbasis S (μ := fun i => (μ i : 𝕜)) hw x i,
       map_mul, RCLike.conj_ofReal, mul_left_comm, RCLike.mul_conj]
   rw [key, RCLike.ofReal_re]
 
