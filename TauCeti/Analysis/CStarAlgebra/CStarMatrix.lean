@@ -35,7 +35,8 @@ Hilbert C⋆-module.
 * `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an
   ordinary matrix respects multiplication and sends `star` to the conjugate transpose.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
-  are self-adjoint is self-adjoint.
+  are self-adjoint is self-adjoint. This is purely algebraic, and holds over any complex
+  star-algebra whose star is proper.
 * `CStarMatrix.nonneg_iff_forall_sum_nonneg`: the quadratic-form criterion for positivity.
 
 ## References
@@ -75,12 +76,11 @@ lemma ofMatrix_symm_mul [Fintype n] [Mul A] [AddCommMonoid A] (M N : CStarMatrix
 lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
     ofMatrix.symm (star M) = (ofMatrix.symm M)ᴴ := (rfl)
 
-end Algebraic
-
-variable {n A : Type*} [Fintype n] [NonUnitalCStarAlgebra A]
-
-/-- A matrix over a C⋆-algebra all of whose quadratic forms are self-adjoint is self-adjoint. -/
-theorem isSelfAdjoint_of_forall_isSelfAdjoint_sum {M : CStarMatrix n n A}
+/-- A matrix over a complex star-algebra with proper star all of whose quadratic forms are
+self-adjoint is self-adjoint. -/
+theorem isSelfAdjoint_of_forall_isSelfAdjoint_sum [Fintype n] [NonUnitalRing A] [StarRing A]
+    [Module ℂ A] [IsScalarTower ℂ A A] [SMulCommClass ℂ A A] [StarModule ℂ A] [IsProperStar A]
+    {M : CStarMatrix n n A}
     (hM : ∀ x : n → A, IsSelfAdjoint (∑ i, ∑ j, star (x i) * M i j * x j)) :
     IsSelfAdjoint M := by
   classical
@@ -106,7 +106,9 @@ theorem isSelfAdjoint_of_forall_isSelfAdjoint_sum {M : CStarMatrix n n A}
     ofMatrix_symm_apply] at this
   rw [star_apply, mul_sub, sub_mul, this, mul_assoc, sub_self]
 
-variable [PartialOrder A] [StarOrderedRing A]
+end Algebraic
+
+variable {n A : Type*} [Fintype n] [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
 /-! The real continuous functional calculus of the C⋆-algebra `CStarMatrix n n A` is not found by
 instance search, because the real scalar action on `CStarMatrix n n A` is the entrywise one rather
