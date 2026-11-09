@@ -10,7 +10,6 @@ public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 import Mathlib.Data.Nat.Cast.Order.Field
 import Mathlib.Tactic.Linarith
-import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Data.Finset.Basic
 import TauCeti.Order.Partition.Finpartition
 
@@ -111,13 +110,26 @@ theorem irregularPairs_subset_offDiag : S.irregularPairs ε P ⊆ P.parts.offDia
   obtain ⟨h₁, h₂, h₃, -⟩ := S.mem_irregularPairs.1 hAB
   exact mem_offDiag.2 ⟨h₁, h₂, h₃⟩
 
+/-- The final estimate of the energy increment: the gain `ε² ε² M / D`, where `M` exceeds
+`ε n²` and `D ≤ n²`, exceeds `ε⁵`. -/
+private theorem pow_five_lt_of_mul_div_le {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {ε M D n g : α} (hε : 0 < ε) (hD : 0 < D)
+    (hDn : D ≤ n ^ 2) (hbad : ε * n ^ 2 < M) (hgain : ε ^ 2 * ε ^ 2 * (M / D) ≤ g) :
+    ε ^ 5 < g := by
+  have hn : 0 < n ^ 2 := hD.trans_le hDn
+  have hM₀ : 0 ≤ M := hbad.le.trans' (by positivity)
+  have hM : ε < M / D :=
+    ((lt_div_iff₀ hn).2 hbad).trans_le (div_le_div_of_nonneg_left hM₀ hD hDn)
+  have hε4 : 0 < ε ^ 2 * ε ^ 2 := by positivity
+  nlinarith
+
 /-- Choosing two sets for each irregular pair gives at most `2 * #P.parts ^ 2` sets. -/
 private theorem card_image_union_irregularPairs_le (P : Finpartition (univ : Finset V))
     (X Y : Finset V × Finset V → Finset V) :
     #((S.irregularPairs ε P).image X ∪ (S.irregularPairs ε P).image Y) ≤ 2 * #P.parts ^ 2 := by
   have hI : #(S.irregularPairs ε P) ≤ #P.parts * #P.parts :=
-    (card_le_card (S.irregularPairs_subset_offDiag)).trans
-      (by rw [offDiag_card]; exact Nat.sub_le _ _)
+    (card_le_card S.irregularPairs_subset_offDiag).trans
+      ((card_offDiag_le_sq P.parts).trans_eq (sq _))
   calc _ ≤ #((S.irregularPairs ε P).image X) + #((S.irregularPairs ε P).image Y) :=
         card_union_le _ _
     _ ≤ #(S.irregularPairs ε P) + #(S.irregularPairs ε P) :=
@@ -190,7 +202,8 @@ theorem exists_refinement_energy_add_lt (P : Finpartition (univ : Finset V)) (h�
       exact Nat.cast_pos.2 (card_pos.2 ⟨(a, b), mem_offDiag.2 ⟨mem_univ _, mem_univ _,
         (hdisj hAB₀).forall_ne_finset ha hb⟩⟩)
     have hDn : D ≤ n ^ 2 := by
-      have h := (Nat.cast_le (α := ℝ)).2 (Finset.card_offDiag_univ_le_sq V)
+      have h := (Nat.cast_le (α := ℝ)).2 (card_offDiag_le_sq (univ : Finset V))
+      rw [card_univ] at h
       push_cast at h
       exact h
     linarith [pow_five_lt_of_mul_div_le hε hD hDn hbad hgain]

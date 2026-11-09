@@ -224,10 +224,9 @@ theorem sq_mul_card_filter_ne_product_le {α R : Type*} [DecidableEq α] [CommSe
   calc ε ^ 2 * (#A * #B : R) = (ε * #A) * (ε * #B) := by ring
     _ ≤ #X * #Y := mul_le_mul hXc hYc (by positivity) (Nat.cast_nonneg _)
 
-/-- There are at most `n ^ 2` ordered pairs of distinct elements of a type with `n` elements. -/
-theorem card_offDiag_univ_le_sq (α : Type*) [Fintype α] :
-    #(univ : Finset α).offDiag ≤ Fintype.card α ^ 2 := by
-  rw [offDiag_card, card_univ, sq]
+/-- A finset has at most `#s ^ 2` ordered pairs of distinct elements. -/
+theorem card_offDiag_le_sq (s : Finset α) : #s.offDiag ≤ #s ^ 2 := by
+  rw [offDiag_card, sq]
   exact Nat.sub_le _ _
 
 /-- Counting the pairs with distinct coordinates in `s ×ˢ t` by their first coordinate: each
