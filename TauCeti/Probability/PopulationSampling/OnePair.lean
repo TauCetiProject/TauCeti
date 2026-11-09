@@ -121,13 +121,9 @@ theorem natCard_update_id_comp_eq_update_id_comp [Fintype ι] (hab : a ≠ b) (f
       simp [update_id_apply_eq_update_id_apply_iff]
     rw [← Set.coe_ofPred, Nat.card_coe_set_eq, hset]
     split_ifs with h
-    · refine Set.ncard_pair fun he => ?_
-      rw [update_id_apply_eq_iff] at h
-      rcases h with h | h <;> simp [h, hab, hab.symm, Equiv.swap_apply_left,
-        Equiv.swap_apply_right] at he
-    · have he : Equiv.swap a b (f i) = f i := by
-        rw [update_id_apply_eq_iff, not_or] at h
-        exact Equiv.swap_apply_of_ne_of_ne h.1 h.2
+    · exact Set.ncard_pair (Equiv.swap_apply_ne_self_iff.2 ⟨hab, update_id_apply_eq_iff.1 h⟩).symm
+    · have he : Equiv.swap a b (f i) = f i := not_not.1 fun hne =>
+        h (update_id_apply_eq_iff.2 (Equiv.swap_apply_ne_self_iff.1 hne).2)
       rw [he, Set.pair_eq_singleton, Set.ncard_singleton]
   have e : {g : ι → κ // update id b a ∘ g = update id b a ∘ f} ≃
       ∀ i, {y : κ // update id b a y = update id b a (f i)} :=
@@ -153,14 +149,10 @@ theorem embedding_update_id_comp_eq_update_id_comp_iff (f g : ι ↪ κ) :
     have hj' : g j = f j := (hpt j).resolve_right hj
     -- Both `f i` and `f j` are moved by the swap, so they are `a` and `b` in some order, and
     -- then `g i = g j`.
-    have hfi : f i = a ∨ f i = b := by
-      by_contra h
-      rw [not_or] at h
-      exact hi (hi'.trans (Equiv.swap_apply_of_ne_of_ne h.1 h.2))
-    have hfj : f j = a ∨ f j = b := by
-      by_contra h
-      rw [not_or] at h
-      exact hj (hj'.trans (Equiv.swap_apply_of_ne_of_ne h.1 h.2).symm)
+    have hfi : f i = a ∨ f i = b :=
+      (Equiv.swap_apply_ne_self_iff.1 fun h => hi (hi'.trans h)).2
+    have hfj : f j = a ∨ f j = b :=
+      (Equiv.swap_apply_ne_self_iff.1 fun h => hj (hj'.trans h.symm)).2
     have hij : i ≠ j := by
       rintro rfl
       exact hi hj'
@@ -189,9 +181,9 @@ theorem natCard_embedding_update_id_comp_eq_update_id_comp [Fintype ι] (hab : a
   have hfix : f.trans (Equiv.swap a b).toEmbedding = f ↔ #{i | update id b a (f i) = a} = 0 := by
     simp only [DFunLike.ext_iff, Embedding.trans_apply, Equiv.coe_toEmbedding, card_eq_zero,
       filter_eq_empty_iff, mem_univ, true_implies, update_id_apply_eq_iff, not_or]
-    refine forall_congr' fun i => ⟨fun h => ?_, fun h => Equiv.swap_apply_of_ne_of_ne h.1 h.2⟩
-    constructor <;> rintro hi <;> rw [hi] at h <;>
-      simp [Equiv.swap_apply_left, Equiv.swap_apply_right, hab, hab.symm] at h
+    refine forall_congr' fun i => ?_
+    rw [← not_iff_not, ← ne_eq, Equiv.swap_apply_ne_self_iff]
+    simp [hab, or_iff_not_imp_left]
   rw [← Set.coe_ofPred, Nat.card_coe_set_eq, hset]
   split_ifs with h
   · rw [hfix.2 h, Set.pair_eq_singleton, Set.ncard_singleton]

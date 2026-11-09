@@ -267,8 +267,8 @@ section TwoInRange
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ] {a b : κ}
 
-/-- Relabelling the codomain by a permutation `σ` shows that the number of injective maps
-`ι → κ` whose range contains two given distinct elements does not depend on which two. -/
+/-- For `a ≠ b` and `c ≠ d`, there are as many injective maps `ι → κ` whose range contains `c`
+and `d` as injective maps whose range contains `a` and `b`. -/
 theorem card_filter_injective_mem_range_and_mem_range_eq {c d : κ} (hab : a ≠ b)
     (hcd : c ≠ d) [DecidablePred fun k : ι → κ => Injective k] :
     #{k : ι → κ | Injective k ∧ (c ∈ Set.range k ∧ d ∈ Set.range k)} =
@@ -293,15 +293,18 @@ theorem card_filter_injective_mem_range_and_mem_range_eq {c d : κ} (hab : a ≠
     refine ⟨σ.injective.comp hk.1, ?_⟩
     simpa [Set.mem_range, ← hσa, ← hσb] using hk.2
 
-/-- Double counting the triples `(k, c, d)` with `k` injective and `c ≠ d` both in the range of
-`k`: each injective `k` contributes `|ι| (|ι| - 1)` pairs, and each of the `|κ| (|κ| - 1)` pairs
-is hit by the same number of injective maps. -/
+/-- For distinct `a b : κ`, `|κ| (|κ| - 1)` times the number of injective maps `k : ι → κ` with
+`a` and `b` in the range of `k` equals the number of injective maps `ι → κ` times
+`|ι| (|ι| - 1)`. -/
 theorem descFactorial_two_mul_card_filter_injective_mem_range_and_mem_range
     (hab : a ≠ b) [DecidablePred fun k : ι → κ => Injective k] :
     (Fintype.card κ).descFactorial 2 *
         #{k : ι → κ | Injective k ∧ (a ∈ Set.range k ∧ b ∈ Set.range k)} =
       (Fintype.card κ).descFactorial (Fintype.card ι) * (Fintype.card ι).descFactorial 2 := by
   classical
+  -- Double count the triples `(k, c, d)` with `k` injective and `c ≠ d` both in the range of `k`:
+  -- each injective `k` contributes `|ι| (|ι| - 1)` pairs, and each of the `|κ| (|κ| - 1)` pairs
+  -- is hit by the same number of injective maps.
   let I : Finset (ι → κ) := {k | Injective k}
   have hI : #I = (Fintype.card κ).descFactorial (Fintype.card ι) := by
     rw [← Fintype.card_subtype]
