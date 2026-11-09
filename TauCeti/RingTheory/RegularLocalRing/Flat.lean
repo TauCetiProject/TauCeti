@@ -69,9 +69,7 @@ theorem isRegularLocalRing_iff_of_flat_of_map_maximalIdeal_eq [IsLocalRing R]
     [IsLocalRing S] [IsNoetherianRing S] [Module.Flat R S]
     (h : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S) :
     _root_.IsRegularLocalRing S ↔ _root_.IsRegularLocalRing R := by
-  have : IsLocalHom (algebraMap R S) := ⟨fun x hx ↦ by
-    by_contra hnu
-    exact (mem_maximalIdeal _).1 (h ▸ Ideal.mem_map_of_mem _ ((mem_maximalIdeal x).2 hnu)) hx⟩
+  have : IsLocalHom (algebraMap R S) := ((local_hom_tfae (algebraMap R S)).out 1 3).mpr h.le
   refine ⟨fun hS ↦ IsRegularLocalRing.of_flat_of_isLocalHom (S := S), fun hR ↦ ?_⟩
   have := hR
   have : IsNoetherianRing R := inferInstance
@@ -111,10 +109,8 @@ theorem of_hasGoingDown_of_quotient_map_maximalIdeal [IsRegularLocalRing R] [IsL
   set I := (maximalIdeal R).map (algebraMap R S)
   -- The closed fibre is nonzero, so `I` is proper, hence contained in the maximal ideal.
   have hI : I ≠ ⊤ := Ideal.Quotient.nontrivial_iff.mp inferInstance
-  have : IsLocalHom (algebraMap R S) := ⟨fun x hx ↦ by
-    by_contra hnu
-    exact (mem_maximalIdeal _).1 (le_maximalIdeal hI
-      (Ideal.mem_map_of_mem _ ((mem_maximalIdeal x).2 hnu))) hx⟩
+  have : IsLocalHom (algebraMap R S) :=
+    ((local_hom_tfae (algebraMap R S)).out 1 3).mpr (le_maximalIdeal hI)
   -- `I = 𝔪_R S` needs at most as many generators as `𝔪_R`, that is `dim R` of them, and by the
   -- dimension formula `dim S ⧸ I + dim R = dim S`.
   refine I.isRegularLocalRing_of_quotient_of_spanFinrank_le
