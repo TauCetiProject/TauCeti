@@ -86,6 +86,18 @@ theorem toCLM_injective :
     Function.Injective (toCLM : ContinuousLinearMapUltrastrong 𝕜 E F → E →L[𝕜] F) :=
   equiv.injective
 
+theorem toCLM_surjective :
+    Function.Surjective (toCLM : ContinuousLinearMapUltrastrong 𝕜 E F → E →L[𝕜] F) :=
+  equiv.surjective
+
+theorem ofCLM_injective :
+    Function.Injective (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltrastrong 𝕜 E F) :=
+  equiv.symm.injective
+
+theorem ofCLM_surjective :
+    Function.Surjective (ofCLM : (E →L[𝕜] F) → ContinuousLinearMapUltrastrong 𝕜 E F) :=
+  equiv.symm.surjective
+
 instance instAddCommGroup : AddCommGroup (ContinuousLinearMapUltrastrong 𝕜 E F) :=
   equiv.addCommGroup
 
@@ -108,8 +120,18 @@ instance instIsScalarTower {S T : Type*} [DistribSMul S F] [SMulCommClass 𝕜 S
     [SMul S T] [IsScalarTower S T F] : IsScalarTower S T (ContinuousLinearMapUltrastrong 𝕜 E F) :=
   equiv.isScalarTower S T
 
+instance instSMulCommClass {S T : Type*} [DistribSMul S F] [SMulCommClass 𝕜 S F]
+    [ContinuousConstSMul S F] [DistribSMul T F] [SMulCommClass 𝕜 T F] [ContinuousConstSMul T F]
+    [SMulCommClass S T F] : SMulCommClass S T (ContinuousLinearMapUltrastrong 𝕜 E F) :=
+  equiv.smulCommClass S T
+
 instance instRing : Ring (ContinuousLinearMapUltrastrong 𝕜 E E) :=
   equiv.ring
+
+instance instAlgebra {S : Type*} [CommSemiring S] [Module S E] [SMulCommClass 𝕜 S E] [SMul S 𝕜]
+    [IsScalarTower S 𝕜 E] [ContinuousConstSMul S E] :
+    Algebra S (ContinuousLinearMapUltrastrong 𝕜 E E) :=
+  equiv.algebra S
 
 @[simp] theorem toCLM_zero : (0 : ContinuousLinearMapUltrastrong 𝕜 E F).toCLM = 0 := rfl
 
@@ -131,11 +153,66 @@ instance instRing : Ring (ContinuousLinearMapUltrastrong 𝕜 E E) :=
 @[simp] theorem toCLM_mul (A B : ContinuousLinearMapUltrastrong 𝕜 E E) :
     (A * B).toCLM = A.toCLM * B.toCLM := rfl
 
+@[simp] theorem toCLM_pow (A : ContinuousLinearMapUltrastrong 𝕜 E E) (n : ℕ) :
+    (A ^ n).toCLM = A.toCLM ^ n := rfl
+
+@[simp] theorem toCLM_natCast (n : ℕ) : (n : ContinuousLinearMapUltrastrong 𝕜 E E).toCLM = n := rfl
+
+@[simp] theorem toCLM_intCast (n : ℤ) : (n : ContinuousLinearMapUltrastrong 𝕜 E E).toCLM = n := rfl
+
+@[simp] theorem ofCLM_zero : ofCLM (0 : E →L[𝕜] F) = 0 := rfl
+
+@[simp] theorem ofCLM_add (f g : E →L[𝕜] F) : ofCLM (f + g) = ofCLM f + ofCLM g := rfl
+
+@[simp] theorem ofCLM_neg (f : E →L[𝕜] F) : ofCLM (-f) = -ofCLM f := rfl
+
+@[simp] theorem ofCLM_sub (f g : E →L[𝕜] F) : ofCLM (f - g) = ofCLM f - ofCLM g := rfl
+
+@[simp] theorem ofCLM_smul {S : Type*} [DistribSMul S F] [SMulCommClass 𝕜 S F]
+    [ContinuousConstSMul S F] (c : S) (f : E →L[𝕜] F) : ofCLM (c • f) = c • ofCLM f := rfl
+
+@[simp] theorem ofCLM_one : ofCLM (1 : E →L[𝕜] E) = 1 := rfl
+
+@[simp] theorem ofCLM_mul (f g : E →L[𝕜] E) : ofCLM (f * g) = ofCLM f * ofCLM g := rfl
+
+@[simp] theorem ofCLM_pow (f : E →L[𝕜] E) (n : ℕ) : ofCLM (f ^ n) = ofCLM f ^ n := rfl
+
+@[simp] theorem ofCLM_natCast (n : ℕ) : ofCLM (n : E →L[𝕜] E) = n := rfl
+
+@[simp] theorem ofCLM_intCast (n : ℤ) : ofCLM (n : E →L[𝕜] E) = n := rfl
+
+section AlgebraMap
+
+variable {S : Type*} [CommSemiring S] [Module S E] [SMulCommClass 𝕜 S E] [SMul S 𝕜]
+  [IsScalarTower S 𝕜 E] [ContinuousConstSMul S E]
+
+@[simp] theorem toCLM_algebraMap (c : S) :
+    (algebraMap S (ContinuousLinearMapUltrastrong 𝕜 E E) c).toCLM = algebraMap S (E →L[𝕜] E) c :=
+  rfl
+
+@[simp] theorem ofCLM_algebraMap (c : S) :
+    ofCLM (algebraMap S (E →L[𝕜] E) c) = algebraMap S (ContinuousLinearMapUltrastrong 𝕜 E E) c :=
+  rfl
+
+end AlgebraMap
+
 /-- The linear equivalence between the ultrastrong copy and `E →L[𝕜] F`. -/
 @[simps!]
 def linearEquiv (S : Type*) [Semiring S] [Module S F] [SMulCommClass 𝕜 S F]
     [ContinuousConstSMul S F] : ContinuousLinearMapUltrastrong 𝕜 E F ≃ₗ[S] (E →L[𝕜] F) :=
   (addEquiv (𝕜 := 𝕜) (E := E) (F := F)).linearEquiv S
+
+/-- The ring equivalence between the ultrastrong copy and `E →L[𝕜] E`. -/
+@[simps!]
+def ringEquiv : ContinuousLinearMapUltrastrong 𝕜 E E ≃+* (E →L[𝕜] E) :=
+  equiv.ringEquiv
+
+/-- The algebra equivalence between the ultrastrong copy and `E →L[𝕜] E`. -/
+@[simps!]
+def algEquiv (S : Type*) [CommSemiring S] [Module S E] [SMulCommClass 𝕜 S E] [SMul S 𝕜]
+    [IsScalarTower S 𝕜 E] [ContinuousConstSMul S E] :
+    ContinuousLinearMapUltrastrong 𝕜 E E ≃ₐ[S] (E →L[𝕜] E) :=
+  equiv.algEquiv S
 
 end Algebra
 
