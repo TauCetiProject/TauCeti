@@ -31,7 +31,8 @@ Let `a` and `b` be positive natural numbers. The circle acts on `ℂ²` with wei
 on it continuously. For `a = b = 1` this is the Hopf action on a round three-sphere.
 
 When `a` and `b` are coprime and `ε > 0`, the reduced space `E / S¹` is a topological sphere with
-two points of nontrivial isotropy:
+two isotropy points, whose cyclic stabilizers have orders `a` and `b` (nontrivial exactly when the
+weight exceeds `1`):
 
 * **Stabilizers.** The circle element `u` fixes `z` exactly when `u ^ a = 1` if `z₁ ≠ 0` and
   `u ^ b = 1` if `z₂ ≠ 0`. Off the two coordinate axes the action is therefore free
