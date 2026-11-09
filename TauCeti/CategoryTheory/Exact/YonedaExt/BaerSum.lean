@@ -112,26 +112,6 @@ theorem pushout_mk_eq_pullback_mk {e : E.Extension Z X} {e' : E.Extension Z' X'}
   refine Extension.pushout_rel ((e'.isPullback c).lift h e.g h₂) ?_ (by simp)
   apply (e'.isPullback c).hom_ext <;> simp [h₁]
 
-/-- A morphism into a direct sum of extensions relates cobase and base change. This restates
-`TauCeti.ExactStructure.Ext1.pushout_mk_eq_pullback_mk` with the middle term written
-`e₁.obj ⊞ e₂.obj`, on which the biproduct `simp` lemmas fire. -/
-private theorem pushout_mk_eq_pullback_mk_biprod {e : E.Extension Z X} {e₁ : E.Extension Z₁ X₁}
-    {e₂ : E.Extension Z₂ X₂} {a : X ⟶ X₁ ⊞ X₂} {c : Z ⟶ Z₁ ⊞ Z₂} (h : e.obj ⟶ e₁.obj ⊞ e₂.obj)
-    (h₁ : e.f ≫ h = a ≫ Limits.biprod.map e₁.f e₂.f)
-    (h₂ : h ≫ Limits.biprod.map e₁.g e₂.g = e.g ≫ c) :
-    (mk e).pushout a = (mk (e₁.biprod e₂)).pullback c :=
-  pushout_mk_eq_pullback_mk (e' := e₁.biprod e₂) h h₁ h₂
-
-/-- A morphism out of a direct sum of extensions relates cobase and base change. This restates
-`TauCeti.ExactStructure.Ext1.pushout_mk_eq_pullback_mk` with the middle term written
-`e₁.obj ⊞ e₂.obj`, on which the biproduct `simp` lemmas fire. -/
-private theorem biprod_pushout_mk_eq_pullback_mk {e₁ : E.Extension Z₁ X₁} {e₂ : E.Extension Z₂ X₂}
-    {e : E.Extension Z X} {a : X₁ ⊞ X₂ ⟶ X} {c : Z₁ ⊞ Z₂ ⟶ Z} (h : e₁.obj ⊞ e₂.obj ⟶ e.obj)
-    (h₁ : Limits.biprod.map e₁.f e₂.f ≫ h = a ≫ e.f)
-    (h₂ : h ≫ e.g = Limits.biprod.map e₁.g e₂.g ≫ c) :
-    (mk (e₁.biprod e₂)).pushout a = (mk e).pullback c :=
-  pushout_mk_eq_pullback_mk (e := e₁.biprod e₂) h h₁ h₂
-
 /-- The **direct sum** of two classes, in `Ext¹_E(Z₁ ⊞ Z₂, X₁ ⊞ X₂)`. -/
 noncomputable def biprod (ξ₁ : E.Ext1 Z₁ X₁) (ξ₂ : E.Ext1 Z₂ X₂) : E.Ext1 (Z₁ ⊞ Z₂) (X₁ ⊞ X₂) :=
   lift (fun e₁ ↦ lift (fun e₂ ↦ mk (e₁.biprod e₂))
@@ -155,10 +135,12 @@ theorem pushout_biprod_lift (ξ : E.Ext1 Z X) (a : X ⟶ X₁) (b : X ⟶ X₂) 
   induction ξ using induction with
   | h e =>
     simp only [pushout_mk (e := e) (v := a), pushout_mk (e := e) (v := b), biprod_mk]
-    refine pushout_mk_eq_pullback_mk_biprod
+    refine pushout_mk_eq_pullback_mk (e' := (e.pushout a).biprod (e.pushout b))
       (Limits.biprod.lift (e.pushoutInl a) (e.pushoutInl b)) ?_ ?_
-    · apply Limits.biprod.hom_ext <;> simp [Extension.f_pushoutInl]
-    · apply Limits.biprod.hom_ext <;> simp
+    · change e.f ≫ Limits.biprod.lift _ _ = _ ≫ Limits.biprod.map _ _
+      apply Limits.biprod.hom_ext <;> simp [Extension.f_pushoutInl]
+    · change Limits.biprod.lift _ _ ≫ Limits.biprod.map _ _ = _
+      apply Limits.biprod.hom_ext <;> simp
 
 /-- Base change along a morphism out of a biproduct is the cobase change along the codiagonal of
 the direct sum of the base changes along the two components. -/
@@ -168,10 +150,12 @@ theorem pullback_biprod_desc (ξ : E.Ext1 Z X) (c : Z₁ ⟶ Z) (d : Z₂ ⟶ Z)
   induction ξ using induction with
   | h e =>
     simp only [pullback_mk (e := e) (u := c), pullback_mk (e := e) (u := d), biprod_mk]
-    refine (biprod_pushout_mk_eq_pullback_mk
+    refine (pushout_mk_eq_pullback_mk (e := (e.pullback c).biprod (e.pullback d))
       (Limits.biprod.desc (e.pullbackFst c) (e.pullbackFst d)) ?_ ?_).symm
-    · apply Limits.biprod.hom_ext' <;> simp
-    · apply Limits.biprod.hom_ext' <;> simp [Extension.pullbackFst_g]
+    · change Limits.biprod.map _ _ ≫ Limits.biprod.desc _ _ = _
+      apply Limits.biprod.hom_ext' <;> simp
+    · change Limits.biprod.desc _ _ ≫ _ = Limits.biprod.map _ _ ≫ _
+      apply Limits.biprod.hom_ext' <;> simp [Extension.pullbackFst_g]
 
 /-- The cobase change of a direct sum along the first projection is a base change of the first
 summand. -/
@@ -182,7 +166,8 @@ theorem biprod_pushout_fst (ξ₁ : E.Ext1 Z₁ X₁) (ξ₂ : E.Ext1 Z₂ X₂)
     induction ξ₂ using induction with
     | h e₂ =>
       rw [biprod_mk]
-      exact biprod_pushout_mk_eq_pullback_mk Limits.biprod.fst (by simp) (by simp)
+      exact pushout_mk_eq_pullback_mk (e := e₁.biprod e₂) Limits.biprod.fst
+        (Limits.biprod.map_fst _ _) (Limits.biprod.map_fst _ _).symm
 
 /-- The cobase change of a direct sum along the second projection is a base change of the second
 summand. -/
@@ -193,7 +178,8 @@ theorem biprod_pushout_snd (ξ₁ : E.Ext1 Z₁ X₁) (ξ₂ : E.Ext1 Z₂ X₂)
     induction ξ₂ using induction with
     | h e₂ =>
       rw [biprod_mk]
-      exact biprod_pushout_mk_eq_pullback_mk Limits.biprod.snd (by simp) (by simp)
+      exact pushout_mk_eq_pullback_mk (e := e₁.biprod e₂) Limits.biprod.snd
+        (Limits.biprod.map_snd _ _) (Limits.biprod.map_snd _ _).symm
 
 /-- The base change of a direct sum along the first inclusion is a cobase change of the first
 summand. -/
@@ -204,7 +190,8 @@ theorem biprod_pullback_inl (ξ₁ : E.Ext1 Z₁ X₁) (ξ₂ : E.Ext1 Z₂ X₂
     induction ξ₂ using induction with
     | h e₂ =>
       rw [biprod_mk]
-      exact (pushout_mk_eq_pullback_mk_biprod Limits.biprod.inl (by simp) (by simp)).symm
+      exact (pushout_mk_eq_pullback_mk (e' := e₁.biprod e₂) Limits.biprod.inl
+        (Limits.biprod.inl_map _ _).symm (Limits.biprod.inl_map _ _)).symm
 
 /-- The base change of a direct sum along the second inclusion is a cobase change of the second
 summand. -/
@@ -215,7 +202,8 @@ theorem biprod_pullback_inr (ξ₁ : E.Ext1 Z₁ X₁) (ξ₂ : E.Ext1 Z₂ X₂
     induction ξ₂ using induction with
     | h e₂ =>
       rw [biprod_mk]
-      exact (pushout_mk_eq_pullback_mk_biprod Limits.biprod.inr (by simp) (by simp)).symm
+      exact (pushout_mk_eq_pullback_mk (e' := e₁.biprod e₂) Limits.biprod.inr
+        (Limits.biprod.inr_map _ _).symm (Limits.biprod.inr_map _ _)).symm
 
 /-! ### The Baer sum -/
 
