@@ -240,23 +240,16 @@ theorem hasLyapunovForm_iff_forall_eq_zero_of_apply_eq_neg_smul_of_apply_eq_smul
         obtain ⟨h₁, h₂⟩ := h μ.im _ _ hre' him'
         exact hz0 (WithLp.ofLp_injective 2 (Complexification.ext h₁ h₂))
   -- The real part of `Sc` on real vectors is a Lyapunov form of `A`.
-  let S : E →L[ℝ] E := LinearMap.toContinuousLinearMap
-    { toFun x := (Sc (WithLp.toLp 2 (Complexification.ofReal x))).ofLp.re
-      map_add' x y := by
-        have : Complexification.ofReal (x + y) =
-            Complexification.ofReal x + Complexification.ofReal y := by
-          ext <;> simp
-        rw [this, WithLp.toLp_add, map_add, WithLp.ofLp_add, Complexification.add_re]
-      map_smul' r x := by
-        have : Complexification.ofReal (r • x) = (r : ℂ) • Complexification.ofReal x := by
-          ext <;> simp
-        rw [this, WithLp.toLp_smul, map_smul, WithLp.ofLp_smul, Complexification.smul_re]
-        simp }
-  have hS (x : E) : S x = (Sc (WithLp.toLp 2 (Complexification.ofReal x))).ofLp.re := rfl
+  let S : E →L[ℝ] E := LinearMap.toContinuousLinearMap <|
+    (Complexification.reCLM E).toLinearMap ∘ₗ
+      (WithLp.linearEquiv 2 ℝ (Complexification E)).toLinearMap ∘ₗ
+      (Sc : _ →ₗ[ℂ] _).restrictScalars ℝ ∘ₗ
+      (WithLp.linearEquiv 2 ℝ (Complexification E)).symm.toLinearMap ∘ₗ
+      (Complexification.ofRealLI E).toLinearMap
   have hinner (x y : E) : ⟪S x, y⟫_ℝ =
       (⟪Sc (WithLp.toLp 2 (Complexification.ofReal x)),
         WithLp.toLp 2 (Complexification.ofReal y)⟫_ℂ).re := by
-    simp [hS]
+    simp [S]
   refine hasLyapunovForm_iff.mpr ⟨S, fun x y ↦ ?_, c, hc, fun v ↦ ?_⟩
   · simp only [coe_coe]
     rw [hinner, hSc.apply_clm, ← Complex.conj_re, inner_conj_symm, real_inner_comm, hinner]
