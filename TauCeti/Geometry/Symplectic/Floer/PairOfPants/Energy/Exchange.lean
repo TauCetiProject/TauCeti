@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Exchange
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.LinearAlgebra.Determinant.Prod
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # The energy of the input-exchange family
@@ -38,9 +37,9 @@ period-one `C¹` Hamiltonians `H_q` on a symplectic vector space and `R ≥ 2`, 
 `A_H` is the Hamiltonian action `TauCeti.SymplecticForm.hamiltonianAction`. For `c = 0` this is the
 energy identity of the pair of pants
 (`integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction`).
-With the curvature bound
-`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le`, the energy
-differs from the change of action by at most `B₀ + B₁ + B_∞` when `|H_q| ≤ B_q`
+Since the curvature of `K_c` along `u` is that of `K_0` along `u ∘ Φ_c`, the curvature bound
+`TauCeti.SymplecticForm.abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le` shows that
+the energy differs from the change of action by at most `B₀ + B₁ + B_∞` when `|H_q| ≤ B_q`
 (`SymplecticForm.abs_integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation_sub_le`).
 For a solution of the Floer equation with tame almost complex structures the energy is
 nonnegative, which gives the action bound `A_{H_∞}(ℓ^c_∞(R)) ≤ A_{H_0}(ℓ_0(R)) + A_{H_1}(ℓ_1(R))
@@ -644,11 +643,12 @@ theorem abs_integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation_
           (↑c + inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I)))))| ≤ ∑ q, B q := by
   rw [integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation ω hH hHs hc₀ hc₁ hu hR,
     sub_sub_cancel_left, abs_neg]
-  have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 0)
-  rw [← Real.norm_eq_abs]
-  exact MeasureTheory.norm_setIntegral_le_of_lintegral_enorm_le
-    (Finset.sum_nonneg fun q _ ↦ hB₀ q) (ENNReal.ofReal_sum_of_nonneg (fun q _ ↦ hB₀ q) ▸
-      lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le ω hH hHs hB hc₀ hc₁ u) _
+  -- The curvature along `u` is the curvature of the pair-of-pants datum along `u ∘ Φ_c`.
+  have hS : {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1} = thricePuncturedSphereReal :=
+    Set.ext fun _ ↦ mem_thricePuncturedSphereReal_iff.symm
+  rw [hS, integral_hamiltonianCurvature_exchangePerturbation_eq ω hH hHs hc₀ hc₁]
+  exact abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB _ _
 
 /-- **The one-sided action bound along the input-exchange family.** Let `u` be a map which is
 `C²` on `S = ℂ ∖ {0, 1}` and solves the Floer equation `(du - X_K)^{0,1} = 0` for the member
@@ -732,7 +732,8 @@ theorem hamiltonianAction_le_add_add_sum_of_exchangePerturbation (ω : Symplecti
   have h := hamiltonianAction_le_add_add_sub_sum_of_exchangePerturbation ω hH hHs
     (h := fun q _ ↦ -(q.endSign * B q)) (fun _ ↦ intervalIntegrable_const)
     (endSign_mul_neg_endSign_mul_le hB) hc₀ hc₁ hu hR hJ hfloer
-  rwa [sum_endSign_mul_integral_neg_endSign_mul, sub_neg_eq_add] at h
+  simp_rw [intervalIntegral.integral_const, sub_zero, one_smul] at h
+  rwa [sum_endSign_mul_neg_endSign_mul, sub_neg_eq_add] at h
 
 /-- **The one-sided action bound for the limiting actions along the input-exchange family.**
 Let `u` be a map which is `C²` on `S = ℂ ∖ {0, 1}` and solves the Floer equation for the member
@@ -806,7 +807,8 @@ theorem le_add_add_sum_of_tendsto_hamiltonianAction_exchangePerturbation
   have h := le_add_add_sub_sum_of_tendsto_hamiltonianAction_exchangePerturbation ω hH hHs
     (h := fun q _ ↦ -(q.endSign * B q)) (fun _ ↦ intervalIntegrable_const)
     (endSign_mul_neg_endSign_mul_le hB) hc₀ hc₁ hu hJ hfloer ha₀ ha₁ ha
-  rwa [sum_endSign_mul_integral_neg_endSign_mul, sub_neg_eq_add] at h
+  simp_rw [intervalIntegral.integral_const, sub_zero, one_smul] at h
+  rwa [sum_endSign_mul_neg_endSign_mul, sub_neg_eq_add] at h
 
 end SymplecticForm
 

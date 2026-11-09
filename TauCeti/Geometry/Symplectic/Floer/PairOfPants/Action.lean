@@ -454,36 +454,10 @@ theorem le_add_add_sub_sum_of_tendsto_hamiltonianAction (ω : SymplecticForm V)
       (fun z hz ↦ hJ z ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩)
       fun z hz ↦ hfloer z ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩⟩
 
-end SymplecticForm
-
 /-! ### Action bounds for bounded Hamiltonians
 
 If `|H_q| ≤ B_q`, the constants `h_q = ∓B_q` satisfy the one-sided bounds `±h_q ≤ ±H_q`, and the
 one-sided constant `-∫₀¹ h_0 - ∫₀¹ h_1 + ∫₀¹ h_∞` becomes `B_0 + B_1 + B_∞`. -/
-
-namespace ThricePuncturedSphere.Puncture
-
-/-- Bounds `|H_q| ≤ B_q` give the one-sided bounds `±h_q ≤ ±H_q` for the constants
-`h_q = ∓B_q`. -/
-theorem endSign_mul_neg_endSign_mul_le {V : Type*} {H : Puncture → ℝ → V → ℝ} {B : Puncture → ℝ}
-    (hB : ∀ q t x, |H q t x| ≤ B q) (q : Puncture) (t : ℝ) (x : V) :
-    q.endSign * -(q.endSign * B q) ≤ q.endSign * H q t x := by
-  rw [mul_neg, ← mul_assoc, endSign_mul_self, one_mul]
-  exact neg_le_of_abs_le (by rw [abs_mul, abs_endSign, one_mul]; exact hB q t x)
-
-/-- For the constants `h_q = ∓B_q`, the one-sided constant is `B_0 + B_1 + B_∞`. -/
-theorem sum_endSign_mul_integral_neg_endSign_mul (B : Puncture → ℝ) :
-    ∑ q, q.endSign * ∫ _ in (0 : ℝ)..1, -(q.endSign * B q) = -∑ q, B q := by
-  simp [mul_neg, ← mul_assoc, Finset.sum_neg_distrib]
-
-end ThricePuncturedSphere.Puncture
-
-namespace SymplecticForm
-
-open Floer
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {H : Puncture → ℝ → V → ℝ}
 
 /-- **The energy bound for a pair of pants.** Under the hypotheses of
 `SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq`, if moreover
@@ -514,7 +488,8 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_le (ω : Symplectic
   have h := lintegral_floerEnergyDensity_pairOfPantsPerturbation_le_sum_sub_sum ω hH hHs
     (h := fun q _ ↦ -(q.endSign * B q)) (fun _ ↦ intervalIntegrable_const)
     (endSign_mul_neg_endSign_mul_le hB) hu hJ hfloer ha
-  rwa [sum_endSign_mul_integral_neg_endSign_mul, sub_neg_eq_add] at h
+  simp_rw [intervalIntegral.integral_const, sub_zero, one_smul] at h
+  rwa [sum_endSign_mul_neg_endSign_mul, sub_neg_eq_add] at h
 
 /-- **The action bound on a truncated pair of pants.** Let `K` be the pair-of-pants perturbation
 of period-one `C¹` Hamiltonians `H_q` with `|H_q| ≤ B_q`, and let `u` be a map which is `C²` on
@@ -548,7 +523,8 @@ theorem hamiltonianAction_le_add_add_sum (ω : SymplecticForm V)
   have h := hamiltonianAction_le_add_add_sub_sum ω hH hHs
     (h := fun q _ ↦ -(q.endSign * B q)) (fun _ ↦ intervalIntegrable_const)
     (endSign_mul_neg_endSign_mul_le hB) hu hR hJ hfloer
-  rwa [sum_endSign_mul_integral_neg_endSign_mul, sub_neg_eq_add] at h
+  simp_rw [intervalIntegral.integral_const, sub_zero, one_smul] at h
+  rwa [sum_endSign_mul_neg_endSign_mul, sub_neg_eq_add] at h
 
 /-- **The action bound for a pair of pants.** Under the hypotheses of
 `SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq`, if moreover
@@ -579,7 +555,8 @@ theorem le_add_add_sum_of_tendsto_hamiltonianAction (ω : SymplecticForm V)
   have h := le_add_add_sub_sum_of_tendsto_hamiltonianAction ω hH hHs
     (h := fun q _ ↦ -(q.endSign * B q)) (fun _ ↦ intervalIntegrable_const)
     (endSign_mul_neg_endSign_mul_le hB) hu hJ hfloer ha
-  rwa [sum_endSign_mul_integral_neg_endSign_mul, sub_neg_eq_add] at h
+  simp_rw [intervalIntegral.integral_const, sub_zero, one_smul] at h
+  rwa [sum_endSign_mul_neg_endSign_mul, sub_neg_eq_add] at h
 
 end SymplecticForm
 

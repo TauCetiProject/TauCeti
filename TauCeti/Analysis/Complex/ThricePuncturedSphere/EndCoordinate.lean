@@ -92,6 +92,19 @@ theorem endSign_eq_one_or_eq_neg_one (q : Puncture) : q.endSign = 1 ∨ q.endSig
 theorem endSign_ne_zero (q : Puncture) : q.endSign ≠ 0 := by
   cases q <;> simp
 
+/-- Bounds `|H_q| ≤ B_q` give the one-sided bounds `±h_q ≤ ±H_q` for the constants
+`h_q = ∓B_q`. -/
+theorem endSign_mul_neg_endSign_mul_le {V : Type*} {H : Puncture → ℝ → V → ℝ} {B : Puncture → ℝ}
+    (hB : ∀ q t x, |H q t x| ≤ B q) (q : Puncture) (t : ℝ) (x : V) :
+    q.endSign * -(q.endSign * B q) ≤ q.endSign * H q t x := by
+  rw [mul_neg, ← mul_assoc, endSign_mul_self, one_mul]
+  exact neg_le_of_abs_le (by rw [abs_mul, abs_endSign, one_mul]; exact hB q t x)
+
+/-- For the constants `h_q = ∓B_q`, the signed sum `∑ q, ε_q h_q` is `-(B_0 + B_1 + B_∞)`. -/
+theorem sum_endSign_mul_neg_endSign_mul (B : Puncture → ℝ) :
+    ∑ q, q.endSign * -(q.endSign * B q) = -∑ q, B q := by
+  simp [mul_neg, ← mul_assoc, Finset.sum_neg_distrib]
+
 /-- The center of an end lift: `cylindricalEndLift q z - q.endCenter` is a multiple of
 `exp (-2πz)`. It is `0` at the ends at `0` and `∞`, and `1` at the end at `1`. -/
 def endCenter : Puncture → ℂ
