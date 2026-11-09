@@ -69,7 +69,7 @@ below.
 * `TauCeti.finrank_eigenspace_tetrahedronSpringMatrix`: the eigenspace dimensions.
 * `TauCeti.tetrahedronAffineFieldEquiv_mem_eigenspace_zero_iff` and its `neg_two`, `neg_four`,
   `neg_eight` companions: the four eigenspaces in the coordinates `(t, A)`.
-* `TauCeti.sup_eigenspace_tetrahedronSpringMatrix`: the four eigenspaces span `ℝ¹²`.
+* `TauCeti.sup_eigenspace_tetrahedronSpringMatrix_eq_top`: the four eigenspaces span `ℝ¹²`.
 * `TauCeti.finrank_eigenspace_smul_tetrahedronSpringMatrix`: the frequencies of
   `u'' = (κ / (2m)) H u` and their multiplicities.
 * `TauCeti.eq_normalModeMotion_tetrahedronSpringMatrix`: every solution of
@@ -608,7 +608,7 @@ theorem tetrahedronAffineFieldEquiv_mem_eigenspace_neg_eight_iff (t : Fin 3 → 
 
 /-- The eigenspaces of the force matrix for `0`, `-2`, `-4` and `-8` span `ℝ¹²`: every
 displacement is a sum of eigenvectors for these eigenvalues. -/
-theorem sup_eigenspace_tetrahedronSpringMatrix :
+theorem sup_eigenspace_tetrahedronSpringMatrix_eq_top :
     Module.End.eigenspace tetrahedronSpringMatrix.toLin' 0 ⊔
         Module.End.eigenspace tetrahedronSpringMatrix.toLin' (-2) ⊔
         Module.End.eigenspace tetrahedronSpringMatrix.toLin' (-4) ⊔
@@ -633,6 +633,16 @@ theorem sup_eigenspace_tetrahedronSpringMatrix :
 A spring of stiffness `κ` along an edge of squared length `2` between particles of mass `m`
 gives the equation of motion `u'' = (κ / (2m)) H u`. -/
 
+/-- The squared vibrational angular frequencies `√(κ/m)`, `√(2κ/m)` and `2√(κ/m)` are
+`-(κ / (2m)) μ` for the eigenvalues `μ = -2`, `-4` and `-8` of the force matrix. -/
+private theorem sq_frequencies_tetrahedron {κ m : ℝ} (hκm : 0 ≤ κ / m) :
+    √(κ / m) ^ 2 = -(κ / (2 * m) * -2) ∧ √(2 * κ / m) ^ 2 = -(κ / (2 * m) * -4) ∧
+      (2 * √(κ / m)) ^ 2 = -(κ / (2 * m) * -8) := by
+  refine ⟨?_, ?_, ?_⟩
+  · rw [Real.sq_sqrt hκm]; field_simp
+  · rw [Real.sq_sqrt (by rw [mul_div_assoc]; positivity)]; field_simp; ring
+  · rw [mul_pow, Real.sq_sqrt hκm]; field_simp; ring
+
 /-- For stiffness `κ` and mass `m` with `κ / m > 0`, the acceleration operator `(κ / (2m)) H`
 has the eigenvalue `-ω²`, `ω ≥ 0`, exactly for the zero modes `ω = 0`, with multiplicity `6`, and
 for the vibrational angular frequencies `√(κ/m)`, `√(2κ/m)` and `2√(κ/m)`, with multiplicities
@@ -649,28 +659,21 @@ theorem finrank_eigenspace_smul_tetrahedronSpringMatrix {κ m ω : ℝ} (hκm : 
   have hc : κ / (2 * m) ≠ 0 := by
     rw [mul_comm, ← div_div]
     positivity
-  have hsq {s : ℝ} (hs : 0 ≤ s) : ω = s ↔ ω ^ 2 = s ^ 2 := (sq_eq_sq₀ hω hs).symm
-  have h0 : -(ω ^ 2) / (κ / (2 * m)) = 0 ↔ ω = 0 := by
-    simp [hc]
-  have h2 : -(ω ^ 2) / (κ / (2 * m)) = -2 ↔ ω = √(κ / m) := by
-    rw [hsq (Real.sqrt_nonneg _), Real.sq_sqrt hκm.le, div_eq_iff hc]
-    constructor <;> intro h <;> field_simp at h ⊢ <;> linarith
-  have h4 : -(ω ^ 2) / (κ / (2 * m)) = -4 ↔ ω = √(2 * κ / m) := by
-    rw [hsq (Real.sqrt_nonneg _), Real.sq_sqrt (by rw [mul_div_assoc]; positivity),
-      div_eq_iff hc]
-    constructor <;> intro h <;> field_simp at h ⊢ <;> linarith
-  have h8 : -(ω ^ 2) / (κ / (2 * m)) = -8 ↔ ω = 2 * √(κ / m) := by
-    rw [hsq (by positivity), mul_pow, Real.sq_sqrt hκm.le, div_eq_iff hc]
-    constructor <;> intro h <;> field_simp at h ⊢ <;> linarith
+  obtain ⟨h₂, h₄, h₈⟩ := sq_frequencies_tetrahedron hκm.le
+  -- `-ω² / (κ / (2m)) = μ` exactly when `ω` is the frequency `s ≥ 0` with `s² = -(κ / (2m)) μ`.
+  have hev {μ s : ℝ} (hs : 0 ≤ s) (h : s ^ 2 = -(κ / (2 * m) * μ)) :
+      -(ω ^ 2) / (κ / (2 * m)) = μ ↔ ω = s := by
+    rw [← sq_eq_sq₀ hω hs, h, div_eq_iff hc, mul_comm μ, neg_eq_iff_eq_neg]
   rw [map_smul, ← mul_div_cancel₀ (-(ω ^ 2)) hc, Module.End.eigenspace_smul _ hc,
     finrank_eigenspace_tetrahedronSpringMatrix]
-  simp only [h0, h2, h4, h8]
+  simp only [hev (μ := 0) le_rfl (by simp), hev (Real.sqrt_nonneg _) h₂,
+    hev (Real.sqrt_nonneg _) h₄, hev (by positivity) h₈]
 
 /-- **The motions of the spring tetrahedron.** Let `u` solve the linearized equation of motion
 `u'' = (κ / (2m)) H u`, `κ / m ≥ 0`, with initial position `x₀ + x₂ + x₄ + x₈` and initial
 velocity `y₀ + y₂ + y₄ + y₈`, where `x_k` and `y_k` are eigenvectors of `H` for `-k`
-(such decompositions exist by `TauCeti.sup_eigenspace_tetrahedronSpringMatrix`). Then `u` is the
-uniform motion `x₀ + t y₀` of the zero modes plus the normal-mode oscillations of angular
+(such decompositions exist by `TauCeti.sup_eigenspace_tetrahedronSpringMatrix_eq_top`). Then `u`
+is the uniform motion `x₀ + t y₀` of the zero modes plus the normal-mode oscillations of angular
 frequencies `√(κ/m)`, `√(2κ/m)` and `2√(κ/m)`. -/
 theorem eq_normalModeMotion_tetrahedronSpringMatrix {κ m : ℝ} (hκm : 0 ≤ κ / m)
     {u u' : ℝ → Fin 4 × Fin 3 → ℝ} (hu : ∀ t, HasDerivAt u (u' t) t)
@@ -697,12 +700,7 @@ theorem eq_normalModeMotion_tetrahedronSpringMatrix {κ m : ℝ} (hκm : 0 ≤ �
       (hω : ω ^ 2 = -(κ / (2 * m) * μ)) : A v = -(ω ^ 2) • v := by
     rw [Module.End.mem_eigenspace_iff, toLin'_apply] at hv
     rw [hA, hv, smul_smul, hω, neg_neg]
-  have h₁ : √(κ / m) ^ 2 = -(κ / (2 * m) * -2) := by
-    rw [Real.sq_sqrt hκm]; field_simp
-  have h₂ : √(2 * κ / m) ^ 2 = -(κ / (2 * m) * -4) := by
-    rw [Real.sq_sqrt (by rw [mul_div_assoc]; positivity)]; field_simp; ring
-  have h₃ : (2 * √(κ / m)) ^ 2 = -(κ / (2 * m) * -8) := by
-    rw [mul_pow, Real.sq_sqrt hκm]; field_simp; ring
+  obtain ⟨h₁, h₂, h₃⟩ := sq_frequencies_tetrahedron hκm
   have h := eq_sum_normalModeMotion (A := A) (ω := ![0, √(κ / m), √(2 * κ / m), 2 * √(κ / m)])
     (x := ![x₀, x₂, x₄, x₈]) (y := ![y₀, y₂, y₄, y₈])
     (fun i ↦ by fin_cases i; exacts [key hx₀ (by simp), key hx₂ h₁, key hx₄ h₂, key hx₈ h₃])

@@ -58,7 +58,9 @@ namespace TauCeti
 
 open Real
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+section Module
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E]
 
 /-- The **normal-mode motion** of angular frequency `ω` with initial position `x` and initial
 velocity `y`: `t ↦ cos (ω t) • x + (t sinc (ω t)) • y`. For `ω ≠ 0` this is
@@ -103,11 +105,17 @@ theorem normalModeMotion_smul (ω c : ℝ) (x y : E) (t : ℝ) :
     normalModeMotion ω (c • x) (c • y) t = c • normalModeMotion ω x y t := by
   simp only [normalModeMotion_def, smul_add, smul_comm c]
 
-/-- A bounded linear operator commutes with the normal-mode motion. -/
-theorem map_normalModeMotion {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] (L : E →L[ℝ] F)
-    (ω : ℝ) (x y : E) (t : ℝ) :
+/-- A linear map commutes with the normal-mode motion. -/
+theorem map_normalModeMotion {F G : Type*} [AddCommGroup F] [Module ℝ F] [FunLike G E F]
+    [LinearMapClass G ℝ E F] (L : G) (ω : ℝ) (x y : E) (t : ℝ) :
     L (normalModeMotion ω x y t) = normalModeMotion ω (L x) (L y) t := by
   simp [normalModeMotion_def]
+
+end Module
+
+section Normed
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The velocity of the normal-mode motion with initial data `(x, y)` is the normal-mode motion
 with initial data `(y, -ω² x)`. -/
@@ -117,9 +125,8 @@ theorem hasDerivAt_normalModeMotion (ω : ℝ) (x y : E) (t : ℝ) :
     simpa [mul_comm] using ((hasDerivAt_id t).const_mul ω).cos
   rw [show normalModeMotion ω x y = _ from funext (normalModeMotion_def ω x y)]
   convert (hcos.smul_const x).fun_add ((hasDerivAt_mul_sinc_mul ω t).smul_const y) using 1
-  rw [normalModeMotion_def, smul_smul, add_comm, ← mul_sinc (ω * t)]
-  congr 2
-  ring
+  rw [normalModeMotion_def, ← mul_sinc (ω * t)]
+  module
 
 /-- If `x` and `y` are eigenvectors of `A` for the eigenvalue `-ω²`, the acceleration of the
 normal-mode motion `normalModeMotion ω x y` is `A` applied to its position: it solves
@@ -159,5 +166,7 @@ theorem eq_sum_normalModeMotion {ι : Type*} [Fintype ι] {A : E →L[ℝ] E} {�
     (fun t ↦ ?_) (t₀ := 0) (by simpa using h₀) (by simpa using h₀')
   rw [map_sum]
   exact HasDerivAt.fun_sum fun i _ ↦ hasDerivAt_normalModeMotion_of_apply_eq (hx i) (hy i) t
+
+end Normed
 
 end TauCeti
