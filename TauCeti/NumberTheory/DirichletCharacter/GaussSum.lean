@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Cyclotomic.Gal
 public import Mathlib.NumberTheory.DirichletCharacter.GaussSum
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
+public import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 public import TauCeti.NumberTheory.MulChar.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.Analysis.Fourier.ZMod
@@ -117,30 +118,6 @@ theorem gaussSum_mul_gaussSum_inv_eq_neg_one_mul_card_of_isPrimitive
         _ = (χ (-1) * χ (-1)) * (gaussSum χ e * gaussSum χ⁻¹ e) := by ring
         _ = _ := by rw [χ.apply_neg_one_mul_self, one_mul]
     _ = _ := by rw [hprod]
-
-/-- The level of a primitive additive character of `ZMod n` with values in a domain is nonzero in
-that domain: in characteristic `p ∣ n`, the element `n / p` of `ZMod n` is nonzero but is sent to
-a `p`th root of unity, which is `1`. -/
-theorem _root_.AddChar.IsPrimitive.natCast_ne_zero {R : Type*} [CommRing R] [IsDomain R] {n : ℕ}
-    [NeZero n] {e : AddChar (ZMod n) R} (he : e.IsPrimitive) : (n : R) ≠ 0 := by
-  intro h
-  have hdvd : ringChar R ∣ n := (CharP.cast_eq_zero_iff R (ringChar R) n).mp h
-  have hp0 : ringChar R ≠ 0 := fun h0 ↦ NeZero.ne n (zero_dvd_iff.mp (h0 ▸ hdvd))
-  have : Fact (ringChar R).Prime :=
-    ⟨(CharP.char_is_prime_or_zero R (ringChar R)).resolve_right hp0⟩
-  obtain ⟨m, hm⟩ := hdvd
-  have hm0 : 0 < m := Nat.pos_of_ne_zero fun h0 ↦ NeZero.ne n (by simpa [h0] using hm)
-  have hmn : m < n := by
-    rw [hm]
-    nlinarith [(Fact.out : (ringChar R).Prime).two_le]
-  have ha : (m : ZMod n) ≠ 0 := fun h0 ↦
-    absurd (Nat.le_of_dvd hm0 ((ZMod.natCast_eq_zero_iff m n).mp h0)) (by omega)
-  have hpow : (e (m : ZMod n) - 1) ^ ringChar R = 0 := by
-    have hz : ringChar R • (m : ZMod n) = 0 := by
-      rw [nsmul_eq_mul, ← Nat.cast_mul, ← hm, ZMod.natCast_self]
-    rw [sub_pow_char, one_pow, ← AddChar.map_nsmul_eq_pow, hz, AddChar.map_zero_eq_one, sub_self]
-  exact ha ((he.zmod_char_eq_one_iff n _).mp
-    (sub_eq_zero.mp ((pow_eq_zero_iff hp0).mp hpow)))
 
 /-- The Gauss sum of a primitive Dirichlet character against a primitive additive character is
 nonzero. -/
