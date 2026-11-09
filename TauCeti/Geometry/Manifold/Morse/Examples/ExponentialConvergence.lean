@@ -60,13 +60,6 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-/-- For the standard metric on an inner product space, the Riemannian distance to `0` is the
-norm. -/
-private theorem riemannianEDist_zero_right {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℝ F] (x : F) :
-    Manifold.riemannianEDist 𝓘(ℝ, F) x 0 = ENNReal.ofReal ‖x‖ := by
-  rw [← IsRiemannianManifold.out, edist_dist, dist_zero_right]
-
 /-! ### A degenerate minimum: `x⁴` on `ℝ` -/
 
 section QuarticWell
@@ -148,8 +141,8 @@ theorem riemannianEDist_maximalIntegralCurve_neg_mgradient_pow_four {x₀ t : �
     Manifold.riemannianEDist 𝓘(ℝ, ℝ)
         (maximalIntegralCurve (-mgradient 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 4)) x₀ t) 0 =
       ENNReal.ofReal (|x₀| * (1 + 8 * x₀ ^ 2 * t) ^ (-(1 / 2 : ℝ))) := by
-  rw [maximalIntegralCurve_neg_mgradient_pow_four ht, riemannianEDist_zero_right,
-    Real.norm_eq_abs, abs_mul, abs_of_pos (Real.rpow_pos_of_pos ht _)]
+  rw [maximalIntegralCurve_neg_mgradient_pow_four ht, ← IsRiemannianManifold.out, edist_dist,
+    dist_zero_right, Real.norm_eq_abs, abs_mul, abs_of_pos (Real.rpow_pos_of_pos ht _)]
 
 /-- **Polynomial, not exponential, convergence to a degenerate minimum.** For `x₀ ≠ 0`, the
 trajectory of `-grad x⁴` through `x₀` converges to `0`, but its distance to `0` is bounded by
@@ -185,7 +178,7 @@ theorem not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient
           gcongr ?_ * _ * _
           exact (mul_le_mul_of_nonneg_left hrp hx.le).trans ht
       _ = C * (1 + 8 * x₀ ^ 2 * t) := by
-          rw [mul_assoc C, ← Real.exp_add, neg_add_cancel, Real.exp_zero, mul_one]
+          simp [Real.exp_neg]
   have hgrow' : K * t < Real.exp (μ * t) :=
     (lt_div_iff₀ (by linarith)).1 (by simpa using hgrow)
   have hK : |x₀| * K = C * (1 + 8 * x₀ ^ 2) := by
@@ -254,8 +247,8 @@ theorem riemannianEDist_maximalIntegralCurve_neg_mgradient_sq_sub_sq (a t : ℝ)
           (fun z : EuclideanSpace ℝ (Fin 2) ↦ z 0 ^ 2 - z 1 ^ 2)) (EuclideanSpace.single 0 a) t)
         0 =
       ENNReal.ofReal (|a| * Real.exp (-(2 * t))) := by
-  rw [maximalIntegralCurve_neg_mgradient_sq_sub_sq, riemannianEDist_zero_right,
-    PiLp.norm_single, Real.norm_eq_abs, abs_mul, Real.abs_exp]
+  rw [maximalIntegralCurve_neg_mgradient_sq_sub_sq, ← IsRiemannianManifold.out, edist_dist,
+    dist_zero_right, PiLp.norm_single, Real.norm_eq_abs, abs_mul, Real.abs_exp]
 
 /-- **The rate `2` at the saddle is sharp.** For `a ≠ 0` and `μ > 2`, the distance from the
 trajectory of `-grad (x² - y²)` through `(a, 0)` to the saddle point is not bounded by
@@ -280,7 +273,7 @@ theorem not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient
           rw [mul_assoc, ← Real.exp_add]
           ring_nf
       _ ≤ C * Real.exp (-(μ * t)) * Real.exp (μ * t) := by gcongr
-      _ = C := by rw [mul_assoc, ← Real.exp_add, neg_add_cancel, Real.exp_zero, mul_one]
+      _ = C := by simp [Real.exp_neg]
   linarith [(div_lt_iff₀ (abs_pos.2 ha)).1 hbig]
 
 /-- A property holding near the origin of the Euclidean plane holds at some nonzero point of each
