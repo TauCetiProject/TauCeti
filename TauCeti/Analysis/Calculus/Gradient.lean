@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+public import TauCeti.Topology.MetricSpace.Holder
 -- Private: the derivative sum and scalar rules and the symmetry of second derivatives are used
 -- only inside the proofs below.
 import Mathlib.Analysis.Calculus.FDeriv.Add
@@ -42,11 +43,14 @@ theorem about `‖Dφ‖`.
 * `TauCeti.gradient_neg` and `TauCeti.gradient_sub`: the gradient of a negative and of a
   difference.
 * `TauCeti.gradient_of_notMem_tsupport`: the gradient vanishes off the topological support.
+* `TauCeti.gradient_eq_zero_iff`: `∇ f x = 0 ↔ fderiv 𝕜 f x = 0`.
 * `HasCompactSupport.gradient`: the gradient of a compactly supported function is compactly
-  supported.
+  supported; `HasCompactSupport.mono_of_forall_gradient`: so is any function vanishing where both
+  the function and its gradient vanish.
 * `TauCeti.measurable_gradient`: the gradient of any function is measurable.
 * `ContDiff.gradient_right`: over `ℝ`, where `toDual` is linear, the gradient of a `C^{m+1}`
-  function is `Cᵐ`; `HasCompactSupport.memLp_gradient`: the gradient of a compactly supported
+  function is `Cᵐ`, and `ContDiff.continuous_gradient`: that of a `Cⁿ` function with `n ≠ 0` is
+  continuous; `HasCompactSupport.memLp_gradient`: the gradient of a compactly supported
   `C¹` function is in `Lᵖ(μ)` for every measure `μ` finite on compact sets;
   `ContDiffAt.continuousAt_fderiv_gradient` and
   `ContDiffAt.eventually_differentiableAt_gradient`: the Hessian of a function `C²` at `x` is
@@ -62,6 +66,8 @@ theorem about `‖Dφ‖`.
 * `TauCeti.norm_gradient_fderiv_apply_le`: `‖∇ (∂ᵥ f) x‖ ≤ ‖v‖ ‖D²f x‖`.
 * `TauCeti.norm_iteratedFDeriv_two_sub_le_sum`: the operator norm of `D²f x - D²f y` is at most
   the sum, over an orthonormal basis `(bᵢ)`, of `‖∇ (∂_{bᵢ} f) x - ∇ (∂_{bᵢ} f) y‖`.
+* `OrthonormalBasis.holderOnWith_iteratedFDeriv_two_of_dist_gradient_le`: if the gradients of the
+  directional derivatives along an orthonormal basis are `α`-Hölder, so is `D²f`.
 -/
 
 public section
@@ -117,10 +123,22 @@ does. -/
 theorem gradient_of_notMem_tsupport (h : x ∉ tsupport f) : ∇ f x = 0 := by
   rw [gradient, fderiv_of_notMem_tsupport 𝕜 h, map_zero]
 
+/-- The gradient vanishes exactly where the Fréchet derivative does: `toDual` is injective. -/
+theorem gradient_eq_zero_iff : ∇ f x = 0 ↔ fderiv 𝕜 f x = 0 := by
+  rw [gradient, map_eq_zero_iff _ (toDual 𝕜 F).symm.injective]
+
 /-- The gradient of a compactly supported function is compactly supported, as is its Fréchet
 derivative (`HasCompactSupport.fderiv`). -/
 theorem _root_.HasCompactSupport.gradient (hf : HasCompactSupport f) : HasCompactSupport (∇ f) :=
   hf.mono' fun _ hx ↦ by_contra fun h ↦ hx (gradient_of_notMem_tsupport h)
+
+/-- A function vanishing wherever both `f` and its gradient vanish is compactly supported if `f`
+is. -/
+theorem _root_.HasCompactSupport.mono_of_forall_gradient {M : Type*} [Zero M] {g : F → M}
+    (hf : HasCompactSupport f) (hg : ∀ x, f x = 0 → ∇ f x = 0 → g x = 0) :
+    HasCompactSupport g :=
+  hf.mono' fun y hy ↦ by_contra fun h ↦
+    hy (hg y (image_eq_zero_of_notMem_tsupport h) (gradient_of_notMem_tsupport h))
 
 /-- The gradient of an arbitrary function is Borel measurable, as is its Fréchet derivative
 (`measurable_fderiv`); no differentiability is assumed, the gradient being `0` where `f` is not
@@ -139,6 +157,13 @@ theorem _root_.ContDiff.gradient_right {E : Type*} [NormedAddCommGroup E] [Inner
     [CompleteSpace E] {m n : WithTop ℕ∞} {f : E → ℝ} (hf : ContDiff ℝ n f) (hmn : m + 1 ≤ n) :
     ContDiff ℝ m (∇ f) :=
   (toDual ℝ E).symm.contDiff.comp (hf.fderiv_right hmn)
+
+/-- Over `ℝ`, the gradient of a `Cⁿ` function with `n ≠ 0` is continuous, as is its Fréchet
+derivative (`ContDiff.continuous_fderiv`). -/
+theorem _root_.ContDiff.continuous_gradient {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] {n : WithTop ℕ∞} {f : E → ℝ} (hf : ContDiff ℝ n f)
+    (hn : n ≠ 0) : Continuous (∇ f) :=
+  (toDual ℝ E).symm.continuous.comp (hf.continuous_fderiv hn)
 
 /-- Over `ℝ`, the gradient of a compactly supported `C¹` function is in `Lᵖ(μ)` for every
 measure `μ` finite on compact sets, being continuous with compact support. -/
@@ -267,5 +292,28 @@ theorem norm_iteratedFDeriv_two_sub_le_sum {E ι : Type*} [NormedAddCommGroup E]
         · exact (PiLp.norm_apply_le (b.repr (m 1)) i).trans_eq (b.repr.norm_map (m 1))
         · exact norm_inner_le_norm _ _
     _ = _ := by ring
+
+/-- If the gradients of the directional derivatives `∂_{bᵢ} u` of a function `u`, along an
+orthonormal basis `b`, are `α`-Hölder on `S` with constant `D`, then `D²u` is `α`-Hölder on `S` with
+constant `(card ι) D`, wherever `fderiv ℝ u` is differentiable on `S`. -/
+theorem _root_.OrthonormalBasis.holderOnWith_iteratedFDeriv_two_of_dist_gradient_le
+    {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E] [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E)
+    {α : NNReal} {S : Set E} {u : E → ℝ} {D : ℝ} (hD : 0 ≤ D)
+    (hdiff : ∀ x ∈ S, DifferentiableAt ℝ (fderiv ℝ u) x)
+    (hdir : ∀ i, ∀ x ∈ S, ∀ y ∈ S,
+      dist (∇ (fun z => fderiv ℝ u z (b i)) x) (∇ (fun z => fderiv ℝ u z (b i)) y) ≤
+        D * dist x y ^ (α : ℝ)) :
+    HolderOnWith ((Fintype.card ι : ℝ) * D).toNNReal α (iteratedFDeriv ℝ 2 u) S := by
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  rw [Real.coe_toNNReal _ (by positivity), dist_eq_norm]
+  calc ‖iteratedFDeriv ℝ 2 u x - iteratedFDeriv ℝ 2 u y‖
+      ≤ ∑ i, ‖∇ (fun z => fderiv ℝ u z (b i)) x - ∇ (fun z => fderiv ℝ u z (b i)) y‖ :=
+        norm_iteratedFDeriv_two_sub_le_sum b (hdiff x hx) (hdiff y hy)
+    _ ≤ ∑ _i : ι, D * dist x y ^ (α : ℝ) :=
+        Finset.sum_le_sum fun i _ => by simpa only [dist_eq_norm] using hdir i x hx y hy
+    _ = _ := by
+        rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+        ring
 
 end TauCeti

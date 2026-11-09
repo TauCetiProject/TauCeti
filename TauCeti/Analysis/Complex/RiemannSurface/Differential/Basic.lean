@@ -547,7 +547,7 @@ theorem order_mvfderiv_eq_localMultiplicity_sub_one
   set g : ℂ → ℂ := fun z ↦ f ((chartAt ℂ x).symm z) - f x
   have hg : AnalyticAt ℂ g (chartAt ℂ x x) :=
     (TauCeti.analyticAt_comp_chartAt_symm hf).sub analyticAt_const
-  have hmult := natCast_localMultiplicity hf hnc
+  have hmult := natCast_localMultiplicity hf.self_of_nhds.continuousAt hnc
   simp only [chartAt_self_eq, OpenPartialHomeomorph.refl_apply, id_eq] at hmult
   have hord : _root_.meromorphicOrderAt g (chartAt ℂ x x) = (localMultiplicity f x : ℤ) := by
     rw [hg.meromorphicOrderAt_eq, ← hmult]

@@ -365,6 +365,49 @@ theorem W1p.compL_mem_w1p0Submodule (hΦp : IsProperMap Φ) (hUV : (U : Set E) =
   rw [h1, h2]
   exact image_eq_zero_of_notMem_tsupport hxK
 
+/-- **Zero boundary values are preserved by a change of variables with a continuous inverse.** If a
+map `Ψ`, continuous on `V` and mapping `V` into `U`, is a left inverse of `Φ` on `U`, then
+precomposition with `Φ` maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`. Unlike
+`TauCeti.W1p.compL_mem_w1p0Submodule`, nothing is assumed about `Φ` outside `U`. -/
+theorem W1p.compL_mem_w1p0Submodule_of_leftInvOn {Ψ : E → E} (hΨ : ContinuousOn Ψ V)
+    (hΨmaps : MapsTo Ψ V U) (hΨΦ : LeftInvOn Ψ Φ U) {u : W1p mu V p}
+    (hu : u ∈ w1p0Submodule mu V p) :
+    W1p.compL Φ hp hΦ hinj hmaps hL hc hdet u ∈ w1p0Submodule mu U p := by
+  refine w1p0Submodule_subset_of_isClosed (p := p)
+    ((w1p0Submodule mu U p).isClosed.preimage
+      (W1p.compL Φ hp hΦ hinj hmaps hL hc hdet).continuous)
+    (fun φ => ?_) hu
+  -- On `U`, a test function `φ` on `V` composed with `Φ` vanishes off the compact `Ψ(tsupport φ)`.
+  have hK : IsCompact (Ψ '' tsupport φ) :=
+    φ.hasCompactSupport.isCompact.image_of_continuousOn (hΨ.mono φ.tsupport_subset)
+  refine W1p.mem_w1p0Submodule_of_isCompact hp hK
+    (hΨmaps.mono_left φ.tsupport_subset).image_subset ?_
+  filter_upwards [W1p.value_compL_ae Φ hp hΦ hinj hmaps hL hc hdet _,
+    ae_comp_of_map_absolutelyContinuous (hΦ.continuousOn.aemeasurable U.isOpen.measurableSet)
+      (Measure.absolutelyContinuous_of_le_smul
+        (map_restrict_le_smul_restrict_of_differentiableOn mu U.isOpen hΦ hinj hmaps hc hdet))
+      (W1p.value_ofTestFunctionₗ_ae (mu := mu) (p := p) φ),
+    ae_restrict_mem U.isOpen.measurableSet] with x h1 h2 hxU hxK
+  rw [h1, h2]
+  exact image_eq_zero_of_notMem_tsupport fun hx => hxK ⟨Φ x, hx, hΨΦ hxU⟩
+
+/-- If `Ψ` is a change of variables from `V` into `U` with `Ψ ∘ Φ = id` on `U`, precomposing with
+`Ψ` and then with `Φ` is the identity of `W^{1,p}(U)`. -/
+theorem W1p.compL_compL_of_leftInvOn {Ψ : E → E} {L' c' : ℝ} (hΨ : DifferentiableOn ℝ Ψ V)
+    (hΨinj : InjOn Ψ V) (hΨmaps : MapsTo Ψ V U) (hΨL : ∀ y ∈ (V : Set E), ‖fderiv ℝ Ψ y‖ ≤ L')
+    (hc' : 0 < c') (hΨdet : ∀ y ∈ (V : Set E), c' ≤ |(fderiv ℝ Ψ y).det|)
+    (hΨΦ : LeftInvOn Ψ Φ U) (u : W1p mu U p) :
+    W1p.compL Φ hp hΦ hinj hmaps hL hc hdet (W1p.compL Ψ hp hΨ hΨinj hΨmaps hΨL hc' hΨdet u) =
+      u := by
+  refine W1p.ext_value (Lp.ext ?_)
+  filter_upwards [W1p.value_compL_ae Φ hp hΦ hinj hmaps hL hc hdet _,
+    ae_comp_of_map_absolutelyContinuous (hΦ.continuousOn.aemeasurable U.isOpen.measurableSet)
+      (Measure.absolutelyContinuous_of_le_smul
+        (map_restrict_le_smul_restrict_of_differentiableOn mu U.isOpen hΦ hinj hmaps hc hdet))
+      (W1p.value_compL_ae Ψ hp hΨ hΨinj hΨmaps hΨL hc' hΨdet u),
+    ae_restrict_mem U.isOpen.measurableSet] with x h1 h2 hx
+  rw [h1, h2, hΨΦ hx]
+
 end ChangeOfVariables
 
 end TauCeti
