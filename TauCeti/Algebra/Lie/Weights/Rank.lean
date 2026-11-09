@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Lie.Rank
 import Mathlib.Algebra.CharZero.Infinite
-import Mathlib.Algebra.Module.Submodule.Union
 public import Mathlib.Algebra.Lie.Weights.RootSystem
 public import Mathlib.LinearAlgebra.RootSystem.Base
 import TauCeti.Algebra.Lie.AdjointAction.RootExponential
