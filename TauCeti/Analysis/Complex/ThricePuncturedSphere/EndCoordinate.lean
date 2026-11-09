@@ -533,18 +533,23 @@ theorem truncation_eq (R : ℝ) :
     cases q
     exacts [(h₀ hw₀).2 ha, (h₁ hw₁).2 hb, (h₂ hw₀).2 hc]
 
-/-- For `R ≥ 0`, the points of the disc `‖w‖ ≤ 2 exp (2πR)` outside the truncation `S_R` lie in
-the open disc `‖w‖ < 2 exp (2π)`: they are within `exp (-2πR) / 2 ≤ 1 / 2` of `0` or `1`. -/
-theorem closedBall_sdiff_truncation_subset_ball {R : ℝ} (hR : 0 ≤ R) :
+/-- The points of the disc `‖w‖ ≤ 2 exp (2πR)` outside the truncation `S_R` lie in the open disc
+`‖w‖ < 2 exp (2π)`: for `R ≥ 0` they are within `exp (-2πR) / 2 ≤ 1 / 2` of `0` or `1`, and for
+`R < 0` the disc is already smaller. -/
+theorem closedBall_sdiff_truncation_subset_ball {R : ℝ} :
     Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \ truncation R ⊆
       Metric.ball 0 (2 * Real.exp (2 * π)) := by
   rintro w ⟨hwD, hwT⟩
+  rw [mem_ball_zero_iff]
+  rcases lt_or_ge R 0 with hR | hR
+  · have := Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos] : 2 * π * R < 2 * π)
+    rw [Metric.mem_closedBall, dist_zero_right] at hwD
+    linarith
   have he : Real.exp (-(2 * π * R)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
   have h1 : 1 ≤ Real.exp (2 * π) := Real.one_le_exp (by positivity)
   rw [truncation_eq] at hwT
   have hnorm := norm_sub_norm_le w 1
   rw [norm_one] at hnorm
-  rw [mem_ball_zero_iff]
   by_cases h₀ : Real.exp (-(2 * π * R)) / 2 ≤ ‖w‖
   · have h₁ : ‖w - 1‖ < Real.exp (-(2 * π * R)) / 2 := by
       by_contra! h
