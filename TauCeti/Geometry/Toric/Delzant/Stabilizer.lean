@@ -47,8 +47,8 @@ under `π` of the coordinate subtorus of the angles supported on `s`
 
 ## Main definitions
 
-* `TauCeti.Toric.faceSubtorus i u p s`: the subgroup of `V / p i(N)` spanned by the normals of
-  the facets in `s`.
+* `TauCeti.Toric.faceSubtorus i u p s`: the image in `V / p i(N)` of the real span of the normals
+  of the facets in `s`.
 
 ## Main results
 
@@ -59,8 +59,8 @@ under `π` of the coordinate subtorus of the angles supported on `s`
 * `TauCeti.Toric.exists_weightRotation_neg_apply_eq_iff_mem_faceSubtorus`,
   `TauCeti.Toric.exists_weightRotation_neg_apply_eq_iff_mem_faceSubtorus_activeSet`: the
   residual stabilizer is the face subtorus of the active facets.
-* `TauCeti.Toric.forall_exists_weightRotation_neg_apply_eq_iff_activeSet_eq_empty`: the residual
-  torus acts freely exactly over the points of `Δ` lying on no facet.
+* `TauCeti.Toric.forall_exists_weightRotation_neg_apply_eq_iff_eq_zero_iff_activeSet_eq_empty`: the
+  residual torus acts freely exactly over the points of `Δ` lying on no facet.
 * `TauCeti.Toric.forall_exists_weightRotation_neg_apply_eq_iff_mem_extremePoints`: the residual
   torus fixes the orbit over `y` exactly when `y` is a vertex of `Δ`.
 * `TauCeti.Toric.setOf_forall_eq_eq_range_weightRotation_neg`: the moment fibres are single
@@ -168,9 +168,7 @@ theorem faceSubtorus_eq_top_iff [Countable N] {p : ℝ} {s : Set ι} :
       rintro _ ⟨v, rfl⟩
       obtain ⟨w, hw, hwv⟩ := mem_faceSubtorus.1 (h ▸ AddSubgroup.mem_top (v : V ⧸ (p • i).range))
       obtain ⟨n, hn⟩ := QuotientAddGroup.eq.1 hwv
-      have hfw : f w ∈ (Submodule.span ℝ ((fun j ↦ i (u j)) '' s)).map f :=
-        Submodule.mem_map_of_mem hw
-      rw [hfW, Submodule.mem_bot] at hfw
+      have hfw : f w = 0 := LinearMap.le_ker_iff_map.2 hfW hw
       exact ⟨n, by simp only [hn, map_add, map_neg, hfw, neg_zero, zero_add]⟩
     refine Cardinal.not_countable_real ?_
     rw [← range_eq_univ.2 (LinearMap.surjective hf)]
@@ -183,30 +181,6 @@ theorem faceSubtorus_eq_top_iff [Countable N] {p : ℝ} {s : Set ι} :
 /-! ### Stabilizers of the residual torus -/
 
 variable [Fintype ι]
-
-/-- The rotations of `x` by `-θ` and by `-t` agree exactly when `θ_j - t_j ∈ 2πℤ` at every
-coordinate `z_j = q_j + i p_j` of `x` that is nonzero. -/
-private theorem weightRotation_neg_apply_eq_iff (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι)
-    (θ t : ι → ℝ) :
-    weightRotation (-θ) x = weightRotation (-t) x ↔
-      ∀ j, (x.1 j ≠ 0 ∨ x.2 j ≠ 0) → ((θ j - t j : ℝ) : AddCircle (2 * π)) = 0 := by
-  have hθ : weightRotation (-θ) = (weightRotation (-t)).comp (weightRotation (-(θ - t))) := by
-    rw [← weightRotation_add]
-    congr 1
-    abel
-  have hinj : Function.Injective (weightRotation (-t)) := fun y z h ↦ by
-    have h' := congrArg (weightRotation t) h
-    simpa only [← ContinuousLinearMap.comp_apply, ← weightRotation_add, add_neg_cancel,
-      weightRotation_zero, ContinuousLinearMap.id_apply] using h'
-  rw [hθ, ContinuousLinearMap.comp_apply, hinj.eq_iff, weightRotation_apply_eq_self_iff]
-  refine forall₂_congr fun j _ ↦ ?_
-  rw [AddCircle.coe_eq_zero_iff]
-  simp only [Pi.neg_apply, Pi.sub_apply, zsmul_eq_mul]
-  constructor
-  · rintro ⟨k, hk⟩
-    exact ⟨-k, by push_cast; linarith⟩
-  · rintro ⟨k, hk⟩
-    exact ⟨-k, by push_cast; linarith⟩
 
 /-- **The residual stabilizer.** The rotation of `x` by `-θ` lies in the orbit of `x` under the
 kernel torus `N_Δ` of `facetTorusHom` exactly when the class of `θ` in the residual torus
@@ -258,20 +232,11 @@ theorem exists_weightRotation_neg_apply_eq_iff_mem_faceSubtorus_activeSet
   rw [activeSet_eq_of_forall_eq hy]
   exact exists_weightRotation_neg_apply_eq_iff_mem_faceSubtorus x θ
 
-/-- If the normals generate the integral lattice, every element of the residual torus
-`V / 2π i(N)` is the class `facetTorusHom [θ]` of some angles `θ`. -/
-private theorem exists_facetTorusHom_eq (hi : IsIntegralLattice i)
-    (hu : Function.Surjective (Fintype.linearCombination ℤ u)) (q : V ⧸ ((2 * π) • i).range) :
-    ∃ θ : ι → ℝ, facetTorusHom i u (2 * π) (fun j ↦ (θ j : AddCircle (2 * π))) = q := by
-  obtain ⟨φ, rfl⟩ := surjective_facetTorusHom hi.span_range_eq_top hu q
-  choose θ hθ using fun j ↦ QuotientAddGroup.mk_surjective (φ j)
-  exact ⟨θ, congrArg _ (funext hθ)⟩
-
 /-- **The residual torus acts freely exactly over the facet-free points.** Suppose that the
 normals are nonzero and generate the integral lattice. If `μ(x) = β_ℝ^* y`, the only element of
 the residual torus moving `x` within its orbit under the kernel torus is `0` exactly when `y`
 lies on no facet of `Δ`. -/
-theorem forall_exists_weightRotation_neg_apply_eq_iff_activeSet_eq_empty
+theorem forall_exists_weightRotation_neg_apply_eq_iff_eq_zero_iff_activeSet_eq_empty
     (hi : IsIntegralLattice i) (hu : Function.Surjective (Fintype.linearCombination ℤ u))
     (hu₀ : ∀ j, u j ≠ 0) (hy : ∀ j, (x.1 j ^ 2 + x.2 j ^ 2) / 2 + c j = y (i (u j))) :
     (∀ θ : ι → ℝ, (∃ t : ι → ℝ,
@@ -285,7 +250,7 @@ theorem forall_exists_weightRotation_neg_apply_eq_iff_activeSet_eq_empty
   -- Both sides say that the face subtorus of the active facets is trivial.
   trans faceSubtorus i u (2 * π) (activeSet (facetPairing i u) c y) = ⊥
   · refine ⟨fun h ↦ eq_bot_iff.2 fun q hq ↦ ?_, fun h θ ↦ by rw [h, AddSubgroup.mem_bot]⟩
-    obtain ⟨θ, rfl⟩ := exists_facetTorusHom_eq hi hu q
+    obtain ⟨θ, rfl⟩ := exists_facetTorusHom_eq hi.span_range_eq_top hu q
     exact (h θ).1 hq
   · rw [faceSubtorus_eq_bot_iff, eq_empty_iff_forall_notMem]
     exact forall₂_congr fun j _ ↦ by simpa using hu₀ j ∘ (map_eq_zero_iff i hi.injective).1
@@ -307,7 +272,7 @@ theorem forall_exists_weightRotation_neg_apply_eq_iff_mem_extremePoints
   rw [mem_extremePoints_facetPolyhedron_iff_span_eq_top, ← faceSubtorus_eq_top_iff (p := 2 * π),
     and_iff_right (mem_facetPolyhedron_of_forall_eq c hy), eq_top_iff]
   refine ⟨fun h q _ ↦ ?_, fun h θ ↦ h (AddSubgroup.mem_top _)⟩
-  obtain ⟨θ, rfl⟩ := exists_facetTorusHom_eq hi hu q
+  obtain ⟨θ, rfl⟩ := exists_facetTorusHom_eq hi.span_range_eq_top hu q
   exact h θ
 
 /-- **Moment fibres are torus orbits.** If `μ(x) = β_ℝ^* y`, the points `x'` of `ℂ^ι` with
@@ -330,7 +295,7 @@ end Level
 
 namespace IsDelzant
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   {i : N →+ V} {c : ι → ℝ} (hΔ : IsDelzant i u c) (hi : IsIntegralLattice i)
 include hΔ hi
 
@@ -341,6 +306,7 @@ theorem exists_activeSet_eq_empty [Finite ι] :
     ∃ y ∈ facetPolyhedron i u c, activeSet (facetPairing i u) c y = ∅ := by
   classical
   have := Fintype.ofFinite ι
+  have := hi.finiteDimensional
   obtain ⟨v, hv⟩ := hΔ.extremePoints_nonempty
   obtain ⟨b, hb⟩ := isSmoothVertex_def.1 (hΔ.isSmoothVertex v hv)
   -- Move from `v` along a functional `w` that is `1` on the active normals; for small positive

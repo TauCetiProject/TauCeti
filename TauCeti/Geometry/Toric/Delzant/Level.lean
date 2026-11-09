@@ -334,21 +334,13 @@ theorem weightRotation_neg_eq_self_iff {x : EuclideanSpace ℝ ι × EuclideanSp
     (hx : x ∈ delzantLevel i u c) {t : ι → ℝ}
     (ht : (fun j ↦ (t j : AddCircle (2 * π))) ∈ (facetTorusHom i u (2 * π)).ker) :
     weightRotation (-t) x = x ↔ (fun j ↦ (t j : AddCircle (2 * π))) = 0 := by
-  rw [weightRotation_apply_eq_self_iff]
+  rw [weightRotation_neg_apply_eq_self_iff]
   constructor
   · intro h
     obtain ⟨v, hv, hvx⟩ := hΔ.exists_isSmoothVertex_of_mem_delzantLevel hx
-    refine eq_zero_of_mem_ker_facetTorusHom hi (isSmoothVertex_def.1 hv) ht fun j hj ↦ ?_
-    obtain ⟨k, hk⟩ := h j (hvx j hj)
-    rw [AddCircle.coe_eq_zero_iff]
-    refine ⟨-k, ?_⟩
-    rw [zsmul_eq_mul]
-    simp only [Pi.neg_apply] at hk
-    push_cast
-    linarith
-  · intro h j _
-    obtain ⟨k, hk⟩ := (AddCircle.coe_eq_zero_iff (2 * π)).1 (congrFun h j)
-    exact ⟨-k, by simp only [Pi.neg_apply, ← hk, zsmul_eq_mul]; push_cast; ring⟩
+    exact eq_zero_of_mem_ker_facetTorusHom hi (isSmoothVertex_def.1 hv) ht fun j hj ↦
+      h j (hvx j hj)
+  · exact fun h j _ ↦ congrFun h j
 
 include hi in
 /-- **The infinitesimal action of the kernel torus is free on the level.** For `t` in the Lie

@@ -92,6 +92,8 @@ span a cone containing a line, so that `0` is not an extreme point of the image,
   the image of `μ` is the cone of covectors with nonnegative coordinates in `b`.
 * `TauCeti.weightRotation_apply_eq_self_iff`, `TauCeti.weightGenerator_apply_eq_zero_iff`: the
   stabilizer and the infinitesimal stabilizer of a point.
+* `TauCeti.weightRotation_neg_apply_eq_self_iff`, `TauCeti.weightRotation_neg_apply_eq_iff`: the
+  stabilizer of a point, and when two rotations agree at a point, with angles in `ℝ / 2πℤ`.
 * `TauCeti.mem_ker_weightGenerator_iff`, `TauCeti.finrank_ker_weightGenerator`: the kernel of the
   generator of `θ` is the subspace of `z` with `z_i = 0` whenever `θ_i ≠ 0`, of dimension twice
   the number of `i` with `θ_i = 0`.
@@ -173,6 +175,12 @@ theorem weightRotation_zero : weightRotation (0 : ι → ℝ) = ContinuousLinear
 theorem weightRotation_add (θ θ' : ι → ℝ) :
     weightRotation (θ + θ') = (weightRotation θ).comp (weightRotation θ') := by
   ext x i <;> simp [cos_add, sin_add] <;> ring
+
+/-- Every rotation is injective, with inverse the rotation by the opposite angles. -/
+theorem weightRotation_injective (θ : ι → ℝ) : Function.Injective (weightRotation θ) :=
+  fun y z h ↦ by
+    simpa only [← ContinuousLinearMap.comp_apply, ← weightRotation_add, neg_add_cancel,
+      weightRotation_zero, ContinuousLinearMap.id_apply] using congrArg (weightRotation (-θ)) h
 
 /-- Rotations preserve the standard symplectic form. -/
 theorem stdSymplecticForm_weightRotation (θ : ι → ℝ)
@@ -382,6 +390,29 @@ theorem weightRotation_apply_eq_self_iff (θ : ι → ℝ)
       · exact Or.inr (h i hi)
       · exact Or.inl (by tauto)
     exact ⟨fun i ↦ (key i).1, fun i ↦ (key i).2⟩
+
+/-- **Stabilizers in the weight model, on the circle.** The rotation by `-θ` fixes `z` exactly when
+the class of `θ_i` in `ℝ / 2πℤ` vanishes for every coordinate `z_i = q_i + i p_i` that is
+nonzero. -/
+theorem weightRotation_neg_apply_eq_self_iff (θ : ι → ℝ)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    weightRotation (-θ) x = x ↔
+      ∀ i, (x.1 i ≠ 0 ∨ x.2 i ≠ 0) → (θ i : AddCircle (2 * π)) = 0 := by
+  rw [weightRotation_apply_eq_self_iff]
+  refine forall₂_congr fun i _ ↦ ?_
+  rw [AddCircle.coe_eq_zero_iff, Pi.neg_apply]
+  simp only [zsmul_eq_mul]
+  exact ⟨fun ⟨k, hk⟩ ↦ ⟨-k, by push_cast; linarith⟩, fun ⟨k, hk⟩ ↦ ⟨-k, by push_cast; linarith⟩⟩
+
+/-- The rotations of `z` by `-θ` and by `-t` agree exactly when `θ_i - t_i ∈ 2πℤ` at every
+coordinate `z_i = q_i + i p_i` of `z` that is nonzero. -/
+theorem weightRotation_neg_apply_eq_iff (θ t : ι → ℝ)
+    (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    weightRotation (-θ) x = weightRotation (-t) x ↔
+      ∀ i, (x.1 i ≠ 0 ∨ x.2 i ≠ 0) → ((θ i - t i : ℝ) : AddCircle (2 * π)) = 0 := by
+  rw [show -θ = -t + -(θ - t) by abel, weightRotation_add, ContinuousLinearMap.comp_apply,
+    (weightRotation_injective _).eq_iff, weightRotation_neg_apply_eq_self_iff]
+  rfl
 
 /-- **Infinitesimal stabilizers in the weight model.** The generator of `θ` vanishes at `z` exactly
 when `θ_i = 0` for every coordinate `z_i = q_i + i p_i` that is nonzero. -/

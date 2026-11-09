@@ -68,6 +68,8 @@ points.
   `TauCeti.Toric.IsDelzant.isConnected_ker_facetTorusHom`: the kernel of `π` is connected.
 * `TauCeti.Toric.surjective_facetTorusHom`, `TauCeti.Toric.IsDelzant.surjective_facetTorusHom`:
   `π` is surjective.
+* `TauCeti.Toric.exists_facetTorusHom_eq`: every element of `V / p i(N)` is the image under `π`
+  of the classes of real angles.
 * `TauCeti.Toric.eq_zero_of_mem_ker_facetTorusHom`: the kernel of `π` meets the coordinate
   subtorus of a lattice basis of normals trivially.
 
@@ -193,6 +195,15 @@ theorem surjective_facetTorusHom (hi : Submodule.span ℝ (Set.range i) = ⊤)
   obtain ⟨v, rfl⟩ := QuotientAddGroup.mk_surjective q
   obtain ⟨t, rfl⟩ := surjective_linearCombination_real hi hu v
   exact ⟨_, facetTorusHom_coe i u p t⟩
+
+/-- If the normals generate the lattice and the lattice spans `V`, every element of
+`V / p i(N)` is the class `facetTorusHom [θ]` of some real angles `θ`. -/
+theorem exists_facetTorusHom_eq (hi : Submodule.span ℝ (Set.range i) = ⊤)
+    (hu : Function.Surjective (Fintype.linearCombination ℤ u)) (q : V ⧸ (p • i).range) :
+    ∃ θ : ι → ℝ, facetTorusHom i u p (fun j ↦ (θ j : AddCircle p)) = q := by
+  obtain ⟨v, rfl⟩ := QuotientAddGroup.mk_surjective q
+  obtain ⟨t, rfl⟩ := surjective_linearCombination_real hi hu v
+  exact ⟨t, facetTorusHom_coe i u p t⟩
 
 /-- **The kernel torus meets a coordinate subtorus of a lattice basis trivially.** Suppose that
 the normals `u j` with `j ∈ s` form a basis of the integral lattice `N`. An element of the kernel

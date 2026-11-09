@@ -185,11 +185,8 @@ theorem mem_extremePoints_facetPolyhedron_iff_span_eq_top [Finite ι] [FiniteDim
     by_contra hne
     obtain ⟨f, hf, hfW⟩ :=
       Submodule.exists_dual_map_eq_bot_of_lt_top (lt_top_iff_ne_top.2 hne) inferInstance
-    refine hf (LinearMap.toContinuousLinearMap.map_eq_zero_iff.1 (h _ fun j hj ↦ ?_))
-    have : f (i (u j)) ∈ (Submodule.span ℝ ((fun j ↦ i (u j)) ''
-        activeSet (facetPairing i u) c x)).map f :=
-      Submodule.mem_map_of_mem (Submodule.subset_span ⟨j, hj, rfl⟩)
-    rwa [hfW, Submodule.mem_bot] at this
+    exact hf (LinearMap.toContinuousLinearMap.map_eq_zero_iff.1 (h _ fun j hj ↦
+      LinearMap.le_ker_iff_map.2 hfW (Submodule.subset_span ⟨j, hj, rfl⟩)))
   · have hle : Submodule.span ℝ ((fun j ↦ i (u j)) '' activeSet (facetPairing i u) c x) ≤
         LinearMap.ker (w : V →ₗ[ℝ] ℝ) :=
       Submodule.span_le.2 (by rintro _ ⟨j, hj, rfl⟩; exact hw j hj)
