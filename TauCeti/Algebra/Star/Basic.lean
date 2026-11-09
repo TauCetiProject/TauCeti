@@ -17,11 +17,13 @@ instance for matrices over a C⋆-algebra.
 
 ## Main results
 
-* `eq_zero_of_forall_star_mul_mul_eq_zero`: if `star d * X * c = 0` for all `c` and `d`, then
-  `X = 0`.
+* `TauCeti.eq_zero_of_forall_star_mul_mul_eq_zero`: if `star d * X * c = 0` for all `c` and
+  `d`, then `X = 0`.
 -/
 
 public section
+
+namespace TauCeti
 
 variable {R : Type*} [NonUnitalSemiring R] [StarRing R] [IsProperStar R]
 
@@ -32,3 +34,5 @@ theorem eq_zero_of_forall_star_mul_mul_eq_zero {X : R} (h : ∀ c d : R, star d 
   have h' : star (X * star X) * (X * star X) = 0 := by
     simpa [star_mul, mul_assoc] using h (star X) (X * star X)
   exact mul_star_self_eq_zero.mp (star_mul_self_eq_zero.mp h')
+
+end TauCeti

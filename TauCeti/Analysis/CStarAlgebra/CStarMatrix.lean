@@ -105,7 +105,7 @@ theorem isSelfAdjoint_of_forall_isSelfAdjoint_sum {M : CStarMatrix n n A}
       simp [Complex.ext_iff] <;> norm_num
   refine ext fun i j => ?_
   apply sub_eq_zero.mp
-  refine eq_zero_of_forall_star_mul_mul_eq_zero fun c d => ?_
+  refine TauCeti.eq_zero_of_forall_star_mul_mul_eq_zero fun c d => ?_
   have := hP (Pi.single j c) (Pi.single i d)
   simp only [← Pi.single_star, single_dotProduct, mulVec_single, Pi.smul_apply, col_apply,
     MulOpposite.smul_eq_mul_unop, MulOpposite.unop_op, star_mul, star_star,
