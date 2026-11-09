@@ -12,7 +12,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Fourier.L2Multiplier
 import TauCeti.MeasureTheory.Function.Lp.Complete
-import TauCeti.MeasureTheory.Function.Lp.Indicator
+import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
 # The Beurling operator is the Wirtinger derivative of the Cauchy transform on smooth data
@@ -101,7 +101,7 @@ private theorem tendsto_eLpNorm_indicator_closedBall {a A M : ℝ} (ha : 0 < a) 
       fun _ ↦ A * (a + n)⁻¹ * (M / (a + n))) 2 volume =
         ENNReal.ofReal (2 * A * M * √π / (a + n)) := by
     have hn : 0 < a + n := by positivity
-    rw [eLpNorm_two_indicator_closedBall_const _ _ (by positivity),
+    rw [Complex.eLpNorm_two_indicator_closedBall_const _ _ (by positivity),
       Real.enorm_eq_ofReal (by positivity), ← ENNReal.ofReal_mul (by positivity)]
     congr 1
     field_simp
