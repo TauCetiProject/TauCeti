@@ -184,7 +184,8 @@ theorem projectiveDimension_quotient_span_singleton_eq_one (hx : x ∈ nonZeroDi
     ((projectiveDimension_ge_iff _ 1).mpr fun h ↦ ?_)
   have := (IsProjective.iff_projective _).mpr (projective_iff_hasProjectiveDimensionLT_one.mpr h)
   have := Module.Projective.of_equiv (Shrink.linearEquiv R (R ⧸ span {x}))
-  exact Module.Flat.not_quotient_span_singleton hx hx' inferInstance
+  exact Module.Flat.not_quotient_of_mem_nonZeroDivisors (span_singleton_ne_top hx') hx
+    (mem_span_singleton_self x) inferInstance
 
 /-- **Change of rings for projective dimension, by reduction.** If `x` is a nonzerodivisor of `R`
 which is regular on an `R`-module `M` of projective dimension at most `n`, then `M ⧸ x M` has
