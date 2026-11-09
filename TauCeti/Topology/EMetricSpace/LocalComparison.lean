@@ -6,16 +6,18 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 module
 
 public import Mathlib.Topology.EMetricSpace.Basic
+public import TauCeti.Topology.UniformSpace.Complete
 
 /-!
 # Completeness from local comparison of extended metrics
 
 Completeness transfers from a reference extended metric to a target extended metric when the
 identity is continuous and every target Cauchy sequence is reference Cauchy. A local upper
-bound on reference distances on each target unit ball suffices for the Cauchy hypothesis.
+bound on reference distances on target balls of a common positive radius suffices for the
+Cauchy hypothesis.
 The comparison constant may depend on the center, and infinite distances are permitted.
 A single center also suffices when all target distances to it are finite and comparison
-holds on every finite ball. These criteria apply to complete Ricci-flow time slices.
+holds on every finite ball.
 
 Public formalization references:
 [lean-eval-submissions](https://github.com/frenzymath/lean-eval-submissions) and
@@ -31,45 +33,25 @@ open scoped ENNReal NNReal Topology
 
 variable {X : Type*}
 
-/-- A target extended metric is complete if the identity from a complete reference extended
-metric is continuous and every target Cauchy sequence is reference Cauchy. -/
-theorem completeSpace_of_continuous_cauchySeq
-    (d₀ d₁ : PseudoEMetricSpace X)
-    (hcomplete : @CompleteSpace X d₀.toUniformSpace)
-    (hcontinuous : @Continuous X X d₀.toUniformSpace.toTopologicalSpace
-      d₁.toUniformSpace.toTopologicalSpace id)
-    (hcauchy : ∀ u : ℕ → X, @CauchySeq X ℕ d₁.toUniformSpace _ u →
-      @CauchySeq X ℕ d₀.toUniformSpace _ u) :
-    @CompleteSpace X d₁.toUniformSpace := by
-  let : PseudoEMetricSpace X := d₁
-  apply EMetric.complete_of_cauchySeq_tendsto
-  intro u hu
-  have hlimit : ∃ x, Tendsto u atTop
-      (@nhds X d₀.toUniformSpace.toTopologicalSpace x) := by
-    let : PseudoEMetricSpace X := d₀
-    let : CompleteSpace X := hcomplete
-    exact cauchySeq_tendsto_of_complete (hcauchy u hu)
-  obtain ⟨x, hx⟩ := hlimit
-  exact ⟨x, (@Continuous.tendsto X X d₀.toUniformSpace.toTopologicalSpace
-    d₁.toUniformSpace.toTopologicalSpace id hcontinuous x).comp hx⟩
-
 /-- If the reference extended metric is complete, the identity to the target is continuous,
 and reference distances are bounded by a finite multiple of target distances on each closed
-target unit ball, then the target extended metric is complete. -/
+target ball of a common positive radius, then the target extended metric is complete. -/
 theorem completeSpace_of_continuous_local_edist_bound
     (d₀ d₁ : PseudoEMetricSpace X)
     (hcomplete : @CompleteSpace X d₀.toUniformSpace)
     (hcontinuous : @Continuous X X d₀.toUniformSpace.toTopologicalSpace
       d₁.toUniformSpace.toTopologicalSpace id)
+    (r : ℝ≥0∞) (hr : 0 < r)
     (hcompare : ∀ p : X, ∃ C : ℝ≥0, ∀ x y : X,
-      d₁.edist x p ≤ 1 → d₁.edist y p ≤ 1 →
+      d₁.edist x p ≤ r → d₁.edist y p ≤ r →
       d₀.edist x y ≤ C * d₁.edist x y) :
     @CompleteSpace X d₁.toUniformSpace := by
-  apply completeSpace_of_continuous_cauchySeq d₀ d₁ hcomplete hcontinuous
+  apply completeSpace_of_continuous_cauchySeq d₀.toUniformSpace d₁.toUniformSpace
+    hcomplete hcontinuous
   intro u hu
   let : PseudoEMetricSpace X := d₁
-  obtain ⟨N₀, hN₀⟩ := EMetric.cauchySeq_iff'.mp hu 1 zero_lt_one
-  have huR : ∀ n ≥ N₀, d₁.edist (u n) (u N₀) ≤ 1 := fun n hn ↦ (hN₀ n hn).le
+  obtain ⟨N₀, hN₀⟩ := EMetric.cauchySeq_iff'.mp hu r hr
+  have huR : ∀ n ≥ N₀, d₁.edist (u n) (u N₀) ≤ r := fun n hn ↦ (hN₀ n hn).le
   obtain ⟨C, hC⟩ := hcompare (u N₀)
   have hucauchy := EMetric.cauchySeq_iff.mp hu
   let : PseudoEMetricSpace X := d₀
@@ -82,7 +64,9 @@ theorem completeSpace_of_continuous_local_edist_bound
   exact ENNReal.mul_lt_of_lt_div' (hN m ((le_max_right _ _).trans hm)
     n ((le_max_right _ _).trans hn))
 
-/-- A single center suffices when every target distance to it is finite. -/
+/-- The target extended metric is complete if the reference is complete, the identity is
+continuous, all target distances to a fixed center are finite, and reference distances are
+bounded by a finite multiple of target distances on every finite ball about that center. -/
 theorem completeSpace_of_continuous_local_edist_bound_at_basepoint
     (d₀ d₁ : PseudoEMetricSpace X) (p : X)
     (hcomplete : @CompleteSpace X d₀.toUniformSpace)
@@ -93,7 +77,7 @@ theorem completeSpace_of_continuous_local_edist_bound_at_basepoint
       d₁.edist x p ≤ R → d₁.edist y p ≤ R →
       d₀.edist x y ≤ C * d₁.edist x y) :
     @CompleteSpace X d₁.toUniformSpace := by
-  apply completeSpace_of_continuous_local_edist_bound d₀ d₁ hcomplete hcontinuous
+  apply completeSpace_of_continuous_local_edist_bound d₀ d₁ hcomplete hcontinuous 1 zero_lt_one
   intro q
   obtain ⟨C, hC⟩ := hcompare (1 + (d₁.edist q p).toNNReal)
   refine ⟨C, fun x y hx hy ↦ hC x y ?_ ?_⟩
