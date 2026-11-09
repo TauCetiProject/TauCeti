@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Exponential
+import Mathlib.Analysis.SpecialFunctions.Log.Basic
 
 /-!
 # The normed-algebra exponential
@@ -41,6 +42,9 @@ Baker--Campbell--Hausdorff expansion.
   power-bounded elements satisfy `‖exp (s • b)‖ ≤ M * Real.exp ‖s‖`
   (`TauCeti.norm_exp_smul_le_mul_exp_of_norm_pow_le`).
 * `TauCeti.exp_smul_one`: the exponential of a scalar multiple of the unit.
+* `NormedSpace.exp_mul_of_mul_eq_zero`: if `x * y = 0`, then `exp x * y = y`.
+* `TauCeti.exists_norm_exp_smul_le_of_norm_exp_smul_lt_one`: if `‖exp (τ • x)‖ < 1` for one time
+  `τ > 0`, then `‖exp (t • x)‖` decays exponentially as `t → ∞`.
 -/
 
 public section
@@ -101,6 +105,21 @@ theorem exp_add_smul (a : A) (s t : 𝕂) :
   rw [add_smul, exp_add_of_commute (((Commute.refl a).smul_left _).smul_right _)]
 
 end Normed
+
+section Rat
+
+variable {A : Type*} [NormedRing A] [NormedAlgebra ℚ A] [CompleteSpace A]
+
+/-- If `x * y = 0`, then the exponential of `x` fixes `y` from the left: `exp x * y = y`. All
+terms of the exponential series except the first are killed by `y`. -/
+theorem exp_mul_of_mul_eq_zero {x y : A} (h : x * y = 0) : exp x * y = y := by
+  rw [exp_eq_tsum ℚ, ← (expSeries_summable' (𝕂 := ℚ) x).tsum_mul_right,
+    tsum_eq_single 0 fun n hn ↦ ?_]
+  · simp
+  · obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
+    rw [smul_mul_assoc, pow_succ, mul_assoc, h, mul_zero, smul_zero]
+
+end Rat
 
 end NormedSpace
 
@@ -165,6 +184,48 @@ theorem exp_smul_one (c : 𝕜) : exp (c • (1 : 𝔸)) = exp c • 1 := by
   rw [← Algebra.algebraMap_eq_smul_one, ← Algebra.algebraMap_eq_smul_one, ← algebraMap_exp_comm]
 
 end RCLike
+
+/-- **Exponential decay from a single contraction.** In a complete normed real algebra, if
+`‖exp (τ • x)‖ < 1` for some `τ > 0`, then `‖exp (t • x)‖ ≤ K * Real.exp (-α * t)` for all
+`t ≥ 0`, with constants `K` and `α > 0`. -/
+theorem exists_norm_exp_smul_le_of_norm_exp_smul_lt_one [NormedAlgebra ℝ 𝔸] [CompleteSpace 𝔸]
+    (x : 𝔸) {τ : ℝ} (hτ : 0 < τ) (h : ‖exp (τ • x)‖ < 1) :
+    ∃ K α : ℝ, 0 < α ∧ ∀ t : ℝ, 0 ≤ t → ‖exp (t • x)‖ ≤ K * Real.exp (-α * t) := by
+  let +nondep : NormedAlgebra ℚ 𝔸 := .restrictScalars ℚ ℝ 𝔸
+  -- Write `t = n τ + s` with `0 ≤ s < τ`: then `exp (t • x) = exp (s • x) * exp (τ • x) ^ n`.
+  obtain ⟨M, hM⟩ : ∃ M, ∀ s ∈ Set.Icc 0 τ, ‖exp (s • x)‖ ≤ M :=
+    isCompact_Icc.exists_bound_of_continuousOn
+      (exp_continuous.comp (continuous_id.smul continuous_const)).continuousOn
+  set q := max ‖exp (τ • x)‖ (1 / 2)
+  have hq0 : 0 < q := lt_max_of_lt_right (by norm_num)
+  have hlog : Real.log q < 0 := Real.log_neg hq0 (max_lt h (by norm_num))
+  refine ⟨M / q, -Real.log q / τ, div_pos (neg_pos.mpr hlog) hτ, fun t ht ↦ ?_⟩
+  set n := ⌊t / τ⌋₊
+  have hn : (n : ℝ) * τ ≤ t := (le_div_iff₀ hτ).mp (Nat.floor_le (div_nonneg ht hτ.le))
+  have hn' : t / τ ≤ n + 1 := (Nat.lt_floor_add_one (t / τ)).le
+  have hn'' : t ≤ (n + 1) * τ := (div_le_iff₀ hτ).mp hn'
+  have hsplit : exp (t • x) = exp ((t - n * τ) • x) * exp (τ • x) ^ n := by
+    rw [← exp_nsmul, ← Nat.cast_smul_eq_nsmul ℝ, smul_smul, ← exp_add_smul]
+    ring_nf
+  have hM0 : ‖exp ((t - n * τ) • x)‖ ≤ M := hM _ ⟨by linarith, by linarith⟩
+  have hM0' : 0 ≤ M := (norm_nonneg _).trans hM0
+  have hpow : ‖exp (t • x)‖ ≤ M * q ^ n := by
+    rcases Nat.eq_zero_or_pos n with h0 | hpos
+    · rw [h0] at hM0
+      rwa [hsplit, h0, pow_zero, mul_one, pow_zero, mul_one]
+    · rw [hsplit]
+      refine (norm_mul_le _ _).trans (mul_le_mul hM0 ?_ (norm_nonneg _) hM0')
+      exact (norm_pow_le' _ hpos).trans (pow_le_pow_left₀ (norm_nonneg _) (le_max_left _ _) n)
+  calc ‖exp (t • x)‖ ≤ M * q ^ n := hpow
+    _ = M / q * Real.exp ((n + 1 : ℕ) * Real.log q) := by
+        rw [Real.exp_nat_mul, Real.exp_log hq0, pow_succ]
+        field_simp
+    _ ≤ M / q * Real.exp (-(-Real.log q / τ) * t) := by
+        refine mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr ?_) (div_nonneg hM0' hq0.le)
+        calc ((n + 1 : ℕ) : ℝ) * Real.log q ≤ t / τ * Real.log q := by
+              push_cast
+              exact mul_le_mul_of_nonpos_right hn' hlog.le
+          _ = -(-Real.log q / τ) * t := by ring
 
 /-- If the unit has norm at most one, then the norm of the exponential of a real scalar multiple
 of the unit is at most the corresponding scalar exponential. -/
