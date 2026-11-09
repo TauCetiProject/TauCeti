@@ -189,9 +189,8 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
     rw [hD₁]
     exact (isFredholm_sectionLinearization_iff hbl he hcl hz).mp hFred
   have hidx : D₁.index =
-      ContinuousLinearMap.index (mvfderiv 𝓘(ℝ, X) (fun y ↦ c (y, l)) x : X →L[ℝ] F) := by
-    rw [hD₁]
-    rfl
+      ContinuousLinearMap.index (mvfderiv 𝓘(ℝ, X) (fun y ↦ c (y, l)) x : X →L[ℝ] F) :=
+    congrArg ContinuousLinearMap.index hD₁
   have hn' : ((D₁.index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n := by
     rw [index_sectionLinearization hbl he hcl hz] at hn
     rw [hidx, ContinuousLinearMap.index_def]
