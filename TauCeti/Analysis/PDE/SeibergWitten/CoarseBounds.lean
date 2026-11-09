@@ -45,7 +45,7 @@ over a compact family of geometric data and forcing terms. The three integral bo
 estimate, `TauCeti.SeibergWitten.integral_le_of_le_mul_max_one_sub`: a nonnegative function
 bounded pointwise by `C r w₊ + C` has integral at most `2 C (C + Vol X)`. It holds because the
 `β` bound lets the vacuum defect be absorbed into the `L¹` defect, `w₊ ≤ 2 |1 - |χ|²| + 2 C / r²`
-once `2 C ≤ r`.
+once `2 C ≤ r` (`TauCeti.SeibergWitten.max_one_sub_le_two_mul_abs_sub_add`).
 
 The fields are functions on an arbitrary measure space with values in arbitrary normed groups,
 and the hypotheses are the displayed estimates, so the results apply in a coordinate chart and
@@ -67,22 +67,24 @@ variable {X A B F₁ F₂ F₃ F₄ : Type*} [MeasurableSpace X] {μ : Measure X
   [NormedAddCommGroup A] [NormedAddCommGroup B] [NormedAddCommGroup F₁] [NormedAddCommGroup F₂]
   [NormedAddCommGroup F₃] [NormedAddCommGroup F₄] {α : X → A} {β : X → B} {C r : ℝ}
 
-/-- Pointwise absorption of the vacuum defect: if `b ≤ (C / r) max (1 - s) 0 + C / r²` and
-`2 C ≤ r`, then `max (1 - s) 0 ≤ 2 |1 - s - b| + 2 C / r²`. -/
-private theorem max_one_sub_le_of_le {s b : ℝ} (hr : 0 < r) (hC : 0 ≤ C) (hCr : 2 * C ≤ r)
-    (hb : b ≤ C / r * max (1 - s) 0 + C / r ^ 2) :
-    max (1 - s) 0 ≤ 2 * |1 - s - b| + 2 * C / r ^ 2 := by
-  have hCr₂ : 0 ≤ 2 * C / r ^ 2 := by positivity
+/-- **The vacuum defect is controlled by the spinor defect.** Let `s = |α|²` and `t = |β|²`, and
+suppose `t ≤ (C / r) w₊ + C / r²` for the vacuum defect `w₊ = max (1 - s) 0`. If `0 ≤ C` and
+`2 C ≤ r`, then `w₊ ≤ 2 |1 - s - t| + 2 C / r²`. -/
+theorem max_one_sub_le_two_mul_abs_sub_add {s t : ℝ} (hC : 0 ≤ C) (hr : 2 * C ≤ r)
+    (ht : t ≤ C / r * max (1 - s) 0 + C / r ^ 2) :
+    max (1 - s) 0 ≤ 2 * |1 - s - t| + 2 * (C / r ^ 2) := by
+  have hCr : C / r ≤ 1 / 2 := by
+    rcases (show (0 : ℝ) ≤ r by linarith).eq_or_lt with h | h
+    · simp [← h]
+    · rw [div_le_iff₀ h]
+      linarith
+  have h₂ : 0 ≤ C / r ^ 2 := by positivity
   rcases le_total (1 - s) 0 with h | h
   · rw [max_eq_right h]
-    linarith [abs_nonneg (1 - s - b)]
-  · rw [max_eq_left h] at hb ⊢
-    have hhalf : C / r ≤ 1 / 2 := by
-      rw [div_le_iff₀ hr]
-      linarith
-    have := mul_le_mul_of_nonneg_right hhalf h
-    have := le_abs_self (1 - s - b)
-    have : 2 * C / r ^ 2 = 2 * (C / r ^ 2) := by ring
+    positivity
+  · rw [max_eq_left h] at ht ⊢
+    have := mul_le_mul_of_nonneg_right hCr h
+    have := le_abs_self (1 - s - t)
     linarith
 
 /-- **The integrated coarse bound.** Let `(α, β)` satisfy the `L¹` defect bound
@@ -106,9 +108,9 @@ theorem integral_le_of_le_mul_max_one_sub [IsFiniteMeasure μ] {g : X → ℝ} (
         refine integral_mono_of_nonneg hg₀ hint ?_
         filter_upwards [hβ, hg] with x hβx hgx
         -- Absorb the vacuum defect into the `L¹` defect: `w₊ ≤ 2 |1 - |χ|²| + 2 C / r²`.
-        have hw := max_one_sub_le_of_le hr hC hCr hβx
+        have hw := max_one_sub_le_two_mul_abs_sub_add hC hCr hβx
         calc g x ≤ C * r * max (1 - ‖α x‖ ^ 2) 0 + C := hgx
-          _ ≤ C * r * (2 * |1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2| + 2 * C / r ^ 2) + C := by gcongr
+          _ ≤ C * r * (2 * |1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2| + 2 * (C / r ^ 2)) + C := by gcongr
           _ = 2 * C * r * |1 - ‖α x‖ ^ 2 - ‖β x‖ ^ 2| + (2 * C ^ 2 / r + C) := by
             field_simp
             ring
