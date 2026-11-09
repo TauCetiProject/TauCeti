@@ -14,8 +14,8 @@ import Mathlib.Tactic.Linarith
 /-!
 # Affine reparametrizations of a profile
 
-For a profile `φ`, the function `τ ↦ φ ((A - τ) / D)` has derivative
-`φ' ((A - τ) / D) * (-1 / D)` (`HasDerivAt.comp_sub_div`). If `φ` vanishes on the
+For a profile `φ`, the function `τ ↦ φ ((A - τ) / D)` has derivative `φ' * (-1 / D)`, where `φ'`
+is the derivative of `φ` at `(A - τ) / D` (`HasDerivAt.comp_sub_div`). If `φ` vanishes on the
 negative half-line, then `φ ((A - τ) / D) = 0` for `τ > A` when `D > 0`
 (`TauCeti.comp_sub_div_eq_zero_of_lt`).
 -/
