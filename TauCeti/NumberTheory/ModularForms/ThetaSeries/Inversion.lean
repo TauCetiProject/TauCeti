@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.ModularForms.SlashActions
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.FiniteFourier
 import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 import TauCeti.Analysis.Fourier.PoissonSummation
-import TauCeti.Analysis.SpecialFunctions.Gaussian.Schwartz
+import TauCeti.Analysis.SpecialFunctions.Gaussian.FourierTransform
 
 /-!
 # The inversion law of theta series
