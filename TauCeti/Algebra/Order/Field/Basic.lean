@@ -37,7 +37,10 @@ It also records a perturbation bound for quotients, `|x / a - y / b| ≤ 2 (e + 
 `(1 - δ) b ≤ a ≤ b`, `δ ≤ 1 / 2` and `|x - y| ≤ e`, the comparison
 `2 t / (t² + ρ²) ≤ (2 t / r) (2 r / (r² + ρ²))` for `0 < t`, `0 < r ≤ ρ`, which compares the
 profiles `2 t / (t² + ρ²)` of two scales `t` and `r` outside the radius `r`, and the clearing
-bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`.
+bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`. It also records the absorption bound
+`C (K₀ + N) ≤ 2 C (1 + γ) (K + N)` from `K₀ + N = K + γ N + 2 β e H`, `H ≤ C (K₀ + N)` and
+`2 C β e H ≤ H / 2`, together with the bookkeeping bound `C (M + N P + N) ≤ C (1 + P) (M + N)`
+for nonnegative `C`, `M` and `P`.
 
 Finally, it records a polynomial barrier bound: if `r ≤ M`, `0 < ε`, `1 ≤ c` and `n` is larger
 than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
@@ -200,3 +203,33 @@ theorem BddAbove.le_of_forall_pos_exists_add_mul_le {X α : Type*}
   obtain ⟨z, hzK, hxz, hfz⟩ := H ε hε
   have hwzC := mul_le_mul_of_nonneg_left (hC (Set.mem_image_of_mem w hzK)) hε.le
   nlinarith
+
+/-- The bookkeeping bound `C (M + N P + N) ≤ C (1 + P) (M + N)` for nonnegative `C`, `M` and
+`P`. -/
+theorem mul_add_mul_add_le_mul_one_add_mul_add {R : Type*} [CommSemiring R] [PartialOrder R]
+    [IsOrderedRing R] {C M N P : R} (hC : 0 ≤ C) (hM : 0 ≤ M) (hP : 0 ≤ P) :
+    C * (M + N * P + N) ≤ C * (1 + P) * (M + N) := by
+  have h : M + N * P + N ≤ (1 + P) * (M + N) := by
+    calc M + N * P + N ≤ M + N * P + N + P * M := le_add_of_nonneg_right (mul_nonneg hP hM)
+      _ = (1 + P) * (M + N) := by ring
+  calc C * (M + N * P + N) ≤ C * ((1 + P) * (M + N)) := mul_le_mul_of_nonneg_left h hC
+    _ = C * (1 + P) * (M + N) := by ring
+
+/-- The absorption step of an a priori estimate: if `K₀ + N = K + γ N + 2 β e H`, with
+`H ≤ C (K₀ + N)` and `2 C β e H ≤ H / 2`, then `C (K₀ + N) ≤ 2 C (1 + γ) (K + N)`, for
+nonnegative `C`, `K`, `N` and `γ`. -/
+theorem mul_le_two_mul_one_add_mul_of_absorb {R : Type*} [Field R] [LinearOrder R]
+    [IsStrictOrderedRing R] {C K N γ β e H K₀ : R} (hC : 0 ≤ C)
+    (hK : 0 ≤ K) (hN : 0 ≤ N) (hγ : 0 ≤ γ) (hK₀ : K₀ + N = K + γ * N + 2 * β * e * H)
+    (hHle : H ≤ C * (K₀ + N)) (habs : 2 * C * β * e * H ≤ 1 / 2 * H) :
+    C * (K₀ + N) ≤ 2 * C * (1 + γ) * (K + N) := by
+  have hKγ : 0 ≤ C * (K + γ * N) := by positivity
+  rw [hK₀] at hHle ⊢
+  have hγN : K + γ * N ≤ (1 + γ) * (K + N) := by nlinarith
+  have hsplit : C * (K + γ * N + 2 * β * e * H) = C * (K + γ * N) + 2 * C * β * e * H := by
+    ring
+  rw [hsplit] at hHle ⊢
+  have hH2 : H ≤ 2 * (C * (K + γ * N)) := by linarith
+  have hCγ : C * (K + γ * N) ≤ C * ((1 + γ) * (K + N)) :=
+    mul_le_mul_of_nonneg_left hγN hC
+  linarith
