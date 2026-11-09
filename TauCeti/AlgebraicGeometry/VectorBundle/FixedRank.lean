@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.LineBundle.TensorProduct
 public import TauCeti.AlgebraicGeometry.VectorBundle.Functoriality
 public import TauCeti.AlgebraicGeometry.VectorBundle.Rank
 
@@ -26,13 +27,16 @@ morphisms; it only changes which equivalent rank-one condition is bundled with t
 * `FiniteLocallyFreeSheaf.FixedRank X r`: finite locally free sheaves of fixed rank `r`;
 * `FiniteLocallyFreeSheaf.FixedRank.pullback`: pullback of fixed-rank sheaves, with its identity
   and composition comparisons `FixedRank.pullbackId` and `FixedRank.pullbackComp`;
+* `FiniteLocallyFreeSheaf.FixedRank.twist`: the twist `E ⊗ L` of a fixed-rank sheaf by an
+  invertible sheaf, with its isomorphisms `FixedRank.twistCongr`, `FixedRank.twistTrivialIso` and
+  `FixedRank.twistTensorProductIso`;
 * `InvertibleSheaf.fixedRankOneEquiv`: the equivalence between invertible sheaves and finite
   locally free sheaves of fixed rank one.
 -/
 
 public section
 
-open CategoryTheory
+open CategoryTheory MonoidalCategory
 
 namespace TauCeti
 
@@ -182,6 +186,101 @@ theorem pullbackComp_inv_app_hom {Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
       eqToHom (pullback_obj_obj (f ≫ g) E) ≫
         (FiniteLocallyFreeSheaf.pullbackComp f g).inv.app E.obj ≫
         eqToHom (by simp only [Functor.comp_obj, pullback_obj_obj]) :=
+  ((Category.id_comp _).trans (congrArg _ (Category.comp_id _))).symm
+
+/-- The twist `E ⊗ L` of a finite locally free sheaf `E` of constant rank `r` by an invertible
+sheaf `L`. It has constant rank `r · 1 = r`. -/
+def twist (E : FixedRank X r) (L : InvertibleSheaf X) : FixedRank X r :=
+  ⟨E.obj ⊗ (InvertibleSheaf.toFiniteLocallyFree X).obj L, fun x ↦ by
+    rw [rank_tensor_apply, rank_apply, InvertibleSheaf.rank_toFiniteLocallyFree_apply, mul_one]⟩
+
+/-- The underlying sheaf of the twist `E ⊗ L` is the tensor product of the underlying sheaves. -/
+@[simp]
+theorem twist_obj_obj (E : FixedRank X r) (L : InvertibleSheaf X) :
+    (E.twist L).obj.obj = E.obj.obj ⊗ L.obj :=
+  (rfl)
+
+/-- Twisting transports isomorphisms in both factors: `E ≅ F` and `L ≅ M` give
+`E ⊗ L ≅ F ⊗ M`. -/
+def twistCongr {E F : FixedRank X r} {L M : InvertibleSheaf X} (e : E ≅ F) (f : L ≅ M) :
+    E.twist L ≅ F.twist M :=
+  ObjectProperty.isoMk _
+    (tensorIso ((toFiniteLocallyFree X r).mapIso e)
+      ((InvertibleSheaf.toFiniteLocallyFree X).mapIso f))
+
+/-- On underlying sheaves, `twistCongr e f` is the tensor product of the underlying
+isomorphisms. -/
+@[simp]
+theorem twistCongr_hom_hom_hom {E F : FixedRank X r} {L M : InvertibleSheaf X} (e : E ≅ F)
+    (f : L ≅ M) : (twistCongr e f).hom.hom.hom =
+      eqToHom (twist_obj_obj E L) ≫ (e.hom.hom.hom ⊗ₘ f.hom.hom) ≫
+        eqToHom (twist_obj_obj F M).symm :=
+  ((Category.id_comp _).trans (congrArg _ (Category.comp_id _))).symm
+
+/-- On underlying sheaves, the inverse of `twistCongr e f` is the tensor product of the
+underlying inverse isomorphisms. -/
+@[simp]
+theorem twistCongr_inv_hom_hom {E F : FixedRank X r} {L M : InvertibleSheaf X} (e : E ≅ F)
+    (f : L ≅ M) : (twistCongr e f).inv.hom.hom =
+      eqToHom (twist_obj_obj F M) ≫ (e.inv.hom.hom ⊗ₘ f.inv.hom) ≫
+        eqToHom (twist_obj_obj E L).symm :=
+  ((Category.id_comp _).trans (congrArg _ (Category.comp_id _))).symm
+
+/-- Twisting by the trivial line bundle is the identity: `E ⊗ 𝒪_X ≅ E`. -/
+def twistTrivialIso (E : FixedRank X r) : E.twist (InvertibleSheaf.trivial X) ≅ E :=
+  ObjectProperty.isoMk _
+    (whiskerLeftIso E.obj
+        (ObjectProperty.isoMk (Scheme.Modules.isFiniteLocallyFree X)
+          (InvertibleSheaf.trivialObjIsoUnit X) :
+          (InvertibleSheaf.toFiniteLocallyFree X).obj (InvertibleSheaf.trivial X) ≅ 𝟙_ _) ≪≫
+      ρ_ E.obj)
+
+/-- On underlying sheaves, `twistTrivialIso E` identifies `𝒪_X` with the monoidal unit and then
+applies the right unitor. -/
+@[simp]
+theorem twistTrivialIso_hom_hom_hom (E : FixedRank X r) :
+    (twistTrivialIso E).hom.hom.hom =
+      eqToHom (twist_obj_obj E _) ≫
+        (E.obj.obj ◁ (InvertibleSheaf.trivialObjIsoUnit X).hom ≫ (ρ_ E.obj.obj).hom) :=
+  (Category.id_comp _).symm
+
+/-- On underlying sheaves, the inverse of `twistTrivialIso E` is the inverse right unitor followed
+by the identification of the monoidal unit with `𝒪_X`. -/
+@[simp]
+theorem twistTrivialIso_inv_hom_hom (E : FixedRank X r) :
+    (twistTrivialIso E).inv.hom.hom =
+      ((ρ_ E.obj.obj).inv ≫ E.obj.obj ◁ (InvertibleSheaf.trivialObjIsoUnit X).inv) ≫
+        eqToHom (twist_obj_obj E _).symm :=
+  (Category.comp_id _).symm
+
+/-- Twisting twice is twisting by the tensor product: `(E ⊗ L) ⊗ M ≅ E ⊗ (L ⊗ M)`. -/
+def twistTensorProductIso (E : FixedRank X r) (L M : InvertibleSheaf X) :
+    (E.twist L).twist M ≅ E.twist (InvertibleSheaf.tensorProduct L M) :=
+  ObjectProperty.isoMk _
+    (α_ _ _ _ ≪≫ whiskerLeftIso E.obj
+      (ObjectProperty.isoMk (Scheme.Modules.isFiniteLocallyFree X)
+        (InvertibleSheaf.tensorProductObjIso L M).symm))
+
+/-- On underlying sheaves, `twistTensorProductIso E L M` is the associator followed by the
+identification of `L ⊗ M` with the tensor product of line bundles. -/
+@[simp]
+theorem twistTensorProductIso_hom_hom_hom (E : FixedRank X r) (L M : InvertibleSheaf X) :
+    (twistTensorProductIso E L M).hom.hom.hom =
+      eqToHom (by simp only [twist_obj_obj]) ≫
+        ((α_ E.obj.obj L.obj M.obj).hom ≫
+          E.obj.obj ◁ (InvertibleSheaf.tensorProductObjIso L M).inv) ≫
+        eqToHom (twist_obj_obj E _).symm :=
+  ((Category.id_comp _).trans (congrArg _ (Category.comp_id _))).symm
+
+/-- On underlying sheaves, the inverse of `twistTensorProductIso E L M` is the identification of
+the tensor product of line bundles with `L ⊗ M` followed by the inverse associator. -/
+@[simp]
+theorem twistTensorProductIso_inv_hom_hom (E : FixedRank X r) (L M : InvertibleSheaf X) :
+    (twistTensorProductIso E L M).inv.hom.hom =
+      eqToHom (twist_obj_obj E _) ≫
+        (E.obj.obj ◁ (InvertibleSheaf.tensorProductObjIso L M).hom ≫
+          (α_ E.obj.obj L.obj M.obj).inv) ≫
+        eqToHom (by simp only [twist_obj_obj]) :=
   ((Category.id_comp _).trans (congrArg _ (Category.comp_id _))).symm
 
 end FixedRank

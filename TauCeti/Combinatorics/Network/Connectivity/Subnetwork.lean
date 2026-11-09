@@ -15,9 +15,6 @@ A subnetwork has its own vertex type, consisting only of the selected ambient ve
 characterizes strong connectivity on that subtype by ambient walks whose traced subnetworks remain
 inside the selected subnetwork. Thus omitted ambient vertices play no role, while every arrow of a
 witnessing walk retains its original identity.
-
-The singleton subnetwork is strongly connected even when the ambient network has further vertices;
-this records the empty-walk boundary case of the characterization.
 -/
 
 public section
@@ -45,23 +42,3 @@ theorem isStronglyConnected_iff_exists_toSubnetwork_le (S : N.Subnetwork) :
     exact ⟨q⟩
 
 end TauCeti.Network.Subnetwork
-
-namespace TauCeti.Network
-
-universe u w
-
-variable {K : Type w} {V : Type u} [LE K]
-
-/-- A singleton subnetwork is strongly connected on its own one-vertex carrier, independently of
-the other vertices and arrows of the ambient network. -/
-theorem isStronglyConnected_singletonSubnetwork (N : Network K V) (x : V) :
-    @Quiver.IsStronglyConnected ↥(N.singletonSubnetwork x).vertexSet
-      ⟨(N.singletonSubnetwork x).Hom⟩ := by
-  rw [Quiver.isStronglyConnected_iff]
-  intro y z
-  have hy : y.1 = x := by simpa using y.2
-  have hz : z.1 = x := by simpa using z.2
-  obtain rfl : y = z := Subtype.ext (hy.trans hz.symm)
-  exact ⟨ArrowWalk.nil y⟩
-
-end TauCeti.Network

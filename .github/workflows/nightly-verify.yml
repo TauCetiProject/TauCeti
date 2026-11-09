@@ -102,10 +102,10 @@ jobs:
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@472566310e766bbc7933579a1f7743f41960046e
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@76688a6c293967d60ed0c33a154104f6e8313984
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 472566310e766bbc7933579a1f7743f41960046e
+          tools-ref: 76688a6c293967d60ed0c33a154104f6e8313984
           project-directory: fresh
 
       - name: Resolve the commit under test
@@ -123,8 +123,11 @@ jobs:
           ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
           ELAN_VER: v4.2.3
         run: |
-          curl -sSL -H "Accept: application/octet-stream" \
-            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          if ! curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz?download=1" -o elan.tar.gz; then
+            curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+              "https://api.github.com/repos/leanprover/elan/releases/assets/441516216" -o elan.tar.gz
+          fi
           echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
           tar -xzf elan.tar.gz elan-init
           ./elan-init -y --default-toolchain none
@@ -216,6 +219,14 @@ jobs:
     needs: [verify, pick-reference-runner]
     if: ${{ !cancelled() && needs.verify.outputs.build == 'success'
             && needs.verify.outputs.manifest_upload == 'success' && github.repository == 'TauCetiProject/TauCeti' }}
+    # Nineteen native concurrency groups cap all hosted bulk builds across
+    # workflows, leaving one of the organization's 20 slots for small jobs and
+    # roadmap merge builds. Waiting here consumes no runner. Other pools retain
+    # their existing concurrency; failed pickers share conservative slot zero.
+    concurrency:
+      group: ${{ contains(fromJSON('["ubuntu-latest","ubuntu-24.04","ubuntu-22.04"]'), fromJSON(needs.pick-reference-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-reference-runner.outputs.runner || '"ubuntu-24.04"')) && format('tauceti-hosted-bulk-{0}', needs.pick-reference-runner.outputs.hosted-slot || '0') || format('unlimited-reference-{0}', github.run_id) }}
+      queue: max
+      cancel-in-progress: false
     runs-on: ${{ fromJSON(needs.pick-reference-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-reference-runner.outputs.runner || '"ubuntu-24.04"') }}
     timeout-minutes: 240
     outputs:
@@ -242,10 +253,10 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@472566310e766bbc7933579a1f7743f41960046e
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@76688a6c293967d60ed0c33a154104f6e8313984
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 472566310e766bbc7933579a1f7743f41960046e
+          tools-ref: 76688a6c293967d60ed0c33a154104f6e8313984
           project-directory: fresh
 
       # Pin the reference workspace to the SAME commit, by SHA rather than by branch: main advances
@@ -456,8 +467,11 @@ jobs:
           ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
           ELAN_VER: v4.2.3
         run: |
-          curl -sSL -H "Accept: application/octet-stream" \
-            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          if ! curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz?download=1" -o elan.tar.gz; then
+            curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+              "https://api.github.com/repos/leanprover/elan/releases/assets/441516216" -o elan.tar.gz
+          fi
           echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
           tar -xzf elan.tar.gz elan-init
           ./elan-init -y --default-toolchain none

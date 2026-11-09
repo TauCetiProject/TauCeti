@@ -101,8 +101,7 @@ private theorem isRoot_twoTorsionPolynomial_of_inv_eq (q : Kˣ) (hq : ‖(q : K)
   isRoot_twoTorsionPolynomial_of_neg_eq q hq hc (by rw [← tateUniformization_inv, hcc])
 
 /-- **Parameters whose image has order two, in characteristic two.** If `2 = 0` in `K` and
-`q = r²`, a nonidentity parameter `x` whose image `P` satisfies `-P = P` is the class of `r`, and
-hence its own inverse. -/
+`q = r²`, a nonidentity parameter `x` whose image `P` satisfies `-P = P` is its own inverse. -/
 private theorem inv_eq_self_of_two_eq_zero (q : Kˣ) (hq : ‖(q : K)‖ < 1) (h2 : (2 : K) = 0)
     {r : Kˣ} (hr : r ^ 2 = q) {x : Kˣ ⧸ Subgroup.zpowers q} (hx : x ≠ 1)
     (h : -tateUniformization q hq x = tateUniformization q hq x) : x⁻¹ = x := by

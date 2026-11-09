@@ -19,6 +19,10 @@ assignment on `κ` to the coordinates in the image of `e` has the corresponding 
 `ι`. This is the finite-family form of the fact that a subfamily of independent coordinates is
 still independent.
 
+**Splitting off the first coordinate.** `MeasurableEquiv.piFinSuccAbove` at `0` is `Fin.cons` in
+the reverse direction; composing a measurable function with `Fin.cons` is measurable on the product
+of the head and the tail.
+
 **Currying.** A product measure over the pairs `⟨i, j⟩` of a sigma type is the product over `i`
 of the product measures over `j`: `MeasurableEquiv.piCurry` carries one to the other. Mathlib has
 this for products of probability measures (`MeasureTheory.Measure.infinitePi_map_piCurry`); here
@@ -85,6 +89,7 @@ finite-product form of `MeasureTheory.Measure.prod_apply_symm`.
   preserving;
 * `TauCeti.measurePreserving_piSplitAt` — separating the coordinate `i₀` from the rest is
   measure preserving;
+* `TauCeti.measurePreserving_update_prod_pi` — a one-coordinate refresh is measure preserving;
 * `TauCeti.measurePreserving_update_update` — the two-coordinate refresh is measure
   preserving;
 * `TauCeti.finThreeArrow` and `TauCeti.finFourArrow`, with
@@ -123,6 +128,21 @@ open scoped ENNReal
 namespace TauCeti
 
 open ProbabilityTheory
+
+/-- The inverse of `MeasurableEquiv.piFinSuccAbove` at `0` on a constant family is `Fin.cons`. -/
+theorem _root_.MeasurableEquiv.piFinSuccAbove_zero_symm_apply_eq_cons {β : Type*}
+    [MeasurableSpace β] {n : ℕ} (a : β) (w : Fin n → β) :
+    (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => β) 0).symm (a, w) = Fin.cons a w := by
+  simp [MeasurableEquiv.piFinSuccAbove_symm_apply, Fin.insertNthEquiv_zero]
+
+/-- Composing a measurable function on `Fin (n + 1) → β` with `Fin.cons` is measurable on the
+product of the head and the tail. -/
+theorem _root_.Measurable.comp_finCons {β γ : Type*} [MeasurableSpace β] [MeasurableSpace γ] {n : ℕ}
+    {F : (Fin (n + 1) → β) → γ} (hF : Measurable F) :
+    Measurable (fun p : β × (Fin n → β) => F (Fin.cons p.1 p.2)) := by
+  convert hF.comp (MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => β) 0).symm.measurable
+    using 1
+  exact funext fun p => congrArg F (MeasurableEquiv.piFinSuccAbove_zero_symm_apply_eq_cons ..).symm
 
 /-- Restricting a finite product-distributed assignment along an embedding of index types is
 measure preserving. The target product uses exactly the marginals selected by the embedding. -/
@@ -232,6 +252,39 @@ theorem measurePreserving_piSplitAt (μ : ∀ i, Measure (α i)) [∀ i, SigmaFi
   exact ((measurePreserving_piUnique fun i : {i : ι // i = i₀} => μ i).prod
     (MeasurePreserving.id (Measure.pi fun j : {i : ι // i ≠ i₀} => μ j))).comp
     (measurePreserving_piEquivPiSubtypeProd μ (· = i₀))
+
+/-- Resampling one probability coordinate of a product sample from an independent draw of that
+coordinate's law preserves the product measure. -/
+theorem measurePreserving_update_prod_pi (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)]
+    (i : ι) [IsProbabilityMeasure (μ i)] :
+    MeasurePreserving (fun q : (∀ j, α j) × α i => Function.update q.1 i q.2)
+      ((Measure.pi μ).prod (μ i)) (Measure.pi μ) := by
+  refine ⟨measurable_update', ?_⟩
+  refine (Measure.pi_eq fun s hs => ?_).symm
+  rw [Measure.map_apply measurable_update' (MeasurableSet.univ_pi hs)]
+  have hpre : (fun q : (∀ j, α j) × α i => Function.update q.1 i q.2) ⁻¹' (Set.univ.pi s) =
+      (Set.univ.pi (Function.update s i Set.univ)) ×ˢ s i := by
+    ext ⟨x, y⟩
+    simp only [Set.mem_preimage, Set.mem_pi, Set.mem_univ, true_implies, Set.mem_prod]
+    constructor
+    · intro h
+      refine ⟨fun j => ?_, by simpa using h i⟩
+      by_cases hj : j = i
+      · subst hj; simp
+      · simpa [Function.update_of_ne hj] using h j
+    · rintro ⟨h1, h2⟩ j
+      by_cases hj : j = i
+      · subst hj; simpa using h2
+      · simpa [Function.update_of_ne hj] using h1 j
+  rw [hpre, Measure.prod_prod, Measure.pi_pi,
+    ← Finset.mul_prod_erase Finset.univ (fun j => μ j (s j)) (Finset.mem_univ i),
+    ← Finset.mul_prod_erase Finset.univ (fun j => μ j (Function.update s i Set.univ j))
+      (Finset.mem_univ i)]
+  have h1 : ∏ j ∈ Finset.univ.erase i, μ j (Function.update s i Set.univ j) =
+      ∏ j ∈ Finset.univ.erase i, μ j (s j) :=
+    Finset.prod_congr rfl fun j hj => by rw [Function.update_of_ne (Finset.ne_of_mem_erase hj)]
+  rw [h1]
+  simp [mul_comm]
 
 /-- Overwriting the two distinct coordinates `a` and `b` of a product-distributed assignment by an
 independent pair leaves the product law unchanged. -/

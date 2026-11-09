@@ -55,6 +55,28 @@ namespace TauCeti.IsLocalRing
 
 variable {A : Type*} [CommRing A] [IsLocalRing A] [IsNoetherianRing A] [IsDomain A]
 
+/-- The trace of `1 ⊗ x` in the generic fibre `K ⊗[A] C` lies in `A`, when `A` has depth at least
+two and `A_𝔭 ⊗[A] C` is finite étale over `A_𝔭` for every prime `𝔭` other than the maximal ideal. -/
+private lemma exists_algebraMap_trace_tmul_eq (hdepth : 2 ≤ depth (ModuleCat.of A A))
+    (C : Type*) [CommRing C] [Algebra A C]
+    (h : ∀ (p : Ideal A) [p.IsPrime], p ≠ maximalIdeal A →
+      Module.Finite (Localization.AtPrime p) (Localization.AtPrime p ⊗[A] C) ∧
+        Algebra.Etale (Localization.AtPrime p) (Localization.AtPrime p ⊗[A] C))
+    (x : C) :
+    ∃ a : A, algebraMap A (FractionRing A) a =
+      Algebra.trace (FractionRing A) (FractionRing A ⊗[A] C) (1 ⊗ₜ x) := by
+  refine mem_range_algebraMap_of_two_le_depth (FractionRing A) hdepth fun p _ hp ↦ ?_
+  obtain ⟨_, _⟩ := h p hp
+  have : Module.Free (Localization.AtPrime p) (Localization.AtPrime p ⊗[A] C) :=
+    Module.free_of_flat_of_isLocalRing
+  obtain ⟨⟨a, s⟩, hs⟩ := IsLocalization.surj p.primeCompl
+    (Algebra.trace (Localization.AtPrime p) (Localization.AtPrime p ⊗[A] C) (1 ⊗ₜ x))
+  refine ⟨s, s.2, a, ?_⟩
+  rw [Algebra.trace_baseChange_tmul_of_isScalarTower (S := Localization.AtPrime p),
+    IsScalarTower.algebraMap_apply A (Localization.AtPrime p) (FractionRing A),
+    IsScalarTower.algebraMap_apply A (Localization.AtPrime p) (FractionRing A), ← map_mul,
+    mul_comm, hs]
+
 /-- Let `A` be a Noetherian local domain of depth at least two and `C` a torsion-free `A`-algebra.
 If `A_𝔭 ⊗[A] C` is finite étale over `A_𝔭` for every prime `𝔭` other than the maximal ideal, then
 `C` is a finite `A`-module. -/
@@ -99,16 +121,7 @@ theorem finite_of_finiteEtale_localization (hdepth : 2 ≤ depth (ModuleCat.of A
     have hψ : ψ c t = Algebra.trace K L (ι c * t) := rfl
     rw [hψ, ← hd, TensorProduct.mk_apply, TensorProduct.mk_apply,
       Algebra.TensorProduct.tmul_mul_tmul, mul_one]
-    refine mem_range_algebraMap_of_two_le_depth K hdepth fun p _ hp ↦ ?_
-    obtain ⟨_, _⟩ := h p hp
-    have : Module.Free (Localization.AtPrime p) (Localization.AtPrime p ⊗[A] C) :=
-      Module.free_of_flat_of_isLocalRing
-    obtain ⟨⟨a, s⟩, hs⟩ := IsLocalization.surj p.primeCompl
-      (Algebra.trace (Localization.AtPrime p) (Localization.AtPrime p ⊗[A] C) (1 ⊗ₜ (c * d)))
-    refine ⟨s, s.2, a, ?_⟩
-    rw [Algebra.trace_baseChange_tmul_of_isScalarTower (S := Localization.AtPrime p),
-      IsScalarTower.algebraMap_apply A (Localization.AtPrime p) K,
-      IsScalarTower.algebraMap_apply A (Localization.AtPrime p) K, ← map_mul, mul_comm, hs]
+    exact exists_algebraMap_trace_tmul_eq hdepth C h (c * d)
   have hle : LinearMap.range ψ ≤ N := by
     rintro _ ⟨c, rfl⟩
     choose a ha using hval c
