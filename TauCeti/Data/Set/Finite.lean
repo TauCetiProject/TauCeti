@@ -57,24 +57,12 @@ theorem Set.exists_enumeration_finite_family {ι A : Type*} [Finite ι] (T : ι 
 
 namespace TauCeti
 
-/-- A finite family of functions from finite types to `γ`, together with one more such function
-`c`, factor through a single injective enumeration `b : Fin m ↪ γ`: each value of each function is
-`b` of some index. -/
-theorem exists_embedding_fin_comp_eq {γ : Type*} {ι : Type*} [Finite ι] {α : ι → Type*}
-    [∀ x, Finite (α x)] (d : ∀ x, α x → γ) {β : Type*} [Finite β] (c : β → γ) :
-    ∃ (m : ℕ) (b : Fin m ↪ γ) (f : β → Fin m) (g : ∀ x, α x → Fin m),
-      (∀ i, b (f i) = c i) ∧ ∀ x i, b (g x i) = d x i := by
-  let F : Set γ := Set.range c ∪ ⋃ x, Set.range (d x)
-  have hF : F.Finite :=
-    (Set.finite_range c).union (Set.finite_iUnion fun x => Set.finite_range (d x))
-  obtain ⟨m, b, hb⟩ := hF.fin_embedding
-  obtain ⟨f, hf⟩ := Set.range_subset_range_iff_exists_comp.mp
-    (show Set.range c ⊆ Set.range b from hb ▸ Set.subset_union_left)
-  have hd (x : ι) : ∃ g : α x → Fin m, d x = b ∘ g :=
-    Set.range_subset_range_iff_exists_comp.mp
-      (show Set.range (d x) ⊆ Set.range b from
-        hb ▸ (Set.subset_iUnion (fun x => Set.range (d x)) x).trans Set.subset_union_right)
-  choose g hg using hd
-  exact ⟨m, b, f, g, fun i => (congrFun hf i).symm, fun x i => (congrFun (hg x) i).symm⟩
+/-- A function from a finite type factors through an injective enumeration `b : Fin m ↪ γ` of a
+finite subset of `γ`. -/
+theorem exists_embedding_fin_comp_eq {δ γ : Type*} [Finite δ] (h : δ → γ) :
+    ∃ (m : ℕ) (b : Fin m ↪ γ) (g : δ → Fin m), b ∘ g = h := by
+  obtain ⟨m, b, hb⟩ := (Set.finite_range h).fin_embedding
+  obtain ⟨g, hg⟩ := Set.range_subset_range_iff_exists_comp.mp hb.ge
+  exact ⟨m, b, g, hg.symm⟩
 
 end TauCeti
