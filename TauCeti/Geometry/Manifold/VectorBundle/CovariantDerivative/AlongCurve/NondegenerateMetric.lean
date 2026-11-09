@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acceleration
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Basic
+import TauCeti.Analysis.Calculus.MeanValue
 
 /-!
 # Compatibility with a nondegenerate metric along a curve
@@ -154,10 +155,7 @@ theorem IsMetricCompatible.apply_eq_of_alongCurveWithin_eq_zero (h : g.IsMetricC
       HasDerivWithinAt (fun r ↦ g (γ r) (V r) (W r)) 0 s t := by
     simpa only [hV₀ t ht, hW₀ t ht, map_zero, zero_apply, add_zero] using
       h.hasDerivWithinAt_apply_alongCurveWithin (hγ t ht) (hV t ht) (hW t ht)
-  have h := hconn.ordConnected.convex.norm_image_sub_le_of_norm_hasDerivWithin_le
-    (f' := fun _ ↦ 0) (C := 0) hderiv (fun _ _ ↦ by simp) ha hb
-  simp only [zero_mul, norm_le_zero_iff, sub_eq_zero] at h
-  exact h.symm
+  exact IsPreconnected.eq_of_hasDerivWithinAt_zero hconn hderiv ha hb
 
 /-- **Geodesics of a compatible connection have constant `g(γ', γ')`.** On a preconnected
 parameter set `s` with unique derivatives, a `C²` curve whose covariant acceleration vanishes on

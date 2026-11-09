@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
-import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.MeanValue
 
 /-!
 # Metric compatibility along a curve
@@ -303,11 +303,7 @@ theorem hasDerivWithinAt_apply_alongCurveWithin
   by_cases hu : UniqueDiffWithinAt ℝ s t
   swap
   · -- Without unique derivatives, every function has every derivative.
-    simpa using (HasFDerivWithinAt.of_not_accPt (f := fun r ↦ b (γ r) (V r) (W r))
-      (f' := ContinuousLinearMap.toSpanSingleton ℝ
-        (b (γ t) (alongCurveWithin cov γ V s t) (W t) +
-          b (γ t) (V t) (alongCurveWithin cov γ W s t)))
-      (mt AccPt.uniqueDiffWithinAt hu)).hasDerivWithinAt
+    exact hasDerivWithinAt_iff_hasFDerivWithinAt.2 (.of_not_accPt (mt AccPt.uniqueDiffWithinAt hu))
   -- Expand both fields in a smooth local frame around the point of the curve.
   let e := trivializationAt E (TangentSpace I) (γ t)
   let β := Module.finBasis ℝ E
@@ -464,9 +460,7 @@ theorem IsMetricCompatible.inner_eq_of_alongCurveWithin_eq_zero
   have hderiv (t : ℝ) (ht : t ∈ s) : HasDerivWithinAt (fun r ↦ inner ℝ (V r) (W r)) 0 s t := by
     simpa only [hV₀ t ht, hW₀ t ht, inner_zero_left, inner_zero_right, add_zero] using
       hcov.hasDerivWithinAt_inner_alongCurveWithin (hγ t ht) (hV t ht) (hW t ht)
-  have h := hconn.ordConnected.convex.norm_image_sub_le_of_norm_hasDerivWithin_le
-    (f' := fun _ ↦ 0) (C := 0) hderiv (fun _ _ ↦ by simp) ha hb
-  simpa [sub_eq_zero, eq_comm] using h
+  exact IsPreconnected.eq_of_hasDerivWithinAt_zero hconn hderiv ha hb
 
 end Riemannian
 
