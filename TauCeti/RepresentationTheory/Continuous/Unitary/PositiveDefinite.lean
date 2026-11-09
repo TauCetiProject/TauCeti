@@ -126,11 +126,16 @@ def gnsRepresentation : ContRepresentation ℂ G hφ.gnsSpace :=
       map_one' := hφ.continuousLinearMap_ext fun h ↦ by simp
       map_mul' g k := hφ.continuousLinearMap_ext fun h ↦ by simp [mul_assoc] }
 
+/-- The action of `g` in the GNS representation is the unitary operator `gnsTranslation g`. -/
+private theorem gnsRepresentation_apply (g : G) (x : hφ.gnsSpace) :
+    hφ.gnsRepresentation g x = hφ.gnsTranslation g x :=
+  rfl
+
 /-- The GNS representation translates the GNS vectors on the left. -/
 @[simp]
 theorem gnsRepresentation_gnsVector (g h : G) :
-    hφ.gnsRepresentation g (hφ.gnsVector h) = hφ.gnsVector (g * h) :=
-  hφ.gnsTranslation_gnsVector g h
+    hφ.gnsRepresentation g (hφ.gnsVector h) = hφ.gnsVector (g * h) := by
+  rw [gnsRepresentation_apply, gnsTranslation_gnsVector]
 
 /-- Every GNS vector is the image of the vector at the identity under the GNS representation. -/
 theorem gnsRepresentation_gnsVector_one (g : G) :
@@ -139,8 +144,8 @@ theorem gnsRepresentation_gnsVector_one (g : G) :
 
 /-- The GNS representation is unitary. -/
 theorem isUnitary_gnsRepresentation : hφ.gnsRepresentation.IsUnitary :=
-  -- Each action operator is, by construction, the linear isometry `gnsTranslation g`.
-  (ContRepresentation.isUnitary_iff_norm_map _).mpr fun g x ↦ (hφ.gnsTranslation g).norm_map x
+  (ContRepresentation.isUnitary_iff_norm_map _).mpr fun g x ↦ by
+    rw [gnsRepresentation_apply, LinearIsometryEquiv.norm_map]
 
 /-- A positive-definite function is the coefficient of the GNS vector at the identity in the GNS
 representation. -/
