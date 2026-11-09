@@ -88,8 +88,8 @@ theorem homDensityFin_sub_injHomDensity_le (F : SimpleGraph V) (G : SimpleGraph 
     have hA : Nat.card {f : V → W // f ∈ A} = Nat.card (F →g G) := by
       simpa [A] using (F.card_hom_eq_card_adjPreservingMaps G).symm
     have hEA : Nat.card {f : V → W // f ∈ E ∩ A} =
-        Nat.card {φ : F →g G // Function.Injective ⇑φ} :=
-      F.natCard_injective_inter_adjPreserving G
+        Nat.card {φ : F →g G // Function.Injective ⇑φ} := by
+      simpa [A, E] using (F.card_injective_hom_eq_card_injective_adjPreservingMaps G).symm
     have hE : Nat.card {f : V → W // f ∈ E} =
         (Fintype.card W).descFactorial (Fintype.card V) := by
       rw [← Fintype.card_subtype_injective (α := V) (β := W), ← Nat.card_eq_fintype_card]
