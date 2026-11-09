@@ -6,19 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Data.ZMod.Defs
-import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Basic
+import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading
 
 /-!
-# Products in small strands algebras
+# Products and gradings in small strands algebras
 
 Two products in the strands algebras `A(4, 2)` and `A(3, 1)` of Lipshitz, Ozsváth and Thurston
-over `𝔽₂`, with points `1, …, n` written `0, …, n - 1`.
+over `𝔽₂`, with points `1, …, n` written `0, …, n - 1`, and the noncommutativity of the grading
+group `G'(3)`.
 
 * In `A(4, 2)` the diagrams `φ = (1 ↦ 3, 2 ↦ 2)` and `ψ = (2 ↦ 4, 3 ↦ 3)` each have one
   crossing, and their composite `(1 ↦ 3, 2 ↦ 4)` has none. Since `0 ≠ 1 + 1` the concatenation
   has a double crossing and the product `φ ψ` is zero, although the target of `φ` is the source of
   `ψ`.
 * In `A(3, 1)` the product of `(1 ↦ 2)` and `(2 ↦ 3)` is `(1 ↦ 3)`: no diagram has a crossing.
+* The gradings of `(1 ↦ 2)` and `(2 ↦ 3)` do not commute: `gr'(1 ↦ 2) gr'(2 ↦ 3)` is
+  `λ gr'(2 ↦ 3) gr'(1 ↦ 2)`. Both diagrams have Maslov component `-1/2`, and their classes are
+  the segments `[1, 2]` and `[2, 3]`, whose correction terms `m([2, 3], ∂[1, 2]) = 1/2` and
+  `m([1, 2], ∂[2, 3]) = -1/2` differ by one.
 -/
 
 open TauCeti StrandsAlgebra StrandDiagram
@@ -81,3 +86,47 @@ example :
   · rw [hinv _ (by simp only [mem_trans]; decide), hinv _ (by decide), hinv _ (by decide)]
   congr 1
   exact toPEquiv_injective <| (toPEquiv_trans _ _).trans (PEquiv.single_trans_single _ _ _)
+
+example :
+    let ρ (i j : Fin 3) (h : i ≤ j) : StrandDiagram (Fin 3) :=
+      ⟨PEquiv.single i j, fun _ _ hk ↦ by
+        obtain ⟨rfl, rfl⟩ := (PEquiv.mem_single_iff _ _ _ _).1 hk
+        exact h⟩
+    (ρ 0 1 (by decide)).grading * (ρ 1 2 (by decide)).grading =
+      GradingGroup.lambda (Fin 3) *
+        ((ρ 1 2 (by decide)).grading * (ρ 0 1 (by decide)).grading) := by
+  intro ρ
+  have hS₁ : (ρ 0 1 (by decide)).source = {0} := by
+    ext k
+    simp only [mem_source, Finset.mem_singleton]
+    revert k
+    decide
+  have hT₁ : (ρ 0 1 (by decide)).target = {1} := by
+    ext k
+    simp only [mem_target, Finset.mem_singleton]
+    revert k
+    decide
+  have hS₂ : (ρ 1 2 (by decide)).source = {1} := by
+    ext k
+    simp only [mem_source, Finset.mem_singleton]
+    revert k
+    decide
+  have hT₂ : (ρ 1 2 (by decide)).target = {2} := by
+    ext k
+    simp only [mem_target, Finset.mem_singleton]
+    revert k
+    decide
+  have hinv (χ : StrandDiagram (Fin 3))
+      (h : ∀ p : Fin 3 × Fin 3, ¬(p.1 < p.2 ∧ ∃ a ∈ χ p.1, ∃ b ∈ χ p.2, b < a)) :
+      χ.inversionCount = 0 := by
+    rw [inversionCount_def, Finset.card_eq_zero, Finset.eq_empty_iff_forall_notMem]
+    simpa only [mem_inversions] using h
+  have hI₁ := hinv (ρ 0 1 (by decide)) (by decide)
+  have hI₂ := hinv (ρ 1 2 (by decide)) (by decide)
+  -- The two sides have the same class; compare twice their Maslov components.
+  rw [GradingGroup.lambda_mul]
+  refine FactorSet.Extension.ext ?_ (mul_comm _ _)
+  simp [twiceMaslovComponent_def, coe_homologyClass, hS₁, hT₁, hS₂, hT₂, hI₁, hI₂,
+    twiceMultiplicity_apply, Fin.sum_univ_three, Pi.single_apply]
+  simp only [← ofAdd_neg, ← ofAdd_add]
+  norm_num
