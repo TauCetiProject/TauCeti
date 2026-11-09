@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.SU2.LieAlgebra
 public import TauCeti.RepresentationTheory.Compact.BilinearForm
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
+import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Topology.Algebra.Module.BilinearForm
 /-!
@@ -79,30 +80,18 @@ theorem su2PauliForm_apply (weights x y : Fin 3 → ℝ) :
 theorem su2PauliForm_isSymm (weights : Fin 3 → ℝ) : (su2PauliForm weights).IsSymm := by
   constructor
   intro X Y
-  obtain ⟨x, rfl⟩ := SU2.pauliLieAlgebraEquiv.surjective X
-  obtain ⟨y, rfl⟩ := SU2.pauliLieAlgebraEquiv.surjective Y
-  simp only [su2PauliForm_apply]
-  apply Finset.sum_congr rfl
-  intro i _
-  ring
+  exact (Matrix.isSymm_toBilin'_iff_isSymm.mpr (Matrix.isSymm_diagonal weights)).eq _ _
 
 /-- Strictly positive coordinate weights give a positive-definite native form. -/
 theorem su2PauliForm_posDef (weights : Fin 3 → ℝ) (hweights : ∀ i, 0 < weights i) :
     (su2PauliForm weights).toQuadraticMap.PosDef := by
   intro X hX
-  obtain ⟨x, rfl⟩ := SU2.pauliLieAlgebraEquiv.surjective X
-  rw [LinearMap.BilinMap.toQuadraticMap_apply, su2PauliForm_apply]
-  have hx : x ≠ 0 := by
-    intro hx
-    apply hX
-    rw [hx, map_zero]
-  have hnonneg (i : Fin 3) : 0 ≤ weights i * x i * x i := by
-    nlinarith [mul_nonneg (hweights i).le (sq_nonneg (x i))]
-  obtain ⟨i, hi⟩ : ∃ i, x i ≠ 0 := by simpa only [ne_eq, funext_iff, Pi.zero_apply,
-    not_forall] using hx
-  apply Finset.sum_pos' (fun j _ ↦ hnonneg j)
-  refine ⟨i, Finset.mem_univ _, ?_⟩
-  nlinarith [mul_pos (hweights i) (sq_pos_of_ne_zero hi)]
+  have hx : SU2.pauliLieAlgebraEquiv.symm X ≠ 0 :=
+    (map_ne_zero_iff SU2.pauliLieAlgebraEquiv.symm
+      SU2.pauliLieAlgebraEquiv.symm.injective).mpr hX
+  simpa only [LinearMap.BilinMap.toQuadraticMap_apply, su2PauliForm,
+    LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, Matrix.toBilin'_apply', star_trivial] using
+    (Matrix.posDef_diagonal_iff.mpr hweights).dotProduct_mulVec_pos hx
 
 local notation "A" => LeftInvariantDerivation
   𝓘(ℝ, Matrix (Fin 2) (Fin 2) ℂ) (Matrix (Fin 2) (Fin 2) ℂ)ˣ
