@@ -29,7 +29,7 @@ public section
 namespace TauCeti
 
 open MeasureTheory Filter Metric
-open scoped Laplacian Gradient InnerProductSpace
+open scoped ContDiff Laplacian Gradient InnerProductSpace
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
@@ -89,6 +89,69 @@ theorem integral_inner_gradient_eq_neg_integral_mul_laplacian {u v : E → ℝ}
     ← Finset.sum_neg_distrib]
   exact Finset.sum_congr rfl fun i _ ↦ hdir i
 
+/-- On a ball, the Laplacian of a `C²` function plus an integrable function is integrable. -/
+private theorem integrableOn_laplacian_add_ball {f g : E → ℝ} (hf : ContDiff ℝ 2 f)
+    (hgi : Integrable g μ) (r : ℝ) : IntegrableOn (fun x ↦ Δ f x + g x) (ball 0 r) μ :=
+  ((hf.continuous_laplacian.continuousOn.integrableOn_compact
+    (isCompact_closedBall 0 r)).mono_set ball_subset_closedBall).add hgi.integrableOn
+
+/-- The mass of `Δ f + g` on a ball is bounded using a cutoff `χ` that is `1` on the ball and
+whose Laplacian is at most `C / R ^ 2`, when `Δ f + g` is nonnegative: both derivatives move to
+the cutoff by Green's identity, so no first-derivative integrability is needed. -/
+private theorem integral_ball_laplacian_add_le {f g χ : E → ℝ} {C R : ℝ}
+    (hf : ContDiff ℝ 2 f) (hfi : Integrable f μ) (hgi : Integrable g μ)
+    (hle : ∀ x, -g x ≤ Δ f x) (hC0 : 0 ≤ C) (hR : 1 ≤ R) (hχ : ContDiff ℝ ∞ χ)
+    (hχc : HasCompactSupport χ) (hχ1 : ∀ x, ‖x‖ < R → χ =ᶠ[nhds x] fun _ ↦ 1)
+    (hΔ : ∀ x, ‖Δ χ x‖ ≤ C / R ^ 2) (hχrange : ∀ x, χ x ∈ Set.Icc (0 : ℝ) 1) :
+    ∫ x in ball 0 R, (Δ f x + g x) ∂μ ≤ C * (∫ x, ‖f x‖ ∂μ) + ∫ x, ‖g x‖ ∂μ := by
+  let k := fun x ↦ Δ f x + g x
+  have hk0 : ∀ x, 0 ≤ k x := fun x ↦ by dsimp [k]; linarith [hle x]
+  have hχg : Integrable (fun x ↦ χ x * g x) μ :=
+    hgi.bdd_mul hχ.continuous.aestronglyMeasurable (ae_of_all μ fun x ↦ by
+      rw [Real.norm_eq_abs, abs_of_nonneg (hχrange x).1]
+      exact (hχrange x).2)
+  have hχΔ : Integrable (fun x ↦ χ x * Δ f x) μ :=
+    (hχ.continuous.mul hf.continuous_laplacian).integrable_of_hasCompactSupport hχc.mul_right
+  have hχk : Integrable (fun x ↦ χ x * k x) μ := by
+    simpa only [k, mul_add, Pi.add_def] using hχΔ.add hχg
+  have hΔf : Integrable (fun x ↦ Δ χ x * f x) μ :=
+    ((hχ.of_le (by simp)).continuous_laplacian.mul hf.continuous)
+      |>.integrable_of_hasCompactSupport hχc.laplacian.mul_right
+  have hgreen : ∫ x, χ x * Δ f x ∂μ = ∫ x, Δ χ x * f x ∂μ := by
+    let φ : TestFunction (⊤ : TopologicalSpace.Opens E) ℝ ⊤ :=
+      ⟨χ, hχ.of_le (by simp), hχc, Set.subset_univ _⟩
+    exact (hf.contDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian φ).symm
+  have hbound (x : E) : Δ χ x * f x ≤ C * ‖f x‖ := by
+    calc
+      Δ χ x * f x ≤ ‖Δ χ x‖ * ‖f x‖ := by
+        simpa only [Real.norm_eq_abs, abs_mul] using le_abs_self (Δ χ x * f x)
+      _ ≤ C * ‖f x‖ := by
+        apply mul_le_mul_of_nonneg_right _ (norm_nonneg _)
+        exact (hΔ x).trans (div_le_self hC0 (one_le_pow₀ hR))
+  calc
+    ∫ x in ball 0 R, k x ∂μ ≤ ∫ x, χ x * k x ∂μ := by
+      rw [← integral_indicator measurableSet_ball]
+      apply integral_mono
+        ((integrableOn_laplacian_add_ball hf hgi R).integrable_indicator measurableSet_ball) hχk
+      intro x
+      by_cases hx : x ∈ ball (0 : E) R
+      · simp only [Set.indicator_of_mem hx, (hχ1 x (mem_ball_zero_iff.mp hx)).self_of_nhds,
+          one_mul]
+        exact le_rfl
+      · simp only [Set.indicator_of_notMem hx]
+        exact mul_nonneg (hχrange x).1 (hk0 x)
+    _ = (∫ x, Δ χ x * f x ∂μ) + ∫ x, χ x * g x ∂μ := by
+      simp_rw [k, mul_add]
+      rw [integral_add hχΔ hχg, hgreen]
+    _ ≤ (∫ x, C * ‖f x‖ ∂μ) + ∫ x, ‖g x‖ ∂μ := by
+      apply add_le_add (integral_mono hΔf (hfi.norm.const_mul C) hbound)
+      apply integral_mono hχg hgi.norm
+      intro x
+      exact (le_abs_self _).trans (by
+        rw [abs_mul, abs_of_nonneg (hχrange x).1]
+        exact mul_le_of_le_one_left (abs_nonneg _) (hχrange x).2)
+    _ = _ := by rw [integral_const_mul]
+
 /-- An integrable `C²` function with an integrable lower bound on its Laplacian has
 an integrable Laplacian. No bounds on its first derivatives at infinity are required. -/
 theorem integrable_laplacian_of_integrable_of_le {f g : E → ℝ} (hf : ContDiff ℝ 2 f)
@@ -98,67 +161,19 @@ theorem integrable_laplacian_of_integrable_of_le {f g : E → ℝ} (hf : ContDif
   have hC0 : 0 ≤ C := by
     obtain ⟨χ, -, -, -, -, -, hΔ, -⟩ := hC 1 zero_lt_one
     simpa using (norm_nonneg (Δ χ 0)).trans (hΔ 0)
-  let k := fun x ↦ Δ f x + g x
-  have hk (r : ℝ) : IntegrableOn k (ball 0 r) μ :=
-    ((hf.continuous_laplacian.continuousOn.integrableOn_compact
-      (isCompact_closedBall 0 r)).mono_set ball_subset_closedBall).add hgi.integrableOn
-  have hk0 : ∀ x, 0 ≤ k x := fun x ↦ by dsimp [k]; linarith [hle x]
   have hR : Tendsto (fun n : ℕ ↦ (n : ℝ) + 1) atTop atTop :=
     tendsto_atTop_add_const_right _ _ tendsto_natCast_atTop_atTop
   -- Bound the mass on expanding balls by the same constant, using nonnegative cutoffs.
-  have hki : Integrable k μ := by
+  have hki : Integrable (fun x ↦ Δ f x + g x) μ := by
     apply (aecover_ball (μ := μ) (x := (0 : E)) hR).integrable_of_integral_bounded_of_nonneg_ae
         (C * (∫ x, ‖f x‖ ∂μ) + ∫ x, ‖g x‖ ∂μ)
-        (fun n ↦ hk (n + 1)) (ae_of_all μ hk0)
+        (fun n ↦ integrableOn_laplacian_add_ball hf hgi (n + 1))
+        (ae_of_all μ fun x ↦ by linarith [hle x])
     apply Filter.Eventually.of_forall
     intro n
     obtain ⟨χ, hχ, hχc, hχ1, -, -, hΔ, hχrange⟩ := hC (n + 1) (by positivity)
-    have hχg : Integrable (fun x ↦ χ x * g x) μ :=
-      hgi.bdd_mul hχ.continuous.aestronglyMeasurable (ae_of_all μ fun x ↦ by
-        rw [Real.norm_eq_abs, abs_of_nonneg (hχrange x).1]
-        exact (hχrange x).2)
-    have hχΔ : Integrable (fun x ↦ χ x * Δ f x) μ :=
-      (hχ.continuous.mul hf.continuous_laplacian).integrable_of_hasCompactSupport hχc.mul_right
-    have hχk : Integrable (fun x ↦ χ x * k x) μ := by
-      simpa only [k, mul_add, Pi.add_def] using hχΔ.add hχg
-    have hΔf : Integrable (fun x ↦ Δ χ x * f x) μ :=
-      ((hχ.of_le (by simp)).continuous_laplacian.mul hf.continuous)
-        |>.integrable_of_hasCompactSupport hχc.laplacian.mul_right
-    -- Move both derivatives to the cutoff; no first-derivative integrability is needed.
-    have hgreen : ∫ x, χ x * Δ f x ∂μ = ∫ x, Δ χ x * f x ∂μ := by
-      let φ : TestFunction (⊤ : TopologicalSpace.Opens E) ℝ ⊤ :=
-        ⟨χ, hχ.of_le (by simp), hχc, Set.subset_univ _⟩
-      exact (hf.contDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian φ).symm
-    have hbound (x : E) : Δ χ x * f x ≤ C * ‖f x‖ := by
-      calc
-        Δ χ x * f x ≤ ‖Δ χ x‖ * ‖f x‖ := by
-          simpa only [Real.norm_eq_abs, abs_mul] using le_abs_self (Δ χ x * f x)
-        _ ≤ C * ‖f x‖ := by
-          apply mul_le_mul_of_nonneg_right _ (norm_nonneg _)
-          exact (hΔ x).trans (div_le_self hC0
-            (by nlinarith [Nat.cast_nonneg (α := ℝ) n] : 1 ≤ (n + 1 : ℝ) ^ 2))
-    calc
-      ∫ x in Metric.ball 0 (n + 1), k x ∂μ ≤ ∫ x, χ x * k x ∂μ := by
-        rw [← integral_indicator measurableSet_ball]
-        apply integral_mono
-          ((hk (n + 1)).integrable_indicator measurableSet_ball) hχk
-        intro x
-        by_cases hx : x ∈ Metric.ball (0 : E) (n + 1)
-        · simp only [Set.indicator_of_mem hx,
-            (hχ1 x (mem_ball_zero_iff.mp hx)).self_of_nhds, one_mul, le_refl]
-        · simp only [Set.indicator_of_notMem hx]
-          exact mul_nonneg (hχrange x).1 (hk0 x)
-      _ = (∫ x, Δ χ x * f x ∂μ) + ∫ x, χ x * g x ∂μ := by
-        simp_rw [k, mul_add]
-        rw [integral_add hχΔ hχg, hgreen]
-      _ ≤ (∫ x, C * ‖f x‖ ∂μ) + ∫ x, ‖g x‖ ∂μ := by
-        apply add_le_add (integral_mono hΔf (hfi.norm.const_mul C) hbound)
-        apply integral_mono hχg hgi.norm
-        intro x
-        exact (le_abs_self _).trans (by
-          rw [abs_mul, abs_of_nonneg (hχrange x).1]
-          exact mul_le_of_le_one_left (abs_nonneg _) (hχrange x).2)
-      _ = _ := by rw [integral_const_mul]
-  simpa only [Pi.sub_def, k, add_sub_cancel_right] using hki.sub hgi
+    exact integral_ball_laplacian_add_le hf hfi hgi hle hC0
+      (by simp) hχ hχc hχ1 hΔ hχrange
+  simpa only [Pi.sub_def, add_sub_cancel_right] using hki.sub hgi
 
 end TauCeti

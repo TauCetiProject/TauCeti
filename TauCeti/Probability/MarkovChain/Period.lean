@@ -73,9 +73,9 @@ def returnLengths (x : α) : Set ℕ := {n | 0 < n ∧ 0 < (κ ^ n) x {x}}
 theorem mem_returnLengths : n ∈ κ.returnLengths x ↔ 0 < n ∧ 0 < (κ ^ n) x {x} := Iff.rfl
 
 /-- The return lengths of a state are closed under addition. -/
-theorem add_mem_returnLengths [MeasurableSingletonClass α] {m : ℕ}
+theorem add_mem_returnLengths {m : ℕ}
     (hm : m ∈ κ.returnLengths x) (hn : n ∈ κ.returnLengths x) : m + n ∈ κ.returnLengths x :=
-  ⟨by have := hm.1; lia, pow_add_apply_pos (measurableSet_singleton x) hm.2 hn.2⟩
+  ⟨by have := hm.1; lia, pow_add_apply_pos hm.2 hn.2⟩
 
 variable (κ) in
 /-- The period of a state `x`: the gcd of its positive return lengths. A state that the chain
@@ -109,6 +109,29 @@ def IsAperiodic : Prop := ∀ x, κ.period x = 1
 
 theorem isAperiodic_iff : κ.IsAperiodic ↔ ∀ x, κ.period x = 1 := Iff.rfl
 
+/-- If `x` reaches `y` and `y` reaches `x`, then the period of `x` divides the period of `y`. -/
+theorem period_dvd_period_of_pos {a b : ℕ} (hxy : 0 < (κ ^ a) x {y})
+    (hyx : 0 < (κ ^ b) y {x}) : κ.period x ∣ κ.period y := by
+  -- A round trip `x → y → x` of length `a + b` has positive probability, and inserting a return
+  -- to `y` of length `n` gives one of length `a + n + b`; the period of `x` divides both.
+  have hround : 0 < (κ ^ (a + b)) x {x} := pow_add_apply_pos hxy hyx
+  have hdvd_ab : κ.period x ∣ a + b := by
+    rcases Nat.eq_zero_or_pos (a + b) with h | h
+    · simp [h]
+    · exact period_dvd_of_mem_returnLengths ⟨h, hround⟩
+  refine dvd_period_iff.mpr fun n hn ↦ ?_
+  have hlong : a + n + b ∈ κ.returnLengths x :=
+    ⟨by have := hn.1; lia, pow_add_apply_pos
+      (pow_add_apply_pos hxy hn.2) hyx⟩
+  have h := period_dvd_of_mem_returnLengths hlong
+  rw [show a + n + b = n + (a + b) by lia] at h
+  exact (Nat.dvd_add_left hdvd_ab).mp h
+
+/-- **The period is a class property.** Mutually reachable states have the same period. -/
+theorem period_eq_period_of_pos {a b : ℕ} (hxy : 0 < (κ ^ a) x {y})
+    (hyx : 0 < (κ ^ b) y {x}) : κ.period x = κ.period y :=
+  Nat.dvd_antisymm (period_dvd_period_of_pos hxy hyx) (period_dvd_period_of_pos hyx hxy)
+
 section MeasurableSingletonClass
 
 variable [MeasurableSingletonClass α]
@@ -132,29 +155,6 @@ theorem eventually_pos_pow_apply_singleton_self_of_period_eq_one (h : κ.period 
     ∀ᶠ n in atTop, 0 < (κ ^ n) x {x} := by
   simpa [h] using eventually_pos_pow_period_mul_apply_singleton κ x
 
-/-- If `x` reaches `y` and `y` reaches `x`, then the period of `x` divides the period of `y`. -/
-theorem period_dvd_period_of_pos {a b : ℕ} (hxy : 0 < (κ ^ a) x {y})
-    (hyx : 0 < (κ ^ b) y {x}) : κ.period x ∣ κ.period y := by
-  -- A round trip `x → y → x` of length `a + b` has positive probability, and inserting a return
-  -- to `y` of length `n` gives one of length `a + n + b`; the period of `x` divides both.
-  have hround : 0 < (κ ^ (a + b)) x {x} := pow_add_apply_pos (measurableSet_singleton x) hxy hyx
-  have hdvd_ab : κ.period x ∣ a + b := by
-    rcases Nat.eq_zero_or_pos (a + b) with h | h
-    · simp [h]
-    · exact period_dvd_of_mem_returnLengths ⟨h, hround⟩
-  refine dvd_period_iff.mpr fun n hn ↦ ?_
-  have hlong : a + n + b ∈ κ.returnLengths x :=
-    ⟨by have := hn.1; lia, pow_add_apply_pos (measurableSet_singleton x)
-      (pow_add_apply_pos (measurableSet_singleton y) hxy hn.2) hyx⟩
-  have h := period_dvd_of_mem_returnLengths hlong
-  rw [show a + n + b = n + (a + b) by lia] at h
-  exact (Nat.dvd_add_left hdvd_ab).mp h
-
-/-- **The period is a class property.** Mutually reachable states have the same period. -/
-theorem period_eq_period_of_pos {a b : ℕ} (hxy : 0 < (κ ^ a) x {y})
-    (hyx : 0 < (κ ^ b) y {x}) : κ.period x = κ.period y :=
-  Nat.dvd_antisymm (period_dvd_period_of_pos hxy hyx) (period_dvd_period_of_pos hyx hxy)
-
 /-- If `x` has period one and reaches `y`, then `(κ ^ n) x {y}` is positive for every
 sufficiently large `n`. -/
 theorem eventually_pos_pow_apply_singleton_of_period_eq_one {a : ℕ} (hx : κ.period x = 1)
@@ -164,7 +164,7 @@ theorem eventually_pos_pow_apply_singleton_of_period_eq_one {a : ℕ} (hx : κ.p
   obtain ⟨N, hN⟩ := h
   refine ⟨N + a, fun n hn ↦ ?_⟩
   rw [show n = (n - a) + a by lia]
-  exact pow_add_apply_pos (measurableSet_singleton y) (hN _ (by lia)) hxy
+  exact pow_add_apply_pos (hN _ (by lia)) hxy
 
 /-- Under counting-measure irreducibility every state reaches every other state. -/
 theorem exists_pos_pow_apply_singleton [IsIrreducible Measure.count κ] (x y : α) :
