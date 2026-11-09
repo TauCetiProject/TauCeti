@@ -25,8 +25,10 @@ These predicates concern actual functions; almost-everywhere changes do not affe
 They impose no global integrability condition on the possibly unbounded domain.
 
 This file supplies restriction to arbitrary subsets, linearity, continuous-linear composition,
-decreasing the integrability exponent, and decreasing the derivative order. Smoothness on an
-open neighbourhood gives membership, without requiring a global smooth extension.
+multiplication of local `Lᵖ` functions by continuous factors (with extension by zero for factors
+supported in the domain), decreasing the integrability exponent, and decreasing the derivative
+order. Smoothness on an open neighbourhood gives membership, without requiring a global smooth
+extension.
 No boundary trace or extension across the boundary is asserted. On open domains, local `L¹`
 membership is identified with local integrability, supplying the native weak-derivative hypotheses.
 In positive order, completeness is inherited from the native weak-derivative predicate; the
@@ -134,6 +136,28 @@ theorem MemLpLoc.const_smul (hf : MemLpLoc p U f) (c : ℝ) : MemLpLoc p U (c �
 theorem MemLpLoc.clm_comp (hf : MemLpLoc p U f) (A : F →L[ℝ] G) :
     MemLpLoc p U (fun z => A (f z)) :=
   fun K hK hc => A.comp_memLp' (hf K hK hc)
+
+/-- A factor continuous on `U` preserves local `Lᵖ` membership on `U`, since it is bounded on
+every compact subset of `U`. -/
+theorem MemLpLoc.continuousOn_smul {χ : ℂ → ℝ} (hf : MemLpLoc p U f) (hχ : ContinuousOn χ U) :
+    MemLpLoc p U (fun z => χ z • f z) :=
+  memLpLoc_iff.2 fun K hK hc =>
+    (memLpLoc_iff.1 (hχ.memLpLoc (p := ⊤)) K hK hc).smul (memLpLoc_iff.1 hf K hK hc)
+
+/-- A continuous factor supported in `U` extends a local `Lᵖ` function on `U` by zero to a local
+`Lᵖ` function on the whole plane: on a compact set `K` the product only sees
+`K ∩ tsupport χ`, a compact subset of `U`. -/
+theorem MemLpLoc.continuous_smul_of_tsupport_subset {χ : ℂ → ℝ} (hf : MemLpLoc p U f)
+    (hχ : Continuous χ) (hsupp : tsupport χ ⊆ U) : MemLpLoc p Set.univ (fun z => χ z • f z) := by
+  have hT := hf.continuousOn_smul hχ.continuousOn
+  have hcl : IsClosed (tsupport χ) := isClosed_tsupport χ
+  refine memLpLoc_iff.2 fun K _ hK => ?_
+  have heq : (fun z => χ z • f z) = (tsupport χ).indicator (fun z => χ z • f z) := by
+    refine (Set.indicator_eq_self.2 ?_).symm
+    exact (Function.support_smul_subset_left χ f).trans (subset_tsupport χ)
+  rw [heq, memLp_indicator_iff_restrict hcl.measurableSet.nullMeasurableSet,
+    Measure.restrict_restrict hcl.measurableSet]
+  exact memLpLoc_iff.1 hT _ (Set.inter_subset_left.trans hsupp) (hK.inter_left hcl)
 
 /-- The iterated weak derivatives through order `k` exist on `interior U` and are `Lᵖ` on
 every compact subset of `U`, including compact sets reaching its boundary.
