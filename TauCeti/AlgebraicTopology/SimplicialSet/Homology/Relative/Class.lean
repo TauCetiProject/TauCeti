@@ -19,7 +19,7 @@ For a pair of simplicial sets `Q` (a monomorphism `Q.left ⟶ Q.right`), a `1`-s
 in `R`. This file computes its image under the connecting morphism, the difference
 `[v₁] - [v₀]` of the classes of its endpoints (`SSetPair.relClass₁_homologyδ`); proves that the
 class is natural in maps of pairs (`SSetPair.relClass₁_homologyMap`); and identifies it with the
-image of the absolute class `TauCeti.SSet.ιHomology₁` (in `SimplicialSet/Homology/One.lean`) when
+image of the absolute class `SSet.ιHomology₁` (in `SimplicialSet/Homology/One.lean`) when
 the two faces agree (`SSetPair.ιHomology₁_homologyπ`). The computation of the connecting morphism
 is `ShortComplex.ShortExact.δ_eq` for the short exact sequence of chain complexes of the pair.
 
@@ -113,8 +113,8 @@ lemma relClass₁_homologyMap {Q' : SSetPair.{w}} (f : Q ⟶ Q') :
 /-- The relative class of a `1`-simplex whose two faces agree is the image of its absolute
 class. -/
 lemma ιHomology₁_homologyπ (h : Q.right.δ 0 s = Q.right.δ 1 s) :
-    TauCeti.SSet.ιHomology₁ R Q.right s h ≫ Q.homologyπ R 1 = relClass₁ R Q s v₀ v₁ h₀ h₁ := by
-  rw [TauCeti.SSet.ιHomology₁_eq, relClass₁, Category.assoc, SSetPair.homologyπ,
+    SSet.ιHomology₁ R Q.right s h ≫ Q.homologyπ R 1 = relClass₁ R Q s v₀ v₁ h₀ h₁ := by
+  rw [SSet.ιHomology₁_eq, relClass₁, Category.assoc, SSetPair.homologyπ,
     HomologicalComplex.homologyπ_naturality, ← Category.assoc,
     HomologicalComplex.liftCycles_comp_cyclesMap]
 
