@@ -29,9 +29,10 @@ finite (`MeasureTheory.Measure.eLpNorm_iteratedFDeriv_two_thickening_ne_top`), a
 the preimage thickening is controlled by `D²u` through the ellipticity constants of `e`
 (`MeasureTheory.Measure.toReal_eLpNorm_iteratedFDeriv_two_comp_le`).
 
-On a Euclidean space, the `L²` norm of the Hessian of a `C²` function whose second derivative is
-supported in a closed ball, with all second partial derivatives bounded by `B`, is at most the
-square root of the volume of the ball times `(card ι)² B`
+On a finite-dimensional inner product space with an additive Haar measure, the `L²` norm of the
+Hessian of a `C²` function whose second derivative is supported in a closed ball, with all second
+partial derivatives along an orthonormal basis bounded by `B`, is at most the square root of the
+measure of the ball times `(card ι)² B`
 (`TauCeti.toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall`).
 -/
 
@@ -145,30 +146,28 @@ end MeasureTheory.Measure
 
 namespace TauCeti
 
-section EuclideanHessian
+section InnerHessian
 
 open MeasureTheory Metric
 
-/-- The `L²` norm of the second derivative of a `C²` function `w` on a Euclidean space is at most
-`volume (closedBall 0 R) ^ (1/2) * (card ι) ^ 2 * B`, when the second derivative of `w` is supported
-in the closed ball `closedBall x₀ R` and all its second partial derivatives are bounded by `B`.
-Only the second derivative needs to be supported there, so `w` itself may be nonzero outside. -/
+/-- The `L²` norm of the second derivative of a `C²` function `w` on a finite-dimensional real inner
+product space with an additive Haar measure `μ` is at most
+`μ (closedBall 0 R) ^ (1/2) * (card ι) ^ 2 * B`, when the second derivative of `w` is supported in
+the closed ball `closedBall x₀ R` and all its second partial derivatives along an orthonormal basis
+`b` are bounded by `B`. Only the second derivative needs to be supported there, so `w` itself may be
+nonzero outside. -/
 theorem toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall
-    {ι : Type*} [Fintype ι] [Nonempty ι] [DecidableEq ι]
-    {w : EuclideanSpace ℝ ι → ℝ} (hw : ContDiff ℝ 2 w)
-    {x₀ : EuclideanSpace ℝ ι} {R B : ℝ}
-    (hsupp : Function.support (iteratedFDeriv ℝ 2 w) ⊆ closedBall x₀ R)
-    (hB : ∀ x i j,
-      |fderiv ℝ (fderiv ℝ w) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ B) :
-    (eLpNorm (iteratedFDeriv ℝ 2 w) 2 volume).toReal ≤
-      (volume (closedBall (0 : EuclideanSpace ℝ ι) R)).toReal ^ (2⁻¹ : ℝ) *
-        ((Fintype.card ι : ℝ) ^ 2 * B) := by
+    {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    [Fintype ι] [Nonempty ι] (b : OrthonormalBasis ι ℝ E) {w : E → ℝ} (hw : ContDiff ℝ 2 w)
+    {x₀ : E} {R B : ℝ} (hsupp : Function.support (iteratedFDeriv ℝ 2 w) ⊆ closedBall x₀ R)
+    (hB : ∀ x i j, |fderiv ℝ (fderiv ℝ w) x (b i) (b j)| ≤ B) :
+    (eLpNorm (iteratedFDeriv ℝ 2 w) 2 μ).toReal ≤
+      (μ (closedBall (0 : E) R)).toReal ^ (2⁻¹ : ℝ) * ((Fintype.card ι : ℝ) ^ 2 * B) := by
   have hB₀ : 0 ≤ B :=
     (abs_nonneg _).trans (hB 0 (Classical.arbitrary ι) (Classical.arbitrary ι))
-  have hnorm (x : EuclideanSpace ℝ ι) :
-      ‖iteratedFDeriv ℝ 2 w x‖ ≤ (Fintype.card ι : ℝ) ^ 2 * B := by
-    refine (iteratedFDeriv ℝ 2 w x).opNorm_le_card_sq_mul_of_norm_apply_le
-      (EuclideanSpace.basisFun _ ℝ) (B := B) fun i j => ?_
+  have hnorm (x : E) : ‖iteratedFDeriv ℝ 2 w x‖ ≤ (Fintype.card ι : ℝ) ^ 2 * B := by
+    refine (iteratedFDeriv ℝ 2 w x).opNorm_le_card_sq_mul_of_norm_apply_le b (B := B) fun i j => ?_
     simpa [iteratedFDeriv_two_apply] using hB x i j
   refine (ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity)
     measure_closedBall_lt_top.ne) ENNReal.ofReal_ne_top) (eLpNorm_le_of_ae_bound_of_support_subset
@@ -178,6 +177,6 @@ theorem toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall
     Measure.addHaar_closedBall_center]
   simp only [ENNReal.toReal_ofNat]
 
-end EuclideanHessian
+end InnerHessian
 
 end TauCeti

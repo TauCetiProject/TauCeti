@@ -77,6 +77,33 @@ local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
 /-- The product of a globally Hölder factor `c` vanishing off `s` with a factor `g` which is
 bounded and Hölder on `s` is globally Hölder, and bounded by the product of the bounds. -/
+/-- Translating a cutoff keeps the global Hölder constant and the uniform bound of the cutoff and
+of its first and second derivatives in the directions `e i`. -/
+private theorem holderWith_translate_cutoff {ι : Type*} (e : ι → E) {α Z : ℝ≥0}
+    {ζ₀ : E → ℝ} (x₀ : E) (hZ0 : HolderWith Z α ζ₀ ∧ ∀ x, |ζ₀ x| ≤ Z)
+    (hZ1 : ∀ i, HolderWith Z α (fun x => fderiv ℝ ζ₀ x (e i)) ∧ ∀ x, |fderiv ℝ ζ₀ x (e i)| ≤ Z)
+    (hZ2 : ∀ i j, HolderWith Z α (fun x => fderiv ℝ (fderiv ℝ ζ₀) x (e i) (e j)) ∧
+      ∀ x, |fderiv ℝ (fderiv ℝ ζ₀) x (e i) (e j)| ≤ Z) :
+    (HolderWith Z α (fun x => ζ₀ (x - x₀)) ∧ ∀ x, |ζ₀ (x - x₀)| ≤ Z) ∧
+    (∀ i, HolderWith Z α (fun x => fderiv ℝ (fun x => ζ₀ (x - x₀)) x (e i)) ∧
+      ∀ x, |fderiv ℝ (fun x => ζ₀ (x - x₀)) x (e i)| ≤ Z) ∧
+    ∀ i j, HolderWith Z α (fun x => fderiv ℝ (fderiv ℝ fun x => ζ₀ (x - x₀)) x (e i) (e j)) ∧
+      ∀ x, |fderiv ℝ (fderiv ℝ fun x => ζ₀ (x - x₀)) x (e i) (e j)| ≤ Z := by
+  have hD1 : fderiv ℝ (fun x => ζ₀ (x - x₀)) = fun x => fderiv ℝ ζ₀ (x - x₀) :=
+    funext fun _ => fderiv_comp_sub x₀
+  have hD2 : fderiv ℝ (fderiv ℝ fun x => ζ₀ (x - x₀)) =
+      fun x => fderiv ℝ (fderiv ℝ ζ₀) (x - x₀) := by
+    rw [hD1]
+    exact funext fun _ => fderiv_comp_sub x₀
+  have htr {g : E → ℝ} (h : HolderWith Z α g ∧ ∀ x, |g x| ≤ Z) :
+      HolderWith Z α (fun x => g (x - x₀)) ∧ ∀ x, |g (x - x₀)| ≤ Z :=
+    ⟨fun x y => by simpa only [edist_sub_right] using h.1 (x - x₀) (y - x₀), fun x => h.2 _⟩
+  refine ⟨htr hZ0, fun i => ?_, fun i j => ?_⟩
+  · rw [hD1]
+    exact htr (hZ1 i)
+  · rw [hD2]
+    exact htr (hZ2 i j)
+
 private theorem holderWith_mul_and_abs_le {c g : E → ℝ} {s : Set E} {α Kc Mc Kg Mg : ℝ≥0}
     (hc : HolderWith Kc α c) (hcM : ∀ x, |c x| ≤ Mc) (hc0 : ∀ x ∉ s, c x = 0)
     (hg : HolderOnWith Kg α g s) (hgM : ∀ x ∈ s, |g x| ≤ Mg) :
@@ -386,7 +413,7 @@ private theorem cutoff_mul_data {ζ u : E → ℝ} {x₀ : E} {R : ℝ} {α Z N 
     (holderWith_sum_smul_fderiv_fderiv_cutoff_mul isOpen_ball hζ2 hζs hZ0 hZ1 hZ2 hu hN0 hdu hd2u
       hHu hHdu (fun i j => (hL i j).mono hsR) (fun x hx => hM x (hsR hx)) hK).mono
       (le_of_eq (by ring)), hsupp, ?_⟩
-  exact (toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall hw hsupp
+  exact (toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall volume (EuclideanSpace.basisFun _ ℝ) hw hsupp
     (B := 4 * Z * N) fun x i j => by simpa using (hWH i j).2 x).trans_eq
     (by simp only [Fintype.card_fin]; push_cast; ring)
 
@@ -445,8 +472,14 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
     fun {a x₀} hEll hEll' hL hM {u N K V} hu hN0 hN1 hN2 hV hK => ?_⟩
   -- The cutoff `ζ` about `x₀`, the translate of `ζ₀`.
   set ζ : E → ℝ := fun x => ζ₀ (x - x₀)
-  obtain ⟨hζ2, hζ1, hζs⟩ :=
-    translate_cutoff_facts (x₀ := x₀) (R := R) (hζ₀.of_le (by norm_cast)) hζ₀1 hζ₀s
+  have hζ2 : ContDiffOn ℝ 2 ζ (ball x₀ R) :=
+    ((hζ₀.of_le (by norm_cast)).comp (contDiff_id.sub contDiff_const)).contDiffOn
+  have hζ1 : closedBall x₀ ρ ⊆ interior (ζ ⁻¹' {1}) := fun x hx =>
+    preimage_interior_subset_interior_preimage (continuous_id.sub continuous_const)
+      (hζ₀1 (by simpa [dist_eq_norm] using hx))
+  have hζs : tsupport ζ ⊆ ball x₀ R := fun x hx => by
+    simpa [dist_eq_norm] using hζ₀s (tsupport_comp_subset_preimage ζ₀
+      (continuous_id.sub continuous_const) hx)
   -- Translation keeps the global Hölder constants and the uniform bounds of `ζ₀` and its
   -- derivatives.
   obtain ⟨hZ0, hZ1, hZ2⟩ :=

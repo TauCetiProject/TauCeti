@@ -49,11 +49,7 @@ in `[c - r - 1, c + r + 1]` have `L²` mass at least `2 r` and derivative energy
 independently of `c` and `r` (`TauCeti.exists_forall_contDiff_plateau`). The squared gradient of a
 function supported in a closed ball with bounded gradient there has integral at most the squared
 bound times the volume of the ball
-(`TauCeti.setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall`). Translating a cutoff
-keeps the global Hölder constant and the uniform bound of the cutoff and of its first and second
-derivatives (`TauCeti.holderWith_translate_cutoff`), and the translate of a `C²` cutoff is `C²` on
-a ball, equals one near the translated inner ball and is supported in the translated outer ball
-(`TauCeti.translate_cutoff_facts`).
+(`TauCeti.setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall`).
 
 Finally, the space-time cut-offs `(t, x) ↦ χ (s • x) * φ (t, x)` of a function `φ` vanishing outside
 a time interval, for a bump `χ` and a small scale `s`, have compact support
@@ -232,49 +228,6 @@ theorem _root_.ContDiffOn.exists_contDiff_eventually_eq_prod_univ [NormedSpace �
     ((hψ.of_le (by simp)).comp contDiff_fst).contDiffOn hψU', fun x hx => ?_⟩
   filter_upwards [hψone x hx] with y hy η
   rw [hy, one_smul]
-
-/-- Translating a cutoff keeps the global Hölder constant and the uniform bound of the cutoff and
-of its first and second derivatives in the directions `e i`. -/
-theorem holderWith_translate_cutoff [NormedSpace ℝ E] {ι : Type*} (e : ι → E) {α Z : ℝ≥0}
-    {ζ₀ : E → ℝ} (x₀ : E) (hZ0 : HolderWith Z α ζ₀ ∧ ∀ x, |ζ₀ x| ≤ Z)
-    (hZ1 : ∀ i, HolderWith Z α (fun x => fderiv ℝ ζ₀ x (e i)) ∧ ∀ x, |fderiv ℝ ζ₀ x (e i)| ≤ Z)
-    (hZ2 : ∀ i j, HolderWith Z α (fun x => fderiv ℝ (fderiv ℝ ζ₀) x (e i) (e j)) ∧
-      ∀ x, |fderiv ℝ (fderiv ℝ ζ₀) x (e i) (e j)| ≤ Z) :
-    (HolderWith Z α (fun x => ζ₀ (x - x₀)) ∧ ∀ x, |ζ₀ (x - x₀)| ≤ Z) ∧
-    (∀ i, HolderWith Z α (fun x => fderiv ℝ (fun x => ζ₀ (x - x₀)) x (e i)) ∧
-      ∀ x, |fderiv ℝ (fun x => ζ₀ (x - x₀)) x (e i)| ≤ Z) ∧
-    ∀ i j, HolderWith Z α (fun x => fderiv ℝ (fderiv ℝ fun x => ζ₀ (x - x₀)) x (e i) (e j)) ∧
-      ∀ x, |fderiv ℝ (fderiv ℝ fun x => ζ₀ (x - x₀)) x (e i) (e j)| ≤ Z := by
-  have hD1 : fderiv ℝ (fun x => ζ₀ (x - x₀)) = fun x => fderiv ℝ ζ₀ (x - x₀) :=
-    funext fun _ => fderiv_comp_sub x₀
-  have hD2 : fderiv ℝ (fderiv ℝ fun x => ζ₀ (x - x₀)) =
-      fun x => fderiv ℝ (fderiv ℝ ζ₀) (x - x₀) := by
-    rw [hD1]
-    exact funext fun _ => fderiv_comp_sub x₀
-  have htr {g : E → ℝ} (h : HolderWith Z α g ∧ ∀ x, |g x| ≤ Z) :
-      HolderWith Z α (fun x => g (x - x₀)) ∧ ∀ x, |g (x - x₀)| ≤ Z :=
-    ⟨fun x y => by simpa only [edist_sub_right] using h.1 (x - x₀) (y - x₀), fun x => h.2 _⟩
-  refine ⟨htr hZ0, fun i => ?_, fun i j => ?_⟩
-  · rw [hD1]
-    exact htr (hZ1 i)
-  · rw [hD2]
-    exact htr (hZ2 i j)
-
-/-- The translate `x ↦ ζ₀ (x - x₀)` of a `C²` cutoff, equal to one near `closedBall 0 ρ` and
-supported in `ball 0 R`, is `C²` on `ball x₀ R`, equal to one near `closedBall x₀ ρ`, and supported
-in `ball x₀ R`. -/
-theorem translate_cutoff_facts [NormedSpace ℝ E] {ζ₀ : E → ℝ} {x₀ : E} {R ρ : ℝ}
-    (hζ₀ : ContDiff ℝ 2 ζ₀) (hζ₀1 : Metric.closedBall (0 : E) ρ ⊆ interior (ζ₀ ⁻¹' {1}))
-    (hζ₀s : tsupport ζ₀ ⊆ Metric.ball 0 R) :
-    ContDiffOn ℝ 2 (fun x => ζ₀ (x - x₀)) (Metric.ball x₀ R) ∧
-      Metric.closedBall x₀ ρ ⊆ interior ((fun x => ζ₀ (x - x₀)) ⁻¹' {1}) ∧
-      tsupport (fun x => ζ₀ (x - x₀)) ⊆ Metric.ball x₀ R := by
-  refine ⟨(hζ₀.comp (contDiff_id.sub contDiff_const)).contDiffOn,
-    fun x hx => ?_, fun x hx => ?_⟩
-  · exact preimage_interior_subset_interior_preimage (continuous_id.sub continuous_const)
-      (hζ₀1 (by simpa [dist_eq_norm] using hx))
-  · simpa [dist_eq_norm] using hζ₀s (tsupport_comp_subset_preimage ζ₀
-      (continuous_id.sub continuous_const) hx)
 
 /-- On a measurable set `K` where the cutoff `χ` is one nearby, `D u = D (χ u)`, so the `Lᵖ` norm
 of `D u` on `K` is at most that of `D (χ u)` on the whole space. -/
