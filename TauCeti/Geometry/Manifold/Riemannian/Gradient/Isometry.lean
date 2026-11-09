@@ -37,6 +37,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-- A local isometry carries the gradient of a pullback to the target gradient, under
 pointwise differentiability of the target function. -/
+@[simp]
 theorem mfderiv_mgradient_comp (hf : IsLocalRiemannianIsometry I J f)
     {φ : N → ℝ} {x : M} (hφ : MDifferentiableAt J 𝓘(ℝ) φ (f x)) :
     mfderiv I J f x (mgradient I (φ ∘ f) x) = mgradient J φ (f x) := by
