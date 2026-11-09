@@ -187,7 +187,8 @@ theorem dirichletStickBreaking_stickRatios {n : ℕ}
     · rw [dirichletStickBreaking_succ, ht, ih (fun j ↦ hx j.succ)]
       have hy (k : Fin (n + 1)) : y k = x k.succ := by simp [y]
       simp only [hy] at hT hs
-      simp [dirichletNormalize_apply, dirichletStickRatios_apply, hy]
+      simp only [dirichletNormalize_apply, dirichletStickRatios_apply, hy,
+        Fin.castSucc_zero, Fin.zero_le, Finset.filter_true]
       field_simp [hS, hT]
       rw [hs]
       ring
@@ -202,15 +203,14 @@ private theorem map_fin_insert {n : ℕ} {a : Fin (n + 2) → ℝ} (ha : ∀ i, 
   have h := map_dirichletStickInsert_prod_betaMeasure_dirichletMeasure ha'
   have hr := map_reindex_dirichletMeasure (e := e.symm) ha'
   rw [← h, Measure.map_map (by fun_prop) measurable_dirichletStickInsert] at hr
-  have hf : (fun z : ℝ × EuclideanSpace ℝ (Fin (n + 1)) ↦
-      (EuclideanSpace.equiv _ ℝ).symm
-        (fun j ↦ dirichletStickInsert z (e j))) =
+  have hf : (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e.symm ∘ dirichletStickInsert) =
       (fun z ↦ (EuclideanSpace.equiv _ ℝ).symm
         (Fin.cons z.1 (fun i ↦ (1 - z.1) * z.2 i))) := by
     funext z
     ext j
-    refine Fin.cases ?_ (fun i ↦ ?_) j <;> simp [e]
-  simpa only [Function.comp_def, hf, e, Equiv.symm_symm, Equiv.symm_apply_apply,
+    refine Fin.cases ?_ (fun i ↦ ?_) j <;>
+      simp [LinearIsometryEquiv.piLpCongrLeft_apply, e]
+  simpa only [hf, Function.comp_def, e, Equiv.symm_symm, Equiv.symm_apply_apply,
     finSuccEquiv_symm_none, finSuccEquiv_symm_some] using hr
 
 private theorem tail_shape_pos {n : ℕ} {a : Fin (n + 1) → ℝ}
@@ -218,6 +218,14 @@ private theorem tail_shape_pos {n : ℕ} {a : Fin (n + 1) → ℝ}
     0 < ∑ j with i.castSucc < j, a j := by
   apply Finset.sum_pos (fun j _ ↦ ha j)
   exact ⟨i.succ, by simp⟩
+
+private abbrev stickBreakingBetaMeasures {n : ℕ} (a : Fin (n + 1) → ℝ) (i : Fin n) :=
+  betaMeasure (a i.castSucc) (∑ j with i.castSucc < j, a j)
+
+private theorem isProbabilityMeasure_stickBreakingBetaMeasures {n : ℕ}
+    {a : Fin (n + 1) → ℝ} (ha : ∀ i, 0 < a i) (i : Fin n) :
+    IsProbabilityMeasure (stickBreakingBetaMeasures a i) :=
+  isProbabilityMeasureBeta (ha _) (tail_shape_pos ha i)
 
 /-- Independent Beta fractions, with second shapes equal to the remaining concentration,
 construct the Dirichlet law. The case of one coordinate uses an empty product of laws. -/
@@ -238,18 +246,19 @@ theorem map_dirichletStickBreaking_pi_betaMeasure {n : ℕ} {a : Fin (n + 1) →
     simp
   | succ n ih =>
     -- Separate the first Beta fraction, construct the tail by induction, and insert it.
-    let μ (i : Fin (n + 1)) :=
-      betaMeasure (a i.castSucc) (∑ j with i.castSucc < j, a j)
+    let μ := stickBreakingBetaMeasures a
     let _ (i : Fin (n + 1)) : IsProbabilityMeasure (μ i) :=
-      isProbabilityMeasureBeta (ha _) (tail_shape_pos ha i)
+      isProbabilityMeasure_stickBreakingBetaMeasures ha i
     have hzero : μ 0 = betaMeasure (a 0) (∑ j : Fin (n + 1), a j.succ) := by
-      simp [μ, Finset.sum_filter, Fin.sum_univ_succ]
+      dsimp only [μ, stickBreakingBetaMeasures]
+      rw [Finset.sum_filter]
+      simp [Fin.sum_univ_succ]
     have htail : (Measure.pi fun i : Fin n ↦ μ i.succ).map dirichletStickBreaking =
         dirichletMeasure (fun j : Fin (n + 1) ↦ a j.succ) := by
       convert ih (fun j ↦ ha j.succ) using 1
       congr 2
       funext i
-      simp [μ, Finset.sum_filter, Fin.sum_univ_succ]
+      simp [μ, stickBreakingBetaMeasures, Finset.sum_filter, Fin.sum_univ_succ]
     have hsplit : (Measure.pi μ).map (fun v ↦ (v 0, fun i : Fin n ↦ v i.succ)) =
         (μ 0).prod (Measure.pi fun i : Fin n ↦ μ i.succ) := by
       simpa only [MeasurableEquiv.piFinSuccAbove_apply, Fin.succAbove_zero,
@@ -273,9 +282,9 @@ theorem map_dirichletStickRatios_dirichletMeasure {n : ℕ} {a : Fin (n + 1) →
     (dirichletMeasure a).map dirichletStickRatios =
       Measure.pi fun i : Fin n ↦
         betaMeasure (a i.castSucc) (∑ j with i.castSucc < j, a j) := by
-  let μ (i : Fin n) := betaMeasure (a i.castSucc) (∑ j with i.castSucc < j, a j)
+  let μ := stickBreakingBetaMeasures a
   let _ (i : Fin n) : IsProbabilityMeasure (μ i) :=
-    isProbabilityMeasureBeta (ha _) (tail_shape_pos ha i)
+    isProbabilityMeasure_stickBreakingBetaMeasures ha i
   rw [← map_dirichletStickBreaking_pi_betaMeasure ha,
     Measure.map_map (measurable_dirichletStickRatios n) (measurable_dirichletStickBreaking n)]
   calc
@@ -321,9 +330,9 @@ theorem HasLaw.dirichletStickRatios {X : Ω → EuclideanSpace ℝ (Fin (n + 1))
 theorem HasLaw.iIndepFun_dirichletStickRatios {X : Ω → EuclideanSpace ℝ (Fin (n + 1))}
     (hX : HasLaw X (dirichletMeasure a) P) (ha : ∀ i, 0 < a i) :
     iIndepFun (fun i : Fin n ↦ fun ω ↦ TauCeti.Probability.dirichletStickRatios (X ω) i) P := by
-  let μ (i : Fin n) := betaMeasure (a i.castSucc) (∑ j with i.castSucc < j, a j)
+  let μ := stickBreakingBetaMeasures a
   let _ (i : Fin n) : IsProbabilityMeasure (μ i) :=
-    isProbabilityMeasureBeta (ha _) (Finset.sum_pos (fun j _ ↦ ha j) ⟨i.succ, by simp⟩)
+    isProbabilityMeasure_stickBreakingBetaMeasures ha i
   let _ := isProbabilityMeasure_dirichletMeasure ha
   let _ : IsProbabilityMeasure P := hX.isProbabilityMeasure
   have h := hX.dirichletStickRatios ha

@@ -93,17 +93,16 @@ theorem map_euclideanFiberSum_dirichletMeasure [DecidableEq κ] {f : ι → κ}
 /-- Reindexing a Dirichlet vector by an equivalence reindexes its concentration vector. -/
 theorem map_reindex_dirichletMeasure {e : ι ≃ κ} {a : ι → ℝ}
     (ha : ∀ i, 0 < a i) :
-    (dirichletMeasure a).map
-        (fun x ↦ (EuclideanSpace.equiv κ ℝ).symm (fun j ↦ x (e.symm j))) =
-      dirichletMeasure (fun j ↦ a (e.symm j)) := by
+    (dirichletMeasure a).map (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e) =
+      dirichletMeasure (a ∘ e.symm) := by
   classical
   have h := map_euclideanFiberSum_dirichletMeasure e.surjective ha
-  have hf : euclideanFiberSum e =
-      (fun x ↦ (EuclideanSpace.equiv κ ℝ).symm (fun j ↦ x (e.symm j))) := by
+  have hf : euclideanFiberSum e = LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e := by
     funext x
     ext j
-    simp [euclideanFiberSum_apply, ← e.eq_symm_apply, Finset.sum_filter]
-  simpa [hf, ← e.eq_symm_apply, Finset.sum_filter] using h
+    simp [euclideanFiberSum_apply, LinearIsometryEquiv.piLpCongrLeft_apply,
+      ← e.eq_symm_apply, Finset.sum_filter]
+  simpa [hf, ← e.eq_symm_apply, Finset.sum_filter, Function.comp_def] using h
 
 end Probability
 
