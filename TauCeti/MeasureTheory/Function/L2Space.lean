@@ -16,7 +16,9 @@ space is integrable. Mathlib states this for elements of `L²` (`MeasureTheory.L
 this file gives the form for functions satisfying `MemLp f 2 μ`, which is how second-moment
 hypotheses on random vectors are usually stated, together with the special case of a quadratic
 form `⟪B (f x), f x⟫` of a matrix `B` on a Euclidean-valued function.
-For counting measure, singleton-supported vectors separate L² functions.
+For counting measure, singleton-supported vectors separate L² functions. On a compact space with
+a finite measure, the L² pairing of an L² function with a continuous function is an integral
+(`MeasureTheory.L2.inner_toLp_continuousMap`), extending Mathlib's `ContinuousMap.inner_toLp`.
 
 For a complex inner product space `F` regarded as a real one (`InnerProductSpace.complexToReal`),
 the real inner product on `L²(α, F)` is the real part of the complex one
@@ -27,7 +29,7 @@ coordinate `i` (`MeasureTheory.L2.inner_evalCLM_compLpL`).
 
 public section
 
-open scoped InnerProductSpace
+open scoped ComplexConjugate InnerProductSpace
 
 namespace MeasureTheory
 
@@ -86,5 +88,15 @@ theorem L2.inner_evalCLM_compLpL {ι : Type*} [DecidableEq ι] {G : ι → Type*
     (lp.singleContinuousLinearMap 𝕜 G 2 i).coeFn_compLpL u] with x h₁ h₂
   rw [h₁, h₂, lp.singleContinuousLinearMap_apply, lp.inner_single_right]
   rfl
+
+/-- On a compact space with a finite measure, the L² inner product of an L² function `f` with a
+continuous function `g` is the integral of their pointwise inner product. -/
+theorem L2.inner_toLp_continuousMap [TopologicalSpace α] [BorelSpace α] [CompactSpace α]
+    [IsFiniteMeasure μ] (f : Lp 𝕜 2 μ) (g : C(α, 𝕜)) :
+    ⟪f, ContinuousMap.toLp 2 μ 𝕜 g⟫_𝕜 = ∫ x, g x * conj (f x) ∂μ := by
+  rw [L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [ContinuousMap.coeFn_toLp (p := 2) (𝕜 := 𝕜) μ g] with x hx
+  rw [hx, RCLike.inner_apply]
 
 end MeasureTheory

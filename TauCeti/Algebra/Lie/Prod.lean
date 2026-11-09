@@ -32,6 +32,8 @@ product.
 * `TauCeti.LieModuleHom.fst` and `TauCeti.LieModuleHom.snd`: the two projections.
 * `TauCeti.LieModuleHom.inl` and `TauCeti.LieModuleHom.inr`: the two inclusions.
 * `TauCeti.LieModuleHom.prod`: the pairing of two morphisms with the same domain.
+* `TauCeti.LieModuleHom.prodEquiv`: pairing is a linear equivalence onto the morphisms into the
+  product.
 * `LieSubmodule.prodFst` and `LieSubmodule.prodSnd`: the projections of a product Lie submodule.
   A nonzero coordinate guarantees surjectivity onto an irreducible factor.
 * `TauCeti.LieModuleEquiv.prodComm`: swapping the factors is an equivalence.
@@ -119,6 +121,36 @@ theorem snd_prod (f : P →ₗ⁅R,L⁆ M) (g : P →ₗ⁅R,L⁆ N) :
     (snd R L M N).comp (prod f g) = g := by
   ext p
   simp
+
+/-- A morphism into a product of Lie modules is the pairing of its two components. -/
+@[simp]
+theorem prod_fst_comp_snd_comp (f : P →ₗ⁅R,L⁆ M × N) :
+    prod ((fst R L M N).comp f) ((snd R L M N).comp f) = f :=
+  LieModuleHom.ext fun _ ↦ by simp
+
+variable [LieAlgebra R L] [LieModule R L M] [LieModule R L N]
+
+variable (R L M N P) in
+/-- **The universal property of the binary product of Lie modules**: pairing is a linear
+equivalence between pairs of morphisms `P → M`, `P → N` and morphisms `P → M × N`. Its inverse
+takes the two components. -/
+def prodEquiv : ((P →ₗ⁅R,L⁆ M) × (P →ₗ⁅R,L⁆ N)) ≃ₗ[R] (P →ₗ⁅R,L⁆ M × N) where
+  toFun g := prod g.1 g.2
+  map_add' _ _ := LieModuleHom.ext fun _ ↦ by simp
+  map_smul' _ _ := LieModuleHom.ext fun _ ↦ by simp
+  invFun f := ((fst R L M N).comp f, (snd R L M N).comp f)
+  left_inv g := by simp
+  right_inv f := prod_fst_comp_snd_comp f
+
+@[simp]
+theorem prodEquiv_apply (g : (P →ₗ⁅R,L⁆ M) × (P →ₗ⁅R,L⁆ N)) :
+    prodEquiv R L M N P g = prod g.1 g.2 :=
+  (rfl)
+
+@[simp]
+theorem prodEquiv_symm_apply (f : P →ₗ⁅R,L⁆ M × N) :
+    (prodEquiv R L M N P).symm f = ((fst R L M N).comp f, (snd R L M N).comp f) :=
+  (rfl)
 
 end LieModuleHom
 

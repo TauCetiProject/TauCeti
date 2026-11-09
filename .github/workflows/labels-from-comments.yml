@@ -1,0 +1,75 @@
+# Any contributor may add/remove an allowlisted label with a standalone LABEL/-LABEL line.
+# Only newly posted conversation comments count; editing/deleting a comment does not undo it.
+# The last matching line for each label wins. Labels and matching are case-sensitive.
+name: Labels from comments
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions: {}
+
+jobs:
+  label:
+    if: github.repository == 'TauCetiProject/TauCeti'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # No checkout: neither PR code nor comment text is ever executed.
+      - name: Read label commands
+        id: commands
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const allowed = new Set([
+              'dont-repair-in-queue',
+              'hold',
+              'keep',
+              'mathlib-overlap',
+              'documentation',
+              'enhancement',
+              'help wanted',
+            ]);
+            const commands = new Map();
+            for (const raw of context.payload.comment.body.split(/\r?\n/)) {
+              const line = raw.trim();
+              const remove = line.startsWith('-');
+              const label = remove ? line.slice(1) : line;
+              if (allowed.has(label)) commands.set(label, !remove);
+            }
+            core.setOutput('labels', JSON.stringify([...commands]));
+
+      # App-generated label events reach queue/status workflows and webhooks.
+      # GITHUB_TOKEN would suppress follow-up Actions runs; the org also disables its writes.
+      - name: Mint repository-scoped label token
+        if: steps.commands.outputs.labels != '[]'
+        id: token
+        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3.0.0
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: TauCetiProject
+          repositories: TauCeti
+          permission-issues: write
+
+      - name: Apply label commands
+        if: steps.commands.outputs.labels != '[]'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          LABEL_COMMANDS: ${{ steps.commands.outputs.labels }}
+        with:
+          github-token: ${{ steps.token.outputs.token }}
+          script: |
+            const { owner, repo, number: issue_number } = context.issue;
+            for (const [label, add] of JSON.parse(process.env.LABEL_COMMANDS)) {
+              if (add) {
+                await github.rest.issues.addLabels({ owner, repo, issue_number, labels: [label] });
+              } else {
+                try {
+                  await github.rest.issues.removeLabel({ owner, repo, issue_number, name: label });
+                } catch (error) {
+                  // Removing a label that is already absent is a successful no-op.
+                  if (error.status !== 404) throw error;
+                }
+              }
+            }
