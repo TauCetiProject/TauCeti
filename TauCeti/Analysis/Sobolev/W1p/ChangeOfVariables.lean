@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 public import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 
+import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
@@ -383,27 +384,38 @@ end ChangeOfVariables
 
 /-! ### The chain rule for weak derivatives under a `C¹` change of variables -/
 
-section AffineMap
-
-variable {𝕜 E' F' : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
-  [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
-
-/-- The affine map `x ↦ A x + b` has derivative `A` at every point. -/
-theorem _root_.ContinuousLinearEquiv.fderiv_add_const (A : E' ≃L[𝕜] F') (b : F') (x : E') :
-    fderiv 𝕜 (fun x => A x + b) x = (A : E' →L[𝕜] F') :=
-  (A.hasFDerivAt.add_const b).fderiv
-
-/-- The derivative of the affine map `x ↦ A x + b` has nonzero determinant at every point. -/
-theorem _root_.ContinuousLinearEquiv.det_fderiv_add_const_ne_zero (A : E' ≃L[𝕜] E') (b x : E') :
-    (fderiv 𝕜 (fun x => A x + b) x).det ≠ 0 := by
-  rw [A.fderiv_add_const]
-  exact A.toLinearEquiv.isUnit_det'.ne_zero
-
-end AffineMap
-
 section ChainRule
 
 variable [mu.IsAddHaarMeasure] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- A real-valued function with a weak derivative on `V` gives, on an open set `V'` with compact
+closure in `V`, an element of `W^{1,1}(V')` whose value is `u` and whose weak gradient represents
+`Du` almost everywhere. -/
+private theorem exists_w1p_one_ae_eq {u : E → ℝ} {Du : E → E →L[ℝ] ℝ}
+    (hu : HasWeakFDerivOn mu V u Du) {V' : Opens E} (hV'V : closure (V' : Set E) ⊆ V)
+    (hV'c : IsCompact (closure (V' : Set E))) :
+    ∃ w : W1p mu V' 1, W1p.value w =ᵐ[mu.restrict V'] u ∧
+      ∀ᵐ y ∂mu.restrict V', innerSL ℝ (W1p.gradient w y) = Du y := by
+  set g : E → E := fun y => (InnerProductSpace.toDual ℝ E).symm (Du y)
+  have hg : ∀ y, innerSL ℝ (g y) = Du y := fun y => by
+    ext v
+    simp [g, InnerProductSpace.toDual_symm_apply]
+  have hu1 : MemLp u 1 (mu.restrict V') := memLp_one_iff_integrable.2
+    ((hu.locallyIntegrableOn.integrableOn_compact_subset hV'V hV'c).mono_set subset_closure)
+  have hDu1 : MemLp Du 1 (mu.restrict V') := memLp_one_iff_integrable.2
+    ((hu.locallyIntegrableOn_deriv.integrableOn_compact_subset hV'V hV'c).mono_set subset_closure)
+  have hg1 : MemLp g 1 (mu.restrict V') :=
+    (InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv.toContinuousLinearMap.comp_memLp'
+      hDu1
+  have hw : HasWeakFDerivOn mu V' (hu1.toLp u) (fun y => innerSL ℝ (hg1.toLp g y)) := by
+    refine ((hu.mono (subset_closure.trans hV'V)).congr_ae hu1.coeFn_toLp.symm).congr_ae_deriv ?_
+    filter_upwards [hg1.coeFn_toLp] with y hy
+    rw [hy, hg]
+  refine ⟨W1p.mk (hu1.toLp u) (hg1.toLp g) hw, ?_, ?_⟩
+  · rw [W1p.value_mk]
+    exact hu1.coeFn_toLp
+  · filter_upwards [hg1.coeFn_toLp] with y hy
+    rw [W1p.gradient_mk, hy, hg]
 
 /-- The scalar chain rule on a ball whose closure lies in `U`, from the first-order change of
 variables `TauCeti.W1p.compL` at exponent one. -/
@@ -424,30 +436,13 @@ private theorem hasWeakFDerivOn_comp_ball {u : E → ℝ} {Du : E → E →L[ℝ
   obtain ⟨W, hWo, hKW, hWV, hWc⟩ := exists_open_between_and_isCompact_closure hΦK V.isOpen
     ((image_mono hr).trans hmaps.image_subset)
   set V' : Opens E := ⟨W, hWo⟩
-  have hV'V : V' ≤ V := subset_closure.trans hWV
   have hmaps' : MapsTo Φ B V' := fun y hy => hKW ⟨y, Metric.ball_subset_closedBall hy, rfl⟩
   have hΦB : DifferentiableOn ℝ Φ B := (hΦ.differentiableOn one_ne_zero).mono hBU
   have hcB : ∀ y ∈ (B : Set E), c ≤ |(fderiv ℝ Φ y).det| := fun y hy =>
     hcK y (Metric.ball_subset_closedBall hy)
   have hLB : ∀ y ∈ (B : Set E), ‖fderiv ℝ Φ y‖ ≤ L := fun y hy =>
     hLK y (Metric.ball_subset_closedBall hy)
-  -- The value and the gradient of `u` are integrable on `V'`.
-  set g : E → E := fun y => (InnerProductSpace.toDual ℝ E).symm (Du y)
-  have hg : ∀ y, innerSL ℝ (g y) = Du y := fun y => by
-    ext v
-    simp [g, InnerProductSpace.toDual_symm_apply]
-  have hu1 : MemLp u 1 (mu.restrict V') := memLp_one_iff_integrable.2
-    ((hu.locallyIntegrableOn.integrableOn_compact_subset hWV hWc).mono_set subset_closure)
-  have hDu1 : MemLp Du 1 (mu.restrict V') := memLp_one_iff_integrable.2
-    ((hu.locallyIntegrableOn_deriv.integrableOn_compact_subset hWV hWc).mono_set subset_closure)
-  have hg1 : MemLp g 1 (mu.restrict V') :=
-    (InnerProductSpace.toDual ℝ E).symm.toContinuousLinearEquiv.toContinuousLinearMap.comp_memLp'
-      hDu1
-  have hw : HasWeakFDerivOn mu V' (hu1.toLp u) (fun y => innerSL ℝ (hg1.toLp g y)) := by
-    refine ((hu.mono hV'V).congr_ae hu1.coeFn_toLp.symm).congr_ae_deriv ?_
-    filter_upwards [hg1.coeFn_toLp] with y hy
-    rw [hy, hg]
-  set w : W1p mu V' 1 := W1p.mk (hu1.toLp u) (hg1.toLp g) hw
+  obtain ⟨w, hwu, hwg⟩ := exists_w1p_one_ae_eq (V' := V') hu hWV hWc
   have hcomp := W1p.hasWeakFDerivOn
     (W1p.compL Φ ENNReal.one_ne_top hΦB (hinj.mono hBU) hmaps' hLB hc hcB w)
   -- Almost-everywhere statements on `V'` pull back to `B` along `Φ`.
@@ -459,11 +454,11 @@ private theorem hasWeakFDerivOn_comp_ball {u : E → ℝ} {Du : E → E →L[ℝ
           hmaps' hc hcB)) h
   refine (hcomp.congr_ae ?_).congr_ae_deriv ?_
   · filter_upwards [W1p.value_compL_ae Φ ENNReal.one_ne_top hΦB (hinj.mono hBU) hmaps' hLB hc
-      hcB w, hpull hu1.coeFn_toLp] with y h1 h2
-    rw [h1, W1p.value_mk, h2]
+      hcB w, hpull hwu] with y h1 h2
+    rw [h1, h2]
   · filter_upwards [W1p.gradient_compL_ae Φ ENNReal.one_ne_top hΦB (hinj.mono hBU) hmaps' hLB hc
-      hcB w, hpull hg1.coeFn_toLp] with y h1 h2
-    rw [h1, W1p.gradient_mk, h2, ← hg (Φ y)]
+      hcB w, hpull hwg] with y h1 h2
+    rw [h1, ← h2]
     ext v
     simp [ContinuousLinearMap.adjoint_inner_left]
 
@@ -482,11 +477,14 @@ theorem HasWeakFDerivOn.comp_contDiffOn_diffeo {u : E → F} {Du : E → E →L[
     hmaps
   refine hasWeakFDerivOn_of_forall_strongDual
     (hu.locallyIntegrableOn.comp_contDiffOn_diffeo U.isOpen hΦ hinj hdet hmaps)
-    (fun v => (ContinuousLinearMap.apply ℝ F v).locallyIntegrableOn_comp hDloc) fun ℓ => ?_
+    (fun v => by
+      simpa only [Function.comp_def, ContinuousLinearMap.apply_apply] using
+        (ContinuousLinearMap.apply ℝ F v).locallyIntegrableOn_comp hDloc) fun ℓ => ?_
   refine hasWeakFDerivOn_iff_locally.2 fun x hx => ?_
   obtain ⟨r, hr, hrU⟩ := Metric.nhds_basis_closedBall.mem_iff.1 (U.isOpen.mem_nhds hx)
-  exact ⟨_, Metric.mem_ball_self hr,
-    hasWeakFDerivOn_comp_ball (hu.clm_comp ℓ) hΦ hinj hdet hmaps hrU⟩
+  refine ⟨⟨Metric.ball x r, Metric.isOpen_ball⟩, Metric.mem_ball_self hr, ?_⟩
+  simpa only [ContinuousLinearMap.comp_assoc] using
+    hasWeakFDerivOn_comp_ball (hu.clm_comp ℓ) hΦ hinj hdet hmaps hrU
 
 /-- **Affine changes of variables.** For `A : E ≃L[ℝ] E` and `b : E` with `x ↦ A x + b` mapping `U`
 into `V`, a weak derivative `Du` of `u` on `V` gives the weak derivative `x ↦ Du (A x + b) ∘ A` of
