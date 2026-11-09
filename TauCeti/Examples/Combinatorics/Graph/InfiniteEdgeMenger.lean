@@ -67,14 +67,10 @@ private theorem vertexSet_graphOfEnds {β : Type*} (ends : β → Sym2 (Fin 3)) 
     V(graphOfEnds ends) = Set.univ :=
   rfl
 
-private def edgeWalk {β : Type*} (G : Graph (Fin 3) β) (e : β) (x y : Fin 3)
-    (h : G.IsLink e x y) : G.Walk x y :=
-  .cons e h .nil
-
 private def pathWalk {β : Type*} (G : Graph (Fin 3) β) (e₀₁ e₁₂ : β)
     (h₀₁ : G.IsLink e₀₁ 0 1) (h₁₂ : G.IsLink e₁₂ 1 2) :
     G.Walk (0 : Fin 3) 2 :=
-  (edgeWalk G e₀₁ 0 1 h₀₁).append (edgeWalk G e₁₂ 1 2 h₁₂)
+  h₀₁.toWalk.append h₁₂.toWalk
 
 private abbrev infiniteParallelPathEnds (e : Bool × ℕ) : Sym2 (Fin 3) :=
   if e.1 then s(1, 2) else s(0, 1)
@@ -98,11 +94,11 @@ private theorem vertexSet_infiniteParallelPath : V(infiniteParallelPath) = Set.u
 
 private def infiniteParallelPathWalkZeroOne :
     infiniteParallelPath.Walk (0 : Fin 3) 1 :=
-  edgeWalk infiniteParallelPath (false, 0) 0 1 (by simp)
+  (show infiniteParallelPath.IsLink (false, 0) 0 1 by simp).toWalk
 
 private def infiniteParallelPathWalkOneTwo :
     infiniteParallelPath.Walk (1 : Fin 3) 2 :=
-  edgeWalk infiniteParallelPath (true, 0) 1 2 (by simp)
+  (show infiniteParallelPath.IsLink (true, 0) 1 2 by simp).toWalk
 
 private def infiniteParallelPathWalk :
     infiniteParallelPath.Walk (0 : Fin 3) 2 :=
@@ -304,8 +300,7 @@ example :
       ⟨by simp, infiniteParallelPathWithDirectWalk, ?_⟩
     intro e he hdirect
     rcases e with _ | ⟨b, n⟩
-    · unfold infiniteParallelPathWithDirectWalk pathWalk edgeWalk at he
-      rw [Walk.edges_append, Walk.edges_cons, Walk.edges_nil] at he
+    · unfold infiniteParallelPathWithDirectWalk pathWalk at he
       simp at he
     · cases b <;> simp [infiniteParallelPathWithDirectEnds,
         infiniteParallelPathEnds] at hdirect
