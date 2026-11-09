@@ -120,6 +120,7 @@ theorem IsTransient.meanReturnTime_eq_top (hx : κ.IsTransient x) : κ.meanRetur
 
 variable [MeasurableSingletonClass S]
 
+omit [MeasurableSingletonClass S] in
 /-- Finite extended mean return time implies almost-sure return. -/
 theorem isRecurrent_of_meanReturnTime_ne_top (h : κ.meanReturnTime x ≠ ∞) :
     κ.IsRecurrent x := by
