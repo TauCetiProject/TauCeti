@@ -41,6 +41,17 @@ theorem _root_.IsCompact.inter_of_forall_exists {U S : Set X} (hU : IsCompact U)
   rw [heq]
   exact htf.isCompact_biUnion fun x hx ↦ hWc x (htU hx)
 
+/-- **Connected components of a compact set are compact.** The connected component of a compact
+set `K` at a point is closed in `K`, hence compact; it is empty at a point outside `K`. -/
+theorem _root_.IsCompact.isCompact_connectedComponentIn {K : Set X} (hK : IsCompact K)
+    (x : X) : IsCompact (connectedComponentIn K x) := by
+  by_cases hx : x ∈ K
+  · have : CompactSpace K := isCompact_iff_compactSpace.1 hK
+    rw [connectedComponentIn_eq_image hx]
+    exact isClosed_connectedComponent.isCompact.image continuous_subtype_val
+  · rw [connectedComponentIn_eq_empty hx]
+    exact isCompact_empty
+
 /-- **A continuous injection on a compact set maps components onto components.** If `f` is
 continuous and injective on a compact set `K` with values in a Hausdorff space, and `A ⊆ K`, then
 `f` maps the connected component of `A` at a point `x ∈ K` onto the connected component of

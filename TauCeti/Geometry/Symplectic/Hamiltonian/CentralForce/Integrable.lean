@@ -47,6 +47,8 @@ completely integrable system there (`TauCeti.isIntegrableSystem_centralForceEner
   orbits `X_H = (L / (m ‖q‖²)) X_L`.
 * `TauCeti.image_centralForceEnergyMomentum_setOf_not_isRegularPoint`: the critical values.
 * `TauCeti.puncturedPhaseSpace`: the open set `{(q, p) | q ≠ 0}`.
+* `TauCeti.poissonBracket_centralForceEnergyMomentum_comp_subtypeVal`: `H` and `L` Poisson-commute
+  on every open set avoiding the collision set.
 * `TauCeti.isIntegrableSystem_centralForceEnergyMomentum`: `(H, L)` is a completely integrable
   system on the punctured phase space.
 
@@ -342,6 +344,44 @@ theorem dense_setOf_inner_ne_zero :
   filter_upwards [self_mem_nhdsWithin] with ε hε
   simpa [g, inner_add_right, inner_smul_right, h, hq'] using hε
 
+/-- **The energy and the angular momentum Poisson-commute off the collision set.** On every open
+set of `V × V` avoiding the collision set `q = 0`, with the restriction of the standard symplectic
+form, the components of the energy–momentum map of a potential differentiable on `(0, ∞)`
+Poisson-commute. -/
+theorem poissonBracket_centralForceEnergyMomentum_comp_subtypeVal [FiniteDimensional ℝ V]
+    {m : ℝ} {U : ℝ → ℝ} (hU : DifferentiableOn ℝ U (Ioi 0)) {W : TopologicalSpace.Opens (V × V)}
+    (hW : ∀ x ∈ W, x.1 ≠ 0) (i j : Fin 2) (x : W) :
+    SmoothTwoForm.poissonBracket
+      (SmoothForm.mpullback (Subtype.val : W → V × V) contMDiff_subtype_val
+        (stdSymplecticForm (V := V)).constSmooth)
+      (fun y ↦ (centralForceEnergyMomentum b m U ∘ Subtype.val) y i)
+      (fun y ↦ (centralForceEnergyMomentum b m U ∘ Subtype.val) y j) x = 0 := by
+  have hq : (x : V × V).1 ≠ 0 := hW x x.2
+  have hU' : HasDerivAt U (deriv U ‖(x : V × V).1‖) ‖(x : V × V).1‖ :=
+    (hU.differentiableAt (Ioi_mem_nhds (norm_pos_iff.2 hq))).hasDerivAt
+  have hdiff (k : Fin 2) :
+      MDifferentiableAt 𝓘(ℝ, V × V) 𝓘(ℝ) (fun y ↦ centralForceEnergyMomentum b m U y k) x :=
+    (differentiableAt_pi.1
+      (hasFDerivAt_centralForceEnergyMomentum b hU' hq).differentiableAt k).mdifferentiableAt
+  -- Each component of `F ∘ Subtype.val` is the corresponding component of `F` composed with
+  -- `Subtype.val`, by definition of composition.
+  have hcomp (k : Fin 2) : (fun y : W ↦ (centralForceEnergyMomentum b m U ∘ Subtype.val) y k) =
+      (fun y ↦ centralForceEnergyMomentum b m U y k) ∘ Subtype.val := rfl
+  -- The bracket is computed on `V × V`, where `{H, L} = 0`.
+  rw [hcomp, hcomp,
+    ((SymplecticForm.isNondegenerate_constSmooth _).mpullback_subtype_val _).poissonBracket_comp
+      (SymplecticForm.isNondegenerate_constSmooth _) contMDiff_subtype_val rfl
+      (by rw [Manifold.mfderiv_subtype_val]; exact (Manifold.tangentSpaceOpenEquiv x).surjective)
+      (hdiff i) (hdiff j),
+    SymplecticForm.poissonBracket_constSmooth]
+  have h := stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum (m := m)
+    hU' hq (b 0) (b 1)
+  fin_cases i <;> fin_cases j
+  · exact SymplecticForm.poissonBracket_self _ _ _
+  · exact h
+  · simpa [← SymplecticForm.neg_poissonBracket _ (centralForceHamiltonian m U)] using h
+  · exact SymplecticForm.poissonBracket_self _ _ _
+
 /-- **Planar central forces are completely integrable.** On the punctured phase space
 `{(q, p) | q ≠ 0}` of the plane, with the restriction of the standard symplectic form, the energy
 `H = ‖p‖² / (2m) + U(‖q‖)` of a potential `U` smooth on `(0, ∞)` and the angular momentum
@@ -362,31 +402,9 @@ theorem isIntegrableSystem_centralForceEnergyMomentum [FiniteDimensional ℝ V] 
   have hFd (x : puncturedPhaseSpace V) :
       MDifferentiableAt 𝓘(ℝ, V × V) 𝓘(ℝ, Fin 2 → ℝ) (centralForceEnergyMomentum b m U) x :=
     ((hF x).differentiableAt (by simp)).mdifferentiableAt
-  have hdiff (x : puncturedPhaseSpace V) (i : Fin 2) :
-      MDifferentiableAt 𝓘(ℝ, V × V) 𝓘(ℝ) (fun y ↦ centralForceEnergyMomentum b m U y i) x :=
-    ((contDiffAt_pi.1 (hF x) i).differentiableAt (by simp)).mdifferentiableAt
-  refine ⟨fun x ↦ (hF x).contMDiffAt.comp x (contMDiff_subtype_val x), fun i j x ↦ ?_, ?_, ?_⟩
-  · -- The bracket is computed on `V × V`, where `{H, L} = 0`.
-    have hr : 0 < ‖(x : V × V).1‖ := norm_pos_iff.2 x.2
-    have hU' : HasDerivAt U (deriv U ‖(x : V × V).1‖) ‖(x : V × V).1‖ :=
-      ((hU.differentiableOn (by simp)).differentiableAt (Ioi_mem_nhds hr)).hasDerivAt
-    -- Each component of `F ∘ Subtype.val` is the corresponding component of `F` composed with
-    -- `Subtype.val`, by definition of composition.
-    have hcomp (k : Fin 2) : (fun y : puncturedPhaseSpace V ↦
-        (centralForceEnergyMomentum b m U ∘ Subtype.val) y k) =
-          (fun y ↦ centralForceEnergyMomentum b m U y k) ∘ Subtype.val := rfl
-    rw [hcomp, hcomp,
-      ((SymplecticForm.isNondegenerate_constSmooth _).mpullback_subtype_val _).poissonBracket_comp
-        (SymplecticForm.isNondegenerate_constSmooth _) contMDiff_subtype_val rfl
-        (isRegularPoint_iff.1 (hval x)) (hdiff x i) (hdiff x j),
-      SymplecticForm.poissonBracket_constSmooth]
-    have h := stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum (m := m)
-      hU' x.2 (b 0) (b 1)
-    fin_cases i <;> fin_cases j
-    · exact SymplecticForm.poissonBracket_self _ _ _
-    · exact h
-    · simpa [← SymplecticForm.neg_poissonBracket _ (centralForceHamiltonian m U)] using h
-    · exact SymplecticForm.poissonBracket_self _ _ _
+  refine ⟨fun x ↦ (hF x).contMDiffAt.comp x (contMDiff_subtype_val x),
+    poissonBracket_centralForceEnergyMomentum_comp_subtypeVal b (hU.differentiableOn (by simp))
+      (fun _ hx ↦ hx), ?_, ?_⟩
   · -- Points with nonzero radial momentum are regular, and they are dense.
     refine Dense.mono (s₁ := {x : puncturedPhaseSpace V | ⟪(x : V × V).1, (x : V × V).2⟫_ℝ ≠ 0})
       (fun x hx ↦ ?_) ?_
