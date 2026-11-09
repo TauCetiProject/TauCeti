@@ -375,9 +375,18 @@ let `U ⊆ Ω` be open and convex. The Monge–Ampère measure of `u` restricted
 off `U`) is the restriction to `U` of the Monge–Ampère measure of `u` on `Ω`: a subgradient of `u`
 relative to the neighbourhood `U` of a point is a subgradient relative to `Ω`. -/
 theorem mongeAmpereMeasure_ite_eq_restrict {U : Set E} [DecidablePred (· ∈ U)] (hΩ : IsOpen Ω)
-    (hU : IsOpen U) (hUc : Convex ℝ U) (hUΩ : U ⊆ Ω) (hu : ConvexOn ℝ Ω u) (hμ : μ ≪ ν) :
+    (hU : IsOpen U) (hUc : Convex ℝ U) (hUΩ : U ⊆ Ω) (hu : ConvexOn ℝ Ω u) :
     mongeAmpereMeasure μ (fun x => if x ∈ U then (u x : EReal) else ⊤) =
       (mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤)).restrict U := by
+  by_cases h : ∃ ν : Measure E, ν.IsAddHaarMeasure ∧ μ ≪ ν
+  swap
+  · -- without an additive Haar measure dominating `μ` both sides are `0`
+    have h0 (g : E → EReal) : mongeAmpereMeasure μ g = 0 := by
+      rw [mongeAmpereMeasure, dite_eq_right]
+      rintro ⟨-, -, h'⟩
+      exact h h'
+    rw [h0, h0, Measure.restrict_zero]
+  obtain ⟨ν, _, hμ⟩ := h
   ext s hs
   rw [Measure.restrict_apply hs, mongeAmpereMeasure_ite_apply μ hU (hu.subset hUΩ hUc) hμ hs,
     mongeAmpereMeasure_ite_apply μ hΩ hu hμ (hs.inter hU.measurableSet),
@@ -397,12 +406,12 @@ Monge–Ampère measure of `u` extended by `⊤` off `Ω`, then every density `g
 `U`. -/
 theorem withDensity_restrict_le_mongeAmpereMeasure {U : Set E} [DecidablePred (· ∈ U)]
     {f g : E → ℝ} (hΩ : IsOpen Ω) (hU : IsOpen U) (hUc : Convex ℝ U) (hUΩ : U ⊆ Ω)
-    (hu : ConvexOn ℝ Ω u) (hμ : μ ≪ ν) (hg : ∀ x ∈ U, g x ≤ f x)
+    (hu : ConvexOn ℝ Ω u) (hg : ∀ x ∈ U, g x ≤ f x)
     (hMA : (μ.restrict Ω).withDensity (fun x => ENNReal.ofReal (f x)) ≤
       mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤)) :
     (μ.restrict U).withDensity (fun x => ENNReal.ofReal (g x)) ≤
       mongeAmpereMeasure μ (fun x => if x ∈ U then (u x : EReal) else ⊤) := by
-  rw [mongeAmpereMeasure_ite_eq_restrict μ hΩ hU hUc hUΩ hu hμ]
+  rw [mongeAmpereMeasure_ite_eq_restrict μ hΩ hU hUc hUΩ hu]
   calc (μ.restrict U).withDensity (fun x => ENNReal.ofReal (g x))
       ≤ (μ.restrict U).withDensity fun x => ENNReal.ofReal (f x) :=
         withDensity_mono (ae_restrict_of_forall_mem hU.measurableSet fun x hx =>
@@ -418,12 +427,12 @@ Monge–Ampère measure of `u` extended by `⊤` off `Ω`, then every density `g
 `U`. -/
 theorem mongeAmpereMeasure_le_withDensity_restrict {U : Set E} [DecidablePred (· ∈ U)]
     {f g : E → ℝ} (hΩ : IsOpen Ω) (hU : IsOpen U) (hUc : Convex ℝ U) (hUΩ : U ⊆ Ω)
-    (hu : ConvexOn ℝ Ω u) (hμ : μ ≪ ν) (hg : ∀ x ∈ U, f x ≤ g x)
+    (hu : ConvexOn ℝ Ω u) (hg : ∀ x ∈ U, f x ≤ g x)
     (hMA : mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) ≤
       (μ.restrict Ω).withDensity (fun x => ENNReal.ofReal (f x))) :
     mongeAmpereMeasure μ (fun x => if x ∈ U then (u x : EReal) else ⊤) ≤
       (μ.restrict U).withDensity (fun x => ENNReal.ofReal (g x)) := by
-  rw [mongeAmpereMeasure_ite_eq_restrict μ hΩ hU hUc hUΩ hu hμ]
+  rw [mongeAmpereMeasure_ite_eq_restrict μ hΩ hU hUc hUΩ hu]
   calc (mongeAmpereMeasure μ fun x => if x ∈ Ω then (u x : EReal) else ⊤).restrict U
       ≤ ((μ.restrict Ω).withDensity fun x => ENNReal.ofReal (f x)).restrict U :=
         Measure.restrict_mono subset_rfl hMA

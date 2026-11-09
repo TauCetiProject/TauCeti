@@ -131,7 +131,7 @@ theorem mongeAmpereMeasure_ite_convexSection_add_linearMap {Ω : Set E} [Decidab
   rw [mongeAmpereMeasure_ite_add_linearMap μ u L c,
     mongeAmpereMeasure_ite_eq_restrict μ hΩ
       (isOpen_convexSection hΩ (hu.continuousOn hΩ) ℓ.continuous_of_finiteDimensional)
-      (convex_convexSection hu) convexSection_subset hu AbsolutelyContinuous.rfl]
+      (convex_convexSection hu) convexSection_subset hu]
 
 /-- A lower bound `a μ ≤ MA_u` on `Ω` gives the lower bound `a μ ≤ MA_{u + L + c}` on a section
 `S` of `u`, for the Monge–Ampère measures of `u` extended by `⊤` off `Ω` and of `u + L + c`
