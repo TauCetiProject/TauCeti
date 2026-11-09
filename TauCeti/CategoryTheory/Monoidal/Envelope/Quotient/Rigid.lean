@@ -170,7 +170,8 @@ theorem leftAdjointMate_map {X Y : C} [HasLeftDual X] [HasLeftDual Y] (f : X ⟶
     (ᘁ((toMonoidalQuotient I).map f)) = (toMonoidalQuotient I).map (ᘁf) := by
   apply ExactPairing.leftDualHom_ext (Y := (toMonoidalQuotient I).obj X)
   rw [leftAdjointMate_comp_evaluation]
-  simp only [evaluation_leftDual_obj, whiskerLeft_map, ← Functor.map_comp]
+  simp only [evaluation_leftDual_obj, CategoryTheory.Quotient.whiskerLeft_map,
+    ← Functor.map_comp]
   -- Rewriting `leftDual_obj` here gives an ill-typed motive: the following mapped evaluation
   -- has fixed source the image of `Y ⊗ ᘁY`, while rewriting abstracts its dual object alone.
   -- The chosen dual and quotient whiskering are definitionally the source images, so applying
@@ -183,7 +184,8 @@ theorem rightAdjointMate_map {X Y : C} [HasRightDual X] [HasRightDual Y] (f : X 
     ((toMonoidalQuotient I).map f)ᘁ = (toMonoidalQuotient I).map (fᘁ) := by
   apply ExactPairing.rightHom_ext (X := (toMonoidalQuotient I).obj X)
   rw [rightAdjointMate_comp_evaluation]
-  simp only [evaluation_rightDual_obj, map_whiskerRight, ← Functor.map_comp]
+  simp only [evaluation_rightDual_obj, CategoryTheory.Quotient.map_whiskerRight,
+    ← Functor.map_comp]
   -- As above, rewriting `rightDual_obj` abstracts the whiskering object but leaves the mapped
   -- evaluation's fixed source, the image of `Yᘁ ⊗ Y`; the resulting motive is ill-typed.
   -- The descended dual and whiskering are definitionally the source images, allowing `map`
