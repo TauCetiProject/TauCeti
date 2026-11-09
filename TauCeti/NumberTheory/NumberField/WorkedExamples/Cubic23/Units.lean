@@ -360,11 +360,11 @@ theorem discr_X_pow_three_add_two_mul_X_sq_sub_three_mul_X_sub_one :
   norm_num [coeff_add, coeff_sub, coeff_X_pow, coeff_one, coeff_X, coeff_C_mul]
 
 /-- A polynomial of positive discriminant is excluded by the index--discriminant formula in a
-field of discriminant `-23`: its discriminant is never a positive square times `-23`. -/
+field of discriminant `-23`: its discriminant is never a square times `-23`. -/
 private theorem discr_ne_sq_mul_of_pos {g : ℤ[X]} (hK : NumberField.discr K = -23)
     (hg : 0 < g.discr) :
-    ∀ n : ℕ, 0 < n → g.discr ≠ (n : ℤ) ^ 2 * NumberField.discr K := by
-  intro n _ heq
+    ∀ n : ℕ, g.discr ≠ (n : ℤ) ^ 2 * NumberField.discr K := by
+  intro n heq
   rw [hK] at heq
   nlinarith [sq_nonneg (n : ℤ)]
 
@@ -416,14 +416,14 @@ theorem cubicUnitEliminationCertificate (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 +
         rw [hpoly, hc.1, hc.2.1, hc.2.2]
         norm_num
         ring
-      exact discr_ne_sq_mul_of_pos (discr_eq_neg_twenty_three hmin hgen)
-        (by rw [hg, discr_X_pow_three_add_X_sq_sub_two_mul_X_sub_one]; norm_num)
+      exact fun n _ ↦ discr_ne_sq_mul_of_pos (discr_eq_neg_twenty_three hmin hgen)
+        (by rw [hg, discr_X_pow_three_add_X_sq_sub_two_mul_X_sub_one]; norm_num) n
     · have hg : g = X ^ 3 + 2 * X ^ 2 - 3 * X - 1 := by
         rw [hpoly, hc.1, hc.2.1, hc.2.2]
         norm_num
         ring
-      exact discr_ne_sq_mul_of_pos (discr_eq_neg_twenty_three hmin hgen)
-        (by rw [hg, discr_X_pow_three_add_two_mul_X_sq_sub_three_mul_X_sub_one]; norm_num)
+      exact fun n _ ↦ discr_ne_sq_mul_of_pos (discr_eq_neg_twenty_three hmin hgen)
+        (by rw [hg, discr_X_pow_three_add_two_mul_X_sq_sub_three_mul_X_sub_one]; norm_num) n
   · left
     simpa only [not_exists, not_and] using hroot
 
