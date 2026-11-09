@@ -17,7 +17,7 @@ covered by finitely many such balls centred at points of `A`, all lying in the t
 pulling back into a given neighbourhood of `A`
 (`OpenPartialHomeomorph.exists_finset_closedBall_cover`). It also identifies the fibre of a map `f`
 over `f x`, inside a chart ball about `x` on which `x` is the only point over `f x`, with `{x}`
-(`OpenPartialHomeomorph.preimage_singleton_inter_symm_image_ball`).
+(`OpenPartialHomeomorph.preimage_singleton_inter_symm_image_ball_eq_singleton`).
 -/
 
 public section
@@ -55,7 +55,7 @@ theorem exists_finset_closedBall_cover (φ : OpenPartialHomeomorph M E) {A U : S
 
 /-- The fibre of `f` over `f x` inside a chart ball about `x` on which `x` is the only point over
 `f x` is `{x}`. -/
-theorem preimage_singleton_inter_symm_image_ball {N : Type*} {f : M → N} {x : M}
+theorem preimage_singleton_inter_symm_image_ball_eq_singleton {N : Type*} {f : M → N} {x : M}
     (e : OpenPartialHomeomorph M E) (hx : x ∈ e.source) {r : ℝ} (hr : 0 < r)
     (hisol : ∀ z ∈ ball (e x) r, z ≠ e x → f (e.symm z) ≠ f x) :
     f ⁻¹' {f x} ∩ e.symm '' ball (e x) r = {x} := by

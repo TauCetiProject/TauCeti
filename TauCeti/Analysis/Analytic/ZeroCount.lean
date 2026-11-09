@@ -39,7 +39,7 @@ order there to every point.
   the open disc is at most the total count.
 * `TauCeti.finsum_mem_analyticOrderNatAt_eq_zero_of_forall_ne_zero` — a function without zeros on
   a set has count `0` there.
-* `AnalyticOnNhd.exists_finset_finsum_ball_analyticOrderNatAt_eq_sum` — a function analytic on a
+* `AnalyticOnNhd.exists_finset_finsum_analyticOrderNatAt_ball_eq_sum` — a function analytic on a
   closed disc and nonzero somewhere on it has finitely many zeros in the open disc, which carry
   the whole count.
 * `AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_zero_iff` — conversely, given a point of the
@@ -116,7 +116,7 @@ theorem AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_zero_iff
 /-- If `g` is analytic on a closed disc and does not vanish at some point of it, then it has
 finitely many zeros in the open disc, and the sum over the open disc of the orders of vanishing of
 `g` is the sum of those orders over the finite set `S` of zeros. -/
-theorem AnalyticOnNhd.exists_finset_finsum_ball_analyticOrderNatAt_eq_sum {g : 𝕜 → E}
+theorem AnalyticOnNhd.exists_finset_finsum_analyticOrderNatAt_ball_eq_sum {g : 𝕜 → E}
     {c a : 𝕜} {r : ℝ}
     (hg : AnalyticOnNhd 𝕜 g (closedBall c r)) (ha : a ∈ closedBall c r) (hga : g a ≠ 0) :
     ∃ S : Finset 𝕜, (∀ z, z ∈ S ↔ z ∈ ball c r ∧ g z = 0) ∧
