@@ -14,6 +14,7 @@ import Mathlib.Analysis.Complex.Liouville
 import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 import Mathlib.NumberTheory.ModularForms.LevelOne.GradedRing
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 
 /-!
 # The Weierstrass curve of a period lattice
@@ -235,23 +236,14 @@ lemma weierstrassCurve_j :
 variable {L} in
 /-- The `j`-invariant of `E_Λ` is `1728` exactly when `g₃(Λ) = 0`. -/
 lemma weierstrassCurve_j_eq_1728_iff : L.weierstrassCurve.j = 1728 ↔ L.g₃ = 0 := by
-  have hΔ := L.weierstrassCurve_Δ_ne_zero
-  rw [weierstrassCurve_Δ] at hΔ
-  rw [weierstrassCurve_j, div_eq_iff hΔ]
-  constructor
-  · intro h
-    exact pow_eq_zero_iff two_ne_zero |>.mp (by linear_combination h / 46656)
-  · intro h
-    rw [h]
-    ring
+  rw [WeierstrassCurve.j_eq_1728_iff]
+  norm_num [c₆, b₂, b₄, b₆]
 
 variable {L} in
 /-- The `j`-invariant of `E_Λ` is `0` exactly when `g₂(Λ) = 0`. -/
 lemma weierstrassCurve_j_eq_zero_iff : L.weierstrassCurve.j = 0 ↔ L.g₂ = 0 := by
-  have hΔ := L.weierstrassCurve_Δ_ne_zero
-  rw [weierstrassCurve_Δ] at hΔ
-  rw [weierstrassCurve_j, div_eq_zero_iff, or_iff_left hΔ, mul_eq_zero, or_iff_right (by norm_num),
-    pow_eq_zero_iff three_ne_zero]
+  rw [WeierstrassCurve.j_eq_zero_iff]
+  norm_num [c₄, b₂, b₄]
 
 end PeriodPair
 

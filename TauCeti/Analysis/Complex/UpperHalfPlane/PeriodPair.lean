@@ -659,6 +659,19 @@ lemma lattice_smul_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.latt
     (c • L).lattice = (c • L').lattice := by
   rw [lattice_smul, lattice_smul, h]
 
+/-- The invariants `g₂` and `g₃` depend only on the lattice. -/
+lemma g₂_eq_and_g₃_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice) :
+    L.g₂ = L'.g₂ ∧ L.g₃ = L'.g₃ := by
+  simp [g₂, g₃, G_eq_of_lattice_eq h]
+
+/-- If `Λ` is homothetic to a lattice preserved by multiplication by `c`, then `Λ` is preserved by
+multiplication by `c`. -/
+lemma lattice_smul_eq_self_of_lattice_eq_smul {L L₀ : PeriodPair} {c d : ℂˣ}
+    (hd : L.lattice = (d • L₀).lattice) (hc : (c • L₀).lattice = L₀.lattice) :
+    (c • L).lattice = L.lattice := by
+  rw [lattice_smul_eq_of_lattice_eq c hd, ← mul_smul, mul_comm, mul_smul,
+    lattice_smul_eq_of_lattice_eq d hc, hd]
+
 section RootsOfUnity
 
 variable {L}
@@ -667,7 +680,8 @@ variable {L}
 @[simp]
 lemma lattice_neg_one_smul (L : PeriodPair) : ((-1 : ℂˣ) • L).lattice = L.lattice := by
   ext x
-  conv_lhs => rw [show x = ((-1 : ℂˣ) : ℂ) * -x by simp]
+  have hx : x = ((-1 : ℂˣ) : ℂ) * -x := by simp
+  conv_lhs => rw [hx]
   rw [mul_mem_lattice_smul_iff, neg_mem_iff]
 
 /-- If multiplication by a primitive `n`-th root of unity `ζ` preserves a lattice, then so does
@@ -680,7 +694,8 @@ lemma lattice_smul_eq_self_of_pow_eq_one {ζ c : ℂˣ} {n : ℕ} [NeZero n]
     | zero => rw [pow_zero, one_smul]
     | succ i ih => rw [pow_succ, mul_smul, lattice_smul_eq_of_lattice_eq _ hL, ih]
   obtain ⟨i, -, hi⟩ := hζ.eq_pow_of_pow_eq_one hc
-  rw [show c = ζ ^ i from Units.ext (by rw [Units.val_pow_eq_pow_val, hi]), key]
+  have hi' : c = ζ ^ i := Units.ext (by rw [Units.val_pow_eq_pow_val, hi])
+  rw [hi', key]
 
 /-- Every lattice is preserved by multiplication by a square root of unity `c = ±1`. -/
 lemma lattice_smul_eq_self_of_sq_eq_one {c : ℂˣ} (hc : (c : ℂ) ^ 2 = 1) :
