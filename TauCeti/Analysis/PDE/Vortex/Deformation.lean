@@ -227,6 +227,19 @@ theorem covariantDerivative_eq_re_mul_add_im_mul (x : ℂ → EuclideanSpace ℝ
   push_cast
   ring
 
+/-- The covariant derivative of a `C¹` field along a fixed tangent vector is continuous in the
+base point. -/
+theorem continuous_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ 1 x)
+    (v : ℂ) : Continuous fun z ↦ covariantDerivative x z v := by
+  have hxi (i : Fin 4) : ContDiff ℝ 1 fun z ↦ x z i :=
+    (EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hx
+  have hα := contDiff_sectionValue (hxi 2) (hxi 3)
+  simp only [covariantDerivative_apply]
+  exact ((hα.continuous_fderiv one_ne_zero).clm_apply continuous_const).add
+    ((continuous_const.mul (continuous_ofReal.comp
+      (((hxi 0).continuous.mul continuous_const).add
+        ((hxi 1).continuous.mul continuous_const)))).mul hα.continuous)
+
 /-- The covariant derivative `∇₁ α` in the real field coordinates: for a field differentiable at
 `z`, `∇₁ α = 2 ((∂₁ p - b₁ q) + i (∂₁ q + b₁ p))`. -/
 theorem covariantDerivative_one_eq {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
