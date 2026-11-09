@@ -375,6 +375,17 @@ theorem inverseHerbrand_of_coe_le_zero {v : RamificationIndexDomain} (hv : (v : 
     inverseHerbrand K L v = v :=
   (herbrandOrderIso K L).symm_apply_eq.2 (herbrand_of_coe_le_zero K L hv).symm
 
+variable {K L} in
+/-- If the inverse Herbrand function sends `u` to `-1`, then `u = -1`. -/
+theorem coe_eq_neg_one_of_inverseHerbrand_eq_neg_one {u : RamificationIndexDomain}
+    (hinverse : inverseHerbrand K L u = ⟨(-1 : ℝ), le_rfl⟩) : (u : ℝ) = -1 := by
+  have hinverse_neg_one :
+      inverseHerbrand K L ⟨(-1 : ℝ), le_rfl⟩ = ⟨(-1 : ℝ), le_rfl⟩ :=
+    inverseHerbrand_of_coe_le_zero K L (by norm_num)
+  have hu_eq : u = ⟨(-1 : ℝ), le_rfl⟩ :=
+    (inverseHerbrand_strictMono K L).injective <| hinverse.trans hinverse_neg_one.symm
+  exact congrArg Subtype.val hu_eq
+
 omit [IsGalois K L] in
 private theorem herbrandReal_of_mem_Icc (n : ℕ) {u : ℝ} (h₁ : (n : ℝ) ≤ u) (h₂ : u ≤ n + 1) :
     herbrandReal K L u =

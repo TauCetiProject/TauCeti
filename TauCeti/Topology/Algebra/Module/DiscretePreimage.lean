@@ -74,6 +74,14 @@ private theorem orbitRelQuotient_mk_mem_image_preimage_add_iff {U C : Set E'} (h
 
 variable [TopologicalSpace E] [TopologicalSpace E']
 
+omit [Module K E] [Module K E'] in
+/-- A discrete subgroup `L'` of `E'` meets some open neighbourhood `U` of `0` only in `0`. -/
+private theorem exists_isOpen_zero_mem_forall_mem_eq_zero [DiscreteTopology L'] :
+    ∃ U : Set E', IsOpen U ∧ (0 : E') ∈ U ∧ ∀ y ∈ U, y ∈ L' → y = 0 := by
+  obtain ⟨U, hUo, hU⟩ := isOpen_inter_eq_singleton_of_mem_discrete
+    (isDiscrete_iff_discreteTopology.2 ‹DiscreteTopology L'›) L'.zero_mem
+  exact ⟨U, hUo, (hU.symm.subset rfl).1, fun y hy hyL ↦ hU.subset ⟨hy, hyL⟩⟩
+
 /-- If `f` carries `L` into the closed subgroup `L'`, then `f⁻¹(L') / L` is closed in the orbit
 space of translation by `L`. For lattices and a complex linear `f`, it is the kernel of the
 induced homomorphism of complex tori. -/
@@ -96,10 +104,7 @@ theorem Submodule.exists_isOpen_inter_orbitRelQuotient_mk_image_preimage [Contin
         _root_.Quotient.mk (AddAction.orbitRel L E) '' (LinearMap.ker f) := by
   set π := _root_.Quotient.mk (AddAction.orbitRel L E)
   -- An open neighbourhood `U` of `0` meeting `L'` only in `0`.
-  obtain ⟨U, hUo, hU⟩ := isOpen_inter_eq_singleton_of_mem_discrete
-    (isDiscrete_iff_discreteTopology.2 ‹DiscreteTopology L'›) L'.zero_mem
-  have hU0 : ∀ y ∈ U, y ∈ L' → y = 0 := fun y hy hyL ↦ hU.subset ⟨hy, hyL⟩
-  have h0U : (0 : E') ∈ U := (hU.symm.subset rfl).1
+  obtain ⟨U, hUo, h0U, hU0⟩ := exists_isOpen_zero_mem_forall_mem_eq_zero (L' := L')
   -- The open set is the image of `f⁻¹(f(L) + U)`.
   set C : Set E' := ↑(L.map (f.restrictScalars ℤ))
   have hCL : ∀ c ∈ C, ∀ l ∈ L, c - f l ∈ C := fun c hc l hl ↦
@@ -140,14 +145,7 @@ theorem Submodule.connectedComponentIn_orbitRelQuotient_mk_image_preimage [Discr
   · exact ((LinearMap.ker f).restrictScalars ℝ).convex.isPreconnected.image _
       continuous_quotient_mk'.continuousOn
   -- A neighbourhood `U` of `0` meeting `L'` only in `0`.
-  obtain ⟨U, hUo, hU⟩ := isOpen_induced_iff.1 (isOpen_discrete {(0 : L')})
-  have hU0 : ∀ y ∈ U, y ∈ L' → y = 0 := fun y hy hyL ↦ by
-    have hmem : (⟨y, hyL⟩ : L') ∈ Subtype.val ⁻¹' U := hy
-    rw [hU, mem_singleton_iff] at hmem
-    exact congrArg Subtype.val hmem
-  have h0U : (0 : E') ∈ U := by
-    have : (0 : L') ∈ Subtype.val ⁻¹' U := hU ▸ rfl
-    exact this
+  obtain ⟨U, hUo, h0U, hU0⟩ := exists_isOpen_zero_mem_forall_mem_eq_zero (L' := L')
   -- Split `f⁻¹(L') / L` into two relatively open pieces, according to whether `f x` lies in
   -- `f(L)`; the connected component of `0` lies in the first piece.
   set C : Set E' := ↑(L.map (f.restrictScalars ℤ))

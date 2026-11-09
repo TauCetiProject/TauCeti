@@ -146,22 +146,7 @@ variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologica
   {I : ModelWithCorners ℝ E HM} [TopologicalSpace M] [ChartedSpace HM M]
   [IsManifold I (⊤ : ℕ∞) M]
 
-/-! ### Floer cylinders -/
-
 variable {ω : SmoothTwoForm I M} {H : ℝ → M → ℝ} {G : ℝ × ℝ → M → ℝ} {u : ℝ × ℝ → M}
-
-/-- The Floer energy density of a solution of `∂_s u + J (∂_t u - X_{G_z}(u)) = 0` for the
-perturbation `K = G_z dt`, which has no `ds` component, is nonnegative when `J` is tamed by `ω` at
-`u z`. -/
-theorem IsNondegenerate.floerEnergyDensity_zero_left_nonneg (hω : ω.IsNondegenerate)
-    {z : ℝ × ℝ} {J : AlmostComplexStructure (TangentSpace I (u z))}
-    (hJ : (hω.symplecticFormAt (u z)).Tames J)
-    (hfloer : mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
-      J (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
-        ω.hamiltonianVectorField (G z) (u z)) = 0) :
-    0 ≤ ω.floerEnergyDensity (fun _ _ ↦ 0) G u z :=
-  floerEnergyDensity_nonneg hω hJ <|
-    (ω.isComplexLinearMap_perturbedMFDeriv_iff _ _ u z J).2 (by simpa using hfloer)
 
 /-! ### The energy identity for perturbations without `ds` component -/
 
@@ -186,34 +171,12 @@ theorem IsNondegenerate.integral_floerEnergyDensity_zero_left (hω : ω.IsNondeg
   have hR : Icc a b ×ˢ Icc (0 : ℝ) 1 = Icc (a, 0) (b, 1) := Icc_prod_Icc _ _ _ _
   have hab' : ((a, 0) : ℝ × ℝ) ≤ (b, 1) := Prod.mk_le_mk.2 ⟨hab, zero_le_one⟩
   have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
-  -- The symplectic area density is the integrand of the rectangle integral.
-  let area : ℝ × ℝ → ℝ := fun z ↦ SmoothBundleForm.eval₂ ω (u z)
-    (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag)
-  have harea_cont : Continuous area :=
-    (hω₀.continuous_apply_mfderiv hu (1, 0) (0, 1)).congr fun z ↦ by
-      simp [area, SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
-  -- The derivative term `d(K(u))` is continuous, since `K_t(u)` is `C¹`.
-  have hf : ContDiff ℝ 1 fun w ↦ G w (u w) :=
-    contMDiff_iff_contDiff.mp (hG.comp (contMDiff_id.prodMk hu))
-  have hdK : Continuous fun z ↦ fderiv ℝ (fun w ↦ G w (u w)) z stdComplexLineReal :=
-    (hf.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  have hcurv : Continuous fun z ↦ fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal :=
-    (continuous_fderiv_of_contMDiff hu hG).clm_apply continuous_const
-  -- Pointwise, the energy density is the area density plus `d(K(u))` minus the curvature.
-  have hpt (z : ℝ × ℝ) : ω.floerEnergyDensity (fun _ _ ↦ 0) G u z =
-      area z + fderiv ℝ (fun w ↦ G w (u w)) z stdComplexLineReal -
-        fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal := by
-    rw [hω.floerEnergyDensity_eq ((hu z).mdifferentiableAt one_ne_zero)
-      (contMDiffAt_const.mdifferentiableAt one_ne_zero)
-      ((hG _).mdifferentiableAt one_ne_zero), hamiltonianCurvature_zero_left]
-    simp [area]
-  have hE : Continuous (ω.floerEnergyDensity (fun _ _ ↦ 0) G u) :=
-    ((harea_cont.add hdK).sub hcurv).congr fun z ↦ (hpt z).symm
   have h := hω.integral_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := G) isOpen_univ
     hu.contMDiffOn contMDiffOn_const hG.contMDiffOn hab' (subset_univ _)
-    (hE.continuousOn.integrableOn_compact isCompact_Icc)
-    (by simpa only [hamiltonianCurvature_zero_left] using
-      hcurv.continuousOn.integrableOn_compact isCompact_Icc)
+    ((hω.continuous_floerEnergyDensity_zero_left hG hu).continuousOn.integrableOn_compact
+      isCompact_Icc)
+    ((continuous_hamiltonianCurvature_zero_left_comp hG hu).continuousOn.integrableOn_compact
+      isCompact_Icc)
   simp only [hamiltonianCurvature_zero_left, intervalIntegral.integral_zero] at h
   rw [hR, h, ← hω₀.setIntegral_eq_rectangleIntegral hu hab']
   simp only [SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
@@ -329,7 +292,8 @@ theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction
       contractibleLoopAction ω.1 H (fun t ↦ u (a, t)) := by
   have h := hω.integral_floerEnergyDensity_eq_contractibleLoopAction_sub hωe hH hu hper hab hv
   have hnonneg := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)
-    fun z hz ↦ hω.floerEnergyDensity_zero_left_nonneg (G := fun w ↦ H w.2) (hJ z hz) (hfloer z hz)
+    fun z hz ↦ hω.floerEnergyDensity_zero_left_nonneg (Kt := fun w ↦ H w.2) (hJ z hz)
+      (hfloer z hz)
   linarith
 
 /-! ### Continuation cylinders and the action filtration -/
