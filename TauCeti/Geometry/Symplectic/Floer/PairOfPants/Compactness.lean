@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
-public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 
 /-!
 # Compactness of pairs of pants with bounded end actions
@@ -104,13 +103,13 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPant
     (hK' (by norm_num) 1) (hK' (by norm_num) I) hJ hD hK (prod_mono hDS (subset_univ K))
     fun z hz x _ ↦ hJt z (hDS hz) x
   refine ⟨δ, hδ, fun Ω u a A hΩ hΩD hu hfl ha hA huK ↦ ?_⟩
+  set Ks : ℝ × ℝ → V → ℝ := fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1
+  set Kt : ℝ × ℝ → V → ℝ := fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x I
   have hΩS : Ω ⊆ thricePuncturedSphereReal := hΩD.trans hDS
   have hΩm : MeasurableSet Ω := hΩ.measurableSet
   -- The energy over `Ω` is at most the energy over `S`, hence at most `A + B_0 + B_1 + B_∞`.
   have hf0 (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal) :
-      0 ≤ ω.floerEnergyDensity
-        (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x I) (u k) z :=
+      0 ≤ ω.floerEnergyDensity Ks Kt (u k) z :=
     ω.floerEnergyDensity_nonneg (hJt z hz _) (hfl k z hz)
   -- The action bound `a_∞ ≤ a_0 + a_1 + B_0 + B_1 + B_∞` makes the energy bound nonnegative.
   have hE0 : 0 ≤ A + ∑ q, B q := by
@@ -118,10 +117,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPant
       (fun q ↦ (hHs q).of_le (by norm_num)) hB ((hu 0).of_le (by norm_num))
       (fun z hz ↦ hJt z hz _) (hfl 0) (ha 0)
     linarith [hA 0]
-  have hlin (k : ℕ) : ∫⁻ z in Ω, ENNReal.ofReal (ω.floerEnergyDensity
-      (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x I) (u k) z) ≤
-        ENNReal.ofReal (A + ∑ q, B q) := by
+  have hlin (k : ℕ) : ∫⁻ z in Ω, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt (u k) z) ≤
+      ENNReal.ofReal (A + ∑ q, B q) := by
     refine (lintegral_mono_set hΩS).trans <|
       (lintegral_floerEnergyDensity_pairOfPantsPerturbation_le ω hH
         (fun q ↦ (hHs q).of_le (by norm_num)) hB ((hu k).of_le (by norm_num))
@@ -129,9 +126,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_pairOfPant
     simp only [Puncture.sum_univ, Puncture.endSign_zero, Puncture.endSign_one,
       Puncture.endSign_inf]
     linarith [hA k]
-  have hint (k : ℕ) : IntegrableOn (ω.floerEnergyDensity
-      (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x I) (u k)) Ω :=
+  have hint (k : ℕ) : IntegrableOn (ω.floerEnergyDensity Ks Kt (u k)) Ω :=
     ⟨((ω.continuousOn_floerEnergyDensity isOpen_thricePuncturedSphereReal
       ((hu k).of_le (by norm_num)) (hK' (by norm_num) 1) (hK' (by norm_num) I)).mono
         hΩS).aestronglyMeasurable hΩm,

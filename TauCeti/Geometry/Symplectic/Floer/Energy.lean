@@ -484,29 +484,27 @@ theorem mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity
   nlinarith [hJc a, mul_le_mul_of_nonneg_left hM hc, sq_nonneg M, sq_nonneg ‖a‖]
 
 /-- **The energy density bounds the derivative.** Let `u` solve the Floer equation at `z` for an
-almost complex structure `J` with `c ‖v‖² ≤ ω(v, J v)` and `‖J v‖ ≤ M ‖v‖` for all `v`, where
-`0 < c`. Then `∂_s u` is controlled by the energy density and the Hamiltonian vector field:
-`‖∂_s u‖² ≤ 2 (1 + M²) / c · ω(∂_s u - X_{K_s}, ∂_t u - X_{K_t}) + 2 ‖X_{K_s}(u)‖²`. -/
+almost complex structure `J` with `c ‖v‖² ≤ ω(v, J v)` for all `v`, where `0 < c`. Then `∂_s u` is
+controlled by the energy density and the Hamiltonian vector field:
+`‖∂_s u‖² ≤ 2 / c · ω(∂_s u - X_{K_s}, ∂_t u - X_{K_t}) + 2 ‖X_{K_s}(u)‖²`. -/
 theorem norm_fderiv_stdComplexLineReal_sq_le (ω : SymplecticForm V)
-    {J : AlmostComplexStructure V} {c M : ℝ} (hc : 0 < c)
-    (hJc : ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J v)) (hJM : ∀ v, ‖J v‖ ≤ M * ‖v‖)
+    {J : AlmostComplexStructure V} {c : ℝ} (hc : 0 < c) (hJc : ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J v))
     (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
       (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V)) :
     ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 ≤
-      2 * (1 + M ^ 2) / c * ω.floerEnergyDensity Ks Kt u z +
+      2 / c * ω.floerEnergyDensity Ks Kt u z +
         2 * ‖ω.hamiltonianVectorField (Ks z) (u z)‖ ^ 2 := by
-  have hco := ω.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity hc.le hJc hJM h
-  rw [perturbedFDeriv_apply_stdComplexLineReal] at hco
+  rw [ω.floerEnergyDensity_eq_of_isComplexLinearMap h, perturbedFDeriv_apply_stdComplexLineReal]
   set a := fderiv ℝ u z stdComplexLineReal
   set X := ω.hamiltonianVectorField (Ks z) (u z)
-  -- `‖a‖ ≤ ‖a - X‖ + ‖X‖`, and `c ‖a - X‖²` is at most `(1 + M²)` times the energy density.
+  -- `‖a‖ ≤ ‖a - X‖ + ‖X‖`, and `c ‖a - X‖²` is at most the energy density `ω(a - X, J (a - X))`.
   have htri : ‖a‖ ≤ ‖a - X‖ + ‖X‖ := norm_le_norm_sub_add a X
   have hsq : ‖a‖ ^ 2 ≤ 2 * ‖a - X‖ ^ 2 + 2 * ‖X‖ ^ 2 := by
     nlinarith [norm_nonneg a, norm_nonneg (a - X), norm_nonneg X, sq_nonneg (‖a - X‖ - ‖X‖)]
-  have hle : ‖a - X‖ ^ 2 ≤ (1 + M ^ 2) / c * ω.floerEnergyDensity Ks Kt u z := by
-    rw [div_mul_eq_mul_div, le_div_iff₀ hc]
-    nlinarith [sq_nonneg ‖ω.perturbedFDeriv Ks Kt u z stdComplexLineImag‖]
-  rw [mul_div_assoc, mul_assoc]
+  have hle : ‖a - X‖ ^ 2 ≤ 1 / c * ω (a - X) (J (a - X)) := by
+    rw [one_div_mul_eq_div, le_div_iff₀ hc, mul_comm]
+    exact hJc (a - X)
+  rw [div_eq_mul_one_div 2 c, mul_assoc]
   linarith
 
 /-- **The energy density plus the curvature is exact.** For a `C²` map `u` into a symplectic
