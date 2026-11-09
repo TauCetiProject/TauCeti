@@ -12,7 +12,6 @@ public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.Morse.Lemma
 public import TauCeti.Geometry.Manifold.Morse.ModelTransport
-import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 
 /-!
