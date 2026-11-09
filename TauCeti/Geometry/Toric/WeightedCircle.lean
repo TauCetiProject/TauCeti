@@ -36,7 +36,7 @@ two points of nontrivial isotropy:
   `u ^ b = 1` if `z₂ ≠ 0`. Off the two coordinate axes the action is therefore free
   (`TauCeti.Toric.stabilizer_weightedEllipsoid_eq_bot`), while the points of `E` on the axis
   `z₂ = 0` have the cyclic stabilizer of `a`-th roots of unity, of order `a`
-  (`TauCeti.Toric.nat_card_stabilizer_weightedEllipsoid_of_snd_eq_zero`), and those on the axis
+  (`TauCeti.Toric.natCard_stabilizer_weightedEllipsoid_of_snd_eq_zero`), and those on the axis
   `z₁ = 0` the cyclic stabilizer of order `b`.
 * **The quotient.** The weighted Hopf map `z ↦ [z₁ ^ b : z₂ ^ a]` to the complex projective line
   is invariant, because `u` multiplies both homogeneous coordinates by `u ^ (a b)`. Its fibres on
@@ -44,7 +44,7 @@ two points of nontrivial isotropy:
   the two sides of the defining equation of `E` forces `|c| = 1` and `|z_j| = |w_j|`, and the
   quotients `z_j / w_j` are circle elements `u₁, u₂` with `u₁ ^ b = u₂ ^ a`. Since `a` and `b` are
   coprime, a Bézout identity produces `v` with `v ^ a = u₁` and `v ^ b = u₂`
-  (`TauCeti.exists_pow_eq_and_pow_eq_of_coprime`), so that `z = v • w`. Every line is reached,
+  (`TauCeti.pow_eq_pow_iff_of_coprime'`), so that `z = v • w`. Every line is reached,
   by scaling a choice of roots `(r₁, r₂)` with `r₁ ^ b = v₁` and `r₂ ^ a = v₂` along the weighted
   real dilation `λ ↦ (λ ^ a r₁, λ ^ b r₂)` until it meets `E`. Since `E` is compact and the
   projective line is Hausdorff, the induced continuous bijection is a homeomorphism
@@ -70,8 +70,8 @@ over the two poles are recorded separately and are not erased.
 * `TauCeti.Toric.weightedRotation_eq_self_iff`: the stabilizer of a point of `ℂ²`.
 * `TauCeti.Toric.isCompact_weightedEllipsoid`: the ellipsoid is compact.
 * `TauCeti.Toric.stabilizer_weightedEllipsoid_eq_bot`: the action is free off the axes.
-* `TauCeti.Toric.nat_card_stabilizer_weightedEllipsoid_of_snd_eq_zero`,
-  `TauCeti.Toric.nat_card_stabilizer_weightedEllipsoid_of_fst_eq_zero`: the axial stabilizers
+* `TauCeti.Toric.natCard_stabilizer_weightedEllipsoid_of_snd_eq_zero`,
+  `TauCeti.Toric.natCard_stabilizer_weightedEllipsoid_of_fst_eq_zero`: the axial stabilizers
   have orders `a` and `b`; `TauCeti.Toric.finite_stabilizer_weightedEllipsoid` and
   `TauCeti.Toric.isCyclic_stabilizer_weightedEllipsoid`: every stabilizer on the ellipsoid is
   finite cyclic.
@@ -152,14 +152,14 @@ def weightedEllipsoid (ε : ℝ) : Set (ℂ × ℂ) :=
 
 variable {ε : ℝ}
 
+@[simp]
 theorem mem_weightedEllipsoid {z : ℂ × ℂ} :
     z ∈ weightedEllipsoid a b ε ↔ a * ‖z.1‖ ^ 2 + b * ‖z.2‖ ^ 2 = 2 * ε :=
   Iff.rfl
 
-@[simp]
 theorem weightedRotation_mem_weightedEllipsoid_iff {u : Circle} {z : ℂ × ℂ} :
     weightedRotation a b u z ∈ weightedEllipsoid a b ε ↔ z ∈ weightedEllipsoid a b ε := by
-  simp [mem_weightedEllipsoid]
+  simp
 
 theorem isClosed_weightedEllipsoid : IsClosed (weightedEllipsoid a b ε) :=
   isClosed_eq (by fun_prop) continuous_const
@@ -228,23 +228,28 @@ theorem mem_stabilizer_weightedEllipsoid_iff_of_fst_eq_zero {z : weightedEllipso
   rw [mem_stabilizer_weightedEllipsoid_iff]
   simp [h₁, h₂]
 
+/-- Through `toUnits`, the circle elements with `u ^ n = 1` are the `n`-th roots of unity. -/
+private def kerPowEquivRootsOfUnity (n : ℕ) :
+    (powMonoidHom n : Circle →* Circle).ker ≃ rootsOfUnity n Circle :=
+  toUnits.toEquiv.subtypeEquiv fun u ↦ by simp [mem_rootsOfUnity, ← map_pow]
+
 /-- **The stabilizer on the axis `z₂ = 0` has order `a`.** -/
-theorem nat_card_stabilizer_weightedEllipsoid_of_snd_eq_zero (ha : 0 < a)
+theorem natCard_stabilizer_weightedEllipsoid_of_snd_eq_zero (ha : 0 < a)
     {z : weightedEllipsoid a b ε} (h₁ : (z : ℂ × ℂ).1 ≠ 0) (h₂ : (z : ℂ × ℂ).2 = 0) :
     Nat.card (MulAction.stabilizer Circle z) = a := by
   have : NeZero a := ⟨ha.ne'⟩
-  refine (Nat.card_congr <| toUnits.toEquiv.subtypeEquiv fun u ↦ ?_).trans
-    (HasEnoughRootsOfUnity.natCard_rootsOfUnity Circle a)
-  simp [mem_stabilizer_weightedEllipsoid_iff_of_snd_eq_zero h₁ h₂, mem_rootsOfUnity, ← map_pow]
+  refine (Nat.card_congr <| (Equiv.subtypeEquivRight fun u ↦ ?_).trans
+    (kerPowEquivRootsOfUnity a)).trans (HasEnoughRootsOfUnity.natCard_rootsOfUnity Circle a)
+  simp [mem_stabilizer_weightedEllipsoid_iff_of_snd_eq_zero h₁ h₂]
 
 /-- **The stabilizer on the axis `z₁ = 0` has order `b`.** -/
-theorem nat_card_stabilizer_weightedEllipsoid_of_fst_eq_zero (hb : 0 < b)
+theorem natCard_stabilizer_weightedEllipsoid_of_fst_eq_zero (hb : 0 < b)
     {z : weightedEllipsoid a b ε} (h₁ : (z : ℂ × ℂ).1 = 0) (h₂ : (z : ℂ × ℂ).2 ≠ 0) :
     Nat.card (MulAction.stabilizer Circle z) = b := by
   have : NeZero b := ⟨hb.ne'⟩
-  refine (Nat.card_congr <| toUnits.toEquiv.subtypeEquiv fun u ↦ ?_).trans
-    (HasEnoughRootsOfUnity.natCard_rootsOfUnity Circle b)
-  simp [mem_stabilizer_weightedEllipsoid_iff_of_fst_eq_zero h₁ h₂, mem_rootsOfUnity, ← map_pow]
+  refine (Nat.card_congr <| (Equiv.subtypeEquivRight fun u ↦ ?_).trans
+    (kerPowEquivRootsOfUnity b)).trans (HasEnoughRootsOfUnity.natCard_rootsOfUnity Circle b)
+  simp [mem_stabilizer_weightedEllipsoid_iff_of_fst_eq_zero h₁ h₂]
 
 /-- **Every stabilizer on the ellipsoid is finite** for positive weights and `ε > 0`: it is
 contained in the group of `a`-th or of `b`-th roots of unity. -/
@@ -256,13 +261,13 @@ theorem finite_stabilizer_weightedEllipsoid (ha : 0 < a) (hb : 0 < b) (hε : 0 <
       simp only [h₁, h₂, norm_zero] at hz
       linarith
     exact Nat.finite_of_card_ne_zero <| by
-      rw [nat_card_stabilizer_weightedEllipsoid_of_fst_eq_zero hb h₁ h₂]
+      rw [natCard_stabilizer_weightedEllipsoid_of_fst_eq_zero hb h₁ h₂]
       exact hb.ne'
   · have : NeZero a := ⟨ha.ne'⟩
-    refine Finite.of_injective (β := rootsOfUnity a Circle)
-      (fun u ↦ ⟨toUnits (u : Circle), ?_⟩) fun u v h ↦ ?_
-    · simp [mem_rootsOfUnity, ← map_pow, (mem_stabilizer_weightedEllipsoid_iff.1 u.2).1 h₁]
-    · exact Subtype.ext (toUnits.injective (congrArg Subtype.val h :))
+    have hle : MulAction.stabilizer Circle z ≤ (powMonoidHom a : Circle →* Circle).ker :=
+      fun u hu ↦ by simpa using (mem_stabilizer_weightedEllipsoid_iff.1 hu).1 h₁
+    have := Finite.of_equiv _ (kerPowEquivRootsOfUnity a).symm
+    exact Finite.of_injective _ (Subgroup.inclusion_injective hle)
 
 /-- **Every stabilizer on the ellipsoid is cyclic** for positive weights and `ε > 0`, being a
 finite subgroup of the circle. -/
@@ -280,16 +285,16 @@ def weightedHopfVector (z : ℂ × ℂ) : Fin 2 → ℂ :=
   ![z.1 ^ b, z.2 ^ a]
 
 @[simp]
-theorem weightedHopfVector_zero (z : ℂ × ℂ) : weightedHopfVector a b z 0 = z.1 ^ b :=
+theorem weightedHopfVector_apply_zero (z : ℂ × ℂ) : weightedHopfVector a b z 0 = z.1 ^ b :=
   (rfl)
 
 @[simp]
-theorem weightedHopfVector_one (z : ℂ × ℂ) : weightedHopfVector a b z 1 = z.2 ^ a :=
+theorem weightedHopfVector_apply_one (z : ℂ × ℂ) : weightedHopfVector a b z 1 = z.2 ^ a :=
   (rfl)
 
 theorem continuous_weightedHopfVector : Continuous (weightedHopfVector a b) :=
   continuous_pi fun i ↦ by fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one,
-    weightedHopfVector_zero, weightedHopfVector_one] <;> fun_prop
+    weightedHopfVector_apply_zero, weightedHopfVector_apply_one] <;> fun_prop
 
 /-- The weighted rotation by `u` multiplies both homogeneous coordinates by `u ^ (a b)`. -/
 theorem weightedHopfVector_weightedRotation (u : Circle) (z : ℂ × ℂ) :
@@ -387,8 +392,8 @@ theorem exists_weightedRotation_eq_of_weightedHopfVector_eq_smul (ha : 0 < a) (h
     ext
     simp only [Circle.coe_pow, coe_circleDiv, div_pow, h₁, h₂]
     rw [mul_div_cancel_right₀ _ (pow_ne_zero _ hw₁), mul_div_cancel_right₀ _ (pow_ne_zero _ hw₂)]
-  obtain ⟨v, hv₁, hv₂⟩ := exists_pow_eq_and_pow_eq_of_coprime hab hpow
-  exact ⟨v, hrot (fun _ ↦ hv₁) fun _ ↦ hv₂⟩
+  obtain ⟨v, hv₁, hv₂⟩ := (pow_eq_pow_iff_of_coprime' hab.symm).1 hpow
+  exact ⟨v, hrot (fun _ ↦ hv₁.symm) fun _ ↦ hv₂.symm⟩
 
 /-- **Weighted dilations reach the ellipsoid.** For positive weights and `ε > 0`, every nonzero
 `r ∈ ℂ²` has a positive real multiple `λ` for which `(λ ^ a r₁, λ ^ b r₂)` lies on the ellipsoid. -/

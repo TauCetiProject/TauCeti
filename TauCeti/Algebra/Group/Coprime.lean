@@ -28,9 +28,11 @@ virtual characters induced from `p`-elementary subgroups.
 * `TauCeti.exists_zpow_mul_zpow_eq_of_coprime` and its additive form
   `TauCeti.exists_zsmul_add_zsmul_eq_of_coprime`: the factorization above, with coefficients
   independent of `y`.
-* `TauCeti.exists_pow_eq_and_pow_eq_of_coprime` and its additive form
-  `TauCeti.exists_nsmul_eq_and_nsmul_eq_of_coprime`: for coprime `n` and `m`, elements `x` and `y`
-  of a commutative group with `x ^ m = y ^ n` are `v ^ n` and `v ^ m` for a single `v`.
+* `Commute.pow_eq_pow_iff_of_coprime'` and its additive form
+  `AddCommute.nsmul_eq_nsmul_iff_of_coprime'`: for coprime `m` and `n`, commuting elements `x`
+  and `y` of a group satisfy `x ^ m = y ^ n` exactly when they are `v ^ n` and `v ^ m` for a
+  single `v`; `TauCeti.pow_eq_pow_iff_of_coprime'` and
+  `TauCeti.nsmul_eq_nsmul_iff_of_coprime'` specialize this to commutative groups.
 * `TauCeti.mem_of_forall_prime_exists_pow_mem` and its additive form
   `TauCeti.mem_of_forall_prime_exists_nsmul_mem`: membership from prime-to-`p` powers, one
   prime at a time, in any subgroup (or additive subgroup) of a group.
@@ -57,22 +59,33 @@ theorem exists_zpow_mul_zpow_eq_of_coprime {G : Type*} [Group G] {n m : ℕ}
       _ = y ^ ((Nat.gcd n m : ℕ) : ℤ) := by rw [← Nat.gcd_eq_gcd_ab]
       _ = y := by rw [h.gcd_eq_one, zpow_natCast, pow_one]⟩
 
-/-- **Common roots for coprime exponents.** For coprime `n` and `m`, two elements `x` and `y` of a
-commutative group with `x ^ m = y ^ n` are the `n`-th and `m`-th powers of a single element `v`.
-Writing `1 = n i + m j`, the element `v = x ^ i * y ^ j` works. -/
-@[to_additive /-- **Common divisions for coprime coefficients.** For coprime `n` and `m`, two
-elements `x` and `y` of an additive commutative group with `m • x = n • y` are the multiples `n • v`
-and `m • v` of a single element `v`. -/]
-theorem exists_pow_eq_and_pow_eq_of_coprime {G : Type*} [CommGroup G] {n m : ℕ}
-    (h : Nat.Coprime n m) {x y : G} (hxy : x ^ m = y ^ n) : ∃ v : G, v ^ n = x ∧ v ^ m = y := by
-  obtain ⟨i, j, hij⟩ := exists_zpow_mul_zpow_eq_of_coprime (G := G) h
-  have hcomm (g : G) (k : ℤ) (l : ℕ) : (g ^ k) ^ l = (g ^ l) ^ k := by
-    rw [← zpow_natCast, ← zpow_mul, ← zpow_natCast, ← zpow_mul, mul_comm]
-  refine ⟨x ^ i * y ^ j, ?_, ?_⟩
-  · rw [mul_pow, hcomm, hcomm, ← hxy]
-    exact hij x
-  · rw [mul_pow, hcomm, hcomm, hxy]
-    exact hij y
+/-- **Common roots for coprime exponents.** For coprime `m` and `n`, two commuting elements `x`
+and `y` of a group satisfy `x ^ m = y ^ n` exactly when they are the `n`-th and `m`-th powers of a
+single element `v`. Writing `1 = m i + n j`, the element `v = y ^ i * x ^ j` works. This is the
+group version of Mathlib's `Commute.pow_eq_pow_iff_of_coprime` for groups with zero. -/
+@[to_additive /-- **Common divisions for coprime coefficients.** For coprime `m` and `n`, two
+commuting elements `x` and `y` of an additive group satisfy `m • x = n • y` exactly when they are
+the multiples `n • v` and `m • v` of a single element `v`. -/]
+protected theorem _root_.Commute.pow_eq_pow_iff_of_coprime' {G : Type*} [Group G] {x y : G}
+    {m n : ℕ} (hxy : Commute x y) (hmn : m.Coprime n) :
+    x ^ m = y ^ n ↔ ∃ v, x = v ^ n ∧ y = v ^ m := by
+  refine ⟨fun h ↦ ?_, by rintro ⟨v, rfl, rfl⟩; rw [← pow_mul, ← pow_mul']⟩
+  obtain ⟨i, j, hij⟩ := exists_zpow_mul_zpow_eq_of_coprime (G := G) hmn
+  have hc : Commute (y ^ i) (x ^ j) := (hxy.zpow_zpow j i).symm
+  refine ⟨y ^ i * x ^ j, ?_, ?_⟩
+  · conv_lhs => rw [← hij x, h]
+    simp only [hc.mul_pow, ← zpow_natCast, zpow_comm]
+  · conv_lhs => rw [← hij y, ← h]
+    simp only [hc.mul_pow, ← zpow_natCast, zpow_comm]
+
+/-- **Common roots for coprime exponents** in a commutative group: for coprime `m` and `n`,
+`x ^ m = y ^ n` exactly when `x` and `y` are the `n`-th and `m`-th powers of a single element. -/
+@[to_additive /-- **Common divisions for coprime coefficients** in an additive commutative group:
+for coprime `m` and `n`, `m • x = n • y` exactly when `x` and `y` are the multiples `n • v` and
+`m • v` of a single element `v`. -/]
+theorem pow_eq_pow_iff_of_coprime' {G : Type*} [CommGroup G] {x y : G} {m n : ℕ}
+    (hmn : m.Coprime n) : x ^ m = y ^ n ↔ ∃ v, x = v ^ n ∧ y = v ^ m :=
+  (Commute.all x y).pow_eq_pow_iff_of_coprime' hmn
 
 /-- **Membership from prime-to-`p` powers.** If for every prime `p` some power `x ^ m` with
 `p ∤ m` lies in the subgroup `H`, then `x` lies in `H`. -/
