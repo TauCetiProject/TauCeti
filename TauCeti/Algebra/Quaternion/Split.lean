@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.QuaternionBasis
-public import Mathlib.LinearAlgebra.Matrix.Notation
+public import TauCeti.Algebra.Quaternion.SquareSplit
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -15,8 +14,9 @@ import Mathlib.Tactic.FinCases
 This file constructs explicit algebra equivalences from split quaternion algebras to two-by-two
 matrix algebras, over a commutative ring in which two is invertible.
 
-For a unit `b`, the symbol algebra `ℍ[R,1,b]` is split. The equivalence sends its standard
-generators to
+For a unit `b`, the symbol algebra `ℍ[R,1,b]` is split. The equivalence is the case `a = 1` of
+`TauCeti.QuaternionAlgebra.firstSquareEquivMatrix` for the symbol `(a²,b)`, and sends its
+standard generators to
 
 ```text
 i ↦ !![1, 0; 0, -1],   j ↦ !![0, b; 1, 0].
@@ -60,61 +60,29 @@ variable {R : Type*} [CommRing R]
 
 section One
 
-private def oneMatrixBasis (b : R) :
-    _root_.QuaternionAlgebra.Basis (Matrix (Fin 2) (Fin 2) R) 1 0 b where
-  i := !![1, 0; 0, -1]
-  j := !![0, b; 1, 0]
-  k := !![0, b; -1, 0]
-  i_mul_i := by simp [Matrix.one_fin_two]
-  j_mul_j := by simp [Matrix.one_fin_two]
-  i_mul_j := by simp
-  j_mul_i := by simp
-
-private theorem oneMatrixBasis_liftHom_apply (b : R) (q : ℍ[R,1,b]) :
-    (oneMatrixBasis b).liftHom q =
-      !![q.re + q.imI, b * (q.imJ + q.imK);
-        q.imJ - q.imK, q.re - q.imI] := by
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [oneMatrixBasis, _root_.QuaternionAlgebra.Basis.liftHom,
-      _root_.QuaternionAlgebra.Basis.lift, Algebra.algebraMap_eq_smul_one] <;> ring
-
 variable [Invertible (2 : R)]
 
-private def oneMatrixInverse (b : Rˣ) (M : Matrix (Fin 2) (Fin 2) R) : ℍ[R,1,(b : R)] :=
-  ⟨⅟2 * (M 0 0 + M 1 1), ⅟2 * (M 0 0 - M 1 1),
-    ⅟2 * (↑b⁻¹ * M 0 1 + M 1 0), ⅟2 * (↑b⁻¹ * M 0 1 - M 1 0)⟩
-
-private theorem oneMatrixInverse_leftInverse (b : Rˣ) :
-    Function.LeftInverse (oneMatrixInverse b) (oneMatrixBasis (b : R)).liftHom := by
-  intro q
-  rw [oneMatrixBasis_liftHom_apply]
-  ext <;> simp [oneMatrixInverse] <;> grind [invOf_mul_self, Units.inv_mul]
-
-private theorem oneMatrixInverse_rightInverse (b : Rˣ) :
-    Function.RightInverse (oneMatrixInverse b) (oneMatrixBasis (b : R)).liftHom := by
-  intro M
-  rw [oneMatrixBasis_liftHom_apply]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [oneMatrixInverse] <;>
-    grind [invOf_mul_self, Units.inv_mul]
-
 /-- The explicit splitting `ℍ[R,1,b] ≃ₐ[R] M₂(R)` for a unit `b` over a commutative ring in
-which two is invertible. It sends the quaternion generators `i` and `j` to
-`!![1, 0; 0, -1]` and `!![0, b; 1, 0]`, respectively. -/
-def oneEquivMatrix (b : Rˣ) : ℍ[R,1,(b : R)] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R :=
-  { (oneMatrixBasis (b : R)).liftHom with
-    invFun := oneMatrixInverse b
-    left_inv := oneMatrixInverse_leftInverse b
-    right_inv := oneMatrixInverse_rightInverse b }
+which two is invertible: the case `a = 1` of `firstSquareEquivMatrix`, after rewriting the first
+parameter `1` as `1²`. It sends the quaternion generators `i` and `j` to `!![1, 0; 0, -1]` and
+`!![0, b; 1, 0]`, respectively. -/
+noncomputable def oneEquivMatrix (b : Rˣ) : ℍ[R,1,(b : R)] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R :=
+  (AlgEquiv.cast (A := fun t => ℍ[R,t,(b : R)]) (by simp : (1 : R) = ((1 : Rˣ) : R) ^ 2)).trans
+    (firstSquareEquivMatrix 1 b)
 
 /-- The splitting equivalence on an arbitrary quaternion. -/
 @[simp]
 theorem oneEquivMatrix_apply (b : Rˣ) (q : ℍ[R,1,(b : R)]) :
     oneEquivMatrix b q =
       !![q.re + q.imI, (b : R) * (q.imJ + q.imK);
-        q.imJ - q.imK, q.re - q.imI] :=
-  oneMatrixBasis_liftHom_apply _ q
+        q.imJ - q.imK, q.re - q.imI] := by
+  have hcast : ∀ {t : R} (h : (1 : R) = t),
+      AlgEquiv.cast (R := R) (A := fun t => ℍ[R,t,(b : R)]) h q =
+        ⟨q.re, q.imI, q.imJ, q.imK⟩ := by
+    rintro _ rfl
+    rfl
+  rw [oneEquivMatrix, AlgEquiv.trans_apply, hcast, firstSquareEquivMatrix_apply]
+  simp [mul_add]
 
 /-- The inverse splitting equivalence recovers the four quaternion coordinates from the four
 matrix entries. -/
@@ -122,8 +90,14 @@ matrix entries. -/
 theorem oneEquivMatrix_symm_apply (b : Rˣ) (M : Matrix (Fin 2) (Fin 2) R) :
     (oneEquivMatrix b).symm M =
       ⟨⅟2 * (M 0 0 + M 1 1), ⅟2 * (M 0 0 - M 1 1),
-        ⅟2 * (↑b⁻¹ * M 0 1 + M 1 0), ⅟2 * (↑b⁻¹ * M 0 1 - M 1 0)⟩ :=
-  (rfl)
+        ⅟2 * (↑b⁻¹ * M 0 1 + M 1 0), ⅟2 * (↑b⁻¹ * M 0 1 - M 1 0)⟩ := by
+  have hcast : ∀ {t : R} (h : (1 : R) = t) (q : ℍ[R,t,(b : R)]),
+      (AlgEquiv.cast (R := R) (A := fun t => ℍ[R,t,(b : R)]) h).symm q =
+        ⟨q.re, q.imI, q.imJ, q.imK⟩ := by
+    rintro _ rfl q
+    rfl
+  rw [oneEquivMatrix, AlgEquiv.symm_trans_apply, hcast, firstSquareEquivMatrix_symm_apply]
+  ext <;> simp [← mul_neg]
 
 end One
 

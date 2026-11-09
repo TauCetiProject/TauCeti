@@ -132,15 +132,11 @@ theorem Affine.Point.map_eq_self_of_mem_inertiaSubgroup_of_mem_fixingSubgroup
   -- `τ` and `ρ` have the same underlying map.
   have hτρ (x : M) : τ x = ρ x := by
     rw [AlgEquiv.ofRingEquiv_apply, AlgEquiv.coe_toRingEquiv]
-  have hτ : τ ∈ LocalFieldsRamification.lowerRamificationGroup L M 0 := by
-    have h := restrictNormal_mem_lowerRamificationGroup_zero M hσ
-    rw [LocalFieldsRamification.mem_lowerRamificationGroup_iff] at h ⊢
-    -- Hence `τ` and `ρ` act on `𝒪[M]` by the same map.
-    intro x
-    have hx : τ • x = ρ • x := Subtype.ext <| by
-      rw [AlgEquiv.coe_smul_integerRing, AlgEquiv.coe_smul_integerRing, hτρ]
-    rw [hx]
-    exact h x
+  have hτρ' : τ.restrictScalars K = ρ := AlgEquiv.ext hτρ
+  have hτ : τ ∈ LocalFieldsRamification.lowerRamificationGroup L M 0 :=
+    (LocalFieldsRamification.comap_restrictScalarsHom_lowerRamificationGroup K M L 0).le
+      (Subgroup.mem_comap.2 ((AlgEquiv.restrictScalarsHom_apply ..).trans hτρ' ▸
+        restrictNormal_mem_lowerRamificationGroup_zero M hσ))
   have hcomm : σ.toAlgHom.comp M.val = M.val.comp ρ.toAlgHom :=
     AlgHom.ext fun x ↦ (AlgEquiv.restrictNormal_commutes σ M x).symm
   obtain ⟨Q, hQP⟩ := (Affine.Point.exists_map_eq_iff P M.val).mpr
@@ -150,27 +146,9 @@ theorem Affine.Point.map_eq_self_of_mem_inertiaSubgroup_of_mem_fixingSubgroup
         (IntermediateField.subset_adjoin K _ (Set.mem_insert_of_mem _ rfl)))⟩, rfl⟩⟩
   rw [← hQP, ← map_nsmul, Affine.Point.map_map, hcomm, ← Affine.Point.map_map] at hP
   have hQ := Affine.Point.map_injective M.val hP
-  -- Transport `Q` to the model `C • W` over `L`, which has good reduction.
-  have hbc : W⁄M = (W⁄L)⁄M :=
-    (WeierstrassCurve.map_baseChange W (IsScalarTower.toAlgHom K L M)).symm
-  set e := AddEquiv.cast (M := fun V : WeierstrassCurve M ↦ V.toAffine.Point) hbc
-  set pv := (W⁄L).pointEquivVariableChange M C
-  have key (R : (W⁄M).toAffine.Point) :
-      Affine.Point.map τ.toAlgHom (pv.symm (e R)) =
-        pv.symm (e (Affine.Point.map ρ.toAlgHom R)) := by
-    rw [map_pointEquivVariableChange_symm]
-    congr 1
-    -- Both sides apply `σ` to the coordinates of `R`.
-    rcases R with _ | ⟨x, y, hxy⟩
-    · simp only [← Affine.Point.zero_def, _root_.map_zero]
-    · rw [AddEquiv.cast_apply, Affine.Point.cast_some hbc, Affine.Point.map_some,
-        Affine.Point.map_some, AddEquiv.cast_apply, Affine.Point.cast_some hbc]
-      simp only [AlgEquiv.toAlgHom_apply, hτρ]
-  have hn' : (n : 𝓀[L]) ≠ 0 := by
-    rwa [← map_natCast (algebraMap 𝓀[K] 𝓀[L]), map_ne_zero_iff _ (algebraMap 𝓀[K] 𝓀[L]).injective]
-  have hQ' := Affine.Point.map_eq_self_of_mem_lowerRamificationGroup_zero (W := C • W⁄L) hn' hτ
-    (P := pv.symm (e Q)) (by rw [← map_nsmul, ← map_nsmul, key, hQ])
-  rw [key, pv.symm.injective.eq_iff, e.injective.eq_iff] at hQ'
+  have hQ' := Affine.Point.map_restrictScalars_eq_self_of_mem_lowerRamificationGroup_zero
+    (W := W) C hn hτ (Q := Q) (by rwa [hτρ'])
+  rw [hτρ'] at hQ'
   rw [← hQP, Affine.Point.map_map, hcomm, ← Affine.Point.map_map, hQ']
 
 /-- **The Tate module is unramified over a field of good reduction.** Let `L` be a finite

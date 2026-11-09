@@ -58,6 +58,11 @@ factors by vectors of that subspace does not change the product.
   subspace `P` is unchanged when its other factors are moved by vectors of `P`.
 * `exteriorPower.toTensorPower_comp_map` and `exteriorPower.map_comp_fromTensorPower`: the
   antisymmetrization and the canonical surjection are natural in the module.
+* `TauCeti.ExteriorAlgebra.ιMulti_comp_cast`: an exterior product in the exterior algebra is
+  unchanged by renumbering its factors along `Fin.cast`, and
+  `TauCeti.ExteriorAlgebra.ιMulti_comp_append` splits the image of an appended family.
+* `TauCeti.ExteriorAlgebra.ιMulti_mul_ιMulti_eq_neg_one_pow_smul`: exterior products of `i` and
+  `j` vectors commute up to the scalar sign `(-1) ^ (j * i)`.
 * `TauCeti.ExteriorAlgebra.exteriorPower_map_map`: the image of `⋀ⁿ M` in the exterior algebra
   under the map induced by `f` is the `n`th power of the degree-one image of `f`.
 * `TauCeti.ExteriorAlgebra.ι_mem_exteriorPower_one` and
@@ -398,6 +403,33 @@ namespace TauCeti
 namespace ExteriorAlgebra
 
 variable [CommRing R] [AddCommGroup M] [Module R M] {N : Type*} [AddCommGroup N] [Module R N]
+
+/-- An exterior product in the exterior algebra is unchanged by renumbering its factors along
+`Fin.cast`. -/
+@[simp]
+theorem ιMulti_comp_cast {n m : ℕ} (h : n = m) (v : Fin m → M) :
+    _root_.ExteriorAlgebra.ιMulti R n (v ∘ Fin.cast h) = _root_.ExteriorAlgebra.ιMulti R m v := by
+  subst h
+  rfl
+
+/-- The exterior product of the image of an appended family under a linear map splits as the
+product of the exterior products of the images of the two parts. -/
+theorem ιMulti_comp_append {n m : ℕ} (f : M →ₗ[R] N) (a : Fin n → M) (b : Fin m → M) :
+    _root_.ExteriorAlgebra.ιMulti R (n + m) (f ∘ Fin.append a b) =
+      _root_.ExteriorAlgebra.ιMulti R n (f ∘ a) * _root_.ExteriorAlgebra.ιMulti R m (f ∘ b) := by
+  rw [← _root_.ExteriorAlgebra.map_apply_ιMulti, ← _root_.ExteriorAlgebra.ιMulti_mul_ιMulti,
+    map_mul, _root_.ExteriorAlgebra.map_apply_ιMulti, _root_.ExteriorAlgebra.map_apply_ιMulti]
+
+/-- Exterior products of `i` and `j` vectors commute up to the sign `(-1) ^ (j * i)`, written
+with a scalar of the base ring rather than Mathlib's unit of `ℤ`
+(`ExteriorAlgebra.ιMulti_mul_ιMulti_anticomm`). -/
+theorem ιMulti_mul_ιMulti_eq_neg_one_pow_smul {i j : ℕ} (u : Fin i → M) (v : Fin j → M) :
+    _root_.ExteriorAlgebra.ιMulti R i u * _root_.ExteriorAlgebra.ιMulti R j v =
+      (-1 : R) ^ (j * i) •
+        (_root_.ExteriorAlgebra.ιMulti R j v * _root_.ExteriorAlgebra.ιMulti R i u) := by
+  rw [_root_.ExteriorAlgebra.ιMulti_mul_ιMulti_anticomm, Units.smul_def,
+    ← Int.cast_smul_eq_zsmul R]
+  norm_num
 
 /-- Inside the exterior algebra, the image of the `n`th exterior power under the map induced by
 `f` is the `n`th power of the degree-one image of the range of `f`. -/

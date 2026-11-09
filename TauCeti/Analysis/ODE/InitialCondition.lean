@@ -134,6 +134,79 @@ theorem contDiffAt_globalSolution {n : ℕ∞} (v : E → E) {K : ℝ≥0} (hv :
     (by simpa [projIcc_left] using congrArg (fun w : E ↦ p.1 + w) hbase) hcont hderiv
   simpa [projIcc_right] using this.symm
 
+/-- The flow law propagates joint smoothness of the global solution from `(a, s)` and from
+`(globalSolution v hv a s, t - s)` to `(a, t)`. -/
+private theorem contDiffAt_globalSolution_of_contDiffAt_sub {n : ℕ} (v : E → E) {K : ℝ≥0}
+    (hv : LipschitzWith K v) (a : E) {s t : ℝ}
+    (hs : ContDiffAt ℝ (n + 1) (fun p : E × ℝ ↦ globalSolution v hv p.1 p.2) (a, s))
+    (hout : ContDiffAt ℝ (n + 1) (fun p : E × ℝ ↦ globalSolution v hv p.1 p.2)
+      (globalSolution v hv a s, t - s)) :
+    ContDiffAt ℝ (n + 1) (fun p : E × ℝ ↦ globalSolution v hv p.1 p.2) (a, t) := by
+  have hfixed : ContDiffAt ℝ (n + 1) (fun x ↦ globalSolution v hv x s) a :=
+    hs.comp a (contDiffAt_id.prodMk contDiffAt_const)
+  have hinner : ContDiffAt ℝ (n + 1)
+      (fun p : E × ℝ ↦ (globalSolution v hv p.1 s, p.2 - s)) (a, t) :=
+    (hfixed.comp (a, t) contDiffAt_fst).prodMk (contDiffAt_snd.sub contDiffAt_const)
+  apply (hout.comp (a, t) hinner).congr_of_eventuallyEq
+  filter_upwards [] with p
+  dsimp only [Function.comp_apply]
+  rw [← globalSolution_add]
+  congr 2
+  ring
+
+/-- The finite-order case of `contDiff_globalSolution`: for a globally Lipschitz `C^(n+1)` vector
+field `v` and natural `n`, the global solution is jointly `C^(n+1)` in the initial condition and
+time. -/
+private theorem contDiff_globalSolution_of_nat {n : ℕ} (v : E → E) {K : ℝ≥0}
+    (hv : LipschitzWith K v) (hvs : ContDiff ℝ (n + 1) v) :
+    ContDiff ℝ (n + 1) (fun p : E × ℝ ↦ globalSolution v hv p.1 p.2) := by
+  let G : E × ℝ → E := fun p ↦ globalSolution v hv p.1 p.2
+  -- For a fixed initial condition, the times at which `G` is `C^(n+1)` form a nonempty clopen
+  -- subset of `ℝ`; the flow law propagates smoothness locally, including at limit points.
+  have hlocal (a : E) : ContDiffAt ℝ (n + 1) G (a, 0) := by
+    exact_mod_cast contDiffAt_globalSolution (n := (n : ℕ∞)) v hv
+      (by exact_mod_cast hvs.contDiffOn) (univ_mem : Set.univ ∈ nhds a)
+  have hfinite : (n + 1 : ℕ∞) ≠ ∞ := by simp
+  apply contDiff_iff_contDiffAt.2
+  rintro ⟨a, t⟩
+  let S : Set ℝ := {s | ContDiffAt ℝ (n + 1) G (a, s)}
+  have hopen : IsOpen S := by
+    rw [isOpen_iff_mem_nhds]
+    intro s hs
+    have houter : ∀ᶠ u in nhds s,
+        ContDiffAt ℝ (n + 1) G (globalSolution v hv a s, u - s) := by
+      have hevent := (hlocal (globalSolution v hv a s)).eventually hfinite
+      have htend : Tendsto (fun u : ℝ ↦ (globalSolution v hv a s, u - s)) (nhds s)
+          (nhds (globalSolution v hv a s, 0)) := by
+        have hconst : ContinuousAt (fun _ : ℝ ↦ globalSolution v hv a s) s := continuousAt_const
+        have hsub : ContinuousAt (fun u : ℝ ↦ u - s) s :=
+          continuousAt_id.sub continuousAt_const
+        have htend' := hconst.prodMk hsub
+        simpa only [ContinuousAt, sub_self] using htend'
+      exact htend.eventually hevent
+    exact houter.mono fun u hu ↦ contDiffAt_globalSolution_of_contDiffAt_sub v hv a hs hu
+  have hclosed : IsClosed S := by
+    apply isClosed_of_closure_subset
+    intro s hs
+    have houter : ∀ᶠ u in nhds s,
+        ContDiffAt ℝ (n + 1) G (globalSolution v hv a u, s - u) := by
+      have hevent := (hlocal (globalSolution v hv a s)).eventually hfinite
+      have htend : Tendsto (fun u ↦ (globalSolution v hv a u, s - u)) (nhds s)
+          (nhds (globalSolution v hv a s, 0)) := by
+        have hsub : ContinuousAt (fun u : ℝ ↦ s - u) s :=
+          continuousAt_const.sub continuousAt_id
+        have htend' := (continuous_globalSolution_apply v hv a).continuousAt.prodMk hsub
+        simpa only [ContinuousAt, sub_self] using htend'
+      exact htend.eventually hevent
+    obtain ⟨u, hu⟩ := (mem_closure_iff_nhds').1 hs _ houter
+    exact contDiffAt_globalSolution_of_contDiffAt_sub v hv a u.property hu
+  have hSuniv : S = Set.univ :=
+    IsClopen.eq_univ ⟨hclosed, hopen⟩ ⟨0, hlocal a⟩
+  have ht : t ∈ S := by
+    rw [hSuniv]
+    exact Set.mem_univ t
+  exact ht
+
 /-- **The global solution of a globally Lipschitz `C^(n+1)` field is `C^(n+1)` jointly in its
 initial condition and time.**
 
@@ -153,68 +226,7 @@ theorem contDiff_globalSolution {n : ℕ∞} (v : E → E) {K : ℝ≥0} (hv : L
       exact contDiff_infty.2 fun k ↦ (H k (hvs.of_le (by exact_mod_cast le_top))).of_le
         (by exact_mod_cast le_self_add)
     | coe k => exact_mod_cast H k (by exact_mod_cast hvs)
-  clear hvs n
-  intro n hvs
-  -- For a fixed initial condition, the smooth times form a nonempty clopen subset of `ℝ`:
-  -- the flow law propagates smoothness locally, including at limit points.
-  let G : E × ℝ → E := fun p ↦ globalSolution v hv p.1 p.2
-  have hlocal (a : E) : ContDiffAt ℝ (n + 1) G (a, 0) := by
-    exact_mod_cast contDiffAt_globalSolution (n := (n : ℕ∞)) v hv
-      (by exact_mod_cast hvs.contDiffOn) (univ_mem : Set.univ ∈ nhds a)
-  have hfinite : (n + 1 : ℕ∞) ≠ ∞ := by simp
-  have propagate (a : E) {s t : ℝ} (hs : ContDiffAt ℝ (n + 1) G (a, s))
-      (hout : ContDiffAt ℝ (n + 1) G (globalSolution v hv a s, t - s)) :
-      ContDiffAt ℝ (n + 1) G (a, t) := by
-    have hfixed : ContDiffAt ℝ (n + 1) (fun x ↦ globalSolution v hv x s) a :=
-      hs.comp a (contDiffAt_id.prodMk contDiffAt_const)
-    have hinner : ContDiffAt ℝ (n + 1)
-        (fun p : E × ℝ ↦ (globalSolution v hv p.1 s, p.2 - s)) (a, t) :=
-      (hfixed.comp (a, t) contDiffAt_fst).prodMk (contDiffAt_snd.sub contDiffAt_const)
-    apply (hout.comp (a, t) hinner).congr_of_eventuallyEq
-    filter_upwards [] with p
-    dsimp only [G, Function.comp_apply]
-    rw [← globalSolution_add]
-    congr 2
-    ring
-  apply contDiff_iff_contDiffAt.2
-  rintro ⟨a, t⟩
-  let S : Set ℝ := {s | ContDiffAt ℝ (n + 1) G (a, s)}
-  have hopen : IsOpen S := by
-    rw [isOpen_iff_mem_nhds]
-    intro s hs
-    have houter : ∀ᶠ u in nhds s,
-        ContDiffAt ℝ (n + 1) G (globalSolution v hv a s, u - s) := by
-      have hevent := (hlocal (globalSolution v hv a s)).eventually hfinite
-      have htend : Tendsto (fun u : ℝ ↦ (globalSolution v hv a s, u - s)) (nhds s)
-          (nhds (globalSolution v hv a s, 0)) := by
-        have hconst : ContinuousAt (fun _ : ℝ ↦ globalSolution v hv a s) s := continuousAt_const
-        have hsub : ContinuousAt (fun u : ℝ ↦ u - s) s :=
-          continuousAt_id.sub continuousAt_const
-        have htend' := hconst.prodMk hsub
-        simpa only [ContinuousAt, sub_self] using htend'
-      exact htend.eventually hevent
-    exact houter.mono fun u hu ↦ propagate a hs hu
-  have hclosed : IsClosed S := by
-    apply isClosed_of_closure_subset
-    intro s hs
-    have houter : ∀ᶠ u in nhds s,
-        ContDiffAt ℝ (n + 1) G (globalSolution v hv a u, s - u) := by
-      have hevent := (hlocal (globalSolution v hv a s)).eventually hfinite
-      have htend : Tendsto (fun u ↦ (globalSolution v hv a u, s - u)) (nhds s)
-          (nhds (globalSolution v hv a s, 0)) := by
-        have hsub : ContinuousAt (fun u : ℝ ↦ s - u) s :=
-          continuousAt_const.sub continuousAt_id
-        have htend' := (continuous_globalSolution_apply v hv a).continuousAt.prodMk hsub
-        simpa only [ContinuousAt, sub_self] using htend'
-      exact htend.eventually hevent
-    obtain ⟨u, hu⟩ := (mem_closure_iff_nhds').1 hs _ houter
-    exact propagate a u.property hu
-  have hSuniv : S = Set.univ :=
-    IsClopen.eq_univ ⟨hclosed, hopen⟩ ⟨0, hlocal a⟩
-  have ht : t ∈ S := by
-    rw [hSuniv]
-    exact Set.mem_univ t
-  exact ht
+  exact fun _ ↦ contDiff_globalSolution_of_nat v hv
 
 /-- At every fixed time, the global solution of a globally Lipschitz `C^(n+1)` field is a
 `C^(n+1)` function of its initial condition. -/

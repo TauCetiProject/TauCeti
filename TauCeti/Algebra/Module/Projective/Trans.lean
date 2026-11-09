@@ -28,7 +28,7 @@ public section
 
 namespace Module.Projective
 
-variable {R S M : Type*} [Semiring R] [Semiring S] [Module R S] [IsScalarTower R S S]
+variable {R : Type*} (S M : Type*) [Semiring R] [Semiring S] [Module R S] [IsScalarTower R S S]
   [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
 
 /-- **Projectivity is transitive along a scalar tower.** A projective module over a ring `S` that is
@@ -36,10 +36,8 @@ itself projective as a left `R`-module is projective over `R`. -/
 theorem trans [Module.Projective R S] [Module.Projective S M] : Module.Projective R M := by
   classical
   obtain ⟨s, hs⟩ := Module.projective_def'.mp ‹Module.Projective S M›
-  have : Module.Projective R (M →₀ S) :=
-    .of_equiv' (finsuppLequivDFinsupp (M := S) R).symm
-  refine .of_split (s.restrictScalars R) ((Finsupp.linearCombination S id).restrictScalars R) ?_
-  ext x
-  exact DFunLike.congr_fun hs x
+  have : Module.Projective R (M →₀ S) := .of_equiv' (finsuppLequivDFinsupp R).symm
+  exact .of_split (s.restrictScalars R) ((Finsupp.linearCombination S id).restrictScalars R)
+    (LinearMap.ext fun x ↦ LinearMap.congr_fun hs x)
 
 end Module.Projective

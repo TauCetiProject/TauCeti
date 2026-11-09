@@ -9,6 +9,7 @@ public import Mathlib.CategoryTheory.Abelian.Injective.Dimension
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.HomotopyCofiber
+public import TauCeti.Algebra.Homology.Ext.Presentation
 
 /-!
 # Projective cycles and contractible complexes
@@ -27,7 +28,8 @@ shape, possibly unbounded in both directions or cyclic.
   in degree `j`. When the cycles of `X₂` in degree `j` have projective dimension `< n`, those of
   `X₁` do as soon as those of `X₃` have projective dimension `< n + 1`. In particular, when the
   cycles of `X₂` are projective, those of `X₁` are syzygies of those of `X₃`, and their projective
-  dimension drops by one.
+  dimension drops by one. Likewise, along an exact range of projectives the projective dimension
+  of the cycles drops by one in each degree.
 * With enough projectives, and when every index is both the source and the target of a relation
   of the shape, every complex receives a degreewise epimorphism from a contractible complex with
   projective terms, the mapping cone of the identity of a complex with zero differential made of
@@ -49,6 +51,8 @@ extensions into objects of injective dimension at most `d`; they are `d`-th syzy
 * `HomologicalComplex.exists_projective_contractible_epi_f`: when every index is both the source
   and the target of a relation, every complex is the target of a degreewise epimorphism from a
   contractible complex with projective terms.
+* `CochainComplex.hasProjectiveDimensionLT_cycles_of_add`: dimension shifting for the projective
+  dimension of the cycles along an exact range of projectives.
 * `HomologicalComplex.ext_cycles_eq_zero_of_rel` and `CochainComplex.ext_cycles_eq_zero_of_add`:
   dimension shifting for extensions out of the cycles.
 * `CochainComplex.ext_cycles_eq_zero_of_hasInjectiveDimensionLE`: the cycles of an exact range of
@@ -132,6 +136,32 @@ theorem HomologicalComplex.exists_projective_contractible_epi_f [EnoughProjectiv
     refine epi_of_epi_fac (f := homotopyCofiber.inlX (𝟙 G) j i hij) (h := h j i hij) ?_
     simp [hα, h, dite_eq_left hij]
 
+/-- **Dimension shifting for the cycles**: if `K` has projective terms in degrees
+`j, …, j + k - 1` and is exact in degrees `j + 1, …, j + k`, then the cycles of `K` in degree `j`
+have projective dimension `< p + 1` whenever those in degree `j + k` have projective dimension
+`< p + 1 + k`, along the short exact sequences `0 ⟶ Zⁱ ⟶ Kⁱ ⟶ Zⁱ⁺¹ ⟶ 0`. -/
+theorem CochainComplex.hasProjectiveDimensionLT_cycles_of_add {K : CochainComplex C ℤ} (j : ℤ)
+    (k : ℕ) (hproj : ∀ l : ℕ, l < k → Projective (K.X (j + l)))
+    (hexact : ∀ l : ℕ, l < k → K.ExactAt (j + l + 1)) (p : ℕ)
+    (h : HasProjectiveDimensionLT (K.cycles (j + k)) (p + 1 + k)) :
+    HasProjectiveDimensionLT (K.cycles j) (p + 1) := by
+  induction k generalizing j p with
+  | zero => simpa using h
+  | succ k ih =>
+    have hj (l : ℕ) : j + 1 + (l : ℤ) = j + ((l + 1 : ℕ) : ℤ) := by push_cast; ring
+    have : Projective (K.X j) := by simpa using hproj 0 (by lia)
+    have hS := K.cyclesShortComplex_shortExact_of_iso (j := j + 1) rfl
+      (by simpa using hexact 0 (by lia)) (Iso.refl _) (Iso.refl _)
+    refine hS.hasProjectiveDimensionLT_X₁ (p + 1)
+      (hasProjectiveDimensionLT_of_ge _ 1 (p + 1) (by lia)) ?_
+    refine ih (j + 1) (fun l hl ↦ ?_) (fun l hl ↦ ?_) (p + 1) ?_
+    · rw [hj]
+      exact hproj (l + 1) (by lia)
+    · rw [hj]
+      exact hexact (l + 1) (by lia)
+    · rw [hj, show p + 1 + 1 + k = p + 1 + (k + 1) by lia]
+      exact h
+
 section Ext
 
 variable [HasExt.{w} C] {Y : C}
@@ -143,9 +173,8 @@ theorem HomologicalComplex.ext_cycles_eq_zero_of_rel {K : HomologicalComplex C c
     (hjj' : c.Rel j j') [Projective (K.X j)] (hj' : K.ExactAt j') (n : ℕ)
     (h : ∀ e : Ext.{w} (K.cycles j') Y (n + 2), e = 0) (e : Ext.{w} (K.cycles j) Y (n + 1)) :
     e = 0 := by
-  have hS := K.cyclesShortComplex_shortExact_of_iso hjj' hj' (Iso.refl _) (Iso.refl _)
-  obtain ⟨x, rfl⟩ := Ext.contravariant_sequence_exact₁ hS Y e (n₁ := n + 2) (by lia) (h _)
-  rw [Ext.eq_zero_of_projective x, Ext.comp_zero]
+  exact (K.cyclesShortComplex_shortExact_of_iso hjj' hj' (Iso.refl _)
+    (Iso.refl _)).ext_X₁_eq_zero_of_ext_X₃_eq_zero h e
 
 /-- **Dimension shifting along the cycles**: if `K` has projective terms in degrees
 `j, …, j + k - 1` and is exact in degrees `j + 1, …, j + k`, then `Ext^{n+1}(Zʲ, Y)` vanishes

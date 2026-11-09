@@ -344,11 +344,13 @@ theorem spinToSpecialOrthogonal_bijective_of_finrank_eq_zero
   let _ : Subsingleton M := Module.finrank_zero_iff.mp hM
   exact spinToSpecialOrthogonal_bijective_of_subsingleton Q
 
+omit [FiniteDimensional K M] in
 /-- The kernel of the Spin action on a positive-dimensional finite nondegenerate quadratic space
 over a field where `2` is invertible has cardinality two. -/
 theorem card_ker_spinToSpecialOrthogonal (hM : 0 < Module.finrank K M)
     (Q : QuadraticForm K M) [Invertible (2 : K)] (hQ : Q.Nondegenerate) :
     Nat.card (MonoidHom.ker (spinToSpecialOrthogonal Q)) = 2 := by
+  have : FiniteDimensional K M := Module.finite_of_finrank_pos hM
   let _ : Nontrivial M := Module.nontrivial_of_finrank_pos hM
   rw [Nat.card_eq_two_iff' (1 : MonoidHom.ker (spinToSpecialOrthogonal Q))]
   have hQ0 := hQ.ne_zero

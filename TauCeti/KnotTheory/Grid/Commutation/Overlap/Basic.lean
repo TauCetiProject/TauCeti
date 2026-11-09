@@ -196,6 +196,26 @@ theorem OMonomial_mul_OMonomial_of_isRepartition
   simpa only [toRectangleDecomposition_first_toGridRectangle,
     toRectangleDecomposition_second_toGridRectangle] using h.OMonomial_mul_OMonomial G R
 
+/-- Emptiness of both pieces of a rectangle--pentagon domain whose pieces share their initial side
+puts the rectangle's top row strictly between its bottom row and the pentagon's top row. -/
+theorem top_mem_cIoo_of_isEmpty_of_left_eq_left
+    (D : GridRectanglePentagonDecomposition a s x z)
+    (hcommon' : D.toRectangleDecomposition.first.left = D.toRectangleDecomposition.second.left)
+    (hright : D.rectangle.right ≠ D.pentagon.right)
+    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
+    D.rectangle.top ∈ Grid.cIoo D.rectangle.bottom D.pentagon.top := by
+  simpa only [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def,
+    toRectangleDecomposition_first_left, toRectangleDecomposition_first_right,
+    toRectangleDecomposition_second_right, toRectangleDecomposition_middle] using
+    (D.toRectangleDecomposition.cyclicOrder_of_isEmpty_of_left_eq_left hcommon'
+      (by simpa only [toRectangleDecomposition_first_right,
+        toRectangleDecomposition_second_right] using hright)
+      (by simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
+      (by simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
+        D.toRectangleDecomposition_middle,
+        D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)).2
+
 end GridRectanglePentagonDecomposition
 
 namespace GridRectanglePentagonDecomposition

@@ -226,7 +226,7 @@ theorem scalarCurvature_rescale_eq_rpow_mul_conformalLaplacian
       Real.rpow_add hux, Real.rpow_neg hux.le, Real.rpow_neg_one]
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
   rw [g.scalarCurvature_rescale hf hf_pos hfφ x, laplaceBeltrami_smul I _ hlog,
-    mgradient_smul _ (hlog.mdifferentiable (by simp)), Pi.smul_apply,
+    mgradient_smul _, Pi.smul_apply,
     laplaceBeltrami_log I (hu.of_le (by simp)) (fun y ↦ (hu_pos y).ne'),
     mgradient_log (hu.mdifferentiableAt (by simp)) hux.ne', hpow, conformalLaplacian_def,
     conformalCoefficient_def, ← g.scalarCurvature_def x]

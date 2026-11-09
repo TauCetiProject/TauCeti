@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Reciprocity
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.CosetSplitting
+public import TauCeti.Algebra.Module.ZLattice.SignedDiscriminant
 
 /-!
 # The closed formula for lattice Gauss sums
@@ -25,9 +26,18 @@ symbol. This evaluates the scalar in the theta transformation law for matrices w
 column is positive and whose upper-left entry is odd. No character at the level, or reduction
 of arbitrary matrices to this case, is asserted here.
 
+The sum depends only on `a` modulo `c`. At `c = level L`, comparing an odd `a ≡ 1` with `1`
+therefore shows `(D_L / a) = 1` for the signed discriminant `D_L = signedDiscr L =
+(-1)^k |L^∨/L|`. The unit-kernel criterion `TauCeti.conductor_kroneckerChar_dvd_iff` then proves
+that the conductor of the Kronecker character of `D_L` divides `level L`
+(`ZLattice.IsEven.conductor_kroneckerChar_signedDiscr_dvd_level`). No divisibility between the
+level and `|D_L|` is assumed. This is the arithmetic descent needed to put the theta
+transformation character at the lattice's level.
+
 ## References
 
 * B. Schoeneberg, *Elliptic Modular Functions*, Springer, 1974, Chapter IX.
+* W. Ebeling, *Lattices and Codes*, 3rd ed., Springer (2013), Chapter 3.
 -/
 
 public section
@@ -91,5 +101,46 @@ theorem thetaSeries_slash_eq_jacobiSym_smul (hk : finrank ℝ E = 2 * k) (A : SL
     simpa only [ha, hc] using A.isCoprime_col 0
   rw [hL.thetaSeries_slash_eq_gaussSum_smul hk A hc hN, ha,
     hL.normalized_gaussSum_eq_jacobiSym hk haodd hN hac.natCoprime]
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The Jacobi symbol of the signed discriminant is `1` on odd natural numbers
+congruent to `1` modulo the level. No separate coprimality assumption is needed. -/
+theorem jacobiSym_signedDiscr_eq_one (hk : finrank ℝ E = 2 * k) {a : ℕ}
+    (ha : Odd a) (hmod : a ≡ 1 [MOD level L]) :
+    jacobiSym (signedDiscr L) a = 1 := by
+  classical
+  borelize E
+  have : NeZero (level L) := ⟨hL.isIntegral.level_pos.ne'⟩
+  have hcop : a.Coprime (level L) := by
+    rw [Nat.coprime_iff_gcd_eq_one, hmod.gcd_eq, Nat.gcd_one_left]
+  have hsum : gaussSum L hL a (level L) = gaussSum L hL 1 (level L) :=
+    gaussSum_eq_of_modEq hL (by exact_mod_cast hmod)
+  have hone := hL.gaussSum_eq_sqrt_card_mul_jacobiSym hk odd_one dvd_rfl
+    (Nat.coprime_one_left (level L))
+  simp only [Nat.cast_one, jacobiSym.one_right, Int.cast_one, mul_one] at hone
+  rw [hL.gaussSum_eq_sqrt_card_mul_jacobiSym hk ha dvd_rfl hcop, hone] at hsum
+  have hcard : (0 : ℝ) < Nat.card (DiscriminantGroup L) := by
+    have := hL.isIntegral.finite_discriminantGroup
+    exact_mod_cast Nat.card_pos
+  have hne : (level L : ℂ) ^ k * (√(Nat.card (DiscriminantGroup L) : ℝ) : ℂ) * I ^ k ≠ 0 :=
+    mul_ne_zero (mul_ne_zero (pow_ne_zero _ (Nat.cast_ne_zero.mpr (NeZero.ne _)))
+      (ofReal_ne_zero.mpr (Real.sqrt_pos.2 hcard).ne')) (pow_ne_zero _ I_ne_zero)
+  rw [signedDiscr_of_finrank_eq L hk]
+  exact_mod_cast (mul_left_cancel₀ hne (hsum.trans (mul_one _).symm))
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- **The discriminant-character conductor divides the lattice level.** The character
+is initially defined modulo `|D_L|`; its primitive character can consequently be
+induced to `level L`. The coefficient ring need only distinguish `1` and `-1`. -/
+theorem conductor_kroneckerChar_signedDiscr_dvd_level (R : Type*) [CommRing R]
+    [NeZero (2 : R)] (hE : Even (finrank ℝ E)) :
+    (TauCeti.kroneckerChar R (signedDiscr L) (hL.signedDiscr_modEq_zero_or_one hE)
+      hL.isIntegral.signedDiscr_ne_zero).conductor ∣ level L := by
+  obtain ⟨k, hk⟩ := hE
+  have hk' : finrank ℝ E = 2 * k := hk.trans (two_mul k).symm
+  apply (TauCeti.conductor_kroneckerChar_dvd_iff _ _).mpr
+  intro a ha _ hmod
+  rw [TauCeti.kroneckerSym_eq_jacobiSym _ ha]
+  exact hL.jacobiSym_signedDiscr_eq_one hk' ha hmod
 
 end ZLattice.IsEven

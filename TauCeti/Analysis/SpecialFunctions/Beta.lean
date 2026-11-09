@@ -12,7 +12,7 @@ import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.Analysis.Real.Sqrt
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
@@ -41,6 +41,8 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 
 * `TauCeti.intervalIntegrable_rpow_mul_one_sub_rpow` — interval integrability of the beta
   integrand between any two points of `[0, 1]`;
+* `TauCeti.intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow` — interval integrability of a product
+  of two power singularities `|x - p| ^ α * |x - q| ^ β` with exponents greater than `-1`;
 * `TauCeti.integrableOn_rpow_mul_one_sub_rpow_iff` — the sharp integrability criterion at both
   endpoints of the unit interval;
 * `TauCeti.integral_rpow_mul_one_sub_rpow` — Euler's beta integral,
@@ -61,6 +63,8 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 * `TauCeti.integral_rpow_mul_one_add_sq_rpow` — the radial form
   `∫ y in Ioi 0, y ^ (s - 1) * (1 + y ^ 2) ^ (-r / 2) = Β(s / 2, (r - s) / 2) / 2` of the second
   integral, obtained by substituting `u = y ^ 2`;
+* `TauCeti.integral_rpow_div_add` and `TauCeti.integrableOn_rpow_div_add` — the Mellin
+  transform and integrability of `x ^ (s - 1) / (x + a)` for `0 < s < 1` and `0 < a`;
 * `TauCeti.integral_rpow_div_one_add_sq` and `TauCeti.integral_rpow_div_sq_add_sq` — the Mellin
   transform `∫ y in Ioi 0, y ^ (s - 1) / (y ^ 2 + t ^ 2) = |t| ^ (s - 2) * π / (2 sin (π s / 2))`
   for `0 < s < 2`, by Euler's reflection formula, with
@@ -71,6 +75,10 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
   rational functions `y / (y ^ 2 + t ^ 2) - y⁻¹` and `t / (y ^ 2 + t ^ 2) - t / (1 + y ^ 2)`,
   reduced to the Mellin transform above; at exponent one the second has the logarithmic value
   `-(t log |t|)`;
+* `TauCeti.integral_rpow_mul_inv_add_sub_inv_add_div_one_add_sq` and
+  `TauCeti.integral_mul_inv_add_sub_inv_add_div_one_add_sq` — the Mellin integrals of the rational
+  sine-compensated Laplace transform `(x + a)⁻¹ - x⁻¹ + a / (1 + x ^ 2)`, with a power formula
+  for `0 < α < 2`, `α ≠ 1`, and the logarithmic value `a * log a` at exponent one;
 * `TauCeti.abs_deriv_smul_one_add_rpow` — the change-of-variables identity relating the first and
   second beta-integral kernels under the chart `u ↦ u / (1 - u)`;
 * `TauCeti.integrable_one_add_sq_rpow`, `TauCeti.integral_one_add_sq_rpow`,
@@ -80,8 +88,12 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 * `ProbabilityTheory.beta_comm` — symmetry of `Β`;
 * `ProbabilityTheory.beta_one_half_left_eq_two_rpow_mul_beta_self` — Legendre's duplication
   formula as a relation between `Β(1/2, a)` and `Β(a, a)`;
-* `ProbabilityTheory.beta_one_right` — the value `Β(a, 1) = 1 / a`;
+* `ProbabilityTheory.beta_one_right`, `ProbabilityTheory.beta_one_left` — the values
+  `Β(a, 1) = Β(1, a) = 1 / a`;
 * `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`;
+* `ProbabilityTheory.beta_add_one_sub_one_div` and `ProbabilityTheory.beta_add_two_sub_two_div` —
+  the ratios `Β(a + 1, b - 1) / Β(a, b) = a / (b - 1)` and
+  `Β(a + 2, b - 2) / Β(a, b) = a (a + 1) / ((b - 1) (b - 2))`;
 * `ProbabilityTheory.beta_three_halves_three_halves` — the value `Β(3/2, 3/2) = π / 8`.
 * `ProbabilityTheory.tendsto_natCast_mul_beta_atTop` — `n Β(n, s) → 0` along the natural numbers
   for `s > 1`.
@@ -149,6 +161,48 @@ theorem intervalIntegrable_rpow_mul_one_sub_rpow (ha : 0 < a) (hb : 0 < b) {u v 
   refine key.mono_set (uIcc_subset_uIcc ?_ ?_) <;>
     rw [uIcc_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
   exacts [hu, hv]
+
+/-- The product of two power singularities `|x - p| ^ α * |x - q| ^ β` is interval integrable
+between `p < q` when both exponents are greater than `-1`. This reduces to Euler's beta integral. -/
+private theorem intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow_of_lt {p q α β : ℝ} (hpq : p < q)
+    (hα : -1 < α) (hβ : -1 < β) :
+    IntervalIntegrable (fun x : ℝ ↦ |x - p| ^ α * |x - q| ^ β) volume p q := by
+  let L := q - p
+  have hL : 0 < L := sub_pos.mpr hpq
+  have hbeta : IntervalIntegrable (fun t : ℝ ↦ t ^ α * (1 - t) ^ β) volume 0 1 := by
+    simpa only [add_sub_cancel_right] using
+      intervalIntegrable_rpow_mul_one_sub_rpow (a := α + 1) (b := β + 1)
+        (by linarith) (by linarith) (u := 0) (v := 1) (by simp) (by simp)
+  have hscaled : IntervalIntegrable
+      (fun x : ℝ ↦ (x / L) ^ α * (1 - x / L) ^ β) volume 0 L := by
+    have h := hbeta.comp_mul_right (c := L⁻¹)
+    simpa [div_eq_mul_inv, hL.ne'] using h
+  have hshifted : IntervalIntegrable
+      (fun x : ℝ ↦ ((x - p) / L) ^ α * (1 - (x - p) / L) ^ β) volume p q := by
+    have h := hscaled.comp_sub_right p
+    simpa [L] using h
+  refine (hshifted.const_mul (L ^ (α + β))).congr fun x hx ↦ ?_
+  rw [uIoc_of_le hpq.le] at hx
+  have hxp : 0 < x - p := sub_pos.mpr hx.1
+  have hqx : 0 ≤ q - x := sub_nonneg.mpr hx.2
+  have hone : 1 - (x - p) / L = (q - x) / L := by
+    field_simp [hL.ne']
+    ring
+  rw [abs_of_pos hxp, abs_of_nonpos (sub_nonpos.mpr hx.2), neg_sub, hone,
+    Real.div_rpow hxp.le hL.le, Real.div_rpow hqx hL.le, div_eq_mul_inv]
+  rw [Real.rpow_add hL]
+  field_simp [(Real.rpow_pos_of_pos hL _).ne']
+
+/-- The product of two power singularities `|x - p| ^ α * |x - q| ^ β` is interval integrable
+between any two endpoints `p` and `q` when both exponents are greater than `-1`. -/
+theorem intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow {p q α β : ℝ}
+    (hα : -1 < α) (hβ : -1 < β) :
+    IntervalIntegrable (fun x : ℝ ↦ |x - p| ^ α * |x - q| ^ β) volume p q := by
+  rcases lt_trichotomy p q with hpq | rfl | hqp
+  · exact intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow_of_lt hpq hα hβ
+  · exact IntervalIntegrable.refl
+  · have h := (intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow_of_lt hqp hβ hα).symm
+    simpa only [mul_comm] using h
 
 /-- If the beta integrand is interval integrable on the unit interval, then its exponent at the
 left endpoint is greater than `-1`. -/
@@ -404,7 +458,7 @@ theorem integrableOn_rpow_mul_one_add_rpow (ha : 0 < a) (hb : 0 < b) :
   rw [← hchart,
     integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Ioo
       (fun u hu => (hasDerivAt_div_one_sub (ne_of_lt hu.2)).hasDerivWithinAt)
-      (injOn_div_one_sub_Ioo (u0 := 0))]
+      (strictMonoOn_div_one_sub.injOn.mono Ioo_subset_Iio_self)]
   exact hIoo.congr_fun (fun u hu => (abs_deriv_smul_one_add_rpow a b hu).symm) measurableSet_Ioo
 
 private lemma eventually_const_mul_rpow_le_rpow_mul_one_add_rpow (hab : 0 < a + b) :
@@ -507,7 +561,7 @@ theorem integral_rpow_mul_one_add_rpow (ha : 0 < a) (hb : 0 < b) :
   rw [← hchart,
     integral_image_eq_integral_abs_deriv_smul measurableSet_Ioo
       (fun u hu => (hasDerivAt_div_one_sub (ne_of_lt hu.2)).hasDerivWithinAt)
-      (injOn_div_one_sub_Ioo (u0 := 0)),
+      (strictMonoOn_div_one_sub.injOn.mono Ioo_subset_Iio_self),
     setIntegral_congr_fun measurableSet_Ioo (fun u hu => abs_deriv_smul_one_add_rpow a b hu),
     ← integral_rpow_mul_one_sub_rpow ha hb,
     intervalIntegral.integral_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
@@ -525,10 +579,8 @@ private lemma image_sqrt_Ioi : Real.sqrt '' Ioi 0 = Ioi 0 := by
     exact ⟨x ^ 2, mem_Ioi.mpr (pow_pos (mem_Ioi.mp hx) 2), Real.sqrt_sq (mem_Ioi.mp hx).le⟩
 
 /-- The square root is injective on the positive half-line. -/
-private lemma injOn_sqrt_Ioi : InjOn Real.sqrt (Ioi 0) := by
-  intro u hu v hv huv
-  have := congrArg (· ^ 2) huv
-  simpa [Real.sq_sqrt (mem_Ioi.mp hu).le, Real.sq_sqrt (mem_Ioi.mp hv).le] using this
+private lemma injOn_sqrt_Ioi : InjOn Real.sqrt (Ioi 0) := fun _ hu _ hv h =>
+  (Real.sqrt_inj (mem_Ioi.1 hu).le (mem_Ioi.1 hv).le).1 h
 
 /-- Under the square root the kernel `(1 + x ^ 2) ^ (-s)` becomes the integrand of Euler's second
 beta integral with first parameter `1 / 2`. -/
@@ -609,6 +661,35 @@ theorem integral_rpow_mul_one_add_sq_rpow {r : ℝ} (hs : 0 < s) (hsr : s < r) :
     smul_eq_mul]
   ring
 
+/-- The Mellin transform of a positive linear denominator. -/
+theorem integral_rpow_div_add (s a : ℝ) (hs : 0 < s) (hs1 : s < 1) (ha : 0 < a) :
+    ∫ x in Ioi (0 : ℝ), x ^ (s - 1) / (x + a) =
+      a ^ (s - 1) * (Real.pi / Real.sin (Real.pi * s)) := by
+  have hbase : ∫ x in Ioi (0 : ℝ), x ^ (s - 1) / (1 + x) = Real.pi / Real.sin (Real.pi * s) := by
+    have h := integral_rpow_mul_one_add_rpow hs (by linarith : 0 < 1 - s)
+    simpa [ProbabilityTheory.beta, Real.Gamma_mul_Gamma_one_sub, Real.rpow_neg_one,
+      div_eq_mul_inv] using h
+  have h := integral_comp_mul_left_Ioi (fun x : ℝ ↦ x ^ (s - 1) / (x + a)) 0 ha
+  rw [mul_zero, smul_eq_mul] at h
+  calc
+    _ = ∫ x in Ioi (0 : ℝ), a ^ (s - 1) * (x ^ (s - 1) / (1 + x)) := by
+      rw [← mul_inv_cancel_left₀ ha.ne' (∫ x in Ioi (0 : ℝ), x ^ (s - 1) / (x + a)),
+        ← h, ← integral_const_mul]
+      refine setIntegral_congr_fun measurableSet_Ioi fun x (hx : 0 < x) ↦ ?_
+      rw [Real.mul_rpow ha.le hx.le]
+      field_simp
+      ring
+    _ = _ := by rw [integral_const_mul, hbase]
+
+/-- Integrability of the Mellin kernel with a positive linear denominator. -/
+theorem integrableOn_rpow_div_add (s a : ℝ) (hs : 0 < s) (hs1 : s < 1) (ha : 0 < a) :
+    IntegrableOn (fun x : ℝ ↦ x ^ (s - 1) / (x + a)) (Ioi 0) := by
+  apply Integrable.of_integral_ne_zero
+  rw [integral_rpow_div_add s a hs hs1 ha]
+  have : 0 < Real.sin (Real.pi * s) :=
+    Real.sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [Real.pi_pos])
+  positivity
+
 /-- **The Mellin transform of `1 / (1 + y ^ 2)`.** For `0 < s < 2`,
 `∫ y in Ioi 0, y ^ (s - 1) / (1 + y ^ 2) = π / (2 * sin (π * s / 2))`. This is the radial
 second beta integral at `r = 2`, evaluated by Euler's reflection formula. -/
@@ -674,6 +755,44 @@ theorem integral_rpow_mul_div_sq_add_sq_sub_inv (hs : 0 < s) (hs2 : s < 2) (t : 
         Real.rpow_sub ht', Real.rpow_two]
       field_simp
 
+/-- The case `1 < s` of `integral_rpow_mul_div_sq_add_sq_sub_div_one_add_sq`: both terms are Mellin
+transforms at exponent `s - 1`. -/
+private theorem integral_rpow_mul_div_sq_add_sq_sub_div_one_add_sq_of_one_lt (hs3 : s < 3)
+    (hs1 : 1 < s) {t : ℝ} (ht : t ≠ 0) :
+    ∫ y in Ioi (0 : ℝ), y ^ s * (t / (y ^ 2 + t ^ 2) - t / (1 + y ^ 2)) =
+      (t * |t| ^ (s - 1) - t) * (Real.pi / (2 * Real.cos (Real.pi * s / 2))) := by
+  have h0 : 0 < s - 1 := by linarith
+  have h2 : s - 1 < 2 := by linarith
+  have ht' := abs_pos.mpr ht
+  have hsin : Real.sin (Real.pi * (s - 1) / 2) = -Real.cos (Real.pi * s / 2) := by
+    rw [show Real.pi * (s - 1) / 2 = Real.pi * s / 2 - Real.pi / 2 by ring,
+      Real.sin_sub_pi_div_two]
+  have hcos : Real.cos (Real.pi * s / 2) ≠ 0 :=
+    (Real.cos_neg_of_pi_div_two_lt_of_lt (by nlinarith [Real.pi_pos])
+      (by nlinarith [Real.pi_pos])).ne
+  calc
+    _ = ∫ y in Ioi (0 : ℝ), (t * (y ^ (s - 1 - 1) / (y ^ 2 + 1 ^ 2)) -
+          t ^ 3 * (y ^ (s - 1 - 1) / (y ^ 2 + t ^ 2))) := by
+      refine setIntegral_congr_fun measurableSet_Ioi fun y (hy : 0 < y) ↦ ?_
+      have hpow : y ^ s = y ^ (s - 1 - 1) * y ^ 2 := by
+        rw [← Real.rpow_natCast, ← Real.rpow_add hy]
+        congr 1
+        push_cast
+        ring
+      rw [hpow, one_pow, add_comm (y ^ 2) 1]
+      field_simp
+      ring
+    _ = _ := by
+      rw [integral_sub ((integrableOn_rpow_div_sq_add_sq h0 h2 one_ne_zero).const_mul t)
+        ((integrableOn_rpow_div_sq_add_sq h0 h2 ht).const_mul _),
+        integral_const_mul, integral_const_mul, integral_rpow_div_sq_add_sq h0 h2 ht,
+        integral_rpow_div_sq_add_sq h0 h2 one_ne_zero, abs_one, Real.one_rpow, hsin]
+      have key : t ^ 3 * |t| ^ (s - 1 - 2) = t * |t| ^ (s - 1) := by
+        rw [show t ^ 3 = t * |t| ^ 2 by rw [sq_abs]; ring, Real.rpow_sub ht' (s - 1),
+          Real.rpow_two]
+        field_simp
+      linear_combination (Real.pi / (2 * Real.cos (Real.pi * s / 2))) * key
+
 /-- For `-1 < s < 3` with `s ≠ 1`,
 `∫ y in Ioi 0, y ^ s * (t / (y ^ 2 + t ^ 2) - t / (1 + y ^ 2)) =
   (t * |t| ^ (s - 1) - t) * π / (2 * cos (π * s / 2))`. -/
@@ -703,38 +822,7 @@ theorem integral_rpow_mul_div_sq_add_sq_sub_div_one_add_sq (hs : -1 < s) (hs3 : 
           integral_rpow_div_sq_add_sq h0 h2 one_ne_zero, abs_one, Real.one_rpow, hsin,
           show s + 1 - 2 = s - 1 by ring]
         ring
-  · -- Above one, both terms are Mellin transforms at exponent `s - 1`.
-    have h0 : 0 < s - 1 := by linarith
-    have h2 : s - 1 < 2 := by linarith
-    have ht' := abs_pos.mpr ht
-    have hsin : Real.sin (Real.pi * (s - 1) / 2) = -Real.cos (Real.pi * s / 2) := by
-      rw [show Real.pi * (s - 1) / 2 = Real.pi * s / 2 - Real.pi / 2 by ring,
-        Real.sin_sub_pi_div_two]
-    have hcos : Real.cos (Real.pi * s / 2) ≠ 0 :=
-      (Real.cos_neg_of_pi_div_two_lt_of_lt (by nlinarith [Real.pi_pos])
-        (by nlinarith [Real.pi_pos])).ne
-    calc
-      _ = ∫ y in Ioi (0 : ℝ), (t * (y ^ (s - 1 - 1) / (y ^ 2 + 1 ^ 2)) -
-            t ^ 3 * (y ^ (s - 1 - 1) / (y ^ 2 + t ^ 2))) := by
-        refine setIntegral_congr_fun measurableSet_Ioi fun y (hy : 0 < y) ↦ ?_
-        have hpow : y ^ s = y ^ (s - 1 - 1) * y ^ 2 := by
-          rw [← Real.rpow_natCast, ← Real.rpow_add hy]
-          congr 1
-          push_cast
-          ring
-        rw [hpow, one_pow, add_comm (y ^ 2) 1]
-        field_simp
-        ring
-      _ = _ := by
-        rw [integral_sub ((integrableOn_rpow_div_sq_add_sq h0 h2 one_ne_zero).const_mul t)
-          ((integrableOn_rpow_div_sq_add_sq h0 h2 ht).const_mul _),
-          integral_const_mul, integral_const_mul, integral_rpow_div_sq_add_sq h0 h2 ht,
-          integral_rpow_div_sq_add_sq h0 h2 one_ne_zero, abs_one, Real.one_rpow, hsin]
-        have key : t ^ 3 * |t| ^ (s - 1 - 2) = t * |t| ^ (s - 1) := by
-          rw [show t ^ 3 = t * |t| ^ 2 by rw [sq_abs]; ring, Real.rpow_sub ht' (s - 1),
-            Real.rpow_two]
-          field_simp
-        linear_combination (Real.pi / (2 * Real.cos (Real.pi * s / 2))) * key
+  · exact integral_rpow_mul_div_sq_add_sq_sub_div_one_add_sq_of_one_lt hs3 hs1 ht
 
 open Topology in
 /-- The exponent-one case, which has an elementary logarithmic primitive:
@@ -790,6 +878,129 @@ theorem integral_mul_div_sq_add_sq_sub_div_one_add_sq (t : ℝ) :
   push_cast
   ring
 
+open Real in
+/-- The Mellin integral of the rational sine-compensated Laplace transform, away from
+exponent one. The cancellations at zero and infinity permit every `0 < α < 2`. -/
+theorem integral_rpow_mul_inv_add_sub_inv_add_div_one_add_sq {α a : ℝ}
+    (hα : 0 < α) (hα2 : α < 2) (hα1 : α ≠ 1) (ha : 0 < a) :
+    ∫ x in Ioi (0 : ℝ), x ^ α * ((x + a)⁻¹ - x⁻¹ + a / (1 + x ^ 2)) =
+      -a ^ α * (π / sin (π * α)) + a * (π / (2 * cos (π * α / 2))) := by
+  rcases hα1.lt_or_gt with h1 | h1
+  · -- Below one, the two separate Mellin integrals converge.
+    have h0 : 0 < α + 1 := by linarith
+    have h2 : α + 1 < 2 := by linarith
+    have hsin : sin (π * (α + 1) / 2) = cos (π * α / 2) := by
+      have he : π * (α + 1) / 2 = π * α / 2 + π / 2 := by ring
+      rw [he, sin_add_pi_div_two]
+    calc
+      _ = ∫ x in Ioi (0 : ℝ), -a * (x ^ (α - 1) / (x + a)) +
+          a * (x ^ (α + 1 - 1) / (x ^ 2 + 1 ^ 2)) := by
+        refine setIntegral_congr_fun measurableSet_Ioi fun x (hx : 0 < x) ↦ ?_
+        rw [rpow_sub_one hx.ne', add_sub_cancel_right, one_pow]
+        field_simp
+        ring
+      _ = _ := by
+        rw [integral_add ((integrableOn_rpow_div_add α a hα h1 ha).const_mul (-a))
+          ((integrableOn_rpow_div_sq_add_sq h0 h2 one_ne_zero).const_mul a),
+          integral_const_mul, integral_const_mul, integral_rpow_div_add α a hα h1 ha,
+          integral_rpow_div_sq_add_sq h0 h2 one_ne_zero, abs_one, one_rpow, hsin,
+          rpow_sub_one ha.ne']
+        field_simp
+  · -- Above one, cancel the linear tail before separating the integrals.
+    have h0 : 0 < α - 1 := by linarith
+    have h2 : α - 1 < 2 := by linarith
+    have hsin : sin (π * (α - 1) / 2) = -cos (π * α / 2) := by
+      have he : π * (α - 1) / 2 = π * α / 2 - π / 2 := by ring
+      rw [he, sin_sub_pi_div_two]
+    have hsin' : sin (π * (α - 1)) = -sin (π * α) := by
+      have he : π * (α - 1) = π * α - π := by ring
+      rw [he, sin_sub_pi]
+    calc
+      _ = ∫ x in Ioi (0 : ℝ), a ^ 2 * (x ^ (α - 1 - 1) / (x + a)) -
+          a * (x ^ (α - 1 - 1) / (x ^ 2 + 1 ^ 2)) := by
+        refine setIntegral_congr_fun measurableSet_Ioi fun x (hx : 0 < x) ↦ ?_
+        have hp : x ^ α = x ^ (α - 1 - 1) * x ^ 2 := by
+          rw [← rpow_natCast, ← rpow_add hx]
+          congr 1
+          norm_num
+          ring
+        rw [hp, one_pow]
+        field_simp
+        ring
+      _ = _ := by
+        rw [integral_sub ((integrableOn_rpow_div_add (α - 1) a h0 (by linarith) ha).const_mul _)
+          ((integrableOn_rpow_div_sq_add_sq h0 h2 one_ne_zero).const_mul a),
+          integral_const_mul, integral_const_mul,
+          integral_rpow_div_add (α - 1) a h0 (by linarith) ha,
+          integral_rpow_div_sq_add_sq h0 h2 one_ne_zero, abs_one, one_rpow, hsin, hsin']
+        have hp : a ^ 2 * a ^ (α - 1 - 1) = a ^ α := by
+          rw [← rpow_natCast, ← rpow_add ha]
+          congr 1
+          norm_num
+          ring
+        rw [← mul_assoc, hp]
+        ring
+
+open Real Topology in
+/-- At exponent one, the rational compensated Laplace integral is logarithmic. -/
+theorem integral_mul_inv_add_sub_inv_add_div_one_add_sq {a : ℝ} (ha : 0 < a) :
+    ∫ x in Ioi (0 : ℝ), x * ((x + a)⁻¹ - x⁻¹ + a / (1 + x ^ 2)) = a * log a := by
+  -- This logarithmic primitive has a finite limit at both ends of the half-line.
+  let F : ℝ → ℝ := fun x ↦ a / 2 * log (1 + x ^ 2) - a * log (x + a)
+  have hpos (x : ℝ) : 1 + x ^ 2 ≠ 0 := by positivity
+  have hcont : ContinuousWithinAt F (Ici 0) 0 := by
+    apply ContinuousAt.continuousWithinAt
+    unfold F
+    fun_prop (disch := positivity)
+  have hderiv (x : ℝ) (hx : x ∈ Ioi (0 : ℝ)) :
+      HasDerivAt F (x * ((x + a)⁻¹ - x⁻¹ + a / (1 + x ^ 2))) x := by
+    have hx : 0 < x := hx
+    have h1 := ((hasDerivAt_pow 2 x).const_add 1).log (hpos x)
+    have h2 := ((hasDerivAt_id x).add_const a).log (by positivity : x + a ≠ 0)
+    convert! (h1.const_mul (a / 2)).sub (h2.const_mul a) using 1
+    simp only [id_eq, Nat.cast_ofNat, Nat.reduceSub, pow_one]
+    field_simp
+    ring
+  -- Bound the rational derivative by an integrable Cauchy kernel.
+  have hint : IntegrableOn
+      (fun x : ℝ ↦ x * ((x + a)⁻¹ - x⁻¹ + a / (1 + x ^ 2))) (Ioi 0) := by
+    have hb := (integrableOn_rpow_div_sq_add_sq (s := 1) (by norm_num) (by norm_num)
+      one_ne_zero).const_mul ((a + a⁻¹) * a)
+    refine hb.mono' (by fun_prop) ?_
+    filter_upwards [ae_restrict_mem measurableSet_Ioi] with x (hx : 0 < x)
+    have hf : x * ((x + a)⁻¹ - x⁻¹ + a / (1 + x ^ 2)) =
+        a / (1 + x ^ 2) * ((a * x - 1) / (x + a)) := by field_simp; ring
+    rw [hf, Real.norm_eq_abs, abs_mul, abs_of_pos (by positivity : 0 < a / (1 + x ^ 2))]
+    have hle : |(a * x - 1) / (x + a)| ≤ a + a⁻¹ := by
+      rw [abs_div, abs_of_pos (by positivity : 0 < x + a), div_le_iff₀ (by positivity)]
+      have hi : 0 ≤ a⁻¹ * x := by positivity
+      rw [abs_le]
+      constructor <;> field_simp <;> nlinarith [sq_nonneg a, mul_nonneg ha.le hx.le]
+    calc
+      _ ≤ a / (1 + x ^ 2) * (a + a⁻¹) := mul_le_mul_of_nonneg_left hle (by positivity)
+      _ = _ := by simp; ring
+  -- Combine the logarithms into a ratio tending to one; their separate limits diverge.
+  have hlim : Tendsto F atTop (𝓝 0) := by
+    have hratio : Tendsto (fun x : ℝ ↦ (1 + x⁻¹ ^ 2) / (1 + a * x⁻¹) ^ 2)
+        atTop (𝓝 1) := by
+      simpa only [Pi.div_def, zero_pow two_ne_zero, add_zero, mul_zero, one_pow, div_one]
+        using ((tendsto_inv_atTop_zero.pow 2).const_add 1).div
+        ((tendsto_inv_atTop_zero.const_mul a).const_add 1 |>.pow 2) (by norm_num)
+    have hlog := ((continuousAt_log one_ne_zero).tendsto.comp hratio).const_mul (a / 2)
+    simp only [log_one, mul_zero] at hlog
+    apply hlog.congr'
+    filter_upwards [eventually_gt_atTop (0 : ℝ)] with x (hx : 0 < x)
+    have hxa : x + a ≠ 0 := by positivity
+    have hr : (1 + x⁻¹ ^ 2) / (1 + a * x⁻¹) ^ 2 = (1 + x ^ 2) / (x + a) ^ 2 := by
+      field_simp
+      ring
+    simp only [Function.comp_apply]
+    rw [hr, log_div (hpos x) (pow_ne_zero 2 hxa), log_pow]
+    dsimp [F]
+    ring
+  rw [integral_Ioi_of_hasDerivAt_of_tendsto hcont hderiv hint hlim]
+  simp [F]
+
 end SecondIntegral
 
 end TauCeti
@@ -828,6 +1039,11 @@ theorem beta_one_half_left_eq_two_rpow_mul_beta_self (ha : 0 < a) :
 theorem beta_one_right (ha : 0 < a) : beta a 1 = 1 / a := by
   rw [ProbabilityTheory.beta, Real.Gamma_one, mul_one, Real.Gamma_add_one ha.ne']
   field_simp
+
+/-- Euler's beta function at first parameter `1`. -/
+@[simp]
+theorem beta_one_left (ha : 0 < a) : beta 1 a = 1 / a := by
+  rw [beta_comm, beta_one_right ha]
 
 /-- The unit step of Euler's beta function in its first parameter. -/
 theorem beta_add_one_left (ha : a ≠ 0) (hab : a + b ≠ 0) :

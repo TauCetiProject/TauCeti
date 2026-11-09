@@ -24,7 +24,7 @@ past that power. Products use later-factor-first order.
 
 The local relations follow Crawley-Boevey, *Quiver algebras, weighted projective lines,
 and the Deligne--Simpson problem*, Section 1. The alternating-word calculation uses
-`TauCeti.span_pair_pow_succ_le`; the expected Frobenius pairing is described by Ringel,
+`TauCeti.span_pair_pow_succ`; the expected Frobenius pairing is described by Ringel,
 *The preprojective algebra of a quiver*.
 
 ## Main results
@@ -148,37 +148,17 @@ theorem signlessPreprojectiveDForkBacktrack_span_pow_eq (hn : 3 ≤ n) :
     (Submodule.span k {signlessPreprojectiveDForkBacktrack (n := n) k true,
       signlessPreprojectiveDForkBacktrack (n := n) k false}) ^ (c + 1) =
         Submodule.span k {signlessPreprojectiveDForkWords k hn (.inr ())} := by
-  let x := signlessPreprojectiveDForkBacktrack (n := n) k true
-  let y := signlessPreprojectiveDForkBacktrack (n := n) k false
-  let P := Submodule.span k {x, y}
-  have hx : x ∈ P := Submodule.subset_span (Or.inl rfl)
-  have hy : y ∈ P := Submodule.subset_span (Or.inr rfl)
-  have hsum : x + y ∈ P := P.add_mem hx hy
-  have htop : signlessPreprojectiveDForkWords k hn (.inr ()) = x * (x + y) ^ c :=
-    signlessPreprojectiveDForkTopWord_eq k hn
-  have hpow : (x + y) ^ (c + 1) = 0 :=
-    signlessPreprojectiveDForkBacktrack_add_pow_eq_zero k hn
-  apply le_antisymm
-  · refine (span_pair_pow_succ_le (signlessPreprojectiveDForkBacktrack_mul_self k hn true)
-      (signlessPreprojectiveDForkBacktrack_mul_self k hn false) c).trans ?_
-    apply Submodule.span_le.mpr
-    intro z hz
-    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hz
-    rcases hz with rfl | rfl
-    · rw [← htop]
-      exact Submodule.subset_span rfl
-    · have hrel : y * (x + y) ^ c = -(x * (x + y) ^ c) := by
-        have hs : x * (x + y) ^ c + y * (x + y) ^ c = 0 := by
-          simpa only [add_mul, pow_succ'] using hpow
-        exact eq_neg_of_add_eq_zero_right hs
-      rw [hrel, ← htop]
-      exact Submodule.neg_mem _ (Submodule.subset_span rfl)
-  · apply Submodule.span_le.mpr
-    intro z hz
-    simp only [Set.mem_singleton_iff] at hz
-    subst z
-    rw [htop, pow_succ']
-    exact Submodule.mul_mem_mul hx (Submodule.pow_mem_pow P hsum c)
+  rw [span_pair_pow_succ (signlessPreprojectiveDForkBacktrack_mul_self k hn true)
+    (signlessPreprojectiveDForkBacktrack_mul_self k hn false) c,
+    signlessPreprojectiveDForkTopWord_eq k hn]
+  set x := signlessPreprojectiveDForkBacktrack (n := n) k true
+  set y := signlessPreprojectiveDForkBacktrack (n := n) k false
+  -- The second alternating word is the negative of the first, since `(x + y) ^ (c + 1) = 0`.
+  have hrel : y * (x + y) ^ c = -(x * (x + y) ^ c) := by
+    refine eq_neg_of_add_eq_zero_right ?_
+    simpa only [add_mul, pow_succ'] using signlessPreprojectiveDForkBacktrack_add_pow_eq_zero k hn
+  rw [hrel, Set.pair_comm,
+    Submodule.span_insert_eq_span (neg_mem (Submodule.mem_span_singleton_self _))]
 
 /-- One further product of leaf backtracks vanishes. -/
 @[simp] theorem signlessPreprojectiveDForkBacktrack_span_pow_succ_eq_bot (hn : 3 ≤ n) :

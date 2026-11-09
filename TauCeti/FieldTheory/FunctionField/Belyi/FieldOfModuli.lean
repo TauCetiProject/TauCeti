@@ -55,6 +55,8 @@ field of moduli of the pair.
 ## Main results
 
 * `TauCeti.AlgebraicBelyiPair.IsoClass.fieldOfModuli_smul`: `M(σ • c) = σ(M(c))`.
+* `TauCeti.AlgebraicBelyiPair.IsoClass.fixingSubgroup_fieldOfModuli`: over a finite extension of
+  `ℚ`, the automorphisms fixing the field of moduli are the stabilizer of the class.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.fieldOfModuli_le_of_fixingSubgroup_le`: the field of
   moduli lies in every subfield `K` with `k / K` Galois whose automorphisms fix the class.
 * `TauCeti.AlgebraicBelyiPair.curveStabilizer_eq_of_algEquiv`: the stabilizer of the curve depends
@@ -107,6 +109,20 @@ theorem fieldOfModuli_smul (g : k ≃ₐ[ℚ] k) (c : IsoClass k) :
     (g • c).fieldOfModuli = c.fieldOfModuli.map g.toAlgHom := by
   rw [fieldOfModuli_def, MulAction.stabilizer_smul_eq_stabilizer_map_conj,
     MulEquiv.toMonoidHom_eq_coe, Subgroup.fixedField_map_conj, fieldOfModuli_def]
+
+/-- Over a finite extension `k` of `ℚ`, the automorphisms of `k` fixing the field of moduli of a
+class are exactly those fixing the class. -/
+@[simp]
+theorem fixingSubgroup_fieldOfModuli [FiniteDimensional ℚ k] (c : IsoClass k) :
+    c.fieldOfModuli.fixingSubgroup = MulAction.stabilizer (k ≃ₐ[ℚ] k) c := by
+  rw [fieldOfModuli_def, IntermediateField.fixingSubgroup_fixedField]
+
+/-- A finite extension `k` of `ℚ` is Galois over the field of moduli of every class, as over the
+fixed field of any group of automorphisms. -/
+instance isGalois_fieldOfModuli [FiniteDimensional ℚ k] (c : IsoClass k) :
+    IsGalois c.fieldOfModuli k := by
+  rw [fieldOfModuli_def]
+  infer_instance
 
 /-- The field of moduli of a class `c` is contained in every subfield `K` of `k` over which `k`
 is Galois, such as any subfield of `AlgebraicClosure ℚ`, and such that every automorphism of `k`

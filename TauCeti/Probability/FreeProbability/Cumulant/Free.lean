@@ -82,40 +82,6 @@ private theorem prod_freeCumulant_eq_zero_of_mixed {b : α → A}
   exact Subtype.ext <| (Finpartition.eq_top_of_mem_parts (hXs ▸ hX)).trans
     NoncrossingPartition.coe_top.symm
 
-/-- Let `f` be monotone on `s` and identify no two positions other than `i ≤ j`, which are adjacent
-in `s`. If the join in `NC(s)` of `π` with the partition `σ_f` into the fibres of `f` is `1`, then
-`s` is the union of the parts of `π` through `i` and `j`: merging these two parts gives a
-noncrossing partition above `π` and `σ_f`. -/
-private theorem mem_union_of_sup_comap_eq_top {f : α → α} (hf : MonotoneOn f s) {i j : α}
-    (hi : i ∈ s) (hj : j ∈ s) (hij : i ≤ j) (hadj : ∀ z ∈ s, z ≤ i ∨ j ≤ z)
-    (hfeq : ∀ {u v}, f u = f v → u ≠ v → (u = i ∨ u = j) ∧ (v = i ∨ v = j))
-    {π : NoncrossingPartition s} (hπ : π ⊔ NoncrossingPartition.comap hf ⊥ = ⊤) {z : α}
-    (hz : z ∈ s) : z ∈ π.1.part i ∪ π.1.part j := by
-  obtain ⟨Q, hQ, hπQ, hQi⟩ := π.2.exists_part_eq_union hi hj hij hadj
-  have hiQ : ∀ {u}, u = i ∨ u = j → u ∈ Q.part i := by
-    rintro u (rfl | rfl) <;> rw [hQi]
-    exacts [mem_union_left _ (π.1.mem_part_self.2 hi), mem_union_right _ (π.1.mem_part_self.2 hj)]
-  -- The fibres of `f` lie in the parts of `Q`.
-  have hσQ : (NoncrossingPartition.comap hf ⊥ : Finpartition s) ≤ Q := by
-    intro b hb
-    obtain ⟨x, hx⟩ := Finpartition.nonempty_of_mem_parts _ hb
-    have hxs := Finpartition.le _ hb hx
-    refine ⟨Q.part x, Q.part_mem.2 hxs, fun w hw => ?_⟩
-    rw [← Finpartition.part_eq_of_mem _ hb hx, NoncrossingPartition.coe_comap,
-      NoncrossingPartition.coe_bot, Finpartition.part_comap_bot hxs] at hw
-    obtain ⟨-, hwx⟩ := mem_filter.1 hw
-    rcases eq_or_ne w x with rfl | hne
-    · exact Q.mem_part_self.2 hxs
-    obtain ⟨hw', hx'⟩ := hfeq hwx hne
-    rw [Q.part_eq_of_mem (Q.part_mem.2 hi) (hiQ hx')]
-    exact hiQ hw'
-  have htop : Q = ⊤ := congrArg Subtype.val
-    (top_le_iff.1 (hπ ▸ sup_le hπQ hσQ) : (⟨Q, hQ⟩ : NoncrossingPartition s) = ⊤)
-  rw [← hQi, htop, Finpartition.part_eq_of_mem _ (by
-    rw [Finpartition.parts_top (nonempty_of_ne_empty (ne_empty_of_mem hi)).ne_empty]
-    exact mem_singleton_self s) hi]
-  exact hz
-
 /-- *Grouping two adjacent letters with equal labels*: let `i < j` be adjacent positions of `s` with
 `ℓ i = ℓ j`, and let the labels along `s` not all be equal. If the mixed free cumulants of the
 proper subwords of `a` along `s` vanish, then grouping the letters at `i` and `j` into the letter
@@ -135,8 +101,8 @@ private theorem freeCumulant_fiberProd_collapse_eq {a : α → A}
   obtain ⟨z, hz, hzi⟩ : ∃ z ∈ s, ℓ z ≠ ℓ i := by
     by_contra! h
     exact hxy ((h x hx).trans (h y hy).symm)
-  rcases mem_union.1 (mem_union_of_sup_comap_eq_top hf hi hj hij.le hadj hfeq
-    (mem_filter.1 hπ).2 hz) with hz' | hz'
+  rcases mem_union.1 (NoncrossingPartition.mem_part_union_part_of_sup_comap_bot_eq_top hf hi hj
+    hij.le hadj (fun _ _ => hfeq) (mem_filter.1 hπ).2 hz) with hz' | hz'
   · exact prod_freeCumulant_eq_zero_of_mixed hsub hπtop (π.1.part_mem.2 hi) hz'
       (π.1.mem_part_self.2 hi) hzi
   · exact prod_freeCumulant_eq_zero_of_mixed hsub hπtop (π.1.part_mem.2 hj) hz'

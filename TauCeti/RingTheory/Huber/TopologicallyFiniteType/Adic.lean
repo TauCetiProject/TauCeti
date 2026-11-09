@@ -94,7 +94,7 @@ section Presentation
 /-- **An algebra strictly topologically of finite type is adic for the extended ideal.** If `B`
 is an open quotient of `A⟨X₁, …, Xₖ⟩` over an `I`-adic ring `A`, with `I` finitely generated,
 then the topology of `B` is the `I·B`-adic one. -/
-theorem IsStrictlyTopologicallyFiniteType.isAdic [IsTopologicalRing B]
+theorem IsStrictlyTopologicallyFiniteType.isAdic
     (h : IsStrictlyTopologicallyFiniteType (algebraMap A B)) (hI : IsAdic I) (hfg : I.FG) :
     IsAdic (I.map (algebraMap A B)) := by
   obtain ⟨k, π, hπ, hcomm⟩ := isStrictlyTopologicallyFiniteType_iff.mp h
@@ -255,7 +255,7 @@ end Lift
 topological `A`-algebra `B` is strictly topologically of finite type exactly when `B` is
 noetherian, `I·B`-adic, `I·B`-adically separated and complete, and `B ⧸ I·B` is a finitely
 generated `A ⧸ I`-algebra. Noetherianity of `B` follows from the other three conditions. -/
-theorem isStrictlyTopologicallyFiniteType_algebraMap_iff [IsTopologicalRing B] [IsNoetherianRing A]
+theorem isStrictlyTopologicallyFiniteType_algebraMap_iff [IsNoetherianRing A]
     (hI : IsAdic I) :
     IsStrictlyTopologicallyFiniteType (algebraMap A B) ↔
       IsNoetherianRing B ∧ IsAdic (I.map (algebraMap A B)) ∧

@@ -32,6 +32,9 @@ and avoid exposing the definitional equality of the objects being transported.
   identifications `Y i ≅ F.obj (X i)`, to the image under a functor `F` of the transport.
 * `CategoryTheory.Functor.map_heq`: a functor sends morphisms which agree up to equalities of their
   endpoints to morphisms which agree in the same way.
+* `CategoryTheory.Functor.map_comp_eqToHom_of_isThin`: on a thin category, the images under a
+  functor of two morphisms between equal endpoints agree up to the transports along those
+  equalities.
 * `CategoryTheory.Functor.map_homOfLE_eq` and `CategoryTheory.Functor.unop_map_homOfLE_eq`: a
   functor out of a preorder sends inequalities with equal endpoints to the same morphism, up to the
   identifications of the endpoints.
@@ -135,6 +138,15 @@ theorem map_heq {C D : Type*} [Category* C] [Category* D] (F : C ⥤ D) {X Y X' 
     F.map f ≍ F.map f' := by
   subst hX hY
   rw [eq_of_heq h]
+
+/-- On a thin category, such as a preorder, the images under a functor `F` of two morphisms
+`f : X ⟶ Y` and `g : X' ⟶ Y'` between equal endpoints agree up to the transports along those
+equalities, since `f` and `g` agree up to the same transports. -/
+theorem map_comp_eqToHom_of_isThin {C D : Type*} [Category* C] [Category* D] [Quiver.IsThin C]
+    (F : C ⥤ D) {X Y X' Y' : C} (f : X ⟶ Y) (g : X' ⟶ Y') (hX : X = X') (hY : Y = Y') :
+    F.map f ≫ eqToHom (congrArg F.obj hY) = eqToHom (congrArg F.obj hX) ≫ F.map g := by
+  subst hX hY
+  simp [Subsingleton.elim f g]
 
 /-- A functor out of a preorder sends inequalities with equal endpoints to the same morphism, up to
 the identifications of the endpoints. -/

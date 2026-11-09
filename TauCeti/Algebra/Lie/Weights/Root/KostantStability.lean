@@ -53,8 +53,6 @@ vectors, this is exactly the invariance needed to make `L` a module over the Kos
 
 ## Main results
 
-* `TauCeti.coe_add_natCast_smul_ne_zero`: an ascending root string through a root other than `-α`
-  never meets the zero weight.
 * `TauCeti.IsChevalleySystem.ad_pow_rootVector_eq_zero_or_exists`: the root-string form of the
   iterated adjoint action, with its rising-factorial coefficient.
 * `TauCeti.IsChevalleySystem.inv_factorial_smul_ad_pow_mem_chevalleyLieLattice`: the Chevalley
@@ -77,32 +75,6 @@ universe u v
 variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [LieAlgebra.IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [LieModule.IsTriangularizable K H L]
-
-/-- **Root strings avoid the zero weight.** If `α` and `β` are roots with `β ≠ -α`, then no
-weight `β + n α` of the ascending `α`-string through `β` is zero.
-
-Only `± α` are multiples of a root `α`, so a vanishing member of the string would force `β = α`
-and then `(n + 1) α = 0`. -/
-theorem coe_add_natCast_smul_ne_zero {α β : Weight K H L} (hα : α.IsNonZero) (hβ : β.IsNonZero)
-    (hαβ : (α : H → K) + β ≠ 0) (n : ℕ) : (β : H → K) + (n : K) • (α : H → K) ≠ 0 := by
-  intro h
-  have hsmul : (β : H → K) = (-(n : K)) • (α : H → K) := by
-    rw [neg_smul, eq_neg_iff_add_eq_zero]
-    exact h
-  rcases eq_neg_or_eq_of_eq_smul α β hβ _ hsmul with hb | hb
-  · refine hαβ ?_
-    rw [hb, Weight.coe_neg]
-    abel
-  · refine hα ?_
-    rw [hb] at h
-    have hzero : ((n : K) + 1) • (α : H → K) = 0 := by
-      rw [add_smul, one_smul, add_comm]
-      exact h
-    have hn1 : ((n : K) + 1) ≠ 0 := by
-      have : ((n + 1 : ℕ) : K) ≠ 0 := Nat.cast_ne_zero.2 (Nat.succ_ne_zero n)
-      push_cast at this
-      exact this
-    exact (smul_eq_zero.mp hzero).resolve_left hn1
 
 namespace IsChevalleySystem
 
@@ -131,16 +103,11 @@ theorem ad_pow_rootVector_eq_zero_or_exists {α β : Weight K H L} (hα : α.IsN
   | succ n ih =>
     rcases ih with h0 | ⟨γ, hγcoe, hγbot, z, hznat, hz⟩
     · exact Or.inl (by rw [pow_succ', mul_apply_eq_comp, h0, map_zero])
-    have hγ : γ.IsNonZero := by
-      rw [Weight.IsNonZero, Weight.IsZero, hγcoe]
-      exact coe_add_natCast_smul_ne_zero hα hβ hαβ n
+    have hγ := γ.isNonZero_of_coe_eq_add_natCast_smul hα hβ hαβ hγcoe
     have hshift : (α : H → K) + (γ : H → K) = (β : H → K) + ((n + 1 : ℕ) : K) • (α : H → K) := by
       rw [hγcoe]
       push_cast
       module
-    have hαγ : (α : H → K) + (γ : H → K) ≠ 0 := by
-      rw [hshift]
-      exact coe_add_natCast_smul_ne_zero hα hβ hαβ (n + 1)
     have hstep : ((ad K L (x α)) ^ (n + 1)) (x β) = (z : K) • ⁅x α, x γ⁆ := by
       rw [pow_succ', mul_apply_eq_comp, hz, map_smul, ad_apply]
     by_cases hbot : rootSpace H ((α : H → K) + (γ : H → K)) = ⊥
@@ -149,9 +116,7 @@ theorem ad_pow_rootVector_eq_zero_or_exists {α β : Weight K H L} (hα : α.IsN
     refine Or.inr ?_
     set δ : Weight K H L := ⟨(α : H → K) + (γ : H → K), hbot⟩
     have hδcoe : (δ : H → K) = (α : H → K) + (γ : H → K) := rfl
-    have hδnz : δ.IsNonZero := by
-      rw [Weight.IsNonZero, Weight.IsZero, hδcoe]
-      exact hαγ
+    have hδnz := δ.isNonZero_of_coe_eq_add_natCast_smul hα hβ hαβ (hδcoe.trans hshift)
     have hlie : ⁅x α, x γ⁆ =
         hx.toIsSl2System.structureConstant α γ δ hδnz hδcoe • x δ :=
       hx.toIsSl2System.lie_eq_structureConstant_smul α γ δ hδnz hδcoe
@@ -175,6 +140,30 @@ theorem ad_pow_rootVector_eq_zero_or_exists {α β : Weight K H L} (hα : α.IsN
       · rw [hstep, hlie, hN]
         push_cast
         module
+
+/-- Every divided iterated bracket at a root of a nonopposite root string has an
+integer coefficient. -/
+theorem exists_int_inv_factorial_smul_ad_pow_eq_zsmul
+    (α β : Weight K H L) (hα : α.IsNonZero) (hβ : β.IsNonZero)
+    (hab : (α : H → K) + β ≠ 0)
+    (γ : Weight K H L) (n : ℕ) (hγ : (γ : H → K) = (β : H → K) + (n : K) • (α : H → K)) :
+    ∃ z : ℤ, (n.factorial : K)⁻¹ • ((ad K L (x α)) ^ n) (x β) = z • x γ := by
+  rcases hx.ad_pow_rootVector_eq_zero_or_exists hα hβ hab n with
+    hzero | ⟨δ, hδ, -, z, hz, hpow⟩
+  · exact ⟨0, by simp [hzero]⟩
+  have hδγ : δ = γ := by
+    apply DFunLike.coe_injective
+    exact hδ.trans hγ.symm
+  subst δ
+  obtain ⟨w, hw⟩ : (n.factorial : ℤ) ∣ z := by
+    apply Int.dvd_natAbs.1
+    rw [hz]
+    exact Int.natCast_dvd_natCast.2 (Nat.factorial_dvd_ascFactorial _ _)
+  refine ⟨w, ?_⟩
+  rw [hpow, hw, smul_smul, ← Int.cast_smul_eq_zsmul K]
+  congr 1
+  push_cast
+  exact inv_mul_cancel_left₀ (Nat.cast_ne_zero.2 n.factorial_ne_zero) _
 
 /-- **The root string through `-α`.** The divided powers of `ad (x α)` send the root vector at
 `-α` into the Chevalley lattice. This is the exceptional string, excluded by the hypothesis
@@ -235,19 +224,11 @@ theorem inv_factorial_smul_ad_pow_rootVector_mem (α β : Weight K H L) (n : ℕ
     subst hβα
     exact hx.inv_factorial_smul_ad_pow_root_neg_mem α hα n
   -- the generic string, where the rising factorial is divisible by `n !`
-  rcases hx.ad_pow_rootVector_eq_zero_or_exists hα hβ hαβ n with h0 | ⟨γ, -, -, z, hznat, hz⟩
+  rcases hx.ad_pow_rootVector_eq_zero_or_exists hα hβ hαβ n with h0 | ⟨γ, hγ, -⟩
   · rw [h0, smul_zero]
     exact zero_mem _
-  obtain ⟨w, hw⟩ : ((n.factorial : ℤ)) ∣ z := by
-    refine Int.dvd_natAbs.1 ?_
-    rw [hznat]
-    exact Int.natCast_dvd_natCast.2 (Nat.factorial_dvd_ascFactorial _ _)
-  have hfac : (n.factorial : K) ≠ 0 := Nat.cast_ne_zero.2 n.factorial_ne_zero
-  rw [hz, hw, smul_smul]
-  have : (n.factorial : K)⁻¹ * (((n.factorial : ℤ) * w : ℤ) : K) = (w : K) := by
-    push_cast
-    field_simp
-  rw [this, Int.cast_smul_eq_zsmul]
+  obtain ⟨w, hw⟩ := hx.exists_int_inv_factorial_smul_ad_pow_eq_zsmul α β hα hβ hαβ γ n hγ
+  rw [hw]
   exact zsmul_mem (hx.rootVector_mem_chevalleyLieLattice γ) w
 
 /-- **Divided powers of the adjoint action of a root vector send coroots into the Chevalley

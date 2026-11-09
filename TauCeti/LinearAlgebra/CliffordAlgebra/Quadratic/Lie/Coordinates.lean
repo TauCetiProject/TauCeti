@@ -111,33 +111,13 @@ theorem soEquivQuadratic_eq_sum_bivector {ι : Type w} [Fintype ι] [DecidableEq
     rw [← map_sum, ← map_smul]
     congr 1
     rw [Finset.sum_sub_distrib]
+    have hnd := QuadraticMap.nondegenerate_polar_iff.mpr hQ
     have hfirst :
         ∑ i, Q.polarBilin (d i) x • (f : Module.End K V) (b i) =
           (f : Module.End K V) x := by
-      calc
-        _ = (f : Module.End K V) (∑ i, Q.polarBilin (d i) x • b i) := by
-          rw [map_sum]
-          simp only [map_smul]
-        _ = (f : Module.End K V) x := by
-          congr 1
-          calc
-            _ = ∑ i, b.repr x i • b i := by
-              apply Finset.sum_congr rfl
-              intro i _
-              congr 1
-              calc
-                Q.polarBilin (d i) x = Q.polarBilin x (d i) :=
-                  QuadraticMap.polar_comm Q (d i) x
-                _ = (LinearMap.BilinForm.dualBasis Q.polarBilin
-                    (QuadraticMap.nondegenerate_polar_iff.mpr hQ) d).repr x i :=
-                  (LinearMap.BilinForm.dualBasis_repr_apply
-                    (QuadraticMap.nondegenerate_polar_iff.mpr hQ) d x i).symm
-                _ = b.repr x i := by
-                  rw [LinearMap.BilinForm.dualBasis_dualBasis
-                    (QuadraticMap.nondegenerate_polar_iff.mpr hQ)
-                    (LinearMap.BilinForm.isSymm_def.mpr fun y z ↦
-                      QuadraticMap.polar_comm Q y z) b]
-            _ = x := b.sum_repr x
+      simpa only [← map_smul, ← map_sum] using
+        congrArg (f : Module.End K V)
+          (LinearMap.BilinForm.sum_apply_dualBasis_smul (B := Q.polarBilin) hnd b x)
     have hskew (i : ι) :
         Q.polarBilin ((f : Module.End K V) (b i)) x =
           -Q.polarBilin (b i) ((f : Module.End K V) x) := by
@@ -145,23 +125,11 @@ theorem soEquivQuadratic_eq_sum_bivector {ι : Type w} [Fintype ι] [DecidableEq
     have hsecond :
         ∑ i, Q.polarBilin ((f : Module.End K V) (b i)) x • d i =
           -(f : Module.End K V) x := by
-      calc
-        _ = ∑ i, -(Q.polarBilin (b i) ((f : Module.End K V) x) • d i) := by
-          apply Finset.sum_congr rfl
-          intro i _
-          rw [hskew, neg_smul]
-        _ = -(∑ i, Q.polarBilin (b i) ((f : Module.End K V) x) • d i) := by
-          rw [Finset.sum_neg_distrib]
-        _ = -(f : Module.End K V) x := by
-          congr 1
-          calc
-            _ = ∑ i, d.repr ((f : Module.End K V) x) i • d i := by
-              apply Finset.sum_congr rfl
-              intro i _
-              congr 1
-              rw [LinearMap.BilinForm.dualBasis_repr_apply]
-              exact QuadraticMap.polar_comm Q (b i) ((f : Module.End K V) x)
-            _ = (f : Module.End K V) x := d.sum_repr ((f : Module.End K V) x)
+      simp only [hskew, neg_smul, Finset.sum_neg_distrib, QuadraticMap.polarBilin_apply_apply]
+      congr 1
+      simpa only [QuadraticMap.polar_comm Q (b _), QuadraticMap.polarBilin_apply_apply] using
+        LinearMap.BilinForm.sum_apply_smul_dualBasis (B := Q.polarBilin) hnd b
+          ((f : Module.End K V) x)
     simp only [QuadraticMap.polarBilin_apply_apply] at hfirst hsecond
     rw [hfirst, hsecond, sub_neg_eq_add, ← two_smul K, ← mul_smul,
       inv_mul_cancel₀ (Invertible.ne_zero (2 : K)), one_smul]

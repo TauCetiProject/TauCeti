@@ -220,8 +220,7 @@ theorem tangentSpaceCastModel_mfderiv_apply {f : UpperHalfSpace E → UpperHalfS
   -- Read the base point of `hA` as a point of the open subset, as in the general lemma.
   have hA' : HasFDerivAt A L (show upperHalfSpaceOpens E from x).1 := hA
   have h := TauCeti.Manifold.tangentSpaceOpenEquiv_mfderiv_apply
-    (U := upperHalfSpaceOpens E) (V := upperHalfSpaceOpens E) (f := f) hf
-    hA'.differentiableAt.mdifferentiableAt hcomp v
+    (U := upperHalfSpaceOpens E) (V := upperHalfSpaceOpens E) (f := f) hf hcomp v
   rw [hA'.hasMFDerivAt.mfderiv] at h
   -- Both the open-subset identification and `tangentSpaceCastModel` are the identity of the model.
   have e₁ := TauCeti.Manifold.tangentSpaceOpenEquiv_apply (I := 𝓘(ℝ, WithLp 2 (E × ℝ)))

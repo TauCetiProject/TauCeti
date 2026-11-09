@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Wkp.LocalApproximation
+public import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 public import TauCeti.MeasureTheory.Function.Lp.L1Convergence
@@ -126,10 +126,9 @@ private theorem hasWeakFDerivOn_comp_testFunction {F : ℝ → ℝ} (hF : ContDi
     funext fun x => (hasFDerivAt_comp_testFunction hF phi x).fderiv
   have hcd : ContDiff ℝ 1 fun y => F (phi y) := hF.comp (phi.contDiff.of_le (by simp))
   rw [← heq]
-  refine hasWeakFDerivOn_of_differentiableOn ?_ ?_ fun x _ =>
+  refine hasWeakFDerivOn_of_differentiableOn ?_ fun x _ =>
     (hasFDerivAt_comp_testFunction hF phi x).differentiableAt
-  · exact (hcd.continuous.locallyIntegrable).locallyIntegrableOn _
-  · exact ((hcd.continuous_fderiv one_ne_zero).locallyIntegrable).locallyIntegrableOn _
+  exact ((hcd.continuous_fderiv one_ne_zero).locallyIntegrable).locallyIntegrableOn _
 
 end TestFunction
 

@@ -42,12 +42,11 @@ theorem mulVec_mem_sobolevFields_natCast (k : ℕ)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields k) :
     (fun z ↦ WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, A i j z * y z j)) ∈
       sobolevFields k := by
-  apply mem_sobolevFields.mpr
-  intro i
+  refine mem_sobolevFields.mpr fun i ↦ mem_realSobolevFunctions.mpr ?_
   have hentry (j : Fin 4) : ∃ v : Lp ℝ 2 (volume : Measure ℂ),
       v ∈ realSobolevSubmodule ℂ k 2 ∧
         (v : ℂ → ℝ) =ᵐ[volume] fun z ↦ A i j z * y z j := by
-    obtain ⟨u, hu, huS⟩ := mem_sobolevFields.mp hy j
+    obtain ⟨u, hu, huS⟩ := mem_realSobolevFunctions.mp (mem_sobolevFields.mp hy j)
     obtain ⟨M, hM, hMbound⟩ := hbound i j
     obtain ⟨v, hvS, hv⟩ :=
       exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives

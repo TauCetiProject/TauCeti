@@ -38,6 +38,7 @@ finite-dimensional real Lie group `G`:
 
 ## Main results
 
+* `TauCeti.Lie.IsMaximalTorus.map_conj`: conjugation preserves maximal tori in a topological group.
 * `TauCeti.Lie.IsTorus.image_lieExp_lieSubalgebraOfSubgroup`: a torus is the exponential image of
   its Lie algebra (the case of `image_lieExp_lieSubalgebraOfSubgroup_of_isConnected`).
 * `TauCeti.Lie.IsTorus.eq_of_lieSubalgebraOfSubgroup_eq`: a torus is determined by its Lie
@@ -126,6 +127,13 @@ theorem IsMaximalTorus.map_mulEquiv {G' : Type*} [TopologicalSpace G'] [Group G'
     simpa [Subgroup.map_map] using Subgroup.map_mono (f := f.symm.toMonoidHom) hle
   have heq := hT.eq_of_le (hS.map f.symm.toMonoidHom hf') hle'
   simpa [Subgroup.map_map] using Subgroup.map_mono (f := f.toMonoidHom) heq.ge
+
+/-- Conjugation preserves maximal tori in a topological group. -/
+theorem IsMaximalTorus.map_conj [IsTopologicalGroup G] {T : Subgroup G}
+    (hT : IsMaximalTorus T) (g : G) : IsMaximalTorus (T.map (MulAut.conj g).toMonoidHom) :=
+  hT.map_mulEquiv (MulAut.conj g) (IsTopologicalGroup.continuous_conj g)
+    ((by fun_prop : Continuous fun x ↦ g⁻¹ * x * g).congr fun x ↦
+      (MulAut.conj_symm_apply g x).symm)
 
 /-- The trivial subgroup is a torus. -/
 theorem isTorus_bot : IsTorus (⊥ : Subgroup G) where

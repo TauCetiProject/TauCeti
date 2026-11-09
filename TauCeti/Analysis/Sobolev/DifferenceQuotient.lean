@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.TestFunctionLp
+public import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.Rademacher
@@ -83,8 +83,10 @@ theorem integral_inv_mul_sub_mul_tendsto_neg_integral_lineDeriv_mul {u : E → �
     (hu : LocallyIntegrableOn u Ω μ) (φ : 𝓓(Ω, ℝ)) (v : E) :
     Tendsto (fun t : ℝ => ∫ x, t⁻¹ * (u (x + t • v) - u x) * φ x ∂μ) (𝓝[≠] 0)
       (𝓝 (-∫ x, lineDeriv ℝ (φ : E → ℝ) x v * u x ∂μ)) := by
-  obtain ⟨w, hw, hwS, hwadd⟩ := hu.exists_integrable_eqOn_add_of_isCompact Ω.isOpen
+  obtain ⟨w, hw, hwadd⟩ := hu.exists_integrable_eqOn_add_of_isCompact Ω.isOpen
     φ.hasCompactSupport φ.tsupport_subset
+  have hwS : EqOn w u (tsupport (φ : E → ℝ)) := fun x hx => by
+    simpa using hwadd.self_of_nhds x hx
   have htend : Tendsto (fun t : ℝ => t • v) (𝓝 0) (𝓝 0) := by
     simpa using (tendsto_id (x := 𝓝 (0 : ℝ))).smul_const v
   have hwt := htend.eventually hwadd
@@ -157,8 +159,9 @@ theorem exists_norm_le_hasWeakLineDerivOn_of_frequently_eLpNorm_inv_mul_sub_le {
   refine exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le hu v hC fun φ => ?_
   set S := tsupport (φ : E → ℝ)
   have hS : IsCompact S := φ.hasCompactSupport
-  obtain ⟨w, hw, hwS, hwadd⟩ := hu.exists_integrable_eqOn_add_of_isCompact Ω.isOpen
+  obtain ⟨w, hw, hwadd⟩ := hu.exists_integrable_eqOn_add_of_isCompact Ω.isOpen
     hS φ.tsupport_subset
+  have hwS : EqOn w u S := fun x hx => by simpa using hwadd.self_of_nhds x hx
   have htend : Tendsto (fun t : ℝ => t • v) (𝓝 0) (𝓝 0) := by
     simpa using (tendsto_id (x := 𝓝 (0 : ℝ))).smul_const v
   have hwt := htend.eventually hwadd

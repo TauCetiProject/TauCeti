@@ -46,6 +46,7 @@ is used for the closure of firm modules under kernels and extensions.
 
 * `TauCeti.Almost.BasicSetup.isFirm_tilde` and `TauCeti.Almost.BasicSetup.isFirm_tilde_tensor`:
   `m~` and every module `m~ ⊗[V] M` are firm.
+* `TauCeti.Almost.BasicSetup.IsFirm.tensorProduct`: a tensor product with a firm module is firm.
 * `TauCeti.Almost.BasicSetup.isFirm_classical`, `TauCeti.Almost.BasicSetup.isFirm_zero_iff` and
   `TauCeti.Almost.BasicSetup.isFirm_self_iff`: every module is firm for the classical setup, only
   the zero module is firm for the zero setup, and `V` is firm only if `m = V`.
@@ -177,6 +178,14 @@ theorem isFirm_tilde_tensor : S.IsFirm (S.tilde ⊗[V] M) := by
   -- `LinearEquiv.ofBijective` and `LinearEquiv.rTensor` have the expected underlying maps.
   exact ((LinearEquiv.ofBijective _ S.isFirm_tilde).rTensor M).bijective.comp
     (LinearEquiv.bijective _)
+
+variable {S M} in
+/-- A tensor product with a firm module is firm: `P ⊗[V] M ≅ P ⊗[V] (m~ ⊗[V] M)` is of the form
+`m~ ⊗[V] (P ⊗[V] M)`. -/
+theorem IsFirm.tensorProduct (P : Type*) [AddCommGroup P] [Module V P] (hM : S.IsFirm M) :
+    S.IsFirm (P ⊗[V] M) :=
+  (LinearEquiv.isFirm_iff S ((LinearEquiv.ofBijective _ hM).symm.lTensor P ≪≫ₗ
+    TensorProduct.leftComm V P S.tilde M)).mpr (S.isFirm_tilde_tensor _)
 
 variable {S M} in
 /-- A firm module that is almost zero is zero: its action map is a surjection from
@@ -461,6 +470,16 @@ theorem closure_obj (N : S.Firm) :
 theorem closure_map {N N' : S.Firm} (f : N ⟶ N') :
     S.closure.map f = (ihom (ModuleCat.of V S.tilde)).map f.hom :=
   (rfl)
+
+/-- The functor `N ↦ Hom_V(m~, N)` on firm modules is additive. -/
+instance : S.closure.Additive :=
+  inferInstanceAs (Functor.Additive (S.isFirm.ι ⋙
+    (linearCoyoneda V (ModuleCat.{u} V)).obj (Opposite.op (ModuleCat.of V S.tilde))))
+
+/-- The functor `N ↦ Hom_V(m~, N)` on firm modules is `V`-linear. -/
+instance : S.closure.Linear V :=
+  inferInstanceAs (Functor.Linear V (S.isFirm.ι ⋙
+    (linearCoyoneda V (ModuleCat.{u} V)).obj (Opposite.op (ModuleCat.of V S.tilde))))
 
 /-- The functor `firm` is left adjoint to `closure` (Bhatt, Construction 4.1.5): this is the
 tensor-hom adjunction for `m~`, restricted to firm modules. -/

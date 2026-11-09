@@ -71,8 +71,8 @@ theorem restrict [(N.subgroupOf H).Normal] (hNL : N ≤ L) (hLH : L ≤ H) :
   constructor
   · exact disjoint_iff.mp (h.disjoint.mono_right inf_le_left)
   · rw [inf_comm K L, sup_comm,
-      inf_sup_assoc_of_le
-        (h.right_le.trans (le_normalizer_of_normal_subgroupOf h.left_le)) hNL,
+      inf_sup_assoc_of_le (coe_mul_of_left_le_normalizer_right _ _
+        (h.right_le.trans (le_normalizer_of_normal_subgroupOf h.left_le))) hNL,
       sup_comm K N, h.sup_eq, inf_eq_left.mpr hLH]
 
 end IsLocalComplement

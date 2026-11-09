@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Data.Int.Interval
+import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Tactic.Abel
+import Mathlib.Tactic.Ring
 
 /-!
 # Sums over intervals of natural numbers and integers
@@ -27,6 +29,7 @@ and the nonpositive half `∑ j ∈ range (N + 1), F (-(j : ℤ))`.
 * `Finset.sum_Ico_one_sub_one_const`: `∑ _k ∈ Ico 1 (n - 1), c = (n - 2) * c` for `2 ≤ n`.
 * `Finset.sum_Icc_eq_add_sum_range`: `(∑ i ∈ Icc (-(N : ℤ)) N, F i) + F 0` equals the sum of `F j`
   and `F (-(j : ℤ))` over `j ∈ range (N + 1)`.
+* `Finset.sum_range_sub_mul_two`: twice the sum of `r + 1 - j` over `j < e` is `e (2 r + 3 - e)`.
 -/
 
 public section
@@ -85,5 +88,19 @@ theorem sum_Icc_eq_add_sum_range {M : Type*} [AddCommMonoid M] (F : ℤ → M) (
   rw [hunion, hinter, sum_singleton] at hkey
   rw [hkey, hs, ht, sum_image (fun _ _ _ _ h ↦ by exact_mod_cast h),
     sum_image (fun _ _ _ _ h ↦ by omega)]
+
+/-- Twice the number of pairs `(j, i)` with `j < e` and `i + j ≤ r`, that is, the sum of `r + 1 - j`
+over `j < e`, doubled. -/
+theorem sum_range_sub_mul_two (r e : ℕ) (he : e ≤ r + 1) :
+    (∑ j ∈ range e, ((r + 1 - j : ℕ) : ℤ)) * 2 = e * (2 * r + 3 - e) := by
+  have h : (∑ j ∈ range e, (j : ℤ)) * 2 = e * (e - 1) := by
+    rcases e.eq_zero_or_pos with rfl | he0
+    · simp
+    · have h := congrArg (Nat.cast : ℕ → ℤ) (sum_range_id_mul_two e)
+      rw [Nat.cast_mul, Nat.cast_mul, Nat.cast_sub he0, Nat.cast_sum] at h
+      simpa using h
+  rw [sum_congr rfl fun j hj ↦ Nat.cast_sub (by grind), sum_sub_distrib, sub_mul, h]
+  simp
+  ring
 
 end Finset

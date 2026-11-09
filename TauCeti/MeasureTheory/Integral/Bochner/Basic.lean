@@ -43,6 +43,10 @@ for set and probability integrals.
   function's integral by the integral of its pointwise positive part.
 * `lintegral_ofReal_eq_one` gives a probability density (almost everywhere nonnegative, with
   integral one) total extended mass one.
+* `ofReal_integral_add_ofReal_integral_le` adds the positive parts of two integrals whose
+  integrands sum, almost everywhere, to at most a third integrable function.
+* `integral_min_le_left` and `integral_le_integral_max` compare the integral of an integrable
+  function with that of its pointwise minimum or maximum with another integrable function.
 * `toReal_lintegral_coe_eq_integral` identifies `(∫⁻ ω, (f ω : ℝ≥0∞) ∂μ).toReal` with
   `∫ ω, (f ω : ℝ) ∂μ` for any almost-everywhere measurable `f : Ω → ℝ≥0`.
 
@@ -53,12 +57,21 @@ for set and probability integrals.
 
 ## Set and probability integrals
 
+* `nonpos_nonneg_of_mem_Icc_of_integral_eq_zero`: a mean zero random variable with values in
+  `[a, b]` has `a ≤ 0 ≤ b`.
 * `setIntegral_norm_add_sq_le` integrates the pointwise bound
   `‖g + h‖² ≤ 2 ‖g‖² + 2 ‖h‖²` over a set.
 * `setIntegral_norm_sub_sq_le_add_of_le` transfers a square-mean decay estimate from `K` on a
   pair of sets `s ⊆ S` to any `f` close to `K` in square mean on `S`.
 * `sq_setIntegral_le_measureReal_mul_setIntegral_sq` is Cauchy--Schwarz for a real-valued set
   integral, in squared form.
+* `measureReal_inter_lt_le_setIntegral_max_sub_sq_div` is Chebyshev's inequality for truncations:
+  the level set `{l < g}` in `s` has measure at most `∫_s ((g - k)⁺)² / (l - k)²`.
+* `ae_le_of_setIntegral_max_sub_sq_eq_zero` gives `g ≤ k` almost everywhere on `s` when the
+  squared truncation `((g - k)⁺)²` has zero integral over `s`.
+* `setIntegral_rpow_le_rpow_mul_setIntegral_rpow` interpolates `L^q` between `L^∞` and `Lᵖ`:
+  `∫_s w^q ≤ F^{q-p} ∫_t wᵖ` for `p ≤ q`, `0 ≤ w` almost everywhere on `t` and `w ≤ F` almost
+  everywhere on `s ⊆ t`.
 * `setIntegral_le_setIntegral_sq_mul_of_eqOn` compares an integral over a set with a weighted
   integral over a larger set, for a weight in `[0, 1]` almost everywhere on the larger set and
   equal to one on the smaller set.
@@ -361,6 +374,18 @@ theorem ofReal_integral_le_lintegral_ofReal {Ω : Type*} [MeasurableSpace Ω]
   · rw [integral_undef hf]
     simp
 
+/-- The integral of the pointwise minimum of two integrable functions is at most the integral of
+the first one. -/
+theorem integral_min_le_left {α : Type*} [MeasurableSpace α] {μ : Measure α} {f g : α → ℝ}
+    (hf : Integrable f μ) (hg : Integrable g μ) : ∫ x, min (f x) (g x) ∂μ ≤ ∫ x, f x ∂μ :=
+  integral_mono (hf.inf hg) hf fun _ ↦ min_le_left _ _
+
+/-- The integral of the first of two integrable functions is at most the integral of their
+pointwise maximum. -/
+theorem integral_le_integral_max {α : Type*} [MeasurableSpace α] {μ : Measure α} {f g : α → ℝ}
+    (hf : Integrable f μ) (hg : Integrable g μ) : ∫ x, f x ∂μ ≤ ∫ x, max (f x) (g x) ∂μ :=
+  integral_mono hf (hf.sup hg) fun _ ↦ le_max_left _ _
+
 /-- A probability density `ρ`, almost everywhere nonnegative with `∫ ρ = 1`, has total extended
 mass one: `∫⁻ ofReal (ρ t) dμ = 1`. -/
 theorem lintegral_ofReal_eq_one {α : Type*} [MeasurableSpace α] {μ : Measure α}
@@ -368,6 +393,21 @@ theorem lintegral_ofReal_eq_one {α : Type*} [MeasurableSpace α] {μ : Measure 
     ∫⁻ t, ENNReal.ofReal (ρ t) ∂μ = 1 := by
   rw [← ofReal_integral_eq_lintegral_ofReal (integrable_of_integral_eq_one hρ1) hρ0, hρ1,
     ENNReal.ofReal_one]
+
+/-- Positive parts of integrals add up under an almost-everywhere bound: for integrable `F`, `G`,
+`N` with `0 ≤ F ≤ N` and `F + G ≤ N` almost everywhere, the positive parts of `∫ F` and `∫ G` sum
+to at most the positive part of `∫ N`. The function `G` may take negative values, in which case
+`∫ G` may be negative and its positive part is `0`. -/
+theorem ofReal_integral_add_ofReal_integral_le {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    {F G N : Ω → ℝ} (hF : Integrable F μ) (hG : Integrable G μ) (hN : Integrable N μ)
+    (hF0 : 0 ≤ᵐ[μ] F) (hFN : F ≤ᵐ[μ] N) (hFG : ∀ᵐ x ∂μ, F x + G x ≤ N x) :
+    ENNReal.ofReal (∫ x, F x ∂μ) + ENNReal.ofReal (∫ x, G x ∂μ) ≤
+      ENNReal.ofReal (∫ x, N x ∂μ) := by
+  rcases le_total 0 (∫ x, G x ∂μ) with hG0 | hG0
+  · rw [← ENNReal.ofReal_add (integral_nonneg_of_ae hF0) hG0, ← integral_add hF hG]
+    exact ENNReal.ofReal_le_ofReal (integral_mono_ae (hF.add hG) hN hFG)
+  · rw [ENNReal.ofReal_of_nonpos hG0, add_zero]
+    exact ENNReal.ofReal_le_ofReal (integral_mono_ae hF hN hFN)
 
 /-- The real value of the extended Lebesgue integral of an almost-everywhere measurable
 `ℝ≥0`-valued function equals its Bochner integral. Neither finiteness of the measure nor
@@ -513,6 +553,73 @@ theorem measure_compl_roots_eq_zero_of_integral_norm_eval_sq_eq_zero {𝕜 : Typ
   refine measure_mono_null (fun w hw ↦ ?_) (ae_iff.1 hae)
   have hw' : p.eval w ≠ 0 := fun h0 ↦ hw (by simp [mem_roots hp, h0])
   simpa using hw'
+
+/-- **Chebyshev's inequality for truncations.** For `k < l`, the level set `{l < g}` in a
+measurable set `s` has measure at most `∫_s ((g - k)⁺)² / (l - k)²`, when `((g - k)⁺)²` is
+integrable on `s`. -/
+theorem measureReal_inter_lt_le_setIntegral_max_sub_sq_div {X : Type*} [MeasurableSpace X]
+    {ν : Measure X} {g : X → ℝ} {s : Set X} (hs : MeasurableSet s)
+    {k l : ℝ} (hkl : k < l) (hint : IntegrableOn (fun x => max (g x - k) 0 ^ 2) s ν) :
+    ν.real (s ∩ {x | l < g x}) ≤ (∫ x in s, max (g x - k) 0 ^ 2 ∂ν) / (l - k) ^ 2 := by
+  have hlk : 0 < (l - k) ^ 2 := by nlinarith
+  rw [le_div_iff₀ hlk, mul_comm]
+  refine le_trans ?_ (mul_meas_ge_le_integral_of_nonneg
+    (Eventually.of_forall fun x => by positivity) hint ((l - k) ^ 2))
+  rw [measureReal_restrict_apply' hs]
+  have hfin : (ν.restrict s) {x | (l - k) ^ 2 ≤ max (g x - k) 0 ^ 2} ≠ ∞ := by
+    exact (hint.measure_ge_lt_top hlk).ne
+  refine mul_le_mul_of_nonneg_left (measureReal_mono (fun x hx => ?_)
+    (by rw [← Measure.restrict_apply' hs]; exact hfin)) hlk.le
+  obtain ⟨hxs, hx⟩ := hx
+  refine ⟨?_, hxs⟩
+  simp only [Set.mem_ofPred_eq] at hx ⊢
+  rw [max_eq_left (by linarith)]
+  exact pow_le_pow_left₀ (by linarith) (by linarith) 2
+
+/-- If the squared truncation `((g - k)⁺)²` is integrable on `s` with integral zero, then `g ≤ k`
+almost everywhere on `s`. -/
+theorem ae_le_of_setIntegral_max_sub_sq_eq_zero {X : Type*} [MeasurableSpace X] {ν : Measure X}
+    {g : X → ℝ} {s : Set X} {k : ℝ} (hint : IntegrableOn (fun x => max (g x - k) 0 ^ 2) s ν)
+    (hzero : ∫ x in s, max (g x - k) 0 ^ 2 ∂ν = 0) : ∀ᵐ x ∂ν.restrict s, g x ≤ k := by
+  have hae := (setIntegral_eq_zero_iff_of_nonneg_ae
+    (Eventually.of_forall fun x => by positivity) hint).1 hzero
+  filter_upwards [hae] with x hx
+  have hmax : max (g x - k) 0 = 0 := pow_eq_zero_iff two_ne_zero |>.1 hx
+  linarith [le_max_left (g x - k) 0]
+
+/-- **Interpolation of `L^q` between `L^∞` and `Lᵖ`.** If `w ≥ 0` and `w ≤ F` almost everywhere
+on `s`, `s ⊆ t`, `p ≤ q` and `q ≠ 0`, then `∫_s w^q ≤ F^{q-p} ∫_t wᵖ`. -/
+theorem setIntegral_rpow_le_rpow_mul_setIntegral_rpow {X : Type*} [MeasurableSpace X]
+    {ν : Measure X} {w : X → ℝ} {s t : Set X} {F p q : ℝ} (hF : 0 ≤ F) (hst : s ⊆ t)
+    (hpq : p ≤ q) (hq : q ≠ 0) (hw0 : ∀ᵐ x ∂ν.restrict t, 0 ≤ w x)
+    (hintp : IntegrableOn (fun x => w x ^ p) t ν) (hwF : ∀ᵐ x ∂ν.restrict s, w x ≤ F) :
+    ∫ x in s, w x ^ q ∂ν ≤ F ^ (q - p) * ∫ x in t, w x ^ p ∂ν := by
+  have hw0s : ∀ᵐ x ∂ν.restrict s, 0 ≤ w x := ae_restrict_of_ae_restrict_of_subset hst hw0
+  calc ∫ x in s, w x ^ q ∂ν
+      ≤ ∫ x in s, F ^ (q - p) * w x ^ p ∂ν := by
+        refine integral_mono_of_nonneg (hw0s.mono fun x hx => Real.rpow_nonneg hx q)
+          ((hintp.mono_set hst).const_mul _) ?_
+        filter_upwards [hw0s, hwF] with x h0 hx
+        have hqp : w x ^ q = w x ^ (q - p) * w x ^ p := by
+          rw [← Real.rpow_add' h0 (by simpa using hq), sub_add_cancel]
+        rw [hqp]
+        exact mul_le_mul_of_nonneg_right
+          (Real.rpow_le_rpow h0 hx (by linarith : (0 : ℝ) ≤ q - p))
+          (Real.rpow_nonneg h0 p)
+    _ = F ^ (q - p) * ∫ x in s, w x ^ p ∂ν := integral_const_mul _ _
+    _ ≤ F ^ (q - p) * ∫ x in t, w x ^ p ∂ν := by
+        exact mul_le_mul_of_nonneg_left (setIntegral_mono_set hintp
+          (hw0.mono fun x hx => Real.rpow_nonneg hx p) hst.eventuallyLE)
+          (Real.rpow_nonneg hF _)
+
+/-- A mean zero random variable with values in `[a, b]` has `a ≤ 0 ≤ b`. -/
+theorem nonpos_nonneg_of_mem_Icc_of_integral_eq_zero {Ω : Type*} [mΩ : MeasurableSpace Ω]
+    {μ : Measure Ω} [IsProbabilityMeasure μ] {X : Ω → ℝ}
+    {a b : ℝ} (hX : Integrable X μ) (hbound : ∀ᵐ ω ∂μ, X ω ∈ Set.Icc a b)
+    (hmean : ∫ ω, X ω ∂μ = 0) : a ≤ 0 ∧ 0 ≤ b := by
+  constructor
+  · simpa [hmean] using integral_mono_ae (integrable_const a) hX (hbound.mono fun ω h => h.1)
+  · simpa [hmean] using integral_mono_ae hX (integrable_const b) (hbound.mono fun ω h => h.2)
 
 end MeasureTheory
 

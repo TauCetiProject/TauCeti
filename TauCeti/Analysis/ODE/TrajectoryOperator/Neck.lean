@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.ODE.EnergyEstimate.Fredholm
+public import TauCeti.Analysis.ODE.EnergyEstimate.Lyapunov
 public import TauCeti.Analysis.ODE.EnergyEstimate.Sobolev
 public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 public import TauCeti.Analysis.SpecialFunctions.Hyperbolic
@@ -40,8 +40,9 @@ The equation `v' = a_R v` has the explicit positive solution
 equation `v' = -a_R v` has the solution `1 / F_R`. Neither is square integrable, so neither
 equation has a nonzero square-integrable solution. By the kernel description of
 `TauCeti.WeakDerivStep.kerTrajectoryOperatorEquiv`, `D_R` and its formal adjoint are injective;
-since `D_R` has closed range (`TauCeti.WeakDerivStep.isClosed_range_trajectoryOperator`) and the
-orthogonal complement of its range is the kernel of the formal adjoint, `D_R` is also surjective.
+since `D_R` has closed range
+(`TauCeti.WeakDerivStep.isClosed_range_trajectoryOperator_of_hasLyapunovForm`) and the orthogonal
+complement of its range is the kernel of the formal adjoint, `D_R` is also surjective.
 
 For the lower bound on the inverse, the translated kernel element `ξ_R(s) = sech (s + R)` of `D₁`
 satisfies `D_R ξ_R = -exp (s - R) / (cosh (s - R) cosh (s + R))`, and pointwise
@@ -497,27 +498,21 @@ theorem range_trajectoryOperator_neg_neckCoeff_smul_id (R : ℝ)
   set A : ℝ → E →L[ℝ] E := fun s ↦ -neckCoeff R s • ContinuousLinearMap.id ℝ E
   have hsym : ∀ s, (A s).toLinearMap.IsSymmetric := fun s x y ↦ by
     simp [A, inner_smul_left, inner_smul_right]
-  have hA : ContDiff ℝ 1 A :=
-    (contDiff_neckCoeff R).neg.smul (contDiff_const (c := ContinuousLinearMap.id ℝ E))
-  have hderiv : deriv A = fun s ↦ -deriv (neckCoeff R) s • ContinuousLinearMap.id ℝ E := by
-    funext s
-    exact (((contDiff_neckCoeff R (n := 1)).differentiable one_ne_zero s).hasDerivAt.neg.smul_const
-      (ContinuousLinearMap.id ℝ E)).deriv
+  have hA : Continuous A := (continuous_neckCoeff R).neg.smul continuous_const
   have hlim {l : Filter ℝ} (h : Tendsto (neckCoeff R) l (𝓝 1)) :
       Tendsto A l (𝓝 (-ContinuousLinearMap.id ℝ E)) := by
     simpa [A] using h.neg.smul_const (ContinuousLinearMap.id ℝ E)
-  have hdlim {l : Filter ℝ} (h : Tendsto (deriv (neckCoeff R)) l (𝓝 0)) :
-      Tendsto (deriv A) l (𝓝 0) := by
-    simpa [hderiv] using h.neg.smul_const (ContinuousLinearMap.id ℝ E)
   have hgap : ∀ v, 1 * ‖v‖ ≤ ‖(-ContinuousLinearMap.id ℝ E) v‖ := fun v ↦ by simp
-  have hclosed := isClosed_range_trajectoryOperator hA hsym one_pos hgap hgap
-    (hlim (tendsto_neckCoeff_atBot R)) (hlim (tendsto_neckCoeff_atTop R))
-    (hdlim (tendsto_deriv_neckCoeff_atBot R)) (hdlim (tendsto_deriv_neckCoeff_atTop R)) AL hAL
-  have hALsym : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ),
-      (AL s).toLinearMap.IsSymmetric := by
+  have hbot := hlim (tendsto_neckCoeff_atBot R)
+  have hclosed := isClosed_range_trajectoryOperator_of_hasLyapunovForm hA
+    (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hbot one_pos hgap)
+    (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hbot one_pos hgap)
+    hbot (hlim (tendsto_neckCoeff_atTop R)) AL hAL
+  -- The coefficients are symmetric, so `AL` is also the class of their adjoints.
+  have hALadj : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ),
+      AL s = ContinuousLinearMap.adjoint (AL s) := by
     filter_upwards [hAL] with s hs
-    rw [hs]
-    exact hsym s
+    rw [hs, (ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.2 (hsym s)).adjoint_eq]
   have hnegAL : -AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ neckCoeff R s • ContinuousLinearMap.id ℝ E := by
     filter_upwards [Lp.coeFn_neg AL, hAL] with s hs hAs
@@ -527,7 +522,7 @@ theorem range_trajectoryOperator_neg_neckCoeff_smul_id (R : ℝ)
     (ker_trajectoryOperator_eq_bot_iff ((continuous_neckCoeff R).smul continuous_const) (-AL)
       hnegAL).2 (squareIntegrableSolutions_neckCoeff_smul_id R)
   have horth : (trajectoryOperator (p := 2) AL).rangeᗮ = ⊥ := by
-    rw [orthogonal_range_trajectoryOperator_eq_map_ker hALsym, hker, Submodule.map_bot]
+    rw [orthogonal_range_trajectoryOperator_eq_map_ker hALadj, hker, Submodule.map_bot]
   rw [← hclosed.submodule_topologicalClosure_eq, Submodule.topologicalClosure_eq_top_iff]
   exact horth
 
