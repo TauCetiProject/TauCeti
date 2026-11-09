@@ -100,7 +100,7 @@ private theorem support_standardStableMeasure_of_abs_lt_one (hα : α ∈ Ioo 0 
     (hβ : |β| < 1) : (stableMeasure α β 1 0).support = univ := by
   obtain ⟨μ, hμ, -⟩ := existsUnique_conv_stableCompensatedPoissonMeasure_eq hα hβ.le
     (by norm_num : (0 : ℝ) < 1)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure hα hβ.le zero_lt_one
+  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β 1
   obtain ⟨a, ha⟩ := Measure.nonempty_support (IsProbabilityMeasure.ne_zero (μ : Measure ℝ))
   apply eq_univ_of_forall
   intro x
@@ -145,7 +145,7 @@ private theorem mem_support_standardStableMeasure_of_eventually (hα : α ∈ Io
   obtain ⟨a, ha, haS⟩ := Measure.nonempty_inter_support_of_pos hn
   have hya : y - a ∈ (stableCompensatedPoissonMeasure α β (r n)).support :=
     hsub (by simpa [Metric.mem_ball, Real.dist_eq, abs_sub_comm] using ha)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure hα hβ (hr n)
+  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β (r n)
   have hmem := Measure.add_mem_support_conv haS hya
   rwa [hρ n, add_sub_cancel] at hmem
 
