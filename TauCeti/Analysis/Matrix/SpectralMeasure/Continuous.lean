@@ -46,7 +46,7 @@ theorem continuous_eigenvalueMeasure :
     letI := hnonempty s
     empiricalMeasureOfFintype fun z : (s : Multiset ℂ) => (z : ℂ)
   have hμ : Continuous μ := by
-    apply TauCeti.Sym.continuous_iff_comp_ofFn.mpr
+    apply Sym.continuous_iff_comp_ofFn.mpr
     have hcomp : μ ∘ Sym.ofFn =
         (empiricalMeasureOfFintype : (Fin (Fintype.card n) → ℂ) → ProbabilityMeasure ℂ) := by
       funext a
