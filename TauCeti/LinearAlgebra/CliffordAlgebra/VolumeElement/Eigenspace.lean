@@ -131,16 +131,14 @@ theorem smul_mem_eigenspace_complexVolume_of_odd (hn : Odd n)
   rw [← mul_smul, ← Subalgebra.mem_center_iff.1 (complexVolume_mem_center o hn) x, mul_smul, hψ,
     smul_comm]
 
-/-- An even Clifford element preserves each eigenspace of `Γ`, in any dimension: in even dimension
-`Γ` commutes with even elements, and in odd dimension it is central. -/
+/-- An even Clifford element preserves each eigenspace of `Γ`, in any dimension, because `Γ`
+commutes with even elements. -/
 theorem smul_mem_eigenspace_complexVolume_of_mem_even
     {x : CliffordAlgebra (Q.baseChange ℂ)} (hx : x ∈ evenOdd (Q.baseChange ℂ) 0) {μ : ℂ} {ψ : E}
     (hψ : ψ ∈ (Algebra.lsmul ℂ ℂ E (complexVolume Q o)).eigenspace μ) :
     x • ψ ∈ (Algebra.lsmul ℂ ℂ E (complexVolume Q o)).eigenspace μ := by
-  obtain hn | hn := Nat.even_or_odd n
-  · simp only [mem_eigenspace_iff, Algebra.lsmul_coe] at hψ ⊢
-    rw [← mul_smul, (commute_complexVolume_of_mem_even o hn hx).eq, mul_smul, hψ, smul_comm]
-  · exact smul_mem_eigenspace_complexVolume_of_odd o hn x hψ
+  simp only [mem_eigenspace_iff, Algebra.lsmul_coe] at hψ ⊢
+  rw [← mul_smul, (commute_complexVolume_of_mem_even o hx).eq, mul_smul, hψ, smul_comm]
 
 /-! ### Naturality under isometries -/
 

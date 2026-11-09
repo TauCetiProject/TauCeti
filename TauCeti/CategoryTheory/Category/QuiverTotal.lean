@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.CategoryTheory.EqToHom
+public import Mathlib.CategoryTheory.Groupoid
+public import Mathlib.Combinatorics.Quiver.Covering
 public import Mathlib.Combinatorics.Quiver.Subquiver
 
 /-!
@@ -26,7 +28,9 @@ A sum over the total arrows with source `x` is a sum over the arrows `x ⟶ y` f
 the arrows out of `x` with those out of `y` with the same targets, so the sum of a function of the
 target over the arrows with source `x` depends only on the isomorphism class of `x`
 (`Quiver.Total.finsum_mem_preimage_left_singleton_eq_of_iso`). Such sums define the cutoff
-functions of étale groupoids.
+functions of étale groupoids. In a groupoid, inverting arrows turns it into the sum of the same
+function of the source over the arrows `Quiver.Costar x` with target `x`
+(`Quiver.Total.finsum_costar_eq_finsum_mem_preimage_left_singleton`).
 
 ## Main declarations
 
@@ -84,6 +88,17 @@ theorem finsum_mem_preimage_left_singleton_eq_of_iso {M : Type*} [AddCommMonoid 
   rw [finsum_mem_preimage_left_singleton, finsum_mem_preimage_left_singleton]
   exact finsum_comp_equiv (Equiv.sigmaCongrRight fun _ ↦ e.homFromEquiv)
     (f := fun p : Σ z, (y ⟶ z) ↦ g p.1)
+
+/-- In a groupoid, inverting arrows identifies the arrows with target `x` with those with source
+`x`. So the sum of a function of the source over the arrows with target `x` is the sum of the same
+function of the target over the total arrows with source `x`. -/
+theorem finsum_costar_eq_finsum_mem_preimage_left_singleton [IsGroupoid C] {M : Type*}
+    [AddCommMonoid M] (g : C → M) (x : C) :
+    ∑ᶠ b : Quiver.Costar x, g b.1 = ∑ᶠ a ∈ Quiver.Total.left ⁻¹' {x}, g a.right := by
+  rw [finsum_mem_preimage_left_singleton]
+  let := Groupoid.ofIsGroupoid (C := C)
+  exact (finsum_comp_equiv (Equiv.sigmaCongrRight fun _ ↦ Groupoid.invEquiv)
+    (f := fun b : Quiver.Costar x ↦ g b.1)).symm
 
 /-- The composite of total arrows `a` and `b` of a category with the target of `a` equal to the
 source of `b`: the first arrow is followed by the second. -/

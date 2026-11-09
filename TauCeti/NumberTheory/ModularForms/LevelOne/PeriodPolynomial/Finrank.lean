@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ModularForms.LevelOne.DimensionFormula
 public import TauCeti.NumberTheory.ModularForms.LevelOne.PeriodPolynomial.Basic
 
+import TauCeti.LinearAlgebra.Trace.Basic
 import TauCeti.LinearAlgebra.Trace.Idempotent
 import TauCeti.RingTheory.MvPolynomial.Finrank
 import TauCeti.RingTheory.Polynomial.Dickson
@@ -44,7 +45,7 @@ injective, are isomorphisms: the even and odd parts `W_w^±` together span `W_w`
   `V_w`.
 * `TauCeti.finrank_periodPolynomials_add_eq`: for positive even `w`,
   `dim W_w + (w + 1) = 2 ⌈w / 4⌉ + 2 ⌈w / 3⌉`.
-* `TauCeti.periodPolynomials_zero`: `W_0 = 0` when `2 ≠ 0`.
+* `TauCeti.periodPolynomials_zero`: `W_0 = 0`.
 * `TauCeti.finrank_periodPolynomials_eq_finrank_modularForm_add_finrank_cuspForm`: for every `w`,
   `dim W_w = dim M_{w+2}(SL(2, ℤ)) + dim S_{w+2}(SL(2, ℤ))` over `ℂ`.
 
@@ -182,26 +183,23 @@ theorem finrank_periodPolynomials_add_eq [CharZero K] (hw : Even w) (hw₀ : w �
     finrank_ker_one_add_U_add_U_sq hw] at h
   omega
 
-/-- **In degree `0` there are no nonzero period polynomials** when `2 ≠ 0`: `S` fixes the
-constants, so `1 + S` is injective on `V_0`. -/
+/-- **In degree `0` there are no nonzero period polynomials**, over every field: `S` and `U` fix the
+constants, so `1 + S = 2` and `1 + U + U² = 3` on `V_0`, and a vector killed by both is `0`. -/
 @[simp]
-theorem periodPolynomials_zero [NeZero (2 : K)] : periodPolynomials K 0 = ⊥ := by
-  -- `S` has trace `1` on the line `V_0`, so `2 dim ker (1 + S) = 0`
-  have h := LinearMap.two_mul_finrank_ker_one_add_of_sq_eq_one
-    (binaryFormRep_S_sq_of_even (R := K) ⟨0, rfl⟩)
-  rw [finrank_homogeneousSubmodule_fin_two, trace_binaryFormRep_S] at h
-  have hle := Submodule.finrank_le
-    (LinearMap.ker (1 + binaryFormRep K 0 (op (S : Matrix (Fin 2) (Fin 2) ℤ))))
-  rw [finrank_homogeneousSubmodule_fin_two] at hle
-  have hker : LinearMap.ker (1 + binaryFormRep K 0 (op (S : Matrix (Fin 2) (Fin 2) ℤ))) = ⊥ := by
-    rw [← Submodule.finrank_eq_zero]
-    interval_cases _ : finrank K
-      (LinearMap.ker (1 + binaryFormRep K 0 (op (S : Matrix (Fin 2) (Fin 2) ℤ))))
-    · rfl
-    · norm_num at h
-      exact absurd h two_ne_zero
-  rw [eq_bot_iff, ← hker, periodPolynomials_def]
-  exact inf_le_left
+theorem periodPolynomials_zero : periodPolynomials K 0 = ⊥ := by
+  -- `S` and `U` have trace `1` on the line `V_0`, so they act as the identity
+  have hV : finrank K (homogeneousSubmodule (Fin 2) K 0) = 1 :=
+    finrank_homogeneousSubmodule_fin_two K 0
+  have hS := LinearMap.eq_trace_smul_one_of_finrank_eq_one hV
+    (binaryFormRep K 0 (op (S : Matrix (Fin 2) (Fin 2) ℤ)))
+  have hU := LinearMap.eq_trace_smul_one_of_finrank_eq_one hV
+    (binaryFormRep K 0 (op ((T * S : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)))
+  rw [trace_binaryFormRep_S, dickson_zero] at hS
+  rw [trace_binaryFormRep_U, dickson_zero] at hU
+  rw [eq_bot_iff, periodPolynomials_def, hS, hU]
+  rintro v ⟨h₁, h₂⟩
+  norm_num at h₁ h₂ ⊢
+  linear_combination h₂ - h₁
 
 /-- **The period-polynomial space has the dimension of `M_{w+2} ⊕ S_{w+2}`**: over `ℂ`,
 `dim W_w = dim M_{w+2}(SL(2, ℤ)) + dim S_{w+2}(SL(2, ℤ))` for every `w`.

@@ -17,7 +17,7 @@ public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 For a nonarchimedean local field `K`, `TauCeti.teichmuller 𝒪[K]` is the canonical
 multiplicative section `𝓀[K]ˣ →* 𝒪[K]ˣ`. This file adds its zero-preserving extension
 `teichmullerLift K : 𝓀[K] →*₀ 𝒪[K]`, obtained from Mathlib's `Perfection.teichmuller₀`, and proves
-that the two constructions agree on units. Both lifts are natural along a finite extension `L/K`:
+that the two constructions agree on units. Both lifts are natural along an extension `L/K`:
 the inclusion `𝒪[K] → 𝒪[L]` carries the Teichmüller representative of `a ∈ 𝓀[K]` to the
 Teichmüller representative of the image of `a` in `𝓀[L]`. It also records that, for
 `q = #𝓀[K]` and `f ≠ 0`, `q ^ f - 1` is a unit in `𝒪[K]`, and that an exponent prime to the
@@ -41,7 +41,7 @@ residue characteristic `p` is nonzero.
 * `TauCeti.teichmullerLift_neg_one`: in odd residue characteristic the lift of `-1` is `-1`.
 * `AlgEquiv.smul_teichmullerLift`: local-field automorphisms commute with the
   Teichmüller lift through their residue-field action.
-* `TauCeti.algebraMap_teichmullerLift`: the Teichmüller lift is natural along a finite extension
+* `TauCeti.algebraMap_teichmullerLift`: the Teichmüller lift is natural along an extension
   of local fields.
 
 ## References
@@ -210,9 +210,9 @@ section Extension
 variable {K L : Type*}
   [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
   [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
-  [Algebra K L] [ValuativeExtension K L] [Module.Finite K L]
+  [Algebra K L] [ValuativeExtension K L]
 
-/-- **Naturality of the Teichmüller lift.** Along a finite extension `L/K` of local fields, the
+/-- **Naturality of the Teichmüller lift.** Along an extension `L/K` of local fields, the
 Teichmüller representative in `𝒪[K]` of `a ∈ 𝓀[K]` is the Teichmüller representative in `𝒪[L]`
 of the image of `a` in `𝓀[L]`. -/
 @[simp]

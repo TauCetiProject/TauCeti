@@ -18,7 +18,7 @@ The restriction of a module of finite type along an open immersion is of finite 
 inverse of the equivalence between modules on an open subscheme and modules on its slice site
 preserves finite type. Consequently, finite type can be checked on restrictions to any open
 cover, or to all affine opens. This is the finite-type analogue of
-`TauCeti.AlgebraicGeometry.isQuasicoherent_of_isQuasicoherent_restrict`.
+`AlgebraicGeometry.Scheme.Modules.isQuasicoherent_iff_of_iSup_eq_top`.
 -/
 
 public section

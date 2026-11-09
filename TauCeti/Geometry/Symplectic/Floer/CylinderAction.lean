@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Action
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 
 /-!
@@ -26,8 +27,15 @@ its two boundary loops `γ_a = u(a, ·)` and `γ_b = u(b, ·)`:
 `E(u) = ∫ u^* ω + ∫₀¹ H(t, γ_b(t)) dt - ∫₀¹ H(t, γ_a(t)) dt`
 
 (`TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_cylindrical`). This file
-rewrites the right-hand side as a difference of actions of the two loops, in two settings.
+rewrites the right-hand side as a difference of actions of the two loops, in four settings.
 
+* For an arbitrary nondegenerate form, such as the symplectic form of a closed monotone
+  manifold, and a `C¹` map `v` with `v (0, ·) = γ_b`, the energy is
+  `A_H(γ_a, w # v) - A_H(γ_b, v)` for the action `A_H(γ, u) = ∫ u^* ω - ∫₀¹ H(t, γ(t)) dt` of
+  `γ` measured against `u` (`TauCeti.cylinderAction`), where `w` is `u` on `[a, b] × ℝ` rescaled
+  to `[0, 1] × ℝ`
+  (`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub`). When `v`
+  is a cap of `γ_b`, `w # v` is a cap of `γ_a`, and the energy is the drop of the capped action.
 * For a weakly exact form (`TauCeti.IsWeaklyExact`, the area half of symplectic asphericity) and
   a `C²` cylinder whose loop `γ_b` bounds a cap, the energy is `A_H(γ_a) - A_H(γ_b)` for the
   action `A_H(γ) = ∫ v^* ω - ∫₀¹ H(t, γ(t)) dt` of contractible loops
@@ -37,24 +45,45 @@ rewrites the right-hand side as a difference of actions of the two loops, in two
   `C²` cylinder the energy is `A_H(γ_a) - A_H(γ_b)` for the action
   `A_H(γ) = -∫_γ α - ∫₀¹ H(t, γ(t)) dt` of arbitrary loops
   (`TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_sub_of_mextDeriv_eq`).
+* For a form vanishing on tori (`TauCeti.VanishesOnTori`, the area half of symplectic
+  atoroidality) and a smooth map `u` whose loop `γ_b` is joined to a reference loop `γ₀` by a
+  smooth cylinder, the energy is `𝒜_H(γ_a) - 𝒜_H(γ_b)` for the action
+  `𝒜_H(γ) = ∫ Γ^* ω - ∫₀¹ H(t, γ(t)) dt` relative to `γ₀`
+  (`TauCeti.SmoothTwoForm.referenceAction`), the cylinder `Γ` running from `γ` to `γ₀`
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_referenceAction_sub`).
+  Choosing one reference loop in each free homotopy class, this is the energy identity on the
+  whole free loop space, not only on contractible loops.
 
 For a solution of the Floer equation and almost complex structures tamed by `ω`, the energy
 density is nonnegative
-(`TauCeti.SmoothTwoForm.IsNondegenerate.floerEnergyDensity_cylindrical_nonneg`), so for a weakly
-exact form the contractible action of the loops decreases along a Floer cylinder
-(`TauCeti.SmoothTwoForm.IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction`).
+(`TauCeti.SmoothTwoForm.IsNondegenerate.floerEnergyDensity_zero_left_nonneg`), so the capped
+action decreases along a Floer cylinder when the caps are glued along it
+(`TauCeti.SmoothTwoForm.IsNondegenerate.cylinderAction_le_cylinderAction`), for a weakly exact
+form the contractible action of the loops decreases
+(`TauCeti.SmoothTwoForm.IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction`), and
+for a form vanishing on tori so does the action relative to a reference loop
+(`TauCeti.SmoothTwoForm.IsNondegenerate.referenceAction_le_referenceAction`).
 This monotonicity underlies the action filtration of the Floer complex.
 
 ## Main results
 
 * `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_cylindrical`: the energy of a
   map over `[a, b] × [0, 1]` for a cylindrical perturbation.
+* `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub`: the energy
+  of a cylinder is the drop of the capped action, for any nondegenerate form.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.cylinderAction_le_cylinderAction`: the capped action
+  decreases along Floer cylinders.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_contractibleLoopAction_sub`: for a
   weakly exact form, the energy of a cylinder is the drop of the contractible action.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_sub_of_mextDeriv_eq`: for
   an exact form, the energy of a cylinder is the drop of the action of its loops.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction`: the
   contractible action decreases along Floer cylinders.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_referenceAction_sub`: for a
+  form vanishing on tori, the energy of a cylinder is the drop of the action relative to a
+  reference loop.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.referenceAction_le_referenceAction`: the action relative
+  to a reference loop decreases along Floer cylinders.
 
 ## References
 
@@ -78,21 +107,7 @@ variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologica
   {I : ModelWithCorners ℝ E HM} [TopologicalSpace M] [ChartedSpace HM M]
   [IsManifold I (⊤ : ℕ∞) M]
 
-/-! ### Floer cylinders -/
-
 variable {ω : SmoothTwoForm I M} {H : ℝ → M → ℝ} {u : ℝ × ℝ → M}
-
-/-- The Floer energy density of a solution of `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` for the
-cylindrical perturbation `K = H_t dt` is nonnegative when `J` is tamed by `ω` at `u z`. -/
-theorem IsNondegenerate.floerEnergyDensity_cylindrical_nonneg (hω : ω.IsNondegenerate)
-    {z : ℝ × ℝ} {J : AlmostComplexStructure (TangentSpace I (u z))}
-    (hJ : (hω.symplecticFormAt (u z)).Tames J)
-    (hfloer : mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
-      J (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
-        ω.hamiltonianVectorField (H z.2) (u z)) = 0) :
-    0 ≤ ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z :=
-  floerEnergyDensity_nonneg hω hJ <|
-    (ω.isComplexLinearMap_perturbedMFDeriv_iff _ _ u z J).2 (by simpa using hfloer)
 
 /-! ### The energy identity for cylindrical perturbations -/
 
@@ -117,26 +132,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cylindrical (hω : ω.IsNond
   have hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
     hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
   have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
-  -- The symplectic area density is the integrand of the rectangle integral.
-  let area : ℝ × ℝ → ℝ := fun z ↦ SmoothBundleForm.eval₂ ω (u z)
-    (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag)
-  have harea_cont : Continuous area :=
-    (hω₀.continuous_apply_mfderiv hu (1, 0) (0, 1)).congr fun z ↦ by
-      simp [area, SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
-  -- The derivative term `d(K(u))` is continuous, since `K_t(u)` is `C¹`.
-  have hf : ContDiff ℝ 1 fun w ↦ H w.2 (u w) :=
-    contMDiff_iff_contDiff.mp (hKt.comp (contMDiff_id.prodMk hu))
-  have hdK : Continuous fun z ↦ fderiv ℝ (fun w ↦ H w.2 (u w)) z stdComplexLineReal :=
-    (hf.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  -- Pointwise, the energy density is the area density plus `d(K(u))`.
-  have hpt (z : ℝ × ℝ) : ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
-      area z + fderiv ℝ (fun w ↦ H w.2 (u w)) z stdComplexLineReal := by
-    rw [hω.floerEnergyDensity_eq ((hu z).mdifferentiableAt one_ne_zero)
-      (contMDiffAt_const.mdifferentiableAt one_ne_zero)
-      ((hKt _).mdifferentiableAt one_ne_zero), hamiltonianCurvature_cylindrical]
-    simp [area]
-  have hE : Continuous (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u) :=
-    (harea_cont.add hdK).congr fun z ↦ (hpt z).symm
+  have hE := hω.continuous_floerEnergyDensity_zero_left hKt hu
   have h := hω.integral_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2) isOpen_univ
     hu.contMDiffOn contMDiffOn_const hKt.contMDiffOn hab' (subset_univ _)
     (hE.continuousOn.integrableOn_compact isCompact_Icc)
@@ -144,6 +140,41 @@ theorem IsNondegenerate.integral_floerEnergyDensity_cylindrical (hω : ω.IsNond
   simp only [hamiltonianCurvature_cylindrical, intervalIntegral.integral_zero, integral_zero] at h
   rw [hR, h, ← hω₀.setIntegral_eq_rectangleIntegral hu hab']
   simp only [SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
+  ring
+
+/-- **The energy of a Floer cylinder is the drop of the capped action.** Let `ω` be a
+nondegenerate two-form on a finite-dimensional manifold, `H` a `C¹` time-dependent Hamiltonian
+and `u` a `C¹` map. Let `v` be an arbitrary `C¹` map with `v (0, ·) = γ_b`, where
+`γ_b = u(b, ·)`. Rescaling `[a, b]` to `[0, 1]` makes `u` a map `w` from `γ_a = u(a, ·)` to
+`γ_b`, which is glued to `v` as `w # v` (`TauCeti.rectangleTrans`). The Floer energy of `u` over
+`[a, b] × [0, 1]` for the cylindrical perturbation `K = H_t dt` is
+`A_H(γ_a, w # v) - A_H(γ_b, v)`, for the action `TauCeti.cylinderAction` of a loop measured
+against a map. When `v` is a cap of `γ_b`, `w # v` is a cap of `γ_a`, and this is the energy
+identity for capped loops: the energy is the drop of the capped action. Neither weak exactness nor
+closedness of `ω` is needed, and neither `u` nor `v` needs to be periodic. -/
+theorem IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub
+    (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {a b : ℝ} (hab : a ≤ b) {v : ℝ × ℝ → M}
+    (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v) (hv₀ : ∀ t, v (0, t) = u (b, t)) :
+    ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
+      cylinderAction ω.1 H (rectangleTrans (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) -
+        cylinderAction ω.1 H v := by
+  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
+  -- Rescale `[a, b]` to `[0, 1]` to view `u` as a cylinder from `γ_a` to `γ_b`.
+  let σ : ℝ → ℝ := fun s ↦ a + (b - a) * s
+  have hσ (s : ℝ) : HasDerivAt σ (b - a) s := by
+    have h := ((hasDerivAt_id s).const_mul (b - a)).const_add a
+    rwa [mul_one] at h
+  have hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 (u ∘ Prod.map σ id) :=
+    hu.comp (((contDiff_const.add (contDiff_const.mul contDiff_id)).prodMap contDiff_id).contMDiff)
+  have hrect : rectangleIntegral ω.1 (u ∘ Prod.map σ id) (0, 0) (1, 1) =
+      rectangleIntegral ω.1 u (a, 0) (b, 1) := by
+    rw [rectangleIntegral_comp_prodMap hω₀ hu (fun s _ ↦ hσ s) continuousOn_const]
+    simp [σ]
+  have h := cylinderAction_rectangleTrans_sub hω₀ H hw hv fun t ↦ by simp [σ, hv₀]
+  simp only [Function.comp_apply, Prod.map_apply, id_eq, σ, hrect] at h
+  rw [hω.integral_floerEnergyDensity_cylindrical hH hu hab, h]
+  simp only [mul_zero, add_zero, mul_one, add_sub_cancel]
   ring
 
 /-- **The energy of a Floer cylinder is the drop of the contractible action.** Let `ω` be a
@@ -162,25 +193,42 @@ theorem IsNondegenerate.integral_floerEnergyDensity_eq_contractibleLoopAction_su
       contractibleLoopAction ω.1 H (fun t ↦ u (a, t)) -
         contractibleLoopAction ω.1 H (fun t ↦ u (b, t)) := by
   have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
-  -- Rescale `[a, b]` to `[0, 1]` to view `u` as a cylinder from `γ_a` to `γ_b`.
-  let σ : ℝ → ℝ := fun s ↦ a + (b - a) * s
-  have hσ (s : ℝ) : HasDerivAt σ (b - a) s := by
-    have h := ((hasDerivAt_id s).const_mul (b - a)).const_add a
-    rwa [mul_one] at h
-  have hw : IsLoopCylinder I (u ∘ Prod.map σ id) (fun t ↦ u (a, t)) fun t ↦ u (b, t) :=
-    { contMDiff := hu.comp
-        (((contDiff_const.add (contDiff_const.mul contDiff_id)).prodMap contDiff_id).contMDiff)
-      apply_add_one := fun z ↦ hper (σ z.1, z.2)
-      apply_zero := fun t ↦ by simp [σ]
-      apply_one := fun t ↦ by simp [σ] }
-  have hrect : rectangleIntegral ω.1 (u ∘ Prod.map σ id) (0, 0) (1, 1) =
-      rectangleIntegral ω.1 u (a, 0) (b, 1) := by
-    rw [rectangleIntegral_comp_prodMap hω₀ (hu.of_le one_le_two) (fun s _ ↦ hσ s)
-      continuousOn_const]
-    simp [σ]
-  rw [hω.integral_floerEnergyDensity_cylindrical hH (hu.of_le one_le_two) hab,
-    hωe.contractibleLoopAction_sub hω₀ H hw hv, ← hrect]
-  ring
+  obtain ⟨x, hv'⟩ := isCap_iff.1 hv
+  -- Rescaling `[a, b]` to `[0, 1]` makes `u` a cylinder from `γ_a` to `γ_b`.
+  have hw : IsLoopCylinder I (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) (fun t ↦ u (a, t))
+      fun t ↦ u (b, t) :=
+    { contMDiff := hu.comp (contMDiff_prodMap_affine a b)
+      apply_add_one := fun z ↦ hper (a + (b - a) * z.1, z.2)
+      apply_zero := fun t ↦ by simp
+      apply_one := fun t ↦ by simp }
+  rw [hω.integral_floerEnergyDensity_eq_cylinderAction_sub hH (hu.of_le one_le_two) hab
+      (hv'.contMDiff.of_le one_le_two) hv'.apply_zero,
+    hωe.contractibleLoopAction_eq hω₀ H (hw.trans hv').isCap,
+    hωe.contractibleLoopAction_eq hω₀ H hv'.isCap]
+
+/-- **The capped action decreases along Floer cylinders.** Under the hypotheses of
+`TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub`, if
+`u` solves the Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` on `[a, b] × [0, 1]` for
+almost complex structures `J z` on `T_{u z} M` tamed by `ω`, then the action of the loop at
+`s = b` measured against the arbitrary `C¹` map `v` is at most the action of the loop at `s = a`
+measured against the glued map. When `v` is a cap of the loop at `s = b`, the glued map is a cap
+of the loop at `s = a`, and this says that the capped action decreases. -/
+theorem IsNondegenerate.cylinderAction_le_cylinderAction
+    (hω : ω.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) {a b : ℝ} (hab : a ≤ b) {v : ℝ × ℝ → M}
+    (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v) (hv₀ : ∀ t, v (0, t) = u (b, t))
+    (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z)))
+    (hJ : ∀ z ∈ Icc a b ×ˢ Icc 0 1, (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
+      J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
+        ω.hamiltonianVectorField (H z.2) (u z)) = 0) :
+    cylinderAction ω.1 H v ≤
+      cylinderAction ω.1 H (rectangleTrans (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) := by
+  have h := hω.integral_floerEnergyDensity_eq_cylinderAction_sub hH hu hab hv hv₀
+  have hnonneg := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)
+    fun z hz ↦ hω.floerEnergyDensity_zero_left_nonneg (Kt := fun w ↦ H w.2) (hJ z hz)
+      (hfloer z hz)
+  linarith
 
 /-- **The energy of a Floer cylinder for an exact form.** Let `ω = dα` be a nondegenerate exact
 two-form on a finite-dimensional manifold, `H` a `C¹` time-dependent Hamiltonian, and `u` a `C²`
@@ -220,7 +268,62 @@ theorem IsNondegenerate.contractibleLoopAction_le_contractibleLoopAction
       contractibleLoopAction ω.1 H (fun t ↦ u (a, t)) := by
   have h := hω.integral_floerEnergyDensity_eq_contractibleLoopAction_sub hωe hH hu hper hab hv
   have hnonneg := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)
-    fun z hz ↦ hω.floerEnergyDensity_cylindrical_nonneg (hJ z hz) (hfloer z hz)
+    fun z hz ↦ hω.floerEnergyDensity_zero_left_nonneg (Kt := fun w ↦ H w.2) (hJ z hz)
+      (hfloer z hz)
+  linarith
+
+/-! ### The action relative to a reference loop -/
+
+/-- **The energy of a Floer cylinder is the drop of the action relative to a reference loop.**
+Let `ω` be a nondegenerate two-form vanishing on tori on a finite-dimensional manifold, `H` a
+`C¹` time-dependent Hamiltonian, and `u` a smooth map, `1`-periodic in its second coordinate.
+If the loop `γ_b = u(b, ·)` is joined to the reference loop `γ₀` by a smooth cylinder, the Floer
+energy of `u` over `[a, b] × [0, 1]` for the cylindrical perturbation `K = H_t dt` is
+`𝒜_H(γ_a) - 𝒜_H(γ_b)`, where `γ_a = u(a, ·)` and `𝒜_H` is the action
+`TauCeti.SmoothTwoForm.referenceAction` relative to `γ₀`. The loop `γ_a` is joined to `γ₀` by
+gluing `u` to the cylinder from `γ_b`, so both actions are computed with genuine cylinders. -/
+theorem IsNondegenerate.integral_floerEnergyDensity_eq_referenceAction_sub
+    (hω : ω.IsNondegenerate) (hωt : VanishesOnTori ω.1)
+    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) u) (hper : ∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z)
+    {a b : ℝ} (hab : a ≤ b) {γ₀ : ℝ → M} {v : ℝ × ℝ → M}
+    (hv : IsSmoothCylinder I (fun t ↦ u (b, t)) γ₀ v) :
+    ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
+      ω.referenceAction H γ₀ (fun t ↦ u (a, t)) - ω.referenceAction H γ₀ (fun t ↦ u (b, t)) := by
+  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
+  -- Rescale `[a, b]` to `[0, 1]` and glue the result to `v`: a cylinder from `γ_a` to `γ₀`.
+  have hc := isSmoothCylinder_comp_prodMap_affine hu hper a b
+  have hw := hc.trans hv fun t ↦ by simp [hv.apply_zero]
+  rw [hω.integral_floerEnergyDensity_cylindrical hH (hu.of_le (by simp)) hab,
+    referenceAction_eq hωt hw, referenceAction_eq hωt hv, cylinderAction_eq_of_isSmoothCylinder hw,
+    cylinderAction_eq_of_isSmoothCylinder hv,
+    rectangleIntegral_rectangleTrans hω₀ (hc.contMDiff.of_le (by simp))
+      (hv.contMDiff.of_le (by simp)) (fun t ↦ by simp [hv.apply_zero]),
+    rectangleIntegral_comp_prodMap_affine hω₀ (hu.of_le (by simp)) a b 0 1]
+  ring
+
+/-- **The action relative to a reference loop decreases along Floer cylinders.** Under the
+hypotheses of
+`TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_referenceAction_sub`, if
+`u` solves the Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` on `[a, b] × [0, 1]` for
+almost complex structures `J z` on `T_{u z} M` tamed by `ω`, then the action of the loop at
+`s = b` relative to `γ₀` is at most that of the loop at `s = a`. -/
+theorem IsNondegenerate.referenceAction_le_referenceAction
+    (hω : ω.IsNondegenerate) (hωt : VanishesOnTori ω.1)
+    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry H))
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) u) (hper : ∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z)
+    {a b : ℝ} (hab : a ≤ b) {γ₀ : ℝ → M} {v : ℝ × ℝ → M}
+    (hv : IsSmoothCylinder I (fun t ↦ u (b, t)) γ₀ v)
+    (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z)))
+    (hJ : ∀ z ∈ Icc a b ×ˢ Icc 0 1, (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal +
+      J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag -
+        ω.hamiltonianVectorField (H z.2) (u z)) = 0) :
+    ω.referenceAction H γ₀ (fun t ↦ u (b, t)) ≤ ω.referenceAction H γ₀ (fun t ↦ u (a, t)) := by
+  have h := hω.integral_floerEnergyDensity_eq_referenceAction_sub hωt hH hu hper hab hv
+  have hnonneg := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)
+    fun z hz ↦ hω.floerEnergyDensity_zero_left_nonneg (Kt := fun w ↦ H w.2) (hJ z hz)
+      (hfloer z hz)
   linarith
 
 end Energy
