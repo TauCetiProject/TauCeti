@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # Real powers
@@ -317,19 +318,13 @@ lemma mul_rpow_div_mul_le_two_mul {α C₀ N R r X C : ℝ} (hC₀ : 0 ≤ C₀)
 /-- If `d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)` with `d > 0`, then `x ≤ √B * d ^ (β - 1)`. -/
 theorem le_sqrt_mul_rpow_sub_one_of_sq_le {x d B β : ℝ} (hd : 0 < d)
     (h : d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)) : x ≤ Real.sqrt B * d ^ (β - 1) := by
-  have hB : 0 ≤ B := by
-    have h0 : 0 ≤ B * d ^ (2 * β) := (by positivity : 0 ≤ d ^ 2 * x ^ 2).trans h
-    exact nonneg_of_mul_nonneg_left h0 (Real.rpow_pos_of_pos hd _)
-  rcases lt_or_ge x 0 with hx | hx
-  · exact hx.le.trans (by positivity)
-  have hsq : (d * x) ^ 2 ≤ (Real.sqrt B * d ^ β) ^ 2 := by
+  have hsq : (d * x) ^ 2 ≤ B * (d ^ β) ^ 2 := by
     have hp : d ^ (2 * β) = (d ^ β) ^ 2 := by
       simpa only [Nat.cast_ofNat, mul_comm] using Real.rpow_mul_natCast hd.le β 2
-    rw [hp] at h
-    simpa only [mul_pow, Real.sq_sqrt hB] using h
-  have h' := (sq_le_sq₀ (by positivity) (by positivity)).mp hsq
+    rwa [hp, ← mul_pow] at h
+  have h' := Real.le_sqrt_mul_of_sq_le_mul (Real.rpow_nonneg hd.le β) hsq
   rw [Real.rpow_sub_one hd.ne', ← mul_div_assoc, le_div_iff₀ hd]
-  nlinarith
+  linarith
 
 end Real
 
