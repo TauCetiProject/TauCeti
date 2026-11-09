@@ -78,10 +78,6 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-! ### Reflection with prescribed weights -/
 
-/-- The dilation factor of each node is nonzero. -/
-theorem higherReflectionNode_ne_zero {k : ℕ} (j : Fin k) : higherReflectionNode j ≠ 0 :=
-  (higherReflectionNode_neg j).ne
-
 /-- Reflection of `g` across the real axis with weights `d j` at the normal dilations
 `higherReflectionNode j = -1 / (j + 1)`: it is `g z` for `0 ≤ z.im`, and
 `∑ j, d j • g (z.re + higherReflectionNode j * z.im * I)` for `z.im < 0`, which only samples `g` in
@@ -120,7 +116,7 @@ theorem planarReflection_higherReflectionCoeff (k : ℕ) (g : ℂ → F) (z : �
   · simp [hz]
   · rw [planarReflection_of_neg _ _ (not_le.1 hz), higherReflection_of_neg _ _ (not_le.1 hz),
       higherReflectionLower_apply]
-    rfl
+    simp only [imDilation_apply]
 
 /-- The order-one reflection is the even reflection across the real axis. -/
 theorem planarReflection_higherReflectionCoeff_one (g : ℂ → F) (z : ℂ) :
@@ -242,15 +238,15 @@ private theorem setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → 
   have hK : IsCompact K := hχc.isCompact.inter_right (isClosed_le continuous_const continuous_im)
   have hKU : K ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} := fun z hz => ⟨hχΩ hz, hz.2⟩
   have hgK : IntegrableOn g K := memLp_one_iff_integrable.1 (memLpLoc_iff.1 hg K hKU hK)
-  have hg'K : IntegrableOn g' K := memLp_one_iff_integrable.1 (memLpLoc_iff.1 hg' K hKU hK)
-  -- A continuous factor vanishing off `tsupport χ` makes `g` or `g'` integrable on `H`.
-  have hint : ∀ {f : ℂ → ℝ} {h : ℂ → F}, Continuous f → (∀ z ∉ tsupport χ, f z = 0) →
-      IntegrableOn h K → IntegrableOn (fun z => f z • h z) H := by
-    intro f h hf hf0 hh
-    refine ((hh.continuousOn_smul hf.continuousOn hK).of_forall_sdiff_eq_zero
-      (measurableSet_le measurable_const measurable_im) fun z hz => ?_).mono_set
-        fun z hz => le_of_lt hz
-    simp [hf0 z fun h => hz.2 ⟨h, hz.1⟩]
+  have hHsub : H ⊆ {z : ℂ | 0 ≤ z.im} :=
+    fun z (hz : 0 < z.im) => show (0 : ℝ) ≤ z.im from le_of_lt hz
+  have hclosed : IsClosed {z : ℂ | 0 ≤ z.im} := isClosed_le continuous_const continuous_im
+  -- A continuous factor supported in `tsupport χ` makes `g` or `g'` integrable on `H`.
+  have hint {f : ℂ → ℝ} {h : ℂ → F} (hh : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) h)
+      (hf : Continuous f) (hfχ : tsupport f ⊆ tsupport χ) :
+      IntegrableOn (fun z => f z • h z) H :=
+    (hh.integrableOn_smul hf (hχc.mono' ((subset_tsupport f).trans hfχ)) hclosed
+      fun z hz => ⟨hχΩ ⟨hfχ hz.1, hz.2⟩, hz.2⟩).mono_set hHsub
   have hdχ : Continuous fun z => fderiv ℝ χ z v :=
     (hχ.continuous_fderiv (by simp)).clm_apply continuous_const
   have hdst : Continuous (deriv Real.smoothTransition) :=
@@ -259,19 +255,17 @@ private theorem setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → 
   set D : ℕ → ℂ → ℝ := fun n z => χ z *
     (deriv Real.smoothTransition (((n : ℝ) + 1) * z.im - 1) * (((n : ℝ) + 1) * v.im)) with hD
   have I1 : IntegrableOn (fun z => fderiv ℝ χ z v • g z) H :=
-    hint hdχ (fun z hz => by simp [fderiv_of_notMem_tsupport (𝕜 := ℝ) hz]) hgK
+    hint hg hdχ (tsupport_fderiv_apply_subset ℝ v)
   have I3 : IntegrableOn (fun z => χ z • g' z) H :=
-    hint hχ.continuous (fun z hz => image_eq_zero_of_notMem_tsupport hz) hg'K
+    hint hg' hχ.continuous subset_rfl
   have I1' (n : ℕ) : IntegrableOn (fun z => (imCutoff n z * fderiv ℝ χ z v) • g z) H :=
-    hint ((contDiff_imCutoff n).continuous.mul hdχ)
-      (fun z hz => by simp [fderiv_of_notMem_tsupport (𝕜 := ℝ) hz]) hgK
+    hint hg ((contDiff_imCutoff n).continuous.mul hdχ)
+      (tsupport_mul_subset_right.trans (tsupport_fderiv_apply_subset ℝ v))
   have I2 (n : ℕ) : IntegrableOn (fun z => D n z • g z) H :=
-    hint (hχ.continuous.mul ((hdst.comp ((continuous_const.mul continuous_im).sub
-      continuous_const)).mul continuous_const))
-      (fun z hz => by simp [hD, image_eq_zero_of_notMem_tsupport hz]) hgK
+    hint hg (hχ.continuous.mul ((hdst.comp ((continuous_const.mul continuous_im).sub
+      continuous_const)).mul continuous_const)) tsupport_mul_subset_left
   have I3' (n : ℕ) : IntegrableOn (fun z => (imCutoff n z * χ z) • g' z) H :=
-    hint ((contDiff_imCutoff n).continuous.mul hχ.continuous)
-      (fun z hz => by simp [image_eq_zero_of_notMem_tsupport hz]) hg'K
+    hint hg' ((contDiff_imCutoff n).continuous.mul hχ.continuous) tsupport_mul_subset_right
   -- The weak derivative identity, tested against `imCutoff n * χ`.
   have key (n : ℕ) : (∫ z in H, (imCutoff n z * fderiv ℝ χ z v) • g z) +
       ∫ z in H, D n z • g z = -∫ z in H, (imCutoff n z * χ z) • g' z := by
@@ -435,8 +429,7 @@ private theorem integral_smul_planarReflection {Ω : Set ℂ}
     have hu : IntegrableOn
         (fun w => f (imDilation (higherReflectionNode j)⁻¹ w) • h w) {z : ℂ | 0 < z.im} :=
       (hh.integrableOn_smul (hf.comp (imDilation _).continuous)
-        (hfc.comp_homeomorph (imDilationEquiv (inv_ne_zero
-          (higherReflectionNode_ne_zero j))).toHomeomorph) hclosed
+        (hfc.comp_imDilation (inv_ne_zero (higherReflectionNode_ne_zero j))) hclosed
         (fun w hw => ⟨tsupport_comp_imDilation_inv_subset hΩ j hfΩ hw, hw.2⟩)).mono_set
         fun z (hz : 0 < z.im) => show (0 : ℝ) ≤ z.im from le_of_lt hz
     rw [← integrableOn_comp_imDilation_iff (higherReflectionNode_ne_zero j),
@@ -491,8 +484,7 @@ theorem HasWeakLineDerivOn.planarReflection_one {Ω : Opens ℂ}
   congr 1
   set c := (higherReflectionNode j)⁻¹
   have hψ := setIntegral_fderiv_smul_eq_neg hgW hg hg' (hφ.comp (imDilation c).contDiff)
-    (hφc.comp_homeomorph (imDilationEquiv (inv_ne_zero (higherReflectionNode_ne_zero j))
-      ).toHomeomorph)
+    (hφc.comp_imDilation (inv_ne_zero (higherReflectionNode_ne_zero j)))
     (tsupport_comp_imDilation_inv_subset hΩ j hφΩ) (Or.inl (by simp)) (v := 1)
   simp only [Function.comp_def, fderiv_comp_imDilation_apply hφd, imDilation_one] at hψ
   exact hψ
@@ -539,7 +531,7 @@ theorem HasWeakLineDerivOn.planarReflection_I {Ω : Opens ℂ}
     set ψ : ℂ → ℝ := fun w => φ (imDilation n⁻¹ w) with hψdef
     have hψ : ContDiff ℝ ∞ ψ := hφ.comp (imDilation _).contDiff
     have hψc : HasCompactSupport ψ :=
-      hφc.comp_homeomorph (imDilationEquiv (inv_ne_zero hn.ne)).toHomeomorph
+      (hφc.comp_imDilation (inv_ne_zero hn.ne))
     have hψΩ := tsupport_comp_imDilation_inv_subset hΩ j hφΩ
     have hdψ (w : ℂ) : fderiv ℝ ψ w I = n⁻¹ * fderiv ℝ φ (imDilation n⁻¹ w) I := by
       rw [hψdef, fderiv_comp_imDilation_apply hφd, imDilation_I, map_smul, smul_eq_mul]
@@ -703,7 +695,7 @@ theorem MemWkpLoc.planarReflection {p : ℝ≥0∞} (hp : 1 ≤ p) {Ω : Opens �
       (h2.clm_comp (ContinuousLinearMap.smulRightL ℝ ℂ F imCLM))
     convert h using 1
     funext z
-    rfl
+    simp [planarReflectionFDeriv]
 
 /-- **Higher-order reflection extends half-disc Sobolev maps.** A map in `W^{k,p}_loc` of the
 relatively open set `Ω ∩ {0 ≤ im}`, with derivatives tested in `Ω ∩ {0 < im}` and `Lᵖ` bounds up to
@@ -784,7 +776,7 @@ theorem eLpNorm_planarReflection_le {p : ℝ≥0∞} (hp : 1 ≤ p) {Ω : Set �
     have he := Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage volume g
       (imDilationEquiv (higherReflectionNode_ne_zero j)) p (s := U)
     have hdet : LinearMap.det ((imDilationEquiv (higherReflectionNode_ne_zero j) : ℂ ≃L[ℝ] ℂ) :
-        ℂ →ₗ[ℝ] ℂ) = higherReflectionNode j := det_imDilation _
+        ℂ →ₗ[ℝ] ℂ) = higherReflectionNode j := det_imDilationEquiv _
     rw [hdet, coe_imDilationEquiv] at he
     -- Pi scalar multiplication evaluates pointwise; expose it to use the norm API.
     change eLpNorm (d j • fun z => g (imDilation (higherReflectionNode j) z)) p _ ≤ _

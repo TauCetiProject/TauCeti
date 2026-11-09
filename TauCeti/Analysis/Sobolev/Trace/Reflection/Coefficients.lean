@@ -53,6 +53,10 @@ theorem higherReflectionNode_neg {k : ℕ} (j : Fin k) : higherReflectionNode j 
   rw [higherReflectionNode, neg_neg_iff_pos, inv_pos]
   positivity
 
+/-- Each node is nonzero, so its dilation is invertible. -/
+theorem higherReflectionNode_ne_zero {k : ℕ} (j : Fin k) : higherReflectionNode j ≠ 0 :=
+  (higherReflectionNode_neg j).ne
+
 /-- The reflection nodes are pairwise distinct. -/
 theorem higherReflectionNode_injective (k : ℕ) :
     Function.Injective (higherReflectionNode (k := k)) := by

@@ -38,7 +38,7 @@ namespace TauCeti
 
 /-- The real-linear map `x + y i ↦ x + c y i`, which dilates the normal coordinate of the upper
 half-plane by `c` and fixes the real axis pointwise. -/
-@[expose] def imDilation (c : ℝ) : ℂ →L[ℝ] ℂ :=
+def imDilation (c : ℝ) : ℂ →L[ℝ] ℂ :=
   LinearMap.toContinuousLinearMap
     { toFun := fun z => ⟨z.re, c * z.im⟩
       map_add' := fun z w => Complex.ext (by simp) (by simp [mul_add])
@@ -51,6 +51,10 @@ theorem imDilation_apply_re (c : ℝ) (z : ℂ) : (imDilation c z).re = z.re := 
 @[simp]
 theorem imDilation_apply_im (c : ℝ) (z : ℂ) : (imDilation c z).im = c * z.im := by
   simp [imDilation]
+
+/-- The dilation in coordinates. -/
+theorem imDilation_apply (c : ℝ) (z : ℂ) : imDilation c z = ⟨z.re, c * z.im⟩ :=
+  Complex.ext (imDilation_apply_re c z) (imDilation_apply_im c z)
 
 /-- Dilations of the normal coordinate compose by multiplying the factors. -/
 theorem imDilation_imDilation (c c' : ℝ) (z : ℂ) :
@@ -80,7 +84,7 @@ theorem det_imDilation (c : ℝ) : LinearMap.det (imDilation c : ℂ →ₗ[ℝ]
   simp [LinearMap.toMatrix_apply]
 
 /-- A nonzero dilation of the normal coordinate as a continuous linear equivalence. -/
-@[expose] def imDilationEquiv {c : ℝ} (hc : c ≠ 0) : ℂ ≃L[ℝ] ℂ :=
+def imDilationEquiv {c : ℝ} (hc : c ≠ 0) : ℂ ≃L[ℝ] ℂ :=
   ContinuousLinearEquiv.equivOfInverse (imDilation c) (imDilation c⁻¹)
     (fun z => by rw [imDilation_imDilation, inv_mul_cancel₀ hc, imDilation_one_apply])
     (fun z => by rw [imDilation_imDilation, mul_inv_cancel₀ hc, imDilation_one_apply])
@@ -88,6 +92,17 @@ theorem det_imDilation (c : ℝ) : LinearMap.det (imDilation c : ℂ →ₗ[ℝ]
 @[simp]
 theorem coe_imDilationEquiv {c : ℝ} (hc : c ≠ 0) : ⇑(imDilationEquiv hc) = imDilation c := by
   rfl
+
+/-- The determinant of a nonzero dilation, seen as an equivalence. -/
+theorem det_imDilationEquiv {c : ℝ} (hc : c ≠ 0) :
+    LinearMap.det ((imDilationEquiv hc : ℂ ≃L[ℝ] ℂ) : ℂ →ₗ[ℝ] ℂ) = c :=
+  det_imDilation c
+
+/-- Precomposing with a nonzero dilation preserves compact support. -/
+theorem _root_.HasCompactSupport.comp_imDilation {α : Type*} [Zero α] {f : ℂ → α}
+    (hf : HasCompactSupport f) {c : ℝ} (hc : c ≠ 0) :
+    HasCompactSupport fun z => f (imDilation c z) :=
+  hf.comp_homeomorph (imDilationEquiv hc).toHomeomorph
 
 /-- A nonzero dilation is a measurable embedding. -/
 theorem measurableEmbedding_imDilation {c : ℝ} (hc : c ≠ 0) :
