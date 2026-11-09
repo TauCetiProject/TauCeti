@@ -67,6 +67,16 @@ individual coordinate derivatives. These estimates are adapted from
 [KLS](https://github.com/human-ai-mathematics/kls-lean), commit
 `65810c73f9dd7945fc646ab484cb19d673f5291d`,
 `formalization/FunctionalInequalities/Analysis/Sard/Disk.lean`.
+
+## Invariance along a direction
+
+Over `ℝ` or `ℂ`, a map whose derivative kills a vector `v` at every point `z + t • v` of the
+segment from `z` to `z + v` (`t` real, `0 ≤ t ≤ 1`) takes the same value at `z` and `z + v`
+(`TauCeti.apply_add_eq_of_fderiv_apply_eq_zero`). Unlike Mathlib's
+`Convex.is_const_of_fderivWithin_eq_zero`, only the derivative in the direction `v` is assumed to
+vanish, so the map need not be constant near the segment. Consequently, if `π` is a continuous
+projection and the derivative of a map kills `ker π` on a ball about `0`, then near `0` the map
+only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`).
 -/
 
 public section
@@ -175,15 +185,16 @@ open Metric in
 /-- The mean value inequality: if `h` fixes `c` and `h - id` has derivative of norm at most `δ` on
 the closed ball of radius `2 r` about `c`, then `h - id` moves points of this ball by at most
 `δ * (2 * r)`. -/
-theorem norm_sub_le_of_norm_fderiv_sub_id_le {c : E} {h : E → E} {r δ : ℝ} (hr : 0 < r)
-    (hδ0 : 0 ≤ δ) (hhc : h c = c)
+theorem norm_sub_le_of_norm_fderiv_sub_id_le {c : E} {h : E → E} {r δ : ℝ}
+    (hhc : h c = c)
     (hhd : ∀ x ∈ closedBall c (2 * r),
       HasFDerivAt (fun y ↦ h y - y) (fderiv ℝ h x - ContinuousLinearMap.id ℝ E) x)
     (hδ : ∀ x ∈ closedBall c (2 * r), ‖fderiv ℝ h x - ContinuousLinearMap.id ℝ E‖ ≤ δ)
     {x : E} (hx : x ∈ closedBall c (2 * r)) : ‖h x - x‖ ≤ δ * (2 * r) := by
+  have hδ0 : 0 ≤ δ := (norm_nonneg _).trans (hδ x hx)
   have := Convex.norm_image_sub_le_of_norm_fderiv_le (fun y hy ↦ (hhd y hy).differentiableAt)
     (fun y hy ↦ (hhd y hy).fderiv ▸ hδ y hy) (convex_closedBall c (2 * r))
-    (mem_closedBall_self (by positivity)) hx
+    (mem_closedBall_self ((dist_nonneg).trans (mem_closedBall.1 hx))) hx
   rw [hhc, sub_self, sub_zero] at this
   exact this.trans (mul_le_mul_of_nonneg_left (mem_closedBall_iff_norm.1 hx) hδ0)
 
@@ -192,10 +203,10 @@ open Real in
 every `r > 0` (`0 ≤ β ≤ 1`), then `‖u b - u a‖ ≤ 2 D |b - a| a^(β - 1)` for `a / 2 ≤ b`. -/
 theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] {u f' : ℝ → F} {β D : ℝ} (hβ₀ : 0 ≤ β) (hβ₁ : β - 1 ≤ 0)
-    (hD : 0 ≤ D)
     (hderiv : ∀ r, 0 < r → HasDerivAt u (f' r) r) (hbound : ∀ r, 0 < r → ‖f' r‖ ≤ D * r ^ (β - 1))
     {a b : ℝ} (ha : 0 < a) (hb : a / 2 ≤ b) : ‖u b - u a‖ ≤ 2 * D * (|b - a| * a ^ (β - 1)) := by
   have ha2 : 0 < a / 2 := half_pos ha
+  have hD : 0 ≤ D := by simpa using (norm_nonneg _).trans (hbound 1 one_pos)
   have hmv := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le (f := u) (s := Ici (a / 2))
     (f' := f') (C := D * (a / 2) ^ (β - 1))
     (fun r hr => (hderiv r (ha2.trans_le hr)).hasDerivWithinAt)
@@ -211,6 +222,65 @@ theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt {F : Type*} [NormedAddCom
   calc ‖u b - u a‖ ≤ D * (a / 2) ^ (β - 1) * |b - a| := hmv
     _ ≤ D * (2 * a ^ (β - 1)) * |b - a| := by gcongr
     _ = _ := by ring
+
+section Direction
+
+variable {𝕂 : Type*} [RCLike 𝕂] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕂 G]
+
+/-- If `g` is differentiable at every point `z + t • v` of the segment from `z` to `z + v`, for
+real `0 ≤ t ≤ 1`, and its derivative kills `v` there, then `g` takes the same value at `z` and at
+`z + v`. -/
+theorem apply_add_eq_of_fderiv_apply_eq_zero {g : F → G} {z v : F}
+    (hg : ∀ t ∈ Set.Icc (0 : ℝ) 1, DifferentiableAt 𝕂 g (z + (t : 𝕂) • v))
+    (hv : ∀ t ∈ Set.Icc (0 : ℝ) 1, fderiv 𝕂 g (z + (t : 𝕂) • v) v = 0) : g (z + v) = g z := by
+  -- The points of the real segment from `0` to `1` in `𝕂` are the real numbers in `[0, 1]`.
+  have hs : ∀ t ∈ segment ℝ (0 : 𝕂) 1, ∃ r ∈ Set.Icc (0 : ℝ) 1, (r : 𝕂) = t := by
+    rintro _ ⟨a, b, ha, hb, hab, rfl⟩
+    refine ⟨b, ⟨hb, ?_⟩, by simp [RCLike.real_smul_eq_coe_mul]⟩
+    linarith
+  -- The restriction of `g` to the line through `z` in direction `v` has zero derivative on this
+  -- segment, which is convex and contains `0` and `1`.
+  have hq : ∀ t ∈ segment ℝ (0 : 𝕂) 1, HasFDerivWithinAt (fun t : 𝕂 ↦ g (z + t • v))
+      ((fderiv 𝕂 g (z + t • v)).comp ((ContinuousLinearMap.id 𝕂 𝕂).smulRight v))
+      (segment ℝ (0 : 𝕂) 1) t := fun t ht ↦ by
+    obtain ⟨r, hr, rfl⟩ := hs t ht
+    exact ((hg r hr).hasFDerivAt.comp (r : 𝕂)
+      ((hasFDerivAt_id _).smul_const v |>.const_add z)).hasFDerivWithinAt
+  have h := (convex_segment (0 : 𝕂) 1).norm_image_sub_le_of_norm_hasFDerivWithin_le hq
+    (C := 0) (fun t ht ↦ by
+      obtain ⟨r, hr, rfl⟩ := hs t ht
+      rw [norm_le_zero_iff]
+      ext
+      simp [hv r hr])
+    (left_mem_segment ℝ (0 : 𝕂) 1) (right_mem_segment ℝ (0 : 𝕂) 1)
+  simpa [sub_eq_zero] using h
+
+/-- Let `π` be a continuous projection of `F`. If `g` is differentiable on the ball of radius `r`
+about `0` and its derivative there kills the kernel of `π`, then `g` only depends on the `π`
+component on the part of that ball where `‖π z‖ + ‖z - π z‖ < r`. -/
+theorem apply_proj_eq_of_fderiv_apply_eq_zero {g : F → G} {π : F →L[𝕂] F}
+    (hπ : IsIdempotentElem π) {r : ℝ} (hg : DifferentiableOn 𝕂 g (Metric.ball 0 r))
+    (hker : ∀ u ∈ Metric.ball (0 : F) r, ∀ v, π v = 0 → fderiv 𝕂 g u v = 0) {z : F}
+    (hz : ‖π z‖ + ‖z - π z‖ < r) : g (π z) = g z := by
+  have hπz : π (z - π z) = 0 := by
+    rw [map_sub, sub_eq_zero]
+    exact congr($hπ z).symm
+  -- The segment from `π z` to `z` stays in the ball.
+  have hball (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) :
+      π z + (t : 𝕂) • (z - π z) ∈ Metric.ball (0 : F) r := by
+    rw [mem_ball_zero_iff]
+    refine (norm_add_le _ _).trans_lt (lt_of_le_of_lt ?_ hz)
+    rw [norm_smul, RCLike.norm_ofReal, abs_of_nonneg ht.1]
+    gcongr
+    exact mul_le_of_le_one_left (norm_nonneg _) ht.2
+  have h := apply_add_eq_of_fderiv_apply_eq_zero (z := π z) (v := z - π z)
+    (fun t ht ↦ hg.differentiableAt (Metric.isOpen_ball.mem_nhds (hball t ht)))
+    (fun t ht ↦ hker _ (hball t ht) _ hπz)
+  rw [add_sub_cancel] at h
+  exact h.symm
+
+end Direction
 
 end TauCeti
 

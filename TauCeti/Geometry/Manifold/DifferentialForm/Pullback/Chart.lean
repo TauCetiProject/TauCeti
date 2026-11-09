@@ -16,7 +16,8 @@ The coordinate expression of a pullback uses the within-range derivative of the 
 with the inverse source chart. This is the actual manifold chain rule, including boundary
 points, and supplies the coefficient transport used in interval and product comparisons.
 In top degree, the coefficient of a pullback in a basis is the coordinate Jacobian determinant
-times the coefficient of the form.
+times the coefficient of the form; when the two manifolds are modelled on different spaces, the
+Jacobian is read in the source model through a linear equivalence of the model spaces.
 Pulling a flat form back along a preferred chart and reading it in the same chart recovers the
 flat form on the chart target, which is how flat constructions in a chart are moved to the
 manifold; conversely, evaluating a form `φ` on the chart source agrees with evaluating
@@ -213,30 +214,34 @@ end TauCeti.RoughForm
 
 namespace TauCeti.RoughForm
 
-variable {E H H' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E E' H H' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I 1 M]
-  [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold J 1 N] {k : ℕ}
 
 /-- The coefficient of a pullback in a preferred chart of the source is the determinant of the
 coordinate expression of the map times the coefficient of the form in a preferred chart of the
-target. Derivatives are taken within the model range, so boundary and corner points are
-included. -/
+target. The two model spaces are compared through a continuous linear equivalence `C : E ≃ E'`:
+the determinant is that of the coordinate derivative followed by `C⁻¹`, and the target
+coefficient is taken in the basis `C ∘ b`. Derivatives are taken within the model range, so
+boundary and corner points are included. -/
 theorem inChartAt_mpullback_apply_basis_eq_det_mul (φ : RoughForm J N ℝ k)
-    (b : Module.Basis (Fin k) ℝ E) {f : M → N} {β : M} {α : N} {x : M}
+    (b : Module.Basis (Fin k) ℝ E) (C : E ≃L[ℝ] E') {f : M → N} {β : M} {α : N} {x : M}
     (hx : x ∈ (extChartAt I β).source) (hfx : f x ∈ (extChartAt J α).source)
     (hf : MDifferentiableAt I J f x) :
     (mpullback I J f φ).inChartAt β (extChartAt I β x) b =
-      (fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm) (range I)
-        (extChartAt I β x)).det * φ.inChartAt α (extChartAt J α (f x)) b := by
+      ((C.symm : E' →L[ℝ] E) ∘L fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm)
+        (range I) (extChartAt I β x)).det *
+          φ.inChartAt α (extChartAt J α (f x)) (b.map C.toLinearEquiv) := by
   have hz := (extChartAt I β).map_source hx
   have hfz : MDifferentiableAt I J f ((extChartAt I β).symm (extChartAt I β x)) := by
     rwa [(extChartAt I β).left_inv hx]
   have hgα : f ((extChartAt I β).symm (extChartAt I β x)) ∈ (extChartAt J α).source := by
     simpa only [(extChartAt I β).left_inv hx] using hfx
   rw [inChartAt_mpullback_eq_compContinuousLinearMap φ β α hz hfz hgα,
-    ContinuousAlternatingMap.compContinuousLinearMap_apply_basis]
+    ContinuousAlternatingMap.compContinuousLinearMap_apply_basis_map _ _ _ C]
   simp only [(extChartAt I β).left_inv hx]
 
 end TauCeti.RoughForm
