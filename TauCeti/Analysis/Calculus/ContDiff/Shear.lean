@@ -64,18 +64,20 @@ theorem exists_contDiffOn_shear (A : (V × W) ≃L[𝕜] Y) (c₀ : Y) {U : Set 
   let Ψ := (affine.toOpenPartialHomeomorph.trans shear).transHomeomorph A.toHomeomorph
   have hΨ_apply (x : Y) : Ψ x =
       A ((A.symm (x - c₀)).1, (A.symm (x - c₀)).2 - g (A.symm (x - c₀)).1) := by
-    simp only [Ψ, OpenPartialHomeomorph.transHomeomorph_apply, Function.comp_apply,
-      OpenPartialHomeomorph.trans_apply, Homeomorph.toOpenPartialHomeomorph_apply,
-      affine, Homeomorph.trans_apply, Homeomorph.coe_addRight,
-      ContinuousLinearEquiv.coe_toHomeomorph, ← sub_eq_add_neg]
-    rfl
-  refine ⟨Ψ, ?_, ?_, fun x ↦ ?_, hΨ_apply⟩
-  · exact A.contDiff.comp_contDiffOn
-      (hminus.comp (A.symm.contDiff.comp (contDiff_id.add contDiff_const)).contDiffOn
-        (fun _ (hp : _ ∈ Ψ.source) ↦ hp.2))
-  · exact (A.contDiff.comp_contDiffOn
-      (hplus.comp A.symm.contDiff.contDiffOn (fun _ hp ↦ Set.mem_of_mem_inter_left hp))).add
-        contDiffOn_const
-  · simp [Ψ, affine, shear, ← sub_eq_add_neg]
+    simp [Ψ, affine, shear, ← sub_eq_add_neg]
+  have hΨ_symm_apply (y : Y) : Ψ.symm y =
+      A ((A.symm y).1, (A.symm y).2 + g (A.symm y).1) + c₀ := by
+    simp [Ψ, affine, shear, Homeomorph.addRight_symm]
+  have hΨ_source (x : Y) : x ∈ Ψ.source ↔ (A.symm (x - c₀)).1 ∈ U := by
+    simp [Ψ, affine, shear, ← sub_eq_add_neg]
+  have hΨ_target (y : Y) : y ∈ Ψ.target ↔ (A.symm y).1 ∈ U := by
+    simp [Ψ, affine, shear]
+  refine ⟨Ψ, ?_, ?_, hΨ_source, hΨ_apply⟩
+  · refine (A.contDiff.comp_contDiffOn
+      (hminus.comp (A.symm.contDiff.comp (contDiff_id.sub contDiff_const)).contDiffOn
+        fun x hx ↦ (hΨ_source x).1 hx)).congr fun x _ ↦ hΨ_apply x
+  · refine ((A.contDiff.comp_contDiffOn
+      (hplus.comp A.symm.contDiff.contDiffOn fun y hy ↦ (hΨ_target y).1 hy)).add
+        contDiffOn_const).congr fun y _ ↦ hΨ_symm_apply y
 
 end ContinuousLinearEquiv
