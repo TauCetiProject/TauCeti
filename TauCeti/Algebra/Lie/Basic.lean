@@ -562,4 +562,14 @@ theorem ext_on_of_lieSpan_eq_top {R L L' M N : Type*} [CommRing R] [LieRing L]
   have hle : (⊤ : LieSubmodule R L M) ≤ P := hs ▸ LieSubmodule.lieSpan_le.mpr h
   exact LinearMap.ext fun m => LinearMap.mem_eqLocus.mp (hle (LieSubmodule.mem_top m))
 
+/-- A linear map between Lie algebras that respects the bracket on a pair `(v, w)` respects it on
+the swapped pair. -/
+theorem map_lie_swap {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing M]
+    [LieAlgebra R M] {f : L →ₗ[R] M} {v w : L} (h : f ⁅v, w⁆ = ⁅f v, f w⁆) :
+    f ⁅w, v⁆ = ⁅f w, f v⁆ := by
+  calc f ⁅w, v⁆ = f (-⁅v, w⁆) := by rw [lie_skew w v]
+    _ = -f ⁅v, w⁆ := map_neg _ _
+    _ = -⁅f v, f w⁆ := by rw [h]
+    _ = ⁅f w, f v⁆ := lie_skew (f w) (f v)
+
 end LinearMap
