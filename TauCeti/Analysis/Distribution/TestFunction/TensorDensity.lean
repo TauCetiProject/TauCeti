@@ -10,7 +10,7 @@ import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
-import TauCeti.Analysis.Fourier.TorusDecay
+import TauCeti.Analysis.Fourier.Torus.Smooth
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 /-!
