@@ -196,8 +196,10 @@ theorem integralTopForm_mpullback_suspensionForm_of_orbitTorus_comp_eq
   have hΦe : Topology.IsOpenEmbedding Φ := Φ.coe_toHomeomorph ▸ Φ.toHomeomorph.isOpenEmbedding
   rw [← SmoothForm.mpullback_mpullback _ _ Φ.contMDiff (contMDiff_orbitTorus h),
     SmoothForm.coe_mpullback,
-    hΦe.integralTopForm_mpullback_of_isOrientationPreservingAt hΦ (by simp),
-    mpullback_orbitTorus_suspensionForm, AddCircle.integralTopForm_wedge_timeForm, one_mul]
+    hΦe.integralTopForm_mpullback_of_isOrientationPreservingAt hΦ (by simp)]
+  -- The orbit torus is the periodic torus, whose `Ω`-area is `d`.
+  convert integralTopForm_mpullback_periodicTorus_suspensionForm h using 5
+  exact funext fun p ↦ by rw [orbitTorus_apply, periodicTorus_apply]
 
 variable [I.Boundaryless] [FiniteDimensional ℝ E] [I'.Boundaryless] [CompactSpace C]
   [ConnectedSpace C]
