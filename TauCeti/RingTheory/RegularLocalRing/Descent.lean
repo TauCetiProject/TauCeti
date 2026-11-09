@@ -19,11 +19,14 @@ Noetherianity of the source is necessary: both descend by faithful flatness. The
 dimension of the source residue field is then bounded by the dimension of the target, so
 Serre's criterion proves regularity.
 
+In particular, regularity descends along any flat local homomorphism
+(`TauCeti.IsRegularLocalRing.of_flat_of_isLocalHom`). The closed fibre need not be a field or be
+regular. This is the local input for descent of regularity of schemes along faithfully flat
+covers.
+
 Globally, a ring faithfully flat in a regular ring is a regular ring
 (`TauCeti.IsRegularRing.of_faithfullyFlat`), by passing to localizations at primes and a prime
-of the target above each. In particular, regularity descends along any flat local homomorphism.
-The closed fibre need not be a field or be regular. This is the local input for descent of
-regularity of schemes along faithfully flat covers.
+of the target above each.
 
 ## References
 

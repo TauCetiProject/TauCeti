@@ -94,7 +94,8 @@ regular ring `R` also bounds the finite `A`-modules. For a flat local
 homomorphism of Noetherian local rings and the residue field of `A`, this is the finite projective
 dimension from which Serre's characterization of regular local rings deduces that `A` is regular
 (H. Matsumura, *Commutative Ring Theory*, Theorem 23.7 (i)); see
-`TauCeti.IsRegularRing.of_faithfullyFlat` in `Descent.lean`.
+`TauCeti.IsRegularLocalRing.of_faithfullyFlat` and
+`TauCeti.IsRegularLocalRing.of_flat_of_isLocalHom` in `Descent.lean`.
 
 ## References
 
