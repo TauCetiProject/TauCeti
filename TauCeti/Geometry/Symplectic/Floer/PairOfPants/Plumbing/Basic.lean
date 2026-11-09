@@ -79,7 +79,7 @@ public noncomputable section
 
 open Set Real Manifold Topology Function
 open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
-open TauCeti.Complex (realChart realChart_apply contDiff_realChart)
+open TauCeti.Complex (realChart realChart_apply contDiff_realChart injective_realChart)
 
 namespace TauCeti.Floer
 
@@ -141,12 +141,6 @@ private theorem contDiff_realChart_plumbingMap (q : Puncture) (L : ℝ) {n : Wit
   have hψ : q.plumbingMap L = fun w => q.endCenter + q.plumbingFactor L * w :=
     funext (plumbingMap_apply q L)
   exact contDiff_realChart (by rw [hψ]; fun_prop)
-
-private theorem injective_realChart_plumbingMap (q : Puncture) (L : ℝ) :
-    Injective (realChart (q.plumbingMap L)) := fun a b h ↦ by
-  rw [realChart_apply, realChart_apply] at h
-  exact Complex.equivRealProdCLM.symm.injective
-    (q.plumbingMap_injective L (Complex.equivRealProdCLM.injective h))
 
 /-- At points other than the four punctures, the components of the plumbed perturbation of `C¹`
 Hamiltonians are differentiable in the domain point. -/
@@ -312,7 +306,8 @@ private theorem setLIntegral_enorm_hamiltonianCurvature_plumbedPerturbation_le_i
     differentiableAt_plumbedPerturbation_domain hq hHa hHb hHas hHbs hab hL (hS₄ hw) y v
   have htgt {w : ℝ × ℝ} (hw : w ∈ S) (y : M) (v : ℂ) :=
     mdifferentiableAt_plumbedPerturbation_target hq hHa hHb hHas hHbs hab hL (hS₄ hw) y v
-  rw [ω.lintegral_enorm_hamiltonianCurvature_image hSm (injective_realChart_plumbingMap q L).injOn
+  rw [ω.lintegral_enorm_hamiltonianCurvature_image hSm
+    (injective_realChart (q.plumbingMap_injective L)).injOn
     (fun w _ ↦ (contDiff_realChart_plumbingMap q L).contDiffAt)
     (fun w hw ↦ hdom hw _ 1) (fun w hw ↦ hdom hw _ Complex.I)
     (fun w hw ↦ htgt hw _ 1) (fun w hw ↦ htgt hw _ Complex.I)]

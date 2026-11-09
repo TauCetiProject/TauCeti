@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Basic
 import TauCeti.Analysis.Complex.ThricePuncturedSphere.Exchange
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 
 /-!
@@ -72,8 +73,10 @@ negative planes and the output by a positive plane.
   `H(t) dt`.
 * `TauCeti.Floer.contMDiff_negativePlanePerturbation`: for a period-one Hamiltonian of class
   `C^n`, the plane datum is of class `C^n` on all of `ℂ × M`, including the pole.
-* `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le`: its
-  integrated curvature along any map is at most a bound for `|H|`.
+* `TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le`: its
+  integrated curvature along any map into a manifold is at most a bound for `|H|`, with the
+  vector-space form
+  `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le`.
 * `TauCeti.SymplecticForm.integral_floerEnergyDensity_negativePlanePerturbation_closedBall`: the
   energy identity over the disc bounded by the circle `s = -R` of the end.
 * `SymplecticForm.abs_integral_floerEnergyDensity_negativePlanePerturbation_closedBall_sub_le`: the
@@ -90,8 +93,10 @@ negative planes and the output by a positive plane.
   `H(t) dt`.
 * `TauCeti.Floer.contMDiffAt_positivePlanePerturbation`: for a period-one Hamiltonian of class
   `C^n`, the positive plane datum is of class `C^n` on `(ℂ ∖ {0}) × M`.
-* `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le`: its
-  integrated curvature along any map is at most a bound for `|H|`.
+* `TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le`: its
+  integrated curvature along any map into a manifold is at most a bound for `|H|`, with the
+  vector-space form
+  `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le`.
 * `SymplecticForm.integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_ball`: the
   energy identity over the annulus whose inner boundary is the circle `s = R` of the end.
 * `abs_integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_ball_sub_le`: the
@@ -469,6 +474,56 @@ theorem contMDiffAt_plumbedPerturbation_single_zero {n : ℕ∞} (hHa : ∀ r, P
 
 end TauCeti.Floer
 
+namespace TauCeti.SmoothTwoForm
+
+open Floer MeasureTheory
+
+variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
+  {H : ℝ → M → ℝ}
+
+/-- **The integrated curvature of the negative plane.** Let `K` be the negative plane
+perturbation of a period-one `C¹` Hamiltonian `H` with `|H| ≤ B`, with components
+`K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)` in the global coordinate `z = s + i t` of `ℂ`. Then for
+every map `u` into the target manifold, the integral of `|R_K(z, u(z))|` over the plane is at
+most `B`. -/
+theorem lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le (ω : SmoothTwoForm I M)
+    (hH : Periodic H 1) (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) {B : ℝ}
+    (hB : ∀ t x, |H t x| ≤ B) (u : ℝ × ℝ → M) :
+    ∫⁻ z, ‖ω.hamiltonianCurvature
+        (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)‖ₑ ≤ ENNReal.ofReal B := by
+  have h := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
+    (forall_single inf (P := fun f => Periodic f 1) (fun _ => rfl) hH)
+    (forall_single inf (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f))
+      contMDiff_const hHs)
+    (abs_single_le inf hB) u
+  rwa [pairOfPantsPerturbation_single_inf, Fintype.sum_eq_single inf fun r hr => by
+    simp [Pi.single_eq_of_ne hr], Pi.single_eq_same] at h
+
+/-- **The integrated curvature of the positive plane.** Let `K` be the positive plane
+perturbation of a period-one `C¹` Hamiltonian `H` with `|H| ≤ B`, with components
+`K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)` in the global coordinate `z = s + i t` of `ℂ`. Then for
+every map `u` into the target manifold, the integral of `|R_K(z, u(z))|` over the plane is at
+most `B`. -/
+theorem lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le (ω : SmoothTwoForm I M)
+    (hH : Periodic H 1) (hHs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry H)) {B : ℝ}
+    (hB : ∀ t x, |H t x| ≤ B) (u : ℝ × ℝ → M) :
+    ∫⁻ z, ‖ω.hamiltonianCurvature
+        (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)‖ₑ ≤ ENNReal.ofReal B := by
+  have h := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
+    (forall_single zero (P := fun f => Periodic f 1) (fun _ => rfl) hH)
+    (forall_single zero (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry f))
+      contMDiff_const hHs)
+    (abs_single_le zero hB) u
+  rwa [pairOfPantsPerturbation_single_zero, Fintype.sum_eq_single zero fun r hr => by
+    simp [Pi.single_eq_of_ne hr], Pi.single_eq_same] at h
+
+end TauCeti.SmoothTwoForm
+
 namespace TauCeti.SymplecticForm
 
 open Floer MeasureTheory
@@ -487,12 +542,8 @@ theorem lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le (ω : 
         (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ENNReal.ofReal B := by
-  have h := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
-    (forall_single inf (P := fun f => Periodic f 1) (fun _ => rfl) hH)
-    (forall_single inf (P := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
-    (abs_single_le inf hB) u
-  rwa [pairOfPantsPerturbation_single_inf, Fintype.sum_eq_single inf fun r hr => by
-    simp [Pi.single_eq_of_ne hr], Pi.single_eq_same] at h
+  simpa using ω.constSmooth.lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le hH
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff) hB u
 
 omit [FiniteDimensional ℝ V] in
 /-- The components of the negative plane perturbation in real coordinates are `C¹` jointly in the
@@ -636,12 +687,8 @@ theorem lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le (ω : 
         (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ENNReal.ofReal B := by
-  have h := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
-    (forall_single zero (P := fun f => Periodic f 1) (fun _ => rfl) hH)
-    (forall_single zero (P := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
-    (abs_single_le zero hB) u
-  rwa [pairOfPantsPerturbation_single_zero, Fintype.sum_eq_single zero fun r hr => by
-    simp [Pi.single_eq_of_ne hr], Pi.single_eq_same] at h
+  simpa using ω.constSmooth.lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le hH
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff) hB u
 
 omit [FiniteDimensional ℝ V] in
 /-- The components of the positive plane perturbation in real coordinates are `C¹` jointly in the

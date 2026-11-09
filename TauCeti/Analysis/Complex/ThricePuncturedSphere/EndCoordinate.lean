@@ -143,6 +143,12 @@ theorem cylindricalEndLift_eq (q : Puncture) (z : ℂ) :
     q.cylindricalEndLift z = q.endCenter + q.endScale * Complex.exp (-(2 * (π : ℂ)) * z) := by
   cases q <;> simp <;> ring
 
+/-- The end lift at `z` lies at distance `‖b_q‖ exp (-2π Re z)` from the center `c_q` of the end. -/
+theorem norm_cylindricalEndLift_sub_endCenter (q : Puncture) (z : ℂ) :
+    ‖q.cylindricalEndLift z - q.endCenter‖ = ‖q.endScale‖ * Real.exp (-(2 * π * z.re)) := by
+  rw [cylindricalEndLift_eq, add_sub_cancel_left, norm_mul, Complex.norm_exp]
+  simp [Complex.mul_re, mul_assoc]
+
 /-- In polar form, the end lift traverses the circle of radius `‖b_q‖ exp (-2πs)` about the
 center `c_q` of the end clockwise, starting at the argument of the scale `b_q`. -/
 theorem cylindricalEndLift_ofReal_add_ofReal_mul_I (q : Puncture) (x t : ℝ) :

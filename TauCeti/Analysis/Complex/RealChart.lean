@@ -18,6 +18,7 @@ A map `f : ℂ → ℂ` of the plane, read in the real coordinates `ℝ × ℝ �
 `f'`, the real derivative of its real chart is multiplication by `f'`
 (`TauCeti.Complex.hasFDerivAt_realChart`, `TauCeti.Complex.fderiv_realChart_apply`), and a map
 that is `C^n` over `ℂ` is `C^n` over `ℝ` in real coordinates (`TauCeti.Complex.contDiff_realChart`).
+The real chart of an injective map is injective (`TauCeti.Complex.injective_realChart`).
 -/
 
 public section
@@ -55,5 +56,10 @@ theorem contDiff_realChart {f : ℂ → ℂ} {n : WithTop ℕ∞} (hf : ContDiff
     ContDiff ℝ n (realChart f) :=
   Complex.equivRealProdCLM.contDiff.comp
     ((hf.restrict_scalars ℝ).comp Complex.equivRealProdCLM.symm.contDiff)
+
+/-- The real chart of an injective map is injective. -/
+theorem injective_realChart {f : ℂ → ℂ} (hf : Function.Injective f) :
+    Function.Injective (realChart f) :=
+  Complex.equivRealProdCLM.injective.comp (hf.comp Complex.equivRealProdCLM.symm.injective)
 
 end TauCeti.Complex

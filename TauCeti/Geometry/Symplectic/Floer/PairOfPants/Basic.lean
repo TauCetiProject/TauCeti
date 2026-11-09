@@ -82,6 +82,13 @@ theorem pairOfPantsPerturbation_def (H : Puncture → ℝ → M → ℝ) (w : �
         q.endAngularForm w := by
   rw [pairOfPantsPerturbation]
 
+/-- The perturbation is additive in the Hamiltonians. -/
+theorem pairOfPantsPerturbation_add (H₁ H₂ : Puncture → ℝ → M → ℝ) :
+    pairOfPantsPerturbation (H₁ + H₂) =
+      pairOfPantsPerturbation H₁ + pairOfPantsPerturbation H₂ := by
+  funext w x
+  simp only [pairOfPantsPerturbation_def, Pi.add_apply, mul_add, add_smul, Finset.sum_add_distrib]
+
 variable {H : Puncture → ℝ → M → ℝ}
 
 /-- Where the cutoff of the end `q` is nonzero, the point lies on the part `±s > 1` of that end,

@@ -183,11 +183,6 @@ theorem perturbationPullback_pairOfPantsPerturbation_exchangeHamiltonians
 
 /-! ### The ends of the family -/
 
-/-- The real part of the exponent of the end lifts. -/
-private theorem re_neg_two_pi_mul (z : ℂ) : (-(2 * (π : ℂ)) * z).re = -(2 * π) * z.re := by
-  rw [show -(2 * (π : ℂ)) * z = ((-(2 * π) : ℝ) : ℂ) * z by push_cast; ring,
-    Complex.re_ofReal_mul]
-
 /-- Every `c ∈ [0, 1]` lies within distance `1` of `1`. -/
 private theorem norm_ofReal_sub_one_le {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) :
     ‖(c : ℂ) - 1‖ ≤ 1 := by
@@ -201,10 +196,9 @@ private theorem norm_cylindricalEndLift_sub_le {q : Puncture} (hq : q ≠ inf) {
     (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {z : ℂ} (hz : 0 < z.re) :
     ‖q.cylindricalEndLift z - c‖ ≤ 2 := by
   have hφ : ‖q.cylindricalEndLift z - q.endCenter‖ ≤ 1 := by
-    rw [cylindricalEndLift_eq, add_sub_cancel_left, norm_mul, norm_endScale hq,
-      Complex.norm_exp]
-    have : Real.exp (-(2 * (π : ℂ)) * z).re ≤ 1 := by
-      rw [Real.exp_le_one_iff, re_neg_two_pi_mul]
+    rw [norm_cylindricalEndLift_sub_endCenter, norm_endScale hq]
+    have : Real.exp (-(2 * π * z.re)) ≤ 1 := by
+      rw [Real.exp_le_one_iff]
       nlinarith [Real.pi_pos]
     linarith
   have hc : ‖q.endCenter - (c : ℂ)‖ ≤ 1 := by
@@ -293,9 +287,10 @@ theorem exchangePerturbation_add_cylindricalEndLift_inf_of_neg (hH : Periodic (H
       v.im * (smoothTransition (-z.re - 1) * H inf z.im x) := by
   -- The end lift at `∞` stays at distance more than `2` from `0` on the part `s < 0`.
   have hφ : 2 ≤ ‖inf.cylindricalEndLift z‖ := by
-    rw [cylindricalEndLift_inf, norm_mul, Complex.norm_ofNat, Complex.norm_exp]
-    have : 1 ≤ Real.exp (-(2 * (π : ℂ)) * z).re := by
-      rw [Real.one_le_exp_iff, re_neg_two_pi_mul]
+    have h := norm_cylindricalEndLift_sub_endCenter inf z
+    rw [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at h
+    have : 1 ≤ Real.exp (-(2 * π * z.re)) := by
+      rw [Real.one_le_exp_iff]
       nlinarith [Real.pi_pos]
     linarith
   have hw : 3 / 2 ≤ ‖(c : ℂ) + inf.cylindricalEndLift z - c‖ := by
