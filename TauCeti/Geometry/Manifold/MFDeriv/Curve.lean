@@ -170,6 +170,23 @@ theorem curveVelocityWithin_apply :
     curveVelocityWithin I γ s t = mfderivWithin 𝓘(𝕜, 𝕜) I γ s t (1 : 𝕜) :=
   (rfl)
 
+/-- Where the derivative within `s` is not unique, the velocity within `s` is Mathlib's junk
+value `0`. -/
+theorem curveVelocityWithin_eq_zero_of_not_uniqueDiffWithinAt
+    (hu : ¬ UniqueDiffWithinAt 𝕜 s t) : curveVelocityWithin I γ s t = 0 := by
+  rw [curveVelocityWithin_apply]
+  by_cases hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t
+  · have h : mfderivWithin 𝓘(𝕜, 𝕜) I γ s t = 0 := by
+      classical
+      simp only [mfderivWithin, hγ, ↓reduceIte, extChartAt_model_space_eq_id,
+        PartialEquiv.refl_symm, PartialEquiv.refl_coe, Set.preimage_id_eq, id_eq,
+        ModelWithCorners.range_eq_univ, Set.inter_univ]
+      exact fderivWithin_zero_of_not_uniqueDiffWithinAt hu
+    rw [h]
+    rfl
+  · rw [mfderivWithin_zero_of_not_mdifferentiableWithinAt hγ]
+    rfl
+
 /-- The unrestricted velocity is the unrestricted derivative evaluated at the unit tangent
 vector. -/
 theorem curveVelocity_apply : curveVelocity I γ t = mfderiv 𝓘(𝕜, 𝕜) I γ t (1 : 𝕜) := by
