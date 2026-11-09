@@ -65,6 +65,13 @@ theorem hasSum_restrictedEval₂OfBound (f : IsRestricted.subring (R := R) c) :
   simpa only [ht, restrictedEval₂OfBound, RingHom.comp_apply] using
     hasSum_restrictedEval₂ (RingHom.id S) a (fun _ ↦ le_rfl) ha (restrictedMap φ hφ f)
 
+/-- Bounded evaluation sends a monomial `r Xᵗ` to `φ(r) aᵗ`. -/
+@[simp]
+theorem restrictedEval₂OfBound_monomial (t : Fin k →₀ ℕ) (r : R) :
+    restrictedEval₂OfBound φ a hφ ha ⟨monomial t r, isRestricted_monomial c t r⟩ =
+      φ r * ∏ i, a i ^ t i := by
+  rw [restrictedEval₂OfBound_apply, weightedEval_monomial]
+
 /-- Bounded evaluation extends the coefficient map on constants. -/
 @[simp]
 theorem restrictedEval₂OfBound_algebraMap (r : R) :
@@ -129,7 +136,7 @@ theorem eq_restrictedEval₂OfBound (ψ : IsRestricted.subring (R := R) c →+* 
 
 include hφ ha in
 /-- The universal property at bounded arguments for an arbitrary bounded coefficient map. -/
-theorem existsUnique_continuous_ringHom_of_bound :
+theorem existsUnique_continuous_ringHom_isRestricted_subring_of_bound :
     ∃! ψ : IsRestricted.subring (R := R) c →+* S,
       Continuous ψ ∧ (∀ r, ψ (algebraMap R _ r) = φ r) ∧
         ∀ i, ψ ⟨X i, isRestricted_X c i⟩ = a i :=
