@@ -40,7 +40,10 @@ decompose a tempered distribution into frequency blocks for Besov and Bessel-pot
 * `ContDiffBump.hasSum_inhomogeneousLittlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for every `ξ`.
 * `ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`: finite overlap of the pieces.
 * `ContDiffBump.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_le`: the uniform rescaled
-  derivative bounds for the inhomogeneous partition.
+  derivative bounds for the inhomogeneous partition, and
+  `ContDiffBump.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_le`: their weighted
+  form `‖D^k ψⱼ ξ‖ (1 + ‖ξ‖) ^ k ≤ B`, so the pieces form a bounded family of symbols of order
+  zero.
 
 ## References
 
@@ -261,6 +264,15 @@ theorem tsupport_inhomogeneousLittlewoodPaley_succ_subset (j : ℕ) :
   refine (φ.tsupport_littlewoodPaley_subset _).trans fun ξ hξ ↦ ?_
   simpa [← zpow_natCast] using hξ
 
+/-- Every piece `ψⱼ` of the inhomogeneous partition is supported in the closed ball of radius
+`2^j φ.rOut`. -/
+theorem tsupport_inhomogeneousLittlewoodPaley_subset_closedBall (j : ℕ) :
+    tsupport (φ.inhomogeneousLittlewoodPaley j) ⊆ closedBall 0 (2 ^ j * φ.rOut) := by
+  rcases j with _ | j
+  · simpa using φ.tsupport_inhomogeneousLittlewoodPaley_zero_subset
+  · exact (φ.tsupport_inhomogeneousLittlewoodPaley_succ_subset j).trans fun ξ hξ ↦
+      mem_closedBall_zero_iff.2 hξ.2
+
 /-- The partial sums of the inhomogeneous partition telescope:
 `∑_{j ≤ N} ψⱼ ξ = φ (2^{-N} ξ)`. -/
 theorem sum_inhomogeneousLittlewoodPaley_range (N : ℕ) (ξ : E) :
@@ -382,6 +394,32 @@ theorem exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_le (k : ℕ) :
     refine (hB _ ξ).trans ?_
     rw [zpow_natCast]
     exact div_le_div_of_nonneg_right (le_max_left B M) (by positivity)
+
+/-- **The cutoffs are a bounded family of symbols of order zero.** The `k`-th derivative of `ψⱼ`
+satisfies `‖D^k ψⱼ ξ‖ (1 + ‖ξ‖) ^ k ≤ B` with `B` independent of `j`: the factor `2^{-jk}` from the
+derivative compensates `1 + ‖ξ‖ ≤ 2^j (1 + φ.rOut)` on the support of `ψⱼ`. -/
+theorem exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_le (k : ℕ) :
+    ∃ B, 0 ≤ B ∧ ∀ (j : ℕ) (ξ : E),
+      ‖iteratedFDeriv ℝ k (φ.inhomogeneousLittlewoodPaley j) ξ‖ * (1 + ‖ξ‖) ^ k ≤ B := by
+  obtain ⟨B, hB0, hB⟩ := φ.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_le k
+  have hr := φ.rOut_pos
+  refine ⟨B * (1 + φ.rOut) ^ k, by positivity, fun j ξ ↦ ?_⟩
+  by_cases hξ : ξ ∈ tsupport (φ.inhomogeneousLittlewoodPaley j)
+  · have hξ' : ‖ξ‖ ≤ 2 ^ j * φ.rOut :=
+      mem_closedBall_zero_iff.1 (φ.tsupport_inhomogeneousLittlewoodPaley_subset_closedBall j hξ)
+    have h2 : (0 : ℝ) < (2 ^ j) ^ k := by positivity
+    calc ‖iteratedFDeriv ℝ k (φ.inhomogeneousLittlewoodPaley j) ξ‖ * (1 + ‖ξ‖) ^ k
+        ≤ B / (2 ^ j) ^ k * (2 ^ j * (1 + φ.rOut)) ^ k := by
+          refine mul_le_mul (hB j ξ) ?_ (by positivity) (by positivity)
+          gcongr
+          have : (1 : ℝ) ≤ 2 ^ j := one_le_pow₀ one_le_two
+          nlinarith
+      _ = B * (1 + φ.rOut) ^ k := by
+          rw [mul_pow]
+          field_simp
+  · rw [Function.notMem_support.1 (fun h ↦ hξ (support_iteratedFDeriv_subset (𝕜 := ℝ) k h)),
+      norm_zero, zero_mul]
+    positivity
 
 end FiniteDimensional
 

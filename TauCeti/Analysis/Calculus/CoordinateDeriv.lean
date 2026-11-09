@@ -56,6 +56,8 @@ symbol calculus.
 * `TauCeti.mixedDeriv`: the mixed position-frequency derivative `∂_x^α ∂_ξ^β`.
 * `ContinuousLinearMap.coordinateDeriv_of_bilinear`, `ContinuousLinearMap.mixedDeriv_of_bilinear`:
   the Leibniz rules.
+* `TauCeti.norm_mixedDeriv_comp_snd_smul_le`: the Leibniz bound for the product `ψ(ξ) a(x, ξ)`
+  with a frequency cutoff.
 -/
 
 public section
@@ -619,5 +621,50 @@ theorem _root_.ContinuousLinearMap.mixedDeriv_of_bilinear (B : F →L[ℝ] G →
   exact List.map_congr_left fun t ht => B.coordinateDeriv_of_bilinear (hsa t ht) (hsb t ht) x
 
 end Leibniz
+
+/-! ### Products with a frequency cutoff -/
+
+section Cutoff
+
+variable {ψ : CoordinateSpace n → ℝ} {a : CoordinateSpace n × CoordinateSpace n → A}
+
+/-- The Leibniz bound for a mixed derivative of the product `ψ(ξ) a(x, ξ)` of a smooth function of
+the frequency alone and a smooth function of the position and the frequency, in terms of the
+derivatives of `ψ` at `ξ` and the mixed derivatives of `a` at `(x, ξ)`. -/
+theorem norm_mixedDeriv_comp_snd_smul_le (hψ : ContDiff ℝ ∞ ψ) (ha : ContDiff ℝ ∞ a)
+    (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
+    ‖mixedDeriv α β (fun p => ψ p.2 • a p) x ξ‖ ≤
+      ∑ i ∈ Finset.range (β.length + 1), (β.length.choose i : ℝ) * ‖iteratedFDeriv ℝ i ψ ξ‖ *
+        ∑ w : Fin (β.length - i) → Fin n, ‖mixedDeriv α (List.ofFn w) a x ξ‖ := by
+  have hf : ContDiff ℝ ∞ fun p : CoordinateSpace n × CoordinateSpace n => ψ p.2 • a p :=
+    (hψ.comp contDiff_snd).smul ha
+  -- take the position derivatives first; the cutoff does not depend on the position
+  have hg : ContDiff ℝ ∞ fun η => coordinateDeriv α (fun y => a (y, η)) x :=
+    (ha.coordinateDeriv_fst α).comp (contDiff_const.prodMk contDiff_id)
+  have hpos (η : CoordinateSpace n) :
+      coordinateDeriv α (fun y => ψ η • a (y, η)) x =
+        ψ η • coordinateDeriv α (fun y => a (y, η)) x := by
+    have h := coordinateDeriv_const_smul α (f := fun y => a (y, η))
+      ((ha.comp (contDiff_id.prodMk (contDiff_const (c := η)))).of_le
+        (by exact_mod_cast le_top)) (ψ η)
+    exact congrFun h x
+  rw [mixedDeriv_eq_coordinateDeriv_snd hf]
+  simp only [hpos]
+  refine (norm_coordinateDeriv_smul_le β (hψ.of_le (by exact_mod_cast le_top))
+    (hg.of_le (by exact_mod_cast le_top)) ξ).trans_eq ?_
+  simp only [mixedDeriv_eq_coordinateDeriv_snd ha]
+
+/-- Away from the support of a smooth frequency cutoff `ψ`, every mixed derivative of
+`ψ(ξ) a(x, ξ)` vanishes. -/
+theorem mixedDeriv_comp_snd_smul_eq_zero_of_notMem_tsupport (hψ : ContDiff ℝ ∞ ψ)
+    (ha : ContDiff ℝ ∞ a) (α β : List (Fin n)) (x : CoordinateSpace n) {ξ : CoordinateSpace n}
+    (hξ : ξ ∉ tsupport ψ) :
+    mixedDeriv α β (fun p => ψ p.2 • a p) x ξ = 0 := by
+  refine norm_le_zero_iff.1 ((norm_mixedDeriv_comp_snd_smul_le hψ ha α β x ξ).trans_eq ?_)
+  refine Finset.sum_eq_zero fun i _ => ?_
+  rw [Function.notMem_support.1 (fun h => hξ (support_iteratedFDeriv_subset (𝕜 := ℝ) i h)),
+    norm_zero, mul_zero, zero_mul]
+
+end Cutoff
 
 end TauCeti
