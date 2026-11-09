@@ -117,7 +117,6 @@ junk value `Φ p`. -/
 theorem riemannianExp_mfderiv [I.Boundaryless] [J.Boundaryless]
     [T2Space M] (Φ : RiemannianIsometry I J M N) (p : M) (v : TangentSpace I p) :
     riemannianExp J N (Φ p) (mfderiv I J Φ p v) = Φ (riemannianExp I M p v) := by
-  have : T2Space N := Φ.toDiffeomorph.toHomeomorph.t2Space
   simp only [riemannianExp_def, Φ.maximalGeodesic_mfderiv]
 
 end TauCeti.RiemannianIsometry
