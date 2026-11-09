@@ -17,8 +17,8 @@ bound for a difference and the bound on the Gauss norm of a truncation of a rest
 
 * `TauCeti.PowerSeries.gaussNorm_sub_le_of_le`: the Gauss norm of a difference is bounded by a
   common bound on the two Gauss norms, over an ultrametric ring.
-* `TauCeti.PowerSeries.gaussNorm_trunc_le`: a truncation of a restricted series has Gauss norm at
-  most that of the series.
+* `TauCeti.PowerSeries.gaussNorm_trunc_le`: a truncation of a series with Gauss norm has Gauss norm
+  at most that of the series.
 -/
 
 public section
@@ -48,16 +48,16 @@ end Ultrametric
 
 section Trunc
 
-variable {R : Type*} [NormedRing R] {f : PowerSeries R}
+variable {R : Type*} [SeminormedRing R] {f : PowerSeries R}
 
-/-- Every truncation of a restricted series `f` has Gauss norm at most that of `f`. -/
-theorem gaussNorm_trunc_le (hf : f.IsRestricted c) (N : ℕ) :
+/-- Every truncation of a series `f` with Gauss norm has Gauss norm at most that of `f`. -/
+theorem gaussNorm_trunc_le (hf : f.HasGaussNorm norm c) (N : ℕ) :
     ((f.trunc N : Polynomial R) : PowerSeries R).gaussNorm norm c ≤ f.gaussNorm norm c := by
   rw [PowerSeries.gaussNorm_eq]
   refine ciSup_le fun m ↦ ?_
   rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc]
   split_ifs
-  · exact PowerSeries.le_gaussNorm norm c f (hasGaussNorm_of_isRestricted hf) m
+  · exact PowerSeries.le_gaussNorm norm c f hf m
   · simpa using PowerSeries.gaussNorm_nonneg norm c f norm_nonneg
 
 end Trunc

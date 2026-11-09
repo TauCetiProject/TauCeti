@@ -304,19 +304,20 @@ private theorem exists_gaussNorm_sub_mul_add_le (hg : IsMulDistinguished c s g) 
   have htailr : (g - ((g.trunc (s + 1) : Polynomial R) : PowerSeries R)).IsRestricted c := by
     rw [sub_eq_add_neg]
     exact hgr.add (isRestricted_polynomial _).neg
+  have hfG : f.HasGaussNorm norm c := hasGaussNorm_of_isRestricted hf
   rcases eq_or_ne f 0 with rfl | hf0
   · exact ⟨0, 0, PowerSeries.isRestricted_zero c, fun m _ ↦ by simp, by simp [hzero],
       by simp [hzero], by simp [hzero]⟩
   have hfpos : 0 < f.gaussNorm norm c :=
     lt_of_le_of_ne (PowerSeries.gaussNorm_nonneg norm c f norm_nonneg) fun h ↦
       hf0 ((PowerSeries.gaussNorm_eq_zero_iff norm c f norm_zero norm_nonneg
-        (fun _ ↦ norm_eq_zero.mp) hc (hasGaussNorm_of_isRestricted hf)).mp h.symm)
+        (fun _ ↦ norm_eq_zero.mp) hc hfG).mp h.symm)
   -- Truncate `f` past the degree where its weighted coefficients have dropped below `θ‖f‖`.
   have : Fact (0 < c) := ⟨hc⟩
   obtain ⟨N, hN⟩ := Metric.tendsto_atTop.mp
     (tendsto_trunc_atTop (⟨f, hf⟩ : PowerSeries.IsRestricted.subring (R := R) c))
     (θ * f.gaussNorm norm c) (mul_pos hθ hfpos)
-  have hFn := gaussNorm_trunc_le hf N
+  have hFn := gaussNorm_trunc_le hfG N
   have hsmall : (f - ((f.trunc N : Polynomial R) : PowerSeries R)).gaussNorm norm c
       ≤ θ * f.gaussNorm norm c := by
     have h := hN N le_rfl
