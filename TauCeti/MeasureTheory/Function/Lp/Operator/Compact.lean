@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
-public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral
+public import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Basic
 import TauCeti.Algebra.BigOperators.Group.Finset.Indicator
 import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
 import TauCeti.MeasureTheory.Function.AEStronglyMeasurable
