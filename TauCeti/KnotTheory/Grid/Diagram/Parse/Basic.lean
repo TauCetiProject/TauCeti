@@ -16,8 +16,10 @@ alternates the markings along each link component, and reconstructs the two mark
 
 ## Main definitions
 
-* `TauCeti.GridDiagram.parseGridDiagram`: parse a box-drawing diagram of a specified size,
-  panicking when it is invalid or has a different size.
+* `TauCeti.GridDiagram.parseDrawing`: parse a canonical box-drawing diagram, returning its size and
+  grid diagram or `none`.
+* `TauCeti.GridDiagram.parseGridDiagram`: a source-literal helper for `Repr` output, intended only
+  for hardcoded diagrams of a specified size; it panics on invalid input or a size mismatch.
 -/
 
 public section
@@ -386,13 +388,17 @@ private def parseGrid {width height : Nat} (chars : Vector (Vector Char width) h
   guard (reprMatchesDrawing chars pairings G)
   pure ⟨pairings.rows.length, G⟩
 
-private def parseDrawing (source : String) : Option (Σ n : ℕ, GridDiagram n) := do
+/-- Parse the canonical box-drawing representation of a grid diagram, returning its size and value
+or `none` if the drawing is invalid. Each component's topmost-leftmost marking must be labeled `○`
+or `×` to specify its coloring. -/
+def parseDrawing (source : String) : Option (Σ n : ℕ, GridDiagram n) := do
   let source := if source.toList.head? == some '\n' then source else "\n" ++ source
   let ⟨_, _, chars⟩ ← parseCharMatrix source
   parseGrid chars
 
-/-- Parse a box-drawing grid diagram of size `n`, panicking if the drawing is invalid or has a
-different size. `○` and `×` may label one endpoint per component to choose its `O`/`X` coloring. -/
+/-- Parse a canonical box-drawing grid diagram of size `n`, intended for hardcoded source strings
+such as `Repr` output. Panics if the drawing is invalid or has a different size. Each component's
+topmost-leftmost marking must be labeled `○` or `×` to specify its `O`/`X` coloring. -/
 def parseGridDiagram (n : ℕ) (source : String) [Inhabited (GridDiagram n)] : GridDiagram n :=
   match parseDrawing source with
   | some ⟨m, G⟩ =>
