@@ -5,15 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 
 /-!
 # Examples and non-examples of finite-regularity almost complex structures
 
-On a complex normed space `V`, multiplication by `i` is a constant almost complex structure of
-every regularity `ℓ`. It is the specialization of the smooth constant structure, and its chart
-expression is the constant map `i`.
+On a complex normed space `V`, multiplication by `i` is the smooth structure
+`SmoothAlmostComplexStructure.ofComplexManifold V V`, so it is a structure of every regularity
+`ℓ`. Its chart expression is the constant map `i`, as for every constant structure.
 
 The identity endomorphism is never an almost complex structure: `id ∘ id = id`, while
 `-id ≠ id` on a nontrivial real vector space. In particular a smooth endomorphism field on `ℂ`
@@ -24,8 +25,9 @@ every point, not on an open set.
 ## Main declarations
 
 * `ContMDiffAlmostComplexStructure.toEndomorphism_ne_id`: no fibre of a structure is the identity.
-* `ContMDiffAlmostComplexStructure.const_complexI_eq_toContMDiff`,
-  `ContMDiffAlmostComplexStructure.inChart_const`: the constant structure `i`.
+* `ContMDiffAlmostComplexStructure.inChart_const`,
+  `ContMDiffAlmostComplexStructure.inChart_toContMDiff_ofComplexManifold_self`: the chart
+  expression of a constant structure, and of the structure `i`, is constant.
 * `ContMDiffAlmostComplexStructure.cutoffSection`,
   `ContMDiffAlmostComplexStructure.not_exists_toEndomorphism_eq_cutoffSection`: the cut-off
   section and its rejection.
@@ -74,49 +76,6 @@ end Identity
 
 section ComplexConstant
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-
-/-- Multiplication by `i` on a complex normed space, as a real continuous linear map. -/
-def complexI (V : Type*) [NormedAddCommGroup V] [NormedSpace ℂ V] : V →L[ℝ] V :=
-  Complex.I • ContinuousLinearMap.id ℝ V
-
-@[simp]
-theorem complexI_apply (v : V) : complexI V v = Complex.I • v := (rfl)
-
-/-- Multiplication by `i` squares to minus the identity. -/
-theorem complexI_complexI (v : V) : complexI V (complexI V v) = -v := by
-  simp [smul_smul]
-
-/-- On a complex normed space, multiplication by `i` is a constant structure of regularity `n`
-for every `n`, and it is the regularity-`n` view of the smooth constant structure. -/
-theorem const_complexI_eq_toContMDiff (n : ℕ∞) :
-    const n (complexI V) complexI_complexI =
-      (SmoothAlmostComplexStructure.const (complexI V) complexI_complexI).toContMDiff n := by
-  ext x v
-  change (const n (complexI V) complexI_complexI).toEndomorphism x v =
-    ((SmoothAlmostComplexStructure.const (complexI V) complexI_complexI).toContMDiff n
-      ).toEndomorphism x v
-  simp
-
-/-- At infinite regularity the constant structure `i` is the smooth constant structure. -/
-@[simp]
-theorem toSmooth_const_complexI :
-    (const ⊤ (complexI V) complexI_complexI).toSmooth =
-      SmoothAlmostComplexStructure.const (complexI V) complexI_complexI := by
-  ext x v
-  change (const ⊤ (complexI V) complexI_complexI).toSmooth.toEndomorphism x v =
-    (SmoothAlmostComplexStructure.const (complexI V) complexI_complexI).toEndomorphism x v
-  simp
-
-/-- Lowering the regularity of the constant structure `i` gives the constant structure `i`. -/
-@[simp]
-theorem ofLE_const_complexI {m n : ℕ∞} (h : m ≤ n) :
-    (const n (complexI V) complexI_complexI).ofLE h = const m (complexI V) complexI_complexI := by
-  ext x v
-  change ((const n (complexI V) complexI_complexI).ofLE h).toEndomorphism x v =
-    (const m (complexI V) complexI_complexI).toEndomorphism x v
-  simp
-
 /-- The chart expression of a constant structure on its model space is the constant map. -/
 @[simp]
 theorem inChart_const {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] (n : ℕ∞)
@@ -125,12 +84,15 @@ theorem inChart_const {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] (n 
   rw [inChart_def, const_toEndomorphism_apply]
   exact inCoordinates_tangent_bundle_core_model_space _ _ _ _ _
 
-/-- The chart expression of the constant structure `i` is smooth. -/
-theorem contDiff_inChart_const_complexI (n : ℕ∞) (x : V) :
-    ContDiff ℝ ∞ ((const n (complexI V) complexI_complexI).inChart x) := by
-  rw [show (const n (complexI V) complexI_complexI).inChart x = fun _ ↦ complexI V from
-    funext (inChart_const n _ _ x)]
-  exact contDiff_const
+/-- On a complex normed space `V`, for example `ℂⁿ`, multiplication by `i` is a structure of
+every regularity `n`, and its chart expression is constantly multiplication by `i`. -/
+theorem inChart_toContMDiff_ofComplexManifold_self {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℂ V] (n : ℕ∞) (x z : V) :
+    ((SmoothAlmostComplexStructure.ofComplexManifold V V).toContMDiff n).inChart x z =
+      Complex.I • ContinuousLinearMap.id ℝ V := by
+  rw [inChart_def, SmoothAlmostComplexStructure.toContMDiff_toEndomorphism_apply,
+    SmoothAlmostComplexStructure.toEndomorphism_ofComplexManifold]
+  exact inCoordinates_tangent_bundle_core_model_space _ _ _ _ _
 
 end ComplexConstant
 
@@ -154,26 +116,29 @@ theorem unitDiscCutoff_of_two_le_norm {z : ℂ} (hz : 2 ≤ ‖z‖) : unitDiscC
 
 /-- The endomorphism field `χ • i + (1 - χ) • id` on `ℂ`, where `χ` is `unitDiscCutoff`. -/
 def cutoffField (z : ℂ) : ℂ →L[ℝ] ℂ :=
-  unitDiscCutoff z • complexI ℂ + (1 - unitDiscCutoff z) • ContinuousLinearMap.id ℝ ℂ
+  unitDiscCutoff z • (Complex.I • ContinuousLinearMap.id ℝ ℂ) +
+    (1 - unitDiscCutoff z) • ContinuousLinearMap.id ℝ ℂ
 
 /-- The cut-off field is smooth. -/
 theorem contDiff_cutoffField : ContDiff ℝ ∞ cutoffField := by
   have hχ : ContDiff ℝ ∞ (unitDiscCutoff : ℂ → ℝ) := unitDiscCutoff.contDiff
   exact (hχ.smul contDiff_const).add ((contDiff_const.sub hχ).smul contDiff_const)
 
-theorem cutoffField_of_norm_le_one {z : ℂ} (hz : ‖z‖ ≤ 1) : cutoffField z = complexI ℂ := by
+theorem cutoffField_of_norm_le_one {z : ℂ} (hz : ‖z‖ ≤ 1) :
+    cutoffField z = Complex.I • ContinuousLinearMap.id ℝ ℂ := by
   ext v
   simp [cutoffField, unitDiscCutoff_of_norm_le_one hz]
 
 theorem cutoffField_of_two_le_norm {z : ℂ} (hz : 2 ≤ ‖z‖) :
     cutoffField z = ContinuousLinearMap.id ℝ ℂ := by
+  ext v
   simp [cutoffField, unitDiscCutoff_of_two_le_norm hz]
 
 /-- On the closed unit disc the cut-off field squares to minus the identity. -/
 theorem cutoffField_cutoffField_of_norm_le_one {z : ℂ} (hz : ‖z‖ ≤ 1) (v : ℂ) :
     cutoffField z (cutoffField z v) = -v := by
   rw [cutoffField_of_norm_le_one hz]
-  exact complexI_complexI v
+  simp [← mul_assoc]
 
 /-- Outside the disc of radius `2` the cut-off field fails the square identity. -/
 theorem cutoffField_comp_ne_neg_id {z : ℂ} (hz : 2 ≤ ‖z‖) :
@@ -187,15 +152,11 @@ theorem cutoffField_comp_ne_neg_id {z : ℂ} (hz : 2 ≤ ‖z‖) :
 def cutoffSection :
     ContMDiffSection 𝓘(ℝ, ℂ) (ℂ →L[ℝ] ℂ) ∞
       (fun z : ℂ ↦ TangentSpace 𝓘(ℝ, ℂ) z →L[ℝ] TangentSpace 𝓘(ℝ, ℂ) z) :=
-  ⟨cutoffField, by
-    intro x
-    rw [contMDiffAt_hom_bundle]
-    refine ⟨contMDiffAt_id, ?_⟩
-    simpa only [inCoordinates_tangent_bundle_core_model_space] using
-      contDiff_cutoffField.contMDiff x⟩
+  endomorphismOfModel cutoffField contDiff_cutoffField
 
 @[simp]
-theorem cutoffSection_apply (z : ℂ) : cutoffSection z = cutoffField z := (rfl)
+theorem cutoffSection_apply (z : ℂ) : cutoffSection z = cutoffField z :=
+  endomorphismOfModel_apply _ _ z
 
 /-- The smooth cut-off section is not the field of an almost complex structure of any regularity:
 it squares to `-1` on the unit disc, but the identity is required at every point. -/

@@ -246,16 +246,28 @@ section ModelSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
+/-- A `Cⁿ` field of continuous linear maps on a normed space, as a `Cⁿ` section of the tangent
+endomorphism bundle of the model manifold. -/
+def endomorphismOfModel (A : V → V →L[ℝ] V) (hA : ContDiff ℝ n A) :
+    ContMDiffSection (modelWithCornersSelf ℝ V) (V →L[ℝ] V) n
+      (fun x : V ↦ TangentSpace (modelWithCornersSelf ℝ V) x →L[ℝ]
+        TangentSpace (modelWithCornersSelf ℝ V) x) :=
+  ⟨A, by
+    intro x
+    rw [contMDiffAt_hom_bundle]
+    refine ⟨contMDiffAt_id, ?_⟩
+    simpa only [inCoordinates_tangent_bundle_core_model_space] using hA.contMDiff x⟩
+
+@[simp]
+theorem endomorphismOfModel_apply (A : V → V →L[ℝ] V) (hA : ContDiff ℝ n A) (x : V) :
+    endomorphismOfModel A hA x = A x := (rfl)
+
 /-- A `Cⁿ` field of continuous linear maps squaring to minus the identity defines a `Cⁿ`
 almost complex structure on the model manifold. The field may depend on the base point. -/
 def ofModel (A : V → V →L[ℝ] V) (hA : ContDiff ℝ n A)
     (hAA : ∀ x v, A x (A x v) = -v) :
     ContMDiffAlmostComplexStructure (modelWithCornersSelf ℝ V) n V where
-  toEndomorphism := ⟨A, by
-    intro x
-    rw [contMDiffAt_hom_bundle]
-    refine ⟨contMDiffAt_id, ?_⟩
-    simpa only [inCoordinates_tangent_bundle_core_model_space] using hA.contMDiff x⟩
+  toEndomorphism := endomorphismOfModel A hA
   square_neg x := by
     ext v
     exact hAA x v
