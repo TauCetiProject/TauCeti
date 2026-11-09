@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FittingIdeal.Determinant
-import TauCeti.LinearAlgebra.Matrix.CornerMinor
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 import TauCeti.LinearAlgebra.Matrix.MulVec
 
