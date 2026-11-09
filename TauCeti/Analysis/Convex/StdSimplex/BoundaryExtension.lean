@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Normed.Ring.Lemmas
 public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
+import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Analysis.Convex.StdSimplex
 
 /-!
 # Rational extension of boundary data into the standard simplex
@@ -80,6 +82,7 @@ def stdSimplexBoundary : Set (ι → ℝ) :=
   {y ∈ (range fun s : StdSimplex ℝ ι => ⇑s.weights) | ∃ i, y i = 0}
 
 /-- Membership in the relative boundary of the standard simplex. -/
+@[simp]
 theorem mem_stdSimplexBoundary {x : ι → ℝ} :
     x ∈ stdSimplexBoundary ι ↔ x ∈ (range fun s : StdSimplex ℝ ι => ⇑s.weights) ∧ ∃ i, x i = 0 :=
   Iff.rfl
@@ -88,12 +91,6 @@ theorem mem_stdSimplexBoundary {x : ι → ℝ} :
 theorem stdSimplexBoundary_subset :
     stdSimplexBoundary ι ⊆ range fun s : StdSimplex ℝ ι => ⇑s.weights :=
   fun _ hx => hx.1
-
-/-- Membership in the standard simplex, as nonnegative coordinates summing to one. -/
-private theorem mem_range_weights_iff [Fintype ι] {x : ι → ℝ} :
-    x ∈ (range fun s : StdSimplex ℝ ι => ⇑s.weights) ↔ (∀ i, 0 ≤ x i) ∧ ∑ i, x i = 1 := by
-  rw [StdSimplex.range_toFun_comp_weights]
-  simp
 
 variable [Finite ι]
 
@@ -113,7 +110,8 @@ private theorem mem_stdSimplexBoundary_or_forall_pos {x : ι → ℝ}
   by_cases h : ∀ i, 0 < x i
   · exact Or.inr h
   · obtain ⟨i, hi⟩ := not_forall.1 h
-    exact Or.inl ⟨hx, i, le_antisymm (not_lt.1 hi) ((mem_range_weights_iff.1 hx).1 i)⟩
+    exact Or.inl ⟨hx, i,
+      le_antisymm (not_lt.1 hi) ((StdSimplex.mem_range_toFun_comp_weights_iff.1 hx).1 i)⟩
 
 /-- A coordinate of a point of the standard simplex is less than one if some other coordinate
 is positive. -/
@@ -122,7 +120,7 @@ theorem apply_lt_one_of_mem_range_weights {x : ι → ℝ}
     (hxj : 0 < x j) : x i < 1 := by
   classical
   have := Fintype.ofFinite ι
-  obtain ⟨hx0, hx1⟩ := mem_range_weights_iff.1 hx
+  obtain ⟨hx0, hx1⟩ := StdSimplex.mem_range_toFun_comp_weights_iff.1 hx
   have := sum_le_sum_of_subset_of_nonneg (subset_univ {i, j}) fun k _ _ => hx0 k
   rw [sum_pair hij.symm, hx1] at this
   linarith
@@ -147,17 +145,20 @@ theorem stdSimplexFacetProjection_apply_self (i : ι) (x : ι → ℝ) :
   simp [stdSimplexFacetProjection]
 
 /-- The coordinates of the facet projection away from `i`. -/
+@[simp]
 theorem stdSimplexFacetProjection_apply_of_ne {i j : ι} (h : j ≠ i) (x : ι → ℝ) :
     stdSimplexFacetProjection i x j = x j / (1 - x i) := by
   simp [stdSimplexFacetProjection, h, div_eq_inv_mul]
 
 /-- A point of the facet opposite `i` is fixed by the projection from `i`. -/
+@[simp]
 theorem stdSimplexFacetProjection_of_apply_eq_zero {i : ι} {x : ι → ℝ} (h : x i = 0) :
     stdSimplexFacetProjection i x = x := by
   simp [stdSimplexFacetProjection, h]
 
-/-- The point `x` lies at parameter `x i` on the segment from its facet projection to the vertex
-`i`. -/
+/-- Away from the hyperplane `x i = 1`, the point `x` is the affine combination of the vertex `i`
+and its facet projection from `i` with coefficients `x i` and `1 - x i`; for `0 ≤ x i < 1` this
+places `x` at parameter `x i` on the segment from its facet projection to the vertex `i`. -/
 theorem apply_smul_single_add_smul_stdSimplexFacetProjection {i : ι} {x : ι → ℝ} (h : x i ≠ 1) :
     x i • Pi.single i 1 + (1 - x i) • stdSimplexFacetProjection i x = x := by
   rw [stdSimplexFacetProjection, smul_smul, mul_inv_cancel₀ (sub_ne_zero.2 h.symm), one_smul,
@@ -184,8 +185,8 @@ theorem stdSimplexFacetProjection_mem_range_weights {i : ι} {x : ι → ℝ}
     stdSimplexFacetProjection i x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights := by
   have := Fintype.ofFinite ι
   have hpos : 0 < 1 - x i := sub_pos.2 h
-  obtain ⟨hx0, hx1⟩ := mem_range_weights_iff.1 hx
-  refine mem_range_weights_iff.2 ⟨fun j => ?_, ?_⟩
+  obtain ⟨hx0, hx1⟩ := StdSimplex.mem_range_toFun_comp_weights_iff.1 hx
+  refine StdSimplex.mem_range_toFun_comp_weights_iff.2 ⟨fun j => ?_, ?_⟩
   · rcases eq_or_ne j i with rfl | hj
     · simp
     · rw [stdSimplexFacetProjection_apply_of_ne hj]
@@ -469,18 +470,12 @@ theorem stdSimplexGapExtension_of_apply_eq_zero {i : ι} (h : x i = 0)
     exact (le_antisymm (hab ▸ hc.2) hc.1).symm
   · rw [mul_div_cancel₀ _ (sub_ne_zero.2 hab), add_sub_cancel]
 
-/-- The normalized position of a height in a gap lies in `[0, 1]`. -/
-private theorem div_sub_mem_Icc {a b c : ℝ} (hc : c ∈ Set.Icc a b) :
-    (c - a) / (b - a) ∈ Set.Icc 0 1 :=
-  ⟨div_nonneg (sub_nonneg.2 hc.1) (sub_nonneg.2 (hc.1.trans hc.2)),
-    div_le_one_of_le₀ (sub_le_sub_right hc.2 a) (sub_nonneg.2 (hc.1.trans hc.2))⟩
-
 /-- For a constant in `[0, 1]`, the gap height lies in the gap. -/
 theorem stdSimplexGapExtension_mem_Icc [Nontrivial ι] (hα : α ∈ Set.Icc 0 1)
     (hc : ∀ y ∈ stdSimplexBoundary ι, c y ∈ Set.Icc (a y) (b y))
     (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) (hab : a x ≤ b x) :
     stdSimplexGapExtension a b c α x ∈ Set.Icc (a x) (b x) := by
-  have hE := stdSimplexExtension_mem_Icc hα (fun y hy => div_sub_mem_Icc (hc y hy)) hx
+  have hE := stdSimplexExtension_mem_Icc hα (fun y hy => sub_div_sub_mem_Icc (hc y hy)) hx
   rw [stdSimplexGapExtension_def]
   constructor <;> nlinarith [hE.1, hE.2]
 
@@ -490,7 +485,7 @@ theorem stdSimplexGapExtension_mem_Ioo [Nontrivial ι] (hα : α ∈ Set.Ioo 0 1
     (hc : ∀ y ∈ stdSimplexBoundary ι, c y ∈ Set.Icc (a y) (b y))
     (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) (h : ∀ i, 0 < x i)
     (hab : a x < b x) : stdSimplexGapExtension a b c α x ∈ Set.Ioo (a x) (b x) := by
-  have hE := stdSimplexExtension_mem_Ioo hα (fun y hy => div_sub_mem_Icc (hc y hy)) hx h
+  have hE := stdSimplexExtension_mem_Ioo hα (fun y hy => sub_div_sub_mem_Icc (hc y hy)) hx h
   rw [stdSimplexGapExtension_def]
   constructor <;> nlinarith [hE.1, hE.2]
 
@@ -517,16 +512,15 @@ theorem stdSimplexGapExtension_lt_stdSimplexGapExtension [Nontrivial ι] {c₁ c
   exact div_le_div_of_nonneg_right (sub_le_sub_right (hc y hy).2 _) (sub_nonneg.2 (hc y hy).1)
 
 /-- **Continuity of gap heights.** Let `a` and `b` be continuous on the simplex, and let the
-boundary heights `c` be continuous on the relative boundary and lie in the gap there. If the gap
-collapses only on faces of codimension at least two, the gap height is continuous on the
-simplex. -/
+boundary heights `c` be continuous on the relative boundary and lie in the gap there. If on the
+relative boundary the gap collapses only on faces of codimension at least two, the gap height is
+continuous on the simplex; the gap may collapse anywhere in the open simplex. -/
 theorem continuousOn_stdSimplexGapExtension [Nontrivial ι]
     (ha : ContinuousOn a (range fun s : StdSimplex ℝ ι => ⇑s.weights))
     (hb : ContinuousOn b (range fun s : StdSimplex ℝ ι => ⇑s.weights))
     (hc : ContinuousOn c (stdSimplexBoundary ι))
     (hcab : ∀ y ∈ stdSimplexBoundary ι, c y ∈ Set.Icc (a y) (b y))
-    (hcollapse : ∀ y ∈ (range fun s : StdSimplex ℝ ι => ⇑s.weights),
-      a y = b y → ∃ i j, i ≠ j ∧ y i = 0 ∧ y j = 0) :
+    (hcollapse : ∀ y ∈ stdSimplexBoundary ι, a y = b y → ∃ i j, i ≠ j ∧ y i = 0 ∧ y j = 0) :
     ContinuousOn (stdSimplexGapExtension a b c α) (range fun s : StdSimplex ℝ ι => ⇑s.weights) := by
   set r : (ι → ℝ) → ℝ := fun y => (c y - a y) / (b y - a y)
   have hr (y : ι → ℝ) (hy : y ∈ stdSimplexBoundary ι) (hne : a y ≠ b y) :
@@ -536,7 +530,7 @@ theorem continuousOn_stdSimplexGapExtension [Nontrivial ι]
         ((ha y hy.1).mono stdSimplexBoundary_subset))
       (sub_ne_zero.2 hne.symm)
   have hr01 (y : ι → ℝ) (hy : y ∈ stdSimplexBoundary ι) : r y ∈ Set.Icc 0 1 :=
-    div_sub_mem_Icc (hcab y hy)
+    sub_div_sub_mem_Icc (hcab y hy)
   have hrC (y : ι → ℝ) (hy : y ∈ stdSimplexBoundary ι) : |r y| ≤ 1 :=
     abs_le.2 ⟨by linarith [(hr01 y hy).1], (hr01 y hy).2⟩
   have hfun : stdSimplexGapExtension a b c α =
@@ -570,7 +564,7 @@ theorem continuousOn_stdSimplexGapExtension [Nontrivial ι]
       (continuousWithinAt_stdSimplexExtension_of_forall_pos hx h fun i => ?_))
     have hpB := stdSimplexFacetProjection_mem_stdSimplexBoundary hx h i
     refine hr _ hpB fun heq => ?_
-    obtain ⟨j, k, hjk, hj, hk⟩ := hcollapse _ hpB.1 heq
+    obtain ⟨j, k, hjk, hj, hk⟩ := hcollapse _ hpB heq
     obtain ⟨l, hl, hl0⟩ : ∃ l, l ≠ i ∧ stdSimplexFacetProjection i x l = 0 := by
       rcases eq_or_ne j i with rfl | hji
       · exact ⟨k, hjk.symm, hk⟩

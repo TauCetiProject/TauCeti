@@ -42,6 +42,9 @@ bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`.
 Finally, it records a polynomial barrier bound: if `r ≤ M`, `0 < ε`, `1 ≤ c` and `n` is larger
 than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
 
+It also records that the normalized position `(c - a) / (b - a)` of a point `c ∈ [a, b]` lies in
+`[0, 1]`, also when the interval is degenerate.
+
 ## Main results
 
 * `BddAbove.le_of_forall_pos_exists_add_mul_le`: transfer a bound at maximizers of
@@ -59,6 +62,7 @@ than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
 * `TauCeti.mul_le_one_of_le_inv_one_add`: `a * b ≤ 1` for `0 ≤ b` and `a ≤ (1 + b)⁻¹`.
 * `TauCeti.sub_mul_mul_one_add_sq_neg_of_lt`: the strict inequality
   `r - ε * (c * (1 + n ^ 2)) < 0` for `r ≤ M`, `0 < ε`, `1 ≤ c` and `M / ε < n`.
+* `TauCeti.sub_div_sub_mem_Icc`: `(c - a) / (b - a) ∈ [0, 1]` for `c ∈ [a, b]`.
 -/
 
 public section
@@ -184,6 +188,13 @@ theorem sub_mul_mul_one_add_sq_neg_of_lt {α : Type*} [Field α] [LinearOrder α
   have h4 : ε * (1 + n ^ 2) ≤ ε * (c * (1 + n ^ 2)) :=
     mul_le_mul_of_nonneg_left (le_mul_of_one_le_left (by positivity) hc) hε.le
   nlinarith [mul_le_mul_of_nonneg_left h3 hε.le]
+
+/-- The normalized position `(c - a) / (b - a)` of a point `c ∈ [a, b]` lies in `[0, 1]`. For a
+degenerate interval `a = b` it is `0`. -/
+theorem sub_div_sub_mem_Icc {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    {a b c : α} (hc : c ∈ Set.Icc a b) : (c - a) / (b - a) ∈ Set.Icc 0 1 :=
+  ⟨div_nonneg (sub_nonneg.2 hc.1) (sub_nonneg.2 (hc.1.trans hc.2)),
+    div_le_one_of_le₀ (sub_le_sub_right hc.2 a) (sub_nonneg.2 (hc.1.trans hc.2))⟩
 
 end TauCeti
 

@@ -32,6 +32,8 @@ of a closed vertex star whose link is a combinatorial ball.
 
 ## Main results
 
+* `Convexity.StdSimplex.mem_range_toFun_comp_weights_iff`: the weight vectors of the standard
+  simplex are the vectors with nonnegative coordinates summing to one.
 * `Convexity.StdSimplex.convex_range_toFun_comp_weights`: the weight vectors of the standard
   simplex form a convex set.
 * `TauCeti.card_mul_inf'_smul_add_smul_barycenter`: `card ι` times the least coordinate recovers
@@ -52,6 +54,14 @@ public section
 open Set Finset Convexity
 
 namespace Convexity.StdSimplex
+
+/-- A vector is a weight vector of the standard simplex if and only if its coordinates are
+nonnegative and sum to one. -/
+theorem mem_range_toFun_comp_weights_iff {R : Type*} [Semiring R] [PartialOrder R]
+    {X : Type*} [Fintype X] {x : X → R} :
+    x ∈ (range fun t : StdSimplex R X => ⇑t.weights) ↔ (∀ i, 0 ≤ x i) ∧ ∑ i, x i = 1 := by
+  rw [range_toFun_comp_weights]
+  simp
 
 /-- The weight vectors of the standard simplex on a finite type form a convex set. -/
 theorem convex_range_toFun_comp_weights (R : Type*) [Semiring R] [PartialOrder R]
