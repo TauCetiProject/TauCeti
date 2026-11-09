@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 
 /-!
 # Norm inequalities in `Lᵖ` spaces
@@ -53,6 +54,9 @@ bounds.
   to any constant.
 * `MeasureTheory.MemLp.norm_toLp_le_measureReal_rpow_mul`: on a set `s` of finite measure, a
   function bounded by `M` has `Lᵖ(s)` norm at most `μ(s)^{1/p} M`, `1 ≤ p < ∞`.
+* `MeasureTheory.Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion`: classes in `Lᵖ` on finitely many
+  sets with a common representative glue to a class on any set they cover, with norm at most the
+  sum of their norms.
 -/
 
 public section
@@ -263,6 +267,24 @@ theorem MemLp.norm_toLp_le_measureReal_rpow_mul {p : ℝ≥0∞} [Fact (1 ≤ p)
       filter_upwards [hg.coeFn_toLp, hgM] with y hy hyM
       rwa [hy])
     rwa [← measureReal_restrict_apply_univ]
+
+/-- **Gluing `Lᵖ` classes along a finite cover.** For `1 ≤ p`, let finitely many sets `u i` cover
+`s`. If each `f i ∈ Lᵖ(u i)` agrees almost everywhere on `u i` with one function `g`, then some
+class in `Lᵖ(s)` agrees almost everywhere on `s` with `g` and has norm at most `∑ᵢ ‖f i‖`. -/
+theorem Lp.exists_ae_eq_norm_le_sum_of_subset_iUnion {ι : Type*} [Fintype ι] {p : ℝ≥0∞}
+    [Fact (1 ≤ p)] {u : ι → Set X} (hs : s ⊆ ⋃ i, u i) (f : ∀ i, Lp F p (μ.restrict (u i)))
+    (hf : ∀ i, f i =ᵐ[μ.restrict (u i)] g) :
+    ∃ G : Lp F p (μ.restrict s), G =ᵐ[μ.restrict s] g ∧ ‖G‖ ≤ ∑ i, ‖f i‖ := by
+  have hg : ∀ i, MemLp g p (μ.restrict (u i)) := fun i => (Lp.memLp (f i)).ae_eq (hf i)
+  have hgs := MemLp.restrict_of_subset_iUnion Fact.out hs hg
+  refine ⟨hgs.toLp g, hgs.coeFn_toLp, ?_⟩
+  have hfi : ∀ i, ‖f i‖ = (eLpNorm g p (μ.restrict (u i))).toReal :=
+    fun i => by rw [Lp.norm_def, eLpNorm_congr_ae (hf i)]
+  rw [Lp.norm_toLp]
+  simp only [hfi]
+  rw [← ENNReal.toReal_sum fun i _ => (hg i).eLpNorm_ne_top]
+  exact ENNReal.toReal_mono (ENNReal.sum_ne_top.2 fun i _ => (hg i).eLpNorm_ne_top)
+    (eLpNorm_restrict_le_sum_of_subset_iUnion g Fact.out hs)
 
 end Restrict
 

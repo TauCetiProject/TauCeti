@@ -164,6 +164,13 @@ theorem value_restrictL_ae (hU : U ≤ Omega) (k : ℕ) (u : Wkp mu Omega p k) :
     value k (restrictL hU k u) =ᵐ[mu.restrict U] value k u :=
   value_restrictAux_ae hU k u
 
+/-- A Sobolev function on `Omega` whose value agrees almost everywhere on the smaller open set `U`
+with the value of `u` restricts to `u` on `U`. -/
+theorem restrictL_eq_of_value_ae_eq (hU : U ≤ Omega) (k : ℕ) {u : Wkp mu U p k}
+    {w : Wkp mu Omega p k} (hvalw : value k w =ᵐ[mu.restrict U] value k u) :
+    restrictL hU k w = u :=
+  ext k (Lp.ext ((value_restrictL_ae hU k w).trans hvalw))
+
 /-- Restriction keeps the same highest weak derivative on the smaller domain. -/
 theorem iteratedGradient_restrictL_ae (hU : U ≤ Omega) (k : ℕ)
     (u : Wkp mu Omega p (k + 1)) :
