@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.VectorBundle.Tensoriality
+public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 import Mathlib.Geometry.Manifold.Notation
@@ -31,6 +32,10 @@ differentiable.
 
 ## Main results
 
+* `TauCeti.SmoothAlmostComplexStructure.zeroOnePart`: the `(0,1)`-part of a `V`-valued one-form,
+  its complex antilinear part (`TauCeti.SmoothAlmostComplexStructure.toLinearMap_zeroOnePart`), a
+  projection onto the `(0,1)`-forms
+  (`TauCeti.SmoothAlmostComplexStructure.zeroOnePart_eq_self_iff`).
 * `TauCeti.IsRealCauchyRiemannOperator.difference`: two real Cauchy–Riemann operators differ by a
   zeroth-order term, a `(0,1)`-form with values in the real endomorphisms of `V`
   (`TauCeti.IsRealCauchyRiemannOperator.isZeroOneForm_difference`).
@@ -54,7 +59,7 @@ differentiable.
   Appendix C.1, Definition C.1.5 and Exercise C.1.7.
 -/
 
-@[expose] public section
+public section
 
 open Bundle FiberBundle
 open scoped ContDiff Manifold
@@ -68,20 +73,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)]
   [FiberBundle F V] [∀ x, AddCommGroup (V x)] [∀ x, Module ℂ (V x)]
-
-/-! ### Multiplication by complex constants on sections -/
-
-/-- Multiplying a section of a complex vector bundle by a complex constant preserves
-differentiability, where differentiability is taken for the real structure of the bundle. -/
-theorem mdifferentiableAt_complex_smul_section [NormedSpace ℂ F] [VectorBundle ℂ F V] (c : ℂ)
-    {σ : Π x : M, V x} {x : M} (hσ : MDiffAt (T% σ) x) : MDiffAt (T% (c • σ)) x := by
-  rw [mdifferentiableAt_section] at hσ ⊢
-  set e := trivializationAt F V x
-  have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt F V x
-  let L : F →L[ℝ] F := c • ContinuousLinearMap.id ℝ F
-  refine (L.mdifferentiableAt.comp x hσ).congr_of_eventuallyEq ?_
-  filter_upwards [e.open_baseSet.mem_nhds hx] with y hy
-  exact (e.linear ℂ hy).map_smul c (σ y)
 
 variable [∀ x, Module ℝ (V x)] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
 
@@ -113,15 +104,15 @@ def sectionComplexLinearPart (D : (Π x : M, V x) → Π x : M, TangentSpace I x
 
 theorem sectionComplexLinearPart_apply (σ : Π x : M, V x) (x : M) :
     sectionComplexLinearPart D σ x = (2⁻¹ : ℝ) • (D σ x - Complex.I • D (Complex.I • σ) x) :=
-  rfl
+  (rfl)
 
 /-- The complex linear part of a complex linear operator is the operator itself. -/
 theorem IsComplexLinearOperator.sectionComplexLinearPart_eq (hD : IsComplexLinearOperator F D)
     {σ : Π x : M, V x} {x : M} (hσ : MDiffAt (T% σ) x) :
     sectionComplexLinearPart D σ x = D σ x := by
-  rw [sectionComplexLinearPart_apply, hD.complex_I_smul hσ, smul_smul Complex.I Complex.I,
-    Complex.I_mul_I, neg_one_smul, sub_neg_eq_add, ← two_smul ℝ, smul_smul,
-    inv_mul_cancel₀ two_ne_zero, one_smul]
+  rw [sectionComplexLinearPart_apply, hD.complex_I_smul hσ]
+  simp only [smul_smul Complex.I Complex.I, Complex.I_mul_I, neg_one_smul]
+  module
 
 /-- Uniqueness of the complex linear part (McDuff–Salamon, Exercise C.1.7): if an operator is the
 sum of a complex linear operator and a complex antilinear zeroth-order term, then the complex
@@ -133,7 +124,7 @@ theorem sectionComplexLinearPart_eq_of_eq_add [NormedSpace ℂ F] [VectorBundle 
     (hDeq : ∀ ⦃σ : Π x : M, V x⦄ ⦃x : M⦄, MDiffAt (T% σ) x → D σ x = D₀ σ x + α x (σ x))
     {σ : Π x : M, V x} {x : M} (hσ : MDiffAt (T% σ) x) :
     sectionComplexLinearPart D σ x = D₀ σ x := by
-  have hIσ := mdifferentiableAt_complex_smul_section Complex.I hσ
+  have hIσ := hσ.const_smul_section Complex.I
   rw [sectionComplexLinearPart_apply, hDeq hσ, hDeq hIσ, hD₀.complex_I_smul hσ, Pi.smul_apply, hα]
   simp only [smul_add, smul_neg, smul_smul Complex.I Complex.I, Complex.I_mul_I, neg_one_smul]
   module
@@ -159,10 +150,16 @@ def dbarSMulRight (g : M → ℝ) (σ : Π x : M, V x) (x : M) : TangentSpace I 
 
 variable {j}
 
+omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)] in
+/-- The defining condition of a `(0,1)`-form: `η (j v) = -(i • η v)` for all `v`. -/
+theorem isZeroOneForm_iff {x : M} {η : TangentSpace I x →L[ℝ] V x} :
+    j.IsZeroOneForm η ↔ ∀ v, η (j x v) = -(Complex.I • η v) :=
+  Iff.rfl
+
 theorem dbarSMulRight_apply (g : M → ℝ) (σ : Π x : M, V x) (x : M) (v : TangentSpace I x) :
     j.dbarSMulRight g σ x v =
       (2⁻¹ : ℝ) • (d% g x v • σ x + d% g x (j x v) • Complex.I • σ x) :=
-  rfl
+  (rfl)
 
 /-- The term `(∂bar g) ⊗ ξ` vanishes for constant `g`. -/
 @[simp]
@@ -181,13 +178,28 @@ theorem isZeroOneForm_iff_isComplexAntilinear {x : M} (η : TangentSpace I x →
       (DistribSMul.toLinearMap ℝ (V x) Complex.I) η.toLinearMap :=
   ⟨fun h ↦ isComplexAntilinear_of_apply h, fun h v ↦ h.apply v⟩
 
-/-- The term `(∂bar g) ⊗ ξ` is a `(0,1)`-form. -/
+omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)] in
+private theorem toEndomorphism_comp_toEndomorphism (x : M) :
+    (j.toEndomorphism x).toLinearMap ∘ₗ (j.toEndomorphism x).toLinearMap = -LinearMap.id :=
+  LinearMap.ext fun v ↦ by simp
+
+private theorem complex_I_comp_complex_I {W : Type*} [AddCommGroup W] [Module ℂ W] [Module ℝ W]
+    [IsScalarTower ℝ ℂ W] :
+    DistribSMul.toLinearMap ℝ W Complex.I ∘ₗ DistribSMul.toLinearMap ℝ W Complex.I =
+      -LinearMap.id :=
+  LinearMap.ext fun v ↦ by simp [smul_smul]
+
+/-- The term `(∂bar g) ⊗ ξ` is a `(0,1)`-form: it is the complex antilinear part of `dg ⊗ ξ`. -/
 theorem isZeroOneForm_dbarSMulRight (g : M → ℝ) (σ : Π x : M, V x) (x : M) :
     j.IsZeroOneForm (j.dbarSMulRight g σ x) := by
-  intro v
-  simp only [dbarSMulRight_apply, apply_apply, map_neg, neg_smul, smul_add, smul_neg,
-    smul_comm Complex.I (_ : ℝ), smul_smul Complex.I Complex.I, Complex.I_mul_I, one_smul]
-  abel
+  have h : (j.dbarSMulRight g σ x).toLinearMap = complexAntilinearPart
+      (j.toEndomorphism x).toLinearMap (DistribSMul.toLinearMap ℝ (V x) Complex.I)
+      ((d% g x).smulRight (σ x)).toLinearMap := by
+    ext v
+    simp [dbarSMulRight_apply, complexAntilinearPart_apply]
+  rw [isZeroOneForm_iff_isComplexAntilinear, h]
+  exact complexAntilinearPart_isComplexAntilinear (toEndomorphism_comp_toEndomorphism x)
+    complex_I_comp_complex_I _
 
 variable [∀ x, ContinuousSMul ℂ (V x)]
 
@@ -199,6 +211,80 @@ theorem dbarSMulRight_complex_I_smul (g : M → ℝ) (σ : Π x : M, V x) (x : M
   simp only [dbarSMulRight_apply, Pi.smul_apply, smul_apply, smul_add,
     smul_comm Complex.I (_ : ℝ), smul_smul Complex.I Complex.I, Complex.I_mul_I, neg_one_smul,
     smul_neg]
+
+/-! ### The `(0,1)`-part of a one-form -/
+
+variable (j) in
+/-- The `(0,1)`-part `η^{0,1} v = ½ (η v + i • η (j v))` of a `V`-valued one-form `η`. -/
+def zeroOnePart {x : M} (η : TangentSpace I x →L[ℝ] V x) : TangentSpace I x →L[ℝ] V x :=
+  (2⁻¹ : ℝ) • (η + Complex.I • η.comp (j.toEndomorphism x))
+
+theorem zeroOnePart_apply {x : M} (η : TangentSpace I x →L[ℝ] V x) (v : TangentSpace I x) :
+    j.zeroOnePart η v = (2⁻¹ : ℝ) • (η v + Complex.I • η (j x v)) :=
+  (rfl)
+
+/-- The `(0,1)`-part of a one-form is its complex antilinear part
+`TauCeti.complexAntilinearPart` for `j` and multiplication by `i`. -/
+theorem toLinearMap_zeroOnePart {x : M} (η : TangentSpace I x →L[ℝ] V x) :
+    (j.zeroOnePart η).toLinearMap = complexAntilinearPart (j.toEndomorphism x).toLinearMap
+      (DistribSMul.toLinearMap ℝ (V x) Complex.I) η.toLinearMap := by
+  ext v
+  simp [zeroOnePart_apply, complexAntilinearPart_apply]
+
+/-- The `(0,1)`-part of a one-form is a `(0,1)`-form. -/
+theorem isZeroOneForm_zeroOnePart {x : M} (η : TangentSpace I x →L[ℝ] V x) :
+    j.IsZeroOneForm (j.zeroOnePart η) := by
+  rw [isZeroOneForm_iff_isComplexAntilinear, toLinearMap_zeroOnePart]
+  exact complexAntilinearPart_isComplexAntilinear (toEndomorphism_comp_toEndomorphism x)
+    complex_I_comp_complex_I _
+
+/-- A one-form is a `(0,1)`-form exactly when it is fixed by the `(0,1)`-projection. -/
+theorem zeroOnePart_eq_self_iff {x : M} {η : TangentSpace I x →L[ℝ] V x} :
+    j.zeroOnePart η = η ↔ j.IsZeroOneForm η := by
+  refine ⟨fun h ↦ h ▸ isZeroOneForm_zeroOnePart η, fun h ↦ ContinuousLinearMap.coe_injective ?_⟩
+  rw [toLinearMap_zeroOnePart]
+  exact ((isZeroOneForm_iff_isComplexAntilinear η).1 h).complexAntilinearPart_eq
+    complex_I_comp_complex_I
+
+/-- The `(0,1)`-projection fixes `(0,1)`-forms. -/
+@[simp]
+theorem IsZeroOneForm.zeroOnePart_eq {x : M} {η : TangentSpace I x →L[ℝ] V x}
+    (h : j.IsZeroOneForm η) : j.zeroOnePart η = η :=
+  zeroOnePart_eq_self_iff.2 h
+
+/-- The `(0,1)`-projection is idempotent. -/
+@[simp]
+theorem zeroOnePart_zeroOnePart {x : M} (η : TangentSpace I x →L[ℝ] V x) :
+    j.zeroOnePart (j.zeroOnePart η) = j.zeroOnePart η :=
+  (isZeroOneForm_zeroOnePart η).zeroOnePart_eq
+
+/-- The `(0,1)`-projection is additive. -/
+theorem zeroOnePart_add {x : M} (η η' : TangentSpace I x →L[ℝ] V x) :
+    j.zeroOnePart (η + η') = j.zeroOnePart η + j.zeroOnePart η' := by
+  ext v
+  simp only [zeroOnePart_apply, add_apply, smul_add]
+  abel
+
+/-- The `(0,1)`-projection commutes with real scalars. -/
+theorem zeroOnePart_smul (c : ℝ) {x : M} (η : TangentSpace I x →L[ℝ] V x) :
+    j.zeroOnePart (c • η) = c • j.zeroOnePart η := by
+  ext v
+  simp only [zeroOnePart_apply, smul_apply, smul_add, smul_comm Complex.I c,
+    smul_comm (2⁻¹ : ℝ) c]
+
+/-- The `(0,1)`-projection commutes with complex scalars. -/
+theorem zeroOnePart_complex_smul (c : ℂ) {x : M} (η : TangentSpace I x →L[ℝ] V x) :
+    j.zeroOnePart (c • η) = c • j.zeroOnePart η := by
+  ext v
+  simp only [zeroOnePart_apply, smul_apply, smul_add, smul_comm Complex.I c,
+    smul_comm (2⁻¹ : ℝ) c]
+
+/-- The `(0,1)`-part of `dg ⊗ ξ` is `(∂bar g) ⊗ ξ`. -/
+theorem zeroOnePart_smulRight (g : M → ℝ) (σ : Π x : M, V x) (x : M) :
+    j.zeroOnePart ((d% g x).smulRight (σ x)) = j.dbarSMulRight g σ x := by
+  ext v
+  simp only [zeroOnePart_apply, dbarSMulRight_apply, ContinuousLinearMap.smulRight_apply,
+    smul_comm Complex.I (_ : ℝ)]
 
 end SmoothAlmostComplexStructure
 
@@ -325,12 +411,12 @@ theorem isRealCauchyRiemannOperator_sectionComplexLinearPart
       hD.isZeroOneForm (Complex.I • σ) x v, smul_neg, smul_sub, smul_comm Complex.I (2⁻¹ : ℝ)]
     abel
   add {σ σ' x} hσ hσ' := by
-    have hIσ := mdifferentiableAt_complex_smul_section Complex.I hσ
-    have hIσ' := mdifferentiableAt_complex_smul_section Complex.I hσ'
+    have hIσ := hσ.const_smul_section Complex.I
+    have hIσ' := hσ'.const_smul_section Complex.I
     simp only [sectionComplexLinearPart_apply, smul_add, hD.add hσ hσ', hD.add hIσ hIσ']
     module
   leibniz {σ g x} hσ hg := by
-    have hIσ := mdifferentiableAt_complex_smul_section Complex.I hσ
+    have hIσ := hσ.const_smul_section Complex.I
     have hcomm : Complex.I • (g • σ) = g • (Complex.I • σ) := by
       ext y
       exact smul_comm Complex.I (g y) (σ y)
@@ -381,7 +467,7 @@ theorem isZeroOneForm_antilinearPart (hD : IsRealCauchyRiemannOperator F j D) (x
 theorem antilinearPart_complex_I_smul (hD : IsRealCauchyRiemannOperator F j D) (x : M) (e : V x) :
     hD.antilinearPart x (Complex.I • e) = -(Complex.I • hD.antilinearPart x e) := by
   have hσ := mdifferentiableAt_extend I F e
-  have hIσ := mdifferentiableAt_complex_smul_section Complex.I hσ
+  have hIσ := hσ.const_smul_section Complex.I
   have hII : Complex.I • Complex.I • extend F e = -extend F e := by
     rw [smul_smul, Complex.I_mul_I, neg_one_smul]
   have h₁ := hD.antilinearPart_apply hIσ

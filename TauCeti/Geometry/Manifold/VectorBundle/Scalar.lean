@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+import Mathlib.Geometry.Manifold.Notation
 
 /-!
 # Smooth scalar rescaling of vector bundles
@@ -16,7 +18,9 @@ of the total space, with inverse given by reciprocal multiplication. This constr
 the zero section and preserves the projection, without a choice of global trivialization.
 More generally, over a `𝕜`-charted base, scalar multiplication by `𝕜'`-valued maps along a normed
 field extension `𝕜 ⊆ 𝕜'` preserves `C^n` regularity and equips `C^n` sections with compatible
-`Module 𝕜'` and `IsScalarTower 𝕜 𝕜'` instances (`ContMDiffSection.instModuleOfNormedAlgebra`).
+`Module 𝕜'` and `IsScalarTower 𝕜 𝕜'` instances (`ContMDiffSection.instModuleOfNormedAlgebra`);
+multiplication by a constant of `𝕜'` also preserves differentiability of sections
+(`MDifferentiableAt.const_smul_section`).
 
 For normal bundles, positive rescaling converts unit-radius fibre coordinates to a radius
 varying over the submanifold. It is the rescaling step in the variable-radius tubular
@@ -84,6 +88,18 @@ theorem ContMDiff.smul_totalSpace {a : M → 𝕜'} {g : M → TotalSpace F V}
     ContMDiff J (I.prod 𝓘(𝕜, F)) n
       (fun y => (⟨(g y).proj, a y • (g y).2⟩ : TotalSpace F V)) :=
   fun x => (ha x).smul_totalSpace (hg x)
+
+/-- Multiplying a section of a `𝕜'`-linear vector bundle by a constant of `𝕜'` preserves
+differentiability at a point, where differentiability is taken over `𝕜`. -/
+theorem MDifferentiableAt.const_smul_section {σ : Π b, V b} {x : B} (hσ : MDiffAt (T% σ) x)
+    (c : 𝕜') : MDiffAt (T% (c • σ)) x := by
+  rw [mdifferentiableAt_section] at hσ ⊢
+  set e := trivializationAt F V x
+  have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt F V x
+  let L : F →L[𝕜] F := c • ContinuousLinearMap.id 𝕜 F
+  refine (L.mdifferentiableAt.comp x hσ).congr_of_eventuallyEq ?_
+  filter_upwards [e.open_baseSet.mem_nhds hx] with y hy
+  exact (e.linear 𝕜' hy).map_smul c (σ y)
 
 namespace TauCeti
 

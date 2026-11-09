@@ -20,8 +20,6 @@ is complex linear when `∇` commutes with multiplication by `i`
 
 ## Main results
 
-* `TauCeti.SmoothAlmostComplexStructure.zeroOnePart`: the `(0,1)`-part of a `V`-valued one-form,
-  its complex antilinear part (`TauCeti.SmoothAlmostComplexStructure.toLinearMap_zeroOnePart`).
 * `IsCovariantDerivativeOn.isRealCauchyRiemannOperator_zeroOnePart`: the `(0,1)`-part of a
   covariant derivative is a real Cauchy–Riemann operator.
 * `IsCovariantDerivativeOn.isComplexLinearOperator_zeroOnePart`: it is complex linear for a
@@ -33,7 +31,7 @@ is complex linear when `∇` commutes with multiplication by `i`
   Appendix C.1.
 -/
 
-@[expose] public section
+public section
 
 open Bundle
 open scoped ContDiff Manifold
@@ -50,43 +48,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   [FiberBundle F V] [∀ x, AddCommGroup (V x)] [∀ x, Module ℂ (V x)] [∀ x, Module ℝ (V x)]
   [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
   [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)]
-
-namespace SmoothAlmostComplexStructure
-
-/-- The `(0,1)`-part `η^{0,1} v = ½ (η v + i • η (j v))` of a `V`-valued one-form `η`. -/
-def zeroOnePart {x : M} (η : TangentSpace I x →L[ℝ] V x) : TangentSpace I x →L[ℝ] V x :=
-  (2⁻¹ : ℝ) • (η + Complex.I • η.comp (j.toEndomorphism x))
-
-variable {j}
-
-theorem zeroOnePart_apply {x : M} (η : TangentSpace I x →L[ℝ] V x) (v : TangentSpace I x) :
-    j.zeroOnePart η v = (2⁻¹ : ℝ) • (η v + Complex.I • η (j x v)) :=
-  rfl
-
-/-- The `(0,1)`-part of a one-form is its complex antilinear part
-`TauCeti.complexAntilinearPart` for `j` and multiplication by `i`. -/
-theorem toLinearMap_zeroOnePart {x : M} (η : TangentSpace I x →L[ℝ] V x) :
-    (j.zeroOnePart η).toLinearMap = complexAntilinearPart (j.toEndomorphism x).toLinearMap
-      (DistribSMul.toLinearMap ℝ (V x) Complex.I) η.toLinearMap := by
-  ext v
-  simp [zeroOnePart_apply, complexAntilinearPart_apply]
-
-/-- The `(0,1)`-part of a one-form is a `(0,1)`-form. -/
-theorem isZeroOneForm_zeroOnePart {x : M} (η : TangentSpace I x →L[ℝ] V x) :
-    j.IsZeroOneForm (j.zeroOnePart η) := by
-  intro v
-  simp only [zeroOnePart_apply, apply_apply, map_neg, smul_add, smul_neg,
-    smul_comm Complex.I (2⁻¹ : ℝ), smul_smul Complex.I Complex.I, Complex.I_mul_I, neg_one_smul]
-  abel
-
-/-- The `(0,1)`-part of `dg ⊗ ξ` is `(∂bar g) ⊗ ξ`. -/
-theorem zeroOnePart_smulRight (g : M → ℝ) (σ : Π x : M, V x) (x : M) :
-    j.zeroOnePart ((d% g x).smulRight (σ x)) = j.dbarSMulRight g σ x := by
-  ext v
-  simp only [zeroOnePart_apply, dbarSMulRight_apply, ContinuousLinearMap.smulRight_apply,
-    smul_comm Complex.I (_ : ℝ)]
-
-end SmoothAlmostComplexStructure
 
 open SmoothAlmostComplexStructure
 
