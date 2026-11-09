@@ -21,6 +21,11 @@ for every orthonormal basis `(eᵢ)`. This is the Ricci-type contraction of `h �
 identity that determines the Schouten tensor of a Riemannian metric as the unique bilinear form
 `P` with `Ric = (n - 2) P + (tr_g P) g`, and that makes the Weyl tensor trace-free.
 
+Taking the trace once more shows that in dimension at least `3` the map `h ↦ h ⊙ g` is injective
+(`LinearMap.BilinForm.kulkarniNomizu_innerₗ_eq_zero_iff`): a bilinear form whose Kulkarni–Nomizu
+product with the inner product vanishes is zero. In dimension `2` this fails, since there
+`(h ⊙ g)` only sees the trace of `h`.
+
 ## References
 
 * A. L. Besse, *Einstein Manifolds*, Springer (1987), Section 1.G.
@@ -55,5 +60,21 @@ theorem sum_kulkarniNomizu_innerₗ {ι : Type*} [Fintype ι] (h : BilinForm ℝ
     Finset.sum_add_distrib, ← Finset.sum_mul, ← Finset.mul_sum, hleft, hright, hdim,
     ← TauCeti.bilinFormTrace_eq_sum h b]
   ring
+
+/-- **In dimension at least `3`, the Kulkarni–Nomizu product with the inner product is
+injective**: `h ⊙ g = 0` only for `h = 0`. -/
+theorem kulkarniNomizu_innerₗ_eq_zero_iff (hW : 3 ≤ Module.finrank ℝ W) {h : BilinForm ℝ W} :
+    kulkarniNomizu h (innerₗ W) = 0 ↔ h = 0 := by
+  refine ⟨fun H ↦ ?_, fun H ↦ by simp [H]⟩
+  have hW' : (3 : ℝ) ≤ Module.finrank ℝ W := by exact_mod_cast hW
+  have hc : ((Module.finrank ℝ W : ℝ) - 2) • h + TauCeti.bilinFormTrace h • innerₗ W = 0 := by
+    ext y z
+    simpa [H] using (sum_kulkarniNomizu_innerₗ h (stdOrthonormalBasis ℝ W) y z).symm
+  have htr : TauCeti.bilinFormTrace h = 0 := by
+    have := congrArg TauCeti.bilinFormTrace hc
+    simp only [map_add, map_smul, TauCeti.bilinFormTrace_inner, smul_eq_mul, map_zero] at this
+    nlinarith
+  rw [htr, zero_smul, add_zero, smul_eq_zero] at hc
+  exact hc.resolve_left (by linarith)
 
 end LinearMap.BilinForm
