@@ -153,6 +153,13 @@ theorem toPartialDiffeomorphOfMemMaximalAtlas_symm_apply (v : E) :
   change (e.extend I).symm v = _
   exact congrFun (e.extend_coe_symm (I := I)) v
 
+/-- The inverse partial diffeomorphism of the extended maximal-atlas chart is the inverse of the
+extended chart. -/
+theorem coe_toPartialDiffeomorphOfMemMaximalAtlas_symm :
+    ⇑(e.toPartialDiffeomorphOfMemMaximalAtlas he).symm = (e.extend I).symm :=
+  -- The constructor is opaque; its inverse field is the inverse of the extended chart.
+  (rfl)
+
 end OpenPartialHomeomorph
 
 namespace TauCeti

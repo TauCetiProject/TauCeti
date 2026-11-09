@@ -15,11 +15,17 @@ reading a continuous linear equivalence as one at any regularity. Mathlib's
 `ContinuousLinearEquiv.toDiffeomorph` gives the latter at regularity `∞` only, so it does not cover
 the analytic regularity `ω`.
 
+The file also records the source, target, forward map and inverse map of Mathlib's composition
+`PartialDiffeomorph.trans`, so that callers need not unfold it through `OpenPartialHomeomorph`.
+
 ## Main definitions
 
 * `PartialDiffeomorph.ofLE`: a `C^n` partial diffeomorphism as a `C^m` one, for `m ≤ n`.
 * `ContinuousLinearEquiv.toPartialDiffeomorph`: a continuous linear equivalence as a `C^n` partial
   diffeomorphism defined everywhere, for any `n`.
+* `PartialDiffeomorph.trans_source`, `PartialDiffeomorph.trans_target`,
+  `PartialDiffeomorph.coe_trans`, `PartialDiffeomorph.coe_trans_symm`: the composition of partial
+  diffeomorphisms, computed componentwise.
 -/
 
 public section
@@ -52,6 +58,33 @@ def ofLE (Φ : PartialDiffeomorph I J M N n) (hmn : m ≤ n) : PartialDiffeomorp
 theorem ofLE_toPartialEquiv (Φ : PartialDiffeomorph I J M N n) (hmn : m ≤ n) :
     (Φ.ofLE hmn).toPartialEquiv = Φ.toPartialEquiv :=
   (rfl)
+
+section Trans
+
+variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners 𝕜 F' H''}
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
+  (Φ : PartialDiffeomorph I J M N n) (Ψ : PartialDiffeomorph J K N P n)
+
+/-- The source of a composition of partial diffeomorphisms. -/
+theorem trans_source : (Φ.trans Ψ).source = Φ.source ∩ Φ ⁻¹' Ψ.source :=
+  (rfl)
+
+/-- The target of a composition of partial diffeomorphisms. -/
+theorem trans_target : (Φ.trans Ψ).target = Ψ.target ∩ Ψ.symm ⁻¹' Φ.target :=
+  (rfl)
+
+/-- The forward map of a composition of partial diffeomorphisms is the composition of the forward
+maps. -/
+theorem coe_trans : ⇑(Φ.trans Ψ) = Ψ ∘ Φ :=
+  (rfl)
+
+/-- The inverse map of a composition of partial diffeomorphisms is the composition of the inverse
+maps, in the opposite order. -/
+theorem coe_trans_symm : ⇑(Φ.trans Ψ).symm = Φ.symm ∘ Ψ.symm :=
+  (rfl)
+
+end Trans
 
 end PartialDiffeomorph
 
