@@ -23,8 +23,7 @@ map, such as the projection `Prod.fst` from a product of σ-finite measures, pre
 
 For counting measures, precomposition by a map that is injective on the support does not increase
 `eLpNorm`. This is the `ℓᵖ` estimate for shifted and reindexed sequences
-(`MeasureTheory.eLpNorm_count_le_of_injOn`), and each term of a sequence is at most its `ℓᵖ` norm
-(`MeasureTheory.le_eLpNorm_count`).
+(`MeasureTheory.eLpNorm_count_le_of_injOn`).
 
 ## Main declarations
 
@@ -33,7 +32,6 @@ For counting measures, precomposition by a map that is injective on the support 
   quasi-measure-preserving map preserves `L^∞`.
 * `MeasureTheory.eLpNorm_count_le_of_injOn`: the `ℓᵖ` norm of `f` is at most that of `g` when
   `f ≤ g ∘ e` with `e` injective on the support of `f`.
-* `MeasureTheory.le_eLpNorm_count`: each term of a sequence is at most its `ℓᵖ` norm.
 -/
 
 public section
@@ -100,21 +98,5 @@ theorem eLpNorm_count_le_of_injOn {α' β' : Type*} [MeasurableSpace α'] [Measu
         tsum_le_tsum fun a ↦ by gcongr; exact hfg a
     _ ≤ ∑' b, g b ^ p.toReal :=
         tsum_comp_le_tsum_of_injective he.injective fun b ↦ g b ^ p.toReal
-
-/-- **A term of a sequence is at most its `ℓᵖ` norm.** On a countable type with counting measure,
-`f a ≤ ‖f‖_p` for every `a` and every `p ≠ 0`. -/
-theorem le_eLpNorm_count {α' : Type*} [MeasurableSpace α'] [MeasurableSingletonClass α']
-    [Countable α'] (f : α' → ℝ≥0∞) {p : ℝ≥0∞} (hp0 : p ≠ 0) (a : α') :
-    f a ≤ eLpNorm f p .count := by
-  have hf : AEStronglyMeasurable f .count := (measurable_of_countable f).aestronglyMeasurable
-  rcases eq_or_ne p ∞ with rfl | hp
-  · rw [eLpNorm_exponent_top hf, eLpNormEssSup_count]
-    exact le_iSup (fun a ↦ ‖f a‖ₑ) a
-  have hr : p.toReal ≠ 0 := (ENNReal.toReal_pos hp0 hp).ne'
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hf, lintegral_count, one_div]
-  calc f a = (f a ^ p.toReal) ^ p.toReal⁻¹ := (ENNReal.rpow_rpow_inv hr _).symm
-    _ ≤ (∑' b, ‖f b‖ₑ ^ p.toReal) ^ p.toReal⁻¹ := by
-        gcongr
-        exact le_tsum (fun b ↦ ‖f b‖ₑ ^ p.toReal) a
 
 end MeasureTheory

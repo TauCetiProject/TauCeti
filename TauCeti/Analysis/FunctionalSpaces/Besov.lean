@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
+import Mathlib.MeasureTheory.Function.LpSeminorm.Count
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 
 /-!
@@ -119,8 +120,9 @@ theorem besovNorm_neg (u : 𝓢'(E, F)) : (-u).besovNorm φ s p q = u.besovNorm 
 variable {q} in
 /-- Each weighted block norm `2^{s j} ‖Δⱼ u‖_p` is at most the Besov norm `‖u‖_{B^s_{p,q}}`. -/
 theorem two_rpow_mul_eLpNorm_littlewoodPaleyBlock_le_besovNorm (hq : q ≠ 0) (u : 𝓢'(E, F))
-    (j : ℕ) : 2 ^ (s * j) * (littlewoodPaleyBlock F φ j u).eLpNorm p ≤ u.besovNorm φ s p q :=
-  le_eLpNorm_count (fun j : ℕ ↦ 2 ^ (s * j) * (littlewoodPaleyBlock F φ j u).eLpNorm p) hq j
+    (j : ℕ) : 2 ^ (s * j) * (littlewoodPaleyBlock F φ j u).eLpNorm p ≤ u.besovNorm φ s p q := by
+  simpa [besovNorm_def] using
+    enorm_le_eLpNorm_count (fun j : ℕ ↦ 2 ^ (s * j) * (littlewoodPaleyBlock F φ j u).eLpNorm p) j hq
 
 variable {q} in
 /-- The Besov norm is definite: for `q ≠ 0`, it vanishes only at `0`. If all the blocks `Δⱼ u`
