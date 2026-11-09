@@ -36,6 +36,8 @@ Dually, a single vector is a valid row for a new generator exactly when it is a 
 ## Main definitions and results
 
 * `RowFiniteTwistingCocycle`: homogeneous finite rows with the Maurer–Cartan equation.
+* `RowFiniteTwistingCocycle.wellFounded_mem_support`: a one-sided cocycle with generator indices
+  bounded below is semi-free, its row relation `y ∈ (m.m x).support` being well-founded.
 * `rowFiniteTotalGrading` and `rowFiniteTwistedDifferential`: the graded free left module
   and its differential, characterized on homogeneous elementary vectors.
 * `RowFiniteTwistingCocycle.isDGLeftModule_rowFiniteTwistedDifferential`: the differential
@@ -46,6 +48,8 @@ Dually, a single vector is a valid row for a new generator exactly when it is a 
   row is the vanishing of its twisted differential.
 * The zero cocycle, whose differential is the coefficient differential alone
   (`rowFiniteTwistedDifferential_zero`).
+* `isHomogeneous_linearCombination`: a map out of the free module sending each generator to the
+  matching degree is homogeneous of degree zero.
 * `linearCombination_rowFiniteTwistedDifferential` and
   `forall_linearCombination_rowFiniteTwistedDifferential_iff`: maps out of the free module
   commute with the differentials exactly when they do so on generators.
@@ -189,6 +193,32 @@ omit [GradedAlgebra 𝒜] in
 theorem zero_m : (0 : RowFiniteTwistingCocycle 𝒜 d P ind).m = 0 :=
   (rfl)
 
+omit [GradedAlgebra 𝒜] in
+/-- The row of a generator `x` has total degree `1 - ind x`: it is the differential of the
+generator. -/
+theorem m_mem_rowFiniteTotalGrading (m : RowFiniteTwistingCocycle 𝒜 d P ind) (x : P) :
+    m.m x ∈ rowFiniteTotalGrading 𝒜 ind (1 - ind x) :=
+  (mem_rowFiniteTotalGrading_iff _ _).mpr fun y ↦ by
+    convert m.mem_graded x y using 2
+    ring
+
+omit [GradedAlgebra 𝒜] in
+/-- A one-sided cocycle, with `m x y = 0` whenever `ind x ≤ ind y`, whose generator indices are
+bounded below, is **semi-free**: the relation `y ∈ (m.m x).support`, saying that `y` occurs in the
+row of `x`, is well-founded, since it strictly lowers the index. -/
+theorem wellFounded_mem_support (m : RowFiniteTwistingCocycle 𝒜 d P ind)
+    (hm : ∀ x y, ind x ≤ ind y → m.m x y = 0) {p₀ : ℤ} (hp₀ : ∀ x, p₀ ≤ ind x) :
+    WellFounded fun y x ↦ y ∈ (m.m x).support :=
+  Subrelation.wf (r := InvImage (· < ·) fun x ↦ (ind x - p₀).toNat)
+    (fun {y x} hy ↦ by
+      have hlt : ind y < ind x := by
+        by_contra h
+        exact Finsupp.mem_support_iff.mp hy (hm x y (not_lt.mp h))
+      have := hp₀ y
+      dsimp only [InvImage]
+      omega)
+    (InvImage.wf _ wellFounded_lt)
+
 end RowFiniteTwistingCocycle
 
 section SignedMap
@@ -255,7 +285,7 @@ theorem rowFiniteSignedMap_sub (h h' : P → N) :
   rw [sub_eq_add_neg, rowFiniteSignedMap_add, rowFiniteSignedMap_neg, sub_eq_add_neg]
 
 /-- An `A`-linear map commutes with the signed extension. -/
-theorem rowFiniteSignedMap_comp {N' : Type*} [AddCommGroup N'] [Module R N'] [Module A N']
+theorem apply_rowFiniteSignedMap {N' : Type*} [AddCommGroup N'] [Module R N'] [Module A N']
     [IsScalarTower R A N'] (φ : N →ₗ[A] N') (h : P → N) (f : P →₀ A) :
     φ (rowFiniteSignedMap (𝒜 := 𝒜) h f) = rowFiniteSignedMap (𝒜 := 𝒜) (φ ∘ h) f := by
   simp [rowFiniteSignedMap_apply, Finsupp.sum, map_sum]
@@ -295,22 +325,6 @@ theorem rowFiniteSignedMap_linearCombination (k : Q → N) (ν : P → Q →₀ 
       rw [rowFiniteSignedMap_single _ x b.2, Finsupp.linearCombination_single,
         rowFiniteSignedMap_smul k b.2]
     | add b c hb hc => simp only [Finsupp.single_add, map_add, hb, hc]
-
-/-- Rows with shifted degree `k` give a signed map of total degree `k`. -/
-theorem rowFiniteSignedMap_mem_totalGrading (h : P → Q →₀ A) {k : ℤ}
-    (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - ind x + k)) {n : ℤ} {f : P →₀ A}
-    (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) :
-    rowFiniteSignedMap (𝒜 := 𝒜) h f ∈ rowFiniteTotalGrading 𝒜 indQ (n + k) := by
-  classical
-  rw [mem_rowFiniteTotalGrading_iff] at hf
-  rw [← Finsupp.sum_single f, Finsupp.sum, map_sum]
-  refine Submodule.sum_mem _ fun x _ ↦ ?_
-  rw [rowFiniteSignedMap_single h x (hf x), mem_rowFiniteTotalGrading_iff]
-  intro y
-  simp only [Finsupp.smul_apply, smul_eq_mul]
-  apply Submodule.smul_of_tower_mem
-  have := SetLike.GradedMul.mul_mem (hf x) (hh x y)
-  convert this using 2; ring
 
 end SignedMap
 
@@ -416,7 +430,9 @@ theorem linearCombination_mem_of_mem_support {g : P → M} {j n : ℤ} {f : P �
   rw [Finsupp.linearCombination_apply, Finsupp.sum]
   refine Submodule.sum_mem _ fun x hx ↦ ?_
   have := SetLike.GradedSMul.smul_mem (hf x) (hg x hx)
-  rwa [vadd_eq_add, show n + ind x + (-ind x + j) = n + j by ring] at this
+  rw [vadd_eq_add] at this
+  convert this using 2
+  ring
 
 omit [GradedAlgebra 𝒜] [IsScalarTower R A M] in
 /-- An `A`-linear map out of the free module sends total degree `n` to degree `n` as soon as
@@ -425,6 +441,14 @@ theorem linearCombination_mem_of_mem_rowFiniteTotalGrading {g : P → M}
     (hg : ∀ x, g x ∈ ℳ (-ind x)) {n : ℤ} {f : P →₀ A}
     (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) : Finsupp.linearCombination A g f ∈ ℳ n := by
   simpa using linearCombination_mem_of_mem_support (j := 0) hf fun x _ ↦ by simpa using hg x
+
+omit [GradedAlgebra 𝒜] [IsScalarTower R A M] in
+/-- An `A`-linear map out of the free module sending each generator `x` to degree `-ind x` is
+homogeneous of degree zero. -/
+theorem isHomogeneous_linearCombination {g : P → M} (hg : ∀ x, g x ∈ ℳ (-ind x)) :
+    LinearMap.IsHomogeneous (Finsupp.linearCombination A g) (rowFiniteTotalGrading 𝒜 ind) ℳ 0 :=
+  LinearMap.isHomogeneous_def.mpr fun _ _ hf ↦ by
+    simpa using linearCombination_mem_of_mem_rowFiniteTotalGrading hg hf
 
 /-- The signed extension of images of degree `-ind x + j` sends a vector of total degree `n` to
 degree `n + j`; only the generators in its support matter. -/
@@ -437,7 +461,19 @@ theorem rowFiniteSignedMap_mem_of_mem_support {k : P → M} {j n : ℤ} {f : P �
   rw [rowFiniteSignedMap_single k x (hf x)]
   apply Submodule.smul_of_tower_mem
   have := SetLike.GradedSMul.smul_mem (hf x) (hk x hx)
-  rwa [vadd_eq_add, show n + ind x + (-ind x + j) = n + j by ring] at this
+  rw [vadd_eq_add] at this
+  convert this using 2
+  ring
+
+/-- Rows with shifted degree `k` give a signed map of total degree `k`. -/
+theorem rowFiniteSignedMap_mem_totalGrading {Q : Type uQ} {indQ : Q → ℤ} (h : P → Q →₀ A)
+    {k : ℤ} (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - ind x + k)) {n : ℤ} {f : P →₀ A}
+    (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) :
+    rowFiniteSignedMap (𝒜 := 𝒜) h f ∈ rowFiniteTotalGrading 𝒜 indQ (n + k) :=
+  rowFiniteSignedMap_mem_of_mem_support (ℳ := rowFiniteTotalGrading 𝒜 indQ) hf fun x _ ↦
+    (mem_rowFiniteTotalGrading_iff _ _).mpr fun y ↦ by
+      convert hh x y using 2
+      ring
 
 variable [DirectSum.Decomposition ℳ] {dM : M →ₗ[R] M} {h : IsDGAlgebra 𝒜 d}
 

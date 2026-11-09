@@ -79,6 +79,19 @@ theorem ext {η θ : RowFiniteParametrizedCocycle ν₀ ν₁}
   funext x
   exact Finsupp.ext (hh x)
 
+/-- A parametrized cocycle from homotopy rows `h x` of total degree `-indP x - 1`, the degrees of
+a homotopy, satisfying the generator equation. -/
+@[expose, simps]
+def ofTotalGrading (h : P → Q →₀ A) (hh : ∀ x, h x ∈ rowFiniteTotalGrading 𝒜 indQ (-indP x - 1))
+    (hhd : ∀ x, rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m (h x) +
+      rowFiniteSignedMap (𝒜 := 𝒜) h (mP.m x) = ν₁.ν x - ν₀.ν x) :
+    RowFiniteParametrizedCocycle ν₀ ν₁ where
+  h := h
+  mem_graded x y := by
+    convert (mem_rowFiniteTotalGrading_iff _ _).mp (hh x) y using 2
+    ring
+  parametrized := hhd
+
 variable (η : RowFiniteParametrizedCocycle ν₀ ν₁)
 
 /-- The signed map of a parametrized cocycle lowers total degree by one. -/
