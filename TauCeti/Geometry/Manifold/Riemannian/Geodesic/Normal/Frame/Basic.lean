@@ -22,6 +22,10 @@ These frames allow tensor and curvature calculations in an orthonormal frame who
 coefficients vanish at the point of calculation. They are orthonormal throughout the normal
 neighbourhood; they need not be coordinate fields or be parallel away from its centre.
 
+`OrthonormalBasis.normalFrameExpansion` reconstructs an initial tangent vector at another point
+from its orthonormal components in the frame; on the normal neighbourhood this preserves
+components and inner products, and it is the identity at the centre.
+
 ## References
 
 * J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapter 5
@@ -58,6 +62,41 @@ def normalOrthonormalFrame (I : ModelWithCorners ℝ E H) (M : Type*)
 theorem normalOrthonormalFrame_def (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (i : ι) (q : M) :
     normalOrthonormalFrame I M p U b i q =
       gramSchmidtNormed ℝ (fun j ↦ normalCoordinateField I M p U (b j) q) i := (rfl)
+
+/-- Reconstruct an initial tangent vector in the normal orthonormal frame at another point. -/
+def _root_.OrthonormalBasis.normalFrameExpansion (b : OrthonormalBasis ι ℝ (TangentSpace I p))
+    (q : M) (a : TangentSpace I p) : TangentSpace I q :=
+  ∑ i, ⟪b i, a⟫_ℝ • normalOrthonormalFrame I M p U b i q
+
+/-- Frame reconstruction uses the initial orthonormal components. -/
+theorem _root_.OrthonormalBasis.normalFrameExpansion_apply
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (q : M) (a : TangentSpace I p) :
+    b.normalFrameExpansion (U := U) q a =
+      ∑ i, ⟪b i, a⟫_ℝ • normalOrthonormalFrame I M p U b i q := by rfl
+
+/-- Frame reconstruction sends zero to zero. -/
+@[simp]
+theorem _root_.OrthonormalBasis.normalFrameExpansion_zero
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (q : M) :
+    b.normalFrameExpansion (U := U) q 0 = 0 := by
+  simp [OrthonormalBasis.normalFrameExpansion_apply]
+
+/-- Frame reconstruction is additive. -/
+@[simp]
+theorem _root_.OrthonormalBasis.normalFrameExpansion_add
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (q : M) (a a' : TangentSpace I p) :
+    b.normalFrameExpansion (U := U) q (a + a') =
+      b.normalFrameExpansion (U := U) q a + b.normalFrameExpansion (U := U) q a' := by
+  simp [OrthonormalBasis.normalFrameExpansion_apply, inner_add_right, add_smul,
+    Finset.sum_add_distrib]
+
+/-- Frame reconstruction commutes with scalar multiplication. -/
+@[simp]
+theorem _root_.OrthonormalBasis.normalFrameExpansion_smul
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (q : M) (c : ℝ) (a : TangentSpace I p) :
+    b.normalFrameExpansion (U := U) q (c • a) = c • b.normalFrameExpansion (U := U) q a := by
+  simp [OrthonormalBasis.normalFrameExpansion_apply, real_inner_smul_right, mul_smul,
+    Finset.smul_sum]
 
 namespace IsNormalDomain
 
@@ -102,6 +141,27 @@ theorem isLocalFrameOn_normalOrthonormalFrame (h : IsNormalDomain I M p U)
       (TauCeti.finrank_tangentSpace (I := I) x).symm
   contMDiffOn := h.contMDiffOn_normalOrthonormalFrame b
 
+/-- The moving-frame components of a reconstructed vector are its original components. -/
+@[simp]
+theorem inner_normalFrameExpansion (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) {q : M}
+    (hq : q ∈ riemannianExp I M p '' U) (a : TangentSpace I p) (k : ι) :
+    ⟪normalOrthonormalFrame I M p U b k q, b.normalFrameExpansion (U := U) q a⟫_ℝ =
+      ⟪b k, a⟫_ℝ := by
+  simp [OrthonormalBasis.normalFrameExpansion_apply, inner_sum, real_inner_smul_right,
+    orthonormal_iff_ite.mp (h.orthonormal_normalOrthonormalFrame b hq)]
+
+/-- Reconstruction in a normal orthonormal frame preserves inner products. -/
+@[simp]
+theorem inner_normalFrameExpansion_pair (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) {q : M}
+    (hq : q ∈ riemannianExp I M p '' U) (a a' : TangentSpace I p) :
+    ⟪b.normalFrameExpansion (U := U) q a, b.normalFrameExpansion (U := U) q a'⟫_ℝ =
+      ⟪a, a'⟫_ℝ := by
+  rw [b.normalFrameExpansion_apply q a, sum_inner]
+  simp only [real_inner_smul_left, h.inner_normalFrameExpansion b hq]
+  simpa only [real_inner_comm a] using b.sum_inner_mul_inner a a'
+
 variable [I.Boundaryless] [T2Space M]
 
 /-- At its centre, the normal orthonormal frame recovers the prescribed orthonormal basis. -/
@@ -122,6 +182,13 @@ theorem leviCivitaConnection_normalOrthonormalFrame_self (h : IsNormalDomain I M
     (fun j ↦ h.mdifferentiableAt_normalCoordinateField (b j) h.self_mem_image)
     (h.linearIndependent_normalCoordinateField b.orthonormal.linearIndependent h.self_mem_image)
     (fun j ↦ h.leviCivitaConnection_normalCoordinateField_self (b j)) i
+
+/-- At the centre, frame reconstruction is the identity. -/
+@[simp]
+theorem normalFrameExpansion_self (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (a : TangentSpace I p) :
+    b.normalFrameExpansion (U := U) p a = a := by
+  simp [OrthonormalBasis.normalFrameExpansion_apply, h.normalOrthonormalFrame_self, b.sum_repr']
 
 end IsNormalDomain
 
