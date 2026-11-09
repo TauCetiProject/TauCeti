@@ -75,27 +75,21 @@ variable {R : Type*} [CommSemiring R] {δ : R} {n : ℕ}
 the scalar given by the augmentation. -/
 theorem mul_eq_aug_smul_of_mul_e_eq_zero {f : TemperleyLieb R δ n}
     (hf : ∀ i, f * e δ i = 0) (x : TemperleyLieb R δ n) : f * x = aug x • f := by
-  have hx : x ∈ Algebra.adjoin R (Set.range (e δ (n := n))) := adjoin_range_e (R := R) ▸ trivial
-  induction hx using Algebra.adjoin_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    simp [hf]
+  induction x using TemperleyLieb.induction with
+  | e i => simp [hf]
   | algebraMap r => simp [Algebra.smul_def, Algebra.commutes]
-  | add x y _ _ hx hy => rw [mul_add, hx, hy, map_add, add_smul]
-  | mul x y _ _ hx hy => rw [← mul_assoc, hx, smul_mul_assoc, hy, smul_smul, map_mul]
+  | add x y hx hy => rw [mul_add, hx, hy, map_add, add_smul]
+  | mul x y hx hy => rw [← mul_assoc, hx, smul_mul_assoc, hy, smul_smul, map_mul]
 
 /-- An element killed on the left by every generator multiplies every element on the right as
 the scalar given by the augmentation. -/
 theorem mul_eq_aug_smul_of_e_mul_eq_zero {f : TemperleyLieb R δ n}
     (hf : ∀ i, e δ i * f = 0) (x : TemperleyLieb R δ n) : x * f = aug x • f := by
-  have hx : x ∈ Algebra.adjoin R (Set.range (e δ (n := n))) := adjoin_range_e (R := R) ▸ trivial
-  induction hx using Algebra.adjoin_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    simp [hf]
+  induction x using TemperleyLieb.induction with
+  | e i => simp [hf]
   | algebraMap r => simp [Algebra.smul_def]
-  | add x y _ _ hx hy => rw [add_mul, hx, hy, map_add, add_smul]
-  | mul x y _ _ hx hy => rw [mul_assoc, hy, mul_smul_comm, hx, smul_smul, map_mul, mul_comm]
+  | add x y hx hy => rw [add_mul, hx, hy, map_add, add_smul]
+  | mul x y hx hy => rw [mul_assoc, hy, mul_smul_comm, hx, smul_smul, map_mul, mul_comm]
 
 /-- **Uniqueness of the Jones–Wenzl projection**, with no invertibility hypothesis: an element of
 augmentation `1` killed on the left by every generator equals an element of augmentation `1`

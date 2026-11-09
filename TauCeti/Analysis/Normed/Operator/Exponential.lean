@@ -48,7 +48,6 @@ variable {𝕜 : Type*} [RCLike 𝕜] {X : Type*} [NormedAddCommGroup X] [Normed
 /-- Exponentials of scalar multiples of the same bounded operator split over addition. -/
 theorem _root_.ContinuousLinearMap.exp_add_smul (A : X →L[𝕜] X) (s t : 𝕜) :
     exp ((s + t) • A) = (exp (s • A)).comp (exp (t • A)) := by
-  let +nondep : NormedAlgebra ℚ (X →L[𝕜] X) := .restrictScalars ℚ 𝕜 _
   exact (NormedSpace.exp_add_smul A s t).trans (ContinuousLinearMap.mul_def _ _)
 
 /-- Pointwise form of `ContinuousLinearMap.exp_add_smul`:

@@ -190,6 +190,60 @@ private theorem exists_inverted_coordinate_of_polygonal_ends {ι : Type*} [Finit
   exact tendsto_mul_logDeriv_deriv_of_inverted_coordinate_of_side hgc hgd hgne hgi hgU hginf hwg
     (hqU hw) hρ hn hUw
 
+/-- **The local conditions of the Schwarz--Christoffel formula at an end.**  Let `g = (f - q)⁻¹`
+be the inverted coordinate of the map `f = q + g⁻¹` of the upper half-plane, with a real zero `x`,
+and suppose that `f` maps the points of the upper half-plane near `x` into one of the three kinds
+of far end `E` (the far part of a sector of opening `(-e' - 1) * π`, of a half-strip, or of the
+exterior of a half-strip), which lies in the image of `f`.  Then `f` satisfies the local condition
+for a vertex at infinity with turning exponent `e'`, as required by
+`TauCeti.eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary`. -/
+private theorem exists_ball_end_of_inverted_coordinate {g f : ℂ → ℂ} {q : ℂ}
+    (hgc : ContinuousOn g {z : ℂ | 0 ≤ z.im}) (hgd : DifferentiableOn ℂ g upperHalfPlaneSet)
+    (hf : f = fun z => q + (g z)⁻¹) (hgf : EqOn g (fun z => (f z - q)⁻¹) upperHalfPlaneSet)
+    (hgne : ∀ z ∈ upperHalfPlaneSet, g z ≠ 0)
+    (hgi : InjOn g {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0}) {x : ℝ} (hx : g x = 0)
+    {e' ρ : ℝ} {E : Set ℂ} {c b : ℂ} (hb : b ≠ 0)
+    (hE : (e' ∈ Ioo (-3 : ℝ) (-1) ∧
+        E = {w : ℂ | ρ < ‖w - c‖ ∧ |((w - c) / b).arg| < (-e' - 1) * Real.pi / 2}) ∨
+      (e' = -1 ∧
+        E = {w : ℂ | ρ < ((w - c) / b).re ∧ ((w - c) / b).im ∈ Ioo 0 Real.pi}) ∨
+      (e' = -3 ∧ E = {w : ℂ | ρ < ‖w - c‖ ∧
+        (((w - c) / b).re < 0 ∨ ((w - c) / b).im ∉ Icc 0 Real.pi)}))
+    (hS : E ⊆ f '' upperHalfPlaneSet) (hfS : ∀ᶠ z in 𝓝[upperHalfPlaneSet] (x : ℂ), f z ∈ E) :
+    (e' ∈ Ioo (-3 : ℝ) (-1) ∧ ∃ r > 0, ∃ c b : ℂ, b ≠ 0 ∧ ∃ G : ℂ → ℂ,
+      EqOn G (fun z => b / (f z - c)) (ball (x : ℂ) r ∩ {z : ℂ | 0 < z.im}) ∧
+      G (x : ℂ) = 0 ∧
+      ContinuousOn G (ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) ∧
+      InjOn G (ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) ∧
+      (∀ z ∈ ball (x : ℂ) r, 0 < z.im → |(G z).arg| < (-e' - 1) * Real.pi / 2) ∧
+      ∀ z ∈ ball (x : ℂ) r, z.im = 0 → G z ≠ 0 →
+        |(G z).arg| = (-e' - 1) * Real.pi / 2) ∨
+    (e' = -1 ∧ ∃ r > 0, ∃ c b : ℂ, b ≠ 0 ∧ ∃ G : ℂ → ℂ,
+      EqOn G (fun z => exp ((f z - c) / b)) (ball (x : ℂ) r ∩ {z : ℂ | 0 < z.im}) ∧
+      G (x : ℂ) = 0 ∧
+      ContinuousOn G (ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) ∧
+      (∀ z ∈ ball (x : ℂ) r, z.im = 0 → (G z).im = 0) ∧
+      MapsTo G (ball (x : ℂ) r ∩ {z : ℂ | 0 < z.im}) {z : ℂ | 0 < z.im} ∧
+      InjOn G (ball (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im})) ∨
+    (e' = -3 ∧ ∃ r > 0, ∃ ρ : ℝ, ∃ c b : ℂ, b ≠ 0 ∧
+      ContinuousOn f ((closedBall (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) \ {(x : ℂ)}) ∧
+      InjOn f ((closedBall (x : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) \ {(x : ℂ)}) ∧
+      Tendsto f (𝓝[{z : ℂ | 0 ≤ z.im} \ {(x : ℂ)}] (x : ℂ)) (cobounded ℂ) ∧
+      ∀ w : ℂ, ρ < ‖w - c‖ →
+        (w ∈ f '' (ball (x : ℂ) r ∩ upperHalfPlaneSet) ↔
+          ((w - c) / b).re < 0 ∨ ((w - c) / b).im ∉ Icc 0 Real.pi)) := by
+  subst hf
+  rcases hE with ⟨he', hEk⟩ | ⟨he', hEk⟩ | ⟨he', hEk⟩ <;> rw [hEk] at hS hfS
+  · obtain ⟨r, hr, h₁, h₂, h₃, h₄, h₅, h₆⟩ :=
+      exists_ball_sector_end_of_inverted_coordinate hgc hgd hgf hgne hgi hx
+        (β := -e' - 1) ⟨by linarith [he'.2], by linarith [he'.1]⟩ hb hS hfS
+    exact Or.inl ⟨he', r, hr, c, b, hb, _, h₁, h₂, h₃, h₄, h₅, h₆⟩
+  · exact Or.inr (Or.inl ⟨he', exists_ball_halfStrip_end_of_inverted_coordinate hgc hgd hgf hgne
+      hgi hx hb hS hfS⟩)
+  · obtain ⟨r, hr, ρ', h₁, h₂, h₃, h₄⟩ :=
+      exists_ball_halfStripExterior_end_of_inverted_coordinate hgc hgd hgf hgne hgi hx hb hS hfS
+    exact Or.inr (Or.inr ⟨he', r, hr, ρ', c, b, hb, h₁, h₂, h₃, h₄⟩)
+
 /-- The Schwarz--Christoffel representation of a Riemann map of a polygonal domain with several
 ends, before its constants are named: a holomorphic bijection `f` of the upper half-plane onto `U`
 which is an affine image of the primitive, has the limit `-2` of `z * f''(z) / f'(z)` at infinity,
@@ -266,19 +320,8 @@ private theorem exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygon
       obtain ⟨r, hr, h₁, h₂, h₃, h₄⟩ :=
         exists_ball_corner_of_inverted_coordinate hgc hgi hgU (hga i).1 hρ' hn hU'
       exact Or.inl ⟨he i, r, hr, n, hn, h₁, h₂, h₃, h₄⟩
-    · have hS : E k ⊆ f '' upperHalfPlaneSet := hgU ▸ hEU k
-      have hfS := hfa' k
-      rcases hE k with ⟨he', hEk⟩ | ⟨he', hEk⟩ | ⟨he', hEk⟩ <;> rw [hEk] at hS hfS
-      · obtain ⟨r, hr, h₁, h₂, h₃, h₄, h₅, h₆⟩ :=
-          exists_ball_sector_end_of_inverted_coordinate hgc hgd hgf hgne hgi (hga' k)
-            (β := -e' k - 1) ⟨by linarith [he'.2], by linarith [he'.1]⟩ (hb k) hS hfS
-        exact Or.inr (Or.inl ⟨he', r, hr, c k, b k, hb k, _, h₁, h₂, h₃, h₄, h₅, h₆⟩)
-      · exact Or.inr (Or.inr (Or.inl ⟨he', exists_ball_halfStrip_end_of_inverted_coordinate hgc
-          hgd hgf hgne hgi (hga' k) (hb k) hS hfS⟩))
-      · obtain ⟨r, hr, ρ', h₁, h₂, h₃, h₄⟩ :=
-          exists_ball_halfStripExterior_end_of_inverted_coordinate hgc hgd hgf hgne hgi
-            (hga' k) (hb k) hS hfS
-        exact Or.inr (Or.inr (Or.inr ⟨he', r, hr, ρ', c k, b k, hb k, h₁, h₂, h₃, h₄⟩))
+    · exact Or.inr (exists_ball_end_of_inverted_coordinate hgc hgd rfl hgf hgne hgi (hga' k)
+        (hb k) (hE k) (hgU ▸ hEU k) (hfa' k))
   · rw [← (hga i).2]
     exact tendsto_const_nhds.add
       (((hgc _ (by simp)).tendsto.mono_left (nhdsWithin_mono _ hH)).inv₀ (hga i).1)
