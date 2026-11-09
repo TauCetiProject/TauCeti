@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Degree.SphereRotation
 public import TauCeti.Geometry.Manifold.Instances.Stiefel
-import TauCeti.Analysis.Complex.Circle
 
 /-!
 # The rotation family over the unit tangent bundle of a sphere
