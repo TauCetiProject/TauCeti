@@ -144,6 +144,7 @@ theorem rank_pow_add_smul_toMatrix'_joinEnds (c : Module.End.JordanChainBasis (t
   rw [rank, rank, ← toLin'_apply', ← toLin'_apply', toLin'_pow, toLin'_pow, map_add, map_smul,
     toLin'_toMatrix', c.finrank_range_add_smul_joinEnds_pow hij ht]
 
+omit [Finite ι] in
 /-- **Elementary degenerations lie in orbit closures.** Over a field with continuous ring
 operations in which `0` is not isolated, such as `ℂ`, a matrix `Y` lies in the closure of the
 conjugacy class of `Y + M`, where `M` is the matrix of `c.joinEnds i j` for distinct chains
@@ -153,6 +154,9 @@ theorem mem_closure_orbit_add_toMatrix'_joinEnds [TopologicalSpace K] [IsTopolog
     (hij : i ≠ j) :
     Y ∈ closure
       (MulAction.orbit (ConjAct (GL n K)) (Y + LinearMap.toMatrix' (c.joinEnds i j))) := by
+  have := Module.Finite.finite_basis c.basis
+  have : Finite ι := Finite.of_injective
+    (fun i : ι ↦ (⟨i, ⟨0, c.len_pos i⟩⟩ : Σ i, Fin (c.len i))) fun _ _ h ↦ congrArg Sigma.fst h
   have hcont : Continuous fun t : K => Y + t • LinearMap.toMatrix' (c.joinEnds i j) := by
     fun_prop
   have h := (hcont.tendsto 0).mono_left (nhdsWithin_le_nhds (s := {0}ᶜ))

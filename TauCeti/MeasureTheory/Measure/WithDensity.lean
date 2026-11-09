@@ -14,6 +14,7 @@ public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.MeasureTheory.Measure.Real
 import Mathlib.MeasureTheory.Function.AEEqOfLIntegral
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Pushing a weighted measure forward
@@ -44,6 +45,8 @@ measure finite.
   absolute value has the folded density.
 * `MeasureTheory.Measure.map_withDensity_eq_withDensity`: a pointwise factorization of one weight
   through a map whose Jacobian identity is already known transports that weight to the image.
+* `MeasureTheory.Measure.map_withDensity_comp`: the image of a measure weighted by a pulled-back
+  weight is the image measure weighted by that weight.
 * `MeasureTheory.Measure.map_add_right_withDensity`: translating a weighted right-invariant
   measure translates the weight.
 * `MeasureTheory.Measure.map_affine_withDensity`: the image of a weighted Haar measure under an
@@ -203,6 +206,13 @@ theorem map_withDensity_eq_withDensity {μ : Measure α} {ν : Measure β} {f : 
   · rw [Set.indicator_of_notMem (Set.mem_preimage.not.mpr hzq), Pi.mul_apply,
       Set.indicator_of_notMem hzq, mul_zero]
 
+/-- **A pulled-back weight is pushed forward.** The image under a measurable `f` of `μ` weighted by
+`g ∘ f` is the image of `μ` weighted by `g`. This is the case of
+`map_withDensity_eq_withDensity` with trivial Jacobian. -/
+theorem map_withDensity_comp {μ : Measure α} {f : α → β} {g : β → ℝ≥0∞} (hf : Measurable f)
+    (hg : Measurable g) : (μ.withDensity (g ∘ f)).map f = (μ.map f).withDensity g :=
+  map_withDensity_eq_withDensity (jac := fun _ => 1) hf measurable_const hg (by simp) (by simp)
+
 /-- **Translating a weighted invariant measure translates its weight.** If `μ` is invariant under
 right translation, then pushing `μ.withDensity f` forward along `x ↦ x + y` gives `μ` weighted by
 `x ↦ f (x - y)`. This is how the location parameter of a location family on the line moves under
@@ -266,16 +276,7 @@ theorem rnDeriv_map_affine (μ : Measure E) [μ.IsAddHaarMeasure] (A : E ≃L[�
   let r : ℝ≥0∞ := ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹|
   have hdet : LinearMap.det (A : E →ₗ[ℝ] E) ≠ 0 := ((A : E ≃ₗ[ℝ] E).isUnit_det').ne_zero
   have hr : r ≠ 0 := by simp [r, hdet]
-  have hmapμ : μ.map (fun x ↦ c + A x) = r • μ := by
-    have hmapA : μ.map A = r • μ := by
-      simpa [r] using Measure.map_linearMap_addHaar_eq_smul_addHaar μ hdet
-    calc
-      μ.map (fun x ↦ c + A x) = (μ.map A).map (fun y : E ↦ c + y) :=
-        (Measure.map_map (by fun_prop) (by fun_prop)).symm
-      _ = (r • μ).map (fun y : E ↦ c + y) := by rw [hmapA]
-      _ = r • μ := by
-        rw [Measure.map_smul r
-          ((by fun_prop : Measurable fun y : E ↦ c + y).aemeasurable), map_add_left_eq_self]
+  have hmapμ : μ.map (fun x ↦ c + A x) = r • μ := Measure.map_affine_addHaar_eq_smul μ A c
   have hsing : (ν.singularPart μ).map (fun x ↦ c + A x) ⟂ₘ μ := by
     have h := hemb.mutuallySingular_map (Measure.mutuallySingular_singularPart ν μ)
     rw [hmapμ] at h

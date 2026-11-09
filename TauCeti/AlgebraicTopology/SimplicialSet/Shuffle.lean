@@ -77,9 +77,6 @@ public section
 noncomputable section
 
 open CategoryTheory Limits MonoidalCategory Simplicial HomologicalComplex
-open TauCeti.SSet (chainComplexMap_f_comp chainComplexMap_f_comp_assoc
-  chainComplexMap_f_chainComplexFunctor_map_app_f
-  chainComplexMap_f_chainComplexFunctor_map_app_f_assoc)
 
 universe w v u
 
@@ -264,8 +261,8 @@ lemma prodConeChain_chainComplexFunctor_map_app_f {T' : C} (u : T ⟶ T') (m : �
         prodConeChain a b T' m := by
   ext x
   rw [ιChainComplex_prodConeChain_assoc,
-    TauCeti.SSet.ιChainComplex_chainComplexFunctor_map_app_f,
-    TauCeti.SSet.ιChainComplex_chainComplexFunctor_map_app_f_assoc, ιChainComplex_prodConeChain]
+    SSet.ιChainComplex_chainComplexFunctor_map_app_f,
+    SSet.ιChainComplex_chainComplexFunctor_map_app_f_assoc, ιChainComplex_prodConeChain]
 
 end Chain
 
@@ -457,7 +454,7 @@ lemma shuffleChain_chainComplexFunctor_map_app_f {T' : C} (u : T ⟶ T') :
         (((chainComplexFunctor C).map u).app ((Δ[p] : SSet.{w}) ⊗ Δ[q])).f n =
       u ≫ shuffleChain T' p q n h
   | 0, 0, 0, _ => by
-    rw [shuffleChain, shuffleChain, TauCeti.SSet.ιChainComplex_chainComplexFunctor_map_app_f]
+    rw [shuffleChain, shuffleChain, SSet.ιChainComplex_chainComplexFunctor_map_app_f]
   | p + 1, 0, n + 1, _ => by
     simp only [shuffleChain, Category.assoc, prodConeChain_chainComplexFunctor_map_app_f,
       chainComplexMap_f_chainComplexFunctor_map_app_f_assoc,
@@ -772,8 +769,8 @@ lemma shuffle_coefficient_naturality {R' S' : C} (f : R ⟶ R') (g : S ⟶ S') :
   refine mapBifunctor.hom_ext fun p q h ↦ tensorChainComplexX_hom_ext fun x y ↦ ?_
   rw [HomologicalComplex.comp_f, HomologicalComplex.comp_f, tensorHom_eq_mapBifunctorMap,
     ι_tensorHom_assoc, tensorHom_comp_tensorHom_assoc,
-    TauCeti.SSet.ιChainComplex_chainComplexFunctor_map_app_f,
-    TauCeti.SSet.ιChainComplex_chainComplexFunctor_map_app_f, ← tensorHom_comp_tensorHom_assoc,
+    SSet.ιChainComplex_chainComplexFunctor_map_app_f,
+    SSet.ιChainComplex_chainComplexFunctor_map_app_f, ← tensorHom_comp_tensorHom_assoc,
     ιChainComplex_tensorHom_ιChainComplex_shuffle_f,
     ιChainComplex_tensorHom_ιChainComplex_shuffle_f_assoc,
     chainComplexMap_f_chainComplexFunctor_map_app_f,
