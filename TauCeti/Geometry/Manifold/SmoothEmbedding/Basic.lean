@@ -157,6 +157,12 @@ theorem isImmersion (f : SmoothEmbedding I J n M N) : Manifold.IsImmersion I J n
 theorem isEmbedding (f : SmoothEmbedding I J n M N) : IsEmbedding f :=
   f.isSmoothEmbedding.isEmbedding
 
+/-- The tangent spaces of an embedded manifold are finite-dimensional when the ambient manifold
+is, since the differential embeds them into the ambient tangent spaces. -/
+theorem finiteDimensional_tangentSpace [FiniteDimensional 𝕜 E'] (f : SmoothEmbedding I J n M N)
+    (x : M) (hn : n ≠ 0) : FiniteDimensional 𝕜 (TangentSpace I x) :=
+  Module.Finite.of_injective _ (f.isImmersion.mfderiv_injective hn x)
+
 /-- The coordinate differential of an embedding remains split-injective on the overlap
 of its tangent charts, including for infinite-dimensional models. -/
 theorem hasLeftInverse_inTangentCoordinates_mfderiv [IsManifold I 1 M] [IsManifold J 1 N]

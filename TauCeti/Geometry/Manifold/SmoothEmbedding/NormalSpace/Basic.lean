@@ -101,12 +101,6 @@ instance [FiniteDimensional 𝕜 F] (f : SmoothEmbedding I J n M N) (x : M) (hn 
     FiniteDimensional 𝕜 (f.NormalSpace x hn) :=
   inferInstanceAs (FiniteDimensional 𝕜 (TangentSpace J (f x) ⧸ f.tangentRange x hn))
 
-/-- The tangent spaces of an embedded manifold are finite-dimensional when the ambient manifold
-is, since the differential embeds them into the ambient tangent spaces. -/
-theorem finiteDimensional_tangentSpace [FiniteDimensional 𝕜 F] (f : SmoothEmbedding I J n M N)
-    (x : M) (hn : n ≠ 0) : FiniteDimensional 𝕜 (TangentSpace I x) :=
-  Module.Finite.of_injective _ (f.isImmersion.mfderiv_injective hn x)
-
 /-- Project an ambient tangent vector to its normal class. -/
 noncomputable def normalClass (f : SmoothEmbedding I J n M N) (x : M) (hn : n ≠ 0) :
     TangentSpace J (f x) →ₗ[𝕜] f.NormalSpace x hn :=
