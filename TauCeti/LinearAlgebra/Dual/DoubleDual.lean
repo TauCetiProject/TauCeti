@@ -12,7 +12,7 @@ public import Mathlib.LinearAlgebra.Dual.Defs
 
 If the dual of `M` is reflexive, every map from `M` to a reflexive module extends uniquely
 across evaluation `M → M**`. The extension is the double dual of the map followed by inverse
-evaluation in the target. Thus, whenever double duals are reflexive, double dualization is a
+evaluation in the target. Thus, whenever duals are reflexive, double dualization is a
 reflection into reflexive modules. The statement does not require evaluation on `M` to be
 injective; torsion may be killed by it.
 
