@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.Prod
 
 The product of two internally graded modules has the componentwise grading. This supplies
 the grading on finite biproducts and mapping cones of curved differential graded modules.
+The two inclusions into the product have degree zero.
 -/
 
 public section
@@ -93,5 +94,15 @@ noncomputable def prod : InternalGrading R (M × N) := by
 @[simp]
 theorem prod_piece (p : ℤ) : (G.prod H).piece p = (G.piece p).prod (H.piece p) := by
   simp only [prod, ofDecomposition_piece]
+
+/-- The first inclusion into the product has degree zero. -/
+theorem isHomogeneous_inl :
+    LinearMap.IsHomogeneous (LinearMap.inl R M N) G.piece (G.prod H).piece 0 :=
+  LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by simpa using hx
+
+/-- The second inclusion into the product has degree zero. -/
+theorem isHomogeneous_inr :
+    LinearMap.IsHomogeneous (LinearMap.inr R M N) H.piece (G.prod H).piece 0 :=
+  LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by simpa using hx
 
 end TauCeti.InternalGrading
