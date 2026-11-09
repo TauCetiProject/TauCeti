@@ -17,17 +17,16 @@ On a complex normed space `V`, multiplication by `i` is the smooth structure
 `ℓ`. Its chart expression is the constant map `i`, as for every constant structure.
 
 The identity endomorphism is never an almost complex structure: `id ∘ id = id`, while
-`-id ≠ id` on a nontrivial real vector space. In particular a smooth endomorphism field on `ℂ`
-equal to `i` on the closed unit disc and to `id` outside the disc of radius `2` squares to `-1`
-on the unit disc but is not the field of any structure: the square identity is required at
-every point, not on an open set.
+`-id ≠ id` on a nontrivial real vector space
+(`ContMDiffAlmostComplexStructure.toEndomorphism_ne_id`). In particular a smooth endomorphism
+field on `ℂ` equal to `i` on the closed unit disc and to `id` outside the disc of radius `2`
+squares to `-1` on the unit disc but is not the field of any structure: the square identity
+`J ∘ J = -1` is required at every point, not only on an open set.
 
 ## Main declarations
 
-* `ContMDiffAlmostComplexStructure.toEndomorphism_ne_id`: no fibre of a structure is the identity.
-* `ContMDiffAlmostComplexStructure.inChart_const`,
-  `ContMDiffAlmostComplexStructure.inChart_toContMDiff_ofComplexManifold_self`: the chart
-  expression of a constant structure, and of the structure `i`, is constant.
+* `SmoothAlmostComplexStructure.inChart_ofComplexManifold_self`: the chart expression of the
+  structure `i` is constant.
 * `ContMDiffAlmostComplexStructure.cutoffSection`,
   `ContMDiffAlmostComplexStructure.not_exists_toEndomorphism_eq_cutoffSection`: the cut-off
   section and its rejection.
@@ -40,61 +39,22 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-namespace ContMDiffAlmostComplexStructure
+namespace SmoothAlmostComplexStructure
 
-section Identity
-
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Nontrivial E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] {n : ℕ∞}
-
-/-- No fibre of an almost complex structure is the identity, at any regularity: the identity
-squares to itself, and `id ≠ -id` on a nontrivial real vector space. -/
-theorem toEndomorphism_ne_id (J : ContMDiffAlmostComplexStructure I n M) (x : M) :
-    J.toEndomorphism x ≠ ContinuousLinearMap.id ℝ (TangentSpace I x) := by
-  intro h
-  obtain ⟨v, hv⟩ := exists_ne (0 : E)
-  have hJv : J x (J x v) = -v := J.apply_apply x v
-  have hxv : J x v = v := congrArg (fun A : TangentSpace I x →L[ℝ] TangentSpace I x ↦ A v) h
-  rw [hxv, hxv] at hJv
-  have h2 : (2 : ℝ) • v = 0 := by
-    rw [two_smul]
-    nth_rw 1 [hJv]
-    exact neg_add_cancel v
-  exact hv ((smul_eq_zero.mp h2).resolve_left two_ne_zero)
-
-/-- The identity section is not the endomorphism field of any almost complex structure, at any
-regularity, on a nonempty manifold modelled on a nontrivial space. -/
-theorem not_exists_toEndomorphism_eq_id [Nonempty M] :
-    ¬∃ J : ContMDiffAlmostComplexStructure I n M,
-      ∀ x, J.toEndomorphism x = ContinuousLinearMap.id ℝ (TangentSpace I x) := by
-  rintro ⟨J, hJ⟩
-  obtain ⟨x⟩ := ‹Nonempty M›
-  exact J.toEndomorphism_ne_id x (hJ x)
-
-end Identity
-
-section ComplexConstant
-
-/-- The chart expression of a constant structure on its model space is the constant map. -/
+/-- On a complex normed space `V`, for example `ℂⁿ`, the chart expression of multiplication
+by `i` is constantly multiplication by `i`. Via `toContMDiff`, this is a structure of every
+regularity with the same chart expression (`toContMDiff_inChart`). -/
 @[simp]
-theorem inChart_const {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] (n : ℕ∞)
-    (Jc : W →L[ℝ] W) (hJc : ∀ v, Jc (Jc v) = -v) (x z : W) :
-    (const n Jc hJc).inChart x z = Jc := by
-  rw [inChart_def, const_toEndomorphism_apply]
-  exact inCoordinates_tangent_bundle_core_model_space _ _ _ _ _
+theorem inChart_ofComplexManifold_self {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+    (x z : V) :
+    (ofComplexManifold V V).inChart x z = Complex.I • ContinuousLinearMap.id ℝ V := by
+  rw [← toContMDiff_inChart _ _ ⊤,
+    ContMDiffAlmostComplexStructure.inChart_modelWithCornersSelf,
+    toContMDiff_toEndomorphism_apply, toEndomorphism_ofComplexManifold]
 
-/-- On a complex normed space `V`, for example `ℂⁿ`, multiplication by `i` is a structure of
-every regularity `n`, and its chart expression is constantly multiplication by `i`. -/
-theorem inChart_toContMDiff_ofComplexManifold_self {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℂ V] (n : ℕ∞) (x z : V) :
-    ((SmoothAlmostComplexStructure.ofComplexManifold V V).toContMDiff n).inChart x z =
-      Complex.I • ContinuousLinearMap.id ℝ V := by
-  rw [inChart_def, SmoothAlmostComplexStructure.toContMDiff_toEndomorphism_apply,
-    SmoothAlmostComplexStructure.toEndomorphism_ofComplexManifold]
-  exact inCoordinates_tangent_bundle_core_model_space _ _ _ _ _
+end SmoothAlmostComplexStructure
 
-end ComplexConstant
+namespace ContMDiffAlmostComplexStructure
 
 section Cutoff
 
@@ -159,7 +119,8 @@ theorem cutoffSection_apply (z : ℂ) : cutoffSection z = cutoffField z :=
   endomorphismOfModel_apply _ _ z
 
 /-- The smooth cut-off section is not the field of an almost complex structure of any regularity:
-it squares to `-1` on the unit disc, but the identity is required at every point. -/
+it squares to `-1` on the unit disc, but equals `id` outside radius `2`, and the square identity
+`J ∘ J = -1` is required at every point, not only on an open set. -/
 theorem not_exists_toEndomorphism_eq_cutoffSection {n : ℕ∞} :
     ¬∃ J : ContMDiffAlmostComplexStructure 𝓘(ℝ, ℂ) n ℂ,
       ∀ z, J.toEndomorphism z = cutoffSection z := by
@@ -167,6 +128,7 @@ theorem not_exists_toEndomorphism_eq_cutoffSection {n : ℕ∞} :
   have h2 : 2 ≤ ‖(2 : ℂ)‖ := by simp
   refine J.toEndomorphism_ne_id 2 ?_
   rw [hJ, cutoffSection_apply, cutoffField_of_two_le_norm h2]
+  -- `TangentSpace 𝓘(ℝ, ℂ) 2` unfolds to `ℂ`, so both sides are the identity of `ℂ`.
   rfl
 
 end Cutoff

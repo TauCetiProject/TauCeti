@@ -17,7 +17,8 @@ parameter `n : ℕ∞` includes continuous structures and the smooth endpoint.
 `TauCeti.ContMDiffAlmostComplexStructure.smoothEquiv` identifies the infinite-regularity
 carrier with the existing `SmoothAlmostComplexStructure`. Forgetting regularity preserves the
 underlying section and commutes with evaluation. Applying a structure to a vector field along a
-map preserves every regularity order at most that of the structure.
+map preserves every regularity order at most that of the structure. On a manifold modelled on a
+nontrivial space no fibre is the identity (`toEndomorphism_ne_id`).
 
 ## References
 
@@ -87,6 +88,29 @@ theorem almostComplexStructureAt_apply (J : ContMDiffAlmostComplexStructure I n 
 theorem apply_apply (J : ContMDiffAlmostComplexStructure I n M) (x : M)
     (v : TangentSpace I x) : J x (J x v) = -v :=
   (J.almostComplexStructureAt x).apply_apply v
+
+/-- No fibre of an almost complex structure is the identity, at any regularity: the identity
+squares to itself, and `id ≠ -id` on a nontrivial real vector space. -/
+theorem toEndomorphism_ne_id [Nontrivial E] (J : ContMDiffAlmostComplexStructure I n M) (x : M) :
+    J.toEndomorphism x ≠ ContinuousLinearMap.id ℝ (TangentSpace I x) := by
+  intro h
+  obtain ⟨v, hv⟩ := exists_ne (0 : E)
+  have hJv : J x (J x v) = -v := J.apply_apply x v
+  have hxv : J x v = v := congrArg (fun A : TangentSpace I x →L[ℝ] TangentSpace I x ↦ A v) h
+  rw [hxv, hxv] at hJv
+  -- Adding `v` to both sides of `v = -v` gives `2 • v = 0`.
+  have h2 : (2 : ℝ) • v = 0 := by
+    simpa [two_smul] using congrArg (v + ·) hJv
+  exact hv ((smul_eq_zero.mp h2).resolve_left two_ne_zero)
+
+/-- The identity section is not the endomorphism field of any almost complex structure, at any
+regularity, on a nonempty manifold modelled on a nontrivial space. -/
+theorem not_exists_toEndomorphism_eq_id [Nontrivial E] [Nonempty M] :
+    ¬∃ J : ContMDiffAlmostComplexStructure I n M,
+      ∀ x, J.toEndomorphism x = ContinuousLinearMap.id ℝ (TangentSpace I x) := by
+  rintro ⟨J, hJ⟩
+  obtain ⟨x⟩ := ‹Nonempty M›
+  exact J.toEndomorphism_ne_id x (hJ x)
 
 /-- Each fibrewise endomorphism is injective. -/
 theorem injective (J : ContMDiffAlmostComplexStructure I n M) (x : M) :
