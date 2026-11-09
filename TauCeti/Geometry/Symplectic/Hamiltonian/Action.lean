@@ -40,7 +40,8 @@ and `C¹` maps it obeys the following laws.
   sphere (`TauCeti.cylinderAction_sub_cylinderAction`).
 
 For a closed `C¹` form the action is moreover unchanged along a `C²` homotopy of caps fixing the
-loop (`TauCeti.cylinderAction_eq_of_homotopy`).
+loop, or of cylinders fixing the loop and the reference loop
+(`TauCeti.cylinderAction_eq_of_homotopy`).
 
 The action depends on the reference cylinder in general. It only depends on the loop:
 
@@ -77,7 +78,7 @@ reference loop has action `-∫₀¹ H(t, γ₀(t)) dt` relative to itself
 * `TauCeti.cylinderAction_sub_cylinderAction`: recapping changes the action by the area of the
   sphere between the two caps.
 * `TauCeti.cylinderAction_eq_of_homotopy`: for a closed `C¹` form, the action is unchanged along a
-  `C²` homotopy of caps fixing the loop.
+  `C²` homotopy of caps fixing the loop, or of cylinders fixing both of their loops.
 
 ## References
 
@@ -128,9 +129,33 @@ theorem cylinderAction_const (σ : RoughForm I M ℝ 2) (H : ℝ → M → ℝ) 
     rectangleIntegral_comp_fst σ (fun _ ↦ x) _ _
   rw [cylinderAction_def, h, zero_sub]
 
+/-- The action measured against a cylinder from `γ` is `∫ u^* σ - ∫₀¹ H(t, γ(t)) dt`. -/
+theorem cylinderAction_eq_of_isSmoothCylinder {σ : RoughForm I M ℝ 2} {H : ℝ → M → ℝ}
+    {γ γ₀ : ℝ → M} {u : ℝ × ℝ → M} (hu : IsSmoothCylinder I γ γ₀ u) :
+    cylinderAction σ H u = rectangleIntegral σ u (0, 0) (1, 1) - ∫ t in 0..1, H t (γ t) := by
+  simp only [cylinderAction_def, hu.apply_zero]
+
 section Continuous
 
 variable [IsManifold I 1 M] {σ : RoughForm I M ℝ 2}
+
+/-- **Independence of the cap.** If a continuous form `σ` vanishes on spheres, the action of a
+loop is the same measured against any two smooth caps, even if they end at different points. -/
+theorem cylinderAction_eq_of_vanishesOnSpheres (hS : VanishesOnSpheres σ)
+    (hσ : IsSmoothForm I 0 σ) {H : ℝ → M → ℝ} {γ : ℝ → M} {u v : ℝ × ℝ → M} {x y : M}
+    (hu : IsSmoothCylinder I γ (fun _ ↦ x) u) (hv : IsSmoothCylinder I γ (fun _ ↦ y) v) :
+    cylinderAction σ H u = cylinderAction σ H v := by
+  rw [cylinderAction_eq_of_isSmoothCylinder hu, cylinderAction_eq_of_isSmoothCylinder hv,
+    hS.rectangleIntegral_eq hσ hu hv]
+
+/-- **Independence of the cylinder.** If a continuous form `σ` vanishes on tori, the action of a
+loop is the same measured against any two smooth cylinders to the same reference loop. -/
+theorem cylinderAction_eq_of_vanishesOnTori (hT : VanishesOnTori σ) (hσ : IsSmoothForm I 0 σ)
+    {H : ℝ → M → ℝ} {γ γ₀ : ℝ → M} {u v : ℝ × ℝ → M}
+    (hu : IsSmoothCylinder I γ γ₀ u) (hv : IsSmoothCylinder I γ γ₀ v) :
+    cylinderAction σ H u = cylinderAction σ H v := by
+  rw [cylinderAction_eq_of_isSmoothCylinder hu, cylinderAction_eq_of_isSmoothCylinder hv,
+    hT.rectangleIntegral_eq hσ hu hv]
 
 /-- **Gluing at the far end.** For a continuous form and `C¹` maps `u` and `v` with
 `u (1, ·) = v (0, ·)`, gluing `v` to the far end of `u` adds the area of `v` to the action of
@@ -177,14 +202,16 @@ theorem cylinderAction_sub_cylinderAction (hσ : IsSmoothForm I 0 σ) (H : ℝ �
 end Continuous
 
 /-- **Homotopy invariance.** For a closed `C¹` two-form, the action does not change along a `C²`
-homotopy `Φ` that fixes the loop `Φ ((0, t), c)`, keeps the far end `Φ ((1, t), c)` a single
-point at each time `c` (the point may move), and keeps the maps periodic in `t`. So caps related
-by such a homotopy relative to the loop give the same action. -/
+homotopy `Φ` that fixes the loop `Φ ((0, t), c)`, keeps the maps periodic in `t`, and either fixes
+the far end `Φ ((1, t), c)` or keeps it a single point at each time `c` (the point may move). So
+caps related by such a homotopy relative to the loop give the same action, and so do cylinders
+to a fixed reference loop related by a homotopy fixing both loops. -/
 theorem cylinderAction_eq_of_homotopy [IsManifold I 2 M] {σ : RoughForm I M ℝ 2}
     (hσ : IsSmoothForm I 1 σ) (hdσ : mextDeriv σ = 0) (H : ℝ → M → ℝ)
     {Φ : (ℝ × ℝ) × ℝ → M} (hΦ : ContMDiff 𝓘(ℝ, (ℝ × ℝ) × ℝ) I 2 Φ)
     (hloop : ∀ t ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((0, t), c) = Φ ((0, t), 0))
-    (hcentre : ∀ t ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((1, t), c) = Φ ((1, 0), c))
+    (hend : (∀ t ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((1, t), c) = Φ ((1, t), 0)) ∨
+      ∀ t ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((1, t), c) = Φ ((1, 0), c))
     (hper : ∀ s ∈ Icc (0 : ℝ) 1, ∀ c ∈ Icc (0 : ℝ) 1, Φ ((s, 1), c) = Φ ((s, 0), c)) :
     cylinderAction σ H (fun z ↦ Φ (z, 1)) = cylinderAction σ H (fun z ↦ Φ (z, 0)) := by
   have hI : [[(0 : ℝ), 1]] = Icc 0 1 := uIcc_of_le zero_le_one
@@ -195,34 +222,14 @@ theorem cylinderAction_eq_of_homotopy [IsManifold I 2 M] {σ : RoughForm I M ℝ
   simp only [cylinderAction_def]
   rw [rectangleIntegral_eq_of_homotopy (a := (0, 0)) (b := (1, 1)) hσ hdσ hΦ
       (.inl fun t ht c hc ↦ hloop t (hI ▸ ht) c hc)
-      (.inr fun t ht c hc ↦ (hcentre t (hI ▸ ht) c hc).trans (hcentre 1 hc1 c hc).symm)
+      (hend.imp (fun h t ht c hc ↦ h t (hI ▸ ht) c hc)
+        fun h t ht c hc ↦ (h t (hI ▸ ht) c hc).trans (h 1 hc1 c hc).symm)
       (fun s hs c hc ↦ hper s (hI ▸ hs) c hc), hH]
 
 namespace SmoothTwoForm
 
 variable [IsManifold I ∞ M]
   {σ : SmoothTwoForm I M} {H : ℝ → M → ℝ} {γ γ₀ : ℝ → M} {u v : ℝ × ℝ → M}
-
-/-- The action measured against a cylinder from `γ` is `∫ u^* σ - ∫₀¹ H(t, γ(t)) dt`. -/
-theorem cylinderAction_eq_of_isSmoothCylinder (hu : IsSmoothCylinder I γ γ₀ u) :
-    cylinderAction σ.1 H u = rectangleIntegral σ.1 u (0, 0) (1, 1) - ∫ t in 0..1, H t (γ t) := by
-  simp only [cylinderAction_def, hu.apply_zero]
-
-/-- **Independence of the cap.** If `σ` vanishes on spheres, the action of a loop is the same
-measured against any two smooth caps, even if they end at different points. -/
-theorem cylinderAction_eq_of_vanishesOnSpheres (hσ : VanishesOnSpheres σ.1) {x y : M}
-    (hu : IsSmoothCylinder I γ (fun _ ↦ x) u) (hv : IsSmoothCylinder I γ (fun _ ↦ y) v) :
-    cylinderAction σ.1 H u = cylinderAction σ.1 H v := by
-  rw [cylinderAction_eq_of_isSmoothCylinder hu, cylinderAction_eq_of_isSmoothCylinder hv,
-    hσ.rectangleIntegral_eq (σ.isSmoothForm.of_le (by simp)) hu hv]
-
-/-- **Independence of the cylinder.** If `σ` vanishes on tori, the action of a loop is the same
-measured against any two smooth cylinders to the same reference loop. -/
-theorem cylinderAction_eq_of_vanishesOnTori (hσ : VanishesOnTori σ.1)
-    (hu : IsSmoothCylinder I γ γ₀ u) (hv : IsSmoothCylinder I γ γ₀ v) :
-    cylinderAction σ.1 H u = cylinderAction σ.1 H v := by
-  rw [cylinderAction_eq_of_isSmoothCylinder hu, cylinderAction_eq_of_isSmoothCylinder hv,
-    hσ.rectangleIntegral_eq (σ.isSmoothForm.of_le (by simp)) hu hv]
 
 open Classical in
 /-- The Hamiltonian action of a contractible loop `γ`, measured against a smooth cap of `γ`; it is
@@ -240,7 +247,8 @@ theorem contractibleAction_eq (hσ : VanishesOnSpheres σ.1) {x : M}
     σ.contractibleAction H γ = cylinderAction σ.1 H u := by
   have h : ∃ u : ℝ × ℝ → M, ∃ x : M, IsSmoothCylinder I γ (fun _ ↦ x) u := ⟨u, x, hu⟩
   simp only [contractibleAction, h, ↓reduceDIte]
-  exact cylinderAction_eq_of_vanishesOnSpheres hσ h.choose_spec.choose_spec hu
+  exact cylinderAction_eq_of_vanishesOnSpheres hσ (σ.isSmoothForm.of_le (by simp))
+    h.choose_spec.choose_spec hu
 
 /-- The action of a loop with no smooth cap is `0`. -/
 @[simp]
@@ -271,7 +279,7 @@ theorem referenceAction_eq (hσ : VanishesOnTori σ.1) (hu : IsSmoothCylinder I 
     σ.referenceAction H γ₀ γ = cylinderAction σ.1 H u := by
   have h : ∃ u : ℝ × ℝ → M, IsSmoothCylinder I γ γ₀ u := ⟨u, hu⟩
   simp only [referenceAction, h, ↓reduceDIte]
-  exact cylinderAction_eq_of_vanishesOnTori hσ h.choose_spec hu
+  exact cylinderAction_eq_of_vanishesOnTori hσ (σ.isSmoothForm.of_le (by simp)) h.choose_spec hu
 
 /-- The action of a loop relative to `γ₀` is `0` when there is no smooth cylinder to `γ₀`. -/
 @[simp]
