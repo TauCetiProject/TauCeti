@@ -52,13 +52,15 @@ theorem windingNumber_eq_degree_of_eq_div_norm {x w : ℂ} {u : Circle}
     exists_continuousOn_arg_lift_with_partition (by norm_num : (0 : ℝ) ≤ 1) hc hn
   let θ : ℝ → ℝ := fun t ↦ Complex.arg (γ.extend 0 - w) +
     ∑ j ∈ Finset.range N, (Complex.log (segRatio γ.extend w (s j) (s (j + 1)) t)).im
+  have hθ_apply (t : ℝ) : θ t = Complex.arg (γ.extend 0 - w) +
+      ∑ j ∈ Finset.range N, (Complex.log (segRatio γ.extend w (s j) (s (j + 1)) t)).im := rfl
+  simp only [← hθ_apply] at hlift
   have hθp : ∀ t : I, Circle.exp (θ t) = p t := by
     intro t
     apply Subtype.ext
     rw [Circle.coe_exp, hp]
     have ht := hlift t t.property
     simp only [Path.extend_apply γ t.property] at ht
-    change γ t - w = (‖γ t - w‖ : ℂ) * Complex.exp (Complex.I * (θ t : ℂ)) at ht
     apply (eq_div_iff (Complex.ofReal_ne_zero.mpr
       (norm_ne_zero_iff.mpr (sub_ne_zero.mpr (havoid t))))).2
     rw [mul_comm Complex.I] at ht
@@ -81,7 +83,7 @@ theorem windingNumber_eq_degree_of_eq_div_norm {x w : ℂ} {u : Circle}
     refine Finset.sum_congr rfl fun j hj ↦ ?_
     rw [segRatio_eq_endpoint_div_of_le (hsmono (Nat.le_succ j))
       ((hsmono (Nat.succ_le_of_lt (Finset.mem_range.mp hj))).trans_eq hs1)]
-  change θ 1 - θ 0 = _ at hdeg
+  simp only [Set.domRestrict_apply, Set.Icc.coe_one, Set.Icc.coe_zero, ← hθ_apply] at hdeg
   rw [hθ1, hθ0, add_sub_cancel_left] at hdeg
   have hc' : ContinuousOn γ.extend (uIcc 0 1) := hγ.continuousOn
   have hn' : ∀ t ∈ uIcc (0 : ℝ) 1, γ.extend t ≠ w := by simpa using hn

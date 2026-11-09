@@ -25,7 +25,8 @@ homotopy through `ℂ \ {w}`, have the same winding number about `w`. The proof 
 many horizontal slices of the homotopy by endpoint-preserving smooth approximations, then chains
 the resulting smooth paths with proximity invariance of the winding number. For closed paths the
 endpoints may move: a homotopy through closed loops in `ℂ \ {w}` becomes a fixed-endpoint homotopy
-after dividing each loop `γ` by `γ 0 - w`, which does not change its winding number.
+of loops based at `1` after replacing each loop `γ` by `t ↦ (γ t - w) / (γ 0 - w)`, whose winding
+number about `0` equals the winding number of `γ` about `w`.
 
 ## Main results
 
