@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.Support
-public import TauCeti.Analysis.Distribution.TestFunction.Pullback
+public import TauCeti.Analysis.Distribution.TestFunction.Homotopy
 
 /-!
 # Pushforward of compactly supported currents along smooth maps
@@ -31,6 +31,15 @@ where `χ Φ^*` is the pullback with cutoff `TestFunction.cutoffPullbackCLM`, de
 * if `|χ| ≤ 1` and `‖DΦ‖ ≤ L` on the support of `χ`, then `M(Φ_# T) ≤ L ^ k M(T)`;
 * functoriality: `(Ψ ∘ Φ)_# T = Ψ_# (Φ_# T)`.
 
+For a homotopy `H` smooth near `Ω × [0, 1]`, not necessarily proper, the homotopy current
+`H_# ([[0, 1]] × T) = T ∘ K_χ` is defined with the homotopy operator with cutoff
+`TestFunction.cutoffHomotopyPullbackCLM`. It does not depend on the cutoff, agrees with
+`T ∘ TestFunction.homotopyPullbackCLM` when `H` is proper, and satisfies the **homotopy formula**
+`∂ H_# ([[0, 1]] × T) + H_# ([[0, 1]] × ∂ T) = H₁# T - H₀# T`, where `Hₜ = H (·, t)`. Its support
+lies in the image under `H` of `(tsupport χ ∩ spt T) × [0, 1]`, and
+`M(H_# ([[0, 1]] × T)) ≤ A L ^ k M(T)` when `|χ| ≤ 1`, `‖∂ₜ H‖ ≤ A` and the spatial derivative of
+`H` is bounded by `L` on `tsupport χ × [0, 1]`.
+
 ## Main declarations
 
 * `ContinuousLinearMap.comp_cutoffPullbackCLM_congr`: independence of the cutoff.
@@ -40,17 +49,25 @@ where `χ Φ^*` is the pullback with cutoff `TestFunction.cutoffPullbackCLM`, de
 * `ContinuousLinearMap.comp_cutoffPullbackCLM_comp_cutoffPullbackCLM`: functoriality.
 * `Distribution.dsupport_comp_cutoffPullbackCLM_subset`: `spt (Φ_# T) ⊆ Φ (tsupport χ ∩ spt T)`.
 * `Distribution.mass_comp_cutoffPullbackCLM_le`: `M(Φ_# T) ≤ L ^ k M(T)`.
+* `ContinuousLinearMap.comp_cutoffHomotopyPullbackCLM_congr`,
+  `ContinuousLinearMap.comp_cutoffHomotopyPullbackCLM_eq_comp_homotopyPullbackCLM`: independence of
+  the cutoff and agreement with the proper homotopy current.
+* `ContinuousLinearMap.comp_cutoffHomotopyPullbackCLM_comp_extDerivCLM`: the homotopy formula, and
+  `ContinuousLinearMap.comp_cutoffHomotopyPullbackCLM_comp_extDerivCLM_finZero` in degree zero.
+* `Distribution.dsupport_comp_cutoffHomotopyPullbackCLM_subset`,
+  `Distribution.mass_comp_cutoffHomotopyPullbackCLM_le`: the support and mass of the homotopy
+  current.
 
 ## References
 
 * H. Federer, *Geometric Measure Theory*, §4.1.7 (the pushforward of a current whose support is
-  compact, defined with a cutoff).
+  compact, defined with a cutoff) and §4.1.9 (the homotopy formula).
 * L. Simon, *Introduction to Geometric Measure Theory*, Chapter 6, §2.
 -/
 
 public section
 
-open Set Filter TopologicalSpace TestFunction Distribution
+open Set Filter TopologicalSpace TestFunction Distribution TauCeti
 open scoped Distributions Topology NNReal ENNReal BoundedContinuousFunction
 
 namespace ContinuousLinearMap
@@ -117,6 +134,80 @@ theorem comp_cutoffPullbackCLM_comp_cutoffPullbackCLM (T : 𝓓(Ω, E [⋀^Fin k
   refine map_eq_map_of_eventuallyEq T (hχ'Φ.mono fun x hx ↦ ?_)
   exact (cutoffPullbackCLM_cutoffPullbackCLM (hΨΦ := hΨΦ) hmaps ω x).trans (by rw [hx, one_smul])
 
+section Homotopy
+
+/-! ### The homotopy formula for currents with compact support -/
+
+variable [CompleteSpace F] {H : E × ℝ → E'}
+  {hH : ∀ p ∈ (Ω : Set E) ×ˢ Icc (0 : ℝ) 1, ContDiffAt ℝ (⊤ : ℕ∞) H p}
+
+/-- **Independence of the cutoff for homotopy currents**: the current
+`T ∘ TestFunction.cutoffHomotopyPullbackCLM χ hH` depends only on the germ of `χ` along the support
+of `T`. -/
+theorem comp_cutoffHomotopyPullbackCLM_congr (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] G)
+    (h : (χ₁ : E → ℝ) =ᶠ[𝓝ˢ (dsupport T)] χ₂) :
+    (T ∘L cutoffHomotopyPullbackCLM χ₁ hH : 𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] G) =
+      T ∘L cutoffHomotopyPullbackCLM χ₂ hH := by
+  ext ω
+  exact map_eq_map_of_eventuallyEq T (h.mono fun x hx ↦ by simp [hx])
+
+/-- **Agreement with the proper homotopy current**: if `H` is proper on `Ω × [0, 1]` and `χ` is
+equal to one near the support of `T`, then `T ∘ K_χ = T ∘ K`, where `K_χ` and `K` are the homotopy
+operators with and without cutoff. -/
+theorem comp_cutoffHomotopyPullbackCLM_eq_comp_homotopyPullbackCLM
+    (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] G) (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1)
+    (hHp : ∀ K : Set E', IsCompact K → K ⊆ Ω' →
+      IsCompact (((Ω : Set E) ×ˢ Icc (0 : ℝ) 1) ∩ H ⁻¹' K)) :
+    (T ∘L cutoffHomotopyPullbackCLM χ hH : 𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] G) =
+      T ∘L homotopyPullbackCLM hH hHp := by
+  ext ω
+  refine map_eq_map_of_eventuallyEq T (hχ.mono fun x hx ↦ ?_)
+  have hxΩ : x ∈ Ω := χ.tsupport_subset (subset_tsupport _ (by simp [hx]))
+  simp [hx, hxΩ]
+
+variable [IsTopologicalAddGroup G]
+
+/-- **The homotopy formula for currents with compact support**: if `χ` is equal to one near the
+support of a current `T` on test `(k + 1)`-forms, then
+`∂ H_# ([[0, 1]] × T) = H₁# T - H₀# T - H_# ([[0, 1]] × ∂ T)`, where
+`H_# ([[0, 1]] × T) = T ∘ K_χ` for the homotopy operator `K_χ` with cutoff, `Hₜ# T = T ∘ (χ Hₜ^*)`
+for the slices `Hₜ = H (·, t)` and `∂ T = T ∘ d`. No properness of `H` is needed. -/
+theorem comp_cutoffHomotopyPullbackCLM_comp_extDerivCLM
+    (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] G) (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) :
+    (T ∘L cutoffHomotopyPullbackCLM χ hH) ∘L
+        (extDerivCLM : 𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _) =
+      T ∘L cutoffPullbackCLM χ (fun x ↦ H (x, 1))
+          (contDiffOn_comp_prodMk_left hH ⟨zero_le_one, le_rfl⟩) -
+        T ∘L cutoffPullbackCLM χ (fun x ↦ H (x, 0))
+          (contDiffOn_comp_prodMk_left hH ⟨le_rfl, zero_le_one⟩) -
+        (T ∘L extDerivCLM) ∘L cutoffHomotopyPullbackCLM χ hH := by
+  ext ω
+  simp only [comp_apply, sub_apply, ← map_sub]
+  refine map_eq_map_of_eventuallyEq T ?_
+  filter_upwards [hχ.eventually_nhdsSet] with x hx
+  simp only [FunLike.coe_sub, Pi.sub_apply]
+  exact cutoffHomotopyPullbackCLM_extDerivCLM_apply ω hx
+
+/-- **The homotopy formula for `0`-currents with compact support**: if `χ` is equal to one near the
+support of a current `T` on test `0`-forms, then `∂ H_# ([[0, 1]] × T) = H₁# T - H₀# T`, where
+`H_# ([[0, 1]] × T) = T ∘ K_χ` and `Hₜ# T = T ∘ (χ Hₜ^*)`. -/
+theorem comp_cutoffHomotopyPullbackCLM_comp_extDerivCLM_finZero
+    (T : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] G) (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) :
+    (T ∘L cutoffHomotopyPullbackCLM χ hH) ∘L
+        (extDerivCLM : 𝓓(Ω', E' [⋀^Fin 0]→L[ℝ] F) →L[ℝ] _) =
+      T ∘L cutoffPullbackCLM χ (fun x ↦ H (x, 1))
+          (contDiffOn_comp_prodMk_left hH ⟨zero_le_one, le_rfl⟩) -
+        T ∘L cutoffPullbackCLM χ (fun x ↦ H (x, 0))
+          (contDiffOn_comp_prodMk_left hH ⟨le_rfl, zero_le_one⟩) := by
+  ext ω
+  simp only [comp_apply, sub_apply, ← map_sub]
+  refine map_eq_map_of_eventuallyEq T ?_
+  filter_upwards [hχ.eventually_nhdsSet] with x hx
+  simp only [FunLike.coe_sub, Pi.sub_apply]
+  exact cutoffHomotopyPullbackCLM_extDerivCLM_apply_finZero ω hx
+
+end Homotopy
+
 end ContinuousLinearMap
 
 namespace Distribution
@@ -172,5 +263,70 @@ theorem mass_comp_cutoffPullbackCLM_le [NormedAddCommGroup V] [NormedSpace ℝ V
         rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_pow L.coe_nonneg]
         exact ENNReal.ofReal_le_ofReal hb
     _ = (L : ℝ≥0∞) ^ k * mass T := mul_comm _ _
+
+section Homotopy
+
+variable [CompleteSpace F] {H : E × ℝ → E'}
+  {hH : ∀ p ∈ (Ω : Set E) ×ˢ Icc (0 : ℝ) 1, ContDiffAt ℝ (⊤ : ℕ∞) H p}
+
+/-- **The support of a homotopy current**: the support of `T ∘ K_χ`, where `K_χ` is the homotopy
+operator with cutoff `χ`, lies in the image under `H` of the product of the part of the support of
+`T` in the support of `χ` with `[0, 1]`. In particular it is compact. -/
+theorem dsupport_comp_cutoffHomotopyPullbackCLM_subset [FiniteDimensional ℝ E] [AddCommMonoid V]
+    [FunLike 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V] [AddMonoidHomClass 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V]
+    (T : 𝓕) :
+    dsupport (T ∘ (cutoffHomotopyPullbackCLM χ hH :
+        𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _)) ⊆
+      H '' ((tsupport χ ∩ dsupport T) ×ˢ Icc (0 : ℝ) 1) := by
+  have hS : IsCompact (H '' ((tsupport χ ∩ dsupport T) ×ˢ Icc (0 : ℝ) 1)) :=
+    ((IsCompact.inter_right χ.hasCompactSupport isClosed_dsupport).prod
+      isCompact_Icc).image_of_continuousOn fun p hp ↦
+        (hH p ⟨χ.tsupport_subset hp.1.1, hp.2⟩).continuousAt.continuousWithinAt
+  -- A test form supported off this image is sent to a test form supported off `spt T`.
+  have hvan : IsVanishingOn (T ∘ (cutoffHomotopyPullbackCLM χ hH :
+      𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _))
+      (H '' ((tsupport χ ∩ dsupport T) ×ˢ Icc (0 : ℝ) 1))ᶜ := fun ω hω ↦
+    map_eq_zero_of_disjoint_dsupport T <| disjoint_left.2 fun x hx hxT ↦ by
+      obtain ⟨p, ⟨⟨hpχ, hpt⟩, hpω⟩, rfl⟩ := tsupport_cutoffHomotopyPullbackCLM_subset ω hx
+      exact hω hpω ⟨p, ⟨⟨hpχ, hxT⟩, hpt⟩, rfl⟩
+  have h := (hvan.disjoint_dsupport hS.isClosed.isOpen_compl).subset_compl_left
+  rwa [compl_compl] at h
+
+/-- **The mass of a homotopy current with compact support**: if `|χ| ≤ 1`, `‖∂ₜ H‖ ≤ A` and the
+spatial derivative of `H` has operator norm at most `L` on `tsupport χ × [0, 1]`, then
+`M(T ∘ K_χ) ≤ A L ^ k M(T)` for a `k`-current `T`, where `K_χ` is the homotopy operator with
+cutoff `χ`. -/
+theorem mass_comp_cutoffHomotopyPullbackCLM_le [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [FunLike 𝓕 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V] [LinearMapClass 𝓕 ℝ 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) V]
+    (T : 𝓕) (hχ : ∀ x, |χ x| ≤ 1) {A L : ℝ≥0}
+    (hA : ∀ p ∈ tsupport χ ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ H p (0, 1)‖ ≤ A)
+    (hL : ∀ p ∈ tsupport χ ×ˢ Icc (0 : ℝ) 1, ‖(fderiv ℝ H p).comp (.inl ℝ E ℝ)‖ ≤ L) :
+    mass (T ∘ (cutoffHomotopyPullbackCLM χ hH :
+        𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _)) ≤ A * L ^ k * mass T := by
+  refine mass_le_iff.2 fun ω hω ↦ ?_
+  have hb : ‖(cutoffHomotopyPullbackCLM χ hH ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ ≤ A * L ^ k := by
+    refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun x ↦ ?_
+    rw [coe_toBoundedContinuousFunction]
+    by_cases hx : x ∈ tsupport χ
+    · refine (norm_cutoffHomotopyPullbackCLM_apply_le hω (fun t ht ↦ hA _ ⟨hx, ht⟩)
+        fun t ht ↦ hL _ ⟨hx, ht⟩).trans ?_
+      calc |χ x| * (A * L ^ k : ℝ) ≤ 1 * (A * L ^ k) := by gcongr; exact hχ x
+        _ = A * L ^ k := one_mul _
+    · rw [cutoffHomotopyPullbackCLM_apply, image_eq_zero_of_notMem_tsupport hx, zero_smul,
+        norm_zero]
+      positivity
+  calc ‖T (cutoffHomotopyPullbackCLM χ hH ω)‖ₑ
+      ≤ mass T * ‖(cutoffHomotopyPullbackCLM χ hH ω : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ₑ :=
+        enorm_apply_le_mass_mul T _
+    _ ≤ mass T * (A * L ^ k : ℝ≥0) := by
+        gcongr
+        rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal]
+        exact ENNReal.ofReal_le_ofReal (by simpa using hb)
+    _ = A * L ^ k * mass T := by
+        rw [mul_comm]
+        push_cast
+        ring
+
+end Homotopy
 
 end Distribution

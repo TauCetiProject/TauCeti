@@ -67,6 +67,8 @@ proved directly, without Stokes' theorem on the manifold with corners `M × [0, 
   `TauCeti.norm_cylinderHomotopy_le`, `TauCeti.norm_iteratedFDeriv_cylinderHomotopy_le`: support
   and sup-norm bounds for `h ω` and its derivatives, which make `h` continuous on compactly
   supported smooth forms.
+* `TauCeti.norm_cylinderHomotopy_pullback_le`: the bound `B A L ^ n` for `h (Φ^* ω)`, in terms of
+  bounds `B` for `ω` and `A`, `L` for the time and space derivatives of `Φ`.
 
 ## References
 
@@ -81,7 +83,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set
-open scoped unitInterval Interval
+open scoped unitInterval Interval NNReal
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
@@ -222,6 +224,48 @@ theorem norm_cylinderHomotopy_le {ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]
     rw [uIoc_of_le zero_le_one] at ht
     exact ((contractInl (E := E) (F := F) (n := n)).le_of_opNorm_le norm_contractInl_le_one _).trans
       ((one_mul _).trans_le (h t (Ioc_subset_Icc_self ht)))
+  have hI := intervalIntegral.norm_integral_le_of_norm_le_const hle
+  rw [sub_zero, abs_one, mul_one] at hI
+  rw [cylinderHomotopy_apply]
+  simp only [← contractInl_apply]
+  exact hI
+
+/-- **The cylinder homotopy operator of a pullback**: let `Φ : E × ℝ → E'` and let `ω` be a
+form on `E'` with `‖ω (Φ (x, t))‖ ≤ B` for `t ∈ [0, 1]`. If `‖DΦ (x, t) (0, 1)‖ ≤ A` and the
+spatial derivative `DΦ (x, t) ∘ inl` has operator norm at most `L` along `{x} × [0, 1]`, then the
+cylinder homotopy operator of the pullback `Φ^* ω` is bounded by `B A L ^ n` at `x`. Only one
+argument of the pulled-back form sees the time direction, which gives this bound rather than the
+one from the full norm of `DΦ`. -/
+theorem norm_cylinderHomotopy_pullback_le {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    {Φ : E × ℝ → E'} {ω : E' → E' [⋀^Fin (n + 1)]→L[ℝ] F} {x : E} {A B L : ℝ≥0}
+    (hω : ∀ t ∈ Icc (0 : ℝ) 1, ‖ω (Φ (x, t))‖ ≤ B)
+    (hA : ∀ t ∈ Icc (0 : ℝ) 1, ‖fderiv ℝ Φ (x, t) (0, 1)‖ ≤ A)
+    (hL : ∀ t ∈ Icc (0 : ℝ) 1, ‖(fderiv ℝ Φ (x, t)).comp (.inl ℝ E ℝ)‖ ≤ L) :
+    ‖cylinderHomotopy (fun p ↦ (ω (Φ p)).compContinuousLinearMap (fderiv ℝ Φ p)) x‖ ≤
+      B * A * L ^ n := by
+  have hle : ∀ t ∈ Ι (0 : ℝ) 1, ‖contractInl ((ω (Φ (x, t))).compContinuousLinearMap
+      (fderiv ℝ Φ (x, t)))‖ ≤ B * A * L ^ n := fun t ht ↦ by
+    rw [uIoc_of_le zero_le_one] at ht
+    have ht' : t ∈ Icc (0 : ℝ) 1 := Ioc_subset_Icc_self ht
+    -- Contracting with `∂ₜ` first, the remaining `n` arguments only see `DΦ ∘ inl`.
+    have hcomp : contractInl ((ω (Φ (x, t))).compContinuousLinearMap (fderiv ℝ Φ (x, t))) =
+        ((ω (Φ (x, t))).curryLeft (fderiv ℝ Φ (x, t) (0, 1))).compContinuousLinearMap
+          ((fderiv ℝ Φ (x, t)).comp (.inl ℝ E ℝ)) := by
+      rw [contractInl_apply, ContinuousAlternatingMap.curryLeft_compContinuousLinearMap]
+      ext v
+      rfl
+    rw [hcomp]
+    calc _ ≤ ‖(ω (Φ (x, t))).curryLeft (fderiv ℝ Φ (x, t) (0, 1))‖ *
+          ‖(fderiv ℝ Φ (x, t)).comp (.inl ℝ E ℝ)‖ ^ n :=
+          (ContinuousAlternatingMap.norm_compContinuousLinearMap_le _ _).trans_eq (by simp)
+      _ ≤ (‖ω (Φ (x, t))‖ * ‖fderiv ℝ Φ (x, t) (0, 1)‖) * L ^ n := by
+          gcongr
+          · exact ((ω (Φ (x, t))).curryLeft.le_opNorm _).trans_eq
+              (by rw [ContinuousAlternatingMap.norm_curryLeft])
+          · exact hL t ht'
+      _ ≤ (B * A) * L ^ n := by
+          gcongr
+          exacts [hω t ht', hA t ht']
   have hI := intervalIntegral.norm_integral_le_of_norm_le_const hle
   rw [sub_zero, abs_one, mul_one] at hI
   rw [cylinderHomotopy_apply]
