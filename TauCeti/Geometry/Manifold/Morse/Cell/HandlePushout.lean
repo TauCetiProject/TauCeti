@@ -39,7 +39,8 @@ attaching regions.
 The pushout property comes from the closed cover of `M_{c-ε} ∪ ⋃ᵢ Hᵢ` by the lower sublevel and
 the compact handles `Hᵢ` (`CategoryTheory.IsPushout.of_isClosedEmbedding`). Each handle is a
 product of closed balls in the coordinates `{j | j < k i}` and `{j | k i ≤ j}` of its chart; these
-are reindexed to the standard discs by relabelling the coordinates.
+are reindexed to the standard discs by relabelling the coordinates
+(`LinearIsometryEquiv.closedBallHomeomorphDisk`).
 
 ## Main results
 
@@ -66,48 +67,6 @@ open scoped ContDiff Manifold
 universe u
 
 namespace TauCeti
-
-section Reindex
-
-variable {n k : ℕ}
-
-private theorem card_subtype_not_lt (hk : k ≤ n) :
-    Fintype.card {j : Fin n // ¬j.val < k} = n - k := by
-  rw [Fintype.card_subtype_compl, Fintype.card_fin, ← Fintype.card_congr (Fin.castLEquiv hk),
-    Fintype.card_fin]
-
-/-- The handle `D^k × D^(n-k)`, a product of closed unit balls in the first `k` and in the remaining
-coordinates of `ℝⁿ`, is the product `𝔻 k × 𝔻 (n - k)` of the standard discs of `TopCat`, by
-relabelling the coordinates of each factor. -/
-private def handleHomeomorph (hk : k ≤ n) :
-    closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k}) 1 ×
-        closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k}) 1 ≃ₜ
-      TopCat.disk.{u} k × TopCat.disk.{u} (n - k) :=
-  (((LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ (Fin.castLEquiv hk).symm).toHomeomorph.subtype
-      fun x ↦ by simp).trans Homeomorph.ulift.symm).prodCongr
-    (((LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ
-      (Fintype.equivFinOfCardEq (card_subtype_not_lt hk))).toHomeomorph.subtype
-        fun x ↦ by simp).trans Homeomorph.ulift.symm)
-
-private theorem norm_fst_handleHomeomorph (hk : k ≤ n)
-    (x : closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k}) 1 ×
-      closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k}) 1) :
-    ‖(((handleHomeomorph.{u} hk x).1 :
-      ULift.{u} (closedBall (0 : EuclideanSpace ℝ (Fin k)) 1)).down : EuclideanSpace ℝ (Fin k))‖ =
-      ‖(x.1 : EuclideanSpace ℝ {j : Fin n // j.val < k})‖ :=
-  (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ (Fin.castLEquiv hk).symm).norm_map x.1
-
-private theorem norm_snd_handleHomeomorph (hk : k ≤ n)
-    (x : closedBall (0 : EuclideanSpace ℝ {j : Fin n // j.val < k}) 1 ×
-      closedBall (0 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k}) 1) :
-    ‖(((handleHomeomorph.{u} hk x).2 :
-      ULift.{u} (closedBall (0 : EuclideanSpace ℝ (Fin (n - k))) 1)).down :
-        EuclideanSpace ℝ (Fin (n - k)))‖ =
-      ‖(x.2 : EuclideanSpace ℝ {j : Fin n // ¬j.val < k})‖ :=
-  (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ
-    (Fintype.equivFinOfCardEq (card_subtype_not_lt hk))).norm_map x.2
-
-end Reindex
 
 section HandlePushout
 
@@ -284,12 +243,19 @@ theorem exists_isPushout_sublevel_handles [Finite ι] (hfs : ContMDiff I 𝓘(�
       ∀ x, (∀ i, x ∉ range (α i)) → (f (j x : M) = c + ε ↔ f (x : M) = c - ε) := by
   obtain ⟨H, e, Φ, hH, hge, he, -, hΦ, hΦtop⟩ :=
     exists_diffeomorph_sublevel_eq_union_handles hfs ψ hψ k hε hball hf hcompact hcrit
+  -- Relabel the coordinates `{j | j < k i}` and `{j | k i ≤ j}` of each handle as `Fin (k i)` and
+  -- `Fin (n - k i)`, carrying it to the standard discs `𝔻 (k i) × 𝔻 (n - k i)`.
+  have hcard : ∀ i, Fintype.card {j : Fin n // ¬j.val < k i} = n - k i := fun i ↦ by
+    rw [Fintype.card_subtype_compl, Fintype.card_fin, Fintype.card_fin_lt_of_le (hk i)]
   refine isPushout_of_handles hfs.continuous k Φ.toHomeomorph H
-    (fun i ↦ (e i).trans (handleHomeomorph.{u} (hk i)))
+    (fun i ↦ (e i).trans <|
+      (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ
+        (Fin.castLEquiv (hk i)).symm).closedBallHomeomorphDisk.{u}.prodCongr
+      (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ
+        (Fintype.equivFinOfCardEq (hcard i))).closedBallHomeomorphDisk.{u})
     (fun i l hil ↦ (hψ hil).mono (hH i) (hH l)) hge
-    (fun i x ↦ by rw [he, Homeomorph.trans_apply, norm_fst_handleHomeomorph]) hΦ fun x ↦ ?_
-  simp only [hΦtop x, Homeomorph.trans_apply, norm_snd_handleHomeomorph,
-    Diffeomorph.coe_toHomeomorph]
+    (fun i x ↦ by simp [he]) hΦ fun x ↦ ?_
+  simp [hΦtop x]
 
 /-- **Milnor's handle attachment theorem, as a pushout** (Milnor, Remark 3.3). Let `f` be a Morse
 function on a Hausdorff manifold of dimension `m` whose band `f⁻¹[c - δ, c + δ]` is compact, for
