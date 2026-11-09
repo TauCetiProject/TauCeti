@@ -8,9 +8,9 @@ module
 public import TauCeti.Analysis.Distribution.TestFunction.Prod
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
+import TauCeti.Analysis.Distribution.TestFunction.FourierSeries
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
-import TauCeti.Analysis.Fourier.Torus.Smooth
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 /-!
@@ -28,19 +28,19 @@ determined by the pairings `K (ψ ⊗ φ)`.
 
 Fix a test function `f` on `Ω × O`. Its support lies in the product of two compact sets, and
 cutoffs `χ₁` on `Ω` and `χ₂` on `O` equal to one near them satisfy `f = (χ₁ ⊗ χ₂) f`. A linear
-change of coordinates `L : E × D → ℝⁿ` sends the support of `χ₁ ⊗ χ₂` into the open unit cube,
-where `f ∘ L⁻¹` is the limit in every `C^k` norm of trigonometric polynomials
-`∑ n ∈ s, c n exp (2πi ⟪n, y⟫)`
-(`TauCeti.UnitAddTorus.exists_tendstoUniformlyOn_iteratedFDeriv_sum_cexp`, a truncated Fourier
-series of the periodic extension). A linear form in `(x, t)` is the sum of a linear form in `x`
-and one in `t`, so each exponential `exp (2πi ⟪n, L (x, t)⟫)` is a product of a function of `x`
-and a function of `t`, and the real part of such a product is
-`Re a Re b - Im a Im b`. Hence the cut-off real parts `(χ₁ ⊗ χ₂) Re (p ∘ L)` of these polynomials
-are finite sums of tensor products of real test functions. They are supported in the fixed
-compact set `tsupport χ₁ ×ˢ tsupport χ₂`, and by the Leibniz rule
-(`ContDiffOn.tendstoUniformlyOn_iteratedFDerivWithin_clm_apply_comp`) their derivatives converge
-uniformly to those of `(χ₁ ⊗ χ₂) f = f`, so they converge to `f` in the LF topology
-(`TestFunction.tendsto_of_tendstoUniformly_iteratedFDeriv`).
+change of coordinates `L : E × D → ℝⁿ` (Euclidean) sends the support of `χ₁ ⊗ χ₂` into a ball
+that meets none of its translates by nonzero integer vectors. There `f ∘ L⁻¹` is the limit in
+every `C^k` norm of trigonometric polynomials `∑ m ∈ s, c m exp (2πi ⟪m, y⟫)`: these are the
+partial sums of the Fourier expansion of `f ∘ L⁻¹` in modulated cutoffs
+(`ContDiffMapSupportedIn.hasSum_fourier_smul_modulate`), read where the cutoff equals one.
+A linear form in `(x, t)` is the sum of a linear form in `x` and one in `t`, so each exponential
+`exp (2πi ⟪m, L (x, t)⟫)` is a product of a function of `x` and a function of `t`, and the real
+part of such a product is `Re a Re b - Im a Im b`. Hence the cut-off real parts
+`(χ₁ ⊗ χ₂) Re (p ∘ L)` of these polynomials are finite sums of tensor products of real test
+functions. They are supported in the fixed compact set `tsupport χ₁ ×ˢ tsupport χ₂`, and by the
+Leibniz rule (`ContDiffOn.tendstoUniformlyOn_iteratedFDerivWithin_clm_apply_comp`) their
+derivatives converge uniformly to those of `(χ₁ ⊗ χ₂) f = f`, so they converge to `f` in the LF
+topology (`TestFunction.tendsto_of_tendstoUniformly_iteratedFDeriv`).
 
 Real-valued test functions are the ones on which Mathlib's distributions `𝓓'(Ω, F)` are defined.
 
@@ -94,33 +94,32 @@ private theorem exists_mem_tensorSpan_eq_mul_re (hV : (Ω : Set E) ×ˢ (O : Set
   simp only [sub_apply, prodSMulCLM_apply, smulLeftCLM_apply, smul_eq_mul, mul_re]
   ring
 
-/-- The cut-off real part `(χ₁ ⊗ χ₂) Re (p ∘ L)` of a trigonometric polynomial `p` read through a
-linear map `L : E × D → ℝⁿ` lies in the span of the tensor products. -/
+/-- The cut-off real part `(χ₁ ⊗ χ₂) Re p` of a trigonometric polynomial
+`p z = ∑ n ∈ s, c n exp (2πi ℓ n z)` with real linear phases `ℓ n` lies in the span of the tensor
+products. -/
 private theorem exists_mem_tensorSpan_eq_mul_re_sum (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V)
-    (χ₁ : 𝓓(Ω, ℝ)) (χ₂ : 𝓓(O, ℝ)) {ι : Type*} [Fintype ι] (L : E × D →L[ℝ] ι → ℝ)
-    (c : (ι → ℤ) → ℂ) (s : Finset (ι → ℤ)) :
+    (χ₁ : 𝓓(Ω, ℝ)) (χ₂ : 𝓓(O, ℝ)) {κ : Type*} (ℓ : κ → E × D →L[ℝ] ℝ) (c : κ → ℂ)
+    (s : Finset κ) :
     ∃ h ∈ tensorSpan hV, ∀ z : E × D, h z = χ₁ z.1 * χ₂ z.2 *
-      (∑ n ∈ s, c n * cexp (2 * π * I * ∑ i, (n i : ℂ) * (L z i : ℂ))).re := by
+      (∑ n ∈ s, c n * cexp (2 * π * I * (ℓ n z : ℂ))).re := by
   classical
   induction s using Finset.induction_on with
   | empty => exact ⟨0, zero_mem _, fun z ↦ by simp⟩
   | insert n s hn ih =>
     obtain ⟨h, hh, hhz⟩ := ih
     -- The phase is the sum of a linear form in `z.1` and one in `z.2`.
-    set ℓ : E × D →L[ℝ] ℝ := (∑ i, (n i : ℝ) • ContinuousLinearMap.proj i) ∘L L
-    have hℓ (z : E × D) : ∑ i, (n i : ℂ) * (L z i : ℂ) = ((ℓ (z.1, 0) + ℓ (0, z.2) : ℝ) : ℂ) := by
+    have hℓ (z : E × D) : (ℓ n z : ℂ) = ((ℓ n (z.1, 0) + ℓ n (0, z.2) : ℝ) : ℂ) := by
       rw [← map_add, Prod.mk_add_mk, add_zero, zero_add]
-      simp [ℓ]
     have hof : ContDiff ℝ ∞ fun r : ℝ ↦ (r : ℂ) := ofRealCLM.contDiff
-    have hu : ContDiff ℝ ∞ fun x : E ↦ c n * cexp (2 * π * I * (ℓ (x, 0) : ℂ)) := by
-      have : ContDiff ℝ ∞ fun x : E ↦ ℓ (x, 0) := ℓ.contDiff.comp (by fun_prop)
+    have hu : ContDiff ℝ ∞ fun x : E ↦ c n * cexp (2 * π * I * (ℓ n (x, 0) : ℂ)) := by
+      have : ContDiff ℝ ∞ fun x : E ↦ ℓ n (x, 0) := (ℓ n).contDiff.comp (by fun_prop)
       fun_prop
-    have hw : ContDiff ℝ ∞ fun t : D ↦ cexp (2 * π * I * (ℓ (0, t) : ℂ)) := by
-      have : ContDiff ℝ ∞ fun t : D ↦ ℓ (0, t) := ℓ.contDiff.comp (by fun_prop)
+    have hw : ContDiff ℝ ∞ fun t : D ↦ cexp (2 * π * I * (ℓ n (0, t) : ℂ)) := by
+      have : ContDiff ℝ ∞ fun t : D ↦ ℓ n (0, t) := (ℓ n).contDiff.comp (by fun_prop)
       fun_prop
     obtain ⟨h', hh', hh'z⟩ := exists_mem_tensorSpan_eq_mul_re hV χ₁ χ₂ hu hw
     refine ⟨h' + h, add_mem hh' hh, fun z ↦ ?_⟩
-    rw [add_apply, hh'z, hhz, Finset.sum_insert hn, add_re, mul_add, hℓ, ofReal_add, mul_add,
+    rw [add_apply, hh'z, hhz, Finset.sum_insert hn, add_re, mul_add, hℓ z, ofReal_add, mul_add,
       exp_add]
     simp only [mul_assoc]
 
@@ -186,6 +185,55 @@ private theorem tendsto_of_eq_mul_re {G : Type*} [NormedAddCommGroup G] [NormedS
     rw [Function.notMem_support.1 fun h' ↦ hz' (support_iteratedFDeriv_subset k h'), norm_zero]
     exact hε
 
+/-- **Trigonometric approximation on a small ball.** There is a ball `‖y‖ < r` in `ℝⁿ` on which
+every smooth function `g` supported in it is the limit in every `C^k` norm of trigonometric
+polynomials `∑ m ∈ s, c m exp (2πi ⟪w m, y⟫)`, as the finite set `s` of frequencies grows. These
+are the partial sums of the Fourier expansion of `g` in modulated cutoffs
+(`ContDiffMapSupportedIn.hasSum_fourier_smul_modulate`), read where the cutoff equals one. -/
+private theorem exists_tendstoUniformlyOn_iteratedFDeriv_sum_cexp (N : ℕ) :
+    ∃ r > 0, ∀ g : EuclideanSpace ℝ (Fin N) → ℂ, ContDiff ℝ ∞ g →
+      support g ⊆ Metric.ball 0 r → ∃ (κ : Type) (w : κ → EuclideanSpace ℝ (Fin N)) (c : κ → ℂ),
+        ∀ k : ℕ, TendstoUniformlyOn (fun s : Finset κ ↦ iteratedFDeriv ℝ k
+          fun y ↦ ∑ m ∈ s, c m * cexp (2 * π * I * (innerSL ℝ (w m) y : ℂ)))
+          (iteratedFDeriv ℝ k g) atTop (Metric.ball 0 r) := by
+  let Y := EuclideanSpace ℝ (Fin N)
+  -- The lattice `Λ` of integer vectors, whose nonzero vectors have norm at least `ε`.
+  let Λ : Submodule ℤ Y := Submodule.span ℤ (range (EuclideanSpace.basisFun _ ℝ).toBasis)
+  obtain ⟨ε, hε, hΛ⟩ := Metric.isOpen_singleton_iff.1 (isOpen_discrete {(0 : Λ)})
+  -- The ball `K` of radius `ε / 3` meets none of its nonzero `Λ`-translates.
+  let K : Compacts Y := ⟨Metric.closedBall 0 (ε / 3), isCompact_closedBall _ _⟩
+  have hK : ∀ y ∈ K, ∀ ℓ : Λ, y + ℓ ∈ K → ℓ = 0 := fun y hy ℓ hyℓ ↦ hΛ ℓ <| by
+    have hy' : ‖y‖ ≤ ε / 3 := mem_closedBall_zero_iff.1 hy
+    have hyℓ' : ‖y + ℓ‖ ≤ ε / 3 := mem_closedBall_zero_iff.1 hyℓ
+    rw [dist_zero_right]
+    calc ‖(ℓ : Y)‖ = ‖(y + ℓ) - y‖ := by rw [add_sub_cancel_left]
+      _ ≤ ‖y + ℓ‖ + ‖y‖ := norm_sub_le _ _
+      _ < ε := by linarith
+  -- A cutoff `χ` supported in `K`, equal to one on the ball of radius `ε / 6`.
+  let b : ContDiffBump (0 : Y) := ⟨ε / 6, ε / 3, by positivity, by linarith⟩
+  have hof : ContDiff ℝ ∞ fun r : ℝ ↦ (r : ℂ) := ofRealCLM.contDiff
+  let χ : 𝓓_{K}(Y, ℂ) := .of_support_subset (hof.comp b.contDiff) fun y hy ↦
+    Metric.ball_subset_closedBall (b.support_eq ▸ support_comp_subset ofReal_zero _ hy)
+  have hχ1 (y : Y) (hy : y ∈ Metric.ball (0 : Y) (ε / 6)) : χ y = 1 := by
+    change ((b y : ℝ) : ℂ) = 1
+    rw [b.one_of_mem_closedBall (Metric.ball_subset_closedBall hy), ofReal_one]
+  refine ⟨ε / 6, by positivity, fun g hg hgsupp ↦ ?_⟩
+  -- The Fourier expansion of `g` in the modulated cutoffs converges in `𝓓_{K}(Y, ℂ)`.
+  let φ : 𝓓_{K}(Y, ℂ) := .of_support_subset hg fun y hy ↦
+    Metric.closedBall_subset_closedBall (by linarith) (Metric.ball_subset_closedBall (hgsupp hy))
+  obtain ⟨c, hc⟩ : ∃ c : ZLattice.dual Λ → ℂ, HasSum (fun m ↦ c m • χ.modulate m) φ :=
+    ⟨_, ContDiffMapSupportedIn.hasSum_fourier_smul_modulate Λ φ χ hK fun y hy ↦
+      hχ1 y (hgsupp hy)⟩
+  refine ⟨ZLattice.dual Λ, (↑), c, fun k ↦ ?_⟩
+  have h1 := ((ContDiffMapSupportedIn.structureMapCLM ℂ ⊤ k).continuous.tendsto φ).comp hc
+  rw [BoundedContinuousFunction.tendsto_iff_tendstoUniformly] at h1
+  -- Near the ball `χ = 1`, so there the partial sums are the trigonometric polynomials.
+  refine h1.tendstoUniformlyOn.congr (Eventually.of_forall fun s y hy ↦ ?_)
+  simp only [comp_apply, ContDiffMapSupportedIn.structureMapCLM_top_apply]
+  refine (Filter.EventuallyEq.iteratedFDeriv ℝ (Filter.eventually_of_mem
+    (Metric.isOpen_ball.mem_nhds hy) fun y' hy' ↦ ?_) k).eq_of_nhds
+  simp [hχ1 y' hy', real_inner_comm]
+
 /-- **Density of tensor products of test functions.** For open sets `Ω ⊆ E` and `O ⊆ D` of
 finite-dimensional real normed spaces and `V = Ω ×ˢ O`, the tensor products
 `(x, t) ↦ ψ t • φ x` of real test functions `φ` on `Ω` and `ψ` on `O` span a dense subspace of
@@ -209,24 +257,31 @@ theorem dense_span_prodSMulCLM [FiniteDimensional ℝ E] [FiniteDimensional ℝ 
   have hCV : C ⊆ V := hV ▸ prod_mono χ₁.tsupport_subset χ₂.tsupport_subset
   have hKC : tsupport (f : E × D → ℝ) ⊆ C := fun z hz ↦
     ⟨subset_tsupport _ (by simp [(hχf z hz).1]), subset_tsupport _ (by simp [(hχf z hz).2])⟩
-  -- Linear coordinates `L` sending `C` into the open unit cube.
-  obtain ⟨L, hLC⟩ := hC.exists_continuousLinearEquiv_mapsTo_ball one_half_pos
-  -- `f` read in these coordinates is approximated by trigonometric polynomials on the cube.
-  set g : (Fin (Module.finrank ℝ (E × D)) → ℝ) → ℂ := fun y ↦ (f (L.symm y) : ℂ)
-  have hg : ContDiff ℝ ∞ g := ofRealCLM.contDiff.comp (f.contDiff.comp L.symm.contDiff)
-  have hgsupp : support g ⊆ Metric.ball 0 (1 / 2) := fun y hy ↦ by
+  -- Linear coordinates `L` sending `C` into a ball where trigonometric approximation holds.
+  obtain ⟨r, hr, hfour⟩ := exists_tendstoUniformlyOn_iteratedFDeriv_sum_cexp
+    (Module.finrank ℝ (E × D))
+  obtain ⟨L, hLC⟩ := hC.exists_continuousLinearEquiv_mapsTo_ball
+    (finrank_euclideanSpace_fin).symm hr
+  -- `f` read in these coordinates is approximated by trigonometric polynomials on the ball.
+  set g : EuclideanSpace ℝ (Fin (Module.finrank ℝ (E × D))) → ℂ := fun y ↦ (f (L.symm y) : ℂ)
+  have hof : ContDiff ℝ ∞ fun r : ℝ ↦ (r : ℂ) := ofRealCLM.contDiff
+  have hg : ContDiff ℝ ∞ g := hof.comp (f.contDiff.comp L.symm.contDiff)
+  have hgsupp : support g ⊆ Metric.ball 0 r := fun y hy ↦ by
     have hAy : L.symm y ∈ tsupport (f : E × D → ℝ) := subset_tsupport _ (by simpa [g] using hy)
     simpa using hLC (hKC hAy)
-  obtain ⟨c, hc⟩ := TauCeti.UnitAddTorus.exists_tendstoUniformlyOn_iteratedFDeriv_sum_cexp hg hgsupp
-  set L' : E × D →L[ℝ] Fin (Module.finrank ℝ (E × D)) → ℝ := L.toContinuousLinearMap
-  choose h hh hhz using exists_mem_tensorSpan_eq_mul_re_sum hV.symm.subset χ₁ χ₂ L' c
+  obtain ⟨κ, w, c, hc⟩ := hfour g hg hgsupp
+  set L' := L.toContinuousLinearMap
+  choose h hh hhz using exists_mem_tensorSpan_eq_mul_re_sum hV.symm.subset χ₁ χ₂
+    (fun m ↦ innerSL ℝ (w m) ∘L L') c
   refine mem_closure_of_tendsto
-    (tendsto_of_eq_mul_re hCV L' hLC hg (fun z ↦ ?_) (fun s ↦ ?_) hc hhz) (Eventually.of_forall hh)
+    (tendsto_of_eq_mul_re hCV L' hLC hg (fun z ↦ ?_) (fun s ↦ ?_) hc (fun s z ↦ ?_))
+    (Eventually.of_forall hh)
   · by_cases hz : z ∈ tsupport (f : E × D → ℝ)
     · simp [g, L', (hχf z hz).1, (hχf z hz).2]
     · simp [g, L', image_eq_zero_of_notMem_tsupport hz]
-  · have hof : ContDiff ℝ ∞ fun r : ℝ ↦ (r : ℂ) := ofRealCLM.contDiff
+  · have (m : κ) : ContDiff ℝ ∞ (innerSL ℝ (w m)) := (innerSL ℝ (w m)).contDiff
     fun_prop
+  · simp [hhz, L']
 
 /-- **Uniqueness on tensor products.** A continuous linear map on the real test functions on
 `V = Ω ×ˢ O`, with values in a Hausdorff space, is determined by its values on the tensor products

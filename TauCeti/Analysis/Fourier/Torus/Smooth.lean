@@ -31,12 +31,6 @@ on the monomials, weighted by the Fourier coefficients of `f`; in particular `T`
 these values. These expansions are the input to the Fourier-series proof of the Schwartz kernel
 theorem.
 
-A smooth function `g` on `d → ℝ` supported in the open unit cube `‖x‖ < 1 / 2` (sup norm) agrees
-there with its periodic extension `x ↦ ∑ᶠ m, g (x + m)`, the lift of a smooth function on the
-torus. Hence `g` is the limit, in every `C^k` norm on the cube, of trigonometric polynomials
-`∑ n ∈ s, c n exp (2πi ∑ i, n i x i)`. This expands test functions on a compact coordinate box in
-Fourier modes, as in the proof that tensor products of test functions are dense.
-
 ## Main definitions
 
 * `TauCeti.UnitAddTorus.smoothFunctions d`: the smooth functions on `UnitAddTorus d`.
@@ -63,9 +57,6 @@ Fourier modes, as in the proof that tensor products of test functions are dense.
   coefficients of `f`.
 * `TauCeti.UnitAddTorus.linearMap_eq_of_apply_mFourierSmooth_eq`: two continuous linear maps that
   agree on the Fourier monomials are equal.
-* `TauCeti.UnitAddTorus.exists_tendstoUniformlyOn_iteratedFDeriv_sum_cexp`: a smooth function
-  supported in the open unit cube is a `C^k` limit of trigonometric polynomials on the cube, for
-  every `k`.
 
 ## References
 
@@ -417,130 +408,5 @@ theorem linearMap_eq_of_apply_mFourierSmooth_eq {F : Type*} [NormedAddCommGroup 
   ext f
   refine (T.hasSum_mFourierCoeff_smul_apply hT f).unique ?_
   simpa only [h] using T'.hasSum_mFourierCoeff_smul_apply hT' f
-
-/-! ### Trigonometric approximation on the open unit cube -/
-
-/-- The periodic extension `x ↦ ∑ᶠ m, g (x + m)` of a function `g` on `d → ℝ`. -/
-private def periodize (g : (d → ℝ) → ℂ) (x : d → ℝ) : ℂ :=
-  ∑ᶠ m : d → ℤ, g (x + fun i ↦ (m i : ℝ))
-
-variable {g : (d → ℝ) → ℂ}
-
-/-- Near any point, only finitely many integer translates of a function supported in the open
-unit cube are nonzero. -/
-private theorem exists_finset_periodize_eq (hg : Function.support g ⊆ Metric.ball 0 (1 / 2))
-    (x₀ : d → ℝ) : ∃ T : Finset (d → ℤ), ∀ x ∈ Metric.ball x₀ (1 / 2),
-      periodize g x = ∑ m ∈ T, g (x + fun i ↦ (m i : ℝ)) := by
-  classical
-  set N : ℤ := ⌈‖x₀‖⌉ + 1 with hN
-  refine ⟨Fintype.piFinset fun _ ↦ Finset.Icc (-N) N, fun x hx ↦ ?_⟩
-  refine finsum_eq_sum_of_support_subset _ fun m hm ↦ ?_
-  have hball := hg hm
-  rw [mem_ball_zero_iff] at hball
-  rw [Metric.mem_ball, dist_eq_norm] at hx
-  simp only [Finset.mem_coe, Fintype.mem_piFinset, Finset.mem_Icc]
-  intro i
-  have h1 : |x i + m i| < 1 / 2 := by
-    simpa [Real.norm_eq_abs] using (norm_le_pi_norm (x + fun i ↦ (m i : ℝ)) i).trans_lt hball
-  have h2 : |x i| < ‖x₀‖ + 1 / 2 := by
-    have := norm_le_pi_norm x i
-    have := norm_sub_norm_le x x₀
-    rw [Real.norm_eq_abs] at *
-    linarith
-  have h3 : ‖x₀‖ ≤ (⌈‖x₀‖⌉ : ℝ) := Int.le_ceil _
-  have h4 : |(m i : ℝ)| < N := by
-    have : |(m i : ℝ)| ≤ |x i + m i| + |x i| := by
-      calc |(m i : ℝ)| = |(x i + m i) - x i| := by ring_nf
-        _ ≤ |x i + m i| + |x i| := abs_sub _ _
-    rw [hN]
-    push_cast
-    linarith
-  rw [abs_lt] at h4
-  exact ⟨by exact_mod_cast h4.1.le, by exact_mod_cast h4.2.le⟩
-
-/-- The periodic extension of a smooth function supported in the open unit cube is smooth. -/
-private theorem contDiff_periodize (hg : Function.support g ⊆ Metric.ball 0 (1 / 2))
-    (hg' : ContDiff ℝ ∞ g) : ContDiff ℝ ∞ (periodize g) := by
-  refine contDiff_iff_contDiffAt.2 fun x₀ ↦ ?_
-  obtain ⟨T, hT⟩ := exists_finset_periodize_eq hg x₀
-  have hsum : ContDiff ℝ ∞ fun x ↦ ∑ m ∈ T, g (x + fun i ↦ (m i : ℝ)) :=
-    ContDiff.sum fun m _ ↦ hg'.comp (contDiff_id.add contDiff_const)
-  exact hsum.contDiffAt.congr_of_eventuallyEq
-    (Filter.eventually_of_mem (Metric.ball_mem_nhds x₀ (by norm_num)) hT)
-
-omit [Fintype d] in
-/-- The periodic extension has every integer vector as a period. -/
-private theorem periodize_add (x : d → ℝ) (n : d → ℤ) :
-    periodize g (x + fun i ↦ (n i : ℝ)) = periodize g x := by
-  unfold periodize
-  calc ∑ᶠ m : d → ℤ, g (x + (fun i ↦ (n i : ℝ)) + fun i ↦ (m i : ℝ))
-      = ∑ᶠ m : d → ℤ, (fun m' : d → ℤ ↦ g (x + fun i ↦ (m' i : ℝ))) (Equiv.addLeft n m) :=
-        finsum_congr fun m ↦ congrArg g <| by
-          ext i
-          simp only [Pi.add_apply, Equiv.coe_addLeft, Int.cast_add]
-          ring
-    _ = ∑ᶠ m : d → ℤ, g (x + fun i ↦ (m i : ℝ)) :=
-        finsum_comp_equiv (Equiv.addLeft n) (f := fun m' : d → ℤ ↦ g (x + fun i ↦ (m' i : ℝ)))
-
-/-- On the open unit cube, the periodic extension of a function supported there is the function
-itself. -/
-private theorem periodize_eq_of_mem_ball (hg : Function.support g ⊆ Metric.ball 0 (1 / 2))
-    {x : d → ℝ} (hx : x ∈ Metric.ball (0 : d → ℝ) (1 / 2)) : periodize g x = g x := by
-  unfold periodize
-  rw [finsum_eq_single _ 0 fun m hm ↦ ?_]
-  · congr 1
-    ext i
-    simp
-  · refine Function.notMem_support.1 fun hmem ↦ ?_
-    have hball := hg hmem
-    rw [mem_ball_zero_iff] at hball hx
-    obtain ⟨i, hi⟩ : ∃ i, m i ≠ 0 := by simpa using Function.ne_iff.1 hm
-    have h1 : |x i + m i| < 1 / 2 := by
-      simpa [Real.norm_eq_abs] using (norm_le_pi_norm (x + fun i ↦ (m i : ℝ)) i).trans_lt hball
-    have h2 : |x i| < 1 / 2 := by
-      simpa [Real.norm_eq_abs] using (norm_le_pi_norm x i).trans_lt hx
-    have h3 : (1 : ℝ) ≤ |(m i : ℝ)| := by exact_mod_cast Int.one_le_abs hi
-    have : |(m i : ℝ)| ≤ |x i + m i| + |x i| := by
-      calc |(m i : ℝ)| = |(x i + m i) - x i| := by ring_nf
-        _ ≤ |x i + m i| + |x i| := abs_sub _ _
-    linarith
-
-/-- **Trigonometric approximation in `C^∞` on the open unit cube.** A smooth function `g` on
-`d → ℝ` supported in the open unit cube `‖x‖ < 1 / 2` (sup norm) is approximated in every `C^k`
-norm on that cube by trigonometric polynomials: there are coefficients `c n` (the Fourier
-coefficients of the periodic extension of `g`) such that for every `k`, the `k`-th derivatives of
-`∑ n ∈ s, c n exp (2πi ∑ i, n i x i)` converge to that of `g`, uniformly on the cube, as the
-finite set `s` of frequencies grows. -/
-theorem exists_tendstoUniformlyOn_iteratedFDeriv_sum_cexp
-    (hg : ContDiff ℝ ∞ g) (hsupp : Function.support g ⊆ Metric.ball 0 (1 / 2)) :
-    ∃ c : (d → ℤ) → ℂ, ∀ k : ℕ, TendstoUniformlyOn
-      (fun (s : Finset (d → ℤ)) (x : d → ℝ) ↦ iteratedFDeriv ℝ k
-        (fun y : d → ℝ ↦ ∑ n ∈ s, c n * cexp (2 * π * I * ∑ i, (n i : ℂ) * y i)) x)
-      (iteratedFDeriv ℝ k g) atTop (Metric.ball 0 (1 / 2)) := by
-  -- Descend the periodic extension to a smooth function `f` on the torus.
-  have hG := contDiff_periodize hsupp hg
-  obtain ⟨f, -, hf⟩ := exists_continuous_comp_coe_eq hG.continuous fun n x ↦ periodize_add x n
-  have hlift : (fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) = periodize g := funext hf
-  have hfs : f ∈ smoothFunctions d := mem_smoothFunctions.2 (hlift ▸ hG)
-  refine ⟨mFourierCoeff f, fun k ↦ Metric.tendstoUniformlyOn_iff.2 fun ε hε ↦ ?_⟩
-  -- The trigonometric polynomials are the lifts of the partial sums of the Fourier series.
-  filter_upwards [eventually_derivBound_sub_sum hfs k (half_pos hε)] with s hs x hx
-  set S : UnitAddTorus d → ℂ := ∑ n ∈ s, mFourierCoeff f n • ⇑(mFourier n)
-  have hS : (fun y : d → ℝ ↦ ∑ n ∈ s, mFourierCoeff f n * cexp (2 * π * I * ∑ i, (n i : ℂ) * y i)) =
-      fun y ↦ S fun i ↦ (y i : UnitAddCircle) := by
-    funext y
-    simp [S, Finset.sum_apply, mFourier_coe_apply]
-  have hSs : S ∈ smoothFunctions d :=
-    Submodule.sum_mem _ fun n _ ↦ Submodule.smul_mem _ _ (mFourier_mem_smoothFunctions n)
-  -- On the open cube the periodic extension agrees with `g` near `x`.
-  have hgx : iteratedFDeriv ℝ k g x = iteratedFDeriv ℝ k (periodize g) x :=
-    (Filter.EventuallyEq.iteratedFDeriv ℝ (Filter.eventually_of_mem
-      (Metric.isOpen_ball.mem_nhds hx) fun y hy ↦ periodize_eq_of_mem_ball hsupp hy)
-        k).eq_of_nhds.symm
-  have hsub := iteratedFDeriv_sub_apply (i := k) (x := x)
-    ((mem_smoothFunctions.1 hfs).contDiffAt.of_le (mod_cast le_top))
-    ((mem_smoothFunctions.1 hSs).contDiffAt.of_le (mod_cast le_top))
-  rw [dist_eq_norm, hgx, ← hlift, hS, ← hsub]
-  exact (hs k le_rfl x).trans_lt (half_lt_self hε)
 
 end TauCeti.UnitAddTorus
