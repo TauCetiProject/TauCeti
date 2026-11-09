@@ -21,6 +21,8 @@ Binary and finite concatenations add lengths, and restriction to a subpath recov
 on its parameter interval. Reversal and increasing continuous reparametrizations preserve length.
 All length identities are extended nonnegative identities, allowing paths of infinite length.
 In particular, concatenation is rectifiable exactly when both constituent paths are rectifiable.
+A `C`-Lipschitz map on the unit interval, in particular a `C`-Lipschitz path, has length at most
+`C`.
 -/
 
 -- Central Mathlib inputs: `eVariationOn.comp_eq_of_monotoneOn`,
@@ -170,3 +172,22 @@ theorem boundedVariationOn_reparam_iff (γ : Path x y) {f : I → I} (hf : Monot
   simp only [BoundedVariationOn, eVariationOn_reparam γ hf hc h0 h1]
 
 end Path
+
+namespace TauCeti
+
+open scoped NNReal
+
+/-- The identity of the unit interval has total variation `1`. -/
+theorem eVariationOn_id_unitInterval : eVariationOn (id : I → I) univ = 1 := by
+  change eVariationOn ((id : ℝ → ℝ) ∘ (Subtype.val : I → ℝ)) univ = 1
+  rw [eVariationOn.comp_eq_of_monotoneOn id Subtype.val (fun _ _ _ _ h ↦ h), image_univ,
+    Subtype.range_coe_subtype, ofPred_mem_eq, unitInterval, eVariationOn_id_Icc, sub_zero,
+    ENNReal.ofReal_one]
+
+/-- A `C`-Lipschitz map on the unit interval has total variation at most `C`. -/
+theorem eVariationOn_unitInterval_le_of_lipschitzWith {X : Type*} [PseudoEMetricSpace X]
+    {f : I → X} {C : ℝ≥0} (hf : LipschitzWith C f) : eVariationOn f univ ≤ C := by
+  simpa only [Function.comp_id, eVariationOn_id_unitInterval, mul_one] using
+    hf.lipschitzOnWith.comp_eVariationOn_le (mapsTo_id univ)
+
+end TauCeti
