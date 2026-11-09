@@ -38,6 +38,7 @@ because `locTopology` is deliberately not an instance; this is the same preamble
 
 * `TauCeti.Huber.PairOfDefinition.restrictionRingHom` : the restriction map
   `A⟨T/s⟩ →+* A⟨T''/s''⟩` attached to a refinement.
+* `TauCeti.Huber.PairOfDefinition.restrictionAlgHom` : the same map as a map of `A`-algebras.
 
 ## Main results
 
@@ -316,6 +317,70 @@ theorem eq_restrictionRingHom :
   have _ := isTopologicalRing_locUniformSpace P T'' s'' S'' hden''
   exact fun g hgc hge ↦ (existsUnique_continuous_ringHom_of_refines P T s S hden T'' s'' S''
     hden'' r hs'' hT).choose_spec.2 g ⟨hgc, hge⟩
+
+/-- **The restriction map as a map of `A`-algebras.** This is `restrictionRingHom`, which
+commutes with the structure maps from `A` by `restrictionRingHom_comp_toCompletionLoc`; the
+`A`-algebra structures on the completions are the ones induced by the continuous actions
+`continuousSMul_locUniformSpace`. -/
+@[expose] noncomputable def restrictionAlgHom :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := continuousSMul_locUniformSpace P T s S hden
+    letI := uniformContinuousConstSMul_of_continuousConstSMul A S
+    letI := locUniformSpace P T'' s'' S'' hden''
+    letI := isUniformAddGroup_locUniformSpace P T'' s'' S'' hden''
+    letI := isTopologicalRing_locUniformSpace P T'' s'' S'' hden''
+    letI := continuousSMul_locUniformSpace P T'' s'' S'' hden''
+    letI := uniformContinuousConstSMul_of_continuousConstSMul A S''
+    UniformSpace.Completion S →ₐ[A] UniformSpace.Completion S'' :=
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have _ := continuousSMul_locUniformSpace P T s S hden
+  have _ := uniformContinuousConstSMul_of_continuousConstSMul A S
+  let _ := locUniformSpace P T'' s'' S'' hden''
+  have _ := isUniformAddGroup_locUniformSpace P T'' s'' S'' hden''
+  have _ := isTopologicalRing_locUniformSpace P T'' s'' S'' hden''
+  have _ := continuousSMul_locUniformSpace P T'' s'' S'' hden''
+  have _ := uniformContinuousConstSMul_of_continuousConstSMul A S''
+  { restrictionRingHom P T s S hden T'' s'' S'' hden'' r hs'' hT with
+    commutes' := fun a ↦ by
+      rw [UniformSpace.Completion.algebraMap_def, UniformSpace.Completion.algebraMap_def,
+        ← toCompletionLoc_apply P T s S hden a, ← toCompletionLoc_apply P T'' s'' S'' hden'' a]
+      exact RingHom.congr_fun
+        (restrictionRingHom_comp_toCompletionLoc P T s S hden T'' s'' S'' hden'' r hs'' hT) a }
+
+@[simp]
+theorem coe_restrictionAlgHom :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := continuousSMul_locUniformSpace P T s S hden
+    letI := uniformContinuousConstSMul_of_continuousConstSMul A S
+    letI := locUniformSpace P T'' s'' S'' hden''
+    letI := isUniformAddGroup_locUniformSpace P T'' s'' S'' hden''
+    letI := isTopologicalRing_locUniformSpace P T'' s'' S'' hden''
+    letI := continuousSMul_locUniformSpace P T'' s'' S'' hden''
+    letI := uniformContinuousConstSMul_of_continuousConstSMul A S''
+    ⇑(restrictionAlgHom P T s S hden T'' s'' S'' hden'' r hs'' hT) =
+      restrictionRingHom P T s S hden T'' s'' S'' hden'' r hs'' hT :=
+  rfl
+
+/-- The restriction map of `A`-algebras is continuous. -/
+theorem continuous_restrictionAlgHom :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    letI := continuousSMul_locUniformSpace P T s S hden
+    letI := uniformContinuousConstSMul_of_continuousConstSMul A S
+    letI := locUniformSpace P T'' s'' S'' hden''
+    letI := isUniformAddGroup_locUniformSpace P T'' s'' S'' hden''
+    letI := isTopologicalRing_locUniformSpace P T'' s'' S'' hden''
+    letI := continuousSMul_locUniformSpace P T'' s'' S'' hden''
+    letI := uniformContinuousConstSMul_of_continuousConstSMul A S''
+    Continuous (restrictionAlgHom P T s S hden T'' s'' S'' hden'' r hs'' hT) :=
+  continuous_restrictionRingHom P T s S hden T'' s'' S'' hden'' r hs'' hT
 
 /-- **On the image of `Aₛ`, the restriction map is the map of localisations.** The restriction map
 of a refinement sends the image of `x ∈ Aₛ` in `A⟨T/s⟩` to the image in `A⟨T''/s''⟩` of the
