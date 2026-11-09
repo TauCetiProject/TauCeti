@@ -35,8 +35,8 @@ This file constructs that inverse and proves its basic properties:
 * `TauCeti.HomogeneousSymbol.IsElliptic.exists_mul_norm_le_norm_coefficient_apply`: the elliptic
   estimate `‖ξ‖ ^ m ‖v‖ ≤ C ‖a(x, ξ) v‖` for positions in a compact set and a proper frequency
   space;
-* `TauCeti.HomogeneousSymbol.IsElliptic.finrank_eq`: when there is a position and a nonzero
-  frequency, an elliptic symbol identifies `V` with `W`, so the fibres have the same rank. With
+* `TauCeti.HomogeneousSymbol.IsElliptic.finrank_eq`: when there is a nonzero frequency, an
+  elliptic symbol identifies `V` with `W`, so the fibres have the same rank. With
   no nonzero frequency, as on a zero-dimensional base, every symbol is elliptic
   (`TauCeti.HomogeneousSymbol.isElliptic_of_subsingleton`), and no rank condition follows;
 * on `ℝⁿ`, the cut-off inverse is a two-sided inverse of the cut-off symbol modulo smoothing
@@ -90,27 +90,25 @@ theorem isElliptic_of_subsingleton [Subsingleton E] (a : HomogeneousSymbol X E V
     a.IsElliptic :=
   fun _ ξ hξ ↦ (hξ (Subsingleton.elim ξ 0)).elim
 
-/-- An elliptic symbol at a single position and nonzero frequency identifies the fibres `V` and
-`W`. -/
-theorem IsElliptic.nonempty_continuousLinearEquiv [Nonempty X] [Nontrivial E]
+/-- In the presence of a nonzero frequency, an elliptic symbol identifies the fibres `V` and `W`. -/
+theorem IsElliptic.nonempty_continuousLinearEquiv [Nontrivial E]
     {a : HomogeneousSymbol X E V W m} (ha : a.IsElliptic) : Nonempty (V ≃L[ℂ] W) := by
   obtain ⟨ξ, hξ⟩ := exists_ne (0 : E)
-  obtain ⟨e, -⟩ := ha (Classical.arbitrary X) ξ hξ
+  obtain ⟨e, -⟩ := ha 0 ξ hξ
   exact ⟨e⟩
 
-/-- In the presence of a position and a nonzero frequency, an elliptic symbol forces the fibres
-to have the same rank. -/
-theorem IsElliptic.finrank_eq [Nonempty X] [Nontrivial E] {a : HomogeneousSymbol X E V W m}
+/-- In the presence of a nonzero frequency, an elliptic symbol forces the fibres to have the same
+rank. -/
+theorem IsElliptic.finrank_eq [Nontrivial E] {a : HomogeneousSymbol X E V W m}
     (ha : a.IsElliptic) : Module.finrank ℂ V = Module.finrank ℂ W :=
   let ⟨e⟩ := ha.nonempty_continuousLinearEquiv
   e.toLinearEquiv.finrank_eq
 
-/-- In the presence of a position and a nonzero frequency, the zero symbol on a nonzero fibre is
-not elliptic. -/
-theorem not_isElliptic_zero [Nonempty X] [Nontrivial E] [Nontrivial V] :
+/-- In the presence of a nonzero frequency, the zero symbol on a nonzero fibre is not elliptic. -/
+theorem not_isElliptic_zero [Nontrivial E] [Nontrivial V] :
     ¬(0 : HomogeneousSymbol X E V W m).IsElliptic := fun h ↦ by
   obtain ⟨ξ, hξ⟩ := exists_ne (0 : E)
-  have := h (Classical.arbitrary X) ξ hξ
+  have := h 0 ξ hξ
   rw [coefficient_zero, Pi.zero_apply, ContinuousLinearMap.isInvertible_zero_iff] at this
   exact not_subsingleton V this.1
 
