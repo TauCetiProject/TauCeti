@@ -113,7 +113,7 @@ private theorem morseCellReattachment_morseCellAttachmentCell_of_stationary
     exact (congrArg _ (Subtype.ext (hKb i t s))).trans (ConcreteCategory.congr_hom
       (hom_comp_morseAttachingMap_comp_morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀ h hb hhb i) s)
   · exact morseCellReattachment_morseCellAttachmentCell_of_norm_le φ₀ φ₁ k hk hε hball₀ hball₁ hf₀
-      hf₁ _ _ K hK i (not_le.1 hw).le
+      hf₁ _ _ K hK i
       ((TopCat.coe_diskRadialPush_one_of_norm_le _ (not_le.1 hw).le).trans (by norm_num))
 
 /-- **The strict comparison represents the reattachment map.** If the homotopies of pairs
