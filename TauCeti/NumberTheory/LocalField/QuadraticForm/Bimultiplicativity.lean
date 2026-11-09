@@ -203,7 +203,8 @@ theorem exists_not_isSquare_hilbertSymbol_eq_one (h2 : (2 : K) ≠ 0) (a : Kˣ) 
   decide
 
 /-- **The local Hilbert symbol takes both values.** Every sign `±1` is `(a, b)_K` for some
-`a, b ∈ Kˣ`; in particular some quaternion algebra `ℍ[K,a,b]` is a division algebra. -/
+`a, b ∈ Kˣ`; when `2 ≠ 0` in `K`, in particular some quaternion algebra `ℍ[K,a,b]` is a
+division algebra. -/
 theorem uncurry_hilbertSymbol_surjective :
     Function.Surjective (Function.uncurry (hilbertSymbol (K := K))) := by
   intro s
