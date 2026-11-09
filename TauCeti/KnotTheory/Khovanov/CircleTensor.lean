@@ -268,13 +268,20 @@ theorem fiberwiseMul_circleX [Fintype σ] (f : σ → τ) (i : σ) (x : CircleTe
   rw [circleX_apply, circleX_apply, map_mul, fiberwiseMul_singleAlgHom]
 
 /-- Reindexing along `e` carries `X` on the circle `i` to `X` on the circle `e i`. -/
-theorem reindex_circleX [Finite σ] (e : σ ≃ τ) (i : σ) (x : CircleTensor R σ) :
+theorem reindex_circleX (e : σ ≃ τ) (i : σ) (x : CircleTensor R σ) :
     reindex R (fun _ ↦ R[ε]) e (circleX R i x) =
       circleX R (e i) (reindex R (fun _ ↦ R[ε]) e x) := by
-  have := Fintype.ofFinite σ
-  have h := toLinearMap_fiberwiseMul_equiv (R := R) (B := R[ε]) e
-  rw [← LinearEquiv.coe_coe, ← h, AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply,
-    fiberwiseMul_circleX]
+  induction x using PiTensorProduct.induction_on with
+  | smul_tprod r f =>
+    simp only [circleX_apply, singleAlgHom_apply, map_smul, tprod_mul_tprod,
+      reindex_tprod]
+    congr 2
+    funext j
+    obtain ⟨k, rfl⟩ := e.surjective j
+    simp only [Equiv.symm_apply_apply, Pi.mul_apply, MonoidHom.mulSingle_apply,
+      Pi.mulSingle_apply, e.injective.eq_iff]
+    split_ifs <;> exact congrArg _ (congrArg f (e.symm_apply_apply k).symm)
+  | add x y hx hy => simp [hx, hy]
 
 end X
 
