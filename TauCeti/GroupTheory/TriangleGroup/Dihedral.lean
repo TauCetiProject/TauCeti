@@ -106,9 +106,7 @@ private theorem y_mul_y_mul_x_zpow_cast_one (m : ℕ) :
     y 2 2 m * (y 2 2 m * x 2 2 m) ^ (ZMod.cast (1 : ZMod m) : ℤ) = x 2 2 m := by
   have hyy : y 2 2 m * y 2 2 m = 1 := by simpa only [pow_two] using y_pow 2 2 m
   rcases m with - | - | m
-  · -- `ZMod 0` is `ℤ` by definition, so the cast to `ℤ` is the identity
-    have hc : (ZMod.cast (1 : ZMod 0) : ℤ) = 1 := rfl
-    simp [hc, ← mul_assoc, hyy]
+  · simp [← mul_assoc, hyy]
   · have hyx : y 2 2 1 * x 2 2 1 = 1 := by simpa only [pow_one] using y_mul_x_pow 2 2 1
     have hxy : x 2 2 1 = y 2 2 1 := mul_left_cancel (hyx.trans hyy.symm)
     simp [Subsingleton.elim (1 : ZMod 1) 0, hxy]
