@@ -177,8 +177,9 @@ theorem isSeparable_adjoin_iff_notMem_fieldRange_frobenius [PerfectField k]
   rw [hF.isSeparable_adjoin_iff_D_ne_zero, ne_eq, hF.D_eq_zero_iff_mem_fieldRange_frobenius p x]
 
 /-- **An element outside `F^p` is separating** (Stichtenoth, Proposition 3.10.2(a)): in a
-one-variable function field over a perfect field of characteristic `p`, an element that is not a
-`p`-th power in `F` is transcendental over `k`, and `F / k(x)` is separable. -/
+one-variable function field over a perfect field of exponential characteristic `p`, an element
+that is not a `p`-th power in `F` is transcendental over `k`, and `F / k(x)` is separable. In
+characteristic zero (`p = 1`) the hypothesis `x ∉ F^p` is contradictory. -/
 theorem transcendental_and_isSeparable_adjoin_of_notMem_fieldRange_frobenius [PerfectField k]
     (hF : TauCeti.IsFunctionField k F) (p : ℕ) [ExpChar F p] {x : F}
     (hx : x ∉ (frobenius F p).fieldRange) :
@@ -200,11 +201,8 @@ theorem exists_pow_eq_and_adjoin_eq_top_of_finrank_prime_of_not_isSeparable [Per
     (hprime : (Module.finrank k⟮x⟯ F).Prime) (hsep : ¬ Algebra.IsSeparable k⟮x⟯ F) :
     ∃ y : F, y ^ p = x ∧ k⟮y⟯ = ⊤ := by
   have : FiniteDimensional k⟮x⟯ F := Module.finite_of_finrank_pos hprime.pos
-  have hx : Transcendental k x := fun halg ↦ by
-    have : FiniteDimensional k k⟮x⟯ := IntermediateField.adjoin.finiteDimensional halg.isIntegral
-    have : FiniteDimensional k F := Module.Finite.trans k⟮x⟯ F
-    obtain ⟨z, hz⟩ := hF.exists_transcendental
-    exact hz (Algebra.IsAlgebraic.isAlgebraic z)
+  have hx : Transcendental k x :=
+    transcendental_of_finiteDimensional_adjoin hF.exists_transcendental.choose_spec
   cases (inferInstance : ExpChar F p) with
   | zero => exact (hsep inferInstance).elim
   | prime hp =>

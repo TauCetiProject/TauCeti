@@ -54,6 +54,14 @@ def IsFunctionField : Prop :=
 
 variable {k F}
 
+/-- If `F` is finite over `k(x)` and `F` contains an element transcendental over `k`, then `x` is
+transcendental over `k`: otherwise `F` would be finite over `k`. -/
+theorem transcendental_of_finiteDimensional_adjoin {x z : F} (hz : Transcendental k z)
+    [FiniteDimensional k⟮x⟯ F] : Transcendental k x := fun hx ↦ by
+  have : FiniteDimensional k k⟮x⟯ := IntermediateField.adjoin.finiteDimensional hx.isIntegral
+  have : FiniteDimensional k F := Module.Finite.trans k⟮x⟯ F
+  exact hz (Algebra.IsAlgebraic.isAlgebraic z)
+
 namespace IsFunctionField
 
 /-- A field finite over `k(x)` for a transcendental `x` is an algebraic function field. -/

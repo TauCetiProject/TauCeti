@@ -197,10 +197,7 @@ theorem finiteDimensional_residueField_of_finiteDimensional_adjoin (x : F)
   obtain ⟨t, ht⟩ := P.exists_isUniformizer
   rw [P.isUniformizer_iff_ord_eq_one] at ht
   have htt : Transcendental k t := P.transcendental_of_ord_ne_zero (by omega)
-  have hxt : Transcendental k x := fun hx ↦ htt (by
-    have : FiniteDimensional k k⟮x⟯ := IntermediateField.adjoin.finiteDimensional hx.isIntegral
-    have : FiniteDimensional k F := Module.Finite.trans k⟮x⟯ F
-    exact Algebra.IsAlgebraic.isAlgebraic t)
+  have hxt : Transcendental k x := transcendental_of_finiteDimensional_adjoin htt
   have : FiniteDimensional k⟮t⟯ F :=
     (IsFunctionField.of_finiteDimensional_adjoin hxt).finiteDimensional_adjoin htt
   exact Module.rank_lt_aleph0_iff.mp
