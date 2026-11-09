@@ -350,7 +350,7 @@ variable {K : Type u} {L : Type v} {M : Type w} {N : Type w₁} {P : Type*}
   [AddCommGroup P] [Module K P] [LieRingModule L P] [LieModule K L P]
   [LinearWeights K L M] [LinearWeights K L N] [LinearWeights K L P]
   [FiniteDimensional K M] [FiniteDimensional K N] [FiniteDimensional K P]
-  [IsTriangularizable K L N] [IsTriangularizable K L P]
+  [IsTriangularizable K L N]
 
 /-- **Formal characters are additive on short exact sequences.** If `M → N → P` is exact, the
 first map is injective and the second is surjective, then the character of `N` is the sum of the
@@ -358,6 +358,19 @@ characters of `M` and `P`. -/
 theorem formalCharacter_eq_add_of_exact (f : M →ₗ⁅K,L⁆ N) (g : N →ₗ⁅K,L⁆ P)
     (h : Function.Exact f g) (hf : Function.Injective f) (hg : Function.Surjective g) :
     formalCharacter K L N = formalCharacter K L M + formalCharacter K L P := by
+  -- the quotient of a triangularizable module is triangularizable
+  have : IsTriangularizable K L P := by
+    refine ⟨fun x ↦ top_unique fun p _ ↦ ?_⟩
+    obtain ⟨n, rfl⟩ := hg p
+    have hn : n ∈ ⨆ φ, (toEnd K L N x).maxGenEigenspace φ := by
+      rw [IsTriangularizable.maxGenEigenspace_eq_top]; trivial
+    have hle : (⨆ φ, (toEnd K L N x).maxGenEigenspace φ).map g.toLinearMap ≤
+        ⨆ φ, (toEnd K L P x).maxGenEigenspace φ := by
+      rw [Submodule.map_iSup]
+      refine iSup_mono fun φ ↦ ?_
+      exact Module.End.map_genEigenspace_le g.toLinearMap
+        (LinearMap.ext fun m ↦ (g.map_lie x m).symm) φ ⊤
+    exact hle (Submodule.mem_map_of_mem hn)
   refine AddMonoidAlgebra.ext (Finsupp.ext fun χ ↦ ?_)
   simp only [formalCharacter_coeff, AddMonoidAlgebra.coeff_add, Finsupp.add_apply]
   exact_mod_cast (finrank_genWeightSpace_add_finrank_genWeightSpace_eq f g h hf hg
