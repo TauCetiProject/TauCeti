@@ -185,6 +185,44 @@ theorem planeRotatedEndomorphism_apply_apply (θ : ℝ) (v : V) :
   simp only [planeRotatedEndomorphism_apply]
   exact (planeRotated θ).apply_apply v
 
+/-- The zero angle gives multiplication by `i`. -/
+theorem planeRotatedEndomorphism_zero :
+    planeRotatedEndomorphism 0 = I • ContinuousLinearMap.id ℝ V := by
+  ext1 v
+  simp [planeRotatedEndomorphism_eq]
+
+/-- An angle function vanishing at a point is recovered from its rotation field, with the same
+order at that point. -/
+theorem contDiffAt_of_contDiffAt_planeRotatedEndomorphism_comp {n : ℕ} {φ : V → ℝ} {x : V}
+    (hφ : ContinuousAt φ x) (hφx : φ x = 0)
+    (h : ContDiffAt ℝ n (fun z : V ↦ planeRotatedEndomorphism (φ z)) x) :
+    ContDiffAt ℝ n φ x := by
+  -- Recover the angle from its sine coefficient using arcsine near zero.
+  have heval := h.clm_apply (contDiffAt_const
+    (c := I • (EuclideanSpace.single 0 1 : V)))
+  have hcoord := (PiLp.proj (p := 2) (𝕜 := ℝ) (β := fun _ : Fin 2 ↦ ℂ) 1).contDiff.contDiffAt.comp
+    x heval
+  have hre := Complex.reCLM.contDiff.contDiffAt.comp x hcoord
+  have hsin : ContDiffAt ℝ n (fun z : V ↦ Real.sin (φ z)) x := by
+    have heq : (fun z : V ↦ -((planeRotatedEndomorphism (φ z)
+        (I • (EuclideanSpace.single 0 1 : V))) 1).re) =
+        fun z : V ↦ Real.sin (φ z) := by
+      funext z
+      rw [planeRotatedEndomorphism_apply, planeRotated_imaginary_single_zero]
+      simp [-Complex.ofReal_sin]
+    rw [← heq]
+    exact hre.neg
+  have ha : ContDiffAt ℝ n Real.arcsin (Real.sin (φ x)) := by
+    simpa only [hφx, Real.sin_zero] using
+      (Real.contDiffAt_arcsin (x := 0) (by norm_num) (by norm_num) :
+        ContDiffAt ℝ n Real.arcsin 0)
+  have hrange : Ioo (-(Real.pi / 2)) (Real.pi / 2) ∈ 𝓝 (φ x) := by
+    rw [hφx]
+    exact Ioo_mem_nhds (by linarith [Real.pi_pos]) (by linarith [Real.pi_pos])
+  apply (ha.comp x hsin).congr_of_eventuallyEq
+  filter_upwards [hφ.preimage_mem_nhds hrange] with z hz
+  exact (Real.arcsin_sin hz.1.le hz.2.le).symm
+
 end TauCeti.AlmostComplexStructure
 
 namespace TauCeti.ContMDiffAlmostComplexStructure
@@ -264,35 +302,9 @@ theorem not_contDiffAt_radialAngle (ℓ : ℕ) :
 theorem not_contDiffAt_radialRotation_field (ℓ : ℕ) :
     ¬ ContDiffAt ℝ (ℓ + 1)
       (fun z : V ↦ planeRotatedEndomorphism (radialAngle ℓ z)) 0 := by
-  -- Recover the angle from its actual sine coefficient using arcsine near zero.
   intro h
-  have heval := h.clm_apply (contDiffAt_const
-    (c := I • (EuclideanSpace.single 0 1 : V)))
-  have hcoord := (PiLp.proj (p := 2) (𝕜 := ℝ) (β := fun _ : Fin 2 ↦ ℂ) 1).contDiff.contDiffAt.comp
-    (0 : V) heval
-  have hre := Complex.reCLM.contDiff.contDiffAt.comp (0 : V) hcoord
-  have hsin : ContDiffAt ℝ (ℓ + 1) (fun z : V ↦ Real.sin (radialAngle ℓ z)) 0 := by
-    have heq : (fun z : V ↦ -((planeRotatedEndomorphism (radialAngle ℓ z)
-        (I • (EuclideanSpace.single 0 1 : V))) 1).re) =
-        fun z : V ↦ Real.sin (radialAngle ℓ z) := by
-      funext z
-      rw [planeRotatedEndomorphism_apply, planeRotated_imaginary_single_zero]
-      simp [-Complex.ofReal_sin]
-    rw [← heq]
-    exact hre.neg
-  have ha : ContDiffAt ℝ (ℓ + 1) Real.arcsin (Real.sin (radialAngle ℓ (0 : V))) := by
-    simpa only [radialAngle_zero, Real.sin_zero] using
-      (Real.contDiffAt_arcsin (x := 0) (by norm_num) (by norm_num) :
-        ContDiffAt ℝ (ℓ + 1) Real.arcsin 0)
-  have hasin := ha.comp (0 : V) hsin
-  have hrange : Ioo (-(Real.pi / 2)) (Real.pi / 2) ∈ 𝓝 (radialAngle ℓ (0 : V)) := by
-    rw [radialAngle_zero]
-    exact Ioo_mem_nhds (by linarith [Real.pi_pos]) (by linarith [Real.pi_pos])
-  have hsmall := (contDiff_radialAngle ℓ).continuous.continuousAt.preimage_mem_nhds hrange
-  apply not_contDiffAt_radialAngle ℓ
-  apply hasin.congr_of_eventuallyEq
-  filter_upwards [hsmall] with z hz
-  exact (Real.arcsin_sin hz.1.le hz.2.le).symm
+  exact not_contDiffAt_radialAngle ℓ <| contDiffAt_of_contDiffAt_planeRotatedEndomorphism_comp
+    (contDiff_radialAngle ℓ).continuous.continuousAt (radialAngle_zero ℓ) (by exact_mod_cast h)
 
 /-- No structure of the next order has the same endomorphism field as this radial example. -/
 theorem not_exists_radialRotation_successor (ℓ : ℕ) :

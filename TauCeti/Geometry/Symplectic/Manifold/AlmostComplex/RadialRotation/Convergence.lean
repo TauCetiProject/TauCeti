@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.RadialRotation
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.RadialRotation.Basic
+public import TauCeti.Topology.UniformSpace.HeineCantor
 
 /-!
 # Convergence of rescaled radial rotations
@@ -32,18 +32,6 @@ public noncomputable section
 open Complex Set Filter Topology
 open scoped ContDiff Manifold
 
-namespace TauCeti.AlmostComplexStructure
-
-local notation "V" => EuclideanSpace ℂ (Fin 2)
-
-/-- The zero angle gives multiplication by `i`. -/
-theorem planeRotatedEndomorphism_zero :
-    planeRotatedEndomorphism 0 = I • ContinuousLinearMap.id ℝ V := by
-  ext1 v
-  simp [planeRotatedEndomorphism_eq]
-
-end TauCeti.AlmostComplexStructure
-
 namespace TauCeti.ContMDiffAlmostComplexStructure
 
 open AlmostComplexStructure
@@ -54,6 +42,11 @@ local notation "V" => EuclideanSpace ℂ (Fin 2)
 point `z`. -/
 def scaledRadialRotationField (ℓ : ℕ) (q : ℝ × V) : V →L[ℝ] V :=
   planeRotatedEndomorphism (q.1 * radialAngle ℓ q.2)
+
+/-- The joint field at a scale and a point is the rotation field at the scaled radial angle. -/
+theorem scaledRadialRotationField_def (ℓ : ℕ) (q : ℝ × V) :
+    scaledRadialRotationField ℓ q = planeRotatedEndomorphism (q.1 * radialAngle ℓ q.2) := by
+  rfl
 
 /-- The joint field has order `ℓ` in the scale and the point together. -/
 theorem contDiff_scaledRadialRotationField (ℓ : ℕ) :
@@ -105,14 +98,10 @@ theorem tendstoLocallyUniformly_iteratedFDeriv_scaledRadialRotationField_slice (
         iteratedFDeriv ℝ k (fun w ↦ scaledRadialRotationField ℓ (s n, w)) z)
       (iteratedFDeriv ℝ k fun _ : V ↦ I • ContinuousLinearMap.id ℝ V) l := by
   rw [tendstoLocallyUniformly_iff_forall_isCompact]
-  intro K hK u hu
-  obtain ⟨v, hv, hvu⟩ := hK.mem_uniformity_of_prod (s := univ) (q := (0 : ℝ))
-    (f := fun s z ↦ iteratedFDeriv ℝ k (fun w ↦ scaledRadialRotationField ℓ (s, w)) z)
-    (continuous_iteratedFDeriv_scaledRadialRotationField_slice ℓ hk).continuousOn
-    (mem_univ _) (symm_le_uniformity hu)
-  rw [nhdsWithin_univ] at hv
-  filter_upwards [hs hv] with n hn z hz
-  simpa [scaledRadialRotationField_zero] using hvu (s n) hn z hz
+  intro K hK
+  simpa using Continuous.tendstoUniformlyOn_of_tendsto
+    (Φ := fun s z ↦ iteratedFDeriv ℝ k (fun w ↦ scaledRadialRotationField ℓ (s, w)) z)
+    (continuous_iteratedFDeriv_scaledRadialRotationField_slice ℓ hk) hK hs
 
 /-- The structure `J_m = A_m i A_m⁻¹` of order `ℓ`, where `A_m(z)` rotates the real coordinate
 plane through the angle `‖z‖^(ℓ+1/2) / m`. -/
@@ -123,7 +112,8 @@ def scaledRadialRotation (ℓ m : ℕ) :
     (contDiff_planeRotatedEndomorphism.comp ((contDiff_radialAngle ℓ).div_const _))
     (fun z v ↦ planeRotatedEndomorphism_apply_apply (radialAngle ℓ z / m) v)
 
-/-- The endomorphism field of `J_m` is the rotation through the divided radial angle. -/
+/-- The endomorphism field of `J_m` is multiplication by `i` conjugated by the rotation through
+the divided radial angle. -/
 @[simp]
 theorem scaledRadialRotation_toEndomorphism (ℓ m : ℕ) (z : V) :
     (show V →L[ℝ] V from (scaledRadialRotation ℓ m).toEndomorphism z) =
@@ -152,38 +142,6 @@ theorem tendstoLocallyUniformly_iteratedFDeriv_scaledRadialRotation (ℓ : ℕ) 
   rw [scaledRadialRotation_toEndomorphism_eq_slice ℓ m]
   rfl
 
-/-- An angle function vanishing at the origin is recovered from its rotation field, with the
-same order at the origin. -/
-private theorem contDiffAt_of_contDiffAt_planeRotatedEndomorphism_comp {n : ℕ} {φ : V → ℝ}
-    (hφ : ContinuousAt φ 0) (hφ0 : φ 0 = 0)
-    (h : ContDiffAt ℝ n (fun z : V ↦ planeRotatedEndomorphism (φ z)) 0) :
-    ContDiffAt ℝ n φ 0 := by
-  -- Recover the angle from its sine coefficient using arcsine near zero.
-  have heval := h.clm_apply (contDiffAt_const
-    (c := I • (EuclideanSpace.single 0 1 : V)))
-  have hcoord := (PiLp.proj (p := 2) (𝕜 := ℝ) (β := fun _ : Fin 2 ↦ ℂ) 1).contDiff.contDiffAt.comp
-    (0 : V) heval
-  have hre := Complex.reCLM.contDiff.contDiffAt.comp (0 : V) hcoord
-  have hsin : ContDiffAt ℝ n (fun z : V ↦ Real.sin (φ z)) 0 := by
-    have heq : (fun z : V ↦ -((planeRotatedEndomorphism (φ z)
-        (I • (EuclideanSpace.single 0 1 : V))) 1).re) =
-        fun z : V ↦ Real.sin (φ z) := by
-      funext z
-      rw [planeRotatedEndomorphism_apply, planeRotated_imaginary_single_zero]
-      simp [-Complex.ofReal_sin]
-    rw [← heq]
-    exact hre.neg
-  have ha : ContDiffAt ℝ n Real.arcsin (Real.sin (φ 0)) := by
-    simpa only [hφ0, Real.sin_zero] using
-      (Real.contDiffAt_arcsin (x := 0) (by norm_num) (by norm_num) :
-        ContDiffAt ℝ n Real.arcsin 0)
-  have hrange : Ioo (-(Real.pi / 2)) (Real.pi / 2) ∈ 𝓝 (φ 0) := by
-    rw [hφ0]
-    exact Ioo_mem_nhds (by linarith [Real.pi_pos]) (by linarith [Real.pi_pos])
-  apply (ha.comp (0 : V) hsin).congr_of_eventuallyEq
-  filter_upwards [hφ.preimage_mem_nhds hrange] with z hz
-  exact (Real.arcsin_sin hz.1.le hz.2.le).symm
-
 /-- For `m ≠ 0`, the field of `J_m` is not of order `ℓ+1` at the origin, so the `C^ℓ`
 convergence of `J_m` to `i` does not improve to `C^{ℓ+1}` convergence. -/
 theorem not_contDiffAt_scaledRadialRotation_field (ℓ : ℕ) {m : ℕ} (hm : m ≠ 0) :
@@ -191,7 +149,7 @@ theorem not_contDiffAt_scaledRadialRotation_field (ℓ : ℕ) {m : ℕ} (hm : m 
       (fun z ↦ (show V →L[ℝ] V from (scaledRadialRotation ℓ m).toEndomorphism z)) 0 := by
   intro h
   simp only [scaledRadialRotation_toEndomorphism] at h
-  have hφ := contDiffAt_of_contDiffAt_planeRotatedEndomorphism_comp
+  have hφ := contDiffAt_of_contDiffAt_planeRotatedEndomorphism_comp (x := 0)
     (((contDiff_radialAngle ℓ).continuous.div_const _).continuousAt)
     (by simp) (by exact_mod_cast h)
   apply not_contDiffAt_radialAngle ℓ
