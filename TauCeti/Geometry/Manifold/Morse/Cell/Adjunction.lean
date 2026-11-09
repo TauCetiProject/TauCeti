@@ -8,8 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Cell.Comparison
 public import TauCeti.Geometry.Manifold.Morse.Deformation
 public import TauCeti.Topology.CWComplex.Classical.Disk
-public import TauCeti.Topology.Homotopy.Extension.CWComplex
-public import TauCeti.Topology.Homotopy.Extension.Pushout
 
 /-!
 # Crossing a critical value between regular levels attaches cells
@@ -195,12 +193,7 @@ theorem IsMorse.exists_homotopyEquiv_sigmaDiskAdjunctionSpace (hf : IsMorse I f)
           ContinuousMap.ext hr] }
   obtain ⟨E, -, hE⟩ := er.exists_homotopyEquiv_relCWAdjunctionSpace
     (univ.sigma fun p ↦ (univ : Set (TopCat.disk.{u} (k p)))) (sigmaDiskAttachingMap α)
-  have hcomp : sigmaDiskAttachingMap (fun p ↦ r.comp (α p)) = r.comp (sigmaDiskAttachingMap α) := by
-    refine ContinuousMap.ext fun x ↦ ?_
-    obtain ⟨⟨p, s⟩, rfl⟩ := (sigmaDiskBoundaryHomeomorph k).symm.surjective x
-    rw [ContinuousMap.comp_apply, sigmaDiskAttachingMap_apply (n := k),
-      sigmaDiskAttachingMap_apply (n := k), ContinuousMap.comp_apply]
-  rw [hcomp]
+  rw [sigmaDiskAttachingMap_comp]
   refine ⟨E.symm.trans (e₁.trans e₂), fun z ↦ ?_⟩
   rw [ContinuousMap.HomotopyEquiv.trans_apply, ContinuousMap.HomotopyEquiv.trans_apply, hE, he₂,
     he₁]

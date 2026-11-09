@@ -306,6 +306,16 @@ theorem sigmaDiskAttachingMap_apply (a : ∀ i, C(TopCat.diskBoundary.{u} (n i),
     sigmaDiskAttachingMap a ((sigmaDiskBoundaryHomeomorph n).symm ⟨i, s⟩) = a i s := by
   simp [sigmaDiskAttachingMap]
 
+/-- Composing each attaching map `a i` with `g` composes the attaching map of the disjoint union of
+disks with `g`. -/
+@[simp]
+theorem sigmaDiskAttachingMap_comp {W : Type*} [TopologicalSpace W] (g : C(Z, W))
+    (a : ∀ i, C(TopCat.diskBoundary.{u} (n i), Z)) :
+    sigmaDiskAttachingMap (fun i ↦ g.comp (a i)) = g.comp (sigmaDiskAttachingMap a) := by
+  ext x
+  obtain ⟨⟨i, s⟩, rfl⟩ := (sigmaDiskBoundaryHomeomorph n).symm.surjective x
+  simp
+
 /-- **Attaching cells along a family of maps.** Gluing the disjoint union of the disks
 `TopCat.disk (n i)` to a space `Y` along `TauCeti.sigmaDiskAttachingMap b` gives a relative CW
 complex over `Y` (`TauCeti.relativeCWPushout`) whose `m`-cells are the indices `i` with
@@ -388,9 +398,9 @@ theorem isPushout_sigmaDiskAdjunctionSpace {Y : TopCat.{u}}
     refine Sigma.hom_ext _ _ fun i ↦ ?_
     refine ConcreteCategory.hom_ext _ _ fun x ↦ Subtype.ext ?_
     rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, sigmaDiskBoundaryIso_hom_ι_apply,
-      ← Category.assoc, Sigma.ι_map, Category.assoc, ConcreteCategory.comp_apply,
-      ConcreteCategory.comp_apply, coe_sigmaDiskIso_hom_ι_apply]
-    rfl
+      Sigma.ι_map_assoc, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
+      coe_sigmaDiskIso_hom_ι_apply]
+    simp
   · simp
   · simp
 
