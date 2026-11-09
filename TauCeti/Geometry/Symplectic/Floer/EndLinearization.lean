@@ -151,7 +151,7 @@ theorem eventually_norm_floerLinearization_sub_stationaryCylinderOperator_le
       (contDiff_fst.fst.prodMk contDiff_snd)) contDiff_snd (by norm_num)).continuous
   -- The coefficients along `u` converge uniformly on `T` to those along `x`.
   have hK := hT.image_of_continuousOn ((continuousOn_id' T).prodMk hx)
-  have hpair := hu.graph
+  have hpair := (TauCeti.tendstoUniformlyOn_const id l T).prodMk_same hu
   have h₁ := Metric.tendstoUniformlyOn_iff.1
     (hK.comp_tendstoUniformlyOn (fun _ _ ↦ hJ.continuous.continuousAt) hpair) ε hε
   have h₂ := Metric.tendstoUniformlyOn_iff.1
@@ -169,7 +169,7 @@ theorem eventually_norm_floerLinearization_sub_stationaryCylinderOperator_le
   have e₂ := hs₂ t ht
   have e₃ := hs₃ t ht
   have e₄ := hs₄ t ht
-  simp only [dist_eq_norm', Pi.zero_apply, sub_zero, Jc] at e₁ e₂ e₃ e₄
+  simp only [dist_eq_norm', Pi.zero_apply, sub_zero, id_eq, Jc] at e₁ e₂ e₃ e₄
   have hCt := hC _ (mem_image_of_mem _ ht)
   simp only [Jc] at hCt
   have hdJu : ‖fderiv ℝ (fun y ↦ (J t y).toLinearMap.toContinuousLinearMap) (u (s, t))‖ ≤
@@ -229,14 +229,14 @@ theorem tendstoUniformlyOn_sliceDefect_of_floerOperator_eq_zero (ω : Symplectic
   have hK := hT.image_of_continuousOn ((continuousOn_id' T).prodMk hx)
   obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hJ.continuousOn
   have hM : 0 < |C| + 1 := by positivity
-  have h₁ := Metric.tendstoUniformlyOn_iff.1
-    (hK.comp_tendstoUniformlyOn (fun _ _ ↦ hJ.continuousAt) hu.graph) 1 one_pos
+  have h₁ := Metric.tendstoUniformlyOn_iff.1 (hK.comp_tendstoUniformlyOn (fun _ _ ↦ hJ.continuousAt)
+    ((TauCeti.tendstoUniformlyOn_const id l T).prodMk_same hu)) 1 one_pos
   rw [Metric.tendstoUniformlyOn_iff] at hs ⊢
   intro ε hε
   filter_upwards [hF, h₁, hs (ε / (|C| + 1)) (by positivity)] with s hsF hs₁ hs₂ t ht
   have e₁ := hs₁ t ht
   have e₂ := hs₂ t ht
-  simp only [dist_eq_norm', Pi.zero_apply, sub_zero, Jc] at e₁ e₂ ⊢
+  simp only [dist_eq_norm', Pi.zero_apply, sub_zero, id_eq, Jc] at e₁ e₂ ⊢
   have hCt := hC _ (mem_image_of_mem _ ht)
   simp only [Jc] at hCt
   have hJu : ‖(J t (u (s, t))).toLinearMap.toContinuousLinearMap‖ ≤ |C| + 1 := by
