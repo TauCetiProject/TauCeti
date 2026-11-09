@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import Mathlib.Topology.Algebra.Group.Basic
 
 /-!
@@ -18,8 +18,7 @@ maps. This topology permits comparisons between orthogonal groups and groups of 
 isometries. The instance is scoped as `TauCeti.LinearIsometryEquivOperatorNorm`.
 
 In finite dimension, continuity of a family is equivalent to continuity at each vector.
-For a real or complex Hilbert space the linear isometry group is a topological group:
-inversion is the restriction of the continuous adjoint operation.
+The linear isometry group of any normed space is a topological group.
 -/
 
 public section
@@ -43,11 +42,8 @@ open scoped TauCeti.LinearIsometryEquivOperatorNorm
 /-- Linear isometry equivalences form a subspace of the continuous linear maps. -/
 theorem isEmbedding_toContinuousLinearMap :
     Topology.IsEmbedding
-      (fun e : E ≃ₗᵢ[𝕜] F => (e.toContinuousLinearEquiv : E →L[𝕜] F)) := by
-  have hinj : Function.Injective
       (fun e : E ≃ₗᵢ[𝕜] F => (e.toContinuousLinearEquiv : E →L[𝕜] F)) :=
-    fun _ _ h => LinearIsometryEquiv.ext fun x => DFunLike.congr_fun h x
-  exact hinj.isEmbedding_induced
+  Function.Injective.isEmbedding_induced fun _ _ h => ext fun x => DFunLike.congr_fun h x
 
 /-- Continuity of a family of linear isometries can be checked on its operator-valued map. -/
 theorem continuous_operatorNorm_iff {X : Type*} [TopologicalSpace X]
@@ -81,16 +77,7 @@ theorem continuous_operatorNorm_iff_apply [CompleteSpace 𝕜] [FiniteDimensiona
   simpa only [ContinuousLinearEquiv.coe_coe, coe_toContinuousLinearEquiv] using
     ((continuous_operatorNorm_iff (f := f)).trans continuous_clm_apply)
 
-end LinearIsometryEquiv
-
-namespace LinearIsometryEquiv
-
-variable {𝕜 : Type*} [RCLike 𝕜] {E : Type*}
-  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-
-open scoped TauCeti.LinearIsometryEquivOperatorNorm
-
-/-- The linear isometry group of a Hilbert space is a topological group in the operator norm
+/-- The linear isometry group of a normed space is a topological group in the operator norm
 topology. -/
 theorem isTopologicalGroup_operatorNorm : IsTopologicalGroup (E ≃ₗᵢ[𝕜] E) where
   continuous_mul := by
@@ -100,10 +87,16 @@ theorem isTopologicalGroup_operatorNorm : IsTopologicalGroup (E ≃ₗᵢ[𝕜] 
         ext x
         simp
   continuous_inv := by
-    apply continuous_operatorNorm_iff.mpr
-    exact (ContinuousLinearMap.adjoint.continuous.comp
-      isEmbedding_toContinuousLinearMap.continuous).congr fun e => by
-        exact e.adjoint_eq_symm
+    refine continuous_operatorNorm_iff.mpr <| continuous_iff_continuousAt.mpr fun e => ?_
+    rw [ContinuousAt, tendsto_iff_norm_sub_tendsto_zero]
+    refine squeeze_zero (fun _ => norm_nonneg _) (fun f => ?_) <|
+      tendsto_iff_norm_sub_tendsto_zero.mp (isEmbedding_toContinuousLinearMap.continuous.tendsto e)
+    refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v => ?_
+    calc _ = ‖((f.toContinuousLinearEquiv : E →L[𝕜] E) - e.toContinuousLinearEquiv) (e⁻¹ v)‖ := by
+          rw [← f.norm_map, ← norm_neg]
+          -- Keep `e⁻¹` and `f⁻¹` as linear isometries so that `coe_inv` applies.
+          simp [-toContinuousLinearEquiv_inv, coe_inv]
+      _ ≤ _ := (ContinuousLinearMap.le_opNorm _ _).trans_eq (by simp)
 
 scoped[TauCeti.LinearIsometryEquivOperatorNorm] attribute [instance]
   LinearIsometryEquiv.isTopologicalGroup_operatorNorm

@@ -256,13 +256,14 @@ theorem fromBlocks_diagonal_mem {A D : Matrix l l R} (hAD : Aᵀ * D = 1) :
 `C A⁻¹` and `A⁻¹ B` are symmetric, and `D = (C A⁻¹) A (A⁻¹ B) + A⁻ᵀ`. -/
 theorem symm_and_toBlocks₂₂_of_mem_symplecticGroup {n R : Type*} [Fintype n] [DecidableEq n]
     [CommRing R] {M : Matrix (n ⊕ n) (n ⊕ n) R} (hM : M ∈ Matrix.symplecticGroup n R)
-    {Ainv : Matrix n n R} (hleft : Ainv * M.toBlocks₁₁ = 1) (hright : M.toBlocks₁₁ * Ainv = 1) :
+    {Ainv : Matrix n n R} (hright : M.toBlocks₁₁ * Ainv = 1) :
     (M.toBlocks₂₁ * Ainv).IsSymm ∧ (Ainv * M.toBlocks₁₂).IsSymm ∧
       M.toBlocks₂₂ = M.toBlocks₂₁ * Ainv * M.toBlocks₁₁ * (Ainv * M.toBlocks₁₂) + Ainvᵀ := by
   set A := M.toBlocks₁₁
   set B := M.toBlocks₁₂
   set C := M.toBlocks₂₁
   set D := M.toBlocks₂₂
+  have hleft : Ainv * A = 1 := mul_eq_one_comm.mp hright
   have hMblocks : Matrix.fromBlocks A B C D = M := M.fromBlocks_toBlocks
   have hblocks : Aᵀ * C = Cᵀ * A ∧ Bᵀ * D = Dᵀ * B ∧ Aᵀ * D - Cᵀ * B = 1 :=
     (SymplecticGroup.fromBlocks_mem_iff).mp (hMblocks ▸ hM)

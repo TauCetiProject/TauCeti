@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.UpwardClosure
 public import TauCeti.Algebra.Group.PowerClassGroup.Basic
 
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.NumberTheory.ClassFieldTheory.Brauer.RootsOfUnity
 import TauCeti.NumberTheory.ClassFieldTheory.Local.HilbertPairing
 import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic

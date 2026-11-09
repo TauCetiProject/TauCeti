@@ -396,8 +396,7 @@ theorem momentDefect_eq_of_mem_connectedComponent [PreconnectedSpace M]
     |>.isLocallyConstant_of_mfderiv_eq_zero (fun g ↦ ?_)
     |>.apply_eq_of_isPreconnected isPreconnected_connectedComponent hk mem_connectedComponent
   rw [← mvfderiv_eq_zero_iff]
-  refine mfderiv_eq_zero_of_mfderiv_mul_left_one_eq_zero
-    ((h.contMDiff_momentDefect_apply x₀ ξ).mdifferentiableAt (by simp)) ?_
+  refine mfderiv_eq_zero_of_mfderiv_mul_left_one_eq_zero ?_
   rw [← mvfderiv_eq_zero_iff]
   /- Near `g`, the defect is `θ(g k)(ξ) = θ(g)(ξ) + θ(k)(Ad_{g⁻¹} ξ)`, whose derivative in `k`
   at `1` vanishes because the cocycle does. -/
