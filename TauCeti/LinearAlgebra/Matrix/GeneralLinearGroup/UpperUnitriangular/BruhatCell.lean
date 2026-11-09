@@ -8,6 +8,7 @@ module
 public import TauCeti.Data.Finset.Inversions
 public import TauCeti.GroupTheory.Perm.Coxeter
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Bruhat
+public import TauCeti.LinearAlgebra.Matrix.RowCol
 
 /-!
 # Unitriangular coordinates on the Bruhat cells of `GLₙ`
