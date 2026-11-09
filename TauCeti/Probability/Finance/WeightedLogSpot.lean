@@ -126,10 +126,8 @@ theorem deriv_deriv_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace α ℝ
     funext (u.deriv_spatialSlice t)
   have h₁ {x : ℝ} (hx : 0 < x) :
       x * deriv f x = spatialFDerivL u (slabMk (log x) t) 1 := by
-    simpa only [u.deriv_spatialSlice] using
-      mul_deriv_comp_log (u.hasDerivAt_spatialSlice t (log x)).differentiableAt hx.ne'
-  have h₂ := sq_mul_deriv_deriv_comp_log (Eventually.of_forall fun y =>
-    (u.hasDerivAt_spatialSlice t y).differentiableAt)
+    simpa only [u.deriv_spatialSlice] using mul_deriv_comp_log (v := fun y => u (slabMk y t)) hx.ne'
+  have h₂ := sq_mul_deriv_deriv_comp_log
     (by rw [hv']; exact (u.hasDerivAt_spatialFDerivL_apply t (log s) 1).differentiableAt)
     hs.ne'
   rw [hv', u.deriv_spatialFDerivL_apply] at h₂

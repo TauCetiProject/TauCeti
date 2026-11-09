@@ -77,15 +77,14 @@ variable {s y : ℝ}
 are arbitrary reals, so they may be the values of a local volatility and a time-dependent rate at
 `(s, t)`. -/
 theorem pde_comp_log {u : ℝ → ℝ → ℝ} {t : ℝ} (σ r : ℝ)
-    (hu : ∀ᶠ y in 𝓝 (log s), DifferentiableAt ℝ (fun y => u y t) y)
     (hu' : DifferentiableAt ℝ (deriv fun y => u y t) (log s)) (hs : s ≠ 0) :
     deriv (fun t' => u (log s) t') t +
         σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => u (log x) t) s +
         r * (s * deriv (fun x => u (log x) t) s - u (log s) t) =
       deriv (fun t' => u (log s) t') t + σ ^ 2 / 2 * deriv (deriv fun y => u y t) (log s) +
         (r - σ ^ 2 / 2) * deriv (fun y => u y t) (log s) - r * u (log s) t := by
-  have h₁ := mul_deriv_comp_log hu.self_of_nhds hs
-  have h₂ := sq_mul_deriv_deriv_comp_log hu hu' hs
+  have h₁ := mul_deriv_comp_log (v := fun y => u y t) hs
+  have h₂ := sq_mul_deriv_deriv_comp_log (v := fun y => u y t) hu' hs
   linear_combination σ ^ 2 / 2 * h₂ + r * h₁
 
 /-- **The pricing equation in log-spot coordinates.** For a function `C(s, t)` of the spot and
@@ -103,7 +102,7 @@ theorem pde_comp_exp {C : ℝ → ℝ → ℝ} {t : ℝ} (σ r : ℝ)
         r * (exp y * deriv (fun x => C x t) (exp y) - C (exp y) t) := by
   have h₁ : HasDerivAt (fun y => C (exp y) t) (deriv (fun x => C x t) (exp y) * exp y) y :=
     hC.self_of_nhds.hasDerivAt.comp y (hasDerivAt_exp y)
-  rw [deriv_deriv_comp_exp (f := fun x => C x t) hC hC', h₁.deriv]
+  rw [deriv_deriv_comp_exp (f := fun x => C x t) hC', h₁.deriv]
   ring
 
 /-- **The pricing equation in weighted log-spot coordinates.** For a function `C(s, t)` of the
