@@ -28,8 +28,7 @@ In particular a `C¹` diffeomorphism of half-discs preserving the real axis and 
 half-plane preserves the half-disc classes. For real-affine maps `z ↦ A z + b` every order is
 preserved, by induction on the order from the first-order formula `Du (A z + b) ∘ A`
 (`TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add`). The dilation `z ↦ 2 z` scales the
-first derivative by `2`, the reflection `z ↦ -conj z` preserves the half-disc classes, and the
-rotation `z ↦ I z` does not preserve the real axis.
+first derivative by `2`, and the reflection `z ↦ -conj z` preserves the half-disc classes.
 
 Higher orders for nonlinear `Φ` need the multiplication of local Sobolev maps by smooth
 coefficients and are not treated here.
@@ -205,11 +204,6 @@ theorem MemWkpLoc.comp_conj {u : ℂ → F} (hu : MemWkpLoc p V k u)
     (hmaps : MapsTo (conj ·) U V) : MemWkpLoc p U k (fun z => u (conj z)) := by
   simpa using hu.comp_continuousLinearEquiv_add Complex.conjCLE 0 (by simpa using hmaps)
 
-/-- Complex conjugation maps the real axis into itself. -/
-theorem mapsTo_conj_setOf_im_eq_zero :
-    MapsTo (conj ·) {z : ℂ | z.im = 0} {z : ℂ | z.im = 0} := fun z hz => by
-  simpa using hz
-
 /-- The reflection `z ↦ -conj z` across the imaginary axis preserves the real axis and the upper
 half-plane, hence the half-disc classes on the unit half-disc, at every order. -/
 theorem MemWkpLoc.halfDisc_comp_neg_conj {u : ℂ → F}
@@ -217,12 +211,6 @@ theorem MemWkpLoc.halfDisc_comp_neg_conj {u : ℂ → F}
     MemWkpLoc p (Metric.ball 0 1 ∩ {z | 0 ≤ z.im}) k (fun z => u (-conj z)) := by
   simpa using hu.comp_continuousLinearEquiv_add (Complex.conjCLE.trans
     (ContinuousLinearEquiv.neg ℝ)) 0 (fun z hz => by simpa using hz)
-
-/-- The rotation `z ↦ I z` does not preserve the real axis, so it is not admissible on
-half-discs. -/
-theorem not_mapsTo_I_mul_setOf_im_eq_zero :
-    ¬ MapsTo (fun z : ℂ => Complex.I * z) {z | z.im = 0} {z | z.im = 0} := fun h => by
-  simpa using h (show (1 : ℂ) ∈ {z : ℂ | z.im = 0} by simp)
 
 end Planar
 
