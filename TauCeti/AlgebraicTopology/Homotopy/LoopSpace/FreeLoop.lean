@@ -167,6 +167,22 @@ def basedMapCircleHomotopyGroupMulEquiv (m : ℕ) :
     ((Homeomorph.symm_apply_eq _).1 (basedMapCircleOneHomeomorphPath_symm_refl x)).symm).trans
     (HomotopyGroup.pathLoopSpaceMulEquiv m)
 
+/-- The loop-space shift on the based loops is the map induced by
+`TauCeti.basedMapCircleOneHomeomorphPath`, followed by the path loop-space shift
+`HomotopyGroup.pathLoopSpaceMulEquiv`. -/
+@[simp]
+theorem basedMapCircleHomotopyGroupMulEquiv_apply (m : ℕ)
+    (a : π_ (m + 1) (BasedMap Circle Q 1 x)
+      ⟨ContinuousMap.const Circle x, ContinuousMap.const_apply x 1⟩) :
+    basedMapCircleHomotopyGroupMulEquiv x m a =
+      HomotopyGroup.pathLoopSpaceMulEquiv m
+        (HomotopyGroup.map ⟨basedMapCircleOneHomeomorphPath x,
+            (basedMapCircleOneHomeomorphPath x).continuous⟩
+          ((Homeomorph.symm_apply_eq _).1 (basedMapCircleOneHomeomorphPath_symm_refl x)).symm
+          a) := by
+  rw [basedMapCircleHomotopyGroupMulEquiv, MulEquiv.trans_apply,
+    HomotopyGroup.homeomorphMulEquivOfEq_apply]
+
 /-! ### Free loops -/
 
 /-- The injection `π_{m+2}(Q, x) → π_{m+1}(𝓛Q, x)` at the constant loop: the inverse of the
@@ -178,14 +194,15 @@ def freeLoopHomotopyGroupHom (m : ℕ) :
     (basedMapCircleHomotopyGroupMulEquiv x m).symm.toMonoidHom
 
 /-- On the loop-space shift of a class of based loops, `TauCeti.freeLoopHomotopyGroupHom` is the
-map induced by the inclusion of the based loops. -/
-@[simp]
+map induced by the inclusion of the based loops. Not `@[simp]`: the simp normal form unfolds
+the loop-space shift through `TauCeti.basedMapCircleHomotopyGroupMulEquiv_apply`. -/
 theorem freeLoopHomotopyGroupHom_basedMapCircleHomotopyGroupMulEquiv (m : ℕ)
     (a : π_ (m + 1) (BasedMap Circle Q 1 x)
       ⟨ContinuousMap.const Circle x, ContinuousMap.const_apply x 1⟩) :
     freeLoopHomotopyGroupHom x m (basedMapCircleHomotopyGroupMulEquiv x m a) =
       HomotopyGroup.map ⟨Subtype.val, continuous_subtype_val⟩ rfl a := by
-  simp [freeLoopHomotopyGroupHom]
+  rw [freeLoopHomotopyGroupHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    MulEquiv.symm_apply_apply, HomotopyGroup.mapHom_apply]
 
 /-- The injection `π_{m+2}(Q, x) → π_{m+1}(𝓛Q, x)` is injective. -/
 theorem injective_freeLoopHomotopyGroupHom (m : ℕ) :
@@ -206,7 +223,8 @@ theorem range_freeLoopHomotopyGroupHom (m : ℕ) :
   · rintro ⟨b, rfl⟩
     exact ⟨_, rfl⟩
   · rintro ⟨b, rfl⟩
-    exact ⟨basedMapCircleHomotopyGroupMulEquiv x m b, by simp [freeLoopHomotopyGroupHom]⟩
+    exact ⟨basedMapCircleHomotopyGroupMulEquiv x m b,
+      freeLoopHomotopyGroupHom_basedMapCircleHomotopyGroupMulEquiv x m b⟩
 
 /-- **The constant loops split the free-loop sequence.** Evaluation undoes the constant loops on
 homotopy groups. -/
@@ -228,8 +246,7 @@ def contractibleLoopsHomotopyGroupMulEquiv [DecidableEq N] [Nonempty N] :
       HomotopyGroup N C(Circle, Q) (ContinuousMap.const Circle x) :=
   MulEquiv.ofBijective
     (HomotopyGroup.mapHom ⟨Subtype.val, continuous_subtype_val⟩ (coe_constContractibleLoop x)) <| by
-      rw [show ⇑(HomotopyGroup.mapHom (N := N) _ (coe_constContractibleLoop x)) = _ from
-        funext (HomotopyGroup.mapHom_apply _ _)]
+      rw [HomotopyGroup.mapHom, MonoidHom.coe_mk, OneHom.coe_mk]
       refine HomotopyGroup.bijective_map_subtypeVal_of_pathComponent_subset ?_ _
       rw [coe_constContractibleLoop]
       exact pathComponent_const_subset_contractibleLoops x
