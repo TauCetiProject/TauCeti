@@ -13,8 +13,8 @@ public import TauCeti.Algebra.Module.Dual.Indecomposable
 # The Auslander--Reiten translate
 
 For an algebra `A` over a commutative semiring `k`, the **duality** `D = Hom_k(-, k)` turns a right
-`A`-module into a left `A`-module, by `TauCeti.dualRightAction`.  This file applies that duality to
-the Auslander--Reiten transpose to define the **Auslander--Reiten translate**
+`A`-module into a left `A`-module, by `TauCeti.linearMapRightAction`.  This file applies that
+duality to the Auslander--Reiten transpose to define the **Auslander--Reiten translate**
 
 `τ M = D (Tr M)`
 
@@ -53,7 +53,7 @@ that statement, and it is what licenses the notation `τ M`.
 
 ## Implementation notes
 
-`TauCeti.dualRightAction` is a plain ring homomorphism rather than a `Module` instance on every
+`TauCeti.linearMapRightAction` is a plain ring homomorphism rather than a `Module` instance on every
 dual, for the reasons recorded in `TauCeti/LinearAlgebra/Dual/RightAction.lean`; the single
 `Module` instance built from it is the one on the translate, whose underlying transpose pins the
 right-module structure being dualized.
@@ -103,7 +103,7 @@ variable {P₀ : Type v} {P₁ : Type w} [AddCommMonoid P₀] [Module A P₀]
 
 /-- The **Auslander--Reiten translate** `τ = D Tr` attached to a linear map `p₁ : P₁ → P₀`: the
 `k`-dual of its Auslander--Reiten transpose.  The transpose is a right `A`-module, so
-`TauCeti.dualRightAction` makes the translate a left `A`-module.
+`TauCeti.linearMapRightAction` makes the translate a left `A`-module.
 
 When `p₁` is the first map of a minimal projective presentation `P₁ → P₀ → M → 0`, this is the
 Auslander--Reiten translate of `M`: no exactness or projectivity is needed to form it, and
@@ -120,14 +120,14 @@ variable {p₁ : P₁ →ₗ[A] P₀}
 
 instance : Module A (AuslanderReitenTranslate k p₁) :=
   Module.compHom (Module.Dual k (AuslanderReitenTranspose p₁))
-    (dualRightAction k (AuslanderReitenTranspose p₁))
+    (linearMapRightAction k (AuslanderReitenTranspose p₁) k)
 
 /-- The `A`-action on the translate is precomposition with the right action on the transpose. -/
 @[simp]
 theorem smul_apply (a : A) (φ : AuslanderReitenTranslate k p₁)
     (x : AuslanderReitenTranspose p₁) :
     (a • φ) x = φ (MulOpposite.op a • x) :=
-  dualRightAction_apply_apply k (AuslanderReitenTranspose p₁) a φ x
+  linearMapRightAction_apply_apply k (AuslanderReitenTranspose p₁) k a φ x
 
 /-- Scalars from `k` act on the translate through `A`, so the two actions on it are the layered
 ones: the `k`-action is the restriction of the `A`-action along the algebra map. -/
