@@ -57,17 +57,13 @@ theorem twoRank_eq_two_of_minpoly_eq_X_sq_add_twenty_one
         using isPrimeDiscriminant_oddPrimeDiscriminant (p := 3) (by decide) (by decide)
     · simpa [oddPrimeDiscriminant_of_mod_four_eq_three (by norm_num : 7 % 4 = 3)]
         using isPrimeDiscriminant_oddPrimeDiscriminant (p := 7) (by decide) (by decide)
-  have heven : ∀ P ∈ ({-4, -3, -7} : Finset ℤ), ∀ Q ∈ ({-4, -3, -7} : Finset ℤ),
-      IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q := by
-    intro P hP Q hQ
-    fin_cases hP <;> fin_cases hQ <;> simp only [IsEvenPrimeDiscriminant] <;> decide
   have hprod : ∏ P ∈ ({-4, -3, -7} : Finset ℤ), P = fundamentalDiscriminant (-21 : ℤ) := by
     rw [Finset.prod_insert (by decide : (-4 : ℤ) ∉ ({-3, -7} : Finset ℤ)),
       Finset.prod_insert (by decide : (-3 : ℤ) ∉ ({-7} : Finset ℤ)), Finset.prod_singleton,
       fundamentalDiscriminant_of_mod_four_ne_one (by decide : (-21 : ℤ) % 4 ≠ 1)]
     ring
   have hncard : (ramifiedPrimes K).ncard = 3 := by
-    rw [ncard_ramifiedPrimes_eq_card hmin hgen squarefree_neg_twenty_one hs heven hprod,
+    rw [ncard_ramifiedPrimes_eq_card hmin hgen squarefree_neg_twenty_one hs hprod,
       Finset.card_insert_of_notMem (by decide : (-4 : ℤ) ∉ ({-3, -7} : Finset ℤ)),
       Finset.card_insert_of_notMem (by decide : (-3 : ℤ) ∉ ({-7} : Finset ℤ)),
       Finset.card_singleton]

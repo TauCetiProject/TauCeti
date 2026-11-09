@@ -148,12 +148,10 @@ private theorem exists_diagonalTransport :
       · refine (continuousAt_const (y := (0 : F →L[𝕜] F))).congr ?_
         filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hz] with p hp
         simp [w, hp]
-    · filter_upwards [hJ, (by fun_prop : Continuous fun p : X × I × I ↦ (p.1, p.2.2)).continuousAt
-        |>.preimage_mem_nhds ((trivializationAt F E (p₀.1, p₀.2.2)).open_baseSet.mem_nhds
-          (mem_baseSet_trivializationAt F E _))] with p hp hpb
+    · filter_upwards [hJ] with p hp
       rw [finsum_eq_sum_of_support_subset _ fun z hz ↦ hp ((ρ.mem_finsupport p).1 (hw p hz)),
         inCoordinates_finset_sum]
-      exact Finset.sum_congr rfl fun z _ ↦ (inCoordinates_smul _ _ hpb).symm
+      exact Finset.sum_congr rfl fun z _ ↦ (inCoordinates_smul _ _).symm
   · have hp : ((x, s, s) : X × I × I) ∈ D := rfl
     have hterm (z : X × I) : w z (x, s, s) • chartTransport 𝕜 F E z (x, s, s) =
         w z (x, s, s) • ContinuousLinearMap.id 𝕜 (E (x, s)) := by
@@ -317,7 +315,7 @@ theorem exists_continuousLinearEquiv_cylinder [CompleteSpace F] :
       ((Φ q).symm : E q →L[𝕜] E (q.1, 0))) q₀ := by
     simpa only [← inverse_equiv] using ContinuousAt.inCoordinates_clm_inverse
       (b₁ := fun q : X × I ↦ (q.1, (0 : I))) (b₂ := fun q : X × I ↦ q)
-      (hΦc q₀) (by fun_prop) continuousAt_id isInvertible_equiv
+      (hΦc q₀) isInvertible_equiv
   refine ⟨Φ, continuous_iff_continuousAt.2 fun v₀ ↦ ?_,
     Pullback.continuous_iff.2 ⟨FiberBundle.continuous_proj F E,
       continuous_iff_continuousAt.2 fun v₀ ↦ ?_⟩, fun x ↦ ?_⟩

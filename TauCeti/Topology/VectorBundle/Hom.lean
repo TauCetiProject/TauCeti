@@ -137,38 +137,31 @@ theorem ContinuousAt.eventually_isInvertible_of_inCoordinates
   simpa only [nhdsWithin_univ] using hϕ.eventually_isInvertible_of_inCoordinates hb₁ hb₂ hm₀
 
 /-- Inversion preserves continuity within `s` at `m₀` in coordinates of a family of fibre maps
-invertible at `m₀`, provided both base maps are continuous within `s` at `m₀`. Only the model
-source must be complete. -/
+invertible at `m₀`. Only the model source must be complete. -/
 theorem ContinuousWithinAt.inCoordinates_clm_inverse
     (hϕ : ContinuousWithinAt
       (fun m ↦ inCoordinates F V F' W (b₁ m₀) (b₁ m) (b₂ m₀) (b₂ m) (ϕ m)) s m₀)
-    (hb₁ : ContinuousWithinAt b₁ s m₀) (hb₂ : ContinuousWithinAt b₂ s m₀)
     (hm₀ : (ϕ m₀).IsInvertible) :
     ContinuousWithinAt
       (fun m ↦ inCoordinates F' W F V (b₂ m₀) (b₂ m) (b₁ m₀) (b₁ m) (ϕ m).inverse) s m₀ := by
-  have h₁ := mem_baseSet_trivializationAt F V (b₁ m₀)
-  have h₂ := mem_baseSet_trivializationAt F' W (b₂ m₀)
-  have hinv := (isInvertible_inCoordinates_iff h₁ h₂).2 hm₀
-  -- Near `m₀`, the inverse in coordinates is the inverse of the coordinate expression,
+  have hinv := (isInvertible_inCoordinates_iff (mem_baseSet_trivializationAt F V (b₁ m₀))
+    (mem_baseSet_trivializationAt F' W (b₂ m₀))).2 hm₀
+  -- The inverse in coordinates is the inverse of the coordinate expression,
   -- and inversion is continuous at an invertible map.
-  refine ((hinv.contDiffAt_map_inverse (n := 0)).continuousAt.comp_continuousWithinAt
+  exact ((hinv.contDiffAt_map_inverse (n := 0)).continuousAt.comp_continuousWithinAt
     (f := fun m ↦ inCoordinates F V F' W (b₁ m₀) (b₁ m) (b₂ m₀) (b₂ m) (ϕ m)) hϕ)
-    |>.congr_of_eventuallyEq ?_ (inCoordinates_inverse (ϕ m₀) h₁ h₂)
-  filter_upwards [hb₁.preimage_mem_nhdsWithin
-      ((trivializationAt F V (b₁ m₀)).open_baseSet.mem_nhds h₁),
-    hb₂.preimage_mem_nhdsWithin ((trivializationAt F' W (b₂ m₀)).open_baseSet.mem_nhds h₂)]
-    with m hm₁ hm₂
-  exact inCoordinates_inverse (ϕ m) hm₁ hm₂
+    |>.congr_of_eventuallyEq (Filter.Eventually.of_forall fun m ↦ inCoordinates_inverse (ϕ m))
+      (inCoordinates_inverse (ϕ m₀))
 
 /-- Inversion preserves continuity at `m₀` in coordinates of a family of fibre maps invertible at
-`m₀`, provided both base maps are continuous at `m₀`. Only the model source must be complete. -/
+`m₀`. Only the model source must be complete. -/
 theorem ContinuousAt.inCoordinates_clm_inverse
     (hϕ : ContinuousAt (fun m ↦ inCoordinates F V F' W (b₁ m₀) (b₁ m) (b₂ m₀) (b₂ m) (ϕ m)) m₀)
-    (hb₁ : ContinuousAt b₁ m₀) (hb₂ : ContinuousAt b₂ m₀) (hm₀ : (ϕ m₀).IsInvertible) :
+    (hm₀ : (ϕ m₀).IsInvertible) :
     ContinuousAt
       (fun m ↦ inCoordinates F' W F V (b₂ m₀) (b₂ m) (b₁ m₀) (b₁ m) (ϕ m).inverse) m₀ := by
-  rw [← continuousWithinAt_univ] at hϕ hb₁ hb₂ ⊢
-  exact hϕ.inCoordinates_clm_inverse hb₁ hb₂ hm₀
+  rw [← continuousWithinAt_univ] at hϕ ⊢
+  exact hϕ.inCoordinates_clm_inverse hm₀
 
 end OfInCoordinates
 
@@ -310,7 +303,7 @@ theorem ContinuousWithinAt.clm_bundle_inverse
       (fun m ↦ TotalSpace.mk' (F₂ →L[𝕜] F₁) (E := fun y ↦ E₂ y →L[𝕜] E₁ y)
         (b m) (ϕ m).inverse) s x := by
   rw [continuousWithinAt_hom_bundle] at hϕ ⊢
-  exact ⟨hϕ.1, hϕ.2.inCoordinates_clm_inverse hϕ.1 hϕ.1 hx⟩
+  exact ⟨hϕ.1, hϕ.2.inCoordinates_clm_inverse hx⟩
 
 /-- Inversion of a continuous Hom-bundle section is continuous at a point where its fibre
 map is invertible. -/

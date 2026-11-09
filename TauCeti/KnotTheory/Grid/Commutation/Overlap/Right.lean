@@ -654,10 +654,9 @@ theorem recutRightEqRightSecond_inj
       simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
         toRectangleDecomposition_middle, toRectangleDecomposition_second_toGridRectangle]
         using hpentagonE
-    have hbackD := hD.symm honeD hfirstD hlastD
-    have hbackE := hE.symm honeE hfirstE hlastE
+    have hbackD := hD.symm hfirstD hlastD
+    have hbackE := hE.symm hfirstE hlastE
     have hone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hbackD
-      (D.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide honeD)
     apply toRectangleDecomposition_injective
     exact (GridRectangleDecomposition.existsUnique_isRecut _ hone
       hD.isEmpty_first hD.isEmpty_second).unique hbackD hbackE
