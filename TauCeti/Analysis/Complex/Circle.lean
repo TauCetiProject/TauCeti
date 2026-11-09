@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
+import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import Mathlib.Analysis.Calculus.FDeriv.Comp
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
 
 /-!
 # The unit circle: the unit sphere of `ℂ`, the exponential and the coordinate function
@@ -34,6 +38,9 @@ and records that the coordinate function `z ↦ z` is a unitary element of `C(S�
   identity for a point of `sphere (0 : ℂ) 1`.
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
   complex exponentials on the circle.
+* `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
+* `Circle.differentiableAt_coe_inv`: the pointwise inverse of a differentiable circle-valued map
+  is differentiable.
 -/
 
 public section
@@ -116,6 +123,20 @@ theorem mixed_power_rotation_factor {p q : ℕ} (hpq : p ≠ q) :
         ((u : ℂ) ^ q * (u : ℂ) ^ d) * ((u : ℂ) ^ q)⁻¹ = (u : ℂ) ^ d := by field_simp
         _ = -1 := huk
   simpa only [u, d] using hfactor
+
+/-- Every point of the circle has an `n`-th root on the circle, for `n ≠ 0`: `exp (i arg z / n)`.
+-/
+theorem exists_pow_nat_eq (z : Circle) {n : ℕ} (hn : n ≠ 0) : ∃ y : Circle, y ^ n = z :=
+  ⟨exp (Complex.arg z / n), by
+    rw [← exp_nsmul, nsmul_eq_mul, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hn), exp_arg]⟩
+
+/-- The pointwise inverse of a circle-valued map that is differentiable at `z`, as a map into `ℂ`,
+is differentiable at `z`. -/
+theorem differentiableAt_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {u : E → Circle} {z : E} (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z) :
+    DifferentiableAt ℝ (fun w ↦ ((u⁻¹ w : Circle) : ℂ)) z := by
+  simpa only [Pi.inv_apply, coe_inv_eq_conj, Function.comp_def, Complex.conjCLE_apply] using
+    Complex.conjCLE.differentiableAt.comp z hu
 
 /-- The map `t ↦ exp (i t)` from the real line to the circle, as a continuous homomorphism
 from `Multiplicative ℝ`. -/

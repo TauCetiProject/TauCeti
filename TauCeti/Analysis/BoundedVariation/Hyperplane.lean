@@ -55,72 +55,96 @@ open scoped ENNReal Distributions RealInnerProductSpace
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
   [MeasurableSpace F] [BorelSpace F] {ν : F}
 
+/-- The divergence theorem for a test field `φ` on the half-space `{x | ⟪x, ν⟫ < c}`: its integral
+is the flux `⟪φ, ν⟫` through the boundary hyperplane. -/
+private lemma integral_setOf_inner_lt_divergenceCLM (hν : ‖ν‖ = 1) (c : ℝ) (Ω : Opens F)
+    (φ : 𝓓(Ω, F)) : ∫ x in {x | ⟪x, ν⟫ < c}, divergenceCLM φ x =
+      ∫ x in {x | ⟪x, ν⟫ = c}, ⟪φ x, ν⟫ ∂μHE[finrank ℝ F - 1] := by
+  simp_rw [divergenceCLM_apply]
+  exact setIntegral_setOf_inner_lt_trace_fderiv hν c (φ.contDiff.of_le (by simp))
+    φ.hasCompactSupport
+
+/-- The perimeter of the half-space `{x | ⟪x, ν⟫ < c}` in `Ω` is at most the normalized Hausdorff
+measure of the part `Ω ∩ {x | ⟪x, ν⟫ = c}` of the boundary hyperplane lying in `Ω`. -/
+private lemma perimeter_setOf_inner_lt_le (hν : ‖ν‖ = 1) (c : ℝ) (Ω : Opens F) :
+    perimeter volume Ω {x | ⟪x, ν⟫ < c} ≤ μHE[finrank ℝ F - 1] (Ω ∩ {x | ⟪x, ν⟫ = c}) := by
+  set S : Set F := {x | ⟪x, ν⟫ = c}
+  have hH : MeasurableSet {x : F | ⟪x, ν⟫ < c} := measurableSet_lt (by fun_prop) measurable_const
+  have hdiv := integral_setOf_inner_lt_divergenceCLM hν c Ω
+  rw [perimeter_eq_iSup hH.nullMeasurableSet]
+  refine iSup₂_le fun φ hφ => ?_
+  -- An admissible field has normal component at most one on `Ω` and vanishes off `Ω`.
+  have hle (x : F) : ‖⟪φ x, ν⟫‖ₑ ≤ (Ω : Set F).indicator 1 x := by
+    by_cases hx : x ∈ (Ω : Set F)
+    · rw [indicator_of_mem hx, Pi.one_apply, ← ofReal_norm, ENNReal.ofReal_le_one]
+      exact (norm_inner_le_norm _ _).trans (by rw [hν, mul_one]; exact hφ x)
+    · simp [image_eq_zero_of_notMem_tsupport fun h => hx (φ.tsupport_subset h)]
+  calc ENNReal.ofReal (∫ x in {x | ⟪x, ν⟫ < c}, divergenceCLM φ x)
+      ≤ ‖∫ x in S, ⟪φ x, ν⟫ ∂μHE[finrank ℝ F - 1]‖ₑ := by
+        rw [hdiv]
+        exact Real.ofReal_le_enorm _
+    _ ≤ ∫⁻ x in S, (Ω : Set F).indicator 1 x ∂μHE[finrank ℝ F - 1] :=
+        (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono hle)
+    _ = μHE[finrank ℝ F - 1] (Ω ∩ S) := by
+        rw [lintegral_indicator_one Ω.isOpen.measurableSet, Measure.restrict_apply
+          Ω.isOpen.measurableSet]
+
+
+/-- The perimeter of the half-space `{x | ⟪x, ν⟫ < c}` in `Ω` is at least the normalized Hausdorff
+measure of the part `Ω ∩ {x | ⟪x, ν⟫ = c}` of the boundary hyperplane lying in `Ω`. -/
+private lemma le_perimeter_setOf_inner_lt (hν : ‖ν‖ = 1) (c : ℝ) (Ω : Opens F) :
+    μHE[finrank ℝ F - 1] (Ω ∩ {x | ⟪x, ν⟫ = c}) ≤ perimeter volume Ω {x | ⟪x, ν⟫ < c} := by
+  set S : Set F := {x | ⟪x, ν⟫ = c}
+  have hS : MeasurableSet S := measurableSet_eq_fun (by fun_prop) measurable_const
+  have hH : MeasurableSet {x : F | ⟪x, ν⟫ < c} := measurableSet_lt (by fun_prop) measurable_const
+  have hdiv := integral_setOf_inner_lt_divergenceCLM hν c Ω
+  rw [perimeter_eq_iSup hH.nullMeasurableSet]
+  -- Test with `χ ν` for a cutoff `χ` equal to one on a compact subset of the hyperplane part in
+  -- `Ω`, and use inner regularity of Lebesgue measure on the hyperplane.
+  -- Approximate the open part `ι ⁻¹' Ω` of the parametrizing space by compact sets.
+  set ι : (ℝ ∙ ν)ᗮ → F := fun y => c • ν + (y : F)
+  have hι : Continuous ι := by fun_prop
+  rw [← Measure.restrict_apply' hS, euclideanHausdorffMeasure_restrict_setOf_inner_eq hν,
+    Measure.map_apply hι.measurable Ω.isOpen.measurableSet,
+    (Ω.isOpen.preimage hι).measure_eq_iSup_isCompact]
+  refine iSup₂_le fun C hCΩ => iSup_le fun hC => ?_
+  -- A cutoff `χ` equal to one on `ι '' C` gives the admissible field `χ ν`.
+  obtain ⟨χ, hχ1, hχ01⟩ := exists_eventually_eq_one (n := ⊤) (hC.image hι)
+    (image_subset_iff.2 hCΩ)
+  let φ : 𝓓(Ω, F) := ⟨fun x => χ x • ν, χ.contDiff.smul contDiff_const,
+    χ.hasCompactSupport.smul_right, (tsupport_smul_subset_left _ _).trans χ.tsupport_subset⟩
+  have hφ (x : F) : ‖φ x‖ ≤ 1 := by
+    simp only [φ, coe_mk, norm_smul, hν, mul_one, Real.norm_eq_abs, abs_of_nonneg (hχ01 x).1]
+    exact (hχ01 x).2
+  have hχι : Integrable (fun y => χ (ι y)) := by
+    have h := integrableOn_setOf_inner_eq hν c χ.continuous χ.hasCompactSupport
+    rwa [IntegrableOn, euclideanHausdorffMeasure_restrict_setOf_inner_eq hν,
+      integrable_map_measure χ.continuous.aestronglyMeasurable hι.aemeasurable] at h
+  calc volume C = ENNReal.ofReal (∫ y, C.indicator 1 y) := by
+        rw [integral_indicator_one hC.measurableSet, ofReal_measureReal hC.measure_lt_top.ne]
+    _ ≤ ENNReal.ofReal (∫ y, χ (ι y)) := by
+        refine ENNReal.ofReal_le_ofReal (integral_mono
+          ((integrable_indicator_iff hC.measurableSet).2 (integrableOn_const
+            hC.measure_lt_top.ne)) hχι fun y => ?_)
+        by_cases hy : y ∈ C
+        · rw [indicator_of_mem hy, Pi.one_apply, hχ1.self_of_nhdsSet _ (mem_image_of_mem ι hy)]
+        · rw [indicator_of_notMem hy]
+          exact (hχ01 _).1
+    _ = ENNReal.ofReal (∫ x in {x | ⟪x, ν⟫ < c}, divergenceCLM φ x) := by
+        rw [hdiv, setIntegral_setOf_inner_eq hν]
+        simp [φ, ι, real_inner_smul_left, hν]
+    _ ≤ ⨆ (φ : 𝓓(Ω, F)) (_ : ∀ x, ‖φ x‖ ≤ 1),
+        ENNReal.ofReal (∫ x in {x | ⟪x, ν⟫ < c}, divergenceCLM φ x) :=
+        le_iSup₂_of_le (f := fun (φ : 𝓓(Ω, F)) (_ : ∀ x, ‖φ x‖ ≤ 1) =>
+          ENNReal.ofReal (∫ x in {x | ⟪x, ν⟫ < c}, divergenceCLM φ x)) φ hφ le_rfl
+
+
 /-- **The perimeter of a half-space.** For a unit vector `ν`, the perimeter of the half-space
 `{x | ⟪x, ν⟫ < c}` in an open set `Ω` is the `(n - 1)`-dimensional Hausdorff measure of the part
 of its boundary hyperplane `{x | ⟪x, ν⟫ = c}` lying in `Ω`. -/
 theorem perimeter_setOf_inner_lt (hν : ‖ν‖ = 1) (c : ℝ) (Ω : Opens F) :
-    perimeter volume Ω {x | ⟪x, ν⟫ < c} = μHE[finrank ℝ F - 1] (Ω ∩ {x | ⟪x, ν⟫ = c}) := by
-  set S : Set F := {x | ⟪x, ν⟫ = c}
-  have hS : MeasurableSet S := measurableSet_eq_fun (by fun_prop) measurable_const
-  have hH : MeasurableSet {x : F | ⟪x, ν⟫ < c} := measurableSet_lt (by fun_prop) measurable_const
-  have hdiv (φ : 𝓓(Ω, F)) : ∫ x in {x | ⟪x, ν⟫ < c}, divergenceCLM φ x =
-      ∫ x in S, ⟪φ x, ν⟫ ∂μHE[finrank ℝ F - 1] := by
-    simp_rw [divergenceCLM_apply]
-    exact setIntegral_setOf_inner_lt_trace_fderiv hν c (φ.contDiff.of_le (by simp))
-      φ.hasCompactSupport
-  rw [perimeter_eq_iSup hH.nullMeasurableSet]
-  refine le_antisymm (iSup₂_le fun φ hφ => ?_) ?_
-  · -- An admissible field has normal component at most one on `Ω` and vanishes off `Ω`.
-    have hle (x : F) : ‖⟪φ x, ν⟫‖ₑ ≤ (Ω : Set F).indicator 1 x := by
-      by_cases hx : x ∈ (Ω : Set F)
-      · rw [indicator_of_mem hx, Pi.one_apply, ← ofReal_norm, ENNReal.ofReal_le_one]
-        exact (norm_inner_le_norm _ _).trans (by rw [hν, mul_one]; exact hφ x)
-      · simp [image_eq_zero_of_notMem_tsupport fun h => hx (φ.tsupport_subset h)]
-    calc ENNReal.ofReal (∫ x in {x | ⟪x, ν⟫ < c}, divergenceCLM φ x)
-        ≤ ‖∫ x in S, ⟪φ x, ν⟫ ∂μHE[finrank ℝ F - 1]‖ₑ := by
-          rw [hdiv]
-          exact Real.ofReal_le_enorm _
-      _ ≤ ∫⁻ x in S, (Ω : Set F).indicator 1 x ∂μHE[finrank ℝ F - 1] :=
-          (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono hle)
-      _ = μHE[finrank ℝ F - 1] (Ω ∩ S) := by
-          rw [lintegral_indicator_one Ω.isOpen.measurableSet, Measure.restrict_apply
-            Ω.isOpen.measurableSet]
-  · -- Approximate the open part `ι ⁻¹' Ω` of the parametrizing space by compact sets.
-    set ι : (ℝ ∙ ν)ᗮ → F := fun y => c • ν + (y : F)
-    have hι : Continuous ι := by fun_prop
-    rw [← Measure.restrict_apply' hS, euclideanHausdorffMeasure_restrict_setOf_inner_eq hν,
-      Measure.map_apply hι.measurable Ω.isOpen.measurableSet,
-      (Ω.isOpen.preimage hι).measure_eq_iSup_isCompact]
-    refine iSup₂_le fun C hCΩ => iSup_le fun hC => ?_
-    -- A cutoff `χ` equal to one on `ι '' C` gives the admissible field `χ ν`.
-    obtain ⟨χ, hχ1, hχ01⟩ := exists_eventually_eq_one (n := ⊤) (hC.image hι)
-      (image_subset_iff.2 hCΩ)
-    let φ : 𝓓(Ω, F) := ⟨fun x => χ x • ν, χ.contDiff.smul contDiff_const,
-      χ.hasCompactSupport.smul_right, (tsupport_smul_subset_left _ _).trans χ.tsupport_subset⟩
-    have hφ (x : F) : ‖φ x‖ ≤ 1 := by
-      simp only [φ, coe_mk, norm_smul, hν, mul_one, Real.norm_eq_abs, abs_of_nonneg (hχ01 x).1]
-      exact (hχ01 x).2
-    have hχι : Integrable (fun y => χ (ι y)) := by
-      have h := integrableOn_setOf_inner_eq hν c χ.continuous χ.hasCompactSupport
-      rwa [IntegrableOn, euclideanHausdorffMeasure_restrict_setOf_inner_eq hν,
-        integrable_map_measure χ.continuous.aestronglyMeasurable hι.aemeasurable] at h
-    calc volume C = ENNReal.ofReal (∫ y, C.indicator 1 y) := by
-          rw [integral_indicator_one hC.measurableSet, ofReal_measureReal hC.measure_lt_top.ne]
-      _ ≤ ENNReal.ofReal (∫ y, χ (ι y)) := by
-          refine ENNReal.ofReal_le_ofReal (integral_mono
-            ((integrable_indicator_iff hC.measurableSet).2 (integrableOn_const
-              hC.measure_lt_top.ne)) hχι fun y => ?_)
-          by_cases hy : y ∈ C
-          · rw [indicator_of_mem hy, Pi.one_apply, hχ1.self_of_nhdsSet _ (mem_image_of_mem ι hy)]
-          · rw [indicator_of_notMem hy]
-            exact (hχ01 _).1
-      _ = ENNReal.ofReal (∫ x in {x | ⟪x, ν⟫ < c}, divergenceCLM φ x) := by
-          rw [hdiv, setIntegral_setOf_inner_eq hν]
-          simp [φ, ι, real_inner_smul_left, hν]
-      _ ≤ ⨆ (φ : 𝓓(Ω, F)) (_ : ∀ x, ‖φ x‖ ≤ 1),
-          ENNReal.ofReal (∫ x in {x | ⟪x, ν⟫ < c}, divergenceCLM φ x) :=
-          le_iSup₂_of_le (f := fun (φ : 𝓓(Ω, F)) (_ : ∀ x, ‖φ x‖ ≤ 1) =>
-            ENNReal.ofReal (∫ x in {x | ⟪x, ν⟫ < c}, divergenceCLM φ x)) φ hφ le_rfl
+    perimeter volume Ω {x | ⟪x, ν⟫ < c} = μHE[finrank ℝ F - 1] (Ω ∩ {x | ⟪x, ν⟫ = c}) :=
+  le_antisymm (perimeter_setOf_inner_lt_le hν c Ω) (le_perimeter_setOf_inner_lt hν c Ω)
 
 /-- **The perimeter of a half-space in a ball centred on its boundary.** For a unit vector `ν` and
 `r > 0`, the half-space `{y | ⟪y, ν⟫ < ⟪x, ν⟫}`, whose boundary hyperplane passes through `x`, has
