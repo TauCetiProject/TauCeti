@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import TauCeti.Analysis.InnerProductSpace.ExternalProductBlock
+public import TauCeti.Analysis.Normed.Module.Basic
 public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
 
 /-!
@@ -176,13 +177,6 @@ variable {X Y E F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAdd
   [InnerProductSpace ℝ F] {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
   [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
 
-/-- The conic ratio `‖u‖² / (‖u‖² + ‖v‖²)` is invariant under positive dilations. -/
-private theorem conicRatio_smul {G G' : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [NormedAddCommGroup G'] [NormedSpace ℝ G'] (u : G) (v : G') {t : ℝ} (ht : 0 < t) :
-    ‖t • u‖ ^ 2 / (‖t • u‖ ^ 2 + ‖t • v‖ ^ 2) = ‖u‖ ^ 2 / (‖u‖ ^ 2 + ‖v‖ ^ 2) := by
-  simp only [norm_smul, Real.norm_of_nonneg ht.le, mul_pow, ← mul_add]
-  exact mul_div_mul_left _ _ (pow_ne_zero 2 ht.ne')
-
 /-- For smooth maps `σ`, `π` and `π'` out of `Q`, and `g` smooth away from the zero frequency,
 the function `q ↦ χ(‖π q‖² / (‖π q‖² + ‖π' q‖²)) • g (σ q, π q)` is smooth wherever
 `(π q, π' q) ≠ 0`: where `π q ≠ 0` all its factors are smooth, and near a point with `π q = 0`
@@ -230,7 +224,8 @@ def conicCutoffFst (χ : ConicCutoff) (a : HomogeneousSymbol X E V W m) :
       a.contDiffOn_coefficient).mono
       fun p hp ↦ by simpa [Prod.ext_iff, or_iff_not_imp_left] using hp
   homogeneous x ξ t ht := by
-    simp only [Prod.smul_fst, Prod.smul_snd, conicRatio_smul _ _ ht, a.homogeneous _ _ t ht]
+    simp only [Prod.smul_fst, Prod.smul_snd, norm_smul_sq_div_add_norm_smul_sq _ _ ht.ne',
+      a.homogeneous _ _ t ht]
     exact smul_comm _ _ _
 
 @[simp]
@@ -265,7 +260,7 @@ def conicCutoffSnd (χ : ConicCutoff) (b : HomogeneousSymbol Y F V W m) :
       fun p _ ↦ by simp [add_comm]
   homogeneous x ξ t ht := by
     simp only [Prod.smul_fst, Prod.smul_snd, add_comm (‖t • ξ.1‖ ^ 2), add_comm (‖ξ.1‖ ^ 2),
-      conicRatio_smul _ _ ht, b.homogeneous _ _ t ht]
+      norm_smul_sq_div_add_norm_smul_sq _ _ ht.ne', b.homogeneous _ _ t ht]
     exact smul_comm _ _ _
 
 @[simp]
