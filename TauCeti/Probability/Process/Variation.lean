@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Function.BoundedVariation
-public import TauCeti.Probability.Process.Predictable
+public import TauCeti.Probability.Process.Predictable.Basic
 public import Mathlib.Topology.EMetricSpace.VariationOnFromTo
 
 /-!
