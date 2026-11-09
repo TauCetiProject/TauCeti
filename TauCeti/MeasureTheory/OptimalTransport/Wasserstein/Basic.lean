@@ -686,7 +686,6 @@ theorem HasFiniteMoment.integrable_of_lipschitzWith [OpensMeasurableSpace X] {ν
     [IsFiniteMeasure ν] (h : HasFiniteMoment 1 ν) {K : ℝ≥0} {f : X → ℝ}
     (hf : LipschitzWith K f) : Integrable f ν := by
   obtain ⟨x₀, hx₀⟩ := h
-  have hd : Measurable fun y ↦ dist y x₀ := (continuous_id.dist continuous_const).measurable
   have hint : Integrable (fun y ↦ dist y x₀) ν :=
     memLp_one_iff_integrable.1 (memLp_dist_iff_memLp_edist.2 hx₀)
   refine ((integrable_const |f x₀|).add (hint.const_mul K)).mono'
