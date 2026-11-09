@@ -306,7 +306,7 @@ end Ordered
 
 section Subadditive
 
-variable [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+variable [Ring R] [PartialOrder R] [IsOrderedAddMonoid R]
 
 /-- For a nonnegative vector with nonnegative Cartan image, a zero coefficient forces every
 neighbouring coefficient to vanish. -/

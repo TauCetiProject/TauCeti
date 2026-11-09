@@ -22,6 +22,7 @@ an interval of the Boolean lattice `Finset (Sym2 V)`, where the finset interval 
 ## Main results
 
 * `SimpleGraph.exists_minimum_weight_edge` — a finite nonempty edge set has a minimum-weight edge.
+* `SimpleGraph.Iso.sum_neighborFinset_comp` — neighbour sums commute with graph isomorphisms.
 * `SimpleGraph.prod_filter_le_le_eq_prod_Icc_edgeFinset` and its additive version
   `SimpleGraph.sum_filter_le_le_eq_sum_Icc_edgeFinset` — a product (sum) over the graphs between
   `F` and `H` of a function of their edge finsets is the product (sum) of that function over
@@ -45,6 +46,17 @@ theorem exists_minimum_weight_edge (G : SimpleGraph V) [Finite G.edgeSet] (hG : 
   induction e using Sym2.inductionOn with
   | _ u v =>
     exact ⟨u, v, G.mem_edgeSet.1 (mem_edgeFinset.1 he), fun e he' ↦ hmin e (mem_edgeFinset.2 he')⟩
+
+/-- Summing a pulled-back function over neighbours commutes with a graph isomorphism. -/
+theorem Iso.sum_neighborFinset_comp {W R : Type*} [Fintype V] [Fintype W]
+    {G : SimpleGraph V} {H : SimpleGraph W}
+    [DecidableRel G.Adj] [DecidableRel H.Adj] [AddCommMonoid R]
+    (e : G ≃g H) (i : V) (a : W → R) :
+    ∑ j ∈ G.neighborFinset i, a (e j) = ∑ j ∈ H.neighborFinset (e i), a j := by
+  exact Finset.sum_equiv e.toEquiv
+    (fun j ↦ by
+      simpa only [mem_neighborFinset, RelIso.coe_fn_toEquiv] using e.map_adj_iff.symm)
+    (fun _ _ ↦ by rw [RelIso.coe_fn_toEquiv])
 
 variable [Fintype V] [DecidableEq V] [CommMonoid M]
 
