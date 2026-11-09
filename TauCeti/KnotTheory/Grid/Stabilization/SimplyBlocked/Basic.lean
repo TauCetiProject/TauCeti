@@ -7,7 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Stabilization.Homology
 public import TauCeti.KnotTheory.Grid.SimplyBlocked.Basic
-import TauCeti.Algebra.Homology.SquareZero.ShortExact
+import TauCeti.KnotTheory.Grid.Homology.ExactSequence
 
 /-!
 # The simply blocked stabilization chain map
@@ -184,21 +184,6 @@ private theorem stabilizeXChainMap_X_smul (c : GridChainMinus R (n + 1)) :
   rw [map_smulₛₗ]
   simp [Fin.predAbove_succAbove]
 
-/-- Specialization at `V_k` is the quotient of `GC⁻` by multiplication by `V_k`, as a short exact
-sequence of complexes `0 → GC⁻ --V_k--> GC⁻ → GC^ → 0`. -/
-private theorem isShortExactDifferential_X_smul {m : ℕ} (H : GridDiagram m) (k : Fin m) :
-    AddMonoidHom.IsShortExactDifferential
-      (DistribSMul.toAddMonoidHom _ (MvPolynomial.X k : MvPolynomial (Fin m) R))
-      (simplyBlockedSpecialization R k).toAddMonoidHom (H.unblockedDifferential R).toAddMonoidHom
-      (H.unblockedDifferential R).toAddMonoidHom (H.simplyBlockedDifferential R k).toAddMonoidHom
-    where
-  square_zero c := LinearMap.congr_fun (H.unblockedDifferential_comp_self_eq_zero R) c
-  injective := X_smul_gridChainMinus_injective R k
-  exact := exact_X_smul_simplyBlockedSpecialization R k
-  surjective := simplyBlockedSpecialization_surjective R k
-  comm_left c := map_smul (H.unblockedDifferential R) _ c
-  comm_right c := simplyBlockedSpecialization_unblockedDifferential _ R k c
-
 /-- `exists_sub_stabilizeXChainMap_mem_range` for the underlying additive maps. -/
 private theorem exists_sub_stabilizeXChainMap_mem_addRange (c : GridChainMinus R n)
     (hc : c ∈ (G.unblockedDifferential R).toAddMonoidHom.ker) :
@@ -230,7 +215,8 @@ theorem exists_sub_simplyBlockedStabilizeXMap_mem_range {y : GridChainHat R n i}
     (G.simplyBlockedStabilizeXMap s i R).toAddMonoidHom
     (f₁ := (G.stabilizeXChainMap s R).toAddMonoidHom)
     (f := (G.stabilizeXChainMap s R).toAddMonoidHom)
-    (isShortExactDifferential_X_smul R (G') j) (isShortExactDifferential_X_smul R G i)
+    ((G').isShortExactDifferential_X_smul_simplyBlockedSpecialization R j)
+    (G.isShortExactDifferential_X_smul_simplyBlockedSpecialization R i)
     (G.stabilizeXChainMap_unblockedDifferential s R)
     (G.stabilizeXChainMap_X_smul s i R)
     (G.simplyBlockedStabilizeXMap_simplyBlockedSpecialization s i R)
@@ -251,7 +237,8 @@ theorem mem_range_of_simplyBlockedStabilizeXMap_mem_range {x : GridChainHat R (n
     (G.simplyBlockedStabilizeXMap s i R).toAddMonoidHom
     (f₁ := (G.stabilizeXChainMap s R).toAddMonoidHom)
     (f := (G.stabilizeXChainMap s R).toAddMonoidHom)
-    (isShortExactDifferential_X_smul R (G') j) (isShortExactDifferential_X_smul R G i)
+    ((G').isShortExactDifferential_X_smul_simplyBlockedSpecialization R j)
+    (G.isShortExactDifferential_X_smul_simplyBlockedSpecialization R i)
     (G.stabilizeXChainMap_unblockedDifferential s R)
     (G.stabilizeXChainMap_unblockedDifferential s R)
     (G.stabilizeXChainMap_X_smul s i R)
