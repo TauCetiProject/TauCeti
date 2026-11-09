@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.RegularLocalRing.Defs
+public import Mathlib.RingTheory.RootsOfUnity.Basic
+public import TauCeti.FieldTheory.IsSepClosed
 import Mathlib.FieldTheory.Separable
 import Mathlib.RingTheory.Ideal.GoingUp
 import Mathlib.RingTheory.Flat.TorsionFree
@@ -48,7 +50,9 @@ maximal ideal lies over the maximal ideal of `A` and contains the root. So when 
 Noetherian, `f` is a nonzerodivisor and `A/(f)` is regular, the cover is a regular local ring,
 hence a normal domain, again for every `e ≥ 1`. This is the regularity of the root algebra
 `A[x]/(x^e - f)` used in the proof of Stacks, Lemma 58.31.5 (0EYG), where `A` is a strictly
-henselian regular local ring and `f` a local equation of the divisor.
+henselian regular local ring and `f` a local equation of the divisor. The cover has the same
+residue field as `A`; to use the residue-field API, first install
+`standardTameCover_isLocalRing` as a local instance.
 
 ## Main definitions
 
@@ -59,10 +63,15 @@ henselian regular local ring and `f` a local equation of the divisor.
   the root is `A ⧸ (f)`.
 * `TauCeti.standardTameCoverAwayAlgEquiv`: the localization of the cover at `f` is the standard
   cover of `A_f` along the image of `f`.
+* `TauCeti.standardTameCoverAlgHomOfDvd`: for `e ∣ e'`, the map `A[x]/(x^e − f) → A[x]/(x^e' − f)`
+  sending `x` to `x ^ (e' / e)`.
+* `TauCeti.standardTameCoverAut`: the action `x ↦ ζ x` of the `e`-th roots of unity of `A` on
+  `A[x]/(x^e − f)`.
 
 ## Main results
 
 * `TauCeti.standardTameCover_free`: for `e ≥ 1` the cover is free of rank `e`.
+* For `e ≠ 0` the cover is a finite `A`-module (an instance).
 * `TauCeti.isFiniteProductOfStandardTameCovers_iff`: unfolding of the predicate.
 * `TauCeti.IsFiniteProductOfStandardTameCovers.of_algEquiv`: transport along `A`-algebra
   isomorphisms.
@@ -106,7 +115,7 @@ public section
 
 universe u v w
 
-open Polynomial TensorProduct
+open Polynomial TensorProduct IsLocalRing
 
 namespace TauCeti
 
@@ -238,6 +247,96 @@ theorem standardTameCover_etale {f : A} {e : ℕ} (hf : IsUnit f) (he : IsUnit (
     · exact monic_X_pow_sub_C _ he₀
   have := hmonic.isStandardEtale_adjoinRoot (separable_X_pow_sub_C_unit hf.unit he)
   infer_instance
+
+/-- For `e ≠ 0` the standard cover `A[x]/(x^e − f)` is a finite `A`-module, since `x ^ e - f` is
+monic. -/
+instance (f : A) (e : ℕ) [NeZero e] : Module.Finite A (standardTameCover A f e) :=
+  (monic_X_pow_sub_C f (NeZero.ne e)).finite_adjoinRoot
+
+section Maps
+
+variable (f : A) {e e' : ℕ}
+
+/-- For `e ∣ e'`, the `A`-algebra map `A[x]/(x^e − f) → A[x]/(x^e' − f)` sending `x` to
+`x ^ (e' / e)`. -/
+noncomputable def standardTameCoverAlgHomOfDvd (h : e ∣ e') :
+    standardTameCover A f e →ₐ[A] standardTameCover A f e' :=
+  (AdjoinRoot.algHomEquiv _ _).symm ⟨AdjoinRoot.root _ ^ (e' / e), by
+    simp [← pow_mul, Nat.div_mul_cancel h]⟩
+
+/-- The map `standardTameCoverAlgHomOfDvd` sends the root `x` to `x ^ (e' / e)`. -/
+@[simp]
+theorem standardTameCoverAlgHomOfDvd_root (h : e ∣ e') :
+    standardTameCoverAlgHomOfDvd f h (AdjoinRoot.root _) = AdjoinRoot.root _ ^ (e' / e) :=
+  AdjoinRoot.algHomEquiv_symm_apply_root _
+
+/-- The map `standardTameCoverAlgHomOfDvd` of `e ∣ e` is the identity. -/
+@[simp]
+theorem standardTameCoverAlgHomOfDvd_refl [NeZero e] :
+    standardTameCoverAlgHomOfDvd f (dvd_refl e) = AlgHom.id A _ :=
+  AdjoinRoot.algHom_ext (by simp [Nat.div_self (Nat.pos_of_neZero e)])
+
+/-- The maps `standardTameCoverAlgHomOfDvd` are compatible with composition. -/
+theorem standardTameCoverAlgHomOfDvd_comp {e'' : ℕ} (h₁ : e ∣ e') (h₂ : e' ∣ e'') :
+    (standardTameCoverAlgHomOfDvd f h₂).comp (standardTameCoverAlgHomOfDvd f h₁) =
+      standardTameCoverAlgHomOfDvd f (h₁.trans h₂) :=
+  AdjoinRoot.algHom_ext (by simp [← pow_mul, Nat.div_mul_div h₂ h₁])
+
+/-- The `A`-algebra endomorphism `x ↦ ζ x` of `A[x]/(x^e − f)`, for an `e`-th root of unity `ζ`
+of `A`. -/
+private noncomputable def standardTameCoverMulAlgHom (ζ : rootsOfUnity e A) :
+    standardTameCover A f e →ₐ[A] standardTameCover A f e :=
+  (AdjoinRoot.algHomEquiv _ _).symm ⟨algebraMap A _ (ζ : Aˣ) * AdjoinRoot.root _, by
+    have hζ : ((ζ : Aˣ) : A) ^ e = 1 := by
+      rw [← Units.val_pow_eq_pow_val, (mem_rootsOfUnity e _).mp ζ.2, Units.val_one]
+    simp [mul_pow, ← map_pow (AdjoinRoot.of _), hζ]⟩
+
+private theorem standardTameCoverMulAlgHom_root (ζ : rootsOfUnity e A) :
+    standardTameCoverMulAlgHom f ζ (AdjoinRoot.root _) =
+      algebraMap A (standardTameCover A f e) (ζ : Aˣ) * AdjoinRoot.root _ :=
+  AdjoinRoot.algHomEquiv_symm_apply_root _
+
+private theorem standardTameCoverMulAlgHom_comp (ζ ξ : rootsOfUnity e A) :
+    (standardTameCoverMulAlgHom f ζ).comp (standardTameCoverMulAlgHom f ξ) =
+      standardTameCoverMulAlgHom f (ζ * ξ) :=
+  AdjoinRoot.algHom_ext (by
+    simp only [AlgHom.comp_apply, standardTameCoverMulAlgHom_root, map_mul, AlgHom.commutes,
+      Subgroup.coe_mul, Units.val_mul]
+    ring)
+
+private theorem standardTameCoverMulAlgHom_one :
+    standardTameCoverMulAlgHom f (1 : rootsOfUnity e A) = AlgHom.id A _ :=
+  AdjoinRoot.algHom_ext (by simp [standardTameCoverMulAlgHom_root])
+
+/-- The action of the `e`-th roots of unity of `A` on `A[x]/(x^e − f)` by the `A`-algebra
+automorphisms `x ↦ ζ x`. Over a field, this is Mathlib's `autAdjoinRootXPowSubC`. -/
+noncomputable def standardTameCoverAut :
+    rootsOfUnity e A →* (standardTameCover A f e ≃ₐ[A] standardTameCover A f e) where
+  toFun ζ := AlgEquiv.ofAlgHom (standardTameCoverMulAlgHom f ζ)
+    (standardTameCoverMulAlgHom f ζ⁻¹)
+    (by rw [standardTameCoverMulAlgHom_comp, mul_inv_cancel, standardTameCoverMulAlgHom_one])
+    (by rw [standardTameCoverMulAlgHom_comp, inv_mul_cancel, standardTameCoverMulAlgHom_one])
+  map_one' := AlgEquiv.ext fun x ↦ DFunLike.congr_fun (standardTameCoverMulAlgHom_one f) x
+  map_mul' ζ ξ := AlgEquiv.ext fun x ↦
+    (DFunLike.congr_fun (standardTameCoverMulAlgHom_comp f ζ ξ) x).symm
+
+/-- The automorphism `standardTameCoverAut f ζ` sends the root `x` to `ζ x`. -/
+@[simp]
+theorem standardTameCoverAut_root (ζ : rootsOfUnity e A) :
+    standardTameCoverAut f ζ (AdjoinRoot.root _) =
+      algebraMap A (standardTameCover A f e) (ζ : Aˣ) * AdjoinRoot.root _ :=
+  standardTameCoverMulAlgHom_root f ζ
+
+/-- For `e ∣ e'`, the map `x ↦ x ^ (e' / e)` intertwines the action of an `e'`-th root of unity
+`ζ` with that of the `e`-th root of unity `ζ ^ (e' / e)`. -/
+theorem standardTameCoverAut_comp_standardTameCoverAlgHomOfDvd (h : e ∣ e')
+    (ζ : rootsOfUnity e' A) (ξ : rootsOfUnity e A) (hξ : (ξ : Aˣ) = ζ ^ (e' / e)) :
+    (standardTameCoverAut f ζ : standardTameCover A f e' →ₐ[A] _).comp
+        (standardTameCoverAlgHomOfDvd f h) =
+      (standardTameCoverAlgHomOfDvd f h).comp (standardTameCoverAut f ξ) :=
+  AdjoinRoot.algHom_ext (by simp [mul_pow, hξ, -AdjoinRoot.algebraMap_eq])
+
+end Maps
 
 section Away
 
@@ -376,6 +475,66 @@ theorem standardTameCover_isLocalRing (hf : f ∈ IsLocalRing.maximalIdeal A) (h
       ← (standardTameCoverQuotientSpanRootAlgEquiv f he).map_eq_zero_iff]
     simpa [φ] using this
   simpa using M.add_mem ((Ideal.span_singleton_le_iff_mem M).mpr hroot hxa) haM
+
+section ResidueField
+
+variable [IsLocalRing (standardTameCover A f e)]
+
+/-- The root of a positive-degree cover along an element of the maximal ideal vanishes in
+its residue field. -/
+@[simp]
+theorem standardTameCover_residue_root (hf : f ∈ maximalIdeal A) (he : e ≠ 0) :
+    residue (standardTameCover A f e) (AdjoinRoot.root (X ^ e - C f)) = 0 := by
+  have := (monic_X_pow_sub_C f he).finite_adjoinRoot
+  have hcomap : (maximalIdeal (standardTameCover A f e)).under A = maximalIdeal A :=
+    IsLocalRing.eq_maximalIdeal inferInstance
+  rw [residue_eq_zero_iff]
+  apply Ideal.IsPrime.mem_of_pow_mem inferInstance e
+  rw [AdjoinRoot.root_X_pow_sub_C_pow, ← AdjoinRoot.algebraMap_eq]
+  rwa [← Ideal.mem_comap, ← Ideal.under_def, hcomap]
+
+/-- The residue field of a positive-degree root cover along the maximal ideal is canonically
+isomorphic to that of the base. The root reduces to zero, and constants reduce as in `A`. -/
+noncomputable def standardTameCoverResidueFieldEquiv (hf : f ∈ maximalIdeal A) (he : e ≠ 0) :
+    ResidueField (standardTameCover A f e) ≃+* ResidueField A := by
+  let φ : standardTameCover A f e →+* ResidueField A :=
+    AdjoinRoot.lift (residue A) 0 (by simp [he, (residue_eq_zero_iff f).mpr hf])
+  have hφ : Function.Surjective φ := by
+    intro z
+    obtain ⟨a, rfl⟩ := residue_surjective z
+    exact ⟨AdjoinRoot.of _ a, by simp [φ]⟩
+  have hker : RingHom.ker φ = maximalIdeal (standardTameCover A f e) :=
+    IsLocalRing.eq_maximalIdeal (RingHom.ker_isMaximal_of_surjective φ hφ)
+  exact (Ideal.quotEquivOfEq hker.symm).trans (RingHom.quotientKerEquivOfSurjective hφ)
+
+/-- The residue-field identification of a root cover preserves the residues of constants. -/
+@[simp]
+theorem standardTameCoverResidueFieldEquiv_residue_of (hf : f ∈ maximalIdeal A) (he : e ≠ 0)
+    (a : A) :
+    standardTameCoverResidueFieldEquiv hf he
+      (residue (standardTameCover A f e) (AdjoinRoot.of _ a)) = residue A a := by
+  unfold standardTameCoverResidueFieldEquiv
+  -- `erw` identifies the residue-field wrapper with the quotient used by the two comparisons.
+  erw [RingEquiv.trans_apply, Ideal.quotEquivOfEq_mk,
+    RingHom.quotientKerEquivOfSurjective_apply_mk, AdjoinRoot.lift_of]
+
+/-- In the inverse residue-field identification, a constant is sent to the same constant. -/
+@[simp]
+theorem standardTameCoverResidueFieldEquiv_symm_residue (hf : f ∈ maximalIdeal A) (he : e ≠ 0)
+    (a : A) :
+    (standardTameCoverResidueFieldEquiv hf he).symm (residue A a) =
+      residue (standardTameCover A f e) (AdjoinRoot.of _ a) := by
+  apply (standardTameCoverResidueFieldEquiv hf he).injective
+  simp
+
+/-- A root cover along the maximal ideal has separably closed residue field whenever the
+base does. This does not require the exponent to be invertible. -/
+theorem standardTameCover_isSepClosed_residueField [IsSepClosed (ResidueField A)]
+    (hf : f ∈ maximalIdeal A) (he : e ≠ 0) :
+    IsSepClosed (ResidueField (standardTameCover A f e)) :=
+  IsSepClosed.of_ringEquiv (standardTameCoverResidueFieldEquiv hf he).symm
+
+end ResidueField
 
 /-- If `A` is a Noetherian local ring, `f ∈ 𝔪_A` is a nonzerodivisor and `A ⧸ (f)` is regular,
 then `A[x]/(x^e - f)` is a regular local ring for every `e > 0`, whether or not `e` is invertible

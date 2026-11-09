@@ -19,8 +19,9 @@ Let `S` be a scheme and `F` an `𝒪_S`-module. On the big site `Over S`, the as
 `S`-schemes pulls a section of `h'^* F` back to a section of `f^* h'^* F ≅ h^* F`, and this is
 semilinear along `f^♯ : Γ(T', 𝒪) ⟶ Γ(T, 𝒪)`. For quasi-coherent `F` this is the presheaf of
 modules underlying the big-site module `F^a` (Stacks, Section 35.8), whose sheaf property for the
-fpqc topology is Stacks, Lemma 35.8.1; that sheaf property is not proved in this file (see
-`TauCeti.AlgebraicGeometry.Sites.Big.Zariski` for the Zariski topology).
+fpqc topology is Stacks, Lemma 35.8.1; that sheaf property is proved in
+`TauCeti.AlgebraicGeometry.Sites.Big.Sheaf`, which defines `F^a` as
+`AlgebraicGeometry.Scheme.Modules.bigSheaf F`.
 
 The restriction maps are compatible with identities and composition because global sections of
 `h^* F` are morphisms `h^* 𝒪_S ⟶ h^* F` (`AlgebraicGeometry.Scheme.Modules.bigSectionsEquiv`),

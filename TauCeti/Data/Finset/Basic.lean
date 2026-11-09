@@ -34,6 +34,8 @@ import TauCeti.Data.Set.PowersetCard
   of them.
 * `Finset.filter_lt_eq_insert_of_forall_lt` splits the elements of a finite set after `s` into its
   first such element and the elements after a later point.
+* `Finset.convex_filter_erase_le` shows that the elements of a finite set up to a given point, other
+  than its least element, contain every element of the set between two of them.
 * `Finset.sum_powerset_neg_one_pow_card_of_ring` evaluates the alternating sum over the subsets of
   a finset in an arbitrary ring.
 * `Finset.sum_powerset_neg_one_pow_mul_eq_zero` pairs subsets that differ by one element
@@ -82,8 +84,6 @@ import TauCeti.Data.Set.PowersetCard
   from a set of exceptional elements, and a comparison at the exceptional elements.
 * `Finset.sum_filter_le_sum_filter_le` reindexes a double sum over chains in a finite type with a
   `≤` relation.
-* `Finset.sum_eq_four` reduces a double sum over a pair of finite types to the values of its
-  summand at the four cells of a rectangle where it is supported.
 * `Finset.filter_ne_product_of_disjoint` says that every pair in the product of disjoint finsets
   has distinct coordinates, `Finset.card_filter_ne_product` counts the pairs with distinct
   coordinates in any product by their first coordinate, `Finset.card_filter_ne_product_comm`
@@ -469,6 +469,16 @@ theorem sum_filter_le_sum_filter_le {α M : Type*} [Fintype α] [LE α] [AddComm
         rw [sum_comm]
         exact sum_congr rfl fun c _ => (sum_filter _ _).symm
 
+/-- The positions of `s` other than the least one `m`, up to a position `y`, contain every
+position of `s` between two of them. -/
+theorem convex_filter_erase_le {α : Type*} [LinearOrder α] {s : Finset α} {m : α}
+    (hmin : ∀ z ∈ s, m ≤ z) (y : α) :
+    ∀ a ∈ {z ∈ s.erase m | z ≤ y}, ∀ c ∈ {z ∈ s.erase m | z ≤ y}, ∀ b ∈ s,
+      a < b → b < c → b ∈ {z ∈ s.erase m | z ≤ y} := by
+  intro a ha c hc b hb hab hbc
+  simp only [mem_filter, mem_erase] at ha hc ⊢
+  exact ⟨⟨((hmin a ha.1.2).trans_lt hab).ne', hb⟩, hbc.le.trans hc.2⟩
+
 /-- **The alternating sum over the subsets of a finset** is `1` for the empty finset and `0`
 otherwise, in an arbitrary ring. Mathlib's `Finset.sum_powerset_neg_one_pow_card` is the case of
 the integers. -/
@@ -775,28 +785,6 @@ theorem _root_.StrictMono.exists_image_eq_of_subset_Ioo {α β : Type*} [LinearO
   refine ⟨a', b', S', rfl, rfl, rfl, he.le_iff_le.1 hab, fun s hs ↦ ?_⟩
   have := mem_Ioo.1 (hS (mem_image_of_mem _ hs))
   exact mem_Ioo.2 ⟨he.lt_iff_lt.1 this.1, he.lt_iff_lt.1 this.2⟩
-
-/-- The double sum over a pair of finite types of a function that vanishes outside the four cells
-of the rectangle `i`, `i'` by `j`, `j'` is the sum of its four values there. -/
-theorem sum_eq_four {ι κ M : Type*} [Fintype ι] [Fintype κ] [AddCommMonoid M] (g : ι → κ → M)
-    (i i' : ι) (j j' : κ) (hi'ne : i ≠ i') (hj'ne : j ≠ j')
-    (h0 : ∀ x y, ¬(x = i ∧ y = j) → ¬(x = i ∧ y = j') → ¬(x = i' ∧ y = j)
-      → ¬(x = i' ∧ y = j') → g x y = 0) :
-    (∑ x, ∑ y, g x y) = g i j + g i j' + g i' j + g i' j' := by
-  classical
-  have hzero (x : ι) (hx : x ≠ i) (hx' : x ≠ i') : (∑ y, g x y) = 0 := by
-    apply Finset.sum_eq_zero
-    intro y _
-    exact h0 x y (fun h => hx h.1) (fun h => hx h.1) (fun h => hx' h.1) (fun h => hx' h.1)
-  calc (∑ x, ∑ y, g x y) = (∑ y, g i y) + (∑ y, g i' y) :=
-        Fintype.sum_eq_add i i' hi'ne (fun x hx => hzero x hx.1 hx.2)
-    _ = (g i j + g i j') + (g i' j + g i' j') := by
-        rw [Fintype.sum_eq_add j j' hj'ne (f := g i) (fun y hy => h0 i y (fun h => hy.1 h.2)
-              (fun h => hy.2 h.2) (fun h => hi'ne h.1) (fun h => hi'ne h.1)),
-            Fintype.sum_eq_add j j' hj'ne (f := g i') (fun y hy => h0 i' y
-              (fun h => hi'ne h.1.symm) (fun h => hi'ne h.1.symm) (fun h => hy.1 h.2)
-              (fun h => hy.2 h.2))]
-    _ = g i j + g i j' + g i' j + g i' j' := by simp only [add_assoc]
 
 /-- If `c` is the first element of a finite set `S` after `s`, and no element of `S` lies in
 `(c, t₂]`, then the elements of `S` after `s` are `c` and the elements after `t₂`. -/
