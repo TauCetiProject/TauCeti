@@ -329,10 +329,16 @@ theorem mass_comp_monoCLM {Ω' : Opens E} (h : Ω' ≤ Ω) :
     simpa [hψ] using enorm_le_mass (f := f ∘ ι) (φ := ψ) hφ
 
 /-- Restriction to an open subset does not increase mass. -/
-theorem mass_comp_monoCLM_le {Ω' : Opens E} (h : Ω' ≤ Ω) :
+theorem mass_comp_monoCLM_le {Ω' : Opens E} :
     mass (f ∘ (TestFunction.monoCLM ℝ : 𝓓^{n}(Ω', F) →L[ℝ] 𝓓^{n}(Ω, F))) ≤ mass f := by
-  rw [mass_comp_monoCLM h]
-  exact localMass_le_mass
+  by_cases h : Ω' ≤ Ω
+  · rw [mass_comp_monoCLM h]
+    exact localMass_le_mass
+  · -- the inclusion is the zero map, so the restriction is the constant `f 0`
+    rw [mass_le_iff]
+    intro ψ _
+    simpa [TestFunction.monoCLM_eq_zero (not_and_of_not_right _ h)] using
+      enorm_le_mass (f := f) (φ := 0) (by simp)
 
 /-- The local mass of an open restriction is the local mass on the intersection with its domain.
 The testing set `U` need not be open or measurable. -/
@@ -374,9 +380,22 @@ theorem hasLocallyFiniteMass_def :
 /-- Open restriction preserves locally finite mass, with the same order-zero bound on each
 compact set in the smaller domain. -/
 theorem HasLocallyFiniteMass.comp_monoCLM {Ω' : Opens E} {f : 𝓓^{n}(Ω, F) → V}
-    (hf : HasLocallyFiniteMass f) (h : Ω' ≤ Ω) :
+    (hf : HasLocallyFiniteMass f) :
     HasLocallyFiniteMass
       (f ∘ (TestFunction.monoCLM ℝ : 𝓓^{n}(Ω', F) →L[ℝ] 𝓓^{n}(Ω, F))) := by
+  by_cases h : Ω' ≤ Ω
+  swap
+  · -- the inclusion is the zero map, so the restriction is the constant `f 0`, which vanishes
+    rw [hasLocallyFiniteMass_def] at hf ⊢
+    obtain ⟨_, _, hfC⟩ := hf ∅ isCompact_empty (empty_subset _)
+    intro _ _ _
+    have hf0 : f 0 = 0 := by
+      have h0 := hfC 0 (by simp)
+      have hz : ((0 : 𝓓^{n}(Ω, F)) : E →ᵇ F) = 0 := by ext; simp
+      rw [hz, norm_zero, mul_zero] at h0
+      exact norm_le_zero_iff.mp h0
+    refine ⟨0, le_rfl, fun φ _ => ?_⟩
+    simp [TestFunction.monoCLM_eq_zero (not_and_of_not_right _ h), hf0]
   rw [hasLocallyFiniteMass_def] at hf ⊢
   intro K hK hKΩ'
   obtain ⟨C, hC, hfC⟩ := hf K hK (hKΩ'.trans h)

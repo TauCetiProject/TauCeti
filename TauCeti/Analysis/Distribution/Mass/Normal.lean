@@ -253,33 +253,28 @@ variable {Ω' : Opens E} {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
 
 /-- **Restriction.** The restriction of a locally normal current to an open subset `Ω' ⊆ Ω` is
 locally normal. -/
-theorem IsLocallyNormal.comp_monoCLM (hT : IsLocallyNormal T) (h : Ω' ≤ Ω) :
+theorem IsLocallyNormal.comp_monoCLM (hT : IsLocallyNormal T) :
     IsLocallyNormal (T ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) := by
   cases k with
   | zero =>
     rw [isLocallyNormal_finZero_iff, coe_comp]
-    exact HasLocallyFiniteMass.comp_monoCLM hT h
+    exact HasLocallyFiniteMass.comp_monoCLM hT
   | succ k =>
     rw [isLocallyNormal_succ_iff, comp_monoCLM_comp_extDerivCLM, coe_comp, coe_comp]
-    exact ⟨hT.1.comp_monoCLM h, hT.2.comp_monoCLM h⟩
+    exact ⟨hT.1.comp_monoCLM, hT.2.comp_monoCLM⟩
 
 /-- **Restriction.** The restriction of a normal current to an open subset `Ω' ⊆ Ω` is normal: its
-mass and the mass of its boundary are local masses of `T` and `∂T` on `Ω'`. If `Ω'` is not
-contained in `Ω`, the restriction map is zero. -/
+mass and the mass of its boundary are local masses of `T` and `∂T` on `Ω'`. -/
 theorem IsNormal.comp_monoCLM (hT : IsNormal T) :
     IsNormal (T ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) := by
-  by_cases h : Ω' ≤ Ω
-  swap
-  · rw [monoCLM_eq_zero (fun H => h H.2), comp_zero]
-    exact isNormal_zero
   cases k with
   | zero =>
     rw [isNormal_finZero_iff, coe_comp]
-    exact ne_top_of_le_ne_top hT (mass_comp_monoCLM_le h)
+    exact ne_top_of_le_ne_top hT mass_comp_monoCLM_le
   | succ k =>
     rw [isNormal_succ_iff, comp_monoCLM_comp_extDerivCLM, coe_comp, coe_comp]
-    exact ⟨ne_top_of_le_ne_top hT.1 (mass_comp_monoCLM_le h),
-      ne_top_of_le_ne_top hT.2 (mass_comp_monoCLM_le h)⟩
+    exact ⟨ne_top_of_le_ne_top hT.1 mass_comp_monoCLM_le,
+      ne_top_of_le_ne_top hT.2 mass_comp_monoCLM_le⟩
 
 end Restriction
 
