@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.Topology.Connected.Basic
 import TauCeti.Algebra.Algebra.Hom
 import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Connected
-import TauCeti.LinearAlgebra.TensorProduct.Hom
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 import TauCeti.RingTheory.Extension.Cotangent.Vanishing
 import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 
@@ -104,7 +104,8 @@ theorem ker_eq_bot_of_smooth_of_connected_of_conormalSubspace_eq_bot
     -- `P.Ring` is `H` by definition of `P`, and `κ` is the residue field of `K` at the
     -- augmentation ideal, so the kernel of `P.Ring → κ` is the augmentation ideal of `H`.
     rw [show RingHom.ker (algebraMap P.Ring κ) = Bialgebra.AugmentationIdeal k H from
-      BialgHom.ker_algebraMap_residueField_eq_augmentationIdeal f hf_algebraMap]
+      by rw [IsScalarTower.algebraMap_eq H K κ, hf_algebraMap]
+         exact BialgHom.ker_algebraMap_residueField_eq_augmentationIdeal f]
     exact (conormalSubspace_eq_bot_iff_toIdeal_le_sq_augmentationIdeal _).mp
       hconormal (hPker ▸ hx)
   have hfiber : Subsingleton (p.Fiber P.Cotangent) :=

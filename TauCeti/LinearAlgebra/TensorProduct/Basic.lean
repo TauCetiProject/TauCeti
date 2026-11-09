@@ -336,6 +336,23 @@ theorem sum_mul_tmul_eq_sum_tmul_mul {ι : Type*} [Fintype ι] (φ : A →ₗ[k]
 
 end Casimir
 
+/-- A module that splits off the target of a map whose base change to `κ` is zero has zero base
+change to `κ`. -/
+theorem subsingleton_tensor_of_lTensor_eq_zero {R M N κ : Type*} [CommSemiring R]
+    [AddCommMonoid κ] [Module R κ] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    (c : M →ₗ[R] N) (l : N →ₗ[R] M) (hl : l ∘ₗ c = LinearMap.id) (h : c.lTensor κ = 0) :
+    Subsingleton (κ ⊗[R] M) := by
+  have hinjective : Function.Injective (c.lTensor κ) := by
+    intro x y hxy
+    have h := congrArg (l.lTensor κ) hxy
+    simpa only [← LinearMap.comp_apply, ← LinearMap.lTensor_comp, hl,
+      LinearMap.lTensor_id, LinearMap.id_apply] using h
+  constructor
+  intro x y
+  apply hinjective
+  rw [h]
+  rfl
+
 end LinearMap
 
 namespace TensorProduct
