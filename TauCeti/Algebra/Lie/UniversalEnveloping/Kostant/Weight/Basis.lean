@@ -69,7 +69,8 @@ choice is confined to one weight space at a time.
 * `TauCeti.UniversalEnvelopingAlgebra.isInternal_weightSublattice`: a Kostant-stable subgroup lying
   in the span of the integral joint weight spaces is their internal direct sum.
 * `TauCeti.UniversalEnvelopingAlgebra.mem_range_kostantWeightFin_iff`: the weights recorded by the
-  numbered weight basis are exactly those whose weight sublattice is nonzero.
+  numbered weight-sublattice indices are exactly those whose weight sublattice is nonzero; under
+  the admissibility hypotheses these are the weights of the numbered weight basis of `M`.
 
 ## References
 
@@ -402,9 +403,10 @@ theorem isCartanWeightVector_kostantWeightBasisFin
   rw [kostantWeightBasisFin_apply]
   exact isCartanWeightVector_kostantWeightBasis e h ρ M hM hV _
 
-/-- **The weights recorded by the `Fin`-indexed weight basis are exactly the weights of the
-lattice**: an integral weight is carried by some vector of the basis if and only if its weight
-sublattice is nonzero. -/
+/-- **The weights recorded by the numbered weight-sublattice indices** are exactly those whose
+weight sublattice is nonzero: an integral weight lies in the range of `kostantWeightFin` if and
+only if `weightSublattice h ρ M μ ≠ ⊥`. Under the admissibility hypotheses of
+`kostantWeightBasisFin`, these are the weights of the vectors of that basis of `M`. -/
 theorem mem_range_kostantWeightFin_iff {μ : κ → ℤ} :
     μ ∈ Set.range (kostantWeightFin h ρ M) ↔ weightSublattice h ρ M μ ≠ ⊥ := by
   refine ⟨?_, fun hμ => ?_⟩
