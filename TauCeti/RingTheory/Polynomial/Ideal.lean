@@ -7,7 +7,9 @@ module
 
 public import Mathlib.RingTheory.Polynomial.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.RingTheory.Localization.Away.AdjoinRoot
+import Mathlib.Tactic.ComputeDegree
 import TauCeti.RingTheory.Localization.Ideal
 
 /-!
@@ -27,6 +29,10 @@ No field or Noetherian hypothesis is needed.
 
 Multiplication by `c X - 1` on `B[X]` is injective, since its constant coefficient is a unit
 (`Polynomial.mulLeft_C_mul_X_sub_one_injective`).
+
+Finally, `Ideal.exists_poly_isRoot_mk_of_pow_four_dvd_cubic` bounds the residues modulo a nonzero
+nonunit `ϖ` of the solutions of a cubic congruence modulo `ϖ ^ 4` of the form
+`(ϖ t)³ + a₂ (ϖ t)² + a₄ (ϖ t) + a₆` by the roots of a nonzero polynomial of degree at most `3`.
 
 ## References
 
@@ -99,6 +105,93 @@ theorem comap_C_map_C_sup_span_C_mul_X_sub_one (I : Ideal R) (r : R) (S : Type*)
   ext x
   rw [mem_comap_C_map_C_sup_span_C_mul_X_sub_one_iff, mem_comap,
     IsLocalization.Away.algebraMap_mem_map_algebraMap_iff r]
+
+/-- A polynomial over `R ⧸ (ϖ)` with a coefficient the residue of an element not divisible by `ϖ`
+is nonzero. -/
+theorem ne_zero_of_coeff_mk_of_not_dvd {ϖ u : R} (hu : ¬ ϖ ∣ u)
+    (p : (R ⧸ Ideal.span {ϖ})[X]) (n : ℕ) (h : p.coeff n = Ideal.Quotient.mk _ u) : p ≠ 0 :=
+  fun h0 ↦ hu ((Ideal.Quotient.eq_zero_iff_dvd _ _).1 (by rw [← h, h0, coeff_zero]))
+
+/-- Over an integral domain `R` with a nonzero nonunit `ϖ`, the residues `t` modulo `ϖ` for which
+`ϖ ^ 4` divides `(ϖ t)³ + a₂ (ϖ t)² + a₄ (ϖ t) + a₆` are among the roots of a nonzero polynomial of
+degree at most `3` over `R ⧸ (ϖ)`. -/
+theorem exists_poly_isRoot_mk_of_pow_four_dvd_cubic [IsDomain R] {ϖ : R} (hϖ0 : ϖ ≠ 0)
+    (hϖ : ¬ IsUnit ϖ) (a₂ a₄ a₆ : R) :
+    ∃ p : (R ⧸ Ideal.span {ϖ})[X], p ≠ 0 ∧ p.natDegree ≤ 3 ∧ ∀ t : R,
+      ϖ ^ 4 ∣ (ϖ * t) ^ 3 + a₂ * (ϖ * t) ^ 2 + a₄ * (ϖ * t) + a₆ →
+        p.IsRoot (Ideal.Quotient.mk _ t) := by
+  have : Nontrivial (R ⧸ Ideal.span {ϖ}) :=
+    Ideal.Quotient.nontrivial_iff.2 (by rwa [Ne, Ideal.span_singleton_eq_top])
+  have hm (x : R) (hx : ϖ ∣ x) : Ideal.Quotient.mk (Ideal.span {ϖ}) x = 0 :=
+    (Ideal.Quotient.eq_zero_iff_dvd _ _).2 hx
+  have cancel (k n : ℕ) (x z : R) (h : ϖ ^ (k + n) ∣ z) (e : z = ϖ ^ k * x) : ϖ ^ n ∣ x := by
+    rw [e, pow_add] at h
+    exact (mul_dvd_mul_iff_left (pow_ne_zero _ hϖ0)).1 h
+  have step (x y z : R) (h : ϖ ∣ z) (e : z = ϖ * x + y) : ϖ ∣ y :=
+    (dvd_add_right (dvd_mul_right ϖ x)).1 (e ▸ h)
+  -- Stage 1: `a₆` is the constant term modulo `ϖ`, so either `ϖ ∤ a₆` or we cancel one `ϖ`.
+  by_cases h6 : ϖ ∣ a₆
+  swap
+  · refine ⟨1, one_ne_zero, by simp, fun t h ↦ (h6 ?_).elim⟩
+    exact step (ϖ ^ 2 * t ^ 3 + a₂ * ϖ * t ^ 2 + a₄ * t) a₆ _
+      ((dvd_pow_self ϖ (by norm_num : 4 ≠ 0)).trans h) (by ring)
+  obtain ⟨b, rfl⟩ := h6
+  have hG (t : R) (h : ϖ ^ 4 ∣ (ϖ * t) ^ 3 + a₂ * (ϖ * t) ^ 2 + a₄ * (ϖ * t) + ϖ * b) :
+      ϖ ∣ ϖ ^ 2 * t ^ 3 + a₂ * ϖ * t ^ 2 + a₄ * t + b :=
+    (dvd_pow_self ϖ (by norm_num : 3 ≠ 0)).trans (cancel 1 3 _ _ h (by ring))
+  -- Stage 2: the coefficient `a₄` of the linear term modulo `ϖ`.
+  by_cases h4 : ϖ ∣ a₄
+  swap
+  · refine ⟨C (Ideal.Quotient.mk _ a₄) * X + C (Ideal.Quotient.mk _ b), ?_, by compute_degree!,
+      fun t h ↦ ?_⟩
+    · exact ne_zero_of_coeff_mk_of_not_dvd h4 _ 1 (by simp)
+    · simpa [IsRoot.def, map_add, map_mul, map_pow] using
+        hm _ (step (ϖ * t ^ 3 + a₂ * t ^ 2) (a₄ * t + b) _ (hG t h) (by ring))
+  obtain ⟨c, rfl⟩ := h4
+  -- Stage 3: with `a₄ = ϖ c`, the constant term `b` must be divisible by `ϖ` (else no root).
+  by_cases hb : ϖ ∣ b
+  swap
+  · refine ⟨1, one_ne_zero, by simp, fun t h ↦ (hb ?_).elim⟩
+    exact step (ϖ * t ^ 3 + a₂ * t ^ 2 + c * t) b _ (hG t h) (by ring)
+  obtain ⟨d, rfl⟩ := hb
+  have hH (t : R) (h : ϖ ^ 4 ∣ (ϖ * t) ^ 3 + a₂ * (ϖ * t) ^ 2 + ϖ * c * (ϖ * t) + ϖ * (ϖ * d)) :
+      ϖ ^ 2 ∣ ϖ * t ^ 3 + a₂ * t ^ 2 + c * t + d := cancel 2 2 _ _ h (by ring)
+  have hH1 (t : R) (h : ϖ ^ 4 ∣ (ϖ * t) ^ 3 + a₂ * (ϖ * t) ^ 2 + ϖ * c * (ϖ * t) +
+      ϖ * (ϖ * d)) : ϖ ∣ ϖ * t ^ 3 + a₂ * t ^ 2 + c * t + d :=
+    (dvd_pow_self ϖ (by norm_num : 2 ≠ 0)).trans (hH t h)
+  -- Stage 4: cancel `ϖ²` and look at the coefficient `a₂` of the quadratic term.
+  by_cases h2 : ϖ ∣ a₂
+  swap
+  · refine ⟨C (Ideal.Quotient.mk _ a₂) * X ^ 2 + C (Ideal.Quotient.mk _ c) * X +
+      C (Ideal.Quotient.mk _ d), ?_, by compute_degree!, fun t h ↦ ?_⟩
+    · exact ne_zero_of_coeff_mk_of_not_dvd h2 _ 2 (by simp)
+    · have := hm _ (step (t ^ 3) (a₂ * t ^ 2 + c * t + d) _ (hH1 t h) (by ring))
+      rw [map_add, map_add, map_mul, map_mul, map_pow] at this
+      simpa [IsRoot.def] using this
+  obtain ⟨e, rfl⟩ := h2
+  -- Stage 5: with `a₂ = ϖ e`, the linear coefficient `c` modulo `ϖ`.
+  by_cases hc : ϖ ∣ c
+  swap
+  · refine ⟨C (Ideal.Quotient.mk _ c) * X + C (Ideal.Quotient.mk _ d), ?_, by compute_degree!,
+      fun t h ↦ ?_⟩
+    · exact ne_zero_of_coeff_mk_of_not_dvd hc _ 1 (by simp)
+    · simpa [IsRoot.def, map_add, map_mul, map_pow] using
+        hm _ (step (t ^ 3 + e * t ^ 2) (c * t + d) _ (hH1 t h) (by ring))
+  obtain ⟨f, rfl⟩ := hc
+  -- Stage 6: with `c = ϖ f`, the constant `d` is forced divisible by `ϖ`; then monic cubic.
+  by_cases hd : ϖ ∣ d
+  swap
+  · refine ⟨1, one_ne_zero, by simp, fun t h ↦ (hd ?_).elim⟩
+    exact step (t ^ 3 + e * t ^ 2 + f * t) d _ (hH1 t h) (by ring)
+  obtain ⟨g, rfl⟩ := hd
+  have hmon : (X ^ 3 + C (Ideal.Quotient.mk (Ideal.span {ϖ}) e) * X ^ 2 +
+      C (Ideal.Quotient.mk (Ideal.span {ϖ}) f) * X +
+      C (Ideal.Quotient.mk (Ideal.span {ϖ}) g)).Monic := by monicity!
+  refine ⟨_, hmon.ne_zero, by compute_degree!, fun t h ↦ ?_⟩
+  have h1 : ϖ ∣ t ^ 3 + e * t ^ 2 + f * t + g := by
+    simpa using cancel 1 1 (t ^ 3 + e * t ^ 2 + f * t + g)
+      (ϖ * t ^ 3 + ϖ * e * t ^ 2 + ϖ * f * t + ϖ * g) (hH t h) (by ring)
+  simpa [IsRoot.def] using hm _ h1
 
 end Ideal
 
