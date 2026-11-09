@@ -153,7 +153,7 @@ theorem exists_boltzmannEntropy_ne_top_and_ne_bot_and_wassersteinEDist_dirac_le
   have hdens : m[|s] = m.withDensity fun y ↦ ((s.indicator (fun _ ↦ c) y : ℝ≥0) : ℝ≥0∞) := by
     simp_rw [ENNReal.coe_indicator, withDensity_indicator hs, withDensity_const, hc]
     rw [ProbabilityTheory.cond]
-  obtain ⟨μ, hμ⟩ := WassersteinSpace.exists_coe_eq_cond (p := p) hs isBounded_ball hs0 hstop
+  obtain ⟨μ, hμ, -, -⟩ := WassersteinSpace.exists_coe_eq_cond (p := p) hs isBounded_ball hs0 hstop
   have hW : wassersteinEDist p (Measure.dirac x) ((μ : ProbabilityMeasure X) : Measure X) ≤
       ENNReal.ofReal r := by
     have hbound : ∀ᵐ y ∂((μ : ProbabilityMeasure X) : Measure X),
@@ -255,19 +255,13 @@ theorem CurvatureDimensionInfinity.exists_dist_sq_add_dist_sq_le
   -- `W₂(μ₀, μ₁) ≤ d + 2 r`, so the midpoint is within `d / 2 + 2 r` of both `δ_{x₀}` and `δ_{x₁}`.
   have hW : dist μ₀ μ₁ ≤ d + 2 * r := by
     rw [← edist_le_ofReal (by positivity), WassersteinSpace.edist_def]
-    calc wassersteinEDist 2 ((μ₀ : ProbabilityMeasure X) : Measure X) (μ₁ : ProbabilityMeasure X)
-        ≤ wassersteinEDist 2 ((μ₀ : ProbabilityMeasure X) : Measure X) (Measure.dirac x₀) +
-          (wassersteinEDist 2 (Measure.dirac x₀) (Measure.dirac x₁) +
-            wassersteinEDist 2 (Measure.dirac x₁) ((μ₁ : ProbabilityMeasure X) : Measure X)) :=
-          (wassersteinEDist_triangle measurable_edist one_le_two _ _ _).trans
-            (add_le_add le_rfl (wassersteinEDist_triangle measurable_edist one_le_two _ _ _))
-      _ ≤ ENNReal.ofReal r + (ENNReal.ofReal d + ENNReal.ofReal r) := by
-          rw [wassersteinEDist_comm measurable_edist, wassersteinEDist_dirac_dirac two_ne_zero,
-            edist_dist]
-          gcongr
-      _ = ENNReal.ofReal (d + 2 * r) := by
-          rw [← ENNReal.ofReal_add hd hr.le, ← ENNReal.ofReal_add hr.le (by positivity)]
-          ring_nf
+    refine (wassersteinEDist_le_add_edist_add_of_wassersteinEDist_dirac_le measurable_edist
+      one_le_two hW₀ hW₁).trans_eq ?_
+    rw [edist_dist, ← ENNReal.ofReal_add hr.le dist_nonneg,
+      ← ENNReal.ofReal_add (by positivity) hr.le]
+    congr 1
+    simp only [d]
+    ring
   have hmid (x : X) (μ : WassersteinSpace 2 X)
       (hx : wassersteinEDist 2 (Measure.dirac x) ((μ : ProbabilityMeasure X) : Measure X) ≤
         ENNReal.ofReal r) (hμ : dist μ (γ (1 / 2)) = 1 / 2 * dist μ₀ μ₁) :
@@ -403,9 +397,9 @@ theorem CurvatureDimension.dist_le (h : M.CurvatureDimension K N) (hK : 0 < K) (
       ((hball z).mono fun _ hw ↦ ball_subset_closedBall hw))
   have hpos {z : X} (hz : z ∈ M.support) : M.reference (ball z r) ≠ 0 :=
     ((M.mem_support_iff z).1 hz _ (ball_mem_nhds z hr)).ne'
-  obtain ⟨μ₀, hμ₀⟩ := WassersteinSpace.exists_coe_eq_cond (p := 2) measurableSet_ball
+  obtain ⟨μ₀, hμ₀, -, -⟩ := WassersteinSpace.exists_coe_eq_cond (p := 2) measurableSet_ball
     isBounded_ball (hpos hx) (M.finite_bounded _ isBounded_ball).ne
-  obtain ⟨μ₁, hμ₁⟩ := WassersteinSpace.exists_coe_eq_cond (p := 2) measurableSet_ball
+  obtain ⟨μ₁, hμ₁, -, -⟩ := WassersteinSpace.exists_coe_eq_cond (p := 2) measurableSet_ball
     isBounded_ball (hpos hy) (M.finite_bounded _ isBounded_ball).ne
   have hac₀ : ((μ₀ : ProbabilityMeasure X) : Measure X) ≪ M.reference :=
     hμ₀ ▸ cond_absolutelyContinuous

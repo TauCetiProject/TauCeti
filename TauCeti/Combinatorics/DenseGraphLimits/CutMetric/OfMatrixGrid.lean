@@ -11,7 +11,8 @@ import Mathlib.Probability.ProbabilityMassFunction.Constructions
 import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.Triangle
 import TauCeti.Data.ENNReal.Weights
 import TauCeti.MeasureTheory.Measure.Coupling.Shift
-import TauCeti.MeasureTheory.Measure.FiniteMeasure
+import TauCeti.MeasureTheory.Measure.FiniteMeasure.Basic
+import TauCeti.MeasureTheory.Measure.Prod
 
 /-!
 # Rounding the weights of a finite weighted graph
@@ -128,6 +129,33 @@ theorem exists_gridValue_cutDist_le (ν : Measure κ) [IsProbabilityMeasure ν] 
 
 end Grid
 
+section Mismatch
+
+variable {κ : Type*} [MeasurableSpace κ]
+
+variable [MeasurableSingletonClass κ] [Countable κ] {ν ν' : Measure κ}
+
+/-- The overlaid difference of two weighted graphs with the same edge weights is bounded by the
+indicator of the pairs of pairs with a mismatched coordinate, where it vanishes otherwise. -/
+private theorem abs_overlayDiff_ofMatrix_le_indicator [IsProbabilityMeasure ν]
+    [IsProbabilityMeasure ν'] (π : Measure (κ × κ)) (b : κ → κ → Set.Icc (0 : ℝ) 1)
+    (hb : ∀ i j, b i j = b j i) (z : (κ × κ) × (κ × κ)) :
+    |overlayDiff (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb) π z.1 z.2| ≤
+      (((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) ∪
+        ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ)).indicator
+          (1 : ((κ × κ) × (κ × κ)) → ℝ) z := by
+  by_cases hz : z ∈ ((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) ∪
+      ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ)
+  · rw [Set.indicator_of_mem hz, Pi.one_apply]
+    exact abs_overlayDiff_apply_le_one _ _ _ _ _
+  · rw [Set.indicator_of_notMem hz]
+    simp only [Set.mem_union, Set.mem_prod, Set.mem_univ, and_true, true_and, not_or,
+      Set.mem_compl_iff, not_not, Set.mem_diagonal_iff] at hz
+    rw [overlayDiff_apply, Graphon.ofMatrix_apply, Graphon.ofMatrix_apply, hz.1, hz.2, sub_self,
+      abs_zero]
+
+end Mismatch
+
 section WeightShift
 
 variable {κ : Type*} [Fintype κ] [MeasurableSpace κ] [MeasurableSingletonClass κ]
@@ -166,18 +194,7 @@ theorem cutDist_ofMatrix_le_two_mul_sum_tsub [IsProbabilityMeasure ν] [IsProbab
     ((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) ∪
       ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ) with hB
   have hBmeas : MeasurableSet B := MeasurableSet.of_discrete
-  have hle : ∀ z : (κ × κ) × (κ × κ),
-      |overlayDiff (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb) π z.1 z.2|
-        ≤ B.indicator (1 : ((κ × κ) × (κ × κ)) → ℝ) z := by
-    intro z
-    by_cases hz : z ∈ B
-    · rw [Set.indicator_of_mem hz, Pi.one_apply]
-      exact abs_overlayDiff_apply_le_one _ _ _ _ _
-    · rw [Set.indicator_of_notMem hz]
-      simp only [hB, Set.mem_union, Set.mem_prod, Set.mem_univ, and_true, true_and, not_or,
-        Set.mem_compl_iff, not_not, Set.mem_diagonal_iff] at hz
-      rw [overlayDiff_apply, Graphon.ofMatrix_apply, Graphon.ofMatrix_apply, hz.1, hz.2, sub_self,
-        abs_zero]
+  have hle := abs_overlayDiff_ofMatrix_le_indicator (ν := ν) (ν' := ν') π b hb
   refine (cutDist_le _ _ hπ).trans ?_
   refine (cutNorm_le_integral_abs _ _).trans ?_
   have hint : Integrable (fun z : (κ × κ) × (κ × κ) =>
@@ -194,13 +211,7 @@ theorem cutDist_ofMatrix_le_two_mul_sum_tsub [IsProbabilityMeasure ν] [IsProbab
           norm_num
         rw [measureReal_def, htwo]
         refine ENNReal.toReal_mono (ENNReal.mul_ne_top (by simp) hrne) ?_
-        calc (π.prod π) B
-            ≤ (π.prod π) ((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) +
-              (π.prod π) ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ) := measure_union_le _ _
-          _ = π (Set.diagonal κ)ᶜ + π (Set.diagonal κ)ᶜ := by
-              rw [Measure.prod_prod, Measure.prod_prod, measure_univ, mul_one, one_mul]
-          _ ≤ ∑ k, (ν {k} - ν' {k}) + ∑ k, (ν {k} - ν' {k}) := add_le_add hoff hoff
-          _ = 2 * ∑ k, (ν {k} - ν' {k}) := (two_mul _).symm
+        exact (Measure.prod_self_union_le_two_mul π _).trans (by gcongr)
 
 /-- Moving a weighting `ρ` to one that keeps `min (ρ {k}) (σ {k})` at every vertex but `k₀` costs at
 most twice the mass by which `ρ` exceeds `σ`. -/
@@ -311,7 +322,7 @@ theorem exists_gridWeightMeasure_cutDist_le {n N : ℕ} [NeZero n] (hN : 0 < N)
   have hN0 : (N : ℝ≥0∞) ≠ 0 := by exact_mod_cast hN.ne'
   have hNtop : (N : ℝ≥0∞) ≠ ⊤ := ENNReal.natCast_ne_top N
   obtain ⟨w, hwsum, hle, hge⟩ := exists_nat_weights_of_sum_eq_one (Finset.mem_univ (0 : Fin n))
-    ν.sum_singleton_eq_one hN
+    ν.sum_singleton_eq_one N
   refine ⟨w, hwsum, ?_⟩
   set ν' := gridWeightMeasure hN w hwsum with hν'
   have hweight : ∀ i, ν' {i} = (w i : ℝ≥0∞) / (N : ℝ≥0∞) := fun i => by

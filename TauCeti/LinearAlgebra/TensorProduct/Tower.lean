@@ -19,6 +19,9 @@ For a tower `R → A → B` and an `R`-module `M`, the structure map `A → B` i
 base change of the `R`-algebra map `IsScalarTower.toAlgHom R A B`. This file records that the two
 agree as functions, so the `A`-linearity of the first applies to the second.
 
+For a subring `B` of a commutative ring `R` and an `R`-module `M`, an element of `B` can be moved
+across the tensor sign of `R ⊗[B] M`.
+
 ## Main results
 
 * `AlgHom.rTensor_toLinearMap_apply_smul`: the scalar-extension comparison induced by an algebra
@@ -27,6 +30,9 @@ agree as functions, so the `A`-linearity of the first applies to the second.
   structure map `A → B` is the base change of the `R`-algebra map `A →ₐ[R] B`.
 * `TensorProduct.AlgebraTensorModule.lTensor_eq_baseChange`: over the coefficient algebra itself,
   `TensorProduct.AlgebraTensorModule.lTensor` is `LinearMap.baseChange`.
+
+* `TensorProduct.tmul_eq_one_tmul_smul_of_mem`: in `R ⊗[B] M`, for a subring `B` of `R` and
+  `r ∈ B`, `r ⊗ m = 1 ⊗ r • m`.
 -/
 
 public section
@@ -63,3 +69,10 @@ theorem TensorProduct.AlgebraTensorModule.lTensor_eq_baseChange {R : Type*} (A :
     [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N) :
     AlgebraTensorModule.lTensor A A f = f.baseChange A :=
   AlgebraTensorModule.ext fun a x => by simp
+
+/-- In `R ⊗[B] M`, for a subring `B` of `R`, an element `r ∈ B` can be moved across the tensor
+sign: `r ⊗ m = 1 ⊗ r • m`. -/
+theorem TensorProduct.tmul_eq_one_tmul_smul_of_mem {R M : Type*} [CommRing R] [AddCommMonoid M]
+    [Module R M] {B : Subring R} {r : R} (hr : r ∈ B) (m : M) :
+    r ⊗ₜ[B] m = (1 : R) ⊗ₜ (r • m) := by
+  simpa [Subring.smul_def] using smul_tmul (⟨r, hr⟩ : B) (1 : R) m

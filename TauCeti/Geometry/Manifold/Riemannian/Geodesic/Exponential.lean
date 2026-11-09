@@ -166,13 +166,18 @@ theorem riemannianExp_smul [T2Space M]
         (mt mem_geodesicInterval_iff_smul_mem_expDomain.mpr ht),
       maximalGeodesic_eq_of_not_mem ht]
 
+omit [I.Boundaryless] in
 /-- The domain of the exponential map is star-shaped at the zero vector. -/
 theorem starConvex_expDomain (p : M) : StarConvex ℝ (0 : TangentSpace I p) (expDomain I M p) := by
   intro v hv a b _ hb hab
-  rw [smul_zero, zero_add, ← mem_geodesicInterval_iff_smul_mem_expDomain]
-  have hb1 : b ≤ 1 := by linarith
-  exact ordConnected_geodesicInterval.out zero_mem_geodesicInterval (mem_expDomain_iff.1 hv)
-    ⟨hb, hb1⟩
+  rw [smul_zero, zero_add]
+  rcases eq_or_ne b 0 with rfl | hb0
+  · rw [zero_smul]
+    exact zero_mem_expDomain p
+  · rw [mem_expDomain_iff, mem_geodesicInterval_smul_iff hb0, mul_one]
+    have hv1 := mem_expDomain_iff.1 hv
+    exact ordConnected_geodesicInterval.out (zero_mem_geodesicInterval_of_mem hv1) hv1
+      ⟨hb, by linarith⟩
 
 /-! ### Regularity -/
 
@@ -307,6 +312,16 @@ itself. -/
     exact congrArg _ hv
   exact hcomp.symm.trans
     ((DFunLike.congr_fun (hasMFDerivAt_unique (hexp.comp 0 hray) hgeo) (1 : ℝ)).trans hv)
+
+/-- The radial curve `s ↦ exp_p (s • v)` is smooth at time zero. -/
+theorem contMDiffAt_riemannianExp_smul_zero [T2Space M] (p : M) (v : TangentSpace I p) :
+    ContMDiffAt 𝓘(ℝ) I ∞ (fun s : ℝ ↦ riemannianExp I M p (s • v)) 0 := by
+  have hlin : ContMDiffAt 𝓘(ℝ) 𝓘(ℝ, TangentSpace I p) ∞ (fun s : ℝ ↦ s • v) 0 :=
+    (contMDiff_iff_contDiff.mpr (by fun_prop)).contMDiffAt
+  have hexp : ContMDiffAt 𝓘(ℝ, TangentSpace I p) I ∞ (riemannianExp I M p)
+      ((0 : ℝ) • v) := by
+    simpa only [zero_smul] using contMDiffAt_riemannianExp (zero_mem_expDomain p)
+  exact hexp.comp (f := fun s : ℝ ↦ s • v) (g := riemannianExp I M p) 0 hlin
 
 /-- The radial curve `s ↦ exp_p (s • v)` leaves `p` with velocity `v`. -/
 @[simp] theorem curveVelocity_riemannianExp_smul_zero [T2Space M] (p : M) (v : TangentSpace I p) :

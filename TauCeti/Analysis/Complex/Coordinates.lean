@@ -16,7 +16,7 @@ The real linear coordinate interchange is an involution with determinant `-1`, r
 the reversal of orientation. Any `v` has real coordinates in the real basis `u`, `r * u * I`,
 `u ≠ 0`, `r ≠ 0`, of radial and angular directions at the point `r * u`
 (`Complex.eq_re_mul_add_im_div_mul`). The real frame `(1, 0)`, `(i, 0)`, `(0, 1)` of `ℂ × ℝ` is
-linearly independent.
+linearly independent. A point `c + t * I` of a vertical line with `c ≠ 0` is nonzero.
 -/
 
 public section
@@ -71,5 +71,10 @@ theorem linearIndependent_one_zero_I_zero_zero_one :
   · simpa using congrArg (fun x : ℂ × ℝ ↦ x.1.re) hg
   · simpa using congrArg (fun x : ℂ × ℝ ↦ x.1.im) hg
   · simpa using congrArg Prod.snd hg
+
+/-- A point `c + t * I` of the vertical line `Re z = c` is nonzero as soon as `c` is.  Mathlib's
+`Complex.ne_zero_of_re_pos` covers only the positive-real-part case. -/
+theorem ofReal_add_mul_I_ne_zero {c : ℝ} (hc : c ≠ 0) (t : ℝ) : (c : ℂ) + t * I ≠ 0 :=
+  fun h ↦ hc (by simpa using congrArg Complex.re h)
 
 end Complex

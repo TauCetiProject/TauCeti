@@ -128,7 +128,7 @@ noncomputable abbrev baseChangePointsEquiv (k : Type) [CommRing k] [Algebra (ZMo
     (R := k)).symm.trans (pointsMulEquiv (CommAlgCat.of (ZMod 3) k))
 
 /-- A common-kernel quotient point is its underlying general-linear point read as a matrix. -/
-private theorem coe_pointsMulEquiv_apply (A : CommAlgCat.{v} (ZMod 3))
+theorem coe_pointsMulEquiv_apply (A : CommAlgCat.{v} (ZMod 3))
     (q : HopfAlgebra.points
       (R := ZMod 3) (H := CommHopfAlgCat.quotient
         (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
@@ -372,6 +372,20 @@ noncomputable def rootSubgroupPoints (k : Fin 2 ⊕ Fin 2) (A : Type v) [CommRin
     fun _ => TauCeti.GeneralLinear.pointsMulEquiv_mapPointsFunctor_mem_generatedPointsSubgroup
       7 generator (.inl k) A _
 
+/-- The rank-one root word `x₋ᵢ(1) xᵢ(-1) x₋ᵢ(1)` inside the carrier's points. -/
+noncomputable def rankOneWord (i : Fin 2) (A : Type v) [CommRing A] [Algebra (ZMod 3) A] :
+    points A :=
+  rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd 1) *
+    rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd (-1)) *
+      rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd 1)
+
+/-- The rank-one word is the indicated product of three numbered root-group elements. -/
+theorem rankOneWord_def (i : Fin 2) (A : Type v) [CommRing A] [Algebra (ZMod 3) A] :
+    rankOneWord i A =
+      rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd 1) *
+        rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd (-1)) *
+          rootSubgroupPoints (.inr i) A (Multiplicative.ofAdd 1) := (rfl)
+
 /-- A numbered simple-root point of the carrier is the image of the corresponding point of `𝔾ₐ`
 under the generating coordinate map. -/
 theorem coe_rootSubgroupPoints_gaPointsMulEquiv (k : Fin 2 ⊕ Fin 2) (A : Type v) [CommRing A]
@@ -401,7 +415,7 @@ theorem coe_rootSubgroupPoints (k : Fin 2 ⊕ Fin 2) (A : Type v) [CommRing A]
     rw [hqdef, MulEquiv.apply_symm_apply]
   have hq := pointsMulEquiv_kostantRootSubgroupToralBaseChangeCoordinateMap rootGen cartanGen
     rep lattice.toAddSubgroup rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator
-    latticeBasis weight (ZMod 3) IntegralToralClosure.definingIdeal_def k
+    latticeBasis weight (ZMod 3) k
     (CommAlgCat.of (ZMod 3) A) q
   rw [hu] at hq
   have hcomp :

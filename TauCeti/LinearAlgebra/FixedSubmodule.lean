@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Dynamics.FixedPoints.Basic
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.FixedSubmodule
 public import Mathlib.LinearAlgebra.Pi
 
@@ -15,7 +16,8 @@ public import Mathlib.LinearAlgebra.Pi
 This file supplements Mathlib's `LinearMap.fixedSubmodule`, the submodule of vectors fixed by a
 linear endomorphism, with its behaviour under restriction to an invariant submodule and
 transport by an intertwining linear equivalence, together with fixed vectors of a componentwise
-endomorphism.
+endomorphism. Over a commutative ring the fixed submodule is the eigenspace for the eigenvalue
+`1`.
 
 ## Main results
 
@@ -33,6 +35,9 @@ endomorphism.
 
 * `LinearMap.fixedSubmodule_restrict`: the fixed submodule of the restriction of `f` to an
   invariant submodule `p` is the part of the fixed submodule of `f` that lies in `p`.
+
+* `Module.End.eigenspace_one_eq_fixedSubmodule`: the `1`-eigenspace of an endomorphism is its
+  fixed submodule.
 -/
 
 public section
@@ -175,3 +180,13 @@ theorem fixedSubmoduleCongr_symm_apply (e : U ≃ₗ[R] W)
   simp [fixedSubmoduleCongr]
 
 end LinearEquiv
+
+namespace Module.End
+
+/-- The eigenspace of an endomorphism for the eigenvalue `1` is its fixed submodule. -/
+theorem eigenspace_one_eq_fixedSubmodule {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
+    (f : End R V) : f.eigenspace 1 = f.fixedSubmodule := by
+  ext v
+  simp [LinearMap.mem_fixedSubmodule_iff]
+
+end Module.End

@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Affinoid.PowerBounded
-public import TauCeti.RingTheory.Affinoid.LaurentFraction
+public import TauCeti.RingTheory.Affinoid.LaurentFraction.Basic
+public import TauCeti.RingTheory.Affinoid.Subdomain.Basic
+
+import TauCeti.RingTheory.Affinoid.QuotientNorm
 
 import TauCeti.RingTheory.Affinoid.Restricted.PointNorm
 
@@ -23,7 +26,10 @@ property of the Laurent fraction algebra `A⟨f, g⁻¹⟩ = A⟨X, Y⟩ ⧸ (X�
 classical points: for an affinoid algebra `B` with a complete ultrametric algebra norm, a
 `K`-algebra map `φ : A → B` factors through `A⟨f, g⁻¹⟩` if and only if the induced map
 `Sp B → Sp A` takes values in `L(f, g⁻¹)`, and the factorisation is then unique. In particular
-every classical point of `A⟨f, g⁻¹⟩` lies over a point of `L(f, g⁻¹)`.
+every classical point of `A⟨f, g⁻¹⟩` lies over a point of `L(f, g⁻¹)`. The structure map
+represents this set as an affinoid subdomain (`LaurentFraction.isAffinoidSubdomainMap`), with
+no norm or topology required on the test algebras in that universal property. This file also
+handles intersections of Laurent domains and iterated Laurent presentations.
 
 The universal property is the point-free one of `TauCeti.LaurentFraction.existsUnique_algHom`
 (each `φ fᵢ` is power-bounded, each `φ gⱼ` is a unit with power-bounded inverse), translated by
@@ -37,6 +43,10 @@ power-bounded inverse (`TauCeti.IsAffinoidAlgebra.isUnit_and_isPowerBounded_inve
 
 ## Main results
 
+* `TauCeti.laurentDomain_append`: concatenating two families of Laurent inequalities gives
+  the intersection of their Laurent domains.
+* `TauCeti.IsAffinoidSubdomainMap.image_laurentDomain`: under a map representing the first
+  Laurent domain, the image of the second Laurent domain is the concatenated Laurent domain.
 * `TauCeti.IsAffinoidAlgebra.range_maximalSpectrumComap_subset_laurentDomain_iff`: `Sp B → Sp A`
   lands in `L(f, g⁻¹)` if and only if every `φ fᵢ` is power-bounded and every `φ gⱼ` is a unit
   with power-bounded inverse.
@@ -45,6 +55,10 @@ power-bounded inverse (`TauCeti.IsAffinoidAlgebra.isUnit_and_isPowerBounded_inve
 * `TauCeti.LaurentFraction.pointNorm_algebraMap_le_one` and
   `TauCeti.LaurentFraction.one_le_pointNorm_algebraMap`: `|fᵢ| ≤ 1` and `|gⱼ| ≥ 1` at every
   classical point of `A⟨f, g⁻¹⟩`.
+* `TauCeti.LaurentFraction.isAffinoidSubdomainMap`: the Laurent fraction algebra represents
+  the Laurent domain as an affinoid subdomain, including empty domains and nonreduced algebras.
+* `TauCeti.LaurentFraction.isAffinoidSubdomainMap_iterate`: successively imposing Laurent
+  inequalities represents the concatenated Laurent domain via the composite structure map.
 * `TauCeti.LaurentFraction.maximalSpectrumComap_mem_laurentDomain`: the map
   `Sp A⟨f, g⁻¹⟩ → Sp A` takes values in `L(f, g⁻¹)`.
 
@@ -57,6 +71,8 @@ power-bounded inverse (`TauCeti.IsAffinoidAlgebra.isUnit_and_isPowerBounded_inve
 public section
 
 namespace TauCeti
+
+universe u
 
 variable {K : Type*} [NontriviallyNormedField K]
 
@@ -76,6 +92,17 @@ def laurentDomain (f : Fin r → A) (g : Fin s → A) : Set (MaximalSpectrum A) 
 theorem mem_laurentDomain {f : Fin r → A} {g : Fin s → A} {x : MaximalSpectrum A} :
     x ∈ laurentDomain K f g ↔ (∀ i, pointNorm K x (f i) ≤ 1) ∧ ∀ j, 1 ≤ pointNorm K x (g j) :=
   Iff.rfl
+
+/-- Concatenating Laurent inequalities takes the intersection of the two Laurent domains. -/
+@[simp]
+theorem laurentDomain_append {r' s' : ℕ} (f : Fin r → A) (g : Fin s → A)
+    (f' : Fin r' → A) (g' : Fin s' → A) :
+    laurentDomain K (Fin.append f f') (Fin.append g g') =
+      laurentDomain K f g ∩ laurentDomain K f' g' := by
+  ext x
+  simp only [mem_laurentDomain, Set.mem_inter_iff, Fin.forall_fin_add,
+    Fin.append_left, Fin.append_right]
+  tauto
 
 end LaurentDomain
 
@@ -101,6 +128,34 @@ theorem range_maximalSpectrumComap_subset_laurentDomain_iff (hB : IsAffinoidAlge
     fun ⟨hf, hg⟩ y ↦ ⟨fun i ↦ hf i y, fun j ↦ hg j y⟩⟩
 
 end IsAffinoidAlgebra
+
+namespace IsAffinoidSubdomainMap
+
+variable {A B : Type u} [CommRing A] [Algebra K A] [CommRing B] [Algebra K B]
+  {r s r' s' : ℕ} {f : Fin r → A} {g : Fin s → A} {φ : A →ₐ[K] B}
+
+/-- The image of the Laurent domain defined by a second family is the Laurent domain defined
+by concatenating both families. This is a statement on classical points, with the first
+Laurent domain represented by `φ`. -/
+theorem image_laurentDomain (hφ : IsAffinoidSubdomainMap φ (laurentDomain K f g))
+    (hA : IsAffinoidAlgebra K A) (f' : Fin r' → A) (g' : Fin s' → A) :
+    hφ.isAffinoidAlgebra.maximalSpectrumComap φ ''
+      laurentDomain K (φ ∘ f') (φ ∘ g') =
+        laurentDomain K (Fin.append f f') (Fin.append g g') := by
+  rw [laurentDomain_append]
+  ext x
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    refine ⟨hφ.range_maximalSpectrumComap_subset ⟨y, rfl⟩, ?_⟩
+    simpa only [mem_laurentDomain, Function.comp_apply,
+      IsAffinoidAlgebra.pointNorm_maximalSpectrumComap] using hy
+  · rintro ⟨hx₁, hx₂⟩
+    obtain ⟨y, rfl⟩ := (hφ.range_maximalSpectrumComap hA).symm ▸ hx₁
+    refine ⟨y, ?_, rfl⟩
+    simpa only [mem_laurentDomain, Function.comp_apply,
+      IsAffinoidAlgebra.pointNorm_maximalSpectrumComap] using hx₂
+
+end IsAffinoidSubdomainMap
 
 namespace LaurentFraction
 
@@ -143,6 +198,44 @@ theorem maximalSpectrumComap_mem_laurentDomain (x : MaximalSpectrum (LaurentFrac
   simp only [mem_laurentDomain, IsAffinoidAlgebra.pointNorm_maximalSpectrumComap,
     IsScalarTower.coe_toAlgHom']
   exact ⟨pointNorm_algebraMap_le_one hA x, one_le_pointNorm_algebraMap hA x⟩
+
+include hA in
+/-- **Laurent domains are affinoid subdomains.** The structure map
+`A → A⟨f, g⁻¹⟩` represents `L(f, g⁻¹)` among all affinoid test algebras, without choosing
+norms on those test algebras. No unit-ideal condition on `f` and `g` is required. -/
+theorem isAffinoidSubdomainMap :
+    IsAffinoidSubdomainMap (IsScalarTower.toAlgHom K A (LaurentFraction f g))
+      (laurentDomain K f g) where
+  isAffinoidAlgebra := isAffinoidAlgebra hA f g
+  range_maximalSpectrumComap_subset :=
+    Set.range_subset_iff.mpr (maximalSpectrumComap_mem_laurentDomain hA)
+  existsUnique_algHom {C} _ _ hC ψ hψ := by
+    -- The predicate is algebraic; equip the test algebra with a residue norm only here.
+    let := hC.residueNormedCommRing
+    let := hC.residueNormedAlgebra
+    have := hC.isUltrametricDist_residueNormedCommRing
+    have := hC.completeSpace_residueNormedCommRing
+    obtain ⟨χ, hχ, huniq⟩ := (existsUnique_algHom_iff_range_subset hA hC ψ).mpr hψ
+    exact ⟨χ, AlgHom.ext hχ, fun θ hθ ↦ huniq θ (AlgHom.congr_fun hθ)⟩
+
+section Iterate
+
+variable {A B : Type u} [CommRing A] [Algebra K A]
+  [NormedCommRing B] [NormedAlgebra K B] [IsUltrametricDist B] [CompleteSpace B]
+  {r s r' s' : ℕ} {f : Fin r → A} {g : Fin s → A} {φ : A →ₐ[K] B}
+
+/-- Successively imposing Laurent inequalities represents the concatenated Laurent domain,
+compatibly with the composite structure map from `A`. -/
+theorem isAffinoidSubdomainMap_iterate
+    (hφ : IsAffinoidSubdomainMap φ (laurentDomain K f g)) (hA : IsAffinoidAlgebra K A)
+    (f' : Fin r' → A) (g' : Fin s' → A) :
+    IsAffinoidSubdomainMap
+      ((IsScalarTower.toAlgHom K B (LaurentFraction (φ ∘ f') (φ ∘ g'))).comp φ)
+      (laurentDomain K (Fin.append f f') (Fin.append g g')) := by
+  rw [← hφ.image_laurentDomain hA f' g']
+  exact hφ.comp hA (isAffinoidSubdomainMap hφ.isAffinoidAlgebra)
+
+end Iterate
 
 end LaurentFraction
 

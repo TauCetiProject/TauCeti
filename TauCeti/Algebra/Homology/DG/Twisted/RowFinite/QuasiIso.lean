@@ -79,23 +79,24 @@ variable (hm : ∀ x y, ind x ≤ ind y → m.m x y = 0) (f : DGRightModuleHom h
   (hf : ∀ c w, dM c = 0 → f c = dN w → ∃ u v, dM u = c ∧ f u + dN v = w)
 include hm hf
 
-/-- One step of the descent: a relative cycle in the `p`th stage of the cell filtration differs
-from a relative boundary by a relative cycle in the `(p - 1)`st stage. -/
-private theorem exists_sub_mem_indexFiltration {p : ℤ} {g : P →₀ M} {k : P →₀ N}
+/-- A relative cycle `(g, k)` in the `p`th stage of the cell filtration has relative boundary
+witnesses `(u, v)` in the `p`th stage: on generators of index `p` they hit `(g, k)`, and they
+vanish on all other generators. -/
+private theorem exists_forall_ind_eq_of_cycle {p : ℤ} {g : P →₀ M} {k : P →₀ N}
     (hgp : g ∈ rowFiniteIndexFiltration (R := R) ind p)
     (hkp : k ∈ rowFiniteIndexFiltration (R := R) ind p) (hg : m.coefficientDifferential hM g = 0)
     (hgk : Finsupp.mapRange.linearMap (f.toLinearMap.restrictScalars R) g =
       m.coefficientDifferential hN k) :
-    ∃ (u : P →₀ M) (v : P →₀ N),
-      g - m.coefficientDifferential hM u ∈ rowFiniteIndexFiltration (R := R) ind (p - 1) ∧
-      k - Finsupp.mapRange.linearMap (f.toLinearMap.restrictScalars R) u -
-        m.coefficientDifferential hN v ∈ rowFiniteIndexFiltration (R := R) ind (p - 1) := by
+    ∃ (u : P →₀ M) (v : P →₀ N), u ∈ rowFiniteIndexFiltration (R := R) ind p ∧
+      v ∈ rowFiniteIndexFiltration (R := R) ind p ∧
+      (∀ x, ind x = p → dM (u x) = g x ∧ f (u x) + dN (v x) = k x) ∧
+      ∀ x, ind x ≠ p → u x = 0 ∧ v x = 0 := by
   classical
   -- The coefficients on generators of index `p` are relative cycles of `f`.
   have htop (x : P) (hx : ind x = p) : dM (g x) = 0 ∧ f (g x) = dN (k x) := by
     refine ⟨?_, ?_⟩
-    · rw [← m.coefficientDifferential_apply_of_ind_eq hM hm hgp hx, hg, Finsupp.zero_apply]
-    · rw [← m.coefficientDifferential_apply_of_ind_eq hN hm hkp hx, ← hgk]
+    · rw [← m.coefficientDifferential_apply_of_eq hM hm hgp hx, hg, Finsupp.zero_apply]
+    · rw [← m.coefficientDifferential_apply_of_eq hN hm hkp hx, ← hgk]
       simp
   -- Choose relative boundaries for them, and zero elsewhere.
   have key (x : P) : ∃ (u : M) (v : N), (ind x = p → dM u = g x ∧ f u + dN v = k x) ∧
@@ -130,21 +131,38 @@ private theorem exists_sub_mem_indexFiltration {p : ℤ} {g : P →₀ M} {k : P
     intro x hx
     rw [hv]
     exact (hoff x (by omega)).2
-  have hDu := m.coefficientDifferential_mem_indexFiltration hM hm hup
-  have hDv := m.coefficientDifferential_mem_indexFiltration hN hm hvp
+  exact ⟨u, v, hup, hvp, fun x hx ↦ by rw [hu, hv]; exact (hUV x).1 hx, fun x hx ↦ by
+    rw [hu, hv]; exact hoff x hx⟩
+
+/-- One step of the descent: a relative cycle in the `p`th stage of the cell filtration differs
+from a relative boundary by a relative cycle in the `(p - 1)`st stage. -/
+private theorem exists_sub_mem_indexFiltration {p : ℤ} {g : P →₀ M} {k : P →₀ N}
+    (hgp : g ∈ rowFiniteIndexFiltration (R := R) ind p)
+    (hkp : k ∈ rowFiniteIndexFiltration (R := R) ind p) (hg : m.coefficientDifferential hM g = 0)
+    (hgk : Finsupp.mapRange.linearMap (f.toLinearMap.restrictScalars R) g =
+      m.coefficientDifferential hN k) :
+    ∃ (u : P →₀ M) (v : P →₀ N),
+      g - m.coefficientDifferential hM u ∈ rowFiniteIndexFiltration (R := R) ind (p - 1) ∧
+      k - Finsupp.mapRange.linearMap (f.toLinearMap.restrictScalars R) u -
+        m.coefficientDifferential hN v ∈ rowFiniteIndexFiltration (R := R) ind (p - 1) := by
+  classical
+  obtain ⟨u, v, hup, hvp, h1, h2⟩ :=
+    m.exists_forall_ind_eq_of_cycle hM hN hm f hf hgp hkp hg hgk
+  have hDu := m.coefficientDifferential_mem_rowFiniteIndexFiltration hM hm hup
+  have hDv := m.coefficientDifferential_mem_rowFiniteIndexFiltration hN hm hvp
   refine ⟨u, v, ?_, ?_⟩ <;> rw [mem_rowFiniteIndexFiltration_iff ind] <;> intro x hx <;>
     rcases lt_or_eq_of_le (show p ≤ ind x by omega) with hpx | hpx
   · rw [Finsupp.sub_apply, (mem_rowFiniteIndexFiltration_iff ind).mp hgp x hpx,
       (mem_rowFiniteIndexFiltration_iff ind).mp hDu x hpx, sub_zero]
-  · rw [Finsupp.sub_apply, m.coefficientDifferential_apply_of_ind_eq hM hm hup hpx.symm, hu,
-      ((hUV x).1 hpx.symm).1, sub_self]
+  · rw [Finsupp.sub_apply, m.coefficientDifferential_apply_of_eq hM hm hup hpx.symm,
+      (h1 x hpx.symm).1, sub_self]
   · simp [(mem_rowFiniteIndexFiltration_iff ind).mp hkp x hpx,
-      (mem_rowFiniteIndexFiltration_iff ind).mp hDv x hpx, hu, hoff x hpx.ne']
+      (mem_rowFiniteIndexFiltration_iff ind).mp hDv x hpx, (h2 x hpx.ne').1]
   · rw [Finsupp.sub_apply, Finsupp.sub_apply,
-      m.coefficientDifferential_apply_of_ind_eq hN hm hvp hpx.symm, hv]
+      m.coefficientDifferential_apply_of_eq hN hm hvp hpx.symm]
     simp only [Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_apply,
-      LinearMap.coe_restrictScalars, DGRightModuleHom.coe_toLinearMap, hu]
-    rw [← ((hUV x).1 hpx.symm).2]
+      LinearMap.coe_restrictScalars, DGRightModuleHom.coe_toLinearMap]
+    rw [← (h1 x hpx.symm).2]
     abel
 
 /-- **Relative cycles of twisted complexes are relative boundaries.** Let `m` be one-sided, with

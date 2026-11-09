@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
 import Mathlib.Topology.EMetricSpace.VariationOnFromTo
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.Riemannian.MetricBridge
+import TauCeti.Topology.EMetricSpace.VariationOnFromTo
 
 /-!
 # The total variation of a curve is its Riemannian path length
@@ -193,10 +194,8 @@ private theorem norm_curveVelocityWithin_le_mul_deriv_variationOnFromTo
     (eventually_mem_nhdsWithin (a := (0 : ℝ)) (s := Ioi 0)).and (hshift.eventually_mem hIcc)
   -- The right slopes of `V` at `t` are nonnegative, hence so is its derivative.
   have hD : 0 ≤ deriv V t := by
-    refine ge_of_tendsto hV ?_
-    filter_upwards [hmem] with h hh
-    have := variationOnFromTo.monotoneOn hbv ha htab hh.2 (by linarith [hh.1])
-    exact smul_nonneg (inv_nonneg.2 hh.1.le) (sub_nonneg.2 this)
+    rw [← derivWithin_of_mem_nhds hIcc]
+    exact (variationOnFromTo.monotoneOn hbv ha).derivWithin_nonneg
   have hγt : Tendsto (fun h ↦ γ (t + h)) (𝓝[>] 0) (𝓝 x) :=
     ((hγ.continuousWithinAt.continuousAt hIcc).tendsto).comp hshift
   refine NormedSpace.norm_le_dual_bound ℝ w (by positivity) fun ℓ ↦ ?_
@@ -213,16 +212,12 @@ private theorem norm_curveVelocityWithin_le_mul_deriv_variationOnFromTo
     with h hh hy
   have hth : t ≤ t + h := by linarith [hh.1]
   -- The distance travelled on `[t, t + h]` is at most the variation there.
-  have hedist : edist x (γ (t + h)) ≤ ENNReal.ofReal (V (t + h) - V t) := by
-    rw [hVdef, ← variationOnFromTo.add hbv ha htab hh.2, add_sub_cancel_left,
-      variationOnFromTo.eq_of_le _ _ hth, ENNReal.ofReal_toReal (hbv t (t + h) htab hh.2)]
-    exact eVariationOn.edist_le γ ⟨htab, le_rfl, hth⟩ ⟨hh.2, hth, le_rfl⟩
   have hΔ : 0 ≤ V (t + h) - V t :=
     sub_nonneg.2 (variationOnFromTo.monotoneOn hbv ha htab hh.2 hth)
   have hchart : ‖ℓ (extChartAt I x (γ (t + h)) - extChartAt I x x)‖ ≤
       r * ‖ℓ‖ * (V (t + h) - V t) := by
-    have := (hy ℓ).trans (by gcongr : ENNReal.ofReal r * ‖ℓ‖ₑ * edist x (γ (t + h)) ≤
-      ENNReal.ofReal r * ‖ℓ‖ₑ * ENNReal.ofReal (V (t + h) - V t))
+    have := (hy ℓ).trans (mul_le_mul' le_rfl
+      (hbv.edist_le_ofReal_variationOnFromTo_sub ha htab hh.2 hth))
     rw [← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul (by linarith),
       ← ENNReal.ofReal_mul (by positivity)] at this
     exact (ENNReal.ofReal_le_ofReal_iff (by positivity)).1 this

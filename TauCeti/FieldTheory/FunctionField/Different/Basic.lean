@@ -103,6 +103,7 @@ variable (F') (P : Place k F)
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
 
+omit [FiniteDimensional F F'] in
 /-- **A basis integral at `P` with unit discriminant makes the local model self-dual**: if some
 `F`-basis of `F'` has vectors integral over `𝒪_P` and discriminant a unit at `P`, then the trace
 dual of `𝒪'_P` is `𝒪'_P` itself. -/
@@ -111,6 +112,7 @@ theorem traceDual_one_eq_one_of_ord_discr_eq_zero {ι : Type*} [Fintype ι] [Dec
     (hd : P.ord (Algebra.discr F b) = 0) :
     Submodule.traceDual (P.integers) F (1 : Submodule (integralClosure (P.integers) F') F')
       = 1 := by
+  have : FiniteDimensional F F' := Module.Finite.of_basis b
   refine le_antisymm (fun x hx ↦ ?_) Submodule.one_le_traceDual_one
   have hd0 : Algebra.discr F b ≠ 0 := Algebra.discr_not_zero_of_basis F b
   have hminv : (Algebra.discr F b)⁻¹ ∈ P.integers :=
@@ -229,7 +231,7 @@ theorem differentExponent_def : differentExponent k F P' =
 theorem pow_dvd_differentIdeal_iff_le_differentExponent {n : ℕ} :
     (centerIntegralClosure k F P').asIdeal ^ n ∣ differentIdeal ((P'.restrict k F).integers)
         (integralClosure ((P'.restrict k F).integers) F') ↔ n ≤ differentExponent k F P' :=
-  pow_dvd_differentIdeal_iff_le_multiplicity _ (centerIntegralClosure k F P').ne_bot
+  pow_dvd_differentIdeal_iff_le_multiplicity _ (centerIntegralClosure k F P').isPrime.ne_top
 
 /-- **Dedekind's different theorem, first part** (Stichtenoth, Theorem 3.5.1(a)): the different
 exponent of a place is at least one less than its ramification index.  It is stated as
@@ -240,15 +242,13 @@ hypothesis beyond separability of `F' / F`, and in particular none on the residu
 theorem ramificationIdx_le_differentExponent_add_one :
     ramificationIdx F P' ≤ differentExponent k F P' + 1 := by
   have hS := algebraMap_mem_integers_of_mem_integralClosure k F P'
-  have hpbot : IsLocalRing.maximalIdeal ((P'.restrict k F).integers) ≠ ⊥ :=
-    IsDiscreteValuationRing.not_a_field _
   -- the ramification index of `P'` over `P` is the ramification index of the centres
   have hidx : (centerIntegralClosure k F P').asIdeal.ramificationIdx
       ((P'.restrict k F).integers) = ramificationIdx F P' := by
     rw [centerIntegralClosure_def]
     exact (ramificationIdx_eq_ramificationIdx_center
       (R := ((P'.restrict k F).integers)) k F P' hS).symm
-  have := ramificationIdx_sub_one_le_multiplicity_differentIdeal _ hpbot
+  have := ramificationIdx_sub_one_le_multiplicity_differentIdeal (P'.restrict k F).integers
     (centerIntegralClosure k F P').asIdeal
   rw [differentExponent_def, ← hidx]
   have hpos := ramificationIdx_pos F P'

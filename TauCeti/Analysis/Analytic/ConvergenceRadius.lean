@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Analytic.ConvergenceRadius
 
 Taking partial sums of a formal multilinear series commutes with continuous linear maps.
 This allows coefficientwise linear operations to pass through finite approximations.
+Each partial sum extends the previous one by a single term.
 A geometric bound on coefficient norms also gives a comparison of convergence radii, even when
 the two series are defined over different normed fields.
 -/
@@ -31,6 +32,11 @@ theorem ContinuousLinearMap.compFormalMultilinearSeries_partialSum (f : F →L[�
     (p : FormalMultilinearSeries 𝕜 E F) (n : ℕ) (x : E) :
     (f.compFormalMultilinearSeries p).partialSum n x = f (p.partialSum n x) := by
   simp [FormalMultilinearSeries.partialSum]
+
+/-- The partial sum of length `n + 1` is the partial sum of length `n` plus the `n`-th term. -/
+theorem FormalMultilinearSeries.partialSum_succ (p : FormalMultilinearSeries 𝕜 E F) (n : ℕ)
+    (x : E) : p.partialSum (n + 1) x = p.partialSum n x + p n fun _ ↦ x :=
+  Finset.sum_range_succ _ _
 
 end PartialSum
 

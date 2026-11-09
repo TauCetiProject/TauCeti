@@ -45,6 +45,8 @@ unfolded by hand.
   `SL(2, ℝ)`-action.
 * `TauCeti.bijOn_sub_div_sub_upperHalfPlaneSet`: an ordered pair of real prevertices gives
   a fractional-linear bijection of the upper half-plane.
+* `TauCeti.im_neg_one_div_pos`: the inversion `S : τ ↦ -1/τ` maps a complex number with positive
+  imaginary part to one with positive imaginary part.
 * `ModularGroup.re_S_smul`, `ModularGroup.S_smul_S_smul`: the inversion `S` negates the real
   part up to a `normSq` factor, and is an involution of `ℍ`.
 * `ModularGroup.coe_S_smul`, `ModularGroup.coe_T_smul`: `S` and `T` act on `ℍ ⊆ ℂ` by
@@ -231,6 +233,41 @@ theorem sq_smul_smul_eq_vadd_S_smul_vadd (g : SL(2, ℤ)) (hc : g 1 0 ≠ 0) (τ
   field_simp
   linear_combination -hdet
 
+open Matrix.SpecialLinearGroup in
+/-- The bottom row of `(S * T * S⁻¹) ^ r` in `SL₂(ℤ)` has entries `-r` and `1`, so its automorphy
+factor at `z` is `-r z + 1`. -/
+theorem denom_mapGL_STS_inv_pow (r : ℕ) (z : ℍ) :
+    denom (mapGL ℝ ((S * T * S⁻¹ : SL(2, ℤ)) ^ r)) z = -(r : ℂ) * z + 1 := by
+  let g : SL(2, ℤ) := (S * T * S⁻¹ : SL(2, ℤ)) ^ r
+  have hg : (S * T * S⁻¹ : SL(2, ℤ)) ^ r = g := rfl
+  have hp : g = S * T ^ r * S⁻¹ := by simp [g, conj_pow]
+  have h10 : (g : Matrix (Fin 2) (Fin 2) ℤ) 1 0 = -(r : ℤ) := by
+    rw [hp, ← zpow_natCast]
+    simp only [Matrix.SpecialLinearGroup.coe_mul, ModularGroup.S_inv,
+      Matrix.SpecialLinearGroup.coe_neg, coe_S, coe_T_zpow]
+    norm_num [Matrix.mul_apply, Fin.sum_univ_two]
+  have h11 : (g : Matrix (Fin 2) (Fin 2) ℤ) 1 1 = 1 := by
+    rw [hp, ← zpow_natCast]
+    simp only [Matrix.SpecialLinearGroup.coe_mul, ModularGroup.S_inv,
+      Matrix.SpecialLinearGroup.coe_neg, coe_S, coe_T_zpow]
+    norm_num [Matrix.mul_apply, Fin.sum_univ_two]
+  rw [hg, denom, mapGL_coe_matrix, map_apply_coe]
+  simp only [RingHom.mapMatrix_apply, Matrix.map_apply, h10, h11]
+  simp [algebraMap_int_eq]
+
+open Matrix.SpecialLinearGroup in
+/-- The denominators of `(S T S⁻¹) ^ (n * m)` at a point `z` are pairwise distinct as `m` varies,
+for `n > 0`. -/
+theorem denom_mapGL_STS_inv_pow_injective {n : ℕ} (hn : 0 < n) (z : ℍ) :
+    Function.Injective fun m : ℕ ↦ denom (mapGL ℝ ((S * T * S⁻¹ : SL(2, ℤ)) ^ (n * m))) z :=
+  fun m₁ m₂ hm ↦ by
+    have him := congrArg Complex.im hm
+    simp only [denom_mapGL_STS_inv_pow, Complex.add_im, Complex.one_im, add_zero,
+      Complex.neg_im, Complex.mul_im, Complex.natCast_im] at him
+    have hmul : ((n * m₁ : ℕ) : ℝ) = ((n * m₂ : ℕ) : ℝ) :=
+      mul_right_cancel₀ z.im_ne_zero (by simpa using him)
+    exact Nat.eq_of_mul_eq_mul_left hn (Nat.cast_injective hmul)
+
 end ModularGroup
 
 namespace TauCeti
@@ -257,5 +294,8 @@ theorem bijOn_sub_div_sub_upperHalfPlaneSet {p q : ℝ} (hpq : p < q) :
   simpa only [UpperHalfPlane.range_coe] using
     hsemi.bijOn_range (MulAction.toPerm g).bijective UpperHalfPlane.coe_injective
 
+/-- `S : τ ↦ -1/τ` preserves the upper half-plane: `0 < (-1/τ).im` whenever `0 < τ.im`. -/
+theorem im_neg_one_div_pos {τ : ℂ} (hτ : 0 < τ.im) : 0 < (-1 / τ).im := by
+  simpa [neg_div, inv_neg] using UpperHalfPlane.im_inv_neg_coe_pos ⟨τ, hτ⟩
 
 end TauCeti

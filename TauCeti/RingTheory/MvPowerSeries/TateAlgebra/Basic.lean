@@ -66,6 +66,8 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
   `NormMulClass` from its coefficient ring.
 * `MvPowerSeries.dense_closure_monomial`: polynomials with coefficients in a dense subset of the
   coefficient ring are dense.
+* `MvPowerSeries.IsRestricted.rename_of_injective`: renaming along an embedding preserves
+  restrictedness at the reindexed polyradii.
 * `MvPowerSeries.isRestricted_renameEquiv_iff`: renaming the variables along an equivalence
   reindexes the polyradii, and `MvPowerSeries.IsRestricted.renameAlgEquiv` is the resulting
   algebra isomorphism of restricted-series subrings; `MvPowerSeries.IsRestricted.renameAlgEquivOfEq`
@@ -640,6 +642,12 @@ theorem norm_algebraMap_isRestrictedSubring (r : R) :
     Subtype.ext (coe_algebraMap_isRestrictedSubring r)
   rw [h, norm_C]
 
+/-- The coefficient ring acts boundedly for the Gauss norm, without a field hypothesis. -/
+instance : IsBoundedSMul R (IsRestricted.subring (R := R) c) :=
+  IsBoundedSMul.of_norm_smul_le fun a f ↦ by
+    simpa only [Algebra.smul_def, norm_algebraMap_isRestrictedSubring] using
+      norm_mul_le (algebraMap R (IsRestricted.subring (R := R) c) a) f
+
 /-- The constant-series embedding is an isometry. -/
 theorem isometry_algebraMap_isRestrictedSubring :
     Isometry (algebraMap R (IsRestricted.subring (R := R) c)) :=
@@ -650,6 +658,24 @@ end NormedCommRing
 section Rename
 
 variable {σ τ R : Type*} [NormedCommRing R]
+
+/-- Renaming along an embedding preserves restrictedness at the reindexed polyradii.
+The polyradii outside the image of the embedding are arbitrary. -/
+theorem IsRestricted.rename_of_injective (e : σ ↪ τ) {c : τ → ℝ}
+    {f : MvPowerSeries σ R} (hf : IsRestricted (c ∘ e) f) :
+    IsRestricted c (rename e f) := by
+  intro s hs
+  refine eventually_cofinite.mpr <|
+    ((eventually_cofinite.mp (hf.eventually hs)).image (Finsupp.embDomain e)).subset ?_
+  intro t ht
+  obtain ⟨u, rfl⟩ : t ∈ Set.range (Finsupp.embDomain e) := by
+    by_contra h
+    have hzero := coeff_rename_eq_zero e f
+      (by rwa [← funext (Finsupp.embDomain_eq_mapDomain e)])
+    exact ht (by simpa [hzero] using mem_of_mem_nhds hs)
+  refine ⟨u, ?_, rfl⟩
+  intro hu
+  exact ht (by simpa [Finsupp.prod_embDomain, Function.comp_def] using hu)
 
 /-- **Restrictedness is invariant under renaming the variables.** Renaming along an equivalence
 `e : σ ≃ τ` gives a series restricted at the polyradii `c` exactly when the original series is
@@ -804,21 +830,33 @@ noncomputable instance instNormedAlgebraIsRestrictedSubring :
 end NormedField
 
 /-- A coefficientwise norm bound gives the same Gauss-norm bound for restricted series over
-possibly different coefficient rings, at the same positive polyradii. -/
+possibly different coefficient rings, at the same positive polyradii. The constant `K` may be
+any real number: if it is negative, all coefficients vanish. -/
 theorem norm_le_mul_of_norm_coeff_le {σ R S : Type*}
     [NormedRing R] [IsUltrametricDist R] [NormedRing S] [IsUltrametricDist S]
     {c : σ → ℝ} [∀ i, Fact (0 < c i)]
     {f : IsRestricted.subring (R := R) c} {g : IsRestricted.subring (R := S) c}
-    {K : ℝ} (hK : 0 ≤ K)
+    {K : ℝ}
     (h : ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ ≤ K * ‖coeff t (g : MvPowerSeries σ S)‖) :
     ‖f‖ ≤ K * ‖g‖ := by
-  refine (norm_le_iff (mul_nonneg hK (norm_nonneg g))).mpr fun t ↦ ?_
-  calc
-    ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤
-        K * ‖coeff t (g : MvPowerSeries σ S)‖ * t.prod (c · ^ ·) :=
-      mul_le_mul_of_nonneg_right (h t) (prod_pow_pos t).le
-    _ ≤ K * ‖g‖ := by
-      rw [mul_assoc]
-      exact mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le g t) hK
+  rcases le_or_gt 0 K with hK | hK
+  · refine (norm_le_iff (mul_nonneg hK (norm_nonneg g))).mpr fun t ↦ ?_
+    calc
+      ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤
+          K * ‖coeff t (g : MvPowerSeries σ S)‖ * t.prod (c · ^ ·) :=
+        mul_le_mul_of_nonneg_right (h t) (prod_pow_pos t).le
+      _ ≤ K * ‖g‖ := by
+        rw [mul_assoc]
+        exact mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le g t) hK
+  · -- a negative constant forces every coefficient of `f` and `g` to vanish
+    have hg t : ‖coeff t (g : MvPowerSeries σ S)‖ = 0 := by
+      nlinarith [h t, norm_nonneg (coeff t (f : MvPowerSeries σ R)),
+        norm_nonneg (coeff t (g : MvPowerSeries σ S))]
+    have hf t : ‖coeff t (f : MvPowerSeries σ R)‖ = 0 :=
+      le_antisymm (by simpa [hg t] using h t) (norm_nonneg _)
+    have hf0 : ‖f‖ ≤ 0 := (norm_le_iff le_rfl).mpr fun t ↦ by simp [hf t]
+    have hg0 : ‖g‖ ≤ 0 := (norm_le_iff le_rfl).mpr fun t ↦ by simp [hg t]
+    rw [le_antisymm hg0 (norm_nonneg g), mul_zero]
+    exact hf0
 
 end TauCeti.MvPowerSeries

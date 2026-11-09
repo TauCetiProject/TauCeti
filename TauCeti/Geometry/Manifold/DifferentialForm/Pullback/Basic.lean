@@ -249,6 +249,15 @@ theorem mpullback_apply (f : M → M') (ω : RoughForm I' M' F k)
     mpullback I I' f ω x v = ω (f x) (fun i ↦ mfderiv I I' f x (v i)) :=
   bundleMpullback_apply f ω x v
 
+/-- Evaluation of the pullback of a two-form on a pair of tangent vectors. -/
+theorem mpullback_apply_pair (f : M → M') (ω : RoughForm I' M' F 2) (x : M)
+    (a b : TangentSpace I x) :
+    mpullback I I' f ω x ![a, b] = ω (f x) ![mfderiv I I' f x a, mfderiv I I' f x b] := by
+  rw [mpullback_apply]
+  congr 1
+  funext i
+  fin_cases i <;> rfl
+
 /-- Pullback within the whole manifold is ordinary pullback. -/
 @[simp]
 theorem mpullbackWithin_univ (f : M → M') (ω : RoughForm I' M' F k) :
@@ -306,6 +315,12 @@ theorem mpullback_apply_eq_mpullback_apply_iff {f : M → M'} {x : M}
   · refine ContinuousAlternatingMap.ext fun v ↦ ?_
     rw [mpullback_apply, mpullback_apply, h]
 
+/-- A pullback vanishes at every point where the form vanishes at the image point. -/
+theorem mpullback_apply_eq_zero {f : M → M'} {ω : RoughForm I' M' F k} {x : M}
+    (h : ω (f x) = 0) : mpullback I I' f ω x = 0 := by
+  ext v
+  simp [mpullback_apply, h]
+
 /-- Pullback along a surjective map whose derivatives are all surjective is injective. -/
 theorem mpullback_injective_of_surjective {f : M → M'} (hsurj : Function.Surjective f)
     (hf : ∀ x, Function.Surjective (mfderiv I I' f x)) :
@@ -356,6 +371,18 @@ theorem mpullback_smul {S : Type*} [Monoid S] [DistribMulAction S F]
     [ContinuousConstSMul S F] [SMulCommClass ℝ S F] (f : M → M') (c : S)
     (ω : RoughForm I' M' F k) : mpullback I I' f (c • ω) = c • mpullback I I' f ω :=
   bundleMpullback_smul f c ω
+
+/-- Pullback of a form multiplied pointwise by a scalar function multiplies the pullback by the
+composite function, for any scalars acting continuously on the coefficient space and commuting
+with the real action. -/
+@[simp]
+theorem mpullback_fun_smul {S : Type*} [Monoid S] [DistribMulAction S F]
+    [ContinuousConstSMul S F] [SMulCommClass ℝ S F] (f : M → M') (c : M' → S)
+    (ω : RoughForm I' M' F k) :
+    mpullback I I' f (fun y ↦ c y • ω y) = fun x ↦ c (f x) • mpullback I I' f ω x := by
+  funext x
+  ext v
+  simp only [mpullback_apply, ContinuousAlternatingMap.smul_apply]
 
 /-- Within-set pullback by the identity fixes forms wherever the derivative is unique. -/
 @[simp]

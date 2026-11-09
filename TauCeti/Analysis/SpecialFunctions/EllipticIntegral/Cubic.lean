@@ -5,6 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Legendre
+public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Algebraic
+import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.HalfAngle
+import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.Calculus.Deriv.Pow
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import Mathlib.MeasureTheory.Function.JacobianOneDim
+
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Gauss
 import TauCeti.Analysis.Calculus.RealCharts
 
@@ -47,6 +58,7 @@ the AGM integral with `K(k) / √(e₁ - e₃)`.
 * P. F. Byrd and M. D. Friedman, *Handbook of Elliptic Integrals for Engineers and Scientists*,
   2nd ed., Springer, 1971, formulas 236.00 and 239.00.
 * NIST *Digital Library of Mathematical Functions*, §19.29, <https://dlmf.nist.gov/19.29>.
+* J. E. Cremona, *Algorithms for Modular Elliptic Curves*, 2nd ed., Cambridge, 1997, §3.7.
 -/
 
 public section
@@ -169,5 +181,101 @@ theorem lintegral_Ioo_inv_sqrt_cubic_eq_legendreK (h₃₂ : e₃ < e₂) (h₂�
       ENNReal.ofReal (legendreK √((e₂ - e₃) / (e₁ - e₃)) / √(e₁ - e₃)) := by
   rw [lintegral_Ioo_inv_sqrt_cubic_eq_agmIntegral h₃₂ h₂₁,
     agmIntegral_sqrt_sub_eq_legendreK h₃₂.le h₂₁]
+
+/-- For `b ≠ 0`, or `b = 0` with `a < e₁`, the squared modulus `(A + a - e₁) / (2A)` of the cubic
+`4 (x - e₁)((x - a)² + b²)`, where `A = √((e₁ - a)² + b²)`, lies in `[0, 1)`: indeed
+`|e₁ - a| ≤ A`, with strict inequality when `b ≠ 0`. -/
+theorem sqrt_add_sub_div_two_mul_sqrt_mem_Ico {e₁ a b : ℝ} (hb : b ≠ 0 ∨ a < e₁) :
+    (√((e₁ - a) ^ 2 + b ^ 2) + a - e₁) / (2 * √((e₁ - a) ^ 2 + b ^ 2)) ∈ Ico 0 1 := by
+  have hpos : 0 < (e₁ - a) ^ 2 + b ^ 2 := by
+    rcases hb with hb | hb
+    · positivity
+    · have : e₁ - a ≠ 0 := by linarith
+      positivity
+  set A := √((e₁ - a) ^ 2 + b ^ 2)
+  have hA2 : A ^ 2 = (e₁ - a) ^ 2 + b ^ 2 := sq_sqrt hpos.le
+  have hA : 0 < A := sqrt_pos.2 hpos
+  have hpA₁ : e₁ - a ≤ A :=
+    (le_abs_self _).trans (abs_le_of_sq_le_sq (by nlinarith) hA.le)
+  have hpA₂ : a - e₁ < A := by
+    rcases hb with hb | hb
+    · have hb2 : 0 < b ^ 2 := by positivity
+      have : |e₁ - a| < A := abs_lt_of_sq_lt_sq (by linarith) hA.le
+      linarith [neg_abs_le (e₁ - a)]
+    · linarith
+  exact ⟨div_nonneg (by linarith) (by positivity), (div_lt_one (by positivity)).2 (by linarith)⟩
+
+/-- **The integral over `(e₁, ∞)` for a cubic with one real root.** For `b ≠ 0`, put
+`A = √((e₁ - a)² + b²)` and `k = √((A + a - e₁)/(2A))`. Then
+`∫_{(e₁, ∞)} (4(x - e₁)((x - a)² + b²))^(-1/2) dx = K(k) / √A`. In particular the integral
+converges. The formula also holds for `b = 0` when the double root `a` lies below `e₁`; then
+`A = e₁ - a` and `k = 0`. -/
+theorem lintegral_Ioi_inv_sqrt_mul_sq_add_sq_eq_legendreK {e₁ a b : ℝ} (hb : b ≠ 0 ∨ a < e₁) :
+    ∫⁻ x in Ioi e₁, ENNReal.ofReal (√(4 * (x - e₁) * ((x - a) ^ 2 + b ^ 2)))⁻¹ =
+      ENNReal.ofReal (legendreK √((√((e₁ - a) ^ 2 + b ^ 2) + a - e₁) /
+        (2 * √((e₁ - a) ^ 2 + b ^ 2))) / √(√((e₁ - a) ^ 2 + b ^ 2))) := by
+  have hpos : 0 < (e₁ - a) ^ 2 + b ^ 2 := by
+    rcases hb with hb | hb
+    · positivity
+    · have : e₁ - a ≠ 0 := by linarith
+      positivity
+  -- The modulus: `0 ≤ k² < 1`.
+  obtain ⟨hq₀, hq₁⟩ := sqrt_add_sub_div_two_mul_sqrt_mem_Ico hb
+  set A := √((e₁ - a) ^ 2 + b ^ 2)
+  have hA2 : A ^ 2 = (e₁ - a) ^ 2 + b ^ 2 := sq_sqrt hpos.le
+  have hA : 0 < A := sqrt_pos.2 hpos
+  clear_value A
+  set q := (A + a - e₁) / (2 * A)
+  have hk : √q ^ 2 = q := sq_sqrt hq₀
+  have hF := lintegral_Ioo_zero_pi_legendreF_integrand (k := √q) (by rwa [hk])
+  rw [hk] at hF
+  -- The substitution `x = e₁ + A (1 - cos θ)/(1 + cos θ)` and its derivative.
+  set f : ℝ → ℝ := fun θ ↦ e₁ + A * ((1 - cos θ) / (1 + cos θ))
+  set f' : ℝ → ℝ := fun θ ↦ A * (2 * sin θ / (1 + cos θ) ^ 2)
+  have hcos : ∀ θ ∈ Ioo 0 π, 0 < 1 + cos θ := fun θ hθ ↦
+    one_add_cos_pos (by linarith [hθ.1, pi_pos]) hθ.2
+  have hderiv : ∀ θ ∈ Ioo 0 π, HasDerivWithinAt f (f' θ) (Ioo 0 π) θ := fun θ hθ ↦ by
+    have hc := (hcos θ hθ).ne'
+    have h := ((((hasDerivAt_cos θ).const_sub 1).div ((hasDerivAt_cos θ).const_add 1)
+      hc).const_mul A).const_add e₁
+    convert h.hasDerivWithinAt using 1
+    simp only [f']
+    field_simp
+    ring
+  have hf'0 : ∀ θ ∈ Ioo 0 π, f' θ ≠ 0 := fun θ hθ ↦
+    mul_ne_zero hA.ne' (div_ne_zero (mul_ne_zero two_ne_zero
+      (sin_pos_of_pos_of_lt_pi hθ.1 hθ.2).ne')
+      (pow_ne_zero 2 (hcos θ hθ).ne'))
+  -- The cubic at the substituted point, using `sin² θ = 1 - cos² θ` and `b² = A² - (e₁ - a)²`.
+  have hD : ∀ θ ∈ Ioo 0 π, 4 * (f θ - e₁) * ((f θ - a) ^ 2 + b ^ 2) =
+      f' θ ^ 2 * (4 * A) * (1 - q * sin θ ^ 2) := fun θ hθ ↦ by
+    have hc := (hcos θ hθ).ne'
+    have hb2 : b ^ 2 = A ^ 2 - (e₁ - a) ^ 2 := by rw [hA2]; ring
+    simp only [f, f', q, mul_pow, div_pow, sin_sq, hb2]
+    field_simp
+    ring
+  have hp : ∀ θ ∈ Ioo 0 π, 0 ≤ 1 - q * sin θ ^ 2 := fun θ _ ↦ by
+    nlinarith [mul_le_of_le_one_right hq₀ (sin_sq_le_one θ)]
+  -- `f` is `θ ↦ (1 - cos θ)/(1 + cos θ)` followed by `u ↦ e₁ + A u`.
+  have himage : f '' Ioo 0 π = Ioi e₁ := by
+    rw [show f = (e₁ + ·) ∘ (A * ·) ∘ fun θ ↦ (1 - cos θ) / (1 + cos θ) from rfl, image_comp,
+      image_comp, image_one_sub_cos_div_one_add_cos_Ioo, image_mul_left_Ioi hA,
+      image_const_add_Ioi, mul_zero, add_zero]
+  have hinj : InjOn f (Ioo 0 π) :=
+    ((add_right_injective e₁).comp (mul_right_injective₀ hA.ne')).comp_injOn
+      (injOn_one_sub_cos_div_one_add_cos.mono Ioo_subset_Ico_self)
+  rw [← himage, lintegral_image_eq_lintegral_abs_deriv_mul measurableSet_Ioo hderiv hinj,
+    setLIntegral_congr_fun measurableSet_Ioo (g := fun θ ↦ ENNReal.ofReal (√(4 * A))⁻¹ *
+      ENNReal.ofReal ((1 - q * sin θ ^ 2) ^ (-1 / 2 : ℝ))) fun θ hθ ↦ ?_,
+    lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, hF,
+    ← ENNReal.ofReal_mul (inv_nonneg.2 (sqrt_nonneg _)), sqrt_mul zero_le_four,
+    show (4 : ℝ) = 2 ^ 2 by norm_num, sqrt_sq zero_le_two]
+  · congr 1
+    field_simp
+  · -- The transformed integrand: `|f'| (f'² c p)^(-1/2) = (√c)⁻¹ p^(-1/2)`.
+    dsimp only
+    rw [← ENNReal.ofReal_mul (abs_nonneg _), ← ENNReal.ofReal_mul (inv_nonneg.2 (sqrt_nonneg _)),
+      hD θ hθ, abs_mul_inv_sqrt_sq_mul_mul (hf'0 θ hθ) (by positivity), neg_div,
+      rpow_neg (hp θ hθ), ← sqrt_eq_rpow]
 
 end TauCeti.Real

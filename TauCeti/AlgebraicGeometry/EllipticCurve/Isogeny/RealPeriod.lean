@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.InvariantDifferential
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Wronskian
-public import TauCeti.AlgebraicGeometry.EllipticCurve.RealPeriod
+public import TauCeti.AlgebraicGeometry.EllipticCurve.RealPeriod.Basic
 -- Proof-only: the quotient rule `(N / D)' = W(D, N) / D²`.
 import TauCeti.Analysis.Calculus.Deriv.Polynomial
 -- Proof-only: the real points over an abscissa, and the finite kernel of an isogeny on points.

@@ -77,7 +77,7 @@ theorem braiding_inv (X Y : MonoidalQuotient I) :
 /-- The quotient functor preserves the braiding, with its existing monoidal structure. -/
 noncomputable instance : (toMonoidalQuotient I).Braided where
   braided X Y := by
-    simp only [μ_eq, Category.id_comp, Category.comp_id, braiding_hom]
+    simp only [Quotient.functor_μ, Category.id_comp, Category.comp_id, braiding_hom]
     rfl
 
 end Braided

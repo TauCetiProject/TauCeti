@@ -40,6 +40,11 @@ fields on a product manifold.
 * `MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff`: the differential of a
   parameter-preserving map splits exactly when the differential of its slice splits.
 * `TauCeti.mfderiv_swap`: the derivative of the exchange of factors exchanges the components.
+
+* `MDifferentiableAt.mfderiv_fst_apply` and `MDifferentiableAt.mfderiv_snd_apply`: the
+  differential of a coordinate of a map into a product.
+* `MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct`: the derivative of a
+  fibre-product condition `(f y).2 = (g y).1`.
 -/
 
 public section
@@ -265,3 +270,56 @@ theorem MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff
   exact (congrArg ContinuousLinearMap.HasLeftInverse hslice.symm).to_iff
 
 end ParameterPreserving
+
+section Coordinates
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E F F' F'' : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  [NormedAddCommGroup F''] [NormedSpace 𝕜 F'']
+  {H G G' G'' : Type*} [TopologicalSpace H] [TopologicalSpace G] [TopologicalSpace G']
+  [TopologicalSpace G'']
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F G} {J' : ModelWithCorners 𝕜 F' G'}
+  {J'' : ModelWithCorners 𝕜 F'' G''}
+  {M N N' N'' : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace N] [ChartedSpace G N] [TopologicalSpace N'] [ChartedSpace G' N']
+  [TopologicalSpace N''] [ChartedSpace G'' N'']
+  {f : M → N × N'} {x : M}
+
+/-- The differential of the first coordinate of a map into a product is the first coordinate of
+its differential. -/
+theorem MDifferentiableAt.mfderiv_fst_apply (hf : MDifferentiableAt I (J.prod J') f x)
+    (v : TangentSpace I x) :
+    mfderiv I J (fun y ↦ (f y).1) x v = (mfderiv I (J.prod J') f x v).1 := by
+  have h := mfderiv_comp_apply x mdifferentiableAt_fst hf v
+  rw [mfderiv_fst, Function.comp_def] at h
+  -- `ContinuousLinearMap.fst` is the first projection by definition. Its domain, the product
+  -- of the coordinate tangent spaces, is the tangent space of the product only by definition, so
+  -- `ContinuousLinearMap.coe_fst'` cannot be rewritten here.
+  exact h
+
+/-- The differential of the second coordinate of a map into a product is the second coordinate of
+its differential. -/
+theorem MDifferentiableAt.mfderiv_snd_apply (hf : MDifferentiableAt I (J.prod J') f x)
+    (v : TangentSpace I x) :
+    mfderiv I J' (fun y ↦ (f y).2) x v = (mfderiv I (J.prod J') f x v).2 := by
+  have h := mfderiv_comp_apply x mdifferentiableAt_snd hf v
+  rw [mfderiv_snd, Function.comp_def] at h
+  -- `ContinuousLinearMap.snd` is the second projection by definition. Its domain, the product
+  -- of the coordinate tangent spaces, is the tangent space of the product only by definition, so
+  -- `ContinuousLinearMap.coe_snd'` cannot be rewritten here.
+  exact h
+
+/-- Differentiating a fibre-product condition: if the second coordinate of `f` agrees everywhere
+with the first coordinate of `g`, then so do the corresponding coordinates of their
+differentials. -/
+theorem MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct {g : M → N' × N''}
+    (hf : MDifferentiableAt I (J.prod J') f x) (hg : MDifferentiableAt I (J'.prod J'') g x)
+    (hfg : ∀ y, (f y).2 = (g y).1) (v : TangentSpace I x) :
+    (mfderiv I (J.prod J') f x v).2 = (mfderiv I (J'.prod J'') g x v).1 := by
+  rw [← hf.mfderiv_snd_apply, ← hg.mfderiv_fst_apply]
+  -- The two coordinate maps are equal; ascribing `F'` gives both sides one type, since the tangent
+  -- spaces of `N'` at `(f x).2` and `(g x).1` are both `F'`.
+  exact congrArg (fun φ : M → N' ↦ (mfderiv I J' φ x v : F')) (funext hfg)
+
+end Coordinates

@@ -96,7 +96,7 @@ to torsion modules and do not require the coefficient algebra to be flat.
 * `TauCeti.baseChangeOfMulActionEquiv`: the base change of `R[X]` is `A[X]`.
 * `TauCeti.baseChangeComapEquiv`: the base change of the permutation module `X →₀ R` is `A[X]`.
 * `Representation.baseChangeRestrictScalarsIntEquiv`: a `ZMod n`-representation is its own
-  reduction, `ZMod n ⊗_ℤ ρ.restrictScalarsInt ≅ ρ`.
+  reduction, `ZMod n ⊗_ℤ ρ.restrictScalars ℤ ≅ ρ`.
 * `TauCeti.baseChangeFDRepHom` and `TauCeti.baseChangeFDRep`: scalar extension of an equivariant
   map, and scalar extension as an additive functor `FDRep k G ⥤ FDRep k' G`.
 * `TauCeti.baseChangeFDRepUnitIso` and `TauCeti.baseChangeFDRepTensorIso`: the comparison
@@ -769,8 +769,8 @@ theorem baseChangeComapEquiv_tmul_single (a : A) (x : X) (r : R) :
     baseChangeComapEquiv R A G X (a ⊗ₜ[R] Finsupp.single x r)
       = MonoidAlgebra.single x (r • a) := by
   simp only [baseChangeComapEquiv, _root_.Representation.Equiv.trans_apply,
-    _root_.Representation.Equiv.baseChange_tmul, ofDistribMulActionComapEquiv_single,
-    baseChangeOfMulActionEquiv_tmul_single]
+    _root_.Representation.Equiv.baseChange_tmul, ofDistribMulActionComapEquiv_apply,
+    MonoidAlgebra.ofCoeff_single, baseChangeOfMulActionEquiv_tmul_single]
 
 /-- `TauCeti.baseChangeComapEquiv` carries the element of `A[X]` supported at `x` with coefficient
 `a` back to the pure tensor `a ⊗ₜ single x 1`. -/
@@ -909,7 +909,7 @@ variable {n : ℕ} {G : Type*} [Monoid G] {W : Type*} [AddCommGroup W] [Module (
 `ZMod n`. It is Mathlib's `TensorProduct.lidOfCompatibleSMul`, which applies because every element
 of `ZMod n` is the image of an integer. -/
 noncomputable def baseChangeRestrictScalarsIntEquiv (ρ : Representation (ZMod n) G W) :
-    (Representation.baseChange (ZMod n) ρ.restrictScalarsInt).Equiv ρ :=
+    (Representation.baseChange (ZMod n) (ρ.restrictScalars ℤ)).Equiv ρ :=
   haveI : CompatibleSMul ℤ (ZMod n) (ZMod n) W :=
     .of_algebraMap_surjective _ _ ZMod.intCast_surjective
   .mk (TensorProduct.lidOfCompatibleSMul ℤ (ZMod n) W) fun g ↦ by

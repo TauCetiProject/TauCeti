@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Ring.Quotient
 public import TauCeti.RingTheory.Affinoid.Continuity
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.ClosedIdeal
 public import Mathlib.Topology.Algebra.Algebra.Equiv
-
-import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # Quotient norms and the topology of affinoid algebras
@@ -69,34 +68,27 @@ theorem isOpenQuotientMap (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
 
 /-- For a surjective algebra homomorphism `f` from a noetherian ultrametric Banach algebra onto a
 completely normed affinoid algebra, the algebraic first isomorphism theorem `A ⧸ ker f ≃ B` is a
-homeomorphism for the quotient topology on `A ⧸ ker f`. -/
+homeomorphism for the quotient topology on `A ⧸ ker f`. This is
+`ContinuousAlgHom.quotientKerEquivOfSurjective` applied to `f`, which is automatically
+continuous. -/
 noncomputable def quotientKerContinuousAlgEquiv (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
     (hf : Function.Surjective f) : (A ⧸ RingHom.ker f) ≃A[K] B :=
-  let e := Ideal.quotientKerAlgEquivOfSurjective hf
-  have he : (e : A ⧸ RingHom.ker f → B) = RingHom.kerLift (f : A →+* B) := by
-    funext x
-    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-    rw [Ideal.quotientKerAlgEquivOfSurjective_mk]
-    exact (RingHom.kerLift_mk (f : A →+* B) a).symm
-  have h : IsHomeomorph e := he ▸
-    RingHom.isHomeomorph_kerLift (hB.isOpenQuotientMap f hf).isQuotientMap
-  { e with
-    continuous_toFun := h.continuous
-    continuous_invFun :=
-      (e.toEquiv.toHomeomorphOfContinuousOpen h.continuous h.isOpenMap).symm.continuous }
+  ContinuousAlgHom.quotientKerEquivOfSurjective ⟨f, hB.continuous_algHom f⟩ hf
 
 /-- The first isomorphism theorem sends the class of `a` to `f a`. -/
 @[simp]
 theorem quotientKerContinuousAlgEquiv_mk (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
     (hf : Function.Surjective f) (a : A) :
-    hB.quotientKerContinuousAlgEquiv f hf (Ideal.Quotient.mk _ a) = f a := (rfl)
+    hB.quotientKerContinuousAlgEquiv f hf (Ideal.Quotient.mk _ a) = f a :=
+  ContinuousAlgHom.quotientKerEquivOfSurjective_mk ⟨f, hB.continuous_algHom f⟩ hf a
 
 /-- The underlying algebra isomorphism is the algebraic first isomorphism theorem. -/
 @[simp]
 theorem toAlgEquiv_quotientKerContinuousAlgEquiv (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
     (hf : Function.Surjective f) :
     (hB.quotientKerContinuousAlgEquiv f hf).toAlgEquiv =
-      Ideal.quotientKerAlgEquivOfSurjective hf := (rfl)
+      Ideal.quotientKerAlgEquivOfSurjective hf :=
+  ContinuousAlgHom.toAlgEquiv_quotientKerEquivOfSurjective ⟨f, hB.continuous_algHom f⟩ hf
 
 end Surjective
 

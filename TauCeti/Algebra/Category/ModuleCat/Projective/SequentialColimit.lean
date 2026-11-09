@@ -9,7 +9,9 @@ public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Category.ModuleCat.Colimits
+public import TauCeti.Algebra.Category.ModuleCat.DirectedUnion
 public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
+public import TauCeti.RingTheory.Flat.ProjectiveDimension
 
 /-!
 # The projective dimension of a sequential colimit of modules
@@ -21,14 +23,23 @@ colimit `M`. Dimension shifting along the telescope short exact sequence
 direct sum `⨁ₙ Fₙ` has projective dimension at most `d`, as coproducts of modules are exact.
 
 The bound is sharp: `ℚ` is the colimit of `ℤ →2 ℤ →3 ℤ →4 ⋯` (multiplication by `n + 2` at the
-`n`-th step) of free `ℤ`-modules but is not projective. This is how a bound on the projective
-dimension of modules over the stages of a sequential colimit of rings, such as the perfection of
-a ring of characteristic `p`, leads to a bound over the colimit.
+`n`-th step) of free `ℤ`-modules but is not projective.
+
+This is how a bound on the projective dimension of modules over the stages of a sequential
+colimit of rings leads to a bound over the colimit. Let `R` be the union of an increasing
+sequence of subrings `S₀ ⊆ S₁ ⊆ ⋯` and flat over each of them. Every `R`-module `M` is the colimit
+of the base changes `R ⊗[Sₙ] M` (`TauCeti.ModuleCat.isColimitTensorSubringCocone`), and flat
+base change does not increase projective dimension. So if `M` has projective dimension at most
+`d` over every `Sₙ`, then it has projective dimension at most `d + 1` over `R`.
+The perfection of a regular ring of characteristic `p` is the main example.
 
 ## Main declarations
 
 * `ModuleCat.hasProjectiveDimensionLT_succ_of_isColimit`: the colimit of a sequence of modules of
   projective dimension `< n` has projective dimension `< n + 1`.
+* `ModuleCat.hasProjectiveDimensionLT_succ_of_iSup_eq_top`: if `R` is the union of an increasing
+  sequence of subrings over each of which it is flat, and an `R`-module has projective dimension
+  `< n` over each of these subrings, then it has projective dimension `< n + 1` over `R`.
 
 ## References
 
@@ -60,5 +71,25 @@ theorem hasProjectiveDimensionLT_succ_of_isColimit [Small.{v} R] {c : Cocone F} 
   rw [← telescopeShortComplex_X₃ F c]
   exact hS.hasProjectiveDimensionLT_X₃ n (telescopeShortComplex_X₁ F c ▸ hsum n le_rfl)
     (telescopeShortComplex_X₂ F c ▸ hsum (n + 1) n.le_succ)
+
+end ModuleCat
+
+namespace ModuleCat
+
+open TauCeti.ModuleCat in
+/-- If `R` is the union of an increasing sequence of subrings `S k` over each of which it is flat,
+and an `R`-module `M` has projective dimension `< n` over every `S k`, then it has projective
+dimension `< n + 1` over `R`. In terms of `HasProjectiveDimensionLE`, global dimension at most
+`d` for all the `S k` gives global dimension at most `d + 1` for `R`. -/
+theorem hasProjectiveDimensionLT_succ_of_iSup_eq_top {R : Type u} [CommRing R]
+    {S : ℕ → Subring R} (hS : Monotone S) (htop : ⨆ k, S k = ⊤) [∀ k, Module.Flat (S k) R]
+    {n : ℕ} (M : ModuleCat.{u} R) (h : ∀ k, HasProjectiveDimensionLT (of (S k) M) n) :
+    HasProjectiveDimensionLT M (n + 1) := by
+  have htop' (r : R) : ∃ k, r ∈ S k :=
+    (Subring.mem_iSup_of_directed hS.directed_le).1 (htop ▸ Subring.mem_top r)
+  have := hasProjectiveDimensionLT_succ_of_isColimit (tensorSubringFunctor M hS)
+    (isColimitTensorSubringCocone htop') n fun k ↦
+      tensorSubringFunctor_obj M hS k ▸ hasProjectiveDimensionLT_tensorProduct R M (h k)
+  rwa [tensorSubringCocone_pt] at this
 
 end ModuleCat

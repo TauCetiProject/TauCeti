@@ -38,6 +38,7 @@ first statement does not extend to `|c| < 1`.
 ## Main statements
 
 * `ZLattice.smul_eq_comap`: for `c ≠ 0`, `c • L` is the pullback of `L` along `c⁻¹ • ·`.
+* `ZLattice.basisSmul`: for `c ≠ 0`, a `ℤ`-basis `b` of `L` gives the `ℤ`-basis `c • b` of `c • L`.
 * `ZLattice.dual_smul`: `(c • L)^∨ = c⁻¹ • L^∨` for `c ≠ 0`.
 * `ZLattice.covolume_smul`, `ZLattice.det_smul`: `covolume (c • L) = |c|ⁿ covolume L` and
   `det (c • L) = c²ⁿ det L` for `c ≠ 0`.
@@ -122,6 +123,26 @@ instance [DiscreteTopology L] [IsZLattice ℝ L] (c : ℝ) [NeZero c] : IsZLatti
   span_top := by
     rw [smul_eq_comap L (NeZero.ne c)]
     exact IsZLattice.span_top
+
+section Basis
+
+variable {L} {ι : Type*}
+
+/-- For `c ≠ 0`, a `ℤ`-basis `b` of `L` scales to the `ℤ`-basis `c • b` of `c • L`. -/
+noncomputable def basisSmul (b : Basis ι ℤ L) {c : ℝ} (hc : c ≠ 0) :
+    Basis ι ℤ (c • L : Submodule ℤ E) :=
+  b.map ((L.equivMapOfInjective _ (smul_right_injective E hc)).trans
+    (LinearEquiv.ofEq _ _ pointwise_smul_def.symm))
+
+/-- The `i`-th vector of the scaled basis `basisSmul b hc` is `c • b i`. -/
+@[simp]
+theorem coe_basisSmul_apply (b : Basis ι ℤ L) {c : ℝ} (hc : c ≠ 0) (i : ι) :
+    (basisSmul b hc i : E) = c • (b i : E) := by
+  simp only [basisSmul, Basis.map_apply, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
+  -- `c • L` is by definition the image of `L` under `c • ·` (`Submodule.pointwise_smul_def`).
+  exact coe_equivMapOfInjective_apply _ _ _ _
+
+end Basis
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L]
   [IsZLattice ℝ L]
@@ -213,6 +234,22 @@ theorem det_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι] (b : Ortho
   -- The lattice instances of `span ℤ (Set.range b)` are those of the `ℤ`-span of a basis.
   rw [← b.coe_toBasis] at hu ⊢
   rw [det_sqrt_smul _ hm, hu.det_eq_one, mul_one]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L]
+  [IsZLattice ℝ L] in
+/-- For an orthonormal basis `b` and a nonzero natural number `m`, the discriminant group of the
+scaled cubic lattice `√m • ℤ b` has order `det (√m • ℤ b) = mⁿ`, where `n` is the dimension of the
+space. For instance the discriminant group `(ℤ/2)²` of `√2 ℤ²` has order `4`. -/
+theorem natCard_discriminantGroup_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E) {m : ℕ} (hm : m ≠ 0) :
+    Nat.card (DiscriminantGroup (√(m : ℝ) • span ℤ (Set.range b))) = m ^ finrank ℝ E := by
+  have := b.toBasis.finiteDimensional_of_finite
+  borelize E
+  have : NeZero √(m : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (by positivity)⟩
+  have h :=
+    ((isUnimodular_span_orthonormalBasis b).isIntegral.sqrt_smul m).det_eq_card_discriminantGroup
+  rw [det_sqrt_smul_span_orthonormalBasis b hm] at h
+  exact_mod_cast h.symm
 
 variable {L}
 

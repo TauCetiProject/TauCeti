@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Circle
 public import TauCeti.Analysis.PDE.Vortex.Deformation
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Algebra.Group.Action.Basic
+import TauCeti.Analysis.Complex.Circle
 
 /-!
 # Smooth framed gauge transformations of plane vortex fields
@@ -21,6 +22,13 @@ The action is free and preserves the equation, the physical energy density and t
 framing. It agrees with the existing real-phase action. The logarithmic derivative is expressed
 without choosing a real phase. This permits gauges whose phase tends to zero too slowly to lie in an
 unweighted Sobolev space. The smooth group here is not a Banach completion.
+
+The linear part `gaugeLinearAction` fixes the connection variation and rotates its section
+variation. This file provides its composition, inverse, pointwise norm, vanishing and regularity
+laws, the affine increment and difference identities, and the derivative of the gauge action in
+field directions. The gauge's real and imaginary derivatives and the section-coordinate Leibniz
+rules are expressed through `gaugeForm`, for use by the deformation operators in
+`FramedGauge.Linearization`.
 
 ## References
 
@@ -80,6 +88,88 @@ theorem gaugeTransform_apply (u : ℂ → Circle) (x : ℂ → EuclideanSpace �
         (u z : ℂ).re * x z 2 - (u z : ℂ).im * x z 3,
         (u z : ℂ).im * x z 2 + (u z : ℂ).re * x z 3] := (rfl)
 
+/-- The linear part of a charge-one gauge transformation. On variations it fixes the
+connection and rotates the section; on the gauge-fixed target it fixes the two real rows
+and rotates the complex row. -/
+def gaugeLinearAction (u : ℂ → Circle) :
+    Module.End ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) where
+  toFun y z := !₂[y z 0, y z 1,
+    (u z : ℂ).re * y z 2 - (u z : ℂ).im * y z 3,
+    (u z : ℂ).im * y z 2 + (u z : ℂ).re * y z 3]
+  map_add' y v := by
+    ext z i
+    fin_cases i <;> simp <;> ring
+  map_smul' c y := by
+    ext z i
+    fin_cases i <;> simp <;> ring
+
+/-- Coordinate formula for the linear gauge action. -/
+theorem gaugeLinearAction_apply (u : ℂ → Circle) (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    gaugeLinearAction u y z = !₂[y z 0, y z 1,
+      (u z : ℂ).re * y z 2 - (u z : ℂ).im * y z 3,
+      (u z : ℂ).im * y z 2 + (u z : ℂ).re * y z 3] := (rfl)
+
+@[simp]
+theorem gaugeLinearAction_one (y : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    gaugeLinearAction 1 y = y := by
+  ext z i
+  fin_cases i <;> simp [gaugeLinearAction_apply]
+
+/-- Successive linear gauge actions multiply their gauges. No regularity is needed. -/
+theorem gaugeLinearAction_mul (u v : ℂ → Circle) (y : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    gaugeLinearAction (u * v) y = gaugeLinearAction u (gaugeLinearAction v y) := by
+  ext z i
+  fin_cases i <;> simp [gaugeLinearAction_apply, mul_re, mul_im] <;> ring
+
+/-- The inverse gauge undoes the linear action. -/
+@[simp]
+theorem gaugeLinearAction_inv_gaugeLinearAction (u : ℂ → Circle)
+    (y : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    gaugeLinearAction u⁻¹ (gaugeLinearAction u y) = y := by
+  rw [← gaugeLinearAction_mul, inv_mul_cancel, gaugeLinearAction_one]
+
+/-- The linear action also undoes the inverse gauge. -/
+@[simp]
+theorem gaugeLinearAction_gaugeLinearAction_inv (u : ℂ → Circle)
+    (y : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    gaugeLinearAction u (gaugeLinearAction u⁻¹ y) = y := by
+  rw [← gaugeLinearAction_mul, mul_inv_cancel, gaugeLinearAction_one]
+
+/-- The linear gauge action is a pointwise isometry for the coefficient metrics of both
+the field variations and the gauge-fixed target. -/
+@[simp]
+theorem norm_gaugeLinearAction (u : ℂ → Circle) (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ‖gaugeLinearAction u y z‖ = ‖y z‖ := by
+  apply (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp
+  have hn := Circle.re_sq_add_im_sq (u z)
+  simp only [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four, gaugeLinearAction_apply,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+    Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
+  linear_combination (y z 2 ^ 2 + y z 3 ^ 2) * hn
+
+/-- Pointwise vanishing is preserved in both directions. -/
+@[simp]
+theorem gaugeLinearAction_eq_zero_iff (u : ℂ → Circle)
+    (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    gaugeLinearAction u y z = 0 ↔ y z = 0 := by
+  rw [← norm_eq_zero, norm_gaugeLinearAction, norm_eq_zero]
+
+/-- Smooth gauges preserve the regularity of variations, without differentiating a
+connection increment. -/
+theorem contDiff_gaugeLinearAction {n : WithTop ℕ∞} {u : ℂ → Circle}
+    (hu : ContDiff ℝ n (fun z ↦ (u z : ℂ))) {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hy : ContDiff ℝ n y) : ContDiff ℝ n (gaugeLinearAction u y) := by
+  have hr := reCLM.contDiff.comp hu
+  have hi := imCLM.contDiff.comp hu
+  have hc (i : Fin 4) : ContDiff ℝ n (fun z ↦ y z i) := (contDiff_piLp _).mp hy i
+  apply (contDiff_piLp _).mpr
+  intro i
+  fin_cases i <;> simp only [gaugeLinearAction_apply, PiLp.toLp_apply]
+  · exact hc 0
+  · exact hc 1
+  · exact (hr.mul (hc 2)).sub (hi.mul (hc 3))
+  · exact (hi.mul (hc 2)).add (hr.mul (hc 3))
+
 /-- The logarithmic derivative of a product is the sum of the logarithmic derivatives. -/
 theorem gaugeForm_mul {u v : ℂ → Circle} {z : ℂ}
     (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z)
@@ -121,6 +211,28 @@ theorem gaugeTransform_mul {u v : ℂ → Circle}
   ext z i
   fin_cases i <;> simp [gaugeTransform, gaugeForm_mul (hu z) (hv z), mul_re, mul_im] <;> ring
 
+/-- Gauge action on differences of fields is its linear action on the difference. -/
+theorem gaugeTransform_sub_gaugeTransform (u : ℂ → Circle) (x y : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    gaugeTransform u x - gaugeTransform u y = gaugeLinearAction u (x - y) := by
+  ext z i
+  fin_cases i <;> simp [gaugeTransform_apply, gaugeLinearAction_apply] <;> ring
+
+/-- The affine gauge action transports every increment by its linear part. -/
+theorem gaugeTransform_add (u : ℂ → Circle) (x y : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    gaugeTransform u (x + y) = gaugeTransform u x + gaugeLinearAction u y := by
+  ext z i
+  fin_cases i <;> simp [gaugeTransform_apply, gaugeLinearAction_apply] <;> ring
+
+/-- The linear action is the derivative of the actual gauge action in every field direction. -/
+theorem hasDerivAt_gaugeTransform_add_smul (u : ℂ → Circle)
+    (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    HasDerivAt (fun t : ℝ ↦ gaugeTransform u (x + t • y) z)
+      (gaugeLinearAction u y z) 0 := by
+  simp_rw [gaugeTransform_add, map_smul, Pi.add_apply, Pi.smul_apply]
+  simpa only [id_eq, one_smul] using
+    (((hasDerivAt_id (0 : ℝ)).smul_const (gaugeLinearAction u y z)).const_add
+      (gaugeTransform u x z))
+
 /-- The smooth framed group acts on fields; the field need not itself be smooth. -/
 instance : MulAction framedGaugeGroup (ℂ → EuclideanSpace ℝ (Fin 4)) where
   smul u x := gaugeTransform u.val x
@@ -141,13 +253,86 @@ theorem fderiv_coe_eq_mul_gaugeForm {u : ℂ → Circle} {z : ℂ}
     fderiv ℝ (fun w ↦ (u w : ℂ)) z v = (u z : ℂ) * I * gaugeForm u z v := by
   have h := congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L v) hu.hasFDerivAt.norm_sq.fderiv
   simp [Circle.norm_coe, Complex.inner, mul_re] at h
-  have hn := Circle.normSq_coe (u z)
-  simp only [Complex.normSq_apply] at hn
+  have hn := Circle.re_sq_add_im_sq (u z)
   apply Complex.ext <;> simp [gaugeForm_apply, mul_re, mul_im]
   · linear_combination
       -((fderiv ℝ (fun w ↦ (u w : ℂ)) z) v).re * hn - (u z : ℂ).re / 2 * h
   · linear_combination
       -((fderiv ℝ (fun w ↦ (u w : ℂ)) z) v).im * hn - (u z : ℂ).im / 2 * h
+
+/-- The derivative of the real part of a circle-valued gauge is its imaginary coordinate
+multiplied by the negative logarithmic derivative, without choosing a phase. -/
+theorem fderiv_re_coe_eq_neg_im_mul_gaugeForm {u : ℂ → Circle} {z : ℂ}
+    (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z) (v : ℂ) :
+    fderiv ℝ (fun w ↦ (u w : ℂ).re) z v = -(u z : ℂ).im * gaugeForm u z v := by
+  calc
+    _ = (fderiv ℝ (fun w ↦ (u w : ℂ)) z v).re :=
+      congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L v)
+        (reCLM.hasFDerivAt.comp z hu.hasFDerivAt).fderiv
+    _ = _ := by
+      rw [fderiv_coe_eq_mul_gaugeForm hu v]
+      simp only [mul_re, mul_im, I_re, I_im, ofReal_re, ofReal_im,
+        mul_zero, mul_one, sub_zero, zero_sub, neg_mul]
+
+/-- The derivative of the imaginary part of a circle-valued gauge is its real coordinate
+multiplied by the logarithmic derivative, without choosing a phase. -/
+theorem fderiv_im_coe_eq_re_mul_gaugeForm {u : ℂ → Circle} {z : ℂ}
+    (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z) (v : ℂ) :
+    fderiv ℝ (fun w ↦ (u w : ℂ).im) z v = (u z : ℂ).re * gaugeForm u z v := by
+  calc
+    _ = (fderiv ℝ (fun w ↦ (u w : ℂ)) z v).im :=
+      congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L v)
+        (imCLM.hasFDerivAt.comp z hu.hasFDerivAt).fderiv
+    _ = _ := by
+      rw [fderiv_coe_eq_mul_gaugeForm hu v]
+      simp only [mul_re, mul_im, I_re, I_im, ofReal_re, ofReal_im,
+        mul_zero, mul_one, zero_add, add_zero]
+
+/-- Leibniz rule for the real section coordinate of the linear gauge action. Only the gauge
+and the two section coordinates need be differentiable at the point. -/
+theorem fderiv_gaugeLinearAction_apply_two {u : ℂ → Circle} {z : ℂ}
+    (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hp : DifferentiableAt ℝ (fun w ↦ y w 2) z)
+    (hq : DifferentiableAt ℝ (fun w ↦ y w 3) z) (v : ℂ) :
+    fderiv ℝ (fun w ↦ gaugeLinearAction u y w 2) z v =
+      (u z : ℂ).re * fderiv ℝ (fun w ↦ y w 2) z v -
+        (u z : ℂ).im * fderiv ℝ (fun w ↦ y w 3) z v -
+        gaugeForm u z v * gaugeLinearAction u y z 3 := by
+  have hr : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).re) z :=
+    reCLM.differentiableAt.comp z hu
+  have hi : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).im) z :=
+    imCLM.differentiableAt.comp z hu
+  simp only [gaugeLinearAction_apply, PiLp.toLp_apply, Matrix.cons_val_two,
+    Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
+  rw [fderiv_fun_sub (hr.fun_mul hp) (hi.fun_mul hq), fderiv_fun_mul hr hp,
+    fderiv_fun_mul hi hq]
+  simp only [sub_apply, add_apply, smul_apply, smul_eq_mul,
+    fderiv_re_coe_eq_neg_im_mul_gaugeForm hu, fderiv_im_coe_eq_re_mul_gaugeForm hu]
+  ring
+
+/-- Leibniz rule for the imaginary section coordinate of the linear gauge action. Only the
+gauge and the two section coordinates need be differentiable at the point. -/
+theorem fderiv_gaugeLinearAction_apply_three {u : ℂ → Circle} {z : ℂ}
+    (hu : DifferentiableAt ℝ (fun w ↦ (u w : ℂ)) z)
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hp : DifferentiableAt ℝ (fun w ↦ y w 2) z)
+    (hq : DifferentiableAt ℝ (fun w ↦ y w 3) z) (v : ℂ) :
+    fderiv ℝ (fun w ↦ gaugeLinearAction u y w 3) z v =
+      (u z : ℂ).im * fderiv ℝ (fun w ↦ y w 2) z v +
+        (u z : ℂ).re * fderiv ℝ (fun w ↦ y w 3) z v +
+        gaugeForm u z v * gaugeLinearAction u y z 2 := by
+  have hr : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).re) z :=
+    reCLM.differentiableAt.comp z hu
+  have hi : DifferentiableAt ℝ (fun w ↦ (u w : ℂ).im) z :=
+    imCLM.differentiableAt.comp z hu
+  simp only [gaugeLinearAction_apply, PiLp.toLp_apply, Matrix.cons_val_two,
+    Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons]
+  rw [fderiv_fun_add (hi.fun_mul hp) (hr.fun_mul hq), fderiv_fun_mul hi hp,
+    fderiv_fun_mul hr hq]
+  simp only [add_apply, smul_apply, smul_eq_mul,
+    fderiv_re_coe_eq_neg_im_mul_gaugeForm hu, fderiv_im_coe_eq_re_mul_gaugeForm hu]
+  ring
 
 /-- The smooth framed gauge action is free. The connection coordinates suffice; no
 nonvanishing, regularity or equation hypothesis on the field is required. -/
@@ -274,27 +459,11 @@ theorem equation_gaugeTransform {u : ℂ → Circle}
     imCLM.differentiableAt.comp z hu'
   have hg (v : ℂ) : DifferentiableAt ℝ (fun w ↦ gaugeForm u w v) z :=
     (differentiableAt_gaugeForm hu).clm_apply (differentiableAt_const v)
-  have hgr (v : ℂ) : fderiv ℝ (fun w ↦ (u w : ℂ).re) z v =
-      -(u z : ℂ).im * gaugeForm u z v := by
-    have heq : fderiv ℝ (fun w ↦ (u w : ℂ).re) z =
-        reCLM ∘L fderiv ℝ (fun w ↦ (u w : ℂ)) z := by
-      simpa only [Function.comp_def, Complex.reCLM_apply] using
-        (reCLM.hasFDerivAt.comp z hu'.hasFDerivAt).fderiv
-    rw [heq]
-    simpa using congrArg Complex.re (fderiv_coe_eq_mul_gaugeForm hu' v)
-  have hgi (v : ℂ) : fderiv ℝ (fun w ↦ (u w : ℂ).im) z v =
-      (u z : ℂ).re * gaugeForm u z v := by
-    have heq : fderiv ℝ (fun w ↦ (u w : ℂ).im) z =
-        imCLM ∘L fderiv ℝ (fun w ↦ (u w : ℂ)) z := by
-      simpa only [Function.comp_def, Complex.imCLM_apply] using
-        (imCLM.hasFDerivAt.comp z hu'.hasFDerivAt).fderiv
-    rw [heq]
-    simpa using congrArg Complex.im (fderiv_coe_eq_mul_gaugeForm hu' v)
-  have hn := Circle.normSq_coe (u z)
-  simp only [Complex.normSq_apply] at hn
+  have hn := Circle.re_sq_add_im_sq (u z)
   ext i
   fin_cases i <;> simp [gaugeTransform, fderiv_fun_sub, fderiv_fun_add,
-    fderiv_fun_mul, hx, hr, hi, hg, hgr, hgi, -gaugeForm_apply]
+    fderiv_fun_mul, hx, hr, hi, hg, fderiv_re_coe_eq_neg_im_mul_gaugeForm hu',
+    fderiv_im_coe_eq_re_mul_gaugeForm hu', -gaugeForm_apply]
   · linear_combination (x z 2 ^ 2 + x z 3 ^ 2) / 2 * hn -
       fderiv_gaugeForm_symm hu 1 I
   · ring
@@ -314,8 +483,7 @@ theorem equation_gaugeTransform_eq_zero_iff {u : ℂ → Circle}
   have h₂ := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 2) h
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
     Matrix.head_cons, Matrix.tail_cons, PiLp.zero_apply] at h₀ h₁ h₂
-  have hn := Circle.normSq_coe (u z)
-  simp only [Complex.normSq_apply] at hn
+  have hn := Circle.re_sq_add_im_sq (u z)
   ext i
   have hi : i = 0 ∨ i = 1 ∨ i = 2 := by omega
   rcases hi with rfl | rfl | rfl
@@ -426,5 +594,19 @@ theorem exp_mem_framedGaugeGroup {f : ℂ → ℝ} (hf : ContDiff ℝ ∞ f)
   · simpa only [Circle.coe_exp, Function.comp_def, Complex.ofRealCLM_apply] using
       ((ofRealCLM.contDiff.comp hf).mul (contDiff_const (c := I))).cexp
   · simpa only [Circle.exp_zero, Function.comp_def] using (Circle.exp.continuous.tendsto 0).comp ht
+
+/-- **The framed gauge action is free at a field with nowhere dense zeros.** If the section of
+`y` is nonzero on a dense set, then a smooth framed gauge is determined by its action on `y`. -/
+theorem framedGaugeGroup_smul_left_injective {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hdense : Dense {z | sectionValue y z ≠ 0}) :
+    Function.Injective fun u : framedGaugeGroup ↦ u • y := by
+  intro u v huv
+  have hc (u : framedGaugeGroup) : Continuous fun z ↦ ((u.val z : Circle) : ℂ) :=
+    ((mem_framedGaugeGroup _).mp u.property).1.continuous
+  refine Subtype.ext (funext fun z ↦ Circle.ext ?_)
+  refine congrFun ((hc u).ext_on hdense (hc v) fun w hw ↦ ?_) z
+  have hw' := congrArg (fun x ↦ sectionValue x w) huv
+  simp only [framedGaugeGroup_smul, sectionValue_gaugeTransform] at hw'
+  exact mul_right_cancel₀ hw hw'
 
 end TauCeti.Vortex

@@ -16,6 +16,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FinitePoint
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 -- Proof-only: the ratio of `(G : nG)` to `#G[n]` is unchanged on a finite-index subgroup.
 import TauCeti.GroupTheory.Index.NSmul
+-- Proof-only: multiplication by `n` is injective on one side of an additive equivalence.
+import TauCeti.Algebra.Group.Equiv.Pow
 -- Proof-only: the `n`-primary component is finite over a uniquely `n`-divisible subgroup.
 import TauCeti.GroupTheory.Index.PrimaryComponent
 

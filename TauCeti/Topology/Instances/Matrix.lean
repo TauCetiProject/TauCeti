@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
+public import Mathlib.Topology.UniformSpace.Matrix
 public import Mathlib.Topology.Metrizable.Basic
 public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 public import TauCeti.Topology.Algebra.IsOpenUnits
@@ -24,7 +25,8 @@ pseudo-metrizable whenever `α` is. This makes metrizable-codomain results, such
 of pointwise limits of measurable maps, available for matrix-valued functions without choosing a
 matrix norm.
 
-Matrices with countably many rows and columns are second countable when their entries are.
+Matrices with countably many rows and columns are second countable when their entries are, and
+matrices with finitely many rows and columns are σ-compact when their entries are.
 
 Square matrices act jointly continuously on column vectors by `Matrix.mulVec`, the action of
 `Mathlib.LinearAlgebra.Matrix.Action`; through the unit group, so does `GL n R`
@@ -32,7 +34,8 @@ Square matrices act jointly continuously on column vectors by `Matrix.mulVec`, t
 
 The same product topology gives entrywise control of a real matrix-valued map near a point of
 continuity, again without a matrix norm
-(`ContinuousAt.exists_ball_subset_forall_abs_sub_le`).
+(`ContinuousAt.exists_ball_subset_forall_abs_sub_le`), and the product uniformity gives the
+uniform version for uniformly continuous maps (`UniformContinuous.exists_pos_forall_abs_sub_le`).
 
 Over a topological field, the inverse of a matrix-valued function that is continuous at a point
 with invertible value is continuous there (`ContinuousAt.matrix_inv`), and so are its entries
@@ -78,6 +81,11 @@ instance {m n α : Type*} [Countable m] [Countable n] [TopologicalSpace α]
     [SecondCountableTopology α] : SecondCountableTopology (Matrix m n α) :=
   inferInstanceAs (SecondCountableTopology (m → n → α))
 
+/-- Matrices with finitely many rows and columns over a σ-compact space form a σ-compact space. -/
+instance {m n α : Type*} [Finite m] [Finite n] [TopologicalSpace α] [SigmaCompactSpace α] :
+    SigmaCompactSpace (Matrix m n α) :=
+  inferInstanceAs (SigmaCompactSpace (m → n → α))
+
 /-- Square matrices act jointly continuously on column vectors by `Matrix.mulVec`. -/
 instance {n R : Type*} [Fintype n] [DecidableEq n] [Semiring R] [TopologicalSpace R]
     [ContinuousAdd R] [ContinuousMul R] : ContinuousSMul (Matrix n n R) (n → R) :=
@@ -107,6 +115,28 @@ theorem exists_ball_subset_forall_abs_sub_le {X m n : Type*} [PseudoMetricSpace 
   exact ⟨r, hr, fun y hy => (hrx y hy).1, fun y hy => (hrx y hy).2⟩
 
 end ContinuousAt
+
+namespace UniformContinuous
+
+open Filter Metric
+open scoped Uniformity
+
+/-- If a real matrix-valued map `a` on a pseudo-metric space is uniformly continuous, then for every
+`ε > 0` there is `r > 0` such that every entry of `a` varies by at most `ε` between any two points
+at distance less than `r`. -/
+theorem exists_pos_forall_abs_sub_le {X m n : Type*} [PseudoMetricSpace X] [Finite m] [Finite n]
+    {a : X → Matrix m n ℝ} (ha : UniformContinuous a) {ε : ℝ} (hε : 0 < ε) :
+    ∃ r : ℝ, 0 < r ∧ ∀ x y, dist x y < r → ∀ i j, |a x i j - a y i j| ≤ ε := by
+  have hev : ∀ᶠ z : X × X in 𝓤 X, ∀ i j, |a z.1 i j - a z.2 i j| ≤ ε := by
+    refine eventually_all.2 fun i => eventually_all.2 fun j => ?_
+    have hij : UniformContinuous fun x => a x i j := (Matrix.uniformContinuous _ _ _).1 ha i j
+    filter_upwards [hij (dist_mem_uniformity hε)] with z hz
+    rw [Set.mem_preimage, Set.mem_ofPred_eq, Real.dist_eq] at hz
+    exact hz.le
+  obtain ⟨r, hr, hrz⟩ := uniformity_basis_dist.mem_iff.1 hev
+  exact ⟨r, hr, fun x y hxy => @hrz (x, y) hxy⟩
+
+end UniformContinuous
 
 section Inverse
 
@@ -181,19 +211,19 @@ theorem Continuous.matrix_kronecker {X R l m n p : Type*} [TopologicalSpace X]
 
 namespace Matrix
 
-variable {R m n : Type*} [CommSemiring R] [StarRing R] [Fintype m] [DecidableEq m] [Fintype n]
-  [DecidableEq n] [TopologicalSpace R] [ContinuousMul R]
+variable {R α m n : Type*} [CommSemiring R] [Semiring α] [StarRing α] [Algebra R α]
+  [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n] [TopologicalSpace α]
 
 @[continuity, fun_prop]
 theorem continuous_kroneckerOneStarAlgHom :
-    Continuous (kroneckerOneStarAlgHom R (m := m) n) :=
-  (continuous_id.matrix_kronecker continuous_const).congr fun A ↦
-    (kroneckerOneStarAlgHom_apply A).symm
+    Continuous (kroneckerOneStarAlgHom R (α := α) (m := m) n) :=
+  (continuous_pi fun _ ↦ continuous_id).matrix_blockDiagonal.congr fun A ↦
+    (kronecker_one A).symm.trans (kroneckerOneStarAlgHom_apply A).symm
 
 @[continuity, fun_prop]
 theorem continuous_oneKroneckerStarAlgHom :
-    Continuous (oneKroneckerStarAlgHom R (m := m) n) :=
-  (continuous_const.matrix_kronecker continuous_id).congr fun B ↦
-    (oneKroneckerStarAlgHom_apply B).symm
+    Continuous (oneKroneckerStarAlgHom R (α := α) (m := m) n) :=
+  ((continuous_pi fun _ ↦ continuous_id).matrix_blockDiagonal.matrix_reindex _ _).congr fun B ↦
+    (one_kronecker B).symm.trans (oneKroneckerStarAlgHom_apply B).symm
 
 end Matrix

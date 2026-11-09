@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.LinearAlgebra.Matrix.Rank.Closed
 public import TauCeti.LinearAlgebra.Projectivization.ZeroLocus
-public import TauCeti.RingTheory.MvPolynomial.Jacobian
+public import TauCeti.RingTheory.MvPolynomial.Jacobian.Basic
 public import TauCeti.Topology.Algebra.MvPolynomial.HomogeneousSubmodule
 public import TauCeti.Topology.Algebra.MvPolynomial.ZeroLocus
 public import TauCeti.Topology.Algebra.Projectivization

@@ -63,6 +63,8 @@ The projections below are sealed instead, and are used through their characteris
 * `TauCeti.Wkp.iteratedGradient`: the highest weak derivative of a positive-order Sobolev function.
 * `TauCeti.Wkp.hasWeakFDerivOn_iteratedGradient`: adjacent recorded derivatives satisfy the weak
   derivative identity.
+* `TauCeti.Wkp.ae_value_add_sum_eq`: almost everywhere, the value of a sum of Sobolev functions is
+  the sum of the almost-everywhere values of the summands.
 
 ## References
 
@@ -261,6 +263,30 @@ theorem value_finsetSum_ae {κ : Type*} (k : ℕ) (s : Finset κ) (u : κ → Wk
   filter_upwards [Lp.coeFn_fun_finsetSum s fun j => value k (u j)] with x hx
   rw [h, hx]
 
+/-- Almost everywhere, the value of `Fe + ∑ᵢⱼ (M₁ᵢⱼ + M₂ᵢⱼ)`, summed over finite sets `s` and `t`,
+is the value of `Fe` plus the sum of the values of the `M₁ᵢⱼ` and `M₂ᵢⱼ`, which are given almost
+everywhere by `c₁` and `c₂`. -/
+theorem ae_value_add_sum_eq {ι κ : Type*} {k : ℕ} (Fe : Wkp mu Omega p k) (s : Finset ι)
+    (t : Finset κ) (M₁ M₂ : ι → κ → Wkp mu Omega p k) {c₁ c₂ : ι → κ → E → ℝ}
+    (h₁ : ∀ᵐ x ∂mu.restrict Omega, ∀ i ∈ s, ∀ j ∈ t, Wkp.value k (M₁ i j) x = c₁ i j x)
+    (h₂ : ∀ᵐ x ∂mu.restrict Omega, ∀ i ∈ s, ∀ j ∈ t, Wkp.value k (M₂ i j) x = c₂ i j x) :
+    ∀ᵐ x ∂mu.restrict Omega,
+      Wkp.value k (Fe + ∑ i ∈ s, ∑ j ∈ t, (M₁ i j + M₂ i j)) x =
+        Wkp.value k Fe x + ∑ i ∈ s, ∑ j ∈ t, (c₁ i j x + c₂ i j x) := by
+  rw [Wkp.value_add]
+  filter_upwards [Lp.coeFn_add (Wkp.value k Fe) _,
+    Wkp.value_finsetSum_ae k s fun i => ∑ j ∈ t, (M₁ i j + M₂ i j),
+    (Filter.eventually_all_finset s).2 fun i _ =>
+      Wkp.value_finsetSum_ae k t fun j => M₁ i j + M₂ i j,
+    (Filter.eventually_all_finset s).2 fun i _ => (Filter.eventually_all_finset t).2 fun j _ =>
+      Lp.coeFn_add (Wkp.value k (M₁ i j)) (Wkp.value k (M₂ i j)), h₁, h₂]
+    with x h₃ h₄ h₅ h₆ h₇ h₈
+  rw [h₃, Pi.add_apply, h₄]
+  refine congrArg _ (Finset.sum_congr rfl fun i hi => ?_)
+  rw [h₅ i hi]
+  refine Finset.sum_congr rfl fun j hj => ?_
+  rw [Wkp.value_add, h₆ i hi j hj, Pi.add_apply, h₇ i hi j hj, h₈ i hi j hj]
+
 /-- At order zero, the value component of a Sobolev function is the function itself. -/
 @[simp]
 theorem value_zero (u : Wkp mu Omega p 0) : value 0 u = u :=
@@ -377,6 +403,15 @@ theorem hasWeakFDerivOn_iteratedGradient (k : ℕ) (u : Wkp mu Omega p (k + 2)) 
   exact WeakDerivStep.hasWeakFDerivOn_base_prev
     (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
 
+/-- On an open subset of the line, the weak gradient of the first-order part of
+`u ∈ W^{2,p}(Ω)` has weak derivative the weak Hessian evaluated in the direction `1`. -/
+theorem hasWeakLineDerivOn_gradient_lowerOrder {mu : Measure ℝ} [mu.IsAddHaarMeasure]
+    {Omega : Opens ℝ} (u : Wkp mu Omega p 2) :
+    HasWeakLineDerivOn mu Omega (W1p.gradient (lowerOrder 1 u))
+      (fun x => iteratedGradient 1 u x 1) 1 := by
+  rw [← iteratedGradient_zero]
+  exact (hasWeakFDerivOn_iteratedGradient 0 u).hasWeakLineDerivOn 1
+
 /-- **A Sobolev function vanishing on an open subset has vanishing highest weak derivative
 there.** If `u ∈ W^{k+1,p}(Ω)` vanishes almost everywhere on an open `V ⊆ Ω`, then its highest
 weak derivative `iteratedGradient k u` vanishes almost everywhere on `V`. The first-order case is
@@ -393,6 +428,24 @@ theorem iteratedGradient_ae_eq_zero_of_value_ae_eq_zero (k : ℕ) (u : Wkp mu Om
       have hzero : HasWeakFDerivOn mu V (iteratedGradient k (lowerOrder (k + 1) u)) 0 :=
         hasWeakFDerivOn_zero.congr_ae (by filter_upwards [hprev] with x hx; exact hx.symm)
       exact ((hasWeakFDerivOn_iteratedGradient k u).mono hV).ae_eq hzero
+
+/-- A variant of `TauCeti.Wkp.iteratedGradient_ae_eq_zero_of_value_ae_eq_zero` for an open set
+`t` that need not lie in `Ω`: if `u ∈ W^{k+1,p}(Ω)` vanishes almost everywhere on `Ω ∩ t`, then
+so does its highest weak derivative `iteratedGradient k u`. Taking `t = sᶜ` for a closed set `s`,
+the weak derivatives of a function vanishing outside `s` vanish outside `s`. -/
+theorem iteratedGradient_ae_eq_zero_of_value_ae_eq_zero_of_isOpen (k : ℕ)
+    (u : Wkp mu Omega p (k + 1)) {t : Set E} (ht : IsOpen t)
+    (hu : ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∈ t → value (k + 1) u x = 0) :
+    ∀ᵐ x ∂mu.restrict (Omega : Set E), x ∈ t → iteratedGradient k u x = 0 := by
+  let V : Opens E := Omega ⊓ ⟨t, ht⟩
+  have hVm : MeasurableSet (V : Set E) := V.isOpen.measurableSet
+  have hval : ∀ᵐ x ∂mu.restrict (V : Set E), value (k + 1) u x = 0 := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset inf_le_left hu, ae_restrict_mem hVm]
+      with x hx hxV using hx hxV.2
+  have hV := (ae_restrict_iff' hVm).1
+    (iteratedGradient_ae_eq_zero_of_value_ae_eq_zero k u inf_le_left hval)
+  filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet, ae_restrict_of_ae hV]
+    with x hxΩ hx hxt using hx ⟨hxΩ, hxt⟩
 
 /-- Two positive-order Sobolev functions are equal when their lower-order components are equal;
 uniqueness of weak derivatives determines the highest components. -/
@@ -449,6 +502,20 @@ theorem norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ (k : ℕ
   rw [lowerOrder_succ, iteratedGradient_succ]
   exact WeakDerivStep.norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq
     (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
+
+/-- The Sobolev norm is bounded by the sum of the preceding component norm and the highest
+weak-derivative norm, for every exponent and positive order. -/
+theorem norm_le_norm_lowerOrder_add_norm_iteratedGradient (k : ℕ)
+    (u : Wkp mu Omega p (k + 1)) :
+    ‖u‖ ≤ ‖lowerOrder k u‖ + ‖iteratedGradient k u‖ := by
+  cases k with
+  | zero =>
+      rw [lowerOrder_zero, iteratedGradient_zero]
+      exact W1p.norm_le_norm_value_add_norm_gradient u
+  | succ k =>
+      have h := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u
+      nlinarith [norm_nonneg u, norm_nonneg (lowerOrder (k + 1) u),
+        norm_nonneg (iteratedGradient (k + 1) u)]
 
 /-- At exponent two, the squared graph norm at every positive order is the sum of the squared
 norm of the lower-order component and the squared norm of the highest weak derivative.  The

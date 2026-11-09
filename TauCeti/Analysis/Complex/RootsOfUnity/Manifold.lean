@@ -5,6 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.RootsOfUnity.Quotient
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Power
+
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Analysis.Complex.RootsOfUnity.Quotient
 
@@ -27,12 +32,15 @@ on which the rotations lift.
 * `TauCeti.rootsOfUnityBall.instChartedSpace`, `TauCeti.rootsOfUnityBall.instIsManifold`: the disc
   is a `C^n` manifold modelled on `ℂ` for every `n`; for `n = ω` it is a complex manifold.
 * `TauCeti.rootsOfUnityBall.contMDiff_val`: the inclusion of the disc into `ℂ` is holomorphic.
+* `TauCeti.rootsOfUnityBall.coe_chartAt_symm`: the inverse of a chart of the disc is the identity
+  of `ℂ` on its target.
 * `TauCeti.rootsOfUnityBall.instContMDiffConstSMul`: the rotations act on the disc by `C^n` maps,
   that is, by biholomorphisms.
 -/
 
 public section
 
+open Set
 open scoped Manifold ContDiff
 
 namespace TauCeti
@@ -71,6 +79,37 @@ instance instContMDiffConstSMul : ContMDiffConstSMul 𝓘(ℂ) n (rootsOfUnity m
 theorem contMDiff_val : ContMDiff 𝓘(ℂ) 𝓘(ℂ) n ((↑) : rootsOfUnityBall m r → ℂ) :=
   contMDiff_subtype_val (U := opens m r)
 
+/-- The charts of the disc are restrictions of the identity chart of `ℂ`: the inverse of a chart
+sends each point of its target to that point of the disc. -/
+theorem coe_chartAt_symm (u : rootsOfUnityBall m r) {w : ℂ} (hw : w ∈ (chartAt ℂ u).target) :
+    ((chartAt ℂ u).symm w : ℂ) = w := by
+  -- The charts of the disc are by definition those of `opens m r`, which
+  -- `TopologicalSpace.Opens.chartAt_eq` identifies with restrictions of the charts of `ℂ`; the
+  -- chart of `ℂ` at `u` is the identity (`chartAt_self_eq`).
+  have h : chartAt ℂ u = (chartAt ℂ (u : ℂ)).subtypeRestr (s := opens m r) ⟨u⟩ :=
+    TopologicalSpace.Opens.chartAt_eq (x := (u : opens m r))
+  rw [h] at hw ⊢
+  exact (chartAt ℂ (u : ℂ)).subtypeRestr_symm_apply ⟨u⟩ hw
+
 end rootsOfUnityBall
+
+/-- The inclusion of the rotated disc into `ℂ` is a local biholomorphism. -/
+theorem isLocalDiffeomorph_coe_rootsOfUnityBall {n : ℕ∞ω} :
+    IsLocalDiffeomorph 𝓘(ℂ) 𝓘(ℂ) n ((↑) : rootsOfUnityBall m r → ℂ) :=
+  isLocalDiffeomorph_subtype_val (U := ⟨_, isOpen_rootsOfUnityBall⟩)
+
+/-- The coordinate `u ↦ u ^ m` of the quotient of the rotated disc is holomorphic. -/
+theorem contMDiff_coe_pow_rootsOfUnityBall {n : ℕ∞ω} :
+    ContMDiff 𝓘(ℂ) 𝓘(ℂ) n fun u : rootsOfUnityBall m r ↦ (u : ℂ) ^ m :=
+  (contDiff_id.pow m).contMDiff.comp isLocalDiffeomorph_coe_rootsOfUnityBall.contMDiff
+
+/-- **The quotient coordinate is a local biholomorphism off the centre.** For `1 ≤ n`, the map
+`u ↦ u ^ m` from the rotated disc to `ℂ` is a `C^n` local diffeomorphism at every point other
+than the centre. -/
+theorem isLocalDiffeomorphAt_coe_pow_rootsOfUnityBall {n : ℕ∞ω} (hn : 1 ≤ n)
+    {u : rootsOfUnityBall m r} (hu : (u : ℂ) ≠ 0) :
+    IsLocalDiffeomorphAt 𝓘(ℂ) 𝓘(ℂ) n (fun u : rootsOfUnityBall m r ↦ (u : ℂ) ^ m) u :=
+  IsLocalDiffeomorphAt.comp (K := 𝓘(ℂ)) (P := ℂ) (isLocalDiffeomorph_coe_rootsOfUnityBall u)
+    (isLocalDiffeomorphAt_pow hn (NeZero.ne m) hu)
 
 end TauCeti
