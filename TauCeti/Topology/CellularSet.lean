@@ -11,7 +11,9 @@ public import Mathlib.Topology.MetricSpace.Bounded
 import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
+import TauCeti.Data.Set.Lattice
 import TauCeti.Topology.Homeomorph.Shrink
+import TauCeti.Topology.MetricSpace.NestedCollapse
 
 /-!
 # Cellular sets and their collapse
@@ -138,80 +140,39 @@ theorem exists_collapse_iInter {θ : ℕ → E → M} (hθ : ∀ i, IsOpenEmbedd
     ∃ g : M → M, Continuous g ∧ Surjective g ∧
       (∀ x y, g x = g y ↔ x = y ∨ x ∈ ⋂ i, K i ∧ y ∈ ⋂ i, K i) ∧ ∀ x ∉ range (θ 0), g x = x := by
   classical
-  set X := ⋂ i, K i
   have hKsucc (i : ℕ) : K (i + 1) ⊆ K i := (hKθ i).trans (hθK i)
   have hKanti : Antitone K := antitone_nat_of_succ_le hKsucc
   have hKne (i : ℕ) : (K i).Nonempty := (range_nonempty (θ i)).mono (hθK i)
   obtain ⟨G, hG0, hGstab, hGimg, hGdiam⟩ := exists_homeomorph_seq hθ hK hKθ hθK
-  -- The images `S k = G k '' K (k + 1)` are nested compact sets with diameters tending to `0`.
-  obtain ⟨S, hS⟩ : ∃ S : ℕ → Set M, ∀ k, S k = G k '' K (k + 1) := ⟨_, fun _ ↦ rfl⟩
-  have hScpt (k : ℕ) : IsCompact (S k) := hS k ▸ (hK _).image (G k).continuous
-  have hSanti (k : ℕ) : S (k + 1) ⊆ S k := by
-    rw [hS, hS, ← hGimg k (k + 1) (by omega)]
-    exact image_mono (hKsucc _)
-  -- The sets `S k` shrink to a single point `q`.
-  obtain ⟨q, hq⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed S hSanti
-    (fun k ↦ hS k ▸ (hKne _).image _) (hScpt 0) fun k ↦ (hScpt k).isClosed
-  have hqS (k : ℕ) : q ∈ S k := mem_iInter.1 hq k
-  have hmemS {k m : ℕ} (hkm : k ≤ m) {x : M} (hx : x ∈ K (k + 1)) : G m x ∈ S k :=
-    hS k ▸ hGimg k m hkm ▸ mem_image_of_mem _ hx
-  have hdistS {k : ℕ} {y : M} (hy : y ∈ S k) : dist y q < 1 / ((k : ℝ) + 1) :=
-    (dist_le_diam_of_mem (hScpt k).isBounded hy (hqS k)).trans_lt (hS k ▸ hGdiam k)
-  -- The collapse: `q` on `X`, and the eventual value of `G` elsewhere.
-  have hex (x : M) (hx : x ∉ X) : ∃ k, x ∉ K (k + 1) := by
-    obtain ⟨i, hi⟩ : ∃ i, x ∉ K i := by simpa [X] using hx
-    exact ⟨i, fun h ↦ hi (hKsucc i h)⟩
-  obtain ⟨g, hgX, hgG'⟩ : ∃ g : M → M, (∀ x ∈ X, g x = q) ∧
-      ∀ x (hx : x ∉ X), g x = G (hex x hx).choose x :=
-    ⟨fun x ↦ if hx : x ∈ X then q else G (hex x hx).choose x, fun x hx ↦ dite_eq_left hx,
-      fun x hx ↦ dite_eq_right hx⟩
-  have hgG (k : ℕ) (x : M) (hx : x ∉ K (k + 1)) : g x = G k x := by
-    have hxX : x ∉ X := fun h ↦ hx (mem_iInter.1 h _)
-    have hj := (hex x hxX).choose_spec
-    rw [hgG' x hxX]
-    rcases le_total (hex x hxX).choose k with hjk | hkj
-    · exact (hGstab _ k hjk x hj).symm
-    · exact hGstab k _ hkj x hx
-  have hgq (x : M) (hx : x ∉ X) : g x ≠ q := by
-    obtain ⟨k, hk⟩ := hex x hx
-    obtain ⟨y, hy, hyq⟩ := hS k ▸ hqS k
+  obtain ⟨q, hqS, hdist⟩ := exists_mem_image_and_dist_lt hK hKsucc hKne
+    (fun k ↦ (G k).continuous) hGimg hGdiam
+  obtain ⟨g, hgX, hgG⟩ := exists_map_eq_of_notMem (G := fun k ↦ ⇑(G k)) hKsucc hGstab q
+  have hgq (x : M) (hx : x ∉ ⋂ i, K i) : g x ≠ q := by
+    obtain ⟨k, hk⟩ := exists_notMem_succ_of_notMem_iInter hKsucc hx
+    obtain ⟨y, hy, hyq⟩ := hqS k
     rw [hgG k x hk]
     intro h
     exact hk ((G k).injective (hyq.trans h.symm) ▸ hy)
-  refine ⟨g, continuous_iff_continuousAt.2 fun x ↦ ?_, fun z ↦ ?_, fun x y ↦ ?_, fun x hx ↦ ?_⟩
-  · by_cases hx : x ∈ X
-    · -- Near a point of `X`, every value of `g` lies in a small set `S k` containing `q`.
-      rw [ContinuousAt, hgX x hx, Metric.tendsto_nhds]
-      intro ε hε
-      obtain ⟨k, hk⟩ := exists_nat_one_div_lt hε
-      have hxθ : x ∈ range (θ (k + 1)) := hKθ (k + 1) (mem_iInter.1 hx (k + 2))
-      filter_upwards [(hθ (k + 1)).isOpen_range.mem_nhds hxθ] with y hy
-      by_cases hyX : y ∈ X
-      · rwa [hgX y hyX, dist_self]
-      obtain ⟨j, hj⟩ := hex y hyX
-      rw [hgG (max j k) y fun h ↦ hj (hKanti (by omega) h)]
-      exact (hdistS (hmemS (le_max_right j k) (hθK (k + 1) hy))).trans hk
-    · -- Away from `X`, `g` agrees with some `G k` on a neighbourhood.
-      obtain ⟨k, hk⟩ := hex x hx
-      exact (G k).continuous.continuousAt.congr (eventually_of_mem
-        ((hK (k + 1)).isClosed.isOpen_compl.mem_nhds hk) fun y hy ↦ (hgG k y hy).symm)
+  refine ⟨g, continuous_of_eq_of_notMem (fun i ↦ (hθ i).isOpen_range) (fun i ↦ (hK i).isClosed)
+    hKθ hθK (fun k ↦ (G k).continuous) hdist hgX hgG, fun z ↦ ?_, fun x y ↦ ?_,
+    fun x hx ↦ ?_⟩
   · rcases eq_or_ne z q with rfl | hzq
     · obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed K
         hKsucc hKne (hK 0) fun i ↦ (hK i).isClosed
       exact ⟨x, hgX x hx⟩
     obtain ⟨k, hk⟩ := exists_nat_one_div_lt (dist_pos.2 hzq)
     have hzK : (G k).symm z ∉ K (k + 1) := fun h ↦ by
-      have := hdistS (hmemS le_rfl h)
+      have := hdist k k le_rfl _ h
       rw [Homeomorph.apply_symm_apply] at this
       linarith
     exact ⟨(G k).symm z, by rw [hgG k _ hzK, Homeomorph.apply_symm_apply]⟩
   · refine ⟨fun h ↦ ?_, ?_⟩
-    · by_cases hx : x ∈ X <;> by_cases hy : y ∈ X
+    · by_cases hx : x ∈ ⋂ i, K i <;> by_cases hy : y ∈ ⋂ i, K i
       · exact .inr ⟨hx, hy⟩
       · exact (hgq y hy (h.symm.trans (hgX x hx))).elim
       · exact (hgq x hx (h.trans (hgX y hy))).elim
-      · obtain ⟨j, hj⟩ := hex x hx
-        obtain ⟨k, hk⟩ := hex y hy
+      · obtain ⟨j, hj⟩ := exists_notMem_succ_of_notMem_iInter hKsucc hx
+        obtain ⟨k, hk⟩ := exists_notMem_succ_of_notMem_iInter hKsucc hy
         have hxm : x ∉ K (max j k + 1) := fun h ↦ hj (hKanti (by omega) h)
         have hym : y ∉ K (max j k + 1) := fun h ↦ hk (hKanti (by omega) h)
         exact .inl ((G _).injective (by rwa [← hgG _ x hxm, ← hgG _ y hym]))
