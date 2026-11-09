@@ -59,63 +59,80 @@ private def negativeMatrix (i : Fin 4) : Matrix (Fin 26) (Fin 26) ℤ :=
     (if a = loweringTarget i b then loweringCoeff i b else 0) +
     (if a = loweringDividedSquareTarget i b then loweringDividedSquareCoeff i b else 0)
 
+/-! ### Row-by-row certificates
+
+The integral certificates are checked one row at a time. Multiplying a row vector by any of
+these sparse matrices reads at most three of its coordinates, so the kernel never evaluates a
+twenty-six-term matrix-product sum; zero coefficients are tested first, so that the kernel
+skips the coordinates they would multiply. -/
+
+private theorem vecMul_positiveMatrix (v : Fin 26 → ℤ) (i : Fin 4) :
+    v ᵥ* positiveMatrix i = fun b ↦ v b +
+      (if raisingCoeff i b = 0 then 0 else v (raisingTarget i b) * raisingCoeff i b) +
+      (if raisingDividedSquareCoeff i b = 0 then 0 else
+        v (raisingDividedSquareTarget i b) * raisingDividedSquareCoeff i b) := by
+  ext b
+  simp only [Matrix.vecMul, dotProduct, positiveMatrix, Matrix.of_apply, mul_add, mul_ite,
+    mul_one, mul_zero, Finset.sum_add_distrib, Fintype.sum_ite_eq']
+  split_ifs <;> simp [*]
+
+private theorem vecMul_negativeMatrix (v : Fin 26 → ℤ) (i : Fin 4) :
+    v ᵥ* negativeMatrix i = fun b ↦ v b -
+      (if loweringCoeff i b = 0 then 0 else v (loweringTarget i b) * loweringCoeff i b) +
+      (if loweringDividedSquareCoeff i b = 0 then 0 else
+        v (loweringDividedSquareTarget i b) * loweringDividedSquareCoeff i b) := by
+  ext b
+  simp only [Matrix.vecMul, dotProduct, negativeMatrix, Matrix.of_apply, mul_add, mul_sub,
+    mul_ite, mul_one, mul_zero, Finset.sum_add_distrib, Finset.sum_sub_distrib,
+    Fintype.sum_ite_eq']
+  split_ifs <;> simp [*]
+
+private theorem vecMul_weylMatrix (v : Fin 26 → ℤ) (i : Fin 4) :
+    v ᵥ* weylMatrix i = fun b ↦ v (weylTarget i b) * weylCoeff i b +
+      if i = 2 ∧ b = 13 then v 13 else if i = 3 ∧ b = 12 then -v 13 else 0 := by
+  ext b
+  simp only [Matrix.vecMul, dotProduct, weylMatrix, Matrix.of_apply, mul_add, mul_ite,
+    mul_one, mul_zero, mul_neg, Finset.sum_add_distrib, Fintype.sum_ite_eq']
+  congr 1
+  rw [Finset.sum_eq_single 13 (fun a _ ha ↦ by simp [ha]) (by simp)]
+  simp
+
+private theorem vecMul_list_prod_weylMatrix (l : List (Fin 4)) (v : Fin 26 → ℤ) :
+    v ᵥ* (l.map weylMatrix).prod = l.foldl (fun w i ↦ w ᵥ* weylMatrix i) v := by
+  induction l generalizing v with
+  | nil => simp
+  | cons i l ih =>
+    rw [List.map_cons, List.prod_cons, ← Matrix.vecMul_vecMul, ih, List.foldl_cons]
+
 private theorem weylMatrix_certificate : ∀ i : Fin 4,
     positiveMatrix i * negativeMatrix i * positiveMatrix i = weylMatrix i := by
-  -- Bound the kernel's reduction cache by checking one node at a time.
   intro i
+  refine Matrix.ext_row fun a ↦ ?_
+  rw [← Matrix.single_one_vecMul, ← Matrix.single_one_vecMul, ← Matrix.vecMul_vecMul,
+    ← Matrix.vecMul_vecMul]
+  simp only [vecMul_positiveMatrix, vecMul_negativeMatrix, vecMul_weylMatrix]
+  revert a
   fin_cases i <;> decide +kernel
 
--- Separate kernel checks bound memory usage without exceeding elaboration heartbeats.
-private theorem braid_certificate_01 :
-    ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 0 1).map weylMatrix).prod =
-      ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 1 0).map weylMatrix).prod := by
-  decide +kernel
-
-private theorem braid_certificate_02 :
-    ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 0 2).map weylMatrix).prod =
-      ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 2 0).map weylMatrix).prod := by
-  decide +kernel
-
-private theorem braid_certificate_03 :
-    ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 0 3).map weylMatrix).prod =
-      ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 3 0).map weylMatrix).prod := by
-  decide +kernel
-
-private theorem braid_certificate_12 :
-    ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 1 2).map weylMatrix).prod =
-      ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 2 1).map weylMatrix).prod := by
-  decide +kernel
-
-private theorem braid_certificate_13 :
-    ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 1 3).map weylMatrix).prod =
-      ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 3 1).map weylMatrix).prod := by
-  decide +kernel
-
-private theorem braid_certificate_23 :
-    ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 2 3).map weylMatrix).prod =
-      ((CoxeterSystem.braidWord CoxeterMatrix.F₄ 3 2).map weylMatrix).prod := by
-  decide +kernel
-
-private theorem braid_certificate (i j : Fin 4) :
+private theorem braid_certificate_of_lt : ∀ i j : Fin 4, i < j →
     ((CoxeterSystem.braidWord CoxeterMatrix.F₄ i j).map weylMatrix).prod =
       ((CoxeterSystem.braidWord CoxeterMatrix.F₄ j i).map weylMatrix).prod := by
-  fin_cases i <;> fin_cases j
+  intro i j hij
+  refine Matrix.ext_row fun a ↦ ?_
+  rw [← Matrix.single_one_vecMul, ← Matrix.single_one_vecMul, vecMul_list_prod_weylMatrix,
+    vecMul_list_prod_weylMatrix]
+  simp only [vecMul_weylMatrix]
+  revert hij a
+  fin_cases i <;> fin_cases j <;> decide +kernel
+
+private theorem braid_certificate : ∀ i j : Fin 4,
+    ((CoxeterSystem.braidWord CoxeterMatrix.F₄ i j).map weylMatrix).prod =
+      ((CoxeterSystem.braidWord CoxeterMatrix.F₄ j i).map weylMatrix).prod := by
+  intro i j
+  rcases lt_trichotomy i j with h | rfl | h
+  · exact braid_certificate_of_lt i j h
   · rfl
-  · exact braid_certificate_01
-  · exact braid_certificate_02
-  · exact braid_certificate_03
-  · exact braid_certificate_01.symm
-  · rfl
-  · exact braid_certificate_12
-  · exact braid_certificate_13
-  · exact braid_certificate_02.symm
-  · exact braid_certificate_12.symm
-  · rfl
-  · exact braid_certificate_23
-  · exact braid_certificate_03.symm
-  · exact braid_certificate_13.symm
-  · exact braid_certificate_23.symm
-  · rfl
+  · exact (braid_certificate_of_lt j i h).symm
 
 private theorem coe_simpleWeylPoint_int (i : Fin 4) :
     ((simpleWeylPoint i ℤ : Matrix.GeneralLinearGroup (Fin 26) ℤ) :

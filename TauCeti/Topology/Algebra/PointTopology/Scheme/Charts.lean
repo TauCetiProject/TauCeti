@@ -74,7 +74,7 @@ private theorem exists_overlap_factorization [IsLocalRing R]
     rw [Category.assoc, hj, ← Spec.map_comp]
     congr 1
   have : (ℓ ≫ j).IsOver (Spec (.of k)) := ⟨hbase⟩
-  obtain ⟨ψ, hψ⟩ := AlgebraicGeometry.exists_spec_map_comp_eq_of_range_subset
+  obtain ⟨ψ, hψ, -⟩ := AlgebraicGeometry.existsUnique_spec_map_comp_eq_of_range_subset
     (R := k) i (ℓ ≫ j) hrange
   refine ⟨b, ψ, ?_, hψ⟩
   exact IsLocalRing.notMem_maximalIdeal.mp <| (PrimeSpectrum.mem_basicOpen b q).1 hb

@@ -97,6 +97,23 @@ lemma renewalExcess_pos {ω : Ω} (hω : Tendsto (fun n ↦ arrival T n ω) atTo
     0 < renewalExcess T t ω :=
   tsub_pos_of_lt (lt_arrival_renewalCountNat_succ hω t)
 
+/-- On a nonexplosive path, specifying the count and a lower bound for the excess is
+equivalent to locating two consecutive arrivals around the corresponding time window. -/
+lemma renewalCountNat_eq_and_lt_renewalExcess_iff {ω : Ω}
+    (hω : Tendsto (fun n ↦ arrival T n ω) atTop atTop) {n : ℕ} {t x : ℝ≥0} :
+    (renewalCountNat T t ω = n ∧ x < renewalExcess T t ω) ↔
+      arrival T n ω ≤ t ∧ t + x < arrival T (n + 1) ω := by
+  constructor
+  · rintro ⟨hN, hx⟩
+    refine ⟨by simpa [hN] using arrival_renewalCountNat_le hω t, ?_⟩
+    rw [← hN, ← add_renewalExcess hω t]
+    gcongr
+  · rintro ⟨hs, hx⟩
+    have hN := (renewalCountNat_eq_iff hω).2 ⟨hs, le_self_add.trans_lt hx⟩
+    refine ⟨hN, ?_⟩
+    rw [renewalExcess_def, hN]
+    exact lt_tsub_iff_left.2 hx
+
 /-- On a nonexplosive path, the excess at `t` exceeds `x` exactly when some arrival
 `arrival T n` is at most `t` while the next one is after `t + x`. That index `n` is then the
 count at `t`. -/
@@ -104,15 +121,10 @@ lemma lt_renewalExcess_iff {ω : Ω} (hω : Tendsto (fun n ↦ arrival T n ω) a
     {t x : ℝ≥0} :
     x < renewalExcess T t ω ↔ ∃ n, arrival T n ω ≤ t ∧ t + x < arrival T (n + 1) ω := by
   constructor
-  · intro h
-    refine ⟨renewalCountNat T t ω, arrival_renewalCountNat_le hω t, ?_⟩
-    rw [← add_renewalExcess hω t]
-    gcongr
-  · rintro ⟨n, hn, hx⟩
-    have hN : renewalCountNat T t ω = n :=
-      (renewalCountNat_eq_iff hω).2 ⟨hn, le_self_add.trans_lt hx⟩
-    rw [renewalExcess_def, hN]
-    exact lt_tsub_iff_left.2 hx
+  · intro hx
+    exact ⟨renewalCountNat T t ω, (renewalCountNat_eq_and_lt_renewalExcess_iff hω).1 ⟨rfl, hx⟩⟩
+  · rintro ⟨n, hn⟩
+    exact ((renewalCountNat_eq_and_lt_renewalExcess_iff hω).2 hn).2
 
 variable (T) in
 /-- The events `{arrival T n ≤ t, t + x < arrival T (n + 1)}` are pairwise disjoint, on every
