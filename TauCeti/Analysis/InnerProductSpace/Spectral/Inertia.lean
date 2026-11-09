@@ -19,9 +19,9 @@ the orthogonal complement of the negative spectral subspace, and negative semide
 subspaces are complementary. Over `ℝ`, the dimensions of these subspaces are the indices of
 inertia of the form (`LinearMap.IsSymmetric.sigNeg_eq_finrank_pointSpectralSubspace` and
 `LinearMap.IsSymmetric.sigPos_eq_finrank_pointSpectralSubspace` in
-`TauCeti.Analysis.InnerProductSpace.Symmetric.Signature`). For the Riesz operator `B♯` of a real bilinear form `B`, with
-`⟪B♯ u, v⟫ = B u v`, the form `B` itself is negative definite on the negative spectral subspace
-of `B♯` and positive definite on the positive one.
+`TauCeti.Analysis.InnerProductSpace.Symmetric.Signature`). For the Riesz operator `B♯` of a real
+bilinear form `B`, with `⟪B♯ u, v⟫ = B u v`, the form `B` itself is negative definite on the
+negative spectral subspace of `B♯` and positive definite on the positive one.
 
 Together with the smooth dependence of the spectral projections on an invertible self-adjoint
 operator (`TauCeti.Analysis.InnerProductSpace.Spectral.Projection`), this splits a smooth family of
