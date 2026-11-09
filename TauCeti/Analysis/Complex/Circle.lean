@@ -37,6 +37,8 @@ and records that the coordinate function `z ↦ z` is a unitary element of `C(S�
   identity for a point of `sphere (0 : ℂ) 1`.
 * `Circle.differentiableAt_coe_inv`: the pointwise inverse of a differentiable circle-valued map
   is differentiable.
+* `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
+  complex exponentials on the circle.
 -/
 
 public section
@@ -44,6 +46,7 @@ public section
 noncomputable section
 
 open Metric
+open scoped ComplexConjugate
 
 namespace Circle
 
@@ -82,6 +85,50 @@ theorem differentiableAt_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace
     DifferentiableAt ℝ (fun w ↦ ((u⁻¹ w : Circle) : ℂ)) z := by
   simpa only [Pi.inv_apply, coe_inv_eq_conj, Function.comp_def, Complex.conjCLE_apply] using
     Complex.conjCLE.differentiableAt.comp z hu
+
+/-- Raising `exp (π * I / d)` to a nonzero natural power `d` gives `-1`. -/
+theorem exp_pow_eq_neg_one (d : ℕ) (hd : d ≠ 0) :
+    (Circle.exp (Real.pi / d) : ℂ) ^ d = -1 := by
+  rw [Circle.coe_exp, ← Complex.exp_nat_mul]
+  have hmul : (d : ℂ) * (↑(Real.pi / d) * Complex.I) = Real.pi * Complex.I := by
+    push_cast
+    field_simp
+  rw [hmul, Complex.exp_pi_mul_I]
+
+/-- For distinct natural powers, rotation by `exp (π * I / |p - q|)` negates their mixed
+  power. -/
+theorem mixed_power_rotation_factor {p q : ℕ} (hpq : p ≠ q) :
+    (Circle.exp (Real.pi / (if p < q then q - p else p - q)) : ℂ) ^ p *
+      conj (Circle.exp (Real.pi / (if p < q then q - p else p - q)) : ℂ) ^ q = -1 := by
+  let d := if p < q then q - p else p - q
+  have hd : d ≠ 0 := by
+    dsimp [d]
+    split_ifs with h
+    · exact Nat.sub_ne_zero_of_lt h
+    · exact Nat.sub_ne_zero_of_lt (lt_of_le_of_ne (le_of_not_gt h) (Ne.symm hpq))
+  have hcases : p < q ∨ q < p := lt_or_gt_of_ne hpq
+  let u : Circle := Circle.exp (Real.pi / d)
+  have huk : (u : ℂ) ^ d = -1 := by
+    simpa [u] using exp_pow_eq_neg_one d hd
+  have hconj : conj (u : ℂ) = (u : ℂ)⁻¹ := (Circle.coe_inv_eq_conj u).symm
+  have hfactor : (u : ℂ) ^ p * conj (u : ℂ) ^ q = -1 := by
+    rcases hcases with hpq' | hqp'
+    · have hq : q = p + d := by
+        simpa [d, hpq', Nat.add_comm] using (Nat.sub_add_cancel (Nat.le_of_lt hpq')).symm
+      rw [hconj, hq, pow_add, inv_pow, inv_pow]
+      calc
+        (u : ℂ) ^ p * (((u : ℂ) ^ p)⁻¹ * ((u : ℂ) ^ d)⁻¹) =
+            ((u : ℂ) ^ p * ((u : ℂ) ^ p)⁻¹) * ((u : ℂ) ^ d)⁻¹ := by rw [← mul_assoc]
+        _ = ((u : ℂ) ^ d)⁻¹ := by field_simp
+        _ = -1 := by rw [huk]; norm_num
+    · have hp : p = q + d := by
+        simpa [d, not_lt_of_ge (le_of_lt hqp'), Nat.add_comm] using
+          (Nat.sub_add_cancel (Nat.le_of_lt hqp')).symm
+      rw [hconj, hp, pow_add, inv_pow]
+      calc
+        ((u : ℂ) ^ q * (u : ℂ) ^ d) * ((u : ℂ) ^ q)⁻¹ = (u : ℂ) ^ d := by field_simp
+        _ = -1 := huk
+  simpa only [u, d] using hfactor
 
 /-- The map `t ↦ exp (i t)` from the real line to the circle, as a continuous homomorphism
 from `Multiplicative ℝ`. -/

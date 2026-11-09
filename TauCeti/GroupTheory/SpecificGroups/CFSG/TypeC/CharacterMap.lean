@@ -48,12 +48,8 @@ Steinberg map on the type-C fundamental-weight torus. The diagram factor is triv
 untwisted family. -/
 theorem isCharacterMap_steinberg :
     IsCharacterMap d.weightTorus d.steinberg d.1.datumSteinberg.weightMap := by
-  have hdatum : d.1.datumSteinberg = d.1.datumFrobenius :=
-    (d.1.datumSteinberg_eq_datumFrobenius_iff_of_not_usesHalfFrobenius
-      d.toGraphTwistedIndex.2).mpr d.diagramPerm_eq_one
-  rw [hdatum, ValidLieTypeIndex.datumFrobenius_weightMap, isCharacterMap_iff]
-  intro s
-  simpa only [torusPointMap_nsmul, torusPointMap_id, MonoidHom.pow_apply,
-    MonoidHom.id_apply] using d.steinberg_weightTorus s
+  rw [d.1.datumSteinberg_weightMap_of_diagramPerm_eq_one
+    d.toGraphTwistedIndex.2 d.diagramPerm_eq_one]
+  exact IsCharacterMap.of_map_eq_pow d.steinberg_weightTorus
 
 end TauCeti.TypeCLieIndex
