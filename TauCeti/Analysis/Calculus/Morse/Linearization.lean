@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import TauCeti.Analysis.Calculus.IteratedGradient
 public import TauCeti.Analysis.Calculus.Morse.Basic
@@ -46,6 +47,8 @@ results that identify the operator as the derivative of the gradient and prove s
 * `TauCeti.hessianOperator_eq_continuousLinearMapOfBilin`: its Riesz formula.
 * `OrthonormalBasis.toMatrix_hessianOperator_apply` and `OrthonormalBasis.det_hessianOperator`:
   its entries and its determinant in an orthonormal basis.
+* `TauCeti.hessianOperator_single_apply`: for a `C²` function on `ℝⁿ`, its entries in the
+  standard basis are the second partial derivatives.
 * `ContDiffAt.contDiffAt_hessianOperator`: pointwise regularity of the Hessian field.
 * `ContDiffAt.fderiv_hessianOperator_apply`: its directional derivative is the Hessian of the
   directional derivative of the function.
@@ -144,6 +147,15 @@ theorem _root_.OrthonormalBasis.det_hessianOperator {ι : Type*} [Fintype ι] [D
   congr 1
   ext i j
   exact b.toMatrix_hessianOperator_apply f x i j
+
+/-- In the standard basis of `ℝⁿ`, the entries `(D²u(y) eⱼ)ᵢ` of the Hessian operator of a function
+`C²` at `y` are the second partial derivatives `∂ᵢ∂ⱼu(y)`. -/
+theorem hessianOperator_single_apply {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {u : EuclideanSpace ℝ ι → ℝ} {y : EuclideanSpace ℝ ι} (hu : ContDiffAt ℝ 2 u y) (i j : ι) :
+    hessianOperator u y (EuclideanSpace.single j 1) i =
+      fderiv ℝ (fderiv ℝ u) y (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
+  rw [← hu.isSymmSndFDerivAt (by simp), ← inner_hessianOperator_left]
+  simp [EuclideanSpace.inner_single_right]
 
 /-- Applying the Riesz map to the Hessian operator recovers the dual-valued second derivative. -/
 @[simp]

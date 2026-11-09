@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.InnerProductSpace.Spectrum
 import TauCeti.Analysis.Matrix.PosSemidef.Determinant
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
 # The Aleksandrov–Bakelman–Pucci maximum principle
@@ -98,14 +99,6 @@ theorem sum_mul_fderiv_fderiv_nonpos_of_mem_upperContactSet (hΩ : IsOpen Ω)
   sum_mul_fderiv_fderiv_nonpos hA (hu.contDiffAt (hΩ.mem_nhds (upperContactSet_subset hy)))
     (fderiv_fderiv_self_nonpos_of_mem_upperContactSet hΩ hu hy)
 
-/-- In the standard basis of `ℝⁿ`, the entries `(D²u(y) eⱼ)ᵢ` of the Hessian operator of a function
-`C²` at `y` are the second partial derivatives `∂ᵢ∂ⱼu(y)`. -/
-private theorem hessianOperator_single_apply (hu : ContDiffAt ℝ 2 u y) (i j : ι) :
-    hessianOperator u y (EuclideanSpace.single j 1) i =
-      fderiv ℝ (fderiv ℝ u) y (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
-  rw [← hu.isSymmSndFDerivAt (by simp), ← inner_hessianOperator_left]
-  simp [EuclideanSpace.inner_single_right]
-
 /-- **The pointwise bound by the elliptic operator.** If `-T` is a positive operator on `ℝⁿ`, `A`
 is positive definite and `c ≤ ∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ`, then `|det T| ≤ (c⁻ / n)ⁿ / det A`. Applied to the
 Hessian `T = D²u` on the upper contact set, with `c = f`, it bounds the integrand of the
@@ -177,9 +170,7 @@ theorem setLIntegral_negPart_div_det_eq_mul_eLpNorm_pow [Nonempty ι]
   set n := Fintype.card ι
   set g := fun y => (f y)⁻ / (a y).det ^ (n : ℝ)⁻¹
   have hn : n ≠ 0 := Fintype.card_ne_zero
-  have h := eLpNorm_nnreal_pow_eq_lintegral (p := (n : NNReal)) (Nat.cast_ne_zero.2 hn) hg
-  simp only [ENNReal.coe_natCast, NNReal.coe_natCast, ENNReal.rpow_natCast] at h
-  rw [h, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  rw [← lintegral_enorm_pow_eq_eLpNorm_pow hn hg, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
   refine lintegral_congr_ae (ha.mono fun y hy => ?_)
   have hdet := hy.det_pos
   have hgy : 0 ≤ g y := div_nonneg (negPart_nonneg _) (Real.rpow_nonneg hdet.le _)

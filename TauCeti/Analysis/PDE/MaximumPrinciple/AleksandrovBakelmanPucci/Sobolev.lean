@@ -40,6 +40,15 @@ contact set of `ū` and `D²u ≤ 0` means that `-D²u` is a positive operator. 
 coefficients beyond positive definiteness on the contact set; in particular no bound on
 `a / D*` is needed.
 
+Gilbarg–Trudinger, Theorem 9.1, states the estimate under the weaker hypothesis
+`u ∈ W^{2,n}_loc(Ω) ∩ C⁰(closure Ω)`. That local form remains open here. It does not follow by
+applying the results of this file on interior subsets of `Ω`, because the contact set of `ū`
+relative to a subset need not lie in its contact set relative to `Ω`. The proof below uses
+`u ∈ W^{2,n}(Ω)` in one place only: the common integrable majorant of `|det D²vₖ|` on all of `Ω`.
+A proof of the local form could keep supporting slopes of norm below `(1 - ε) (ū x - m) / diam Ω`;
+their contact points lie in `{y ∈ closure Ω | m + ε (ū x - m) ≤ ū y}`, a compact subset of `Ω`
+on which `W^{2,n}_loc` gives the majorant.
+
 ## The approximation
 
 Mollify `u` at radius `δₖ / 2` and restrict to the interior sets `Uₖ = {δₖ < dist(·, Ωᶜ)}`, with
