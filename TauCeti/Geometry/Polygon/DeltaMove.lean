@@ -440,7 +440,7 @@ theorem isDeltaMove_of_chart {m : ℕ} {q : Polygon P m} {j : Fin m} {w : P}
     funext k
     fin_cases k <;> rfl
   refine ⟨hind', fun k hk => ?_⟩
-  rw [Affine.Triangle.closedInterior_eq_image_convexHull _ hφ (x := x) (y := y) (z := z)
+  rw [Affine.Triangle.closedInterior_eq_image_convexHull _ (x := x) (y := y) (z := z)
     (by rw [← hx, ← hy, ← hz]), hx, hy, ← image_pair]
   exact hedge k hk
 
@@ -452,7 +452,6 @@ theorem IsDeltaMove.closedInterior_eq_image (h : poly.IsDeltaMove R i c) :
     h.triangle.closedInterior = TauCeti.triangleChart R (poly i) (poly (finRotate n i)) c ''
       convexHull R {((0 : R), (0 : R)), (1, 0), (0, 1)} :=
   Affine.Triangle.closedInterior_eq_image_convexHull _
-    (TauCeti.triangleChart_injective h.affineIndependent)
     (by rw [IsDeltaMove.triangle_points, TauCeti.triangleChart_apply_zero_zero,
       TauCeti.triangleChart_apply_one_zero, TauCeti.triangleChart_apply_zero_one])
 

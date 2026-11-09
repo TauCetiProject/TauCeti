@@ -105,7 +105,7 @@ private theorem eventually_lt_frobeniusPsi_div_of_lt_crossingConstant
         frobeniusPsi_asymptotic_of_isCyclotomicExtension _ M q
           (e.symm (σ, τ)).toFixedFieldAlgEquiv
     rw [Nat.card_coe_set_eq, ConjClasses.ncard_carrier_mk_of_mem_center
-      (Subgroup.mem_center_iff.mpr fun ρ ↦ hcomm ρ _), hcard, Nat.cast_one, Nat.cast_mul] at h
+      (Submonoid.mem_center_iff.mpr fun ρ ↦ hcomm ρ _), hcard, Nat.cast_one, Nat.cast_mul] at h
     exact (isLittleO_sub_mul_iff_tendsto_div (eventually_ne_atTop 0)).mp h
   -- Summed over the tags, the limits add up to the crossing constant.
   have hsum : Tendsto (fun x ↦ ∑ τ ∈ taggedElements f,

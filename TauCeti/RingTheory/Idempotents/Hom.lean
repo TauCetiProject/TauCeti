@@ -44,6 +44,8 @@ distinguished family of idempotents, since the corner inherits the grading of `A
 * `TauCeti.spanSingletonHomEquivCorner`: **the dictionary `Hom_A(Ae, Af) ≃ₗ[k] eAf`.**
 * `TauCeti.coe_apply_eq_mul_apply_generator`: a homomorphism out of `Ae` is right multiplication
   by its value at `e`.
+* `IsIdempotentElem.endSpanSingletonRingEquiv`: the endomorphism ring of `Ae` is the opposite of
+  the corner `eAe`, as rings.
 
 ## References
 
@@ -174,3 +176,44 @@ theorem coe_spanSingletonHomEquivCorner_symm_apply (he : IsIdempotentElem e)
   (rfl)
 
 end TauCeti
+
+namespace IsIdempotentElem
+
+open TauCeti MulOpposite
+
+variable {A : Type*} [Ring A] {e : A}
+
+/-- **The endomorphism ring of `Ae` is the opposite of the corner `eAe`**: evaluation at the
+generator `e` (`TauCeti.spanSingletonHomEquivCorner`) is multiplicative up to order, since an
+endomorphism is right multiplication by its value at `e`. -/
+noncomputable def endSpanSingletonRingEquiv (he : IsIdempotentElem e) :
+    (Module.End A (Ideal.span {e} : Ideal A))ᵐᵒᵖ ≃+* he.Corner where
+  toFun φ := (he.cornerLinearEquivCornerSubmodule (R := ℕ)).symm
+    (spanSingletonHomEquivCorner (k := ℕ) he (unop φ))
+  invFun c := op ((spanSingletonHomEquivCorner (k := ℕ) he).symm
+    (he.cornerLinearEquivCornerSubmodule (R := ℕ) c))
+  left_inv φ := by simp
+  right_inv c := by simp
+  map_mul' φ ψ := Subtype.ext <| by
+    simpa using coe_apply_eq_mul_apply_generator he (unop ψ) (unop φ (spanSingletonGenerator e))
+  map_add' φ ψ := Subtype.ext <| by simp
+
+@[simp]
+theorem val_endSpanSingletonRingEquiv_apply (he : IsIdempotentElem e)
+    (φ : (Module.End A (Ideal.span {e} : Ideal A))ᵐᵒᵖ) :
+    (he.endSpanSingletonRingEquiv φ).1 = (unop φ (spanSingletonGenerator e) : A) := by
+  -- Unfold the definition to the two dictionary equivalences, which have `simp` lemmas.
+  change ((he.cornerLinearEquivCornerSubmodule (R := ℕ)).symm
+    (spanSingletonHomEquivCorner (k := ℕ) he (unop φ))).1 = _
+  simp
+
+@[simp]
+theorem coe_unop_endSpanSingletonRingEquiv_symm_apply (he : IsIdempotentElem e) (c : he.Corner)
+    (y : (Ideal.span {e} : Ideal A)) :
+    (unop (he.endSpanSingletonRingEquiv.symm c) y : A) = (y : A) * c.1 := by
+  -- Unfold the definition to the two dictionary equivalences, which have `simp` lemmas.
+  change ((spanSingletonHomEquivCorner (k := ℕ) he).symm
+    (he.cornerLinearEquivCornerSubmodule (R := ℕ) c) y : A) = _
+  simp
+
+end IsIdempotentElem

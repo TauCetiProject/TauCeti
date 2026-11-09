@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Converse
+import TauCeti.Algebra.Field.LinearFractional
 import TauCeti.Analysis.Complex.Conformal.PreSchwarzian
 import TauCeti.Analysis.Complex.UpperHalfPlane.Affine
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
@@ -86,25 +87,12 @@ theorem logDeriv_deriv_schwarzChristoffelPrimitive_const_sub_inv
     simpa using logDeriv_zpow z (-2)
   rw [hlog, hdφ, logDeriv_deriv_schwarzChristoffelPrimitive _ _ _ hφz] at hchain
   simp only [Fintype.sum_option, Option.elim'_none, Option.elim'_some] at hchain ⊢
-  have hfraction (i : ι) :
-      (e i : ℂ) / ((p : ℂ) - z⁻¹ - (a i : ℂ)) / z ^ 2 =
-        (e i : ℂ) / (z - (-(a i - p)⁻¹ : ℝ)) - (e i : ℂ) / z := by
-    have hgap : (a i : ℂ) - (p : ℂ) ≠ 0 := by exact_mod_cast sub_ne_zero.mpr (ha i)
-    have hden : (p : ℂ) - z⁻¹ - (a i : ℂ) ≠ 0 :=
-      sub_ne_zero.mpr (UpperHalfPlane.ne_ofReal ⟨_, hφz⟩ _)
-    have hleft : -1 + (p : ℂ) * z - z * (a i : ℂ) ≠ 0 := by
-      convert mul_ne_zero hden hz0 using 1
-      field_simp
-      ring
-    have hright : 1 - (p : ℂ) * z + z * (a i : ℂ) ≠ 0 := by
-      intro h
-      apply hleft
-      linear_combination -h
+  have hfraction (i : ι) : (e i : ℂ) / ((p : ℂ) - z⁻¹ - a i) / z ^ 2 =
+      (e i : ℂ) / (z - (-(a i - p)⁻¹ : ℝ)) - (e i : ℂ) / z := by
+    have hap : (a i : ℂ) ≠ p := by exact_mod_cast ha i
     push_cast
-    field_simp
-    ring_nf at hleft hright ⊢
-    field_simp
-    ring
+    exact div_sub_inv_sub_div_sq_eq_div_sub_sub_div (e i : ℂ) hap hz0
+      (sub_ne_zero.mpr (UpperHalfPlane.ne_ofReal ⟨_, hφz⟩ _))
   have hsum := Finset.sum_congr (s₁ := univ) (s₂ := univ) rfl (fun i _ => hfraction i)
   rw [← Finset.sum_div, Finset.sum_sub_distrib, ← Finset.sum_div] at hsum
   have hpterm : (t : ℂ) / ((p : ℂ) - z⁻¹ - p) / z ^ 2 = -(t : ℂ) / z := by

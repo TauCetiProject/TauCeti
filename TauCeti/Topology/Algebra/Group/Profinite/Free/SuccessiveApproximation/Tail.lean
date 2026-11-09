@@ -82,6 +82,143 @@ universe u
 
 variable {p : ℕ} [Fact p.Prime] {X : Type u} [Finite X] [LinearOrder X]
 
+omit [Finite X] [LinearOrder X] in
+/-- **Tail corrections.** For coefficients `c_i` vanishing outside a duplicate-free list `l`, there
+are corrections `u_i` (one may take the powers `x_i^{p^n c_i}`) in the cyclic subgroups
+`Subgroup.closure {x_i}` and in `λ_n(F)`, such that the class in `gr_n(F)` of the product
+`∏_{i ∈ l} u_i` is `Σ_i c_i π^n ξ_i`. -/
+private theorem exists_prod_gradedMk_eq_sum [Fintype X] (c : X → ZMod p) {l : List X}
+    (hnd : l.Nodup) (hc : ∀ i, c i ≠ 0 → i ∈ l) (n : ℕ) :
+    ∃ u : X → freeProP p X, (∀ i, u i ∈ pLowerCentralSeries p (freeProP p X) n) ∧
+      (∀ i, u i ∈ Subgroup.closure {of i}) ∧
+        ∃ hU : (l.map u).prod ∈ pLowerCentralSeries p (freeProP p X) n,
+          gradedMk p (freeProP p X) n ⟨(l.map u).prod, hU⟩ =
+            ∑ i, c i • gradedPowIter p (freeProP p X) n (gradedMkZero p (freeProP p X) (of i)) := by
+  classical
+  let g : X → gradedPiece p (freeProP p X) n := fun i ↦
+    gradedPowIter p (freeProP p X) n (gradedMkZero p (freeProP p X) (of i))
+  have hpow (i : X) : of i ^ p ^ n ∈ pLowerCentralSeries p (freeProP p X) n := by
+    simpa using pow_pow_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero p (of i)) n
+  -- The tail correction `u_i = x_i^{p^n c_i}`, an element of `λ_n` with class `c_i π^n ξ_i`.
+  let u : X → freeProP p X := fun i ↦ of i ^ (p ^ n * (c i).val)
+  have hu : ∀ i, u i ∈ pLowerCentralSeries p (freeProP p X) n := fun i ↦ by
+    simp only [u, pow_mul]
+    exact pow_mem (hpow i) _
+  have hu_class : ∀ i, gradedMk p (freeProP p X) n ⟨u i, hu i⟩ = c i • g i := by
+    intro i
+    have heq : (⟨u i, hu i⟩ : pLowerCentralSeries p (freeProP p X) n) =
+        ⟨_, hpow i⟩ ^ (c i).val :=
+      Subtype.ext (by simp [u, pow_mul])
+    rw [heq, gradedMk_pow, ← Nat.cast_smul_eq_nsmul (ZMod p), ZMod.natCast_zmod_val]
+    simp only [g, gradedPowIter_gradedMkZero]
+  -- The class of the product is the sum of the classes, by `gradedMk_list_prod`.
+  let L : List (pLowerCentralSeries p (freeProP p X) n) := l.map fun i ↦ ⟨u i, hu i⟩
+  have hUL : (l.map u).prod = (L.prod : freeProP p X) := by
+    rw [SubmonoidClass.coe_list_prod, List.map_map]
+    rfl
+  refine ⟨u, hu, fun i ↦ pow_mem (subset_closure (Set.mem_singleton _)) _, hUL ▸ L.prod.2, ?_⟩
+  have hU_class : gradedMk p (freeProP p X) n ⟨(l.map u).prod, hUL ▸ L.prod.2⟩ =
+      (l.map fun i ↦ c i • g i).sum := by
+    have : (⟨(l.map u).prod, hUL ▸ L.prod.2⟩ : pLowerCentralSeries p (freeProP p X) n) = L.prod :=
+      Subtype.ext hUL
+    rw [this, gradedMk_list_prod, List.map_map]
+    exact congrArg List.sum (List.map_congr_left fun i _ ↦ hu_class i)
+  rw [hU_class, ← List.sum_toFinset _ hnd]
+  exact Finset.sum_subset (Finset.subset_univ _) fun i _ hi ↦ by
+    rw [of_not_not fun h ↦ hi (List.mem_toFinset.mpr (hc i h)), zero_smul]
+
+/-- **A basis modification realizing a prescribed deviation class.** For every vector
+`v ∈ gr_{k+1}(F)^X` there are modifications `ω_i ∈ λ_{k+1}(F)` such that the basis modification
+`θ_ω` moves a relator `a ∈ λ_1(F)` by an element of `λ_{k+2}(F)` whose class is `δ_ρ(v)`, where
+`ρ ∈ gr_1(F)` is the class of `a`. -/
+private theorem exists_gradedMk_inv_mul_basisModification_eq_basisModificationDelta {k : ℕ}
+    (a : pLowerCentralSeries p (freeProP p X) 1)
+    (v : X → gradedPiece p (freeProP p X) (k + 1)) :
+    ∃ (ω : X → pLowerCentralSeries p (freeProP p X) (k + 1))
+      (hd : (a : freeProP p X)⁻¹ * basisModification ω a ∈
+        pLowerCentralSeries p (freeProP p X) (k + 1 + 1)),
+      gradedMk p (freeProP p X) (k + 1 + 1) ⟨(a : freeProP p X)⁻¹ * basisModification ω a, hd⟩ =
+        basisModificationDelta p X (le_add_self : 1 ≤ k + 1) (gradedMk p (freeProP p X) 1 a) v := by
+  choose ω hω using fun i ↦ gradedMk_surjective (k + 1) (v i)
+  refine ⟨ω, inv_mul_apply_mem_pLowerCentralSeries (basisModification ω).toMonoidHom
+    (basisModification ω).continuous (inv_mul_basisModification_mem_pLowerCentralSeries ω) a.2, ?_⟩
+  rw [gradedMk_inv_mul_basisModification (le_add_self : 1 ≤ k + 1) ω a]
+  congr 1
+  exact funext hω
+
+/-- **One step of the finite successive approximation with tails.** From an approximation modulo
+`λ_{k+2}(F)` and the span statement at level `k+1`, one basis modification and one tail correction
+give an approximation modulo `λ_{k+3}(F)`. -/
+private theorem exists_continuousMonoidHom_inv_mul_apply_mem_succ
+    (r w : pLowerCentralSeries p (freeProP p X) 1) (S : Set X) (l₁ l₂ : List X)
+    (hnd : (l₁ ++ l₂).Nodup) (hl : ∀ i ∈ S, i ∈ l₁ ++ l₂) (k : ℕ)
+    (hspan : LinearMap.range (basisModificationDelta p X (le_add_self : 1 ≤ k + 1)
+        (gradedMk p (freeProP p X) 1 r)) ⊔ gradedPowIterSpan p X S (k + 1 + 1) = ⊤)
+    (φ : freeProP p X →ₜ* freeProP p X) (t : X → freeProP p X)
+    (hφ : ∀ g, g⁻¹ * φ g ∈ pLowerCentralSeries p (freeProP p X) 1)
+    (ht : ∀ i, t i ∈ (Subgroup.closure {of i}).topologicalClosure)
+    (ht2 : ∀ i, t i ∈ pLowerCentralSeries p (freeProP p X) 2)
+    (hr : (φ r)⁻¹ * ((l₁.map t).prod * w * (l₂.map t).prod) ∈
+      pLowerCentralSeries p (freeProP p X) (k + 2)) :
+    ∃ (φ : freeProP p X →ₜ* freeProP p X) (t : X → freeProP p X),
+      (∀ g, g⁻¹ * φ g ∈ pLowerCentralSeries p (freeProP p X) 1) ∧
+        (∀ i, t i ∈ (Subgroup.closure {of i}).topologicalClosure) ∧
+        (∀ i, t i ∈ pLowerCentralSeries p (freeProP p X) 2) ∧
+        (φ r)⁻¹ * ((l₁.map t).prod * w * (l₂.map t).prod) ∈
+          pLowerCentralSeries p (freeProP p X) (k + 1 + 2) := by
+  have := Fintype.ofFinite X
+  -- `φ r` is again a relator with class `ρ`: `φ` is congruent to the identity modulo `λ_2` on
+  -- `λ_1`.
+  have hφr : φ r ∈ pLowerCentralSeries p (freeProP p X) 1 :=
+    φ.toMonoidHom.map_pLowerCentralSeries_le φ.continuous 1 ⟨r, r.2, rfl⟩
+  have hρ : gradedMk p (freeProP p X) 1 ⟨φ r, hφr⟩ = gradedMk p (freeProP p X) 1 r := by
+    rw [gradedMk_eq_gradedMk_iff]
+    exact (QuotientGroup.eq.mpr
+      (inv_mul_apply_mem_pLowerCentralSeries φ.toMonoidHom φ.continuous hφ r.2)).symm
+  -- Decompose the class of the deviation `z = (φ r)⁻¹ * T` in `gr_{k+2}(F)` as `δ_ρ(v) + y'`
+  -- with `y'` in the tail, and write `y'` through tail coefficients and corrections.
+  have hz := Submodule.mem_top (R := ZMod p) (x := gradedMk p (freeProP p X) (k + 1 + 1) ⟨_, hr⟩)
+  rw [← hspan] at hz
+  obtain ⟨_, ⟨v, rfl⟩, y', hy', hyy'⟩ := Submodule.mem_sup.mp hz
+  obtain ⟨c, hcS, hsum⟩ := exists_fun_of_mem_gradedPowIterSpan hy'
+  -- The corrections carry the negated coefficients, so that their class is `-y'`.
+  obtain ⟨u, hu, hucl, hU, hUc⟩ := exists_prod_gradedMk_eq_sum (-c) hnd
+    (fun i hi ↦ hl i (hcS i (neg_ne_zero.mp hi))) (k + 1 + 1)
+  simp only [Pi.neg_apply, neg_smul, Finset.sum_neg_distrib, hsum] at hUc
+  obtain ⟨ω, hd, hωd⟩ :=
+    exists_gradedMk_inv_mul_basisModification_eq_basisModificationDelta (k := k) ⟨φ r, hφr⟩ v
+  -- The key identity in `gr_{k+2}(F)`: the class of `z * U` is the class of the deviation `d`
+  -- of the basis modification, both being `δ_ρ(v)`.
+  have hkey : gradedMk p (freeProP p X) (k + 1 + 1)
+      ⟨((φ r)⁻¹ * ((l₁.map t).prod * w * (l₂.map t).prod)) * ((l₁ ++ l₂).map u).prod,
+        mul_mem hr hU⟩ =
+        gradedMk p (freeProP p X) (k + 1 + 1) ⟨(φ r)⁻¹ * basisModification ω (φ r), hd⟩ := by
+    have hmul : (⟨_, mul_mem hr hU⟩ : pLowerCentralSeries p (freeProP p X) (k + 1 + 1)) =
+        ⟨_, hr⟩ * ⟨_, hU⟩ := Subtype.ext (by rw [Subgroup.coe_mul])
+    rw [hmul, gradedMk_mul, hUc, ← hyy', hωd, hρ, add_neg_cancel_right]
+  refine ⟨(basisModification ω).comp φ, fun i ↦ t i * u i, fun g ↦ ?_, fun i ↦ ?_,
+    fun i ↦ ?_, ?_⟩
+  · have h2 : (φ g)⁻¹ * basisModification ω (φ g) ∈ pLowerCentralSeries p (freeProP p X) 1 :=
+      pLowerCentralSeries_antitone (by omega)
+        (inv_mul_basisModification_mem_pLowerCentralSeries ω (φ g))
+    have := mul_mem (hφ g) h2
+    rwa [mul_assoc, mul_inv_cancel_left] at this
+  · exact mul_mem (ht i) (le_topologicalClosure _ (hucl i))
+  · exact mul_mem (ht2 i) (pLowerCentralSeries_antitone (by omega) (hu i))
+  · -- The computation modulo `λ_{k+3}`, where the classes of the tail corrections are central.
+    refine QuotientGroup.inv_mul_mul_list_prod_map_mul_mem
+      (pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1))
+      (fun i ↦ Submonoid.mem_center_iff.mpr fun q ↦ by
+        obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
+        exact (commute_mk_of_mem_pLowerCentralSeries (hu i) g).eq) ?_
+    -- Cancel `(φ r)⁻¹` from the key identity.
+    refine mul_left_cancel (a := (((φ r)⁻¹ : freeProP p X) :
+      freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1))) ?_
+    have hk := gradedMk_eq_gradedMk_iff.mp hkey
+    rw [← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul]
+    simp only [mul_assoc, ContinuousMonoidHom.coe_comp, Function.comp_apply] at hk ⊢
+    exact hk
+
 /-- **Finite successive approximation with tails.** Let `r, w ∈ λ_1(F)` have the same class
 `ρ ∈ gr_1(F)`, let `S` be a set of generators and `l₁, l₂` disjoint duplicate-free lists of
 generators containing `S`, and suppose `gr_{m+1}(F) = Im δ_ρ + ⟨π^{m+1} ξ_i : i ∈ S⟩` for
@@ -113,164 +250,47 @@ theorem exists_continuousMonoidHom_inv_mul_apply_mem_of_range_sup_gradedPowIterS
     simpa [h1] using QuotientGroup.eq.mp (gradedMk_eq_gradedMk_iff.mp h)
   | succ k ih =>
     obtain ⟨φ, t, hφ, ht, ht2, hr⟩ := ih fun m hm hmk ↦ hspan m hm (hmk.trans k.le_succ)
-    have := Fintype.ofFinite X
-    -- `φ r` is again a relator with class `ρ`: `φ` is congruent to the identity modulo `λ_2` on
-    -- `λ_1`.
-    have hφr : φ r ∈ pLowerCentralSeries p (freeProP p X) 1 :=
-      φ.toMonoidHom.map_pLowerCentralSeries_le φ.continuous 1 ⟨r, r.2, rfl⟩
-    have hρ : gradedMk p (freeProP p X) 1 ⟨φ r, hφr⟩ = gradedMk p (freeProP p X) 1 r := by
-      rw [gradedMk_eq_gradedMk_iff]
-      exact (QuotientGroup.eq.mpr
-        (inv_mul_apply_mem_pLowerCentralSeries φ.toMonoidHom φ.continuous hφ r.2)).symm
-    -- Decompose the class of the deviation `z = (φ r)⁻¹ * T` in `gr_{k+2}(F)` as `δ_ρ(v) + y'`
-    -- with `y'` in the tail, and write `y' = Σ_i c_i π^{k+2} ξ_i`.
-    set T := (l₁.map t).prod * w * (l₂.map t).prod with hT
-    have hz : gradedMk p (freeProP p X) (k + 1 + 1) ⟨(φ r)⁻¹ * T, hr⟩ ∈
-        LinearMap.range (basisModificationDelta p X (by omega : 1 ≤ k + 1)
-          (gradedMk p (freeProP p X) 1 r)) ⊔
-          gradedPowIterSpan p X S (k + 1 + 1) := by
-      rw [hspan (k + 1) (by omega) le_rfl]
-      exact Submodule.mem_top
-    obtain ⟨y, hy, y', hy', hyy'⟩ := Submodule.mem_sup.mp hz
-    obtain ⟨v, rfl⟩ := LinearMap.mem_range.mp hy
-    have := Fintype.ofFinite S
-    obtain ⟨c, hc⟩ := mem_gradedPowIterSpan_iff.mp hy'
-    -- The tail coefficients, negated and extended by zero to all generators.
-    let P : X → Prop := fun i ↦ i ∈ S
-    let c' : X → ZMod p := fun i ↦ if h : P i then -c ⟨i, h⟩ else 0
-    let g : X → gradedPiece p (freeProP p X) (k + 1 + 1) := fun i ↦
-      gradedPowIter p (freeProP p X) (k + 1 + 1) (gradedMkZero p (freeProP p X) (of i))
-    have hc'_zero : ∀ i, ¬ P i → c' i = 0 := fun i hP ↦ dite_eq_right hP
-    have hc'_of : ∀ i (hi : P i), c' i = -c ⟨i, hi⟩ := fun i hi ↦ dite_eq_left hi
-    have hc' : ∀ i, c' i ≠ 0 → i ∈ l₁ ++ l₂ := fun i hi ↦
-      hl i (by_contra fun hP ↦ hi (hc'_zero i hP))
-    have hsum : ∑ i, c' i • g i = -y' := by
-      have h1 : ∑ i ∈ Finset.univ.filter P, c' i • g i = ∑ i, c' i • g i :=
-        Finset.sum_filter_of_ne fun i _ hi ↦
-          by_contra fun hP ↦ hi (by rw [hc'_zero i hP, zero_smul])
-      have h2 : ∑ i ∈ Finset.univ.filter P, c' i • g i = ∑ j : {i // P i}, c' j • g j :=
-        Finset.sum_subtype _
-          (fun i ↦ by simp only [Finset.mem_filter, Finset.mem_univ, true_and, P]) _
-      rw [← h1, h2, ← hc, ← Finset.sum_neg_distrib]
-      exact Finset.sum_equiv (Equiv.refl _) (fun j ↦ by simp) fun j _ ↦ by
-        rw [Equiv.refl_apply, hc'_of j j.2]
-        exact neg_smul _ _
-    -- The tail correction `u_i = x_i^{p^{k+2} c_i}`, an element of `λ_{k+2}` with class
-    -- `c_i π^{k+2} ξ_i`.
-    have hpow (i : X) :
-        of i ^ p ^ (k + 1 + 1) ∈ pLowerCentralSeries p (freeProP p X) (k + 1 + 1) := by
-      simpa using
-        pow_pow_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero p (of i)) (k + 1 + 1)
-    let u : X → freeProP p X := fun i ↦ of i ^ (p ^ (k + 1 + 1) * (c' i).val)
-    have hu : ∀ i, u i ∈ pLowerCentralSeries p (freeProP p X) (k + 1 + 1) := fun i ↦ by
-      simp only [u, pow_mul]
-      exact pow_mem (hpow i) _
-    have hu_class : ∀ i, gradedMk p (freeProP p X) (k + 1 + 1) ⟨u i, hu i⟩ = c' i • g i := by
-      intro i
-      have heq : (⟨u i, hu i⟩ : pLowerCentralSeries p (freeProP p X) (k + 1 + 1)) =
-          ⟨_, hpow i⟩ ^ (c' i).val :=
-        Subtype.ext (by simp [u, pow_mul])
-      rw [heq, gradedMk_pow, ← Nat.cast_smul_eq_nsmul (ZMod p), ZMod.natCast_zmod_val]
-      simp only [g, gradedPowIter_gradedMkZero]
-    have humem : ∀ l : List X, (l.map u).prod ∈ pLowerCentralSeries p (freeProP p X) (k + 1 + 1) :=
-      fun l ↦ list_prod_mem fun x hx ↦ by
-        obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
-        exact hu i
-    have hU_class : ∀ l : List X,
-        gradedMk p (freeProP p X) (k + 1 + 1) ⟨(l.map u).prod, humem l⟩ =
-          (l.map fun i ↦ c' i • g i).sum := by
-      intro l
-      induction l with
-      | nil => exact gradedMk_one _
-      | cons a l ihl =>
-        have hcons : (⟨((a :: l).map u).prod, humem (a :: l)⟩ :
-            pLowerCentralSeries p (freeProP p X) (k + 1 + 1)) =
-              ⟨u a, hu a⟩ * ⟨(l.map u).prod, humem l⟩ :=
-          Subtype.ext (by simp [List.prod_cons])
-        rw [hcons, gradedMk_mul, ihl, hu_class, List.map_cons, List.sum_cons]
-    have hU : gradedMk p (freeProP p X) (k + 1 + 1) ⟨((l₁ ++ l₂).map u).prod, humem _⟩ = -y' := by
-      rw [hU_class, ← List.sum_toFinset _ hnd, ← hsum]
-      exact Finset.sum_subset (Finset.subset_univ _) fun i _ hi ↦ by
-        rw [of_not_not fun h ↦ hi (List.mem_toFinset.mpr (hc' i h)), zero_smul]
-    -- Lift `v` to modifications `ω_i ∈ λ_{k+1}` and modify the basis by them.
-    choose ω hω using fun i ↦ gradedMk_surjective (k + 1) (v i)
-    have hd : (φ r)⁻¹ * basisModification ω (φ r) ∈
-        pLowerCentralSeries p (freeProP p X) (k + 1 + 1) :=
-      inv_mul_apply_mem_pLowerCentralSeries (basisModification ω).toMonoidHom
-        (basisModification ω).continuous (inv_mul_basisModification_mem_pLowerCentralSeries ω) hφr
-    -- The key identity in `gr_{k+2}(F)`: the class of `z * U` is the class of the deviation `d`
-    -- of the basis modification, both being `δ_ρ(v)`.
-    have hkey : gradedMk p (freeProP p X) (k + 1 + 1)
-        ⟨((φ r)⁻¹ * T) * ((l₁ ++ l₂).map u).prod, mul_mem hr (humem _)⟩ =
-          gradedMk p (freeProP p X) (k + 1 + 1) ⟨(φ r)⁻¹ * basisModification ω (φ r), hd⟩ := by
-      have h1 := gradedMk_inv_mul_basisModification (le_add_self : 1 ≤ k + 1) ω ⟨φ r, hφr⟩
-      have hωv : (fun i ↦ gradedMk p (freeProP p X) (k + 1) (ω i)) = v := funext hω
-      rw [hρ, hωv] at h1
-      have hzU : (⟨((φ r)⁻¹ * T) * ((l₁ ++ l₂).map u).prod, mul_mem hr (humem _)⟩ :
-          pLowerCentralSeries p (freeProP p X) (k + 1 + 1)) =
-            ⟨(φ r)⁻¹ * T, hr⟩ * ⟨_, humem (l₁ ++ l₂)⟩ := rfl
-      rw [hzU, gradedMk_mul, hU, ← hyy', h1, add_neg_cancel_right]
-    refine ⟨(basisModification ω).comp φ, fun i ↦ t i * u i, fun g ↦ ?_, fun i ↦ ?_,
-      fun i ↦ ?_, ?_⟩
-    · have h2 : (φ g)⁻¹ * basisModification ω (φ g) ∈ pLowerCentralSeries p (freeProP p X) 1 :=
-        pLowerCentralSeries_antitone (by omega)
-          (inv_mul_basisModification_mem_pLowerCentralSeries ω (φ g))
-      have := mul_mem (hφ g) h2
-      rwa [mul_assoc, mul_inv_cancel_left] at this
-    · exact mul_mem (ht i) (pow_mem (le_topologicalClosure _
-        (subset_closure (Set.mem_singleton _))) _)
-    · exact mul_mem (ht2 i) (pLowerCentralSeries_antitone (by omega) (hu i))
-    · -- The computation modulo `λ_{k+3}`, where the classes of the tail corrections are central.
-      refine (QuotientGroup.eq_one_iff _).mp ?_
-      have hcen : ∀ i, ((u i : freeProP p X) :
-          freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1)) ∈
-            Submonoid.center _ := fun i ↦ Submonoid.mem_center_iff.mpr fun q ↦ by
-        obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
-        exact (commute_mk_of_mem_pLowerCentralSeries (hu i) g).eq
-      have hprod : ∀ l : List X, (((l.map fun i ↦ t i * u i).prod : freeProP p X) :
-          freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1)) =
-            ((l.map t).prod : freeProP p X ⧸ _) * ((l.map u).prod : freeProP p X ⧸ _) := by
-        intro l
-        rw [← QuotientGroup.mk'_apply, map_list_prod, List.map_map, ← QuotientGroup.mk'_apply,
-          map_list_prod, List.map_map, ← QuotientGroup.mk'_apply, map_list_prod, List.map_map]
-        simpa [Function.comp_def] using
-          List.prod_map_mul_of_mem_center l (fun i ↦ ((t i : freeProP p X) :
-            freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1))) _
-            fun i _ ↦ hcen i
-      have hUcen : ∀ l : List X, (((l.map u).prod : freeProP p X) :
-          freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1)) ∈
-            Submonoid.center _ := fun l ↦ by
-        rw [← QuotientGroup.mk'_apply, map_list_prod, List.map_map]
-        exact Submonoid.list_prod_mem _ fun x hx ↦ by
-          obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
-          exact hcen i
-      have hkey' := gradedMk_eq_gradedMk_iff.mp hkey
-      simp only [hT, QuotientGroup.mk_mul, QuotientGroup.mk_inv, List.map_append,
-        List.prod_append] at hkey'
-      set A := ((φ r : freeProP p X) :
-        freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1))
-      set W := ((w : freeProP p X) :
-        freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1))
-      set P₁ := (((l₁.map t).prod : freeProP p X) :
-        freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1))
-      set P₂ := (((l₂.map t).prod : freeProP p X) :
-        freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1))
-      set U₁ := (((l₁.map u).prod : freeProP p X) :
-        freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1))
-      set U₂ := (((l₂.map u).prod : freeProP p X) :
-        freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1))
-      -- The class of the moved relator `θ (φ r)`, from the key identity.
-      have hD : ((basisModification ω (φ r) : freeProP p X) :
-          freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1)) =
-            P₁ * W * P₂ * U₁ * U₂ := by
-        have := congrArg (A * ·) hkey'
-        simpa only [← mul_assoc, mul_inv_cancel, one_mul] using this.symm
-      have e₁ : ∀ q, q * U₁ = U₁ * q := Submonoid.mem_center_iff.mp (hUcen l₁)
-      simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply, QuotientGroup.mk_mul,
-        QuotientGroup.mk_inv, hprod, hD, inv_mul_eq_one]
-      calc P₁ * W * P₂ * U₁ * U₂ = P₁ * (W * P₂ * U₁) * U₂ := by simp only [mul_assoc]
-        _ = P₁ * (U₁ * (W * P₂)) * U₂ := by rw [e₁]
-        _ = P₁ * U₁ * W * (P₂ * U₂) := by simp only [mul_assoc]
+    exact exists_continuousMonoidHom_inv_mul_apply_mem_succ r w S l₁ l₂ hnd hl k
+      (hspan (k + 1) le_add_self le_rfl) φ t hφ ht ht2 hr
+
+/-- **Level data of the comparison with tails.** At every level `k` there is a surjective
+endomorphism `s` of `F ⧸ λ_k` together with classes of tail elements `t_i ∈ ⟨x_i⟩ ∩ λ_2(F)` such
+that `s` carries the class of `r` to the class of the tail word. This is the finite approximation
+with tails of this file read modulo `λ_k`. -/
+private theorem exists_surjective_apply_eq_tailWord
+    (r w : pLowerCentralSeries p (freeProP p X) 1)
+    (h : gradedMk p (freeProP p X) 1 r = gradedMk p (freeProP p X) 1 w) (S : Set X)
+    (l₁ l₂ : List X) (hnd : (l₁ ++ l₂).Nodup) (hl : ∀ i ∈ S, i ∈ l₁ ++ l₂)
+    (hspan : ∀ m (hm : 1 ≤ m),
+      LinearMap.range (basisModificationDelta p X hm (gradedMk p (freeProP p X) 1 r)) ⊔
+        gradedPowIterSpan p X S (m + 1) = ⊤) (k : ℕ) :
+    ∃ s : (freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) k →ₜ*
+          freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) k) ×
+        (X → freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) k),
+      Function.Surjective s.1 ∧
+        (∀ i, s.2 i ∈ ((Subgroup.closure {of i}).topologicalClosure ⊓
+          pLowerCentralSeries p (freeProP p X) 2).map
+            (QuotientGroup.mk' (pLowerCentralSeries p (freeProP p X) k))) ∧
+        s.1 (r : freeProP p X) = (l₁.map s.2).prod * (w : freeProP p X) * (l₂.map s.2).prod := by
+  have hp : p.Prime := Fact.out
+  have hfg := isTopologicallyFinitelyGenerated_freeProP p X
+  have := QuotientGroup.discreteTopology (hfg.isOpen_pLowerCentralSeries hp k)
+  obtain ⟨φ, t, hφ, ht, ht2, hr⟩ :=
+    exists_continuousMonoidHom_inv_mul_apply_mem_of_range_sup_gradedPowIterSpan_eq_top r w h S
+      l₁ l₂ hnd hl k fun m hm _ ↦ hspan m hm
+  have hsurj : Function.Surjective φ :=
+    (isProP_freeProP p X).surjective_of_forall_inv_mul_mem_pLowerCentralSeries_one φ.continuous hφ
+  have hle : pLowerCentralSeries p (freeProP p X) k ≤
+      (pLowerCentralSeries p (freeProP p X) k).comap φ.toMonoidHom :=
+    Subgroup.map_le_iff_le_comap.mp (φ.toMonoidHom.map_pLowerCentralSeries_le φ.continuous k)
+  refine ⟨(⟨QuotientGroup.map _ _ φ.toMonoidHom hle, continuous_of_discreteTopology⟩,
+    fun i ↦ ((t i : freeProP p X) : freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) k)),
+    QuotientGroup.map_surjective_of_surjective _ _ _ (QuotientGroup.mk_surjective.comp hsurj) hle,
+    fun i ↦ ⟨t i, ⟨ht i, ht2 i⟩, rfl⟩, ?_⟩
+  rw [ContinuousMonoidHom.coe_mk, QuotientGroup.map_mk]
+  have hmk := QuotientGroup.eq.mpr (pLowerCentralSeries_antitone (by omega : k ≤ k + 2) hr)
+  simp only [QuotientGroup.mk_mul, QuotientGroup.mk_list_prod, List.map_map] at hmk
+  exact hmk
 
 /-- **The successive-approximation theorem with tails.** Let `r, w ∈ λ_1(F)` be relators of the
 free pro-`p` group `F` on a finite linearly ordered type with the same class `ρ ∈ gr_1(F)`, let
@@ -292,25 +312,12 @@ theorem exists_continuousMulEquiv_apply_eq_of_range_sup_gradedPowIterSpan_eq_top
   have hp : p.Prime := Fact.out
   have hfg := isTopologicallyFinitelyGenerated_freeProP p X
   have hP := isProP_freeProP p X
-  have : ∀ k, DiscreteTopology (freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) k) :=
-    fun k ↦ QuotientGroup.discreteTopology (hfg.isOpen_pLowerCentralSeries hp k)
   -- The closed subgroup in which the tail of the generator `x_i` lives.
   let H (i : X) : Subgroup (freeProP p X) :=
     (Subgroup.closure {of i}).topologicalClosure ⊓ pLowerCentralSeries p (freeProP p X) 2
   have hH (i : X) : IsClosed (H i : Set (freeProP p X)) := by
     rw [Subgroup.coe_inf]
     exact (isClosed_topologicalClosure _).inter (isClosed_pLowerCentralSeries 2)
-  have hmkT : ∀ (k : ℕ) (t : X → freeProP p X),
-      (((l₁.map t).prod * w * (l₂.map t).prod : freeProP p X) :
-        freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) k) =
-      (l₁.map fun i ↦ ((t i : freeProP p X) : freeProP p X ⧸ _)).prod *
-        (w : freeProP p X ⧸ _) *
-        (l₂.map fun i ↦ ((t i : freeProP p X) : freeProP p X ⧸ _)).prod := fun k t ↦ by
-    rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, ← QuotientGroup.mk'_apply, map_list_prod,
-      List.map_map,
-      ← QuotientGroup.mk'_apply (pLowerCentralSeries p (freeProP p X) k) (l₂.map t).prod,
-      map_list_prod, List.map_map]
-    rfl
   -- The level-`k` comparison data: surjective endomorphisms of `F ⧸ λ_k` together with the classes
   -- of the tail elements, carrying the class of `r` to the class of the tail word.
   let D (k : ℕ) : Type u :=
@@ -322,25 +329,13 @@ theorem exists_continuousMulEquiv_apply_eq_of_range_sup_gradedPowIterSpan_eq_top
         s.1 (r : freeProP p X) = (l₁.map s.2).prod * (w : freeProP p X) * (l₂.map s.2).prod}
   have : ∀ k, Finite (D k) := fun k ↦ by
     have := hfg.finite_quotient_pLowerCentralSeries hp k
-    exact Finite.of_injective (fun s : D k ↦ (⇑s.1.1, s.1.2)) fun s s' hss' ↦ Subtype.ext
-      (Prod.ext (DFunLike.coe_injective (Prod.ext_iff.mp hss').1) (Prod.ext_iff.mp hss').2)
+    have : Finite (freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) k →ₜ*
+        freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) k) :=
+      Finite.of_injective _ DFunLike.coe_injective
+    infer_instance
   -- Each level is nonempty, by the finite approximations.
-  have : ∀ k, Nonempty (D k) := fun k ↦ by
-    obtain ⟨φ, t, hφ, ht, ht2, hr⟩ :=
-      exists_continuousMonoidHom_inv_mul_apply_mem_of_range_sup_gradedPowIterSpan_eq_top r w h S
-        l₁ l₂ hnd hl k fun m hm _ ↦ hspan m hm
-    rw [pLowerCentralSeries_one_eq_proPFrattini hp] at hφ
-    have hsurj : Function.Surjective φ :=
-      hP.surjective_of_forall_inv_mul_mem_proPFrattini (φ := φ.toMonoidHom) φ.continuous hφ
-    have hle : pLowerCentralSeries p (freeProP p X) k ≤
-        (pLowerCentralSeries p (freeProP p X) k).comap φ.toMonoidHom :=
-      Subgroup.map_le_iff_le_comap.mp (φ.toMonoidHom.map_pLowerCentralSeries_le φ.continuous k)
-    refine ⟨⟨(⟨QuotientGroup.map _ _ φ.toMonoidHom hle, continuous_of_discreteTopology⟩,
-      fun i ↦ ((t i : freeProP p X) : freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) k)),
-      QuotientGroup.map_surjective_of_surjective _ _ _ (QuotientGroup.mk_surjective.comp hsurj) hle,
-      fun i ↦ ⟨t i, ⟨ht i, ht2 i⟩, rfl⟩, ?_⟩⟩
-    rw [ContinuousMonoidHom.coe_mk, QuotientGroup.map_mk, ← hmkT]
-    exact QuotientGroup.eq.mpr (pLowerCentralSeries_antitone (by omega : k ≤ k + 2) hr)
+  have : ∀ k, Nonempty (D k) := fun k ↦
+    (exists_surjective_apply_eq_tailWord r w h S l₁ l₂ hnd hl hspan k).elim fun s hs ↦ ⟨⟨s, hs⟩⟩
   let C : PLowerCentralSeriesComparison p (freeProP p X) (freeProP p X) D :=
     { map := fun _ s ↦ s.1.1
       map_surjective := fun _ s ↦ s.2.1
@@ -360,28 +355,12 @@ theorem exists_continuousMulEquiv_apply_eq_of_range_sup_gradedPowIterSpan_eq_top
     (fun _ : Unit ↦ (1 : freeProP p X)) (fun _ ↦ 1) (1 : freeProP p X →ₜ* freeProP p X) 1
     (fun _ _ _ ↦ by simp) (fun _ ↦ ⟨0, fun _ _ _ _ ↦ by simp⟩)
   -- The tail elements, recovered from the compatible sequence of their classes.
-  have hcompat (i : X) (k : ℕ) (g : freeProP p X)
-      (hg : (g : freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1)) =
-        (s (k + 1)).1.2 i) :
-      (g : freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) k) = (s k).1.2 i := by
-    rw [← hs k]
-    exact (QuotientGroup.mapOfLE_mk (pLowerCentralSeries_succ_le k) g).symm.trans
-      (congrArg _ hg)
-  choose t ht using fun i ↦
-    (hP.existsUnique_forall_mk_eq_pLowerCentralSeries hp (fun k ↦ (s k).1.2 i) (hcompat i)).exists
-  have htH (i : X) : t i ∈ H i :=
-    hP.mem_of_forall_mk_mem_map_pLowerCentralSeries hp (hH i) fun k ↦
-      (ht i k).symm ▸ (s k).2.2.1 i
-  -- At each level `k`, the classes of the recovered tail elements are the tail classes carried in
-  -- the comparison data, as functions on the generators; this is the form in which they enter the
-  -- level-`k` equation of the data.
-  have hts (k : ℕ) :
-      (fun i ↦ ((t i : freeProP p X) : freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) k)) =
-        (s k).1.2 :=
-    funext fun i ↦ ht i k
+  obtain ⟨t, htH, hts⟩ := hP.exists_forall_mem_and_forall_mk_eq_pLowerCentralSeries hp hH
+    (fun k i ↦ (s k).1.2 i) (fun k i ↦ congrArg (fun x ↦ x.1.2 i) (hs k)) fun k i ↦ (s k).2.2.1 i
   refine ⟨e, t, fun i ↦ (Subgroup.mem_inf.mp (htH i)).1, fun i ↦ (Subgroup.mem_inf.mp (htH i)).2,
     eq_of_forall_mk_eq_of_iInf_eq_bot (hP.iInf_pLowerCentralSeries_eq_bot hp) fun k ↦ ?_⟩
-  rw [hmkT, hts k]
+  simp only [QuotientGroup.mk_mul, QuotientGroup.mk_list_prod, List.map_map, Function.comp_def,
+    funext (hts k)]
   exact (he k r).trans (s k).2.2.2
 
 end TauCeti.freeProP

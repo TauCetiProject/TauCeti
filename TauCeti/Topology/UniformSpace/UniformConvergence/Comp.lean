@@ -26,6 +26,11 @@ compact product `s ×ˢ t` suffices when all the values lie in `t`
 (`IsCompact.tendstoUniformlyOn_comp_prodMk`): `P` is then uniformly continuous there. This is the
 form in which the coefficients `J(z, u(z))` of a nonlinear equation converge along a sequence of
 maps `u` converging uniformly on a compact set.
+
+The file also records that a constant family converges uniformly
+(`TauCeti.tendstoUniformlyOn_const`), and that two families converging uniformly along the same
+filter converge jointly (`TendstoUniformlyOn.prodMk_same`), which is the form needed to compose
+with maps of several variables.
 -/
 
 public section
@@ -57,3 +62,19 @@ theorem IsCompact.tendstoUniformlyOn_comp_prodMk {α β γ : Type*} [PseudoMetri
     Metric.uniformContinuousOn_iff.1 ((hs.prod ht).uniformContinuousOn_of_continuous hP) ε hε
   filter_upwards [hF, Metric.tendstoUniformlyOn_iff.1 h δ hδ] with i hFi hi x hx
   exact hPδ _ ⟨hx, hf hx⟩ _ ⟨hx, hFi hx⟩ (by simpa [Prod.dist_eq] using hi x hx)
+
+namespace TauCeti
+
+/-- A constant family converges uniformly to its value. -/
+theorem tendstoUniformlyOn_const (f : α → β) (p : Filter ι) (s : Set α) :
+    TendstoUniformlyOn (fun _ ↦ f) f p s :=
+  fun _ hu ↦ .of_forall fun _ _ _ ↦ refl_mem_uniformity hu
+
+end TauCeti
+
+/-- Two families converging uniformly on `s` along the same filter converge jointly. Mathlib's
+`TendstoUniformlyOn.prodMk` gives the joint convergence along the product filter `p ×ˢ p`. -/
+theorem TendstoUniformlyOn.prodMk_same {F' : ι → α → γ} {f' : α → γ}
+    (h : TendstoUniformlyOn F f p s) (h' : TendstoUniformlyOn F' f' p s) :
+    TendstoUniformlyOn (fun i x ↦ (F i x, F' i x)) (fun x ↦ (f x, f' x)) p s :=
+  fun _ hu ↦ Filter.tendsto_diag.eventually (h.prodMk h' _ hu)
