@@ -5,6 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.Topology.Category.TopCat.Opens
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basic
 
@@ -50,6 +51,10 @@ No Huber-ring hypotheses are needed. The bundled version for morphisms of Huber 
   `isEmbedding_spaComap_quotientMk`,
   `range_spaComap_quotientMk`, `isClosedEmbedding_spaComap_quotientMk`: the quotient map for the
   image plus ring is a closed embedding with support locus as its range.
+* `AlgHom.comap_mem_spa_integralClosure`: an `A`-algebra map `B → C` of algebras with their
+  natural topologies pulls `Spa(C, C⁺)` back into `Spa(B, B⁺)`, where the plus rings are the
+  integral closures of the image of `A⁺`; in particular the `A`-algebra automorphisms of `B` act
+  on `Spa(B, B⁺)`.
 
 ## References
 
@@ -373,3 +378,27 @@ theorem isClosedEmbedding_spaComap_quotientMk (J : Ideal A) (Aplus : Subring A) 
 end Quotient
 
 end TauCeti.ValuationSpectrum
+
+namespace AlgHom
+
+open TauCeti TauCeti.ValuationSpectrum
+
+variable {A B C : Type*} [CommRing A] [TopologicalSpace A]
+  [CommRing B] [TopologicalSpace B] [Algebra A B] [IsModuleTopology A B]
+  [CommRing C] [TopologicalSpace C] [Algebra A C] [IsModuleTopology A C]
+  {Aplus : Subring A}
+
+/-- **`A`-algebra maps act on adic spectra.** If `B` and `C` are `A`-algebras with their natural
+topologies, an `A`-algebra map `σ : B → C` pulls `Spa(C, C⁺)` back into `Spa(B, B⁺)`, where `B⁺`
+and `C⁺` are the integral closures of the image of `A⁺`. -/
+theorem comap_mem_spa_integralClosure (σ : B →ₐ[A] C) {w : Spv C}
+    (hw : w ∈ spa (integralClosure (Aplus.map (algebraMap A C)) C).toSubring) :
+    ValuationSpectrum.comap (σ : B →+* C) w ∈
+      spa (integralClosure (Aplus.map (algebraMap A B)) B).toSubring := by
+  have : ContinuousAdd C := IsModuleTopology.toContinuousAdd A C
+  rw [spa_integralClosure] at hw ⊢
+  refine comap_mem_spa (IsModuleTopology.continuous_of_linearMap σ.toLinearMap) ?_ hw
+  rintro _ ⟨a, ha, rfl⟩
+  exact ⟨a, ha, (σ.commutes a).symm⟩
+
+end AlgHom

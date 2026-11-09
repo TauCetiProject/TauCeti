@@ -52,9 +52,6 @@ is the fibre bound for valuation spectra along finite flat ring maps
   to `A` is continuous is continuous.
 * `TauCeti.ValuationSpectrum.mem_spa_integralClosure_iff`: `w ∈ Spa(B, B⁺)` iff its pullback lies
   in `Spa(A, A⁺)`.
-* `AlgHom.comap_mem_spa_integralClosure`: an `A`-algebra map `B → C` of algebras with their
-  natural topologies pulls `Spa(C, C⁺)` back into `Spa(B, B⁺)`; in particular the `A`-algebra
-  automorphisms of `B` act on `Spa(B, B⁺)`.
 * `TauCeti.ValuationSpectrum.exists_mem_spa_supp_eq_comap_eq`: a point of `Spa(A, A⁺)` lifts to
   `Spa(B, B⁺)` with any prescribed support lying over its own.
 * `TauCeti.Huber.Pair.Hom.IsFiniteEtale.surjective_spaComap`: a faithfully flat finite étale
@@ -243,27 +240,3 @@ theorem IsFiniteEtale.finite_fibre {φ : Hom S T} (hφ : φ.IsFiniteEtale) (x : 
 end Huber.Pair.Hom
 
 end TauCeti
-
-namespace AlgHom
-
-open TauCeti TauCeti.ValuationSpectrum
-
-variable {A B C : Type*} [CommRing A] [TopologicalSpace A]
-  [CommRing B] [TopologicalSpace B] [Algebra A B] [IsModuleTopology A B]
-  [CommRing C] [TopologicalSpace C] [Algebra A C] [IsModuleTopology A C]
-  {Aplus : Subring A}
-
-/-- **`A`-algebra maps act on adic spectra.** If `B` and `C` are `A`-algebras with their natural
-topologies, an `A`-algebra map `σ : B → C` pulls `Spa(C, C⁺)` back into `Spa(B, B⁺)`, where `B⁺`
-and `C⁺` are the integral closures of the image of `A⁺`. -/
-theorem comap_mem_spa_integralClosure (σ : B →ₐ[A] C) {w : Spv C}
-    (hw : w ∈ spa (integralClosure (Aplus.map (algebraMap A C)) C).toSubring) :
-    ValuationSpectrum.comap (σ : B →+* C) w ∈
-      spa (integralClosure (Aplus.map (algebraMap A B)) B).toSubring := by
-  have : ContinuousAdd C := IsModuleTopology.toContinuousAdd A C
-  rw [spa_integralClosure] at hw ⊢
-  refine comap_mem_spa (IsModuleTopology.continuous_of_linearMap σ.toLinearMap) ?_ hw
-  rintro _ ⟨a, ha, rfl⟩
-  exact ⟨a, ha, (σ.commutes a).symm⟩
-
-end AlgHom
