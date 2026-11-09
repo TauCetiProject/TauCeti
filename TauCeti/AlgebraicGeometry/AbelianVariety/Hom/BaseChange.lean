@@ -260,9 +260,23 @@ lemma baseChangePointMulEquiv_apply (A : AbelianVariety K)
     baseChangePointMulEquiv A L T p =
       ((Over.mapPullbackAdj (Spec.map (CommRingCat.ofHom (algebraMap K L)))).homEquiv
         T A.toOver).symm (p ≫ eqToHom (baseChange_toOver A L)) := by
+  -- No public application lemma crosses MulEquiv.trans and Hom.mulEquivCongrRight together.
+  -- This computation lemma opens those wrappers once; subsequent proofs use its statement.
   change GroupScheme.baseChangePointMulEquiv _ (Grp.mk A.toOver) T
     (p ≫ eqToHom (baseChange_toOver A L)) = _
   exact GroupScheme.baseChangePointMulEquiv_apply _ (Grp.mk A.toOver) T _
+
+/-- Construct a base-changed point through the pullback adjunction and inverse transport. -/
+@[simp]
+lemma baseChangePointMulEquiv_symm_apply (A : AbelianVariety K)
+    (L : Type u) [Field L] [Algebra K L] (T : Over (Spec (.of L)))
+    (p : (Over.map (Spec.map (CommRingCat.ofHom (algebraMap K L)))).obj T ⟶ A.toOver) :
+    (baseChangePointMulEquiv A L T).symm p =
+      (Over.mapPullbackAdj (Spec.map (CommRingCat.ofHom (algebraMap K L)))).homEquiv
+        T A.toOver p ≫ eqToHom (baseChange_toOver A L).symm := by
+  apply (baseChangePointMulEquiv A L T).injective
+  rw [MulEquiv.apply_symm_apply, baseChangePointMulEquiv_apply]
+  simp
 
 /-- The point comparison is given by the first pullback projection. -/
 @[simp]
@@ -272,9 +286,9 @@ lemma baseChangePointMulEquiv_apply_left (A : AbelianVariety K)
     (baseChangePointMulEquiv A L T p).left =
       (p ≫ eqToHom (baseChange_toOver A L)).left ≫ Limits.pullback.fst A.toOver.hom
         (Spec.map (CommRingCat.ofHom (algebraMap K L))) := by
-  change (GroupScheme.baseChangePointMulEquiv _ (Grp.mk A.toOver) T
-    (p ≫ eqToHom (baseChange_toOver A L))).left = _
-  exact GroupScheme.baseChangePointMulEquiv_apply_left _ (Grp.mk A.toOver) T _
+  rw [baseChangePointMulEquiv_apply]
+  -- The adjunction's public definition computes its inverse on underlying Over morphisms.
+  rfl
 
 /-- The point comparison commutes with restriction along maps of test schemes. -/
 lemma baseChangePointMulEquiv_naturality_left (A : AbelianVariety K)
@@ -283,12 +297,9 @@ lemma baseChangePointMulEquiv_naturality_left (A : AbelianVariety K)
     baseChangePointMulEquiv A L U (g ≫ p) =
       (Over.map (Spec.map (CommRingCat.ofHom (algebraMap K L)))).map g ≫
         baseChangePointMulEquiv A L T p := by
-  change GroupScheme.baseChangePointMulEquiv _ (Grp.mk A.toOver) U
-      ((g ≫ p) ≫ eqToHom (baseChange_toOver A L)) =
-    _ ≫ GroupScheme.baseChangePointMulEquiv _ (Grp.mk A.toOver) T
-      (p ≫ eqToHom (baseChange_toOver A L))
-  rw [Category.assoc]
-  exact GroupScheme.baseChangePointMulEquiv_naturality_left _ (Grp.mk A.toOver) g _
+  rw [baseChangePointMulEquiv_apply, baseChangePointMulEquiv_apply, Category.assoc]
+  exact (Over.mapPullbackAdj _).homEquiv_naturality_left_symm g
+    (p ≫ eqToHom (baseChange_toOver A L))
 
 /-- The point comparison commutes with homomorphisms of abelian varieties. -/
 lemma baseChangePointMulEquiv_postcomp {A B : AbelianVariety K} (f : A ⟶ B)
