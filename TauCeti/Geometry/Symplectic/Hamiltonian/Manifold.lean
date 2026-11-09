@@ -252,18 +252,7 @@ theorem hamiltonianVectorField_fun_sum {ι : Type*} {s : Finset ι} {F : ι → 
     (hF : ∀ i ∈ s, MDifferentiableAt I 𝓘(ℝ) (F i) x) :
     σ.hamiltonianVectorField (fun y ↦ ∑ i ∈ s, F i y) x =
       ∑ i ∈ s, σ.hamiltonianVectorField (F i) x := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert a s ha ih =>
-    have hs : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ ∑ i ∈ s, F i y) x := by
-      simpa only [Finset.sum_fn] using
-        MDifferentiableAt.sum fun i hi ↦ hF i (Finset.mem_insert_of_mem hi)
-    have hfun : (fun y ↦ ∑ i ∈ insert a s, F i y) = F a + fun y ↦ ∑ i ∈ s, F i y := by
-      funext y
-      rw [Finset.sum_insert ha, Pi.add_apply]
-    rw [hfun, hamiltonianVectorField_add (hF a (Finset.mem_insert_self a s)) hs,
-      ih fun i hi ↦ hF i (Finset.mem_insert_of_mem hi), Finset.sum_insert ha]
+  simp only [hamiltonianVectorField_def, mvfderiv_fun_sum hF, map_sum]
 
 /-- At fixed `x`, the derivative in the real coefficient of `f + t • g`, read in the model
 space of the tangent fiber, is the Hamiltonian vector of `g` at `x`. -/
