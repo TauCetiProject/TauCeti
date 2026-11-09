@@ -30,7 +30,7 @@ namespace TauCeti.Montgomery
 
 section Seven
 
-local instance : Fact (Nat.Prime 7) := ⟨by decide⟩
+local instance coordinatesPrimeSeven : Fact (Nat.Prime 7) := ⟨by decide⟩
 
 /-! ### Coordinate pairs -/
 
