@@ -107,45 +107,6 @@ private theorem continuous_rellichKernel :
   -- `uncurry (rellichKernel φ r s)` is by definition the product of this coefficient and `id`.
   exact hc.smul (continuous_const (y := ContinuousLinearMap.id ℂ F))
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- Peetre's inequality for the weights of the kernel, with the decay in `ξ`:
-`⟨ξ⟩ ^ r ⟨η⟩ ^ (-s) ≤ 2 ^ (|s| / 2) ⟨ξ - η⟩ ^ |s| ⟨ξ⟩ ^ (r - s)`. -/
-private theorem weight_le_left (ξ η : E) :
-    (1 + ‖ξ‖ ^ 2) ^ (r / 2) * (1 + ‖η‖ ^ 2) ^ (-s / 2) ≤
-      2 ^ (|s| / 2) * (1 + ‖ξ - η‖ ^ 2) ^ (|s| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((r - s) / 2) := by
-  have hP := TauCeti.one_add_norm_sq_rpow_le_mul_sub (-s) η ξ
-  rw [abs_neg, norm_sub_rev] at hP
-  have hξ : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
-  calc (1 + ‖ξ‖ ^ 2) ^ (r / 2) * (1 + ‖η‖ ^ 2) ^ (-s / 2)
-      ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2) *
-          (2 ^ (|s| / 2) * (1 + ‖ξ - η‖ ^ 2) ^ (|s| / 2) * (1 + ‖ξ‖ ^ 2) ^ (-s / 2)) := by
-        gcongr
-    _ = 2 ^ (|s| / 2) * (1 + ‖ξ - η‖ ^ 2) ^ (|s| / 2) *
-          ((1 + ‖ξ‖ ^ 2) ^ (r / 2) * (1 + ‖ξ‖ ^ 2) ^ (-s / 2)) := by ring
-    _ = _ := by rw [← Real.rpow_add hξ]; ring_nf
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- Peetre's inequality for the weights of the kernel, with the decay in `η`:
-`⟨ξ⟩ ^ r ⟨η⟩ ^ (-s) ≤ 2 ^ (|r| / 2) ⟨ξ - η⟩ ^ |r| ⟨η⟩ ^ (r - s)`. -/
-private theorem weight_le_right (ξ η : E) :
-    (1 + ‖ξ‖ ^ 2) ^ (r / 2) * (1 + ‖η‖ ^ 2) ^ (-s / 2) ≤
-      2 ^ (|r| / 2) * (1 + ‖ξ - η‖ ^ 2) ^ (|r| / 2) * (1 + ‖η‖ ^ 2) ^ ((r - s) / 2) := by
-  have hP := TauCeti.one_add_norm_sq_rpow_le_mul_sub r ξ η
-  have hη : 0 < 1 + ‖η‖ ^ 2 := by positivity
-  calc (1 + ‖ξ‖ ^ 2) ^ (r / 2) * (1 + ‖η‖ ^ 2) ^ (-s / 2)
-      ≤ (2 ^ (|r| / 2) * (1 + ‖ξ - η‖ ^ 2) ^ (|r| / 2) * (1 + ‖η‖ ^ 2) ^ (r / 2)) *
-          (1 + ‖η‖ ^ 2) ^ (-s / 2) := by
-        gcongr
-    _ = 2 ^ (|r| / 2) * (1 + ‖ξ - η‖ ^ 2) ^ (|r| / 2) *
-          ((1 + ‖η‖ ^ 2) ^ (r / 2) * (1 + ‖η‖ ^ 2) ^ (-s / 2)) := by ring
-    _ = _ := by rw [← Real.rpow_add hη]; ring_nf
-
-/-- A negative power `(1 + t ^ 2) ^ ((r - s) / 2)` is at most `(1 + R ^ 2) ^ ((r - s) / 2)` for
-`0 ≤ R ≤ t`. -/
-private theorem rpow_le_of_le (h : r ≤ s) {R t : ℝ} (hR : 0 ≤ R) (hRt : R ≤ t) :
-    (1 + t ^ 2) ^ ((r - s) / 2) ≤ (1 + R ^ 2) ^ ((r - s) / 2) :=
-  Real.rpow_le_rpow_of_nonpos (by positivity) (by gcongr) (by linarith)
-
 omit [CompleteSpace F] in
 /-- The kernel is dominated by `(1 + R ^ 2) ^ ((r - s) / 2)` times the integrable function
 `rellichBound` of `ξ - η` as soon as `‖ξ‖ ≥ R` or `‖η‖ ≥ R`. -/
@@ -163,16 +124,20 @@ private theorem norm_rellichKernel_le_of_le (h : r ≤ s) {R : ℝ} (hR : 0 ≤ 
   rcases hξη with hξ | hη
   · calc _ ≤ 2 ^ (|s| / 2) * (1 + ‖ξ - η‖ ^ 2) ^ (|s| / 2) * (1 + R ^ 2) ^ ((r - s) / 2) *
           ‖𝓕 φ (ξ - η)‖ := by
-          refine mul_le_mul_of_nonneg_right ((weight_le_left ξ η).trans ?_) h₁
-          exact mul_le_mul_of_nonneg_left (rpow_le_of_le h hR hξ) (by positivity)
+          refine mul_le_mul_of_nonneg_right
+            ((TauCeti.one_add_norm_sq_rpow_mul_rpow_le_mul_sub_left r s ξ η).trans ?_) h₁
+          exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_nonpos (by positivity)
+            (by gcongr) (by linarith)) (by positivity)
       _ ≤ _ := by
           rw [mul_add]
           refine le_add_of_le_of_nonneg (le_of_eq (by ring)) ?_
           positivity
   · calc _ ≤ 2 ^ (|r| / 2) * (1 + ‖ξ - η‖ ^ 2) ^ (|r| / 2) * (1 + R ^ 2) ^ ((r - s) / 2) *
           ‖𝓕 φ (ξ - η)‖ := by
-          refine mul_le_mul_of_nonneg_right ((weight_le_right ξ η).trans ?_) h₁
-          exact mul_le_mul_of_nonneg_left (rpow_le_of_le h hR hη) (by positivity)
+          refine mul_le_mul_of_nonneg_right
+            ((TauCeti.one_add_norm_sq_rpow_mul_rpow_le_mul_sub_right r s ξ η).trans ?_) h₁
+          exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_nonpos (by positivity)
+            (by gcongr) (by linarith)) (by positivity)
       _ ≤ _ := by
           rw [mul_add]
           refine le_add_of_nonneg_of_le ?_ (le_of_eq (by ring))

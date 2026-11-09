@@ -37,6 +37,12 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   `⟨x + y⟩ ^ s ≤ 2 ^ (|s| / 2) ⟨x⟩ ^ s ⟨y⟩ ^ |s|`.
 * `TauCeti.one_add_norm_sq_rpow_le_mul_sub`: the equivalent form
   `⟨x⟩ ^ s ≤ 2 ^ (|s| / 2) ⟨x - y⟩ ^ |s| ⟨y⟩ ^ s`.
+* `TauCeti.one_add_norm_sq_rpow_mul_rpow_le_mul_sub_left`,
+  `TauCeti.one_add_norm_sq_rpow_mul_rpow_le_mul_sub_right`: the two-weight forms
+  `⟨x⟩ ^ r ⟨y⟩ ^ (-s) ≤ 2 ^ (|s| / 2) ⟨x - y⟩ ^ |s| ⟨x⟩ ^ (r - s)` and
+  `⟨x⟩ ^ r ⟨y⟩ ^ (-s) ≤ 2 ^ (|r| / 2) ⟨x - y⟩ ^ |r| ⟨y⟩ ^ (r - s)`, which bound the Fourier
+  kernel of an operator from `H^s` to `H^r` by a function of `x - y` times a weight of order
+  `r - s` in either variable.
 * `TauCeti.one_add_norm_sq_rpow_le_of_norm_eq_mul`: rescaling by `c ≥ 1` changes the weight
   `⟨x⟩ ^ s` by at most the factor `c ^ |s|`.
 * `TauCeti.one_add_norm_add_sq_rpow_le`: the subadditive form
@@ -108,6 +114,41 @@ theorem one_add_norm_sq_rpow_le_mul_sub [SeminormedAddCommGroup E] (s : ℝ) (x 
   have h := one_add_norm_add_sq_rpow_le_mul s y (x - y)
   rw [add_sub_cancel] at h
   linarith
+
+omit [SeminormedAddGroup E] in
+/-- **Peetre's inequality** for a pair of weights, with the decay in `x`:
+`⟨x⟩ ^ r ⟨y⟩ ^ (-s) ≤ 2 ^ (|s| / 2) ⟨x - y⟩ ^ |s| ⟨x⟩ ^ (r - s)` for all real `r` and `s`. -/
+theorem one_add_norm_sq_rpow_mul_rpow_le_mul_sub_left [SeminormedAddCommGroup E] (r s : ℝ)
+    (x y : E) :
+    (1 + ‖x‖ ^ 2) ^ (r / 2) * (1 + ‖y‖ ^ 2) ^ (-s / 2) ≤
+      2 ^ (|s| / 2) * (1 + ‖x - y‖ ^ 2) ^ (|s| / 2) * (1 + ‖x‖ ^ 2) ^ ((r - s) / 2) := by
+  have hP := one_add_norm_sq_rpow_le_mul_sub (-s) y x
+  rw [abs_neg, norm_sub_rev] at hP
+  have hx : 0 < 1 + ‖x‖ ^ 2 := by positivity
+  calc (1 + ‖x‖ ^ 2) ^ (r / 2) * (1 + ‖y‖ ^ 2) ^ (-s / 2)
+      ≤ (1 + ‖x‖ ^ 2) ^ (r / 2) *
+          (2 ^ (|s| / 2) * (1 + ‖x - y‖ ^ 2) ^ (|s| / 2) * (1 + ‖x‖ ^ 2) ^ (-s / 2)) := by
+        gcongr
+    _ = 2 ^ (|s| / 2) * (1 + ‖x - y‖ ^ 2) ^ (|s| / 2) *
+          ((1 + ‖x‖ ^ 2) ^ (r / 2) * (1 + ‖x‖ ^ 2) ^ (-s / 2)) := by ring
+    _ = _ := by rw [← Real.rpow_add hx]; ring_nf
+
+omit [SeminormedAddGroup E] in
+/-- **Peetre's inequality** for a pair of weights, with the decay in `y`:
+`⟨x⟩ ^ r ⟨y⟩ ^ (-s) ≤ 2 ^ (|r| / 2) ⟨x - y⟩ ^ |r| ⟨y⟩ ^ (r - s)` for all real `r` and `s`. -/
+theorem one_add_norm_sq_rpow_mul_rpow_le_mul_sub_right [SeminormedAddCommGroup E] (r s : ℝ)
+    (x y : E) :
+    (1 + ‖x‖ ^ 2) ^ (r / 2) * (1 + ‖y‖ ^ 2) ^ (-s / 2) ≤
+      2 ^ (|r| / 2) * (1 + ‖x - y‖ ^ 2) ^ (|r| / 2) * (1 + ‖y‖ ^ 2) ^ ((r - s) / 2) := by
+  have hP := one_add_norm_sq_rpow_le_mul_sub r x y
+  have hy : 0 < 1 + ‖y‖ ^ 2 := by positivity
+  calc (1 + ‖x‖ ^ 2) ^ (r / 2) * (1 + ‖y‖ ^ 2) ^ (-s / 2)
+      ≤ (2 ^ (|r| / 2) * (1 + ‖x - y‖ ^ 2) ^ (|r| / 2) * (1 + ‖y‖ ^ 2) ^ (r / 2)) *
+          (1 + ‖y‖ ^ 2) ^ (-s / 2) := by
+        gcongr
+    _ = 2 ^ (|r| / 2) * (1 + ‖x - y‖ ^ 2) ^ (|r| / 2) *
+          ((1 + ‖y‖ ^ 2) ^ (r / 2) * (1 + ‖y‖ ^ 2) ^ (-s / 2)) := by ring
+    _ = _ := by rw [← Real.rpow_add hy]; ring_nf
 
 omit [SeminormedAddGroup E] in
 /-- Rescaling by a factor `c ≥ 1` changes the Japanese bracket weight by at most `c ^ |s|`: if
