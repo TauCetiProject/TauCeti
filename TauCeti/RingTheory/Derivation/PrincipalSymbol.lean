@@ -46,7 +46,7 @@ at `x`, a symmetric multilinear map `T_x*M × ⋯ × T_x*M → Hom(E_x, F_x)`.
 * `TauCeti.commutatorSymbol_update_mul`: the Leibniz rule in each slot.
 * `TauCeti.commutatorSymbol_add_algebraMap`: adding scalars to the entries does not change the
   commutator symbol.
-* `TauCeti.commutatorSymbol_conjDifferentialOperators`: the commutator symbol is natural under
+* `AlgEquiv.commutatorSymbol_conjDifferentialOperators`: the commutator symbol is natural under
   conjugation by algebra isomorphisms.
 * `TauCeti.commutatorSymbol_comp_const`: on the diagonal, commutator symbols multiply under
   composition, up to the binomial coefficient `(m + k).choose m`.
@@ -303,26 +303,14 @@ section Conj
 variable {R A B : Type*} [CommSemiring R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
   (e : A ≃ₐ[R] B)
 
-/-- Iterated commutators commute with conjugation by an algebra isomorphism `e`, the entries
-being transported by `e`. -/
-private theorem list_prod_smulCommutator_conj {m : ℕ} (a : Fin m → A) (D : A →ₗ[R] A) :
-    (List.ofFn fun i ↦ smulCommutator R (e (a i))).prod
-        (e.toLinearMap ∘ₗ D ∘ₗ e.symm.toLinearMap) =
-      e.toLinearMap ∘ₗ (List.ofFn fun i ↦ smulCommutator R (a i)).prod D ∘ₗ e.symm.toLinearMap := by
-  induction m generalizing D with
-  | zero => rfl
-  | succ m ih =>
-    simp only [List.ofFn_succ, List.prod_cons, mul_apply_eq_comp]
-    rw [ih (fun i ↦ a i.succ), smulCommutator_conj]
-
 /-- The commutator symbol of the conjugate `e ∘ D ∘ e⁻¹` of `D` by an algebra isomorphism `e`, at
 the images `e aᵢ`, is the conjugate of the commutator symbol of `D` at the `aᵢ`. -/
-theorem commutatorSymbol_conjDifferentialOperators {m : ℕ} (D : differentialOperators R A A A m)
-    (a : Fin m → A) (y : B) :
+theorem _root_.AlgEquiv.commutatorSymbol_conjDifferentialOperators {m : ℕ}
+    (D : differentialOperators R A A A m) (a : Fin m → A) (y : B) :
     commutatorSymbol R B B B m (e.conjDifferentialOperators m D) (fun i ↦ e (a i)) y =
       e (commutatorSymbol R A A A m D a (e.symm y)) := by
   rw [commutatorSymbol_apply_apply, AlgEquiv.coe_conjDifferentialOperators,
-    list_prod_smulCommutator_conj, commutatorSymbol_apply_apply]
+    e.list_prod_smulCommutator_conj, commutatorSymbol_apply_apply]
   rfl
 
 end Conj
