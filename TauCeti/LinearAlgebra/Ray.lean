@@ -56,10 +56,10 @@ theorem SameRay.trans_of_ne_zero (hxy : SameRay R x y) (hyz : SameRay R y z) (hy
     SameRay R x z :=
   hxy.trans hyz fun h ↦ absurd h hy
 
-/-- Scaling a ray by a unit commutes with transporting it along a linear equivalence. -/
+/-- Transporting a ray along a linear equivalence commutes with scaling it by a unit. -/
 @[simp]
-theorem Module.Ray.map_units_smul {N : Type*} [AddCommMonoid N] [Module R N] (e : M ≃ₗ[R] N)
-    (u : Rˣ) (v : Module.Ray R M) : Module.Ray.map e (u • v) = u • Module.Ray.map e v := by
+theorem Module.Ray.map_units_smul {N : Type*} [AddCommMonoid N] [Module R N] (f : M ≃ₗ[R] N)
+    (u : Rˣ) (v : Module.Ray R M) : Module.Ray.map f (u • v) = u • Module.Ray.map f v := by
   induction v using Module.Ray.ind with | h v hv =>
     simp only [smul_rayOfNeZero, Module.Ray.map_apply, Units.smul_def, map_smul]
 

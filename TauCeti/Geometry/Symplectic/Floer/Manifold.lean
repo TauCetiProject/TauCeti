@@ -93,6 +93,9 @@ form they recover the vector-space definitions.
   `SmoothTwoForm.integral_hamiltonianCurvature_image`,
   `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_image`: invariance of the energy, the
   integrated curvature and the curvature allowance under changes of domain coordinates.
+* `SmoothTwoForm.hamiltonianCurvature_comp_add_right`,
+  `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`: translations of the domain
+  translate the curvature and preserve the curvature allowance along a map.
 
 ## References
 
@@ -337,6 +340,14 @@ theorem hamiltonianCurvature_congr_of_eventuallyEq (ω : SmoothTwoForm I M)
   rw [hamiltonianCurvature_def, hamiltonianCurvature_def, hs'.fderiv_eq, ht'.fderiv_eq,
     hs.eq_of_nhds, ht.eq_of_nhds]
 
+/-- Translating the perturbation data by `v` translates the curvature by `v`. -/
+theorem hamiltonianCurvature_comp_add_right (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (v z : ℝ × ℝ) (x : M) :
+    ω.hamiltonianCurvature (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) z x =
+      ω.hamiltonianCurvature Ks Kt (z + v) x := by
+  simp only [hamiltonianCurvature_def]
+  rw [fderiv_comp_add_right (f := fun w ↦ Kt w x), fderiv_comp_add_right (f := fun w ↦ Ks w x)]
+
 /-- The zero perturbation has zero curvature. -/
 @[simp]
 theorem hamiltonianCurvature_zero (ω : SmoothTwoForm I M) (z : ℝ × ℝ) (x : M) :
@@ -506,6 +517,17 @@ theorem lintegral_enorm_hamiltonianCurvature_image (ω : SmoothTwoForm I M)
     (fun w hw ↦ (hφ w hw).differentiableAt (by norm_num)) fun w hw ↦
       ω.hamiltonianCurvature_perturbationPullback (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw)
         (hKt' w hw)
+
+/-- Translations of the domain preserve the integrated curvature along a map. -/
+theorem lintegral_enorm_hamiltonianCurvature_comp_add_right (ω : SmoothTwoForm I M)
+    (Ks Kt : ℝ × ℝ → M → ℝ) (u : ℝ × ℝ → M) (v : ℝ × ℝ) :
+    ∫⁻ z, ‖ω.hamiltonianCurvature (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) z (u (z + v))‖ₑ =
+      ∫⁻ z, ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ := by
+  have hv : MeasurePreserving (· + v) volume volume :=
+    (measurePreserving_add_right volume v.1).prod (measurePreserving_add_right volume v.2)
+  simp only [hamiltonianCurvature_comp_add_right]
+  exact hv.lintegral_comp_emb (measurableEmbedding_addRight v)
+    (fun z ↦ ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ)
 
 /-- **The energy identity on a rectangle, for a manifold target.** Let `u` and the perturbation
 data `K = K_s ds + K_t dt` be `C¹` over an open neighbourhood `U` of a rectangle
@@ -789,6 +811,17 @@ theorem floerEnergyDensity_constSmooth (ω : SymplecticForm V)
     fromTangentSpace_constSmooth_apply, fromTangentSpace_perturbedMFDeriv_constSmooth_apply,
     fromTangentSpace_perturbedMFDeriv_constSmooth_apply]
 
+/-- For a constant form, the intrinsic symplectic area density of a map of the plane is the
+vector-space area density `ω(∂_s u, ∂_t u)`. -/
+theorem eval₂_constSmooth_mfderiv_stdComplexLine (ω : SymplecticForm V) (u : ℝ × ℝ → V)
+    (z : ℝ × ℝ) :
+    SmoothBundleForm.eval₂ ω.constSmooth (u z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, V) u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, V) u z stdComplexLineImag) =
+      ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
+  rw [← SmoothTwoForm.floerEnergyDensity_zero, floerEnergyDensity_constSmooth,
+    floerEnergyDensity_zero]
+
 open MeasureTheory Set Filter Topology in
 /-- **The energy identity for compactly supported perturbation data.** Let the perturbation data
 `K = K_s ds + K_t dt` vanish outside a compact set `C` of the domain, and let `u` and `K` be `C¹`
@@ -829,17 +862,7 @@ theorem setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero (ω : Symplectic
     (isNondegenerate_constSmooth ω).setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero hU
     (contMDiffOn_iff_contDiffOn.mpr hu) (hK' hKs) (hK' hKt) hC hCU hKsC hKtC hD hCD
     (hE' ▸ hE) (hR' ▸ hR)
-  have harea (z : ℝ × ℝ) :
-      SmoothBundleForm.eval₂ ω.constSmooth (u z)
-          (mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, V) u z stdComplexLineReal)
-          (mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, V) u z stdComplexLineImag) =
-      ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
-    refine (eval₂_constSmooth_mfderiv_eq ω u z stdComplexLineReal stdComplexLineImag).trans ?_
-    simp only [mvfderiv_eq_fderiv, ContinuousLinearMap.coe_comp, Function.comp_def,
-      ContinuousLinearEquiv.coe_coe]
-    rw [NormedSpace.fromTangentSpace_apply (𝕜 := ℝ) z stdComplexLineReal,
-      NormedSpace.fromTangentSpace_apply (𝕜 := ℝ) z stdComplexLineImag]
-  simpa only [hE', hR', harea] using h
+  simpa only [hE', hR', eval₂_constSmooth_mfderiv_stdComplexLine] using h
 
 
 end TauCeti.SymplecticForm

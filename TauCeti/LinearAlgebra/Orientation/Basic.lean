@@ -33,6 +33,8 @@ compatibility under linear equivalences.
 * `Orientation.map_units_smul_eq_iff_det_mul_pos`: the signed-Jacobian compatibility criterion.
 * `Orientation.map_linearEquiv_neg`: transport along the negation of an `n`-dimensional space
   multiplies an orientation by `(-1) ^ n`.
+* `Orientation.map_units_smul_eq_units_smul_map_iff_det_mul_pos`: the same criterion between two
+  spaces, relative to a reference linear equivalence.
 * `Orientation.intCast_units_smul_ite_eq`: the relative sign reconstructs an orientation.
 -/
 
@@ -179,6 +181,19 @@ theorem Orientation.map_linearEquiv_neg [FiniteDimensional R M] (x : Orientation
     simp
   rw [hdet]
   exact inv_eq_of_mul_eq_one_right (by simp [← mul_pow])
+
+/-- The signed Jacobian criterion for transporting orientations between two spaces: a linear
+equivalence `A : M ≃ N` carries `u • o` to `v • C o`, where `C : M ≃ N` is a reference
+equivalence, exactly when `u v det (C⁻¹ ∘ A)` is positive. -/
+theorem Orientation.map_units_smul_eq_units_smul_map_iff_det_mul_pos [FiniteDimensional R M]
+    {N : Type*} [AddCommGroup N] [Module R N] (o : Orientation R M ι) (A C : M ≃ₗ[R] N)
+    (u v : Rˣ) (hι : Fintype.card ι = finrank R M) :
+    Orientation.map ι A (u • o) = v • Orientation.map ι C o ↔
+      0 < (u : R) * (v : R) * LinearMap.det (A.trans C.symm).toLinearMap := by
+  have hC : v • Orientation.map ι C o = Orientation.map ι C (v • o) := by
+    rw [Orientation.map, Module.Ray.map_units_smul]
+  rw [← map_units_smul_eq_iff_det_mul_pos o _ u v hι, hC, map_trans, ← map_symm,
+    Equiv.symm_apply_eq]
 
 open Classical in
 /-- The sign distinguishing two orientations reconstructs the second from the first when

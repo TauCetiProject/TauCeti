@@ -261,8 +261,7 @@ theorem eigenvalueMeasure_toMeasure (A : Matrix n n ℂ) :
 
 /-- The eigenvalue measure of a set is the proportion of characteristic roots in it, counted with
 algebraic multiplicity. -/
-theorem eigenvalueMeasure_apply (A : Matrix n n ℂ) {s : Set ℂ} [DecidablePred (· ∈ s)]
-    (hs : MeasurableSet s) :
+theorem eigenvalueMeasure_apply (A : Matrix n n ℂ) {s : Set ℂ} [DecidablePred (· ∈ s)] :
     (A.eigenvalueMeasure : Measure ℂ) s =
       ((Fintype.card n : ℕ) : ℝ≥0∞)⁻¹ * Multiset.card (A.charpoly.roots.filter (· ∈ s)) := by
   rw [eigenvalueMeasure_toMeasure, _root_.smul_apply, smul_eq_mul]
@@ -270,7 +269,7 @@ theorem eigenvalueMeasure_apply (A : Matrix n n ℂ) {s : Set ℂ} [DecidablePre
   induction A.charpoly.roots using Multiset.induction_on with
   | empty => simp
   | cons z m ih =>
-    by_cases hz : z ∈ s <;> simp [Measure.dirac_apply' _ hs, hz, ih, add_comm]
+    by_cases hz : z ∈ s <;> simp [Measure.dirac_apply, hz, ih, add_comm]
 
 /-- Integrating against the eigenvalue measure is averaging over the characteristic roots,
 counted with algebraic multiplicity. -/
