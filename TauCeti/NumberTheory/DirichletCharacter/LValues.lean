@@ -275,9 +275,9 @@ private theorem inv_normalization_mul_tsum_eq_generalizedBernoulli_of_apply_neg_
     (ZMod.isPrimitive_stdAddChar N)
   rw [ZMod.card, hχpar] at hprod
   have hv : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
-  have hτ := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hv hχ
+  have hτ := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hχ
     (ZMod.isPrimitive_stdAddChar N)
-  have hτinv := DirichletCharacter.gaussSum_inv_ne_zero_of_isPrimitive hv hχ
+  have hτinv := DirichletCharacter.gaussSum_inv_ne_zero_of_isPrimitive hχ
     (ZMod.isPrimitive_stdAddChar N)
   have hf : ((k - 1).factorial : ℂ) ≠ 0 :=
     Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
