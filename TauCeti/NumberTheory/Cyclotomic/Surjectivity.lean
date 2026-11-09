@@ -45,10 +45,8 @@ theorem modularCyclotomicCharacter_surjective_of_irreducible
     (ZMod.val_coe_unit_coprime u).symm hirr
   refine ⟨σ, ?_⟩
   have hAut : hζ.autToPow K σ = u := by
-    apply Units.ext
-    apply ZMod.val_injective
-    exact hζ.pow_inj (ZMod.val_lt _) (ZMod.val_lt _)
-      ((IsPrimitiveRoot.autToPow_spec K hζ σ).trans hpow)
+    exact Units.ext (by simpa only [ZMod.natCast_zmod_val] using
+      hζ.coe_autToPow_eq_natCast hpow)
   exact (IsPrimitiveRoot.autToPow_eq_modularCyclotomicCharacter n K hζ σ).symm.trans hAut
 
 end TauCeti
