@@ -198,7 +198,7 @@ end Bundle.Trivialization
 
 namespace Bundle.Trivialization
 
-/-- For a trivialization `tq` of a continuous map `q` with discrete fibre, the sheet of index `j`
+/-- For a trivialization `tq` of a map `q` with discrete fibre, the sheet of index `j`
 over an open set `V` inside the base set, the set of points lying over `V` with fibre coordinate
 `j`, is open. -/
 theorem isOpen_sheet {Z B J : Type*} [TopologicalSpace Z] [TopologicalSpace B]
@@ -265,7 +265,8 @@ theorem map_mem_sheet_iff (hg : Continuous g) (hqg : ∀ e, q (g e) = p e) {I J 
     exact ⟨by rw [hqg]; exact h1, by rw [h3, h2]⟩
 
 /-- The point `tp.symm (q w, i)` of the `p`-sheet of index `i` lying over `q w` is mapped by `g`
-to `w`, provided `q w` lies in the connected set `V` and `w` is in the `q`-sheet of index `j`, and
+to `w`, provided `q w` lies in a preconnected set `V` contained in both base sets and `w` is in the
+`q`-sheet of index `j`, and
 the image under `g` of the point of that `p`-sheet over the reference base point `x₀ ∈ V` lies in
 the same `q`-sheet of index `j`. -/
 theorem map_symm_eq_of_mem_sheet (hg : Continuous g) (hqg : ∀ e, q (g e) = p e)
