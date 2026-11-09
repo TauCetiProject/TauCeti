@@ -5,6 +5,8 @@ Authors: Jon Crall, Claude Opus 5, OpenAI gpt-6.1-terra
 -/
 module
 
+public import TauCeti.Analysis.Complex.Pick.Nevanlinna
+import all TauCeti.Analysis.Complex.Pick.Nevanlinna
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Map
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Representation.OfRepresentation
@@ -52,44 +54,47 @@ theorem inverseCayleyCoord_def (w : ℂ) :
 @[simp] theorem inverseCayleyCoord_one : inverseCayleyCoord 1 = 0 := by
   simp [inverseCayleyCoord]
 
+/-- The complex coordinate agrees with the existing boundary coordinate on the unit circle. -/
+@[simp] theorem inverseCayleyCoord_coe_circle (z : Circle) :
+    inverseCayleyCoord (z : ℂ) = TauCeti.circleCayleyInv z := by
+  by_cases hz : z = 1
+  · subst z
+    simp [TauCeti.circleCayleyInv]
+  have hn := Circle.normSq_coe z
+  rw [Complex.normSq_apply] at hn
+  have hd : 1 - (z : ℂ).re ≠ 0 := by
+    intro h
+    have hre : (z : ℂ).re = 1 := by linarith
+    have him : (z : ℂ).im = 0 := by nlinarith [sq_nonneg (z : ℂ).im]
+    apply hz
+    apply Circle.ext
+    apply Complex.ext <;> simp [hre, him]
+  simp only [inverseCayleyCoord, TauCeti.circleCayleyInv, div_re, mul_re, mul_im,
+    I_re, I_im, one_re, one_im, add_re, add_im, sub_re, sub_im, zero_mul,
+    one_mul, zero_add, zero_sub, Complex.normSq_apply]
+  have hquad : (1 - (z : ℂ).re) * (1 - (z : ℂ).re) +
+      -(z : ℂ).im * -(z : ℂ).im = 2 * (1 - (z : ℂ).re) := by nlinarith
+  rw [hquad]
+  field_simp
+  ring
+
 /-- The inverse coordinate recovers a real number from its Cayley transform. -/
 @[simp] theorem inverseCayleyCoord_cayley (t : ℝ) :
     inverseCayleyCoord (((t : ℂ) - I) / ((t : ℂ) + I)) = t := by
-  have h : (t : ℂ) + I ≠ 0 := by
-    intro heq
-    have := congrArg Complex.im heq
-    simp at this
-  have h' : 1 - ((t : ℂ) - I) / ((t : ℂ) + I) ≠ 0 := by
-    intro heq
-    have := congrArg (fun z : ℂ => z * ((t : ℂ) + I)) heq
-    field_simp at this
-    simp at this
-  have heq : I * (1 + ((t : ℂ) - I) / ((t : ℂ) + I)) /
-      (1 - ((t : ℂ) - I) / ((t : ℂ) + I)) = t := by
-    field_simp
-    ring
-  simp only [inverseCayleyCoord, heq, ofReal_re]
+  rw [← TauCeti.coe_boundaryCayley, inverseCayleyCoord_coe_circle,
+    TauCeti.circleCayleyInv_boundaryCayley]
 
 /-- The Cayley transform recovers each unit-circle point other than `1`. -/
 theorem cayley_inverseCayleyCoord {w : ℂ} (hw : ‖w‖ = 1) (h1 : w ≠ 1) :
     ((inverseCayleyCoord w : ℂ) - I) / ((inverseCayleyCoord w : ℂ) + I) = w := by
-  have hn : w.re ^ 2 + w.im ^ 2 = 1 := by
-    have h := Complex.normSq_eq_norm_sq w
-    rw [hw] at h
-    simpa [Complex.normSq_apply, pow_two] using h
-  have him : (I * (1 + w) / (1 - w)).im = 0 := by
-    simp only [div_im, mul_re, mul_im, I_re, I_im, one_re, one_im, add_re, add_im,
-      sub_re, sub_im, zero_mul, one_mul, zero_add, zero_sub, Complex.normSq_apply]
-    rw [← sub_div]
-    apply div_eq_zero_iff.mpr
-    left
-    nlinarith
-  have hreal : ((inverseCayleyCoord w : ℝ) : ℂ) = I * (1 + w) / (1 - w) := by
-    apply Complex.ext <;> simp [inverseCayleyCoord, him]
-  rw [hreal]
-  have hden : 1 - w ≠ 0 := sub_ne_zero.mpr h1.symm
-  field_simp
-  ring
+  let z : Circle := ⟨w, by
+    simpa [Submonoid.unitSphere, Metric.mem_sphere, dist_zero_right] using hw⟩
+  have hz : z ≠ 1 := by
+    intro h
+    apply h1
+    exact congrArg (fun z : Circle => (z : ℂ)) h
+  have h := congrArg (fun z : Circle => (z : ℂ)) (TauCeti.boundaryCayley_circleCayleyInv hz)
+  simpa only [TauCeti.coe_boundaryCayley, ← inverseCayleyCoord_coe_circle] using h
 
 end Complex
 
@@ -113,7 +118,7 @@ theorem spectralPVM_def :
         (Complex.measurable_inverseCayleyCoord.comp measurable_subtype_coe) := (rfl)
 
 /-- Its projection of a Borel set is the Cayley spectral projection of the inverse image. -/
-theorem spectralPVM_proj (B : Set ℝ) (hB : MeasurableSet B) :
+@[simp] theorem spectralPVM_proj (B : Set ℝ) (hB : MeasurableSet B) :
     (spectralPVM hA).proj B hB =
       (ProjValMeasure.ofRepresentation (cfcHom hA.isStarNormal_cayley)).proj
         ((Complex.inverseCayleyCoord ∘ Subtype.val) ⁻¹' B)
@@ -121,7 +126,7 @@ theorem spectralPVM_proj (B : Set ℝ) (hB : MeasurableSet B) :
   rw [spectralPVM_def, ProjValMeasure.map_proj]
 
 /-- The diagonal scalar measures are the pushforwards of the Cayley representation measures. -/
-theorem spectralPVM_diag (ξ : H) :
+@[simp] theorem spectralPVM_diag (ξ : H) :
     (spectralPVM hA).diag ξ =
       Measure.map (Complex.inverseCayleyCoord ∘ Subtype.val)
         ((cfcHom hA.isStarNormal_cayley).representationDiagMeasure ξ) := by
