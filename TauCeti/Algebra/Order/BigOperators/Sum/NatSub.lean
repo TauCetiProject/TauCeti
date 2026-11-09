@@ -32,7 +32,7 @@ open Finset
 /-- If `c ≤ d` pointwise and `c ≠ d` (that is, `c < d` in the pointwise order) on a finite index
 type, the differences `d i - c i` sum to at least `1`. -/
 theorem one_le_sum_sub_of_lt {R β : Type*} [AddCommGroupWithOne R] [LinearOrder R]
-    [IsOrderedAddMonoid R] [ZeroLEOneClass R] [NeZero (1 : R)] [Fintype β] {c d : β → ℕ}
+    [IsOrderedAddMonoid R] [ZeroLEOneClass R] [Fintype β] {c d : β → ℕ}
     (h : c < d) : 1 ≤ ∑ i, ((d i : R) - c i) := by
   obtain ⟨i₀, hi₀⟩ := Pi.lt_def.mp h |>.2
   have hnn (i : β) : 0 ≤ (d i : R) - c i := by
