@@ -9,7 +9,9 @@ public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Finite
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.NakayamaRim
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.SplittingModule
 import Mathlib.NumberTheory.Padics.LocalField
+import TauCeti.Algebra.Module.Projective.Semilinear
 import TauCeti.Algebra.MonoidAlgebra.Exactness
+import TauCeti.LinearAlgebra.LinearEquiv.Basic
 import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
@@ -149,17 +151,12 @@ theorem nonempty_of_isZero {L K : Type} [Field L] [Field K] [Algebra K L]
     finite := hfin
     projdim := ⟨n, f, hf, hker⟩ }⟩
 
-/-- **A degree-two class of `A(L)` satisfying Tate's hypotheses gives a Tate module.** Let `L` be
-a finite extension of `ℚ_p` and `K` a subfield with `Gal(L/K)` finite, and let
-`u ∈ H²(Gal(L/K), A(L))`. Suppose that for every `p`-subgroup `S` of `Gal(L/K)`,
-`H¹(S, A(L)) = 0`, the restriction of `u` generates `H²(S, A(L))` as a `ℤ_p`-module, and
-`H²(S, A(L))` has order `#S`. Then the splitting module of `u`, an extension
-`0 → A(L) → Y → I_G → 0`, is cohomologically trivial
-(`TauCeti.TateCohomology.isZero_res_splittingModule`; on `ℓ`-subgroups for `ℓ ≠ p` all
-positive-degree group cohomology of a `ℤ_p`-module vanishes), so it is a Tate module of the
-layer. -/
-theorem nonempty_of_tateHypotheses {L K : Type} [Field L] [Field K] [Algebra K L]
-    [Algebra ℚ_[p] L] [Module.Finite ℚ_[p] L] [Finite (L ≃ₐ[K] L)]
+/-- **The splitting module of a class satisfying Tate's hypotheses is cohomologically trivial.**
+On every subgroup its Tate cohomology vanishes in every degree; this is the input of
+`TauCeti.LayerTateModule.nonempty_of_isZero` in
+`TauCeti.LayerTateModule.nonempty_of_tateHypotheses`. -/
+private theorem isZero_res_splittingModule_of_tateHypotheses {L K : Type} [Field L] [Field K]
+    [Algebra K L] [Algebra ℚ_[p] L] [Module.Finite ℚ_[p] L] [Finite (L ≃ₐ[K] L)]
     (u : groupCohomology (Rep.of (padicCompletionUnitsRepresentation p L K)) 2)
     (h1 : ∀ S : Subgroup (L ≃ₐ[K] L), IsPGroup p S →
       IsZero (groupCohomology
@@ -173,7 +170,9 @@ theorem nonempty_of_tateHypotheses {L K : Type} [Field L] [Field K] [Algebra K L
       Nat.card (groupCohomology
         (Rep.res S.subtype (Rep.of (padicCompletionUnitsRepresentation p L K))) 2) =
         Nat.card S) :
-    Nonempty (LayerTateModule p L K) := by
+    ∀ (S : Subgroup (L ≃ₐ[K] L)) [Fintype S] (n : ℤ),
+      IsZero (tateCohomology (Rep.res S.subtype
+        (Rep.splittingModule (Rep.of (padicCompletionUnitsRepresentation p L K)) u)) n) := by
   let A := Rep.of (padicCompletionUnitsRepresentation p L K)
   -- On an `ℓ`-subgroup with `ℓ ≠ p`, everything vanishes: `#S` is a unit of `ℤ_p`.
   have hunit (ℓ : ℕ) [Fact ℓ.Prime] (hℓ : ℓ ≠ p) (S : Subgroup (L ≃ₐ[K] L))
@@ -207,6 +206,20 @@ theorem nonempty_of_tateHypotheses {L K : Type} [Field L] [Field K] [Algebra K L
         rw [Nat.card_unique (α := groupCohomology (Rep.res S.subtype A) 2),
           Ideal.span_singleton_eq_top.mpr (hunit ℓ hℓ S hS)]
         exact (Nat.card_unique).symm)
+  exact hY
+
+/-- The splitting module of a degree-two class `u` of `A(L)` is an extension
+`0 → A(L) → Y → I_G → 0` of `ℤ_p[Gal(L/K)]`-modules: the inclusion `ι` is injective, the projection
+`π` to the augmentation ideal is surjective, and the sequence is exact. -/
+private theorem exists_exact_splittingModule {L K : Type} [Field L] [Field K] [Algebra K L]
+    (u : groupCohomology (Rep.of (padicCompletionUnitsRepresentation p L K)) 2) :
+    ∃ (ι : Additive ↑(padicCompletionUnits p L) →ₗ[MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)]
+        (Rep.splittingModule (Rep.of (padicCompletionUnitsRepresentation p L K)) u).ρ.asModule)
+      (π : (Rep.splittingModule (Rep.of (padicCompletionUnitsRepresentation p L K)) u).ρ.asModule
+        →ₗ[MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)]
+        RingHom.ker (MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L))),
+      Function.Injective ι ∧ Function.Surjective π ∧ Function.Exact ι π := by
+  let A := Rep.of (padicCompletionUnitsRepresentation p L K)
   -- The inclusion of `A(L)` and the projection to `I_G ⊆ ℤ_p[G]`, as `ℤ_p[G]`-linear maps.
   let ι : Additive ↑(padicCompletionUnits p L) →ₗ[MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)]
       (Rep.splittingModule A u).ρ.asModule :=
@@ -253,7 +266,59 @@ theorem nonempty_of_tateHypotheses {L K : Type} [Field L] [Field K] [Algebra K L
     rw [← map_zero (Rep.augmentationι ℤ_[p] (L ≃ₐ[K] L)).hom,
       (TauCeti.AugmentationIdeal.augmentationι_injective ℤ_[p] (L ≃ₐ[K] L)).eq_iff]
     exact (Rep.exact_iff_function_exact _).1 hse.exact y
-  exact nonempty_of_isZero _ hY hι hπ hιπ
+  exact ⟨ι, π, hι, hπ, hιπ⟩
+
+/-- **A degree-two class of `A(L)` satisfying Tate's hypotheses gives a Tate module.** Let `L` be
+a finite extension of `ℚ_p` and `K` a subfield with `Gal(L/K)` finite, and let
+`u ∈ H²(Gal(L/K), A(L))`. Suppose that for every `p`-subgroup `S` of `Gal(L/K)`,
+`H¹(S, A(L)) = 0`, the restriction of `u` generates `H²(S, A(L))` as a `ℤ_p`-module, and
+`H²(S, A(L))` has order `#S`. Then the splitting module of `u`, an extension
+`0 → A(L) → Y → I_G → 0`, is cohomologically trivial
+(`TauCeti.TateCohomology.isZero_res_splittingModule`; on `ℓ`-subgroups for `ℓ ≠ p` all
+positive-degree group cohomology of a `ℤ_p`-module vanishes), so it is a Tate module of the
+layer. -/
+theorem nonempty_of_tateHypotheses {L K : Type} [Field L] [Field K] [Algebra K L]
+    [Algebra ℚ_[p] L] [Module.Finite ℚ_[p] L] [Finite (L ≃ₐ[K] L)]
+    (u : groupCohomology (Rep.of (padicCompletionUnitsRepresentation p L K)) 2)
+    (h1 : ∀ S : Subgroup (L ≃ₐ[K] L), IsPGroup p S →
+      IsZero (groupCohomology
+        (Rep.res S.subtype (Rep.of (padicCompletionUnitsRepresentation p L K))) 1))
+    (hgen : ∀ S : Subgroup (L ≃ₐ[K] L), IsPGroup p S →
+      ∀ x : groupCohomology
+        (Rep.res S.subtype (Rep.of (padicCompletionUnitsRepresentation p L K))) 2,
+        ∃ r : ℤ_[p], r • groupCohomology.map S.subtype
+          (𝟙 (Rep.res S.subtype (Rep.of (padicCompletionUnitsRepresentation p L K)))) 2 u = x)
+    (hcard : ∀ S : Subgroup (L ≃ₐ[K] L), IsPGroup p S →
+      Nat.card (groupCohomology
+        (Rep.res S.subtype (Rep.of (padicCompletionUnitsRepresentation p L K))) 2) =
+        Nat.card S) :
+    Nonempty (LayerTateModule p L K) := by
+  obtain ⟨ι, π, hι, hπ, hιπ⟩ := exists_exact_splittingModule (p := p) u
+  exact nonempty_of_isZero _ (isZero_res_splittingModule_of_tateHypotheses u h1 hgen hcard) hι hπ
+    hιπ
+
+/-- The isomorphism `A(L) ≃ A(L')` of `nonempty_of_equiv` is semilinear over the induced
+isomorphism of group algebras `ℤ_p[Gal(L/K)] ≃ ℤ_p[Gal(L'/K')]`. -/
+private theorem smul_toMul_mapDomainRingEquiv {p : ℕ} [Fact p.Prime] {L K : Type u} [Field L]
+    [Field K] [Algebra K L]
+    {L' K' : Type} [Field L'] [Field K'] [Algebra K' L']
+    (φ : (L ≃ₐ[K] L) ≃* (L' ≃ₐ[K'] L'))
+    (c : ↑(padicCompletionUnits p L) ≃* ↑(padicCompletionUnits p L'))
+    (hsmul : ∀ (a : ℤ_[p]) (x : Additive ↑(padicCompletionUnits p L)),
+      Additive.ofMul (c (a • x).toMul) = a • Additive.ofMul (c x.toMul))
+    (haut : ∀ σ x, c (padicCompletionUnitsAut p L K σ x) =
+      padicCompletionUnitsAut p L' K' (φ σ) (c x))
+    (r : MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)) (x : Additive ↑(padicCompletionUnits p L)) :
+    Additive.ofMul (c (r • x).toMul) =
+      MonoidAlgebra.mapDomainRingEquiv ℤ_[p] φ r • Additive.ofMul (c x.toMul) := by
+  induction r using MonoidAlgebra.induction_linear with
+  | zero => simp
+  | add r s hr hs =>
+    rw [add_smul, toMul_add, map_mul, ofMul_mul, hr, hs, map_add, add_smul]
+  | single σ a =>
+    obtain ⟨x, rfl⟩ : ∃ y, Additive.ofMul y = x := ⟨x.toMul, rfl⟩
+    rw [MonoidAlgebra.mapDomainRingEquiv_single, padicCompletionUnits_single_smul, hsmul,
+      toMul_ofMul, toMul_ofMul, haut, padicCompletionUnits_single_smul]
 
 /-- **Transport of the Tate module along an isomorphism of layers.** Let `L/K` and `L'/K'` be
 layers, `L', K'` in `Type`, with an isomorphism `φ` of their automorphism groups and a
@@ -274,17 +339,7 @@ theorem nonempty_of_equiv {L K : Type u} [Field L] [Field K] [Algebra K L]
   let Φ : R ≃+* R' := MonoidAlgebra.mapDomainRingEquiv ℤ_[p] φ
   have : RingHomInvPair (Φ : R →+* R') (Φ.symm : R' →+* R) := .of_ringEquiv Φ
   have : RingHomInvPair (Φ.symm : R' →+* R) (Φ : R →+* R') := .of_ringEquiv_symm Φ
-  -- `A(L) ≃ A(L')` is `Φ`-semilinear.
-  have hc (r : R) (x : Additive ↑(padicCompletionUnits p L)) :
-      Additive.ofMul (c (r • x).toMul) = Φ r • Additive.ofMul (c x.toMul) := by
-    induction r using MonoidAlgebra.induction_linear with
-    | zero => simp
-    | add r s hr hs =>
-      rw [add_smul, toMul_add, map_mul, ofMul_mul, hr, hs, map_add, add_smul]
-    | single σ a =>
-      obtain ⟨x, rfl⟩ : ∃ y, Additive.ofMul y = x := ⟨x.toMul, rfl⟩
-      rw [MonoidAlgebra.mapDomainRingEquiv_single, padicCompletionUnits_single_smul, hsmul,
-        toMul_ofMul, toMul_ofMul, haut, padicCompletionUnits_single_smul]
+  have hc := smul_toMul_mapDomainRingEquiv (p := p) φ c hsmul haut
   let cS : Additive ↑(padicCompletionUnits p L) ≃ₛₗ[(Φ : R →+* R')]
       Additive ↑(padicCompletionUnits p L') :=
     { c.toAdditive with map_smul' := hc }
@@ -297,41 +352,17 @@ theorem nonempty_of_equiv {L K : Type u} [Field L] [Field K] [Algebra K L]
       map_smul' _ _ := rfl
       left_inv _ := rfl
       right_inv _ := rfl }
-  -- `Φ` identifies the augmentation ideals.
-  have hI : Submodule.map (Φ.toSemilinearEquiv : R →ₛₗ[(Φ : R →+* R')] R')
-      (RingHom.ker (MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L))) =
-      RingHom.ker (MonoidAlgebra.augmentation ℤ_[p] (L' ≃ₐ[K'] L')) := by
-    ext y
-    rw [Submodule.mem_map_equiv, RingHom.mem_ker, RingHom.mem_ker,
-      ← MonoidAlgebra.augmentation_mapDomainRingEquiv ℤ_[p] φ]
-    exact Iff.of_eq (congrArg (· = 0) (congrArg _ (Φ.apply_symm_apply y)))
+  have hI := RingEquiv.map_ker_toSemilinearEquiv Φ (MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L))
+    (MonoidAlgebra.augmentation ℤ_[p] (L' ≃ₐ[K'] L'))
+    (MonoidAlgebra.augmentation_mapDomainRingEquiv ℤ_[p] φ)
   let eI := Φ.toSemilinearEquiv.ofSubmodules _ _ hI
   obtain ⟨n, f', hf', hker'⟩ := Y.projdim
-  let PΦ : (Fin n → R) ≃ₛₗ[(Φ : R →+* R')] (Fin n → R') :=
-    { toFun v i := Φ (v i)
-      invFun v i := Φ.symm (v i)
-      map_add' _ _ := funext fun _ ↦ map_add Φ _ _
-      map_smul' _ _ := funext fun _ ↦ map_mul Φ _ _
-      left_inv _ := funext fun _ ↦ Φ.symm_apply_apply _
-      right_inv _ := funext fun _ ↦ Φ.apply_symm_apply _ }
+  obtain ⟨f, hf, hker⟩ :=
+    Module.exists_surjective_projective_ker_of_semilinearEquiv Φ eY f' hf' hker'
   let ι : Additive ↑(padicCompletionUnits p L) →ₗ[R] ULift.{u} Y.carrier :=
     eY.symm.toLinearMap.comp (Y.ι.comp cS.toLinearMap)
   let π : ULift.{u} Y.carrier →ₗ[R] RingHom.ker (MonoidAlgebra.augmentation ℤ_[p] (L ≃ₐ[K] L)) :=
     eI.symm.toLinearMap.comp (Y.π.comp eY.toLinearMap)
-  let f : (Fin n → R) →ₗ[R] ULift.{u} Y.carrier :=
-    eY.symm.toLinearMap.comp (f'.comp PΦ.toLinearMap)
-  have hf : Function.Surjective f :=
-    eY.symm.surjective.comp (hf'.comp PΦ.surjective)
-  have hker : (LinearMap.ker f).map (PΦ : (Fin n → R) →ₛₗ[(Φ : R →+* R')] (Fin n → R')) =
-      LinearMap.ker f' := by
-    ext v
-    rw [Submodule.mem_map_equiv, LinearMap.mem_ker, LinearMap.mem_ker]
-    -- Unfold the local definitions of `f` and of the inverse of `PΦ`.
-    change eY.symm (f' (PΦ (PΦ.symm v))) = 0 ↔ _
-    rw [LinearEquiv.apply_symm_apply, LinearEquiv.map_eq_zero_iff]
-  have : Module.Projective R (LinearMap.ker f) :=
-    .of_equiv (σ := (Φ.symm : R' →+* R)) (σ' := (Φ : R →+* R'))
-      (PΦ.ofSubmodules _ _ hker).symm
   have hιπ : Function.Exact ι π := by
     intro y
     -- Unfold the local definitions of `ι` and `π`.
@@ -350,7 +381,7 @@ theorem nonempty_of_equiv {L K : Type u} [Field L] [Field K] [Algebra K L]
     π_surjective := eI.symm.surjective.comp (Y.π_surjective.comp eY.surjective)
     exact := LinearMap.exact_iff.mp hιπ
     finite := .of_surjective f hf
-    projdim := ⟨n, f, hf, this⟩ }⟩
+    projdim := ⟨n, f, hf, hker⟩ }⟩
 
 end LayerTateModule
 

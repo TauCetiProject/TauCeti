@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.Algebra.MvPolynomial.PDeriv
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
+public import TauCeti.RingTheory.MvPolynomial.Rescale
 
 /-!
 # Linear changes of variables in multivariate polynomials
@@ -42,6 +43,8 @@ forms of degree `n`, through which the modular group acts on period polynomials.
   determinant preserves nonvanishing of the gradient at nonzero zeros over a faithful algebra
   without zero divisors.
 * `MvPolynomial.map_linearSubst`: changing coefficients commutes with substitution.
+* `MvPolynomial.linearSubst_diagonal`: a diagonal matrix rescales the variables by its
+  diagonal entries.
 * `MvPolynomial.linearSubst_diagonal_monomial`: a diagonal matrix scales each monomial by
   the product of its diagonal entries raised to the corresponding exponents.
 * `MvPolynomial.coeff_linearSubst_upperTriangular_monomial`: under an upper-triangular
@@ -92,23 +95,19 @@ theorem map_linearSubst {S : Type*} [CommSemiring S] (f : R →+* S) (M : Matrix
   | add p q hp hq => simp [hp, hq]
   | mul_X p i hp => simp [hp]
 
+/-- A diagonal change of variables is the rescaling of the variables by the diagonal entries. -/
+theorem linearSubst_diagonal [DecidableEq σ] (v : σ → R) :
+    linearSubst (Matrix.diagonal v) = rescale v := by
+  refine algHom_ext fun i ↦ ?_
+  rw [linearSubst_X, rescale_X, Finset.sum_eq_single i (fun j _ hji ↦ by simp [Ne.symm hji])
+    (by simp), diagonal_apply_eq]
+
 /-- A diagonal change of variables scales a monomial by the product of its eigenvalues. -/
 @[simp]
 theorem linearSubst_diagonal_monomial [DecidableEq σ] (v : σ → R) (s : σ →₀ ℕ) :
     linearSubst (Matrix.diagonal v) (monomial s 1) =
       (s.prod fun i k => v i ^ k) • monomial s 1 := by
-  have h (i : σ) : (∑ j, C ((Matrix.diagonal v) i j) * X j) = C (v i) * X i := by
-    classical
-    have hs : (∑ j, C ((Matrix.diagonal v) i j) * X j) =
-        C ((Matrix.diagonal v) i i) * X i := by
-      apply Finset.sum_eq_single i
-      · intro j _ hji
-        simp [Ne.symm hji]
-      · simp
-    simpa [Matrix.diagonal_apply] using hs
-  rw [linearSubst_eq_aeval, aeval_monomial, monomial_eq]
-  simp only [h, map_one, one_mul, mul_pow, Finsupp.prod, smul_eq_C_mul,
-    Finset.prod_mul_distrib, map_prod, map_pow]
+  rw [linearSubst_diagonal, rescale_monomial, smul_eq_C_mul, C_mul_monomial]
 
 /-- An upper-triangular change of variables in two variables is triangular on monomials: the
 coefficient of `X₀ᵏ X₁ˡ` in the image of `X₀ᵏ X₁ˡ` is `aᵏ dˡ`, independently of `b`. -/

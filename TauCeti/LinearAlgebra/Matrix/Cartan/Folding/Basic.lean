@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Perm.Cycle.Factors
+public import TauCeti.LinearAlgebra.FixedSubmodule.Permutation
 public import TauCeti.LinearAlgebra.Matrix.NormTwoShell.Basic
 import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 import TauCeti.LinearAlgebra.Matrix.Submatrix
 import TauCeti.LinearAlgebra.Matrix.Symmetric
 
@@ -31,6 +33,24 @@ with rows `O` and columns `P`, is
 which does not depend on the choice of `j ∈ P`. It has diagonal entries `2` and nonpositive
 off-diagonal entries.
 
+The symmetrization of `C` is explicit. Reading a vertex `i` as the simple root `αᵢ`, the folded
+simple root of `O` is `β_O = |O|⁻¹ ∑_{i ∈ O} αᵢ` (`Equiv.Perm.orbitMean`), and the folded Gram
+matrix `G_{O,P} = ⟪β_O, β_P⟫` (`Matrix.foldedGramMatrix`) is the Gram matrix of these vectors for
+the form of `B`. Since the `β_O` are linearly independent, `G` is positive definite. Since the
+column sums of `B` over an orbit are constant along the orbits, `G_{O,P} = |O|⁻¹ ∑_{i ∈ O} B i j`
+for `j ∈ P`, and multiplying row `O` of `C` by the positive rational
+
+`δ_O = (c_O |O|)⁻¹ = d_O / (2 |O|)`  (`Matrix.foldingSymmetrizer`)
+
+gives `G`. In particular `C_{O,P} = 2 ⟪β_O, β_P⟫ / ⟪β_O, β_O⟫`, the usual formula for the Cartan
+integers of a root system with simple roots `β_O`.
+
+For instance, for the reversal of `A₃` the orbits `O = {1, 3}` and `P = {2}` both have column sum
+`d = 2`, so `c_O = c_P = 1`, and `C` has rows `(2, -2)` and `(-1, 2)`, a rank-two Cartan matrix with
+a double edge. The folded simple roots `β_O = (α₁ + α₃) / 2` and `β_P = α₂` have
+`⟪β_O, β_O⟫ = 1`, `⟪β_O, β_P⟫ = -1` and `⟪β_P, β_P⟫ = 2`, and the symmetrizer `(1/2, 1)` carries
+`C` to this Gram matrix.
+
 The file also proves the orbit string bound behind the higher Serre relations of the folded
 frame: if `α_j + ∑_{i ∈ O} sᵢ αᵢ` has norm two for some `s ≥ 0` and `j ∉ O`, then
 `∑_{i ∈ O} sᵢ ≤ -c_O ∑_{i ∈ O} B i j`. The Laplacian bound `Matrix.IsSymm.mul_sum_sq_le` turns
@@ -41,6 +61,8 @@ gives the claim.
 
 * `Matrix.foldingScale B σ O`: the scale `c_O = 2 / d_O`.
 * `Matrix.foldedCartanMatrix B σ`: the folded Cartan matrix `C`.
+* `Matrix.foldedGramMatrix B σ`: the Gram matrix `⟪β_O, β_P⟫` of the folded simple roots.
+* `Matrix.foldingSymmetrizer B σ`: the symmetrizer `δ_O = (c_O |O|)⁻¹`.
 
 ## Main results
 
@@ -52,12 +74,18 @@ gives the claim.
 * `Matrix.foldedCartanMatrix_apply_of_sameCycle`: `C_{O,P}` may be computed at any `j ∈ P`.
 * `Matrix.foldedCartanMatrix_apply_self`, `Matrix.foldedCartanMatrix_nonpos`: `C` has diagonal
   entries `2` and nonpositive off-diagonal entries.
+* `Matrix.posDef_foldedGramMatrix`: the folded Gram matrix of a positive definite `B` is positive
+  definite.
+* `Matrix.foldedGramMatrix_apply_eq_sum_div_card`: `⟪β_O, β_P⟫ = |O|⁻¹ ∑_{i ∈ O} B i j` for `j ∈ P`.
+* `Matrix.foldingSymmetrizer_mul_foldedCartanMatrix`: `δ_O C_{O,P} = ⟪β_O, β_P⟫`.
+* `Matrix.foldedCartanMatrix_apply_eq_two_mul_div`: `C_{O,P} = 2 ⟪β_O, β_P⟫ / ⟪β_O, β_O⟫`.
 * `Matrix.IsSymm.sum_le_of_mem_normTwoShell`: the orbit string bound.
 
 ## References
 
 * V. G. Kac, *Infinite dimensional Lie algebras*, third edition, Cambridge University Press (1990),
-  §7.9, for the fixed points of a diagram automorphism and the folded generators.
+  §7.9, for the fixed points of a diagram automorphism, the folded generators and the folded
+  Cartan matrix.
 -/
 
 public section
@@ -201,6 +229,119 @@ theorem foldedCartanMatrix_nonpos (hB : B.PosDef) (hdiag : ∀ i, B i i = 2)
       Equiv.Perm.ne_of_sameCycle_out (by simpa using hi) (Equiv.Perm.SameCycle.refl σ P.out) hOP
 
 end CartanMatrix
+
+/-! ### The folded Gram matrix and its symmetrizer -/
+
+section GramMatrix
+
+variable {I : Type*} [Fintype I] [DecidableEq I] (B : Matrix I I ℤ) (σ : Equiv.Perm I)
+
+/-- The folded Gram matrix `G_{O,P} = ⟪β_O, β_P⟫` of a permutation `σ` of the vertices: the Gram
+matrix, for the form `⟪a, b⟫ = a ⬝ᵥ B *ᵥ b` read over `ℚ`, of the folded simple roots
+`β_O = Equiv.Perm.orbitMean σ O`. -/
+noncomputable def foldedGramMatrix :
+    Matrix (Quotient (Equiv.Perm.SameCycle.setoid σ)) (Quotient (Equiv.Perm.SameCycle.setoid σ))
+      ℚ :=
+  Matrix.of fun O P ↦ σ.orbitMean O ⬝ᵥ B.map (Int.cast : ℤ → ℚ) *ᵥ σ.orbitMean P
+
+theorem foldedGramMatrix_apply (O P : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
+    B.foldedGramMatrix σ O P = σ.orbitMean O ⬝ᵥ B.map (Int.cast : ℤ → ℚ) *ᵥ σ.orbitMean P :=
+  (rfl)
+
+/-- The folded Gram matrix is the congruence of `B` by the matrix whose rows are the folded simple
+roots. -/
+theorem foldedGramMatrix_eq_mul_mul_transpose :
+    B.foldedGramMatrix σ =
+      Matrix.of σ.orbitMean * B.map (Int.cast : ℤ → ℚ) * (Matrix.of σ.orbitMean)ᵀ := by
+  ext O P
+  rw [foldedGramMatrix_apply, dotProduct_mulVec, Matrix.mul_apply]
+  simp [vecMul, dotProduct, Matrix.mul_apply]
+
+variable {B} in
+/-- **The folded Gram matrix of a positive definite `B` is positive definite.** No invariance of
+`B` under `σ` is needed. -/
+theorem posDef_foldedGramMatrix (hB : B.PosDef) : (B.foldedGramMatrix σ).PosDef := by
+  classical
+  -- `G` is a congruence of `B` by the matrix of the linearly independent folded simple roots.
+  rw [foldedGramMatrix_eq_mul_mul_transpose, ← conjTranspose_eq_transpose_of_trivial]
+  exact (TauCeti.Matrix.posDef_map_intCast hB).mul_mul_conjTranspose_same
+    (Matrix.vecMul_injective_iff.mpr σ.linearIndependent_orbitMean)
+
+variable {B σ}
+
+/-- For a `σ`-invariant `B`, the folded Gram matrix is the column sum of `B` over `O` at any
+vertex `j` of `P`, divided by `|O|`: `⟪β_O, β_P⟫ = |O|⁻¹ ∑_{i ∈ O} B i j`. In particular
+`⟪β_O, β_O⟫ = d_O / |O|`. -/
+theorem foldedGramMatrix_apply_eq_sum_div_card (hσ : B.reindex σ σ = B)
+    (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) {P : Quotient (Equiv.Perm.SameCycle.setoid σ)}
+    {j : I} (hj : σ.SameCycle j P.out) :
+    B.foldedGramMatrix σ O P =
+      ((∑ i with σ.SameCycle i O.out, B i j : ℤ) : ℚ) / #{i | σ.SameCycle i O.out} := by
+  have hP : (#{j | σ.SameCycle j P.out} : ℚ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (σ.card_sameCycle_out_pos P).ne'
+  -- Each column sum over `O` at a vertex of `P` is the one at `j`.
+  have hcol : ∀ j' ∈ ({j' | σ.SameCycle j' P.out} : Finset I),
+      ∑ i with σ.SameCycle i O.out, (B i j' : ℚ) =
+        ((∑ i with σ.SameCycle i O.out, B i j : ℤ) : ℚ) :=
+    fun j' hj' ↦ by
+      rw [sum_apply_eq_of_sameCycle hσ O (hj.trans (mem_filter.mp hj').2.symm), Int.cast_sum]
+  simp_rw [foldedGramMatrix_apply, Equiv.Perm.orbitMean_dotProduct, mulVec,
+    Equiv.Perm.dotProduct_orbitMean, ← mul_sum, map_apply]
+  rw [sum_comm, sum_congr rfl hcol, sum_const, nsmul_eq_mul]
+  field_simp
+
+variable (B σ) in
+/-- The folding symmetrizer `δ_O = (c_O |O|)⁻¹` of a `σ`-orbit `O`, where `c_O` is the folding
+scale `Matrix.foldingScale B σ O`. When `B` is positive definite and `σ`-invariant with diagonal
+entries `2` and nonpositive off-diagonal entries, `c_O d_O = 2` for the column sum `d_O` of `B`
+over `O` (`Matrix.foldingScale_mul_sum`), so the symmetrizer is `d_O / (2 |O|)`. -/
+noncomputable def foldingSymmetrizer (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) : ℚ :=
+  ((B.foldingScale σ O : ℚ) * #{i | σ.SameCycle i O.out})⁻¹
+
+theorem foldingSymmetrizer_def (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
+    B.foldingSymmetrizer σ O = ((B.foldingScale σ O : ℚ) * #{i | σ.SameCycle i O.out})⁻¹ :=
+  (rfl)
+
+/-- The folding symmetrizer is positive. -/
+theorem foldingSymmetrizer_pos (hB : B.PosDef) (hdiag : ∀ i, B i i = 2)
+    (hoff : ∀ i j, i ≠ j → B i j ≤ 0) (hσ : B.reindex σ σ = B)
+    (O : Quotient (Equiv.Perm.SameCycle.setoid σ)) : 0 < B.foldingSymmetrizer σ O := by
+  have hc : (0 : ℚ) < B.foldingScale σ O := by exact_mod_cast foldingScale_pos hB hdiag hoff hσ O
+  have hO := σ.card_sameCycle_out_pos O
+  rw [foldingSymmetrizer_def]
+  positivity
+
+/-- **The folding symmetrizer symmetrizes the folded Cartan matrix**: multiplying row `O` of the
+folded Cartan matrix by `δ_O` gives the folded Gram matrix, `δ_O C_{O,P} = ⟪β_O, β_P⟫`. -/
+theorem foldingSymmetrizer_mul_foldedCartanMatrix (hB : B.PosDef) (hdiag : ∀ i, B i i = 2)
+    (hoff : ∀ i j, i ≠ j → B i j ≤ 0) (hσ : B.reindex σ σ = B)
+    (O P : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
+    B.foldingSymmetrizer σ O * B.foldedCartanMatrix σ O P = B.foldedGramMatrix σ O P := by
+  have hc : (B.foldingScale σ O : ℚ) ≠ 0 := by
+    exact_mod_cast (foldingScale_pos hB hdiag hoff hσ O).ne'
+  have hO : (#{i | σ.SameCycle i O.out} : ℚ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (σ.card_sameCycle_out_pos O).ne'
+  rw [foldedGramMatrix_apply_eq_sum_div_card hσ O (Equiv.Perm.SameCycle.refl σ P.out),
+    foldedCartanMatrix_apply, foldingSymmetrizer_def]
+  push_cast
+  field_simp
+
+/-- **The Cartan integers of the folded simple roots.** The folded Cartan matrix is
+`C_{O,P} = 2 ⟪β_O, β_P⟫ / ⟪β_O, β_O⟫`, the Cartan matrix, with `H` rows, of the vectors `β_O` for
+the form of `B`. -/
+theorem foldedCartanMatrix_apply_eq_two_mul_div (hB : B.PosDef) (hdiag : ∀ i, B i i = 2)
+    (hoff : ∀ i j, i ≠ j → B i j ≤ 0) (hσ : B.reindex σ σ = B)
+    (O P : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
+    (B.foldedCartanMatrix σ O P : ℚ) =
+      2 * B.foldedGramMatrix σ O P / B.foldedGramMatrix σ O O := by
+  have hδ := (foldingSymmetrizer_pos hB hdiag hoff hσ O).ne'
+  rw [← foldingSymmetrizer_mul_foldedCartanMatrix hB hdiag hoff hσ,
+    ← foldingSymmetrizer_mul_foldedCartanMatrix hB hdiag hoff hσ,
+    foldedCartanMatrix_apply_self hB hdiag hoff hσ]
+  field_simp
+  ring
+
+end GramMatrix
 
 /-! ### The orbit string bound -/
 

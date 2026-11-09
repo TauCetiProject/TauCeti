@@ -44,6 +44,10 @@ function field (`TauCeti.AlgebraicGeometry.CodimensionOnePoint.equivPlace`).
 * `TauCeti.AlgebraicGeometry.twoChartModel.isNoetherian`: the scheme is Noetherian.
 * `TauCeti.AlgebraicGeometry.twoChartModel.topologicalKrullDim_eq_one`: the scheme has dimension
   one.
+* `TauCeti.AlgebraicGeometry.twoChartModel.isFunctionField_functionField` and
+  `TauCeti.AlgebraicGeometry.twoChartModel.isIntegrallyClosedIn_functionField`: `k(X)` is an
+  algebraic function field over `k`, with exact constant field `k` whenever `k` is integrally
+  closed in `F`.
 * `TauCeti.AlgebraicGeometry.twoChartModel.coheight_le_one`: every point has codimension at most
   one.
 * `TauCeti.AlgebraicGeometry.twoChartModel.isRegularLocalRing_stalk`: every local ring is a
@@ -138,6 +142,20 @@ theorem topologicalKrullDim_eq_one (hxt : Transcendental k x) :
   rw [topologicalKrullDim_eq_toNat_trdeg_functionField k, (functionFieldEquiv hxt).trdeg_eq,
     hF.trdeg_eq_one]
   simp
+
+/-- **The function field of the two-chart model is an algebraic function field over `k`**, for `x`
+transcendental over `k`. -/
+theorem isFunctionField_functionField (hxt : Transcendental k x) :
+    IsFunctionField k (twoChartModel hF hx).functionField := by
+  have := locallyOfFiniteType (hF := hF) (hx := hx) hxt
+  exact (isFunctionField_functionField_iff k).mpr (topologicalKrullDim_eq_one hxt)
+
+/-- **Exactness of the constant field transfers to the function field of the two-chart model**: if
+`k` is integrally closed in `F`, then `k` is integrally closed in `k(twoChartModel hF hx)`. -/
+theorem isIntegrallyClosedIn_functionField (hxt : Transcendental k x)
+    (hk : IsIntegrallyClosedIn k F) :
+    IsIntegrallyClosedIn k (twoChartModel hF hx).functionField :=
+  (functionFieldEquiv hxt).isIntegrallyClosedIn.mpr hk
 
 /-- **Every point of the two-chart model has codimension at most one**, for `x` transcendental
 over `k`. -/

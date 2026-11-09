@@ -49,6 +49,86 @@ variable
   {x x₀ y : M}
   {cov : (Π z : M, TangentSpace I z) → (Π z : M, TangentSpace I z →L[𝕜] TangentSpace I z)}
 
+section Helpers
+
+include b
+
+variable [Fintype ι] [IsManifold I 2 M]
+  {e₀ e₁ : Trivialization E (TotalSpace.proj : TotalSpace E (TangentSpace I : M → Type _) → M)}
+  [MemTrivializationAtlas e₀] [MemTrivializationAtlas e₁]
+
+/-- The coefficients of the field `z ↦ e₁.symmL z V` in the frame of the trivialization `e₀` at `x₀`
+are, near `x`, the coordinates of `tangentCoordChange I x x₀ z V`, so its flat derivative in that
+frame at `x` is `e₀.symmL x` applied to the derivative of the tangent coordinate change. -/
+private theorem frameCovariantDerivative_symmL_coordChange
+    (he₀ : e₀ = trivializationAt E (TangentSpace I) x₀)
+    (he₁ : e₁ = trivializationAt E (TangentSpace I) x)
+    (hx₀ : x ∈ e₀.baseSet) (hx₁ : x ∈ e₁.baseSet)
+    (hcmd : MDifferentiableAt I 𝓘(𝕜, E →L[𝕜] E) (tangentCoordChange I x x₀) x)
+    (V : TangentSpace I x) :
+    frameCovariantDerivative I b e₀ (fun z ↦ e₁.symmL 𝕜 z (V : E)) x =
+      (e₀.symmL 𝕜 x).comp (mvfderiv I (fun z ↦ tangentCoordChange I x x₀ z V) x) := by
+  have hgA : MDifferentiableAt I 𝓘(𝕜, E) (fun z ↦ tangentCoordChange I x x₀ z V) x :=
+    MDifferentiableAt.clm_apply hcmd mdifferentiableAt_const
+  refine frameCovariantDerivative_eq_symmL_comp b hgA.hasMFDerivAt (fun i ↦ ?_) hx₀
+  filter_upwards [e₀.open_baseSet.mem_nhds hx₀, e₁.open_baseSet.mem_nhds hx₁] with z hz₀ hz₁
+  rw [e₀.localFrameCoeff_eq_coeff (b := b) (s := fun z ↦ e₁.symmL 𝕜 z (V : E)) hz₀,
+    ← Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) e₀ hz₀,
+    ← Basis.coord_apply]
+  subst he₀ he₁
+  rw [continuousLinearMapAt_symmL_coordChange (I := I) (x := x) (x₀ := x₀) (y := z) hz₁ hz₀ V]
+
+/-- The Christoffel forms of a covariant derivative in the frames at `x₀` and `x` differ at `x` by
+the derivative of the tangent coordinate change. -/
+private theorem christoffelForm_coordChange
+    (he₀ : e₀ = trivializationAt E (TangentSpace I) x₀)
+    (he₁ : e₁ = trivializationAt E (TangentSpace I) x)
+    (hx₀ : x ∈ e₀.baseSet) (hx₁ : x ∈ e₁.baseSet)
+    (hcmd : MDifferentiableAt I 𝓘(𝕜, E →L[𝕜] E) (tangentCoordChange I x x₀) x)
+    (hcov : IsCovariantDerivativeOn E cov e₀.baseSet)
+    (hcov' : IsCovariantDerivativeOn E cov e₁.baseSet) (V : TangentSpace I x) :
+    christoffelForm b hcov x V = christoffelForm b hcov' x V
+      - (e₀.symmL 𝕜 x).comp (mvfderiv I (fun z ↦ tangentCoordChange I x x₀ z V) x) := by
+  have hσ : MDiffAt (T% (fun z ↦ e₁.symmL 𝕜 z (V : E))) x := by
+    refine (((contMDiffOn_symm_baseSet (n := 1) (e := e₁) (V : E)).mdifferentiableOn
+      one_ne_zero).mdifferentiableAt (e₁.open_baseSet.mem_nhds hx₁)).congr_of_eventuallyEq ?_
+    filter_upwards [e₁.open_baseSet.mem_nhds hx₁] with z hz
+    exact congrArg (TotalSpace.mk' E z) (e₁.symmL_apply hz _)
+  have hσx : e₁.symmL 𝕜 x V = V := by
+    subst he₁
+    exact symmL_trivializationAt_self (I := I) x V
+  have hp₀ := covariantDerivative_eq_add_christoffelForm b hcov hx₀ hσ
+  have hp₁ := covariantDerivative_eq_add_christoffelForm b hcov' hx₁ hσ
+  rw [frameCovariantDerivative_symmL_coordChange b he₀ he₁ hx₀ hx₁ hcmd V, hσx] at hp₀
+  rw [frameCovariantDerivative_symmL_const b hx₁ (V : E), hσx] at hp₁
+  linear_combination (norm := module) (hp₀.symm.trans hp₁)
+
+/-- Reading the Christoffel form in the frame at `x` through the trivialization at `x₀` gives the
+tangent coordinate change of the Christoffel map. -/
+private theorem continuousLinearMapAt_christoffelForm
+    (he₀ : e₀ = trivializationAt E (TangentSpace I) x₀)
+    (he₁ : e₁ = trivializationAt E (TangentSpace I) x)
+    (hx₀ : x ∈ e₀.baseSet) (hx₁ : x ∈ e₁.baseSet)
+    (hcov' : IsCovariantDerivativeOn E cov e₁.baseSet) (U V : TangentSpace I x) :
+    e₀.continuousLinearMapAt 𝕜 x (christoffelForm b hcov' x V U) =
+      tangentCoordChange I x x₀ x (christoffelMap b hcov' x V U) := by
+  have hV : e₁.symmL 𝕜 x V = V := by
+    subst he₁
+    exact symmL_trivializationAt_self (I := I) x V
+  have hU : e₁.symmL 𝕜 x U = U := by
+    subst he₁
+    exact symmL_trivializationAt_self (I := I) x U
+  have h1 : e₁.symmL 𝕜 x (christoffelMap b hcov' x V U) = christoffelForm b hcov' x V U := by
+    rw [christoffelMap_apply b hcov' hx₁ (V : E) (U : E),
+      e₁.symmL_continuousLinearMapAt (R := 𝕜) hx₁]
+    simp only [hV, hU]
+  rw [← h1]
+  subst he₀ he₁
+  exact continuousLinearMapAt_symmL_coordChange (I := I) (x := x) (x₀ := x₀) (y := x)
+    (mem_chart_source H x) hx₀ _
+
+end Helpers
+
 /-- **The Christoffel transformation law.**  The Christoffel map of a covariant derivative on the
 tangent bundle, read in the trivialization centred at `x₀` and evaluated at the `x₀`-coordinates
 of a tangent vector `V` and direction `U`, is the pushforward by
@@ -65,108 +145,22 @@ theorem christoffelMap_coordChange [Fintype ι] [IsManifold I 2 M]
             (tangentCoordChange I x x₀ x U)
           = tangentCoordChange I x x₀ x (christoffelMap b hcov' x V U)
             - mvfderiv I (fun z => tangentCoordChange I x x₀ z V) x U := by
-  classical
   have hI : IsManifold I 1 M := IsManifold.of_le (n := 2) one_le_two
-  intro _hx₀ U V hcov hcov'
+  intro hx₀ U V hcov hcov'
   set e₀ := trivializationAt E (TangentSpace I) x₀ with he₀
   set e₁ := trivializationAt E (TangentSpace I) x with he₁
   have hx₀c : x ∈ (chartAt H x₀).source := by
     rw [← OpenPartialHomeomorph.extend_source (f := chartAt H x₀) (I := I)]
-    exact _hx₀
+    exact hx₀
   have hx₀' : x ∈ e₀.baseSet := hx₀c
   have hx₁' : x ∈ e₁.baseSet := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x
-  have hopen₀ : e₀.baseSet ∈ nhds x := e₀.open_baseSet.mem_nhds hx₀'
-  have hopen₁ : e₁.baseSet ∈ nhds x := e₁.open_baseSet.mem_nhds hx₁'
-  set σ : Π z : M, TangentSpace I z := fun z => e₁.symmL 𝕜 z V with hσdef
-  have hσx : σ x = V := by
-    simpa only [hσdef, he₁] using (symmL_trivializationAt_self (I := I) x V)
-  have hσ : MDifferentiableAt I I.tangent (T% σ) x := by
-    have h1 : ContMDiffAt I (I.prod 𝓘(𝕜, E)) 1 (fun z => TotalSpace.mk' E z (σ z)) x := by
-      rw [e₁.contMDiffAt_section_iff hx₁']
-      have hc : ContMDiffAt I 𝓘(𝕜, E) 1 (fun _ : M => @id E V) x := contMDiffAt_const
-      refine ContMDiffAt.congr_of_eventuallyEq hc ?_
-      filter_upwards [hopen₁] with z hz
-      simp only [hσdef]
-      rw [← Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) e₁ hz _]
-      exact e₁.continuousLinearMapAt_symmL (R := 𝕜) hz V
-    exact h1.mdifferentiableAt one_ne_zero
-  -- the frame coefficient functions of `σ`, in both frames, near `x`
-  have hcoeff₀ (i : ι) : (fun z => e₀.localFrameCoeff I b i z (σ z))
-      =ᶠ[nhds x] (fun z => b.coord i (tangentCoordChange I x x₀ z V)) := by
-    filter_upwards [hopen₀, hopen₁] with z hz₀ hz₁
-    rw [e₀.localFrameCoeff_eq_coeff (b := b) hz₀,
-      ← Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) e₀ hz₀]
-    rw [← Basis.coord_apply]
-    simp only [hσdef]
-    rw [continuousLinearMapAt_symmL_coordChange (I := I) (x := x) (x₀ := x₀) (y := z)
-      hz₁ hz₀ V]
-  have hcoeff₁ (i : ι) : (fun z => e₁.localFrameCoeff I b i z (σ z))
-      =ᶠ[nhds x] (fun _ => b.coord i V) := by
-    filter_upwards [hopen₁] with z hz
-    rw [e₁.localFrameCoeff_eq_coeff (b := b) hz,
-      ← Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) e₁ hz]
-    rw [← Basis.coord_apply]
-    simp only [hσdef]
-    exact congrArg (b.coord i) (e₁.continuousLinearMapAt_symmL (R := 𝕜) hz V)
-  -- the family of coordinate changes is differentiable; write its derivative as `A`
   have hcmd : MDifferentiableAt I 𝓘(𝕜, E →L[𝕜] E) (tangentCoordChange I x x₀) x := by
     -- the `n + 1` regularity hypothesis of the polymorphic theorem, read at `n := 1`
     have : IsManifold I (1 + 1) M := inferInstanceAs (IsManifold I 2 M)
     exact (contMDiffAt_tangentCoordChange (I := I) (n := 1) (x := x) (y := x₀)
-      _hx₀).mdifferentiableAt one_ne_zero
-  have hgA : MDifferentiableAt I 𝓘(𝕜, E) (fun z => tangentCoordChange I x x₀ z V) x :=
-    MDifferentiableAt.clm_apply hcmd mdifferentiableAt_const
-  set A : TangentSpace I x →L[𝕜] E := mvfderiv I (fun z => tangentCoordChange I x x₀ z V) x with hA
-  -- the flat derivative of `σ` in the frame at `x₀` is `symmL x ∘ A`
-  have hflat₀ : frameCovariantDerivative I b e₀ σ x = (e₀.symmL 𝕜 x).comp A := by
-    ext v
-    rw [frameCovariantDerivative_apply]
-    have hterm : ∀ i : ι, mvfderiv I (LinearMap.piApply (e₀.localFrameCoeff I b i) σ) x v
-        = b.coord i (A v) := by
-      intro i
-      have h1 : HasMFDerivAt I 𝓘(𝕜, E) (fun z => tangentCoordChange I x x₀ z V) x A := by
-        rw [hA]; exact hgA.hasMFDerivAt
-      have h2 : HasMFDerivAt I 𝓘(𝕜, 𝕜)
-          (fun z => b.coord i (tangentCoordChange I x x₀ z V)) x
-          ((LinearMap.toContinuousLinearMap (b.coord i)).comp A) := by
-        let k : E →L[𝕜] 𝕜 := LinearMap.toContinuousLinearMap (b.coord i)
-        exact HasMFDerivAt.comp (x := x) (f := fun z => tangentCoordChange I x x₀ z V)
-          (g := k) (g' := k) (ContinuousLinearMap.hasMFDerivAt k) h1
-      have h3 := h2.congr_of_eventuallyEq (hcoeff₀ i)
-      rw [mvfderiv_apply_eq_mfderiv_apply]
-      rw [LinearMap.piApply_apply, h3.mfderiv]
-      rfl
-    simp only [hterm]
-    have hsum : ∑ i, b.coord i (A v) • e₀.localFrame b i x = e₀.symmL 𝕜 x (A v) := by
-      have h1 : e₀.symmL 𝕜 x (A v) = e₀.symmL 𝕜 x (∑ i, b.coord i (A v) • b i) := by
-        congr 1
-        simp [Basis.sum_repr, Basis.coord_apply]
-      rw [h1, map_sum]
-      exact Finset.sum_congr rfl fun i _ ↦ by
-        rw [map_smul, symmL_basis_eq_localFrame b hx₀' i]
-    rw [hsum]
-    rfl
-  -- the flat derivative of `σ` in the frame at `x` vanishes: `σ` has constant coefficients there
-  have hflat₁ : frameCovariantDerivative I b e₁ σ x = 0 := by
-    ext v
-    rw [frameCovariantDerivative_apply]
-    have hterm : ∀ i : ι, mvfderiv I (LinearMap.piApply (e₁.localFrameCoeff I b i) σ) x v
-        = (0 : 𝕜) := by
-      intro i
-      have h4 := hasMFDerivAt_const (I := I) (I' := 𝓘(𝕜, 𝕜)) (b.coord i V) x
-      have h3 := h4.congr_of_eventuallyEq (hcoeff₁ i)
-      rw [mvfderiv_apply_eq_mfderiv_apply]
-      rw [LinearMap.piApply_apply, h3.mfderiv]
-      rfl
-    simp only [hterm, zero_smul, Finset.sum_const_zero, zero_apply]
-  -- the two frame decompositions of the covariant derivative of `σ` at `x` agree
-  have hp₀ := covariantDerivative_eq_add_christoffelForm b hcov hx₀' hσ
-  have hp₁ := covariantDerivative_eq_add_christoffelForm b hcov' hx₁' hσ
-  rw [hflat₀, hσx] at hp₀
-  rw [hflat₁, hσx] at hp₁
-  have hform : christoffelForm b hcov x V
-      = christoffelForm b hcov' x V - (e₀.symmL 𝕜 x).comp A := by
-    linear_combination (norm := module) (hp₀.symm.trans hp₁)
+      hx₀).mdifferentiableAt one_ne_zero
+  have hform := christoffelForm_coordChange b he₀ he₁ hx₀' hx₁' hcmd hcov hcov' V
+  have hmap' := continuousLinearMapAt_christoffelForm b he₀ he₁ hx₀' hx₁' hcov' U V
   -- read both Christoffel forms in the model space
   have hw : ∀ u : E, e₀.continuousLinearMapAt 𝕜 x u = tangentCoordChange I x x₀ x u := by
     intro u
@@ -177,33 +171,19 @@ theorem christoffelMap_coordChange [Fintype ι] [IsManifold I 2 M]
   have hsymmL : ∀ u : E, e₀.symmL 𝕜 x (tangentCoordChange I x x₀ x u) = u := by
     intro u
     rw [← hw u, e₀.symmL_continuousLinearMapAt (R := 𝕜) hx₀' u]
-  have hV : e₁.symmL 𝕜 x V = V := hσx
-  have hU : e₁.symmL 𝕜 x U = U := by
-    simpa only [he₁] using (symmL_trivializationAt_self (I := I) x U)
-  have hmap' : e₀.continuousLinearMapAt 𝕜 x (christoffelForm b hcov' x V U)
-      = tangentCoordChange I x x₀ x (christoffelMap b hcov' x V U) := by
-    have h1 : e₁.symmL 𝕜 x (christoffelMap b hcov' x V U)
-        = christoffelForm b hcov' x V U := by
-      rw [christoffelMap_apply b hcov' hx₁' (V : E) (U : E),
-        e₁.symmL_continuousLinearMapAt (R := 𝕜) hx₁']
-      simp only [hV, hU]
-    rw [← h1, continuousLinearMapAt_symmL_coordChange (I := I) (x := x) (x₀ := x₀) (y := x)
-      (mem_chart_source H x) hx₀c (christoffelMap b hcov' x V U)]
   have hfinal : e₀.continuousLinearMapAt 𝕜 x (christoffelForm b hcov x V U)
-      + A U = e₀.continuousLinearMapAt 𝕜 x (christoffelForm b hcov' x V U) := by
-    have h2 : e₀.continuousLinearMapAt 𝕜 x ((e₀.symmL 𝕜 x ∘SL A) U) = A U :=
-      e₀.continuousLinearMapAt_symmL (R := 𝕜) hx₀' (A U)
-    rw [hform, sub_apply, map_sub, h2]
+      + mvfderiv I (fun z => tangentCoordChange I x x₀ z V) x U =
+        e₀.continuousLinearMapAt 𝕜 x (christoffelForm b hcov' x V U) := by
+    rw [hform, sub_apply, map_sub, ContinuousLinearMap.comp_apply,
+      e₀.continuousLinearMapAt_symmL (R := 𝕜) hx₀']
     abel
   calc christoffelMap b hcov x (tangentCoordChange I x x₀ x V)
         (tangentCoordChange I x x₀ x U) =
       e₀.continuousLinearMapAt 𝕜 x (christoffelForm b hcov x V U) := by
-        have hAV := hsymmL (V : E)
-        have hAU := hsymmL (U : E)
-        rw [christoffelMap_apply b hcov hx₀', hAV, hAU]
+        rw [christoffelMap_apply b hcov hx₀', hsymmL (V : E), hsymmL (U : E)]
     _ = tangentCoordChange I x x₀ x (christoffelMap b hcov' x V U)
         - mvfderiv I (fun z => tangentCoordChange I x x₀ z V) x U := by
-        rw [← hmap', ← hA]
+        rw [← hmap']
         exact eq_sub_iff_add_eq.mpr hfinal
 
 end CoordinateChange

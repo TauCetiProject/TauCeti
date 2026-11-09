@@ -34,7 +34,7 @@ theorem exists_algHom_apply_eq_of_sq_eq [Normal K L]
   obtain ⟨φ⟩ := hφ
   have hyint : IsIntegral K y := .of_pow two_pos (hy ▸ isIntegral_algebraMap)
   have hmin : minpoly K y = Polynomial.X ^ 2 - Polynomial.C r := by
-    apply Algebra.minpoly_eq_X_sq_sub_C_of_sq_eq_of_natDegree_eq_two hy
+    refine Algebra.minpoly_eq_X_pow_sub_C_of_pow_eq_of_natDegree_eq two_ne_zero hy ?_
     rw [← IntermediateField.adjoin.finrank hyint, hydegree]
   have hroot : Polynomial.aeval (φ z) (minpoly K y) = 0 := by
     have hφz : (φ z) ^ 2 = algebraMap K L r := by

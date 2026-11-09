@@ -479,7 +479,7 @@ theorem multiplicationOperator_smul (c : ℂ) (a : Lp ℂ ⊤ (AddCircle.haarAdd
 theorem multiplicationOperator_comp_multiplicationOperator
     (a b : Lp ℂ ⊤ (AddCircle.haarAddCircle (T := T))) :
     multiplicationOperator a ∘L multiplicationOperator b =
-      multiplicationOperator (a • b : Lp ℂ ⊤ (AddCircle.haarAddCircle (T := T))) := by
+      multiplicationOperator (a * b) := by
   ext1 u
   apply (toLpₗᵢ T).injective
   simp only [ContinuousLinearMap.comp_apply, toLpₗᵢ_multiplicationOperator]

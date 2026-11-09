@@ -12,9 +12,9 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 # Basic rules for the quadratic form of a matrix
 
 Elementary rules for Mathlib's `Matrix.toQuadraticForm'` — evaluation, its behaviour under
-scaling, negation, transposition and on diagonal matrices — together with the isometries of the
-attached forms induced by congruence, block diagonals and reindexing. They are kept apart from
-the signature theory so that consumers needing only these rules do not import it.
+scaling, addition, negation, transposition and on diagonal matrices — together with the
+isometries of the attached forms induced by congruence, block diagonals and reindexing. They are
+kept apart from the signature theory so that consumers needing only these rules do not import it.
 
 ## Main definitions
 
@@ -26,6 +26,7 @@ the signature theory so that consumers needing only these rules do not import it
 
 * `Matrix.toQuadraticForm'_apply`: the form evaluated at a vector is `x ⬝ᵥ A *ᵥ x`.
 * `Matrix.toQuadraticForm'_smul`: scaling a matrix scales its quadratic form.
+* `Matrix.toQuadraticForm'_add`: the quadratic form is additive in the matrix.
 * `Matrix.toQuadraticForm'_transpose`: a matrix and its transpose carry the same form.
 * `Matrix.toQuadraticForm'_add_transpose`: the form of `A + Aᵀ` is twice the form of `A`.
 * `Matrix.toQuadraticForm'_diagonal`: a diagonal matrix gives a weighted sum of squares.
@@ -51,9 +52,14 @@ theorem toQuadraticForm'_smul (c : R) (A : Matrix ι ι R) :
     (c • A).toQuadraticForm' = c • A.toQuadraticForm' := by
   simp [Matrix.toQuadraticForm']
 
--- Not a `simp` lemma: `TauCeti.PDE.toQuadraticForm'_transpose` already normalises the same
--- left-hand side pointwise on `EuclideanSpace ℝ n`, and the two cannot both be simp-normal.
+/-- The quadratic form of a sum of matrices is the sum of their quadratic forms. -/
+@[simp]
+theorem toQuadraticForm'_add (A B : Matrix ι ι R) :
+    (A + B).toQuadraticForm' = A.toQuadraticForm' + B.toQuadraticForm' := by
+  simp [Matrix.toQuadraticForm', LinearMap.BilinMap.toQuadraticMap_add]
+
 /-- A matrix and its transpose carry the same quadratic form. -/
+@[simp]
 theorem toQuadraticForm'_transpose (A : Matrix ι ι R) :
     (Aᵀ).toQuadraticForm' = A.toQuadraticForm' := by
   ext x
@@ -62,8 +68,7 @@ theorem toQuadraticForm'_transpose (A : Matrix ι ι R) :
 /-- The quadratic form of `A + Aᵀ` is twice the quadratic form of `A`. -/
 theorem toQuadraticForm'_add_transpose (A : Matrix ι ι R) :
     (A + Aᵀ).toQuadraticForm' = (2 : R) • A.toQuadraticForm' := by
-  ext x
-  simp [toQuadraticForm'_apply, add_mulVec, dotProduct_transpose_mulVec, two_mul]
+  rw [toQuadraticForm'_add, toQuadraticForm'_transpose, two_smul]
 
 /-- The quadratic form of `-A` is the negative of the quadratic form of `A`. -/
 @[simp]

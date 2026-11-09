@@ -141,6 +141,12 @@ section Domain
 
 variable {R : Type*} [CommRing R] [NoZeroDivisors R] {A B : R}
 
+/-- The coordinate pair of the distinguished point of order two is `(0, B)`. -/
+@[simp]
+theorem coordinates_twoTorsionPoint (hB : B ≠ 0) :
+    coordinates A B (twoTorsionPoint A hB) = ⟨0, B⟩ := by
+  simp [twoTorsionPoint_def]
+
 /-- For `B ≠ 0`, the first field of the coordinate pair vanishes exactly at the distinguished
 point of order two `(0, 0)`. -/
 @[simp]
@@ -176,6 +182,17 @@ end Domain
 section Field
 
 variable {K : Type*} [Field K] {A B : K}
+
+/-- The coordinate pairs of multiples of the distinguished point of order two alternate
+between infinity and that point. This includes characteristic two. -/
+theorem coordinates_nsmul_twoTorsionPoint [DecidableEq K] (hB : B ≠ 0) (k : ℕ) :
+    coordinates A B (k • twoTorsionPoint A hB) =
+      if k % 2 = 0 then ⟨1, 0⟩ else ⟨0, B⟩ := by
+  rw [← mod_addOrderOf_nsmul, addOrderOf_twoTorsionPoint]
+  by_cases hk : k % 2 = 0
+  · simp [hk]
+  · have hk' : k % 2 = 1 := by omega
+    simp [hk']
 
 /-- The **projective `x`-coordinate** of a native point of `model A B` over a field, for
 `B ≠ 0`: the point of the projective line `ℙ K (Fin 2 → K)` defined by its coordinate pair. It is
@@ -253,7 +270,8 @@ theorem exists_two_mul_abs_sub_mul_le_and_cross_coordinates_eq_zero (hB : B ≠ 
     {Q : (model A B).toAffine.Point} {q : ℤ} (hq : q • Q = 0) {w : ℤ} (hw : 0 < w) :
     ∃ i : ℤ, 2 * |q - i * w| ≤ w ∧
       (coordinates A B ((i * w) • Q)).cross (coordinates A B (|q - i * w| • Q)) = 0 := by
-  obtain ⟨i, hi⟩ := Int.exists_two_mul_abs_sub_mul_le q hw
+  obtain ⟨i, hi⟩ := Int.exists_two_mul_abs_sub_mul_le q hw.ne'
+  rw [abs_of_pos hw] at hi
   refine ⟨i, hi, cross_coordinates_zsmul_eq_zero_of_zsmul_eq_zero hB hq ?_⟩
   rcases abs_choice (q - i * w) with h | h <;> rw [h]
   exacts [.inl (by ring), .inr (by ring)]

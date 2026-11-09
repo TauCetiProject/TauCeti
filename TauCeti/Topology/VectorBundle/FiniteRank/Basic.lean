@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.Core
+public import TauCeti.Topology.VectorBundle.Core.Basic
 public import TauCeti.Topology.VectorBundle.Descent
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -17,8 +17,9 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimension
 with model `Fin rank → 𝕜`, indexed by the base points, with the chart at `x` labelled by `x`.
 Its morphisms are `VectorBundleCore.CoordinateHom`: continuous chart operators satisfying
 transition compatibility, hence actual continuous fibrewise linear maps of the reconstructed
-bundles. Addition of chart operators makes this category preadditive. The trivial rank-zero
-core is a zero object. No nonemptiness or separation assumption on the base is required.
+bundles. Addition of chart operators makes this category preadditive. Every rank-zero core,
+in particular the trivial one, is a zero object. No nonemptiness or separation assumption on
+the base is required.
 
 Objects here have constant rank. They provide the constituent categories on the clopen rank
 strata of a variable-rank bundle; no boundedness assertion about variable ranks is made.
@@ -36,6 +37,12 @@ in finite-dimensional charts supplies the inverse bundle morphism.
 Between two cores with the same chart domains, a fixed coordinate operator intertwining their
 transition maps is a bundle map with that operator on every fibre (`constHom`), and a fixed
 intertwining coordinate equivalence is an isomorphism (`constIso`).
+
+A map into the total space of `trivial 𝕜 B n` is continuous exactly when its base point and its
+coordinate vector in `Fin n → 𝕜` are (`continuous_trivial_iff`). Hence bundle maps into a trivial
+core are exactly the fibrewise linear maps to `Fin n → 𝕜` that are continuous on the source total
+space: `continuous_fiberMap_trivial` gives one direction, and over a complete scalar field
+`toTrivial` gives the other.
 
 The construction uses Mathlib's vector-bundle cores and preadditive-category interfaces,
 and the coordinate descent and Hom-bundle inversion API in the imported modules.
@@ -114,6 +121,18 @@ variable {A D C : FiniteRankBundleCore 𝕜 B}
     (f ≫ g).fiberMap x = (g.fiberMap x).comp (f.fiberMap x) :=
   CoordinateHom.fiberMap_comp g f x
 
+/-- Each point lies in the chart labelled by itself. -/
+theorem mem_baseSet_self (A : FiniteRankBundleCore 𝕜 B) (x : B) : x ∈ A.core.baseSet x := by
+  simpa only [A.indexAt_eq] using A.core.mem_baseSet_at x
+
+/-- At the charts labelled by a point, the chart operator of a morphism is its fibre map. -/
+theorem operator_self (f : A ⟶ D) (x : B) :
+    f.operator x x ⟨x, A.mem_baseSet_self x, D.mem_baseSet_self x⟩ = f.fiberMap x := by
+  rw [CoordinateHom.operator_eq]
+  ext v
+  simp only [inChartCoordinates_apply, A.indexAt_eq, D.indexAt_eq, coordChange_self,
+    ContinuousLinearMap.id_apply]
+
 /-- Pointwise addition of coordinate bundle maps makes the category preadditive. -/
 instance : Preadditive (FiniteRankBundleCore 𝕜 B) where
   homGroup A D := inferInstanceAs (AddCommGroup (CoordinateHom A.core D.core))
@@ -179,23 +198,72 @@ def trivial (n : ℕ) : FiniteRankBundleCore 𝕜 B where
 @[simp] theorem coordChange_trivial (n : ℕ) (i j x : B) :
     (trivial 𝕜 B n).core.coordChange i j x = ContinuousLinearMap.id 𝕜 (Fin n → 𝕜) := (rfl)
 
-/-- The trivial rank-zero core is a zero object. -/
-theorem isZero_trivial_zero : IsZero (trivial 𝕜 B 0) where
+section ToTrivial
+
+variable {X : Type*} [TopologicalSpace X] {n : ℕ}
+
+/-- A map into the total space of a trivial core is continuous exactly when its base point and
+its coordinate vector depend continuously on the argument. -/
+theorem continuous_trivial_iff {f : X → (trivial 𝕜 B n).core.TotalSpace} :
+    Continuous f ↔
+      Continuous (fun y ↦ (f y).proj) ∧ Continuous (fun y ↦ ((f y).2 : Fin n → 𝕜)) := by
+  refine ⟨fun h ↦ ⟨(FiberBundle.continuous_proj _ _).comp h,
+    continuous_iff_continuousAt.2 fun y ↦
+      ((FiberBundle.continuousAt_totalSpace _ f).1 h.continuousAt).2⟩, fun h ↦ ?_⟩
+  exact continuous_iff_continuousAt.2 fun y ↦
+    (FiberBundle.continuousAt_totalSpace _ f).2 ⟨h.1.continuousAt, h.2.continuousAt⟩
+
+/-- The coordinate vector of a point of a trivial core depends continuously on the point. -/
+theorem continuous_trivial_snd :
+    Continuous fun p : (trivial 𝕜 B n).core.TotalSpace ↦ (p.2 : Fin n → 𝕜) :=
+  (continuous_trivial_iff.1 continuous_id).2
+
+/-- The fibre maps of a bundle map into a trivial core form a continuous map from the source total
+space to the coordinate space. -/
+theorem continuous_fiberMap_trivial (f : A ⟶ trivial 𝕜 B n) :
+    Continuous fun p : A.core.TotalSpace ↦ (f.fiberMap p.proj p.2 : Fin n → 𝕜) := by
+  have h := f.continuous_totalSpaceMap
+  rw [CoordinateHom.totalSpaceMap_def] at h
+  exact continuous_trivial_snd.comp h
+
+variable [CompleteSpace 𝕜]
+
+/-- A family of linear maps from the fibres of a core to `Fin n → 𝕜` which is continuous on the
+total space is a bundle map into the trivial core of rank `n`. -/
+def toTrivial (f : B → (Fin A.rank → 𝕜) →L[𝕜] (Fin n → 𝕜))
+    (hf : Continuous fun p : A.core.TotalSpace ↦ f p.proj p.2) : A ⟶ trivial 𝕜 B n :=
+  CoordinateHom.ofContinuous f <|
+    (continuous_hom_bundle_iff (E₁ := A.core.Fiber) (E₂ := (trivial 𝕜 B n).core.Fiber) f).2 <|
+      continuous_trivial_iff.2 ⟨A.core.continuous_proj, hf⟩
+
+@[simp] theorem fiberMap_toTrivial (f : B → (Fin A.rank → 𝕜) →L[𝕜] (Fin n → 𝕜))
+    (hf : Continuous fun p : A.core.TotalSpace ↦ f p.proj p.2) (x : B) :
+    (toTrivial f hf).fiberMap x = f x :=
+  congrFun (CoordinateHom.fiberMap_ofContinuous _ _) x
+
+end ToTrivial
+
+/-- A core of rank zero is a zero object: its fibres are zero spaces. -/
+theorem isZero_of_rank_eq_zero (A : FiniteRankBundleCore 𝕜 B) (h : A.rank = 0) : IsZero A where
   unique_to D := ⟨⟨⟨0⟩, fun f => by
     apply hom_ext
     intro x
     apply ContinuousLinearMap.ext
     intro v
-    let : Subsingleton (Fin (trivial 𝕜 B 0).rank → 𝕜) := by
-      rw [rank_trivial]
+    let : Subsingleton (Fin A.rank → 𝕜) := by
+      rw [h]
       infer_instance
     have hv : v = 0 := Subsingleton.elim _ _
     simp [hv]⟩⟩
-  unique_from A := ⟨⟨⟨0⟩, fun f => by
+  unique_from D := ⟨⟨⟨0⟩, fun f => by
     apply hom_ext
     intro x
     ext v i
-    exact Fin.elim0 i⟩⟩
+    exact (Fin.cast h i).elim0⟩⟩
+
+/-- The trivial rank-zero core is a zero object. -/
+theorem isZero_trivial_zero : IsZero (trivial 𝕜 B 0) :=
+  isZero_of_rank_eq_zero _ (rank_trivial 0)
 
 /-- A point-indexed rank-zero core supplies the category's zero object. -/
 instance : HasZeroObject (FiniteRankBundleCore 𝕜 B) :=

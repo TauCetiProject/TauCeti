@@ -380,8 +380,10 @@ theorem mem_of_mem_span_of_mem_virtualCharacters (A : Subring k) (t : A →+ ℤ
   have h := virtualCharacters_eq_closure_irreducibleCharacters (k := k) (G := G)
   rw [← range_irreducibleCharacter] at h
   rw [h] at hV hf
-  exact mem_of_mem_span_of_mem_closure
-    ((linearIndependent_irreducibleCharacter (k := k)).restrict_scalars' A) t ht hV hf hfA
+  have hspan := AddSubgroup.toIntSubmodule_closure (Set.range (irreducibleCharacter (G := G) k))
+  exact mem_of_mem_span_of_mem_span_range
+    ((linearIndependent_irreducibleCharacter (k := k)).restrict_scalars' A) t.toIntLinearMap ht
+    (V := V.toIntSubmodule) (hspan ▸ AddSubgroup.toIntSubmodule.monotone hV) (hspan ▸ hf) hfA
 
 /-- Reading an integer combination of irreducible characters back inside
 `TauCeti.ClassFunction`. -/

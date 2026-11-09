@@ -18,6 +18,7 @@ counterpart of Mathlib's `Unitization.starMap`, and it is functorial.
 
 * `Unitization.map`: the unital algebra homomorphism induced on forced unitizations.
 * `Unitization.map_id`, `Unitization.map_comp`: functoriality.
+* `Unitization.fstHom_comp_map`: the induced map preserves the augmentation.
 -/
 
 public section
@@ -59,6 +60,11 @@ theorem snd_map (f : A →ₙₐ[R] B) (x : Unitization R A) :
     (map (R := R) f x).snd = f x.snd := by
   rw [← inl_fst_add_inr_snd_eq x, map_add]
   simp [algebraMap_eq_inl]
+
+/-- The induced map of forced unitizations preserves the augmentation `(r, a) ↦ r`. -/
+@[simp]
+theorem fstHom_comp_map (f : A →ₙₐ[R] B) : (fstHom R B).comp (map f) = fstHom R A :=
+  AlgHom.ext fun x ↦ by simp
 
 /-- The identity homomorphism induces the identity homomorphism of forced unitizations. -/
 @[simp]

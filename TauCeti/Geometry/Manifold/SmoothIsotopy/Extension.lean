@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Flow
 public import TauCeti.Geometry.Manifold.SmoothAmbientIsotopic.Basic
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Diffeotopy
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Velocity.Isotopy
+import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 
 /-!
 # The isotopy extension theorem
@@ -21,7 +23,10 @@ point outside a compact set, with `Φ (t, f₀ x) = F (σ t, x)` for `x ∈ A`, 
 change of time `Real.smoothTransition`. In particular its final diffeomorphism carries `f₀` to `f₁`
 on `A` (`TauCeti.SmoothIsotopy.exists_diffeotopy_final_apply_eq`). This is the isotopy extension
 theorem of Hirsch, Chapter 8, Theorem 1.3, for compact parts of the source; the source itself need
-not be compact.
+not be compact. The diffeotopy can moreover be chosen to fix a closed set `C` which the moving part
+of `A` never meets (`TauCeti.SmoothIsotopy.exists_diffeotopy_apply_eq_of_forall_notMem`): the
+ambient velocity field is cut off by a smooth function equal to `1` on the motion of that part and
+to `0` on `C`.
 
 The proof integrates a velocity field. Run at the time `σ s`, the motion of `A` is stationary for
 `s ≤ 0` and `s ≥ 1`, and `TauCeti.SmoothIsotopy.exists_ambientVelocityField` extends its velocity
@@ -43,6 +48,8 @@ the same relation (`TauCeti.smoothAmbientIsotopic_iff_smoothIsotopic`); the forw
 * `TauCeti.SmoothIsotopy.exists_diffeotopy_apply_eq`: a smooth isotopy is, on a compact subset of
   its source, the restriction of a compactly supported diffeotopy, after the change of time
   `Real.smoothTransition`.
+* `TauCeti.SmoothIsotopy.exists_diffeotopy_apply_eq_of_forall_notMem`: the same, with the
+  diffeotopy fixing a closed set missed by the moving part of the compact subset.
 * `TauCeti.SmoothIsotopy.exists_diffeotopy_final_apply_eq`: the final diffeomorphism of that
   diffeotopy carries the initial embedding to the final one on the compact subset.
 * `TauCeti.SmoothIsotopic.smoothAmbientIsotopic`: smoothly isotopic smooth maps of a compact
@@ -74,6 +81,73 @@ variable {E E' H H' M N : Type*}
   [I.Boundaryless] [J.Boundaryless] [IsManifold J ∞ N]
   [T2Space N] [SigmaCompactSpace N]
 
+/-- **Isotopy extension fixing a closed set.** Let `F` be a `C^n` isotopy through smooth embeddings
+into a finite-dimensional boundaryless manifold, and `A`, `A₀` compact subsets of the source such
+that `F` keeps fixed every point of `A` outside `A₀`. If the motion of `A₀` never
+meets the closed set `C`, then the motion of `A` is the restriction of a `C^m` diffeotopy `Φ` of
+the target fixing every point of `C` and every point outside a compact set, for `1 ≤ m` and
+`m + 1 ≤ n`: `Φ (t, f₀ x) = F (σ t, x)` for `x ∈ A`, where `σ` is the change of time
+`Real.smoothTransition`, and `Φ (t, y) = y` for `y ∈ C`.
+
+This is how isotopy extension leaves alone a part of the target that the isotopy does not move,
+such as the rest of a line along which an arc is straightened. -/
+theorem SmoothIsotopy.exists_diffeotopy_apply_eq_of_forall_notMem {n m : ℕ∞} [IsManifold I n M]
+    {f₀ f₁ : C^n⟮I, M; J, N⟯} (F : SmoothIsotopy f₀ f₁) {A₀ A : Set M} {C : Set N}
+    (hA₀ : IsCompact A₀) (hA : IsCompact A) (hC : IsClosed C)
+    (hA₀C : ∀ t, ∀ x ∈ A₀, F (t, x) ∉ C) (hstat : ∀ t, ∀ x ∈ A, x ∉ A₀ → F (t, x) = f₀ x)
+    (hm : 1 ≤ m) (hmn : m + 1 ≤ n) :
+    ∃ Φ : Diffeotopy J m N, ∃ K : Set N, IsCompact K ∧ (∀ t, ∀ y ∉ K, Φ (t, y) = y) ∧
+      (∀ t, ∀ x ∈ A, Φ (t, f₀ x) = F (⟨Real.smoothTransition t, Real.smoothTransition.nonneg _,
+        Real.smoothTransition.le_one _⟩, x)) ∧ ∀ t, ∀ y ∈ C, Φ (t, y) = y := by
+  let σ : ℝ → unitInterval := fun s =>
+    ⟨Real.smoothTransition s, Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
+  obtain ⟨X, K, hK, hXK, hX, hvel⟩ := F.exists_ambientVelocityField hA hm hmn
+  -- A cutoff equal to `1` on the motion of `A₀` and to `0` on `C`.
+  have hT : IsCompact ((fun p : unitInterval × M => F p) '' (univ ×ˢ A₀)) :=
+    (isCompact_univ.prod hA₀).image F.contMDiff.continuous
+  obtain ⟨ρ, hρC, hρT, -⟩ := exists_contMDiffMap_zero_one_of_isClosed J (n := m) hC hT.isClosed
+    (by
+      rw [Set.disjoint_right]
+      rintro _ ⟨⟨t, x⟩, ⟨-, hx⟩, rfl⟩
+      exact hA₀C t x hx)
+  let Y : ℝ → (y : N) → TangentSpace J y := fun u y => ρ y • X u y
+  have hYK : ∀ u, ∀ y ∉ K, Y u y = 0 := fun u y hy => by simp only [Y, hXK u y hy, smul_zero]
+  have hY : ContMDiff (𝓘(ℝ, ℝ).prod J) J.tangent m
+      (fun p : ℝ × N => (⟨p.2, Y p.1 p.2⟩ : TangentBundle J N)) :=
+    (ρ.contMDiff.comp contMDiff_snd).smul_totalSpace hX
+  -- Along the motion of `A`, the cut-off field is the velocity field: on the motion of `A₀` the
+  -- cutoff is `1`, and the other points of `A` are stationary, where both fields vanish.
+  have hYX : ∀ t, ∀ x ∈ A, Y t (F (σ t, x)) = X t (F (σ t, x)) := by
+    intro t x hx
+    by_cases hx₀ : x ∈ A₀
+    · simp only [Y, hρT ⟨(σ t, x), ⟨mem_univ _, hx₀⟩, rfl⟩, Pi.one_apply, one_smul]
+    · have hconst : (fun s => F (σ s, x)) = fun _ => f₀ x := funext fun s => hstat _ x hx hx₀
+      have h0 : (1 : ℝ →L[ℝ] ℝ).smulRight (X t (F (σ t, x))) = 0 := by
+        have h := (hvel t x hx).mfderiv
+        rw [hconst, mfderiv_const] at h
+        exact h.symm
+      have hX0 : X t (F (σ t, x)) = 0 := by
+        simpa using congrArg (fun L : ℝ →L[ℝ] TangentSpace J (F (σ t, x)) => L 1) h0
+      simp only [Y, hX0, smul_zero]
+  have hvelY : ∀ t, ∀ x ∈ A, HasMFDerivAt 𝓘(ℝ, ℝ) J (fun s => F (σ s, x)) t
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (Y t (F (σ t, x)))) := fun t x hx => by
+    rw [hYX t x hx]
+    exact hvel t x hx
+  have hY₁ := hY.of_le (m := 1) (by exact_mod_cast hm)
+  have hcomplete := isCompleteVectorField_timeDependentSuspensionField hY₁ hK hYK
+  refine ⟨timeDependentFlowDiffeotopy hm hY hcomplete, K, hK,
+    fun t y hy => timeDependentFlowDiffeotopy_apply_of_forall_eq_zero hm hY hcomplete
+      (fun u => hYK u y hy) t, fun t x hx => ?_, fun t y hy =>
+    timeDependentFlowDiffeotopy_apply_of_forall_eq_zero hm hY hcomplete
+      (fun u => by simp only [Y, hρC hy, Pi.zero_apply, zero_smul]) t⟩
+  -- The curve `s ↦ F (σ s, x)` solves the time-dependent equation and starts at `f₀ x`.
+  have h₀ : σ 0 = 0 := Subtype.ext Real.smoothTransition.zero
+  have hsol := timeDependentFlowOf_eq_of_hasMFDerivAt hY₁ (a := -1) (b := 2) (s := 0) (t := t)
+    (fun u _ => hvelY u x hx) ⟨by norm_num, by norm_num⟩ ⟨by linarith [t.2.1], by linarith [t.2.2]⟩
+  rw [h₀, F.apply_zero] at hsol
+  rw [timeDependentFlowDiffeotopy_apply]
+  exact hsol
+
 /-- **Isotopy extension on a compact subset.** A `C^n` isotopy `F` of a boundaryless manifold
 through smooth embeddings into a finite-dimensional boundaryless manifold is, on any compact subset
 `A` of the source, the restriction of a `C^m` diffeotopy `Φ` of the target fixing every point
@@ -85,21 +159,10 @@ theorem SmoothIsotopy.exists_diffeotopy_apply_eq {n m : ℕ∞} [IsManifold I n 
     ∃ Φ : Diffeotopy J m N, ∃ K : Set N, IsCompact K ∧ (∀ t, ∀ y ∉ K, Φ (t, y) = y) ∧
       ∀ t, ∀ x ∈ A, Φ (t, f₀ x) = F (⟨Real.smoothTransition t, Real.smoothTransition.nonneg _,
         Real.smoothTransition.le_one _⟩, x) := by
-  obtain ⟨X, K, hK, hXK, hX, hvel⟩ := F.exists_ambientVelocityField hA hm hmn
-  have hX₁ := hX.of_le (m := 1) (by exact_mod_cast hm)
-  have hcomplete := isCompleteVectorField_timeDependentSuspensionField hX₁ hK hXK
-  refine ⟨timeDependentFlowDiffeotopy hm hX hcomplete, K, hK,
-    fun t y hy => timeDependentFlowDiffeotopy_apply_of_forall_eq_zero hm hX hcomplete
-      (fun u => hXK u y hy) t, fun t x hx => ?_⟩
-  -- The curve `s ↦ F (σ s, x)` solves the time-dependent equation and starts at `f₀ x`.
-  have h₀ : (⟨Real.smoothTransition 0, Real.smoothTransition.nonneg _,
-      Real.smoothTransition.le_one _⟩ : unitInterval) = 0 :=
-    Subtype.ext Real.smoothTransition.zero
-  have hsol := timeDependentFlowOf_eq_of_hasMFDerivAt hX₁ (a := -1) (b := 2) (s := 0) (t := t)
-    (fun u _ => hvel u x hx) ⟨by norm_num, by norm_num⟩ ⟨by linarith [t.2.1], by linarith [t.2.2]⟩
-  rw [h₀, F.apply_zero] at hsol
-  rw [timeDependentFlowDiffeotopy_apply]
-  exact hsol
+  obtain ⟨Φ, K, hK, hΦK, hΦ, -⟩ := F.exists_diffeotopy_apply_eq_of_forall_notMem (A₀ := A)
+    (C := ∅) hA hA isClosed_empty (fun _ _ _ => notMem_empty _)
+    (fun _ _ hx hx' => (hx' hx).elim) hm hmn
+  exact ⟨Φ, K, hK, hΦK, hΦ⟩
 
 /-- **Isotopy extension on a compact subset, final form.** The final diffeomorphism of a compactly
 supported `C^m` diffeotopy carries the initial embedding `f₀` of a `C^n` isotopy to the final one

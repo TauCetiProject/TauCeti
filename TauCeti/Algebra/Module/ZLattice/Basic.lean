@@ -20,7 +20,10 @@ The coordinates of a real basis `b` carry any additive Haar measure `μ` to Lebe
 
 It also records basic facts about lattices: a full lattice is the `ℤ`-span of a basis of
 the ambient space, and membership in the pull-back `ZLattice.comap` of a lattice is membership of
-the image. The pull-back `L ∩ V` of a discrete subgroup to a subspace `V` is again discrete.
+the image. The pull-back `L ∩ V` of a discrete subgroup to a subspace `V` is again discrete, and
+so is the pull-back of a discrete subgroup or of a full lattice along a linear isometry
+equivalence; precomposing a linear map with a linear equivalence likewise preserves discreteness
+and fullness of its range.
 
 ## Main results
 
@@ -37,6 +40,9 @@ the image. The pull-back `L ∩ V` of a discrete subgroup to a subspace `V` is a
 * `ZLattice.mem_comap`: `x ∈ ZLattice.comap K L e` if and only if `e x ∈ L`.
 * `ZLattice.instDiscreteTopologyComapSubtype`: the restriction `L ∩ V` of a discrete subgroup `L`
   to a subspace `V` is discrete.
+* `ZLattice.instDiscreteTopologyComapLinearIsometryEquiv`,
+  `ZLattice.instIsZLatticeComapLinearIsometryEquiv`: the pull-back of a discrete subgroup, or of a
+  full lattice, along a linear isometry equivalence is again one.
 * `ZLattice.instDiscreteTopologyRangeCompEquiv`, `ZLattice.instIsZLatticeRangeCompEquiv`:
   precomposing a linear map with a linear equivalence preserves discreteness and fullness of its
   range.
@@ -68,20 +74,22 @@ theorem _root_.ZSpan.convex_fundamentalDomain (β : Basis ι ℝ E) :
 
 /-- Two vectors in the integer span that translate the same point into the fundamental domain
 in subtraction form are equal. -/
-theorem _root_.ZSpan.eq_of_sub_mem_fundamentalDomain [Finite ι] (β : Basis ι ℝ E)
+theorem _root_.ZSpan.eq_of_sub_mem_fundamentalDomain (β : Basis ι ℝ E)
     {x w₁ w₂ : E} (hw₁ : w₁ ∈ Submodule.span ℤ (Set.range β))
     (hw₂ : w₂ ∈ Submodule.span ℤ (Set.range β))
     (h₁ : x - w₁ ∈ ZSpan.fundamentalDomain β)
     (h₂ : x - w₂ ∈ ZSpan.fundamentalDomain β) : w₁ = w₂ := by
-  have hn₁ : -w₁ ∈ Submodule.span ℤ (Set.range β) := neg_mem hw₁
-  have hn₂ : -w₂ ∈ Submodule.span ℤ (Set.range β) := neg_mem hw₂
-  have subtype_vadd (w : E) (hw : w ∈ Submodule.span ℤ (Set.range β)) :
-      (⟨w, hw⟩ : Submodule.span ℤ (Set.range β)) +ᵥ x = w + x := rfl
-  have heq : (⟨-w₁, hn₁⟩ : Submodule.span ℤ (Set.range β)) = ⟨-w₂, hn₂⟩ :=
-    (ZSpan.exist_unique_vadd_mem_fundamentalDomain β x).unique
-      (by rw [subtype_vadd]; simpa only [sub_eq_add_neg, add_comm] using h₁)
-      (by rw [subtype_vadd]; simpa only [sub_eq_add_neg, add_comm] using h₂)
-  exact neg_injective (congrArg Subtype.val heq)
+  refine β.repr.injective (Finsupp.ext fun i ↦ ?_)
+  obtain ⟨a, ha⟩ := (β.mem_span_iff_repr_mem ℤ _).1 hw₁ i
+  obtain ⟨b, hb⟩ := (β.mem_span_iff_repr_mem ℤ _).1 hw₂ i
+  have h₁i := (ZSpan.mem_fundamentalDomain β).1 h₁ i
+  have h₂i := (ZSpan.mem_fundamentalDomain β).1 h₂ i
+  simp only [map_sub, Finsupp.sub_apply, ← ha, ← hb, eq_intCast, Set.mem_Ico] at h₁i h₂i ⊢
+  have h₃ : (a : ℝ) < b + 1 := by linarith [h₁i.1, h₁i.2, h₂i.1, h₂i.2]
+  have h₄ : (b : ℝ) < a + 1 := by linarith [h₁i.1, h₁i.2, h₂i.1, h₂i.2]
+  have h₅ : a < b + 1 := by exact_mod_cast h₃
+  have h₆ : b < a + 1 := by exact_mod_cast h₄
+  rw [show a = b by omega]
 
 /-- The coordinates of a real basis `b` carry an additive Haar measure `μ` to Lebesgue measure on
 `ι → ℝ`, scaled by the measure of the fundamental domain of `b`: every set `s` has
@@ -156,6 +164,27 @@ instance instDiscreteTopologyComapSubtype {K : Type*} [NormedField K] {E : Type*
     [NormedAddCommGroup E] [NormedSpace K E] (L : Submodule ℤ E) [DiscreteTopology L]
     (V : Submodule K E) : DiscreteTopology (ZLattice.comap K L V.subtype) :=
   comap_discreteTopology K L continuous_subtype_val V.injective_subtype
+
+section LinearIsometryEquiv
+
+variable {K : Type*} [NormedField K] {E F : Type*} [NormedAddCommGroup E] [NormedSpace K E]
+  [NormedAddCommGroup F] [NormedSpace K F] (L : Submodule ℤ E) [DiscreteTopology L]
+  (e : F ≃ₗᵢ[K] E)
+
+-- Mathlib states these instances for the map underlying a continuous linear equivalence; the
+-- map underlying a linear isometry equivalence is the same by definition, but instance search
+-- does not see through `LinearIsometryEquiv.toContinuousLinearEquiv`.
+/-- The pull-back of a discrete subgroup along a linear isometry equivalence is discrete. -/
+instance instDiscreteTopologyComapLinearIsometryEquiv :
+    DiscreteTopology (ZLattice.comap K L e.toLinearEquiv.toLinearMap) :=
+  inferInstanceAs (DiscreteTopology (ZLattice.comap K L e.toContinuousLinearEquiv.toLinearMap))
+
+/-- The pull-back of a full lattice along a linear isometry equivalence is a full lattice. -/
+instance instIsZLatticeComapLinearIsometryEquiv [IsZLattice K L] :
+    IsZLattice K (ZLattice.comap K L e.toLinearEquiv.toLinearMap) :=
+  inferInstanceAs (IsZLattice K (ZLattice.comap K L e.toContinuousLinearEquiv.toLinearMap))
+
+end LinearIsometryEquiv
 
 /-- Precomposing a linear map with a linear equivalence leaves its range unchanged, hence preserves
 discreteness of the range. -/

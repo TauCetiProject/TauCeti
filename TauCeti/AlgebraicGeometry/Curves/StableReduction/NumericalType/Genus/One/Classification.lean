@@ -268,6 +268,42 @@ lemma IsGenusOneMinimalShape.of_affineE8
   rw [isGenusOneMinimalShape_iff]
   itauto
 
+/-- An exhaustive chain of four or five components has one of the genus-one path shapes. -/
+private lemma IsGenusOneMinimalShape.of_exhaustive_chain_four_five {t : ℕ} {c : ℕ → T.Component}
+    (hindices : ∀ i, T.genus i = 0 ∧ T.intersection i i = -(2 * (T.weight i : ℤ)))
+    (ht4 : 4 ≤ t) (ht6 : t < 6) (hcard : Fintype.card T.Component = t)
+    (hc : T.IsSelfIntersectionMinusTwoChain t c)
+    (hzero : ∀ i < t, ∀ j < t, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
+      T.intersection (c i) (c j) = 0) : T.IsGenusOneMinimalShape := by
+  have hself (i : T.Component) := (hindices i).2
+  interval_cases t
+  · rcases T.isGenusOneFourPathShape_or_isGenusOneFourPathShape hcard
+        (hself _) (hself _) (hself _) (hself _)
+        (hzero 0 (by omega) 2 (by omega) (by omega) (by omega) (by omega))
+        (hzero 0 (by omega) 3 (by omega) (by omega) (by omega) (by omega))
+        (hzero 1 (by omega) 3 (by omega) (by omega) (by omega) (by omega))
+        (hc.intersection_succ_pos 0 (by omega)) (hc.intersection_succ_pos 1 (by omega))
+        (hc.intersection_succ_pos 2 (by omega)) with h4 | h4
+    · exact IsGenusOneMinimalShape.of_fourPath hindices ⟨hcard, c, hc, hzero, h4⟩
+    · exact IsGenusOneMinimalShape.of_fourPath hindices
+        ⟨hcard, fun i ↦ c (4 - 1 - i), hc.reverse,
+          intersection_reverse_eq_zero_of_nonconsecutive hzero, h4⟩
+  · rcases T.isGenusOneFivePathShape_or_isGenusOneFivePathShape hcard
+        (hself _) (hself _) (hself _) (hself _) (hself _)
+        (hzero 0 (by omega) 2 (by omega) (by omega) (by omega) (by omega))
+        (hzero 0 (by omega) 3 (by omega) (by omega) (by omega) (by omega))
+        (hzero 0 (by omega) 4 (by omega) (by omega) (by omega) (by omega))
+        (hzero 1 (by omega) 3 (by omega) (by omega) (by omega) (by omega))
+        (hzero 1 (by omega) 4 (by omega) (by omega) (by omega) (by omega))
+        (hzero 2 (by omega) 4 (by omega) (by omega) (by omega) (by omega))
+        (hc.intersection_succ_pos 0 (by omega)) (hc.intersection_succ_pos 1 (by omega))
+        (hc.intersection_succ_pos 2 (by omega)) (hc.intersection_succ_pos 3 (by omega))
+        with h5 | h5
+    · exact IsGenusOneMinimalShape.of_fivePath hindices ⟨hcard, c, hc, hzero, h5⟩
+    · exact IsGenusOneMinimalShape.of_fivePath hindices
+        ⟨hcard, fun i ↦ c (5 - 1 - i), hc.reverse,
+          intersection_reverse_eq_zero_of_nonconsecutive hzero, h5⟩
+
 /-- An exhaustive chain of at least two components has one of the genus-one path shapes.
 The chain length selects the finite classifications up to five components and the long-path
 classification thereafter; reversing the chain preserves its nonconsecutive zero intersections. -/
@@ -279,56 +315,32 @@ lemma IsGenusOneMinimalShape.of_exhaustive_chain {t : ℕ} {c : ℕ → T.Compon
       T.intersection (c i) (c j) = 0) : T.IsGenusOneMinimalShape := by
   have hself (i : T.Component) := (hindices i).2
   rcases lt_or_ge t 6 with ht6 | ht6
-  · interval_cases t
-    · obtain ⟨x, y, hxy, hshape⟩ :=
-        T.exists_weight_multiplicity_intersection_eq_of_card_eq_two hcard
-          (hc.ne (i := 0) (j := 1) (by omega) (by omega) (by omega)) (hself _) (hself _)
-      refine IsGenusOneMinimalShape.of_pair hindices ⟨hcard, x, y, ?_, hshape⟩
-      rcases hxy with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-      · exact hc.ne (by omega) (by omega) (by omega)
-      · exact hc.ne (by omega) (by omega) (by omega)
-    · obtain ⟨x, z, hxz, hshape⟩ :=
-        T.exists_weight_multiplicity_intersection_eq_of_card_eq_three hcard
-          (hc.ne (i := 0) (j := 1) (by omega) (by omega) (by omega))
-          (hc.ne (i := 0) (j := 2) (by omega) (by omega) (by omega))
-          (hc.ne (i := 1) (j := 2) (by omega) (by omega) (by omega))
-          (hself _) (hself _) (hself _)
-          (hzero 0 (by omega) 2 (by omega) (by omega) (by omega) (by omega))
-      refine IsGenusOneMinimalShape.of_chain hindices ⟨hcard, x, c 1, z, ?_⟩
-      rcases hxz with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-      · exact ⟨hc.ne (by omega) (by omega) (by omega), hc.ne (by omega) (by omega) (by omega),
-          hc.ne (by omega) (by omega) (by omega),
-          hzero 0 (by omega) 2 (by omega) (by omega) (by omega) (by omega), hshape⟩
-      · refine ⟨hc.ne (by omega) (by omega) (by omega), hc.ne (by omega) (by omega) (by omega),
-          hc.ne (by omega) (by omega) (by omega), ?_, hshape⟩
-        rw [T.intersection_comm]
-        exact hzero 0 (by omega) 2 (by omega) (by omega) (by omega) (by omega)
-    · rcases T.isGenusOneFourPathShape_or_isGenusOneFourPathShape hcard
-          (hself _) (hself _) (hself _) (hself _)
-          (hzero 0 (by omega) 2 (by omega) (by omega) (by omega) (by omega))
-          (hzero 0 (by omega) 3 (by omega) (by omega) (by omega) (by omega))
-          (hzero 1 (by omega) 3 (by omega) (by omega) (by omega) (by omega))
-          (hc.intersection_succ_pos 0 (by omega)) (hc.intersection_succ_pos 1 (by omega))
-          (hc.intersection_succ_pos 2 (by omega)) with h4 | h4
-      · exact IsGenusOneMinimalShape.of_fourPath hindices ⟨hcard, c, hc, hzero, h4⟩
-      · exact IsGenusOneMinimalShape.of_fourPath hindices
-          ⟨hcard, fun i ↦ c (4 - 1 - i), hc.reverse,
-            intersection_reverse_eq_zero_of_nonconsecutive hzero, h4⟩
-    · rcases T.isGenusOneFivePathShape_or_isGenusOneFivePathShape hcard
-          (hself _) (hself _) (hself _) (hself _) (hself _)
-          (hzero 0 (by omega) 2 (by omega) (by omega) (by omega) (by omega))
-          (hzero 0 (by omega) 3 (by omega) (by omega) (by omega) (by omega))
-          (hzero 0 (by omega) 4 (by omega) (by omega) (by omega) (by omega))
-          (hzero 1 (by omega) 3 (by omega) (by omega) (by omega) (by omega))
-          (hzero 1 (by omega) 4 (by omega) (by omega) (by omega) (by omega))
-          (hzero 2 (by omega) 4 (by omega) (by omega) (by omega) (by omega))
-          (hc.intersection_succ_pos 0 (by omega)) (hc.intersection_succ_pos 1 (by omega))
-          (hc.intersection_succ_pos 2 (by omega)) (hc.intersection_succ_pos 3 (by omega))
-          with h5 | h5
-      · exact IsGenusOneMinimalShape.of_fivePath hindices ⟨hcard, c, hc, hzero, h5⟩
-      · exact IsGenusOneMinimalShape.of_fivePath hindices
-          ⟨hcard, fun i ↦ c (5 - 1 - i), hc.reverse,
-            intersection_reverse_eq_zero_of_nonconsecutive hzero, h5⟩
+  · rcases lt_or_ge t 4 with ht4 | ht4
+    · interval_cases t
+      · obtain ⟨x, y, hxy, hshape⟩ :=
+          T.exists_weight_multiplicity_intersection_eq_of_card_eq_two hcard
+            (hc.ne (i := 0) (j := 1) (by omega) (by omega) (by omega)) (hself _) (hself _)
+        refine IsGenusOneMinimalShape.of_pair hindices ⟨hcard, x, y, ?_, hshape⟩
+        rcases hxy with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+        · exact hc.ne (by omega) (by omega) (by omega)
+        · exact hc.ne (by omega) (by omega) (by omega)
+      · obtain ⟨x, z, hxz, hshape⟩ :=
+          T.exists_weight_multiplicity_intersection_eq_of_card_eq_three hcard
+            (hc.ne (i := 0) (j := 1) (by omega) (by omega) (by omega))
+            (hc.ne (i := 0) (j := 2) (by omega) (by omega) (by omega))
+            (hc.ne (i := 1) (j := 2) (by omega) (by omega) (by omega))
+            (hself _) (hself _) (hself _)
+            (hzero 0 (by omega) 2 (by omega) (by omega) (by omega) (by omega))
+        refine IsGenusOneMinimalShape.of_chain hindices ⟨hcard, x, c 1, z, ?_⟩
+        rcases hxz with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+        · exact ⟨hc.ne (by omega) (by omega) (by omega), hc.ne (by omega) (by omega) (by omega),
+            hc.ne (by omega) (by omega) (by omega),
+            hzero 0 (by omega) 2 (by omega) (by omega) (by omega) (by omega), hshape⟩
+        · refine ⟨hc.ne (by omega) (by omega) (by omega), hc.ne (by omega) (by omega) (by omega),
+            hc.ne (by omega) (by omega) (by omega), ?_, hshape⟩
+          rw [T.intersection_comm]
+          exact hzero 0 (by omega) 2 (by omega) (by omega) (by omega) (by omega)
+    · exact IsGenusOneMinimalShape.of_exhaustive_chain_four_five hindices ht4 ht6 hcard hc hzero
   · rcases T.isGenusOneLongPathShape_or_isGenusOneLongPathShape hcard ht6 hc hzero with
       hlong | hlong
     · exact IsGenusOneMinimalShape.of_longPath hindices ⟨t, c, ht6, hcard, hc, hzero, hlong⟩

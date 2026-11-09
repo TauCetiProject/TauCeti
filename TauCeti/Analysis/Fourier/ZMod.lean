@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Fourier.ZMod
 import TauCeti.Data.ZMod.Count
 
 /-!
-# The discrete Fourier transform of a function of the reduction modulo a divisor
+# The discrete Fourier transform on `ZMod N`: reductions and integrality
 
 For `v ∣ N`, a function `f` on `ZMod v` pulls back to `ZMod N` along the reduction
 `j ↦ (j.val : ZMod v)`. Its discrete Fourier transform modulo `N` is supported on the multiples
@@ -22,9 +22,16 @@ unity, so the transform vanishes.
 This is how the Fourier coefficients of a Dirichlet character modulo `v` appear in sums over the
 residues modulo a multiple `N` of `v`.
 
+The values of the standard additive character are `N`-th roots of unity, so the transform of a
+function with values in a subring `R ⊆ ℂ` containing them again has its values in `R`.
+
 ## Main results
 
+* `ZMod.stdAddChar_intCast_natCast_mul`: the additive character modulo `m n` at `n x` is the
+  additive character modulo `m` at `x`.
 * `ZMod.dft_comp_natCast_val`: the transform of a function of the reduction modulo `v ∣ N`.
+* `ZMod.dft_apply_mem`: the transform of an `R`-valued function is `R`-valued when `R` contains
+  the `N`-th roots of unity.
 -/
 
 public section
@@ -32,6 +39,16 @@ public section
 namespace ZMod
 
 variable {v N : ℕ} [NeZero v] [NeZero N] {E : Type*} [AddCommGroup E] [Module ℂ E]
+
+/-- **The standard additive character at a multiple.** The standard additive character modulo
+`m n` at `n x` is the standard additive character modulo `m` at `x`: both are `e^(2π i x / m)`. -/
+theorem stdAddChar_intCast_natCast_mul {m n : ℕ} [NeZero m] [NeZero n] (x : ℤ) :
+    stdAddChar (((n * x : ℤ) : ZMod (m * n))) = stdAddChar (x : ZMod m) := by
+  have hn : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
+  rw [stdAddChar_coe, stdAddChar_coe]
+  congr 1
+  push_cast
+  field_simp
 
 /-- **The Fourier transform of a function of the reduction modulo a divisor.** For `v ∣ N` and
 `L = N / v`, the discrete Fourier transform modulo `N` of `j ↦ f (j mod v)` is `L • 𝓕 f m` at
@@ -88,5 +105,16 @@ theorem dft_comp_natCast_val (hv : v ∣ N) (f : ZMod v → E) (k : ℤ) :
     have h0 : (1 - stdAddChar (-((v : ZMod N) * (k : ZMod N)))) • ∑ j, T j = 0 := by
       rw [sub_smul, one_smul, ← hshift, sub_self]
     exact (smul_eq_zero.mp h0).resolve_left (sub_ne_zero.mpr hne.symm)
+
+/-- **Integrality of the discrete Fourier transform.** If a subring `R ⊆ ℂ` contains the `N`-th
+roots of unity, the discrete Fourier transform of an `R`-valued function on `ZMod N` is
+`R`-valued. -/
+theorem dft_apply_mem {R : Subring ℂ} (hR : ∀ ζ : ℂ, ζ ^ N = 1 → ζ ∈ R) {Φ : ZMod N → ℂ}
+    (hΦ : ∀ j, Φ j ∈ R) (k : ZMod N) : 𝓕 Φ k ∈ R := by
+  rw [dft_apply]
+  refine R.sum_mem fun j _ ↦ ?_
+  rw [smul_eq_mul]
+  refine R.mul_mem (hR _ ?_) (hΦ j)
+  rw [← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, natCast_self, zero_mul, AddChar.map_zero_eq_one]
 
 end ZMod

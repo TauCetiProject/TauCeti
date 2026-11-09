@@ -400,7 +400,7 @@ def idelesCohomologyLocalization : tateCohomology (idelesRep K L) n →+
     (Π₀ v : HeightOneSpectrum (𝓞 K), tateCohomology (semilocalUnitsRep L v) n) ×
       ((w : InfinitePlace K) → tateCohomology (infiniteSemilocalUnitsRep L w) n) where
   toFun x :=
-    (dfinsuppOfFiniteSupport
+    (DFinsupp.ofSupportFinite
       (fun v ↦ ((tateCohomologyFunctor n).map (idelesToSemilocalUnits L v)).hom x)
       (finite_setOf_map_idelesToSemilocalUnits_ne_zero L n x),
       fun w ↦ ((tateCohomologyFunctor n).map (idelesToInfiniteSemilocalUnits L w)).hom x)
@@ -414,7 +414,7 @@ theorem idelesCohomologyLocalization_fst_apply (x : tateCohomology (idelesRep K 
     (v : HeightOneSpectrum (𝓞 K)) :
     (idelesCohomologyLocalization K L n x).1 v =
       ((tateCohomologyFunctor n).map (idelesToSemilocalUnits L v)).hom x :=
-  dfinsuppOfFiniteSupport_apply _ _ v
+  DFinsupp.ofSupportFinite_apply _ _ v
 
 /-- The component of `idelesCohomologyLocalization` at an infinite place `w` is induced by the
 semi-local component at `w`. -/

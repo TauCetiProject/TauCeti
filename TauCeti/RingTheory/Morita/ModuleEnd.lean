@@ -176,6 +176,15 @@ theorem isotypicEval_bijective_of_bijective_lsmul [Module.Finite k S] [Module.Pr
   exact ⟨Function.LeftInverse.injective (isotypicEvalInv_isotypicEval h s _ _ hs),
     Function.RightInverse.surjective (isotypicEval_isotypicEvalInv h s _ _ hs)⟩
 
+/-- A finite basis of `S` reconstructs every vector of an `A`-module from its
+multiplicity components `homOfDual h (b.coord i) x`. -/
+theorem sum_homOfDual_coord_apply {ι : Type*} [Fintype ι] (b : Basis ι k S) (x : M) :
+    ∑ i, homOfDual h (b.coord i) x (b i) = x := by
+  have hsum := isotypicEval_isotypicEvalInv h Finset.univ b.coord b
+    (fun t ↦ by simp [Basis.coord_apply]) x
+  simpa only [isotypicEvalInv, LinearMap.sum_apply, LinearMap.comp_apply,
+    TensorProduct.mk_apply, map_sum, isotypicEval_tmul] using hsum
+
 variable [Module.Finite k S] [Module.Projective k S]
 
 /-- **Every module over `A ≅ End_k S` is `S` tensored with its multiplicity space.** Evaluation

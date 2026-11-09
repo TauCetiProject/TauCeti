@@ -304,18 +304,10 @@ theorem exists_localStableSet_eq_lipschitzGraph_of_contDiffAt
         MapsTo y (Ici 0) (closedBall 0 r) → Tendsto y atTop (𝓝 0)) := by
   obtain ⟨K, alpha, epsilon, r, hr, hs, hu, hN, hsmall, hC₀, hNn, hbound⟩ :=
     h.exists_lyapunovPerronData hf C hC
+  have hN0 := h.negativeGradientRemainder_centered_zero
+  have hN' := h.hasFDerivAt_negativeGradientRemainder_centered
+  have hfield_time := neg_gradient_centered_time_eq (f := f) (x := x)
   set N : E → E := fun z ↦ negativeGradientRemainder f x (x + z) with hNdef
-  have hN0 : N 0 = 0 := by
-    rw [hNdef]
-    exact h.negativeGradientRemainder_centered_zero
-  have hN' : HasFDerivAt N (0 : E →L[ℝ] E) 0 := by
-    rw [hNdef]
-    exact h.hasFDerivAt_negativeGradientRemainder_centered
-  have hfield_time :
-      (fun (_ : ℝ) z ↦ (-hessianOperator f x) z + N z) =
-        fun (_ : ℝ) z ↦ (-∇ f) (x + z) := by
-    rw [hNdef]
-    exact neg_gradient_centered_time_eq
   -- Choose `rho` so that the Lyapunov--Perron solutions with parameters in `closedBall 0 rho`
   -- stay strictly inside the ball of confinement, where the cutoff is invisible.
   obtain ⟨rho, hrho, hrho_lt⟩ :=
@@ -358,8 +350,7 @@ theorem exists_localStableSet_eq_lipschitzGraph_of_contDiffAt
     apply ContinuousLinearMap.tendsto_of_isIntegralCurveOn_mapsTo_closedBall
       hs hu hr.le hN hsmall hN0 h.isIdempotentElem_stableProjection
       h.commute_neg_hessianOperator_stableProjection
-    · rw [hfield_time]
-      exact hy
+    · rwa [hfield_time]
     · exact hmaps
 
 /-- **Confined trajectories at a Morse critical point form a `C¹` Lipschitz graph.** For every
@@ -421,18 +412,10 @@ theorem exists_localUnstableSet_eq_lipschitzGraph_of_contDiffAt
         MapsTo y (Iic 0) (closedBall 0 r) → Tendsto y atBot (nhds 0)) := by
   obtain ⟨K, alpha, epsilon, r, hr, hs, hu, hN, hsmall, hC₀, hNn, hbound⟩ :=
     h.exists_lyapunovPerronData hf C hC
+  have hN0 := h.negativeGradientRemainder_centered_zero
+  have hN' := h.hasFDerivAt_negativeGradientRemainder_centered
+  have hfield_time := neg_gradient_centered_time_eq (f := f) (x := x)
   set N : E → E := fun z ↦ negativeGradientRemainder f x (x + z) with hNdef
-  have hN0 : N 0 = 0 := by
-    rw [hNdef]
-    exact h.negativeGradientRemainder_centered_zero
-  have hN' : HasFDerivAt N (0 : E →L[ℝ] E) 0 := by
-    rw [hNdef]
-    exact h.hasFDerivAt_negativeGradientRemainder_centered
-  have hfield_time :
-      (fun (_ : ℝ) z ↦ (-hessianOperator f x) z + N z) =
-        fun (_ : ℝ) z ↦ (-∇ f) (x + z) := by
-    rw [hNdef]
-    exact neg_gradient_centered_time_eq
   obtain ⟨rho, hrho, hrho_lt⟩ :=
     exists_pos_mul_lt hr ((K : ℝ) / (1 - 2 * K * ((epsilon : ℝ) * 2) / alpha))
   have hset :=
@@ -469,15 +452,13 @@ theorem exists_localUnstableSet_eq_lipschitzGraph_of_contDiffAt
         (h.contDiffAt.unstableLinearSubspace : Set E) := by
       simpa only [LinearMap.coe_range, ContinuousLinearMap.coe_coe] using
         congrArg (fun s : Submodule ℝ E ↦ (s : Set E)) h.range_unstableProjection
-    rw [hfield_time] at hset
-    rw [← h.unstableProjection_def] at hset
+    rw [hfield_time, ← h.unstableProjection_def] at hset
     simpa only [g, localUnstableSet, localInvariantSet, hrange] using hset
   · intro y hy hmaps
     apply ContinuousLinearMap.tendsto_atBot_of_isIntegralCurveOn_mapsTo_closedBall
       hs hu hr.le hN hsmall hN0 h.isIdempotentElem_stableProjection
       h.commute_neg_hessianOperator_stableProjection
-    · rw [hfield_time]
-      exact hy
+    · rwa [hfield_time]
     · exact hmaps
 
 /-- **Confined backward trajectories at a Morse critical point form a `C¹` Lipschitz graph.** For

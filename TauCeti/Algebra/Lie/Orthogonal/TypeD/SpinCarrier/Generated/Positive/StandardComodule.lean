@@ -70,6 +70,14 @@ def standardComodule : Comodule R (coordinateHopfAlgebra n hn R) (Fin (dimension
 
 attribute [local instance] standardComodule
 
+/-- The positive spin coaction is the ambient standard coaction corestricted to its quotient. -/
+theorem standardComodule_coact :
+    Comodule.coact (R := R) (C := coordinateHopfAlgebra n hn R)
+        (M := Fin (dimension n) → R) =
+      let _ := GeneralLinear.standardComodule R (dimension n)
+      Comodule.corestrictCoact
+        (CommHopfAlgCat.mkQuotient _ (definingIdeal n hn R)).hom.toCoalgHom := (rfl)
+
 /-- The coefficient matrix is the ambient generic matrix modulo the positive subgroup's ideal. -/
 theorem coefficientMatrix_basisFun :
     Comodule.coefficientMatrix (C := coordinateHopfAlgebra n hn R)
@@ -157,6 +165,7 @@ private theorem stable_of_raising_closed (s : Set (Fin (dimension n)))
   · intro i
     apply GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_le_ker
     intro a b hab
+    simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
     have ha : a ∉ s := by
       intro ha
       by_cases hb : b ∈ s <;> simp [w, ha, hb] at hab

@@ -164,10 +164,8 @@ lemma inv_localEquation_mem_sections :
 /-- An equation of `E` is a section of `𝒪_X(-E)` on its domain. -/
 lemma localEquation_mem_sections_neg :
     (Scheme.rationalFunctionsEquiv V).symm (g : X.functionField) ∈ (-E).sections V := by
-  have hneg : Scheme.rationalUnitClass X V (Additive.ofMul g⁻¹) = (-E) |_ V := by
-    rw [ofMul_inv, map_neg, hg]
-    simp only [TopCat.Presheaf.restrictOpen, TopCat.Presheaf.restrict, map_neg]
-  refine (mem_sections_iff_of_rationalUnitClass_eq le_rfl hneg).mpr ⟨1, ?_⟩
+  refine (mem_sections_iff_of_rationalUnitClass_eq le_rfl
+    (rationalUnitClass_inv_eq_neg_of_eq hg)).mpr ⟨1, ?_⟩
   simp
 
 variable (D : CartierDivisor X)

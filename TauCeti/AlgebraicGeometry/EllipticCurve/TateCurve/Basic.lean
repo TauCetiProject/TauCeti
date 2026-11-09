@@ -47,6 +47,9 @@ The formal invariants are those of the Tate curve as an elliptic curve over the 
   power series of constant coefficient `1`, and `Δ = q - 24 q² + ⋯`.
 * `TauCeti.exists_tateCurve_a₆_eq_X_mul`: `a₆ = q · u` with `u` a power series of constant
   coefficient `-1`, so `a₆ = -q + ⋯`.
+* `TauCeti.exists_tateCurve_Δ_inv_eq` and `TauCeti.tateCurve_Δ_inv_notMem_range_algebraMap`:
+  over `ℤ⸨q⸩` the inverse discriminant is `q⁻¹ · v(q)` with `v = 1 + 24 q + ⋯ ∈ ℤ⟦q⟧`, and fails
+  holomorphy at the cusp (`∉ Set.range (algebraMap ℤ⟦q⟧ ℤ⸨q⸩)`).
 * `TauCeti.exists_tateCurve_j_eq`: over `ℤ⸨q⸩` the Tate curve is elliptic and
   `j = q⁻¹ · J(q)` with `J ∈ ℤ⟦q⟧` and `J = 1 + 744 q + ⋯`.
 
@@ -66,7 +69,7 @@ namespace TauCeti
 
 /-- **The Tate curve** `y² + xy = x³ + a₄ x + a₆` over `ℤ⟦q⟧`, with `a₄ = -5 s₃` and
 `a₆ = -(5 s₃ + 7 s₅) / 12`. The `n`-th coefficient of `a₆` is `-(5 σ₃(n) + 7 σ₅(n)) / 12`, an
-integer by `twelve_dvd_five_mul_sigma_three_add_seven_mul_sigma_five`; use
+integer by `twelve_dvd_five_mul_sigma_add_seven_mul_sigma_add_two`; use
 `coeff_tateCurve_a₆` and `twelve_mul_tateCurve_a₆` rather than the definition. -/
 noncomputable def tateCurve : WeierstrassCurve ℤ⟦X⟧ where
   a₁ := 1
@@ -94,7 +97,8 @@ theorem coeff_tateCurve_a₆ (n : ℕ) :
 theorem twelve_mul_coeff_tateCurve_a₆ (n : ℕ) :
     12 * coeff n tateCurve.a₆ = -(5 * σ 3 n + 7 * σ 5 n) := by
   have h : (12 : ℤ) * (((5 * σ 3 n + 7 * σ 5 n) / 12 : ℕ) : ℤ) = 5 * σ 3 n + 7 * σ 5 n := by
-    exact_mod_cast Nat.mul_div_cancel' (twelve_dvd_five_mul_sigma_three_add_seven_mul_sigma_five n)
+    exact_mod_cast Nat.mul_div_cancel'
+      (twelve_dvd_five_mul_sigma_add_seven_mul_sigma_add_two (k := 3) (by norm_num) n)
   simp only [tateCurve, coeff_mk]
   linear_combination -h
 
@@ -226,12 +230,12 @@ private theorem coeff_tateCurve_c₄_pow_three :
   simp [map_ofNat constantCoeff, tateCurve_c₄, coeff_mul, pow_succ, Finset.Nat.antidiagonal_succ,
     constantCoeff_divisorSumSeries, sigma_apply]
 
-/-- **`j(q) = 1 / q + 744 + ⋯`**: over `ℤ⸨q⸩` the `j`-invariant of the Tate curve is `q⁻¹ · J(q)`
-for a power series `J ∈ ℤ⟦q⟧` with `J = 1 + 744 q + ⋯`. In particular `j` has a simple pole at
-`q = 0` and integral coefficients. -/
-theorem exists_tateCurve_j_eq :
-    ∃ J : ℤ⟦X⟧, constantCoeff J = 1 ∧ coeff 1 J = 744 ∧
-      (tateCurve.baseChange ℤ⸨X⸩).j = HahnSeries.single (-1) 1 * (J : ℤ⸨X⸩) := by
+/-- **`Δ(q)⁻¹ = 1 / q + 24 + ⋯`**: over `ℤ⸨q⸩` the inverse of the Tate discriminant is
+`q⁻¹ · v(q)` for a power series `v ∈ ℤ⟦q⟧` with `v = 1 + 24 q + ⋯`. -/
+theorem exists_tateCurve_Δ_inv_eq :
+    ∃ v : ℤ⟦X⟧, constantCoeff v = 1 ∧ coeff 1 v = 24 ∧
+      (((tateCurve.baseChange ℤ⸨X⸩).Δ'⁻¹ : ℤ⸨X⸩ˣ) : ℤ⸨X⸩) =
+        HahnSeries.single (-1) 1 * (v : ℤ⸨X⸩) := by
   obtain ⟨u, hu₀, -, hΔ⟩ := exists_tateCurve_Δ_eq_X_mul
   have hu₁ : coeff 1 u = -24 := by
     have h := coeff_two_tateCurve_Δ
@@ -244,19 +248,39 @@ theorem exists_tateCurve_j_eq :
     have h := congrArg (coeff 1) huv
     simp [coeff_mul, Finset.Nat.antidiagonal_succ, hu₀, hu₁, hv₀] at h
     linarith
+  refine ⟨v, hv₀, hv₁, Units.inv_eq_of_mul_eq_one_right ?_⟩
+  rw [WeierstrassCurve.coe_Δ', WeierstrassCurve.baseChange, WeierstrassCurve.map_Δ, hΔ,
+    LaurentSeries.coe_algebraMap, map_mul, HahnSeries.ofPowerSeries_X,
+    mul_mul_mul_comm, HahnSeries.single_mul_single, ← map_mul, huv]
+  simp
+
+/-- The inverse discriminant `Δ⁻¹` of the Tate curve over `ℤ⸨q⸩` has a pole at `q = 0`: it does not
+lie in the subring `ℤ⟦q⟧` of formal power series holomorphic at the cusp. -/
+theorem tateCurve_Δ_inv_notMem_range_algebraMap :
+    (((tateCurve.baseChange ℤ⸨X⸩).Δ'⁻¹ : ℤ⸨X⸩ˣ) : ℤ⸨X⸩) ∉ Set.range (algebraMap ℤ⟦X⟧ ℤ⸨X⸩) := by
+  rintro ⟨P, hP⟩
+  have hmul : algebraMap ℤ⟦X⟧ ℤ⸨X⸩ (tateCurve.Δ * P) = 1 := by
+    rw [map_mul, hP, ← WeierstrassCurve.map_Δ, ← WeierstrassCurve.baseChange,
+      ← WeierstrassCurve.coe_Δ', Units.mul_inv]
+  rw [LaurentSeries.coe_algebraMap, ← map_one (HahnSeries.ofPowerSeries ℤ ℤ)] at hmul
+  have h1 : tateCurve.Δ * P = 1 := HahnSeries.ofPowerSeries_injective hmul
+  have h0 : (0 : ℤ) = 1 := by
+    simpa [constantCoeff_tateCurve_Δ] using congrArg (constantCoeff (R := ℤ)) h1
+  exact zero_ne_one h0
+
+/-- **`j(q) = 1 / q + 744 + ⋯`**: over `ℤ⸨q⸩` the `j`-invariant of the Tate curve is `q⁻¹ · J(q)`
+for a power series `J ∈ ℤ⟦q⟧` with `J = 1 + 744 q + ⋯`. In particular `j` has a simple pole at
+`q = 0` and integral coefficients. -/
+theorem exists_tateCurve_j_eq :
+    ∃ J : ℤ⟦X⟧, constantCoeff J = 1 ∧ coeff 1 J = 744 ∧
+      (tateCurve.baseChange ℤ⸨X⸩).j = HahnSeries.single (-1) 1 * (J : ℤ⸨X⸩) := by
+  obtain ⟨v, hv₀, hv₁, hinv⟩ := exists_tateCurve_Δ_inv_eq
   refine ⟨v * tateCurve.c₄ ^ 3, ?_, ?_, ?_⟩
   · rw [map_mul, coeff_tateCurve_c₄_pow_three.1]
     simp [hv₀]
   · rw [coeff_one_mul, coeff_tateCurve_c₄_pow_three.1, coeff_tateCurve_c₄_pow_three.2]
     simp [hv₀, hv₁]
-  · have hinv : (((tateCurve.baseChange ℤ⸨X⸩).Δ'⁻¹ : ℤ⸨X⸩ˣ) : ℤ⸨X⸩) =
-        HahnSeries.single (-1) 1 * (v : ℤ⸨X⸩) := by
-      refine Units.inv_eq_of_mul_eq_one_right ?_
-      rw [WeierstrassCurve.coe_Δ', WeierstrassCurve.baseChange, WeierstrassCurve.map_Δ, hΔ,
-        LaurentSeries.coe_algebraMap, map_mul, HahnSeries.ofPowerSeries_X,
-        mul_mul_mul_comm, HahnSeries.single_mul_single, ← map_mul, huv]
-      simp
-    rw [WeierstrassCurve.j, hinv, WeierstrassCurve.baseChange, WeierstrassCurve.map_c₄,
+  · rw [WeierstrassCurve.j, hinv, WeierstrassCurve.baseChange, WeierstrassCurve.map_c₄,
       LaurentSeries.coe_algebraMap]
     simp only [map_mul, map_pow]
     ring

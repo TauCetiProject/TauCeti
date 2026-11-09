@@ -101,6 +101,8 @@ variable {N : ℕ}
 
 open CongruenceSubgroup
 
+namespace TauCeti
+
 /-- Pointwise formula for the translated-and-transported modular form underlying
 `diamondOpAux`. -/
 private lemma mcast_translate_apply (k : ℤ) (g : ↥(Gamma0 N))
@@ -617,3 +619,5 @@ theorem isCompl_comap_subtype_range_cuspToModFormCharSpace {k : ℤ}
     have hs : f - e ∈ LinearMap.range (cuspToModFormCharSpace k χ) :=
       (mem_range_cuspToModFormCharSpace_iff k χ _).mpr (Submodule.sub_projection_mem _ _)
     exact Submodule.mem_sup.mpr ⟨e, he, f - e, hs, add_sub_cancel _ _⟩
+
+end TauCeti

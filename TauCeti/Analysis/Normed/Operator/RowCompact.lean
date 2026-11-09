@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.Analysis.Normed.Operator.CompletelyContinuous
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix
+import Mathlib.Algebra.Polynomial.Div
 
 /-!
 # Row-compact operators between model spaces
@@ -39,7 +41,9 @@ row-compact map of rank one can have a row of entries of norm one.
 Row-compact maps form a closed two-sided operator ideal over ultrametric Tate scalars: they are
 stable under sums and scalar multiples, under composition on either side with continuous linear
 maps (`ContinuousLinearMap.IsRowCompact.comp_clm`, `ContinuousLinearMap.IsRowCompact.clm_comp`),
-and under limits in operator norm (`ContinuousLinearMap.isRowCompact_of_tendsto`).
+and under limits in operator norm (`ContinuousLinearMap.isRowCompact_of_tendsto`). In particular
+a polynomial with zero constant coefficient takes row-compact endomorphisms to row-compact
+endomorphisms (`ContinuousLinearMap.IsRowCompact.aeval`).
 
 ## Main definitions
 
@@ -71,7 +75,7 @@ and under limits in operator norm (`ContinuousLinearMap.isRowCompact_of_tendsto`
 
 public section
 
-open Filter Topology ZeroAtInftyContinuousMap
+open Filter Topology ZeroAtInftyContinuousMap Polynomial
 open scoped ZeroAtInfty
 
 variable {I J K L R : Type*} [TopologicalSpace I] [TopologicalSpace J] [DiscreteTopology J]
@@ -375,6 +379,28 @@ theorem IsRowCompact.isCompletelyContinuous {u : C₀(J, R) →L[R] C₀(I, R)}
   simpa using norm_sub_indicatorCLM_comp_apply_le hε.le (fun i hi j ↦
     (hu.norm_matrixCoeff_le_rowNorm i j).trans (not_le.1 (by simpa using hi)).le) x
 
+/-- Row-compact operators have output truncations `π_S ∘ u` converging to `u` in operator norm. -/
+theorem IsRowCompact.tendsto_ringOpNorm_sub_indicatorCLM_comp {u : C₀(J, R) →L[R] C₀(I, R)}
+    (hu : u.IsRowCompact) :
+    Tendsto (fun S : Finset I ↦ ‖u - (indicatorCLM R (S : Set I)).comp u‖) atTop (𝓝 0) := by
+  refine tendsto_order.2 ⟨fun a ha ↦ Eventually.of_forall fun _ ↦
+    ha.trans_le (ringOpNorm_nonneg _), fun ε hε ↦ ?_⟩
+  have hT : {i | ε / 2 ≤ u.rowNorm i}.Finite := by
+    simpa only [not_lt] using
+      eventually_cofinite.1 (hu.tendsto_rowNorm.eventually_lt_const (half_pos hε))
+  filter_upwards [eventually_ge_atTop hT.toFinset] with S hS
+  refine lt_of_le_of_lt (ringOpNorm_le_bound _ (half_pos hε).le
+    (norm_sub_indicatorCLM_comp_apply_le (half_pos hε).le fun i hi j ↦ ?_)) (half_lt_self hε)
+  exact (hu.norm_matrixCoeff_le_rowNorm i j).trans
+    (not_le.1 fun h ↦ hi (hS (by simpa using h))).le
+
+/-- The output truncations `π_S ∘ u` of a row-compact `u` converge to `u` in operator norm as the
+finite set `S` grows. -/
+theorem IsRowCompact.tendsto_ringOpNorm_indicatorCLM_comp_sub {u : C₀(J, R) →L[R] C₀(I, R)}
+    (hu : u.IsRowCompact) :
+    Tendsto (fun S : Finset I ↦ ‖(indicatorCLM R (S : Set I)).comp u - u‖) atTop (𝓝 0) := by
+  simpa only [← neg_sub u, ringOpNorm_neg] using hu.tendsto_ringOpNorm_sub_indicatorCLM_comp
+
 variable [TauCeti.NormedRing.IsTate R]
 
 /-- **Row compactness is norm convergence of output truncations**: over ultrametric Tate scalars,
@@ -384,34 +410,17 @@ theorem isRowCompact_iff_tendsto_ringOpNorm_sub_indicatorCLM_comp
     {u : C₀(J, R) →L[R] C₀(I, R)} :
     u.IsRowCompact ↔
       Tendsto (fun S : Finset I ↦ ‖u - (indicatorCLM R (S : Set I)).comp u‖) atTop (𝓝 0) := by
-  refine ⟨fun hu ↦ ?_, fun h ↦ isRowCompact_iff_tendsto_rowNorm.2 ?_⟩
-  · refine tendsto_order.2 ⟨fun a ha ↦ Eventually.of_forall fun _ ↦
-      ha.trans_le (ringOpNorm_nonneg _), fun ε hε ↦ ?_⟩
-    have hT : {i | ε / 2 ≤ u.rowNorm i}.Finite := by
-      simpa only [not_lt] using
-        eventually_cofinite.1 (hu.tendsto_rowNorm.eventually_lt_const (half_pos hε))
-    filter_upwards [eventually_ge_atTop hT.toFinset] with S hS
-    refine lt_of_le_of_lt (ringOpNorm_le_bound _ (half_pos hε).le
-      (norm_sub_indicatorCLM_comp_apply_le (half_pos hε).le fun i hi j ↦ ?_)) (half_lt_self hε)
-    exact (hu.norm_matrixCoeff_le_rowNorm i j).trans
-      (not_le.1 fun h ↦ hi (hS (by simpa using h))).le
-  · refine tendsto_order.2 ⟨fun a ha ↦ Eventually.of_forall fun i ↦ ha.trans_le
-      (u.rowNorm_nonneg i), fun ε hε ↦ ?_⟩
-    obtain ⟨S, hS⟩ := (h.eventually_lt_const hε).exists
-    refine eventually_cofinite.2 (S.finite_toSet.subset fun i hi ↦ ?_)
-    by_contra hiS
-    refine hi (lt_of_le_of_lt ?_ hS)
-    have := ((indicatorCLM R (S : Set I)ᶜ).comp u).rowNorm_le_ringOpNorm i
-    rwa [rowNorm_indicatorCLM_comp, Set.indicator_of_mem (by simpa using hiS),
-      ← sub_indicatorCLM_comp] at this
-
-/-- Over ultrametric Tate scalars, the output truncations `π_S ∘ u` of a row-compact `u` converge
-to `u` in operator norm as the finite set `S` grows. -/
-theorem IsRowCompact.tendsto_ringOpNorm_indicatorCLM_comp_sub {u : C₀(J, R) →L[R] C₀(I, R)}
-    (hu : u.IsRowCompact) :
-    Tendsto (fun S : Finset I ↦ ‖(indicatorCLM R (S : Set I)).comp u - u‖) atTop (𝓝 0) := by
-  simpa only [← neg_sub u, ringOpNorm_neg] using
-    isRowCompact_iff_tendsto_ringOpNorm_sub_indicatorCLM_comp.1 hu
+  refine ⟨fun hu ↦ hu.tendsto_ringOpNorm_sub_indicatorCLM_comp, fun h ↦
+    isRowCompact_iff_tendsto_rowNorm.2 ?_⟩
+  refine tendsto_order.2 ⟨fun a ha ↦ Eventually.of_forall fun i ↦ ha.trans_le
+    (u.rowNorm_nonneg i), fun ε hε ↦ ?_⟩
+  obtain ⟨S, hS⟩ := (h.eventually_lt_const hε).exists
+  refine eventually_cofinite.2 (S.finite_toSet.subset fun i hi ↦ ?_)
+  by_contra hiS
+  refine hi (lt_of_le_of_lt ?_ hS)
+  have := ((indicatorCLM R (S : Set I)ᶜ).comp u).rowNorm_le_ringOpNorm i
+  rwa [rowNorm_indicatorCLM_comp, Set.indicator_of_mem (by simpa using hiS),
+    ← sub_indicatorCLM_comp] at this
 
 end Truncation
 
@@ -471,6 +480,14 @@ theorem IsRowCompact.clm_comp [DiscreteTopology I] {u : C₀(J, R) →L[R] C₀(
             ((u.norm_matrixCoeff_le_rowNorm i j).trans hi'.le) (norm_nonneg _)
             (ringOpNorm_nonneg w)
       _ ≤ ε / 2 := hδ
+
+/-- A polynomial with zero constant coefficient takes row-compact operators to row-compact
+operators, over ultrametric Tate scalars. -/
+theorem IsRowCompact.aeval {u : C₀(J, R) →L[R] C₀(J, R)} (hu : u.IsRowCompact) {B : R[X]}
+    (hB0 : B.coeff 0 = 0) : (Polynomial.aeval u B).IsRowCompact := by
+  obtain ⟨B', rfl⟩ := X_dvd_iff.2 hB0
+  rw [map_mul, aeval_X, mul_def]
+  exact hu.comp_clm _
 
 end Ideal
 

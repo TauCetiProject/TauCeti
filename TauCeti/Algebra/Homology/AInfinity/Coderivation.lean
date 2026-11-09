@@ -324,24 +324,13 @@ theorem IsSuspension.taylorComponent_comp_self_apply {G : InternalGrading R A}
     have hreplace : ∀ i < p + 1 + (n - p - s),
         replaceBlock x p s e i ∈ G.piece (replaceDeg d p s i) := fun _ hi ↦
       replaceBlock_mem_replaceDeg_of_mem_blockDeg G.piece hx he hps hi
-    -- Present the spliced word as the pure tensor to which the outer suspension relation applies.
-    have hsplice : ReducedTensorWords.splice R (fun i : Fin n ↦ x i) 0 n p s e =
-        ReducedTensorWords.of R A ⟨p + 1 + (n - p - s), by omega⟩
-          (PiTensorProduct.tprod R fun i : Fin (p + 1 + (n - p - s)) ↦
-            replaceBlock x p s e i) := by
-      rw [ReducedTensorWords.splice_eq_of_tprod R _ e hspos hps (by omega)]
-      apply ReducedTensorWords.of_tprod_congr R A (by omega) (by omega)
-      intro i
-      simp only [Fin.val_cast, Nat.zero_add]
-      split_ifs with hip hi
-      · exact (replaceBlock_of_lt x p s e hip).symm
-      · rw [hi, replaceBlock_self]
-      · exact (replaceBlock_of_gt x p s e (by omega)).symm
     rw [ReducedTensorWords.letter_comp_gradedCoderiv, hinner]
     -- `e` names the suspended inner operation so the splice lemma can be reused without
     -- exposing the implementation of tensor words.
     change _ • F (ReducedTensorWords.splice R (fun i : Fin n ↦ x i) 0 n p s e) = _
-    rw [suspendedStasheffTerm_def, hsplice]
+    -- Present the spliced word as the pure tensor to which the outer suspension relation applies.
+    rw [suspendedStasheffTerm_def,
+      ReducedTensorWords.splice_eq_of_tprod_replaceBlock R x hspos hps e]
     rw [(isSuspension_def _ _ _).1 hFm (p + 1 + (n - p - s)) (by omega) (replaceDeg d p s)
       (replaceBlock x p s e) hreplace]
     simp only [e]

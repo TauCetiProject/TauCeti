@@ -10,14 +10,15 @@ public import Mathlib.Topology.Homeomorph.Lemmas
 /-!
 # Transporting inducing maps along homeomorphisms
 
-A map is inducing exactly when its conjugate by homeomorphisms of the source and target is
-inducing. The product form transports a family of maps into the factors of a product along
-homeomorphisms of the source and of every factor.
+Maps intertwined by a homeomorphism of the source and an inducing map of the target (for
+instance, conjugate by homeomorphisms of the source and target) are inducing simultaneously. The
+product form transports a family of maps into the factors of a product along homeomorphisms of
+the source and of every factor.
 
 ## Main results
 
-* `Homeomorph.isInducing_iff_of_homeomorph`: maps intertwined by homeomorphisms of the source and
-  target are inducing simultaneously.
+* `Homeomorph.isInducing_iff_of_homeomorph`: maps intertwined by a homeomorphism of the source
+  and an inducing map of the target are inducing simultaneously.
 * `Homeomorph.isInducing_pi_iff_of_homeomorph`: the same for maps into a product, with one
   homeomorphism for every factor.
 -/
@@ -28,16 +29,15 @@ namespace Homeomorph
 
 open Topology
 
-/-- Maps intertwined by homeomorphisms of the source and of the target induce the topology
-simultaneously. -/
+/-- Maps intertwined by a homeomorphism of the source and an inducing map of the target induce
+the topology simultaneously. -/
 theorem isInducing_iff_of_homeomorph {X X' Y Y' : Type*} [TopologicalSpace X]
     [TopologicalSpace X'] [TopologicalSpace Y] [TopologicalSpace Y'] (e : X ≃ₜ X')
-    (e' : Y ≃ₜ Y') {r : X → Y} {r' : X' → Y'} (h : ∀ x, e' (r x) = r' (e x)) :
-    IsInducing r ↔ IsInducing r' := by
-  have hcomm : e' ∘ r = r' ∘ e := funext h
-  rw [← e'.isInducing.of_comp_iff, hcomm]
-  refine ⟨fun h' ↦ ?_, fun h' ↦ h'.comp e.isInducing⟩
-  simpa [Function.comp_def] using h'.comp e.symm.isInducing
+    {f : Y → Y'} (hf : IsInducing f) {r : X → Y} {r' : X' → Y'}
+    (h : ∀ x, f (r x) = r' (e x)) : IsInducing r ↔ IsInducing r' := by
+  rw [← hf.of_comp_iff, show f ∘ r = r' ∘ e from funext h]
+  exact ⟨fun h' ↦ by simpa [Function.comp_assoc] using h'.comp e.symm.isInducing,
+    (·.comp e.isInducing)⟩
 
 /-- Restriction maps that commute with homeomorphisms of the source and of every target induce
 the topology simultaneously. -/
@@ -46,6 +46,6 @@ theorem isInducing_pi_iff_of_homeomorph {X X' ι : Type*} [TopologicalSpace X]
     [∀ i, TopologicalSpace (Y' i)] (e : X ≃ₜ X') (e' : ∀ i, Y i ≃ₜ Y' i)
     {r : X → ∀ i, Y i} {r' : X' → ∀ i, Y' i} (h : ∀ x i, e' i (r x i) = r' (e x) i) :
     IsInducing r ↔ IsInducing r' :=
-  e.isInducing_iff_of_homeomorph (Homeomorph.piCongrRight e') fun x ↦ funext (h x)
+  e.isInducing_iff_of_homeomorph (piCongrRight e').isInducing fun x ↦ funext (h x)
 
 end Homeomorph

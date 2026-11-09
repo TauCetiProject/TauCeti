@@ -27,6 +27,8 @@ instantiate the result below.
 
 * `TauCeti.GeneralLinear.pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv`: the
   presented base-change point equivalence preserves the ambient invertible matrix.
+* `TauCeti.GeneralLinear.pointsMulEquiv_quotientPointsHom_mapPointsFunctor_of_comp_baseChangeMap`:
+  the same for the points of a map out of the presented carrier that is a scalar extension.
 -/
 
 public section
@@ -90,6 +92,29 @@ theorem pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv (B : CommAl
     CommHopfAlgCat.quotientPointsHom_apply_apply, ← CommHopfAlgCat.mkQuotient_apply,
     ← CommHopfAlgCat.mkQuotient_apply, CommHopfAlgCat.baseChangeIsoPointsMulEquiv_apply_apply]
   exact congrArg q.ofConv (iso_inv_one_tmul_mkQuotient_X n I J e he i j)
+
+include he in
+/-- On points, a map out of the base-changed presented carrier over `A` that is a scalar extension
+of a map `f` out of the presented carrier over `k` has the matrix of `f` at the restricted point. -/
+theorem pointsMulEquiv_quotientPointsHom_mapPointsFunctor_of_comp_baseChangeMap
+    {G : CommHopfAlgCat k} {GA : CommHopfAlgCat A}
+    (gG : CommHopfAlgCat.baseChange (K := A) G ⟶ GA)
+    (f : CommHopfAlgCat.quotient (coordinateHopfAlgebra k n) I ⟶ G)
+    (fA : CommHopfAlgCat.quotient (coordinateHopfAlgebra A n) J ⟶ GA)
+    (hcompat : e.hom ≫ CommHopfAlgCat.baseChangeMap f ≫ gG = fA)
+    (B : CommAlgCat.{w} A) (q : HopfAlgebra.points (R := A) (H := GA) B) :
+    pointsMulEquiv n
+        (CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra A n) J B
+          ((CommHopfAlgCat.Hom.mapPointsFunctor fA).app B q)) =
+      pointsMulEquiv n
+        (CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra k n) I
+          (CommAlgCat.restrictScalarsObj (algebraMap k A) B)
+          ((CommHopfAlgCat.Hom.mapPointsFunctor f).app _
+            (CommHopfAlgCat.baseChangePointsMulEquiv (K := A) B G
+              (WithConv.toConv (q.ofConv.comp gG.hom.toAlgHom))))) := by
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
+  rw [← CommHopfAlgCat.baseChangeIsoPointsMulEquiv_mapPointsFunctor _ gG f fA hcompat]
+  exact (pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv n I J e he B _).symm
 
 end
 

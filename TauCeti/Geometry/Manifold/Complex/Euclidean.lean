@@ -17,9 +17,10 @@ in standard real Euclidean coordinates. The chart carrier stays `EuclideanSpace 
 only the model vector space changes to `EuclideanSpace ℝ (Fin (2 * n))`.
 
 The model is Mathlib's `ModelWithCorners.transContinuousLinearEquiv` applied to the norm
-preserving coordinates `TauCeti.complexEuclideanRealLinearIsometryEquiv`. After installing
+preserving coordinates `TauCeti.complexEuclideanRealLinearIsometryEquiv`. Installing
 `IsManifold.restrictScalars ℝ` locally and rewriting `complexEuclideanRealModel_def`, Mathlib's
-existing transport instance supplies its `IsManifold` structure at any regularity, and
+existing transport instance supplies its `IsManifold` structure at any regularity (packaged as the
+scoped instance `TauCeti.ComplexManifold.isManifold_complexEuclideanRealModel`), and
 `ContinuousLinearEquiv.toTransContinuousLinearEquiv` is the identity comparison diffeomorphism.
 The application equations below identify this transport explicitly with real and imaginary
 coordinates, including when used in extended charts.
@@ -57,5 +58,20 @@ theorem complexEuclideanRealModel_symm_apply (v : EuclideanSpace ℝ (Fin (2 * n
     (complexEuclideanRealModel n).symm v =
       (complexEuclideanRealLinearIsometryEquiv n).symm v := by
   simp [complexEuclideanRealModel]
+
+namespace ComplexManifold
+
+/-- A `C^n` complex manifold modelled on `𝓘(ℂ, EuclideanSpace ℂ (Fin d))` is, with the same charts,
+a real `C^n` manifold modelled on `TauCeti.complexEuclideanRealModel d`. Available after
+`open scoped TauCeti.ComplexManifold`. -/
+scoped instance isManifold_complexEuclideanRealModel {n : WithTop ℕ∞} {d : ℕ} {X : Type*}
+    [TopologicalSpace X] [ChartedSpace (EuclideanSpace ℂ (Fin d)) X]
+    [h : IsManifold 𝓘(ℂ, EuclideanSpace ℂ (Fin d)) n X] :
+    IsManifold (complexEuclideanRealModel d) n X := by
+  have := h.restrictScalars ℝ
+  rw [complexEuclideanRealModel_def]
+  infer_instance
+
+end ComplexManifold
 
 end TauCeti

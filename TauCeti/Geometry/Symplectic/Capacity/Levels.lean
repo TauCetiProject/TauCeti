@@ -7,11 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Capacity.HoferZehnder
 public import TauCeti.Geometry.Symplectic.Hamiltonian.AlmostExistence
-import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
-import TauCeti.Topology.Homotopy.AddCircle
 
 /-!
 # Short closed characteristics on the levels of an energy function
@@ -34,8 +31,8 @@ every `v < τ (b - a)` (`TauCeti.exists_contDiff_antitone_cutoff_abs_deriv_le`),
 
 Read the other way, this is the step of the Hofer–Zehnder and Struwe argument that turns
 finiteness of the capacity into periodic orbits: if `c°_HZ(W) < τ (b - a)`, some level of `F`
-in `(a, b)` carries a nonconstant periodic orbit of `X_F` of period at most `τ`, contractible in
-`W` (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_isMIntegralCurve_of_contractibleHZCapacity_lt`).
+in `(a, b)` carries a closed characteristic of period at most `τ`, contractible in `W`
+(`IsNondegenerate.exists_mem_Ioo_hasContractibleClosedCharacteristicOfPeriodLE`).
 In particular, if `c°_HZ(W)` is finite, every interval of levels `(a, b)` satisfying the
 assumptions above contains a level carrying a closed characteristic contractible in `W`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_mem_Ioo_hasContractibleClosedCharacteristic`):
@@ -52,9 +49,9 @@ compactness argument for the resulting orbits; neither is treated here.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.ofReal_mul_sub_le_contractibleHZCapacity`: in the
   absence of short contractible closed orbits on the levels in `(a, b)`, the capacity is at least
   `τ (b - a)`.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.exists_isMIntegralCurve_of_contractibleHZCapacity_lt`:
-  if the capacity is less than `τ (b - a)`, a level in `(a, b)` carries a nonconstant contractible
-  closed orbit of period at most `τ`.
+* `IsNondegenerate.exists_mem_Ioo_hasContractibleClosedCharacteristicOfPeriodLE`:
+  if the capacity is less than `τ (b - a)`, a level in `(a, b)` carries a contractible closed
+  characteristic of period at most `τ`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.exists_mem_Ioo_hasContractibleClosedCharacteristic`:
   finite capacity gives a closed characteristic on some level in every interval `(a, b)`
   satisfying the assumptions above.
@@ -85,20 +82,16 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   [FiniteDimensional ℝ E] {σ : SmoothTwoForm I M} {W : Set M} {F : M → ℝ} {a b τ : ℝ}
 
 /-- **Orbits of `φ ∘ F`.** A `T`-periodic orbit `γ` of `X_{φ ∘ F}` whose loop is contractible in
-`W` is constant as soon as, writing `c = φ'(F (γ 0))`, every periodic orbit `γ'` of `X_F` through
-`γ 0` of period at most `T |c|` whose loop is contractible in `W` is constant when `c ≠ 0`. Indeed
-`F` is constant along `γ`, and along its level `X_{φ ∘ F} = c X_F`: if `c = 0` then `γ` is an
-integral curve with zero derivative, hence constant, and otherwise `t ↦ γ (t / c)` is such an orbit
-`γ'`. -/
+`W` is constant as soon as, writing `c = φ'(F (γ 0))`, the level of `γ 0` carries no closed
+characteristic contractible in `W` of period at most `T |c|` when `c ≠ 0`. Indeed `F` is constant
+along `γ`, and along its level `X_{φ ∘ F} = c X_F`: if `c = 0` then the field vanishes along `γ`,
+so `γ` is constant, and otherwise `t ↦ γ (t / c)` is such a closed characteristic. -/
 private theorem IsNondegenerate.eq_of_isMIntegralCurve_comp (hσ : σ.IsNondegenerate)
     (hF : MDifferentiable I 𝓘(ℝ) F) {φ : ℝ → ℝ} (hφ : Differentiable ℝ φ) {T : ℝ} (hT : 0 < T)
     {γ : ℝ → M} (hγ : IsMIntegralCurve γ (σ.hamiltonianVectorField (φ ∘ F)))
     {g : C(AddCircle T, W)} (hg : g.Nullhomotopic) (hgγ : ∀ t : ℝ, (g t : M) = γ t)
-    (horb : deriv φ (F (γ 0)) ≠ 0 → ∀ (P : ℝ) (γ' : ℝ → M), 0 < P →
-      P ≤ T * |deriv φ (F (γ 0))| → IsMIntegralCurve γ' (σ.hamiltonianVectorField F) →
-      Periodic γ' P → γ' 0 = γ 0 →
-      (∃ g' : C(AddCircle P, W), g'.Nullhomotopic ∧ ∀ t : ℝ, (g' t : M) = γ' t) →
-      ∀ t, γ' t = γ' 0) :
+    (horb : deriv φ (F (γ 0)) ≠ 0 → ¬σ.HasContractibleClosedCharacteristicOfPeriodLE W F (F (γ 0))
+      (T * |deriv φ (F (γ 0))|)) :
     ∀ t, γ t = γ 0 := by
   set c := deriv φ (F (γ 0))
   have hX (x : M) :
@@ -115,24 +108,16 @@ private theorem IsNondegenerate.eq_of_isMIntegralCurve_comp (hσ : σ.IsNondegen
       σ.hamiltonianVectorField (φ ∘ F) (γ t) = c • σ.hamiltonianVectorField F (γ t) := by
     rw [hX, hlev]
   by_cases hc : c = 0
-  · exact fun t ↦ MDifferentiable.apply_eq_of_mfderiv_eq_zero (I := 𝓘(ℝ))
-      (fun u ↦ (hγ u).mdifferentiableAt)
-      (fun u ↦ by rw [(hγ u).mfderiv, hXγ, hc, zero_smul, ContinuousLinearMap.smulRight_zero]; rfl)
-      t 0
-  -- Otherwise `γ' t = γ (t / c)` is a periodic orbit of `X_F` with a contractible loop.
-  obtain ⟨g', hg', hgg'⟩ := hg.exists_addCircle_comp_mul hT.ne' (inv_ne_zero hc)
-  have hgγ' (t : ℝ) : (g' t : M) = γ (t * c⁻¹) := by rw [hgg', hgγ]
-  have hγ' : IsMIntegralCurve (fun t ↦ γ (t * c⁻¹)) (σ.hamiltonianVectorField F) := fun t ↦ by
-    have h : σ.hamiltonianVectorField F (γ (t * c⁻¹)) =
-        c⁻¹ • σ.hamiltonianVectorField (φ ∘ F) (γ (t * c⁻¹)) := by
-      rw [hXγ, smul_smul, inv_mul_cancel₀ hc, one_smul]
-    rw [h]
-    exact hγ.comp_mul c⁻¹ t
-  have hconst := horb hc (T / |c⁻¹|) (fun t ↦ γ (t * c⁻¹))
-    (div_pos hT (abs_pos.2 (inv_ne_zero hc))) (by rw [abs_inv, div_inv_eq_mul]) hγ'
-    (fun t ↦ by simp only [← hgγ', AddCircle.coe_add_period]) (by simp) ⟨g', hg', hgγ'⟩
-  intro t
-  simpa [mul_inv_cancel_right₀ hc] using hconst (t * c)
+  · exact fun t ↦ hγ.apply_eq_of_forall_eq_zero (fun u ↦ by rw [hXγ, hc, zero_smul]) 0 t
+  -- Otherwise `t ↦ γ (t / c)` is a closed characteristic of period `T |c|`, which is excluded.
+  by_contra hne
+  have hγc : IsMIntegralCurve γ (c⁻¹⁻¹ • σ.hamiltonianVectorField F) := fun t ↦ by
+    rw [inv_inv, Pi.smul_apply, ← hXγ]
+    exact hγ t
+  have h := hasContractibleClosedCharacteristicOfPeriodLE_of_isMIntegralCurve_smul hT
+    (inv_ne_zero hc) hγc (not_forall.1 hne) hlev ⟨g, hg, hgγ⟩
+  rw [abs_inv, div_inv_eq_mul] at h
+  exact horb hc h
 
 /-- **Admissibility of `μ ∘ F`.** Let `F` be smooth with `{F ≤ b}` compact and contained in the
 interiors of `W` and of `M`, taking values below `a < b` somewhere and above `b` somewhere in the
@@ -147,10 +132,7 @@ theorem IsNondegenerate.isContractibleHZAdmissible_comp (hσ : σ.IsNondegenerat
     (hanti : Antitone μ) (hnn : ∀ r, 0 ≤ μ r) (hhigh : ∀ r, b ≤ r → μ r = 0)
     (hlow : ∀ r ≤ a, μ r = μ a) (habs : ∀ r, |deriv μ r| ≤ τ)
     (hzero : ∀ r ∉ Ioo a b, deriv μ r = 0)
-    (horb : ∀ (T : ℝ) (γ : ℝ → M), 0 < T → T ≤ τ →
-      IsMIntegralCurve γ (σ.hamiltonianVectorField F) → Periodic γ T → F (γ 0) ∈ Ioo a b →
-      (∃ g : C(AddCircle T, W), g.Nullhomotopic ∧ ∀ t : ℝ, (g t : M) = γ t) →
-      ∀ t, γ t = γ 0) :
+    (horb : ∀ s ∈ Ioo a b, ¬σ.HasContractibleClosedCharacteristicOfPeriodLE W F s τ) :
     σ.IsContractibleHZAdmissible W (μ ∘ F) := by
   have hle (r : ℝ) : μ r ≤ μ a := by
     rcases le_total r a with h | h
@@ -178,13 +160,12 @@ theorem IsNondegenerate.isContractibleHZAdmissible_comp (hσ : σ.IsNondegenerat
       eq_of_isMIntegralCurve := by
         rintro T γ hT hT1 hγ - ⟨g, hg, hgγ⟩
         refine hσ.eq_of_isMIntegralCurve_comp (hF.mdifferentiable (by simp))
-          (hμ.differentiable (by simp)) hT hγ hg hgγ fun hc P γ' hP hPT hγ' hper hγ'0 hg' ↦ ?_
+          (hμ.differentiable (by simp)) hT hγ hg hgγ fun hc h ↦ ?_
         -- A nonzero slope `μ'(s)` forces `s ∈ (a, b)` and `|μ'(s)| ≤ τ`.
-        refine horb P γ' hP (hPT.trans ?_) hγ' hper ?_ hg'
-        · simpa using mul_le_mul hT1 (habs _) (abs_nonneg _) zero_le_one
-        · rw [hγ'0]
-          by_contra hs
-          exact hc (hzero _ hs) }
+        refine horb _ ?_ (h.mono subset_rfl ?_)
+        · by_contra hs
+          exact hc (hzero _ hs)
+        · simpa using mul_le_mul hT1 (habs _) (abs_nonneg _) zero_le_one }
 
 /-- **A lower bound for the `π₁`-sensitive Hofer–Zehnder capacity from the levels of an energy
 function.** Let `F` be smooth with `{F ≤ b}` compact and contained in the interiors of `W` and of
@@ -195,10 +176,7 @@ theorem IsNondegenerate.ofReal_mul_sub_le_contractibleHZCapacity (hσ : σ.IsNon
     (hF : ContMDiff I 𝓘(ℝ) ∞ F) (hab : a < b) (hcpt : IsCompact {x | F x ≤ b})
     (hW : {x | F x ≤ b} ⊆ interior W) (hM : {x | F x ≤ b} ⊆ I.interior M)
     (ha : ∃ x, F x < a) (hb : ∃ x ∈ interior W, b < F x)
-    (horb : ∀ (T : ℝ) (γ : ℝ → M), 0 < T → T ≤ τ →
-      IsMIntegralCurve γ (σ.hamiltonianVectorField F) → Periodic γ T → F (γ 0) ∈ Ioo a b →
-      (∃ g : C(AddCircle T, W), g.Nullhomotopic ∧ ∀ t : ℝ, (g t : M) = γ t) →
-      ∀ t, γ t = γ 0) :
+    (horb : ∀ s ∈ Ioo a b, ¬σ.HasContractibleClosedCharacteristicOfPeriodLE W F s τ) :
     ENNReal.ofReal (τ * (b - a)) ≤ σ.contractibleHZCapacity W := by
   refine le_of_forall_lt_imp_le_of_dense fun e he ↦ ?_
   have hvτ : e.toReal < τ * (b - a) := ENNReal.toReal_lt_of_lt_ofReal he
@@ -223,21 +201,17 @@ theorem IsNondegenerate.ofReal_mul_sub_le_contractibleHZCapacity (hσ : σ.IsNon
 /-- **Short contractible closed orbits from a capacity bound.** Let `F` be smooth with
 `{F ≤ b}` compact and contained in the interiors of `W` and of `M`, taking values below `a < b`
 somewhere and above `b` somewhere in the interior of `W`. If `c°_HZ(W) < τ (b - a)`, then some
-level `F⁻¹(s)`, `s ∈ (a, b)`, carries a nonconstant `T`-periodic orbit of `X_F` with
-`0 < T ≤ τ` whose loop is contractible in `W`. -/
-theorem IsNondegenerate.exists_isMIntegralCurve_of_contractibleHZCapacity_lt
+level `F⁻¹(s)`, `s ∈ (a, b)`, carries a closed characteristic contractible in `W` of period at
+most `τ`. -/
+theorem IsNondegenerate.exists_mem_Ioo_hasContractibleClosedCharacteristicOfPeriodLE
     (hσ : σ.IsNondegenerate) (hF : ContMDiff I 𝓘(ℝ) ∞ F) (hab : a < b)
     (hcpt : IsCompact {x | F x ≤ b}) (hW : {x | F x ≤ b} ⊆ interior W)
     (hM : {x | F x ≤ b} ⊆ I.interior M) (ha : ∃ x, F x < a) (hb : ∃ x ∈ interior W, b < F x)
     (hcap : σ.contractibleHZCapacity W < ENNReal.ofReal (τ * (b - a))) :
-    ∃ (T : ℝ) (γ : ℝ → M), 0 < T ∧ T ≤ τ ∧ IsMIntegralCurve γ (σ.hamiltonianVectorField F) ∧
-      Periodic γ T ∧ F (γ 0) ∈ Ioo a b ∧ (∃ t, γ t ≠ γ 0) ∧
-      ∃ g : C(AddCircle T, W), g.Nullhomotopic ∧ ∀ t : ℝ, (g t : M) = γ t := by
+    ∃ s ∈ Ioo a b, σ.HasContractibleClosedCharacteristicOfPeriodLE W F s τ := by
   by_contra h
-  refine hcap.not_ge (hσ.ofReal_mul_sub_le_contractibleHZCapacity hF hab hcpt hW hM ha hb ?_)
-  intro T γ hT hTτ hγ hper hs hg
-  by_contra hne
-  exact h ⟨T, γ, hT, hTτ, hγ, hper, hs, not_forall.1 hne, hg⟩
+  exact hcap.not_ge (hσ.ofReal_mul_sub_le_contractibleHZCapacity hF hab hcpt hW hM ha hb
+    fun s hs h' ↦ h ⟨s, hs, h'⟩)
 
 /-- **Dense existence of contractible closed characteristics.** If the `π₁`-sensitive
 Hofer–Zehnder capacity of `W` is finite, then for every `a < b` such that `{F ≤ b}` is compact and
@@ -258,14 +232,9 @@ theorem IsNondegenerate.exists_mem_Ioo_hasContractibleClosedCharacteristic
     calc σ.contractibleHZCapacity W
         = ENNReal.ofReal (σ.contractibleHZCapacity W).toReal := (ENNReal.ofReal_toReal hcap.ne).symm
       _ < _ := (ENNReal.ofReal_lt_ofReal_iff (by positivity)).2 (lt_add_one _)
-  obtain ⟨T, γ, hT, -, hγ, hper, hs, hne, hg⟩ :=
-    hσ.exists_isMIntegralCurve_of_contractibleHZCapacity_lt hF hab hcpt hW hM ha hb hτ
-  -- The energy `F` is conserved along `γ`.
-  have hlev (t : ℝ) : F (γ t) = F (γ 0) :=
-    (hσ.isHamiltonianVectorField_hamiltonianVectorField F).apply_eq_of_isMIntegralCurve hγ
-      (fun _ ↦ hF.mdifferentiable (by simp) _) 0 t
-  exact ⟨F (γ 0), hs, hasContractibleClosedCharacteristic_iff.2
-    ⟨T, γ, hT, hγ, hper, hne, hlev, hg⟩⟩
+  obtain ⟨s, hs, h⟩ :=
+    hσ.exists_mem_Ioo_hasContractibleClosedCharacteristicOfPeriodLE hF hab hcpt hW hM ha hb hτ
+  exact ⟨s, hs, h.hasContractibleClosedCharacteristic⟩
 
 end SmoothTwoForm
 

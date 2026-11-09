@@ -131,6 +131,101 @@ theorem orbitTorusOperator_smul (c : ℝ) :
   simp only [orbitTorusOperator_apply, fderiv_const_smul_field, Pi.smul_apply,
     smul_apply, map_smul, smul_add]
 
+/-- The first potential `φ₁` of the cross term `⟪∂s u, J₀ ∂t u + S(t) u⟫`: the `s`-derivative of
+`⟪u, S u⟫ + ⟪u, J₀ ∂t u⟫`. -/
+private def crossTermPotential₁ (J₀ : V →L[ℝ] V) (S : ℝ → V →L[ℝ] V) (u : ℝ × ℝ → V)
+    (z : ℝ × ℝ) : ℝ :=
+  (⟪u z, S z.2 (fderiv ℝ u z stdComplexLineReal)⟫ +
+      ⟪fderiv ℝ u z stdComplexLineReal, S z.2 (u z)⟫) +
+    (⟪u z, J₀ (fderiv ℝ (fderiv ℝ u) z stdComplexLineReal stdComplexLineImag)⟫ +
+      ⟪fderiv ℝ u z stdComplexLineReal, J₀ (fderiv ℝ u z stdComplexLineImag)⟫)
+
+/-- The second potential `φ₂` of the cross term `⟪∂s u, J₀ ∂t u + S(t) u⟫`: the `t`-derivative
+of `⟪u, J₀ ∂s u⟫`. -/
+private def crossTermPotential₂ (J₀ : V →L[ℝ] V) (u : ℝ × ℝ → V) (z : ℝ × ℝ) : ℝ :=
+  ⟪u z, J₀ (fderiv ℝ (fderiv ℝ u) z stdComplexLineImag stdComplexLineReal)⟫ +
+    ⟪fderiv ℝ u z stdComplexLineImag, J₀ (fderiv ℝ u z stdComplexLineReal)⟫
+
+/-- Pointwise, the cross term `⟪∂s u, J₀ ∂t u + S(t) u⟫` is half of `φ₁ - φ₂`, by symmetry of `S`
+and of the second derivative and skew-adjointness of `J₀`. -/
+private theorem inner_fderiv_eq_half_sub
+    (hJ₀ : ∀ x y, ⟪J₀ x, y⟫ = -⟪x, J₀ y⟫) (hS : ∀ t x y, ⟪S t x, y⟫ = ⟪x, S t y⟫)
+    (hu : ContDiff ℝ 2 u) (z : ℝ × ℝ) :
+    ⟪fderiv ℝ u z stdComplexLineReal, J₀ (fderiv ℝ u z stdComplexLineImag) + S z.2 (u z)⟫ =
+      (crossTermPotential₁ J₀ S u z - crossTermPotential₂ J₀ u z) / 2 := by
+  have k₁ : ⟪u z, S z.2 (fderiv ℝ u z stdComplexLineReal)⟫ =
+      ⟪fderiv ℝ u z stdComplexLineReal, S z.2 (u z)⟫ := by
+    rw [← hS, real_inner_comm]
+  have k₂ : ⟪fderiv ℝ u z stdComplexLineImag, J₀ (fderiv ℝ u z stdComplexLineReal)⟫ =
+      -⟪fderiv ℝ u z stdComplexLineReal, J₀ (fderiv ℝ u z stdComplexLineImag)⟫ := by
+    rw [← hJ₀, real_inner_comm]
+  have k₃ : fderiv ℝ (fderiv ℝ u) z stdComplexLineReal stdComplexLineImag =
+      fderiv ℝ (fderiv ℝ u) z stdComplexLineImag stdComplexLineReal :=
+    hu.contDiffAt.isSymmSndFDerivAt (by simp) _ _
+  simp only [crossTermPotential₁, crossTermPotential₂, inner_add_right, k₁, k₂, k₃]
+  ring
+
+/-- The first potential `φ₁` of a `C²` map is continuous. -/
+private theorem continuous_crossTermPotential₁ (hScont : Continuous S) (hu : ContDiff ℝ 2 u) :
+    Continuous (crossTermPotential₁ J₀ S u) := by
+  have hdu : Continuous (fderiv ℝ u) := hu.continuous_fderiv (by norm_num)
+  unfold crossTermPotential₁
+  fun_prop
+
+/-- The second potential `φ₂` of a `C²` map is continuous. -/
+private theorem continuous_crossTermPotential₂ (hu : ContDiff ℝ 2 u) :
+    Continuous (crossTermPotential₂ J₀ u) := by
+  have hdu : Continuous (fderiv ℝ u) := hu.continuous_fderiv (by norm_num)
+  unfold crossTermPotential₂
+  fun_prop
+
+/-- The first potential `φ₁` integrates to zero over the fundamental rectangle: its primitive
+`⟪u, S u⟫ + ⟪u, J₀ ∂t u⟫` in `s` is `1`-periodic in `s` because `ε₁ ^ 2 = 1`. -/
+private theorem setIntegral_crossTermPotential₁_eq_zero (hScont : Continuous S)
+    (hu : ContDiff ℝ 2 u) (hε₁ : ε₁ ^ 2 = 1) (hs : ∀ s t, u (s + 1, t) = ε₁ • u (s, t)) :
+    ∫ z in Icc (0 : ℝ) 1 ×ˢ Icc 0 d, crossTermPotential₁ J₀ S u z = 0 := by
+  set e₁ := stdComplexLineReal
+  set e₂ := stdComplexLineImag
+  have hu1 : Differentiable ℝ u := hu.differentiable (by norm_num)
+  have hdu1 : Differentiable ℝ (fderiv ℝ u) :=
+    (hu.fderiv_right (m := 1) le_rfl).differentiable one_ne_zero
+  have hus (s t : ℝ) : HasDerivAt (fun s => u (s, t)) (fderiv ℝ u (s, t) e₁) s :=
+    (hu1 _).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_left s t)
+  refine setIntegral_rect_eq_zero_of_hasDerivAt_fst (continuous_crossTermPotential₁ hScont hu)
+    (Φ := fun z => ⟪u z, S z.2 (u z)⟫ + ⟪u z, J₀ (fderiv ℝ u z e₂)⟫)
+    (fun s t => ((hus s t).inner ℝ ((S t).hasFDerivAt.comp_hasDerivAt s (hus s t))).add
+      ((hus s t).inner ℝ (J₀.hasFDerivAt.comp_hasDerivAt s
+        (hasDerivAt_fderiv_apply_fst (hdu1 _) e₂)))) fun t => ?_
+  have h0 : u (1, t) = ε₁ • u (0, t) := by simpa using hs 0 t
+  have h0' : fderiv ℝ u (1, t) = ε₁ • fderiv ℝ u (0, t) := by
+    simpa using fderiv_add_eq_smul (c := ((1 : ℝ), (0 : ℝ)))
+      (fun ⟨a, b⟩ => by simpa using hs a b) (0, t)
+  simp only [h0, h0', map_smul, smul_apply, real_inner_smul_left, real_inner_smul_right]
+  linear_combination (⟪u (0, t), S t (u (0, t))⟫ + ⟪u (0, t), J₀ (fderiv ℝ u (0, t) e₂)⟫) * hε₁
+
+/-- The second potential `φ₂` integrates to zero over the fundamental rectangle: its primitive
+`⟪u, J₀ ∂s u⟫` in `t` is `d`-periodic in `t` because `ε₂ ^ 2 = 1`. -/
+private theorem setIntegral_crossTermPotential₂_eq_zero (hu : ContDiff ℝ 2 u)
+    (hε₂ : ε₂ ^ 2 = 1) (ht : ∀ s t, u (s, t + d) = ε₂ • u (s, t)) :
+    ∫ z in Icc (0 : ℝ) 1 ×ˢ Icc 0 d, crossTermPotential₂ J₀ u z = 0 := by
+  set e₁ := stdComplexLineReal
+  set e₂ := stdComplexLineImag
+  have hu1 : Differentiable ℝ u := hu.differentiable (by norm_num)
+  have hdu1 : Differentiable ℝ (fderiv ℝ u) :=
+    (hu.fderiv_right (m := 1) le_rfl).differentiable one_ne_zero
+  have hut (s t : ℝ) : HasDerivAt (fun t => u (s, t)) (fderiv ℝ u (s, t) e₂) t :=
+    (hu1 _).hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_right s t)
+  refine setIntegral_rect_eq_zero_of_hasDerivAt_snd (continuous_crossTermPotential₂ hu)
+    (Φ := fun z => ⟪u z, J₀ (fderiv ℝ u z e₁)⟫)
+    (fun s t => (hut s t).inner ℝ (J₀.hasFDerivAt.comp_hasDerivAt t
+      (hasDerivAt_fderiv_apply_snd (hdu1 _) e₁))) fun s => ?_
+  have h0 : u (s, d) = ε₂ • u (s, 0) := by simpa using ht s 0
+  have h0' : fderiv ℝ u (s, d) = ε₂ • fderiv ℝ u (s, 0) := by
+    simpa using fderiv_add_eq_smul (c := ((0 : ℝ), d))
+      (fun ⟨a, b⟩ => by simpa using ht a b) (s, 0)
+  simp only [h0, h0', map_smul, smul_apply, real_inner_smul_left, real_inner_smul_right]
+  linear_combination ⟪u (s, 0), J₀ (fderiv ℝ u (s, 0) e₁)⟫ * hε₂
+
 /-- The cross term `⟪∂s u, J₀ ∂t u + S(t) u⟫` of `‖D u‖²` integrates to zero over the fundamental
 rectangle: it is half of `∂s ⟪u, S u + J₀ ∂t u⟫ - ∂t ⟪u, J₀ ∂s u⟫`, and both potentials are
 periodic because the twists square to one. -/
@@ -141,71 +236,13 @@ private theorem setIntegral_inner_fderiv_eq_zero
     ∫ z in Icc (0 : ℝ) 1 ×ˢ Icc 0 d,
       ⟪fderiv ℝ u z stdComplexLineReal, J₀ (fderiv ℝ u z stdComplexLineImag) + S z.2 (u z)⟫ =
       0 := by
-  set e₁ := stdComplexLineReal
-  set e₂ := stdComplexLineImag
-  have hu1 : Differentiable ℝ u := hu.differentiable (by norm_num)
-  have hdu : Continuous (fderiv ℝ u) := hu.continuous_fderiv (by norm_num)
-  have hdu1 : Differentiable ℝ (fderiv ℝ u) :=
-    (hu.fderiv_right (m := 1) le_rfl).differentiable one_ne_zero
-  have hddu : Continuous (fderiv ℝ (fderiv ℝ u)) :=
-    (hu.fderiv_right (m := 1) le_rfl).continuous_fderiv one_ne_zero
-  have hus (s t : ℝ) : HasDerivAt (fun s => u (s, t)) (fderiv ℝ u (s, t) e₁) s :=
-    (hu1 _).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_left s t)
-  have hut (s t : ℝ) : HasDerivAt (fun t => u (s, t)) (fderiv ℝ u (s, t) e₂) t :=
-    (hu1 _).hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_right s t)
-  have hs' (s t : ℝ) : fderiv ℝ u (s + 1, t) = ε₁ • fderiv ℝ u (s, t) := by
-    simpa using fderiv_add_eq_smul (c := ((1 : ℝ), (0 : ℝ)))
-      (fun ⟨a, b⟩ => by simpa using hs a b) (s, t)
-  have ht' (s t : ℝ) : fderiv ℝ u (s, t + d) = ε₂ • fderiv ℝ u (s, t) := by
-    simpa using fderiv_add_eq_smul (c := ((0 : ℝ), d)) (fun ⟨a, b⟩ => by simpa using ht a b) (s, t)
-  -- `φ₁` is the `s`-derivative of `⟪u, S u⟫ + ⟪u, J₀ ∂t u⟫`.
-  let φ₁ : ℝ × ℝ → ℝ := fun z =>
-    (⟪u z, S z.2 (fderiv ℝ u z e₁)⟫ + ⟪fderiv ℝ u z e₁, S z.2 (u z)⟫) +
-      (⟪u z, J₀ (fderiv ℝ (fderiv ℝ u) z e₁ e₂)⟫ + ⟪fderiv ℝ u z e₁, J₀ (fderiv ℝ u z e₂)⟫)
-  -- `φ₂` is the `t`-derivative of `⟪u, J₀ ∂s u⟫`.
-  let φ₂ : ℝ × ℝ → ℝ := fun z =>
-    ⟪u z, J₀ (fderiv ℝ (fderiv ℝ u) z e₂ e₁)⟫ + ⟪fderiv ℝ u z e₂, J₀ (fderiv ℝ u z e₁)⟫
-  have hu0 := hu.continuous
-  have hφ₁ : Continuous φ₁ := by fun_prop
-  have hφ₂ : Continuous φ₂ := by fun_prop
-  have h₁ : ∫ z in Icc (0 : ℝ) 1 ×ˢ Icc 0 d, φ₁ z = 0 := by
-    refine setIntegral_rect_eq_zero_of_hasDerivAt_fst hφ₁
-      (Φ := fun z => ⟪u z, S z.2 (u z)⟫ + ⟪u z, J₀ (fderiv ℝ u z e₂)⟫)
-      (fun s t => ((hus s t).inner ℝ ((S t).hasFDerivAt.comp_hasDerivAt s (hus s t))).add
-        ((hus s t).inner ℝ (J₀.hasFDerivAt.comp_hasDerivAt s
-          (hasDerivAt_fderiv_apply_fst (hdu1 _) e₂)))) fun t => ?_
-    have h0 := hs 0 t
-    have h0' := hs' 0 t
-    rw [zero_add] at h0 h0'
-    simp only [h0, h0', map_smul, smul_apply, real_inner_smul_left,
-      real_inner_smul_right]
-    linear_combination (⟪u (0, t), S t (u (0, t))⟫ + ⟪u (0, t), J₀ (fderiv ℝ u (0, t) e₂)⟫) * hε₁
-  have h₂ : ∫ z in Icc (0 : ℝ) 1 ×ˢ Icc 0 d, φ₂ z = 0 := by
-    refine setIntegral_rect_eq_zero_of_hasDerivAt_snd hφ₂
-      (Φ := fun z => ⟪u z, J₀ (fderiv ℝ u z e₁)⟫)
-      (fun s t => (hut s t).inner ℝ (J₀.hasFDerivAt.comp_hasDerivAt t
-        (hasDerivAt_fderiv_apply_snd (hdu1 _) e₁))) fun s => ?_
-    have h0 := ht s 0
-    have h0' := ht' s 0
-    rw [zero_add] at h0 h0'
-    simp only [h0, h0', map_smul, smul_apply, real_inner_smul_left,
-      real_inner_smul_right]
-    linear_combination ⟪u (s, 0), J₀ (fderiv ℝ u (s, 0) e₁)⟫ * hε₂
-  have hpt : (fun z : ℝ × ℝ => ⟪fderiv ℝ u z e₁, J₀ (fderiv ℝ u z e₂) + S z.2 (u z)⟫) =
-      fun z => (φ₁ z - φ₂ z) / 2 := by
-    funext z
-    have k₁ : ⟪u z, S z.2 (fderiv ℝ u z e₁)⟫ = ⟪fderiv ℝ u z e₁, S z.2 (u z)⟫ := by
-      rw [← hS, real_inner_comm]
-    have k₂ : ⟪fderiv ℝ u z e₂, J₀ (fderiv ℝ u z e₁)⟫ =
-        -⟪fderiv ℝ u z e₁, J₀ (fderiv ℝ u z e₂)⟫ := by
-      rw [← hJ₀, real_inner_comm]
-    have k₃ : fderiv ℝ (fderiv ℝ u) z e₁ e₂ = fderiv ℝ (fderiv ℝ u) z e₂ e₁ :=
-      hu.contDiffAt.isSymmSndFDerivAt (by simp) e₁ e₂
-    simp only [φ₁, φ₂, inner_add_right, k₁, k₂, k₃]
-    ring
   have hR : IsCompact (Icc (0 : ℝ) 1 ×ˢ Icc 0 d) := isCompact_Icc.prod isCompact_Icc
-  rw [hpt, integral_div, integral_sub (hφ₁.continuousOn.integrableOn_compact hR)
-    (hφ₂.continuousOn.integrableOn_compact hR), h₁, h₂, sub_self, zero_div]
+  simp only [inner_fderiv_eq_half_sub hJ₀ hS hu]
+  rw [integral_div, integral_sub
+    ((continuous_crossTermPotential₁ hScont hu).continuousOn.integrableOn_compact hR)
+    ((continuous_crossTermPotential₂ hu).continuousOn.integrableOn_compact hR),
+    setIntegral_crossTermPotential₁_eq_zero hScont hu hε₁ hs,
+    setIntegral_crossTermPotential₂_eq_zero hu hε₂ ht, sub_self, zero_div]
 
 /-- **The energy identity for the orbit-torus operator.** For a `C²` map `u` which is twisted
 periodic with signs `ε₁` in `s` and `ε₂` in `t`, with `J₀` skew-adjoint and `S` symmetric, the

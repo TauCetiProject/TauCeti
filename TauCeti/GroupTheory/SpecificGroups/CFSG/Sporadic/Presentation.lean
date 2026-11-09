@@ -151,6 +151,12 @@ to importing modules, so this equation is how they reach it. -/
 theorem SporadicName.presentation_M12 : SporadicName.M12.presentation = Sporadic.m12Presentation :=
   (rfl)
 
+/-- The presentation selected for `M₂₂` is the transcribed Conder–Havas–Ramsay presentation
+`TauCeti.Sporadic.m22Presentation`. -/
+@[simp]
+theorem SporadicName.presentation_M22 : SporadicName.M22.presentation = Sporadic.m22Presentation :=
+  (rfl)
+
 /-- The sporadic group concretely defined by its selected finite presentation. -/
 abbrev SporadicName.Group (s : SporadicName) : Type := s.presentation.Group
 

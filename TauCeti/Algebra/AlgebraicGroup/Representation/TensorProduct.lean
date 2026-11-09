@@ -79,18 +79,8 @@ theorem differential_tensor_tmul (d : Derivation R H (Bialgebra.CounitAlgebra R 
     (w : W) :
     differential (R := R) (H := H) (M := V ⊗[R] W) d (v ⊗ₜ w) =
       differential (R := R) (H := H) d v ⊗ₜ w + v ⊗ₜ differential (R := R) (H := H) d w := by
-  have hd (a b : H) :
-      ((Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap) (a * b) =
-        ((Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap) a *
-            Coalgebra.counit (R := R) b +
-          Coalgebra.counit (R := R) a *
-            ((Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap) b := by
-    simp only [LinearMap.comp_apply, Derivation.coeFn_coe, Derivation.leibniz, map_add,
-      AlgEquiv.toLinearMap_apply, Bialgebra.CounitAlgebra.algEquivSelf_smul,
-      Algebra.algebraMap_self, RingHom.id_apply]
-    ring
   rw [differential_apply, differential_apply, differential_apply, tensor_coact, tensorCoact_tmul,
-    tensorComponent_tensorCombine hd]
+    tensorComponent_tensorCombine (Bialgebra.CounitAlgebra.algEquivSelf_comp_apply_mul d)]
   simp only [← coactComponent_apply, coactComponent_counit, LinearMap.id_apply]
 
 /-- The Leibniz rule for a tensor product of comodules, as an identity of linear maps:

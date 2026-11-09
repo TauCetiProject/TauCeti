@@ -103,6 +103,13 @@ theorem evalStage_mono (hst : s ≤ t) (h : evalStage σ s c n = some d) :
   obtain ⟨hc, h, hd⟩ := evalStage_eq_some_iff.1 h
   exact evalStage_eq_some_of_evaln h hst (hc.trans_le hst) (hd.trans_le hst)
 
+/-- Failure at a later stage implies failure at every earlier stage for a fixed oracle. -/
+theorem evalStage_eq_none_of_le (hts : t ≤ s) (h : evalStage σ s c n = none) :
+    evalStage σ t c n = none := by
+  cases ht : evalStage σ t c n with
+  | none => rfl
+  | some a => have := evalStage_mono hts ht; simp [h] at this
+
 /-- Two successful stage computations against the same oracle have the same output and use. -/
 theorem evalStage_unique {d' : Halt} (h : evalStage σ s c n = some d)
     (h' : evalStage σ t c n = some d') : d = d' :=

@@ -444,6 +444,16 @@ theorem baseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap
     (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
     (latticeBasis n) (basisWeight n) A (definingIdeal_def n) k
 
+/-- Every transported numbered root-subgroup coordinate map is surjective, so the root subgroup
+remains a closed subgroup after arbitrary scalar extension. -/
+theorem rootSubgroupToBaseChangeCoordinateMap_surjective
+    (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+    Function.Surjective (rootSubgroupToBaseChangeCoordinateMap n A k).hom := by
+  rw [← baseChangeCoordinateIso_hom_comp_rootSubgroupBaseChangeMap n A k]
+  exact _root_.CommHopfAlgCat.baseChangeMap_surjective_of_iso (K := A)
+    (rootSubgroupIntegralCoordinateMap n k) (rootSubgroupIntegralCoordinateMap_surjective n k)
+    (baseChangeCoordinateIso n A) (AdditiveGroup.coordinateHopfAlgebraBaseChangeIso ℤ A)
+
 /-- On points, the transported factored coordinate map is the named numbered root subgroup. -/
 @[simp]
 theorem baseChangePointsMulEquiv_mapPointsFunctor_rootSubgroupToBaseChangeCoordinateMap
@@ -470,7 +480,7 @@ theorem baseChangePointsMulEquiv_mapPointsFunctor_rootSubgroupToBaseChangeCoordi
       (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
       (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
       (rep_kostantForm_mem_lattice n) (isNilpotent_rep_rootGenerator n)
-      (latticeBasis n) (basisWeight n) A (definingIdeal_def n) k B q
+      (latticeBasis n) (basisWeight n) A k B q
   rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at h
   unfold baseChangeDefiningIdeal rootSubgroupToBaseChangeCoordinateMap
   exact h

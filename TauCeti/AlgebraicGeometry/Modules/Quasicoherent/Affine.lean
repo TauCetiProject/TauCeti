@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
+public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 public import Mathlib.AlgebraicGeometry.Modules.Tilde
+public import Mathlib.Algebra.Category.ModuleCat.Descent
 public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 public import Mathlib.CategoryTheory.Abelian.Transfer
 
@@ -16,6 +18,11 @@ public import Mathlib.CategoryTheory.Abelian.Transfer
 The category of quasi-coherent modules on an affine scheme `X` is abelian and has enough
 injectives. Pullback along `X.isoSpec` and Mathlib's tilde equivalence identify it with
 `ModuleCat Γ(X, ⊤)`. These are the category theoretic inputs for deriving exact global sections.
+
+Under the tilde equivalence, pullback along `Spec φ` for a ring map `φ : R ⟶ S` is extension of
+scalars along `φ` (`tildeEquivFunctorCompPullbackIso`). Hence pullback along `Spec φ` preserves
+finite limits when `φ` is flat (`preservesFiniteLimits_pullback_specMap`) and reflects
+isomorphisms when `φ` is faithfully flat (`reflectsIsomorphisms_pullback_specMap`).
 -/
 
 public section
@@ -64,6 +71,85 @@ noncomputable instance (X : Scheme.{u}) [IsAffine X] :
     EnoughInjectives (QuasicoherentSheaf X) := by
   let : EnoughInjectives (ModuleCat Γ(X, ⊤)) := ModuleCat.enoughInjectives _
   exact EnoughInjectives.of_equivalence (affineEquiv X).functor
+
+section Pullback
+
+variable {R S : CommRingCat.{u}} (φ : R ⟶ S)
+
+/-- Under Mathlib's equivalence `tildeEquiv` between modules and quasi-coherent modules on the
+spectrum, pullback along `Spec φ` is extension of scalars along `φ`: the pullback of `M~` is
+`(S ⊗[R] M)~`, naturally in the `R`-module `M`. This is
+`TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso` for quasi-coherent modules. -/
+noncomputable def tildeEquivFunctorCompPullbackIso :
+    (tildeEquiv (R := R)).functor ⋙ pullback (Spec.map φ) ≅
+      ModuleCat.extendScalars φ.hom ⋙ (tildeEquiv (R := S)).functor :=
+  ((_root_.SheafOfModules.isQuasicoherent (Spec S).ringCatSheaf).fullyFaithfulι.whiskeringRight
+    _).preimageIso
+      (Functor.associator _ _ _ ≪≫
+      Functor.isoWhiskerLeft (tildeEquiv (R := R)).functor (pullbackCompιIso (Spec.map φ)) ≪≫
+        TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso φ)
+
+/-- The underlying morphism of `tildeEquivFunctorCompPullbackIso` is
+`TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso`. -/
+@[simp]
+theorem tildeEquivFunctorCompPullbackIso_hom_app_hom (M : ModuleCat.{u} R) :
+    ((tildeEquivFunctorCompPullbackIso φ).hom.app M).hom =
+      eqToHom (pullback_obj_obj (Spec.map φ) ((tildeEquiv (R := R)).functor.obj M)) ≫
+        (TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso φ).hom.app M := by
+  have h := NatTrans.congr_app (Functor.FullyFaithful.map_preimage
+    ((_root_.SheafOfModules.isQuasicoherent (Spec S).ringCatSheaf).fullyFaithfulι.whiskeringRight
+      (ModuleCat.{u} R)) (X := (tildeEquiv (R := R)).functor ⋙ pullback (Spec.map φ))
+    (Y := ModuleCat.extendScalars φ.hom ⋙ (tildeEquiv (R := S)).functor)
+    (Functor.associator _ _ _ ≪≫
+      Functor.isoWhiskerLeft (tildeEquiv (R := R)).functor (pullbackCompιIso (Spec.map φ)) ≪≫
+      TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso φ).hom) M
+  refine h.trans ?_
+  -- The associator is an identity, and the composite mixes the categories `SheafOfModules` and
+  -- `Scheme.Modules`, so neither `simp` nor `rw` applies; the first factor is the identity and
+  -- the second is `pullbackCompιIso` by definition of the composite natural transformation.
+  exact (Category.id_comp _).trans (congrArg (· ≫ _)
+    (pullbackCompιIso_hom_app (Spec.map φ) ((tildeEquiv (R := R)).functor.obj M)))
+
+@[simp]
+theorem tildeEquivFunctorCompPullbackIso_inv_app_hom (M : ModuleCat.{u} R) :
+    ((tildeEquivFunctorCompPullbackIso φ).inv.app M).hom =
+      (TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso φ).inv.app M ≫
+        eqToHom (pullback_obj_obj (Spec.map φ) ((tildeEquiv (R := R)).functor.obj M)).symm := by
+  have h := NatTrans.congr_app (Functor.FullyFaithful.map_preimage
+    ((_root_.SheafOfModules.isQuasicoherent (Spec S).ringCatSheaf).fullyFaithfulι.whiskeringRight
+      (ModuleCat.{u} R)) (X := ModuleCat.extendScalars φ.hom ⋙ (tildeEquiv (R := S)).functor)
+    (Y := (tildeEquiv (R := R)).functor ⋙ pullback (Spec.map φ))
+    (Functor.associator _ _ _ ≪≫
+      Functor.isoWhiskerLeft (tildeEquiv (R := R)).functor (pullbackCompιIso (Spec.map φ)) ≪≫
+      TauCeti.AlgebraicGeometry.tildeFunctorCompPullbackIso φ).inv) M
+  refine h.trans ?_
+  exact (congrArg (_ ≫ ·) ((Category.comp_id _).trans
+    (pullbackCompιIso_inv_app (Spec.map φ) ((tildeEquiv (R := R)).functor.obj M))))
+
+/-- Pullback of quasi-coherent modules along `Spec φ` is extension of scalars along `φ`,
+conjugated by `tildeEquiv`. -/
+private noncomputable def extendScalarsConjIso :
+    (tildeEquiv (R := R)).inverse ⋙ ModuleCat.extendScalars φ.hom ⋙
+      (tildeEquiv (R := S)).functor ≅ pullback (Spec.map φ) :=
+  Functor.isoWhiskerLeft _ (tildeEquivFunctorCompPullbackIso φ).symm ≪≫
+    (Functor.associator _ _ _).symm ≪≫
+    Functor.isoWhiskerRight (tildeEquiv (R := R)).counitIso _ ≪≫ Functor.leftUnitor _
+
+/-- For a flat ring map `φ`, pullback of quasi-coherent modules along `Spec φ` preserves finite
+limits, as extension of scalars along `φ` does. -/
+theorem preservesFiniteLimits_pullback_specMap (hφ : φ.hom.Flat) :
+    Limits.PreservesFiniteLimits (pullback (Spec.map φ)) := by
+  have := ModuleCat.preservesFiniteLimits_extendScalars_of_flat hφ
+  exact Limits.preservesFiniteLimits_of_natIso (extendScalarsConjIso φ)
+
+/-- For a faithfully flat ring map `φ`, pullback of quasi-coherent modules along `Spec φ` reflects
+isomorphisms, as extension of scalars along `φ` does. -/
+theorem reflectsIsomorphisms_pullback_specMap (hφ : φ.hom.FaithfullyFlat) :
+    (pullback (Spec.map φ)).ReflectsIsomorphisms := by
+  have := ModuleCat.reflectsIsomorphisms_extendScalars_of_faithfullyFlat hφ
+  exact reflectsIsomorphisms_of_iso (extendScalarsConjIso φ)
+
+end Pullback
 
 end QuasicoherentSheaf
 

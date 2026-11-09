@@ -20,6 +20,11 @@ manifolds is assumed.
 Conversely, between manifolds modelled on finite-dimensional spaces of the same dimension over a
 complete field, if a composite of differentiable maps has invertible manifold derivative then so do
 both factors (`isInvertible_mfderiv_of_isInvertible_mfderiv_comp`).
+
+If the source is modelled on a finite-dimensional space over a complete field and the derivative
+carries a tangent basis `b` onto a basis `b'`, then it is the continuous linear equivalence mapping
+`b` to `b'` (`exists_coe_eq_mfderiv_of_basis`), so it is invertible
+(`isInvertible_mfderiv_of_basis`).
 -/
 
 public section
@@ -69,5 +74,29 @@ theorem isInvertible_mfderiv_of_isInvertible_mfderiv_comp [CompleteSpace 𝕜]
       (mfderiv I' I'' g (f x) : TangentSpace I' (f x) →ₗ[𝕜] TangentSpace I'' (g (f x)))
       ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim').2 hsurj, hsurj⟩
       ).toContinuousLinearEquiv, ContinuousLinearMap.ext fun _ ↦ rfl⟩⟩
+
+/-- If the source is modelled on a finite-dimensional space over a complete field and the
+derivative at `x` carries a basis `b` of the tangent space at `x` to a basis `b'` of the tangent
+space at `f x`, then the derivative is a continuous linear equivalence mapping `b` to `b'`. -/
+theorem exists_coe_eq_mfderiv_of_basis [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] {ι : Type*}
+    {f : M → M'} {x : M} (b : Module.Basis ι 𝕜 (TangentSpace I x))
+    (b' : Module.Basis ι 𝕜 (TangentSpace I' (f x))) (hbb' : ∀ i, mfderiv I I' f x (b i) = b' i) :
+    ∃ e : TangentSpace I x ≃L[𝕜] TangentSpace I' (f x),
+      (e : TangentSpace I x →L[𝕜] TangentSpace I' (f x)) = mfderiv I I' f x ∧
+        b.map e.toLinearEquiv = b' := by
+  refine ⟨(b.equiv b' (Equiv.refl ι)).toContinuousLinearEquiv,
+    ContinuousLinearMap.coe_injective <| b.ext fun i ↦ ?_, Module.Basis.eq_of_apply_eq fun i ↦ ?_⟩
+  · simp [Module.Basis.equiv_apply, hbb']
+  · simp
+
+/-- If the source is modelled on a finite-dimensional space over a complete field and the
+derivative at `x` carries a basis `b` of the tangent space at `x` to a basis `b'` of the tangent
+space at `f x`, then it is invertible. -/
+theorem isInvertible_mfderiv_of_basis [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] {ι : Type*}
+    {f : M → M'} {x : M} (b : Module.Basis ι 𝕜 (TangentSpace I x))
+    (b' : Module.Basis ι 𝕜 (TangentSpace I' (f x))) (hbb' : ∀ i, mfderiv I I' f x (b i) = b' i) :
+    (mfderiv I I' f x).IsInvertible :=
+  let ⟨e, he, _⟩ := exists_coe_eq_mfderiv_of_basis b b' hbb'
+  ⟨e, he⟩
 
 end TauCeti

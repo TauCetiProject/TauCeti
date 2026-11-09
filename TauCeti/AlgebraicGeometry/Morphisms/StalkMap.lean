@@ -19,7 +19,6 @@ public import TauCeti.RingTheory.Unramified.LocalRing
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import Mathlib.RingTheory.Flat.TorsionFree
 import TauCeti.RingTheory.Flat.Noetherian
-import TauCeti.RingTheory.Flat.Tower
 import TauCeti.RingTheory.Unramified.Normal
 
 /-!
@@ -39,8 +38,9 @@ shows that both conditions only depend on the stalk map `f.stalkMap x`:
 
 Both stalk conditions descend along flat morphisms: for `g : X' ⟶ X` with flat stalk map at
 `x'`, if the stalk map of `g ≫ f` at `x'` is flat (resp. formally unramified, with `f` and
-`g ≫ f` locally of finite type), then so is the stalk map of `f` at `g x'`. Hence if `f` is locally
-of finite presentation, `g` is flat and surjective and `g ≫ f` is étale, then `f` is étale
+`g ≫ f` locally of finite type), then so is the stalk map of `f` at `g x'`; the flat case is
+`AlgebraicGeometry.Scheme.Hom.flat_stalkMap_of_comp`. Hence if `f` is locally of finite
+presentation, `g` is flat and surjective and `g ≫ f` is étale, then `f` is étale
 (`AlgebraicGeometry.Etale.of_comp_surjective`). For an étale surjective `g` this is the statement
 of Stacks, Lemma 35.31.1 (036W), that étaleness is étale local on the source, for `f` locally of
 finite presentation.
@@ -240,24 +240,6 @@ theorem etaleAt_iff_stalkMap (f : X ⟶ Y) [LocallyOfFinitePresentation f] (x : 
     (hV.primeIdealOf ⟨x, hxV⟩).asIdeal
   exact HasRingHomProperty.exists_ι_comp_of_away @Etale hU hV hVU hxV r hrx
     (RingHom.etale_algebraMap.mpr hr)
-
-/-- Flatness of stalk maps descends along flat morphisms: if `g` has flat stalk map at `x'` and
-`g ≫ f` has flat stalk map at `x'`, then `f` has flat stalk map at `g x'`. -/
-theorem flat_stalkMap_of_comp {X' : Scheme.{u}} (g : X' ⟶ X) (f : X ⟶ Y) (x' : X')
-    (hg : (g.stalkMap x').hom.Flat) (h : ((g ≫ f).stalkMap x').hom.Flat) :
-    (f.stalkMap (g x')).hom.Flat := by
-  have h' : ((g.stalkMap x').hom.comp (f.stalkMap (g x')).hom).Flat := by
-    rw [← CommRingCat.hom_comp, ← Scheme.Hom.stalkMap_comp]
-    -- The stalks at `(g ≫ f) x'` and `f (g x')` agree definitionally, but not reducibly.
-    exact h
-  algebraize [(f.stalkMap (g x')).hom, (g.stalkMap x').hom,
-    (g.stalkMap x').hom.comp (f.stalkMap (g x')).hom]
-  -- The algebra structure is that of the stalk map, which is a local homomorphism.
-  have : IsLocalHom (algebraMap (X.presheaf.stalk (g x')) (X'.presheaf.stalk x')) :=
-    inferInstanceAs (IsLocalHom (g.stalkMap x').hom)
-  have : Module.FaithfullyFlat (X.presheaf.stalk (g x')) (X'.presheaf.stalk x') :=
-    .of_flat_of_isLocalHom
-  exact Module.Flat.of_faithfullyFlat_of_flat _ _ (X'.presheaf.stalk x')
 
 /-- Formal unramifiedness of stalk maps descends along flat morphisms: for `f` and `g ≫ f` locally
 of finite type, if `g` has flat stalk map at `x'` and `g ≫ f` has formally unramified stalk map at

@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.Huber.NoetherianType.Basic
 
 import TauCeti.RingTheory.AdicCompletion.Noetherian
 import TauCeti.RingTheory.Huber.Adic
-import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
 # Noetherianity of completions of adic rings and of rings of definition

@@ -8,20 +8,40 @@ module
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
 public import TauCeti.Algebra.Module.ZLattice.Basic
+public import TauCeti.Algebra.Module.ZLattice.Quotient
 public import TauCeti.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Geometry.Manifold.Algebra.SMul
+public import TauCeti.Geometry.Manifold.Algebra.Subgroup
 public import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.Instances.Quotient
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Topology.Algebra.Group.DiscontinuousSubgroup
 public import TauCeti.Topology.Algebra.Module.Submodule
+public import TauCeti.Topology.Covering.Quotient
 import Mathlib.Analysis.LocallyConvex.HahnBanach
 import TauCeti.Algebra.Module.ZLattice.Ker
-import TauCeti.Algebra.Module.ZLattice.Quotient
 import TauCeti.Geometry.Manifold.Immersion.Basic
+import TauCeti.Topology.Algebra.Module.DiscretePreimage
 
 /-!
-# Quotients of normed spaces by discrete submodules are Lie groups
+# Smooth quotients by discrete subgroups and submodules
+
+## Discrete subgroups of Lie groups
+
+For a discrete subgroup `N` of a Lie group `G`, the coset space `G ⧸ N` is a manifold
+with the same model as `G`, and the projection is a local diffeomorphism
+(`Subgroup.isLocalDiffeomorph_quotientMk`). Neither normality nor local compactness is needed.
+If `N` is normal, the quotient is a Lie group, and smooth homomorphisms trivial on `N`
+descend smoothly (`Subgroup.contMDiff_quotientGroup_lift`). These results apply to discrete
+normal subgroups, including finite central kernels of representations.
+
+The covering input is Mathlib's `Subgroup.isQuotientCoveringMap`. The charts and local
+diffeomorphism use `IsLocalHomeomorph.isManifold_chartedSpaceOfRightInverse` and
+`IsLocalHomeomorph.isLocalDiffeomorph_chartedSpaceOfRightInverse`. The Lie group structure
+and smooth descent criterion use `IsLocalDiffeomorph.lieGroup` and
+`IsLocalDiffeomorph.contMDiff_comp_iff`, respectively.
+
+## Discrete submodules of normed spaces
 
 Let `L` be a discrete submodule of a locally compact normed space `E` over a nontrivially normed
 field `𝕜`. The translation action of `L` on `E` is free and properly discontinuous
@@ -67,7 +87,30 @@ complex torus `ker f / (L ∩ ker f)` holomorphically into `E / L`, with image t
 component of the kernel `f⁻¹(L') / L` of the induced homomorphism of complex Lie groups
 (`Submodule.range_orbitRelQuotientMap_ker_subtype`).
 
+That identity component is an open subgroup of the kernel, so the kernel is a union of
+translates of the torus `ker f / (L ∩ ker f)`. Translating the charts of this torus makes the
+kernel a `C^n` Lie group modelled on `ker f`
+(`AddSubgroup.lieAddGroup_chartedSpaceOfIsOpenEmbedding`) whose inclusion into `E / L` is a `C^n`
+embedding. For complex `f` the kernel is thus a closed
+complex Lie subgroup of `E / L`, and the torus `ker f / (L ∩ ker f)` is biholomorphic onto its
+identity component.
+
 ## Main results
+
+### Discrete subgroups
+
+The following results also have additive counterparts in the `AddSubgroup` namespace.
+
+* `Subgroup.isLocalDiffeomorph_quotientMk`: the coset projection by a discrete subgroup is a
+  local diffeomorphism.
+* `Subgroup.instLieGroupDiscreteQuotient`: the quotient by a discrete normal subgroup is a
+  Lie group.
+* `Subgroup.contMDiff_quotient_iff`: smoothness on the coset space is equivalent to smoothness
+  after composition with the projection.
+* `Subgroup.contMDiff_quotientGroup_lift`: a smooth homomorphism killing a discrete normal
+  subgroup descends smoothly to the quotient group.
+
+### Discrete submodules
 
 * `Submodule.instLieAddGroupOrbitRelQuotient`: the quotient of a locally compact normed space by a
   discrete submodule is a `C^n` additive Lie group; for `𝕜 = ℂ` and `n = ω` it is a complex Lie
@@ -89,9 +132,19 @@ component of the kernel `f⁻¹(L') / L` of the induced homomorphism of complex 
 * `Submodule.isSmoothEmbedding_orbitRelQuotientMap_ker_subtype`: for a real or complex linear map
   `f` carrying a full lattice `L` into a discrete subgroup, the torus `ker f / (L ∩ ker f)` embeds
   into `E / L`; for complex `f` the embedding is holomorphic.
+* `Submodule.instLieAddGroupKerOrbitRelQuotientMap`: the kernel `f⁻¹(L') / L` of the induced map
+  `E / L → E' / L'` is a `C^n` additive Lie group modelled on `ker f`; for complex `f` it is a
+  complex Lie group.
+* `Submodule.isSmoothEmbedding_subtypeVal_ker_orbitRelQuotientMap`: the inclusion of that kernel
+  into `E / L` is a `C^n` embedding.
+* `Submodule.isOpenEmbedding_orbitRelQuotientToKerOrbitRelQuotientMap`,
+  `Submodule.isLocalDiffeomorph_orbitRelQuotientToKerOrbitRelQuotientMap`: the torus
+  `ker f / (L ∩ ker f)` is an open subgroup of the kernel, included by a `C^n` local
+  diffeomorphism.
 
 ## References
 
+* John M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 21.
 * Christina Birkenhake and Herbert Lange, *Complex Abelian Varieties*, second edition,
   Grundlehren der mathematischen Wissenschaften 302, Springer, 2004, Chapter 1, Sections 1.1
   and 1.2.
@@ -100,6 +153,92 @@ component of the kernel `f⁻¹(L') / L` of the induced homomorphism of complex 
 public section
 
 open scoped Manifold ContDiff
+
+noncomputable section
+
+open Topology
+
+namespace Subgroup
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {n : ℕ∞ω}
+  {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [ChartedSpace H G]
+  (N : Subgroup G) [DiscreteTopology N]
+
+/-- The charts on the native coset space are pushed forward from the Lie group along the
+covering projection. -/
+@[to_additive /-- The charts on the native additive coset space are pushed forward from the
+additive Lie group along the covering projection. -/]
+instance instChartedSpaceDiscreteQuotient : ChartedSpace H (G ⧸ N) :=
+  N.isLocalHomeomorph_quotientMk.chartedSpace QuotientGroup.mk_surjective
+
+variable [LieGroup I n G]
+
+omit [IsTopologicalGroup G] [DiscreteTopology N] in
+/-- Right multiplication by a subgroup element is a smooth deck transformation. -/
+@[to_additive /-- Translation by a subgroup element is a smooth deck transformation. -/]
+private theorem quotientMk_smooth_deck (z w : G)
+    (h : (QuotientGroup.mk z : G ⧸ N) = QuotientGroup.mk w) :
+    ∃ φ : G → G, ContMDiffAt I I n φ z ∧ φ z = w ∧
+      QuotientGroup.mk (s := N) ∘ φ =ᶠ[nhds z] QuotientGroup.mk (s := N) := by
+  have hn : z⁻¹ * w ∈ N := QuotientGroup.eq.mp h
+  refine ⟨fun x ↦ x * (z⁻¹ * w), (contMDiff_id.mul contMDiff_const).contMDiffAt,
+    by simp, Filter.Eventually.of_forall fun x ↦ ?_⟩
+  exact QuotientGroup.eq.mpr (by simpa using N.inv_mem hn)
+
+/-- A discrete subgroup's native coset space is a manifold, with the same model as the group. -/
+@[to_additive /-- A discrete additive subgroup's native coset space is a manifold, with the same
+model as the additive group. -/]
+instance instIsManifoldDiscreteQuotient : IsManifold I n (G ⧸ N) :=
+  (isLocalHomeomorph_quotientMk N).isManifold_chartedSpaceOfRightInverse (I := I) (n := n)
+    QuotientGroup.mk_surjective.hasRightInverse.choose_spec (quotientMk_smooth_deck N)
+
+/-- The native coset projection is a local diffeomorphism for the pushed-forward charts. -/
+@[to_additive /-- The native additive coset projection is a local diffeomorphism for the
+pushed-forward charts. -/]
+theorem isLocalDiffeomorph_quotientMk :
+    IsLocalDiffeomorph I I n (QuotientGroup.mk (s := N)) :=
+  (isLocalHomeomorph_quotientMk N).isLocalDiffeomorph_chartedSpaceOfRightInverse (I := I) (n := n)
+    QuotientGroup.mk_surjective.hasRightInverse.choose_spec (quotientMk_smooth_deck N)
+
+/-- Quotients by discrete normal subgroups are Lie groups for their native group structure
+and the covering charts. -/
+@[to_additive /-- Quotients by discrete normal additive subgroups are additive Lie groups for
+their native additive group structure and the covering charts. -/]
+instance instLieGroupDiscreteQuotient [N.Normal] : LieGroup I n (G ⧸ N) :=
+  (isLocalDiffeomorph_quotientMk (I := I) (n := n) N).lieGroup
+    (QuotientGroup.mk' N) QuotientGroup.mk_surjective
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M]
+
+/-- A map out of the native coset space is smooth if and only if it is smooth on the covering
+group, for any differentiability order `m ≤ n`, where `n` is the regularity of the group. -/
+@[to_additive /-- A map out of the native additive coset space is smooth if and only if it is
+smooth on the covering additive group, for any differentiability order `m ≤ n`, where `n` is the
+regularity of the additive group. -/]
+theorem contMDiff_quotient_iff {m : ℕ∞ω} (hm : m ≤ n) (f : G ⧸ N → M) :
+    ContMDiff I I' m f ↔ ContMDiff I I' m (f ∘ QuotientGroup.mk (s := N)) :=
+  ((isLocalDiffeomorph_quotientMk (I := I) (n := n) N).contMDiff_comp_iff
+    QuotientGroup.mk_surjective hm).symm
+
+/-- A smooth homomorphism killing a discrete normal subgroup descends smoothly to the native
+quotient group. The target need only be a charted monoid, such as an endomorphism monoid;
+its operations need not be smooth. -/
+@[to_additive /-- A smooth additive homomorphism killing a discrete normal additive subgroup
+descends smoothly to the native quotient additive group. The target need only be a charted
+additive monoid; its operations need not be smooth. -/]
+theorem contMDiff_quotientGroup_lift [N.Normal] [Monoid M] (f : G →* M) (hN : N ≤ f.ker)
+    {m : ℕ∞ω} (hm : m ≤ n) (hf : ContMDiff I I' m f) :
+    ContMDiff I I' m (QuotientGroup.lift N f hN) := by
+  apply (N.contMDiff_quotient_iff (I := I) hm _).mpr
+  simpa only [Function.comp_def, QuotientGroup.lift_mk] using hf
+
+end Subgroup
+
+end
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] [LocallyCompactSpace E] {R : Type*} [Ring R] [Module R E] (L : Submodule R E)
@@ -336,3 +475,94 @@ theorem Submodule.isSmoothEmbedding_orbitRelQuotientMap_ker_subtype {𝕜 : Type
   exact L.isSmoothEmbedding_orbitRelQuotientMap_subtype _ (.of_finiteDimensional _)
 
 end Subtorus
+
+section Kernel
+
+open Topology
+
+variable {𝕜 : Type*} [RCLike 𝕜] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedSpace 𝕜 E] [IsScalarTower ℝ 𝕜 E] [FiniteDimensional ℝ E] {E' : Type*}
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedSpace 𝕜 E'] [IsScalarTower ℝ 𝕜 E']
+  (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L] {L' : Submodule ℤ E'}
+  [DiscreteTopology L'] (f : E →ₗ[𝕜] E') (h : L ≤ L'.comap (f.restrictScalars ℤ))
+
+/-- The torus `ker f / (L ∩ ker f)` is an open subgroup of the kernel `f⁻¹(L') / L` of the map
+`E / L → E' / L'` induced by `f`. -/
+theorem Submodule.isOpenEmbedding_orbitRelQuotientToKerOrbitRelQuotientMap :
+    IsOpenEmbedding (L.orbitRelQuotientToKerOrbitRelQuotientMap f h) := by
+  set j := (ZLattice.comap 𝕜 L (LinearMap.ker f).subtype).orbitRelQuotientMap L
+    ((LinearMap.ker f).subtype.restrictScalars ℤ) le_rfl
+  have hemb := (Submodule.isSmoothEmbedding_orbitRelQuotientMap_ker_subtype (n := 0) L f
+    (Submodule.map_le_iff_le_comap.2 h)).isEmbedding
+  have hcoe : Subtype.val ∘ L.orbitRelQuotientToKerOrbitRelQuotientMap f h = j :=
+    funext (L.coe_orbitRelQuotientToKerOrbitRelQuotientMap f h)
+  refine ⟨IsEmbedding.subtypeVal.of_comp_iff.1 (hcoe ▸ hemb), ?_⟩
+  obtain ⟨U, hU, hUK⟩ := Submodule.exists_isOpen_inter_orbitRelQuotient_mk_image_preimage L f
+    (LinearMap.continuous_of_finiteDimensional (f.restrictScalars ℝ))
+    (Submodule.map_le_iff_le_comap.2 h)
+  have hK : ((L.orbitRelQuotientMap L' (f.restrictScalars ℤ) h).ker :
+      Set (AddAction.orbitRel.Quotient L E)) =
+        _root_.Quotient.mk (AddAction.orbitRel L E) '' (f ⁻¹' L') := by
+    simp [Submodule.ker_orbitRelQuotientMap]
+  have hj : Set.range j = _root_.Quotient.mk (AddAction.orbitRel L E) '' (LinearMap.ker f) :=
+    (Submodule.range_orbitRelQuotientMap _ _ _ _).trans <| congrArg _ <| by ext; simp
+  -- The range is the trace of `U` on the kernel.
+  convert hU.preimage continuous_subtype_val using 1
+  ext ⟨z, hz⟩
+  have hzK : z ∈ _root_.Quotient.mk (AddAction.orbitRel L E) '' (f ⁻¹' L') := hK ▸ hz
+  have hzU : z ∈ U ↔ z ∈ Set.range j := by
+    rw [hj, ← hUK, Set.mem_inter_iff, and_iff_left hzK]
+  rw [Set.mem_preimage, hzU]
+  exact ⟨fun ⟨t, ht⟩ ↦ ⟨t, (congrFun hcoe t).symm.trans (congrArg Subtype.val ht)⟩,
+    fun ⟨t, ht⟩ ↦ ⟨t, Subtype.ext ((congrFun hcoe t).trans ht)⟩⟩
+
+/-- The kernel `f⁻¹(L') / L` of the homomorphism `E / L → E' / L'` induced by `f` is charted on
+`ker f`: near each of its points it is a translate of the torus `ker f / (L ∩ ker f)`, which is an
+open subgroup of the kernel. -/
+noncomputable instance Submodule.instChartedSpaceKerOrbitRelQuotientMap :
+    ChartedSpace (LinearMap.ker f) (L.orbitRelQuotientMap L' (f.restrictScalars ℤ) h).ker :=
+  AddSubgroup.chartedSpaceOfIsOpenEmbedding _ (L.orbitRelQuotientToKerOrbitRelQuotientMap f h)
+    (Submodule.isOpenEmbedding_orbitRelQuotientToKerOrbitRelQuotientMap L f h)
+
+/-- For the charts `Submodule.instChartedSpaceKerOrbitRelQuotientMap`, the inclusion of the torus
+`ker f / (L ∩ ker f)` into the kernel `f⁻¹(L') / L` is a `C^n` local diffeomorphism. Since it is
+also an open embedding (`Submodule.isOpenEmbedding_orbitRelQuotientToKerOrbitRelQuotientMap`), it
+identifies the torus with the identity component of the kernel; for `𝕜 = ℂ` and `n = ω` this
+identification is biholomorphic. -/
+theorem Submodule.isLocalDiffeomorph_orbitRelQuotientToKerOrbitRelQuotientMap :
+    IsLocalDiffeomorph 𝓘(𝕜, LinearMap.ker f) 𝓘(𝕜, LinearMap.ker f) n
+      (L.orbitRelQuotientToKerOrbitRelQuotientMap f h) :=
+  AddSubgroup.isLocalDiffeomorph_chartedSpaceOfIsOpenEmbedding _
+
+private theorem isImmersion_coe_orbitRelQuotientToKerOrbitRelQuotientMap :
+    Manifold.IsImmersion 𝓘(𝕜, LinearMap.ker f) 𝓘(𝕜, E) n fun t ↦
+      (L.orbitRelQuotientToKerOrbitRelQuotientMap f h t : AddAction.orbitRel.Quotient L E) := by
+  -- Followed by the inclusion of the kernel, the codomain restriction is the map of quotients
+  -- induced by the inclusion of `ker f`.
+  simpa only [Submodule.coe_orbitRelQuotientToKerOrbitRelQuotientMap] using
+    (Submodule.isSmoothEmbedding_orbitRelQuotientMap_ker_subtype L f
+      (Submodule.map_le_iff_le_comap.2 h)).isImmersion
+
+/-- **The kernel of an induced homomorphism of tori is a Lie group.** Let a linear map
+`f : E → E'` over `𝕜 = ℝ` or `ℂ` carry a full lattice `L` into a discrete subgroup `L'`. The kernel
+`f⁻¹(L') / L` of the map `E / L → E' / L'` induced by `f`, with the charts
+`Submodule.instChartedSpaceKerOrbitRelQuotientMap` modelled on `ker f`, is a `C^n` additive Lie
+group. For `𝕜 = ℂ` and `n = ω` it is a complex Lie group. -/
+instance Submodule.instLieAddGroupKerOrbitRelQuotientMap :
+    LieAddGroup 𝓘(𝕜, LinearMap.ker f) n (L.orbitRelQuotientMap L' (f.restrictScalars ℤ) h).ker :=
+  AddSubgroup.lieAddGroup_chartedSpaceOfIsOpenEmbedding _
+    (isImmersion_coe_orbitRelQuotientToKerOrbitRelQuotientMap L f h)
+
+/-- **The kernel of an induced homomorphism of tori is an embedded Lie subgroup.** Let a linear
+map `f : E → E'` over `𝕜 = ℝ` or `ℂ` carry a full lattice `L` into a discrete subgroup `L'`. The
+inclusion into `E / L` of the kernel `f⁻¹(L') / L` of the induced map `E / L → E' / L'` is a `C^n`
+embedding. For `𝕜 = ℂ` and `n = ω` this makes the kernel a closed complex Lie subgroup of the
+complex torus `E / L`; it is closed by `Submodule.isClosed_orbitRelQuotient_mk_image_preimage`. -/
+theorem Submodule.isSmoothEmbedding_subtypeVal_ker_orbitRelQuotientMap :
+    Manifold.IsSmoothEmbedding 𝓘(𝕜, LinearMap.ker f) 𝓘(𝕜, E) n
+      (Subtype.val : (L.orbitRelQuotientMap L' (f.restrictScalars ℤ) h).ker →
+        AddAction.orbitRel.Quotient L E) :=
+  AddSubgroup.isSmoothEmbedding_subtypeVal_chartedSpaceOfIsOpenEmbedding _
+    (isImmersion_coe_orbitRelQuotientToKerOrbitRelQuotientMap L f h)
+
+end Kernel

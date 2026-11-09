@@ -124,13 +124,7 @@ theorem invariant_eq_padicValNat_nsmul_of_isProP
         (by rw [AddSubgroup.inclusion_range, QuotientAddGroup.ker_mk'])
       rw [hprev, heq] at hstep
       simpa only [succ_nsmul] using hstep
-  -- The top term is equivariantly isomorphic to `M`.
-  let eTop : N (padicValNat p (Nat.card M)) ≃+ M :=
-    (AddEquiv.addSubgroupCongr (htop _ le_rfl)).trans AddSubgroup.topEquiv
-  have htopEq := invariant_eq_of_equiv I hExact (hprim _) hM eTop (by
-    intro g x
-    simp only [eTop, AddEquiv.trans_apply, AddSubgroup.topEquiv_apply,
-      AddEquiv.addSubgroupCongr_apply, AddSubgroup.restrictDistribMulAction_coe_smul])
-  exact htopEq.symm.trans (hind _ le_rfl)
+  exact (invariant_addSubgroup_eq_of_eq_top I hExact hM (N _) (hN _) (htop _ le_rfl)
+    (hprim _)).symm.trans (hind _ le_rfl)
 
 end TauCeti

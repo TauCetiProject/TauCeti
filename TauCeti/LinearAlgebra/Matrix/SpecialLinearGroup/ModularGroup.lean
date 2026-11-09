@@ -13,7 +13,9 @@ import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 
 This module records the matrix of the standard modular-group generator `S` after scalar extension
 from `SL₂(ℤ)` to `SL₂(R)`, writes it as a word in three transvections, and shows that `S` and
-`U = T S` generate `SL₂(ℤ)`.
+`U = T S` generate `SL₂(ℤ)`. It also makes explicit the right action `r ↦ r γ` of `S` and `T` on
+row vectors over any ring, through the integer cast of the entries; the general composition laws
+of that action are in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic`.
 
 ## Main declarations
 
@@ -25,6 +27,12 @@ from `SL₂(ℤ)` to `SL₂(R)`, writes it as a word in three transvections, and
 * `TauCeti.Matrix.SpecialLinearGroup.closure_S_T_mul_S`: `S` and `T S` generate `SL₂(ℤ)`; this
   follows from Mathlib's `Matrix.SpecialLinearGroup.SL2Z_generators` for `S` and `T`, since
   `T = (T S) S⁻¹`.
+* `TauCeti.Matrix.SpecialLinearGroup.apply_smul_eq_of_S_smul_of_T_smul`: a function on an
+  `SL₂(ℤ)`-set that is invariant under `S` and `T` is invariant under all of `SL₂(ℤ)`.
+
+* `TauCeti.Matrix.SpecialLinearGroup.vecMul_map_modularGroup_S`,
+  `TauCeti.Matrix.SpecialLinearGroup.vecMul_map_modularGroup_T`: `r S = (r₂, -r₁)` and
+  `r T = (r₁, r₁ + r₂)`.
 -/
 
 public section
@@ -66,5 +74,34 @@ theorem closure_S_T_mul_S : Subgroup.closure {S, T * S} = (⊤ : Subgroup SL(2, 
   have hU : T * S ∈ Subgroup.closure {S, T * S} := Subgroup.subset_closure (by simp)
   -- `T = (T S) S⁻¹`
   exact Set.pair_subset hS (by simpa using mul_mem hU (inv_mem hS))
+
+open ModularGroup in
+/-- A function on an `SL₂(ℤ)`-set that is invariant under the generators `S` and `T` is invariant
+under all of `SL₂(ℤ)`. -/
+theorem apply_smul_eq_of_S_smul_of_T_smul {X α : Type*} [MulAction SL(2, ℤ) X] {f : X → α}
+    (hS : ∀ x, f (S • x) = f x) (hT : ∀ x, f (T • x) = f x) (γ : SL(2, ℤ)) (x : X) :
+    f (γ • x) = f x := by
+  have hγ : γ ∈ Subgroup.closure {S, T} := by simp [SpecialLinearGroup.SL2Z_generators]
+  induction hγ using Subgroup.closure_induction generalizing x with
+  | one => rw [one_smul]
+  | mem g hg =>
+    rcases hg with rfl | rfl
+    · exact hS x
+    · exact hT x
+  | mul g h _ _ hg hh => rw [mul_smul, hg, hh]
+  | inv g _ hg => rw [← hg, smul_inv_smul]
+
+/-- The row vector `r` multiplied on the right by `S = [[0, -1], [1, 0]]` is `(r₂, -r₁)`. -/
+theorem vecMul_map_modularGroup_S {R : Type u} [Ring R] (r : Fin 2 → R) :
+    r ᵥ* (ModularGroup.S : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom R) = ![r 1, -r 0] := by
+  ext i
+  fin_cases i <;> simp [ModularGroup.coe_S, vecMul, dotProduct, Fin.sum_univ_two]
+
+/-- The row vector `r` multiplied on the right by `T = [[1, 1], [0, 1]]` is `(r₁, r₁ + r₂)`. -/
+theorem vecMul_map_modularGroup_T {R : Type u} [Ring R] (r : Fin 2 → R) :
+    r ᵥ* (ModularGroup.T : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom R) =
+      ![r 0, r 0 + r 1] := by
+  ext i
+  fin_cases i <;> simp [ModularGroup.coe_T, vecMul, dotProduct, Fin.sum_univ_two]
 
 end TauCeti.Matrix.SpecialLinearGroup

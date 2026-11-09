@@ -27,8 +27,10 @@ is faithful.
 * `CliffordAlgebra.map_reverse` proves naturality of Clifford reversal.
 * `CliffordAlgebra.map_star` proves naturality of Clifford conjugation.
 * `CliffordAlgebra.map_mem_even` proves preservation of the even subalgebra.
-* `CliffordAlgebra.comp_eq_map_comp_of_forall_ι`: a linear map of Clifford modules intertwining
-  the generators along a quadratic isometry `f` intertwines every `a` with `map f a`.
+* `CliffordAlgebra.comp_eq_map_comp_of_forall_ιₛₗ`: a semilinear map of Clifford modules, whose
+  twist fixes the base scalars, intertwining the generators along a quadratic isometry `f`
+  intertwines every `a` with `map f a`; `CliffordAlgebra.comp_eq_map_comp_of_forall_ι` is the
+  linear case.
 * `CliffordAlgebra.mul_eq_map_involute_mul_of_forall_ι`: an element that moves past each
   generator by an isometry `f` up to sign moves past every `a` by `map f ∘ involute`.
 * `CliffordAlgebra.map_evenOdd_equivOfIsometry` proves that an isometry equivalence preserves the
@@ -96,6 +98,31 @@ theorem map_mem_even (f : Q₁ →qᵢ Q₂) {x : CliffordAlgebra Q₁} (hx : x 
       simpa only [map_mul, map_apply_ι, zero_add] using
         SetLike.mul_mem_graded (ι_mul_ι_mem_evenOdd_zero Q₂ (f m₁) (f m₂)) hx
 
+/-- A semilinear map `U` of Clifford modules that intertwines the generators along a quadratic
+isometry `f`, `U c(m) = c(f m) U`, intertwines every Clifford element `a` with `map f a`, provided
+its twist `σ` fixes the scalars coming from the base ring. For complex Clifford modules of a real
+quadratic form, `σ` can be complex conjugation, as for charge conjugation of spinors. -/
+theorem comp_eq_map_comp_of_forall_ιₛₗ {S : Type*} [CommRing S] [Algebra R S]
+    {W₁ W₂ : Type*} [AddCommGroup W₁] [Module S W₁] [Module R W₁] [IsScalarTower R S W₁]
+    [AddCommGroup W₂] [Module S W₂] [Module R W₂] [IsScalarTower R S W₂]
+    {ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End S W₁} {ρ₂ : CliffordAlgebra Q₂ →ₐ[R] Module.End S W₂}
+    {f : Q₁ →qᵢ Q₂} {σ : S →+* S} (hσ : ∀ r, σ (algebraMap R S r) = algebraMap R S r)
+    {U : W₁ →ₛₗ[σ] W₂} (hU : ∀ m, U.comp (ρ₁ (ι Q₁ m)) = (ρ₂ (ι Q₂ (f m))).comp U)
+    (a : CliffordAlgebra Q₁) :
+    U.comp (ρ₁ a) = (ρ₂ (map f a)).comp U := by
+  induction a using CliffordAlgebra.induction with
+  | algebraMap r =>
+    ext w
+    simp only [LinearMap.comp_apply, AlgHom.commutes, Module.algebraMap_end_apply]
+    -- Base scalars act through `S`, where the twist `σ` fixes them.
+    rw [← algebraMap_smul S r w, ← algebraMap_smul S r (U w), map_smulₛₗ, hσ]
+  | ι m => rw [map_apply_ι, hU]
+  | mul a b ha hb =>
+    -- Reassociate to expose `U ∘ ρ₁ a`, then reassociate back to expose `U ∘ ρ₁ b`.
+    simp only [map_mul, Module.End.mul_eq_comp, ← LinearMap.comp_assoc, ha]
+    simp only [LinearMap.comp_assoc, hb]
+  | add a b ha hb => simp only [map_add, LinearMap.comp_add, LinearMap.add_comp, ha, hb]
+
 /-- A linear map `U` of Clifford modules that intertwines the generators along a quadratic
 isometry `f`, `U c(m) = c(f m) U`, intertwines every Clifford element `a` with `map f a`. -/
 theorem comp_eq_map_comp_of_forall_ι {S : Type*} [CommRing S] [Algebra R S]
@@ -104,17 +131,8 @@ theorem comp_eq_map_comp_of_forall_ι {S : Type*} [CommRing S] [Algebra R S]
     {ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End S W₁} {ρ₂ : CliffordAlgebra Q₂ →ₐ[R] Module.End S W₂}
     {f : Q₁ →qᵢ Q₂} {U : W₁ →ₗ[S] W₂} (hU : ∀ m, U ∘ₗ ρ₁ (ι Q₁ m) = ρ₂ (ι Q₂ (f m)) ∘ₗ U)
     (a : CliffordAlgebra Q₁) :
-    U ∘ₗ ρ₁ a = ρ₂ (map f a) ∘ₗ U := by
-  induction a using CliffordAlgebra.induction with
-  | algebraMap r =>
-    ext w
-    simp [Algebra.algebraMap_eq_smul_one]
-  | ι m => rw [map_apply_ι, hU]
-  | mul a b ha hb =>
-    -- Reassociate to expose `U ∘ₗ ρ₁ a`, then reassociate back to expose `U ∘ₗ ρ₁ b`.
-    simp only [map_mul, Module.End.mul_eq_comp, ← LinearMap.comp_assoc, ha]
-    simp only [LinearMap.comp_assoc, hb]
-  | add a b ha hb => simp only [map_add, LinearMap.comp_add, LinearMap.add_comp, ha, hb]
+    U ∘ₗ ρ₁ a = ρ₂ (map f a) ∘ₗ U :=
+  comp_eq_map_comp_of_forall_ιₛₗ (fun _ ↦ rfl) hU a
 
 /-- If an element `u` of a Clifford algebra moves past every generator by a quadratic isometry `f`
 of the same form, up to sign, `u * ι m = -(ι (f m) * u)`, then it moves past every Clifford

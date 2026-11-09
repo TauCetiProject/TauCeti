@@ -65,7 +65,7 @@ group; it is a commutator of a torus element with another long-root generator. -
 private theorem unipotent_zero_mem_commutator_suzukiGroup (hn : n ≠ 0)
     (b : GaloisField 2 (2 * n + 1)) :
     unipotent n 0 b ∈ ⁅suzukiGroup n, suzukiGroup n⁆ := by
-  obtain ⟨κ, hκ⟩ := exists_pow_two_pow_succ_ne_sq n hn
+  obtain ⟨κ, hκ⟩ := (exists_pow_two_pow_succ_ne_sq_iff n).2 hn
   have hμ : ((κ : GaloisField 2 (2 * n + 1)) ^ 2 ^ (n + 1))⁻¹ + 1 ≠ 0 := by
     intro h0
     have h1 : (κ : GaloisField 2 (2 * n + 1)) ^ 2 ^ (n + 1) = 1 := by
@@ -82,7 +82,7 @@ group. -/
 private theorem unipotent_mem_commutator_suzukiGroup (hn : n ≠ 0)
     (a b : GaloisField 2 (2 * n + 1)) :
     unipotent n a b ∈ ⁅suzukiGroup n, suzukiGroup n⁆ := by
-  obtain ⟨κ, hκ⟩ := exists_pow_two_pow_succ_ne_sq n hn
+  obtain ⟨κ, hκ⟩ := (exists_pow_two_pow_succ_ne_sq_iff n).2 hn
   set l : GaloisField 2 (2 * n + 1) :=
     (κ : GaloisField 2 (2 * n + 1)) ^ 2 ^ (n + 1) / (κ : GaloisField 2 (2 * n + 1)) ^ 2 + 1 with hl
   have hl0 : l ≠ 0 := by

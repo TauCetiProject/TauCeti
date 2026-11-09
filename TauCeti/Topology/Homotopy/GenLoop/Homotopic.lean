@@ -20,6 +20,8 @@ homeomorphism between spaces of generalized loops preserves and reflects homotop
 
 ## Main declarations
 
+* `GenLoop.homotopic_of_continuousMap`: a map `I × I^N → X` between two generalized loops that is
+  stationary at the basepoint over the cube boundary is a homotopy relative to the boundary.
 * `GenLoop.homotopic_iff_joined`: homotopy relative to the cube boundary is path connectedness.
 * `Homeomorph.genLoopHomotopic_iff`: a homeomorphism of generalized-loop spaces preserves and
   reflects homotopy.
@@ -69,6 +71,16 @@ def homotopyRelOfPath {p q : Ω^ N X x} (γ : Path p q) :
 theorem homotopyRelOfPath_apply {p q : Ω^ N X x} (γ : Path p q) (t : I) (z : I^N) :
     homotopyRelOfPath γ (t, z) = γ t z :=
   by rw [homotopyRelOfPath.eq_1]; rfl
+
+/-- A continuous map `I × I^N → X` from `p` to `q` that takes the value `x` over the cube boundary
+is a homotopy of generalized loops relative to the cube boundary. -/
+theorem homotopic_of_continuousMap {p q : Ω^ N X x} (H : C(I × I^N, X))
+    (h₀ : ∀ z, H (0, z) = p z) (h₁ : ∀ z, H (1, z) = q z)
+    (hb : ∀ t, ∀ z ∈ Cube.boundary N, H (t, z) = x) : _root_.GenLoop.Homotopic p q :=
+  ⟨{ toContinuousMap := H
+     map_zero_left := h₀
+     map_one_left := h₁
+     prop' t z hz := (hb t z hz).trans (_root_.GenLoop.boundary p z hz).symm }⟩
 
 /-- **Two generalized loops are homotopic relative to the cube boundary exactly when they are
 joined by a path in the space of generalized loops.** The compact-open topology on `Ω^ N X x`

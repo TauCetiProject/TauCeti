@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Module.Equiv.Opposite
 public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Combinatorics.Quiver.PathWeight
+public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.LinearAlgebra.Graded.ExtendByZero
 public import TauCeti.RepresentationTheory.Quiver.Radical
 
@@ -61,6 +62,8 @@ algebra and equips it with a differential, neither of which is part of `gradeBy`
   `TauCeti.PathAlgebra.ofArrow_mem_gradeBy_iff` and
   `TauCeti.PathAlgebra.vertexIdempotent_mem_gradeBy_iff` read off the degree of an arrow and of a
   vertex idempotent.
+* `TauCeti.PathAlgebra.koszulTwist_vertexIdempotent`: the Koszul twist of the grading by an
+  integer arrow weight fixes the vertex idempotents.
 * `TauCeti.PathAlgebra.gradedAlgebra`: **the path-length grading**, the `GradedAlgebra` instance
   on `TauCeti.PathAlgebra.grade`, with `TauCeti.PathAlgebra.grade_mul_grade_le` and
   `TauCeti.PathAlgebra.isInternal_grade` its two halves.
@@ -444,6 +447,22 @@ theorem isHomogeneous_gradeBy_gradeBy {M' : Type*} [AddMonoid M']
 
 end GradedAlgebra
 
+section KoszulTwist
+
+variable {k : Type w} {Q : Type u} [CommRing k] [Quiver.{v} Q] [Finite Q]
+  {wt : ∀ {a b : Q}, (a ⟶ b) → ℤ}
+
+/-- The Koszul twist `x ↦ (-1) ^ (q |x|) x` of the grading by an integer arrow weight fixes the
+vertex idempotents, which have degree zero. -/
+@[simp]
+theorem koszulTwist_vertexIdempotent (q : ℤ) (v : Q) :
+    (InternalGrading.ofDecomposition (gradeBy k wt)).koszulTwist q (vertexIdempotent k v) =
+      vertexIdempotent k v :=
+  InternalGrading.koszulTwist_apply_of_mem_zero _
+    (by rw [InternalGrading.ofDecomposition_piece]; exact vertexIdempotent_mem_gradeBy_zero wt v) q
+
+end KoszulTwist
+
 /-! ### The path-length grading -/
 
 section Grade
@@ -695,7 +714,7 @@ theorem integerGrade_zero_eq_span_range_vertexIdempotent :
 
 /-- The integer-indexed path-length pieces form an internal direct sum. -/
 theorem isInternal_integerGrade [Finite Q] : DirectSum.IsInternal (integerGrade k Q) :=
-  Graded.isInternal_extendByZero (isInternal_grade k Q)
+  Graded.isInternal_extendByZero_iff.2 (isInternal_grade k Q)
 
 /-- The path algebra is integer graded by path length, with zero pieces in negative degrees. -/
 @[instance_reducible]

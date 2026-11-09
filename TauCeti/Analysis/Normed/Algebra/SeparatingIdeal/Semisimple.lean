@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Algebra.SeparatingIdeal.Idempotent
 public import TauCeti.Analysis.Normed.Algebra.SeparatingIdeal.Radical
 public import TauCeti.RingTheory.Jacobson.NonUnital
+import TauCeti.Analysis.Normed.Algebra.Jacobson
 import TauCeti.RingTheory.Idempotents.Algebraic
 
 /-!
@@ -91,11 +92,8 @@ theorem continuous_of_surjective_of_nonUnitalJacobson_eq_bot {B : Type*}
     apply WithLp.ofLp_injective
     simpa [WithLp.unitization_algebraMap, Unitization.algebraMap_eq_inl] using
       Unitization.inl_fst_add_inr_snd_eq (WithLp.ofLp y)
-  have : RingHomSurjective eB.toRingHom := ⟨eB.surjective⟩
-  have hrad : Ring.jacobson (WithLp 1 (Unitization ℂ B)) = ⊥ :=
-    Module.jacobson_eq_bot_of_injective eB.toRingHom.toSemilinearMap eB.injective
-      ((TauCeti.jacobson_unitization_eq_bot_iff (IsSemisimpleRing.jacobson_eq_bot ℂ)).2 hB)
-  have hc := Θ.toNonUnitalAlgHom.continuous_of_surjective_of_jacobson_eq_bot hΘs hrad
+  have hc := Θ.toNonUnitalAlgHom.continuous_of_surjective_of_jacobson_eq_bot hΘs
+    ((TauCeti.jacobson_withLp_unitization_eq_bot_iff ℂ B).2 hB)
   refine (WithLp.unitization_isometry_inr (𝕜 := ℂ) (A := B)).comp_continuous_iff.1 ?_
   exact (hc.comp (WithLp.unitization_isometry_inr (𝕜 := ℂ) (A := A)).continuous).congr hΘ
 

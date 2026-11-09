@@ -45,6 +45,9 @@ stages.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_eq_indexCharacter` and
   `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_eq_signCharacter`: at `z = q` and `z = -q⁻¹`
   the Ocneanu trace is the corresponding character.
+* `TauCeti.TypeAHeckeAlgebra.eq_ocneanuTrace_toInfinite`: a normalized, tracial family of
+  functionals on the finite Hecke algebras, compatible with the tower maps and satisfying the
+  Markov rule, is the Ocneanu trace restricted to each finite algebra.
 
 ## References
 
@@ -288,6 +291,32 @@ private theorem extend_extend_mul_lastT_mul_mul_lastT
         rw [lastT_mul_lastT_mul, map_add, map_smul, smul_eq_mul]
     _ = _ := by rw [extend_incl_mul_lastT_mul_incl z hφ]
 
+/-- The pairing `(a, b) ↦ ψ (a * T * b * T)` is symmetric when one argument lies in the stage
+`m + 1`, where `T` is the last generator. -/
+private theorem extend_extend_mul_lastT_mul_incl_comm (hφ : ∀ x y, φ (x * y) = φ (y * x))
+    (hφ' : ∀ x y, extend z φ (x * y) = extend z φ (y * x)) (a : stage R q (m + 2))
+    (c : stage R q (m + 1)) :
+    extend z (extend z φ)
+        (incl q (m + 2) a * lastT q (m + 1) * incl q (m + 2) (incl q (m + 1) c) *
+          lastT q (m + 1)) =
+      extend z (extend z φ)
+        (incl q (m + 2) (incl q (m + 1) c) * lastT q (m + 1) * incl q (m + 2) a *
+          lastT q (m + 1)) := by
+  calc extend z (extend z φ) (incl q (m + 2) a * lastT q (m + 1) *
+          incl q (m + 2) (incl q (m + 1) c) * lastT q (m + 1))
+      = extend z (extend z φ) (incl q (m + 2) (incl q (m + 1) c) *
+          (incl q (m + 2) a * lastT q (m + 1) * lastT q (m + 1))) := by
+        rw [mul_assoc _ (incl q (m + 2) (incl q (m + 1) c)), ← (commute_lastT c).eq,
+          ← mul_assoc, extend_incl_mul_comm z hφ']
+    _ = (((q : R) - ↑q⁻¹) * z + 1) * extend z φ (incl q (m + 1) c * a) := by
+        rw [← mul_assoc, ← mul_assoc, ← map_mul, extend_incl_mul_lastT_mul_lastT z hφ']
+    _ = extend z (extend z φ)
+          (lastT q (m + 1) * incl q (m + 2) (incl q (m + 1) c * a) * lastT q (m + 1)) :=
+        (extend_extend_lastT_mul_incl_mul_lastT z hφ hφ' _).symm
+    _ = extend z (extend z φ) (incl q (m + 2) (incl q (m + 1) c) * lastT q (m + 1) *
+          incl q (m + 2) a * lastT q (m + 1)) := by
+        rw [map_mul (incl q (m + 2)), ← mul_assoc (lastT q (m + 1)), (commute_lastT c).eq]
+
 /-- The pairing `(a, b) ↦ ψ (a * T * b * T)` on the stage `m + 2`, where `ψ` is the second
 extension of `φ` and `T` the last generator, is symmetric. -/
 private theorem extend_extend_mul_lastT_mul_mul_lastT_comm (hφ : ∀ x y, φ (x * y) = φ (y * x))
@@ -307,23 +336,9 @@ private theorem extend_extend_mul_lastT_mul_mul_lastT_comm (hφ : ∀ x y, φ (x
   have hG : ∀ a b, G a b =
       ψ (incl q (m + 2) a * lastT q (m + 1) * incl q (m + 2) b * lastT q (m + 1)) :=
     fun _ _ ↦ rfl
-  -- The pairing is symmetric when one argument lies in the stage `m + 1`.
-  have hA : ∀ a c, G a (incl q (m + 1) c) = G (incl q (m + 1) c) a := by
-    intro a c
+  have hA : ∀ a c, G a (incl q (m + 1) c) = G (incl q (m + 1) c) a := fun a c ↦ by
     rw [hG, hG]
-    calc ψ (incl q (m + 2) a * lastT q (m + 1) * incl q (m + 2) (incl q (m + 1) c) *
-            lastT q (m + 1))
-        = ψ (incl q (m + 2) (incl q (m + 1) c) *
-            (incl q (m + 2) a * lastT q (m + 1) * lastT q (m + 1))) := by
-          rw [mul_assoc _ (incl q (m + 2) (incl q (m + 1) c)), ← (commute_lastT c).eq,
-            ← mul_assoc, extend_incl_mul_comm z hφ']
-      _ = (((q : R) - ↑q⁻¹) * z + 1) * extend z φ (incl q (m + 1) c * a) := by
-          rw [← mul_assoc, ← mul_assoc, ← map_mul, extend_incl_mul_lastT_mul_lastT z hφ']
-      _ = ψ (lastT q (m + 1) * incl q (m + 2) (incl q (m + 1) c * a) * lastT q (m + 1)) :=
-          (extend_extend_lastT_mul_incl_mul_lastT z hφ hφ' _).symm
-      _ = ψ (incl q (m + 2) (incl q (m + 1) c) * lastT q (m + 1) * incl q (m + 2) a *
-            lastT q (m + 1)) := by
-          rw [map_mul (incl q (m + 2)), ← mul_assoc (lastT q (m + 1)), (commute_lastT c).eq]
+    exact extend_extend_mul_lastT_mul_incl_comm z hφ hφ' a c
   -- The pairing is symmetric on the products `c * T' * d`.
   have hB : ∀ c d c' d', G (incl q (m + 1) c' * lastT q m * incl q (m + 1) d')
       (incl q (m + 1) c * lastT q m * incl q (m + 1) d) =
@@ -507,5 +522,73 @@ theorem ocneanuTrace_eq_signCharacter :
   isMarkovTrace_signCharacter.eq_ocneanuTrace.symm
 
 end InfiniteTypeAHeckeAlgebra
+
+namespace TypeAHeckeAlgebra
+
+open InfiniteTypeAHeckeAlgebra
+
+variable {R : Type*} [CommRing R] {q : Rˣ}
+
+/-- **Finite Markov towers are restrictions of the Ocneanu trace.** A family of linear
+functionals `φ n` on the Hecke algebras on `n` strands which is normalized on zero strands,
+compatible with the tower maps, tracial at each level, and satisfies the Markov rule
+`φ (n + 2) (strandIncl R q (n + 1) x * T q (Fin.last n)) = z * φ (n + 1) x` for the last
+generator, is the Ocneanu trace with parameter `z` restricted along `toInfinite`. -/
+theorem eq_ocneanuTrace_toInfinite {z : R} (φ : ∀ n, TypeAHeckeAlgebra R q n →ₗ[R] R)
+    (h_one : φ 0 1 = 1) (h_incl : ∀ n x, φ (n + 1) (strandIncl R q n x) = φ n x)
+    (h_comm : ∀ n x y, φ n (x * y) = φ n (y * x))
+    (h_markov : ∀ n x, φ (n + 2) (strandIncl R q (n + 1) x * T q (Fin.last n)) =
+      z * φ (n + 1) x)
+    (n : ℕ) (x : TypeAHeckeAlgebra R q n) : φ n x = ocneanuTrace R q z (toInfinite R q n x) := by
+  have hτ := isMarkovTrace_ocneanuTrace (q := q) z
+  have hmem (m : ℕ) (y : TypeAHeckeAlgebra R q m) : toInfinite R q m y ∈ stage R q m := by
+    rw [← range_toInfinite]
+    exact ⟨y, rfl⟩
+  -- On at most one strand both functionals are normalized maps out of the scalars.
+  have hle (n : ℕ) (hn : n ≤ 1) (x : TypeAHeckeAlgebra R q n) :
+      φ n x = ocneanuTrace R q z (toInfinite R q n x) := by
+    obtain ⟨r, rfl⟩ := algebraMap_surjective_of_le_one hn x
+    have h1 : φ n 1 = 1 := by
+      obtain rfl | rfl : n = 0 ∨ n = 1 := by omega
+      · exact h_one
+      · simpa using (h_incl 0 1).trans h_one
+    rw [AlgHom.commutes, hτ.map_algebraMap, Algebra.algebraMap_eq_smul_one, map_smul, h1,
+      smul_eq_mul, mul_one]
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+  obtain hn | ⟨n, rfl⟩ : n ≤ 1 ∨ ∃ m, n = m + 2 := by
+    rcases n with _ | _ | m
+    exacts [.inl (by omega), .inl le_rfl, .inr ⟨m, rfl⟩]
+  · exact hle n hn x
+  -- The image of the stage `n + 2` lies in the image of the locus where the functionals agree.
+  let P : Submodule R (InfiniteTypeAHeckeAlgebra R q) :=
+    (LinearMap.eqLocus (φ (n + 2)) ((ocneanuTrace R q z).comp
+      (toInfinite R q (n + 2)).toLinearMap)).map (toInfinite R q (n + 2)).toLinearMap
+  have hsub (y : InfiniteTypeAHeckeAlgebra R q) (hy : y ∈ stage R q (n + 1)) :
+      ∃ y' : TypeAHeckeAlgebra R q (n + 1), toInfinite R q (n + 1) y' = y := by
+    rw [← range_toInfinite] at hy
+    exact hy
+  have hP : Subalgebra.toSubmodule (stage R q (n + 2)) ≤ P := by
+    refine toSubmodule_stage_add_two_le_iff.2 ⟨fun y hy ↦ ?_, fun a ha b hb ↦ ?_⟩
+    · obtain ⟨y', rfl⟩ := hsub y hy
+      refine ⟨strandIncl R q (n + 1) y', LinearMap.mem_eqLocus.2 ?_, toInfinite_strandIncl y'⟩
+      simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, h_incl, toInfinite_strandIncl]
+      exact ih (n + 1) (by omega) y'
+    · obtain ⟨a', rfl⟩ := hsub a ha
+      obtain ⟨b', rfl⟩ := hsub b hb
+      have hT : toInfinite R q (n + 2) (T q (Fin.last n)) = InfiniteTypeAHeckeAlgebra.T q n := by
+        simp
+      refine ⟨strandIncl R q (n + 1) a' * T q (Fin.last n) * strandIncl R q (n + 1) b',
+        LinearMap.mem_eqLocus.2 ?_, ?_⟩
+      · simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, map_mul,
+          toInfinite_strandIncl, hT]
+        rw [h_comm, ← mul_assoc, ← map_mul, h_markov, ih (n + 1) (by omega),
+          hτ.map_mul_T_mul (hmem _ a') (hmem _ b'), map_mul]
+      · simp [hT]
+  obtain ⟨y, hy, hyx⟩ := hP (hmem _ x)
+  rw [← toInfinite_injective R q (n + 2) hyx]
+  exact hy
+
+end TypeAHeckeAlgebra
 
 end TauCeti

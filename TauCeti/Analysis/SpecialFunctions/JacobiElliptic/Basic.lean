@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Legendre
 import Mathlib.Analysis.Calculus.Deriv.Inverse
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Complex
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
@@ -29,13 +30,15 @@ value `id`; theorems that need `k ^ 2 < 1` say so.
 We prove the basic theory:
 
 * the amplitude inverts `F`, is odd, continuous and strictly increasing, satisfies
-  `am(u + 2 n K) = am(u) + n π` and `am(K) = π / 2`, and has derivative `dn`;
+  `am(u + 2 n K) = am(u) + n π` and `am(K) = π / 2`, has derivative `dn`, and is
+  nonexpansive in its argument;
 * the identities `sn² + cn² = 1` and `dn² + k² sn² = 1`, positivity of `dn`, and the parities of
   `sn`, `cn` and `dn` in the argument and in the modulus;
 * the derivatives `sn′ = cn dn`, `cn′ = -sn dn`, `dn′ = -k² sn cn`, and the first-order
   differential equation `(sn′)² = (1 - sn²)(1 - k² sn²)`;
 * the antiperiods `2K` of `sn` and `cn`, hence their period `4K`, the period `2K` of `dn`, and the
   values at `u = K`;
+* the points where `sn = 1`, and hence that `4K` is the least positive period of `sn`;
 * the degeneration at modulus `0`: `am = id`, `sn = sin`, `cn = cos`, `dn = 1`.
 
 Here `K = legendreK k` is the complete integral of the first kind.
@@ -280,6 +283,19 @@ theorem hasDerivAt_jacobiAm {k : ℝ} (hk : k ^ 2 < 1) (u : ℝ) :
     (inv_ne_zero (jacobiDn_pos hk u).ne') (Eventually.of_forall (legendreF_jacobiAm hk))
   rwa [inv_inv] at h
 
+/-- The Jacobi amplitude is nonexpansive in its real argument. -/
+theorem lipschitzWith_jacobiAm (k : ℝ) : LipschitzWith 1 (jacobiAm k) := by
+  by_cases hk : k ^ 2 < 1
+  · refine lipschitzWith_of_nnnorm_deriv_le
+      (fun u ↦ (hasDerivAt_jacobiAm hk u).differentiableAt) fun u ↦ ?_
+    rw [(hasDerivAt_jacobiAm hk u).deriv]
+    have hnorm : ‖jacobiDn k u‖ ≤ 1 := by
+      rw [Real.norm_eq_abs, abs_of_nonneg (jacobiDn_nonneg k u)]
+      exact jacobiDn_le_one k u
+    exact_mod_cast hnorm
+  · rw [jacobiAm_of_one_le_sq (le_of_not_gt hk)]
+    exact LipschitzWith.id
+
 /-- `sn′ = cn · dn` (DLMF §22.13(i)). -/
 theorem hasDerivAt_jacobiSn {k : ℝ} (hk : k ^ 2 < 1) (u : ℝ) :
     HasDerivAt (jacobiSn k) (jacobiCn k u * jacobiDn k u) u := by
@@ -352,5 +368,30 @@ theorem jacobiCn_legendreK {k : ℝ} (hk : k ^ 2 < 1) : jacobiCn k (legendreK k)
 @[simp]
 theorem jacobiDn_legendreK {k : ℝ} (hk : k ^ 2 < 1) : jacobiDn k (legendreK k) = √(1 - k ^ 2) := by
   rw [jacobiDn_def, jacobiSn_legendreK hk, one_pow, mul_one]
+
+/-- `sn` attains the value `1` exactly at the points `K + 4 n K`, `n ∈ ℤ`. -/
+theorem jacobiSn_eq_one_iff {k : ℝ} (hk : k ^ 2 < 1) {u : ℝ} :
+    jacobiSn k u = 1 ↔ ∃ n : ℤ, legendreK k + n * (4 * legendreK k) = u := by
+  rw [jacobiSn_def, sin_eq_one_iff]
+  refine exists_congr fun n ↦ ?_
+  have h := legendreF_add_int_mul_pi hk (π / 2) (2 * n)
+  push_cast at h
+  have hn : π / 2 + n * (2 * π) = π / 2 + 2 * n * π := by ring
+  rw [eq_comm, jacobiAm_eq_iff hk, hn, h,
+    ← legendreK_def]
+  constructor <;> rintro rfl <;> ring
+
+/-- `4K` is the least positive period of `sn` (DLMF §22.4(i)). For `k = 0` it is the least
+positive period `2π` of `sin`. -/
+theorem isLeast_jacobiSn_period {k : ℝ} (hk : k ^ 2 < 1) :
+    IsLeast {p | 0 < p ∧ Function.Periodic (jacobiSn k) p} (4 * legendreK k) := by
+  have hK := legendreK_pos hk
+  refine ⟨⟨by positivity, jacobiSn_periodic hk⟩, fun p ⟨hp, hper⟩ ↦ ?_⟩
+  obtain ⟨n, hn⟩ := (jacobiSn_eq_one_iff hk).1 ((hper _).trans (jacobiSn_legendreK hk))
+  have hn0 : (0 : ℝ) < n := by nlinarith
+  have hn1 : (1 : ℝ) ≤ n := by
+    have := Int.cast_pos.1 hn0
+    exact_mod_cast (by omega : (1 : ℤ) ≤ n)
+  nlinarith
 
 end TauCeti.Real

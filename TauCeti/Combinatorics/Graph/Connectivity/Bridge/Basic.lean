@@ -297,6 +297,24 @@ theorem isBridge_iff_forall_cycle_notMem (he : e ∈ E(G)) :
   exact (Walk.cons_isCycle_iff ..).mpr
     ⟨q.bypass_isPath, fun hm ↦ hq e (q.edges_bypass_subset_edges hm) rfl⟩
 
+/-- An edge on a cycle in a subgraph is not a bridge in the containing graph. -/
+theorem Walk.IsCycle.not_isBridge_of_le {K : Graph α β} (hKG : K ≤ G)
+    {p : K.Walk x x} (hp : p.IsCycle) (he : e ∈ p.edges) : ¬ G.IsBridge e := by
+  intro hbridge
+  exact hbridge.notMem_edges_of_isCycle (hp.mapLe hKG) (by
+    simpa only [Walk.edges_mapLe_eq_edges] using he)
+
+/-- No edge of the graph traced by a cycle is a bridge. -/
+theorem Walk.IsCycle.not_isBridge_walkGraph {p : G.Walk x x} (hp : p.IsCycle)
+    (e : β) : ¬ (G.walkGraph p).IsBridge e := by
+  intro he
+  have hpos : 0 < p.length := Nat.pos_of_ne_zero fun h ↦ hp.not_nil (Walk.length_eq_zero_iff.mp h)
+  let q := p.transfer (p.walkGraph_le_of_pos hpos) fun f hf ↦
+    (p.mem_edgeSet_walkGraph f).mpr hf
+  have hq : q.IsCycle := (Walk.isCycle_transfer (p.walkGraph_le_of_pos hpos) p _).mpr hp
+  exact hq.not_isBridge_of_le le_rfl (by
+    simpa only [q, Walk.edges_transfer] using (p.mem_edgeSet_walkGraph e).mp he.mem_edgeSet) he
+
 /-- Deleting all bridges leaves a graph without bridges. -/
 theorem not_isBridge_deleteEdges_bridgeSet (G : Graph α β) (e : β) :
     ¬ (G.deleteEdges G.bridgeSet).IsBridge e := by
@@ -378,6 +396,28 @@ theorem IsForest.edges_subset_of_isPath (hG : G.IsForest) {p : G.Walk x y} (hp :
         simp only [Walk.edges_append, Walk.edges_reverse, IsLink.edges_toWalk,
           List.reverse_singleton, List.mem_append, List.mem_singleton] at hfq
         exact hfq.resolve_left fun hfe ↦ hep (hfe ▸ hf)
+
+/-- Two paths in a forest with the same endpoints are equal. -/
+theorem IsForest.eq_of_isPath (hG : G.IsForest) {p q : G.Walk x y}
+    (hp : p.IsPath) (hq : q.IsPath) : p = q := by
+  induction p with
+  | nil =>
+      cases q with
+      | nil => rfl
+      | cons e h q => exact ((Walk.isPath_cons e h q).mp hq).2 q.end_mem_support |>.elim
+  | @cons x z y e h p ih =>
+      cases q with
+      | nil => exact ((Walk.isPath_cons e h p).mp hp).2 p.end_mem_support |>.elim
+      | @cons _ w _ f hf q =>
+          have he : e ∈ (Walk.cons f hf q).edges :=
+            hG.edges_subset_of_isPath hp (Walk.cons f hf q) (by simp)
+          simp only [Walk.edges_cons, List.mem_cons] at he
+          have hef : e = f := he.resolve_right fun heq ↦
+            ((Walk.isPath_cons f hf q).mp hq).2 (q.mem_support_of_isLink_of_mem_edges h heq)
+          subst f
+          obtain rfl := h.right_unique hf
+          exact congrArg (Walk.cons e h)
+            (ih ((Walk.isPath_cons e h p).mp hp).1 ((Walk.isPath_cons e hf q).mp hq).1)
 
 /-- A graph with no edges is a forest. -/
 @[simp]

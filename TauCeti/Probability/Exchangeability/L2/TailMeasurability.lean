@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Exchangeability.L2.Cesaro.Convergence
 public import TauCeti.Probability.Process.BlockAverage.Tail
 import TauCeti.MeasureTheory.Function.AEStronglyMeasurable
-import TauCeti.MeasureTheory.Function.BoundedMemLp
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 
@@ -129,8 +128,8 @@ theorem Contractable.exists_tailProcess_measurable_cesaro_limit {μ : Measure Ω
           atTop (𝓝 0) :=
   let ⟨C, hC⟩ := hf_bdd
   hX.exists_tailProcess_measurable_cesaro_limit_of_memLp hX_ae hf
-    (memLp_comp_of_bound hf (hX_ae 0) C
-      (Filter.Eventually.of_forall fun ω => hC (X 0 ω)) 2)
+    (MemLp.of_bound (hf.comp_aemeasurable (hX_ae 0)).aestronglyMeasurable C
+      (Filter.Eventually.of_forall fun ω => hC (X 0 ω)))
 
 end Probability
 

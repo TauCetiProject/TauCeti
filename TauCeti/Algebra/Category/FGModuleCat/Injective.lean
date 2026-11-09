@@ -34,28 +34,20 @@ universe u v
 variable {R : Type u} [Ring R]
 
 /-- The inclusion of finitely generated modules into all modules preserves monomorphisms: a
-monomorphism of finitely generated modules is injective, as one sees by testing it on cyclic
-submodules. -/
+monomorphism of finitely generated modules is an injective linear map. -/
 instance _root_.FGModuleCat.forget₂_preservesMonomorphisms :
-    (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).PreservesMonomorphisms := by
-  refine ⟨fun {A B} f _ ↦ (ModuleCat.mono_iff_injective _).mpr ?_⟩
-  rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
-  intro (a : A) ha
-  have ha_zero : f.hom.hom a = 0 := ha
-  let C := FGModuleCat.of R (R ∙ a)
-  let i : C ⟶ A := FGModuleCat.ofHom (R ∙ a).subtype
-  have hi_comp : i ≫ f = 0 := by
-    apply FGModuleCat.hom_ext
-    apply LinearMap.ext
-    rintro ⟨x, hx⟩
-    obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.mp hx
-    calc
-      (i ≫ f).hom.hom ⟨r • a, hx⟩ = f.hom.hom (r • a) := rfl
-      _ = r • f.hom.hom a := map_smul f.hom.hom r a
-      _ = 0 := by rw [ha_zero, smul_zero]
-      _ = (0 : C ⟶ B).hom.hom ⟨r • a, hx⟩ := rfl
-  have hi : i = 0 := (cancel_mono f).mp (by simpa only [Limits.zero_comp] using hi_comp)
-  exact congrArg (fun g : C ⟶ A ↦ g.hom.hom ⟨a, Submodule.mem_span_singleton_self a⟩) hi
+    (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).PreservesMonomorphisms where
+  preserves {A B} f _ := by
+    refine (ModuleCat.mono_iff_injective _).mpr <|
+      (injective_iff_map_eq_zero _).mpr fun a ha ↦ ?_
+    simp only [forget₂, HasForget₂.forget₂, ObjectProperty.ι_map] at ha
+    -- Test `f` on the inclusion of the cyclic submodule `R ∙ a`, which is finitely generated.
+    let i : FGModuleCat.of R (R ∙ a) ⟶ A := ObjectProperty.homMk (ModuleCat.ofHom (R ∙ a).subtype)
+    have hi : i = 0 := (cancel_mono f).mp <| by
+      ext ⟨x, hx⟩
+      obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.mp hx
+      simp [i, ha]
+    simpa [i] using congr(($hi).hom.hom ⟨a, Submodule.mem_span_singleton_self a⟩)
 
 /-- A finitely generated injective module is an injective object of `FGModuleCat R`. -/
 theorem _root_.FGModuleCat.injective_of_moduleInjective (X : FGModuleCat.{v} R)

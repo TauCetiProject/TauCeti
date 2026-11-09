@@ -35,15 +35,16 @@ once the truncation degree kills `ad e`. -/
 theorem toMatrixAlgEquiv_expAd {ι : Type*} [Fintype ι] [DecidableEq ι]
     (b : Module.Basis ι K L) {e : L} {d : ℕ} (hd : ad K L e ^ d = 0) (t : K)
     (ht : IsNilpotent (ad K L (t • e))) :
-    LinearMap.toMatrixAlgEquiv b (expAd (t • e) ht).toLinearEquiv.toLinearMap =
+    LinearMap.toMatrixAlgEquiv b
+        (expAd (t • e) ht.exists_pow_apply_eq_zero).toLinearEquiv.toLinearMap =
       expSeries (LinearMap.toMatrixAlgEquiv b (ad K L e)) d t := by
-  have hlin : (expAd (t • e) ht).toLinearEquiv.toLinearMap =
+  have hlin : (expAd (t • e) ht.exists_pow_apply_eq_zero).toLinearEquiv.toLinearMap =
       ∑ k ∈ Finset.range d, ((k.factorial : K)⁻¹) • (t • ad K L e) ^ k := by
     ext y
     have hy : (ad K L (t • e) ^ d) y = 0 := by
       rw [map_smul, smul_pow, hd, smul_zero, LinearMap.zero_apply]
     simp only [LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv, LinearMap.sum_apply,
-      expAd_apply_eq_sum ht hy]
+      expAd_apply_eq_sum ht.exists_pow_apply_eq_zero hy]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
     have hq := ratCast_smul_eq ℚ K ((k.factorial : ℚ)⁻¹) (((t • ad K L e) ^ k) y)
     rw [Rat.cast_id] at hq

@@ -47,7 +47,7 @@ theorem matrixCoefficientTensor_injective :
   intro z hz
   apply (dualTensorHom_bijective (R := k) (M := M) (N := M)).1
   rw [map_zero]
-  apply TauCeti.LinearMap.eq_zero_of_trace_mul_eq_zero
+  apply LinearMap.forall_trace_mul_eq_zero_iff.mp
   intro T
   obtain ⟨f, rfl⟩ := convolutionAction_surjective (C := C) T
   rw [LinearMap.trace_mul_comm, ← WithConv.apply_matrixCoefficientTensor_eq_trace, hz, map_zero]

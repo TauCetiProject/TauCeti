@@ -55,6 +55,9 @@ off the invariant differential.
 ## Main results
 
 * `FormalGroup.nsmulSeries_succ`: `[n + 1]_F(T) = F([n]_F(T), T)`.
+* `FormalGroup.coeff_nsmulSeries_succ_of_eq_addInvX_add_X_pow_mul`: if `[n](T)` agrees
+  with the inverse below degree `k`, adding `T` retains the coefficient of their difference
+  in degree `k`.
 * `FormalGroup.nsmulSeries_add`: `[m + n]_F(T) = F([m]_F(T), [n]_F(T))`.
 * `FormalGroup.nsmulSeries_mul`: `[m n]_F(T) = [m]_F([n]_F(T))`.
 * `FormalGroup.subst_nsmulSeries`: `[n]_F(x) = n • x` for every power-series point `x` of `F`.
@@ -66,6 +69,8 @@ off the invariant differential.
   `P([n]_F(T)) · [n]_F'(T) = n · P(T)`.
 * `FormalGroup.coeff_one_nsmulSeries`: `[n]_F(T) = n T + ⋯`.
 * `FormalGroup.natCast_eq_zero_of_nsmulSeries_eq_zero`: if `[n]_F = 0` then `n = 0` in `R`.
+* `FormalGroup.natCast_eq_zero_of_two_le_order_nsmulSeries`: if `[n]_F` has order at least two
+  then `n = 0` in `R`.
 * `FormalGroup.natCast_dvd_derivative_nsmulSeries`: `n` divides the derivative of `[n]_F`.
 * `FormalGroup.natCast_dvd_coeff_nsmulSeries`: `n` divides the coefficient of `Tᵏ` in `[n]_F`
   for `k` coprime to `n`.
@@ -137,6 +142,17 @@ theorem hasSubst_nsmulSeries_X (n : ℕ) : HasSubst ![F.nsmulSeries n, PowerSeri
     fin_cases s
     · exact F.constantCoeff_nsmulSeries n
     · exact PowerSeries.constantCoeff_X
+
+/-- If `[n]_F(T) = i(T) + Tᵏ s(T)` with `k ≠ 0`, then `[n + 1]_F` vanishes below degree
+`k` and has coefficient `s(0)` in degree `k`. No commutativity hypothesis on `F` is needed. -/
+theorem coeff_nsmulSeries_succ_of_eq_addInvX_add_X_pow_mul {n k m : ℕ}
+    {s : PowerSeries R} (h : F.nsmulSeries n = F.addInvX + PowerSeries.X ^ k * s)
+    (hk : k ≠ 0) (hm : m ≤ k) :
+    PowerSeries.coeff m (F.nsmulSeries (n + 1)) =
+      if m = k then PowerSeries.constantCoeff s else 0 := by
+  rw [nsmulSeries_succ, h,
+    F.coeff_subst_add_X_pow_mul_X F.constantCoeff_addInvX s hk hm,
+    F.subst_addInvX_X_eq_zero, map_zero, _root_.zero_add]
 
 /-- `[m n]_F(T) = [m]_F([n]_F(T))`: multiplication by `m n` is the composite of multiplication by
 `m` and by `n`. -/
@@ -301,6 +317,13 @@ theorem coeff_one_nsmulSeries (n : ℕ) :
 /-- If `[n]_F = 0` then `n = 0` in `R`, as `n` is the linear coefficient of `[n]_F`. -/
 theorem natCast_eq_zero_of_nsmulSeries_eq_zero {n : ℕ} (h : F.nsmulSeries n = 0) : (n : R) = 0 := by
   simpa [h] using (F.coeff_one_nsmulSeries n).symm
+
+/-- If `[n]_F` has order at least two then `n = 0` in `R`, as `n` is the linear coefficient of
+`[n]_F`. -/
+theorem natCast_eq_zero_of_two_le_order_nsmulSeries {n : ℕ}
+    (h : 2 ≤ (F.nsmulSeries n).order) : (n : R) = 0 := by
+  rw [← F.coeff_one_nsmulSeries n]
+  exact PowerSeries.coeff_of_lt_order 1 ((Nat.cast_lt.mpr one_lt_two).trans_le h)
 
 /-- **The derivative of `[n]_F` is divisible by `n`**, for a commutative formal group law `F`. -/
 theorem natCast_dvd_derivative_nsmulSeries [F.IsComm] (n : ℕ) :

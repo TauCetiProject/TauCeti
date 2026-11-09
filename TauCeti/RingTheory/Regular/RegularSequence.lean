@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Depth.Basic
 public import Mathlib.RingTheory.Regular.RegularSequence
-import Mathlib.RingTheory.Ideal.AssociatedPrime.Finiteness
+import TauCeti.RingTheory.Ideal.AssociatedPrime.Basic
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!
@@ -16,6 +16,10 @@ import TauCeti.RingTheory.Ideal.Operations
 This file produces regular sequences on a module `M` from local information.
 
 If `a, b` is a weakly `M`-regular sequence, then `bʲ` is regular on `M ⧸ aⁿ M` for all `n` and `j`.
+For `M = R`, an element of the total ring of fractions of `R` which lies in `R` after multiplication
+by a power of `a`, and also after multiplication by a power of `b`, already lies in `R`. When `a`
+and `b` are non-zero-divisors, this says that `R_a` and `R_b` intersect in `R` inside the total
+ring of fractions.
 
 If `f₁, …, f_r` is weakly `M`-regular, every relation `∑ fᵢ mᵢ = 0` with `mᵢ ∈ M` has all its
 coefficients in `(f₁, …, f_r) M`. Dividing the last element out first,
@@ -42,10 +46,11 @@ extend sections of `M~` across `V(I)` (Stacks, Lemma 31.5.11 (0E9I)).
   forces `m ∈ a M`.
 * `RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_quotSMulTop_pow`: for a weakly `M`-regular
   sequence `a, b`, the power `bʲ` is regular on `M ⧸ aⁿ M`.
+* `RingTheory.Sequence.IsWeaklyRegular.mem_range_algebraMap_of_pow_mul_mem`: for a weakly
+  `R`-regular sequence `a, b`, a fraction which lies in `R` after multiplication by a power of `a`,
+  and also after multiplication by a power of `b`, already lies in `R`.
 * `RingTheory.Sequence.IsWeaklyRegular.mem_ofList_smul_top_of_sum_eq_zero`: the coefficients of a
   relation `∑ fᵢ mᵢ = 0` among a weakly `M`-regular sequence lie in `(f₁, …, f_r) M`.
-* `Ideal.exists_mem_isSMulRegular_iff`: `I` contains an `M`-regular element if and only if it lies
-  in no associated prime of `M`.
 * `IsLocalRing.exists_isSMulRegular_of_depth_ne_zero`: over a Noetherian local ring, a finite
   module of nonzero depth has a regular element in the maximal ideal.
 * `TauCeti.exists_isWeaklyRegular_of_le_depth_localizedModule`: if `depth M_p ≥ n` at every prime
@@ -127,6 +132,35 @@ theorem RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_quotSMulTop_pow {a b :
 
 end Pow
 
+section FractionRing
+
+variable {R : Type u} [CommRing R] {K : Type v} [CommRing K] [Algebra R K] [IsFractionRing R K]
+
+/-- If `a, b` is a weakly `R`-regular sequence, an element of the total ring of fractions of `R`
+which lies in `R` after multiplication by a power of `a`, and also after multiplication by a power
+of `b`, already lies in `R`. When `b` is also a non-zero-divisor, this says that the localizations
+`R_a` and `R_b` intersect in `R` inside the total ring of fractions. -/
+theorem RingTheory.Sequence.IsWeaklyRegular.mem_range_algebraMap_of_pow_mul_mem {a b : R}
+    (h : IsWeaklyRegular R [a, b]) {z : K} {n j : ℕ}
+    (ha : algebraMap R K (a ^ n) * z ∈ (algebraMap R K).range)
+    (hb : algebraMap R K (b ^ j) * z ∈ (algebraMap R K).range) :
+    z ∈ (algebraMap R K).range := by
+  obtain ⟨u, hu⟩ := ha
+  obtain ⟨v, hv⟩ := hb
+  have han : IsSMulRegular R (a ^ n) := ((isWeaklyRegular_cons_iff R a [b]).1 h).1.pow n
+  -- Cross-multiplying, `bʲ u = aⁿ v`, so `u ∈ aⁿ R` as `bʲ` is regular on `R ⧸ aⁿ R`.
+  have huv : a ^ n • v = b ^ j • u := IsFractionRing.injective R K <| by
+    simp only [smul_eq_mul, map_mul, hu, hv]
+    ring
+  obtain ⟨c, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1
+    (TauCeti.isSMulRegular_quotSMulTop_iff.1 (h.isSMulRegular_quotSMulTop_pow n j) u v huv)
+  -- Then `aⁿ z = aⁿ c`, and `aⁿ` is a unit of `K`.
+  refine ⟨c, (IsLocalization.map_units K (⟨a ^ n, ?_⟩ : nonZeroDivisors R)).mul_left_cancel ?_⟩
+  · exact ((Commute.isRegular_iff fun _ ↦ Commute.all _ _).2 han).mem_nonZeroDivisors
+  · simpa [smul_eq_mul] using hu
+
+end FractionRing
+
 section Relations
 
 variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M]
@@ -181,23 +215,6 @@ end Relations
 
 variable {R : Type u} [CommRing R] [IsNoetherianRing R] {M : Type v} [AddCommGroup M] [Module R M]
   [Module.Finite R M]
-
-/-- **Prime avoidance for regular elements.** An ideal `I` of a Noetherian ring contains an
-element that is regular on a finite module `M` if and only if `I` is contained in no associated
-prime of `M`. -/
-theorem Ideal.exists_mem_isSMulRegular_iff (I : Ideal R) :
-    (∃ a ∈ I, IsSMulRegular M a) ↔ ∀ p ∈ associatedPrimes R M, ¬ I ≤ p := by
-  have hzd := biUnion_associatedPrimes_eq_compl_regular R M
-  refine ⟨fun ⟨a, ha, reg⟩ p hp hle ↦ ?_, fun h ↦ ?_⟩
-  · have hmem : a ∈ ⋃ p ∈ associatedPrimes R M, (p : Set R) := Set.mem_biUnion hp (hle ha)
-    rw [hzd] at hmem
-    exact hmem reg
-  · by_contra! hreg
-    obtain ⟨p, hp, hle⟩ := (Ideal.subset_union_prime_finite (associatedPrimes.finite R M)
-      (f := id) 0 0 fun _ hp _ _ ↦ hp.isPrime).1 <| by
-        simp_rw [id, hzd]
-        exact hreg
-    exact h p hp hle
 
 /-- Over a Noetherian local ring, a finite module of nonzero depth has a regular element in the
 maximal ideal. -/

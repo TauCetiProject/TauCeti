@@ -215,23 +215,16 @@ private theorem potentialIso_fromRel_of_relIso (e : ⇑r ≃r ⇑s) :
     PotentialIso (L := Language.graph) V W :=
   letI := (fromRel r).structure
   letI := (fromRel s).structure
-  (Iso.toLanguageEquiv (G := fromRel r) (H := fromRel s) ⟨e.toEquiv, fun {_ _} => by
-    simp only [fromRel_adj, RelIso.coe_fn_toEquiv, ne_eq, e.injective.eq_iff,
-      e.map_rel_iff]⟩).potentialIso
+  ((nonempty_equiv_fromRel_iff r s).mpr ⟨e⟩).some.potentialIso
 
 /-- Countable equivalence relations whose graphs are potentially isomorphic are isomorphic. -/
 private theorem nonempty_relIso_of_potentialIso [Countable V] [Countable W]
     (h : letI := (fromRel r).structure; letI := (fromRel s).structure
       PotentialIso (L := Language.graph) V W) :
-    Nonempty (⇑r ≃r ⇑s) := by
-  let := (fromRel r).structure
-  let := (fromRel s).structure
-  obtain ⟨e⟩ := countable_potentialIso_iff_iso.mp h
-  refine ⟨⟨e.toEquiv, fun {x y} => ?_⟩⟩
-  -- The pair `![x, y]` and its image under `e` have the same atomic type.
-  obtain ⟨-, hrel⟩ := (sameAtomicType_fromRel_iff r s _ _).mp
-    (e.bfEquiv (0 : Ordinal.{0}) ![x, y]).sameAtomicType
-  exact (hrel 0 1).symm
+    Nonempty (⇑r ≃r ⇑s) :=
+  letI := (fromRel r).structure
+  letI := (fromRel s).structure
+  (nonempty_equiv_fromRel_iff r s).mp (countable_potentialIso_iff_iso.mp h)
 
 /-- Two countable equivalence relations with infinite classes and equally many classes are
 isomorphic. -/

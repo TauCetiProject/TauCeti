@@ -61,6 +61,11 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
 
 ## Main declarations
 
+* `TauCeti.PDE.posSemidef_neg_fderiv_fderiv`: where the second derivative of a `C²` function is
+  nonpositive on the diagonal, for instance at a local maximum, the negated Hessian matrix is
+  positive semidefinite.
+* `TauCeti.PDE.sum_mul_fderiv_fderiv_nonpos`: where the second derivative of a `C²` function is
+  nonpositive on the diagonal, the principal part of an elliptic operator is nonpositive.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_nonpos_of_isLocalMax`: at a local maximum of a `C²` function,
   the principal part of an elliptic operator is nonpositive.
 * `TauCeti.PDE.not_isLocalMax_of_sum_mul_fderiv_fderiv_add_fderiv_pos`: a strict subsolution of
@@ -106,14 +111,13 @@ open Matrix RealInnerProductSpace
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- **The principal part at a local maximum.** If the matrix `A` has nonnegative quadratic form
-and `f` is `C²` at a local maximum `x`, then `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼf(x) ≤ 0`. The matrix need not be
-symmetric. -/
-theorem sum_mul_fderiv_fderiv_nonpos_of_isLocalMax {A : Matrix ι ι ℝ}
-    (hA : ∀ ξ : EuclideanSpace ℝ ι, 0 ≤ A.toQuadraticForm' ξ) {f : EuclideanSpace ℝ ι → ℝ}
-    {x : EuclideanSpace ℝ ι} (hf : ContDiffAt ℝ 2 f x) (hmax : IsLocalMax f x) :
-    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
-      (EuclideanSpace.single j 1) ≤ 0 := by
+/-- **The negated Hessian matrix.** If `f` is `C²` at `x` and its second derivative there is
+nonpositive on the diagonal, `D²f(x)(w, w) ≤ 0` for every `w`, as at a local maximum, then the
+negated Hessian matrix `(-∂ᵢ∂ⱼf(x))ᵢⱼ` is positive semidefinite. -/
+theorem posSemidef_neg_fderiv_fderiv {f : EuclideanSpace ℝ ι → ℝ} {x : EuclideanSpace ℝ ι}
+    (hf : ContDiffAt ℝ 2 f x) (hneg : ∀ w, fderiv ℝ (fderiv ℝ f) x w w ≤ 0) :
+    (Matrix.of fun i j ↦ -fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1)).PosSemidef := by
   let H := fderiv ℝ (fderiv ℝ f) x
   -- The Hessian in coordinates.
   have hH (v w : EuclideanSpace ℝ ι) :
@@ -124,22 +128,34 @@ theorem sum_mul_fderiv_fderiv_nonpos_of_isLocalMax {A : Matrix ι ι ℝ}
       _root_.sum_apply, _root_.smul_apply, smul_eq_mul, Finset.mul_sum]
     exact Finset.sum_comm.trans (Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦
       by ring)
+  refine .of_dotProduct_mulVec_nonneg ?_ fun v ↦ ?_
+  · ext i j
+    simpa using hf.isSymmSndFDerivAt (by simp) (EuclideanSpace.single j 1)
+      (EuclideanSpace.single i 1)
+  · have h := hneg (WithLp.toLp 2 v)
+    rw [hH] at h
+    have : star v ⬝ᵥ ((Matrix.of fun i j ↦ -H (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1)) *ᵥ v) = -∑ i, ∑ j, v i * v j *
+        H (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
+      simp only [dotProduct, mulVec, star_trivial, of_apply, Finset.mul_sum,
+        ← Finset.sum_neg_distrib]
+      exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
+    linarith
+
+/-- **The principal part at a point of nonpositive Hessian.** If the matrix `A` has nonnegative
+quadratic form, `f` is `C²` at `x` and `D²f(x)(w, w) ≤ 0` for every `w`, then
+`∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼf(x) ≤ 0`. The matrix need not be symmetric. -/
+theorem sum_mul_fderiv_fderiv_nonpos {A : Matrix ι ι ℝ}
+    (hA : ∀ ξ : EuclideanSpace ℝ ι, 0 ≤ A.toQuadraticForm' ξ) {f : EuclideanSpace ℝ ι → ℝ}
+    {x : EuclideanSpace ℝ ι} (hf : ContDiffAt ℝ 2 f x)
+    (hneg : ∀ w, fderiv ℝ (fderiv ℝ f) x w w ≤ 0) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) ≤ 0 := by
+  let H := fderiv ℝ (fderiv ℝ f) x
   -- The negated Hessian matrix is positive semidefinite, hence a sum of rank-one matrices.
   let M : Matrix ι ι ℝ :=
     Matrix.of fun i j ↦ -H (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
-  have hM : M.PosSemidef := by
-    refine .of_dotProduct_mulVec_nonneg ?_ fun v ↦ ?_
-    · ext i j
-      simpa [M] using hf.isSymmSndFDerivAt (by simp) (EuclideanSpace.single j 1)
-        (EuclideanSpace.single i 1)
-    · have h := fderiv_fderiv_self_nonpos_of_isLocalMax hf hmax (WithLp.toLp 2 v)
-      rw [hH] at h
-      have : star v ⬝ᵥ (M *ᵥ v) = -∑ i, ∑ j, v i * v j *
-          H (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
-        simp only [M, dotProduct, mulVec, star_trivial, of_apply, Finset.mul_sum,
-          ← Finset.sum_neg_distrib]
-        exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
-      linarith
+  have hM : M.PosSemidef := posSemidef_neg_fderiv_fderiv hf hneg
   obtain ⟨m, v, hv⟩ := Matrix.posSemidef_iff_eq_sum_vecMulVec.mp hM
   have hMv (i j : ι) : H (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) =
       -∑ k, v k i * v k j := by
@@ -159,6 +175,16 @@ theorem sum_mul_fderiv_fderiv_nonpos_of_isLocalMax {A : Matrix ι ι ℝ}
             Finset.sum_congr rfl fun _ _ ↦ by ring
   rw [key, neg_nonpos]
   exact Finset.sum_nonneg fun k _ ↦ by simpa using hA (WithLp.toLp 2 (v k))
+
+/-- **The principal part at a local maximum.** If the matrix `A` has nonnegative quadratic form
+and `f` is `C²` at a local maximum `x`, then `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼf(x) ≤ 0`. The matrix need not be
+symmetric. -/
+theorem sum_mul_fderiv_fderiv_nonpos_of_isLocalMax {A : Matrix ι ι ℝ}
+    (hA : ∀ ξ : EuclideanSpace ℝ ι, 0 ≤ A.toQuadraticForm' ξ) {f : EuclideanSpace ℝ ι → ℝ}
+    {x : EuclideanSpace ℝ ι} (hf : ContDiffAt ℝ 2 f x) (hmax : IsLocalMax f x) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) ≤ 0 :=
+  sum_mul_fderiv_fderiv_nonpos hA hf (fderiv_fderiv_self_nonpos_of_isLocalMax hf hmax)
 
 /-- **Strict interior obstruction.** If `A` has nonnegative quadratic form, `f` is `C²` at `x`
 and `0 < ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼf(x) + ∂_v f(x)`, then `f` has no local maximum at `x`. The direction `v` is
@@ -413,6 +439,40 @@ theorem eqOn_of_sum_mul_fderiv_fderiv_add_fderiv_sub_mul_eq_of_eqOn_frontier
   (le_of_sum_mul_fderiv_fderiv_add_fderiv_sub_mul_le_of_le_frontier hK hlam ha hb hc hgcont
     hfcont hgcd hfcd (fun _ hy ↦ (hL hy).le) (fun _ hy ↦ (hbdry hy).ge) hx)
 
+omit [Nonempty ι] in
+/-- The supersolution estimate for the comparison function `g = C - r exp (α ⟪e, ·⟫)` with
+`α = β / λ + 1`: if `r w ≥ F / λ` at `y`, `0 ≤ c` and `0 ≤ g y`, then
+`∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼg + ∂_b g - c g ≤ -F` at `y`. -/
+private theorem sum_mul_fderiv_fderiv_add_fderiv_sub_mul_const_sub_smul_exp_inner_le
+    {A : Matrix ι ι ℝ} {lam β C r F c : ℝ} {e b y : EuclideanSpace ℝ ι}
+    {g : EuclideanSpace ℝ ι → ℝ} (hlam : 0 < lam)
+    (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) (he : ‖e‖ = 1)
+    (hb : ‖b‖ ≤ β) (hF : 0 ≤ F) (hr : 0 ≤ r) (hc : 0 ≤ c)
+    (hrw : F / lam ≤ r * Real.exp ((β / lam + 1) * ⟪e, y⟫))
+    (hgdef : g = (fun _ ↦ C) + (-r) • fun z ↦ Real.exp ((β / lam + 1) * ⟪e, z⟫))
+    (hgy : 0 ≤ g y) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ g) y (EuclideanSpace.single i 1)
+      (EuclideanSpace.single j 1) + fderiv ℝ g y b - c * g y ≤ -F := by
+  set α := β / lam + 1
+  set w : EuclideanSpace ℝ ι → ℝ := fun z ↦ Real.exp (α * ⟪e, z⟫)
+  have hwcd : ContDiff ℝ 2 w := (contDiff_exp_inner _ e).of_le (by norm_cast)
+  have hβ : 0 ≤ β := (norm_nonneg _).trans hb
+  have hα : 1 ≤ α := le_add_of_nonneg_left (div_nonneg hβ hlam.le)
+  have hLw : α * lam * w y ≤ ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ w) y
+      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) + fderiv ℝ w y b :=
+    mul_exp_le_sum_mul_fderiv_fderiv_add_fderiv_exp_inner hlam hA he hb y
+  have hcg : 0 ≤ c * g y := mul_nonneg hc hgy
+  rw [hgdef, sum_mul_fderiv_fderiv_add_fderiv_add_smul contDiffAt_const hwcd.contDiffAt]
+  simp only [fderiv_fun_const, fderiv_zero, Pi.zero_apply, _root_.zero_apply, mul_zero,
+    Finset.sum_const_zero, zero_add, neg_mul]
+  -- `r L w ≥ α λ (r w) ≥ α λ (F / λ) = α F ≥ F`.
+  have h1 : r * (α * lam * w y) = α * lam * (r * w y) := by ring
+  have h2 : α * lam * (F / lam) = α * F := by field_simp
+  have h3 := mul_le_mul_of_nonneg_left hrw (by positivity : 0 ≤ α * lam)
+  have h4 : F ≤ α * F := le_mul_of_one_le_left hF hα
+  rw [hgdef] at hcg
+  linarith [mul_le_mul_of_nonneg_left hLw hr]
+
 /-- **The a priori bound for elliptic operators in non-divergence form.** Let `a`, `b`, `c` be as
 in `le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`, and let `f`, continuous on `K` and
 `C²` on its interior, satisfy `c f - F ≤ ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼf + bⁱ ∂ᵢf` there for a constant `F ≥ 0`.
@@ -477,22 +537,10 @@ theorem le_add_of_mul_sub_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier
   -- `g` is a supersolution: `L g - c g ≤ -F`.
   have hLg (y : EuclideanSpace ℝ ι) (hy : y ∈ interior K) :
       ∑ i, ∑ j, a y i j * fderiv ℝ (fderiv ℝ g) y (EuclideanSpace.single i 1)
-        (EuclideanSpace.single j 1) + fderiv ℝ g y (b y) - c y * g y ≤ -F := by
-    have hyK := interior_subset hy
-    have hLw : α * lam * w y ≤ ∑ i, ∑ j, a y i j * fderiv ℝ (fderiv ℝ w) y
-        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) + fderiv ℝ w y (b y) :=
-      mul_exp_le_sum_mul_fderiv_fderiv_add_fderiv_exp_inner hlam (ha hy) he (hb hy) y
-    have hr : 0 ≤ r := by positivity
-    have hcg : 0 ≤ c y * g y := mul_nonneg (hc hy) (by linarith [hg y, (hrwK y hyK).2])
-    rw [sum_mul_fderiv_fderiv_add_fderiv_add_smul contDiffAt_const hwcd.contDiffAt]
-    simp only [fderiv_fun_const, fderiv_zero, Pi.zero_apply, _root_.zero_apply, mul_zero,
-      Finset.sum_const_zero, zero_add, neg_mul]
-    -- `r L w ≥ α λ (r w) ≥ α λ (F / λ) = α F ≥ F`.
-    have h1 : r * (α * lam * w y) = α * lam * (r * w y) := by ring
-    have h2 : α * lam * (F / lam) = α * F := by field_simp
-    have h3 := mul_le_mul_of_nonneg_left (hrwK y hyK).1 (by positivity : 0 ≤ α * lam)
-    have h4 : F ≤ α * F := le_mul_of_one_le_left hF hα
-    linarith [mul_le_mul_of_nonneg_left hLw hr]
+        (EuclideanSpace.single j 1) + fderiv ℝ g y (b y) - c y * g y ≤ -F :=
+    sum_mul_fderiv_fderiv_add_fderiv_sub_mul_const_sub_smul_exp_inner_le hlam (ha hy) he (hb hy)
+      hF (by positivity) (hc hy) (hrwK y (interior_subset hy)).1 rfl
+      (by linarith [hg y, (hrwK y (interior_subset hy)).2])
   have hfg : f x ≤ g x := le_of_sum_mul_fderiv_fderiv_add_fderiv_sub_mul_le_of_le_frontier hK hlam
     ha hb hc hcont hgcd.continuous.continuousOn hcd (fun _ _ ↦ hgcd.contDiffAt)
     (fun y hy ↦ (hLg y hy).trans (by linarith [hsub hy]))

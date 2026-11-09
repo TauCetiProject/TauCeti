@@ -66,7 +66,7 @@ open IsDedekindDomain NumberField NumberField.InfinitePlace QuadraticMap TauCeti
 
 namespace TauCeti.NumberField.QuadraticForm.GlobalFormInvariants.IsLocalRealization
 
-variable {K : Type} [Field K] [NumberField K] {I : GlobalFormInvariants K}
+variable {K : Type*} [Field K] [NumberField K] {I : GlobalFormInvariants K}
   {U : ∀ v : HeightOneSpectrum (𝓞 K),
     _root_.QuadraticForm (v.adicCompletion K) (Fin I.rank → v.adicCompletion K)}
   {R : {w : InfinitePlace K // w.IsReal} → _root_.QuadraticForm ℝ (Fin I.rank → ℝ)}

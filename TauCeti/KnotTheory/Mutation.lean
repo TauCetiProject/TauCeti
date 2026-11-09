@@ -90,7 +90,7 @@ noncomputable section
 namespace TauCeti
 
 open Function Set Metric Filter Topology
-open scoped Manifold ContDiff
+open scoped _root_.Manifold ContDiff
 
 /-! ### The standard Conway sphere -/
 

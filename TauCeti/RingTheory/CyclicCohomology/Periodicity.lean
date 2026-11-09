@@ -209,13 +209,6 @@ theorem cyclicTotalDifferential_cyclicTotalPeriodicity {m : ℕ} (x : cyclicTota
     simp only [cyclicTotalDifferential_apply_succ, coe_cyclicTotalPeriodicity_apply]
     rw [cyclicBicomplexVertical_sub_apply x q, ← cyclicBicomplexHorizontal_sub_apply x (q + 1)]
 
-variable (R A M) in
-/-- The periodicity map commutes with the total differential, as linear maps. -/
-theorem cyclicTotalDifferential_comp_cyclicTotalPeriodicity (m : ℕ) :
-    cyclicTotalDifferential R A M (m + 2) ∘ₗ cyclicTotalPeriodicity R A M m =
-      cyclicTotalPeriodicity R A M (m + 1) ∘ₗ cyclicTotalDifferential R A M m :=
-  LinearMap.ext cyclicTotalDifferential_cyclicTotalPeriodicity
-
 /-- The projection onto column zero commutes with the differentials: the column-zero component of
 the total differential of `x` is the Hochschild coboundary of the column-zero component of `x`. -/
 theorem cyclicTotalToHochschild_cyclicTotalDifferential {m : ℕ}
@@ -228,9 +221,9 @@ theorem cyclicTotalToHochschild_cyclicTotalDifferential {m : ℕ}
 
 end Differential
 
-section Contraction
+section KillingColumnOne
 
-variable {R A M : Type*} [CommRing R] [Semiring A] [Module R A]
+variable {R A M : Type*} [CommSemiring R] [NonAssocSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
 
 /-- **Killing column one.** Let `y` be a total cochain of degree `m + 2` of a unital algebra which
@@ -254,6 +247,13 @@ theorem exists_cyclicTotalPeriodicity_eq_add_cyclicTotalDifferential {m : ℕ}
   obtain ⟨w, hw⟩ := (mem_range_cyclicTotalPeriodicity_iff
     (x := y + cyclicTotalDifferential R A M (m + 1) z)).2 ⟨by simp [hz₁], by simp [hz₂, hy₂]⟩
   exact ⟨w, z, hw⟩
+
+end KillingColumnOne
+
+section Contraction
+
+variable {R A M : Type*} [CommRing R] [Semiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
 
 /-- **Killing the first two columns.** Let `x` be a total cocycle of degree `m + 2` of a unital
 algebra whose column-zero component is the Hochschild coboundary of a cochain `χ`. Then `x` is
@@ -497,51 +497,30 @@ projection onto column zero vanishes in Hochschild cohomology. -/
 theorem exact_cyclicTotalHomologyPeriodicity_homologyMap_cyclicTotalComplexToHochschild (m : ℕ) :
     Function.Exact (cyclicTotalHomologyPeriodicity R A M m)
       (HomologicalComplex.homologyMap (cyclicTotalComplexToHochschild R A M) (m + 2)) := by
-  have hinj (n : ℕ) :=
-    (ModuleCat.mono_iff_injective (cyclicTotalComplexXIso R A M n).hom).1 inferInstance
-  intro c
-  refine ⟨fun hc ↦ ?_, ?_⟩
-  swap
+  refine fun c ↦ ⟨fun hc ↦ ?_, ?_⟩
+  · obtain ⟨x, rfl⟩ := cyclicTotalHomologyMk_surjective (m + 2) c
+    rw [homologyMap_cyclicTotalComplexToHochschild_cyclicTotalHomologyMk,
+      hochschildCohomology.mk_eq_zero_iff, mem_hochschildCoboundaries_succ_iff] at hc
+    obtain ⟨χ, hχ⟩ := hc
+    have hx : cyclicTotalDifferential R A M (m + 2) x.1 = 0 := LinearMap.mem_ker.1 x.2
+    obtain ⟨w, b, hwb⟩ := exists_eq_cyclicTotalPeriodicity_add_cyclicTotalDifferential x.1 hx χ hχ
+    -- `D b` lies in `cyclicTotalCochains R A M (m + 1 + 1)`, definitionally degree `m + 2`
+    have hSw : cyclicTotalPeriodicity R A M m w = x.1 -
+        ⟨_, (cyclicTotalDifferential R A M (m + 1) b).2⟩ :=
+      Subtype.ext (by rw [Submodule.coe_sub, hwb, add_sub_cancel_right])
+    have hw : cyclicTotalDifferential R A M m w = 0 := by
+      apply cyclicTotalPeriodicity_injective R A M (m + 1)
+      rw [← cyclicTotalDifferential_cyclicTotalPeriodicity, hSw, map_sub, hx, map_zero, zero_sub,
+        neg_eq_zero]
+      exact cyclicTotalDifferential_cyclicTotalDifferential b
+    refine ⟨cyclicTotalHomologyMk R A M m ⟨w, hw⟩, ?_⟩
+    rw [cyclicTotalHomologyPeriodicity_cyclicTotalHomologyMk, ← sub_eq_zero, ← map_sub]
+    exact (cyclicTotalHomologyMk_succ_eq_zero_iff (n := m + 1) _).2
+      ⟨-b, Subtype.ext (by simp [hSw])⟩
   · rintro ⟨c, rfl⟩
     rw [← ModuleCat.comp_apply,
       cyclicTotalHomologyPeriodicity_comp_homologyMap_cyclicTotalComplexToHochschild]
     rfl
-  obtain ⟨x, hx, rfl⟩ := (cyclicTotalComplex R A M).exists_homologyπ_moduleCatCyclesMk_eq
-    (m + 3) (by simp) c
-  -- The column-zero component of `x` is a Hochschild coboundary `b χ`.
-  rw [HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk,
-    HomologicalComplex.moduleCat_homologyπ_eq_zero_iff _ (CochainComplex.prev_nat_succ (m + 1))]
-    at hc
-  obtain ⟨χ, hχ⟩ := hc
-  have hχ' := congrArg ((hochschildCochainComplex R A M).iCycles (m + 2)) hχ
-  rw [← ModuleCat.comp_apply, HomologicalComplex.toCycles_i,
-    HomologicalComplex.iCycles_moduleCatCyclesMk] at hχ'
-  have hbχ := congrArg (hochschildCochainComplexXIso R A M (m + 2)).hom hχ'
-  rw [hochschildCochainComplex_d_apply, cyclicTotalComplexToHochschild_f_apply] at hbχ
-  have hx' : cyclicTotalDifferential R A M (m + 2) ((cyclicTotalComplexXIso R A M (m + 2)).hom x) =
-      0 := by
-    rw [← cyclicTotalComplex_d_apply, hx, map_zero]
-  -- Hence `x` is the image of a total cochain `w` of degree `m` up to a total coboundary `D b`.
-  obtain ⟨w, b, hwb⟩ := exists_eq_cyclicTotalPeriodicity_add_cyclicTotalDifferential _ hx' _ hbχ
-  -- `D b` lies in `cyclicTotalCochains R A M (m + 1 + 1)`, definitionally degree `m + 2`
-  have hSw : cyclicTotalPeriodicity R A M m w = (cyclicTotalComplexXIso R A M (m + 2)).hom x -
-      ⟨_, (cyclicTotalDifferential R A M (m + 1) b).2⟩ :=
-    Subtype.ext (by rw [Submodule.coe_sub, hwb, add_sub_cancel_right])
-  have hw : cyclicTotalDifferential R A M m w = 0 := by
-    apply cyclicTotalPeriodicity_injective R A M (m + 1)
-    rw [← cyclicTotalDifferential_cyclicTotalPeriodicity, hSw, map_sub, hx', map_zero, zero_sub,
-      neg_eq_zero]
-    exact cyclicTotalDifferential_cyclicTotalDifferential b
-  have hw' : (cyclicTotalComplex R A M).d m (m + 1) ((cyclicTotalComplexXIso R A M m).inv w) = 0 :=
-    hinj (m + 1) (by rw [cyclicTotalComplex_d_apply, Iso.inv_hom_id_apply, hw, map_zero])
-  refine ⟨(cyclicTotalComplex R A M).homologyπ m
-    ((cyclicTotalComplex R A M).moduleCatCyclesMk _ (m + 1) (by simp) hw'), ?_⟩
-  rw [cyclicTotalHomologyPeriodicity_homologyπ]
-  refine ((cyclicTotalComplex R A M).moduleCat_homologyπ_eq_of_iCycles_sub_eq_d
-    ((cyclicTotalComplexXIso R A M (m + 1)).inv b) (hinj (m + 2) ?_)).symm
-  rw [HomologicalComplex.iCycles_moduleCatCyclesMk, HomologicalComplex.iCycles_moduleCatCyclesMk,
-    map_sub, Iso.inv_hom_id_apply, Iso.inv_hom_id_apply, cyclicTotalComplex_d_apply,
-    Iso.inv_hom_id_apply, hSw, sub_sub_cancel]
 
 end Exactness
 

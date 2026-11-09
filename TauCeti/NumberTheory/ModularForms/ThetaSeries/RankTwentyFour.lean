@@ -188,7 +188,7 @@ theorem representationNumber_two_mul_of_finrank_eq_twenty_four (hL : IsEven L)
   have h := congrArg (fun f : ModularForm 𝒮ℒ 12 ↦ (qExpansion 1 f).coeff m)
     (hL.thetaForm_eq_E_twelve_add_smul_discriminant hU hr)
   rw [ModularForm.qExpansion_add_smul_discriminant,
-    ZLattice.coe_thetaForm (k := 12) hL hU hr, hL.qExpansion_thetaSeries_coeff, map_add,
+    ZLattice.qExpansion_thetaForm_coeff (k := 12) hL hU hr, map_add,
     PowerSeries.coeff_smul, TauCeti.ModularForm.E_twelve_qExpansion_coeff, ite_eq_right hm,
     smul_eq_mul] at h
   exact_mod_cast h

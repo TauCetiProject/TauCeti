@@ -436,6 +436,13 @@ theorem rationalFunctionsEquiv_toRationalFunctions_app (U : X.Opens) [Nonempty U
       X.germToFunctionField U r := by
   exact ConcreteCategory.congr_hom (app_comp_functionFieldSectionsIso U) r
 
+/-- The inclusion `𝒪_X ⟶ 𝒦_X` commutes with the restriction maps. -/
+theorem toRationalFunctions_app_map {U V : X.Opens} (i : V ⟶ U) (r : Γ(X, U)) :
+    Scheme.Modules.Hom.app (toRationalFunctions X) V (X.presheaf.map i.op r) =
+      (rationalFunctions X).presheaf.map i.op
+        (Scheme.Modules.Hom.app (toRationalFunctions X) U r) :=
+  PresheafOfModules.naturality_apply (toRationalFunctions X).val i.op r
+
 /-- A morphism from the structure sheaf to rational functions is multiplication by the
 rational function obtained by evaluating the global section `1`. -/
 theorem _root_.AlgebraicGeometry.Scheme.Modules.Hom.rationalFunctionsEquiv_app_unit

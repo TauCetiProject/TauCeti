@@ -21,6 +21,10 @@ Kummer classes of `a` and `b` (`TauCeti.brauerCohomologyEquiv_quaternionClass`).
 `2`-torsion comparison `TauCeti.brauer2EquivH2 K : Br(K)[2] ≃ H²_cont(G_K, 𝔽₂)`, this is the
 classical identity `ι [(a, b)] = (a) ∪ (b)` (`TauCeti.brauer2EquivH2_quaternionClass`).
 
+On square classes, the quaternion symbol is a biadditive pairing
+`Kˣ/(Kˣ)² × Kˣ/(Kˣ)² → Br(K)[2]` (`TauCeti.BrauerGroup.quaternionPairing`), and `ι` carries it to
+the Kummer cup pairing `TauCeti.kummerCup` (`TauCeti.brauer2EquivH2_quaternionPairing`).
+
 If `a` is a square, both sides vanish. Otherwise, choose square roots `α` of `a` and `β` of `b` in
 `Kˢ`, and let `L = K(α)`, a quadratic Galois subextension of `Kˢ`. The computation has three steps.
 
@@ -43,6 +47,10 @@ If `a` is a square, both sides vanish. Otherwise, choose square roots `α` of `a
   `h2MuToUnits K ((a) ∪ (b))`.
 * `TauCeti.brauer2EquivH2_quaternionClass`: the `2`-torsion comparison sends `[(a, b)]` to
   `(a) ∪ (b)`.
+* `TauCeti.BrauerGroup.quaternionPairing`: the quaternion symbol as a biadditive pairing on
+  square classes with values in `Br(K)[2]`.
+* `TauCeti.brauer2EquivH2_quaternionPairing`: the `2`-torsion comparison carries the quaternion
+  pairing to the Kummer cup pairing.
 
 ## References
 
@@ -83,38 +91,6 @@ local instance : LocallyCompactSpace (AbsoluteGaloisGroup K) :=
 
 variable [Invertible (2 : K)]
 
-variable (K) in
-/-- The inverse of the coefficient dictionary `μ₂ ≃ 𝔽₂`, as a `G_K`-equivariant map. -/
-private def trivialF2ToMu2 :
-    (trivialF2 (AbsoluteGaloisGroup K)).V →+[AbsoluteGaloisGroup K] KummerCoeff K 2 :=
-  { (kummerCoeffEquiv K).symm.toAddMonoidHom with
-    map_smul' := fun g b ↦ by
-      simp only [AddMonoidHom.toFun_eq_coe, AddEquiv.coe_toAddMonoidHom, MonoidHom.id_apply,
-        mu2_smul_eq_self, TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply] }
-
-/-- `trivialF2ToMu2` is the inverse coefficient dictionary. -/
-private theorem trivialF2ToMu2_apply (b : (trivialF2 (AbsoluteGaloisGroup K)).V) :
-    trivialF2ToMu2 K b = (kummerCoeffEquiv K).symm b :=
-  (rfl)
-
-/-- The inverse of `kummerCoeffIsoTrivialF2`, read on the discrete module `𝔽₂`, is the coefficient
-map of `trivialF2ToMu2`. -/
-private theorem eqToHom_comp_kummerCoeffIsoTrivialF2_inv :
-    eqToHom (ofDiscreteModule_trivialF2 (AbsoluteGaloisGroup K)) ≫
-        (kummerCoeffIsoTrivialF2 K).inv =
-      ofDiscreteModuleMap (trivialF2ToMu2 K).toAddMonoidHom.toIntLinearMap
-        fun g m ↦ map_smul (trivialF2ToMu2 K) g m := by
-  refine TopRep.hom_ext (DFunLike.ext _ _ fun (b : (trivialF2 (AbsoluteGaloisGroup K)).V) ↦ ?_)
-  -- The goal is the composite read at a carrier, which no rewrite reaches: `TopRep.comp_apply` is
-  -- stated at the carrier of a `TopRep` object, and the carrier of `ofDiscreteModule` is not
-  -- syntactically the module. `change` exposes the composite, as in
-  -- `TauCeti.kummerCoeffIsoTrivialF2_inv_apply`; the remaining goal is
-  -- `ofDiscreteModuleMap_hom_apply`, stated at the unfolded carrier.
-  change (kummerCoeffIsoTrivialF2 K).inv
-    (eqToHom (ofDiscreteModule_trivialF2 (AbsoluteGaloisGroup K)) b) = _
-  rw [eqToHom_ofDiscreteModule_trivialF2_apply, kummerCoeffIsoTrivialF2_inv_apply]
-  rfl
-
 /-- On an explicit class of `H²(G_K, 𝔽₂)`, `h2MuToUnits K` is the explicit coefficient map along
 `𝔽₂ ≃ μ₂ ⊆ (Kˢ)ˣ`. -/
 private theorem h2MuToUnits_explicitH2
@@ -134,17 +110,6 @@ private theorem h2MuToUnits_explicitH2
   -- the two sides apply the same composite of coefficient maps, once as a composite morphism and
   -- once as two successive applications
   rfl
-
-/-- The element `0` of `𝔽₂` goes to `1` in `(Kˢ)ˣ`, and the element `1` goes to `-1`. -/
-private theorem toMul_kummerCoeffIncl_trivialF2ToMu2 (b : (trivialF2 (AbsoluteGaloisGroup K)).V) :
-    (kummerCoeffIncl K 2 (trivialF2ToMu2 K b)).toMul =
-      if trivialF2Equiv (AbsoluteGaloisGroup K) b = 0 then 1 else -1 := by
-  rw [toMul_kummerCoeffIncl, trivialF2ToMu2_apply, kummerCoeffEquiv_symm_apply]
-  generalize trivialF2Equiv (AbsoluteGaloisGroup K) b = v
-  rcases (by decide : ∀ v : ZMod 2, v = 0 ∨ v = 1) v with rfl | rfl
-  · rw [map_zero, toMul_zero, OneMemClass.coe_one, ite_eq_left_iff.2 fun h ↦ (h rfl).elim]
-  · rw [← mu2EquivZMod2_apply_mu2NegOne (K := K), AddEquiv.symm_apply_apply, toMul_mu2NegOne,
-      mu2EquivZMod2_apply_mu2NegOne, ite_eq_right_of_eq_false _ _ (eq_false one_ne_zero)]
 
 open scoped Classical in
 /-- **The image of `(a) ∪ (b)` in `H²(G_K, (Kˢ)ˣ)` on an explicit cocycle.** If `α² = a` and
@@ -365,5 +330,53 @@ theorem brauer2EquivH2_quaternionClass (a b : Kˣ) :
       (trivialF2TopPairing (AbsoluteGaloisGroup K)).cup 1 1 (kummerClass a) (kummerClass b) :=
   h2MuToUnits_injective K (by
     rw [brauer2EquivH2_h2MuToUnits, brauerCohomologyEquiv_quaternionClass])
+
+/-! ### The quaternion pairing on square classes -/
+
+namespace BrauerGroup
+
+variable (K) in
+/-- **The quaternion pairing** `Kˣ/(Kˣ)² × Kˣ/(Kˣ)² → Br(K)[2]`, `([a], [b]) ↦ [(a, b)]`: the
+quaternion symbol as a biadditive map on square classes with values in the `2`-torsion of the
+Brauer group, written additively. -/
+noncomputable def quaternionPairing :
+    SquareClassGroup K →+ SquareClassGroup K →+ Additive (twoTorsion K) :=
+  AddMonoidHom.mk'
+    (fun x ↦ AddMonoidHom.mk'
+      (fun y ↦ Additive.ofMul ⟨quaternionClassOnSquareClasses x y,
+        mem_twoTorsion.2 (quaternionClassOnSquareClasses_sq x y)⟩)
+      fun y z ↦ Additive.toMul.injective <| Subtype.ext <|
+        quaternionClassOnSquareClasses_add_right x y z)
+    fun x y ↦ AddMonoidHom.ext fun z ↦ Additive.toMul.injective <| Subtype.ext <|
+      quaternionClassOnSquareClasses_add_left x y z
+
+/-- The quaternion pairing, read in the Brauer group, is the quaternion symbol on square
+classes. -/
+@[simp]
+theorem coe_toMul_quaternionPairing (x y : SquareClassGroup K) :
+    ((quaternionPairing K x y).toMul : BrauerGroup K) = quaternionClassOnSquareClasses x y :=
+  (rfl)
+
+/-- The quaternion pairing is symmetric. -/
+theorem quaternionPairing_comm (x y : SquareClassGroup K) :
+    quaternionPairing K x y = quaternionPairing K y x :=
+  Additive.toMul.injective <| Subtype.ext <| by
+    simp only [coe_toMul_quaternionPairing, quaternionClassOnSquareClasses_comm x y]
+
+end BrauerGroup
+
+/-- **The quaternion pairing is the Kummer cup pairing.** Under the identification
+`Br(K)[2] ≃ H²_cont(G_K, 𝔽₂)`, the quaternion pairing `([a], [b]) ↦ [(a, b)]` on square classes
+becomes the cup product pairing `([a], [b]) ↦ (a) ∪ (b)` of Kummer classes. -/
+@[simp]
+theorem brauer2EquivH2_quaternionPairing (x y : SquareClassGroup K) :
+    brauer2EquivH2 K (BrauerGroup.quaternionPairing K x y) = kummerCup K x y := by
+  rw [← squareClass_toMul_out x, ← squareClass_toMul_out y, kummerCup_squareClass_squareClass,
+    ← brauer2EquivH2_quaternionClass]
+  congr 1
+  apply Additive.toMul.injective
+  ext
+  simp only [BrauerGroup.coe_toMul_quaternionPairing,
+    BrauerGroup.quaternionClassOnSquareClasses_squareClass, toMul_ofMul]
 
 end TauCeti

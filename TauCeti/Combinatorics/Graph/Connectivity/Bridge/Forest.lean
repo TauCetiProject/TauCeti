@@ -167,29 +167,6 @@ theorem edgeSet_bridgeForest : E(G.bridgeForest) = G.bridgeSet := by
 
 /-! ### Projection of walks -/
 
-private def Walk.copyBridgeForest {C D C' D' : G.BridgeComponent}
-    (p : G.bridgeForest.Walk C D) (hC : C = C') (hD : D = D') :
-    G.bridgeForest.Walk C' D' := by
-  subst C'
-  subst D'
-  exact p
-
-@[simp]
-private theorem Walk.edges_copyBridgeForest {C D C' D' : G.BridgeComponent}
-    (p : G.bridgeForest.Walk C D) (hC : C = C') (hD : D = D') :
-    (p.copyBridgeForest hC hD).edges = p.edges := by
-  subst C'
-  subst D'
-  rfl
-
-@[simp]
-private theorem Walk.support_copyBridgeForest {C D C' D' : G.BridgeComponent}
-    (p : G.bridgeForest.Walk C D) (hC : C = C') (hD : D = D') :
-    (p.copyBridgeForest hC hD).support = p.support := by
-  subst C'
-  subst D'
-  rfl
-
 /-- Project a walk to the bridge forest by omitting each traversal of a non-bridge edge.
 
 The endpoint-membership arguments identify the bridge components containing the endpoints. -/
@@ -201,7 +178,7 @@ noncomputable def Walk.toBridgeForest (p : G.Walk x y) (hx : x ∈ V(G)) (hy : y
   | @cons x y z e h p ih =>
       by_cases he : G.IsBridge e
       · exact .cons e (he.isLink_bridgeForest h) (ih h.right_mem hy)
-      · exact (ih h.right_mem hy).copyBridgeForest
+      · exact (ih h.right_mem hy).copy
           ((bridgeComponentOf_eq_bridgeComponentOf_iff hx h.right_mem).2
             (h.reachable_deleteEdges_bridgeSet he)).symm rfl
 
@@ -218,52 +195,37 @@ theorem Walk.toBridgeForest_cons_of_isBridge (h : G.IsLink e x y) (p : G.Walk y 
       Walk.cons e (he.isLink_bridgeForest h) (p.toBridgeForest h.right_mem hz) := by
   simp [Walk.toBridgeForest, he]
 
-/-- Projecting a non-bridge traversal does not change the projected edge list. -/
+/-- A nonbridge traversal is omitted; only the identification of its end components remains. -/
 @[simp]
-theorem Walk.edges_toBridgeForest_cons_of_not_isBridge (h : G.IsLink e x y)
+theorem Walk.toBridgeForest_cons_of_not_isBridge (h : G.IsLink e x y)
     (p : G.Walk y z) (he : ¬ G.IsBridge e) (hx : x ∈ V(G)) (hz : z ∈ V(G)) :
-    ((Walk.cons e h p).toBridgeForest hx hz).edges =
-      (p.toBridgeForest h.right_mem hz).edges := by
+    (Walk.cons e h p).toBridgeForest hx hz =
+      (p.toBridgeForest h.right_mem hz).copy
+        ((G.bridgeComponentOf_eq_bridgeComponentOf_iff hx h.right_mem).mpr
+          (h.reachable_deleteEdges_bridgeSet he)).symm rfl := by
   simp [Walk.toBridgeForest, he]
+
+open Classical in
+/-- Projection retains exactly the original bridge identities, in their original order. -/
+@[simp]
+theorem Walk.edges_toBridgeForest (p : G.Walk x y) (hx : x ∈ V(G)) (hy : y ∈ V(G)) :
+    (p.toBridgeForest hx hy).edges = p.edges.filter (fun e ↦ decide (G.IsBridge e)) := by
+  classical
+  induction p with
+  | nil => simp
+  | cons e h p ih =>
+      by_cases he : G.IsBridge e
+      · rw [Walk.toBridgeForest_cons_of_isBridge h p he]
+        simp [he, ih]
+      · rw [Walk.toBridgeForest_cons_of_not_isBridge h p he, Walk.edges_copy]
+        simp [he, ih]
 
 /-- Projection retains the order and identity of the bridge traversals that remain. -/
 theorem Walk.edges_toBridgeForest_sublist (p : G.Walk x y) (hx : x ∈ V(G))
     (hy : y ∈ V(G)) : List.Sublist (p.toBridgeForest hx hy).edges p.edges := by
-  induction p with
-  | nil => simp
-  | @cons x y z e h p ih =>
-      by_cases he : G.IsBridge e
-      · rw [Walk.toBridgeForest_cons_of_isBridge h p he]
-        simpa using (ih h.right_mem hy).cons_cons e
-      · rw [Walk.edges_toBridgeForest_cons_of_not_isBridge h p he]
-        simpa only [Walk.edges_cons] using (ih h.right_mem hy).cons e
-
-/-- An edge occurs in the projected walk exactly when it occurs in the original walk and is a
-bridge. -/
-@[simp]
-theorem Walk.mem_edges_toBridgeForest_iff (p : G.Walk x y) (hx : x ∈ V(G))
-    (hy : y ∈ V(G)) :
-    e ∈ (p.toBridgeForest hx hy).edges ↔ e ∈ p.edges ∧ G.IsBridge e := by
-  induction p with
-  | nil => simp
-  | @cons x y z f h p ih =>
-      by_cases hf : G.IsBridge f
-      · rw [Walk.toBridgeForest_cons_of_isBridge h p hf]
-        simp only [Walk.edges_cons, List.mem_cons, ih h.right_mem hy]
-        constructor
-        · rintro (rfl | ⟨he, hbe⟩)
-          · exact ⟨Or.inl rfl, hf⟩
-          · exact ⟨Or.inr he, hbe⟩
-        · rintro ⟨rfl | he, hbe⟩
-          · exact Or.inl rfl
-          · exact Or.inr ⟨he, hbe⟩
-      · rw [Walk.edges_toBridgeForest_cons_of_not_isBridge h p hf]
-        simp only [Walk.edges_cons, List.mem_cons, ih h.right_mem hy]
-        constructor
-        · exact fun ⟨he, hbe⟩ ↦ ⟨Or.inr he, hbe⟩
-        · rintro ⟨rfl | he, hbe⟩
-          · exact (hf hbe).elim
-          · exact ⟨he, hbe⟩
+  classical
+  rw [Walk.edges_toBridgeForest]
+  exact List.filter_sublist
 
 /-! ### Reachability -/
 
@@ -367,41 +329,12 @@ theorem isForest_bridgeForest (G : Graph α β) : G.bridgeForest.IsForest := by
       (singleton_subset_iff.mpr (mem_bridgeSet.mpr hbr))]
   exact hbr.not_reachable_deleteEdges h
 
-/-- Projecting a path to the bridge forest gives a path. -/
-theorem Walk.IsPath.toBridgeForest {p : G.Walk x y} (hp : p.IsPath) (hx : x ∈ V(G))
-    (hy : y ∈ V(G)) : (p.toBridgeForest hx hy).IsPath := by
-  apply ((isForest_bridgeForest G).isPath_iff_isTrail _).2
-  rw [Walk.isTrail_def]
-  exact List.Nodup.sublist (p.edges_toBridgeForest_sublist hx hy)
-    ((Walk.isTrail_def p).1 hp.isTrail)
-
-/-- A path lift of a bridge-forest path traverses every bridge displayed by that forest path. -/
-theorem Walk.IsPath.mem_edges_liftBridgeForest {C D : G.BridgeComponent}
-    {q : G.bridgeForest.Walk C D} (hq : q.IsPath) (hx : x ∈ V(C.1)) (hy : y ∈ V(D.1))
-    (he : e ∈ q.edges) : e ∈ (q.liftBridgeForest hx hy).edges := by
-  have hxG := BridgeComponent.mem_vertexSet hx
-  have hyG := BridgeComponent.mem_vertexSet hy
-  let q' := q.copyBridgeForest (BridgeComponent.eq_bridgeComponentOf hx)
-    (BridgeComponent.eq_bridgeComponentOf hy)
-  have hq' : q'.IsPath := by
-    apply (Walk.isPath_def q').2
-    simpa [q'] using (Walk.isPath_def q).1 hq
-  have heq' : e ∈ q'.edges := by simpa [q'] using he
-  have heProject := (isForest_bridgeForest G).edges_subset_of_isPath hq'
-    ((q.liftBridgeForest hx hy).toBridgeForest hxG hyG) heq'
-  exact (Walk.mem_edges_toBridgeForest_iff _ _ _).1 heProject |>.1
-
-/-- For a bridge-forest path, the bridge identities in its lift are exactly its displayed
-edges. -/
-theorem Walk.IsPath.mem_edges_liftBridgeForest_iff {C D : G.BridgeComponent}
-    {q : G.bridgeForest.Walk C D} (hq : q.IsPath) (hx : x ∈ V(C.1)) (hy : y ∈ V(D.1)) :
-    e ∈ (q.liftBridgeForest hx hy).edges ∧ G.IsBridge e ↔ e ∈ q.edges := by
-  constructor
-  · exact fun ⟨he, heBridge⟩ ↦ q.mem_edges_of_mem_edges_liftBridgeForest hx hy he heBridge
-  · intro he
-    have heForest : e ∈ E(G.bridgeForest) := q.edges_subset_edgeSet he
-    rw [edgeSet_bridgeForest] at heForest
-    exact ⟨hq.mem_edges_liftBridgeForest hx hy he, mem_bridgeSet.mp heForest⟩
+/-- The projection of a trail to the bridge forest is a path. -/
+theorem Walk.IsTrail.isPath_toBridgeForest {p : G.Walk x y} (hp : p.IsTrail)
+    (hx : x ∈ V(G)) (hy : y ∈ V(G)) : (p.toBridgeForest hx hy).IsPath := by
+  apply (G.isForest_bridgeForest.isPath_iff_isTrail _).mpr
+  rw [Walk.isTrail_def, Walk.edges_toBridgeForest]
+  exact ((Walk.isTrail_def p).mp hp).filter _
 
 /-! ### Connected components -/
 

@@ -57,6 +57,7 @@ of which vanishes because `Δ = (E₄³ - E₆²) / 1728` has no zeros.
 * `TauCeti.ModularForm.tendsto_qParam_mul_j_atImInfty`,
   `TauCeti.ModularForm.analyticAt_cuspFunction_qParam_mul_j`: `q j → 1` at `i∞`, and `q j` is
   analytic in `q` at the cusp.
+* `TauCeti.ModularForm.infinite_range_j`: `j` takes infinitely many values.
 * `TauCeti.ModularForm.meromorphicAt_cuspFunction_j`,
   `TauCeti.ModularForm.meromorphicOrderAt_cuspFunction_j`: `j` is meromorphic in its width-one
   q-coordinate, with a simple pole at zero.
@@ -67,6 +68,8 @@ of which vanishes because `Δ = (E₄³ - E₆²) / 1728` has no zeros.
 * `TauCeti.ModularForm.exists_qExpansion_qParam_mul_j_coeff_eq_intCast`,
   `TauCeti.ModularForm.exists_laurentQExpansion_j_coeff_eq_intCast`: these coefficients are
   integers.
+* `TauCeti.ModularForm.j_J_smul`: `j (-conj τ) = conj (j τ)`, from the integrality of these
+  coefficients.
 * `TauCeti.ModularForm.laurentQExpansion_j` and
   `TauCeti.ModularForm.orderTop_laurentQExpansion_j`: the Laurent `q`-expansion of `j`, of
   order `-1`, with first coefficients `TauCeti.ModularForm.laurentQExpansion_j_coeff_neg_one`,
@@ -294,6 +297,18 @@ theorem tendsto_qParam_mul_j_atImInfty :
 theorem isBoundedAtImInfty_qParam_mul_j : IsBoundedAtImInfty (fun τ : ℍ ↦ 𝕢 1 τ * j τ) :=
   tendsto_qParam_mul_j_atImInfty.isBigO_one ℝ
 
+/-- The modular invariant takes infinitely many values: `q j → 1` at `i∞` while `q → 0`, so `j` is
+unbounded. -/
+theorem infinite_range_j : (Set.range j).Infinite := by
+  intro hfin
+  obtain ⟨B, hB⟩ := hfin.isBounded.exists_norm_le
+  have h0 : Tendsto (fun τ : ℍ ↦ 𝕢 1 τ * j τ) atImInfty (𝓝 0) :=
+    squeeze_zero_norm (a := fun τ : ℍ ↦ ‖𝕢 1 τ‖ * B) (fun τ ↦ by
+      rw [norm_mul]
+      exact mul_le_mul_of_nonneg_left (hB _ ⟨τ, rfl⟩) (norm_nonneg _))
+      (by simpa using (qParam_tendsto_atImInfty one_pos).norm.mul_const B)
+  exact one_ne_zero (tendsto_nhds_unique tendsto_qParam_mul_j_atImInfty h0)
+
 /-- The cusp function of `q j` is analytic at `q = 0`, so `j`, read in the coordinate `q`, is
 meromorphic at the cusp. -/
 theorem analyticAt_cuspFunction_qParam_mul_j :
@@ -495,5 +510,25 @@ theorem exists_laurentQExpansion_j_coeff_eq_intCast (n : ℤ) :
   · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = k - 1 := ⟨(n + 1).toNat, by omega⟩
     rw [laurentQExpansion_j_coeff_natCast_sub_one]
     exact exists_qExpansion_qParam_mul_j_coeff_eq_intCast k
+
+/-- **`j` commutes with complex conjugation**: `j (-conj τ) = conj (j τ)`, where
+`J • τ = -conj τ` is the reflection in the imaginary axis. The `q`-parameter of `-conj τ` is the
+conjugate of that of `τ`, and the `q`-expansion of `j` has integer coefficients. -/
+@[simp]
+theorem j_J_smul (τ : ℍ) : j (J • τ) = starRingEnd ℂ (j τ) := by
+  have hq : 𝕢 1 ((J • τ : ℍ) : ℂ) = starRingEnd ℂ (𝕢 1 τ) := by
+    rw [Function.Periodic.qParam, Function.Periodic.qParam, coe_J_smul, ← Complex.exp_conj]
+    simp [map_ofNat]
+  have hc (m : ℕ) : starRingEnd ℂ ((qExpansion 1 (fun τ : ℍ ↦ 𝕢 1 τ * j τ)).coeff (m + 1)) =
+      (qExpansion 1 (fun τ : ℍ ↦ 𝕢 1 τ * j τ)).coeff (m + 1) := by
+    obtain ⟨k, hk⟩ := exists_qExpansion_qParam_mul_j_coeff_eq_intCast (m + 1)
+    rw [hk, map_intCast]
+  have h₁ := hasSum_j_sub_inv_qParam (J • τ)
+  have h₂ := Complex.hasSum_conj'.2 (hasSum_j_sub_inv_qParam τ)
+  rw [hq] at h₁
+  simp only [smul_eq_mul, map_mul, map_pow, hc] at h₂
+  have h := h₁.unique h₂
+  rw [map_sub, map_inv₀] at h
+  simpa using h
 
 end TauCeti.ModularForm

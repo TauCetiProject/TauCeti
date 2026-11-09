@@ -33,6 +33,8 @@ for `k ≠ 0`.
   acting on `ι → R`.
 * `Matrix.card_quotient_range_mulVecLin_eq_pow`: over a discrete valuation ring, if `det A` is
   associated to `ϖ ^ k` for a uniformizer `ϖ`, the quotient has `q ^ k` elements.
+* `LinearMap.infinite_quotient_range_of_det_eq_zero`: over an infinite domain, if `det f = 0` then
+  `M ⧸ range f` is infinite.
 -/
 
 public section
@@ -91,6 +93,34 @@ theorem card_quotient_range_eq_card_quotient_span_det {f : M →ₗ[R] M} (hf : 
     _ = Nat.card (R ⧸ Ideal.span {f.det}) := by
         rw [Ideal.prod_span_singleton, ← Ideal.span_singleton_eq_span_singleton.mpr hassoc,
           cardQuot_apply]
+
+omit [IsPrincipalIdealRing R] in
+/-- **An endomorphism with vanishing determinant has infinite cokernel.** Over an infinite domain,
+if `det f = 0` then `M ⧸ range f` is infinite. Together with
+`card_quotient_range_eq_card_quotient_span_det`, over an infinite principal ideal domain the
+cokernel of `f` is finite exactly when `det f ≠ 0` and `R ⧸ (det f)` is finite. -/
+theorem infinite_quotient_range_of_det_eq_zero [Infinite R] {f : M →ₗ[R] M} (hf : f.det = 0) :
+    Infinite (M ⧸ range f) := by
+  -- The kernel of `f` is nonzero, so by rank-nullity the cokernel has positive rank, and the
+  -- multiples of an element of positive rank are pairwise distinct.
+  have hker : 0 < Module.rank R (ker f) := by
+    obtain ⟨x, hx, hx0⟩ := (ker f).ne_bot_iff.mp (det_eq_zero_iff_ker_ne_bot.mp hf)
+    exact rank_pos_iff_exists_ne_zero.mpr ⟨⟨x, hx⟩, by simpa using hx0⟩
+  -- Rank-nullity twice: `rank (M ⧸ range f) = 0` would force `rank (ker f) = 0`.
+  have hrank : Module.rank R (M ⧸ range f) ≠ 0 := by
+    intro h
+    have h₁ := f.rank_range_add_rank_ker
+    have h₂ := (range f).rank_quotient_add_rank
+    rw [h, zero_add] at h₂
+    rw [h₂, Cardinal.add_eq_left_iff] at h₁
+    rcases h₁ with h₁ | h₁
+    · exact (rank_lt_aleph0 R M).not_ge ((le_max_left _ _).trans h₁)
+    · exact hker.ne' h₁
+  obtain ⟨y, hy⟩ : ∃ y : M ⧸ range f, ∀ a : R, a ≠ 0 → a • y ≠ 0 := by
+    simpa [rank_eq_zero_iff] using hrank
+  refine Infinite.of_injective (fun a : R ↦ a • y) fun a b hab ↦ ?_
+  by_contra hne
+  exact hy (a - b) (sub_ne_zero.mpr hne) (by rw [sub_smul]; exact sub_eq_zero.mpr hab)
 
 end LinearMap
 

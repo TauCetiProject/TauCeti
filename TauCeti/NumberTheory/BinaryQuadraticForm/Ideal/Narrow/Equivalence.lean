@@ -33,8 +33,8 @@ namespace TauCeti.BinaryQuadraticForm
 
 /-- Every native narrow Picard class comes from a primitive proper form class. -/
 theorem properClassToNarrowPic_surjective (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1)
-    [Fact (¬ IsSquare D)] (hpos : 0 < D) :
-    Function.Surjective (properClassToNarrowPic D hD hpos) := by
+    [Fact (¬ IsSquare D)] :
+    Function.Surjective (properClassToNarrowPic D hD) := by
   let O := QuadraticOrder.numberFieldOrder D hD
   intro c
   obtain ⟨I, hIc⟩ := GlobalNumberFields.NarrowPic.mk_surjective O c
@@ -60,7 +60,7 @@ theorem narrowPicClass_eq_narrowPicClass_iff_of_pos (D : ℤ) [Fact (¬ IsSquare
     (hpos : 0 < D) {f g : BinaryQuadraticForm ℤ} (hf : f.discrim = D) (hfp : f.IsPrimitive)
     (hg : g.discrim = D) (hgp : g.IsPrimitive) :
     f.narrowPicClass D hf hfp = g.narrowPicClass D hg hgp ↔ ∃ γ : SL(2, ℤ), γ • f = g := by
-  refine ⟨fun h ↦ ?_, by rintro ⟨γ, rfl⟩; exact (narrowPicClass_smul f D hf hfp hpos γ).symm⟩
+  refine ⟨fun h ↦ ?_, by rintro ⟨γ, rfl⟩; exact (narrowPicClass_smul f D hf hfp γ).symm⟩
   obtain ⟨ρ, hρ⟩ := exists_smul_a_pos f (hf.symm ▸ hpos)
   obtain ⟨σ, hσ⟩ := exists_smul_a_pos g (hg.symm ▸ hpos)
   have hρD := (discrim_smul ρ f).trans hf
@@ -73,8 +73,8 @@ theorem narrowPicClass_eq_narrowPicClass_iff_of_pos (D : ℤ) [Fact (¬ IsSquare
       ((ρ • f).invertibleFractionalIdeal D hρD hρp) =
       GlobalNumberFields.NarrowPic.mk O
         ((σ • g).invertibleFractionalIdeal D hσD hσp) := by
-    rw [narrowPicClass_eq_mk_of_smul_a_pos f D hf hfp hpos ρ hρ,
-      narrowPicClass_eq_mk_of_smul_a_pos g D hg hgp hpos σ hσ] at h
+    rw [narrowPicClass_eq_mk_of_smul_a_pos f D hf hfp ρ hρ,
+      narrowPicClass_eq_mk_of_smul_a_pos g D hg hgp σ hσ] at h
     exact h
   obtain ⟨u, hu, hI⟩ :=
     (GlobalNumberFields.NarrowPic.mk_eq_mk_iff_exists_norm_pos O
@@ -94,7 +94,7 @@ theorem narrowPicClass_eq_narrowPicClass_iff_of_pos (D : ℤ) [Fact (¬ IsSquare
 discriminant. -/
 theorem properClassToNarrowPic_injective (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1)
     [Fact (¬ IsSquare D)] (hpos : 0 < D) :
-    Function.Injective (properClassToNarrowPic D hD hpos) := by
+    Function.Injective (properClassToNarrowPic D hD) := by
   refine fun q r ↦ Quotient.inductionOn₂ q r fun f g h ↦ ?_
   simp only [properClassToNarrowPic_mk, narrowPicClass_eq_narrowPicClass_iff_of_pos D hpos] at h
   obtain ⟨γ, hγ⟩ := h
@@ -107,14 +107,14 @@ def properClassEquivNarrowPic (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1)
     [Fact (¬ IsSquare D)] (hpos : 0 < D) :
     MulAction.orbitRel.Quotient SL(2, ℤ) (primitiveForms D) ≃
       GlobalNumberFields.NarrowPic (QuadraticOrder.numberFieldOrder D hD) :=
-  Equiv.ofBijective (properClassToNarrowPic D hD hpos)
-    ⟨properClassToNarrowPic_injective D hD hpos, properClassToNarrowPic_surjective D hD hpos⟩
+  Equiv.ofBijective (properClassToNarrowPic D hD)
+    ⟨properClassToNarrowPic_injective D hD hpos, properClassToNarrowPic_surjective D hD⟩
 
 /-- The bijection retains the existing oriented form-ideal map as its forward function. -/
 @[simp] theorem properClassEquivNarrowPic_apply (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 = 1)
     [Fact (¬ IsSquare D)] (hpos : 0 < D)
     (q : MulAction.orbitRel.Quotient SL(2, ℤ) (primitiveForms D)) :
-    properClassEquivNarrowPic D hD hpos q = properClassToNarrowPic D hD hpos q := by
+    properClassEquivNarrowPic D hD hpos q = properClassToNarrowPic D hD q := by
   rfl
 
 end TauCeti.BinaryQuadraticForm

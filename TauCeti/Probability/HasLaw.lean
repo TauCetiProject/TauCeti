@@ -33,7 +33,7 @@ connected support onto a law split into two separated pieces is continuous on th
 is the topological reason why optimal transport maps onto disconnected targets are discontinuous.
 
 Adjoining a coordinate with an s-finite measure to a random variable gives the pair the product
-measure.
+measure. Completing the source measure preserves every random variable's law.
 
 ## Main results
 
@@ -86,6 +86,20 @@ theorem _root_.ProbabilityTheory.HasLaw.cond (hT : HasLaw T ν μ) {s : Set Y}
     ← Measure.restrict_map_of_aemeasurable hT.aemeasurable hs,
     ← Measure.map_apply_of_aemeasurable hT.aemeasurable hs, hT.map_eq,
     ProbabilityTheory.cond]
+
+/-- Completing the source measure does not change a random variable's law. -/
+theorem _root_.ProbabilityTheory.HasLaw.completion (hT : HasLaw T ν μ) :
+    HasLaw (fun x : NullMeasurableSpace X μ => T x) ν μ.completion := by
+  have hmeas : AEMeasurable (fun x : NullMeasurableSpace X μ => T x) μ.completion :=
+    ⟨hT.aemeasurable.mk T,
+      hT.aemeasurable.measurable_mk.mono le_eventuallyMeasurableSpace le_rfl,
+      hT.aemeasurable.ae_eq_mk⟩
+  refine ⟨hmeas, Measure.ext fun A hA => ?_⟩
+  rw [Measure.map_apply_of_aemeasurable hmeas hA]
+  -- The type tag on the preimage only records the completed source sigma-algebra.
+  exact (Measure.completion_apply μ (T ⁻¹' A)).trans
+    ((Measure.map_apply_of_aemeasurable hT.aemeasurable hA).symm.trans
+      (congrArg (fun ρ : Measure Y => ρ A) hT.map_eq))
 
 section Atom
 

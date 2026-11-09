@@ -155,6 +155,18 @@ theorem generatedCoordinateMap_comp_generatedCoordinateLift
     generatedCoordinateMap n A ≫ generatedCoordinateLift n A j = generatorCoordinateMap n A j :=
   CommHopfAlgCat.mkQuotient_comp_commonKernelLift (generatorCoordinateMap n A) j
 
+/-- The numbered root coordinate maps of the generated subgroup are surjective, so each
+numbered root subgroup is a closed subgroup. -/
+theorem generatedCoordinateLift_inl_surjective (k : Fin (n + 1) ⊕ Fin (n + 1)) :
+    Function.Surjective (generatedCoordinateLift n A (.inl k)).hom := by
+  apply CommHopfAlgCat.commonKernelLift_surjective_of_surjective
+    (generatorCoordinateMap n A) (.inl k)
+  rw [generatorCoordinateMap_inl,
+    ← coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap,
+    _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
+  exact (rootSubgroupToBaseChangeCoordinateMap_surjective n A k).comp
+    (coordinateMap_surjective n A)
+
 /-- The lift is the unique factorization of the `j`th generator coordinate map through the
 generated subgroup. -/
 theorem generatedCoordinateLift_unique (j : Sum (Fin (n + 1) ⊕ Fin (n + 1)) Unit)
@@ -236,6 +248,28 @@ theorem baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebra
         generatedCoordinateMap n K :=
   CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom _ _ _
     (map_baseChangeHopfIdeal_generatedDefiningIdeal n k K)
+
+/-- The generated-carrier comparison intertwines every numbered root-subgroup and weight-torus
+coordinate lift. -/
+@[reassoc (attr := simp)]
+theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom
+    [Module.Free k K] (j : (Fin (n + 1) ⊕ Fin (n + 1)) ⊕ Unit) :
+    CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateLift n k j) ≫
+        (generatorCoordinateAlgebraBaseChangeIso n k K j).hom =
+      (generatedCoordinateHopfAlgebraBaseChangeIso n k K).hom ≫
+        generatedCoordinateLift n K j := by
+  apply CommHopfAlgCat.baseChangeMap_lift_comp_iso_hom
+    (generatedCoordinateMap n k) (generatedCoordinateMap_surjective n k)
+    (generatedCoordinateLift n k j) (generatedCoordinateMap n K)
+    (generatedCoordinateLift n K j)
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n))
+    (generatedCoordinateHopfAlgebraBaseChangeIso n k K)
+    (generatorCoordinateAlgebraBaseChangeIso n k K j)
+    (baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeIso_hom
+      n k K)
+  rw [generatedCoordinateMap_comp_generatedCoordinateLift,
+    generatedCoordinateMap_comp_generatedCoordinateLift]
+  exact generatorCoordinateMap_baseChange n k K j
 
 end BaseChange
 

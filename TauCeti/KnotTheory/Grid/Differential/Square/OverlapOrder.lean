@@ -40,6 +40,9 @@ order.
   order constraint when the common side is terminal for both rectangles.
 * `TauCeti.GridRectangleDecomposition.cyclicOrder_of_isEmpty_of_left_eq_right` and
   `cyclicOrder_of_isEmpty_of_right_eq_left`: the two mixed-orientation constraints.
+* `TauCeti.GridRectangleBetween.bottom_mem_cIoo_and_top_eq_of_right_eq_right` and
+  `top_mem_cIoo_and_bottom_eq_of_left_eq_left`: two composable empty rectangles with one common
+  side of the same orientation are stacked along it.
 
 ## References
 
@@ -240,5 +243,31 @@ theorem cyclicOrder_of_isEmpty_of_right_eq_left (D : GridRectangleDecomposition 
       transpose_second_right] using hrows⟩
 
 end GridRectangleDecomposition
+
+namespace GridRectangleBetween
+
+variable {n : ℕ} {x y z : GridState n}
+
+/-- Two composable empty rectangles sharing their terminal side column but not their initial one
+are stacked along it: the second ends at the row where the first starts, and this row lies
+strictly between the bottom of the second and the top of the first. -/
+theorem bottom_mem_cIoo_and_top_eq_of_right_eq_right (P : GridRectangleBetween x y)
+    (Q : GridRectangleBetween y z) (hright : P.right = Q.right) (hleft : P.left ≠ Q.left)
+    (hP : P.IsEmpty) (hQ : Q.IsEmpty) : P.bottom ∈ Grid.cIoo Q.bottom P.top ∧ Q.top = P.bottom := by
+  let D : GridRectangleDecomposition x z := ⟨y, P, Q⟩
+  refine ⟨(D.cyclicOrder_of_isEmpty_of_right_eq_right hright hleft hP hQ).2, ?_⟩
+  rw [top_def, ← hright, P.map_right, bottom_def]
+
+/-- Two composable empty rectangles sharing their initial side column but not their terminal one
+are stacked along it: the second starts at the row where the first ends, and this row lies
+strictly between the bottom of the first and the top of the second. -/
+theorem top_mem_cIoo_and_bottom_eq_of_left_eq_left (P : GridRectangleBetween x y)
+    (Q : GridRectangleBetween y z) (hleft : P.left = Q.left) (hright : P.right ≠ Q.right)
+    (hP : P.IsEmpty) (hQ : Q.IsEmpty) : P.top ∈ Grid.cIoo P.bottom Q.top ∧ Q.bottom = P.top := by
+  let D : GridRectangleDecomposition x z := ⟨y, P, Q⟩
+  exact ⟨(D.cyclicOrder_of_isEmpty_of_left_eq_left hleft hright hP hQ).2,
+    D.second_bottom_eq_first_top_of_left_eq_left hleft⟩
+
+end GridRectangleBetween
 
 end TauCeti

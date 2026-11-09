@@ -232,8 +232,6 @@ theorem orderOf_rayClassArtinMap_idealClass (I : integralIdealsPrimeTo 𝔪)
     orderOf (rayClassArtinMap 𝔪 h (idealClass 𝔪 I)) = Q.inertiaDeg (𝓞 K) := by
   have : Algebra.IsUnramifiedAt (𝓞 K) Q := h.isUnramifiedAt_of_integralIdealsPrimeTo I Q
   exact Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q
-    (Ideal.ne_bot_of_liesOver_of_ne_bot (Ring.ne_bot_of_isMaximal_of_not_isField
-      ‹_› (RingOfIntegers.not_isField K)) Q)
     (isArithFrobAt_rayClassArtinMap_idealClass h I Q)
 
 /-- **The decomposition law for an admissible modulus**: a prime ideal `𝔭` of `K` prime to `𝔪`

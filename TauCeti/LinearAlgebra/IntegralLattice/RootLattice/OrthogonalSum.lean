@@ -7,8 +7,10 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.NormShell
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Pi
+public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Prod
+import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.OrthogonalGroup
 
 /-!
 # Orthogonal sums of root lattices and their glue words
@@ -30,8 +32,10 @@ description of a class in the discriminant group.  The identification is natural
 isometries of the root lattices and under permutations of the components
 (`TauCeti.DynkinType.discriminantQuadraticIsometry_pi_glueWordIsometry`,
 `TauCeti.DynkinType.discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry`), so glue words
-may be transported along either change of coordinates.  Isotropic and Lagrangian subgroups of glue
-words correspond to those of the discriminant group by
+may be transported along either change of coordinates; when all components have the same type,
+the two combine to signed permutations of the components
+(`TauCeti.DynkinType.discriminantQuadraticIsometry_signedPerm_glueWordIsometry`).
+Isotropic and Lagrangian subgroups of glue words correspond to those of the discriminant group by
 `TauCeti.FiniteQuadraticModule.Isometry.isIsotropic_map_iff` and
 `TauCeti.FiniteQuadraticModule.Isometry.isLagrangian_map_iff`.
 
@@ -45,8 +49,13 @@ words correspond to those of the discriminant group by
 * `TauCeti.DynkinType.discriminantQuadraticIsometry_pi_glueWordIsometry`,
   `TauCeti.DynkinType.discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry`: naturality of
   the glue-word isometry under componentwise isometries and permutations of the components.
+* `TauCeti.DynkinType.discriminantQuadraticIsometry_signedPerm_glueWordIsometry`: naturality of
+  the glue-word isometry under signed permutations of identical components.
 * `TauCeti.DynkinType.piGlueAlphabetCongr`: the glue words of a family of components equal to a
   reindexing of `t`.
+* `TauCeti.DynkinType.piGlueAlphabetCongr_refl`, `TauCeti.DynkinType.piGlueAlphabetCongr_trans`:
+  reindexing glue words along the identity is the identity, and along a composite is reindexing
+  along each factor in turn.
 * `TauCeti.DynkinType.isNondegenerate_pi_glueAlphabet`,
   `TauCeti.DynkinType.natCard_pi_glueAlphabet`: the module of glue words is nondegenerate, of
   order `∏ i, |det (t i).cartanMatrix|`.
@@ -161,6 +170,44 @@ theorem discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry (hv : ∀ i, 
   discriminantQuadraticIsometry_piCongrLeft_discriminantQuadraticIsometryPiOfIsometry
     (fun i ↦ (t i).rootLattice (ht i)) (fun i ↦ (t i).glueAlphabetIsometry (hv i) (ht i)) σ w
 
+section SignedPermutation
+
+variable {T : DynkinType} {hT : T.IsSimplyLaced} (hvT : T.Valid)
+
+/-- **Naturality of glue words under signed permutations of identical components.**  Let all
+components have the same type `T`.  Multiplying component `i` of the orthogonal sum of root
+lattices by the sign `u i` and then moving it to position `σ i` carries the discriminant class of
+a glue word `w` to the class of the word whose label in position `j` is
+`u (σ.symm j) • w (σ.symm j)`. -/
+theorem discriminantQuadraticIsometry_signedPerm_glueWordIsometry (u : ι → ℤˣ)
+    (σ : Equiv.Perm ι) (w : ∀ _ : ι, T.glueAlphabet hT) :
+    ((Isometry.pi fun i ↦ Isometry.unitsSMul (u i) (T.rootLattice hT)).trans
+        (Isometry.piCongrLeft (fun _ ↦ T.rootLattice hT) σ)).discriminantQuadraticIsometry
+        (isEven_pi_rootLattice _ _) (glueWordIsometry (fun _ ↦ T) (fun _ ↦ hT) (fun _ ↦ hvT) w) =
+      glueWordIsometry (fun _ ↦ T) (fun _ ↦ hT) (fun _ ↦ hvT)
+        fun j ↦ u (σ.symm j) • w (σ.symm j) := by
+  -- The signs act first, componentwise, and the permutation then moves the components.
+  have h1 := (Isometry.discriminantQuadraticIsometry_apply _ (isEven_pi_rootLattice _ _)
+    _).symm.trans (discriminantQuadraticIsometry_pi_glueWordIsometry (fun _ ↦ T)
+      (fun _ ↦ hT) (fun _ ↦ hvT) (fun _ ↦ hvT)
+      (fun i ↦ Isometry.unitsSMul (u i) (T.rootLattice hT))
+      (fun i x ↦ u i • x) (fun i x ↦ by
+        refine Eq.trans ?_ ((Isometry.discriminantQuadraticIsometry_apply _ _ _).trans
+          (Isometry.discriminantGroupEquiv_unitsSMul_apply (u i) _ _)).symm
+        exact map_zsmul (T.glueAlphabetIsometry hvT hT) (u i : ℤ) x) w)
+  have h2 := (Isometry.discriminantQuadraticIsometry_apply _ (isEven_pi_rootLattice _ _)
+    _).symm.trans (discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry (fun _ ↦ T)
+      (fun _ ↦ hT) (fun _ ↦ hvT) σ (fun i ↦ u i • w i))
+  refine (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans ?_
+  rw [Isometry.discriminantGroupEquiv_trans]
+  refine (LinearEquiv.trans_apply _).trans ?_
+  rw [h1]
+  refine h2.trans (congrArg _ (funext fun j ↦ ?_))
+  obtain ⟨k, rfl⟩ := σ.surjective j
+  rw [Equiv.piCongrLeft_apply_apply, Equiv.symm_apply_apply]
+
+end SignedPermutation
+
 section OfEq
 
 variable {κ : Type*} [Fintype κ] {s : κ → DynkinType} {hs : ∀ k, (s k).IsSimplyLaced}
@@ -188,6 +235,28 @@ theorem piGlueAlphabetCongr_apply (w : ∀ i, (t i).glueAlphabet (ht i)) (k : κ
     (fun i ↦ ((t i).glueAlphabet (ht i)).quadratic) σ).apply_symm_apply w]
   rw [QuadraticMap.IsometryEquiv.piCongrLeft_apply_apply]
   -- `QuadraticMap.IsometryEquiv.pi` acts coordinatewise by definition.
+  rfl
+
+/-- Reindexing glue words along the identity equivalence is the identity. -/
+@[simp]
+theorem piGlueAlphabetCongr_refl (h : ∀ i, t (Equiv.refl ι i) = t i) :
+    piGlueAlphabetCongr t ht (Equiv.refl ι) h (hs := ht) = QuadraticMap.IsometryEquiv.refl _ := by
+  refine DFunLike.ext _ _ fun w ↦ funext fun i ↦ ?_
+  rw [piGlueAlphabetCongr_apply, FiniteQuadraticModule.Isometry.ofEq_apply]
+  -- A cast along an equality of a type with itself is the identity.
+  exact cast_eq _ _
+
+/-- Reindexing glue words along `σ` and then along `τ` is reindexing along `τ.trans σ`. -/
+theorem piGlueAlphabetCongr_trans {μ : Type*} [Fintype μ] {u : μ → DynkinType}
+    {hu : ∀ m, (u m).IsSimplyLaced} (τ : μ ≃ κ) (h' : ∀ m, s (τ m) = u m) :
+    (piGlueAlphabetCongr t ht σ h).trans (piGlueAlphabetCongr s hs τ h' (hs := hu)) =
+      piGlueAlphabetCongr t ht (τ.trans σ) fun m ↦
+        (congrArg t (τ.trans_apply σ m)).trans ((h (τ m)).trans (h' m)) := by
+  refine DFunLike.ext _ _ fun w ↦ funext fun m ↦ ?_
+  rw [QuadraticMap.IsometryEquiv.trans_apply, piGlueAlphabetCongr_apply, piGlueAlphabetCongr_apply,
+    piGlueAlphabetCongr_apply, FiniteQuadraticModule.Isometry.ofEq_apply,
+    FiniteQuadraticModule.Isometry.ofEq_apply, FiniteQuadraticModule.Isometry.ofEq_apply, cast_cast]
+  -- `τ.trans σ` applies `τ` and then `σ` by definition.
   rfl
 
 end OfEq

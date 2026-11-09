@@ -10,11 +10,13 @@ public import Mathlib.Analysis.InnerProductSpace.Symmetric
 /-!
 # Two-vector quadratic-form identities in real or complex inner-product spaces
 
-Four elementary lemmas useful for block-operator perturbation estimates and planar motions:
+Five elementary lemmas useful for block-operator perturbation estimates and planar motions:
 
 * `LinearMap.IsSymmetric.re_inner_map_symm`: the real mixed coefficients agree for symmetric maps;
 * `LinearMap.re_inner_smul_add_smul_map`: expand the real quadratic form of a two-vector
   real-linear combination;
+* `TauCeti.abs_re_inner_le_of_norm_le`: `‖w‖ ≤ ε * ‖v‖` bounds `|re ⟪u, w⟫|` by `‖u‖ * ‖v‖ * ε`,
+  so an operator bound `‖H v‖ ≤ ε * ‖v‖` bounds the real part of every coefficient `⟪u, H v⟫`;
 * `TauCeti.norm_smul_add_smul_sq`: the Pythagorean norm formula for a two-vector
   real-linear combination when the real part of the mixed inner product vanishes;
 * `TauCeti.norm_smul_add_smul_eq_one_of_sq_add_sq`: its unit-circle case, `‖γ y + σ z‖ = 1` for
@@ -58,6 +60,15 @@ theorem re_inner_smul_add_smul_map (H : E →ₗ[𝕜] E) (y z : E) (γ σ : ℝ
 end LinearMap
 
 namespace TauCeti
+
+/-- If `‖w‖ ≤ ε * ‖v‖`, then `|re ⟪u, w⟫| ≤ ‖u‖ * ‖v‖ * ε`. For `w = H v` this says that an
+operator bound `‖H v‖ ≤ ε * ‖v‖` bounds the real part of every coefficient `⟪u, H v⟫`. -/
+theorem abs_re_inner_le_of_norm_le (u : E) {v w : E} {ε : ℝ} (hw : ‖w‖ ≤ ε * ‖v‖) :
+    |RCLike.re ⟪u, w⟫_𝕜| ≤ ‖u‖ * ‖v‖ * ε :=
+  calc |RCLike.re ⟪u, w⟫_𝕜| ≤ ‖⟪u, w⟫_𝕜‖ := RCLike.abs_re_le_norm _
+    _ ≤ ‖u‖ * ‖w‖ := norm_inner_le_norm _ _
+    _ ≤ ‖u‖ * (ε * ‖v‖) := by gcongr
+    _ = ‖u‖ * ‖v‖ * ε := by ring
 
 /-- Squared norm of a real linear combination of two vectors orthogonal with respect
 to the real part of the inner product. -/

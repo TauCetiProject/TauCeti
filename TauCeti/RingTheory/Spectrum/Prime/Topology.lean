@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 
+import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
 import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
@@ -24,7 +25,8 @@ homomorphism with nil kernel, and in particular along an injective one.
 
 A subset of the prime spectrum containing every minimal prime is dense. This is how
 generic properties, such as freeness of a module at the minimal primes of a reduced ring, are
-turned into dense subsets of the spectrum.
+turned into dense subsets of the spectrum. In particular the basic open set `D(a)` of a
+nonzerodivisor `a` is dense, since minimal primes consist of zero divisors.
 
 An open subset of the prime spectrum of a commutative ring containing the zero locus of an ideal
 contained in the Jacobson radical is the whole spectrum: every prime ideal is contained in a
@@ -116,6 +118,13 @@ theorem dense_of_forall_mem_minimalPrimes {s : Set (PrimeSpectrum R)}
   obtain ⟨q, hq, hqx⟩ := Ideal.exists_minimalPrimes_le (J := x.asIdeal) bot_le
   have hspec : (⟨q, hq.1.1⟩ : PrimeSpectrum R) ⤳ x := (le_iff_specializes _ _).mp hqx
   exact ⟨_, hspec.mem_open hU hx, hs q hq⟩
+
+/-- The basic open set `D(a)` of a nonzerodivisor `a` is dense: it contains every minimal prime,
+since minimal primes consist of zero divisors. -/
+theorem dense_basicOpen_of_mem_nonZeroDivisors {a : R} (ha : a ∈ nonZeroDivisors R) :
+    Dense (basicOpen a : Set (PrimeSpectrum R)) :=
+  dense_of_forall_mem_minimalPrimes fun _ hp ↦
+    Set.disjoint_right.mp (Ideal.disjoint_nonZeroDivisors_of_mem_minimalPrimes hp) ha
 
 /-- For an ideal `I` of a commutative ring `S` contained in the Jacobson radical of `S`, an open
 subset of the prime spectrum of `S` contains the zero locus of `I` exactly when it is the whole

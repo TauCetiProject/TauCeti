@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Reflection.DimensionVector
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Iterate
+import TauCeti.LinearAlgebra.Reflection
 import TauCeti.RepresentationTheory.Quiver.Reflection.EulerForm
 
 /-!
@@ -382,27 +383,15 @@ polarized Tits form, to the simple dimension vector at every vertex of that word
 theorem titsPolarForm_single_eq_zero_of_vertexPreReflectionList_eq_self {l : List Q}
     (hnd : l.Nodup) {v : Q → ℤ} (hv : vertexPreReflectionList Q l v = v) {i : Q} (hi : i ∈ l) :
     titsPolarForm Q (Pi.single i 1) v = 0 := by
-  induction l with
-  | nil => simp at hi
-  | cons j l ih =>
-    obtain ⟨hjl, hnd'⟩ := List.nodup_cons.mp hnd
-    -- The head `j` occurs nowhere else in the word, so the remaining reflections leave the `j`-th
-    -- coordinate of `sⱼ v` untouched.
-    have hcoord : vertexPreReflectionList Q (j :: l) v j
-        = v j - titsPolarForm Q (Pi.single j 1) v := by
-      rw [vertexPreReflectionList_apply_cons,
-        vertexPreReflectionList_apply_of_notMem Q hjl, vertexPreReflection_apply]
-      simp
-    -- The `j`-th coordinate of the fixed-point equation therefore reads `vⱼ - ⟨αⱼ, v⟩ = vⱼ`.
-    rw [hv] at hcoord
-    have hj : titsPolarForm Q (Pi.single j 1) v = 0 := by omega
-    -- Then `sⱼ` fixes `v`, so the tail of the word fixes `v` as well.
-    have hfix : vertexPreReflection Q j v = v :=
-      vertexPreReflection_apply_of_titsPolarForm_eq_zero Q j hj
-    rw [vertexPreReflectionList_apply_cons, hfix] at hv
-    rcases List.mem_cons.mp hi with rfl | hi'
-    · exact hj
-    · exact ih hnd' hv hi'
+  -- The composite is a product of reflections along the standard basis vectors, which are
+  -- linearly independent.
+  have hpre : vertexPreReflection Q =
+      fun i ↦ Module.preReflection (Pi.single i 1) (titsPolarForm Q (Pi.single i 1)) :=
+    funext fun i ↦ LinearMap.ext fun d ↦ by
+      rw [vertexPreReflection_apply, Module.preReflection_apply]
+  rw [vertexPreReflectionList, hpre] at hv
+  exact (Module.list_prod_map_preReflection_apply_eq_self_iff (Pi.linearIndependent_single_one Q ℤ)
+    (List.nodup_reverse.mpr hnd)).mp hv i (List.mem_reverse.mpr hi)
 
 /-- A vector fixed by the reflection product along a repetition-free word in *all* the vertices
 lies in the radical of the polarized Tits form. -/
