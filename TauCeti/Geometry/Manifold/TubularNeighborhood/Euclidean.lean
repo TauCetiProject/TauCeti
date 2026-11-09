@@ -362,6 +362,7 @@ theorem normalSubspace_eq_of_mem_source [IsManifold I 1 M] {f : M → V} {x y : 
   congr 1
   exact LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.mpr L.surjective)
 
+omit [FiniteDimensional ℝ E] in
 /-- The local tubular neighbourhood theorem on `M`: around every point there is an open set `W`
 and a radius `δ` such that the normal map is injective, and sends relatively open sets to open
 sets, on the normal vectors of length less than `δ` at points of `W`. -/
@@ -373,6 +374,8 @@ theorem exists_injOn_isOpen_image_normalTube [I.Boundaryless] [IsManifold I 2 M]
       ∀ O : Set (M × V), IsOpen O →
         IsOpen ((fun p : M × V => f p.1 + p.2) '' (O ∩ {p | p.1 ∈ W ∧ p ∈ normalTube I f δ})) := by
   have : IsManifold I 1 M := IsManifold.of_le (n := 2) (by norm_num)
+  have : FiniteDimensional ℝ E :=
+    Module.Finite.of_injective (mfderiv I 𝓘(ℝ, V) f x₀ : E →L[ℝ] V).toLinearMap (himm x₀)
   set e := extChartAt I x₀
   set g : E → V := f ∘ e.symm
   have hgd : ContDiffOn ℝ 2 g e.target :=
@@ -424,6 +427,7 @@ theorem exists_injOn_isOpen_image_normalTube [I.Boundaryless] [IsManifold I 2 M]
         exact hv
       · simp [g]
 
+omit [FiniteDimensional ℝ E] in
 /-- **Tubular neighbourhood theorem** for a compact `C²` embedded submanifold of a Euclidean
 space: for some `ε > 0`, the map `(x, v) ↦ f x + v` is an open embedding of the normal vectors of
 length less than `ε` into `V`. -/
@@ -431,6 +435,8 @@ theorem exists_isOpenEmbedding_normalTube [I.Boundaryless] [IsManifold I 2 M] [C
     {f : M → V} (hf : ContMDiff I 𝓘(ℝ, V) 2 f)
     (himm : ∀ x, Injective (mfderiv I 𝓘(ℝ, V) f x)) (hinj : Injective f) :
     ∃ ε > 0, IsOpenEmbedding ((normalTube I f ε).domRestrict fun p : M × V => f p.1 + p.2) := by
+  rcases isEmpty_or_nonempty M with hM | ⟨⟨x⟩⟩
+  · exact ⟨1, one_pos, .of_isEmpty _⟩
   choose W hWo hxW δ hδ hinjOn hopen using exists_injOn_isOpen_image_normalTube hf himm
   obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover W hWo
     (fun x _ => mem_iUnion.mpr ⟨x, hxW x⟩)
@@ -499,6 +505,7 @@ theorem isEmbedding_totalSpace_normalSubspace {F : Type*} (f : M → V) :
   obtain ⟨rfl, h⟩ := h
   rw [Subtype.ext h]
 
+omit [FiniteDimensional ℝ E] in
 /-- **Tubular neighbourhood theorem** for a compact `C²` embedded submanifold of a Euclidean
 space, as `IsTubularNeighborhood` data: for some `ε > 0`, the normal vectors of length less than
 `ε`, in the total space of the normal bundle, are mapped by `(x, v) ↦ f x + v` homeomorphically
