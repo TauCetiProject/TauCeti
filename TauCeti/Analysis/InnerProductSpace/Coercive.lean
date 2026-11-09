@@ -235,8 +235,7 @@ theorem inner_add_smul_id_nonneg_of_norm_sub_le {A D : F →L[ℝ] F} {κ t : �
     (hA : ∀ v, κ * ‖v‖ ^ 2 ≤ inner ℝ (A v) v) (hD : ‖D - A‖ ≤ κ + t) (v : F) :
     0 ≤ inner ℝ ((D + t • ContinuousLinearMap.id ℝ F) v) v := by
   set B := D - A
-  have h₁ : -(‖B‖ * ‖v‖ ^ 2) ≤ inner ℝ (B v) v := by
-    nlinarith [abs_le.1 (abs_real_inner_le_norm (B v) v), B.le_opNorm v, norm_nonneg v]
+  have h₁ : -(‖B‖ * ‖v‖ ^ 2) ≤ inner ℝ (B v) v := neg_le_of_abs_le (B.abs_inner_apply_le v)
   have h₂ : inner ℝ ((D + t • ContinuousLinearMap.id ℝ F) v) v =
       inner ℝ (A v) v + inner ℝ (B v) v + t * ‖v‖ ^ 2 := by
     simp only [B, _root_.add_apply, _root_.sub_apply, _root_.smul_apply,
