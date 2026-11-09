@@ -58,8 +58,8 @@ requirements are separate matters, not treated here.
 * `TauCeti.Priority.finite_injurySet_iff_finite_injuryStages`,
   `TauCeti.Priority.finite_injurySet_iff_eventually_eq_empty`: under monotone stages, finitely
   many injuring numbers are equivalent to both.
-* `TauCeti.Priority.ncard_injuryStages_le`: finitely many injuring numbers bound the number of
-  injury stages.
+* `TauCeti.Priority.ncard_injuryStages_le`: under monotone stages, there are at most as many
+  injury stages as injuring numbers (as `ncard`s, which are both `0` in the infinite case).
 * `TauCeti.Priority.finite_injurySet_of_eventually_bounded`: an eventually bounded restraint admits
   only finitely many injuring numbers.
 * `TauCeti.Priority.exists_forall_injuriesAt_eq_empty_of_eventually_bounded`: under monotone
