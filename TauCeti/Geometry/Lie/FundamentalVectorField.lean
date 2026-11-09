@@ -340,7 +340,7 @@ theorem mfderiv_smul_fundamentalVectorField [LieGroup I 1 G] (g : G) (ξ : Group
 /-- **The exponential flow.** For every `x`, the curve `t ↦ exp(t ξ) • x` is an integral curve of
 the fundamental vector field `ξ_M`. -/
 theorem isMIntegralCurve_mulInvariantExp_smul_smul [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G] [BoundarylessManifold I G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G] [BoundarylessManifold I G]
     (ξ : GroupLieAlgebra I G) (x : M) :
     IsMIntegralCurve (fun t : ℝ => mulInvariantExp (t • ξ) • x) (fundamentalVectorField I' ξ) := by
   have horbit (y : M) (h : G) : MDifferentiableAt I I' (fun k : G => k • y) h :=
@@ -381,7 +381,7 @@ section OneParameter
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G] [BoundarylessManifold I G]
+  [LieGroup I (minSmoothness ℝ 3) G] [T2Space G] [BoundarylessManifold I G]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [MulAction G M]
