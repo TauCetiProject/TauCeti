@@ -57,6 +57,8 @@ than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
 * `TauCeti.two_mul_div_add_sq_le_mul`: `2 t / (t² + ρ²) ≤ (2 t / r) (2 r / (r² + ρ²))` for
   `0 < t` and `0 < r ≤ ρ`.
 * `TauCeti.mul_le_one_of_le_inv_one_add`: `a * b ≤ 1` for `0 ≤ b` and `a ≤ (1 + b)⁻¹`.
+* `TauCeti.pow_five_lt_of_mul_div_le`: `ε ^ 5 < g` from `ε * n ^ 2 < M`, `0 < D ≤ n ^ 2` and
+  `ε ^ 2 * ε ^ 2 * (M / D) ≤ g`.
 * `TauCeti.sub_mul_mul_one_add_sq_neg_of_lt`: the strict inequality
   `r - ε * (c * (1 + n ^ 2)) < 0` for `r ≤ M`, `0 < ε`, `1 ≤ c` and `M / ε < n`.
 -/
@@ -184,6 +186,19 @@ theorem sub_mul_mul_one_add_sq_neg_of_lt {α : Type*} [Field α] [LinearOrder α
   have h4 : ε * (1 + n ^ 2) ≤ ε * (c * (1 + n ^ 2)) :=
     mul_le_mul_of_nonneg_left (le_mul_of_one_le_left (by positivity) hc) hε.le
   nlinarith [mul_le_mul_of_nonneg_left h3 hε.le]
+
+/-- If `ε * n ^ 2 < M`, `0 < D ≤ n ^ 2` and `ε ^ 2 * ε ^ 2 * (M / D) ≤ g`, then `ε ^ 5 < g`:
+the gain `ε² ε² M / D` exceeds `ε⁵`. -/
+theorem pow_five_lt_of_mul_div_le {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {ε M D n g : α} (hε : 0 < ε) (hD : 0 < D)
+    (hDn : D ≤ n ^ 2) (hbad : ε * n ^ 2 < M) (hgain : ε ^ 2 * ε ^ 2 * (M / D) ≤ g) :
+    ε ^ 5 < g := by
+  have hn : 0 < n ^ 2 := hD.trans_le hDn
+  have hM₀ : 0 ≤ M := hbad.le.trans' (by positivity)
+  have hM : ε < M / D :=
+    ((lt_div_iff₀ hn).2 hbad).trans_le (div_le_div_of_nonneg_left hM₀ hD hDn)
+  have hε4 : 0 < ε ^ 2 * ε ^ 2 := by positivity
+  nlinarith
 
 end TauCeti
 
