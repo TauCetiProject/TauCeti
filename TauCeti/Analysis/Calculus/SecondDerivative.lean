@@ -79,6 +79,7 @@ Morse-theoretic definitions that use them.
   functions of one variable is diagonal.
 * `TauCeti.fderiv_fderiv_fderiv_apply`: the second derivative of a directional derivative of a
   `C³` map is its third derivative.
+* `TauCeti.fderiv_fderiv_apply_comm`: directional derivatives of a `C²` map commute.
 * `TauCeti.fderiv_fderiv_fderiv_apply_comm`: the third derivative of a sufficiently smooth map is
   symmetric in its last two directions.
 * `TauCeti.fderiv_fderiv_const_smul`: the second derivative of a constant multiple.
@@ -286,6 +287,16 @@ theorem fderiv_fderiv_fderiv_apply {g : E → F} {x : E} (hg : ContDiffAt 𝕜 3
     (by norm_num)), hfirst.fderiv_eq, fderiv_clm_apply (hD2.clm_apply (differentiableAt_const b))
     (differentiableAt_const v)]
   simp [fderiv_clm_apply_const_apply hD2]
+
+/-- **Directional derivatives commute.** At a point where `g` is `C^{minSmoothness 𝕜 2}` (so `C²`
+over `ℝ` or `ℂ`), differentiating `y ↦ Dg(y) u` in the direction `v` gives the same result as
+differentiating `y ↦ Dg(y) v` in the direction `u`. -/
+theorem fderiv_fderiv_apply_comm {n : WithTop ℕ∞} {g : E → F} {x : E}
+    (hg : ContDiffAt 𝕜 n g x) (hn : minSmoothness 𝕜 2 ≤ n) (u v : E) :
+    fderiv 𝕜 (fun y ↦ fderiv 𝕜 g y u) x v = fderiv 𝕜 (fun y ↦ fderiv 𝕜 g y v) x u := by
+  have h2 : (2 : WithTop ℕ∞) ≤ n := le_minSmoothness.trans hn
+  rw [(hg.hasFDerivAt_fderiv_apply h2 u).fderiv, (hg.hasFDerivAt_fderiv_apply h2 v).fderiv]
+  exact hg.isSymmSndFDerivAt hn v u
 
 /-- **The third derivative is symmetric in its last two directions.** For a map that is
 `C^{minSmoothness 𝕜 3}` at `x` (so `C³` over `ℝ` or `ℂ`), differentiating the symmetry of the

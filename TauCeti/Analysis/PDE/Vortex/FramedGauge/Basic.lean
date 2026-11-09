@@ -404,23 +404,32 @@ theorem differentiableAt_gaugeForm {u : ℂ → Circle} {z : ℂ}
         (hu.fderiv_right (by norm_num)))
   exact h.differentiableAt one_ne_zero
 
+/-- A gauge transformation is `Cⁿ` at a point where the gauge is `Cⁿ⁺¹` and the field is `Cⁿ`. -/
+theorem contDiffAt_gaugeTransform {u : ℂ → Circle} {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    {n : WithTop ℕ∞} (hu : ContDiffAt ℝ (n + 1) (fun w ↦ (u w : ℂ)) z)
+    (hx : ContDiffAt ℝ n x z) : ContDiffAt ℝ n (gaugeTransform u x) z := by
+  have hu' : ContDiffAt ℝ n (fun w ↦ (u w : ℂ)) z := hu.of_le le_self_add
+  have hg : ContDiffAt ℝ n (gaugeForm u) z :=
+    contDiffAt_const.clm_comp
+      ((ContinuousLinearMap.mul ℝ ℂ).contDiff.contDiffAt.comp z
+        (conjCLE.contDiff.contDiffAt.comp z hu') |>.clm_comp (hu.fderiv_right le_rfl))
+  have hr : ContDiffAt ℝ n (fun w ↦ (u w : ℂ).re) z := reCLM.contDiff.contDiffAt.comp z hu'
+  have hi : ContDiffAt ℝ n (fun w ↦ (u w : ℂ).im) z := imCLM.contDiff.contDiffAt.comp z hu'
+  have hc (i : Fin 4) : ContDiffAt ℝ n (fun w ↦ x w i) z := contDiffAt_euclidean.1 hx i
+  refine contDiffAt_euclidean.2 fun i ↦ ?_
+  fin_cases i <;> simp only [gaugeTransform, PiLp.toLp_apply]
+  · exact (hc 0).sub (hg.clm_apply contDiffAt_const)
+  · exact (hc 1).sub (hg.clm_apply contDiffAt_const)
+  · exact (hr.mul (hc 2)).sub (hi.mul (hc 3))
+  · exact (hi.mul (hc 2)).add (hr.mul (hc 3))
+
 /-- Smooth gauges preserve smooth fields. -/
 theorem contDiff_gaugeTransform {u : ℂ → Circle}
     (hu : ContDiff ℝ ∞ (fun w ↦ (u w : ℂ)))
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x) :
-    ContDiff ℝ ∞ (gaugeTransform u x) := by
-  have hg := contDiff_gaugeForm hu
-  have hr := reCLM.contDiff.comp hu
-  have hi := imCLM.contDiff.comp hu
-  have hc (i : Fin 4) : ContDiff ℝ ∞ (fun z ↦ x z i) :=
-    (contDiff_piLp _).mp hx i
-  apply (contDiff_piLp _).mpr
-  intro i
-  fin_cases i <;> simp only [gaugeTransform, PiLp.toLp_apply]
-  · exact (hc 0).sub (hg.clm_apply contDiff_const)
-  · exact (hc 1).sub (hg.clm_apply contDiff_const)
-  · exact (hr.mul (hc 2)).sub (hi.mul (hc 3))
-  · exact (hi.mul (hc 2)).add (hr.mul (hc 3))
+    ContDiff ℝ ∞ (gaugeTransform u x) :=
+  contDiff_iff_contDiffAt.2 fun _ ↦
+    contDiffAt_gaugeTransform (hu.of_le (by simp)).contDiffAt hx.contDiffAt
 
 /-- The logarithmic derivative of a `C²` circle-valued gauge is closed. -/
 theorem fderiv_gaugeForm_symm {u : ℂ → Circle} {z : ℂ}

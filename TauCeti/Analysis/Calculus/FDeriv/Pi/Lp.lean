@@ -11,7 +11,12 @@ import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Calculus.FDeriv.WithLp
 
 /-!
-# Derivative norms of coordinate slices on finite Hilbert products
+# Coordinates of derivatives on finite `Lᵖ` products
+
+A coordinate of the derivative of a map into a finite `Lᵖ` product is the derivative of the
+corresponding coordinate map (`PiLp.fderiv_apply_apply`).
+
+## Derivative norms of coordinate slices on finite Hilbert products
 
 Freezing all but one coordinate of a scalar function on `PiLp 2 E` gives a function on
 that factor. At a differentiability point, its derivative norm equals the norm of the
@@ -26,6 +31,17 @@ noncomputable section
 open InnerProductSpace
 
 namespace PiLp
+
+/-- A coordinate of the derivative of a map into a finite `Lᵖ` product is the derivative of the
+corresponding coordinate map. -/
+theorem fderiv_apply_apply {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {p : ENNReal} [Fact (1 ≤ p)] {ι : Type*} [Finite ι] {β : ι → Type*}
+    [∀ i, NormedAddCommGroup (β i)] [∀ i, NormedSpace 𝕜 (β i)] {f : F → PiLp p β} {x : F}
+    (hf : DifferentiableAt 𝕜 f x) (i : ι) (v : F) :
+    fderiv 𝕜 (fun y ↦ f y i) x v = fderiv 𝕜 f x v i := by
+  have := Fintype.ofFinite ι
+  have h := ((PiLp.hasFDerivAt_apply (𝕜 := 𝕜) p (f x) i).comp x hf.hasFDerivAt).fderiv
+  exact congrArg (fun L : F →L[𝕜] β i ↦ L v) h
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {E : ι → Type*}
   [∀ i, NormedAddCommGroup (E i)] [∀ i, InnerProductSpace ℝ (E i)]

@@ -16,6 +16,7 @@ import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
 
 /-!
 # The affine Sobolev space of framed plane vortex fields
@@ -42,6 +43,12 @@ represent `a = i (b₁ ds + b₂ dt)` and `α = 2 (p + i q)`.
 
 Changing the radial cutoff changes the reference by a smooth compactly supported field, so the
 affine space does not depend on the cutoff (`framedFieldSpace_eq`). The vacuum lies in `A_0^s`.
+
+At integer orders, Sobolev regularity of a `C¹` field is read off from its classical derivatives:
+for `s ≥ 0` its directional derivatives lie in `sobolevFields s` when it lies in
+`sobolevFields (s + 1)` (`fderiv_apply_mem_sobolevFields`), and conversely
+(`mem_sobolevFields_add_one_of_fderiv_apply`); `sobolevFields 0` consists of the square-integrable
+fields (`integrable_norm_sq_of_mem_sobolevFields_zero`, `mem_sobolevFields_zero_of_memLp`).
 
 Off the disc where the cutoff is active, the reference field is the field reconstructed from the
 holomorphic factor `z ^ m` and the harmonic amplitude `-m log |z|`
@@ -302,6 +309,65 @@ theorem mem_sobolevFields_of_hasCompactSupport {y : ℂ → EuclideanSpace ℝ (
     (hy : ContDiff ℝ ∞ y) (hc : HasCompactSupport y) (s : ℝ) : y ∈ sobolevFields s :=
   mem_sobolevFields.2 fun i ↦ mem_realSobolevFunctions_of_hasCompactSupport
     (contDiff_euclidean.1 hy i) (hc.comp_left (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) rfl) s
+
+/-- A field in `sobolevFields 0` has integrable squared norm, the sum of the squares of its
+coordinates. -/
+theorem integrable_norm_sq_of_mem_sobolevFields_zero {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hy : y ∈ sobolevFields 0) : Integrable (fun z ↦ ‖y z‖ ^ 2) := by
+  simp_rw [EuclideanSpace.real_norm_sq_eq]
+  exact integrable_finsetSum _ fun i _ ↦
+    (memLp_of_mem_realSobolevFunctions (mem_sobolevFields.1 hy i)).integrable_sq
+
+/-- A square-integrable field lies in `sobolevFields 0`. -/
+theorem mem_sobolevFields_zero_of_memLp {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hy : MemLp y 2 volume) : y ∈ sobolevFields 0 :=
+  mem_sobolevFields.2 fun i ↦ mem_realSobolevFunctions_zero_iff.2
+    ((EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).comp_memLp' hy)
+
+/-- **Classical derivatives of Sobolev fields.** For `s ≥ 0`, each directional derivative of a
+`C¹` field in `sobolevFields (s + 1)` lies in `sobolevFields s`. -/
+theorem fderiv_apply_mem_sobolevFields {s : ℝ} (hs : 0 ≤ s) {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hy : ContDiff ℝ 1 y) (hmem : y ∈ sobolevFields (s + 1)) (v : ℂ) :
+    (fun z ↦ fderiv ℝ y z v) ∈ sobolevFields s := by
+  refine mem_sobolevFields.2 fun i ↦ ?_
+  have hc : ContDiff ℝ 1 (fun z ↦ y z i) :=
+    (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).contDiff.comp hy
+  have h := fderiv_apply_mem_realSobolevFunctions (by norm_num) (by norm_num) hs hc
+    (mem_sobolevFields.1 hmem i) v
+  simpa only [PiLp.fderiv_apply_apply (hy.differentiable one_ne_zero _)] using h
+
+/-- **Sobolev regularity of fields from classical derivatives.** A `C¹` field in `sobolevFields s`
+whose directional derivatives all lie in `sobolevFields s` lies in `sobolevFields (s + 1)`. -/
+theorem mem_sobolevFields_add_one_of_fderiv_apply {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hy : ContDiff ℝ 1 y) (hmem : y ∈ sobolevFields s)
+    (hd : ∀ v, (fun z ↦ fderiv ℝ y z v) ∈ sobolevFields s) :
+    y ∈ sobolevFields (s + 1) := by
+  refine mem_sobolevFields.2 fun i ↦ ?_
+  have hc : ContDiff ℝ 1 (fun z ↦ y z i) :=
+    (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).contDiff.comp hy
+  refine mem_realSobolevFunctions_add_one_of_fderiv_apply (by norm_num) (by norm_num) hc
+    (mem_sobolevFields.1 hmem i) fun v ↦ ?_
+  simpa only [PiLp.fderiv_apply_apply (hy.differentiable one_ne_zero _)] using
+    mem_sobolevFields.1 (hd v) i
+
+/-- The derivatives of a `C¹` field along `1` and `I` determine its Sobolev regularity: if both
+lie in `sobolevFields s`, so does every directional derivative, and the field lies in
+`sobolevFields (s + 1)`. -/
+theorem mem_sobolevFields_add_one_of_fderiv_apply_one_of_fderiv_apply_I {s : ℝ}
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : ContDiff ℝ 1 y) (hmem : y ∈ sobolevFields s)
+    (h₁ : (fun z ↦ fderiv ℝ y z 1) ∈ sobolevFields s)
+    (hI : (fun z ↦ fderiv ℝ y z I) ∈ sobolevFields s) :
+    y ∈ sobolevFields (s + 1) := by
+  refine mem_sobolevFields_add_one_of_fderiv_apply hy hmem fun v ↦ ?_
+  have hv : (fun z ↦ fderiv ℝ y z v) =
+      v.re • (fun z ↦ fderiv ℝ y z 1) + v.im • (fun z ↦ fderiv ℝ y z I) := by
+    have hv' : v = v.re • (1 : ℂ) + v.im • I := by
+      apply Complex.ext <;> simp
+    funext z
+    conv_lhs => rw [hv']
+    simp only [map_add, map_smul, Pi.add_apply, Pi.smul_apply]
+  rw [hv]
+  exact add_mem (Submodule.smul_mem _ _ h₁) (Submodule.smul_mem _ _ hI)
 
 /-- **Decay of continuous Sobolev fields.** For `s > 1`, a continuous field in `sobolevFields s`
 tends to zero at infinity: by Sobolev embedding each coordinate agrees almost everywhere with a
