@@ -75,17 +75,18 @@ theorem smul_eq_of_nontrivial_dirichletFace_inter {p : ℍ} {g g' : G} (hg : g �
 
 /-- On its supporting bisector the face imposes just the Dirichlet-domain inequalities. -/
 @[simp]
-theorem preimage_geodesicLine_dirichletFace {p : ℍ} {g : G} (hg : g • p ≠ p) :
+theorem preimage_geodesicLine_dirichletFace {p : ℍ} {g : G} :
     geodesicLine (perpBisector p (g • p)) ⁻¹' dirichletFace p g =
       geodesicLine (perpBisector p (g • p)) ⁻¹' dirichletDomain G p := by
-  rw [dirichletFace_eq_inter_range_geodesicLine hg, preimage_inter,
-    preimage_range, inter_univ]
+  by_cases hg : g • p = p
+  · rw [dirichletFace_eq_dirichletDomain_of_smul_eq hg]
+  · rw [dirichletFace_eq_inter_range_geodesicLine hg, preimage_inter,
+      preimage_range, inter_univ]
 
-/-- The parameters of a nontrivial equality face on its supporting bisector form an interval. -/
-theorem ordConnected_preimage_geodesicLine_dirichletFace {p : ℍ} {g : G}
-    (hg : g • p ≠ p) :
+/-- The parameters of an equality face on its supporting bisector form an interval. -/
+theorem ordConnected_preimage_geodesicLine_dirichletFace {p : ℍ} {g : G} :
     (geodesicLine (perpBisector p (g • p)) ⁻¹' dirichletFace p g).OrdConnected := by
-  rw [preimage_geodesicLine_dirichletFace hg]
+  rw [preimage_geodesicLine_dirichletFace]
   exact ordConnected_preimage_geodesicLine_dirichletDomain G
 
 /-- A face indexed by an element moving the centre lies on the boundary of the domain.
@@ -125,7 +126,7 @@ theorem exists_dirichletFace_eq_geodesicSegment {p : ℍ} {g : G} (hg : g • p 
     (isometry_geodesicLine k).isClosedEmbedding.isCompact_preimage
       (Metric.isCompact_of_isClosed_isBounded (isClosed_dirichletFace p g) hb)
   have hconn : IsConnected S :=
-    ⟨hS, (ordConnected_preimage_geodesicLine_dirichletFace hg).isPreconnected⟩
+    ⟨hS, ordConnected_preimage_geodesicLine_dirichletFace.isPreconnected⟩
   have hab := eq_Icc_of_connected_compact hconn hcompact
   refine ⟨geodesicLine k (sInf S), geodesicLine k (sSup S), ?_⟩
   rw [geodesicSegment_geodesicLine, uIcc_of_le (nonempty_Icc.mp (hab ▸ hS)),
