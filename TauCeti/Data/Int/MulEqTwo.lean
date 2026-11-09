@@ -34,7 +34,7 @@ lemma eq_one_and_eq_two_or_of_mul_eq_two {a b : ℤ} (ha : 0 ≤ a) (hab : a * b
   interval_cases a <;> omega
 
 /-- **Two nonpositive integers whose product is `2` are `-1` and `-2`**, in one order or the other:
-the two entries of a double edge, whose orientation this splits into its two cases. -/
+if `x ≤ 0` and `x * y = 2`, then `(x, y)` is `(-1, -2)` or `(-2, -1)`. -/
 lemma eq_neg_one_and_eq_neg_two_or_of_mul_eq_two {x y : ℤ} (hx : x ≤ 0) (hxy : x * y = 2) :
     (x = -1 ∧ y = -2) ∨ (x = -2 ∧ y = -1) := by
   have := eq_one_and_eq_two_or_of_mul_eq_two (neg_nonneg.2 hx) (by rwa [neg_mul_neg])

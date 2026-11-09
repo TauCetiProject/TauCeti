@@ -933,15 +933,6 @@ theorem exists_weight_intersection_fork_five_eq (hcard : 5 < Fintype.card T.Comp
 
 /-! ### Six components -/
 
-/-- A component of self-intersection `-2w` has a nonnegative intersection number only with
-other components. -/
-theorem ne_of_intersection_nonneg {i j : T.Component}
-    (hi : T.intersection i i = -(2 * (T.weight i : ℤ))) (h : 0 ≤ T.intersection i j) :
-    i ≠ j := by
-  rintro rfl
-  have := (T.weight i).pos
-  omega
-
 /-- Six components of self-intersection `-2w` forming a chain in a numerical type with more than
 six components have no additional intersections. This is the graph-shape part of the
 six-component base case for
@@ -1034,9 +1025,8 @@ private theorem chain_six_form_neg (hcard : 6 < Fintype.card T.Component)
   ring_nf at hneg ⊢
   exact hneg
 
-/-- In a chain of six components of self-intersection `-2w`, the normalized ratios cannot be `2` at
-both ends. The kernel vector of the intersection form for each orientation of the two ends has all
-coordinates in `{1, 2}`, contradicting negative definiteness. -/
+/-- In a chain of six components of self-intersection `-2w` with simple middle edges and
+negative-definite intersection form, the end ratios `p₁ q₁` and `p₅ q₅` are not both `2`. -/
 private theorem chain_six_end_ratios_not_both_two
     {g h i j k l : T.Component}
     (hg : T.intersection g g = -(2 * (T.weight g : ℤ)))
