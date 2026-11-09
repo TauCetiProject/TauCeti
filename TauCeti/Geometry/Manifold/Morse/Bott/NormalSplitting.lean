@@ -35,7 +35,13 @@ inner product chosen on `P` and on the trivialization; their dimensions do not.
 
 The pointwise statements need only some linear equivalence `L : P ≃ₗ[ℝ] NormalSpace s` with
 `Q (u, v) = Hess (L u, L v)`, such as `(e.linearEquivAt ℝ s hs).symm` for a normal-bundle
-trivialization `e`.
+trivialization `e`. Such a form is negative definite on the negative spectral subspace of its
+Riesz operator and positive definite on the positive one: apply
+`InnerProductSpace.apply_self_neg_of_mem_pointSpectralSubspace_Iio` and
+`InnerProductSpace.apply_self_pos_of_mem_pointSpectralSubspace_Ioi` to
+`IsCriticalSubmanifold.isSelfAdjoint_continuousLinearMapOfBilin`. For a Morse–Bott submanifold
+the form is injective (`IsNondegenerateCriticalSubmanifold.injective_of_normalHessian_eq`), so its
+Riesz operator is invertible by `InnerProductSpace.isUnit_continuousLinearMapOfBilin`.
 
 ## Main results
 
@@ -43,12 +49,6 @@ In the namespace `TauCeti.SmoothEmbedding`:
 
 * `IsCriticalSubmanifold.isSelfAdjoint_continuousLinearMapOfBilin`: a form representing the normal
   Hessian has a self-adjoint Riesz operator.
-* `IsCriticalSubmanifold.apply_self_neg_of_mem_pointSpectralSubspace_Iio`,
-  `IsCriticalSubmanifold.apply_self_pos_of_mem_pointSpectralSubspace_Ioi`: such a form is negative
-  definite on the negative spectral subspace of its Riesz operator and positive definite on the
-  positive one.
-* `IsNondegenerateCriticalSubmanifold.isUnit_continuousLinearMapOfBilin`: for a Morse–Bott
-  submanifold, that Riesz operator is invertible.
 * `IsNondegenerateCriticalSubmanifold.isCompl_pointSpectralSubspace_continuousLinearMapOfBilin`:
   for a Morse–Bott submanifold, the negative and positive spectral subspaces of the Riesz operator
   are complementary.
@@ -95,38 +95,11 @@ theorem isSelfAdjoint_continuousLinearMapOfBilin (h : i.IsCriticalSubmanifold f)
   InnerProductSpace.isSelfAdjoint_continuousLinearMapOfBilin fun u v ↦ by
     rw [← hQ, ← hQ, (h.isSymm_normalHessian hn s).eq]
 
-/-- A bilinear form `Q` representing the normal Hessian of a critical submanifold through a linear
-equivalence `L` is negative definite on the negative spectral subspace of its Riesz operator. -/
-theorem apply_self_neg_of_mem_pointSpectralSubspace_Iio (h : i.IsCriticalSubmanifold f) {s : S}
-    (L : P ≃ₗ[ℝ] i.NormalSpace s hn) {Q : P →L[ℝ] P →L[ℝ] ℝ}
-    (hQ : ∀ u v, h.normalHessian hn s (L u) (L v) = Q u v) {u : P}
-    (hu : u ∈ Module.End.pointSpectralSubspace Q♯.toLinearMap (Iio 0)) (hu0 : u ≠ 0) :
-    Q u u < 0 :=
-  InnerProductSpace.apply_self_neg_of_mem_pointSpectralSubspace_Iio
-    (h.isSelfAdjoint_continuousLinearMapOfBilin hn L hQ) hu hu0
-
-/-- A bilinear form `Q` representing the normal Hessian of a critical submanifold through a linear
-equivalence `L` is positive definite on the positive spectral subspace of its Riesz operator. -/
-theorem apply_self_pos_of_mem_pointSpectralSubspace_Ioi (h : i.IsCriticalSubmanifold f) {s : S}
-    (L : P ≃ₗ[ℝ] i.NormalSpace s hn) {Q : P →L[ℝ] P →L[ℝ] ℝ}
-    (hQ : ∀ u v, h.normalHessian hn s (L u) (L v) = Q u v) {u : P}
-    (hu : u ∈ Module.End.pointSpectralSubspace Q♯.toLinearMap (Ioi 0)) (hu0 : u ≠ 0) :
-    0 < Q u u :=
-  InnerProductSpace.apply_self_pos_of_mem_pointSpectralSubspace_Ioi
-    (h.isSelfAdjoint_continuousLinearMapOfBilin hn L hQ) hu hu0
-
 end IsCriticalSubmanifold
 
 namespace IsNondegenerateCriticalSubmanifold
 
 variable [I.Boundaryless] [IsManifold I 2 M]
-
-/-- A bilinear form on an inner product space `P` representing the normal Hessian of a Morse–Bott
-critical submanifold through a linear equivalence `L` has an invertible Riesz operator. -/
-theorem isUnit_continuousLinearMapOfBilin (h : i.IsNondegenerateCriticalSubmanifold f) {s : S}
-    (L : P ≃ₗ[ℝ] i.NormalSpace s hn) {Q : P →L[ℝ] P →L[ℝ] ℝ}
-    (hQ : ∀ u v, h.normalHessian hn s (L u) (L v) = Q u v) : IsUnit Q♯ :=
-  InnerProductSpace.isUnit_continuousLinearMapOfBilin (h.injective_of_normalHessian_eq hn L hQ)
 
 /-- **The normal splitting.** For a bilinear form `Q` representing the normal Hessian of a
 Morse–Bott critical submanifold through a linear equivalence `L`, the negative and positive
@@ -195,8 +168,9 @@ positive spectral subspaces of the Riesz operators `(Q s)♯` are `C^k` on the b
 The ranges of these projections are the spectral subspaces themselves. They are complementary
 (`isCompl_pointSpectralSubspace_continuousLinearMapOfBilin`), `Q s` is negative, respectively
 positive, definite on them
-(`IsCriticalSubmanifold.apply_self_neg_of_mem_pointSpectralSubspace_Iio` and
-`IsCriticalSubmanifold.apply_self_pos_of_mem_pointSpectralSubspace_Ioi`), and their dimensions are
+(`InnerProductSpace.apply_self_neg_of_mem_pointSpectralSubspace_Iio` and
+`InnerProductSpace.apply_self_pos_of_mem_pointSpectralSubspace_Ioi`, applied to
+`IsCriticalSubmanifold.isSelfAdjoint_continuousLinearMapOfBilin`), and their dimensions are
 the Morse indices of `f` and `-f` at `i s`
 (`finrank_pointSpectralSubspace_Iio_continuousLinearMapOfBilin` and
 `finrank_pointSpectralSubspace_Ioi_continuousLinearMapOfBilin`). Each of these applies to the
