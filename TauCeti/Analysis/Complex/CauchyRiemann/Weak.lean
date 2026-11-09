@@ -26,7 +26,7 @@ is `∂ₛu + J(z, u) ∂ₜu = η(z, u)`, in the coordinate `z = s + it`. Its w
   `TauCeti.MemWkpLoc`. On an open set the two predicates agree.
 
 This is McDuff–Salamon's normalization: for a constant `J` the left-hand side is twice the
-Cauchy–Riemann operator `∂̄ = (∂ₛ + J ∂ₜ)/2`. No hypothesis on `J` is part of the predicates:
+Cauchy–Riemann operator `\bar∂ = (∂ₛ + J ∂ₜ)/2`. No hypothesis on `J` is part of the predicates:
 the square identity `J² = -1` and the regularity of `J` and `η` enter only the theorems that use
 them, so the linear equations with arbitrary coefficient fields are special cases.
 

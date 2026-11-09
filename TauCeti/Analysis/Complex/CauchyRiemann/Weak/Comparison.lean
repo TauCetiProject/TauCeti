@@ -24,7 +24,7 @@ This file compares the planar weak equation `TauCeti.IsWeakCauchyRiemannOn` of
   coordinate vectors are related by `i`; `TauCeti.forall_map_I_mul_eq_iff` is the linear algebra.
 * `TauCeti.IsWeakCauchyRiemannOn.hasWeakConjWirtingerDerivOn`: for the constant structure `i` on
   a complex space, a weak solution has weak conjugate Wirtinger derivative `η(z, u)/2`; in
-  particular the homogeneous equation is `∂̄u = 0` weakly.
+  particular the homogeneous equation is `\bar∂u = 0` weakly.
 * `TauCeti.isWeakCauchyRiemannOn_floer_iff`: Floer's equation
   `∂ₛu + J(u)(∂ₜu - X(u)) = 0` is the inhomogeneous equation whose term is twice the value on
   `∂ₛ` of the normalized Floer forcing term `TauCeti.InhomogeneousTerm.floer`, namely `J X`.
@@ -115,7 +115,7 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] {η : ℂ → F 
 
 /-- **The constant structure `i`.** For multiplication by `i` on a complex space, a weak solution
 of the equation with inhomogeneous term `η` has weak conjugate Wirtinger derivative
-`η(z, w(z))/2`, the normalization `∂̄ = (∂ₛ + i ∂ₜ)/2`. -/
+`η(z, w(z))/2`, the normalization `\bar∂ = (∂ₛ + i ∂ₜ)/2`. -/
 theorem IsWeakCauchyRiemannOn.hasWeakConjWirtingerDerivOn
     (h : IsWeakCauchyRiemannOn p Ω (fun _ _ => I • ContinuousLinearMap.id ℝ F) η w) :
     HasWeakConjWirtingerDerivOn volume Ω w (fun z => (2 : ℂ)⁻¹ • η z (w z)) := by
@@ -125,7 +125,7 @@ theorem IsWeakCauchyRiemannOn.hasWeakConjWirtingerDerivOn
   rw [← hz]
   simp
 
-/-- For the constant structure `i`, the homogeneous weak equation gives `∂̄w = 0` weakly. -/
+/-- For the constant structure `i`, the homogeneous weak equation gives `\bar∂w = 0` weakly. -/
 theorem IsWeakCauchyRiemannOn.hasWeakConjWirtingerDerivOn_zero
     (h : IsWeakCauchyRiemannOn p Ω (fun _ _ => I • ContinuousLinearMap.id ℝ F) (fun _ _ => 0) w) :
     HasWeakConjWirtingerDerivOn volume Ω w 0 := by
