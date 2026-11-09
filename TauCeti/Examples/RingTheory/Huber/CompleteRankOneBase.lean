@@ -8,6 +8,7 @@ module
 import Mathlib.RingTheory.DiscreteValuationRing.TFAE
 import TauCeti.RingTheory.Huber.CompleteRankOneBase
 import TauCeti.RingTheory.Huber.Padic.Basic
+import TauCeti.RingTheory.Valuation.AdicSeparated
 
 /-!
 # Examples of complete rank-one valuation bases

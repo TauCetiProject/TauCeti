@@ -65,7 +65,7 @@ presentation (`TauCeti.Huber.isAdmissibleAlgebra_iff_flat`).
 * `TauCeti.Huber.isAdmissibleAlgebra_iff_flat`: over a `ϖ`-adically separated valuation ring, an
   algebra is admissible exactly when it is topologically of finite presentation and flat.
 * `TauCeti.Huber.isAdmissibleAlgebra_restrictedMvPowerSeriesCompletion`: over a complete adic
-  domain, `O⟨ξ₁, …, ξₙ⟩` is admissible.
+  ring, `O⟨ξ₁, …, ξₙ⟩` is admissible for every `ϖ` acting injectively on `O`.
 
 ## References
 
@@ -287,12 +287,13 @@ theorem isAdmissibleAlgebra_iff_flat [IsDomain O] [ValuationRing O] {ϖ : O} (h�
 
 section Restricted
 
-variable [IsDomain O] [IsAdicRing O]
+variable [IsAdicRing O]
 
 variable (O) in
-/-- Over a complete adic domain, the restricted power-series algebra `O⟨ξ₁, …, ξₙ⟩` is admissible
-for every nonzero `ϖ`. -/
-theorem isAdmissibleAlgebra_restrictedMvPowerSeriesCompletion {ϖ : O} (hϖ : ϖ ≠ 0) (n : ℕ) :
+/-- Over a complete adic ring, the restricted power-series algebra `O⟨ξ₁, …, ξₙ⟩` is admissible
+for every `ϖ` acting injectively on `O`. -/
+theorem isAdmissibleAlgebra_restrictedMvPowerSeriesCompletion {ϖ : O} (hϖ : IsSMulRegular O ϖ)
+    (n : ℕ) :
     IsAdmissibleAlgebra ϖ (restrictedMvPowerSeriesCompletion n O) := by
   let _ : UniformSpace O := IsTopologicalAddGroup.rightUniformSpace O
   have : IsUniformAddGroup O := isUniformAddGroup_of_addCommGroup

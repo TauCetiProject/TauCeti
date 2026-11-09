@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.KrullDimension.Basic
 public import TauCeti.RingTheory.AdicRing.Basic
-public import TauCeti.RingTheory.Valuation.AdicSeparated
 
 /-!
 # Complete rank-one valuation bases

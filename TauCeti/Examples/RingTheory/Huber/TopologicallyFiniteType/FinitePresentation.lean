@@ -39,13 +39,13 @@ example : IsAdmissibleAlgebra ϖ O := by
 example (n : ℕ) : IsAdmissibleAlgebra ϖ (restrictedMvPowerSeriesCompletion n O) := by
   have := IsCompleteRankOneBase.isAdicRing ϖ
   exact isAdmissibleAlgebra_restrictedMvPowerSeriesCompletion O
-    (IsCompleteRankOneBase.ne_zero (ϖ := ϖ)) n
+    (.of_ne_zero (IsCompleteRankOneBase.ne_zero (ϖ := ϖ))) n
 
 example (n : ℕ) : Module.Flat O (restrictedMvPowerSeriesCompletion n O) := by
   have := IsCompleteRankOneBase.isAdicRing ϖ
   have hϖ : ϖ ≠ 0 := IsCompleteRankOneBase.ne_zero
   exact ((isAdmissibleAlgebra_iff_flat hϖ).mp
-    (isAdmissibleAlgebra_restrictedMvPowerSeriesCompletion O hϖ n)).2
+    (isAdmissibleAlgebra_restrictedMvPowerSeriesCompletion O (.of_ne_zero hϖ) n)).2
 
 -- `O ⧸ ϖᵐ` is topologically of finite presentation ...
 example (m : ℕ) : IsTopologicallyFinitePresentation O (O ⧸ Ideal.span {ϖ ^ m}) := by
