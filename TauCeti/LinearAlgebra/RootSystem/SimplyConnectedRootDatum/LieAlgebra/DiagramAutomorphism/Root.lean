@@ -109,11 +109,6 @@ theorem diagramLieEquiv_chevalleySystem (hσ : σ ∈ t.diagramSymmetry) (α : F
     · simpa using h'
     · simpa using hε
 
-private theorem zsmul_chevalleySystem_inj (α : Fin t.numRoots) {a b : ℤ} :
-    a • t.chevalleySystem ht α = b • t.chevalleySystem ht α ↔ a = b := by
-  simp only [← Int.cast_smul_eq_zsmul ℚ,
-    smul_left_inj (t.isSl2Triple_chevalleySystem ht α).e_ne_zero, Int.cast_inj]
-
 /-- The sign is uniquely characterized by the image of its nonzero root vector. -/
 theorem eq_chevalleyDiagramSign_iff (hσ : σ ∈ t.diagramSymmetry)
     {α : Fin t.numRoots} {ε : ℤˣ} :
@@ -122,7 +117,8 @@ theorem eq_chevalleyDiagramSign_iff (hσ : σ ∈ t.diagramSymmetry)
         (ε : ℤ) • t.chevalleySystem ht (t.diagramRootPerm ht hσ α) := by
   refine ⟨fun h => h ▸ diagramLieEquiv_chevalleySystem ht hσ α, fun h => ?_⟩
   rw [diagramLieEquiv_chevalleySystem] at h
-  exact Units.ext ((zsmul_chevalleySystem_inj ht _).mp h).symm
+  let : Module.IsTorsionFree ℤ (t.lieAlgebra ht) := Module.IsTorsionFree.trans ℚ
+  exact Units.ext ((smul_left_inj (t.isSl2Triple_chevalleySystem ht _).e_ne_zero).mp h).symm
 
 /-- The pinned diagram action has sign one on every positive simple root. -/
 @[simp]
@@ -186,7 +182,9 @@ theorem chevalleyDiagramSign_mul_structureConstant (hσ : σ ∈ t.diagramSymmet
     (lie_chevalleySystem_eq_structureConstant_zsmul h)
   simp only [LieEquiv.map_lie, diagramLieEquiv_chevalleySystem, zsmul_lie, lie_zsmul,
     lie_chevalleySystem_eq_structureConstant_zsmul hp, map_zsmul, smul_smul] at H
-  simpa only [mul_assoc, mul_left_comm] using (zsmul_chevalleySystem_inj ht _).mp H
+  let : Module.IsTorsionFree ℤ (t.lieAlgebra ht) := Module.IsTorsionFree.trans ℚ
+  simpa only [mul_assoc, mul_left_comm] using
+    (smul_left_inj (t.isSl2Triple_chevalleySystem ht _).e_ne_zero).mp H
 
 end
 
