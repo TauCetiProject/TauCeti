@@ -48,7 +48,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- On a zero-differential set, the fiber measures admit measurable majorants satisfying
 Eilenberg's bound at every positive Lipschitz scale. -/
 private theorem exists_measurable_majorant_of_hasFDerivWithinAt_zero
-    (hf : ∀ x ∈ s, HasFDerivWithinAt f (0 : E →L[ℝ] F) s x) {t : ℝ} (ht : 0 ≤ t)
+    (hf : ∀ x ∈ s, HasFDerivWithinAt f (0 : E →L[ℝ] F) s x) {t : ℝ}
     (ε : ℝ≥0) (hε : ε ≠ 0) :
     ∃ G : F → ℝ≥0∞, Measurable G ∧
       (∀ y, μH[t] (s ∩ f ⁻¹' {y}) ≤ G y) ∧
@@ -64,7 +64,7 @@ private theorem exists_measurable_majorant_of_hasFDerivWithinAt_zero
     have h := (happ n).lipschitzOnWith
     simpa [hAx] using h
   choose G hGm hGle hGint using fun n ↦
-    (hLip n).exists_measurable_hausdorffMeasure_inter_preimage_le μ ht
+    (hLip n).exists_measurable_hausdorffMeasure_inter_preimage_le μ
   have hsum : ∑' n, μH[finrank ℝ F + t] (s ∩ u n) = μH[finrank ℝ F + t] s := by
     calc
       _ = ∑' n, (μH[finrank ℝ F + t].restrict s) (u n) := by
@@ -94,13 +94,13 @@ private theorem exists_measurable_majorant_of_hasFDerivWithinAt_zero
 measure, then almost every fiber has zero `t`-dimensional Hausdorff measure. Differentiability
 within the set suffices, and no measurability of the set is required. -/
 theorem ae_hausdorffMeasure_inter_preimage_eq_zero_of_hasFDerivWithinAt_zero_of_measure_ne_top
-    (hf : ∀ x ∈ s, HasFDerivWithinAt f (0 : E →L[ℝ] F) s x) {t : ℝ} (ht : 0 ≤ t)
+    (hf : ∀ x ∈ s, HasFDerivWithinAt f (0 : E →L[ℝ] F) s x) {t : ℝ}
     (hs : μH[finrank ℝ F + t] s ≠ ∞) :
     ∀ᵐ y ∂μ, μH[t] (s ∩ f ⁻¹' {y}) = 0 := by
   let ε : ℕ → ℝ≥0 := fun n ↦ 1 / ((n : ℝ≥0) + 1)
   have hε (n : ℕ) : ε n ≠ 0 := by positivity
   choose G hGm hGle hGint using fun n ↦
-    exists_measurable_majorant_of_hasFDerivWithinAt_zero μ hf ht (ε n) (hε n)
+    exists_measurable_majorant_of_hasFDerivWithinAt_zero μ hf (ε n) (hε n)
   have hlim : Tendsto (fun n ↦ (ε n : ℝ≥0∞)) atTop (𝓝 0) :=
     ENNReal.tendsto_coe.2 tendsto_one_div_add_atTop_nhds_zero_nat
   have hbound : Tendsto (fun n ↦ μ (Metric.ball (0 : F) 1) *
@@ -135,7 +135,7 @@ theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_hasFDerivWithinAt
         ((s ∩ Metric.closedBall 0 n) ∩ f ⁻¹' {y}) = 0 := by
     apply ae_hausdorffMeasure_inter_preimage_eq_zero_of_hasFDerivWithinAt_zero_of_measure_ne_top μ
       (s := s ∩ Metric.closedBall 0 n)
-      (fun x hx ↦ (hf x hx.1).mono inter_subset_left) (Nat.cast_nonneg _)
+      (fun x hx ↦ (hf x hx.1).mono inter_subset_left)
     rw [hdim']
     exact ne_top_of_le_ne_top (isCompact_closedBall (0 : E) (n : ℝ)).measure_lt_top.ne
       (measure_mono inter_subset_right)

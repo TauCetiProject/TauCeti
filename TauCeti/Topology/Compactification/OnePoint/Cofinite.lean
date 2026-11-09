@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Compactification.OnePoint.Basic
-public import Mathlib.Topology.DiscreteSubset
 
 /-!
 # A set converging along the cofinite filter is a one-point compactification
@@ -46,12 +45,10 @@ theorem _root_.Filter.Tendsto.discreteTopology_diff_singleton
     (h : Tendsto ((↑) : s → X) cofinite (𝓝 a)) : DiscreteTopology ↥(s \ {a}) := by
   refine discreteTopology_iff_isOpen_singleton.mpr fun x ↦ ?_
   obtain ⟨U, V, hU, hV, haU, hxV, hUV⟩ := t2_separation (Ne.symm x.2.2)
-  refine isOpen_singleton_of_finite_mem_nhds x
-    ((hV.preimage continuous_subtype_val).mem_nhds hxV) ?_
   -- Only finitely many points of `s` lie outside `U`, and `V` is disjoint from `U`.
-  refine ((eventually_cofinite.mp (h (hU.mem_nhds haU))).preimage
-    (inclusion_injective sdiff_subset).injOn).subset fun y hy hyU ↦ ?_
-  exact disjoint_left.mp hUV hyU hy
+  exact isOpen_singleton_of_finite_mem_nhds x ((hV.preimage continuous_subtype_val).mem_nhds hxV)
+    (((eventually_cofinite.mp (h (hU.mem_nhds haU))).preimage
+      (inclusion_injective sdiff_subset).injOn).subset fun _ hy hyU ↦ disjoint_left.mp hUV hyU hy)
 
 /-- **A set converging to `a` along the cofinite filter, with `a` added, is the one-point
 compactification of its complement of `a`**: the homeomorphism `(s \ {a})⁺ ≃ₜ insert a s` that is
@@ -62,10 +59,9 @@ noncomputable def _root_.Filter.Tendsto.onePointHomeomorphInsert
     (by simpa only [Subtype.range_coe] using h.isCompact_insert_range_of_cofinite)
   OnePoint.equivOfIsEmbeddingOfRangeEq ⟨a, mem_insert a s⟩
     (inclusion (sdiff_subset.trans (subset_insert a s))) (IsEmbedding.inclusion _) (by
-      ext ⟨y, hy⟩
-      simp only [range_inclusion, mem_ofPred_eq, Set.mem_sdiff, mem_singleton_iff, mem_compl_iff,
-        Subtype.mk.injEq]
-      exact ⟨fun hy' ↦ hy'.2, fun hya ↦ ⟨hy.resolve_left hya, hya⟩⟩)
+      ext
+      simp only [range_inclusion]
+      grind)
 
 /-- The homeomorphism `(s \ {a})⁺ ≃ₜ insert a s` is the inclusion on `s \ {a}`. -/
 @[simp]

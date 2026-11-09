@@ -56,7 +56,9 @@ map of a `C^(m+1)` Lagrangian, `1 ≤ m`, is a `C^m` local diffeomorphism at an 
 vector exactly when the fibre Hessian there is invertible
 (`TauCeti.isLocalDiffeomorphAt_legendreMap_iff`); on a boundaryless manifold it is a local
 diffeomorphism exactly when the Lagrangian is regular
-(`TauCeti.isLocalDiffeomorph_legendreMap_iff`).
+(`TauCeti.isLocalDiffeomorph_legendreMap_iff`), so for a smooth regular Lagrangian it is a smooth
+local diffeomorphism (`TauCeti.IsRegularLagrangian.isLocalDiffeomorph_legendreMap`) and the Cartan
+two-form `ω_L = FL^*ω` is symplectic (`TauCeti.IsRegularLagrangian.isSymplectic_cartanTwoForm`).
 
 Subtracting a potential `V : M → 𝕜` changes neither the Legendre map, nor the fibre Hessian, nor the
 Cartan forms, and adds `V` to the energy (`TauCeti.legendreMap_sub_comp_proj`,
@@ -66,7 +68,8 @@ The basic example is the Lagrangian `L(v) = ½ g(v, v) - V(x)` of a mechanical s
 energy given by a fibrewise symmetric bilinear form `g`, such as the `inner` field of a Riemannian
 metric (`TauCeti.mechanicalLagrangian`). Its Legendre map is `v ↦ g(v, ·)`, the index-lowering map
 of `g`, and its energy is the total energy `½ g(v, v) + V(x)`
-(`TauCeti.legendreMap_mechanicalLagrangian_snd`, `TauCeti.lagrangianEnergy_mechanicalLagrangian`).
+(`TauCeti.legendreMap_mechanicalLagrangian`, `TauCeti.legendreMap_mechanicalLagrangian_snd`,
+`TauCeti.lagrangianEnergy_mechanicalLagrangian`).
 Its fibre Hessian is `g` itself (`TauCeti.fiberHessian_mechanicalLagrangian`), so it is regular
 exactly when each `g x` is invertible as a map from `T_x M` onto its continuous dual
 (`TauCeti.isRegularLagrangian_mechanicalLagrangian_iff`). On a finite-dimensional manifold this
@@ -85,9 +88,12 @@ Riemannian metric (`TauCeti.isRegularLagrangian_mechanicalLagrangian`).
   where the fibre Hessian is.
 * `TauCeti.isLocalDiffeomorphAt_legendreMap_iff`, `TauCeti.isLocalDiffeomorph_legendreMap_iff`:
   `FL` is a local diffeomorphism at a tangent vector exactly when the fibre Hessian there is
-  invertible, and everywhere exactly when the Lagrangian is regular.
+  invertible, and everywhere exactly when the Lagrangian is regular, with
+  `TauCeti.IsRegularLagrangian.isLocalDiffeomorph_legendreMap` for smooth `L`.
 * `TauCeti.cartanForm`, `TauCeti.cartanTwoForm`: the Cartan forms `θ_L = FL^*λ` and
   `ω_L = -dθ_L = FL^*ω`.
+* `TauCeti.IsRegularLagrangian.isSymplectic_cartanTwoForm`: `ω_L` is symplectic for a smooth
+  regular Lagrangian.
 * `TauCeti.mechanicalLagrangian`: the Lagrangian `½ g(v, v) - V(x)`, with its Legendre map,
   energy and fibre Hessian, and its regularity for `g` invertible onto the dual, in particular
   for positive definite `g` in finite dimensions.
@@ -457,6 +463,22 @@ theorem isLocalDiffeomorph_legendreMap_iff [BoundarylessManifold I.tangent (Tang
 
 end LocalDiffeomorph
 
+section SmoothLocalDiffeomorph
+
+variable {𝕜 E H : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M]
+  [ChartedSpace H M] [IsManifold I ∞ M] [BoundarylessManifold I.tangent (TangentBundle I M)]
+  {L : TangentBundle I M → 𝕜}
+
+/-- The Legendre map of a smooth regular Lagrangian on a boundaryless manifold is a smooth local
+diffeomorphism. -/
+theorem IsRegularLagrangian.isLocalDiffeomorph_legendreMap
+    (hL : ContMDiff I.tangent 𝓘(𝕜, 𝕜) ∞ L) (hreg : IsRegularLagrangian L) :
+    IsLocalDiffeomorph I.tangent (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) ∞ (legendreMap L) :=
+  (isLocalDiffeomorph_legendreMap_iff hL le_rfl (by simp)).2 hreg
+
+end SmoothLocalDiffeomorph
+
 section Cartan
 
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
@@ -536,6 +558,19 @@ theorem mpullback_legendreMap_symplecticForm {L : TangentBundle I M → ℝ}
   rw [CotangentBundle.symplecticForm_eq_neg_mextDerivₗ, map_neg,
     ← SmoothForm.mextDerivₗ_mpullback, cartanTwoForm_eq_neg_mextDerivₗ, cartanForm]
 
+/-- **The Cartan two-form of a regular Lagrangian is symplectic.** For a smooth regular real
+Lagrangian on a boundaryless manifold, the Legendre map is a local diffeomorphism, so it pulls the
+canonical symplectic form `ω` of `T*M` back to a symplectic form `ω_L = FL^*ω` on `TM`. -/
+theorem IsRegularLagrangian.isSymplectic_cartanTwoForm [CompleteSpace E]
+    [BoundarylessManifold I.tangent (TangentBundle I M)] {L : TangentBundle I M → ℝ}
+    (hL : ContMDiff I.tangent 𝓘(ℝ, ℝ) ∞ L) (hreg : IsRegularLagrangian L) :
+    (cartanTwoForm L hL).IsSymplectic := by
+  have hω := CotangentBundle.isSymplectic_symplecticForm (I := I) (M := M)
+  rw [← mpullback_legendreMap_symplecticForm hL]
+  exact ⟨hω.isClosed.mpullback _ _,
+    hω.isNondegenerate.isNondegenerate_mpullback_of_isLocalDiffeomorph
+      (hreg.isLocalDiffeomorph_legendreMap hL)⟩
+
 end Cartan
 
 section Mechanical
@@ -595,6 +630,14 @@ theorem legendreMap_mechanicalLagrangian_snd
   have hB : B u y = B y u := hg v.proj u y
   simp [hB]
   ring
+
+/-- The Legendre map of a mechanical Lagrangian, for symmetric `g`, sends a tangent vector `v` at
+`x` to the covector `g(v, ·)` at `x`. -/
+theorem legendreMap_mechanicalLagrangian
+    {g : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ}
+    (hg : ∀ x v w, g x v w = g x w v) (V : M → ℝ) (v : TangentBundle I M) :
+    legendreMap (mechanicalLagrangian g V) v = TotalSpace.mk' (E →L[ℝ] ℝ) v.proj (g v.proj v.2) :=
+  TotalSpace.ext rfl (heq_of_eq (legendreMap_mechanicalLagrangian_snd hg V v))
 
 /-- **The energy of a mechanical Lagrangian** is the total energy `½ g(v, v) + V(x)`, kinetic plus
 potential. -/

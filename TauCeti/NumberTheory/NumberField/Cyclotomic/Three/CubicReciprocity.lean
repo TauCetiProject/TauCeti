@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Three.JacobiSum
-public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.StickelbergerPhi
+public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.StickelbergerPhi.Basic
 import Mathlib.NumberTheory.NumberField.Cyclotomic.PID
 import TauCeti.NumberTheory.MulChar.Basic
 import TauCeti.NumberTheory.NumberField.PrimeIdeal

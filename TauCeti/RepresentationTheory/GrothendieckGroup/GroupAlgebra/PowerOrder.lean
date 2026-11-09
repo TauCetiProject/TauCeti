@@ -63,8 +63,8 @@ theorem nonempty_linearEquiv_trivial_of_forall_pow_eq_one
     ext x
     exact hn x
   have : FiniteDimensional k M := ρ.asModuleEquiv.finiteDimensional
-  have htriv := hρ.eq_trivial_of_forall_pow_expChar_pow_eq_one p hpow
-  have hdim := hρ.finrank_eq_one_of_forall_pow_expChar_pow_eq_one p hpow
+  have htriv := hρ.eq_trivial_of_forall_pow_expChar_pow_eq_one hpow
+  have hdim := hρ.finrank_eq_one_of_forall_pow_expChar_pow_eq_one hpow
   let e := LinearEquiv.ofFinrankEq M k (hdim.trans (Module.finrank_self k).symm)
   have he : ρ.Equiv (Representation.trivial k G k) := Representation.Equiv.mk e (by
     intro g
@@ -75,6 +75,41 @@ theorem nonempty_linearEquiv_trivial_of_forall_pow_eq_one
     (Representation.asModuleLinearEquivOfEquiv he)⟩
 
 variable {G : Type u} [Group G] [Finite G]
+
+omit [Fact p.Prime] [CharP k p] [Finite G] in
+/-- The power-order condition on the group-algebra basis vectors passes to submodules. -/
+private theorem forall_pow_eq_one_submodule {X : Type u} [AddCommGroup X] [Module k[G] X]
+    (N : Submodule k[G] X)
+    (hpow : ∀ g : G, ∃ n : ℕ, ∀ x : X, MonoidAlgebra.single (g ^ p ^ n) (1 : k) • x = x) :
+    ∀ g : G, ∃ n : ℕ, ∀ x : N, MonoidAlgebra.single (g ^ p ^ n) (1 : k) • x = x := by
+  intro g
+  obtain ⟨n, hn⟩ := hpow g
+  exact ⟨n, fun x ↦ Subtype.ext (hn x)⟩
+
+omit [Fact p.Prime] [CharP k p] [Finite G] in
+/-- The power-order condition on the group-algebra basis vectors passes to quotients. -/
+private theorem forall_pow_eq_one_quotient {X : Type u} [AddCommGroup X] [Module k[G] X]
+    (N : Submodule k[G] X)
+    (hpow : ∀ g : G, ∃ n : ℕ, ∀ x : X, MonoidAlgebra.single (g ^ p ^ n) (1 : k) • x = x) :
+    ∀ g : G, ∃ n : ℕ, ∀ x : X ⧸ N, MonoidAlgebra.single (g ^ p ^ n) (1 : k) • x = x := by
+  intro g
+  obtain ⟨n, hn⟩ := hpow g
+  refine ⟨n, fun x ↦ ?_⟩
+  obtain ⟨y, rfl⟩ := N.mkQ_surjective x
+  exact (N.mkQ.map_smul _ y).symm.trans (congrArg N.mkQ (hn y))
+
+/-- A simple quotient of a finitely generated group-algebra module with `p`-power-order action
+has the class of the trivial line. -/
+private theorem exactK0_quotient_eq_trivial_of_forall_pow_eq_one {X : Type u} [AddCommGroup X]
+    [Module k[G] X] [Module.Finite k[G] X] (N : Submodule k[G] X) [IsSimpleModule k[G] (X ⧸ N)]
+    (hpow : ∀ g : G, ∃ n : ℕ, ∀ x : X, MonoidAlgebra.single (g ^ p ^ n) (1 : k) • x = x) :
+    (ExactK0.of (FGModuleCat.of k[G] (X ⧸ N)) : ExactK0 (finiteModulesExactStructure k[G])) =
+      ExactK0.of (FGModuleCat.of k[G] (Representation.trivial k G k).asModule) := by
+  let := Module.restrictScalars k k[G] (X ⧸ N)
+  let := IsScalarTower.restrictScalars k k[G] (X ⧸ N)
+  obtain ⟨e⟩ := nonempty_linearEquiv_trivial_of_forall_pow_eq_one p
+    (ModuleCat.of k[G] (X ⧸ N)) (forall_pow_eq_one_quotient p N hpow)
+  exact ExactK0.of_congr e.toFGModuleCatIso
 
 /-- A finitely generated group-algebra module with `p`-power-order image in characteristic `p`
 has Grothendieck class equal to its dimension times the trivial class. The exponent may depend
@@ -114,25 +149,8 @@ theorem exactK0_of_eq_finrank_smul_of_forall_pow_eq_one (M : FGModuleCat.{u} k[G
     let := hfg
     have : IsNoetherian k[G] N := (isFiniteLength_iff_isNoetherian_isArtinian.mp hN).1
     have : Module.Finite k[G] N := inferInstance
-    -- The same exponent works on the submodule and its quotient.
-    have hNpow : ∀ g : G, ∃ n : ℕ,
-        ∀ x : N, MonoidAlgebra.single (g ^ p ^ n) (1 : k) • x = x := by
-      intro g
-      obtain ⟨n, hn⟩ := hpow g
-      exact ⟨n, fun x ↦ Subtype.ext (hn x)⟩
-    have hQpow : ∀ g : G, ∃ n : ℕ,
-        ∀ x : X ⧸ N, MonoidAlgebra.single (g ^ p ^ n) (1 : k) • x = x := by
-      intro g
-      obtain ⟨n, hn⟩ := hpow g
-      refine ⟨n, fun x ↦ ?_⟩
-      obtain ⟨y, rfl⟩ := N.mkQ_surjective x
-      exact (N.mkQ.map_smul _ y).symm.trans (congrArg N.mkQ (hn y))
-    let := Module.restrictScalars k k[G] (X ⧸ N)
-    let := IsScalarTower.restrictScalars k k[G] (X ⧸ N)
-    obtain ⟨e⟩ := nonempty_linearEquiv_trivial_of_forall_pow_eq_one p
-      (ModuleCat.of k[G] (X ⧸ N)) hQpow
-    have hQ : (ExactK0.of (FGModuleCat.of k[G] (X ⧸ N)) :
-        ExactK0 (finiteModulesExactStructure k[G])) = t := ExactK0.of_congr e.toFGModuleCatIso
+    have hNpow := forall_pow_eq_one_submodule p N hpow
+    have hQ := exactK0_quotient_eq_trivial_of_forall_pow_eq_one p N hpow
     -- The quotient is a trivial line. Add its class to the induction hypothesis.
     have hrel : (ExactK0.of (FGModuleCat.of k[G] X) :
         ExactK0 (finiteModulesExactStructure k[G])) =

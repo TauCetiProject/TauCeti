@@ -642,6 +642,28 @@ private theorem natCard_ker_normGradedMap_succ_eq (hℓ : (finrank K L).Prime) {
       hπK hσ hγ x hxa, map_eq_zero_iff _ (algebraMap 𝓀[K] 𝓀[L]).injective,
     EmbeddingLike.map_eq_zero_iff, ofMul_eq_zero]
 
+/-- If `L/K` is totally ramified, the graded norm at depth `t + 1` with `ψ(t + 1) = t + 1` has a
+kernel of the order of its cokernel, because both graded pieces have `q` elements. So a kernel
+of order `[L : K]` forces its range to have index `[L : K]`. -/
+private theorem index_range_normGradedMap_succ_eq_finrank (h : IsTotallyRamified K L) {s : ℕ}
+    (hψ : psiNat K L (s + 1) = s + 1)
+    (hcard_ker : Nat.card (normGradedMap K L (s + 1)).ker = finrank K L) :
+    (normGradedMap K L (s + 1)).range.index = finrank K L := by
+  -- Both graded pieces have `q` elements, so the cokernel has the order of the kernel.
+  have hT : Nat.card (UnitFiltrationGraded K (s + 1)) ≠ 0 := by
+    rw [natCard_unitFiltrationGraded_succ]
+    exact Nat.card_pos.ne'
+  have : Finite (UnitFiltrationGraded K (s + 1)) := Nat.finite_of_card_ne_zero hT
+  have hST : Nat.card (UnitFiltrationGraded L (psiNat K L (s + 1))) =
+      Nat.card (UnitFiltrationGraded K (s + 1)) := by
+    rw [hψ, natCard_unitFiltrationGraded_succ, natCard_unitFiltrationGraded_succ,
+      natCard_residueField K L, h.inertiaDegree_eq_one, pow_one]
+  have h₁ := Subgroup.card_ker_mul_card_range (normGradedMap K L (s + 1))
+  have h₂ := Subgroup.card_mul_index (normGradedMap K L (s + 1)).range
+  have hpos : 0 < Nat.card (normGradedMap K L (s + 1)).range := Nat.card_pos
+  rw [← hcard_ker]
+  nlinarith
+
 /-- **The graded norm at a positive break.** Let `L/K` be a Galois extension of nonarchimedean
 local fields of prime degree `ℓ` whose upper ramification filtration breaks at a natural number
 `t > 0`. Then the kernel of the graded norm `normGradedMap K L t` has order `ℓ`, and its image has
@@ -695,20 +717,6 @@ theorem normGradedMap_at_break (hℓ : (finrank K L).Prime) {t : ℕ} (ht0 : 0 <
       ring
     rw [Subfield.mem_bot_iff_pow_eq_self 𝓀[L] (finrank K L), Equiv.mulLeft₀_apply, hpow,
       mul_eq_zero, sub_eq_zero, or_iff_right (pow_ne_zero _ hc0)]
-  refine ⟨hcard_ker, ?_⟩
-  -- Both graded pieces have `q` elements, so the cokernel has the order of the kernel.
-  have hT : Nat.card (UnitFiltrationGraded K (s + 1)) ≠ 0 := by
-    rw [natCard_unitFiltrationGraded_succ]
-    exact Nat.card_pos.ne'
-  have : Finite (UnitFiltrationGraded K (s + 1)) := Nat.finite_of_card_ne_zero hT
-  have hST : Nat.card (UnitFiltrationGraded L (psiNat K L (s + 1))) =
-      Nat.card (UnitFiltrationGraded K (s + 1)) := by
-    rw [hψ, natCard_unitFiltrationGraded_succ, natCard_unitFiltrationGraded_succ,
-      natCard_residueField K L, h.inertiaDegree_eq_one, pow_one]
-  have h₁ := Subgroup.card_ker_mul_card_range (normGradedMap K L (s + 1))
-  have h₂ := Subgroup.card_mul_index (normGradedMap K L (s + 1)).range
-  have hpos : 0 < Nat.card (normGradedMap K L (s + 1)).range := Nat.card_pos
-  rw [← hcard_ker]
-  nlinarith
+  exact ⟨hcard_ker, index_range_normGradedMap_succ_eq_finrank h hψ hcard_ker⟩
 
 end TauCeti

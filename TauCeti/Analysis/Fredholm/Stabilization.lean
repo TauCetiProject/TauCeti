@@ -9,14 +9,17 @@ public import TauCeti.Analysis.Fredholm.Basic
 import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import TauCeti.Analysis.Normed.Operator.Splitting.Family
 import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Finite stabilization of Fredholm families
 
 A Fredholm operator becomes surjective after adjoining a finite-dimensional subspace
-of its target to its domain. For a continuous operator family one subspace works
-throughout a neighbourhood. A fixed projection onto the stabilized kernel at the base
-point gives invertible paired coordinates throughout a smaller neighbourhood.
+of its target to its domain. The subspace can be taken inside any dense subspace of the
+target, so in Cauchy–Riemann gluing it can be spanned by smooth compactly supported
+sections. For a continuous operator family one subspace works throughout a neighbourhood.
+A fixed projection onto the stabilized kernel at the base point gives invertible paired
+coordinates throughout a smaller neighbourhood.
 
 `ContinuousLinearMap.kernelHomeomorph` then gives product charts on the stabilized
 kernel locus with its subspace topology. Their fibre maps are linear, and
@@ -24,6 +27,11 @@ kernel locus with its subspace topology. Their fibre maps are linear, and
 regularity of a smooth operator family. In particular the stabilized kernel dimension
 is locally constant, even when the original kernel dimension jumps. These are the
 local finite-dimensional kernel models used in determinant line bundles.
+
+Wherever the cokernel keeps its dimension at the base point, the stabilizer remains an exact
+topological complement of the range, and the projection onto it along the range varies with the
+family; see `ContinuousLinearMap.isTopCompl_of_isInvertible_prod_coprod` and
+`ContinuousLinearMap.contDiffAt_snd_comp_kerSection_coprod`.
 
 ## References
 
@@ -34,6 +42,7 @@ local finite-dimensional kernel models used in determinant line bundles.
 public section
 
 open Function Set Topology
+open Submodule (IsTopCompl)
 
 namespace ContinuousLinearMap
 
@@ -64,26 +73,31 @@ variable [CompleteSpace E] [CompleteSpace F]
   {X : Type*} [TopologicalSpace X] {T : X → E →L[𝕜] F} {x₀ : X}
 
 /-- A family continuous and Fredholm at one point admits a fixed finite-dimensional target
-stabilizer and fixed kernel coordinate on a neighbourhood. Pairing the stabilized operator
-with this coordinate is invertible there. For continuous families, `kernelHomeomorph`
-supplies actual local product charts, with model the finite-dimensional stabilized kernel
-at the base point.
-No Fredholm hypothesis is imposed away from the base point. -/
+stabilizer and fixed kernel coordinate on a neighbourhood. The stabilizer can be chosen inside any
+dense subspace `D` of the target, for instance a space of smooth compactly supported sections, and
+it is then a topological complement of the range at the base point. Pairing the stabilized
+operator with the coordinate is invertible on the neighbourhood. For continuous families,
+`kernelHomeomorph` supplies actual local product charts, with model the finite-dimensional
+stabilized kernel at the base point.
+No Fredholm hypothesis is imposed away from the base point. At the parameters of the
+neighbourhood where the cokernel keeps its dimension at the base point, the stabilizer stays an
+exact complement of the range (`ContinuousLinearMap.isTopCompl_of_isInvertible_prod_coprod`). -/
 theorem IsFredholm.exists_stabilization_kernel_coordinates (hT₀ : IsFredholm (T x₀))
-    (hT : ContinuousAt T x₀) :
-    ∃ S : Submodule 𝕜 F, FiniteDimensional 𝕜 S ∧
+    (hT : ContinuousAt T x₀) {D : Submodule 𝕜 F} (hD : Dense (D : Set F)) :
+    ∃ S : Submodule 𝕜 F, S ≤ D ∧ IsTopCompl S (T x₀).range ∧ FiniteDimensional 𝕜 S ∧
       ∃ q : (E × S) →L[𝕜] ((T x₀).coprod S.subtypeL).ker,
         ∃ U : Set X, IsOpen U ∧ x₀ ∈ U ∧
           ∀ x ∈ U, (((T x).coprod S.subtypeL).prod q).IsInvertible := by
-  obtain ⟨pkg⟩ := hT₀.nonempty_fredholmPackage
-  let S := pkg.decCodom.X₀
-  let : FiniteDimensional 𝕜 S := pkg.decCodom.finite_X₀
-  let : IsClosed (S : Set F) := pkg.decCodom.isTopCompl.isClosed'
+  have := hT₀.finite_coker
+  obtain ⟨S, hSD, hS⟩ := Submodule.exists_le_isTopCompl_of_dense hT₀.isClosed_range hD
+  have : FiniteDimensional 𝕜 S :=
+    ((T x₀).range.quotientEquivOfIsCompl S hS.isCompl).finiteDimensional
+  have : IsClosed (S : Set F) := S.closed_of_finiteDimensional
   let A : X → (E × S) →L[𝕜] F := fun x ↦ (T x).coprod S.subtypeL
   have hsurj : Surjective (A x₀) := by
     apply LinearMap.range_eq_top.mp
-    rw [range_coprod, Submodule.toLinearMap_subtypeL, Submodule.range_subtype, pkg.range_eq]
-    exact pkg.decCodom.isTopCompl.isCompl.sup_eq_top
+    rw [range_coprod, Submodule.toLinearMap_subtypeL, Submodule.range_subtype]
+    exact hS.isCompl.sup_eq_top
   have hfred : IsFredholm (A x₀) := hT₀.coprod_of_finiteDimensional S.subtypeL
   let q := Classical.choose hfred.closedComplemented_ker
   have hinv : ((A x₀).prod q).IsInvertible := by
@@ -92,6 +106,6 @@ theorem IsFredholm.exists_stabilization_kernel_coordinates (hT₀ : IsFredholm (
     exact coe_implicitCoordEquiv _ _ _
   have hA : ContinuousAt A x₀ := hT.continuousLinearMapCoprod continuousAt_const
   obtain ⟨U, hU, hx₀, hUinv⟩ := exists_isOpen_isInvertible_prod hA hinv
-  exact ⟨S, inferInstance, q, U, hU, hx₀, hUinv⟩
+  exact ⟨S, hSD, hS.symm, inferInstance, q, U, hU, hx₀, hUinv⟩
 
 end ContinuousLinearMap

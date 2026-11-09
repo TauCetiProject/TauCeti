@@ -17,8 +17,9 @@ import TauCeti.Algebra.BigOperators.Finset.Range
 
 The free cumulants of a word are obtained from its block moments by Möbius inversion on the
 lattice `NC(s)` of noncrossing partitions, so the values of its Möbius function `μ` are the
-coefficients expressing cumulants through moments. This file computes the values `μ(0̂, π)`
-and identifies `μ(π, 1̂)` with `μ(0̂, Kπ)` using the Kreweras complement.
+coefficients expressing cumulants through moments. This file computes the values `μ(0̂, π)`,
+identifies `μ(π, 1̂)` with `μ(0̂, Kπ)` using the Kreweras complement, and so computes the values
+`μ(π, 1̂)` on the noncrossing partitions of `n` ordered positions.
 
 First, `μ(0̂, π)` is multiplicative: the lower interval `[0̂, π]` is the product of the lattices
 `NC(B)` over the parts `B` of `π`, and accordingly `μ(0̂, π) = ∏_{B ∈ π} μ_{NC(B)}(0̂, 1̂)`.
@@ -30,6 +31,10 @@ are exactly the partitions into the positions after `m₁` up to some position `
 positions. Together with multiplicativity this gives the recurrence
 `μ_n = -∑_{0 < i < n} μ_i μ_(n-i)`, which is the recurrence of the signed Catalan numbers.
 
+Third, on `NC(n)` the Kreweras complement `K` reverses the order and maps the upper interval
+`[π, 1̂]` onto the lower interval `[0̂, K(π)]`, so `μ(π, 1̂) = μ(0̂, K(π))`. These are the
+coefficients of the formula expressing free cumulants through moments.
+
 ## Main results
 
 * `TauCeti.NoncrossingPartition.mu_bot_eq_prod_mu` — `μ(0̂, π) = ∏_{B ∈ π} μ_{NC(B)}(0̂, 1̂)`.
@@ -39,6 +44,8 @@ positions. Together with multiplicativity this gives the recurrence
   lower Möbius intervals on `NC(n)`.
 * `TauCeti.NoncrossingPartition.mu_bot_eq_prod` — the blockwise formula
   `μ(0̂, π) = ∏_{B ∈ π} (-1)^(|B|-1) C_(|B|-1)`.
+* `TauCeti.NoncrossingPartition.mu_top_eq_prod_kreweras` — on `NC(n)`,
+  `μ(π, 1_n) = ∏_{B ∈ K(π)} (-1)^(|B|-1) C_(|B|-1)`, with `K` the Kreweras complement.
 
 ## References
 
@@ -82,10 +89,8 @@ theorem mu_bot_eq_prod_mu (π : NoncrossingPartition s) :
       htop (Subtype.ext (Finpartition.eq_top_of_mem_parts (h ▸ hB)))
   obtain ⟨B, hB, hB1⟩ : ∃ B ∈ π.1.parts, 1 < #B := by
     by_contra! h
-    refine hbot (le_bot_iff.1 fun B hB => ?_)
-    obtain ⟨i, rfl⟩ :=
-      card_eq_one.1 (le_antisymm (h B hB) (π.1.nonempty_of_mem_parts hB).card_pos)
-    exact ⟨{i}, Finpartition.mem_bot_iff.2 ⟨i, π.1.le hB (mem_singleton_self i), rfl⟩, le_rfl⟩
+    exact hbot (Subtype.ext (Finpartition.eq_bot_iff_forall_card_eq_one.2 fun B hB =>
+      le_antisymm (h B hB) (π.1.nonempty_of_mem_parts hB).card_pos))
   have hsum : ∑ σ ∈ Iic π, ∏ C ∈ σ.1.parts, mu 𝕜 (⊥ : NoncrossingPartition C) ⊤ = 0 := by
     rw [sum_Iic_prod_parts_eq_prod_sum]
     refine prod_eq_zero hB ?_
@@ -292,11 +297,19 @@ theorem mu_bot_eq_prod (π : NoncrossingPartition s) :
   rw [mu_bot_eq_prod_mu]
   exact prod_congr rfl fun B _ => mu_bot_top B
 
+/-! ### Upper intervals -/
+
 /-- The Kreweras complement identifies an upper Möbius interval with a lower one. -/
 theorem mu_top_eq_mu_bot_kreweras {𝕜 : Type*} [Ring 𝕜] {n : ℕ}
     (π : NoncrossingPartition (univ : Finset (Fin n))) :
     mu 𝕜 π ⊤ = mu 𝕜 ⊥ (kreweras π) := by
   have h := OrderIso.mu_map (𝕜 := 𝕜) (krewerasOrderIso n) π ⊤
   simpa only [krewerasOrderIso_apply, kreweras_top, mu_toDual] using h.symm
+
+/-- The blockwise formula for the Möbius function of `NC(n)` on upper intervals: `μ(π, 1_n)` is
+the product over the parts `B` of the Kreweras complement `K(π)` of `(-1)^(|B|-1) C_(|B|-1)`. -/
+theorem mu_top_eq_prod_kreweras {n : ℕ} (π : NoncrossingPartition (univ : Finset (Fin n))) :
+    mu 𝕜 π ⊤ = ∏ B ∈ (kreweras π).1.parts, (-1) ^ (#B - 1) * (catalan (#B - 1) : 𝕜) := by
+  rw [mu_top_eq_mu_bot_kreweras, mu_bot_eq_prod]
 
 end TauCeti.NoncrossingPartition

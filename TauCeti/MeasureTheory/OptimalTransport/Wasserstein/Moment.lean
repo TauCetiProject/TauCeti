@@ -251,6 +251,20 @@ section Sufficiency
 variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   {p : ℝ≥0∞} {γ : Type*} {L : Filter γ} {μs : γ → ProbabilityMeasure X} {μ : ProbabilityMeasure X}
 
+/-- The `2 ^ q`-multiple of the `q`-moment of `ν` beyond radius `R` is at most `2 ^ q * τ`, if the
+`q`-moment of `ν` beyond some smaller radius `R'` is at most `τ`. -/
+private theorem lintegral_const_mul_indicator_edist_rpow_le {q : ℝ} (hq : 0 ≤ q) (x : X)
+    {R R' : ℝ≥0} (hR' : R' ≤ R) {ν : Measure X} {τ : ℝ≥0∞}
+    (hν : ∫⁻ y in {y | R' ≤ nndist x y}, edist x y ^ q ∂ν ≤ τ) :
+    ∫⁻ y, 2 ^ q * {w | R ≤ nndist x w}.indicator (fun w ↦ edist x w ^ q) y ∂ν ≤ 2 ^ q * τ := by
+  have hS : MeasurableSet {w | R ≤ nndist x w} :=
+    measurableSet_le measurable_const (continuous_const.nndist continuous_id).measurable
+  rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg hq ENNReal.ofNat_ne_top),
+    lintegral_indicator hS]
+  gcongr
+  exact (lintegral_mono_set (s := {y | R ≤ nndist x y}) (t := {y | R' ≤ nndist x y})
+    fun y (hy : R ≤ nndist x y) ↦ hR'.trans hy).trans hν
+
 /-- **Weak convergence and convergence of moments give Wasserstein convergence.** On a separable
 pseudometric space, let probability measures `μᵢ` converge weakly to `μ`, and let their
 `p`-moments about a basepoint `x` converge to the finite `p`-moment of `μ`. Then for every finite
@@ -286,28 +300,9 @@ theorem tendsto_wassersteinEDist_of_tendsto_probabilityMeasure_of_tendsto_linteg
   set S : Set X := {w | R ≤ nndist x w}
   have hS : MeasurableSet S :=
     measurableSet_le measurable_const (continuous_const.nndist continuous_id).measurable
-  have htail {ν : Measure X} {R' : ℝ≥0} (hR' : R' ≤ R)
-      (hν : ∫⁻ y in {y | R' ≤ nndist x y}, edist x y ^ p.toReal ∂ν ≤ τ) :
-      ∫⁻ y, 2 ^ p.toReal * S.indicator (fun w ↦ edist x w ^ p.toReal) y ∂ν ≤ 2 ^ p.toReal * τ := by
-    rw [lintegral_const_mul' _ _ h2q, lintegral_indicator hS]
-    gcongr
-    exact (lintegral_mono_set (s := {y | R ≤ nndist x y}) (t := {y | R' ≤ nndist x y})
-      fun y (hy : R ≤ nndist x y) ↦ hR'.trans hy).trans hν
   have hf : Measurable fun w ↦ 2 ^ p.toReal * S.indicator (fun w ↦ edist x w ^ p.toReal) w :=
     (((continuous_const.edist continuous_id).measurable.pow_const _).indicator hS).const_mul _
-  -- The transport cost of the truncated cost tends to `0` along weak convergence.
-  have hcore : Tendsto (fun i ↦ transportCost (fun z : X × X ↦ min (edist z.1 z.2) (2 * R) ^
-      p.toReal) (μs i : Measure X) (μ : Measure X)) L (𝓝 0) := by
-    refine tendsto_transportCost_of_tendsto_probabilityMeasure (M := (2 * (R : ℝ≥0∞)) ^ p.toReal)
-      (ENNReal.rpow_ne_top_of_nonneg hq.le (by finiteness))
-      (fun z ↦ ENNReal.rpow_le_rpow (min_le_right _ _) hq.le) (fun η hη ↦ ?_) h
-    have hpow : Tendsto (fun t : ℝ≥0∞ ↦ t ^ p.toReal) (𝓝 0) (𝓝 0) := by
-      simpa [ENNReal.zero_rpow_of_pos hq] using
-        (ENNReal.continuous_rpow_const (y := p.toReal)).tendsto 0
-    obtain ⟨δ, hδ, hδη⟩ :=
-      ENNReal.nhds_zero_basis.eventually_iff.1 (hpow.eventually (ge_mem_nhds hη))
-    exact ⟨δ, hδ, fun a b hab ↦
-      (ENNReal.rpow_le_rpow (min_le_left _ _) hq.le).trans (hδη hab)⟩
+  have hcore := tendsto_transportCost_min_edist_rpow_of_tendsto_probabilityMeasure hp0 hp (2 * R) h
   filter_upwards [hcore.eventually (ge_mem_nhds hε2), hR₁] with i hi hRi
   calc transportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) (μs i : Measure X) μ
       ≤ transportCost (fun z : X × X ↦ min (edist z.1 z.2) (2 * R) ^ p.toReal +
@@ -321,8 +316,10 @@ theorem tendsto_wassersteinEDist_of_tendsto_probabilityMeasure_of_tendsto_linteg
           ∫⁻ y, 2 ^ p.toReal * S.indicator (fun w ↦ edist x w ^ p.toReal) y ∂(μ : Measure X) :=
         transportCost_add_split hf hf
     _ ≤ ε / 2 + 2 ^ p.toReal * τ + 2 ^ p.toReal * τ :=
-        add_le_add (add_le_add hi (htail (le_max_left _ _) hRi))
-          (htail (le_max_right _ _) (eventually_top.1 hR₂ ()))
+        add_le_add (add_le_add hi
+          (lintegral_const_mul_indicator_edist_rpow_le hq.le x (le_max_left _ _) hRi))
+          (lintegral_const_mul_indicator_edist_rpow_le hq.le x (le_max_right _ _)
+            (eventually_top.1 hR₂ ()))
     _ ≤ ε / 2 + ε / 2 := by
         rw [add_assoc]
         exact add_le_add le_rfl hτε

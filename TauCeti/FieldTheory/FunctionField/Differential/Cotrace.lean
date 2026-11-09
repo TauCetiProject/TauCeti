@@ -394,11 +394,7 @@ theorem weilDifferentialDivisor_weilDifferentialCotrace (hF : IsFunctionField k 
   -- `B' + P'` at every place over `P`.
   obtain ⟨z, hzQ, hzP, htr⟩ :=
     Place.exists_forall_valuation_le_and_trace_eq k F hF' P' (W.coeff P) hx
-  have hβ : Pi.single P z ∈ relativeRepartitionSpace k F F' :=
-    mem_relativeRepartitionSpace_iff.mpr <| Filter.eventually_cofinite.mpr <|
-      (Set.finite_singleton P).subset fun Q hQ ↦ by
-      by_contra hQP
-      exact hQ (by simp [Pi.single_eq_of_ne hQP, isIntegral_zero])
+  have hβ := single_mem_relativeRepartitionSpace (k := k) P z
   -- So the fibre-constant repartition that is `z` over `P` and `0` elsewhere is killed by
   -- `Cotr ω`, although its trace `ι_P x` is not killed by `ω`.
   have hpull : ((relativeRepartitionPullback k k' F F' ⟨_, hβ⟩ : ↥(repartitionSpace k' F')) :
@@ -414,11 +410,7 @@ theorem weilDifferentialDivisor_weilDifferentialCotrace (hF : IsFunctionField k 
         exact hzQ Q' hQ hne
     · simp [Pi.single_eq_of_ne hQ]
   have htrβ : repartitionTrace k F F' hF ⟨_, hβ⟩ = singleRepartition P x :=
-    Subtype.ext <| funext fun Q ↦ by
-      simp only [repartitionTrace_apply]
-      rcases eq_or_ne Q P with rfl | hQ
-      · rw [singleRepartition_self, Pi.single_eq_same, htr]
-      · rw [singleRepartition_of_ne hQ, Pi.single_eq_of_ne hQ, map_zero]
+    htr ▸ repartitionTrace_single hF P z
   apply hωx
   rw [repartitionDualComponent_apply, ← htrβ, ← trace_weilDifferentialCotrace_apply hF hF' ω,
     weilDifferentialFiltration_apply_eq_zero_of_mem_adeleFiltration hbound _ hpull, map_zero]
@@ -439,18 +431,9 @@ theorem trace_finsum_repartitionDualComponent_weilDifferentialCotrace (hF : IsFu
       repartitionDualComponent (ω : Module.Dual k ↥(repartitionSpace k F)) P
         (Algebra.trace F F' v) := by
   classical
-  let β : ↥(relativeRepartitionSpace k F F') :=
-    ⟨Pi.single P v, mem_relativeRepartitionSpace_iff.mpr <| Filter.eventually_cofinite.mpr <|
-      (Set.finite_singleton P).subset fun Q hQ ↦ by
-        by_contra hne
-        exact hQ (by simp [Pi.single_eq_of_ne (Set.mem_singleton_iff.not.mp hne)])⟩
-  have htr : repartitionTrace k F F' hF β = singleRepartition P (Algebra.trace F F' v) :=
-    Subtype.ext <| funext fun Q ↦ by
-      rw [repartitionTrace_apply]
-      rcases eq_or_ne Q P with rfl | hQ
-      · simp [β]
-      · simp [β, hQ, singleRepartition_of_ne hQ]
-  rw [repartitionDualComponent_apply, ← htr, ← trace_weilDifferentialCotrace_apply hF hF' ω β,
+  let β : ↥(relativeRepartitionSpace k F F') := ⟨_, single_mem_relativeRepartitionSpace P v⟩
+  rw [repartitionDualComponent_apply, ← repartitionTrace_single hF P v,
+    ← trace_weilDifferentialCotrace_apply hF hF' ω β,
     apply_eq_finsum_repartitionDualComponent (weilDifferentialCotrace k' F' hF hF' ω).2]
   congr 1
   refine finsum_congr fun P' ↦ ?_

@@ -57,17 +57,18 @@ theorem exists_fieldUnit_isSquare_div_at_places
     have hopen : IsOpen {u : (v.1.adicCompletion K)ˣ | IsSquare u} := by
       simpa only [← square_eq_range_powMonoidHom, Subgroup.coe_square]
         using isOpen_range_powMonoidHom (two_ne_zero' (v.1.adicCompletion K))
-    exact Filter.Tendsto.eventually_isSquare_div_of_isOpen_squares
+    exact Filter.Tendsto.eventually_isSquare_div
       (f := fun y : (∀ v : S, v.1.adicCompletion K) × (T → ℝ) => y.1 v)
-      hcont.continuousAt hopen (a v).ne_zero
+      hcont.continuousAt (hopen.mem_nhds .one) (a v).ne_zero
   have hr (w : T) : ∀ᶠ y in 𝓝 target, y.2 w ≠ 0 ∧ IsSquare (y.2 w / (b w : ℝ)) := by
     have hcont : Continuous (fun y : (∀ v : S, v.1.adicCompletion K) × (T → ℝ) =>
         y.2 w) :=
       (continuous_apply w).comp continuous_snd
-    exact hcont.continuousAt.eventually_isSquare_div_of_isOpen_squares
-      (by
+    exact hcont.continuousAt.eventually_isSquare_div
+      ((by
         simpa only [Units.isSquare_iff_pos] using
-          (isOpen_lt continuous_const Units.continuous_val : IsOpen {u : ℝˣ | 0 < (u : ℝ)}))
+          (isOpen_lt continuous_const Units.continuous_val : IsOpen {u : ℝˣ | 0 < (u : ℝ)}) :
+        IsOpen {u : ℝˣ | IsSquare u}).mem_nhds .one)
       (b w).ne_zero
   have he := (eventually_all.mpr hf).and (eventually_all.mpr hr)
   obtain ⟨y, hy, x, rfl⟩ := mem_closure_iff_nhds.mp
@@ -113,9 +114,9 @@ theorem exists_coefficients_prod_eq_isSquare_div_at_places
         (algebraMap K (v.1.adicCompletion K)).toMonoidHom (e i)) / ∏ i, a v i) := by
       rw [← map_prod, he]
       exact ha v
-    exact isSquare_div_last_of_isSquare_div_prod
-      (a := fun i => Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom (e i))
-      (b := a v) hhead hp
+    exact isSquare_div_of_isSquare_prod_div_prod (Finset.mem_univ (Fin.last n))
+      (a := fun i => Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom (e i)) (b := a v)
+      (fun j _ hj ↦ by obtain ⟨j, rfl⟩ := Fin.exists_castSucc_eq.2 hj; exact hhead j) hp
   · intro w i
     have hhead (j : Fin n) : IsSquare
         (Units.map (embedding_of_isReal w.1.2).toMonoidHom (e j.castSucc) / b w j.castSucc) := by
@@ -127,8 +128,8 @@ theorem exists_coefficients_prod_eq_isSquare_div_at_places
         (embedding_of_isReal w.1.2).toMonoidHom (e i)) / ∏ i, b w i) := by
       rw [← map_prod, he]
       exact hb w
-    exact isSquare_div_last_of_isSquare_div_prod
-      (a := fun i => Units.map (embedding_of_isReal w.1.2).toMonoidHom (e i))
-      (b := b w) hhead hp
+    exact isSquare_div_of_isSquare_prod_div_prod (Finset.mem_univ (Fin.last n))
+      (a := fun i => Units.map (embedding_of_isReal w.1.2).toMonoidHom (e i)) (b := b w)
+      (fun j _ hj ↦ by obtain ⟨j, rfl⟩ := Fin.exists_castSucc_eq.2 hj; exact hhead j) hp
 
 end TauCeti.GlobalNumberFields

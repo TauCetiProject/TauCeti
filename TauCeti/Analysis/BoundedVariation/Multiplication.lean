@@ -77,7 +77,7 @@ theorem totalVariationOn_mul_le {χ : E → ℝ} (hχ : ContDiff ℝ ∞ χ) {c 
     rw [hχφ_apply, norm_smul, Real.norm_eq_abs]
     exact (mul_le_of_le_one_right (abs_nonneg _) (hφ x)).trans (hχc x)
   have hint (ψ : 𝓓(Ω, ℝ)) : Integrable (fun x => ψ x * u x) μ := by
-    simpa using integrable_smul_of_locallyIntegrableOn hu ψ
+    simpa using ψ.integrable_smul hu
   have hsplit : ∫ x, divergenceCLM φ x * (χ * u) x ∂μ =
       ∫ x, divergenceCLM χφ x * u x ∂μ - ∫ x, a x * u x ∂μ := by
     rw [← integral_sub (hint _) (hint a)]

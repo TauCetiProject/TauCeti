@@ -143,24 +143,22 @@ private theorem image_subset_of_inter_nonempty {U : Set N} (hU : IsPreconnected 
   rw [← mem_preimage, hbf] at hqf
   exact hs0 (hqf.2 ▸ hq.2)
 
-/-- The side of the local bicollar in `image_subset_of_inter_nonempty` lies in `A` or in `B`. -/
+/-- A side of the local bicollar at depths in a preconnected set `s` avoiding `0` lies in `A` or
+in `B`. -/
 private theorem image_subset_or_image_subset {U : Set N} (hU : IsPreconnected U)
     {b : U × ℝ → M} (hb : IsBicollar (f ∘ ((↑) : U → N)) b)
     (hbf : b ⁻¹' range f = univ ×ˢ ({0} : Set ℝ)) {s : Set ℝ} (hs : IsPreconnected s)
     (hs0 : (0 : ℝ) ∉ s) (hA : IsOpen A) (hB : IsOpen B) (hAB : Disjoint A B)
-    (hcompl : (range f)ᶜ = A ∪ B) (hs₀ : s.Nonempty) [Nonempty U] :
+    (hcompl : (range f)ᶜ = A ∪ B) :
     b '' (univ ×ˢ s) ⊆ A ∨ b '' (univ ×ˢ s) ⊆ B := by
-  obtain ⟨t, ht⟩ := hs₀
-  have hmem : b (Classical.arbitrary U, t) ∈ A ∪ B := by
-    rw [← hcompl]
-    intro hf
-    rw [← mem_preimage, hbf] at hf
-    exact hs0 (hf.2 ▸ ht)
-  have hq : b (Classical.arbitrary U, t) ∈ b '' (univ ×ˢ s) := ⟨_, ⟨mem_univ _, ht⟩, rfl⟩
-  rcases hmem with hA' | hB'
-  · exact .inl (image_subset_of_inter_nonempty hU hb hbf hs hs0 hA hB hAB hcompl ⟨_, hq, hA'⟩)
-  · exact .inr (image_subset_of_inter_nonempty hU hb hbf hs hs0 hB hA hAB.symm
-      (hcompl.trans (union_comm _ _)) ⟨_, hq, hB'⟩)
+  have : PreconnectedSpace U := isPreconnected_iff_preconnectedSpace.1 hU
+  refine ((isPreconnected_univ.prod hs).image _
+    hb.isOpenEmbedding.continuous.continuousOn).subset_or_subset hA hB hAB ?_
+  rintro _ ⟨q, hq, rfl⟩
+  rw [← hcompl]
+  intro hqf
+  rw [← mem_preimage, hbf] at hqf
+  exact hs0 (hqf.2 ▸ hq.2)
 
 /-- A local bicollar whose two sides both lie in `A` sweeps out a neighbourhood of its zero slice
 missing `B`. -/
@@ -187,12 +185,11 @@ theorem isLocallyBicollaredWithSides_of_range_subset_closure [LocallyConnectedSp
     (hfB : range f ⊆ closure B) : IsLocallyBicollaredWithSides f A B := by
   refine isLocallyBicollaredWithSides_iff.2 fun x => ?_
   obtain ⟨U, hU, hxU, hUc, b, hb, hbf⟩ := h.exists_isPreconnected_isBicollar hf x
-  have : Nonempty U := ⟨⟨x, hxU⟩⟩
   have hcompl' : (range f)ᶜ = B ∪ A := hcompl.trans (union_comm _ _)
   have hpos := image_subset_or_image_subset hUc hb hbf isPreconnected_Ioi
-    (lt_irrefl 0) hA hB hAB hcompl nonempty_Ioi
+    (lt_irrefl 0) hA hB hAB hcompl
   have hneg := image_subset_or_image_subset hUc hb hbf isPreconnected_Iio
-    (lt_irrefl 0) hA hB hAB hcompl nonempty_Iio
+    (lt_irrefl 0) hA hB hAB hcompl
   -- The two sides cannot both lie in `A`, nor both in `B`, since `f x` is in both closures.
   have hx : f ((⟨x, hxU⟩ : U) : N) ∈ range f := mem_range_self _
   refine ⟨U, hU, hxU, ?_⟩

@@ -58,28 +58,7 @@ theorem differential_adjointComodule (d : Derivation R H (Bialgebra.CounitAlgebr
     (sndHom C C).restrictScalars R
   -- Extract the infinitesimal coefficient after scalar extension, so both descriptions
   -- of the differentiated action can be compared in the cotangent-dual model.
-  have hcoeff (z : DualNumber C ⊗[R] V) (a : H) :
-      Bialgebra.CounitAlgebra.algEquivSelf R H R
-          (cotangentLinearEquiv (B := R) (TensorProduct.lid R V
-            (LinearMap.rTensor V s z)) a) =
-        Bialgebra.CounitAlgebra.algEquivSelf R H R
-          ((Bialgebra.CounitAlgebra.algEquivSelf R H (DualNumber C)
-            (tangentScalarExtensionEquiv (R := R) (A := H) (B := DualNumber C) z a)).snd) := by
-    induction z using TensorProduct.inductionOn with
-    | add z w hz hw => simp only [map_add, add_apply, snd_add, hz, hw]
-    | tmul c y =>
-      rw [LinearMap.rTensor_tmul, TensorProduct.lid_tmul,
-        algEquivSelf_cotangentLinearEquiv_apply,
-        algEquivSelf_tangentScalarExtensionEquiv_tmul_apply,
-        LinearMap.smul_apply, smul_eq_mul]
-      simp only [algebraMap_eq_inl', snd_mul, snd_inl, fst_inl,
-        op_smul_eq_smul, smul_eq_mul]
-      simp only [s, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
-        LinearMap.restrictScalars_apply, sndHom_apply]
-      -- The coefficient synonym carries the same ring operations, with transported instances.
-      erw [mul_zero, zero_add, map_mul]
-      rw [AlgEquiv.commutes]
-      exact mul_comm _ _
+  have hcoeff := algEquivSelf_cotangentLinearEquiv_rTensor_sndHom (R := R) (A := H)
   -- Compute the adjoint action on the constant lift of the input tangent vector.
   have haction := tangentScalarExtensionEquiv_adjointComodule_endOfPoint
     (R := R) (H := H) (CommAlgCat.of R (DualNumber C))
@@ -107,16 +86,7 @@ theorem differential_adjointComodule (d : Derivation R H (Bialgebra.CounitAlgebr
   -- The tangent-point equivalence packages the same dual-number lift.
   simp only [derivationMulEquivTangentKer_apply_ofConv, toAdd_ofAdd] at ha
   rw [ha]
-  have hp : pointInCounitAlgebra (DualNumber C)
-      ((derivationMulEquivTangentKer R H R (.ofAdd d)).val) =
-      (Bialgebra.CounitAlgebra.pointsMulEquiv R H (DualNumber C)).symm
-        ((derivationMulEquivTangentKer R H R (.ofAdd d)).val) := by
-    apply WithConv.ofConv_injective
-    ext b
-    simp only [pointInCounitAlgebra_apply,
-      Bialgebra.CounitAlgebra.pointsMulEquiv_symm_apply]
-    exact (Bialgebra.CounitAlgebra.algEquivSelf_symm_apply R H (DualNumber C) _).symm
-  rw [hp, adDerivation_dualNumber_apply]
+  rw [pointInCounitAlgebra_eq_pointsMulEquiv_symm, adDerivation_dualNumber_apply]
   simp only [snd_add, snd_inl, snd_inr, zero_add, cotangentDualLieEquiv_apply]
 
 end Derivation

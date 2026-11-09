@@ -36,31 +36,6 @@ universe u v w x
 
 namespace Comodule
 
-variable {k : Type u} [CommSemiring k]
-variable {C : Type v} {D : Type w}
-variable [AddCommMonoid C] [Module k C] [Coalgebra k C]
-variable [AddCommMonoid D] [Module k D] [Coalgebra k D]
-variable {V : Type x} [AddCommMonoid V] [Module k V] [Comodule k C V]
-
-/-- Complete reducibility is unchanged by corestriction along a coalgebra morphism
-with a linear retraction. -/
-theorem isCompletelyReducible_corestrict_iff_of_split (f : C →ₗc[k] D)
-    (r : D →ₗ[k] C) (hr : r.comp f.toLinearMap = LinearMap.id) :
-    (letI : Comodule k D V := Comodule.Corestrict f;
-      IsCompletelyReducible k D V) ↔ IsCompletelyReducible k C V := by
-  let _ : Comodule k D V := Comodule.Corestrict f
-  constructor
-  · exact isCompletelyReducible_of_orderIso k
-      (Subcomodule.corestrictOrderIsoOfSplit f r hr).symm (OrderIso.refl _)
-      (fun A ↦ by simp)
-  · exact isCompletelyReducible_of_orderIso k
-      (Subcomodule.corestrictOrderIsoOfSplit f r hr) (OrderIso.refl _)
-      (fun A ↦ by simp)
-
-end Comodule
-
-namespace Comodule
-
 variable {k : Type u} [Field k]
 variable {C : Type v} {D : Type w}
 variable [AddCommMonoid C] [Module k C] [Coalgebra k C]

@@ -7,9 +7,9 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Basic
 public import Mathlib.Data.Fintype.EquivFin
-public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 public import TauCeti.LinearAlgebra.Matrix.IdealEntries
+public import TauCeti.LinearAlgebra.SymplecticGroup
 
 /-!
 # Lifting symplectic matrices
@@ -63,33 +63,6 @@ private theorem upperPart_sub_transpose_eq {n : Type*} [LinearOrder n]
       simpa using this.symm
     simp [upperPart, hji, hji.not_gt, hskew]
 
-private theorem isAlt_toBilin'_J :
-    (Matrix.toBilin' (Matrix.J l R)).IsAlt := by
-  intro v
-  simp [Matrix.toBilin'_apply', Matrix.J, Matrix.fromBlocks_mulVec, dotProduct, mul_comm,
-    Matrix.neg_mulVec]
-
-private theorem mul_J_mul_transpose_sub_J_diagonal
-    (M : Matrix (l ⊕ l) (l ⊕ l) R) (i : l ⊕ l) :
-    (M * Matrix.J l R * M.transpose - Matrix.J l R) i i = 0 := by
-  let B := Matrix.toBilin' (Matrix.J l R)
-  have hcomp :
-      Matrix.toBilin' (M * Matrix.J l R * M.transpose) =
-        B.comp M.transpose.mulVecLin M.transpose.mulVecLin := by
-    simpa only [B, Matrix.toLin'_apply', Matrix.transpose_transpose] using
-      (Matrix.toBilin'_comp (Matrix.J l R) M.transpose M.transpose).symm
-  have hAltComp :
-      (Matrix.toBilin' (M * Matrix.J l R * M.transpose)).IsAlt := by
-    rw [hcomp]
-    intro v
-    exact isAlt_toBilin'_J (M.transpose.mulVecLin v)
-  have hAlt :
-      (Matrix.toBilin' (M * Matrix.J l R * M.transpose - Matrix.J l R)).IsAlt := by
-    rw [map_sub]
-    exact hAltComp.sub isAlt_toBilin'_J
-  have hi := hAlt (Pi.single i 1)
-  simpa only [Matrix.toBilin'_single] using hi
-
 /-- Every symplectic matrix modulo a square-zero ideal lifts to a symplectic matrix.
 
 The result is valid over an arbitrary commutative ring, in every characteristic, and for the
@@ -135,7 +108,9 @@ theorem map_quotient_mk_surjective_of_sq_eq_bot
     noncomm_ring
   have hE_diag : forall i, E i i = 0 := by
     intro i
-    exact mul_J_mul_transpose_sub_J_diagonal M i
+    dsimp only [E, J]
+    rw [Matrix.sub_apply, Matrix.mul_J_mul_transpose_apply_self]
+    simpa using Matrix.mul_J_mul_transpose_apply_self (1 : Matrix (l ⊕ l) (l ⊕ l) R) i
   let Y : Matrix (l ⊕ l) (l ⊕ l) R := upperPart (-E)
   have hY_mem : forall i j, Y i j ∈ I := by
     intro i j

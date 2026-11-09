@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Analysis.Normed.Module.RCLike.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
+public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.LinearAlgebra.Pi
 
 /-!
 # Basic facts about bounded operators
@@ -31,16 +34,17 @@ A left inverse `S` of `T` modulo an error term gives the estimate
 
 Finally, an operator bounded below is injective
 (`ContinuousLinearMap.injective_of_forall_norm_le`) and stays nonzero under a sufficiently small
-perturbation (`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), an invertible
-
-(`ContinuousLinearMap.injective_of_forall_norm_le`), and invertible if it is also surjective
+perturbation (`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), and is invertible if it
+is also surjective
 (`ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le`), with inverse bounded by the
 same constant (`ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le`); an invertible
 operator `A` on a normed space cancels against its inverse
 (`ContinuousLinearMap.ringInverse_apply_apply`, `ContinuousLinearMap.apply_ringInverse_apply`)
 and is bounded below by `‖A⁻¹‖⁻¹` (`ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply`),
 and conversely a lower bound `‖x‖ ≤ M ‖A x‖` bounds the norm of the inverse by `M`
-(`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`).
+(`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`). An operator bounded below
+is invertible if a sufficiently nearby operator is invertible
+(`ContinuousLinearMap.isUnit_of_forall_mul_norm_le_of_norm_sub_lt`).
 
 The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm at
 most one, such as the trace of `A` along an orthonormal basis, is bounded by `#s * ‖A‖`
@@ -50,9 +54,20 @@ Over `ℝ` or `ℂ`, two-sided norm bounds `1 - δ < ‖T v‖ < 1 + δ` on a `�
 extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on the whole space
 (`ContinuousLinearMap.norm_apply_bounds_of_net`).
 
+A continuous bilinear map satisfies a Young-type bound
+`‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for every `c > 0`
+(`ContinuousLinearMap.norm_apply_apply_le_mul_add_sq`).
+
 A **metric quotient map**, an operator `q` with `‖q‖ ≤ 1` lifting every vector of norm less than
 `r` to a vector of norm less than `r`, maps each open ball about `0` onto the open ball of the same
 radius (`ContinuousLinearMap.image_ball_eq_ball`).
+
+Finite real products also admit coordinate-basis estimates and continuous linear equivalences
+obtained by replacing one coordinate. The coordinate arguments are adapted from
+[KLS](https://github.com/human-ai-mathematics/kls-lean), commit
+`65810c73f9dd7945fc646ab484cb19d673f5291d`,
+`formalization/FunctionalInequalities/Analysis/`, files `PiCoordinates.lean` and
+`Sard/CoordinateChange.lean`; the coordinate bound comes from `Sard/Disk.lean`.
 -/
 
 public section
@@ -210,6 +225,48 @@ theorem norm_ringInverse_le_of_forall_norm_le {A : E →L[𝕜] E} (hA : IsUnit 
   refine opNorm_le_bound _ hM fun y ↦ ?_
   simpa only [apply_ringInverse_apply hA] using h (Ring.inverse A y)
 
+/-- An operator bounded below by `c` is invertible if its distance from an invertible operator is
+less than `c / 2`; in particular `c > 0`. -/
+theorem isUnit_of_forall_mul_norm_le_of_norm_sub_lt [CompleteSpace E]
+    {A B : E →L[𝕜] E} {c : ℝ}
+    (hbound : ∀ x : E, c * ‖x‖ ≤ ‖A x‖) (hB : IsUnit B) (hAB : ‖A - B‖ < c / 2) :
+    IsUnit A := by
+  have hc : 0 < c := by linarith [norm_nonneg (A - B)]
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · have hA : A = 1 := Subsingleton.elim _ _
+    rw [hA]
+    exact isUnit_one
+  obtain ⟨u, rfl⟩ := hB
+  -- The nearby invertible operator retains at least half the lower bound.
+  have hlow (x : E) : c / 2 * ‖x‖ ≤ ‖(u : E →L[𝕜] E) x‖ := by
+    have h := norm_add_le ((A - (u : E →L[𝕜] E)) x) ((u : E →L[𝕜] E) x)
+    simp only [sub_apply, sub_add_cancel] at h
+    have hdist := mul_le_mul_of_nonneg_right hAB.le (norm_nonneg x)
+    have hn := (A - (u : E →L[𝕜] E)).le_opNorm x
+    rw [sub_apply] at hn
+    have hb := hbound x
+    nlinarith
+  have hinv : ‖(↑u⁻¹ : E →L[𝕜] E)‖ ≤ 2 / c := by
+    rw [← Ring.inverse_unit]
+    apply norm_ringInverse_le_of_forall_norm_le u.isUnit (by positivity)
+    intro x
+    rw [div_mul_eq_mul_div]
+    apply (le_div_iff₀ hc).mpr
+    have h := hlow x
+    nlinarith
+  -- The inverse bound places `A` within Mathlib's nearby-unit radius.
+  have hnear : ‖A - (u : E →L[𝕜] E)‖ < ‖(↑u⁻¹ : E →L[𝕜] E)‖⁻¹ := by
+    rw [← one_div, lt_div_iff₀ (Units.norm_pos u⁻¹)]
+    calc ‖A - (u : E →L[𝕜] E)‖ * ‖(↑u⁻¹ : E →L[𝕜] E)‖ ≤
+          ‖A - (u : E →L[𝕜] E)‖ * (2 / c) :=
+            mul_le_mul_of_nonneg_left hinv (norm_nonneg _)
+      _ < 1 := by
+        have hpos : 0 < 2 / c := by positivity
+        have h := mul_lt_mul_of_pos_right hAB hpos
+        have heq : (c / 2) * (2 / c) = 1 := by field_simp
+        rwa [heq] at h
+  exact (u.ofNearby A hnear).isUnit
+
 end Inverse
 
 /-- The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm
@@ -224,6 +281,25 @@ theorem norm_sum_apply_apply_le {ι : Type*} (s : Finset ι) (A : X →L[𝕜] X
     _ ≤ ‖A‖ * 1 * 1 := by gcongr <;> exact hv i hi
     _ = ‖A‖ := by ring
 
+section Young
+
+variable {𝕜 X Y Z : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup X]
+  [NormedSpace 𝕜 X] [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y] [SeminormedAddCommGroup Z]
+  [NormedSpace 𝕜 Z]
+
+/-- A Young-type bound for a continuous bilinear map: for every `c > 0`,
+`‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)`. -/
+theorem norm_apply_apply_le_mul_add_sq (B : X →L[𝕜] Y →L[𝕜] Z) {c : ℝ} (hc : 0 < c) (u : X)
+    (v : Y) : ‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2) := by
+  refine (B.le_opNorm₂ _ _).trans ?_
+  rw [mul_assoc]
+  gcongr
+  have h := two_mul_le_add_mul_sq (a := ‖u‖) (b := ‖v‖) (inv_pos.2 hc)
+  rw [inv_inv] at h
+  linarith
+
+end Young
+
 section Net
 
 variable {𝕜 V F : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
@@ -233,9 +309,16 @@ variable {𝕜 V F : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace �
 give `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` everywhere. -/
 theorem norm_apply_bounds_of_net (T : V →L[𝕜] F) {t : Set V} {δ : ℝ}
     (hnear : ∀ w : V, ‖w‖ = 1 → ∃ v ∈ t, ‖w - v‖ < δ)
-    (hlow : ∀ v ∈ t, 1 - δ < ‖T v‖) (hup : ∀ v ∈ t, ‖T v‖ < 1 + δ) (hδ : 0 ≤ δ)
+    (hlow : ∀ v ∈ t, 1 - δ < ‖T v‖) (hup : ∀ v ∈ t, ‖T v‖ < 1 + δ)
     (hδ1 : δ ≤ 1 / 6) :
     (∀ v, (1 - 3 * δ) * ‖v‖ ≤ ‖T v‖) ∧ ∀ v, ‖T v‖ ≤ (1 + 3 * δ) * ‖v‖ := by
+  -- on a trivial space both bounds hold for any `δ`; otherwise the net forces `0 ≤ δ`
+  rcases subsingleton_or_nontrivial V with hV | hV
+  · exact ⟨fun v ↦ by rw [Subsingleton.elim v 0]; simp, fun v ↦ by rw [Subsingleton.elim v 0]; simp⟩
+  obtain ⟨x, hx⟩ := exists_ne (0 : V)
+  have hδ : 0 ≤ δ := by
+    obtain ⟨v, -, hwv⟩ := hnear ((‖x‖⁻¹ : 𝕜) • x) (norm_smul_inv_norm hx)
+    exact (norm_nonneg _).trans hwv.le
   -- Propagate the upper bound to the unit sphere, and then bound `‖T‖`.
   have hTnorm : ‖T‖ ≤ 1 + 3 * δ := by
     have hbound : ‖T‖ ≤ 1 + δ + ‖T‖ * δ := by
@@ -287,5 +370,99 @@ theorem image_ball_eq_ball {q : E →SL[σ₁₂] F} (h₁ : ‖q‖ ≤ 1)
 end MetricQuotient
 
 end ContinuousLinearMap
+
+end
+
+namespace ContinuousLinearMap
+
+/-- A pointwise squared-norm bound gives the square-root bound on the operator norm. -/
+public theorem opNorm_le_sqrt_of_forall_sq_norm_le
+    {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (T : E →L[𝕜] F) {c : ℝ} (hc : 0 ≤ c)
+    (h : ∀ x, ‖T x‖ ^ 2 ≤ c * ‖x‖ ^ 2) : ‖T‖ ≤ Real.sqrt c := by
+  refine T.opNorm_le_bound (Real.sqrt_nonneg _) fun x => ?_
+  apply (sq_le_sq₀ (norm_nonneg _) (mul_nonneg (Real.sqrt_nonneg _) (norm_nonneg _))).mp
+  simpa only [mul_pow, Real.sq_sqrt hc] using h x
+
+end ContinuousLinearMap
+
+public section
+
+/-- A nonzero functional on a finite real product is nonzero on some coordinate vector. -/
+theorem ContinuousLinearMap.exists_apply_single_ne_zero {ι : Type*} [Finite ι] [DecidableEq ι]
+    (α : (ι → ℝ) →L[ℝ] ℝ) (hα : α ≠ 0) : ∃ i : ι, α (Pi.single i (1 : ℝ)) ≠ 0 := by
+  let := Fintype.ofFinite ι
+  by_contra h
+  push Not at h
+  refine hα (ContinuousLinearMap.ext fun v => ?_)
+  have hv : v = ∑ i : ι, v i • Pi.single i (1 : ℝ) := by
+    funext k
+    simp [Finset.sum_apply, Pi.single_apply]
+  rw [hv]
+  simp [map_sum, h]
+
+/-- A coordinate bound for a functional on a finite real product bounds its value on every
+vector, using the cardinality of the index set and the product norm. -/
+theorem ContinuousLinearMap.abs_apply_le_card_mul_norm {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (L : (ι → ℝ) →L[ℝ] ℝ) (v : ι → ℝ) {M : ℝ}
+    (h : ∀ j, |L (Pi.single j (1 : ℝ))| ≤ M) :
+    |L v| ≤ Fintype.card ι * ‖v‖ * M := by
+  have hv : v = ∑ j : ι, v j • Pi.single j (1 : ℝ) := by
+    funext m
+    simp [Finset.sum_apply, Pi.single_apply]
+  calc |L v| = |∑ j : ι, v j * L (Pi.single j (1 : ℝ))| := by
+        conv_lhs => rw [hv]
+        simp [map_sum, smul_eq_mul]
+    _ ≤ ∑ j : ι, |v j * L (Pi.single j (1 : ℝ))| := Finset.abs_sum_le_sum_abs _ _
+    _ ≤ ∑ _j : ι, ‖v‖ * M := by
+        refine Finset.sum_le_sum fun j _ => ?_
+        rw [abs_mul]
+        exact mul_le_mul (by simpa [Real.norm_eq_abs] using norm_le_pi_norm v j) (h j)
+          (abs_nonneg _) (norm_nonneg _)
+    _ = Fintype.card ι * ‖v‖ * M := by simp [Finset.sum_const, mul_assoc]
+
+/-- Replacing one coordinate by a linear functional is injective when its coefficient at
+that coordinate is nonzero. -/
+theorem ContinuousLinearMap.pi_update_injective {ι : Type*} [DecidableEq ι]
+    (α : (ι → ℝ) →L[ℝ] ℝ) (i : ι) (hα : α (Pi.single i (1 : ℝ)) ≠ 0) :
+    Function.Injective (ContinuousLinearMap.pi fun m : ι ↦
+      if m = i then α else ContinuousLinearMap.proj m) := by
+  intro v₁ v₂ hv
+  rw [← sub_eq_zero]
+  set v : ι → ℝ := v₁ - v₂ with hvdef
+  have h0 : (ContinuousLinearMap.pi fun m : ι =>
+      if m = i then α else ContinuousLinearMap.proj m) v = 0 := by
+    rw [hvdef, map_sub, hv, sub_self]
+  have hoff : ∀ m, m ≠ i → v m = 0 := by
+    intro m hm
+    have := congrFun h0 m
+    simpa [ContinuousLinearMap.pi_apply, hm] using this
+  have hsingle : v = v i • Pi.single i (1 : ℝ) := by
+    funext m
+    rcases eq_or_ne m i with rfl | hm
+    · simp
+    · simp [hoff m hm, hm]
+  have hαv : α v = 0 := by
+    have := congrFun h0 i
+    simpa [ContinuousLinearMap.pi_apply] using this
+  rw [hsingle, map_smul, smul_eq_mul] at hαv
+  have hvi : v i = 0 := by
+    rcases mul_eq_zero.mp hαv with h | h
+    · exact h
+    · exact absurd h hα
+  rw [hsingle, hvi, zero_smul]
+
+/-- Replacing one coordinate by a functional with a nonzero coefficient at that coordinate
+is a continuous linear equivalence. -/
+theorem ContinuousLinearMap.exists_pi_update_equiv {ι : Type*} [Finite ι] [DecidableEq ι]
+    (α : (ι → ℝ) →L[ℝ] ℝ) (i : ι) (hα : α (Pi.single i (1 : ℝ)) ≠ 0) :
+    ∃ e : (ι → ℝ) ≃L[ℝ] (ι → ℝ),
+      (e : (ι → ℝ) →L[ℝ] (ι → ℝ)) =
+        ContinuousLinearMap.pi fun m : ι ↦ if m = i then α else ContinuousLinearMap.proj m := by
+  refine ⟨(LinearEquiv.ofInjectiveEndo _ (α.pi_update_injective i hα)).toContinuousLinearEquiv, ?_⟩
+  ext v m
+  rfl
 
 end

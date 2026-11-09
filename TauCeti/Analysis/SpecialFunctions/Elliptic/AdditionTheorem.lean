@@ -20,7 +20,9 @@ together with the companion formula for `℘'(z + w)`. In terms of the point map
 `P(z) = (℘(z), ℘'(z) / 2)` to the Weierstrass curve `y² = x³ - (g₂ / 4) x - g₃ / 4`
 (`PeriodPair.weierstrassPoint`), these say that `P(z + w)` is the chord-and-tangent sum of `P(z)`
 and `P(w)`. Hence `P` is a group homomorphism from `ℂ` to the points of the curve with kernel `Λ`:
-this is the injectivity half of the complex uniformization `ℂ / Λ ≃ E(ℂ)`.
+this is the injectivity half of the complex uniformization `ℂ / Λ ≃ E(ℂ)`. Together with the
+surjectivity of `P` (`PeriodPair.weierstrassPoint_surjective`), it gives the group isomorphism
+`ℂ / Λ ≃+ E(ℂ)` (`PeriodPair.weierstrassPointEquiv`).
 
 ## Main results
 
@@ -30,6 +32,10 @@ this is the injectivity half of the complex uniformization `ℂ / Λ ≃ E(ℂ)`
 * `PeriodPair.weierstrassPoint_add`: `P(z + w) = P(z) + P(w)`.
 * `PeriodPair.weierstrassPointHom`: the point map as a group homomorphism `ℂ →+ E(ℂ)`, and
   `PeriodPair.ker_weierstrassPointHom`: its kernel is `Λ`.
+* `PeriodPair.weierstrassPointEquiv`: the group isomorphism `ℂ / Λ ≃+ E(ℂ)` induced by the point
+  map, which is surjective by `PeriodPair.weierstrassPoint_surjective`, with
+  `PeriodPair.weierstrassPointEquiv_mk` and `PeriodPair.weierstrassPointEquiv_symm_weierstrassPoint`
+  for the isomorphism and its inverse on the class of `z`.
 
 ## Implementation notes
 
@@ -419,5 +425,23 @@ lemma weierstrassPointHom_apply (z : ℂ) : L.weierstrassPointHom z = L.weierstr
 lemma ker_weierstrassPointHom : L.weierstrassPointHom.ker = L.lattice.toAddSubgroup := by
   ext z
   simp
+
+/-- **The complex uniformization** `ℂ / Λ ≃+ E_Λ(ℂ)`, induced by the point map
+`z ↦ (℘(z), ℘'(z) / 2)` (`PeriodPair.weierstrassPoint`), which is a surjective group homomorphism
+with kernel `Λ`. -/
+def weierstrassPointEquiv :
+    (ℂ ⧸ L.lattice.toAddSubgroup) ≃+ L.weierstrassCurve.toAffine.Point :=
+  QuotientAddGroup.liftEquiv _
+    (fun P ↦ by simpa using L.weierstrassPoint_surjective P) L.ker_weierstrassPointHom.symm
+
+@[simp]
+lemma weierstrassPointEquiv_mk (z : ℂ) :
+    L.weierstrassPointEquiv (QuotientAddGroup.mk z) = L.weierstrassPoint z := by
+  exact (QuotientAddGroup.liftEquiv_mk _ _ _ z).trans (L.weierstrassPointHom_apply z)
+
+@[simp]
+lemma weierstrassPointEquiv_symm_weierstrassPoint (z : ℂ) :
+    L.weierstrassPointEquiv.symm (L.weierstrassPoint z) = QuotientAddGroup.mk z := by
+  rw [AddEquiv.symm_apply_eq, weierstrassPointEquiv_mk]
 
 end PeriodPair

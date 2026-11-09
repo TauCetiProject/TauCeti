@@ -15,7 +15,7 @@ import Mathlib.Analysis.Convex.SpecificFunctions.Pow
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
-import TauCeti.Analysis.Convex.FunctionTopology
+import TauCeti.Analysis.Convex.Function.Topology
 import TauCeti.Analysis.InnerProductSpace.Spectrum
 import TauCeti.Analysis.Matrix.MinkowskiDeterminant
 

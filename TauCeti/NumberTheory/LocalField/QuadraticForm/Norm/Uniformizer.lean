@@ -45,10 +45,8 @@ theorem valuation_sq_sub_mul_sq_of_odd {a : Kˣ}
     let u := Units.mk0 x hx
     let v := Units.mk0 y hy
     have heq : (normalizedValuation K (u ^ 2)).toAdd =
-        (normalizedValuation K (a * v ^ 2)).toAdd := by
-      apply le_antisymm
-      · exact (toAdd_normalizedValuation_le_iff_valuation_le _ _).mpr h.ge
-      · exact (toAdd_normalizedValuation_le_iff_valuation_le _ _).mpr h.le
+        (normalizedValuation K (a * v ^ 2)).toAdd :=
+      (toAdd_normalizedValuation_eq_iff_valuation_eq _ _).mpr (by simpa [u, v] using h)
     simp only [map_mul, map_pow, toAdd_mul, toAdd_pow, nsmul_eq_mul] at heq
     obtain ⟨n, hn⟩ := ha
     omega

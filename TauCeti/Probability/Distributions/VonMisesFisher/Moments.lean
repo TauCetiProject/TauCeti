@@ -11,7 +11,7 @@ import TauCeti.Analysis.InnerProductSpace.NormPow
 import Mathlib.Probability.Moments.MGFAnalytic
 
 /-!
-# Mean and second moments of the von Mises–Fisher law
+# Moments and covariance of the von Mises–Fisher law
 
 In dimension `d ≥ 2`, a von Mises–Fisher unit vector of positive concentration `κ` and
 mean direction `m` has expectation `I_{d/2}(κ) / I_{d/2-1}(κ) • m`. At zero concentration
@@ -32,6 +32,7 @@ The mixed second moment of two linear observables splits into an isotropic term 
 rank-one term in the mean direction. Its coefficients are given by the ratio of adjacent
 modified Bessel functions. At zero concentration the uniform-sphere formula applies. Products
 of linear observables are integrable for every natural parameter and every concentration.
+Subtracting the product of the means gives the covariance and variance formulas.
 
 For second moments, the argument differentiates the directional mgf twice in the
 regularized hypergeometric form of the normalizer, whose argument is the squared norm.
@@ -280,6 +281,31 @@ theorem integral_inner_mul_inner_vonMisesFisherNaturalMeasure
   simp only [norm_add_sq_real, inner_add_right] at hsum
   linear_combination hsum / 2
 
+/-- In dimension `d ≥ 2`, linear observables under a nonzero natural parameter `η` have
+covariance `A / κ ⟪u, v⟫ + (1 - d A / κ - A ^ 2) ⟪m, u⟫ ⟪m, v⟫`, where `κ = ‖η‖`,
+`m = η / κ` and `A = I_{d/2}(κ) / I_{d/2-1}(κ)`. -/
+theorem covariance_inner_vonMisesFisherNaturalMeasure (hd : 2 ≤ Module.finrank ℝ E)
+    {η : E} (hη : η ≠ 0) (u v : E) :
+    cov[fun x : sphere (0 : E) 1 ↦ ⟪u, (x : E)⟫, fun x : sphere (0 : E) 1 ↦ ⟪v, (x : E)⟫;
+        vonMisesFisherNaturalMeasure η] =
+      besselI ((Module.finrank ℝ E : ℝ) / 2) ‖η‖ /
+          besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) ‖η‖ / ‖η‖ * ⟪u, v⟫ +
+        (1 - (Module.finrank ℝ E : ℝ) *
+            (besselI ((Module.finrank ℝ E : ℝ) / 2) ‖η‖ /
+              besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) ‖η‖) / ‖η‖ -
+          (besselI ((Module.finrank ℝ E : ℝ) / 2) ‖η‖ /
+            besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) ‖η‖) ^ 2) *
+          (⟪η, u⟫ / ‖η‖) * (⟪η, v⟫ / ‖η‖) := by
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
+  rw [covariance_eq_sub (memLp_inner_vonMisesFisherNaturalMeasure η u 2)
+    (memLp_inner_vonMisesFisherNaturalMeasure η v 2)]
+  simp only [Pi.mul_apply]
+  rw [integral_inner_mul_inner_vonMisesFisherNaturalMeasure hd hη,
+    integral_inner_vonMisesFisherNaturalMeasure hd hη,
+    integral_inner_vonMisesFisherNaturalMeasure hd hη]
+  simp only [real_inner_comm u η, real_inner_comm v η]
+  ring
+
 /-- At positive concentration, the von Mises–Fisher second-moment tensor evaluated on any
 two vectors is `(A/κ) I + (1-d A/κ) m mᵀ`, where `A = I_{d/2}(κ) / I_{d/2-1}(κ)`. -/
 theorem integral_inner_mul_inner_vonMisesFisherMeasure (hd : 2 ≤ Module.finrank ℝ E)
@@ -297,6 +323,44 @@ theorem integral_inner_mul_inner_vonMisesFisherMeasure (hd : 2 ≤ Module.finran
   rw [vonMisesFisherMeasure_of_nonneg m hκ.le]
   simpa only [hnorm, real_inner_smul_left, mul_div_cancel_left₀ _ hκ.ne'] using
     integral_inner_mul_inner_vonMisesFisherNaturalMeasure hd hη u v
+
+/-- For a unit direction `m` and positive concentration `κ` in dimension `d ≥ 2`, linear
+observables have covariance `A / κ ⟪u, v⟫ + (1 - d A / κ - A ^ 2) ⟪m, u⟫ ⟪m, v⟫`, where
+`A = I_{d/2}(κ) / I_{d/2-1}(κ)`. -/
+theorem covariance_inner_vonMisesFisherMeasure (hd : 2 ≤ Module.finrank ℝ E)
+    (m : sphere (0 : E) 1) {κ : ℝ} (hκ : 0 < κ) (u v : E) :
+    cov[fun x : sphere (0 : E) 1 ↦ ⟪u, (x : E)⟫, fun x : sphere (0 : E) 1 ↦ ⟪v, (x : E)⟫;
+        vonMisesFisherMeasure m κ] =
+      besselI ((Module.finrank ℝ E : ℝ) / 2) κ /
+          besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) κ / κ * ⟪u, v⟫ +
+        (1 - (Module.finrank ℝ E : ℝ) *
+            (besselI ((Module.finrank ℝ E : ℝ) / 2) κ /
+              besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) κ) / κ -
+          (besselI ((Module.finrank ℝ E : ℝ) / 2) κ /
+            besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) κ) ^ 2) *
+          ⟪(m : E), u⟫ * ⟪(m : E), v⟫ := by
+  have hm : ‖(m : E)‖ = 1 := mem_sphere_zero_iff_norm.mp m.property
+  rw [vonMisesFisherMeasure_of_nonneg m hκ.le,
+    covariance_inner_vonMisesFisherNaturalMeasure hd
+      (smul_ne_zero hκ.ne' (ne_zero_of_mem_sphere one_ne_zero m))]
+  simp only [norm_smul, norm_eq_abs, abs_of_pos hκ, hm, mul_one, real_inner_smul_left,
+    mul_div_cancel_left₀ _ hκ.ne']
+
+/-- For a unit direction `m` and positive concentration `κ` in dimension `d ≥ 2`, the variance
+of `⟪u, X⟫` is `A / κ ‖u‖ ^ 2 + (1 - d A / κ - A ^ 2) ⟪m, u⟫ ^ 2`, where
+`A = I_{d/2}(κ) / I_{d/2-1}(κ)`. -/
+theorem variance_inner_vonMisesFisherMeasure (hd : 2 ≤ Module.finrank ℝ E)
+    (m : sphere (0 : E) 1) {κ : ℝ} (hκ : 0 < κ) (u : E) :
+    Var[fun x : sphere (0 : E) 1 ↦ ⟪u, (x : E)⟫; vonMisesFisherMeasure m κ] =
+      besselI ((Module.finrank ℝ E : ℝ) / 2) κ /
+          besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) κ / κ * ‖u‖ ^ 2 +
+        (1 - (Module.finrank ℝ E : ℝ) *
+            (besselI ((Module.finrank ℝ E : ℝ) / 2) κ /
+              besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) κ) / κ -
+          (besselI ((Module.finrank ℝ E : ℝ) / 2) κ /
+            besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) κ) ^ 2) * ⟪(m : E), u⟫ ^ 2 := by
+  rw [← covariance_self (by fun_prop), covariance_inner_vonMisesFisherMeasure hd m hκ,
+    real_inner_self_eq_norm_sq, mul_assoc, ← pow_two]
 
 /-- At zero concentration, the second-moment tensor is the uniform tensor `I/d`. -/
 theorem integral_inner_mul_inner_vonMisesFisherMeasure_zero
@@ -331,6 +395,27 @@ theorem integral_inner_mul_inner_vonMisesFisherMeasure
   rw [← TauCeti.Probability.integral_inner_mul_inner_vonMisesFisherMeasure hd m hκ u v]
   simpa only [Function.comp_def] using hX.integral_comp
     (f := fun x : sphere (0 : E) 1 ↦ ⟪u, (x : E)⟫ * ⟪v, (x : E)⟫) (by fun_prop)
+
+/-- Linear observables of a von Mises–Fisher random unit vector with positive concentration
+have the covariance determined by the isotropic and mean-direction coefficients. -/
+theorem covariance_inner_vonMisesFisherMeasure
+    {E Ω : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [MeasurableSpace Ω] {P : Measure Ω}
+    {X : Ω → sphere (0 : E) 1} {m : sphere (0 : E) 1} {κ : ℝ}
+    (hX : HasLaw X (vonMisesFisherMeasure m κ) P) (hd : 2 ≤ Module.finrank ℝ E)
+    (hκ : 0 < κ) (u v : E) :
+    cov[fun ω ↦ ⟪u, (X ω : E)⟫, fun ω ↦ ⟪v, (X ω : E)⟫; P] =
+      besselI ((Module.finrank ℝ E : ℝ) / 2) κ /
+          besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) κ / κ * ⟪u, v⟫ +
+        (1 - (Module.finrank ℝ E : ℝ) *
+            (besselI ((Module.finrank ℝ E : ℝ) / 2) κ /
+              besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) κ) / κ -
+          (besselI ((Module.finrank ℝ E : ℝ) / 2) κ /
+            besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) κ) ^ 2) *
+          ⟪(m : E), u⟫ * ⟪(m : E), v⟫ := by
+  rw [hX.covariance_fun_comp (f := fun x : sphere (0 : E) 1 ↦ ⟪u, (x : E)⟫)
+    (g := fun x : sphere (0 : E) 1 ↦ ⟪v, (x : E)⟫) (by fun_prop) (by fun_prop),
+    TauCeti.Probability.covariance_inner_vonMisesFisherMeasure hd m hκ]
 
 /-- At zero concentration, the second moment of a sphere-valued von Mises–Fisher random
 variable is the uniform-sphere second moment. -/

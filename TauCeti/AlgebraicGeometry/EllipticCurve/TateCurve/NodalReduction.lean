@@ -13,14 +13,15 @@ import Mathlib.Tactic.Ring
 import TauCeti.Analysis.Normed.Group.Ultra
 
 /-!
-# Points with `‖x‖ = 1` on equations reducing to the nodal cubic
+# Points with `‖x‖ ≤ 1` on equations reducing to the nodal cubic
 
 Let `K` be an ultrametric normed field and `A₄, A₆ ∈ K` with `‖A₄‖, ‖A₆‖ < 1`. Modulo the maximal
 ideal, the equation `y² + xy = x³ + A₄x + A₆` (the shape of the Tate curve) is the nodal cubic
 `y² + xy = x³`. This file records two facts about its solutions with `‖x‖ = 1`, which reduce to
 nonsingular points of the nodal cubic other than the point at infinity: both tangent directions
 `y` and `x + y` at the node are units, and a line through the origin meets the curve in at most
-one such solution. No completeness, discreteness or characteristic assumption is needed.
+one such solution. It also records that a solution with `‖x‖ < 1` has `‖y‖ < 1`, so that it
+reduces to the node. No completeness, discreteness or characteristic assumption is needed.
 
 ## Main results
 
@@ -28,6 +29,7 @@ one such solution. No completeness, discreteness or characteristic assumption is
   `‖y‖ = ‖x + y‖ = 1`.
 * `TauCeti.eq_and_eq_of_mul_eq_mul_of_equation`: two solutions with first coordinates of norm one
   on a common line through the origin are equal.
+* `TauCeti.norm_lt_one_of_equation`: a solution with `‖x‖ < 1` has `‖y‖ < 1`.
 -/
 
 public section
@@ -84,5 +86,26 @@ theorem eq_and_eq_of_mul_eq_mul_of_equation {A₄ A₆ x y X Y : K} (hA₄ : ‖
   have hx0 : x ≠ 0 := norm_ne_zero_iff.mp (by rw [hx]; exact one_ne_zero)
   rw [hxX, mul_comm y] at h
   exact mul_left_cancel₀ hx0 h
+
+/-- On a curve `y² + xy = x³ + A₄x + A₆` with `‖A₄‖ ≤ 1` and `‖A₆‖ < 1`, a solution with `‖x‖ < 1`
+has `‖y‖ < 1`: it reduces to the origin, which is the node of the reduction when `‖A₄‖ < 1`. -/
+theorem norm_lt_one_of_equation {A₄ A₆ x y : K} (hA₄ : ‖A₄‖ ≤ 1) (hA₆ : ‖A₆‖ < 1)
+    (hx : ‖x‖ < 1) (h : y ^ 2 + x * y = x ^ 3 + A₄ * x + A₆) : ‖y‖ < 1 := by
+  by_contra! hy
+  -- the right-hand side is small, while `y (x + y)` has norm `‖y‖² ≥ 1`
+  have hr : ‖x ^ 3 + A₄ * x + A₆‖ < 1 := by
+    refine (IsUltrametricDist.norm_add_le_max _ _).trans_lt (max_lt ?_ hA₆)
+    refine (IsUltrametricDist.norm_add_le_max _ _).trans_lt (max_lt ?_ ?_)
+    · rw [norm_pow]
+      exact pow_lt_one₀ (norm_nonneg _) hx three_ne_zero
+    · rw [norm_mul]
+      exact (mul_le_of_le_one_left (norm_nonneg _) hA₄).trans_lt hx
+  have hs : ‖x + y‖ = ‖y‖ := by
+    rw [IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm (hx.trans_le hy).ne,
+      max_eq_right (hx.trans_le hy).le]
+  have hl : ‖y ^ 2 + x * y‖ = ‖y‖ * ‖y‖ := by
+    rw [show y ^ 2 + x * y = y * (x + y) by ring, norm_mul, hs]
+  rw [h] at hl
+  nlinarith
 
 end TauCeti

@@ -44,6 +44,12 @@ finite étale scheme over `Spec K` has exactly as many points over `Spec K` as i
 Points over `Spec K` are written as morphisms `𝟙_ (Over (Spec K)) ⟶ Over.mk f` of the cartesian
 monoidal category `Over (Spec K)`, as for the points of group schemes over `Spec K`.
 
+Finally, let `A` be a local ring with residue field `κ` and `B` an `A`-algebra whose closed fibre
+`κ ⊗[A] B` is a finite étale `κ`-algebra. A field-valued point `Spec L ⟶ Spec A` of the closed
+point factors through `κ`, so the base change `L ⊗[A] B` is the base change of `κ ⊗[A] B` along
+`κ → L`; hence the base change of `Spec B ⟶ Spec A` to `Spec L` is finite étale of rank
+`dim_κ (κ ⊗[A] B)`.
+
 ## Main results
 
 * `AlgebraicGeometry.isOpenImmersion_iff_etale_and_universallyInjective`: the open immersions are
@@ -56,6 +62,10 @@ monoidal category `Over (Spec K)`, as for the points of group schemes over `Spec
   with at least `f.finrank s` points of `X` over `Spec K` is étale.
 * `AlgebraicGeometry.Scheme.Hom.natCard_eq_finrank_of_etale`: over a separably closed field `K`,
   a finite étale morphism `f : X ⟶ Spec K` has exactly `f.finrank s` points of `X` over `Spec K`.
+* `TauCeti.AlgebraicGeometry.etale_isFinite_finrank_of_isPullback_SpecMap`: for a local ring `A`
+  and an `A`-algebra `B` whose closed fibre is finite étale, the base change of
+  `Spec B ⟶ Spec A` along a field-valued point of the closed point is finite étale of the same
+  rank.
 -/
 
 public section
@@ -156,5 +166,47 @@ instance etale_respectsIso :
     CategoryTheory.MorphismProperty.RespectsIso @AlgebraicGeometry.Etale :=
   CategoryTheory.MorphismProperty.respectsIso_of_isStableUnderComposition
     fun _ _ _ (_ : CategoryTheory.IsIso _) ↦ inferInstance
+
+section ClosedFibre
+
+open CategoryTheory CategoryTheory.Limits _root_.AlgebraicGeometry IsLocalRing
+open scoped TensorProduct
+
+variable {A L B : Type u} [CommRing A] [IsLocalRing A] [Field L] [Algebra A L]
+  [IsLocalHom (algebraMap A L)] [CommRing B] [Algebra A B]
+
+/-- If the closed fibre `κ ⊗[A] B` of `A → B` is a finite étale `κ`-algebra, then the base change of
+`Spec B ⟶ Spec A` along a field-valued point of the closed point of `Spec A` is finite étale, of
+the same rank. -/
+theorem etale_isFinite_finrank_of_isPullback_SpecMap
+    [Algebra.Etale (ResidueField A) (ResidueField A ⊗[A] B)]
+    [Module.Finite (ResidueField A) (ResidueField A ⊗[A] B)] {P : Scheme.{u}}
+    {fst : P ⟶ Spec (.of B)} {snd : P ⟶ Spec (.of L)}
+    (h : IsPullback fst snd (Spec.map (CommRingCat.ofHom (algebraMap A B)))
+      (Spec.map (CommRingCat.ofHom (algebraMap A L)))) :
+    Etale snd ∧ IsFinite snd ∧ ∀ y, snd.finrank y =
+      Module.finrank (ResidueField A) (ResidueField A ⊗[A] B) := by
+  -- The base change `L ⊗[A] B` is the base change of the closed fibre along `κ → L`.
+  let := (ResidueField.lift (algebraMap A L)).toAlgebra
+  have : IsScalarTower A (ResidueField A) L := .of_algebraMap_eq fun a ↦ by
+    simp [RingHom.algebraMap_toAlgebra]
+  let e : L ⊗[ResidueField A] (ResidueField A ⊗[A] B) ≃ₐ[L] L ⊗[A] B :=
+    Algebra.TensorProduct.cancelBaseChange A (ResidueField A) L L B
+  have : Algebra.Etale L (L ⊗[A] B) := .of_equiv e
+  have : Module.Finite L (L ⊗[A] B) := .equiv e.toLinearEquiv
+  have hsnd := h.isoIsPullback_hom_snd _ _
+    (isPullback_SpecMap_of_isPushout _ _ _ _ (CommRingCat.isPushout_tensorProduct A L B)).flip
+  have : Etale (Spec.map (CommRingCat.ofHom (algebraMap L (L ⊗[A] B)))) :=
+    (HasRingHomProperty.Spec_iff (P := @Etale)).mpr (RingHom.etale_algebraMap.mpr inferInstance)
+  have : IsFinite (Spec.map (CommRingCat.ofHom (algebraMap L (L ⊗[A] B)))) :=
+    (IsFinite.SpecMap_iff _).mpr (RingHom.finite_algebraMap.mpr inferInstance)
+  refine ⟨hsnd ▸ inferInstance, hsnd ▸ inferInstance, fun y ↦ ?_⟩
+  rw [← hsnd, Scheme.Hom.finrank_comp_left_of_isIso]
+  refine (Scheme.Hom.finrank_SpecMap_algebraMap L (L ⊗[A] B) y).trans ?_
+  rw [Module.rankAtStalk_eq_finrank_of_free, ← e.toLinearEquiv.finrank_eq,
+    Module.finrank_baseChange]
+  exact Pi.natCast_apply _ _
+
+end ClosedFibre
 
 end TauCeti.AlgebraicGeometry

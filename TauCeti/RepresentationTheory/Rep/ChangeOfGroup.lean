@@ -37,6 +37,8 @@ and restriction along a monoid isomorphism is an equivalence of representation c
 * `Representation.IsIntertwiningMap.ofRes`: an intertwining map along an isomorphism
   `e : G ≃* H` read as a morphism `Res(e⁻¹)(M) ⟶ N` of `H`-representations.
 * `MulEquiv.resFunctorEquiv`: the equivalence induced by restriction along a monoid isomorphism.
+* `Rep.resInclusionHom`: the identity of the restriction of a representation to a subgroup `K`,
+  as a morphism into the restriction to `K` of its restriction to a larger subgroup `L`.
 
 ## Main results
 
@@ -234,6 +236,37 @@ theorem Rep.isIntertwiningMap_res_res_toRes_naturality {K : Type uK} {L : Type u
   simp
 
 end RepMorphisms
+
+section Subgroup
+
+open CategoryTheory
+
+variable {R : Type u} {G : Type uG} [Semiring R] [Group G]
+
+namespace Rep
+
+/-- The identity of the restriction of `A` to a subgroup `K`, viewed as a morphism into the
+restriction to `K` (along `Subgroup.inclusion h`) of the restriction of `A` to a larger subgroup
+`L`. The two representations of `K` have the same underlying module and action. -/
+def resInclusionHom (A : Rep.{uV} R G) {K L : Subgroup G} (h : K ≤ L) :
+    res K.subtype A ⟶ res (Subgroup.inclusion h) (res L.subtype A) :=
+  𝟙 (res K.subtype A)
+
+/-- `resInclusionHom A h` acts on vectors as the identity. The coercion is stated at
+`IntertwiningMap (A.ρ.comp K.subtype) ((A.ρ.comp L.subtype).comp (Subgroup.inclusion h))`, `simp`'s
+normal form of the coercion of a morphism between the two restrictions, so that `simp` can use
+this lemma. -/
+@[simp]
+theorem resInclusionHom_hom_apply (A : Rep.{uV} R G) {K L : Subgroup G} (h : K ≤ L) (v : A.V) :
+    @DFunLike.coe (Representation.IntertwiningMap (A.ρ.comp K.subtype)
+      ((A.ρ.comp L.subtype).comp (Subgroup.inclusion h))) _ _ _ (resInclusionHom A h).hom v =
+        v := by
+  simp only [resInclusionHom]
+  rfl
+
+end Rep
+
+end Subgroup
 
 section Tensor
 

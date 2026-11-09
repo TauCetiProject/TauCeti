@@ -33,6 +33,9 @@ module: `C a` acts coefficientwise on the left, while `X` sends `a Xⁿ` to
 * `TauCeti.OreExtension.eval₂`: evaluation along a coefficient homomorphism at a chosen element.
 * `TauCeti.OreExtension.lift` and `TauCeti.OreExtension.liftAlgHom`: the universal ring and
   `k`-algebra homomorphisms out of the Ore extension.
+* `TauCeti.OreExtension.mapAlgHom` and `TauCeti.OreExtension.mapAlgEquiv`: the algebra
+  homomorphisms and
+  equivalences induced by coefficient maps intertwining the twists and the skew derivations.
 
 ## Main statements
 
@@ -668,6 +671,81 @@ theorem algHom_ext {f g : OreExtension σ δ →ₐ[k] S}
   AlgHom.toRingHom_injective (ringHom_ext hC hX)
 
 end UniversalProperty
+
+section Map
+
+variable {R' : Type*} [Semiring R'] [Algebra k R'] {σ' : R' →ₐ[k] R'} {δ' : SigmaDerivation σ'}
+
+/-- An algebra map of coefficients intertwining the twists and the skew derivations induces a
+`k`-algebra map of Ore extensions, which is `f` on the coefficients and fixes the variable. -/
+def mapAlgHom (f : R →ₐ[k] R') (hσ : ∀ a, f (σ a) = σ' (f a)) (hδ : ∀ a, f (δ a) = δ' (f a)) :
+    OreExtension σ δ →ₐ[k] OreExtension σ' δ' :=
+  liftAlgHom (CAlgHom.comp f) X fun a ↦ by simp [X_mul_C, hσ, hδ]
+
+@[simp]
+theorem mapAlgHom_C (f : R →ₐ[k] R') (hσ : ∀ a, f (σ a) = σ' (f a))
+    (hδ : ∀ a, f (δ a) = δ' (f a)) (a : R) : mapAlgHom f hσ hδ (C a) = C (f a) :=
+  liftAlgHom_C _ _ _ a
+
+@[simp]
+theorem mapAlgHom_X (f : R →ₐ[k] R') (hσ : ∀ a, f (σ a) = σ' (f a))
+    (hδ : ∀ a, f (δ a) = δ' (f a)) :
+    mapAlgHom f hσ hδ X = X :=
+  liftAlgHom_X _ _ _
+
+@[simp]
+theorem mapAlgHom_monomial (f : R →ₐ[k] R') (hσ : ∀ a, f (σ a) = σ' (f a))
+    (hδ : ∀ a, f (δ a) = δ' (f a)) (n : ℕ) (a : R) :
+    mapAlgHom f hσ hδ (monomial n a) = monomial n (f a) := by
+  rw [← C_mul_X_pow_eq_monomial, map_mul, map_pow, mapAlgHom_C, mapAlgHom_X,
+    C_mul_X_pow_eq_monomial]
+
+/-- An algebra equivalence of coefficients intertwining the twists and the skew derivations
+induces a `k`-algebra equivalence of Ore extensions, which is `e` on the coefficients and fixes
+the variable. -/
+def mapAlgEquiv (e : R ≃ₐ[k] R') (hσ : ∀ a, e (σ a) = σ' (e a)) (hδ : ∀ a, e (δ a) = δ' (e a)) :
+    OreExtension σ δ ≃ₐ[k] OreExtension σ' δ' :=
+  have hσ' : ∀ b, e.symm (σ' b) = σ (e.symm b) :=
+    Function.Semiconj.inverse_left hσ e.symm_apply_apply e.apply_symm_apply
+  have hδ' : ∀ b, e.symm (δ' b) = δ (e.symm b) :=
+    Function.Semiconj.inverse_left hδ e.symm_apply_apply e.apply_symm_apply
+  AlgEquiv.ofAlgHom (mapAlgHom (e : R →ₐ[k] R') hσ hδ) (mapAlgHom (e.symm : R' →ₐ[k] R) hσ' hδ')
+    (algHom_ext
+      (fun b ↦ (congrArg (mapAlgHom (e : R →ₐ[k] R') hσ hδ) (mapAlgHom_C _ hσ' hδ' b)).trans
+        ((mapAlgHom_C _ hσ hδ _).trans (by simp)))
+      ((congrArg (mapAlgHom (e : R →ₐ[k] R') hσ hδ) (mapAlgHom_X _ hσ' hδ')).trans
+        (mapAlgHom_X _ hσ hδ)))
+    (algHom_ext
+      (fun a ↦ (congrArg (mapAlgHom (e.symm : R' →ₐ[k] R) hσ' hδ') (mapAlgHom_C _ hσ hδ a)).trans
+        ((mapAlgHom_C _ hσ' hδ' _).trans (by simp)))
+      ((congrArg (mapAlgHom (e.symm : R' →ₐ[k] R) hσ' hδ') (mapAlgHom_X _ hσ hδ)).trans
+        (mapAlgHom_X _ hσ' hδ')))
+
+@[simp]
+theorem mapAlgEquiv_C (e : R ≃ₐ[k] R') (hσ : ∀ a, e (σ a) = σ' (e a))
+    (hδ : ∀ a, e (δ a) = δ' (e a)) (a : R) : mapAlgEquiv e hσ hδ (C a) = C (e a) :=
+  mapAlgHom_C _ hσ hδ a
+
+@[simp]
+theorem mapAlgEquiv_X (e : R ≃ₐ[k] R') (hσ : ∀ a, e (σ a) = σ' (e a))
+    (hδ : ∀ a, e (δ a) = δ' (e a)) : mapAlgEquiv e hσ hδ X = X :=
+  mapAlgHom_X _ hσ hδ
+
+@[simp]
+theorem mapAlgEquiv_symm_C (e : R ≃ₐ[k] R') (hσ : ∀ a, e (σ a) = σ' (e a))
+    (hδ : ∀ a, e (δ a) = δ' (e a)) (b : R') : (mapAlgEquiv e hσ hδ).symm (C b) = C (e.symm b) :=
+  mapAlgHom_C (e.symm : R' →ₐ[k] R)
+    (Function.Semiconj.inverse_left hσ e.symm_apply_apply e.apply_symm_apply)
+    (Function.Semiconj.inverse_left hδ e.symm_apply_apply e.apply_symm_apply) b
+
+@[simp]
+theorem mapAlgEquiv_symm_X (e : R ≃ₐ[k] R') (hσ : ∀ a, e (σ a) = σ' (e a))
+    (hδ : ∀ a, e (δ a) = δ' (e a)) : (mapAlgEquiv e hσ hδ).symm X = X :=
+  mapAlgHom_X (e.symm : R' →ₐ[k] R)
+    (Function.Semiconj.inverse_left hσ e.symm_apply_apply e.apply_symm_apply)
+    (Function.Semiconj.inverse_left hδ e.symm_apply_apply e.apply_symm_apply)
+
+end Map
 
 section Ring
 

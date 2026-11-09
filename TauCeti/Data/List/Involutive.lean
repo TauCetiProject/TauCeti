@@ -29,16 +29,10 @@ theorem predicate_foldl_iff_of_involutive {I J : Type*} (p : I → Prop)
     (reflect : J → I → I) (hinvolutive : ∀ j, Function.Involutive (reflect j))
     (hreflect : ∀ a j, p a → p (reflect j a)) (l : List J) (a : I) :
     p (l.foldl (fun b j ↦ reflect j b) a) ↔ p a := by
-  constructor
-  · intro h
-    induction l generalizing a with
-    | nil => exact h
-    | cons j l ih =>
-        have hnext := ih (reflect j a) h
-        simpa only [hinvolutive j a] using hreflect (reflect j a) j hnext
-  · intro h
-    induction l generalizing a with
-    | nil => exact h
-    | cons j _ ih => exact ih _ (hreflect a j h)
+  induction l generalizing a with
+  | nil => rfl
+  | cons j l ih =>
+    rw [List.foldl_cons, ih]
+    exact ⟨fun h ↦ hinvolutive j a ▸ hreflect _ j h, hreflect a j⟩
 
 end TauCeti

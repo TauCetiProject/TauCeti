@@ -40,7 +40,8 @@ any finiteness or simplicity statement.
 
 ## Main declarations
 
-* `TauCeti.E7Minuscule.frobenius`: the `p ^ k`-power Frobenius on the carrier's points.
+* `TauCeti.E7Minuscule.frobenius` and `frobenius_def`: the `p ^ k`-power Frobenius on the
+  carrier's points, the functorial image of the iterated Frobenius of the value ring.
 * `TauCeti.E7Minuscule.coe_frobenius` and `coe_frobenius_apply`: its matrix and entrywise actions.
 * `TauCeti.E7Minuscule.frobenius_rootSubgroupPoints`: its action on every numbered simple-root
   subgroup, and `TauCeti.E7Minuscule.rootSubgroupPoints_mem_fixedSubgroup_frobenius`: the
@@ -80,6 +81,15 @@ For `p` prime, `0 < k` and `A` an algebraic closure of `ZMod p`, this is the `q`
 of the carrier's points for `q = p ^ k`. -/
 def frobenius : points A →* points A :=
   (pointsPresentation A).map (pointsPresentation A) (iterateFrobenius A p k)
+
+/-- The Frobenius endomorphism is the functorial image of the iterated Frobenius of the value
+ring. -/
+-- Not `@[simp]`: `coe_frobenius_apply` and the root-subgroup and torus equations are the normal
+-- forms, and unfolding to the functorial map would keep them from firing.
+theorem frobenius_def :
+    frobenius p k A =
+      (pointsPresentation A).map (pointsPresentation A) (iterateFrobenius A p k) :=
+  (rfl)
 
 /-- The Frobenius endomorphism of the type-`E₇` minuscule carrier acts by entrywise Frobenius.
 

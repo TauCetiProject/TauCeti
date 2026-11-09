@@ -190,9 +190,9 @@ theorem image_generalizedParetoMap_Ioi {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
             linarith)) hξ
       · exact generalizedParetoMap_log_div hs.ne' hξ hb
 
-/-- At nonzero scale and shape, the image of the whole line is the generalized Pareto domain
-where the affine support factor is positive. -/
-theorem image_generalizedParetoMap_univ {s ξ : ℝ} (hs : s ≠ 0) (hξ : ξ ≠ 0) :
+/-- At nonzero scale, the image of the whole line is the generalized Pareto domain where the
+affine support factor is positive. At shape zero both sides are the whole line. -/
+theorem image_generalizedParetoMap_univ {s : ℝ} (hs : s ≠ 0) (ξ : ℝ) :
     generalizedParetoMap s ξ '' univ = {x | 0 < 1 + ξ * x / s} := by
   ext x
   constructor
@@ -200,7 +200,10 @@ theorem image_generalizedParetoMap_univ {s ξ : ℝ} (hs : s ≠ 0) (hξ : ξ �
     rw [Set.mem_ofPred_eq, one_add_mul_generalizedParetoMap_div hs]
     exact Real.exp_pos _
   · intro hx
-    exact ⟨_, mem_univ _, generalizedParetoMap_log_div hs hξ hx⟩
+    by_cases hξ : ξ = 0
+    · subst ξ
+      exact ⟨x / s, mem_univ _, by rw [generalizedParetoMap_zero, mul_div_cancel₀ _ hs]⟩
+    · exact ⟨_, mem_univ _, generalizedParetoMap_log_div hs hξ hx⟩
 
 /-- The generalized Pareto measure with scale `s` and shape `ξ`.
 
@@ -264,9 +267,12 @@ theorem ae_pos_and_one_add_mul_div_pos_generalizedParetoMeasure (s ξ : ℝ) :
   rw [one_add_mul_generalizedParetoMap_div hs.ne']
   exact Real.exp_pos _
 
-/-- Every singleton has zero generalized Pareto measure at positive scale. -/
-theorem nullSingletonClass_generalizedParetoMeasure {s : ℝ} (hs : 0 < s) (ξ : ℝ) :
+/-- Every singleton has zero generalized Pareto measure, for every scale and shape. -/
+instance nullSingletonClass_generalizedParetoMeasure (s ξ : ℝ) :
     NullSingletonClass (generalizedParetoMeasure s ξ) := by
+  rcases le_or_gt s 0 with hs | hs
+  · rw [generalizedParetoMeasure_of_nonpos hs]
+    exact ⟨fun _ ↦ by simp⟩
   rw [generalizedParetoMeasure_of_pos hs]
   exact Measure.nullSingletonClass_map_of_injective
     (measurable_generalizedParetoMap_right s ξ) (strictMono_generalizedParetoMap hs ξ).injective

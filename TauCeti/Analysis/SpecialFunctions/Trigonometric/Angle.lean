@@ -23,10 +23,15 @@ invisible, and then read back as an equality of representatives.
 It also records how the representative `Real.Angle.toReal ∈ (-π, π]` behaves on differences of
 angles of the same sign, the difference counterpart of Mathlib's `toReal_add_of_sign_eq_neg_sign`.
 
+For a natural number `m ≠ 0`, if the cosine of `2 n π / m` is one then `m ∣ n`; this bounds the
+order of the rank-two rotations in the geometric representation of a Coxeter group.
+
 ## Main results
 
 * `Real.exists_int_eq_add_of_cos_sin_eq`: reals whose `cos` and `sin` at `2π` times them agree
   differ by an integer.
+* `TauCeti.dvd_of_cos_two_mul_pi_div_eq_one`: if `cos (2 n (π / m)) = 1` for a nonzero natural `m`,
+  then `m ∣ n`.
 * `Real.Angle.toIcoMod_eq_toIcoMod_iff_coe_eq`: two reals have the same `[0, 2π)` representative
   exactly when they are equal in `Real.Angle`.
 * `Real.Angle.toReal_sub_of_sign_eq`: for angles of the same sign, the subtracted one not `π`,
@@ -82,6 +87,22 @@ theorem _root_.Real.exists_int_eq_add_of_cos_sin_eq {a b : ℝ}
   refine ⟨n, ?_⟩
   have hpi : (2 * Real.pi) ≠ 0 := by positivity
   exact mul_left_cancel₀ hpi (by linarith)
+
+/-- If the cosine of `2 * n * (π / m)` is one, with `m` a nonzero natural number, then `m` divides
+`n`, so a rotation through the angle `2 π / m` whose `n`-th power is the identity forces `m ∣ n`. -/
+theorem dvd_of_cos_two_mul_pi_div_eq_one {m n : ℕ} (hm : m ≠ 0)
+    (h : Real.cos (2 * (n : ℝ) * (Real.pi / m)) = 1) : m ∣ n := by
+  obtain ⟨j, hj⟩ := (Real.cos_eq_one_iff _).1 h
+  have hm0 : (m : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hm
+  have hmul : (j : ℝ) * (2 * Real.pi) * (m : ℝ) = 2 * (n : ℝ) * Real.pi := by
+    rw [hj]
+    field_simp
+  have hcancel : (j : ℝ) * (m : ℝ) = (n : ℝ) :=
+    mul_right_cancel₀ (by positivity : (2 : ℝ) * Real.pi ≠ 0) (by linear_combination hmul)
+  have hint : (m : ℤ) ∣ (n : ℤ) := ⟨j, by
+    have : (n : ℤ) = j * (m : ℤ) := by exact_mod_cast hcancel.symm
+    linarith⟩
+  exact Int.ofNat_dvd.1 (by simpa using hint)
 
 /-- If the oriented angles `θ` and `α` add up to `β ∈ (0, π)`, where `|θ| = α`,
 then `β = 2α`: the other possibility `θ = -α` would force `β = 0`. -/
