@@ -44,6 +44,8 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
 * `TauCeti.Manifold.exists_isNormalDomain_ball_with_isCompact_riemannianExp_image_closedBall`:
   a smaller closed tangent ball inside a larger normal ball has compact exponential image.
 * `TauCeti.Manifold.IsNormalDomain.isOpen_image`: a normal neighbourhood is open.
+* `TauCeti.Manifold.IsNormalDomain.injective_mfderiv_riemannianExp`: the differential of the
+  exponential map is injective on a normal domain.
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_riemannianExp` and
   `TauCeti.Manifold.IsNormalDomain.riemannianExp_riemannianLog`: the two inverse identities.
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_self`: the logarithm vanishes at the base point.
@@ -126,6 +128,11 @@ theorem ball (h : IsNormalDomain I M p U) (hU : Metric.ball 0 r ⊆ U) (hr : 0 <
 theorem isOpen_image (h : IsNormalDomain I M p U) :
     IsOpen (riemannianExp I M p '' U) :=
   h.isLocalDiffeomorphOn.isOpen_image h.isOpen
+
+/-- The differential of the exponential map is injective at every vector of a normal domain. -/
+theorem injective_mfderiv_riemannianExp (h : IsNormalDomain I M p U) (hv : v ∈ U) :
+    Injective (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v) :=
+  ((h.isLocalDiffeomorphOn ⟨v, hv⟩).isInvertible_mfderiv (by simp)).injective
 
 /-- A vector of a normal domain can be shrunk towards the origin inside the normal domain. -/
 theorem smul_mem (h : IsNormalDomain I M p U) (hv : v ∈ U) (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) :

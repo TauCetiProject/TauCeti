@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Exponential.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Gauss.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 import Mathlib.Analysis.SpecialFunctions.Sqrt
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 
@@ -32,8 +30,8 @@ supplied by the differential of the exponential map. In geodesic polar coordinat
 * `TauCeti.Manifold.hasDerivWithinAt_polarJacobian_zero`: `j(0) = 0` and `j_r(0) = ‖w‖`, as a
   right derivative.
 * `TauCeti.Manifold.IsNormalDomain.contDiffOn_polarJacobian` and
-  `TauCeti.Manifold.IsNormalDomain.tendsto_deriv_polarJacobian_zero`: smoothness away from the
-  centre, and the right limit of the radial derivative at the centre.
+  `TauCeti.Manifold.tendsto_deriv_polarJacobian_zero`: smoothness away from the centre, and the
+  right limit of the radial derivative at the centre.
 
 All domains of the exponential map remain explicit; no curvature hypothesis is made.
 
@@ -82,7 +80,7 @@ omit [I.Boundaryless] [T2Space M] in
 
 omit [I.Boundaryless] [T2Space M] in
 /-- The polar Jacobian is nonnegative, including at conjugate vectors. -/
-theorem polarJacobian_nonneg (p : M) (v w : TangentSpace I p) (r : ℝ) :
+@[simp] theorem polarJacobian_nonneg (p : M) (v w : TangentSpace I p) (r : ℝ) :
     0 ≤ polarJacobian (I := I) p v w r := norm_nonneg _
 
 omit [I.Boundaryless] [T2Space M] in
@@ -90,25 +88,15 @@ omit [I.Boundaryless] [T2Space M] in
 theorem polarJacobian_eq_abs_mul (p : M) (v w : TangentSpace I p) (r : ℝ) :
     polarJacobian (I := I) p v w r =
       |r| * ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v) w‖ := by
+  -- `L` is the differential with domain written as `T_p M` rather than as the tangent space of
+  -- `T_p M` at `r • v`; only in this form do the linear-map rewrites match syntactically.
   let L : TangentSpace I p →L[ℝ] TangentSpace I (riemannianExp I M p (r • v)) :=
     mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v)
-  change ‖L (r • w)‖ = |r| * ‖L w‖
-  rw [L.map_smul, norm_smul, Real.norm_eq_abs]
+  have hL : ‖L (r • w)‖ = |r| * ‖L w‖ := by rw [L.map_smul, norm_smul, Real.norm_eq_abs]
+  rw [polarJacobian_eq_norm]
+  exact hL
 
-/-- A normal exponential differential has trivial kernel. -/
-theorem IsNormalDomain.injective_mfderiv_riemannianExp
-    {U : Set (TangentSpace I p)} (h : IsNormalDomain I M p U) {z : TangentSpace I p}
-    (hz : z ∈ U) :
-    Injective (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) z) := by
-  have hinv := h.mfderiv_riemannianLog_comp_mfderiv_riemannianExp hz
-  intro a b hab
-  have hleft (u : TangentSpace I p) :
-      mfderiv I 𝓘(ℝ, TangentSpace I p) (riemannianLog I M p U)
-        (riemannianExp I M p z)
-        (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) z u) = u :=
-    DFunLike.congr_fun hinv u
-  rw [← hleft a, ← hleft b, hab]
-
+omit [I.Boundaryless] [T2Space M] in
 /-- Positivity of the polar Jacobian before leaving a normal domain. -/
 theorem IsNormalDomain.polarJacobian_pos {U : Set (TangentSpace I p)}
     (h : IsNormalDomain I M p U) (hr : r ≠ 0) (hw : w ≠ 0) (hmem : r • v ∈ U) :
@@ -121,59 +109,71 @@ theorem IsNormalDomain.polarJacobian_pos {U : Set (TangentSpace I p)}
 
 /-- Unit radial vectors remain unit after applying the exponential differential. -/
 theorem inner_mfderiv_riemannianExp_unit_radial
-    (hr : r ≠ 0) (hmem : r • v ∈ expDomain I M p) (hv : ‖v‖ = 1) :
+    (hmem : r • v ∈ expDomain I M p) (hv : ‖v‖ = 1) :
     ⟪mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v) v,
       mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v) v⟫_ℝ = 1 := by
+  have hvinner : ⟪v, v⟫_ℝ = 1 := by rw [real_inner_self_eq_norm_sq, hv, one_pow]
+  rcases eq_or_ne r 0 with rfl | hr
+  · rw [zero_smul, mfderiv_riemannianExp_apply_zero, riemannianExp_zero, hvinner]
+  -- `L` is the differential with domain written as `T_p M`, as in `polarJacobian_eq_abs_mul`.
   let L : TangentSpace I p →L[ℝ] TangentSpace I (riemannianExp I M p (r • v)) :=
     mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v)
   have h : ⟪L (r • v), L (r • v)⟫_ℝ = ⟪r • v, r • v⟫_ℝ :=
     inner_mfderiv_riemannianExp_radial hmem
-  have hvinner : ⟪v, v⟫_ℝ = 1 := by rw [real_inner_self_eq_norm_sq, hv, one_pow]
   rw [L.map_smul, real_inner_smul_left, real_inner_smul_right,
     real_inner_smul_left, real_inner_smul_right, hvinner] at h
-  change ⟪L v, L v⟫_ℝ = 1
-  apply mul_left_cancel₀ hr
-  apply mul_left_cancel₀ hr
-  simpa only [mul_one] using h
+  have hL : ⟪L v, L v⟫_ℝ = 1 := by
+    apply mul_left_cancel₀ hr
+    apply mul_left_cancel₀ hr
+    simpa only [mul_one] using h
+  exact hL
 
 /-- Gauss orthogonality in unit radial and angular coordinates. -/
 theorem inner_mfderiv_riemannianExp_radial_angular
-    (hr : r ≠ 0) (hmem : r • v ∈ expDomain I M p) (hvw : ⟪v, w⟫_ℝ = 0) :
+    (hmem : r • v ∈ expDomain I M p) (hvw : ⟪v, w⟫_ℝ = 0) :
     ⟪mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v) v,
       mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v) (r • w)⟫_ℝ = 0 := by
+  -- `L` is the differential with domain written as `T_p M`, as in `polarJacobian_eq_abs_mul`.
   let L : TangentSpace I p →L[ℝ] TangentSpace I (riemannianExp I M p (r • v)) :=
     mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v)
-  have h : ⟪L (r • v), L (r • w)⟫_ℝ = ⟪r • v, r • w⟫_ℝ :=
-    inner_mfderiv_riemannianExp_radial hmem
-  rw [L.map_smul r v, real_inner_smul_left, real_inner_smul_left, real_inner_smul_right,
-    hvw, mul_zero, mul_zero] at h
-  exact (mul_eq_zero.mp h).resolve_left hr
+  have hL : ⟪L v, L (r • w)⟫_ℝ = 0 := by
+    rcases eq_or_ne r 0 with rfl | hr
+    · rw [zero_smul ℝ w, map_zero, inner_zero_right]
+    have h : ⟪L (r • v), L (r • w)⟫_ℝ = ⟪r • v, r • w⟫_ℝ :=
+      inner_mfderiv_riemannianExp_radial hmem
+    rw [L.map_smul r v, real_inner_smul_left, real_inner_smul_left, real_inner_smul_right,
+      hvw, mul_zero, mul_zero] at h
+    exact (mul_eq_zero.mp h).resolve_left hr
+  exact hL
 
 /-- The full polar metric, evaluated on two coordinate tangent vectors.
 The angular coefficient is the polar Jacobian. -/
 theorem inner_mfderiv_riemannianExp_polar
-    (hr : r ≠ 0) (hmem : r • v ∈ expDomain I M p)
+    (hmem : r • v ∈ expDomain I M p)
     (hv : ‖v‖ = 1) (hvw : ⟪v, w⟫_ℝ = 0) (a b c d : ℝ) :
     ⟪mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v)
         (a • v + b • (r • w)),
       mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v)
         (c • v + d • (r • w))⟫_ℝ =
       a * c + polarJacobian (I := I) p v w r ^ 2 * b * d := by
+  -- `L` is the differential with domain written as `T_p M`, as in `polarJacobian_eq_abs_mul`.
   let L : TangentSpace I p →L[ℝ] TangentSpace I (riemannianExp I M p (r • v)) :=
     mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v)
   have hrad : ⟪L v, L v⟫_ℝ = 1 :=
-    inner_mfderiv_riemannianExp_unit_radial hr hmem hv
+    inner_mfderiv_riemannianExp_unit_radial hmem hv
   have hcross : ⟪L v, L (r • w)⟫_ℝ = 0 :=
-    inner_mfderiv_riemannianExp_radial_angular hr hmem hvw
+    inner_mfderiv_riemannianExp_radial_angular hmem hvw
   have hcross' : ⟪L (r • w), L v⟫_ℝ = 0 := by rw [real_inner_comm, hcross]
-  change ⟪L (a • v + b • (r • w)), L (c • v + d • (r • w))⟫_ℝ = _
-  rw [L.map_add, L.map_add, L.map_smul a v, L.map_smul b (r • w),
-    L.map_smul c v, L.map_smul d (r • w)]
-  simp only [inner_add_left, inner_add_right,
-    real_inner_smul_left, real_inner_smul_right, hrad, hcross, hcross', mul_zero,
-    add_zero, zero_add, mul_one, real_inner_self_eq_norm_sq]
-  change c * a + d * (b * polarJacobian (I := I) p v w r ^ 2) = _
-  ring
+  have hang : ⟪L (r • w), L (r • w)⟫_ℝ = polarJacobian (I := I) p v w r ^ 2 :=
+    (real_inner_self_eq_norm_sq _).trans (congrArg (· ^ 2) (polarJacobian_eq_norm p v w r).symm)
+  have hL : ⟪L (a • v + b • (r • w)), L (c • v + d • (r • w))⟫_ℝ =
+      a * c + polarJacobian (I := I) p v w r ^ 2 * b * d := by
+    rw [L.map_add, L.map_add, L.map_smul a v, L.map_smul b (r • w),
+      L.map_smul c v, L.map_smul d (r • w)]
+    simp only [inner_add_left, inner_add_right, real_inner_smul_left, real_inner_smul_right,
+      hrad, hcross, hcross', hang, mul_zero, add_zero, zero_add, mul_one]
+    ring
+  exact hL
 
 /-- The unscaled angular exponential coefficient is continuous at the centre. The norm
 here is the varying Riemannian tangent norm, rather than a fixed model-space norm. -/
@@ -227,12 +227,14 @@ theorem contDiffOn_inner_angular_riemannianExp (p : M) (w : TangentSpace I p) :
   (contMDiffOn_riemannianExp p).contDiffOn_inner_mfderiv (by simp)
     (isOpen_expDomain p) w w
 
-/-- The unscaled angular length coefficient is smooth on any normal domain when the
-initial angular vector is nonzero. -/
+/-- The unscaled angular length coefficient is smooth on any normal domain. -/
 theorem IsNormalDomain.contDiffOn_norm_angular_riemannianExp
-    {U : Set (TangentSpace I p)} (h : IsNormalDomain I M p U) (hw : w ≠ 0) :
+    {U : Set (TangentSpace I p)} (h : IsNormalDomain I M p U) :
     ContDiffOn ℝ ∞ (fun z : TangentSpace I p ↦
       ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) z w‖) U := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · exact (contDiffOn_const (c := (0 : ℝ))).congr fun z _ ↦
+      (congrArg norm (map_zero _)).trans norm_zero
   have hinner := (contDiffOn_inner_angular_riemannianExp (I := I) p w).mono
     h.subset_expDomain
   have hsqrt := hinner.sqrt fun z hz ↦ by
@@ -243,12 +245,12 @@ theorem IsNormalDomain.contDiffOn_norm_angular_riemannianExp
 
 /-- Smoothness of the polar Jacobian away from the centre in a normal domain. -/
 theorem IsNormalDomain.contDiffOn_polarJacobian
-    {U : Set (TangentSpace I p)} (h : IsNormalDomain I M p U) (hw : w ≠ 0) :
+    {U : Set (TangentSpace I p)} (h : IsNormalDomain I M p U) :
     ContDiffOn ℝ ∞ (polarJacobian (I := I) p v w) {r : ℝ | 0 < r ∧ r • v ∈ U} := by
   have hq : ContDiffOn ℝ ∞ (fun r : ℝ ↦
       ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v) w‖)
       {r : ℝ | 0 < r ∧ r • v ∈ U} :=
-    (h.contDiffOn_norm_angular_riemannianExp hw).comp
+    (h.contDiffOn_norm_angular_riemannianExp (w := w)).comp
       (contDiff_id.smul contDiff_const).contDiffOn (fun _ hr ↦ hr.2)
   refine (contDiffOn_id.mul hq).congr ?_
   intro r hr
@@ -256,28 +258,26 @@ theorem IsNormalDomain.contDiffOn_polarJacobian
 
 /-- The radial derivative of the polar Jacobian tends to the angular initial speed from
 the right, even though the polar Jacobian need not be differentiable at the centre. -/
-theorem IsNormalDomain.tendsto_deriv_polarJacobian_zero
-    {U : Set (TangentSpace I p)} (h : IsNormalDomain I M p U) (hw : w ≠ 0) :
+theorem tendsto_deriv_polarJacobian_zero (p : M) (v w : TangentSpace I p) :
     Tendsto (deriv (polarJacobian (I := I) p v w)) (𝓝[>] 0) (𝓝 ‖w‖) := by
-  let q (r : ℝ) :=
-    ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v) w‖
-  have hq : ContDiffAt ℝ ∞ q 0 := by
-    have hq₀ := (h.contDiffOn_norm_angular_riemannianExp hw).contDiffAt
-      (h.isOpen.mem_nhds h.zero_mem)
-    have hq₀' : ContDiffAt ℝ ∞ (fun z : TangentSpace I p ↦
-        ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) z w‖) ((0 : ℝ) • v) := by
-      simpa only [zero_smul] using hq₀
-    exact hq₀'.comp (f := fun r : ℝ ↦ r • v) 0
+  obtain ⟨R, -, h⟩ := exists_isNormalDomain_ball (I := I) p
+  have h0 : (0 : ℝ) • v ∈ Metric.ball (0 : TangentSpace I p) R := by
+    rw [zero_smul]
+    exact h.zero_mem
+  have hq : ContDiffAt ℝ ∞ (fun r : ℝ ↦
+      ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v) w‖) 0 :=
+    ((h.contDiffOn_norm_angular_riemannianExp (w := w)).contDiffAt
+      (h.isOpen.mem_nhds h0)).comp (f := fun r : ℝ ↦ r • v) 0
       (contDiff_id.smul contDiff_const).contDiffAt
-  have hprod : ContDiffAt ℝ ∞ (fun r ↦ r * q r) 0 := contDiffAt_id.mul hq
+  have hprod : ContDiffAt ℝ ∞ (fun r : ℝ ↦
+      r * ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v) w‖) 0 :=
+    contDiffAt_id.mul hq
+  have hd : HasDerivAt (fun r : ℝ ↦
+      r * ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • v) w‖) _ 0 :=
+    (hasDerivAt_id' 0).mul (hq.differentiableAt (by simp)).hasDerivAt
   have hlim := (hprod.derivWithin (m := 0) (by simp)).continuousAt.tendsto
-  have hderiv : deriv (fun r ↦ r * q r) 0 = ‖w‖ := by
-    have hd := ((hasDerivAt_id' 0).mul (hq.differentiableAt (by simp)).hasDerivAt).deriv
-    change deriv (fun r ↦ r * q r) 0 = _ at hd
-    rw [hd, one_mul, zero_mul, add_zero]
-    change ‖mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) ((0 : ℝ) • v) w‖ = _
-    rw [zero_smul, mfderiv_riemannianExp_apply_zero, riemannianExp_zero]
-  rw [hderiv] at hlim
+  rw [hd.deriv, one_mul, zero_mul, add_zero, zero_smul, mfderiv_riemannianExp_apply_zero,
+    riemannianExp_zero] at hlim
   apply (hlim.mono_left nhdsWithin_le_nhds).congr'
   filter_upwards [self_mem_nhdsWithin] with r hr
   apply Filter.EventuallyEq.deriv_eq
