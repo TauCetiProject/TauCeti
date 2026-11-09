@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
-public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import Mathlib.FieldTheory.Normal.Defs
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
