@@ -42,6 +42,8 @@ for a `C¹` function, and needs no integrability of the function itself.
 * `MeasureTheory.Measure.translateLp_zero`, `MeasureTheory.Measure.translateLp_symm`,
   `MeasureTheory.Measure.translateLp_add`: translation is an action of the additive group.
 * `MeasureTheory.Measure.continuous_translateLp`: strong continuity of `translateLp` for `p < ∞`.
+* `MeasureTheory.Measure.tendsto_translateLp_of_tendsto`: translates of convergent `Lᵖ` classes
+  by vanishing translations converge to the same limit.
 * `MeasureTheory.Measure.enorm_translateLp_sub`: identifies the norm of an `Lᵖ` translation
   increment with its pointwise `eLpNorm`.
 * `MeasureTheory.MemLp.comp_add_right_restrict_of_mapsTo`: translation preserves `Lᵖ` on a smaller
@@ -163,6 +165,24 @@ theorem continuous_translateLp [TopologicalSpace E] [ContinuousAdd E] [BorelSpac
     Continuous fun h : E ↦ translateLp mu p h f := by
   simpa only [translateLp, Lp.compMeasurePreservingₗᵢEquiv_apply] using
     Lp.continuous_compMeasurePreserving_add_right hp f
+
+/-- Translations by vectors tending to zero of `Lᵖ` classes converging to `g` converge to `g`,
+when `p < ∞`. -/
+theorem tendsto_translateLp_of_tendsto [TopologicalSpace E] [ContinuousAdd E] [BorelSpace E]
+    [R1Space E] [mu.InnerRegularCompactLTTop] [IsLocallyFiniteMeasure mu] (hp : p ≠ ∞)
+    {I : Type*} {l : Filter I} {h : I → E} (hh : Filter.Tendsto h l (nhds 0))
+    {A : I → Lp F p mu} {g : Lp F p mu} (hA : Filter.Tendsto A l (nhds g)) :
+    Filter.Tendsto (fun i ↦ translateLp mu p (h i) (A i)) l (nhds g) := by
+  have htr : Filter.Tendsto (fun i ↦ translateLp mu p (h i) g) l (nhds g) := by
+    simpa only [translateLp_zero, Function.comp_def] using
+      ((continuous_translateLp hp g).tendsto 0).comp hh
+  rw [tendsto_iff_dist_tendsto_zero] at hA htr ⊢
+  refine squeeze_zero (fun _ ↦ dist_nonneg) (fun i ↦ ?_) (by simpa using hA.add htr)
+  calc dist (translateLp mu p (h i) (A i)) g
+      ≤ dist (translateLp mu p (h i) (A i)) (translateLp mu p (h i) g) +
+        dist (translateLp mu p (h i) g) g := dist_triangle _ _ _
+    _ = dist (A i) g + dist (translateLp mu p (h i) g) g := by
+      rw [LinearIsometryEquiv.dist_map]
 
 /-- The `Lᵖ` extended norm of a translation increment is its pointwise `eLpNorm`. -/
 theorem enorm_translateLp_sub (h : E) (f : Lp F p mu) :
