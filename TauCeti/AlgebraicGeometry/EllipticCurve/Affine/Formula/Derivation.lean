@@ -27,7 +27,7 @@ a derivation on `K` over `R`. Writing `W_X` and `W_Y` for the partial derivative
 * `WeierstrassCurve.Affine.Equation.derivation_Y_eq_smul_derivation_X`: over a field, at a point
   where `W_Y` does not vanish, `D y = (-W_X(x, y) / W_Y(x, y)) • D x`.
 * `WeierstrassCurve.Affine.derivation_slope_of_X_ne` and
-  `WeierstrassCurve.Affine.derivation_slope_self_of_Y_ne`: the chain rule for the chord and the
+  `WeierstrassCurve.Affine.derivation_slope_self`: the chain rule for the chord and the
   tangent slope.
 * `WeierstrassCurve.Affine.derivation_addX_slope_of_right_constant`: when the second point has
   constant coordinates for the derivation, translation preserves `dx / W_Y` without requiring
@@ -214,16 +214,22 @@ theorem derivation_slope_of_X_ne [DecidableEq K] {x₁ x₂ y₁ y₂ : K} (hx :
       (x₁ - x₂)⁻¹ ^ 2 • ((x₁ - x₂) • (D y₁ - D y₂) - (y₁ - y₂) • (D x₁ - D x₂)) := by
   rw [slope_of_X_ne hx, D.leibniz_div, map_sub, map_sub]
 
-/-- **The chain rule for the tangent slope** `-W_X / W_Y` at a point which is not its own
-negative. -/
-theorem derivation_slope_self_of_Y_ne [DecidableEq K] {x y : K}
-    (hy : y ≠ (W⁄K).toAffine.negY x y) :
+/-- **The chain rule for the tangent slope** `-W_X / W_Y`. At a point which is its own negative
+both sides vanish. -/
+theorem derivation_slope_self [DecidableEq K] (x y : K) :
     D ((W⁄K).toAffine.slope x x y y) =
       ((W⁄K).toAffine.polynomialY.evalEval x y)⁻¹ ^ 2 •
         ((W⁄K).toAffine.polynomialY.evalEval x y • D (-(W⁄K).toAffine.polynomialX.evalEval x y) -
           (-(W⁄K).toAffine.polynomialX.evalEval x y) •
             D ((W⁄K).toAffine.polynomialY.evalEval x y)) := by
-  rw [slope_of_Y_ne_eq_evalEval rfl hy, D.leibniz_div]
+  by_cases hy : y = (W⁄K).toAffine.negY x y
+  · have h0 : (W⁄K).toAffine.polynomialY.evalEval x y = 0 := by
+      rw [Affine.evalEval_polynomialY]
+      rw [Affine.negY] at hy
+      linear_combination hy
+    rw [slope_of_Y_eq rfl hy, map_zero, h0]
+    simp
+  · rw [slope_of_Y_ne_eq_evalEval rfl hy, D.leibniz_div]
 
 private theorem derivation_addX_slope_of_X_ne [DecidableEq K] {x₁ x₂ y₁ y₂ : K}
     (h₁ : (W⁄K).toAffine.Equation x₁ y₁) (h₂ : (W⁄K).toAffine.Equation x₂ y₂) (hx : x₁ ≠ x₂)
@@ -270,7 +276,7 @@ private theorem derivation_addX_slope_of_Y_ne [DecidableEq K] {x y : K}
   have c := (W⁄K).toAffine.tangent_coeff (x := x) (y := y)
     (N := -(W⁄K).toAffine.polynomialX.evalEval x y) (u := (W⁄K).toAffine.polynomialY.evalEval x y)
     (by rw [evalEval_polynomialX]; ring) (evalEval_polynomialY x y) hu
-  rw [derivation_addX W D, derivation_slope_self_of_Y_ne D hy, map_neg,
+  rw [derivation_addX W D, derivation_slope_self D x y, map_neg,
     derivation_evalEval_polynomialX, derivation_evalEval_polynomialY,
     h.derivation_Y_eq_smul_derivation_X D hu, slope_of_Y_ne_eq_evalEval rfl hy,
     evalEval_polynomialY ((W⁄K).toAffine.addX _ _ _)]
