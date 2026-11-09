@@ -313,4 +313,31 @@ theorem im_schwarzChristoffelBoundary_first_lt (a e : Fin (n + 1) → ℝ)
       rw [← heq] at hlt
       exact hle.not_gt hlt
 
+/-- The bounded open arc lies strictly above the line through the vertex at infinity. -/
+theorem im_schwarzChristoffelVertexAtInfinity_lt_im_boundary
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
+    (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) {x : ℝ}
+    (hx : x ∈ Ioo (a 0) (a (Fin.last n))) :
+    (schwarzChristoffelVertexAtInfinity a e z₀).im < (schwarzChristoffelBoundary a e z₀ x).im := by
+  rw [(Complex.lt_def.mp (schwarzChristoffelVertexAtInfinity_lt_boundary_of_le_first a e z₀ ha
+    (he 0).1 hsum le_rfl)).2]
+  exact im_schwarzChristoffelBoundary_first_lt a e z₀ ha he hsum hx
+
+/-- The boundary never meets the vertex at infinity at a finite parameter. -/
+theorem schwarzChristoffelBoundary_ne_vertexAtInfinity
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
+    (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) (x : ℝ) :
+    schwarzChristoffelBoundary a e z₀ x ≠ schwarzChristoffelVertexAtInfinity a e z₀ := by
+  by_cases hx₀ : x ≤ a 0
+  · exact (schwarzChristoffelVertexAtInfinity_lt_boundary_of_le_first a e z₀ ha
+      (he 0).1 hsum hx₀).ne'
+  by_cases hxn : a (Fin.last n) ≤ x
+  · exact (schwarzChristoffelBoundary_lt_vertexAtInfinity_of_last_le a e z₀ ha
+      (he (Fin.last n)).1 (by rw [hsum]; norm_num) hxn).ne
+  · intro h
+    have hi := im_schwarzChristoffelVertexAtInfinity_lt_im_boundary a e z₀ ha he hsum
+      ⟨lt_of_not_ge hx₀, lt_of_not_ge hxn⟩
+    rw [h] at hi
+    exact hi.false
+
 end TauCeti
