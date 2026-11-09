@@ -46,20 +46,34 @@ private abbrev preArrow (a : CostructuredArrow G d)
     CostructuredArrow (pre C G) ⟨d, x⟩ :=
   CostructuredArrow.mk (Y := (⟨a.left, b.left⟩ : Grothendieck (G ⋙ C))) (Hom.mk a.hom b.hom)
 
+/-- The equation for assembled costructured arrows reduces to its base and fiber equations. -/
+private lemma preArrow_hom_ext {a a' : CostructuredArrow G d}
+    {b : CostructuredArrow (C.map a.hom).toFunctor x}
+    {b' : CostructuredArrow (C.map a'.hom).toFunctor x}
+    (u : a.left ⟶ a'.left)
+    (φ : (C.map (G.map u)).toFunctor.obj b.left ⟶ b'.left)
+    (h : G.map u ≫ a'.hom = a.hom)
+    (w : eqToHom (by rw [← Cat.Hom.comp_obj, ← Functor.map_comp, h]) ≫
+      (C.map a'.hom).toFunctor.map φ ≫ b'.hom = b.hom) :
+    (pre C G).map (Hom.mk u φ : (preArrow a b).left ⟶ (preArrow a' b').left) ≫
+      (preArrow a' b').hom = (preArrow a b).hom := by
+  fapply Grothendieck.ext
+  · exact h
+  · simp only [CostructuredArrow.mk_left, pre_obj_base, CostructuredArrow.mk_hom_eq_self,
+      pre_obj_fiber, comp_base, pre_map_base, comp_fiber, pre_map_fiber]
+    -- `pre` preserves fibers definitionally: `(G ⋙ C).obj a.left = C.obj (G.obj a.left)`
+    -- and `(G ⋙ C).map u = C.map (G.map u)`. The generated `Grothendieck.ext`
+    -- transport still contains these wrappers; `erw` unfolds them when composing the casts.
+    erw [eqToHom_trans_assoc]
+    exact w
+
 /-- Fiber components over a fixed base component map to costructured arrows on `pre C G`. -/
 private def preFiberPrefunctor (a : CostructuredArrow G d) :
     CostructuredArrow (C.map a.hom).toFunctor x ⥤q CostructuredArrow (pre C G) ⟨d, x⟩ where
   obj b := preArrow a b
   map {b b'} g := CostructuredArrow.homMk (Hom.mk (𝟙 a.left) (eqToHom (by simp) ≫ g.left)) (by
-    fapply Grothendieck.ext
-    · simp
-    · simp only [CostructuredArrow.mk_left, pre_obj_base, CostructuredArrow.mk_hom_eq_self,
-        pre_obj_fiber, Functor.comp_obj, Functor.comp_map, comp_base, pre_map_base, comp_fiber,
-        pre_map_fiber, Functor.map_comp, Category.assoc, CommaMorphism.w, Functor.const_obj_obj,
-        CostructuredArrow.right_eq_id, Functor.const_obj_map, Category.comp_id, eqToHom_map]
-      -- The fiber categories agree after unfolding the Grothendieck composition.
-      erw [eqToHom_trans_assoc, eqToHom_trans_assoc]
-      simp)
+    apply preArrow_hom_ext _ _ (by simp)
+    simp [Functor.map_comp, eqToHom_map, eqToHom_trans_assoc])
 
 /-- Transport of a fiber component along an arrow of base components. -/
 private abbrev preTransport {a₁ a₂ : CostructuredArrow G d} (h : a₁ ⟶ a₂)
@@ -73,14 +87,8 @@ private def toPreTransport {a₁ a₂ : CostructuredArrow G d} (h : a₁ ⟶ a�
     (b : CostructuredArrow (C.map a₁.hom).toFunctor x) :
     preArrow a₁ b ⟶ preArrow a₂ (preTransport h b) :=
   CostructuredArrow.homMk (Hom.mk h.left (𝟙 _)) (by
-    fapply Grothendieck.ext
-    · exact CostructuredArrow.w h
-    · simp only [CostructuredArrow.mk_left, pre_obj_base, CostructuredArrow.mk_hom_eq_self,
-        pre_obj_fiber, Functor.comp_obj, Functor.comp_map, comp_base, pre_map_base, comp_fiber,
-        pre_map_fiber, Functor.map_id, Category.id_comp]
-      -- The fiber categories agree after unfolding the Grothendieck composition.
-      erw [eqToHom_trans_assoc, eqToHom_trans_assoc]
-      simp)
+    apply preArrow_hom_ext _ _ (CostructuredArrow.w h)
+    simp [eqToHom_trans_assoc])
 
 end InitialPre
 
