@@ -59,6 +59,7 @@ namespace TauCeti.Huber
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
   {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] {φ : A →+* B}
 
+omit [IsTopologicalRing B] in
 /-- **A noetherian ring of definition ascends along a homomorphism topologically of finite type**
 (Huber, Corollary 3.4(iii); Wedhorn, Proposition 6.35). If `A` has a noetherian ring of definition
 and `φ : A → B` is topologically of finite type, then `B` has a noetherian ring of definition. -/
