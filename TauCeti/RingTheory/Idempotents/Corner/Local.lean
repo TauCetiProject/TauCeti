@@ -24,8 +24,9 @@ since units lift modulo the radical (`TauCeti.Ring.isLocalHom_mk_jacobson`).
 
 ## Main results
 
-* `IsIdempotentElem.isLocalRing_corner_of_isLocalRing_end`: the corner is local when the
-  endomorphism ring of `Ae` is.
+* `IsIdempotentElem.isLocalRing_corner_of_isLocalRing_end` and
+  `IsIdempotentElem.isLocalRing_end_of_isLocalRing_corner`: the corner `eAe` is local exactly when
+  the endomorphism ring of `Ae` is.
 * `TauCeti.IsPrimitiveIdempotent.isLocalRing_corner`: a primitive idempotent of an Artinian ring
   has a local corner.
 * `IsIdempotentElem.isLocalRing_corner_of_isPrimitiveIdempotent_mk`: an idempotent that is
@@ -45,6 +46,12 @@ theorem isLocalRing_corner_of_isLocalRing_end (he : IsIdempotentElem e)
   have : Nontrivial he.Corner := he.endSpanSingletonRingEquiv.injective.nontrivial
   IsLocalRing.of_surjective' he.endSpanSingletonRingEquiv.toRingHom
     he.endSpanSingletonRingEquiv.surjective
+
+/-- The endomorphism ring of the left ideal `Ae` is local when the corner `eAe` is. -/
+theorem isLocalRing_end_of_isLocalRing_corner (he : IsIdempotentElem e) [IsLocalRing he.Corner] :
+    IsLocalRing (Module.End A (Ideal.span {e} : Ideal A)) :=
+  have := he.endSpanSingletonRingEquiv.symm.isLocalRing
+  (RingEquiv.opOp (Module.End A (Ideal.span {e} : Ideal A))).symm.isLocalRing
 
 end IsIdempotentElem
 
