@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.Logarithm.AdicPoint
-import TauCeti.RingTheory.FormalGroup.Hom.Additive
 import TauCeti.RingTheory.Ideal.IsPrincipal
 
 /-!
@@ -38,33 +37,6 @@ variable {R : Type*} [CommRing R] [HasUniqueDiv R]
   (hs : ∀ n : ℕ, (n + 1 : R) ∣ s ^ n)
   (ht : ∀ n : ℕ, (n + 1 : R) ∣ t ^ n)
 
-/-- A homomorphism from a rescaled formal group to the additive law is its linear coefficient
-times the integral logarithm. -/
-theorem toPowerSeries_eq_coeff_one_smul_rescaleLog (f : FormalGroupHom (F.rescale s) 𝔾ₐ) :
-    f.toPowerSeries = PowerSeries.coeff 1 f.toPowerSeries • F.rescaleLog hs := by
-  let e := F.rescaleLogIso hs
-  have hinv : PowerSeries.coeff 1 e.invHom.toPowerSeries = 1 := by
-    simpa only [FormalGroupIso.symm_toHom] using
-      (FormalGroupIso.IsStrict.coeff_one (f := e.symm))
-  have h := (f.comp e.invHom).toPowerSeries_eq_coeff_one_smul_X
-  rw [coeff_one_comp, hinv, mul_one] at h
-  have heq : (f.comp e.invHom).comp e.toHom = f := by
-    rw [comp_assoc, e.invHom_comp_toHom, comp_id]
-  have := congrArg toPowerSeries heq
-  rw [comp_toPowerSeries, h, PowerSeries.subst_smul e.toHom.hasSubst,
-    PowerSeries.subst_X e.toHom.hasSubst] at this
-  simpa only [e, rescaleLogIso_toHom, rescaleLogHom_toPowerSeries] using this.symm
-
-/-- Integral logarithms are natural along homomorphisms, including when the tangent map is
-not a unit: `log_G(f(T)) = f'(0) log_F(T)`. -/
-theorem subst_rescaleLog (f : FormalGroupHom (F.rescale s) (G.rescale t)) :
-    PowerSeries.subst f.toPowerSeries (G.rescaleLog ht) =
-      PowerSeries.coeff 1 f.toPowerSeries • F.rescaleLog hs := by
-  have h := ((G.rescaleLogHom ht).comp f).toPowerSeries_eq_coeff_one_smul_rescaleLog hs
-  rw [coeff_one_comp, rescaleLogHom_toPowerSeries, coeff_one_rescaleLog, one_mul,
-    comp_toPowerSeries, rescaleLogHom_toPowerSeries] at h
-  exact h
-
 section Adic
 
 variable [UniformSpace R] [IsUniformAddGroup R] [CompleteSpace R] [T2Space R]
@@ -88,15 +60,9 @@ theorem rescaleLogPointEquiv_toIdealPointHom
   have heq := h.unique (by
     simpa only [PowerSeries.coeff_smul, rescaleLogHom_toPowerSeries, smul_eq_mul,
       mul_assoc] using hmul)
-  have hF := hlog.unique (by
-    simpa only [rescaleLogHom_toPowerSeries, smul_eq_mul] using
-      (PowerSeries.hasSum_aeval (R := R) x.val.hasEval (F.rescaleLog hs)))
-  have hG := ((G.rescaleLogHom ht).hasSum_val_toTopNilpotentPointHom
-    (f.toTopNilpotentPointHom R x.val)).unique (by
-      simpa only [rescaleLogHom_toPowerSeries, smul_eq_mul] using
-        (PowerSeries.hasSum_aeval (R := R)
-          (f.toTopNilpotentPointHom R x.val).hasEval (G.rescaleLog ht)))
-  rw [toTopNilpotentPointHom_comp, AddMonoidHom.comp_apply, hG, hF] at heq
+  rw [toTopNilpotentPointHom_comp, AddMonoidHom.comp_apply,
+    val_rescaleLogHom_toTopNilpotentPointHom,
+    val_rescaleLogHom_toTopNilpotentPointHom] at heq
   simpa only [coe_rescaleLogPointEquiv, coe_toIdealPointHom,
     Submodule.coe_smul, smul_eq_mul] using heq
 
@@ -131,12 +97,13 @@ theorem index_range_toIdealPointHom
     ext z
     rw [AddSubgroup.mem_map_equiv, f.mem_range_toIdealPointHom_iff hs ht I,
       AddEquiv.apply_symm_apply]
-    rfl
+    simp only [AddMonoidHom.mem_range, DistribSMul.toAddMonoidHom_apply]
   rw [← hr, AddSubgroup.index_map_of_bijective (G.rescaleLogPointEquiv ht I).bijective]
 
 /-- On a nonzero principal adic ideal in a domain, the cokernel index of a homomorphism
 between logarithmically linearised formal groups is the order of the ring modulo its tangent
-coefficient. In particular this computes the small-neighbourhood index over a complete DVR. -/
+coefficient. In particular this applies over a complete DVR without additive torsion, for
+formal groups rescaled so that `(n + 1) ∣ sⁿ` and `(n + 1) ∣ tⁿ` for every `n`. -/
 theorem index_range_toIdealPointHom_eq_natCard_quotient [IsDomain R] [I.IsPrincipal]
     (f : FormalGroupHom (F.rescale s) (G.rescale t)) (hI : I ≠ ⊥) :
     (f.toIdealPointHom I).range.index =
