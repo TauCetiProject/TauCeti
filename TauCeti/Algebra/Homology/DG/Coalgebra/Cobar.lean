@@ -43,6 +43,8 @@ and the remaining term is `s⁻¹ (d (d c)) = 0`.
 ## Main results
 
 * `TauCeti.cobarDifferential_ι`: the differential on generators.
+* `TauCeti.cobarDifferential_algebraMap` and `TauCeti.cobarDifferential_one`: the differential
+  annihilates scalars.
 * `TauCeti.cobarDifferential_mul`: the graded Leibniz rule.
 * `TauCeti.IsNonCounitalDGCoalgebra.cobarDifferential_cobarDifferential`: the differential squares
   to zero.
@@ -109,11 +111,23 @@ private theorem cobarDifferential_ι_eq (c : C) :
 
 /-- The cobar differential on a generator `s⁻¹ c`: the desuspended coproduct, with the Koszul twist
 of the first tensor factor, minus the desuspended differential. -/
+@[simp]
 theorem cobarDifferential_ι (c : C) :
     cobarDifferential G Δ d (ι R c) =
       LinearMap.mul' R (TensorAlgebra R C)
           (TensorProduct.map (ι R ∘ₗ G.koszulTwist 1) (ι R) (Δ c)) - ι R (d c) := by
   rw [cobarDifferential_ι_eq, cobarQuadratic, LinearMap.comp_apply]
+
+/-- The cobar differential annihilates the image of the ground ring. -/
+@[simp]
+theorem cobarDifferential_algebraMap (r : R) :
+    cobarDifferential G Δ d (algebraMap R (TensorAlgebra R C) r) = 0 :=
+  tensorAlgebraDerivation_algebraMap _ _ r
+
+/-- The cobar differential annihilates the unit. -/
+@[simp]
+theorem cobarDifferential_one : cobarDifferential G Δ d 1 = 0 :=
+  tensorAlgebraDerivation_one _ _
 
 /-- The **graded Leibniz rule** of the cobar differential, for a left factor of degree `p` in the
 cobar grading. -/

@@ -42,8 +42,6 @@ module, is `TauCeti.PathAlgebra.liftDerivation`.
 
 ## Main results
 
-* `TauCeti.koszulTwist_tensorAlgebraPiece_ι`: the Koszul twist of the tensor algebra twists each
-  generator.
 * `TauCeti.tensorAlgebraDerivation_ι` and `TauCeti.tensorAlgebraDerivation_mul`: the derivation
   extends `f` and satisfies the Koszul-signed Leibniz rule; `TauCeti.tensorAlgebraDerivation_unique`
   says that it is the only such map.
@@ -69,20 +67,6 @@ variable {R : Type uR} {M : Type uM} [CommRing R] [AddCommGroup M] [Module R M]
   (G : InternalGrading R M)
 
 open TensorAlgebra InternalGrading
-
-/-- The Koszul twist of the tensor algebra, graded by input degree, twists each generator by the
-Koszul twist of the grading of the generators.  This is the value on generators of the Koszul
-automorphism `koszulTwistAlgEquiv (tensorAlgebraPiece G) n`. -/
-@[simp]
-theorem koszulTwist_tensorAlgebraPiece_ι (n : ℤ) (x : M) :
-    (ofDecomposition (tensorAlgebraPiece G)).koszulTwist n (ι R x) = ι R (G.koszulTwist n x) := by
-  have h : (ofDecomposition (tensorAlgebraPiece G)).koszulTwist n ∘ₗ ι R =
-      ι R ∘ₗ G.koszulTwist n :=
-    G.linearMap_ext fun p x hx ↦ by
-      rw [LinearMap.comp_apply, LinearMap.comp_apply,
-        koszulTwist_ofDecomposition_apply_of_mem _ (ι_mem_tensorAlgebraPiece G hx),
-        G.koszulTwist_apply_of_mem hx, map_smul]
-  exact LinearMap.congr_fun h x
 
 variable (f : M →ₗ[R] TensorAlgebra R M)
 
