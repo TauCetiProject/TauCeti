@@ -547,13 +547,8 @@ theorem subst_formalCoordinate_log_formalGroup [Algebra ℚ R] (C : VariableChan
     (W : WeierstrassCurve R) :
     subst (C.formalCoordinate W).toPowerSeries (formalGroup W).log =
       ((C.u⁻¹ : Rˣ) : R) • (formalGroup (C • W)).log := by
-  have : HasUniqueDiv R := .of_isTorsionFree ℚ R
-  refine derivative.ext ?_ ?_
-  · rw [derivative_subst (C.formalCoordinate W).hasSubst, FormalGroup.derivative_log,
-      Derivation.map_smul, FormalGroup.derivative_log, smul_eq_C_mul]
-    exact subst_formalCoordinate_invariantDifferential_formalGroup C W
-  · exact (constantCoeff_subst_eq_zero (C.formalCoordinate W).constantCoeff_toPowerSeries _
-      (formalGroup W).constantCoeff_log).trans (by simp)
+  rw [formalGroup_smul, FormalGroup.log_smul, inv_inv, map_inv, linearCoeff_formalCoordinate,
+    inv_inv, smul_smul, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_smul]
 
 /-- The height ideals of the formal group of a Weierstrass curve do not depend on the chosen
 Weierstrass equation. -/
