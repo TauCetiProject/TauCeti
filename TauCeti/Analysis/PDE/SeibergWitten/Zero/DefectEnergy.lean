@@ -152,7 +152,7 @@ variable [MeasurableSpace E] [OpensMeasurableSpace E]
 on the closed ball of radius `ρ` about a zero `x₀` of `α`, with `r ≥ 1`, `r ≥ 8 C` and
 `256 C r ρ² ≤ 1`, the defect energy `E_r = (r / 4) ∫ |1 - |α|² - |β|²|` of that ball is at least
 `r / 8` times its measure, for every measure `μ`. -/
-theorem ofReal_mul_measure_le_setLIntegral_of_eq_zero (μ : Measure E) {C r ρ : ℝ} (hC : 0 ≤ C)
+theorem ofReal_mul_measure_le_setLIntegral_of_eq_zero {μ : Measure E} {C r ρ : ℝ} (hC : 0 ≤ C)
     (hr : 1 ≤ r) (hrC : 8 * C ≤ r) (hρ : 256 * C * r * ρ ^ 2 ≤ 1)
     (hα : ∀ y ∈ closedBall x₀ ρ, DifferentiableAt ℝ α y)
     (hmod : ∀ y ∈ closedBall x₀ ρ, ‖α y‖ ^ 2 ≤ 1 + C / r)
@@ -177,7 +177,7 @@ variable [FiniteDimensional ℝ E] [BorelSpace E]
 measure `μ` on a space of dimension `n`, under the hypotheses of
 `ofReal_mul_measure_le_setLIntegral_of_eq_zero` and `ρ ≥ 0`, the defect energy of the closed
 ball of radius `ρ` about the zero is at least `(r / 8) ρⁿ μ(B₁)`, where `B₁` is the unit ball. -/
-theorem ofReal_mul_measure_ball_le_setLIntegral_of_eq_zero (μ : Measure E) [μ.IsAddHaarMeasure]
+theorem ofReal_mul_measure_ball_le_setLIntegral_of_eq_zero {μ : Measure E} [μ.IsAddHaarMeasure]
     {C r ρ : ℝ} (hC : 0 ≤ C) (hr : 1 ≤ r) (hrC : 8 * C ≤ r) (hρ₀ : 0 ≤ ρ)
     (hρ : 256 * C * r * ρ ^ 2 ≤ 1)
     (hα : ∀ y ∈ closedBall x₀ ρ, DifferentiableAt ℝ α y)
@@ -190,7 +190,7 @@ theorem ofReal_mul_measure_ball_le_setLIntegral_of_eq_zero (μ : Measure E) [μ.
       ∫⁻ y in closedBall x₀ ρ, ENNReal.ofReal (r / 4 * |1 - ‖α y‖ ^ 2 - ‖β y‖ ^ 2|) ∂μ := by
   have hr₀ : 0 ≤ r := zero_le_one.trans hr
   refine le_of_eq_of_le ?_
-    (ofReal_mul_measure_le_setLIntegral_of_eq_zero μ hC hr hrC hρ hα hmod hβ hgrad h₀)
+    (ofReal_mul_measure_le_setLIntegral_of_eq_zero (μ := μ) hC hr hrC hρ hα hmod hβ hgrad h₀)
   rw [Measure.addHaar_closedBall μ x₀ hρ₀, ← mul_assoc,
     ← ENNReal.ofReal_mul (by positivity)]
 
@@ -202,7 +202,7 @@ defect energy of that ball satisfies
 `E_r(B_{c₀ / √r}) ≥ c₁ / r`,  `c₁ = c₀⁴ μ(B₁) / 8`.
 
 The constant `c₁` does not depend on `r` or on the fields. -/
-theorem ofReal_div_le_setLIntegral_of_eq_zero (μ : Measure E) [μ.IsAddHaarMeasure]
+theorem ofReal_div_le_setLIntegral_of_eq_zero {μ : Measure E} [μ.IsAddHaarMeasure]
     (hE : finrank ℝ E = 4) {C r c₀ : ℝ} (hC : 0 ≤ C) (hr : 1 ≤ r) (hrC : 8 * C ≤ r)
     (hc₀ : 0 ≤ c₀) (hc₀C : 256 * C * c₀ ^ 2 ≤ 1)
     (hα : ∀ y ∈ closedBall x₀ (c₀ / √r), DifferentiableAt ℝ α y)
@@ -225,7 +225,7 @@ theorem ofReal_div_le_setLIntegral_of_eq_zero (μ : Measure E) [μ.IsAddHaarMeas
   have hρ4 : r / 8 * (c₀ / √r) ^ 4 = c₀ ^ 4 / 8 / r := by
     rw [div_pow, show √r ^ 4 = (√r ^ 2) ^ 2 by ring, hsq]
     field_simp
-  refine le_of_eq_of_le ?_ (ofReal_mul_measure_ball_le_setLIntegral_of_eq_zero μ hC hr hrC
+  refine le_of_eq_of_le ?_ (ofReal_mul_measure_ball_le_setLIntegral_of_eq_zero (μ := μ) hC hr hrC
     (div_nonneg hc₀ hsqrt.le) hρ hα hmod hβ hgrad h₀)
   rw [hE, hρ4, ← ofReal_measureReal (measure_ball_lt_top (μ := μ)).ne,
     ← ENNReal.ofReal_mul (by positivity)]
