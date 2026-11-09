@@ -28,6 +28,9 @@ Rescaling an involution by a scalar `μ` with `μ * μ = 1` gives an endomorphis
 (`Module.End.smul_mul_smul_self_eq_one`).
 
 A finite nontrivial module has more than one endomorphism (`Module.End.one_lt_natCard`).
+
+Endomorphisms conjugate by a linear equivalence square to the same scalar
+(`Module.End.mul_self_eq_smul_one_iff_of_forall_apply_eq`).
 -/
 
 public section
@@ -85,5 +88,19 @@ theorem one_lt_natCard {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
     [Finite M] : 1 < Nat.card (Module.End R M) := by
   have : Finite (Module.End R M) := Finite.of_injective _ DFunLike.coe_injective
   exact Finite.one_lt_card
+
+/-- Conjugate endomorphisms have the same squares. -/
+theorem mul_self_eq_smul_one_iff_of_forall_apply_eq {R M N : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] {A : Module.End R M}
+    {B : Module.End R N} {e : M ≃ₗ[R] N} (hAB : ∀ v, e (A v) = B (e v)) (κ : R) :
+    A * A = κ • 1 ↔ B * B = κ • 1 := by
+  have hBe : ∀ w, B w = e (A (e.symm w)) := fun w ↦ by rw [hAB, e.apply_symm_apply]
+  refine ⟨fun hAA ↦ LinearMap.ext fun w ↦ ?_, fun hBB ↦ LinearMap.ext fun v ↦ ?_⟩
+  · have hAAv : A (A (e.symm w)) = κ • e.symm w := by
+      simpa using LinearMap.congr_fun hAA (e.symm w)
+    simp [hBe, hAAv]
+  · have hBBv : B (B (e v)) = κ • e v := by simpa using LinearMap.congr_fun hBB (e v)
+    refine e.injective ?_
+    simp [hAB, hBBv]
 
 end Module.End

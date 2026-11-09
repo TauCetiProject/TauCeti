@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Lie.SkewAdjoint
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 import Mathlib.Analysis.Real.Sqrt
 import TauCeti.Geometry.Symplectic.Plane
-import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
+import TauCeti.LinearAlgebra.End.Basic
 
 /-!
 # Williamson normal forms on a symplectic plane
@@ -188,114 +188,6 @@ theorem exists_apply_eq_one_apply_eq_smul_apply_eq_neg_smul [Nontrivial V] {A : 
 
 section Plane
 
-/-- In a symplectic plane, a pair `(q, p)` with `ω(q, p) = 1` is a basis: every vector is
-`x q + y p`. -/
-private theorem exists_eq_smul_add_smul (hV : finrank ℝ V = 2) {q p : V} (h : ω q p = 1) (v : V) :
-    ∃ x y : ℝ, v = x • q + y • p := by
-  let b := basisOfLinearIndependentOfCardEqFinrank
-    (LinearIndependent.pair_symm_iff.1 (ω.isAlt.linearIndependent_pair_of_apply_eq_one h))
-    (by simp [hV])
-  refine ⟨b.repr v 0, b.repr v 1, ?_⟩
-  have hv := b.sum_repr v
-  rw [Fin.sum_univ_two] at hv
-  simpa [b] using hv.symm
-
-/-- In a symplectic plane, two linear maps agreeing on a pair `(q, p)` with `ω(q, p) = 1` are
-equal. -/
-private theorem ext_of_apply_eq_one (hV : finrank ℝ V = 2) {q p : V} (h : ω q p = 1)
-    {f g : V →ₗ[ℝ] W} (hq : f q = g q) (hp : f p = g p) : f = g := by
-  ext v
-  obtain ⟨x, y, rfl⟩ := exists_eq_smul_add_smul hV h v
-  simp [hq, hp]
-
-/-- If `ω(q, p) = 1` on a symplectic plane `V` and `ω'(q', p') = 1` on a symplectic plane `W`, some
-linear symplectomorphism `V ≃ W` sends `q` to `q'` and `p` to `p'`. In any equal finite dimension
-this is an instance of Witt's extension theorem `exists_isSymplectomorphism_extend`; on planes the
-two pairs are bases and the map is explicit. -/
-private theorem exists_isSymplectomorphism_apply_eq (hV : finrank ℝ V = 2) (hW : finrank ℝ W = 2)
-    {q p : V} {q' p' : W} (h : ω q p = 1) (h' : ω' q' p' = 1) :
-    ∃ e : V ≃ₗ[ℝ] W, IsSymplectomorphism ω ω' e ∧ e q = q' ∧ e p = p' := by
-  let b := basisOfLinearIndependentOfCardEqFinrank
-    (LinearIndependent.pair_symm_iff.1 (ω.isAlt.linearIndependent_pair_of_apply_eq_one h))
-    (by simp [hV])
-  let b' := basisOfLinearIndependentOfCardEqFinrank
-    (LinearIndependent.pair_symm_iff.1 (ω'.isAlt.linearIndependent_pair_of_apply_eq_one h'))
-    (by simp [hW])
-  let e := b.equiv b' (Equiv.refl _)
-  have he0 : e q = q' := by simpa [e, b, b'] using b.equiv_apply 0 b' (Equiv.refl _)
-  have he1 : e p = p' := by simpa [e, b, b'] using b.equiv_apply 1 b' (Equiv.refl _)
-  refine ⟨e, isSymplectomorphism_iff.2 fun v w ↦ ?_, he0, he1⟩
-  obtain ⟨x, y, rfl⟩ := exists_eq_smul_add_smul hV h v
-  obtain ⟨x', y', rfl⟩ := exists_eq_smul_add_smul hV h w
-  have he : ∀ s t : ℝ, e (s • q + t • p) = s • q' + t • p' := fun s t ↦ by simp [he0, he1]
-  rw [he, he, ω.apply_smul_add_smul, ω'.apply_smul_add_smul, h, h']
-
-/-- On a symplectic plane, a nonzero vector `v` with `ω(A v, v) = 0` is an eigenvector of `A`. -/
-private theorem exists_apply_eq_smul_of_apply_eq_zero (hV : finrank ℝ V = 2) {A : Module.End ℝ V}
-    {v : V} (hv : v ≠ 0) (h : ω (A v) v = 0) : ∃ t : ℝ, A v = t • v := by
-  have h' : ω v (A v) = 0 := by rw [← ω.neg_eq, h, neg_zero]
-  have := not_linearIndependent_of_apply_eq_zero hV h'
-  rw [LinearIndependent.pair_iff' hv] at this
-  simp only [not_forall, not_not] at this
-  obtain ⟨t, ht⟩ := this
-  exact ⟨t, ht.symm⟩
-
-/-- On a symplectic plane, if `A² = κ` with `κ < 0`, then `ω(A v, v) ≠ 0` for every `v ≠ 0`. -/
-private theorem apply_ne_zero_of_mul_self_eq_neg (hV : finrank ℝ V = 2) {A : Module.End ℝ V}
-    {κ : ℝ} (hκ : κ < 0) (hAA : A * A = κ • 1) {v : V} (hv : v ≠ 0) : ω (A v) v ≠ 0 := by
-  intro h
-  obtain ⟨t, ht⟩ := exists_apply_eq_smul_of_apply_eq_zero hV hv h
-  have hAAv : A (A v) = κ • v := by simpa using LinearMap.congr_fun hAA v
-  rw [ht, map_smul, ht, smul_smul] at hAAv
-  have : t * t = κ := smul_left_injective ℝ hv hAAv
-  nlinarith
-
-/-- On a symplectic plane, if `A² = 0`, then `ω(A v, v) ≠ 0` whenever `A v ≠ 0`. -/
-private theorem apply_ne_zero_of_mul_self_eq_zero (hV : finrank ℝ V = 2) {A : Module.End ℝ V}
-    (hAA : A * A = 0) {v : V} (hv : A v ≠ 0) : ω (A v) v ≠ 0 := by
-  intro h
-  have hv0 : v ≠ 0 := by rintro rfl; simp at hv
-  obtain ⟨t, ht⟩ := exists_apply_eq_smul_of_apply_eq_zero hV hv0 h
-  have hAAv : A (A v) = 0 := by simpa using LinearMap.congr_fun hAA v
-  rw [ht, map_smul, ht, smul_smul] at hAAv
-  have ht0 : t = 0 := by simpa [hv0] using hAAv
-  exact hv (by rw [ht, ht0, zero_smul])
-
-/-- Two endomorphisms of symplectic planes acting by the same matrix on pairs `(q, p)` and
-`(q', p')` with `ω(q, p) = 1 = ω'(q', p')` are conjugate by a linear symplectomorphism. -/
-private theorem exists_isSymplectomorphism_forall_apply_eq_of_pair (hV : finrank ℝ V = 2)
-    (hW : finrank ℝ W = 2) {A : Module.End ℝ V} {B : Module.End ℝ W} {q p : V} {q' p' : W}
-    (h : ω q p = 1) (h' : ω' q' p' = 1) {x₁ y₁ x₂ y₂ : ℝ} (hAq : A q = x₁ • q + y₁ • p)
-    (hAp : A p = x₂ • q + y₂ • p) (hBq : B q' = x₁ • q' + y₁ • p')
-    (hBp : B p' = x₂ • q' + y₂ • p') :
-    ∃ e : V ≃ₗ[ℝ] W, IsSymplectomorphism ω ω' e ∧ ∀ v, e (A v) = B (e v) := by
-  obtain ⟨e, he, heq, hep⟩ := exists_isSymplectomorphism_apply_eq hV hW h h'
-  refine ⟨e, he, fun v ↦ ?_⟩
-  have := ext_of_apply_eq_one hV h (f := e.toLinearMap ∘ₗ A) (g := B ∘ₗ e.toLinearMap)
-    (by simp [hAq, heq, hep, hBq]) (by simp [hAp, heq, hep, hBp])
-  exact LinearMap.congr_fun this v
-
-/-- Conjugate endomorphisms have the same squares. -/
-private theorem mul_self_eq_smul_one_iff_of_forall_apply_eq {A : Module.End ℝ V}
-    {B : Module.End ℝ W} {e : V ≃ₗ[ℝ] W} (hAB : ∀ v, e (A v) = B (e v)) (κ : ℝ) :
-    A * A = κ • 1 ↔ B * B = κ • 1 := by
-  have hBe : ∀ w, B w = e (A (e.symm w)) := fun w ↦ by rw [hAB, e.apply_symm_apply]
-  refine ⟨fun hAA ↦ LinearMap.ext fun w ↦ ?_, fun hBB ↦ LinearMap.ext fun v ↦ ?_⟩
-  · have hAAv : A (A (e.symm w)) = κ • e.symm w := by
-      simpa using LinearMap.congr_fun hAA (e.symm w)
-    simp [hBe, hAAv]
-  · have hBBv : B (B (e v)) = κ • e v := by simpa using LinearMap.congr_fun hBB (e v)
-    refine e.injective ?_
-    simp [hAB, hBBv]
-
-/-- Endomorphisms conjugate by a linear symplectomorphism have Hamiltonians `v ↦ ω(A v, v)` with
-the same values. -/
-private theorem exists_iff_of_forall_apply_eq {A : Module.End ℝ V} {B : Module.End ℝ W}
-    {e : V ≃ₗ[ℝ] W} (he : IsSymplectomorphism ω ω' e) (hAB : ∀ v, e (A v) = B (e v))
-    (P : ℝ → Prop) : (∃ v, P (ω (A v) v)) ↔ ∃ w, P (ω' (B w) w) :=
-  ⟨fun ⟨v, hv⟩ ↦ ⟨e v, by rwa [← hAB, he.apply]⟩,
-    fun ⟨w, hw⟩ ↦ ⟨e.symm w, by rwa [← he.apply, hAB, e.apply_symm_apply]⟩⟩
-
 /-- **Williamson's classification on a symplectic plane.** Two elements `A` and `B` of the
 symplectic Lie algebras of symplectic planes `(V, ω)` and `(W, ω')` are conjugate by a linear
 symplectomorphism exactly when their squares are the same homothety and their Hamiltonians
@@ -309,7 +201,7 @@ theorem exists_isSymplectomorphism_forall_apply_eq_iff (hV : finrank ℝ V = 2)
       (∀ κ : ℝ, A * A = κ • 1 ↔ B * B = κ • 1) ∧
       ((∃ v, 0 < ω (A v) v) ↔ ∃ w, 0 < ω' (B w) w) ∧
       ((∃ v, ω (A v) v < 0) ↔ ∃ w, ω' (B w) w < 0) := by
-  refine ⟨fun ⟨e, he, hAB⟩ ↦ ⟨mul_self_eq_smul_one_iff_of_forall_apply_eq hAB,
+  refine ⟨fun ⟨e, he, hAB⟩ ↦ ⟨Module.End.mul_self_eq_smul_one_iff_of_forall_apply_eq hAB,
     exists_iff_of_forall_apply_eq he hAB (0 < ·), exists_iff_of_forall_apply_eq he hAB (· < 0)⟩,
     ?_⟩
   -- Conversely, `A² = κ` for some `κ`, and according to the sign of `κ` both `A` and `B` have
