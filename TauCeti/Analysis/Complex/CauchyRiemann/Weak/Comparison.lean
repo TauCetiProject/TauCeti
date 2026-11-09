@@ -100,7 +100,7 @@ of the equation with inhomogeneous term `η` has weak conjugate Wirtinger deriva
 theorem IsWeakCauchyRiemannOn.hasWeakConjWirtingerDerivOn
     (h : IsWeakCauchyRiemannOn p Ω (fun _ _ => I • ContinuousLinearMap.id ℝ F) η w) :
     HasWeakConjWirtingerDerivOn volume Ω w (fun z => (2 : ℂ)⁻¹ • η z (w z)) := by
-  obtain ⟨-, -, D, hD, -, hae⟩ := isWeakCauchyRiemannOn_iff.1 h
+  obtain ⟨-, -, D, hD, -, hae⟩ := isWeakCauchyRiemannOn_iff_of_isOpen.1 h
   refine hD.hasWeakConjWirtingerDerivOn.congr_ae_deriv ?_
   filter_upwards [hae] with z hz
   rw [← hz]
@@ -136,7 +136,7 @@ theorem isWeakCauchyRiemannOn_floer_iff :
           ∀ᵐ z ∂volume.restrict (Ω : Set ℂ), D z 1 +
             (show V →L[ℝ] V from J.toEndomorphism ((z.re, z.im), u z))
               (D z I - X ((z.re, z.im), u z)) = 0 := by
-  refine isWeakCauchyRiemannOn_iff.trans ?_
+  refine isWeakCauchyRiemannOn_iff_of_isOpen.trans ?_
   refine and_congr_right' (and_congr_right' (exists_congr fun D =>
     and_congr_right' (and_congr_right' (Filter.eventually_congr
       (Filter.Eventually.of_forall fun z => ?_)))))
