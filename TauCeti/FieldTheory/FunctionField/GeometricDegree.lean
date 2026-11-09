@@ -414,23 +414,60 @@ variable [Algebra F F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] (F k' F')
 
 /-- **Mathlib's linear disjointness implies the degree hypothesis**: if the constants of `F'` and
 the lower function field `F` are linearly disjoint over `k` in the sense of
-`IntermediateField.LinearDisjoint`, and `k' / k` is algebraic, then adjoining the constants to `F`
-costs exactly `[k' : k]`.
+`IntermediateField.LinearDisjoint`, then adjoining the constants to `F` costs exactly `[k' : k]`
+(both sides are `0` when `k' / k` is infinite).
 
 This is the bridge from Mathlib's predicate to the degree form `[F·k' : F] = [k' : k]` in which the
 hypothesis is carried by
 `TauCeti.finrank_eq_geometricDegree_mul_finrank_of_finrank_constantCompositum_eq`,
 `TauCeti.finrank_dvd_finrank_of_finrank_constantCompositum_eq` and
 `TauCeti.Divisor.degree_conorm`. -/
-theorem finrank_constantCompositum_eq_finrank_of_linearDisjoint [Algebra.IsAlgebraic k k']
+theorem finrank_constantCompositum_eq_finrank_of_linearDisjoint
     (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F) :
     Module.finrank F (constantCompositum F k' F') = Module.finrank k k' := by
   have e := (IsScalarTower.toAlgHom k k' F').equivFieldRange
-  have halg : Algebra.IsAlgebraic k (IsScalarTower.toAlgHom k k' F').fieldRange := e.isAlgebraic
-  have hrank := H.adjoin_rank_eq_rank_left_of_isAlgebraic (.inl halg)
-  rw [constantCompositum_def, ← IsScalarTower.toAlgHom_fieldRange k k' F',
-    e.toLinearEquiv.finrank_eq]
-  exact congrArg Cardinal.toNat hrank
+  by_cases hk : Algebra.IsAlgebraic k k'
+  · have halg : Algebra.IsAlgebraic k (IsScalarTower.toAlgHom k k' F').fieldRange :=
+      e.isAlgebraic
+    have hrank := H.adjoin_rank_eq_rank_left_of_isAlgebraic (.inl halg)
+    rw [constantCompositum_def, ← IsScalarTower.toAlgHom_fieldRange k k' F',
+      e.toLinearEquiv.finrank_eq]
+    exact congrArg Cardinal.toNat hrank
+  · have hk' : ¬ Module.Finite k k' := fun _ ↦ hk (Algebra.IsAlgebraic.of_finite k k')
+    rw [Module.finrank_of_not_finite hk', Module.finrank_of_not_finite]
+    intro hfin
+    have hrank := Subalgebra.LinearDisjoint.adjoin_rank_eq_rank_left H
+    set L' := (IsScalarTower.toAlgHom k F F').range
+    let i : F ≃ₐ[k] L' := AlgEquiv.ofInjectiveField (IsScalarTower.toAlgHom k F F')
+    have heq : (Algebra.adjoin F
+        ((IsScalarTower.toAlgHom k k' F').fieldRange : Set F')).toSubsemiring =
+        (Algebra.adjoin L'
+          ((IsScalarTower.toAlgHom k k' F').fieldRange : Set F')).toSubsemiring := by
+      rw [Algebra.adjoin_toSubsemiring, Algebra.adjoin_toSubsemiring]
+      congr 2
+      ext x
+      simp only [Set.mem_range, Subtype.exists]
+      exact ⟨fun ⟨y, h⟩ ↦ ⟨x, ⟨y, h⟩, rfl⟩, fun ⟨a, ⟨y, h1⟩, h2⟩ ↦ ⟨y, h1.trans h2⟩⟩
+    have hrk : Module.rank F (Algebra.adjoin F
+        ((IsScalarTower.toAlgHom k k' F').fieldRange : Set F')) =
+        Module.rank L' (Algebra.adjoin L'
+          ((IsScalarTower.toAlgHom k k' F').fieldRange : Set F')) :=
+      rank_eq_of_equiv_equiv i (RingEquiv.subsemiringCongr heq).toAddEquiv
+        i.bijective fun a ⟨x, hx⟩ ↦ by
+          ext
+          simp_rw [Algebra.smul_def]
+          rfl
+    have hle : Module.rank F (Algebra.adjoin F
+        ((IsScalarTower.toAlgHom k k' F').fieldRange : Set F')) ≤
+        Module.rank F (constantCompositum F k' F') := by
+      rw [← Subalgebra.rank_toSubmodule]
+      exact Submodule.rank_mono (Subalgebra.toSubmodule.monotone
+        (IntermediateField.algebra_adjoin_le_adjoin F _))
+    have h2 : Module.rank k (IsScalarTower.toAlgHom k k' F').fieldRange ≤
+        Module.rank F (constantCompositum F k' F') :=
+      hrank.symm.le.trans (hrk.symm.le.trans hle)
+    have := Module.rank_lt_aleph0_iff.mp (h2.trans_lt (Module.rank_lt_aleph0_iff.mpr hfin))
+    exact hk' (Module.Finite.equiv e.symm.toLinearEquiv)
 
 /-- **Adjoining a separable constant field extension to the lower function field preserves
 finrank**, provided the constant field downstairs is exact: `[F·k' : F] = [k' : k]`, which for
