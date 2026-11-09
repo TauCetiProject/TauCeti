@@ -36,6 +36,7 @@ ultraweak convergence are equivalent.
 As for the ultrastrong copy, the algebraic structure is transported from `E →L[𝕜] F` along
 `ContinuousLinearMapUltraweak.equiv` and the definitions are exposed, so that the transport and
 the agreement of the uniform structure with the topology hold by definition downstream.
+The seminorms are not exposed; they are used through `seminorm_apply` and `seminormFamily_apply`.
 
 ## References
 
@@ -235,7 +236,7 @@ section Seminorms
 
 /-- The ultraweak seminorm `A ↦ ‖⟪η, (⊕ₙ A) ξ⟫‖ = ‖∑ₙ ⟪ηₙ, A ξₙ⟫‖` attached to
 `ξ ∈ ℓ²(ℕ, E)` and `η ∈ ℓ²(ℕ, F)`. -/
-noncomputable def seminorm (ξ : ℓ²(ℕ, E)) (η : ℓ²(ℕ, F)) :
+@[no_expose] noncomputable def seminorm (ξ : ℓ²(ℕ, E)) (η : ℓ²(ℕ, F)) :
     Seminorm 𝕜 (ContinuousLinearMapUltraweak 𝕜 E F) where
   toFun A := ‖⟪η, lp.ampliation ℕ 2 A.toCLM ξ⟫_𝕜‖
   map_zero' := by simp
@@ -246,18 +247,18 @@ noncomputable def seminorm (ξ : ℓ²(ℕ, E)) (η : ℓ²(ℕ, F)) :
 @[simp]
 theorem seminorm_apply (ξ : ℓ²(ℕ, E)) (η : ℓ²(ℕ, F)) (A : ContinuousLinearMapUltraweak 𝕜 E F) :
     seminorm ξ η A = ‖⟪η, lp.ampliation ℕ 2 A.toCLM ξ⟫_𝕜‖ :=
-  rfl
+  (rfl)
 
 variable (𝕜 E F) in
 /-- The family of seminorms inducing the ultraweak topology. -/
-noncomputable def seminormFamily :
+@[no_expose] noncomputable def seminormFamily :
     SeminormFamily 𝕜 (ContinuousLinearMapUltraweak 𝕜 E F) (ℓ²(ℕ, E) × ℓ²(ℕ, F)) :=
   fun p ↦ seminorm p.1 p.2
 
 @[simp]
 theorem seminormFamily_apply (p : ℓ²(ℕ, E) × ℓ²(ℕ, F)) :
     seminormFamily 𝕜 E F p = seminorm p.1 p.2 :=
-  rfl
+  (rfl)
 
 theorem withSeminorms : WithSeminorms (seminormFamily 𝕜 E F) :=
   let e : ℓ²(ℕ, E) × ℓ²(ℕ, F) ≃ (Σ _ : ℓ²(ℕ, E) × ℓ²(ℕ, F), Unit) := .symm <| .sigmaUnique _ _

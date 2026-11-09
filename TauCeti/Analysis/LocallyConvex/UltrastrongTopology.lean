@@ -39,7 +39,8 @@ The definition needs no inner product: `E` and `F` are arbitrary normed spaces.
 The type copy follows Mathlib's `ContinuousLinearMapWOT`: its algebraic structure is transported
 from `E →L[𝕜] F` along `ContinuousLinearMapUltrastrong.equiv`, and the definitions are exposed so
 that this transport, and the agreement of the uniform structure with the topology, hold by
-definition for downstream files.
+definition for downstream files. The seminorms are not exposed; they are used through
+`seminorm_apply` and `seminormFamily_apply`.
 
 ## References
 
@@ -232,7 +233,8 @@ end Topology
 section Seminorms
 
 /-- The ultrastrong seminorm `A ↦ ‖(⊕ₙ A) ξ‖ = (∑ₙ ‖A ξₙ‖²)^(1/2)` attached to `ξ ∈ ℓ²(ℕ, E)`. -/
-noncomputable def seminorm (ξ : ℓ²(ℕ, E)) : Seminorm 𝕜 (ContinuousLinearMapUltrastrong 𝕜 E F) where
+@[no_expose] noncomputable def seminorm (ξ : ℓ²(ℕ, E)) :
+    Seminorm 𝕜 (ContinuousLinearMapUltrastrong 𝕜 E F) where
   toFun A := ‖lp.ampliation ℕ 2 A.toCLM ξ‖
   map_zero' := by simp
   add_le' A B := by simpa using norm_add_le _ _
@@ -242,17 +244,17 @@ noncomputable def seminorm (ξ : ℓ²(ℕ, E)) : Seminorm 𝕜 (ContinuousLinea
 @[simp]
 theorem seminorm_apply (ξ : ℓ²(ℕ, E)) (A : ContinuousLinearMapUltrastrong 𝕜 E F) :
     seminorm ξ A = ‖lp.ampliation ℕ 2 A.toCLM ξ‖ :=
-  rfl
+  (rfl)
 
 variable (𝕜 E F) in
 /-- The family of seminorms inducing the ultrastrong topology. -/
-noncomputable def seminormFamily :
+@[no_expose] noncomputable def seminormFamily :
     SeminormFamily 𝕜 (ContinuousLinearMapUltrastrong 𝕜 E F) ℓ²(ℕ, E) :=
   seminorm
 
 @[simp]
 theorem seminormFamily_apply (ξ : ℓ²(ℕ, E)) : seminormFamily 𝕜 E F ξ = seminorm ξ :=
-  rfl
+  (rfl)
 
 theorem withSeminorms : WithSeminorms (seminormFamily 𝕜 E F) :=
   let e : ℓ²(ℕ, E) ≃ (Σ _ : ℓ²(ℕ, E), Unit) := .symm <| .sigmaUnique _ _
