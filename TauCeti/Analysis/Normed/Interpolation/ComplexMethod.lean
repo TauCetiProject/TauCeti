@@ -51,7 +51,7 @@ admissible functions through their boundary traces:
   preserves identities and composition (`ComplexMethodSpace.map_id`, `ComplexMethodSpace.map_comp`)
   and commutes with the inclusions of the intersections (`ComplexMethodSpace.map_ofInter`). Thus
   the complex method is an exact interpolation functor of exponent `θ`;
-* `ComplexMethodSpace.norm_refl`: for the couple `(X, X)`, `[X, X]_θ = X` isometrically.
+* `ComplexMethodSpace.norm_refl`: for the couple `(X, X)`, the map `[X, X]_θ → X` is an isometry.
 
 ## References
 
@@ -433,6 +433,7 @@ theorem norm_toSum_le (u : C.ComplexMethodSpace θ) : ‖toSum u‖ ≤ ‖u‖ 
   rw [toSum_mk]
   exact ((C.stripEval θ).le_of_opNorm_le (C.norm_stripEval_le θ) g).trans_lt (by simpa using hg)
 
+/-- The inclusion of `[X₀, X₁]_θ` into the sum space has operator norm at most one. -/
 theorem opNorm_toSum_le : ‖(toSum : C.ComplexMethodSpace θ →L[ℂ] C.SumSpace)‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u => by simpa using norm_toSum_le u
 
@@ -600,12 +601,14 @@ theorem norm_ofInter_le {θ : ℝ} (hθ : θ ∈ Icc 0 1) (x : C.inter) : ‖ofI
     simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
   exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall key)
 
+/-- For `0 ≤ θ ≤ 1`, the inclusion of the intersection into `[X₀, X₁]_θ` has operator norm at
+most one. -/
 theorem opNorm_ofInter_le {θ : ℝ} (hθ : θ ∈ Icc 0 1) :
     ‖(ofInter θ : C.inter →L[ℂ] C.ComplexMethodSpace θ)‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x => by simpa using norm_ofInter_le hθ x
 
 /-- For the couple `(X, X)` and `0 ≤ θ ≤ 1`, the complex interpolation norm is the norm of `X`:
-`[X, X]_θ = X` isometrically. -/
+the map `u ↦ sumSpaceEmbed (toSum u)` from `[X, X]_θ` to `X` is an isometry. -/
 theorem norm_refl {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] {θ : ℝ}
     (hθ : θ ∈ Icc 0 1) (u : (refl ℂ X).ComplexMethodSpace θ) :
     ‖u‖ = ‖(refl ℂ X).sumSpaceEmbed (toSum u)‖ := by
