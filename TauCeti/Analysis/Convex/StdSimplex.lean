@@ -100,8 +100,15 @@ section Boundary
 
 variable (ι) in
 /-- The relative boundary of the standard simplex: its points with some vanishing coordinate. -/
-@[expose] def stdSimplexBoundary : Set (ι → ℝ) :=
+def stdSimplexBoundary : Set (ι → ℝ) :=
   {y ∈ (range fun s : StdSimplex ℝ ι => ⇑s.weights) | ∃ i, y i = 0}
+
+variable (ι) in
+/-- The relative boundary of the standard simplex is the set of its points with some vanishing
+coordinate. -/
+theorem stdSimplexBoundary_def :
+    stdSimplexBoundary ι = {y ∈ (range fun s : StdSimplex ℝ ι => ⇑s.weights) | ∃ i, y i = 0} :=
+  (rfl)
 
 /-- Membership in the relative boundary of the standard simplex. -/
 @[simp]
@@ -161,7 +168,7 @@ theorem convexJoin_boundary_stdSimplex_barycenter [Nontrivial ι] :
     convexJoin ℝ (stdSimplexBoundary ι) {⇑(StdSimplex.barycenter : StdSimplex ℝ ι).weights} =
       range fun s : StdSimplex ℝ ι => ⇑s.weights := by
   classical
-  rw [stdSimplexBoundary]
+  rw [stdSimplexBoundary_def]
   set c : ℝ := (Fintype.card ι : ℝ)
   have hc : 0 < c := Nat.cast_pos.mpr Fintype.card_pos
   have hS : (range fun s : StdSimplex ℝ ι => ⇑s.weights) =

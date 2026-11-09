@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
@@ -43,7 +44,8 @@ Finally, it records a polynomial barrier bound: if `r ≤ M`, `0 < ε`, `1 ≤ c
 than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
 
 It also records that the normalized position `(c - a) / (b - a)` of a point `c ∈ [a, b]` lies in
-`[0, 1]`, also when the interval is degenerate.
+`[0, 1]`, also when the interval is degenerate, and that for a finite family of nonnegative
+elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each reciprocal `(x j)⁻¹`.
 
 ## Main results
 
@@ -63,6 +65,8 @@ It also records that the normalized position `(c - a) / (b - a)` of a point `c �
 * `TauCeti.sub_mul_mul_one_add_sq_neg_of_lt`: the strict inequality
   `r - ε * (c * (1 + n ^ 2)) < 0` for `r ≤ M`, `0 < ε`, `1 ≤ c` and `M / ε < n`.
 * `TauCeti.sub_div_sub_mem_Icc`: `(c - a) / (b - a) ∈ [0, 1]` for `c ∈ [a, b]`.
+* `TauCeti.one_add_sum_inv_pos`, `TauCeti.inv_le_one_add_sum_inv`: for nonnegative `x i`,
+  `0 < 1 + ∑ i ∈ s, (x i)⁻¹` and `(x j)⁻¹ ≤ 1 + ∑ i ∈ s, (x i)⁻¹` for `j ∈ s`.
 -/
 
 public section
@@ -195,6 +199,19 @@ theorem sub_div_sub_mem_Icc {α : Type*} [Field α] [LinearOrder α] [IsStrictOr
     {a b c : α} (hc : c ∈ Set.Icc a b) : (c - a) / (b - a) ∈ Set.Icc 0 1 :=
   ⟨div_nonneg (sub_nonneg.2 hc.1) (sub_nonneg.2 (hc.1.trans hc.2)),
     div_le_one_of_le₀ (sub_le_sub_right hc.2 a) (sub_nonneg.2 (hc.1.trans hc.2))⟩
+
+/-- For a finite family of nonnegative elements, `1 + ∑ i ∈ s, (x i)⁻¹` is positive. -/
+theorem one_add_sum_inv_pos {α ι : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]
+    {s : Finset ι} {x : ι → α} (h : ∀ i ∈ s, 0 ≤ x i) : 0 < 1 + ∑ i ∈ s, (x i)⁻¹ :=
+  add_pos_of_pos_of_nonneg one_pos (Finset.sum_nonneg fun i hi => inv_nonneg.2 (h i hi))
+
+/-- For a finite family of nonnegative elements, each reciprocal `(x j)⁻¹` with `j ∈ s` is at
+most `1 + ∑ i ∈ s, (x i)⁻¹`. -/
+theorem inv_le_one_add_sum_inv {α ι : Type*} [Semifield α] [LinearOrder α]
+    [IsStrictOrderedRing α] {s : Finset ι} {x : ι → α} (h : ∀ i ∈ s, 0 ≤ x i) {j : ι}
+    (hj : j ∈ s) : (x j)⁻¹ ≤ 1 + ∑ i ∈ s, (x i)⁻¹ :=
+  (Finset.single_le_sum (fun i hi => inv_nonneg.2 (h i hi)) hj).trans
+    (le_add_of_nonneg_left zero_le_one)
 
 end TauCeti
 

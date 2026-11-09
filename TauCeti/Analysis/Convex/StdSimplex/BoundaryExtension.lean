@@ -153,23 +153,6 @@ end FacetProjection
 
 variable [Fintype ι]
 
-section Weights
-
-variable {x : ι → ℝ}
-
-/-- Each reciprocal coordinate of a point with positive coordinates is at most the denominator
-of the interior formula. -/
-private theorem inv_le_one_add_sum_inv (h : ∀ i, 0 < x i) (j : ι) :
-    (x j)⁻¹ ≤ 1 + ∑ i, (x i)⁻¹ :=
-  (single_le_sum (fun i _ => (inv_pos.2 (h i)).le) (mem_univ j)).trans
-    (le_add_of_nonneg_left zero_le_one)
-
-/-- The denominator of the interior formula is positive. -/
-private theorem one_add_sum_inv_pos (h : ∀ i, 0 < x i) : 0 < 1 + ∑ i, (x i)⁻¹ :=
-  add_pos_of_pos_of_nonneg one_pos (sum_nonneg fun i _ => (inv_pos.2 (h i)).le)
-
-end Weights
-
 variable [DecidableEq ι]
 
 /-- The extension of boundary data `g` into the standard simplex with interior constant `α`.
@@ -215,7 +198,8 @@ theorem stdSimplexExtension_eq_weights (h : ∀ i, 0 < x i) :
 theorem stdSimplexExtension_const (c : ℝ) (x : ι → ℝ) :
     stdSimplexExtension c (fun _ => c) x = c := by
   by_cases h : ∀ i, 0 < x i
-  · rw [stdSimplexExtension_of_forall_pos h, div_eq_iff (one_add_sum_inv_pos h).ne', ← sum_mul]
+  · rw [stdSimplexExtension_of_forall_pos h,
+      div_eq_iff (one_add_sum_inv_pos fun i _ => (h i).le).ne', ← sum_mul]
     ring
   · exact stdSimplexExtension_of_not_forall_pos h
 
@@ -225,13 +209,13 @@ theorem stdSimplexExtension_le_stdSimplexExtension [Nontrivial ι] {α₁ α₂ 
     (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) :
     stdSimplexExtension α₁ g₁ x ≤ stdSimplexExtension α₂ g₂ x := by
   rcases mem_stdSimplexBoundary_or_forall_pos hx with hxB | h
-  · obtain ⟨-, i, hi⟩ := id hxB
+  · obtain ⟨-, i, hi⟩ := mem_stdSimplexBoundary.1 hxB
     rw [stdSimplexExtension_of_apply_eq_zero hi, stdSimplexExtension_of_apply_eq_zero hi]
     exact hg x hxB
   · rw [stdSimplexExtension_of_forall_pos h, stdSimplexExtension_of_forall_pos h]
     exact div_le_div_of_nonneg_right (add_le_add hα <| sum_le_sum fun i _ =>
       mul_le_mul_of_nonneg_left (hg _ (stdSimplexFacetProjection_mem_stdSimplexBoundary hx h i))
-        (inv_pos.2 (h i)).le) (one_add_sum_inv_pos h).le
+        (inv_pos.2 (h i)).le) (one_add_sum_inv_pos fun i _ => (h i).le).le
 
 /-- On the open simplex the extension is strictly monotone in the constant. -/
 theorem stdSimplexExtension_lt_stdSimplexExtension [Nontrivial ι] {α₁ α₂ : ℝ}
@@ -241,7 +225,7 @@ theorem stdSimplexExtension_lt_stdSimplexExtension [Nontrivial ι] {α₁ α₂ 
   rw [stdSimplexExtension_of_forall_pos h, stdSimplexExtension_of_forall_pos h]
   exact div_lt_div_of_pos_right (add_lt_add_of_lt_of_le hα <| sum_le_sum fun i _ =>
     mul_le_mul_of_nonneg_left (hg _ (stdSimplexFacetProjection_mem_stdSimplexBoundary hx h i))
-      (inv_pos.2 (h i)).le) (one_add_sum_inv_pos h)
+      (inv_pos.2 (h i)).le) (one_add_sum_inv_pos fun i _ => (h i).le)
 
 /-- If the constant and the boundary data lie in `[m, M]`, so does the extension. -/
 theorem stdSimplexExtension_mem_Icc [Nontrivial ι] {m M : ℝ} (hα : α ∈ Set.Icc m M)
@@ -274,7 +258,7 @@ denominator. -/
 private theorem stdSimplexExtension_eq_add_sum (h : ∀ i, 0 < x i) (L : ℝ) :
     stdSimplexExtension α g x = L + ((α - L) * (1 + ∑ i, (x i)⁻¹)⁻¹ +
       ∑ i, (x i)⁻¹ * (1 + ∑ i, (x i)⁻¹)⁻¹ * (g (stdSimplexFacetProjection i x) - L)) := by
-  have hS := (one_add_sum_inv_pos h).ne'
+  have hS := (one_add_sum_inv_pos (s := univ) fun i _ => (h i).le).ne'
   have hsum : ∑ i, (x i)⁻¹ * (1 + ∑ i, (x i)⁻¹)⁻¹ * (g (stdSimplexFacetProjection i x) - L) =
       (1 + ∑ i, (x i)⁻¹)⁻¹ * ∑ i, (x i)⁻¹ * g (stdSimplexFacetProjection i x) -
         (1 + ∑ i, (x i)⁻¹)⁻¹ * L * ∑ i, (x i)⁻¹ := by
@@ -301,18 +285,21 @@ private theorem tendsto_stdSimplexExtension_of_apply_eq_zero [Nontrivial ι] {i�
   -- The reciprocal of the denominator tends to zero, since it is at most `y i₀`.
   have hinv : Tendsto (fun y : ι → ℝ => (1 + ∑ i, (y i)⁻¹)⁻¹) (𝓝[U] x) (𝓝 0) := by
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds (hi₀ ▸ hcoord i₀)
-      (hU.mono fun y hy => (inv_pos.2 (one_add_sum_inv_pos hy.2)).le) (hU.mono fun y hy => ?_)
-    simpa using inv_anti₀ (inv_pos.2 (hy.2 i₀)) (inv_le_one_add_sum_inv hy.2 i₀)
+      (hU.mono fun y hy => (inv_pos.2 (one_add_sum_inv_pos fun i _ => (hy.2 i).le)).le)
+      (hU.mono fun y hy => ?_)
+    simpa using inv_anti₀ (inv_pos.2 (hy.2 i₀))
+      (inv_le_one_add_sum_inv (fun i _ => (hy.2 i).le) (mem_univ i₀))
   have hterm (j : ι) : Tendsto (fun y : ι → ℝ => (y j)⁻¹ * (1 + ∑ i, (y i)⁻¹)⁻¹ *
       (g (stdSimplexFacetProjection j y) - L)) (𝓝[U] x) (𝓝 0) := by
     rcases eq_or_ne (x j) 0 with hxj | hxj
     · -- A facet through `x`: bounded weight, deviation tending to zero.
       refine isBoundedUnder_le_mul_tendsto_zero (isBoundedUnder_of_eventually_le (a := 1)
         (hU.mono fun y hy => ?_)) ?_
-      · have hS := one_add_sum_inv_pos hy.2
+      · have hS := one_add_sum_inv_pos (s := univ) fun i _ => (hy.2 i).le
         rw [Function.comp_apply, Real.norm_eq_abs, abs_of_nonneg (mul_nonneg
           (inv_pos.2 (hy.2 j)).le (inv_pos.2 hS).le), ← div_eq_mul_inv]
-        exact div_le_one_of_le₀ (inv_le_one_add_sum_inv hy.2 j) hS.le
+        exact div_le_one_of_le₀
+          (inv_le_one_add_sum_inv (fun i _ => (hy.2 i).le) (mem_univ j)) hS.le
       · have hp : Tendsto (stdSimplexFacetProjection j) (𝓝[U] x)
             (𝓝[stdSimplexBoundary ι] x) := by
           refine tendsto_nhdsWithin_iff.2 ⟨?_, hU.mono fun y hy =>
@@ -345,11 +332,11 @@ theorem continuousWithinAt_stdSimplexExtension_of_apply_eq_zero [Nontrivial ι] 
       stdSimplexBoundary ι ∪ {y ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights | ∀ j, 0 < y j} := by
     ext y
     exact ⟨fun hy => (mem_stdSimplexBoundary_or_forall_pos hy).imp id (⟨hy, ·⟩),
-      fun hy => hy.elim (·.1) (·.1)⟩
+      fun hy => hy.elim (stdSimplexBoundary_subset ·) (·.1)⟩
   have hEx : stdSimplexExtension α g x = g x := stdSimplexExtension_of_apply_eq_zero hi₀
   rw [hsplit]
   refine ContinuousWithinAt.union (hg.congr (fun y hy => ?_) hEx) ?_
-  · obtain ⟨j, hj⟩ := hy.2
+  · obtain ⟨j, hj⟩ := (mem_stdSimplexBoundary.1 hy).2
     exact stdSimplexExtension_of_apply_eq_zero hj
   · rw [ContinuousWithinAt, hEx]
     exact tendsto_stdSimplexExtension_of_apply_eq_zero hi₀ hC hg
@@ -379,7 +366,7 @@ theorem continuousWithinAt_stdSimplexExtension_of_forall_pos [Nontrivial ι]
       fun y hy => stdSimplexFacetProjection_mem_stdSimplexBoundary hy.1 hy.2 i
   exact (continuousWithinAt_const.add (tendsto_finsetSum univ fun i _ => (hinv i).mul (hgp i))).div
     (continuousWithinAt_const.add (tendsto_finsetSum univ fun i _ => hinv i))
-    (one_add_sum_inv_pos h).ne'
+    (one_add_sum_inv_pos fun i _ => (h i).le).ne'
 
 /-- **Continuous extension.** Boundary data continuous on the relative boundary extend
 continuously to the standard simplex. -/
@@ -389,7 +376,7 @@ theorem continuousOn_stdSimplexExtension [Nontrivial ι]
   obtain ⟨C, hC⟩ := isCompact_stdSimplexBoundary.exists_bound_of_continuousOn hg
   intro x hx
   rcases mem_stdSimplexBoundary_or_forall_pos hx with hxB | h
-  · obtain ⟨-, i, hi⟩ := id hxB
+  · obtain ⟨-, i, hi⟩ := mem_stdSimplexBoundary.1 hxB
     exact continuousWithinAt_stdSimplexExtension_of_apply_eq_zero hi
       (fun y hy => by simpa using hC y hy) (hg x hxB)
   · exact continuousWithinAt_stdSimplexExtension_of_forall_pos hx h fun i =>
@@ -476,9 +463,9 @@ theorem continuousOn_stdSimplexGapExtension [Nontrivial ι]
   set r : (ι → ℝ) → ℝ := fun y => (c y - a y) / (b y - a y)
   have hr (y : ι → ℝ) (hy : y ∈ stdSimplexBoundary ι) (hne : a y ≠ b y) :
       ContinuousWithinAt r (stdSimplexBoundary ι) y :=
-    ((hc y hy).sub ((ha y hy.1).mono stdSimplexBoundary_subset)).div
-      (((hb y hy.1).mono stdSimplexBoundary_subset).sub
-        ((ha y hy.1).mono stdSimplexBoundary_subset))
+    ((hc y hy).sub ((ha y (stdSimplexBoundary_subset hy)).mono stdSimplexBoundary_subset)).div
+      (((hb y (stdSimplexBoundary_subset hy)).mono stdSimplexBoundary_subset).sub
+        ((ha y (stdSimplexBoundary_subset hy)).mono stdSimplexBoundary_subset))
       (sub_ne_zero.2 hne.symm)
   have hr01 (y : ι → ℝ) (hy : y ∈ stdSimplexBoundary ι) : r y ∈ Set.Icc 0 1 :=
     sub_div_sub_mem_Icc (hcab y hy)
@@ -490,7 +477,7 @@ theorem continuousOn_stdSimplexGapExtension [Nontrivial ι]
   rw [hfun]
   intro x hx
   rcases mem_stdSimplexBoundary_or_forall_pos hx with hxB | h
-  · obtain ⟨-, i, hi⟩ := id hxB
+  · obtain ⟨-, i, hi⟩ := mem_stdSimplexBoundary.1 hxB
     rcases ne_or_eq (a x) (b x) with hne | heq
     · exact (ha x hx).add (((hb x hx).sub (ha x hx)).mul
         (continuousWithinAt_stdSimplexExtension_of_apply_eq_zero hi hrC (hr x hxB hne)))
