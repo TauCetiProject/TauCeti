@@ -37,6 +37,8 @@ for radii arbitrarily close to `ρ` from the right holds at `ρ` when `f` is rig
   quotient of `m` is its right derivative, where that exists.
 * `MeasureTheory.Measure.measure_closedBall_le_of_frequently_le`: a closed-ball bound for radii
   arbitrarily close to `ρ` from the right extends to `ρ` for a right-continuous gauge.
+* `MeasureTheory.Measure.measure_ball_le_of_forall_lt`: a bound on the measures of the open balls
+  of radius less than `ρ` bounds the open ball of radius `ρ`.
 -/
 
 public section
@@ -111,5 +113,22 @@ theorem measure_closedBall_le_of_frequently_le (μ : Measure X) {f : ℝ → ℝ
     μ (closedBall x ρ) ≤ f ρ :=
   isClosed_Ici.mem_of_frequently_of_tendsto (h.mp (eventually_nhdsWithin_of_forall
     fun r (hr : ρ < r) hle => (measure_mono (closedBall_subset_closedBall hr.le)).trans hle)) hf
+
+/-- An open ball is exhausted by the concentric balls of smaller radius, so a bound on the measures
+of the smaller balls bounds the measure of the ball. -/
+theorem measure_ball_le_of_forall_lt (μ : Measure X) {x : X} {ρ : ℝ} {B : ℝ≥0∞}
+    (h : ∀ r < ρ, μ (ball x r) ≤ B) : μ (ball x ρ) ≤ B := by
+  have hU : ⋃ i : ℕ, ball x (ρ - 1 / ((i : ℝ) + 1)) = ball x ρ := by
+    ext z
+    simp only [mem_iUnion, mem_ball]
+    refine ⟨fun ⟨i, hi⟩ => hi.trans (sub_lt_self _ Nat.one_div_pos_of_nat), fun hz => ?_⟩
+    obtain ⟨i, hi⟩ := exists_nat_one_div_lt (sub_pos.2 hz)
+    exact ⟨i, by linarith⟩
+  have hmono : Monotone fun i : ℕ => ball x (ρ - 1 / ((i : ℝ) + 1)) := fun i j hij =>
+    ball_subset_ball (sub_le_sub_left (one_div_le_one_div_of_le (by positivity)
+      (by exact_mod_cast Nat.add_le_add_right hij 1)) _)
+  rw [← hU]
+  exact le_of_tendsto' (tendsto_measure_iUnion_atTop hmono) fun i =>
+    h _ (sub_lt_self _ Nat.one_div_pos_of_nat)
 
 end MeasureTheory.Measure

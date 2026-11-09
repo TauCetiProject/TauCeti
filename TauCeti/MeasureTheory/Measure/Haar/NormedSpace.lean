@@ -85,6 +85,7 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
 * `MeasureTheory.Measure.eLpNorm_ball_le_mul_rpow`: Hölder's inequality on a ball, with the volume
   of the ball written through that of the unit ball.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
+* `ContinuousLinearMap.ofReal_abs_det_le`: `|det T| ≤ 2ⁿ (‖S‖ⁿ + ‖T - S‖ⁿ)` for any `S`.
 * `ContinuousLinearMap.norm_det_le_opNorm_pow`: `‖det f‖ ≤ ‖f‖ ^ n` in dimension `n` over an
   `RCLike` field.
 -/
@@ -422,6 +423,32 @@ theorem _root_.ContinuousLinearMap.abs_det_le_opNorm_pow
     mu.addHaar_closedBall 0 zero_le_one, one_pow, ENNReal.ofReal_one, one_mul] at h
   exact (ENNReal.ofReal_le_ofReal_iff (by positivity)).1 <|
     (ENNReal.mul_le_mul_iff_left (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne).1 h
+
+/-- The determinant of `T` is controlled by the `n`-th powers of the norms of any `S` and of
+`T - S`, `n` the dimension: `|det T| ≤ ‖T‖ⁿ ≤ 2ⁿ (‖S‖ⁿ + ‖T - S‖ⁿ)`. -/
+theorem _root_.ContinuousLinearMap.ofReal_abs_det_le
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    (T S : E →L[ℝ] E) :
+    ENNReal.ofReal |T.det| ≤ 2 ^ finrank ℝ E * (‖S‖ₑ ^ finrank ℝ E + ‖T - S‖ₑ ^ finrank ℝ E) := by
+  -- `‖T‖ ≤ 2 max (‖S‖, ‖T - S‖)`.
+  have h1 : ‖T‖ₑ ≤ 2 * max ‖S‖ₑ ‖T - S‖ₑ := by
+    calc ‖T‖ₑ = ENNReal.ofReal ‖S + (T - S)‖ := by rw [add_sub_cancel, ofReal_norm]
+      _ ≤ ENNReal.ofReal (‖S‖ + ‖T - S‖) := ENNReal.ofReal_le_ofReal (norm_add_le _ _)
+      _ ≤ 2 * max ‖S‖ₑ ‖T - S‖ₑ := by
+          rw [ENNReal.ofReal_add (norm_nonneg _) (norm_nonneg _), ofReal_norm, ofReal_norm,
+            two_mul]
+          exact add_le_add (le_max_left _ _) (le_max_right _ _)
+  have h2 : max ‖S‖ₑ ‖T - S‖ₑ ^ finrank ℝ E ≤ ‖S‖ₑ ^ finrank ℝ E + ‖T - S‖ₑ ^ finrank ℝ E := by
+    rcases le_total ‖S‖ₑ ‖T - S‖ₑ with h | h
+    · rw [max_eq_right h]; exact le_add_self
+    · rw [max_eq_left h]; exact le_self_add
+  calc ENNReal.ofReal |T.det| ≤ ‖T‖ₑ ^ finrank ℝ E := by
+        rw [← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
+        exact ENNReal.ofReal_le_ofReal T.abs_det_le_opNorm_pow
+    _ ≤ _ := by
+        refine (pow_le_pow_left' h1 _).trans ?_
+        rw [mul_pow]
+        exact mul_le_mul_right h2 _
 
 /-- **The determinant is bounded by the operator norm** over an `RCLike` field: `‖det f‖ ≤ ‖f‖ ^ n`
 for a linear endomorphism `f` of a normed space of finite dimension `n`. -/

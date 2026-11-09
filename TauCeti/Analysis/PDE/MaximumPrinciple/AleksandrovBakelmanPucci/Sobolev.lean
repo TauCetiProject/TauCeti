@@ -7,10 +7,12 @@ module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
-import Mathlib.Topology.MetricSpace.Sequences
-import TauCeti.Analysis.InnerProductSpace.Spectrum
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.Analysis.InnerProductSpace.Positive.Basic
+import TauCeti.Analysis.Normed.Module.Basic
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.InterBall
 
 /-!
 # The Aleksandrov–Bakelman–Pucci estimate for strong solutions
@@ -50,13 +52,14 @@ To pass to the limit:
   integrable majorant, built from a summable sequence of `Lⁿ` errors
   (`TauCeti.exists_strictMono_lintegral_tsum_ne_top_of_tendsto_lintegral`), so the reverse
   Fatou lemma bounds the upper limit of the integrals over the contact sets of `vₖ`;
-* a point that lies in the contact sets of infinitely many `vₖ` lies in the contact set of `ū`,
-  since the supporting slopes stay bounded and the supporting inequalities pass to the limit;
-* at such a point the negated Hessians of the `vₖ` are positive, hence so is their limit `-D²u`.
+* a point that lies in the contact sets of infinitely many `vₖ` lies in the contact set of `ū`
+  (`TauCeti.PDE.mem_upperContactSet_of_frequently`);
+* at such a point the negated Hessians of the `vₖ` are positive
+  (`TauCeti.PDE.isPositive_neg_hessianOperator_of_mem_upperContactSet`), hence so is their limit
+  `-D²u`, since the positive operators form a closed set.
 
-On the contact set the determinant–trace inequality for the positive operator `-D²u`
-(`LinearMap.IsPositive.det_mul_det_le_sum_mul_apply_div_card_pow`) then bounds `|det D²u|` by
-`(f⁻ / n)ⁿ / det a`, as in the `C²` case.
+On the contact set the pointwise bound `TauCeti.PDE.abs_det_le_negPart_div_card_pow_div_det`,
+shared with the `C²` case, then bounds `|det D²u|` by `(f⁻ / n)ⁿ / det a`.
 
 ## Main declarations
 
@@ -91,132 +94,6 @@ section Approximation
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {u : E → ℝ} {Ω : Set E} {x y : E} {m : ℝ}
 
-omit [FiniteDimensional ℝ E] in
-/-- **Supporting slopes are bounded.** If the affine function through `(y, v y)` with slope `p`
-lies above `v` on `closedBall y r`, `r > 0`, and `|v| ≤ M` there, then `‖p‖ ≤ 2 M / r`: test the
-inequality at `y - r p / ‖p‖`. -/
-private theorem norm_le_of_forall_le_add_inner {v : E → ℝ} {p : E} {r M : ℝ} (hr : 0 < r)
-    (hp : ∀ z ∈ closedBall y r, v z ≤ v y + ⟪p, z - y⟫)
-    (hM : ∀ z ∈ closedBall y r, |v z| ≤ M) : ‖p‖ ≤ 2 * M / r := by
-  rw [le_div_iff₀ hr]
-  have hy := abs_le.1 (hM y (mem_closedBall_self hr.le))
-  rcases eq_or_ne p 0 with rfl | h0
-  · rw [norm_zero, zero_mul]
-    linarith
-  have hz : y - (r / ‖p‖) • p ∈ closedBall y r := by
-    rw [mem_closedBall, dist_eq_norm, sub_sub_cancel_left, norm_neg, norm_smul,
-      Real.norm_eq_abs, abs_div, abs_of_pos hr, abs_norm, div_mul_cancel₀ _ (norm_ne_zero_iff.2 h0)]
-  have h := hp _ hz
-  rw [sub_sub_cancel_left, inner_neg_right, inner_smul_right, real_inner_self_eq_norm_sq] at h
-  have hrp : r / ‖p‖ * ‖p‖ ^ 2 = ‖p‖ * r := by
-    field_simp
-  rw [hrp] at h
-  linarith [abs_le.1 (hM _ hz)]
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- Uniform convergence on sets `U k` which eventually contain a ball around each point of `Ω`
-gives pointwise convergence on `Ω`. -/
-private theorem tendsto_of_eventually_abs_sub_le {U : ℕ → Set E} {v : ℕ → E → ℝ}
-    (hUball : ∀ z ∈ Ω, ∃ r > 0, ∀ᶠ k in atTop, closedBall z r ⊆ U k)
-    (hvu : ∀ ε > 0, ∀ᶠ k in atTop, ∀ z ∈ U k, |v k z - u z| ≤ ε) {z : E} (hz : z ∈ Ω) :
-    Tendsto (fun k => v k z) atTop (𝓝 (u z)) := by
-  obtain ⟨s, hs, hsb⟩ := hUball z hz
-  refine Metric.tendsto_nhds.2 fun ε hε => ?_
-  filter_upwards [hsb, hvu (ε / 2) (half_pos hε)] with k hk hk'
-  rw [Real.dist_eq]
-  exact (hk' z (hk (mem_closedBall_self hs.le))).trans_lt (half_lt_self hε)
-
-/-- **Contact points pass to the limit.** Let `v k` converge to `u` uniformly on open sets
-`U k ⊆ Ω` which eventually contain a ball around each point of `Ω`. If `y` lies in the upper
-contact set of `v k` on `U k` for infinitely many `k`, then `y` lies in the upper contact set of
-`u` on `Ω`. -/
-private theorem mem_upperContactSet_of_frequently {U : ℕ → Set E} {v : ℕ → E → ℝ}
-    (hu : ContinuousOn u Ω) (hUΩ : ∀ k, U k ⊆ Ω)
-    (hUball : ∀ z ∈ Ω, ∃ r > 0, ∀ᶠ k in atTop, closedBall z r ⊆ U k)
-    (hvu : ∀ ε > 0, ∀ᶠ k in atTop, ∀ z ∈ U k, |v k z - u z| ≤ ε)
-    (hfreq : ∃ᶠ k in atTop, y ∈ upperContactSet (v k) (U k)) :
-    y ∈ upperContactSet u Ω := by
-  obtain ⟨k₀, hk₀⟩ := hfreq.exists
-  have hyΩ : y ∈ Ω := hUΩ k₀ (upperContactSet_subset hk₀)
-  obtain ⟨r, hr, hball⟩ := hUball y hyΩ
-  obtain ⟨k₁, hk₁⟩ := hball.exists
-  -- `u` is bounded on the ball around `y`.
-  obtain ⟨M, hM⟩ := (isCompact_closedBall y r).exists_bound_of_continuousOn
-    (hu.mono (hk₁.trans (hUΩ k₁)))
-  -- Along a subsequence, `y` is a contact point and `v k` is uniformly close to `u`, so the
-  -- supporting slopes are bounded and a further subsequence of them converges.
-  obtain ⟨φ, hφ, hP⟩ := extraction_of_frequently_atTop
-    ((hfreq.and_eventually hball).and_eventually (hvu 1 one_pos))
-  choose p hp using fun j => (mem_upperContactSet.1 (hP j).1.1).2
-  have hpb (j : ℕ) : p j ∈ closedBall (0 : E) (2 * (M + 1) / r) := by
-    refine mem_closedBall_zero_iff.2 (norm_le_of_forall_le_add_inner hr
-      (fun z hz => hp j z ((hP j).1.2 hz)) fun z hz => ?_)
-    have h := abs_le.1 ((hP j).2 z ((hP j).1.2 hz))
-    have h' := abs_le.1 (Real.norm_eq_abs _ ▸ hM z hz)
-    exact abs_le.2 ⟨by linarith, by linarith⟩
-  obtain ⟨q, -, ψ, hψ, hq⟩ := tendsto_subseq_of_bounded isBounded_closedBall hpb
-  -- Pass to the limit in the supporting inequalities.
-  have hφψ : Tendsto (fun j => φ (ψ j)) atTop atTop := hφ.tendsto_atTop.comp hψ.tendsto_atTop
-  have hlim {z : E} (hz : z ∈ Ω) : Tendsto (fun j => v (φ (ψ j)) z) atTop (𝓝 (u z)) :=
-    (tendsto_of_eventually_abs_sub_le hUball hvu hz).comp hφψ
-  refine mem_upperContactSet.2 ⟨hyΩ, q, fun z hz => le_of_tendsto_of_tendsto (hlim hz)
-    ((hlim hyΩ).add (hq.inner tendsto_const_nhds)) ?_⟩
-  obtain ⟨s, hs, hsb⟩ := hUball z hz
-  filter_upwards [hφψ.eventually hsb] with j hj
-  exact hp (ψ j) z (hj (mem_closedBall_self hs.le))
-
-omit [FiniteDimensional ℝ E] in
-/-- At a contact point of a `C²` function, the negated Hessian operator is positive. -/
-private theorem isPositive_neg_hessianOperator_of_mem_upperContactSet {v : E → ℝ} {U : Set E}
-    [CompleteSpace E] (hU : IsOpen U) (hv : ContDiffOn ℝ 2 v U) (hy : y ∈ upperContactSet v U) :
-    (-hessianOperator v y).IsPositive := by
-  have hv' := hv.contDiffAt (hU.mem_nhds (upperContactSet_subset hy))
-  refine (ContinuousLinearMap.isPositive_iff _).2 ⟨fun w w' => ?_, fun w => ?_⟩
-  · simp only [ContinuousLinearMap.coe_coe, neg_apply, inner_neg_left,
-      inner_neg_right, inner_hessianOperator_left]
-    rw [real_inner_comm, inner_hessianOperator_left]
-    exact congrArg Neg.neg (hv'.isSymmSndFDerivAt (by simp) w w')
-  · rw [neg_apply, inner_neg_left, inner_hessianOperator_left, neg_nonneg]
-    exact fderiv_fderiv_self_nonpos_of_mem_upperContactSet hU hv hy w
-
-/-- The determinant of `T` is controlled by the `n`-th powers of the norms of any `S` and of
-`T - S`, `n` the dimension: `|det T| ≤ ‖T‖ⁿ ≤ 2ⁿ (‖S‖ⁿ + ‖T - S‖ⁿ)`. -/
-private theorem ofReal_abs_det_le (T S : E →L[ℝ] E) :
-    ENNReal.ofReal |T.det| ≤ 2 ^ finrank ℝ E * (‖S‖ₑ ^ finrank ℝ E + ‖T - S‖ₑ ^ finrank ℝ E) := by
-  -- `‖T‖ ≤ 2 max (‖S‖, ‖T - S‖)`.
-  have h1 : ‖T‖ₑ ≤ 2 * max ‖S‖ₑ ‖T - S‖ₑ := by
-    calc ‖T‖ₑ = ENNReal.ofReal ‖S + (T - S)‖ := by rw [add_sub_cancel, ofReal_norm]
-      _ ≤ ENNReal.ofReal (‖S‖ + ‖T - S‖) := ENNReal.ofReal_le_ofReal (norm_add_le _ _)
-      _ ≤ 2 * max ‖S‖ₑ ‖T - S‖ₑ := by
-          rw [ENNReal.ofReal_add (norm_nonneg _) (norm_nonneg _), ofReal_norm, ofReal_norm,
-            two_mul]
-          exact add_le_add (le_max_left _ _) (le_max_right _ _)
-  have h2 : max ‖S‖ₑ ‖T - S‖ₑ ^ finrank ℝ E ≤ ‖S‖ₑ ^ finrank ℝ E + ‖T - S‖ₑ ^ finrank ℝ E := by
-    rcases le_total ‖S‖ₑ ‖T - S‖ₑ with h | h
-    · rw [max_eq_right h]; exact le_add_self
-    · rw [max_eq_left h]; exact le_self_add
-  calc ENNReal.ofReal |T.det| ≤ ‖T‖ₑ ^ finrank ℝ E := by
-        rw [← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
-        exact ENNReal.ofReal_le_ofReal T.abs_det_le_opNorm_pow
-    _ ≤ _ := by
-        refine (pow_le_pow_left' h1 _).trans ?_
-        rw [mul_pow]
-        exact mul_le_mul_right h2 _
-
-omit [FiniteDimensional ℝ E] in
-/-- The operators whose negative is positive form a closed set. -/
-private theorem isClosed_setOf_isPositive_neg : IsClosed {T : E →L[ℝ] E | (-T).IsPositive} := by
-  have h : {T : E →L[ℝ] E | (-T).IsPositive} =
-      (⋂ w, ⋂ w', {T : E →L[ℝ] E | ⟪T w, w'⟫ = ⟪w, T w'⟫}) ∩ ⋂ w, {T | ⟪T w, w⟫ ≤ 0} := by
-    ext T
-    simp [ContinuousLinearMap.isPositive_iff, LinearMap.IsSymmetric]
-  rw [h]
-  refine (isClosed_iInter fun w => isClosed_iInter fun w' => isClosed_eq ?_ ?_).inter
-    (isClosed_iInter fun w => isClosed_le ?_ continuous_const)
-  · exact (continuous_id.clm_apply continuous_const).inner continuous_const
-  · exact continuous_const.inner (continuous_id.clm_apply continuous_const)
-  · exact (continuous_id.clm_apply continuous_const).inner continuous_const
-
 /-- **The pointwise limit of the contact integrands.** In the setting of
 `mem_upperContactSet_of_frequently`, let `y ∈ Ω` be a point at which the Hessians of the `C²`
 functions `v k` converge to `H`. Then the upper limit of `|det D²(v k)(y)|` restricted to the
@@ -236,7 +113,8 @@ private theorem limsup_indicator_upperContactSet_le {U : ℕ → Set E} {v : ℕ
   · have hyΓ := mem_upperContactSet_of_frequently hu hUΩ hUball hvu hfreq
     have hT := hT (upperContactSet_subset hyΓ)
     have hHN : H y ∈ {T : E →L[ℝ] E | (-T).IsPositive} :=
-      isClosed_setOf_isPositive_neg.mem_of_frequently_of_tendsto
+      (ContinuousLinearMap.isClosed_setOf_isPositive.preimage
+        continuous_neg).mem_of_frequently_of_tendsto
         (hfreq.mono fun k hk => isPositive_neg_hessianOperator_of_mem_upperContactSet (hUo k)
           (hv k).contDiffOn hk) hT
     rw [indicator_of_mem (mem_inter hyΓ hHN)]
@@ -251,25 +129,6 @@ private theorem limsup_indicator_upperContactSet_le {U : ℕ → Set E} {v : ℕ
     exact le_rfl
 
 variable [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
-/-- A ball is exhausted by the concentric balls of smaller radius, so a bound on the measures of
-the smaller balls bounds the measure of the ball. -/
-private theorem measure_ball_le_of_forall_lt {R : ℝ} {B : ℝ≥0∞}
-    (h : ∀ s < R, μ (ball (0 : E) s) ≤ B) : μ (ball (0 : E) R) ≤ B := by
-  have hU : ⋃ i : ℕ, ball (0 : E) (R - 1 / ((i : ℝ) + 1)) = ball 0 R := by
-    ext z
-    simp only [mem_iUnion, mem_ball, dist_zero_right]
-    refine ⟨fun ⟨i, hi⟩ => hi.trans (sub_lt_self _ Nat.one_div_pos_of_nat), fun hz => ?_⟩
-    obtain ⟨i, hi⟩ := exists_nat_one_div_lt (sub_pos.2 hz)
-    exact ⟨i, by linarith⟩
-  have hmono : Monotone fun i : ℕ => ball (0 : E) (R - 1 / ((i : ℝ) + 1)) := fun i j hij =>
-    ball_subset_ball (sub_le_sub_left (one_div_le_one_div_of_le (by positivity)
-      (by exact_mod_cast Nat.add_le_add_right hij 1)) _)
-  rw [← hU]
-  exact le_of_tendsto' (tendsto_measure_iUnion_atTop hmono) fun i =>
-    h _ (sub_lt_self _ Nat.one_div_pos_of_nat)
-
 
 omit [μ.IsAddHaarMeasure] in
 /-- **A common majorant along a subsequence.** Let `F k` be measurable operator fields converging
@@ -299,7 +158,8 @@ private theorem exists_subseq_majorant [Nontrivial E] (hΩ : IsOpen Ω) {U : ℕ
   -- The majorant `2ⁿ (‖H‖ⁿ + ∑ⱼ ‖F (φ j) - H‖ⁿ)`.
   · have hC : (2 : ℝ≥0∞) ^ n ≠ ∞ := ENNReal.pow_ne_top ENNReal.ofNat_ne_top
     refine ⟨fun y => 2 ^ n * (Ω.indicator (fun y => ‖H y‖ₑ ^ n) y + ∑' j, D (φ j) y), ?_,
-      fun j y hy => (ofReal_abs_det_le _ (H y)).trans (mul_le_mul_right (add_le_add ?_ ?_) _)⟩
+      fun j y hy => ((F (φ j) y).ofReal_abs_det_le (H y)).trans
+        (mul_le_mul_right (add_le_add ?_ ?_) _)⟩
     · rw [lintegral_const_mul' _ _ hC, lintegral_add_left'
         ((aemeasurable_indicator_iff hΩ.measurableSet).2 (hHm.enorm.pow_const n)),
         lintegral_indicator hΩ.measurableSet]
@@ -335,9 +195,8 @@ private theorem addHaar_ball_sub_le_lintegral [Nontrivial E] (hΩb : Bornology.I
   rcases le_or_gt (u x - m - 2 * ε) 0 with ha | ha
   · rw [ball_eq_empty.2 (div_nonpos_of_nonpos_of_nonneg ha diam_nonneg), measure_empty]
     exact zero_le
-  have hdU : 0 < diam U := (by positivity : (0 : ℝ) < 2 * r).trans_le
-    ((diam_ball_eq x hr.le).symm.trans_le
-      (diam_mono (ball_subset_closedBall.trans hxU) (hΩb.subset hUΩ)))
+  have hdU : 0 < diam U := diam_pos (infinite_of_mem_nhds x
+    (hUo.mem_nhds (hxU (mem_closedBall_self hr.le)))).nontrivial (hΩb.subset hUΩ)
   refine measure_mono (ball_subset_ball ?_)
   calc (u x - m - 2 * ε) / diam Ω ≤ (u x - m - 2 * ε) / diam U :=
         div_le_div_of_nonneg_left ha.le hdU (diam_mono hUΩ hΩb)
@@ -395,11 +254,8 @@ private theorem addHaar_ball_le_of_tendsto [Nontrivial E] (hΩb : Bornology.IsBo
       (fun z hz => (hUball z hz).imp fun r ⟨hr, h⟩ => ⟨hr, hφt.eventually h⟩)
       (fun _ => hv _) (fun ε hε => hφt.eventually (hvu ε hε)) hy
   -- Each approximant satisfies the `C²` estimate with boundary value `m + ε`; let `ε → 0`.
-  refine measure_ball_le_of_forall_lt μ fun s hs => ?_
-  have hd : 0 < diam Ω := by
-    obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 hΩ x hx
-    exact (by positivity : (0 : ℝ) < 2 * r).trans_le
-      ((diam_ball_eq x hr.le).symm.trans_le (diam_mono hball hΩb))
+  refine Measure.measure_ball_le_of_forall_lt μ fun s hs => ?_
+  have hd : 0 < diam Ω := diam_pos (infinite_of_mem_nhds x (hΩ.mem_nhds hx)).nontrivial hΩb
   set ε := ((u x - m) / diam Ω - s) * diam Ω / 2
   have hε : 0 < ε := by
     have : 0 < (u x - m) / diam Ω - s := sub_pos.2 hs
@@ -431,12 +287,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
   {ū : E → ℝ} {x : E} {m : ℝ}
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- A bounded subset of a nontrivial real normed space has nonempty complement. -/
-private theorem nonempty_compl_of_isBounded [Nontrivial E] {s : Set E}
-    (hs : Bornology.IsBounded s) : sᶜ.Nonempty :=
-  nonempty_compl.2 fun h => NormedSpace.unbounded_univ ℝ E (h ▸ hs)
-
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- If `ū` is continuous on the closure of a bounded open set `Ω` and at most `m` on its frontier,
 then `ū < m + η` at the points of `Ω` close enough to the complement of `Ω`. -/
@@ -454,7 +304,7 @@ private theorem exists_pos_forall_infDist_lt [Nontrivial E] (hΩb : Bornology.Is
     linarith
   obtain ⟨δ, hδ, hδK⟩ := hK.exists_cthickening_subset_open Ω.isOpen hKΩ
   refine ⟨δ, hδ, fun z hz hzδ => lt_of_not_ge fun hzη => hzδ.not_ge ?_⟩
-  refine (le_infDist (nonempty_compl_of_isBounded hΩb)).2 fun w hw =>
+  refine (le_infDist (hΩb.nonempty_compl ℝ)).2 fun w hw =>
     le_of_not_gt fun hwz => hw (hδK ?_)
   exact mem_cthickening_of_dist_le w z δ K ⟨subset_closure hz, hzη⟩ (dist_comm w z ▸ hwz.le)
 
@@ -518,15 +368,6 @@ private theorem exists_eventually_closedBall_subset {s : Set E} (hs : IsOpen s) 
   simp only [mem_ofPred_eq]
   linarith [mem_closedBall.1 hw]
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
-/-- The `n`-th power of the `Lⁿ` norm on `Ω` as a Lebesgue integral. -/
-private theorem setLIntegral_enorm_pow_eq_eLpNorm_pow {F : Type*} [NormedAddCommGroup F]
-    {n : ℕ} (hn : 1 ≤ n) {f : E → F} (hf : AEStronglyMeasurable f (μ.restrict Ω)) :
-    ∫⁻ y in Ω, ‖f y‖ₑ ^ n ∂μ = eLpNorm f n (μ.restrict Ω) ^ n := by
-  have h := eLpNorm_nnreal_pow_eq_lintegral (p := (n : NNReal))
-    (Nat.cast_ne_zero.2 (Nat.one_le_iff_ne_zero.1 hn)) hf
-  simpa only [ENNReal.coe_natCast, NNReal.coe_natCast, ENNReal.rpow_natCast] using h.symm
-
 /-- On open sets `U k ⊆ Ω` whose points have their bump ball in `Ω`, the Hessians of the
 mollifications of `u ∈ W^{2,n}(Ω)` converge to the weak Hessian in `Lⁿ` as the bump radii tend
 to zero. -/
@@ -543,7 +384,7 @@ private theorem tendsto_setLIntegral_hessianOperator_smoothField_sub
   rw [zero_pow (Nat.one_le_iff_ne_zero.1 hn)] at h
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h (fun _ => zero_le)
     fun k => ?_
-  rw [Function.comp_apply, ← setLIntegral_enorm_pow_eq_eLpNorm_pow hn
+  rw [Function.comp_apply, ← lintegral_enorm_pow_eq_eLpNorm_pow (Nat.one_le_iff_ne_zero.1 hn)
     ((Wkp.contDiff_smoothField _ _).continuous.aestronglyMeasurable.sub
       (Lp.aestronglyMeasurable _))]
   refine (setLIntegral_congr_fun (hUo k).measurableSet fun y hy => ?_).trans_le
@@ -600,11 +441,12 @@ theorem addHaar_ball_le_lintegral_abs_det_iteratedGradient {p : ℝ≥0∞} [Fac
     have := hdm z (hball k hz'.le (mem_closedBall_self (φ k).rOut_pos.le)) (hz' ▸ hk)
     linarith [(abs_le.1 (hk' z (hball k hz'.le))).2]
   have hH : ∫⁻ y in Ω, ‖Wkp.iteratedGradient 1 u y‖ₑ ^ finrank ℝ E ∂μ ≠ ∞ := by
-    rw [setLIntegral_enorm_pow_eq_eLpNorm_pow hn1 (Lp.aestronglyMeasurable _)]
+    rw [lintegral_enorm_pow_eq_eLpNorm_pow (Nat.one_le_iff_ne_zero.1 hn1)
+      (Lp.aestronglyMeasurable _)]
     exact ENNReal.pow_ne_top (Lp.eLpNorm_lt_top _).ne
   exact addHaar_ball_le_of_tendsto μ hΩb Ω.isOpen (hcont.mono subset_closure) hx hUo hUΩ
     (fun z hz => exists_eventually_closedBall_subset Ω.isOpen
-      (nonempty_compl_of_isBounded hΩb) hδ0 hz)
+      (hΩb.nonempty_compl ℝ) hδ0 hz)
     (fun k => contDiff_infty.1 (Wkp.contDiff_smoothField _ _) 2)
     (fun ε hε => (hclose ε hε).mono fun k hk y hy => hk y (hball k (le_of_lt hy)))
     hvm (Lp.aestronglyMeasurable _) hH
@@ -642,18 +484,8 @@ theorem volume_ball_le_setLIntegral_upperContactSet_of_wkp
   set T : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι := Wkp.iteratedGradient 1 u y
   by_cases hy : (-T).IsPositive
   · rw [indicator_of_mem hy]
-    -- On the contact set `-D²u` is positive, so the determinant–trace inequality bounds the
-    -- determinant of `D²u` by the elliptic operator.
-    have hentry : ∑ i, ∑ j, a y i j * (↑(-T) : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι)
-        (EuclideanSpace.single j 1) i = -∑ i, ∑ j, a y i j * T (EuclideanSpace.single j 1) i := by
-      simp [Finset.sum_neg_distrib]
-    have hS := hy.toLinearMap.sum_mul_apply_nonneg hay.posSemidef
-    have hD := hy.toLinearMap.det_mul_det_le_sum_mul_apply_div_card_pow hay.posSemidef
-    rw [hentry] at hS hD
-    rw [← hy.toLinearMap.abs_det_neg, ContinuousLinearMap.toLinearMap_neg, neg_neg] at hD
-    refine ENNReal.ofReal_le_ofReal ((le_div_iff₀ hay.det_pos).2 (hD.trans (pow_le_pow_left₀
-      (div_nonneg hS (Nat.cast_nonneg _)) (div_le_div_of_nonneg_right ?_ (Nat.cast_nonneg _)) _)))
-    exact (neg_le_neg hfy).trans (neg_le_negPart _)
+    exact ENNReal.ofReal_le_ofReal (abs_det_le_negPart_div_card_pow_div_det
+      (by simpa only [ContinuousLinearMap.toLinearMap_neg] using hy.toLinearMap) hay hfy)
   · rw [indicator_of_notMem hy]
     exact zero_le
 
@@ -682,13 +514,9 @@ theorem le_add_mul_eLpNorm_negPart_div_det_rpow_of_wkp
     have h := (Fact.out : 1 ≤ p)
     rw [hp] at h
     exact_mod_cast h)
-  -- `Ω` is a nonempty open set, so it has positive diameter.
-  have hd : 0 < diam (Ω : Set (EuclideanSpace ℝ ι)) := by
-    obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 Ω.isOpen x hx
-    calc 0 < 2 * ε := by positivity
-      _ = diam (ball x ε) := (diam_ball_eq x hε.le).symm
-      _ ≤ diam (Ω : Set (EuclideanSpace ℝ ι)) := diam_mono hball hΩb
-  refine le_add_div_mul_toReal_of_volume_ball_le hd hg.eLpNorm_lt_top.ne ?_
+  refine le_add_div_mul_toReal_of_volume_ball_le
+    (diam_pos (infinite_of_mem_nhds x (Ω.isOpen.mem_nhds hx)).nontrivial hΩb)
+    hg.eLpNorm_lt_top.ne ?_
   rw [← setLIntegral_negPart_div_det_eq_mul_eLpNorm_pow ha hg.aestronglyMeasurable]
   exact volume_ball_le_setLIntegral_upperContactSet_of_wkp hΩb hp u hcont hū ha hf hm hx
 

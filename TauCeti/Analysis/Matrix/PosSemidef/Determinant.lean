@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Matrix.Spectrum
 public import TauCeti.Analysis.Matrix.Sqrt
 public import TauCeti.LinearAlgebra.Matrix.SchurComplement
 public import TauCeti.LinearAlgebra.Matrix.PosSemidef
+public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.InnerProductSpace.Positive
 
 /-!
 # Determinant inequalities for positive-semidefinite matrices
@@ -23,7 +25,11 @@ over either real or complex scalars.
 For real positive-semidefinite `n × n` matrices, the inequality of arithmetic and
 geometric means for the eigenvalues gives `det A ≤ (tr A / n) ^ n`, and its mixed
 form `det A * det B ≤ (tr (A * B) / n) ^ n` is the pointwise step of the
-Aleksandrov–Bakelman–Pucci maximum principle.
+Aleksandrov–Bakelman–Pucci maximum principle. Read through the standard basis of `ℝⁿ`, it bounds
+`det T det A` by `(∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ / n)ⁿ` for a positive operator `T`
+(`LinearMap.IsPositive.det_mul_det_le_sum_mul_apply_div_card_pow`), where the principal part
+`∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ = tr (A M_T)` (`LinearMap.IsSymmetric.trace_mul_toMatrix`) is nonnegative
+(`LinearMap.IsPositive.sum_mul_apply_nonneg`).
 
 ## References
 
@@ -209,3 +215,49 @@ theorem PosSemidef.det_mul_det_le_trace_mul_div_card_pow {A B : Matrix n n ℝ}
 end ArithmeticMean
 
 end Matrix
+
+namespace LinearMap
+
+open Matrix
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- For a symmetric operator `T` on `ℝⁿ`, the trace of `A` times the matrix of `T` is
+`∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ`. -/
+theorem IsSymmetric.trace_mul_toMatrix {T : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι}
+    (hT : T.IsSymmetric) (A : Matrix ι ι ℝ) :
+    (A * LinearMap.toMatrix (EuclideanSpace.basisFun ι ℝ).toBasis
+      (EuclideanSpace.basisFun ι ℝ).toBasis T).trace =
+      ∑ i, ∑ j, A i j * T (EuclideanSpace.single j 1) i := by
+  have hsym (i j : ι) :
+      T (EuclideanSpace.single i 1) j = T (EuclideanSpace.single j 1) i := by
+    simpa [EuclideanSpace.inner_single_right, EuclideanSpace.inner_single_left] using
+      hT (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
+  simp only [Matrix.trace, Matrix.diag_apply, Matrix.mul_apply, LinearMap.toMatrix_apply,
+    OrthonormalBasis.coe_toBasis, OrthonormalBasis.coe_toBasis_repr_apply,
+    EuclideanSpace.basisFun_apply, EuclideanSpace.basisFun_repr, hsym]
+
+/-- **The principal part of a positive operator.** If `T` is a positive operator on `ℝⁿ` and `A`
+is positive semidefinite, then `0 ≤ ∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ`. -/
+theorem IsPositive.sum_mul_apply_nonneg
+    {T : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι} (hT : T.IsPositive) {A : Matrix ι ι ℝ}
+    (hA : A.PosSemidef) : 0 ≤ ∑ i, ∑ j, A i j * T (EuclideanSpace.single j 1) i := by
+  rw [← hT.isSymmetric.trace_mul_toMatrix]
+  exact hA.trace_mul_nonneg ((LinearMap.posSemidef_toMatrix_iff _).2 hT)
+
+/-- **The determinant bound for a positive operator.** If `T` is a positive operator on `ℝⁿ` and
+`A` is positive semidefinite, then `det T det A ≤ (∑ᵢⱼ Aᵢⱼ (T eⱼ)ᵢ / n)ⁿ`: the determinant–trace
+inequality `Matrix.PosSemidef.det_mul_det_le_trace_mul_div_card_pow` for `A` and the matrix of
+`T`. Applied to `T = -D²u` on the upper contact set, it bounds the Hessian determinant by the
+elliptic operator. -/
+theorem IsPositive.det_mul_det_le_sum_mul_apply_div_card_pow
+    {T : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι} (hT : T.IsPositive) {A : Matrix ι ι ℝ}
+    (hA : A.PosSemidef) :
+    LinearMap.det T * A.det ≤
+      ((∑ i, ∑ j, A i j * T (EuclideanSpace.single j 1) i) / Fintype.card ι) ^
+        Fintype.card ι := by
+  rw [← LinearMap.det_toMatrix (EuclideanSpace.basisFun ι ℝ).toBasis, mul_comm,
+    ← hT.isSymmetric.trace_mul_toMatrix]
+  exact hA.det_mul_det_le_trace_mul_div_card_pow ((LinearMap.posSemidef_toMatrix_iff _).2 hT)
+
+end LinearMap

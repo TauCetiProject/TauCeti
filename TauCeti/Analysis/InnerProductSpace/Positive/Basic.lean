@@ -23,6 +23,8 @@ entries along any orthonormal family sum to at most the trace
 (`LinearMap.IsPositive.sum_re_inner_le_re_trace`). These are the inputs to Ky Fan's maximum
 principle for positive operators.
 
+The positive operators form a closed set (`ContinuousLinearMap.isClosed_setOf_isPositive`).
+
 A contraction between real or complex Hilbert spaces satisfies `D D† ≤ 1` in the Loewner
 order (`ContinuousLinearMap.self_comp_adjoint_le_one`), so its defect operator `1 - D D†`
 is positive.
@@ -85,6 +87,22 @@ theorem IsPositive.isUnit_one_add {T : E →L[𝕜] E} (hT : T.IsPositive) : IsU
         rw [add_apply, one_apply_eq_self, inner_add_left, map_add, inner_self_eq_norm_sq]
         exact le_add_of_nonneg_right (hT.re_inner_nonneg_left x)
     _ ≤ ‖⟪(1 + T) x, x⟫_𝕜‖ := RCLike.re_le_norm _
+
+omit [CompleteSpace E] in
+/-- The positive operators form a closed set. -/
+theorem isClosed_setOf_isPositive : IsClosed {T : E →L[𝕜] E | T.IsPositive} := by
+  have h : {T : E →L[𝕜] E | T.IsPositive} =
+      (⋂ x, ⋂ y, {T : E →L[𝕜] E | ⟪T x, y⟫_𝕜 = ⟪x, T y⟫_𝕜}) ∩
+        ⋂ x, {T : E →L[𝕜] E | 0 ≤ RCLike.re ⟪T x, x⟫_𝕜} := by
+    ext T
+    simp [isPositive_def, LinearMap.IsSymmetric, reApplyInnerSelf]
+  rw [h]
+  refine (isClosed_iInter fun x => isClosed_iInter fun y => isClosed_eq ?_ ?_).inter
+    (isClosed_iInter fun x => isClosed_le continuous_const ?_)
+  · exact (continuous_id.clm_apply continuous_const).inner continuous_const
+  · exact continuous_const.inner (continuous_id.clm_apply continuous_const)
+  · exact RCLike.continuous_re.comp
+      ((continuous_id.clm_apply continuous_const).inner continuous_const)
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
 

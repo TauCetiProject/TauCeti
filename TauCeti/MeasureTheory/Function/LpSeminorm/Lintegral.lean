@@ -16,7 +16,9 @@ For a finite exponent `p ≠ 0`, Mathlib's `MeasureTheory.eLpNorm_nnreal_pow_eq_
 measurability the seminorm is `∞` by convention, so the inequality
 `∫⁻ ‖f‖ₑ ^ p ∂μ ≤ eLpNorm f p μ ^ p` holds for every `f`
 (`TauCeti.lintegral_rpow_enorm_le_rpow_eLpNorm`). This is the form in which a bound on the `Lᵖ`
-seminorm is used to bound an integral, with no measurability side condition.
+seminorm is used to bound an integral, with no measurability side condition. For a natural
+exponent `n ≠ 0` and measurable `f` the identity reads `∫⁻ ‖f‖ₑ ^ n ∂μ = eLpNorm f n μ ^ n`
+(`TauCeti.lintegral_enorm_pow_eq_eLpNorm_pow`).
 
 Consequently a function in `Lᵖ` for `p ≠ 0` is finite almost everywhere
 (`MeasureTheory.MemLp.ae_enorm_lt_top`), including for `p = ∞`.
@@ -40,6 +42,13 @@ theorem lintegral_rpow_enorm_le_rpow_eLpNorm {p : ℝ≥0} (hp : p ≠ 0) (f : �
   · rw [eLpNorm_of_not_aestronglyMeasurable hf,
       ENNReal.top_rpow_of_pos (NNReal.coe_pos.2 (pos_iff_ne_zero.2 hp))]
     exact le_top
+
+/-- For `n ≠ 0`, the `n`-th power of the `Lⁿ` seminorm of an almost everywhere strongly measurable
+function is the integral of `‖f‖ₑ ^ n`. -/
+theorem lintegral_enorm_pow_eq_eLpNorm_pow {n : ℕ} (hn : n ≠ 0) {f : α → ε}
+    (hf : AEStronglyMeasurable f μ) : ∫⁻ x, ‖f x‖ₑ ^ n ∂μ = eLpNorm f n μ ^ n := by
+  simpa only [ENNReal.coe_natCast, NNReal.coe_natCast, ENNReal.rpow_natCast] using
+    (eLpNorm_nnreal_pow_eq_lintegral (p := (n : ℝ≥0)) (Nat.cast_ne_zero.2 hn) hf).symm
 
 end TauCeti
 

@@ -7,10 +7,12 @@ module
 
 public import Mathlib.MeasureTheory.Function.Jacobian
 public import TauCeti.Analysis.Calculus.Morse.Linearization
+public import Mathlib.Analysis.InnerProductSpace.Positive
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Convex.SubgradientImage
+import Mathlib.Topology.MetricSpace.Sequences
 
 /-!
 # The upper contact set and its gradient image
@@ -45,6 +47,10 @@ elliptic operator applied to it, in
   contact set is relatively closed, hence measurable.
 * `TauCeti.PDE.fderiv_fderiv_self_nonpos_of_mem_upperContactSet`: the second derivative of a `C²`
   function is nonpositive on the diagonal at a point of the upper contact set.
+* `TauCeti.PDE.isPositive_neg_hessianOperator_of_mem_upperContactSet`: there the negated Hessian
+  operator is positive.
+* `TauCeti.PDE.mem_upperContactSet_of_frequently`: a point in the upper contact sets of infinitely
+  many uniform approximants of `u` lies in the upper contact set of `u`.
 * `TauCeti.PDE.ball_subset_image_gradient_upperContactSet`: the ball of radius
   `(u x - m) / diam Ω` lies in the gradient image of the upper contact set.
 * `TauCeti.PDE.addHaar_image_gradient_upperContactSet_le`: the measure of that gradient image is
@@ -132,7 +138,76 @@ theorem measurableSet_upperContactSet [MeasurableSpace E] [OpensMeasurableSpace 
   filter_upwards [self_mem_nhdsWithin] with z hz
   exact ((mem_upperContactSet_iff_gradient hΩ hdiff).1 hz).2 x hx
 
+/-- At a point of the upper contact set of a function that is `C²` on an open set, the negated
+Hessian operator is positive. -/
+theorem isPositive_neg_hessianOperator_of_mem_upperContactSet (hΩ : IsOpen Ω)
+    (hu : ContDiffOn ℝ 2 u Ω) (hy : y ∈ upperContactSet u Ω) :
+    (-hessianOperator u y).IsPositive := by
+  have hu' := hu.contDiffAt (hΩ.mem_nhds (upperContactSet_subset hy))
+  refine (ContinuousLinearMap.isPositive_iff _).2 ⟨fun w w' => ?_, fun w => ?_⟩
+  · simp only [ContinuousLinearMap.coe_coe, neg_apply, inner_neg_left,
+      inner_neg_right, inner_hessianOperator_left]
+    rw [real_inner_comm, inner_hessianOperator_left]
+    exact congrArg Neg.neg (hu'.isSymmSndFDerivAt (by simp) w w')
+  · rw [neg_apply, inner_neg_left, inner_hessianOperator_left, neg_nonneg]
+    exact fderiv_fderiv_self_nonpos_of_mem_upperContactSet hΩ hu hy w
+
 variable [FiniteDimensional ℝ E]
+
+omit [InnerProductSpace ℝ E] [CompleteSpace E] [FiniteDimensional ℝ E] in
+/-- Uniform convergence on sets `U k` which eventually contain a ball around each point of `Ω`
+gives pointwise convergence on `Ω`. -/
+private theorem tendsto_of_eventually_abs_sub_le {U : ℕ → Set E} {v : ℕ → E → ℝ}
+    (hUball : ∀ z ∈ Ω, ∃ r > 0, ∀ᶠ k in atTop, closedBall z r ⊆ U k)
+    (hvu : ∀ ε > 0, ∀ᶠ k in atTop, ∀ z ∈ U k, |v k z - u z| ≤ ε) {z : E} (hz : z ∈ Ω) :
+    Tendsto (fun k => v k z) atTop (𝓝 (u z)) := by
+  obtain ⟨s, hs, hsb⟩ := hUball z hz
+  refine Metric.tendsto_nhds.2 fun ε hε => ?_
+  filter_upwards [hsb, hvu (ε / 2) (half_pos hε)] with k hk hk'
+  rw [Real.dist_eq]
+  exact (hk' z (hk (mem_closedBall_self hs.le))).trans_lt (half_lt_self hε)
+
+omit [CompleteSpace E] in
+/-- **Contact points pass to the limit.** Let `v k` converge to `u` uniformly on sets `U k ⊆ Ω`
+which eventually contain a ball around each point of `Ω`. If `y` lies in the upper contact set of
+`v k` on `U k` for infinitely many `k`, then `y` lies in the upper contact set of `u` on `Ω`. -/
+theorem mem_upperContactSet_of_frequently {U : ℕ → Set E} {v : ℕ → E → ℝ}
+    (hu : ContinuousOn u Ω) (hUΩ : ∀ k, U k ⊆ Ω)
+    (hUball : ∀ z ∈ Ω, ∃ r > 0, ∀ᶠ k in atTop, closedBall z r ⊆ U k)
+    (hvu : ∀ ε > 0, ∀ᶠ k in atTop, ∀ z ∈ U k, |v k z - u z| ≤ ε)
+    (hfreq : ∃ᶠ k in atTop, y ∈ upperContactSet (v k) (U k)) :
+    y ∈ upperContactSet u Ω := by
+  obtain ⟨k₀, hk₀⟩ := hfreq.exists
+  have hyΩ : y ∈ Ω := hUΩ k₀ (upperContactSet_subset hk₀)
+  obtain ⟨r, hr, hball⟩ := hUball y hyΩ
+  obtain ⟨k₁, hk₁⟩ := hball.exists
+  -- `u` is bounded on the ball around `y`.
+  obtain ⟨M, hM⟩ := (isCompact_closedBall y r).exists_bound_of_continuousOn
+    (hu.mono (hk₁.trans (hUΩ k₁)))
+  -- Along a subsequence, `y` is a contact point and `v k` is uniformly close to `u`, so the
+  -- supporting slopes are bounded and a further subsequence of them converges.
+  obtain ⟨φ, hφ, hP⟩ := extraction_of_frequently_atTop
+    ((hfreq.and_eventually hball).and_eventually (hvu 1 one_pos))
+  choose p hp using fun j => (mem_upperContactSet.1 (hP j).1.1).2
+  have hpb (j : ℕ) : p j ∈ closedBall (0 : E) (2 * (M + 1) / r) := by
+    rw [mem_closedBall_zero_iff, le_div_iff₀ hr, mul_comm, ← norm_neg]
+    refine mul_norm_le_of_forall_add_inner_le (u := fun z => -v (φ j) z) hr.le (hP j).1.2
+      (fun z hz => ?_) fun z hz => ?_
+    · have h := abs_le.1 ((hP j).2 z ((hP j).1.2 hz))
+      have h' := abs_le.1 (Real.norm_eq_abs _ ▸ hM z hz)
+      exact abs_le.2 ⟨by linarith, by linarith⟩
+    · rw [inner_neg_right, real_inner_comm]
+      linarith [hp j z hz]
+  obtain ⟨q, -, ψ, hψ, hq⟩ := tendsto_subseq_of_bounded isBounded_closedBall hpb
+  -- Pass to the limit in the supporting inequalities.
+  have hφψ : Tendsto (fun j => φ (ψ j)) atTop atTop := hφ.tendsto_atTop.comp hψ.tendsto_atTop
+  have hlim {z : E} (hz : z ∈ Ω) : Tendsto (fun j => v (φ (ψ j)) z) atTop (𝓝 (u z)) :=
+    (tendsto_of_eventually_abs_sub_le hUball hvu hz).comp hφψ
+  refine mem_upperContactSet.2 ⟨hyΩ, q, fun z hz => le_of_tendsto_of_tendsto (hlim hz)
+    ((hlim hyΩ).add (hq.inner tendsto_const_nhds)) ?_⟩
+  obtain ⟨s, hs, hsb⟩ := hUball z hz
+  filter_upwards [hφψ.eventually hsb] with j hj
+  exact hp (ψ j) z (hj (mem_closedBall_self hs.le))
 
 /-- **The gradient image of the upper contact set** (Gilbarg–Trudinger, Lemma 9.2). Let `Ω` be
 bounded and open, let `u` be continuous on `closure Ω` and differentiable in `Ω`, and let `m`

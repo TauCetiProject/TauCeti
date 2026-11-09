@@ -526,8 +526,8 @@ absolute value of the determinant of its negative. -/
 theorem abs_det_neg {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
     [FiniteDimensional ℝ F] {S : F →ₗ[ℝ] F} (hS : S.IsPositive) :
     |LinearMap.det (-S)| = LinearMap.det S := by
-  rw [← neg_one_smul ℝ S, LinearMap.det_smul, abs_mul, abs_pow, abs_neg, abs_one, one_pow,
-    one_mul, abs_of_nonneg hS.det_nonneg]
+  rw [← neg_one_smul ℝ S, LinearMap.det_smul]
+  simp [abs_of_nonneg hS.det_nonneg]
 
 end LinearMap.IsPositive
 

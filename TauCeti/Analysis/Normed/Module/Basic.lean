@@ -22,6 +22,8 @@ This file collects elementary norm facts for scalar actions on seminormed additi
   norm-bounded preimages along linear maps.
 * `TauCeti.mul_norm_le_two_mul_norm_of_norm_sub_smul_le`: a vector within `K * a ^ 2` of the real
   multiple `a • v`, with `|a| * (2 * K) ≤ ‖v‖`, still has norm at least half of `|a| * ‖v‖`.
+* `Bornology.IsBounded.nonempty_compl`: a bounded subset of a nontrivial normed space has nonempty
+  complement.
 -/
 
 public section
@@ -66,5 +68,11 @@ theorem mul_norm_le_two_mul_norm_of_norm_sub_smul_le {E : Type*} [SeminormedAddC
     mul_nonneg (abs_nonneg a) (norm_nonneg v)]
 
 end TauCeti
+
+/-- A bounded subset of a nontrivial normed space has nonempty complement. -/
+theorem Bornology.IsBounded.nonempty_compl (𝕜 : Type*) {E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [Nontrivial E] {s : Set E}
+    (hs : Bornology.IsBounded s) : sᶜ.Nonempty :=
+  Set.nonempty_compl.2 fun h => NormedSpace.unbounded_univ 𝕜 E (h ▸ hs)
 
 end
