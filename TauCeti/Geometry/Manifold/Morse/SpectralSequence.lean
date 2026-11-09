@@ -24,9 +24,9 @@ has at `(p, q)` the relative homology `Hₙ(M_{a (q + 1)}, M_{a q})` of the `q`t
 The filtration is a **critical-band filtration** when `a` is a critical-band cut of `f`
 (`TauCeti.IsCriticalBandCut`): each band `f⁻¹[a q, a (q + 1)]` is compact and contains at most one
 critical value, which lies strictly between `a q` and `a (q + 1)` (`TauCeti.IsCriticalBand`). On a
-compact manifold every Morse function has such a filtration, cut by an arithmetic progression of
-regular values (`TauCeti.IsMorse.exists_isCriticalBandCut`), which starts below and ends above all
-values of `f`, so that the filtration is finite.
+compact manifold every Morse function has such a filtration, cut by a strictly increasing sequence
+of regular values (`TauCeti.IsMorse.exists_isCriticalBandCut`), which starts below and ends above
+all values of `f`, so that the filtration is finite.
 
 For a Morse function the first page is then free on the critical points
 (`TauCeti.IsMorse.nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma`): the object at
@@ -46,10 +46,6 @@ the images of the homology of the sublevels is free on the critical points of in
 (`TauCeti.IsMorse.nonempty_cokernel_abutmentFiltrationMap_iso_sigma_of_forall_ne_add_one`). This
 refines the lacunary principle `TauCeti.IsMorse.finrank_singularHomology_eq_of_forall_ne_add_one`,
 which records only the dimensions.
-
-The same filtration, cut at regular values separating the critical values, is the one whose first
-page is computed for Morse–Bott functions by the homology of the critical submanifolds shifted by
-their indices; here only the ordinary Morse case is identified.
 
 ## Main results
 
@@ -259,7 +255,7 @@ theorem IsMorse.nonempty_cokernel_abutmentFiltrationMap_iso_sigma_of_forall_ne_a
     exact ⟨(eE.isZero_iff.1 (E.isZero_page_X_of_le le_rfl hpq r hr)).iso
       (e₂.isZero_iff.1 hpq)⟩
   -- Otherwise every object joined to `pq` by a differential vanishes, so `pq` survives.
-  let e := E.pageXIsoOfLE le_rfl (pq := pq) (fun s hs pq' hpq' ↦ by
+  let e := E.pageXIsoOfLEOfIsZero le_rfl (pq := pq) (fun s hs pq' hpq' ↦ by
     rcases hpq' with hpq' | hpq'
     · exact (isZero_or_isZero_page_two_X R hf ha hind
         (Abelian.SpectralObject.coreE₂Cohomological.hc s pq pq' hpq' hs)).resolve_left hpq
