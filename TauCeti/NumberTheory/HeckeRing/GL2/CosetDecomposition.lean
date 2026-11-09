@@ -209,17 +209,8 @@ lemma upperTriRep_mul_upperTriRep {n m : ℕ} (b' : Fin n) (b : Fin m) :
 
 /-- The representatives have positive determinant: `det !![1, b; 0, p] = p > 0`. -/
 lemma det_upperTriRep_pos (b : Fin p) :
-    0 < (↑(upperTriRep p b) : Matrix (Fin 2) (Fin 2) ℚ).det := by
-  have hpos : ∀ i : Fin 2, 0 < ![1, p] i := fun i ↦ by fin_cases i <;> simp [b.pos]
-  have hdiag : (0 : ℚ) < (↑(natDiagGL 2 ![1, p]) : Matrix (Fin 2) (Fin 2) ℚ).det :=
-    natDiagGL_det_pos 2 ![1, p] hpos
-  have hunit := RingHom.map_det (Int.castRingHom ℚ)
-    (unitriMat ((upperTriEntriesEquivFin p).symm b))
-  rw [det_unitriMat] at hunit
-  have hunit' : ((unitriMat ((upperTriEntriesEquivFin p).symm b)).map
-      (Int.cast : ℤ → ℚ)).det = 1 := by simpa using hunit.symm
-  rw [upperTriRep, upperTriGL_def, Units.val_mul, Matrix.det_mul]
-  simpa [hunit'] using hdiag
+    0 < (↑(upperTriRep p b) : Matrix (Fin 2) (Fin 2) ℚ).det :=
+  det_pos_of_coe_eq_upperTri p (coe_upperTriRep p b)
 
 /-- **The scaling representative** `!![p, 0; 0, 1]`, as `natDiagGL 2 ![p, 1]`. That entrywise
 description needs `0 < p`, which is why `coe_scaleRep` carries the hypothesis: at `p = 0` the
