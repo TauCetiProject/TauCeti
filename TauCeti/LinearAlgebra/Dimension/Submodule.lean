@@ -21,7 +21,8 @@ nontrivially. Dually, the preimage of a subspace `W` under a linear map out of a
 `m`-dimensional space has codimension at most the codimension of `W`. A set spans a subspace of
 dimension at least `n` exactly when it contains `n` linearly independent vectors. Two disjoint
 subspaces of a finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
-A subspace of dimension at least three contains `x`, `z` with `a, x, z` linearly independent.
+A subspace of dimension at least three contains `x` outside `𝕜 ∙ a` and `z` outside
+`span 𝕜 {a, x}`.
 A finite-dimensional subspace spanning the whole space together with `V`, of dimension at most the
 codimension of `V`, is a complement of `V`; here `V` itself may be infinite-dimensional.
 
