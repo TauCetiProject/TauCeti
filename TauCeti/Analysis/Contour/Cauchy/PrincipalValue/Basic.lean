@@ -207,16 +207,14 @@ theorem aestronglyMeasurable_truncated_mul_deriv {f : ℂ → ℂ} (hf : Measura
       (fun t => if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0) μ := by
   have hD : MeasurableSet {t | DifferentiableAt ℝ γ t} := measurableSet_of_differentiableAt ℝ γ
   have hcont : ContinuousOn γ {t | DifferentiableAt ℝ γ t} := fun t ht =>
-    (show DifferentiableAt ℝ γ t from ht).continuousAt.continuousWithinAt
+    (by simpa using ht : DifferentiableAt ℝ γ t).continuousAt.continuousWithinAt
   have hγ : AEMeasurable γ (μ.restrict {t | DifferentiableAt ℝ γ t}) := hcont.aemeasurable hD
   have heq : (fun t => if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0) =
       {t | DifferentiableAt ℝ γ t}.indicator
         (fun t => if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0) := by
     funext t
-    by_cases ht : DifferentiableAt ℝ γ t
-    · simp [Set.indicator_of_mem (show t ∈ {t | DifferentiableAt ℝ γ t} from ht)]
-    · simp [Set.indicator_of_notMem (show t ∉ {t | DifferentiableAt ℝ γ t} from ht),
-        deriv_zero_of_not_differentiableAt ht]
+    by_cases ht : DifferentiableAt ℝ γ t <;>
+      simp [ht, deriv_zero_of_not_differentiableAt]
   rw [heq, aestronglyMeasurable_indicator_iff hD]
   exact aestronglyMeasurable_truncated hγ
     ((hf.comp_aemeasurable hγ).mul (measurable_deriv γ).aemeasurable).aestronglyMeasurable
