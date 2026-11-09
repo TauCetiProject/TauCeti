@@ -147,6 +147,42 @@ private theorem ShiftAgree.snoc (h : ShiftAgree K a b) (hK : K' ≤ K) {m : M} {
 
 variable [PredOrder N] [NoMinOrder N]
 
+/-- **The far case of the forth step.** If every entry of `a` lies more than `K'` steps from `m`,
+there is an element of `N` in the same position relative to the entries of `b`, again more than
+`K'` steps away from each of them. -/
+private theorem ShiftAgree.exists_far [Nonempty N] (h : ShiftAgree K a b) (hK : 2 * K' + 2 ≤ K)
+    {m : M} (hbelow : ∀ j, a j < m → succ^[K' + 1] (a j) ≤ m)
+    (habove : ∀ j, m < a j → succ^[K' + 1] m ≤ a j) :
+    ∃ m' : N, ∀ j, (a j < m → succ^[K' + 1] (b j) ≤ m') ∧
+      (m < a j → succ^[K' + 1] m' ≤ b j) := by
+  classical
+  by_cases hL : ∃ i, a i < m
+  · -- Go `K' + 1` steps above the entry of `b` matching the greatest entry of `a` below `m`.
+    obtain ⟨i₀, hi₀, hmax⟩ := (Finset.univ.filter fun i => a i < m).exists_max_image a
+      (by simpa [Finset.Nonempty] using hL)
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi₀ hmax
+    refine ⟨succ^[K' + 1] (b i₀), fun j => ⟨fun hj => ?_, fun hj => ?_⟩⟩
+    · exact (succ_strictMono.iterate _).monotone ((h.le_iff j i₀).1 (hmax j hj))
+    · -- The entry `a j` lies at least `2 * K' + 2` steps above `a i₀`.
+      have ha : succ^[K' + 1 + (K' + 1)] (a i₀) ≤ succ^[0] (a j) := by
+        rw [Function.iterate_add_apply, Function.iterate_zero_apply]
+        exact ((succ_strictMono.iterate _).monotone (hbelow i₀ hi₀)).trans (habove j hj)
+      simpa only [Function.iterate_add_apply, Function.iterate_zero_apply] using
+        (h i₀ j _ 0 (by omega) K.zero_le).1 ha
+  · push Not at hL
+    by_cases hU : ∃ i, m < a i
+    · -- Go `K' + 1` steps below the entry of `b` matching the least entry of `a` above `m`.
+      obtain ⟨j₀, hj₀, hmin⟩ := (Finset.univ.filter fun i => m < a i).exists_min_image a
+        (by simpa [Finset.Nonempty] using hU)
+      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj₀ hmin
+      refine ⟨pred^[K' + 1] (b j₀), fun j => ⟨fun hj => absurd hj (hL j).not_gt, fun hj => ?_⟩⟩
+      rw [Function.LeftInverse.iterate (g := succ) (f := pred) succ_pred]
+      exact (h.le_iff j₀ j).1 (hmin j hj)
+    · -- The tuples are empty.
+      push Not at hU
+      exact ⟨Classical.arbitrary N, fun j =>
+        ⟨fun hj => absurd hj (hL j).not_gt, fun hj => absurd hj (hU j).not_gt⟩⟩
+
 /-- **The forth step.** If the entries of two tuples agree on shifts by at most `2 * K' + 2`
 steps, every new element of `M` has an answer in `N` keeping agreement on shifts by at most
 `K'` steps. -/
@@ -193,32 +229,7 @@ private theorem ShiftAgree.exists_snoc [Nonempty N] (h : ShiftAgree K a b)
       have hb := succ_iterate_lt_succ_iterate_of_succ_iterate_le ((hm' j).2 hj)
         (by omega : d < K' + 1) e
       exact ⟨iff_of_true ha.le hb.le, iff_of_false ha.not_ge hb.not_ge⟩
-  by_cases hL : ∃ i, a i < m
-  · -- Go `K' + 1` steps above the entry of `b` matching the greatest entry of `a` below `m`.
-    obtain ⟨i₀, hi₀, hmax⟩ := (Finset.univ.filter fun i => a i < m).exists_max_image a
-      (by simpa [Finset.Nonempty] using hL)
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi₀ hmax
-    refine ⟨succ^[K' + 1] (b i₀), fun j => ⟨fun hj => ?_, fun hj => ?_⟩⟩
-    · exact (succ_strictMono.iterate _).monotone ((h.le_iff j i₀).1 (hmax j hj))
-    · -- The entry `a j` lies at least `2 * K' + 2` steps above `a i₀`.
-      have ha : succ^[K' + 1 + (K' + 1)] (a i₀) ≤ succ^[0] (a j) := by
-        rw [Function.iterate_add_apply, Function.iterate_zero_apply]
-        exact ((succ_strictMono.iterate _).monotone (hbelow i₀ hi₀)).trans (habove j hj)
-      simpa only [Function.iterate_add_apply, Function.iterate_zero_apply] using
-        (h i₀ j _ 0 (by omega) K.zero_le).1 ha
-  · push Not at hL
-    by_cases hU : ∃ i, m < a i
-    · -- Go `K' + 1` steps below the entry of `b` matching the least entry of `a` above `m`.
-      obtain ⟨j₀, hj₀, hmin⟩ := (Finset.univ.filter fun i => m < a i).exists_min_image a
-        (by simpa [Finset.Nonempty] using hU)
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj₀ hmin
-      refine ⟨pred^[K' + 1] (b j₀), fun j => ⟨fun hj => absurd hj (hL j).not_gt, fun hj => ?_⟩⟩
-      rw [Function.LeftInverse.iterate (g := succ) (f := pred) succ_pred]
-      exact (h.le_iff j₀ j).1 (hmin j hj)
-    · -- The tuples are empty.
-      push Not at hU
-      exact ⟨Classical.arbitrary N, fun j =>
-        ⟨fun hj => absurd hj (hL j).not_gt, fun hj => absurd hj (hU j).not_gt⟩⟩
+  exact h.exists_far hK hbelow habove
 
 variable [PredOrder M] [NoMinOrder M]
 variable [Language.order.Structure M] [Language.order.OrderedStructure M]

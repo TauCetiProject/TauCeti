@@ -200,8 +200,7 @@ theorem IsValuationSaturated.exists_add_sum_smul_mem {M : Submodule (Valued.inte
   have hA (n : ℕ) (t : ι → K) :
       t ∈ A n ↔ (a n : K) • z + ∑ i, ((a n : K) * t i) • e i ∈ M := by
     simp [A, Valued.integer.smul_def, smul_add, Finset.smul_sum, smul_smul]
-  have hA_succ (n : ℕ) : A (n + 1) ⊆ A n := by
-    intro t ht
+  have hA_succ (n : ℕ) : A (n + 1) ⊆ A n := fun t ht ↦ by
     obtain ⟨c, hc⟩ := Valued.integer.dvd_iff_norm_le.2 (hmono n.le_succ)
     have := M.smul_mem c ht
     rwa [smul_smul, mul_comm, ← hc] at this
@@ -213,30 +212,21 @@ theorem IsValuationSaturated.exists_add_sum_smul_mem {M : Submodule (Valued.inte
   have hball (n : ℕ) (c : ι → K) (hc : c ∈ A n) (t : ι → K)
       (htc : ∀ i, dist (t i) (c i) ≤ ‖(a n : K)‖⁻¹) : t ∈ A n := by
     have hmem (i : ι) : (a n : K) * (t i - c i) ∈ Valued.integer K := by
-      refine Valued.integer.mem_iff.2 ?_
-      rw [norm_mul, ← dist_eq_norm]
-      calc ‖(a n : K)‖ * dist (t i) (c i) ≤ ‖(a n : K)‖ * ‖(a n : K)‖⁻¹ :=
-            mul_le_mul_of_nonneg_left (htc i) (norm_nonneg _)
-        _ = 1 := mul_inv_cancel₀ (norm_ne_zero_iff.2 (ha0 n))
-    let s : ι → Valued.integer K := fun i ↦ ⟨_, hmem i⟩
-    have hs (i : ι) : (s i : K) = (a n : K) * (t i - c i) := rfl
-    have key : (a n : K) • z + ∑ i, ((a n : K) * t i) • e i =
-        ((a n : K) • z + ∑ i, ((a n : K) * c i) • e i) + ∑ i, s i • e i := by
-      simp only [Valued.integer.smul_def, hs, add_assoc, ← Finset.sum_add_distrib, ← add_smul]
-      congr 2 with i
-      module
+      rw [Valued.integer.mem_iff, norm_mul, ← dist_eq_norm]
+      exact (mul_le_mul_of_nonneg_left (htc i) (norm_nonneg _)).trans_eq
+        (mul_inv_cancel₀ (norm_ne_zero_iff.2 (ha0 n)))
     rw [hA] at hc ⊢
-    rw [key]
-    exact M.add_mem hc (M.sum_mem fun i _ ↦ M.smul_mem _ (he i))
+    convert M.add_mem hc (M.sum_mem (t := .univ) fun i _ ↦ M.smul_mem ⟨_, hmem i⟩ (he i)) using 1
+    simp only [Valued.integer.smul_def, add_assoc, ← Finset.sum_add_distrib, ← add_smul]
+    congr 2 with i
+    module
   -- Every point of `A n` is within `‖a n‖⁻¹` of a point of `A (n + 1)`.
   have hstep (n : ℕ) (c : ι → K) (hc : c ∈ A n) :
       ∃ c' ∈ A (n + 1), ∀ i, dist (c' i) (c i) ≤ ‖(a n : K)‖⁻¹ := by
     obtain ⟨d, hd⟩ := hA_ne (n + 1)
     have hdiff : ∑ i, ((a n : K) * (d i - c i)) • e i ∈ M := by
-      have := M.sub_mem ((hA n d).1 (hA_succ n hd)) ((hA n c).1 hc)
-      convert this using 1
-      simp only [mul_sub, sub_smul, Finset.sum_sub_distrib]
-      abel
+      convert M.sub_mem ((hA n d).1 (hA_succ n hd)) ((hA n c).1 hc) using 1
+      simp only [mul_sub, sub_smul, Finset.sum_sub_distrib, add_sub_add_left_eq_sub]
     obtain ⟨s, hs⟩ := hspan _ hdiff
     have hsum : ∑ i, (c i + (a n : K)⁻¹ * s i) • e i = ∑ i, d i • e i := by
       have h2 := congrArg ((a n : K)⁻¹ • ·) hs
@@ -248,18 +238,16 @@ theorem IsValuationSaturated.exists_add_sum_smul_mem {M : Submodule (Valued.inte
     · simpa only [A, Set.mem_ofPred_eq, hsum] using hd
     · rw [dist_eq_norm, add_sub_cancel_left, norm_mul, norm_inv]
       exact mul_le_of_le_one_right (inv_nonneg.2 (norm_nonneg _)) (Valued.integer.norm_le_one (s i))
-  obtain ⟨t, ht⟩ := SphericallyCompleteSpace.exists_forall_mem_of_dist_le (A := A)
-    (r := fun n ↦ ‖(a n : K)‖⁻¹)
-    (fun m n hmn ↦ inv_anti₀ (norm_pos_iff.2 (ha0 m)) (hmono hmn))
+  obtain ⟨t, ht⟩ := SphericallyCompleteSpace.exists_forall_mem_of_dist_le
+    (r := fun n ↦ ‖(a n : K)‖⁻¹) (fun m n hmn ↦ inv_anti₀ (norm_pos_iff.2 (ha0 m)) (hmono hmn))
     (fun n ↦ inv_nonneg.2 (norm_nonneg _)) (hA_ne 0) hstep hball
-  refine ⟨t, hM.mem_of_forall_smul_mem (ham 0) (fun x y hxy ↦ ?_) fun b hb ↦ ?_⟩
-  · -- `a 0` is a nonzero scalar, hence a nonzerodivisor on the `K`-vector space `E`.
-    simp only [Valued.integer.smul_def] at hxy
-    exact smul_right_injective E (ha0 0) hxy
-  · obtain ⟨n, hn⟩ := hcof b hb
-    obtain ⟨d, hd⟩ := Valued.integer.dvd_iff_norm_le.2 hn
-    rw [hd, mul_comm, mul_smul]
-    exact M.smul_mem d (ht n)
+  -- `a 0` is a nonzero scalar, hence a nonzerodivisor on the `K`-vector space `E`.
+  refine ⟨t, hM.mem_of_forall_smul_mem (ham 0) (fun x y hxy ↦ smul_right_injective E (ha0 0)
+    (by simpa only [Valued.integer.smul_def] using hxy)) fun b hb ↦ ?_⟩
+  obtain ⟨n, hn⟩ := hcof b hb
+  obtain ⟨d, hd⟩ := Valued.integer.dvd_iff_norm_le.2 hn
+  rw [hd, mul_comm, mul_smul]
+  exact M.smul_mem d (ht n)
 
 /-- The image of an `𝓂[K]`-saturated lattice `M ⊆ ι → K` under the `i`-th coordinate is
 saturated, provided the sublattice of `M` on which this coordinate vanishes has a finite basis. -/
@@ -297,39 +285,22 @@ private theorem isValuationSaturated_map_proj {ι : Type*}
   -- A point `z` over `q`: `z = a⁻¹ • m₀` for some `m₀ ∈ M` over `a * q`.
   obtain ⟨m₀, hm₀, hm₀i⟩ := Submodule.mem_map.1 (f ⟨a, ham⟩).2
   rw [hq, LinearMap.proj_apply] at hm₀i
-  -- Every `c • z` with `c ∈ 𝓂[K]` lies in `M` modulo the span of the kernel basis `e`.
+  -- Every `c • z` with `c ∈ 𝓂[K]` lies in `M` modulo the span of the kernel basis `e`: lift `c • q`
+  -- to `mc ∈ M`; then `a • mc - c • m₀ ∈ M` has vanishing `i`-th coordinate, so it is
+  -- `∑ j, s j • e j`, and `c • a⁻¹ • m₀ + ∑ j, (a⁻¹ * s j) • e j = mc ∈ M`.
   have hz (c : Valued.integer K) (hc : c ∈ maximalIdeal (Valued.integer K)) :
       ∃ t : Fin k → K, c • (a : K)⁻¹ • m₀ + ∑ j, t j • e j ∈ M := by
-    rcases le_total ‖(c : K)‖ ‖(a : K)‖ with hle | hle
-    · -- If `‖c‖ ≤ ‖a‖`, then `c = a * d` with `d ∈ 𝒪[K]`, so `c • a⁻¹ • m₀ = d • m₀ ∈ M`.
-      obtain ⟨d, hd⟩ := Valued.integer.dvd_iff_norm_le.2 hle
-      refine ⟨0, ?_⟩
-      have h : c • (a : K)⁻¹ • m₀ = d • m₀ := by
-        simp only [Valued.integer.smul_def, hd, Subring.coe_mul, smul_smul]
-        congr 1
-        field_simp
-      simpa [h] using M.smul_mem d hm₀
-    · -- If `‖a‖ ≤ ‖c‖`, then `a = d * c` with `d ∈ 𝒪[K]`. Lift `c • q` to `mc ∈ M`. Then
-      -- `d • mc - m₀ ∈ M` has vanishing `i`-th coordinate, so it is `∑ j, s j • e j`, and since
-      -- `(c / a) * d = 1` we get `c • a⁻¹ • m₀ + ∑ j, (c / a * s j) • e j = mc ∈ M`.
-      have hc0 : (c : K) ≠ 0 := norm_pos_iff.1 ((norm_pos_iff.2 ha).trans_le hle)
-      obtain ⟨d, hd⟩ := Valued.integer.dvd_iff_norm_le.2 hle
-      have hd' : (d : K) * c = a := by rw [hd, Subring.coe_mul, mul_comm]
-      obtain ⟨mc, hmc, hmci⟩ := Submodule.mem_map.1 (f ⟨c, hc⟩).2
-      rw [hq, LinearMap.proj_apply] at hmci
-      obtain ⟨s, hs⟩ := hrepr (d • mc - m₀) (M.sub_mem (M.smul_mem d hmc) hm₀) (by
-        simp [Valued.integer.smul_def, hmci, hm₀i, ← hd', mul_assoc])
-      refine ⟨fun j ↦ (c : K) / a * s j, ?_⟩
-      have hsum : ∑ j, ((c : K) / a * s j) • e j = ((c : K) / a) • ((d : K) • mc - m₀) := by
-        rw [← Valued.integer.smul_def d mc, hs, Finset.smul_sum]
-        simp only [smul_smul, Valued.integer.smul_def]
-      have hd0 : (d : K) ≠ 0 := fun h ↦ ha (by rw [← hd', h, zero_mul])
-      have hcd : (c : K) / a * d = 1 := by
-        rw [← hd']
-        field_simp
-      convert hmc using 1
-      rw [hsum, Valued.integer.smul_def]
-      linear_combination (norm := module) hcd • mc
+    obtain ⟨mc, hmc, hmci⟩ := Submodule.mem_map.1 (f ⟨c, hc⟩).2
+    rw [hq, LinearMap.proj_apply] at hmci
+    obtain ⟨s, hs⟩ := hrepr (a • mc - c • m₀) (M.sub_mem (M.smul_mem a hmc) (M.smul_mem c hm₀))
+      (by simp [Valued.integer.smul_def, hmci, hm₀i, mul_left_comm])
+    refine ⟨fun j ↦ (a : K)⁻¹ * s j, ?_⟩
+    have hsum : ∑ j, ((a : K)⁻¹ * s j) • e j = (a : K)⁻¹ • ((a : K) • mc - (c : K) • m₀) := by
+      rw [← Valued.integer.smul_def a, ← Valued.integer.smul_def c, hs, Finset.smul_sum]
+      simp only [smul_smul, Valued.integer.smul_def]
+    convert hmc using 1
+    rw [hsum, Valued.integer.smul_def]
+    linear_combination (norm := module) inv_mul_cancel₀ ha • mc
   obtain ⟨t, ht⟩ := hM.exists_add_sum_smul_mem he hspan hz
   have hqmem : q ∈ M.map (LinearMap.proj i) :=
     Submodule.mem_map.2 ⟨_, ht, by simp [Finset.sum_apply, hei, hm₀i, ha]⟩
@@ -356,41 +327,31 @@ theorem exists_basis_of_isValuationSaturated (hK : ∀ r : ℝ, 0 < r → ∃ x 
   let _ : DenselyNormedField K := DenselyNormedField.ofForallExistsNormEq hK
   obtain ⟨a, ham, ha⟩ := Valued.integer.exists_mem_maximalIdeal_coe_ne_zero (K := K)
   -- Induct on a finite set `s` of coordinates outside which `M` vanishes.
-  suffices h : ∀ s : Finset ι, ∀ M : Submodule (Valued.integer K) (ι → K),
-      (∀ x ∈ M, ∀ j ∉ s, x j = 0) → Bornology.IsBounded (M : Set (ι → K)) →
-      IsValuationSaturated (Valued.integer K) (maximalIdeal (Valued.integer K)) M →
-      ∃ k ≤ s.card, Nonempty (Module.Basis (Fin k) (Valued.integer K) M) from
-    Finset.card_univ (α := ι) ▸ h Finset.univ M (fun _ _ j hj ↦ absurd (Finset.mem_univ j) hj) hb hM
-  intro s
-  induction s using Finset.induction_on with
+  have hMs : ∀ x ∈ M, ∀ j ∉ (Finset.univ : Finset ι), x j = 0 :=
+    fun _ _ j hj ↦ absurd (Finset.mem_univ j) hj
+  rw [← Finset.card_univ]
+  generalize (Finset.univ : Finset ι) = s at hMs ⊢
+  induction s using Finset.induction_on generalizing M with
   | empty =>
-    intro M hM0 _ _
     have : Subsingleton M := ⟨fun x y ↦ Subtype.ext (funext fun j ↦ by
-      rw [hM0 x x.2 j (Finset.notMem_empty j), hM0 y y.2 j (Finset.notMem_empty j)])⟩
+      rw [hMs x x.2 j (Finset.notMem_empty j), hMs y y.2 j (Finset.notMem_empty j)])⟩
     exact ⟨0, le_rfl, ⟨Module.Basis.empty M⟩⟩
   | insert i s hi ih =>
-    intro M hMs hb hM
     -- The part `N` of `M` on which the `i`-th coordinate vanishes is free by induction.
     set N := M ⊓ LinearMap.ker (LinearMap.proj i : (ι → K) →ₗ[Valued.integer K] K)
     have hN (x : ι → K) : x ∈ N ↔ x ∈ M ∧ x i = 0 := by simp [N]
     have hNs (x : ι → K) (hx : x ∈ N) (j : ι) (hj : j ∉ s) : x j = 0 := by
-      obtain ⟨hxM, hxi⟩ := (hN x).1 hx
-      by_cases hji : j = i
-      · rw [hji]
-        exact hxi
-      · exact hMs x hxM j (by simp [hji, hj])
+      rcases eq_or_ne j i with rfl | hji
+      exacts [((hN x).1 hx).2, hMs x ((hN x).1 hx).1 j (by simp [hji, hj])]
     have hNsat : IsValuationSaturated (Valued.integer K) (maximalIdeal (Valued.integer K)) N :=
       hM.of_le_of_forall_smul_mem inf_le_left fun x hx hxa ↦ (hN x).2 ⟨hx, by
         have h : (a : K) * x i = 0 := by
           simpa [Valued.integer.smul_def] using ((hN _).1 (hxa a ham)).2
         exact (mul_eq_zero_iff_left ha).1 h⟩
-    obtain ⟨k, hk, ⟨bN⟩⟩ := ih N hNs (hb.subset inf_le_left) hNsat
+    obtain ⟨k, hk, ⟨bN⟩⟩ := ih (M := N) (hb.subset inf_le_left) hNsat hNs
     -- The image `Q` of the `i`-th coordinate is a bounded saturated lattice in `K`, so principal.
-    have hQb : Bornology.IsBounded
-        ((M.map (LinearMap.proj i) : Submodule (Valued.integer K) K) : Set K) := by
-      rw [Submodule.map_coe]
-      exact (LinearMap.proj i).isBounded_image_of_integer hb
-    obtain ⟨q, hq⟩ := exists_eq_span_singleton_of_isValuationSaturated hK hQb
+    obtain ⟨q, hq⟩ := exists_eq_span_singleton_of_isValuationSaturated hK
+      (by rw [Submodule.map_coe]; exact (LinearMap.proj i).isBounded_image_of_integer hb)
       (isValuationSaturated_map_proj hM i bN)
     rcases eq_or_ne q 0 with rfl | hq0
     · have hNM : N = M := inf_eq_left.2 fun x hx ↦ by
@@ -405,10 +366,9 @@ theorem exists_basis_of_isValuationSaturated (hK : ∀ r : ℝ, 0 < r → ∃ x 
     rw [LinearMap.proj_apply] at hyi
     refine ⟨k + 1, by rw [Finset.card_insert_of_notMem hi]; omega,
       ⟨Module.Basis.mkFinConsOfLE y hy bN inf_le_left (fun c x hx hcx ↦ ?_) fun z hz ↦ ?_⟩⟩
-    · have hxi : x i = 0 := ((hN x).1 hx).2
-      have h := congrFun hcx i
-      simp only [Pi.add_apply, Pi.smul_apply, Valued.integer.smul_def, smul_eq_mul, hyi, hxi,
-        Pi.zero_apply, add_zero] at h
+    · have h := congrFun hcx i
+      simp only [Pi.add_apply, Pi.smul_apply, Valued.integer.smul_def, smul_eq_mul, hyi,
+        ((hN x).1 hx).2, Pi.zero_apply, add_zero] at h
       exact Subtype.ext ((mul_eq_zero_iff_right hq0).1 h)
     · have hzi : z i ∈ Valued.integer K ∙ q := by
         rw [← hq]

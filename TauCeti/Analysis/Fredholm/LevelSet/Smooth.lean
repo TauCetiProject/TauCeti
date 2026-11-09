@@ -104,8 +104,6 @@ theorem contDiffAt_coe_levelSetChart_symm_of_mem {n : ℕ∞ω} (hf : HasStrictF
     (hk : k ∈ (levelSetChart hf hf' hker ha).target)
     (hmem : (((levelSetChart hf hf' hker ha).symm k : ↥{x | f x = c}) : E) ∈
       hf.implicitCoordSource hf' hker)
-    {A : E →L[K] F}
-    (hA : HasFDerivAt f A (((levelSetChart hf hf' hker ha).symm k : ↥{x | f x = c}) : E))
     (hcont : ContDiffAt K n f (((levelSetChart hf hf' hker ha).symm k : ↥{x | f x = c}) : E)) :
     ContDiffAt K n
       (fun k ↦ (((levelSetChart hf hf' hker ha).symm k : ↥{x | f x = c}) : E)) k := by
@@ -120,9 +118,8 @@ theorem contDiffAt_coe_levelSetChart_symm_of_mem {n : ℕ∞ω} (hf : HasStrictF
   have hinverse : ContDiffAt K n
       (hf.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker).symm (f a, k) := by
     refine hf.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm_of_mem hf' hker
-      hktarget ?_ (A := A) ?_ ?_
+      hktarget ?_ ?_
     · rw [hval]; exact hmem
-    · rw [hval]; exact hA
     · rw [hval]; exact hcont
   have hslice : ContDiffAt K n
       (fun k' : ↥f'.ker ↦

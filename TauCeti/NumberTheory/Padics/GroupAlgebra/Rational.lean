@@ -11,13 +11,13 @@ public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.RingTheory.Flat.TorsionFree
-import TauCeti.Algebra.Module.LinearMap.Finite
 import TauCeti.Algebra.Module.Projective.LinearMap
 import TauCeti.Algebra.Module.Projective.Reduction
 import TauCeti.Algebra.Module.Projective.Trans
 import TauCeti.LinearAlgebra.Dimension.Localization
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Projective
 import TauCeti.RingTheory.Jacobson.Semiprimary
+import TauCeti.RingTheory.Noetherian.LinearMap
 import TauCeti.RingTheory.Semisimple.Multiplicity
 
 /-!
@@ -98,8 +98,6 @@ theorem natCard_linearMap_quotient_eq_of_tensorRat (P : Type v) [AddCommGroup P]
   -- `Hom(P, M)` and `Hom(P, N)` are free of finite rank over `ℤ_p` and embed in each other.
   have : Module.Finite ℤ_[p] M := .trans A M
   have : Module.Finite ℤ_[p] N := .trans A N
-  have : Module.Finite ℤ_[p] (P →ₗ[A] M) := .linearMap_of_isNoetherian
-  have : Module.Finite ℤ_[p] (P →ₗ[A] N) := .linearMap_of_isNoetherian
   have hfP : Function.Injective (LinearMap.compRight (M := P) ℤ_[p] f) := fun a b hab ↦
     LinearMap.ext fun x ↦ hf (LinearMap.congr_fun hab x)
   have hgP : Function.Injective (LinearMap.compRight (M := P) ℤ_[p] g) := fun a b hab ↦
@@ -139,8 +137,8 @@ theorem nonempty_linearEquiv_of_projective_of_tensorRat_of_not_dvd (hG : ¬p ∣
     (h : Nonempty ((M ⊗[ℤ_[p]] ℚ_[p]) ≃ₗ[A] (N ⊗[ℤ_[p]] ℚ_[p]))) :
     Nonempty (M ≃ₗ[A] N) := by
   -- Projective `ℤ_p[G]`-modules are projective, hence torsion-free, over `ℤ_p`.
-  have : Module.Projective ℤ_[p] M := .trans (S := A)
-  have : Module.Projective ℤ_[p] N := .trans (S := A)
+  have : Module.Projective ℤ_[p] M := .trans A M
+  have : Module.Projective ℤ_[p] N := .trans A N
   -- Work with the radical quotients, which are finite and semisimple; the radical is `(p)`.
   have hJ := jacobson_padicInt_monoidAlgebra_eq_span_p p hG
   have : IsArtinianRing (A ⧸ Ring.jacobson A) := isArtinian_of_finite

@@ -201,6 +201,7 @@ naturality isomorphisms of `η` along the two sides of the square, composed with
 isomorphisms of `F` and of `G`, agree. The two sides are arranged as the naturality isomorphisms
 of the composites of `η` with strong transformations whose naturality isomorphisms are the square
 isomorphisms, as in `CategoryTheory.Pseudofunctor.mapNatTrans`. -/
+@[to_app]
 lemma naturality_isoMapOfCommSq [Strict B] (η : F ⟶ G) {X₁ X₂ Y₁ Y₂ : B} {t : X₁ ⟶ Y₁}
     {l : X₁ ⟶ X₂} {r : Y₁ ⟶ Y₂} {b : X₂ ⟶ Y₂} (sq : CommSq t l r b) :
     F.map t ◁ (η.naturality r).hom ≫ (α_ _ _ _).inv ≫ (η.naturality t).hom ▷ G.map r ≫
