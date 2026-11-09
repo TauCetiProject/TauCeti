@@ -83,9 +83,14 @@ theorem dist_pow_smul_eq_mul {g : G} {x : T.V} {p : T.Path x (g • x)}
       · simp
     | succ n ih =>
       obtain ⟨q, hq, hqlen, hqlast⟩ := ih
-      obtain ⟨r, hrdarts, hr⟩ := Aut.exists_path_darts_eq_map_smul (T.action (g ^ n)) p
+      let r := (T.action (g ^ n)).toHom.toPrefunctor.mapPath p
+      have hrdarts : Path.darts T.toSerreGraph r =
+          (Path.darts T.toSerreGraph p).map (T.action (g ^ n) • ·) :=
+        (Hom.darts_mapPath _ _ p).trans (List.map_congr_left fun e _ => Aut.toHom_mapE _ e)
+      have hr := Hom.isReduced_mapPath_iff _ _ (T.action (g ^ n)).toHom_mapE_injective p
       let r' : T.Path (g ^ n • x) (g ^ (n + 1) • x) :=
-        r.cast (smul_vertex_def _ _ _).symm (by rw [← smul_vertex_def, pow_succ, mul_smul])
+        r.cast (by rw [Hom.toPrefunctor_obj, Aut.toHom_mapV, ← smul_vertex_def])
+          (by rw [Hom.toPrefunctor_obj, Aut.toHom_mapV, ← smul_vertex_def, pow_succ, mul_smul])
       have hr'darts : Path.darts T.toSerreGraph r' =
           (Path.darts T.toSerreGraph p).map (g ^ n • ·) := by
         rw [Path.darts_cast, hrdarts]
@@ -149,10 +154,14 @@ theorem isHyperbolic_mul_of_isReduced {s t : G} {a b : T.V} {p : T.Path a b}
   obtain ⟨e, he⟩ : ∃ e, (Path.darts T.toSerreGraph p).getLast? = some e :=
     ⟨_, List.getLast?_eq_some_getLast hne⟩
   -- The path from `b` back along `p` to `a` and then along `s • p` to `s • b = (s * t) • b`.
-  obtain ⟨r, hrdarts, hr⟩ := Aut.exists_path_darts_eq_map_smul (T.action s) p
+  let r := (T.action s).toHom.toPrefunctor.mapPath p
+  have hrdarts : Path.darts T.toSerreGraph r = (Path.darts T.toSerreGraph p).map (T.action s • ·) :=
+    (Hom.darts_mapPath _ _ p).trans (List.map_congr_left fun e _ => Aut.toHom_mapE _ e)
+  have hr := Hom.isReduced_mapPath_iff _ _ (T.action s).toHom_mapE_injective p
   have hsb : s • b = (s * t) • b := by rw [mul_smul, ht]
   let q : T.Path b ((s * t) • b) := p.reverse.comp
-    (r.cast (by rw [← smul_vertex_def, hs]) (by rw [← smul_vertex_def, hsb]))
+    (r.cast (by rw [Hom.toPrefunctor_obj, Aut.toHom_mapV, ← smul_vertex_def, hs])
+      (by rw [Hom.toPrefunctor_obj, Aut.toHom_mapV, ← smul_vertex_def, hsb]))
   have hqdarts : Path.darts T.toSerreGraph q = (Path.darts T.toSerreGraph p).reverse.map T.rev ++
       (Path.darts T.toSerreGraph p).map (s • ·) := by
     rw [Path.darts_comp, Path.darts_reverse, Path.darts_cast, hrdarts]

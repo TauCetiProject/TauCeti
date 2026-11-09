@@ -18,13 +18,13 @@ automorphisms of a tree, whose pairwise products are elliptic, fixes a vertex.
 
 The proof goes through shortest paths between two sets of vertices. In a tree, two nonempty sets
 of vertices are joined by a reduced path that meets the first set only at its start and the
-second only at its end (`SerreGraph.IsTree.exists_isReduced_path`). When the second set is
-convex, continuing such a path by a reduced path inside that set never backtracks
-(`SerreGraph.IsConvex.isReduced_comp`), so the end of the path lies on the reduced path from its
-start to every vertex of the convex set. For three pairwise intersecting convex sets, this puts
-the end of a shortest path from the intersection of the first two to the third in all three
-(`SerreGraph.IsTree.inter_inter_nonempty`); induction on the number of sets gives Helly's theorem
-(`SerreGraph.IsTree.helly_theorem`).
+second only at its end (`SerreGraph.IsTree.exists_isReduced_path`, in the file on distances).
+When the second set is convex, continuing such a path by a reduced path inside that set never
+backtracks (`SerreGraph.IsConvex.isReduced_comp`), so the end of the path lies on the reduced
+path from its start to every vertex of the convex set. For three pairwise intersecting convex
+sets, this puts the end of a shortest path from the intersection of the first two to the third in
+all three (`SerreGraph.IsTree.inter_inter_nonempty`); induction on the number of sets gives
+Helly's theorem (`SerreGraph.IsTree.helly_theorem`).
 
 ## References
 
@@ -38,32 +38,6 @@ namespace SerreGraph
 
 variable {Γ : SerreGraph}
 
-/-- In a tree, two nonempty sets of vertices are joined by a reduced path whose darts end
-outside the first set and start outside the second: it meets the first set only at its start
-and the second only at its end. -/
-theorem IsTree.exists_isReduced_path (h : Γ.IsTree) {A B : Set Γ.V} (hA : A.Nonempty)
-    (hB : B.Nonempty) : ∃ a ∈ A, ∃ b ∈ B, ∃ p : Γ.Path a b, Path.IsReduced Γ p ∧
-      ∀ e ∈ Path.darts Γ p, Γ.tgt e ∉ A ∧ Γ.src e ∉ B := by
-  classical
-  -- Choose `a ∈ A` and `b ∈ B` at minimal distance, and the reduced path between them.
-  have hex : ∃ n, ∃ a ∈ A, ∃ b ∈ B, Γ.dist a b = n :=
-    ⟨_, hA.some, hA.some_mem, hB.some, hB.some_mem, rfl⟩
-  obtain ⟨a, ha, b, hb, hab⟩ := Nat.find_spec hex
-  have hmin : ∀ a' ∈ A, ∀ b' ∈ B, Nat.find hex ≤ Γ.dist a' b' := fun a' ha' b' hb' =>
-    Nat.find_min' hex ⟨a', ha', b', hb', rfl⟩
-  obtain ⟨p, hp, -⟩ := h.existsUnique_isReduced a b
-  have hlen : p.length = Nat.find hex := by rw [← h.isAcyclic.dist_eq_length hp, hab]
-  refine ⟨a, ha, b, hb, p, hp, fun e he => ?_⟩
-  -- A dart of the path cuts it into two pieces, each strictly shorter than the path.
-  obtain ⟨q, r, hqr⟩ := Path.exists_eq_cons_comp_of_mem_darts Γ p he
-  have hlen' : q.length + 1 + r.length = Nat.find hex := by
-    rw [← hlen, hqr, Quiver.Path.length_comp, Quiver.Path.length_cons]
-  refine ⟨fun hA' => ?_, fun hB' => ?_⟩
-  · have := (hmin _ hA' b hb).trans (dist_le_length r)
-    omega
-  · have := (hmin a ha _ hB').trans (dist_le_length q)
-    omega
-
 /-- In a tree, three pairwise intersecting convex sets of vertices have a common vertex. -/
 theorem IsTree.inter_inter_nonempty (h : Γ.IsTree) {A B C : Set Γ.V} (hA : Γ.IsConvex A)
     (hB : Γ.IsConvex B) (hC : Γ.IsConvex C) (hAB : (A ∩ B).Nonempty) (hAC : (A ∩ C).Nonempty)
@@ -74,7 +48,8 @@ theorem IsTree.inter_inter_nonempty (h : Γ.IsTree) {A B C : Set Γ.V} (hA : Γ.
   have hnear : ∀ D : Set Γ.V, Γ.IsConvex D → x ∈ D → (D ∩ C).Nonempty → y ∈ D := by
     rintro D hD hxD ⟨d, hdD, hdC⟩
     obtain ⟨q, hq, -⟩ := h.existsUnique_isReduced y d
-    have hpq := hC.isReduced_comp hy hdC hp (fun e he => (hpC e he).2) hq
+    have hpq := hC.isReduced_comp hy hdC hp
+      (fun e he => (hpC e (List.mem_of_mem_getLast? he)).2) hq
     cases hl : (Path.darts Γ p).getLast? with
     | none => exact Path.eq_of_darts_eq_nil Γ p (List.getLast?_eq_none_iff.mp hl) ▸ hxD
     | some e =>
