@@ -328,6 +328,7 @@ theorem finrank_add_manifoldMorseIndex_le_of_posDef_criticalHessian
     (Q := (criticalHessian I f x).toBilinForm.toQuadraticMap)
   rw [manifoldMorseIndex_neg_eq_sigPos_criticalHessian] at h
   rw [manifoldMorseIndex_eq_sigNeg_criticalHessian]
+  -- The two sides differ only in reading the model space `E` as `TangentSpace I x`.
   have : Module.finrank ℝ (TangentSpace I x) = Module.finrank ℝ E := rfl
   lia
 
@@ -393,11 +394,11 @@ theorem criticalHessian_comp_snd_apply {q : V → ℝ} {y : V} (hq : ContDiffAt 
   have key := fderiv_fderiv_comp_apply (φ := Prod.snd)
     (b := extChartAt (I.prod 𝓘(ℝ, V)) (x, y) (x, y)) (hsnd ▸ hq) contDiff_snd.contDiffAt v w
   refine key.trans ?_
-  have hfst : fderiv ℝ (Prod.snd : E × V → V) = fun _ ↦ ContinuousLinearMap.snd ℝ E V :=
+  have hDsnd : fderiv ℝ (Prod.snd : E × V → V) = fun _ ↦ ContinuousLinearMap.snd ℝ E V :=
     funext fun _ ↦ fderiv_snd
   have hd : fderiv ℝ (fderiv ℝ (Prod.snd : E × V → V)) = 0 := by
-    rw [hfst]
-    exact funext fun z ↦ congrFun (fderiv_fun_const (ContinuousLinearMap.snd ℝ E V)) z
+    rw [hDsnd]
+    exact fderiv_fun_const _
   simp only [fderiv_snd, hd, hsnd, ContinuousLinearMap.coe_snd', Pi.zero_apply]
   exact (congrArg (fderiv ℝ (fderiv ℝ q) y v.2 w.2 + ·) (map_zero (fderiv ℝ q y))).trans
     (add_zero _)
