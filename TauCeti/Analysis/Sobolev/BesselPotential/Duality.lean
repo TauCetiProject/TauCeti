@@ -118,17 +118,14 @@ theorem besselPotentialPairing_toBesselPotentialSpaceCLM (B : F →L[ℂ] G →L
     (φ : 𝓢(E, F)) (ψ : 𝓢(E, G)) :
     B.besselPotentialPairing s p q (SchwartzMap.toBesselPotentialSpaceCLM s p φ)
         (SchwartzMap.toBesselPotentialSpaceCLM (-s) q ψ) = ∫ x, B (φ x) (ψ x) := by
-  rw [besselPotentialPairing_apply, SchwartzMap.toLp_toBesselPotentialSpaceCLM,
-    SchwartzMap.toLp_toBesselPotentialSpaceCLM]
+  rw [besselPotentialPairing_apply]
   calc _ = ∫ x, B (SchwartzMap.fourierMultiplierCLM F
           (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) φ x)
         (SchwartzMap.fourierMultiplierCLM G
           (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (-s / 2) : ℝ) : ℂ)) ψ x) := by
         refine integral_congr_ae ?_
-        filter_upwards [SchwartzMap.coeFn_toLp (SchwartzMap.fourierMultiplierCLM F
-            (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) φ) p volume,
-          SchwartzMap.coeFn_toLp (SchwartzMap.fourierMultiplierCLM G
-            (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (-s / 2) : ℝ) : ℂ)) ψ) q volume] with x h₁ h₂
+        filter_upwards [SchwartzMap.coeFn_toLp_toBesselPotentialSpaceCLM (p := p) φ,
+          SchwartzMap.coeFn_toLp_toBesselPotentialSpaceCLM (s := -s) (p := q) ψ] with x h₁ h₂
         rw [h₁, h₂]
     -- Move `J^s` to the second factor, where it cancels `J^{-s}`.
     _ = ∫ x, B (φ x) (ψ x) := by
@@ -156,6 +153,7 @@ section Distribution
 
 variable [CompleteSpace F] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q]
 
+variable (q) in
 /-- The distribution underlying `u ∈ H^{s,p}(E, F)` acts on a scalar Schwartz function `ψ`, viewed
 in `H^{-s,q}(E)`, by the density pairing with the scalar multiplication `(v, c) ↦ c • v`. -/
 theorem toDistr_apply_eq_besselPotentialPairing {s : ℝ} (u : H^{s, p}(E, F)) (ψ : 𝓢(E, ℂ)) :
@@ -165,11 +163,11 @@ theorem toDistr_apply_eq_besselPotentialPairing {s : ℝ} (u : H^{s, p}(E, F)) (
     TemperedDistribution.besselPotential, TemperedDistribution.fourierMultiplierCLM_apply_apply,
     SchwartzMap.fourier_smulLeftCLM_fourierInv_eq (by fun_prop)]
   simp only [norm_neg]
-  rw [Lp.toTemperedDistribution_apply, SchwartzMap.toLp_toBesselPotentialSpaceCLM]
+  rw [Lp.toTemperedDistribution_apply]
   refine integral_congr_ae ?_
-  filter_upwards [SchwartzMap.coeFn_toLp (SchwartzMap.fourierMultiplierCLM ℂ
-    (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (-s / 2) : ℝ) : ℂ)) ψ) q volume] with x hx
-  simp [hx]
+  filter_upwards [SchwartzMap.coeFn_toLp_toBesselPotentialSpaceCLM (s := -s) (p := q) ψ] with x hx
+  rw [hx]
+  simp
 
 end Distribution
 
