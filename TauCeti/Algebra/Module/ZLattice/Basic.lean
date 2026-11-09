@@ -70,20 +70,22 @@ theorem _root_.ZSpan.convex_fundamentalDomain (β : Basis ι ℝ E) :
 
 /-- Two vectors in the integer span that translate the same point into the fundamental domain
 in subtraction form are equal. -/
-theorem _root_.ZSpan.eq_of_sub_mem_fundamentalDomain [Finite ι] (β : Basis ι ℝ E)
+theorem _root_.ZSpan.eq_of_sub_mem_fundamentalDomain (β : Basis ι ℝ E)
     {x w₁ w₂ : E} (hw₁ : w₁ ∈ Submodule.span ℤ (Set.range β))
     (hw₂ : w₂ ∈ Submodule.span ℤ (Set.range β))
     (h₁ : x - w₁ ∈ ZSpan.fundamentalDomain β)
     (h₂ : x - w₂ ∈ ZSpan.fundamentalDomain β) : w₁ = w₂ := by
-  have hn₁ : -w₁ ∈ Submodule.span ℤ (Set.range β) := neg_mem hw₁
-  have hn₂ : -w₂ ∈ Submodule.span ℤ (Set.range β) := neg_mem hw₂
-  have subtype_vadd (w : E) (hw : w ∈ Submodule.span ℤ (Set.range β)) :
-      (⟨w, hw⟩ : Submodule.span ℤ (Set.range β)) +ᵥ x = w + x := rfl
-  have heq : (⟨-w₁, hn₁⟩ : Submodule.span ℤ (Set.range β)) = ⟨-w₂, hn₂⟩ :=
-    (ZSpan.exist_unique_vadd_mem_fundamentalDomain β x).unique
-      (by rw [subtype_vadd]; simpa only [sub_eq_add_neg, add_comm] using h₁)
-      (by rw [subtype_vadd]; simpa only [sub_eq_add_neg, add_comm] using h₂)
-  exact neg_injective (congrArg Subtype.val heq)
+  refine β.repr.injective (Finsupp.ext fun i ↦ ?_)
+  obtain ⟨a, ha⟩ := (β.mem_span_iff_repr_mem ℤ _).1 hw₁ i
+  obtain ⟨b, hb⟩ := (β.mem_span_iff_repr_mem ℤ _).1 hw₂ i
+  have h₁i := (ZSpan.mem_fundamentalDomain β).1 h₁ i
+  have h₂i := (ZSpan.mem_fundamentalDomain β).1 h₂ i
+  simp only [map_sub, Finsupp.sub_apply, ← ha, ← hb, eq_intCast, Set.mem_Ico] at h₁i h₂i ⊢
+  have h₃ : (a : ℝ) < b + 1 := by linarith [h₁i.1, h₁i.2, h₂i.1, h₂i.2]
+  have h₄ : (b : ℝ) < a + 1 := by linarith [h₁i.1, h₁i.2, h₂i.1, h₂i.2]
+  have h₅ : a < b + 1 := by exact_mod_cast h₃
+  have h₆ : b < a + 1 := by exact_mod_cast h₄
+  rw [show a = b by omega]
 
 /-- The coordinates of a real basis `b` carry an additive Haar measure `μ` to Lebesgue measure on
 `ι → ℝ`, scaled by the measure of the fundamental domain of `b`: every set `s` has

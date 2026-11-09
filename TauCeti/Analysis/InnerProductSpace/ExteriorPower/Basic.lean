@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import TauCeti.Algebra.Lie.ExteriorPower
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 
 /-!
@@ -210,6 +212,7 @@ section FinFour
 
 open exteriorPower
 
+omit [FiniteDimensional ℝ E] in
 /-- A wedge of two vectors in the basis `bᵢ ∧ bⱼ`, `i < j`, of `⋀² E` induced by an orthonormal
 basis `b` indexed by `Fin 4`. -/
 theorem ιMulti_two_eq_sum (b : OrthonormalBasis (Fin 4) ℝ E) (u w : E) :
@@ -220,6 +223,7 @@ theorem ιMulti_two_eq_sum (b : OrthonormalBasis (Fin 4) ℝ E) (u w : E) :
       (b.repr u 1 * b.repr w 2 - b.repr u 2 * b.repr w 1) • ιMulti ℝ 2 ![b 1, b 2] +
       (b.repr u 1 * b.repr w 3 - b.repr u 3 * b.repr w 1) • ιMulti ℝ 2 ![b 1, b 3] +
       (b.repr u 2 * b.repr w 3 - b.repr u 3 * b.repr w 2) • ιMulti ℝ 2 ![b 2, b 3] := by
+  have := Module.Finite.of_basis b.toBasis
   refine ext_inner_ιMulti_two fun a c ↦ ?_
   simp only [inner_add_left, real_inner_smul_left, inner_ιMulti_two, ← b.repr_apply_apply]
   simp only [b.inner_eq_sum_repr, conj_trivial, Fin.sum_univ_four]
@@ -271,7 +275,7 @@ end OrthonormalBasis
 
 namespace TauCeti
 
-open exteriorPower
+open _root_.exteriorPower
 open scoped RealInnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -340,12 +344,23 @@ theorem inner_twoVectorContraction_apply (F : ⋀[ℝ]^2 V) (u w : V) :
   rw [real_inner_comm w, real_inner_comm _ F, twoVectorContraction_apply]
   simpa using (LinearMap.congr_fun key F).symm
 
+omit [FiniteDimensional ℝ V] in
 /-- The contraction by a two-vector is orthogonal to its argument, `⟪u ⌟ F, u⟫ = 0`. -/
 theorem inner_twoVectorContraction_apply_self (F : ⋀[ℝ]^2 V) (u : V) :
     ⟪twoVectorContraction F u, u⟫ = 0 := by
-  rw [inner_twoVectorContraction_apply,
-    (ιMulti ℝ 2).map_eq_zero_of_eq ![u, u] (i := 0) (j := 1) rfl (by decide), inner_zero_right]
+  -- The contraction `u ⌟ F` is a one-form, the image of the vector `a`, and contracting by `u`
+  -- twice gives zero.
+  set a := twoVectorContraction F u with ha
+  have hιa : ExteriorAlgebra.ι ℝ a = contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V) := by
+    rw [ha, twoVectorContraction_apply]
+    exact ExteriorAlgebra.ι_ιInv_of_mem_exteriorPower_one
+      (ExteriorAlgebra.contractLeft_mem_exteriorPower (innerₗ V u) (n := 1) F.2)
+  have h0 := contractLeft_contractLeft (innerₗ V u) (F : ExteriorAlgebra ℝ V)
+  rw [← hιa, contractLeft_ι, ExteriorAlgebra.algebraMap_eq_zero_iff] at h0
+  rw [real_inner_comm]
+  exact h0
 
+omit [FiniteDimensional ℝ V] in
 /-- **The contraction by a two-vector is skew-adjoint**: `⟪u ⌟ F, w⟫ = -⟪u, w ⌟ F⟫`. -/
 theorem inner_twoVectorContraction_apply_left (F : ⋀[ℝ]^2 V) (u w : V) :
     ⟪twoVectorContraction F u, w⟫ = -⟪u, twoVectorContraction F w⟫ := by
