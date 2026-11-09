@@ -15,7 +15,7 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 
 Let `K₁' ⊆ ℝ^a` and `K₂' ⊆ ℝ^b` be compact sets that meet none of their translates by nonzero
 integer vectors (for instance sets of diameter less than one,
-`TauCeti.UnitAddTorus.eq_zero_of_add_mem_of_diam_lt_one`), and let `B` be a bilinear map on
+`UnitAddTorus.eq_zero_of_add_mem_of_diam_lt_one`), and let `B` be a bilinear map on
 `𝓓_{K₁'}(ℝ^a, ℂ) × 𝓓_{K₂'}(ℝ^b, ℂ)` with values in a complex Banach space, continuous in the
 sense that `‖B φ ψ‖ ≤ C N_k(φ) N_k(ψ)` for one of the `C^k` seminorms `N_k`. For compact sets
 `K₁`, `K₂` in the interiors of `K₁'`, `K₂'`, this file constructs the kernel of `B` on
@@ -32,7 +32,7 @@ The proof transfers the Schwartz kernel theorem on the torus
 `Kᵢ'` and equal to one on `Kᵢ`. The bilinear map `(f, g) ↦ B (χ₁ f) (χ₂ g)` on smooth functions
 on the tori `(ℝ / ℤ)^a` and `(ℝ / ℤ)^b` is continuous for the `C^k` norms, so it has a kernel
 `K` on the product torus, and `T Φ` is `K` applied to the periodization of `Φ`
-(`TauCeti.UnitAddTorus.periodize`). Since `Kᵢ'` meets none of its integer translates, the
+(`UnitAddTorus.periodize`). Since `Kᵢ'` meets none of its integer translates, the
 periodization of `φ` cut off by `χ₁` is `φ` again, and periodization takes tensor products to
 tensor products; this gives `T (φ ⊗ ψ) = B φ ψ`. For the comparison, a map `T'` as above
 induces `h ↦ T' ((χ₁ ⊗ χ₂) h)` on the product torus, which represents the same bilinear map on

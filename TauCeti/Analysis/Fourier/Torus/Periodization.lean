@@ -12,18 +12,18 @@ import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 # Periodization of compactly supported functions to the torus
 
 For a compactly supported function `f : (d → ℝ) → ℂ`, the periodization
-`TauCeti.UnitAddTorus.periodize f` is the function on the torus `UnitAddTorus d = (ℝ / ℤ)^d`
-whose lift to `d → ℝ` is `x ↦ ∑ ℓ : d → ℤ, f (x + ℓ)` (`TauCeti.UnitAddTorus.periodize_coe`).
+`UnitAddTorus.periodize f` is the function on the torus `UnitAddTorus d = (ℝ / ℤ)^d`
+whose lift to `d → ℝ` is `x ↦ ∑ ℓ : d → ℤ, f (x + ℓ)` (`UnitAddTorus.periodize_coe`).
 Near each point only finitely many translates of `f` are nonzero, so the periodization of a
-smooth `f` is a smooth function on the torus (`TauCeti.UnitAddTorus.periodize_mem_smoothFunctions`).
+smooth `f` is a smooth function on the torus (`UnitAddTorus.periodize_mem_smoothFunctions`).
 
 When the support of `f` lies in a set `S` that meets none of its translates by nonzero integer
 vectors, for instance a set of diameter less than one
-(`TauCeti.UnitAddTorus.eq_zero_of_add_mem_of_diam_lt_one`), at most one translate is nonzero at
+(`UnitAddTorus.eq_zero_of_add_mem_of_diam_lt_one`), at most one translate is nonzero at
 each point. Then the periodization agrees with `f` on `S`
-(`TauCeti.UnitAddTorus.periodize_coe_of_mem`), and its `C^N` norms are those of `f`
-(`TauCeti.UnitAddTorus.derivBound_periodize`). Periodization takes tensor products
-`f(x) g(y)` to tensor products on the product torus (`TauCeti.UnitAddTorus.periodize_tensor`).
+(`UnitAddTorus.periodize_coe_of_mem`), and its `C^N` norms are those of `f`
+(`UnitAddTorus.derivBound_periodize`). Periodization takes tensor products
+`f(x) g(y)` to tensor products on the product torus (`UnitAddTorus.periodize_tensor`).
 
 These are the facts that move the Fourier-series arguments on the torus, such as the Schwartz
 kernel theorem of `TauCeti.Analysis.Fourier.Torus.Kernel`, to smooth functions supported in a
@@ -31,18 +31,18 @@ small compact subset of `d → ℝ`.
 
 ## Main definitions
 
-* `TauCeti.UnitAddTorus.periodize`: the periodization of a function on `d → ℝ`.
+* `UnitAddTorus.periodize`: the periodization of a function on `d → ℝ`.
 
 ## Main results
 
-* `TauCeti.UnitAddTorus.periodize_coe`: the lift of the periodization is the sum of the integer
+* `UnitAddTorus.periodize_coe`: the lift of the periodization is the sum of the integer
   translates.
-* `TauCeti.UnitAddTorus.periodize_mem_smoothFunctions`: the periodization of a smooth compactly
+* `UnitAddTorus.periodize_mem_smoothFunctions`: the periodization of a smooth compactly
   supported function is smooth.
-* `TauCeti.UnitAddTorus.periodize_coe_of_mem`, `TauCeti.UnitAddTorus.derivBound_periodize`: on a
+* `UnitAddTorus.periodize_coe_of_mem`, `UnitAddTorus.derivBound_periodize`: on a
   set meeting none of its nonzero integer translates, the periodization agrees with `f`, and its
   derivatives are bounded by those of `f`.
-* `TauCeti.UnitAddTorus.periodize_tensor`: periodization of tensor products.
+* `UnitAddTorus.periodize_tensor`: periodization of tensor products.
 -/
 
 public section
@@ -52,14 +52,14 @@ noncomputable section
 open Filter Function Set Topology
 open scoped ContDiff
 
-namespace TauCeti.UnitAddTorus
+namespace UnitAddTorus
 
-open _root_.UnitAddTorus
+open TauCeti.UnitAddTorus
 
 variable {d : Type*}
 
 /-- The periodization of `f : (d → ℝ) → ℂ`: the function on the torus whose lift to `d → ℝ` is
-`x ↦ ∑ ℓ : d → ℤ, f (x + ℓ)` (`TauCeti.UnitAddTorus.periodize_coe`). -/
+`x ↦ ∑ ℓ : d → ℤ, f (x + ℓ)` (`UnitAddTorus.periodize_coe`). -/
 def periodize (f : (d → ℝ) → ℂ) (z : UnitAddTorus d) : ℂ :=
   ∑' ℓ : d → ℤ, f ((fun i ↦ (AddCircle.equivIco 1 0 (z i) : ℝ)) + fun i ↦ (ℓ i : ℝ))
 
@@ -211,4 +211,4 @@ theorem periodize_tensor {f : (a → ℝ) → ℂ} {g : (b → ℝ) → ℂ} (hf
     ← (Equiv.sumArrowEquivProdArrow a b ℤ).tsum_eq]
   rfl
 
-end TauCeti.UnitAddTorus
+end UnitAddTorus
