@@ -122,17 +122,13 @@ theorem _root_.Function.Exact.linearIndependent_append {R M N P : Type*} [Ring R
     {f : M →ₗ[R] N} {g : N →ₗ[R] P} (h : Function.Exact f g) (hf : Function.Injective f)
     {m n : ℕ} {u : Fin m → M} {v : Fin n → N} (hu : LinearIndependent R u)
     (hv : LinearIndependent R (g ∘ v)) : LinearIndependent R (Fin.append (f ∘ u) v) := by
-  refine Fintype.linearIndependent_iff.2 fun t ht ↦ ?_
-  simp only [Fin.sum_univ_add, Fin.append_left, Fin.append_right, Function.comp_apply] at ht
-  -- Applying `g` kills the first block and leaves a relation among the `g (v j)`.
-  have htv : ∀ j, t (Fin.natAdd m j) = 0 := by
-    refine Fintype.linearIndependent_iff.1 hv _ ?_
-    simpa [h.apply_apply_eq_zero] using congrArg g ht
-  simp only [htv, zero_smul, Finset.sum_const_zero, add_zero] at ht
-  -- What remains is the image under the injective `f` of a relation among the `u i`.
-  have htu : ∀ i, t (Fin.castAdd n i) = 0 :=
-    Fintype.linearIndependent_iff.1 hu _ (hf (by simpa using ht))
-  exact fun i ↦ Fin.addCases htu htv i
+  -- `f ∘ u` spans a submodule of `range f = ker g`, which meets the span of `v` trivially.
+  have hdisj : Disjoint (Submodule.span R (Set.range (f ∘ u))) (Submodule.span R (Set.range v)) :=
+    ((Submodule.range_ker_disjoint hv).mono_right (by
+      rw [h.linearMap_ker_eq, Set.range_comp, Submodule.span_image]
+      exact LinearMap.map_le_range)).symm
+  refine (linearIndependent_equiv' finSumFinEquiv Fin.append_comp_sumElim).1 ?_
+  exact (hu.map' f (LinearMap.ker_eq_bot.2 hf)).sum_type (hv.of_comp g) hdisj
 
 section FiniteDimensionalExact
 
