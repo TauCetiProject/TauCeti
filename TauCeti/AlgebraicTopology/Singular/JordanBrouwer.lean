@@ -11,6 +11,8 @@ public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.Field.ULift
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.Geometry.Manifold.Instances.Sphere
+import TauCeti.AlgebraicTopology.Sphere.Zero
+import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # The complement of an embedded sphere and the Jordan–Brouwer separation theorem
@@ -215,35 +217,14 @@ def reducedSingularHomologySphereComplRangeSphereIso {i : ℕ}
 
 omit [FiniteDimensional ℝ E] in
 /-- The unit sphere of an infinite-dimensional real normed space does not inject into the unit
-sphere of a real normed space of dimension `dim E + 1 = 1`: the former is infinite, as it spans
-the space, while the latter has two points. -/
+sphere of a real normed space of dimension `dim E + 1 = 1`: the former is infinite, while the
+latter has two points. -/
 private lemma false_of_not_finiteDimensional_of_injective (hEF : finrank ℝ F = finrank ℝ E + 1)
     (hE : ¬ FiniteDimensional ℝ E) (hi : Function.Injective h) : False := by
   rw [Module.finrank_of_not_finite hE, zero_add] at hEF
-  have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
-  obtain ⟨v, hv0, hv⟩ := finrank_eq_one_iff'.1 hEF
-  have hvpos : 0 < ‖v‖ := norm_pos_iff.2 hv0
-  have hF : (sphere (0 : F) 1).Finite := by
-    refine ({‖v‖⁻¹ • v, -(‖v‖⁻¹ • v)} : Set F).toFinite.subset fun w hw ↦ ?_
-    obtain ⟨c, rfl⟩ := hv w
-    have hn : |c| * ‖v‖ = 1 := by simpa [norm_smul] using hw
-    simp only [mem_insert_iff, mem_singleton_iff]
-    rcases le_total 0 c with hc | hc
-    · rw [abs_of_nonneg hc] at hn
-      exact Or.inl (by rw [eq_inv_of_mul_eq_one_left hn])
-    · rw [abs_of_nonpos hc] at hn
-      refine Or.inr ?_
-      rw [show c = -‖v‖⁻¹ by linarith [eq_inv_of_mul_eq_one_left hn], neg_smul]
-  have : Finite (sphere (0 : E) 1) := have := hF.to_subtype; .of_injective h hi
-  have hspan : Submodule.span ℝ (sphere (0 : E) 1) = ⊤ := by
-    refine eq_top_iff.2 fun x _ ↦ ?_
-    by_cases hx : x = 0
-    · simp [hx]
-    have hx' : x = ‖x‖ • (‖x‖⁻¹ • x) := by
-      rw [smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.2 hx), one_smul]
-    rw [hx']
-    exact Submodule.smul_mem _ _ (Submodule.subset_span (by simp [norm_smul, hx]))
-  exact hE (Module.finite_def.2 (hspan ▸ Submodule.fg_span (Set.toFinite _)))
+  have := finite_sphere_of_finrank_eq_one hEF (0 : F) 1
+  have : Finite (sphere (0 : E) 1) := .of_injective h hi
+  exact hE (finiteDimensional_of_finite_sphere ‹_›)
 
 omit [FiniteDimensional ℝ E] in
 /-- **The Jordan–Brouwer separation theorem.** The complement of the image of a continuous injection
@@ -277,14 +258,18 @@ theorem natCard_zerothHomotopy_sphere_compl_range_eq_two (hEF : finrank ℝ F = 
   rw [← Nat.card_congr (Equiv.optionSubtypeNe (ZerothHomotopy.mk x)), Finite.card_option,
     Nat.card_unique]
 
+omit [FiniteDimensional ℝ E] in
 /-- **The Jordan–Brouwer separation theorem, connected-component form.** The complement of the
-image of a continuous injection of the unit sphere of a finite-dimensional real normed space `E`
-into the unit sphere of a real normed space of dimension `dim E + 1` has exactly two connected
-components. The complement is an open subset of a manifold, so its connected components are its
-path components. -/
+image of a continuous injection of the unit sphere of a real normed space `E` into the unit sphere
+of a real normed space of dimension `dim E + 1` has exactly two connected components. The
+complement is an open subset of a manifold, so its connected components are its path
+components. -/
 theorem natCard_connectedComponents_sphere_compl_range_eq_two
     (hEF : finrank ℝ F = finrank ℝ E + 1) (hc : Continuous h) (hi : Function.Injective h) :
     Nat.card (ConnectedComponents ↥(range h)ᶜ) = 2 := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · exact (false_of_not_finiteDimensional_of_injective hEF hE hi).elim
   -- The unit sphere of `F` is homeomorphic to the Euclidean one, which is a manifold.
   have : FiniteDimensional ℝ F := .of_finrank_pos (by omega)
   have : Fact (finrank ℝ (EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) = finrank ℝ E + 1) := ⟨by simp⟩
