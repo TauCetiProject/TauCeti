@@ -286,10 +286,11 @@ theorem exists_isMIntegralCurveOn_maximalIntegralCurve_eq
 
 /-- At the initial time, the maximal integral curve takes its prescribed initial value. -/
 @[simp]
-theorem maximalIntegralCurve_zero (h : (0 : ℝ) ∈ maximalIntegralCurveInterval v x) :
-    maximalIntegralCurve v x 0 = x := by
-  obtain ⟨γ, _, _, _, hx, _, _, heq⟩ := exists_isMIntegralCurveOn_maximalIntegralCurve_eq h
-  rw [heq, hx]
+theorem maximalIntegralCurve_zero : maximalIntegralCurve v x 0 = x := by
+  by_cases h : (0 : ℝ) ∈ maximalIntegralCurveInterval v x
+  · obtain ⟨γ, _, _, _, hx, _, _, heq⟩ := exists_isMIntegralCurveOn_maximalIntegralCurve_eq h
+    rw [heq, hx]
+  · exact maximalIntegralCurve_eq_of_not_mem h
 
 variable [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M]
 
@@ -414,7 +415,7 @@ theorem not_mapClusterPt_nhdsLT_maximalIntegralCurve [CompleteSpace E]
   obtain ⟨c, hc, δ, hδ, hδeq⟩ :=
     ((isMIntegralCurveOn_maximalIntegralCurve hv).mono hsub).exists_gt_isMIntegralCurveOn_Ioo
       (ha.trans hb0) hv hy
-  have hδ0 : δ 0 = x := by rw [hδeq ⟨ha, hb0⟩, maximalIntegralCurve_zero h0]
+  have hδ0 : δ 0 = x := by rw [hδeq ⟨ha, hb0⟩, maximalIntegralCurve_zero]
   obtain ⟨s, hs⟩ := exists_between hc
   exact absurd (hb.1 (hδ.subset_maximalIntegralCurveInterval ⟨ha, hb0.trans hc⟩ hδ0
     ⟨ha.trans (hb0.trans hs.1), hs.2⟩)) (not_le.mpr hs.1)
@@ -445,7 +446,7 @@ theorem not_mapClusterPt_nhdsGT_maximalIntegralCurve [CompleteSpace E]
   obtain ⟨c, hc, δ, hδ, hδeq⟩ :=
     ((isMIntegralCurveOn_maximalIntegralCurve hv).mono hsub).exists_lt_isMIntegralCurveOn_Ioo
       (ha0.trans hb) hv hy
-  have hδ0 : δ 0 = x := by rw [hδeq ⟨ha0, hb⟩, maximalIntegralCurve_zero h0]
+  have hδ0 : δ 0 = x := by rw [hδeq ⟨ha0, hb⟩, maximalIntegralCurve_zero]
   obtain ⟨s, hs⟩ := exists_between hc
   exact absurd (ha.1 (hδ.subset_maximalIntegralCurveInterval ⟨hc.trans ha0, hb⟩ hδ0
     ⟨hs.1, hs.2.trans (ha0.trans hb)⟩)) (not_le.mpr hs.2)
@@ -530,7 +531,7 @@ stated. -/
 theorem maximalIntegralCurveInterval_eq_univ_iff
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) :
     maximalIntegralCurveInterval v x = univ ↔ ∃ γ : ℝ → M, γ 0 = x ∧ IsMIntegralCurve γ v := by
-  refine ⟨fun h ↦ ⟨maximalIntegralCurve v x, maximalIntegralCurve_zero (h ▸ mem_univ 0), ?_⟩,
+  refine ⟨fun h ↦ ⟨maximalIntegralCurve v x, maximalIntegralCurve_zero, ?_⟩,
     fun ⟨γ, hx, hγ⟩ ↦ eq_univ_of_forall fun t ↦ ?_⟩
   · exact TauCeti.isMIntegralCurve_maximalIntegralCurve_of_eq_univ hv h
   · have habs := abs_nonneg t

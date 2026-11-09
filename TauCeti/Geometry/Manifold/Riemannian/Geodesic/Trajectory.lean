@@ -164,10 +164,8 @@ theorem isGeodesicCurveOnFrom_maximalGeodesic (p : M) (v : TangentSpace I p) :
     (I := I) (M := M) (s := geodesicInterval I M p v) (t := (0 : ℝ))
     (isOpen_geodesicInterval.uniqueDiffOn 0 h0) hz h0
   have hz0 : maximalIntegralCurve (geodesicSpray I M) (TotalSpace.mk' E p v) 0 =
-      TotalSpace.mk' E p v := by
-    apply maximalIntegralCurve_zero
-    rw [hdomains]
-    exact h0
+      TotalSpace.mk' E p v :=
+    maximalIntegralCurve_zero
   refine ⟨hgeo, h0, ?_⟩
   unfold maximalGeodesic
   simpa only [curveVelocityLiftWithin_apply] using hlift.symm.trans hz0
@@ -233,7 +231,7 @@ theorem IsGeodesicCurveOn.maximalGeodesic_sub_eq {γ : ℝ → M} {a b τ t : �
       (contMDiff_one_geodesicSpray (I := I) (M := M)) hdomain
   have heq := isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless
     (contMDiff_one_geodesicSpray (I := I) (M := M)) hmax hconst
-    (maximalIntegralCurve_zero (hdomain ▸ mem_univ 0))
+    maximalIntegralCurve_zero
   funext t
   exact congrArg TotalSpace.proj (congrFun heq t)
 

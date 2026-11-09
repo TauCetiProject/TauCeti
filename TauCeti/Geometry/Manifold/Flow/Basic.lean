@@ -96,11 +96,9 @@ theorem zero_mem_flowDomain_of_mem {v : (x : M) → TangentSpace I x} {t : ℝ} 
   exact mem_flowDomain.mpr (hγ.subset_maximalIntegralCurveInterval hγ0 hγx hγ0)
 
 /-- The maximal flow fixes every point at time zero. -/
+@[simp]
 theorem flowOf_zero (v : (x : M) → TangentSpace I x) (x : M) : flowOf v 0 x = x := by
-  rw [flowOf_apply]
-  by_cases h : (0 : ℝ) ∈ maximalIntegralCurveInterval v x
-  · exact maximalIntegralCurve_zero h
-  · exact maximalIntegralCurve_eq_of_not_mem h
+  rw [flowOf_apply, maximalIntegralCurve_zero]
 
 variable [T2Space M] [BoundarylessManifold I M] [CompleteSpace E]
 
