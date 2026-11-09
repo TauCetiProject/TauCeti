@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
+import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
+import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplier
 
 /-!
@@ -18,8 +20,11 @@ coefficient need not have a Sobolev tail: this is the form needed for the linear
 by expanding the equation and gauge action about a nondecaying reference field.
 
 The matrix version allows mixing the connection and section coordinates and permits different
-bounds for each coefficient. These results assert membership, not boundedness of a completed
-operator or smoothness of the nonlinear equation map.
+bounds for each coefficient. Multiplication by a coordinate of a framed field of `A_m^n`, which
+combines a smooth reference coordinate with a Sobolev tail, preserves `H^n(ℂ)` for `n > 1`
+(`mul_mem_realSobolevFunctions_of_mem_framedFieldSpace`), since `H^n(ℂ)` is then an algebra.
+These results assert membership, not boundedness of a completed operator or smoothness of the
+nonlinear equation map.
 
 ## References
 
@@ -77,5 +82,24 @@ theorem smul_mem_sobolevFields_natCast (k : ℕ) {ψ : ℂ → ℝ}
     ext z i
     simp [PiLp.smul_apply, smul_eq_mul]
   exact hfield ▸ h
+
+/-- **Multiplication by a coordinate of a framed field.** For an integer `n > 1`, multiplying a
+real `H^n` function by a coordinate of a field of `A_m^n` gives an `H^n` function. The
+reference coordinate is smooth with bounded derivatives, and `H^n(ℂ)` is an algebra. -/
+theorem mul_mem_realSobolevFunctions_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)}
+    {m n : ℕ} (hn : 1 < n) {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m n)
+    (i : Fin 4) {g : ℂ → ℝ} (hg : g ∈ realSobolevFunctions ℂ n 2) :
+    (fun z ↦ x z i * g z) ∈ realSobolevFunctions ℂ n 2 := by
+  have hw : (fun z ↦ (x - referenceField f m) z i) ∈ realSobolevFunctions ℂ n 2 :=
+    mem_sobolevFields.1 (mem_framedFieldSpace.1 hx) i
+  have href := mul_mem_realSobolevFunctions_of_bounded_derivatives (p := 2) (by norm_num)
+    (by norm_num) n (contDiff_euclidean.1 (contDiff_referenceField f m) i)
+    (fun j _ ↦ exists_norm_iteratedFDeriv_referenceField_apply_le f m j i) hg
+  have hprod := mul_mem_realSobolevFunctions
+    (finrank_real_complex_lt_two_mul (by exact_mod_cast hn)) hw hg
+  convert add_mem href hprod using 1
+  ext z
+  simp only [Pi.add_apply, Pi.mul_apply, Pi.sub_apply, PiLp.sub_apply]
+  ring
 
 end TauCeti.Vortex

@@ -111,6 +111,7 @@ theorem contDiff_referenceField (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
   · exact (reCLM.contDiff.comp hs).div_const 2
   · exact (imCLM.contDiff.comp hs).div_const 2
 
+-- Source: copied from https://github.com/TauCetiProject/TauCeti/pull/33760.
 /-- Every iterated derivative of each coordinate of the reference field is bounded. -/
 theorem exists_norm_iteratedFDeriv_referenceField_apply_le (f : ContDiffBump (0 : ℝ)) (m n : ℕ)
     (i : Fin 4) : ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ referenceField f m z i) z‖ ≤ C := by

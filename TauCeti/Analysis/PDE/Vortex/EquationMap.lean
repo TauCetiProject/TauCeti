@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
+public import TauCeti.Analysis.PDE.Vortex.Multiplier
 public import TauCeti.Analysis.PDE.Vortex.WindingPhase
-public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
@@ -98,27 +98,6 @@ theorem equation_referenceField_apply_mem_realSobolevFunctions (f : ContDiffBump
       ENat.coe_top_add_one.le) i)
     ((hasCompactSupport_equation_referenceField f m).comp_left
       (g := fun v : EuclideanSpace ℝ (Fin 3) ↦ v i) rfl) s
-
-/-! ### Products with the coordinates of framed fields -/
-
-/-- **Multiplication by a coordinate of a framed field.** For an integer `n > 1`, multiplying a
-real `H^n` function by a coordinate of a field of `A_m^n` gives an `H^n` function. The
-reference coordinate is smooth with bounded derivatives, and `H^n(ℂ)` is an algebra. -/
-theorem mul_mem_realSobolevFunctions_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)}
-    {m n : ℕ} (hn : 1 < n) {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m n)
-    (i : Fin 4) {g : ℂ → ℝ} (hg : g ∈ realSobolevFunctions ℂ n 2) :
-    (fun z ↦ x z i * g z) ∈ realSobolevFunctions ℂ n 2 := by
-  have hw : (fun z ↦ (x - referenceField f m) z i) ∈ realSobolevFunctions ℂ n 2 :=
-    mem_sobolevFields.1 (mem_framedFieldSpace.1 hx) i
-  have href := mul_mem_realSobolevFunctions_of_bounded_derivatives (p := 2) (by norm_num)
-    (by norm_num) n (contDiff_euclidean.1 (contDiff_referenceField f m) i)
-    (fun j _ ↦ exists_norm_iteratedFDeriv_referenceField_apply_le f m j i) hg
-  have hprod := mul_mem_realSobolevFunctions
-    (finrank_real_complex_lt_two_mul (by exact_mod_cast hn)) hw hg
-  convert add_mem href hprod using 1
-  ext z
-  simp only [Pi.add_apply, Pi.mul_apply, Pi.sub_apply, PiLp.sub_apply]
-  ring
 
 /-! ### The deformation complex and the equation map -/
 
