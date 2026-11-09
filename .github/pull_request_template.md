@@ -66,7 +66,9 @@ reasoning about whether it is needed.
   promises (Q9).
 - If it follows from the other hypotheses (`[NeZero n]` from `1 < n`, `[Finite K]` from a
   cardinality bound, `[Module.Free k M]` from a basis, `[T2Space G]` from a Lie group structure),
-  derive it inside the proof instead of asking every caller for it.
+  derive it inside the proof instead of asking every caller for it. Remove it even when a related
+  lemma, such as the ring-level version, states it: consistency with another lemma is not a reason
+  to keep it.
 - If the proof breaks only in a degenerate case (an empty type, `0`, `⊥`, the zero ring), handle
   that case and drop the hypothesis when the statement holds there for a real reason (an empty
   sum, an a.e. statement for the zero measure, contradictory hypotheses). Keep it only when you can
@@ -88,10 +90,10 @@ blank lines or comments. For a proof over 50 lines, first look for a shorter rou
 lemma, `grind`, `positivity`, `fun_prop`, a better induction principle. Otherwise split it at its
 natural stages into lemmas of at most 50 lines each: a step that is a reusable result in its own
 right becomes a public, documented lemma in the file where it belongs, and a step specific to this
-proof becomes a `private` lemma. Keep the main statement unchanged. In the rare case where a proof cannot be split,
-keep it, add comments inside it explaining its global structure, and say why in the note. Treat
-long `def` and `instance` bodies the same way (move the proof obligations into lemmas), and turn
-any block repeated within or across the PR's proofs into one lemma.
+proof becomes a `private` lemma. Keep the main statement unchanged. In the rare case where a
+proof cannot be split, keep it, add comments inside it explaining its global structure, and say
+why in the note. Treat long `def` and `instance` bodies the same way (move the proof obligations
+into lemmas), and turn any block repeated within or across the PR's proofs into one lemma.
 
 Q6. Elaboration speed. Time every declaration the PR adds or changes, for instance with the
 `profiler` option set in a scratch file (`set_option` is not allowed in library code) or by timing
@@ -103,11 +105,15 @@ an intermediate `have` with its type, or prove an equation lemma), and `convert`
 a `module` file, check that `#check @f.eq_1` from a non-module file returns at once for each new
 definition.
 
-Q7. API for new definitions. Give each new definition its characteristic lemmas (`_apply`, `_def`,
-`ext`, and `@[simp]` lemmas whose left-hand side is in simp normal form, so that they fire), so that
-callers do not re-derive them. Inline a definition that has no API and is used once, unless the
-roadmap names it. Evaluate each new definition on degenerate inputs (empty, zero, the trivial
-ring): if it returns a junk value there, make sure no theorem holds only because of it.
+Q7. API for new definitions. Inline a new definition that is used once and has no API, unless the
+roadmap names it. For each other new definition, name the lemma that says what it is: its `_def`,
+`_iff` or `_apply` lemma, or the equation its proofs use. Only the proofs of such lemmas should
+unfold the definition: if another proof in the PR unfolds it by hand, the lemma is missing, so add
+it and use it there. Add the rest of each definition's characteristic lemmas too (`ext`, and
+`@[simp]` lemmas whose left-hand side is in simp normal form, so that they fire), so that callers
+do not re-derive them. Evaluate each new definition on degenerate inputs (empty, zero, the trivial
+ring): if it returns a junk value there, make sure no theorem holds only because of it. The note
+names, for each new definition, the lemma that says what it is.
 
 Q8. Tidy what the PR adds or changes. Leave the rest of an existing file alone.
 - The module docstring of each new file lists the main definitions and results in it, and that of
@@ -128,7 +134,8 @@ Q8. Tidy what the PR adds or changes. Leave the rest of an existing file alone.
 
 Q9. Statements re-read. Read each new statement as a mathematician would. Write down what its
 docstring promises, part by part, and check that each part appears in the conclusion, with nothing
-moved into the hypotheses. Check that the statement says what the source says, and that it is not
-vacuous: the hypotheses can hold together, and the conclusion does not hold for a reason the
-docstring does not intend. A simple, correct lemma is fine.
+moved into the hypotheses. Check the order of the quantifiers the docstring implies: one `x` that
+works for every `n` is `∃ x, ∀ n, …`, not `∀ n, ∃ x, …`. Check that the statement says what the
+source says, and that it is not vacuous: the hypotheses can hold together, and the conclusion does
+not hold for a reason the docstring does not intend. A simple, correct lemma is fine.
 -->
