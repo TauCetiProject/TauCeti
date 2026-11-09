@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CWComplex.Classical.Basic
-public import TauCeti.Topology.Coherent
 
 /-!
 # The union of a tower of CW complexes
