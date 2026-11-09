@@ -132,7 +132,7 @@ private theorem exists_inverted_coordinate_of_polygonal_ends {ι : Type*} [Finit
       Tendsto (fun z => z * logDeriv (deriv fun z => q + (g z)⁻¹) z)
         (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 (-2)) ∧
       Injective a ∧ ∀ i, g (a i) ≠ 0 ∧ q + (g (a i))⁻¹ = v i := by
-  have := locallyConnectedSpace_frontier_image_inv_sub_of_frontier_eq hUo hq hUb hd hfr
+  have := locallyConnectedSpace_frontier_image_inv_sub_of_frontier_eq hq hUb hd hfr
   have hvU (i : ι) : v i ∈ frontier U := by
     obtain ⟨r, hr, n, hn, hUi⟩ := hcorner i
     exact mem_frontier_of_forall_mem_iff_abs_arg_lt hr hn
@@ -167,7 +167,7 @@ private theorem exists_inverted_coordinate_of_polygonal_ends {ι : Type*} [Finit
   -- the real boundary values of `g` are the inverses of `w - q` for frontier points `w`
   have hgr' : insert (w - q)⁻¹ (g '' {z : ℂ | z.im = 0}) =
       insert 0 ((fun z : ℂ => (z - q)⁻¹) '' frontier U) := by
-    rw [hgr, frontier_image_inv_sub hUo hq hUb]
+    rw [hgr, frontier_image_inv_sub hq hUb]
   have hfront {z : ℂ} (hz : z.im = 0) (hgz : g z ≠ 0) : q + (g z)⁻¹ ∈ frontier U := by
     obtain ⟨w', hw', hwg'⟩ := ((hgr' ▸ mem_insert_of_mem _ ⟨z, hz, rfl⟩ :
       g z ∈ insert 0 ((fun z : ℂ => (z - q)⁻¹) '' frontier U))).resolve_left hgz

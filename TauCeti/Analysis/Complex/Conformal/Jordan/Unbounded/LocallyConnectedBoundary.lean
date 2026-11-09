@@ -76,7 +76,7 @@ theorem exists_bijOn_upperHalfPlaneSet_of_locallyConnectedSpace_frontier_image_i
   have hVs : IsSimplyConnected ((fun z : ℂ => (z - q)⁻¹) '' U) :=
     isSimplyConnected_image_of_differentiableOn_of_injOn hUo hUs hdiff hinj
   have hV0 : (0 : ℂ) ∈ frontier ((fun z : ℂ => (z - q)⁻¹) '' U) := by
-    rw [frontier_image_inv_sub hUo hq hUb]
+    rw [frontier_image_inv_sub hq hUb]
     exact mem_insert _ _
   obtain ⟨g, hgc, hgd, hgV, hgK, hgR, hg0⟩ :=
     exists_continuousOn_bijOn_upperHalfPlaneSet_of_locallyConnectedSpace_frontier hVo hVs

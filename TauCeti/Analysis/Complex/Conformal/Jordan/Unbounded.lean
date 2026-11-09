@@ -27,7 +27,7 @@ and tends to infinity at infinity.
 
 ## Main statements
 
-* `TauCeti.frontier_image_inv_sub`: inverting an open unbounded set about a point outside its
+* `TauCeti.frontier_image_inv_sub`: inverting an unbounded set about a point outside its
   closure adds `0` to the inverted frontier.
 * `TauCeti.isJordanCurve_frontier_image_inv_sub`: the inversion of an unbounded Jordan domain about
   an exterior point is a bounded Jordan domain.
@@ -90,18 +90,35 @@ theorem not_isBounded_of_isJordanCurve_frontier
   fun h =>
     not_isBounded_of_isJordanCurve_insert_infty hUJ (h.closure.subset frontier_subset_closure)
 
-/-- Inverting an open unbounded set `U` about a point `q` outside its closure, the frontier of the
+/-- Inverting a set `U` about a point `q` outside its closure, the interior of the image is the
+image of the interior. -/
+theorem interior_image_inv_sub (hq : q ∉ closure U) :
+    interior ((fun z : ℂ => (z - q)⁻¹) '' U) = (fun z : ℂ => (z - q)⁻¹) '' interior U := by
+  refine Subset.antisymm (fun w hw => ?_) (interior_maximal (image_mono interior_subset)
+    (isOpen_image_inv_sub isOpen_interior fun h => hq (subset_closure (interior_subset h))))
+  obtain ⟨u, hu, rfl⟩ := interior_subset hw
+  -- the points off `q` inverted into the interior of the image form an open subset of `U`
+  have hN : IsOpen ({q}ᶜ ∩ (fun z : ℂ => (z - q)⁻¹) ⁻¹' interior ((fun z : ℂ => (z - q)⁻¹) '' U)) :=
+    (continuousOn_inv₀.comp (continuousOn_id.sub continuousOn_const) fun z hz => by
+      simpa [sub_ne_zero] using hz).isOpen_inter_preimage isOpen_compl_singleton isOpen_interior
+  have hNU : {q}ᶜ ∩ (fun z : ℂ => (z - q)⁻¹) ⁻¹' interior ((fun z : ℂ => (z - q)⁻¹) '' U) ⊆ U :=
+    fun z hz => by
+      obtain ⟨v, hv, hvz⟩ := interior_subset hz.2
+      exact (inv_injective.comp (sub_left_injective (b := q)) hvz) ▸ hv
+  exact ⟨u, hN.subset_interior_iff.mpr hNU
+    ⟨fun h => hq (subset_closure (h ▸ hu)), hw⟩, rfl⟩
+
+/-- Inverting an unbounded set `U` about a point `q` outside its closure, the frontier of the
 image is the image of the frontier together with `0`, the image of infinity. -/
-theorem frontier_image_inv_sub (hUo : IsOpen U) (hq : q ∉ closure U) (hUb : ¬IsBounded U) :
+theorem frontier_image_inv_sub (hq : q ∉ closure U) (hUb : ¬IsBounded U) :
     frontier ((fun z : ℂ => (z - q)⁻¹) '' U) =
       insert 0 ((fun z : ℂ => (z - q)⁻¹) '' frontier U) := by
-  have hU0 : (0 : ℂ) ∉ (fun z : ℂ => (z - q)⁻¹) '' U := by
+  have hU0 : (0 : ℂ) ∉ (fun z : ℂ => (z - q)⁻¹) '' interior U := by
     rintro ⟨z, hz, hz0⟩
     rw [inv_eq_zero, sub_eq_zero] at hz0
-    exact hq (subset_closure (hz0 ▸ hz))
-  have hV := isOpen_image_inv_sub hUo fun h => hq (subset_closure h)
-  rw [hV.frontier_eq, closure_image_inv_sub hUb, insert_sdiff_of_notMem _ hU0,
-    hUo.frontier_eq, image_sdiff (f := fun z : ℂ => (z - q)⁻¹)
+    exact hq (subset_closure (interior_subset (hz0 ▸ hz)))
+  rw [frontier, closure_image_inv_sub hUb, interior_image_inv_sub hq,
+    insert_sdiff_of_notMem _ hU0, frontier, image_sdiff (f := fun z : ℂ => (z - q)⁻¹)
       (inv_injective.comp (sub_left_injective (b := q)))]
 
 /-- Inverting the finite part of a spherical Jordan curve through infinity about a point off
@@ -135,10 +152,10 @@ theorem isJordanCurve_insert_zero_image_inv_sub {S : Set ℂ} (hq : q ∉ S)
 /-- **Inverting an unbounded Jordan domain gives a bounded Jordan domain.** If the frontier of an
 open set `U`, together with infinity, is a spherical Jordan curve, inversion about a point outside
 its closure gives a planar Jordan frontier through `0`. -/
-theorem isJordanCurve_frontier_image_inv_sub (hUo : IsOpen U) (hq : q ∉ closure U)
+theorem isJordanCurve_frontier_image_inv_sub (hq : q ∉ closure U)
     (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U))) :
     IsJordanCurve (frontier ((fun z : ℂ => (z - q)⁻¹) '' U)) := by
-  rw [frontier_image_inv_sub hUo hq (not_isBounded_of_isJordanCurve_frontier hUJ)]
+  rw [frontier_image_inv_sub hq (not_isBounded_of_isJordanCurve_frontier hUJ)]
   exact isJordanCurve_insert_zero_image_inv_sub
     (fun h => hq (frontier_subset_closure h)) hUJ
 
@@ -166,11 +183,11 @@ theorem exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_inft
   have hVc : IsConnected ((fun z : ℂ => (z - q)⁻¹) '' U) :=
     hUc.image _ ((continuousOn_id.sub continuousOn_const).inv₀ fun z hz =>
       sub_ne_zero.mpr fun (h : z = q) => hqU (h ▸ hz))
-  have hVfr := frontier_image_inv_sub hUo hq hUb
+  have hVfr := frontier_image_inv_sub hq hUb
   obtain ⟨g, hgc, hgd, hgV, hgcl, hgR, hg0⟩ :=
     exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_frontier hVo hVc
       (isBounded_image_inv_sub hq)
-      (isJordanCurve_frontier_image_inv_sub hUo hq hUJ) (hVfr ▸ mem_insert _ _)
+      (isJordanCurve_frontier_image_inv_sub hq hUJ) (hVfr ▸ mem_insert _ _)
   -- removing `0` from the closure or the frontier of the inverted domain leaves the image of the
   -- closure or the frontier of `U`, which `w ↦ q + w⁻¹` carries back
   have h0 {S : Set ℂ} (hS : S ⊆ closure U) : (0 : ℂ) ∉ (fun z : ℂ => (z - q)⁻¹) '' S := by

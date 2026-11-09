@@ -153,17 +153,17 @@ theorem locallyConnectedSpace_insert_zero_image_inv_sub_union_segment_ray {ι κ
   rw [heq]
   exact locallyConnectedSpace_iUnion_image_of_isCompact isCompact_Icc hγ
 
-/-- **Polygonal frontiers are locally connected after inversion.** Let `U` be an unbounded open
+/-- **Polygonal frontiers are locally connected after inversion.** Let `U` be an unbounded
 set whose frontier is the union of finitely many closed segments `[x i, y i]` and finitely many
 closed rays `p k + t * d k`, `t ≥ 0`, `d k ≠ 0`, and let `q ∉ closure U`. Then the inversion of `U`
 about `q` has locally connected frontier, even when `U` has several ends at infinity. -/
 theorem locallyConnectedSpace_frontier_image_inv_sub_of_frontier_eq {ι κ : Type*} [Finite ι]
-    [Finite κ] {U : Set ℂ} (hUo : IsOpen U) (hq : q ∉ closure U) (hUb : ¬IsBounded U)
+    [Finite κ] {U : Set ℂ} (hq : q ∉ closure U) (hUb : ¬IsBounded U)
     {x y : ι → ℂ} {p d : κ → ℂ} (hd : ∀ k, d k ≠ 0)
     (hU : frontier U =
       (⋃ i, segment ℝ (x i) (y i)) ∪ ⋃ k, (fun t : ℝ => p k + (t : ℂ) * d k) '' Ici 0) :
     LocallyConnectedSpace (frontier ((fun z : ℂ => (z - q)⁻¹) '' U)) := by
-  rw [frontier_image_inv_sub hUo hq hUb, hU]
+  rw [frontier_image_inv_sub hq hUb, hU]
   exact locallyConnectedSpace_insert_zero_image_inv_sub_union_segment_ray x y p d hd
     (hU ▸ fun h => hq (frontier_subset_closure h))
 

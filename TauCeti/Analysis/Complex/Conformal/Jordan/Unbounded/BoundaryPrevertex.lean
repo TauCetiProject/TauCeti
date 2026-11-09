@@ -132,7 +132,7 @@ prescribed frontier point.
 The equality `hgr` is the boundary-surjectivity conclusion supplied by
 `TauCeti.exists_bijOn_upperHalfPlaneSet_of_locallyConnectedSpace_frontier_image_inv_sub`. -/
 theorem exists_injective_prevertices_of_inverted_boundary {U : Set ℂ} {q : ℂ}
-    (hUo : IsOpen U) (hq : q ∉ closure U) (hUb : ¬IsBounded U)
+    (hq : q ∉ closure U) (hUb : ¬IsBounded U)
     (hgc : ContinuousOn g {z : ℂ | 0 ≤ z.im})
     (hgf : EqOn g (fun z => (f z - q)⁻¹) upperHalfPlaneSet)
     (hgr : insert 0 (g '' {z : ℂ | z.im = 0}) =
@@ -146,7 +146,7 @@ theorem exists_injective_prevertices_of_inverted_boundary {U : Set ℂ} {q : ℂ
   have htarget (i : ι) : (v i - q)⁻¹ ∈ g '' {z : ℂ | z.im = 0} := by
     have hmem : (v i - q)⁻¹ ∈
         frontier ((fun z : ℂ => (z - q)⁻¹) '' U) := by
-      rw [frontier_image_inv_sub hUo hq hUb]
+      rw [frontier_image_inv_sub hq hUb]
       exact mem_insert_of_mem _ ⟨v i, hvU i, rfl⟩
     rw [← hgr, mem_insert_iff] at hmem
     exact hmem.resolve_left (inv_ne_zero (hvq i))
@@ -229,7 +229,7 @@ theorem injOn_inverted_boundary_of_isPreconnectedApproachAt {U : Set ℂ}
   rcases hz.eq_or_lt with hz | hz <;> rcases hz'.eq_or_lt with hz' | hz'
   · -- two real parameters: their common value is `(w - q)⁻¹` for a frontier point `w` of `U`
     have hmem := hgfr hz.symm
-    rw [frontier_image_inv_sub hUo hq hUb] at hmem
+    rw [frontier_image_inv_sub hq hUb] at hmem
     obtain ⟨w, hw, hwg⟩ := hmem.resolve_left hgz
     have hwq : w ≠ q := fun h => hq (h ▸ frontier_subset_closure hw)
     have hfib := subsingleton_inverted_boundary_fiber_of_isPreconnectedApproachAt hgc hgd hgf
