@@ -127,4 +127,40 @@ theorem condExp_withDensity_eq_div {f : Ω → ℝ} (hm : m ≤ mΩ)
         μ[fun y ↦ (w y).toReal | m] x := by
   simpa only [smul_eq_mul, div_eq_inv_mul] using condExp_withDensity hm hw hf
 
+/-- A variable known in `m`, integrable under the changed measure, remains integrable
+under the original measure after multiplication by the conditional density. -/
+theorem StronglyMeasurable.integrable_condExp_toReal_smul (hf : StronglyMeasurable[m] f)
+    (hw : AEMeasurable w μ) [IsFiniteMeasure (μ.withDensity w)]
+    (hint : Integrable f (μ.withDensity w)) :
+    Integrable (fun x ↦ μ[fun y ↦ (w y).toReal | m] x • f x) μ := by
+  have hmass := isFiniteMeasure_withDensity_iff.mp
+    (inferInstance : IsFiniteMeasure (μ.withDensity w))
+  have htop := ae_lt_top' hw hmass
+  have hweighted := (integrable_withDensity_iff_integrable_smul₀' hw htop).mp hint
+  exact integrable_condExp.congr
+    (condExp_smul_of_aestronglyMeasurable_right
+      (integrable_toReal_of_lintegral_ne_top hw hmass) hweighted hf.aestronglyMeasurable)
+
+/-- On events in `m`, integration against the conditional density is integration
+under the changed measure, for an `m`-measurable integrable observable. -/
+theorem StronglyMeasurable.setIntegral_condExp_toReal_smul (hf : StronglyMeasurable[m] f)
+    (hm : m ≤ mΩ) [SigmaFinite (μ.trim hm)] (hw : AEMeasurable w μ)
+    [IsFiniteMeasure (μ.withDensity w)] (hint : Integrable f (μ.withDensity w))
+    {s : Set Ω} (hs : MeasurableSet[m] s) :
+    ∫ x in s, μ[fun y ↦ (w y).toReal | m] x • f x ∂μ = ∫ x in s, f x ∂μ.withDensity w := by
+  have hmass := isFiniteMeasure_withDensity_iff.mp
+    (inferInstance : IsFiniteMeasure (μ.withDensity w))
+  have htop := ae_lt_top' hw hmass
+  have hweighted := (integrable_withDensity_iff_integrable_smul₀' hw htop).mp hint
+  have hpull := condExp_smul_of_aestronglyMeasurable_right
+    (integrable_toReal_of_lintegral_ne_top hw hmass) hweighted hf.aestronglyMeasurable
+  calc
+    ∫ x in s, μ[fun y ↦ (w y).toReal | m] x • f x ∂μ =
+        ∫ x in s, μ[fun y ↦ (w y).toReal • f y | m] x ∂μ :=
+      setIntegral_congr_ae (hm s hs) (hpull.symm.mono fun _ hx _ ↦ hx)
+    _ = ∫ x in s, (w x).toReal • f x ∂μ := setIntegral_condExp hm hweighted hs
+    _ = ∫ x in s, f x ∂μ.withDensity w :=
+      (setIntegral_withDensity_eq_setIntegral_toReal_smul₀ hw.restrict
+        (ae_restrict_of_ae htop) _ (hm s hs)).symm
+
 end MeasureTheory
