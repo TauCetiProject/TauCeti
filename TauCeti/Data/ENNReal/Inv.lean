@@ -23,7 +23,7 @@ plus half of itself is at most `2 b`.
 ## Main declarations
 
 * `ENNReal.toReal_one_sub_div`: `(1 - a / b).toReal = 1 - a.toReal / b.toReal` for `a ≤ b`.
-* `ENNReal.zero_le_one_sub_one_div_toReal`: for `1 ≤ p`, the Hölder exponent `1 - 1 / p.toReal`
+* `ENNReal.one_sub_one_div_toReal_nonneg`: for `1 ≤ p`, the Hölder exponent `1 - 1 / p.toReal`
   is nonnegative.
 * `ENNReal.toNNReal_one_sub_div_pos`: `0 < (1 - a / b).toNNReal` for `a < b`.
 * `ENNReal.exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one`: for `r > 1` and `n > 0` with
@@ -53,7 +53,7 @@ theorem toNNReal_one_sub_div_pos {a b : ℝ≥0∞} (hab : a < b) : 0 < (1 - a /
     (sub_ne_top one_ne_top)
 
 /-- For `1 ≤ p`, the Hölder exponent `1 - 1 / p` is nonnegative (with `p = ∞` giving `1`). -/
-theorem zero_le_one_sub_one_div_toReal {p : ℝ≥0∞} (hp : 1 ≤ p) : 0 ≤ 1 - 1 / p.toReal := by
+theorem one_sub_one_div_toReal_nonneg {p : ℝ≥0∞} (hp : 1 ≤ p) : 0 ≤ 1 - 1 / p.toReal := by
   rcases eq_or_ne p ∞ with rfl | hp_top
   · simp
   · have h1p : (1 : ℝ) ≤ p.toReal := by

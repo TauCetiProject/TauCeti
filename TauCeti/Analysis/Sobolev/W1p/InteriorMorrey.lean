@@ -93,7 +93,7 @@ theorem W1p.setIntegral_ball_norm_gradient_le {Omega : Opens E} (u : W1p mu Omeg
         r ^ ((finrank ℝ E : ℝ) * (1 - 1 / p.toReal)) *
           (eLpNorm (W1p.gradient u) p (mu.restrict (ball z r))).toReal := by
   set q : ℝ := 1 - 1 / p.toReal
-  have hq : 0 ≤ q := ENNReal.zero_le_one_sub_one_div_toReal Fact.out
+  have hq : 0 ≤ q := ENNReal.one_sub_one_div_toReal_nonneg Fact.out
   have hf : AEStronglyMeasurable (W1p.gradient u) (mu.restrict (ball z r)) :=
     (Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono hball le_rfl)
   have hfin : eLpNorm (W1p.gradient u) p (mu.restrict (ball z r)) ≠ ∞ :=

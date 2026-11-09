@@ -269,7 +269,7 @@ theorem exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le (c : ℝ) {M B B' 
   · refine ⟨M, hM, fun T hTM _ _ f => ?_⟩
     rw [← Lp.enorm_def, ← Lp.enorm_def]
     exact (T.le_opENorm f).trans (by gcongr)
-  · have : 0 ≤ 1 - 1 / p.toReal := ENNReal.zero_le_one_sub_one_div_toReal hp.le
+  · have : 0 ≤ 1 - 1 / p.toReal := ENNReal.one_sub_one_div_toReal_nonneg hp.le
     refine ⟨(ENNReal.ofReal p.toReal *
           (2 * (2 ^ Fintype.card ι * (4 * M ^ 2) + ENNReal.ofReal c ^ Fintype.card ι + 4 * B')) +
         ENNReal.ofReal (p.toReal / (p.toReal - 2)) * (4 * M ^ 2)) ^ (1 - 1 / p.toReal),

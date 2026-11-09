@@ -180,7 +180,7 @@ theorem coe_rpow_one_sub_toReal_inv_mul_rpow_toReal_inv {p : ℝ≥0∞} (hp : 1
     ((A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ : ℝ≥0) : ℝ≥0∞) =
       (A : ℝ≥0∞) ^ (1 - p.toReal⁻¹) * (B : ℝ≥0∞) ^ p.toReal⁻¹ := by
   have h₀ : 0 ≤ 1 - p.toReal⁻¹ := by
-    simpa only [one_div] using ENNReal.zero_le_one_sub_one_div_toReal hp
+    simpa only [one_div] using ENNReal.one_sub_one_div_toReal_nonneg hp
   rw [ENNReal.coe_mul, ENNReal.coe_rpow_of_nonneg _ h₀,
     ENNReal.coe_rpow_of_nonneg _ (by positivity)]
 

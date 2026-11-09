@@ -94,7 +94,7 @@ theorem eLpNorm_add_measure_le (f : α → ε) (hp : 1 ≤ p) :
         eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hfμ,
         eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top hfν, lintegral_add_measure]
       exact ENNReal.rpow_add_le_add_rpow _ _ (by positivity)
-        (sub_nonneg.1 (ENNReal.zero_le_one_sub_one_div_toReal hp))
+        (sub_nonneg.1 (ENNReal.one_sub_one_div_toReal_nonneg hp))
   · by_cases hfμ : AEStronglyMeasurable f μ
     · have hfν : ¬ AEStronglyMeasurable f ν := fun hfν => hadd (hfμ.add_measure hfν)
       simp [eLpNorm_of_not_aestronglyMeasurable, hadd, hfν]
