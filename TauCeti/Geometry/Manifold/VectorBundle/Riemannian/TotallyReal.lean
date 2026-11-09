@@ -52,52 +52,6 @@ open scoped Manifold ContDiff
 
 namespace TauCeti
 
-section BilinearComp
-
-variable {X H B F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
-  [TopologicalSpace H] {IB : ModelWithCorners ℝ X H}
-  [TopologicalSpace B] [ChartedSpace H B]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {V : B → Type*}
-  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
-  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
-  {n : ℕ∞ω}
-
-/-- Precomposing both arguments of a `C^n` field of bilinear forms with a `C^n` field of
-endomorphisms gives a `C^n` field of bilinear forms. -/
-theorem contMDiff_bilinearComp_bundle [∀ x, IsNormableSpace ℝ (V x)]
-    {β : ∀ x, V x →L[ℝ] V x →L[ℝ] ℝ}
-    (hβ : ContMDiff IB (IB.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) n (fun x ↦
-      TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) (E := fun y ↦ V y →L[ℝ] V y →L[ℝ] ℝ) x (β x)))
-    {A : ∀ x, V x →L[ℝ] V x}
-    (hA : ContMDiff IB (IB.prod 𝓘(ℝ, F →L[ℝ] F)) n (fun x ↦
-      TotalSpace.mk' (F →L[ℝ] F) (E := fun y ↦ V y →L[ℝ] V y) x (A x))) :
-    ContMDiff IB (IB.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) n (fun x ↦
-      TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) (E := fun y ↦ V y →L[ℝ] V y →L[ℝ] ℝ) x
-        ((β x).bilinearComp (A x) (A x))) := by
-  intro x
-  rw [contMDiffAt_hom_bundle]
-  refine ⟨contMDiffAt_id, ?_⟩
-  let a (y : B) := ContinuousLinearMap.inCoordinates F V F V x y x y (A y)
-  let q (y : B) := ContinuousLinearMap.inCoordinates F V (F →L[ℝ] ℝ)
-    (fun z ↦ V z →L[ℝ] ℝ) x y x y (β y)
-  have ha : ContMDiffAt IB 𝓘(ℝ, F →L[ℝ] F) n a x :=
-    ((contMDiffAt_hom_bundle _).mp (hA x)).2
-  have hq : ContMDiffAt IB 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ) n q x :=
-    ((contMDiffAt_hom_bundle _).mp (hβ x)).2
-  have hc := (ha.clm_precomp (F₃ := ℝ)).clm_comp (hq.clm_comp ha)
-  apply hc.congr_of_eventuallyEq
-  filter_upwards [(trivializationAt F V x).open_baseSet.mem_nhds
-    (FiberBundle.mem_baseSet_trivializationAt F V x)] with y hy
-  dsimp only [a, q]
-  ext v w
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.precomp_apply]
-  rw [inCoordinates_apply_eq₂ hy hy (by simp), inCoordinates_apply_eq₂ hy hy (by simp)]
-  simp [ContinuousLinearMap.inCoordinates, hy]
-
-end BilinearComp
-
 section Projection
 
 variable {X H B F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
@@ -121,16 +75,18 @@ continuous real-linear map. It is continuous because the fibre is finite-dimensi
 def totallyRealProjection
     (hL : ∀ x, IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (L x))
     (x : B) : V x →L[ℝ] V x where
-  toLinearMap := (hL x).projection
+  toLinearMap := (L x).projection _ (hL x).isCompl
   cont := by
     let e := VectorBundle.continuousLinearEquivAt ℝ F V x
     let : FiniteDimensional ℝ F := Module.Finite.trans ℂ F
-    let f : F →ₗ[ℝ] F := e.toLinearEquiv.toLinearMap ∘ₗ (hL x).projection ∘ₗ
+    let f : F →ₗ[ℝ] F := e.toLinearEquiv.toLinearMap ∘ₗ (L x).projection _ (hL x).isCompl ∘ₗ
       e.symm.toLinearEquiv.toLinearMap
-    have hf : ⇑(hL x).projection = e.symm ∘ f ∘ e := by
+    have hf : ⇑((L x).projection _ (hL x).isCompl) = e.symm ∘ f ∘ e := by
       funext v
       simp [f]
-    change Continuous ⇑(hL x).projection
+    -- The `cont` field is stated for the bare `toFun` of the linear map; restate it for the
+    -- function coercion so that `hf` can rewrite it.
+    change Continuous ⇑((L x).projection _ (hL x).isCompl)
     rw [hf]
     exact e.symm.continuous.comp (f.continuous_of_finiteDimensional.comp e.continuous)
 
@@ -140,7 +96,7 @@ omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
 @[simp]
 theorem totallyRealProjection_apply
     (hL : ∀ x, IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (L x))
-    (x : B) (v : V x) : totallyRealProjection F hL x v = (hL x).projection v :=
+    (x : B) (v : V x) : totallyRealProjection F hL x v = (L x).projection _ (hL x).isCompl v :=
   (rfl)
 
 omit [∀ x, ContinuousConstSMul ℂ (V x)] in
@@ -256,11 +212,11 @@ def totallyRealCompatible (g : ContMDiffRiemannianMetric IB n F V)
   have hP := contMDiff_totallyRealProjection hLs hL
   have hPJ := hP.clm_bundle_comp (contMDiff_smulIEquiv_bundle (IB := IB) (n := n) (G := F) (W := V))
   let b₁ : TauCeti.Manifold.BilinearSection IB F V ℝ n :=
-    ⟨fun x ↦ (g.inner x).bilinearComp (P x) (P x), contMDiff_bilinearComp_bundle g.contMDiff hP⟩
+    ⟨fun x ↦ (g.inner x).bilinearComp (P x) (P x), g.contMDiff.bilinearComp_bundle hP⟩
   let b₂ : TauCeti.Manifold.BilinearSection IB F V ℝ n :=
     ⟨fun x ↦ (g.inner x).bilinearComp (P x ∘L (Complex.smulIEquiv (V x) : V x →L[ℝ] V x))
       (P x ∘L (Complex.smulIEquiv (V x) : V x →L[ℝ] V x)),
-      contMDiff_bilinearComp_bundle g.contMDiff hPJ⟩
+      g.contMDiff.bilinearComp_bundle hPJ⟩
   have hJ := lsmul_I_comp_lsmul_I
   ofPositiveDefiniteSection (b₁ + b₂) <| by
     refine (TauCeti.Manifold.mem_positiveDefiniteBilinearSections _).2
@@ -278,8 +234,9 @@ variable (g : ContMDiffRiemannianMetric IB n F V)
 @[simp]
 theorem totallyRealCompatible_inner (x : B) (v w : V x) :
     (g.totallyRealCompatible hLs hL).inner x v w =
-      g.inner x ((hL x).projection v) ((hL x).projection w) +
-        g.inner x ((hL x).projection (Complex.I • v)) ((hL x).projection (Complex.I • w)) := by
+      g.inner x ((L x).projection _ (hL x).isCompl v) ((L x).projection _ (hL x).isCompl w) +
+        g.inner x ((L x).projection _ (hL x).isCompl (Complex.I • v))
+          ((L x).projection _ (hL x).isCompl (Complex.I • w)) := by
   simp [totallyRealCompatible]
 
 /-- The compatible metric is the pointwise compatible form of `g`. -/
@@ -310,8 +267,7 @@ theorem orthogonal_totallyRealCompatible (x : B) :
     LinearMap.BilinForm.orthogonal ((g.totallyRealCompatible hLs hL).inner x).toLinearMap₁₂ (L x) =
       (L x).map ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) := by
   rw [toLinearMap₁₂_totallyRealCompatible_inner]
-  exact (hL x).orthogonal_compatibleForm (lsmul_I_comp_lsmul_I (V x))
-    fun a _ ha ↦ g.pos x a ha
+  exact (hL x).orthogonal_compatibleForm fun a _ ha ↦ g.pos x a ha
 
 /-- **Uniqueness of the compatible metric.** A metric invariant under multiplication by `i`,
 agreeing with `g` on `L`, and making `L` orthogonal to `i L` is the compatible metric of `g`. -/
