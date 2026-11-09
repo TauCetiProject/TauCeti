@@ -26,8 +26,8 @@ for étaleness over a field to finite separable field extensions.
   a basis is nonzero iff the trace form is nondegenerate.
 * `TauCeti.Algebra.isReduced_of_traceForm_nondegenerate`: an algebra over a reduced ring with
   nondegenerate trace form is reduced.
-* `TauCeti.Algebra.finite_of_traceForm_nondegenerate`: an algebra over a field with nondegenerate
-  trace form is finite-dimensional.
+* `TauCeti.Algebra.finite_of_traceForm_nondegenerate`: an algebra over a commutative ring with
+  nondegenerate trace form is a finite module.
 
 ## References
 
@@ -110,9 +110,9 @@ theorem Algebra.isReduced_of_traceForm_nondegenerate {B : Type*} [IsReduced K] [
   exact (Algebra.isNilpotent_trace_of_isNilpotent
     ((Commute.all x y).isNilpotent_mul_right hx)).eq_zero
 
-/-- An algebra over a field with nondegenerate trace form is finite-dimensional: otherwise the
-trace vanishes, so nondegeneracy forces the algebra to be trivial, hence finite. -/
-theorem Algebra.finite_of_traceForm_nondegenerate {F B : Type*} [Field F] [CommRing B]
+/-- An algebra over a commutative ring with nondegenerate trace form is a finite module:
+otherwise the trace vanishes, so nondegeneracy forces the algebra to be trivial, hence finite. -/
+theorem Algebra.finite_of_traceForm_nondegenerate {F B : Type*} [CommRing F] [CommRing B]
     [Algebra F B] (h : (Algebra.traceForm F B).Nondegenerate) : Module.Finite F B := by
   by_contra hfd
   have htr : Algebra.trace F B = 0 := Algebra.trace_eq_zero_of_not_exists_basis F
