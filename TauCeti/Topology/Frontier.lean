@@ -105,25 +105,31 @@ section Straddle
 
 variable {X : Type*} [TopologicalSpace X] {S V : Set X}
 
+/-- **A preconnected set missing the frontier lies in the interior or in the exterior.** If `S` is
+preconnected and disjoint from `frontier V`, then `S ⊆ interior V` or `S ⊆ (closure V)ᶜ`. -/
+theorem _root_.IsPreconnected.subset_interior_or_subset_compl_closure (hS : IsPreconnected S)
+    (h : Disjoint S (frontier V)) : S ⊆ interior V ∨ S ⊆ (closure V)ᶜ := by
+  have hsub : S ⊆ interior V ∪ interior Vᶜ := by
+    rw [← compl_frontier_eq_union_interior]
+    exact fun x hx hxf => h.le_bot ⟨hx, hxf⟩
+  rw [interior_compl] at hsub
+  exact hS.subset_or_subset isOpen_interior isClosed_closure.isOpen_compl
+    (disjoint_compl_right.mono_left (interior_subset.trans subset_closure)) hsub
+
 /-- **A preconnected set that meets both a set and its complement meets its frontier.** If `S` is
 preconnected and contains a point of `V` and a point outside `V`, then `S` meets `frontier V`.
 
-Nothing is assumed about `V`; the argument is that `(frontier V)ᶜ` is the union of the two disjoint
-open sets `interior V` and `interior Vᶜ`, so a preconnected set missing the frontier is confined to
-one of them and therefore cannot straddle `V`. -/
+Nothing is assumed about `V`; a preconnected set missing the frontier is confined to the interior
+or to the exterior of `V` and therefore cannot straddle `V`. -/
 theorem _root_.IsPreconnected.inter_frontier_nonempty (hS : IsPreconnected S)
     (h₁ : (S ∩ V).Nonempty) (h₂ : (S \ V).Nonempty) : (S ∩ frontier V).Nonempty := by
   by_contra hcon
-  have hsub : S ⊆ interior V ∪ interior Vᶜ := by
-    rw [← compl_frontier_eq_union_interior]
-    exact fun x hx hxf => hcon ⟨x, hx, hxf⟩
-  have hdisj : Disjoint (interior V) (interior Vᶜ) :=
-    disjoint_compl_right.mono interior_subset interior_subset
-  rcases hS.subset_or_subset isOpen_interior isOpen_interior hdisj hsub with h | h
+  rcases hS.subset_interior_or_subset_compl_closure
+    (Set.disjoint_iff_inter_eq_empty.mpr (Set.not_nonempty_iff_eq_empty.mp hcon)) with h | h
   · obtain ⟨x, hxS, hxV⟩ := h₂
     exact hxV (interior_subset (h hxS))
   · obtain ⟨x, hxS, hxV⟩ := h₁
-    exact interior_subset (h hxS) hxV
+    exact h hxS (subset_closure hxV)
 
 /-- **The connected component of a point in the complement of a set `F` stays inside any set
 containing the point whose frontier lies in `F`.** Otherwise the component, being preconnected,
