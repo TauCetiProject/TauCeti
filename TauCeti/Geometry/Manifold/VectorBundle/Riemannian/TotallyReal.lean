@@ -237,7 +237,8 @@ variable {X H B F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
   [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℂ F V]
   {n : ℕ∞ω} {ι : Type*} [Finite ι] {L : ∀ x, Submodule ℝ (V x)}
 
-local instance : VectorBundle ℝ F V := VectorBundle.restrictScalars ℝ ℂ F V
+local instance instVectorBundleRealTotallyReal : VectorBundle ℝ F V :=
+  VectorBundle.restrictScalars ℝ ℂ F V
 
 variable [ContMDiffVectorBundle n F V IB]
 
