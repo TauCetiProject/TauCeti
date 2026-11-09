@@ -182,9 +182,10 @@ theorem localDegree_card {f : ℂ → ℂ} {z₀ : ℂ} {r : ℝ} (hr : 0 < r)
   rw [← hcount w hwδ, count_eq_ncard hA hsimple, hset]
 
 /-- **The open-mapping degree**, textbook form. If `f` is analytic at `z₀`, then there are radii `r`
-and `δ` for which `localDegree` applies. If `z₀` is an isolated solution of `f z = f z₀` —
-equivalently, `f` is not constant near `z₀` — this is the degree count; if `f` is constant near
-`z₀`, every order involved is `0` by convention. -/
+and `δ` such that, for every `w` with `‖w - f z₀‖ < δ`, the sum of the orders of `f - w` over
+`ball z₀ r` equals the order of `f - f z₀` at `z₀`. If `z₀` is an isolated solution of
+`f z = f z₀` — equivalently, `f` is not constant near `z₀` — then `localDegree` applies and this is
+the degree count; if `f` is constant near `z₀`, every order involved is `0` by convention. -/
 theorem exists_localDegree {f : ℂ → ℂ} {z₀ : ℂ} (hf : AnalyticAt ℂ f z₀) :
     ∃ r > 0, AnalyticOnNhd ℂ f (closedBall z₀ r) ∧
       ∃ δ > 0, ∀ w : ℂ, ‖w - f z₀‖ < δ →
