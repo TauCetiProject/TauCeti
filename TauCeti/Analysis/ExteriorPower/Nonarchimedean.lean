@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.ExteriorPower.Plucker
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.Algebra.Order.AbsoluteValue.Int
+import TauCeti.LinearAlgebra.Matrix.Shear
 
 /-!
 # Nonarchimedean changes of coordinates for Plücker vectors
@@ -165,32 +166,16 @@ theorem exists_integral_plucker_reduction (v : AbsoluteValue K ℝ) (hv : IsNona
     rw [← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ (isUnit_iff_ne_zero.mpr he),
       Matrix.one_mul]
   -- Extend the off-pivot columns of the normalized family by zero on the
-  -- other rows. This shear has square zero.
-  let N : Matrix ι ι K := Matrix.of
-    (Function.extend e (fun a j ↦ if j ∈ range e then 0 else B a j) 0)
-  have hrow (a : Fin p) (j : ι) : N (e a) j = if j ∈ range e then 0 else B a j := by
-    simp [N, e.injective.extend_apply]
-  have hout {i : ι} (hi : i ∉ range e) (j : ι) : N i j = 0 := by
-    simp [N, Function.extend_apply' _ _ _ hi]
-  have hcol (i : ι) {j : ι} (hj : j ∈ range e) : N i j = 0 := by
-    by_cases hi : i ∈ range e
-    · obtain ⟨a, rfl⟩ := hi
-      simp [hrow, hj]
-    · exact hout hi j
-  have hNN : N * N = 0 := by
-    ext i j
-    refine Finset.sum_eq_zero fun k _ ↦ ?_
-    by_cases hk : k ∈ range e
-    · simp [hcol i hk]
-    · simp [hout hk j]
+  -- other rows. This matrix has square zero.
+  obtain ⟨N, hNN, hcol, hout, hrow⟩ := B.exists_mul_self_eq_zero_extension e
   have hN (i j : ι) : v (N i j) ≤ 1 := by
     by_cases hi : i ∈ range e
     · obtain ⟨a, rfl⟩ := hi
-      rw [hrow]
-      split_ifs
-      · simp
-      · exact hb a j
-    · simp [hout hi j]
+      by_cases hj : j ∈ range e
+      · simp [hcol _ _ hj]
+      · rw [hrow a j hj]
+        exact hb a j
+    · simp [hout i hi j]
   have hunit (i j : ι) : v ((1 : Matrix ι ι K) i j) ≤ 1 := by
     by_cases h : i = j <;> simp [Matrix.one_apply, h]
   have hbound (i j : ι) : v ((1 - N) i j) ≤ 1 ∧ v ((1 + N) i j) ≤ 1 := by
@@ -203,16 +188,16 @@ theorem exists_integral_plucker_reduction (v : AbsoluteValue K ℝ) (hv : IsNona
   · simp [sub_mul, mul_add, hNN]
   · simp [mul_sub, add_mul, hNN]
   -- Summing over the pivot rows recovers P B = x off the pivot columns;
-  -- the shear vanishes on the pivot columns themselves.
+  -- the matrix vanishes on the pivot columns themselves.
   · intro i j
     rw [Matrix.mul_sub, Matrix.mul_one, Matrix.sub_apply]
     by_cases hj : j ∈ range e
-    · simp [hj, Matrix.mul_apply, hcol _ hj]
+    · simp [hj, Matrix.mul_apply, hcol _ _ hj]
     · have hsum : (x * N) i j = (P * B) i j := by
         rw [Matrix.mul_apply, Matrix.mul_apply]
         exact (Fintype.sum_of_injective e e.injective _ _
-          (fun k hk ↦ by simp [hout hk j])
-          (fun a ↦ by simp [P, hrow, hj])).symm
+          (fun k hk ↦ by simp [hout k hk j])
+          (fun a ↦ by simp [P, hrow _ _ hj])).symm
       simp [hj, hsum, hPB]
 
 end Field
