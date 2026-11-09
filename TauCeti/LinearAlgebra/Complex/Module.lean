@@ -27,7 +27,8 @@ squaring to `-1`, satisfies `L (b * I) = A (L b)` for every `b`
 Multiplication by `I` and by `-I` are mutually inverse on any complex multiplication action.
 
 A real-linear map between complex modules that commutes with multiplication by `I` is complex
-linear (`LinearMap.complexOfMapISmul`).
+linear (`LinearMap.complexOfMapISmul`). A conjugate-linear equivalence of complex modules is a
+real-linear equivalence (`LinearEquiv.toRealLinearEquiv`).
 
 Likewise an `ℝ`-algebra map out of the complex plane is determined by its value at `I`, so a
 conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds everywhere once it holds
@@ -161,6 +162,34 @@ theorem restrictScalars_complexOfMapISmul (u : V →ₗ[ℝ] W)
 end LinearMap
 
 end ComplexOfMapISmul
+
+namespace LinearEquiv
+
+variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [Module ℂ V] [IsScalarTower ℝ ℂ V]
+  [AddCommGroup W] [Module ℝ W] [Module ℂ W] [IsScalarTower ℝ ℂ W]
+
+/-- A conjugate-linear equivalence of complex modules, as a real-linear equivalence: complex
+conjugation fixes the real scalars. -/
+def toRealLinearEquiv (f : V ≃ₗ⋆[ℂ] W) : V ≃ₗ[ℝ] W where
+  toFun := f
+  invFun := f.symm
+  map_add' := map_add f
+  map_smul' r v := by
+    rw [← algebraMap_smul ℂ r v, map_smulₛₗ, Complex.coe_algebraMap, Complex.conj_ofReal,
+      RingHom.id_apply, ← Complex.coe_algebraMap, algebraMap_smul]
+  left_inv := f.left_inv
+  right_inv := f.right_inv
+
+@[simp]
+theorem coe_toRealLinearEquiv (f : V ≃ₗ⋆[ℂ] W) : ⇑f.toRealLinearEquiv = f :=
+  (rfl)
+
+@[simp]
+theorem toRealLinearEquiv_symm (f : V ≃ₗ⋆[ℂ] W) :
+    f.toRealLinearEquiv.symm = f.symm.toRealLinearEquiv :=
+  (rfl)
+
+end LinearEquiv
 
 namespace Units
 
