@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Calculus.FDeriv.DiagonalQuadratic
 public import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
 public import TauCeti.Analysis.Calculus.Morse.Index
-import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 
 /-!
@@ -107,12 +106,11 @@ theorem morseIndex_sum_comp_eval (hφ : ∀ i, ContDiffAt ℝ 2 (φ i) (y i)) :
 nonzero. -/
 theorem isNondegenerateCriticalPoint_diagonalQuadratic_zero_iff (a : ι → ℝ) :
     IsNondegenerateCriticalPoint (diagonalQuadratic a) 0 ↔ ∀ i, a i ≠ 0 := by
-  have h : ∀ c : ℝ, (deriv fun y : ℝ ↦ c * y ^ 2 / 2) = fun y ↦ c * y := fun c ↦
-    funext fun y ↦ by simp; ring
   rw [funext (diagonalQuadratic_apply a),
     isNondegenerateCriticalPoint_sum_comp_eval_iff (φ := fun i y ↦ a i * y ^ 2 / 2)
       fun i ↦ by fun_prop]
-  simp [h]
+  simp only [funext (deriv_mul_sq_div_two _)]
+  simp
 
 /-- The Morse index of `∑ᵢ aᵢ xᵢ² / 2` is the number of negative `aᵢ`. -/
 @[simp]
