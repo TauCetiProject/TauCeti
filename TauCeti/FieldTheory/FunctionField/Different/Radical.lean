@@ -218,12 +218,6 @@ private theorem ramificationIdx_eq_and_differentExponent_add_one_eq_of_pow_eq {y
   have hn0 : n ≠ 0 := by
     rintro rfl
     exact hn Nat.cast_zero
-  rcases eq_or_ne u 0 with rfl | hu
-  · simp only [ord_zero, Int.gcd_zero_right, Int.natAbs_natCast,
-      Nat.div_self (Nat.pos_of_ne_zero hn0)]
-    have hdvd : (n : ℤ) ∣ (P'.restrict k F).ord 0 := by rw [ord_zero]; exact dvd_zero _
-    exact ⟨ramificationIdx_eq_one_of_pow_eq_of_dvd_ord k F hgen hy hn hdvd,
-      by rw [differentExponent_eq_zero_of_pow_eq_of_dvd_ord k F hgen hy hn hdvd]⟩
   set m := (P'.restrict k F).ord u
   set r := Int.gcd n m
   set s := n / r
