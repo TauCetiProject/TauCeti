@@ -113,10 +113,11 @@ If a property holds for almost every point of a finite-dimensional space `W`, an
 isomorphism from `K × Kᗮ` to `W`, then for almost every `a ∈ E` the property holds at the image
 under `T` of the components of `a` along `K` and `Kᗮ`. -/
 theorem ae_of_ae_orthogonalProjectionOnto_prod {W : Type*} [NormedAddCommGroup W]
-    [NormedSpace ℝ W] [FiniteDimensional ℝ W] [MeasurableSpace W] [BorelSpace W]
+    [NormedSpace ℝ W] [MeasurableSpace W] [BorelSpace W]
     (μ : Measure E) [μ.IsAddHaarMeasure] (K : Submodule ℝ E) (T : (K × Kᗮ) ≃L[ℝ] W)
     (ν : Measure W) [ν.IsAddHaarMeasure] {p : W → Prop} (hp : ∀ᵐ w ∂ν, p w) :
     ∀ᵐ a ∂μ, p (T (K.orthogonalProjectionOnto a, Kᗮ.orthogonalProjectionOnto a)) := by
+  have : FiniteDimensional ℝ W := T.toLinearEquiv.finiteDimensional
   let S : E ≃L[ℝ] W :=
     (K.prodEquivOfIsCompl Kᗮ K.isCompl_orthogonal).symm.toContinuousLinearEquiv.trans T
   have hS : ∀ a, S a = T (K.orthogonalProjectionOnto a, Kᗮ.orthogonalProjectionOnto a) :=
