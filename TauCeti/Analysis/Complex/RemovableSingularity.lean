@@ -66,9 +66,9 @@ theorem eqOn_prod_of_eqOn_prod_diff_singleton {X Y : Type*} [TopologicalSpace X]
 
 /-- If a function agrees off the hyperplane `z = c` with a function continuous at `(x, c)`, for
 each `x ∈ U`, then its transverse slices are bounded near `c` away from `c`. -/
-theorem bddAbove_slice_of_local {X : Type*} [TopologicalSpace X] {q : X × ℂ → ℂ} {U : Set X}
-    {c : ℂ}
-    (hlocalq : ∀ x ∈ U, ∃ v : X × ℂ → ℂ,
+theorem bddAbove_slice_of_local {X : Type*} [TopologicalSpace X] {Y : Type*}
+    [SeminormedAddGroup Y] {q : X × ℂ → Y} {U : Set X} {c : ℂ}
+    (hlocalq : ∀ x ∈ U, ∃ v : X × ℂ → Y,
       ContinuousAt v (x, c) ∧ ∀ᶠ p in 𝓝 (x, c), p.2 ≠ c → q p = v p) :
     ∀ x ∈ U, ∃ t ∈ 𝓝 c, BddAbove (norm ∘ (fun z ↦ q (x, z)) '' (t \ {c})) := by
   intro x hx
@@ -84,10 +84,11 @@ theorem bddAbove_slice_of_local {X : Type*} [TopologicalSpace X] {q : X × ℂ �
 /-- An extension `w` of `q` across the hyperplane `z = c`, continuous along it, agrees with a
 nonvanishing local witness also on the hyperplane, by uniqueness of the limit along a punctured
 slice. Thus no zero is introduced by extension. -/
-theorem extension_ne_zero_of_local {X : Type*} [TopologicalSpace X] {q w : X × ℂ → ℂ} {U : Set X}
-    {s : Set ℂ} {c : ℂ} (hs : IsOpen s) (hc : c ∈ s) (hw : ∀ x ∈ U, ContinuousAt w (x, c))
+theorem extension_ne_zero_of_local {X : Type*} [TopologicalSpace X] {Y : Type*} [Zero Y]
+    [TopologicalSpace Y] [T2Space Y] {q w : X × ℂ → Y} {U : Set X} {s : Set ℂ} {c : ℂ}
+    (hs : IsOpen s) (hc : c ∈ s) (hw : ∀ x ∈ U, ContinuousAt w (x, c))
     (hwq : EqOn w q (U ×ˢ (s \ {c})))
-    (hlocalq : ∀ x ∈ U, ∃ v : X × ℂ → ℂ,
+    (hlocalq : ∀ x ∈ U, ∃ v : X × ℂ → Y,
       ContinuousAt v (x, c) ∧ v (x, c) ≠ 0 ∧
         ∀ᶠ p in 𝓝 (x, c), p.2 ≠ c → q p = v p) :
     ∀ x ∈ U, w (x, c) ≠ 0 := by
