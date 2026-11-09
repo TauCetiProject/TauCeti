@@ -226,6 +226,14 @@ lemma inv_scaleGL_smul_vadd [NeZero d] (a : ℝ) (τ : ℍ) :
   push_cast
   ring
 
+/-- Scaling up commutes with translation, at the cost of multiplying the shift by `d`. -/
+lemma scaleGL_smul_vadd [NeZero d] (a : ℝ) (τ : ℍ) :
+    (scaleGL d • ((a : ℝ) +ᵥ τ) : ℍ) = ((d : ℝ) * a) +ᵥ (scaleGL d • τ) := by
+  apply UpperHalfPlane.ext
+  rw [coe_scaleGL_smul, UpperHalfPlane.coe_vadd, UpperHalfPlane.coe_vadd, coe_scaleGL_smul]
+  push_cast
+  ring
+
 @[simp]
 lemma scaleGL_one : scaleGL 1 = 1 := by
   rw [scaleGL, ← map_one diagGL]
@@ -1143,14 +1151,6 @@ lemma qParam_one_scaleGL_smul [NeZero d] (τ : ℍ) :
   rw [← Complex.exp_nat_mul]
   ring_nf
 
-/-- Scaling up commutes with a unit translation, at the cost of translating by `d`. -/
-lemma scaleGL_smul_one_vadd [NeZero d] (τ : ℍ) :
-    (scaleGL d • ((1 : ℝ) +ᵥ τ) : ℍ) = (d : ℝ) +ᵥ (scaleGL d • τ) := by
-  apply UpperHalfPlane.ext
-  rw [coe_scaleGL_smul, UpperHalfPlane.coe_vadd, UpperHalfPlane.coe_vadd, coe_scaleGL_smul]
-  push_cast
-  ring
-
 /-- **A level-raise is `1`-periodic through `ofComplex`.** If `1` is a strict period of `𝒢`, then
 `V_d f ∘ ofComplex` is `1`-periodic, for any target group `𝒢'` admitted by `hle`. -/
 theorem _root_.ModularForm.periodic_comp_ofComplex_levelRaise [𝒢'.HasDetOne] [NeZero d]
@@ -1158,7 +1158,7 @@ theorem _root_.ModularForm.periodic_comp_ofComplex_levelRaise [𝒢'.HasDetOne] 
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : ModularForm 𝒢 k) :
     Periodic (⇑(ModularForm.levelRaise d hle f) ∘ ofComplex) 1 := by
   refine UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ ?_
-  simp only [ModularForm.levelRaise_apply, scaleGL_smul_one_vadd]
+  simp only [ModularForm.levelRaise_apply, scaleGL_smul_vadd, mul_one]
   rw [SlashInvariantForm.vAdd_apply_of_mem_strictPeriods f _ (by simpa using nsmul_mem h𝒢 d)]
 
 /-- **The `q`-parameter function of a level-raise is analytic at the cusp `∞`.** If `1` is a
