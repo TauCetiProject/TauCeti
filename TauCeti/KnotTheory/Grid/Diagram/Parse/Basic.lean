@@ -9,16 +9,15 @@ public import TauCeti.KnotTheory.Grid.Diagram.Basic
 import TauCeti.KnotTheory.Grid.Diagram.Components
 
 /-!
-# Parsing grid links
+# Parsing grid diagrams
 
 This file decodes box-drawing characters into edge data, pairs the endpoints in rows and columns,
 alternates the markings along each link component, and reconstructs the two marking permutations.
 
 ## Main definitions
 
-* `TauCeti.GridDiagram.Link`: a grid diagram together with its size.
-* `TauCeti.GridDiagram.parseLink`: parse a box-drawing link, choosing one alternating marking on
-  each component.
+* `TauCeti.GridDiagram.parseGridDiagram`: parse a box-drawing diagram of a specified size,
+  panicking when it is invalid or has a different size.
 -/
 
 public section
@@ -26,9 +25,6 @@ public section
 namespace TauCeti
 
 namespace GridDiagram
-
-/-- A grid diagram packaged with its grid number. -/
-abbrev Link := Σ n : ℕ, GridDiagram n
 
 private abbrev Point (height width : Nat) := Fin height × Fin width
 
@@ -376,7 +372,7 @@ private def reprMatchesDrawing {width height : Nat} (chars : Vector (Vector Char
     false
 
 private def parseGrid {width height : Nat} (chars : Vector (Vector Char width) height) :
-    Option Link := do
+    Option (Σ n : ℕ, GridDiagram n) := do
   let board ← edgeBoardOfChars chars
   guard (edgeConnectionsMatch chars board)
   let horizontal := horizontalEnds board
@@ -390,14 +386,21 @@ private def parseGrid {width height : Nat} (chars : Vector (Vector Char width) h
   guard (reprMatchesDrawing chars pairings G)
   pure ⟨pairings.rows.length, G⟩
 
-private def parseDrawing (source : String) : Option Link := do
+private def parseDrawing (source : String) : Option (Σ n : ℕ, GridDiagram n) := do
+  let source := if source.toList.head? == some '\n' then source else "\n" ++ source
   let ⟨_, _, chars⟩ ← parseCharMatrix source
   parseGrid chars
 
-/-- Parse a box-drawing link, accepting only drawings reproduced by the renderer. `○` and `×` may
-label one endpoint per component to choose its `O`/`X` coloring. -/
-def parseLink (source : String) : Option Link :=
-  parseDrawing ("\n" ++ source)
+/-- Parse a box-drawing grid diagram of size `n`, panicking if the drawing is invalid or has a
+different size. `○` and `×` may label one endpoint per component to choose its `O`/`X` coloring. -/
+def parseGridDiagram (n : ℕ) (source : String) [Inhabited (GridDiagram n)] : GridDiagram n :=
+  match parseDrawing source with
+  | some ⟨m, G⟩ =>
+    if h : m = n then
+      h ▸ G
+    else
+      panic! s!"expected a grid diagram of size {n}"
+  | none => panic! "invalid grid diagram"
 
 end GridDiagram
 

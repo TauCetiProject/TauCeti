@@ -45,7 +45,7 @@ relabelings, as well as by diagonal reflection, half-turn rotation, and exchangi
 * `TauCeti.GridDiagram.IsKnot.traversalIndex`: on a knot grid, the number of steps of the
   component permutation from a base column to a column.
 * `TauCeti.GridDiagram.reprString` and `Repr (GridDiagram n)`: a labeled box-drawing
-  representation using `link%` syntax.
+  representation using `parseGridDiagram`.
 
 ## References
 
@@ -588,14 +588,16 @@ topmost-leftmost marking identifies its `O`/`X` coloring. -/
 def reprString (G : GridDiagram n) : String :=
   String.intercalate "\n" (drawingLines G)
 
-/-- The `Repr` instance emits a `link%` term for this grid diagram. -/
+/-- The `Repr` instance emits a `parseGridDiagram` call for this grid diagram. -/
 instance : Repr (GridDiagram n) where
   reprPrec G _ :=
     if G.reprString.isEmpty then
-      Std.Format.text "link% \"\""
+      Std.Format.text ("TauCeti.GridDiagram.parseGridDiagram " ++ toString n ++ " \"\"")
     else
       let lines := G.reprString.splitOn "\n" |>.map fun line ↦ "  " ++ line
-      Std.Format.text ("link% \"\n" ++ String.intercalate "\n" lines ++ "\n\"")
+      Std.Format.text
+        ("TauCeti.GridDiagram.parseGridDiagram " ++ toString n ++ " \"\n" ++
+          String.intercalate "\n" lines ++ "\n\"")
 
 end GridDiagram
 

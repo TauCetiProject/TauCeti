@@ -28,6 +28,7 @@ occupied grid points of a grid state.
 * `TauCeti.GridState.subdiagonal`: the grid state whose occupied row is one below its column.
 * `TauCeti.GridState.pointSet`: the finite set of occupied grid points of a grid state.
 * `TauCeti.GridDiagram`: an `n × n` grid diagram with `O` and `X` markings.
+* `Inhabited (GridDiagram 0)` and `Inhabited (GridDiagram (n + 2))`: canonical default diagrams.
 * `TauCeti.GridDiagram.OSet`, `TauCeti.GridDiagram.XSet`: the marking-square sets.
 * Relabeling, swapping, transposition, and marking-swap operations for grid states and diagrams.
 * `TauCeti.GridDiagram.cast`: transport of a grid diagram along an equality of grid numbers.
@@ -647,6 +648,12 @@ instance : IsEmpty (GridDiagram 1) where
   false := by
     intro G
     exact G.disjoint 0 (Subsingleton.elim _ _)
+
+instance : Inhabited (GridDiagram 0) where
+  default := ⟨⟨Equiv.refl _⟩, ⟨Equiv.refl _⟩, fun c ↦ Fin.elim0 c⟩
+
+instance (n : ℕ) : Inhabited (GridDiagram (n + 2)) where
+  default := ⟨⟨Equiv.refl _⟩, ⟨finRotate _⟩, by simp⟩
 
 namespace GridDiagram
 
