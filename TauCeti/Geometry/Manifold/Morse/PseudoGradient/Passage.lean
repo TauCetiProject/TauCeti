@@ -33,6 +33,8 @@ applied to the flow of an adapted pseudo-gradient on a compact manifold.
   the split hyperbolic flow.
 * `TauCeti.IsAdaptedPseudoGradient.flow_toChart_symm_splitCoord_symm`: while the model orbit stays
   in a box contained in the chart, the flow of `X` is the split hyperbolic flow.
+* `TauCeti.IsAdaptedPseudoGradient.flow_toChart_symm_splitCoord_symm_of_exp_abs_mul_le`: the same
+  at time `t` for a point whose split coordinates, enlarged by `e^{|t|}`, stay in the box.
 * `TauCeti.IsAdaptedPseudoGradient.flow_splitExitTime`: the flow carries a point of the entrance
   face to its image under the passage map, at the exit time.
 * `TauCeti.IsAdaptedPseudoGradient.flow_splitEntryTime`: backward in time, the flow carries a point
@@ -96,6 +98,29 @@ theorem flow_toChart_symm_splitCoord_symm (hX : IsAdaptedPseudoGradient f X)
   refine hX.flow_toChart_symm_of_forall_mem_uIcc φ hφ fun s hs ↦ hε _ ?_
   rw [hlin, ← φ.max_norm_fst_norm_snd_splitCoord, LinearEquiv.apply_symm_apply, max_le_iff]
   exact hw s hs
+
+/-- **In a Morse box the flow is the split hyperbolic flow for short times.** Let `X` be the
+linear field `z ↦ (-wᵢ zᵢ)ᵢ` in the Morse chart `φ`, and let the coordinate cube of radius `ε` lie
+in the chart. If both split coordinates `u` and `v` of `w` satisfy `e^{|t|} ‖·‖ ≤ ε`, then at
+time `t` the flow of `X` from the point with split coordinates `w` is the point with split
+coordinates `(e^{-t} u, e^t v)`. -/
+theorem flow_toChart_symm_splitCoord_symm_of_exp_abs_mul_le (hX : IsAdaptedPseudoGradient f X)
+    (φ : MorseChart E f x)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {ε : ℝ} (hε : ∀ z, ‖z‖ ≤ ε → φ.coord.symm z ∈ φ.toChart.target)
+    {w : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))} {t : ℝ}
+    (hu : Real.exp |t| * ‖w.fst‖ ≤ ε) (hv : Real.exp |t| * ‖w.snd‖ ≤ ε) :
+    hX.flow t (φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm w))) =
+      φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (splitQuadraticFlow t w))) := by
+  refine hX.flow_toChart_symm_splitCoord_symm φ hφ hε fun s hs ↦ ?_
+  -- Between the times `0` and `t`, the factors `e^{∓s}` are at most `e^{|t|}`.
+  have hst : |s| ≤ |t| := by simpa using abs_sub_left_of_mem_uIcc hs
+  rw [norm_fst_splitQuadraticFlow, norm_snd_splitQuadraticFlow]
+  exact ⟨(mul_le_mul_of_nonneg_right (Real.exp_le_exp.2 ((neg_le_abs s).trans hst))
+      (norm_nonneg _)).trans hu,
+    (mul_le_mul_of_nonneg_right (Real.exp_le_exp.2 ((le_abs_self s).trans hst))
+      (norm_nonneg _)).trans hv⟩
 
 /-- **Passage through a Morse box.** Let `X` be the linear field `z ↦ (-wᵢ zᵢ)ᵢ` in the Morse chart
 `φ`, and let the coordinate cube of radius `ε` lie in the chart. At the exit time

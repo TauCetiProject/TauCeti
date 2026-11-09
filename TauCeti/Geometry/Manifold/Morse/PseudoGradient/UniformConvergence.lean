@@ -44,6 +44,10 @@ the entrance times uniformly.
   `TauCeti.IsAdaptedPseudoGradient.exists_forall_sub_le_mul_exp_of_unstableSet` and
   `TauCeti.IsAdaptedPseudoGradient.tendsto_flow_atBot_prod_principal`: the same in backward time
   for compact subsets of `W^u(x)`.
+* `TauCeti.IsAdaptedPseudoGradient.exists_forall_exists_norm_coord_flow_eq` and
+  `TauCeti.IsAdaptedPseudoGradient.exists_forall_exists_norm_coord_flow_eq_of_unstableSet`: the
+  orbit of a point of `W^s(x)` or `W^u(x)` other than `x` crosses every small coordinate sphere
+  of the chart, on the coordinate subspace of the stable or unstable set.
 
 ## References
 
@@ -226,6 +230,65 @@ theorem tendsto_flow_atBot_prod_principal (hf : IsMorse 𝓘(ℝ, E) f) {K : Set
     (tendsto_neg_atBot_atTop.prodMap (tendsto_id (x := 𝓟 K)))
   refine h.congr fun p ↦ ?_
   simp [hX.neg_flow hf, Flow.reverse_apply]
+
+/-- **Stable orbits cross every small coordinate sphere.** Let `X` be the linear field
+`z ↦ (-wᵢ zᵢ)ᵢ` in the Morse chart `φ` at `x`, and `y ≠ x` a point of `W^s(x)`. For every small
+enough `ε > 0`, the orbit of `y` passes through a point of the chart whose coordinates of negative
+weight vanish and whose coordinates have sup norm exactly `ε`. -/
+theorem exists_forall_exists_norm_coord_flow_eq (φ : MorseChart E f x)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {y : M} (hy : y ∈ hX.flow.stableSet x) (hyx : y ≠ x) :
+    ∃ m > 0, ∀ ε, 0 < ε → ε ≤ m → ∃ t, hX.flow t y ∈ φ.toChart.source ∧
+      (∀ i, φ.weight i < 0 → φ.coord (φ.toChart (hX.flow t y)) i = 0) ∧
+      ‖φ.coord (φ.toChart (hX.flow t y))‖ = ε := by
+  obtain ⟨T, C, hTC⟩ := hX.exists_forall_norm_coord_flow_le_mul_exp φ hφ hf isCompact_singleton
+    (singleton_subset_iff.2 hy)
+  set g : ℝ → ℝ := fun t ↦ ‖φ.coord (φ.toChart (hX.flow t y))‖
+  have hg : ContinuousOn g (Ici T) :=
+    (φ.continuous_coord.comp_continuousOn (φ.toChart.continuousOn.comp
+      (hX.flow.continuous continuous_id continuous_const).continuousOn
+      fun t ht ↦ (hTC y rfl t ht).1)).norm
+  -- At time `T` the orbit is in the chart but not at `x`, so its coordinates are nonzero.
+  have hT := (hTC y rfl T le_rfl).1
+  have hgT : 0 < g T := by
+    refine norm_pos_iff.2 fun h0 ↦ hyx ?_
+    have hx := (φ.toChart_eq_zero_iff hT).1 (φ.coord.map_eq_zero_iff.1 h0)
+    rw [← Flow.map_zero_apply hX.flow y, ← neg_add_cancel T, Flow.map_add, hx,
+      Flow.fixed_of_mem_stableSet hy]
+  refine ⟨g T, hgT, fun ε hε hεT ↦ ?_⟩
+  -- The coordinates decay to `0`, so they reach the norm `ε` by the intermediate value theorem.
+  have hlim : Tendsto (fun t ↦ C * Real.exp (-t)) atTop (𝓝 0) := by
+    simpa using Real.tendsto_exp_neg_atTop_nhds_zero.const_mul C
+  obtain ⟨t₁, ht₁, hCt₁⟩ := ((eventually_ge_atTop T).and (hlim.eventually (ge_mem_nhds hε))).exists
+  obtain ⟨t, ht, hgt⟩ := intermediate_value_Icc' ht₁ (hg.mono Icc_subset_Ici_self)
+    ⟨(hTC y rfl t₁ ht₁).2.2.trans hCt₁, hεT⟩
+  obtain ⟨hmem, hzero, -⟩ := hTC y rfl t ht.1
+  exact ⟨t, hmem, hzero, hgt⟩
+
+/-- **Unstable orbits cross every small coordinate sphere.** Let `f` be a Morse function, `X` the
+linear field `z ↦ (-wᵢ zᵢ)ᵢ` in the Morse chart `φ` at `x`, and `y ≠ x` a point of `W^u(x)`. For
+every small enough `ε > 0`, the orbit of `y` passes through a point of the chart whose coordinates
+of positive weight vanish and whose coordinates have sup norm exactly `ε`. -/
+theorem exists_forall_exists_norm_coord_flow_eq_of_unstableSet (hf : IsMorse 𝓘(ℝ, E) f)
+    (φ : MorseChart E f x)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {y : M} (hy : y ∈ hX.flow.unstableSet x) (hyx : y ≠ x) :
+    ∃ m > 0, ∀ ε, 0 < ε → ε ≤ m → ∃ t, hX.flow t y ∈ φ.toChart.source ∧
+      (∀ i, 0 < φ.weight i → φ.coord (φ.toChart (hX.flow t y)) i = 0) ∧
+      ‖φ.coord (φ.toChart (hX.flow t y))‖ = ε := by
+  -- Backward in time, `X` is the reversed field `-X` of the Morse function `-f`.
+  have hnd := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
+    ((φ.mfderiv_eq_zero_iff φ.mem_source).2 rfl)
+  obtain ⟨m, hm, h⟩ := (hX.neg hf).exists_forall_exists_norm_coord_flow_eq (φ.neg hnd)
+    (φ.coord_mfderiv_neg hφ hnd) (hf.neg.contMDiff.mdifferentiable (by simp))
+    (hX.unstableSet_eq_stableSet_neg hf x ▸ hy) hyx
+  refine ⟨m, hm, fun ε hε hεm ↦ ?_⟩
+  obtain ⟨t, ht⟩ := h ε hε hεm
+  refine ⟨-t, ?_⟩
+  simpa only [hX.neg_flow hf, Flow.reverse_apply, MorseChart.neg_toChart, MorseChart.neg_coord,
+    MorseChart.neg_weight, Pi.neg_apply, Left.neg_neg_iff] using ht
 
 end IsAdaptedPseudoGradient
 

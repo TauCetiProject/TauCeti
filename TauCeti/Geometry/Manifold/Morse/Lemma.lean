@@ -39,6 +39,9 @@ stable and unstable manifolds are then studied.
   the model.
 * `TauCeti.MorseChart.max_norm_fst_norm_snd_splitCoord`: the sup norm of the coordinates is the
   larger of the norms of the two factors of the split coordinates.
+* `TauCeti.MorseChart.splitCoord_fst_eq_zero_iff` and
+  `TauCeti.MorseChart.splitCoord_snd_eq_zero_iff`: a factor of the split coordinates vanishes
+  exactly when the coordinates of the corresponding sign of weight vanish.
 * `TauCeti.MorseChart.finrank_snd_splitCoord` and
   `TauCeti.MorseChart.finrank_fst_splitCoord_add_manifoldMorseIndex`: the expanding factor of the
   split coordinates has dimension the Morse index, and the contracting factor the complementary
@@ -205,6 +208,30 @@ theorem max_norm_fst_norm_snd_splitCoord (z : Fin (Module.finrank ℝ E) → ℝ
     by_cases hi : φ.weight i = 1
     · exact le_max_of_le_left (by simpa using norm_le_pi_norm (φ.splitCoord z).fst ⟨i, hi⟩)
     · exact le_max_of_le_right (by simpa using norm_le_pi_norm (φ.splitCoord z).snd ⟨i, hi⟩)
+
+/-- The contracting factor of the split coordinates vanishes exactly when the coordinates of
+positive weight vanish. -/
+theorem splitCoord_fst_eq_zero_iff (z : Fin (Module.finrank ℝ E) → ℝ) :
+    (φ.splitCoord z).fst = 0 ↔ ∀ i, 0 < φ.weight i → z i = 0 := by
+  simp [funext_iff, φ.weight_eq_one_iff]
+
+/-- The expanding factor of the split coordinates vanishes exactly when the coordinates of
+negative weight vanish. -/
+theorem splitCoord_snd_eq_zero_iff (z : Fin (Module.finrank ℝ E) → ℝ) :
+    (φ.splitCoord z).snd = 0 ↔ ∀ i, φ.weight i < 0 → z i = 0 := by
+  simp [funext_iff, φ.weight_ne_one_iff]
+
+/-- When the coordinates of positive weight vanish, the sup norm of the coordinates is the norm of
+the expanding factor of the split coordinates. -/
+theorem norm_snd_splitCoord_of_fst_eq_zero {z : Fin (Module.finrank ℝ E) → ℝ}
+    (hz : (φ.splitCoord z).fst = 0) : ‖(φ.splitCoord z).snd‖ = ‖z‖ := by
+  rw [← φ.max_norm_fst_norm_snd_splitCoord, hz, norm_zero, max_eq_right (norm_nonneg _)]
+
+/-- When the coordinates of negative weight vanish, the sup norm of the coordinates is the norm of
+the contracting factor of the split coordinates. -/
+theorem norm_fst_splitCoord_of_snd_eq_zero {z : Fin (Module.finrank ℝ E) → ℝ}
+    (hz : (φ.splitCoord z).snd = 0) : ‖(φ.splitCoord z).fst‖ = ‖z‖ := by
+  rw [← φ.max_norm_fst_norm_snd_splitCoord, hz, norm_zero, max_eq_left (norm_nonneg _)]
 
 /-- The expanding factor of the split coordinates of a Morse chart has dimension the Morse index. -/
 theorem finrank_snd_splitCoord :

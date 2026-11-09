@@ -50,6 +50,9 @@ vector space.
 * `TauCeti.IsAdaptedPseudoGradient.tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet`:
   the time at which an orbit crosses the level of a point `y` of such a trajectory depends
   continuously on the orbit near `y`.
+* `TauCeti.IsAdaptedPseudoGradient.eventually_forall_flow_mem_of_mem_unstableSet_inter_stableSet`:
+  the orbits of points near such a point `y` cross a level only near the crossing of the orbit
+  of `y`.
 * `TauCeti.IsAdaptedPseudoGradient.span_mtangentConeAt_unstableSet_inter_stableSet_sup_ker_eq_top`:
   every level of `f` is transverse to `W^u(a) ∩ W^s(b)`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_unstableSet_inter_stableSet_level_chart`: under
@@ -221,6 +224,27 @@ theorem exists_tendsto_flow_of_tendsto (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(�
   simpa only [Function.comp_def, ← Flow.map_add, sub_add_cancel, zero_add] using
     ((hX.flow.continuous continuous_fst continuous_snd).tendsto (0, hX.flow σ w)).comp
       (ht.prodMk_nhds hu')
+
+/-- **Nearby orbits cross a level near the crossing of a trajectory.** Let `y` lie on a trajectory
+from `a` to a different critical point `b`, whose orbit meets the level `c` at the point
+`flow σ y`. For every neighbourhood `W` of that point, the orbit of every point near `y` meets the
+level `c` only inside `W`. -/
+theorem eventually_forall_flow_mem_of_mem_unstableSet_inter_stableSet
+    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) (hab : a ≠ b)
+    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {σ : ℝ} (hσ : f (hX.flow σ y) = c)
+    {W : Set M} (hW : W ∈ 𝓝 (hX.flow σ y)) :
+    ∀ᶠ w in 𝓝 y, ∀ s, f (hX.flow s w) = c → hX.flow s w ∈ W := by
+  have hc := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf hab
+    (hX.flow.isInvariant_unstableSet_inter_stableSet a b σ hy)
+  rw [hσ] at hc
+  -- Index the crossings of the level `c` by the pairs `(w, s)` with `f (flow s w) = c`.
+  let ι := {i : M × ℝ // f (hX.flow i.2 i.1) = c}
+  obtain ⟨σ', hσ', hlim⟩ := hX.exists_tendsto_flow_of_tendsto hf hy hc.1 hc.2
+    (tendsto_comap (f := fun i : ι ↦ i.1.1)) (s := fun i ↦ i.1.2) fun i ↦ i.2
+  obtain rfl := (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf hab hy hc.1
+    hc.2).unique hσ' hσ
+  filter_upwards [eventually_comap.1 (hlim.eventually_mem hW)] with w hw s hs
+  exact hw ⟨(w, s), hs⟩ rfl
 
 /-- **Levels are transverse to connecting trajectories.** At a point `y` of `W^u(a) ∩ W^s(b)` with
 `a ≠ b`, the tangent space of `W^u(a) ∩ W^s(b)` and the kernel of `df_y`, the tangent space of the
