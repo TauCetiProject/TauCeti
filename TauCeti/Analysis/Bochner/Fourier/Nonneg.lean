@@ -600,18 +600,14 @@ theorem fourier_re_nonneg_of_posSemidef (F : V → ℂ)
     simp
 
 /-- The Fourier transform of a conjugate-symmetric function, on a finite-dimensional real
-inner-product space, has vanishing imaginary part — by Hermitian symmetry and the negation
-invariance of Haar measure.
-
-No integrability is needed: each step — `Real.fourier_eq`, `integral_conj`,
-`integral_neg_eq_self` — is an equality that survives a divergent integral, both sides then being
-Mathlib's default value `0`.
-
-Not a `@[simp]` lemma: neither side condition is dischargeable by `simp`'s discharger, so the
-rule would be tried against every `(𝓕 _ _).im` and never fire. -/
+inner-product space, has vanishing imaginary part. No regularity assumption on `F` is needed: if
+the integral defining `𝓕 F ξ` diverges it is Mathlib's default value `0`, whose imaginary part
+vanishes. -/
 theorem fourier_im_eq_zero_of_map_neg_eq_conj (F : V → ℂ)
     (hsymm : ∀ v : V, F (-v) = conj (F v)) (ξ : V) :
     (𝓕 F ξ).im = 0 := by
+  -- Each step (`Real.fourier_eq`, `integral_conj`, `integral_neg_eq_self`) is an equality that
+  -- survives a divergent integral, both sides then being the default value `0`.
   rw [fourier_eq_integral_fourierAtom_mul F ξ]
   have hconj : conj (∫ v, fourierAtom ξ v * F v) = ∫ v, fourierAtom ξ v * F v := by
     rw [← integral_conj]
