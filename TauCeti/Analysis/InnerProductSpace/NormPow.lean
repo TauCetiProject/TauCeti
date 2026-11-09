@@ -370,8 +370,8 @@ theorem norm_iteratedFDeriv_two_norm_rpow_sub_le {p : ℝ} (hp : p ≤ 3) {a b :
     calc ‖b + t • d‖ ^ (p - 3) ≤ (‖b‖ / 2) ^ (p - 3) :=
           Real.rpow_le_rpow_of_nonpos (by positivity) (hseg t ht) (sub_nonpos.2 hp)
       _ = 2 ^ (3 - p) * ‖b‖ ^ (p - 3) := by
-          rw [Real.div_rpow hbN.le two_pos.le, ← neg_sub p 3, Real.rpow_neg two_pos.le,
-            div_eq_mul_inv, mul_comm]
+          rw [Real.div_rpow hbN.le zero_le_two, div_eq_mul_inv, ← Real.rpow_neg zero_le_two]
+          ring_nf
   have ha : a ≠ 0 := by
     have := hseg 1 ⟨zero_le_one, le_rfl⟩
     rw [one_smul, hd, add_sub_cancel] at this
