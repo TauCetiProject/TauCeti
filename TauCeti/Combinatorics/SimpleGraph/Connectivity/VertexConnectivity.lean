@@ -83,7 +83,7 @@ ed., Graduate Texts in Mathematics 173, Springer, 2017, Section 1.4.
 * `SimpleGraph.isVertexReachable_iff_exists_paths`: **Menger's theorem**, predicate form, for
   nonadjacent vertices.
 * `SimpleGraph.isVertexConnected_iff_forall_exists_paths`: the **global form of Menger's
-  theorem**: on a vertex type with more than `k` vertices (hence a finite one),
+  theorem**: on a vertex type `V` with `k < Nat.card V` (which forces `V` to be finite),
   `k`-vertex-connectivity is the existence of `k` distinct internally disjoint paths between every
   two distinct vertices.
 * `SimpleGraph.Walk.reachable_induce_coe_of_mem_support`,
@@ -556,10 +556,10 @@ private theorem reachable_induce_deleteEdges_of_isVertexReachable {x y : V} {X :
   · rw [Walk.support_transfer] at hz
     exact fun hzX ↦ hp z hz (Set.mem_insert_of_mem _ hzX)
 
-/-- **The global form of Menger's theorem.** A simple graph with more than `k` vertices
-(so on a finite vertex type) is `k`-vertex-connected exactly when every two distinct vertices `s`
-and `t`, adjacent or not, are joined by `k` distinct paths pairwise sharing no vertex other than
-`s` and `t`. -/
+/-- **The global form of Menger's theorem.** A simple graph on a vertex type `V` with
+`k < Nat.card V` (which forces `V` to be finite) is `k`-vertex-connected exactly when every two
+distinct vertices `s` and `t`, adjacent or not, are joined by `k` distinct paths pairwise sharing
+no vertex other than `s` and `t`. -/
 theorem isVertexConnected_iff_forall_exists_paths {k : ℕ} (hk : k < Nat.card V) :
     G.IsVertexConnected k ↔ ∀ s t, s ≠ t → ∃ P : Fin k → G.Walk s t, Function.Injective P ∧
       (∀ i, (P i).IsPath) ∧ Pairwise fun i j ↦ (P i).InternallyDisjoint (P j) := by
