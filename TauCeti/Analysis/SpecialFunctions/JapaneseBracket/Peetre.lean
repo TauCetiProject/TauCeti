@@ -42,6 +42,7 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
 * `TauCeti.one_add_norm_add_sq_rpow_le`: the subadditive form
   `⟨x + y⟩ ^ s ≤ 2 ^ s (⟨x⟩ ^ s + ⟨y⟩ ^ s)` for `s ≥ 0`, which splits the weight of a convolution
   between its two factors.
+* `TauCeti.one_add_norm_sq_rpow_le_one_add_norm_pow`: `⟨x⟩ ^ N ≤ (1 + ‖x‖) ^ N` for natural `N`.
 * `TauCeti.one_add_norm_sq_rpow_le_two_pow_mul_one_add_norm_pow`: the comparison
   `⟨x⟩ ^ N ≤ 2 ^ N (1 + ‖x‖ ^ N)` of a natural power of the bracket with a power of the norm.
 
@@ -164,10 +165,10 @@ theorem one_add_norm_add_sq_rpow_le {s : ℝ} (hs : 0 ≤ s) (x y : E) :
       gcongr
       exact max_le_add_of_nonneg (by positivity) (by positivity)
 
-/-- A natural power of the Japanese bracket is comparable to the same power of the norm:
-`(1 + ‖x‖ ^ 2) ^ (N / 2) ≤ 2 ^ N (1 + ‖x‖ ^ N)`. -/
-theorem one_add_norm_sq_rpow_le_two_pow_mul_one_add_norm_pow (x : E) (N : ℕ) :
-    (1 + ‖x‖ ^ 2) ^ ((N : ℝ) / 2) ≤ 2 ^ N * (1 + ‖x‖ ^ N) :=
+/-- A natural power of the Japanese bracket is at most the same power of `1 + ‖x‖`:
+`(1 + ‖x‖ ^ 2) ^ (N / 2) ≤ (1 + ‖x‖) ^ N`. -/
+theorem one_add_norm_sq_rpow_le_one_add_norm_pow (x : E) (N : ℕ) :
+    (1 + ‖x‖ ^ 2) ^ ((N : ℝ) / 2) ≤ (1 + ‖x‖) ^ N :=
   calc (1 + ‖x‖ ^ 2) ^ ((N : ℝ) / 2) ≤ ((1 + ‖x‖) ^ 2) ^ ((N : ℝ) / 2) :=
         Real.rpow_le_rpow (by positivity)
           (by rw [add_sq, one_pow, mul_one]; linarith [norm_nonneg x]) (by positivity)
@@ -175,6 +176,13 @@ theorem one_add_norm_sq_rpow_le_two_pow_mul_one_add_norm_pow (x : E) (N : ℕ) :
         rw [← Real.rpow_natCast (1 + ‖x‖) 2, ← Real.rpow_mul (by positivity),
           ← Real.rpow_natCast]
         ring_nf
+
+/-- A natural power of the Japanese bracket is comparable to the same power of the norm:
+`(1 + ‖x‖ ^ 2) ^ (N / 2) ≤ 2 ^ N (1 + ‖x‖ ^ N)`. -/
+theorem one_add_norm_sq_rpow_le_two_pow_mul_one_add_norm_pow (x : E) (N : ℕ) :
+    (1 + ‖x‖ ^ 2) ^ ((N : ℝ) / 2) ≤ 2 ^ N * (1 + ‖x‖ ^ N) :=
+  calc (1 + ‖x‖ ^ 2) ^ ((N : ℝ) / 2) ≤ (1 + ‖x‖) ^ N :=
+        one_add_norm_sq_rpow_le_one_add_norm_pow x N
     _ ≤ 2 ^ (N - 1) * (1 ^ N + ‖x‖ ^ N) := add_pow_le zero_le_one (norm_nonneg x) N
     _ ≤ 2 ^ N * (1 + ‖x‖ ^ N) := by
         rw [one_pow]

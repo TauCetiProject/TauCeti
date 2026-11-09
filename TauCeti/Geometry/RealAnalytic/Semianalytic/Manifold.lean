@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.RealAnalytic.Semianalytic.Basic
 public import TauCeti.Geometry.Manifold.ContMDiff.Analytic
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Semianalytic sets on real analytic manifolds
@@ -274,7 +275,7 @@ theorem MSemianalyticAt.preimage {s : Set M'} {g : M → M'} {x : M}
     MSemianalyticAt I (g ⁻¹' s) x := by
   let c := writtenInExtChartAt I I' x g
   have hc : ContDiffAt ℝ ω c (extChartAt I x x) :=
-    (contMDiffAt_iff.1 hg).2.contDiffAt (by simp [I.range_eq_univ])
+    hg.contDiffAt_writtenInExtChartAt
   have hcx : c (extChartAt I x x) = extChartAt I' (g x) (g x) :=
     writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x)
   -- Neighborhood stability of C^ω needs no completeness of the target model.
