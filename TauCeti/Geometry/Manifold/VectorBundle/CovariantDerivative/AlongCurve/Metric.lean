@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
-import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.TangentCone.Basic
 
 /-!
@@ -295,11 +295,7 @@ theorem hasDerivWithinAt_apply_alongCurveWithin
   by_cases hu : UniqueDiffWithinAt ℝ s t
   swap
   · -- Without unique derivatives, every function has every derivative.
-    simpa using (HasFDerivWithinAt.of_not_accPt (f := fun r ↦ b (γ r) (V r) (W r))
-      (f' := ContinuousLinearMap.toSpanSingleton ℝ
-        (b (γ t) (alongCurveWithin cov γ V s t) (W t) +
-          b (γ t) (V t) (alongCurveWithin cov γ W s t)))
-      (mt AccPt.uniqueDiffWithinAt hu)).hasDerivWithinAt
+    exact hasDerivWithinAt_iff_hasFDerivWithinAt.2 (.of_not_accPt (mt AccPt.uniqueDiffWithinAt hu))
   -- Expand both fields in a smooth local frame around the point of the curve.
   let e := trivializationAt E (TangentSpace I) (γ t)
   let β := Module.finBasis ℝ E
@@ -456,9 +452,7 @@ theorem IsMetricCompatible.inner_eq_of_alongCurveWithin_eq_zero
   have hderiv (t : ℝ) (ht : t ∈ s) : HasDerivWithinAt (fun r ↦ inner ℝ (V r) (W r)) 0 s t := by
     simpa only [hV₀ t ht, hW₀ t ht, inner_zero_left, inner_zero_right, add_zero] using
       hcov.hasDerivWithinAt_inner_alongCurveWithin (hγ t ht) (hV t ht) (hW t ht)
-  have h := hconn.ordConnected.convex.norm_image_sub_le_of_norm_hasDerivWithin_le
-    (f' := fun _ ↦ 0) (C := 0) hderiv (fun _ _ ↦ by simp) ha hb
-  simpa [sub_eq_zero, eq_comm] using h
+  exact IsPreconnected.eq_of_hasDerivWithinAt_zero hconn hderiv ha hb
 
 /-- **Uniqueness of parallel fields.** On a preconnected parameter set, two parallel tangent
 fields along a differentiable curve that agree at one parameter agree at every parameter of the
@@ -473,13 +467,10 @@ theorem IsMetricCompatible.eq_of_alongCurveWithin_eq_zero
     (hV₀ : ∀ t ∈ s, alongCurveWithin cov γ V s t = 0)
     (hW₀ : ∀ t ∈ s, alongCurveWithin cov γ W s t = 0)
     {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) (hinit : V a = W a) : V b = W b := by
-  rcases eq_or_ne a b with rfl | hab
-  · exact hinit
-  have hs := hconn.uniqueDiffOn ha hb hab
-  have hVV := hcov.inner_eq_of_alongCurveWithin_eq_zero hs hconn hγ hV hV hV₀ hV₀ hb ha
-  have hVW := hcov.inner_eq_of_alongCurveWithin_eq_zero hs hconn hγ hV hW hV₀ hW₀ hb ha
-  have hWV := hcov.inner_eq_of_alongCurveWithin_eq_zero hs hconn hγ hW hV hW₀ hV₀ hb ha
-  have hWW := hcov.inner_eq_of_alongCurveWithin_eq_zero hs hconn hγ hW hW hW₀ hW₀ hb ha
+  have hVV := hcov.inner_eq_of_alongCurveWithin_eq_zero hconn hγ hV hV hV₀ hV₀ hb ha
+  have hVW := hcov.inner_eq_of_alongCurveWithin_eq_zero hconn hγ hV hW hV₀ hW₀ hb ha
+  have hWV := hcov.inner_eq_of_alongCurveWithin_eq_zero hconn hγ hW hV hW₀ hV₀ hb ha
+  have hWW := hcov.inner_eq_of_alongCurveWithin_eq_zero hconn hγ hW hW hW₀ hW₀ hb ha
   apply sub_eq_zero.mp
   apply (inner_self_eq_zero (𝕜 := ℝ)).mp
   rw [inner_sub_left, inner_sub_right, inner_sub_right, hVV, hVW, hWV, hWW, hinit]

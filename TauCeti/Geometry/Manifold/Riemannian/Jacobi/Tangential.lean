@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Basic
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Smoothness
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
@@ -151,11 +152,8 @@ theorem IsJacobiFieldOn.inner_alongCurveWithin_curveVelocityWithin_eq
     inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ J s a) (curveVelocityWithin I γ s a) =
       inner ℝ (alongCurveWithin (leviCivitaConnection I M) γ J s b)
         (curveVelocityWithin I γ s b) := by
-  have h := (Real.convex_iff_isPreconnected.2 hs).norm_image_sub_le_of_norm_hasDerivWithin_le
-    (fun r hr ↦ hJ.hasDerivWithinAt_inner_alongCurveWithin_curveVelocityWithin hr)
-    (C := 0) (fun _ _ ↦ by simp) hb ha
-  rw [zero_mul, norm_le_zero_iff, sub_eq_zero] at h
-  exact h
+  exact (IsPreconnected.eq_of_hasDerivWithinAt_zero hs
+    (fun r hr ↦ hJ.hasDerivWithinAt_inner_alongCurveWithin_curveVelocityWithin hr) hb ha).symm
 
 /-- **The tangential component of a Jacobi field is affine.** On a preconnected parameter set,
 `⟨J(t), γ'(t)⟩ = ⟨J(a), γ'(a)⟩ + (t - a) ⟨DJ(a), γ'(a)⟩`. -/
@@ -174,9 +172,8 @@ theorem IsJacobiFieldOn.inner_curveVelocityWithin_eq
     rw [hJ.inner_alongCurveWithin_curveVelocityWithin_eq hs hr ha] at h₁
     exact (h₁.sub (((hasDerivAt_id' r).sub_const a).mul_const c).hasDerivWithinAt).congr_deriv
       (by simp [c])
-  have h := (Real.convex_iff_isPreconnected.2 hs).norm_image_sub_le_of_norm_hasDerivWithin_le
-    hderiv (C := 0) (fun _ _ ↦ by simp) ha ht
-  rw [zero_mul, norm_le_zero_iff, sub_eq_zero, sub_self, zero_mul, sub_zero] at h
+  have h := IsPreconnected.eq_of_hasDerivWithinAt_zero hs hderiv ha ht
+  simp only [sub_self, zero_mul, sub_zero] at h
   linarith
 
 /-- **Normal Jacobi fields.** A Jacobi field on a preconnected parameter set is orthogonal to the
