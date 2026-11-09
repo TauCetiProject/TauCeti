@@ -53,9 +53,6 @@ which we reuse instead of redefining.
   `TauCeti.Probability.map_im_apply_ginibreComplex`: the real and imaginary parts of the complex
   Ginibre entries are `N(0, 1/2)`; the pair is a product law by
   `TauCeti.Probability.map_re_im_apply_ginibreComplex`.
-* `TauCeti.Probability.integrable_norm_sq_properComplexGaussianScalar` and
-  `TauCeti.Probability.integral_norm_sq_properComplexGaussianScalar`: integrability and the
-  second moment of a standard scalar proper complex Gaussian.
 * `TauCeti.Probability.ae_posSemidef_gaussianGramReal` and
   `TauCeti.Probability.ae_posSemidef_gaussianGramComplex`: the Gram laws are supported on
   positive semidefinite matrices.

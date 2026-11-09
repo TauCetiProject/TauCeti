@@ -17,6 +17,9 @@ Both statements use centered coordinate products and include
 their integrability. Thus the factor one half and the signs of the off-diagonal blocks
 in the real covariance agree with the proper complex convention, including singular laws.
 The squared modulus of each centered coordinate is integrable and has mean its complex variance.
+In particular, `integrable_norm_sq_properComplexGaussianScalar` and
+`integral_norm_sq_properComplexGaussianScalar` give integrability and unit second moment for
+the standard scalar law.
 
 The proofs use Mathlib's real Gaussian coordinate covariance and Fernique integrability.
 

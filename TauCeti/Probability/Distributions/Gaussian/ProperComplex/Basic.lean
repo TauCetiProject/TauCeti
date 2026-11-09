@@ -20,7 +20,8 @@ covariance is `C`, while the complex pseudocovariance vanishes.
 This file constructs the law on the product Borel space `ι → ℂ`, identifies its real
 coordinate law, and proves probability, the mean, parameter measurability, and the
 zero-covariance and invalid-covariance Dirac cases. Singular covariance matrices and
-empty coordinate types are included.
+empty coordinate types are included. `properComplexGaussianScalar` is the coordinate law
+with zero mean and unit covariance.
 
 The construction uses `Matrix.realify`, `complexToRealEuclidean`, and Mathlib's
 `multivariateGaussian`.

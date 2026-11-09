@@ -23,6 +23,8 @@ identity.
 
 For a standard complex coordinate, the real variances are `1 / 2`, the squared modulus has
 rate-one exponential law, and the Rayleigh scale is `Real.sqrt (1 / 2)`.
+`map_re_im_properComplexGaussianScalar` gives the joint law of the real and imaginary parts
+of the standard scalar law.
 
 The proofs reuse real Gaussian coordinate independence, `map_sum_sq_pi_gaussianReal`, and
 `map_norm_pi_gaussianReal`.
