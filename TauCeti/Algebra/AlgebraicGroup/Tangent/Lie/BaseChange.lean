@@ -237,21 +237,20 @@ theorem finrank_lie_baseChange {k K H : Type*} [Field k] [Field K] [Algebra k K]
     Module.finrank K
         (Derivation K (K ⊗[k] H) (Bialgebra.CounitAlgebra K (K ⊗[k] H) K)) =
       Module.finrank k (Derivation k H (Bialgebra.CounitAlgebra k H k)) :=
-  calc
-    _ = Module.finrank K (Derivation k H (Bialgebra.CounitAlgebra k H K)) :=
-      (tangentBaseChangeLieEquiv (R := k) (K := K) (H := H)).toLinearEquiv.finrank_eq.symm
-    _ = Module.finrank K (Bialgebra.CotangentSpace k H →ₗ[k] K) :=
-      (Derivation.cotangentLinearEquiv (R := k) (A := H) (B := K)).finrank_eq.symm
-    _ = Module.finrank K (K ⊗[k] Bialgebra.CotangentSpace k H →ₗ[K] K) :=
-      (LinearMap.liftBaseChangeEquiv K).finrank_eq
-    _ = Module.finrank K (K ⊗[k] Bialgebra.CotangentSpace k H) := Subspace.dual_finrank_eq
-    _ = Module.finrank k (Bialgebra.CotangentSpace k H) := Module.finrank_baseChange
-    _ = _ := Derivation.finrank_eq_finrank_cotangentSpace.symm
+  (tangentBaseChangeLieEquiv (R := k) (K := K) (H := H)).toLinearEquiv.finrank_eq.symm.trans
+    Derivation.finrank_tangent_baseChange
+
+/-- A vector space over a field is finite-dimensional if its scalar extension to a field is. -/
+theorem _root_.Module.Finite.of_baseChange {k K V : Type*} [Field k] [Field K] [Algebra k K]
+    [AddCommGroup V] [Module k V] (h : Module.Finite K (K ⊗[k] V)) : Module.Finite k V := by
+  rw [← Module.rank_lt_aleph0_iff] at h ⊢
+  rwa [Module.rank_baseChange, Cardinal.lift_lt_aleph0] at h
 
 /-- Extension of the ground field preserves and reflects nondegeneracy of the Killing form of the
 Lie algebra of an affine monoid: the Lie algebra of `K ⊗[k] H` has nondegenerate Killing form
 exactly when `Lie(G)` does. When the augmentation cotangent space is infinite-dimensional, neither
-Lie algebra is Killing, since traces on an infinite-dimensional space vanish. -/
+Lie algebra is Killing in Mathlib's convention, where the trace on a module without a finite
+basis is zero. -/
 theorem isKilling_lie_baseChange_iff {k K H : Type*} [Field k] [Field K] [Algebra k K]
     [CommRing H] [Bialgebra k H] :
     LieAlgebra.IsKilling K
@@ -275,13 +274,10 @@ theorem isKilling_lie_baseChange_iff {k K H : Type*} [Field k] [Field K] [Algebr
         (L := Derivation K (K ⊗[k] H) (Bialgebra.CounitAlgebra K (K ⊗[k] H) K))
       have hdual : Module.Finite K (K ⊗[k] Bialgebra.CotangentSpace k H →ₗ[K] K) :=
         Module.Finite.equiv
-          (((((tangentBaseChangeLieEquiv (R := k) (K := K) (H := H)).toLinearEquiv.symm.trans
-            (Derivation.cotangentLinearEquiv (R := k) (A := H) (B := K)).symm).trans
-              (LinearMap.liftBaseChangeEquiv K))))
-      have hbc := (Module.finite_dual_iff K).1 hdual
-      rw [← Module.rank_lt_aleph0_iff, Module.rank_baseChange, Cardinal.lift_lt_aleph0,
-        Module.rank_lt_aleph0_iff] at hbc
-      exact hbc
+          ((tangentBaseChangeLieEquiv (R := k) (K := K) (H := H)).toLinearEquiv.symm.trans
+            ((Derivation.cotangentLinearEquiv (R := k) (A := H) (B := K)).symm.trans
+              (LinearMap.liftBaseChangeEquiv K)))
+      exact Module.Finite.of_baseChange (K := K) ((Module.finite_dual_iff K).1 hdual)
     · have := finite_of_isKilling (R := k) (L := Derivation k H (Bialgebra.CounitAlgebra k H k))
       exact (Module.finite_dual_iff k).1
         (Module.Finite.equiv Derivation.cotangentDualLieEquiv.symm.toLinearEquiv)
