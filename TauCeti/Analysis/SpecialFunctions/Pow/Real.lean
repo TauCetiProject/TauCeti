@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # Real powers
@@ -107,6 +108,9 @@ with the corresponding integral of `q`-th powers.
   exponents have finite multiplicative support.
 * `Real.rpow_finsum_of_pos`: `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i` for `0 < a` and finitely supported
   `f`.
+* `Real.le_sqrt_mul_rpow_sub_one_of_sq_le`: `x ≤ √B * d ^ (β - 1)` when
+  `d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)` with `d > 0`, the step turning a mean-value bound on `d ^ 2 *
+  x ^ 2` into a pointwise power bound on `x`.
 -/
 
 public section
@@ -310,6 +314,17 @@ lemma mul_rpow_div_mul_le_two_mul {α C₀ N R r X C : ℝ} (hC₀ : 0 ≤ C₀)
     C₀ * (r / R) ^ α * X ≤ 2 * (C * r ^ α) :=
   calc _ ≤ C₀ * (r / R) ^ α * N := by gcongr
     _ = 2 * (C * r ^ α) := by rw [hC, Real.div_rpow hr hR.le]; field_simp
+
+/-- If `d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)` with `d > 0`, then `x ≤ √B * d ^ (β - 1)`. -/
+theorem le_sqrt_mul_rpow_sub_one_of_sq_le {x d B β : ℝ} (hd : 0 < d)
+    (h : d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)) : x ≤ Real.sqrt B * d ^ (β - 1) := by
+  have hsq : (d * x) ^ 2 ≤ B * (d ^ β) ^ 2 := by
+    have hp : d ^ (2 * β) = (d ^ β) ^ 2 := by
+      simpa only [Nat.cast_ofNat, mul_comm] using Real.rpow_mul_natCast hd.le β 2
+    rwa [hp, ← mul_pow] at h
+  have h' := Real.le_sqrt_mul_of_sq_le_mul (Real.rpow_nonneg hd.le β) hsq
+  rw [Real.rpow_sub_one hd.ne', ← mul_div_assoc, le_div_iff₀ hd]
+  linarith
 
 end Real
 
