@@ -107,10 +107,8 @@ theorem relativeEigenspace_innerₗ {E : Type*} [NormedAddCommGroup E]
   ext x
   rw [mem_relativeEigenspace_iff, Module.End.mem_eigenspace_iff]
   simp only [hT, innerₗ_apply_apply]
-  refine ⟨fun h ↦ ?_, fun h y ↦ by rw [h, real_inner_smul_left]⟩
-  rw [← sub_eq_zero, ← inner_self_eq_zero (𝕜 := ℝ)]
-  rw [inner_sub_left, h, real_inner_smul_left, inner_sub_right, real_inner_smul_right, mul_sub,
-    sub_self]
+  exact ⟨fun h ↦ ext_inner_right ℝ fun y ↦ by rw [h, real_inner_smul_left],
+    fun h y ↦ by rw [h, real_inner_smul_left]⟩
 
 /-- **Euclidean model.** For positive definite symmetric `g` and symmetric `q`, a linear isometry
 from Euclidean space carries the point-spectral subspaces of a symmetric operator representing the
@@ -218,7 +216,8 @@ theorem finrank_relativeSpectralSubspace_Iio :
   set N := g.relativeSpectralSubspace q (Iio 0)
   set P := g.relativeSpectralSubspace q (Ici 0)
   have hNP : IsCompl N P := by
-    refine ⟨disjoint_relativeSpectralSubspace hg hpos hq (Iio_disjoint_Ici le_rfl),
+    refine ⟨disjoint_relativeSpectralSubspace hg
+      (fun v h ↦ by_contra fun hv ↦ (hpos v hv).ne' h) hq (Iio_disjoint_Ici le_rfl),
       codisjoint_iff.mpr ?_⟩
     simpa [N, P, compl_Iio] using relativeSpectralSubspace_sup_compl_eq_top hg hpos hq
       (Ω := Iio 0)
@@ -246,7 +245,8 @@ theorem finrank_relativeSpectralSubspace_Ioi :
 complementary. -/
 theorem isCompl_relativeSpectralSubspace_Iio_Ioi (hker : LinearMap.ker q = ⊥) :
     IsCompl (g.relativeSpectralSubspace q (Iio 0)) (g.relativeSpectralSubspace q (Ioi 0)) := by
-  refine ⟨disjoint_relativeSpectralSubspace hg hpos hq Iio_disjoint_Ioi_same,
+  refine ⟨disjoint_relativeSpectralSubspace hg
+    (fun v h ↦ by_contra fun hv ↦ (hpos v hv).ne' h) hq Iio_disjoint_Ioi_same,
     codisjoint_iff.mpr ?_⟩
   · have hsplit : (univ : Set ℝ) = (Iio 0 ∪ Ioi 0) ∪ {0} := by
       ext x

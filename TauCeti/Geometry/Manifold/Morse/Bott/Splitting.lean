@@ -105,13 +105,13 @@ theorem positiveNormalSpace_def :
       (g.inner s).toBilinForm.relativeSpectralSubspace (h.normalHessian hn s) (Ioi 0) :=
   (rfl)
 
-/-- **The normal spaces are orthogonal for the metric.** -/
+/-- **The negative and positive normal spaces are orthogonal for the metric `g`.** -/
 theorem inner_eq_zero_of_mem_negativeNormalSpace (hv : v ∈ h.negativeNormalSpace hn g s)
     (hw : w ∈ h.positiveNormalSpace hn g s) : g.inner s v w = 0 :=
   (LinearMap.BilinForm.apply_eq_zero_of_mem_relativeSpectralSubspace
     (g.isSymm_toBilinForm_inner s) (h.isSymm_normalHessian hn s) Iio_disjoint_Ioi_same hv hw).1
 
-/-- **The normal spaces are orthogonal for the normal Hessian.** -/
+/-- **The negative and positive normal spaces are orthogonal for the normal Hessian.** -/
 theorem normalHessian_eq_zero_of_mem_negativeNormalSpace (hv : v ∈ h.negativeNormalSpace hn g s)
     (hw : w ∈ h.positiveNormalSpace hn g s) : h.normalHessian hn s v w = 0 :=
   (LinearMap.BilinForm.apply_eq_zero_of_mem_relativeSpectralSubspace
@@ -120,8 +120,9 @@ theorem normalHessian_eq_zero_of_mem_negativeNormalSpace (hv : v ∈ h.negativeN
 /-- The negative and positive normal spaces meet only in `0`. -/
 theorem disjoint_negativeNormalSpace_positiveNormalSpace :
     Disjoint (h.negativeNormalSpace hn g s) (h.positiveNormalSpace hn g s) :=
-  LinearMap.BilinForm.disjoint_relativeSpectralSubspace (g.isSymm_toBilinForm_inner s) (g.pos s)
-    (h.isSymm_normalHessian hn s) Iio_disjoint_Ioi_same
+  LinearMap.BilinForm.disjoint_relativeSpectralSubspace (g.isSymm_toBilinForm_inner s)
+    (fun v h ↦ by_contra fun hv ↦ (g.pos s v hv).ne' h) (h.isSymm_normalHessian hn s)
+    Iio_disjoint_Ioi_same
 
 variable [FiniteDimensional ℝ E]
 
