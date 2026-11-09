@@ -10,6 +10,8 @@ public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Abs
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.Gram.Factor
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.RealAlgebra
+import Mathlib.Analysis.InnerProductSpace.Completion
+import Mathlib.Analysis.Normed.Module.Completion
 
 /-!
 # The modulus of a bounded operator
@@ -204,13 +206,21 @@ theorem norm_modulus_comp {G : Type*} [SeminormedAddCommGroup G] [NormedSpace �
   opNorm_ext _ _ fun x ↦ T.norm_modulus_apply (D x)
 
 /-- Postcomposition law for the modulus: `‖D |T|‖ = ‖D T†‖` for every bounded operator `D` out of
-the source of `T`. -/
+the source of `T` into an inner product space, which need not be complete. -/
 theorem norm_comp_modulus {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
-    [CompleteSpace G] (T : E →L[𝕜] F) (D : E →L[𝕜] G) : ‖D ∘L T.modulus‖ = ‖D ∘L T†‖ :=
+    (T : E →L[𝕜] F) (D : E →L[𝕜] G) : ‖D ∘L T.modulus‖ = ‖D ∘L T†‖ := by
+  -- The embedding into the completion preserves norms, so we may assume `G` is complete.
+  let ι : G →L[𝕜] UniformSpace.Completion G := UniformSpace.Completion.toComplL
+  have hE (A : E →L[𝕜] G) : ‖ι ∘L A‖ = ‖A‖ :=
+    (UniformSpace.Completion.toComplₗᵢ (𝕜 := 𝕜) (E := G)).norm_toContinuousLinearMap_comp
+  have hF (A : F →L[𝕜] G) : ‖ι ∘L A‖ = ‖A‖ :=
+    (UniformSpace.Completion.toComplₗᵢ (𝕜 := 𝕜) (E := G)).norm_toContinuousLinearMap_comp
+  rw [← hE (D ∘L T.modulus), ← hF (D ∘L T†), ← comp_assoc, ← comp_assoc]
+  generalize ι ∘L D = D'
   -- Pass to adjoints, which preserve norms, and apply the precomposition law.
-  calc ‖D ∘L T.modulus‖ = ‖(D ∘L T.modulus)†‖ := (adjoint.norm_map _).symm
-    _ = ‖T ∘L D†‖ := by rw [adjoint_comp, adjoint_modulus, norm_modulus_comp]
-    _ = ‖D ∘L T†‖ := by rw [← adjoint.norm_map, adjoint_comp, adjoint_adjoint]
+  calc ‖D' ∘L T.modulus‖ = ‖(D' ∘L T.modulus)†‖ := (adjoint.norm_map _).symm
+    _ = ‖T ∘L D'†‖ := by rw [adjoint_comp, adjoint_modulus, norm_modulus_comp]
+    _ = ‖D' ∘L T†‖ := by rw [← adjoint.norm_map, adjoint_comp, adjoint_adjoint]
 
 section RealAlgebra
 
