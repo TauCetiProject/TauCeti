@@ -286,6 +286,15 @@ theorem map_symmetricAlgebraInvariants_of_leftInverse {f : M →ₗ[R] N} {s : N
 
 end Map
 
+/-- Pulling a representation back along a surjective homomorphism does not change its invariant
+subalgebra in the symmetric algebra. This equality preserves the ambient graded algebra. -/
+theorem symmetricAlgebraInvariants_comp_of_surjective {H : Type*} [Monoid H]
+    (f : H →* G) (hf : Function.Surjective f) :
+    Representation.symmetricAlgebraInvariants (ρ.comp f) = ρ.symmetricAlgebraInvariants := by
+  ext p
+  simp only [mem_symmetricAlgebraInvariants, symmetricAlgebra_comp_apply]
+  exact ⟨fun hp g ↦ by obtain ⟨h, rfl⟩ := hf g; exact hp h, fun hp h ↦ hp (f h)⟩
+
 /-- The action of `G` on `Sym M` induced by `ρ`, as a representation by linear maps over the
 invariant subalgebra `Sym(M)^G`: each `ρ g` fixes the invariants, so it is linear over them. Its
 underlying maps are those of `Representation.symmetricAlgebra`. -/
@@ -314,6 +323,24 @@ section Group
 
 variable [CommSemiring R] [Group G] [AddCommMonoid M] [Module R M]
 variable (ρ : Representation R G M)
+
+/-- Passing to the symmetric algebra preserves the kernel: an element acts trivially on the
+algebra exactly when it acts trivially on its degree-one generators. -/
+@[simp]
+theorem ker_symmetricAlgebra : ρ.symmetricAlgebra.ker = ρ.ker := by
+  ext g
+  simp only [MonoidHom.mem_ker]
+  refine ⟨fun h ↦ LinearMap.ext fun m ↦ ι_injective R M ?_, fun h ↦ ?_⟩
+  · have hm := LinearMap.congr_fun h (SymmetricAlgebra.ι R M m)
+    simpa [symmetricAlgebra_apply, SymmetricAlgebra.map_apply_ι] using hm
+  · ext p
+    simp [symmetricAlgebra_apply, h, Module.End.one_eq_id]
+
+/-- The kernel of a representation acts trivially on its entire symmetric algebra. -/
+theorem symmetricAlgebra_apply_of_mem_ker {g : G} (hg : g ∈ ρ.ker)
+    (p : SymmetricAlgebra R M) : ρ.symmetricAlgebra g p = p := by
+  have hg' : g ∈ ρ.symmetricAlgebra.ker := by rwa [ker_symmetricAlgebra]
+  exact LinearMap.congr_fun (MonoidHom.mem_ker.mp hg') p
 
 /-- For a group, `Sym M` is an invariant extension of the invariant subalgebra under the bundled
 action, so Mathlib's `Algebra.IsInvariant` API applies to it. This is Mathlib's instance for

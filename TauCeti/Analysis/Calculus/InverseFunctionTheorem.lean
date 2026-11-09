@@ -149,12 +149,14 @@ section ContDiffInverse
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- A `C^n` open partial homeomorphism of a complete normed space (`n ≠ 0`) whose derivative is
-invertible at every point of its source has a `C^n` inverse on its target. -/
+/-- A `C^n` open partial homeomorphism of a complete normed space whose derivative is invertible at
+every point of its source has a `C^n` inverse on its target. -/
 theorem OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv [CompleteSpace E] {n : ℕ∞ω}
     (ψ : OpenPartialHomeomorph E F) (hψ : ContDiffOn 𝕜 n ψ ψ.source)
-    (hinv : ∀ x ∈ ψ.source, (fderiv 𝕜 ψ x).IsInvertible) (hn : n ≠ 0) :
+    (hinv : ∀ x ∈ ψ.source, (fderiv 𝕜 ψ x).IsInvertible) :
     ContDiffOn 𝕜 n ψ.symm ψ.target := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact contDiffOn_zero.2 ψ.continuousOn_symm
   intro y hy
   have hx := ψ.map_target hy
   have hat : ContDiffAt 𝕜 n ψ (ψ.symm y) :=

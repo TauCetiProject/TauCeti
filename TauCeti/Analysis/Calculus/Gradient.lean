@@ -14,6 +14,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 -- only inside the proofs below.
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
@@ -38,6 +39,8 @@ theorem about `‖Dφ‖`.
 * `TauCeti.norm_gradient_eq_norm_fderiv`: `‖∇ f x‖ = ‖fderiv 𝕜 f x‖`.
 * `TauCeti.gradient_add`: additivity of the gradient at a point of differentiability.
 * `TauCeti.gradient_const_smul`: `∇ (c • f) x = conj c • ∇ f x`.
+* `TauCeti.gradient_neg` and `TauCeti.gradient_sub`: the gradient of a negative and of a
+  difference.
 * `TauCeti.gradient_of_notMem_tsupport`: the gradient vanishes off the topological support.
 * `HasCompactSupport.gradient`: the gradient of a compactly supported function is compactly
   supported.
@@ -53,6 +56,9 @@ theorem about `‖Dφ‖`.
 * `TauCeti.isSymmetric_of_hasFDerivAt_gradient`: over `ℝ`, the derivative of the gradient (the
   Hessian as an endomorphism of `E`) is a symmetric operator wherever it exists, provided the
   function is differentiable nearby.
+* `TauCeti.isLocalMax_sub_inner_of_forall_le` and `TauCeti.eq_gradient_of_forall_le`: over `ℝ`,
+  if the affine function `u y + ⟪p, · - y⟫` lies above `u` on a neighbourhood of `y`, then
+  `u - ⟪p, ·⟫` has a local maximum at `y`, and `p = ∇ u y` when `u` is differentiable at `y`.
 * `TauCeti.norm_gradient_fderiv_apply_le`: `‖∇ (∂ᵥ f) x‖ ≤ ‖v‖ ‖D²f x‖`.
 * `TauCeti.norm_iteratedFDeriv_two_sub_le_sum`: the operator norm of `D²f x - D²f y` is at most
   the sum, over an orthonormal basis `(bᵢ)`, of `‖∇ (∂_{bᵢ} f) x - ∇ (∂_{bᵢ} f) y‖`.
@@ -94,6 +100,16 @@ theorem gradient_const_smul (c : 𝕜) :
   apply (toDual 𝕜 F).injective
   simp only [toDual_gradient, map_smulₛₗ, RingHomCompTriple.comp_apply, RingHom.id_apply,
     fderiv_const_smul_field, Pi.smul_apply]
+
+/-- The gradient of the negative of a function is the negative of its gradient. -/
+@[simp]
+theorem gradient_neg : ∇ (-f) x = -∇ f x := by
+  simpa using gradient_const_smul (f := f) (x := x) (-1 : 𝕜)
+
+/-- The gradient is subtractive wherever both terms are differentiable. -/
+theorem gradient_sub (hf : DifferentiableAt 𝕜 f x) (hg : DifferentiableAt 𝕜 g x) :
+    ∇ (f - g) x = ∇ f x - ∇ g x := by
+  rw [sub_eq_add_neg, gradient_add hf hg.neg, gradient_neg, sub_eq_add_neg]
 
 /-- The gradient vanishes off the topological support of the function, as the Fréchet derivative
 does. -/
@@ -185,6 +201,30 @@ theorem isSymmetric_of_hasFDerivAt_gradient {E : Type*} [NormedAddCommGroup E]
   intro v w
   simpa [L, real_inner_comm] using
     second_derivative_symmetric_of_eventually h₁ (L.hasFDerivAt.comp x hH) v w
+
+/-- If the affine function `u y + ⟪p, · - y⟫` lies above `u` on a neighbourhood `s` of `y`, then
+`u - ⟪p, ·⟫` has a local maximum at `y`. -/
+theorem isLocalMax_sub_inner_of_forall_le {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] {u : E → ℝ} {s : Set E} {y p : E} (hs : s ∈ 𝓝 y)
+    (hp : ∀ x ∈ s, u x ≤ u y + ⟪p, x - y⟫_ℝ) : IsLocalMax (fun x => u x - ⟪p, x⟫_ℝ) y := by
+  filter_upwards [hs] with x hx
+  have := hp x hx
+  rw [inner_sub_right] at this
+  linarith
+
+/-- A slope `p` whose affine function `u y + ⟪p, · - y⟫` lies above `u` on a neighbourhood of a
+point `y` of differentiability is the gradient: `p = ∇ u y`. -/
+theorem eq_gradient_of_forall_le {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [CompleteSpace E] {u : E → ℝ} {s : Set E} {y p : E} (hs : s ∈ 𝓝 y)
+    (hu : DifferentiableAt ℝ u y) (hp : ∀ x ∈ s, u x ≤ u y + ⟪p, x - y⟫_ℝ) : p = ∇ u y := by
+  have hmax : IsLocalMax (u - ⇑(innerSL ℝ p)) y :=
+    (isLocalMax_sub_inner_of_forall_le hs hp).congr
+      (.of_forall fun x => by simp only [Pi.sub_apply, innerSL_apply_apply])
+  have h0 := hmax.hasFDerivAt_eq_zero (hu.hasFDerivAt.sub (innerSL ℝ p).hasFDerivAt)
+  rw [sub_eq_zero] at h0
+  rw [gradient, h0, eq_comm, LinearIsometryEquiv.symm_apply_eq]
+  ext z
+  simp
 
 /-- The gradient of a directional derivative is controlled by the second derivative:
 `‖∇ (∂ᵥ f) x‖ ≤ ‖v‖ ‖D²f x‖`, wherever `fderiv ℝ f` is differentiable. -/

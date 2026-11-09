@@ -216,12 +216,13 @@ theorem norm_ringInverse_le_of_forall_norm_le {A : E →L[𝕜] E} (hA : IsUnit 
   refine opNorm_le_bound _ hM fun y ↦ ?_
   simpa only [apply_ringInverse_apply hA] using h (Ring.inverse A y)
 
-/-- An operator bounded below by `c > 0` is invertible if its distance from an invertible
-operator is less than `c / 2`. -/
+/-- An operator bounded below by `c` is invertible if its distance from an invertible operator is
+less than `c / 2`; in particular `c > 0`. -/
 theorem isUnit_of_forall_mul_norm_le_of_norm_sub_lt [CompleteSpace E]
-    {A B : E →L[𝕜] E} {c : ℝ} (hc : 0 < c)
+    {A B : E →L[𝕜] E} {c : ℝ}
     (hbound : ∀ x : E, c * ‖x‖ ≤ ‖A x‖) (hB : IsUnit B) (hAB : ‖A - B‖ < c / 2) :
     IsUnit A := by
+  have hc : 0 < c := by linarith [norm_nonneg (A - B)]
   rcases subsingleton_or_nontrivial E with hE | hE
   · have hA : A = 1 := Subsingleton.elim _ _
     rw [hA]
@@ -299,9 +300,16 @@ variable {𝕜 V F : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace �
 give `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` everywhere. -/
 theorem norm_apply_bounds_of_net (T : V →L[𝕜] F) {t : Set V} {δ : ℝ}
     (hnear : ∀ w : V, ‖w‖ = 1 → ∃ v ∈ t, ‖w - v‖ < δ)
-    (hlow : ∀ v ∈ t, 1 - δ < ‖T v‖) (hup : ∀ v ∈ t, ‖T v‖ < 1 + δ) (hδ : 0 ≤ δ)
+    (hlow : ∀ v ∈ t, 1 - δ < ‖T v‖) (hup : ∀ v ∈ t, ‖T v‖ < 1 + δ)
     (hδ1 : δ ≤ 1 / 6) :
     (∀ v, (1 - 3 * δ) * ‖v‖ ≤ ‖T v‖) ∧ ∀ v, ‖T v‖ ≤ (1 + 3 * δ) * ‖v‖ := by
+  -- on a trivial space both bounds hold for any `δ`; otherwise the net forces `0 ≤ δ`
+  rcases subsingleton_or_nontrivial V with hV | hV
+  · exact ⟨fun v ↦ by rw [Subsingleton.elim v 0]; simp, fun v ↦ by rw [Subsingleton.elim v 0]; simp⟩
+  obtain ⟨x, hx⟩ := exists_ne (0 : V)
+  have hδ : 0 ≤ δ := by
+    obtain ⟨v, -, hwv⟩ := hnear ((‖x‖⁻¹ : 𝕜) • x) (norm_smul_inv_norm hx)
+    exact (norm_nonneg _).trans hwv.le
   -- Propagate the upper bound to the unit sphere, and then bound `‖T‖`.
   have hTnorm : ‖T‖ ≤ 1 + 3 * δ := by
     have hbound : ‖T‖ ≤ 1 + δ + ‖T‖ * δ := by
@@ -355,3 +363,18 @@ end MetricQuotient
 end ContinuousLinearMap
 
 end
+
+namespace ContinuousLinearMap
+
+/-- A pointwise squared-norm bound gives the square-root bound on the operator norm. -/
+public theorem opNorm_le_sqrt_of_forall_sq_norm_le
+    {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (T : E →L[𝕜] F) {c : ℝ} (hc : 0 ≤ c)
+    (h : ∀ x, ‖T x‖ ^ 2 ≤ c * ‖x‖ ^ 2) : ‖T‖ ≤ Real.sqrt c := by
+  refine T.opNorm_le_bound (Real.sqrt_nonneg _) fun x => ?_
+  apply (sq_le_sq₀ (norm_nonneg _) (mul_nonneg (Real.sqrt_nonneg _) (norm_nonneg _))).mp
+  simpa only [mul_pow, Real.sq_sqrt hc] using h x
+
+end ContinuousLinearMap

@@ -12,106 +12,74 @@ public import Mathlib.Algebra.Order.Monoid.Unbundled.Basic
 # Comparing two sums when one index set dominates the other
 
 Two finite sets of the same size, one of which carries a strictly larger weight at every point
-than the other, have strictly ordered sums (`TauCeti.sum_lt_sum_of_forall_lt`): the sizes agreeing
-is what makes the comparison work without any pointwise pairing of the two sets, since any
-bijection between them compares the weights termwise.
+than the other carries at any of its points, have strictly ordered sums
+(`TauCeti.sum_lt_sum_of_forall_lt`). The two sets may be indexed by different types and weighted
+by different functions; the sizes agreeing is what makes the comparison work without any pointwise
+pairing of the two sets, since any bijection between them compares the weights termwise.
 
-`TauCeti.sum_lt_sum_image_sdiff` is the form in which the comparison is used. A permutation `σ`
-of a finite set `X` that does not map a part `A` of it to itself must move some point of `A` out
-of `A`; if `A` carries the larger weights, the image of the complementary part `X \ A` therefore
-weighs strictly more than `X \ A` itself. The two sums involved differ only on the points that
-`σ` moves in or out of `X \ A`, and those are compared by the previous lemma.
+`TauCeti.sum_lt_sum_image_sdiff` is the form in which the comparison is used. A map `σ` that
+permutes a finite set `X` but does not map a part `A` of it to itself must move some point of `A`
+out of `A`; if `A` carries the larger weights, the image of the complementary part `X \ A`
+therefore weighs strictly more than `X \ A` itself.
 
 The weights take values in an additive commutative monoid preordered so that addition is strictly
-monotone, which is what compares two sums of the same length termwise, and what turns the
-comparison of the parts on which the two sums differ into a comparison of the sums themselves.
+monotone. This is weaker than the ordered cancellative monoids of Mathlib's
+`Finset.sum_lt_sum_of_nonempty` and `Finset.sum_sdiff_lt_sum_sdiff`, and it suffices both to
+compare two sums of the same length termwise and to compare two sums through the parts on which
+they differ.
 -/
 
 public section
 
 namespace TauCeti
 
-variable {α M : Type*} [AddCommMonoid M] [Preorder M] [AddLeftStrictMono M]
+variable {M : Type*} [AddCommMonoid M] [Preorder M] [AddLeftStrictMono M]
 
 /-- **A set whose weights are all smaller than those of a second set of the same size has the
-smaller sum.** The two sets have the same size, so some bijection matches them up, and along it
-every weight of the first set is smaller than the weight of its partner. -/
-theorem sum_lt_sum_of_forall_lt (f : α → M) {U V : Finset α}
-    (hcard : V.card = U.card) (hU : U.Nonempty) (hlt : ∀ u ∈ U, ∀ v ∈ V, f v < f u) :
-    ∑ v ∈ V, f v < ∑ u ∈ U, f u := by
+smaller sum.** If `s` is nonempty, `t` has as many elements as `s`, and every value of `g` on `t`
+is smaller than every value of `f` on `s`, then the sum of `g` over `t` is smaller than the sum of
+`f` over `s`. -/
+theorem sum_lt_sum_of_forall_lt {ι κ : Type*} (f : ι → M) (g : κ → M) {s : Finset ι}
+    {t : Finset κ} (hcard : t.card = s.card) (hs : s.Nonempty)
+    (hlt : ∀ i ∈ s, ∀ j ∈ t, g j < f i) :
+    ∑ j ∈ t, g j < ∑ i ∈ s, f i := by
   classical
-  induction hU using Finset.Nonempty.cons_induction generalizing V with
-  | singleton u =>
-    obtain ⟨v, rfl⟩ := Finset.card_eq_one.mp (by simpa using hcard)
-    simpa using hlt u (by simp) v (by simp)
-  | cons u U hu _ ih =>
-    -- pair `u` off against any label of `V`, and compare the two remaining sums
-    obtain ⟨v, hv⟩ : V.Nonempty := Finset.card_pos.mp (by simp [hcard])
-    have hcard' : (V.erase v).card = U.card := by
-      rw [Finset.card_erase_of_mem hv, hcard, Finset.card_cons]
-      simp
-    calc ∑ z ∈ V, f z
-        = f v + ∑ z ∈ V.erase v, f z := (Finset.add_sum_erase _ f hv).symm
-      _ < f u + ∑ z ∈ U, f z :=
-          add_lt_add (hlt u (Finset.mem_cons_self _ _) v hv)
-            (ih hcard' fun a ha b hb =>
-              hlt a (Finset.mem_cons_of_mem ha) b (Finset.mem_of_mem_erase hb))
-      _ = ∑ z ∈ Finset.cons u U hu, f z := (Finset.sum_cons _).symm
+  induction hs using Finset.Nonempty.cons_induction generalizing t with
+  | singleton i =>
+    obtain ⟨j, rfl⟩ := Finset.card_eq_one.mp (by simpa using hcard)
+    simpa using hlt i (by simp) j (by simp)
+  | cons i s hi _ ih =>
+    -- pair `i` off against any element `j` of `t`, and compare the two remaining sums
+    obtain ⟨j, hj⟩ : t.Nonempty := Finset.card_pos.mp (by simp [hcard])
+    rw [← Finset.add_sum_erase _ _ hj, Finset.sum_cons]
+    exact add_lt_add (hlt i (by simp) j hj)
+      (ih (by simp [Finset.card_erase_of_mem hj, hcard, hi]) fun a ha b hb =>
+        hlt a (by simp [ha]) b (Finset.mem_of_mem_erase hb))
 
-/-- **A permutation of a set that does not preserve a prescribed part increases the sum over the
-other part.** If every weight of `A` exceeds every weight of `X \ A`, and `σ` permutes `X` without
-mapping `A` to itself, then `σ` moves some point of `A` into the image of `X \ A`, exchanging a
-point for one of strictly larger weight, so that image has the larger sum. -/
-theorem sum_lt_sum_image_sdiff [DecidableEq α] (f : α → M) {X A : Finset α}
-    {σ : Equiv.Perm α} (hAX : A ⊆ X) (hXimg : X.image σ = X) (himg : A.image σ ≠ A)
+/-- **A map permuting a set but not a prescribed part of it increases the sum over the other
+part.** If every weight of `A ⊆ X` exceeds every weight of `X \ A`, and `σ` maps `X` onto itself
+without mapping `A` onto itself, then the image of `X \ A` under `σ` has the larger sum. -/
+theorem sum_lt_sum_image_sdiff {α : Type*} [DecidableEq α] (f : α → M) {X A : Finset α}
+    {σ : α → α} (hAX : A ⊆ X) (hXimg : X.image σ = X) (himg : A.image σ ≠ A)
     (hlt : ∀ a ∈ A, ∀ b ∈ X \ A, f b < f a) :
     ∑ z ∈ X \ A, f z < ∑ z ∈ (X \ A).image σ, f z := by
-  classical
-  have hmemX : ∀ k ∈ X, σ k ∈ X := fun k hk => hXimg ▸ Finset.mem_image_of_mem σ hk
-  have hXA : X \ (X \ A) = A := Finset.sdiff_sdiff_eq_self hAX
-  have hcard : ((X \ A).image σ).card = (X \ A).card :=
-    Finset.card_image_of_injective _ σ.injective
-  have hBsub : (X \ A).image σ ⊆ X := by
-    intro z hz
-    obtain ⟨k, hk, rfl⟩ := Finset.mem_image.mp hz
-    exact hmemX k (Finset.sdiff_subset hk)
-  -- the image of the second part is not the second part again, since `A` is not preserved
-  have hne : (X \ A).image σ ≠ X \ A := by
-    intro heq
-    refine himg (Finset.eq_of_subset_of_card_le (fun z hz => ?_)
-      (le_of_eq (Finset.card_image_of_injective _ σ.injective).symm))
-    obtain ⟨k, hk, rfl⟩ := Finset.mem_image.mp hz
-    have hnot : σ k ∉ X \ A := by
-      intro hcontra
-      have himg' : σ k ∈ (X \ A).image σ := heq.symm ▸ hcontra
-      obtain ⟨k', hk', hk'eq⟩ := Finset.mem_image.mp himg'
-      exact (Finset.mem_sdiff.mp hk').2 (σ.injective hk'eq ▸ hk)
-    have hmem := Finset.mem_sdiff.mpr ⟨hmemX k (hAX hk), hnot⟩
-    rwa [hXA] at hmem
-  -- so the two differ, and what the image gains lies in `A`, above everything it loses
-  have hUV := Finset.card_sdiff_comm hcard
-  have hUne : (((X \ A).image σ) \ (X \ A)).Nonempty := by
-    rw [Finset.sdiff_nonempty]
-    exact fun hsub => hne (Finset.eq_of_subset_of_card_le hsub (le_of_eq hcard.symm))
-  have hUlt : ∀ u ∈ ((X \ A).image σ) \ (X \ A), ∀ v ∈ (X \ A) \ ((X \ A).image σ), f v < f u := by
-    intro u hu v hv
-    obtain ⟨huX, huB⟩ := Finset.mem_sdiff.mp hu
-    refine hlt u ?_ v (Finset.mem_sdiff.mp hv).1
-    have hmem := Finset.mem_sdiff.mpr ⟨hBsub huX, huB⟩
-    rwa [hXA] at hmem
-  have hlt' := sum_lt_sum_of_forall_lt f hUV.symm hUne hUlt
-  -- the two sums agree on the common part, so the two differences compare them
-  have h1 := Finset.sum_sdiff (s₁ := (X \ A) ∩ ((X \ A).image σ))
-    (s₂ := X \ A) (f := f) Finset.inter_subset_left
-  rw [Finset.sdiff_inter_self_left] at h1
-  have h2 := Finset.sum_sdiff (s₁ := ((X \ A).image σ) ∩ (X \ A))
-    (s₂ := (X \ A).image σ) (f := f) Finset.inter_subset_left
-  rw [Finset.sdiff_inter_self_left, Finset.inter_comm] at h2
-  calc ∑ z ∈ X \ A, f z
-      = (∑ z ∈ (X \ A) \ ((X \ A).image σ), f z) +
-        ∑ z ∈ (X \ A) ∩ ((X \ A).image σ), f z := h1.symm
-    _ < (∑ z ∈ ((X \ A).image σ) \ (X \ A), f z) +
-        ∑ z ∈ (X \ A) ∩ ((X \ A).image σ), f z := by gcongr
-    _ = ∑ z ∈ (X \ A).image σ, f z := h2
+  have hinj : Set.InjOn σ X := Finset.card_image_iff.mp (by rw [hXimg])
+  have hσAX : A.image σ ⊆ X := hXimg ▸ Finset.image_subset_image hAX
+  have hcard : (A.image σ).card = A.card := Finset.card_image_of_injOn (hinj.mono hAX)
+  -- the image of `X \ A` is `X \ σ(A)`; it differs from `X \ A` by trading `σ(A) \ A`, which
+  -- lies in `X \ A`, for `A \ σ(A)`, which lies in `A`
+  rw [Finset.image_sdiff_of_injOn hinj hAX, hXimg]
+  have hlt' :
+      ∑ z ∈ (X \ A) \ (X \ A.image σ), f z < ∑ z ∈ (X \ A.image σ) \ (X \ A), f z := by
+    rw [sdiff_sdiff_sdiff_cancel_left hσAX, sdiff_sdiff_sdiff_cancel_left hAX]
+    exact sum_lt_sum_of_forall_lt f f (Finset.card_sdiff_comm hcard)
+      (Finset.sdiff_nonempty.mpr fun h => himg (Finset.eq_of_subset_of_card_le h hcard.le).symm)
+      fun a ha b hb =>
+        hlt a (Finset.mem_sdiff.mp ha).1 b (Finset.sdiff_subset_sdiff hσAX le_rfl hb)
+  -- the two sums agree on the common part, so comparing the differences compares them
+  rw [← Finset.sum_sdiff (Finset.inter_subset_left (s₁ := X \ A) (s₂ := X \ A.image σ)),
+    ← Finset.sum_sdiff (Finset.inter_subset_right (s₁ := X \ A) (s₂ := X \ A.image σ)),
+    Finset.sdiff_inter_self_left, Finset.sdiff_inter_self_right]
+  exact add_lt_add_left hlt' _
 
 end TauCeti
