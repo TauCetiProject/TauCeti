@@ -151,11 +151,15 @@ theorem ballPoissonIntegral_def (g : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 �
         ∂volume.toSphere := by
   rw [ballPoissonIntegral]
 
-/-- The Poisson integral of non-integrable boundary data is the junk value zero off the sphere,
-because the Poisson kernel with a pole off the sphere is continuous and nowhere zero there. -/
+/-- The Poisson integral of non-integrable boundary data is the junk value zero.  On the sphere
+the kernel vanishes; off the sphere the kernel is continuous and nowhere zero, so the integrand is
+not integrable either. -/
+@[simp]
 theorem ballPoissonIntegral_eq_zero_of_not_integrable
     {g : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 → ℝ} (hg : ¬Integrable g volume.toSphere)
-    {x : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ ≠ 1) : ballPoissonIntegral g x = 0 := by
+    (x : EuclideanSpace ℝ (Fin n)) : ballPoissonIntegral g x = 0 := by
+  by_cases hx : ‖x‖ = 1
+  · simp [ballPoissonIntegral_def, ballPoissonKernel_def, hx]
   refine integral_undef fun hint ↦ hg ?_
   have hK := continuous_ballPoissonKernel_on_sphere x hx
   have hne (y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1) : ballPoissonKernel n x y ≠ 0 := by
@@ -180,12 +184,9 @@ theorem harmonicOnNhd_ballPoissonIntegral {g : sphere (0 : EuclideanSpace ℝ (F
     HarmonicOnNhd (ballPoissonIntegral g) (sphere (0 : EuclideanSpace ℝ (Fin n)) 1)ᶜ := by
   by_cases hg : Integrable g volume.toSphere
   swap
-  · intro x hx
-    have hx1 : ∀ᶠ y in 𝓝 x, y ∈ (sphere (0 : EuclideanSpace ℝ (Fin n)) 1)ᶜ :=
-      isClosed_sphere.isOpen_compl.mem_nhds hx
-    refine (harmonicAt_congr_nhds (f₂ := fun _ ↦ (0 : ℝ)) ?_).2 (harmonicAt_const 0)
-    filter_upwards [hx1] with y hy
-    exact ballPoissonIntegral_eq_zero_of_not_integrable hg (by simpa using hy)
+  · rw [show ballPoissonIntegral g = fun _ ↦ 0 from
+      funext (ballPoissonIntegral_eq_zero_of_not_integrable hg)]
+    exact harmonicOnNhd_const 0
   have hU : ∀ x ∈ (sphere (0 : EuclideanSpace ℝ (Fin n)) 1)ᶜ,
       ∀ y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1, (x, (y : EuclideanSpace ℝ (Fin n))) ∈
         {p : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) | p.1 ≠ p.2} :=
