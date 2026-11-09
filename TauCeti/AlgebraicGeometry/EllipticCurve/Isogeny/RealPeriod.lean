@@ -249,14 +249,16 @@ theorem encard_setOf_eval_div_eq_xCoord_of_mem_range (φ : Isogeny W₁ W₂) {P
   exact ENat.card_congr ((Hom.ofIsogeny φ).pointMapHom.fiberEquivKer Q)
 
 /-- **Off the image of `φ`, the fibre of `x ↦ N(x) / D(x)` is empty.** For a real point `P` of
-`W₂` not of order two and not in `φ(W₁(ℝ))`, no `x` has `Ψ₂Sq₁(x) > 0`, `D(x) ≠ 0` and
+`W₂` not in `φ(W₁(ℝ))`, no `x` has `Ψ₂Sq₁(x) > 0`, `D(x) ≠ 0` and
 `N(x) / D(x) = x(P)`, where `N / D = φ.xRatFunc`. -/
 theorem setOf_eval_div_eq_xCoord_eq_empty_of_notMem_range (φ : Isogeny W₁ W₂) {P : W₂.Point}
-    (hP : -P ≠ P) (hφ : P ∉ (Hom.ofIsogeny φ).pointMapHom.range) :
+    (hφ : P ∉ (Hom.ofIsogeny φ).pointMapHom.range) :
     {x | 0 < W₁.Ψ₂Sq.eval x ∧ φ.xRatFunc.denom.eval x ≠ 0 ∧
         φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x = P.xCoord} = ∅ := by
-  rw [← xCoord_image_preimage_pointMap φ hP, image_eq_empty, eq_empty_iff_forall_notMem]
-  exact fun Q hQ ↦ hφ ⟨Q, (Hom.pointMapHom_apply _ Q).trans hQ⟩
+  refine eq_empty_iff_forall_notMem.2 fun x ⟨hx, hD, hr⟩ ↦ hφ ?_
+  obtain ⟨Q, -, hQ⟩ := exists_pointMap_eq_of_mem_fibre φ
+    (fun h ↦ hφ (by rw [h]; exact zero_mem _)) hx hD hr
+  exact ⟨Q, (Hom.pointMapHom_apply _ Q).trans hQ⟩
 
 /-- Over `x' ≠ 0` the poles of `N / D`, where Lean's `N(x) / 0 = 0`, lie in no fibre. -/
 private theorem inter_preimage_eq_setOf (φ : Isogeny W₁ W₂) {y : ℝ} (hy : y ≠ 0) :
@@ -320,7 +322,7 @@ private theorem encard_inter_preimage_eq_indicator (φ : Isogeny W₁ W₂) {y :
     rw [Point.xCoord_some] at he
     rw [he, indicator_of_mem]
     exact ⟨hy, _, hφ, Point.some_ne_zero h, Point.xCoord_some h⟩
-  · have he := setOf_eval_div_eq_xCoord_eq_empty_of_notMem_range φ hP hφ
+  · have he := setOf_eval_div_eq_xCoord_eq_empty_of_notMem_range φ hφ
     rw [Point.xCoord_some] at he
     rw [he, encard_empty, indicator_of_notMem]
     -- the only other point with abscissa `x'` is `-P`, which is not in the image either
@@ -545,7 +547,9 @@ variable (φ) in
 `Ψ₂Sq₂ > 0` on `(e, ∞)`, every affine real point `P` of `W₂` with `x(P) ≥ e` is the image under
 `φ` of a real point of `W₁`. -/
 theorem mem_range_pointMapHom_of_le_xCoord {e : ℝ} (hpos : ∀ ⦃y⦄, e < y → 0 < W₂.Ψ₂Sq.eval y)
-    {P : W₂.Point} (hP : P ≠ 0) (he : e ≤ P.xCoord) : P ∈ (Hom.ofIsogeny φ).pointMapHom.range := by
+    {P : W₂.Point} (he : e ≤ P.xCoord) : P ∈ (Hom.ofIsogeny φ).pointMapHom.range := by
+  rcases eq_or_ne P 0 with rfl | hP
+  · exact zero_mem _
   obtain ⟨c, hc, -⟩ := φ.existsUnique_pullbackDifferential_invariantDifferential_eq_smul
   obtain ⟨x, hx, hD, hr⟩ := exists_eval_div_eq hc hpos he
   obtain ⟨y, h⟩ := exists_nonsingular_of_nonneg_eval_Ψ₂Sq hx
@@ -587,12 +591,8 @@ private theorem add_mem_range_pointMapHom_of_xCoord_lt {e₁ e₂ e : ℝ} (h₁
     (by rwa [WeierstrassCurve.ψ₂])
   have key := Point.xCoord_add_sub_mul_sub hT hψ h hne
   rw [hc] at key
-  refine mem_range_pointMapHom_of_le_xCoord φ hpos (fun h0 ↦ hne ?_) ?_
-  · -- `P + T = 0` would make `P = -T = T`
-    rw [add_eq_zero_iff_eq_neg, ← (neg_eq_iff_add_eq_zero.mpr
-      ((Point.some_add_self_eq_zero_iff hT).mpr hψ))] at h0
-    simpa using congrArg Point.xCoord h0
-  · nlinarith [mul_pos (sub_pos.2 h₁) (by linarith : (0 : ℝ) < e - e₁)]
+  refine mem_range_pointMapHom_of_le_xCoord φ hpos ?_
+  nlinarith [mul_pos (sub_pos.2 h₁) (by linarith : (0 : ℝ) < e - e₁)]
 
 end Image
 
@@ -626,7 +626,7 @@ private theorem setOf_xCoord_mem_range_eq_Ioi (φ : Isogeny W₁ W₂) {e₁ e�
       exact (hy.trans_eq (by simp [hfac])).false
     simpa using sub_mem (add_mem_range_pointMapHom_of_xCoord_lt φ h₁₂ h₂ hfac hT hψ hP hlt) hPH
   · obtain ⟨y', h⟩ := exists_nonsingular_of_nonneg_eval_Ψ₂Sq (hpos hy).le
-    refine ⟨hpos hy, _, mem_range_pointMapHom_of_le_xCoord φ hpos (Point.some_ne_zero h) ?_,
+    refine ⟨hpos hy, _, mem_range_pointMapHom_of_le_xCoord φ hpos ?_,
       Point.some_ne_zero h, Point.xCoord_some h⟩
     rw [Point.xCoord_some]
     exact (mem_Ioi.mp hy).le
@@ -640,8 +640,8 @@ theorem abs_mul_realPeriod_mul_index_eq_card_ker_mul (φ : Isogeny W₁ W₂) {c
       Nat.card (Hom.ofIsogeny φ).pointMapHom.ker * W₂.realPeriod := by
   set H := (Hom.ofIsogeny φ).pointMapHom.range
   obtain ⟨e, he, hpos⟩ := exists_isRoot_Ψ₂Sq_and_forall_lt_pos_eval W₂
-  have hH (P : W₂.Point) (hP : P ≠ 0) (hle : e ≤ P.xCoord) : P ∈ H :=
-    mem_range_pointMapHom_of_le_xCoord φ hpos hP hle
+  have hH (P : W₂.Point) (hle : e ≤ P.xCoord) : P ∈ H :=
+    mem_range_pointMapHom_of_le_xCoord φ hpos hle
   by_cases hx : ∃ x₀ < e, 0 ≤ W₂.Ψ₂Sq.eval x₀
   swap
   · -- every real point other than `O` lies over `[e, ∞)`
@@ -649,7 +649,7 @@ theorem abs_mul_realPeriod_mul_index_eq_card_ker_mul (φ : Isogeny W₁ W₂) {c
     rcases eq_or_ne P 0 with rfl | hP
     · exact zero_mem H
     obtain ⟨x, y, h, rfl⟩ := Point.exists_eq_some_of_ne_zero hP
-    refine hH _ hP (le_of_not_gt fun hlt ↦ hx ⟨x, ?_,
+    refine hH _ (le_of_not_gt fun hlt ↦ hx ⟨x, ?_,
       exists_equation_iff_nonneg_eval_Ψ₂Sq.mp ⟨y, h.1⟩⟩)
     rwa [Point.xCoord_some] at hlt
   obtain ⟨x₀, hx₀, h₀⟩ := hx
@@ -661,7 +661,7 @@ theorem abs_mul_realPeriod_mul_index_eq_card_ker_mul (φ : Isogeny W₁ W₂) {c
   have hnot (P : W₂.Point) (hP : P ∉ H) : P + .some e₁ t hT ∈ H := by
     have hP0 : P ≠ 0 := fun h ↦ hP (h ▸ zero_mem H)
     exact add_mem_range_pointMapHom_of_xCoord_lt φ h₁₂ h₂ hfac hT hψ hP0
-      (lt_of_not_ge fun hle ↦ hP (hH P hP0 hle))
+      (lt_of_not_ge fun hle ↦ hP (hH P hle))
   by_cases hTH : .some e₁ t hT ∈ H
   · refine abs_mul_realPeriod_mul_index_eq_of_forall_mem φ hc fun P ↦ by_contra fun hP ↦ hP ?_
     simpa only [add_sub_cancel_right] using sub_mem (hnot P hP) hTH
