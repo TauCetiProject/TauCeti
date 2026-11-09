@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.RCLike
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Calculus.Deriv.AffineMap
@@ -16,6 +17,7 @@ import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Topology.Order.Compact
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Mean value estimates
@@ -52,6 +54,12 @@ For a function on the real line with derivative of norm at most `D r ^ (β - 1)`
 where `0 ≤ β ≤ 1`, the increments satisfy `‖u b - u a‖ ≤ 2 D |b - a| a ^ (β - 1)` for `a > 0` and
 `a / 2 ≤ b` (`TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt`).
 
+## Space-time functions vanishing outside a time interval
+
+A function of time and space with derivative bounded by `C` that vanishes outside the time
+interval `(a, b)` is bounded by `C (b - a)`, by the mean value inequality from its value at the
+time `a` (`TauCeti.norm_le_mul_sub_of_forall_notMem_Ioo_eq_zero`).
+
 ## Comparing maps with nearby derivatives
 
 If two maps on a convex set have derivatives within `ε` of a common linear map and agree at a
@@ -59,6 +67,23 @@ point `y`, then by the mean value inequality applied to their difference they st
 `2 ε ‖x - y‖` of each other (`Convex.norm_sub_le_of_norm_hasFDerivWithin_sub_le`).
 This compares a map to a model agreeing with it to first order before splicing them together
 (`TauCeti.Analysis.Calculus.Splice`).
+
+For an antilipschitz parametrization with bounded derivative, an image chord controls the
+parametric chord and its intervening points. A scalar mean value estimate permits bounds on
+individual coordinate derivatives. These estimates are adapted from
+[KLS](https://github.com/human-ai-mathematics/kls-lean), commit
+`65810c73f9dd7945fc646ab484cb19d673f5291d`,
+`formalization/FunctionalInequalities/Analysis/Sard/Disk.lean`.
+
+## Invariance along a direction
+
+Over `ℝ` or `ℂ`, a map whose derivative kills a vector `v` at every point `z + t • v` of the
+segment from `z` to `z + v` (`t` real, `0 ≤ t ≤ 1`) takes the same value at `z` and `z + v`
+(`TauCeti.apply_add_eq_of_fderiv_apply_eq_zero`). Unlike Mathlib's
+`Convex.is_const_of_fderivWithin_eq_zero`, only the derivative in the direction `v` is assumed to
+vanish, so the map need not be constant near the segment. Consequently, if `π` is a continuous
+projection and the derivative of a map kills `ker π` on a ball about `0`, then near `0` the map
+only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`).
 -/
 
 public section
@@ -167,15 +192,16 @@ open Metric in
 /-- The mean value inequality: if `h` fixes `c` and `h - id` has derivative of norm at most `δ` on
 the closed ball of radius `2 r` about `c`, then `h - id` moves points of this ball by at most
 `δ * (2 * r)`. -/
-theorem norm_sub_le_of_norm_fderiv_sub_id_le {c : E} {h : E → E} {r δ : ℝ} (hr : 0 < r)
-    (hδ0 : 0 ≤ δ) (hhc : h c = c)
+theorem norm_sub_le_of_norm_fderiv_sub_id_le {c : E} {h : E → E} {r δ : ℝ}
+    (hhc : h c = c)
     (hhd : ∀ x ∈ closedBall c (2 * r),
       HasFDerivAt (fun y ↦ h y - y) (fderiv ℝ h x - ContinuousLinearMap.id ℝ E) x)
     (hδ : ∀ x ∈ closedBall c (2 * r), ‖fderiv ℝ h x - ContinuousLinearMap.id ℝ E‖ ≤ δ)
     {x : E} (hx : x ∈ closedBall c (2 * r)) : ‖h x - x‖ ≤ δ * (2 * r) := by
+  have hδ0 : 0 ≤ δ := (norm_nonneg _).trans (hδ x hx)
   have := Convex.norm_image_sub_le_of_norm_fderiv_le (fun y hy ↦ (hhd y hy).differentiableAt)
     (fun y hy ↦ (hhd y hy).fderiv ▸ hδ y hy) (convex_closedBall c (2 * r))
-    (mem_closedBall_self (by positivity)) hx
+    (mem_closedBall_self ((dist_nonneg).trans (mem_closedBall.1 hx))) hx
   rw [hhc, sub_self, sub_zero] at this
   exact this.trans (mul_le_mul_of_nonneg_left (mem_closedBall_iff_norm.1 hx) hδ0)
 
@@ -184,10 +210,10 @@ open Real in
 every `r > 0` (`0 ≤ β ≤ 1`), then `‖u b - u a‖ ≤ 2 D |b - a| a^(β - 1)` for `a / 2 ≤ b`. -/
 theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] {u f' : ℝ → F} {β D : ℝ} (hβ₀ : 0 ≤ β) (hβ₁ : β - 1 ≤ 0)
-    (hD : 0 ≤ D)
     (hderiv : ∀ r, 0 < r → HasDerivAt u (f' r) r) (hbound : ∀ r, 0 < r → ‖f' r‖ ≤ D * r ^ (β - 1))
     {a b : ℝ} (ha : 0 < a) (hb : a / 2 ≤ b) : ‖u b - u a‖ ≤ 2 * D * (|b - a| * a ^ (β - 1)) := by
   have ha2 : 0 < a / 2 := half_pos ha
+  have hD : 0 ≤ D := by simpa using (norm_nonneg _).trans (hbound 1 one_pos)
   have hmv := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le (f := u) (s := Ici (a / 2))
     (f' := f') (C := D * (a / 2) ^ (β - 1))
     (fun r hr => (hderiv r (ha2.trans_le hr)).hasDerivWithinAt)
@@ -203,6 +229,85 @@ theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt {F : Type*} [NormedAddCom
   calc ‖u b - u a‖ ≤ D * (a / 2) ^ (β - 1) * |b - a| := hmv
     _ ≤ D * (2 * a ^ (β - 1)) * |b - a| := by gcongr
     _ = _ := by ring
+
+section Direction
+
+variable {𝕂 : Type*} [RCLike 𝕂] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕂 G]
+
+/-- If `g` is differentiable at every point `z + t • v` of the segment from `z` to `z + v`, for
+real `0 ≤ t ≤ 1`, and its derivative kills `v` there, then `g` takes the same value at `z` and at
+`z + v`. -/
+theorem apply_add_eq_of_fderiv_apply_eq_zero {g : F → G} {z v : F}
+    (hg : ∀ t ∈ Set.Icc (0 : ℝ) 1, DifferentiableAt 𝕂 g (z + (t : 𝕂) • v))
+    (hv : ∀ t ∈ Set.Icc (0 : ℝ) 1, fderiv 𝕂 g (z + (t : 𝕂) • v) v = 0) : g (z + v) = g z := by
+  -- The points of the real segment from `0` to `1` in `𝕂` are the real numbers in `[0, 1]`.
+  have hs : ∀ t ∈ segment ℝ (0 : 𝕂) 1, ∃ r ∈ Set.Icc (0 : ℝ) 1, (r : 𝕂) = t := by
+    rintro _ ⟨a, b, ha, hb, hab, rfl⟩
+    refine ⟨b, ⟨hb, ?_⟩, by simp [RCLike.real_smul_eq_coe_mul]⟩
+    linarith
+  -- The restriction of `g` to the line through `z` in direction `v` has zero derivative on this
+  -- segment, which is convex and contains `0` and `1`.
+  have hq : ∀ t ∈ segment ℝ (0 : 𝕂) 1, HasFDerivWithinAt (fun t : 𝕂 ↦ g (z + t • v))
+      ((fderiv 𝕂 g (z + t • v)).comp ((ContinuousLinearMap.id 𝕂 𝕂).smulRight v))
+      (segment ℝ (0 : 𝕂) 1) t := fun t ht ↦ by
+    obtain ⟨r, hr, rfl⟩ := hs t ht
+    exact ((hg r hr).hasFDerivAt.comp (r : 𝕂)
+      ((hasFDerivAt_id _).smul_const v |>.const_add z)).hasFDerivWithinAt
+  have h := (convex_segment (0 : 𝕂) 1).norm_image_sub_le_of_norm_hasFDerivWithin_le hq
+    (C := 0) (fun t ht ↦ by
+      obtain ⟨r, hr, rfl⟩ := hs t ht
+      rw [norm_le_zero_iff]
+      ext
+      simp [hv r hr])
+    (left_mem_segment ℝ (0 : 𝕂) 1) (right_mem_segment ℝ (0 : 𝕂) 1)
+  simpa [sub_eq_zero] using h
+
+/-- Let `π` be a continuous projection of `F`. If `g` is differentiable on the ball of radius `r`
+about `0` and its derivative there kills the kernel of `π`, then `g` only depends on the `π`
+component on the part of that ball where `‖π z‖ + ‖z - π z‖ < r`. -/
+theorem apply_proj_eq_of_fderiv_apply_eq_zero {g : F → G} {π : F →L[𝕂] F}
+    (hπ : IsIdempotentElem π) {r : ℝ} (hg : DifferentiableOn 𝕂 g (Metric.ball 0 r))
+    (hker : ∀ u ∈ Metric.ball (0 : F) r, ∀ v, π v = 0 → fderiv 𝕂 g u v = 0) {z : F}
+    (hz : ‖π z‖ + ‖z - π z‖ < r) : g (π z) = g z := by
+  have hπz : π (z - π z) = 0 := by
+    rw [map_sub, sub_eq_zero]
+    exact congr($hπ z).symm
+  -- The segment from `π z` to `z` stays in the ball.
+  have hball (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) :
+      π z + (t : 𝕂) • (z - π z) ∈ Metric.ball (0 : F) r := by
+    rw [mem_ball_zero_iff]
+    refine (norm_add_le _ _).trans_lt (lt_of_le_of_lt ?_ hz)
+    rw [norm_smul, RCLike.norm_ofReal, abs_of_nonneg ht.1]
+    gcongr
+    exact mul_le_of_le_one_left (norm_nonneg _) ht.2
+  have h := apply_add_eq_of_fderiv_apply_eq_zero (z := π z) (v := z - π z)
+    (fun t ht ↦ hg.differentiableAt (Metric.isOpen_ball.mem_nhds (hball t ht)))
+    (fun t ht ↦ hker _ (hball t ht) _ hπz)
+  rw [add_sub_cancel] at h
+  exact h.symm
+
+end Direction
+
+/-- A function with derivative bounded by `C` that vanishes outside the time interval `(a, b)` is
+bounded by `C * (b - a)`, by the mean value inequality from its value at the time `a`. -/
+theorem norm_le_mul_sub_of_forall_notMem_Ioo_eq_zero {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {a b : ℝ} {φ : ℝ × E → ℝ} (hφd : Differentiable ℝ φ) {C : ℝ}
+    (hC : ∀ q, ‖fderiv ℝ φ q‖ ≤ C) (hzero : ∀ q : ℝ × E, q.1 ∉ Ioo a b → φ q = 0) (hab : a ≤ b)
+    (q : ℝ × E) : ‖φ q‖ ≤ C * (b - a) := by
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
+  by_cases hq : q.1 ∈ Ioo a b
+  · have hq' : q - (a, q.2) = (q.1 - a, 0) := by ext <;> simp
+    have hn : ‖q - (a, q.2)‖ ≤ b - a := by
+      rw [hq', Prod.norm_def, norm_zero, Real.norm_eq_abs, max_eq_left (abs_nonneg _),
+        abs_of_pos (sub_pos.2 hq.1)]
+      linarith [hq.2]
+    have := convex_univ.norm_image_sub_le_of_norm_fderiv_le (fun p _ ↦ hφd p) (fun p _ ↦ hC p)
+      (mem_univ (a, q.2)) (mem_univ q)
+    rw [hzero (a, q.2) (by simp), sub_zero] at this
+    exact this.trans (mul_le_mul_of_nonneg_left hn hC0)
+  · rw [hzero q hq, norm_zero]
+    exact mul_nonneg hC0 (sub_nonneg.2 hab)
 
 end TauCeti
 
@@ -241,3 +346,94 @@ theorem norm_image_sub_le_of_norm_hasDerivWithin_le' {φ : G} {C : ℝ}
   abel
 
 end Convex
+
+/-- A chord in a closed unit ball remains uniformly close in the image to its initial point,
+relative to the image distance to a prescribed intermediate point, if the parametrization
+has bounded derivative and is antilipschitz on the ball. -/
+theorem Differentiable.norm_sub_le_mul_of_segment {P Q : Type*}
+    [NormedAddCommGroup P] [NormedSpace ℝ P] [NormedAddCommGroup Q] [NormedSpace ℝ Q]
+    {φ : P → Q} (hφd : Differentiable ℝ φ) {C κ : ℝ}
+    (hbound : ∀ x ∈ Metric.closedBall (0 : P) 1, ‖fderiv ℝ φ x‖ ≤ C)
+    (hanti : ∀ a ∈ Metric.closedBall (0 : P) 1, ∀ b ∈ Metric.closedBall (0 : P) 1,
+      ‖a - b‖ ≤ κ * ‖φ a - φ b‖)
+    {a b : P} (ha : a ∈ Metric.closedBall (0 : P) 1)
+    (hb : b ∈ Metric.closedBall (0 : P) 1) {s t : ℝ} (hs : s ∈ Set.Icc (0 : ℝ) 1)
+    (ht : t ∈ Set.Icc (0 : ℝ) s) :
+    ‖φ a - φ (a + t • (b - a))‖ ≤ C * κ * ‖φ a - φ (a + s • (b - a))‖ := by
+  have hC : 0 ≤ C := (norm_nonneg _).trans (hbound 0 (by simp))
+  have hsnorm : s * ‖b - a‖ ≤ κ * ‖φ a - φ (a + s • (b - a))‖ := by
+    have h1 := hanti a ha _ ((convex_closedBall (0 : P) 1).add_smul_sub_mem ha hb hs)
+    have heq : a - (a + s • (b - a)) = -(s • (b - a)) := by module
+    simpa only [heq, norm_neg, norm_smul, Real.norm_eq_abs, abs_of_nonneg hs.1] using h1
+  have hconv := convex_closedBall (0 : P) 1
+  have hmv := hconv.norm_image_sub_le_of_norm_hasFDerivWithin_le
+      (fun x _ ↦ (hφd x).hasFDerivAt.hasFDerivWithinAt) hbound ha
+      ((convex_closedBall (0 : P) 1).add_smul_sub_mem ha hb ⟨ht.1, ht.2.trans hs.2⟩)
+  have heq : (a + t • (b - a)) - a = t • (b - a) := by module
+  rw [heq, norm_smul, Real.norm_eq_abs, abs_of_nonneg ht.1] at hmv
+  rw [norm_sub_rev]
+  refine hmv.trans ?_
+  have htnorm : t * ‖b - a‖ ≤ κ * ‖φ a - φ (a + s • (b - a))‖ :=
+    (mul_le_mul_of_nonneg_right ht.2 (norm_nonneg _)).trans hsnorm
+  calc C * (t * ‖b - a‖) ≤ C * (κ * ‖φ a - φ (a + s • (b - a))‖) :=
+        mul_le_mul_of_nonneg_left htnorm hC
+    _ = C * κ * ‖φ a - φ (a + s • (b - a))‖ := by ring
+
+/-- The mean value estimate along a parametrized chord, with bounds on the coordinate
+derivatives of a real-valued function and the derivative of the parametrization. -/
+theorem Differentiable.abs_sub_le_of_basis_bound {P : Type*}
+    [NormedAddCommGroup P] [NormedSpace ℝ P] {n : ℕ}
+    {φ : P → (Fin n → ℝ)} (hφd : Differentiable ℝ φ)
+    {f : (Fin n → ℝ) → ℝ} (hf : Differentiable ℝ f) {C D : ℝ} (hD : 0 ≤ D)
+    (hbound : ∀ x ∈ Metric.closedBall (0 : P) 1, ‖fderiv ℝ φ x‖ ≤ C)
+    {a b : P} (ha : a ∈ Metric.closedBall (0 : P) 1)
+    (hb : b ∈ Metric.closedBall (0 : P) 1) {s : ℝ} (hs : s ∈ Set.Icc (0 : ℝ) 1)
+    (hcoord : ∀ t ∈ Set.Ico (0 : ℝ) s, ∀ j : Fin n,
+      |fderiv ℝ f (φ (a + t • (b - a))) (Pi.single j (1 : ℝ))| ≤ D) :
+    |f (φ (a + s • (b - a))) - f (φ a)| ≤ n * (C * ‖b - a‖) * D * s := by
+  let g : ℝ → ℝ := fun t ↦ f (φ (a + t • (b - a)))
+  let g' : ℝ → ℝ := fun t ↦
+    fderiv ℝ f (φ (a + t • (b - a))) (fderiv ℝ φ (a + t • (b - a)) (b - a))
+  have hcurve (t : ℝ) : HasDerivAt (fun t : ℝ ↦ a + t • (b - a)) (b - a) t := by
+    simpa using ((hasDerivAt_id t).smul_const (b - a)).const_add a
+  have hgd (t : ℝ) : HasDerivAt g (g' t) t :=
+    (hf _).hasFDerivAt.comp_hasDerivAt t
+      ((hφd _).hasFDerivAt.comp_hasDerivAt t (hcurve t))
+  have hderiv : ∀ t ∈ Ico (0 : ℝ) s, ‖g' t‖ ≤ n * (C * ‖b - a‖) * D := by
+    intro t ht
+    have hball := (convex_closedBall (0 : P) 1).add_smul_sub_mem ha hb
+      ⟨ht.1, ht.2.le.trans hs.2⟩
+    have hvnorm : ‖fderiv ℝ φ (a + t • (b - a)) (b - a)‖ ≤ C * ‖b - a‖ :=
+      (ContinuousLinearMap.le_opNorm _ _).trans
+        (mul_le_mul_of_nonneg_right (hbound _ hball) (norm_nonneg _))
+    have hcoord_bound := (fderiv ℝ f (φ (a + t • (b - a)))).abs_apply_le_card_mul_norm
+      (fderiv ℝ φ (a + t • (b - a)) (b - a)) (hcoord t ht)
+    have hscalar : |g' t| ≤ n * ‖fderiv ℝ φ (a + t • (b - a)) (b - a)‖ * D := by
+      simpa only [g', Fintype.card_fin] using hcoord_bound
+    exact hscalar.trans
+      (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left hvnorm (Nat.cast_nonneg n)) hD)
+  have hmain := norm_image_sub_le_of_norm_deriv_le_segment'
+    (fun t _ ↦ (hgd t).hasDerivWithinAt) hderiv s (right_mem_Icc.mpr hs.1)
+  simpa only [g, zero_smul, add_zero, sub_zero, Real.norm_eq_abs] using hmain
+
+namespace ContDiff
+
+open Function
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **Lipschitz bound for a jointly `C¹` family on a box.** If `Γ t s` is `C¹` in `(t, s)`, there is
+a constant `B` such that `‖Γ t₁ s₁ - Γ t₂ s₂‖ ≤ B * max |t₁ - t₂| |s₁ - s₂|` for all `t₁, t₂` in
+`[t₀, t₁']` and all `s₁, s₂` in `[a, b]`. -/
+theorem exists_norm_sub_le_mul_max_uncurry {Γ : ℝ → ℝ → E} (hΓ : ContDiff ℝ 1 (uncurry Γ))
+    (t₀ t₀' a b : ℝ) :
+    ∃ B : NNReal, ∀ ⦃x₁ y₁ x₂ y₂ : ℝ⦄, x₁ ∈ Icc t₀ t₀' → y₁ ∈ Icc a b → x₂ ∈ Icc t₀ t₀' →
+      y₂ ∈ Icc a b → ‖Γ x₁ y₁ - Γ x₂ y₂‖ ≤ B * max |x₁ - x₂| |y₁ - y₂| := by
+  have hQc : IsCompact (Icc t₀ t₀' ×ˢ Icc a b) := isCompact_Icc.prod isCompact_Icc
+  have hQv : Convex ℝ (Icc t₀ t₀' ×ˢ Icc a b) := (convex_Icc _ _).prod (convex_Icc _ _)
+  obtain ⟨B, hB⟩ := hΓ.contDiffOn.exists_lipschitzOnWith one_ne_zero hQv hQc
+  refine ⟨B, fun x₁ y₁ x₂ y₂ hx₁ hy₁ hx₂ hy₂ ↦ ?_⟩
+  have := hB.dist_le_mul (x := (x₁, y₁)) (y := (x₂, y₂)) ⟨hx₁, hy₁⟩ ⟨hx₂, hy₂⟩
+  simpa [dist_eq_norm, Prod.dist_eq, Real.dist_eq] using this
+
+end ContDiff

@@ -50,6 +50,10 @@ stages, hence a distribution. This proves **Amice's theorem** for distributions:
 transform is injective (`amiceTransform_injective`) and its range consists exactly of the power
 series converging on the open unit disc (`mem_range_amiceTransform_iff`). Its inverse is
 `ofOnOpenDisc` (`amiceTransform_ofOnOpenDisc`, `ofOnOpenDisc_amiceTransform`).
+Bundled, it is the additive equivalence `amiceTransformEquiv` with the subring
+`PowerSeries.OnOpenDisc.subring K 1`. Since `log (1 + T)` lies on the open unit disc but is not
+the transform of a measure, distributions strictly enlarge the measures
+(`ofOnOpenDisc_log_notMem_range_ofMeasure`).
 
 ## Main definitions
 
@@ -59,6 +63,8 @@ series converging on the open unit disc (`mem_range_amiceTransform_iff`). Its in
   `μ(x ↦ (x choose n))`.
 * `TauCeti.LocallyAnalyticDistribution.ofOnOpenDisc`: the distribution whose moments are the
   coefficients of a power series on the open unit disc, inverse to the Amice transform.
+* `TauCeti.LocallyAnalyticDistribution.amiceTransformEquiv`: the Amice transform as an additive
+  equivalence onto the power series on the open unit disc.
 
 ## Main results
 
@@ -339,7 +345,41 @@ theorem mem_range_amiceTransform_iff {F : PowerSeries K} :
   rintro ⟨μ, rfl⟩
   exact onOpenDisc_amiceTransform μ
 
+/-- The Amice bijection between locally analytic distributions and the subring of power series
+on the open unit disc, bundled additively. The forward transform is also `K`-linear. -/
+noncomputable def amiceTransformEquiv :
+    LocallyAnalyticDistribution p K ≃+ PowerSeries.OnOpenDisc.subring K 1 where
+  toFun μ := ⟨amiceTransform μ, PowerSeries.OnOpenDisc.mem_subring.mpr
+    (onOpenDisc_amiceTransform μ)⟩
+  invFun F := ofOnOpenDisc p (PowerSeries.OnOpenDisc.mem_subring.mp F.2)
+  left_inv := ofOnOpenDisc_amiceTransform
+  right_inv F := Subtype.ext (amiceTransform_ofOnOpenDisc p
+    (PowerSeries.OnOpenDisc.mem_subring.mp F.2))
+  map_add' μ ν := Subtype.ext (map_add amiceTransform μ ν)
+
+/-- The bijection has the Amice transform as its underlying power series. -/
+@[simp]
+theorem coe_amiceTransformEquiv (μ : LocallyAnalyticDistribution p K) :
+    (amiceTransformEquiv μ : PowerSeries K) = amiceTransform μ := (rfl)
+
+/-- The inverse bijection constructs the distribution from the given open-disc series. -/
+@[simp]
+theorem amiceTransformEquiv_symm_apply (F : PowerSeries.OnOpenDisc.subring K 1) :
+    amiceTransformEquiv.symm F =
+      ofOnOpenDisc p (PowerSeries.OnOpenDisc.mem_subring.mp F.2) := (rfl)
+
 end NormedAlgebra
+
+/-- The logarithm `log (1 + T)` is the Amice transform of a distribution which is not induced by
+a continuous measure. Thus passing from measures to distributions strictly enlarges the range of
+the transform. -/
+theorem ofOnOpenDisc_log_notMem_range_ofMeasure :
+    ofOnOpenDisc p (PowerSeries.onOpenDisc_log (K := ℚ_[p])) ∉
+      LinearMap.range (ofMeasure (p := p) (K := ℚ_[p])) := by
+  rintro ⟨μ, hμ⟩
+  apply log_notMem_range_amiceTransform (p := p)
+  refine ⟨μ, ?_⟩
+  rw [← amiceTransform_ofMeasure, hμ, amiceTransform_ofOnOpenDisc]
 
 end LocallyAnalyticDistribution
 
