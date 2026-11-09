@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.Semisimple.Defs
 public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Sl2.Basic
+public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 
 /-!
 # The weight string of a primitive vector for an `sl₂` triple
@@ -30,7 +31,8 @@ basis, and `M` is the standard `(n+1)`-dimensional irreducible `V(n)`. The span 
 over any commutative coefficient ring. Over a domain of characteristic zero the string of a
 torsion-free module is linearly independent. Mathlib's endpoint statements ask the module to be
 Noetherian for the string to stop; in a module irreducible over the subalgebra of the triple the
-string stops by irreducibility alone (`TauCeti.pow_toEnd_f_add_one_eq_zero_of_isIrreducible`), so
+string stops by irreducibility alone
+(`IsSl2Triple.HasPrimitiveVectorWith.pow_toEnd_f_add_one_eq_zero_of_isIrreducible`), so
 the ladder basis, the dimension and the classification need no Noetherian hypothesis: the finite
 dimension of `V(n)` is a conclusion, not an assumption.
 
@@ -69,9 +71,9 @@ Mathlib's `IsSl2Triple.HasPrimitiveVectorWith.lie_e_pow_succ_toEnd_f`.
 * `TauCeti.linearIndependent_pow_toEnd_f`: the `n + 1` vectors of the string are linearly
   independent, being eigenvectors of `h` for the distinct eigenvalues `n, n - 2, …, -n`.
 * `TauCeti.weightStringSubmodule_eq_top`: a primitive vector of an irreducible module generates it.
-* `TauCeti.pow_toEnd_f_add_one_eq_zero_of_isIrreducible`: in an irreducible module the string of
-  a primitive vector of weight `n : ℕ` stops at step `n + 1` without any Noetherian hypothesis,
-  because a nonzero vector there would be primitive of a weight that is not a natural number.
+* `IsSl2Triple.HasPrimitiveVectorWith.pow_toEnd_f_add_one_eq_zero_of_isIrreducible`: in an
+  irreducible module the string of a primitive vector of weight `n : ℕ` stops at step `n + 1`
+  without any Noetherian hypothesis, which gives the finite ladder basis.
 * `TauCeti.pow_toEnd_e_pow_toEnd_f_self` and `TauCeti.pow_toEnd_e_pow_toEnd_f_eq_zero`: raising a
   string vector back up returns a multiple of the primitive vector, with the explicit ladder
   coefficient, and raising it further gives zero.
@@ -236,19 +238,6 @@ theorem weightStringSubmodule_eq_top [LieModule.IsIrreducible K (t.toLieSubalgeb
     (P : t.HasPrimitiveVectorWith m μ) : weightStringSubmodule P = ⊤ :=
   LieSubmodule.eq_top_of_isIrreducible _ _ _ _
 
-/-- A string `m, f • m, f² • m, …` vanishing at step `n + 1` may be truncated to its first `n + 1`
-positions without changing its span. -/
-theorem span_range_pow_toEnd_f_eq_span_range_fin {n : ℕ} (h0 : (toEnd K L M f ^ (n + 1)) m = 0) :
-    Submodule.span K (Set.range fun i : ℕ ↦ (toEnd K L M f ^ i) m) =
-      Submodule.span K (Set.range fun i : Fin (n + 1) ↦ (toEnd K L M f ^ (i : ℕ)) m) := by
-  refine le_antisymm (Submodule.span_le.2 ?_) (Submodule.span_le.2 ?_)
-  · rintro _ ⟨i, rfl⟩
-    rcases le_or_gt i n with hi | hi
-    · exact Submodule.subset_span ⟨⟨i, by omega⟩, rfl⟩
-    · simp [Module.End.pow_map_zero_of_le hi h0]
-  · rintro _ ⟨i, rfl⟩
-    exact Submodule.subset_span ⟨(i : ℕ), rfl⟩
-
 /-! ### Climbing back up the string -/
 
 /-- **Raising a string vector back to the top.** Applying the raising operator `j` times to the
@@ -361,12 +350,14 @@ variable [LieModule.IsIrreducible K (t.toLieSubalgebra K) M]
 
 /-- **Irreducibility ends the string.** In a module irreducible over the subalgebra of the triple,
 the weight string of a primitive vector of weight `n : ℕ` vanishes at step `n + 1`, with no
-Noetherian hypothesis: a nonzero `fⁿ⁺¹ • m` would itself be primitive, of weight `-n - 2`, so by
-irreducibility its own string would span `M` and contain `m`; but `m` is an eigenvector of `h` for
-the eigenvalue `n`, while that string lies in the eigenspaces of the eigenvalues
-`-n - 2, -n - 4, …`, and eigenspaces for distinct eigenvalues are independent. -/
-theorem pow_toEnd_f_add_one_eq_zero_of_isIrreducible (P : t.HasPrimitiveVectorWith m (n : K)) :
-    (toEnd K L M f ^ (n + 1)) m = 0 := by
+Noetherian hypothesis. This gives the finite ladder basis, and hence the dimension of `V(n)`,
+without assuming that the module is Noetherian. -/
+theorem _root_.IsSl2Triple.HasPrimitiveVectorWith.pow_toEnd_f_add_one_eq_zero_of_isIrreducible
+    (P : t.HasPrimitiveVectorWith m (n : K)) : (toEnd K L M f ^ (n + 1)) m = 0 := by
+  -- A nonzero `fⁿ⁺¹ • m` would itself be primitive, of weight `-n - 2`, so by irreducibility its
+  -- own string would span `M` and contain `m`. But `m` is an eigenvector of `h` for the
+  -- eigenvalue `n`, while that string lies in the eigenspaces of the eigenvalues
+  -- `-n - 2, -n - 4, …`, and eigenspaces for distinct eigenvalues are independent.
   by_contra hy
   set y := (toEnd K L M f ^ (n + 1)) m with hy_def
   have Py : t.HasPrimitiveVectorWith y ((n : K) - 2 * ((n + 1 : ℕ) : K)) :=
@@ -397,9 +388,10 @@ theorem pow_toEnd_f_add_one_eq_zero_of_isIrreducible (P : t.HasPrimitiveVectorWi
 /-- The weight string of a primitive vector of weight `n : ℕ` in an irreducible module stops after
 `n` steps. This is `TauCeti.pow_toEnd_f_eq_zero_of_lt` with irreducibility over the subalgebra of
 the triple in place of the Noetherian hypothesis. -/
-theorem pow_toEnd_f_eq_zero_of_lt_of_isIrreducible (P : t.HasPrimitiveVectorWith m (n : K))
-    {i : ℕ} (hi : n < i) : (toEnd K L M f ^ i) m = 0 :=
-  Module.End.pow_map_zero_of_le hi (pow_toEnd_f_add_one_eq_zero_of_isIrreducible P)
+theorem _root_.IsSl2Triple.HasPrimitiveVectorWith.pow_toEnd_f_eq_zero_of_lt_of_isIrreducible
+    (P : t.HasPrimitiveVectorWith m (n : K)) {i : ℕ} (hi : n < i) :
+    (toEnd K L M f ^ i) m = 0 :=
+  Module.End.pow_map_zero_of_le hi P.pow_toEnd_f_add_one_eq_zero_of_isIrreducible
 
 /-! ### The ladder basis and the dimension of `V(n)` -/
 
@@ -407,7 +399,8 @@ theorem pow_toEnd_f_eq_zero_of_lt_of_isIrreducible (P : t.HasPrimitiveVectorWith
 family indexed by the `n + 1` positions of the string. -/
 theorem span_range_pow_toEnd_f_eq_top (P : t.HasPrimitiveVectorWith m (n : K)) :
     Submodule.span K (Set.range fun i : Fin (n + 1) ↦ (toEnd K L M f ^ (i : ℕ)) m) = ⊤ := by
-  rw [← span_range_pow_toEnd_f_eq_span_range_fin (pow_toEnd_f_add_one_eq_zero_of_isIrreducible P),
+  rw [← Module.End.span_range_pow_apply_eq_span_range_fin _
+      P.pow_toEnd_f_add_one_eq_zero_of_isIrreducible,
     ← weightStringSubmodule_toSubmodule P, weightStringSubmodule_eq_top P]
   simp
 
@@ -452,7 +445,7 @@ theorem lie_f_basisOfHasPrimitiveVectorWith (P : t.HasPrimitiveVectorWith m (n :
 theorem lie_f_basisOfHasPrimitiveVectorWith_last (P : t.HasPrimitiveVectorWith m (n : K)) :
     ⁅f, basisOfHasPrimitiveVectorWith P (Fin.last n)⁆ = 0 := by
   rw [basisOfHasPrimitiveVectorWith_apply, P.lie_f_pow_toEnd_f]
-  exact pow_toEnd_f_eq_zero_of_lt_of_isIrreducible P (by simp)
+  exact P.pow_toEnd_f_eq_zero_of_lt_of_isIrreducible (by simp)
 
 /-- On the ladder basis, `e` is the raising operator, moving one step up the string with the
 Casimir-type coefficient `(i + 1)(n - i)`. -/
@@ -498,8 +491,8 @@ private theorem linearEquivOfHasPrimitiveVectorWith_apply_pow_toEnd_f
   · simpa [linearEquivOfHasPrimitiveVectorWith] using
       Basis.equiv_apply (basisOfHasPrimitiveVectorWith P) ⟨i, by omega⟩
         (basisOfHasPrimitiveVectorWith P') (Equiv.refl (Fin (n + 1)))
-  · rw [pow_toEnd_f_eq_zero_of_lt_of_isIrreducible P hi,
-      pow_toEnd_f_eq_zero_of_lt_of_isIrreducible P' hi, map_zero]
+  · rw [P.pow_toEnd_f_eq_zero_of_lt_of_isIrreducible hi,
+      P'.pow_toEnd_f_eq_zero_of_lt_of_isIrreducible hi, map_zero]
 
 /-- **The highest weight determines the irreducible.** Two modules irreducible over the subalgebra
 of an `sl₂` triple, each carrying a primitive vector of the same weight `n`, are equivalent as
