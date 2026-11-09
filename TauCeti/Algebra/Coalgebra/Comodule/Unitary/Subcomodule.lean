@@ -74,9 +74,7 @@ theorem IsUnitary.of_isometry (hN : IsUnitary 𝕜 A N) (f : Hom 𝕜 A M N)
           _ = 1 := by rw [hv, Matrix.mul_one, hT]
   have hS : uᴴ = u.map (HopfAlgebra.antipode 𝕜) :=
     left_inv_eq_right_inv hleft (coefficientMatrix_mul_map_antipode b.toBasis)
-  rw [b.isUnitary_comodule_iff, Unitary.mem_iff, Matrix.star_eq_conjTranspose, hS]
-  exact ⟨map_antipode_mul_coefficientMatrix b.toBasis,
-    coefficientMatrix_mul_map_antipode b.toBasis⟩
+  exact b.isUnitary_comodule_iff_map_antipode_eq_conjTranspose.mpr hS.symm
 
 end TauCeti.Comodule
 
@@ -92,9 +90,7 @@ inner product. -/
 theorem isUnitary (W : Subcomodule 𝕜 A M) (hM : Comodule.IsUnitary 𝕜 A M) :
     Comodule.IsUnitary 𝕜 A W := by
   apply hM.of_isometry W.subtype
-  have h : (W.subtype : W → M) = Subtype.val := funext W.subtype_apply
-  rw [h]
-  exact isometry_subtype_coe
+  simpa only [← Comodule.Hom.coe_toLinearMap, subtype_toLinearMap] using W.isometry_subtype
 
 /-- The orthogonal complement of a subcomodule of a finite unitary Hopf comodule,
 with its inherited coaction. -/
@@ -109,17 +105,15 @@ theorem unitaryOrthogonal_toSubmodule (W : Subcomodule 𝕜 A M)
     (hM : Comodule.IsUnitary 𝕜 A M) :
     (W.unitaryOrthogonal hM).toSubmodule = W.toSubmoduleᗮ := by
   rw [unitaryOrthogonal, Comodule.Hom.ker_toSubmodule, Comodule.Hom.adjoint_toLinearMap,
-    ← LinearMap.orthogonal_range, subtype_toLinearMap]
-  congr 1
-  exact Submodule.range_subtype _
+    ← LinearMap.orthogonal_range, range_subtype_toLinearMap]
 
 /-- Membership in the orthogonal subcomodule is orthogonality to every vector of the
 original subcomodule. -/
 @[simp]
 theorem mem_unitaryOrthogonal (W : Subcomodule 𝕜 A M) (hM : Comodule.IsUnitary 𝕜 A M)
     (x : M) : x ∈ W.unitaryOrthogonal hM ↔ ∀ w ∈ W, inner 𝕜 w x = 0 := by
-  rw [← mem_toSubmodule, unitaryOrthogonal_toSubmodule]
-  exact Submodule.mem_orthogonal _ _
+  rw [← mem_toSubmodule, unitaryOrthogonal_toSubmodule, Submodule.mem_orthogonal]
+  simp only [mem_toSubmodule]
 
 /-- A subcomodule and its orthogonal complement are complementary as submodules. -/
 theorem isCompl_unitaryOrthogonal (W : Subcomodule 𝕜 A M)

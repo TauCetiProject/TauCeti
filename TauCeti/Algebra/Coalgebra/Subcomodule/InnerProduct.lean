@@ -32,4 +32,15 @@ instance (W : Subcomodule 𝕜 A M) : InnerProductSpace 𝕜 W :=
 theorem coe_inner (W : Subcomodule 𝕜 A M) (x y : W) :
     inner 𝕜 x y = inner 𝕜 (x : M) (y : M) := (rfl)
 
+/-- The inherited norm agrees with the ambient norm. -/
+@[simp ←, norm_cast]
+theorem norm_coe (W : Subcomodule 𝕜 A M) (x : W) : ‖(x : M)‖ = ‖x‖ := by
+  rw [norm_eq_sqrt_re_inner (𝕜 := 𝕜), norm_eq_sqrt_re_inner (𝕜 := 𝕜), coe_inner]
+
+/-- The subcomodule inclusion preserves distances for the inherited inner product. -/
+theorem isometry_subtype (W : Subcomodule 𝕜 A M) : Isometry (SMulMemClass.subtype W) := by
+  apply (AddMonoidHomClass.isometry_iff_norm (SMulMemClass.subtype W)).mpr
+  intro x
+  rw [SMulMemClass.subtype_apply, norm_coe]
+
 end TauCeti.Subcomodule
