@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Character
 public import Mathlib.RepresentationTheory.Intertwining
+public import TauCeti.Algebra.MonoidAlgebra.CharacterTwist
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 
 /-!
@@ -59,6 +60,8 @@ representation need neither.
   irreducible**, and conversely.
 * `Representation.char_charTwist`: the trace character of the twist is `χ` times the character
   of `ρ`.
+* `Representation.asAlgebraHom_charTwist`: on the group algebra, the twist acts through the
+  algebra automorphism `MonoidAlgebra.charTwist χ` of `k[G]`.
 
 ## References
 
@@ -119,6 +122,12 @@ theorem charTwist_trivial (χ : G →* kˣ) :
     charTwist χ (trivial k G k) = ofLinearCharacter χ :=
   MonoidHom.ext fun _ => LinearMap.ext fun x => by
     simp [ofLinearCharacter_apply, smul_eq_mul]
+
+/-- On the group algebra, the twist of `ρ` by `χ` acts through the twist of `k[G]` by `χ`: an
+element `x : k[G]` acts on `charTwist χ ρ` as `MonoidAlgebra.charTwist χ x` acts on `ρ`. -/
+theorem asAlgebraHom_charTwist (χ : G →* kˣ) (ρ : Representation k G V) :
+    (charTwist χ ρ).asAlgebraHom = ρ.asAlgebraHom.comp (MonoidAlgebra.charTwist χ).toAlgHom :=
+  MonoidAlgebra.algHom_ext (fun g ↦ by simp) (AlgHom.ext fun a ↦ by simp)
 
 /-- A submodule stable under `ρ` is stable under any twist of `ρ`. -/
 theorem charTwist_apply_mem_of_apply_mem {χ : G →* kˣ} {ρ : Representation k G V}

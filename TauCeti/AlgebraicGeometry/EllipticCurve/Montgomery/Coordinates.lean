@@ -270,7 +270,8 @@ theorem exists_two_mul_abs_sub_mul_le_and_cross_coordinates_eq_zero (hB : B ≠ 
     {Q : (model A B).toAffine.Point} {q : ℤ} (hq : q • Q = 0) {w : ℤ} (hw : 0 < w) :
     ∃ i : ℤ, 2 * |q - i * w| ≤ w ∧
       (coordinates A B ((i * w) • Q)).cross (coordinates A B (|q - i * w| • Q)) = 0 := by
-  obtain ⟨i, hi⟩ := Int.exists_two_mul_abs_sub_mul_le q hw
+  obtain ⟨i, hi⟩ := Int.exists_two_mul_abs_sub_mul_le q hw.ne'
+  rw [abs_of_pos hw] at hi
   refine ⟨i, hi, cross_coordinates_zsmul_eq_zero_of_zsmul_eq_zero hB hq ?_⟩
   rcases abs_choice (q - i * w) with h | h <;> rw [h]
   exacts [.inl (by ring), .inr (by ring)]

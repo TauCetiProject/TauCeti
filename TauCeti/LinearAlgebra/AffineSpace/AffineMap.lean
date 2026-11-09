@@ -13,10 +13,12 @@ import Mathlib.Tactic.Ring
 /-!
 # Affine maps and line maps
 
-Computations and affine-subspace avoidance for `AffineMap.lineMap`.
+Affine-map uniqueness, line-map computations, and affine-subspace avoidance.
 
 ## Main results
 
+* `AffineMap.ext_of_ne`: affine maps from a division ring that agree at two distinct points are
+  equal.
 * `AffineMap.apply_eq_add_mul_sub`: an affine function on the line is
   `s ↦ f 0 + s * (f 1 - f 0)`.
 * `AffineMap.lineMap_vsub_lineMap_eq_vsub_add_smul_sub_smul`: the difference of points on two
@@ -30,6 +32,16 @@ Source: https://github.com/yuma-mizuno-lean/Mei/blob/7f1e4c7714fb020473694755ad8
 public section
 
 namespace AffineMap
+
+/-- Affine maps from a division ring that agree at two distinct points are equal. -/
+theorem ext_of_ne {k V P : Type*} [DivisionRing k] [AddCommGroup V] [Module k V]
+    [AddTorsor V P] {f g : k →ᵃ[k] P} {a b : k} (hab : a ≠ b) (ha : f a = g a)
+    (hb : f b = g b) : f = g := by
+  ext c
+  have hc : c = lineMap a b ((c - a) / (b - a)) := by
+    rw [lineMap_apply_ring', div_mul_cancel₀ _ (sub_ne_zero.mpr hab.symm)]
+    exact (sub_add_cancel c a).symm
+  rw [hc, f.apply_lineMap, g.apply_lineMap, ha, hb]
 
 /-- An affine function on the line is determined by its values at `0` and `1`. -/
 theorem apply_eq_add_mul_sub {k : Type*} [CommRing k] (f : k →ᵃ[k] k) (s : k) :

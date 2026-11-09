@@ -20,6 +20,9 @@ with a nonempty bounded open interval (`Set.OrdConnected.exists_ae_eq_Ioo`): fin
 bounds it, and it lies between the open and the closed interval spanned by its infimum and
 supremum.
 
+Pulling real Lebesgue measure on `(0,T]` back to `ℝ≥0` commutes with restriction,
+and the resulting finite-horizon measure has total mass `T`.
+
 On a finite coordinate space `ι → ℝ`, permuting the coordinates and changing their signs
 preserves Lebesgue measure (`TauCeti.volume_preserving_signedPerm`).
 -/
@@ -27,7 +30,26 @@ preserves Lebesgue measure (`TauCeti.volume_preserving_signedPerm`).
 public section
 
 open MeasureTheory Set
-open scoped ENNReal
+open scoped ENNReal NNReal
+
+namespace NNReal
+
+/-- Pulling Lebesgue measure on `(0,T]` back to `ℝ≥0` is the restriction of its pullback. -/
+theorem comap_volume_restrict_Ioc (T : ℝ≥0) :
+    (volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ) =
+      (volume.comap ((↑) : ℝ≥0 → ℝ)).restrict (Ioc 0 T) := by
+  rw [NNReal.isClosedEmbedding_coe.measurableEmbedding.comap_restrict]
+  -- The preimage is definitionally `Ioc 0 T`: the order on `ℝ≥0` is inherited from `ℝ`.
+  congr 1
+
+/-- The pullback of Lebesgue measure on `(0,T]` to `ℝ≥0` has total mass `T`. -/
+theorem comap_volume_restrict_Ioc_univ (T : ℝ≥0) :
+    (volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ) univ = T := by
+  rw [comap_volume_restrict_Ioc, Measure.restrict_apply_univ,
+    NNReal.isClosedEmbedding_coe.measurableEmbedding.comap_apply]
+  simp
+
+end NNReal
 
 namespace TauCeti
 
