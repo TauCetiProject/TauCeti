@@ -26,7 +26,7 @@ is imposed on `M`.
 Right exactness of tensor product gives middle exactness and surjectivity over any complete
 ultrametric normed ring. For affinoids, flatness of the overlap algebra also preserves
 injectivity of the augmentation. In particular gluing holds for infinitely generated and
-nonflat modules, as well as for modules detecting nilpotents.
+nonflat modules, including quotient modules `A ⧸ I`.
 
 ## References
 
@@ -104,8 +104,8 @@ theorem moduleDiff_natural {N : Type*} [AddCommGroup N] [Module A N]
 
 variable [CompleteSpace A]
 
-/-- Tensoring the scalar Laurent sequence gives exactness at the pair of module sections.
-The module need not be flat or finite. -/
+/-- The kernel of the module Laurent differential is exactly the image of the module
+augmentation; `M` need not be flat or finite. -/
 theorem exact_moduleAugmentation_moduleDiff (f : A) :
     Function.Exact (moduleAugmentation M f) (moduleDiff M f) := by
   apply Function.Exact.of_ladder_linearEquiv_of_exact
@@ -117,11 +117,10 @@ theorem exact_moduleAugmentation_moduleDiff (f : A) :
 
 /-- Every module section on the Laurent overlap is a difference of restrictions. -/
 theorem moduleDiff_surjective (f : A) : Function.Surjective (moduleDiff M f) := by
-  have h := LinearMap.rTensor_surjective M (diff_surjective f)
-  intro w
-  obtain ⟨z, hz⟩ := h w
-  refine ⟨TensorProduct.prodLeft A A (L(f)) (G(f)) M z, ?_⟩
-  exact (LinearMap.congr_fun (moduleDiff_prodLeft M f) z).trans hz
+  apply Function.Surjective.of_comp
+    (g := TensorProduct.prodLeft A A (L(f)) (G(f)) M)
+  rw [← LinearEquiv.coe_coe, ← LinearMap.coe_comp, moduleDiff_prodLeft]
+  exact LinearMap.rTensor_surjective M (diff_surjective f)
 
 section Affinoid
 
@@ -139,21 +138,10 @@ theorem moduleAugmentation_injective (f : A) :
   let α := Algebra.linearMap A (L(f) × G(f))
   have hi := LinearMap.lTensor_injective_of_exact_of_flat (diff f) (diff_surjective f)
     α (algebraMap_injective hA f) (exact_algebraMap_diff f) M
-  have hr : Function.Injective (α.rTensor M) := by
-    intro x y hxy
-    apply (TensorProduct.comm A A M).injective
-    apply hi
-    rw [LinearMap.lTensor_comm, LinearMap.lTensor_comm]
-    exact congrArg (TensorProduct.comm A (L(f) × G(f)) M) hxy
-  intro m n hmn
-  apply (TensorProduct.lid A M).symm.injective
-  apply hr
-  apply (TensorProduct.prodLeft A A (L(f)) (G(f)) M).injective
-  have he (x : M) := LinearMap.congr_fun (moduleAugmentation_lid M f)
-    ((TensorProduct.lid A M).symm x)
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.apply_symm_apply] at he
-  exact (he m).symm.trans (hmn.trans (he n))
+  have hr := (α.lTensor_inj_iff_rTensor_inj M).mp hi
+  apply (EquivLike.injective_comp (TensorProduct.lid A M) _).mp
+  rw [← LinearEquiv.coe_coe, ← LinearMap.coe_comp, moduleAugmentation_lid]
+  exact (TensorProduct.prodLeft A A (L(f)) (G(f)) M).injective.comp hr
 
 include hA in
 /-- Compatible algebraic module sections on the two Laurent pieces glue uniquely. -/

@@ -11,8 +11,9 @@ public import TauCeti.AlgebraicGeometry.Rigid.Affinoid.LaurentCover.Module
 # Algebraic module checks for the Laurent cover
 
 Exercise module gluing on the countable free module and on arbitrary quotient modules.
-These do not require a Banach norm or flatness of the module. A nonzero finitely supported
-vector remains detectable on the cover, and module maps preserve the augmentation.
+These do not require a Banach norm or flatness of the module. A nonzero single-coordinate
+vector `Finsupp.single i a` remains detectable on the cover, and module maps preserve the
+augmentation.
 -/
 
 public section
@@ -39,7 +40,8 @@ example (u : L ⊗[A] (ℕ →₀ A)) (v : G ⊗[A] (ℕ →₀ A))
   existsUnique_module_gluing _ hA f u v h
 
 include hA in
-/-- A nonzero basis vector in the countable free module is detected by Laurent restrictions. -/
+/-- A nonzero multiple of a basis vector in the countable free module is detected by
+Laurent restrictions. -/
 theorem augmentation_single_ne_zero (i : ℕ) (a : A) (ha : a ≠ 0) :
     moduleAugmentation (ℕ →₀ A) f (Finsupp.single i a) ≠ 0 := by
   intro h
