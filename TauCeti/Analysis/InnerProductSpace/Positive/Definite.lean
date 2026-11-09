@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Spectrum
 public import Mathlib.LinearAlgebra.Basis.SMul
 import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
+import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
 
 /-!
 # A positive-definite form is the standard one in suitable coordinates
@@ -179,13 +180,10 @@ theorem _root_.ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_
         div_self (norm_ne_zero_iff.2 hRν), one_smul]
     rw [hadj]
     exact (congrArg O hRw).trans (by rw [map_smul, hOw])
-  · -- `λ ‖y‖² ≤ ‖R (O y)‖² = ‖e y‖²`, applied to `y = e⁻¹ x`
-    have h := hRn (O (e.symm x))
-    rw [← he, e.apply_symm_apply, O.norm_map] at h
-    rw [inv_mul_eq_div, le_div_iff₀ (Real.sqrt_pos.2 hlam)]
-    refine (pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero).1 ?_
-    rw [mul_pow, Real.sq_sqrt hlam.le, mul_comm]
-    exact h
+  · -- `λ ‖y‖² ≤ ‖R (O y)‖² = ‖e y‖²`
+    refine e.norm_symm_apply_le_inv_sqrt_mul_norm hlam (fun y => ?_) x
+    have h := hRn (O y)
+    rwa [← he, O.norm_map] at h
 
 end Real
 
