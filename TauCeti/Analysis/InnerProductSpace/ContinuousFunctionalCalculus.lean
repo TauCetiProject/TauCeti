@@ -8,10 +8,12 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
+public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Subalgebra
 public import TauCeti.Analysis.InnerProductSpace.Complexification
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.RealImaginaryPart
 
 /-!
@@ -268,6 +270,35 @@ theorem restrictScalars_cfc (f : ℝ → ℝ) (T : E →L[𝕜] E)
 attribute [instance] instStarOrderedRingRCLike
 
 end RCLike
+
+/-- Adding a nonnegative operator to a strictly positive real Hilbert space operator preserves
+strict positivity. -/
+theorem _root_.IsStrictlyPositive.add_nonneg_real {S T : X →L[ℝ] X}
+    (hS : IsStrictlyPositive S) (hT : 0 ≤ T) : IsStrictlyPositive (S + T) := by
+  have hp : 0 ≤ S + T := add_nonneg hS.nonneg hT
+  -- Mathlib supplies the addition result for complex C⋆-algebras; complexification preserves
+  -- the spectrum of a self-adjoint real operator, hence also its invertibility.
+  let Φ := complexifyL2StarAlgHom X
+  have hΦ : IsStrictlyPositive (Φ (S + T)) := by
+    rw [map_add]
+    exact (hS.isUnit.map Φ |>.isStrictlyPositive (map_nonneg Φ hS.nonneg)).add_nonneg
+      (map_nonneg Φ hT)
+  refine IsStrictlyPositive.iff_of_unital.mpr ⟨hp, ?_⟩
+  rw [← spectrum.zero_notMem_iff ℝ, ← spectrum_complexifyL2 hp.isSelfAdjoint]
+  simpa only [Φ, complexifyL2StarAlgHom_apply] using
+    (spectrum.zero_notMem_iff ℝ).mpr hΦ.isUnit
+
+/-- Adding a strictly positive operator to a nonnegative real Hilbert space operator preserves
+strict positivity. -/
+theorem _root_.IsStrictlyPositive.nonneg_add_real {S T : X →L[ℝ] X}
+    (hS : 0 ≤ S) (hT : IsStrictlyPositive T) : IsStrictlyPositive (S + T) :=
+  add_comm T S ▸ hT.add_nonneg_real hS
+
+/-- Strictly positive operators on a real Hilbert space form a convex set. -/
+theorem convex_setOf_isStrictlyPositive :
+    Convex ℝ {T : X →L[ℝ] X | IsStrictlyPositive T} := by
+  refine convex_iff_forall_pos.mpr fun S hS T hT a b ha hb _ ↦ ?_
+  exact (IsStrictlyPositive.smul ha hS).add_nonneg_real (smul_nonneg hb.le hT.nonneg)
 
 /-- The inner product of two images under a positive operator's square root. -/
 theorem inner_sqrt_apply_sqrt_apply_eq_inner {T : X →L[ℝ] X} (hT : 0 ≤ T) (u v : X) :

@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.Dual
-public import Mathlib.Analysis.Convex.Basic
 
-import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
 
 /-!
@@ -349,23 +347,7 @@ theorem convex_setOf_isStrictlyPositive_continuousLinearMapOfBilin [CompleteSpac
     intro v
     simp [inner_add_left, inner_smul_left, continuousLinearMapOfBilin_apply]
   rw [Set.mem_ofPred_eq, heq]
-  rcases lt_or_eq_of_le ha with ha | rfl
-  · have hp : 0 ≤ a • h♯ + b • k♯ :=
-      add_nonneg (smul_nonneg ha.le hh.nonneg) (smul_nonneg hb hk.nonneg)
-    -- Mathlib's strict-positivity addition lemma is for complex C⋆-algebras;
-    -- complexification preserves the spectrum of our self-adjoint real operator.
-    let Φ := complexifyL2StarAlgHom E
-    have hΦ : IsStrictlyPositive (Φ (a • h♯ + b • k♯)) := by
-      rw [map_add]
-      exact ((IsStrictlyPositive.smul ha hh).isUnit.map Φ |>.isStrictlyPositive
-        (map_nonneg Φ (smul_nonneg ha.le hh.nonneg))).add_nonneg
-          (map_nonneg Φ (smul_nonneg hb hk.nonneg))
-    refine IsStrictlyPositive.iff_of_unital.mpr ⟨hp, ?_⟩
-    rw [← spectrum.zero_notMem_iff ℝ, ← spectrum_complexifyL2 hp.isSelfAdjoint]
-    simpa only [Φ, complexifyL2StarAlgHom_apply] using
-      (spectrum.zero_notMem_iff ℝ).mpr hΦ.isUnit
-  · have hb1 : b = 1 := by simpa using hab
-    simpa [hb1] using hk
+  exact convex_setOf_isStrictlyPositive hh hk ha hb hab
 
 /-- The affine interpolation of positive metrics remains positive, including at its endpoints. -/
 theorem isStrictlyPositive_continuousLinearMapOfBilin_lineMap [CompleteSpace E]
