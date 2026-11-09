@@ -226,6 +226,13 @@ theorem sum_sampleIntegrand_inter_eq (A B : Finset (Sym2 (Fin n)))
     -- A graph with edge trace `B` on `A` is the same data as the set `S` of edges it uses outside
     -- `A`, so the two maps below are mutually inverse bijections between those graphs and the
     -- subsets of the undecided edges `E(⊤) \ A`.
+    have hset : ∀ S ∈ ((⊤ : SimpleGraph (Fin n)).edgeFinset \ A).powerset,
+        (SimpleGraph.fromEdgeSet (↑(B ∪ S) : Set (Sym2 (Fin n)))).edgeSet = ↑(B ∪ S) := by
+      intro S hS
+      exact SimpleGraph.edgeSet_fromEdgeSet_of_subset fun e he =>
+        SimpleGraph.mem_edgeFinset.1
+          (Finset.union_subset (hBA.trans hA)
+            ((Finset.mem_powerset.mp hS).trans Finset.sdiff_subset) (Finset.mem_coe.1 he))
     refine Finset.sum_nbij'
       (fun H => H.edgeFinset \ A)
       (fun S => SimpleGraph.fromEdgeSet (↑(B ∪ S) : Set (Sym2 (Fin n))))
@@ -241,12 +248,8 @@ theorem sum_sampleIntegrand_inter_eq (A B : Finset (Sym2 (Fin n)))
       have hSsub := Finset.mem_powerset.mp hS
       rw [Finset.mem_filter]
       refine ⟨Finset.mem_univ _, ?_⟩
-      have hset := SimpleGraph.edgeSet_fromEdgeSet_of_subset fun e he =>
-        SimpleGraph.mem_edgeFinset.1
-          (Finset.union_subset (hBA.trans hA) (hSsub.trans Finset.sdiff_subset)
-            (Finset.mem_coe.1 he))
       ext e
-      simp only [Finset.mem_inter, SimpleGraph.mem_edgeFinset, hset, Finset.mem_coe,
+      simp only [Finset.mem_inter, SimpleGraph.mem_edgeFinset, hset S hS, Finset.mem_coe,
         Finset.mem_union]
       exact ⟨fun h => h.1.resolve_right fun heS => (Finset.mem_sdiff.mp (hSsub heS)).2 h.2,
         fun h => ⟨Or.inl h, hBA h⟩⟩
@@ -260,12 +263,8 @@ theorem sum_sampleIntegrand_inter_eq (A B : Finset (Sym2 (Fin n)))
     -- The edges that `B ∪ S` uses outside `A` are exactly `S`, since `S` avoids `A`.
     · intro S hS
       have hSsub := Finset.mem_powerset.mp hS
-      have hset := SimpleGraph.edgeSet_fromEdgeSet_of_subset fun e he =>
-        SimpleGraph.mem_edgeFinset.1
-          (Finset.union_subset (hBA.trans hA) (hSsub.trans Finset.sdiff_subset)
-            (Finset.mem_coe.1 he))
       ext e
-      simp only [Finset.mem_sdiff, SimpleGraph.mem_edgeFinset, hset, Finset.mem_coe,
+      simp only [Finset.mem_sdiff, SimpleGraph.mem_edgeFinset, hset S hS, Finset.mem_coe,
         Finset.mem_union]
       exact ⟨fun h => h.1.resolve_left fun heB => h.2 (hBA heB),
         fun h => ⟨Or.inr h, (Finset.mem_sdiff.mp (hSsub h)).2⟩⟩
