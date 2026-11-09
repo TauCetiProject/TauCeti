@@ -66,7 +66,7 @@ theorem IsCellularSet.exists_homeomorph_preimage_hemisphere
     rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p, one_pow]
   -- `h₀` identifies the preimage of the closed hemisphere with the closed hemisphere; the
   -- cellular set `g⁻¹(p)` lies in the preimage of the open hemisphere.
-  obtain ⟨h₀, hoff, hin⟩ := hA.exists_homeomorph_image hg
+  obtain ⟨h₀, hoff, hin⟩ := hA.exists_homeomorph_image hg.continuousOn
     (K := g ⁻¹' {y | 0 ≤ ⟪(y : F), (p : F)⟫}) (U := g ⁻¹' {y | 0 < ⟪(y : F), (p : F)⟫})
     (isClosed_le continuous_const hgp).isCompact (isOpen_lt continuous_const hgp)
     (fun x hx ↦ by

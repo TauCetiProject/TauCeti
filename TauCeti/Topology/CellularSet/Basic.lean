@@ -11,6 +11,7 @@ public import Mathlib.Topology.MetricSpace.Bounded
 import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
+import TauCeti.Topology.Homeomorph.CompactQuotient
 import TauCeti.Topology.Homeomorph.Shrink
 
 /-!
@@ -58,9 +59,9 @@ of compact sets with diameters tending to `0`. The collapse is their pointwise l
 * `TauCeti.IsCellularSet.exists_collapse`: a cellular subset of a manifold is collapsed to one point
   by a continuous surjection, supported in any of its neighbourhoods, whose other fibres are
   singletons.
-* `TauCeti.IsCellularSet.exists_homeomorph_image`: a continuous map into a Hausdorff space which
-  collapses a cellular set inside a compact set `K` and is otherwise injective on `K` identifies `K`
-  homeomorphically with its image.
+* `TauCeti.IsCellularSet.exists_homeomorph_image`: a map into a Hausdorff space, continuous on a
+  compact set `K`, which collapses a cellular set inside `K` and is otherwise injective on `K`
+  identifies `K` homeomorphically with its image.
 * `TauCeti.isCellularSet_closedBall`: closed balls are cellular.
 
 ## References
@@ -304,13 +305,13 @@ theorem IsCellularSet.exists_collapse [ChartedSpace E M] {X : Set M} (hX : IsCel
 
 /-- **A map collapsing only a cellular set is a homeomorphism up to that collapse.** Let `M` be a
 metric space which is a topological manifold modelled on a finite-dimensional real normed space
-`E`, let `K ⊆ M` be compact, and let `X` be a cellular set lying in an open set `U ⊆ K`. If a
-continuous map `φ` from `M` to a Hausdorff space collapses `X` to a point and is injective on `K`
-otherwise, then `K` is homeomorphic to its image `φ '' K`, by a homeomorphism which agrees with `φ`
-outside `U` and sends exactly the points of `U` into `φ '' U`. -/
+`E`, let `K ⊆ M` be compact, and let `X` be a cellular set lying in an open set `U ⊆ K`. If a map
+`φ` from `M` to a Hausdorff space is continuous on `K`, collapses `X` to a point and is injective on
+`K` otherwise, then `K` is homeomorphic to its image `φ '' K`, by a homeomorphism which agrees with
+`φ` outside `U` and sends exactly the points of `U` into `φ '' U`. -/
 theorem IsCellularSet.exists_homeomorph_image [ChartedSpace E M] {X : Set M}
     (hX : IsCellularSet E X) {Y : Type*} [TopologicalSpace Y] [T2Space Y] {φ : M → Y}
-    (hφ : Continuous φ) {K U : Set M} (hK : IsCompact K) (hU : IsOpen U) (hXU : X ⊆ U)
+    {K U : Set M} (hφ : ContinuousOn φ K) (hK : IsCompact K) (hU : IsOpen U) (hXU : X ⊆ U)
     (hUK : U ⊆ K) (hφK : ∀ x ∈ K, ∀ y ∈ K, φ x = φ y ↔ x = y ∨ x ∈ X ∧ y ∈ X) :
     ∃ h : K ≃ₜ φ '' K, (∀ x : K, (x : M) ∉ U → (h x : Y) = φ x) ∧
       ∀ x : K, (h x : Y) ∈ φ '' U ↔ (x : M) ∈ U := by
@@ -330,42 +331,30 @@ theorem IsCellularSet.exists_homeomorph_image [ChartedSpace E M] {X : Set M}
     by_cases h : x ∈ U
     · exact hUK (hcUU x h)
     · rwa [hcU x h]
-  let cK : C(K, K) := ⟨MapsTo.restrict c K K hcK, hcc.restrict hcK⟩
-  have hcKs : Surjective cK := hcK.restrict_surjective_iff.2 fun y hy ↦ by
+  have hcKs : Surjective (hcK.restrict c K K) := hcK.restrict_surjective_iff.2 fun y hy ↦ by
     obtain ⟨x, rfl⟩ := hcs y
     by_cases h : x ∈ U
     · exact ⟨x, hUK h, rfl⟩
     · exact ⟨x, by rwa [hcU x h] at hy, rfl⟩
-  have : CompactSpace K := isCompact_iff_compactSpace.1 hK
-  have hq : IsQuotientMap cK := .of_surjective_continuous hcKs cK.continuous
-  -- On `K`, the map `φ` has the same fibres as `c`, so it descends along `c` to a bijection.
-  let φK : C(K, φ '' K) := ⟨(mapsTo_image φ K).restrict, hφ.restrict _⟩
-  have hfib (a b : K) : cK a = cK b ↔ φK a = φK b := by
-    rw [Subtype.ext_iff, Subtype.ext_iff]
-    exact (hcf a b).trans (hφK a a.2 b b.2).symm
-  have hfac : FactorsThrough φK cK := fun a b ↦ (hfib a b).1
-  set ψ := hq.lift φK hfac
-  have hψ (a : K) : ψ (cK a) = φK a := DFunLike.congr_fun (hq.lift_comp φK hfac) a
-  have hψi : Injective ψ := fun z₁ z₂ hz ↦ by
-    obtain ⟨a₁, rfl⟩ := hcKs z₁
-    obtain ⟨a₂, rfl⟩ := hcKs z₂
-    rw [hψ, hψ] at hz
-    exact (hfib a₁ a₂).2 hz
-  have hψs : Surjective ψ := fun ⟨_, a, ha, hy⟩ ↦ ⟨cK ⟨a, ha⟩, by
-    rw [hψ]
-    exact Subtype.ext hy⟩
-  -- Outside `U` the collapse is the identity, so `ψ` agrees with `φ` there.
-  have hoff (x : K) (hx : (x : M) ∉ U) : (ψ x : Y) = φ x :=
-    calc (ψ x : Y) = ψ (cK x) := by rw [show cK x = x from Subtype.ext (hcU x hx)]
-      _ = φ x := congrArg Subtype.val (hψ x)
-  have hin (x : K) : (ψ x : Y) ∈ φ '' U ↔ (x : M) ∈ U := by
+  -- On `K`, the map `φ` has the same fibres as `c`, so `φ '' K` is identified with `K` by a
+  -- homeomorphism `e` sending `φ x` to `c x`.
+  obtain ⟨e, he⟩ := exists_homeomorph_image_of_forall_eq_iff hφ hK (hcK.restrict c K K)
+    (hcc.restrict hcK) hcKs fun a b ↦ by
+      rw [Subtype.ext_iff]
+      exact (hcf a b).trans (hφK a a.2 b b.2).symm
+  have hψ (a : K) : (e.symm (hcK.restrict c K K a) : Y) = φ a := by
+    rw [← he, e.symm_apply_apply]
+  -- Outside `U` the collapse is the identity, so `e.symm` agrees with `φ` there.
+  have hoff (x : K) (hx : (x : M) ∉ U) : (e.symm x : Y) = φ x := by
+    rw [← hψ, show hcK.restrict c K K x = x from Subtype.ext (hcU x hx)]
+  have hin (x : K) : (e.symm x : Y) ∈ φ '' U ↔ (x : M) ∈ U := by
     obtain ⟨a, rfl⟩ := hcKs x
     rw [hψ]
     refine ⟨fun ⟨u, hu, hua⟩ ↦ hcUU a ?_, fun hx ↦ mem_image_of_mem φ (hcU' a hx)⟩
     rcases (hφK u (hUK hu) a a.2).1 hua with h | h
     · exact h ▸ hu
     · exact hXU h.2
-  exact ⟨ψ.continuous.homeoOfEquivCompactToT2 (f := .ofBijective ψ ⟨hψi, hψs⟩), hoff, hin⟩
+  exact ⟨e.symm, hoff, hin⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- A closed ball `closedBall x r` with `r ≥ 0` is cellular in `E`: it is the intersection of the
