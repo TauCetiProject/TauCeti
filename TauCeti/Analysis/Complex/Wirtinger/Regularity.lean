@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Wirtinger.TestBound
 public import TauCeti.Analysis.Complex.Wirtinger.Weak
-public import TauCeti.Analysis.Sobolev.Local.Basic
+public import TauCeti.Analysis.Sobolev.Local.Norm
 public import TauCeti.Analysis.Sobolev.TestFunctionLp.Representation
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
@@ -21,18 +21,19 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 Let `F` be a finite-dimensional complex inner product space and `1 < p < ∞`. If `u : ℂ → F` is
 locally `Lᵖ` on an open set `Ω` and its distributional derivative `\bar∂u` is locally `Lᵖ`, then
 `u` lies in `W^{1,p}_loc(Ω)`. If `\bar∂u` lies in `W^{k,p}_loc(Ω)`, then `u` lies in
-`W^{k+1,p}_loc(Ω)`. The first-order interior estimate
-`‖Du‖_{Lᵖ(K)} ≤ C (‖\bar∂u‖_{Lᵖ(Ω')} + ‖u‖_{Lᵖ(Ω')})` holds on every compact `K ⊆ Ω`, for an open
-`Ω'` with `K ⊆ Ω'` and compact closure in `Ω`. The solution may instead be measured in any larger
-exponent `r ≥ p`, including infinity. The `Lᵖ` norm of `u` cannot be dropped from the estimate:
+`W^{k+1,p}_loc(Ω)`. The interior estimate
+`‖u‖_{W^{k+1,p}(K)} ≤ C (‖\bar∂u‖_{W^{k,p}(Ω')} + ‖u‖_{Lᵖ(Ω')})` holds on every compact `K ⊆ Ω`,
+for an open `Ω'` with `K ⊆ Ω'` and compact closure in `Ω`. In the first-order estimate for the
+derivative, the solution may instead be measured in any larger exponent `r ≥ p`, including
+infinity. The `Lᵖ` norm of `u` cannot be dropped from the estimate:
 the identity map solves `\bar∂u = 0` and has nonzero derivative.
 
 The first-order statement combines two existing results. The interior test bound for the
 distributional equation controls each directional distributional derivative by the conjugate
 `Lᵠ` norm of the test function. The `Lᵖ` dual representation then turns each such bound into an
 `Lᵖ` weak derivative, coordinatewise in a real basis of `F`. Local weak derivatives glue to a
-weak derivative on `Ω`. The induction on the order uses that a weak directional derivative of a
-solution solves the differentiated equation.
+weak derivative on `Ω`. The induction on the order, for both regularity and the estimate, uses
+that a weak directional derivative of a solution solves the differentiated equation.
 
 ## Main results
 
@@ -44,6 +45,7 @@ solution solves the differentiated equation.
 * `HasWeakConjWirtingerDerivOn.memWkpLoc_succ`: local `W^{k+1,p}` regularity for every `k`.
 * `exists_eLpNorm_le_of_hasWeakConjWirtingerDerivOn_of_le` and
   `exists_eLpNorm_le_of_hasWeakConjWirtingerDerivOn`: the first-order interior estimate.
+* `exists_eLpNormWkp_le_of_hasWeakConjWirtingerDerivOn`: the interior `W^{k+1,p}` estimate.
 * `not_exists_eLpNorm_le_eLpNorm_conjWirtingerDeriv`: the estimate fails without the `Lᵖ` norm of
   the solution.
 
@@ -259,6 +261,12 @@ theorem HasWeakConjWirtingerDerivOn.memWkpLoc_one (hp : 1 < p) (hp_top : p ≠ �
   exact (hD'p.ae_eq ((hD.mono hVΩ).ae_eq hD').symm).mono_measure
     (Measure.restrict_mono hKV le_rfl)
 
+/-- A real-linear map on `ℂ` is determined by its values at `1` and `I`. -/
+private theorem eq_smulRightL_add {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (L : ℂ →L[ℝ] E) : L = smulRightL ℝ ℂ E reCLM (L 1) + smulRightL ℝ ℂ E imCLM (L I) := by
+  refine ContinuousLinearMap.coe_injective (Complex.basisOneI.ext fun i => ?_)
+  fin_cases i <;> simp
+
 /-- **Local `W^{k+1,p}` regularity for `\bar∂`.** For `1 < p < ∞` and every `k`, a locally `Lᵖ`
 function whose distributional `\bar∂` derivative lies in `W^{k,p}_loc` on an open set lies in
 `W^{k+1,p}_loc` there. Each weak derivative of the solution solves the differentiated
@@ -276,10 +284,8 @@ theorem HasWeakConjWirtingerDerivOn.memWkpLoc_succ (hp : 1 < p) (hp_top : p ≠ 
     have hv (w : ℂ) : MemWkpLoc p Ω (k + 1) (fun z => D z w) :=
       ih ((memWkpLoc_zero_iff.1 hDp).clm_comp (apply ℝ F w)) (hDfk.clm_comp (apply ℝ F w))
         (h.weakLineDeriv (hD.hasWeakLineDerivOn w) (hDf.hasWeakLineDerivOn w))
-    have hDeq : D = fun z => smulRightL ℝ ℂ F reCLM (D z 1) + smulRightL ℝ ℂ F imCLM (D z I) := by
-      funext z
-      refine ContinuousLinearMap.coe_injective (Complex.basisOneI.ext fun i => ?_)
-      fin_cases i <;> simp
+    have hDeq : D = fun z => smulRightL ℝ ℂ F reCLM (D z 1) + smulRightL ℝ ℂ F imCLM (D z I) :=
+      funext fun z => eq_smulRightL_add (D z)
     refine memWkpLoc_succ_iff_of_isOpen.2 ⟨hu, D, hD, ?_⟩
     rw [hDeq]
     exact ((hv 1).clm_comp _).add ((hv I).clm_comp _)
@@ -347,5 +353,108 @@ theorem not_exists_eLpNorm_le_eLpNorm_conjWirtingerDeriv (hp : p ≠ 0) {Ω Ω' 
   obtain ⟨z, hz⟩ := hae.exists
   have h1 := ContinuousLinearMap.ext_iff.1 hz 1
   simp at h1
+
+/-- **Interior `W^{k+1,p}` estimate for `\bar∂`.** For `1 < p < ∞`, every `k` and a compact
+`K ⊆ Ω`, there are an open `Ω'` with `K ⊆ Ω'` and compact closure in `Ω`, and a constant `C`,
+such that every locally `Lᵖ` solution of `\bar∂u = f` with `f ∈ W^{k,p}_loc(Ω)` satisfies
+`‖u‖_{W^{k+1,p}(K)} ≤ C (‖f‖_{W^{k,p}(Ω')} + ‖u‖_{Lᵖ(Ω')})`. -/
+theorem exists_eLpNormWkp_le_of_hasWeakConjWirtingerDerivOn (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (k : ℕ) {Ω : Opens ℂ} {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+    ∃ Ω' : Opens ℂ, K ⊆ Ω' ∧ IsCompact (closure (Ω' : Set ℂ)) ∧ closure (Ω' : Set ℂ) ⊆ Ω ∧
+      ∃ C : ℝ≥0, ∀ u f : ℂ → F, MemLpLoc p Ω u → MemWkpLoc p Ω k f →
+        HasWeakConjWirtingerDerivOn volume Ω u f →
+        eLpNormWkp p K (k + 1) u ≤
+          C * (eLpNormWkp p Ω' k f + eLpNorm u p (volume.restrict Ω')) := by
+  have := FiniteDimensional.complete ℂ F
+  have hint : Opens.interior K ≤ Ω := fun x hx => hKΩ (interior_subset hx)
+  induction k generalizing K with
+  | zero =>
+    obtain ⟨Ω', hKΩ', hΩ'c, hΩ'Ω, C, hC⟩ :=
+      exists_eLpNorm_le_of_hasWeakConjWirtingerDerivOn (F := F) hp hp_top hK hKΩ
+    refine ⟨Ω', hKΩ', hΩ'c, hΩ'Ω, C + 1, fun u f hu hf h => ?_⟩
+    have hf₀ := memWkpLoc_zero_iff.1 hf
+    obtain ⟨D, hD, -⟩ := (h.memWkpLoc_one hp hp_top hu hf₀).exists_weakFDeriv_of_isOpen
+    calc eLpNormWkp p K (0 + 1) u
+        ≤ eLpNorm u p (volume.restrict K) + eLpNormWkp p K 0 D :=
+          eLpNormWkp_succ_le (hD.mono hint)
+      _ ≤ eLpNorm u p (volume.restrict Ω') +
+          C * (eLpNorm f p (volume.restrict Ω') + eLpNorm u p (volume.restrict Ω')) := by
+          rw [eLpNormWkp_zero]
+          gcongr ?_ + ?_
+          · exact eLpNorm_mono_measure _ (Measure.restrict_mono hKΩ' le_rfl)
+          · exact hC u f D hu hf₀ h hD
+      _ ≤ ↑(C + 1) * (eLpNormWkp p Ω' 0 f + eLpNorm u p (volume.restrict Ω')) := by
+          rw [eLpNormWkp_zero, ENNReal.coe_add, ENNReal.coe_one, add_mul, one_mul,
+            add_comm (_ * _)]
+          gcongr
+          exact le_add_self
+  | succ k ih =>
+    obtain ⟨Ω₁, hKΩ₁, hΩ₁c, hΩ₁Ω, C₁, hC₁⟩ := ih hK hKΩ hint
+    obtain ⟨Ω₂, hΩ₁Ω₂, hΩ₂c, hΩ₂Ω, C₀, hC₀⟩ :=
+      exists_eLpNorm_le_of_hasWeakConjWirtingerDerivOn (F := F) hp hp_top hΩ₁c hΩ₁Ω
+    let a : ℂ → (ℂ →L[ℝ] F) →L[ℝ] F := fun w => apply ℝ F w
+    let L₁ := smulRightL ℝ ℂ F reCLM
+    let L₂ := smulRightL ℝ ℂ F imCLM
+    let B : ℝ≥0 := ‖L₁‖₊ * ‖a 1‖₊ + ‖L₂‖₊ * ‖a I‖₊
+    have hKΩ₂ : K ⊆ Ω₂ := hKΩ₁.trans (subset_closure.trans hΩ₁Ω₂)
+    have hΩ₂Ω' : Ω₂ ≤ Ω := subset_closure.trans hΩ₂Ω
+    refine ⟨Ω₂, hKΩ₂, hΩ₂c, hΩ₂Ω, 1 + B * (C₁ * (1 + C₀)), fun u f hu hf h => ?_⟩
+    obtain ⟨Df, hDf, hDfk⟩ := hf.exists_weakFDeriv_of_isOpen
+    obtain ⟨D, hD, hDp⟩ :=
+      (h.memWkpLoc_one hp hp_top hu hf.memLpLoc).exists_weakFDeriv_of_isOpen
+    set X := eLpNormWkp p Ω₂ (k + 1) f with hX
+    set Y := eLpNorm u p (volume.restrict Ω₂)
+    have hfX : eLpNorm f p (volume.restrict Ω₂) ≤ X := eLpNorm_le_eLpNormWkp
+    have hDfX : eLpNormWkp p Ω₁ k Df ≤ X := by
+      refine (eLpNormWkp_mono_set (subset_closure.trans hΩ₁Ω₂)).trans ?_
+      rw [hX, eLpNormWkp_succ, Opens.interior_coe]
+      exact le_add_left (le_iInf₂ fun D' hD' =>
+        (eLpNormWkp_congr_ae ((hDf.mono hΩ₂Ω').ae_eq hD')).le)
+    have hDY : eLpNorm D p (volume.restrict Ω₁) ≤ C₀ * (X + Y) := by
+      refine (eLpNorm_mono_measure _ (Measure.restrict_mono subset_closure le_rfl)).trans ?_
+      refine (hC₀ u f D hu hf.memLpLoc h hD).trans ?_
+      gcongr
+    have hdir (w : ℂ) : eLpNormWkp p K (k + 1) (fun z => D z w) ≤
+        ‖a w‖ₑ * (C₁ * (1 + C₀) * (X + Y)) := by
+      have hDw : eLpNorm (fun z => D z w) p (volume.restrict Ω₁) ≤
+          ‖a w‖ₑ * eLpNorm D p (volume.restrict Ω₁) := by
+        have := eLpNormWkp_clm_comp_le (p := p) (U := Ω₁) (k := 0) (f := D) (a w)
+        rw [eLpNormWkp_zero, eLpNormWkp_zero] at this
+        exact this
+      calc eLpNormWkp p K (k + 1) (fun z => D z w)
+          ≤ C₁ * (eLpNormWkp p Ω₁ k (fun z => Df z w) +
+              eLpNorm (fun z => D z w) p (volume.restrict Ω₁)) :=
+            hC₁ _ _ ((memWkpLoc_zero_iff.1 hDp).clm_comp (a w)) (hDfk.clm_comp (a w))
+              (h.weakLineDeriv (hD.hasWeakLineDerivOn w) (hDf.hasWeakLineDerivOn w))
+        _ ≤ C₁ * (‖a w‖ₑ * X + ‖a w‖ₑ * (C₀ * (X + Y))) := by
+            refine mul_le_mul_right (add_le_add ?_ ?_) _
+            · exact (eLpNormWkp_clm_comp_le (f := Df) (a w)).trans (by gcongr)
+            · exact hDw.trans (by gcongr)
+        _ ≤ C₁ * (‖a w‖ₑ * (X + Y) + ‖a w‖ₑ * (C₀ * (X + Y))) := by
+            gcongr
+            exact le_self_add
+        _ = ‖a w‖ₑ * (C₁ * (1 + C₀) * (X + Y)) := by ring
+    have hDeq : D = (fun z => L₁ (D z 1)) + fun z => L₂ (D z I) :=
+      funext fun z => eq_smulRightL_add (D z)
+    calc eLpNormWkp p K (k + 1 + 1) u
+        ≤ eLpNorm u p (volume.restrict K) + eLpNormWkp p K (k + 1) D :=
+          eLpNormWkp_succ_le (hD.mono hint)
+      _ ≤ Y + (‖L₁‖ₑ * (‖a 1‖ₑ * (C₁ * (1 + C₀) * (X + Y))) +
+          ‖L₂‖ₑ * (‖a I‖ₑ * (C₁ * (1 + C₀) * (X + Y)))) := by
+          gcongr ?_ + ?_
+          · exact eLpNorm_mono_measure _ (Measure.restrict_mono hKΩ₂ le_rfl)
+          · rw [hDeq]
+            refine (eLpNormWkp_add_le hp.le).trans (add_le_add ?_ ?_)
+            · exact (eLpNormWkp_clm_comp_le L₁).trans (by gcongr; exact hdir 1)
+            · exact (eLpNormWkp_clm_comp_le L₂).trans (by gcongr; exact hdir I)
+      _ ≤ ↑(1 + B * (C₁ * (1 + C₀))) * (X + Y) := by
+          simp only [B, enorm_eq_nnnorm]
+          push_cast
+          calc Y + (↑‖L₁‖₊ * (↑‖a 1‖₊ * (↑C₁ * (1 + ↑C₀) * (X + Y))) +
+                ↑‖L₂‖₊ * (↑‖a I‖₊ * (↑C₁ * (1 + ↑C₀) * (X + Y))))
+              ≤ (X + Y) + (↑‖L₁‖₊ * (↑‖a 1‖₊ * (↑C₁ * (1 + ↑C₀) * (X + Y))) +
+                ↑‖L₂‖₊ * (↑‖a I‖₊ * (↑C₁ * (1 + ↑C₀) * (X + Y)))) := by
+                gcongr; exact le_add_self
+            _ = _ := by ring
 
 end TauCeti
