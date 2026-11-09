@@ -84,10 +84,12 @@ theorem etvDist_eq_iSup_sub_add_iSup_sub :
     Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_iSup,
     Measure.toJordanDecomposition_toSignedMeasure_sub_negPart_univ_eq_iSup]
 
-/-- For finite measures of equal total mass (e.g. two probability measures), the total variation
-distance is twice the largest excess `μ A - ν A` over measurable events. -/
+omit [IsFiniteMeasure ν] in
+/-- For a finite measure and a measure of the same total mass (e.g. two probability measures), the
+total variation distance is twice the largest excess `μ A - ν A` over measurable events. -/
 theorem etvDist_eq_two_mul_iSup_sub (h : μ univ = ν univ) :
     etvDist μ ν = 2 * ⨆ (A : Set α) (_ : MeasurableSet A), μ A - ν A := by
+  have : IsFiniteMeasure ν := ⟨h ▸ measure_lt_top μ univ⟩
   rw [etvDist_eq_posPart_univ_add_negPart_univ,
     ← Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_negPart_univ h, ← two_mul,
     Measure.toJordanDecomposition_toSignedMeasure_sub_posPart_univ_eq_iSup]
@@ -102,9 +104,10 @@ theorem etvDist_le_of_forall_le_add {c d : ℝ≥0∞}
   · exact iSup₂_le fun A hA => tsub_le_iff_left.2 (h₁ A hA)
   · exact iSup₂_le fun A hA => tsub_le_iff_left.2 (h₂ A hA)
 
-/-- **Total variation as an eventwise bound.** For finite measures of equal total mass (e.g. two
-probability measures), `etvDist μ ν ≤ 2 * c` if and only if every measurable event has `μ`-mass
-at most its `ν`-mass plus `c`. In other words, `etvDist μ ν` is twice the distance
+omit [IsFiniteMeasure ν] in
+/-- **Total variation as an eventwise bound.** For a finite measure and a measure of the same total
+mass (e.g. two probability measures), `etvDist μ ν ≤ 2 * c` if and only if every measurable event
+has `μ`-mass at most its `ν`-mass plus `c`. In other words, `etvDist μ ν` is twice the distance
 `sup_A |μ A - ν A|`. -/
 theorem etvDist_le_two_mul_iff (h : μ univ = ν univ) {c : ℝ≥0∞} :
     etvDist μ ν ≤ 2 * c ↔ ∀ A, MeasurableSet A → μ A ≤ ν A + c := by
@@ -114,7 +117,7 @@ theorem etvDist_le_two_mul_iff (h : μ univ = ν univ) {c : ℝ≥0∞} :
 omit [IsFiniteMeasure ν] in
 /-- The total variation distance from a point mass to a probability measure is twice the
 probability of missing that point. The factor two is Mathlib's normalization. -/
-@[simp] theorem etvDist_dirac_left [MeasurableSingletonClass α] (x : α) [IsProbabilityMeasure ν] :
+@[simp] theorem etvDist_dirac_left (x : α) [IsProbabilityMeasure ν] :
     etvDist (Measure.dirac x) ν = 2 * (1 - ν {x}) := by
   rw [etvDist_eq_two_mul_iSup_sub (by simp)]
   congr 1
@@ -124,12 +127,14 @@ probability of missing that point. The factor two is Mathlib's normalization. -/
     · rw [Measure.dirac_apply' _ hA, Set.indicator_of_mem hx]
       exact tsub_le_tsub_left (measure_mono (Set.singleton_subset_iff.mpr hx)) 1
     · simp [Measure.dirac_apply' _ hA, hx]
-  · simpa using le_iSup₂ (f := fun (A : Set α) (_ : MeasurableSet A) =>
-      Measure.dirac x A - ν A) {x} (measurableSet_singleton x)
+  · have hT := measurableSet_toMeasurable ν {x}
+    simpa [Measure.dirac_apply' _ hT, subset_toMeasurable ν {x} rfl] using
+      le_iSup₂ (f := fun (A : Set α) (_ : MeasurableSet A) => Measure.dirac x A - ν A)
+        (toMeasurable ν {x}) hT
 
 omit [IsFiniteMeasure ν] in
 /-- The real-valued total variation distance from a point mass to a probability measure. -/
-@[simp] theorem tvDist_dirac_left [MeasurableSingletonClass α] (x : α) [IsProbabilityMeasure ν] :
+@[simp] theorem tvDist_dirac_left (x : α) [IsProbabilityMeasure ν] :
     tvDist (Measure.dirac x) ν = 2 * (1 - ν.real {x}) := by
   rw [tvDist, etvDist_dirac_left, ENNReal.toReal_mul,
     ENNReal.toReal_sub_of_le (prob_le_one) (by simp)]
