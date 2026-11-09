@@ -13,6 +13,9 @@ public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.CategoryTheory.Preadditive.Yoneda.Basic
 
+import Mathlib.Algebra.Category.Grp.Limits
+import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
+
 /-!
 # The preadditive Yoneda and coYoneda functors
 
@@ -58,6 +61,7 @@ functor by an ideal `I` of `C`, its target is the quotient `(-, X) / I(-, X)`.
 * `CategoryTheory.preadditiveYoneda_map_comp_preadditiveYonedaMap_eq_zero_iff`: the natural
   transformation `(-, X) ⟶ (G -, G X)` kills `(-, f)` exactly when `G` kills `f`.
 * `CategoryTheory.exact_preadditiveYoneda_map_iff`: exactness at a representable functor.
+* `CategoryTheory.preservesLimitsOfShape_preadditiveYoneda`: the embedding preserves small limits.
 -/
 
 public section
@@ -189,5 +193,17 @@ theorem exact_preadditiveYoneda_map_iff {W Z : C} (w : W ⟶ Z) {F : Cᵒᵖ ⥤
     ((evaluation Cᵒᵖ AddCommGrpCat.{v}).obj V)).symm
   rw [← ShortComplex.exact_iff_isZero_homology]
   exact (key V.unop).2 (@H V.unop)
+
+/-- The Yoneda embedding `X ↦ (-, X)` into additive presheaves preserves small limits. -/
+instance preservesLimitsOfShape_preadditiveYoneda (J : Type*) [Category* J] [Small.{v} J] :
+    PreservesLimitsOfShape J (preadditiveYoneda : C ⥤ Cᵒᵖ ⥤ AddCommGrpCat.{v}) := by
+  -- Forgetting the group structure of the values gives the Yoneda embedding into presheaves of
+  -- sets, and the forgetful functor reflects small limits.
+  have : PreservesLimitsOfShape J ((preadditiveYoneda : C ⥤ Cᵒᵖ ⥤ AddCommGrpCat.{v}) ⋙
+      (Functor.whiskeringRight Cᵒᵖ AddCommGrpCat (Type v)).obj (forget AddCommGrpCat)) := by
+    rw [whiskering_preadditiveYoneda]
+    infer_instance
+  exact preservesLimitsOfShape_of_reflects_of_preserves _
+    ((Functor.whiskeringRight Cᵒᵖ AddCommGrpCat (Type v)).obj (forget AddCommGrpCat))
 
 end CategoryTheory
