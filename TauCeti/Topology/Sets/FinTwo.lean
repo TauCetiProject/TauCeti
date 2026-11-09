@@ -5,16 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Topology.Defs.Basic
-public import TauCeti.Data.Set.Lattice
 
 /-!
 # Families of two sets
 
 Two sets `U` and `V` give a family `![U, V]` indexed by `Fin 2`, the form in which a cover by two
-sets is passed to results about covers indexed by an arbitrary type. Its union is `U ∪ V`,
-by `Set.iUnion_vecCons` and `Set.iUnion_const`. It is a family of open sets when `U` and `V`
-are open (`IsOpen.vecCons`).
+sets is passed to results about covers indexed by an arbitrary type. This file shows that the
+family consists of open sets when `U` and `V` are open (`IsOpen.vecCons`).
 -/
 
 public section

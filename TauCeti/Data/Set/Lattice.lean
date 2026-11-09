@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.VecNotation
-public import Mathlib.Data.Fintype.Pi
 public import Mathlib.Data.Set.Lattice.Indexed
+
+import Mathlib.Data.Fintype.Pi
+import Mathlib.Data.Set.Lattice.Bounded
 
 /-!
 # Indexed unions and intersections of sets
@@ -15,11 +17,11 @@ public import Mathlib.Data.Set.Lattice.Indexed
 A set defined by a condition `Φ` on the tuple of values of a family of functions is the union,
 over the tuples satisfying `Φ`, of the fibres of the family over those tuples.
 
-Prepending a set to a finite family adds that set to the union of the family.
+The union of the binary family `![U, V]` is `U ∪ V`.
 
 ## Main results
 
-* `Set.iUnion_vecCons`: the union of a finite family splits into its head and tail.
+* `Set.iUnion_vecCons_pair`: the union of a family of two sets.
 * `TauCeti.setOf_apply_eq_biUnion_iInter`:
   `{x | Φ (g · x)} = ⋃ ε ∈ {ε | Φ ε}, ⋂ i, {x | g i x = ε i}`.
 * `TauCeti.exists_notMem_succ_of_notMem_iInter`: a point outside the intersection of a decreasing
@@ -32,11 +34,10 @@ public section
 
 open Set
 
-/-- The union of a finite family with a prepended set is the union of that set and the tail. -/
+/-- The union of the binary family `![U, V]` is `U ∪ V`. -/
 @[simp]
-theorem Set.iUnion_vecCons {X : Type*} {n : ℕ} (s : Set X) (f : Fin n → Set X) :
-    ⋃ i, Matrix.vecCons s f i = s ∪ ⋃ i, f i :=
-  Set.iUnion_cons f s
+theorem Set.iUnion_vecCons_pair {X : Type*} (U V : Set X) : ⋃ i, ![U, V] i = U ∪ V := by
+  simp only [Matrix.vecCons, Set.iUnion_cons, Set.iUnion_of_empty, Set.union_empty]
 
 namespace TauCeti
 
