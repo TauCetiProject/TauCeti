@@ -94,9 +94,16 @@ variable [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)]
 
 variable (F) in
 /-- An operator from sections of a complex vector bundle `V` to `V`-valued one-forms is *complex
-linear* if it commutes with multiplication by `i` on sections differentiable at a point. -/
-def IsComplexLinearOperator (D : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x) : Prop :=
-  ∀ ⦃σ : Π x : M, V x⦄ ⦃x : M⦄, MDiffAt (T% σ) x → D (Complex.I • σ) x = Complex.I • D σ x
+linear* if, on sections differentiable at a point, it is real linear and commutes with
+multiplication by `i`. -/
+structure IsComplexLinearOperator (D : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x) :
+    Prop where
+  add {σ σ' : Π x : M, V x} {x : M} (hσ : MDiffAt (T% σ) x) (hσ' : MDiffAt (T% σ') x) :
+    D (σ + σ') x = D σ x + D σ' x
+  smul_const (a : ℝ) {σ : Π x : M, V x} {x : M} (hσ : MDiffAt (T% σ) x) :
+    D (a • σ) x = a • D σ x
+  complex_I_smul {σ : Π x : M, V x} {x : M} (hσ : MDiffAt (T% σ) x) :
+    D (Complex.I • σ) x = Complex.I • D σ x
 
 /-- The complex linear part `D^ℂ ξ = ½ (D ξ - i • D (i • ξ))` of an operator on sections of a
 complex vector bundle. -/
@@ -112,8 +119,9 @@ theorem sectionComplexLinearPart_apply (σ : Π x : M, V x) (x : M) :
 theorem IsComplexLinearOperator.sectionComplexLinearPart_eq (hD : IsComplexLinearOperator F D)
     {σ : Π x : M, V x} {x : M} (hσ : MDiffAt (T% σ) x) :
     sectionComplexLinearPart D σ x = D σ x := by
-  rw [sectionComplexLinearPart_apply, hD hσ, smul_smul Complex.I Complex.I, Complex.I_mul_I,
-    neg_one_smul, sub_neg_eq_add, ← two_smul ℝ, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
+  rw [sectionComplexLinearPart_apply, hD.complex_I_smul hσ, smul_smul Complex.I Complex.I,
+    Complex.I_mul_I, neg_one_smul, sub_neg_eq_add, ← two_smul ℝ, smul_smul,
+    inv_mul_cancel₀ two_ne_zero, one_smul]
 
 /-- Uniqueness of the complex linear part (McDuff–Salamon, Exercise C.1.7): if an operator is the
 sum of a complex linear operator and a complex antilinear zeroth-order term, then the complex
@@ -126,7 +134,7 @@ theorem sectionComplexLinearPart_eq_of_eq_add [NormedSpace ℂ F] [VectorBundle 
     {σ : Π x : M, V x} {x : M} (hσ : MDiffAt (T% σ) x) :
     sectionComplexLinearPart D σ x = D₀ σ x := by
   have hIσ := mdifferentiableAt_complex_smul_section Complex.I hσ
-  rw [sectionComplexLinearPart_apply, hDeq hσ, hDeq hIσ, hD₀ hσ, Pi.smul_apply, hα]
+  rw [sectionComplexLinearPart_apply, hDeq hσ, hDeq hIσ, hD₀.complex_I_smul hσ, Pi.smul_apply, hα]
   simp only [smul_add, smul_neg, smul_smul Complex.I Complex.I, Complex.I_mul_I, neg_one_smul]
   module
 
@@ -227,6 +235,16 @@ theorem neg (hD : IsRealCauchyRiemannOperator F j D) {σ : Π x : M, V x} {x : M
     (hσ : MDiffAt (T% σ) x) : D (-σ) x = -D σ x := by
   simpa using hD.smul_const (-1) hσ
 
+/-- A real Cauchy–Riemann operator which commutes with multiplication by `i` is complex linear. -/
+theorem isComplexLinearOperator [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)]
+    (hD : IsRealCauchyRiemannOperator F j D)
+    (hI : ∀ ⦃σ : Π x : M, V x⦄ ⦃x : M⦄, MDiffAt (T% σ) x →
+      D (Complex.I • σ) x = Complex.I • D σ x) :
+    IsComplexLinearOperator F D where
+  add := hD.add
+  smul_const := hD.smul_const
+  complex_I_smul := @hI
+
 /-! ### Zeroth-order terms -/
 
 /-- Adding a zeroth-order term `α`, a `(0,1)`-form with values in the real endomorphisms of `V`, to
@@ -295,16 +313,6 @@ section ComplexPart
 
 variable [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)]
 
-/-- The complex linear part of a real Cauchy–Riemann operator is complex linear. -/
-theorem isComplexLinearOperator_sectionComplexLinearPart (hD : IsRealCauchyRiemannOperator F j D) :
-    IsComplexLinearOperator F (sectionComplexLinearPart D) := by
-  intro σ x hσ
-  have hII : Complex.I • Complex.I • σ = -σ := by
-    rw [smul_smul, Complex.I_mul_I, neg_one_smul]
-  simp only [sectionComplexLinearPart_apply, hII, hD.neg hσ, smul_sub, smul_neg,
-    smul_comm Complex.I (2⁻¹ : ℝ), smul_smul Complex.I Complex.I, Complex.I_mul_I, neg_one_smul]
-  module
-
 variable [NormedSpace ℂ F] [VectorBundle ℂ F V]
 
 /-- The complex linear part of a real Cauchy–Riemann operator is a real Cauchy–Riemann
@@ -330,6 +338,17 @@ theorem isRealCauchyRiemannOperator_sectionComplexLinearPart
       dbarSMulRight_complex_I_smul, smul_add, smul_smul Complex.I Complex.I, Complex.I_mul_I,
       neg_one_smul, smul_comm Complex.I (g x)]
     module
+
+/-- The complex linear part of a real Cauchy–Riemann operator is complex linear. -/
+theorem isComplexLinearOperator_sectionComplexLinearPart (hD : IsRealCauchyRiemannOperator F j D) :
+    IsComplexLinearOperator F (sectionComplexLinearPart D) := by
+  refine hD.isRealCauchyRiemannOperator_sectionComplexLinearPart.isComplexLinearOperator ?_
+  intro σ x hσ
+  have hII : Complex.I • Complex.I • σ = -σ := by
+    rw [smul_smul, Complex.I_mul_I, neg_one_smul]
+  simp only [sectionComplexLinearPart_apply, hII, hD.neg hσ, smul_sub, smul_neg,
+    smul_comm Complex.I (2⁻¹ : ℝ), smul_smul Complex.I Complex.I, Complex.I_mul_I, neg_one_smul]
+  module
 
 variable [VectorBundle ℝ F V] [FiniteDimensional ℝ F] [ContMDiffVectorBundle 1 F V I]
 

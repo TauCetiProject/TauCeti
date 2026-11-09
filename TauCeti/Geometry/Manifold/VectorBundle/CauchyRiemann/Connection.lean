@@ -112,11 +112,12 @@ theorem _root_.IsCovariantDerivativeOn.isRealCauchyRiemannOperator_zeroOnePart
 `i`, is a complex linear real Cauchy–Riemann operator. -/
 theorem _root_.IsCovariantDerivativeOn.isComplexLinearOperator_zeroOnePart
     {cov : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x}
+    (hcov : IsCovariantDerivativeOn F cov)
     (hI : ∀ ⦃σ : Π x : M, V x⦄ ⦃x : M⦄, MDiffAt (T% σ) x →
       cov (Complex.I • σ) x = Complex.I • cov σ x) :
     IsComplexLinearOperator F fun σ x ↦ j.zeroOnePart (cov σ x) := by
+  refine (hcov.isRealCauchyRiemannOperator_zeroOnePart j).isComplexLinearOperator ?_
   intro σ x hσ
-  dsimp only
   rw [hI hσ]
   ext v
   simp only [zeroOnePart_apply, smul_apply, smul_add,
