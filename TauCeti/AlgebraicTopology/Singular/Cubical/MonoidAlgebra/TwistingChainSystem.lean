@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Hom
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Pairing
-public import TauCeti.Algebra.Homology.DG.Twisted.Map
+public import TauCeti.Algebra.Homology.DG.Twisted.Cocycle
 
 /-!
 # Twisting chain systems and the Barraud–Cornea cocycle
@@ -58,8 +57,6 @@ with coefficients in a DG local system.
   (`TauCeti.TwistingChainSystem.chain_eq_zero_of_le`).
 * `TauCeti.cubicalChainDifferential_twistingChainSum`: the twisting sum is a cycle.
 * `TauCeti.cubicalChainSumMap_twistingChainSum`: push-forward along multiplicative evaluation maps.
-* `TauCeti.TwistingChainSystem.twistingCocycle_comp`: naturality of the twisting cocycle in the
-  monoid.
 
 ## References
 
@@ -275,27 +272,6 @@ theorem twistingCocycle_m (S : TwistingChainSystem ind ι R)
     (x y : P) :
     (S.twistingCocycle q hq).m x y = cubicalChainSumMap R (q x y) (S.chain x y) := by
   rw [twistingCocycle, TwistingCocycle.ofNonpos_m]
-
-/-- **Naturality of the twisting cocycle in the monoid.** Composing multiplicative evaluation maps
-with a continuous monoid homomorphism `φ : G → G'` maps the twisting cocycle along the DG algebra
-morphism `C^□_*(φ; R)`. -/
-theorem twistingCocycle_comp {G' : Type*} [Monoid G'] [TopologicalSpace G'] [ContinuousMul G']
-    (S : TwistingChainSystem ind ι R)
-    (hq : ∀ x z y (u : M x z) (v : M z y), q x y (ι x z y (u, v)) = q x z u * q z y v)
-    (φ : G →ₜ* G') :
-    S.twistingCocycle (fun x y ↦ φ.toContinuousMap.comp (q x y))
-        (fun x z y u v ↦ by simp [hq]) =
-      (S.twistingCocycle q hq).map (cubicalChainDGAlgHom R φ) := by
-  refine TwistingCocycle.ext fun x y ↦ ?_
-  rw [twistingCocycle_m, TwistingCocycle.map_m, twistingCocycle_m, cubicalChainSumMap_comp,
-    LinearMap.comp_apply]
-  generalize cubicalChainSumMap R (q x y) (S.chain x y) = a
-  induction a using DirectSum.induction_on with
-  | zero => rw [map_zero, map_zero]
-  | of n c =>
-    rw [← DirectSum.lof_eq_of R]
-    exact (cubicalChainSumMap_lof φ.toContinuousMap c).trans (cubicalChainDGAlgHom_lof φ n c).symm
-  | add a b ha hb => rw [map_add, map_add, ha, hb]
 
 end TwistingChainSystem
 

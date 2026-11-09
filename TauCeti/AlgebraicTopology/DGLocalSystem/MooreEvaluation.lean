@@ -28,9 +28,9 @@ collapse of a tree in `B` through the critical points. The images `θ ∘ e x y`
 `x₀` (`TauCeti.mooreLoopEvaluation`), and they are multiplicative along the composition maps
 (`TauCeti.mooreLoopEvaluation_mul`). So every twisting chain system on the `M x y` gives a twisting
 cocycle over the chains `C^□_*(Ω_{x₀} X; R)` on the Moore loop space
-(`TauCeti.TwistingChainSystem.mooreTwistingCocycle`). Applied to a representing chain system, this
-is the construction of the Barraud–Cornea cocycle: evaluate into Moore paths, then into
-`C_*(Ω X)`.
+(`TauCeti.TwistingChainSystem.mooreTwistingCocycle`). Applied to a representing chain system, with
+`e` the trajectory evaluation and `θ` the collapse of a tree through the critical points, this is
+the Barraud–Cornea cocycle: evaluate into Moore paths, then into `C_*(Ω X)`.
 
 ## Main definitions
 
@@ -99,7 +99,8 @@ variable [Fintype P] {ι : ∀ x y z, C(M x y × M y z, M x z)}
 /-- **The twisting cocycle over the Moore loops of a twisting chain system** whose spaces are
 evaluated into Moore paths, concatenating along the composition maps, and then collapsed to loops at
 `x₀` by `θ`. When `S` is a representing chain system on the trajectory spaces of a Morse function,
-this is the Barraud–Cornea cocycle with values in `C^□_*(Ω_{x₀} X; R)`. -/
+`e` is the evaluation of trajectories into Moore paths, and `θ` is the collapse of a tree through
+the critical points, this is the Barraud–Cornea cocycle with values in `C^□_*(Ω_{x₀} X; R)`. -/
 def mooreTwistingCocycle (S : TwistingChainSystem ind ι R) :
     TwistingCocycle (R := R) (A := loopChainAlgebra X x₀ R)
       (cubicalChainGrading (MooreLoopSpace X x₀) R)
