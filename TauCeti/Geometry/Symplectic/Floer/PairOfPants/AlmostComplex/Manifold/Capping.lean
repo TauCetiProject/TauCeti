@@ -177,8 +177,6 @@ theorem contMDiff_negativePlaneAlmostComplex {F G N : Type*} [NormedAddCommGroup
     lt_of_lt_of_le (by linarith [Real.one_le_exp (by positivity : 0 ≤ 2 * π)]) hge
   have hS : f y₀ ≠ 0 ∧ f y₀ ≠ 1 :=
     ⟨fun h => by norm_num [h] at h₁, fun h => by norm_num [h] at h₁⟩
-  have hβ : ContMDiff 𝓘(ℝ) 𝓘(ℝ) n smoothTransition :=
-    ((smoothTransition.contDiff (n := ⊤)).of_le ENat.LEInfty.out).contMDiff
   simp only [negativePlaneAlmostComplex]
   refine contMDiffAt_endWeightedAlmostComplex h₀ _ _ (c := fun _ => negativePlaneWeight) (hb y₀)
     (fun q => ?_)
@@ -187,8 +185,8 @@ theorem contMDiff_negativePlaneAlmostComplex {F G N : Type*} [NormedAddCommGroup
   -- Only the weight of the end `∞` is nonzero, and it is smooth off the center of that end.
   by_cases hq : q = inf
   · simp only [negativePlaneWeight, hq, ↓reduceIte]
-    exact hβ.contMDiffAt.comp y₀ (((inf.contDiffAt_re_endCoord (ne_endCenter hS inf)).neg.sub
-      contDiffAt_const).contMDiffAt.comp y₀ (hf y₀))
+    simpa only [endSign_inf, neg_one_mul] using
+      Floer.contMDiffAt_smoothTransition_endCoord_comp inf 1 (hf y₀) (ne_endCenter hS inf)
   · simp only [negativePlaneWeight, hq, ↓reduceIte]
     exact contMDiffAt_const
 

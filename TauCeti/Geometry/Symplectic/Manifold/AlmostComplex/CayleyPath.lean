@@ -109,6 +109,18 @@ private theorem cayleyPathEnd_eq (t : ℝ) (x : M) :
     (h₁.compatibleAt x) t (J₀.almostComplexStructureAt_toLinearMap x).symm
     (J₁.almostComplexStructureAt_toLinearMap x).symm
 
+omit [FiniteDimensional ℝ E] in
+/-- On the base set of the tangent trivialization at `x₀`, reading a tangent endomorphism in
+coordinates is conjugation by an algebra isomorphism. -/
+private theorem inCoordinates_eq_conjContinuousAlgEquiv {x₀ x : M}
+    (hx : x ∈ (trivializationAt E (TangentSpace I) x₀).baseSet)
+    (A : TangentSpace I x →L[ℝ] TangentSpace I x) :
+    ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x₀ x x₀ x A =
+      ((trivializationAt E (TangentSpace I) x₀).continuousLinearEquivAt ℝ x
+        hx).conjContinuousAlgEquiv A := by
+  simp only [ContinuousLinearMap.inCoordinates_eq hx hx,
+    ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
+
 include h₀ in
 /-- Read in the tangent trivialization at `x₀`, the Cayley denominator `1 - J₀ L` of a tame
 structure `L` is invertible at `x₀`. -/
@@ -124,12 +136,8 @@ private theorem isUnit_one_sub_inCoordinates_mul {L : SmoothAlmostComplexStructu
   have hx₀ : x₀ ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x₀
   let φ₀ := (e.continuousLinearEquivAt ℝ x₀ hx₀).conjContinuousAlgEquiv
   -- Reading in coordinates at `x₀` is conjugation by an algebra isomorphism.
-  have hconj (A : TangentSpace I x₀ →L[ℝ] TangentSpace I x₀) :
-      ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x₀ x₀ x₀ x₀ A =
-        φ₀ A := by
-    simp only [φ₀, e, ContinuousLinearMap.inCoordinates_eq hx₀ hx₀,
-      ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
-  rw [hconj, hconj, ← map_mul, ← map_one φ₀, ← map_sub]
+  rw [inCoordinates_eq_conjContinuousAlgEquiv hx₀, inCoordinates_eq_conjContinuousAlgEquiv hx₀,
+    ← map_mul, ← map_one φ₀, ← map_sub]
   exact ((h₀.compatibleAt x₀).tames.isUnit_one_sub_mul_of_toLinearMap
     (h₀.isNondegenerate.tames_iff.mp hL x₀) (J₀.almostComplexStructureAt_toLinearMap x₀).symm
     (L.almostComplexStructureAt_toLinearMap x₀).symm).map φ₀
@@ -167,9 +175,8 @@ private theorem contMDiff_cayleyPathEnd_family {K₀ K₁ : P → SmoothAlmostCo
     fun x A ↦ ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x₀ x x₀ x A
   -- On the base set, reading in coordinates is conjugation by an algebra isomorphism.
   have hconj {x : M} (hx : x ∈ e.baseSet) (A : TangentSpace I x →L[ℝ] TangentSpace I x) :
-      coord x A = (e.continuousLinearEquivAt ℝ x hx).conjContinuousAlgEquiv A := by
-    simp only [coord, e, ContinuousLinearMap.inCoordinates_eq hx hx,
-      ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
+      coord x A = (e.continuousLinearEquivAt ℝ x hx).conjContinuousAlgEquiv A :=
+    inCoordinates_eq_conjContinuousAlgEquiv hx A
   have hx₀ : x₀ ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x₀
   have hinner : ContMDiffAt (IP.prod I) 𝓘(ℝ, ℝ × (E →L[ℝ] E) × (E →L[ℝ] E)) ∞
       (fun q : P × M ↦ (smoothTransition (τ q.1), coord q.2 ((K₀ q.1).toEndomorphism q.2),
@@ -453,9 +460,8 @@ theorem contMDiffAt_of_cayley_eq_sum {ι : Type*} [Fintype ι]
     ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x₀ x x₀ x A
   -- On the base set, reading in coordinates is conjugation by an algebra isomorphism.
   have hconj {x : M} (hx : x ∈ e.baseSet) (A : TangentSpace I x →L[ℝ] TangentSpace I x) :
-      coord x A = (e.continuousLinearEquivAt ℝ x hx).conjContinuousAlgEquiv A := by
-    simp only [coord, e, ContinuousLinearMap.inCoordinates_eq hx hx,
-      ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
+      coord x A = (e.continuousLinearEquivAt ℝ x hx).conjContinuousAlgEquiv A :=
+    inCoordinates_eq_conjContinuousAlgEquiv hx A
   have hx₀ : x₀ ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x₀
   -- The base structure and the families `L i`, in coordinates.
   let A := fun y => coord (b y) (J₀.toEndomorphism (b y))

@@ -285,12 +285,9 @@ theorem contMDiff_pairOfPantsAlmostComplex
         (b p) ((h₀.pairOfPantsAlmostComplex J hJ ⟨f p, hS p⟩).toEndomorphism (b p))) := by
   intro y₀
   have hq (q : Puncture) : f y₀ ≠ q.endCenter := ne_endCenter (hS y₀) q
-  have hβ : ContMDiff 𝓘(ℝ) 𝓘(ℝ) n smoothTransition :=
-    ((smoothTransition.contDiff (n := ⊤)).of_le ENat.LEInfty.out).contMDiff
   simp only [pairOfPantsAlmostComplex]
   exact contMDiffAt_endWeightedAlmostComplex h₀ J hJ (hb y₀)
-    (fun q => hβ.contMDiffAt.comp y₀ (((contDiffAt_const.mul
-      (q.contDiffAt_re_endCoord (hq q))).sub contDiffAt_const).contMDiffAt.comp y₀ (hf y₀)))
+    (fun q => Floer.contMDiffAt_smoothTransition_endCoord_comp q 1 (hf y₀) (hq q))
     fun q => q.contMDiffAt_toEndomorphism_comp_im_endCoord (hJp q) (hJs q) (hf y₀) (hb y₀) (hq q)
 
 end TauCeti.SmoothTwoForm.Compatible

@@ -104,7 +104,7 @@ theorem almostComplexStructureAt_cappedAlmostComplex (r L : ℝ) (w : ℂ) (x : 
     (Floer.tames_cappedAlmostComplex (h₀.compatibleAt x) r L w ()) ?_
   rw [cappedAlmostComplex, cayley_endWeightedAlmostComplex, Floer.cayley_cappedAlmostComplex,
     Finset.smul_sum]
-  simp only [smul_smul, Floer.cappedWeight]
+  simp only [smul_smul, Floer.cappedWeight_def]
 
 /-- The capped structure is `σ`-compatible when the structures on the ends are. -/
 theorem compatible_cappedAlmostComplex (hJc : ∀ q t, σ.Compatible (J q t)) (r L : ℝ) (w : ℂ) :
@@ -212,21 +212,6 @@ variable {F G N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [Topological
   {I' : ModelWithCorners ℝ F G} [TopologicalSpace N] [ChartedSpace G N]
   {n : ℕ∞ω} [ENat.LEInfty n]
 
-/-- The weight of the end `q` is `C^n` along a `C^n` family that stays away from the center of
-the end. -/
-private theorem contMDiffAt_cappedWeight {r L : N → ℝ} {f : N → ℂ} {y₀ : N}
-    (hr : ContMDiffAt I' 𝓘(ℝ) n r y₀) (hL : ContMDiffAt I' 𝓘(ℝ) n L y₀)
-    (hf : ContMDiffAt I' 𝓘(ℝ, ℂ) n f y₀) (q : Puncture) (hq : f y₀ ≠ q.endCenter) :
-    ContMDiffAt I' 𝓘(ℝ) n (fun y => Floer.cappedWeight (r y) (L y) q (f y)) y₀ := by
-  have hβ : ContMDiff 𝓘(ℝ) 𝓘(ℝ) n smoothTransition :=
-    ((smoothTransition.contDiff (n := ⊤)).of_le ENat.LEInfty.out).contMDiff
-  have hσ : ContMDiffAt I' 𝓘(ℝ) n (fun y => q.endSign * (q.endCoord (f y)).re) y₀ :=
-    (contDiffAt_const.mul (q.contDiffAt_re_endCoord hq)).contMDiffAt.comp y₀ hf
-  -- Products of real functions are scalar products.
-  simp only [Floer.cappedWeight]
-  exact (hβ.contMDiffAt.comp y₀ hr).smul ((hβ.contMDiffAt.comp y₀ (hσ.sub contMDiffAt_const)).smul
-    (hβ.contMDiffAt.comp y₀ ((hL.add contMDiffAt_const).sub hσ)))
-
 /-- **The structure is smooth.** For end structures which have period one in `t` and are `C^n`
 on `ℝ × M`, the capped structures are `C^n` along every `C^n` family of cutoff parameters `r`,
 neck lengths `L`, points `f` of `ℂ`, including the poles `0` and `1`, and points `b` of `M`. -/
@@ -255,7 +240,7 @@ theorem contMDiff_cappedAlmostComplex (hJp : ∀ q, Function.Periodic (J q) 1)
   simp only [cappedAlmostComplex]
   exact contMDiffAt_endWeightedAlmostComplex h₀ J hJ
     (c := fun y => Floer.cappedWeight (r y) (L y)) (hb y₀)
-    (fun q => contMDiffAt_cappedWeight (hr y₀) (hL y₀) (hf y₀) q (hq q))
+    (fun q => Floer.contMDiffAt_cappedWeight (hr y₀) (hL y₀) (hf y₀) q (hq q))
     fun q => q.contMDiffAt_toEndomorphism_comp_im_endCoord (hJp q) (hJs q) (hf y₀) (hb y₀) (hq q)
 
 end Smooth

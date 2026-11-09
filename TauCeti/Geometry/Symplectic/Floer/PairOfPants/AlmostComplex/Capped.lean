@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.Floer.ComparisonFamily
+import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.Algebra.SMul
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 
@@ -130,9 +131,15 @@ private theorem weight_eq_zero_of_notMem_truncation (hw : w ∉ truncation (L + 
 /-- The weight `β(r) β(σ_q - 1) β(L + 3 - σ_q)` of the end `q` in the Cayley transform of the
 capped structure at `w ∈ ℂ`, where `σ_q = ±s_q(w)` is the signed longitudinal coordinate of the
 end `q` and `β` is the smooth transition function. -/
-@[expose] def cappedWeight (r L : ℝ) (q : Puncture) (w : ℂ) : ℝ :=
+def cappedWeight (r L : ℝ) (q : Puncture) (w : ℂ) : ℝ :=
   smoothTransition r * (smoothTransition (q.endSign * (q.endCoord w).re - 1) *
     smoothTransition (L + 3 - q.endSign * (q.endCoord w).re))
+
+theorem cappedWeight_def (r L : ℝ) (q : Puncture) (w : ℂ) :
+    cappedWeight r L q w = smoothTransition r *
+      (smoothTransition (q.endSign * (q.endCoord w).re - 1) *
+        smoothTransition (L + 3 - q.endSign * (q.endCoord w).re)) :=
+  (rfl)
 
 /-- The weights lie in `[0, 1]`. -/
 theorem cappedWeight_mem_Icc (r L : ℝ) (q : Puncture) (w : ℂ) : cappedWeight r L q w ∈ Icc 0 1 :=
@@ -156,8 +163,25 @@ theorem eventually_cappedWeight_eq_zero {c : ℂ} (hc : c = 0 ∨ c = 1) (L₀ :
   have hL : ∀ᶠ p : ℂ × ℝ in 𝓝 (c, L₀), p.2 < L₀ + 1 :=
     continuous_snd.continuousAt.eventually (gt_mem_nhds (by linarith))
   filter_upwards [hw, hL] with p hpw hpL r q
-  rw [cappedWeight, weight_eq_zero_of_notMem_truncation
+  rw [cappedWeight_def, weight_eq_zero_of_notMem_truncation
     fun h => hpw (truncation_mono (by linarith) h), mul_zero]
+
+/-- The weight of the end `q` is `C^n` along a `C^n` family that stays away from the center of
+the end. -/
+theorem contMDiffAt_cappedWeight {F G N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [TopologicalSpace G] {I' : ModelWithCorners ℝ F G} [TopologicalSpace N] [ChartedSpace G N]
+    {n : WithTop ℕ∞} [ENat.LEInfty n] {r L : N → ℝ} {f : N → ℂ} {y₀ : N}
+    (hr : ContMDiffAt I' 𝓘(ℝ) n r y₀) (hL : ContMDiffAt I' 𝓘(ℝ) n L y₀)
+    (hf : ContMDiffAt I' 𝓘(ℝ, ℂ) n f y₀) (q : Puncture) (hq : f y₀ ≠ q.endCenter) :
+    ContMDiffAt I' 𝓘(ℝ) n (fun y => cappedWeight (r y) (L y) q (f y)) y₀ := by
+  have hβ : ContMDiff 𝓘(ℝ) 𝓘(ℝ) n smoothTransition :=
+    ((smoothTransition.contDiff (n := ⊤)).of_le ENat.LEInfty.out).contMDiff
+  have hσ : ContMDiffAt I' 𝓘(ℝ) n (fun y => q.endSign * (q.endCoord (f y)).re) y₀ :=
+    (contDiffAt_const.mul (q.contDiffAt_re_endCoord hq)).contMDiffAt.comp y₀ hf
+  -- Products of real functions are scalar products.
+  simp only [cappedWeight_def]
+  exact (hβ.contMDiffAt.comp y₀ hr).smul ((contMDiffAt_smoothTransition_endCoord_comp q 1 hf
+    hq).smul (hβ.contMDiffAt.comp y₀ ((hL.add contMDiffAt_const).sub hσ)))
 
 end Weight
 
@@ -199,8 +223,8 @@ theorem cayley_cappedAlmostComplex (h₀ : ω.Compatible J₀) (r L : ℝ) (w : 
       smoothTransition r • ∑ q, (smoothTransition (q.endSign * (q.endCoord w).re - 1) *
         smoothTransition (L + 3 - q.endSign * (q.endCoord w).re)) •
         J₀.cayley (J q (q.endCoord w).im x) := by
-  simp only [cappedAlmostComplex, cayley_endWeightedAlmostComplex, cappedWeight, Finset.smul_sum,
-    smul_smul]
+  simp only [cappedAlmostComplex, cayley_endWeightedAlmostComplex, cappedWeight_def,
+    Finset.smul_sum, smul_smul]
 
 /-- The capped structure is `ω`-compatible when the structures on the ends are. -/
 theorem compatible_cappedAlmostComplex (h₀ : ω.Compatible J₀)
@@ -262,7 +286,7 @@ theorem cayley_cappedAlmostComplex_cylindricalEndLift_of_pos (h₀ : ω.Compatib
       (smoothTransition r * (smoothTransition (q.endSign * z.re - 1) *
         smoothTransition (L + 3 - q.endSign * z.re))) • J₀.cayley (J q z.im x) := by
   rw [cappedAlmostComplex,
-    cayley_endWeightedAlmostComplex_cylindricalEndLift_of_pos h₀ hJp hz, cappedWeight,
+    cayley_endWeightedAlmostComplex_cylindricalEndLift_of_pos h₀ hJp hz, cappedWeight_def,
     re_endCoord_cylindricalEndLift]
 
 /-- **The neck.** If `J q` has period one in `t` and `r ≥ 1`, then on the part
@@ -334,7 +358,7 @@ private theorem eventually_weight_eq_zero (q : Puncture) (L₀ : ℝ) :
         smoothTransition (p.2 + 3 - q.endSign * (q.endCoord p.1).re) = 0 := by
   filter_upwards [eventually_cappedWeight_eq_zero q.endCenter_eq_zero_or_eq_one L₀] with p hp
   -- The weight with the cutoff `β(1) = 1`.
-  simpa [cappedWeight, smoothTransition.one_of_one_le le_rfl] using hp 1 q
+  simpa [cappedWeight_def, smoothTransition.one_of_one_le le_rfl] using hp 1 q
 
 /-- The term of the end `q` in the Cayley coordinate of the capped structure is smooth jointly in
 the neck length `L`, the point `w ∈ ℂ` and the parameter `x`, also at the center of the end, where
