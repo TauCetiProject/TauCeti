@@ -359,14 +359,14 @@ theorem discr_X_pow_three_add_two_mul_X_sq_sub_three_mul_X_sub_one :
   rw [Polynomial.discr_of_degree_eq_three (by compute_degree <;> norm_num)]
   norm_num [coeff_add, coeff_sub, coeff_X_pow, coeff_one, coeff_X, coeff_C_mul]
 
-/-- A polynomial of discriminant `49` or `257` is excluded by the index--discriminant formula in a
+/-- A polynomial of positive discriminant is excluded by the index--discriminant formula in a
 field of discriminant `-23`: its discriminant is never a positive square times `-23`. -/
-private theorem discr_ne_sq_mul_of_discr_eq {g : ℤ[X]} (hK : NumberField.discr K = -23)
-    (hg : g.discr = 49 ∨ g.discr = 257) :
+private theorem discr_ne_sq_mul_of_pos {g : ℤ[X]} (hK : NumberField.discr K = -23)
+    (hg : 0 < g.discr) :
     ∀ n : ℕ, 0 < n → g.discr ≠ (n : ℤ) ^ 2 * NumberField.discr K := by
   intro n _ heq
   rw [hK] at heq
-  rcases hg with h | h <;> rw [h] at heq <;> nlinarith [sq_nonneg (n : ℤ)]
+  nlinarith [sq_nonneg (n : ℤ)]
 
 /-- **The 98-candidate elimination certificate.** Every monic cubic with constant coefficient
 `±1` and the coefficient bounds forced by a unit below `θ² - θ` is excluded either by having no
@@ -416,14 +416,14 @@ theorem cubicUnitEliminationCertificate (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 +
         rw [hpoly, hc.1, hc.2.1, hc.2.2]
         norm_num
         ring
-      exact discr_ne_sq_mul_of_discr_eq (discr_eq_neg_twenty_three hmin hgen)
-        (Or.inl (hg ▸ discr_X_pow_three_add_X_sq_sub_two_mul_X_sub_one))
+      exact discr_ne_sq_mul_of_pos (discr_eq_neg_twenty_three hmin hgen)
+        (by rw [hg, discr_X_pow_three_add_X_sq_sub_two_mul_X_sub_one]; norm_num)
     · have hg : g = X ^ 3 + 2 * X ^ 2 - 3 * X - 1 := by
         rw [hpoly, hc.1, hc.2.1, hc.2.2]
         norm_num
         ring
-      exact discr_ne_sq_mul_of_discr_eq (discr_eq_neg_twenty_three hmin hgen)
-        (Or.inr (hg ▸ discr_X_pow_three_add_two_mul_X_sq_sub_three_mul_X_sub_one))
+      exact discr_ne_sq_mul_of_pos (discr_eq_neg_twenty_three hmin hgen)
+        (by rw [hg, discr_X_pow_three_add_two_mul_X_sq_sub_three_mul_X_sub_one]; norm_num)
   · left
     simpa only [not_exists, not_and] using hroot
 

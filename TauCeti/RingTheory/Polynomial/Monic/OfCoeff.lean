@@ -163,7 +163,7 @@ end TauCeti
 
 namespace Polynomial.Monic
 
-variable {R : Type*} [CommSemiring R]
+variable {R : Type*} [Semiring R]
 
 /-- A monic polynomial of degree three is `X ^ 3 + C a * X ^ 2 + C b * X + C c` for its own
 coefficients `a`, `b`, `c`. -/
@@ -172,6 +172,6 @@ theorem eq_X_pow_three_add_of_natDegree_eq_three {g : R[X]} (hmonic : g.Monic)
     g = X ^ 3 + C (g.coeff 2) * X ^ 2 + C (g.coeff 1) * X + C (g.coeff 0) := by
   conv_lhs => rw [hmonic.as_sum, hdeg]
   simp [Finset.sum_range_succ]
-  ring
+  abel
 
 end Polynomial.Monic
