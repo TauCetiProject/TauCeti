@@ -9,7 +9,6 @@ public import Mathlib.CategoryTheory.Grothendieck
 public import TauCeti.CategoryTheory.FiberedCategory.Fiber
 public import Mathlib.CategoryTheory.Groupoid
 public import Mathlib.CategoryTheory.Limits.HasLimits
-public import Mathlib.CategoryTheory.Endomorphism
 
 /-!
 # Sections and their coefficient limits
@@ -23,7 +22,8 @@ A functor from the total category to a category `V` restricts to a diagram
 along each section. Taking limits of these diagrams gives a functor from sections
 to `V`. Section isomorphisms induce isomorphisms of the limits via `Functor.mapIso`;
 when every fiber is a groupoid, every section morphism induces an isomorphism.
-Apply `Functor.mapAut` to obtain an action of the automorphism group of a section.
+After importing `Mathlib.CategoryTheory.Endomorphism`, apply `Functor.mapAut`
+to obtain an action of the automorphism group of a section.
 The projection formula computes the induced maps at every base object;
 functoriality supplies identity and composition.
 
@@ -87,7 +87,7 @@ theorem hom_comp {s t r : Section C} (α : s ⟶ t) (β : t ⟶ r) :
     hom (α ≫ β) = hom α ≫ hom β := (rfl)
 
 /-- A morphism of sections lies over the identity transformation of the base. -/
-theorem hom_over {s t : Section C} (α : s ⟶ t) :
+theorem whiskerRight_hom_forget {s t : Section C} (α : s ⟶ t) :
     whiskerRight (hom α) (forget C) =
       eqToHom s.toFunctor_comp_forget ≫ eqToHom t.toFunctor_comp_forget.symm := by
   have := α.property
@@ -95,9 +95,9 @@ theorem hom_over {s t : Section C} (α : s ⟶ t) :
     ((whiskeringRight D (Grothendieck C) D).obj (forget C)) (𝟙 (𝟭 D)) (hom α)
 
 /-- Every component of a section morphism projects to an isomorphism of the base. -/
-instance hom_app_base_isIso {s t : Section C} (α : s ⟶ t) (d : D) :
+instance isIso_hom_app_base {s t : Section C} (α : s ⟶ t) (d : D) :
     IsIso ((hom α).app d).base := by
-  have h := hom_over α
+  have h := whiskerRight_hom_forget α
   have : IsIso (whiskerRight (hom α) (forget C)) := by
     rw [h]
     infer_instance
