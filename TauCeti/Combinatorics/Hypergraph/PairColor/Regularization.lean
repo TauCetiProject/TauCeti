@@ -10,6 +10,7 @@ public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 import Mathlib.Data.Nat.Cast.Order.Field
 import Mathlib.Tactic.Linarith
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Data.Finset.Basic
 import TauCeti.Order.Partition.Finpartition
 
@@ -110,19 +111,6 @@ theorem irregularPairs_subset_offDiag : S.irregularPairs ε P ⊆ P.parts.offDia
   obtain ⟨h₁, h₂, h₃, -⟩ := S.mem_irregularPairs.1 hAB
   exact mem_offDiag.2 ⟨h₁, h₂, h₃⟩
 
-/-- The final estimate of the energy increment: the gain `ε² ε² M / D`, where `M` exceeds
-`ε n²` and `D ≤ n²`, exceeds `ε⁵`. -/
-private theorem pow_five_lt_of_mul_div_le {α : Type*} [Field α] [LinearOrder α]
-    [IsStrictOrderedRing α] {ε M D n g : α} (hε : 0 < ε) (hD : 0 < D)
-    (hDn : D ≤ n ^ 2) (hbad : ε * n ^ 2 < M) (hgain : ε ^ 2 * ε ^ 2 * (M / D) ≤ g) :
-    ε ^ 5 < g := by
-  have hn : 0 < n ^ 2 := hD.trans_le hDn
-  have hM₀ : 0 ≤ M := hbad.le.trans' (by positivity)
-  have hM : ε < M / D :=
-    ((lt_div_iff₀ hn).2 hbad).trans_le (div_le_div_of_nonneg_left hM₀ hD hDn)
-  have hε4 : 0 < ε ^ 2 * ε ^ 2 := by positivity
-  nlinarith
-
 /-- Choosing two sets for each irregular pair gives at most `2 * #P.parts ^ 2` sets. -/
 private theorem card_image_union_irregularPairs_le (P : Finpartition (univ : Finset V))
     (X Y : Finset V × Finset V → Finset V) :
@@ -206,7 +194,7 @@ theorem exists_refinement_energy_add_lt (P : Finpartition (univ : Finset V)) (h�
       rw [card_univ] at h
       push_cast at h
       exact h
-    linarith [pow_five_lt_of_mul_div_le hε hD hDn hbad hgain]
+    linarith [TauCeti.pow_five_lt_of_mul_div_le hε hD hDn hbad hgain]
 
 /-- The refinement invariant: after `k` rounds starting from `P₀`, either the irregular pairs
 cover at most `ε |V|²` ordered pairs of vertices, or the energy has grown by at least `k ε⁵`. -/
