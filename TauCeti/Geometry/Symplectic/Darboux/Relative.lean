@@ -153,10 +153,15 @@ theorem exists_diffeomorph_fix_zeroSection_eventually_compContinuousLinearMap_fd
   -- The pulled-back form `A^* ω₁` satisfies the hypotheses of the relative Moser step.
   let ω₁' : E × N → (E × N) [⋀^Fin 2]→L[ℝ] ℝ :=
     fun x ↦ (ω₁ (A x)).compContinuousLinearMap (A : (E × N) →L[ℝ] (E × N))
+  have hr0 : (r : WithTop ℕ∞) ≠ 0 := by
+    have : (1 : WithTop ℕ∞) ≤ r := by exact_mod_cast hr
+    exact (lt_of_lt_of_le zero_lt_one this).ne'
   have hω₁' : ContDiffOn ℝ r ω₁' (W ∩ A ⁻¹' W) :=
-    (contDiffOn_pullback_continuousLinearEquiv hω₁ A).mono inter_subset_right
+    (contDiffOn_pullback_continuousLinearMap (r := r) hω₁
+      (A : (E × N) →L[ℝ] (E × N))).mono inter_subset_right
   have hdω₁' : ∀ x ∈ W ∩ A ⁻¹' W, extDeriv ω₁' x = 0 := fun x hx ↦
-    extDeriv_pullback_continuousLinearEquiv_eq_zero hr hW hω₁ hdω₁ A hx.2
+    extDeriv_pullback_continuousLinearMap_eq_zero (r := r) hr0 hW hω₁ hdω₁
+      (A : (E × N) →L[ℝ] (E × N)) hx.2
   have htan' : ∀ q : E, (q, (0 : N)) ∈ W ∩ A ⁻¹' W →
       (ω₁' (q, 0)).compContinuousLinearMap (.inl ℝ E N) =
         (ω₀ (q, 0)).compContinuousLinearMap (.inl ℝ E N) := fun q hq ↦ by
