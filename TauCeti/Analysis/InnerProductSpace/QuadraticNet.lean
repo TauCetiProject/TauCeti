@@ -14,9 +14,11 @@ public import Mathlib.Topology.MetricSpace.Cover
 A bound for the quadratic form of a symmetric operator on an `η`-net of the unit sphere controls
 its operator norm, with loss `(1 - 2η)⁻¹`.
 
+This file formalizes the net argument in the TauCeti RandomMatrices roadmap, §2.4.
+
 ## References
 
-* R. Vershynin, *High-Dimensional Probability*, 2018, §4.4, Exercise 4.4.3.
+* R. Vershynin, *High-Dimensional Probability*, 2018, Lemma 4.4.1 and Exercise 4.4.3.
 * T. Tao, *Topics in Random Matrix Theory*, §2.3.
 -/
 
@@ -26,9 +28,9 @@ open Metric RCLike
 
 namespace ContinuousLinearMap
 
-/-- Perturbing both arguments of the quadratic form of a continuous linear map changes it by at
-most `2η ‖T‖`, when both vectors have norm at most one and are within `η` of each other. -/
-theorem norm_inner_map_sub_le {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
+/-- The quadratic form of a continuous linear map changes by at most `2η ‖T‖` between vectors
+in the closed unit ball that are within `η` of each other. -/
+theorem norm_inner_map_self_sub_le {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
     [InnerProductSpace 𝕜 E] (T : E →L[𝕜] E) {η : ℝ} {x y : E}
     (hx : ‖x‖ ≤ 1) (hy : ‖y‖ ≤ 1) (hxy : ‖x - y‖ ≤ η) :
     ‖Inner.inner 𝕜 (T x) x - Inner.inner 𝕜 (T y) y‖ ≤ 2 * η * ‖T‖ := by
@@ -52,21 +54,12 @@ theorem norm_inner_map_sub_le {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup
     _ ≤ ‖T (x - y)‖ * ‖x‖ + ‖T y‖ * ‖x - y‖ :=
           add_le_add (norm_inner_le_norm _ _) (norm_inner_le_norm _ _)
     _ ≤ (‖T‖ * η) * 1 + ‖T‖ * η := by
-      refine add_le_add ?_ ?_
-      · calc
-          ‖T (x - y)‖ * ‖x‖ ≤ (‖T‖ * η) * ‖x‖ :=
-            mul_le_mul_of_nonneg_right hTxy (norm_nonneg _)
-          _ ≤ (‖T‖ * η) * 1 :=
-            mul_le_mul_of_nonneg_left hx (mul_nonneg T.opNorm_nonneg hη)
-      · calc
-          ‖T y‖ * ‖x - y‖ ≤ ‖T‖ * ‖x - y‖ :=
-            mul_le_mul_of_nonneg_right hTy (norm_nonneg _)
-          _ ≤ ‖T‖ * η := mul_le_mul_of_nonneg_left hxy T.opNorm_nonneg
+      gcongr
     _ = 2 * η * ‖T‖ := by ring
 
 /-- For a symmetric continuous linear map, a uniform bound on the real part of its quadratic
 form over unit vectors bounds its operator norm. -/
-theorem norm_le_of_forall_norm_eq_one_abs_re_inner_le {𝕜 E : Type*} [RCLike 𝕜]
+theorem norm_le_of_forall_norm_eq_one_abs_re_inner_map_self_le {𝕜 E : Type*} [RCLike 𝕜]
     [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] (T : E →L[𝕜] E) (hT : T.IsSymmetric)
     {C : ℝ} (hC : 0 ≤ C)
     (h : ∀ x : E, ‖x‖ = 1 → |RCLike.re (Inner.inner 𝕜 (T x) x)| ≤ C) : ‖T‖ ≤ C := by
@@ -75,23 +68,20 @@ theorem norm_le_of_forall_norm_eq_one_abs_re_inner_le {𝕜 E : Type*} [RCLike �
   by_cases hx : x = 0
   · subst x
     simpa only [rayleighQuotient_apply_zero, abs_zero] using hC
-  · let y : E := (‖x‖⁻¹ : 𝕜) • x
-    have hy : ‖y‖ = 1 := by
-      simpa [y] using norm_smul_inv_norm (𝕜 := 𝕜) hx
-    have hxnorm : ‖x‖ ≠ 0 := norm_ne_zero_iff.mpr hx
-    have hscale : T.rayleighQuotient y = T.rayleighQuotient x := by
-      change T.rayleighQuotient (((‖x‖⁻¹ : 𝕜) • x)) = _
-      apply T.rayleigh_smul
-      exact inv_ne_zero (by exact_mod_cast hxnorm)
-    have hquot : T.rayleighQuotient y = RCLike.re (Inner.inner 𝕜 (T y) y) := by
-      simp [rayleighQuotient, reApplyInnerSelf_apply, hy]
-    rw [← hscale]
-    simpa only [hquot] using h y hy
+  · have hxmem : T.rayleighQuotient x ∈
+        T.rayleighQuotient '' ({0}ᶜ : Set E) := ⟨x, hx, rfl⟩
+    rw [T.image_rayleigh_eq_image_rayleigh_sphere (show 0 < (1 : ℝ) by norm_num)] at hxmem
+    obtain ⟨y, hy, hxy⟩ := hxmem
+    have hy_norm : ‖y‖ = 1 := mem_sphere_zero_iff_norm.mp hy
+    rw [← hxy, show T.rayleighQuotient y =
+        RCLike.re (Inner.inner 𝕜 (T y) y) by
+          simp [rayleighQuotient, reApplyInnerSelf_apply, hy_norm]]
+    exact h y hy_norm
 
 /-- A bound on the real part of a symmetric operator's quadratic form on an `η`-cover of the
 unit sphere bounds its operator norm. The cover points may lie anywhere in the closed unit ball.
 -/
-theorem norm_le_of_isSymmetric_of_abs_re_inner_le_of_isCover_sphere
+theorem norm_le_of_isSymmetric_of_abs_re_inner_map_self_le_of_isCover
     {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
     (T : E →L[𝕜] E) (hT : T.IsSymmetric) {η : NNReal} (hη : η < (1 / 2 : NNReal))
     {N : Set E} {M : ℝ} (hM0 : 0 ≤ M) (hN : N ⊆ closedBall (0 : E) 1)
@@ -114,7 +104,7 @@ theorem norm_le_of_isSymmetric_of_abs_re_inner_le_of_isCover_sphere
       simpa [mem_closedBall, dist_eq_norm] using hN hzN
     have hdist' : ‖x - z‖ ≤ (η : ℝ) := by
       simpa [mem_closedBall, dist_eq_norm] using hdist
-    have herror := norm_inner_map_sub_le T hx.le hznorm hdist'
+    have herror := norm_inner_map_self_sub_le T hx.le hznorm hdist'
     have herror' :
         |RCLike.re (Inner.inner 𝕜 (T x) x) - RCLike.re (Inner.inner 𝕜 (T z) z)| ≤
           2 * (η : ℝ) * ‖T‖ := by
@@ -131,7 +121,7 @@ theorem norm_le_of_isSymmetric_of_abs_re_inner_le_of_isCover_sphere
   -- The Rayleigh-quotient characterization turns the unit-vector estimate into an operator-norm
   -- bound; rearrange to absorb the error term, using η < 1/2.
   have hnorm : ‖T‖ ≤ M + 2 * (η : ℝ) * ‖T‖ :=
-    norm_le_of_forall_norm_eq_one_abs_re_inner_le T hT
+    norm_le_of_forall_norm_eq_one_abs_re_inner_map_self_le T hT
       (add_nonneg hM0 (mul_nonneg (by positivity) (norm_nonneg T))) hunit
   have hsolve : (1 - 2 * (η : ℝ)) * ‖T‖ ≤ M := by nlinarith
   exact (le_inv_mul_iff₀ hden).mpr hsolve
