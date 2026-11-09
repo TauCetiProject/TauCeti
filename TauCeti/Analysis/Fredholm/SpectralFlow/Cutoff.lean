@@ -6,14 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Continuity
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import Mathlib.Analysis.Normed.Operator.Compact.FredholmAlternative
 public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
-public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
 public import TauCeti.Analysis.Fredholm.SelfAdjoint.SpectralGap
 public import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
-public import TauCeti.Analysis.Normed.Operator.IdempotentRange
+public import TauCeti.Analysis.Normed.Operator.SpectralProjection
 
 /-!
 # Finite spectral cutoffs and spectral counts
@@ -36,8 +34,9 @@ long as `c` stays a finite spectral cutoff. Two facts make this usable:
   is constant for self-adjoint `T` near `T₀`
   (`TauCeti.IsFiniteSpectralCutoff.eventually_spectralCount_sub_eq`).
 
-Both rest on the continuity of `T ↦ 𝟙_Ω(T)` near a self-adjoint `T₀` whose spectrum avoids the
-frontier of `Ω`, and on the local constancy of the rank of a continuous family of projections.
+Both rest on the local constancy of the rank of the spectral projection `𝟙_Ω(T)` near a
+self-adjoint `T₀` whose spectrum avoids the frontier of `Ω`
+(`IsSelfAdjoint.eventually_nonempty_continuousLinearEquiv_range_cfc_indicator`).
 Every self-adjoint Fredholm operator has a finite spectral cutoff
 (`IsSelfAdjoint.exists_isFiniteSpectralCutoff_of_isFredholm`), by its spectral gap at zero.
 
@@ -54,10 +53,6 @@ ones by `ContinuousLinearMap.instIsometricContinuousFunctionalCalculusRealIsSelf
 
 ## Main results
 
-* `TauCeti.range_cfc_indicator_le_of_subset`: spectral projections are monotone in the set.
-* `IsSelfAdjoint.eventually_nonempty_continuousLinearEquiv_range_cfc_indicator`: if the spectrum
-  of a self-adjoint `T₀` avoids the frontier of `Ω`, then for self-adjoint `T` near `T₀` the
-  ranges of `𝟙_Ω(T)` and `𝟙_Ω(T₀)` are isomorphic.
 * `TauCeti.IsFiniteSpectralCutoff.finite_spectrum_inter_Ioo`: the spectrum in `(-c, c)` is finite.
 * `TauCeti.IsFiniteSpectralCutoff.finiteDimensional_range_cfc_indicator_Ico`: the spectral
   projection onto `[0, c)` has finite rank.
@@ -82,49 +77,6 @@ namespace TauCeti
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
   [NormedAlgebra ℝ (E →L[𝕜] E)] [IsometricContinuousFunctionalCalculus ℝ (E →L[𝕜] E) IsSelfAdjoint]
-
-/-! ### Spectral projections -/
-
-/-- **Spectral projections have locally constant rank.** If the spectrum of a self-adjoint
-operator `T₀` avoids the frontier of `Ω`, then for every self-adjoint `T` near `T₀` the ranges of
-the spectral projections `𝟙_Ω(T₀)` and `𝟙_Ω(T)` are isomorphic. -/
-theorem _root_.IsSelfAdjoint.eventually_nonempty_continuousLinearEquiv_range_cfc_indicator
-    {T₀ : E →L[𝕜] E} (hT₀ : IsSelfAdjoint T₀) {Ω : Set ℝ}
-    (hΩ : Disjoint (spectrum ℝ T₀) (frontier Ω)) :
-    ∀ᶠ T in 𝓝[{T | IsSelfAdjoint T}] T₀,
-      Nonempty ((cfc (Ω.indicator 1) T₀).range ≃L[𝕜] (cfc (Ω.indicator 1) T).range) := by
-  set U : Set (E →L[𝕜] E) := {T | IsSelfAdjoint T ∧ Disjoint (spectrum ℝ T) (frontier Ω)}
-  -- `U` is a neighbourhood of `T₀` among the self-adjoint operators.
-  have hU : U ∈ 𝓝[{T | IsSelfAdjoint T}] T₀ := by
-    have h := (upperHemicontinuous_spectrum ℝ (E →L[𝕜] E)).upperHemicontinuousAt T₀ _
-      (isClosed_frontier.isOpen_compl.mem_nhdsSet.2 hΩ.subset_compl_right)
-    filter_upwards [nhdsWithin_le_nhds h, self_mem_nhdsWithin] with T hT hsa
-    exact ⟨hsa, subset_compl_iff_disjoint_right.1 (subset_of_mem_nhdsSet hT)⟩
-  -- The spectral projection is continuous on `U`, so its rank is locally constant there.
-  have hcont : ContinuousOn (fun T ↦ cfc (Ω.indicator (1 : ℝ → ℝ)) T) U :=
-    ContinuousOn.cfc_of_mem_nhdsSet _ (s := (frontier Ω)ᶜ)
-      (isClosed_frontier.isOpen_compl.mem_nhdsSet.2 <| iUnion₂_subset fun T hT ↦
-        hT.2.subset_compl_right) continuousOn_id (fun T hT ↦ hT.1)
-      (ContinuousOn.indicator_of_disjoint_frontier (by exact continuousOn_const)
-        disjoint_compl_left)
-  have hmem : T₀ ∈ U := ⟨hT₀, hΩ⟩
-  have h := eventually_nonempty_continuousLinearEquiv_range
-    (continuousOn_iff_continuous_domRestrict.1 hcont)
-    (fun T ↦ (isStarProjection_cfc_indicator (T : E →L[𝕜] E) Ω).isIdempotentElem) ⟨T₀, hmem⟩
-  refine nhdsWithin_le_of_mem hU ?_
-  rw [nhdsWithin_eq_map_subtype_coe hmem]
-  exact Filter.eventually_map.2 h
-
-/-- If `Ω' ⊆ Ω` and both indicators are continuous on the spectrum of `T`, the spectral projection
-onto `Ω'` maps into the range of the spectral projection onto `Ω`. -/
-theorem range_cfc_indicator_le_of_subset {T : E →L[𝕜] E} {Ω Ω' : Set ℝ} (hsub : Ω' ⊆ Ω)
-    (hΩ : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ T))
-    (hΩ' : ContinuousOn (Ω'.indicator (1 : ℝ → ℝ)) (spectrum ℝ T)) :
-    (cfc (Ω'.indicator 1) T).range ≤ (cfc (Ω.indicator 1) T).range := by
-  have h : cfc (Ω'.indicator (1 : ℝ → ℝ)) T = cfc (Ω.indicator 1) T * cfc (Ω'.indicator 1) T := by
-    rw [← cfc_mul _ _ T hΩ hΩ', ← Pi.mul_def, ← inter_indicator_one, inter_eq_right.2 hsub]
-  rw [h, ContinuousLinearMap.toLinearMap_mul]
-  exact LinearMap.range_comp_le_range _ _
 
 /-! ### Finite spectral cutoffs -/
 

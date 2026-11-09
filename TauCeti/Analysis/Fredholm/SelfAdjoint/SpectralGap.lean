@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Normed.Operator.ClosedRange
+public import TauCeti.Analysis.Real.BumpPlateau
 public import TauCeti.Topology.Indicator
 
 /-!
@@ -52,33 +53,8 @@ open Set
 
 namespace IsSelfAdjoint
 
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-
-/-- A continuous bump `k` at `l` with `k l = 1` and a continuous plateau `h` equal to one on the
-support of `k`, such that `|x h(x)| ≤ |l| + 2δ` everywhere. -/
-private theorem exists_bump_plateau (l : ℝ) {δ : ℝ} (hδ : 0 < δ) :
-    ∃ k h : ℝ → ℝ, Continuous k ∧ Continuous h ∧ k l = 1 ∧ (∀ x, h x * k x = k x) ∧
-      ∀ x, ‖x * h x‖ ≤ |l| + 2 * δ := by
-  refine ⟨fun x ↦ max 0 (1 - |x - l| / δ), fun x ↦ max 0 (min 1 (2 - |x - l| / δ)),
-    by fun_prop, by fun_prop, by simp, fun x ↦ ?_, fun x ↦ ?_⟩
-  · rcases le_or_gt δ |x - l| with hx | hx
-    · have : 1 - |x - l| / δ ≤ 0 := by rw [sub_nonpos, le_div_iff₀ hδ]; linarith
-      simp [max_eq_left this]
-    · have : 1 ≤ 2 - |x - l| / δ := by rw [le_sub_comm, div_le_iff₀ hδ]; linarith
-      simp [min_eq_left this]
-  · rw [norm_mul, Real.norm_eq_abs, Real.norm_eq_abs]
-    rcases le_or_gt (2 * δ) |x - l| with hx | hx
-    · have : 2 - |x - l| / δ ≤ 0 := by rw [sub_nonpos, le_div_iff₀ hδ]; linarith
-      simp only [min_eq_right (this.trans zero_le_one), max_eq_left this, abs_zero, mul_zero]
-      positivity
-    · have h0 : 0 ≤ max 0 (min 1 (2 - |x - l| / δ)) := le_max_left _ _
-      have h1 : max 0 (min 1 (2 - |x - l| / δ)) ≤ 1 := max_le zero_le_one (min_le_left _ _)
-      have hx' : |x| ≤ |l| + 2 * δ := by have := abs_sub_abs_le_abs_sub x l; linarith
-      rw [abs_of_nonneg h0]
-      nlinarith [abs_nonneg x]
-
-variable [CompleteSpace E] [NormedAlgebra ℝ (E →L[𝕜] E)]
-  [IsometricContinuousFunctionalCalculus ℝ (E →L[𝕜] E) IsSelfAdjoint]
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+  [NormedAlgebra ℝ (E →L[𝕜] E)] [IsometricContinuousFunctionalCalculus ℝ (E →L[𝕜] E) IsSelfAdjoint]
 
 /-- A **self-adjoint operator with closed range has a spectral gap at zero**: every nonzero point
 of its real spectrum has absolute value at least some `c > 0`. -/
@@ -99,7 +75,7 @@ theorem exists_pos_forall_mem_spectrum_of_isClosed_range {T : E →L[𝕜] E} (h
     have : δ ≤ (C⁻¹ - |l|) / 3 := min_le_right _ _
     calc C * (|l| + 2 * δ) < C * C⁻¹ := by gcongr; linarith
       _ = 1 := mul_inv_cancel₀ hC.ne'
-  obtain ⟨k, h, hkc, hhc, hkl, hhk, hbound⟩ := exists_bump_plateau l hδ0
+  obtain ⟨k, h, hkc, hhc, hkl, hhk, hbound⟩ := Real.exists_bump_plateau l hδ0
   -- `Q = T k(T)` maps into the range of `T`, and `T Q = R Q` for `R = (x ↦ x h(x))(T)`.
   have hidc : ContinuousOn (fun x : ℝ ↦ x) (spectrum ℝ T) := continuousOn_id
   have hxkc : ContinuousOn (fun x ↦ x * k x) (spectrum ℝ T) := (continuous_id.mul hkc).continuousOn
