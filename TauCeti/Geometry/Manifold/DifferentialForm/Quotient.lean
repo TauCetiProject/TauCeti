@@ -85,7 +85,6 @@ theorem isBasic_quotientMk (hn : n ≠ 0) {α : RoughForm I M F k}
     (hα : ∀ g : G, mpullback I I (g • ·) α = α) :
     IsBasic I (Quotient.mk (MulAction.orbitRel G M)) α :=
   (isLocalDiffeomorph_quotientMk (n := n)).isBasic_of_mpullback_eq hn (σ := fun g : G ↦ (g • ·))
-    (fun g ↦ (contMDiff_const_smul g).mdifferentiable hn)
     (fun g ↦ funext fun x ↦ Quotient.sound (MulAction.mem_orbit x g))
     (fun _ _ h ↦ Or.inr (MulAction.mem_orbit_iff.mp (Quotient.exact h.symm))) hα
 
