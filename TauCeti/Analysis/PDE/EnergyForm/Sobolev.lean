@@ -722,12 +722,8 @@ theorem norm_energyFormH1_le_of_bounds
       have h1 : ‖W1p.gradient w‖ = 0 := by
         simp [Lp.norm_def, hΩ]
       nlinarith [W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq w, norm_nonneg w]
-    have hμ : mu.restrict (Omega : Set (EuclideanSpace ℝ ι)) = 0 := by
-      rw [hΩ, Measure.restrict_empty]
     have hform : energyFormH1 a b c u v = 0 := by
-      unfold energyFormH1
-      rw [energyFormIntegral_def, hμ]
-      exact integral_zero_measure _
+      simp [energyFormH1_def, hΩ]
     rw [hform, hnorm u, norm_zero, zero_mul, mul_zero]
   have hbeta : 0 ≤ beta := (norm_nonneg _).trans (hb_bound x hx)
   have hgamma : 0 ≤ gamma := (norm_nonneg _).trans (hc_bound x hx)
