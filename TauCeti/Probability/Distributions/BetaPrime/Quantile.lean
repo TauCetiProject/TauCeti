@@ -68,7 +68,7 @@ theorem tendsto_quantile_betaPrimeMeasure_nhdsGT_zero (ha : 0 < a) (hb : 0 < b) 
     simpa only [Pi.div_apply, id_eq, zero_div] using
       tendsto_id.div (tendsto_const_nhds.sub tendsto_id)
         (by norm_num : (1 : ℝ) - 0 ≠ 0)
-  have hlim := hmap.comp (tendsto_inverseRegularizedIncompleteBeta_zero ha hb)
+  have hlim := hmap.comp (tendsto_inverseRegularizedIncompleteBeta_zero (a := a) (b := b))
   apply (EReal.tendsto_coe.mpr hlim).congr'
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
   rw [Function.comp_apply, fisherSnedecorMap_def]

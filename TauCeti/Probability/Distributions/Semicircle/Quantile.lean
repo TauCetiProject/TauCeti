@@ -51,8 +51,8 @@ theorem quantile_semicircleMeasure_mem_Ioo {u : ℝ} (hu : u ∈ Ioo 0 1) :
 theorem continuousOn_quantile_semicircleMeasure :
     ContinuousOn semicircleMeasure.quantile (Ioo 0 1) := by
   rw [continuousOn_congr (fun u hu ↦ quantile_semicircleMeasure hu)]
-  exact (continuousOn_const.mul (continuousOn_inverseRegularizedIncompleteBeta
-    (by norm_num) (by norm_num))).sub continuousOn_const
+  exact (continuousOn_const.mul continuousOn_inverseRegularizedIncompleteBeta).sub
+    continuousOn_const
 
 /-- Semicircle quantiles are strictly increasing on the interior probability levels. -/
 theorem strictMonoOn_quantile_semicircleMeasure :
@@ -62,8 +62,8 @@ theorem strictMonoOn_quantile_semicircleMeasure :
 /-- Semicircle quantiles tend to the lower support endpoint as the level tends to zero. -/
 theorem tendsto_quantile_semicircleMeasure_nhdsGT_zero :
     Tendsto (fun u ↦ (semicircleMeasure.quantile u : EReal)) (𝓝[>] 0) (𝓝 (-1)) := by
-  have h := ((tendsto_inverseRegularizedIncompleteBeta_zero
-    (by norm_num : (0 : ℝ) < 3 / 2) (by norm_num : (0 : ℝ) < 3 / 2)).const_mul 2).sub_const 1
+  have h := ((tendsto_inverseRegularizedIncompleteBeta_zero (a := 3 / 2) (b := 3 / 2)).const_mul
+    2).sub_const 1
   norm_num only at h
   apply (EReal.tendsto_coe.2 h).congr'
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu

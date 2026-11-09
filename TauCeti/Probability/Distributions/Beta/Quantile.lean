@@ -94,7 +94,7 @@ theorem betaMeasure_map_sq_one_right {a : ℝ} (ha : 0 < a) :
 from above. -/
 theorem tendsto_quantile_betaMeasure_nhdsGT_zero (ha : 0 < a) (hb : 0 < b) :
     Tendsto (betaMeasure a b).quantile (𝓝[>] 0) (𝓝 0) := by
-  apply (tendsto_inverseRegularizedIncompleteBeta_zero ha hb).congr'
+  apply (tendsto_inverseRegularizedIncompleteBeta_zero (a := a) (b := b)).congr'
   filter_upwards [Ioo_mem_nhdsGT one_pos] with u hu
   exact (quantile_betaMeasure ha hb hu).symm
 

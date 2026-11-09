@@ -72,8 +72,7 @@ theorem tendsto_quantile_fisherSnedecorMeasure_nhdsGT_zero (hm : 0 < m) (hn : 0 
     have hcont := (hasDerivAt_fisherSnedecorMap m n
       (u := 0) (by norm_num)).continuousAt.tendsto
     have hcomp := hcont.comp
-      (tendsto_inverseRegularizedIncompleteBeta_zero
-        (by linarith : 0 < m / 2) (by linarith : 0 < n / 2))
+      (tendsto_inverseRegularizedIncompleteBeta_zero (a := m / 2) (b := n / 2))
     have hzero : fisherSnedecorMap m n 0 = 0 := by
       rw [fisherSnedecorMap_def]
       norm_num

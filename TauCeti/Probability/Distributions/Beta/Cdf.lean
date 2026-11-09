@@ -184,7 +184,7 @@ theorem continuous_cdf_betaMeasure (hα : 0 < α) (hβ : 0 < β) :
   have h : ⇑(cdf (betaMeasure α β)) = regularizedIncompleteBeta α β :=
     funext (cdf_betaMeasure_eq hα hβ)
   rw [h]
-  exact continuous_regularizedIncompleteBeta hα hβ
+  exact continuous_regularizedIncompleteBeta hα
 
 /-- A random variable with a beta law has the regularized incomplete beta function as its
 cumulative distribution function. -/

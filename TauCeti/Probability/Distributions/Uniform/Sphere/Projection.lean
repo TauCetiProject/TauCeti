@@ -52,10 +52,9 @@ theorem tendsto_quantile_map_inner_uniformSphereMeasure_nhdsGT_zero
     rw [quantile_map_inner_uniformSphereMeasure_of_finrank_eq_one hd1 v
       ⟨hu.1, hu.2.trans (by norm_num)⟩, ite_eq_left hu.2.le]
   have hd2 : 2 ≤ Module.finrank ℝ E := by omega
-  have ha : 0 < ((Module.finrank ℝ E : ℝ) - 1) / 2 := by
-    exact div_pos (sub_pos.mpr (by exact_mod_cast (by omega : 1 < Module.finrank ℝ E))) two_pos
-  have h := ((tendsto_inverseRegularizedIncompleteBeta_zero ha ha).const_mul 2).const_add (-1)
-    |>.const_mul ‖v‖
+  have h := ((tendsto_inverseRegularizedIncompleteBeta_zero
+    (a := ((Module.finrank ℝ E : ℝ) - 1) / 2) (b := ((Module.finrank ℝ E : ℝ) - 1) / 2)).const_mul
+    2).const_add (-1) |>.const_mul ‖v‖
   simp only [mul_zero, add_zero, mul_neg_one] at h
   apply h.congr'
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu

@@ -110,9 +110,9 @@ theorem quantile_map_eval_uniformSphereMeasure (i : ι) {u : ℝ} (hu : u ∈ Io
 theorem tendsto_quantile_map_eval_uniformSphereMeasure_nhdsGT_zero (i : ι) :
     Tendsto ((uniformSphereMeasure (EuclideanSpace ℝ ι)).map (fun x ↦ x.val i)).quantile
       (𝓝[>] 0) (𝓝 (-1)) := by
-  have ha : 0 < ((Fintype.card ι : ℝ) - 1) / 2 :=
-    div_pos (sub_pos.mpr (by exact_mod_cast Fintype.one_lt_card (α := ι))) two_pos
-  have h := ((tendsto_inverseRegularizedIncompleteBeta_zero ha ha).const_mul 2).const_add (-1)
+  have h := ((tendsto_inverseRegularizedIncompleteBeta_zero
+    (a := ((Fintype.card ι : ℝ) - 1) / 2) (b := ((Fintype.card ι : ℝ) - 1) / 2)).const_mul
+    2).const_add (-1)
   simp only [mul_zero, add_zero] at h
   apply h.congr'
   filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
