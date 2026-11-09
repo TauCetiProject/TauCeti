@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.Adjoint.Basic
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 
 /-!

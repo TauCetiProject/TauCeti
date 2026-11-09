@@ -6,7 +6,7 @@ Authors: Jon Crall, GPT-6
 module
 
 public import TauCeti.Analysis.InnerProductSpace.HermitianDilation.Basic
-public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.Adjoint.Basic
 
 /-!
 # The operator norm of a Hermitian dilation

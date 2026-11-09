@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Algebra.Star.PartialIsometry
-public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.Adjoint.Basic
 public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
