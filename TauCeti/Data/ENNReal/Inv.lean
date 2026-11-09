@@ -30,6 +30,9 @@ plus half of itself is at most `2 b`.
   `s` with `q⁻¹ < s⁻¹ + 2⁻¹` and `p⁻¹ + s⁻¹ ≤ q⁻¹` exists exactly when `2 < p`.
 * `ENNReal.le_mul_two_of_le_add_div_two`: the absorption step `a ≤ b + a / 2 → a ≤ 2 b` for
   finite `a`, as used in elliptic estimates.
+* `ENNReal.ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul`: the cancellation
+  `ofReal (d ^ n / n) / m * ofReal (n * a) = ofReal (a * d ^ n / m.toReal)` for `m` finite and
+  nonzero.
 -/
 
 public section
@@ -106,5 +109,18 @@ theorem exists_inv_lt_inv_add_inv_two_and_inv_add_inv_le_iff {p q : ℝ≥0∞} 
       calc q⁻¹ = q⁻¹ - p⁻¹ + p⁻¹ := (tsub_add_cancel_of_le hpq).symm
         _ < q⁻¹ - p⁻¹ + 2⁻¹ := ENNReal.add_lt_add_left (sub_ne_top hqtop) hp2
     · rw [inv_inv, add_tsub_cancel_of_le hpq]
+
+/-- Cancelling a finite nonzero denominator `m` against the factor `n` of a product:
+`ofReal (d ^ n / n) / m * ofReal (n * a) = ofReal (a * d ^ n / m)`. -/
+theorem ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul {n : ℕ} {d a : ℝ} {m : ℝ≥0∞}
+    (hn : 0 < n) (hd : 0 ≤ d) (hm₀ : m ≠ 0) (hm_top : m ≠ ∞) :
+    ENNReal.ofReal (d ^ n / n) / m * ENNReal.ofReal (n * a) =
+      ENNReal.ofReal (a * d ^ n / m.toReal) := by
+  have hmpos : 0 < m.toReal := toReal_pos hm₀ hm_top
+  have hn' : (0 : ℝ) < n := Nat.cast_pos.2 hn
+  conv_lhs => rw [← ofReal_toReal hm_top]
+  rw [← ENNReal.ofReal_div_of_pos hmpos, ← ENNReal.ofReal_mul (by positivity)]
+  congr 1
+  field_simp
 
 end ENNReal
