@@ -8,12 +8,12 @@ module
 public import TauCeti.Probability.Renewal.Translate.Bounds
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
 import TauCeti.MeasureTheory.Group.Convolution.IntervalBound
+import TauCeti.MeasureTheory.Measure.Prokhorov
 import TauCeti.Topology.ContinuousMap.CompactlySupported
 import Mathlib.MeasureTheory.Group.IntegralConvolution
 import Mathlib.MeasureTheory.Integral.CompactlySupported
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
-import Mathlib.Topology.UrysohnsLemma
 
 /-!
 # Limits of translated renewal measures are harmonic
@@ -77,42 +77,17 @@ variable {μ : Measure ℝ≥0}
 
 /-- A locally finite vague limit of translates of the renewal measure inherits the local renewal
 bound, up to enlarging the length of the interval by `2`. -/
-theorem measure_Icc_le_of_tendsto_integral [IsProbabilityMeasure μ] (hμ : μ {0} < 1)
+theorem measure_Icc_le_of_tendsto_integral [IsProbabilityMeasure μ]
     {ι : Type*} {l : Filter ι} [l.NeBot] {t : ι → ℝ} {η : Measure ℝ} [IsLocallyFiniteMeasure η]
     (hη : ∀ f : C_c(ℝ, ℝ), Tendsto (fun i ↦ ∫ x, f x ∂μ.translatedRenewalMeasure (t i)) l
       (𝓝 (∫ x, f x ∂η))) (a b : ℝ) :
     η (Icc a b) ≤ μ.renewalMeasure (Iic (b - a + 2).toNNReal) := by
-  -- Compare with a Urysohn function equal to one on `[a, b]` and vanishing off `(a - 1, b + 1)`.
-  obtain ⟨g, hg1, hg0, hgc, hg01⟩ := exists_continuous_one_zero_of_isCompact
-    (isCompact_Icc (a := a) (b := b)) (isOpen_Ioo (a := a - 1) (b := b + 1)).isClosed_compl
-    (disjoint_compl_right_iff_subset.mpr (Icc_subset_Ioo (by linarith) (by linarith)))
-  let gc : C_c(ℝ, ℝ) := ⟨g, hgc⟩
-  have hlin (ν : Measure ℝ) [IsFiniteMeasureOnCompacts ν] :
-      ENNReal.ofReal (∫ x, gc x ∂ν) = ∫⁻ x, ENNReal.ofReal (gc x) ∂ν :=
-    ofReal_integral_eq_lintegral_ofReal gc.integrable (ae_of_all _ fun x ↦ (hg01 x).1)
-  calc η (Icc a b) = ∫⁻ x, (Icc a b).indicator 1 x ∂η :=
-        (lintegral_indicator_one measurableSet_Icc).symm
-    _ ≤ ∫⁻ x, ENNReal.ofReal (gc x) ∂η := lintegral_mono fun x ↦ by
-        by_cases hx : x ∈ Icc a b
-        · simp [indicator_of_mem hx, gc, hg1 hx]
-        · simp [indicator_of_notMem hx]
-    _ = ENNReal.ofReal (∫ x, gc x ∂η) := (hlin η).symm
-    _ ≤ μ.renewalMeasure (Iic (b - a + 2).toNNReal) := by
-        refine le_of_tendsto' ((ENNReal.continuous_ofReal.tendsto _).comp (hη gc)) fun i ↦ ?_
-        have := μ.isLocallyFiniteMeasure_translatedRenewalMeasure hμ (t i)
-        rw [Function.comp_apply, hlin]
-        calc ∫⁻ x, ENNReal.ofReal (gc x) ∂μ.translatedRenewalMeasure (t i)
-            ≤ ∫⁻ x, (Icc (a - 1) (b + 1)).indicator 1 x
-                ∂μ.translatedRenewalMeasure (t i) := lintegral_mono fun x ↦ by
-              by_cases hx : x ∈ Ioo (a - 1) (b + 1)
-              · simpa [indicator_of_mem (Ioo_subset_Icc_self hx), gc] using (hg01 x).2
-              · simp [gc, hg0 hx]
-          _ = μ.translatedRenewalMeasure (t i) (Icc (a - 1) (b + 1)) :=
-              lintegral_indicator_one measurableSet_Icc
-          _ ≤ μ.renewalMeasure (Iic (b - a + 2).toNNReal) := by
-              refine (measure_mono (Icc_subset_Icc_right ?_)).trans
-                (μ.translatedRenewalMeasure_Icc_add_le (t i) (a - 1) (b - a + 2).toNNReal)
-              linarith [Real.le_coe_toNNReal (b - a + 2)]
+  -- Transfer the bound on the open neighbourhood `(a - 1, b + 1)` of `[a, b]` to the limit.
+  refine isCompact_Icc.measure_le_of_tendsto_integral (V := Ioo (a - 1) (b + 1)) isOpen_Ioo
+    (Icc_subset_Ioo (by linarith) (by linarith)) (Eventually.of_forall fun i ↦ ?_) hη
+  refine (measure_mono (Ioo_subset_Icc_self.trans (Icc_subset_Icc_right ?_))).trans
+    (μ.translatedRenewalMeasure_Icc_add_le (t i) (a - 1) (b - a + 2).toNNReal)
+  linarith [Real.le_coe_toNNReal (b - a + 2)]
 
 variable [IsProbabilityMeasure μ]
 
@@ -136,7 +111,7 @@ theorem map_coe_conv_eq_self_of_tendsto_integral (hμ : μ {0} < 1) {ι : Type*}
   -- The convolution `μ ∗ η` is locally finite, since `η` has uniformly bounded interval masses.
   have : IsLocallyFiniteMeasure (μ.map ((↑) : ℝ≥0 → ℝ) ∗ η) :=
     isLocallyFiniteMeasure_conv_of_measure_Icc_le two_pos (fun c ↦ by
-      have := measure_Icc_le_of_tendsto_integral hμ hη c (c + 2)
+      have := measure_Icc_le_of_tendsto_integral hη c (c + 2)
       rwa [show c + 2 - c + 2 = (4 : ℝ) by ring] at this)
       (μ.renewalMeasure_Iic_lt_top hμ (4 : ℝ).toNNReal).ne
   refine ext_of_integral_eq_on_compactlySupported fun f ↦ ?_
@@ -145,7 +120,7 @@ theorem map_coe_conv_eq_self_of_tendsto_integral (hμ : μ {0} < 1) {ι : Type*}
   have hB : B ≠ ∞ := (μ.renewalMeasure_Iic_lt_top hμ _).ne
   have hBη (c : ℝ) : η (Icc (c + a) (c + b)) ≤ B := by
     simpa [show c + b - (c + a) = b - a by ring] using
-      measure_Icc_le_of_tendsto_integral hμ hη (c + a) (c + b)
+      measure_Icc_le_of_tendsto_integral hη (c + a) (c + b)
   have hBU (i : ι) (c : ℝ) :
       μ.translatedRenewalMeasure (t i) (Icc (c + a) (c + b)) ≤ B :=
     (measure_mono (Icc_subset_Icc_right (by linarith [Real.le_coe_toNNReal (b - a)]))).trans
