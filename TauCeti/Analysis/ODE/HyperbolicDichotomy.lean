@@ -84,11 +84,13 @@ theorem re_ne_zero_of_aeval_minpoly_eq_zero {f : End ℝ E}
     simp only [hre, mul_zero, map_zero, zero_mul, sub_zero, map_add, aeval_X_pow, aeval_C,
       LinearMap.add_apply, algebraMap_end_apply] at hfv
     have hffv : f (f v) = -(‖z‖ ^ 2) • v := by
-      rw [neg_smul, ← sub_eq_zero, sub_neg_eq_add, ← hfv, pow_two f, _root_.mul_apply_eq_comp]
+      rw [neg_smul, eq_neg_iff_add_eq_zero, ← hfv, pow_two f, _root_.mul_apply_eq_comp]
     refine hv (hf ‖z‖ v (-‖z‖⁻¹ • f v) ?_ ?_).1
-    · rw [smul_smul, neg_mul_neg, mul_inv_cancel₀ hc, one_smul]
-    · rw [map_smul, hffv, smul_smul, neg_mul_neg, pow_two, ← mul_assoc, inv_mul_cancel₀ hc,
-        one_mul]
+    · match_scalars
+      field_simp
+    · rw [map_smul, hffv]
+      match_scalars
+      field_simp
 
 end Module.End
 
@@ -133,8 +135,7 @@ theorem exists_projection_exponential_bounds (A : E →L[ℝ] E)
   have hA0' : aeval (-A) (q.comp (-X) * p.comp (-X)) = 0 := by
     rw [← Polynomial.mul_comp, hcomp, mul_comm, hA0]
   have huv' : v.comp (-X) * q.comp (-X) + u.comp (-X) * p.comp (-X) = 1 := by
-    rw [← Polynomial.mul_comp, ← Polynomial.mul_comp, ← Polynomial.add_comp, add_comm, huv,
-      Polynomial.one_comp]
+    simpa [add_comm] using congrArg (·.comp (-X)) huv
   have hq' (z : ℂ) (hz : aeval z (q.comp (-X)) = 0) : z.re < 0 := by
     rw [aeval_comp, map_neg, aeval_X] at hz
     simpa using hq (-z) hz

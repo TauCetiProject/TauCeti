@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Normed.Algebra.Exponential
 public import TauCeti.Analysis.Normed.Module.Complexification
 public import TauCeti.Analysis.Normed.Operator.Exponential
 import Mathlib.FieldTheory.IsAlgClosed.Spectrum
+import TauCeti.Algebra.Polynomial.Div
 
 /-!
 # Exponential decay of Hurwitz-stable operators
@@ -141,10 +142,8 @@ theorem exists_norm_exp_smul_mul_aeval_le {A : E →L[ℝ] E} {p q u v : ℝ[X]}
   have hsX : s - X = -((X + 1) * u * p) := by linear_combination X * huv
   have hs1 : s + 1 = (X + 1) * (v * q) := by linear_combination -huv
   have hps : p ∣ p.comp s := by
-    have h := sub_dvd_eval_sub s X (p.map C)
-    rw [eval_map, eval_map, eval₂_C_X, ← algebraMap_eq, ← aeval_def, ← comp_eq_aeval] at h
     have hp' : p ∣ s - X := ⟨-((X + 1) * u), by rw [hsX]; ring⟩
-    simpa using (hp'.trans h).add (dvd_refl p)
+    simpa using (hp'.trans (sub_dvd_comp_sub p s X)).add (dvd_refl p)
   have hB : aeval (aeval A s) (p * (X + 1)) = 0 := by
     rw [← aeval_comp, Polynomial.mul_comp, Polynomial.add_comp, Polynomial.X_comp,
       Polynomial.one_comp, hs1]
