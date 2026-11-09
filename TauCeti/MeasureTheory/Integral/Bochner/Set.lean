@@ -37,6 +37,8 @@ on nonempty open sets.
 * `MeasureTheory.setLIntegral_enorm_sq_eq_ofReal_setIntegral`: the Lebesgue integral of `‖f‖ₑ ^ 2`
   over `A` is `ofReal` of the Bochner integral of `‖f‖ ^ 2`, and
   `MeasureTheory.setLIntegral_enorm_sq_le_ofReal` the corresponding bound.
+* `MeasureTheory.norm_setIntegral_le_of_lintegral_enorm_le`: a bound `B ≥ 0` on `∫⁻ ‖f‖ₑ` over
+  the whole space bounds the norm of the integral of `f` over every set.
 * `Continuous.eq_zero_of_integral_conj_mul_self_eq_zero`: a continuous square-integrable function
   `h` with `∫ conj (h x) * h x = 0` vanishes.
 -/
@@ -200,5 +202,13 @@ theorem setLIntegral_enorm_sq_le_ofReal {α E : Type*} [MeasurableSpace α]
     (hf : IntegrableOn (fun x => ‖f x‖ ^ 2) A ν) (h : ∫ x in A, ‖f x‖ ^ 2 ∂ν ≤ c) :
     ∫⁻ x in A, ‖f x‖ₑ ^ 2 ∂ν ≤ ENNReal.ofReal c :=
   (setLIntegral_enorm_sq_eq_ofReal_setIntegral hf).trans_le (ENNReal.ofReal_le_ofReal h)
+
+/-- A bound `B ≥ 0` on the Lebesgue integral of `‖f‖ₑ` over the whole space bounds the norm of the
+Bochner integral of `f` over every set `s`. -/
+theorem norm_setIntegral_le_of_lintegral_enorm_le {α E : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {ν : Measure α} {f : α → E} {B : ℝ} (hB : 0 ≤ B)
+    (h : ∫⁻ x, ‖f x‖ₑ ∂ν ≤ ENNReal.ofReal B) (s : Set α) : ‖∫ x in s, f x ∂ν‖ ≤ B := by
+  rw [← ENNReal.ofReal_le_ofReal_iff hB, ofReal_norm]
+  exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans h)
 
 end MeasureTheory

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 import TauCeti.Geometry.Symplectic.Area.ThricePuncturedSphere
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # The energy of a pair of pants in terms of the actions of its ends
@@ -293,22 +294,6 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq (ω : Symplectic
   exact (ENNReal.continuous_ofReal.tendsto _).comp
     (tendsto_integral_floerEnergyDensity_truncation ω hH hHs hu ha)
 
-/-- The integrated curvature of the pair-of-pants perturbation over `S` is at most
-`B_0 + B_1 + B_∞` in absolute value, if `|H_q| ≤ B_q`. -/
-private theorem abs_integral_hamiltonianCurvature_le (ω : SymplecticForm V)
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) (u : ℝ × ℝ → V) :
-    |∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-      z (u z)| ≤ ∑ q, B q := by
-  have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 0)
-  rw [← ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg fun q _ => hB₀ q),
-    ← Real.enorm_eq_ofReal_abs, ENNReal.ofReal_sum_of_nonneg fun q _ => hB₀ q]
-  exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
-    (lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB u))
-
 /-- **The energy and the actions on a truncated pair of pants.** If the end Hamiltonians are
 bounded, `|H_q| ≤ B_q`, then for every `R ≥ 2` the Floer energy of `u` over the truncation `S_R`
 differs from the signed sum `A_{H_0}(ℓ_0) + A_{H_1}(ℓ_1) - A_{H_∞}(ℓ_∞)` of the actions of its
@@ -327,7 +312,11 @@ theorem abs_integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_sub_s
         (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))))| ≤ ∑ q, B q := by
   rw [integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction
     ω hH hHs hu hR, sub_sub_cancel_left, abs_neg]
-  exact abs_integral_hamiltonianCurvature_le ω hH hHs hB u
+  have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 0)
+  rw [← Real.norm_eq_abs]
+  exact MeasureTheory.norm_setIntegral_le_of_lintegral_enorm_le
+    (Finset.sum_nonneg fun q _ ↦ hB₀ q) (ENNReal.ofReal_sum_of_nonneg (fun q _ ↦ hB₀ q) ▸
+      lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB u) _
 
 /-! ### One-sided action bounds -/
 

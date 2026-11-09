@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Exchange
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.LinearAlgebra.Determinant.Prod
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # The energy of the input-exchange family
@@ -652,23 +653,6 @@ theorem integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation
     exchangeMap_cylindricalEndLift_inf c (by linarith : (1 : ℝ) ≤ R)]
   ring
 
-/-- The integrated curvature of the member `c ∈ [0, 1]` of the family over `S` is at most
-`B_0 + B_1 + B_∞` in absolute value, if `|H_q| ≤ B_q`. -/
-private theorem abs_integral_hamiltonianCurvature_exchangePerturbation_le (ω : SymplecticForm V)
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
-    (u : ℝ × ℝ → V) :
-    |∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
-      (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
-      z (u z)| ≤ ∑ q, B q := by
-  have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 0)
-  rw [← ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg fun q _ => hB₀ q),
-    ← Real.enorm_eq_ofReal_abs, ENNReal.ofReal_sum_of_nonneg fun q _ => hB₀ q]
-  exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
-    (lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le ω hH hHs hB hc₀ hc₁ u))
-
 /-- **The energy and the actions along the input-exchange family.** If the end Hamiltonians are
 bounded, `|H_q| ≤ B_q`, then for every `c ∈ [0, 1]` and `R ≥ 2` the Floer energy of `u` for the
 member `c` of the family over the truncation with recentred output end differs from the change of
@@ -692,7 +676,11 @@ theorem abs_integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation_
           (↑c + inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I)))))| ≤ ∑ q, B q := by
   rw [integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation ω hH hHs hc₀ hc₁ hu hR,
     sub_sub_cancel_left, abs_neg]
-  exact abs_integral_hamiltonianCurvature_exchangePerturbation_le ω hH hHs hB hc₀ hc₁ u
+  have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 0)
+  rw [← Real.norm_eq_abs]
+  exact MeasureTheory.norm_setIntegral_le_of_lintegral_enorm_le
+    (Finset.sum_nonneg fun q _ ↦ hB₀ q) (ENNReal.ofReal_sum_of_nonneg (fun q _ ↦ hB₀ q) ▸
+      lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le ω hH hHs hB hc₀ hc₁ u) _
 
 /-- **The one-sided action bound along the input-exchange family.** Let `u` be a map which is
 `C²` on `S = ℂ ∖ {0, 1}` and solves the Floer equation `(du - X_K)^{0,1} = 0` for the member

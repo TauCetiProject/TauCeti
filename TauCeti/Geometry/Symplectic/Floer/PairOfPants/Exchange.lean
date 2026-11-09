@@ -292,7 +292,7 @@ theorem exchangePerturbation_add_cylindricalEndLift_inf (hH : Periodic (H inf) 1
 
 /-- The input Hamiltonians, with the output Hamiltonian replaced by zero, inherit any property
 shared by the Hamiltonians `H q` and `0`. -/
-theorem forall_update_inf {P : (ℝ → M → ℝ) → Prop} (h₀ : P 0) (hH : ∀ q, P (H q))
+private theorem forall_update_inf {P : (ℝ → M → ℝ) → Prop} (h₀ : P 0) (hH : ∀ q, P (H q))
     (q : Puncture) : P (update H inf 0 q) := by
   rcases eq_or_ne q inf with rfl | hq
   · simpa using h₀
