@@ -156,7 +156,7 @@ section Ring
 variable {n : ℕ} {R : Type*} [Ring R]
 
 /-- If `A *ᵥ u = 0` and `u (Fin.last n)` is a unit, then the submatrix of `A` omitting its last
-column sends `x ∘ castSucc - (u (last))⁻¹ x (last) • u ∘ castSucc` to `A *ᵥ x`. -/
+column sends `fun i => x i.castSucc - u i.castSucc * (u (last))⁻¹ * x (last)` to `A *ᵥ x`. -/
 theorem submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero {m : Type*}
     (A : Matrix m (Fin (n + 1)) R) {u : Fin (n + 1) → R} (hu : A *ᵥ u = 0)
     (huunit : IsUnit (u (Fin.last n))) (x : Fin (n + 1) → R) :
