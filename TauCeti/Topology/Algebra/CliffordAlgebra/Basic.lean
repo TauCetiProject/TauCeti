@@ -47,7 +47,7 @@ actions. A basis appears only in the proof that the topology is Hausdorff.
 * `CliffordAlgebra.instSigmaCompactSpaceCliffordAlgebra` proves the topology is σ-compact under
   the same hypotheses with σ-compact in place of locally compact.
 * `CliffordAlgebra.isClosedEmbedding_algebraMap` identifies the scalar field as a closed
-  subspace over a nontrivially normed field.
+  subspace over a Hausdorff topological field in which `2` is invertible.
 * `CliffordAlgebra.continuous_reverse` and `CliffordAlgebra.continuous_involute` prove continuity
   of the two canonical Clifford involutions.
 * `CliffordAlgebra.instContinuousStarCliffordAlgebra` packages continuity of Clifford star.
@@ -186,14 +186,14 @@ section ScalarEmbedding
 
 open Topology
 
-variable {K V : Type*} [NontriviallyNormedField K]
+variable {K V : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K] [T2Space K]
   [Invertible (2 : K)] [AddCommGroup V] [Module K V]
 
-/-- The scalar inclusion in a Clifford algebra is a closed embedding for its module topology:
-the inclusion has a linear left inverse, which is continuous for the module topology, and the
-Clifford algebra is Hausdorff. -/
+/-- The scalar inclusion in a Clifford algebra is a closed embedding for its module topology. -/
 theorem isClosedEmbedding_algebraMap (Q : QuadraticForm K V) :
     IsClosedEmbedding (algebraMap K (CliffordAlgebra Q)) := by
+  -- the inclusion has a linear left inverse, which is continuous for the module topology, and the
+  -- Clifford algebra is Hausdorff
   obtain ⟨p, hp⟩ := LinearMap.exists_leftInverse_of_injective
     (Algebra.linearMap K (CliffordAlgebra Q)) (LinearMap.ker_eq_bot.mpr (algebraMap_injective Q))
   exact Function.LeftInverse.isClosedEmbedding (f := p) (g := algebraMap K (CliffordAlgebra Q))
