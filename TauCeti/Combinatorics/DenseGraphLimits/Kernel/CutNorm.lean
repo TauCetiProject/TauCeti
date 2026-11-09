@@ -178,17 +178,10 @@ private theorem bddAbove_range_of_forall_le {I : Sort*} {f : I → ℝ} {C : ℝ
     (h : ∀ i, f i ≤ C) : BddAbove (range f) :=
   ⟨C, Set.forall_mem_range.2 h⟩
 
-/-- A rectangle integral does not change when the two sets are replaced by measurable hulls. -/
-private theorem rectIntegral_toMeasurable (K : SymmKernel Ω μ) (S T : Set Ω) :
-    K.rectIntegral μ S T =
-      K.rectIntegral μ (toMeasurable μ S) (toMeasurable μ T) := by
-  simp only [SymmKernel.rectIntegral_def, ← Measure.prod_restrict,
-    Measure.restrict_toMeasurable (measure_ne_top μ _)]
-
 /-- Every rectangle integral is bounded by the cut norm. -/
 theorem abs_rectIntegral_le_cutNorm (K : SymmKernel Ω μ) (S T : Set Ω) :
     |K.rectIntegral μ S T| ≤ cutNorm μ K := by
-  rw [rectIntegral_toMeasurable, cutNorm_eq_cutNormSet, cutNormSet_def]
+  rw [SymmKernel.rectIntegral_toMeasurable μ K S T, cutNorm_eq_cutNormSet, cutNormSet_def]
   apply le_ciSup_of_le (bddAbove_range_of_forall_le fun S =>
     iSup_measurableSet_left_le_integral_abs μ K S) (toMeasurable μ S)
   apply le_ciSup_of_le (bddAbove_range_of_forall_le fun _ =>
@@ -217,8 +210,8 @@ theorem exists_lt_abs_rectIntegral (K : SymmKernel Ω μ) {c : ℝ} (h : c < cut
   intro S hS T hT
   exact le_of_not_gt fun hST => h' ⟨S, T, hS, hT, hST⟩
 
-/-- **On a finite carrier the cut norm is attained.** When the carrier is finite and every subset
-of it is measurable, the supremum defining the cut norm is a maximum over rectangles. -/
+/-- **On a finite carrier the cut norm is attained.** When the carrier is finite, the supremum
+defining the cut norm is a maximum over rectangles. -/
 theorem exists_cutNorm_eq_abs_rectIntegral [Finite Ω]
     (K : SymmKernel Ω μ) : ∃ S T : Set Ω, cutNorm μ K = |K.rectIntegral μ S T| := by
   obtain ⟨p, hp⟩ := Finite.exists_max fun p : Set Ω × Set Ω => |K.rectIntegral μ p.1 p.2|
