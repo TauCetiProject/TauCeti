@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
 public import TauCeti.CategoryTheory.Monoidal.Presentation
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 
 /-!
 # The free monoidal category on a self-dual object
@@ -30,7 +30,8 @@ isomorphism:
   isomorphism whose component at the generator is `e` followed by the inverse of `liftObjIso V`.
 
 The condition that a strong monoidal functor `F` sends a self-duality of `g` to one of `V` along
-`e : F.obj g ≅ V` is `TauCeti.SendsSelfDuality F V e`: the coevaluation and evaluation of `V`
+`e : F.obj g ≅ V` is `TauCeti.SendsSelfDuality F V e`, from
+`TauCeti.CategoryTheory.Monoidal.Rigid.Functor`: the coevaluation and evaluation of `V`
 are the images under `F` of those of `g`, transported along `e` and the comparison morphisms of
 `F`.
 
@@ -48,28 +49,11 @@ agree in the Temperley–Lieb diagram category, which records only the number of
 
 public section
 
-universe u v u' v'
+universe u v
 
 open CategoryTheory MonoidalCategory Functor.LaxMonoidal Functor.OplaxMonoidal
 
 namespace TauCeti
-
-section SendsSelfDuality
-
-variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
-  {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
-
-/-- A strong monoidal functor `F : D ⥤ C` *sends the self-duality of `g` to the self-duality of
-`V` along `e : F.obj g ≅ V`* when the coevaluation and the evaluation of `V` are the images under
-`F` of those of `g`, composed with the unit and tensor comparisons of `F` and with `e`. -/
-structure SendsSelfDuality {g : D} [ExactPairing g g] (F : D ⥤ C) [F.Monoidal] (V : C)
-    [ExactPairing V V] (e : F.obj g ≅ V) : Prop where
-  /-- The coevaluation of `g` is sent to the coevaluation of `V`. -/
-  coevaluation : ε F ≫ F.map (η_ g g) = η_ V V ≫ (e.inv ⊗ₘ e.inv) ≫ μ F g g
-  /-- The evaluation of `g` is sent to the evaluation of `V`. -/
-  evaluation : (e.inv ⊗ₘ e.inv) ≫ μ F g g ≫ F.map (ε_ g g) ≫ η F = ε_ V V
-
-end SendsSelfDuality
 
 namespace FreeSelfDualityCat
 
@@ -200,10 +184,12 @@ def liftObjIso : (lift V).obj generator ≅ V :=
   Iso.refl V
 
 /-- The identification of the image of the generator under `lift V` with `V` is the identity. -/
+@[simp]
 theorem liftObjIso_hom : (liftObjIso V).hom = 𝟙 V :=
   (rfl)
 
 /-- The identification of the image of the generator under `lift V` with `V` is the identity. -/
+@[simp]
 theorem liftObjIso_inv : (liftObjIso V).inv = 𝟙 V :=
   (rfl)
 
