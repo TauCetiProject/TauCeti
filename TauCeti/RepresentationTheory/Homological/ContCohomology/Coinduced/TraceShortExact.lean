@@ -55,7 +55,7 @@ single at `1` to the single at `g`, and the singles at `1` add up to the single 
 ## Main results
 
 * `TauCeti.DiscreteCoind.isAddPGroup_traceKer`: over a compact group the kernel of the trace
-  of a discrete `p`-primary torsion module is `p`-primary torsion.
+  of a `p`-primary torsion module is `p`-primary torsion.
 * `TauCeti.DiscreteCoind.conj_single_one`: conjugation by `g` moves the single at `1` with value
   `a` to the single at `g` with value `g • a`.
 * `TauCeti.DiscreteCoind.range_traceKerCover`: the image of the cover is exactly the kernel of
@@ -107,10 +107,10 @@ theorem coe_smul_traceKer (g : G) (f : traceKer G U M) :
     ((g • f : traceKer G U M) : DiscreteCoind G U M) = g • (f : DiscreteCoind G U M) :=
   rfl
 
-/-- Over a compact group, the kernel of the trace of a discrete `p`-primary torsion module is
+/-- Over a compact group, the kernel of the trace of a `p`-primary torsion module is
 `p`-primary torsion, as a subgroup of the `p`-primary torsion module `Coind_U^G M`. -/
-theorem isAddPGroup_traceKer {p : ℕ} [CompactSpace G] [TopologicalSpace M]
-    [DiscreteTopology M] (hM : IsAddPGroup p M) : IsAddPGroup p (traceKer G U M) :=
+theorem isAddPGroup_traceKer {p : ℕ} [CompactSpace G] (hM : IsAddPGroup p M) :
+    IsAddPGroup p (traceKer G U M) :=
   (isAddPGroup_discreteCoind G U M hM).of_injective (traceKer G U M).subtype
     Subtype.val_injective
 
