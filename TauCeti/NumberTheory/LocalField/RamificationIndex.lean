@@ -85,10 +85,11 @@ The definition only uses the algebra map and the two normalized valuations, so i
 the compatibility hypothesis `ValuativeExtension K L`. Apart from the unfolding lemma
 `ramificationIndex_def` and the reformulations of tame and wild ramification, every public theorem
 about it assumes compatibility, which makes the restricted valuation trivial on the units of
-`𝒪[K]` and hence a power of `v_K`. The tower results (`ramificationIndex_tower`,
-`isTamelyRamified_tower_iff`, `IsTamelyRamified.tower_bot`) are the exception: they assume
-compatibility only for the top step `M/L`, as they compare indices through the valuations of `L`
-and `M` and never use a valuation of `K`. Finiteness of `L/K` is used by no statement in this
+`𝒪[K]` and hence a power of `v_K`. The multiplicativity theorem `ramificationIndex_tower` is the
+exception: it assumes compatibility only for the top step `M/L`, as it compares indices through
+the valuations of `L` and `M` and never uses a valuation of `K`. The tame tower results
+`isTamelyRamified_tower_iff` and `IsTamelyRamified.tower_bot` still require the compatible bottom
+step `L/K` and its residue field. Finiteness of `L/K` is used by no statement in this
 file.
 
 ## References
