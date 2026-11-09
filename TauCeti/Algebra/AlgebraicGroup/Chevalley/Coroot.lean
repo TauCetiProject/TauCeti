@@ -22,17 +22,18 @@ those values with the rank-one words `n_i(s) n_i(1)⁻¹` in the numbered positi
 simple root subgroups, over every commutative ring. In particular this identifies the coroot
 normalization without treating the full-weight parametrization as the actual torus.
 
-The rank-one identity is supplied by the generic Kostant coroot theory in
-`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Coroot`;
-the additional content here is its comparison with the coordinates of the datum's own torus.
+The rank-one identity is Steinberg's quotient `kostantWeylParam_mul_inv_kostantWeylParam` in
+`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.RankOne`, used through its
+matrix-coordinate form `kostantRootSubgroupMatrix_mul_mul_mul_inv` in
+`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Coordinate`.
+The additional content here is its comparison with the coordinates of the datum's own torus.
 `simpleCorootParameter_eq_fullWeightTorusRestriction` identifies the simple coroot with restriction
-of a single full-weight coordinate. The shared matrix transport in
-`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Coordinate` also supplies the
-doubled-minuscule E₆ calculation.
+of a single full-weight coordinate.
 
 ## References
 
 * R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 19 and Lemma 28(c).
+* R. W. Carter, *Simple Groups of Lie Type*, §§6.4 and 7.1.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 -/
 

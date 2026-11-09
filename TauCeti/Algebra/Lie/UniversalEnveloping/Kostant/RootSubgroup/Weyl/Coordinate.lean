@@ -15,9 +15,6 @@ Transport `kostantWeylParam_mul_inv_kostantWeylParam` through an arbitrary finit
 The resulting identity uses only root-subgroup matrices and the weight-torus matrix, so it can
 be used in different represented point groups without repeating the basis transport.
 
-The proof factors the calculation in
-`TauCeti.Algebra.Lie.E6.DoubledMinuscule.Weyl.Products`.
-
 ## References
 
 * R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemmas 19–20.
