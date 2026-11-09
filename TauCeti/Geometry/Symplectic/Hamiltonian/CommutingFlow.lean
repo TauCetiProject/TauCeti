@@ -46,6 +46,8 @@ restricts to the flow of `Fᵢ` on the `i`-th coordinate axis, preserves `σ` an
 `g^* σ + ∑ᵢ dhᵢ ∧ d(Fᵢ ∘ g)`
 (`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_hamiltonianFlowAction_comp`), since each `h n`
 acts by a symplectomorphism preserving `F` and the `X_{Fᵢ}` are pairwise `σ`-orthogonal. For a
+section `s` of `F`, moving `s` by `h` thus changes `s^* σ` by the exact form `∑ᵢ dhᵢ ∧ dcᵢ`
+(`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_hamiltonianFlowAction_section`). For a
 completely integrable system `F` (`TauCeti.SmoothTwoForm.IsIntegrableSystem`) that is a proper
 map, the completeness hypothesis holds
 (`IsIntegrableSystem.isCompleteVectorField_hamiltonianVectorField_of_isProperMap`), and this is the
@@ -76,6 +78,8 @@ connected regular fibre with a torus.
 * `TauCeti.SmoothTwoForm.IsSymplectic.mfderiv_hamiltonianFlowAction_comp` and
   `TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_hamiltonianFlowAction_comp`: the derivative of
   a map `n ↦ h n • g n`, and its pullback `(h • g)^* σ = g^* σ + ∑ᵢ dhᵢ ∧ d(Fᵢ ∘ g)`.
+* `TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_hamiltonianFlowAction_section`: moving a
+  section `s` of `F` by `h` adds `∑ᵢ dhᵢ ∧ dcᵢ` to `s^* σ`.
 
 ## References
 
@@ -90,8 +94,8 @@ public section
 
 noncomputable section
 
-open Function
-open scoped ContDiff Manifold Matrix
+open Filter Function
+open scoped ContDiff Manifold Matrix Topology
 
 namespace TauCeti
 
@@ -504,6 +508,8 @@ theorem eval₂_mfderiv_hamiltonianFlowAction_comp {h : N → ι → ℝ} {g : N
     rw [hB, SmoothForm.bilinFormAt_apply, hσ.isNondegenerate.eval₂_hamiltonianVectorField,
       mvfderiv_apply (hFd _) i]
     simp only [ContinuousLinearMap.comp_apply, mvfderiv_apply_eq_mfderiv_apply]
+    -- The tangent space of the model space `ι → ℝ` is `ι → ℝ` by definition, so `proj i` reads
+    -- off the `i`-th coordinate of the derivative.
     rfl
   have hvX (i : ι) (w : TangentSpace I (φ y)) :
       B w (σ.hamiltonianVectorField (F · i) (φ y)) = -mfderiv I 𝓘(ℝ, ι → ℝ) F (φ y) w i := by
@@ -527,6 +533,33 @@ theorem eval₂_mfderiv_hamiltonianFlowAction_comp {h : N → ι → ℝ} {g : N
     LinearMap.smul_apply, hXX, hXv, hvX, hφφ, hFφ, smul_eq_mul, mul_zero, Finset.sum_const_zero,
     zero_add, mul_neg, Finset.sum_neg_distrib, dotProduct]
   ring
+
+/-- **Moving a section of `F` by the Hamiltonian flow action.** Let `s` be a section of `F` near
+`c`, differentiable at `c`, and let `h : (ι → ℝ) → (ι → ℝ)` be differentiable at `c`. Then the
+map `c ↦ h c • s c`, which is again a section of `F`
+(`TauCeti.SmoothTwoForm.IsSymplectic.apply_hamiltonianFlowAction`), pulls `σ` back to
+
+`(h • s)^* σ = s^* σ + ∑ᵢ dhᵢ ∧ dcᵢ`. -/
+theorem eval₂_mfderiv_hamiltonianFlowAction_section {s : (ι → ℝ) → M} {h : (ι → ℝ) → ι → ℝ}
+    {c : ι → ℝ} (hs : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I s c) (hFs : ∀ᶠ c' in 𝓝 c, F (s c') = c')
+    (hh : DifferentiableAt ℝ h c) (b b' : ι → ℝ) :
+    SmoothBundleForm.eval₂ σ ((hσ.hamiltonianFlowAction hF hcomm hc (h c)).toMul (s c))
+        (mfderiv 𝓘(ℝ, ι → ℝ) I (fun c ↦ (hσ.hamiltonianFlowAction hF hcomm hc (h c)).toMul (s c))
+          c b)
+        (mfderiv 𝓘(ℝ, ι → ℝ) I (fun c ↦ (hσ.hamiltonianFlowAction hF hcomm hc (h c)).toMul (s c))
+          c b') =
+      SmoothBundleForm.eval₂ σ (s c) (mfderiv 𝓘(ℝ, ι → ℝ) I s c b)
+          (mfderiv 𝓘(ℝ, ι → ℝ) I s c b') +
+        (fderiv ℝ h c b ⬝ᵥ b' - fderiv ℝ h c b' ⬝ᵥ b) := by
+  -- `F ∘ s` is the identity near `c`, and `h` is a map between vector spaces.
+  have hFs' (w : ι → ℝ) : mfderiv 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℝ) (F ∘ s) c w = w := by
+    exact congrArg (fun L ↦ L w) ((hasFDerivAt_id (𝕜 := ℝ) c).congr_of_eventuallyEq
+      (show F ∘ s =ᶠ[𝓝 c] id from hFs)).hasMFDerivAt.mfderiv
+  have hh' (w : ι → ℝ) : mfderiv 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℝ) h c w = fderiv ℝ h c w :=
+    congrArg (fun L ↦ L w) hh.hasFDerivAt.hasMFDerivAt.mfderiv
+  refine (hσ.eval₂_mfderiv_hamiltonianFlowAction_comp hF hcomm hc hh.mdifferentiableAt hs b
+    b').trans ?_
+  rw [hFs', hFs', hh', hh']
 
 end IsSymplectic
 

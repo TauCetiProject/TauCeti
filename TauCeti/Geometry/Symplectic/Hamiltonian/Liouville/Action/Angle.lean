@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Action
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Action.Basic
 
 /-!
-# The symplectic form in action-angle coordinates
+# The angle map and its pullback of the symplectic form
 
 Let `σ` be a symplectic form on a boundaryless manifold `M`, and let `F : M → (ι → ℝ)` be a smooth
 family of pairwise Poisson-commuting functions with complete Hamiltonian vector fields, with the
@@ -17,14 +17,11 @@ conventions `ι_{X_f} σ = df` and `{f, g} = σ(X_f, X_g) = df(X_g)`. Their flow
 
 ## Moving a section by the flow action
 
-For maps `h : N → (ι → ℝ)` and `g : N → M`, the map `n ↦ h n • g n` pulls `σ` back to
-`g^* σ + ∑ᵢ dhᵢ ∧ d(Fᵢ ∘ g)`
-(`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_hamiltonianFlowAction_comp`). For a section
-`s` of `F`, so that `F ∘ s = id`, this says that moving `s` by `h` changes `s^* σ` by the exact
-form `∑ᵢ dhᵢ ∧ dcᵢ`
+For a section `s` of `F`, so that `F ∘ s = id`, moving `s` by a map `h : (ι → ℝ) → (ι → ℝ)`
+changes `s^* σ` by the exact form `∑ᵢ dhᵢ ∧ dcᵢ`
 (`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_hamiltonianFlowAction_section`); the moved map
-`h • s` is again a section. Choosing `h` with `∑ᵢ dhᵢ ∧ dcᵢ = -s^* σ` therefore turns `s` into a
-Lagrangian section.
+`h • s` is again a section. Choosing `h` with `∑ᵢ dhᵢ ∧ dcᵢ = -s^* σ` therefore turns `s` into an
+isotropic section, `s^* σ = 0`, which is Lagrangian when `M` has dimension `2 |ι|`.
 
 ## The angle map
 
@@ -43,9 +40,10 @@ they differ by `2π ℤ^ι`, so `θ ↦ Ψ(θ, c)` descends to an injective map 
 
 `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ + s^* σ`
 
-(`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_angleMap`). For a Lagrangian section `s` this
-is the Liouville–Arnold normal form `σ = ∑ᵢ dθᵢ ∧ dIᵢ` in the angles `θᵢ` and the actions
-`Iᵢ = Aᵢ`.
+(`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_angleMap`), and for an isotropic section `s`
+it is `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ`. This pullback identity is not yet the Liouville–Arnold normal form
+`σ = ∑ᵢ dθᵢ ∧ dIᵢ`: that reading needs `(θ, c) ↦ Ψ(θ, c)` to be a local diffeomorphism, so that
+`(θ, A)` are coordinates, and this is not proved here.
 
 ## Main definitions
 
@@ -55,13 +53,12 @@ is the Liouville–Arnold normal form `σ = ∑ᵢ dθᵢ ∧ dIᵢ` in the angl
 
 All in the namespace `TauCeti.SmoothTwoForm.IsSymplectic`:
 
-* `eval₂_mfderiv_hamiltonianFlowAction_section`: moving a section by `h` adds `∑ᵢ dhᵢ ∧ dcᵢ`.
 * `apply_angleMap`, `contMDiffOn_angleMap`: the angle map takes values in the levels of `F`, and it
   is smooth.
 * `angleMap_add_two_pi_mul_intCast`, `angleMap_eq_angleMap_iff`: the angle map is `2π`-periodic in
   the angles, and injective modulo `2π ℤ^ι` for a basis of periods.
 * `eval₂_mfderiv_angleMap`: `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ + s^* σ`.
-* `eval₂_mfderiv_angleMap_of_eval₂_eq_zero`: `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ` for a Lagrangian section.
+* `eval₂_mfderiv_angleMap_of_eval₂_eq_zero`: `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ` for an isotropic section.
 
 ## References
 
@@ -94,35 +91,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   (hc : ∀ i, IsCompleteVectorField (σ.hamiltonianVectorField (F · i)))
 
 include hσ hF hcomm hc
-
-/-! ### Moving a section of `F` by the Hamiltonian flow action -/
-
-/-- **Moving a section of `F` by the Hamiltonian flow action.** Let `s` be a section of `F` near
-`c`, differentiable at `c`, and let `h : (ι → ℝ) → (ι → ℝ)` be differentiable at `c`. Then the
-map `c ↦ h c • s c`, which is again a section of `F`
-(`TauCeti.SmoothTwoForm.IsSymplectic.apply_hamiltonianFlowAction`), pulls `σ` back to
-
-`(h • s)^* σ = s^* σ + ∑ᵢ dhᵢ ∧ dcᵢ`. -/
-theorem eval₂_mfderiv_hamiltonianFlowAction_section {s : (ι → ℝ) → M} {h : (ι → ℝ) → ι → ℝ}
-    {c : ι → ℝ} (hs : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I s c) (hFs : ∀ᶠ c' in 𝓝 c, F (s c') = c')
-    (hh : DifferentiableAt ℝ h c) (b b' : ι → ℝ) :
-    SmoothBundleForm.eval₂ σ ((hσ.hamiltonianFlowAction hF hcomm hc (h c)).toMul (s c))
-        (mfderiv 𝓘(ℝ, ι → ℝ) I (fun c ↦ (hσ.hamiltonianFlowAction hF hcomm hc (h c)).toMul (s c))
-          c b)
-        (mfderiv 𝓘(ℝ, ι → ℝ) I (fun c ↦ (hσ.hamiltonianFlowAction hF hcomm hc (h c)).toMul (s c))
-          c b') =
-      SmoothBundleForm.eval₂ σ (s c) (mfderiv 𝓘(ℝ, ι → ℝ) I s c b)
-          (mfderiv 𝓘(ℝ, ι → ℝ) I s c b') +
-        (fderiv ℝ h c b ⬝ᵥ b' - fderiv ℝ h c b' ⬝ᵥ b) := by
-  -- `F ∘ s` is the identity near `c`, and `h` is a map between vector spaces.
-  have hFs' (w : ι → ℝ) : mfderiv 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℝ) (F ∘ s) c w = w := by
-    exact congrArg (fun L ↦ L w) ((hasFDerivAt_id (𝕜 := ℝ) c).congr_of_eventuallyEq
-      (show F ∘ s =ᶠ[𝓝 c] id from hFs)).hasMFDerivAt.mfderiv
-  have hh' (w : ι → ℝ) : mfderiv 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℝ) h c w = fderiv ℝ h c w :=
-    congrArg (fun L ↦ L w) hh.hasFDerivAt.hasMFDerivAt.mfderiv
-  refine (hσ.eval₂_mfderiv_hamiltonianFlowAction_comp hF hcomm hc hh.mdifferentiableAt hs b
-    b').trans ?_
-  rw [hFs', hFs', hh', hh']
 
 /-! ### The angle map -/
 
@@ -218,7 +186,7 @@ theorem contMDiffOn_angleMap {t : Set (ι → ℝ)} (hs : ContMDiffOn 𝓘(ℝ, 
   exact (hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).comp_contMDiffOn
     (hu.contMDiffOn.prodMk hsn)
 
-/-- **The symplectic form in action-angle coordinates.** Let `s` be a section of `F` near `c`,
+/-- **The pullback of `σ` along the angle map.** Let `s` be a section of `F` near `c`,
 differentiable at `c`, let the `λ⁽ⁱ⁾`, differentiable at `c`, be periods along it near `c`, and
 let `A` be action variables for them at `c`, `dAᵢ = (2π)⁻¹ ∑ⱼ λ⁽ⁱ⁾ⱼ dcⱼ`. Then at `(θ, c)` the
 angle map pulls `σ` back to
@@ -294,10 +262,11 @@ theorem eval₂_mfderiv_angleMap {A : (ι → ℝ) → ι → ℝ}
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   ring
 
-/-- **The Liouville–Arnold normal form.** If, in addition to the hypotheses of
-`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_angleMap`, the section `s` is Lagrangian at `c`,
-then the angle map pulls `σ` back to `∑ᵢ dθᵢ ∧ dAᵢ` at `(θ, c)`: in the angles `θᵢ` and the
-actions `Iᵢ = Aᵢ`, the symplectic form is `σ = ∑ᵢ dθᵢ ∧ dIᵢ`. -/
+/-- **The angle map of an isotropic section.** If, in addition to the hypotheses of
+`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_angleMap`, the section `s` is isotropic at `c`,
+`s^* σ = 0`, then the angle map pulls `σ` back to `Ψ^* σ = ∑ᵢ dθᵢ ∧ dAᵢ` at `(θ, c)`. Once `Ψ`
+is known to be a local diffeomorphism, so that `(θ, A)` are coordinates, this gives the
+Liouville–Arnold normal form `σ = ∑ᵢ dθᵢ ∧ dIᵢ` in the angles `θᵢ` and the actions `Iᵢ = Aᵢ`. -/
 theorem eval₂_mfderiv_angleMap_of_eval₂_eq_zero {A : (ι → ℝ) → ι → ℝ}
     (hs : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I s c) (hFs : ∀ᶠ c' in 𝓝 c, F (s c') = c')
     (hL : ∀ b b', SmoothBundleForm.eval₂ σ (s c) (mfderiv 𝓘(ℝ, ι → ℝ) I s c b)
