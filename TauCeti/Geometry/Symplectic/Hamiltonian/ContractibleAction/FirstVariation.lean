@@ -111,7 +111,8 @@ theorem IsWeaklyExact.hasDerivAt_capArea (hφ : IsSmoothForm I 0 φ) (hw : IsWea
       fun s ↦ capArea φ (fun t ↦ w (s₀, t)) - ∫ x in s₀..s, f x := by
     funext s
     rw [hw.capArea_eq_rectangleIntegral_add hφ (isLoopCylinder_comp_prodMap hwc hper s s₀) hu,
-      rectangleIntegral_comp_prodMap_affine hφ (hwc.of_le one_le_two), rectangleIntegral_def]
+      rectangleIntegral_comp_prodMap_affine hφ (hwc.of_le one_le_two) s s₀ 0 1,
+      rectangleIntegral_def]
     rw [intervalIntegral.integral_symm s₀ s]
     abel
   rw [heq]

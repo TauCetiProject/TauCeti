@@ -53,6 +53,10 @@ domain.
   part `∂_s K_t - ∂_t K_s` of the curvature scales by `det dφ`, for any target.
 * `TauCeti.Floer.perturbationPullback_realChart`: the pullback of a datum on `ℂ` along a
   holomorphic map `f` evaluates the datum at `f w` on `f'(w) v`.
+* `TauCeti.Floer.differentiableAt_domain_of_differentiableAt`,
+  `TauCeti.Floer.differentiableAt_target_of_differentiableAt`: a datum on `ℂ` that is
+  differentiable jointly in the domain and target points is differentiable in each of them, in
+  real coordinates.
 * `TauCeti.SymplecticForm.perturbedFDeriv_perturbationPullback`: the perturbed derivative of the
   reparametrized map is the original one precomposed with `dφ`.
 * `TauCeti.SymplecticForm.floerEnergyDensity_perturbationPullback`: the energy density scales by
@@ -202,6 +206,29 @@ theorem perturbationPullback_realChart (P : ℂ → X → ℂ →L[ℝ] ℝ) {f 
   rw [perturbationPullback_apply, fderiv_realChart_apply hf, realChart_apply,
     ContinuousLinearEquiv.symm_apply_apply, Complex.equivRealProdCLM_apply]
   exact ((P _ x : ℂ →ₗ[ℝ] ℝ).apply_eq_re_smul_one_add_im_smul_I _).symm
+
+section Differentiable
+
+variable [NormedAddCommGroup X] [NormedSpace ℝ X] {P : ℂ → X → ℂ →L[ℝ] ℝ} {w : ℝ × ℝ} {x : X}
+
+/-- If a datum `P` on `ℂ` is differentiable jointly in the domain and target points, then, in the
+real coordinates, its value on a fixed tangent vector is differentiable in the domain point. -/
+theorem differentiableAt_domain_of_differentiableAt
+    (hP : DifferentiableAt ℝ (fun p : ℂ × X ↦ P p.1 p.2) (Complex.equivRealProdCLM.symm w, x))
+    (v : ℂ) : DifferentiableAt ℝ (fun z ↦ P (Complex.equivRealProdCLM.symm z) x v) w :=
+  (hP.comp (f := fun z ↦ (Complex.equivRealProdCLM.symm z, x)) w
+    (Complex.equivRealProdCLM.symm.differentiableAt.prodMk (differentiableAt_const x))).clm_apply
+    (differentiableAt_const v)
+
+/-- If a datum `P` on `ℂ` is differentiable jointly in the domain and target points, then, in the
+real coordinates, its value on a fixed tangent vector is differentiable in the target point. -/
+theorem differentiableAt_target_of_differentiableAt
+    (hP : DifferentiableAt ℝ (fun p : ℂ × X ↦ P p.1 p.2) (Complex.equivRealProdCLM.symm w, x))
+    (v : ℂ) : DifferentiableAt ℝ (fun y ↦ P (Complex.equivRealProdCLM.symm w) y v) x :=
+  (hP.comp (f := fun y ↦ (Complex.equivRealProdCLM.symm w, y)) x
+    ((differentiableAt_const _).prodMk differentiableAt_id)).clm_apply (differentiableAt_const v)
+
+end Differentiable
 
 end Floer
 

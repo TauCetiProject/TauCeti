@@ -223,6 +223,27 @@ theorem IsSmoothForm.continuous_apply_mfderiv {φ : RoughForm I M F 2} (hφ : Is
     Continuous fun z ↦ φ (u z) ![mfderiv 𝓘(ℝ, E') I u z a, mfderiv 𝓘(ℝ, E') I u z b] :=
   (hφ.continuous_mpullback_apply hu ![a, b]).congr fun z ↦ mpullback_apply_pair u φ z a b
 
+/-- For a continuous two-form `φ` and a map `u` from a normed space which is `C¹` on an open set
+`U`, the form evaluated on the derivatives of `u` along two fixed vectors,
+`z ↦ φ (u z) (du_z a, du_z b)`, is continuous on `U`. -/
+theorem IsSmoothForm.continuousOn_apply_mfderiv {φ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 0 φ) {u : E' → M} {U : Set E'} (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, E') I 1 u U) (a b : E') :
+    ContinuousOn (fun z ↦ φ (u z) ![mfderiv 𝓘(ℝ, E') I u z a, mfderiv 𝓘(ℝ, E') I u z b]) U := by
+  -- The derivatives along fixed vectors are continuous tangent fields along `u` on `U`.
+  have hv (e : E') : ContMDiffOn 𝓘(ℝ, E') I.tangent 0
+      (fun w ↦ TotalSpace.mk' E (u w) (mfderiv 𝓘(ℝ, E') I u w e)) U :=
+    contMDiffOn_zero_iff.2 fun z hz ↦
+      (((hu.contMDiffAt (hU.mem_nhds hz)).continuousAt_tangentMap le_rfl).comp
+        ((tangentBundleModelSpaceHomeomorph 𝓘(ℝ, E')).symm.continuous.continuousAt.comp
+          (continuous_id.prodMk continuous_const).continuousAt)).continuousWithinAt
+  have h := ContMDiffOn.continuousAlternatingMap_bundle_apply
+    (v := fun i ↦ ![fun w ↦ mfderiv 𝓘(ℝ, E') I u w a, fun w ↦ mfderiv 𝓘(ℝ, E') I u w b] i)
+    (hφ.contMDiff.comp_contMDiffOn (hu.of_le zero_le_one)) (fun i ↦ by fin_cases i <;> exact hv _)
+  refine ((continuous_snd.comp (Trivial.homeomorphProd M F).continuous).comp_continuousOn
+    (contMDiffOn_zero_iff.1 h)).congr fun z _ ↦ congrArg (φ (u z)) (funext fun i ↦ ?_)
+  fin_cases i <;> rfl
+
 omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
 /-- Pulling a form back along a diffeomorphism and then along its inverse returns the form. -/
 @[simp]
@@ -271,6 +292,13 @@ theorem mpullback_apply_eq_smul_of_mpullback_eq_smul {hf : ContMDiff I I' ∞ f}
     TauCeti.mpullback (F := F) I I' f φ'.1 x = c • φ.1 x := by
   have h := congrFun (congrArg Subtype.val h) x
   rwa [coe_mpullback, SetLike.val_smul, Pi.smul_apply] at h
+
+/-- If the pullback of `φ'` is `c` times `φ` at `x`, then the pullback of `-φ'` is `-c` times `φ`
+at `x`. -/
+theorem mpullback_neg_apply_eq_neg_smul {hf : ContMDiff I I' ∞ f} {φ' : SmoothForm I' M' F k}
+    {φ : SmoothForm I M F k} {x : M} {c : ℝ} (h : (mpullback f hf φ').1 x = c • φ.1 x) :
+    (mpullback f hf (-φ')).1 x = -c • φ.1 x := by
+  rw [map_neg, NegMemClass.coe_neg, Pi.neg_apply, h, neg_smul]
 
 /-- Evaluation of the smooth pullback of a two-form on a pair of tangent vectors. -/
 theorem eval₂_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f)

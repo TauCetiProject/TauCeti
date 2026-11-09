@@ -179,11 +179,10 @@ end IsLoopCylinder
 over `[0, 1] × ℝ`. -/
 theorem isLoopCylinder_comp_prodMap {w : ℝ × ℝ → M} (hwc : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 w)
     (hper : ∀ z : ℝ × ℝ, w (z.1, z.2 + 1) = w z) (s s₀ : ℝ) :
-    IsLoopCylinder I (w ∘ Prod.map (fun σ ↦ s + σ * (s₀ - s)) id) (fun t ↦ w (s, t))
+    IsLoopCylinder I (w ∘ Prod.map (fun σ ↦ s + (s₀ - s) * σ) id) (fun t ↦ w (s, t))
       (fun t ↦ w (s₀, t)) where
-  contMDiff := hwc.comp
-    ((contDiff_const.add (contDiff_id.mul contDiff_const)).prodMap contDiff_id).contMDiff
-  apply_add_one z := hper (s + z.1 * (s₀ - s), z.2)
+  contMDiff := hwc.comp (contMDiff_prodMap_affine s s₀)
+  apply_add_one z := hper (s + (s₀ - s) * z.1, z.2)
   apply_zero t := by simp
   apply_one t := by simp
 
