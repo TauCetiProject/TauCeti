@@ -117,18 +117,19 @@ theorem IsIntegralManifold.exists_partialDiffeomorph
     [IsManifold J m N] [IsManifold K m P]
     {D : ∀ z : M, Submodule ℝ (TangentSpace I z)} {f : N → M} {g : P → M}
     (hf : IsIntegralManifold J m D f) (hg : IsIntegralManifold K m D g)
-    (hm : 1 ≤ m) (hmr : (m : ℕ∞ω) + 1 ≤ r) :
-    let _ : IsManifold I 1 M :=
+    (hm : 1 ≤ m) (hmr : (m : ℕ∞ω) + 1 ≤ r)
+    (hinv : let _ : IsManifold I 1 M :=
       .of_le ((show (1 : ℕ∞ω) ≤ (m : ℕ∞ω) + 1 from le_add_self).trans hmr)
-    IsInvolutiveDistribution I D → ∀ {k : ℕ},
-      IsContMDiffDistribution I m k D → ∀ {x : N} {y : P},
-      J.IsInteriorPoint x → K.IsInteriorPoint y → I.IsInteriorPoint (f x) → f x = g y →
-        ∃ e : PartialDiffeomorph J K N P m,
-          x ∈ e.source ∧ e x = y ∧ ∀ z ∈ e.source, f z = g (e z) := by
+      IsInvolutiveDistribution I D) {k : ℕ}
+    (hD : let _ : IsManifold I 1 M :=
+      .of_le ((show (1 : ℕ∞ω) ≤ (m : ℕ∞ω) + 1 from le_add_self).trans hmr)
+      IsContMDiffDistribution I m k D) {x : N} {y : P}
+    (hx : J.IsInteriorPoint x) (hy : K.IsInteriorPoint y)
+    (hfx : I.IsInteriorPoint (f x)) (hfg : f x = g y) :
+    ∃ e : PartialDiffeomorph J K N P m,
+      x ∈ e.source ∧ e x = y ∧ ∀ z ∈ e.source, f z = g (e z) := by
   let _ : IsManifold I 1 M :=
     .of_le ((show (1 : ℕ∞ω) ≤ (m : ℕ∞ω) + 1 from le_add_self).trans hmr)
-  dsimp only
-  intro hinv k hD x y hx hy hfx hfg
   have hm' : (1 : ℕ∞ω) ≤ m := by exact_mod_cast hm
   let _ : IsManifold I (m : ℕ∞ω) M :=
     .of_le (le_self_add.trans hmr)
