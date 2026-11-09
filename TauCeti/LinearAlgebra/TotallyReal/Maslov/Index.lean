@@ -37,12 +37,11 @@ Its **Maslov index** `μ(Λ)` (`TauCeti.TotallyRealLoop.maslovIndex`) is the deg
   (`TauCeti.IsMaximalTotallyReal.continuous_maslovPhase_of_frame`), in particular along a loop
   (`TauCeti.TotallyRealLoop.continuous_maslovPhase`), which is why `maslovPhasePath` is well
   defined.
-* It is normalized: the half-turn `t ↦ e^{iπt} L₀`, which closes up since `-L₀ = L₀`, has Maslov
-  index `n = dim_ℂ E` (`TauCeti.TotallyRealLoop.maslovIndex_rotation`); for `E = ℂ` and `L₀ = ℝ`
-  this is the loop `e^{iπt} ℝ` of Maslov index one. More generally the `k`-fold half-turn
-  `t ↦ e^{iπkt} L₀` has Maslov index `k n` for every integer `k`
-  (`TauCeti.TotallyRealLoop.maslovIndex_rotationZPow`). The constant loop has Maslov index zero
-  (`TauCeti.TotallyRealLoop.maslovIndex_const`).
+* It is normalized: the `k`-fold half-turn `t ↦ e^{iπkt} L₀`, which closes up since
+  `e^{iπk} = ±1` and `-L₀ = L₀`, has Maslov index `k n` for every integer `k`, where
+  `n = dim_ℂ E` (`TauCeti.TotallyRealLoop.maslovIndex_rotationZPow`); for `k = 1`, `E = ℂ` and
+  `L₀ = ℝ` this is the loop `e^{iπt} ℝ` of Maslov index one. The constant loop has Maslov index
+  zero (`TauCeti.TotallyRealLoop.maslovIndex_const`).
 * It changes sign when the loop is traversed backwards
   (`TauCeti.TotallyRealLoop.maslovIndex_symm`).
 
@@ -210,7 +209,7 @@ theorem maslovIndex_const {L₀ : Submodule ℝ E}
       simp)
     (by simp)
 
-/-- **Normalization of the Maslov index, `k`-fold version.** The `k`-fold half-turn
+/-- **Normalization of the Maslov index.** The `k`-fold half-turn
 `t ↦ e^{iπkt} L₀` of a maximal totally real subspace of an `n`-dimensional complex space has
 Maslov index `k n`, for every integer `k`. -/
 @[simp]
@@ -242,14 +241,6 @@ theorem maslovIndex_rotationZPow {L₀ : Submodule ℝ E}
     push_cast
     linarith
   exact_mod_cast (mul_right_cancel₀ hπ key').symm
-
-/-- **Normalization of the Maslov index.** The half-turn `t ↦ e^{iπt} L₀` of a maximal totally
-real subspace of an `n`-dimensional complex space has Maslov index `n`. -/
-@[simp]
-theorem maslovIndex_rotation {L₀ : Submodule ℝ E}
-    (hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀) :
-    (rotation hL₀).maslovIndex = finrank ℂ E := by
-  simpa only [rotationZPow_one, Int.cast_one, one_mul] using maslovIndex_rotationZPow hL₀ 1
 
 /-- **Reversing a loop negates its Maslov index**: traversing the boundary the other way turns the
 loop of Maslov phases around. -/

@@ -17,8 +17,11 @@ of its restriction to the boundary circle, that is, a totally real subbundle who
 the complex rank of the bundle. Every complex bundle over `D` is trivial, and in a
 trivialization `D × E` the subbundle `F` is a loop `Λ` of maximal totally real subspaces of `E`
 (`TauCeti.TotallyRealLoop`), parametrized by `t ↦ e^{2πit}`. The boundary Maslov index `μ(E, F)`
-is the Maslov index `μ(Λ)` of that loop (McDuff--Salamon, Theorem C.3.6). This file proves the
-properties that make this a well-defined invariant with the expected axioms on the disc.
+is the Maslov index `μ(Λ)` of that loop (McDuff--Salamon, Theorem C.3.6). This file proves that
+`μ(E, F)` does not depend on the trivialization, so that it is a well-defined invariant, and
+collects the normalization, orientation, additivity and naturality results on the disc, proved
+for loops in `TauCeti.LinearAlgebra.TotallyReal.Maslov.Index`,
+`TauCeti.LinearAlgebra.TotallyReal.Maslov.Prod` and `TauCeti.LinearAlgebra.TotallyReal.Maslov.Map`.
 
 * **Independence of the trivialization.** Two trivializations differ by a continuous map
   `B : D → GL(E)`, and the loop read in the second trivialization is `t ↦ B (e^{2πit}) (Λ t)`. Its
@@ -40,8 +43,8 @@ properties that make this a well-defined invariant with the expected axioms on t
   `TauCeti.TotallyRealLoop.maslovIndex_map_const`.
 
 The definition of `μ(E, F)` for bundle pairs over general compact surfaces with boundary, as the
-first Chern number of the doubled bundle, and its loop formula as a sum over boundary circles are
-not treated here.
+first Chern number of the doubled bundle, its loop formula as a sum over boundary circles, and the
+composition axiom for gluing surfaces along boundary circles are not treated here.
 
 ## Main declarations
 
@@ -99,7 +102,7 @@ theorem maslovIndex_map_of_continuousOn_closedBall (B : ℂ → E ≃L[ℂ] E)
 
 /-- The convention witness: the half-turn `θ ↦ e^{iθ/2} ℝ` of the real line in `ℂ` has Maslov
 index `1`, not `1 / 2`. -/
-example : (rotation isMaximalTotallyReal_span_one).maslovIndex = 1 := by
+example : (rotationZPow isMaximalTotallyReal_span_one 1).maslovIndex = 1 := by
   simp
 
 /-- The normalization `μ(ℂ, e^{ikθ/2} ℝ) = k` on the disc, for every integer `k`. -/

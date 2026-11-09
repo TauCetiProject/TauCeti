@@ -64,8 +64,8 @@ on a surface, each of which carries a loop of its own, is a further step built o
   is the product of the two loops of Maslov phases.
 * `TauCeti.TotallyRealLoop.maslovIndex_prod`: **the direct-sum axiom** of the Maslov index of
   loops.
-* `TauCeti.TotallyRealLoop.maslovIndex_prod_rotation`: the two half-turns, taken in the two
-  summands, have Maslov index the sum of the two complex dimensions.
+* `TauCeti.TotallyRealLoop.maslovIndex_prod_rotationZPow`: the two `k`-fold half-turns, taken in
+  the two summands, have Maslov index `k` times the sum of the two complex dimensions.
 
 ## References
 
@@ -265,12 +265,14 @@ theorem maslovIndex_prod (Λ : TotallyRealLoop E) (Λ' : TotallyRealLoop E') :
     rfl
   rw [hμ₃, hμ₁, hμ₂, Circle.degree_mul]
 
-/-- The direct sum of the two half-turns has Maslov index the sum of the two complex dimensions. -/
-theorem maslovIndex_prod_rotation {L₁ : Submodule ℝ E} {L₂ : Submodule ℝ E'}
+/-- The direct sum of the two `k`-fold half-turns has Maslov index `k` times the sum of the two
+complex dimensions. -/
+theorem maslovIndex_prod_rotationZPow {L₁ : Submodule ℝ E} {L₂ : Submodule ℝ E'}
     (hL₁ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₁)
-    (hL₂ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E' Complex.I).restrictScalars ℝ) L₂) :
-    (rotation hL₁ |>.prod (rotation hL₂)).maslovIndex = finrank ℂ E + finrank ℂ E' := by
-  rw [maslovIndex_prod, maslovIndex_rotation, maslovIndex_rotation]
+    (hL₂ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E' Complex.I).restrictScalars ℝ) L₂) (k : ℤ) :
+    (rotationZPow hL₁ k |>.prod (rotationZPow hL₂ k)).maslovIndex =
+      k * (finrank ℂ E + finrank ℂ E') := by
+  rw [maslovIndex_prod, maslovIndex_rotationZPow, maslovIndex_rotationZPow, mul_add]
 
 end TotallyRealLoop
 

@@ -32,10 +32,8 @@ operators.
 * `TauCeti.TotallyRealLoop.map`: the pointwise image `t ↦ B t (Λ t)` under a loop `B` of
   complex-linear automorphisms.
 * `TauCeti.TotallyRealLoop.symm`: the loop `t ↦ Λ (1 - t)` traversed backwards.
-* `TauCeti.TotallyRealLoop.rotation`: the half-turn `t ↦ e^{iπt} L₀`, which closes up since
-  `-L₀ = L₀`.
 * `TauCeti.TotallyRealLoop.rotationZPow`: the `k`-fold half-turn `t ↦ e^{iπkt} L₀` for an integer
-  `k`, which closes up since `e^{iπk} = ±1`.
+  `k`, which closes up since `e^{iπk} = ±1` and `-L₀ = L₀`.
 
 ## References
 
@@ -167,8 +165,8 @@ theorem symm_apply (t : I) : Λ.symm t = Λ (σ t) :=
 theorem symm_symm : Λ.symm.symm = Λ :=
   ext fun t => by simp
 
-/-- The frame `t ↦ e^{iat} • id` of the rotations `TauCeti.TotallyRealLoop.rotation` (`a = π`) and
-`TauCeti.TotallyRealLoop.rotationZPow` (`a = πk`). -/
+/-- The frame `t ↦ e^{iat} • id` of the rotations `TauCeti.TotallyRealLoop.rotationZPow`
+(`a = πk`). -/
 private noncomputable def rotationFrame (a : ℝ) (t : I) : E ≃L[ℂ] E :=
   ContinuousLinearEquiv.smulLeft
     (Units.mk0 (Complex.exp ((a * t : ℝ) * Complex.I)) (Complex.exp_ne_zero _))
@@ -188,40 +186,20 @@ private theorem continuous_rotationFrame (a : ℝ) :
   simp_rw [h]
   fun_prop
 
-/-- The loop `t ↦ e^{iπt} L₀`, `t ∈ [0, 1]`, turning a maximal totally real subspace `L₀` through
-half a revolution; it closes up because `-L₀ = L₀`. -/
-noncomputable def rotation {L₀ : Submodule ℝ E}
-    (hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀) :
-    TotallyRealLoop E where
-  toFun t := L₀.map
-    ((LinearMap.lsmul ℂ E (Complex.exp ((π * t : ℝ) * Complex.I))).restrictScalars ℝ)
-  exists_frame := by
-    exact ⟨L₀, hL₀, rotationFrame π, continuous_rotationFrame π,
-      fun t => by rw [rotationFrame_toLinearEquiv]⟩
-  toFun_zero_eq_toFun_one := by
-    have h1 :
-        (LinearMap.lsmul ℂ E (Complex.exp ((π * (1 : I) : ℝ) * Complex.I))).restrictScalars ℝ =
-          -LinearMap.id := by
-      ext x
-      simp [Complex.exp_pi_mul_I]
-    have h0 :
-        (LinearMap.lsmul ℂ E (Complex.exp ((π * (0 : I) : ℝ) * Complex.I))).restrictScalars ℝ =
-          LinearMap.id := by
-      ext x
-      simp
-    rw [h0, h1, Submodule.map_neg]
-
 @[simp]
-theorem rotation_apply {L₀ : Submodule ℝ E}
-    (hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀) (t : I) :
-    rotation hL₀ t =
-      L₀.map ((LinearMap.lsmul ℂ E (Complex.exp ((π * t : ℝ) * Complex.I))).restrictScalars ℝ) :=
-  (rfl)
+private theorem lsmul_one_restrictScalars :
+    (LinearMap.lsmul ℂ E (1 : ℂ)).restrictScalars ℝ = LinearMap.id := by
+  ext x
+  simp
+
+private theorem lsmul_neg_one_restrictScalars :
+    (LinearMap.lsmul ℂ E (-1 : ℂ)).restrictScalars ℝ = -LinearMap.id := by
+  ext x
+  simp
 
 /-- The loop `t ↦ e^{iπkt} L₀`, `t ∈ [0, 1]`, turning a maximal totally real subspace `L₀` through
 `k` half revolutions, for an integer `k`; it closes up because `e^{iπk} = ±1` and `-L₀ = L₀`. For
-`k = 1` it is the half-turn `TauCeti.TotallyRealLoop.rotation`
-(`TauCeti.TotallyRealLoop.rotationZPow_one`). On the unit circle `θ = 2πt`, this is the loop
+`k = 1` it is the half-turn `t ↦ e^{iπt} L₀`. On the unit circle `θ = 2πt`, this is the loop
 `θ ↦ e^{ikθ/2} L₀`. -/
 noncomputable def rotationZPow {L₀ : Submodule ℝ E}
     (hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀) (k : ℤ) :
@@ -232,28 +210,16 @@ noncomputable def rotationZPow {L₀ : Submodule ℝ E}
     ⟨L₀, hL₀, rotationFrame (π * k), continuous_rotationFrame (π * k),
       fun t => by rw [rotationFrame_toLinearEquiv]⟩
   toFun_zero_eq_toFun_one := by
-    have h0 :
-        (LinearMap.lsmul ℂ E (Complex.exp ((π * k * (0 : I) : ℝ) * Complex.I))).restrictScalars ℝ =
-          LinearMap.id := by
-      ext x
-      simp
+    have h0 : Complex.exp ((π * k * (0 : I) : ℝ) * Complex.I) = 1 := by simp
     -- `e^{iπk} = (-1) ^ k` acts as `±1`.
     have hk : Complex.exp ((π * k * (1 : I) : ℝ) * Complex.I) = (-1) ^ k := by
       rw [← Complex.exp_pi_mul_I, ← Complex.exp_int_mul]
       push_cast
       ring_nf
-    rw [h0, hk, Submodule.map_id]
+    rw [h0, hk, lsmul_one_restrictScalars, Submodule.map_id]
     rcases Int.even_or_odd k with he | ho
-    · rw [he.neg_one_zpow]
-      have : (LinearMap.lsmul ℂ E (1 : ℂ)).restrictScalars ℝ = LinearMap.id := by
-        ext x
-        simp
-      rw [this, Submodule.map_id]
-    · rw [ho.neg_one_zpow]
-      have : (LinearMap.lsmul ℂ E (-1 : ℂ)).restrictScalars ℝ = -LinearMap.id := by
-        ext x
-        simp
-      rw [this, Submodule.map_neg, Submodule.map_id]
+    · rw [he.neg_one_zpow, lsmul_one_restrictScalars, Submodule.map_id]
+    · rw [ho.neg_one_zpow, lsmul_neg_one_restrictScalars, Submodule.map_neg, Submodule.map_id]
 
 @[simp]
 theorem rotationZPow_apply {L₀ : Submodule ℝ E}
@@ -263,23 +229,12 @@ theorem rotationZPow_apply {L₀ : Submodule ℝ E}
       ((LinearMap.lsmul ℂ E (Complex.exp ((π * k * t : ℝ) * Complex.I))).restrictScalars ℝ) :=
   (rfl)
 
-/-- The single half-turn is the half-turn `TauCeti.TotallyRealLoop.rotation`. -/
-@[simp]
-theorem rotationZPow_one {L₀ : Submodule ℝ E}
-    (hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀) :
-    rotationZPow hL₀ 1 = rotation hL₀ :=
-  ext fun t => by simp
-
 /-- Zero half-turns give the constant loop. -/
 @[simp]
 theorem rotationZPow_zero {L₀ : Submodule ℝ E}
     (hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀) :
     rotationZPow hL₀ 0 = const hL₀ :=
-  ext fun t => by
-    have : (LinearMap.lsmul ℂ E (1 : ℂ)).restrictScalars ℝ = LinearMap.id := by
-      ext x
-      simp
-    simp [this]
+  ext fun t => by simp
 
 end TotallyRealLoop
 
