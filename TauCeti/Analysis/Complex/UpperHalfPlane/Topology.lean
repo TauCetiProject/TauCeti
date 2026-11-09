@@ -61,7 +61,8 @@ many points, such as the vertices of a tessellation, therefore keeps `ℍ` conne
 * `TauCeti.not_mem_image_upperHalfPlaneSet_of_im_eq_zero`.
 * `TauCeti.im_neg_inv_nonneg`.
 * `TauCeti.bijOn_const_sub_inv_upperHalfPlaneSet`.
-* `TauCeti.tendsto_comp_neg_inv_cobounded`.
+* `TauCeti.tendsto_comp_neg_inv_cobounded`, `TauCeti.continuousOn_comp_neg_inv`.
+* `TauCeti.injOn_update_of_injOn_diff`: filling in a map at one point keeps it injective.
 * `TauCeti.continuousOn_update_comp_const_sub_inv`,
   `TauCeti.tendsto_update_comp_const_sub_inv_cobounded`,
   `TauCeti.insert_image_update_comp_const_sub_inv`,
@@ -257,6 +258,29 @@ theorem tendsto_comp_neg_inv_cobounded {α : Type*} {l : Filter α} {f : ℂ →
     Tendsto (fun w => f (-w⁻¹)) (𝓝[{w : ℂ | 0 ≤ w.im} \ {0}] 0) l := by
   simpa [Function.comp_def] using hp.comp (tendsto_const_sub_inv_nhdsWithin_zero 0)
 
+/-- If `f` is continuous on the closed upper half-plane, then `w ↦ f (-w⁻¹)` is continuous on the
+closed upper half-plane with `0` removed. -/
+theorem continuousOn_comp_neg_inv {α : Type*} [TopologicalSpace α] {f : ℂ → α}
+    (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im}) :
+    ContinuousOn (fun w => f (-w⁻¹)) ({w : ℂ | 0 ≤ w.im} \ {0}) := fun _ hw =>
+  (hfc _ (im_neg_inv_nonneg.mpr hw.1)).comp (f := fun w : ℂ => -w⁻¹)
+    (continuousAt_inv₀ hw.2).neg.continuousWithinAt fun _ hy => im_neg_inv_nonneg.mpr hy.1
+
+/-- A map that is injective off a point `a` of a set `s`, and whose value `L` at `a` is taken
+nowhere else on `s`, stays injective on `s` after being redefined to be `L` at `a`. -/
+theorem injOn_update_of_injOn_diff {α β : Type*} [DecidableEq α] {G : α → β} {s : Set α} {a : α}
+    {L : β} (hG : InjOn G (s \ {a})) (hL : ∀ x ∈ s, x ≠ a → G x ≠ L) :
+    InjOn (Function.update G a L) s := by
+  intro x hx y hy h
+  by_cases h₁ : x = a <;> by_cases h₂ : y = a
+  · rw [h₁, h₂]
+  · rw [h₁, Function.update_self, Function.update_of_ne h₂] at h
+    exact (hL y hy h₂ h.symm).elim
+  · rw [h₂, Function.update_self, Function.update_of_ne h₁] at h
+    exact (hL x hx h₁ h).elim
+  · rw [Function.update_of_ne h₁, Function.update_of_ne h₂] at h
+    exact hG ⟨hx, h₁⟩ ⟨hy, h₂⟩ h
+
 /-- For real `c`, the Möbius map `z ↦ c - z⁻¹` carries the closed upper half-plane near infinity
 to the closed upper half-plane near `c`. -/
 theorem tendsto_const_sub_inv_cobounded (c : ℝ) :
@@ -353,11 +377,9 @@ theorem continuousOn_update_div_sub_neg_inv {f : ℂ → ℂ} {r : ℝ} {c b : �
       (ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) := by
   have hT := tendsto_comp_neg_inv_cobounded hp
   refine continuousOn_update_iff.mpr ⟨fun w hw => ?_, fun _ => ?_⟩
-  · have hinv : ContinuousWithinAt (fun w : ℂ => -w⁻¹) ((ball 0 r ∩ {z | 0 ≤ z.im}) \ {0}) w :=
-      (continuousAt_inv₀ hw.2).neg.continuousWithinAt
-    exact continuousWithinAt_const.div (((hfc _ (im_neg_inv_nonneg.mpr hw.1.2)).comp
-      (f := fun w : ℂ => -w⁻¹) hinv fun y (hy : y ∈ (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}) =>
-        im_neg_inv_nonneg.mpr hy.1.2).sub_const c) (hne w hw.1.1 hw.1.2 hw.2)
+  · exact continuousWithinAt_const.div
+      (((continuousOn_comp_neg_inv hfc).mono (sdiff_subset_sdiff_left inter_subset_right) w
+        hw).sub_const c) (hne w hw.1.1 hw.1.2 hw.2)
   · have hlim := (tendsto_inv₀_cobounded.comp ((tendsto_sub_const_cobounded c).comp
       (hT.mono_left (nhdsWithin_mono _
         (sdiff_subset_sdiff_left (inter_subset_right (s := ball (0 : ℂ) r))))))).const_mul b
@@ -371,20 +393,11 @@ theorem injOn_update_div_sub_neg_inv {f : ℂ → ℂ} {r : ℝ} {c b : ℂ} (hb
     (hne : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 → f (-w⁻¹) - c ≠ 0) :
     InjOn (Function.update (fun w => b / (f (-w⁻¹) - c)) 0 0)
       (ball (0 : ℂ) r ∩ {z : ℂ | 0 ≤ z.im}) := by
-  set g : ℂ → ℂ := Function.update (fun w => b / (f (-w⁻¹) - c)) 0 0
-  have hg0 : g 0 = 0 := Function.update_self _ _ _
-  have hgv : ∀ w, w ≠ 0 → g w = b / (f (-w⁻¹) - c) := fun w hw => Function.update_of_ne hw _ _
-  intro w₁ hw₁ w₂ hw₂ h
-  by_cases h₁ : w₁ = 0 <;> by_cases h₂ : w₂ = 0
-  · rw [h₁, h₂]
-  · rw [h₁, hg0, hgv w₂ h₂] at h
-    exact absurd h.symm (div_ne_zero hb (hne w₂ hw₂.1 hw₂.2 h₂))
-  · rw [h₂, hg0, hgv w₁ h₁] at h
-    exact absurd h (div_ne_zero hb (hne w₁ hw₁.1 hw₁.2 h₁))
-  · rw [hgv w₁ h₁, hgv w₂ h₂] at h
-    have h' := congrArg (·⁻¹) h
-    simp only [inv_div, div_left_inj' hb, sub_left_inj] at h'
-    simpa using hfi (im_neg_inv_nonneg.mpr hw₁.2) (im_neg_inv_nonneg.mpr hw₂.2) h'
+  refine injOn_update_of_injOn_diff (fun w₁ hw₁ w₂ hw₂ h => ?_) fun w hw hw0 =>
+    div_ne_zero hb (hne w hw.1 hw.2 hw0)
+  have h' := congrArg (·⁻¹) h
+  simp only [inv_div, div_left_inj' hb, sub_left_inj] at h'
+  simpa using hfi (im_neg_inv_nonneg.mpr hw₁.1.2) (im_neg_inv_nonneg.mpr hw₂.1.2) h'
 
 end TauCeti
 

@@ -156,13 +156,10 @@ private theorem exists_eqOn_neg_inv_of_tendsto (hfc : ContinuousOn f {z : ℂ | 
     exact hpf ⟨-w⁻¹, im_neg_inv_nonneg.mpr hw, h.symm⟩
   refine ⟨r, hr, update (fun w => (f (-w⁻¹) - q) / b) 0 ((p - q) / b),
     fun w hw => update_of_ne (hne w hw.2) _ _, ?_, fun w hw hw0 => ?_, fun w hw => ?_,
-    fun w₁ hw₁ w₂ hw₂ h => ?_⟩
+    injOn_update_of_injOn_diff (fun w₁ hw₁ w₂ hw₂ h => ?_) fun w hw _ h => ?_⟩
   · refine continuousOn_update_iff.mpr ⟨fun w hw => ?_, fun _ => ?_⟩
-    · have hinv : ContinuousWithinAt (fun w : ℂ => -w⁻¹) ((ball 0 r ∩ {z | 0 ≤ z.im}) \ {0}) w :=
-        (continuousAt_inv₀ hw.2).neg.continuousWithinAt
-      exact (((hfc _ (im_neg_inv_nonneg.mpr hw.1.2)).comp (f := fun w : ℂ => -w⁻¹) hinv
-        fun y (hy : y ∈ (ball 0 r ∩ {z : ℂ | 0 ≤ z.im}) \ {0}) =>
-          im_neg_inv_nonneg.mpr hy.1.2).sub_const q).div_const b
+    · exact (((continuousOn_comp_neg_inv hfc).mono (sdiff_subset_sdiff_left inter_subset_right) w
+        hw).sub_const q).div_const b
     · exact ((hT.mono_left (nhdsWithin_mono _
         (sdiff_subset_sdiff_left inter_subset_right))).sub_const q).div_const b
   · by_cases h0 : w = 0
@@ -177,14 +174,9 @@ private theorem exists_eqOn_neg_inv_of_tendsto (hfc : ContinuousOn f {z : ℂ | 
   · rw [update_of_ne (hne w hw.2)]
     exact (hU _ (hball w hw.1 hw.2.le (hne w hw.2))).mp
       (hfU ▸ mem_image_of_mem f (hmem w hw.2))
-  · by_cases h₁ : w₁ = 0 <;> by_cases h₂ : w₂ = 0
-    · rw [h₁, h₂]
-    · rw [h₁, update_self, update_of_ne h₂] at h
-      exact (hnotp w₂ hw₂.2 h).elim
-    · rw [h₂, update_self, update_of_ne h₁] at h
-      exact (hnotp w₁ hw₁.2 h.symm).elim
-    · rw [update_of_ne h₁, update_of_ne h₂, div_left_inj' hb, sub_left_inj] at h
-      simpa using hfi (im_neg_inv_nonneg.mpr hw₁.2) (im_neg_inv_nonneg.mpr hw₂.2) h
+  · rw [div_left_inj' hb, sub_left_inj] at h
+    simpa using hfi (im_neg_inv_nonneg.mpr hw₁.1.2) (im_neg_inv_nonneg.mpr hw₂.1.2) h
+  · exact hnotp w hw.2 h.symm
 
 /-- **Condition at infinity, from the global data.**  If `f` tends at infinity to a point `p`
 which is not a value of `f` on the closed upper half-plane, and hence not a vertex, then `p` lies on
