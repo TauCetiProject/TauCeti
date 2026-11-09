@@ -119,7 +119,7 @@ private theorem exists_norm_iteratedGradient_le_of_inter_eq_normalHalfSpace_inte
     hK.isClosed hHK 2 w hwK
   have hWD := Wkp.iteratedGradient_ae_eq_indicator_of_isClosed hK.isClosed hHK 1 hwK hW
   have hW0 : Wkp.firstOrder 1 W ∈ w1p0Submodule volume (normalHalfSpace a) p := by
-    refine W1p.mem_w1p0Submodule_of_inter_eq_of_isCompact hp_top hΩU hK hKU hw0 ?_ ?_
+    refine W1p.mem_w1p0Submodule_of_inter_eq_of_isCompact hΩU hK hKU hw0 ?_ ?_
     · simpa only [Wkp.value_firstOrder] using hwK
     · simpa only [Wkp.value_firstOrder] using hW
   have hWK := Wkp.value_ae_eq_zero_of_value_ae_eq_indicator hwK hW
