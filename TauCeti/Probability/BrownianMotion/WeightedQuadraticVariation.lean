@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.BrownianMotion.Filtered
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Probability.Distributions.Gaussian.Moments
-import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
 import Mathlib.Probability.Independence.Integration
 
 /-!

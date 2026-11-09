@@ -31,6 +31,8 @@ case `E = ℝ`.
 
 ## Main statements
 
+* `TauCeti.integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero`: the second-moment identity
+  for pairwise orthogonal random vectors with integrable pairwise inner products.
 * `TauCeti.integral_norm_sum_sq_of_pairwise_indepFun`: Bienaymé's identity for random vectors.
 * `TauCeti.integral_norm_finiteMean_sub_sq`: the mean-square error of a sample mean.
 * `TauCeti.integral_finiteMean_sub_sq`: the same identity for real random variables.
@@ -53,8 +55,9 @@ namespace TauCeti
 
 variable {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
 
-variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E] [MeasurableSpace E]
-  [BorelSpace E]
+variable [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+variable [CompleteSpace E] [MeasurableSpace E] [BorelSpace E]
 
 /-- **Bienaymé's identity for random vectors.** If the random vectors `X i`, `i ∈ s`, in a real
 Hilbert space are square-integrable, centered and pairwise independent, then the expected squared
@@ -73,7 +76,8 @@ theorem integral_norm_sum_sq_of_pairwise_indepFun [IsFiniteMeasure μ] {X : ι �
       ((hX j hj).integrable one_le_two) (innerSL ℝ)
     rw [hmean i hi, map_zero, zero_apply] at h
     exact h
-  exact integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero hX
+  exact integral_norm_sum_sq_of_pairwise_integral_inner_eq_zero
+    (fun i hi j hj ↦ (hX i hi).integrable_inner (hX j hj))
     (fun i hi j hj hij ↦ hcross i hi j hj hij.symm)
 
 variable [Fintype ι] [Nonempty ι]
