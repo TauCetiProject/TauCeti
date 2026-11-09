@@ -349,13 +349,20 @@ theorem IsRegularPoint.finrank_ker_fderiv_comp_extChartAt_symm_add_finrank
 
 /-- At a regular point of a scalar function on a boundaryless manifold, the kernel of the
 preferred-chart derivative has codimension one. -/
-theorem IsRegularPoint.finrank_ker_fderiv_comp_extChartAt_symm [FiniteDimensional 𝕜 E]
+theorem IsRegularPoint.finrank_ker_fderiv_comp_extChartAt_symm
     {g : M → 𝕜} (h : IsRegularPoint I 𝓘(𝕜) g x) :
     Module.finrank 𝕜 (fderiv 𝕜 (g ∘ (extChartAt I x).symm) (extChartAt I x x)).ker =
       Module.finrank 𝕜 E - 1 := by
-  have := h.finrank_ker_fderiv_comp_extChartAt_symm_add_finrank
-  rw [Module.finrank_self] at this
-  omega
+  by_cases hE : FiniteDimensional 𝕜 E
+  · have := h.finrank_ker_fderiv_comp_extChartAt_symm_add_finrank
+    rw [Module.finrank_self] at this
+    omega
+  · -- A finite-dimensional kernel of a surjection onto `𝕜` would make `E` finite-dimensional.
+    have hker : ¬ Module.Finite 𝕜
+        (fderiv 𝕜 (g ∘ (extChartAt I x).symm) (extChartAt I x x)).ker := fun hk ↦
+      hE (Module.Finite.of_exact (LinearMap.exact_subtype_ker_map _)
+        h.surjective_fderiv_comp_extChartAt_symm)
+    rw [Module.finrank_of_not_finite hker, Module.finrank_of_not_finite hE]
 
 end Boundaryless
 
