@@ -39,6 +39,8 @@ covers is how minimal free resolutions are built.
   basis.
 * `TauCeti.IsLocalRing.exists_surjective_ker_le_maximalIdeal_smul`: a finite module over a local
   ring `(R, 𝔪, k)` is a quotient of `R ^ dim_k (k ⊗ M)` by a submodule of `𝔪 • R ^ dim_k (k ⊗ M)`.
+* `Module.free_of_projective_of_isLocalRing`: a finitely generated projective module over a local
+  ring is free, for any `AddCommMonoid` module.
 
 ## References
 
@@ -143,3 +145,16 @@ theorem exists_surjective_ker_le_maximalIdeal_smul_shrink {R : Type u} [CommRing
   rw [Submodule.map_smul'', Submodule.map_top, LinearEquiv.range]
 
 end TauCeti.IsLocalRing
+
+namespace Module
+
+/-- A finitely generated projective module over a local ring is free. This is
+`Module.free_of_flat_of_isLocalRing`, once the module carries the additive group structure that
+it asks for. -/
+theorem free_of_projective_of_isLocalRing {R M : Type*} [CommRing R] [IsLocalRing R]
+    [AddCommMonoid M] [Module R M] [Module.Finite R M] [Module.Projective R M] :
+    Module.Free R M :=
+  let _ := Module.addCommMonoidToAddCommGroup R (M := M)
+  Module.free_of_flat_of_isLocalRing
+
+end Module
