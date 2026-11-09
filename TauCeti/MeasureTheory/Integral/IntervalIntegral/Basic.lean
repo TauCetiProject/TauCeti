@@ -27,6 +27,9 @@ not belong to any particular application.
 * `TauCeti.intervalIntegral.norm_sub_sub_integral_le`: the defect `a₂ - a₁ - ∫ g` from an integral
   equation changes by at most the changes of the endpoint values plus `δ |t₂ - t₁|` when the
   integrand changes by at most `δ`.
+* `TauCeti.tendsto_intervalIntegral_atTop_atBot`: the accumulated integral of a locally
+  integrable function bounded below almost everywhere by a positive constant tends to `+∞` at
+  `+∞` and to `-∞` at `-∞`.
 * `MeasureTheory.IntegrableOn.intervalIntegrable_of_mem_Icc`: a function integrable on `(a, b)`
   for a measure without mass at points is interval integrable between any two points of `[a, b]`.
 * `ContinuousLinearEquiv.intervalIntegral_comp_comm`: a continuous linear equivalence commutes
@@ -162,6 +165,32 @@ theorem setIntegral_norm_inv_smul {E : Type*} [NormedAddCommGroup E] [NormedSpac
     ENNReal.toReal_ofReal (sub_nonneg.mpr hab.le)]
   simp only [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos (sub_pos.mpr hab), smul_eq_mul]
   rw [← mul_assoc, mul_inv_cancel₀ (sub_pos.mpr hab).ne', one_mul]
+
+open Filter in
+/-- The accumulated integral `t ↦ ∫ r in a..t, w r` of a locally integrable function bounded below
+almost everywhere by a positive constant tends to `+∞` at `+∞` and to `-∞` at `-∞`. -/
+theorem tendsto_intervalIntegral_atTop_atBot {w : ℝ → ℝ}
+    {a : ℝ} (hw : ∀ t, IntervalIntegrable w volume a t) {m : ℝ} (hm : 0 < m)
+    (hwm : ∀ᵐ t ∂volume, m ≤ w t) :
+    Tendsto (fun t ↦ ∫ r in a..t, w r) atTop atTop ∧
+      Tendsto (fun t ↦ ∫ r in a..t, w r) atBot atBot := by
+  -- Compare with the integral `m * (t - a)` of the constant lower bound.
+  constructor
+  · refine tendsto_atTop_mono' atTop ?_
+      (tendsto_atTop_add_const_right _ (-(m * a)) (tendsto_id.const_mul_atTop hm))
+    filter_upwards [eventually_ge_atTop a] with t ht
+    have h := intervalIntegral.integral_mono_ae ht intervalIntegrable_const (hw t) hwm
+    simp only [intervalIntegral.integral_const, smul_eq_mul] at h
+    simp only [id]
+    linarith
+  · refine tendsto_atBot_mono' atBot ?_
+      (tendsto_atBot_add_const_right _ (-(m * a)) (tendsto_id.const_mul_atBot hm))
+    filter_upwards [eventually_le_atBot a] with t ht
+    have h := intervalIntegral.integral_mono_ae ht intervalIntegrable_const (hw t).symm hwm
+    simp only [intervalIntegral.integral_const, smul_eq_mul] at h
+    rw [intervalIntegral.integral_symm]
+    simp only [id]
+    linarith
 
 end TauCeti
 
