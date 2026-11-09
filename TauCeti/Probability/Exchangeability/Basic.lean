@@ -76,6 +76,8 @@ theorem ExchangeableAt.prefixLaw_singleton_comp
     (σ : Equiv.Perm (Fin n)) :
     prefixLaw μ X n {w ∘ σ} = prefixLaw μ X n {w} := by
   set e := MeasurableEquiv.arrowCongr' σ (MeasurableEquiv.refl α)
+  -- Holds by unfolding `MeasurableEquiv.arrowCongr'` to `Equiv.arrowCongr'`, where `refl` acts as
+  -- `id` and `σ⁻¹` is `σ.symm`.
   have he : ⇑e = fun x : Fin n → α => fun i => x (σ⁻¹ i) := rfl
   have hmap : (prefixLaw μ X n).map e = prefixLaw μ X n := by
     conv_lhs => rw [prefixLaw_def, he]
