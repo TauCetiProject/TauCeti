@@ -153,32 +153,27 @@ private theorem eq_one_or_eq_of_eq_sq_add {n m A B : ℤ} (hn : 1 < n) (hnsf : S
 variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
 
 /-- If `d ≡ 1 (mod 4)`, then a finite set of primes dividing the discriminant of `ℚ(√d)` has
-product dividing `-d`. -/
-private theorem prod_dvd_neg_of_mod_four_eq_one
+product dividing `|d|`. -/
+private theorem prod_dvd_natAbs_of_mod_four_eq_one
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
-    (hsf : Squarefree d) (hd : d < -1) (hd4 : d % 4 = 1) {s : Finset ℕ}
+    (hsf : Squarefree d) (hd4 : d % 4 = 1) {s : Finset ℕ}
     (hpprime : ∀ p ∈ s, p.Prime) (hdvddiscr : ∀ p ∈ s, (p : ℤ) ∣ NumberField.discr K) :
-    ((∏ p ∈ s, p : ℕ) : ℤ) ∣ -d := by
+    (∏ p ∈ s, p) ∣ d.natAbs := by
   have hdisc : NumberField.discr K = d :=
     NumberField.discr_eq_of_squarefree_of_mod_four_eq_one hmin hgen hsf hd4
-  have hnabs : (d.natAbs : ℤ) = -d := by omega
-  rw [← hnabs]
-  exact_mod_cast Finset.prod_primes_dvd d.natAbs (fun p hp => (hpprime p hp).prime) fun p hp => by
+  exact Finset.prod_primes_dvd d.natAbs (fun p hp => (hpprime p hp).prime) fun p hp => by
     simpa [hdisc] using Int.natAbs_dvd_natAbs.mpr (hdvddiscr p hp)
 
 /-- If `d ≢ 1 (mod 4)`, then a finite set of primes dividing the discriminant of `ℚ(√d)` has
-product dividing `2 * -d`. -/
-private theorem prod_dvd_two_mul_neg_of_mod_four_ne_one
+product dividing `2 * |d|`. -/
+private theorem prod_dvd_two_mul_natAbs_of_mod_four_ne_one
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
-    (hsf : Squarefree d) (hd : d < -1) (hd4 : d % 4 ≠ 1) {s : Finset ℕ}
+    (hsf : Squarefree d) (hd4 : d % 4 ≠ 1) {s : Finset ℕ}
     (hpprime : ∀ p ∈ s, p.Prime) (hdvddiscr : ∀ p ∈ s, (p : ℤ) ∣ NumberField.discr K) :
-    ((∏ p ∈ s, p : ℕ) : ℤ) ∣ 2 * -d := by
+    (∏ p ∈ s, p) ∣ 2 * d.natAbs := by
   have hdisc : NumberField.discr K = 4 * d :=
     NumberField.discr_eq_four_mul_of_mod_four_ne_one hmin hgen hsf hd4
-  have hnabs : (d.natAbs : ℤ) = -d := by omega
-  have hcast : ((2 * d.natAbs : ℕ) : ℤ) = 2 * -d := by push_cast [hnabs]; ring
-  rw [← hcast]
-  exact_mod_cast Finset.prod_primes_dvd (2 * d.natAbs) (fun p hp => (hpprime p hp).prime)
+  exact Finset.prod_primes_dvd (2 * d.natAbs) (fun p hp => (hpprime p hp).prime)
     fun p hp => by
       have h4 : p ∣ 4 * d.natAbs := by
         simpa [hdisc, Int.natAbs_mul] using Int.natAbs_dvd_natAbs.mpr (hdvddiscr p hp)
@@ -262,11 +257,16 @@ theorem prod_eq_one_or_prod_eq_natAbs_of_isPrincipal_prod
   refine hconv ?_
   by_cases hd4 : d % 4 = 1
   · -- `disc K = d`: every ramified prime divides the odd number `d`.
-    have hmdvd := prod_dvd_neg_of_mod_four_eq_one hmin hgen hsf hd hd4 hpprime hdvddiscr
+    have hmdvd : ((∏ p ∈ s, p : ℕ) : ℤ) ∣ -d := by
+      rw [← hnabs]
+      exact_mod_cast prod_dvd_natAbs_of_mod_four_eq_one hmin hgen hsf hd4 hpprime hdvddiscr
     exact eq_one_or_eq_of_four_mul_eq_sq_add (A := A₀) (B := B₀) hn1 (by omega) hmpos hmsf hmdvd
       (by linear_combination hAB₀ + 4 * hnormeq)
   · -- `disc K = 4d`: a ramified prime divides `2|d|`, and the norm form has no denominator.
-    have hmdvd := prod_dvd_two_mul_neg_of_mod_four_ne_one hmin hgen hsf hd hd4 hpprime hdvddiscr
+    have hmdvd : ((∏ p ∈ s, p : ℕ) : ℤ) ∣ 2 * -d := by
+      rw [← hnabs]
+      exact_mod_cast prod_dvd_two_mul_natAbs_of_mod_four_ne_one hmin hgen hsf hd4 hpprime
+        hdvddiscr
     obtain ⟨A, B, hAB⟩ :=
       NumberField.exists_sq_sub_mul_sq_eq_norm_of_mod_four_ne_one hmin hgen hsf hd4 z
     exact eq_one_or_eq_of_eq_sq_add (A := A) (B := B) hn1 hnsf hmpos hmsf hmdvd
