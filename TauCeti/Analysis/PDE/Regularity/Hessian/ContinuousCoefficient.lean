@@ -68,8 +68,8 @@ variable {n : ℕ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- If every entry of `a` is within `ε` of the corresponding entry of `A`, then `|aᵢⱼ|` is at most
 the sum of the absolute values of the entries of `A` plus `ε`. -/
-theorem abs_le_sum_abs_add {m k : Type*} [Fintype m] [Fintype k] {A : Matrix m k ℝ} {i : m} {j : k}
-    {x ε : ℝ} (h : |x - A i j| ≤ ε) : |x| ≤ ∑ i', ∑ j', |A i' j'| + ε := by
+private theorem abs_le_sum_abs_add {m k : Type*} [Fintype m] [Fintype k] {A : Matrix m k ℝ}
+    {i : m} {j : k} {x ε : ℝ} (h : |x - A i j| ≤ ε) : |x| ≤ ∑ i', ∑ j', |A i' j'| + ε := by
   have h1 : |A i j| ≤ ∑ i', ∑ j', |A i' j'| :=
     (Finset.single_le_sum (f := fun j' => |A i j'|) (fun _ _ => abs_nonneg _)
       (Finset.mem_univ j)).trans
