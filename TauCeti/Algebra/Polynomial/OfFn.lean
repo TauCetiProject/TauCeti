@@ -36,6 +36,23 @@ omit [DecidableEq R] in
 theorem _root_.Polynomial.toFn_apply (n : ℕ) (p : R[X]) (i : Fin n) :
     toFn n p i = p.coeff i := (rfl)
 
+/-- Evaluating the polynomial with coefficient vector `c` under a ring map `f` is the sum of
+`f (c j) * t ^ j`. -/
+@[simp]
+theorem _root_.Polynomial.eval₂_ofFn {S : Type*} [Semiring S] (f : R →+* S) (t : S) {n : ℕ}
+    (c : Fin n → R) : (ofFn n c).eval₂ f t = ∑ j, f (c j) * t ^ (j : ℕ) := by
+  simp only [ofFn_eq_sum_monomial, eval₂_finsetSum, eval₂_monomial]
+
+/-- The coefficient of the product of two polynomials given by coefficient vectors is the
+convolution over bounded pairs of indices of total degree equal to the requested degree. -/
+theorem _root_.Polynomial.coeff_ofFn_mul_ofFn {m n : ℕ} (a : Fin m → R) (b : Fin n → R)
+    (j : ℕ) :
+    (ofFn m a * ofFn n b).coeff j =
+      ∑ l : Fin m × Fin n with (l.1 : ℕ) + (l.2 : ℕ) = j, a l.1 * b l.2 := by
+  rw [ofFn_eq_sum_monomial, ofFn_eq_sum_monomial, Finset.sum_mul_sum, finsetSum_coeff]
+  simp only [finsetSum_coeff, monomial_mul_monomial, coeff_monomial]
+  rw [Finset.sum_filter, Fintype.sum_prod_type]
+
 -- Mathlib's `ofFn` takes `[DecidableEq R]`, so this instance occurs in the statement.
 /-- The coordinate vector with value one at `l` reconstructs the monomial `X ^ l.val`. -/
 @[simp]

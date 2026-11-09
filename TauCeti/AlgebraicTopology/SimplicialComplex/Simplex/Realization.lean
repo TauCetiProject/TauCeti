@@ -138,6 +138,18 @@ theorem range_standardSimplex_coordinates (σ : Finset α) :
     obtain ⟨x, hx⟩ := (standardSimplexCoordinatesHomeomorph σ).surjective ⟨u, hu⟩
     exact ⟨x, congrArg Subtype.val hx⟩
 
+/-- A map on a closed coordinate simplex is continuous if, in the finite coordinates of its
+vertex set, it is the restriction of a map continuous on Mathlib's standard simplex. -/
+theorem continuous_of_continuousOn_coordinates {X : Type*} [TopologicalSpace X]
+    {F : (σ → ℝ) → X} {g : StandardSimplex σ → X} (hFg : ∀ x, F (fun a => x.1 a) = g x)
+    (hF : ContinuousOn F (Set.range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights)) :
+    Continuous g := by
+  have hcoord : Continuous fun x : StandardSimplex σ => fun a : σ => x.1 a :=
+    continuous_pi fun a => (continuous_apply a.1).comp continuous_induced_dom
+  refine (hF.comp_continuous hcoord fun x => ?_).congr hFg
+  rw [← range_standardSimplex_coordinates]
+  exact mem_range_self x
+
 /-- The inverse finite-simplex comparison extends the finite coordinate vector by zero. -/
 @[simp]
 theorem standardSimplexHomeomorph_symm_val (σ : Finset α) (w : Convexity.StdSimplex ℝ σ) :

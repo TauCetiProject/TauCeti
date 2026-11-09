@@ -13,9 +13,11 @@ public import Mathlib.Analysis.Complex.Basic
 The quotient `z₂ / z₁` of two points of an open half-plane through the origin is never a
 nonpositive real, so it lies in `Complex.slitPlane`. The half-plane is encoded by a normal
 direction `a`: its members are the `z` with `0 < (conj a * z).re`. Specializations to the
-four axis-aligned half-planes cover the common cases. A relative displacement smaller than
-the distance to a pole also gives a slit-plane quotient. A product of two points in the
-right half-plane lies in the slit plane as well, and positive real scaling preserves it.
+four axis-aligned half-planes cover the common cases. Points within distance `1` of `1` lie in
+the right half-plane, so this applies to quotients of nearly equal points. A relative
+displacement smaller than the distance to a pole also gives a slit-plane quotient. A product of
+two points in the right half-plane lies in the slit plane as well, and positive real scaling
+preserves it.
 
 Translating a point of the slit plane by a nonnegative real number keeps it in the slit plane,
 and translating a point of `slitPlane ∪ {0}` by a positive one lands in the slit plane.
@@ -36,6 +38,7 @@ is a principal logarithm.
 
 * `TauCeti.div_sub_mem_slitPlane_of_dist_lt_dist`
 * `TauCeti.div_mem_slitPlane_of_re_conj_mul_pos`
+* `TauCeti.re_pos_of_norm_sub_one_lt_one`
 * `TauCeti.div_mem_slitPlane_of_re_pos`, `…_of_re_neg`, `…_of_im_pos`, `…_of_im_neg`
 * `TauCeti.mul_mem_slitPlane_of_re_pos`
 * `TauCeti.ofReal_mul_mem_slitPlane`, `TauCeti.div_ofReal_mem_slitPlane`
@@ -85,6 +88,12 @@ theorem div_mem_slitPlane_of_re_conj_mul_pos {a z₁ z₂ : ℂ}
       (((z₂ / z₁).re : ℝ) : ℂ) * ((starRingEnd ℂ) a * z₁) := by ring
   rw [hz₂, hkey, Complex.re_ofReal_mul] at h₂
   nlinarith
+
+/-- A complex number at distance less than `1` from `1` lies in the open right half-plane. -/
+theorem re_pos_of_norm_sub_one_lt_one {q : ℂ} (hq : ‖q - 1‖ < 1) : 0 < q.re := by
+  have h := Complex.re_le_norm (1 - q)
+  rw [norm_sub_rev, Complex.sub_re, Complex.one_re] at h
+  linarith
 
 /-- Two points in the right half-plane have their ratio in the slit plane. -/
 theorem div_mem_slitPlane_of_re_pos {z₁ z₂ : ℂ} (h₁ : 0 < z₁.re) (h₂ : 0 < z₂.re) :
