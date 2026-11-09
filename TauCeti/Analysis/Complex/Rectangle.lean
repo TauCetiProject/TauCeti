@@ -23,7 +23,7 @@ rectangles.
   union of its four edges, and its interior is the open rectangle.
 * `Complex.mem_Ioo_reProdIm_of_mem_rectangle`: a point of the rectangle off its frontier lies in
   the open rectangle.
-* `Complex.isClosed_rectangle`, `Complex.convex_rectangle`.
+* `Complex.isClosed_rectangle`, `Complex.isCompact_rectangle`, `Complex.convex_rectangle`.
 * `Complex.smul_integral_lineMap_of_im_eq`, `Complex.smul_integral_lineMap_of_re_eq`: the contour
   integral along a horizontal or vertical segment, parametrized over `[0, 1]`, as a real interval
   integral over the real or imaginary parts.
@@ -93,6 +93,10 @@ theorem mem_Ioo_reProdIm_of_mem_rectangle (hre : z.re ≤ w.re) (him : z.im ≤ 
 /-- The closed rectangle is closed. -/
 theorem isClosed_rectangle (z w : ℂ) : IsClosed (Rectangle z w) :=
   isClosed_uIcc.reProdIm isClosed_uIcc
+
+/-- The closed rectangle is compact. -/
+theorem isCompact_rectangle (z w : ℂ) : IsCompact (Rectangle z w) :=
+  isCompact_uIcc.reProdIm isCompact_uIcc
 
 /-- The closed rectangle is convex. -/
 theorem convex_rectangle (z w : ℂ) : Convex ℝ (Rectangle z w) := by

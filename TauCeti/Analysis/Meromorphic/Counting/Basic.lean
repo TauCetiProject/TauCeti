@@ -142,4 +142,29 @@ theorem zeroCount_eq_iff_divisor_eq_zero (hRS : R ⊆ S)
     have := hnonneg z hz
     omega
 
+/-- The zero counts of pairwise disjoint subregions of `S` add up to at most the zero count of
+`S`, provided `S` has finitely many points of positive multiplicity. -/
+theorem sum_zeroCount_le {Rs : List (Set 𝕜)} (hdisj : Rs.Pairwise Disjoint)
+    (hsub : ∀ R ∈ Rs, R ⊆ S)
+    (hS : (S ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat)).Finite) :
+    (Rs.map (zeroCount f U)).sum ≤ zeroCount f U S := by
+  induction Rs generalizing S with
+  | nil => simp
+  | cons R Rs ih =>
+    rw [List.pairwise_cons] at hdisj
+    have hRS : R ⊆ S := hsub R List.mem_cons_self
+    rw [List.map_cons, List.sum_cons, ← zeroCount_add_sdiff hRS hS]
+    refine Nat.add_le_add_left (ih hdisj.2 (fun T hT ↦ ?_) ?_) _
+    · exact subset_sdiff.2 ⟨hsub T (List.mem_cons_of_mem _ hT), (hdisj.1 T hT).symm⟩
+    · exact hS.subset fun z hz ↦ ⟨hz.1.1, hz.2⟩
+
+/-- If the divisor vanishes on the frontier of a closed region, then the region and its interior
+have the same zero count. -/
+theorem zeroCount_interior (hR : IsClosed R)
+    (hfin : (R ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat)).Finite)
+    (hfr : ∀ z ∈ frontier R, MeromorphicOn.divisor f U z = 0) :
+    zeroCount f U (interior R) = zeroCount f U R := by
+  refine (zeroCount_eq_iff_of_subset interior_subset hfin).2 fun z hz ↦ ?_
+  rw [hfr z (hR.frontier_eq ▸ hz), Int.toNat_zero]
+
 end TauCeti
