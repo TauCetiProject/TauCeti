@@ -561,19 +561,6 @@ theorem kMethodENorm_map_le (T : C.SumSpace →ₗ[𝕜] D.SumSpace) {T₀ : X�
           (aestronglyMeasurable_rpow_neg_mul_kFunctional θ u) hmp,
           Real.enorm_of_nonneg (by positivity), kMethodENorm]
 
-/-- A linear map `P` of sum spaces is a left inverse of another one `I` as soon as their
-restrictions to the endpoints are left inverses of each other. -/
-theorem leftInverse_of_leftInverse {I : C.SumSpace →ₗ[𝕜] D.SumSpace}
-    {P : D.SumSpace →ₗ[𝕜] C.SumSpace} {I₀ : X₀ → Y₀} {I₁ : X₁ → Y₁} {P₀ : Y₀ → X₀}
-    {P₁ : Y₁ → X₁} (hI₀ : ∀ x, I (C.fstToSum x) = D.fstToSum (I₀ x))
-    (hI₁ : ∀ x, I (C.sndToSum x) = D.sndToSum (I₁ x))
-    (hP₀ : ∀ y, P (D.fstToSum y) = C.fstToSum (P₀ y))
-    (hP₁ : ∀ y, P (D.sndToSum y) = C.sndToSum (P₁ y)) (h₀ : Function.LeftInverse P₀ I₀)
-    (h₁ : Function.LeftInverse P₁ I₁) : Function.LeftInverse P I := by
-  intro u
-  obtain ⟨x₀, x₁, rfl⟩ := C.exists_fstToSum_add_sndToSum_eq u
-  rw [map_add, map_add, hI₀, hI₁, hP₀, hP₁, h₀, h₁]
-
 /-- **Retracts.** Let `P` be a linear map of sum spaces restricting to maps `P₀ : Y₀ → X₀` and
 `P₁ : Y₁ → X₁` with `‖P₀ y‖ ≤ N₀ ‖y‖` and `‖P₁ y‖ ≤ N₁ ‖y‖`, where `N₀`, `N₁` are positive. If `P`
 is a left inverse of a linear map `I` of sum spaces, then the `K`-method norm of `u` is at most
@@ -777,20 +764,6 @@ end Retract
 section Equiv
 
 variable {e : C.SumSpace ≃ₗ[𝕜] D.SumSpace} {e₀ : X₀ ≃L[𝕜] Y₀} {e₁ : X₁ ≃L[𝕜] Y₁}
-
-omit [T1Space V] [T1Space W] [Fact (1 ≤ q)] in
-/-- If a linear equivalence of sum spaces restricts to an isomorphism `e₀` of the first
-endpoints, its inverse restricts to `e₀.symm`. -/
-theorem symm_apply_fstToSum (he₀ : ∀ x, e (C.fstToSum x) = D.fstToSum (e₀ x)) (y : Y₀) :
-    e.symm (D.fstToSum y) = C.fstToSum (e₀.symm y) :=
-  e.symm_apply_eq.2 (by rw [he₀, ContinuousLinearEquiv.apply_symm_apply])
-
-omit [T1Space V] [T1Space W] [Fact (1 ≤ q)] in
-/-- If a linear equivalence of sum spaces restricts to an isomorphism `e₁` of the second
-endpoints, its inverse restricts to `e₁.symm`. -/
-theorem symm_apply_sndToSum (he₁ : ∀ x, e (C.sndToSum x) = D.sndToSum (e₁ x)) (y : Y₁) :
-    e.symm (D.sndToSum y) = C.sndToSum (e₁.symm y) :=
-  e.symm_apply_eq.2 (by rw [he₁, ContinuousLinearEquiv.apply_symm_apply])
 
 variable (e)
 
