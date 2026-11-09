@@ -40,6 +40,8 @@ directions before taking products.
 * `TauCeti.Grid.cIoo_union_swap`: the two opposite arcs cover the endpoint complement.
 * `TauCeti.Grid.mem_cIoo_cyclic_left`, `TauCeti.Grid.mem_cIoo_cyclic_right`: the two rotations
   of a cyclic order of three points.
+* `TauCeti.Grid.notMem_cIoo_of_mem_cIoo`: if `a` lies on the arc from `d` to `b`, then `d` is not
+  on the arc from `a` to `b`.
 * `TauCeti.Grid.mem_cIoo_swap_of_notMem`: a point off both endpoints that misses one arc lies on
   the opposite arc.
 * `TauCeti.Grid.mem_cIoo_of_mem_cIoo_of_mem_cIoo_swap`: if `a` and `b` lie on opposite arcs from
@@ -96,6 +98,8 @@ directions before taking products.
   its own cyclic successor.
 * `TauCeti.Grid.self_mem_cIco_finRotate`: a point always lies in a nondegenerate half-open arc
   ending at its own cyclic successor.
+* `TauCeti.Grid.notMem_cIco_of_mem_cIoo_finRotate`: a point and its cyclic successor both miss
+  the half-open arc ending strictly before the successor.
 * `TauCeti.Grid.mem_cIco_finRotate_iff_mem_insert_cIoo`: the half-open arc between cyclic
   successors is the open arc with its terminal endpoint restored.
 * `TauCeti.Grid.ite_mem_cIco_finRotate_sub_ite_mem_cIco_finRotate`: moving from `p` to `q` enters
@@ -638,6 +642,11 @@ theorem mem_cIoo_cyclic_left {a b c : Fin n} (h : b ∈ cIoo a c) : c ∈ cIoo b
 theorem mem_cIoo_cyclic_right {a b c : Fin n} (h : b ∈ cIoo a c) : a ∈ cIoo c b := by
   simp only [cIoo, Set.Finite.mem_toFinset, Set.mem_cIoo] at h ⊢
   exact sbtw_cyclic_right h
+
+/-- If `a` lies on the clockwise arc from `d` to `b`, then `d` does not lie on the clockwise arc
+from `a` to `b`. -/
+theorem notMem_cIoo_of_mem_cIoo {a b d : Fin n} (h : a ∈ cIoo d b) : d ∉ cIoo a b := fun h' =>
+  (Finset.disjoint_left.mp (disjoint_cIoo_swap a b)) h' (mem_cIoo_cyclic_right h)
 
 /-- A point off both endpoints and outside one cyclic arc lies on the opposite arc. -/
 theorem mem_cIoo_swap_of_notMem {a b u : Fin n} (hab : a ≠ b)
@@ -1192,6 +1201,14 @@ theorem self_mem_cIco_finRotate {a c : Fin n} (h : c ≠ finRotate n a) :
   -- The complementary arc starts at the cyclic successor of `a`, so it misses `a`: that is
   -- `notMem_cIco_finRotate_left`, which `simp` applies once `finRotate n a` is normalized.
   exact (Finset.mem_union.mp hmem).resolve_right (by simp)
+
+/-- If `m` lies strictly between `l` and the cyclic successor of `a`, then neither `a` nor its
+successor lies in the half-open arc from `l` to `m`. -/
+theorem notMem_cIco_of_mem_cIoo_finRotate {l m a : Fin n} (h : m ∈ cIoo l (finRotate n a)) :
+    a ∉ cIco l m ∧ finRotate n a ∉ cIco l m :=
+  ⟨fun ha => Finset.disjoint_left.mp (disjoint_cIco_cIco_of_mem_cIoo h) ha
+      (self_mem_cIco_finRotate (ne_right_of_mem_cIoo h)),
+    fun hb => right_notMem_cIco l (finRotate n a) (mem_cIco_of_mem_cIco_of_mem_cIoo hb h)⟩
 
 /-- A point missing both halves of a half-open cyclic interval cut at an interior point
 misses the whole interval. -/

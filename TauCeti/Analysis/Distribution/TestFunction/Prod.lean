@@ -31,6 +31,11 @@ test functions on every open set `O ⊆ D` containing the second projection of `
 (`TestFunction.sliceRight`). Pairing the slices with a distribution on `O` is the first step of
 the tensor product of distributions.
 
+For complex smooth functions `φ` supported in a compact set `K₁ ⊆ E` and `ψ` supported in a
+compact set `K₂ ⊆ D`, the tensor product `(x, y) ↦ φ x * ψ y` is a smooth function supported in
+`K₁ ×ˢ K₂` (`ContDiffMapSupportedIn.tensor`), bilinear in `φ` and `ψ`. These are the tensor
+products of test functions against which Schwartz kernels are tested.
+
 ## Main declarations
 
 * `TestFunction.prodSMulCLM`: the continuous linear map `φ ↦ ((x, t) ↦ ψ t • φ x)`.
@@ -40,6 +45,9 @@ the tensor product of distributions.
   support `TestFunction.tsupport_sliceRight_subset`, derivative bound
   `TestFunction.norm_iteratedFDeriv_sliceRight_le` and derivatives
   `TestFunction.sliceRight_lineDerivOp_zero_prod`.
+* `ContDiffMapSupportedIn.tensor`: the tensor product `(x, y) ↦ φ x * ψ y` of complex smooth
+  functions `φ`, `ψ` supported in compact sets `K₁`, `K₂`, supported in `K₁ ×ˢ K₂`, with
+  `ContDiffMapSupportedIn.tensor_apply` and its bilinearity.
 -/
 
 public section
@@ -207,3 +215,42 @@ theorem sliceRight_prodSMulCLM (ψ : 𝓓(O, ℝ)) (hV : (Ω : Set E) ×ˢ (O : 
   simp [mul_comm]
 
 end TestFunction
+
+namespace ContDiffMapSupportedIn
+
+variable {E D : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup D]
+  [NormedSpace ℝ D] {K₁ : Compacts E} {K₂ : Compacts D}
+
+/-- The tensor product `(x, y) ↦ φ x * ψ y` of smooth functions `φ` supported in `K₁` and `ψ`
+supported in `K₂`, a smooth function supported in `K₁ ×ˢ K₂`. -/
+def tensor (φ : 𝓓_{K₁}(E, ℂ)) (ψ : 𝓓_{K₂}(D, ℂ)) : 𝓓_{K₁ ×ˢ K₂}(E × D, ℂ) :=
+  .of_support_subset ((φ.contDiff.comp contDiff_fst).mul (ψ.contDiff.comp contDiff_snd))
+    fun _ hp ↦ ⟨φ.support_subset (left_ne_zero_of_mul hp),
+      ψ.support_subset (right_ne_zero_of_mul hp)⟩
+
+@[simp]
+theorem tensor_apply (φ : 𝓓_{K₁}(E, ℂ)) (ψ : 𝓓_{K₂}(D, ℂ)) (p : E × D) :
+    φ.tensor ψ p = φ p.1 * ψ p.2 :=
+  (rfl)
+
+theorem tensor_add_left (φ φ' : 𝓓_{K₁}(E, ℂ)) (ψ : 𝓓_{K₂}(D, ℂ)) :
+    (φ + φ').tensor ψ = φ.tensor ψ + φ'.tensor ψ := by
+  ext p
+  simp [add_mul]
+
+theorem tensor_add_right (φ : 𝓓_{K₁}(E, ℂ)) (ψ ψ' : 𝓓_{K₂}(D, ℂ)) :
+    φ.tensor (ψ + ψ') = φ.tensor ψ + φ.tensor ψ' := by
+  ext p
+  simp [mul_add]
+
+theorem tensor_smul_left (c : ℂ) (φ : 𝓓_{K₁}(E, ℂ)) (ψ : 𝓓_{K₂}(D, ℂ)) :
+    (c • φ).tensor ψ = c • φ.tensor ψ := by
+  ext p
+  simp [mul_assoc]
+
+theorem tensor_smul_right (c : ℂ) (φ : 𝓓_{K₁}(E, ℂ)) (ψ : 𝓓_{K₂}(D, ℂ)) :
+    φ.tensor (c • ψ) = c • φ.tensor ψ := by
+  ext p
+  simp [mul_left_comm]
+
+end ContDiffMapSupportedIn
