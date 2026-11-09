@@ -190,11 +190,8 @@ variable {K} in
 a prime `ℓ`. -/
 theorem finrank_kummerCoeff {ℓ : ℕ} (hℓ : IsUnit (ℓ : K)) :
     Module.finrank (ZMod ℓ) (KummerCoeff K ℓ) = 1 := by
-  let e := kummerCoeffAddEquivZMod hℓ
-  rw [(LinearEquiv.ofBijective (e.toAddMonoidHom.toZModLinearMap ℓ) e.bijective).finrank_eq]
-  rcases subsingleton_or_nontrivial (ZMod ℓ) with h | h
-  · exact Module.finrank_subsingleton
-  · exact Module.finrank_self _
+  rw [((kummerCoeffAddEquivZMod hℓ).toLinearEquiv (ZMod.map_smul _)).finrank_eq]
+  exact CommSemiring.finrank_self _
 
 /-! ### The two maps of the Kummer sequence -/
 
