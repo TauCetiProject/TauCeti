@@ -42,7 +42,7 @@ factor exists and is as regular as the connections
 (`TauCeti.Vortex.exists_contDiff_sectionValue_eq_mul`). Multiplicities are expressed by a function
 `n` such that each section factors near every `z` as `(w - z) ^ n z * v w`, with `v` continuous and
 nonzero at `z`; the similarity principle upgrades the factor to a `Cᵏ` one with the same exponent
-(`TauCeti.eq_of_eventually_sub_pow_mul_eq`). The factor of the quotient at a zero is the quotient
+(`TauCeti.eq_of_eventually_sub_pow_smul_eq`). The factor of the quotient at a zero is the quotient
 of the two factors there.
 
 For smooth vortices with the same end framing `α (z) · phase (z) → 1`, where `|phase| → 1` (for
