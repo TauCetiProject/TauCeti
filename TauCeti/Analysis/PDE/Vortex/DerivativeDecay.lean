@@ -144,9 +144,8 @@ private theorem abs_log_normSq_sub_log_normSq_add_le_mul_exp
     · simp [hV, h₀]
     · simp only [hV, h₀, ↓reduceIte]
       rw [hΔD w hw.le, div_right_comm]
-      have hq := Real.le_sub_div_log_sub_log (hpos w (hw₁ w hw.le))
-        (hpos (w + h) (hwh w hw.le)) (hc4 w (hw₁ w hw.le)) (hc4 (w + h) (hwh w hw.le)) h₀
-      linarith
+      linarith [Real.le_sub_div_log_sub_log (hpos w (hw₁ w hw.le))
+        (hpos (w + h) (hwh w hw.le)) (hc4 w (hw₁ w hw.le)) (hc4 (w + h) (hwh w hw.le)) h₀]
   -- Both `D` and `-D` tend to zero at infinity and are bounded by `L |h|` on the circle.
   have hcont : ContinuousOn D {w | R ≤ ‖w‖} := fun w hw ↦
     (hDcd w hw).continuousAt.continuousWithinAt
