@@ -140,8 +140,11 @@ theorem exists_analyticOnNhd_eq_prod_X_sub_C_powerSubstitution [CompleteSpace E]
   refine ⟨r, fun i b hb => ?_, fun b hb => ⟨(hr b hb).1, ?_⟩⟩
   · exact analyticOnNhd_of_continuousOn_isRoot hW
       (fun j hj b hb => (hFa j hj _ (hQ b hb)).comp (hQa b))
-      (fun b hb => (hdeg _ (hQ b hb)).le) (fun b hb => hsep _ (hQ b hb)) (hrc i)
-      (fun b hb => (hr b hb).2 i) b hb
+      (fun b hb => (hdeg _ (hQ b hb)).le) (hrc i) (fun b hb => (hr b hb).2 i)
+      (fun b hb => by
+        simpa only [eval₂_id] using
+          (hsep _ (hQ b hb)).eval₂_derivative_ne_zero (RingHom.id ℂ) ((hr b hb).2 i))
+      b hb
   · exact (Sym.toMonic_ofFn_eq_of_forall_isRoot (hmonic _ (hQ b hb))
       (hdeg _ (hQ b hb)) (hr b hb).1 (hr b hb).2).symm.trans (Sym.toMonic_ofFn _)
 
