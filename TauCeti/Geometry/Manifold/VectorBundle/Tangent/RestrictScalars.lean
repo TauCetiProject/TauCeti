@@ -24,11 +24,20 @@ bundles: the comparison is the identity in their bundle coordinates even when th
 are not themselves `C^n` manifolds. For a smooth complex manifold, it identifies its realified
 complex tangent bundle with the tangent bundle of the underlying real manifold.
 
-We work with arbitrary compatible normed field extensions and self-modelled manifolds.
+We work with arbitrary compatible normed field extensions. The fibrewise linear comparison
+supports boundaryless models; the total-space comparisons use self-modelled manifolds.
 The comparison uses `TauCeti.tangentCoordChange_restrictScalars` on chart overlaps;
 no equality of the two tangent-bundle topologies is assumed. Both manifold instances are
 explicit so that both tangent-bundle topologies can be named. The smaller-field instance can
 always be installed locally using `IsManifold.restrictScalars`.
+
+## Main results
+
+* `TangentBundle.restrictScalarsHomeomorph_mk`: the fibrewise linear equivalence agrees with
+  the existing tangent-bundle homeomorphism.
+* `TangentBundle.restrictScalarsHomeomorph` and `TangentBundle.restrictScalarsDiffeomorph`:
+  the topological and smooth total-space comparisons.
+* `TangentBundle.restrictScalarsHomeomorph_tangentMap`: compatibility with tangent maps.
 
 ## References
 
@@ -133,6 +142,16 @@ theorem restrictScalarsHomeomorph_apply (x : M) (v : TangentSpace 𝓘(𝕜', E)
     restrictScalarsHomeomorph 𝕜 M ⟨x, v⟩ =
       ⟨x, (tangentSpaceCastModel 𝓘(𝕜, E) x).symm
         (tangentSpaceCastModel 𝓘(𝕜', E) x v)⟩ := (rfl)
+
+/-- On each fibre, the total-space homeomorphism is the canonical linear scalar comparison. -/
+-- The coordinate application lemma already simplifies this left-hand side.
+theorem restrictScalarsHomeomorph_mk (x : M)
+    (v : RestrictScalars 𝕜 𝕜' (TangentSpace 𝓘(𝕜', E) x)) :
+    restrictScalarsHomeomorph 𝕜 M ⟨x, RestrictScalars.addEquiv 𝕜 𝕜' _ v⟩ =
+      ⟨x, TangentSpace.restrictScalarsLinearEquiv 𝕜 (I := 𝓘(𝕜', E)) x v⟩ := by
+  rw [restrictScalarsHomeomorph_apply, TangentSpace.restrictScalarsLinearEquiv_apply]
+  -- Restriction of a self-model preserves its coordinate maps definitionally.
+  rfl
 
 /-- The inverse scalar comparison reads the tangent vector in the same model coordinates. -/
 @[simp]

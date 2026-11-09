@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.RestrictScalars
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
+public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+public import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Basic
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
@@ -30,7 +33,16 @@ The main example is a holomorphic map between complex manifolds modelled on `�
 Likewise, the tangent coordinate changes of a complex manifold, regarded as a real manifold, are
 its complex tangent coordinate changes regarded as `ℝ`-linear maps.
 
+The fibrewise linear equivalence also supports arbitrary boundaryless models. Its derivative
+comparison specializes to the self-modelled manifolds considered here.
+
 ## Main results
+
+* `TangentSpace.restrictScalarsLinearEquiv` and its `_apply`/`_symm_apply` formulas:
+  the fibrewise scalar-restriction equivalence for boundaryless models.
+* `MDifferentiableAt.mfderiv_restrictScalars_apply` and
+  `MDifferentiableAt.mvfderiv_restrictScalars_apply`: the derivative comparison through
+  that fibre equivalence.
 
 * `MDifferentiableWithinAt.restrictScalars`, `MDifferentiableAt.restrictScalars`,
   `MDifferentiableOn.restrictScalars`, `MDifferentiable.restrictScalars`: differentiability over
@@ -242,3 +254,94 @@ theorem mfderivWithin_extChartAt_symm_smul [IsManifold 𝓘(𝕜', E) 1 M] [IsMa
   exact tangentCoordChange_smul 𝕜 (𝕜' := 𝕜') ⟨hy, mem_chart_source E _⟩ c w
 
 end TauCeti
+
+noncomputable section
+
+namespace TangentSpace
+
+variable (𝕜 : Type*) {𝕜' : Type*}
+  [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜']
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜' E] [NormedSpace 𝕜 E]
+  [IsScalarTower 𝕜 𝕜' E] {H : Type*} [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜' E H} [I.Boundaryless]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- Restriction of scalars identifies each tangent space with the tangent space for the
+restricted boundaryless model, as vector spaces over the smaller field. -/
+def restrictScalarsLinearEquiv (x : M) :
+    RestrictScalars 𝕜 𝕜' (TangentSpace I x) ≃ₗ[𝕜] TangentSpace (I.restrictScalars 𝕜) x where
+  toFun v := (tangentSpaceCastModel (I.restrictScalars 𝕜) x).symm
+    (tangentSpaceCastModel I x (RestrictScalars.addEquiv 𝕜 𝕜' _ v))
+  invFun v := (RestrictScalars.addEquiv 𝕜 𝕜' _).symm
+    ((tangentSpaceCastModel I x).symm (tangentSpaceCastModel (I.restrictScalars 𝕜) x v))
+  left_inv v := by simp
+  right_inv v := by simp
+  map_add' v w := by simp only [map_add]
+  map_smul' c v := by
+    rw [RestrictScalars.addEquiv_map_smul, map_smul, RingHom.id_apply,
+      algebraMap_smul, map_smul]
+
+/-- Scalar restriction preserves the preferred tangent coordinate vector. -/
+@[simp]
+theorem restrictScalarsLinearEquiv_apply (x : M) (v : RestrictScalars 𝕜 𝕜' (TangentSpace I x)) :
+    restrictScalarsLinearEquiv 𝕜 (I := I) x v = (tangentSpaceCastModel (I.restrictScalars 𝕜) x).symm
+      (tangentSpaceCastModel I x (RestrictScalars.addEquiv 𝕜 𝕜' _ v)) := by
+  rfl
+
+/-- The inverse scalar-restriction equivalence preserves preferred tangent coordinates. -/
+@[simp]
+theorem restrictScalarsLinearEquiv_symm_apply (x : M) (v : TangentSpace (I.restrictScalars 𝕜) x) :
+    (restrictScalarsLinearEquiv 𝕜 (I := I) x).symm v = (RestrictScalars.addEquiv 𝕜 𝕜' _).symm
+      ((tangentSpaceCastModel I x).symm
+        (tangentSpaceCastModel (I.restrictScalars 𝕜) x v)) := by
+  rfl
+
+end TangentSpace
+
+namespace MDifferentiableAt
+
+variable (R : Type*) {A : Type*}
+  [NontriviallyNormedField R] [NontriviallyNormedField A] [NormedAlgebra R A]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace A E] [NormedSpace R E]
+  [IsScalarTower R A E] {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace A F] [NormedSpace R F]
+  [IsScalarTower R A F] {N : Type*} [TopologicalSpace N] [ChartedSpace F N]
+
+/-- The fibrewise scalar-restriction equivalence intertwines the manifold derivatives of a
+map differentiable over the larger field. -/
+theorem mfderiv_restrictScalars_apply {f : M → N} {x : M}
+    (hf : MDifferentiableAt 𝓘(A, E) 𝓘(A, F) f x)
+    (v : RestrictScalars R A (TangentSpace 𝓘(A, E) x)) :
+    TangentSpace.restrictScalarsLinearEquiv R (I := 𝓘(A, F)) (f x)
+        ((RestrictScalars.addEquiv R A _).symm
+          (mfderiv 𝓘(A, E) 𝓘(A, F) f x (RestrictScalars.addEquiv R A _ v))) =
+      mfderiv 𝓘(R, E) 𝓘(R, F) f x
+        (TangentSpace.restrictScalarsLinearEquiv R (I := 𝓘(A, E)) x v) := by
+  have h := DFunLike.congr_fun (hf.mfderiv_restrictScalars R)
+    (tangentSpaceCastModel 𝓘(A, E) x (RestrictScalars.addEquiv R A _ v))
+  apply (tangentSpaceCastModel 𝓘(R, F) (f x)).injective
+  simp only [TangentSpace.restrictScalarsLinearEquiv_apply, AddEquiv.apply_symm_apply]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply] at h
+  exact h.symm
+
+/-- A vector-valued derivative evaluated on a tangent vector is unchanged by scalar
+restriction, after transporting that vector through the fibrewise equivalence. -/
+theorem mvfderiv_restrictScalars_apply {f : M → F} {x : M}
+    (hf : MDifferentiableAt 𝓘(A, E) 𝓘(A, F) f x)
+    (v : RestrictScalars R A (TangentSpace 𝓘(A, E) x)) :
+    mvfderiv 𝓘(R, E) f x
+        (TangentSpace.restrictScalarsLinearEquiv R (I := 𝓘(A, E)) x v) =
+      mvfderiv 𝓘(A, E) f x (RestrictScalars.addEquiv R A _ v) := by
+  -- For a vector-space target, the model cast is the standard tangent-space identification.
+  have h := congrArg (tangentSpaceCastModel 𝓘(R, F) (f x)) (hf.mfderiv_restrictScalars_apply R v)
+  simp only [TangentSpace.restrictScalarsLinearEquiv_apply, AddEquiv.apply_symm_apply] at h
+  rw [modelWithCornersSelf_restrictScalars] at h
+  simp only [ContinuousLinearEquiv.apply_symm_apply] at h
+  simp only [mvfderiv, NormedSpace.fromTangentSpace,
+    TangentSpace.restrictScalarsLinearEquiv_apply]
+  rw [ContinuousLinearMap.comp_apply]
+  exact h.symm
+
+
+end MDifferentiableAt
