@@ -7,13 +7,16 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 public import Mathlib.MeasureTheory.Measure.Interval
+public import Mathlib.MeasureTheory.Measure.Real
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 
 /-!
-# Continuity of measures of intervals
+# Measures of intervals
 
 Mathlib's `MeasureTheory.tendsto_measure_Ioc_atBot` lets the left endpoint of `(x, a]` go to
 `-∞`. This file adds the analogous limits for `(x, a)` and `[x, a]`, and the right-continuity of
 `x ↦ μ (-∞, x]` and `x ↦ μ (-∞, x)` at `a` from the right, where both tend to `μ (-∞, a]`.
+Reflection exchanges the two open tails.
 
 ## Main results
 
@@ -22,6 +25,9 @@ Mathlib's `MeasureTheory.tendsto_measure_Ioc_atBot` lets the left endpoint of `(
 * `MeasureTheory.tendsto_measure_Iio_nhdsGT`, `MeasureTheory.tendsto_measure_Iic_nhdsGT`:
   `μ (-∞, x) → μ (-∞, a]` and `μ (-∞, x] → μ (-∞, a]` as `x → a⁺`, provided some `μ (-∞, r)`,
   respectively `μ (-∞, r]`, with `r > a` is finite.
+* `MeasureTheory.Measure.tendsto_measureReal_Icc_neg_mul_atTop`: the real mass of symmetric
+  intervals with endpoints `±δx` tends to the total mass of a finite real measure when `δ > 0`.
+* `MeasureTheory.Measure.map_neg_real_Ioi`: the right tail of a reflected measure is its left tail.
 -/
 
 public section
@@ -82,5 +88,29 @@ theorem tendsto_measure_Iic_nhdsGT (hf : ∃ r > a, μ (Iic r) ≠ ∞) :
     (fun _ _ _ hij => Iic_subset_Iic.2 hij) hf
 
 end DenselyOrdered
+
+/-- Reflection turns the real mass of an open right tail into that of the opposite left tail. -/
+@[simp]
+theorem Measure.map_neg_real_Ioi (μ : Measure ℝ) (x : ℝ) :
+    (μ.map (fun y ↦ -y)).real (Ioi x) = μ.real (Iio (-x)) := by
+  rw [map_measureReal_apply measurable_neg measurableSet_Ioi]
+  congr 1
+  ext y
+  simp
+
+/-- Symmetric intervals growing at any positive rate exhaust a finite measure on the real line.
+Their real masses therefore tend to the total real mass. -/
+theorem Measure.tendsto_measureReal_Icc_neg_mul_atTop (μ : Measure ℝ) [IsFiniteMeasure μ]
+    {δ : ℝ} (hδ : 0 < δ) :
+    Tendsto (fun x : ℝ ↦ μ.real (Icc (-(δ * x)) (δ * x))) atTop (𝓝 (μ.real univ)) := by
+  have hcover : (⋃ x : ℝ, Icc (-x) x) = univ := by
+    rw [iUnion_eq_univ_iff]
+    intro x
+    exact ⟨|x|, neg_abs_le x, le_abs_self x⟩
+  have hm := tendsto_measure_iUnion_atTop
+    (μ := μ) (fun x y (hxy : x ≤ y) ↦ Icc_subset_Icc (neg_le_neg hxy) hxy)
+  rw [hcover] at hm
+  exact ((ENNReal.tendsto_toReal (measure_ne_top μ univ)).comp hm).comp
+    (tendsto_id.const_mul_atTop hδ)
 
 end MeasureTheory

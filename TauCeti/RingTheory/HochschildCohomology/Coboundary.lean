@@ -119,6 +119,39 @@ theorem hochschildBimoduleCofaceFun_succ_castSucc (j : Fin n) :
   rw [← Fin.succ_castSucc, hochschildBimoduleCofaceFun_castSucc_succ]
 
 variable {l r} in
+/-- The cosimplicial identity of `hochschildBimoduleCofaceFun_hochschildBimoduleCofaceFun` for
+`i = 0`, which only needs `l (a * b) = l a ∘ l b` and `l a ∘ r b = r b ∘ l a`. -/
+private theorem cofaceFun_cofaceFun_zero
+    (hl : ∀ a b x, l (a * b) x = l a (l b x)) (hlr : ∀ a b x, l a (r b x) = r b (l a x))
+    (j : Fin (n + 2)) :
+    hochschildBimoduleCofaceFun l r (hochschildBimoduleCofaceFun l r f 0) j.succ =
+      hochschildBimoduleCofaceFun l r (hochschildBimoduleCofaceFun l r f j)
+        (0 : Fin (n + 2)).castSucc := by
+  funext a
+  induction j using Fin.cases with
+  | zero =>
+    -- `l (a₀ a₁) (f (a₂, …)) = l a₀ (l a₁ (f (a₂, …)))`
+    rw [← Fin.castSucc_zero (n := n + 1), hochschildBimoduleCofaceFun_castSucc_succ]
+    simp only [Fin.castSucc_zero, hochschildBimoduleCofaceFun_zero]
+    rw [← Fin.cons_self_tail a, Fin.contractNth_zero_cons]
+    simp only [Fin.cons_zero, Fin.tail_cons, hl]
+  | succ j =>
+    induction j using Fin.lastCases with
+    | last =>
+      -- the left and right actions commute
+      simp only [Fin.succ_last, hochschildBimoduleCofaceFun_last,
+        Fin.castSucc_zero, hochschildBimoduleCofaceFun_zero]
+      rw [Fin.tail_init_eq_init_tail]
+      exact (hlr _ _ _).symm
+    | cast j =>
+      -- an inner contraction commutes with dropping the first entry
+      rw [Fin.succ_castSucc, hochschildBimoduleCofaceFun_castSucc_succ]
+      simp only [Fin.castSucc_zero, hochschildBimoduleCofaceFun_zero,
+        hochschildBimoduleCofaceFun_succ_castSucc]
+      rw [Fin.contractNth_apply_of_lt _ _ _ _ (Nat.succ_pos _), Fin.castSucc_zero,
+        ← Fin.succ_castSucc, Fin.tail_contractNth_succ]
+
+variable {l r} in
 /-- The cosimplicial identity `∂_{j+1} ∘ ∂ᵢ = ∂ᵢ ∘ ∂_j` for `i ≤ j` between the coface formulas,
 for actions `l` and `r` satisfying `l (a * b) = l a ∘ l b`, `r (a * b) = r b ∘ r a` and
 `l a ∘ r b = r b ∘ l a`. -/
@@ -133,29 +166,7 @@ theorem hochschildBimoduleCofaceFun_hochschildBimoduleCofaceFun
   -- `hochschildBimoduleCofaceFun_castSucc_succ`.
   funext a
   induction i using Fin.cases with
-  | zero =>
-    induction j using Fin.cases with
-    | zero =>
-      -- `l (a₀ a₁) (f (a₂, …)) = l a₀ (l a₁ (f (a₂, …)))`
-      rw [← Fin.castSucc_zero (n := n + 1), hochschildBimoduleCofaceFun_castSucc_succ]
-      simp only [Fin.castSucc_zero, hochschildBimoduleCofaceFun_zero]
-      rw [← Fin.cons_self_tail a, Fin.contractNth_zero_cons]
-      simp only [Fin.cons_zero, Fin.tail_cons, hl]
-    | succ j =>
-      induction j using Fin.lastCases with
-      | last =>
-        -- the left and right actions commute
-        simp only [Fin.succ_last, hochschildBimoduleCofaceFun_last,
-          Fin.castSucc_zero, hochschildBimoduleCofaceFun_zero]
-        rw [Fin.tail_init_eq_init_tail]
-        exact (hlr _ _ _).symm
-      | cast j =>
-        -- an inner contraction commutes with dropping the first entry
-        rw [Fin.succ_castSucc, hochschildBimoduleCofaceFun_castSucc_succ]
-        simp only [Fin.castSucc_zero, hochschildBimoduleCofaceFun_zero,
-          hochschildBimoduleCofaceFun_succ_castSucc]
-        rw [Fin.contractNth_apply_of_lt _ _ _ _ (Nat.succ_pos _), Fin.castSucc_zero,
-          ← Fin.succ_castSucc, Fin.tail_contractNth_succ]
+  | zero => exact congrFun (cofaceFun_cofaceFun_zero f hl hlr j) a
   | succ i =>
     induction i using Fin.lastCases with
     | last =>

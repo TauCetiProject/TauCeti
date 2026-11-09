@@ -198,8 +198,6 @@ private theorem mem_rightLeftOverlapPartners_of_inverse
     (F.rectangle_left_ne_pentagon_right_of_mem_cIco hFt)
   obtain ⟨hP, hR⟩ := (G.mem_pentagonRectangleDecompositions C E).1 hE
   have hback := hrecut.symm
-    (GridRectangleDecomposition.hasOneCommonSide_of_isRecut hrecut
-      (F.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone))
     (E.underlying_first_isEmpty ((G.mem_pentagons _).1 hP).1)
     (E.underlying_second_isEmpty
       (((G.swapColumns C.column (finRotate n C.column)).mem_unblockedRectangles _).1 hR).1)
@@ -282,7 +280,7 @@ private theorem rightLeftOverlapPartner_sides
     (D.toRectangleDecomposition.isRecut_recut hone hf hs) hrecut
   have hdata := D.toRectangleDecomposition.isRecutOfRightEqLeft_recut hc hone hf hs
   rw [hEq] at hdata
-  have hback := hrecut.symm hone hf hs
+  have hback := hrecut.symm hf hs
   -- Distinct outer rows exclude mixed-side partners; inspect the two same-side orientations.
   obtain ⟨hbottom, htop⟩ := D.ne_rows_of_rightLeftRecut E hc hturn hdata
   rcases hback.orientation with h | h | h | h

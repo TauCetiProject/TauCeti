@@ -131,6 +131,56 @@ private theorem sum_block_ne_zero_and_ord_le (P' : Place k' F') {ι : Type*} [Fi
     _ = ((l₀ : ℕ) : ℤ) := by
         rw [hT, P'.ord_mul hA₀ne (pow_ne_zero _ ht0), P'.ord_pow, hA₀ord, ht, mul_one, zero_add]
 
+/-- **A block away from `Q₀` is small at `Q₀`.** A sum `∑ b q * (w q.1 * τ ^ q.2)` whose
+coefficients `b q` are integral at `Q₀` (as restrictions to `F`), whose `w j` have order at least
+`e(Q₀ ∣ P)` at `Q₀`, and whose prime-element powers `τ ^ l` are integral at `Q₀`, has valuation at
+most `exp (-e(Q₀ ∣ P))` at `Q₀`. -/
+private theorem valuation_sum_mul_le_exp_neg_ramificationIdx {a c : ℕ} {Q₀ : Place k' F'}
+    (b : Fin a × Fin c → (Q₀.restrict k F).integers) {w : Fin a → F'} {τ : F'}
+    (hw : ∀ j, (ramificationIdx F Q₀ : ℤ) ≤ Q₀.ord (w j)) (hτ : 0 ≤ Q₀.ord τ) :
+    Q₀.valuation (∑ q : Fin a × Fin c, algebraMap F F' ((b q : F)) * (w q.1 * τ ^ (q.2 : ℕ))) ≤
+      WithZero.exp (-(ramificationIdx F Q₀ : ℤ)) := by
+  refine Valuation.map_sum_le _ fun q _ ↦ ?_
+  have hb1 : Q₀.valuation (algebraMap F F' ((b q : F))) ≤ 1 := by
+    refine Q₀.mem_integers_iff.mp (Q₀.mem_integers_iff_ord_nonneg.mpr ?_)
+    rw [ord_algebraMap_restrict k F Q₀ ((b q : F))]
+    exact mul_nonneg (by positivity) ((Q₀.restrict k F).mem_integers_iff_ord_nonneg.mp (b q).2)
+  have hwval : Q₀.valuation (w q.1) ≤ WithZero.exp (-(ramificationIdx F Q₀ : ℤ)) := by
+    have hne : w q.1 ≠ 0 := by
+      intro h
+      have hh := hw q.1
+      have he := ramificationIdx_pos (F := F) Q₀
+      rw [h, ord_zero] at hh
+      omega
+    rw [Q₀.valuation_eq_exp_neg_ord hne]
+    exact WithZero.exp_le_exp.2 (neg_le_neg (hw q.1))
+  have hτval : Q₀.valuation (τ ^ (q.2 : ℕ)) ≤ 1 := by
+    rw [map_pow]
+    exact pow_le_one' (Q₀.mem_integers_iff.mp (Q₀.mem_integers_iff_ord_nonneg.mpr hτ)) _
+  rw [map_mul, map_mul]
+  exact (mul_le_of_le_one_left' hb1).trans ((mul_le_of_le_one_right' hτval).trans hwval)
+
+omit [FiniteDimensional F F'] in
+/-- **The strict triangle inequality forbids a vanishing sum of blocks.** If the blocks `Z i` add
+up to `0`, the block at `i₀` is nonzero of order less than `e(Q i₀ ∣ P)` at `Q i₀`, and every other
+block has valuation at most `exp (-e(Q i₀ ∣ P))` at `Q i₀`, we reach a contradiction. -/
+private theorem false_of_sum_eq_zero_of_valuation_lt {ι : Type*} [Fintype ι] {Q : ι → Place k' F'}
+    {i₀ : ι} {Z : ι → F'} (hZsum : ∑ i, Z i = 0) (hZne : Z i₀ ≠ 0) {l : ℕ}
+    (hZord : (Q i₀).ord (Z i₀) ≤ (l : ℤ)) (hl : l < ramificationIdx F (Q i₀))
+    (hZm : ∀ m, m ≠ i₀ → (Q i₀).valuation (Z m) ≤ WithZero.exp (-(ramificationIdx F (Q i₀) : ℤ))) :
+    False := by
+  classical
+  have hlt : ∀ m ∈ (Finset.univ : Finset ι) \ {i₀},
+      (Q i₀).valuation (Z m) < (Q i₀).valuation (Z i₀) := by
+    intro m hmem
+    simp only [Finset.mem_sdiff, Finset.mem_singleton] at hmem
+    refine lt_of_le_of_lt (hZm m hmem.2) ?_
+    rw [(Q i₀).valuation_eq_exp_neg_ord hZne, WithZero.exp_lt_exp]
+    omega
+  have hval := (Q i₀).valuation.map_sum_eq_of_lt (Finset.mem_univ i₀) hlt
+  rw [hZsum, map_zero] at hval
+  exact ((Valuation.ne_zero_iff _).mpr hZne) hval.symm
+
 /-- **The products `w i j * τ i ^ l` are `F`-linearly independent across the whole fibre.** Given,
 at each place `Q i` over `P`, a prime element `τ i` for `Q i` that is integral at the other places
 of the family, and lifts `w i j` of a family of residues independent over the residue field of `P`,
@@ -196,43 +246,10 @@ private theorem linearIndependent_mul_pow_of_forall_linearIndependent_residue {�
     simpa only [hZ, hV] using hblock
   -- Every other block has order at least `e(Q i₀ ∣ P)` at `Q i₀`.
   have hZm : ∀ m, m ≠ i₀ →
-      (Q i₀).valuation (Z m) ≤ WithZero.exp (-(ramificationIdx F (Q i₀) : ℤ)) := by
-    intro m hm
-    simp only [hZ]
-    refine Valuation.map_sum_le _ fun q _ ↦ ?_
-    have hb1 : (Q i₀).valuation (algebraMap F F' ((b ⟨m, q⟩ : F))) ≤ 1 := by
-      refine (Q i₀).mem_integers_iff.mp ((Q i₀).mem_integers_iff_ord_nonneg.mpr ?_)
-      rw [ord_algebraMap_restrict k F (Q i₀) ((b ⟨m, q⟩ : F))]
-      exact mul_nonneg (by positivity)
-        (((Q i₀).restrict k F).mem_integers_iff_ord_nonneg.mp (b ⟨m, q⟩).2)
-    have hwval : (Q i₀).valuation (w m q.1) ≤
-        WithZero.exp (-(ramificationIdx F (Q i₀) : ℤ)) := by
-      have hne : w m q.1 ≠ 0 := by
-        intro h
-        have hh := hwN m q.1 i₀ (Ne.symm hm)
-        have he := ramificationIdx_pos (F := F) (Q i₀)
-        rw [h, ord_zero] at hh
-        omega
-      rw [(Q i₀).valuation_eq_exp_neg_ord hne]
-      exact WithZero.exp_le_exp.2 (neg_le_neg (hwN m q.1 i₀ (Ne.symm hm)))
-    have hτval : (Q i₀).valuation (τ m ^ (q.2 : ℕ)) ≤ 1 := by
-      rw [map_pow]
-      exact pow_le_one' ((Q i₀).mem_integers_iff.mp
-        ((Q i₀).mem_integers_iff_ord_nonneg.mpr (hτint m i₀ (Ne.symm hm)))) _
-    simp only [hV]
-    rw [map_mul, map_mul]
-    exact (mul_le_of_le_one_left' hb1).trans ((mul_le_of_le_one_right' hτval).trans hwval)
-  -- The strict triangle inequality contradicts `∑ i, Z i = 0`.
-  have hlt : ∀ m ∈ (Finset.univ : Finset ι) \ {i₀},
-      (Q i₀).valuation (Z m) < (Q i₀).valuation (Z i₀) := by
-    intro m hmem
-    simp only [Finset.mem_sdiff, Finset.mem_singleton] at hmem
-    refine lt_of_le_of_lt (hZm m hmem.2) ?_
-    rw [(Q i₀).valuation_eq_exp_neg_ord hZne, WithZero.exp_lt_exp]
-    omega
-  have hval := (Q i₀).valuation.map_sum_eq_of_lt (Finset.mem_univ i₀) hlt
-  rw [hZsum, map_zero] at hval
-  exact ((Valuation.ne_zero_iff _).mpr hZne) hval.symm
+      (Q i₀).valuation (Z m) ≤ WithZero.exp (-(ramificationIdx F (Q i₀) : ℤ)) := fun m hm ↦
+    valuation_sum_mul_le_exp_neg_ramificationIdx k F (fun q ↦ b ⟨m, q⟩)
+      (fun j ↦ hwN m j i₀ (Ne.symm hm)) (hτint m i₀ (Ne.symm hm))
+  exact false_of_sum_eq_zero_of_valuation_lt F hZsum hZne hZord l₀.2 hZm
 
 /-- **The fundamental inequality**, for a family of places indexed by a finite type. This is the
 form the proof produces; `TauCeti.Place.sum_ramificationIdx_mul_relativeDegree_le_finrank` is the
