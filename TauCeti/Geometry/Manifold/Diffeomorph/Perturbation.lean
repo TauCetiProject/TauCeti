@@ -92,11 +92,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 /-- **Compactly supported translations.** Let `c` be a point of a finite-dimensional real normed
 space `E` and `r > 0`. There are `δ > 0` and a family `τ d`, `d ∈ E`, of `C^n` diffeomorphisms of
 `E`, `1 ≤ n`, such that `(d, p) ↦ τ d p` is `C^n`, every `τ d` fixes each point outside the ball
-`B(c, r)`, `τ 0` is the identity, and `τ d c = c + d` whenever `‖d‖ < δ`.
-
-The diffeomorphism `τ d` is `p ↦ p + ρ(p) • κ(d)`, where `ρ` is a bump function supported in
-`B(c, r)` and equal to `1` at `c`, and `κ(d) = χ(d) • d` for a bump function `χ` at `0` so narrow
-that `ρ(p) • κ(d)` is a Lipschitz-small perturbation of the identity. -/
+`B(c, r)`, `τ 0` is the identity, and `τ d c = c + d` whenever `‖d‖ < δ`. -/
 theorem exists_diffeomorph_family_apply_eq_add (c : E) {r : ℝ} (hr : 0 < r) {n : ℕ∞}
     (hn : 1 ≤ n) :
     ∃ δ > 0, ∃ τ : E → E ≃ₘ^n⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E,

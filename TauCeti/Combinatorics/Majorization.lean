@@ -63,13 +63,14 @@ theorem eq_staircase_of_antitone_of_prefix_sum_le_of_sum_eq_of_casimir_eq
       ∑ i ∈ Finset.range N, ((N - (i + 1) : ℕ) : ℤ) *
         (((N - (i + 1) : ℕ) : ℤ) + (N : ℤ) - 2 * i)) :
     ∀ i, i < N → a i = ((N - (i + 1) : ℕ) : ℤ) := by
-  have hpartial := sum_range_eq_zero_of_sum_mul_eq_zero
+  have hpartial := sum_range_eq_zero_of_sum_smul_eq_zero
     (d := fun i => ((N - (i + 1) : ℕ) : ℤ) - a i)
     (w := fun i => ((N - (i + 1) : ℕ) : ℤ) + a i + N - 2 * i)
     (fun k hk => by rw [Finset.sum_sub_distrib]; exact sub_nonneg.mpr (hmajor k hk))
     (by rw [Finset.sum_sub_distrib, hsum, sub_self])
     (fun k hk => by have := ha k hk; omega)
     (by
+      simp only [smul_eq_mul]
       rw [← sub_eq_zero.mpr hcasimir.symm, ← Finset.sum_sub_distrib]
       exact Finset.sum_congr rfl fun i _ => by ring)
   intro i hi
