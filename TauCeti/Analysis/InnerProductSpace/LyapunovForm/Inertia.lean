@@ -13,16 +13,20 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import TauCeti.Analysis.InnerProductSpace.Spectrum
+import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Analysis.Normed.Operator.Exponential
 
 /-!
 # The inertia of a Lyapunov form
 
-Let `A` be an operator on a finite-dimensional real inner product space `E` with a Lyapunov form:
+Let `A` be a bounded operator on a real Hilbert space `E` with a Lyapunov form:
 a symmetric `S` and `c > 0` with `c ‖v‖² ≤ ⟪S (A v), v⟫` for all `v`. Along every solution
 `w(t) = exp (t • A) v` of `w' = A w`, the quadratic form `V(w) = ⟪S w, w⟫` increases at rate at
 least `2 c ‖w‖²`. The inertia theorem of Ostrowski and Schneider says that `S` then sees the
-splitting of `E` into the stable and unstable subspaces of the flow:
+splitting of `E` into the stable and unstable subspaces of the flow. On every real Hilbert space
+`S` is negative definite on the stable subspace and positive definite on the unstable one, and the
+stable vectors are exactly those whose forward orbit stays in the cone `{V ≤ 0}`. In finite
+dimensions:
 
 * the number of negative eigenvalues of `S`, counted with multiplicity, is the dimension of the
   stable subspace `A.stableSubspace` (`exp (t • A) v → 0` as `t → ∞`);
@@ -50,13 +54,17 @@ bounds the dimension of the stable subspace from below.
 
 ## Main results
 
-In the namespace `ContinuousLinearMap`, for `S` symmetric with `c ‖v‖² ≤ ⟪S (A v), v⟫`, `c > 0`:
+In the namespace `ContinuousLinearMap`, for `S` symmetric with `c ‖v‖² ≤ ⟪S (A v), v⟫`, `c > 0`,
+on a real Hilbert space:
 
 * `inner_apply_self_neg_of_mem_stableSubspace`, `inner_apply_self_pos_of_mem_unstableSubspace`:
   `S` is negative definite on the stable subspace and positive definite on the unstable one.
 * `mem_stableSubspace_iff_forall_inner_nonpos`, `mem_unstableSubspace_iff_forall_inner_nonneg`: a
   vector is stable exactly when its forward orbit stays in the cone `{⟪S w, w⟫ ≤ 0}`, and unstable
   exactly when its backward orbit stays in the cone `{⟪S w, w⟫ ≥ 0}`.
+
+On a finite-dimensional space:
+
 * `finrank_stableSubspace_eq_finrank_pointSpectralSubspace_Iio`: the stable dimension is the
   number of negative eigenvalues of `S`.
 * `finrank_unstableSubspace_eq_finrank_pointSpectralSubspace_Ioi`: the unstable dimension is the
@@ -79,21 +87,21 @@ open scoped InnerProductSpace
 
 namespace ContinuousLinearMap
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {A S : E →L[ℝ] E} {c : ℝ}
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {A S : E →L[ℝ] E} {c : ℝ}
+
+section CompleteSpace
+
+variable [CompleteSpace E]
 
 /-! ### The Lyapunov function along the flow -/
 
-/-- The derivative of `t ↦ ⟪S w(t), w(t)⟫` along `w(t) = exp (t • A) v` is `2 ⟪S (A w), w⟫`. -/
-private theorem hasDerivAt_inner_exp_smul_apply (hS : (S : E →ₗ[ℝ] E).IsSymmetric) (v : E)
-    (t : ℝ) :
+/-- For symmetric `S`, the derivative of `t ↦ ⟪S w(t), w(t)⟫` along `w(t) = exp (t • A) v` is
+`2 ⟪S (A w), w⟫`. -/
+private theorem hasDerivAt_inner_exp_smul_apply_of_isSymmetric
+    (hS : (S : E →ₗ[ℝ] E).IsSymmetric) (v : E) (t : ℝ) :
     HasDerivAt (fun t : ℝ ↦ ⟪S (exp (t • A) v), exp (t • A) v⟫_ℝ)
       (2 * ⟪S (A (exp (t • A) v)), exp (t • A) v⟫_ℝ) t := by
-  have hw : HasDerivAt (fun t : ℝ ↦ exp (t • A) v) (A (exp (t • A) v)) t := by
-    simpa using (hasDerivAt_exp_smul_const' A t).clm_apply (hasDerivAt_const t v)
-  have hSw : HasDerivAt (fun t : ℝ ↦ S (exp (t • A) v)) (S (A (exp (t • A) v))) t :=
-    S.hasFDerivAt.comp_hasDerivAt t hw
-  convert hSw.inner ℝ hw using 1
+  convert hasDerivAt_inner_exp_smul_apply A S v t using 1
   rw [hS.apply_clm, real_inner_comm (A (exp (t • A) v)) (S (exp (t • A) v))]
   ring
 
@@ -101,56 +109,50 @@ private theorem hasDerivAt_inner_exp_smul_apply (hS : (S : E →ₗ[ℝ] E).IsSy
 private theorem monotone_inner_exp_smul_apply (hS : (S : E →ₗ[ℝ] E).IsSymmetric) (hc : 0 < c)
     (hcS : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (A v), v⟫_ℝ) (v : E) :
     Monotone fun t : ℝ ↦ ⟪S (exp (t • A) v), exp (t • A) v⟫_ℝ :=
-  monotone_of_hasDerivAt_nonneg (fun t ↦ hasDerivAt_inner_exp_smul_apply hS v t) fun t ↦ by
-    have := hcS (exp (t • A) v)
-    have : 0 ≤ c * ‖exp (t • A) v‖ ^ 2 := by positivity
-    simp only [Pi.zero_apply]
-    linarith
-
-/-- Along a nonzero orbit, the Lyapunov function increases strictly. -/
-private theorem strictMono_inner_exp_smul_apply (hS : (S : E →ₗ[ℝ] E).IsSymmetric) (hc : 0 < c)
-    (hcS : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (A v), v⟫_ℝ) {v : E} (hv : v ≠ 0) :
-    StrictMono fun t : ℝ ↦ ⟪S (exp (t • A) v), exp (t • A) v⟫_ℝ :=
-  strictMono_of_hasDerivAt_pos (fun t ↦ hasDerivAt_inner_exp_smul_apply hS v t) fun t ↦ by
-    have hw : exp (t • A) v ≠ 0 := fun h0 ↦ hv <| by
-      simpa only [expEquiv_apply, expEquiv_symm_apply, h0, map_zero] using
-        ((expEquiv (t • A)).symm_apply_apply v).symm
-    have := hcS (exp (t • A) v)
-    have : 0 < c * ‖exp (t • A) v‖ ^ 2 := by positivity
-    linarith
+  monotone_of_hasDerivAt_nonneg (fun t ↦ hasDerivAt_inner_exp_smul_apply_of_isSymmetric hS v t)
+    fun t ↦ by
+      have := hcS (exp (t • A) v)
+      have : 0 ≤ c * ‖exp (t • A) v‖ ^ 2 := by positivity
+      simp only [Pi.zero_apply]
+      linarith
 
 /-- **Unit-time increments of the Lyapunov function are coercive.** There is `δ > 0` with
-`δ ‖v‖² ≤ ⟪S w(1), w(1)⟫ - ⟪S v, v⟫` for `w(1) = exp A v`. The increment is the quadratic form of
-the symmetric operator `T† S T - S`, `T = exp A`, which is positive and injective by the strict
-monotonicity of the Lyapunov function along nonzero orbits. -/
+`δ ‖v‖² ≤ ⟪S w(1), w(1)⟫ - ⟪S v, v⟫` for `w(1) = exp A v`. Up to time `1` the orbit has norm at
+least `‖v‖ / exp ‖A‖`, and the Lyapunov function grows at rate at least `2 c ‖w‖²`. -/
 private theorem exists_pos_forall_mul_norm_sq_le_inner_exp_sub
     (hS : (S : E →ₗ[ℝ] E).IsSymmetric) (hc : 0 < c) (hcS : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (A v), v⟫_ℝ) :
     ∃ δ > 0, ∀ v : E, δ * ‖v‖ ^ 2 ≤
       ⟪S (exp ((1 : ℝ) • A) v), exp ((1 : ℝ) • A) v⟫_ℝ - ⟪S v, v⟫_ℝ := by
-  set T := exp ((1 : ℝ) • A)
-  set Q : E →L[ℝ] E := adjoint T ∘L S ∘L T - S
-  have hQ (v : E) : ⟪Q v, v⟫_ℝ = ⟪S (T v), T v⟫_ℝ - ⟪S v, v⟫_ℝ := by
-    simp only [Q, sub_apply, comp_apply, inner_sub_left, adjoint_inner_left]
-  -- At time `0` the orbit starts at `v`, and at time `1` it is at `T v`.
-  have hT0 (v : E) : exp ((0 : ℝ) • A) v = v := by simp
-  have hpos : (Q : E →ₗ[ℝ] E).IsPositive := by
-    refine ⟨fun x y ↦ ?_, fun x ↦ ?_⟩
-    · simp only [coe_coe, Q, sub_apply, comp_apply, inner_sub_left, inner_sub_right,
-        adjoint_inner_left, adjoint_inner_right, hS.apply_clm]
-    · have h := monotone_inner_exp_smul_apply hS hc hcS x zero_le_one
-      simp only [hT0] at h
-      rw [coe_coe, RCLike.re_to_real, hQ]
-      linarith
-  have hker : LinearMap.ker (Q : E →ₗ[ℝ] E) = ⊥ := by
-    refine LinearMap.ker_eq_bot'.2 fun x hx ↦ ?_
-    by_contra hx0
-    have h := strictMono_inner_exp_smul_apply hS hc hcS hx0 zero_lt_one
-    simp only [hT0] at h
-    have hQx : ⟪Q x, x⟫_ℝ = 0 := by rw [← coe_coe, hx, inner_zero_left]
-    rw [hQ] at hQx
-    linarith
-  obtain ⟨δ, hδ, h⟩ := hpos.exists_pos_mul_norm_sq_le_re_inner hker
-  exact ⟨δ, hδ, fun v ↦ by simpa only [coe_coe, RCLike.re_to_real, hQ] using h v⟩
+  set K := Real.exp ‖A‖
+  have hK : 0 < K := Real.exp_pos _
+  refine ⟨2 * c / K ^ 2, by positivity, fun v ↦ ?_⟩
+  -- Up to time `1`, the orbit has norm at least `‖v‖ / K`.
+  have hlow {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) : ‖v‖ ≤ K * ‖exp (s • A) v‖ := by
+    have hv : v = exp ((-s) • A) (exp (s • A) v) := by
+      rw [← exp_add_smul_apply, neg_add_cancel, zero_smul, exp_zero, one_apply_eq_self]
+    have hexp : ‖exp ((-s) • A)‖ ≤ K := by
+      refine (TauCeti.norm_exp_smul_le norm_id_le A (-s)).trans (Real.exp_le_exp.2 ?_)
+      rw [norm_neg, Real.norm_of_nonneg hs.1]
+      exact mul_le_of_le_one_right (norm_nonneg A) hs.2
+    calc ‖v‖ = ‖exp ((-s) • A) (exp (s • A) v)‖ := congrArg norm hv
+      _ ≤ ‖exp ((-s) • A)‖ * ‖exp (s • A) v‖ := le_opNorm _ _
+      _ ≤ K * ‖exp (s • A) v‖ := by gcongr
+  have hg := hasDerivAt_inner_exp_smul_apply_of_isSymmetric (A := A) hS v
+  have key := (convex_Icc (0 : ℝ) 1).mul_sub_le_image_sub_of_le_deriv
+    (f := fun t : ℝ ↦ ⟪S (exp (t • A) v), exp (t • A) v⟫_ℝ)
+    (fun t _ ↦ (hg t).continuousAt.continuousWithinAt)
+    (fun t _ ↦ (hg t).differentiableAt.differentiableWithinAt) (C := 2 * c / K ^ 2 * ‖v‖ ^ 2)
+    (fun t ht ↦ ?_) 0 ⟨le_rfl, zero_le_one⟩ 1 ⟨zero_le_one, le_rfl⟩ zero_le_one
+  · simpa using key
+  rw [interior_Icc] at ht
+  rw [(hg t).deriv]
+  have h₁ := hcS (exp (t • A) v)
+  have h₂ : ‖v‖ ^ 2 ≤ K ^ 2 * ‖exp (t • A) v‖ ^ 2 := by
+    rw [← mul_pow]
+    exact pow_le_pow_left₀ (norm_nonneg v) (hlow (Ioo_subset_Icc_self ht)) 2
+  calc 2 * c / K ^ 2 * ‖v‖ ^ 2 ≤ 2 * c / K ^ 2 * (K ^ 2 * ‖exp (t • A) v‖ ^ 2) := by gcongr
+    _ = 2 * (c * ‖exp (t • A) v‖ ^ 2) := by field_simp
+    _ ≤ 2 * ⟪S (A (exp (t • A) v)), exp (t • A) v⟫_ℝ := by linarith
 
 /-- The unit-time increment of the Lyapunov function at an arbitrary time of the orbit. -/
 private theorem mul_norm_sq_le_inner_exp_add_one_sub {δ : ℝ}
@@ -185,7 +187,7 @@ theorem inner_apply_self_neg_of_mem_stableSubspace (hS : (S : E →ₗ[ℝ] E).I
   have : 0 < δ * ‖v‖ ^ 2 := by positivity
   linarith [h v hv]
 
-omit [FiniteDimensional ℝ E] in
+omit [CompleteSpace E] in
 /-- If `S` is a Lyapunov form of `A` with constant `c`, then `-S` is one of `-A` with the same
 constant: this exchanges the stable and unstable subspaces. -/
 private theorem lyapunov_neg (hS : (S : E →ₗ[ℝ] E).IsSymmetric)
@@ -219,10 +221,7 @@ theorem mem_stableSubspace_iff_forall_inner_nonpos (hS : (S : E →ₗ[ℝ] E).I
   · -- The stable subspace is invariant, and the form is negative definite on it.
     intro hv t _
     obtain ⟨δ', hδ', h⟩ := exists_pos_forall_inner_le_of_mem_stableSubspace hS hc hcS
-    have hwt : exp (t • A) v ∈ A.stableSubspace := by
-      rw [← SetLike.mem_coe, coe_stableSubspace] at hv ⊢
-      rw [← flow_apply, _root_.Flow.apply_mem_stableSet_iff]
-      exact hv
+    have hwt : exp (t • A) v ∈ A.stableSubspace := exp_smul_apply_mem_stableSubspace_iff.2 hv
     have : 0 ≤ δ' * ‖exp (t • A) v‖ ^ 2 := by positivity
     linarith [h _ hwt]
   · -- `g` is monotone and bounded above, so its unit-time increments tend to `0`; they
@@ -261,7 +260,11 @@ theorem mem_unstableSubspace_iff_forall_inner_nonneg (hS : (S : E →ₗ[ℝ] E)
   · simpa [key] using h (-t) (neg_nonneg.2 ht)
   · simpa [key] using h (-t) (neg_nonpos.2 ht)
 
+end CompleteSpace
+
 /-! ### The inertia theorem -/
+
+variable [FiniteDimensional ℝ E]
 
 /-- The stable subspace has at least as many dimensions as `S` has negative eigenvalues. -/
 private theorem finrank_pointSpectralSubspace_Iio_le_finrank_stableSubspace

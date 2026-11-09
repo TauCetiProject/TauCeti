@@ -9,6 +9,8 @@ public import TauCeti.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.Semigroups.Group.Flow
 public import TauCeti.Analysis.Semigroups.Group.Generator
 public import TauCeti.Dynamics.Flow.Stable
+import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Normed.Operator.Exponential
 
 /-!
@@ -30,7 +32,9 @@ negative-gradient convention used by Morse theory is recovered by applying these
 * `ContinuousLinearMap.flow`: the flow `exp (t A)` of a bounded linear operator.
 * `ContinuousLinearMap.stableSubspace`, `ContinuousLinearMap.unstableSubspace`: the stable and
   unstable sets of `0` for this flow, as linear subspaces; negating `A` exchanges them
-  (`ContinuousLinearMap.stableSubspace_neg`).
+  (`ContinuousLinearMap.stableSubspace_neg`), and both are invariant under the flow.
+* `ContinuousLinearMap.hasDerivAt_inner_exp_smul_apply`: the derivative of a quadratic form
+  `⟪S w, w⟫` along an orbit `w(t) = exp (t • A) v` of the flow.
 * `LinearMap.IsSymmetric.eigenvectorBasis_repr_flow_neg_apply`: the coordinate formula for the
   flow of a negative symmetric operator in its ordered eigenbasis.
 * `LinearMap.IsSymmetric.stableSet_flow_eq_negativeSpectralSubspace`: the stable set of zero
@@ -136,6 +140,39 @@ theorem stableSubspace_neg (A : X →L[ℝ] X) : (-A).stableSubspace = A.unstabl
 @[simp]
 theorem unstableSubspace_neg (A : X →L[ℝ] X) : (-A).unstableSubspace = A.stableSubspace := by
   rw [← stableSubspace_neg, neg_neg]
+
+/-- The stable subspace is invariant under the flow: `exp (t • A) v` is stable exactly when `v`
+is. The priority makes `simp` use this before unfolding membership by `mem_stableSubspace`. -/
+@[simp high]
+theorem exp_smul_apply_mem_stableSubspace_iff {A : X →L[ℝ] X} {t : ℝ} {v : X} :
+    exp (t • A) v ∈ A.stableSubspace ↔ v ∈ A.stableSubspace := by
+  rw [← SetLike.mem_coe, ← SetLike.mem_coe, coe_stableSubspace, ← flow_apply,
+    _root_.Flow.apply_mem_stableSet_iff]
+
+/-- The unstable subspace is invariant under the flow: `exp (t • A) v` is unstable exactly when
+`v` is. The priority makes `simp` use this before unfolding membership by
+`mem_unstableSubspace`. -/
+@[simp high]
+theorem exp_smul_apply_mem_unstableSubspace_iff {A : X →L[ℝ] X} {t : ℝ} {v : X} :
+    exp (t • A) v ∈ A.unstableSubspace ↔ v ∈ A.unstableSubspace := by
+  rw [← SetLike.mem_coe, ← SetLike.mem_coe, coe_unstableSubspace, ← flow_apply,
+    _root_.Flow.apply_mem_unstableSet_iff]
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+
+/-- The derivative of the quadratic form `t ↦ ⟪S w(t), w(t)⟫` along an orbit
+`w(t) = exp (t • A) v` of the linear flow is `⟪S w, A w⟫ + ⟪S (A w), w⟫`. -/
+theorem hasDerivAt_inner_exp_smul_apply (A S : E →L[ℝ] E) (v : E) (t : ℝ) :
+    HasDerivAt (fun t : ℝ ↦ ⟪S (exp (t • A) v), exp (t • A) v⟫_ℝ)
+      (⟪S (exp (t • A) v), A (exp (t • A) v)⟫_ℝ + ⟪S (A (exp (t • A) v)), exp (t • A) v⟫_ℝ)
+      t := by
+  have hw : HasDerivAt (fun t : ℝ ↦ exp (t • A) v) (A (exp (t • A) v)) t := by
+    simpa using (hasDerivAt_exp_smul_const' A t).clm_apply (hasDerivAt_const t v)
+  exact (S.hasFDerivAt.comp_hasDerivAt t hw).inner ℝ hw
 
 end ContinuousLinearMap
 
