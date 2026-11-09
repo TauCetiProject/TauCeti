@@ -22,8 +22,8 @@ It is continuous by the closed graph theorem: its value is the `Lᵖ` product `�
 continuous in `u` because `ψ` is bounded on `Ω`.
 
 This is the global companion of zero-boundary smooth multiplication
-`TauCeti.Wkp0.contDiffSMulL`: no compact support of `ψ` in `Ω` is required, but `ψ` must be smooth
-on a neighbourhood of the compact set `closure Ω`.
+`TauCeti.Wkp0.contDiffSMulL`: it acts on `W^{k,p}(Ω)` instead of `W^{k,p}_0(Ω)`, and needs `ψ`
+smooth only on a neighbourhood `U` of the compact set `closure Ω` instead of on all of `E`.
 
 ## Main declarations
 
@@ -32,6 +32,8 @@ on a neighbourhood of the compact set `closure Ω`.
 * `TauCeti.Wkp.value_contDiffOnSMulL_ae`: its value is `ψ u` almost everywhere on `Ω`.
 * `TauCeti.Wkp.eq_contDiffOnSMulL_iff`: it is the unique element of `W^{k,p}(Ω)` with that value.
 * `TauCeti.Wkp.lowerOrder_contDiffOnSMulL`: it commutes with forgetting the highest derivative.
+* `TauCeti.Wkp.contDiffOnSMulL_add`, `TauCeti.Wkp.contDiffOnSMulL_mul`: it is additive and
+  multiplicative in `ψ`.
 
 ## References
 
@@ -105,6 +107,12 @@ private def contDiffOnSMulₗ (hU : IsOpen U) (hΩ : IsCompact (closure (Omega :
       with x h₁ h₂ h₃
     rw [h₁, h₂, Pi.smul_apply, Pi.smul_apply, h₃, smul_eq_mul, smul_eq_mul, mul_left_comm]
 
+private theorem contDiffOnSMulₗ_apply (hU : IsOpen U) (hΩ : IsCompact (closure (Omega : Set E)))
+    (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ) (hpsi : ContDiffOn ℝ ∞ psi U)
+    (u : Wkp mu Omega p k) :
+    contDiffOnSMulₗ hU hΩ hΩU k hpsi u = contDiffOnSMulAux hU hΩ hΩU k hpsi u :=
+  rfl
+
 /-- **Smooth multiplication on `W^{k,p}(Ω)`.** If `Ω` has compact closure inside an open set
 `U` and `ψ` is smooth on `U`, multiplication by `ψ` is a continuous linear endomorphism of
 `W^{k,p}(Ω)`, for every order `k` and every `1 ≤ p ≤ ∞`. Its value is the pointwise product
@@ -127,7 +135,7 @@ def contDiffOnSMulL (hU : IsOpen U) (hΩ : IsCompact (closure (Omega : Set E)))
       refine squeeze_zero (fun _ => norm_nonneg _) (fun n => ?_) hlim
       have hsub : value k (L (u n)) - value k (L x) = value k (L (u n - x)) := by
         simp only [← valueL_apply, map_sub]
-      rw [hsub]
+      rw [hsub, contDiffOnSMulₗ_apply]
       exact (norm_lp_le_of_ae_eq_mul hC'
         (value_contDiffOnSMulAux hU hΩ hΩU k hpsi (u n - x))).trans
         (mul_le_mul_of_nonneg_left (norm_value_le k _) (le_max_right _ _))
@@ -141,8 +149,9 @@ theorem value_contDiffOnSMulL_ae (hU : IsOpen U) (hΩ : IsCompact (closure (Omeg
     (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ) (hpsi : ContDiffOn ℝ ∞ psi U)
     (u : Wkp mu Omega p k) :
     (value k (contDiffOnSMulL hU hΩ hΩU k hpsi u) : E → ℝ) =ᵐ[mu.restrict Omega]
-      fun x => psi x * value k u x :=
-  value_contDiffOnSMulAux hU hΩ hΩU k hpsi u
+      fun x => psi x * value k u x := by
+  rw [contDiffOnSMulL, ContinuousLinearMap.coeFn_ofSeqClosedGraph, contDiffOnSMulₗ_apply]
+  exact value_contDiffOnSMulAux hU hΩ hΩU k hpsi u
 
 /-- Smooth multiplication is characterized by its value: an element of `W^{k,p}(Ω)` equals `ψ u`
 exactly when its value is `ψ u` almost everywhere on `Ω`. -/
@@ -164,6 +173,7 @@ theorem lowerOrder_contDiffOnSMulL (hU : IsOpen U) (hΩ : IsCompact (closure (Om
   exact value_contDiffOnSMulL_ae hU hΩ hΩU (k + 1) hpsi u
 
 /-- Multiplication by a constant function is scalar multiplication. -/
+@[simp]
 theorem contDiffOnSMulL_const (hU : IsOpen U) (hΩ : IsCompact (closure (Omega : Set E)))
     (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ) (c : ℝ) (u : Wkp mu Omega p k) :
     contDiffOnSMulL hU hΩ hΩU k (psi := fun _ => c) contDiffOn_const u = c • u := by
@@ -171,6 +181,34 @@ theorem contDiffOnSMulL_const (hU : IsOpen U) (hΩ : IsCompact (closure (Omega :
   rw [eq_contDiffOnSMulL_iff, value_smul]
   filter_upwards [Lp.coeFn_smul c (value k u)] with x hx
   rw [hx, Pi.smul_apply, smul_eq_mul]
+
+/-- Smooth multiplication is additive in the multiplier: `(ψ + φ) u = ψ u + φ u`. -/
+theorem contDiffOnSMulL_add (hU : IsOpen U) (hΩ : IsCompact (closure (Omega : Set E)))
+    (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ) {phi : E → ℝ} (hpsi : ContDiffOn ℝ ∞ psi U)
+    (hphi : ContDiffOn ℝ ∞ phi U) :
+    contDiffOnSMulL (mu := mu) (p := p) hU hΩ hΩU k (hpsi.add hphi) =
+      contDiffOnSMulL hU hΩ hΩU k hpsi + contDiffOnSMulL hU hΩ hΩU k hphi := by
+  ext1 u
+  symm
+  rw [eq_contDiffOnSMulL_iff, add_apply, value_add]
+  filter_upwards [Lp.coeFn_add (value k (contDiffOnSMulL hU hΩ hΩU k hpsi u))
+      (value k (contDiffOnSMulL hU hΩ hΩU k hphi u)),
+    value_contDiffOnSMulL_ae hU hΩ hΩU k hpsi u, value_contDiffOnSMulL_ae hU hΩ hΩU k hphi u]
+    with x h₁ h₂ h₃
+  rw [h₁, Pi.add_apply, h₂, h₃, add_mul]
+
+/-- Smooth multiplication is multiplicative in the multiplier: `(ψ φ) u = ψ (φ u)`. -/
+theorem contDiffOnSMulL_mul (hU : IsOpen U) (hΩ : IsCompact (closure (Omega : Set E)))
+    (hΩU : closure (Omega : Set E) ⊆ U) (k : ℕ) {phi : E → ℝ} (hpsi : ContDiffOn ℝ ∞ psi U)
+    (hphi : ContDiffOn ℝ ∞ phi U) :
+    contDiffOnSMulL (mu := mu) (p := p) hU hΩ hΩU k (hpsi.mul hphi) =
+      (contDiffOnSMulL hU hΩ hΩU k hpsi).comp (contDiffOnSMulL hU hΩ hΩU k hphi) := by
+  ext1 u
+  symm
+  rw [eq_contDiffOnSMulL_iff, ContinuousLinearMap.comp_apply]
+  filter_upwards [value_contDiffOnSMulL_ae hU hΩ hΩU k hpsi (contDiffOnSMulL hU hΩ hΩU k hphi u),
+    value_contDiffOnSMulL_ae hU hΩ hΩU k hphi u] with x h₁ h₂
+  rw [h₁, h₂, mul_assoc]
 
 /-- If `|ψ| ≤ C` on `Ω`, the value of `ψ u` has `Lᵖ` norm at most `C` times that of `u`. -/
 theorem norm_value_contDiffOnSMulL_le (hU : IsOpen U)
