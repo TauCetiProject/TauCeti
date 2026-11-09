@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Complex.Wirtinger.Weak
 public import TauCeti.Analysis.Sobolev.Local.Norm
 public import TauCeti.Analysis.Sobolev.TestFunctionLp.Representation
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Local
-import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.Analysis.Complex.OperatorNorm
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
