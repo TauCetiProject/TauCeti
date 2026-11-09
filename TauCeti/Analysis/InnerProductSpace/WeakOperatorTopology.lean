@@ -33,8 +33,8 @@ vectors gives a net converging to `a` in the weak operator topology. No separabi
 The dimension hypothesis cannot be dropped: on `ℂ` the projections are `0` and `1`, while `1/2`
 is a positive contraction.
 
-For operators from a finite-dimensional real normed space to a finite-dimensional real
-inner-product space, convergence of every inner-product entry implies convergence in operator
+For operators from a finite-dimensional normed space to a finite-dimensional inner-product
+space over `ℝ` or `ℂ`, convergence of every inner-product entry implies convergence in operator
 norm. The proof passes through Mathlib's weak operator topology; its linear equivalence with
 continuous linear maps is continuous because the operator space is finite-dimensional.
 
@@ -167,40 +167,41 @@ end ContinuousLinearMapWOT
 
 namespace ContinuousLinearMap
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-  [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+  [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
 
 /-- In finite dimension, convergence of inner-product entries gives operator-norm convergence. -/
 theorem tendsto_of_forall_inner_apply_tendsto {α : Type*} {l : Filter α}
-    {A : α → E →L[ℝ] F} {B : E →L[ℝ] F}
-    (h : ∀ x y, Tendsto (fun a ↦ ⟪y, A a x⟫_ℝ) l (𝓝 ⟪y, B x⟫_ℝ)) :
+    {A : α → E →L[𝕜] F} {B : E →L[𝕜] F}
+    (h : ∀ x y, Tendsto (fun a ↦ ⟪y, A a x⟫_𝕜) l (𝓝 ⟪y, B x⟫_𝕜)) :
     Tendsto A l (𝓝 B) := by
-  have : FiniteDimensional ℝ (E →WOT[ℝ] F) :=
-    FiniteDimensional.of_injective (ContinuousLinearMapWOT.linearEquiv ℝ).toLinearMap
-      (ContinuousLinearMapWOT.linearEquiv ℝ).injective
-  let e : (E →WOT[ℝ] F) ≃ₗ[ℝ] (E →L[ℝ] F) := ContinuousLinearMapWOT.linearEquiv ℝ
-  have hc : Continuous (ContinuousLinearMapWOT.toCLM (σ := RingHom.id ℝ) :
-      (E →WOT[ℝ] F) → E →L[ℝ] F) := by
+  have := FiniteDimensional.complete 𝕜 F
+  have : FiniteDimensional 𝕜 (E →WOT[𝕜] F) :=
+    FiniteDimensional.of_injective (ContinuousLinearMapWOT.linearEquiv 𝕜).toLinearMap
+      (ContinuousLinearMapWOT.linearEquiv 𝕜).injective
+  let e : (E →WOT[𝕜] F) ≃ₗ[𝕜] (E →L[𝕜] F) := ContinuousLinearMapWOT.linearEquiv 𝕜
+  have hc : Continuous (ContinuousLinearMapWOT.toCLM (σ := RingHom.id 𝕜) :
+      (E →WOT[𝕜] F) → E →L[𝕜] F) := by
     convert e.toLinearMap.continuous_of_finiteDimensional using 1
     funext T
-    exact (ContinuousLinearMapWOT.linearEquiv_apply ℝ T).symm
+    exact (ContinuousLinearMapWOT.linearEquiv_apply 𝕜 T).symm
   have hw : Tendsto (fun a ↦ ContinuousLinearMapWOT.ofCLM (A a)) l
       (𝓝 (ContinuousLinearMapWOT.ofCLM B)) :=
     ContinuousLinearMapWOT.tendsto_iff_forall_inner_apply_tendsto.mpr h
   exact hc.continuousAt.tendsto.comp hw
 
 /-- Inner-product entry derivatives determine finite-dimensional operator-norm derivatives. -/
-theorem hasDerivAt_of_forall_inner_apply_hasDerivAt {A : ℝ → E →L[ℝ] F}
-    {B : E →L[ℝ] F} {t : ℝ}
-    (h : ∀ x y, HasDerivAt (fun u ↦ ⟪y, A u x⟫_ℝ) ⟪y, B x⟫_ℝ t) :
+theorem hasDerivAt_of_forall_inner_apply_hasDerivAt {A : 𝕜 → E →L[𝕜] F}
+    {B : E →L[𝕜] F} {t : 𝕜}
+    (h : ∀ x y, HasDerivAt (fun u ↦ ⟪y, A u x⟫_𝕜) ⟪y, B x⟫_𝕜 t) :
     HasDerivAt A B t := by
   rw [hasDerivAt_iff_tendsto_slope]
   apply tendsto_of_forall_inner_apply_tendsto
   intro x y
-  have heq : (fun u ↦ ⟪y, slope A t u x⟫_ℝ) = slope (fun u ↦ ⟪y, A u x⟫_ℝ) t := by
+  have heq : (fun u ↦ ⟪y, slope A t u x⟫_𝕜) = slope (fun u ↦ ⟪y, A u x⟫_𝕜) t := by
     funext u
-    simp only [slope_def_module, smul_apply, sub_apply, real_inner_smul_right,
+    simp only [slope_def_module, smul_apply, sub_apply, inner_smul_right,
       inner_sub_right, smul_eq_mul]
   rw [heq]
   exact (h x y).tendsto_slope
