@@ -82,20 +82,29 @@ theorem lintegral_pi_update (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMe
 /-- For an L² function on a finite product of probability spaces, almost every one-coordinate
 slice obtained by an independent refresh is again in L². -/
 theorem ae_memLp_two_pi_update (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)]
-    {g : (∀ i, α i) → ℝ} (hg : Measurable g) (hL : MemLp g 2 (Measure.pi μ)) (i : ι) :
+    {g : (∀ i, α i) → ℝ} (hL : MemLp g 2 (Measure.pi μ)) (i : ι) :
     ∀ᵐ x ∂Measure.pi μ, MemLp (fun y ↦ g (Function.update x i y)) 2 (μ i) := by
-  have hm : Measurable (fun q : (∀ j, α j) × α i ↦ g (Function.update q.1 i q.2)) :=
-    hg.comp measurable_update'
-  have hupdate : MemLp (fun q : (∀ j, α j) × α i ↦ g (Function.update q.1 i q.2))
+  -- Replace `g` by a measurable representative `g'`; refreshing a coordinate preserves null sets.
+  set g' : (∀ i, α i) → ℝ := hL.aestronglyMeasurable.mk g
+  have hg' : Measurable g' := hL.aestronglyMeasurable.stronglyMeasurable_mk.measurable
+  have hL' : MemLp g' 2 (Measure.pi μ) := hL.ae_eq hL.aestronglyMeasurable.ae_eq_mk
+  have hmp := measurePreserving_update_prod_pi μ i
+  have hm : Measurable (fun q : (∀ j, α j) × α i ↦ g' (Function.update q.1 i q.2)) :=
+    hg'.comp measurable_update'
+  have hupdate : MemLp (fun q : (∀ j, α j) × α i ↦ g' (Function.update q.1 i q.2))
       2 ((Measure.pi μ).prod (μ i)) := by
     apply (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top (p := 2) (by norm_num) (by norm_num)
       hm.aestronglyMeasurable).mpr
     simp only [ENNReal.toReal_ofNat]
     rw [lintegral_prod _ (hm.enorm.pow_const (2 : ℝ)).aemeasurable,
-      lintegral_pi_update μ (hg.enorm.pow_const (2 : ℝ)) i]
+      lintegral_pi_update μ (hg'.enorm.pow_const (2 : ℝ)) i]
     exact (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top (p := 2) (by norm_num) (by norm_num)
-      hg.aestronglyMeasurable).mp hL
-  exact hupdate.ae_memLp_prod_right
+      hg'.aestronglyMeasurable).mp hL'
+  have hae : ∀ᵐ q ∂(Measure.pi μ).prod (μ i),
+      g (Function.update q.1 i q.2) = g' (Function.update q.1 i q.2) :=
+    hmp.quasiMeasurePreserving.ae hL.aestronglyMeasurable.ae_eq_mk
+  filter_upwards [hupdate.ae_memLp_prod_right, Measure.ae_ae_of_ae_prod hae] with x hx hxe
+  exact hx.ae_eq (hxe.mono fun y hy ↦ hy.symm)
 
 /-- **Fubini after a two-coordinate refresh.** An integral against a finite product of sigma-finite
 measures is an outer integral over the assignment and an inner integral over a fresh independent
