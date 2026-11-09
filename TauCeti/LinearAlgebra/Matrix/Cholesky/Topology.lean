@@ -70,10 +70,12 @@ private theorem image_val_preimage_choleskyReconstruction (K : Set (PosDefMatrix
   · rintro ⟨L, hL, rfl⟩
     exact ⟨L.2.1, fun i ↦ (L.2.2 i).le, _, hL, choleskyReconstruction_coe L⟩
   · rintro ⟨htri, hdiag, A, hA, hAL⟩
+    -- `hAL` is stated through the lambda `fun A ↦ ↑A`; restating it beta-reduces that lambda so
+    -- that it can rewrite the determinant of `A`.
+    have hAL' : (A.1 : Matrix (Fin p) (Fin p) ℝ) = L * Lᵀ := hAL
     have hdet : L.det ≠ 0 := by
       have h := A.2.det_pos
-      rw [show (A.1 : Matrix (Fin p) (Fin p) ℝ) = L * Lᵀ from hAL, Matrix.det_mul,
-        Matrix.det_transpose, ← sq] at h
+      rw [hAL', Matrix.det_mul, Matrix.det_transpose, ← sq] at h
       exact pow_ne_zero_iff two_ne_zero |>.1 h.ne'
     have hpos : ∀ i, 0 < L i i := fun i ↦
       (hdiag i).lt_of_ne (htri.det_ne_zero_iff.mp hdet i).symm
