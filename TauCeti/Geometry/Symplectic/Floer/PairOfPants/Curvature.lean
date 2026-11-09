@@ -796,7 +796,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
   have hT : IsCompact T :=
     Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
   have hTS : T ⊆ thricePuncturedSphereReal := fun z hz =>
-    mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
+    mem_thricePuncturedSphereReal_iff.2 (truncation_subset _ hz)
   have hE := hω.integrableOn_floerEnergyDensity_pairOfPantsPerturbation hH hHs hu hT hTS
   have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv
     isOpen_thricePuncturedSphereReal hu stdComplexLineReal stdComplexLineImag
@@ -1004,7 +1004,7 @@ theorem integrableOn_truncation_pairOfPantsPerturbation (ω : SymplecticForm V)
     Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
   have hTS : Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ thricePuncturedSphereReal :=
     fun z hz =>
-      mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
+      mem_thricePuncturedSphereReal_iff.2 (truncation_subset _ hz)
   have hKs := contDiffOn_pairOfPantsPerturbation hH hHs 1
   have hKt := contDiffOn_pairOfPantsPerturbation hH hHs Complex.I
   have hdu := hu.continuousOn_fderiv_of_isOpen isOpen_thricePuncturedSphereReal le_rfl

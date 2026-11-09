@@ -44,7 +44,8 @@ along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results ar
 * `TauCeti.Floer.pairOfPantsEndComponent H q v`: the component of the pullback along the tangent
   vector `v` of the cylinder, in the end coordinates of the end `q`, so that `K_s` and `K_t` are
   its components along `v = 1` and `v = i`; `TauCeti.Floer.pairOfPantsEndComponent_of_pos`
-  computes them on the part `±s > 0` of the end.
+  computes them on the part `±s > 0` of the end, and
+  `TauCeti.Floer.pairOfPantsEndComponent_I_of_two_le` gives `K_t = H_q(t)` where `±s ≥ 2`.
 * `TauCeti.Floer.exists_cylindricalEndLift_of_pairOfPantsPerturbation_ne_zero`: it is supported
   in the parts `±s > 1` of the three ends, so it vanishes off the ends;
   `TauCeti.Floer.pairOfPantsPerturbation_eq_zero_of_forall_le` states this in end coordinates.
@@ -256,6 +257,14 @@ theorem pairOfPantsEndComponent_I_of_pos (hH : Function.Periodic (H q) 1) {z : �
     pairOfPantsEndComponent H q Complex.I z x =
       smoothTransition (q.endSign * z.1 - 1) * H q z.2 x := by
   simp [pairOfPantsEndComponent_of_pos hH hz]
+
+/-- On the part `±s ≥ 2` of the end `q`, where the cutoff is `1`, the `dt` component of the
+perturbation is `H_q(t)`. -/
+theorem pairOfPantsEndComponent_I_of_two_le (hH : Function.Periodic (H q) 1) {z : ℝ × ℝ}
+    (hz : 2 ≤ q.endSign * z.1) : pairOfPantsEndComponent H q Complex.I z = H q z.2 := by
+  funext x
+  rw [pairOfPantsEndComponent_I_of_pos hH (by linarith),
+    smoothTransition.one_of_one_le (by linarith), one_mul]
 
 /-- The part `±s > 0` of the end `q`, in end coordinates, is open. -/
 private theorem isOpen_endSign_mul_fst_pos (q : Puncture) :
