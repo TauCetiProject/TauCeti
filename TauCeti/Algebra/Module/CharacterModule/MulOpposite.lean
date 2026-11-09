@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Module.CharacterModule
 public import Mathlib.Algebra.Module.FinitePresentation
 public import Mathlib.Algebra.Module.Projective
 
+import TauCeti.Algebra.Module.CharacterModule.Range
+
 /-!
 # The character module of a left module over a noncommutative ring
 
@@ -72,6 +74,21 @@ def opDual (f : M →ₗ[A] N) : CharacterModule N →ₗ[Aᵐᵒᵖ] CharacterM
 @[simp]
 theorem opDual_apply (f : M →ₗ[A] N) (χ : CharacterModule N) (m : M) :
     opDual f χ m = χ (f m) := (rfl)
+
+/-- The identity map induces the identity on character modules. -/
+@[simp]
+theorem opDual_id : opDual (LinearMap.id : M →ₗ[A] M) = LinearMap.id :=
+  LinearMap.ext fun χ ↦ DFunLike.ext _ _ fun _ ↦ opDual_apply _ χ _
+
+/-- The zero map induces the zero map on character modules. -/
+@[simp]
+theorem opDual_zero : opDual (0 : M →ₗ[A] N) = 0 :=
+  LinearMap.ext fun χ ↦ DFunLike.ext _ _ fun _ ↦ map_zero χ
+
+/-- Taking character modules reverses composition. -/
+theorem opDual_comp {K : Type*} [AddCommGroup K] [Module A K] (f : M →ₗ[A] N) (g : N →ₗ[A] K) :
+    opDual (g ∘ₗ f) = opDual f ∘ₗ opDual g :=
+  LinearMap.ext fun _ ↦ DFunLike.ext _ _ fun _ ↦ (rfl)
 
 /-- A surjection of left modules induces an injection of character modules. -/
 theorem opDual_injective_of_surjective (f : M →ₗ[A] N) (hf : Function.Surjective f) :
@@ -142,20 +159,6 @@ theorem injective_of_projective {P : Type v} [AddCommGroup P] [Module A P]
                (DFunLike.congr_fun (h.map_smul a.unop p) y).symm },
       fun x ↦ DFunLike.ext _ _ fun p ↦ DFunLike.congr_fun (LinearMap.congr_fun hh p) x⟩
 
-/-- Characters detect the image of a homomorphism of abelian groups: an element lies in the image
-exactly when every character vanishing on the image vanishes on it. -/
-theorem _root_.AddMonoidHom.mem_range_iff_forall_characterModule {X Y : Type*} [AddCommGroup X]
-    [AddCommGroup Y] (f : X →+ Y) (y : Y) :
-    y ∈ f.range ↔ ∀ χ : CharacterModule Y, (∀ x, χ (f x) = 0) → χ y = 0 := by
-  refine ⟨?_, fun h ↦ ?_⟩
-  · rintro ⟨x, rfl⟩ χ hχ
-    exact hχ x
-  rw [← QuotientAddGroup.eq_zero_iff]
-  refine eq_zero_of_character_apply fun c ↦ ?_
-  exact h (AddMonoidHom.comp c (QuotientAddGroup.mk' f.range)) fun x ↦
-    (congrArg c ((QuotientAddGroup.eq_zero_iff (f x)).mpr
-      (AddMonoidHom.mem_range.mpr ⟨x, rfl⟩))).trans (map_zero c)
-
 /-- A finitely generated submodule `L` of a finite free module is a direct summand as soon as the
 restriction of characters to `L` has an `Aᵐᵒᵖ`-linear section. -/
 private theorem exists_comp_subtype_eq_id_of_section {n : ℕ} {L : Submodule A (Fin n → A)}
@@ -167,6 +170,7 @@ private theorem exists_comp_subtype_eq_id_of_section {n : ℕ} {L : Submodule A 
   obtain ⟨m, r, hr⟩ := Submodule.fg_iff_exists_fin_generating_family.mp hL
   have hrL : ∀ i, r i ∈ L := fun i ↦ hr ▸ Submodule.subset_span ⟨i, rfl⟩
   let b : Fin m → L := fun i ↦ ⟨r i, hrL i⟩
+  have hbr : ∀ i, (b i : Fin n → A) = r i := fun _ ↦ rfl
   let Φ : (Fin n → L) →+ (Fin m → L) := AddMonoidHom.mk' (fun y i ↦ ∑ j, r i j • y j) fun y y' ↦ by
     funext i
     simp [Finset.sum_add_distrib]
@@ -186,7 +190,7 @@ private theorem exists_comp_subtype_eq_id_of_section {n : ℕ} {L : Submodule A 
       have hri : r i = ∑ j, r i j • (Pi.single j 1 : Fin n → A) := by
         funext k
         simp [Finset.sum_apply, Pi.single_apply]
-      rw [← hσ, show ((b i : L) : Fin n → A) = r i from rfl, hri, map_sum]
+      rw [← hσ, hbr, hri, map_sum]
       simp_rw [map_smul, mulOpposite_smul_apply, unop_op, ← hri]
     calc χ b = ∑ i, c i (b i) := by
           conv_lhs => rw [← Finset.univ_sum_single b, map_sum]
