@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Data.List.Sublists
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
@@ -68,6 +69,9 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
   a continuous linear map on `ℝⁿ` (or on `ℝⁿ × ℝⁿ`) in terms of its values on the standard basis.
 * `TauCeti.fderiv_apply_eq_sum_coordinateDeriv`: the derivative of a function of a position and a
   frequency in terms of its first-order coordinate derivatives in the two variables.
+* `TauCeti.coordCLM`: the continuous linear map on `ℝⁿ × ℝⁿ` with given values on the standard
+  basis, and `TauCeti.contDiff_succ_of_hasFDerivAt_coordCLM`, the criterion that a function whose
+  derivative has `C^k` values on the standard basis is `C^(k + 1)`.
 -/
 
 public section
@@ -870,6 +874,42 @@ theorem _root_.ContinuousLinearMap.opNorm_le_of_apply_eq_sum
         · exact norm_fst_le v
         · exact norm_snd_le v
     _ = _ := by ring
+
+/-- The continuous linear map `w ↦ ∑ j, w.1 j • X j + ∑ j, w.2 j • Ξ j` on `ℝⁿ × ℝⁿ`, whose values
+on the standard basis vectors `(e_j, 0)` and `(0, e_j)` are `X j` and `Ξ j`. -/
+def coordCLM (X Ξ : Fin n → A) : CoordinateSpace n × CoordinateSpace n →L[ℝ] A :=
+  ∑ j, ((EuclideanSpace.proj j).comp (ContinuousLinearMap.fst ℝ _ _)).smulRight (X j) +
+    ∑ j, ((EuclideanSpace.proj j).comp (ContinuousLinearMap.snd ℝ _ _)).smulRight (Ξ j)
+
+@[simp]
+theorem coordCLM_apply (X Ξ : Fin n → A) (w : CoordinateSpace n × CoordinateSpace n) :
+    coordCLM X Ξ w = ∑ j, w.1 j • X j + ∑ j, w.2 j • Ξ j := by
+  simp [coordCLM]
+
+/-- `coordCLM` depends continuously on its values on the standard basis. -/
+theorem continuous_coordCLM {T : Type*} [TopologicalSpace T] {X Ξ : Fin n → T → A}
+    (hX : ∀ j, Continuous (X j)) (hΞ : ∀ j, Continuous (Ξ j)) :
+    Continuous fun t ↦ coordCLM (fun j ↦ X j t) (fun j ↦ Ξ j t) := by
+  unfold coordCLM
+  refine (continuous_finsetSum _ fun j _ ↦ ?_).add (continuous_finsetSum _ fun j _ ↦ ?_)
+  · exact (ContinuousLinearMap.smulRightL ℝ _ A _).continuous.comp (hX j)
+  · exact (ContinuousLinearMap.smulRightL ℝ _ A _).continuous.comp (hΞ j)
+
+/-- A function on `ℝⁿ × ℝⁿ` whose derivative at every point has `C^k` values `X j p` and `Ξ j p`
+on the standard basis vectors `(e_j, 0)` and `(0, e_j)` is `C^(k + 1)`. -/
+theorem contDiff_succ_of_hasFDerivAt_coordCLM
+    {f : CoordinateSpace n × CoordinateSpace n → A} {k : ℕ}
+    {X Ξ : Fin n → CoordinateSpace n × CoordinateSpace n → A}
+    (hf : ∀ p, HasFDerivAt f (coordCLM (fun j ↦ X j p) (fun j ↦ Ξ j p)) p)
+    (hX : ∀ j, ContDiff ℝ k (X j)) (hΞ : ∀ j, ContDiff ℝ k (Ξ j)) :
+    ContDiff ℝ (k + 1) f := by
+  rw [contDiff_succ_iff_fderiv]
+  refine ⟨fun p ↦ (hf p).differentiableAt, by simp, ?_⟩
+  rw [funext fun p ↦ (hf p).fderiv]
+  refine contDiff_clm_apply_iff.2 fun w ↦ ?_
+  simp only [coordCLM_apply]
+  exact (ContDiff.sum fun j _ ↦ (hX j).const_smul _).add
+    (ContDiff.sum fun j _ ↦ (hΞ j).const_smul _)
 
 /-- The derivative of a function of a position and a frequency, differentiable at `p`, in the
 direction `v` is the sum of its coordinate derivatives in the position and in the frequency,

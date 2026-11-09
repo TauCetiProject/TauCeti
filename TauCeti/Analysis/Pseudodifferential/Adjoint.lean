@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
-import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -150,16 +149,6 @@ section Abstract
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
-/-- The real-linear map `w ↦ ∑ⱼ w.1 j • A j + ∑ⱼ w.2 j • B j` on `ℝⁿ × ℝⁿ`, with values on the
-coordinate vectors given by `A` and `B`. -/
-private def coordCLM (A B : Fin n → E) : CoordinateSpace n × CoordinateSpace n →L[ℝ] E :=
-  ∑ j, ((EuclideanSpace.proj j).comp (ContinuousLinearMap.fst ℝ _ _)).smulRight (A j) +
-    ∑ j, ((EuclideanSpace.proj j).comp (ContinuousLinearMap.snd ℝ _ _)).smulRight (B j)
-
-private theorem coordCLM_apply (A B : Fin n → E) (w : CoordinateSpace n × CoordinateSpace n) :
-    coordCLM A B w = ∑ j, w.1 j • A j + ∑ j, w.2 j • B j := by
-  simp [coordCLM]
-
 /-- The derivative of `p ↦ exp(2πi ⟪θ, p.1⟫) S(θ, p.2 - 2πθ)` for a function `S(θ, ζ)` that is
 differentiable in `ζ`, with partial derivatives `B j θ ζ`, and whose products with `2πi θ_j` are
 `A j θ ζ`. -/
@@ -198,14 +187,6 @@ private theorem hasFDerivAt_fourierChar_smul_shift {S : CoordinateSpace n → Co
     push_cast
     ring
   · exact Finset.sum_congr rfl fun j _ ↦ smul_comm _ _ _
-
-private theorem continuous_coordCLM {X : Type*} [TopologicalSpace X] {A B : Fin n → X → E}
-    (hA : ∀ j, Continuous (A j)) (hB : ∀ j, Continuous (B j)) :
-    Continuous fun t ↦ coordCLM (fun j ↦ A j t) (fun j ↦ B j t) := by
-  unfold coordCLM
-  refine (continuous_finsetSum _ fun j _ ↦ ?_).add (continuous_finsetSum _ fun j _ ↦ ?_)
-  · exact (ContinuousLinearMap.smulRightL ℝ _ E _).continuous.comp (hA j)
-  · exact (ContinuousLinearMap.smulRightL ℝ _ E _).continuous.comp (hB j)
 
 /-- **Differentiation under the integral sign** for `p ↦ ∫ exp(2πi ⟪θ, p.1⟫) S(θ, p.2 - 2πθ) dθ`:
 if the functions `A j` and `B j` of `hasFDerivAt_fourierChar_smul_shift` are dominated by one
@@ -284,22 +265,6 @@ private theorem hasFDerivAt_integral_fourierChar_smul_shift
     (integrable_finsetSum _ fun j _ ↦ hB' j), integral_finsetSum _ fun j _ ↦ hA' j,
     integral_finsetSum _ fun j _ ↦ hB' j]
   simp only [integral_smul]
-
-/-- A function on `ℝⁿ × ℝⁿ` whose derivative has `C^k` values `A j`, `B j` on the coordinate
-vectors is `C^(k + 1)`. -/
-private theorem contDiff_succ_of_hasFDerivAt_coordCLM
-    {f : CoordinateSpace n × CoordinateSpace n → E} {k : ℕ}
-    {A B : Fin n → CoordinateSpace n × CoordinateSpace n → E}
-    (hf : ∀ p, HasFDerivAt f (coordCLM (fun j ↦ A j p) (fun j ↦ B j p)) p)
-    (hA : ∀ j, ContDiff ℝ k (A j)) (hB : ∀ j, ContDiff ℝ k (B j)) :
-    ContDiff ℝ (k + 1) f := by
-  rw [contDiff_succ_iff_fderiv]
-  refine ⟨fun p ↦ (hf p).differentiableAt, by simp, ?_⟩
-  rw [funext fun p ↦ (hf p).fderiv]
-  refine contDiff_clm_apply_iff.2 fun w ↦ ?_
-  simp only [coordCLM_apply]
-  exact (ContDiff.sum fun j _ ↦ (hA j).const_smul _).add
-    (ContDiff.sum fun j _ ↦ (hB j).const_smul _)
 
 end Abstract
 
@@ -608,20 +573,10 @@ theorem adjoint_add {b : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
     adjoint (a + b) (ha.add hb) = adjoint a ha + adjoint b hb := by
   ext1
   funext ⟨y, ξ⟩
-  have hs : ∀ {c : Symbol n V W m}, c.HasCompactSpatialSupport → ∀ ζ θ : CoordinateSpace n,
-      Integrable fun x ↦ 𝐞 (-⟪x, θ⟫) • c.coefficient (x, ζ) := fun {c} hc ζ θ ↦ by
-    obtain ⟨K, hK, hKc⟩ := hasCompactSpatialSupport_iff.mp hc
-    exact ((Real.continuous_fourierChar.comp (by fun_prop)).smul
-      (c.contDiff_coefficient_slice ζ).continuous).integrable_of_hasCompactSupport
-        (HasCompactSupport.intro hK fun x hx ↦ by simp [hKc x hx, Circle.smul_def])
   rw [coefficient_add, Pi.add_apply, coefficient_adjoint, coefficient_adjoint,
     coefficient_adjoint, ← map_add, ← integral_add (ha.integrable_leftCoeff_integrand (y, ξ))
       (hb.integrable_leftCoeff_integrand (y, ξ))]
-  congr 2
-  funext θ
-  rw [← smul_add, Real.fourier_eq, Real.fourier_eq, Real.fourier_eq,
-    ← integral_add (hs ha _ θ) (hs hb _ θ)]
-  simp only [coefficient_add, Pi.add_apply, Circle.smul_def, smul_add]
+  simp only [ha.fourier_slice_add hb, smul_add]
 
 /-- The adjoint symbol of `c • a` is `conj c • a*`. -/
 @[simp]
@@ -629,8 +584,8 @@ theorem adjoint_smul (c : ℂ) (ha : a.HasCompactSpatialSupport) :
     adjoint (c • a) (ha.smul c) = (starRingEnd ℂ c) • adjoint a ha := by
   ext1
   funext ⟨y, ξ⟩
-  simp only [coefficient_smul, Pi.smul_apply, coefficient_adjoint, Real.fourier_eq, smul_comm _ c,
-    integral_smul, map_smulₛₗ]
+  rw [coefficient_adjoint, coefficient_smul (starRingEnd ℂ c), Pi.smul_apply, coefficient_adjoint]
+  simp only [ha.fourier_slice_smul, smul_comm _ c, integral_smul, map_smulₛₗ]
 
 /-- Taking adjoint symbols commutes with raising the order of a symbol. -/
 @[simp]
