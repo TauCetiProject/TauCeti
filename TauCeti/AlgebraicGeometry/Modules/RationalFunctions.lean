@@ -347,7 +347,7 @@ theorem rationalFunctionsHom_app_injective
 
 end Hom
 
-/-- The restriction maps of `𝒦_X` out of a nonempty open subset are bijective. -/
+/-- The restriction maps of `𝒦_X` to a nonempty open subset are bijective. -/
 theorem rationalFunctions_map_bijective {U V : X.Opens} [Nonempty U] (i : U ⟶ V) :
     Function.Bijective ((rationalFunctions X).presheaf.map i.op) := by
   have : Nonempty V :=
@@ -361,12 +361,12 @@ theorem rationalFunctions_map_bijective {U V : X.Opens} [Nonempty U] (i : U ⟶ 
     refine (rationalFunctionsEquiv U).injective ?_
     rw [rationalFunctionsEquiv_map, LinearEquiv.apply_symm_apply]
 
-/-- The restriction maps of `𝒦_X` out of a nonempty open subset are isomorphisms. -/
+/-- The restriction maps of `𝒦_X` to a nonempty open subset are isomorphisms. -/
 instance isIso_rationalFunctions_map {U V : X.Opens} [Nonempty U] (i : U ⟶ V) :
     IsIso ((rationalFunctions X).presheaf.map i.op) :=
   (ConcreteCategory.isIso_iff_bijective _).mpr (rationalFunctions_map_bijective i)
 
-/-- The restriction maps of the ring sheaf `𝒦_X` out of a nonempty open subset are bijective. -/
+/-- The restriction maps of the ring sheaf `𝒦_X` to a nonempty open subset are bijective. -/
 theorem rationalFunctionsRing_map_bijective {U V : X.Opens} [Nonempty U] (i : U ⟶ V) :
     Function.Bijective ((rationalFunctionsRing X).presheaf.map i.op) := by
   have h : ⇑((rationalFunctionsRing X).presheaf.map i.op) =
@@ -379,7 +379,7 @@ theorem rationalFunctionsRing_map_bijective {U V : X.Opens} [Nonempty U] (i : U 
   exact (rationalFunctionsSectionsEquiv X U).bijective.comp
     ((rationalFunctions_map_bijective i).comp (rationalFunctionsSectionsEquiv X V).symm.bijective)
 
-/-- The restriction maps of the ring sheaf `𝒦_X` out of a nonempty open subset are
+/-- The restriction maps of the ring sheaf `𝒦_X` to a nonempty open subset are
 isomorphisms. -/
 instance isIso_rationalFunctionsRing_map {U V : X.Opens} [Nonempty U] (i : U ⟶ V) :
     IsIso ((rationalFunctionsRing X).presheaf.map i.op) :=
