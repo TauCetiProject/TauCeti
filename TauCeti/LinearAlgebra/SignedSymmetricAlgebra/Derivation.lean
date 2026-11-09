@@ -104,6 +104,22 @@ private theorem twist_of_mem {p : ℤ} {a : SignedSym G} (ha : a ∈ signedSymPi
     twist (G := G) a = p.negOnePow • a := by
   simpa [twist] using InternalGrading.koszulTwistAlgEquiv_apply_of_mem (signedSymPiece G) 1 ha
 
+/-- The Koszul sign identity behind the lower left entry of a product of triangular matrices:
+for `a`, `b` of degrees `p`, `q` and `a'`, `b'` of degrees `p + 1`, `q + 1`,
+`a' * b + σ a * b' = (-1) ^ (p * q) • (b' * a + σ b * a')`. -/
+private theorem mul_add_twist_mul_comm {p q : ℤ} {a b a' b' : SignedSym G}
+    (ha : a ∈ signedSymPiece G p) (hb : b ∈ signedSymPiece G q)
+    (ha' : a' ∈ signedSymPiece G (p + 1)) (hb' : b' ∈ signedSymPiece G (q + 1)) :
+    a' * b + twist a * b' = ((p * q).negOnePow : ℤ) • (b' * a + twist b * a') := by
+  have h₁ : ((p + 1) * q).negOnePow = (p * q).negOnePow * q.negOnePow := by
+    rw [← Int.negOnePow_add]; congr 1; ring
+  have h₂ : p.negOnePow * (p * (q + 1)).negOnePow = (p * q).negOnePow := by
+    rw [← Int.negOnePow_add, Int.negOnePow_eq_iff]; exact ⟨p, by ring⟩
+  rw [twist_of_mem ha, twist_of_mem hb, smul_mul_assoc, smul_mul_assoc,
+    mul_eq_negOnePow_smul_mul G ha' hb, mul_eq_negOnePow_smul_mul G ha hb', h₁, ← h₂]
+  simp only [Units.smul_def, Units.val_mul, mul_smul]
+  module
+
 /-- The lower triangular matrix `[[x, 0], [δ x, σ x]]` attached to a generator `x`. -/
 private noncomputable def triangular : V →ₗ[R] Matrix (Fin 2) (Fin 2) (SignedSym G) where
   toFun x := !![generator G x, 0; δ x, twist (generator G x)]
@@ -131,17 +147,8 @@ private theorem triangular_mul_triangular {p q : ℤ} {x y : V}
   fin_cases i <;> fin_cases j
   · simpa [triangular, Matrix.mul_apply] using mul_eq_negOnePow_smul_mul G hgx hgy
   · simp [triangular, Matrix.mul_apply]
-  · -- Commute each generator past the image of the other under `δ`, of one degree higher.
-    simp only [triangular, LinearMap.coe_mk, AddHom.coe_mk, Matrix.mul_apply, Fin.sum_univ_two,
-      Matrix.smul_apply, twist_of_mem hgx, twist_of_mem hgy, Matrix.of_apply, Matrix.cons_val',
-      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.empty_val', Matrix.cons_val_fin_one,
-      Fin.isValue, Fin.mk_one, Fin.zero_eta]
-    rw [Units.smul_def, Units.smul_def, smul_mul_assoc, smul_mul_assoc,
-      mul_eq_negOnePow_smul_mul G hdx hgy, mul_eq_negOnePow_smul_mul G hgx hdy, add_comm,
-      zsmul_add]
-    simp only [smul_smul, ← Units.val_mul, ← Int.negOnePow_add]
-    rw [(Int.negOnePow_eq_iff (p + p * (q + 1)) (p * q)).2 ⟨p, by ring⟩,
-      (Int.negOnePow_eq_iff ((p + 1) * q) (p * q + q)).2 ⟨0, by ring⟩]
+  · simpa [triangular, Matrix.mul_apply, Fin.sum_univ_two] using
+      mul_add_twist_mul_comm hgx hgy hdx hdy
   · have key : twist (generator G x) * twist (generator G y) =
         ((p * q).negOnePow : ℤ) • (twist (generator G y) * twist (generator G x)) := by
       rw [← map_mul (twist (G := G)), ← map_mul (twist (G := G)),
