@@ -210,8 +210,9 @@ theorem surjOn_stellarSubdivisionLinearMap (hσ : σ ∈ K) (hv : ({v} : Finset 
     obtain ⟨a, ha, hmin⟩ := (σ : Set ι).exists_min_image (fun i => x i)
       σ.finite_toSet hσne
     have haσ : a ∈ σ := ha
-    obtain ⟨y, hy, hycoord, hypos, hya, hysum⟩ :=
-      Finsupp.exists_transfer_vector hvσ hxpos hxsum haσ hmin
+    obtain ⟨y, hy, hycoord, hypos, hya, hysum'⟩ :=
+      Finsupp.exists_transfer_vector hvσ hxpos haσ hmin
+    have hysum : y.sum (fun _ r => r) = 1 := hysum'.trans hxsum
     -- The least coordinate vanishes, and every other old coordinate stays in the old face.
     have hyne : y.support.Nonempty := by
       apply Finsupp.support_nonempty_iff.mpr
