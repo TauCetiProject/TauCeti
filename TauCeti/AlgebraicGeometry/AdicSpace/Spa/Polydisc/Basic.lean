@@ -75,8 +75,9 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
   monomials of `f`.
 * `TauCeti.ValuationSpectrum.valuation_taylorHom_le`: a continuous valuation that bounds every
   monomial of `f` by `f`, and each shifted variable `Tᵢ + aᵢ` by `Tᵢ`, bounds `f(T + a)` by `f`.
-* `TauCeti.ValuationSpectrum.valuation_taylorHom_eq`: under the same hypotheses the valuation is
-  invariant under translation by `a`.
+* `TauCeti.ValuationSpectrum.valuation_taylorHom_eq`: a continuous valuation that bounds every
+  monomial of every series `g` by `g`, and each shifted variable `Tᵢ + aᵢ` by `Tᵢ`, is invariant
+  under translation by `a`.
 * `TauCeti.ValuationSpectrum.taylorHom_comp_taylorHom`: translating by `b` and then by `a`
   is translating by `a + b`.
 * `TauCeti.ValuationSpectrum.taylorHom_mem_powerBoundedSubring`: translation preserves
@@ -539,6 +540,19 @@ theorem comap_taylorHom_classicalPoint (x : spa (powerBoundedSubring A)) (a b : 
 
 end Translation
 
+section FieldConstants
+
+variable {K : Type*} [Field K] [TopologicalSpace K] [NonarchimedeanRing K]
+
+/-- A point of the closed polydisc vanishes on a constant only at `0`. -/
+@[simp]
+theorem closedPolydisc_valuation_weightedC_eq_zero_iff {k : ℕ} (v : closedPolydisc k K) (x : K) :
+    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) = 0 ↔
+      x = 0 :=
+  (v.1.valuation.comap (weightedC _ isWeightFamily_one_weight)).zero_iff
+
+end FieldConstants
+
 section NormedField
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
@@ -573,19 +587,6 @@ theorem closedPolydisc_valuation_weightedC_eq_of_norm_eq {k : ℕ} (v : closedPo
       v.1.valuation (weightedC _ isWeightFamily_one_weight y) :=
   le_antisymm ((closedPolydisc_valuation_weightedC_le_iff v x y).mpr h.le)
     ((closedPolydisc_valuation_weightedC_le_iff v y x).mpr h.ge)
-
-omit [IsUltrametricDist K] in
-/-- A point of the closed polydisc vanishes on a constant only at `0`. -/
-@[simp]
-theorem closedPolydisc_valuation_weightedC_eq_zero_iff {k : ℕ} (v : closedPolydisc k K) (x : K) :
-    v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x) = 0 ↔
-      x = 0 := by
-  refine ⟨fun h ↦ by_contra fun hx ↦ ?_, fun h ↦ by rw [h, map_zero, map_zero]⟩
-  have h1 : v.1.valuation (weightedC (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight x *
-      weightedC _ isWeightFamily_one_weight x⁻¹) = 1 := by
-    rw [← map_mul, mul_inv_cancel₀ hx, map_one, map_one]
-  rw [map_mul, h, zero_mul] at h1
-  exact zero_ne_one h1
 
 /-- The larger of the values of two constants at a point of the closed polydisc is the value of
 the one of larger norm. -/
