@@ -208,7 +208,9 @@ empty while `a ^ 0 - b ^ 0 = 0`. -/
 theorem prod_homogeneousCyclotomic_eq_pow_sub_pow {n : ℕ} (hn : 0 < n) (a b : R) :
     ∏ d ∈ n.divisors, homogeneousCyclotomic d a b = a ^ n - b ^ n := by
   simp_rw [homogeneousCyclotomic_def]
-  rw [← map_prod, ← homogenize_finsetProd fun d _ => natDegree_cyclotomic_le, Nat.sum_totient,
+  rw [← map_prod, ← homogenize_finsetProd (s := n.divisors)
+      (p := fun d ↦ cyclotomic d R) (n := Nat.totient) (fun d _ ↦ natDegree_cyclotomic_le),
+    Nat.sum_totient,
     prod_cyclotomic_eq_X_pow_sub_one hn, homogenize_sub, homogenize_X_pow le_rfl, homogenize_one]
   simp
 
