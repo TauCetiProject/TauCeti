@@ -303,10 +303,15 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
 norm of its weak gradient.  The constant is proportional to `R`, as the scaling of both sides
 forces. -/
 theorem W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball {c : E} {R : ℝ}
-    (hp : p ≠ ∞) (hR : 0 < R) (hOmega : (Omega : Set E) = ball c R) (u : W1p mu Omega p) :
+    (hp : p ≠ ∞) (hOmega : (Omega : Set E) = ball c R) (u : W1p mu Omega p) :
     eLpNorm (fun x ↦ W1p.value u x - ⨍ y in (Omega : Set E), W1p.value u y ∂mu) p
         (mu.restrict Omega) ≤
       ENNReal.ofReal (2 ^ (finrank ℝ E + 1) * R) * ‖W1p.gradient u‖ₑ := by
+  rcases le_or_gt R 0 with hR | hR
+  · -- The ball is empty, so the measure vanishes.
+    have h0 : mu.restrict (Omega : Set E) = 0 := by
+      rw [hOmega, Metric.ball_eq_empty.2 hR, Measure.restrict_empty]
+    simp [h0]
   have hpos : mu (Omega : Set E) ≠ 0 := by
     rw [hOmega]
     exact (measure_ball_pos mu c hR).ne'
@@ -324,17 +329,19 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball {c : E} {R : ℝ}
 `(2 ^ (n + 1) * R)²` times `∫_{B(c, R)} ‖∇u‖²`.  This is
 `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball` for the restriction of `u` to the ball,
 with both sides written as integrals. -/
-theorem W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset {c : E} {R : ℝ} (hR : 0 < R)
+theorem W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset {c : E} {R : ℝ}
     (hball : ball c R ⊆ (Omega : Set E)) (u : W1p mu Omega 2) :
     ∫ x in ball c R, (W1p.value u x - ⨍ y in ball c R, W1p.value u y ∂mu) ^ 2 ∂mu ≤
       (2 ^ (finrank ℝ E + 1) * R) ^ 2 * ∫ x in ball c R, ‖W1p.gradient u x‖ ^ 2 ∂mu := by
+  rcases le_or_gt R 0 with hR | hR
+  · simp [Metric.ball_eq_empty.2 hR]
   -- Restrict `u` to the ball `B = B(c, R)`, viewed as a domain of its own.
   set B : Opens E := ⟨ball c R, isOpen_ball⟩
   have hB : B ≤ Omega := hball
   set uB := W1p.restrictL hB u
   set m := ⨍ y in ball c R, W1p.value u y ∂mu
   have hval : W1p.value uB =ᵐ[mu.restrict (ball c R)] W1p.value u := W1p.value_restrictL_ae hB u
-  have hP := W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball (p := 2) (by simp) hR
+  have hP := W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball (p := 2) (by simp)
     (rfl : (B : Set E) = ball c R) uB
   have havg : ⨍ y in (B : Set E), W1p.value uB y ∂mu = m := average_congr hval
   rw [havg] at hP
@@ -368,10 +375,12 @@ theorem W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset {c : E} {R : �
 `2 ^ (n + 1) * R` times `∫_{B(c, R)} ‖∇u‖`.  This is
 `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball` at exponent one, for the restriction of
 `u` to the ball, which lies in `W^{1,1}` because the ball has finite measure. -/
-theorem W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset {c : E} {R : ℝ} (hR : 0 < R)
+theorem W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset {c : E} {R : ℝ}
     (hball : ball c R ⊆ (Omega : Set E)) (u : W1p mu Omega p) :
     ∫ x in ball c R, |W1p.value u x - ⨍ y in ball c R, W1p.value u y ∂mu| ∂mu ≤
       2 ^ (finrank ℝ E + 1) * R * ∫ x in ball c R, ‖W1p.gradient u x‖ ∂mu := by
+  rcases le_or_gt R 0 with hR | hR
+  · simp [Metric.ball_eq_empty.2 hR]
   -- Restrict `u` to the ball `B = B(c, R)`, viewed as a domain of its own, and lower the
   -- exponent to one.
   set B : Opens E := ⟨ball c R, isOpen_ball⟩
@@ -384,7 +393,7 @@ theorem W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset {c : E} {R : 
     (W1p.value_ofExponentLE_ae _ _).trans (W1p.value_restrictL_ae hB u)
   have hgrad : W1p.gradient uB =ᵐ[mu.restrict (ball c R)] W1p.gradient u :=
     (W1p.gradient_ofExponentLE_ae _ _).trans (W1p.gradient_restrictL_ae hB u)
-  have hP := W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball (p := 1) ENNReal.one_ne_top hR
+  have hP := W1p.eLpNorm_value_sub_setAverage_le_of_eq_ball (p := 1) ENNReal.one_ne_top
     (rfl : (B : Set E) = ball c R) uB
   have havg : ⨍ y in (B : Set E), W1p.value uB y ∂mu = m := average_congr hval
   rw [havg] at hP
@@ -412,12 +421,12 @@ theorem W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset {c : E} {R : 
 /-- A Sobolev function with vanishing weak gradient is almost everywhere constant on every ball
 contained in its domain, by the `L¹` Poincaré–Wirtinger inequality on that ball. -/
 private theorem W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero {u : W1p mu Omega p}
-    (hu : W1p.gradient u = 0) {x : E} {r : ℝ} (hr : 0 < r) (hxr : ball x r ⊆ (Omega : Set E)) :
+    (hu : W1p.gradient u = 0) {x : E} {r : ℝ} (hxr : ball x r ⊆ (Omega : Set E)) :
     ∃ c : ℝ, ∀ᵐ y ∂mu.restrict (ball x r), W1p.value u y = c := by
   have : IsFiniteMeasure (mu.restrict (ball x r)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   set m := ⨍ y in ball x r, W1p.value u y ∂mu
-  have hP := W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset hr hxr u
+  have hP := W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset hxr u
   have hgrad : ∫ y in ball x r, ‖W1p.gradient u y‖ ∂mu = 0 := by
     refine integral_eq_zero_of_ae (ae_restrict_of_ae_restrict_of_subset hxr ?_)
     filter_upwards [(Lp.ext_iff.1 hu).trans (Lp.coeFn_zero _ _ _)] with y hy
@@ -438,7 +447,7 @@ theorem W1p.exists_value_ae_eq_const_of_gradient_eq_zero
     ∃ c : ℝ, ∀ᵐ x ∂mu.restrict Omega, W1p.value u x = c := by
   refine hconn.exists_ae_eq_const_of_forall_nhds fun x hx => ?_
   obtain ⟨r, hr, hxr⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
-  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero hu hr hxr
+  obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_ball_of_gradient_eq_zero hu hxr
   exact ⟨c, ball x r, ball_mem_nhds x hr, hc⟩
 
 end TauCeti
