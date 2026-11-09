@@ -104,8 +104,9 @@ theorem ker_eq_bot_of_smooth_of_connected_of_conormalSubspace_eq_bot
     -- `P.Ring` is `H` by definition of `P`, and `κ` is the residue field of `K` at the
     -- augmentation ideal, so the kernel of `P.Ring → κ` is the augmentation ideal of `H`.
     rw [show RingHom.ker (algebraMap P.Ring κ) = Bialgebra.AugmentationIdeal k H from
-      by rw [IsScalarTower.algebraMap_eq H K κ, hf_algebraMap]
-         exact BialgHom.ker_algebraMap_residueField_eq_augmentationIdeal f]
+      by rw [IsScalarTower.algebraMap_eq H K κ, hf_algebraMap, ← RingHom.comap_ker,
+          Ideal.ker_algebraMap_residueField]
+         exact BialgHom.comap_augmentationIdeal f]
     exact (conormalSubspace_eq_bot_iff_toIdeal_le_sq_augmentationIdeal _).mp
       hconormal (hPker ▸ hx)
   have hfiber : Subsingleton (p.Fiber P.Cotangent) :=

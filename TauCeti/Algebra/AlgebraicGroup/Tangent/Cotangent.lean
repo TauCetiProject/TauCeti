@@ -172,19 +172,16 @@ end TauCeti
 
 namespace BialgHom
 
-/-- Composing a bialgebra map `f : H → K` with the map from `K` to its residue field at the
-augmentation ideal gives a ring map whose kernel is the augmentation ideal of `H`. -/
-theorem ker_algebraMap_residueField_eq_augmentationIdeal {k H K : Type*} [CommRing k]
-    [CommRing H] [CommRing K] [Bialgebra k H] [Bialgebra k K]
-    [(TauCeti.Bialgebra.AugmentationIdeal k K).IsPrime] (f : H →ₐc[k] K) :
-    RingHom.ker ((algebraMap K (TauCeti.Bialgebra.AugmentationIdeal k K).ResidueField).comp
-        f.toAlgHom.toRingHom) = TauCeti.Bialgebra.AugmentationIdeal k H := by
+/-- The preimage of the augmentation ideal of `K` under a bialgebra map `f : H → K` is the
+augmentation ideal of `H`, because `f` commutes with the counits. -/
+theorem comap_augmentationIdeal {k H K : Type*} [CommRing k] [CommRing H] [CommRing K]
+    [Bialgebra k H] [Bialgebra k K] (f : H →ₐc[k] K) :
+    (TauCeti.Bialgebra.AugmentationIdeal k K).comap f.toAlgHom.toRingHom =
+      TauCeti.Bialgebra.AugmentationIdeal k H := by
   ext x
-  rw [RingHom.mem_ker, RingHom.comp_apply, Ideal.algebraMap_residueField_eq_zero]
-  simp only [TauCeti.Bialgebra.AugmentationIdeal, RingHom.mem_ker]
-  constructor
-  · exact fun hx ↦ (CoalgHomClass.counit_comp_apply f x).symm.trans hx
-  · exact fun hx ↦ (CoalgHomClass.counit_comp_apply f x).trans hx
+  simp only [Ideal.mem_comap, TauCeti.Bialgebra.AugmentationIdeal, RingHom.mem_ker]
+  exact ⟨fun hx ↦ (CoalgHomClass.counit_comp_apply f x).symm.trans hx,
+    fun hx ↦ (CoalgHomClass.counit_comp_apply f x).trans hx⟩
 
 end BialgHom
 
