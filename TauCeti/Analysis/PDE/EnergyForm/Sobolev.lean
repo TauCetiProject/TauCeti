@@ -703,6 +703,21 @@ theorem energyFormH1_add_right
   rw [← energyFormH1L_apply hcoeff, map_add]
   simp only [energyFormH1L_apply]
 
+/-- **Subtractivity of the Sobolev energy form in its coefficients.** For two essentially
+bounded coefficient fields, the energy form of the difference of the coefficient triples is the
+difference of the energy forms. This is what turns an `L^∞` bound on the difference of two sets
+of coefficients into a bound on the difference of their energy forms. -/
+theorem energyFormH1_sub {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b' : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c' : EuclideanSpace ℝ ι → ℝ}
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hcoeff' : MemLp (fun x => energyIntegrand (a' x) (b' x) (c' x)) ⊤ (mu.restrict Omega))
+    (u v : W1p mu Omega 2) :
+    energyFormH1 (a - a') (b - b') (c - c') u v =
+      energyFormH1 a b c u v - energyFormH1 a' b' c' u v := by
+  simp only [energyFormH1_def, Pi.sub_apply, energyIntegrand_sub_apply]
+  exact integral_sub (integrable_energyIntegrand_jetField hcoeff u v)
+    (integrable_energyIntegrand_jetField hcoeff' u v)
+
 /-- Boundedness of the Sobolev energy form from upper bounds alone. No lower ellipticity
 hypothesis is needed. -/
 theorem norm_energyFormH1_le_of_bounds
