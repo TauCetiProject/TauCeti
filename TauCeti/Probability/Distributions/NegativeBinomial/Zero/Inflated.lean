@@ -72,11 +72,11 @@ theorem negativeBinomialMeasure_atomMixture_zero_real_singleton (hr : 0 ≤ r) (
 positive shape: all of `ℝ` for the point mass at `w = 1`, and otherwise the negative-binomial
 domain `{t | (1 - p) exp t < 1}`. -/
 theorem integrableExpSet_id_map_cast_negativeBinomialMeasure_atomMixture_zero (hr : 0 < r)
-    (hp : 0 < p) (hp1 : p ≤ 1) :
+    (hp : 0 < p) :
     integrableExpSet id (((negativeBinomialMeasure r p).atomMixture 0 w).map (Nat.cast : ℕ → ℝ)) =
       if w = 1 then univ else {t | (1 - p) * exp t < 1} := by
   rw [Measure.map_natCast_atomMixture_zero, Measure.integrableExpSet_id_atomMixture,
-    integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp hp1]
+    integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp]
 
 /-- The mean of the zero-inflated negative-binomial law is `(1 - w) r (1 - p) / p`. -/
 theorem integral_id_map_cast_negativeBinomialMeasure_atomMixture_zero (hr : 0 ≤ r) (hp : 0 < p)

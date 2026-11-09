@@ -71,7 +71,7 @@ theorem integrableExpSet_id_map_cast_negativeBinomialMeasure_cond_compl_zero_ato
       if w = 1 then univ else {t | (1 - p) * exp t < 1} := by
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1
   rw [Measure.integrableExpSet_id_map_natCast_cond_compl_zero_atomMixture_zero,
-    integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp hp1]
+    integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp]
 
 /-- The mean of the negative-binomial hurdle law is `(1 - w) r (1 - p) / p / (1 - p ^ r)`. -/
 theorem integral_id_map_cast_negativeBinomialMeasure_cond_compl_zero_atomMixture_zero

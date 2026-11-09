@@ -87,7 +87,7 @@ theorem integrable_exp_mul_id_map_cast_geometricMeasure_iff (hp : p ≠ 0) (t : 
       (1 - (p : ℝ)) * exp t < 1 := by
   rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp]
   exact integrable_exp_mul_id_map_cast_negativeBinomialMeasure_iff one_pos
-    (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2 t
+    (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) t
 
 /-- The exact moment-generating domain of the real cast of a nonzero-parameter geometric law. -/
 theorem integrableExpSet_id_map_cast_geometricMeasure (hp : p ≠ 0) :
@@ -95,7 +95,7 @@ theorem integrableExpSet_id_map_cast_geometricMeasure (hp : p ≠ 0) :
       {t | (1 - (p : ℝ)) * exp t < 1} := by
   rw [geometricMeasure_eq_negativeBinomialMeasure_one p hp]
   exact integrableExpSet_id_map_cast_negativeBinomialMeasure one_pos
-    (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp)) p.2.2
+    (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hp))
 
 /-- The moment-generating function of the real cast of a nonzero-parameter geometric law. -/
 theorem mgf_id_map_cast_geometricMeasure (hp : p ≠ 0)
