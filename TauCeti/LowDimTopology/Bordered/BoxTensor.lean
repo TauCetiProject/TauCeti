@@ -209,19 +209,9 @@ private def mergeF : FreeAlgebra R A →ₗ[R] FreeAlgebra R A :=
   ofWords fun w => ∑ i ∈ range (w.length - 1),
     wordF (w.take i) * FreeAlgebra.ι R (w.getD i 0 * w.getD (i + 1) 0) * wordF (w.drop (i + 2))
 
-variable (R A) in
-/-- The quotient map from the free algebra to the tensor algebra, making the letters
-multilinear. -/
-private def toTensor : FreeAlgebra R A →ₐ[R] TensorAlgebra R A :=
-  FreeAlgebra.lift R fun a => TensorAlgebra.ι R a
-
-private theorem toTensor_ι (a : A) :
-    toTensor R A (FreeAlgebra.ι R a) = TensorAlgebra.ι R a :=
-  FreeAlgebra.lift_ι_apply _ _
-
 private theorem toTensor_wordF (w : List A) :
-    toTensor R A (wordF w) = (w.map (TensorAlgebra.ι R)).prod := by
-  simp [wordF, map_list_prod, List.map_map, Function.comp_def, toTensor_ι]
+    FreeAlgebra.toTensor (wordF w) = (w.map (TensorAlgebra.ι R)).prod := by
+  simp [wordF, map_list_prod, List.map_map, Function.comp_def, FreeAlgebra.toTensor_ι]
 
 omit [Ring A] [Algebra R A] in
 private theorem deconcat_wordF_concat (w : List A) (a : A) :
@@ -349,13 +339,13 @@ private theorem letterCoeff_apply (N : TypeDStructure d ι X) (x y : X) :
   (rfl)
 
 private theorem toTensor_letterCoeff_pow (N : TypeDStructure d ι X) (n : ℕ) (x y : X) :
-    toTensor R A ((letterCoeff N ^ n) x y) = (N.tensorCoeff ^ n) x y := by
-  have h : (toTensor R A).mapMatrix (letterCoeff N) =
+    FreeAlgebra.toTensor ((letterCoeff N ^ n) x y) = (N.tensorCoeff ^ n) x y := by
+  have h : (FreeAlgebra.toTensor (R := R) (M := A)).mapMatrix (letterCoeff N) =
       N.tensorCoeff := by
     ext x y
-    simp [letterCoeff, TypeDStructure.tensorCoeff, toTensor_ι]
+    simp [letterCoeff, TypeDStructure.tensorCoeff, FreeAlgebra.toTensor_ι]
   have := congrArg (fun P => P x y)
-    (map_pow ((toTensor R A).mapMatrix) (letterCoeff N) n)
+    (map_pow ((FreeAlgebra.toTensor (R := R) (M := A)).mapMatrix) (letterCoeff N) n)
   simpa [h] using this
 
 /-- **Splitting the iterates.** The splittings of the paths of length `n` from `x` to `z` are the
@@ -400,11 +390,11 @@ private theorem deconcat_letterCoeff_pow (N : TypeDStructure d ι X) (n : ℕ) (
 
 /-- The differentiated letters of the iterates, in the tensor algebra. -/
 private def diffMat (N : TypeDStructure d ι X) (n : ℕ) : Matrix X X (TensorAlgebra R A) :=
-  fun x z => toTensor R A (diffF d ((letterCoeff N ^ n) x z))
+  fun x z => FreeAlgebra.toTensor (diffF d ((letterCoeff N ^ n) x z))
 
 /-- The multiplied adjacent letters of the iterates, in the tensor algebra. -/
 private def mergeMat (N : TypeDStructure d ι X) (n : ℕ) : Matrix X X (TensorAlgebra R A) :=
-  fun x z => toTensor R A (mergeF R ((letterCoeff N ^ n) x z))
+  fun x z => FreeAlgebra.toTensor (mergeF R ((letterCoeff N ^ n) x z))
 
 private theorem diffMat_zero (N : TypeDStructure d ι X) : diffMat N 0 = 0 := by
   ext x z
@@ -424,8 +414,8 @@ private theorem diffMat_succ (N : TypeDStructure d ι X) (n : ℕ) :
       N.tensorCoeff ^ n * (N.coeff.map d).map (TensorAlgebra.ι R) := by
   ext x z
   simp only [diffMat, pow_succ, Matrix.mul_apply, map_sum, letterCoeff_apply, Matrix.map_apply,
-    diffF_mul_ι, map_add, map_mul, sum_add_distrib, toTensor_ι, toTensor_letterCoeff_pow,
-    Matrix.add_apply, TypeDStructure.tensorCoeff_apply]
+    diffF_mul_ι, map_add, map_mul, sum_add_distrib, FreeAlgebra.toTensor_ι,
+    toTensor_letterCoeff_pow, Matrix.add_apply, TypeDStructure.tensorCoeff_apply]
 
 /-- `P_{n+2} = P_{n+1} δ + δ^n (δ * δ)`: the new adjacent pair is the last two letters. -/
 private theorem mergeMat_add_two (N : TypeDStructure d ι X) (n : ℕ) :
@@ -439,7 +429,7 @@ private theorem mergeMat_add_two (N : TypeDStructure d ι X) (n : ℕ) :
     refine sum_congr rfl fun y _ => ?_
     simp only [pow_succ, Matrix.mul_apply, sum_mul, letterCoeff_apply]
   simp only [mergeMat, hpow, map_sum, mergeF_mul_ι_mul_ι, map_add, map_mul, sum_add_distrib,
-    toTensor_ι, Matrix.add_apply, Matrix.mul_apply, Matrix.map_apply,
+    FreeAlgebra.toTensor_ι, Matrix.add_apply, Matrix.mul_apply, Matrix.map_apply,
     TypeDStructure.tensorCoeff_apply]
   congr 1
   · refine sum_congr rfl fun y _ => ?_
@@ -481,22 +471,22 @@ variable {d : A →ₗ[R] A} {M : Type*} [AddCommGroup M] [Module R M] (MM : Typ
 /-- The action of a splitting `u ⊗ v` of a word: `act v ∘ act u`. -/
 private def splitAct : FreeAlgebra R A ⊗[R] FreeAlgebra R A →ₗ[R] Module.End R M :=
   TensorProduct.lift ((LinearMap.mul R (Module.End R M)).flip.compl₁₂
-    (MM.act.comp (toTensor R A).toLinearMap) (MM.act.comp (toTensor R A).toLinearMap))
+    (MM.act.comp FreeAlgebra.toTensor.toLinearMap) (MM.act.comp FreeAlgebra.toTensor.toLinearMap))
 
 private theorem splitAct_tmul (u v : FreeAlgebra R A) :
-    MM.splitAct (u ⊗ₜ v) = MM.act (toTensor R A v) * MM.act (toTensor R A u) := by
+    MM.splitAct (u ⊗ₜ v) = MM.act (FreeAlgebra.toTensor v) * MM.act (FreeAlgebra.toTensor u) := by
   simp [splitAct]
 
 /-- **The `A∞` relations on the free algebra.** For every `s`, the action of the splittings of `s`
 plus the action of its bar differential vanishes; on words this is `TypeAModule.relation`. -/
 private theorem splitAct_deconcat_add (s : FreeAlgebra R A) :
-    MM.splitAct (deconcat R s) + MM.act (toTensor R A (diffF d s + mergeF R s)) = 0 := by
+    MM.splitAct (deconcat R s) + MM.act (FreeAlgebra.toTensor (diffF d s + mergeF R s)) = 0 := by
   have h : MM.splitAct.comp (deconcat R) +
-      MM.act.comp ((toTensor R A).toLinearMap.comp (diffF d + mergeF R)) = 0 := by
+      MM.act.comp (FreeAlgebra.toTensor.toLinearMap.comp (diffF d + mergeF R)) = 0 := by
     refine linearMap_ext_wordF fun w => ?_
     ext x
-    simpa [deconcat, diffF, mergeF, ofWords_wordF, splitAct_tmul, toTensor_wordF, toTensor_ι,
-      LinearMap.sum_apply, add_assoc] using MM.relation w x
+    simpa [deconcat, diffF, mergeF, ofWords_wordF, splitAct_tmul, toTensor_wordF,
+      FreeAlgebra.toTensor_ι, LinearMap.sum_apply, add_assoc] using MM.relation w x
   exact LinearMap.congr_fun h s
 
 /-! ### The box tensor product -/
@@ -573,7 +563,7 @@ theorem boxDifferential_boxDifferential [CharP R 2] {N : TypeDStructure d ι X} 
     exact (sum_subset (range_subset_range.2 (by omega)) fun k _ hk =>
       hvan j k x (Or.inr (not_lt.1 (mem_range.not.1 hk)))).symm
   -- The bar differential of `s x` acts by zero.
-  have hbar : ∀ x, toTensor R A (diffF d (s x) + mergeF R (s x)) = 0 := by
+  have hbar : ∀ x, FreeAlgebra.toTensor (diffF d (s x) + mergeF R (s x)) = 0 := by
     intro x
     have h : ∀ n, ∑ m ∈ range (n + 1), (diffMat N m + mergeMat N m) = diffMat N n := by
       intro n
