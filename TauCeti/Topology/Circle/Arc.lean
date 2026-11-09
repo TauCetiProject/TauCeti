@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import Mathlib.Analysis.Convex.PathConnected
 import TauCeti.Topology.Connected.Basic
 
 /-!
@@ -15,6 +16,8 @@ Mathlib's `Circle.exp` parametrizes the circle by angles. This file reads a *clo
 `Circle.exp '' Set.Icc a b` off a subset of the circle and identifies its complement: a nonempty
 closed preconnected proper subset of the circle is such an arc, and the complement of a closed arc
 is the open arc `Circle.exp '' Set.Ioo b (a + 2 * π)` spanning the complementary angles.
+It also records that the open arcs `Circle.path z w '' Set.Ioo 0 1` and
+`Circle.path w z '' Set.Ioo 0 1` of Mathlib's arc API split the complement of two distinct points.
 
 Nothing here is specific to any curve theory; as with `TauCeti/Topology/Circle/Metric.lean`, these
 are facts about the model circle, and the transport of them to a Jordan curve — where a compact
@@ -51,6 +54,10 @@ open arc.
   pair of angles.
 * `TauCeti.mem_circleExp_image_Icc_neg_iff` — the closed arc `Circle.exp '' Set.Icc (-a) a` is
   where the argument is at most `a` in absolute value.
+* `Circle.isOpen_path_image_Ioo`, `Circle.isPathConnected_path_image_Ioo`,
+  `Circle.disjoint_path_image_Ioo` and `Circle.path_image_Ioo_union` — the open arcs
+  `Circle.path z w '' Set.Ioo 0 1` and `Circle.path w z '' Set.Ioo 0 1` between two distinct points
+  are open, path connected and disjoint, and they cover the complement of `{z, w}`.
 * `TauCeti.exists_centeredArc_subset_of_mem_nhds` — every neighbourhood of `1` contains an arc
   about `1` of half-width at most `π`.
 -/
@@ -163,5 +170,56 @@ theorem exists_centeredArc_subset_of_mem_nhds {V : Set Circle} (hV : V ∈ 𝓝 
   refine ⟨min r' Real.pi, lt_min hr' Real.pi_pos, min_le_right _ _, ?_⟩
   rintro _ ⟨t, ht, rfl⟩
   exact hball (hmem ht)
+
+/-! ## The open arcs between two points
+
+Mathlib parametrizes the two arcs that two distinct points `z` and `w` determine by the paths
+`Circle.path z w` and `Circle.path w z`. The open arcs are the images of `Set.Ioo 0 1`; each is the
+complement of the opposite closed arc (`Circle.compl_range_path`). -/
+
+/-- The open arc `Circle.path u v '' Ioo 0 1` of the circle is path connected. -/
+theorem _root_.Circle.isPathConnected_path_image_Ioo (u v : Circle) :
+    IsPathConnected (Circle.path u v '' Ioo 0 1) := by
+  -- The arc is the image of the real interval `Ioo 0 1` under `Path.extend`, which
+  -- reparametrizes `Circle.path u v` by all of `ℝ`, so it inherits path-connectedness from
+  -- the convex set `Ioo 0 1`.
+  have hproj : Set.projIcc (0 : ℝ) 1 zero_le_one '' Ioo 0 1 = Ioo 0 1 := by
+    ext t
+    simp only [mem_image, mem_Ioo]
+    refine ⟨?_, fun ht => ⟨t, ⟨unitInterval.coe_pos.2 ht.1, unitInterval.coe_lt_one.2 ht.2⟩,
+      Set.projIcc_val _ t⟩⟩
+    rintro ⟨s, hs, rfl⟩
+    rw [Set.projIcc_of_mem _ (Ioo_subset_Icc_self hs)]
+    exact ⟨by simpa [← unitInterval.coe_pos] using hs.1,
+      by simpa [← unitInterval.coe_lt_one] using hs.2⟩
+  have himg : (Circle.path u v).extend '' Ioo (0 : ℝ) 1 = Circle.path u v '' Ioo 0 1 := by
+    rw [← hproj, ← image_comp]
+    refine image_congr fun t ht => ?_
+    rw [Function.comp_apply, ← (Circle.path u v).extend_extends' (Set.projIcc 0 1 zero_le_one t),
+      Set.projIcc_of_mem _ (Ioo_subset_Icc_self ht)]
+  exact himg ▸ ((convex_Ioo (0 : ℝ) 1).isPathConnected (by simp)).image'
+    (Path.continuous_extend _).continuousOn
+
+/-- The open arc from `z` to a different point `w` of the circle is an open set. -/
+theorem _root_.Circle.isOpen_path_image_Ioo {z w : Circle} (hzw : z ≠ w) :
+    IsOpen (Circle.path z w '' Ioo 0 1) := by
+  -- The open arc is the complement of the opposite closed arc, which is compact.
+  rw [← Circle.compl_range_path hzw.symm]
+  exact (isCompact_range (Circle.path w z).continuous).isClosed.isOpen_compl
+
+/-- The two open arcs between two distinct points of the circle are disjoint. -/
+theorem _root_.Circle.disjoint_path_image_Ioo {z w : Circle} (hzw : z ≠ w) :
+    Disjoint (Circle.path z w '' Ioo 0 1) (Circle.path w z '' Ioo 0 1) := by
+  rw [← Circle.compl_range_path hzw.symm]
+  exact disjoint_compl_left_iff_subset.mpr (image_subset_range _ _)
+
+/-- The complement of two distinct points `z` and `w` of the circle is the union of the two open
+arcs between them. -/
+theorem _root_.Circle.path_image_Ioo_union {z w : Circle} (hzw : z ≠ w) :
+    Circle.path z w '' Ioo 0 1 ∪ Circle.path w z '' Ioo 0 1 = ({z, w} : Set Circle)ᶜ := by
+  -- Each open arc is the complement of the opposite closed arc, and the two closed arcs meet
+  -- exactly in `{z, w}`.
+  rw [← Circle.compl_range_path hzw.symm, ← Circle.compl_range_path hzw, ← compl_inter,
+    Circle.range_path_inter_range_path hzw.symm, pair_comm w z]
 
 end TauCeti
