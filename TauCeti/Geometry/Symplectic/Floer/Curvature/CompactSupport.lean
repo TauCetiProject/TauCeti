@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Energy
+public import TauCeti.Geometry.Symplectic.Floer.Manifold
 
 /-!
 # Uniform curvature bounds for compactly supported perturbation families
