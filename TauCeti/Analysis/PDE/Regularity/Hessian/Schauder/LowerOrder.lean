@@ -258,9 +258,13 @@ theorem
   set P' : ℝ≥0 := P.toNNReal
   have hPP' : (P' : ℝ) = P := Real.coe_toNNReal _ hP
   -- `u` and `Du` are bounded by `N` and `P'`, with derivatives bounded by `P'`, hence `α`-Hölder.
-  obtain ⟨hHu, hHDu⟩ := holderWith_and_holderWith_fderiv_of_norm_le_of_norm_iteratedFDeriv_two_le
-    hα1.le hu (fun x => by simpa only [Real.norm_eq_abs] using hN x)
-    (fun x => (h1 x).trans hPP'.ge) fun x => (h2 x).trans hPP'.ge
+  have hHu := holderWith_of_norm_le_of_norm_fderiv_le hα1.le (hu.differentiable (by norm_num))
+    (fun x => by simpa only [Real.norm_eq_abs] using hN x) fun x => (h1 x).trans hPP'.ge
+  have hHDu := holderWith_of_norm_le_of_norm_fderiv_le hα1.le
+    ((hu.fderiv_right (m := 1) (by norm_num)).differentiable (by norm_num))
+    (fun x => (h1 x).trans hPP'.ge) fun x => by
+      rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+      exact (h2 x).trans hPP'.ge
   replace hHu := hHu.holderOnWith univ
   replace hHDu := hHDu.holderOnWith univ
   -- The principal part `L u - (b · ∇u + c u)` is globally `α`-Hölder with constant `K₀`.
