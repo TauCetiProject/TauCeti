@@ -365,9 +365,21 @@ theorem nilradical_eq_top_iff [IsNoetherian R L] :
 variable {R L}
 
 /-- **Every element of the nilradical is `ad`-nilpotent.** -/
-theorem isNilpotent_ad_of_mem_nilradical [IsNoetherian R L] {x : L}
-    (hx : x ∈ nilradical R L) : IsNilpotent (LieAlgebra.ad R L x) :=
-  LieIdeal.isNilpotent_ad_of_mem (nilradical R L) hx
+theorem isNilpotent_ad_of_mem_nilradical {x : L}
+    (hx : x ∈ nilradical R L) : IsNilpotent (LieAlgebra.ad R L x) := by
+  -- the nilradical is a directed supremum, so `x` lies in a single nilpotent ideal
+  obtain ⟨J, hJ, hxJ⟩ : ∃ J : LieIdeal R L, LieRing.IsNilpotent J ∧ x ∈ J := by
+    rw [nilradical, sSup_eq_iSup'] at hx
+    refine LieSubmodule.iSup_induction _
+      (motive := fun y ↦ ∃ J : LieIdeal R L, LieRing.IsNilpotent J ∧ y ∈ J) hx
+      (fun I y hy ↦ ⟨I, I.2, hy⟩) ⟨⊥, inferInstance, zero_mem _⟩ ?_
+    rintro a b ⟨I, hI, ha⟩ ⟨J, hJ, hb⟩
+    have := hI
+    have := hJ
+    exact ⟨I ⊔ J, inferInstance,
+      add_mem ((le_sup_left : I ≤ I ⊔ J) ha) ((le_sup_right : J ≤ I ⊔ J) hb)⟩
+  have := hJ
+  exact LieIdeal.isNilpotent_ad_of_mem J hxJ
 
 end LieAlgebra
 
