@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Positive
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Deriv
 
 /-!
 # The weak maximum principle for elliptic operators in non-divergence form
@@ -76,9 +77,6 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
   `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_neg`: linearity of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_norm_sq`: the operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`
   applied to `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`.
-* `TauCeti.PDE.fderiv_exp_neg_mul_norm_sub_sq_apply`,
-  `TauCeti.PDE.fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply`: the first and second derivatives of
-  the Gaussian `exp (-α ‖x - y‖²)` on a real inner product space.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq`: the operator
   `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to the Gaussian `exp (-α ‖x - y‖²)`, the barrier of Hopf's
   boundary-point lemma.
@@ -285,57 +283,6 @@ theorem sum_mul_fderiv_fderiv_add_fderiv_norm_sq {A : Matrix ι ι ℝ}
       fderiv ℝ (fun y : EuclideanSpace ℝ ι ↦ ‖y‖ ^ 2) x v = 2 * A.trace + 2 * ⟪x, v⟫ := by
   simp only [fderiv_fderiv_norm_sq_apply]
   simp [EuclideanSpace.inner_single_left, Matrix.trace, Finset.mul_sum, mul_comm]
-
-section Gaussian
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- The derivative of the Gaussian `z ↦ exp (-α ‖z - y‖²)` at `x` in the direction `w` is
-`-2 α ⟪x - y, w⟫ exp (-α ‖x - y‖²)`. -/
-theorem fderiv_exp_neg_mul_norm_sub_sq_apply (α : ℝ) (y x w : E) :
-    fderiv ℝ (fun z ↦ Real.exp (-α * ‖z - y‖ ^ 2)) x w =
-      -2 * α * ⟪x - y, w⟫ * Real.exp (-α * ‖x - y‖ ^ 2) := by
-  have h : HasFDerivAt (fun z ↦ Real.exp (-α * ‖z - y‖ ^ 2)) _ x :=
-    (((hasFDerivAt_id x).sub_const y).norm_sq.const_mul (-α)).exp
-  rw [h.fderiv]
-  simp only [smul_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply,
-    ContinuousLinearMap.id_apply, id_eq, smul_eq_mul, nsmul_eq_mul, Nat.cast_ofNat]
-  ring
-
-/-- **The Hessian of the Gaussian.** The second derivative of `z ↦ exp (-α ‖z - y‖²)` at `x` is
-`(4 α² ⟪x - y, w⟫ ⟪x - y, w'⟫ - 2 α ⟪w, w'⟫) exp (-α ‖x - y‖²)`. -/
-theorem fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply (α : ℝ) (y x w w' : E) :
-    fderiv ℝ (fderiv ℝ fun z ↦ Real.exp (-α * ‖z - y‖ ^ 2)) x w w' =
-      (4 * α ^ 2 * ⟪x - y, w⟫ * ⟪x - y, w'⟫ - 2 * α * ⟪w, w'⟫) * Real.exp (-α * ‖x - y‖ ^ 2) := by
-  -- The Gaussian is `φ ∘ q` with `φ s = exp (-α s)` and `q z = ‖z - y‖²`.
-  let q : E → ℝ := fun z ↦ ‖z - y‖ ^ 2
-  let φ : ℝ → ℝ := fun s ↦ Real.exp (-α * s)
-  have hcomp : (fun z ↦ Real.exp (-α * ‖z - y‖ ^ 2)) = φ ∘ q := rfl
-  have hq : ContDiffAt ℝ 2 q x :=
-    ((contDiff_norm_sq ℝ).comp (contDiff_id.sub contDiff_const)).contDiffAt
-  have hφ : ContDiffAt ℝ 2 φ (q x) := by fun_prop
-  have hD1 (w : E) : fderiv ℝ q x w = 2 * ⟪x - y, w⟫ := by
-    have h := fderiv_norm_sq_sub_comp (i := id) (a := y) (x := x) differentiableAt_id
-    simpa [q, inner_sub_left] using congrArg (· w) h
-  have hid : fderiv ℝ (fderiv ℝ (id : E → E)) x = 0 := by
-    have h : fderiv ℝ (id : E → E) = fun _ ↦ ContinuousLinearMap.id ℝ E :=
-      funext fun _ ↦ fderiv_id
-    rw [h]
-    exact fderiv_const_apply _
-  have hD2 (w w' : E) : fderiv ℝ (fderiv ℝ q) x w w' = 2 * ⟪w, w'⟫ := by
-    have h := fderiv_fderiv_norm_sq_sub_comp_apply (i := id) (a := y) (x := x) contDiffAt_id w w'
-    simpa [q, hid] using h
-  have hφ1 : deriv φ = fun s ↦ -α * φ s := by
-    have h := iteratedDeriv_exp_const_mul 1 (-α)
-    rwa [iteratedDeriv_one, pow_one] at h
-  have hφ2 : iteratedDeriv 2 φ = fun s ↦ α ^ 2 * φ s := by
-    have h := iteratedDeriv_exp_const_mul 2 (-α)
-    rwa [neg_sq] at h
-  rw [hcomp, fderiv_fderiv_scalar_comp_apply hφ hq, hD1, hD1, hD2, hφ1, hφ2]
-  simp only [smul_eq_mul, φ, q]
-  ring
-
-end Gaussian
 
 /-- **The Gaussian barrier.** The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to the Gaussian
 `x ↦ exp (-α ‖x - y‖²)` is
