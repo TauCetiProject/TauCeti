@@ -16,10 +16,10 @@ import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 /-!
 # Higher-order reflection of half-disc Sobolev maps
 
-For an open `Ω ⊆ ℂ`, the relatively open set `Ω ∩ ℍ̄` of the closed upper half-plane carries the
-local Sobolev class `TauCeti.MemWkpLoc p (Ω ∩ ℍ̄) k`: weak derivatives on its interior `Ω ∩ ℍ`
-(`TauCeti.interior_inter_setOf_im_nonneg`), with `Lᵖ` bounds on compact sets reaching the real
-axis. This file extends such maps across the axis by the order-`k` higher reflection
+For an open `Ω ⊆ ℂ`, the relatively open set `Ω ∩ {0 ≤ im}` of the closed upper half-plane carries
+the local Sobolev class `TauCeti.MemWkpLoc p (Ω ∩ {0 ≤ im}) k`: weak derivatives on its interior
+`Ω ∩ {0 < im}` (`TauCeti.interior_inter_setOf_im_nonneg`), with `Lᵖ` bounds on compact sets reaching
+the real axis. This file extends such maps across the axis by the order-`k` higher reflection
 
 `u (s - t i) = ∑ j, c j • u (s + t / (j + 1) i)` for `t > 0`,
 
@@ -46,12 +46,12 @@ statement.
   its candidate weak derivative.
 * `TauCeti.HasWeakLineDerivOn.planarReflection_one`, `TauCeti.HasWeakLineDerivOn.planarReflection_I`
   and `TauCeti.HasWeakFDerivOn.planarReflection`: weak gluing across the real axis.
-* `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff`: a map in `W^{k,p}_loc(Ω ∩ ℍ̄)` extends
-  to a map in `W^{k,p}_loc(Ω)` when the node dilations map the lower part of `Ω` into `Ω`; the
-  cases of discs centred on the real axis and of the whole plane are
+* `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff`: a map in `W^{k,p}_loc(Ω ∩ {0 ≤ im})`
+  extends to a map in `W^{k,p}_loc(Ω)` when the node dilations map the lower part of `Ω` into `Ω`;
+  the cases of discs centred on the real axis and of the whole plane are
   `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_ball` and
   `TauCeti.MemWkpLoc.planarReflection_higherReflectionCoeff_univ`.
-* `TauCeti.eLpNorm_planarReflection_le`: the `Lᵖ(Ω)` bound by the `Lᵖ(Ω ∩ ℍ̄)` norm, with the
+* `TauCeti.eLpNorm_planarReflection_le`: the `Lᵖ(Ω)` bound by the `Lᵖ(Ω ∩ {0 ≤ im})` norm, with the
   constant `TauCeti.higherReflectionBound k p` for the Vandermonde weights.
 
 ## References
@@ -169,8 +169,9 @@ theorem memLp_comp_imDilation_iff {c : ℝ} (hc : c ≠ 0) {f : ℂ → F} {s : 
   have h' := h.smul_measure (ENNReal.inv_ne_top.2 h0)
   rwa [smul_smul, ENNReal.inv_mul_cancel h0 ENNReal.ofReal_ne_top, one_smul] at h'
 
-/-- A relatively open subset `Ω ∩ ℍ̄` of the closed upper half-plane has interior `Ω ∩ ℍ` in `ℂ`:
-points on the real axis are not interior, since every neighbourhood meets `{z | z.im < 0}`. -/
+/-- A relatively open subset `Ω ∩ {0 ≤ im}` of the closed upper half-plane has interior
+`Ω ∩ {0 < im}` in `ℂ`: points on the real axis are not interior, since every neighbourhood meets
+`{z | z.im < 0}`. -/
 theorem interior_inter_setOf_im_nonneg {Ω : Set ℂ} (hΩ : IsOpen Ω) :
     interior (Ω ∩ {z : ℂ | 0 ≤ z.im}) = Ω ∩ {z : ℂ | 0 < z.im} := by
   rw [interior_inter, hΩ.interior_eq, Complex.interior_setOfPred_le_im]
@@ -334,9 +335,9 @@ private theorem abs_le_mul_im_of_eq_zero_on_real {M : ℝ} {χ : ℂ → ℝ} (h
 
 /-- **Integration by parts up to the real axis.** Let `g'` be a weak derivative of `g` in the
 direction `v` on the upper part of `Ω`, with `g` and `g'` integrable on compact subsets of
-`Ω ∩ ℍ̄`. Then the integration-by-parts identity on the upper half-plane holds against every
-smooth compactly supported `χ` whose support meets `ℍ̄` inside `Ω`, provided `v` is tangent to the
-real axis or `χ` vanishes on it. -/
+`Ω ∩ {0 ≤ im}`. Then the integration-by-parts identity on the upper half-plane holds against every
+smooth compactly supported `χ` whose support meets `{0 ≤ im}` inside `Ω`, provided `v` is tangent to
+the real axis or `χ` vanishes on it. -/
 private theorem setIntegral_fderiv_smul_eq_neg {Ω : Opens ℂ} {g g' : ℂ → F} {v : ℂ}
     (hgW : HasWeakLineDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) g g' v)
     (hg : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g)
@@ -517,7 +518,8 @@ private theorem preimage_imDilation_node {k : ℕ} (j : Fin k) :
   ext z
   simp [mul_pos_iff, higherReflectionNode_neg j, (higherReflectionNode_neg j).not_gt]
 
-/-- The node dilations map `ℍ̄ ∩ e⁻¹(Ω)` into `Ω` when they map the lower part of `Ω` into `Ω`. -/
+/-- The node dilations map `{0 ≤ im} ∩ e⁻¹(Ω)` into `Ω` when they map the lower part of `Ω` into
+`Ω`. -/
 private theorem imDilation_mem_of_im_nonpos {Ω : Set ℂ}
     (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin k, imDilation (higherReflectionNode j) z ∈ Ω)
     (j : Fin k) {z : ℂ} (hz : z ∈ Ω) (hz0 : z.im ≤ 0) :
@@ -527,7 +529,7 @@ private theorem imDilation_mem_of_im_nonpos {Ω : Set ℂ}
   · rwa [imDilation_of_im_eq_zero _ hz0]
 
 /-- Undoing a node dilation on a function supported in `Ω` gives a function whose support meets
-`ℍ̄` inside `Ω`. -/
+`{0 ≤ im}` inside `Ω`. -/
 private theorem tsupport_comp_imDilation_inv_subset {Ω : Set ℂ}
     (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin k, imDilation (higherReflectionNode j) z ∈ Ω)
     (j : Fin k) {f : ℂ → ℝ} (hfΩ : tsupport f ⊆ Ω) :
@@ -604,8 +606,8 @@ private theorem fderiv_comp_imDilation_apply {φ : ℂ → ℝ} (hφ : Different
   rfl
 
 /-- **Weak gluing in the tangential direction.** If `g'` is the weak derivative of `g` along the
-real axis on the upper part of `Ω`, with both integrable on compact subsets of `Ω ∩ ℍ̄`, then for
-every choice of weights the reflection of `g'` is the weak derivative of the reflection of `g`
+real axis on the upper part of `Ω`, with both integrable on compact subsets of `Ω ∩ {0 ≤ im}`, then
+for every choice of weights the reflection of `g'` is the weak derivative of the reflection of `g`
 along the real axis on all of `Ω`. -/
 theorem HasWeakLineDerivOn.planarReflection_one {Ω : Opens ℂ}
     (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin k, imDilation (higherReflectionNode j) z ∈ Ω)
@@ -642,11 +644,11 @@ theorem HasWeakLineDerivOn.planarReflection_one {Ω : Opens ℂ}
   exact hψ
 
 /-- **Weak gluing in the normal direction.** If `g'` is the weak derivative of `g` in the normal
-direction `I` on the upper part of `Ω`, with both integrable on compact subsets of `Ω ∩ ℍ̄`, and the
-weights sum to one, then the reflection of `g'` with the weights `d j * higherReflectionNode j` is
-the weak derivative of the reflection of `g` in the direction `I` on all of `Ω`. The condition on
-the weights matches the two one-sided values on the real axis; no boundary condition on `g` is
-needed. -/
+direction `I` on the upper part of `Ω`, with both integrable on compact subsets of `Ω ∩ {0 ≤ im}`,
+and the weights sum to one, then the reflection of `g'` with the weights
+`d j * higherReflectionNode j` is the weak derivative of the reflection of `g` in the direction `I`
+on all of `Ω`. The condition on the weights matches the two one-sided values on the real axis; no
+boundary condition on `g` is needed. -/
 theorem HasWeakLineDerivOn.planarReflection_I {Ω : Opens ℂ}
     (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin k, imDilation (higherReflectionNode j) z ∈ Ω)
     {g g' : ℂ → F}
@@ -793,7 +795,7 @@ theorem planarReflectionFDeriv_of_neg (d : Fin k → ℝ) (Dg : ℂ → ℂ →L
   module
 
 /-- **Weak gluing of the full derivative.** If `Dg` is the weak derivative of `g` on the upper
-part of `Ω`, both integrable on compact subsets of `Ω ∩ ℍ̄`, and the weights sum to one, then
+part of `Ω`, both integrable on compact subsets of `Ω ∩ {0 ≤ im}`, and the weights sum to one, then
 `planarReflectionFDeriv d Dg` is the weak derivative of `planarReflection d g` on all of `Ω`. -/
 theorem HasWeakFDerivOn.planarReflection {Ω : Opens ℂ}
     (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin k, imDilation (higherReflectionNode j) z ∈ Ω)
@@ -842,8 +844,8 @@ theorem MemWkpLoc.planarReflection {p : ℝ≥0∞} (hp : 1 ≤ p) {Ω : Opens �
     rfl
 
 /-- **Higher-order reflection extends half-disc Sobolev maps.** A map in `W^{k,p}_loc` of the
-relatively open set `Ω ∩ ℍ̄`, with derivatives tested in `Ω ∩ ℍ` and `Lᵖ` bounds up to the real
-axis, extends by the order-`k` reflection with the Vandermonde weights to a map in
+relatively open set `Ω ∩ {0 ≤ im}`, with derivatives tested in `Ω ∩ {0 < im}` and `Lᵖ` bounds up to
+the real axis, extends by the order-`k` reflection with the Vandermonde weights to a map in
 `W^{k,p}_loc(Ω)`. -/
 theorem MemWkpLoc.planarReflection_higherReflectionCoeff {p : ℝ≥0∞} (hp : 1 ≤ p) {Ω : Opens ℂ}
     (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin k, imDilation (higherReflectionNode j) z ∈ Ω)
@@ -876,7 +878,8 @@ theorem imDilation_higherReflectionNode_mem_ball (x : ℝ) (r : ℝ) {k : ℕ} (
     _ < r := hz
 
 /-- **Extension from a half-disc to the disc.** For a disc `D` centred on the real axis, a map in
-`W^{k,p}_loc(D ∩ ℍ̄)` extends by the order-`k` higher reflection to a map in `W^{k,p}_loc(D)`. -/
+`W^{k,p}_loc(D ∩ {0 ≤ im})` extends by the order-`k` higher reflection to a map in `W^{k,p}_loc(D)`.
+-/
 theorem MemWkpLoc.planarReflection_higherReflectionCoeff_ball {p : ℝ≥0∞} (hp : 1 ≤ p) (x r : ℝ)
     {u : ℂ → F} (hu : MemWkpLoc p (Metric.ball (x : ℂ) r ∩ {z | 0 ≤ z.im}) k u) :
     MemWkpLoc p (Metric.ball (x : ℂ) r) k (TauCeti.planarReflection (higherReflectionCoeff k) u) :=
@@ -904,9 +907,9 @@ theorem planarReflectionBound_higherReflectionCoeff (k : ℕ) (p : ℝ≥0∞) :
   rw [planarReflectionBound, higherReflectionBound_eq]
 
 /-- **The `Lᵖ` bound for the reflection.** For `1 ≤ p ≤ ∞`, the reflection of `g` on `Ω` is
-bounded in `Lᵖ(Ω)` by `planarReflectionBound d p` times the `Lᵖ` norm of `g` on `Ω ∩ ℍ̄`. Applied to
-the components of the weak derivatives of `planarReflectionFDeriv`, it bounds every derivative of
-the extension by the corresponding derivative of `g`. -/
+bounded in `Lᵖ(Ω)` by `planarReflectionBound d p` times the `Lᵖ` norm of `g` on `Ω ∩ {0 ≤ im}`.
+Applied to the components of the weak derivatives of `planarReflectionFDeriv`, it bounds every
+derivative of the extension by the corresponding derivative of `g`. -/
 theorem eLpNorm_planarReflection_le {p : ℝ≥0∞} (hp : 1 ≤ p) {Ω : Set ℂ}
     (hΩ : ∀ z ∈ Ω, z.im < 0 → ∀ j : Fin k, imDilation (higherReflectionNode j) z ∈ Ω)
     (d : Fin k → ℝ) (g : ℂ → F) :
