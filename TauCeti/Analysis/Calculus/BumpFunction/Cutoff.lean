@@ -256,16 +256,16 @@ theorem holderWith_translate_cutoff [NormedSpace ℝ E] {ι : Type*} (e : ι →
   · rw [hD2]
     exact htr (hZ2 i j)
 
-/-- The translate `x ↦ ζ₀ (x - x₀)` of a smooth cutoff, equal to one near `closedBall 0 ρ` and
+/-- The translate `x ↦ ζ₀ (x - x₀)` of a `C²` cutoff, equal to one near `closedBall 0 ρ` and
 supported in `ball 0 R`, is `C²` on `ball x₀ R`, equal to one near `closedBall x₀ ρ`, and supported
 in `ball x₀ R`. -/
 theorem translate_cutoff_facts [NormedSpace ℝ E] {ζ₀ : E → ℝ} {x₀ : E} {R ρ : ℝ}
-    (hζ₀ : ContDiff ℝ ∞ ζ₀) (hζ₀1 : Metric.closedBall (0 : E) ρ ⊆ interior (ζ₀ ⁻¹' {1}))
+    (hζ₀ : ContDiff ℝ 2 ζ₀) (hζ₀1 : Metric.closedBall (0 : E) ρ ⊆ interior (ζ₀ ⁻¹' {1}))
     (hζ₀s : tsupport ζ₀ ⊆ Metric.ball 0 R) :
     ContDiffOn ℝ 2 (fun x => ζ₀ (x - x₀)) (Metric.ball x₀ R) ∧
       Metric.closedBall x₀ ρ ⊆ interior ((fun x => ζ₀ (x - x₀)) ⁻¹' {1}) ∧
       tsupport (fun x => ζ₀ (x - x₀)) ⊆ Metric.ball x₀ R := by
-  refine ⟨((hζ₀.comp (contDiff_id.sub contDiff_const)).of_le (by norm_cast)).contDiffOn,
+  refine ⟨(hζ₀.comp (contDiff_id.sub contDiff_const)).contDiffOn,
     fun x hx => ?_, fun x hx => ?_⟩
   · exact preimage_interior_subset_interior_preimage (continuous_id.sub continuous_const)
       (hζ₀1 (by simpa [dist_eq_norm] using hx))

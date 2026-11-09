@@ -446,7 +446,8 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
     fun {a x₀} hEll hEll' hL hM {u N K V} hu hN0 hN1 hN2 hV hK => ?_⟩
   -- The cutoff `ζ` about `x₀`, the translate of `ζ₀`.
   set ζ : E → ℝ := fun x => ζ₀ (x - x₀)
-  obtain ⟨hζ2, hζ1, hζs⟩ := translate_cutoff_facts (x₀ := x₀) (R := R) hζ₀ hζ₀1 hζ₀s
+  obtain ⟨hζ2, hζ1, hζs⟩ :=
+    translate_cutoff_facts (x₀ := x₀) (R := R) (hζ₀.of_le (by norm_cast)) hζ₀1 hζ₀s
   -- Translation keeps the global Hölder constants and the uniform bounds of `ζ₀` and its
   -- derivatives.
   obtain ⟨hZ0, hZ1, hZ2⟩ :=
