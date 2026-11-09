@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Yamabe.Quotient
+import TauCeti.Analysis.PDE.Yamabe.ConformalInvariance
 import TauCeti.Analysis.PDE.Yamabe.LowerBound
 import TauCeti.Geometry.Manifold.ContMDiff.RPow
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support

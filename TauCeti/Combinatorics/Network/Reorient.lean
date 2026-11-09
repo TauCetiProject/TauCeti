@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Network.Excess
+public import TauCeti.Combinatorics.Network.Shift
 public import TauCeti.Combinatorics.Quiver.Reorient
 
 /-!
@@ -26,6 +26,8 @@ it as a loop.
 * `TauCeti.reorientAssignmentEquiv`: the additive equivalence which negates reversed values.
 * `TauCeti.reorientLower` and `TauCeti.reorientUpper`: the transported bounds.
 * `TauCeti.Network.reorient`: a network with selected arrows reversed.
+* `TauCeti.ExcessFlow.reorientEquiv` and `TauCeti.ExcessIntervalFlow.reorientEquiv`: reorientation
+  of assignments with prescribed excess, or with excess in prescribed vertex intervals.
 
 ## Main results
 
@@ -260,6 +262,55 @@ theorem excessAt_reorientAssignment (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
     Sum.elim_inr, Finset.sum_add_distrib, Finset.sum_neg_distrib]
   rw [← hin, ← hout]
   abel
+
+variable [Preorder K] [AddLeftMono K]
+
+/-- Reversing the arrows selected by `σ` and negating their values identifies the assignments with
+prescribed excess `b` for the bounds `lo` and `hi` with those for the reoriented bounds. -/
+def ExcessFlow.reorientEquiv (σ : ∀ ⦃x y : V⦄, Q x y → Bool) (lo hi : Assignment Q K)
+    (b : V → K) :
+    ExcessFlow lo hi b ≃ ExcessFlow (reorientLower σ lo hi) (reorientUpper σ lo hi) b :=
+  (reorientAssignmentEquiv σ).toEquiv.subtypeEquiv fun f ↦ by
+    rw [AddEquiv.toEquiv_eq_coe, EquivLike.coe_coe, reorientAssignmentEquiv_apply,
+      funext (excessAt_reorientAssignment σ f)]
+    exact and_congr_left' (reorientAssignment_mem_Icc_iff σ lo hi f).symm
+
+@[simp]
+theorem ExcessFlow.reorientEquiv_apply_val (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
+    {lo hi : Assignment Q K} {b : V → K} (f : ExcessFlow lo hi b) :
+    (ExcessFlow.reorientEquiv σ lo hi b f).val = reorientAssignment σ f.val :=
+  (rfl)
+
+@[simp]
+theorem ExcessFlow.reorientEquiv_symm_apply_val (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
+    {lo hi : Assignment Q K} {b : V → K}
+    (g : ExcessFlow (reorientLower σ lo hi) (reorientUpper σ lo hi) b) :
+    ((ExcessFlow.reorientEquiv σ lo hi b).symm g).val = unreorientAssignment σ g.val :=
+  (rfl)
+
+/-- Reversing the arrows selected by `σ` and negating their values identifies the assignments with
+excess between `a` and `b` for the bounds `lo` and `hi` with those for the reoriented bounds. -/
+def ExcessIntervalFlow.reorientEquiv (σ : ∀ ⦃x y : V⦄, Q x y → Bool) (lo hi : Assignment Q K)
+    (a b : V → K) :
+    ExcessIntervalFlow lo hi a b ≃
+      ExcessIntervalFlow (reorientLower σ lo hi) (reorientUpper σ lo hi) a b :=
+  (reorientAssignmentEquiv σ).toEquiv.subtypeEquiv fun f ↦ by
+    rw [AddEquiv.toEquiv_eq_coe, EquivLike.coe_coe, reorientAssignmentEquiv_apply,
+      funext (excessAt_reorientAssignment σ f)]
+    exact and_congr_left' (reorientAssignment_mem_Icc_iff σ lo hi f).symm
+
+@[simp]
+theorem ExcessIntervalFlow.reorientEquiv_apply_val (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
+    {lo hi : Assignment Q K} {a b : V → K} (f : ExcessIntervalFlow lo hi a b) :
+    (ExcessIntervalFlow.reorientEquiv σ lo hi a b f).val = reorientAssignment σ f.val :=
+  (rfl)
+
+@[simp]
+theorem ExcessIntervalFlow.reorientEquiv_symm_apply_val (σ : ∀ ⦃x y : V⦄, Q x y → Bool)
+    {lo hi : Assignment Q K} {a b : V → K}
+    (g : ExcessIntervalFlow (reorientLower σ lo hi) (reorientUpper σ lo hi) a b) :
+    ((ExcessIntervalFlow.reorientEquiv σ lo hi a b).symm g).val = unreorientAssignment σ g.val :=
+  (rfl)
 
 end Excess
 

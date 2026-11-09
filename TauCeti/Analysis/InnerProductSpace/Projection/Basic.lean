@@ -66,9 +66,9 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   linearly independent family in `(𝕜 ∙ p)ᗮ` is linearly independent.
 * `LinearIsometry.exists_mem_sphere_inner_eq_zero`: a linear isometry into a space of larger
   finite dimension has a unit vector orthogonal to its range.
-* `Submodule.mul_norm_sq_le_norm_starProjection_sq_of_finrank_le`: for finite-dimensional
-  subspaces with `dim V ≤ dim U`, a lower bound on `‖P_V u‖²` over `U` transfers to the same
-  bound on `‖P_U v‖²` over `V`.
+* `Submodule.mul_norm_sq_le_norm_starProjection_sq_of_finrank_le`: for a finite-dimensional
+  subspace `V` and a subspace `U` with `dim V ≤ dim U`, a lower bound on `‖P_V u‖²` over `U`
+  transfers to the same bound on `‖P_U v‖²` over `V`.
 * `Submodule.eq_starProjection_of_norm_le`: a vector whose norm is at most that of its projection
   is its projection.
 * `Submodule.mem_iff_forall_mem_orthogonal_norm_le_norm_add`: `v ∈ U` if and only if
@@ -169,14 +169,22 @@ theorem finrank_orthogonal_span_singleton_eq_finrank_sub_one [FiniteDimensional 
   have := Module.finrank_pos_iff_exists_ne_zero (R := 𝕜).2 ⟨v, hv⟩
   exact finrank_add_finrank_orthogonal' <| by rw [finrank_span_singleton hv]; omega
 
-/-- For finite-dimensional subspaces with `dim V ≤ dim U`, a lower bound `k ‖u‖² ≤ ‖P_V u‖²` on
-the cosines of `U` towards `V` transfers to the same lower bound for `V` towards `U`. -/
-theorem mul_norm_sq_le_norm_starProjection_sq_of_finrank_le [FiniteDimensional 𝕜 U]
-    [FiniteDimensional 𝕜 V] (h : Module.finrank 𝕜 V ≤ Module.finrank 𝕜 U) {k : ℝ}
+/-- For a finite-dimensional subspace `V` and a subspace `U` with `dim V ≤ dim U`, a lower bound
+`k ‖u‖² ≤ ‖P_V u‖²` on the cosines of `U` towards `V` transfers to the same lower bound for `V`
+towards `U`. -/
+theorem mul_norm_sq_le_norm_starProjection_sq_of_finrank_le [FiniteDimensional 𝕜 V]
+    (h : Module.finrank 𝕜 V ≤ Module.finrank 𝕜 U) {k : ℝ}
     (hU : ∀ u ∈ U, k * ‖u‖ ^ 2 ≤ ‖V.starProjection u‖ ^ 2) {v : E} (hv : v ∈ V) :
     k * ‖v‖ ^ 2 ≤ ‖U.starProjection v‖ ^ 2 := by
   rcases le_or_gt k 0 with hk | hk
   · exact (mul_nonpos_of_nonpos_of_nonneg hk (sq_nonneg _)).trans (sq_nonneg _)
+  -- If `V` is trivial then `v = 0`. Otherwise `U` has positive dimension, so it is
+  -- finite-dimensional.
+  rcases Nat.eq_zero_or_pos (Module.finrank 𝕜 V) with h0 | hpos
+  · have hV := Submodule.finrank_eq_zero.1 h0
+    rw [hV, Submodule.mem_bot] at hv
+    simp [hv]
+  have : FiniteDimensional 𝕜 U := Module.finite_of_finrank_pos (by omega)
   -- For `k > 0`, `P_V` maps `U` injectively, so `dim U ≤ dim V`; by the dimension hypothesis the
   -- dimensions agree and `P_V` maps `U` onto `V`.
   let T : U →ₗ[𝕜] V := V.orthogonalProjectionOnto.toLinearMap ∘ₗ U.subtype
@@ -363,11 +371,12 @@ open scoped InnerProductSpace
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedAddCommGroup F]
   [InnerProductSpace ℝ F]
 
-/-- A linear isometry into a finite-dimensional space of larger dimension has a unit vector
-orthogonal to its range. -/
-theorem exists_mem_sphere_inner_eq_zero (ι : F →ₗᵢ[ℝ] E) [FiniteDimensional ℝ E]
+/-- A linear isometry into a space of larger finite dimension has a unit vector orthogonal to its
+range. The hypothesis on the dimensions forces the target to be finite-dimensional. -/
+theorem exists_mem_sphere_inner_eq_zero (ι : F →ₗᵢ[ℝ] E)
     (h : Module.finrank ℝ F < Module.finrank ℝ E) :
     ∃ v : Metric.sphere (0 : E) 1, ∀ x, ⟪(v : E), ι x⟫_ℝ = 0 := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
   have hW : LinearMap.range ι.toLinearMap ≠ ⊤ := fun hW ↦ by
     have := LinearMap.finrank_range_of_inj ι.injective
     rw [hW, finrank_top] at this
