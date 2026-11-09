@@ -251,14 +251,11 @@ theorem continuousWithinAt_renewalFunction_Ici (t : ℝ≥0) :
   swap
   · -- the point mass at zero has infinite renewal function, which is constant
     have h1 : μ {0} = 1 := le_antisymm prob_le_one (not_lt.1 hμ)
+    have hae : ∀ᵐ x ∂μ, x ∈ ({0} : Set ℝ≥0) :=
+      (mem_ae_iff_prob_eq_one (measurableSet_singleton 0)).2 h1
     have hdirac : μ = dirac 0 := by
-      ext s hs
-      by_cases h0 : (0 : ℝ≥0) ∈ s
-      · rw [dirac_apply_of_mem h0]
-        exact le_antisymm prob_le_one (h1 ▸ measure_mono (singleton_subset_iff.2 h0))
-      · rw [dirac_apply' _ hs, indicator_of_notMem h0]
-        exact measure_mono_null (subset_compl_singleton_iff.2 h0)
-          ((prob_compl_eq_zero_iff (measurableSet_singleton 0)).2 h1)
+      calc μ = μ.restrict {0} := (restrict_eq_self_of_ae_mem hae).symm
+        _ = dirac 0 := by rw [restrict_singleton, h1, one_smul]
     have hinf : μ.renewalFunction = fun _ ↦ ∞ := by
       funext u
       simp [renewalFunction_eq_tsum, hdirac]
