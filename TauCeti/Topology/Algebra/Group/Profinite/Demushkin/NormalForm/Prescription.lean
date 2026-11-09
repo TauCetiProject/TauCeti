@@ -469,8 +469,8 @@ theorem eq_orientationNeTwo_of_hasPrescriptionProperty (hq : p ∣ q) (hn : Even
 
 /-- **The `q ≠ 2` normal form has exactly one character with the prescription property** (Labute,
 Theorem 4, for the normal form `x₁^q (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)` with `p ∣ q` and `n`
-even; for `n = 0` the group is trivial): the standard orientation, with `χ(x₂) = (1 - q)⁻¹` and
-`χ(x_i) = 1` otherwise. -/
+even; for `n = 0` the group is trivial and its only character is the trivial one): the standard
+orientation, which for `n ≥ 2` has `χ(x₂) = (1 - q)⁻¹` and `χ(x_i) = 1` otherwise. -/
 theorem existsUnique_hasPrescriptionProperty_presentedProP_demushkinWordNeTwo (hq : p ∣ q)
     (hn : Even n) :
     ∃! χ : presentedProP p (Fin n) {demushkinWordNeTwo q n (freeProPGen p n)} →ₜ* ℤ_[p]ˣ,
@@ -638,6 +638,24 @@ theorem hasPrescriptionProperty_orientationTwoOdd (hn₂ : 2 < n) (u : ℤ_[2]ˣ
     (by rw [orientationTwoOdd_presentedProPGen_two f n u hn₂]; exact hu)
     fun _ hi₀ hi₂ ↦ orientationTwoOdd_presentedProPGen_of_ne f n u hi₀ hi₂
 
+/-- **The prescription property in rank one** (Labute, Remark 2 (iii)). On one generator the
+`q = 2`, `n` odd word `x₁² x₂^{2^f}` reads `x₁²` for every level `f`, the presented group is
+`ℤ/2`, and a continuous character has the prescription property exactly when `χ(x₁) = -1`: on the
+relator `x₁²` every crossed homomorphism takes the value `(χ(x₁) + 1) F(x₁)`. -/
+theorem hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd_one_iff
+    (χ : presentedProP 2 (Fin 1) {demushkinWordTwoOdd f 1 (freeProPGen 2 1)} →ₜ* ℤ_[2]ˣ) :
+    HasPrescriptionProperty χ ↔ χ (presentedProPGen 2 1 _ 0) = -1 := by
+  have hmem : demushkinWordTwoOdd f 1 (freeProPGen 2 1) ∈ proPFrattini 2 (freeProP 2 (Fin 1)) := by
+    rw [demushkinWordTwoOdd_one f _ (freeProPGen_eq_one_of_le 2 le_rfl)]
+    exact pow_mem_proPFrattini _
+  refine ⟨apply_presentedProPGen_zero_eq_neg_one_of_hasPrescriptionProperty_demushkinWordTwoOdd
+    f 1 χ hmem one_pos, fun h₀ ↦ ?_⟩
+  refine presentedProP.hasPrescriptionProperty_of_forall_isCrossedHom_eq_zero
+    fun F _ hF r hr ↦ ?_
+  rw [Set.mem_singleton_iff.mp hr, hF.map_demushkinWordTwoOdd, presentedProP.comp_mk_freeProPGen,
+    h₀, freeProPGen_eq_one_of_le 2 le_rfl, hF.map_one, map_one]
+  simp
+
 /-- **Uniqueness of the canonical character of the `q = 2`, `n` odd normal form**: for `f ≥ 1` and
 `n` odd (for `n = 1` the group is `ℤ/2`), a character with the prescription property is the
 orientation with marked value its value `χ(x₃)`. -/
@@ -649,13 +667,8 @@ theorem eq_orientationTwoOdd_of_hasPrescriptionProperty (hf : 0 < f) (hn : Odd n
   · obtain rfl : n = 1 := by obtain ⟨k, hk⟩ := hn; omega
     refine presentedProP.hom_ext_of fun i ↦ ?_
     obtain rfl := Subsingleton.elim i 0
-    have hmem : demushkinWordTwoOdd f 1 (freeProPGen 2 1) ∈
-        proPFrattini 2 (freeProP 2 (Fin 1)) := by
-      rw [demushkinWordTwoOdd_one f _ (freeProPGen_eq_one_of_le 2 le_rfl)]
-      exact pow_mem_proPFrattini _
     rw [← presentedProPGen_val, Fin.val_zero,
-      apply_presentedProPGen_zero_eq_neg_one_of_hasPrescriptionProperty_demushkinWordTwoOdd f 1 χ
-        hmem one_pos hχ,
+      (hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd_one_iff f χ).1 hχ,
       orientationTwoOdd_presentedProPGen_zero f 1 _ one_pos]
   obtain ⟨h₀, -, h⟩ :=
     (hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd_iff f n χ hf hn hn₂).1 hχ
@@ -690,24 +703,6 @@ theorem existsUnique_hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd (
     exact Units.val_inj.1 (by linear_combination (u : ℤ_[2]) * h₂ -
       (χ (presentedProPGen 2 n _ 2) : ℤ_[2]) * hu')
   · exact h i hi₀ hi₂
-
-/-- **The prescription property in rank one** (Labute, Remark 2 (iii)). On one generator the
-`q = 2`, `n` odd word `x₁² x₂^{2^f}` reads `x₁²` for every level `f`, the presented group is
-`ℤ/2`, and a continuous character has the prescription property exactly when `χ(x₁) = -1`: on the
-relator `x₁²` every crossed homomorphism takes the value `(χ(x₁) + 1) F(x₁)`. -/
-theorem hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd_one_iff
-    (χ : presentedProP 2 (Fin 1) {demushkinWordTwoOdd f 1 (freeProPGen 2 1)} →ₜ* ℤ_[2]ˣ) :
-    HasPrescriptionProperty χ ↔ χ (presentedProPGen 2 1 _ 0) = -1 := by
-  have hmem : demushkinWordTwoOdd f 1 (freeProPGen 2 1) ∈ proPFrattini 2 (freeProP 2 (Fin 1)) := by
-    rw [demushkinWordTwoOdd_one f _ (freeProPGen_eq_one_of_le 2 le_rfl)]
-    exact pow_mem_proPFrattini _
-  refine ⟨apply_presentedProPGen_zero_eq_neg_one_of_hasPrescriptionProperty_demushkinWordTwoOdd
-    f 1 χ hmem one_pos, fun h₀ ↦ ?_⟩
-  refine presentedProP.hasPrescriptionProperty_of_forall_isCrossedHom_eq_zero
-    fun F _ hF r hr ↦ ?_
-  rw [Set.mem_singleton_iff.mp hr, hF.map_demushkinWordTwoOdd, presentedProP.comp_mk_freeProPGen,
-    h₀, freeProPGen_eq_one_of_le 2 le_rfl, hF.map_one, map_one]
-  simp
 
 /-- **`ℤ/2`, presented on one generator by `x₁²`, has exactly one character with the prescription
 property**, the sign character `χ(x₁) = -1`, for every level `f`. -/
