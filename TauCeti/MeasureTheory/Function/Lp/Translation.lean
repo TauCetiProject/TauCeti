@@ -173,16 +173,16 @@ theorem tendsto_translateLp_of_tendsto [TopologicalSpace E] [ContinuousAdd E] [B
     {I : Type*} {l : Filter I} {h : I → E} (hh : Filter.Tendsto h l (nhds 0))
     {A : I → Lp F p mu} {g : Lp F p mu} (hA : Filter.Tendsto A l (nhds g)) :
     Filter.Tendsto (fun i ↦ translateLp mu p (h i) (A i)) l (nhds g) := by
-  have htr : Filter.Tendsto (fun i ↦ translateLp mu p (h i) g) l (nhds g) := by
-    simpa only [translateLp_zero, Function.comp_def] using
-      ((continuous_translateLp hp g).tendsto 0).comp hh
-  rw [tendsto_iff_dist_tendsto_zero] at hA htr ⊢
-  refine squeeze_zero (fun _ ↦ dist_nonneg) (fun i ↦ ?_) (by simpa using hA.add htr)
-  calc dist (translateLp mu p (h i) (A i)) g
-      ≤ dist (translateLp mu p (h i) (A i)) (translateLp mu p (h i) g) +
-        dist (translateLp mu p (h i) g) g := dist_triangle _ _ _
-    _ = dist (A i) g + dist (translateLp mu p (h i) g) g := by
-      rw [LinearIsometryEquiv.dist_map]
+  let T : E → C(E, E) := fun h ↦ ⟨(· + h), by fun_prop⟩
+  have hT : Continuous T := ContinuousMap.continuous_of_continuous_uncurry T <| by
+    dsimp only [T, Function.uncurry_apply_pair, ContinuousMap.coe_mk]
+    fun_prop
+  have key : Filter.Tendsto (fun i ↦ translateLp mu p (h i) (A i)) l
+      (nhds (translateLp mu p 0 g)) := by
+    simp only [translateLp, Lp.compMeasurePreservingₗᵢEquiv_apply]
+    exact hA.compMeasurePreservingLp ((hT.tendsto 0).comp hh)
+      (fun i ↦ measurePreserving_add_right mu (h i)) (measurePreserving_add_right mu 0) hp
+  rwa [translateLp_zero] at key
 
 /-- The `Lᵖ` extended norm of a translation increment is its pointwise `eLpNorm`. -/
 theorem enorm_translateLp_sub (h : E) (f : Lp F p mu) :

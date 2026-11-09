@@ -23,7 +23,8 @@ identity recorded at each graph step and the interior convolution theorem.
 
 `TauCeti.Wkp.smoothField` packages the normalized-bump mollification of a zero-extended field as
 a smooth function on the whole space. `TauCeti.Wkp.gradient_smoothField` and
-`TauCeti.Wkp.fderiv_smoothField` restate the derivative identities for it.
+`TauCeti.Wkp.fderiv_smoothField` restate the derivative identities for it, and
+`TauCeti.Wkp.smoothField_eq_zero` locates its support near the set off which the field vanishes.
 
 The classical argument is in L. C. Evans, *Partial Differential Equations*, §5.3.1.
 -/
@@ -35,7 +36,7 @@ noncomputable section
 namespace TauCeti.Wkp
 
 open MeasureTheory Set TopologicalSpace
-open scoped ContDiff Convolution ENNReal
+open scoped ContDiff Convolution ENNReal Pointwise
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -192,9 +193,17 @@ theorem hasFDerivAt_indicator_convolution_normed_value [HasContDiffBump E]
 bump `φ`. It is smooth on the whole space (`contDiff_smoothField`), and where the bump ball lies
 in `Ω` it differentiates like the weak derivatives (`gradient_smoothField`,
 `fderiv_smoothField`). -/
-@[expose] def smoothField [HasContDiffBump E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+def smoothField [HasContDiffBump E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     (phi : ContDiffBump (0 : E)) (f : Lp F p (mu.restrict Omega)) : E → F :=
   phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] (Omega : Set E).indicator (f : E → F)
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure] [Fact (1 ≤ p)] in
+/-- `smoothField` is the convolution of the normalized bump with the zero extension. -/
+theorem smoothField_def [HasContDiffBump E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (phi : ContDiffBump (0 : E)) (f : Lp F p (mu.restrict Omega)) :
+    smoothField phi f =
+      phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] (Omega : Set E).indicator (f : E → F) :=
+  (rfl)
 
 /-- The mollification of a zero-extended `Lᵖ` field is smooth. -/
 theorem contDiff_smoothField [HasContDiffBump E] {F : Type*} [NormedAddCommGroup F]
@@ -206,6 +215,30 @@ theorem contDiff_smoothField [HasContDiffBump E] {F : Type*} [NormedAddCommGroup
   exact phi.hasCompactSupport_normed.contDiff_convolution_left
     (ContinuousLinearMap.lsmul ℝ ℝ) phi.contDiff_normed (hmem.locallyIntegrable Fact.out)
 
+omit [Fact (1 ≤ p)] in
+/-- A mollified field vanishes at every point whose bump ball misses the set off which the field
+vanishes. -/
+theorem smoothField_eq_zero [HasContDiffBump E] {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (phi : ContDiffBump (0 : E)) {K : Set E} (f : Lp F p (mu.restrict Omega))
+    (hf : ∀ᵐ x ∂mu.restrict Omega, x ∉ K → f x = 0) {y : E}
+    (hy : y ∉ K + Metric.closedBall (0 : E) phi.rOut) :
+    smoothField phi f y = 0 := by
+  have hae : (Omega : Set E).indicator (f : E → F) =ᵐ[mu]
+      K.indicator ((Omega : Set E).indicator (f : E → F)) := by
+    filter_upwards [(ae_restrict_iff' Omega.isOpen.measurableSet).1 hf] with x hx
+    by_cases hxK : x ∈ K
+    · rw [indicator_of_mem hxK]
+    · rw [indicator_of_notMem hxK]
+      by_cases hxO : x ∈ (Omega : Set E)
+      · rw [indicator_of_mem hxO, hx hxO hxK]
+      · exact indicator_of_notMem hxO _
+  rw [smoothField_def, convolution_congr _ (Filter.EventuallyEq.refl _ _) hae]
+  refine Function.notMem_support.1 fun hmem => hy ?_
+  obtain ⟨a, ha, b, hb, rfl⟩ := support_convolution_subset _ hmem
+  rw [ContDiffBump.support_normed_eq] at ha
+  have hbK : b ∈ K := support_indicator_subset hb
+  exact ⟨b, hbK, a, Metric.ball_subset_closedBall ha, add_comm b a⟩
+
 /-- At a point whose bump ball lies in `Ω`, the derivative of the mollified `k`th iterated
 weak-gradient field is the mollified `(k+1)`st field. -/
 theorem fderiv_smoothField [HasContDiffBump E] (k : ℕ) (u : Wkp mu Omega p (k + 2))
@@ -213,7 +246,7 @@ theorem fderiv_smoothField [HasContDiffBump E] (k : ℕ) (u : Wkp mu Omega p (k 
     (hx : Metric.closedBall x phi.rOut ⊆ Omega) :
     fderiv ℝ (smoothField phi (iteratedGradient k (lowerOrder (k + 1) u))) x =
       smoothField phi (iteratedGradient (k + 1) u) x := by
-  simpa only [smoothField, convolution_flip] using
+  simpa only [smoothField_def, convolution_flip] using
     fderiv_indicator_convolution_normed_iteratedGradient k u phi x hx
 
 /-- At a point whose bump ball lies in `Ω`, the gradient of the mollified value of a first-order
@@ -227,14 +260,14 @@ theorem gradient_smoothField [HasContDiffBump E] (u : Wkp mu Omega p 1)
   rw [toDual_gradient]
   have hd := fderiv_indicator_convolution_normed_value u phi x hx
   rw [convolution_flip, convolution_flip] at hd
-  rw [smoothField, hd]
+  rw [smoothField_def, hd]
   have hmem := (memLp_indicator_iff_restrict Omega.isOpen.measurableSet.nullMeasurableSet).2
     (Lp.memLp (iteratedGradient 0 u))
   have hi := (phi.hasCompactSupport_normed (μ := mu)).convolutionExists_left
     (ContinuousLinearMap.lsmul ℝ ℝ) phi.continuous_normed (hmem.locallyIntegrable Fact.out) x
   -- Passing the Riesz map through the integral identifies the vector convolution's dual.
   symm
-  rw [smoothField, convolution_def]
+  rw [smoothField_def, convolution_def]
   refine ((InnerProductSpace.toDual ℝ E).toLinearIsometry.toContinuousLinearMap
     |>.integral_comp_comm hi).symm.trans ?_
   apply integral_congr_ae

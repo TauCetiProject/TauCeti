@@ -54,30 +54,6 @@ local instance : (mu.restrict (univ : Set E)).IsAddHaarMeasure := by
   rw [Measure.restrict_univ]
   infer_instance
 
-omit [Fact (1 ≤ p)] in
-/-- A mollified field vanishes at every point whose bump ball misses the set off which the field
-vanishes. -/
-private theorem smoothField_eq_zero {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (phi : ContDiffBump (0 : E)) {K : Set E} (f : Lp F p (mu.restrict Omega))
-    (hf : ∀ᵐ x ∂mu.restrict Omega, x ∉ K → f x = 0) {y : E}
-    (hy : y ∉ K + closedBall (0 : E) phi.rOut) :
-    smoothField phi f y = 0 := by
-  have hae : (Omega : Set E).indicator (f : E → F) =ᵐ[mu]
-      K.indicator ((Omega : Set E).indicator (f : E → F)) := by
-    filter_upwards [(ae_restrict_iff' Omega.isOpen.measurableSet).1 hf] with x hx
-    by_cases hxK : x ∈ K
-    · rw [indicator_of_mem hxK]
-    · rw [indicator_of_notMem hxK]
-      by_cases hxO : x ∈ (Omega : Set E)
-      · rw [indicator_of_mem hxO, hx hxO hxK]
-      · exact indicator_of_notMem hxO _
-  rw [smoothField, convolution_congr _ (EventuallyEq.refl _ _) hae]
-  refine Function.notMem_support.1 fun hmem => hy ?_
-  obtain ⟨a, ha, b, hb, rfl⟩ := support_convolution_subset _ hmem
-  rw [ContDiffBump.support_normed_eq] at ha
-  have hbK : b ∈ K := support_indicator_subset hb
-  exact ⟨b, hbK, a, ball_subset_closedBall ha, add_comm b a⟩
-
 /-- The translated mollification of the value of `u`, as a test function on the whole space. -/
 private def shiftTest (phi : ContDiffBump (0 : E)) (h : E) {K : Set E} (hK : IsCompact K)
     (k : ℕ) (u : Wkp mu Omega p k)
@@ -102,13 +78,6 @@ private theorem shiftTest_lowerOrder (phi : ContDiffBump (0 : E)) (h : E) {K : S
     shiftTest phi h hK k (lowerOrder k u) hu' = shiftTest phi h hK (k + 1) u hu := by
   ext x
   simp only [shiftTest_apply, value_succ]
-
-/-- Every iterated weak derivative of a function vanishing off a closed set vanishes off it. -/
-private theorem iteratedGradient_ae_eq_zero_of_isClosed {K : Set E} (hK : IsClosed K) (k : ℕ)
-    (u : Wkp mu Omega p (k + 1))
-    (hu : ∀ᵐ x ∂mu.restrict Omega, x ∉ K → value (k + 1) u x = 0) :
-    ∀ᵐ x ∂mu.restrict Omega, x ∉ K → iteratedGradient k u x = 0 :=
-  iteratedGradient_ae_eq_zero_of_value_ae_eq_zero_of_isOpen k u hK.isOpen_compl hu
 
 /-- The ball condition: for every point of `Ω`, the translated bump ball either stays inside
 `Ω` or misses `K`. -/
@@ -143,7 +112,9 @@ private theorem gradient_shifted_smoothField (phi : ContDiffBump (0 : E)) (h : E
     exact gradient_smoothField u phi (x + h) hx
   · rw [(shifted_smoothField_eventuallyEq_zero phi h hK (value 1 u) hu hx).gradient_eq,
       gradient_fun_const,
-      smoothField_eq_zero phi _ (iteratedGradient_ae_eq_zero_of_isClosed hK.isClosed 0 u hu)
+      smoothField_eq_zero phi _
+        (iteratedGradient_ae_eq_zero_of_value_ae_eq_zero_of_isOpen _ _
+          hK.isClosed.isOpen_compl hu)
         (notMem_add_closedBall_zero_of_disjoint hx)]
 
 private theorem fderiv_shifted_smoothField (phi : ContDiffBump (0 : E)) (h : E) {K : Set E}
@@ -159,10 +130,12 @@ private theorem fderiv_shifted_smoothField (phi : ContDiffBump (0 : E)) (h : E) 
         value (k + 1) (lowerOrder (k + 1) u) x = 0 := by
       simpa only [value_succ] using hu
     rw [(shifted_smoothField_eventuallyEq_zero phi h hK _
-        (iteratedGradient_ae_eq_zero_of_isClosed hK.isClosed k _ hlow) hx).fderiv_eq,
+        (iteratedGradient_ae_eq_zero_of_value_ae_eq_zero_of_isOpen _ _
+          hK.isClosed.isOpen_compl hlow) hx).fderiv_eq,
       fderiv_const_apply,
       smoothField_eq_zero phi _
-        (iteratedGradient_ae_eq_zero_of_isClosed hK.isClosed (k + 1) u hu)
+        (iteratedGradient_ae_eq_zero_of_value_ae_eq_zero_of_isOpen _ _
+          hK.isClosed.isOpen_compl hu)
         (notMem_add_closedBall_zero_of_disjoint hx)]
 
 /-- On `Ω`, the classical derivative fields of the shifted test function are the shifted
@@ -216,7 +189,7 @@ private theorem shiftAverage_ae {F : Type*} [NormedAddCommGroup F] [NormedSpace 
   have hshift' := hshift.filter_mono
     (ae_mono (Measure.restrict_mono_set mu (subset_univ (Omega : Set E))))
   exact (Lp.coeFn_LpToLpOfMeasureLeSMul _ _ _).trans (by
-    simpa only [Measure.restrict_univ, smoothField, Function.comp_def] using hshift')
+    simpa only [Measure.restrict_univ, smoothField_def, Function.comp_def] using hshift')
 
 private theorem tendsto_shiftAverage {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     [CompleteSpace F] (hp : p ≠ ∞) {I : Type*} {l : Filter I} {phi : I → ContDiffBump (0 : E)}
@@ -278,46 +251,20 @@ private theorem tendsto_restrictL_shiftTest (hp : p ≠ ∞) {K : Set E} (hK : I
       Tendsto (fun i => restrictL (le_top : Omega ≤ ⊤) k
         (ofTestFunctionₗ (mu := mu) (p := p) k (shiftTest (phi i) (h i) hK k u hu)))
         l (𝓝 u) := by
-  intro k
-  -- Orders zero and one use convergence of the value and gradient in `Lᵖ`; successive
-  -- orders use the two components of the closed weak-derivative graph.
-  induction k using Nat.twoStepInduction with
-  | zero =>
-      intro u hu
-      have h' := tendsto_shiftAverage hp hphi hh (value 0 u)
-      simp only [value_zero] at h'
-      convert h' using 1
-      funext i
-      simpa only [value_zero] using value_restrictL_shiftTest hp (phi i) (h i) hK 0 u hu
-  | one =>
-      intro u hu
-      refine W1p.tendsto_iff_value_gradient.2 ⟨?_, ?_⟩
-      · have h' := tendsto_shiftAverage hp hphi hh (value 1 u)
-        simp only [value_one] at h'
-        convert h' using 1
-        funext i
-        simpa only [value_one] using value_restrictL_shiftTest hp (phi i) (h i) hK 1 u hu
-      · have h' := tendsto_shiftAverage hp hphi hh (iteratedGradient 0 u)
-        simp only [iteratedGradient_zero] at h'
-        convert h' using 1
-        funext i
-        simpa only [iteratedGradient_zero] using
-          iteratedGradient_restrictL_shiftTest hp (phi i) (h i) hK (hball i) 0 u hu
-  | more k _ ih =>
-      intro u hu
-      have hlow : ∀ᵐ x ∂mu.restrict Omega, x ∉ K →
-          value (k + 1) (lowerOrder (k + 1) u) x = 0 := by
-        simpa only [value_succ] using hu
-      rw [tendsto_iff_lowerOrder_iteratedGradient (k + 1)]
-      constructor
-      · have h' := ih (lowerOrder (k + 1) u) hlow
-        simp_rw [shiftTest_lowerOrder _ _ hK (k + 1) u hu hlow] at h'
-        convert h' using 1
-        funext i
-        rw [lowerOrder_restrictL, lowerOrder_ofTestFunctionₗ]
-      · have h' := tendsto_shiftAverage hp hphi hh (iteratedGradient (k + 1) u)
-        simpa only [← iteratedGradient_restrictL_shiftTest hp _ _ hK (hball _) (k + 1) u hu]
-          using h'
+  have hlow : ∀ (k : ℕ) (u : Wkp mu Omega p (k + 1)),
+      (∀ᵐ x ∂mu.restrict Omega, x ∉ K → value (k + 1) u x = 0) →
+        ∀ᵐ x ∂mu.restrict Omega, x ∉ K → value k (lowerOrder k u) x = 0 := fun k u hu => by
+    simpa only [value_succ] using hu
+  refine tendsto_of_tendsto_iteratedGradient hlow (w := fun _ u => u)
+    (fun k u hu i => ?_) (fun _ _ => rfl) (fun u hu => ?_) (fun k u hu => ?_)
+  · rw [lowerOrder_restrictL, lowerOrder_ofTestFunctionₗ, shiftTest_lowerOrder _ _ hK k u hu]
+  · have h' := tendsto_shiftAverage hp hphi hh (value 0 u)
+    simp only [value_zero] at h'
+    convert h' using 1
+    funext i
+    simpa only [value_zero] using value_restrictL_shiftTest hp (phi i) (h i) hK 0 u hu
+  · simpa only [← iteratedGradient_restrictL_shiftTest hp _ _ hK (hball _) k u hu] using
+      tendsto_shiftAverage hp hphi hh (iteratedGradient k u)
 
 /-- **Shifted mollification up to the boundary.** Let `1 ≤ p < ∞` and let `u ∈ W^{k,p}(Ω)`
 vanish almost everywhere off a compact set `K`. Suppose that translations `h i → 0` and bumps
