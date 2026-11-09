@@ -34,12 +34,13 @@ complex-linear part depends continuously on `Ψ`
 (`ContinuousLinearMap.continuous_complexLinearPart`), so a continuous family of real-linear
 operators has a continuous family of complex-linear parts.
 
-For a real-linear map `Ψ` of a complex inner product space preserving the standard symplectic form
-`Im ⟪·, ·⟫`, the complex-linear part `P` and the complex-antilinear part `Ψ - P` satisfy
-`‖P z‖² = ‖z‖² + ‖Ψ z - P z‖²` (`ContinuousLinearMap.norm_sq_complexLinearPart_apply`). So the
-complex-linear part of a linear symplectic map is injective, and in finite dimension it is a
-complex-linear automorphism (`ContinuousLinearMap.complexLinearPartEquiv`). This is how the graph
-of a linear symplectic map is moved into place by complex-linear automorphisms in
+For a real-linear map `Ψ` between complex inner product spaces preserving the standard
+symplectic form `Im ⟪·, ·⟫`, the complex-linear part `P` and the complex-antilinear part `Ψ - P`
+satisfy `‖P z‖² = ‖z‖² + ‖Ψ z - P z‖²` (`ContinuousLinearMap.norm_sq_complexLinearPart_apply`).
+So the complex-linear part of a linear symplectic map is injective, and for an endomorphism of a
+finite-dimensional space it is a complex-linear automorphism
+(`ContinuousLinearMap.complexLinearPartEquiv`). This is how the graph of a linear symplectic map
+is moved into place by complex-linear automorphisms in
 `TauCeti.LinearAlgebra.TotallyReal.Maslov.Symplectic`.
 
 ## Main declarations
@@ -50,6 +51,8 @@ of a linear symplectic map is moved into place by complex-linear automorphisms i
 * `ContinuousLinearMap.complexLinearPart_restrictScalars_comp`,
   `ContinuousLinearMap.complexLinearPart_comp_restrictScalars`: compatibility with composition by
   complex-linear operators.
+* `ContinuousLinearMap.restrictScalars_complexLinearPart`: the underlying real-linear operator
+  `½ (Ψ - i ∘ Ψ ∘ i)`.
 * `ContinuousLinearMap.continuous_complexLinearPart`: continuity in the operator.
 * `ContinuousLinearMap.norm_sq_complexLinearPart_apply`: the norm identity for a linear map
   preserving `Im ⟪·, ·⟫`.
@@ -137,8 +140,9 @@ theorem complexLinearPart_comp_restrictScalars (Ψ : F →L[ℝ] G) (f : E →L[
   ext v
   simp [map_smul]
 
-/-- The real-linear operator underlying the complex-linear part. -/
-private theorem restrictScalars_complexLinearPart (Ψ : E →L[ℝ] F) :
+/-- The real-linear operator underlying the complex-linear part is
+`½ (Ψ - i ∘ Ψ ∘ i)`. -/
+theorem restrictScalars_complexLinearPart (Ψ : E →L[ℝ] F) :
     Ψ.complexLinearPart.restrictScalars ℝ =
       (2⁻¹ : ℝ) • (Ψ - (Complex.I • ContinuousLinearMap.id ℝ F).comp
         (Ψ.comp (Complex.I • ContinuousLinearMap.id ℝ E))) := by
@@ -161,11 +165,12 @@ theorem continuous_complexLinearPart :
 
 section Symplectic
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V]
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W]
 
 /-- For a real-linear map `Ψ` preserving the symplectic form `Im ⟪·, ·⟫`, the complex-linear part
 `P` and the complex-antilinear part `Ψ - P` satisfy `‖P z‖² = ‖z‖² + ‖Ψ z - P z‖²`. -/
-theorem norm_sq_complexLinearPart_apply {Ψ : V →L[ℝ] V}
+theorem norm_sq_complexLinearPart_apply {Ψ : V →L[ℝ] W}
     (hΨ : ∀ x y, (⟪Ψ x, Ψ y⟫_ℂ).im = (⟪x, y⟫_ℂ).im) (z : V) :
     ‖Ψ.complexLinearPart z‖ ^ 2 = ‖z‖ ^ 2 + ‖Ψ z - Ψ.complexLinearPart z‖ ^ 2 := by
   set a := Ψ.complexLinearPart z
@@ -182,12 +187,13 @@ theorem norm_sq_complexLinearPart_apply {Ψ : V →L[ℝ] V}
   simp only [inner_add_left, inner_sub_right, inner_smul_right, Complex.add_im, Complex.sub_im,
     Complex.mul_im, Complex.I_re, Complex.I_im, zero_mul, one_mul, zero_add] at key
   rw [← inner_conj_symm a b] at key
-  have hnorm (v : V) : (⟪v, v⟫_ℂ).re = ‖v‖ ^ 2 := by simpa using inner_self_eq_norm_sq (𝕜 := ℂ) v
-  simp only [Complex.add_re, Complex.conj_re, hnorm] at key
+  have hV (v : V) : (⟪v, v⟫_ℂ).re = ‖v‖ ^ 2 := by simpa using inner_self_eq_norm_sq (𝕜 := ℂ) v
+  have hW (w : W) : (⟪w, w⟫_ℂ).re = ‖w‖ ^ 2 := by simpa using inner_self_eq_norm_sq (𝕜 := ℂ) w
+  simp only [Complex.add_re, Complex.conj_re, hV, hW] at key
   linarith
 
 /-- The complex-linear part of a real-linear map preserving `Im ⟪·, ·⟫` is injective. -/
-theorem complexLinearPart_injective {Ψ : V →L[ℝ] V}
+theorem complexLinearPart_injective {Ψ : V →L[ℝ] W}
     (hΨ : ∀ x y, (⟪Ψ x, Ψ y⟫_ℂ).im = (⟪x, y⟫_ℂ).im) :
     Function.Injective Ψ.complexLinearPart := by
   refine (injective_iff_map_eq_zero _).2 fun z hz => ?_

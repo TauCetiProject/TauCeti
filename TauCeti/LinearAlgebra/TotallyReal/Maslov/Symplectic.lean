@@ -7,10 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
-public import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
+public import TauCeti.LinearAlgebra.TotallyReal.Graph
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Map
 import Mathlib.Analysis.Normed.Module.FiniteDimension
-import Mathlib.Tactic.Module
 
 /-!
 # The Maslov index of loops of linear symplectic maps through their graphs
@@ -70,153 +69,6 @@ open scoped InnerProductSpace unitInterval
 
 namespace TauCeti
 
-/-! ### The conjugate graph of a real-linear map -/
-
-section Graph
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-
-/-- The **conjugate graph** `{(K z, Ψ z) | z ∈ E}` of a real-linear operator `Ψ` of a complex
-normed space, for a real-linear automorphism `K`. When `K` is a conjugation, this is the graph of
-`Ψ` in `(E, -i) × (E, i)`, read in `E × E` through `K` on the first factor. -/
-def conjGraph (K : E ≃L[ℝ] E) (Ψ : E →L[ℝ] E) : Submodule ℝ (E × E) :=
-  LinearMap.range ((K : E →ₗ[ℝ] E).prod (Ψ : E →ₗ[ℝ] E))
-
-@[simp]
-theorem mem_conjGraph {K : E ≃L[ℝ] E} {Ψ : E →L[ℝ] E} {x : E × E} :
-    x ∈ conjGraph K Ψ ↔ ∃ z, (K z, Ψ z) = x := by
-  simp [conjGraph]
-
-variable {K : E ≃L[ℝ] E}
-
-/-- An automorphism anticommuting with `i` has inverse anticommuting with `i`. -/
-private theorem symm_apply_I_smul (hK : ∀ z, K (Complex.I • z) = -(Complex.I • K z)) (z : E) :
-    K.symm (Complex.I • K z) = -(Complex.I • z) := by
-  rw [K.symm_apply_eq, map_neg, hK, neg_neg]
-
-/-- **The conjugate graph of the identity is maximal totally real.** For an automorphism `K`
-anticommuting with `i`, the subspace `{(K z, z)}` of `E × E` is complementary to its image under
-multiplication by `i`. -/
-theorem isMaximalTotallyReal_conjGraph_id (hK : ∀ z, K (Complex.I • z) = -(Complex.I • K z)) :
-    IsMaximalTotallyReal ((LinearMap.lsmul ℂ (E × E) Complex.I).restrictScalars ℝ)
-      (conjGraph K (ContinuousLinearMap.id ℝ E)) := by
-  rw [isMaximalTotallyReal_iff]
-  constructor
-  · -- `(K z, z) = i (K w, w)` forces `K w = -K w`, so `w = 0`.
-    rw [Submodule.disjoint_def]
-    intro x hx hx'
-    obtain ⟨z, rfl⟩ := mem_conjGraph.1 hx
-    obtain ⟨y, hy, hyx⟩ := Submodule.mem_map.1 hx'
-    obtain ⟨w, rfl⟩ := mem_conjGraph.1 hy
-    simp only [ContinuousLinearMap.coe_id', id_eq, LinearMap.coe_restrictScalars,
-      LinearMap.lsmul_apply, Prod.smul_mk, Prod.mk.injEq] at hyx
-    obtain ⟨h₁, rfl⟩ := hyx
-    rw [hK] at h₁
-    have hKw : K w = 0 := by
-      have h₂ : (2 : ℂ) • (Complex.I • K w) = 0 := by
-        rw [two_smul]
-        nth_rw 1 [h₁]
-        exact neg_add_cancel _
-      simpa using h₂
-    have hw0 : w = 0 := K.injective (by simpa using hKw)
-    simp [hw0]
-  · -- `(u, w)` is `(K a, a) + i (K b, b)` with `a = (w + K⁻¹ u) / 2`, `i b = (w - K⁻¹ u) / 2`.
-    rw [codisjoint_iff, eq_top_iff]
-    rintro ⟨u, w⟩ -
-    have hII (v : E) : Complex.I • Complex.I • v = -v := by
-      rw [smul_smul, Complex.I_mul_I, neg_one_smul]
-    set a : E := (2⁻¹ : ℝ) • (w + K.symm u)
-    set b : E := -(Complex.I • ((2⁻¹ : ℝ) • (w - K.symm u)))
-    refine Submodule.mem_sup.2 ⟨(K a, a), ⟨a, rfl⟩, Complex.I • (K b, b),
-      ⟨(K b, b), ⟨b, rfl⟩, rfl⟩, ?_⟩
-    have ha : K a = (2⁻¹ : ℝ) • (K w + u) := by
-      simp only [a, map_smul, map_add, K.apply_symm_apply]
-    have hb : K b = (2⁻¹ : ℝ) • (Complex.I • (K w - u)) := by
-      simp only [b, map_neg, hK, neg_neg, map_smul, map_sub, K.apply_symm_apply]
-      rw [smul_comm]
-    simp only [Prod.smul_mk, Prod.mk_add_mk, Prod.mk.injEq, ha, hb]
-    constructor
-    · rw [smul_comm Complex.I (2⁻¹ : ℝ), hII]
-      module
-    · simp only [a, b, smul_neg, smul_comm Complex.I (2⁻¹ : ℝ), hII]
-      module
-
-/-- The conjugate graph of `Ψ` is the conjugate graph of the identity moved by the real-linear map
-`(u, w) ↦ (u, Q u + P w)`, where `P` is the complex-linear part of `Ψ` and `Q` that of `Ψ ∘ K⁻¹`. -/
-theorem conjGraph_eq_map (hK : ∀ z, K (Complex.I • z) = -(Complex.I • K z))
-    (Ψ : E →L[ℝ] E) :
-    conjGraph K Ψ = (conjGraph K (ContinuousLinearMap.id ℝ E)).map
-      ((LinearMap.fst ℝ E E).prod
-        (((Ψ.comp (K.symm : E →L[ℝ] E)).complexLinearPart.restrictScalars ℝ :
-            E →ₗ[ℝ] E) ∘ₗ LinearMap.fst ℝ E E +
-          ((Ψ.complexLinearPart.restrictScalars ℝ : E →L[ℝ] E) : E →ₗ[ℝ] E) ∘ₗ
-            LinearMap.snd ℝ E E)) := by
-  -- `Q (K z) + P z = Ψ z`.
-  have key (z : E) : (Ψ.comp (K.symm : E →L[ℝ] E)).complexLinearPart (K z) +
-      Ψ.complexLinearPart z = Ψ z := by
-    simp only [ContinuousLinearMap.complexLinearPart_apply, ContinuousLinearMap.coe_comp,
-      ContinuousLinearEquiv.coe_coe, Function.comp_apply, K.symm_apply_apply]
-    rw [symm_apply_I_smul hK, map_neg]
-    module
-  have hmap (z : E) : ((LinearMap.fst ℝ E E).prod
-      (((Ψ.comp (K.symm : E →L[ℝ] E)).complexLinearPart.restrictScalars ℝ :
-          E →ₗ[ℝ] E) ∘ₗ LinearMap.fst ℝ E E +
-        ((Ψ.complexLinearPart.restrictScalars ℝ : E →L[ℝ] E) : E →ₗ[ℝ] E) ∘ₗ
-          LinearMap.snd ℝ E E)) (K z, z) = (K z, Ψ z) :=
-    Prod.ext rfl (key z)
-  ext x
-  rw [mem_conjGraph, Submodule.mem_map]
-  constructor
-  · rintro ⟨z, rfl⟩
-    exact ⟨(K z, z), mem_conjGraph.2 ⟨z, by simp⟩, hmap z⟩
-  · rintro ⟨_, hy, rfl⟩
-    obtain ⟨z, rfl⟩ := mem_conjGraph.1 hy
-    exact ⟨z, by simpa using (hmap z).symm⟩
-
-end Graph
-
-/-! ### Frames of conjugate graphs -/
-
-section Frame
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-
-/-- The complex-linear automorphism `(u, w) ↦ (u, Q u + P w)` of `E × E`. -/
-private def skewFrame (Q : E →L[ℂ] E) (P : E ≃L[ℂ] E) : (E × E) ≃L[ℂ] (E × E) :=
-  (LinearEquiv.skewProd (LinearEquiv.refl ℂ E) P.toLinearEquiv
-    (Q : E →ₗ[ℂ] E)).toContinuousLinearEquiv
-
-private theorem skewFrame_apply (Q : E →L[ℂ] E) (P : E ≃L[ℂ] E) (x : E × E) :
-    skewFrame Q P x = (x.1, P x.2 + Q x.1) :=
-  (rfl)
-
-private theorem coe_skewFrame (Q : E →L[ℂ] E) (P : E ≃L[ℂ] E) :
-    (skewFrame Q P : E × E →L[ℂ] E × E) =
-      (ContinuousLinearMap.fst ℂ E E).prod
-        ((P : E →L[ℂ] E).comp (ContinuousLinearMap.snd ℂ E E) +
-          Q.comp (ContinuousLinearMap.fst ℂ E E)) := by
-  ext x <;> simp [skewFrame_apply]
-
-/-- The frames `(u, w) ↦ (u, Q u + P w)` depend continuously on `Q` and `P`. -/
-private theorem continuous_skewFrame {X : Type*} [TopologicalSpace X] {Q : X → E →L[ℂ] E}
-    {P : X → E ≃L[ℂ] E} (hQ : Continuous Q) (hP : Continuous fun x => (P x : E →L[ℂ] E)) :
-    Continuous fun x => (skewFrame (Q x) (P x) : E × E →L[ℂ] E × E) := by
-  simp_rw [coe_skewFrame]
-  exact (ContinuousLinearMap.prodL ℂ).continuous.comp
-    (continuous_const.prodMk ((hP.clm_comp continuous_const).add (hQ.clm_comp continuous_const)))
-
-/-- The frame `(u, w) ↦ (u, Q u + P w)` restricts on real scalars to the map of
-`TauCeti.conjGraph_eq_map`. -/
-private theorem restrictScalars_skewFrame (Q : E →L[ℂ] E) (P : E ≃L[ℂ] E) :
-    (((skewFrame Q P).toLinearEquiv : E × E →ₗ[ℂ] E × E).restrictScalars ℝ) =
-      (LinearMap.fst ℝ E E).prod
-        (((Q.restrictScalars ℝ : E →L[ℝ] E) : E →ₗ[ℝ] E) ∘ₗ LinearMap.fst ℝ E E +
-          (((P : E →L[ℂ] E).restrictScalars ℝ : E →L[ℝ] E) : E →ₗ[ℝ] E) ∘ₗ
-            LinearMap.snd ℝ E E) := by
-  ext x <;> simp [skewFrame_apply, add_comm]
-
-end Frame
-
 /-! ### The graph loop of a loop of linear symplectic maps -/
 
 section Loop
@@ -228,25 +80,33 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [FiniteDim
 private def graphFrame (K : E ≃L[ℝ] E) {X : Type*} (Ψ : X → E →L[ℝ] E)
     (hsymp : ∀ x u v, (⟪Ψ x u, Ψ x v⟫_ℂ).im = (⟪u, v⟫_ℂ).im) (c : ℂ) (x : X) :
     (E × E) ≃L[ℂ] (E × E) :=
-  skewFrame (c • ((Ψ x).comp (K.symm : E →L[ℝ] E)).complexLinearPart)
-    ((Ψ x).complexLinearPartEquiv (hsymp x))
+  (ContinuousLinearEquiv.refl ℂ E).skewProd ((Ψ x).complexLinearPartEquiv (hsymp x))
+    (c • ((Ψ x).comp (K.symm : E →L[ℝ] E)).complexLinearPart)
 
 private theorem graphFrame_apply {X : Type*} (Ψ : X → E →L[ℝ] E)
     (hsymp : ∀ x u v, (⟪Ψ x u, Ψ x v⟫_ℂ).im = (⟪u, v⟫_ℂ).im) (c : ℂ) (x : X) (p : E × E) :
     graphFrame K Ψ hsymp c x p =
       (p.1, (Ψ x).complexLinearPart p.2 +
         c • ((Ψ x).comp (K.symm : E →L[ℝ] E)).complexLinearPart p.1) := by
-  rw [graphFrame, skewFrame_apply, ContinuousLinearMap.complexLinearPartEquiv_apply,
-    smul_apply]
+  rw [graphFrame, ContinuousLinearEquiv.skewProd_apply, ContinuousLinearEquiv.refl_apply,
+    ContinuousLinearMap.complexLinearPartEquiv_apply, smul_apply]
 
 private theorem continuous_graphFrame {X : Type*} [TopologicalSpace X] {Ψ : X → E →L[ℝ] E}
     (hΨ : Continuous Ψ) (hsymp : ∀ x u v, (⟪Ψ x u, Ψ x v⟫_ℂ).im = (⟪u, v⟫_ℂ).im) {c : X → ℂ}
     (hc : Continuous c) :
     Continuous fun x => (graphFrame K Ψ hsymp (c x) x : E × E →L[ℂ] E × E) := by
-  refine continuous_skewFrame (hc.smul (ContinuousLinearMap.continuous_complexLinearPart.comp
-    (hΨ.clm_comp continuous_const))) ?_
-  simp only [ContinuousLinearMap.coe_complexLinearPartEquiv]
-  exact ContinuousLinearMap.continuous_complexLinearPart.comp hΨ
+  -- The frame is the block operator `(u, w) ↦ (u, P w + c Q u)`.
+  have h (x : X) : (graphFrame K Ψ hsymp (c x) x : E × E →L[ℂ] E × E) =
+      (ContinuousLinearMap.fst ℂ E E).prod
+        ((Ψ x).complexLinearPart.comp (ContinuousLinearMap.snd ℂ E E) +
+          (c x • ((Ψ x).comp (K.symm : E →L[ℝ] E)).complexLinearPart).comp
+            (ContinuousLinearMap.fst ℂ E E)) := by
+    ext p <;> simp [graphFrame_apply]
+  simp_rw [h]
+  exact (ContinuousLinearMap.prodL ℂ).continuous.comp (continuous_const.prodMk
+    (((ContinuousLinearMap.continuous_complexLinearPart.comp hΨ).clm_comp continuous_const).add
+      ((hc.smul (ContinuousLinearMap.continuous_complexLinearPart.comp
+        (hΨ.clm_comp continuous_const))).clm_comp continuous_const)))
 
 /-- The frame with `c = 1` carries the conjugate graph of the identity onto that of `Ψ x`. -/
 private theorem map_graphFrame_one (hK : ∀ z, K (Complex.I • z) = -(Complex.I • K z))
@@ -255,8 +115,9 @@ private theorem map_graphFrame_one (hK : ∀ z, K (Complex.I • z) = -(Complex.
     (conjGraph K (ContinuousLinearMap.id ℝ E)).map
         (((graphFrame K Ψ hsymp 1 x).toLinearEquiv : E × E →ₗ[ℂ] E × E).restrictScalars ℝ) =
       conjGraph K (Ψ x) := by
-  rw [graphFrame, restrictScalars_skewFrame, conjGraph_eq_map hK (Ψ x), one_smul,
-    ContinuousLinearMap.coe_complexLinearPartEquiv]
+  rw [conjGraph_eq_map hK (Ψ x)]
+  congr 1
+  ext p <;> simp [graphFrame_apply, add_comm]
 
 /-- The frame with `c = 0` is `id × P`, with `P` the complex-linear part. -/
 private theorem graphFrame_zero {X : Type*} (Ψ : X → E →L[ℝ] E)
