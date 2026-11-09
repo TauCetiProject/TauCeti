@@ -166,6 +166,13 @@ theorem detLineEquivOfFinrankEqZero_symm_one (h : finrank R V = 0) :
     (detLineEquivOfFinrankEqZero h).symm 1 = exteriorPower.ιMulti R _ (Fin.elim0 ∘ Fin.cast h) := by
   rw [LinearEquiv.symm_apply_eq, detLineEquivOfFinrankEqZero_ιMulti]
 
+/-- The determinant line of a module of rank zero is spanned by the empty exterior product: every
+element `x` is `detLineEquivOfFinrankEqZero h x` times it. -/
+theorem detLineEquivOfFinrankEqZero_smul_ιMulti (h : finrank R V = 0) (x : detLine R V)
+    (v : Fin (finrank R V) → V) :
+    detLineEquivOfFinrankEqZero h x • exteriorPower.ιMulti R _ v = x :=
+  (detLineEquivOfFinrankEqZero h).injective (by simp)
+
 end TauCeti
 
 namespace LinearMap
@@ -288,11 +295,10 @@ theorem detLineEquivOfBijective_detLineCongrKerCoker [Nontrivial R] (hf : Functi
   induction x using TensorProduct.inductionOn with
   | tmul a φ =>
     -- A rank-zero determinant line is spanned by the empty exterior product.
-    rw [← (TauCeti.detLineEquivOfFinrankEqZero hker).symm_apply_apply a, ← mul_one
-      (TauCeti.detLineEquivOfFinrankEqZero hker a), ← smul_eq_mul, map_smul,
-      TauCeti.detLineEquivOfFinrankEqZero_symm_one, ← TensorProduct.smul_tmul', map_smul,
-      map_smul, map_smul, detLineCongrKerCoker_tmul, LinearEquiv.detLineCongr_ιMulti,
-      detLineEquivOfBijective_tmul_ιMulti hg _ _ w,
+    rw [← TauCeti.detLineEquivOfFinrankEqZero_smul_ιMulti hker a (Fin.elim0 ∘ Fin.cast hker)]
+    simp only [← TensorProduct.smul_tmul', map_smul, detLineCongrKerCoker_tmul,
+      LinearEquiv.detLineCongr_ιMulti]
+    rw [detLineEquivOfBijective_tmul_ιMulti hg _ _ w,
       detLineEquivOfBijective_tmul_ιMulti hf _ _ (e₂.symm ∘ w ∘ Fin.cast e₂.finrank_eq)]
     simp [Function.comp_def]
   | add x y hx hy => rw [map_add, map_add, hx, hy, map_add]

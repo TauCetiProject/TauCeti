@@ -94,8 +94,8 @@ family of `dim (coker T)` vectors of `V`. Let `β ∈ det V` be the exterior pro
 by `v`, and `γ ∈ det V` that of `T ∘ v` followed by `z`. If `ξ` takes the value `1` at the
 exterior product of the classes of `z` in the cokernel, then `φ γ * detLineEndEquiv T (α ⊗ ξ) = φ β`
 for every functional `φ` on `det V`, where `α` is the exterior product of `u`. When `u` is a basis
-of the kernel and the classes of `z` a basis of the cokernel, so that `β` and `γ` are nonzero, this
-says that `detLineEndEquiv T (α ⊗ ξ)` is the ratio of `β` to `γ`. -/
+of the kernel, `T ∘ v` a basis of the range and the classes of `z` a basis of the cokernel, so that
+`β` and `γ` are nonzero, this says that `detLineEndEquiv T (α ⊗ ξ)` is the ratio of `β` to `γ`. -/
 theorem detLineEndEquiv_tmul (u : Fin (finrank K (ker T)) → ker T)
     (v : Fin (finrank K (range T)) → V) (z : Fin (finrank K (V ⧸ range T)) → V)
     {β : TauCeti.detLine K V} (hβ : (β : ExteriorAlgebra K V) =

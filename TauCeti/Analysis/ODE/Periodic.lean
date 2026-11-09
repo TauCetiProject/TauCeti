@@ -83,7 +83,8 @@ this is the sign of `det (1 - P)` or `det (1 + P)`.
   maps `ℝ → X` twisted by `ε` along `d`.
 * `TauCeti.twistedLinearOperator hM hper ε`: the operator `w ↦ w' - M w` between them.
 * `TauCeti.twistedEndpoint hM d ε`: the endpoint map `f ↦ Ψ(d) (∫₀ᵈ Ψ(s)⁻¹ (f s) ds)`.
-* `TauCeti.detLineTwistedLinearOperatorEquiv`: `det L ≃ det (ε - Ψ(d))`.
+* `TauCeti.detLineTwistedLinearOperatorEquiv`: `det L ≃ det (ε - Ψ(d))`, computed on pure
+  tensors by `TauCeti.detLineTwistedLinearOperatorEquiv_tmul`.
 
 ## Main results
 
@@ -585,6 +586,21 @@ def detLineTwistedLinearOperatorEquiv (hM : Continuous M) (hper : Function.Perio
       (ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)).detLine :=
   LinearMap.detLineCongrKerCoker (kerTwistedLinearOperatorEquiv hM hper ε)
     (quotientRangeTwistedLinearOperatorEquiv hM hper hd hε)
+
+open TensorProduct in
+/-- On pure tensors, `TauCeti.detLineTwistedLinearOperatorEquiv` transports the kernel factor along
+evaluation at `0` and the cokernel functional along the inverse of the endpoint map. -/
+@[simp]
+theorem detLineTwistedLinearOperatorEquiv_tmul (hM : Continuous M) (hper : Function.Periodic M d)
+    (hd : 0 < d) (hε : ε ≠ 0)
+    (x : detLine ℝ (LinearMap.ker (twistedLinearOperator hM hper ε)))
+    (φ : Module.Dual ℝ
+      (detLine ℝ (twistedContinuous X d ε ⧸ LinearMap.range (twistedLinearOperator hM hper ε)))) :
+    detLineTwistedLinearOperatorEquiv hM hper hd hε (x ⊗ₜ φ) =
+      LinearEquiv.detLineCongr (kerTwistedLinearOperatorEquiv hM hper ε) x ⊗ₜ
+        (φ ∘ₗ (LinearEquiv.detLineCongr
+          (quotientRangeTwistedLinearOperatorEquiv hM hper hd hε)).symm.toLinearMap) :=
+  LinearMap.detLineCongrKerCoker_tmul _ _ x φ
 
 variable [FiniteDimensional ℝ X]
 
