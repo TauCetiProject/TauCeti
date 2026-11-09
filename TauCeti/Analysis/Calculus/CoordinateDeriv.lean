@@ -193,6 +193,25 @@ theorem _root_.ContinuousLinearMap.coordinateDeriv_comp_left {B : Type*} [Normed
     coordinateDeriv_eq_iteratedFDeriv α hf, L.iteratedFDeriv_comp_left hf.contDiffAt le_rfl,
     ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply]
 
+/-- The first coordinate derivative `∂_j L` of a continuous linear map is the constant `L eⱼ`. -/
+theorem _root_.ContinuousLinearMap.coordinateDeriv_singleton (L : CoordinateSpace n →L[ℝ] A)
+    (j : Fin n) : coordinateDeriv [j] L = fun _ => L (EuclideanSpace.single j 1) := by
+  funext x
+  rw [coordinateDeriv_cons, coordinateDeriv_nil, L.fderiv]
+
+/-- Every coordinate derivative of order at least two of a continuous linear map vanishes. -/
+theorem _root_.ContinuousLinearMap.coordinateDeriv_cons_cons (L : CoordinateSpace n →L[ℝ] A)
+    (j k : Fin n) (α : List (Fin n)) : coordinateDeriv (j :: k :: α) L = 0 := by
+  induction α generalizing j k with
+  | nil =>
+    funext x
+    rw [coordinateDeriv_cons, L.coordinateDeriv_singleton k, fderiv_const_apply]
+    rfl
+  | cons i α ih =>
+    funext x
+    rw [coordinateDeriv_cons, ih k i, Pi.zero_def, fderiv_const_apply]
+    rfl
+
 /-- The Leibniz bound for a coordinate derivative along a word of length `k` of the product
 `ψ • g` of a `C^k` scalar function and a `C^k` function, in terms of the Fréchet derivatives of `ψ`
 and the coordinate derivatives of `g`. -/
