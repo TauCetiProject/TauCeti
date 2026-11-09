@@ -86,7 +86,7 @@ section Evaluation
 variable [FiniteDimensional ℝ F] [IsManifold J 1 N]
   [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)]
 
-local instance : IsManifold I (1 + 1) M := by
+private local instance : IsManifold I (1 + 1) M := by
   rw [one_add_one_eq_two]
   infer_instance
 
