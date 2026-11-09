@@ -37,7 +37,7 @@ namespace NumberField
 variable {K : Type*} [Field K] [NumberField K]
 
 /-- **Prime-discriminant-radicand multiquadratic splitting law.** Let `K` be generated over
-`ℚ` by square roots of the radicands attached to a finite family of integers `D`. For an odd
+`ℚ` by square roots of the radicands attached to a family of integers `D`. For an odd
 prime `p` dividing none of the `D i`, `p` splits completely in `K` exactly when every `D i` is
 a quadratic residue modulo `p`. -/
 theorem ncard_primesOver_primeDiscriminantRadicands_iff {ι : Type*}
@@ -56,7 +56,7 @@ theorem ncard_primesOver_primeDiscriminantRadicands_iff {ι : Type*}
         D hodd).symm
 
 /-- **Prime-discriminant-radicand multiquadratic splitting law, congruence form.** Let `K`
-be generated over `ℚ` by square roots of the radicands attached to a finite family of prime
+be generated over `ℚ` by square roots of the radicands attached to a family of prime
 discriminants `D`. For an odd prime `p` dividing none of the `D i`, `p` splits completely in
 `K` exactly when each even prime discriminant satisfies the corresponding supplementary
 congruence condition, and each odd prime discriminant satisfies the reciprocal Legendre-symbol
