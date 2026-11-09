@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Action
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Action.Basic
 
 /-!
 # The symplectic form in action-angle coordinates
