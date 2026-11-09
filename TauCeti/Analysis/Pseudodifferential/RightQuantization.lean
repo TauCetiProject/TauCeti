@@ -353,19 +353,15 @@ private theorem integral_shift_fderiv_apply {f : CoordinateSpace n × Coordinate
   ContinuousLinearMap.integral_apply (integrable_shift (hf.continuous_fderiv one_ne_zero) hK
     (fun _ hz _ ↦ fderiv_eq_zero_of_fst_notMem hK.isClosed hfK hz) p θ) v
 
-/-- A continuous family of linear maps is a.e. strongly measurable. -/
+/-- A continuous family of linear maps is a.e. strongly measurable.
+
+This instance of `Continuous.aestronglyMeasurable` is stated over an abstract codomain `F`:
+applied directly to the concrete codomain `_ →L[ℝ] V →L[ℂ] W` below, the search for its
+`PseudoMetrizableSpace` instance exceeds the default typeclass heartbeat limit. -/
 private theorem aestronglyMeasurable_of_continuous_clm {H : Type*} [NormedAddCommGroup H]
     [NormedSpace ℝ H] {φ : CoordinateSpace n → H →L[ℝ] F} (hφ : Continuous φ) :
     AEStronglyMeasurable φ :=
   hφ.aestronglyMeasurable
-
-/-- Evaluation in a direction `v` commutes with the integral of a continuous family of linear
-maps dominated by an integrable function. -/
-private theorem integral_clm_apply_of_norm_le {H : Type*} [NormedAddCommGroup H] [NormedSpace ℝ H]
-    {φ : CoordinateSpace n → H →L[ℝ] F} (hφ : Continuous φ) {g : CoordinateSpace n → ℝ}
-    (hg : Integrable g) (hφg : ∀ θ, ‖φ θ‖ ≤ g θ) (v : H) :
-    (∫ θ, φ θ) v = ∫ θ, φ θ v :=
-  ContinuousLinearMap.integral_apply (hg.mono' hφ.aestronglyMeasurable (.of_forall hφg)) v
 
 end Shift
 
@@ -550,9 +546,10 @@ private theorem HasCompactSpatialSupport.fderiv_rightCoeff_apply (hc : c.HasComp
       v.2 j • rightIntegrand (Symbol.frequencyDeriv j c).coefficient p θ :=
     ((hc.frequencyDeriv j).integrable_rightIntegrand p).smul (v.2 j)
   obtain ⟨B, -, hB⟩ := hc.exists_norm_rightDeriv_le p
-  rw [(hc.hasFDerivAt_rightCoeff p).fderiv, integral_clm_apply_of_norm_le
-    (hc.continuous_rightDeriv p) (integrable_decay.const_mul B)
-    (hB p (Metric.mem_ball_self one_pos))]
+  rw [(hc.hasFDerivAt_rightCoeff p).fderiv, ContinuousLinearMap.integral_apply
+    ((integrable_decay.const_mul B).mono'
+      (aestronglyMeasurable_of_continuous_clm (hc.continuous_rightDeriv p))
+      (.of_forall (hB p (Metric.mem_ball_self one_pos)))) v]
   simp_rw [hc.rightDeriv_apply]
   rw [integral_add (integrable_finsetSum _ fun j _ ↦ hx j) (integrable_finsetSum _ fun j _ ↦ hξ j),
     integral_finsetSum _ fun j _ ↦ hx j, integral_finsetSum _ fun j _ ↦ hξ j]
