@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Proximity
 public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.LocallyConstant
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.Analysis.Contour.Winding.StarConvex
+import TauCeti.MeasureTheory.Function.MetricDerivative.Variation
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-!
@@ -18,6 +19,9 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 The ellipse `(a cos t,b sin t)` has signed-area circulation `πab`. Nonzero axes identify it
 with the invertible affine image of the unit circle, whose determinant is `ab`.
+
+Its length over one traversal, as metric total variation, is the integral of its speed, and
+exchanging the axes preserves the speed after reversing the angle about `π / 4`.
 -/
 
 public section
@@ -62,6 +66,27 @@ theorem hasDerivAt_ellipse (a b t : ℝ) :
     rw [ellipse_apply]
     simp
   · simp
+
+/-- Exchanging the axes of the ellipse reflects it in the diagonal and reverses the angle
+about `π / 4`, so the speeds agree. -/
+theorem norm_deriv_ellipse_eq_norm_deriv_ellipse_swap (a b t : ℝ) :
+    ‖deriv (ellipse a b) t‖ = ‖deriv (ellipse b a) (Real.pi / 2 - t)‖ := by
+  rw [(hasDerivAt_ellipse a b t).deriv, (hasDerivAt_ellipse b a _).deriv,
+    Complex.norm_add_mul_I, Complex.norm_add_mul_I, Real.sin_pi_div_two_sub,
+    Real.cos_pi_div_two_sub]
+  ring_nf
+
+/-- The length of one angular traversal of an ellipse, as metric total variation, is its
+integrated speed. -/
+theorem eVariationOn_ellipse_eq_ofReal_integral (a b : ℝ) :
+    eVariationOn (ellipse a b) (Icc 0 (2 * Real.pi)) =
+      ENNReal.ofReal (∫ t in (0 : ℝ)..2 * Real.pi, ‖deriv (ellipse a b) t‖) := by
+  have hAC := absolutelyContinuous_ellipse a b
+  have hlength := hAC.integral_norm_deriv_eq_eVariationOn_toReal Real.two_pi_pos.le
+  rw [uIcc_of_le Real.two_pi_pos.le] at hlength
+  have hfinite : eVariationOn (ellipse a b) (Icc 0 (2 * Real.pi)) ≠ ⊤ := by
+    simpa only [BoundedVariationOn, uIcc_of_le Real.two_pi_pos.le] using hAC.boundedVariationOn
+  rw [hlength, ENNReal.ofReal_toReal hfinite]
 
 /-- The signed-area circulation integrand is constantly `ab/2`. -/
 theorem circulationFun_area_ellipse (a b t : ℝ) :

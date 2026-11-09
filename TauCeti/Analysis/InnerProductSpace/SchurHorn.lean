@@ -390,7 +390,7 @@ theorem exists_orthonormalBasis_re_inner_apply_self_eq_of_mem_convexHull (hT : T
   -- The decreasing rearrangement of `d` is majorized by the spectrum, hence a diagonal of `T`.
   obtain ⟨hle, hsum⟩ := (mem_convexHull_range_comp_perm_iff_of_antitone
     (hT.eigenvalues_antitone hn) (Tuple.antitone_sortDesc d)).1
-      (comp_perm_mem_convexHull_range_comp_perm hd (Tuple.sortDesc d))
+      ((Tuple.sortDesc d).comp_perm_mem_convexHull_range_comp_perm_iff.2 hd)
   obtain ⟨e, he⟩ := mem_of_prefixSum_le_of_sum_eq hK hspec (Tuple.antitone_sortDesc d) hle hsum
   refine ⟨e.reindex (Tuple.sortDesc d), fun k ↦ ?_⟩
   simpa using congrFun he ((Tuple.sortDesc d).symm k)

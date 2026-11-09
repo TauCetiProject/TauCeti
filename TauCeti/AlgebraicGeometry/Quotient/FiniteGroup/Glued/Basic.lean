@@ -66,6 +66,8 @@ also constructed relatively in `TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.R
   quotient projections of a family of invariant affine opens covering `X`.
 * The projection is `G`-invariant (`TauCeti.InvariantQuotient.asIso_hom_projection`), surjective,
   integral, and an epimorphism.
+* `TauCeti.InvariantQuotient.exists_comp_eq_of_comp_projection_eq`: two points of `X` with values
+  in a field and the same image in the quotient differ by an element of `G`.
 * `TauCeti.InvariantQuotient.existsUnique_projection_comp_eq`: the universal property of the
   quotient for arbitrary target schemes.
 
@@ -623,6 +625,32 @@ theorem isPullback_projection_fromSpec (hσ : HasInvariantAffineCover σ)
   · obtain ⟨p, rfl⟩ : x ∈ Set.range U.2.1.fromSpec := U.2.1.range_fromSpec.ge hx
     exact ⟨AffineInvariantQuotient.projection Γ(X, U.1) G p,
       congr($(fromSpec_projection hσ U) p).symm⟩
+
+/-- **Fibres of the quotient on field-valued points are orbits.** Two morphisms from the spectrum
+of a field to `X` with the same image in `X/G` differ by the action of an element of `G`. -/
+theorem exists_comp_eq_of_comp_projection_eq (hσ : HasInvariantAffineCover σ) {K : Type u}
+    [Field K] {x₁ x₂ : Spec (.of K) ⟶ X} (h : x₁ ≫ projection σ hσ = x₂ ≫ projection σ hσ) :
+    ∃ g : G, x₁ ≫ (σ g).asIso.hom = x₂ := by
+  -- Choose an invariant affine open `U` containing the point of `x₁`; then `x₁` factors through
+  -- the chart `Spec Γ(X, U) ⟶ X`, and so does `x₂` by the chart square.
+  let pt : Spec (.of K) := default
+  obtain ⟨U, hU⟩ := hσ (x₁ pt)
+  let := Scheme.sectionsMulSemiringAction σ U.2.2
+  have hpb := isPullback_projection_fromSpec hσ U
+  have hrange : Set.range x₁ ⊆ Set.range U.2.1.fromSpec := by
+    rintro _ ⟨p, rfl⟩
+    rw [Subsingleton.elim p pt, U.2.1.range_fromSpec]
+    exact hU
+  let y₁ := IsOpenImmersion.lift U.2.1.fromSpec x₁ hrange
+  let y₂ := hpb.lift (y₁ ≫ AffineInvariantQuotient.projection Γ(X, U.1) G) x₂
+    (by rw [Category.assoc, hpb.w, IsOpenImmersion.lift_fac_assoc, h])
+  -- The chart points have the same image in the affine invariant quotient.
+  obtain ⟨g, hg⟩ := AffineInvariantQuotient.exists_comp_specComap_eq Γ(X, U.1) G
+    (x₁ := y₁) (x₂ := y₂) (hpb.lift_fst _ _ _).symm
+  refine ⟨g⁻¹, ?_⟩
+  rw [← IsOpenImmersion.lift_fac U.2.1.fromSpec x₁ hrange, Category.assoc,
+    ← specComap_fromSpec U.2.1 U.2.2, ← Category.assoc, hg]
+  exact hpb.lift_snd _ _ _
 
 /-- The base change of the quotient projection along the chart of an invariant affine open `U`
 has a property respecting isomorphisms exactly when the affine invariant quotient projection of `U`
