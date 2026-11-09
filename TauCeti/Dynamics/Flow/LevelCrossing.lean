@@ -49,6 +49,7 @@ level. They use neither smoothness nor transversality.
 * `Flow.continuousOn_levelCrossingTime`: the crossing time is continuous on `C`.
 * `Flow.levelCrossingTime_flow`: flowing for time `t` subtracts `t` from the crossing time.
 * `Flow.isProperMap_restrict_pair`: time translation on `C` is a proper action.
+* `Flow.bijOn_flow_levelCrossingTime`: following the flow is a bijection between two level slices.
 
 ## References
 
@@ -356,6 +357,24 @@ theorem levelSliceHomeomorph_symm
   ext x
   simp only [levelSliceHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.symm_symm,
     Homeomorph.trans_apply]
+
+include hf hanti hex in
+/-- **Following the flow is a bijection between level slices.** Sending a point of the slice
+`C ∩ {f = c}` to the point of its orbit on the level `c'` is a bijection onto `C ∩ {f = c'}`;
+this is `Flow.levelSliceHomeomorph` read on the underlying sets. -/
+theorem bijOn_flow_levelCrossingTime
+    (hex' : ∀ x ∈ unstableSet φ p ∩ stableSet φ q, ∃ t, f (φ t x) = c') :
+    BijOn (fun x ↦ φ (levelCrossingTime φ f c' x) x)
+      ((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c})
+      ((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c'}) := by
+  set e := levelSliceHomeomorph hf hanti hex hex'
+  have he (x) : (e x : X) = φ (levelCrossingTime φ f c' x) x := coe_levelSliceHomeomorph ..
+  refine ⟨fun x hx ↦ ?_, fun x hx x' hx' h ↦ ?_, fun y hy ↦ ?_⟩
+  · simpa only [he] using (e ⟨x, hx⟩).2
+  · exact congrArg Subtype.val (e.injective (a₁ := ⟨x, hx⟩) (a₂ := ⟨x', hx'⟩)
+      (Subtype.ext (by simpa only [he] using h)))
+  · exact ⟨e.symm ⟨y, hy⟩, (e.symm ⟨y, hy⟩).2,
+      by simpa only [he] using congrArg Subtype.val (e.apply_symm_apply ⟨y, hy⟩)⟩
 
 end Connecting
 
