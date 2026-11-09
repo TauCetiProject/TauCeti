@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Bilinear
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
 
 /-!
@@ -18,6 +19,13 @@ bilinear maps, such as the coordinate expressions of metrics. In particular, pul
 value of a continuous family of multilinear maps valued in bilinear maps, along `u` in every
 argument, gives a continuous family
 (`Continuous.pullbackBilinL_compContinuousMultilinearMap`).
+
+Pulling back along continuous linear equivalences keeps a bilinear map `B₀ : V →L V' →L G`
+invertible as a map to the dual (`ContinuousLinearMap.IsInvertible.bilinearComp`), and it
+conjugates the comparison operator `B₀⁻¹ ∘ B` of two such maps by the equivalence in the first
+slot (`ContinuousLinearMap.inverse_bilinearComp_comp_bilinearComp`). This is how operators built
+from a pair of bilinear forms, such as the Morse congruence of a form with a reference form,
+transform under a linear change of coordinates.
 -/
 
 public section
@@ -49,6 +57,42 @@ theorem pullbackBilinL_eq_comp (u : W →L[𝕜] V) :
       (compL 𝕜 W (V →L[𝕜] G) (W →L[𝕜] G) ((compL 𝕜 W V G).flip u)).comp
         ((compL 𝕜 W V (V →L[𝕜] G)).flip u) :=
   (rfl)
+
+section Invertible
+
+variable {V' W' : Type*} [SeminormedAddCommGroup V'] [NormedSpace 𝕜 V']
+  [SeminormedAddCommGroup W'] [NormedSpace 𝕜 W']
+
+/-- Pulling a bilinear map that is invertible, as a map to the space of linear maps on its
+second argument, back along continuous linear equivalences in both arguments keeps it
+invertible. -/
+theorem IsInvertible.bilinearComp {B₀ : V →L[𝕜] V' →L[𝕜] G} (hB₀ : B₀.IsInvertible)
+    (e₁ : W ≃L[𝕜] V) (e₂ : W' ≃L[𝕜] V') :
+    (B₀.bilinearComp (e₁ : W →L[𝕜] V) (e₂ : W' →L[𝕜] V')).IsInvertible := by
+  refine .of_inverse (g := (e₁.symm : V →L[𝕜] W) ∘L B₀.inverse ∘L
+    (compL 𝕜 V' W' G).flip (e₂.symm : V' →L[𝕜] W')) ?_ ?_
+  · ext φ x
+    simp [hB₀.self_apply_inverse]
+  · ext x
+    have h : (B₀.bilinearComp (e₁ : W →L[𝕜] V) (e₂ : W' →L[𝕜] V') x).comp
+        (e₂.symm : V' →L[𝕜] W') = B₀ (e₁ x) := by
+      ext y
+      simp
+    simp [h, hB₀.inverse_apply_self]
+
+/-- Pulling two bilinear maps back along continuous linear equivalences conjugates their
+comparison operator `B₀⁻¹ ∘ B` by the equivalence `e₁` in the first argument. -/
+theorem inverse_bilinearComp_comp_bilinearComp {B₀ : V →L[𝕜] V' →L[𝕜] G}
+    (hB₀ : B₀.IsInvertible) (B : V →L[𝕜] V' →L[𝕜] G) (e₁ : W ≃L[𝕜] V) (e₂ : W' ≃L[𝕜] V') :
+    (B₀.bilinearComp (e₁ : W →L[𝕜] V) (e₂ : W' →L[𝕜] V')).inverse ∘L
+        B.bilinearComp (e₁ : W →L[𝕜] V) (e₂ : W' →L[𝕜] V') =
+      (e₁.symm : V →L[𝕜] W) ∘L (B₀.inverse ∘L B) ∘L (e₁ : W →L[𝕜] V) := by
+  ext w
+  rw [comp_apply, (hB₀.bilinearComp e₁ e₂).inverse_apply_eq]
+  ext w'
+  simp [hB₀.self_apply_inverse]
+
+end Invertible
 
 end ContinuousLinearMap
 
