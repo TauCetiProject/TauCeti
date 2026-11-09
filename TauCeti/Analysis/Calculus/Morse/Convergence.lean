@@ -309,9 +309,7 @@ theorem exists_tendsto_atBot
     (hmaps : MapsTo γ (Iic 0) K) (hdiff : ∀ y ∈ K, DifferentiableAt ℝ f y)
     (hgrad : ContinuousOn (∇ f) K) (hfin : {y ∈ K | ∇ f y = 0}.Finite) :
     ∃ p ∈ K, ∇ f p = 0 ∧ Tendsto γ atBot (𝓝 p) := by
-  have hgrad_neg : ∀ y : E, ∇ (-f) y = -∇ f y := by
-    intro y
-    simpa using (gradient_const_smul (𝕜 := ℝ) (F := E) (f := f) (x := y) (-1))
+  have hgrad_neg : ∀ y : E, ∇ (-f) y = -∇ f y := fun y ↦ gradient_neg
   have hγ_rev := hγ.comp_mul (-1)
   have hdomain : {t : ℝ | t * (-1) ∈ Iic (0 : ℝ)} = Ici 0 := by
     ext t

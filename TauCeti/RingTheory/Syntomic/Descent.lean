@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 import Mathlib.RingTheory.Finiteness.Descent
 import Mathlib.RingTheory.TensorProduct.MvPolynomial
 import TauCeti.RingTheory.Extension.Cotangent.Rank
-import TauCeti.RingTheory.Extension.Presentation.Basic
+import TauCeti.RingTheory.Extension.Generators
 import TauCeti.RingTheory.Extension.Presentation.LocalizationAway
 import TauCeti.RingTheory.Finiteness.Nakayama
 import TauCeti.RingTheory.Ideal.TensorProduct

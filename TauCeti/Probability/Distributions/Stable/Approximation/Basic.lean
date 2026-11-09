@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.CompoundPoisson.Basic
 public import TauCeti.Probability.Distributions.Stable.LevyKhintchine
 public import Mathlib.Probability.Moments.IntegrableExpMul
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Probability.Distributions.Affine
 import TauCeti.Probability.Distributions.CompoundPoisson.Transforms
 
@@ -23,6 +24,7 @@ converge to `exp (stableCharacteristicExponent α β t)`, by the Lévy–Khintch
 
 These laws are the finite-jump approximations used to construct non-Gaussian stable laws by
 letting the cutoff tend to zero.
+Reflection negates the skewness of each compensated approximation.
 
 When the Lévy measure is carried by `{x | t * x ≤ 0}`, the exponential `exp (t * x)` is
 integrable under every approximation, and the moment generating function at `t` is the
@@ -64,6 +66,35 @@ theorem stableCompensatedPoissonMeasure_def (α β ε : ℝ) :
         (cond (stableLevyMeasure α β) {x : ℝ | ε < |x|})).map
         (fun x ↦ x - ∫ y in {y : ℝ | ε < |y|}, sin y ∂stableLevyMeasure α β) := (rfl)
 
+/-- Reflecting a compensated stable approximation negates its skewness parameter. -/
+theorem map_neg_stableCompensatedPoissonMeasure (α β ε : ℝ) :
+    (stableCompensatedPoissonMeasure α β ε).map (fun x ↦ -x) =
+      stableCompensatedPoissonMeasure α (-β) ε := by
+  let ν := stableLevyMeasure α β
+  let A := {x : ℝ | ε < |x|}
+  have hA : MeasurableSet A := measurableSet_lt measurable_const (by fun_prop)
+  have hpre : (fun x : ℝ ↦ -x) ⁻¹' A = A := by
+    ext x
+    simp [A]
+  have hmass : ν A = stableLevyMeasure α (-β) A := by
+    rw [← map_neg_stableLevyMeasure, Measure.map_apply measurable_neg hA, hpre]
+  have hcond : (cond ν A).map (fun x ↦ -x) = cond (stableLevyMeasure α (-β)) A := by
+    have hrestrict := (Measure.restrict_map (μ := ν) measurable_neg hA).symm
+    rw [hpre, map_neg_stableLevyMeasure] at hrestrict
+    rw [ProbabilityTheory.cond, ProbabilityTheory.cond,
+      Measure.map_smul _ measurable_neg.aemeasurable, hrestrict, hmass]
+  have hsin : (∫ y in A, sin y ∂stableLevyMeasure α (-β)) = -∫ y in A, sin y ∂ν := by
+    rw [← map_neg_stableLevyMeasure,
+      setIntegral_map hA (by fun_prop) measurable_neg.aemeasurable, hpre]
+    simp only [sin_neg, integral_neg, ν]
+  rw [stableCompensatedPoissonMeasure_def, stableCompensatedPoissonMeasure_def,
+    ← hmass, hsin, ← hcond, ← map_neg_compoundPoissonMeasure,
+    Measure.map_map (by fun_prop) measurable_neg,
+    Measure.map_map measurable_neg (by fun_prop)]
+  congr 1
+  ext x
+  simp [sub_eq_add_neg, add_comm, ν, A]
+
 /-- Every valid compensated stable approximation is a probability measure. -/
 theorem isProbabilityMeasure_stableCompensatedPoissonMeasure {α β ε : ℝ}
     (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) :
@@ -93,20 +124,12 @@ theorem charFun_stableCompensatedPoissonMeasure {α β ε : ℝ}
     rw [charFun_apply_real, ProbabilityTheory.cond, integral_smul_measure,
       ENNReal.toReal_inv, Complex.real_smul, Complex.ofReal_inv]
     simp only [Complex.ofReal_mul]
-  have hfinite : IsFiniteMeasure (ν.restrict s) :=
-    isFiniteMeasure_stableLevyMeasure_restrict_abs_gt hε
-  have hexp : IntegrableOn (fun x : ℝ ↦ Complex.exp ((t * x : ℝ) * Complex.I)) s ν := by
-    let _ := hfinite
-    exact Integrable.of_bound (by fun_prop) 1 (ae_of_all _ fun x ↦ by
-      simpa using (Complex.norm_exp_ofReal_mul_I (t * x)).le)
-  have hsin : IntegrableOn (fun x : ℝ ↦ sin x) s ν := by
-    let _ := hfinite
-    exact Integrable.of_bound (by fun_prop) 1
-      (ae_of_all _ fun x ↦ by simpa using abs_sin_le_one x)
-  have hone : IntegrableOn (fun _ : ℝ ↦ (1 : ℂ)) s ν := integrableOn_const hm_top
+  have hexp := integrableOn_exp_ofReal_mul_I_of_measure_ne_top (ν := ν) (s := s) t hm_top
+  have hsin := integrableOn_sin_of_measure_ne_top (ν := ν) (s := s) hm_top
   have hsinC : IntegrableOn (fun x : ℝ ↦ (t * sin x : ℝ) * Complex.I) s ν := by
-    apply (hsin.ofReal.const_mul ((t : ℂ) * Complex.I)).congr
+    refine (hsin.ofReal.const_mul ((t : ℂ) * Complex.I)).congr ?_
     exact ae_of_all _ fun x ↦ by simp only [Complex.ofReal_mul]; ring_nf; rfl
+  have hone : IntegrableOn (fun _ : ℝ ↦ (1 : ℂ)) s ν := integrableOn_const hm_top
   -- Translation contributes the compensating phase. The compound-Poisson exponent then
   -- cancels the cutoff mass introduced by normalization.
   rw [stableCompensatedPoissonMeasure_def]
@@ -125,19 +148,7 @@ theorem charFun_stableCompensatedPoissonMeasure {α β ε : ℝ}
   have hsub₂ := integral_sub hexp hone
   simp only [Pi.sub_apply] at hsub₁ hsub₂
   rw [hsub₁, hsub₂, integral_const]
-  have hsin_integral :
-      ∫ x in s, (t * sin x : ℝ) * Complex.I ∂ν = (t * c : ℝ) * Complex.I := by
-    calc
-      _ = ((t : ℂ) * Complex.I) * ∫ x in s, (sin x : ℂ) ∂ν := by
-        rw [← integral_const_mul]
-        congr with x
-        push_cast
-        ring
-      _ = ((t : ℂ) * Complex.I) * (c : ℂ) := by
-        congr 1
-        exact integral_ofReal
-      _ = (t * c : ℝ) * Complex.I := by push_cast; ring
-  rw [hsin_integral]
+  rw [integral_mul_const, integral_complex_ofReal, integral_const_mul]
   have hm_real : (ν s).toReal ≠ 0 := ENNReal.toReal_ne_zero.mpr ⟨hm0, hm_top⟩
   have hinner : inner ℝ (-c) t = -t * c := by rw [Real.inner_apply]; ring
   rw [hinner, measureReal_restrict_apply_univ]

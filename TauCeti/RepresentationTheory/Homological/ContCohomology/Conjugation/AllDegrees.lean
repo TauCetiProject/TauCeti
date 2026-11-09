@@ -287,19 +287,7 @@ theorem res_comp_conjMap [LocallyCompactSpace G] (g : G)
       res V (ofDiscreteModule ℤ G M) n := by
   -- Insert the inner compatible pair `(x ↦ g⁻¹ x g, m ↦ g • m)` of `G`, which induces the
   -- identity.
-  let c : G →ₜ* G := ContinuousMonoidHom.toContinuousMonoidHom (ContinuousAut.conj g⁻¹)
-  have hc (x : G) : c x = g⁻¹ * x * g := by simp [c]
-  let B : TopRep.res (c : G →* G) (ofDiscreteModule ℤ G M) ⟶ ofDiscreteModule ℤ G M :=
-    ofDiscreteModulePair (c : G →* G) (DistribSMul.toAddMonoidHom M g).toIntLinearMap
-      fun x m => by
-        have hx : (c : G →* G) x = g⁻¹ * x * g := hc x
-        simp only [AddMonoidHom.coe_toIntLinearMap, DistribSMul.toAddMonoidHom_apply, hx,
-          smul_smul]
-        congr 1
-        group
-  have hBm (m : M) : B.hom m = g • m := ofDiscreteModulePair_hom_apply _ _ _ m
-  have hB : _root_.ContinuousCohomology.map c B n = 𝟙 _ :=
-    map_eq_id_of_inner g c hc B hBm (ofDiscreteModule_isSmoothDiscrete ℤ G M) n
+  obtain ⟨c, B, hc, hBm, hB⟩ := exists_map_eq_id_conj_smul M g n
   have hφ : (ContinuousMonoidHom.subgroupSubtype U).comp (conjHom U V g hVU) =
       c.comp (ContinuousMonoidHom.subgroupSubtype V) :=
     ContinuousMonoidHom.ext fun v => by simp [hc]
