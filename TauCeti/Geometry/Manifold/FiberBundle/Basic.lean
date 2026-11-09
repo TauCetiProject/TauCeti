@@ -301,6 +301,17 @@ manifold `B × F`. -/
 instance : ChartedSpace (ModelProd HB HF) (ManifoldTotalSpace F E) :=
   ChartedSpace.comp (ModelProd HB HF) (B × F) (TotalSpace F E)
 
+/-- The fibrewise map of a family of composites is `C^n` when both fibrewise maps are. -/
+theorem _root_.ContMDiff.fiberwiseMap_comp {E' E'' : B → Type*}
+    [TopologicalSpace (TotalSpace F E')] [∀ b, TopologicalSpace (E' b)] [FiberBundle F E']
+    [TopologicalSpace (TotalSpace F E'')] [∀ b, TopologicalSpace (E'' b)] [FiberBundle F E'']
+    {ψ : ∀ b, E' b → E'' b} {φ : ∀ b, E b → E' b}
+    (hψ : ContMDiff (IB.prod IF) (IB.prod IF) n (fiberwiseMap (F := F) ψ))
+    (hφ : ContMDiff (IB.prod IF) (IB.prod IF) n (fiberwiseMap (F := F) φ)) :
+    ContMDiff (IB.prod IF) (IB.prod IF) n (fiberwiseMap (F := F) fun b ↦ ψ b ∘ φ b) := by
+  rw [ManifoldTotalSpace.fiberwiseMap_comp]
+  exact hψ.comp hφ
+
 /-- The preferred chart at a point is the trivialization at its base point followed by the
 product of the charts of the base and of the fibre at its coordinates. -/
 theorem chartAt_homeomorph (x : TotalSpace F E) :

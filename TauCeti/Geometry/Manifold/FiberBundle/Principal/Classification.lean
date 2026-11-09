@@ -268,8 +268,8 @@ theorem exists_equivariant_fiberBundleCoreOfGroupCocycle_coordChange :
     hindex hcoc.continuousOn hcoc.contMDiffOn
   have (b : B) : Nonempty (P b) := ⟨(FiberBundle.homeomorphAt G P b).symm 1⟩
   -- The fibre equivalence given by the chart chosen at each base point.
-  refine ⟨fun b ↦ (e (indexAt b)).symmEquivAt (hindex' b), fun b v g ↦ ?_, fun x ↦ ?_⟩
-  · simp only [Trivialization.symmEquivAt_apply, (e (indexAt b)).symm_apply_mul (hindex' b)]
+  refine ⟨fun b ↦ ((e (indexAt b)).equivAt b (hindex' b)).symm, fun b v g ↦ ?_, fun x ↦ ?_⟩
+  · simp only [Trivialization.equivAt_symm_apply, (e (indexAt b)).symm_apply_mul (hindex' b)]
   obtain ⟨⟨b₀, v₀⟩, rfl⟩ := (homeomorph G Z.Fiber).surjective x
   set β := indexAt b₀
   have : MemTrivializationAtlas (Z.localTriv β) := ⟨mem_range_self β⟩
@@ -291,11 +291,11 @@ theorem exists_equivariant_fiberBundleCoreOfGroupCocycle_coordChange :
   have hα := hindex' b
   -- The glued chart `β` reads `(e α).coordChange (e β) b v`, which `(e β)⁻¹` sends to `(e α)⁻¹ v`.
   rw [fiberwiseMap_homeomorph (E := Z.Fiber) (E' := P)
-    fun b ↦ (e (indexAt b)).symmEquivAt (hindex' b)]
+    fun b ↦ ((e (indexAt b)).equivAt b (hindex' b)).symm]
   simp only [Homeomorph.symm_apply_apply, FiberBundleCore.localTriv_apply, Z,
     fiberBundleCoreOfGroupCocycle_coordChange, fiberBundleCoreOfGroupCocycle_indexAt, smul_eq_mul,
     ← (e (indexAt b)).coordChange_eq_mul (e β) hα hy,
-    (e (indexAt b)).symm_mk_coordChange (e β) hα hy, Trivialization.symmEquivAt_apply]
+    (e (indexAt b)).symm_mk_coordChange (e β) hα hy, Trivialization.equivAt_symm_apply]
 
 variable {Q : B → Type*} [TopologicalSpace (TotalSpace G Q)] [∀ b, TopologicalSpace (Q b)]
   [FiberBundle G Q] [∀ b, MulAction Gᵐᵒᵖ (Q b)] [PrincipalBundle G Q]
@@ -345,20 +345,11 @@ theorem NonabelianCechH1.mk_coordChange_eq_mk_coordChange_iff_exists_equivariant
   · rintro ⟨χ, hχ, hχs⟩
     refine ⟨fun b ↦ (ψ b).symm.trans ((χ b).trans (ψ' b)), fun b g p ↦ ?_, ?_⟩
     · simp [hψsymm, hχ, hψ']
-    · -- The fibrewise map of the composite is the composite of the fibrewise maps.
-      convert hψ's.comp (hχs.comp hψinv) using 1
-      exact (fiberwiseMap_comp (E := P) (E' := Z.Fiber) (E'' := Q) (fun b ↦ (χ b).trans (ψ' b))
-        fun b ↦ (ψ b).symm).trans (congrArg (· ∘ _)
-          (fiberwiseMap_comp (E := Z.Fiber) (E' := Z'.Fiber) (E'' := Q) (fun b ↦ ψ' b) fun b ↦ χ b))
+    · exact hψ's.fiberwiseMap_comp (hχs.fiberwiseMap_comp hψinv)
   · rintro ⟨φ, hφ, hφs⟩
     refine ⟨fun b ↦ (ψ b).trans ((φ b).trans (ψ' b).symm), fun b p g ↦ ?_, ?_⟩
     · simp [hψ, hφ, hψ'symm]
-    · -- The fibrewise map of the composite is the composite of the fibrewise maps.
-      convert hψ'inv.comp (hφs.comp hψs) using 1
-      exact (fiberwiseMap_comp (E := Z.Fiber) (E' := P) (E'' := Z'.Fiber)
-        (fun b ↦ (φ b).trans (ψ' b).symm) fun b ↦ ψ b).trans (congrArg (· ∘ _)
-          (fiberwiseMap_comp (E := P) (E' := Q) (E'' := Z'.Fiber) (fun b ↦ (ψ' b).symm)
-            fun b ↦ φ b))
+    · exact hψ'inv.fiberwiseMap_comp (hφs.fiberwiseMap_comp hψs)
 
 end Transition
 

@@ -19,7 +19,7 @@ The coordinate change between two trivializations is jointly continuous in the b
 fibre coordinate over the overlap of their base sets, which makes the transition functions of a
 fibre bundle continuous.
 Finally, the inverse of a trivialization undoes a coordinate change into it, and over a point
-of its base set it is an equivalence between the model fibre and the fibre.
+of its base set a trivialization is an equivalence between the fibre and the model fibre.
 
 ## Main results
 
@@ -31,8 +31,8 @@ of its base set it is an equivalence between the model fibre and the fibre.
   the overlap of the base sets.
 * `Bundle.Trivialization.symm_mk_coordChange`: the inverse of `e₂` undoes the coordinate change
   from `e₁` to `e₂`, landing on the point with the original fibre coordinate in `e₁`.
-* `Bundle.Trivialization.symmEquivAt`: the inverse of a trivialization as an equivalence between
-  the model fibre and the fibre over a point of its base set.
+* `Bundle.Trivialization.equivAt`: a trivialization as an equivalence between the fibre over a
+  point of its base set and the model fibre.
 -/
 
 public section
@@ -208,23 +208,24 @@ theorem symm_mk_coordChange (e₁ e₂ : Trivialization F (π F E)) {b : B} (h�
   rw [e₁.mk_coordChange e₂ h₁ h₂, e₂.symm_apply_apply
     (e₂.mem_source.2 (by rwa [e₁.proj_symm_apply' h₁])), e₁.mk_symm h₁]
 
-/-- The equivalence between the model fibre and the fibre over a point of the base set of a
-trivialization, given by the inverse of the trivialization. -/
-noncomputable def symmEquivAt (e : Trivialization F (π F E)) {b : B} (hb : b ∈ e.baseSet) :
-    F ≃ E b where
-  toFun := e.symm b
-  invFun p := (e ⟨b, p⟩).2
-  left_inv v := by simp [e.apply_mk_symm hb]
-  right_inv := e.symm_apply_apply_mk hb
+/-- The equivalence between the fibre over a point of the base set of a trivialization and the
+model fibre, given by the trivialization. Compare `Bundle.Trivialization.linearEquivAt`. -/
+-- Exposed so that the fibre coordinates built from it reduce to the trivialization by `rfl`.
+@[expose] noncomputable def equivAt (e : Trivialization F (π F E)) (b : B) (hb : b ∈ e.baseSet) :
+    E b ≃ F where
+  toFun p := (e ⟨b, p⟩).2
+  invFun := e.symm b
+  left_inv := e.symm_apply_apply_mk hb
+  right_inv v := by simp [e.apply_mk_symm hb]
 
 @[simp]
-theorem symmEquivAt_apply (e : Trivialization F (π F E)) {b : B} (hb : b ∈ e.baseSet) (v : F) :
-    e.symmEquivAt hb v = e.symm b v :=
+theorem equivAt_apply (e : Trivialization F (π F E)) (b : B) (hb : b ∈ e.baseSet) (p : E b) :
+    e.equivAt b hb p = (e ⟨b, p⟩).2 :=
   (rfl)
 
 @[simp]
-theorem symmEquivAt_symm_apply (e : Trivialization F (π F E)) {b : B} (hb : b ∈ e.baseSet)
-    (p : E b) : (e.symmEquivAt hb).symm p = (e ⟨b, p⟩).2 :=
+theorem equivAt_symm_apply (e : Trivialization F (π F E)) (b : B) (hb : b ∈ e.baseSet) (v : F) :
+    (e.equivAt b hb).symm v = e.symm b v :=
   (rfl)
 
 end CoordChange
