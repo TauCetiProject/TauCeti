@@ -25,9 +25,9 @@ is needed.
 
 In particular, for a rescaling `z ↦ f (a • z)` the `i`-th derivative at `x` is `a ^ i` times that
 of `f` at `a • x`, again without any differentiability of `f`
-(`TauCeti.iteratedFDeriv_comp_const_smul_apply`). A Hölder bound on a set `t` for `g` or for the
-`i`-th derivative of `f` transfers to the rescaled map on any set that rescaling maps into `t`
-(`HolderOnWith.comp_const_smul`, `TauCeti.holderOnWith_iteratedFDeriv_comp_const_smul`).
+(`TauCeti.iteratedFDeriv_comp_const_smul_apply`). A Hölder bound on a set `t` for the `i`-th
+derivative of `f` transfers to the rescaled map on any set that rescaling maps into `t`
+(`TauCeti.holderOnWith_iteratedFDeriv_comp_const_smul`).
 -/
 
 public section
@@ -133,15 +133,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 open scoped NNReal
-
-/-- If `g` is `r`-Hölder with constant `C` on `t` and rescaling by `a` maps `s` into `t`, then
-`z ↦ g (a • z)` is `r`-Hölder on `s` with constant `C ‖a‖ ^ r`. -/
-theorem HolderOnWith.comp_const_smul {X : Type*} [PseudoMetricSpace X] {g : E → X} {C r : ℝ≥0}
-    {s t : Set E} (hg : HolderOnWith C r g t) (a : 𝕜) (hst : Set.MapsTo (a • ·) s t) :
-    HolderOnWith (C * ‖a‖₊ ^ (r : ℝ)) r (fun z ↦ g (a • z)) s := by
-  have h := hg.comp ((lipschitzWith_smul a).holderWith.holderOnWith s) hst
-  rw [mul_one] at h
-  exact h
 
 namespace TauCeti
 

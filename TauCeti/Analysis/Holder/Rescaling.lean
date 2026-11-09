@@ -14,11 +14,15 @@ import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
-# Rescaling a Beltrami coefficient to small Hölder norm
+# Rescaling a map vanishing at the origin to small Hölder norm
 
-In the Beltrami proof of the existence of isothermal coordinates, an almost complex structure is
-first written in a chart through its Beltrami coefficient `μ`, then normalized by a real-linear
-change of coordinates so that `μ 0 = 0` (the normalized structure at `0` is the standard one by
+A map `μ` that vanishes at `0` and is Hölder near `0`, once rescaled and cut off as
+`z ↦ χ z • μ (ε • z)`, becomes small in Hölder norm as `ε → 0`.
+
+The motivating application is the Beltrami coefficient. In the Beltrami proof of the existence
+of isothermal coordinates, an almost complex structure is first written in a chart through its
+Beltrami coefficient `μ`, then normalized by a real-linear change of coordinates so that
+`μ 0 = 0` (the normalized structure at `0` is the standard one by
 `TauCeti.Beltrami.transport_linearEquiv_eq_std`, whose coefficient vanishes by
 `TauCeti.Beltrami.coefficientEquiv_std`), and finally rescaled to
 
