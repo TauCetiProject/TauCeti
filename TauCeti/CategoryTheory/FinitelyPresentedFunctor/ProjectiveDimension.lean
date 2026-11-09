@@ -58,9 +58,6 @@ abbrev modYoneda : C ⥤ (isFinitelyPresentedFunctor C).FullSubcategory :=
   (isFinitelyPresentedFunctor C).lift preadditiveYoneda
     isFinitelyPresentedFunctor_preadditiveYoneda_obj
 
-instance : (modYoneda : C ⥤ _).Additive where
-  map_add := ObjectProperty.hom_ext _ preadditiveYoneda.map_add
-
 /-- The Yoneda embedding of `C` into `mod C` preserves small limits, since `preadditiveYoneda`
 does and the inclusion of `mod C` into the functor category reflects them. -/
 instance (J : Type*) [Category* J] [Small.{v} J] :
