@@ -88,23 +88,9 @@ private theorem iteratedGradient_localTest (chi : 𝓓(Omega, ℝ))
       iteratedGradientTestFunction (localTest chi phi (k + 1) u) k x =
         smoothField phi (iteratedGradient k u) x := by
   intro k u x hx
-  -- On the open set `U` the test function is the mollified value, and so are its derivatives.
-  have heq : ∀ j, ∀ y ∈ U, iteratedGradientChain (localTest chi phi (k + 1) u : E → ℝ) j y =
-      iteratedGradientChain (smoothField phi (value (k + 1) u)) j y := by
-    intro j
-    induction j with
-    | zero =>
-        intro y hy
-        simp only [iteratedGradientChain_zero]
-        exact (localTest_eventuallyEq chi hchi phi (k + 1) u y hy).gradient_eq
-    | succ j ih =>
-        intro y hy
-        simp only [iteratedGradientChain_succ]
-        have h : iteratedGradientChain (localTest chi phi (k + 1) u : E → ℝ) j =ᶠ[𝓝 y]
-            iteratedGradientChain (smoothField phi (value (k + 1) u)) j :=
-          Filter.eventually_of_mem (U.isOpen.mem_nhds hy) ih
-        exact h.fderiv_eq
-  rw [iteratedGradientTestFunction_def, heq k x hx]
+  -- Near `x ∈ U` the test function is the mollified value, and so are its derivatives.
+  rw [iteratedGradientTestFunction_def,
+    ((localTest_eventuallyEq chi hchi phi (k + 1) u x hx).iteratedGradientChain k).eq_of_nhds]
   exact iteratedGradientChain_normed_convolution_indicator_value phi U.isOpen hphi k u x hx
 
 /-- The restricted `Lᵖ` class of a mollified zero extension used in the approximation. -/

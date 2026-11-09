@@ -220,8 +220,10 @@ private theorem le_add_mul_add_mul_eLpNorm_iteratedGradientChain_sub [Nonempty �
     filter_upwards [hf, ae_restrict_mem hV.measurableSet] with y hfy hy
     refine (neg_mul_le_sum_mul_inner (H₁ := iteratedGradientChain w 1 y) ha.upper_nonneg
       (ha.abs_apply_le (hVΩ hy)) ha.pos (hD y (hVΩ hy)) hfy).trans_eq ?_
-    rw [iteratedGradientChain_succ, iteratedGradientChain_zero, fderiv_gradient]
-    simp only [inner_hessianOperator_left]
+    -- `H₁` is typed as a continuous linear map, the unfolding of `IteratedGradient _ 1`, so
+    -- the order-one identity is applied by `exact` rather than by rewriting.
+    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ =>
+      congrArg (a y i j * ·) (inner_iteratedGradientChain_one_apply w y _ _)
 
 /-- **The Aleksandrov–Bakelman–Pucci estimate for strong solutions** (Gilbarg–Trudinger,
 Theorem 9.1 without drift). Let `Ω ⊆ ℝⁿ`, `n ≥ 1`, be bounded and open, and let `a` be symmetric

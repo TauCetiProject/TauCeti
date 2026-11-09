@@ -124,6 +124,12 @@ theorem inner_hessianOperator_left (f : E → ℝ) (x v w : E) :
   rw [hessianOperator_eq_continuousLinearMapOfBilin]
   exact continuousLinearMapOfBilin_apply _ _ _
 
+/-- The inner-product characterization of the order-one iterated-gradient field: it is the second
+derivative of `f`. -/
+theorem inner_iteratedGradientChain_one_apply (f : E → ℝ) (x v w : E) :
+    ⟪iteratedGradientChain f 1 x v, w⟫_ℝ = fderiv ℝ (fderiv ℝ f) x v w :=
+  inner_hessianOperator_left f x v w
+
 /-- In an orthonormal basis, the entry of the Hessian operator in row `i` and column `j`
 is the second derivative with the input directions `b j` and `b i`. -/
 theorem _root_.OrthonormalBasis.toMatrix_hessianOperator_apply {ι : Type*} [Fintype ι]

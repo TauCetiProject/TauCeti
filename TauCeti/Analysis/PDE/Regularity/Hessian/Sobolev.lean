@@ -89,8 +89,7 @@ private theorem contraction_compLpL_iteratedGradient_ofTestFunctionₗ_ae_eq
   rw [hx, Matrix.contraction_apply, Wkp.iteratedGradient_ofTestFunctionₗ 1 φ, hHx,
     iteratedGradientTestFunction_def]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-  rw [smul_eq_mul, iteratedGradientChain_succ, iteratedGradientChain_zero, fderiv_gradient,
-    inner_hessianOperator_left]
+  rw [smul_eq_mul, inner_iteratedGradientChain_one_apply]
 
 /-- An `Lᵖ` bound on the classical Hessian of a test function `φ` bounds the weak Hessian of `φ`,
 regarded as an element of `W^{2,p}(ℝⁿ)`. -/

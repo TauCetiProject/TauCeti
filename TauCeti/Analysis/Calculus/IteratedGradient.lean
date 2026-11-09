@@ -35,6 +35,8 @@ normed, complete structures are recovered by unfolding the recursion rather than
 
 * `TauCeti.IteratedGradient`: the basis-free target of an iterated gradient.
 * `TauCeti.iteratedGradientChain`: the classical derivative fields of a scalar function.
+* `Filter.EventuallyEq.iteratedGradientChain`: functions that agree near a point have fields that
+  agree near that point.
 * `TauCeti.contDiffAt_iteratedGradientChain`: the `j`th field of a `Cⁿ` function is
   `Cᵐ` when `m + j + 1 ≤ n`.
 * `TauCeti.hasCompactSupport_iteratedGradientChain`: every field of a compactly supported
@@ -47,7 +49,7 @@ noncomputable section
 
 namespace TauCeti
 
-open scoped ContDiff
+open scoped ContDiff Topology
 
 universe u
 
@@ -116,6 +118,15 @@ theorem iteratedGradientChain_zero (f : F → ℝ) :
 theorem iteratedGradientChain_succ (f : F → ℝ) (j : ℕ) :
     iteratedGradientChain f (j + 1) = fderiv ℝ (iteratedGradientChain f j) :=
   (rfl)
+
+/-- Scalar functions that agree near a point have iterated-gradient fields that agree near that
+point, at every order. -/
+protected theorem _root_.Filter.EventuallyEq.iteratedGradientChain {f g : F → ℝ} {x : F}
+    (h : f =ᶠ[𝓝 x] g) (j : ℕ) :
+    iteratedGradientChain f j =ᶠ[𝓝 x] iteratedGradientChain g j := by
+  induction j with
+  | zero => simpa only [iteratedGradientChain_zero] using h.gradient
+  | succ j ih => simpa only [iteratedGradientChain_succ] using ih.fderiv
 
 /-- The `j`th iterated-gradient field is `C^m` at a point whenever the scalar function
 is `C^n` there with `m + j + 1 ≤ n`. -/
