@@ -12,11 +12,11 @@ public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 /-!
 # Positive-definite functions on groups and unitary representations
 
-A function `φ : G → ℂ` on a group is positive definite when
-`∑ᵢ ∑ⱼ conj (cᵢ) cⱼ φ (gᵢ⁻¹ gⱼ) ≥ 0` for all finite families, that is, when the kernel
-`(g, h) ↦ φ (g⁻¹ * h)` is positive semidefinite in the sense of Mathlib's `Matrix.PosSemidef`
-for matrices indexed by `G`. No topology on `G` is involved: this is the theory for discrete
-groups.
+A function `φ : G → 𝕜` on a group, valued in an `RCLike` field `𝕜` such as `ℝ` or `ℂ`, is
+positive definite when `∑ᵢ ∑ⱼ conj (cᵢ) cⱼ φ (gᵢ⁻¹ gⱼ) ≥ 0` for all finite families, that is,
+when the kernel `(g, h) ↦ φ (g⁻¹ * h)` is positive semidefinite in the sense of Mathlib's
+`Matrix.PosSemidef` for matrices indexed by `G`. No topology on `G` is involved: this is the
+theory for discrete groups.
 
 The coefficients `g ↦ ⟪ξ, π g ξ⟫` of unitary representations are positive definite, and the
 GNS construction shows that every positive-definite function arises this way. The GNS space of
@@ -69,9 +69,9 @@ end ContRepresentation.IsUnitary
 
 namespace Matrix.PosSemidef
 
-universe v
+universe u v
 
-variable {G : Type v} [Group G] {φ : G → ℂ}
+variable {𝕜 : Type u} [RCLike 𝕜] {G : Type v} [Group G] {φ : G → 𝕜}
 
 variable (hφ : (Matrix.of fun g h : G ↦ φ (g⁻¹ * h)).PosSemidef)
 
@@ -84,20 +84,20 @@ def gnsVector (g : G) : hφ.gnsSpace := hφ.kolmogorovFeature g
 
 /-- Inner products of GNS vectors recover the positive-definite function. -/
 @[simp]
-theorem inner_gnsVector (g h : G) : ⟪hφ.gnsVector g, hφ.gnsVector h⟫_ℂ = φ (g⁻¹ * h) :=
+theorem inner_gnsVector (g h : G) : ⟪hφ.gnsVector g, hφ.gnsVector h⟫_𝕜 = φ (g⁻¹ * h) :=
   hφ.inner_kolmogorovFeature g h
 
 /-- The GNS vectors span a dense subspace of the GNS space. -/
 theorem gnsVector_dense :
-    (Submodule.span ℂ (Set.range hφ.gnsVector)).topologicalClosure = ⊤ :=
+    (Submodule.span 𝕜 (Set.range hφ.gnsVector)).topologicalClosure = ⊤ :=
   hφ.kolmogorovFeature_dense
 
 private theorem dense_span_range_gnsVector :
-    Dense (Submodule.span ℂ (Set.range hφ.gnsVector) : Set hφ.gnsSpace) :=
+    Dense (Submodule.span 𝕜 (Set.range hφ.gnsVector) : Set hφ.gnsSpace) :=
   Submodule.dense_iff_topologicalClosure_eq_top.mpr hφ.gnsVector_dense
 
 private theorem gnsVector_mul_dense (g : G) :
-    (Submodule.span ℂ (Set.range fun h ↦ hφ.gnsVector (g * h))).topologicalClosure = ⊤ := by
+    (Submodule.span 𝕜 (Set.range fun h ↦ hφ.gnsVector (g * h))).topologicalClosure = ⊤ := by
   have hrange : Set.range (fun h ↦ hφ.gnsVector (g * h)) = Set.range hφ.gnsVector :=
     (Equiv.mulLeft g).surjective.range_comp hφ.gnsVector
   rw [hrange]
@@ -105,7 +105,7 @@ private theorem gnsVector_mul_dense (g : G) :
 
 /-- Left translation by `g` as a unitary operator on the GNS space, sending `gnsVector h` to
 `gnsVector (g * h)`. It is the action of `g` in `gnsRepresentation`. -/
-private def gnsTranslation (g : G) : hφ.gnsSpace ≃ₗᵢ[ℂ] hφ.gnsSpace :=
+private def gnsTranslation (g : G) : hφ.gnsSpace ≃ₗᵢ[𝕜] hφ.gnsSpace :=
   hφ.kolmogorovEquiv (fun h ↦ hφ.gnsVector (g * h))
     (fun a b ↦ by simp [mul_assoc]) (hφ.gnsVector_mul_dense g)
 
@@ -115,13 +115,13 @@ private theorem gnsTranslation_gnsVector (g h : G) :
   hφ.kolmogorovEquiv_apply _ _ _ h
 
 /-- Two continuous linear operators on the GNS space agree when they agree on the GNS vectors. -/
-private theorem continuousLinearMap_ext {S T : hφ.gnsSpace →L[ℂ] hφ.gnsSpace}
+private theorem continuousLinearMap_ext {S T : hφ.gnsSpace →L[𝕜] hφ.gnsSpace}
     (h : ∀ g, S (hφ.gnsVector g) = T (hφ.gnsVector g)) : S = T :=
   ContinuousLinearMap.ext_on hφ.dense_span_range_gnsVector (by rintro _ ⟨g, rfl⟩; exact h g)
 
 /-- The GNS representation of a positive-definite function on a group: left translation of the
 GNS vectors, `gnsVector h ↦ gnsVector (g * h)`. -/
-def gnsRepresentation : ContRepresentation ℂ G hφ.gnsSpace :=
+def gnsRepresentation : ContRepresentation 𝕜 G hφ.gnsSpace :=
   .ofMonoidHom
     { toFun g := (hφ.gnsTranslation g).toContinuousLinearEquiv
       map_one' := hφ.continuousLinearMap_ext fun h ↦ by simp
@@ -151,38 +151,39 @@ theorem isUnitary_gnsRepresentation : hφ.gnsRepresentation.IsUnitary :=
 /-- A positive-definite function is the coefficient of the GNS vector at the identity in the GNS
 representation. -/
 theorem inner_gnsVector_one_gnsRepresentation (g : G) :
-    ⟪hφ.gnsVector 1, hφ.gnsRepresentation g (hφ.gnsVector 1)⟫_ℂ = φ g := by
+    ⟪hφ.gnsVector 1, hφ.gnsRepresentation g (hφ.gnsVector 1)⟫_𝕜 = φ g := by
   simp
 
 /-- The GNS vector at the identity is cyclic for the GNS representation. -/
 theorem gnsRepresentation_gnsVector_one_dense :
-    (Submodule.span ℂ
+    (Submodule.span 𝕜
       (Set.range fun g ↦ hφ.gnsRepresentation g (hφ.gnsVector 1))).topologicalClosure = ⊤ := by
   simpa only [hφ.gnsRepresentation_gnsVector_one] using hφ.gnsVector_dense
 
 /-- The squared distance between two GNS vectors in terms of the positive-definite function. -/
 theorem norm_gnsVector_sub_sq (g h : G) :
-    ‖hφ.gnsVector g - hφ.gnsVector h‖ ^ 2 = 2 * ((φ 1).re - (φ (g⁻¹ * h)).re) := by
-  rw [@norm_sub_sq ℂ, ← inner_self_eq_norm_sq (𝕜 := ℂ), ← inner_self_eq_norm_sq (𝕜 := ℂ)]
-  simp only [inner_gnsVector, inv_mul_cancel, RCLike.re_to_complex]
+    ‖hφ.gnsVector g - hφ.gnsVector h‖ ^ 2 =
+      2 * (RCLike.re (φ 1) - RCLike.re (φ (g⁻¹ * h))) := by
+  rw [@norm_sub_sq 𝕜, ← inner_self_eq_norm_sq (𝕜 := 𝕜), ← inner_self_eq_norm_sq (𝕜 := 𝕜)]
+  simp only [inner_gnsVector, inv_mul_cancel]
   ring
 
 section Universal
 
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
-  {π : ContRepresentation ℂ G V} (hπ : π.IsUnitary) {ξ : V} (hξ : ∀ g, ⟪ξ, π g ξ⟫_ℂ = φ g)
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [CompleteSpace V]
+  {π : ContRepresentation 𝕜 G V} (hπ : π.IsUnitary) {ξ : V} (hξ : ∀ g, ⟪ξ, π g ξ⟫_𝕜 = φ g)
 
 omit [CompleteSpace V] in
-private theorem inner_apply_apply_of_coeff {π : ContRepresentation ℂ G V} (hπ : π.IsUnitary)
-    {ξ : V} (hξ : ∀ g, ⟪ξ, π g ξ⟫_ℂ = φ g) (g h : G) :
-    ⟪π g ξ, π h ξ⟫_ℂ = φ (g⁻¹ * h) := by
+private theorem inner_apply_apply_of_coeff {π : ContRepresentation 𝕜 G V} (hπ : π.IsUnitary)
+    {ξ : V} (hξ : ∀ g, ⟪ξ, π g ξ⟫_𝕜 = φ g) (g h : G) :
+    ⟪π g ξ, π h ξ⟫_𝕜 = φ (g⁻¹ * h) := by
   rw [← hπ.inner_map_inv_mul, hξ]
 
 /-- The universal property of the GNS representation: if `ξ` is a vector of a unitary
 representation `π` whose coefficient is `φ`, then `gnsVector g ↦ π g ξ` extends to a linear
 isometry of the GNS space into the space of `π`. It intertwines the two representations
 (`Matrix.PosSemidef.gnsIsometry_gnsRepresentation`). -/
-def gnsIsometry : hφ.gnsSpace →ₗᵢ[ℂ] V :=
+def gnsIsometry : hφ.gnsSpace →ₗᵢ[𝕜] V :=
   hφ.kolmogorovIsometry (fun g ↦ π g ξ) (inner_apply_apply_of_coeff hπ hξ)
 
 /-- The GNS isometry sends `gnsVector g` to `π g ξ`. -/
@@ -192,7 +193,7 @@ theorem gnsIsometry_gnsVector (g : G) : hφ.gnsIsometry hπ hξ (hφ.gnsVector g
 
 /-- The GNS isometry is the unique linear isometry sending `gnsVector g` to `π g ξ` for every
 `g`. -/
-theorem eq_gnsIsometry (T : hφ.gnsSpace →ₗᵢ[ℂ] V) (hT : ∀ g, T (hφ.gnsVector g) = π g ξ) :
+theorem eq_gnsIsometry (T : hφ.gnsSpace →ₗᵢ[𝕜] V) (hT : ∀ g, T (hφ.gnsVector g) = π g ξ) :
     T = hφ.gnsIsometry hπ hξ :=
   hφ.kolmogorovIsometry_unique _ _ T hT
 
@@ -209,20 +210,20 @@ theorem gnsIsometry_gnsRepresentation (g : G) (x : hφ.gnsSpace) :
 /-- When `ξ` is cyclic for `π`, the GNS isometry is a linear isometric equivalence: the GNS
 representation is unitarily equivalent to every unitary representation with a cyclic vector
 whose coefficient is `φ`. -/
-def gnsEquiv (hcyc : (Submodule.span ℂ (Set.range fun g ↦ π g ξ)).topologicalClosure = ⊤) :
-    hφ.gnsSpace ≃ₗᵢ[ℂ] V :=
+def gnsEquiv (hcyc : (Submodule.span 𝕜 (Set.range fun g ↦ π g ξ)).topologicalClosure = ⊤) :
+    hφ.gnsSpace ≃ₗᵢ[𝕜] V :=
   hφ.kolmogorovEquiv (fun g ↦ π g ξ) (inner_apply_apply_of_coeff hπ hξ) hcyc
 
 /-- The GNS equivalence sends `gnsVector g` to `π g ξ`. -/
 @[simp]
 theorem gnsEquiv_gnsVector
-    (hcyc : (Submodule.span ℂ (Set.range fun g ↦ π g ξ)).topologicalClosure = ⊤) (g : G) :
+    (hcyc : (Submodule.span 𝕜 (Set.range fun g ↦ π g ξ)).topologicalClosure = ⊤) (g : G) :
     hφ.gnsEquiv hπ hξ hcyc (hφ.gnsVector g) = π g ξ :=
   hφ.kolmogorovEquiv_apply _ _ _ g
 
 /-- The GNS equivalence agrees with the GNS isometry. -/
 theorem coe_gnsEquiv
-    (hcyc : (Submodule.span ℂ (Set.range fun g ↦ π g ξ)).topologicalClosure = ⊤) :
+    (hcyc : (Submodule.span 𝕜 (Set.range fun g ↦ π g ξ)).topologicalClosure = ⊤) :
     ⇑(hφ.gnsEquiv hπ hξ hcyc) = hφ.gnsIsometry hπ hξ := by
   have := hφ.eq_gnsIsometry hπ hξ (hφ.gnsEquiv hπ hξ hcyc).toLinearIsometry
     (hφ.gnsEquiv_gnsVector hπ hξ hcyc)
@@ -230,7 +231,7 @@ theorem coe_gnsEquiv
 
 /-- The GNS equivalence intertwines the GNS representation with `π`. -/
 theorem gnsEquiv_gnsRepresentation
-    (hcyc : (Submodule.span ℂ (Set.range fun g ↦ π g ξ)).topologicalClosure = ⊤) (g : G)
+    (hcyc : (Submodule.span 𝕜 (Set.range fun g ↦ π g ξ)).topologicalClosure = ⊤) (g : G)
     (x : hφ.gnsSpace) :
     hφ.gnsEquiv hπ hξ hcyc (hφ.gnsRepresentation g x) = π g (hφ.gnsEquiv hπ hξ hcyc x) := by
   simpa only [coe_gnsEquiv] using hφ.gnsIsometry_gnsRepresentation hπ hξ g x
@@ -241,18 +242,20 @@ end Matrix.PosSemidef
 
 namespace TauCeti
 
-universe v
+universe u v
 
-variable {G : Type v} [Group G] {φ : G → ℂ}
+variable {𝕜 : Type u} [RCLike 𝕜] {G : Type v} [Group G] {φ : G → 𝕜}
 
 /-- **GNS characterization of positive-definite functions.** A function `φ` on a group is positive
 definite, in the sense that the kernel `(g, h) ↦ φ (g⁻¹ * h)` is positive semidefinite, exactly
-when it is a coefficient `g ↦ ⟪ξ, π g ξ⟫` of a unitary representation `π` on a complex Hilbert
-space. The Hilbert space may be taken in the universe of the group. -/
+when it is a coefficient `g ↦ ⟪ξ, π g ξ⟫` of a unitary representation `π` on a Hilbert space over
+`𝕜`. The Hilbert space may be taken in the universe `max u v` of the scalar field and the group,
+which is the universe of the group when `𝕜` is `ℝ` or `ℂ`. -/
 theorem posSemidef_inv_mul_iff_exists_isUnitary :
     (Matrix.of fun g h : G ↦ φ (g⁻¹ * h)).PosSemidef ↔
-      ∃ (V : Type v) (_ : NormedAddCommGroup V) (_ : InnerProductSpace ℂ V) (_ : CompleteSpace V)
-        (π : ContRepresentation ℂ G V) (ξ : V), π.IsUnitary ∧ ∀ g, φ g = ⟪ξ, π g ξ⟫_ℂ := by
+      ∃ (V : Type (max u v)) (_ : NormedAddCommGroup V) (_ : InnerProductSpace 𝕜 V)
+        (_ : CompleteSpace V)
+        (π : ContRepresentation 𝕜 G V) (ξ : V), π.IsUnitary ∧ ∀ g, φ g = ⟪ξ, π g ξ⟫_𝕜 := by
   refine ⟨fun hφ ↦ ⟨hφ.gnsSpace, inferInstance, inferInstance, inferInstance,
     hφ.gnsRepresentation, hφ.gnsVector 1, hφ.isUnitary_gnsRepresentation,
     fun g ↦ (hφ.inner_gnsVector_one_gnsRepresentation g).symm⟩, ?_⟩
