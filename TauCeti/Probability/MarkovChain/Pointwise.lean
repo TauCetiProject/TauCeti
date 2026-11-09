@@ -76,24 +76,18 @@ theorem tendsto_pow_comp_real_singleton_of_parallelComp_isRecurrent
 aperiodic Markov kernel, if the expected first positive return time to `y` is infinite,
 then the time-`n` mass of `{y}` tends to zero from every initial probability law `ν`.
 The mean assigns infinity to nonreturn, so no recurrence assumption is needed. -/
-theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_top
+theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_meanReturnTime_eq_top
     [Countable α] [IsIrreducible Measure.count κ] (hκ : κ.IsAperiodic) {y : α}
-    (hy : (∫⁻ x, (hittingAfter (fun n x => x n) {y} 1 x).recTopCoe ⊤
-      (fun n => (n : ℝ≥0∞)) ∂markovChainLaw (Measure.dirac y) κ) = ⊤)
+    (hy : κ.meanReturnTime y = ⊤)
     (ν : Measure α) [IsProbabilityMeasure ν] :
     Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) atTop (𝓝 0) := by
-  have hmean : κ.meanReturnTime y = ⊤ := by
-    rw [meanReturnTime_def, ← hy]
-    apply lintegral_congr
-    intro x
-    cases hittingAfter (fun n x => x n) {y} 1 x <;> rfl
   by_cases hr : (κ ∥ₖ κ).IsRecurrent (y, y)
   · let := hκ.isIrreducible_parallelComp hκ
     have hlim := HasLaw.tendsto_integral_visitCount_div_markovChainLaw_dirac
       (HasLaw.id (μ := markovChainLaw (Measure.dirac y) κ))
     apply κ.tendsto_pow_comp_real_singleton_of_parallelComp_isRecurrent hr _ ν
     simpa only [id_eq, integral_div, κ.integral_visitCount_succ_markovChainLaw_dirac,
-      hmean, ENNReal.inv_top, ENNReal.toReal_zero] using hlim
+      hy, ENNReal.inv_top, ENNReal.toReal_zero] using hlim
   · exact κ.tendsto_pow_comp_apply_singleton_of_parallelComp_return_lt_one ν
       (isTransient_iff_return_probability_lt_one.mp (isTransient_iff.mpr hr))
 
@@ -103,19 +97,18 @@ namespace ProbabilityTheory.HasLaw
 
 /-- On any realization of an irreducible aperiodic countable-state chain, the probability
 of occupying an infinite-mean state tends to zero. -/
-theorem tendsto_measureReal_apply_eq_of_isAperiodic_of_lintegral_return_eq_top
+theorem tendsto_measureReal_apply_eq_of_isAperiodic_of_meanReturnTime_eq_top
     {α Ω : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [Countable α]
     [MeasurableSpace Ω] {κ : Kernel α α} [IsMarkovKernel κ]
     [Kernel.IsIrreducible Measure.count κ] {ν : Measure α} [IsProbabilityMeasure ν]
     {P : Measure Ω} {X : ℕ → Ω → α}
     (hX : HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) P)
     (hκ : κ.IsAperiodic) {y : α}
-    (hy : (∫⁻ x, (hittingAfter (fun n x => x n) {y} 1 x).recTopCoe ⊤
-      (fun n => (n : ℝ≥0∞)) ∂markovChainLaw (Measure.dirac y) κ) = ⊤) :
+    (hy : κ.meanReturnTime y = ⊤) :
     Tendsto (fun n : ℕ => P.real {ω | X n ω = y}) atTop (𝓝 0) := by
   have heq (n : ℕ) : P.real {ω | X n ω = y} = ((κ ^ n) ∘ₘ ν).real {y} :=
     (hX.eval_markovChainLaw ν κ n).measureReal_eq (measurableSet_singleton y)
   simp_rw [heq]
-  exact κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_top hκ hy ν
+  exact κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_meanReturnTime_eq_top hκ hy ν
 
 end ProbabilityTheory.HasLaw
