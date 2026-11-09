@@ -206,10 +206,8 @@ every law with finite `p`-moment. -/
 theorem integrable_dist_rpow (hp : p ≠ ∞) (μ : WassersteinSpace p X) (x : X) :
     Integrable (fun y ↦ dist y x ^ p.toReal) ((μ : ProbabilityMeasure X) : Measure X) := by
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
-  have hd : AEStronglyMeasurable (fun y ↦ dist y x) ((μ : ProbabilityMeasure X) : Measure X) :=
-    (continuous_id.dist continuous_const).aestronglyMeasurable
   simpa only [Real.norm_eq_abs, abs_dist] using
-    ((memLp_dist_iff_memLp_edist hd).2 ((hasFiniteMoment μ).memLp
+    (memLp_dist_iff_memLp_edist.2 ((hasFiniteMoment μ).memLp
       measurable_edist_right.aestronglyMeasurable)).integrable_norm_rpow hp0 hp
 
 /-- For a finite exponent, the integral `∫ d(y, x)^p dμ(y)` of the `p`-th power of the distance to
