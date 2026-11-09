@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
-public import TauCeti.LinearAlgebra.RootSystem.Chain
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Chain
 public import TauCeti.LinearAlgebra.RootSystem.AdjoinPendant
+public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
 
 /-!
 # The affine diagrams `B̃ₗ` and `A⁽²⁾₂ₗ₋₁` are not of finite type

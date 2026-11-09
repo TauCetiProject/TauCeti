@@ -85,6 +85,14 @@ theorem stableMeasure_map_affine {s : ℝ≥0} {m a b : ℝ}
   push_cast
   ring_nf
 
+/-- Positive scaling and translation of the scale-one, location-zero stable law gives the
+stable law with that scale and location. This holds even for invalid shape or skewness. -/
+theorem stableMeasure_one_zero_map_affine {s : ℝ≥0} {m : ℝ} (hs : 0 < s) :
+    (stableMeasure α β 1 0).map (fun x ↦ m + s * x) = stableMeasure α β s m := by
+  simpa [Real.sign_of_pos (NNReal.coe_pos.mpr hs)] using
+    stableMeasure_map_affine (α := α) (β := β) (s := 1) (m := 0) (a := m) (b := s)
+      (Or.inl (NNReal.coe_ne_zero.mpr hs.ne'))
+
 /-- Reflection of a stable law negates its skewness and location. This holds for all
 parameters, since invalid shapes give the zero measure on both sides. -/
 @[simp]

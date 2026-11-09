@@ -60,6 +60,12 @@ order `m` (`TauCeti.Symbol.spatialDeriv`), so iterating this rule shows that `Op
   gives Mathlib's Fourier multiplier `SchwartzMap.fourierMultiplierCLM` rescaled by `2π`, and
   `ξ ↦ ⟪ξ, v⟫` quantizes to `-i ∂_v`. In particular the differential symbol of `∂_v` is
   `i ⟪ξ, v⟫`.
+* `TauCeti.quantizeSchwartzValue_arrowCongr`: the quantization is compatible with isomorphisms
+  `V ≃L[ℂ] V'` and `W ≃L[ℂ] W'` of the coefficient spaces.
+* `TauCeti.Symbol.continuous_quantizeSchwartzValue_coefficient` and
+  `TauCeti.Symbol.HasCompactSpatialSupport.memLp_quantizeSchwartzValue`: for a symbol
+  `a : TauCeti.Symbol n V W m`, `Op(a) u` is continuous, and if `a` has compact spatial support
+  then so does `Op(a) u`, which therefore lies in every `Lᵖ`.
 * `TauCeti.differentiable_quantizeSchwartzValue` and
   `TauCeti.fderiv_quantizeSchwartzValue_apply`: `Op(a) u` is differentiable for a `C¹`
   coefficient whose values and position derivatives have growth bounds locally uniform in `x`,
@@ -307,6 +313,27 @@ theorem continuous_quantizeSchwartzValue (ha : Continuous a)
   exact continuous_integral_integrand ha hC (𝓕 u)
 
 end Continuity
+
+section Transport
+
+variable {V' W' : Type*} [NormedAddCommGroup V'] [NormedSpace ℂ V'] [NormedAddCommGroup W']
+  [NormedSpace ℂ W']
+
+/-- **Change of coefficient spaces.** For isomorphisms `e₁ : V ≃L[ℂ] V'` and `e₂ : W ≃L[ℂ] W'`,
+quantizing the conjugated coefficient `e₂ ∘ a(x, ξ) ∘ e₁⁻¹` on `e₁ ∘ u` gives `e₂ ∘ Op(a) u`. -/
+theorem quantizeSchwartzValue_arrowCongr (e₁ : V ≃L[ℂ] V') (e₂ : W ≃L[ℂ] W')
+    (a : E × E → V →L[ℂ] W) (u : 𝓢(E, V)) (x : E) :
+    quantizeSchwartzValue (fun p ↦ e₁.arrowCongr e₂ (a p)) (u.postcompCLM (e₁ : V →L[ℂ] V')) x =
+      e₂ (quantizeSchwartzValue a u x) := by
+  have hF (ζ : E) : 𝓕 (u.postcompCLM (e₁ : V →L[ℂ] V')) ζ = e₁ (𝓕 u ζ) := by
+    simp only [SchwartzMap.fourier_coe, Real.fourier_eq, SchwartzMap.postcompCLM_apply,
+      ContinuousLinearEquiv.coe_coe, Circle.smul_def, ← map_smul]
+    exact e₁.integral_comp_comm _
+  simp only [quantizeSchwartzValue_def, hF, ContinuousLinearEquiv.arrowCongr_apply,
+    ContinuousLinearEquiv.symm_apply_apply, Circle.smul_def, ← map_smul]
+  exact e₂.integral_comp_comm _
+
+end Transport
 
 section Deriv
 
@@ -685,5 +712,38 @@ theorem quantizeSchwartzValue_inner_eq_lineDerivOp (v : E) (u : 𝓢(E, V)) (x :
         rw [← Real.fourierInv_eq, ← SchwartzMap.fourierInv_coe, fourierInv_fourier_eq]
 
 end Examples
+
+/-! ### Quantization of symbols -/
+
+namespace Symbol
+
+variable {n : ℕ} {m : ℝ} {a : Symbol n V W m}
+
+/-- The quantization `Op(a) u` of a symbol on a Schwartz function is continuous. -/
+theorem continuous_quantizeSchwartzValue_coefficient (a : Symbol n V W m)
+    (u : 𝓢(CoordinateSpace n, V)) : Continuous (quantizeSchwartzValue a.coefficient u) :=
+  continuous_quantizeSchwartzValue a.contDiff_coefficient.continuous
+    (fun K hK ↦ (a.exists_bound_coefficient K hK).imp fun _ hC ↦ hC.2) u
+
+/-- The quantization of a symbol with compact spatial support vanishes outside that support. -/
+theorem HasCompactSpatialSupport.hasCompactSupport_quantizeSchwartzValue
+    (ha : a.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, V)) :
+    HasCompactSupport (quantizeSchwartzValue a.coefficient u) := by
+  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
+  exact HasCompactSupport.intro hK fun x hx ↦ by simp [quantizeSchwartzValue_def, hKa x hx]
+
+theorem HasCompactSpatialSupport.integrable_quantizeSchwartzValue
+    (ha : a.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, V)) :
+    Integrable (quantizeSchwartzValue a.coefficient u) :=
+  (a.continuous_quantizeSchwartzValue_coefficient u).integrable_of_hasCompactSupport
+    (ha.hasCompactSupport_quantizeSchwartzValue u)
+
+theorem HasCompactSpatialSupport.memLp_quantizeSchwartzValue
+    (ha : a.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, V)) (p : ENNReal) :
+    MemLp (quantizeSchwartzValue a.coefficient u) p :=
+  (a.continuous_quantizeSchwartzValue_coefficient u).memLp_of_hasCompactSupport
+    (ha.hasCompactSupport_quantizeSchwartzValue u)
+
+end Symbol
 
 end TauCeti

@@ -61,8 +61,9 @@ is.
 The statements are in local coordinates, with `ρ`, `α` and `J` on the model space `V`, and cover
 only unperturbed `J`-holomorphic curves: `J` depends on the point of `V` but not on the point of
 the domain, and the equation carries no Hamiltonian term. Floer strips with a domain-dependent
-`J` or a Hamiltonian perturbation, and the passage from a manifold to local coordinates, are not
-treated here.
+`J` or a Hamiltonian perturbation are not treated here. The statements for a compact set and for a
+strip with boundary lines in `{ρ ≤ R}`, for curves in an almost complex manifold, are in
+`TauCeti/Geometry/Symplectic/Manifold/MaximumPrinciple.lean`.
 
 The results live in the organisational namespace `TauCeti.JHolomorphic`: their names describe
 conclusions about `ρ ∘ u`, which only hold for curves solving the Cauchy--Riemann equation.

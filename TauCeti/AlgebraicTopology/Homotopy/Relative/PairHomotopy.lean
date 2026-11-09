@@ -107,6 +107,43 @@ private theorem apply_openBoxContraction
 
 variable [Finite N]
 
+/-- The deformation on the boundary of the face `I × ({0} × I^N)` of `exists_bottomHomotopy` is
+continuous: it is continuous on each of the three closed pieces of the boundary of the face. -/
+private theorem continuousOn_bottomBoundary
+    (H : (p : C(I × (I^N), X.pair.fst)).HomotopyWith q
+      fun f ↦ MapsTo f (Cube.prodBoundary N) (range X.pair.map))
+    (k : I × (I × I^N) → X.pair.fst) (hk₀ : ∀ (u : I) (z : I^N), k (u, (0, z)) = p (0, z))
+    (hk₁ : ∀ (u : I) (z : I^N), k (u, (1, z)) = q (0, z))
+    (hk : ∀ {u t : I} {z : I^N}, z ∈ Cube.boundary N →
+      k (u, (t, z)) = H (t, openBoxContraction u (0, z))) :
+    ContinuousOn k {x | x.2 ∈ Cube.prodBoundary N} := by
+  have hS : {x : I × (I × I^N) | x.2 ∈ Cube.prodBoundary N} =
+      {x | x.2.1 = 0} ∪ ({x | x.2.1 = 1} ∪ {x | x.2.2 ∈ Cube.boundary N}) := by
+    ext x
+    simp [or_assoc]
+  rw [hS]
+  have hc₀ : IsClosed {x : I × (I × I^N) | x.2.1 = 0} := isClosed_eq (by fun_prop) (by fun_prop)
+  have hc₁ : IsClosed {x : I × (I × I^N) | x.2.1 = 1} := isClosed_eq (by fun_prop) (by fun_prop)
+  have hc₂ : IsClosed {x : I × (I × I^N) | x.2.2 ∈ Cube.boundary N} :=
+    hasHomotopyExtensionProperty_cubeBoundary.isClosed.preimage (by fun_prop)
+  refine ContinuousOn.union_of_isClosed ?_ (ContinuousOn.union_of_isClosed ?_ ?_ hc₁ hc₂) hc₀
+    ((hc₁.union hc₂))
+  · refine (by fun_prop : Continuous fun x : I × (I × I^N) ↦
+      (p : C(I × (I^N), X.pair.fst)) (0, x.2.2)).continuousOn.congr fun x hx ↦ ?_
+    obtain ⟨u, t, z⟩ := x
+    obtain rfl : t = 0 := hx
+    exact hk₀ u z
+  · refine (by fun_prop : Continuous fun x : I × (I × I^N) ↦
+      (q : C(I × (I^N), X.pair.fst)) (0, x.2.2)).continuousOn.congr fun x hx ↦ ?_
+    obtain ⟨u, t, z⟩ := x
+    obtain rfl : t = 1 := hx
+    exact hk₁ u z
+  · refine (H.continuous.comp ((continuous_fst.comp continuous_snd).prodMk
+      (continuous_openBoxContraction.comp (by fun_prop : Continuous fun x : I × (I × I^N) ↦
+        (x.1, ((0 : I), x.2.2)))))).continuousOn.congr fun x hx ↦ ?_
+    obtain ⟨u, t, z⟩ := x
+    exact hk hx
+
 /-- The deformation of a homotopy `H` through maps of pairs, from `p` to `q`, on the face
 `I × ({0} × I^N)` of the cube `I × (I × I^N)`, the first coordinate being time: it starts at `H`,
 has values in the subspace, is stationary at times `0` and `1`, and on the boundary of the face
@@ -135,33 +172,7 @@ private theorem exists_bottomHomotopy
     · subst h₁
       rw [apply_openBoxContraction H (.inr rfl) u (.inr hz), H.apply_one, RelGenLoop.coe_coe]
     · rfl
-  have hcont : ContinuousOn k {x | x.2 ∈ Cube.prodBoundary N} := by
-    have hS : {x : I × (I × I^N) | x.2 ∈ Cube.prodBoundary N} =
-        {x | x.2.1 = 0} ∪ ({x | x.2.1 = 1} ∪ {x | x.2.2 ∈ Cube.boundary N}) := by
-      ext x
-      simp [or_assoc]
-    rw [hS]
-    have hc₀ : IsClosed {x : I × (I × I^N) | x.2.1 = 0} := isClosed_eq (by fun_prop) (by fun_prop)
-    have hc₁ : IsClosed {x : I × (I × I^N) | x.2.1 = 1} := isClosed_eq (by fun_prop) (by fun_prop)
-    have hc₂ : IsClosed {x : I × (I × I^N) | x.2.2 ∈ Cube.boundary N} :=
-      hasHomotopyExtensionProperty_cubeBoundary.isClosed.preimage (by fun_prop)
-    refine ContinuousOn.union_of_isClosed ?_ (ContinuousOn.union_of_isClosed ?_ ?_ hc₁ hc₂) hc₀
-      ((hc₁.union hc₂))
-    · refine (by fun_prop : Continuous fun x : I × (I × I^N) ↦
-        (p : C(I × (I^N), X.pair.fst)) (0, x.2.2)).continuousOn.congr fun x hx ↦ ?_
-      obtain ⟨u, t, z⟩ := x
-      obtain rfl : t = 0 := hx
-      exact hk₀ u z
-    · refine (by fun_prop : Continuous fun x : I × (I × I^N) ↦
-        (q : C(I × (I^N), X.pair.fst)) (0, x.2.2)).continuousOn.congr fun x hx ↦ ?_
-      obtain ⟨u, t, z⟩ := x
-      obtain rfl : t = 1 := hx
-      exact hk₁ u z
-    · refine (H.continuous.comp ((continuous_fst.comp continuous_snd).prodMk
-        (continuous_openBoxContraction.comp (by fun_prop : Continuous fun x : I × (I × I^N) ↦
-          (x.1, ((0 : I), x.2.2)))))).continuousOn.congr fun x hx ↦ ?_
-      obtain ⟨u, t, z⟩ := x
-      exact hk hx
+  have hcont := continuousOn_bottomBoundary H k hk₀ hk₁ hk
   have hkB (x : I × (I × I^N)) (hx : x.2 ∈ Cube.prodBoundary N) : k x ∈ range X.pair.map := by
     obtain ⟨u, t, z⟩ := x
     rcases Cube.mem_prodBoundary_iff.1 hx with (rfl | rfl) | hz
@@ -191,6 +202,105 @@ private theorem exists_bottomHomotopy
   · exact (hL' u 0 z (Cube.mk_zero_mem_prodBoundary z)).trans (hk₀ u z)
   · exact (hL' u 1 z (Cube.mk_mem_prodBoundary (.inl rfl))).trans (hk₁ u z)
   · exact (hL' u t z (Cube.mem_prodBoundary_iff.2 (Or.inr hz))).trans (hk hz)
+
+/-- The deformation `K` of `exists_homotopy_eq_on_openBox` is continuous on `I × T`, where `T` is
+the boundary of the cube `I × (I × I^N)`, the union of four closed faces. -/
+private theorem continuousOn_openBoxDeformation
+    (H : (p : C(I × (I^N), X.pair.fst)).HomotopyWith q
+      fun f ↦ MapsTo f (Cube.prodBoundary N) (range X.pair.map))
+    (K : I × (I × (I × I^N)) → X.pair.fst) {L : C(I × (I × I^N), X.pair.fst)}
+    (hK₀ : ∀ (u t : I) (z : I^N), K (u, (t, (0, z))) = L (u, (t, z)))
+    (hKp : ∀ (u : I) (w : I × I^N), K (u, (0, w)) = p w)
+    (hKq : ∀ (u : I) (w : I × I^N), K (u, (1, w)) = q w)
+    (hKJ : ∀ (u t : I) {w : I × I^N}, (w.1 = 1 ∨ w.2 ∈ Cube.boundary N) →
+      K (u, (t, w)) = H (t, openBoxContraction u w)) :
+    ContinuousOn K {x | (x.2.1 = 0 ∨ x.2.1 = 1) ∨ x.2.2 ∈ Cube.prodBoundary N} := by
+  have hS : {x : I × (I × (I × I^N)) | (x.2.1 = 0 ∨ x.2.1 = 1) ∨ x.2.2 ∈ Cube.prodBoundary N} =
+      {x | x.2.2.1 = 0} ∪ ({x | x.2.1 = 0} ∪
+      ({x | x.2.1 = 1} ∪ {x | x.2.2.1 = 1 ∨ x.2.2.2 ∈ Cube.boundary N})) := by
+    ext x
+    simp only [Cube.mem_prodBoundary_iff, mem_ofPred_eq, mem_union]
+    tauto
+  rw [hS]
+  have hc₀ : IsClosed {x : I × (I × (I × I^N)) | x.2.2.1 = 0} :=
+    isClosed_eq (by fun_prop) (by fun_prop)
+  have hc₁ : IsClosed {x : I × (I × (I × I^N)) | x.2.1 = 0} :=
+    isClosed_eq (by fun_prop) (by fun_prop)
+  have hc₂ : IsClosed {x : I × (I × (I × I^N)) | x.2.1 = 1} :=
+    isClosed_eq (by fun_prop) (by fun_prop)
+  have hc₃ : IsClosed {x : I × (I × (I × I^N)) | x.2.2.1 = 1 ∨ x.2.2.2 ∈ Cube.boundary N} :=
+    (isClosed_eq (by fun_prop) (by fun_prop)).union
+      (hasHomotopyExtensionProperty_cubeBoundary.isClosed.preimage (by fun_prop))
+  refine ContinuousOn.union_of_isClosed ?_ (ContinuousOn.union_of_isClosed ?_
+    (ContinuousOn.union_of_isClosed ?_ ?_ hc₂ hc₃) hc₁ (hc₂.union hc₃)) hc₀
+    (hc₁.union (hc₂.union hc₃))
+  · refine (by fun_prop : Continuous fun x : I × (I × (I × I^N)) ↦
+      L (x.1, (x.2.1, x.2.2.2))).continuousOn.congr fun x hx ↦ ?_
+    obtain ⟨u, t, s, z⟩ := x
+    obtain rfl : s = 0 := hx
+    exact hK₀ u t z
+  · refine (by fun_prop : Continuous fun x : I × (I × (I × I^N)) ↦
+      (p : C(I × (I^N), X.pair.fst)) x.2.2).continuousOn.congr fun x hx ↦ ?_
+    obtain ⟨u, t, w⟩ := x
+    obtain rfl : t = 0 := hx
+    exact hKp u w
+  · refine (by fun_prop : Continuous fun x : I × (I × (I × I^N)) ↦
+      (q : C(I × (I^N), X.pair.fst)) x.2.2).continuousOn.congr fun x hx ↦ ?_
+    obtain ⟨u, t, w⟩ := x
+    obtain rfl : t = 1 := hx
+    exact hKq u w
+  · refine (H.continuous.comp ((continuous_fst.comp continuous_snd).prodMk
+      (continuous_openBoxContraction.comp (continuous_fst.prodMk
+        (continuous_snd.comp continuous_snd))))).continuousOn.congr fun x hx ↦ ?_
+    obtain ⟨u, t, w⟩ := x
+    exact hKJ u t hx
+
+/-- Let `K` be a deformation of a homotopy `H` of relative cubes on `I × ∂(I × (I × I^N))`: it
+agrees with `L` on `s = 0`, with `p` and `q` at the two ends, and with `H ∘ openBoxContraction` on
+the open box. Then there is a homotopy `p ≃ q` which sends `{0} × I^N` into the subspace and the
+open box to `H (t, (1, cubeCenter))`. -/
+private theorem exists_homotopy_of_deformation
+    (H : (p : C(I × (I^N), X.pair.fst)).HomotopyWith q
+      fun f ↦ MapsTo f (Cube.prodBoundary N) (range X.pair.map))
+    (L : C(I × (I × I^N), X.pair.fst)) (hL₀ : ∀ t z, L (0, (t, z)) = H (t, (0, z)))
+    (hLB : ∀ u t z, L (u, (t, z)) ∈ range X.pair.map)
+    (K : I × (I × (I × I^N)) → X.pair.fst)
+    (hK₀ : ∀ (u t : I) (z : I^N), K (u, (t, (0, z))) = L (u, (t, z)))
+    (hKp : ∀ (u : I) (w : I × I^N), K (u, (0, w)) = p w)
+    (hKq : ∀ (u : I) (w : I × I^N), K (u, (1, w)) = q w)
+    (hKJ : ∀ (u t : I) {w : I × I^N}, (w.1 = 1 ∨ w.2 ∈ Cube.boundary N) →
+      K (u, (t, w)) = H (t, openBoxContraction u w)) :
+    ∃ F : (p : C(I × (I^N), X.pair.fst)).Homotopy q,
+      (∀ t z, F (t, (0, z)) ∈ range X.pair.map) ∧
+      ∀ t w, (w.1 = 1 ∨ w.2 ∈ Cube.boundary N) → F (t, w) = H (t, (1, cubeCenter)) := by
+  have hcont := continuousOn_openBoxDeformation H K hK₀ hKp hKq hKJ
+  let T : Set (I × (I × I^N)) := {x | (x.1 = 0 ∨ x.1 = 1) ∨ x.2 ∈ Cube.prodBoundary N}
+  -- Extend the deformation over the cube, and take its end.
+  have hT := hasHomotopyExtensionProperty_boundary_prod (N := N)
+  obtain ⟨G, -, hG⟩ := hT.exists_extension_of_isClosed hT.isClosed H.toContinuousMap
+    ⟨fun x ↦ K (x.1, x.2), hcont.comp_continuous (by fun_prop) fun x ↦ x.2.2⟩
+    fun x ↦ by
+      obtain ⟨⟨t, s, z⟩, hx⟩ := x
+      simp only [ContinuousMap.coe_mk, ContinuousMap.Homotopy.coe_toContinuousMap]
+      rcases hx with (rfl | rfl) | hw
+      · exact (hKp 0 (s, z)).trans (H.apply_zero (s, z)).symm
+      · exact (hKq 0 (s, z)).trans (H.apply_one (s, z)).symm
+      · rcases Cube.mem_prodBoundary_iff.1 hw with (rfl | hs) | hz
+        · exact (hK₀ 0 t z).trans (hL₀ t z)
+        · exact (hKJ 0 t (.inl hs)).trans (congrArg (H ⟨t, ·⟩) (openBoxContraction_zero _))
+        · exact (hKJ 0 t (.inr hz)).trans (congrArg (H ⟨t, ·⟩) (openBoxContraction_zero _))
+  have hG' (t : I) (w : I × I^N) (hw : (t, w) ∈ T) : G (1, (t, w)) = K (1, (t, w)) :=
+    hG 1 ⟨(t, w), hw⟩
+  refine ⟨{
+    toFun := fun x ↦ G (1, x)
+    map_zero_left := fun w ↦ (hG' 0 w (Or.inl (Or.inl rfl))).trans (hKp 1 w)
+    map_one_left := fun w ↦ (hG' 1 w (Or.inl (Or.inr rfl))).trans (hKq 1 w) },
+    fun t z ↦ ?_, fun t w hw ↦ ?_⟩
+  · have h := hLB 1 t z
+    rw [← hK₀, ← hG' t (0, z) (Or.inr (Cube.mk_zero_mem_prodBoundary z))] at h
+    exact h
+  · exact (hG' t w (Or.inr (Cube.mk_mem_prodBoundary hw))).trans ((hKJ 1 t hw).trans
+      (congrArg (H ⟨t, ·⟩) (openBoxContraction_one _)))
 
 /-- A homotopy `H` through maps of pairs from `p` to `q` can be deformed, keeping its ends, into a
 homotopy whose stages send the face `{0} × I^N` into the subspace and the open box
@@ -235,73 +345,7 @@ private theorem exists_homotopy_eq_on_openBox
     · subst ht₁
       rw [hKq, apply_openBoxContraction H (.inr rfl) u hw, H.apply_one, RelGenLoop.coe_coe]
     simp [K, hs, ht₀, ht₁]
-  -- `K` is continuous on the boundary `T` of the cube, which is the union of four closed faces.
-  let T : Set (I × (I × I^N)) := {x | (x.1 = 0 ∨ x.1 = 1) ∨ x.2 ∈ Cube.prodBoundary N}
-  have hcont : ContinuousOn K {x | x.2 ∈ T} := by
-    have hS : {x : I × (I × (I × I^N)) | x.2 ∈ T} = {x | x.2.2.1 = 0} ∪ ({x | x.2.1 = 0} ∪
-        ({x | x.2.1 = 1} ∪ {x | x.2.2.1 = 1 ∨ x.2.2.2 ∈ Cube.boundary N})) := by
-      ext x
-      simp only [T, Cube.mem_prodBoundary_iff, mem_ofPred_eq, mem_union]
-      tauto
-    rw [hS]
-    have hc₀ : IsClosed {x : I × (I × (I × I^N)) | x.2.2.1 = 0} :=
-      isClosed_eq (by fun_prop) (by fun_prop)
-    have hc₁ : IsClosed {x : I × (I × (I × I^N)) | x.2.1 = 0} :=
-      isClosed_eq (by fun_prop) (by fun_prop)
-    have hc₂ : IsClosed {x : I × (I × (I × I^N)) | x.2.1 = 1} :=
-      isClosed_eq (by fun_prop) (by fun_prop)
-    have hc₃ : IsClosed {x : I × (I × (I × I^N)) | x.2.2.1 = 1 ∨ x.2.2.2 ∈ Cube.boundary N} :=
-      (isClosed_eq (by fun_prop) (by fun_prop)).union
-        (hasHomotopyExtensionProperty_cubeBoundary.isClosed.preimage (by fun_prop))
-    refine ContinuousOn.union_of_isClosed ?_ (ContinuousOn.union_of_isClosed ?_
-      (ContinuousOn.union_of_isClosed ?_ ?_ hc₂ hc₃) hc₁ (hc₂.union hc₃)) hc₀
-      (hc₁.union (hc₂.union hc₃))
-    · refine (by fun_prop : Continuous fun x : I × (I × (I × I^N)) ↦
-        L (x.1, (x.2.1, x.2.2.2))).continuousOn.congr fun x hx ↦ ?_
-      obtain ⟨u, t, s, z⟩ := x
-      obtain rfl : s = 0 := hx
-      exact hK₀ u t z
-    · refine (by fun_prop : Continuous fun x : I × (I × (I × I^N)) ↦
-        (p : C(I × (I^N), X.pair.fst)) x.2.2).continuousOn.congr fun x hx ↦ ?_
-      obtain ⟨u, t, w⟩ := x
-      obtain rfl : t = 0 := hx
-      exact hKp u w
-    · refine (by fun_prop : Continuous fun x : I × (I × (I × I^N)) ↦
-        (q : C(I × (I^N), X.pair.fst)) x.2.2).continuousOn.congr fun x hx ↦ ?_
-      obtain ⟨u, t, w⟩ := x
-      obtain rfl : t = 1 := hx
-      exact hKq u w
-    · refine (H.continuous.comp ((continuous_fst.comp continuous_snd).prodMk
-        (continuous_openBoxContraction.comp (continuous_fst.prodMk
-          (continuous_snd.comp continuous_snd))))).continuousOn.congr fun x hx ↦ ?_
-      obtain ⟨u, t, w⟩ := x
-      exact hKJ u t hx
-  -- Extend the deformation over the cube, and take its end.
-  have hT := hasHomotopyExtensionProperty_boundary_prod (N := N)
-  obtain ⟨G, -, hG⟩ := hT.exists_extension_of_isClosed hT.isClosed H.toContinuousMap
-    ⟨fun x ↦ K (x.1, x.2), hcont.comp_continuous (by fun_prop) fun x ↦ x.2.2⟩
-    fun x ↦ by
-      obtain ⟨⟨t, s, z⟩, hx⟩ := x
-      simp only [ContinuousMap.coe_mk, ContinuousMap.Homotopy.coe_toContinuousMap]
-      rcases hx with (rfl | rfl) | hw
-      · exact (hKp 0 (s, z)).trans (H.apply_zero (s, z)).symm
-      · exact (hKq 0 (s, z)).trans (H.apply_one (s, z)).symm
-      · rcases Cube.mem_prodBoundary_iff.1 hw with (rfl | hs) | hz
-        · exact (hK₀ 0 t z).trans (hL₀ t z)
-        · exact (hKJ 0 t (.inl hs)).trans (congrArg (H ⟨t, ·⟩) (openBoxContraction_zero _))
-        · exact (hKJ 0 t (.inr hz)).trans (congrArg (H ⟨t, ·⟩) (openBoxContraction_zero _))
-  have hG' (t : I) (w : I × I^N) (hw : (t, w) ∈ T) : G (1, (t, w)) = K (1, (t, w)) :=
-    hG 1 ⟨(t, w), hw⟩
-  refine ⟨{
-    toFun := fun x ↦ G (1, x)
-    map_zero_left := fun w ↦ (hG' 0 w (Or.inl (Or.inl rfl))).trans (hKp 1 w)
-    map_one_left := fun w ↦ (hG' 1 w (Or.inl (Or.inr rfl))).trans (hKq 1 w) },
-    fun t z ↦ ?_, fun t w hw ↦ ?_⟩
-  · have h := hLB 1 t z
-    rw [← hK₀, ← hG' t (0, z) (Or.inr (Cube.mk_zero_mem_prodBoundary z))] at h
-    exact h
-  · exact (hG' t w (Or.inr (Cube.mk_mem_prodBoundary hw))).trans ((hKJ 1 t hw).trans
-      (congrArg (H ⟨t, ·⟩) (openBoxContraction_one _)))
+  exact exists_homotopy_of_deformation H L hL₀ hLB K hK₀ hKp hKq hKJ
 
 namespace RelGenLoop
 

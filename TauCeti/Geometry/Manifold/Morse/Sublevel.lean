@@ -192,4 +192,40 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_sublevel_homeomorph_closedBa
   rw [Homeomorph.trans_apply, Homeomorph.setCongr_apply]
   simpa only [Homeomorph.setCongr_apply] using he ((Homeomorph.setCongr hset) y)
 
+/-- The dual of `IsManifoldNondegenerateCriticalPoint.exists_sublevel_homeomorph_closedBall`: if a
+function has a unique global maximum at a nondegenerate critical point and one compact superlevel
+strictly below it on which it is continuous, all sufficiently small whole superlevels are closed
+discs. The radial coordinate records the function value, subtracted from the maximum value. -/
+theorem IsManifoldNondegenerateCriticalPoint.exists_superlevel_homeomorph_closedBall
+    (hf : ∀ᶠ y in 𝓝 x, ContMDiffAt I 𝓘(ℝ) ∞ f y)
+    (h : IsManifoldNondegenerateCriticalPoint I f x)
+    {a : ℝ} (hcompact : IsCompact {y | a ≤ f y}) (hcont : ContinuousOn f {y | a ≤ f y})
+    (ha : a < f x)
+    (hmax : ∀ y, f x ≤ f y → y = x) :
+    ∃ R > 0, ∀ r, 0 ≤ r → r < R →
+      ∃ e : {y : M // f x - r ^ 2 ≤ f y} ≃ₜ
+          Metric.closedBall (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) r,
+        ∀ y : {y : M // f x - r ^ 2 ≤ f y},
+          f y = f x - ‖(e y : EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))‖ ^ 2 := by
+  have hset : {y | (-f) y ≤ -a} = {y | a ≤ f y} := by
+    ext y
+    simp
+  obtain ⟨R, hR, he⟩ := h.neg.exists_sublevel_homeomorph_closedBall
+    (hf.mono fun y hy ↦ contDiff_neg.contMDiff.contMDiffAt.comp y hy)
+    (hset ▸ hcompact) (hset ▸ hcont.neg) (a := -a) (by simpa using ha)
+    fun y hy ↦ hmax y (by simpa using hy)
+  refine ⟨R, hR, fun r hr hrR ↦ ?_⟩
+  obtain ⟨e, he⟩ := he r hr hrR
+  have hset' : {y | f x - r ^ 2 ≤ f y} = {y | (-f) y ≤ (-f) x + r ^ 2} := by
+    ext y
+    simp only [Set.mem_ofPred_eq, Pi.neg_apply]
+    constructor <;> intro <;> linarith
+  refine ⟨(Homeomorph.setCongr hset').trans e, fun y ↦ ?_⟩
+  have hy := he (Homeomorph.setCongr hset' y)
+  have hv : ((Homeomorph.setCongr hset' y : {y : M // (-f) y ≤ (-f) x + r ^ 2}) : M) = y := by
+    simp [Homeomorph.setCongr_apply]
+  simp only [Function.comp_apply, Pi.neg_apply, hv] at hy
+  rw [Homeomorph.trans_apply]
+  linarith
+
 end TauCeti

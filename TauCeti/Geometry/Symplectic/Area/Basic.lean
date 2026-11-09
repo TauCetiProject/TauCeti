@@ -38,6 +38,9 @@ period of a `2π`-periodic curve backwards as a loop on `[0, 1]` negates its are
 (`TauCeti.SymplecticForm.loopArea_comp_sub_mul`).
 
 A square-integrable differential also gives an integrable symplectic area density, on any domain.
+Pairing bounded loops with functions whose norms have vanishing mean over `[0, 1]` gives
+integrals of the symplectic form that tend to zero
+(`TauCeti.SymplecticForm.tendsto_integral_apply_of_tendsto_integral_norm`).
 
 ## References
 
@@ -81,6 +84,29 @@ theorem integrableOn_fderiv_apply_of_integrableOn_norm_fderiv_sq
     _ ≤ ‖B‖ * ‖fderiv ℝ u z‖ ^ 2 := by
       rw [pow_two, ← mul_assoc]
       gcongr
+
+/-- **Pairing with functions of vanishing mean norm.** If the loops `y_i` are bounded by `R` and the
+integrals over `[0, 1]` of the norms of the continuous `d_i` tend to `0`, then so do the integrals
+`∫₀¹ ω(y_i(t), d_i(t)) dt`. -/
+theorem tendsto_integral_apply_of_tendsto_integral_norm [FiniteDimensional ℝ V]
+    {ω : SymplecticForm V} {ι : Type*} {l : Filter ι}
+    {y d : ι → ℝ → V} {R : ℝ} (hy : ∀ i t, ‖y i t‖ ≤ R) (hd : ∀ i, Continuous (d i))
+    (hdl : Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, ‖d i t‖) l (𝓝 0)) :
+    Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, ω (y i t) (d i t)) l (𝓝 0) := by
+  set Bω := ω.toBilinForm.toContinuousBilinearMap
+  have hω : ∀ v w, |ω v w| ≤ ‖Bω‖ * ‖v‖ * ‖w‖ := fun v w ↦ by
+    simpa only [Bω, LinearMap.toContinuousBilinearMap_apply, Real.norm_eq_abs] using
+      Bω.le_opNorm₂ v w
+  have hlim := hdl.const_mul (‖Bω‖ * R)
+  rw [mul_zero] at hlim
+  refine squeeze_zero_norm (fun i ↦ ?_) hlim
+  rw [← intervalIntegral.integral_const_mul]
+  refine intervalIntegral.norm_integral_le_of_norm_le zero_le_one
+    (Eventually.of_forall fun t _ ↦ ?_) ((continuous_const.mul (hd i).norm).intervalIntegrable _ _)
+  rw [Real.norm_eq_abs]
+  refine (hω _ _).trans ?_
+  gcongr
+  exact hy i t
 
 /-- **Stokes' formula for symplectic area on a rectangle.** If `u` is `C²` at every point of the
 rectangle `Icc a b ⊆ ℝ × ℝ`, its symplectic area over the rectangle is the integral of the
@@ -149,6 +175,25 @@ theorem loopArea_comp_sub_mul (ω : SymplecticForm V) {g : ℝ → V} (hg : Func
   rw [loopArea_def]
   simp only [hderiv, hsmul, intervalIntegral.integral_const_mul, hsub, hshift, smul_eq_mul]
   field_simp
+
+/-- **The loop area of a circle traversed forwards.** If `g` is `2π`-periodic, the loop
+`t ↦ g(θ₀ + 2πt)` runs once through a period of `g`, so its loop area is the area
+`½ ∫_{-π}^{π} ω(g(θ), g'(θ)) dθ` of `g` over one period. -/
+theorem loopArea_comp_add_mul (ω : SymplecticForm V) {g : ℝ → V} (hg : Function.Periodic g (2 * π))
+    (θ₀ : ℝ) :
+    ω.loopArea (fun t ↦ g (θ₀ + 2 * π * t)) =
+      (1 / 2 : ℝ) * ∫ θ in -π..π, ω (g θ) (deriv g θ) := by
+  -- Traverse the reflected function `θ ↦ g(-θ)` backwards.
+  have hg' : Function.Periodic (fun θ ↦ g (-θ)) (2 * π) := fun θ ↦ by
+    simp only
+    rw [show -(θ + 2 * π) = -θ - 2 * π by ring, ← hg (-θ - 2 * π), sub_add_cancel]
+  have h := ω.loopArea_comp_sub_mul hg' (-θ₀)
+  have hloop : (fun t ↦ g (-(-θ₀ - 2 * π * t))) = fun t ↦ g (θ₀ + 2 * π * t) :=
+    funext fun t ↦ congrArg g (by ring)
+  simp only [hloop, deriv_comp_neg, map_neg] at h
+  rw [h, intervalIntegral.integral_neg,
+    intervalIntegral.integral_comp_neg (fun θ ↦ ω (g θ) (deriv g θ)), neg_neg]
+  ring
 
 variable [FiniteDimensional ℝ V] {u : ℝ × ℝ → V} {a b : ℝ}
 

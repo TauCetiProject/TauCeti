@@ -28,7 +28,9 @@ locally Noetherian.
 
 For an ideal `J` of a ring `R`, the formal completion of `Spec R` along `V(J)` is the system
 `spf J` of the affine schemes `Spec (R ⧸ J ^ (n + 1))` (`formalCompletion.specIso`, Stacks,
-Lemma 87.14.6 (0GBA)).
+Lemma 87.14.6 (0GBA)). When `J` is finitely generated, `R` and its `J`-adic completion `R̂` have the
+same reductions, so this is the formal spectrum `Spf R̂` of the adic ring `R̂`
+(`formalCompletion.specIsoSpfCompletion`).
 
 ## Main definitions
 
@@ -40,6 +42,9 @@ Lemma 87.14.6 (0GBA)).
   constant system of `X`.
 * `AlgebraicGeometry.Scheme.formalCompletion.specIso`: the formal completion of `Spec R` along
   `V(J)` is `spf J`.
+* `AlgebraicGeometry.Scheme.formalCompletion.specIsoSpfCompletion`: for `J` finitely generated, the
+  formal completion of `Spec R` along `V(J)` is `Spf R̂`, the formal spectrum of the `J`-adic
+  completion.
 
 ## Main results
 
@@ -293,6 +298,27 @@ theorem specIso_inv_app_toScheme (J : Ideal R) (n : ℕ) :
     (specIso J).inv.app n ≫ toScheme _ _ n = (AdicThickeningSystem.spfToSpec J).app n := by
   rw [specIso, Iso.symm_inv, AdicThickeningSystem.isoMk_hom_app, specLevelIso_hom_toScheme,
     AdicThickeningSystem.spfToSpec_app]
+
+/-- For a finitely generated ideal `J` of `R`, the formal completion of `Spec R` along `V(J)` is
+the formal spectrum of the `J`-adic completion `R̂` of `R`, compatibly with the morphisms to
+`Spec R` (`specIsoSpfCompletion_inv_app_toScheme`). Stacks, Lemma 87.14.6 (0GBA). -/
+@[stacks 0GBA]
+noncomputable def specIsoSpfCompletion (J : Ideal R) (fg : J.FG) :
+    (Spec (CommRingCat.of R)).formalCompletion
+        (ofIdealTop (J.map (ΓSpecIso (CommRingCat.of R)).inv.hom)) ≅
+      Spf (AdicRing.completion J fg) :=
+  specIso J ≪≫ (Spf.completionIso J fg).symm
+
+/-- Under `specIsoSpfCompletion`, the closed immersions `V(J ^ (n + 1)) ⟶ Spec R` are the
+morphisms `Spec (R̂ ⧸ (J R̂) ^ (n + 1)) ⟶ Spec R̂ ⟶ Spec R`. -/
+@[reassoc (attr := simp)]
+theorem specIsoSpfCompletion_inv_app_toScheme (J : Ideal R) (fg : J.FG) (n : ℕ) :
+    (specIsoSpfCompletion J fg).inv.app n ≫ toScheme _ _ n =
+      (Spf.toSpec (AdicRing.completion J fg)).app n ≫
+        Spec.map (CommRingCat.ofHom (algebraMap R (AdicCompletion J R))) := by
+  rw [specIsoSpfCompletion, Iso.trans_inv, Iso.symm_inv, AdicThickeningSystem.comp_app,
+    Category.assoc, specIso_inv_app_toScheme]
+  exact congrArg (·.app n) (Spf.completionIso_hom_spfToSpec J fg)
 
 end formalCompletion
 

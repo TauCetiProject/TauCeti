@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Basic
+public import TauCeti.Geometry.Symplectic.Manifold.Orientation
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
 public import TauCeti.Geometry.Symplectic.StandardCompatible
 import TauCeti.Geometry.Manifold.Diffeomorph.Prod
@@ -21,6 +22,15 @@ The map `((s, t), x) ↦ ([s], [t, x])` from `(ℝ × ℝ) × M` to the symplect
 This file describes its differential and proves that it pulls the suspension form
 `Ω = ds ∧ dt + σ_v` back to the product form `ds ∧ dt + σ`. These identities allow tensor
 constructions on the product to descend to the suspension.
+
+They also compute the orientation of the symplectic suspension. When `σ` is nondegenerate, the
+symplectic orientation of `Ω` is `ds ∧ dt` followed by the symplectic orientation of the fibre: the
+covering map is orientation preserving at every point from the product of the standard orientation
+of the `(s, t)`-plane with the symplectic orientation of `(M, σ)` to the symplectic orientation of
+`(X_φ, Ω)` (`TauCeti.SmoothMappingTorus.isOrientationPreservingAt_suspensionCover`). So a frame
+`(∂_s, T, e₁, …, e₂ₙ)` at `([s], [t, x])` is positive for `Ω`, where `T` is the suspension vector
+field and `(e₁, …, e₂ₙ)` is the image, under the differential of the fibre inclusion
+`y ↦ [t, y]`, of a Darboux basis `(q₁, p₁, …, qₙ, pₙ)` of `(T_x M, σ_x)`.
 
 ## References
 
@@ -148,5 +158,26 @@ theorem mpullback_suspensionCover_suspensionForm :
     SymplecticForm.fromTangentSpace_constSmooth_apply, stdSymplecticForm_apply]
   simp only [RCLike.inner_apply, conj_trivial]
   ring
+
+/-! ### The orientation of the symplectic suspension -/
+
+/-- **The orientation of a symplectic suspension.** For a nondegenerate `σ`, the covering map
+`((s, t), x) ↦ ([s], [t, x])` is orientation preserving at every point, from the standard
+orientation of the `(s, t)`-plane followed by the symplectic orientation of `(M, σ)` to the
+symplectic orientation of `Ω = ds ∧ dt + σ_v` on `(ℝ / ℤ) × Y_φ`. -/
+theorem isOrientationPreservingAt_suspensionCover [FiniteDimensional ℝ E]
+    (hσn : σ.IsNondegenerate) {n : ℕ} (hn : Module.finrank ℝ E = n) (p : (ℝ × ℝ) × M) :
+    Manifold.Orientation.IsOrientationPreservingAt
+      ((Manifold.Orientation.model (I := 𝓘(ℝ, ℝ × ℝ)) (Module.Basis.finTwoProd ℝ).orientation
+        (by simp)).prod (hσn.orientation hn))
+      (((isNondegenerate_suspensionForm_iff (hσ := hσ)).2 hσn).orientation
+        (by simp only [Module.finrank_prod, Module.finrank_self, hn]; omega))
+      (suspensionCover φ) p := by
+  have hstd := SymplecticForm.isNondegenerate_constSmooth (stdSymplecticForm (V := ℝ))
+  have h2 : Module.finrank ℝ (ℝ × ℝ) = 2 := by simp
+  rw [← SymplecticForm.orientation_stdSymplecticForm_real h2,
+    ← SymplecticForm.orientation_constSmooth, ← hstd.orientation_prod hσn h2 hn]
+  exact (hstd.prod hσn).isOrientationPreservingAt_orientation _ _ _
+    (isLocalDiffeomorph_suspensionCover φ).contMDiff mpullback_suspensionCover_suspensionForm p
 
 end TauCeti.SmoothMappingTorus
