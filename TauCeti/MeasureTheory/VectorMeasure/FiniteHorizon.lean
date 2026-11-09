@@ -41,7 +41,8 @@ variable {α : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
 
 /-- Two vector measures carried by `(a,b]` agree if their cumulative increments agree. -/
 theorem MeasureTheory.VectorMeasure.ext_of_restrict_Ioc
-    {E : Type*} [NormedAddCommGroup E] {μ ν : VectorMeasure α E} {a b : α}
+    {E : Type*} [AddCommGroup E] [TopologicalSpace E] [T2Space E]
+    {μ ν : VectorMeasure α E} {a b : α}
     (hab : a ≤ b) (hμ : μ.restrict (Ioc a b) = μ) (hν : ν.restrict (Ioc a b) = ν)
     (h : ∀ x ∈ Icc a b, μ (Ioc a x) = ν (Ioc a x)) : μ = ν := by
   borelize α
