@@ -111,8 +111,8 @@ theorem mpullback_flowOf_comp_apply_eq_symplectization (hZα : (mextDeriv α.1).
   simp only [Matrix.cons_val_fin_one, ← Matrix.vec_single_eq_const,
     mfderiv_flowOf_comp_apply (hZ.of_le (by simp)) (hι.contMDiffAt.of_le (by simp)) hp,
     ContinuousAlternatingMap.vecCons_add, ContinuousAlternatingMap.vecCons_smul,
-    apply_eq_zero_of_interior_eq hZα, smul_zero, zero_add, Manifold.tangentSpaceProdEquiv_apply,
-    hs]
+    RoughForm.apply_eq_zero_of_interior_eq hZα, smul_zero, zero_add,
+    Manifold.tangentSpaceProdEquiv_apply, hs]
 
 /-- **The local Liouville flow map pulls `dα` back to `d(eᵗ ι^* α)`.** Let the smooth vector field
 `Z` be the Liouville field of the one-form `α`, `ι_Z dα = α`, and let `ι : S → M` be smooth. At
