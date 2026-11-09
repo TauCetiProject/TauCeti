@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import TauCeti.Analysis.Fourier.Torus.Smooth
-import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Fourier.Torus.Decay
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
@@ -31,13 +30,11 @@ keeps them rapidly decreasing. Hence:
 
 ## Main definitions
 
-* `UnitAddTorus.lineDeriv f w`: the derivative of a function `f` on `UnitAddTorus d` in
-  the direction `w : d → ℝ`.
 * `UnitAddTorus.conjWirtingerDeriv f`: the Cauchy-Riemann operator
   `∂bar f = (∂_s f + i ∂_t f) / 2` on `UnitAddTorus (Fin 2)`.
 * `TauCeti.UnitAddTorus.conjWirtingerDerivₗ`: `∂bar` as a complex-linear map on smooth functions.
-* `TauCeti.UnitAddTorus.mFourierCoeffₗ n`: the `n`-th Fourier coefficient as a linear form on
-  smooth functions.
+* `TauCeti.UnitAddTorus.kerConjWirtingerDerivEquiv`: the kernel of `∂bar` on smooth functions
+  is a copy of `ℂ`.
 
 ## Main results
 
@@ -50,6 +47,9 @@ keeps them rapidly decreasing. Hence:
 * `TauCeti.UnitAddTorus.ker_conjWirtingerDerivₗ`, `TauCeti.UnitAddTorus.range_conjWirtingerDerivₗ`
   and `TauCeti.UnitAddTorus.cokernelConjWirtingerDerivEquiv`: the kernel, range and cokernel of
   `∂bar` on smooth functions.
+* `TauCeti.UnitAddTorus.finrank_ker_conjWirtingerDerivₗ` and
+  `TauCeti.UnitAddTorus.finrank_cokernel_conjWirtingerDerivₗ`: complex dimension `1` for kernel
+  and cokernel.
 * `TauCeti.UnitAddTorus.finrank_real_ker_conjWirtingerDerivₗ`,
   `TauCeti.UnitAddTorus.finrank_real_cokernel_conjWirtingerDerivₗ` and
   `TauCeti.UnitAddTorus.finrank_ker_sub_finrank_cokernel_conjWirtingerDerivₗ`: real dimension `2`
@@ -110,67 +110,6 @@ end TauCeti.UnitAddTorus
 namespace UnitAddTorus
 
 open TauCeti.UnitAddTorus
-
-variable {d : Type*} [Fintype d]
-
-/-! ### Directional derivatives on the torus -/
-
-/-- The derivative of a function `f` on the torus `UnitAddTorus d` in the direction `w : d → ℝ`:
-its value at `z` is the derivative at `0` of `t ↦ f (z + t w)`. -/
-def lineDeriv (f : UnitAddTorus d → ℂ) (w : d → ℝ) : UnitAddTorus d → ℂ :=
-  fun z ↦ deriv (fun t : ℝ ↦ f (z + fun i ↦ ((t * w i : ℝ) : UnitAddCircle))) 0
-
-omit [Fintype d] in
-/-- Along the line through the image of `x`, a function on the torus is its lift along the line
-through `x`. -/
-private theorem comp_line_eq (f : UnitAddTorus d → ℂ) (x w : d → ℝ) :
-    (fun t : ℝ ↦ f ((fun i ↦ (x i : UnitAddCircle)) + fun i ↦ ((t * w i : ℝ) : UnitAddCircle))) =
-      fun t ↦ (fun y : d → ℝ ↦ f fun i ↦ (y i : UnitAddCircle)) (x + t • w) := by
-  funext t
-  congr 1
-
-omit [Fintype d] in
-/-- At the image of `x`, the directional derivative of `f` is the derivative of its lift. -/
-theorem lineDeriv_coe [Finite d] {f : UnitAddTorus d → ℂ} (x w : d → ℝ)
-    (hf : DifferentiableAt ℝ (fun y : d → ℝ ↦ f fun i ↦ (y i : UnitAddCircle)) x) :
-    lineDeriv f w (fun i ↦ (x i : UnitAddCircle)) =
-      fderiv ℝ (fun y : d → ℝ ↦ f fun i ↦ (y i : UnitAddCircle)) x w := by
-  have := Fintype.ofFinite d
-  rw [lineDeriv, comp_line_eq]
-  exact hf.lineDeriv_eq_fderiv (v := w)
-
-/-- For a smooth function, `t ↦ f (z + t w)` has derivative `lineDeriv f w z` at `0`. -/
-theorem hasDerivAt_lineDeriv {f : UnitAddTorus d → ℂ} (hf : f ∈ smoothFunctions d)
-    (w : d → ℝ) {z : UnitAddTorus d} :
-    HasDerivAt (fun t : ℝ ↦ f (z + fun i ↦ ((t * w i : ℝ) : UnitAddCircle))) (lineDeriv f w z)
-      0 := by
-  obtain ⟨x, rfl⟩ := surjective_coe z
-  refine DifferentiableAt.hasDerivAt ?_
-  rw [comp_line_eq]
-  exact DifferentiableAt.comp (g := fun y : d → ℝ ↦ f fun i ↦ (y i : UnitAddCircle))
-    (f := fun t : ℝ ↦ x + t • w) (0 : ℝ)
-    ((mem_smoothFunctions.1 hf).differentiable (by simp) _) (by fun_prop)
-
-/-- The directional derivatives of a smooth function are smooth. -/
-theorem lineDeriv_mem_smoothFunctions {f : UnitAddTorus d → ℂ} (hf : f ∈ smoothFunctions d)
-    (w : d → ℝ) : lineDeriv f w ∈ smoothFunctions d := by
-  have hF := mem_smoothFunctions.1 hf
-  rw [mem_smoothFunctions]
-  have h : (fun x : d → ℝ ↦ lineDeriv f w (fun i ↦ (x i : UnitAddCircle))) =
-      fun x ↦ fderiv ℝ (fun y : d → ℝ ↦ f fun i ↦ (y i : UnitAddCircle)) x w :=
-    funext fun x ↦ lineDeriv_coe x w (hF.differentiable (by simp) x)
-  rw [h]
-  exact (contDiff_infty_iff_fderiv.1 hF).2.clm_apply contDiff_const
-
-/-- **Fourier coefficients of a directional derivative.** The derivative of a smooth function in
-the direction `w` multiplies its `n`-th Fourier coefficient by `2πi ∑ i, n i * w i`. -/
-theorem mFourierCoeff_lineDeriv {f : UnitAddTorus d → ℂ} (hf : f ∈ smoothFunctions d)
-    (w : d → ℝ) (n : d → ℤ) :
-    mFourierCoeff (lineDeriv f w) n =
-      (2 * π * I * ∑ i, (n i : ℂ) * w i) * mFourierCoeff f n :=
-  mFourierCoeff_eq_smul_of_hasDerivAt (continuous_of_mem_smoothFunctions hf)
-    (continuous_of_mem_smoothFunctions (lineDeriv_mem_smoothFunctions hf w))
-    (fun _ ↦ hasDerivAt_lineDeriv hf w) n
 
 /-! ### The Cauchy-Riemann operator -/
 
@@ -262,7 +201,7 @@ theorem conjWirtingerDeriv_eq_zero_iff {f : UnitAddTorus (Fin 2) → ℂ}
       simp [hn, h'.resolve_left (conjWirtingerMultiplier_ne_zero hn)]
   · rintro ⟨c, rfl⟩
     funext z
-    simp [conjWirtingerDeriv, lineDeriv]
+    simp [conjWirtingerDeriv]
 
 /-- **The range of `∂bar`.** A smooth function `g` on the torus is `∂bar f` for some smooth function
 `f` if and only if its mean `mFourierCoeff g 0` vanishes. -/
@@ -330,21 +269,7 @@ namespace TauCeti.UnitAddTorus
 
 open _root_.UnitAddTorus
 
-variable {d : Type*} [Fintype d]
-
 /-! ### `∂bar` as a linear map on smooth functions -/
-
-/-- The `n`-th Fourier coefficient as a complex-linear form on the smooth functions. -/
-def mFourierCoeffₗ (n : d → ℤ) : smoothFunctions d →ₗ[ℂ] ℂ where
-  toFun f := mFourierCoeff (f : UnitAddTorus d → ℂ) n
-  map_add' f g := mFourierCoeff_add (integrable_of_mem_smoothFunctions f.2)
-    (integrable_of_mem_smoothFunctions g.2) n
-  map_smul' c _ := mFourierCoeff_smul c _ n
-
-@[simp]
-theorem mFourierCoeffₗ_apply (n : d → ℤ) (f : smoothFunctions d) :
-    mFourierCoeffₗ n f = mFourierCoeff (f : UnitAddTorus d → ℂ) n :=
-  (rfl)
 
 /-- The Cauchy-Riemann operator `∂bar` as a complex-linear map on the smooth functions on the square
 torus. -/
@@ -390,12 +315,6 @@ theorem range_conjWirtingerDerivₗ :
   · rintro ⟨f, hf, hfg⟩
     exact ⟨⟨f, hf⟩, Subtype.ext hfg⟩
 
-/-- The constant function `1 = mFourier 0` has mean `1`. -/
-theorem mFourierCoeffₗ_zero_mFourierSmooth_zero :
-    mFourierCoeffₗ (0 : d → ℤ) (mFourierSmooth 0) = 1 := by
-  classical
-  simp [mFourierCoeff_mFourier]
-
 /-- **The cokernel of `∂bar`.** The cokernel of `∂bar` on smooth functions on the torus is
 identified with `ℂ` by taking the mean. -/
 def cokernelConjWirtingerDerivEquiv :
@@ -405,21 +324,22 @@ def cokernelConjWirtingerDerivEquiv :
       ⟨c • mFourierSmooth 0, by
         rw [map_smul, mFourierCoeffₗ_zero_mFourierSmooth_zero, smul_eq_mul, mul_one]⟩)
 
+/-- The class of a smooth function `f` in the cokernel of `∂bar` corresponds to the mean of `f`. -/
+@[simp]
 theorem cokernelConjWirtingerDerivEquiv_mk (f : smoothFunctions (Fin 2)) :
     cokernelConjWirtingerDerivEquiv (Submodule.Quotient.mk f) =
-      mFourierCoeff (f : UnitAddTorus (Fin 2) → ℂ) 0 :=
-  (rfl)
+      mFourierCoeff (f : UnitAddTorus (Fin 2) → ℂ) 0 := by
+  rw [cokernelConjWirtingerDerivEquiv, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
+    ← mFourierCoeffₗ_apply]
+  exact LinearMap.quotKerEquivOfSurjective_apply_mk _ _ f
 
 /-- The cokernel of `∂bar` is spanned by the class of the constant function `1`. -/
 theorem cokernelConjWirtingerDerivEquiv_mk_mFourierSmooth_zero :
-    cokernelConjWirtingerDerivEquiv (Submodule.Quotient.mk (mFourierSmooth 0)) = 1 :=
-  mFourierCoeffₗ_zero_mFourierSmooth_zero
+    cokernelConjWirtingerDerivEquiv (Submodule.Quotient.mk (mFourierSmooth 0)) = 1 := by
+  rw [cokernelConjWirtingerDerivEquiv_mk, ← mFourierCoeffₗ_apply,
+    mFourierCoeffₗ_zero_mFourierSmooth_zero]
 
 /-! ### Dimensions and the index -/
-
-theorem mFourierSmooth_zero_ne_zero : mFourierSmooth (0 : d → ℤ) ≠ 0 := fun h ↦ by
-  have := congrArg (fun f : smoothFunctions d ↦ (f : UnitAddTorus d → ℂ) 0) h
-  simp [mFourier_zero] at this
 
 /-- The kernel of `∂bar` on smooth functions is a copy of `ℂ`: the constant function `c` corresponds
 to `c`. -/
@@ -427,10 +347,28 @@ def kerConjWirtingerDerivEquiv : LinearMap.ker conjWirtingerDerivₗ ≃ₗ[ℂ]
   (LinearEquiv.ofEq _ _ ker_conjWirtingerDerivₗ).trans
     (LinearEquiv.toSpanNonzeroSingleton ℂ _ _ mFourierSmooth_zero_ne_zero).symm
 
+/-- The scalar `c` corresponds to the constant function `c = c • mFourier 0` in the kernel of
+`∂bar`. -/
+@[simp]
+theorem coe_kerConjWirtingerDerivEquiv_symm_apply (c : ℂ) :
+    (kerConjWirtingerDerivEquiv.symm c : smoothFunctions (Fin 2)) = c • mFourierSmooth 0 := by
+  rw [kerConjWirtingerDerivEquiv, LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm,
+    LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply, LinearEquiv.toSpanNonzeroSingleton_apply]
+
+/-- A function in the kernel of `∂bar`, a constant, corresponds to its mean. -/
+@[simp]
+theorem kerConjWirtingerDerivEquiv_apply (f : LinearMap.ker conjWirtingerDerivₗ) :
+    kerConjWirtingerDerivEquiv f = mFourierCoeff (f : UnitAddTorus (Fin 2) → ℂ) 0 := by
+  conv_rhs => rw [← kerConjWirtingerDerivEquiv.symm_apply_apply f]
+  rw [← mFourierCoeffₗ_apply, coe_kerConjWirtingerDerivEquiv_symm_apply, map_smul,
+    mFourierCoeffₗ_zero_mFourierSmooth_zero, smul_eq_mul, mul_one]
+
+/-- The kernel of `∂bar` on smooth functions, the constants, has complex dimension `1`. -/
 theorem finrank_ker_conjWirtingerDerivₗ :
     Module.finrank ℂ (LinearMap.ker conjWirtingerDerivₗ) = 1 := by
   rw [kerConjWirtingerDerivEquiv.finrank_eq, Module.finrank_self]
 
+/-- The cokernel of `∂bar` on smooth functions on the torus has complex dimension `1`. -/
 theorem finrank_cokernel_conjWirtingerDerivₗ :
     Module.finrank ℂ (smoothFunctions (Fin 2) ⧸ LinearMap.range conjWirtingerDerivₗ) = 1 := by
   rw [cokernelConjWirtingerDerivEquiv.finrank_eq, Module.finrank_self]
