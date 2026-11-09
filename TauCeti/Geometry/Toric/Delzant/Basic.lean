@@ -169,16 +169,6 @@ theorem isClosed_facetPolyhedron : IsClosed (facetPolyhedron i u c) := by
   exact isClosed_iInter fun j ↦
     isClosed_le continuous_const (ContinuousLinearMap.apply ℝ ℝ (i (u j))).continuous
 
-/-- A facet polyhedron is bounded when, for a basis `b` of `V`, the values `x (b k)` at its
-points are bounded. -/
-theorem isBounded_facetPolyhedron_of_norm_le {κ : Type*} [Finite κ] (b : Module.Basis κ ℝ V)
-    {M : ℝ} (h : ∀ x ∈ facetPolyhedron i u c, ∀ k, ‖x (b k)‖ ≤ M) :
-    Bornology.IsBounded (facetPolyhedron i u c) := by
-  obtain ⟨C, -, hC⟩ := b.exists_opNorm_le (F := ℝ)
-  refine (Metric.isBounded_iff_subset_closedBall 0).2 ⟨C * max M 0, fun x hx ↦ ?_⟩
-  rw [Metric.mem_closedBall, dist_zero_right]
-  exact hC (le_max_right _ _) fun k ↦ (h x hx k).trans (le_max_left _ _)
-
 /-- **Vertices of a facet polyhedron.** A point `x` of the polyhedron is a vertex exactly when
 no nonzero point of `V*` vanishes on all the normals active at `x`. -/
 theorem mem_extremePoints_facetPolyhedron_iff [Finite ι] {x : StrongDual ℝ V} :

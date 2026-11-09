@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Toric.Delzant.Basic
 
+import TauCeti.Analysis.Normed.Module.FiniteDimension
+
 /-!
 # Hirzebruch trapezoids as Delzant polytopes
 
@@ -226,7 +228,7 @@ private theorem exists_activeSet_hirzebruch_subset_pair (hb : 0 < b) (ha : 0 < a
 private theorem isBounded_facetPolyhedron_hirzebruch (hb : 0 < b) (ha : 0 < a) :
     Bornology.IsBounded (facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin 2))
       (hirzebruchNormal k) (hirzebruchSupport a b)) := by
-  refine isBounded_facetPolyhedron_of_norm_le (Pi.basisFun ℝ (Fin 2))
+  refine (Pi.basisFun ℝ (Fin 2)).isBounded_of_norm_apply_le
     (M := a + |(k : ℝ)| * b + b) fun x hx ↦ ?_
   obtain ⟨hp₀, hq₀, hqb, hpq⟩ := mem_facetPolyhedron_hirzebruch_iff.1 hx
   have hkq : -(k * x (Pi.single 1 1)) ≤ |(k : ℝ)| * b := by

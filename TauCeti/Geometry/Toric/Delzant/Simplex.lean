@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Toric.Delzant.Basic
 
+import TauCeti.Analysis.Normed.Module.FiniteDimension
+
 /-!
 # The standard simplex as a Delzant polytope
 
@@ -129,6 +131,11 @@ theorem none_mem_activeSet_simplex_iff {x : StrongDual ℝ (Fin n → ℝ)} :
         (simplexSupport n a) x ↔ ∑ k, x (Pi.single k 1) = a := by
   rw [mem_activeSet, facetPairing_simplexNormal_none, simplexSupport_none, neg_inj]
 
+/-- A functional on `ℝⁿ` is determined by its values on the standard basis vectors `e_k`. -/
+private theorem strongDual_ext {x y : StrongDual ℝ (Fin n → ℝ)}
+    (h : ∀ k, x (Pi.single k 1) = y (Pi.single k 1)) : x = y :=
+  ContinuousLinearMap.coe_injective <| (Pi.basisFun ℝ (Fin n)).ext fun k ↦ by simpa using h k
+
 /-- For distinct facets `j` and `m`, some nonzero functional vanishes on every normal other than
 those of `j` and `m`. -/
 private theorem exists_ne_zero_facetPairing_simplex_eq_zero {j m : Option (Fin n)} (hjm : j ≠ m) :
@@ -213,13 +220,11 @@ private theorem eq_zero_or_eq_smul_proj_of_mem_extremePoints (ha : 0 < a)
   have hzero {k : Fin n} (hk : some k ≠ j) : x (Pi.single k 1) = 0 :=
     some_mem_activeSet_simplex_iff.1 (by rw [hj]; exact hk)
   rcases j with _ | p
-  · exact Or.inl (ContinuousLinearMap.coe_injective <| (Pi.basisFun ℝ (Fin n)).ext
-      fun k ↦ by simpa using hzero (Option.some_ne_none k))
+  · exact Or.inl (strongDual_ext fun k ↦ by simpa using hzero (Option.some_ne_none k))
   · -- All values but the `p`-th vanish, and the values sum to `a`.
     have hsum := none_mem_activeSet_simplex_iff.1 (by rw [hj]; simp)
-    rw [← Finset.add_sum_erase _ _ (Finset.mem_univ p), Finset.sum_eq_zero fun k hk ↦
-      hzero fun h ↦ (Finset.ne_of_mem_erase hk) (Option.some_injective _ h), add_zero] at hsum
-    refine Or.inr ⟨p, ContinuousLinearMap.coe_injective <| (Pi.basisFun ℝ (Fin n)).ext fun k ↦ ?_⟩
+    rw [Fintype.sum_eq_single p fun k hk ↦ hzero fun h ↦ hk (Option.some_injective _ h)] at hsum
+    refine Or.inr ⟨p, strongDual_ext fun k ↦ ?_⟩
     by_cases hk : k = p
     · subst hk
       simpa using hsum
@@ -249,7 +254,7 @@ theorem mem_extremePoints_facetPolyhedron_simplex_iff (ha : 0 < a)
     rw [facetPairing_apply]
     exact hw j hj
   rcases hx with rfl | ⟨p, rfl⟩
-  · refine ContinuousLinearMap.coe_injective <| (Pi.basisFun ℝ (Fin n)).ext fun k ↦ ?_
+  · refine strongDual_ext fun k ↦ ?_
     have h := hw' (some k) (some_mem_activeSet_simplex_iff.2 (by simp))
     rw [facetPairing_simplexNormal_some] at h
     simpa using h
@@ -259,11 +264,8 @@ theorem mem_extremePoints_facetPolyhedron_simplex_iff (ha : 0 < a)
       rwa [facetPairing_simplexNormal_some] at h
     have hp : w (Pi.single p 1) = 0 := by
       have hsum := hw' none (none_mem_activeSet_simplex_iff.2 (by simp [Pi.single_apply]))
-      rw [facetPairing_simplexNormal_none, neg_eq_zero,
-        ← Finset.add_sum_erase _ _ (Finset.mem_univ p),
-        Finset.sum_eq_zero fun k hk' ↦ hk k (Finset.ne_of_mem_erase hk'), add_zero] at hsum
-      exact hsum
-    refine ContinuousLinearMap.coe_injective <| (Pi.basisFun ℝ (Fin n)).ext fun k ↦ ?_
+      rwa [facetPairing_simplexNormal_none, neg_eq_zero, Fintype.sum_eq_single p hk] at hsum
+    refine strongDual_ext fun k ↦ ?_
     by_cases hkp : k = p
     · simpa [hkp] using hp
     · simpa using hk k hkp
@@ -324,7 +326,7 @@ of size `a` in the lattice `ℤⁿ`, with facet normals `e_1, …, e_n, -(e_1 + 
 polytope. -/
 theorem isDelzant_simplex (hn : n ≠ 0) (ha : 0 < a) :
     IsDelzant ((Int.castAddHom ℝ).compLeft (Fin n)) (simplexNormal n) (simplexSupport n a) := by
-  refine ⟨isBounded_facetPolyhedron_of_norm_le (Pi.basisFun ℝ (Fin n)) (M := a)
+  refine ⟨(Pi.basisFun ℝ (Fin n)).isBounded_of_norm_apply_le (M := a)
     fun x hx k ↦ ?_, fun x hx ↦ ?_, exists_activeSet_simplex_eq_singleton hn ha⟩
   · -- Every value `x(e_k)` at a point of the simplex lies in `[0, a]`.
     obtain ⟨h0, hsum⟩ := mem_facetPolyhedron_simplex_iff.1 hx
