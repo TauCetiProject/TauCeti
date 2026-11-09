@@ -54,12 +54,14 @@ of its fraction field is a Dedekind domain. Neither integral closedness of the b
 separability of the extension is required. The integral closure need not be assumed to be a domain.
 
 This does not assert finiteness as a module over the base ring. -/
-theorem IsIntegralClosure.isDedekindDomain (A : Type*) [CommRing A] [IsDomain A]
+theorem IsIntegralClosure.isDedekindDomain (A : Type*) [CommRing A]
     [IsNoetherianRing A] [Ring.DimensionLEOne A]
     (K : Type*) [Field K] [Algebra A K] [IsFractionRing A K] (L : Type*) [Field L] [Algebra A L]
     [Algebra K L] [IsScalarTower A K L] [Module.Finite K L] (C : Type*) [CommRing C]
     [Algebra A C] [Algebra C L] [IsScalarTower A C L] [IsIntegralClosure C A L] :
     IsDedekindDomain C :=
+  have : IsDomain A := Function.Injective.isDomain (algebraMap A K)
+    (IsFractionRing.injective A K)
   have : IsDomain C := Function.Injective.isDomain (algebraMap C L)
     (IsIntegralClosure.algebraMap_injective C A L)
   have : IsFractionRing C L := IsIntegralClosure.isFractionRing_of_finite_extension A K L C
@@ -75,7 +77,7 @@ of its fraction field is a Dedekind domain, with no separability hypothesis.
 
 This cannot be an instance since `K` cannot be inferred; see
 `integralClosure.isDedekindDomain_fractionRing` for the instance with `K := FractionRing A`. -/
-theorem integralClosure.isDedekindDomain (A : Type*) [CommRing A] [IsDomain A] [IsNoetherianRing A]
+theorem integralClosure.isDedekindDomain (A : Type*) [CommRing A] [IsNoetherianRing A]
     [Ring.DimensionLEOne A]
     (K : Type*) [Field K] [Algebra A K] [IsFractionRing A K] (L : Type*) [Field L] [Algebra A L]
     [Algebra K L] [IsScalarTower A K L] [Module.Finite K L] :
