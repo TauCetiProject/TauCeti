@@ -19,8 +19,10 @@ import Mathlib.RingTheory.Adjoin.Polynomial.Bivariate
 
 This file defines an algebraic function field intrinsically: no rational parameter is chosen.
 It proves that every transcendental element is a valid parameter and generates a function field
-of its own, compares the intrinsic notion with Mathlib's chosen-parameter `FunctionField`, and
-characterizes it by finite generation and transcendence degree one.
+of its own (and that an element algebraic over the base has a field of degree `0` over it by
+convention, `TauCeti.finrank_adjoin_eq_zero_of_isAlgebraic`), compares the intrinsic notion with
+Mathlib's chosen-parameter `FunctionField`, and characterizes it by finite generation and
+transcendence degree one.
 
 It then records how the notion behaves along a change of the field on either side: a finite
 extension of `F` is again a function field over `k`, an algebraic descent `F / E` preserves
@@ -105,6 +107,18 @@ theorem essFiniteType (hF : IsFunctionField k F) : Algebra.EssFiniteType k F := 
   exact Algebra.EssFiniteType.comp k k⟮x⟯ F
 
 end IsFunctionField
+
+/-- If `F` has an element transcendental over `k`, then an element `z` algebraic over `k` generates
+a subfield over which `F` is not finite, so `[F : k(z)]` is `0` by convention: otherwise `F` would
+be finite over `k`, hence algebraic, contradicting the transcendental element. -/
+theorem finrank_adjoin_eq_zero_of_isAlgebraic [Algebra.Transcendental k F] {z : F}
+    (hz : IsAlgebraic k z) : Module.finrank k⟮z⟯ F = 0 := by
+  by_contra h
+  have : Module.Finite k⟮z⟯ F := Module.finite_of_finrank_pos (Nat.pos_of_ne_zero h)
+  obtain ⟨x, hx⟩ := Algebra.Transcendental.transcendental (R := k) (A := F)
+  have : FiniteDimensional k k⟮z⟯ := IntermediateField.adjoin.finiteDimensional hz.isIntegral
+  have : FiniteDimensional k F := Module.Finite.trans k⟮z⟯ F
+  exact hx (Algebra.IsAlgebraic.isAlgebraic x)
 
 namespace IsFunctionField
 

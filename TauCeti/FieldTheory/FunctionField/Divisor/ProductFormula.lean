@@ -23,17 +23,18 @@ have degree `[F : k(z)]`.  This is Stichtenoth, *Algebraic Function Fields and C
 Theorem 1.4.11.
 
 Here `k` is not assumed to be the exact constant field of `F`, so a function outside `k` may still
-be algebraic over `k`.  Accordingly the hypothesis throughout is transcendence over `k`, which is
-strictly stronger than nonconstancy.
+be algebraic over `k`.  Accordingly `degree_zeros` and `degree_poles` assume transcendence over
+`k`, which is strictly stronger than nonconstancy; the degree bounds built on them
+(`finrank_adjoin_le_degree_of_mem_riemannRochSpace`, `finrank_adjoin_eq_mul_degree_of_ord_eq_neg`)
+also cover algebraic functions, where the degree is `0` by convention.
 
 ## Main results
 
 * `TauCeti.Divisor.degree_zeros` and `TauCeti.Divisor.degree_poles` compute the two effective
   parts of the principal divisor of a function transcendental over `k`.
   Consequently `TauCeti.Divisor.finrank_adjoin_le_degree_of_mem_riemannRochSpace` bounds
-  `[F : k(x)]` by `deg W` for `x` in `L(W)` with `W` effective, and
-  `TauCeti.IsFunctionField.finrank_adjoin_eq_zero_of_isAlgebraic` records that `[F : k(x)]` is `0`
-  by convention for `x` algebraic over `k`.
+  `[F : k(x)]` by `deg W` for `x` in `L(W)` with `W` effective; for `x` algebraic over `k` the
+  degree is `0` by convention (`TauCeti.finrank_adjoin_eq_zero_of_isAlgebraic`).
 * `TauCeti.Divisor.degree_principal` is the product formula, and
   `TauCeti.Divisor.degree_zeros_eq_degree_poles` restates it as equality of the degrees of the
   zero and pole divisors.
@@ -210,18 +211,6 @@ private theorem degree_poles_eq_finrank_adjoin (hF : IsFunctionField k F) {x : F
     exact_mod_cast hle
   exact le_antisymm (degree_poles_le_finrank_adjoin hF hx hx0) hdegree_ge
 
-/-- An element of an algebraic function field that is algebraic over `k` generates a subfield
-over which the field is not finite, so the degree `[F : k(z)]` is `0` by convention: otherwise `F`
-would be finite over `k`, hence algebraic, contradicting the transcendental element of `F`. -/
-theorem IsFunctionField.finrank_adjoin_eq_zero_of_isAlgebraic (hF : IsFunctionField k F) {z : F}
-    (hz : IsAlgebraic k z) : Module.finrank k⟮z⟯ F = 0 := by
-  by_contra h
-  have : Module.Finite k⟮z⟯ F := Module.finite_of_finrank_pos (Nat.pos_of_ne_zero h)
-  obtain ⟨x, hx⟩ := hF.exists_transcendental
-  have : FiniteDimensional k k⟮z⟯ := IntermediateField.adjoin.finiteDimensional hz.isIntegral
-  have : FiniteDimensional k F := Module.Finite.trans k⟮z⟯ F
-  exact hx (Algebra.IsAlgebraic.isAlgebraic x)
-
 namespace Divisor
 
 /-- **Stichtenoth, Theorem 1.4.11**: the pole divisor of a function `z` transcendental over `k`
@@ -259,7 +248,8 @@ theorem finrank_adjoin_le_degree_of_mem_riemannRochSpace (hF : IsFunctionField k
   · have hdeg := degree_le_of_le
       ((poles_le_iff_mem_riemannRochSpace hF hW (Units.mk0 x hxt.ne_zero)).mpr hxW)
     rwa [degree_poles hF (Units.mk0 x hxt.ne_zero) hxt, Units.val_mk0] at hdeg
-  · rw [hF.finrank_adjoin_eq_zero_of_isAlgebraic (not_not.mp hxt), Nat.cast_zero]
+  · have : Algebra.Transcendental k F := ⟨hF.exists_transcendental⟩
+    rw [finrank_adjoin_eq_zero_of_isAlgebraic (not_not.mp hxt), Nat.cast_zero]
     exact degree_nonneg hW
 
 /-- **The product formula for an algebraic function field** (Stichtenoth, Theorem 1.4.11):
@@ -306,7 +296,8 @@ theorem finrank_adjoin_eq_mul_degree_of_ord_eq_neg (hF : IsFunctionField k F) {z
   · have hn : n = 0 := by
       have := P.ord_eq_zero_of_isAlgebraic halg
       omega
-    rw [hF.finrank_adjoin_eq_zero_of_isAlgebraic halg, hn, zero_mul]
+    have : Algebra.Transcendental k F := ⟨hF.exists_transcendental⟩
+    rw [finrank_adjoin_eq_zero_of_isAlgebraic halg, hn, zero_mul]
   have hz : z ≠ 0 := fun h0 ↦ halg (h0 ▸ isAlgebraic_zero)
   have hdeg := Divisor.degree_poles hF (Units.mk0 z hz) halg
   rw [Divisor.poles_eq_natCast_zsmul_ofPoint_of_ord_eq_neg hF (z := Units.mk0 z hz) hP hQ,
