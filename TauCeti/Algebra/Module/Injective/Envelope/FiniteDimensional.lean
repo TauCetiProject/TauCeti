@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-public import TauCeti.Algebra.Module.Injective.Envelope.Existence
-import TauCeti.Algebra.Module.Injective.Dual
-public import TauCeti.LinearAlgebra.Dual.Cogenerator
-import TauCeti.LinearAlgebra.Dual.RightAction
+public import TauCeti.Algebra.Module.Injective.Envelope.Basic
+import TauCeti.RingTheory.MatlisDuality.ArtinAlgebra
 
 /-!
 # Finite-dimensional injective envelopes
@@ -18,9 +16,8 @@ Every finite-dimensional module over a finite-dimensional algebra has a finite-d
 injective envelope. No algebraic closedness or self-injectivity is required. The result also
 applies to finitely generated modules, with their base-field action induced from the algebra.
 
-Finite powers of the dual of the right regular module provide finite-dimensional injective
-ambient modules. Restricting an embedding into one of these yields an envelope, so its
-uniqueness follows from the general injective-envelope API.
+A finite-dimensional algebra over a field is an Artin algebra, so this is the field case of
+`TauCeti.exists_isInjectiveEnvelope_of_isArtinianRing`.
 
 ## References
 
@@ -45,20 +42,11 @@ theorem exists_isInjectiveEnvelope_finiteDimensional [Module k M] [IsScalarTower
     ∃ (Q : Type max u v) (_ : AddCommGroup Q) (_ : Module A Q) (_ : Module k Q)
       (_ : IsScalarTower k A Q) (_ : FiniteDimensional k Q) (i : M →ₗ[A] Q),
       IsInjectiveEnvelope i := by
-  -- The left action on the dual of the right regular module is precomposition.
-  let : Module A (Module.Dual k A) := Module.compHom _ (dualRightAction k A)
-  have hsmul (a : A) (φ : Module.Dual k A) (x : A) : (a • φ) x = φ (x * a) :=
-    (dualRightAction_apply_apply k A a φ x).trans (by rw [op_smul_eq_mul])
-  have : IsScalarTower k A (Module.Dual k A) :=
-    (LinearEquiv.refl k _).isScalarTower_of_dual_regular hsmul
-  let : Module.Injective A (Module.Dual k A) :=
-    (LinearEquiv.refl k _).moduleInjective_of_dual_regular hsmul
-  obtain ⟨n, f, hf⟩ := (LinearEquiv.refl k _).exists_injective_linearMap_pi_of_dual hsmul M
-  let : Module.Injective A (Fin n → Module.Dual k A) := Module.Injective.pi A _
-  obtain ⟨P, hP, hp⟩ := f.exists_isInjectiveEnvelope_submodule hf
-  let : FiniteDimensional k P :=
-    Module.Finite.of_injective (P.subtype.restrictScalars k) P.injective_subtype
-  exact ⟨P, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, _, hp⟩
+  have : Module.Finite A M := Module.Finite.of_restrictScalars_finite k A M
+  obtain ⟨Q, _, _, _, i, hi⟩ := exists_isInjectiveEnvelope_of_isArtinianRing k (A := A) M
+  let : Module k Q := Module.compHom Q (algebraMap k A)
+  let : IsScalarTower k A Q := IsScalarTower.of_algebraMap_smul fun _ _ => rfl
+  exact ⟨Q, _, _, _, ‹_›, Module.Finite.trans A Q, i, hi⟩
 
 /-- Every finitely generated module over a finite-dimensional algebra has a finite-dimensional
 injective envelope. The field action on the source is induced through the algebra map. -/

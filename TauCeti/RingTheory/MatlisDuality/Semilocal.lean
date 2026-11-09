@@ -35,6 +35,8 @@ at most one-dimensional over `R ⧸ 𝔪` because `J(R)` is a radical ideal.
 * `TauCeti.IsInjectiveEnvelope.length_linearMap_quotient_jacobson` and
   `TauCeti.IsInjectiveEnvelope.bijective_applyₗ_quotient_jacobson`: Matlis duality for modules of
   finite length over `R`.
+* `IsArtinianRing.isFiniteLength_of_finite`: a finitely generated module over a commutative Artinian
+  ring has finite length.
 * `TauCeti.IsInjectiveEnvelope.isFiniteLength_quotient_jacobson` and
   `TauCeti.exists_isInjectiveEnvelope_quotient_jacobson`: over a commutative Artinian ring, every
   injective hull of `R ⧸ J(R)` has finite length, and one exists in the universe of `R`.
@@ -97,6 +99,11 @@ theorem length_linearMap_quotient_jacobson_eq_one (𝔪 : Ideal R) [h𝔪 : 𝔪
   exact neg_mem hiy
 
 end Ideal
+
+/-- A finitely generated module over a commutative Artinian ring has finite length. -/
+theorem IsArtinianRing.isFiniteLength_of_finite (R : Type u) [CommRing R] [IsArtinianRing R]
+    (M : Type v) [AddCommGroup M] [Module R M] [Module.Finite R M] : IsFiniteLength R M :=
+  ((IsArtinianRing.tfae R M).out 1 4).mp ‹_›
 
 namespace TauCeti
 
