@@ -81,6 +81,16 @@ theorem signBasis_eq_neg_of_orientation_eq_neg (o : Orientation R E ι)
     subst o <;> simp [signBasis, h, Module.Ray.ne_neg_self b.orientation,
       (Module.Ray.ne_neg_self b.orientation).symm]
 
+/-- Reindexing an orientation and a basis along the same equivalence preserves their relative
+sign. -/
+@[simp]
+theorem signBasis_reindex {ι' : Type*} [Fintype ι'] [DecidableEq ι'] (o : Orientation R E ι)
+    (b : Module.Basis ι R E) (e : ι ≃ ι') :
+    signBasis (Orientation.reindex R E e o) (b.reindex e) = signBasis o b := by
+  unfold signBasis
+  rw [b.orientation_reindex e]
+  split_ifs <;> simp_all
+
 /-- The basis signs compensate the change-of-basis determinant to give a positive product. -/
 theorem signBasis_mul_det_mul_pos (o : Orientation R E ι)
     (b b' : Module.Basis ι R E) :

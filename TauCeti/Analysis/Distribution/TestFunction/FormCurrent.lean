@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.MeasureTheory.Integral.Bochner.Alternating
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Calculus.DifferentialForm.Integral
+import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Wedge
 import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -36,9 +37,11 @@ These are the currents represented by locally integrable forms, which are absolu
 with respect to Haar measure; the coefficients of `ω` need not be smooth. The current depends
 linearly on `ω` and only on the almost-everywhere class of `ω` on `Ω`. A typical example is the
 curvature current `(2π)⁻¹ ∫ i F_A ∧ ζ` of a unitary connection on a Hermitian line bundle, whose
-weak limits are studied through its mass. If `ω` is `C¹` and closed on `Ω`, its current has zero
-boundary, `[ω] (d η) = 0` (`Orientation.formCurrent_comp_extDerivCLM_of_extDeriv_eq_zero`); this is
-Stokes' theorem `∫ ω ∧ dη = ± ∫ dω ∧ η` for `η` compactly supported in `Ω`.
+weak limits are studied through its mass. If `ω` is `C¹` on `Ω`, Stokes' theorem
+`∫ ω ∧ dη = (-1) ^ (j + 1) ∫ dω ∧ η` for `η` compactly supported in `Ω` says that the boundary of
+`[ω]` is `± [dω]` (`Orientation.formCurrent_comp_extDerivCLM`). In particular, if `ω` is also
+closed on `Ω`, its current has zero boundary
+(`Orientation.formCurrent_comp_extDerivCLM_of_extDeriv_eq_zero`).
 
 ## Main declarations
 
@@ -52,6 +55,8 @@ Stokes' theorem `∫ ω ∧ dη = ± ∫ dω ∧ η` for `η` compactly supporte
   `Orientation.formCurrent_neg`: linearity in the form.
 * `Orientation.formCurrent_congr_ae`: forms that agree almost everywhere on `Ω` have the same
   current.
+* `Orientation.formCurrent_comp_extDerivCLM`: Stokes' theorem `[ω] ∘ d = (-1) ^ (j + 1) [dω]` for
+  forms that are `C¹` on `Ω`.
 * `Orientation.formCurrent_comp_extDerivCLM_of_extDeriv_eq_zero`: forms closed on `Ω` give currents
   with zero boundary.
 
@@ -215,17 +220,25 @@ theorem formCurrent_congr_ae (o : Orientation ℝ E (Fin (j + l))) (Ω : Opens E
         formCurrent_of_not_locallyIntegrableOn o Ω fun h' ↦ hω (h'.congr hb.symm)]
   · simp [formCurrent_eq_zero_of_finrank_ne o Ω _ h]
 
-/-- **Stokes' theorem for the current of a closed form.** The current of a form `ω` that is `C¹`
-and closed on `Ω` has zero boundary: `[ω] (d η) = ∫ ω ∧ dη = 0` for every test form `η`. -/
-theorem formCurrent_comp_extDerivCLM_of_extDeriv_eq_zero {k : ℕ}
-    (o : Orientation ℝ E (Fin (j + (k + 1)))) (Ω : Opens E) (hω : ContDiffOn ℝ 1 ω Ω)
-    (hdω : Set.EqOn (extDeriv ω) 0 Ω) :
-    o.formCurrent Ω ω ∘L (extDerivCLM : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] _) = 0 := by
+/-- **Stokes' theorem for the current of a form.** The boundary of the current of a form `ω` that
+is `C¹` on `Ω` is, up to the sign `(-1) ^ (j + 1)`, the current of its exterior derivative:
+`[ω] (d η) = ∫ ω ∧ dη = (-1) ^ (j + 1) ∫ dω ∧ η` for every test form `η`. The current of the
+`(j + 1)`-form `dω` uses the orientation `o` with its index reassociated. -/
+theorem formCurrent_comp_extDerivCLM {k : ℕ} (o : Orientation ℝ E (Fin (j + (k + 1))))
+    (Ω : Opens E) (hω : ContDiffOn ℝ 1 ω Ω) :
+    o.formCurrent Ω ω ∘L (extDerivCLM : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] _) =
+      (-1 : ℝ) ^ (j + 1) •
+        (Orientation.reindex ℝ E (finCongr (by omega)) o).formCurrent Ω (extDeriv ω) := by
   by_cases h : finrank ℝ E = j + (k + 1)
   · let b := finBasisOfFinrankEq ℝ E h
+    let e : Fin (j + (k + 1)) ≃ Fin (j + 1 + k) := finCongr (by omega)
     ext η
     have hloc : LocallyIntegrableOn ω Ω b.addHaar :=
       hω.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet
+    have hdloc : LocallyIntegrableOn (extDeriv ω) Ω b.addHaar :=
+      ContinuousOn.locallyIntegrableOn (fun x hx ↦ (TauCeti.contDiffAt_extDeriv (r := 0)
+        (hω.contDiffAt (Ω.isOpen.mem_nhds hx)) (by simp)).continuousAt.continuousWithinAt)
+        Ω.isOpen.measurableSet
     have hη : ContDiff ℝ 1 η := η.contDiff.of_le (by exact_mod_cast le_top)
     -- Off `Ω` the test form `η`, and with it `ω ∧ η`, vanishes near every point.
     have hη₀ (x : E) (hx : x ∉ Ω) : (η : E → E [⋀^Fin k]→L[ℝ] ℝ) =ᶠ[𝓝 x] 0 :=
@@ -240,22 +253,48 @@ theorem formCurrent_comp_extDerivCLM_of_extDeriv_eq_zero {k : ℕ}
           (hω.contDiffAt (Ω.isOpen.mem_nhds hx)) hη.contDiffAt
       · exact contDiffAt_const.congr_of_eventuallyEq (hψ₀ x hx)
     obtain ⟨-, hzero⟩ := b.integral_extDeriv_eq_zero (n := j + k) hψ η.hasCompactSupport.wedge_left
-    -- By the Leibniz rule and `dω = 0` on `Ω`, `d (ω ∧ η) = (-1) ^ j ω ∧ dη`.
+    -- By the Leibniz rule, `d (ω ∧ η) = dω ∧ η + (-1) ^ j ω ∧ dη`.
     have hL (x : E) : extDeriv (fun y ↦ wedge (ω y) (η y)) x b =
-        (-1 : ℝ) ^ j * wedge (ω x) (extDeriv η x) b := by
+        wedge (extDeriv ω x) (η x) (b.reindex e) +
+          (-1 : ℝ) ^ j * wedge (ω x) (extDeriv η x) b := by
       by_cases hx : x ∈ Ω
       · have := TauCeti.extDeriv_pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
           ((hω.contDiffAt (Ω.isOpen.mem_nhds hx)).differentiableAt one_ne_zero)
           (hη.differentiable one_ne_zero x) b
-        simpa [wedge_def, hdω hx] using this
+        have hb : ⇑(b.reindex e) = ⇑b ∘ Fin.cast (by omega) := by
+          ext i
+          simp [e]
+        simpa [wedge_def, hb] using this
       · have hd₀ (m : ℕ) : extDeriv (0 : E → E [⋀^Fin m]→L[ℝ] ℝ) x = 0 := by
           simp [extDeriv, ← alternatizeUncurryFinCLM_apply]
-        rw [(hψ₀ x hx).extDeriv_eq, (hη₀ x hx).extDeriv_eq, hd₀, hd₀]
+        rw [(hψ₀ x hx).extDeriv_eq, (hη₀ x hx).extDeriv_eq, hd₀, hd₀,
+          show η x = 0 from (hη₀ x hx).eq_of_nhds]
         simp [wedge_def]
-    simp_rw [hL, integral_const_mul] at hzero
-    have hint : ∫ x, wedge (ω x) (extDeriv η x) b ∂b.addHaar = 0 := by
-      simpa using hzero
-    simp [formCurrent_apply_eq_signBasis_mul o Ω b hloc, extDerivCLM_apply, hint]
-  · simp [formCurrent_eq_zero_of_finrank_ne o Ω ω h]
+    have hi : Integrable (fun x ↦ wedge (ω x) (extDeriv η x) b) b.addHaar := by
+      simpa using (extDerivCLM η).integrable_bilin (wedgeApplyCLM ⇑b) hloc
+    have hi' : Integrable (fun x ↦ wedge (extDeriv ω x) (η x) (b.reindex e)) b.addHaar := by
+      simpa using η.integrable_bilin (wedgeApplyCLM ⇑(b.reindex e)) hdloc
+    rw [integral_congr_ae (Eventually.of_forall hL), integral_add hi' (hi.const_mul _),
+      integral_const_mul] at hzero
+    rw [ContinuousLinearMap.comp_apply, _root_.smul_apply, smul_eq_mul,
+      formCurrent_apply_eq_signBasis_mul o Ω b hloc,
+      formCurrent_apply_eq_signBasis_mul _ Ω (b.reindex e) hdloc, signBasis_reindex,
+      Module.Basis.addHaar_reindex]
+    simp only [extDerivCLM_apply]
+    have hsq : ((-1 : ℝ) ^ j) ^ 2 = 1 := by rw [← pow_mul, mul_comm, pow_mul]; simp
+    linear_combination ((-1 : ℝ) ^ j * (o.signBasis b : ℝ)) * hzero -
+      (o.signBasis b : ℝ) * (∫ x, wedge (ω x) (extDeriv η x) b ∂b.addHaar) * hsq
+  · have h' : finrank ℝ E ≠ j + 1 + k := by omega
+    simp [formCurrent_eq_zero_of_finrank_ne o Ω ω h, formCurrent_eq_zero_of_finrank_ne _ Ω _ h']
+
+/-- **Stokes' theorem for the current of a closed form.** The current of a form `ω` that is `C¹`
+and closed on `Ω` has zero boundary: `[ω] (d η) = ∫ ω ∧ dη = 0` for every test form `η`. -/
+theorem formCurrent_comp_extDerivCLM_of_extDeriv_eq_zero {k : ℕ}
+    (o : Orientation ℝ E (Fin (j + (k + 1)))) (Ω : Opens E) (hω : ContDiffOn ℝ 1 ω Ω)
+    (hdω : Set.EqOn (extDeriv ω) 0 Ω) :
+    o.formCurrent Ω ω ∘L (extDerivCLM : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] _) = 0 := by
+  rw [formCurrent_comp_extDerivCLM o Ω hω, formCurrent_congr_ae _ Ω (μ := Measure.addHaar)
+    ((ae_restrict_iff' Ω.isOpen.measurableSet).2 (Eventually.of_forall hdω)), formCurrent_zero,
+    smul_zero]
 
 end Orientation

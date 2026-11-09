@@ -73,8 +73,10 @@ everywhere there with a function that is locally integrable on the whole space a
   preserves local integrability.
 * `MeasureTheory.LocallyIntegrableOn.comp_smul_of_mapsTo`: a nonzero dilation onto a smaller set
   preserves local integrability for an additive Haar measure.
-* `MeasureTheory.LocallyIntegrableOn.of_isAddHaarMeasure`: local integrability for one additive
-  Haar measure gives it for every other.
+* `MeasureTheory.LocallyIntegrableOn.smul_measure`: multiplying the measure by a finite constant
+  preserves local integrability.
+* `MeasureTheory.LocallyIntegrableOn.of_isAddHaarMeasure`: on a locally compact second-countable
+  group, local integrability for one additive Haar measure gives it for every other.
 * `MeasureTheory.LocallyIntegrableOn.exists_integrable_eqOn_add_of_isCompact`: localization to
   a compact set and its small translates by a globally integrable function.
 * `MeasureTheory.locallyIntegrableOn_iff_forall_isCompact_closure`: characterization by
@@ -202,14 +204,29 @@ theorem LocallyIntegrableOn.comp_smul_of_mapsTo (hu : LocallyIntegrableOn u Ω �
     exact hus.integrable.smul_measure ENNReal.ofReal_ne_top
   exact (Homeomorph.smulOfNeZero R hR).measurableEmbedding.integrableOn_map_iff.1 hmap
 
-/-- Local integrability does not depend on the choice of additive Haar measure. -/
-theorem LocallyIntegrableOn.of_isAddHaarMeasure (ν : Measure E) [ν.IsAddHaarMeasure]
-    (hu : LocallyIntegrableOn u Ω μ) : LocallyIntegrableOn u Ω ν := by
+end MeasureTheory
+
+namespace MeasureTheory
+
+/-- Local integrability is preserved by multiplying the measure by a finite constant. -/
+theorem LocallyIntegrableOn.smul_measure {X F : Type*} [MeasurableSpace X] [TopologicalSpace X]
+    [TopologicalSpace F] [ESeminormedAddMonoid F] {μ : Measure X} {s : Set X} {u : X → F}
+    (hu : LocallyIntegrableOn u s μ) {c : ENNReal} (hc : c ≠ ⊤) :
+    LocallyIntegrableOn u s (c • μ) := by
   intro x hx
-  obtain ⟨s, hs, hus⟩ := hu x hx
-  refine ⟨s, hs, ?_⟩
-  rw [Measure.isAddLeftInvariant_eq_smul ν μ, IntegrableOn, Measure.restrict_smul]
-  exact hus.integrable.smul_measure ENNReal.coe_ne_top
+  obtain ⟨t, ht, hut⟩ := hu x hx
+  refine ⟨t, ht, ?_⟩
+  rw [IntegrableOn, Measure.restrict_smul]
+  exact hut.integrable.smul_measure hc
+
+/-- Local integrability does not depend on the choice of additive Haar measure. -/
+theorem LocallyIntegrableOn.of_isAddHaarMeasure {G F : Type*} [AddGroup G] [TopologicalSpace G]
+    [IsTopologicalAddGroup G] [LocallyCompactSpace G] [SecondCountableTopology G]
+    [MeasurableSpace G] [BorelSpace G] [TopologicalSpace F] [ESeminormedAddMonoid F]
+    {μ : Measure G} [μ.IsAddHaarMeasure] {Ω : Set G} {u : G → F} (ν : Measure G)
+    [ν.IsAddHaarMeasure] (hu : LocallyIntegrableOn u Ω μ) : LocallyIntegrableOn u Ω ν := by
+  rw [Measure.isAddLeftInvariant_eq_smul ν μ]
+  exact hu.smul_measure ENNReal.coe_ne_top
 
 end MeasureTheory
 
