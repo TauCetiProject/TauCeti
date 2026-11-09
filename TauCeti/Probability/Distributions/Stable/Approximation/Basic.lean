@@ -24,6 +24,7 @@ converge to `exp (stableCharacteristicExponent α β t)`, by the Lévy–Khintch
 
 These laws are the finite-jump approximations used to construct non-Gaussian stable laws by
 letting the cutoff tend to zero.
+Reflection negates the skewness of each compensated approximation.
 
 When the Lévy measure is carried by `{x | t * x ≤ 0}`, the exponential `exp (t * x)` is
 integrable under every approximation, and the moment generating function at `t` is the
@@ -64,6 +65,35 @@ theorem stableCompensatedPoissonMeasure_def (α β ε : ℝ) :
         ((stableLevyMeasure α β) {x : ℝ | ε < |x|}).toNNReal
         (cond (stableLevyMeasure α β) {x : ℝ | ε < |x|})).map
         (fun x ↦ x - ∫ y in {y : ℝ | ε < |y|}, sin y ∂stableLevyMeasure α β) := (rfl)
+
+/-- Reflecting a compensated stable approximation negates its skewness parameter. -/
+theorem map_neg_stableCompensatedPoissonMeasure (α β ε : ℝ) :
+    (stableCompensatedPoissonMeasure α β ε).map (fun x ↦ -x) =
+      stableCompensatedPoissonMeasure α (-β) ε := by
+  let ν := stableLevyMeasure α β
+  let A := {x : ℝ | ε < |x|}
+  have hA : MeasurableSet A := measurableSet_lt measurable_const (by fun_prop)
+  have hpre : (fun x : ℝ ↦ -x) ⁻¹' A = A := by
+    ext x
+    simp [A]
+  have hmass : ν A = stableLevyMeasure α (-β) A := by
+    rw [← map_neg_stableLevyMeasure, Measure.map_apply measurable_neg hA, hpre]
+  have hcond : (cond ν A).map (fun x ↦ -x) = cond (stableLevyMeasure α (-β)) A := by
+    have hrestrict := (Measure.restrict_map (μ := ν) measurable_neg hA).symm
+    rw [hpre, map_neg_stableLevyMeasure] at hrestrict
+    rw [ProbabilityTheory.cond, ProbabilityTheory.cond,
+      Measure.map_smul _ measurable_neg.aemeasurable, hrestrict, hmass]
+  have hsin : (∫ y in A, sin y ∂stableLevyMeasure α (-β)) = -∫ y in A, sin y ∂ν := by
+    rw [← map_neg_stableLevyMeasure,
+      setIntegral_map hA (by fun_prop) measurable_neg.aemeasurable, hpre]
+    simp only [sin_neg, integral_neg, ν]
+  rw [stableCompensatedPoissonMeasure_def, stableCompensatedPoissonMeasure_def,
+    ← hmass, hsin, ← hcond, ← map_neg_compoundPoissonMeasure,
+    Measure.map_map (by fun_prop) measurable_neg,
+    Measure.map_map measurable_neg (by fun_prop)]
+  congr 1
+  ext x
+  simp [sub_eq_add_neg, add_comm, ν, A]
 
 /-- Every valid compensated stable approximation is a probability measure. -/
 theorem isProbabilityMeasure_stableCompensatedPoissonMeasure {α β ε : ℝ}

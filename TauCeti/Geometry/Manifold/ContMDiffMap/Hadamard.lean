@@ -14,22 +14,20 @@ import TauCeti.Analysis.Calculus.Hadamard
 
 Subtracting its value at `x`, a smooth real function on a real normed space is a combination of
 the coordinate functions of a finite basis, each relative to its value at `x`, with smooth
-coefficients whose values at `x` are the directional derivatives along the basis.
-
-More generally, a smooth function whose iterated derivatives of every order below `n` vanish at
-`x` is a combination of products of `n` such relative coordinate functions with smooth
-coefficients.
+coefficients whose values at `x` are the directional derivatives along the basis. More generally,
+subtracting its Taylor polynomial of order `n` at `x`, it is a combination of the products of
+`n + 1` such relative coordinate functions, with smooth coefficients.
 
 ## Main results
 
 * `ContMDiffMap.exists_hadamard_coords`: Hadamard's lemma in the coordinates of a finite basis.
-* `ContMDiffMap.exists_hadamard_coords_of_iteratedFDeriv_eq_zero`: the higher-order Hadamard
-  lemma in the coordinates of a finite basis.
+* `ContMDiffMap.exists_taylor_coords`: Taylor's formula of order `n` with the remainder written
+  in the same coordinates.
 -/
 
 public section
 
-open scoped ContDiff Manifold Nat
+open scoped ContDiff Manifold
 
 noncomputable section
 
@@ -63,44 +61,34 @@ theorem exists_hadamard_coords {E : Type*} [NormedAddCommGroup E]
         rw [map_smul]
         simp [mul_comm]
 
-/-- **The higher-order Hadamard lemma in coordinates.** If the iterated derivatives of a smooth
-real function `f` of every order `k < n` vanish at `x`, then `f` is a combination of the products
-of `n` coordinate functions of a finitely-indexed basis, each taken relative to its own value at
-`x`, with smooth coefficients. At `x` the coefficients are `(n!)⁻¹` times the values of the
-`n`-th iterated derivative of `f` on basis vectors. For `n = 1` this is `exists_hadamard_coords`
-at a zero of `f`. -/
-theorem exists_hadamard_coords_of_iteratedFDeriv_eq_zero {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {ι : Type*} [Fintype ι]
-    (f : C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯) (x : E) (b : Module.Basis ι ℝ E) {n : ℕ}
-    (hf : ∀ k < n, iteratedFDeriv ℝ k f x = 0) :
-    ∃ a : (Fin n → ι) → C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯,
-      (∀ σ, a σ x = (n ! : ℝ)⁻¹ * iteratedFDeriv ℝ n f x (fun j ↦ b (σ j))) ∧
-        ∀ y, f y = ∑ σ, a σ y * ∏ j, (b.coord (σ j) y - b.coord (σ j) x) := by
-  cases n with
-  | zero => exact ⟨fun _ ↦ f, fun σ ↦ by simp, fun y ↦ by simp⟩
-  | succ m =>
-    have hf' : ContDiff ℝ (↑(⊤ : ℕ∞) + (m + 1 : ℕ)) f :=
-      f.contMDiff.contDiff.of_le (by exact_mod_cast le_top)
-    have hR := ContDiff.contDiff_taylorRemainderFactor (m := ⊤) hf' x
-    -- The coefficients are the values of the Taylor remainder factor on basis vectors.
-    refine ⟨fun σ ↦ ⟨fun y ↦ TauCeti.taylorRemainderFactor m f x y (fun j ↦ b (σ j)),
-      ((ContinuousMultilinearMap.apply ℝ (fun _ : Fin (m + 1) ↦ E) ℝ
-        fun j ↦ b (σ j)).contDiff.comp hR).contMDiff⟩, fun σ ↦ ?_, fun y ↦ ?_⟩
-    · have h := congrArg (fun L ↦ L fun j ↦ b (σ j)) (TauCeti.taylorRemainderFactor_self m f x)
-      simp only [smul_apply, smul_eq_mul] at h
-      -- The bundled coefficient `a σ` applied at `x` unfolds to the left side of `h`.
-      exact h
-    have hv : y - x = ∑ i, (b.coord i y - b.coord i x) • b i := by
-      simp_rw [← map_sub, Module.Basis.coord_apply, b.sum_repr]
-    have hf'' : ContDiff ℝ (m + 1) f := f.contMDiff.contDiff.of_le (by exact_mod_cast le_top)
-    -- The Taylor polynomial vanishes, and the remainder expands multilinearly in the basis.
-    rw [ContDiff.eq_sum_add_taylorRemainderFactor_apply hf'' x y,
-      Finset.sum_eq_zero (fun k hk ↦ by rw [hf k (Finset.mem_range.mp hk)]; simp), zero_add, hv,
-      ContinuousMultilinearMap.map_sum]
-    refine Finset.sum_congr rfl fun σ _ ↦ ?_
-    rw [ContinuousMultilinearMap.map_smul_univ, smul_eq_mul, mul_comm]
-    -- The right side applies the bundled coefficient `a σ`, whose underlying function is the
-    -- evaluated remainder factor on the left.
-    rfl
+open scoped Nat in
+/-- **Taylor's formula in coordinates.** A smooth real function on a finite-dimensional space is
+its Taylor polynomial of order `n` at `x` plus a combination of the products of `n + 1`
+coordinate functions of any finitely-indexed basis, each taken relative to its value at `x`, with
+smooth coefficients. When the derivatives of order at most `n` vanish at `x`, this writes the
+function as a sum of products of `n + 1` functions vanishing at `x` with smooth functions. -/
+theorem exists_taylor_coords {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {ι : Type*} [Fintype ι] (f : C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯) (x : E)
+    (b : Module.Basis ι ℝ E) (n : ℕ) :
+    ∃ a : (Fin (n + 1) → ι) → C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯,
+      ∀ y, f y = ∑ k ∈ Finset.range (n + 1), (k ! : ℝ)⁻¹ * iteratedFDeriv ℝ k f x (fun _ ↦ y - x) +
+        ∑ r, a r y * ∏ j, (b.coord (r j) y - b.coord (r j) x) := by
+  have hf : ContDiff ℝ ∞ f := f.contMDiff.contDiff
+  refine ⟨fun r ↦ ⟨fun y ↦ TauCeti.taylorRemainderFactor n f x y (fun j ↦ b (r j)), ?_⟩,
+    fun y ↦ ?_⟩
+  · exact ((ContinuousMultilinearMap.apply ℝ (fun _ : Fin (n + 1) ↦ E) ℝ
+      (fun j ↦ b (r j))).contDiff.comp
+        ((hf.of_le (by simp)).contDiff_taylorRemainderFactor (k := ⊤) x)).contMDiff
+  · rw [(hf.of_le (by simp)).eq_sum_add_taylorRemainderFactor_apply (n := n) x y]
+    simp only [smul_eq_mul]
+    congr 1
+    -- Expand the increment in the basis and use multilinearity of the remainder factor.
+    set T := TauCeti.taylorRemainderFactor n f x y
+    conv_lhs => rw [← b.sum_repr (y - x)]
+    rw [T.map_sum]
+    refine Finset.sum_congr rfl fun r _ ↦ ?_
+    rw [T.map_smul_univ, smul_eq_mul, mul_comm]
+    congr 1
+    simp [Module.Basis.coord_apply]
 
 end ContMDiffMap

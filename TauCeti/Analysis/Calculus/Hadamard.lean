@@ -17,12 +17,12 @@ This file develops the first-order factorization of a smooth map through displac
 basepoint. It is the analytic input for identifying point derivations on a finite-dimensional
 smooth manifold with tangent vectors.
 
-The same weighted segment averages give the integral remainder of the Taylor expansion of every
-order: `TauCeti.taylorRemainderFactor n f x y` is a continuous multilinear map in `n + 1`
-variables, depending smoothly on `y`, which evaluated on `n + 1` copies of `y - x` is the
-difference between `f y` and the order-`n` Taylor polynomial of `f` at `x`. When the derivatives
-of `f` of order at most `n` vanish at `x`, this writes `f` as a smooth multilinear function of
-`n + 1` copies of the displacement, the higher-order Hadamard lemma.
+Its higher-order analogue is `TauCeti.taylorRemainderFactor n f x y`, the averaged `(n + 1)`-st
+derivative of `f` along the segment from `x` to `y` with the weight of Taylor's integral remainder.
+Evaluated on `n + 1` copies of `y - x`, it is the remainder of the Taylor expansion of order `n`
+of `f` at `x`, and it depends smoothly on `y`. Expanding the increment in a basis turns this
+remainder into a combination of products of `n + 1` coordinate functions vanishing at `x`, which
+is how the powers of the vanishing ideal of a point are described by vanishing derivatives.
 -/
 
 public section
@@ -30,7 +30,7 @@ public section
 noncomputable section
 
 open MeasureTheory
-open scoped ContDiff Nat unitInterval
+open scoped ContDiff unitInterval
 
 universe u v
 
@@ -143,63 +143,59 @@ theorem ContDiff.contDiff_hadamardFactor (f : E → F)
 
 namespace TauCeti
 
-/-- The integral remainder of the order-`n` Taylor expansion of `f` at `x`, as a function of the
-endpoint `y`: the weighted average `(n!)⁻¹ ∫₀¹ (1 - t) ^ n D^(n+1) f (x + t (y - x)) dt` of the
-`(n + 1)`-st iterated derivative of `f` along the segment from `x` to `y`. Evaluated on `n + 1`
-copies of `y - x`, it is the difference between `f y` and the order-`n` Taylor polynomial of `f`
-at `x` (`ContDiff.eq_sum_add_taylorRemainderFactor_apply`). For `n = 0` it is `hadamardFactor`,
-seen as a multilinear map in one variable. -/
+open scoped Nat in
+/-- The averaged `(n + 1)`-st derivative of `f` along the segment from `x` to `y`, with the weight
+`(1 - t) ^ n / n!` of the integral form of Taylor's remainder. Evaluated on `n + 1` copies of
+`y - x`, it is the remainder of the Taylor expansion of order `n` of `f` at `x`
+(`ContDiff.eq_sum_add_taylorRemainderFactor_apply`). -/
 noncomputable def taylorRemainderFactor (n : ℕ) (f : E → F) (x y : E) :
     ContinuousMultilinearMap ℝ (fun _ : Fin (n + 1) ↦ E) F :=
-  segmentAverage (fun t ↦ (n ! : ℝ)⁻¹ * (1 - t) ^ n) (iteratedFDeriv ℝ (n + 1) f) x (y - x)
+  (n ! : ℝ)⁻¹ • segmentAverage (fun t ↦ (1 - t) ^ n) (iteratedFDeriv ℝ (n + 1) f) x (y - x)
 
-/-- The order-`n` Taylor remainder factor is the weighted segment average of the `(n + 1)`-st
-iterated derivative with weight `(n!)⁻¹ (1 - t) ^ n`. -/
-theorem taylorRemainderFactor_def (n : ℕ) (f : E → F) (x y : E) :
-    taylorRemainderFactor n f x y =
-      segmentAverage (fun t ↦ (n ! : ℝ)⁻¹ * (1 - t) ^ n) (iteratedFDeriv ℝ (n + 1) f) x
-        (y - x) :=
-  (rfl)
-
-/-- At the basepoint, the order-`n` Taylor remainder factor is `((n + 1)!)⁻¹` times the
-`(n + 1)`-st iterated derivative. -/
+open scoped Nat in
+/-- At the basepoint, the Taylor remainder factor of order `n` is the leading Taylor coefficient
+`iteratedFDeriv ℝ (n + 1) f x / (n + 1)!`. -/
 @[simp]
 theorem taylorRemainderFactor_self [CompleteSpace F] (n : ℕ) (f : E → F) (x : E) :
     taylorRemainderFactor n f x x = ((n + 1)! : ℝ)⁻¹ • iteratedFDeriv ℝ (n + 1) f x := by
-  have hw : ∫ t in (0 : ℝ)..1, (n ! : ℝ)⁻¹ * (1 - t) ^ n = ((n + 1)! : ℝ)⁻¹ := by
-    rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_comp_sub_left
-      (fun t : ℝ ↦ t ^ n), integral_pow]
-    simp [Nat.factorial_succ, mul_comm]
-  rw [taylorRemainderFactor, sub_self, segmentAverage_zero, hw]
-
-/-- If `f` is `C^(m + n + 1)`, the order-`n` Taylor remainder factor of `f` at `x` is `C^m` in the
-endpoint. -/
-theorem _root_.ContDiff.contDiff_taylorRemainderFactor {m : ℕ∞} {n : ℕ} {f : E → F}
-    (hf : ContDiff ℝ (m + (n + 1 : ℕ)) f) (x : E) :
-    ContDiff ℝ m (taylorRemainderFactor n f x) := by
-  have hd : ContDiff ℝ m (iteratedFDeriv ℝ (n + 1) f) := hf.iteratedFDeriv_right le_rfl
-  exact (hd.contDiff_segmentAverage (Continuous.intervalIntegrable (by fun_prop) _ _) x).comp
-    (by fun_prop)
-
-/-- **Taylor's formula with integral remainder**, with the remainder written through the smooth
-multilinear factor `taylorRemainderFactor n f x y` evaluated on `n + 1` copies of `y - x`. -/
-theorem _root_.ContDiff.eq_sum_add_taylorRemainderFactor_apply [CompleteSpace F] {n : ℕ}
-    {f : E → F} (hf : ContDiff ℝ (n + 1) f) (x y : E) :
-    f y = ∑ k ∈ Finset.range (n + 1), (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k f x (fun _ ↦ y - x) +
-      taylorRemainderFactor n f x y (fun _ ↦ y - x) := by
-  have hT := map_add_eq_sum_add_integral_iteratedFDeriv (n := n) (x := x) (y := y - x)
-    (fun _ _ ↦ hf.contDiffAt)
-  have hint : IntervalIntegrable (fun t : ℝ ↦ ((n ! : ℝ)⁻¹ * (1 - t) ^ n) •
-      iteratedFDeriv ℝ (n + 1) f (x + t • (y - x))) volume 0 1 :=
-    Continuous.intervalIntegrable ((by fun_prop : Continuous fun t : ℝ ↦
-      (n ! : ℝ)⁻¹ * (1 - t) ^ n).smul
-      ((hf.continuous_iteratedFDeriv le_rfl).comp (by fun_prop))) _ _
-  -- Evaluation on `n + 1` copies of `y - x` commutes with the integral.
-  have happ := (ContinuousMultilinearMap.apply ℝ (fun _ : Fin (n + 1) ↦ E) F
-      (fun _ ↦ y - x)).intervalIntegral_comp_comm hint
-  simp only [ContinuousMultilinearMap.apply_apply] at happ
-  rw [add_sub_cancel] at hT
-  rw [hT, taylorRemainderFactor, segmentAverage, ← happ]
-  simp only [smul_apply, mul_smul, intervalIntegral.integral_smul]
+  have hint : ∫ t in (0 : ℝ)..1, (1 - t) ^ n = ((n : ℝ) + 1)⁻¹ := by
+    simp [intervalIntegral.integral_comp_sub_left fun t : ℝ ↦ t ^ n, integral_pow]
+  rw [taylorRemainderFactor, sub_self, segmentAverage_zero, hint, smul_smul, Nat.factorial_succ,
+    Nat.cast_mul, Nat.cast_succ, mul_inv, mul_comm]
 
 end TauCeti
+
+open TauCeti
+
+/-- If `f` is `k + (n + 1)` times continuously differentiable, its Taylor remainder factor of
+order `n` is `k` times continuously differentiable in the endpoint. -/
+theorem ContDiff.contDiff_taylorRemainderFactor {f : E → F} {k : ℕ∞} {n : ℕ}
+    (hf : ContDiff ℝ (k + (n + 1) : ℕ∞) f) (x : E) :
+    ContDiff ℝ k (taylorRemainderFactor n f x) := by
+  have hd : ContDiff ℝ k (iteratedFDeriv ℝ (n + 1) f) :=
+    hf.iteratedFDeriv_right (by push_cast; exact le_rfl)
+  exact ((hd.contDiff_segmentAverage
+    ((by fun_prop : Continuous fun t : ℝ ↦ (1 - t) ^ n).intervalIntegrable 0 1) x).comp
+      (contDiff_id.sub contDiff_const)).const_smul _
+
+open scoped Nat in
+/-- **Taylor's formula with the remainder as an averaged derivative.** A `C^(n + 1)` function is
+its Taylor polynomial of order `n` at `x` plus the Taylor remainder factor evaluated on `n + 1`
+copies of the increment. -/
+theorem ContDiff.eq_sum_add_taylorRemainderFactor_apply [CompleteSpace F] {f : E → F} {n : ℕ}
+    (hf : ContDiff ℝ (n + 1) f) (x y : E) :
+    f y = ∑ k ∈ Finset.range (n + 1), (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k f x (fun _ ↦ y - x) +
+      taylorRemainderFactor n f x y (fun _ ↦ y - x) := by
+  have h := map_add_eq_sum_add_integral_iteratedFDeriv (n := n) (x := x) (y := y - x)
+    (fun _ _ ↦ hf.contDiffAt)
+  rw [add_sub_cancel] at h
+  rw [h, taylorRemainderFactor, smul_apply]
+  congr 2
+  have hcont : Continuous fun t : ℝ ↦
+      (1 - t) ^ n • iteratedFDeriv ℝ (n + 1) f (x + t • (y - x)) :=
+    (by fun_prop : Continuous fun t : ℝ ↦ (1 - t) ^ n).smul
+      ((hf.continuous_iteratedFDeriv le_rfl).comp (by fun_prop))
+  have hApply := ContinuousLinearMap.segmentAverage_apply
+    (ContinuousMultilinearMap.apply ℝ (fun _ : Fin (n + 1) ↦ E) F fun _ ↦ y - x)
+    (fun t ↦ (1 - t) ^ n) (iteratedFDeriv ℝ (n + 1) f) x (y - x) (hcont.intervalIntegrable 0 1)
+  simpa using hApply.symm
