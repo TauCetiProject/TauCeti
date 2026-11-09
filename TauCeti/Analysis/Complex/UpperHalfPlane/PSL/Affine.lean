@@ -43,7 +43,7 @@ namespace UpperHalfPlane
 theorem pos_of_coe_smul_eq {h : PSL(2, ℝ)} {μ c : ℝ}
     (hz : ∀ z : ℍ, ((h • z : ℍ) : ℂ) = μ * z + c) : 0 < μ := by
   have him : (((h • UpperHalfPlane.I : ℍ) : ℂ)).im = μ := by simp [hz]
-  simpa [← UpperHalfPlane.coe_im, him] using (h • UpperHalfPlane.I).im_pos
+  exact him ▸ (h • UpperHalfPlane.I).coe_im_pos
 
 end UpperHalfPlane
 
