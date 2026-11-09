@@ -8,7 +8,9 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Tor
 public import TauCeti.CategoryTheory.Abelian.LeftDerived
 import Mathlib.CategoryTheory.Abelian.Exact
+import TauCeti.CategoryTheory.Monoidal.Preadditive
 import TauCeti.CategoryTheory.ObjectProperty.Homology
+import TauCeti.CategoryTheory.ObjectProperty.KilledBy
 
 /-!
 # `Tor` from a projective presentation of length one
@@ -32,11 +34,10 @@ kernels of `Hᵢ(K) ⊗ Bⱼ(L) ⟶ Hᵢ(K) ⊗ Zⱼ(L)`.
 These are the specializations to `X ⊗ -` of the computation of left derived functors in
 `TauCeti.CategoryTheory.Abelian.LeftDerived`.
 
-If `e • 𝟙 X = 0` for a natural number `e`, then `e` kills every `X ⊗ Z` and `Z ⊗ X`
-(`CategoryTheory.nsmul_id_tensor_eq_zero_of_left` and
-`CategoryTheory.nsmul_id_tensor_eq_zero_of_right`), since whiskering is an additive functor, and
-`e` kills every `Torₙ(X, Y)` (`CategoryTheory.nsmul_id_Tor_eq_zero`): the objects killed by `e` are
-closed under subobjects and quotients and contain every `X ⊗ P`.
+If `e • 𝟙 X = 0` for a natural number `e`, then `e` kills every `Torₙ(X, Y)`
+(`CategoryTheory.nsmul_id_Tor_eq_zero`): the objects killed by `e`
+(`CategoryTheory.ObjectProperty.isKilledBy`) are closed under subobjects and quotients and contain
+every `X ⊗ P`.
 
 For Mathlib's `CategoryTheory.Tor' C n`, which derives the first variable instead,
 `((Tor' C n).obj X).obj Y` is `Lₙ(- ⊗ Y)(X)`. The file records two facts about it in the
@@ -60,24 +61,6 @@ namespace CategoryTheory
 open Limits MonoidalCategory
 
 universe v u
-
-section Preadditive
-
-variable {C : Type u} [Category.{v} C] [Preadditive C] [MonoidalCategory C]
-  [MonoidalPreadditive C]
-
-/-- If a natural number `e` kills `X`, in the sense that `e • 𝟙 X = 0`, then it kills `X ⊗ Y`. -/
-lemma nsmul_id_tensor_eq_zero_of_left {X : C} {e : ℕ} (hX : e • 𝟙 X = 0) (Y : C) :
-    e • 𝟙 (X ⊗ Y) = 0 := by
-  rw [← id_whiskerRight, ← curriedTensor_map_app, ← NatTrans.app_nsmul, ← Functor.map_nsmul, hX,
-    Functor.map_zero, NatTrans.app_zero]
-
-/-- If a natural number `e` kills `Y`, in the sense that `e • 𝟙 Y = 0`, then it kills `X ⊗ Y`. -/
-lemma nsmul_id_tensor_eq_zero_of_right {Y : C} {e : ℕ} (hY : e • 𝟙 Y = 0) (X : C) :
-    e • 𝟙 (X ⊗ Y) = 0 := by
-  rw [← whiskerLeft_id, ← curriedTensor_obj_map, ← Functor.map_nsmul, hY, Functor.map_zero]
-
-end Preadditive
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [Abelian C] [MonoidalPreadditive C]
   [HasProjectiveResolutions C] {S S' : ShortComplex C}
@@ -131,18 +114,11 @@ end ShortComplex.ShortExact
 /-- If a natural number `e` kills `X`, in the sense that `e • 𝟙 X = 0`, then it kills every
 `Torₙ(X, Y)`. -/
 lemma nsmul_id_Tor_eq_zero {X : C} {e : ℕ} (hX : e • 𝟙 X = 0) (Y : C) (n : ℕ) :
-    e • 𝟙 (((Tor C n).obj X).obj Y) = 0 := by
-  -- Objects killed by `e` are closed under subobjects and quotients, and contain each `X ⊗ P`.
-  let P : ObjectProperty C := fun Z ↦ e • 𝟙 Z = 0
-  have hP (Z : C) : P Z ↔ e • 𝟙 Z = 0 := Iff.rfl
-  have : P.IsClosedUnderSubobjects := ⟨fun {Z W} f _ hW ↦ (hP Z).2 (by
-    rw [← cancel_mono f, Preadditive.nsmul_comp, Category.id_comp, zero_comp,
-      ← Category.comp_id f, ← Preadditive.comp_nsmul, (hP W).1 hW, comp_zero])⟩
-  have : P.IsClosedUnderQuotients := ⟨fun {Z W} f _ hZ ↦ (hP W).2 (by
-    rw [← cancel_epi f, Preadditive.comp_nsmul, Category.comp_id, comp_zero,
-      ← Category.id_comp f, ← Preadditive.nsmul_comp, (hP Z).1 hZ, zero_comp])⟩
-  exact P.prop_leftDerived_obj ((tensoringLeft C).obj X)
-    (fun Z _ ↦ (hP (X ⊗ Z)).2 (nsmul_id_tensor_eq_zero_of_left hX Z)) Y n
+    e • 𝟙 (((Tor C n).obj X).obj Y) = 0 :=
+  (ObjectProperty.prop_isKilledBy_iff e _).1 <|
+    (ObjectProperty.isKilledBy C e).prop_leftDerived_obj ((tensoringLeft C).obj X)
+      (fun Z _ ↦ (ObjectProperty.prop_isKilledBy_iff e _).2 (nsmul_id_tensor_eq_zero_of_left hX Z))
+      Y n
 
 /-- `Tor'` is additive in its second variable, the one that is not derived. -/
 instance (X : C) (n : ℕ) : ((Tor' C n).obj X).Additive where
