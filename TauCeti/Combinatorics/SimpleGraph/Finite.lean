@@ -22,6 +22,8 @@ an interval of the Boolean lattice `Finset (Sym2 V)`, where the finset interval 
 ## Main results
 
 * `SimpleGraph.exists_minimum_weight_edge` — a finite nonempty edge set has a minimum-weight edge.
+* `SimpleGraph.edgeSet_fromEdgeSet_of_subset` — a set of edges of `G` is the edge set of the
+  graph it generates.
 * `SimpleGraph.prod_filter_le_le_eq_prod_Icc_edgeFinset` and its additive version
   `SimpleGraph.sum_filter_le_le_eq_sum_Icc_edgeFinset` — a product (sum) over the graphs between
   `F` and `H` of a function of their edge finsets is the product (sum) of that function over
@@ -46,6 +48,13 @@ theorem exists_minimum_weight_edge (G : SimpleGraph V) [Finite G.edgeSet] (hG : 
   | _ u v =>
     exact ⟨u, v, G.mem_edgeSet.1 (mem_edgeFinset.1 he), fun e he' ↦ hmin e (mem_edgeFinset.2 he')⟩
 
+/-- A set of pairs contained in the edges of a graph `G` carries no diagonal pair, so it is the
+edge set of the graph it generates. -/
+theorem edgeSet_fromEdgeSet_of_subset {G : SimpleGraph V} {s : Set (Sym2 V)}
+    (hs : s ⊆ G.edgeSet) : (fromEdgeSet s).edgeSet = s := by
+  rw [edgeSet_fromEdgeSet, sdiff_eq_left, Set.disjoint_left]
+  exact fun e he ↦ not_isDiag_of_mem_edgeSet G (hs he)
+
 variable [Fintype V] [DecidableEq V] [CommMonoid M]
 
 /-- Multiplying a function of the edge finset over the graphs between `F` and `H` is multiplying
@@ -59,8 +68,8 @@ theorem prod_filter_le_le_eq_prod_Icc_edgeFinset (F H : SimpleGraph V)
   -- An edge set below `H.edgeFinset` carries no diagonal pair, so it is the edge set of a graph.
   have hset : ∀ s ∈ Icc F.edgeFinset H.edgeFinset,
       (fromEdgeSet (s : Set (Sym2 V))).edgeFinset = s := fun s hs ↦ coe_injective <| by
-    rw [coe_edgeFinset, edgeSet_fromEdgeSet, sdiff_eq_left, Set.disjoint_left]
-    exact fun e he ↦ not_isDiag_of_mem_edgeSet H (mem_edgeFinset.1 ((mem_Icc.1 hs).2 he))
+    rw [coe_edgeFinset, edgeSet_fromEdgeSet_of_subset fun e he ↦
+      mem_edgeFinset.1 ((mem_Icc.1 hs).2 (mem_coe.1 he))]
   refine prod_nbij' (fun G ↦ G.edgeFinset) (fun s ↦ fromEdgeSet (s : Set (Sym2 V)))
     (fun G hG ↦ ?_) (fun s hs ↦ ?_) (fun G _ ↦ ?_) hset (fun G _ ↦ rfl)
   · simpa [edgeFinset_subset_edgeFinset] using hG
