@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Connected.Basic
+public import Mathlib.Topology.Order.OrderClosed
 
 /-!
 # Elementary frontier lemmas
@@ -67,6 +68,15 @@ meeting of two frontiers. The first is the one an argument about limits of point
 the second is the one a diameter estimate consumes, `frontier` being where the estimates of a
 domain-splitting argument live.
 
+## A local defining function takes its boundary value on the frontier
+
+If, on an open set `U`, a set `D` is the superlevel set `{a ≤ f}` of a function `f` with values in
+a linear order, then `f x = a` at every frontier point `x ∈ U` of `D` at which `f` is continuous
+(`TauCeti.eq_of_mem_frontier_of_mem_iff_le`). Where `a < f x`, continuity puts a whole
+neighbourhood of `x` in `D`, so `x` is interior to `D`; where `f x < a`, it puts a whole
+neighbourhood of `x` outside `D`, so `x` is not adherent to `D`. Neither `D` nor `f` needs any
+further hypothesis: `D` need not be closed, and `f` need only be continuous at `x`.
+
 ## Consumers
 
 The straddling, splitting and clinging lemmas serve Carathéodory's boundary correspondence for
@@ -93,6 +103,9 @@ let alone a holomorphic map.
 * `TauCeti.frontier_image_subset_of_closure_subset` — for an open injective map whose image
   closure adds at most a set `t`, the frontier of an image lies on the image of the frontier,
   together with `t`.
+* `TauCeti.eq_of_mem_frontier_of_mem_iff_le` — a function whose superlevel set `{a ≤ f}` agrees
+  with a set on an open set takes the value `a` at the frontier points of the set in that open
+  set where it is continuous.
 -/
 
 public section
@@ -234,5 +247,28 @@ theorem frontier_image_subset_of_closure_subset (hf : IsOpenMap f) (hfi : Functi
   exact Set.union_subset_union_right _ Set.sdiff_subset
 
 end OpenInjectiveImage
+
+section DefiningFunction
+
+open Filter Topology
+
+variable {X α : Type*} [TopologicalSpace X] [LinearOrder α] [TopologicalSpace α]
+  [OrderClosedTopology α] {D U : Set X} {f : X → α} {a : α} {x : X}
+
+/-- **A local defining function takes its boundary value on the frontier.** If, on an open set
+`U`, the set `D` is the superlevel set `{a ≤ f}`, then `f x = a` at every point `x ∈ U` of
+`frontier D` at which `f` is continuous. -/
+theorem eq_of_mem_frontier_of_mem_iff_le (hU : IsOpen U) (hD : ∀ y ∈ U, y ∈ D ↔ a ≤ f y)
+    (hxU : x ∈ U) (hf : ContinuousAt f x) (hx : x ∈ frontier D) : f x = a := by
+  refine le_antisymm (not_lt.1 fun h ↦ hx.2 (mem_interior_iff_mem_nhds.2 ?_)) (not_lt.1 fun h ↦ ?_)
+  · filter_upwards [hU.mem_nhds hxU, hf (isOpen_Ioi.mem_nhds h)] with y hyU hy
+    exact (hD y hyU).2 (le_of_lt hy)
+  · have hDc : Dᶜ ∈ 𝓝 x := by
+      filter_upwards [hU.mem_nhds hxU, hf (isOpen_Iio.mem_nhds h)] with y hyU hy hyD
+      exact not_le.2 hy ((hD y hyU).1 hyD)
+    obtain ⟨y, hyD, hy⟩ := mem_closure_iff_nhds.1 hx.1 _ hDc
+    exact hyD hy
+
+end DefiningFunction
 
 end TauCeti
