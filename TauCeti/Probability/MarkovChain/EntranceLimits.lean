@@ -35,7 +35,8 @@ namespace MeasureTheory.Measure
 variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
   (ν : Measure α) [IsFiniteMeasure ν] (κ : Kernel α α) [IsMarkovKernel κ]
 
-/-- A point-started occupation limit extends to any finite initial measure, multiplied pathwise
+omit [IsFiniteMeasure ν] in
+/-- A point-started occupation limit extends to any initial measure, multiplied pathwise
 by the indicator of ever entering the visited state. Both premise and conclusion count positive
 times only. -/
 theorem ae_tendsto_visitCount_div_of_ae_tendsto_dirac {y : α} {r : ℝ}

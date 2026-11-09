@@ -37,7 +37,8 @@ namespace MeasureTheory.Measure
 variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
   (ν : Measure α) [IsFiniteMeasure ν] (κ : Kernel α α) [IsMarkovKernel κ] {y : α}
 
-/-- **The occupation fraction of a transient state vanishes almost surely**, from every finite
+omit [IsFiniteMeasure ν] in
+/-- **The occupation fraction of a transient state vanishes almost surely**, from every
 initial measure. The count includes times `1` through `n`, not time zero. -/
 theorem ae_tendsto_visitCount_div_of_return_lt_one
     (hy : markovChainLaw (dirac y) κ
@@ -96,6 +97,7 @@ variable {Ω α : Type*} [MeasurableSpace Ω] [MeasurableSpace α]
   [MeasurableSingletonClass α] {P : Measure Ω} {ν : Measure α} [IsFiniteMeasure ν]
   {X : Ω → ℕ → α} {κ : Kernel α α} [IsMarkovKernel κ] {y : α}
 
+omit [IsFiniteMeasure ν] in
 /-- The transient-state occupation limit holds for every realization with the given path law. -/
 theorem ae_tendsto_visitCount_div_of_return_lt_one
     (hX : HasLaw X (markovChainLaw ν κ) P)

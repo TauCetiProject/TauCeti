@@ -106,26 +106,44 @@ variable [MeasurableSpace α] [MeasurableSingletonClass α] (ν : Measure α) (�
 
 /-- At the visit to `y` indexed by `k`, the stopped future has the law of a chain started at `y`,
 scaled by the mass of paths on which that visit exists. The first entrance is visit zero. -/
-theorem markovChainLaw_restrict_map_successiveVisit_eq_smul [IsFiniteMeasure ν]
+theorem markovChainLaw_restrict_map_successiveVisit_eq_smul
     (y : α) (k : ℕ) :
     ((markovChainLaw ν κ).restrict
       {x | successiveVisit (fun n x => x n) y k x ≠ ⊤}).map
         (stoppedValue (fun n => (shift α)^[n]) (successiveVisit (fun n x => x n) y k)) =
       markovChainLaw ν κ {x | successiveVisit (fun n x => x n) y k x ≠ ⊤} •
         markovChainLaw (dirac y) κ := by
+  set A := {x : ℕ → α | successiveVisit (fun n x => x n) y k x ≠ ⊤}
   have hσ := Filtration.adapted_piLE.isStoppingTime_successiveVisit
     (X := fun n (x : ℕ → α) => x n) (measurableSet_singleton y) k
-  have hlaw := markovChainLaw_restrict_map_stoppedValue_shift_iterate_eq_smul ν κ hσ
-    MeasurableSet.univ (y := y) fun x hx => by
-      obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp hx.2
-      simp only [stoppedValue, ← hn, WithTop.untopD_coe]
-      exact (successiveVisit_eq_coe_iff.mp hn.symm).1
-  simpa only [Set.univ_inter] using hlaw
+  have hA : MeasurableSet A := measurableSet_setOf_successiveVisit_ne_top
+    (fun n => measurable_pi_apply n) (measurableSet_singleton y) k
+  have hθ : Measurable (stoppedValue (fun n => (shift α)^[n])
+      (successiveVisit (fun n x => x n) y k)) :=
+    measurable_stoppedValue_of_countable (fun n => measurable_shift_iterate n) hσ.measurable'
+  -- The identity at a Dirac start, where the initial measure is finite.
+  have key : ∀ a : α, ((κ.markovChainKernel a).restrict A).map
+      (stoppedValue (fun n => (shift α)^[n]) (successiveVisit (fun n x => x n) y k)) =
+        κ.markovChainKernel a A • markovChainLaw (dirac y) κ := fun a => by
+    rw [Kernel.markovChainKernel_apply]
+    have hlaw := markovChainLaw_restrict_map_stoppedValue_shift_iterate_eq_smul (dirac a) κ hσ
+      MeasurableSet.univ (y := y) fun x hx => by
+        obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp hx.2
+        simp only [stoppedValue, ← hn, WithTop.untopD_coe]
+        exact (successiveVisit_eq_coe_iff.mp hn.symm).1
+    simpa only [Set.univ_inter] using hlaw
+  ext s hs
+  rw [map_apply hθ hs, restrict_apply (hθ hs), markovChainLaw_eq_comp, smul_apply, smul_eq_mul,
+    bind_apply (hθ hs |>.inter hA) (Kernel.aemeasurable _), bind_apply hA (Kernel.aemeasurable _),
+    ← lintegral_mul_const _ ((Kernel.measurable_coe _ hA))]
+  refine lintegral_congr fun a => ?_
+  have := congrArg (fun m => m s) (key a)
+  simpa only [map_apply hθ hs, restrict_apply (hθ hs), smul_apply, smul_eq_mul] using this
 
 /-- **The visits of a chain to a state have a geometric tail.** The visit to `y` indexed by `k`,
 counting the first entrance as visit zero, exists with probability
 `ℙ_ν(H_y < ∞) · ρ_y ^ k`, where `ρ_y = ℙ_y(T_y⁺ < ∞)` is the return probability of `y`. -/
-theorem markovChainLaw_setOf_successiveVisit_ne_top [IsFiniteMeasure ν] (y : α) (k : ℕ) :
+theorem markovChainLaw_setOf_successiveVisit_ne_top (y : α) (k : ℕ) :
     markovChainLaw ν κ {x | successiveVisit (fun n x => x n) y k x ≠ ⊤} =
       markovChainLaw ν κ {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} *
         markovChainLaw (dirac y) κ {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} ^ k := by
@@ -145,52 +163,87 @@ theorem markovChainLaw_setOf_successiveVisit_ne_top [IsFiniteMeasure ν] (y : α
       ← map_apply hθ hB, markovChainLaw_restrict_map_successiveVisit_eq_smul,
       smul_apply, smul_eq_mul, ih, pow_succ, mul_assoc]
 
+/-- The set of paths that visit `y` infinitely often is measurable. -/
+private theorem measurableSet_setOf_infinite_setOf_eq (y : α) :
+    MeasurableSet {x : ℕ → α | {n | x n = y}.Infinite} := by
+  simp_rw [← forall_successiveVisit_lt_top_iff (X := fun n (x : ℕ → α) => x n),
+    lt_top_iff_ne_top, Set.ofPred_forall]
+  exact MeasurableSet.iInter fun k => measurableSet_setOf_successiveVisit_ne_top
+    (fun n => measurable_pi_apply n) (measurableSet_singleton y) k
+
 /-- **A state that is returned to almost surely is visited infinitely often.** If the chain started
-at `y` returns to `y` almost surely, then for every finite initial measure, almost every path that
+at `y` returns to `y` almost surely, then for every initial measure, almost every path that
 reaches `y` visits it infinitely often. -/
-theorem ae_infinite_setOf_eq_of_hittingAfter_ne_top [IsFiniteMeasure ν] {y : α}
+theorem ae_infinite_setOf_eq_of_hittingAfter_ne_top {y : α}
     (hy : markovChainLaw (dirac y) κ {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} = 1) :
     ∀ᵐ x ∂markovChainLaw ν κ,
       hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤ → {n | x n = y}.Infinite := by
-  have hσ : ∀ k, MeasurableSet {x : ℕ → α | successiveVisit (fun n x => x n) y k x ≠ ⊤} :=
-    measurableSet_setOf_successiveVisit_ne_top (fun n => measurable_pi_apply n)
-      (measurableSet_singleton y)
-  -- Each visit exists exactly on the event that `y` is reached, up to a null set.
-  have hk : ∀ k, ∀ᵐ x ∂markovChainLaw ν κ, hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤ →
-      successiveVisit (fun n x => x n) y k x ≠ ⊤ := fun k => by
-    have hsub : {x : ℕ → α | successiveVisit (fun n x => x n) y k x ≠ ⊤} ⊆
-        {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} := fun x hx => by
-      have hle : successiveVisit (fun n (x : ℕ → α) => x n) y 0 x ≤
-          successiveVisit (fun n x => x n) y k x :=
-        successiveVisit_monotone _ y x (Nat.zero_le k)
-      rw [successiveVisit_zero] at hle
-      exact ne_top_of_le_ne_top hx hle
-    have heq := ae_eq_of_subset_of_measure_ge hsub
-      (by rw [markovChainLaw_setOf_successiveVisit_ne_top ν κ y k, hy, one_pow, mul_one])
-      (hσ k).nullMeasurableSet (measure_ne_top _ _)
-    filter_upwards [heq] with x hx hH
-    exact (iff_of_eq hx).2 hH
-  filter_upwards [ae_all_iff.mpr hk] with x hx hH
-  exact forall_successiveVisit_lt_top_iff.mp fun k => lt_top_iff_ne_top.mpr (hx k hH)
+  -- The statement for a finite initial measure, used at Dirac starts below.
+  have key : ∀ (ν : Measure α) [IsFiniteMeasure ν], ∀ᵐ x ∂markovChainLaw ν κ,
+      hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤ → {n | x n = y}.Infinite := by
+    intro ν _
+    have hσ : ∀ k, MeasurableSet {x : ℕ → α | successiveVisit (fun n x => x n) y k x ≠ ⊤} :=
+      measurableSet_setOf_successiveVisit_ne_top (fun n => measurable_pi_apply n)
+        (measurableSet_singleton y)
+    -- Each visit exists exactly on the event that `y` is reached, up to a null set.
+    have hk : ∀ k, ∀ᵐ x ∂markovChainLaw ν κ, hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤ →
+        successiveVisit (fun n x => x n) y k x ≠ ⊤ := fun k => by
+      have hsub : {x : ℕ → α | successiveVisit (fun n x => x n) y k x ≠ ⊤} ⊆
+          {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} := fun x hx => by
+        have hle : successiveVisit (fun n (x : ℕ → α) => x n) y 0 x ≤
+            successiveVisit (fun n x => x n) y k x :=
+          successiveVisit_monotone _ y x (Nat.zero_le k)
+        rw [successiveVisit_zero] at hle
+        exact ne_top_of_le_ne_top hx hle
+      have heq := ae_eq_of_subset_of_measure_ge hsub
+        (by rw [markovChainLaw_setOf_successiveVisit_ne_top ν κ y k, hy, one_pow, mul_one])
+        (hσ k).nullMeasurableSet (measure_ne_top _ _)
+      filter_upwards [heq] with x hx hH
+      exact (iff_of_eq hx).2 hH
+    filter_upwards [ae_all_iff.mpr hk] with x hx hH
+    exact forall_successiveVisit_lt_top_iff.mp fun k => lt_top_iff_ne_top.mpr (hx k hH)
+  have hH : MeasurableSet {x : ℕ → α | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} :=
+    (measurableSet_singleton ⊤).compl.preimage
+      (Filtration.adapted_piLE.isStoppingTime_hittingAfter
+        (f := Filtration.piLE (X := fun _ : ℕ => α)) (measurableSet_singleton y)).measurable'
+  have hI := measurableSet_setOf_infinite_setOf_eq y
+  have hS : MeasurableSet {x : ℕ → α | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤ →
+      {n | x n = y}.Infinite} := by
+    have : {x : ℕ → α | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤ → {n | x n = y}.Infinite} =
+        {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤}ᶜ ∪ {x | {n | x n = y}.Infinite} := by
+      ext x; simp [imp_iff_not_or]
+    rw [this]
+    exact hH.compl.union hI
+  rw [markovChainLaw_eq_comp]
+  refine ae_comp_of_ae_ae hS (Filter.Eventually.of_forall fun a => ?_)
+  rw [Kernel.markovChainKernel_apply]
+  exact key (dirac a)
 
 /-- **A state that is not returned to almost surely is visited finitely often.** If the return
-probability of `y` is less than one, then for every finite initial measure the chain visits `y`
+probability of `y` is less than one, then for every initial measure the chain visits `y`
 infinitely often with probability zero. -/
-theorem markovChainLaw_setOf_infinite_setOf_eq_eq_zero [IsFiniteMeasure ν] {y : α}
+theorem markovChainLaw_setOf_infinite_setOf_eq_eq_zero {y : α}
     (hy : markovChainLaw (dirac y) κ {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤} < 1) :
     markovChainLaw ν κ {x | {n | x n = y}.Infinite} = 0 := by
-  have ht := ENNReal.Tendsto.const_mul (ENNReal.tendsto_pow_atTop_nhds_zero_of_lt_one hy)
-    (Or.inr (measure_ne_top (markovChainLaw ν κ) {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤}))
-  rw [mul_zero] at ht
-  refine nonpos_iff_eq_zero.mp (ge_of_tendsto' ht fun k => ?_)
-  rw [← markovChainLaw_setOf_successiveVisit_ne_top]
-  exact measure_mono fun x hx =>
-    lt_top_iff_ne_top.mp (forall_successiveVisit_lt_top_iff.mpr hx k)
+  -- The statement for a finite initial measure, used at Dirac starts below.
+  have key : ∀ (ν : Measure α) [IsFiniteMeasure ν],
+      markovChainLaw ν κ {x | {n | x n = y}.Infinite} = 0 := by
+    intro ν _
+    have ht := ENNReal.Tendsto.const_mul (ENNReal.tendsto_pow_atTop_nhds_zero_of_lt_one hy)
+      (Or.inr (measure_ne_top (markovChainLaw ν κ) {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤}))
+    rw [mul_zero] at ht
+    refine nonpos_iff_eq_zero.mp (ge_of_tendsto' ht fun k => ?_)
+    rw [← markovChainLaw_setOf_successiveVisit_ne_top]
+    exact measure_mono fun x hx =>
+      lt_top_iff_ne_top.mp (forall_successiveVisit_lt_top_iff.mpr hx k)
+  rw [markovChainLaw_eq_comp, bind_apply (measurableSet_setOf_infinite_setOf_eq y)
+    (Kernel.aemeasurable _)]
+  simp [Kernel.markovChainKernel_apply, key]
 
-/-- **The mean number of visits.** For a finite initial measure, the mean number of times the
+/-- **The mean number of visits.** For any initial measure, the mean number of times the
 chain is at `y` is `ℙ_ν(H_y < ∞) · (1 - ρ_y)⁻¹`, where `ρ_y` is the return probability of `y`.
 It is infinite when `y` is reached with positive probability and `ρ_y = 1`. -/
-theorem lintegral_encard_setOf_eq_markovChainLaw [IsFiniteMeasure ν] (y : α) :
+theorem lintegral_encard_setOf_eq_markovChainLaw (y : α) :
     ∫⁻ x, ({n | x n = y}.encard : ℝ≥0∞) ∂markovChainLaw ν κ =
       markovChainLaw ν κ {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} *
         (1 - markovChainLaw (dirac y) κ {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤})⁻¹ := by
@@ -203,7 +256,7 @@ theorem lintegral_encard_setOf_eq_markovChainLaw [IsFiniteMeasure ν] (y : α) :
 
 /-- The probability that the chain is at `y` at time `n`, summed over `n`, is the mean number of
 visits `ℙ_ν(H_y < ∞) · (1 - ρ_y)⁻¹`. -/
-private theorem tsum_markovChainLaw_setOf_apply_eq [IsFiniteMeasure ν] (y : α) :
+private theorem tsum_markovChainLaw_setOf_apply_eq (y : α) :
     ∑' n, markovChainLaw ν κ {x | x n = y} =
       markovChainLaw ν κ {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} *
         (1 - markovChainLaw (dirac y) κ {x | hittingAfter (fun n x => x n) {y} 1 x ≠ ⊤})⁻¹ := by
@@ -263,10 +316,10 @@ theorem tsum_pow_apply_singleton_self (y : α) :
   simp_rw [hn, Measure.tsum_markovChainLaw_setOf_apply_eq,
     markovChainLaw_dirac_setOf_hittingAfter_zero_ne_top, one_mul]
 
-/-- **The Green function.** For a finite initial measure `ν`, the mean number of visits to `y`,
+/-- **The Green function.** For an initial measure `ν`, the mean number of visits to `y`,
 `∑ n, ((κ ^ n) ∘ₘ ν) {y}`, is the probability `ℙ_ν(H_y < ∞)` of reaching `y` times the mean
 number of visits `∑ n, (κ ^ n) y {y}` of the chain started at `y`. -/
-theorem tsum_pow_comp_apply_singleton (ν : Measure α) [IsFiniteMeasure ν] (y : α) :
+theorem tsum_pow_comp_apply_singleton (ν : Measure α) (y : α) :
     ∑' n : ℕ, ((κ ^ n) ∘ₘ ν) {y} =
       markovChainLaw ν κ {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} *
         ∑' n : ℕ, (κ ^ n) y {y} := by

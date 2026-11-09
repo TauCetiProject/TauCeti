@@ -77,10 +77,10 @@ theorem integerWalk_ae_infinite_setOf_eq (p : unitInterval) (hp : (p : ℝ) = 1 
   (integerWalk p).ae_infinite_setOf_eq_markovChainLaw_dirac
     (Kernel.isRecurrent_iff.mp ((integerWalk_isRecurrent_iff p x).mpr hp))
 
-/-- From any finite initial measure, a biased integer walk visits every integer only
+/-- From any initial measure, a biased integer walk visits every integer only
 finitely often, on one common full-measure event. -/
 theorem integerWalk_ae_forall_finite_setOf_eq (p : unitInterval)
-    (hp : (p : ℝ) ≠ 1 / 2) (ν : Measure ℤ) [IsFiniteMeasure ν] :
+    (hp : (p : ℝ) ≠ 1 / 2) (ν : Measure ℤ) :
     ∀ᵐ ω ∂markovChainLaw ν (integerWalk p), ∀ y : ℤ, {n | ω n = y}.Finite := by
   apply ae_all_iff.mpr
   intro y
@@ -98,7 +98,7 @@ open TauCeti.Probability
 /-- Finiteness of visits for a biased integer walk transfers to any realization.
 No topology or canonical construction of the sample space is required. -/
 theorem integerWalk_ae_forall_finite_setOf_eq {Ω : Type*} [MeasurableSpace Ω]
-    {P : Measure Ω} {ν : Measure ℤ} [IsFiniteMeasure ν] {p : unitInterval}
+    {P : Measure Ω} {ν : Measure ℤ} {p : unitInterval}
     {X : Ω → ℕ → ℤ} (hX : HasLaw X (markovChainLaw ν (integerWalk p)) P)
     (hp : (p : ℝ) ≠ 1 / 2) :
     ∀ᵐ ω ∂P, ∀ y : ℤ, {n | X ω n = y}.Finite := by

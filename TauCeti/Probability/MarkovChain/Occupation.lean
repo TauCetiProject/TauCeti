@@ -186,7 +186,8 @@ namespace MeasureTheory.Measure
 variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [Countable α]
   (ν : Measure α) [IsFiniteMeasure ν] (κ : Kernel α α) [IsMarkovKernel κ]
 
-/-- **Long-run occupation frequencies.** From any finite initial law, the
+omit [IsFiniteMeasure ν] in
+/-- **Long-run occupation frequencies.** From any initial law, the
 proportion `V_y(n) / n` of the times `1, …, n` spent at `y` converges almost surely to
 `r_y = (m_y⁻¹).toReal` on the event that the chain enters `y`, and to zero off that event. -/
 theorem ae_tendsto_visitCount_div_markovChainLaw (y : α) :
