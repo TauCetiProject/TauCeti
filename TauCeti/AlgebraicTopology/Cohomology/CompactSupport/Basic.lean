@@ -132,6 +132,17 @@ lemma singularCohomologyMap_comp_compactSupportCohomologyι (n : ℕ) {K L : Com
       compactSupportCohomologyι n K :=
   colimit.w (X.compactSupportCohomologyDiagram R k M n) (homOfLE h)
 
+/-- Restricting along `K ⊆ L` and then along `L ⊆ L'` is restricting along `K ⊆ L'`. -/
+lemma singularCohomologyMap_compl_compacts_comp_apply {K L L' : Compacts X} (h₁ : K ≤ L)
+    (h₂ : L ≤ L') (n : ℕ) (z : (TopPair.ofSubset (K : Set X)ᶜ).singularCohomology R k M n) :
+    TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl_compacts h₂)) n
+        (TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 X)
+          (mapsTo_id_compl_compacts h₁)) n z) =
+      TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 X)
+        (mapsTo_id_compl_compacts (h₁.trans h₂))) n z := by
+  rw [← TopPair.singularCohomologyMap_comp_apply,
+    TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ (Category.id_comp _)]
+
 /-- Two maps out of cohomology with compact supports agree if they agree on each `Hⁿ(X, X ∖ K)`. -/
 @[ext]
 lemma compactSupportCohomology_hom_ext {n : ℕ} {N : ModuleCat.{v} k}

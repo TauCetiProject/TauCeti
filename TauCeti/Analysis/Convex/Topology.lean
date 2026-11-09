@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Join
 public import Mathlib.Analysis.Convex.Topology
 
 /-!
@@ -18,6 +19,7 @@ The interior of a sum of two convex sets with nonempty interiors is the sum of t
 interiors. In particular, this describes the interior of the sum of two interval supports.
 
 A closed segment `segment 𝕜 x y` is compact, being the convex hull of the finite set `{x, y}`.
+More generally, the convex join of two compact sets is compact (`IsCompact.convexJoin`).
 -/
 
 public section
@@ -77,3 +79,22 @@ theorem isCompact_segment (𝕜 : Type*) {E : Type*} [Field 𝕜] [LinearOrder �
   convexHull_pair (𝕜 := 𝕜) x y ▸ (toFinite {x, y}).isCompact_convexHull 𝕜
 
 end TauCeti
+
+/-- The convex join of two compact sets is compact: it is the image of `s ×ˢ t ×ˢ [0, 1]` under
+`((a, b), θ) ↦ (1 - θ) • a + θ • b`. -/
+theorem IsCompact.convexJoin {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+    [TopologicalSpace 𝕜] [CompactIccSpace 𝕜] [IsTopologicalRing 𝕜]
+    [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E]
+    [ContinuousSMul 𝕜 E] {s t : Set E} (hs : IsCompact s) (ht : IsCompact t) :
+    IsCompact (convexJoin 𝕜 s t) := by
+  have : _root_.convexJoin 𝕜 s t = (fun p : (E × E) × 𝕜 ↦ (1 - p.2) • p.1.1 + p.2 • p.1.2) ''
+      ((s ×ˢ t) ×ˢ Icc 0 1) := by
+    ext x
+    simp only [mem_convexJoin, segment_eq_image, mem_image, mem_prod, Prod.exists]
+    constructor
+    · rintro ⟨a, ha, b, hb, θ, hθ, rfl⟩
+      exact ⟨a, b, θ, ⟨⟨ha, hb⟩, hθ⟩, rfl⟩
+    · rintro ⟨a, b, θ, ⟨⟨ha, hb⟩, hθ⟩, rfl⟩
+      exact ⟨a, ha, b, hb, θ, hθ, rfl⟩
+  rw [this]
+  exact ((hs.prod ht).prod isCompact_Icc).image (by fun_prop)
