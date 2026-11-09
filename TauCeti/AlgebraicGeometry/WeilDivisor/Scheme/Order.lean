@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.OrderOfVanishing
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 import Mathlib.RingTheory.SimpleModule.Basic
 import TauCeti.AlgebraicGeometry.Scheme.StalkSpecializes
+import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.OrderOfVanishing
 
 /-!
@@ -33,7 +34,7 @@ function regular on `U` has nonnegative order at every point of `U`
 (`Scheme.ord_germToFunctionField_nonneg`), that is, it has no poles where it is defined. On an
 element of the local ring at a codimension-one point, the order is the length `Ring.ord` of its
 quotient (`Scheme.ord_algebraMap_stalk`). More generally, at a codimension-one generization `η`
-of a point `x`, the order of a nonzero germ at `x` is the `Ring.ord` of its image in `𝒪_{X,η}`
+of a point `x`, the order of a germ at `x` is the `Ring.ord` of its image in `𝒪_{X,η}`
 (`Scheme.ord_algebraMap_stalk_of_specializes`), and in particular it is nonnegative
 (`Scheme.ord_algebraMap_stalk_nonneg`). It vanishes exactly when the germ lies outside the prime
 of `𝒪_{X,x}` under the maximal ideal of `𝒪_{X,η}` (`Scheme.ord_algebraMap_stalk_eq_zero_iff`),
@@ -118,20 +119,15 @@ lemma ord_germToFunctionField_nonneg {U : X.Opens} [Nonempty U] (a : Γ(X, U)) {
 of the local ring `𝒪_{X,x}` is its order of vanishing `Ring.ord`, the length of `𝒪_{X,x} ⧸ (c)`.
 Both sides are `0` for `c = 0`. -/
 theorem ord_algebraMap_stalk {x : X} (hx : Order.coheight x = 1)
-    {c : X.presheaf.stalk x} :
+    (c : X.presheaf.stalk x) :
     X.ord (algebraMap (X.presheaf.stalk x) X.functionField c) x =
       (Ring.ord (X.presheaf.stalk x) c).toNat := by
   have : Ring.KrullDimLE 1 (X.presheaf.stalk x) := krullDimLE_of_coheight_le hx.le
   rcases eq_or_ne c 0 with rfl | hc
-  · have htop : Module.length (X.presheaf.stalk x) (X.presheaf.stalk x) = ⊤ := by
-      by_contra h
-      rw [← ne_eq, Module.length_ne_top_iff, isFiniteLength_iff_isNoetherian_isArtinian] at h
-      have : IsArtinianRing (X.presheaf.stalk x) := h.2
-      have h0 := Ring.krullDimLE_iff.mp (inferInstance : Ring.KrullDimLE 0 (X.presheaf.stalk x))
-      rw [ringKrullDim_stalk_eq_coheight, hx] at h0
-      norm_num at h0
-    rw [map_zero, _root_.AlgebraicGeometry.Scheme.ord_zero, Ring.ord_zero, htop]
-    rfl
+  · have htop := TauCeti.length_self_eq_top_of_ringKrullDim_pos (A := X.presheaf.stalk x)
+      (by rw [ringKrullDim_stalk_eq_coheight, hx]; exact zero_lt_one)
+    rw [map_zero, _root_.AlgebraicGeometry.Scheme.ord_zero, Ring.ord_zero, htop,
+      ENat.toNat_top, Pi.zero_apply, Nat.cast_zero]
   have hnz : c ∈ nonZeroDivisors (X.presheaf.stalk x) := mem_nonZeroDivisors_of_ne_zero hc
   obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.mp (Ring.ord_ne_top hnz)
   have hne : algebraMap (X.presheaf.stalk x) X.functionField c ≠ 0 :=
@@ -143,14 +139,14 @@ theorem ord_algebraMap_stalk {x : X} (hx : Order.coheight x = 1)
 /-- At a codimension-one generization `η` of `x`, the order of a germ at `x` is the order of
 vanishing `Ring.ord` of its image in the one-dimensional local ring `𝒪_{X,η}`. -/
 theorem ord_algebraMap_stalk_of_specializes {x η : X} (hη : Order.coheight η = 1) (h : η ⤳ x)
-    {b : X.presheaf.stalk x} :
+    (b : X.presheaf.stalk x) :
     X.ord (algebraMap (X.presheaf.stalk x) X.functionField b) η =
       (Ring.ord (X.presheaf.stalk η) ((X.presheaf.stalkSpecializes h).hom b)).toNat := by
   rw [← algebraMap_stalkSpecializes h, ord_algebraMap_stalk hη]
 
 /-- A germ at `x` has nonnegative order at every codimension-one generization of `x`. -/
 theorem ord_algebraMap_stalk_nonneg {x η : X} (hη : Order.coheight η = 1) (h : η ⤳ x)
-    {b : X.presheaf.stalk x} :
+    (b : X.presheaf.stalk x) :
     0 ≤ X.ord (algebraMap (X.presheaf.stalk x) X.functionField b) η := by
   rw [ord_algebraMap_stalk_of_specializes hη h]
   exact Int.natCast_nonneg _

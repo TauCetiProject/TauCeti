@@ -63,7 +63,7 @@ theorem squarefree_germ_of_forall_ord_le_one {f : Γ(X, ⊤)} (hf : f ≠ 0)
   have haK : algebraMap (X.presheaf.stalk x) X.functionField a ≠ 0 :=
     (map_ne_zero_iff _ hinj).mpr ha0
   have hbound := hord ⟨η, hη⟩
-  have hnonneg := TauCeti.AlgebraicGeometry.Scheme.ord_algebraMap_stalk_nonneg (b := a) hη hηx
+  have hnonneg := TauCeti.AlgebraicGeometry.Scheme.ord_algebraMap_stalk_nonneg hη hηx a
   rw [← X.algebraMap_germ_eq_germToFunctionField (x := x) trivial f, ha, map_mul,
     map_mul, X.ord_mul (mul_ne_zero hpK hpK) haK, X.ord_mul hpK hpK,
     TauCeti.AlgebraicGeometry.Scheme.ord_algebraMap_stalk_eq_one hη hηx hprime] at hbound
