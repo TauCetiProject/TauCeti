@@ -164,7 +164,7 @@ while `3α + β` and `α + 2β` are not, then over every commutative ring of val
 ```
 
 where `M` is the integer with `(ad e_α)² e_β / 2 = M e_δ`; the division is exact. In the types
-`B`, `C` and `F₄` this covers every pair `α`, `β` with `2α + β` a root. -/
+`B`, `C` and `F₄` this covers every pair `α ≠ -β` with `2α + β` a root. -/
 theorem commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
