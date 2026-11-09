@@ -24,7 +24,7 @@ the classical setting of the pair-of-pants product before Novikov coefficients w
   cap classes (`TauCeti.Floer.SphericalCapClass` is a subsingleton when `Γ` is).
 * A class `A` of any common class group `G` mapping to `Γ` by an area-preserving homomorphism has
   zero area, so a generating series `Q = ∑_A N_A q^A` of counts has only finitely many nonzero
-  counts (`TauCeti.Floer.finite_support_of_subsingleton`), and the coefficient comparison
+  counts (`TauCeti.NovikovSeries.finite_support_of_bddAbove_image`), and the coefficient comparison
   `q^A ↦ e^(-q A)` sends it to the total count `∑_A N_A`
   (`TauCeti.Floer.coeff_zero_coefficientComparison_of_subsingleton`).
 * With finitely many orbits every coefficient function on capped generators is a completed
@@ -64,19 +64,11 @@ variable {R S : Type*} [AddCommGroup S] {ω : S →+ ℝ} {c : S →+ ℤ}
 
 section Coefficients
 
-include hq in
-/-- **Counts on a trivial period group are finite sums.** If the period group is trivial, every
-class of a common class group mapping to it by an area-preserving homomorphism has zero area, so a
-generating series of counts has only finitely many nonzero counts. -/
-theorem finite_support_of_subsingleton [Zero R] (Q : NovikovSeries R G ωG) : Q.support.Finite :=
-  Q.finite_support_of_bddAbove ⟨0, by
-    rintro _ ⟨A, rfl⟩
-    rw [← hq A, Subsingleton.elim (q A) 0, map_zero]⟩
-
 /-- **On a trivial period group the coefficient comparison is the total count.** The Floer
 Novikov ring is then `R` (`NovikovSeries.coeffZeroRingEquiv`), and the comparison
-`q^A ↦ e^(-q A)` sends a generating series `∑_A N_A q^A` to `∑_A N_A`, a finite sum by
-`TauCeti.Floer.finite_support_of_subsingleton`. -/
+`q^A ↦ e^(-q A)` sends a generating series `∑_A N_A q^A` to `∑_A N_A`. This is a finite sum by
+`TauCeti.NovikovSeries.finite_support_of_bddAbove_image`, since every class has zero area:
+`ωG A = area ω c (q A) = 0`. -/
 theorem coeff_zero_coefficientComparison_of_subsingleton [Semiring R] (Q : NovikovSeries R G ωG) :
     (coefficientComparison q hq Q).coeff 0 = ∑ᶠ A, Q.coeff A := by
   have h : (-q) ⁻¹' {0} = Set.univ := Set.eq_univ_of_forall fun A => Subsingleton.elim _ _
