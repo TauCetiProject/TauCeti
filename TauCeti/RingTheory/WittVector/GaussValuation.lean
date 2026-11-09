@@ -145,7 +145,7 @@ private theorem gaussTrunc_congr {x y : 𝕎 O} {n : ℕ} (h : (p : 𝕎 O) ^ (n
 private theorem gaussTerm_teichmuller_mul_pow (a : O) (m i : ℕ) :
     gaussTerm p v ρ (teichmuller p a * (p : 𝕎 O) ^ m) i =
       if i = m then v (algebraMap O K a) * ρ ^ m else 0 := by
-  rw [gaussTerm, teichmullerCoeff_teichmuller_mul_pow]
+  rw [gaussTerm, teichmullerCoeff_teichmuller_mul, teichmullerCoeff_natCast_pow]
   split_ifs with h <;> simp [h]
 
 private theorem gaussTrunc_teichmuller_mul_pow (a : O) (m n : ℕ) :
