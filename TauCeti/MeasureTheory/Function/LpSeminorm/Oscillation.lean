@@ -86,13 +86,10 @@ theorem enorm_sub_le_div_of_eLpNorm_restrict_sub_le (hp : 1 ≤ p) {U W : Set X}
         · exact (eLpNorm_mono_measure _ (Measure.restrict_mono inter_subset_right le_rfl)).trans hb
 
 omit [TopologicalSpace X] in
-/-- **Moving the constant on a set of finite measure.** If `‖f - b‖_{Lᵖ(U)} ≤ c * G`
-and `‖b - a‖ ≤ D * G`, then `‖f - a‖_{Lᵖ(U)} ≤ (c + D * μ U ^ (1 / p)) * G`. -/
-theorem eLpNorm_restrict_sub_le_of_enorm_sub_le (hp : 1 ≤ p) {U : Set X}
-    (htop : μ U ≠ ∞) {f : X → F} {a b : F} {c D : ℝ≥0} {G : ℝ≥0∞}
-    (hb : eLpNorm (fun x ↦ f x - b) p (μ.restrict U) ≤ c * G) (hab : ‖b - a‖ₑ ≤ D * G) :
+/-- **Moving the constant.** `‖f - a‖_{Lᵖ(U)} ≤ ‖f - b‖_{Lᵖ(U)} + ‖b - a‖ * μ U ^ (1 / p)`. -/
+theorem eLpNorm_restrict_sub_le_add_enorm_mul (hp : 1 ≤ p) {U : Set X} {f : X → F} {a b : F} :
     eLpNorm (fun x ↦ f x - a) p (μ.restrict U) ≤
-      ↑(c + D * (μ U ^ (1 / p.toReal)).toNNReal) * G := by
+      eLpNorm (fun x ↦ f x - b) p (μ.restrict U) + ‖b - a‖ₑ * μ U ^ (1 / p.toReal) := by
   rcases eq_or_ne (μ U) 0 with h0 | h0
   · simp [Measure.restrict_eq_zero.2 h0]
   have hconst : eLpNorm (fun _ ↦ b - a) p (μ.restrict U) =
@@ -106,32 +103,7 @@ theorem eLpNorm_restrict_sub_le_of_enorm_sub_le (hp : 1 ≤ p) {U : Set X}
         simp
     _ ≤ eLpNorm (fun x ↦ f x - b) p (μ.restrict U) +
           eLpNorm (fun _ ↦ b - a) p (μ.restrict U) := eLpNorm_add_le hp
-    _ ≤ c * G + D * G * μ U ^ (1 / p.toReal) := by
-        rw [hconst]
-        gcongr
-    _ = ↑(c + D * (μ U ^ (1 / p.toReal)).toNNReal) * G := by
-        rw [ENNReal.coe_add, ENNReal.coe_mul, ENNReal.coe_toNNReal
-          (ENNReal.rpow_ne_top_of_nonneg (by positivity) htop)]
-        ring
-
-omit [TopologicalSpace X] in
-/-- **Constants on overlapping sets are uniformly close.** If the overlap of `V i` and `V j` has
-positive finite measure, then `‖a j - a i‖ ≤ D * G` for a constant `D` depending only on `C i`,
-`C j` and the overlap, whenever `f` is `Lᵖ`-close to `a i` on `V i` and to `a j` on `V j` at scales
-`C i * G` and `C j * G`. -/
-theorem exists_enorm_sub_le_mul_of_measure_inter_ne_zero
-    (hp : 1 ≤ p) {ι : Type*} {V : ι → Set X} {i j : ι}
-    (h0 : μ (V i ∩ V j) ≠ 0) (hfin : μ (V i ∩ V j) ≠ ∞) (C : ι → ℝ≥0) :
-    ∃ D : ℝ≥0, ∀ (f : X → F) (a : ι → F) (G : ℝ≥0∞),
-      eLpNorm (fun x ↦ f x - a i) p (μ.restrict (V i)) ≤ C i * G →
-      eLpNorm (fun x ↦ f x - a j) p (μ.restrict (V j)) ≤ C j * G → ‖a j - a i‖ₑ ≤ D * G := by
-  refine ⟨((C i + C j : ℝ≥0∞) / μ (V i ∩ V j) ^ (1 / p.toReal)).toNNReal,
-    fun f a G hPi hPj ↦ ?_⟩
-  have hm0 : μ (V i ∩ V j) ^ (1 / p.toReal) ≠ 0 :=
-    (ENNReal.rpow_pos (pos_iff_ne_zero.2 h0) hfin).ne'
-  rw [ENNReal.coe_toNNReal (ENNReal.div_ne_top (by simp) hm0)]
-  refine (enorm_sub_le_div_of_eLpNorm_restrict_sub_le hp h0 hfin hPi hPj).trans_eq ?_
-  rw [← add_mul, ENNReal.mul_div_right_comm]
+    _ = _ := by rw [hconst]
 
 /-- **Local `Lᵖ` closeness to constants on a connected cover gives global closeness.** Let `μ` be
 a finite measure on a preconnected space, positive on nonempty open sets, and let `V i`, `i ∈ t`,
@@ -150,25 +122,42 @@ theorem exists_eLpNorm_sub_const_le_of_isOpen_cover [PreconnectedSpace X] [IsFin
   obtain ⟨i₀, hi₀, hx₀⟩ := hcover x₀
   have hU : (⋃ j ∈ t, V j) = univ :=
     eq_univ_of_forall fun x ↦ by simpa only [mem_iUnion₂, exists_prop] using hcover x
-  -- The hypothesis on `(f, a, G)`.
-  let P : (X → F) → (ι → F) → ℝ≥0∞ → Prop := fun f a G ↦
-    ∀ i ∈ t, eLpNorm (fun x ↦ f x - a i) p (μ.restrict (V i)) ≤ C i * G
+  -- The data `(f, a, G)` satisfying the hypothesis.
+  let K : Type _ := {x : (X → F) × (ι → F) × ℝ≥0∞ //
+    ∀ i ∈ t, eLpNorm (fun y ↦ x.1 y - x.2.1 i) p (μ.restrict (V i)) ≤ C i * x.2.2}
+  -- Constants on overlapping pieces are uniformly close.
+  have hadj : ∀ i j, (i ∈ t ∧ j ∈ t ∧ (V i ∩ V j).Nonempty) →
+      ∃ D : ℝ≥0, ∀ x : K, ‖x.1.2.1 j - x.1.2.1 i‖ₑ ≤ D * x.1.2.2 := by
+    rintro i j ⟨hi, hj, hij⟩
+    have h0 : μ (V i ∩ V j) ≠ 0 := ((hV i hi).inter (hV j hj)).measure_ne_zero μ hij
+    refine ⟨((C i + C j : ℝ≥0∞) / μ (V i ∩ V j) ^ (1 / p.toReal)).toNNReal, fun x ↦ ?_⟩
+    have hm0 : μ (V i ∩ V j) ^ (1 / p.toReal) ≠ 0 :=
+      (ENNReal.rpow_pos (pos_iff_ne_zero.2 h0) (measure_ne_top _ _)).ne'
+    rw [ENNReal.coe_toNNReal (ENNReal.div_ne_top (by simp) hm0)]
+    refine (enorm_sub_le_div_of_eLpNorm_restrict_sub_le hp h0 (measure_ne_top _ _)
+      (x.2 i hi) (x.2 j hj)).trans_eq ?_
+    rw [← add_mul, ENNReal.mul_div_right_comm]
   -- On each piece, `f` is uniformly close to the constant of `V i₀`.
-  have hpiece : ∀ j ∈ t, ∃ D : ℝ≥0, ∀ f a G, P f a G →
-      eLpNorm (fun x ↦ f x - a i₀) p (μ.restrict (V j)) ≤ D * G := by
+  have hpiece : ∀ j ∈ t, ∃ D : ℝ≥0, ∀ x : K,
+      eLpNorm (fun y ↦ x.1.1 y - x.1.2.1 i₀) p (μ.restrict (V j)) ≤ D * x.1.2.2 := by
     intro j hj
     rcases (V j).eq_empty_or_nonempty with hVj | hVj
-    · exact ⟨0, fun _ _ _ _ ↦ by simp [hVj]⟩
-    obtain ⟨D, hD⟩ := exists_enorm_sub_le_mul_of_reflTransGen P (R := fun i j ↦
-      i ∈ t ∧ j ∈ t ∧ (V i ∩ V j).Nonempty)
-      (fun i j ⟨hi, hj, hij⟩ ↦
-        (exists_enorm_sub_le_mul_of_measure_inter_ne_zero hp
-          (((hV i hi).inter (hV j hj)).measure_ne_zero μ hij) (measure_ne_top _ _) C).imp
-          fun _ hD f a G hP ↦ hD f a G (hP i hi) (hP j hj))
+    · exact ⟨0, fun _ ↦ by simp [hVj]⟩
+    obtain ⟨D, hD⟩ := exists_enorm_sub_le_mul_of_reflTransGen hadj
       (reflTransGen_inter_nonempty_of_isOpen_cover (t := (t : Set ι))
         (by simpa only [Finset.mem_coe, hU] using isPreconnected_univ) hV hi₀ ⟨x₀, hx₀⟩ hj hVj)
-    exact ⟨_, fun f a G hP ↦ eLpNorm_restrict_sub_le_of_enorm_sub_le hp
-      (measure_ne_top _ _) (hP j hj) (hD f a G hP)⟩
+    refine ⟨C j + D * (μ (V j) ^ (1 / p.toReal)).toNNReal, fun x ↦ ?_⟩
+    calc _ ≤ eLpNorm (fun y ↦ x.1.1 y - x.1.2.1 j) p (μ.restrict (V j)) +
+          ‖x.1.2.1 j - x.1.2.1 i₀‖ₑ * μ (V j) ^ (1 / p.toReal) :=
+          eLpNorm_restrict_sub_le_add_enorm_mul hp
+      _ ≤ C j * x.1.2.2 + D * x.1.2.2 * μ (V j) ^ (1 / p.toReal) := by
+          gcongr
+          · exact x.2 j hj
+          · exact hD x
+      _ = ↑(C j + D * (μ (V j) ^ (1 / p.toReal)).toNNReal) * x.1.2.2 := by
+          rw [ENNReal.coe_add, ENNReal.coe_mul, ENNReal.coe_toNNReal
+            (ENNReal.rpow_ne_top_of_nonneg (by positivity) (measure_ne_top _ _))]
+          ring
   choose! D hD using hpiece
   refine ⟨∑ j ∈ t, D j, fun f a G hP ↦ ⟨a i₀, ?_⟩⟩
   calc eLpNorm (fun x ↦ f x - a i₀) p μ
@@ -176,7 +165,7 @@ theorem exists_eLpNorm_sub_const_le_of_isOpen_cover [PreconnectedSpace X] [IsFin
         rw [hU, Measure.restrict_univ]
     _ ≤ ∑ j ∈ t, eLpNorm (fun x ↦ f x - a i₀) p (μ.restrict (V j)) :=
         eLpNorm_restrict_biUnion_finset_le _ hp t V
-    _ ≤ ∑ j ∈ t, D j * G := Finset.sum_le_sum fun j hj ↦ hD j hj f a G hP
+    _ ≤ ∑ j ∈ t, D j * G := Finset.sum_le_sum fun j hj ↦ hD j hj ⟨(f, a, G), hP⟩
     _ = ↑(∑ j ∈ t, D j) * G := by push_cast; rw [Finset.sum_mul]
 
 end TauCeti
