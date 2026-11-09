@@ -62,12 +62,12 @@ the energy density under tameness
 `u` from the integral equation of the Hamiltonian flow. Both defects therefore vanish in the
 limit, which converges uniformly on compact windows.
 
-The convergence of the translates is an assumption here. In applications it is to come from
-compactness away from bubbling points (`TauCeti.Geometry.Symplectic.Floer.Compactness`): the
-energy over the translated windows tends to zero, so no bubbling point survives there. That
-combination, which also needs a bound on the image of `u`, is not carried out here. Nor are the
-nondegeneracy of the orbits, the convergence of the whole half-cylinder rather than a sequence of
-translates, or the exponential decay along the end.
+The convergence of the translates is an assumption here. For a solution on a half-cylinder with
+values in a compact set, `TauCeti.Geometry.Symplectic.Floer.EndTranslates` supplies it along a
+subsequence of every sequence `s_k → ∞`, from the bounded derivative of finite-energy solutions on
+cylindrical ends (`TauCeti.Geometry.Symplectic.Floer.CylindricalEnd`). The nondegeneracy of the
+orbits, the convergence of the whole half-cylinder rather than a sequence of translates, and the
+exponential decay along the end are not treated here.
 
 ## Main results
 

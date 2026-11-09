@@ -15,7 +15,8 @@ A point of `[0, n)` in an ordered ring with a floor operation is the sum of an i
 `Fin n` and a remainder in `[0, 1)`. This describes, for example, time along one of the
 finitely many edges in a polygonal boundary parametrization. In the same way, a `1`-periodic
 function is determined by its values on `[0, 1)`: it takes the same value at `t` and at the
-fractional part of `t`.
+fractional part of `t`. A function on `R × R` periodic in both coordinates is likewise
+determined by its values on the unit square.
 
 For a step `δ > 0` in a linearly ordered field with an integer floor, the multiples of `δ` cut
 the line into the closed intervals `[δ m, δ (m + 1)]` with `m ∈ ℤ`. Every point `x` lies in the
@@ -28,6 +29,8 @@ interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its in
   a remainder in `[0, 1)`.
 * `Function.Periodic.apply_fract`: a `1`-periodic function takes the same value at `t` and at
   its fractional part `Int.fract t`.
+* `Function.Periodic.apply_fract_fract`: a function on `R × R` periodic under `(1, 0)` and
+  `(0, 1)` takes the same value at `z` and at the fractional parts of its coordinates.
 * `TauCeti.mem_Icc_mul_floor_div`: `x ∈ [δ ⌊x / δ⌋, δ (⌊x / δ⌋ + 1)]`.
 * `TauCeti.mem_Icc_ceil_floor_of_mem_Icc`: if `x ∈ [δ m, δ (m + 1)]` and `|x| ≤ R`, then
   `m ∈ [⌈-R / δ⌉ - 1, ⌊R / δ⌋]`.
@@ -51,6 +54,17 @@ theorem exists_eq_natCast_add_of_mem_Ico {R : Type*} [Ring R] [LinearOrder R]
 theorem _root_.Function.Periodic.apply_fract {R β : Type*} [Ring R] [LinearOrder R]
     [FloorRing R] {f : R → β} (hf : Function.Periodic f 1) (t : R) : f (Int.fract t) = f t := by
   simpa [Int.self_sub_floor] using hf.sub_int_mul_eq (x := t) ⌊t⌋
+
+/-- A function on `R × R` that is periodic under `(1, 0)` and `(0, 1)` takes the same value at `z`
+and at the pair of fractional parts of its coordinates. -/
+theorem _root_.Function.Periodic.apply_fract_fract {R β : Type*} [Ring R] [LinearOrder R]
+    [FloorRing R] {f : R × R → β} (h₁ : Function.Periodic f (1, 0))
+    (h₂ : Function.Periodic f (0, 1)) (z : R × R) : f (Int.fract z.1, Int.fract z.2) = f z := by
+  have hz : z = (Int.fract z.1, Int.fract z.2) + ⌊z.1⌋ • ((1 : R), (0 : R)) +
+      ⌊z.2⌋ • ((0 : R), (1 : R)) := by
+    ext <;> simp [Int.fract_add_floor]
+  conv_rhs => rw [hz]
+  rw [h₂.zsmul, h₁.zsmul]
 
 variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [FloorRing K] {δ : K}
 

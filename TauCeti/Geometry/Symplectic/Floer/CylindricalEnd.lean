@@ -50,8 +50,9 @@ then its derivative is bounded on every half-plane `s ≥ b` with `b > a`
 The uniform Lipschitz bound makes the translates `u(· + σ)`, `σ → ∞`, equicontinuous with values in
 `K`. This is the input from which the Arzelà–Ascoli theorem produces the locally uniformly
 convergent translates whose limits `TauCeti.Geometry.Symplectic.Floer.Breaking` identifies as
-Hamiltonian orbits. That extraction, and any decay of `∂ₛu` along the end, are not carried out
-here.
+Hamiltonian orbits; `TauCeti.Geometry.Symplectic.Floer.EndTranslates` carries out that extraction
+for the Floer equation in the form `(du - X_K)^{0,1} = 0`. Decay of `∂ₛu` along the end is not
+treated here.
 
 ## References
 

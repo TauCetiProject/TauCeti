@@ -10,6 +10,9 @@ public import Mathlib.Topology.UniformSpace.Ascoli
 public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Topology.MetricSpace.Pseudo.Real
 
+import Mathlib.Topology.EMetricSpace.Lipschitz
+import Mathlib.Topology.MetricSpace.Equicontinuity
+import Mathlib.Topology.UniformSpace.CompactConvergence
 import Mathlib.Topology.UniformSpace.Completion
 import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Topology.UniformSpace.Ascoli
@@ -37,6 +40,9 @@ and adds companion statements used for compactness and finite approximation of f
 * Conversely, on a weakly locally compact domain, a compact subset of `C(X, Y)` is equicontinuous.
 * A sequence of continuous `1`-periodic loops in a compact subset of a pseudometric space, with a
   common modulus of continuity on `[0, 1]`, has a subsequence converging uniformly on `ℝ`.
+* A map on `ℝ × ℝ` that is Lipschitz on a half-plane `s ≥ A`, with values there in a compact
+  subset of a pseudometric space, has translates `z ↦ u(z + (σₙ, 0))`, `σₙ → ∞`, with a locally
+  uniformly convergent subsequence.
 
 The pointwise hypothesis cannot be replaced by equicontinuity and a common starting point when `Y`
 is not proper. The curves `γₙ(t) = t • eₙ`, `t ∈ [0, 1]`, along the standard basis vectors of
@@ -58,6 +64,8 @@ endpoints `eₙ` stay at distance at least `1` from each other
   is equicontinuous.
 * `TauCeti.exists_tendstoUniformly_subseq_of_periodic_of_modulus`: Arzelà–Ascoli for periodic
   loops with a common modulus of continuity.
+* `TauCeti.exists_tendstoLocallyUniformly_comp_add_subseq_of_lipschitzOnWith`: Arzelà–Ascoli for
+  translates along a half-plane on which a map is Lipschitz.
 
 ## References
 
@@ -231,5 +239,56 @@ theorem exists_tendstoUniformly_subseq_of_periodic_of_modulus {M : Type*} [Pseud
     rw [heq]
     exact hunif.comp p
   exact ⟨ψ, hψ, x, hxper, hux.continuous (Frequently.of_forall fun n ↦ hy _), hux⟩
+
+/-- **Arzelà–Ascoli for translates along a half-plane.** Let `u : ℝ × ℝ → M` be `L`-Lipschitz on
+the half-plane `s ≥ A`, with values there in a compact set `K`. For every sequence `σₙ → ∞`, a
+subsequence of the translates `z ↦ u(z + (σₙ, 0))` converges locally uniformly on `ℝ × ℝ` to a
+continuous map. -/
+theorem exists_tendstoLocallyUniformly_comp_add_subseq_of_lipschitzOnWith {M : Type*}
+    [PseudoMetricSpace M] {K : Set M} (hK : IsCompact K) {u : ℝ × ℝ → M} {A : ℝ} {L : NNReal}
+    (hu : LipschitzOnWith L u (Ici A ×ˢ univ)) (huK : ∀ z ∈ Ici A ×ˢ univ, u z ∈ K)
+    {σ : ℕ → ℝ} (hσ : Tendsto σ atTop atTop) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ g : C(ℝ × ℝ, M),
+      TendstoLocallyUniformly (fun n z ↦ u (z + (σ (φ n), 0))) g atTop := by
+  -- The translates, cut off at the boundary `s = A` of the half-plane, are uniformly Lipschitz.
+  set κ : ℝ → ℝ × ℝ → ℝ × ℝ := fun r z ↦ (max (z.1 + r) A, z.2) with hκ_def
+  have hκ (r : ℝ) (z : ℝ × ℝ) : κ r z ∈ Ici A ×ˢ (univ : Set ℝ) :=
+    ⟨le_max_right _ _, mem_univ _⟩
+  have hGL (r : ℝ) (z w : ℝ × ℝ) : dist (u (κ r z)) (u (κ r w)) ≤ L * dist z w := by
+    refine (hu.dist_le_mul _ (hκ r z) _ (hκ r w)).trans
+      (mul_le_mul_of_nonneg_left ?_ NNReal.zero_le_coe)
+    rw [Prod.dist_eq, Prod.dist_eq, Real.dist_eq, Real.dist_eq z.1]
+    refine max_le_max ((abs_max_sub_max_le_abs _ _ _).trans ?_) le_rfl
+    rw [add_sub_add_right_eq_sub]
+  set G : ℕ → C(ℝ × ℝ, M) := fun n ↦
+    ⟨fun z ↦ u (κ (σ n) z), (LipschitzWith.of_dist_le_mul (hGL (σ n))).continuous⟩ with hG_def
+  have hGeq : Equicontinuous fun n ↦ ⇑(G n) :=
+    Metric.equicontinuous_of_continuity_modulus (fun r ↦ L * r)
+      ((show Continuous fun r : ℝ ↦ (L : ℝ) * r by fun_prop).tendsto' 0 0 (mul_zero _))
+      _ fun z w n ↦ hGL (σ n) z w
+  obtain ⟨g, -, φ, hφ, hlim⟩ :=
+    (ArzelaAscoli.isCompact_closure_range_of_equicontinuous hGeq fun z ↦
+      ⟨K, hK, fun n ↦ huK _ (hκ (σ n) z)⟩).tendsto_subseq
+      fun n ↦ subset_closure (mem_range_self n)
+  have hGg : TendstoLocallyUniformly (fun n ↦ ⇑(G (φ n))) g atTop :=
+    ContinuousMap.tendsto_iff_tendstoLocallyUniformly.1 hlim
+  have hσφ : Tendsto (σ ∘ φ) atTop atTop := hσ.comp hφ.tendsto_atTop
+  -- Near any point, the cut-off translates eventually agree with the translates.
+  refine ⟨φ, hφ, g, fun W hW z₀ ↦ ?_⟩
+  obtain ⟨t, ht, hev⟩ := hGg W hW z₀
+  refine ⟨t ∩ Metric.ball z₀ 1, inter_mem ht (Metric.ball_mem_nhds z₀ one_pos), ?_⟩
+  filter_upwards [hev, hσφ.eventually_ge_atTop (A + 1 - z₀.1)] with n hn hσn y hy
+  have h0 := Metric.mem_ball.1 hy.2
+  rw [Prod.dist_eq] at h0
+  have h1 := (le_max_left _ _).trans_lt h0
+  rw [Real.dist_eq, abs_lt] at h1
+  have hmax : max (y.1 + σ (φ n)) A = y.1 + σ (φ n) :=
+    max_eq_left (by simp only [Function.comp_apply] at hσn; linarith [h1.1])
+  have heq : u (y + (σ (φ n), 0)) = G (φ n) y := by
+    simp only [hG_def, ContinuousMap.coe_mk, hκ_def, hmax]
+    congr 1
+    ext <;> simp
+  rw [heq]
+  exact hn y hy.1
 
 end TauCeti
