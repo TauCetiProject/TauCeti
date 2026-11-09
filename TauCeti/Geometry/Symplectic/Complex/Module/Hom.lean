@@ -199,7 +199,9 @@ end TauCeti
 
 namespace TauCeti.AlmostComplexStructure
 
-/-- A commuting square with a complex-linear map intertwines transported complex structures. -/
+/-- A commuting square with a complex-linear map intertwines transported complex structures.
+The explicit instances select the inherited additive-group parent of scalar restriction,
+matching `RestrictScalars.realModule` rather than the separate direct additive-monoid instance. -/
 theorem ofRestrictScalars_transport_naturality
     {M M' N N' : Type*} [AddCommGroup M] [Module ℂ M] [AddCommGroup M'] [Module ℝ M']
     [AddCommGroup N] [Module ℂ N] [AddCommGroup N'] [Module ℝ N'] :
