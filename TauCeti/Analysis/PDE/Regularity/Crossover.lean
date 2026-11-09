@@ -154,13 +154,10 @@ theorem exists_setAverage_rpow_mul_setAverage_rpow_neg_le [Nonempty ι] :
     lintegral_congr_ae (hpos.mono fun x hx => by
       simp only [f]
       rw [Real.rpow_def_of_pos hx, mul_comm])
-  have hmeas : AEStronglyMeasurable (fun x => W1p.value u x) (mu.restrict (ball x₀ r)) :=
-    (Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono hBΩ le_rfl)
   refine setAverage_mul_setAverage_le_of_setLIntegral_mul_le
     (hpos.mono fun x hx => Real.rpow_nonneg hx.le p)
     (hpos.mono fun x hx => Real.rpow_nonneg hx.le (-p))
-    (hmeas.aemeasurable.pow_const p).aestronglyMeasurable
-    (hmeas.aemeasurable.pow_const (-p)).aestronglyMeasurable ?_
+    ?_
   rw [hexp p, hexp (-p)]
   simpa only [neg_mul] using hJ
 
