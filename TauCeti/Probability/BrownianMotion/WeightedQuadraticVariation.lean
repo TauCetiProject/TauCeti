@@ -44,7 +44,7 @@ namespace TauCeti.Probability.IsFilteredPreBrownianReal
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {B : ℝ≥0 → Ω → ℝ}
 
-private theorem indepFun_centered_sq_increment (hB : IsFilteredPreBrownianReal ℱ B P)
+private theorem indepFun_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
     {s t : ℝ≥0} (hst : s ≤ t) {Y : Ω → ℝ} (hY : Measurable[ℱ s] Y) :
     IndepFun Y (fun ω ↦ (B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) P :=
   (hB.indepFun_sub hst hY).comp measurable_id
@@ -52,47 +52,47 @@ private theorem indepFun_centered_sq_increment (hB : IsFilteredPreBrownianReal �
 
 /-- A past-measurable integrable height times the centered square of a future Brownian
 increment has mean zero. No boundedness or second moment of the height is required. -/
-theorem integral_mul_centered_sq_increment (hB : IsFilteredPreBrownianReal ℱ B P)
+theorem integral_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
     {s t : ℝ≥0} (hst : s ≤ t) {Y : Ω → ℝ} (hY : Measurable[ℱ s] Y)
     (hYi : Integrable Y P) :
     (∫ ω, Y ω * ((B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) ∂P) = 0 := by
-  rw [(indepFun_centered_sq_increment hB hst hY).integral_fun_mul_eq_mul_integral
+  rw [(indepFun_sq_sub_sub hB hst hY).integral_fun_mul_eq_mul_integral
     hYi.aestronglyMeasurable
-      hB.toIsPreBrownianReal.memLp_centered_sq_increment.aestronglyMeasurable,
-    hB.toIsPreBrownianReal.integral_centered_sq_increment hst,
+      hB.toIsPreBrownianReal.memLp_sq_sub_sub.aestronglyMeasurable,
+    hB.toIsPreBrownianReal.integral_sq_sub_sub hst,
     mul_zero]
 
 /-- A square-integrable past height times a centered squared Brownian increment is
 square integrable. -/
-theorem memLp_mul_centered_sq_increment (hB : IsFilteredPreBrownianReal ℱ B P)
+theorem memLp_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
     {s t : ℝ≥0} (hst : s ≤ t) {Y : Ω → ℝ} (hY : Measurable[ℱ s] Y) (hYi : MemLp Y 2 P) :
     MemLp (fun ω ↦ Y ω * ((B t ω - B s ω) ^ 2 - ((t : ℝ) - s))) 2 P := by
-  have hD := hB.toIsPreBrownianReal.memLp_centered_sq_increment (s := s) (t := t)
+  have hD := hB.toIsPreBrownianReal.memLp_sq_sub_sub (s := s) (t := t)
   refine (memLp_two_iff_integrable_sq (hYi.aestronglyMeasurable.mul
     hD.aestronglyMeasurable)).2 ?_
   simpa only [mul_pow, Function.comp_def, id_eq, Pi.mul_def] using
-    ((indepFun_centered_sq_increment hB hst hY).comp
+    ((indepFun_sq_sub_sub hB hst hY).comp
     (measurable_id.pow_const 2) (measurable_id.pow_const 2)).integrable_mul
       hYi.integrable_sq hD.integrable_sq
 
 /-- The second moment of a past-weighted centered squared increment factors exactly. -/
-theorem integral_sq_mul_centered_sq_increment (hB : IsFilteredPreBrownianReal ℱ B P)
+theorem integral_sq_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
     {s t : ℝ≥0} (hst : s ≤ t) {Y : Ω → ℝ} (hY : Measurable[ℱ s] Y) (hYi : MemLp Y 2 P) :
     (∫ ω, (Y ω * ((B t ω - B s ω) ^ 2 - ((t : ℝ) - s))) ^ 2 ∂P) =
       2 * (∫ ω, Y ω ^ 2 ∂P) * ((t : ℝ) - s) ^ 2 := by
   simp_rw [mul_pow]
   have hind : IndepFun (fun ω ↦ Y ω ^ 2)
       (fun ω ↦ ((B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) ^ 2) P :=
-    (indepFun_centered_sq_increment hB hst hY).comp (measurable_id.pow_const 2)
+    (indepFun_sq_sub_sub hB hst hY).comp (measurable_id.pow_const 2)
       (measurable_id.pow_const 2)
   rw [hind.integral_fun_mul_eq_mul_integral hYi.integrable_sq.aestronglyMeasurable
-    hB.toIsPreBrownianReal.memLp_centered_sq_increment.integrable_sq.aestronglyMeasurable,
-    hB.toIsPreBrownianReal.integral_sq_centered_sq_increment hst]
+    hB.toIsPreBrownianReal.memLp_sq_sub_sub.integrable_sq.aestronglyMeasurable,
+    hB.toIsPreBrownianReal.integral_sq_sq_sub_sub hst]
   ring
 
 /-- Exact mean-square identity for a finite centered quadratic sum with arbitrary
 square-integrable predictable heights. The weighted summands need not be independent. -/
-theorem integral_sq_sum_mul_centered_sq_increment (hB : IsFilteredPreBrownianReal ℱ B P)
+theorem integral_sq_sum_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
     {n : ℕ} {t : ℕ → ℝ≥0} (ht : MonotoneOn t (Set.Iic n)) {H : ℕ → Ω → ℝ}
     (hH : ∀ i < n, Measurable[ℱ (t i)] (H i)) (hHi : ∀ i < n, MemLp (H i) 2 P) :
     (∫ ω, (∑ i ∈ range n, H i ω * ((B (t (i + 1)) ω - B (t i) ω) ^ 2 -
@@ -102,7 +102,7 @@ theorem integral_sq_sum_mul_centered_sq_increment (hB : IsFilteredPreBrownianRea
   let Z i ω := H i ω * ((B (t (i + 1)) ω - B (t i) ω) ^ 2 -
     ((t (i + 1) : ℝ) - t i))
   have hZi : ∀ i < n, MemLp (Z i) 2 P := fun i hi ↦
-    hB.memLp_mul_centered_sq_increment (ht hi.le hi (Nat.le_succ i)) (hH i hi) (hHi i hi)
+    hB.memLp_mul_sq_sub_sub (ht hi.le hi (Nat.le_succ i)) (hH i hi) (hHi i hi)
   have horth : ∀ i < n, ∀ j < n, i < j → (∫ ω, Z i ω * Z j ω ∂P) = 0 := by
     intro i hi j hj hij
     have hmeas : Measurable[ℱ (t j)] (fun ω ↦ Z i ω * H j ω) := by
@@ -112,7 +112,7 @@ theorem integral_sq_sum_mul_centered_sq_increment (hB : IsFilteredPreBrownianRea
         (((h₁.sub h₀).pow_const 2).sub measurable_const)).mul (hH j hj)
     have hint : Integrable (fun ω ↦ Z i ω * H j ω) P := by
       simpa only [Pi.mul_def] using (hZi i hi).integrable_mul (hHi j hj)
-    have h := hB.integral_mul_centered_sq_increment (ht hj.le hj (Nat.le_succ j)) hmeas hint
+    have h := hB.integral_mul_sq_sub_sub (ht hj.le hj (Nat.le_succ j)) hmeas hint
     convert h using 1
     congr 1
     ext ω
@@ -122,7 +122,7 @@ theorem integral_sq_sum_mul_centered_sq_increment (hB : IsFilteredPreBrownianRea
       ∑ i ∈ range n, ∫ ω, Z i ω ^ 2 ∂P by
     rw [h, mul_sum]
     exact sum_congr rfl fun i hi ↦ by
-      rw [hB.integral_sq_mul_centered_sq_increment (ht (mem_range.1 hi).le (mem_range.1 hi)
+      rw [hB.integral_sq_mul_sq_sub_sub (ht (mem_range.1 hi).le (mem_range.1 hi)
         (Nat.le_succ i)) (hH i (mem_range.1 hi)) (hHi i (mem_range.1 hi))]
       ring
   apply integral_sq_sum_of_pairwise_integral_mul_eq_zero (fun i hi ↦ hZi i (mem_range.1 hi))
@@ -133,12 +133,12 @@ theorem integral_sq_sum_mul_centered_sq_increment (hB : IsFilteredPreBrownianRea
 
 /-- For heights equal to the Brownian left endpoint, the second moment of the centered
 quadratic error is `2 ∑ᵢ tᵢ (tᵢ₊₁ - tᵢ)²`. -/
-theorem integral_sq_sum_eval_mul_centered_sq_increment (hB : IsFilteredPreBrownianReal ℱ B P)
+theorem integral_sq_sum_eval_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
     {n : ℕ} {t : ℕ → ℝ≥0} (ht : MonotoneOn t (Set.Iic n)) :
     (∫ ω, (∑ i ∈ range n, B (t i) ω * ((B (t (i + 1)) ω - B (t i) ω) ^ 2 -
       ((t (i + 1) : ℝ) - t i))) ^ 2 ∂P) =
         2 * ∑ i ∈ range n, (t i : ℝ) * ((t (i + 1) : ℝ) - t i) ^ 2 := by
-  rw [hB.integral_sq_sum_mul_centered_sq_increment ht (fun i _ ↦ hB.adapted (t i))
+  rw [hB.integral_sq_sum_mul_sq_sub_sub ht (fun i _ ↦ hB.adapted (t i))
     (fun i _ ↦ hB.toIsPreBrownianReal.memLp_eval (t i) (by norm_num))]
   congr 1
   apply sum_congr rfl
@@ -151,13 +151,13 @@ theorem integral_sq_sum_eval_mul_centered_sq_increment (hB : IsFilteredPreBrowni
 
 /-- On a horizon bounded by `T`, mesh at most `δ` bounds the second moment (mean square)
 of the Brownian-weighted centered quadratic error by `2 T² δ`. -/
-theorem integral_sq_sum_eval_mul_centered_sq_increment_le (hB : IsFilteredPreBrownianReal ℱ B P)
+theorem integral_sq_sum_eval_mul_sq_sub_sub_le (hB : IsFilteredPreBrownianReal ℱ B P)
     {n : ℕ} {t : ℕ → ℝ≥0} (ht : MonotoneOn t (Set.Iic n)) {T : ℝ≥0}
     (hT : t n ≤ T) {δ : ℝ} (hδ : 0 ≤ δ)
     (hmesh : ∀ i < n, (t (i + 1) : ℝ) - t i ≤ δ) :
     (∫ ω, (∑ i ∈ range n, B (t i) ω * ((B (t (i + 1)) ω - B (t i) ω) ^ 2 -
       ((t (i + 1) : ℝ) - t i))) ^ 2 ∂P) ≤ 2 * (T : ℝ) ^ 2 * δ := by
-  rw [hB.integral_sq_sum_eval_mul_centered_sq_increment ht]
+  rw [hB.integral_sq_sum_eval_mul_sq_sub_sub ht]
   have hsum : ∑ i ∈ range n, (t i : ℝ) * ((t (i + 1) : ℝ) - t i) ^ 2 ≤
       (T : ℝ) * δ * ∑ i ∈ range n, ((t (i + 1) : ℝ) - t i) := by
     rw [mul_sum]
@@ -180,7 +180,7 @@ theorem integral_sq_sum_eval_mul_centered_sq_increment_le (hB : IsFilteredPreBro
 
 /-- The centered Brownian-weighted quadratic error tends to zero in mean square along
 any deterministic vanishing-mesh family on a bounded horizon. -/
-theorem tendsto_integral_sq_sum_eval_mul_centered_sq_increment
+theorem tendsto_integral_sq_sum_eval_mul_sq_sub_sub
     (hB : IsFilteredPreBrownianReal ℱ B P)
     {α : Type*} {l : Filter α} {n : α → ℕ} {t : α → ℕ → ℝ≥0} {δ : α → ℝ} {T : ℝ≥0}
     (ht : ∀ a, MonotoneOn (t a) (Set.Iic (n a))) (hT : ∀ a, t a (n a) ≤ T)
@@ -192,6 +192,6 @@ theorem tendsto_integral_sq_sum_eval_mul_centered_sq_increment
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     (by simpa using hlim.const_mul (2 * (T : ℝ) ^ 2))
     (fun a ↦ integral_nonneg fun _ ↦ sq_nonneg _) ?_
-  exact fun a ↦ hB.integral_sq_sum_eval_mul_centered_sq_increment_le (ht a) (hT a) (hδ a) (hmesh a)
+  exact fun a ↦ hB.integral_sq_sum_eval_mul_sq_sub_sub_le (ht a) (hT a) (hδ a) (hmesh a)
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

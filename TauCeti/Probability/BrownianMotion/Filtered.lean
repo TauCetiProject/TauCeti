@@ -119,13 +119,12 @@ theorem hasLaw_sub_of_le (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst : s �
   ext
   simp [Real.nndist_eq, hst]
 
-/-- Every natural power of a pre-Brownian increment is integrable. -/
-theorem integrable_pow_increment (hB : IsPreBrownianReal B P)
-    {s t : ℝ≥0} (hst : s ≤ t) (n : ℕ) :
+/-- Every natural power of a pre-Brownian increment is integrable, in either time order. -/
+theorem integrable_pow_sub (hB : IsPreBrownianReal B P) (s t : ℝ≥0) (n : ℕ) :
     Integrable (fun ω ↦ (B t ω - B s ω) ^ n) P := by
   simpa only [Function.comp_def, Pi.sub_apply] using
-    (hB.hasLaw_sub_of_le hst).integrable_comp
-      (TauCeti.integrable_pow_gaussianReal 0 (t - s) n)
+    (hB.hasLaw_sub t s).integrable_comp
+      (TauCeti.integrable_pow_gaussianReal 0 (nndist (t : ℝ) (s : ℝ)) n)
 
 /-- The second moment of a Brownian increment is the elapsed time. -/
 theorem integral_sq_sub_of_le (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst : s ≤ t) :
@@ -154,29 +153,29 @@ theorem memLp_sq_sub (hB : IsPreBrownianReal B P) (s t : ℝ≥0) :
     (h.mul h : MemLp ((B s - B t) * (B s - B t)) 2 P)
 
 /-- The centered square of a Brownian increment is square integrable, in either time order. -/
-theorem memLp_centered_sq_increment (hB : IsPreBrownianReal B P) {s t : ℝ≥0} :
+theorem memLp_sq_sub_sub (hB : IsPreBrownianReal B P) {s t : ℝ≥0} :
     MemLp (fun ω ↦ (B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) 2 P := by
   have := (hB.hasLaw_eval 0).isProbabilityMeasure
   exact (hB.memLp_sq_sub t s).sub (memLp_const _)
 
 /-- The centered square of a Brownian increment has mean zero. -/
-theorem integral_centered_sq_increment (hB : IsPreBrownianReal B P)
+theorem integral_sq_sub_sub (hB : IsPreBrownianReal B P)
     {s t : ℝ≥0} (hst : s ≤ t) :
     (∫ ω, (B t ω - B s ω) ^ 2 - ((t : ℝ) - s) ∂P) = 0 := by
   have := (hB.hasLaw_eval 0).isProbabilityMeasure
-  rw [integral_sub (hB.integrable_pow_increment hst 2) (integrable_const _),
+  rw [integral_sub (hB.integrable_pow_sub s t 2) (integrable_const _),
     hB.integral_sq_sub_of_le hst, integral_const]
   simp
 
 /-- The second moment of a centered squared Brownian increment is twice the squared
 length of its time interval. -/
-theorem integral_sq_centered_sq_increment (hB : IsPreBrownianReal B P)
+theorem integral_sq_sq_sub_sub (hB : IsPreBrownianReal B P)
     {s t : ℝ≥0} (hst : s ≤ t) :
     (∫ ω, ((B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) ^ 2 ∂P) =
       2 * ((t : ℝ) - s) ^ 2 := by
   have := (hB.hasLaw_eval 0).isProbabilityMeasure
-  have h4i := hB.integrable_pow_increment hst 4
-  have h2i := hB.integrable_pow_increment hst 2
+  have h4i := hB.integrable_pow_sub s t 4
+  have h2i := hB.integrable_pow_sub s t 2
   have hexp : ∀ ω, ((B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) ^ 2 =
       (B t ω - B s ω) ^ 4 - 2 * ((t : ℝ) - s) * (B t ω - B s ω) ^ 2 +
         ((t : ℝ) - s) ^ 2 := fun ω ↦ by ring
