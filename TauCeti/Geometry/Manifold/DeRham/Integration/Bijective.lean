@@ -133,8 +133,7 @@ theorem injective_integral [PreconnectedSpace M] (o : Manifold.Orientation I M (
     apply SmoothBundleForm.ext
     intro x
     exact isEmptyElim x
-  letI := hM
-  have : ConnectedSpace M := ⟨⟩
+  have : ConnectedSpace M := { toNonempty := hM }
   have hn : finrank ℝ E ≤ n := by simpa using o.card_eq.ge
   -- A class `e₀` of integral one, supported in a neighbourhood `U₀` on which integration is
   -- injective; `K` consists of the classes which are their integrals times `e₀`.
