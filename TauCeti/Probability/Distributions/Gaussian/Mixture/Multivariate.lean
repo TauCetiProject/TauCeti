@@ -10,7 +10,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Density
 public import TauCeti.Probability.Moments.Covariance
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 import TauCeti.Probability.Distributions.Gaussian.Transforms
-import TauCeti.Probability.Distributions.Mixture
+import TauCeti.Probability.Distributions.Mixture.Basic
 import TauCeti.Probability.Moments.Mixture
 
 /-!

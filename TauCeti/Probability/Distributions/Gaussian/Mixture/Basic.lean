@@ -9,7 +9,7 @@ public import Mathlib.Probability.Distributions.Gaussian.Real
 public import TauCeti.Probability.Distributions.Categorical.Basic
 public import TauCeti.Probability.Density
 import TauCeti.Algebra.BigOperators.Finset.WeightedVariance
-import TauCeti.Probability.Distributions.Mixture
+import TauCeti.Probability.Distributions.Mixture.Basic
 import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
 
