@@ -149,15 +149,17 @@ theorem _root_.Homeomorph.exists_addCircle_lift_symm_comp_eq_add (φ : AddCircle
     fun x ↦ by simp [← hψ, ← hφ]
   exact ⟨G, c, hG, hψ, hc⟩
 
-variable [hT : Fact (0 < T)]
-
 /-- A continuous strictly monotone lift `F` maps the fundamental interval `(0, T]` onto
 `(F 0, F 0 + T]`. -/
 theorem image_Ioc_of_lift (hF : StrictMono F) (hFc : Continuous F)
     (hper : ∀ x, F (x + T) = F x + T) : F '' Ioc 0 T = Ioc (F 0) (F 0 + T) := by
+  rcases le_or_gt T 0 with hT | hT
+  · rw [Ioc_eq_empty (not_lt.2 hT), Ioc_eq_empty (not_lt.2 (by linarith)), image_empty]
   refine (image_Ioc_subset_of_lift hF hper).antisymm ?_
   have hT' : F T = F 0 + T := by simpa using hper 0
-  exact hT' ▸ intermediate_value_Ioc hT.out.le hFc.continuousOn
+  exact hT' ▸ intermediate_value_Ioc hT.le hFc.continuousOn
+
+variable [hT : Fact (0 < T)]
 
 /-- A circle map with a continuous strictly monotone lift is bijective. -/
 theorem bijective_of_lift (hF : StrictMono F) (hFc : Continuous F)
@@ -213,6 +215,7 @@ theorem comp_homeomorphOfLift_symm (hF : StrictMono F) (hFc : Continuous F)
     φ ∘ (homeomorphOfLift φ hF hFc hper hφ).symm = id :=
   (homeomorphOfLift φ hF hFc hper hφ).self_comp_symm
 
+omit hT in
 /-- **Lifts of homeomorphisms of the circle.** A continuous lift `F` of a homeomorphism `φ` of
 `AddCircle T` is either strictly monotone with `F (x + T) = F x + T` (the orientation-preserving
 case) or strictly antitone with `F (x + T) = F x - T` (the orientation-reversing case). -/
@@ -227,6 +230,10 @@ theorem strictMono_or_strictAnti_of_lift {φ : AddCircle T ≃ₜ AddCircle T} (
     have hy := hc y
     rw [hxy] at hx
     linarith
+  rcases eq_or_ne T 0 with rfl | hT0
+  · rcases hF.strictMono_of_inj hFi with hm | ha
+    · exact .inl ⟨hm, fun x ↦ by simp⟩
+    · exact .inr ⟨ha, fun x ↦ by simp⟩
   -- the degrees of `φ` and of its inverse multiply to `1`
   have hde : d * e = 1 := by
     have h₁ : G (F T) = T + c := by simpa using hc T
@@ -234,23 +241,30 @@ theorem strictMono_or_strictAnti_of_lift {φ : AddCircle T ≃ₜ AddCircle T} (
     have hFT : F T = F 0 + d * T := by simpa using hd 0
     rw [hFT, lift_add_int_mul_of_degree he, h₀] at h₁
     have : ((d * e : ℤ) : ℝ) * T = 1 * T := by push_cast; linarith
-    exact_mod_cast mul_right_cancel₀ hT.out.ne' this
-  have hT0 := hT.out
+    exact_mod_cast mul_right_cancel₀ hT0 this
   rcases hF.strictMono_of_inj hFi with hm | ha
   · refine .inl ⟨hm, fun x ↦ ?_⟩
-    have hlt : F 0 < F (0 + T) := hm (by linarith)
-    rw [hd] at hlt
     have hd0 : 0 < d := by
-      have : (0 : ℝ) < d := pos_of_mul_pos_left (by linarith : (0 : ℝ) < d * T) hT0.le
+      have hFT : F T = F 0 + d * T := by simpa using hd 0
+      have : (0 : ℝ) < d := by
+        rcases hT0.lt_or_gt with h | h
+        · have := hm (a := T) (b := 0) h
+          nlinarith
+        · have := hm (a := 0) (b := T) h
+          nlinarith
       exact_mod_cast this
     rcases Int.eq_one_or_neg_one_of_mul_eq_one hde with rfl | rfl
     · simpa using hd x
     · omega
   · refine .inr ⟨ha, fun x ↦ ?_⟩
-    have hlt : F (0 + T) < F 0 := ha (by linarith)
-    rw [hd] at hlt
     have hd0 : d < 0 := by
-      have : (d : ℝ) < 0 := by nlinarith
+      have hFT : F T = F 0 + d * T := by simpa using hd 0
+      have : (d : ℝ) < 0 := by
+        rcases hT0.lt_or_gt with h | h
+        · have := ha (a := T) (b := 0) (by simpa using h)
+          nlinarith
+        · have := ha (a := 0) (b := T) (by simpa using h)
+          nlinarith
       exact_mod_cast this
     rcases Int.eq_one_or_neg_one_of_mul_eq_one hde with rfl | rfl
     · omega
