@@ -102,9 +102,9 @@ theorem mlieBracket_restrictScalars
       (mdifferentiableAt_extChartAt (by simpa only [extChartAt_source] using hy)
         |>.mvfderiv_restrictScalarsSelf_apply R
           ((RestrictScalars.addEquiv R A _).symm (U y)))
-  rw [MDifferentiableAt.mvfderiv_restrictScalarsSelf_apply R
-      (hf.mdifferentiableAt
-        (ne_of_gt (lt_of_lt_of_le (by norm_num : (0 : ℕ∞ω) < 2) le_minSmoothness))),
+  have hf' := hf.mdifferentiableAt
+    (ne_of_gt (lt_of_lt_of_le (by norm_num : (0 : ℕ∞ω) < 2) le_minSmoothness))
+  simp only [MDifferentiableAt.mvfderiv_restrictScalarsSelf_apply R hf',
     (hnear W).mvfderiv_eq, (hnear V).mvfderiv_eq,
     MDifferentiableAt.mvfderiv_restrictScalarsSelf_apply R
       (TauCeti.mdifferentiableAt_mvfderiv_apply hf le_rfl hW),

@@ -43,21 +43,21 @@ variable {L L' : Type*} [LieRing L] [LieAlgebra ℂ L] [LieRing L'] [LieAlgebra 
 /-- The transported canonical complex structure on the image of the equivalence. -/
 -- The generic transport and normalized-equivalence simp rules already prove this equation.
 theorem transport_ofRestrictScalars_apply_image (x : RestrictScalars ℝ ℂ L) :
-    (AlmostComplexStructure.ofRestrictScalars L).transport e.restrictScalarsLinearEquiv (e x) =
+    (AlmostComplexStructure.ofRestrictScalars L).transport e.toRealLinearEquiv (e x) =
       e ((RestrictScalars.addEquiv ℝ ℂ L).symm
         (Complex.I • RestrictScalars.addEquiv ℝ ℂ L x)) := by
-  rw [AlmostComplexStructure.transport_apply, restrictScalarsLinearEquiv_symm_apply,
+  rw [AlmostComplexStructure.transport_apply, toRealLinearEquiv_symm_apply,
     e.symm_apply_apply]
-  exact (restrictScalarsLinearEquiv_apply e _).trans
+  exact (toRealLinearEquiv_apply e _).trans
     (congrArg e (AlmostComplexStructure.ofRestrictScalars_apply L x))
 
 /-- The transported complex structure commutes with the bracket in its first argument. -/
 -- These are explicit rewrite rules: the existing transport application simp lemma expands
 -- their left-hand sides before the bracket laws can match.
 theorem transport_ofRestrictScalars_lie_left (X Y : L') :
-    ⁅(AlmostComplexStructure.ofRestrictScalars L).transport e.restrictScalarsLinearEquiv X, Y⁆ =
+    ⁅(AlmostComplexStructure.ofRestrictScalars L).transport e.toRealLinearEquiv X, Y⁆ =
       (AlmostComplexStructure.ofRestrictScalars L).transport
-        e.restrictScalarsLinearEquiv ⁅X, Y⁆ := by
+        e.toRealLinearEquiv ⁅X, Y⁆ := by
   obtain ⟨x, rfl⟩ := e.toLinearEquiv.surjective X
   obtain ⟨y, rfl⟩ := e.toLinearEquiv.surjective Y
   have hlie (u v : RestrictScalars ℝ ℂ L) : ⁅e u, e v⁆ = e ⁅u, v⁆ :=
@@ -67,16 +67,15 @@ theorem transport_ofRestrictScalars_lie_left (X Y : L') :
     transport_ofRestrictScalars_apply_image]
   apply congrArg e
   apply (RestrictScalars.addEquiv ℝ ℂ L).injective
-  rw [RestrictScalars.addEquiv_lie, AddEquiv.apply_symm_apply,
-    AddEquiv.apply_symm_apply, RestrictScalars.addEquiv_lie, smul_lie]
+  simp only [RestrictScalars.addEquiv_lie, AddEquiv.apply_symm_apply, smul_lie]
 
 /-- The transported complex structure commutes with the bracket in its second argument. -/
 theorem transport_ofRestrictScalars_lie_right (X Y : L') :
-    ⁅X, (AlmostComplexStructure.ofRestrictScalars L).transport e.restrictScalarsLinearEquiv Y⁆ =
+    ⁅X, (AlmostComplexStructure.ofRestrictScalars L).transport e.toRealLinearEquiv Y⁆ =
       (AlmostComplexStructure.ofRestrictScalars L).transport
-        e.restrictScalarsLinearEquiv ⁅X, Y⁆ := by
+        e.toRealLinearEquiv ⁅X, Y⁆ := by
   rw [← lie_skew X
-    ((AlmostComplexStructure.ofRestrictScalars L).transport e.restrictScalarsLinearEquiv Y),
+    ((AlmostComplexStructure.ofRestrictScalars L).transport e.toRealLinearEquiv Y),
     transport_ofRestrictScalars_lie_left, ← LinearMap.map_neg, lie_skew X Y]
 
 end LieEquiv

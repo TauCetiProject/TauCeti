@@ -30,7 +30,7 @@ variable {L L' : Type*} [LieRing L] [LieAlgebra ℂ L] [LieRing L'] [LieAlgebra 
 
 /-- The underlying real-linear equivalence, using the canonical additive-group parent of
 scalar restriction. -/
-noncomputable def restrictScalarsLinearEquiv :
+noncomputable def toRealLinearEquiv :
     letI : AddCommMonoid (RestrictScalars ℝ ℂ L) :=
       (instAddCommGroupRestrictScalars ℝ ℂ L).toAddCommMonoid
     letI := RestrictScalars.realModule L
@@ -48,14 +48,14 @@ noncomputable def restrictScalarsLinearEquiv :
 
 /-- The normalized real-linear comparison has the same forward map as the Lie equivalence. -/
 @[simp]
-theorem restrictScalarsLinearEquiv_apply (x : RestrictScalars ℝ ℂ L) :
-    e.restrictScalarsLinearEquiv x = e x := by
+theorem toRealLinearEquiv_apply (x : RestrictScalars ℝ ℂ L) :
+    e.toRealLinearEquiv x = e x := by
   rfl
 
 /-- The normalized real-linear comparison has the same inverse as the Lie equivalence. -/
 @[simp]
-theorem restrictScalarsLinearEquiv_symm_apply (x : L') :
-    e.restrictScalarsLinearEquiv.symm x = e.symm x := by
+theorem toRealLinearEquiv_symm_apply (x : L') :
+    e.toRealLinearEquiv.symm x = e.symm x := by
   rfl
 
 end LieEquiv
