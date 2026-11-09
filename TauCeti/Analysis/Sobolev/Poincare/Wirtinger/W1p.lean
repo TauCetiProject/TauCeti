@@ -15,7 +15,6 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-import Mathlib.MeasureTheory.Function.LpSpace.Complete
 
 /-!
 # The Poincaré–Wirtinger inequality on `W^{1,p}(Ω)`
@@ -45,8 +44,8 @@ on a subdomain `U` whose closure is a compact subset of `Ω`.  Two limits are th
   `Set.setIntegralLp` — which contains every test function, hence their closure.
 * The convex subdomains are then increased to `Ω`, along the exhaustion
   `TauCeti.exists_seq_isOpen_convex_isCompact_closure_subset_iUnion_eq`.  The means over `S ∩ U`
-  converge to the mean over `S`, and Fatou's lemma for the `Lᵖ` seminorm,
-  `MeasureTheory.Lp.eLpNorm_lim_le_liminf_eLpNorm`, passes the inequality to the limit.  Only the
+  converge to the mean over `S`, and Fatou's lemma for the `Lᵖ` seminorm passes the inequality to
+  the limit (`TauCeti.eLpNorm_sub_setAverage_le_of_tendsto_of_monotone`).  Only the
   measure of `S ∩ U` needs to be tracked, since `diam U ≤ diam Ω` already bounds the numerator of
   the constant.
 
@@ -192,7 +191,6 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
   have hSfin : mu S ≠ ∞ := ne_top_of_le_ne_top hOfin (measure_mono hS)
   have hSRpos : 0 < mu.real S := ENNReal.toReal_pos hS0 hSfin
   have hSR0 : mu.real S ≠ 0 := hSRpos.ne'
-  -- The means over `S ∩ V n` converge to the mean over `S`.
   have hSV : S ⊆ ⋃ n, V n := hVunion ▸ hS
   have hmeasR : Tendsto (fun n ↦ mu.real (S ∩ V n)) atTop (𝓝 (mu.real S)) :=
     tendsto_measureReal_inter_of_monotone hVmono hSV hSfin
@@ -201,10 +199,6 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
       ⟨by rw [Measure.restrict_apply_univ]; exact hSfin.lt_top⟩
     exact ((Lp.memLp (W1p.value u)).mono_measure
       (Measure.restrict_mono hS le_rfl)).integrable Fact.out
-  have ha : Tendsto (fun n ↦ ⨍ y in S ∩ V n, W1p.value u y ∂mu) atTop
-      (𝓝 (⨍ y in S, W1p.value u y ∂mu)) :=
-    tendsto_setAverage_inter_of_monotone hVmono hSV
-      (fun n ↦ hSm.inter (hVopen n).measurableSet.nullMeasurableSet) hSfin hint
   -- The inequality on each piece, with the constant of the whole domain in the numerator.
   set K : ℝ := mu.real (ball (0 : E) 1) * diam (Omega : Set E) ^ (finrank ℝ E + 1) with hKdef
   have hpiece : ∀ n, mu (S ∩ V n) ≠ 0 →
@@ -248,54 +242,17 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
         _ = ‖W1p.gradient u‖ₑ := (Lp.enorm_def _).symm
     exact hcongr ▸ hbase.trans (mul_le_mul' (ENNReal.ofReal_le_ofReal hconst) hgradle)
   -- Fatou along the exhaustion.
-  set a : ℕ → ℝ := fun n ↦ ⨍ y in S ∩ V n, W1p.value u y ∂mu
-  set b : ℝ := ⨍ y in S, W1p.value u y ∂mu
-  set g : ℕ → E → ℝ := fun n ↦ (V n).indicator fun x ↦ W1p.value u x - a n with hgdef
-  have hsm : StronglyMeasurable (W1p.value u) :=
-    (W1p.value u : E →ₘ[mu.restrict (Omega : Set E)] ℝ).stronglyMeasurable
-  have hgmeas : ∀ n, AEStronglyMeasurable (g n) mu := fun n ↦
-    ((hsm.sub stronglyMeasurable_const).indicator (hVopen n).measurableSet).aestronglyMeasurable
-  have hgval : ∀ n x, x ∈ V n → g n x = W1p.value u x - a n := fun n x hx ↦ by
-    simp only [hgdef]
-    exact Set.indicator_of_mem hx _
-  have hgzero : ∀ n x, x ∉ V n → g n x = 0 := fun n x hx ↦ by
-    simp only [hgdef]
-    exact Set.indicator_of_notMem hx _
-  have hptw : ∀ x, Tendsto (fun n ↦ g n x) atTop
-      (𝓝 ((Omega : Set E).indicator (fun x ↦ W1p.value u x - b) x)) := by
-    intro x
-    by_cases hx : x ∈ (Omega : Set E)
-    · obtain ⟨n₀, hn₀⟩ := mem_iUnion.1 (hVunion ▸ hx)
-      rw [Set.indicator_of_mem hx]
-      refine Tendsto.congr' (Filter.eventually_atTop.2 ⟨n₀, fun n hn ↦ ?_⟩)
-        (tendsto_const_nhds.sub ha)
-      exact (hgval n x (hVmono hn hn₀)).symm
-    · rw [Set.indicator_of_notMem hx]
-      exact tendsto_const_nhds.congr fun n ↦ (hgzero n x fun hmem ↦ hx (hVsub n hmem)).symm
-  have hlim : eLpNorm (fun x ↦ W1p.value u x - b) p (mu.restrict Omega) ≤
-      atTop.liminf fun n ↦ eLpNorm (g n) p mu := by
-    rw [← eLpNorm_indicator_eq_eLpNorm_restrict Omega.isOpen.measurableSet.nullMeasurableSet]
-    exact Lp.eLpNorm_lim_le_liminf_eLpNorm hgmeas
-      ((Omega : Set E).indicator fun x ↦ W1p.value u x - b)
-      ((hsm.sub stronglyMeasurable_const).indicator
-        Omega.isOpen.measurableSet).aestronglyMeasurable (ae_of_all _ hptw)
-  have hbound : ∀ᶠ n in atTop, eLpNorm (g n) p mu ≤
-      ENNReal.ofReal (K / mu.real (S ∩ V n)) * ‖W1p.gradient u‖ₑ := by
-    filter_upwards [hmeasR.eventually (lt_mem_nhds hSRpos)] with n hn
-    rw [eLpNorm_indicator_eq_eLpNorm_restrict (hVopen n).measurableSet.nullMeasurableSet]
-    refine hpiece n fun h0 ↦ ?_
-    rw [measureReal_def, h0] at hn
-    simp at hn
   have htend : Tendsto (fun n ↦ ENNReal.ofReal (K / mu.real (S ∩ V n)) * ‖W1p.gradient u‖ₑ)
       atTop (𝓝 (ENNReal.ofReal (K / mu.real S) * ‖W1p.gradient u‖ₑ)) :=
     ENNReal.Tendsto.mul_const (ENNReal.tendsto_ofReal (tendsto_const_nhds.div hmeasR hSR0))
       (Or.inr (by simp))
-  calc eLpNorm (fun x ↦ W1p.value u x - b) p (mu.restrict Omega)
-      ≤ atTop.liminf fun n ↦ eLpNorm (g n) p mu := hlim
-    _ ≤ atTop.liminf fun n ↦ ENNReal.ofReal (K / mu.real (S ∩ V n)) * ‖W1p.gradient u‖ₑ :=
-        Filter.liminf_le_liminf hbound
-    _ = ENNReal.ofReal (K / mu.real S) * ‖W1p.gradient u‖ₑ := htend.liminf_eq
-
+  refine eLpNorm_sub_setAverage_le_of_tendsto_of_monotone hVmono
+    (fun n ↦ (hVopen n).measurableSet) hVunion hSm hS hSfin (Lp.aestronglyMeasurable _) hint
+    htend ?_
+  filter_upwards [hmeasR.eventually (lt_mem_nhds hSRpos)] with n hn
+  refine hpiece n fun h0 ↦ ?_
+  rw [measureReal_def, h0] at hn
+  simp at hn
 
 /-- **The Poincaré–Wirtinger inequality on a ball.**  On a ball of radius `R` the constant of
 `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex` is `2 ^ (n + 1) * R`: the deviation of

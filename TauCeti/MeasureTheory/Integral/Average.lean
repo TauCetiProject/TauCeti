@@ -775,6 +775,52 @@ theorem tendsto_setAverage_inter_of_monotone (hV : Monotone V) (hsV : s ⊆ ⋃ 
   simpa [hunion] using tendsto_setIntegral_of_monotone₀ hm
     (fun m n hmn ↦ Set.inter_subset_inter_right s (hV hmn)) (by rwa [hunion])
 
+/-- **Deviations from means along an exhaustion.** Let `V n` be an increasing sequence of
+measurable sets with union `Ω`, and let `s ⊆ Ω` have finite measure, with `f` integrable on `s`.
+If for all large `n` the deviation of `f` from its mean over `s ∩ V n` has `L^q(V n)` seminorm
+at most `b n`, and `b n → c`, then the deviation of `f` from its mean over `s` has `L^q(Ω)`
+seminorm at most `c`. This passes an inequality proved on the pieces of an exhaustion to the
+whole set, by Fatou's lemma for the `L^q` seminorm. -/
+theorem eLpNorm_sub_setAverage_le_of_tendsto_of_monotone {Ω : Set X} (hV : Monotone V)
+    (hVm : ∀ n, MeasurableSet (V n)) (hVΩ : ⋃ n, V n = Ω) (hsm : NullMeasurableSet s μ)
+    (hs : s ⊆ Ω) (hsfin : μ s ≠ ⊤) (hfm : AEStronglyMeasurable f (μ.restrict Ω))
+    (hf : IntegrableOn f s μ) {q : ℝ≥0∞} {b : ℕ → ℝ≥0∞} {c : ℝ≥0∞}
+    (hb : Tendsto b atTop (𝓝 c))
+    (hle : ∀ᶠ n in atTop,
+      eLpNorm (fun x ↦ f x - ⨍ y in s ∩ V n, f y ∂μ) q (μ.restrict (V n)) ≤ b n) :
+    eLpNorm (fun x ↦ f x - ⨍ y in s, f y ∂μ) q (μ.restrict Ω) ≤ c := by
+  have hΩm : MeasurableSet Ω := hVΩ ▸ MeasurableSet.iUnion hVm
+  have hVsub : ∀ n, V n ⊆ Ω := fun n ↦ hVΩ ▸ Set.subset_iUnion V n
+  have hsV : s ⊆ ⋃ n, V n := hVΩ.symm ▸ hs
+  have ha := tendsto_setAverage_inter_of_monotone hV hsV
+    (fun n ↦ hsm.inter (hVm n).nullMeasurableSet) hsfin hf
+  -- The deviations on the pieces, extended by zero, converge pointwise to the one on `Ω`.
+  set g : ℕ → X → F := fun n ↦ (V n).indicator fun x ↦ f x - ⨍ y in s ∩ V n, f y ∂μ
+  have hgmeas : ∀ n, AEStronglyMeasurable (g n) μ := fun n ↦
+    (aestronglyMeasurable_indicator_iff (hVm n)).2
+      ((hfm.mono_measure (Measure.restrict_mono (hVsub n) le_rfl)).sub aestronglyMeasurable_const)
+  have hptw : ∀ x, Tendsto (fun n ↦ g n x) atTop
+      (𝓝 (Ω.indicator (fun x ↦ f x - ⨍ y in s, f y ∂μ) x)) := by
+    intro x
+    by_cases hx : x ∈ Ω
+    · obtain ⟨n₀, hn₀⟩ := Set.mem_iUnion.1 (hVΩ ▸ hx)
+      rw [Set.indicator_of_mem hx]
+      refine Tendsto.congr' (eventually_atTop.2 ⟨n₀, fun n hn ↦ ?_⟩)
+        (tendsto_const_nhds.sub ha)
+      exact (Set.indicator_of_mem (hV hn hn₀) (fun x ↦ f x - ⨍ y in s ∩ V n, f y ∂μ)).symm
+    · rw [Set.indicator_of_notMem hx]
+      exact tendsto_const_nhds.congr fun n ↦ (Set.indicator_of_notMem
+        (fun hmem ↦ hx (hVsub n hmem)) (fun x ↦ f x - ⨍ y in s ∩ V n, f y ∂μ)).symm
+  rw [← eLpNorm_indicator_eq_eLpNorm_restrict hΩm.nullMeasurableSet]
+  calc eLpNorm (Ω.indicator fun x ↦ f x - ⨍ y in s, f y ∂μ) q μ
+      ≤ atTop.liminf fun n ↦ eLpNorm (g n) q μ :=
+        Lp.eLpNorm_lim_le_liminf_eLpNorm hgmeas _
+          ((aestronglyMeasurable_indicator_iff hΩm).2 (hfm.sub aestronglyMeasurable_const))
+          (ae_of_all _ hptw)
+    _ ≤ atTop.liminf b := liminf_le_liminf (hle.mono fun n hn ↦ by
+        rwa [eLpNorm_indicator_eq_eLpNorm_restrict (hVm n).nullMeasurableSet])
+    _ = c := hb.liminf_eq
+
 end Exhaustion
 
 section Rpow
