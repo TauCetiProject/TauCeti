@@ -102,10 +102,11 @@ variable {𝕜 E F G H M N : Type*} [RCLike 𝕜]
   {n : ℕ∞ω} [IsManifold I n M] [IsManifold J n N]
   {f : M → N} {x : M}
 
-omit [I.Boundaryless] in
+omit [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] [I.Boundaryless] in
 /-- The coordinate map `y ↦ L.symm (c (f y), P (e y))` built from the implicit coordinates of a
 split surjective derivative has the identity as derivative at the base point. -/
-private theorem mfderiv_implicitCoord_symm_eq_id (hf : ContMDiffAt I J n f x) (hn : 1 ≤ n)
+private theorem mfderiv_implicitCoord_symm_eq_id [CompleteSpace E] [CompleteSpace F]
+    (hf : ContMDiffAt I J n f x) (hn : 1 ≤ n)
     (D : E →L[𝕜] F) (hDf : mfderiv I J f x = D) (hD : D.range = ⊤)
     (hker : D.ker.ClosedComplemented) :
     mfderiv I 𝓘(𝕜, E) (fun y ↦ (D.implicitCoordEquiv hD hker).symm
@@ -141,10 +142,11 @@ private theorem mfderiv_implicitCoord_symm_eq_id (hf : ContMDiffAt I J n f x) (h
   ext v
   exact L.symm_apply_apply v
 
-omit [I.Boundaryless] in
+omit [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] [I.Boundaryless] in
 /-- The coordinate map `y ↦ L.symm (c (f y), P (e y))` from the implicit coordinates of a split
 derivative is smooth on any set where `f` is smooth and both charts are defined. -/
-private theorem contMDiffOn_implicitCoord_symm {U W : Set M} (hfU : ContMDiffOn I J n f U)
+private theorem contMDiffOn_implicitCoord_symm [CompleteSpace E] [CompleteSpace F]
+    {U W : Set M} (hfU : ContMDiffOn I J n f U)
     (D : E →L[𝕜] F) (hD : D.range = ⊤) (hker : D.ker.ClosedComplemented)
     (hWU : W ⊆ U) (hWf : W ⊆ f ⁻¹' (chartAt G (f x)).source) (hWe : W ⊆ (chartAt H x).source) :
     ContMDiffOn I 𝓘(𝕜, E) n (fun y ↦ (D.implicitCoordEquiv hD hker).symm
