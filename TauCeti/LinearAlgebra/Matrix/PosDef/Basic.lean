@@ -209,10 +209,10 @@ end TauCeti
 
 namespace Matrix.PosDef
 
-variable {B K : Type*} [Fintype B] [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-  [StarRing K]
+section TrivialStar
 
-omit [Fintype B] in
+variable {B K : Type*} [CommRing K] [LinearOrder K] [IsStrictOrderedRing K] [StarRing K]
+
 /-- **A positive definite matrix on a nonempty index type forces the star of `K` to be trivial**:
 for `s ≠ star s`, the vector supported at one index with entry `s - star s` has a nonpositive
 quadratic form. -/
@@ -228,6 +228,11 @@ theorem trivialStar [Nonempty B] {S : Matrix B B K} (hS : S.PosDef) : TrivialSta
     rw [Finsupp.sum_single_index (by simp), Finsupp.sum_single_index (by simp)] at h
     simp only [star_sub, star_star] at h
     nlinarith [mul_pos htt hpos]⟩
+
+end TrivialStar
+
+variable {B K : Type*} [Fintype B] [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+  [StarRing K]
 
 /-- **A positive definite quadratic inequality bounds every coordinate.** For a positive definite
 matrix `S` and a linear functional `w`, the vectors `c` with `c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w` have squared
