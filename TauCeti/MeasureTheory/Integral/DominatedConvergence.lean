@@ -189,20 +189,27 @@ is continuous in `x` on `s`. Only the values of `f` on `s ×ˢ uIcc a b` matter,
 for instance on a closed rectangle `[a', b'] ×ˢ [a, b]`, up to its boundary. -/
 theorem continuousOn_parametric_intervalIntegral_of_continuousOn {X E : Type*}
     [TopologicalSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure ℝ}
-    [IsLocallyFiniteMeasure μ] [NullSingletonClass μ] {f : X → ℝ → E} {s : Set X} {a b : ℝ}
+    [IsLocallyFiniteMeasure μ] {f : X → ℝ → E} {s : Set X} {a b : ℝ}
     (hf : ContinuousOn (uncurry f) (s ×ˢ uIcc a b)) :
     ContinuousOn (fun x ↦ ∫ t in a..b, f x t ∂μ) s := by
-  have hab : min a b ≤ max a b := min_le_max
-  let P : ℝ → ℝ := fun t ↦ projIcc (min a b) (max a b) hab t
-  have hP : Continuous fun p : s × ℝ ↦ f p.1 (P p.2) :=
-    hf.comp_continuous ((continuous_subtype_val.comp continuous_fst).prodMk
-      (continuous_subtype_val.comp ((continuous_projIcc (h := hab)).comp continuous_snd)))
-      fun p ↦ ⟨p.1.2, (projIcc (min a b) (max a b) hab p.2).2⟩
-  rw [continuousOn_iff_continuous_domRestrict]
-  refine (intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (μ := μ)
-    (f := fun (x : s) t ↦ f x (P t)) hP a b).congr fun x ↦ ?_
-  exact intervalIntegral.integral_congr fun t ht ↦ by
-    simp only [P, projIcc_of_mem hab ht]
+  intro x₀ hx₀
+  rw [Metric.continuousWithinAt_iff']
+  intro ε hε
+  have hint : ∀ x ∈ s, IntervalIntegrable (f x) μ a b := fun x hx ↦
+    (hf.comp (Continuous.prodMk_right x).continuousOn fun _ ht ↦ ⟨hx, ht⟩).intervalIntegrable
+  have hC : 0 < μ.real (uIoc a b) + 1 := by positivity
+  obtain ⟨v, hv, hvf⟩ := isCompact_uIcc.mem_uniformity_of_prod hf hx₀
+    (Metric.dist_mem_uniformity (div_pos hε hC))
+  filter_upwards [hv, self_mem_nhdsWithin] with x hxv hxs
+  rw [dist_eq_norm, ← intervalIntegral.integral_sub (hint x hxs) (hint x₀ hx₀),
+    intervalIntegral.norm_integral_eq_norm_integral_uIoc]
+  calc ‖∫ t in uIoc a b, (f x t - f x₀ t) ∂μ‖
+      ≤ ε / (μ.real (uIoc a b) + 1) * μ.real (uIoc a b) :=
+        norm_setIntegral_le_of_norm_le_const measure_Ioc_lt_top fun t ht ↦ by
+          rw [← dist_eq_norm]
+          exact (hvf x hxv t (uIoc_subset_uIcc ht)).le
+    _ < ε / (μ.real (uIoc a b) + 1) * (μ.real (uIoc a b) + 1) := by gcongr; linarith
+    _ = ε := div_mul_cancel₀ _ hC.ne'
 
 /-- **Integrals over shrinking shells vanish.** If `w` is measurable and `η k` tends to `0`,
 then the integral of an integrable `f` over the shells `{0 < w < η k}` tends to `0`, by dominated
