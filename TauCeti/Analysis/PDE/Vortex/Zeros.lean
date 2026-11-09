@@ -132,7 +132,7 @@ private theorem sectionValue_eq_two_mul (x : ℂ → EuclideanSpace ℝ (Fin 4))
 
 /-- A local factorization of a vortex section with a factor only continuous at `z` can be
 replaced by one with the same exponent and a `Cᵏ` factor. -/
-private theorem exists_contDiffAt_sectionValue_eq_pow_mul_of_order (hk : 1 ≤ k)
+theorem exists_contDiffAt_sectionValue_eq_pow_mul_of_order (hk : 1 ≤ k)
     (hb₁ : ContDiff ℝ k (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ k (fun w ↦ x w 1))
     (hp : Differentiable ℝ (fun w ↦ x w 2)) (hq : Differentiable ℝ (fun w ↦ x w 3))
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) {z : ℂ} {n : ℕ}

@@ -134,10 +134,9 @@ connection coefficients. -/
 theorem exists_contDiffAt_sectionValue_eq_pow_count_mul {D : Multiset ℂ}
     (hD : HasZeroDivisor (sectionValue x) D) (z : ℂ) :
     ∃ v : ℂ → ℂ, ContDiffAt ℝ k v z ∧ v z ≠ 0 ∧
-      ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ D.count z * v w := by
-  obtain ⟨n, v, hvc, hv₀, hvf⟩ :=
-    exists_contDiffAt_sectionValue_eq_pow_mul hn hb₁ hb₂ hp hq hhol hD.exists_ne_zero z
-  exact ⟨v, hvc, hv₀, hD.count_eq_of_eventually_eq_pow_mul hvc.continuousAt hv₀ hvf ▸ hvf⟩
+      ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ D.count z * v w :=
+  exists_contDiffAt_sectionValue_eq_pow_mul_of_order hn hb₁ hb₂ hp hq hhol
+    (hasZeroDivisor_iff.1 hD z)
 
 /-- **The zero divisor of a framed degree-`m` vortex lies in `Sym ℂ m`.** If the section of a
 field with `Cᵏ` connection coefficients, `k ≥ 1`, satisfying the holomorphicity rows has the end
