@@ -104,27 +104,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasurableSpace E] [OpensMeasurableSpace E]
   {Ω : Opens E} {v : E} {μ : Measure E} {u u' : E → F} {ψ : E → ℝ}
 
-/-- A function locally integrable on an open set stays locally integrable on it after
-multiplication by a real function continuous on the set. Unlike
-`MeasureTheory.LocallyIntegrableOn.continuousOn_smul`, this needs no local compactness: near each
-point the factor is bounded and measurable on a small open set. -/
-theorem _root_.MeasureTheory.LocallyIntegrableOn.continuousOn_smul_of_isOpen {X : Type*}
-    [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] {f : X → F} {g : X → ℝ}
-    {s : Set X} {μ : Measure X} (hs : IsOpen s) (hf : LocallyIntegrableOn f s μ)
-    (hg : ContinuousOn g s) : LocallyIntegrableOn (fun x => g x • f x) s μ := by
-  intro x hx
-  obtain ⟨t, ht, hft⟩ := hf x hx
-  rw [hs.nhdsWithin_eq hx] at ht
-  have hgx : ∀ᶠ y in nhds x, ‖g y‖ ≤ ‖g x‖ + 1 :=
-    ((hg.continuousAt (hs.mem_nhds hx)).norm.tendsto.eventually
-      (gt_mem_nhds (lt_add_one ‖g x‖))).mono fun _ h => h.le
-  obtain ⟨V, hVsub, hV, hxV⟩ := mem_nhds_iff.1 (Filter.inter_mem (Filter.inter_mem ht hgx)
-    (hs.mem_nhds hx))
-  refine ⟨V, mem_nhdsWithin_of_mem_nhds (hV.mem_nhds hxV), ?_⟩
-  exact ((hft.mono_set (fun y hy => (hVsub hy).1.1)).bdd_smul (‖g x‖ + 1)
-    ((hg.mono fun y hy => (hVsub hy).2).aestronglyMeasurable hV.measurableSet)
-    (ae_restrict_of_forall_mem hV.measurableSet fun y hy => (hVsub hy).1.2))
-
 /-- **The Leibniz rule for weak directional derivatives, local form.** If `u'` is a weak derivative
 of `u` in the direction `v` on `Ω` and `ψ` is smooth on `Ω`, then `ψ u` is weakly differentiable in
 the direction `v` on `Ω`, with derivative `ψ u' + (∂_v ψ) u`.
