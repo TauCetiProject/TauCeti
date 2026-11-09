@@ -176,33 +176,14 @@ theorem IsNondegenerate.integral_floerEnergyDensity_eq_lagrangianPathAction_sub_
       lagrangianPathAction α.1 f₀ f₁ (fun t ↦ H (a, t)) (fun t ↦ u (a, t)) (c₀ a) (c₁ a) -
         lagrangianPathAction α.1 f₀ f₁ (fun t ↦ H (b, t)) (fun t ↦ u (b, t)) (c₀ b) (c₁ b) -
         ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ H w (u z)) z stdComplexLineReal := by
-  have hR : Icc a b ×ˢ Icc (0 : ℝ) 1 = Icc (a, 0) (b, 1) := Icc_prod_Icc _ _ _ _
-  have hab' : ((a, 0) : ℝ × ℝ) ≤ (b, 1) := Prod.mk_le_mk.2 ⟨hab, zero_le_one⟩
-  have hu₁' : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u := hu.of_le one_le_two
-  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
   -- The manifold energy identity: area, plus the vertical Hamiltonian terms, minus `∂_s H`.
-  have h := hω.integral_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := H) isOpen_univ
-    hu₁'.contMDiffOn contMDiffOn_const hH.contMDiffOn hab' (subset_univ _)
-    ((hω.continuous_floerEnergyDensity_zero_left hH hu₁').continuousOn.integrableOn_compact
-      isCompact_Icc)
-    ((continuous_hamiltonianCurvature_zero_left_comp hH hu₁').continuousOn.integrableOn_compact
-      isCompact_Icc)
-  simp only [hamiltonianCurvature_zero_left, intervalIntegral.integral_zero, sub_zero] at h
+  rw [hω.integral_floerEnergyDensity_zero_left hH (hu.of_le one_le_two) hab]
   -- By Stokes' formula the area is the integral of `α` around the rectangle, and the two
   -- horizontal sides, in the Lagrangians, contribute the changes of the primitives.
-  rw [hR, h, ← hR]
-  have harea : ∫ z in Icc a b ×ˢ Icc 0 1, SmoothBundleForm.eval₂ ω (u z)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) =
-      (pathIntegral α.1 (fun t ↦ u (b, t)) 0 1 - pathIntegral α.1 (fun t ↦ u (a, t)) 0 1) -
-        ((f₁ (c₁ b) - f₁ (c₁ a)) - (f₀ (c₀ b) - f₀ (c₀ a))) := by
-    have hS := hω₀.setIntegral_eq_rectangleIntegral hu₁' hab'
-    rw [← hα, rectangleIntegral_mextDeriv (α.isSmoothForm.of_le (by simp)) hu,
-      pathIntegral_side_eq_sub hi₀ hf₀ hL₀ hc₀ hab hu₀,
-      pathIntegral_side_eq_sub hi₁ hf₁ hL₁ hc₁ hab hu₁, hα] at hS
-    rw [hR, ← hS]
-    simp only [SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
-  rw [harea, lagrangianPathAction_def, lagrangianPathAction_def]
+  rw [← hα, rectangleIntegral_mextDeriv (α.isSmoothForm.of_le (by simp)) hu,
+    pathIntegral_side_eq_sub hi₀ hf₀ hL₀ hc₀ hab hu₀,
+    pathIntegral_side_eq_sub hi₁ hf₁ hL₁ hc₁ hab hu₁, lagrangianPathAction_def,
+    lagrangianPathAction_def]
   ring
 
 /-- **The energy identity of a Floer strip.** Let `ω = dα` be a nondegenerate exact two-form on a
@@ -224,8 +205,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_eq_lagrangianPathAction_sub
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
       lagrangianPathAction α.1 f₀ f₁ H (fun t ↦ u (a, t)) (c₀ a) (c₁ a) -
         lagrangianPathAction α.1 f₀ f₁ H (fun t ↦ u (b, t)) (c₀ b) (c₁ b) := by
-  have hH' : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
-    hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
+  have hH' := Floer.contMDiff_uncurry_comp_snd hH
   -- A Hamiltonian independent of `s` has no `s`-derivative.
   simpa [fderiv_cylindrical_apply_stdComplexLineReal] using
     hω.integral_floerEnergyDensity_eq_lagrangianPathAction_sub_sub_integral hα hH' hu hi₀ hf₀ hL₀
@@ -283,8 +263,7 @@ theorem IsNondegenerate.lagrangianPathAction_le_lagrangianPathAction
         ω.hamiltonianVectorField (H z.2) (u z)) = 0) :
     lagrangianPathAction α.1 f₀ f₁ H (fun t ↦ u (b, t)) (c₀ b) (c₁ b) ≤
       lagrangianPathAction α.1 f₀ f₁ H (fun t ↦ u (a, t)) (c₀ a) (c₁ a) := by
-  have hH' : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
-    hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
+  have hH' := Floer.contMDiff_uncurry_comp_snd hH
   -- A Hamiltonian independent of `s` has no `s`-derivative.
   simpa [fderiv_cylindrical_apply_stdComplexLineReal] using
     hω.lagrangianPathAction_le_lagrangianPathAction_sub_integral hα hH' hu hi₀ hf₀ hL₀ hc₀ hi₁ hf₁
@@ -374,8 +353,7 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_eq_of_tendsto_lagrangianPat
     ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
         ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) =
       ENNReal.ofReal (A₁ - A₂) := by
-  have hH' : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
-    hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
+  have hH' := Floer.contMDiff_uncurry_comp_snd hH
   -- A Hamiltonian independent of `s` has no `s`-derivative.
   simpa [fderiv_cylindrical_apply_stdComplexLineReal] using
     hω.lintegral_floerEnergyDensity_eq_of_tendsto_lagrangianPathAction_sub_integral hα hH' hu hi₀

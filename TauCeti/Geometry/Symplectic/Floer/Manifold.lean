@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
+public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Homotopy
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
@@ -79,6 +80,11 @@ form they recover the vector-space definitions.
   and of the energy density.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity`: the energy identity on a
   rectangle.
+* `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_zero_left`: for a perturbation
+  `K = G_z dt`, the energy over `[a, b] × [0, 1]` is the area `∫ u^* ω`, plus the Hamiltonian
+  terms of the two vertical sides, minus the integral of `∂_s G` along `u`.
+* `Floer.contMDiff_uncurry_comp_snd`: the cylindrical family `(s, t) ↦ K_t` of a `Cⁿ`
+  time-dependent Hamiltonian is a `Cⁿ` family of Hamiltonians.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_of_hasCompactSupport`: the energy
   identity on the plane for a compactly supported perturbation.
 * `SmoothTwoForm.IsNondegenerate.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero`: for
@@ -105,6 +111,20 @@ public noncomputable section
 
 open Function
 open scoped Manifold
+
+namespace TauCeti.Floer
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The cylindrical family `(s, t) ↦ K_t` of a `Cⁿ` time-dependent Hamiltonian on a manifold,
+independent of `s`, is a `Cⁿ` family of Hamiltonians. -/
+theorem contMDiff_uncurry_comp_snd {n : ℕ∞} {K : ℝ → M → ℝ}
+    (hK : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) n (uncurry K)) :
+    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n (uncurry fun w : ℝ × ℝ ↦ K w.2) :=
+  hK.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
+
+end TauCeti.Floer
 
 namespace TauCeti.SmoothTwoForm
 
@@ -572,6 +592,35 @@ theorem IsNondegenerate.integral_floerEnergyDensity [FiniteDimensional ℝ E]
   rw [setIntegral_congr_fun measurableSet_Icc hpt, integral_sub hsum hR,
     integral_add harea hderiv, stdComplexLineReal_eq, stdComplexLineImag_eq,
     integral_fderiv_sub_fderiv_Icc hU hg hf hab habU]
+
+/-- **The energy identity for a perturbation without `ds` component.** Let `G_z`, `z = (s, t)`, be
+a `C¹` family of Hamiltonians and `u` a `C¹` map, for a nondegenerate two-form on a
+finite-dimensional manifold. For the perturbation `K = G_z dt`, the Floer energy of `u` over
+`[a, b] × [0, 1]` is its symplectic area over the rectangle, plus the Hamiltonian term of the loop
+at `s = b` for `G(b, ·)`, minus that of the loop at `s = a` for `G(a, ·)`, minus the integral of the
+curvature `∂_s G` along `u`. Neither periodicity of `u` in `t` nor closedness of the form is
+needed. -/
+theorem IsNondegenerate.integral_floerEnergyDensity_zero_left [FiniteDimensional ℝ E]
+    (hω : ω.IsNondegenerate) {G : ℝ × ℝ → M → ℝ}
+    (hG : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry G)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
+    {a b : ℝ} (hab : a ≤ b) :
+    ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) G u z =
+      rectangleIntegral ω.1 u (a, 0) (b, 1) + (∫ t in 0..1, G (b, t) (u (b, t))) -
+        (∫ t in 0..1, G (a, t) (u (a, t))) -
+        ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal := by
+  have hR : Icc a b ×ˢ Icc (0 : ℝ) 1 = Icc (a, 0) (b, 1) := Icc_prod_Icc _ _ _ _
+  have hab' : ((a, 0) : ℝ × ℝ) ≤ (b, 1) := Prod.mk_le_mk.2 ⟨hab, zero_le_one⟩
+  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
+  have h := hω.integral_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := G) isOpen_univ
+    hu.contMDiffOn contMDiffOn_const hG.contMDiffOn hab' (subset_univ _)
+    ((hω.continuous_floerEnergyDensity_zero_left hG hu).continuousOn.integrableOn_compact
+      isCompact_Icc)
+    ((continuous_hamiltonianCurvature_zero_left_comp hG hu).continuousOn.integrableOn_compact
+      isCompact_Icc)
+  simp only [hamiltonianCurvature_zero_left, intervalIntegral.integral_zero] at h
+  rw [hR, h, ← hω₀.setIntegral_eq_rectangleIntegral hu hab']
+  simp only [SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
+  ring
 
 /-- **The energy identity on the plane, for a compactly supported perturbation.** Let `u` and the
 perturbation data `K = K_s ds + K_t dt` be `C¹` on the whole plane, for a nondegenerate two-form

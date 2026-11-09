@@ -80,8 +80,6 @@ compactness and counting of continuation cylinders are not treated here.
 
 ## Main results
 
-* `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_zero_left`: the energy of a
-  map over `[a, b] × [0, 1]` for a perturbation `K = G_z dt`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_cylindrical`: the energy of a
   map over `[a, b] × [0, 1]` for a cylindrical perturbation.
 * `IsNondegenerate.integral_floerEnergyDensity_eq_contractibleLoopAction_sub_sub_integral`,
@@ -120,13 +118,6 @@ namespace TauCeti.Floer
 variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace HM]
   {I : ModelWithCorners ℝ E HM} [TopologicalSpace M] [ChartedSpace HM M]
 
-/-- The cylindrical family `(s, t) ↦ H_t` of a `Cⁿ` time-dependent Hamiltonian on a manifold,
-independent of `s`, is a `Cⁿ` family of Hamiltonians. -/
-theorem contMDiff_uncurry_comp_snd {n : ℕ∞} {H : ℝ → M → ℝ}
-    (hH : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) n (uncurry H)) :
-    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n (uncurry fun w : ℝ × ℝ ↦ H w.2) :=
-  hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
-
 /-- The linear homotopy `H₀ + β(s) (H₁ - H₀)` of two `Cⁿ` time-dependent Hamiltonians on a manifold
 with a `Cⁿ` profile `β` is a `Cⁿ` family of Hamiltonians. -/
 theorem contMDiff_uncurry_linearHomotopy {n : ℕ∞} {H₀ H₁ : ℝ → M → ℝ} {β : ℝ → ℝ}
@@ -153,34 +144,6 @@ variable {ω : SmoothTwoForm I M} {H : ℝ → M → ℝ} {G : ℝ × ℝ → M 
 section Energy
 
 variable [FiniteDimensional ℝ E]
-
-/-- **The energy identity for a perturbation without `ds` component.** Let `G_z`, `z = (s, t)`, be
-a `C¹` family of Hamiltonians and `u` a `C¹` map, for a nondegenerate two-form on a
-finite-dimensional manifold. For the perturbation `K = G_z dt`, the Floer energy of `u` over
-`[a, b] × [0, 1]` is its symplectic area over the rectangle, plus the Hamiltonian term of the loop
-at `s = b` for `G(b, ·)`, minus that of the loop at `s = a` for `G(a, ·)`, minus the integral of the
-curvature `∂_s G` along `u`. Neither periodicity of `u` in `t` nor closedness of the form is
-needed. -/
-theorem IsNondegenerate.integral_floerEnergyDensity_zero_left (hω : ω.IsNondegenerate)
-    (hG : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry G)) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
-    {a b : ℝ} (hab : a ≤ b) :
-    ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) G u z =
-      rectangleIntegral ω.1 u (a, 0) (b, 1) + (∫ t in 0..1, G (b, t) (u (b, t))) -
-        (∫ t in 0..1, G (a, t) (u (a, t))) -
-        ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ G w (u z)) z stdComplexLineReal := by
-  have hR : Icc a b ×ˢ Icc (0 : ℝ) 1 = Icc (a, 0) (b, 1) := Icc_prod_Icc _ _ _ _
-  have hab' : ((a, 0) : ℝ × ℝ) ≤ (b, 1) := Prod.mk_le_mk.2 ⟨hab, zero_le_one⟩
-  have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
-  have h := hω.integral_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := G) isOpen_univ
-    hu.contMDiffOn contMDiffOn_const hG.contMDiffOn hab' (subset_univ _)
-    ((hω.continuous_floerEnergyDensity_zero_left hG hu).continuousOn.integrableOn_compact
-      isCompact_Icc)
-    ((continuous_hamiltonianCurvature_zero_left_comp hG hu).continuousOn.integrableOn_compact
-      isCompact_Icc)
-  simp only [hamiltonianCurvature_zero_left, intervalIntegral.integral_zero] at h
-  rw [hR, h, ← hω₀.setIntegral_eq_rectangleIntegral hu hab']
-  simp only [SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
-  ring
 
 /-- **The energy identity for a cylindrical perturbation.** Let `H` be a `C¹` time-dependent
 Hamiltonian and `u` a `C¹` map, for a nondegenerate two-form on a finite-dimensional manifold.
