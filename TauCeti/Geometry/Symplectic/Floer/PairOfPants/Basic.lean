@@ -144,11 +144,11 @@ theorem pairOfPantsPerturbation_cylindricalEndLift_of_pos {q : Puncture}
       v.im * (smoothTransition (q.endSign * z.re - 1) * H q z.im x) := by
   rw [pairOfPantsPerturbation, Finset.sum_eq_single q]
   · obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift z
-    have hre : (q.endCoord (q.cylindricalEndLift z)).re = z.re := by simp [hk]
     have him : (q.endCoord (q.cylindricalEndLift z)).im = z.im + k := by simp [hk]
     have hp : H q (z.im + k) x = H q z.im x := by
       simpa using congrFun (hH.int_mul k z.im) x
-    rw [smul_apply, endAngularForm_cylindricalEndLift, hre, him, hp, smul_eq_mul, mul_comm]
+    rw [smul_apply, endAngularForm_cylindricalEndLift, re_endCoord_cylindricalEndLift, him, hp,
+      smul_eq_mul, mul_comm]
   · intro r _ hr
     simp [smoothTransition_endCoord_cylindricalEndLift_eq_zero hr hz]
   · simp

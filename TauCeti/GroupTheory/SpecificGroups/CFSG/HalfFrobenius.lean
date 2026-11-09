@@ -176,6 +176,10 @@ noncomputable def datumSteinberg (e : SuzukiReeIndex) :
       (e.1.dynkinType.simplyConnectedRootDatum e.1.dynkinType_valid) :=
   e.datumSpecialIsogeny ^ e.1.fieldExponent
 
+/-- The root-datum Steinberg map is the index's field-exponent power of its special isogeny. -/
+theorem datumSteinberg_def (e : SuzukiReeIndex) :
+    e.datumSteinberg = e.datumSpecialIsogeny ^ e.1.fieldExponent := (rfl)
+
 /-- **The Steinberg map is a scaling times the special isogeny**, by `p ^ m`. Every computation
 below is read off this decomposition. -/
 theorem datumSteinberg_eq_smulId_mul (e : SuzukiReeIndex) :
