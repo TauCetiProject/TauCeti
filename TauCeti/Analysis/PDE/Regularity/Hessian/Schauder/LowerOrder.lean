@@ -253,7 +253,9 @@ theorem
     push_cast [K₀, γ, β, hPP', P]
     ring
   have hHle : (H : ℝ) ≤ C₀ * (K₀ + N) := by exact_mod_cast hH₀.nnholderNorm_le
-  have habs : 2 * C₀ * β * e * H ≤ 1 / 2 * H := mul_le_mul_of_nonneg_right hεC H.coe_nonneg
+  have habs : C₀ * (2 * β * e * H) ≤ 1 / 2 * H := by
+    have := mul_le_mul_of_nonneg_right hεC H.coe_nonneg
+    linarith
   have hbound : (C₀ : ℝ) * (K₀ + N) ≤ 2 * C₀ * (1 + γ) * (K + N) :=
     mul_add_le_two_mul_one_add_mul_add C₀.coe_nonneg K.coe_nonneg N.coe_nonneg hγ hK₀
       hHle habs

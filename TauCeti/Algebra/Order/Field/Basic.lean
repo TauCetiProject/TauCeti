@@ -39,8 +39,8 @@ It also records a perturbation bound for quotients, `|x / a - y / b| ≤ 2 (e + 
 profiles `2 t / (t² + ρ²)` of two scales `t` and `r` outside the radius `r`, and the clearing
 bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`, and an error-budget bound: if `0 ≤ ε`, `0 < K`
 and `K` dominates `a + b` then `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2`. It also records the
-absorption bound `C (K₀ + N) ≤ 2 C (1 + γ) (K + N)` from `K₀ + N = K + γ N + 2 β e H`,
-`H ≤ C (K₀ + N)` and `2 C β e H ≤ H / 2`, together with the bookkeeping bound
+absorption bound `C (K₀ + N) ≤ 2 C (1 + γ) (K + N)` from `K₀ + N = K + γ N + X`,
+`H ≤ C (K₀ + N)` and `C X ≤ H / 2`, together with the bookkeeping bound
 `C (M + N P + N) ≤ C (1 + P) (M + N)` for nonnegative `C`, `M` and `P`.
 
 Finally, it records a polynomial barrier bound: if `r ≤ M`, `0 < ε`, `1 ≤ c` and `n` is larger
@@ -272,23 +272,18 @@ theorem mul_add_mul_add_le_mul_one_add_mul_add {R : Type*} [CommSemiring R] [Par
   calc C * (M + N * P + N) ≤ C * ((1 + P) * (M + N)) := mul_le_mul_of_nonneg_left h hC
     _ = C * (1 + P) * (M + N) := by ring
 
-/-- The absorption step of an a priori estimate: if `K₀ + N = K + γ N + 2 β e H`, with
-`H ≤ C (K₀ + N)` and `2 C β e H ≤ H / 2`, then `C (K₀ + N) ≤ 2 C (1 + γ) (K + N)`, for
-nonnegative `C`, `K`, `N` and `γ`. -/
+/-- The absorption step of an a priori estimate: if `K₀ + N = K + γ N + X`, with `H ≤ C (K₀ + N)`
+and `C X ≤ H / 2`, then `C (K₀ + N) ≤ 2 C (1 + γ) (K + N)`, for nonnegative `C`, `K`, `N` and
+`γ`. -/
 theorem mul_add_le_two_mul_one_add_mul_add {R : Type*} [Field R] [LinearOrder R]
-    [IsStrictOrderedRing R] {C K N γ β e H K₀ : R} (hC : 0 ≤ C)
-    (hK : 0 ≤ K) (hN : 0 ≤ N) (hγ : 0 ≤ γ) (hK₀ : K₀ + N = K + γ * N + 2 * β * e * H)
-    (hHle : H ≤ C * (K₀ + N)) (habs : 2 * C * β * e * H ≤ 1 / 2 * H) :
+    [IsStrictOrderedRing R] {C K N γ X H K₀ : R} (hC : 0 ≤ C)
+    (hK : 0 ≤ K) (hN : 0 ≤ N) (hγ : 0 ≤ γ) (hK₀ : K₀ + N = K + γ * N + X)
+    (hHle : H ≤ C * (K₀ + N)) (habs : C * X ≤ 1 / 2 * H) :
     C * (K₀ + N) ≤ 2 * C * (1 + γ) * (K + N) := by
-  have hKγ : 0 ≤ C * (K + γ * N) := by positivity
-  rw [hK₀] at hHle ⊢
   have hγN : K + γ * N ≤ (1 + γ) * (K + N) := by nlinarith
-  have hsplit : C * (K + γ * N + 2 * β * e * H) = C * (K + γ * N) + 2 * C * β * e * H := by
-    ring
-  rw [hsplit] at hHle ⊢
-  have hH2 : H ≤ 2 * (C * (K + γ * N)) := by linarith
   have hCγ : C * (K + γ * N) ≤ C * ((1 + γ) * (K + N)) :=
     mul_le_mul_of_nonneg_left hγN hC
+  have hsplit : C * (K₀ + N) = C * (K + γ * N) + C * X := by rw [hK₀]; ring
   linarith
 
 end TauCeti
