@@ -31,10 +31,11 @@ member of a spanning family of submodules are equal, `LinearMap.ext_of_iSup_eq_t
 internal direct sum the spanning hypothesis is `DirectSum.IsInternal.submodule_iSup_eq_top`. If a
 linear map carries each summand of a spanning family into the corresponding member of an
 independent family, then its kernel is spanned by its homogeneous parts,
-`LinearMap.ker_eq_iSup_inf_of_map_le`. Two linear maps out of a finite product `P → M` agree as
-soon as they agree on the homogeneous elementary tensors, `LinearMap.pi_ext_of_decomposition`.
-Conversely, `iSupIndep.map_of_ker_inf_iSup_le` shows that a linear map preserves independence when
-the part of its kernel in the span is spanned by its intersections with the summands.
+`LinearMap.ker_eq_iSup_inf_of_map_le`. Conversely, `iSupIndep.map_of_ker_inf_iSup_le` shows that a
+linear map preserves independence when the part of its kernel in the span is spanned by its
+intersections with the summands. Two linear maps out of a finite product `P → M` agree as soon as
+they agree on the homogeneous single-coordinate functions `Pi.single x α`,
+`LinearMap.pi_ext_of_decomposition`.
 
 `DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map,
 and `DirectSum.IsInternal.comp_equiv` reindexes one along an equivalence of the index types.
@@ -326,8 +327,8 @@ theorem _root_.LinearMap.ker_eq_iSup_inf_of_map_le {R ι M N : Type*} [Ring R] [
   exact Submodule.sum_mem _ fun i hi ↦
     Submodule.mem_iSup_of_mem i ⟨LinearMap.mem_ker.2 (hzero i hi), hc i⟩
 
-/-- Two linear maps out of `P → M` agree if they agree on the homogeneous elementary tensors
-`Pi.single x α`, with `α` in a piece `ℳ q` of a decomposition of `M`. -/
+/-- Two linear maps out of `P → M` agree if they agree on the homogeneous single-coordinate
+functions `Pi.single x α`, with `α` in a piece `ℳ q` of a decomposition of `M`. -/
 theorem _root_.LinearMap.pi_ext_of_decomposition {R ι M N P : Type*} [Semiring R] [AddCommMonoid M]
     [Module R M] [AddCommMonoid N] [Module R N] [Finite P] [DecidableEq P] [DecidableEq ι]
     (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ] {φ ψ : (P → M) →ₗ[R] N}
