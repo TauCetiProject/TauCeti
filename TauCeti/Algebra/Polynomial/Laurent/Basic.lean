@@ -171,7 +171,6 @@ theorem laurentEval_unique (u : Aˣ) (f : R[T;T⁻¹] →ₐ[R] A) (hf : f (T 1)
       exact hf.trans (laurentEval_T_one u).symm
 
 /-- An `R`-algebra map out of `R[T;T⁻¹]` sends a constant `C x` to `algebraMap R A x`. -/
-@[simp]
 theorem _root_.AlgHom.apply_laurentPolynomial_C (φ : R[T;T⁻¹] →ₐ[R] A) (x : R) :
     φ (C x) = algebraMap R A x := by
   rw [C_eq_algebraMap, AlgHom.commutes]
