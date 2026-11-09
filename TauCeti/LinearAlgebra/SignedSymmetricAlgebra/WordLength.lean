@@ -66,7 +66,7 @@ theorem isHomogeneous_ker_quotient_length :
 
 /-- Word-length pieces form an internal direct sum. -/
 theorem isInternal_lengthPiece : DirectSum.IsInternal (lengthPiece G) := by
-  rw [show lengthPiece G = _ from funext (lengthPiece_eq_map G)]
+  rw [funext (lengthPiece_eq_map G)]
   -- `convert!` identifies the additive instances from `RingQuot` and its semiring.
   convert! TauCeti.GradedAlgebra.isInternal_map (fun n : ℕ => (TensorAlgebra.ι R).range ^ n)
     (quotient G) (quotient_surjective G) (isHomogeneous_ker_quotient_length G) using 1
@@ -107,14 +107,8 @@ theorem length_induction {P : ℕ → SignedSym G → Prop}
 /-- An ordered product of `n` generators has word length `n`. -/
 theorem word_mem_lengthPiece {n : ℕ} (x : Fin n → V) :
     (List.ofFn fun i => generator G (x i)).prod ∈ lengthPiece G n := by
-  induction n with
-  | zero =>
-    simpa only [List.ofFn_zero, List.prod_nil, lengthPiece_zero] using
-      (Submodule.one_le.mp (le_refl (1 : Submodule R (SignedSym G))))
-  | succ n ih =>
-    simpa only [List.ofFn_succ, List.prod_cons, add_comm] using
-      SetLike.mul_mem_graded (generator_mem_lengthPiece G (x 0))
-        (ih fun i => x i.succ)
+  simpa using SetLike.list_prod_ofFn_mem_graded (fun _ : Fin n => (1 : ℕ))
+    (fun i => generator G (x i)) (fun i => generator_mem_lengthPiece G (x i))
 
 /-- The length-`n` piece is spanned by ordered products of exactly `n` generators. -/
 theorem lengthPiece_eq_span (n : ℕ) :
@@ -205,17 +199,15 @@ theorem isHomogeneous_map_length (f : V →ₗ[R] W)
     LinearMap.IsHomogeneous (map G H f hf).toLinearMap (lengthPiece G) (lengthPiece H) 0 := by
   refine LinearMap.isHomogeneous_def.2 fun n a ha => ?_
   simp only [add_zero, AlgHom.toLinearMap_apply]
-  refine length_induction G
-    (P := fun n a => map G H f hf a ∈ lengthPiece H n) ?_ ?_ ?_ ha
-  · intro r
-    rw [AlgHom.commutes, lengthPiece_zero]
-    exact Submodule.algebraMap_mem r
-  · intro n a b ha hb
-    simpa only [map_add] using add_mem ha hb
-  · intro n x a ha
-    rw [map_mul, map_generator]
-    simpa only [add_comm] using
-      SetLike.mul_mem_graded (generator_mem_lengthPiece H (f x)) ha
+  have h : ((generator G).range).map (map G H f hf).toLinearMap ≤
+      (generator H).range := by
+    rintro _ ⟨_, ⟨x, rfl⟩, rfl⟩
+    rw [AlgHom.toLinearMap_apply, map_generator]
+    exact LinearMap.mem_range_self _ _
+  have hpow : (lengthPiece G n).map (map G H f hf).toLinearMap ≤ lengthPiece H n := by
+    rw [lengthPiece_def, lengthPiece_def, Submodule.map_pow]
+    exact pow_le_pow_left' h n
+  exact hpow (Submodule.mem_map_of_mem ha)
 
 /-- Word-length projections commute with maps induced by graded linear maps. -/
 @[simp]

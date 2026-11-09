@@ -133,7 +133,7 @@ end SignedSym
 
 /-- The input-degree pieces of the signed symmetric algebra form an internal direct sum. -/
 theorem isInternal_signedSymPiece : DirectSum.IsInternal (signedSymPiece G) := by
-  rw [show signedSymPiece G = _ from funext (signedSymPiece_def G)]
+  rw [funext (signedSymPiece_def G)]
   -- `convert!` identifies the additive instances from `RingQuot` and its semiring.
   convert! GradedAlgebra.isInternal_map (tensorAlgebraPiece G) (SignedSym.quotient G)
     (SignedSym.quotient_surjective G) (SignedSym.isHomogeneous_ker_quotient G) using 1
