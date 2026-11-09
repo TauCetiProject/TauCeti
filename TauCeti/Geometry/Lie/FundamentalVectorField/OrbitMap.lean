@@ -33,9 +33,11 @@ constant on `G`: for finite-dimensional `G`,
 
 `rank d(h ↦ h • x)_g + dim 𝔤_x = dim 𝔤`.
 
-In particular the orbit map is an immersion at one point, equivalently at every point, exactly
-when `𝔤_x = 0`, that is when the action is locally free at `x`; and it is a submersion exactly
-when the fundamental vector fields span `T_x M`, as for a transitive action.
+In particular the differential of the orbit map is injective at one point, equivalently at every
+point, exactly when `𝔤_x = 0`, that is when the action is locally free at `x`; and it is
+surjective at one point, equivalently at every point, exactly when the fundamental vector fields
+span `T_x M`. For finite-dimensional `G` and `M` these are the conditions for the orbit map to be
+an immersion, respectively a submersion.
 
 ## Main results
 
@@ -107,6 +109,7 @@ theorem isotropy_fundamental_smul (g : G) (x : M) :
     exact adjointContinuousLinearMap_mem_isotropy_smul_iff.mpr hη
 
 /-- The isotropy algebras along an orbit have the same dimension. -/
+@[simp]
 theorem finrank_isotropy_fundamental_smul (g : G) (x : M) :
     Module.finrank ℝ ((InfinitesimalAction.fundamental I G I' M).isotropy (g • x)) =
       Module.finrank ℝ ((InfinitesimalAction.fundamental I G I' M).isotropy x) := by
@@ -115,6 +118,7 @@ theorem finrank_isotropy_fundamental_smul (g : G) (x : M) :
     (Lie.tangentAd (I := I) g).injective).toLinearEquiv.finrank_eq.symm
 
 /-- The action is locally free at `g • x` exactly when it is locally free at `x`. -/
+@[simp]
 theorem isotropy_fundamental_smul_eq_bot_iff (g : G) (x : M) :
     (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) = ⊥ ↔
       (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
@@ -146,6 +150,7 @@ theorem orbitTangent_fundamental_smul (g : G) (x : M) :
     exact ⟨_, (mfderiv_smul_fundamentalVectorField g ξ x).symm⟩
 
 /-- The orbit tangent spaces along an orbit have the same dimension. -/
+@[simp]
 theorem finrank_orbitTangent_fundamental_smul (g : G) (x : M) :
     Module.finrank ℝ ((InfinitesimalAction.fundamental I G I' M).orbitTangent (g • x)) =
       Module.finrank ℝ ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) := by
@@ -156,6 +161,7 @@ theorem finrank_orbitTangent_fundamental_smul (g : G) (x : M) :
 
 /-- The fundamental vector fields span the tangent space at `g • x` exactly when they span it at
 `x`. -/
+@[simp]
 theorem orbitTangent_fundamental_smul_eq_top_iff (g : G) (x : M) :
     (InfinitesimalAction.fundamental I G I' M).orbitTangent (g • x) = ⊤ ↔
       (InfinitesimalAction.fundamental I G I' M).orbitTangent x = ⊤ := by
@@ -217,30 +223,23 @@ theorem finrank_range_mfderiv_smul_const_add_finrank_isotropy [FiniteDimensional
   rw [finrank_range_mfderiv_smul_const]
   exact InfinitesimalAction.finrank_orbitTangent_add_finrank_isotropy _ x
 
-/-- **The orbit map is an immersion exactly where the action is locally free.** The differential
-of `h ↦ h • x` at any point `g` is injective exactly when the isotropy algebra `𝔤_x` vanishes. -/
+/-- **The differential of the orbit map is injective exactly where the action is locally free.**
+The differential of `h ↦ h • x` at any point `g` is injective exactly when the isotropy algebra
+`𝔤_x` vanishes. -/
 theorem injective_mfderiv_smul_const_iff (x : M) (g : G) :
     Injective (mfderiv I I' (fun h : G ↦ h • x) g) ↔
       (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
-  rw [← isotropy_fundamental_smul_eq_bot_iff g, LieSubalgebra.eq_bot_iff,
-    injective_iff_map_eq_zero]
-  have hzero : mulRightInvariantVectorField (0 : GroupLieAlgebra I G) g = 0 :=
-    (mulRightInvariantVectorField_apply 0 g).trans (map_zero _)
-  constructor
-  · -- `ξ ∈ 𝔤_{g • x}` puts `ξ^R(g)` in the kernel, so `ξ^R(g) = 0` and `ξ = 0`.
-    intro h ξ hξ
-    refine (bijective_mulRightInvariantVectorField g).injective ?_
-    exact (h _ ((mfderiv_smul_const_mulRightInvariantVectorField_eq_zero_iff x g ξ).mpr hξ)).trans
-      hzero.symm
-  · -- A tangent vector in the kernel is `ξ^R(g)` with `ξ ∈ 𝔤_{g • x}`, so `ξ = 0`.
-    intro h w hw
-    obtain ⟨ξ, rfl⟩ := (bijective_mulRightInvariantVectorField (I := I) g).surjective w
-    rw [h ξ ((mfderiv_smul_const_mulRightInvariantVectorField_eq_zero_iff x g ξ).mp hw)]
-    exact hzero
+  -- Up to the bijection `ξ ↦ ξ^R(g)`, the differential at `g` is evaluation at `g • x`.
+  rw [← isotropy_fundamental_smul_eq_bot_iff g, InfinitesimalAction.isotropy_eq_bot_iff,
+    ← Injective.of_comp_iff' _ (bijective_mulRightInvariantVectorField (I := I) g)]
+  congr! 1
+  ext ξ
+  rw [comp_apply, mfderiv_smul_mulRightInvariantVectorField, InfinitesimalAction.eval_apply,
+    InfinitesimalAction.fundamental_apply]
 
-/-- **The orbit map is a submersion exactly where the fundamental fields span.** The
-differential of `h ↦ h • x` at any point `g` is surjective exactly when the orbit tangent space at
-`x` is the whole tangent space `T_x M`. -/
+/-- **The differential of the orbit map is surjective exactly where the fundamental fields span.**
+The differential of `h ↦ h • x` at any point `g` is surjective exactly when the orbit tangent space
+at `x` is the whole tangent space `T_x M`. -/
 theorem surjective_mfderiv_smul_const_iff (x : M) (g : G) :
     Surjective (mfderiv I I' (fun h : G ↦ h • x) g) ↔
       (InfinitesimalAction.fundamental I G I' M).orbitTangent x = ⊤ := by
