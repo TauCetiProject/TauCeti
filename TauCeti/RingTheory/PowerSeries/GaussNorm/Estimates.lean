@@ -11,15 +11,14 @@ public import TauCeti.RingTheory.PowerSeries.GaussNorm
 # Estimates for the Gauss norm of restricted series
 
 Elementary bounds on the Gauss norm of power series over a (semi)normed ring: the ultrametric
-bound for a difference and the approximation of a restricted series by a truncation leaving a
-small tail.
+bound for a difference and the bound on the Gauss norm of a truncation of a restricted series.
 
 ## Main results
 
 * `TauCeti.PowerSeries.gaussNorm_sub_le_of_le`: the Gauss norm of a difference is bounded by a
   common bound on the two Gauss norms, over an ultrametric ring.
-* `TauCeti.PowerSeries.exists_gaussNorm_trunc_sub_le`: some truncation of a restricted series has
-  Gauss norm at most that of the series and leaves a tail of Gauss norm at most `θ` times it.
+* `TauCeti.PowerSeries.gaussNorm_trunc_le`: a truncation of a restricted series has Gauss norm at
+  most that of the series.
 -/
 
 public section
@@ -51,42 +50,15 @@ section Trunc
 
 variable {R : Type*} [NormedRing R] {f : PowerSeries R}
 
-/-- Some truncation of a restricted series `f` has Gauss norm at most `‖f‖` and leaves a tail of
-Gauss norm at most `θ * ‖f‖`. -/
-theorem exists_gaussNorm_trunc_sub_le (hf : f.IsRestricted c) {θ : ℝ} (hθ : 0 < θ) :
-    ∃ N, ((f.trunc N : Polynomial R) : PowerSeries R).gaussNorm norm c ≤ f.gaussNorm norm c ∧
-      (f - ((f.trunc N : Polynomial R) : PowerSeries R)).gaussNorm norm c
-        ≤ θ * f.gaussNorm norm c := by
-  rcases (PowerSeries.gaussNorm_nonneg norm c f norm_nonneg).eq_or_lt with h0 | hfpos
-  · -- a series of Gauss norm zero is approximated by the zero truncation
-    refine ⟨0, ?_, ?_⟩ <;> simp [← h0]
-  obtain ⟨N, hN⟩ : ∃ N, ∀ m, N ≤ m → ‖f.coeff m‖ * c ^ m ≤ θ * f.gaussNorm norm c := by
-    obtain ⟨N, hN⟩ := Filter.eventually_atTop.mp
-      (((PowerSeries.isRestricted_iff' c f).mp hf).eventually
-        (gt_mem_nhds (mul_pos hθ hfpos)))
-    exact ⟨N, fun m hm ↦ (hN m hm).le⟩
-  have hfcoeff (m : ℕ) : ((f.trunc N : Polynomial R) : PowerSeries R).coeff m =
-      if m < N then f.coeff m else 0 := by
-    rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc]
-  have hFn : ((f.trunc N : Polynomial R) : PowerSeries R).gaussNorm norm c
-      ≤ f.gaussNorm norm c := by
-    rw [PowerSeries.gaussNorm_eq]
-    refine ciSup_le fun m ↦ ?_
-    rw [hfcoeff m]
-    split_ifs
-    · exact PowerSeries.le_gaussNorm norm c f (hasGaussNorm_of_isRestricted hf) m
-    · simpa using PowerSeries.gaussNorm_nonneg norm c f norm_nonneg
-  have hsmall : (f - ((f.trunc N : Polynomial R) : PowerSeries R)).gaussNorm norm c
-      ≤ θ * f.gaussNorm norm c := by
-    rw [PowerSeries.gaussNorm_eq]
-    refine ciSup_le fun m ↦ ?_
-    rw [map_sub, hfcoeff m]
-    split_ifs with hm
-    · simp only [sub_self, norm_zero, zero_mul]
-      exact mul_nonneg hθ.le hfpos.le
-    · rw [sub_zero]
-      exact hN m (by omega)
-  exact ⟨N, hFn, hsmall⟩
+/-- Every truncation of a restricted series `f` has Gauss norm at most that of `f`. -/
+theorem gaussNorm_trunc_le (hf : f.IsRestricted c) (N : ℕ) :
+    ((f.trunc N : Polynomial R) : PowerSeries R).gaussNorm norm c ≤ f.gaussNorm norm c := by
+  rw [PowerSeries.gaussNorm_eq]
+  refine ciSup_le fun m ↦ ?_
+  rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc]
+  split_ifs
+  · exact PowerSeries.le_gaussNorm norm c f (hasGaussNorm_of_isRestricted hf) m
+  · simpa using PowerSeries.gaussNorm_nonneg norm c f norm_nonneg
 
 end Trunc
 

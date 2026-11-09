@@ -11,6 +11,7 @@ import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 import Mathlib.Algebra.Polynomial.Div
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.RingTheory.PowerSeries.TateAlgebra
 
 /-!
 # Weierstrass division for restricted power series
@@ -311,7 +312,16 @@ private theorem exists_gaussNorm_sub_mul_add_le (hg : IsMulDistinguished c s g) 
       hf0 ((PowerSeries.gaussNorm_eq_zero_iff norm c f norm_zero norm_nonneg
         (fun _ ↦ norm_eq_zero.mp) hc (hasGaussNorm_of_isRestricted hf)).mp h.symm)
   -- Truncate `f` past the degree where its weighted coefficients have dropped below `θ‖f‖`.
-  obtain ⟨N, hFn, hsmall⟩ := exists_gaussNorm_trunc_sub_le hf hθ
+  have : Fact (0 < c) := ⟨hc⟩
+  obtain ⟨N, hN⟩ := Metric.tendsto_atTop.mp
+    (tendsto_trunc_atTop (⟨f, hf⟩ : PowerSeries.IsRestricted.subring (R := R) c))
+    (θ * f.gaussNorm norm c) (mul_pos hθ hfpos)
+  have hFn := gaussNorm_trunc_le hf N
+  have hsmall : (f - ((f.trunc N : Polynomial R) : PowerSeries R)).gaussNorm norm c
+      ≤ θ * f.gaussNorm norm c := by
+    have h := hN N le_rfl
+    rw [dist_comm, dist_eq_norm, norm_eq_gaussNorm] at h
+    exact h.le
   have hsmallr : (f - ((f.trunc N : Polynomial R) : PowerSeries R)).IsRestricted c := by
     rw [sub_eq_add_neg]
     exact hf.add (isRestricted_polynomial _).neg
