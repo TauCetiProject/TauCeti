@@ -169,13 +169,13 @@ namespace Function.Periodic
 
 open TauCeti
 
-variable {X : Type*} [TopologicalSpace X] [T2Space X] {u : C(ℝ × ℝ, X)}
+variable {X : Type*} [TopologicalSpace X] {u : C(ℝ × ℝ, X)}
 
 /-- **Time-rotation periods of a cylinder.** If a continuous map `u` on the cylinder is
 `1`-periodic in `t` but not invariant under every time rotation `(s, t) ↦ (s, t + θ)`, then its
 time-rotation periods are the integer multiples of `1 / n` for some `n ≥ 1`. So modulo `1`, the
 stabilizer of `u` for the rotation action of the circle is finite cyclic of order `n`. -/
-theorem exists_periods_translationFlow_eq_zmultiples_inv (h₁ : Periodic u (0, 1))
+theorem exists_periods_translationFlow_eq_zmultiples_inv [T1Space X] (h₁ : Periodic u (0, 1))
     (hu : ∃ θ : ℝ, ¬Periodic u (0, θ)) :
     ∃ n : ℕ, 0 < n ∧
       (translationFlow ((0, 1) : ℝ × ℝ)).periods u = AddSubgroup.zmultiples ((n : ℝ)⁻¹) := by
@@ -192,7 +192,7 @@ cylinder, `1`-periodic in `t`, tending to `x` as `s → -∞` uniformly in `t`, 
 every time rotation. Then for some `n ≥ 1` the periods of `u` are exactly the pairs `(0, θ)` with
 `θ` an integer multiple of `1 / n`: no nontrivial translation in `s`, combined with any rotation,
 fixes `u`. -/
-theorem exists_periodic_iff_of_tendsto_atBot (h₁ : Periodic u (0, 1))
+theorem exists_periodic_iff_of_tendsto_atBot [T2Space X] (h₁ : Periodic u (0, 1))
     (hu : ∃ θ : ℝ, ¬Periodic u (0, θ)) {x : X} (hx : Tendsto u (atBot ×ˢ ⊤) (𝓝 x)) :
     ∃ n : ℕ, 0 < n ∧
       ∀ c : ℝ × ℝ, Periodic u c ↔ c.1 = 0 ∧ c.2 ∈ AddSubgroup.zmultiples ((n : ℝ)⁻¹) := by
