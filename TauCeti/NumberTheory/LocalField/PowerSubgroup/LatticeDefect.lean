@@ -142,7 +142,6 @@ private theorem finite_quotSMulTop_additive_unitFiltration_zero (n : ℕ) [NeZer
   have : NeZero n := ⟨fun h ↦ NeZero.ne (n : L) (by simp [h])⟩
   exact finite_quotSMulTop_of_exact exact_unitFiltrationSubtypeInt_valuationInt
     (fun _ _ h ↦ Additive.toMul.injective (Subtype.ext (congrArg Additive.toMul h)))
-    surjective_valuationInt
 
 /-- The inclusion of `U(L,j)` in `U(L,i)` for `i ≤ j`, written additively, as a `ℤ`-linear map. -/
 private noncomputable abbrev unitFiltrationInclusionInt {i j : ℕ} (h : i ≤ j) :
@@ -174,7 +173,6 @@ instance finite_quotSMulTop_additive_unitFiltration (n : ℕ) [NeZero (n : L)] (
     (QuotientAddGroup.mk' H).toIntLinearMap
   refine finite_quotSMulTop_of_exact (g := g)
     (fun x ↦ ?_) (injective_unitFiltrationInclusionInt (Nat.zero_le i))
-    (QuotientAddGroup.mk'_surjective H ·)
   rw [AddMonoidHom.coe_toIntLinearMap, QuotientAddGroup.mk'_apply, QuotientAddGroup.eq_zero_iff,
     Additive.mem_toAddSubgroup, Subgroup.mem_subgroupOf]
   exact ⟨fun hx ↦ ⟨Additive.ofMul ⟨_, hx⟩, rfl⟩, by rintro ⟨y, rfl⟩; exact y.toMul.2⟩
