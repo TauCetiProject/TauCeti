@@ -41,6 +41,8 @@ is what makes the bracket of product fields split.
   regularity of product fields.
 * `TauCeti.Manifold.mlieBracket_prodVectorField`: the Lie bracket of product fields is the product
   of the Lie brackets.
+* `TauCeti.Manifold.mlieBracket_prodVectorField_horizontal_vertical`: horizontal and vertical
+  lifts commute.
 
 ## References
 
@@ -207,6 +209,26 @@ theorem mlieBracket_prodVectorField (hX₁ : MDifferentiableAt I I.tangent (T% X
       prodVectorField (mlieBracket I X₁ Y₁) (mlieBracket J X₂ Y₂) p :=
   Prod.ext (fst_mlieBracket_prodVectorField hX₁ hY₁ hX₂ hY₂)
     (snd_mlieBracket_prodVectorField hX₁ hY₁ hX₂ hY₂)
+
+/-- Horizontal and vertical lifts of vector fields on a product manifold commute at every point
+where the two fields are differentiable. -/
+@[simp]
+theorem mlieBracket_prodVectorField_horizontal_vertical
+    {X : Π x : M, TangentSpace I x} {V : Π y : N, TangentSpace J y}
+    (hX : MDifferentiableAt I I.tangent (T% X) p.1)
+    (hV : MDifferentiableAt J J.tangent (T% V) p.2) :
+    mlieBracket (I.prod J) (prodVectorField X 0) (prodVectorField 0 V) p = 0 := by
+  have h1 : (1 : ℕ∞ω) ≤ minSmoothness 𝕜 2 :=
+    (show (1 : ℕ∞ω) ≤ 2 by norm_num).trans le_minSmoothness
+  have : IsManifold I 1 M := .of_le h1
+  have : IsManifold J 1 N := .of_le h1
+  have h0M : MDifferentiableAt I I.tangent (T% (0 : Π x : M, TangentSpace I x)) p.1 :=
+    ((contMDiff_zeroSection 𝕜 (TangentSpace I)).mdifferentiableAt one_ne_zero)
+  have h0N : MDifferentiableAt J J.tangent (T% (0 : Π y : N, TangentSpace J y)) p.2 :=
+    ((contMDiff_zeroSection 𝕜 (TangentSpace J)).mdifferentiableAt one_ne_zero)
+  rw [mlieBracket_prodVectorField hX h0M h0N hV]
+  simp only [prodVectorField, mlieBracket_zero_right, mlieBracket_zero_left]
+  exact Prod.mk_zero_zero
 
 end LieBracket
 
