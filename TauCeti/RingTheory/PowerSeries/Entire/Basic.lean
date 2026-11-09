@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.PowerSeries.GaussNorm
 public import TauCeti.RingTheory.PowerSeries.HasseDeriv.GaussNorm
 public import TauCeti.RingTheory.PowerSeries.Restricted
 
@@ -50,6 +51,9 @@ restricted at a fixed radius.
 * `PowerSeries.IsEntire.summable_norm_coeff_mul_pow`: `∑ ‖aₙ‖ tⁿ` converges for every real `t`.
 * `PowerSeries.IsEntire.mk_coeff_succ`: dropping the constant term and dividing by `X` keeps a
   series entire.
+* `PowerSeries.IsEntire.eq_C_of_mul_eq_one` and `PowerSeries.IsEntire.isUnit_iff`: over an
+  ultrametric normed field, the units of the ring of entire series are the nonzero constants,
+  since the Gauss norm is multiplicative and a nonconstant entire series has unbounded Gauss norms.
 
 ## References
 
@@ -264,5 +268,63 @@ theorem IsEntire.derivative (hf : f.IsEntire) : (d⁄dX f).IsEntire := by
   exact hf.hasseDeriv 1
 
 end NormedCommRing
+
+section Units
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] {f g : K⟦X⟧}
+
+open TauCeti.PowerSeries
+
+/-- **Entire units are constant.** Over an ultrametric normed field, if the product of two entire
+series is `1`, then each of them is a constant. -/
+theorem IsEntire.eq_C_of_mul_eq_one (hf : f.IsEntire) (hg : g.IsEntire) (h : f * g = 1) :
+    f = C (constantCoeff f) := by
+  ext n
+  rcases n with _ | m
+  · simp
+  simp only [coeff_C, m.succ_ne_zero, ↓reduceIte]
+  by_contra ha
+  have hg0 : constantCoeff g ≠ 0 := by
+    intro hg0
+    simpa [hg0] using congrArg constantCoeff h
+  -- At every radius `r > 0`, `‖aₘ₊₁‖ rᵐ⁺¹ ‖g(0)‖ ≤ ‖f‖_r ‖g‖_r = ‖f g‖_r = 1`.
+  have key (r : ℝ) (hr : 0 < r) : ‖coeff (m + 1) f‖ * r ^ (m + 1) * ‖constantCoeff g‖ ≤ 1 := by
+    have h1 := congrArg NNReal.toReal (map_one (gaussValuation (R := K) hr))
+    rw [coe_gaussValuation, OneMemClass.coe_one, NNReal.coe_one, ← h,
+      gaussNorm_mul_of_isRestricted hr (hf.isRestricted r) (hg.isRestricted r)] at h1
+    rw [← h1]
+    refine mul_le_mul (_root_.PowerSeries.le_gaussNorm _ _ _
+      (hasGaussNorm_of_isRestricted (hf.isRestricted r)) _) ?_ (norm_nonneg _)
+      (_root_.PowerSeries.gaussNorm_nonneg _ _ _ norm_nonneg)
+    simpa using _root_.PowerSeries.le_gaussNorm _ _ _
+      (hasGaussNorm_of_isRestricted (hg.isRestricted r)) 0
+  -- A large radius violates this bound.
+  set c := ‖coeff (m + 1) f‖ * ‖constantCoeff g‖ with hc_def
+  have hc : 0 < c := by positivity
+  set r := max 1 (2 / c)
+  have hr1 : 1 ≤ r := le_max_left _ _
+  have hle : 2 ≤ c * r ^ (m + 1) := calc
+    2 = c * (2 / c) := by field_simp
+    _ ≤ c * r := by gcongr; exact le_max_right _ _
+    _ ≤ c * r ^ (m + 1) := by gcongr; exact le_self_pow₀ hr1 m.succ_ne_zero
+  have := key r (by positivity)
+  rw [hc_def] at hle
+  linarith
+
+/-- **The units of the ring of entire series** over an ultrametric normed field are the nonzero
+constants. -/
+theorem IsEntire.isUnit_iff {F : IsEntire.subring K} :
+    IsUnit F ↔ ∃ c : K, c ≠ 0 ∧ (F : PowerSeries K) = C c := by
+  refine ⟨fun hF ↦ ?_, fun ⟨c, hc, hFc⟩ ↦ ?_⟩
+  · obtain ⟨G, hG⟩ := hF.exists_right_inv
+    have hFG : (F : PowerSeries K) * G = 1 := congrArg Subtype.val hG
+    refine ⟨constantCoeff (F : PowerSeries K), fun h0 ↦ ?_,
+      IsEntire.eq_C_of_mul_eq_one (IsEntire.mem_subring.mp F.2) (IsEntire.mem_subring.mp G.2) hFG⟩
+    simpa [h0] using congrArg constantCoeff hFG
+  · refine IsUnit.of_mul_eq_one
+      (⟨C c⁻¹, IsEntire.mem_subring.mpr (isEntire_C c⁻¹)⟩ : IsEntire.subring K) (Subtype.ext ?_)
+    rw [Subring.coe_mul, hFc, OneMemClass.coe_one, ← map_mul, mul_inv_cancel₀ hc, map_one]
+
+end Units
 
 end PowerSeries

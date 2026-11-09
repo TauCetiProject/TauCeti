@@ -28,10 +28,6 @@ over the zeros of `f`, defined as the limit of its finite subproducts over close
 particular two entire series with constant coefficient `1` and the same zeros, counted with
 multiplicity, are equal, and an entire series with only finitely many zeros is a polynomial.
 
-The units of the ring of entire series are the nonzero constants, over any ultrametric normed
-field: the Gauss norm is multiplicative, and a nonconstant entire series has unbounded Gauss
-norms while the Gauss norms of an entire series are bounded below by its constant term.
-
 These statements concern the whole affine line. On a disc of finite radius the zeros may
 accumulate towards the boundary, and the corresponding products need not converge.
 
@@ -47,8 +43,6 @@ accumulate towards the boundary, and the corresponding products need not converg
 * `PowerSeries.IsEntire.eq_prod_zeroMultiset_of_forall_norm_le` and
   `PowerSeries.IsEntire.exists_polynomial_eq_of_finite`: an entire series with finitely many zeros
   is a polynomial, namely the product over its zeros when `f(0) = 1`.
-* `PowerSeries.IsEntire.eq_C_of_mul_eq_one` and `PowerSeries.IsEntire.isUnit_iff`: the units of
-  the ring of entire series are the nonzero constants.
 
 ## References
 
@@ -66,62 +60,6 @@ open scoped Topology
 namespace PowerSeries.IsEntire
 
 open TauCeti.PowerSeries
-
-section Units
-
-variable {K : Type*} [NormedField K] [IsUltrametricDist K] {f g : PowerSeries K}
-
-/-- **Entire units are constant.** Over an ultrametric normed field, if the product of two entire
-series is `1`, then each of them is a constant. -/
-theorem eq_C_of_mul_eq_one (hf : f.IsEntire) (hg : g.IsEntire) (h : f * g = 1) :
-    f = C (constantCoeff f) := by
-  ext n
-  rcases n with _ | m
-  · simp
-  simp only [coeff_C, m.succ_ne_zero, ↓reduceIte]
-  by_contra ha
-  have hg0 : constantCoeff g ≠ 0 := by
-    intro hg0
-    simpa [hg0] using congrArg constantCoeff h
-  -- At every radius `r > 0`, `‖aₘ₊₁‖ rᵐ⁺¹ ‖g(0)‖ ≤ ‖f‖_r ‖g‖_r = ‖f g‖_r = 1`.
-  have key (r : ℝ) (hr : 0 < r) : ‖coeff (m + 1) f‖ * r ^ (m + 1) * ‖constantCoeff g‖ ≤ 1 := by
-    have h1 := congrArg NNReal.toReal (map_one (gaussValuation (R := K) hr))
-    rw [coe_gaussValuation, OneMemClass.coe_one, NNReal.coe_one, ← h,
-      gaussNorm_mul_of_isRestricted hr (hf.isRestricted r) (hg.isRestricted r)] at h1
-    rw [← h1]
-    refine mul_le_mul (_root_.PowerSeries.le_gaussNorm _ _ _
-      (hasGaussNorm_of_isRestricted (hf.isRestricted r)) _) ?_ (norm_nonneg _)
-      (_root_.PowerSeries.gaussNorm_nonneg _ _ _ norm_nonneg)
-    simpa using _root_.PowerSeries.le_gaussNorm _ _ _
-      (hasGaussNorm_of_isRestricted (hg.isRestricted r)) 0
-  -- A large radius violates this bound.
-  set c := ‖coeff (m + 1) f‖ * ‖constantCoeff g‖ with hc_def
-  have hc : 0 < c := by positivity
-  set r := max 1 (2 / c)
-  have hr1 : 1 ≤ r := le_max_left _ _
-  have hle : 2 ≤ c * r ^ (m + 1) := calc
-    2 = c * (2 / c) := by field_simp
-    _ ≤ c * r := by gcongr; exact le_max_right _ _
-    _ ≤ c * r ^ (m + 1) := by gcongr; exact le_self_pow₀ hr1 m.succ_ne_zero
-  have := key r (by positivity)
-  rw [hc_def] at hle
-  linarith
-
-/-- **The units of the ring of entire series** over an ultrametric normed field are the nonzero
-constants. -/
-theorem isUnit_iff {F : IsEntire.subring K} :
-    IsUnit F ↔ ∃ c : K, c ≠ 0 ∧ (F : PowerSeries K) = C c := by
-  refine ⟨fun hF ↦ ?_, fun ⟨c, hc, hFc⟩ ↦ ?_⟩
-  · obtain ⟨G, hG⟩ := hF.exists_right_inv
-    have hFG : (F : PowerSeries K) * G = 1 := congrArg Subtype.val hG
-    refine ⟨constantCoeff (F : PowerSeries K), fun h0 ↦ ?_,
-      eq_C_of_mul_eq_one (IsEntire.mem_subring.mp F.2) (IsEntire.mem_subring.mp G.2) hFG⟩
-    simpa [h0] using congrArg constantCoeff hFG
-  · refine IsUnit.of_mul_eq_one
-      (⟨C c⁻¹, IsEntire.mem_subring.mpr (isEntire_C c⁻¹)⟩ : IsEntire.subring K) (Subtype.ext ?_)
-    rw [Subring.coe_mul, hFc, OneMemClass.coe_one, ← map_mul, mul_inv_cancel₀ hc, map_one]
-
-end Units
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] {f g : PowerSeries K}
 
@@ -259,8 +197,11 @@ theorem exists_polynomial_eq_of_finite (hf : f.IsEntire) (hfin : {x : K | f.eval
   have hp := hgc.eq_prod_zeroMultiset_of_forall_norm_le (by simp [c, hg0]) hzero
   refine ⟨Polynomial.X ^ n * Polynomial.C c * ((((C c⁻¹ * g).zeroMultiset R K).map fun α ↦
     1 - Polynomial.C α⁻¹ * Polynomial.X).prod), ?_⟩
-  rw [Polynomial.coe_mul, Polynomial.coe_mul, ← hp, Polynomial.coe_pow, Polynomial.coe_X,
-    Polynomial.coe_C, hfg, mul_assoc, ← mul_assoc (C c), ← map_mul, mul_inv_cancel₀ hg0, map_one,
-    one_mul]
+  rw [Polynomial.coe_mul, ← hp, hfg]
+  push_cast
+  have hc : C c * C c⁻¹ = 1 := by
+    rw [← map_mul]
+    simp [hg0]
+  linear_combination (-(X ^ n * g)) * hc
 
 end PowerSeries.IsEntire

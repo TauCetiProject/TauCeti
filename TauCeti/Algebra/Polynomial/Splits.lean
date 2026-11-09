@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Splits
 import Mathlib.RingTheory.Polynomial.UniqueFactorization
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Splitting from the degrees of irreducible factors, and evaluating split polynomials
@@ -68,8 +69,11 @@ theorem Splits.eq_prod_roots_of_coeff_zero_eq_one {f : K[X]} (hf : f.Splits)
   have hfac : (f.roots.map fun α ↦ 1 - C α⁻¹ * X) =
       f.roots.map fun α ↦ C (-α)⁻¹ * (X - C α) :=
     Multiset.map_congr rfl fun α hα ↦ by
-      rw [inv_neg, C_neg, neg_mul, mul_sub, ← C_mul, inv_mul_cancel₀ (hne α hα), C_1]
-      ring
+      have h : C α⁻¹ * C α = 1 := by
+        rw [← C_mul]
+        simp [hne α hα]
+      rw [inv_neg, C_neg]
+      linear_combination -h
   have hlc : f.leadingCoeff = (f.roots.map fun α ↦ (-α)⁻¹).prod := by
     have h := hf.eval_eq_prod_roots 0
     rw [← coeff_zero_eq_eval_zero, h0] at h
