@@ -184,6 +184,21 @@ private theorem stabilizeXChainMap_X_smul (c : GridChainMinus R (n + 1)) :
   rw [map_smulₛₗ]
   simp [Fin.predAbove_succAbove]
 
+/-- Specialization at `V_k` is the quotient of `GC⁻` by multiplication by `V_k`, as a short exact
+sequence of complexes `0 → GC⁻ --V_k--> GC⁻ → GC^ → 0`. -/
+private theorem isShortExactDifferential_X_smul {m : ℕ} (H : GridDiagram m) (k : Fin m) :
+    AddMonoidHom.IsShortExactDifferential
+      (DistribSMul.toAddMonoidHom _ (MvPolynomial.X k : MvPolynomial (Fin m) R))
+      (simplyBlockedSpecialization R k).toAddMonoidHom (H.unblockedDifferential R).toAddMonoidHom
+      (H.unblockedDifferential R).toAddMonoidHom (H.simplyBlockedDifferential R k).toAddMonoidHom
+    where
+  square_zero c := LinearMap.congr_fun (H.unblockedDifferential_comp_self_eq_zero R) c
+  injective := X_smul_gridChainMinus_injective R k
+  exact := exact_X_smul_simplyBlockedSpecialization R k
+  surjective := simplyBlockedSpecialization_surjective R k
+  comm_left c := map_smul (H.unblockedDifferential R) _ c
+  comm_right c := simplyBlockedSpecialization_unblockedDifferential _ R k c
+
 /-- `exists_sub_stabilizeXChainMap_mem_range` for the underlying additive maps. -/
 private theorem exists_sub_stabilizeXChainMap_mem_addRange (c : GridChainMinus R n)
     (hc : c ∈ (G.unblockedDifferential R).toAddMonoidHom.ker) :
@@ -213,27 +228,15 @@ theorem exists_sub_simplyBlockedStabilizeXMap_mem_range {y : GridChainHat R n i}
   -- stabilization map is a quasi-isomorphism.
   simpa using AddMonoidHom.exists_mem_ker_sub_mem_range_of_exact
     (G.simplyBlockedStabilizeXMap s i R).toAddMonoidHom
-    (d := ((G').unblockedDifferential R).toAddMonoidHom)
-    (e := (G.unblockedDifferential R).toAddMonoidHom)
+    (f₁ := (G.stabilizeXChainMap s R).toAddMonoidHom)
     (f := (G.stabilizeXChainMap s R).toAddMonoidHom)
-    (u := DistribSMul.toAddMonoidHom _ (MvPolynomial.X j : MvPolynomial (Fin (n + 1)) R))
-    (v := DistribSMul.toAddMonoidHom _ (MvPolynomial.X i : MvPolynomial (Fin n) R))
-    (dP := ((G').simplyBlockedDifferential R j).toAddMonoidHom)
-    (eQ := (G.simplyBlockedDifferential R i).toAddMonoidHom)
-    (p := (simplyBlockedSpecialization R j).toAddMonoidHom)
-    (q := (simplyBlockedSpecialization R i).toAddMonoidHom)
-    (fun c => LinearMap.congr_fun (G.unblockedDifferential_comp_self_eq_zero R) c)
-    (fun c => map_smul ((G').unblockedDifferential R) _ c)
-    (fun c => map_smul (G.unblockedDifferential R) _ c) (X_smul_gridChainMinus_injective R i)
-    (exact_X_smul_simplyBlockedSpecialization R j) (exact_X_smul_simplyBlockedSpecialization R i)
-    (simplyBlockedSpecialization_surjective R i)
-    (fun c => simplyBlockedSpecialization_unblockedDifferential _ R j c)
-    (fun c => simplyBlockedSpecialization_unblockedDifferential _ R i c)
-    (fun c => G.stabilizeXChainMap_unblockedDifferential s R c)
-    (fun c => G.stabilizeXChainMap_X_smul s i R c)
-    (fun c => G.simplyBlockedStabilizeXMap_simplyBlockedSpecialization s i R c)
+    (isShortExactDifferential_X_smul R (G') j) (isShortExactDifferential_X_smul R G i)
+    (G.stabilizeXChainMap_unblockedDifferential s R)
+    (G.stabilizeXChainMap_X_smul s i R)
+    (G.simplyBlockedStabilizeXMap_simplyBlockedSpecialization s i R)
     (G.exists_sub_stabilizeXChainMap_mem_addRange s R)
-    (G.mem_addRange_of_stabilizeXChainMap_mem_addRange s R) (y := y) (by simpa using hy)
+    (G.exists_sub_stabilizeXChainMap_mem_addRange s R)
+    (G.mem_addRange_of_stabilizeXChainMap_mem_addRange s R) (by simpa using hy)
 
 /-- A simply blocked cycle of the stabilized diagram whose image in `G` is a boundary is itself a
 boundary. -/
@@ -246,29 +249,15 @@ theorem mem_range_of_simplyBlockedStabilizeXMap_mem_range {x : GridChainHat R (n
   -- `exists_sub_simplyBlockedStabilizeXMap_mem_range`.
   simpa using AddMonoidHom.mem_range_of_map_mem_range_of_exact
     (G.simplyBlockedStabilizeXMap s i R).toAddMonoidHom
-    (d := ((G').unblockedDifferential R).toAddMonoidHom)
-    (e := (G.unblockedDifferential R).toAddMonoidHom)
+    (f₁ := (G.stabilizeXChainMap s R).toAddMonoidHom)
     (f := (G.stabilizeXChainMap s R).toAddMonoidHom)
-    (u := DistribSMul.toAddMonoidHom _ (MvPolynomial.X j : MvPolynomial (Fin (n + 1)) R))
-    (v := DistribSMul.toAddMonoidHom _ (MvPolynomial.X i : MvPolynomial (Fin n) R))
-    (dP := ((G').simplyBlockedDifferential R j).toAddMonoidHom)
-    (eQ := (G.simplyBlockedDifferential R i).toAddMonoidHom)
-    (p := (simplyBlockedSpecialization R j).toAddMonoidHom)
-    (q := (simplyBlockedSpecialization R i).toAddMonoidHom)
-    (fun c => LinearMap.congr_fun (unblockedDifferential_comp_self_eq_zero (G') R) c)
-    (fun c => LinearMap.congr_fun (G.unblockedDifferential_comp_self_eq_zero R) c)
-    (fun c => map_smul ((G').unblockedDifferential R) _ c)
-    (fun c => map_smul (G.unblockedDifferential R) _ c)
-    (X_smul_gridChainMinus_injective R j) (X_smul_gridChainMinus_injective R i)
-    (exact_X_smul_simplyBlockedSpecialization R j) (simplyBlockedSpecialization_surjective R j)
-    (exact_X_smul_simplyBlockedSpecialization R i) (simplyBlockedSpecialization_surjective R i)
-    (fun c => simplyBlockedSpecialization_unblockedDifferential _ R j c)
-    (fun c => simplyBlockedSpecialization_unblockedDifferential _ R i c)
-    (fun c => G.stabilizeXChainMap_unblockedDifferential s R c)
-    (fun c => G.stabilizeXChainMap_X_smul s i R c)
-    (fun c => G.simplyBlockedStabilizeXMap_simplyBlockedSpecialization s i R c)
+    (isShortExactDifferential_X_smul R (G') j) (isShortExactDifferential_X_smul R G i)
+    (G.stabilizeXChainMap_unblockedDifferential s R)
+    (G.stabilizeXChainMap_unblockedDifferential s R)
+    (G.stabilizeXChainMap_X_smul s i R)
+    (G.simplyBlockedStabilizeXMap_simplyBlockedSpecialization s i R)
     (G.exists_sub_stabilizeXChainMap_mem_addRange s R)
-    (G.mem_addRange_of_stabilizeXChainMap_mem_addRange s R) (x := x) (by simpa using hx)
-    (by simpa using h)
+    (G.mem_addRange_of_stabilizeXChainMap_mem_addRange s R)
+    (G.mem_addRange_of_stabilizeXChainMap_mem_addRange s R) (by simpa using hx) (by simpa using h)
 
 end TauCeti.GridDiagram
