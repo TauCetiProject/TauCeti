@@ -7,7 +7,6 @@ module
 
 public import TauCeti.KnotTheory.Khovanov.Complex
 public import TauCeti.KnotTheory.Khovanov.Resolution.EulerCharacteristic
-public import TauCeti.KnotTheory.Khovanov.Resolution.Support
 public import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
@@ -91,21 +90,6 @@ theorem isZero_khovanovHomology_of_cochain_notMem_Icc {i : ℤ}
   (D.khovanovComplex hD R j).isZero_homology_of_notMem_Icc
     (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount (by simpa using hi)
 
-/-- The normalized chain groups vanish outside the translated extreme-resolution quantum
-interval. Circle counts include all crossing-free components. -/
-theorem isZero_khovanovComplex_X_of_quantum_notMem_Icc {j : ℤ}
-    (hj : j ∉ Set.Icc
-      ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount -
-        D.toPDCode.stateLoopCount (PDCode.cubeState ∅))
-      ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount + n +
-        D.toPDCode.stateLoopCount (PDCode.cubeState Finset.univ))) (i : ℤ) :
-    IsZero ((D.khovanovComplex hD R j).X i) := by
-  rw [khovanovComplex_X, ← PDCode.khovanovBracket_apply]
-  apply D.toPDCode.isZero_khovanovBracket_X_of_quantum_notMem_Icc hD R
-  intro h
-  rcases h with ⟨hl, hu⟩
-  exact hj ⟨by omega, by omega⟩
-
 /-- The entire normalized quantum-component complex vanishes outside the same interval. -/
 theorem isZero_khovanovComplex_of_quantum_notMem_Icc {j : ℤ}
     (hj : j ∉ Set.Icc
@@ -138,18 +122,8 @@ theorem finite_quantumSupport_khovanovComplex :
 
 /-- Khovanov cohomology is supported in a finite rectangle in the two gradings jointly. -/
 theorem finite_bigradedSupport_khovanovHomology :
-    {p : ℤ × ℤ | ¬ IsZero (D.khovanovHomology hD R p.1 p.2)}.Finite := by
-  refine ((Set.finite_Icc (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount).prod
-    (Set.finite_Icc
-      ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount -
-        D.toPDCode.stateLoopCount (PDCode.cubeState ∅))
-      ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount + n +
-        D.toPDCode.stateLoopCount (PDCode.cubeState Finset.univ)))).subset ?_
-  rintro ⟨i, j⟩ h
-  constructor
-  · by_contra hi
-    exact h (D.isZero_khovanovHomology_of_cochain_notMem_Icc hD R hi j)
-  · by_contra hj
-    exact h (D.isZero_khovanovHomology_of_quantum_notMem_Icc hD R hj i)
+    {p : ℤ × ℤ | ¬ IsZero (D.khovanovHomology hD R p.1 p.2)}.Finite :=
+  (D.finite_bigradedSupport_khovanovComplex hD R).subset fun _ hp hX ↦
+    hp (ExactAt.of_isZero hX).isZero_homology
 
 end TauCeti.OrientedPDCode
