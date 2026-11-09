@@ -151,12 +151,41 @@ theorem ballPoissonIntegral_def (g : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 �
         ∂volume.toSphere := by
   rw [ballPoissonIntegral]
 
-/-- **The Poisson integral is harmonic.**  For integrable boundary data `g` on the unit sphere of
-`ℝⁿ`, the Poisson integral `P[g]` is harmonic off the sphere, in particular throughout the open
-unit ball. -/
-theorem harmonicOnNhd_ballPoissonIntegral {g : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 → ℝ}
-    (hg : Integrable g volume.toSphere) :
+/-- The Poisson integral of non-integrable boundary data is the junk value zero off the sphere,
+because the Poisson kernel with a pole off the sphere is continuous and nowhere zero there. -/
+theorem ballPoissonIntegral_eq_zero_of_not_integrable
+    {g : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 → ℝ} (hg : ¬Integrable g volume.toSphere)
+    {x : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ ≠ 1) : ballPoissonIntegral g x = 0 := by
+  refine integral_undef fun hint ↦ hg ?_
+  have hK := continuous_ballPoissonKernel_on_sphere x hx
+  have hne (y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1) : ballPoissonKernel n x y ≠ 0 := by
+    have hy : ‖(y : EuclideanSpace ℝ (Fin n))‖ = 1 := norm_eq_of_mem_sphere y
+    have hn : 0 < n := pos_of_ne_zero_euclideanSpace (norm_ne_zero_iff.mp (hy ▸ one_ne_zero))
+    have hsub : x - y ≠ 0 := fun h ↦ hx (by rw [sub_eq_zero.mp h]; exact hy)
+    have hx' : 1 - ‖x‖ ^ 2 ≠ 0 := fun h ↦ hx (by nlinarith [norm_nonneg x])
+    have hω := volume_real_unitBall_pos n
+    rw [ballPoissonKernel_def]
+    have := norm_pos_iff.mpr hsub
+    positivity
+  have hinv : Continuous fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 ↦
+      (ballPoissonKernel n x y)⁻¹ := hK.inv₀ hne
+  obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn hinv.continuousOn
+  have h := hint.bdd_mul hinv.aestronglyMeasurable (ae_of_all _ fun y ↦ hC y (mem_univ y))
+  simpa only [← mul_assoc, inv_mul_cancel₀ (hne _), one_mul] using h
+
+/-- **The Poisson integral is harmonic.**  For boundary data `g` on the unit sphere of `ℝⁿ`, the
+Poisson integral `P[g]` is harmonic off the sphere, in particular throughout the open unit ball. If
+`g` is not integrable, `P[g]` is the junk value zero there. -/
+theorem harmonicOnNhd_ballPoissonIntegral {g : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 → ℝ} :
     HarmonicOnNhd (ballPoissonIntegral g) (sphere (0 : EuclideanSpace ℝ (Fin n)) 1)ᶜ := by
+  by_cases hg : Integrable g volume.toSphere
+  swap
+  · intro x hx
+    have hx1 : ∀ᶠ y in 𝓝 x, y ∈ (sphere (0 : EuclideanSpace ℝ (Fin n)) 1)ᶜ :=
+      isClosed_sphere.isOpen_compl.mem_nhds hx
+    refine (harmonicAt_congr_nhds (f₂ := fun _ ↦ (0 : ℝ)) ?_).2 (harmonicAt_const 0)
+    filter_upwards [hx1] with y hy
+    exact ballPoissonIntegral_eq_zero_of_not_integrable hg (by simpa using hy)
   have hU : ∀ x ∈ (sphere (0 : EuclideanSpace ℝ (Fin n)) 1)ᶜ,
       ∀ y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1, (x, (y : EuclideanSpace ℝ (Fin n))) ∈
         {p : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) | p.1 ≠ p.2} :=
@@ -335,7 +364,7 @@ theorem exists_harmonicOnNhd_ball_continuousOn_closedBall_eq
     (mem_ball_zero_iff.mp hx).ne (mem_sphere_zero_iff_norm.mp hs)
   have hu : EqOn u (ballPoissonIntegral g) (ball 0 1) := fun x hx ↦ dite_eq_right (hball x hx)
   have hP : HarmonicOnNhd (ballPoissonIntegral g) (ball 0 1) :=
-    (harmonicOnNhd_ballPoissonIntegral hgi).mono hball
+    harmonicOnNhd_ballPoissonIntegral.mono hball
   have huP : ∀ x ∈ ball (0 : EuclideanSpace ℝ (Fin n)) 1, u =ᶠ[𝓝 x] ballPoissonIntegral g :=
     fun x hx ↦ Filter.eventually_of_mem (isOpen_ball.mem_nhds hx) hu
   refine ⟨u, fun x hx ↦ (harmonicAt_congr_nhds (huP x hx)).2 (hP x hx), ?_,
