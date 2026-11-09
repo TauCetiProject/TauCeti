@@ -31,8 +31,10 @@ transfers to an arbitrary one.
 ## Main statements
 
 * `TauCeti.mongeAmpereMeasure_mul_of_pos` gives the homogeneity of the Monge–Ampère measure
-  under positive scaling of an extended-real potential, and
-  `TauCeti.mongeAmpereMeasure_ite_mul_of_pos` is its form for a real function on a set.
+  under positive scaling of an extended-real potential,
+  `TauCeti.mongeAmpereMeasure_ite_mul_of_pos` is its form for a real function on a set, and
+  `MeasureTheory.Measure.mongeAmpereMeasure_ite_mul_add_of_pos` is its form for scaling followed
+  by a constant shift.
 * `TauCeti.mongeAmpereMeasure_add_affine` proves invariance of the Aleksandrov Monge–Ampère
   measure under addition of an affine function, and `TauCeti.mongeAmpereMeasure_ite_add_linearMap`
   is its form for a finite convex function on a set and an affine function given by a linear

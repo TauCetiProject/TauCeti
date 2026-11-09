@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Convex.MongeAmpere.Basic
 public import TauCeti.Analysis.Convex.Extrema
 import TauCeti.Analysis.Convex.Function.Topology
 import TauCeti.Analysis.Convex.MongeAmpere.Affine
-import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.Topology.Frontier
 
 /-!
@@ -28,11 +27,14 @@ Monge–Ampère measures `MA_u` and `MA_v` (of `u` and `v` extended by `⊤` off
   Dirichlet problem for the Monge–Ampère equation.
 
 The comparison principle is proved by contradiction. If `u x₀ < v x₀`, then for small `ε > 0`
-the function `w = (1 + ε) v - c` lies above `u` at `x₀` and strictly below `u` on the frontier,
-so the open set `G = {u < w}` has closure inside `Ω`, and `w ≤ u` on its frontier. By
-`TauCeti.exists_forall_add_inner_add_le_of_forall_frontier_le`, the subgradients of `w` on `G`,
-are subgradients of `u` on `G`, as are their small perturbations, which form an open ball.
-The scaling law gives `MA_w(G) = (1 + ε)^n MA_v(G)`. Comparing measures,
+the function `w = (1 + ε) v + b` of `TauCeti.exists_convexOn_lt_frontier_of_lt` lies above `u` at
+`x₀` and strictly below `u` on the frontier, so the open set `G = {u < w}` of
+`TauCeti.exists_isOpen_subset_pos_forall_frontier_le` has closure inside `Ω`, and `w ≤ u` on its
+frontier. By `TauCeti.exists_forall_add_inner_add_le_of_forall_frontier_le`, the subgradients of
+`w` on `G` are subgradients of `u` on `G`, as are their small perturbations, which form an open
+ball.
+The scaling law (`MeasureTheory.Measure.mongeAmpereMeasure_ite_mul_add_of_pos`) gives
+`MA_w(G) = (1 + ε)^n MA_v(G)`. Comparing measures,
 `(1 + ε) ^ n MA_v(G) ≤ MA_u(G) ≤ MA_v(G)` with `0 < MA_u(G)` and `MA_v(G) < ∞`, which is
 impossible.
 
@@ -67,6 +69,21 @@ open scoped Topology ENNReal Pointwise
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {Ω : Set E} [DecidablePred (· ∈ Ω)] {u v : E → ℝ}
+
+/-- A contradiction from a set of large measure: let `MAu ≤ MAv` and `MAw = r • MAv` be measures
+with `r > 1`, and `G` a set with `MAv G < ∞`. If `MAu G = μ Su` and `MAw G = μ Sw` with `Sw ⊆ Su`
+and `0 < μ Su`, then `False`. -/
+private theorem false_of_subset_of_pos {X : Type*} [MeasurableSpace X] (μ : Measure X)
+    {G Su Sw : Set X} {MAu MAv MAw : Measure X} {r : ℝ≥0∞} (hr : 1 < r) (hMA : MAu ≤ MAv)
+    (hwMA : MAw = r • MAv) (hSu : MAu G = μ Su) (hSw : MAw G = μ Sw) (hsub : Sw ⊆ Su)
+    (hpos : 0 < μ Su) (hfin : MAv G ≠ ∞) : False := by
+  have h₁ : r * MAv G ≤ μ Su := by
+    rw [← smul_eq_mul, ← _root_.smul_apply, ← hwMA, hSw]
+    exact measure_mono hsub
+  have h₂ : μ Su ≤ MAv G := hSu ▸ Measure.le_iff'.1 hMA G
+  have := ENNReal.mul_lt_mul_left (hpos.trans_le h₂).ne' hfin hr
+  rw [one_mul] at this
+  exact (this.trans_le (h₁.trans h₂)).false
 
 /-- **A lower convex function with the reverse boundary inequality has more Monge–Ampère mass.**
 Let `Ω` be a bounded open set, and let `u` and `v` be convex on `Ω` and continuous on its
@@ -195,7 +212,7 @@ theorem le_of_mongeAmpereMeasure_le_of_le_frontier (hΩo : IsOpen Ω)
   -- Compare `(1 + ε) ^ n MA_v(G) ≤ MA_u(G) ≤ MA_v(G)` with `0 < MA_u(G)` and `MA_v(G) < ∞`.
   have hεpos : 0 < 1 + ε := by positivity
   obtain ⟨c, η, hη, hcη⟩ := hball
-  refine Measure.false_of_subset_of_pos μ ?_ hMA
+  refine false_of_subset_of_pos μ ?_ hMA
     (Measure.mongeAmpereMeasure_ite_mul_add_of_pos μ hεpos b) hSu hSw hsub
     ((measure_ball_pos μ c hη).trans_le (measure_mono hcη)) ?_
   · rw [← ENNReal.ofReal_one, ENNReal.ofReal_lt_ofReal_iff (by positivity)]

@@ -37,9 +37,6 @@ almost everywhere means everywhere.
 * `Continuous.ae_le_iff_le`: continuous functions satisfy `f ≤ᵐ[μ] g` if and only if `f ≤ g`.
 * `MeasureTheory.ae_eq_top_of_discreteTopology`: on a discrete space, for a measure positive on
   open sets, almost everywhere means everywhere.
-* `MeasureTheory.Measure.false_of_subset_of_pos`: if `MA_u ≤ MA_v` and `MA_w = r • MA_v` with
-  `r > 1` and `MA_v G < ∞`, then `MA_u G = μ Su` and `MA_w G = μ Sw` with `Sw ⊆ Su` and
-  `0 < μ Su` are impossible.
 -/
 
 public section
@@ -128,25 +125,5 @@ theorem _root_.MeasureTheory.ae_eq_top_of_discreteTopology {α : Type*} [Topolog
   ae_eq_top.2 fun x => (isOpen_discrete {x}).measure_ne_zero μ (Set.singleton_nonempty x)
 
 end TauCeti
-
-namespace MeasureTheory.Measure
-
-variable {X : Type*} [MeasurableSpace X]
-
-/-- A contradiction from a set of large measure: let `MAu ≤ MAv` and `MAw = r • MAv` be measures
-with `r > 1`, and `G` a set with `MAv G < ∞`. If `MAu G = μ Su` and `MAw G = μ Sw` with `Sw ⊆ Su`
-and `0 < μ Su`, then `False`. -/
-theorem false_of_subset_of_pos (μ : Measure X) {G Su Sw : Set X} {MAu MAv MAw : Measure X}
-    {r : ℝ≥0∞} (hr : 1 < r) (hMA : MAu ≤ MAv) (hwMA : MAw = r • MAv) (hSu : MAu G = μ Su)
-    (hSw : MAw G = μ Sw) (hsub : Sw ⊆ Su) (hpos : 0 < μ Su) (hfin : MAv G ≠ ∞) : False := by
-  have h₁ : r * MAv G ≤ μ Su := by
-    rw [← smul_eq_mul, ← _root_.smul_apply, ← hwMA, hSw]
-    exact measure_mono hsub
-  have h₂ : μ Su ≤ MAv G := hSu ▸ Measure.le_iff'.1 hMA G
-  have := ENNReal.mul_lt_mul_left (hpos.trans_le h₂).ne' hfin hr
-  rw [one_mul] at this
-  exact (this.trans_le (h₁.trans h₂)).false
-
-end MeasureTheory.Measure
 
 end

@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Analysis.Convex.FunctionTopology
 public import Mathlib.Analysis.Convex.Topology
-public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.Order.OrderClosed
+import Mathlib.Analysis.Normed.Group.Bounded
+import Mathlib.Analysis.Normed.Module.Basic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Topology.Algebra.Order.Field
@@ -27,8 +28,8 @@ A function convex on `s` and continuous on `closure s` remains convex on that cl
 A convex function on `(0, ∞)` bounded above by `L` stays convex when extended by the value `L` at
 `0` (`ConvexOn.apply_mul_le_of_forall_le`), as the limit of convex combinations approaching `0`.
 
-On a set with compact closure, a convex function continuous on the closure can be rescaled and
-shifted to `(1 + ε) v + b` so that it passes from above to below another continuous function
+On a set with compact closure, a convex function `v` continuous on the closure can be rescaled and
+shifted to `(1 + ε) v + b` so that it passes from above to below an arbitrary function `u`
 (`TauCeti.exists_convexOn_lt_frontier_of_lt`).
 -/
 
@@ -60,13 +61,13 @@ theorem convexOn_of_tendsto {l : Filter ι} [l.NeBot] {F : ι → α → β} {f 
 
 section FrontierShift
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Set E}
+variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] {Ω : Set E}
   {u v : E → ℝ}
 
 /-- If `v ≤ u` on the frontier of a set `Ω` with compact closure and `u x₀ < v x₀` at some
-`x₀ ∈ Ω`, with `v` convex on `Ω` and `u`, `v` continuous on its closure, then for a small `ε > 0`
-and a constant `b` the function `(1 + ε) v + b` is convex on `Ω` and continuous on its closure,
-lies below `u` on the frontier, and lies above `u` at `x₀`. -/
+`x₀ ∈ Ω`, with `v` convex on `Ω` and continuous on its closure (nothing is assumed of `u`), then
+for a small `ε > 0` and a constant `b` the function `(1 + ε) v + b` is convex on `Ω` and continuous
+on its closure, lies below `u` on the frontier, and lies above `u` at `x₀`. -/
 theorem exists_convexOn_lt_frontier_of_lt (hΩ : IsCompact (closure Ω))
     (hv : ConvexOn ℝ Ω v) (hvc : ContinuousOn v (closure Ω))
     (hfr : ∀ x ∈ frontier Ω, v x ≤ u x) {x₀ : E} (hx₀ : x₀ ∈ Ω)
