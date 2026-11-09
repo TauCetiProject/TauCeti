@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Coherent
 public import TauCeti.Topology.Homotopy.Extension.HomotopyEquivRel
 import TauCeti.Topology.Coherent
+import TauCeti.Topology.Homeomorph.Subtype
 
 /-!
 # Homotopy equivalences of unions of cofibration towers
@@ -83,25 +84,6 @@ structure IsCofibrationExhaustion (K : ℕ → Set X) : Prop where
   hasHomotopyExtensionProperty (n : ℕ) :
     HasHomotopyExtensionProperty (((↑) : K (n + 1) → X) ⁻¹' K n)
 
-/-- A subset `s ⊆ t` is homeomorphic to its preimage in the subspace `t`. -/
-private def homeomorphPreimageVal {s t : Set X} (h : s ⊆ t) : s ≃ₜ ((↑) : t → X) ⁻¹' s where
-  toFun a := ⟨⟨a, h a.2⟩, a.2⟩
-  invFun a := ⟨a, a.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
-
-@[simp]
-private theorem coe_homeomorphPreimageVal {s t : Set X} (h : s ⊆ t) (a : s) :
-    ((homeomorphPreimageVal h a : t) : X) = a :=
-  rfl
-
-@[simp]
-private theorem coe_homeomorphPreimageVal_symm {s t : Set X} (h : s ⊆ t)
-    (a : ((↑) : t → X) ⁻¹' s) : ((homeomorphPreimageVal h).symm a : X) = a :=
-  rfl
-
 namespace IsCofibrationExhaustion
 
 variable {K : ℕ → Set X} {L : ℕ → Set Y}
@@ -162,12 +144,12 @@ private theorem exists_succ (hK : IsCofibrationExhaustion K) (hL : IsCofibration
         (H' (t, ⟨x, hK.monotone n.le_succ hx⟩) : X) = H (t, ⟨x, hx⟩) := by
   let A : Set (K (n + 1)) := (↑) ⁻¹' K n
   let B : Set (L (n + 1)) := (↑) ⁻¹' L n
-  let ιK : K n ≃ₜ A := homeomorphPreimageVal (hK.monotone n.le_succ)
-  let ιL : L n ≃ₜ B := homeomorphPreimageVal (hL.monotone n.le_succ)
+  let ιK : K n ≃ₜ A := Homeomorph.preimageVal (hK.monotone n.le_succ)
+  let ιL : L n ≃ₜ B := Homeomorph.preimageVal (hL.monotone n.le_succ)
   let h₀ := ιK.symm.toHomotopyEquiv.trans ((e n).trans ιL.toHomotopyEquiv)
   have hh₀ : ∀ a, (h₀ a : L (n + 1)) = e (n + 1) a := fun a ↦ Subtype.ext <| by
     simp only [h₀, HomotopyEquiv.trans_apply, Homeomorph.coe_toHomotopyEquiv]
-    rw [coe_homeomorphPreimageVal, he, he, coe_homeomorphPreimageVal_symm]
+    rw [Homeomorph.coe_preimageVal_apply, he, he, Homeomorph.coe_preimageVal_symm_apply]
   let g₀ : C(B, A) := (ιK : C(K n, A)).comp (g.comp (ιL.symm : C(B, L n)))
   let H₀ : (g₀.comp h₀.toFun).Homotopy (ContinuousMap.id A) :=
     ((Homotopy.refl (ιK : C(K n, A))).comp (H.compContinuousMap (ιK.symm : C(A, K n)))).cast
@@ -179,8 +161,17 @@ private theorem exists_succ (hK : IsCofibrationExhaustion K) (hL : IsCofibration
     (hK.hasHomotopyExtensionProperty n).exists_inverse_extending_homotopy
       (hL.hasHomotopyExtensionProperty n) (e (n + 1)) h₀ hh₀ g₀ H₀
   refine ⟨g', H', fun y hy ↦ ?_, fun t x hx ↦ ?_⟩
-  · exact congrArg (fun z : K (n + 1) ↦ (z : X)) (hg' ⟨⟨y, _⟩, hy⟩)
-  · exact congrArg (fun z : K (n + 1) ↦ (z : X)) (hH' t ⟨⟨x, _⟩, hx⟩)
+  · have hy' : ιL.symm ⟨⟨y, hL.monotone n.le_succ hy⟩, hy⟩ = ⟨y, hy⟩ :=
+      Subtype.ext (Homeomorph.coe_preimageVal_symm_apply _ _)
+    refine (congrArg (fun z : K (n + 1) ↦ (z : X)) (hg' ⟨⟨y, _⟩, hy⟩)).trans ?_
+    simp only [g₀, ContinuousMap.comp_apply, ContinuousMap.coe_ofClass, hy']
+    exact Homeomorph.coe_preimageVal_apply _ _
+  · have hx' : ιK.symm ⟨⟨x, hK.monotone n.le_succ hx⟩, hx⟩ = ⟨x, hx⟩ :=
+      Subtype.ext (Homeomorph.coe_preimageVal_symm_apply _ _)
+    refine (congrArg (fun z : K (n + 1) ↦ (z : X)) (hH' t ⟨⟨x, _⟩, hx⟩)).trans ?_
+    simp only [H₀, Homotopy.cast_apply, Homotopy.comp_apply, Homotopy.refl_apply,
+      Homotopy.compContinuousMap_apply, ContinuousMap.coe_ofClass, hx']
+    exact Homeomorph.coe_preimageVal_apply _ _
 
 /-- **Compatible left inverses on all stages.** Homotopy inverses of the stage equivalences,
 with homotopies `g n ∘ e n ≃ id`, can be chosen to extend one another. -/
