@@ -239,7 +239,12 @@ theorem height_eq_natCast_iff [CharP K p] [F.IsComm] {h : ℕ} :
 
 /-- The height of a commutative formal group law over a field of characteristic `p` is at least
 one. -/
-theorem one_le_height [hp : Fact p.Prime] [CharP K p] [F.IsComm] : 1 ≤ F.height p := by
+theorem one_le_height [CharP K p] [F.IsComm] : 1 ≤ F.height p := by
+  rcases CharP.char_is_prime_or_zero K p with hp0 | rfl
+  swap
+  · have hz : F.height 0 = ⊤ := F.height_eq_top_iff.mpr (by simp)
+    simp [hz]
+  have hp : Fact p.Prime := ⟨hp0⟩
   by_cases h0 : F.nsmulSeries p = 0
   · simp [F.height_eq_top_iff.mpr h0]
   obtain ⟨k, hk0, hk⟩ := F.exists_order_nsmulSeries_eq_pow hp.out (CharP.cast_eq_zero K p) h0
@@ -250,11 +255,6 @@ theorem one_le_height [hp : Fact p.Prime] [CharP K p] [F.IsComm] : 1 ≤ F.heigh
 `h ≠ 0`. -/
 theorem ne_zero_of_height_eq_natCast [CharP K p] [F.IsComm] {h : ℕ}
     (hF : F.height p = h) : h ≠ 0 := by
-  rcases CharP.char_is_prime_or_zero K p with hp0 | rfl
-  swap
-  · have hz : F.height 0 = ⊤ := F.height_eq_top_iff.mpr (by simp)
-    simp [hz] at hF
-  have hp : Fact p.Prime := ⟨hp0⟩
   have := F.one_le_height (p := p)
   rw [hF] at this
   exact_mod_cast (Nat.one_le_iff_ne_zero.mp (by exact_mod_cast this))
