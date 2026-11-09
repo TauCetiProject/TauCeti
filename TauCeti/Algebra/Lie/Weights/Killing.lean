@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Weights.RootSystem
+-- Proof-only: a Killing Lie algebra is finite over the base ring.
+import TauCeti.Algebra.Lie.Killing.Basic
 
 /-!
 # Killing pairings of root spaces
@@ -84,21 +86,7 @@ functional on the Cartan subalgebra is a root exactly when its negative is. -/
 @[simp]
 theorem rootSpace_neg_eq_bot_iff (χ : H → K) :
     rootSpace H (-χ) = ⊥ ↔ rootSpace H χ = ⊥ := by
-  -- a Lie algebra with non-degenerate Killing form is finite-dimensional: on an
-  -- infinite-dimensional space every trace, hence the Killing form, vanishes
-  have : FiniteDimensional K L := by
-    by_contra hfin
-    have hbasis : ¬∃ s : Finset L, Nonempty (Module.Basis s K L) := fun ⟨_, ⟨b⟩⟩ ↦
-      hfin (Module.Finite.of_basis b)
-    have h0 : killingForm K L = 0 := by
-      ext x y
-      simp [LieModule.traceForm_apply_apply, LinearMap.trace, hbasis]
-    have hbot : ⊤ = (⊥ : Submodule K L) := by
-      rw [← ker_killingForm_eq_bot K L, h0, LinearMap.ker_zero]
-    have hsub : Subsingleton L := subsingleton_of_forall_eq 0 fun x ↦ by
-      have : x ∈ (⊥ : Submodule K L) := hbot ▸ Submodule.mem_top
-      simpa using this
-    exact hfin Module.Finite.of_finite
+  have : FiniteDimensional K L := finite_of_isKilling (R := K) (L := L)
   have key (ψ : H → K) (hψ : rootSpace H ψ ≠ ⊥) : rootSpace H (-ψ) ≠ ⊥ :=
     (-(⟨ψ, hψ⟩ : Weight K H L)).genWeightSpace_ne_bot
   exact not_iff_not.mp ⟨fun h ↦ neg_neg χ ▸ key (-χ) h, key χ⟩
