@@ -29,13 +29,14 @@ cut out the simplex
 
 (`TauCeti.Toric.mem_facetPolyhedron_simplex_iff`). It is bounded, since its points have norm at
 most `|a|` (`TauCeti.Toric.isBounded_facetPolyhedron_simplex`). For `a > 0` and `κ` nonempty
-this is a Delzant polytope (`TauCeti.Toric.isDelzant_simplex`). Each of its `#κ + 1` facets is cut
-out by one of the normals. At a vertex all constraints but one are active: if two constraints
-`o₁ ≠ o₂` were inactive, a nonzero functional on `ℝ^κ` (a coordinate, or a difference of two
-coordinates) would vanish on all the active normals. Any `#κ` of the `#κ + 1` normals generate
-`ℤ^κ`: when the missing normal is `-1`, the remaining normals are the coordinate vectors `e k`,
-which generate `ℤ^κ`; when it is `e k`, it is recovered as `e k = -(-1) - ∑_{m ≠ k} e m`. Having
-`#κ = rank ℤ^κ` elements, they then form a basis of `ℤ^κ`.
+this is a Delzant polytope (`TauCeti.Toric.isDelzant_simplex`), with vertices `0` and the
+points `a e_k*` (`TauCeti.Toric.mem_extremePoints_facetPolyhedron_simplex_iff`). Each of its
+`#κ + 1` facets is cut out by one of the normals. At a vertex all constraints but one are active:
+if two constraints `o₁ ≠ o₂` were inactive, a nonzero functional on `ℝ^κ` (a coordinate, or a
+difference of two coordinates) would vanish on all the active normals. Any `#κ` of the `#κ + 1`
+normals generate `ℤ^κ`: when the missing normal is `-1`, the remaining normals are the coordinate
+vectors `e k`, which generate `ℤ^κ`; when it is `e k`, it is recovered as
+`e k = -(-1) - ∑_{m ≠ k} e m`. Having `#κ = rank ℤ^κ` elements, they then form a basis of `ℤ^κ`.
 
 ## Main definitions
 
@@ -49,6 +50,8 @@ which generate `ℤ^κ`; when it is `e k`, it is recovered as `e k = -(-1) - ∑
   the facets of the simplex.
 * `TauCeti.Toric.isBounded_facetPolyhedron_simplex`: the simplex is bounded.
 * `TauCeti.Toric.isDelzant_simplex`: for `a > 0` and `κ` nonempty it is a Delzant polytope.
+* `TauCeti.Toric.mem_extremePoints_facetPolyhedron_simplex_iff`: for `a > 0` its vertices are `0`
+  and the points `a e_k*`.
 
 ## References
 
@@ -149,6 +152,11 @@ private theorem span_simplexNormal_compl [Finite κ] (o : Option κ) :
     refine S.sub_mem (by simpa using S.neg_mem (hmem (o' := none) (by simp))) ?_
     exact S.sum_mem fun m hm ↦ hsingle m (by simpa using Finset.ne_of_mem_erase hm)
   · exact hsingle k hk
+
+/-- A functional on `ℝ^κ` is determined by its values on the coordinate vectors. -/
+private theorem strongDual_ext [Finite κ] {x y : StrongDual ℝ (κ → ℝ)}
+    (h : ∀ k, x (Pi.single k 1) = y (Pi.single k 1)) : x = y :=
+  ContinuousLinearMap.coe_injective <| (Pi.basisFun ℝ κ).ext fun k ↦ by simpa using h k
 
 variable [Fintype κ]
 
@@ -280,5 +288,54 @@ theorem isDelzant_simplex [Nonempty κ] {a : ℝ} (ha : 0 < a) :
       · cases o with
         | none => simpa [apply_compLeft_one] using hsum.ne
         | some m => simp [hpt, hb.ne']
+
+/-- **The vertices of the standard simplex.** For `a > 0`, the vertices are `0` and the points
+`a e_k*`, where `e_k*` is the `k`-th coordinate functional. -/
+theorem mem_extremePoints_facetPolyhedron_simplex_iff {a : ℝ} (ha : 0 < a)
+    {x : StrongDual ℝ (κ → ℝ)} :
+    x ∈ (facetPolyhedron ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ)
+        (simplexSupport a)).extremePoints ℝ ↔
+      x = 0 ∨ ∃ k, x = a • ContinuousLinearMap.proj k := by
+  constructor
+  · -- The inactive constraint determines the vertex.
+    intro hx
+    obtain ⟨o, ho⟩ := exists_activeSet_eq_compl_of_mem_extremePoints ha.ne' hx
+    have hzero {k : κ} (hk : some k ≠ o) : x (Pi.single k 1) = 0 :=
+      some_mem_activeSet_simplex_iff.1 (by rw [ho]; exact hk)
+    cases o with
+    | none => exact Or.inl (strongDual_ext fun k ↦ by simpa using hzero (Option.some_ne_none k))
+    | some p =>
+      -- All values but the `p`-th vanish, and the values sum to `a`.
+      have hsum := none_mem_activeSet_simplex_iff.1 (by rw [ho]; simp)
+      rw [Fintype.sum_eq_single p fun k hk ↦ hzero fun h ↦ hk (Option.some_injective _ h)] at hsum
+      refine Or.inr ⟨p, strongDual_ext fun k ↦ ?_⟩
+      by_cases hk : k = p
+      · subst hk
+        simpa using hsum
+      · simpa [Pi.single_apply, hk] using hzero fun h ↦ hk (Option.some_injective _ h)
+  · intro hx
+    have hmem : x ∈ facetPolyhedron ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ)
+        (simplexSupport a) := by
+      rw [mem_facetPolyhedron_simplex_iff]
+      rcases hx with rfl | ⟨p, rfl⟩
+      · simp [ha.le]
+      · refine ⟨fun k ↦ ?_, by simp [Pi.single_apply]⟩
+        simp only [Pi.single_apply, smul_apply, ContinuousLinearMap.proj_apply, smul_eq_mul]
+        split_ifs <;> simp [ha.le]
+    -- The active normals span: a functional vanishing on them vanishes on every `e_k`.
+    refine mem_extremePoints_facetPolyhedron_iff.2 ⟨hmem, fun w hw ↦ ?_⟩
+    rcases hx with rfl | ⟨p, rfl⟩
+    · exact strongDual_ext fun k ↦ by
+        simpa using hw (some k) (some_mem_activeSet_simplex_iff.2 (by simp))
+    · -- The active normals are the `e_k` with `k ≠ p` and `-1`.
+      have hk (k : κ) (hk : k ≠ p) : w (Pi.single k 1) = 0 := by
+        simpa using hw (some k) (some_mem_activeSet_simplex_iff.2 (by simp [hk]))
+      have hp : w (Pi.single p 1) = 0 := by
+        have hsum := hw none (none_mem_activeSet_simplex_iff.2 (by simp [Pi.single_apply]))
+        simpa [apply_compLeft_one, Fintype.sum_eq_single p hk] using hsum
+      refine strongDual_ext fun k ↦ ?_
+      by_cases hkp : k = p
+      · simpa [hkp] using hp
+      · simpa using hk k hkp
 
 end TauCeti.Toric
