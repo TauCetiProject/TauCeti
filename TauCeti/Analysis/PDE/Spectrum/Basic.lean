@@ -102,6 +102,8 @@ map.
   `TauCeti.PDE.le_of_isDirichletEigenvalue_laplacian_of_subset_ball`: the explicit lower bound
   on the Dirichlet spectrum of a domain inside a ball, and its `-Δ` case
   `1/(2(4R² + 1)) ≤ κ`.
+* `TauCeti.PDE.exists_isCoercive_laplacian_of_isBounded`: the energy form of `-Δ` is coercive on
+  `H¹₀(Ω)` for every bounded `Ω`, so the spectral theory above applies to it.
 
 ## References
 
@@ -217,6 +219,15 @@ def IsDirichletEigenvalue (mu : Measure (EuclideanSpace ℝ ι)) [mu.IsAddHaarMe
   ∃ u : W1p0 mu Omega 2, u ≠ 0 ∧ ∀ v : W1p0 mu Omega 2,
     energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
       kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ
+
+/-- Unfolding `TauCeti.PDE.IsDirichletEigenvalue`: a nonzero `u ∈ H¹₀(Ω)` with
+`a(u, v) = κ ⟪u, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`. -/
+theorem isDirichletEigenvalue_iff (kappa : ℝ) :
+    IsDirichletEigenvalue mu Omega a b c kappa ↔
+      ∃ u : W1p0 mu Omega 2, u ≠ 0 ∧ ∀ v : W1p0 mu Omega 2,
+        energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
+          kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ :=
+  Iff.rfl
 
 /-- Being a Dirichlet eigenvalue, written out as the integral identity
 `a(u, v) = κ ∫_Ω u v`. -/
@@ -670,6 +681,30 @@ theorem le_of_isDirichletEigenvalue_laplacian_of_subset_ball
     aestronglyMeasurable_const (beta := 0) (fun _ _ ↦ by simp) (gamma := 0) (fun _ _ ↦ by simp)
     (fun _ _ ↦ le_rfl) hball (by simp) hkappa
   simpa using key
+
+/-- **The energy form of `-Δ` is coercive on a bounded domain.** On a bounded open
+`Ω ⊆ ℝ^{n+1}` the coefficients of `-Δ` satisfy the integrability condition of the energy form, and
+the form is coercive on `H¹₀(Ω)` by the Poincaré inequality on a ball containing `Ω`. -/
+theorem exists_isCoercive_laplacian_of_isBounded
+    (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :
+    ∃ hcoeff : MemLp (fun x ↦ energyIntegrand
+        ((fun _ ↦ (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ)) x)
+        ((0 : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) x)
+        ((0 : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x)) ⊤
+        (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))),
+      IsCoercive (energyFormH1L0 hcoeff) := by
+  have h1 := uniformlyEllipticOn_const_one_one (n := Fin (n + 1))
+    (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))
+  have hcoeff := memLp_energyIntegrand_of_bounds (mu := volume) (b := 0) (c := 0) (beta := 0)
+    (gamma := 0) h1.upper_nonneg
+    aestronglyMeasurable_const aestronglyMeasurable_const aestronglyMeasurable_const
+    (fun _x hx eta xi ↦ h1.upper_bound hx eta xi) (fun _ _ ↦ by simp) (fun _ _ ↦ by simp)
+  obtain ⟨R, hR, hball⟩ := hOmega.subset_ball_lt 0 0
+  exact ⟨hcoeff, isCoercive_energyFormH1L0 hcoeff
+    (energyFormH1_poincare_constant_pos h1.pos le_rfl (by linarith) (by simp))
+    fun w ↦ UniformlyEllipticOn.mul_norm_sq_le_energyFormH1_self_of_subset_ball h1
+      aestronglyMeasurable_const aestronglyMeasurable_const aestronglyMeasurable_const
+      (fun _ _ ↦ by simp) (gamma := 0) (fun _ _ ↦ by simp) (fun _ _ ↦ le_rfl) hball w.2⟩
 
 /-- **Every Dirichlet eigenvalue of `-Δ` is positive** on a domain inside a ball. -/
 theorem pos_of_isDirichletEigenvalue_laplacian_of_subset_ball
