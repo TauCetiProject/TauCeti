@@ -48,9 +48,9 @@ sheaves on `Spec R`.
   pseudo-coherent.
 * `AlgebraicGeometry.Scheme.Modules.isPseudoCoherent_tilde`: the sheaf `M~` on `Spec R`
   associated with a pseudo-coherent `R`-module `M` is pseudo-coherent.
-* `AlgebraicGeometry.Scheme.Modules.hasFiniteFreeResolution_of_isAffine`: a quasi-coherent
-  module on an affine scheme has a global finite free resolution if its global sections are
-  pseudo-coherent.
+* `AlgebraicGeometry.Scheme.Modules.hasFiniteFreeResolution_of_isPseudoCoherentOver_moduleSpecΓ`:
+  a quasi-coherent module on an affine scheme has a global finite free resolution if its global
+  sections are pseudo-coherent.
 
 ## References
 
@@ -237,7 +237,7 @@ end Tilde
 
 /-- A quasi-coherent module on an affine scheme has a global finite free resolution if its
 module of global sections, viewed on the canonical spectrum, is pseudo-coherent. -/
-theorem hasFiniteFreeResolution_of_isAffine [IsAffine X] (F : X.Modules)
+theorem hasFiniteFreeResolution_of_isPseudoCoherentOver_moduleSpecΓ [IsAffine X] (F : X.Modules)
     [F.IsQuasicoherent]
     (h : TauCeti.Huber.IsPseudoCoherentOver Γ(X, ⊤)
       (moduleSpecΓFunctor.obj (F.restrict X.isoSpec.inv)) ⊤) :

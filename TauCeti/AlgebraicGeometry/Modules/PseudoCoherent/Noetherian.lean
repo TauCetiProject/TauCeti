@@ -54,7 +54,7 @@ theorem hasFiniteFreeResolution_of_isAffine_of_isLocallyNoetherian [IsAffine X] 
   have : IsNoetherianRing Γ(X, ⊤) :=
     IsLocallyNoetherian.component_noetherian ⟨⊤, isAffineOpen_top X⟩
   have : Module.Finite Γ(X, ⊤) (moduleSpecΓFunctor.obj N) := N.finite_moduleSpecΓ
-  exact hasFiniteFreeResolution_of_isAffine F
+  exact hasFiniteFreeResolution_of_isPseudoCoherentOver_moduleSpecΓ F
     TauCeti.Huber.IsPseudoCoherentOver.of_isNoetherianRing
 
 /-- On a locally Noetherian scheme, every quasi-coherent module of finite type is

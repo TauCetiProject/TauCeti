@@ -78,8 +78,8 @@ namespace AlgebraicGeometry.Scheme.Modules
 
 open CategoryTheory Limits
 
-/-- Restriction along an isomorphism and then back along its inverse is naturally isomorphic
-to the identity. -/
+/-- Restricting along `e.inv` and then along `e.hom` is naturally isomorphic to the identity
+of `X.Modules`. -/
 noncomputable def restrictFunctorInvCompHomIso {X Y : Scheme.{u}} (e : X ≅ Y) :
     restrictFunctor e.inv ⋙ restrictFunctor e.hom ≅ 𝟭 X.Modules :=
   (restrictFunctorComp e.hom e.inv).symm ≪≫
