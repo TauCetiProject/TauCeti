@@ -58,6 +58,19 @@ structure IsFilteredPreBrownianReal (ℱ : Filtration ℝ≥0 mΩ) (W : ℝ≥0 
   /-- The increment `W t - W s` is independent of `ℱ s`. -/
   indep_sub ⦃s t : ℝ≥0⦄ : s ≤ t → Indep (.comap (W t - W s) inferInstance) (ℱ s) P
 
+namespace IsFilteredPreBrownianReal
+
+variable {P : Measure Ω} {ℱ : Filtration ℝ≥0 mΩ} {B : ℝ≥0 → Ω → ℝ}
+
+/-- A Brownian increment is independent of every measurable real coefficient known at its
+left endpoint. -/
+theorem indepFun_sub (hB : IsFilteredPreBrownianReal ℱ B P) {s t : ℝ≥0} (hst : s ≤ t)
+    {X : Ω → ℝ} (hX : Measurable[ℱ s] X) : IndepFun (B t - B s) X P :=
+  (IndepFun_iff_Indep _ _ _).mpr
+    (indep_of_indep_of_le_right (hB.indep_sub hst) hX.comap_le)
+
+end IsFilteredPreBrownianReal
+
 end TauCeti.Probability
 
 namespace ProbabilityTheory.IsPreBrownianReal
