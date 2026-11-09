@@ -12,6 +12,7 @@ public import Mathlib.GroupTheory.Subgroup.Center
 public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
 public import TauCeti.Algebra.GroupAction.Trivial
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Basic
+public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Differential
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -76,6 +77,9 @@ boundary of total sum zero, and every grading of a diagram lies in it
 * `TauCeti.StrandDiagram.grading_mem_gPrime`: every grading of a diagram lies in `G'(n)`.
 * `TauCeti.StrandDiagram.grading_eq_lambda_zpow_mul`: diagrams with the same ends differ in
   grading by a power of `λ`.
+* `TauCeti.StrandDiagram.grading_resolve`, `TauCeti.StrandsAlgebra.differential_mem_gradedPart`:
+  every term of the differential of `φ` has grading `λ⁻¹ gr(φ)`, so the differential maps the part
+  of grading `g` to the part of grading `λ⁻¹ g`.
 * `TauCeti.StrandsAlgebra.mul_mem_gradedPart`, `TauCeti.StrandsAlgebra.one_mem_gradedPart`,
   `TauCeti.StrandsAlgebra.iSup_gradedPart`: the graded parts multiply according to the group law,
   contain the unit in degree `1`, and span the algebra; a strand diagram lies in the part of its
@@ -600,6 +604,43 @@ theorem iSupIndep_gradedPart : iSupIndep (gradedPart R : StrandGradingGroup α �
 theorem isInternal_gradedPart {R : Type*} [CommRing R] [DecidableEq (StrandGradingGroup α)] :
     DirectSum.IsInternal (gradedPart R : StrandGradingGroup α → Submodule R (StrandsAlgebra R α)) :=
   DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top iSupIndep_gradedPart iSup_gradedPart
+
+end StrandsAlgebra
+
+/-! ### The differential has degree `λ⁻¹` -/
+
+namespace StrandDiagram
+
+open StrandGradingGroup
+
+variable {α : Type*} [LinearOrder α] [Fintype α]
+
+/-- **The differential has degree `λ⁻¹`**: resolving a crossing of `φ` that lowers the number of
+crossings by one gives a diagram of grading `λ⁻¹ gr(φ)`. -/
+theorem grading_resolve {φ : StrandDiagram α} {p : α × α} (h : p ∈ φ.resolvableInversions) :
+    (φ.resolve p).grading = lambda⁻¹ * φ.grading := by
+  rw [grading_eq_lambda_zpow_mul (source_resolve φ p) (target_resolve φ p),
+    ← (mem_resolvableInversions.1 h).2]
+  push_cast
+  rw [sub_add_cancel_left, zpow_neg_one]
+
+end StrandDiagram
+
+namespace StrandsAlgebra
+
+open StrandDiagram StrandGradingGroup
+
+variable {R α : Type*} [CommSemiring R] [LinearOrder α] [Fintype α]
+
+/-- **The differential has degree `λ⁻¹`**: it maps the part of grading `g` to the part of grading
+`λ⁻¹ g`. -/
+theorem differential_mem_gradedPart {x : StrandsAlgebra R α} {g : StrandGradingGroup α}
+    (hx : x ∈ gradedPart R g) : differential R α x ∈ gradedPart R (lambda⁻¹ * g) := by
+  rw [gradedPart_eq_span] at hx
+  refine (Submodule.span_le (p := (gradedPart R _).comap (differential R α))).2 ?_ hx
+  rintro _ ⟨φ, rfl, rfl⟩
+  rw [SetLike.mem_coe, Submodule.mem_comap, differential_of]
+  exact Submodule.sum_mem _ fun p hp ↦ grading_resolve hp ▸ of_mem_gradedPart _
 
 end StrandsAlgebra
 

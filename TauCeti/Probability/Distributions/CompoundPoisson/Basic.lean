@@ -22,8 +22,8 @@ independent jumps with law `μ`.
 
 The core API records the Poisson mixture formula and the two degenerate cases: rate zero and jumps
 concentrated at zero. These facts are the measure-theoretic foundation for later moment and
-transform calculations. The real-valued measurable-set series converges absolutely and gives
-singleton masses and a lower bound for the atom at zero.
+transform calculations. The real-valued series for the mass of any set converges absolutely and
+gives singleton masses and a lower bound for the atom at zero.
 
 The main results are that compound Poisson laws with a common jump law convolve by adding their
 rates, and that on a second-countable real inner product space with its Borel σ-algebra the
@@ -99,38 +99,36 @@ instance sfinite_compoundPoissonMeasure (r : ℝ≥0) (μ : Measure α) [SFinite
 
 /-- Integration against a compound Poisson law is the Poisson average of integration against its
 convolution powers. -/
-theorem lintegral_compoundPoissonMeasure (r : ℝ≥0) (μ : Measure α) (f : α → ℝ≥0∞)
-    (hf : Measurable f) :
+theorem lintegral_compoundPoissonMeasure (r : ℝ≥0) (μ : Measure α) (f : α → ℝ≥0∞) :
     ∫⁻ x, f x ∂compoundPoissonMeasure r μ =
       ∫⁻ n, ∫⁻ x, f x ∂μ.convolutionPower n ∂poissonMeasure r := by
-  rw [compoundPoissonMeasure_def]
-  exact Measure.lintegral_bind Measurable.of_discrete.aemeasurable
-    hf.aemeasurable
+  rw [compoundPoissonMeasure_eq_sum, poissonMeasure, lintegral_sum_measure,
+    lintegral_sum_measure]
+  simp_rw [lintegral_smul_measure, lintegral_dirac]
 
-/-- The mass assigned by a compound Poisson law to a measurable set is the Poisson average of
-the masses assigned by its convolution powers. -/
-theorem compoundPoissonMeasure_apply (r : ℝ≥0) (μ : Measure α) {s : Set α}
-    (hs : MeasurableSet s) :
-    compoundPoissonMeasure r μ s =
-      ∫⁻ n, μ.convolutionPower n s ∂poissonMeasure r := by
-  rw [compoundPoissonMeasure_def, Measure.bind_apply hs Measurable.of_discrete.aemeasurable]
-
-/-- The measurable-set formula for a compound Poisson law as a Poisson-weighted series. -/
-theorem compoundPoissonMeasure_apply_eq_tsum (r : ℝ≥0) (μ : Measure α) {s : Set α}
-    (hs : MeasurableSet s) :
+/-- The formula for the mass of a set under a compound Poisson law as a Poisson-weighted series. -/
+theorem compoundPoissonMeasure_apply_eq_tsum (r : ℝ≥0) (μ : Measure α) (s : Set α) :
     compoundPoissonMeasure r μ s =
       ∑' n, ENNReal.ofReal (exp (-r) * r ^ n / n !) * μ.convolutionPower n s := by
-  rw [compoundPoissonMeasure_eq_sum, Measure.sum_apply _ hs]
+  rw [compoundPoissonMeasure_eq_sum, Measure.sum_apply_of_countable]
   simp_rw [_root_.smul_apply, smul_eq_mul]
 
+/-- The mass assigned by a compound Poisson law to a set is the Poisson average of
+the masses assigned by its convolution powers. -/
+theorem compoundPoissonMeasure_apply (r : ℝ≥0) (μ : Measure α) (s : Set α) :
+    compoundPoissonMeasure r μ s =
+      ∫⁻ n, μ.convolutionPower n s ∂poissonMeasure r := by
+  rw [compoundPoissonMeasure_apply_eq_tsum, poissonMeasure, lintegral_sum_measure]
+  simp_rw [lintegral_smul_measure, lintegral_dirac, smul_eq_mul]
+
 /-- The Poisson-weighted series of convolution-power probabilities converges to the compound
-probability of every measurable set. Its nonnegative terms also give absolute convergence. -/
+probability of every set. Its nonnegative terms also give absolute convergence. -/
 theorem hasSum_compoundPoissonMeasure_real_apply (r : ℝ≥0) (μ : Measure α)
-    [IsProbabilityMeasure μ] {s : Set α} (hs : MeasurableSet s) :
+    [IsProbabilityMeasure μ] (s : Set α) :
     HasSum (fun n : ℕ => (exp (-(r : ℝ)) * (r : ℝ) ^ n / n !) *
       (μ.convolutionPower n).real s) ((compoundPoissonMeasure r μ).real s) := by
   have hsum := (CompleteLattice.summable.hasSum_iff.mpr
-    (compoundPoissonMeasure_apply_eq_tsum r μ hs).symm).toReal (measure_ne_top _ _)
+    (compoundPoissonMeasure_apply_eq_tsum r μ s).symm).toReal (measure_ne_top _ _)
   rw [← measureReal_def] at hsum
   convert hsum using 1
   funext n
@@ -138,19 +136,19 @@ theorem hasSum_compoundPoissonMeasure_real_apply (r : ℝ≥0) (μ : Measure α)
 
 /-- Native singleton masses are the absolutely convergent Poisson-weighted series of the
 singleton masses of the convolution powers. This applies in particular to `ℕ` and `ℤ` jumps. -/
-theorem compoundPoissonMeasure_real_singleton [MeasurableSingletonClass α]
+theorem compoundPoissonMeasure_real_singleton
     (r : ℝ≥0) (μ : Measure α) [IsProbabilityMeasure μ] (k : α) :
     (compoundPoissonMeasure r μ).real {k} =
       ∑' n : ℕ, (exp (-(r : ℝ)) * (r : ℝ) ^ n / n !) *
         (μ.convolutionPower n).real {k} :=
-  (hasSum_compoundPoissonMeasure_real_apply r μ (measurableSet_singleton k)).tsum_eq.symm
+  (hasSum_compoundPoissonMeasure_real_apply r μ {k}).tsum_eq.symm
 
 /-- The probability of no jumps gives a lower bound for the atom at zero. Nonempty sums can
 also vanish, so equality need not hold for a general jump law. -/
-theorem exp_neg_le_compoundPoissonMeasure_real_singleton_zero [MeasurableSingletonClass α]
+theorem exp_neg_le_compoundPoissonMeasure_real_singleton_zero
     (r : ℝ≥0) (μ : Measure α) [IsProbabilityMeasure μ] :
     exp (-(r : ℝ)) ≤ (compoundPoissonMeasure r μ).real {0} := by
-  have hsum := hasSum_compoundPoissonMeasure_real_apply r μ (measurableSet_singleton 0)
+  have hsum := hasSum_compoundPoissonMeasure_real_apply r μ {0}
   rw [← hsum.tsum_eq]
   simpa using hsum.summable.le_tsum 0 (fun _ _ => by positivity)
 
@@ -160,7 +158,7 @@ theorem measurable_compoundPoissonMeasure_probability [MeasurableAdd₂ α] :
     Measurable fun p : ℝ≥0 × ProbabilityMeasure α =>
       compoundPoissonMeasure p.1 (p.2 : Measure α) := by
   refine Measure.measurable_measure.2 fun s hs => ?_
-  simp_rw [compoundPoissonMeasure_apply_eq_tsum _ _ hs]
+  simp_rw [compoundPoissonMeasure_apply_eq_tsum _ _ s]
   refine Measurable.tsum fun n => ?_
   exact (ENNReal.measurable_ofReal.comp (by fun_prop)).mul
     ((Measure.measurable_coe hs).comp
