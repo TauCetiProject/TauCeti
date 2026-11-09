@@ -36,6 +36,7 @@ complex structure transport API.
 public section
 
 /-- The additive identification for scalar restriction preserves the Lie bracket. -/
+@[simp]
 theorem RestrictScalars.addEquiv_lie {R A L : Type*} [LieRing L]
     (x y : RestrictScalars R A L) :
     RestrictScalars.addEquiv R A L ⁅x, y⁆ =

@@ -279,6 +279,7 @@ def restrictScalarsSelfLinearEquiv (x : M) :
       algebraMap_smul, map_smul]
 
 /-- Native self-model scalar restriction preserves preferred tangent coordinates. -/
+@[simp]
 theorem restrictScalarsSelfLinearEquiv_apply (x : M)
     (v : RestrictScalars R A (TangentSpace 𝓘(A, E) x)) :
     restrictScalarsSelfLinearEquiv R x v = (tangentSpaceCastModel 𝓘(R, E) x).symm
@@ -286,6 +287,7 @@ theorem restrictScalarsSelfLinearEquiv_apply (x : M)
   rfl
 
 /-- The inverse native self-model comparison preserves preferred tangent coordinates. -/
+@[simp]
 theorem restrictScalarsSelfLinearEquiv_symm_apply (x : M) (v : TangentSpace 𝓘(R, E) x) :
     (restrictScalarsSelfLinearEquiv R (A := A) x).symm v =
       (RestrictScalars.addEquiv R A _).symm

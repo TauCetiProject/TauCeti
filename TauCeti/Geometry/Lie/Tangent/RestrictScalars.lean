@@ -148,6 +148,7 @@ def realificationLieEquiv :
       simpa only [AddEquiv.symm_apply_apply] using h }
 
 /-- The real Lie equivalence is the public fibre equivalence at the identity. -/
+@[simp]
 theorem realificationLieEquiv_apply
     (x : RestrictScalars ℝ ℂ (GroupLieAlgebra 𝓘(ℂ, E) G)) :
     realificationLieEquiv (E := E) (G := G) x =
@@ -156,6 +157,7 @@ theorem realificationLieEquiv_apply
   exact TangentSpace.restrictScalarsSelfLinearEquiv_apply ℝ (1 : G) x
 
 /-- Inverse Lie-algebra realification is the inverse public fibre equivalence. -/
+@[simp]
 theorem realificationLieEquiv_symm_apply (x : GroupLieAlgebra 𝓘(ℝ, E) G) :
     (realificationLieEquiv (E := E) (G := G)).symm x =
       (RestrictScalars.addEquiv ℝ ℂ _).symm
