@@ -125,9 +125,7 @@ private theorem polarFactor_adjoint_comp_comp_piLpExtendByZero (hk : k ≤ n)
   rw [← ContinuousLinearMap.polarFactor_conj]
   congr 1
   ext1 w
-  simp [EuclideanSpace.adjoint_piLpExtendByZero_castLEEmb_apply,
-    ← EuclideanSpace.finCastLEEquiv_symm_fst_sumComplEquivProd,
-    EuclideanSpace.sumComplEquivProd_symm_finCastLEEquiv]
+  simp [← EuclideanSpace.finCastLEEquiv_symm_fst_sumComplEquivProd]
 
 /-- **The small negative discs of two Euclidean Morse charts are homotopic below the critical
 level.** Let `ψ₀` and `ψ₁` be charts with values in `ℝⁿ` and a common centre, in which

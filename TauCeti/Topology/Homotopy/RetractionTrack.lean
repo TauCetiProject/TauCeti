@@ -139,19 +139,19 @@ homotopic by `K` are homotopic through annuli whose outer boundaries lie in `B`:
 the retraction track of its inner circle, move that track along `K`, and undo the deformation
 for `γ₁`. On the inner circle the homotopy is `K` run at time `4t - 2`, clamped to `[0, 1]`. -/
 theorem exists_annulus_homotopy (R : (ContinuousMap.id X).HomotopyRel r B) (hr : ∀ x, r x ∈ B)
-    (β : C(I, I)) (hβ₀ : β 0 = 0) (hβ₁ : β 1 = 1) {γ₀ γ₁ : C(I × S, X)}
+    {γ₀ γ₁ : C(I × S, X)}
     (h₀ : ∀ s, γ₀ (1, s) ∈ B) (h₁ : ∀ s, γ₁ (1, s) ∈ B)
     (K : (⟨fun s ↦ γ₀ (0, s), by fun_prop⟩ : C(S, X)).Homotopy ⟨fun s ↦ γ₁ (0, s), by fun_prop⟩) :
     ∃ H : γ₀.Homotopy γ₁, (∀ t s, H (t, 1, s) ∈ B) ∧
       ∀ t s, H (t, 0, s) = K (projIcc 0 1 zero_le_one (4 * t - 2), s) := by
-  let A₀ := R.annulusToTrack hr γ₀ h₀ β hβ₀ hβ₁
-  let A₁ := R.annulusToTrack hr γ₁ h₁ β hβ₀ hβ₁
-  let T := R.toHomotopy.retractionTrackHomotopy β K
+  let A₀ := R.annulusToTrack hr γ₀ h₀ (ContinuousMap.id I) rfl rfl
+  let A₁ := R.annulusToTrack hr γ₁ h₁ (ContinuousMap.id I) rfl rfl
+  let T := R.toHomotopy.retractionTrackHomotopy (ContinuousMap.id I) K
   refine ⟨A₀.toHomotopy.trans (T.trans A₁.toHomotopy.symm), fun t s ↦ ?_, fun t s ↦ ?_⟩
   · simp only [Homotopy.trans_apply, Homotopy.symm_apply]
     split_ifs
     · exact (A₀.prop _).2 s
-    · exact R.toHomotopy.retractionTrackHomotopy_one_mem hr hβ₁ K _ s
+    · exact R.toHomotopy.retractionTrackHomotopy_one_mem hr rfl K _ s
     · exact (A₁.prop _).2 s
   · simp only [Homotopy.trans_apply, Homotopy.symm_apply]
     split_ifs with h h'
@@ -160,7 +160,7 @@ theorem exists_annulus_homotopy (R : (ContinuousMap.id X).HomotopyRel r B) (hr :
         projIcc_of_le_left _ (by linarith)
       rw [h0, K.apply_zero]
       rfl
-    · rw [Homotopy.retractionTrackHomotopy_apply, hβ₀, Homotopy.apply_zero, id_apply]
+    · rw [Homotopy.retractionTrackHomotopy_apply, id_apply, Homotopy.apply_zero, id_apply]
       congr 2
       refine Subtype.ext ?_
       dsimp only

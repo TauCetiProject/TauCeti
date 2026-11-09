@@ -37,7 +37,7 @@ circles of the discs of radius `d` of both cells `f = c - εd²`, and `R` deform
 the collar `d ≤ ‖w‖ ≤ 1`.
 
 * On the disc of radius `d`, the small negative discs of the two charts are joined by
-  `OpenPartialHomeomorph.exists_negativeDisc_homotopy_euclidean`, staying below `c - ‖w‖²`.
+  `OpenPartialHomeomorph.exists_negativeDisc_homotopy_euclidean`, staying below `c - ε‖w‖²`.
 * On the collar, the annuli of `χ₁` and `χ₀ ∘ h` are joined by
   `ContinuousMap.HomotopyRel.exists_annulus_homotopy`: the annulus of `χ₁` is deformed to the
   retraction track `(s, θ) ↦ R_s(χ₁(d θ))` of its inner circle, the track moves with the inner
@@ -193,10 +193,12 @@ private theorem exists_morseAnnulus_homotopy :
         dsimp only
         rw [hG1, map_smallDiscPoint, symm_smallDiscPoint ψ₀ hk hε.le, ContinuousMap.coe_mk,
           coe_morseAnnulusIsometryMap_zero] }
-  obtain ⟨H, hH1, hH0⟩ := R.exists_annulus_homotopy hr (ContinuousMap.id I) rfl rfl
+  have hKc (t : I) (θ : TopCat.diskBoundary.{u} k) : (Kc (t, θ) : M) =
+      G (t, smallDiscPoint ε d θ.down.1 (mem_sphere_zero_iff_norm.1 θ.down.2).le) := rfl
+  obtain ⟨H, hH1, hH0⟩ := R.exists_annulus_homotopy hr
     (apply_morseAnnulusIsometryMap_one_le ψ₁ hk hε.le hball₁ hf₁ _ d)
     (apply_morseAnnulusIsometryMap_one_le ψ₀ hk hε.le hball₀ hf₀ g d) Kc
-  exact ⟨H, hH1, fun t θ ↦ by rw [hH0]; rfl⟩
+  exact ⟨H, hH1, fun t θ ↦ by rw [hH0, hKc]⟩
 
 include hG0 hG1 hGf R hr in
 /-- Milnor's comparison of two characteristic maps, given its two ingredients: a homotopy `G` of
@@ -229,7 +231,7 @@ private theorem exists_homotopy_morseCharacteristicMap_of_negativeDisc (hd : 0 <
   have hseam (t : I) (θ : TopCat.diskBoundary.{u} k) :
       outer (t, 0, θ) = inner (t, TopCat.diskBoundaryInclusion k θ) := Subtype.ext <| by
     rw [houter, hH0, hinner]
-    congr 2
+    simp only [TopCat.coe_diskBoundaryInclusion_apply_down, τ, ContinuousMap.coe_mk]
   have hτ0 : τ 0 = 0 :=
     projIcc_of_le_left zero_le_one (by norm_num : 4 * ((0 : I) : ℝ) - 2 ≤ 0)
   have hτ1 : τ 1 = 1 :=

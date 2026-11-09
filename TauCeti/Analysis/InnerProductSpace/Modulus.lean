@@ -154,14 +154,17 @@ theorem modulus_zero : (0 : E →L[𝕜] F).modulus = 0 :=
 theorem modulus_neg (T : E →L[𝕜] F) : (-T).modulus = T.modulus :=
   (eq_modulus_iff.2 ⟨T.isPositive_modulus, by simp⟩).symm
 
-/-- The modulus is natural under conjugation by a linear isometric equivalence:
-`|e T e⁻¹| = e |T| e⁻¹`. -/
-theorem modulus_conj (e : E ≃ₗᵢ[𝕜] F) (T : E →L[𝕜] E) :
-    ((e : E →L[𝕜] F) ∘L T ∘L (e.symm : F →L[𝕜] E)).modulus =
-      (e : E →L[𝕜] F) ∘L T.modulus ∘L (e.symm : F →L[𝕜] E) := by
+/-- The modulus is natural under linear isometric equivalences of the source and target:
+`|e₁ T e₂⁻¹| = e₂ |T| e₂⁻¹`. In particular the modulus commutes with conjugation by a linear
+isometric equivalence. -/
+theorem modulus_conj {E' F' : Type*} [NormedAddCommGroup E'] [InnerProductSpace 𝕜 E']
+    [CompleteSpace E'] [NormedAddCommGroup F'] [InnerProductSpace 𝕜 F'] [CompleteSpace F']
+    (e₁ : F ≃ₗᵢ[𝕜] F') (e₂ : E ≃ₗᵢ[𝕜] E') (T : E →L[𝕜] F) :
+    ((e₁ : F →L[𝕜] F') ∘L T ∘L (e₂.symm : E' →L[𝕜] E)).modulus =
+      (e₂ : E →L[𝕜] E') ∘L T.modulus ∘L (e₂.symm : E' →L[𝕜] E) := by
   refine (eq_modulus_iff.2 ⟨?_, ?_⟩).symm
   · simpa only [LinearIsometryEquiv.adjoint_eq_symm] using
-      T.isPositive_modulus.conj_adjoint (e : E →L[𝕜] F)
+      T.isPositive_modulus.conj_adjoint (e₂ : E →L[𝕜] E')
   · rw [adjoint_comp, adjoint_comp, LinearIsometryEquiv.adjoint_eq_symm,
       LinearIsometryEquiv.adjoint_eq_symm, LinearIsometryEquiv.symm_symm]
     ext x
