@@ -93,7 +93,7 @@ variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module 
 the plane they span, the Hamiltonian `ω(A ·, ·) / 2` of `A` is `c (x² + y²) / 2`. -/
 theorem exists_apply_eq_one_apply_eq_neg_smul_apply_eq_smul {A : Module.End ℝ V} {v : V} {c : ℝ}
     (hAv : A (A v) = -(c ^ 2) • v) (hv : 0 < c * ω (A v) v) :
-    ∃ q p : V, ω q p = 1 ∧ A q = -c • p ∧ A p = c • q := by
+    ∃ q p : V, ω q p = 1 ∧ A q = -c • p ∧ A p = c • q ∧ ∃ μ : ℝ, 0 < μ ∧ q = μ • v := by
   set x := ω (A v) v
   have hc : c ≠ 0 := by rintro rfl; simp at hv
   have hx : x ≠ 0 := by rintro hx; simp [hx] at hv
@@ -101,7 +101,8 @@ theorem exists_apply_eq_one_apply_eq_neg_smul_apply_eq_smul {A : Module.End ℝ 
   have hμ : μ ^ 2 * x = c := by
     rw [Real.sq_sqrt (div_pos_iff.2 (mul_pos_iff.1 hv)).le]
     field_simp
-  refine ⟨μ • v, -(c⁻¹ * μ) • A v, ?_, ?_, ?_⟩
+  have hμ0 : 0 < μ := Real.sqrt_pos.2 (div_pos_iff.2 (mul_pos_iff.1 hv))
+  refine ⟨μ • v, -(c⁻¹ * μ) • A v, ?_, ?_, ?_, μ, hμ0, rfl⟩
   · have hvAv : ω v (A v) = -x := by rw [← ω.neg_eq]
     beta_reduce at hvAv ⊢
     simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, hvAv]
@@ -119,14 +120,15 @@ of `v` and the vector `q = ε⁻¹ A p` satisfy `ω(q, p) = 1`, `A q = 0` and `A
 plane they span, the Hamiltonian `ω(A ·, ·) / 2` of `A` is `ε y² / 2`. -/
 theorem exists_apply_eq_one_apply_eq_zero_apply_eq_smul {A : Module.End ℝ V} {v : V} {ε : ℝ}
     (hAv : A (A v) = 0) (hv : 0 < ε * ω (A v) v) :
-    ∃ q p : V, ω q p = 1 ∧ A q = 0 ∧ A p = ε • q := by
+    ∃ q p : V, ω q p = 1 ∧ A q = 0 ∧ A p = ε • q ∧ ∃ μ : ℝ, 0 < μ ∧ p = μ • v := by
   have hε : ε ≠ 0 := by rintro rfl; simp at hv
   have hx : ω (A v) v ≠ 0 := by rintro hx; simp [hx] at hv
   set μ := √(ε / ω (A v) v)
   have hμ : μ ^ 2 * ω (A v) v = ε := by
     rw [Real.sq_sqrt (div_pos_iff.2 (mul_pos_iff.1 hv)).le]
     field_simp
-  refine ⟨(ε⁻¹ * μ) • A v, μ • v, ?_, ?_, ?_⟩
+  have hμ0 : 0 < μ := Real.sqrt_pos.2 (div_pos_iff.2 (mul_pos_iff.1 hv))
+  refine ⟨(ε⁻¹ * μ) • A v, μ • v, ?_, ?_, ?_, μ, hμ0, rfl⟩
   · beta_reduce at hμ ⊢
     simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
     field_simp
@@ -342,9 +344,9 @@ theorem exists_isSymplectomorphism_forall_apply_eq_iff (hV : finrank ℝ V = 2)
     have hc0 : c ≠ 0 := by rintro rfl; simp at hcv
     obtain ⟨w, hcw⟩ := hsign c hc0 ⟨v, hcv⟩
     have hκc : κ = -(c ^ 2) := by linarith
-    obtain ⟨q, p, hqp, hAq, hAp⟩ :=
+    obtain ⟨q, p, hqp, hAq, hAp, -⟩ :=
       exists_apply_eq_one_apply_eq_neg_smul_apply_eq_smul (by rw [hAAv, hκc]) hcv
-    obtain ⟨q', p', hqp', hBq, hBp⟩ :=
+    obtain ⟨q', p', hqp', hBq, hBp, -⟩ :=
       exists_apply_eq_one_apply_eq_neg_smul_apply_eq_smul (by rw [hBBw, hκc]) hcw
     exact exists_isSymplectomorphism_forall_apply_eq_of_pair hV hW hqp hqp'
       (x₁ := 0) (y₁ := -c) (x₂ := c) (y₂ := 0) (by simp [hAq]) (by simp [hAp]) (by simp [hBq])
@@ -374,9 +376,9 @@ theorem exists_isSymplectomorphism_forall_apply_eq_iff (hV : finrank ℝ V = 2)
       obtain ⟨ε, -, hεv⟩ := hchoose 1 one_pos _ (apply_ne_zero_of_mul_self_eq_zero hV hAA hv)
       have hε0 : ε ≠ 0 := by rintro rfl; simp at hεv
       obtain ⟨w, hεw⟩ := hsign ε hε0 ⟨v, hεv⟩
-      obtain ⟨q, p, hqp, hAq, hAp⟩ :=
+      obtain ⟨q, p, hqp, hAq, hAp, -⟩ :=
         exists_apply_eq_one_apply_eq_zero_apply_eq_smul (by simpa using hAAv v) hεv
-      obtain ⟨q', p', hqp', hBq, hBp⟩ :=
+      obtain ⟨q', p', hqp', hBq, hBp, -⟩ :=
         exists_apply_eq_one_apply_eq_zero_apply_eq_smul (by simpa using hBBw w) hεw
       exact exists_isSymplectomorphism_forall_apply_eq_of_pair hV hW hqp hqp'
         (x₁ := 0) (y₁ := 0) (x₂ := ε) (y₂ := 0) (by simp [hAq]) (by simp [hAp])
