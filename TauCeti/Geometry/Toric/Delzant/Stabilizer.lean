@@ -102,6 +102,7 @@ def faceSubtorus (p : ℝ) (s : Set ι) : AddSubgroup (V ⧸ (p • i).range) :=
 
 /-- A class lies in the face subtorus of `s` exactly when it is the class of a vector in the span
 of the normals `i (u j)`, `j ∈ s`. -/
+@[simp]
 theorem mem_faceSubtorus {p : ℝ} {s : Set ι} {q : V ⧸ (p • i).range} :
     q ∈ faceSubtorus i u p s ↔
       ∃ v ∈ Submodule.span ℝ ((fun j ↦ i (u j)) '' s), (v : V ⧸ (p • i).range) = q := by

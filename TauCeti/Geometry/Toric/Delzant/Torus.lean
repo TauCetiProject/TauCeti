@@ -186,16 +186,6 @@ theorem isConnected_ker_facetTorusHom
   exact ((Submodule.convex _).isConnected ⟨0, Submodule.zero_mem _⟩).image _
     (continuous_pi fun j ↦ (AddCircle.continuous_mk' p).comp (continuous_apply j)).continuousOn
 
-/-- If the normals generate the lattice and the lattice spans `V`, the homomorphism
-`(ℝ / pℤ)^ι → V / p i(N)` is surjective. -/
-theorem surjective_facetTorusHom (hi : Submodule.span ℝ (Set.range i) = ⊤)
-    (hu : Function.Surjective (Fintype.linearCombination ℤ u)) :
-    Function.Surjective (facetTorusHom i u p) := by
-  intro q
-  obtain ⟨v, rfl⟩ := QuotientAddGroup.mk_surjective q
-  obtain ⟨t, rfl⟩ := surjective_linearCombination_real hi hu v
-  exact ⟨_, facetTorusHom_coe i u p t⟩
-
 /-- If the normals generate the lattice and the lattice spans `V`, every element of
 `V / p i(N)` is the class `facetTorusHom [θ]` of some real angles `θ`. -/
 theorem exists_facetTorusHom_eq (hi : Submodule.span ℝ (Set.range i) = ⊤)
@@ -204,6 +194,13 @@ theorem exists_facetTorusHom_eq (hi : Submodule.span ℝ (Set.range i) = ⊤)
   obtain ⟨v, rfl⟩ := QuotientAddGroup.mk_surjective q
   obtain ⟨t, rfl⟩ := surjective_linearCombination_real hi hu v
   exact ⟨t, facetTorusHom_coe i u p t⟩
+
+/-- If the normals generate the lattice and the lattice spans `V`, the homomorphism
+`(ℝ / pℤ)^ι → V / p i(N)` is surjective. -/
+theorem surjective_facetTorusHom (hi : Submodule.span ℝ (Set.range i) = ⊤)
+    (hu : Function.Surjective (Fintype.linearCombination ℤ u)) :
+    Function.Surjective (facetTorusHom i u p) :=
+  fun q ↦ let ⟨_, h⟩ := exists_facetTorusHom_eq hi hu q; ⟨_, h⟩
 
 /-- **The kernel torus meets a coordinate subtorus of a lattice basis trivially.** Suppose that
 the normals `u j` with `j ∈ s` form a basis of the integral lattice `N`. An element of the kernel

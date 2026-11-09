@@ -410,9 +410,12 @@ theorem weightRotation_neg_apply_eq_iff (θ t : ι → ℝ)
     (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
     weightRotation (-θ) x = weightRotation (-t) x ↔
       ∀ i, (x.1 i ≠ 0 ∨ x.2 i ≠ 0) → ((θ i - t i : ℝ) : AddCircle (2 * π)) = 0 := by
-  rw [show -θ = -t + -(θ - t) by abel, weightRotation_add, ContinuousLinearMap.comp_apply,
-    (weightRotation_injective _).eq_iff, weightRotation_neg_apply_eq_self_iff]
-  rfl
+  -- Rotating by `-θ` is rotating by `-(θ - t)` and then by `-t`. Cancel the injective rotation
+  -- by `-t` and apply the fixed-point criterion to the angles `θ - t`.
+  have hθ : -θ = -t + -(θ - t) := by abel
+  rw [hθ, weightRotation_add, ContinuousLinearMap.comp_apply,
+    (weightRotation_injective (-t)).eq_iff, weightRotation_neg_apply_eq_self_iff]
+  simp only [Pi.sub_apply]
 
 /-- **Infinitesimal stabilizers in the weight model.** The generator of `θ` vanishes at `z` exactly
 when `θ_i = 0` for every coordinate `z_i = q_i + i p_i` that is nonzero. -/
