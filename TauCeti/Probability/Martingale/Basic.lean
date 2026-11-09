@@ -12,6 +12,11 @@ import Mathlib.MeasureTheory.Function.ConditionalExpectation.Real
 /-!
 # Martingale closure properties, division by a process, norms, and submartingale bounds
 
+`MeasureTheory.StronglyAdapted.martingale_iff_setIntegral_eq` characterizes martingales
+among adapted integrable processes by equality of set integrals at two dates. This is useful
+for transporting martingales between measures without comparing conditional-expectation
+representatives.
+
 Closure properties of martingales, including building blocks of the elementary stochastic
 integral:
 
@@ -49,6 +54,21 @@ open Filter
 open scoped ENNReal
 
 namespace MeasureTheory
+
+/-- An adapted integrable process is a martingale exactly when its integrals on every
+event known at an earlier date are unchanged between the two dates. -/
+theorem StronglyAdapted.martingale_iff_setIntegral_eq {Ω ι E : Type*}
+    {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [Preorder ι]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    {ℱ : Filtration ι mΩ} [SigmaFiniteFiltration μ ℱ] {X : ι → Ω → E}
+    (hX : StronglyAdapted ℱ X) (hint : ∀ t, Integrable (X t) μ) :
+    Martingale X ℱ μ ↔ ∀ s t, s ≤ t → ∀ A, MeasurableSet[ℱ s] A →
+      ∫ ω in A, X s ω ∂μ = ∫ ω in A, X t ω ∂μ := by
+  refine ⟨fun h s t hst A hA ↦ h.setIntegral_eq hst hA, fun h ↦ ⟨hX, ?_⟩⟩
+  intro s t hst
+  exact (ae_eq_condExp_of_forall_setIntegral_eq (ℱ.le s) (hint t)
+    (fun _ _ _ ↦ (hint s).integrableOn) (fun A hA _ ↦ h s t hst A hA)
+    (hX s).aestronglyMeasurable).symm
 
 section Div
 
