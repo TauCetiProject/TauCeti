@@ -50,8 +50,9 @@ energy. This gives, for every compactly supported `C¹` function `w`:
 * `TauCeti.Vortex.exists_integral_le_of_reducedFunctional_le`: on each sublevel set of `I`,
   `∫ ‖Dw‖²` and `∫ w²` are bounded, with a constant independent of `w`.
 
-These are the coercivity estimates of the direct method on `H¹(ℂ)`. The extension of `I` and of
-these estimates to `H¹(ℂ)`, the existence of a minimizer, and its regularity are not treated here.
+These are the coercivity estimates of the direct method on `H¹(ℂ)`. The extension of `I` to
+`H¹(ℂ)` and the existence of a minimizer are in `TauCeti.Analysis.PDE.Vortex.Minimizer`; the
+regularity of the minimizer is not treated here.
 
 ## References
 
@@ -89,6 +90,18 @@ theorem reducedFunctional_def (P : Polynomial ℂ) (w : ℂ → ℝ) :
         (∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z)) / 16 +
         ∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
           (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * w z := (rfl)
+
+/-- The coefficient `2 ‖P'‖² / (1 + ‖P‖²)² - (1 + ‖P‖²)⁻¹ / 8` of the linear term of Taubes's
+functional is square integrable when `P` has degree at least one. -/
+theorem memLp_reducedFunctional_coeff {P : Polynomial ℂ} (hm : 0 < P.natDegree) :
+    MemLp (fun z ↦ 2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
+      (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) 2 := by
+  have h1 := (P.memLp_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq).const_mul 2
+  have h2 := (Polynomial.memLp_inv_one_add_norm_eval_sq hm).const_mul (1 / 8 : ℝ)
+  convert h1.sub h2 using 1
+  funext z
+  simp only [Pi.sub_apply]
+  ring
 
 /-! ### Pointwise estimates -/
 
@@ -248,13 +261,7 @@ theorem exists_le_two_mul_reducedFunctional_add (hm : 0 < P.natDegree) :
   obtain ⟨γ, hγ, hsq⟩ := exists_sq_integral_sq_le hm
   set c : ℂ → ℝ := fun z ↦
     2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 - (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8
-  have hc : MemLp c 2 := by
-    have h1 := (P.memLp_norm_derivative_eval_sq_div_one_add_norm_eval_sq_sq).const_mul 2
-    have h2 := (Polynomial.memLp_inv_one_add_norm_eval_sq hm).const_mul (1 / 8 : ℝ)
-    convert h1.sub h2 using 1
-    funext z
-    simp only [c, Pi.sub_apply]
-    ring
+  have hc : MemLp c 2 := memLp_reducedFunctional_coeff hm
   set K := ∫ z, c z ^ 2
   set D := K ^ 2 * γ
   refine ⟨1 + 16 * D, fun w hw hws ↦ ?_⟩
