@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Basis
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Conjugate
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Elementary
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Weyl
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 import TauCeti.RingTheory.Nilpotent.ChevalleyCommutator
