@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap
 
+import TauCeti.Geometry.Manifold.MFDeriv.Curve
+
 /-!
 # Hamiltonian dynamics on reduced spaces
 
@@ -162,22 +164,21 @@ theorem isMIntegralCurve_comp_of_mpullback_eq (hX : σ.IsHamiltonianVectorField 
     (hf : ∀ t, MDifferentiableAt I 𝓘(ℝ) f (i (γ t)))
     (hF : ∀ t, MDifferentiableAt J 𝓘(ℝ) F (p (γ t))) :
     IsMIntegralCurve (p ∘ γ) (η.hamiltonianVectorField F) := fun t ↦ by
-  set Y : TangentSpace I₀ (γ t) := mfderiv 𝓘(ℝ) I₀ γ t 1
-  -- The velocity `Y` of `γ` is a lift of `X`, by uniqueness of the derivative of `i ∘ γ`.
-  have hY : mfderiv I₀ I i (γ t) Y = X (i (γ t)) := by
-    have h := (((hi (γ t)).mdifferentiableAt (by simp)).hasMFDerivAt.comp t
-      (hγ t).hasMFDerivAt).mfderiv.symm.trans (hiγ t).mfderiv
-    simpa using congr($h 1)
+  have hdi := (hi (γ t)).mdifferentiableAt (by simp)
+  have hdp := (hp (γ t)).mdifferentiableAt (by simp)
+  -- The velocity `Y` of `γ` is a lift of `X`, since `di Y` is the velocity of `i ∘ γ`.
+  have hY : mfderiv I₀ I i (γ t) (Manifold.curveVelocity I₀ γ t) = X (i (γ t)) := by
+    rw [← Manifold.curveVelocityWithin_univ, ← Manifold.curveVelocityWithin_map hdi
+      uniqueDiffWithinAt_univ (hγ t).mdifferentiableWithinAt]
+    exact Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt (hiγ t).hasMFDerivWithinAt
+      uniqueDiffWithinAt_univ
   have hpY := hη.mfderiv_eq_hamiltonianVectorField_of_mpullback_eq hi hp hpi hX hfF (hf t) (hF t)
     (hsurj t) hY
-  -- The derivative of `p ∘ γ` is determined by its value `dp Y` at `1`.
-  refine (((hp (γ t)).mdifferentiableAt (by simp)).hasMFDerivAt.comp t
-    (hγ t).hasMFDerivAt).congr_mfderiv (ContinuousLinearMap.ext_ring ?_)
-  have h₁ : η.hamiltonianVectorField F (p (γ t)) =
-      ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (η.hamiltonianVectorField F (p (γ t))) 1 := by
-    simp
-  -- Both sides are `dp Y` up to unfolding the composition and the type of tangent vectors at `t`.
-  exact hpY.trans h₁
+  -- So `p ∘ γ` has velocity `dp Y = X_F`.
+  have hvel := Manifold.curveVelocityWithin_map hdp uniqueDiffWithinAt_univ
+    (hγ t).mdifferentiableWithinAt
+  rw [Manifold.curveVelocityWithin_univ, Manifold.curveVelocityWithin_univ, hpY] at hvel
+  simpa [hvel] using Manifold.hasMFDerivAt_curveVelocity (hdp.comp t (hγ t))
 
 end IsNondegenerate
 
