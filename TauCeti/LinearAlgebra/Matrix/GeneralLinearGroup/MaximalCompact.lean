@@ -64,9 +64,9 @@ Iwasawa decomposition.
   the unitary subgroup is the unitary subgroup.
 * `Matrix.GeneralLinearGroup.exists_conj_smul_le_unitarySubgroup`: every compact subgroup is
   conjugate into the unitary subgroup.
-* `Matrix.GeneralLinearGroup.eq_one_of_mem_isCompact_subgroup_of_nonneg_spectrum`: an element
+* `Matrix.GeneralLinearGroup.eq_one_of_mem_isCompact_subgroup_of_spectrum_nonneg`: an element
   of a compact matrix subgroup whose complex spectrum is nonnegative real is the identity.
-* `Matrix.IsUpperTriangular.eq_one_of_mem_isCompact_subgroup_of_nonneg_diag`: a compact matrix
+* `Matrix.IsUpperTriangular.eq_one_of_mem_isCompact_subgroup_of_diag_nonneg`: a compact matrix
   subgroup meets the upper triangular matrices with nonnegative real diagonal only in the identity.
 * `Matrix.GeneralLinearGroup.maximal_isCompact_iff`: the maximal compact subgroups are exactly the
   conjugates of the unitary subgroup.
@@ -165,7 +165,7 @@ theorem exists_conj_smul_le_unitarySubgroup {K : Subgroup (GL ι 𝕜)}
 open scoped Matrix.Norms.L2Operator in
 /-- An element of a compact complex matrix subgroup with nonnegative real spectrum is the
 identity. The subgroup need not be unitary for the standard inner product. -/
-theorem eq_one_of_mem_isCompact_subgroup_of_nonneg_spectrum (g : GL ι ℂ)
+theorem eq_one_of_mem_isCompact_subgroup_of_spectrum_nonneg (g : GL ι ℂ)
     {K : Subgroup (GL ι ℂ)} (hK : IsCompact (K : Set (GL ι ℂ))) (hg : g ∈ K)
     (hnonneg : ∀ z ∈ spectrum ℂ (g : Matrix ι ι ℂ), 0 ≤ z) : g = 1 := by
   obtain ⟨c, hc⟩ := Matrix.GeneralLinearGroup.exists_conj_smul_le_unitarySubgroup hK
@@ -192,12 +192,12 @@ theorem eq_one_of_mem_isCompact_subgroup_of_nonneg_spectrum (g : GL ι ℂ)
 
 /-- An upper triangular element of a compact complex matrix subgroup whose diagonal entries
 are nonnegative real numbers is the identity. -/
-theorem _root_.Matrix.IsUpperTriangular.eq_one_of_mem_isCompact_subgroup_of_nonneg_diag
+theorem _root_.Matrix.IsUpperTriangular.eq_one_of_mem_isCompact_subgroup_of_diag_nonneg
     [LinearOrder ι]
     {g : GL ι ℂ} (htri : (g : Matrix ι ι ℂ).IsUpperTriangular)
     {K : Subgroup (GL ι ℂ)} (hK : IsCompact (K : Set (GL ι ℂ))) (hg : g ∈ K)
     (hdiag : ∀ i, 0 ≤ (g : Matrix ι ι ℂ) i i) : g = 1 := by
-  apply g.eq_one_of_mem_isCompact_subgroup_of_nonneg_spectrum hK hg
+  apply g.eq_one_of_mem_isCompact_subgroup_of_spectrum_nonneg hK hg
   intro z hz
   have hz' := (Matrix.mem_spectrum_iff_isRoot_charpoly.mp hz).eq_zero
   rw [Matrix.charpoly_of_isUpperTriangular _ htri, Polynomial.eval_prod] at hz'
