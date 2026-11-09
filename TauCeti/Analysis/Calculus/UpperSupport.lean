@@ -29,47 +29,57 @@ open scoped Topology NNReal
 
 namespace TauCeti
 
-/-- A touching upper support bounds the right slopes of the supported function. -/
+/-- A touching upper support with derivative `d` gives right slopes below any `r > d`
+arbitrarily close to `x` on the right. -/
 theorem frequently_slope_lt_of_upper_support {f g : ℝ → ℝ} {x d r : ℝ}
-    (hg : HasDerivAt g d x) (heq : g x = f x)
-    (hle : ∀ᶠ y in 𝓝 x, f y ≤ g y) (hdr : d < r) :
+    (hg : HasDerivWithinAt g d (Ici x) x) (heq : g x = f x)
+    (hle : ∀ᶠ y in 𝓝[>] x, f y ≤ g y) (hdr : d < r) :
     ∃ᶠ y in 𝓝[>] x, slope f x y < r := by
-  have hs := hg.hasDerivWithinAt.limsup_slope_le' (s := Ioi x) (lt_irrefl x) hdr
-  have hnear : ∀ᶠ y in 𝓝[>] x, f y ≤ g y := nhdsWithin_le_nhds hle
-  apply Filter.Eventually.frequently
-  filter_upwards [hs, hnear, self_mem_nhdsWithin] with y hys hy hxy
+  have hs := hg.liminf_right_slope_le hdr
+  apply hs.mp
+  filter_upwards [hle, self_mem_nhdsWithin] with y hy hxy hys
   apply lt_of_le_of_lt _ hys
   rw [slope_def_field, slope_def_field, heq]
   exact div_le_div_of_nonneg_right (sub_le_sub_right hy _) (sub_pos.mpr hxy).le
+
+/-- A differentiable comparison function bounds a function with touching upper supports. -/
+theorem image_le_of_upper_supports {f B B' : ℝ → ℝ} {a b : ℝ}
+    (hf : ContinuousOn f (Icc a b)) (hB : ContinuousOn B (Icc a b))
+    (hB' : ∀ x ∈ Ico a b, HasDerivWithinAt B (B' x) (Ici x) x)
+    (ha : f a ≤ B a)
+    (hsupport : ∀ x ∈ Ico a b, ∃ g : ℝ → ℝ, ∃ d : ℝ,
+      HasDerivWithinAt g d (Ici x) x ∧ g x = f x ∧
+        (∀ᶠ y in 𝓝[>] x, f y ≤ g y) ∧ d ≤ B' x) :
+    ∀ x ∈ Icc a b, f x ≤ B x := by
+  apply image_le_of_liminf_slope_right_le_deriv_boundary hf ha hB
+    hB'
+  intro x hx r hr
+  obtain ⟨g, d, hd, heq, hdom, hbound⟩ := hsupport x hx
+  exact frequently_slope_lt_of_upper_support hd heq hdom (hbound.trans_lt hr)
 
 /-- First-order upper supports with derivative at most `C` bound endpoint growth. -/
 theorem sub_le_mul_of_upper_supports {f : ℝ → ℝ} {a b C : ℝ}
     (hab : a ≤ b) (hf : ContinuousOn f (Icc a b))
     (hsupport : ∀ x ∈ Ico a b, ∃ g : ℝ → ℝ, ∃ d : ℝ,
-      HasDerivAt g d x ∧ g x = f x ∧
-        (∀ᶠ y in 𝓝 x, f y ≤ g y) ∧ d ≤ C) :
+      HasDerivWithinAt g d (Ici x) x ∧ g x = f x ∧
+        (∀ᶠ y in 𝓝[>] x, f y ≤ g y) ∧ d ≤ C) :
     f b - f a ≤ C * (b - a) := by
-  have hcomparison : ∀ x ∈ Icc a b, f x ≤ f a + C * (x - a) := by
-    apply image_le_of_liminf_slope_right_le_deriv_boundary hf
-      (B' := fun _ ↦ C)
-    · simp
-    · fun_prop
-    · intro x _
+  have hcomparison := image_le_of_upper_supports hf
+    (B := fun x ↦ f a + C * (x - a)) (B' := fun _ ↦ C) (by fun_prop)
+    (fun x _ ↦ by
       simpa only [mul_one, id_eq] using
-        ((((hasDerivAt_id x).sub_const a).const_mul C).const_add (f a)).hasDerivWithinAt
-    · intro x hx r hr
-      obtain ⟨g, d, hd, heq, hle, hC⟩ := hsupport x hx
-      exact frequently_slope_lt_of_upper_support hd heq hle (hC.trans_lt hr)
+        ((((hasDerivAt_id x).sub_const a).const_mul C).const_add (f a)).hasDerivWithinAt)
+    (by simp) hsupport
   exact sub_le_iff_le_add.mpr (by simpa only [add_comm] using hcomparison b ⟨hab, le_rfl⟩)
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- A bounded upper support at every point gives a one-sided segment estimate. -/
-theorem sub_le_norm_of_upper_supports {S : Set E} (hS : Convex ℝ S)
+theorem sub_le_mul_norm_sub_of_upper_supports {S : Set E} (hS : Convex ℝ S)
     {f : E → ℝ} (hf : ContinuousOn f S) {C : ℝ}
     (hsupport : ∀ z ∈ S, ∃ g : E → ℝ, ∃ L : E →L[ℝ] ℝ,
       HasFDerivAt g L z ∧ g z = f z ∧
-        (∀ᶠ w in 𝓝 z, f w ≤ g w) ∧ ‖L‖ ≤ C)
+        (∀ᶠ w in 𝓝[S] z, f w ≤ g w) ∧ ‖L‖ ≤ C)
     {x y : E} (hx : x ∈ S) (hy : y ∈ S) :
     f y - f x ≤ C * ‖y - x‖ := by
   let c : ℝ → E := AffineMap.lineMap x y
@@ -81,27 +91,28 @@ theorem sub_le_norm_of_upper_supports {S : Set E} (hS : Convex ℝ S)
       AffineMap.lineMap_apply_one, sub_zero, mul_one] using hseg
   obtain ⟨g, L, hL, heq, hdom, hbound⟩ := hsupport (c t) (hcS (Ico_subset_Icc_self ht))
   refine ⟨g ∘ c, L (y - x),
-    hL.comp_hasDerivAt t AffineMap.hasDerivAt_lineMap, heq,
-    hc.continuousAt hdom, ?_⟩
-  exact (le_abs_self _).trans ((L.le_opNorm _).trans
+    (hL.comp_hasDerivAt t AffineMap.hasDerivAt_lineMap).hasDerivWithinAt, heq, ?_, ?_⟩
+  · have hct : Tendsto c (𝓝[>] t) (𝓝[S] (c t)) := by
+      refine tendsto_nhdsWithin_iff.mpr ⟨hc.continuousAt.mono_left nhdsWithin_le_nhds, ?_⟩
+      filter_upwards [self_mem_nhdsWithin,
+        nhdsWithin_le_nhds (eventually_lt_nhds ht.2)] with u htu hu
+      exact hcS ⟨ht.1.trans htu.le, hu.le⟩
+    exact hct hdom
+  · exact (le_abs_self _).trans ((L.le_opNorm _).trans
     (mul_le_mul_of_nonneg_right hbound (norm_nonneg _)))
 
-/-- Uniformly bounded upper contact differentials imply Lipschitz continuity. -/
+/-- Uniformly bounded upper support differentials imply Lipschitz continuity. -/
 theorem lipschitzOnWith_of_upper_supports {S : Set E} (hS : Convex ℝ S)
     {f : E → ℝ} (hf : ContinuousOn f S) {C : ℝ≥0}
     (hsupport : ∀ z ∈ S, ∃ g : E → ℝ, ∃ L : E →L[ℝ] ℝ,
       HasFDerivAt g L z ∧ g z = f z ∧
-        (∀ᶠ w in 𝓝 z, f w ≤ g w) ∧ ‖L‖ ≤ C) :
+        (∀ᶠ w in 𝓝[S] z, f w ≤ g w) ∧ ‖L‖ ≤ C) :
     LipschitzOnWith C f S := by
-  apply LipschitzOnWith.of_dist_le_mul
+  apply LipschitzOnWith.of_le_add_mul C
   intro x hx y hy
-  rw [Real.dist_eq, dist_eq_norm]
-  apply abs_le.mpr
-  constructor
-  · have h := sub_le_norm_of_upper_supports hS hf hsupport hx hy
-    rw [norm_sub_rev] at h
-    linarith
-  · exact sub_le_norm_of_upper_supports hS hf hsupport hy hx
+  have h := sub_le_mul_norm_sub_of_upper_supports hS hf hsupport hy hx
+  rw [dist_eq_norm]
+  linarith
 
 end TauCeti
 
@@ -110,27 +121,12 @@ open scoped Topology
 
 namespace TauCeti
 
-/-- A differentiable comparison function bounds a function with touching upper supports. -/
-theorem image_le_of_upper_supports {f B B' : ℝ → ℝ} {a b : ℝ}
-    (hf : ContinuousOn f (Icc a b)) (hB : ContinuousOn B (Icc a b))
-    (hB' : ∀ x ∈ Ico a b, HasDerivAt B (B' x) x)
-    (ha : f a ≤ B a)
-    (hsupport : ∀ x ∈ Ico a b, ∃ g : ℝ → ℝ, ∃ d : ℝ,
-      HasDerivAt g d x ∧ g x = f x ∧
-        (∀ᶠ y in 𝓝 x, f y ≤ g y) ∧ d ≤ B' x) :
-    ∀ x ∈ Icc a b, f x ≤ B x := by
-  apply image_le_of_liminf_slope_right_le_deriv_boundary hf ha hB
-    (fun x hx ↦ (hB' x hx).hasDerivWithinAt)
-  intro x hx r hr
-  obtain ⟨g, d, hd, heq, hdom, hbound⟩ := hsupport x hx
-  exact frequently_slope_lt_of_upper_support hd heq hdom (hbound.trans_lt hr)
-
 /-- Continuous contact-derivative bounds can be integrated over an ordered interval. -/
 theorem sub_le_integral_of_upper_supports {f h : ℝ → ℝ} {a b : ℝ}
     (hab : a ≤ b) (hf : ContinuousOn f (Icc a b)) (hh : Continuous h)
     (hsupport : ∀ x ∈ Ico a b, ∃ g : ℝ → ℝ, ∃ d : ℝ,
-      HasDerivAt g d x ∧ g x = f x ∧
-        (∀ᶠ y in 𝓝 x, f y ≤ g y) ∧ d ≤ h x) :
+      HasDerivWithinAt g d (Ici x) x ∧ g x = f x ∧
+        (∀ᶠ y in 𝓝[>] x, f y ≤ g y) ∧ d ≤ h x) :
     f b - f a ≤ ∫ x in a..b, h x := by
   let B : ℝ → ℝ := fun t ↦ f a + ∫ x in a..t, h x
   have hB : ∀ t, HasDerivAt B (h t) t := fun t ↦
@@ -138,7 +134,8 @@ theorem sub_le_integral_of_upper_supports {f h : ℝ → ℝ} {a b : ℝ}
       hh.aestronglyMeasurable.stronglyMeasurableAtFilter hh.continuousAt).const_add _
   have hBa : f a ≤ B a := by simp [B]
   have hcomp := image_le_of_upper_supports hf
-    (fun t _ ↦ (hB t).continuousAt.continuousWithinAt) (fun t _ ↦ hB t) hBa hsupport
+    (fun t _ ↦ (hB t).continuousAt.continuousWithinAt)
+    (fun t _ ↦ (hB t).hasDerivWithinAt) hBa hsupport
       b ⟨hab, le_rfl⟩
   exact sub_le_iff_le_add.mpr (by simpa only [B, add_comm] using hcomp)
 
