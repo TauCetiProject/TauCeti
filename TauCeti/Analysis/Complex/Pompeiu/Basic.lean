@@ -8,11 +8,13 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Convolution
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
+import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.SpecialFunctions.PolarCoord
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.Complex.CauchyKernel
 
@@ -47,11 +49,17 @@ along each ray.
 
 The normalized `TauCeti.cauchyTransform f w = π⁻¹ ∫ z, (w - z)⁻¹ • f z` inverts
 `bar∂` itself. Its basic integral and convolution formulas, almost-everywhere congruence, and
-compact-support left and right inverse identities are available in this module.
+compact-support left and right inverse identities are available in this module. For merely
+integrable `f` it is holomorphic off the closed support `tsupport f`, with complex derivative
+`-π⁻¹ ∫ ((w - z)²)⁻¹ • f z`.
 
 ## Main results
 
 * `TauCeti.cauchyTransform` and `TauCeti.cauchyTransform_apply`: the normalized integral.
+* `TauCeti.hasDerivAt_cauchyTransform_of_notMem_tsupport`,
+  `TauCeti.differentiableOn_cauchyTransform_compl_tsupport` and
+  `TauCeti.wirtingerDeriv_cauchyTransform_apply_one_of_notMem_tsupport`: the Cauchy transform of
+  integrable data is holomorphic off its closed support.
 * `HasCompactSupport.conjWirtingerDeriv_cauchyTransform` and
   `HasCompactSupport.cauchyTransform_conjWirtingerDeriv`: normalized right and left inverses.
 * `HasCompactSupport.two_pi_inv_smul_integral_sub_inv_smul_fderiv_apply_one_add_I_smul_apply_I`:
@@ -125,6 +133,60 @@ theorem cauchyTransform_congr_ae {f g : ℂ → F} (hfg : f =ᵐ[volume] g) :
 theorem cauchyTransform_zero : cauchyTransform (0 : ℂ → F) = 0 := by
   ext w
   simp only [cauchyTransform_apply, Pi.zero_apply, smul_zero, integral_zero]
+
+/-- **Holomorphy off the support.** At every point outside the closed support of integrable data,
+the Cauchy transform has complex derivative `-π⁻¹ ∫ ((w - z)²)⁻¹ • f z`. -/
+theorem hasDerivAt_cauchyTransform_of_notMem_tsupport {f : ℂ → F} {w : ℂ} (hf : Integrable f)
+    (hw : w ∉ tsupport f) :
+    HasDerivAt (cauchyTransform f) (-((Real.pi : ℂ)⁻¹ • ∫ z, ((w - z) ^ 2)⁻¹ • f z)) w := by
+  obtain ⟨δ, hδ0, hδ⟩ := Metric.isOpen_iff.mp (isClosed_tsupport f).isOpen_compl w hw
+  set ε := δ / 2 with hε
+  have hε0 : 0 < ε := half_pos hδ0
+  -- On `ball w ε` every point is at distance at least `ε` from the support.
+  have hfar {w' z : ℂ} (hw' : w' ∈ ball w ε) (hz : z ∈ support f) : ε ≤ ‖w' - z‖ := by
+    have h1 : δ ≤ ‖w - z‖ :=
+      not_lt.mp fun h ↦ hδ (mem_ball_iff_norm'.mpr h) (subset_tsupport f hz)
+    have h2 := norm_sub_le_norm_sub_add_norm_sub w w' z
+    have h3 : ‖w - w'‖ < ε := by rw [← dist_eq_norm, dist_comm]; exact hw'
+    linarith
+  have hderiv := hasDerivAt_integral_of_dominated_loc_of_deriv_le (μ := volume)
+    (F := fun w' z ↦ (w' - z)⁻¹ • f z) (F' := fun w' z ↦ -((w' - z) ^ 2)⁻¹ • f z)
+    (bound := fun z ↦ (ε ^ 2)⁻¹ * ‖f z‖) (ball_mem_nhds w hε0)
+    (Eventually.of_forall fun w' ↦ (by fun_prop : Measurable fun z : ℂ ↦ (w' - z)⁻¹)
+      |>.aestronglyMeasurable.smul hf.1)
+    (hf.smul_of_support_subset subset_rfl (by fun_prop) (K := ε⁻¹) fun z hz ↦ by
+      rw [norm_inv]
+      exact inv_anti₀ hε0 (hfar (mem_ball_self hε0) hz))
+    ((by fun_prop : Measurable fun z : ℂ ↦ -((w - z) ^ 2)⁻¹).aestronglyMeasurable.smul hf.1)
+    (ae_of_all _ fun z w' hw' ↦ norm_smul_le_mul_norm_of_support_subset
+      (g := fun z ↦ -((w' - z) ^ 2)⁻¹) (K := (ε ^ 2)⁻¹) subset_rfl (fun z hz ↦ by
+      rw [norm_neg, norm_inv, norm_pow]
+      exact inv_anti₀ (by positivity) (pow_le_pow_left₀ hε0.le (hfar hw' hz) 2)) z)
+    (hf.norm.const_mul _)
+    (ae_of_all _ fun z w' hw' ↦ by
+      by_cases hz : f z = 0
+      · simpa [hz] using hasDerivAt_const w' (0 : F)
+      · have hne : w' - z ≠ 0 :=
+          norm_pos_iff.mp (hε0.trans_le (hfar hw' hz))
+        exact (((hasDerivAt_id w').sub_const z).inv hne).smul_const (f z) |>.congr_deriv
+          (by simp only [neg_div, one_div, neg_smul, id]))
+  rw [show cauchyTransform f = fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z from
+    funext (cauchyTransform_apply f)]
+  convert hderiv.2.const_smul (Real.pi : ℂ)⁻¹ using 1
+  simp_rw [neg_smul, integral_neg, smul_neg]
+
+/-- The Cauchy transform of integrable data is holomorphic off its closed support. -/
+theorem differentiableOn_cauchyTransform_compl_tsupport {f : ℂ → F} (hf : Integrable f) :
+    DifferentiableOn ℂ (cauchyTransform f) (tsupport f)ᶜ := fun _ hw ↦
+  (hasDerivAt_cauchyTransform_of_notMem_tsupport hf hw).differentiableAt.differentiableWithinAt
+
+/-- Off the closed support the holomorphic Wirtinger derivative of the Cauchy transform is its
+complex derivative. -/
+theorem wirtingerDeriv_cauchyTransform_apply_one_of_notMem_tsupport {f : ℂ → F} {w : ℂ}
+    (hf : Integrable f) (hw : w ∉ tsupport f) :
+    wirtingerDeriv (cauchyTransform f) w 1 = deriv (cauchyTransform f) w := by
+  have hd := (hasDerivAt_cauchyTransform_of_notMem_tsupport hf hw).differentiableAt
+  rw [hd.wirtingerDeriv_eq_fderiv, fderiv_apply_one_eq_deriv]
 
 section Polar
 

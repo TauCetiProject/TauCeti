@@ -40,6 +40,9 @@ profiles `2 t / (t² + ρ²)` of two scales `t` and `r` outside the radius `r`, 
 bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`, and an error-budget bound: if `0 ≤ ε`, `0 < K`
 and `K` dominates `a + b` then `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2`.
 
+It records that `a / ((b - a) b) ≤ 2 a / b²` for `0 ≤ a` and `2 a < b`, the form in which a
+kernel estimate `a / ((b - a) b)` outside a disc of radius `a` becomes an inverse-square bound.
+
 Finally, it records a polynomial barrier bound: if `r ≤ M`, `0 < ε`, `1 ≤ c` and `n` is larger
 than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
 
@@ -64,6 +67,8 @@ than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
   `r - ε * (c * (1 + n ^ 2)) < 0` for `r ≤ M`, `0 < ε`, `1 ≤ c` and `M / ε < n`.
 * `TauCeti.div_mul_add_mul_div_le_half`: `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2` when
   `0 ≤ ε`, `0 < K` and `a + b ≤ K`.
+* `TauCeti.div_sub_mul_le_two_mul_div_sq`: `a / ((b - a) b) ≤ 2 a / b²` for `0 ≤ a` and
+  `2 a < b`.
 -/
 
 public section
@@ -208,6 +213,15 @@ theorem div_mul_add_mul_div_le_half {α : Type*} [Field α] [LinearOrder α]
     _ ≤ ε / (2 * K) * K :=
         mul_le_mul_of_nonneg_left (by linarith) (by positivity)
     _ = ε / 2 := by field_simp
+
+/-- Beyond twice `a ≥ 0`, where `b - a ≥ b / 2`, the quotient `a / ((b - a) b)` is at most
+`2 a / b²`. -/
+theorem div_sub_mul_le_two_mul_div_sq {α : Type*} [Field α] [LinearOrder α]
+    [IsStrictOrderedRing α] {a b : α} (ha : 0 ≤ a) (h : 2 * a < b) :
+    a / ((b - a) * b) ≤ 2 * a / b ^ 2 := by
+  have hb : 0 < b := by linarith
+  rw [div_le_div_iff₀ (mul_pos (by linarith) hb) (by positivity)]
+  nlinarith [mul_nonneg (mul_nonneg ha hb.le) (sub_nonneg.mpr h.le)]
 
 end TauCeti
 
