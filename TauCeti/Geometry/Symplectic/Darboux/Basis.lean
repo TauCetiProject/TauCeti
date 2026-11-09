@@ -192,11 +192,9 @@ theorem IsDarbouxBasis.map {ω' : SymplecticForm W} {e : V ≃ₗ[ℝ] W}
 /-- **Linear symplectomorphisms have determinant one.** On an infinite-dimensional space the
 determinant is `1` by convention. -/
 theorem IsSymplectomorphism.det_eq_one {e : V ≃ₗ[ℝ] V}
-    (he : IsSymplectomorphism ω ω e) : LinearMap.det (e : V →ₗ[ℝ] V) = 1 := by
-  by_cases h : Module.Finite ℝ V
-  · exact BilinForm.IsIsometry.det_eq_one_of_isAlt ω.isAlt ω.nondegenerate
-      (BilinForm.isIsometry_iff.2 he.apply)
-  · exact LinearMap.det_eq_one_of_not_module_finite h _
+    (he : IsSymplectomorphism ω ω e) : LinearMap.det (e : V →ₗ[ℝ] V) = 1 :=
+  BilinForm.IsIsometry.det_eq_one_of_isAlt ω.isAlt ω.nondegenerate
+    (BilinForm.isIsometry_iff.2 he.apply)
 
 /-- **Darboux bases of a direct sum.** The concatenation of a Darboux basis `b` of `ω₁` and a
 Darboux basis `c` of `ω₂`, listing the pairs of `b` before those of `c`, is a Darboux basis of
