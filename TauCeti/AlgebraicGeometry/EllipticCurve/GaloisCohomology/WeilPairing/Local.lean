@@ -119,6 +119,18 @@ theorem localTateKerWeilPairing_apply (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny
       h2MuEquivZMod K hn (muNRepH2Equiv φ.degree K (φ.kerH1WeilPairing hn a b)) :=
   (rfl)
 
+/-- The local Tate pairings are compatible with inclusion into degree-torsion and
+projection onto the dual kernel. No restriction on the residue characteristic is needed. -/
+theorem localTateKerWeilPairing_explicitCoeff1_torsionCoeffToDualKerCoeff
+    (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
+    (b : H1 (AbsoluteGaloisGroup K) (W₁.TorsionCoeff φ.degree)) :
+    φ.localTateKerWeilPairing hn a
+        (explicitCoeff1 _ _ φ.torsionCoeffToDualKerCoeff continuous_of_discreteTopology b) =
+      W₁.localTateWeilPairing φ.degree hn
+        (explicitCoeff1 _ _ φ.kerCoeffToTorsionCoeff continuous_of_discreteTopology a) b := by
+  simp only [localTateKerWeilPairing_apply, localTateWeilPairing_apply,
+    kerH1WeilPairing_explicitCoeff1_torsionCoeffToDualKerCoeff]
+
 /-- **Perfect local Tate duality for the kernels of an isogeny and of its dual.** Pairing with a
 class gives a bijection from `H¹(K, E₁[φ])` to the additive characters of `H¹(K, E₂[φ̂])` with
 values in `ℤ/n`, `n = deg φ`. -/
