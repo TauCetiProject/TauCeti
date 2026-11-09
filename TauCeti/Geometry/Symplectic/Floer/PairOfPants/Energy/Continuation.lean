@@ -59,47 +59,7 @@ open Floer
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {G H : Puncture → ℝ → V → ℝ}
   {L : Puncture → ℝ} {u : ℝ × ℝ → V}
 
-omit [NormedAddCommGroup V] [NormedSpace ℝ V] in
-/-- Beyond the height `2 + ∑ q, |L_q|` on each end, past every neck and collar, the perturbation
-is `H_q(t) dt`. -/
-private theorem pairOfPantsContinuationPerturbation_eq_smul_endAngularForm_of_le {r : Puncture}
-    {w : ℂ} (hw : 2 + ∑ q, |L q| ≤ r.endSign * (r.endCoord w).re) (x : V) :
-    pairOfPantsContinuationPerturbation G H L w x = H r (r.endCoord w).im x • r.endAngularForm w :=
-  have hL : L r ≤ ∑ q, |L q| :=
-    (le_abs_self _).trans (Finset.single_le_sum (fun q _ ↦ abs_nonneg (L q)) (Finset.mem_univ r))
-  pairOfPantsContinuationPerturbation_eq_smul_endAngularForm
-    (by linarith [Finset.sum_nonneg fun q (_ : q ∈ Finset.univ) ↦ abs_nonneg (L q)])
-    (by linarith) x
-
 variable [FiniteDimensional ℝ V]
-
-/-- **The curvature of the pair of pants with continuation necks is integrable.** If
-`|G_q|, |H_q| ≤ B_q` and `|H_q - G_q| ≤ D_q`, then along any map continuous on
-`S = ℂ ∖ {0, 1}` the curvature term `R_K(u)` is integrable over the plane, for all neck
-positions. -/
-theorem integrable_hamiltonianCurvature_pairOfPantsContinuationPerturbation (ω : SymplecticForm V)
-    (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
-    (hGs : ∀ q, ContDiff ℝ 1 (uncurry (G q))) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    {B D : Puncture → ℝ} (hGB : ∀ q t x, |G q t x| ≤ B q) (hHB : ∀ q t x, |H q t x| ≤ B q)
-    (hD : ∀ q t x, |H q t x - G q t x| ≤ D q) (L : Puncture → ℝ)
-    (hu : ContinuousOn u thricePuncturedSphereReal) :
-    Integrable fun z ↦ ω.hamiltonianCurvature
-      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦
-        pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
-      z (u z) := by
-  have hK (v : ℂ) : ContDiffOn ℝ 1
-      (uncurry fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z)
-        x v) (thricePuncturedSphereReal ×ˢ univ) := fun p hp ↦
-    (contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH hGs hHs L hp.1 p.2
-      v).contDiffWithinAt
-  refine ⟨?_, (lintegral_enorm_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le ω hG
-    hH hGs hHs hGB hHB hD L u).trans_lt (ENNReal.sum_lt_top.2 fun q _ ↦
-      ENNReal.add_lt_top.2 ⟨ENNReal.ofReal_lt_top, ENNReal.ofReal_lt_top⟩)⟩
-  -- The curvature is continuous on `S`, whose complement is null.
-  rw [← Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal]
-  exact (ω.continuousOn_hamiltonianCurvature_comp isOpen_thricePuncturedSphereReal hu (hK 1)
-    (hK Complex.I)).aestronglyMeasurable isOpen_thricePuncturedSphereReal.measurableSet
 
 /-- **The energy identity for the pair of pants with continuation necks.** Let `K` be the
 pair-of-pants perturbation with continuation necks at the positions `L_q` from period-one `C¹`

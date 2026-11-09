@@ -378,28 +378,6 @@ section Ends
 
 variable {K : ℂ → V → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → V → ℝ} {u : ℝ × ℝ → V} {T₀ : ℝ}
 
-omit [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- Where `K = H_q(t) dt` on the end `q`, its pullback along the end chart sends `∂_t` to
-`H_q(t)`. -/
-private theorem perturbationPullback_endChart_stdComplexLineImag_of_le
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
-      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1) {q : Puncture} {ζ : ℝ × ℝ} (hζ : T₀ ≤ q.endSign * ζ.1) (x : V) :
-    perturbationPullback (endChart q)
-        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineImag ζ x =
-      H q ζ.2 x := by
-  have hI : Complex.equivRealProdCLM.symm stdComplexLineImag = Complex.I := by
-    apply Complex.ext <;> simp [stdComplexLineImag_eq]
-  rw [perturbationPullback_endChart_eq_cylindricalEndLift K, hI]
-  beta_reduce
-  obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm ζ)
-  have hre : (q.endCoord (q.cylindricalEndLift (Complex.equivRealProdCLM.symm ζ))).re = ζ.1 := by
-    simp [hk]
-  rw [hKH q _ x (by rwa [hre]), smul_apply, endAngularForm_cylindricalEndLift,
-    hk, smul_eq_mul, Complex.I_im, mul_one]
-  simpa using congrFun ((hH q).int_mul k ζ.2) x
-
 /-- Along the end `q`, where `±s > 0`, the derivative of the cutoff at height `T ≥ 0`, composed with
 the Jacobian of the end chart, is `-β'(±s - T) (±1)` times the longitudinal coordinate. -/
 private theorem fderiv_truncation_endChart_apply {T : ℝ} (hT : 0 ≤ T) {q : Puncture} {ζ : ℝ × ℝ}
@@ -423,10 +401,9 @@ private theorem fderiv_truncation_endChart_apply {T : ℝ} (hT : 0 ≤ T) {q : P
   simpa [mul_comm] using h₁.symm
 
 omit [FiniteDimensional ℝ V] in
-/-- **The boundary term in end coordinates.** On the end `q`, for `T ≥ 2`, the two-form
-`dχ ∧ α`, transported to the coordinates of the end with its Jacobian, is
-`-±β'(±s - T) (H_q(t, u_q) + ½ ω(u_q, ∂_t u_q))` for `u_q = u ∘ φ_q`, provided `K = H_q dt`
-beyond height `T₀ ≤ T`. -/
+/-- **The boundary term in end coordinates.** On the end `q`, for `T ≥ 0` with `K = H_q dt`
+beyond height `T₀ ≤ T`, the two-form `dχ ∧ α`, transported to the coordinates of the end with its
+Jacobian, is `-±β'(±s - T) (H_q(t, u_q) + ½ ω(u_q, ∂_t u_q))` for `u_q = u ∘ φ_q`. -/
 private theorem abs_det_mul_wedge_endChart (ω : SymplecticForm V)
     (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
