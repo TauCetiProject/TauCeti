@@ -236,8 +236,7 @@ theorem isContMDiffGroupCocycle_coordChange :
     IsContMDiffGroupCocycle IB IG n U fun i j b ↦ (e i).coordChange (e j) b 1 where
   mul_eq i j k b hb := by
     simp only [← heU] at hb
-    rw [← (e j).coordChange_eq_mul (e k) hb.1.2 hb.2,
-      (e i).coordChange_coordChange (e j) (e k) hb.1.1 hb.1.2]
+    exact (e i).coordChange_one_mul_coordChange_one (e j) (e k) hb.1.1 hb.1.2 hb.2
   contMDiffOn i j := (ContMDiffFiberBundle.contMDiffOn_coordChange (e i) (e j)).comp
     (contMDiff_id.prodMk contMDiff_const).contMDiffOn fun _ hb ↦
       ⟨by simpa only [heU, id_eq] using hb, mem_univ _⟩
