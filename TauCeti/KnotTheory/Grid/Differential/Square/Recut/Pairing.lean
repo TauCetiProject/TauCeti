@@ -992,8 +992,7 @@ theorem sideColumns_union_recut (D : GridRectangleDecomposition x z)
     (D.recut hone hfirst hsecond).first.sideColumns ∪
         (D.recut hone hfirst hsecond).second.sideColumns =
       D.first.sideColumns ∪ D.second.sideColumns :=
-  sideColumns_union_eq_of_hasOneCommonSide _ _
-    (D.hasOneCommonSide_recut hone hfirst hsecond) hone
+  (sideColumns_union_eq_of_hasOneCommonSide _ _ hone).symm
 
 /-- The recut of a decomposition is different from it: the two pass through different
 intermediate grid states. -/
