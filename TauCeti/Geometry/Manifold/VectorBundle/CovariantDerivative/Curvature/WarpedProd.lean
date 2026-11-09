@@ -112,7 +112,8 @@ private theorem IsWarpedProduct.curvatureOperator_horizontal_vertical_horizontal
   have hbracket := mlieBracket_prodVectorField_horizontal_vertical (p := p)
     (hX.mdifferentiableAt (by simp)) (hV.mdifferentiableAt (by simp))
   -- The derivative of `Y f / f` and the two connection corrections combine into `Hess f / f`.
-  have hcoeff := hessian_div_eq_mvfderiv_add (I := I) hf hY p.1 hf₀ X
+  have hcoeff := hessian_div_eq_mvfderiv_add (I := I) (hf.contMDiffAt.of_le (by simp))
+    (x := p.1) (hY.mdifferentiableAt (by simp)) hf₀ X
   -- Substitute these three derivatives in the definition of curvature.
   rw [curvatureOperator_apply, hVY, hXYeq, hbracket, map_zero, sub_zero,
     cov.isCovariantDerivativeOnUniv.leibniz
