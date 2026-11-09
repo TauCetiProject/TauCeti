@@ -96,7 +96,7 @@ private theorem exists_disc_factorization {U : Set ℂ} (hUb : IsBounded U)
   have : LocallyConnectedSpace (frontier ((g ∘ K) '' ball 0 1)) := by
     rw [hF'im]; exact hUJ.locallyConnectedSpace
   obtain ⟨G, hGc, hGF⟩ :=
-    exists_continuousOn_closedBall_eqOn_of_locallyConnectedSpace_frontier one_pos hF'd hF'i
+    exists_continuousOn_closedBall_eqOn_of_locallyConnectedSpace_frontier hF'd hF'i
       (by rwa [hF'im])
   have hGi : InjOn G (closedBall 0 1) := injOn_closedBall_of_isJordanCurve_frontier one_pos hF'd
     hF'i (by rwa [hF'im]) (by rwa [hF'im]) hGc hGF
