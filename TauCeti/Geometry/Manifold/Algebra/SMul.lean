@@ -38,6 +38,7 @@ underlying real manifold.
 * `SetLike.contMDiffConstSMul`: a subobject, such as a submonoid, a subgroup or a submodule, of
   a type acting by `C^n` maps also acts by `C^n` maps.
 * `ContMDiffSMul.contMDiff_smul_const`: the orbit maps `g ↦ g • x` of a `C^n` action are `C^n`.
+* `ContMDiffSMul.mdifferentiable_smul_const`: for `n ≠ 0` these orbit maps are differentiable.
 * `ContinuousLinearEquiv.contMDiffConstSMul_transContinuousLinearEquiv_iff`: a linear change of
   the model vector space does not change whether an action is by `C^n` maps.
 * `ContMDiffConstSMul.restrictScalars`: an action by maps that are `C^n` over `𝕜'` is by maps that
@@ -50,6 +51,8 @@ underlying real manifold.
   infinitely many diffeomorphisms.
 * `TauCeti.contMDiff_smul_of_mem_zpowers`: if an element of finite order acts by a `C^n` map, so
   does every element of the cyclic group it generates.
+* `TauCeti.mfderiv_smul_apply`: for a linear action on a finite-dimensional space, the derivative
+  of `x ↦ g • x` is `v ↦ g • v`.
 -/
 
 public section
@@ -87,6 +90,19 @@ theorem ContMDiffSMul.contMDiff_smul_const {𝕜 : Type*} [NontriviallyNormedFie
     {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [SMul G M] {n : ℕ∞ω}
     [ContMDiffSMul I I' n G M] (x : M) : ContMDiff I I' n fun g : G ↦ g • x :=
   contMDiff_id.smul contMDiff_const
+
+/-- The orbit map `g ↦ g • x` of a `C^n` action with `n ≠ 0` is differentiable. -/
+@[to_additive /-- The orbit map `g ↦ g +ᵥ x` of a `C^n` additive action with `n ≠ 0` is
+differentiable. -/]
+theorem ContMDiffSMul.mdifferentiable_smul_const {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {G : Type*} [TopologicalSpace G] [ChartedSpace H G]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [SMul G M] {n : ℕ∞ω}
+    [ContMDiffSMul I I' n G M] (hn : n ≠ 0) (x : M) : MDifferentiable I I' fun g : G ↦ g • x :=
+  (contMDiff_smul_const x).mdifferentiable hn
 
 /-! ### Changes of model -/
 
@@ -234,5 +250,16 @@ theorem contMDiff_smul_of_mem_zpowers {n : ℕ∞ω} {g : G} (hg : IsOfFinOrder 
     ContMDiff I I n fun x : M ↦ k • x := by
   obtain ⟨m, rfl⟩ := hg.mem_powers_iff_mem_zpowers.mpr hk
   simpa [smul_iterate] using hsmooth.iterate m
+
+/-- For a linear action on a finite-dimensional space, the derivative of `x ↦ g • x` is
+`v ↦ g • v`. -/
+@[simp]
+theorem mfderiv_smul_apply {G V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    [FiniteDimensional ℝ V] [Monoid G] [DistribMulAction G V] [SMulCommClass G ℝ V]
+    (g : G) (x v : V) :
+    mfderiv 𝓘(ℝ, V) 𝓘(ℝ, V) (fun y : V ↦ g • y) x v = g • v :=
+  congrArg (· v)
+    ((LinearMap.toContinuousLinearMap (DistribSMul.toLinearMap ℝ V g)).hasFDerivAt
+      (x := x)).hasMFDerivAt.mfderiv
 
 end TauCeti

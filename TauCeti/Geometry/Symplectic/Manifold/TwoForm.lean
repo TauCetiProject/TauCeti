@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.LocalDiffeomorph
@@ -13,6 +14,7 @@ public import TauCeti.Geometry.Manifold.TwoForm.Pullback
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
+import TauCeti.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
@@ -63,6 +65,8 @@ example.
   partial-diffeomorphism pullback characterizations
   (`TauCeti.SymplecticForm.eval₂_constSmooth_mfderiv_eq`,
   `TauCeti.SmoothTwoForm.mpullback_constSmooth_eq_mpullback_subtype_val_iff`).
+* `TauCeti.SymplecticForm.mpullback_smul_constSmooth`: a linear action preserving a symplectic
+  form acts by symplectomorphisms of the constant form.
 
 The definitions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.2.
@@ -426,6 +430,22 @@ symplectic. -/
 lemma isSymplectic_constSmooth (omegaForm : SymplecticForm V) :
     omegaForm.constSmooth.IsSymplectic :=
   ⟨isClosed_constSmooth omegaForm, isNondegenerate_constSmooth omegaForm⟩
+
+/-- **A linear action preserving a symplectic form acts by symplectomorphisms**: each
+`x ↦ g • x` pulls the constant form back to itself. -/
+theorem mpullback_smul_constSmooth {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Monoid G]
+    [DistribMulAction G V] [SMulCommClass G ℝ V] [ContMDiffSMul I 𝓘(ℝ, V) ∞ G V]
+    (omegaForm : SymplecticForm V)
+    (h : ∀ (g : G) (x y : V), omegaForm (g • x) (g • y) = omegaForm x y) (g : G) :
+    SmoothForm.mpullback (fun x : V ↦ g • x)
+        (ContMDiffSMul.contMDiff_const_smul (I := I) g) omegaForm.constSmooth =
+      omegaForm.constSmooth := by
+  refine SmoothBundleForm.ext_eval₂ fun p v w ↦ ?_
+  rw [SmoothForm.eval₂_mpullback]
+  refine (constSmooth_apply _ _ _ _).trans (Eq.trans ?_ (constSmooth_apply _ _ _ _).symm)
+  -- The differentials are read in the fibres of the form bundle, which are `V` by definition.
+  exact (congrArg₂ (fun a b : V ↦ omegaForm a b) (mfderiv_smul_apply g p v)
+    (mfderiv_smul_apply g p w)).trans (h g v w)
 
 /-- Tameness of a pair of constant smooth structures is exactly tameness of the underlying linear
 pair. -/

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.SkewAdjoint
 public import TauCeti.Geometry.Lie.FundamentalVectorField
 
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+import TauCeti.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -34,7 +35,6 @@ places `dρ(ξ)` in the symplectic Lie algebra `𝔰𝔭(V, ω)`, the input of t
 
 ## Main results
 
-* `TauCeti.mfderiv_smul_apply`: the derivative of `x ↦ g • x` is `v ↦ g • v`.
 * `TauCeti.fundamentalLieHom_apply_apply`: `dρ(ξ) x = ξ_V(x)`; in particular `ξ_V` is linear.
 * `TauCeti.InfinitesimalAction.fundamental_eq_linear_comp`: the fundamental vector fields are the
   linear vector fields `x ↦ dρ(ξ) x`.
@@ -70,13 +70,6 @@ section One
 
 variable [ContMDiffSMul I 𝓘(ℝ, V) 1 G V]
 
-omit [SMulCommClass G ℝ V] in
-/-- Every orbit map of a `C¹` action is differentiable. -/
-private theorem mdifferentiableAt_smul_const (x : V) (g : G) :
-    MDifferentiableAt I 𝓘(ℝ, V) (fun h : G ↦ h • x) g :=
-  (ContMDiffSMul.contMDiff_smul_const (I := I) (I' := 𝓘(ℝ, V)) (n := 1) x).mdifferentiableAt
-    one_ne_zero
-
 variable (V) in
 /-- The fundamental vector field `x ↦ ξ_V(x)` of a smooth linear action, as an endomorphism of
 `V`: it is additive and homogeneous since every orbit map `g ↦ g • x` is linear in `x`. -/
@@ -86,13 +79,15 @@ private def fundamentalEnd (ξ : GroupLieAlgebra I G) : Module.End ℝ V where
     have h : (fun g : G ↦ g • (x + y)) = (fun g : G ↦ g • x) + fun g : G ↦ g • y :=
       funext fun g ↦ smul_add g x y
     rw [fundamentalVectorField_apply, fundamentalVectorField_apply, fundamentalVectorField_apply, h,
-      mfderiv_add (mdifferentiableAt_smul_const x 1) (mdifferentiableAt_smul_const y 1)]
+      mfderiv_add (ContMDiffSMul.mdifferentiable_smul_const (I := I) one_ne_zero x (1 : G))
+        (ContMDiffSMul.mdifferentiable_smul_const (I := I) one_ne_zero y (1 : G))]
     rfl
   map_smul' c x := by
     have h : (fun g : G ↦ g • c • x) = c • fun g : G ↦ g • x :=
       funext fun g ↦ smul_comm g c x
     rw [fundamentalVectorField_apply, fundamentalVectorField_apply, h,
-      ((mdifferentiableAt_smul_const x 1).hasMFDerivAt.const_smul c).mfderiv]
+      ((ContMDiffSMul.mdifferentiable_smul_const (I := I) one_ne_zero x
+        (1 : G)).hasMFDerivAt.const_smul c).mfderiv]
     rfl
 
 private theorem fundamentalEnd_apply (ξ : GroupLieAlgebra I G) (x : V) :
@@ -103,16 +98,6 @@ end One
 
 variable [CompleteSpace E] [LieGroup I (minSmoothness ℝ 3) G] [FiniteDimensional ℝ V]
   [ContMDiffSMul I 𝓘(ℝ, V) ∞ G V]
-
-omit [TopologicalSpace G] in
-/-- For a linear action on a finite-dimensional space, the derivative of `x ↦ g • x` is
-`v ↦ g • v`. -/
-@[simp]
-theorem mfderiv_smul_apply (g : G) (x v : V) :
-    mfderiv 𝓘(ℝ, V) 𝓘(ℝ, V) (fun y : V ↦ g • y) x v = g • v :=
-  congrArg (· v)
-    ((LinearMap.toContinuousLinearMap (DistribSMul.toLinearMap ℝ V g)).hasFDerivAt
-      (x := x)).hasMFDerivAt.mfderiv
 
 /-- A smooth action is in particular `C¹`. -/
 local instance contMDiffSMulOne : ContMDiffSMul I 𝓘(ℝ, V) 1 G V :=
@@ -170,18 +155,17 @@ theorem fundamentalLieHom_mem_skewAdjointLieSubalgebra {B : LinearMap.BilinForm 
   refine (LinearMap.mem_skewAdjointSubmodule _).2 fun x y ↦ ?_
   let b : V →L[ℝ] V →L[ℝ] ℝ := B.toContinuousBilinearMap
   have hb : IsBoundedBilinearMap ℝ fun p : V × V ↦ b p.1 p.2 := b.isBoundedBilinearMap
+  have hx := ContMDiffSMul.mdifferentiable_smul_const (I := I) (I' := 𝓘(ℝ, V)) one_ne_zero x (1 : G)
+  have hy := ContMDiffSMul.mdifferentiable_smul_const (I := I) (I' := 𝓘(ℝ, V)) one_ne_zero y (1 : G)
   have hΦ : MDifferentiableAt I 𝓘(ℝ, V × V) (fun g : G ↦ (g • x, g • y)) 1 :=
-    (mdifferentiableAt_smul_const x 1).prodMk_space (mdifferentiableAt_smul_const y 1)
+    hx.prodMk_space hy
   -- The derivative of the orbit map of the pair is the pair of fundamental vectors.
   have hpair : mvfderiv I (fun g : G ↦ (g • x, g • y)) 1 ξ =
       (fundamentalLieHom I G V ξ x, fundamentalLieHom I G V ξ y) := by
-    have h₁ := (ContinuousLinearMap.fst ℝ V V).mvfderiv_comp_apply hΦ ξ
-    have h₂ := (ContinuousLinearMap.snd ℝ V V).mvfderiv_comp_apply hΦ ξ
-    simp only [Function.comp_def, ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd',
-      mvfderiv_apply_eq_mfderiv_apply] at h₁ h₂
-    rw [fundamentalLieHom_apply_apply, fundamentalLieHom_apply_apply, fundamentalVectorField_apply,
-      fundamentalVectorField_apply]
-    exact Prod.ext h₁.symm h₂.symm
+    rw [mvfderiv_apply_eq_mfderiv_apply, fundamentalLieHom_apply_apply,
+      fundamentalLieHom_apply_apply, fundamentalVectorField_apply, fundamentalVectorField_apply,
+      modelWithCornersSelf_prod, ← chartedSpaceSelf_prod, mfderiv_prodMk hx hy]
+    rfl
   -- The function `g ↦ B (g • x) (g • y)` is constant, so its derivative vanishes.
   have hconst : ((fun p : V × V ↦ b p.1 p.2) ∘ fun g : G ↦ (g • x, g • y)) =
       fun _ ↦ B x y := by

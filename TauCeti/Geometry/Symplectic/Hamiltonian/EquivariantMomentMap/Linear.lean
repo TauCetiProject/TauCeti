@@ -36,8 +36,6 @@ point `0`, so its equivariance defect, which is independent of the point, vanish
 
 ## Main results
 
-* `TauCeti.SymplecticForm.mpullback_smul_constSmooth`: a linear action preserving `ω` acts by
-  symplectomorphisms of the constant form.
 * `TauCeti.SymplecticForm.isMomentMap_representationMomentMap`: `μ` is a moment map of the
   fundamental vector fields.
 * `TauCeti.SymplecticForm.isEquivariantMomentMap_representationMomentMap`: `μ` is a group-level,
@@ -103,21 +101,6 @@ theorem representationMomentMap_eq_comp
       (ω.linearMomentMap x).comp (fundamentalSkewAdjointLieHom I G V hω : _ →ₗ[ℝ] _) := by
   ext ξ
   simp
-
-omit [CompleteSpace E] [LieGroup I (minSmoothness ℝ 3) G] in
-/-- **A linear action preserving `ω` acts by symplectomorphisms**: each `x ↦ g • x` pulls the
-constant form `ω` back to itself. -/
-theorem mpullback_smul_constSmooth (hω : ∀ (g : G) (x y : V), ω (g • x) (g • y) = ω x y)
-    (g : G) :
-    SmoothForm.mpullback (fun x : V ↦ g • x)
-        (ContMDiffSMul.contMDiff_const_smul (I := I) g) ω.constSmooth =
-      ω.constSmooth := by
-  refine SmoothBundleForm.ext_eval₂ fun p v w ↦ ?_
-  rw [SmoothForm.eval₂_mpullback]
-  refine (constSmooth_apply _ _ _ _).trans (Eq.trans ?_ (constSmooth_apply _ _ _ _).symm)
-  -- The differentials are read in the fibres of the form bundle, which are `V` by definition.
-  exact (congrArg₂ (fun a b : V ↦ ω a b) (mfderiv_smul_apply g p v)
-    (mfderiv_smul_apply g p w)).trans (hω g v w)
 
 /-- **The moment map identity for a linear symplectic representation**:
 `d⟨μ, ξ⟩ = ι_{ξ_V} ω` for `μ(x)(ξ) = ½ ω(ξ_V(x), x)`. -/
