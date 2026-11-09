@@ -15,7 +15,7 @@ import TauCeti.Topology.Homotopy.HomotopyGroup.Covering
 # Homotopy groups of a quotient of `A × K` with contractible `A`
 
 Let `A` and `K` be topological groups with `A` contractible, such as a real vector space, and let
-`Γ` be a discrete subgroup of `A × K`. The inclusion `k ↦ [(1, k)]` of `K` into `(A × K) ⧸ Γ`
+`Γ` be a discrete subgroup of `A × K`. The canonical map `k ↦ [(1, k)]` from `K` to `(A × K) ⧸ Γ`
 induces a bijection on every homotopy group of dimension at least two
 (`Subgroup.bijective_homotopyGroupMap_quotientMk_inr`): the inclusion of `K` into `A × K` is a
 section of the second projection, which is a homotopy equivalence because `A` is contractible,
@@ -28,8 +28,8 @@ reduces the question whether `G` is a `K(π, 1)` to the higher homotopy groups o
 
 ## Main results
 
-* `Subgroup.bijective_homotopyGroupMap_quotientMk_inr`: the inclusion of `K` is bijective on
-  `π_(n + 2)`.
+* `Subgroup.bijective_homotopyGroupMap_quotientMk_inr`: the canonical map from `K` is bijective
+  on `π_(n + 2)`.
 * `Subgroup.isAspherical_quotient_iff`: asphericity of `(A × K) ⧸ Γ`.
 
 ## References
@@ -51,7 +51,7 @@ variable {A K : Type*} [Group A] [Group K] [TopologicalSpace A] [TopologicalSpac
   [IsTopologicalGroup A] [IsTopologicalGroup K] (Γ : Subgroup (A × K))
 
 /-- **The higher homotopy groups of `K` are those of `(A × K) ⧸ Γ` for contractible `A`.** For a
-discrete subgroup `Γ` of `A × K`, the inclusion `k ↦ [(1, k)]` of `K` induces a bijection
+discrete subgroup `Γ` of `A × K`, the canonical map `k ↦ [(1, k)]` induces a bijection
 `π_(n + 2)(K, k) → π_(n + 2)((A × K) ⧸ Γ, [(1, k)])`. -/
 theorem bijective_homotopyGroupMap_quotientMk_inr [ContractibleSpace A]
     [DiscreteTopology Γ] (k : K) (n : ℕ) :

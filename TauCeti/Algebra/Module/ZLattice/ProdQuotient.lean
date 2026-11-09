@@ -13,16 +13,18 @@ import TauCeti.Topology.Algebra.Module.CompactQuotient
 /-!
 # The vector part of a cocompact subgroup of `V × K` is a full lattice
 
-Let `V` be a finite-dimensional real normed space, `K` a topological group, and `Γ` a discrete
-subgroup of `V × K`, written multiplicatively as `Multiplicative V × K`, such that the quotient
-`(V × K) ⧸ Γ` is compact and the image of `Γ` in `K` is finite. Then the part of `Γ` in the first
-factor,
+Let `V` be a finite-dimensional Hausdorff real topological vector space, `K` a topological group,
+and `Γ` a subgroup of `V × K`, written multiplicatively as `Multiplicative V × K`, such that the
+quotient `(V × K) ⧸ Γ` is compact and the image of `Γ` in `K` is finite. Then the part of `Γ` in
+the first factor,
 
 `Λ = {v | (v, 1) ∈ Γ}`,
 
-is a full lattice in `V` (`Subgroup.isZLattice_toAddSubgroup'_comap_inl`), so `V ⧸ Λ` is a compact
-torus. The image `P` of `Γ` in `V` spans `V`, since `V ⧸ P` is a continuous image of the compact
-quotient (`AddSubgroup.span_eq_top_of_compactSpace_quotient`). If the image of `Γ` in `K` has `m`
+spans `V` (`Subgroup.span_toAddSubgroup'_comap_inl_eq_top`). When moreover `V` is a normed
+space and `Γ` is discrete, `Λ` is a full lattice in `V`
+(`Subgroup.isZLattice_toAddSubgroup'_comap_inl`), so `V ⧸ Λ` is a compact torus. The image `P`
+of `Γ` in `V` spans `V`, since `V ⧸ P` is a continuous image of the compact quotient
+(`AddSubgroup.span_eq_top_of_compactSpace_quotient`). If the image of `Γ` in `K` has `m`
 elements, then `γᵐ` lies in `V × 1` for every `γ ∈ Γ`, so `m • P ⊆ Λ` and `Λ` spans `V` as well.
 
 Together with the finite covering `(V ⧸ Λ) × K → (V × K) ⧸ Γ` of `Subgroup.prodQuotientMap`, this
@@ -47,7 +49,9 @@ public section
 
 namespace Subgroup
 
-variable {V K : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [Group K] [TopologicalSpace K]
+section Topology
+
+variable {V K : Type*} [AddCommGroup V] [TopologicalSpace V] [Group K] [TopologicalSpace K]
   (Γ : Subgroup (Multiplicative V × K))
 
 /-- The part `{v | (v, 1) ∈ Γ}` of a discrete subgroup `Γ` of `V × K` lying in `V` is discrete. -/
@@ -55,7 +59,8 @@ instance discreteTopology_toAddSubgroup'_comap_inl [DiscreteTopology Γ] :
     DiscreteTopology (Γ.comap (MonoidHom.inl (Multiplicative V) K)).toAddSubgroup' :=
   inferInstanceAs (DiscreteTopology (Γ.comap (MonoidHom.inl (Multiplicative V) K)))
 
-variable [FiniteDimensional ℝ V]
+variable [Module ℝ V] [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V]
+  [FiniteDimensional ℝ V]
 
 /-- **The vector part of a cocompact subgroup of `V × K` spans `V`.** If the quotient
 `(V × K) ⧸ Γ` is compact and the image of `Γ` in `K` is finite, then `Λ = {v | (v, 1) ∈ Γ}` spans
@@ -104,6 +109,13 @@ theorem span_toAddSubgroup'_comap_inl_eq_top [CompactSpace ((Multiplicative V ×
     exact Submodule.subset_span (hmP p hp)
   simpa [smul_smul, inv_mul_cancel₀ hm] using Submodule.smul_mem _ (m : ℝ)⁻¹ h
 
+end Topology
+
+section Normed
+
+variable {V K : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] [Group K]
+  [TopologicalSpace K] (Γ : Subgroup (Multiplicative V × K))
+
 /-- **The vector part of a discrete cocompact subgroup of `V × K` is a full lattice.** If `Γ` is a
 discrete subgroup of `V × K` with compact quotient and finite image in `K`, then
 `Λ = {v | (v, 1) ∈ Γ}` is a full lattice in `V`, so `V ⧸ Λ` is a compact torus. -/
@@ -112,5 +124,7 @@ theorem isZLattice_toAddSubgroup'_comap_inl [DiscreteTopology Γ]
     [Finite (Γ.map (MonoidHom.snd (Multiplicative V) K))] :
     IsZLattice ℝ (Γ.comap (MonoidHom.inl (Multiplicative V) K)).toAddSubgroup'.toIntSubmodule where
   span_top := Γ.span_toAddSubgroup'_comap_inl_eq_top
+
+end Normed
 
 end Subgroup
