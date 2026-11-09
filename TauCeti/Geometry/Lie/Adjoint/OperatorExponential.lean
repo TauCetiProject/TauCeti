@@ -18,7 +18,10 @@ In a real Banach algebra, exponentiating the continuous commutator operator
 identity `Ad (lieExp X) = exp (ad X)`. The underlying linear map of the bounded commutator is
 Mathlib's `LieAlgebra.ad` for the associative-ring Lie bracket. The commutator itself works in
 compatible nonunital seminormed algebras over any nontrivially normed field; the identification
-with `LieAlgebra.ad` uses a unital seminormed algebra. Neither requires completeness.
+with `LieAlgebra.ad` uses a unital seminormed algebra. Neither requires completeness. The proof of
+the conjugation identity uses the exponentials of bounded left and right multiplication,
+`TauCeti.exp_mulLeft_apply` and `TauCeti.exp_mulRight_apply`, which are proved with the other
+multiplication-operator identities in `TauCeti/Analysis/Normed/Operator/Mul.lean`.
 
 ## Main definitions
 
@@ -27,10 +30,6 @@ with `LieAlgebra.ad` uses a unital seminormed algebra. Neither requires complete
 
 ## Main results
 
-* `TauCeti.Lie.exp_mulLeft_apply`: exponentiating left multiplication acts by `exp x` on the left.
-* `TauCeti.Lie.exp_mulRight_apply`: the analogous right-multiplication identity.
-* `TauCeti.Lie.exp_mulLeft` and `TauCeti.Lie.exp_mulRight`: the corresponding bounded-operator
-  identities.
 * `TauCeti.Lie.exp_continuousCommutator_apply`: its operator exponential acts by conjugation.
 * `TauCeti.Lie.exp_continuousCommutator`: the corresponding equality of bounded operators.
 * `TauCeti.Lie.continuousCommutator_toLinearMap`: its underlying linear map is Mathlib's
@@ -79,97 +78,6 @@ theorem continuousCommutator_toLinearMap (x : R) :
   simp [continuousCommutator]
 
 end AlgebraicAdjoint
-
-section Multiplication
-
-open Nat
-
-variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R]
-
-attribute [local instance] TauCeti.normedAlgebraRatOfReal
-
-/-- Exponentiating the bounded left-multiplication operator gives left multiplication by the
-algebra exponential. Completeness is not needed: if the exponential series of `x` is not
-summable, then neither is that of its left multiplication operator, and both exponentials are
-the junk value `0`. -/
-@[simp]
-theorem exp_mulLeft_apply (x y : R) :
-    exp (ContinuousLinearMap.mul ℝ R x) y = exp x * y := by
-  have hpow (n : ℕ) : (n !⁻¹ : ℝ) • (ContinuousLinearMap.mul ℝ R x) ^ n =
-      ContinuousLinearMap.mul ℝ R ((n !⁻¹ : ℝ) • x ^ n) := by
-    ext z
-    simp [ContinuousLinearMap.mul_pow_apply]
-  by_cases hs : Summable fun n : ℕ => (n !⁻¹ : ℝ) • x ^ n
-  · have hx : HasSum (fun n : ℕ => (n !⁻¹ : ℝ) • x ^ n) (exp x) := by
-      rw [exp_eq_tsum ℝ]; exact hs.hasSum
-    have hLs : Summable fun n : ℕ => (n !⁻¹ : ℝ) • (ContinuousLinearMap.mul ℝ R x) ^ n := by
-      simpa only [hpow] using (hs.hasSum.mapL (ContinuousLinearMap.mul ℝ R)).summable
-    have hL : HasSum (fun n : ℕ => (n !⁻¹ : ℝ) • (ContinuousLinearMap.mul ℝ R x) ^ n)
-        (exp (ContinuousLinearMap.mul ℝ R x)) := by
-      rw [exp_eq_tsum ℝ]; exact hLs.hasSum
-    have hop := (ContinuousLinearMap.apply ℝ R y).hasSum hL
-    have halg := hx.mul_right y
-    apply HasSum.unique (hop.congr_fun fun n => ?_) halg
-    simp only [map_smul, ContinuousLinearMap.apply_apply, ContinuousLinearMap.mul_pow_apply]
-    simp only [smul_mul_assoc]
-  · have hL : ¬ Summable fun n : ℕ => (n !⁻¹ : ℝ) • (ContinuousLinearMap.mul ℝ R x) ^ n := by
-      intro h
-      apply hs
-      have h1 := h.mapL (ContinuousLinearMap.apply ℝ R 1)
-      simpa [ContinuousLinearMap.mul_pow_apply] using h1
-    rw [exp_eq_tsum ℝ, exp_eq_tsum ℝ]
-    simp only [tsum_eq_zero_of_not_summable hs, tsum_eq_zero_of_not_summable hL]
-    simp
-
-/-- Exponentiating the bounded right-multiplication operator gives right multiplication by the
-algebra exponential. -/
-@[simp]
-theorem exp_mulRight_apply (x y : R) :
-    exp ((ContinuousLinearMap.mul ℝ R).flip x) y = y * exp x := by
-  have hpow (n : ℕ) : (n !⁻¹ : ℝ) • ((ContinuousLinearMap.mul ℝ R).flip x) ^ n =
-      (ContinuousLinearMap.mul ℝ R).flip ((n !⁻¹ : ℝ) • x ^ n) := by
-    ext z
-    simp [ContinuousLinearMap.flip_mul_pow_apply]
-  by_cases hs : Summable fun n : ℕ => (n !⁻¹ : ℝ) • x ^ n
-  · have hx : HasSum (fun n : ℕ => (n !⁻¹ : ℝ) • x ^ n) (exp x) := by
-      rw [exp_eq_tsum ℝ]; exact hs.hasSum
-    have hLs : Summable fun n : ℕ =>
-        (n !⁻¹ : ℝ) • ((ContinuousLinearMap.mul ℝ R).flip x) ^ n := by
-      simpa only [hpow] using (hs.hasSum.mapL (ContinuousLinearMap.mul ℝ R).flip).summable
-    have hL : HasSum (fun n : ℕ => (n !⁻¹ : ℝ) • ((ContinuousLinearMap.mul ℝ R).flip x) ^ n)
-        (exp ((ContinuousLinearMap.mul ℝ R).flip x)) := by
-      rw [exp_eq_tsum ℝ]; exact hLs.hasSum
-    have hop := (ContinuousLinearMap.apply ℝ R y).hasSum hL
-    have halg := hx.mul_left y
-    apply HasSum.unique (hop.congr_fun fun n => ?_) halg
-    simp only [map_smul, ContinuousLinearMap.apply_apply, ContinuousLinearMap.flip_mul_pow_apply]
-    simp only [mul_smul_comm]
-  · have hL : ¬ Summable fun n : ℕ =>
-        (n !⁻¹ : ℝ) • ((ContinuousLinearMap.mul ℝ R).flip x) ^ n := by
-      intro h
-      apply hs
-      have h1 := h.mapL (ContinuousLinearMap.apply ℝ R 1)
-      simpa [ContinuousLinearMap.flip_mul_pow_apply] using h1
-    rw [exp_eq_tsum ℝ, exp_eq_tsum ℝ]
-    simp only [tsum_eq_zero_of_not_summable hs, tsum_eq_zero_of_not_summable hL]
-    simp
-
-/-- Exponentiating the bounded left-multiplication operator gives the operator of left
-multiplication by the algebra exponential. -/
-theorem exp_mulLeft (x : R) :
-    exp (ContinuousLinearMap.mul ℝ R x) = ContinuousLinearMap.mul ℝ R (exp x) := by
-  ext y
-  simp
-
-/-- Exponentiating the bounded right-multiplication operator gives the operator of right
-multiplication by the algebra exponential. -/
-theorem exp_mulRight (x : R) :
-    exp ((ContinuousLinearMap.mul ℝ R).flip x) =
-      (ContinuousLinearMap.mul ℝ R).flip (exp x) := by
-  ext y
-  simp
-
-end Multiplication
 
 section Complete
 
