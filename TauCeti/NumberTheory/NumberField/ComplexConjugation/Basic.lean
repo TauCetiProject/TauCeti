@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Tower
 
 /-!
@@ -194,10 +193,10 @@ theorem complexConjugationAt_restrictNormal_of_isComplex [Normal K F] (w : Infin
       (eq_one_of_restrictNormal_eq_one K (isUnramified_iff.mpr (Or.inr hv))
         (complexConjugationAt_smul_self K w hw) h1)
 
-/-- The fixed field of a subgroup of the Galois group of a totally complex number field `L`
-over `K` is totally complex as soon as the subgroup contains no complex conjugation of a place of
-`L` ramified over `K`. -/
-theorem isTotallyComplex_fixedField_of_complexConjugationAt_notMem [NumberField K] [NumberField L]
+/-- The fixed field of a subgroup of the Galois group of a totally complex field `L` over `K` is
+totally complex as soon as the subgroup contains no complex conjugation of a place of `L`
+ramified over `K`. -/
+theorem isTotallyComplex_fixedField_of_complexConjugationAt_notMem [FiniteDimensional K L]
     [IsTotallyComplex L] (H : Subgroup (L ≃ₐ[K] L))
     (hH : ∀ (w : InfinitePlace L) (hw : w.IsRamified K), complexConjugationAt K w hw ∉ H) :
     IsTotallyComplex (IntermediateField.fixedField H) := ⟨fun v ↦ by

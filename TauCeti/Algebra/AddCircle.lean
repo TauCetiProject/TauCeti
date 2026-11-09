@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
 public import Mathlib.Topology.Instances.AddCircle.Defs
 
+import TauCeti.Algebra.Group.Subgroup.ToAddSubgroup
 import TauCeti.Algebra.Module.Torsion.Basic
 
 /-!
@@ -505,17 +506,9 @@ end AddCircle
 characteristic-zero division ring is cyclic. -/
 theorem AddCircle.isCyclic_of_finite_multiplicative {𝕜 : Type*} [DivisionRing 𝕜] [CharZero 𝕜]
     (p : 𝕜) (H : Subgroup (Multiplicative (AddCircle p))) [Finite H] : IsCyclic H := by
-  set A : AddSubgroup (AddCircle p) := Subgroup.toAddSubgroup' H
-  have : Finite A := Finite.of_injective
-    (fun a : A ↦ (⟨Multiplicative.ofAdd a.val, a.property⟩ : H)) fun a b h ↦
-    Subtype.ext (congrArg (fun y : H ↦ y.val.toAdd) h)
-  have : IsAddCyclic A := AddCircle.isAddCyclic_of_finite p A
-  let j : H →* Multiplicative A := {
-    toFun := fun y ↦ Multiplicative.ofAdd ⟨y.val.toAdd, y.property⟩
-    map_one' := rfl
-    map_mul' := fun _ _ ↦ rfl }
-  exact isCyclic_of_injective j fun y z h ↦ Subtype.ext (Multiplicative.toAdd.injective
-    (congrArg (fun t : Multiplicative A ↦ (t.toAdd : AddCircle p)) h))
+  have := H.finite_toAddSubgroup'_of_finite
+  have := AddCircle.isAddCyclic_of_finite p (Subgroup.toAddSubgroup' H)
+  exact H.isCyclic_of_isAddCyclic_toAddSubgroup'
 
 namespace ZMod
 
