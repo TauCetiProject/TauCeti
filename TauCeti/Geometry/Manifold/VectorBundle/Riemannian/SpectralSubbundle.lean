@@ -23,11 +23,11 @@ Let `V` be a finite-rank `C^n` vector bundle with a `C^n` Riemannian metric, and
 point `x` the metric turns `Q x` into a self-adjoint invertible operator, its Riesz operator
 `continuousLinearMapOfBilin (Q x)`, and the fibre `V x` splits orthogonally into the sum of the
 eigenspaces with negative eigenvalues and the sum of those with positive eigenvalues. This file
-shows that these two families of subspaces are `C^n` subbundles of `V`: near every point they are
-spanned by `C^n` local frames (`TauCeti.exists_isSubbundleFrameOn_pointSpectralSubspace_Iio` and
+shows that near every point these two families of subspaces are spanned by `C^n` local frames
+(`TauCeti.exists_isSubbundleFrameOn_pointSpectralSubspace_Iio` and
 `TauCeti.exists_isSubbundleFrameOn_pointSpectralSubspace_Ioi`). If their ranks are the same at
-every point of the base, this is the local frame criterion
-`TauCeti.HasLocalContMDiffSubbundleFrames` for a `C^n` subbundle
+every point of the base (for instance over a connected base), they therefore satisfy the local
+frame criterion `TauCeti.HasLocalContMDiffSubbundleFrames` for a `C^n` subbundle
 (`TauCeti.hasLocalContMDiffSubbundleFrames_pointSpectralSubspace_Iio` and
 `TauCeti.hasLocalContMDiffSubbundleFrames_pointSpectralSubspace_Ioi`).
 
@@ -49,7 +49,7 @@ subspaces are those of `Q` in coordinates
 negative spectral projections are smooth
 (`ContinuousLinearMap.starProjection_pointSpectralSubspace_Iio_zero_eq`, which writes them as
 `(1 - A (A²)^(-1/2)) / 2`). Projecting a basis of the negative space at the base point and
-synthesizing the result against the frame gives the local frame of the negative subbundle
+synthesizing the result against the frame gives the local frame of the negative subspaces
 (`TauCeti.exists_isSubbundleFrameOn_map_synthesisMap`).
 
 The motivating example is the normal Hessian of a Morse–Bott critical submanifold, whose negative
