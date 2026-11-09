@@ -305,8 +305,8 @@ theorem Affine.Δ_mem_sq_of_equation (W : Affine R) {I : Ideal R} {x y : R}
     (h : W.Equation x y) (hX : W.polynomialX.evalEval x y ∈ I)
     (hY : W.polynomialY.evalEval x y ∈ I) : W.Δ ∈ I ^ 2 := by
   have := (VariableChange.mk 1 x 0 y • W).Δ_mem_sq_of_a₆_eq_zero
-    (variableChange_translate_a₆_of_equation W h) (variableChange_translate_a₃ W x y ▸ hY)
-    (variableChange_translate_a₄ W x y ▸ I.neg_mem hX)
+    ((variableChange_translate_a₆ W x y).trans (neg_eq_zero.mpr h))
+    (variableChange_translate_a₃ W x y ▸ hY) (variableChange_translate_a₄ W x y ▸ I.neg_mem hX)
   rwa [variableChange_translate_Δ] at this
 
 end WeierstrassCurve
