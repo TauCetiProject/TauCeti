@@ -12,6 +12,8 @@ import TauCeti.Probability.Distributions.Stable.SmallJump.Limit
 import TauCeti.Probability.Distributions.Stable.Operations
 import TauCeti.Probability.Distributions.Affine
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
+import TauCeti.Probability.Moments.Fractional
+import TauCeti.Analysis.SpecialFunctions.Integrals.ExpPower
 import Mathlib.MeasureTheory.Group.IntegralConvolution
 import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
 
@@ -29,10 +31,21 @@ Conversely, Fubini applied to a finite absolute moment of the convolution gives 
 large-jump component with that moment. Translation preserves moment finiteness, so the
 large-jump obstruction persists in the full stable law.
 
+A symmetric stable law with location `m`, scale `s` and shape `α` has, for `0 < q < α`,
+
+`E[|X - m| ^ q] = s ^ q * (2 * Γ(q) * sin (π * q / 2) / π) * Γ(1 - q / α)`.
+
+Centering reduces this to location zero, where the characteristic function is the real
+function `exp (-|s t| ^ α)`. Its fractional absolute moments are recovered from the
+power-weighted integral of `1 - exp (-|s t| ^ α)`, which is a Gamma value. The formula covers
+shape two, where the law is Gaussian with variance `2 * s ^ 2`.
+
 ## References
 
 * J. P. Nolan, *Univariate Stable Distributions: Models for Heavy Tailed Data*, Springer,
   2020, chapter 1.
+* G. Samorodnitsky, M. S. Taqqu, *Stable Non-Gaussian Random Processes*, Chapman & Hall, 1994,
+  section 1.2.
 -/
 
 public section
@@ -106,6 +119,52 @@ theorem integrable_abs_rpow_stableMeasure_iff (hα : α ∈ Ioc 0 2) (hβ : |β|
     memLp_id_map_affine_iff hspos.ne', memLp_id_ofReal_iff_integrable_abs_rpow hq]
   exact integrable_abs_rpow_standardStableMeasure_iff ⟨hα.1, lt_of_le_of_ne hα.2 htwo⟩ hβ hq
 
+/-- The fractional absolute central moments of a symmetric stable law: for `0 < q < α`,
+`E[|X - m| ^ q] = s ^ q * (2 * Γ(q) * sin (π * q / 2) / π) * Γ(1 - q / α)`.
+This includes the Gaussian shape `α = 2` and the zero-scale Dirac law. -/
+theorem integral_abs_sub_rpow_stableMeasure (hα : α ∈ Ioc 0 2) (hq : 0 < q) (hqα : q < α)
+    (s : ℝ≥0) (m : ℝ) :
+    ∫ x, |x - m| ^ q ∂stableMeasure α 0 s m =
+      s ^ q * (2 * Gamma q * sin (π * q / 2) / π) * Gamma (1 - q / α) := by
+  have hβ : |(0 : ℝ)| ≤ 1 := by simp
+  rcases eq_or_ne s 0 with rfl | hs
+  · simp [stableMeasure_zero_scale hα hβ, zero_rpow hq.ne']
+  have hspos : 0 < (s : ℝ) := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hs)
+  have hcenter : (stableMeasure α 0 s m).map (fun x ↦ x - m) = stableMeasure α 0 s 0 := by
+    simpa [← sub_eq_neg_add] using stableMeasure_map_affine (α := α) (β := 0) (s := s)
+      (m := m) (a := -m) (b := 1) (Or.inl one_ne_zero)
+  rw [← integral_map_of_stronglyMeasurable (μ := stableMeasure α 0 s m)
+    (f := fun x : ℝ ↦ |x| ^ q) (by fun_prop) (by fun_prop), hcenter]
+  set ν := stableMeasure α 0 s 0
+  have := isProbabilityMeasure_stableMeasure hα hβ s 0
+  have hre (t : ℝ) : (charFun ν t).re = exp (-|s * t| ^ α) := by
+    have hψ : stableCharacteristicExponent α 0 (s * t) = ((-|s * t| ^ α : ℝ) : ℂ) :=
+      Complex.ext (by simp [hα.1.ne']) (by rw [stableCharacteristicExponent_im_eq_mul]; simp)
+    rw [charFun_stableMeasure hα hβ, hψ]
+    simp only [zero_mul, Complex.ofReal_zero, zero_add]
+    exact Complex.exp_ofReal_re _
+  -- The power-weighted characteristic-function deficit is a rescaled Gamma integral.
+  have hdeficit : ∫ t in Ioi (0 : ℝ), t ^ (-(q + 1)) * (ν.real univ - (charFun ν t).re) =
+      s ^ q * (Gamma (1 - q / α) / q) := by
+    have hg (t : ℝ) (ht : t ∈ Ioi 0) : t ^ (-(q + 1)) * (ν.real univ - (charFun ν t).re) =
+        s ^ (q + 1) * ((s * t) ^ (-(q + 1)) * (1 - exp (-(s * t) ^ α))) := by
+      rw [probReal_univ, hre, abs_of_pos (mul_pos hspos ht),
+        mul_rpow (z := -(q + 1)) hspos.le ht.le, ← mul_assoc, ← mul_assoc, ← rpow_add hspos,
+        add_neg_cancel, rpow_zero, one_mul]
+    rw [setIntegral_congr_fun measurableSet_Ioi hg, integral_const_mul,
+      integral_comp_mul_left_Ioi (fun u ↦ u ^ (-(q + 1)) * (1 - exp (-u ^ α))) 0 hspos,
+      mul_zero, integral_Ioi_rpow_neg_mul_one_sub_exp_neg_rpow hq hqα, smul_eq_mul,
+      rpow_add hspos, rpow_one]
+    field_simp
+  have hbridge := integral_rpow_mul_sub_re_charFun (μ := ν) hq (hqα.trans_le hα.2)
+    ((integrable_abs_rpow_stableMeasure_iff hα hβ hq).2 (Or.inr (Or.inr hqα)))
+  rw [hdeficit, Gamma_add_one hq.ne'] at hbridge
+  have hΓ : Gamma q ≠ 0 := (Gamma_pos_of_pos hq).ne'
+  have hsin : sin (q * π / 2) ≠ 0 :=
+    (sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [pi_pos, hα.2])).ne'
+  field_simp at hbridge ⊢
+  linarith
+
 end TauCeti.Probability
 
 namespace ProbabilityTheory.HasLaw
@@ -120,5 +179,16 @@ theorem integrable_abs_rpow_iff_stableMeasure {Ω : Type*} [MeasurableSpace Ω]
   have h := integrable_map_measure (g := fun x : ℝ ↦ |x| ^ q) (by fun_prop) hX.aemeasurable
   rw [hX.map_eq] at h
   exact h.symm.trans (TauCeti.Probability.integrable_abs_rpow_stableMeasure_iff hα hβ hq)
+
+/-- A random variable with a symmetric stable law has the fractional absolute central moments
+`s ^ q * (2 * Γ(q) * sin (π * q / 2) / π) * Γ(1 - q / α)` for `0 < q < α`. -/
+theorem integral_abs_sub_rpow_stableMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {P : Measure Ω} {X : Ω → ℝ} {α q : ℝ} {s : ℝ≥0} {m : ℝ}
+    (hX : HasLaw X (TauCeti.Probability.stableMeasure α 0 s m) P)
+    (hα : α ∈ Ioc 0 2) (hq : 0 < q) (hqα : q < α) :
+    ∫ ω, |X ω - m| ^ q ∂P =
+      s ^ q * (2 * Gamma q * sin (π * q / 2) / π) * Gamma (1 - q / α) :=
+  (hX.integral_comp (f := fun x ↦ |x - m| ^ q) (by fun_prop)).trans
+    (TauCeti.Probability.integral_abs_sub_rpow_stableMeasure hα hq hqα s m)
 
 end ProbabilityTheory.HasLaw
