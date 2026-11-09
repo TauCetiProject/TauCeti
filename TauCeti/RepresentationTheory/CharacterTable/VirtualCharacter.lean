@@ -468,11 +468,16 @@ theorem characterPairing_eq_intCast_sum {f₁ f₂ : ClassFunction k G}
   push_cast
   exact Finset.sum_congr rfl fun i _ => mul_comm _ _
 
-omit [IsAlgClosed k] in
-/-- **The character pairing is integer-valued on the virtual-character lattice.** -/
+omit [IsAlgClosed k] [Invertible (Nat.card G : k)] in
+/-- **The character pairing is integer-valued on the virtual-character lattice.** If `|G|` is
+zero in `k` the normalization `|G|⁻¹` of the pairing is `0`, so the pairing vanishes and the
+statement holds trivially; it is only meaningful when `|G|` is invertible in `k`. -/
 theorem exists_characterPairing_eq_intCast {f₁ f₂ : ClassFunction k G}
     (h₁ : (f₁ : G → k) ∈ virtualCharacters k G) (h₂ : (f₂ : G → k) ∈ virtualCharacters k G) :
     ∃ n : ℤ, ClassFunction.characterPairing f₁ f₂ = (n : k) := by
+  by_cases hG : (Nat.card G : k) = 0
+  · exact ⟨0, by rw [ClassFunction.characterPairing_apply, hG, inv_zero, zero_mul, Int.cast_zero]⟩
+  let _ : Invertible (Nat.card G : k) := invertibleOfNonzero hG
   obtain ⟨A, B, hAB⟩ := exists_eq_character_sub_character h₁
   obtain ⟨C, D, hCD⟩ := exists_eq_character_sub_character h₂
   have e₁ : f₁ = ClassFunction.ofFDRep A - ClassFunction.ofFDRep B :=
