@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Continuation
 public import TauCeti.Geometry.Symplectic.Floer.CylinderAction
+import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
 # Continuation cylinders in a manifold and the capped action
@@ -22,7 +23,8 @@ whose profile increases from `0` on `s ≤ 0` to `1` on `s ≥ 1`. Its curvature
 
 The energy identity for a family of Hamiltonians on a manifold target
 (`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_zero_left_eq_cylinderAction_sub`)
-measures the Floer energy of `u` over `[a, b] × [0, 1]` against the capped action
+measures the Floer energy of `u` over `[a, b] × [0, 1]`, corrected by the integrated curvature,
+against the capped action
 `A_H(γ, v) = ∫ v^* ω - ∫₀¹ H(t, γ(t)) dt` (`TauCeti.cylinderAction`). Write `γ_a = u(a, ·)` and
 `γ_b = u(b, ·)`, let `v` be a map with `v(0, ·) = γ_b` (a cap of `γ_b`), and let `w # v` be the
 cap of `γ_a` obtained by gluing `u|_{[a, b]}` to `v`. If `H₀ - H₁ ≤ B` along `u`, then
@@ -43,16 +45,18 @@ Taking `h(t) = sup_x (H₀ - H₁)(t, x)`, this is the shift `∫₀¹ sup (H₀
 filtration of capped generators under continuation, with the caps carried along the cylinder.
 No weak exactness or closedness of `ω` is used, so the statements apply to the closed monotone
 targets of capped Floer theory, such as `ℂPⁿ`. The corresponding statements for a symplectic
-vector space target, without caps, are in `TauCeti.Geometry.Symplectic.Floer.Continuation`.
+vector space target, without caps, are in `TauCeti.Geometry.Symplectic.Floer.Continuation`, and
+those for the contractible action of a weakly exact form are in
+`TauCeti.Geometry.Symplectic.Floer.CylinderAction`.
 
 The existence, compactness and counting of continuation cylinders are not treated here.
 
 ## Main results
 
-* `TauCeti.Floer.contMDiff_uncurry_linearHomotopy`: the linear homotopy of `C^n` Hamiltonians
-  on a manifold with a `C^n` profile is `C^n`.
-* `TauCeti.SmoothTwoForm.hamiltonianCurvature_linearHomotopy`: its curvature is
-  `β'(s) (H₁ - H₀)(t)`.
+* `TauCeti.Floer.contMDiff_uncurry_continuationHomotopy`: the continuation homotopy of `C^n`
+  Hamiltonians on a manifold is `C^n`.
+* `TauCeti.SmoothTwoForm.hamiltonianCurvature_linearHomotopy`: the curvature of a linear homotopy
+  is `β'(s) (H₁ - H₀)(t)`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_linearHomotopy_le`: the
   energy bound of a linear homotopy in terms of capped actions.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.cylinderAction_le_cylinderAction_add_of_linearHomotopy`:
@@ -80,20 +84,6 @@ namespace Floer
 
 variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace HM]
   {I : ModelWithCorners ℝ E HM} [TopologicalSpace M] [ChartedSpace HM M] {H₀ H₁ : ℝ → M → ℝ}
-
-/-- The linear homotopy of two `Cⁿ` time-dependent Hamiltonians on a manifold with a `Cⁿ` profile
-is `Cⁿ`. -/
-theorem contMDiff_uncurry_linearHomotopy {n : ℕ∞} {β : ℝ → ℝ} (hβ : ContDiff ℝ n β)
-    (hH₀ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) n (uncurry H₀))
-    (hH₁ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) n (uncurry H₁)) :
-    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n (uncurry (linearHomotopy β H₀ H₁)) := by
-  have hp : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ).prod I) n
-      fun p : (ℝ × ℝ) × M ↦ (p.1.2, p.2) :=
-    (contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd
-  have hβ' : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n fun p : (ℝ × ℝ) × M ↦ β p.1.1 :=
-    (hβ.comp contDiff_fst).contMDiff.comp contMDiff_fst
-  have h := (hH₀.comp hp).add (hβ'.smul ((hH₁.comp hp).sub (hH₀.comp hp)))
-  exact h.congr fun p ↦ (linearHomotopy_def β p.1 p.2).trans (by simp only [smul_eq_mul]; rfl)
 
 /-- The continuation homotopy of two `Cⁿ` time-dependent Hamiltonians on a manifold is `Cⁿ`. -/
 theorem contMDiff_uncurry_continuationHomotopy {n : ℕ∞}
@@ -155,23 +145,24 @@ theorem IsNondegenerate.integral_floerEnergyDensity_linearHomotopy_le (hω : ω.
           (rectangleTrans (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) -
         cylinderAction ω.1 (fun t ↦ linearHomotopy β H₀ H₁ (b, t)) v +
         (β b - β a) * ∫ t in Icc 0 1, B t := by
-  have hK := contMDiff_uncurry_linearHomotopy hβ hH₀ hH₁
-  rw [hω.integral_floerEnergyDensity_zero_left_eq_cylinderAction_sub hK hu hab hv hv₀]
+  rw [hω.integral_floerEnergyDensity_zero_left_eq_cylinderAction_sub
+    (contMDiff_uncurry_linearHomotopy hβ hH₀ hH₁) hu hab hv hv₀]
   -- It remains to bound `-∫ ∂_s H(u) = ∫ β'(s) (H₀ - H₁)(t, u)` by `(β(b) - β(a)) ∫ B`.
-  have hfi : IntegrableOn
-      (fun z ↦ ω.hamiltonianCurvature (fun _ _ ↦ 0) (linearHomotopy β H₀ H₁) z (u z))
-      (Icc a b ×ˢ Icc 0 1) :=
-    (continuous_hamiltonianCurvature_zero_left_comp hK hu).continuousOn.integrableOn_compact
-      (isCompact_Icc.prod isCompact_Icc)
   have hd {G : ℝ → M → ℝ} (hG : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry G)) (x : M) :
       Differentiable ℝ fun t ↦ G t x :=
     (contMDiff_iff_contDiff.mp (hG.comp (contMDiff_id.prodMk contMDiff_const))).differentiable
       one_ne_zero
-  have hle := neg_mul_setIntegral_le_setIntegral hβ hab hB hfi fun z hz ↦ by
-    rw [ω.hamiltonianCurvature_linearHomotopy (hβ.differentiable one_ne_zero z.1) (hd hH₀ _ _)
-      (hd hH₁ _ _)]
-    have := mul_le_mul_of_nonneg_left (hHB z hz) (hβm.deriv_nonneg (x := z.1))
-    linarith
+  have hcurv (z : ℝ × ℝ) :
+      fderiv ℝ (fun w ↦ linearHomotopy β H₀ H₁ w (u z)) z stdComplexLineReal =
+        deriv β z.1 * (H₁ z.2 (u z) - H₀ z.2 (u z)) :=
+    fderiv_linearHomotopy_stdComplexLineReal (hβ.differentiable one_ne_zero z.1) (hd hH₀ _ _)
+      (hd hH₁ _ _)
+  simp only [hcurv]
+  have hp : Continuous fun z : ℝ × ℝ ↦ (z.2, u z) := continuous_snd.prodMk hu.continuous
+  have hle := neg_mul_setIntegral_le_setIntegral_deriv_mul
+    (f := fun z ↦ H₁ z.2 (u z) - H₀ z.2 (u z)) hβ hβm hab
+    ((hH₁.continuous.comp hp).sub (hH₀.continuous.comp hp)).continuousOn hB
+    fun z hz ↦ by linarith [hHB z hz]
   linarith
 
 /-- **The capped action shift of a linear homotopy.** Under the hypotheses of

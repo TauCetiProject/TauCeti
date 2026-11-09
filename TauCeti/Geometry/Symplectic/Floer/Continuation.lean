@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
+import TauCeti.MeasureTheory.Integral.Rectangle
 import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
@@ -64,11 +65,10 @@ action at the end `s → ∞` by at most `∫₀¹ h`: if `A_{H₀}(u(s, ·)) �
 `∫₀¹ sup_x (H₀ - H₁) dt`, the bound by which continuation maps move the action filtration.
 
 These are statements for a symplectic vector space target and maps of the strip whose loops are
-closed. The manifold-target versions, with the actions of capped loops, are in
-`TauCeti.Geometry.Symplectic.Floer.Continuation.Manifold`; both rest on the estimate
-`TauCeti.Floer.neg_mul_setIntegral_le_setIntegral`, which integrates the lower bound
-`-β'(s) B(t)` of the curvature term over a rectangle. The existence, compactness and counting of
-continuation cylinders are not treated here.
+closed. The manifold-target versions are in `TauCeti.Geometry.Symplectic.Floer.CylinderAction`,
+for the contractible action of a weakly exact form, and in
+`TauCeti.Geometry.Symplectic.Floer.Continuation.Manifold`, for the actions of capped loops. The
+existence, compactness and counting of continuation cylinders are not treated here.
 
 ## Main definitions
 
@@ -83,8 +83,6 @@ continuation cylinders are not treated here.
   linear homotopy is `H₀` where `β = 0` and `H₁` where `β = 1`.
 * `TauCeti.Floer.fderiv_linearHomotopy_stdComplexLineReal`: the `s`-derivative of the linear
   homotopy with profile `β` is `β'(s) (H₁ - H₀)`.
-* `TauCeti.Floer.neg_mul_setIntegral_le_setIntegral`: integrating the lower bound
-  `-β'(s) B(t)` over a rectangle gives `-(β(b) - β(a)) ∫ B`.
 * `SymplecticForm.integral_floerEnergyDensity_linearHomotopy_le`,
   `SymplecticForm.hamiltonianAction_le_hamiltonianAction_add_of_linearHomotopy`: the energy bound
   and the action shift of a linear homotopy with a monotone profile over a rectangle.
@@ -220,29 +218,6 @@ theorem fderiv_continuationHomotopy_stdComplexLineReal {z : ℝ × ℝ} {x : V}
   exact fderiv_linearHomotopy_stdComplexLineReal
     ((smoothTransition.contDiff (n := 1)).differentiable one_ne_zero z.1) hH₀ hH₁
 
-/-- **Integrating a lower bound `-β'(s) B(t)` over a rectangle.** Let `β` be a `C¹` profile, `B`
-integrable on `[c, d]`, and `f` integrable on `[a, b] × [c, d]` with `-β'(s) B(t) ≤ f(s, t)` there.
-Then the integral of `f` over the rectangle is at least `-(β(b) - β(a)) ∫_c^d B`. This is how the
-curvature `∂_s H = β'(s) (H₁ - H₀)` of a linear homotopy with monotone profile is controlled by a
-one-sided bound `H₀ - H₁ ≤ B`. -/
-theorem neg_mul_setIntegral_le_setIntegral {β : ℝ → ℝ} (hβ : ContDiff ℝ 1 β) {a b c d : ℝ}
-    (hab : a ≤ b) {B : ℝ → ℝ} (hB : IntegrableOn B (Icc c d)) {f : ℝ × ℝ → ℝ}
-    (hf : IntegrableOn f (Icc a b ×ˢ Icc c d))
-    (hfB : ∀ z ∈ Icc a b ×ˢ Icc c d, -(deriv β z.1 * B z.2) ≤ f z) :
-    -((β b - β a) * ∫ t in Icc c d, B t) ≤ ∫ z in Icc a b ×ˢ Icc c d, f z := by
-  have hβ' : Continuous (deriv β) := hβ.continuous_deriv le_rfl
-  have hvol : (volume : Measure (ℝ × ℝ)) = volume.prod volume := Measure.volume_eq_prod ℝ ℝ
-  have hgi : IntegrableOn (fun z : ℝ × ℝ ↦ deriv β z.1 * B z.2) (Icc a b ×ˢ Icc c d) := by
-    rw [IntegrableOn, hvol, ← Measure.prod_restrict]
-    exact hβ'.continuousOn.integrableOn_Icc.mul_prod hB
-  have hle : ∫ z in Icc a b ×ˢ Icc c d, -(deriv β z.1 * B z.2) ≤ ∫ z in Icc a b ×ˢ Icc c d, f z :=
-    setIntegral_mono_on hgi.neg hf (measurableSet_Icc.prod measurableSet_Icc) hfB
-  have hftc : ∫ s in Icc a b, deriv β s = β b - β a := by
-    rw [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hab,
-      intervalIntegral.integral_deriv_eq_sub (fun x _ ↦ hβ.differentiable one_ne_zero x)
-        (hβ'.intervalIntegrable _ _)]
-  rwa [integral_neg, hvol, setIntegral_prod_mul (deriv β) B, ← hvol, hftc] at hle
-
 end Floer
 
 namespace SymplecticForm
@@ -324,7 +299,6 @@ theorem integral_floerEnergyDensity_linearHomotopy_le (ω : SymplecticForm V)
   rw [ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral
     (contDiff_uncurry_linearHomotopy hβ hH₀ hH₁) hU hu hab hRU hper]
   -- It remains to bound `-∫ ∂_s H(u) = ∫ β'(s) (H₀ - H₁)(t, u)` by `(∫ β') (∫ B)`.
-  have hβ' : Continuous (deriv β) := hβ.continuous_deriv le_rfl
   have hd {G : ℝ → V → ℝ} (hG : ContDiff ℝ 1 (uncurry G)) (t : ℝ) (x : V) :
       DifferentiableAt ℝ (fun t ↦ G t x) t :=
     (hG.comp (contDiff_id.prodMk contDiff_const)).differentiable one_ne_zero t
@@ -333,16 +307,12 @@ theorem integral_floerEnergyDensity_linearHomotopy_le (ω : SymplecticForm V)
     fderiv_linearHomotopy_stdComplexLineReal (hβ.differentiable one_ne_zero z.1) (hd hH₀ _ _)
       (hd hH₁ _ _)
   simp only [hcurv]
-  have hfi : IntegrableOn (fun z : ℝ × ℝ ↦ deriv β z.1 * (H₁ z.2 (u z) - H₀ z.2 (u z)))
-      (Icc a b ×ˢ Icc 0 1) := by
-    have hp : ContinuousOn (fun z : ℝ × ℝ ↦ (z.2, u z)) U :=
-      continuous_snd.continuousOn.prodMk hu.continuousOn
-    exact (((hβ'.comp continuous_fst).continuousOn.mul
-      ((hH₁.continuous.comp_continuousOn hp).sub (hH₀.continuous.comp_continuousOn hp))).mono
-        hRU).integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
-  have hle := neg_mul_setIntegral_le_setIntegral hβ hab hB hfi fun z hz ↦ by
-    have := mul_le_mul_of_nonneg_left (hHB z hz) (hβm.deriv_nonneg (x := z.1))
-    linarith
+  have hp : ContinuousOn (fun z : ℝ × ℝ ↦ (z.2, u z)) U :=
+    continuous_snd.continuousOn.prodMk hu.continuousOn
+  have hle := neg_mul_setIntegral_le_setIntegral_deriv_mul
+    (f := fun z ↦ H₁ z.2 (u z) - H₀ z.2 (u z)) hβ hβm hab
+    (((hH₁.continuous.comp_continuousOn hp).sub (hH₀.continuous.comp_continuousOn hp)).mono hRU)
+    hB fun z hz ↦ by linarith [hHB z hz]
   linarith
 
 /-- **The action shift of a linear homotopy over a rectangle.** Under the hypotheses of
