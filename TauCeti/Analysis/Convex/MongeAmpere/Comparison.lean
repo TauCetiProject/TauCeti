@@ -73,7 +73,8 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 /-- A contradiction from a set of large measure: let `MAu ≤ MAv` and `MAw = r • MAv` be measures
 with `r > 1`, and `G` a set with `MAv G < ∞`. If `MAu G = μ Su` and `MAw G = μ Sw` with `Sw ⊆ Su`
 and `0 < μ Su`, then `False`. -/
-private theorem false_of_subset_of_pos {X : Type*} [MeasurableSpace X] (μ : Measure X)
+private theorem _root_.MeasureTheory.Measure.false_of_subset_of_pos {X : Type*}
+    [MeasurableSpace X] (μ : Measure X)
     {G Su Sw : Set X} {MAu MAv MAw : Measure X} {r : ℝ≥0∞} (hr : 1 < r) (hMA : MAu ≤ MAv)
     (hwMA : MAw = r • MAv) (hSu : MAu G = μ Su) (hSw : MAw G = μ Sw) (hsub : Sw ⊆ Su)
     (hpos : 0 < μ Su) (hfin : MAv G ≠ ∞) : False := by
@@ -212,7 +213,7 @@ theorem le_of_mongeAmpereMeasure_le_of_le_frontier (hΩo : IsOpen Ω)
   -- Compare `(1 + ε) ^ n MA_v(G) ≤ MA_u(G) ≤ MA_v(G)` with `0 < MA_u(G)` and `MA_v(G) < ∞`.
   have hεpos : 0 < 1 + ε := by positivity
   obtain ⟨c, η, hη, hcη⟩ := hball
-  refine false_of_subset_of_pos μ ?_ hMA
+  refine Measure.false_of_subset_of_pos μ ?_ hMA
     (Measure.mongeAmpereMeasure_ite_mul_add_of_pos μ hεpos b) hSu hSw hsub
     ((measure_ball_pos μ c hη).trans_le (measure_mono hcη)) ?_
   · rw [← ENNReal.ofReal_one, ENNReal.ofReal_lt_ofReal_iff (by positivity)]
