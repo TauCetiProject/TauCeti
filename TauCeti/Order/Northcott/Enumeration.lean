@@ -17,7 +17,8 @@ Let `f : ι → α` be a family in a linear order whose sublevel sets `{i | f i 
 on an infinite index type `ι`. Then `ι` can be enumerated by `ℕ` so that the values of `f` are
 listed in nondecreasing order, each value repeated as often as it is taken
 (`exists_equiv_monotone_comp_of_finite_setOf_le`), and along any such enumeration the values tend
-to infinity (`tendsto_comp_atTop_of_finite_setOf_le`).
+to infinity (`tendsto_comp_atTop_of_finite_setOf_le`). The finiteness hypothesis is the field of
+`Northcott f`, taken as an explicit hypothesis.
 
 This is how the eigenvalues of an operator with discrete spectrum, such as the Dirichlet
 eigenvalues of an elliptic operator on a bounded domain, are written as a sequence

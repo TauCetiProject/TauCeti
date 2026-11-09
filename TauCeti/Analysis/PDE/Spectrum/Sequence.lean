@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Schmidt
 public import TauCeti.Analysis.PDE.Spectrum.Basic
 public import TauCeti.MeasureTheory.Function.L2Space
-public import TauCeti.Order.Monotone.Enumeration
+public import TauCeti.Order.Northcott.Enumeration
 
 /-!
 # The Dirichlet eigenvalues as a sequence

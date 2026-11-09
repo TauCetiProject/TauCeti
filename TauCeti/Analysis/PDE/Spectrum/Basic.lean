@@ -699,12 +699,11 @@ theorem exists_isCoercive_laplacian_of_isBounded
     (gamma := 0) h1.upper_nonneg
     aestronglyMeasurable_const aestronglyMeasurable_const aestronglyMeasurable_const
     (fun _x hx eta xi ↦ h1.upper_bound hx eta xi) (fun _ _ ↦ by simp) (fun _ _ ↦ by simp)
-  obtain ⟨R, hR, hball⟩ := hOmega.subset_ball_lt 0 0
-  exact ⟨hcoeff, isCoercive_energyFormH1L0 hcoeff
-    (energyFormH1_poincare_constant_pos h1.pos le_rfl (by linarith) (by simp))
-    fun w ↦ UniformlyEllipticOn.mul_norm_sq_le_energyFormH1_self_of_subset_ball h1
-      aestronglyMeasurable_const aestronglyMeasurable_const aestronglyMeasurable_const
-      (fun _ _ ↦ by simp) (gamma := 0) (fun _ _ ↦ by simp) (fun _ _ ↦ le_rfl) hball w.2⟩
+  obtain ⟨R, -, hball⟩ := hOmega.subset_ball_lt 0 0
+  exact ⟨hcoeff, UniformlyEllipticOn.isCoercive_energyFormH1L0_of_subset_ball h1
+    aestronglyMeasurable_const aestronglyMeasurable_const aestronglyMeasurable_const
+    (beta := 0) (fun _ _ ↦ by simp) (gamma := 0) (fun _ _ ↦ by simp) (fun _ _ ↦ le_rfl) hball
+    (by simp) hcoeff⟩
 
 /-- **Every Dirichlet eigenvalue of `-Δ` is positive** on a domain inside a ball. -/
 theorem pos_of_isDirichletEigenvalue_laplacian_of_subset_ball
