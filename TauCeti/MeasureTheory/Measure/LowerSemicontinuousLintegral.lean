@@ -172,7 +172,7 @@ theorem lowerSemicontinuousOn_lintegral_comp_finiteMeasure
   intro μ₀ hμ₀ c hc
   beta_reduce at hc ⊢
   have hm₀ : AEMeasurable (fun x ↦ h (Φ x)) (μ₀ : Measure Ω) :=
-    aemeasurable_comp_of_forall_exists_isClosed_continuousOn hh fun ε hε ↦
+    hh.aemeasurable_comp_of_forall_exists_isClosed_continuousOn fun ε hε ↦
       (hΦ ε hε).imp fun C hC ↦ ⟨hC.1, hC.2.1, hC.2.2 μ₀ hμ₀⟩
   -- Truncate `h ∘ Φ` at a finite height `M` without losing the strict inequality at `μ₀`.
   have hsup : ∫⁻ x, h (Φ x) ∂(μ₀ : Measure Ω) =

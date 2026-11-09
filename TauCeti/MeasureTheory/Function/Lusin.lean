@@ -49,9 +49,9 @@ maps produced by `ProbabilityTheory.HasLaw` are only almost-everywhere measurabl
 * `TauCeti.exists_isClosed_measure_sdiff_lt_continuousOn_of_ae_eq` — Lusin's conclusion transfers
   to an almost-everywhere equal map, which reduces each almost-everywhere version to its
   everywhere counterpart;
-* `TauCeti.aemeasurable_comp_of_forall_exists_isClosed_continuousOn` — a lower semicontinuous
-  function of a map that is continuous on closed sets with arbitrarily small complement mass is
-  almost-everywhere measurable.
+* `LowerSemicontinuous.aemeasurable_comp_of_forall_exists_isClosed_continuousOn` — a lower
+  semicontinuous function of a map that is continuous on closed sets with arbitrarily small
+  complement mass is almost-everywhere measurable.
 
 ## References
 
@@ -184,7 +184,7 @@ end StronglyMeasurable
 small complement mass is almost-everywhere measurable: the map is continuous on countably many
 closed sets whose union is a full-measure set, and on each of them the composite is lower
 semicontinuous. -/
-theorem aemeasurable_comp_of_forall_exists_isClosed_continuousOn
+theorem _root_.LowerSemicontinuous.aemeasurable_comp_of_forall_exists_isClosed_continuousOn
     {Ω W : Type*} [TopologicalSpace Ω] [MeasurableSpace Ω] [OpensMeasurableSpace Ω]
     [TopologicalSpace W] {h : W → ℝ≥0∞} {Φ : Ω → W} {μ : Measure Ω}
     (hh : LowerSemicontinuous h)
