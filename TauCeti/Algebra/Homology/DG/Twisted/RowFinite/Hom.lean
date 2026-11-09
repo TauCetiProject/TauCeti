@@ -17,8 +17,8 @@ A graded `A`-linear map `Ψ : K_m → N` of degree `j` satisfies the Koszul rule
 of degree `j - ind x`, which may be chosen freely. The map with these values is
 `TauCeti.rowFiniteSignedCombination j u`, which sends `single x a` to `(-1)^(j |a|) a • u x`.
 For `j = 0` it is the linear combination `Finsupp.linearCombination A u`
-(`TauCeti.rowFiniteSignedCombination_zero_left`), and for `j = 1` with free target it is the
-signed row substitution `TauCeti.rowFiniteSignedMap` (`TauCeti.rowFiniteSignedCombination_one`).
+(`TauCeti.rowFiniteSignedCombination_zero_left`), and for `j = 1` it is the signed extension
+`TauCeti.rowFiniteSignedMap` (`TauCeti.rowFiniteSignedCombination_one`).
 
 The complex of graded maps `K_m → N` has differential `δ Ψ = d_N ∘ Ψ - (-1)^j Ψ ∘ D`. Read on
 generators, it sends a family `u` of degree `j` to the family
@@ -143,9 +143,9 @@ theorem rowFiniteSignedCombination_zero_left (u : P → N) :
   | @homogeneous q a => rw [koszulTwist_eq_negOnePow_smul 0 a.2, zero_mul, Int.negOnePow_zero,
       one_smul]
 
-/-- With degree one and free target, the graded map with generator values `h` is the signed row
-substitution. -/
-theorem rowFiniteSignedCombination_one {Q : Type uQ} (h : P → Q →₀ A) :
+/-- With degree one, the graded map with generator values `h` is the signed extension
+`rowFiniteSignedMap`. -/
+theorem rowFiniteSignedCombination_one (h : P → N) :
     rowFiniteSignedCombination 𝒜 1 h = rowFiniteSignedMap (𝒜 := 𝒜) h :=
   LinearMap.ext fun f ↦ by rw [rowFiniteSignedCombination_apply, rowFiniteSignedMap_apply]
 
@@ -223,15 +223,6 @@ theorem rowFiniteSignedCombination_mem {j : ℤ} {u : P → N} {n : ℤ} {f : P 
   convert SetLike.GradedSMul.smul_mem (hf x) (hu x hx) using 2
   simp only [vadd_eq_add]
   ring
-
-omit [GradedAlgebra 𝒜] in
-/-- The row of a generator `x` has total degree `1 - ind x`, one more than the generator. -/
-theorem RowFiniteTwistingCocycle.m_mem_rowFiniteTotalGrading
-    (m : RowFiniteTwistingCocycle 𝒜 d P ind) (x : P) :
-    m.m x ∈ rowFiniteTotalGrading 𝒜 ind (1 - ind x) :=
-  (mem_rowFiniteTotalGrading_iff _ _).mpr fun y ↦ by
-    convert m.mem_graded x y using 2
-    ring
 
 end SignedCombination
 
