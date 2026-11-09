@@ -566,68 +566,55 @@ end ContDiffAt
 
 namespace ContDiffAt
 
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
-  {a : E} {r : ℕ∞ω}
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F] {a : E} {r : ℕ∞ω}
 
 /-- **Parametrizing a regular level set.** Let `g` be `C^r` at `a` with strict derivative `g'` of
-full range, and `g a = 0`. Then there is a `C^r` map `θ` from `ker g'` with `θ 0 = a`, taking values
-in the level set `g = 0` near the origin, and such that, locally at `a`, every zero of `g` lies in
-the image under `θ` of any prescribed neighbourhood of the origin. -/
-theorem exists_parametrization_of_hasStrictFDerivAt {g : E → 𝕜} {g' : E →L[𝕜] 𝕜}
+full range and complemented kernel, and `g a = 0`. Then there is a `C^r` map `θ` from `ker g'` with
+`θ 0 = a`, taking values in the level set `g = 0` near the origin, and such that, locally at `a`,
+every zero of `g` lies in the image under `θ` of any prescribed neighbourhood of the origin. -/
+theorem exists_parametrization_of_hasStrictFDerivAt {g : E → F} {g' : E →L[𝕜] F}
     (hg : ContDiffAt 𝕜 r g a) (hstrict : HasStrictFDerivAt g g' a) (hsurj : g'.range = ⊤)
-    (hr : r ≠ 0) (ha : g a = 0) :
+    (hker : g'.ker.ClosedComplemented) (ha : g a = 0) :
     ∃ θ : ↥g'.ker → E, θ 0 = a ∧ ContDiffAt 𝕜 r θ 0 ∧ (∀ᶠ z in 𝓝 0, g (θ z) = 0) ∧
       ∀ V ∈ 𝓝 (0 : ↥g'.ker), ∀ᶠ x in 𝓝 a, g x = 0 → x ∈ θ '' V := by
-  -- The implicit function theorem for `g`, with kernel coordinate `x ↦ π (x - a)` for a
-  -- projection `π` onto `ker g'`; `θ` parametrizes the level set `g = 0` near `a`. This is the
-  -- data of `HasStrictFDerivAt.implicitFunctionDataOfComplemented`, spelled out because that
-  -- definition does not expose its fields, which the smoothness of `θ` needs.
-  have hker : g'.ker.ClosedComplemented := g'.ker_closedComplemented_of_finiteDimensional_range
-  let π : E →L[𝕜] ↥g'.ker := Classical.choose hker
-  let φ : ImplicitFunctionData 𝕜 E 𝕜 ↥g'.ker :=
-    { leftFun := g
-      leftDeriv := g'
-      rightFun x := π (x - a)
-      rightDeriv := π
-      pt := a
-      hasStrictFDerivAt_leftFun := hstrict
-      hasStrictFDerivAt_rightFun :=
-        π.hasStrictFDerivAt.comp a ((hasStrictFDerivAt_id a).sub_const a)
-      range_leftDeriv := hsurj
-      range_rightDeriv := LinearMap.range_eq_of_proj (Classical.choose_spec hker)
-      isCompl_ker := LinearMap.isCompl_of_proj (Classical.choose_spec hker) }
-  let θ : ↥g'.ker → E := φ.implicitFunction 0
-  -- The implicit-function API is stated for `φ.leftFun`; record that this field is `g`.
-  have hleft : φ.leftFun = g := by simp only [φ]
-  have hright : φ.rightFun φ.pt = 0 := by simp [φ]
-  have hpt : φ.prodFun φ.pt = (0, 0) := by simp [φ, ha]
-  have hθa : θ 0 = a := by
-    have h := φ.implicitFunction_apply_image.self_of_nhds
-    rwa [hright, hleft, ha] at h
-  have hθ : ContDiffAt 𝕜 r θ 0 := by
-    have hrightφ : ContDiffAt 𝕜 r φ.rightFun φ.pt := by
-      simp only [φ]
-      fun_prop
-    have himplicit := φ.contDiffAt_implicitFunction hg hrightφ hr
-    rw [hpt] at himplicit
-    simpa only [Function.comp_def, Function.uncurry_apply_pair] using
-      himplicit.comp 0 (contDiffAt_const.prodMk contDiffAt_id)
-  have hθg : ∀ᶠ z in 𝓝 0, g (θ z) = 0 := by
-    have h : Tendsto (fun z : ↥g'.ker ↦ ((0 : 𝕜), z)) (𝓝 0) (𝓝 (φ.prodFun φ.pt)) := by
-      rw [hpt]
-      exact tendsto_const_nhds.prodMk_nhds tendsto_id
-    exact h.eventually φ.leftFun_implicitFunction
-  have hcover : ∀ V ∈ 𝓝 (0 : ↥g'.ker),
-      ∀ᶠ x in 𝓝 a, g x = 0 → x ∈ θ '' V := by
-    intro V hV
-    -- Near `a`, each `x` is `φ.implicitFunction (g x) (φ.rightFun x)`, and the kernel
-    -- coordinate `φ.rightFun x` tends to `0` as `x` tends to `a`.
-    have htend : Tendsto φ.rightFun (𝓝 a) (𝓝 0) :=
-      hright ▸ φ.hasStrictFDerivAt_rightFun.continuousAt.tendsto
-    filter_upwards [φ.implicitFunction_apply_image, htend hV] with x hx hxV hxi
-    rw [hleft, hxi] at hx
-    exact ⟨φ.rightFun x, hxV, hx⟩
-  exact ⟨θ, hθa, hθ, hθg, hcover⟩
+  -- Parametrize by the inverse of the implicit-function homeomorphism `x ↦ (g x, P (x - a))`
+  -- along the slice `{0} × ker g'`.
+  let Φ := hstrict.implicitToOpenPartialHomeomorphOfComplemented g g' hsurj hker
+  have hsrc : a ∈ Φ.source :=
+    hstrict.mem_implicitToOpenPartialHomeomorphOfComplemented_source hsurj hker
+  have hself : Φ a = (g a, 0) :=
+    hstrict.implicitToOpenPartialHomeomorphOfComplemented_self hsurj hker
+  have hslice : ContDiffAt 𝕜 r (fun k : ↥g'.ker ↦ ((0 : F), k)) 0 :=
+    contDiffAt_const.prodMk contDiffAt_id
+  refine ⟨fun k ↦ Φ.symm (0, k), ?_, ?_, ?_, ?_⟩
+  · simpa only [ha] using
+      hstrict.implicitToOpenPartialHomeomorphOfComplemented_symm_self hsurj hker
+  · have hsymm :=
+      hstrict.contDiffAt_implicitToOpenPartialHomeomorphOfComplemented_symm hg hsurj hker
+    rw [ha] at hsymm
+    exact hsymm.comp 0 hslice
+  · have htarget : (0, (0 : ↥g'.ker)) ∈ Φ.target := by
+      simpa only [ha] using
+        hstrict.mem_implicitToOpenPartialHomeomorphOfComplemented_target hsurj hker
+    filter_upwards [hslice.continuousAt.preimage_mem_nhds (Φ.open_target.mem_nhds htarget)]
+      with z hz
+    calc g (Φ.symm (0, z))
+        = (Φ (Φ.symm (0, z))).1 :=
+          (hstrict.implicitToOpenPartialHomeomorphOfComplemented_fst hsurj hker _).symm
+      _ = 0 := congrArg Prod.fst (Φ.right_inv hz)
+  · intro V hV
+    -- Near `a`, `Φ x = (g x, P (x - a))` with second component tending to `0`.
+    have hcont : Tendsto Φ (𝓝 a) (𝓝 (g a, 0)) := hself ▸ Φ.continuousAt hsrc
+    have hV' : ∀ᶠ x in 𝓝 a, (Φ x).2 ∈ V :=
+      (continuous_snd.continuousAt.tendsto.comp hcont).eventually hV
+    filter_upwards [Φ.open_source.mem_nhds hsrc, hV'] with x hx hxV hxg
+    have hΦx : Φ x = (0, (Φ x).2) :=
+      Prod.ext ((hstrict.implicitToOpenPartialHomeomorphOfComplemented_fst hsurj hker x).trans hxg)
+        rfl
+    refine ⟨(Φ x).2, hxV, ?_⟩
+    change Φ.symm (0, (Φ x).2) = x
+    rw [← hΦx, Φ.left_inv hx]
 
 end ContDiffAt
 
