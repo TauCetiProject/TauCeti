@@ -195,20 +195,32 @@ open MeasureTheory
 singleton-supported vectors is zero. No countability of the index space is needed. -/
 theorem eq_zero_of_apply_indicatorConstLp_singleton
     {α 𝕜 E F : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [RCLike 𝕜]
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
-    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
     (T : Lp E 2 (Measure.count : Measure α) →L[𝕜] F)
     (h : ∀ (i : α) (v : E),
       T (indicatorConstLp 2 (measurableSet_singleton i) (by simp) v) = 0) : T = 0 := by
-  have ht : T.adjoint = 0 := by
-    apply ContinuousLinearMap.ext
-    intro η
-    rw [zero_apply]
-    refine Lp.eq_zero_of_inner_indicatorConstLp_singleton (𝕜 := 𝕜) _ fun i v => ?_
-    rw [adjoint_inner_right, h, inner_zero_left]
-  calc
-    T = T.adjoint.adjoint := (adjoint_adjoint T).symm
-    _ = 0 := by rw [ht, map_zero]
+  -- Finite sets are finite disjoint unions of singletons.
+  have hfin (c : E) (t : Finset α) :
+      T (indicatorConstLp 2 t.measurableSet (by simp [Measure.count_apply_finset]) c) = 0 := by
+    classical
+    induction t using Finset.induction_on with
+    | empty => simp
+    | insert i t hi ih =>
+      have hd : Disjoint ({i} : Set α) (t : Set α) := by simpa using hi
+      have := indicatorConstLp_disjoint_union (p := 2) (μ := (Measure.count : Measure α))
+        (measurableSet_singleton i) t.measurableSet (by simp)
+        (by simp [Measure.count_apply_finset]) hd c
+      simp only [Finset.coe_insert, ← Set.singleton_union] at *
+      rw [this, map_add, h, ih, add_zero]
+  refine ContinuousLinearMap.ext fun f ↦ ?_
+  refine Lp.induction (p := 2) (by norm_num) (fun f ↦ T f = 0) ?_ ?_
+    (isClosed_eq T.continuous continuous_const) f
+  · intro c s hs hμs
+    obtain ⟨t, rfl⟩ := (Measure.count_apply_lt_top.mp hμs).exists_finset_coe
+    exact hfin c t
+  · intro f g hf hg _ hTf hTg
+    rw [map_add, hTf, hTg, add_zero]
 
 end ContinuousLinearMap
 
