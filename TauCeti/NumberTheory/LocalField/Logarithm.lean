@@ -304,12 +304,12 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 /-- **The logarithm is Galois-equivariant.** Every `K`-automorphism of an extension `L/K` of
 nonarchimedean local fields (necessarily finite) commutes with the logarithm:
-`σ (log u) = log (σ u)`. This is `NormedSpace.map_log_of_continuous` for the homeomorphism `σ`. -/
+`σ (log u) = log (σ u)`. This is `RingEquiv.map_log_of_continuous` for the homeomorphism `σ`. -/
 @[simp]
 theorem map_log (σ : L ≃ₐ[K] L) (u : L) :
     σ (NormedSpace.log u) = NormedSpace.log (σ u) := by
   have := TauCeti.finite_of_valuativeExtension K L
-  exact NormedSpace.map_log_of_continuous σ.toRingEquiv σ.continuous_of_valuativeExtension
+  exact RingEquiv.map_log_of_continuous σ.toRingEquiv σ.continuous_of_valuativeExtension
     σ.symm.continuous_of_valuativeExtension u
 
 end AlgEquiv

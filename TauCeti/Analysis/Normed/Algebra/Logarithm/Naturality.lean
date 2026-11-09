@@ -22,7 +22,7 @@ open unit ball about one. It also packages this local identity as an equality of
 * `NormedSpace.eventually_map_log`: naturality near one.
 * `NormedSpace.map_log_germ`: naturality as an equality of germs.
 * `NormedSpace.map_log_germ_continuousMapClass`: the `simp` form of `map_log_germ`.
-* `NormedSpace.map_log_of_continuous`: a ring isomorphism that is a homeomorphism commutes with
+* `RingEquiv.map_log_of_continuous`: a ring isomorphism that is a homeomorphism commutes with
   `log` everywhere.
 
 ## See also
@@ -118,8 +118,8 @@ variable {A B : Type*} [Ring A] [TopologicalSpace A] [IsTopologicalRing A]
 series of `x` is mapped termwise to that of `σ x`, and `σ` preserves summability and `tsum`
 because it has a continuous inverse. When `A` has no `ℚ`-algebra structure, neither has `B`, and
 both sides are `0`. -/
-theorem map_log_of_continuous (σ : A ≃+* B) (hσ : Continuous σ) (hσ' : Continuous σ.symm)
-    (x : A) : σ (log x) = log (σ x) := by
+theorem _root_.RingEquiv.map_log_of_continuous (σ : A ≃+* B) (hσ : Continuous σ)
+    (hσ' : Continuous σ.symm) (x : A) : σ (log x) = log (σ x) := by
   by_cases hQ : Nonempty (Algebra ℚ A)
   · let _ := hQ.some
     let _ := (σ.toRingHom.comp (algebraMap ℚ A)).toRatAlgebra
