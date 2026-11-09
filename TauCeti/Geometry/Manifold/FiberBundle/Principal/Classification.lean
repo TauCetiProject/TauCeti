@@ -338,8 +338,8 @@ theorem NonabelianCechH1.mk_coordChange_eq_mk_coordChange_iff_exists_equivariant
     PrincipalBundle.contMDiff_symm_of_equivariant (P := Z'.Fiber) (fun b ↦ ψ' b)
       (fun b g p ↦ hψ' b p g) hψ's
   -- The inverses of `ψ` and `ψ'` are equivariant too.
-  have hψsymm (b : B) := PrincipalBundle.symm_op_smul_of_equivariant (ψ b) (hψ b)
-  have hψ'symm (b : B) := PrincipalBundle.symm_op_smul_of_equivariant (ψ' b) (hψ' b)
+  have hψsymm (b : B) := (ψ b).symm_op_smul_of_equivariant (hψ b)
+  have hψ'symm (b : B) := (ψ' b).symm_op_smul_of_equivariant (hψ' b)
   rw [mk_eq_mk_iff_exists_equivariant hU indexAt hindex]
   constructor
   · rintro ⟨χ, hχ, hχs⟩

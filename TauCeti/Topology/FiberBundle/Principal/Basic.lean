@@ -161,6 +161,13 @@ theorem coordChange_one_mul_coordChange_one (e₁ e₂ e₃ : Trivialization G (
 
 end Bundle.Trivialization
 
+/-- The inverse of an equivalence from `G` that intertwines right multiplication with a right
+action of `G` intertwines them too. -/
+theorem Equiv.symm_op_smul_of_equivariant {G X : Type*} [Group G] [MulAction Gᵐᵒᵖ X]
+    (e : G ≃ X) (he : ∀ v g : G, e (v * g) = op g • e v) (g : G) (x : X) :
+    e.symm (op g • x) = e.symm x * g := by
+  rw [Equiv.symm_apply_eq, he, Equiv.apply_symm_apply]
+
 namespace TauCeti
 
 variable (G : Type*) {B : Type*} [TopologicalSpace B] [Group G] [TopologicalSpace G]
@@ -248,14 +255,6 @@ theorem division_mul_division (p q r : P b) : division G p q * division G q r = 
 @[simp]
 theorem inv_division (p q : P b) : (division G p q)⁻¹ = division G q p := by
   rw [inv_eq_iff_mul_eq_one, division_mul_division, division_self]
-
-omit [TopologicalSpace G] in
-/-- The inverse of an equivalence from `G` that intertwines right multiplication with a right
-action of `G` intertwines them too. -/
-theorem symm_op_smul_of_equivariant {X : Type*} [MulAction Gᵐᵒᵖ X] (e : G ≃ X)
-    (he : ∀ v g : G, e (v * g) = op g • e v) (g : G) (x : X) :
-    e.symm (op g • x) = e.symm x * g := by
-  rw [Equiv.symm_apply_eq, he, Equiv.apply_symm_apply]
 
 end PrincipalBundle
 
