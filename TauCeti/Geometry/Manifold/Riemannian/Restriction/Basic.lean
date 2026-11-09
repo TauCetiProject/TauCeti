@@ -319,16 +319,19 @@ variable
   {U : Opens M}
 
 /-- Path length is intrinsic: restricting the metric of `M` to an open submanifold `U` does not
-change the length of a differentiable curve read in `U`. -/
+change the length of a curve read in `U`. (Where the curve is not differentiable both integrands
+take the junk value `0`.) -/
 @[simp]
-theorem pathELength_subtypeVal_comp {γ : ℝ → U} {a b : ℝ}
-    (hγ : MDiff[Icc a b] γ) :
+theorem pathELength_subtypeVal_comp {γ : ℝ → U} {a b : ℝ} :
     pathELength I γ a b = pathELength I ((Subtype.val : U → M) ∘ γ) a b := by
   rw [pathELength_eq_lintegral_mfderiv_Icc, pathELength_eq_lintegral_mfderiv_Icc,
     ← MeasureTheory.restrict_Ioo_eq_restrict_Icc]
   refine MeasureTheory.setLIntegral_congr_fun measurableSet_Ioo fun t ht ↦ ?_
-  have hd : MDiffAt γ t :=
-    (hγ t (Set.Ioo_subset_Icc_self ht)).mdifferentiableAt (Icc_mem_nhds ht.1 ht.2)
+  by_cases hd : MDiffAt γ t
+  swap
+  · rw [mfderiv_zero_of_not_mdifferentiableAt hd, mfderiv_zero_of_not_mdifferentiableAt
+      (fun h ↦ hd ((ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff γ Set.univ t).1 h))]
+    simp
   have hv : MDiffAt (Subtype.val : U → M) (γ t) :=
     (contMDiff_subtype_val (γ t)).mdifferentiableAt one_ne_zero
   rw [(HasMFDerivAt.comp t hv.hasMFDerivAt hd.hasMFDerivAt).mfderiv, mfderiv_subtype_val]
@@ -352,7 +355,7 @@ theorem riemannianEDist_le_riemannianEDist_subtype (U : Opens M) (x y : U) :
     riemannianEDist I (x : M) (y : M) ≤ riemannianEDist I x y := by
   refine TauCeti.Manifold.le_riemannianEDist_of_forall_le_pathELength (M := U)
     (I := I) fun γ h0 h1 hγ ↦ ?_
-  rw [TauCeti.Manifold.pathELength_subtypeVal_comp (hγ.mdifferentiableOn one_ne_zero)]
+  rw [TauCeti.Manifold.pathELength_subtypeVal_comp]
   exact Manifold.riemannianEDist_le_pathELength
     (contMDiff_subtype_val.comp_contMDiffOn hγ)
     (congrArg Subtype.val h0) (congrArg Subtype.val h1) zero_le_one

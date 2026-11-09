@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.PermutationTriple.BlockQuotient
+public import TauCeti.Combinatorics.PermutationTriple.Primitivity.Basic
 public import TauCeti.Combinatorics.PermutationTriple.SmallDegrees
 public import TauCeti.GroupTheory.Perm.ComputedCycleType
 
@@ -19,11 +21,19 @@ convention, so the triples below use their componentwise inverses.
 The comparison certifies the listed records against the complete combinatorial classification;
 it does not assert that the database contains every ordered triple or every Belyi map.
 
+Distinct records have distinct isomorphism classes of triples. Exactly four records are
+imprimitive, and each of them primitivizes to the record `2T1-2_2_1.1-a`: its monodromy action has
+a maximal proper block with two translates, and the quotient by these translates is the triple of
+that record, the double cover of the sphere branched over `0` and `1`.
+
 ## References
 
 * M. Musty, S. Schiavone, J. Sijsling, J. Voight, *A database of Belyi maps*, Algorithm 2.3.1.
 * LMFDB, [Belyi map records of degree at most four](https://www.lmfdb.org/Belyi/?deg=1-4).
 -/
+
+open Equiv MulAction
+open scoped Pointwise
 
 public section
 
@@ -142,6 +152,78 @@ theorem unorderedCycleData_eq_classification (n : ℕ) (hn : n ≤ 4) :
     unfold computedUnorderedCycleData
     simp only [unorderedCycleData_def]
     decide +kernel
+
+/-! ### Isomorphism classes and primitivizations -/
+
+namespace SmallDegreeRecord
+
+/-- The isomorphism class of the triple of a record, together with its degree. -/
+def isoClass (r : SmallDegreeRecord) : Σ n, ConnectedIsoClass n :=
+  ⟨r.degree, ConnectedIsoClass.mk r.triple⟩
+
+theorem isoClass_def (r : SmallDegreeRecord) :
+    r.isoClass = ⟨r.degree, ConnectedIsoClass.mk r.triple⟩ := (rfl)
+
+/-- Records with the same isomorphism class have the same ordered cycle data. -/
+theorem computedCycleData_eq_of_isoClass_eq {r r' : SmallDegreeRecord}
+    (h : r.isoClass = r'.isoClass) : computedCycleData r = computedCycleData r' := by
+  rw [isoClass_def, isoClass_def] at h
+  obtain ⟨_, n, t, _⟩ := r
+  obtain ⟨_, n', t', _⟩ := r'
+  obtain ⟨rfl, h⟩ := Sigma.mk.inj_iff.mp h
+  exact Prod.ext rfl (cycleData_eq_of_equivalent
+    (ConnectedIsoClass.mk_eq_mk_iff_equivalent.mp (eq_of_heq h)))
+
+end SmallDegreeRecord
+
+/-- Distinct frozen records have distinct isomorphism classes of triples. -/
+theorem isoClass_nodup : (smallDegreeRecords.map SmallDegreeRecord.isoClass).Nodup := by
+  have h := computedCycleData_nodup
+  rw [List.Nodup, List.pairwise_map] at h ⊢
+  exact h.imp fun hne heq ↦ hne (SmallDegreeRecord.computedCycleData_eq_of_isoClass_eq heq)
+
+/-- Exactly four frozen records are imprimitive, all of degree four. -/
+theorem map_label_filter_not_isPrimitive :
+    (smallDegreeRecords.filter fun r ↦ ¬ r.triple.1.IsPrimitive).map SmallDegreeRecord.label =
+      ["4T1-4_4_1.1.1.1-a", "4T1-4_4_2.2-a", "4T2-2.2_2.2_2.2-a", "4T3-4_2.2_2.1.1-a"] := by
+  decide +kernel
+
+/-- **The imprimitive frozen records primitivize to `2T1-2_2_1.1-a`.** The monodromy action of the
+triple of every imprimitive record has a nonempty block, maximal among blocks, with two translates,
+and the quotient by these translates has the isomorphism class of the record `2T1-2_2_1.1-a`. -/
+theorem exists_isoClass_blockQuotient_eq {r : SmallDegreeRecord} (hr : r ∈ smallDegreeRecords)
+    (hprim : ¬ r.triple.1.IsPrimitive) :
+    ∃ B : Set (Fin r.degree), IsBlock r.triple.1.monodromyGroup B ∧ B.Nonempty ∧
+      (∀ C : Set (Fin r.degree), IsBlock r.triple.1.monodromyGroup C → B ⊆ C →
+        C = B ∨ C = Set.univ) ∧
+      ∃ e : orbit r.triple.1.monodromyGroup B ≃ Fin 2, ∃ q ∈ smallDegreeRecords,
+        q.label = "2T1-2_2_1.1-a" ∧
+          q.isoClass = ⟨2, ConnectedIsoClass.mk
+            ⟨r.triple.1.blockQuotient B e, r.triple.1.isConnected_blockQuotient B e⟩⟩ := by
+  classical
+  -- The nine primitive records are excluded by the finite primitivity test, and each of the four
+  -- imprimitive ones has the block `{0, 2}`, checked against every finite block containing it.
+  have key : ∃ B : Finset (Fin r.degree), r.triple.1.isBlockBool B = true ∧ B.Nonempty ∧
+      (∀ D : Finset (Fin r.degree), r.triple.1.isBlockBool D = true → B ⊆ D →
+        D = B ∨ D = Finset.univ) ∧
+      B.card * 2 = r.degree ∧ B.image r.triple.1.σ0 ≠ B ∧ B.image r.triple.1.σ1 ≠ B := by
+    simp only [smallDegreeRecords, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    all_goals first
+      | exact absurd (by decide +kernel) hprim
+      | exact ⟨{0, 2}, by decide +kernel⟩
+  obtain ⟨B, hB, hBne, hmax, hcard, h0, h1⟩ := key
+  have hB' := (r.triple.1.isBlockBool_eq_true_iff B).mp hB
+  have hBne' : (B : Set (Fin r.degree)).Nonempty := Finset.coe_nonempty.mpr hBne
+  obtain ⟨e, he⟩ := exists_blockQuotient_eq_ofTwo_swap r.triple.2.isPretransitive hB' hBne'
+    (by rwa [Set.ncard_coe_finset]) (by rwa [← Finset.coe_image, Ne, Finset.coe_inj])
+    (by rwa [← Finset.coe_image, Ne, Finset.coe_inj])
+  -- The quotient is the triple of the record `2T1-2_2_1.1-a` itself.
+  refine ⟨B, hB', hBne', r.triple.1.eq_or_eq_univ_of_forall_isBlockBool hmax, e,
+    smallDegreeRecords[1], List.getElem_mem _, rfl, ?_⟩
+  rw [SmallDegreeRecord.isoClass_def]
+  exact congrArg (fun t ↦ (⟨2, ConnectedIsoClass.mk t⟩ : Σ n, ConnectedIsoClass n))
+    (Subtype.ext he.symm)
 
 end LMFDB
 end PermutationTriple

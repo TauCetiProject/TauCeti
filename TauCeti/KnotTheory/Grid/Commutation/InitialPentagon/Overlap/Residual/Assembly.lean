@@ -116,11 +116,11 @@ theorem commutationMap_comp_unblockedDifferential :
     fun x z hzx => ?_
   have hterminal := G.sum_pentagonRectangleWeight_overlap_eq_sum_partners C R hzx
   rw [← G.sum_crossOverlapPartners C (G.pentagonRectangleWeight C R) hzx,
-    ← Finset.sum_sdiff (G.crossOverlapPartners_subset_filter C hzx)
+    ← Finset.sum_sdiff (G.crossOverlapPartners_subset_filter C)
       (f := G.pentagonRectangleWeight C R)] at hterminal
   have hinitial := G.sum_initialPentagonRectangleWeight_overlap_eq_sum_partners C R hzx
   rw [← G.sum_initialPentagonCrossOverlapPartners C (G.initialPentagonRectangleWeight C R) hzx,
-    ← Finset.sum_sdiff (G.initialPentagonCrossOverlapPartners_subset_filter C hzx)
+    ← Finset.sum_sdiff (G.initialPentagonCrossOverlapPartners_subset_filter C)
       (f := G.initialPentagonRectangleWeight C R)] at hinitial
   -- Remove each disjoint recut-partner union once, leaving exactly the turn cuts.
   have := isCancelAdd_of_charTwo R

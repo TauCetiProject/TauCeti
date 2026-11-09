@@ -267,7 +267,7 @@ lemma mono_mayerVietorisCochainToBiprod_zero : Mono (mayerVietorisCochainToBipro
     HomologicalComplex.mono_homologyMap_of_mono_of_not_rel _ 0 fun i h ↦ by
       rw [ComplexShape.up_Rel] at h
       omega
-  exact HomologicalComplex.mono_biprod_lift_homologyMap 0
+  exact (HomologicalComplex.mono_biprod_lift_homologyMap_iff 0).2 inferInstance
 
 /-- **Naturality of the cochain Mayer–Vietoris connecting morphism** in maps of pushout
 squares. -/

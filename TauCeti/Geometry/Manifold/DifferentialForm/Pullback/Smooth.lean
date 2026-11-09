@@ -223,6 +223,27 @@ theorem IsSmoothForm.continuous_apply_mfderiv {φ : RoughForm I M F 2} (hφ : Is
     Continuous fun z ↦ φ (u z) ![mfderiv 𝓘(ℝ, E') I u z a, mfderiv 𝓘(ℝ, E') I u z b] :=
   (hφ.continuous_mpullback_apply hu ![a, b]).congr fun z ↦ mpullback_apply_pair u φ z a b
 
+/-- For a continuous two-form `φ` and a map `u` from a normed space which is `C¹` on an open set
+`U`, the form evaluated on the derivatives of `u` along two fixed vectors,
+`z ↦ φ (u z) (du_z a, du_z b)`, is continuous on `U`. -/
+theorem IsSmoothForm.continuousOn_apply_mfderiv {φ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 0 φ) {u : E' → M} {U : Set E'} (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, E') I 1 u U) (a b : E') :
+    ContinuousOn (fun z ↦ φ (u z) ![mfderiv 𝓘(ℝ, E') I u z a, mfderiv 𝓘(ℝ, E') I u z b]) U := by
+  -- The derivatives along fixed vectors are continuous tangent fields along `u` on `U`.
+  have hv (e : E') : ContMDiffOn 𝓘(ℝ, E') I.tangent 0
+      (fun w ↦ TotalSpace.mk' E (u w) (mfderiv 𝓘(ℝ, E') I u w e)) U :=
+    contMDiffOn_zero_iff.2 fun z hz ↦
+      (((hu.contMDiffAt (hU.mem_nhds hz)).continuousAt_tangentMap le_rfl).comp
+        ((tangentBundleModelSpaceHomeomorph 𝓘(ℝ, E')).symm.continuous.continuousAt.comp
+          (continuous_id.prodMk continuous_const).continuousAt)).continuousWithinAt
+  have h := ContMDiffOn.continuousAlternatingMap_bundle_apply
+    (v := fun i ↦ ![fun w ↦ mfderiv 𝓘(ℝ, E') I u w a, fun w ↦ mfderiv 𝓘(ℝ, E') I u w b] i)
+    (hφ.contMDiff.comp_contMDiffOn (hu.of_le zero_le_one)) (fun i ↦ by fin_cases i <;> exact hv _)
+  refine ((continuous_snd.comp (Trivial.homeomorphProd M F).continuous).comp_continuousOn
+    (contMDiffOn_zero_iff.1 h)).congr fun z _ ↦ congrArg (φ (u z)) (funext fun i ↦ ?_)
+  fin_cases i <;> rfl
+
 omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
 /-- Pulling a form back along a diffeomorphism and then along its inverse returns the form. -/
 @[simp]
@@ -230,6 +251,19 @@ theorem mpullback_symm_mpullback (hn : n ≠ 0) (φ : M ≃ₘ^n⟮I, I'⟯ M')
     (ω : RoughForm I' M' F k) : mpullback I' I φ.symm (mpullback I I' φ ω) = ω := by
   rw [← mpullback_comp (φ.symm.mdifferentiable hn) (φ.mdifferentiable hn),
     show (φ : M → M') ∘ φ.symm = id from funext φ.apply_symm_apply, mpullback_id]
+
+omit [IsManifold I 1 M] in
+/-- Pulling back along the retraction `0 ∘ π` of a vector bundle onto its zero section factors
+through the restriction to the zero section. -/
+theorem mpullback_zeroSection_comp_proj {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F']
+    {V : M → Type*} [TopologicalSpace (TotalSpace F' V)] [∀ x, AddCommMonoid (V x)]
+    [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F' V]
+    [VectorBundle ℝ F' V] (ω : RoughForm (I.prod 𝓘(ℝ, F')) (TotalSpace F' V) F k) :
+    mpullback (I.prod 𝓘(ℝ, F')) (I.prod 𝓘(ℝ, F')) (zeroSection F' V ∘ TotalSpace.proj) ω =
+      mpullback (I.prod 𝓘(ℝ, F')) I (π F' V)
+        (mpullback I (I.prod 𝓘(ℝ, F')) (zeroSection F' V) ω) :=
+  mpullback_comp ((contMDiff_proj (n := 1) V).mdifferentiable one_ne_zero)
+    ((contMDiff_zeroSection (n := 1) ℝ V).mdifferentiable one_ne_zero) ω
 
 namespace SmoothForm
 
@@ -271,6 +305,13 @@ theorem mpullback_apply_eq_smul_of_mpullback_eq_smul {hf : ContMDiff I I' ∞ f}
     TauCeti.mpullback (F := F) I I' f φ'.1 x = c • φ.1 x := by
   have h := congrFun (congrArg Subtype.val h) x
   rwa [coe_mpullback, SetLike.val_smul, Pi.smul_apply] at h
+
+/-- If the pullback of `φ'` is `c` times `φ` at `x`, then the pullback of `-φ'` is `-c` times `φ`
+at `x`. -/
+theorem mpullback_neg_apply_eq_neg_smul {hf : ContMDiff I I' ∞ f} {φ' : SmoothForm I' M' F k}
+    {φ : SmoothForm I M F k} {x : M} {c : ℝ} (h : (mpullback f hf φ').1 x = c • φ.1 x) :
+    (mpullback f hf (-φ')).1 x = -c • φ.1 x := by
+  rw [map_neg, NegMemClass.coe_neg, Pi.neg_apply, h, neg_smul]
 
 /-- Evaluation of the smooth pullback of a two-form on a pair of tangent vectors. -/
 theorem eval₂_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f)
@@ -330,6 +371,24 @@ theorem eval₂_mpullback_snd (φ : SmoothForm I' M' F 2) (p : M × M')
   rw [eval₂_mpullback, mfderiv_snd]
   simp only [Manifold.tangentSpaceProdEquiv_apply]
   -- `ContinuousLinearMap.snd` is the projection of the product.
+  rfl
+
+/-- **Pullback along a graph.** Along the graph `y ↦ (y, f y)` of a map `f` differentiable at
+`x`, the form `pr₁^*α - pr₂^*β` on `M × M'` pulls back at `x` to `α - f^*β`. -/
+theorem mpullback_graph_mpullback_fst_sub_mpullback_snd (α : SmoothForm I M F k)
+    (β : SmoothForm I' M' F k) (hf : MDifferentiableAt I I' f x) :
+    TauCeti.mpullback I (I.prod I') (fun y ↦ (y, f y))
+        (mpullback Prod.fst contMDiff_fst α - mpullback Prod.snd contMDiff_snd β).1 x =
+      α.1 x - TauCeti.mpullback I I' f β.1 x := by
+  have hd : mfderiv I (I.prod I') (fun y ↦ (y, f y)) x =
+      (ContinuousLinearMap.id ℝ _).prod (mfderiv I I' f x) := by
+    rw [← mfderiv_id]
+    exact mfderiv_prodMk mdifferentiableAt_id hf
+  rw [Submodule.coe_sub, coe_mpullback, coe_mpullback]
+  ext v
+  simp only [TauCeti.mpullback_apply, Pi.sub_apply, ContinuousAlternatingMap.sub_apply, hd,
+    mfderiv_fst, mfderiv_snd]
+  -- The two projections of `(v, df v)` are `v` and `df v`.
   rfl
 
 /-- Pullback by the identity is the identity linear map. -/

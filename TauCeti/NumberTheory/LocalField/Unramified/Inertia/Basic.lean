@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Quotient
 public import TauCeti.NumberTheory.LocalField.RamificationGroup
 public import TauCeti.NumberTheory.LocalField.Unramified.Maximal
 
+import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.NumberTheory.LocalField.InertiaDegree
 import TauCeti.NumberTheory.LocalField.Teichmuller
@@ -439,22 +440,15 @@ theorem restrictNormalHom_unramifiedExtension_eq_frobeniusAlgEquiv
 restriction of an arithmetic Frobenius lift to the unramified extension `K_f` of degree `f`
 inside `K^{alg}` generates `Gal(K_f/K)`; for `f = 0` the extension is `K` itself and the group is
 trivial. -/
-theorem zpowers_restrictNormalHom_unramifiedExtension (hσ : IsArithFrobeniusLift K σ) (f : ℕ) :
+theorem zpowers_restrictNormalHom_unramifiedExtension (hσ : IsArithFrobeniusLift K σ) {f : ℕ} :
     Subgroup.zpowers
       (AlgEquiv.restrictNormalHom (unramifiedExtension K (AlgebraicClosure K) f) σ) = ⊤ := by
   set F := unramifiedExtension K (AlgebraicClosure K) f
-  by_cases hf : f = 0
-  · have hF : F = ⊥ := by simp only [F, hf]; exact unramifiedExtension_zero K (AlgebraicClosure K)
-    have : Subsingleton (F ≃ₐ[K] F) := by
-      rw [hF]
-      exact (AlgEquiv.autCongr
-        (IntermediateField.botEquiv K (AlgebraicClosure K))).injective.subsingleton
-    exact Subsingleton.elim _ _
   let := algebraicExtensionValuativeRel K F
   let := algebraicExtensionNormedFieldTopology K F
   have := finiteExtension_isNonarchimedeanLocalField K F
   have := algebraicExtension_valuativeExtension K F
-  have : IsUnramified K F := isUnramified_unramifiedExtension hf
+  have : IsUnramified K F := isUnramified_unramifiedExtension
   rw [hσ.restrictNormalHom_unramifiedExtension_eq_frobeniusAlgEquiv, zpowers_frobeniusAlgEquiv]
 
 /-- **A Frobenius lift acts on finite residue fields as the `q`-th power map.** The restriction of

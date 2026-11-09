@@ -59,8 +59,8 @@ transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
 * `AddCircle.fundamentalGroupMulEquiv_eq_windingNumberIso`: for positive periods the
   chosen-lift computation agrees with Mathlib, including the sign of the generator.
 * `Circle.fundamentalGroupMulEquiv`: `π₁(Circle, x) ≃* Multiplicative ℤ`.
-* `Circle.expLoop` and `Circle.fundamentalGroupMulEquiv_expLoop`: the loop `t ↦ exp(2πit)`,
-  going once counterclockwise around the circle, is sent to the generator `ofAdd 1`.
+* `Circle.fundamentalGroupMulEquiv_expLoop`: the loop `Circle.expLoop`, `t ↦ exp(2πit)`, going
+  once counterclockwise around the circle, is sent to the generator `ofAdd 1`.
 * `Circle.mapOfEq_toCircle_expLoop`: a loop `γ`, read as a map from the circle, sends the class
   of `Circle.expLoop` to the class of `γ`.
 * `Circle.fundamentalGroupMulEquiv_fromPath`: the class of a loop is sent to its degree
@@ -414,17 +414,6 @@ theorem fundamentalGroupMulEquiv_fromPath {x : Circle} (γ : Path x x) :
   exact (homeomorphMulEquivOfEq_trans_windingNumberIso_fromPath _).trans
     (congrArg Multiplicative.ofAdd (degree_symm_trans_trans γ _))
 
-/-- The loop `t ↦ exp(2πit)` at `1`, going once counterclockwise around the unit circle. -/
-def expLoop : Path (1 : Circle) 1 where
-  toFun t := Circle.exp (2 * Real.pi * t)
-  continuous_toFun := by fun_prop
-  source' := by simp
-  target' := by simp
-
-@[simp]
-theorem expLoop_apply (t : unitInterval) : expLoop t = Circle.exp (2 * Real.pi * t) :=
-  (rfl)
-
 /-- **The counterclockwise loop generates `π₁(S¹)` positively.** The isomorphism
 `π₁(Circle, 1) ≃* Multiplicative ℤ` sends the class of `t ↦ exp(2πit)` to `ofAdd 1`. -/
 @[simp]
@@ -432,9 +421,7 @@ theorem fundamentalGroupMulEquiv_expLoop :
     fundamentalGroupMulEquiv 1
       (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk expLoop)) =
       Multiplicative.ofAdd 1 := by
-  rw [fundamentalGroupMulEquiv_fromPath,
-    degree_eq_of_sub_eq expLoop (θ := fun t => 2 * Real.pi * t) (by fun_prop) (fun _ => rfl)
-      (n := 1) (by simp)]
+  rw [fundamentalGroupMulEquiv_fromPath, degree_expLoop]
 
 /-- A loop `γ`, read as a map from the circle by `Path.toCircle`, sends the class of the
 counterclockwise loop `expLoop` to the class of `γ`. So every element of a fundamental group is
@@ -446,7 +433,7 @@ theorem mapOfEq_toCircle_expLoop {X : Type*} [TopologicalSpace X] {x : X} (γ : 
   have h : (expLoop.map γ.toCircle.continuous).cast γ.toCircle_one.symm γ.toCircle_one.symm =
       γ := by
     ext t
-    exact γ.toCircle_exp t
+    simpa using γ.toCircle_exp t
   conv_rhs => rw [← h, Path.Homotopic.Quotient.mk_cast, Path.Homotopic.Quotient.mk_map]
   exact FundamentalGroup.mapOfEq_apply _ _ _
 
