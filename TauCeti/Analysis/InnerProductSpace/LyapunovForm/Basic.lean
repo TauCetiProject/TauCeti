@@ -26,8 +26,9 @@ symmetric operator with `α ‖v‖ ≤ ‖A v‖` has the Lyapunov form `S = A`
 In finite dimensions, the inertia theorem of Ostrowski and Schneider identifies the operators with
 a Lyapunov form as the hyperbolic ones, those without eigenvalues on the imaginary axis. This file
 proves the easy half: an operator with a Lyapunov form has no purely imaginary eigenvalue
-(`ContinuousLinearMap.HasLyapunovForm.eq_zero_of_apply_eq_neg_smul_of_apply_eq_smul`). The converse,
-which needs the spectral splitting of `A`, is not proved here.
+(`ContinuousLinearMap.HasLyapunovForm.eq_zero_of_apply_eq_neg_smul_of_apply_eq_smul`). The converse
+is `ContinuousLinearMap.hasLyapunovForm_iff_forall_eq_zero_of_apply_eq_neg_smul_of_apply_eq_smul`
+in `TauCeti.Analysis.InnerProductSpace.LyapunovForm.Hyperbolic`.
 
 ## Main declarations
 
