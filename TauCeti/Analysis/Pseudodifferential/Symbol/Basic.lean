@@ -47,7 +47,8 @@ A symbol is *smoothing* (`TauCeti.Symbol.IsSmoothing`) if it is a symbol of ever
 symbols are closed under the operations above, and they form a two-sided ideal under composition
 (`TauCeti.Symbol.IsSmoothing.comp_right`, `TauCeti.Symbol.IsSmoothing.comp_left`). A smooth
 coefficient vanishing at all large frequencies is smoothing
-(`TauCeti.Symbol.isSmoothing_ofBoundedFrequencySupport`), while in positive dimension a nonzero
+(`TauCeti.Symbol.isSmoothing_ofBoundedFrequencySupport`,
+`TauCeti.Symbol.isSmoothing_of_coefficient_eq_zero`), while in positive dimension a nonzero
 constant is not (`TauCeti.Symbol.isSmoothing_const_iff`).
 
 The image of a symbol under a continuous linear map of the coefficient spaces, such as conjugation
@@ -1031,6 +1032,11 @@ theorem isSmoothing_ofBoundedFrequencySupport
     (hR : ∀ x ξ, R ≤ ‖ξ‖ → f (x, ξ) = 0) :
     (ofBoundedFrequencySupport f hf R hR : Symbol n V W m).IsSmoothing :=
   fun _ => ⟨ofBoundedFrequencySupport f hf R hR, rfl⟩
+
+/-- A symbol vanishing at every frequency of norm at least `R` is smoothing. -/
+theorem isSmoothing_of_coefficient_eq_zero {a : Symbol n V W m} (R : ℝ)
+    (ha : ∀ x ξ, R ≤ ‖ξ‖ → a.coefficient (x, ξ) = 0) : a.IsSmoothing :=
+  fun _ => ⟨ofBoundedFrequencySupport a.coefficient a.contDiff_coefficient R ha, rfl⟩
 
 /-- In positive dimension, a nonzero constant symbol is not smoothing: it does not even have order
 `-2`. (On `ℝ⁰` every symbol is smoothing, since there `⟨ξ⟩ = 1`.) -/
