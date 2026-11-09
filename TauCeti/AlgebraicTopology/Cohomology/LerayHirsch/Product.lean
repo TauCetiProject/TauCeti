@@ -20,10 +20,12 @@ so that together these form a homogeneous basis of the graded cohomology of `F`.
 `⨁_{p + q = n} ⨁_{i : ι p} H^q(X; k) ⟶ Hⁿ(X × F; k)`, `(a_{p,i}) ↦ ∑ pr₁^* a_{p,i} ⌣ pr₂^* b_{p,i}`,
 
 (`TopCat.lerayHirschProd`) is bijective (`TopCat.lerayHirschProd_bijective`). This is the
-parameterized trivial-fibre case of the Leray–Hirsch theorem: the cohomology of `X × F` is a free
-module over the cohomology of `X` on the pullbacks of the fibre basis. A summand indexed by
-`p + q = n` and `i : ι p` carries the base degree `q`, so `q = n - p` is the base degree `n - dᵢ`
-of the usual statement.
+parameterized trivial-fibre case of the Leray–Hirsch theorem in degree `n`: every class in
+`Hⁿ(X × F; k)` is uniquely a sum `∑ pr₁^* a_{p,i} ⌣ pr₂^* b_{p,i}` with `a_{p,i}` in `H^q(X; k)`
+for `p + q = n`. When `Hₚ(F; k)` is finitely generated in every degree, this holds in all degrees,
+so the cohomology of `X × F` is a free graded module over the cohomology of `X` on the pullbacks
+of the fibre basis. A summand indexed by `p + q = n` and `i : ι p` carries the base degree `q`, so
+`q = n - p` is the base degree `n - dᵢ` of the usual statement.
 
 The proof is the cohomology Künneth theorem `TopCat.singularCohomologyKunnethIso` for `F × X`,
 whose finitely generated factor is the first one. The basis identifies
@@ -31,7 +33,8 @@ whose finitely generated factor is the first one. The basis identifies
 `pr₁^* b ⌣ pr₂^* a`, pulling back along the swap `X × F ⟶ F × X` exchanges the two projections,
 and graded commutativity of the cup product contributes the sign `(-1)^(p q)`, a unit. Finally the
 Künneth theorem computes cohomology from chains with coefficients in `k ⊗ k`, which the unitor
-`k ≅ k ⊗ k` identifies with the chains with coefficients in `k`.
+`k ≅ k ⊗ k` identifies with the chains with coefficients in `k`
+(`TopCat.singularCohomologyChainCoefficientIso`, `TopCat.singularCup_precomp`).
 
 ## Main definitions and results
 
@@ -59,37 +62,6 @@ universe w
 namespace TopCat
 
 variable {k : Type w} [CommRing k]
-
-section Coefficients
-
-/-- The isomorphism `Hⁿ(Y; k ⊗ k, k) ≅ Hⁿ(Y; k, k)` induced by the chain coefficient isomorphism
-`λ⁻¹ : k ≅ k ⊗ k`. -/
-private def tensorUnitCoeffIso (Y : TopCat.{w}) (n : ℕ) :
-    Y.singularCohomology (𝟙_ (ModuleCat.{w} k) ⊗ 𝟙_ (ModuleCat.{w} k)) k
-        (𝟙_ (ModuleCat.{w} k)) n ≅
-      Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) n :=
-  (homologyFunctor _ _ n).mapIso
-    ((TauCeti.ChainComplex.linearYonedaFunctor k (𝟙_ (ModuleCat.{w} k))).mapIso
-      (((SSet.chainComplexFunctor (ModuleCat.{w} k)).mapIso
-        (λ_ (𝟙_ (ModuleCat.{w} k))).symm).app (toSSet.obj Y)).op)
-
-/-- The cup product with chain coefficients `k`, along the unitor `k ≅ k ⊗ k`, is the cup product
-with chain coefficients `k ⊗ k` followed by the coefficient isomorphism. -/
-private lemma singularCup_tensorUnit_eq (Y : TopCat.{w}) {p q n : ℕ} (h : p + q = n)
-    (a : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
-    (b : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
-    Y.singularCup k (λ_ _).inv (λ_ _).hom p q n h a b =
-      (tensorUnitCoeffIso Y n).hom (Y.singularCup k (𝟙 _) (λ_ _).hom p q n h a b) := by
-  have h₁ := TauCeti.alexanderWhitneyDiagonal_def (X := Y) (λ_ (𝟙_ (ModuleCat.{w} k))).inv
-  have h₂ := TauCeti.alexanderWhitneyDiagonal_def (X := Y)
-    (𝟙 (𝟙_ (ModuleCat.{w} k) ⊗ 𝟙_ (ModuleCat.{w} k)))
-  rw [(SSet.chainComplexFunctor (ModuleCat.{w} k)).map_id, NatTrans.id_app,
-    Category.id_comp] at h₂
-  rw [TauCeti.singularCup_def, TauCeti.singularCup_def, h₁, h₂,
-    TauCeti.ChainComplex.cup_precomp]
-  rfl
-
-end Coefficients
 
 variable (X F : TopCat.{w}) (n : ℕ) {ι : ℕ → Type w} [∀ p, DecidableEq (ι p)]
   (b : ∀ p, Module.Basis (ι p) k
@@ -167,8 +139,7 @@ private def ofKunnethSourceSummand (p q : ℕ) (h : p + q = n) :
         ι pq.1.1 ↦
         X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2)
         ⟨⟨(p, q), h⟩, i⟩) ∘ₗ
-      (TensorProduct.finsuppScalarLeft k _ (ι p)).toLinearMap ∘ₗ
-      TensorProduct.map (b p).repr.toLinearMap LinearMap.id
+      (TensorProduct.equivFinsuppOfBasisLeft (b p)).toLinearMap
 
 private lemma ofKunnethSourceSummand_tmul (p q : ℕ) (h : p + q = n) (i : ι p)
     (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
@@ -177,7 +148,7 @@ private lemma ofKunnethSourceSummand_tmul (p q : ℕ) (h : p + q = n) (i : ι p)
         (fun j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1 ↦
           X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j.1.1.2)
         ⟨⟨(p, q), h⟩, i⟩ a := by
-  simp [ofKunnethSourceSummand, TensorProduct.finsuppScalarLeft_apply_tmul]
+  simp [ofKunnethSourceSummand]
 
 /-- The inverse of `toKunnethSource`. -/
 private def ofKunnethSource :
@@ -202,10 +173,6 @@ private lemma ofKunnethSource_ιTensorObj (p q : ℕ) (h : p + q = n) (i : ι p)
   exact (ConcreteCategory.congr_hom (GradedObject.Monoidal.ι_tensorObjDesc _ p q h) _).trans
     (ofKunnethSourceSummand_tmul b p q h i a)
 
-private lemma neg_one_pow_smul_neg_one_pow_smul {M : Type*} [AddCommGroup M] (m : ℕ) (x : M) :
-    ((-1 : ℤ) ^ m) • ((-1 : ℤ) ^ m) • x = x := by
-  rw [smul_smul, ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, one_smul]
-
 /-- `toKunnethSource` is a linear equivalence. -/
 private def toKunnethSourceEquiv :
     (⨁ j : Σ pq : {pq : ℕ × ℕ // pq.1 + pq.2 = n}, ι pq.1.1,
@@ -221,42 +188,64 @@ private def toKunnethSourceEquiv :
         refine TensorProduct.ext ((b p).ext fun i ↦ LinearMap.ext fun a ↦ ?_)
         simp only [LinearMap.compr₂ₛₗ_apply, TensorProduct.mk_apply, ModuleCat.hom_comp,
           ModuleCat.hom_ofHom, LinearMap.comp_apply, Category.comp_id]
-        rw [ofKunnethSource_ιTensorObj, map_zsmul, toKunnethSource_lof, ← map_zsmul,
-          TensorProduct.tmul_smul, neg_one_pow_smul_neg_one_pow_smul]
+        rw [ofKunnethSource_ιTensorObj, map_zsmul, toKunnethSource_lof]
+        simp [TensorProduct.tmul_smul, smul_smul, ← mul_pow]
       exact congrArg ModuleCat.Hom.hom this)
     (by
       refine DirectSum.linearMap_ext k fun ⟨⟨⟨p, q⟩, h⟩, i⟩ ↦ LinearMap.ext fun a ↦ ?_
       simp only [LinearMap.comp_apply, LinearMap.id_comp]
-      rw [toKunnethSource_lof, TensorProduct.tmul_smul, map_zsmul, map_zsmul,
-        ofKunnethSource_ιTensorObj, neg_one_pow_smul_neg_one_pow_smul])
+      rw [toKunnethSource_lof, ofKunnethSource_ιTensorObj]
+      simp [smul_smul, ← mul_pow])
 
 /-- The Leray–Hirsch map of `X × F` is the Künneth map of `F × X`, preceded by the basis
 identification `toKunnethSource` and followed by the swap `X × F ≅ F × X` and the coefficient
 isomorphism `k ⊗ k ≅ k`. -/
 private lemma lerayHirschProd_eq :
     lerayHirschProd X F n b =
-      (tensorUnitCoeffIso (X ⊗ F) n).hom.hom ∘ₗ
+      ((X ⊗ F).singularCohomologyChainCoefficientIso k (𝟙_ (ModuleCat.{w} k))
+          (λ_ (𝟙_ (ModuleCat.{w} k))).symm n).hom.hom ∘ₗ
         (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k) ⊗ 𝟙_ (ModuleCat.{w} k)) (k := k)
           (M := 𝟙_ (ModuleCat.{w} k)) (β_ X F).hom n).hom ∘ₗ
         (singularCohomologyKunneth F X (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k)) k
           (λ_ (𝟙_ (ModuleCat.{w} k))).hom n).hom ∘ₗ toKunnethSource b := by
   refine DirectSum.linearMap_ext k fun ⟨⟨⟨p, q⟩, h⟩, i⟩ ↦ LinearMap.ext fun a ↦ ?_
+  -- The Künneth map sends `b p i ⊗ a'` to the cross product `pr₁^* (b p i) ⌣ pr₂^* a'` on `F × X`,
+  -- whose pullback along the swap is `pr₂^* (b p i) ⌣ pr₁^* a'` on `X × F`.
+  have hcross (a' : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
+      TopCat.singularCohomologyMap (β_ X F).hom n
+          (singularCohomologyKunneth F X (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k)) k
+            (λ_ (𝟙_ (ModuleCat.{w} k))).hom n
+            (GradedObject.Monoidal.ιTensorObj
+              (fun p ↦ F.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
+              (fun q ↦ X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q)
+              p q n h (b p i ⊗ₜ a'))) =
+        (X ⊗ F).singularCup k (𝟙 _) (λ_ _).hom p q n h
+          (TopCat.singularCohomologyMap (snd X F) p (b p i))
+          (TopCat.singularCohomologyMap (fst X F) q a') := by
+    rw [singularCohomologyKunneth_ιTensorObj_tmul, TauCeti.singularCross_eq_singularCup,
+      ← singularCup_naturality, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
+      ← singularCohomologyMap_comp, ← singularCohomologyMap_comp, braiding_hom_fst,
+      braiding_hom_snd]
+  -- Graded commutativity swaps the two factors at the cost of the sign `(-1)^(p q)`.
   have hu : 𝟙 _ ≫ (β_ (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k))).hom = 𝟙 _ := by
     rw [Category.id_comp, braiding_tensorUnit_left, ← unitors_inv_equal, Iso.hom_inv_id]
   have hμ : (β_ (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k))).hom ≫
       (λ_ (𝟙_ (ModuleCat.{w} k))).hom = (λ_ (𝟙_ (ModuleCat.{w} k))).hom := by
     rw [braiding_tensorUnit_left, ← unitors_inv_equal, Category.assoc, Iso.inv_hom_id,
       Category.comp_id]
-  simp only [LinearMap.comp_apply]
-  rw [lerayHirschProd_lof X F n b p q h i a, toKunnethSource_lof b p q h i a]
-  have hK := singularCohomologyKunneth_ιTensorObj_tmul F X (λ_ (𝟙_ (ModuleCat.{w} k))).hom p q n h
-    (b p i) (((-1 : ℤ) ^ (p * q)) • a)
-  rw [TauCeti.singularCross_eq_singularCup] at hK
-  rw [hK, map_zsmul, map_zsmul, map_zsmul, ← singularCup_naturality,
-    ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← singularCohomologyMap_comp,
-    ← singularCohomologyMap_comp, braiding_hom_fst, braiding_hom_snd,
-    TopCat.singularCup_gradedComm (X ⊗ F) k hu hμ (by omega), map_zsmul, map_zsmul,
-    ← singularCup_tensorUnit_eq, mul_comm q p, neg_one_pow_smul_neg_one_pow_smul]
+  have hcomm (a' : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :=
+    (X ⊗ F).singularCup_gradedComm k hu hμ (by omega : q + p = n)
+      (TopCat.singularCohomologyMap (fst X F) q a')
+      (TopCat.singularCohomologyMap (snd X F) p (b p i))
+  -- The cup product along the unitor is the cup product with coefficients `k ⊗ k`, transported.
+  have hcoeff := (X ⊗ F).singularCup_precomp k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (𝟙 _)
+    (λ_ (𝟙_ (ModuleCat.{w} k))).hom q p n (by omega)
+    (TopCat.singularCohomologyMap (fst X F) q a)
+    (TopCat.singularCohomologyMap (snd X F) p (b p i))
+  rw [Category.comp_id] at hcoeff
+  simp only [LinearMap.comp_apply, singularCohomologyChainCoefficientIso_hom, Iso.symm_hom]
+  rw [lerayHirschProd_lof, toKunnethSource_lof, hcross, hcomm, hcoeff]
+  simp [smul_smul, ← mul_pow, mul_comm q p]
 
 variable (X) [IsSemisimpleRing k]
 
@@ -274,7 +263,8 @@ theorem lerayHirschProd_bijective
       (β_ X F).hom n) :=
     ((TauCeti.singularCohomologyFunctor _ k _ n).mapIso (β_ X F).op).toLinearEquiv.bijective
   rw [lerayHirschProd_eq]
-  exact (tensorUnitCoeffIso (X ⊗ F) n).toLinearEquiv.bijective.comp (hσ.comp
+  exact ((X ⊗ F).singularCohomologyChainCoefficientIso k (𝟙_ (ModuleCat.{w} k))
+    (λ_ (𝟙_ (ModuleCat.{w} k))).symm n).toLinearEquiv.bijective.comp (hσ.comp
     ((singularCohomologyKunneth_bijective F X n hF).comp (toKunnethSourceEquiv b).bijective))
 
 /-- **The Leray–Hirsch isomorphism for a product**

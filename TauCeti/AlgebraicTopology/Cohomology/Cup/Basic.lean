@@ -41,6 +41,9 @@ middle and back faces.  The unit is the class of the constant `0`-cocycle
   cochains on a singular simplex.
 * `TopCat.singularCup`: the cup product on singular cohomology, with `TopCat.singularCup_homologyπ`
   computing it on classes of cocycles and `TopCat.singularCup_naturality` its naturality.
+* `TopCat.singularCohomologyChainCoefficientMap` and `TopCat.singularCohomologyChainCoefficientIso`:
+  the change of chain coefficients on singular cohomology, with `TopCat.singularCup_precomp`
+  its compatibility with the cup product.
 * `TopCat.cupCochain_alexanderWhitneyDiagonal_assoc` and `TopCat.singularCup_assoc`:
   associativity of the cup product of cochains and on cohomology.
 * `TopCat.cupCochain_constCochain_left`, `TopCat.cupCochain_constCochain_right`,
@@ -191,6 +194,36 @@ end Laws
 
 end Cochain
 
+section ChainCoefficients
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] {R R' : C}
+
+/-- The map `Hⁿ(X; R, M) ⟶ Hⁿ(X; R', M)` induced by a morphism `f : R' ⟶ R` of chain coefficients:
+precomposition with the induced map of singular chains `C(X; R') ⟶ C(X; R)`. -/
+abbrev singularCohomologyChainCoefficientMap (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C]
+    (M : C) (f : R' ⟶ R) (n : ℕ) :
+    X.singularCohomology R k M n ⟶ X.singularCohomology R' k M n :=
+  HomologicalComplex.homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k M).map
+    (((SSet.chainComplexFunctor C).map f).app (toSSet.obj X)).op) n
+
+/-- The isomorphism `Hⁿ(X; R, M) ≅ Hⁿ(X; R', M)` induced by an isomorphism `e : R' ≅ R` of chain
+coefficients, with underlying map `TopCat.singularCohomologyChainCoefficientMap`. -/
+def singularCohomologyChainCoefficientIso (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C]
+    (M : C) (e : R' ≅ R) (n : ℕ) :
+    X.singularCohomology R k M n ≅ X.singularCohomology R' k M n :=
+  (homologyFunctor _ _ n).mapIso
+    ((TauCeti.ChainComplex.linearYonedaFunctor k M).mapIso
+      (((SSet.chainComplexFunctor C).mapIso e).app (toSSet.obj X)).op)
+
+@[simp]
+lemma singularCohomologyChainCoefficientIso_hom (X : TopCat.{w}) (k : Type*) [Ring k]
+    [Linear k C] (M : C) (e : R' ≅ R) (n : ℕ) :
+    (X.singularCohomologyChainCoefficientIso k M e n).hom =
+      X.singularCohomologyChainCoefficientMap k M e.hom n :=
+  (rfl)
+
+end ChainCoefficients
+
 section Cohomology
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [MonoidalCategory C]
@@ -229,6 +262,20 @@ lemma singularCup_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (k : Type*) [CommR
       TopCat.singularCohomologyMap f n (Y.singularCup k u μ p q n h α β) :=
   TauCeti.ChainComplex.cup_naturality _ μ _ _ _ _ (alexanderWhitneyDiagonal_naturality f u)
     p q n h α β
+
+/-- The cup product along the coefficient morphism `f ≫ u` is the cup product along `u` followed
+by the change of chain coefficients along `f`. -/
+lemma singularCup_precomp (X : TopCat.{w}) (k : Type*) [CommRing k] [Linear k C]
+    [MonoidalLinear k C] {R' : C} (f : R' ⟶ T) (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ P) (p q n : ℕ)
+    (h : p + q = n) (a : X.singularCohomology R k M p) (b : X.singularCohomology S k N q) :
+    X.singularCup k (f ≫ u) μ p q n h a b =
+      X.singularCohomologyChainCoefficientMap k P f n (X.singularCup k u μ p q n h a b) := by
+  have hD : X.alexanderWhitneyDiagonal (f ≫ u) =
+      ((SSet.chainComplexFunctor C).map f).app (toSSet.obj X) ≫ X.alexanderWhitneyDiagonal u := by
+    simp only [TauCeti.alexanderWhitneyDiagonal_def, Functor.map_comp, NatTrans.comp_app,
+      Category.assoc]
+  rw [singularCup, singularCup, hD]
+  exact TauCeti.ChainComplex.cup_precomp _ _ _ _ _ _ _ _ _
 
 section Laws
 
