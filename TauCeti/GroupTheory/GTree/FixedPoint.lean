@@ -20,12 +20,12 @@ Finite generation cannot be dropped: an infinitely generated group, such as the 
 
 The proof has two steps.
 
-* A criterion for hyperbolicity: if a reduced path from `x` to `g • x` is followed by its
-  translate under `g` without backtracking, then the translates of the path by the powers of `g`
-  line up into reduced paths, so `d(x, gⁿ x) = n d(x, g x)` and the orbit of `x` is unbounded
-  (`GTree.dist_pow_smul_eq_mul`, `GTree.isHyperbolic_of_isReduced`). Applied to a shortest path
-  between the fixed point sets of two elliptic elements `s` and `t`, it shows that `s * t` is
-  hyperbolic when these sets are disjoint (`GTree.isHyperbolic_mul_of_disjoint`).
+* A criterion for hyperbolicity: if `g` moves `x` and a reduced path from `x` to `g • x` is
+  followed by its translate under `g` without backtracking, then the translates of the path by
+  the powers of `g` line up into reduced paths, so `d(x, gⁿ x) = n d(x, g x)` and the orbit of
+  `x` is unbounded (`GTree.dist_pow_smul_eq_mul`, `GTree.isHyperbolic_of_isReduced`). Applied to
+  a shortest path between the fixed point sets of two elliptic elements `s` and `t`, it shows
+  that `s * t` is hyperbolic when these sets are disjoint (`GTree.isHyperbolic_mul_of_disjoint`).
 * Helly's theorem for subtrees (`SerreGraph.IsTree.helly_theorem`): the fixed point sets of the
   generators are convex and, by the first step, pairwise intersecting, so they have a common
   vertex.
@@ -57,34 +57,6 @@ open SerreGraph _root_.MulAction
 
 variable {G : Type w} [Group G] {T : GTree.{u, v} G}
 
-/-- The translate of a path by an element of `G` is a path whose darts are the translates of the
-darts of the original path. -/
-private theorem exists_path_darts_eq_map_smul (g : G) {a b : T.V} (p : T.Path a b) :
-    ∃ q : T.Path (g • a) (g • b),
-      Path.darts T.toSerreGraph q = (Path.darts T.toSerreGraph p).map (g • ·) := by
-  refine ⟨((T.action g).toHom.toPrefunctor.mapPath p).cast
-    (by rw [Hom.toPrefunctor_obj, Aut.toHom_mapV, smul_vertex_def])
-    (by rw [Hom.toPrefunctor_obj, Aut.toHom_mapV, smul_vertex_def]), ?_⟩
-  rw [Path.darts_cast, Hom.darts_mapPath]
-  refine List.map_congr_left fun e _ => ?_
-  rw [Aut.toHom_mapE, smul_dart_def]
-
-/-- Translating a dart list by an element of `G` preserves the absence of backtracking. -/
-private theorem isChain_map_smul_iff (g : G) (l : List T.E) :
-    (l.map (g • ·)).IsChain (fun e f => f ≠ T.rev e) ↔ l.IsChain fun e f => f ≠ T.rev e := by
-  rw [List.isChain_map]
-  simp only [rev_smul, ne_eq, smul_left_cancel_iff]
-
-/-- The translate of a reduced path by an element of `G` is reduced. -/
-private theorem exists_isReduced_path_darts_eq_map_smul (g : G) {a b : T.V} {p : T.Path a b}
-    (hp : Path.IsReduced T.toSerreGraph p) : ∃ q : T.Path (g • a) (g • b),
-      Path.IsReduced T.toSerreGraph q ∧
-        Path.darts T.toSerreGraph q = (Path.darts T.toSerreGraph p).map (g • ·) := by
-  obtain ⟨q, hq⟩ := exists_path_darts_eq_map_smul g p
-  refine ⟨q, ?_, hq⟩
-  rw [Path.isReduced_iff_isChain, hq, isChain_map_smul_iff]
-  exact (Path.isReduced_iff_isChain _ p).mp hp
-
 /-! ### A criterion for hyperbolicity -/
 
 /-- If a reduced path from `x` to `g • x` is followed by its translate under `g` without
@@ -111,25 +83,27 @@ theorem dist_pow_smul_eq_mul {g : G} {x : T.V} {p : T.Path x (g • x)}
       · simp
     | succ n ih =>
       obtain ⟨q, hq, hqlen, hqlast⟩ := ih
-      obtain ⟨r, hr, hrdarts⟩ := exists_isReduced_path_darts_eq_map_smul (g ^ n) hp
-      let r' : T.Path (g ^ n • x) (g ^ (n + 1) • x) := r.cast rfl (by rw [pow_succ, mul_smul])
+      obtain ⟨r, hrdarts, hr⟩ := Aut.exists_path_darts_eq_map_smul (T.action (g ^ n)) p
+      let r' : T.Path (g ^ n • x) (g ^ (n + 1) • x) :=
+        r.cast (smul_vertex_def _ _ _).symm (by rw [← smul_vertex_def, pow_succ, mul_smul])
       have hr'darts : Path.darts T.toSerreGraph r' =
           (Path.darts T.toSerreGraph p).map (g ^ n • ·) := by
         rw [Path.darts_cast, hrdarts]
+        simp only [← smul_dart_def]
       refine ⟨q.comp r', ?_, ?_, ?_⟩
-      · refine (Path.isReduced_comp_iff _ q r').mpr ⟨hq, (Path.isReduced_cast _ _ _ r).mpr hr,
-          fun e he f hf => ?_⟩
+      · refine (Path.isReduced_comp_iff _ q r').mpr ⟨hq,
+          (Path.isReduced_cast _ _ _ r).mpr (hr.mpr hp), fun e he f hf => ?_⟩
         rw [hr'darts, List.head?_map, Option.mem_def, Option.map_eq_some_iff] at hf
         obtain ⟨f, hf, rfl⟩ := hf
         exact hqlast e he f hf
       · rw [Quiver.Path.length_comp, hqlen, ← Path.length_darts _ r', hr'darts,
           List.length_map, Path.length_darts, Nat.succ_mul]
       · intro e he f hf
-        rw [Path.darts_comp, hr'darts, List.getLast?_append, List.getLast?_map] at he
         cases hl : (Path.darts T.toSerreGraph p).getLast? with
         | none => simp [List.getLast?_eq_none_iff.mp hl] at hf
         | some e' =>
-          rw [hl, Option.map_some, Option.some_or, Option.mem_some_iff] at he
+          simp only [Path.darts_comp, hr'darts, List.getLast?_append, List.getLast?_map, hl,
+            Option.map_some, Option.some_or, Option.mem_some_iff] at he
           subst he
           rw [rev_smul, pow_succ, mul_smul, Ne, smul_left_cancel_iff]
           exact hg e' hl f hf
@@ -149,7 +123,8 @@ theorem isHyperbolic_of_isReduced {g : G} {x : T.V} (hx : g • x ≠ x) {p : T.
   have hpos : 0 < T.dist x (g • x) :=
     Nat.pos_of_ne_zero fun h => hx ((dist_eq_zero_iff (T.nonempty_path _ _)).mp h).symm
   set n := 2 * T.dist x v + 1
-  have hgv : g ^ n • v = v := (stabilizer G v).pow_mem (mem_stabilizer_iff.mpr hv) n
+  have hgv : g ^ n • v = v :=
+    mem_stabilizer_iff.mp ((stabilizer G v).pow_mem (mem_stabilizer_iff.mpr hv) n)
   have hle : T.dist x (g ^ n • x) ≤ 2 * T.dist x v := by
     calc T.dist x (g ^ n • x) ≤ T.dist x v + T.dist v (g ^ n • x) :=
           dist_triangle (T.nonempty_path _ _) (T.nonempty_path _ _)
@@ -174,18 +149,21 @@ theorem isHyperbolic_mul_of_isReduced {s t : G} {a b : T.V} {p : T.Path a b}
   obtain ⟨e, he⟩ : ∃ e, (Path.darts T.toSerreGraph p).getLast? = some e :=
     ⟨_, List.getLast?_eq_some_getLast hne⟩
   -- The path from `b` back along `p` to `a` and then along `s • p` to `s • b = (s * t) • b`.
-  obtain ⟨r, hr, hrdarts⟩ := exists_isReduced_path_darts_eq_map_smul s hp
+  obtain ⟨r, hrdarts, hr⟩ := Aut.exists_path_darts_eq_map_smul (T.action s) p
   have hsb : s • b = (s * t) • b := by rw [mul_smul, ht]
-  let q : T.Path b ((s * t) • b) := p.reverse.comp (r.cast hs hsb)
+  let q : T.Path b ((s * t) • b) := p.reverse.comp
+    (r.cast (by rw [← smul_vertex_def, hs]) (by rw [← smul_vertex_def, hsb]))
   have hqdarts : Path.darts T.toSerreGraph q = (Path.darts T.toSerreGraph p).reverse.map T.rev ++
       (Path.darts T.toSerreGraph p).map (s • ·) := by
     rw [Path.darts_comp, Path.darts_reverse, Path.darts_cast, hrdarts]
+    simp only [← smul_dart_def]
   have hq : Path.IsReduced T.toSerreGraph q := by
     refine (Path.isReduced_comp_iff _ _ _).mpr ⟨(Path.isReduced_reverse _ p).mpr hp,
-      (Path.isReduced_cast _ _ _ r).mpr hr, fun e' he' f' hf' => ?_⟩
-    rw [Path.darts_reverse, List.getLast?_map, List.getLast?_reverse, hf, Option.map_some,
+      (Path.isReduced_cast _ _ _ r).mpr (hr.mpr hp), fun e' he' f' hf' => ?_⟩
+    simp only [Path.darts_reverse, List.getLast?_map, List.getLast?_reverse, hf, Option.map_some,
       Option.mem_some_iff] at he'
-    rw [Path.darts_cast, hrdarts, List.head?_map, hf, Option.map_some, Option.mem_some_iff] at hf'
+    simp only [Path.darts_cast, hrdarts, List.head?_map, hf, Option.map_some,
+      Option.mem_some_iff] at hf'
     subst he' hf'
     rw [rev_rev]
     exact hsf f hf
@@ -195,10 +173,10 @@ theorem isHyperbolic_mul_of_isReduced {s t : G} {a b : T.V} {p : T.Path a b}
     intro hsb'
     exact hsf f hf (Aut.smul_eq_of_mem_darts (IsTree.isAcyclic _ T.isTree) (T.action s) hs hsb'
       hp (List.mem_of_mem_head? hf))
-  · rw [hqdarts, List.getLast?_append, List.getLast?_map, he, Option.map_some, Option.some_or,
-      Option.mem_some_iff] at he'
-    rw [hqdarts, List.head?_append, List.head?_map, List.head?_reverse, he, Option.map_some,
-      Option.some_or, Option.mem_some_iff] at hf'
+  · simp only [hqdarts, List.getLast?_append, List.getLast?_map, he, Option.map_some,
+      Option.some_or, Option.mem_some_iff] at he'
+    simp only [hqdarts, List.head?_append, List.head?_map, List.head?_reverse, he,
+      Option.map_some, Option.some_or, Option.mem_some_iff] at hf'
     subst he' hf'
     rw [rev_smul, mul_smul, Ne, smul_left_cancel_iff, ← rev_smul, (T.rev_injective).eq_iff]
     exact hte e he
@@ -212,7 +190,8 @@ theorem isHyperbolic_mul_of_disjoint {s t : G} (hs : T.IsElliptic s) (ht : T.IsE
   have ht' : (fixedBy T.V t).Nonempty := (isElliptic_iff.mp ht).imp fun _ hv => mem_fixedBy.mpr hv
   obtain ⟨a, ha, b, hb, p, hp, hpst⟩ := T.isTree.exists_isReduced_path hs' ht'
   have hab : a ≠ b := fun h => Set.disjoint_left.mp hst ha (h ▸ hb)
-  refine isHyperbolic_mul_of_isReduced hp hab ha (fun f hf hsf => ?_) hb (fun e he hte => ?_)
+  refine isHyperbolic_mul_of_isReduced hp hab (mem_fixedBy.mp ha) (fun f hf hsf => ?_)
+    (mem_fixedBy.mp hb) (fun e he hte => ?_)
   · refine (hpst f (List.mem_of_mem_head? hf)).1 ?_
     rw [mem_fixedBy, ← tgt_smul, hsf]
   · refine (hpst e (List.mem_of_mem_getLast? he)).2 ?_
@@ -224,22 +203,25 @@ theorem exists_smul_eq_and_smul_eq_of_isElliptic_mul {s t : G} (hs : T.IsEllipti
   by_contra h
   refine not_isHyperbolic_iff.mpr hst (isHyperbolic_mul_of_disjoint hs ht
     (Set.disjoint_left.mpr fun v hv hv' => ?_))
-  exact h ⟨v, hv, hv'⟩
+  exact h ⟨v, mem_fixedBy.mp hv, mem_fixedBy.mp hv'⟩
 
 /-! ### Serre's lemma -/
 
 /-- **Serre's lemma.** A subgroup generated by a finite set of elliptic elements whose pairwise
 products are elliptic fixes a vertex. -/
 theorem isEllipticSubgroup_closure {S : Set G} (hS : S.Finite) (h₁ : ∀ s ∈ S, T.IsElliptic s)
-    (h₂ : ∀ s ∈ S, ∀ t ∈ S, T.IsElliptic (s * t)) :
+    (h₂ : S.Pairwise fun s t => T.IsElliptic (s * t)) :
     T.IsEllipticSubgroup (Subgroup.closure S) := by
   -- The fixed point sets of the generators are convex and pairwise intersect.
   obtain ⟨v, hv⟩ := T.isTree.helly_theorem (F := fun s : G => fixedBy T.V s) (s := hS.toFinset)
     (fun s _ => T.isConvex_fixedBy s) fun s hs t ht => by
       rw [Set.Finite.mem_toFinset] at hs ht
+      obtain rfl | hst := eq_or_ne s t
+      · obtain ⟨v, hv⟩ := isElliptic_iff.mp (h₁ s hs)
+        exact ⟨v, mem_fixedBy.mpr hv, mem_fixedBy.mpr hv⟩
       obtain ⟨v, hv⟩ := exists_smul_eq_and_smul_eq_of_isElliptic_mul (h₁ s hs) (h₁ t ht)
-        (h₂ s hs t ht)
-      exact ⟨v, hv⟩
+        (h₂ hs ht hst)
+      exact ⟨v, mem_fixedBy.mpr hv.1, mem_fixedBy.mpr hv.2⟩
   refine isEllipticSubgroup_iff.mpr ⟨v, (Subgroup.closure_le _).mpr fun s hs => ?_⟩
   simp only [Set.mem_iInter, Set.Finite.mem_toFinset, mem_fixedBy] at hv
   exact mem_stabilizer_iff.mpr (hv s hs)
@@ -250,7 +232,7 @@ theorem IsEllipticSubgroup.of_fg {H : Subgroup G} (hH : H.FG) (h : ∀ g ∈ H, 
     T.IsEllipticSubgroup H := by
   obtain ⟨S, rfl, hS⟩ := (Subgroup.fg_iff H).mp hH
   exact isEllipticSubgroup_closure hS
-    (fun s hs => h s (Subgroup.subset_closure hs)) fun s hs t ht =>
+    (fun s hs => h s (Subgroup.subset_closure hs)) fun s hs t ht _ =>
       h _ (mul_mem (Subgroup.subset_closure hs) (Subgroup.subset_closure ht))
 
 /-- A finitely generated subgroup fixes a vertex exactly when each of its elements does. -/

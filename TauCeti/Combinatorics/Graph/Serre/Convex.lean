@@ -48,6 +48,18 @@ theorem IsConvex.tgt_mem {S : Set Γ.V} (hS : Γ.IsConvex S) {a b : Γ.V} (ha : 
     simpa only [Path.darts_reverse, List.mem_map, List.mem_reverse] using ⟨e, he, rfl⟩
   simpa only [src_rev] using hS b hb a ha p.reverse hp' (Γ.rev e) he'
 
+/-- A reduced path ending at a vertex `b` of a convex set `C`, and meeting `C` only there, can be
+continued by any reduced path from `b` to a vertex of `C` without backtracking. -/
+theorem IsConvex.isReduced_comp {C : Set Γ.V} (hC : Γ.IsConvex C) {a b c : Γ.V}
+    (hb : b ∈ C) (hc : c ∈ C) {p : Γ.Path a b} (hp : Path.IsReduced Γ p)
+    (hpC : ∀ e ∈ Path.darts Γ p, Γ.src e ∉ C) {q : Γ.Path b c} (hq : Path.IsReduced Γ q) :
+    Path.IsReduced Γ (p.comp q) := by
+  refine (Path.isReduced_comp_iff Γ p q).mpr ⟨hp, hq, fun e he f hf hfe => ?_⟩
+  -- The darts of `q` end in `C`, while the reverse of a dart of `p` ends outside it.
+  have hfC : Γ.tgt f ∈ C := hC.tgt_mem hb hc hq (List.mem_of_mem_head? hf)
+  rw [hfe, tgt_rev] at hfC
+  exact hpC e (List.mem_of_mem_getLast? he) hfC
+
 theorem isConvex_univ : Γ.IsConvex Set.univ := fun _ _ _ _ _ _ _ _ => Set.mem_univ _
 
 theorem isConvex_empty : Γ.IsConvex ∅ := fun _ ha => ha.elim

@@ -137,6 +137,14 @@ theorem toHom_mapE_injective (φ : Γ.Aut) : Function.Injective φ.toHom.mapE :=
   refine (key φ a b).antisymm ?_
   simpa only [inv_smul_smul] using key φ⁻¹ (φ • a) (φ • b)
 
+/-- An automorphism translates a path to a path whose darts are the translates of the darts of
+the original path, and which is reduced exactly when the original path is. -/
+theorem exists_path_darts_eq_map_smul (φ : Γ.Aut) {a b : Γ.V} (p : Γ.Path a b) :
+    ∃ q : Γ.Path (φ • a) (φ • b), Path.darts Γ q = (Path.darts Γ p).map (φ • ·) ∧
+      (Path.IsReduced Γ q ↔ Path.IsReduced Γ p) :=
+  ⟨φ.toHom.toPrefunctor.mapPath p, Hom.darts_mapPath Γ φ.toHom p,
+    Hom.isReduced_mapPath_iff Γ φ.toHom φ.toHom_mapE_injective p⟩
+
 /-! ### Fixed points in acyclic graphs -/
 
 /-- In an acyclic graph, an automorphism fixing two vertices fixes every dart of a reduced path

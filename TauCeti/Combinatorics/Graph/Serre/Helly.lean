@@ -51,11 +51,7 @@ theorem IsTree.exists_isReduced_path (h : Γ.IsTree) {A B : Set Γ.V} (hA : A.No
   obtain ⟨a, ha, b, hb, hab⟩ := Nat.find_spec hex
   have hmin : ∀ a' ∈ A, ∀ b' ∈ B, Nat.find hex ≤ Γ.dist a' b' := fun a' ha' b' hb' =>
     Nat.find_min' hex ⟨a', ha', b', hb', rfl⟩
-  have hpath : ∀ x y : Γ.V, Nonempty (Γ.Path x y) := fun x y =>
-    (Γ.preconnected_iff.mp (Γ.connected_iff.mp h.connected).2) x y
-  obtain ⟨p₀⟩ := hpath a b
-  let p := Path.reduce Γ p₀
-  have hp : Path.IsReduced Γ p := Path.isReduced_reduce Γ p₀
+  obtain ⟨p, hp, -⟩ := h.existsUnique_isReduced a b
   have hlen : p.length = Nat.find hex := by rw [← h.isAcyclic.dist_eq_length hp, hab]
   refine ⟨a, ha, b, hb, p, hp, fun e he => ?_⟩
   -- A dart of the path cuts it into two pieces, each strictly shorter than the path.
@@ -68,18 +64,6 @@ theorem IsTree.exists_isReduced_path (h : Γ.IsTree) {A B : Set Γ.V} (hA : A.No
   · have := (hmin a ha _ hB').trans (dist_le_length q)
     omega
 
-/-- A reduced path ending at a vertex `b` of a convex set `C`, and meeting `C` only there, can be
-continued by any reduced path from `b` to a vertex of `C` without backtracking. -/
-theorem IsConvex.isReduced_comp {C : Set Γ.V} (hC : Γ.IsConvex C) {a b c : Γ.V}
-    (hb : b ∈ C) (hc : c ∈ C) {p : Γ.Path a b} (hp : Path.IsReduced Γ p)
-    (hpC : ∀ e ∈ Path.darts Γ p, Γ.src e ∉ C) {q : Γ.Path b c} (hq : Path.IsReduced Γ q) :
-    Path.IsReduced Γ (p.comp q) := by
-  refine (Path.isReduced_comp_iff Γ p q).mpr ⟨hp, hq, fun e he f hf hfe => ?_⟩
-  -- The darts of `q` end in `C`, while the reverse of a dart of `p` ends outside it.
-  have hfC : Γ.tgt f ∈ C := hC.tgt_mem hb hc hq (List.mem_of_mem_head? hf)
-  rw [hfe, tgt_rev] at hfC
-  exact hpC e (List.mem_of_mem_getLast? he) hfC
-
 /-- In a tree, three pairwise intersecting convex sets of vertices have a common vertex. -/
 theorem IsTree.inter_inter_nonempty (h : Γ.IsTree) {A B C : Set Γ.V} (hA : Γ.IsConvex A)
     (hB : Γ.IsConvex B) (hC : Γ.IsConvex C) (hAB : (A ∩ B).Nonempty) (hAC : (A ∩ C).Nonempty)
@@ -89,9 +73,8 @@ theorem IsTree.inter_inter_nonempty (h : Γ.IsTree) {A B C : Set Γ.V} (hA : Γ.
     h.exists_isReduced_path hAB (hAC.mono Set.inter_subset_right)
   have hnear : ∀ D : Set Γ.V, Γ.IsConvex D → x ∈ D → (D ∩ C).Nonempty → y ∈ D := by
     rintro D hD hxD ⟨d, hdD, hdC⟩
-    obtain ⟨q₀⟩ := (Γ.preconnected_iff.mp (Γ.connected_iff.mp h.connected).2) y d
-    have hpq := hC.isReduced_comp hy hdC hp (fun e he => (hpC e he).2)
-      (Path.isReduced_reduce Γ q₀)
+    obtain ⟨q, hq, -⟩ := h.existsUnique_isReduced y d
+    have hpq := hC.isReduced_comp hy hdC hp (fun e he => (hpC e he).2) hq
     cases hl : (Path.darts Γ p).getLast? with
     | none => exact Path.eq_of_darts_eq_nil Γ p (List.getLast?_eq_none_iff.mp hl) ▸ hxD
     | some e =>
