@@ -28,6 +28,13 @@ in the sublevel `{f ≤ c - δ²}`. The homotopy is the coordinate deformation
 `HasFDerivAt.exists_negativeDisc_homotopy` read through `ψ₀⁻¹`; only a neighbourhood of the
 common centre is used, so the whole negative discs of the two charts need not overlap.
 
+The comparison can be made continuously over a compact space `P` of pairs of charts
+(`OpenPartialHomeomorph.exists_negativeDisc_homotopy_family`). If on one common ball about the
+origin the inverses of `ψ₀ p` are jointly continuous in `p` and the transitions are jointly
+continuous with jointly continuous derivatives, then the polar factors `h p` depend continuously
+on `p`, and one radius `δ` and one homotopy, continuous in `p`, serve the whole family. This is the
+coordinate deformation `TauCeti.exists_negativeDisc_homotopy_family` read through `(ψ₀ p)⁻¹`.
+
 ## References
 
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
@@ -87,6 +94,61 @@ theorem exists_negativeDisc_homotopy (ψ₀ ψ₁ : OpenPartialHomeomorph M (E �
   · obtain ⟨hz, hq⟩ := hHb t w
     simp only [ContinuousMap.coe_mk]
     rw [hf₀ _ (ψ₀.map_target hz), ψ₀.right_inv hz]
+    linarith
+
+/-- **The small negative discs of two compact families of Morse charts are homotopic below the
+critical level, continuously in the parameter.** Let `ψ₀ p` and `ψ₁ p` be charts with a common
+centre, in which `f = c - ‖u‖² + ‖v‖²`, for `p` in a compact space `P`. Suppose that on one ball
+of radius `r` about the origin the inverses of `ψ₀ p` are jointly continuous in `p` and the point,
+and the transitions `ψ₀ p ∘ (ψ₁ p)⁻¹` are defined, jointly continuous, and differentiable with
+derivatives `D p y` jointly continuous in `p` and `y`. Then the polar factor `h p` of the negative
+block of `D p 0` depends continuously on `p`, and for every small `δ > 0` a single homotopy `G`,
+continuous in `p`, deforms the negative discs `w ↦ (ψ₁ p)⁻¹ (w, 0)` of radius `δ` to
+`w ↦ (ψ₀ p)⁻¹ (h p w, 0)` through maps `g` with `f (g w) ≤ c - ‖w‖²`. -/
+theorem exists_negativeDisc_homotopy_family {P : Type*} [TopologicalSpace P] [CompactSpace P]
+    (ψ₀ ψ₁ : P → OpenPartialHomeomorph M (E × F)) {f : M → ℝ} {c : ℝ}
+    (hf₀ : ∀ p, ∀ y ∈ (ψ₀ p).source, f y = c - ‖(ψ₀ p y).1‖ ^ 2 + ‖(ψ₀ p y).2‖ ^ 2)
+    (hf₁ : ∀ p, ∀ y ∈ (ψ₁ p).source, f y = c - ‖(ψ₁ p y).1‖ ^ 2 + ‖(ψ₁ p y).2‖ ^ 2)
+    (hp : ∀ p, (ψ₀ p).symm 0 = (ψ₁ p).symm 0) {r : ℝ} (hr : 0 < r)
+    (h₀ : ∀ p, ball (0 : E × F) r ⊆ (ψ₀ p).target)
+    (h₁ : ∀ p, ball (0 : E × F) r ⊆ (ψ₁ p).target ∩ (ψ₁ p).symm ⁻¹' (ψ₀ p).source)
+    (hs₀ : ContinuousOn (fun q : P × (E × F) ↦ (ψ₀ q.1).symm q.2) (univ ×ˢ ball 0 r))
+    {D : P → E × F → (E × F) →L[ℝ] E × F}
+    (hT : ∀ p, ∀ y ∈ ball (0 : E × F) r, HasFDerivAt (fun z ↦ ψ₀ p ((ψ₁ p).symm z)) (D p y) y)
+    (hTc : ContinuousOn (fun q : P × (E × F) ↦ ψ₀ q.1 ((ψ₁ q.1).symm q.2)) (univ ×ˢ ball 0 r))
+    (hD : ContinuousOn (Function.uncurry D) (univ ×ˢ ball 0 r)) :
+    Continuous (fun p ↦ ((ContinuousLinearMap.fst ℝ E F).comp
+        ((D p 0).comp (ContinuousLinearMap.inl ℝ E F))).polarFactor) ∧
+      ∃ δ₀ > 0, ∀ δ ∈ Ioc 0 δ₀, ∃ G : C(P × I × closedBall (0 : E) δ, M),
+        (∀ p w, G (p, 0, w) = (ψ₁ p).symm ((w : E), 0)) ∧
+        (∀ p w, G (p, 1, w) = (ψ₀ p).symm (((ContinuousLinearMap.fst ℝ E F).comp
+          ((D p 0).comp (ContinuousLinearMap.inl ℝ E F))).polarFactor w, 0)) ∧
+        ∀ p t w, f (G (p, t, w)) ≤ c - ‖(w : E)‖ ^ 2 := by
+  have h0r : (0 : E × F) ∈ ball 0 r := mem_ball_self hr
+  -- Each transition is a change of coordinates fixing the origin and preserving `Q` on the ball.
+  have hT0 (p : P) : ψ₀ p ((ψ₁ p).symm 0) = 0 := by rw [← hp, (ψ₀ p).right_inv (h₀ p h0r)]
+  have hQ (p : P) (y : E × F) (hy : y ∈ ball (0 : E × F) r) :
+      -‖(ψ₀ p ((ψ₁ p).symm y)).1‖ ^ 2 + ‖(ψ₀ p ((ψ₁ p).symm y)).2‖ ^ 2 =
+        -‖y.1‖ ^ 2 + ‖y.2‖ ^ 2 := by
+    have h₀' := hf₀ p _ (h₁ p hy).2
+    have h₁' := hf₁ p _ ((ψ₁ p).map_target (h₁ p hy).1)
+    rw [(ψ₁ p).right_inv (h₁ p hy).1] at h₁'
+    linarith
+  obtain ⟨hh, δ₀, hδ₀, hH⟩ := TauCeti.exists_negativeDisc_homotopy_family
+    (T := fun p z ↦ ψ₀ p ((ψ₁ p).symm z)) hr hT hTc hD hT0 hQ (ball_mem_nhds 0 hr)
+  refine ⟨hh, δ₀, hδ₀, fun δ hδ ↦ ?_⟩
+  obtain ⟨hdisc, H, hH0, hH1, hHb⟩ := hH δ hδ
+  -- Read the coordinate homotopy through the inverses of the charts `ψ₀ p`.
+  refine ⟨⟨fun q ↦ (ψ₀ q.1).symm (H q),
+    hs₀.comp_continuous (f := fun q : P × I × closedBall (0 : E) δ ↦ (q.1, H q))
+      (continuous_fst.prodMk H.continuous) fun q ↦ ⟨mem_univ _, (hHb q.1 q.2.1 q.2.2).1⟩⟩,
+    fun p w ↦ ?_, fun p w ↦ ?_, fun p t w ↦ ?_⟩
+  · simp only [ContinuousMap.coe_mk, hH0]
+    exact (ψ₀ p).left_inv (h₁ p (hdisc w w.2)).2
+  · simp only [ContinuousMap.coe_mk, hH1]
+  · obtain ⟨hz, hq⟩ := hHb p t w
+    simp only [ContinuousMap.coe_mk]
+    rw [hf₀ p _ ((ψ₀ p).map_target (h₀ p hz)), (ψ₀ p).right_inv (h₀ p hz)]
     linarith
 
 end OpenPartialHomeomorph

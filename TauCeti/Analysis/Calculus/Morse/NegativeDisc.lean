@@ -38,6 +38,16 @@ In particular the boundary sphere `‖u‖ = δ` stays at `Q ≤ -δ²` througho
 of the chart `φ₀`, this compares the small characteristic discs of two Morse charts without any
 assumption that their whole negative discs overlap.
 
+The same comparison works continuously in a parameter
+(`TauCeti.exists_negativeDisc_homotopy_family`). For a family `T p` over a compact space `P`,
+differentiable near the origin with derivatives jointly continuous in `p` and the point, the polar
+factors `h p` depend continuously on `p`
+(`ContinuousLinearMap.continuousOn_polarFactor`), and one radius `δ` and one homotopy,
+continuous in `p`, serve the whole family. The rescaling stage uses the joint continuity and the
+uniform linear bound of `TauCeti.continuousOn_derivativeRescale_family` and
+`TauCeti.exists_forall_norm_derivativeRescale_le_family`; the polar stage uses the joint
+continuity of the polar deformation (`ContinuousLinearMap.continuousOn_polarDeformation`).
+
 ## References
 
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
@@ -226,5 +236,162 @@ theorem _root_.HasFDerivAt.exists_negativeDisc_homotopy
   let H := (H₁.trans H₂).trans H₃
   exact ⟨fun w hw' ↦ hδU (hw ⟨w, hw'⟩), H.toContinuousMap, fun w ↦ H.apply_zero w,
     fun w ↦ H.apply_one w, fun t w ↦ H.prop t w⟩
+
+section Family
+
+/-- The linear part of the comparison for a continuous family `C x` of negative columns over a
+space `X`: contract the positive components, then deform the negative blocks
+`N x = (C x ·).1` to their polar factors. Along the way the values are bounded by `‖C x u‖`
+and `Q` stays at most `-‖u‖²`. -/
+private noncomputable def negativeColumnHomotopy {X : Type*} [TopologicalSpace X]
+    (C : X → E →L[ℝ] E × F) (hC : Continuous C)
+    (hCQ : ∀ x u, ‖(C x u).1‖ ^ 2 - ‖(C x u).2‖ ^ 2 = ‖u‖ ^ 2)
+    (hP : Continuous fun x ↦ ((ContinuousLinearMap.fst ℝ E F).comp (C x)).polarFactor) :
+    ContinuousMap.HomotopyWith (⟨fun q : X × E ↦ C q.1 q.2, by fun_prop⟩ : C(X × E, E × F))
+      ⟨fun q ↦ (((ContinuousLinearMap.fst ℝ E F).comp (C q.1)).polarFactor q.2, 0),
+        ((hP.comp continuous_fst).clm_apply continuous_snd).prodMk continuous_const⟩
+      fun g ↦ ∀ q, ‖g q‖ ≤ ‖C q.1 q.2‖ ∧ -‖(g q).1‖ ^ 2 + ‖(g q).2‖ ^ 2 ≤ -‖q.2‖ ^ 2 :=
+  have := FiniteDimensional.complete ℝ E
+  let N : X → E →L[ℝ] E := fun x ↦ (ContinuousLinearMap.fst ℝ E F).comp (C x)
+  have hN (x : X) (u : E) : ‖u‖ ≤ ‖N x u‖ := (C x).norm_le_norm_fst_of_norm_sq_sub (hCQ x) u
+  -- First contract the positive components, then deform the negative blocks.
+  ContinuousMap.HomotopyWith.trans (f₁ := ⟨fun q : X × E ↦ ((C q.1 q.2).1, 0), by fun_prop⟩)
+    { toFun := fun q ↦ ((C q.2.1 q.2.2).1, (1 - (q.1 : ℝ)) • (C q.2.1 q.2.2).2)
+      continuous_toFun := by fun_prop
+      map_zero_left := fun q ↦ by simp
+      map_one_left := fun q ↦ by simp
+      prop' := fun t q ↦ by
+        simp only [ContinuousMap.coe_mk]
+        rw [← positiveContraction_apply (C q.1) (t, q.2)]
+        exact ⟨norm_positiveContraction_le (C q.1) (t, q.2),
+          positiveContraction_neg_norm_sq_add_le (C q.1) (hCQ q.1) (t, q.2)⟩ }
+    { toFun := fun q ↦ ((N q.2.1).polarDeformation q.1 q.2.2, 0)
+      continuous_toFun := by
+        have hc : Continuous fun q : I × (X × E) ↦ (N q.2.1).polarDeformation q.1 :=
+          ContinuousLinearMap.continuousOn_polarDeformation.comp_continuous
+            (f := fun q : I × (X × E) ↦ (N q.2.1, (q.1 : ℝ))) (by fun_prop)
+            fun q ↦ mk_mem_prod ((N q.2.1).isStrictlyPositive_modulus_of_forall_norm_le
+              (hN q.2.1)) (mem_univ _)
+        exact (hc.clm_apply (by fun_prop)).prodMk continuous_const
+      map_zero_left := fun q ↦ by simp [N]
+      map_one_left := fun q ↦ by simp [N]
+      prop' := fun t q ↦ by
+        simp only [ContinuousMap.coe_mk]
+        rw [← polarStage_apply (F := F) (N q.1) (hN q.1) (t, q.2)]
+        exact ⟨(norm_polarStage_le (N q.1) (hN q.1) (t, q.2)).trans (norm_fst_le _),
+          polarStage_neg_norm_sq_add_le (N q.1) (hN q.1) (t, q.2)⟩ }
+
+variable {P : Type*} [TopologicalSpace P] [CompactSpace P] {T : P → E × F → E × F}
+  {D : P → E × F → (E × F) →L[ℝ] E × F} {r : ℝ}
+
+/-- **Small negative discs of a compact family of Morse coordinate systems.** Let `T p` be a
+family of changes of coordinates over a compact parameter space `P`, each fixing the origin and
+preserving `Q(u, v) = -‖u‖² + ‖v‖²` on the ball of radius `r`, where it is differentiable with
+derivatives `D p y` jointly continuous in `p` and `y`; let `T` be jointly continuous there too.
+Write `N p u = (D p 0 (u, 0)).1` for the negative block of the derivative at the origin. Its polar
+factor depends continuously on `p`, and there is one `δ₀ > 0` such that for every `δ ≤ δ₀` the
+maps `u ↦ T p (u, 0)` on the disc `‖u‖ ≤ δ` of `E` are homotopic to `u ↦ ((N p).polarFactor u, 0)`
+by a single homotopy, continuous in `p`, through maps `g` with values in the prescribed
+neighbourhood `V` of the origin and with `Q (g u) ≤ -‖u‖²`. -/
+theorem exists_negativeDisc_homotopy_family (hr : 0 < r)
+    (hT : ∀ p, ∀ y ∈ ball (0 : E × F) r, HasFDerivAt (T p) (D p y) y)
+    (hTc : ContinuousOn (Function.uncurry T) (univ ×ˢ ball 0 r))
+    (hD : ContinuousOn (Function.uncurry D) (univ ×ˢ ball 0 r)) (hT0 : ∀ p, T p 0 = 0)
+    (hQ : ∀ p, ∀ y ∈ ball (0 : E × F) r,
+      -‖(T p y).1‖ ^ 2 + ‖(T p y).2‖ ^ 2 = -‖y.1‖ ^ 2 + ‖y.2‖ ^ 2)
+    {V : Set (E × F)} (hV : V ∈ 𝓝 0) :
+    Continuous (fun p ↦ ((ContinuousLinearMap.fst ℝ E F).comp
+        ((D p 0).comp (ContinuousLinearMap.inl ℝ E F))).polarFactor) ∧
+      ∃ δ₀ > 0, ∀ δ ∈ Ioc 0 δ₀, (∀ w ∈ closedBall (0 : E) δ, (w, (0 : F)) ∈ ball 0 r) ∧
+        ∃ H : C(P × I × closedBall (0 : E) δ, E × F),
+          (∀ p w, H (p, 0, w) = T p ((w : E), 0)) ∧
+          (∀ p w, H (p, 1, w) = (((ContinuousLinearMap.fst ℝ E F).comp
+            ((D p 0).comp (ContinuousLinearMap.inl ℝ E F))).polarFactor w, 0)) ∧
+          ∀ p t w, H (p, t, w) ∈ V ∧
+            -‖(H (p, t, w)).1‖ ^ 2 + ‖(H (p, t, w)).2‖ ^ 2 ≤ -‖(w : E)‖ ^ 2 := by
+  -- The proof runs the three stages of `HasFDerivAt.exists_negativeDisc_homotopy` with the
+  -- parameter `p` carried along. Compactness of `P` gives one linear bound `L` for all rescalings
+  -- and one radius, so that a single `δ₀` keeps every stage inside `V`.
+  have := FiniteDimensional.complete ℝ E
+  have h0r : (0 : E × F) ∈ ball 0 r := mem_ball_self hr
+  obtain ⟨L, hL, ρ, ⟨hρ, hρr⟩, hbound⟩ := exists_forall_norm_derivativeRescale_le_family hr hT hD
+  obtain ⟨s, hs, hsV⟩ := Metric.mem_nhds_iff.mp hV
+  -- The negative columns `C p` of the derivatives pull `Q` back to `-‖u‖²`, so their negative
+  -- blocks `N p` expand norms; both depend continuously on `p`.
+  let C : P → E →L[ℝ] E × F := fun p ↦ (D p 0).comp (ContinuousLinearMap.inl ℝ E F)
+  have hC (p : P) (u : E) : ‖(C p u).1‖ ^ 2 - ‖(C p u).2‖ ^ 2 = ‖u‖ ^ 2 :=
+    norm_sq_sub_comp_inl (hT p 0 h0r) (hT0 p) isOpen_ball h0r (hQ p) u
+  let N : P → E →L[ℝ] E := fun p ↦ (ContinuousLinearMap.fst ℝ E F).comp (C p)
+  have hN (p : P) (u : E) : ‖u‖ ≤ ‖N p u‖ := (C p).norm_le_norm_fst_of_norm_sq_sub (hC p) u
+  have hNpos (p : P) : IsStrictlyPositive (N p).modulus :=
+    (N p).isStrictlyPositive_modulus_of_forall_norm_le (hN p)
+  have hD0 : Continuous fun p ↦ D p 0 :=
+    hD.comp_continuous (continuous_id.prodMk continuous_const) fun _ ↦ ⟨mem_univ _, h0r⟩
+  have hCc : Continuous C := hD0.clm_comp continuous_const
+  have hNc : Continuous N := continuous_const.clm_comp hCc
+  have hPc : Continuous fun p ↦ (N p).polarFactor :=
+    ContinuousLinearMap.continuousOn_polarFactor.comp_continuous hNc fun p ↦ (hNpos p).isUnit
+  refine ⟨hPc, min (ρ / 2) (s / (2 * L)), lt_min (by positivity) (by positivity),
+    fun δ hδ ↦ ?_⟩
+  have hδρ : δ < ρ := hδ.2.trans_lt ((min_le_left _ _).trans_lt (by linarith))
+  have hδs : L * δ < s := by
+    have := (le_div_iff₀ (by positivity : 0 < 2 * L)).mp (hδ.2.trans (min_le_right _ _))
+    nlinarith [hδ.1]
+  have hw (w : closedBall (0 : E) δ) : ‖((w : E), (0 : F))‖ ≤ δ := by
+    simpa [Prod.norm_def] using mem_closedBall_zero_iff.mp w.2
+  have hwr (w : closedBall (0 : E) δ) : ((w : E), (0 : F)) ∈ ball (0 : E × F) r :=
+    mem_ball_zero_iff.mpr ((hw w).trans_lt (hδρ.trans_le hρr))
+  have hCw (p : P) (w : closedBall (0 : E) δ) : ‖C p w‖ ≤ L * δ :=
+    ((D p 0).le_opNorm _).trans (mul_le_mul (hbound p).1 (hw w) (norm_nonneg _) hL.le)
+  -- Both homotopies below are of maps on `P × closedBall 0 δ` keeping their values in `V` and `Q`
+  -- at most `-‖u‖²`.
+  let R : C(P × closedBall (0 : E) δ, E × F) → Prop := fun g ↦
+    ∀ x : P × closedBall (0 : E) δ, g x ∈ V ∧ -‖(g x).1‖ ^ 2 + ‖(g x).2‖ ^ 2 ≤ -‖(x.2 : E)‖ ^ 2
+  have hR {z : E × F} (x : P × closedBall (0 : E) δ) (hz : ‖z‖ ≤ ‖C x.1 x.2‖)
+      (hq : -‖z.1‖ ^ 2 + ‖z.2‖ ^ 2 ≤ -‖(x.2 : E)‖ ^ 2) :
+      z ∈ V ∧ -‖z.1‖ ^ 2 + ‖z.2‖ ^ 2 ≤ -‖(x.2 : E)‖ ^ 2 :=
+    ⟨hsV (mem_ball_zero_iff.mpr ((hz.trans (hCw x.1 x.2)).trans_lt hδs)), hq⟩
+  have hσ (t : I) : (σ t : ℝ) ∈ closedBall (0 : ℝ) 1 := by
+    rw [mem_closedBall_zero_iff, Real.norm_of_nonneg (σ t).2.1]
+    exact (σ t).2.2
+  -- The intermediate map `(p, u) ↦ C p u`.
+  let gC : C(P × closedBall (0 : E) δ, E × F) := ⟨fun x ↦ C x.1 x.2, by fun_prop⟩
+  -- Stage 1: rescale `T p` to its derivative, continuously in `p`.
+  have hT₀ : Continuous fun x : P × closedBall (0 : E) δ ↦ T x.1 ((x.2 : E), 0) :=
+    hTc.comp_continuous (f := fun x : P × closedBall (0 : E) δ ↦ (x.1, ((x.2 : E), (0 : F))))
+      (by fun_prop) fun x ↦ ⟨mem_univ _, hwr x.2⟩
+  have hres : Continuous fun q : I × (P × closedBall (0 : E) δ) ↦
+      derivativeRescale (T q.2.1) (D q.2.1 0) (σ q.1 : ℝ) ((q.2.2 : E), 0) :=
+    (continuousOn_derivativeRescale_family hT hTc hD).comp_continuous
+      (f := fun q : I × (P × closedBall (0 : E) δ) ↦
+        (q.2.1, (σ q.1 : ℝ), ((q.2.2 : E), (0 : F)))) (by fun_prop)
+      fun q ↦ ⟨mem_univ _, hσ q.1, hwr q.2.2⟩
+  let H₁ : ContinuousMap.HomotopyWith ⟨_, hT₀⟩ gC R :=
+    { toFun := fun q ↦ derivativeRescale (T q.2.1) (D q.2.1 0) (σ q.1 : ℝ) ((q.2.2 : E), 0)
+      continuous_toFun := hres
+      map_zero_left := fun x ↦ by simp [derivativeRescale_one, hT0]
+      map_one_left := fun x ↦ by simp [derivativeRescale_zero, gC, C]
+      prop' := fun t x ↦ by
+        have hb := (hbound x.1).2 _ (mem_closedBall_zero_iff.mp (hσ t)) _
+          ((hw x.2).trans_lt hδρ)
+        refine ⟨hsV (mem_ball_zero_iff.mpr ((hb.trans (mul_le_mul_of_nonneg_left (hw x.2)
+          hL.le)).trans_lt hδs)), le_of_eq ?_⟩
+        simpa using (hT x.1 0 h0r).derivativeRescale_neg_norm_fst_sq_add_norm_snd_sq_eq (hT0 x.1)
+          (hQ x.1) (fun c hc ↦ (convex_ball (0 : E × F) r).smul_mem_of_zero_mem h0r (hwr x.2) hc)
+          ⟨(σ t).2.1, (σ t).2.2⟩ }
+  -- Stages 2 and 3: the linear part, read on the discs.
+  let ι : C(P × closedBall (0 : E) δ, P × E) := ⟨fun x ↦ (x.1, x.2), by fun_prop⟩
+  let G := negativeColumnHomotopy C hCc hC hPc
+  let H₂ : ContinuousMap.HomotopyWith gC
+      ⟨fun x : P × closedBall (0 : E) δ ↦ ((N x.1).polarFactor x.2, 0),
+        ((hPc.comp continuous_fst).clm_apply (by fun_prop)).prodMk continuous_const⟩ R :=
+    { toHomotopy := G.toHomotopy.compContinuousMap ι
+      prop' := fun t x ↦ hR x (G.prop t (ι x)).1 (G.prop t (ι x)).2 }
+  let H := H₁.trans H₂
+  refine ⟨fun w hw' ↦ hwr ⟨w, hw'⟩,
+    ⟨fun q ↦ H (q.2.1, (q.1, q.2.2)), H.continuous.comp (by fun_prop)⟩,
+    fun p w ↦ H.apply_zero (p, w), fun p w ↦ H.apply_one (p, w), fun p t w ↦ H.prop t (p, w)⟩
+
+end Family
 
 end TauCeti
