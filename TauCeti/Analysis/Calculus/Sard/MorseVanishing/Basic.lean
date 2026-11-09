@@ -36,7 +36,7 @@ decomposition; it does not apply lower-dimensional Sard to a derivative stratum:
 
 The decomposition depends only on `A` and the order, not on the function. It therefore serves all
 coordinates of a vector-valued map at once, which gives the Morse criticality lemma
-`TauCeti.exists_cover_of_critical` for `C^(k+1)` maps into any finite-dimensional real normed
+`TauCeti.exists_cover_of_fderiv_eq_zero` for `C^(k+1)` maps into any finite-dimensional real normed
 space: the set where the derivative vanishes is covered by countably many points and bounded
 pieces on which the map oscillates by `o(‖y - x‖ ^ (k + 1))`.
 
@@ -349,7 +349,7 @@ private theorem hasDecompRel_self : ∀ (k n : ℕ) (A : Set (Fin n → ℝ)), H
 /-- The Morse criticality lemma for real-valued functions, with the cover chosen uniformly: it
 depends only on `A` and the order, and every `C^(k+1)` function critical on `A` has a uniform
 `o(‖y - x‖ ^ (k + 1))` modulus on each of its pieces. -/
-private theorem exists_cover_of_critical_real (k : ℕ) (A : Set (Fin n → ℝ)) :
+private theorem exists_cover_of_fderiv_eq_zero_real (k : ℕ) (A : Set (Fin n → ℝ)) :
     ∃ (A₀ : Set (Fin n → ℝ)) (P : Set (Set (Fin n → ℝ))), A₀.Countable ∧ P.Countable ∧
       A ⊆ A₀ ∪ ⋃₀ P ∧ (∀ S ∈ P, Bornology.IsBounded S) ∧
       ∀ f : (Fin n → ℝ) → ℝ, ContDiff ℝ (k + 1) f → (∀ x ∈ A, fderiv ℝ f x = 0) →
@@ -392,14 +392,14 @@ private theorem exists_cover_of_critical_real (k : ℕ) (A : Set (Fin n → ℝ)
 real normed space is critical, in the sense that its derivative vanishes, is covered by a
 countable set and countably many bounded pieces, on each of which the map has a uniform
 `o(‖y - x‖ ^ (k + 1))` modulus.  Neither the set nor the pieces are assumed measurable. -/
-theorem _root_.TauCeti.exists_cover_of_critical {F : Type*} [NormedAddCommGroup F]
+theorem _root_.TauCeti.exists_cover_of_fderiv_eq_zero {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] [FiniteDimensional ℝ F] (A : Set (Fin n → ℝ)) {f : (Fin n → ℝ) → F}
     (hf : ContDiff ℝ (k + 1) f) (hA : ∀ x ∈ A, fderiv ℝ f x = 0) :
     ∃ (A₀ : Set (Fin n → ℝ)) (P : Set (Set (Fin n → ℝ))), A₀.Countable ∧ P.Countable ∧
       A ⊆ A₀ ∪ ⋃₀ P ∧
       ∀ S ∈ P, Bornology.IsBounded S ∧ ∀ ε : ℝ, 0 < ε → ∃ δ : ℝ, 0 < δ ∧
         ∀ x ∈ S, ∀ y ∈ S, ‖y - x‖ < δ → ‖f y - f x‖ ≤ ε * ‖y - x‖ ^ (k + 1) := by
-  obtain ⟨A₀, P, hA₀, hP, hcov, hbdd, hmod⟩ := exists_cover_of_critical_real k A
+  obtain ⟨A₀, P, hA₀, hP, hcov, hbdd, hmod⟩ := exists_cover_of_fderiv_eq_zero_real k A
   refine ⟨A₀, P, hA₀, hP, hcov, fun S hS ↦ ⟨hbdd S hS, fun ε hε ↦ ?_⟩⟩
   -- Read `f` in the coordinates of a basis of `F`; each coordinate is critical on `A`.
   let e : F ≃L[ℝ] (Fin (Module.finrank ℝ F) → ℝ) := (Module.finBasis ℝ F).equivFunL

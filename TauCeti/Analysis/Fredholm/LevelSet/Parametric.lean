@@ -395,10 +395,9 @@ Here criticality is defined intrinsically for the local parameter map;
 `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap`
 rewrites it as failure of regularity of the original equation.
 
-The differentiability threshold `(dim ker D₁)² + 1` is a sufficient bound: the kernel of
-`D₁.parameterProj D₂` has the same dimension as `ker D₁`, which bounds its index, so the bound
-dominates Smale's threshold required by
-`TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints`. -/
+The differentiability threshold is Smale's, `n > max (index D₁, 0)`: the derivative of the local
+parameter map at the chart origin, `D₁.parameterProj D₂`, has the same index as `D₁`, so this is
+the threshold required by `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints`. -/
 theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetParameterMap
     {n : ℕ∞ω} {U : Set (D₁.coprod D₂).ker}
     (hf : HasStrictFDerivAt f (D₁.coprod D₂) (x, l))
@@ -406,7 +405,7 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetPar
     (hD₁ : ContinuousLinearMap.IsFredholm D₁)
     (hD : Surjective (D₁.coprod D₂))
     (hxl : f (x, l) = c)
-    (hn : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≤ n)
+    (hn : ((D₁.index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n)
     (hU : U ∈ 𝓝 (0 : (D₁.coprod D₂).ker)) :
     ∃ N ∈ 𝓝 (0 : (D₁.coprod D₂).ker),
       N ⊆ U ∩ (levelSetChart hf (LinearMap.range_eq_top.mpr hD)
@@ -420,21 +419,9 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetPar
   let g := levelSetParameterMap hf hD (hD₁.closedComplemented_ker_coprod hD) hxl
   have hg : ContDiffAt ℝ n g 0 :=
     contDiffAt_levelSetParameterMap hf hcont hD (hD₁.closedComplemented_ker_coprod hD) hxl
-  have hg' : fderiv ℝ g 0 = D₁.parameterProj D₂ :=
-    fderiv_levelSetParameterMap hf hD (hD₁.closedComplemented_ker_coprod hD) hxl
-  have hn' :
-      ((finrank ℝ (D₁.parameterProj D₂).ker * finrank ℝ (D₁.parameterProj D₂).ker + 1 : ℕ) :
-        ℕ∞ω) ≤ n := by
-    simpa only [ContinuousLinearMap.finrank_ker_parameterProj] using hn
   have hFred := isFredholm_fderiv_levelSetParameterMap hf hD hxl hD₁
-  -- The index of the derivative is at most the dimension of its kernel.
   have hn'' : (((fderiv ℝ g 0).index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n := by
-    have hi := (fderiv ℝ g 0).index_eq_finrank_sub
-    rw [← hg'] at hn'
-    refine le_trans ?_ hn'
-    exact_mod_cast Nat.add_le_add_right
-      ((show (fderiv ℝ g 0).index.toNat ≤ finrank ℝ (fderiv ℝ g 0).ker by omega).trans
-        (Nat.le_mul_self _)) 1
+    rwa [index_fderiv_levelSetParameterMap]
   have htarget := (levelSetChart hf (LinearMap.range_eq_top.mpr hD)
     (hD₁.closedComplemented_ker_coprod hD) hxl).open_target.mem_nhds
       (mem_levelSetChart_target hf (LinearMap.range_eq_top.mpr hD)
@@ -465,7 +452,7 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetPar
     (hD₁ : ContinuousLinearMap.IsFredholm D₁)
     (hD : Surjective (D₁.coprod D₂))
     (hxl : f (x, l) = c)
-    (hn : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≤ n)
+    (hn : ((D₁.index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n)
     (hU : U ∈ 𝓝 (0 : (D₁.coprod D₂).ker)) :
     ∃ N ∈ 𝓝 (0 : (D₁.coprod D₂).ker),
       N ⊆ U ∩ (levelSetChart hf (LinearMap.range_eq_top.mpr hD)
@@ -480,9 +467,9 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetPar
           (((levelSetChart hf (LinearMap.range_eq_top.mpr hD)
               (hD₁.closedComplemented_ker_coprod hD) hxl).symm k : ↥{z | f z = c}) :
             E × Λ)).comp (ContinuousLinearMap.inl ℝ E Λ))})) := by
-  have hne : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≠ ∞ :=
+  have hne : ((D₁.index.toNat + 1 : ℕ) : ℕ∞ω) ≠ ∞ :=
     (fun m : ℕ ↦ (by simp : ((m : ℕ) : ℕ∞ω) ≠ ∞)) _
-  have hne0 : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≠ 0 :=
+  have hne0 : ((D₁.index.toNat + 1 : ℕ) : ℕ∞ω) ≠ 0 :=
     (fun m : ℕ ↦ (by simp : ((m + 1 : ℕ) : ℕ∞ω) ≠ 0)) _
   have hdiff : ∀ᶠ w in 𝓝 ((x, l) : E × Λ), DifferentiableAt ℝ f w := by
     filter_upwards [(hcont.of_le hn).eventually hne] with w hw
@@ -518,8 +505,7 @@ theorem exists_mem_nhds_isNowhereDense_not_surjective_fderiv_comp_inl
     (hFred : ContinuousLinearMap.IsFredholm
         ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)))
     (htotal : Surjective (fderiv ℝ f z))
-    (hn : ((finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker *
-          finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker + 1 : ℕ) :
+    (hn : ((((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).index.toNat + 1 : ℕ) :
         ℕ∞ω) ≤ n) :
     ∃ Q ∈ 𝓝 z, ∃ B : Set Λ, IsNowhereDense B ∧
       ∀ w : {z : E × Λ | f z = c}, w ∈ Q →
@@ -531,9 +517,7 @@ theorem exists_mem_nhds_isNowhereDense_not_surjective_fderiv_comp_inl
     (fderiv ℝ f z).comp (ContinuousLinearMap.inr ℝ E Λ)
   have hn0 : n ≠ 0 := by
     intro hnzero
-    have hpos : (0 : ℕ∞ω) <
-        ((finrank ℝ (fixedDeriv z).ker * finrank ℝ (fixedDeriv z).ker + 1 : ℕ) :
-          ℕ∞ω) := by
+    have hpos : (0 : ℕ∞ω) < (((fixedDeriv z).index.toNat + 1 : ℕ) : ℕ∞ω) := by
       simp
     exact (not_lt_of_ge (hn.trans_eq hnzero) hpos)
   have hstrict : HasStrictFDerivAt f ((fixedDeriv z).coprod (parameterDeriv z)) z := by

@@ -229,16 +229,13 @@ private theorem eventually_mem_target_contDiffAt_normalForm
     with y c₁ c₂ c₃ c₄ c₅ using ⟨c₁, c₂, c₃, c₄, c₅⟩
 
 omit [CompleteSpace F] in
-/-- On a set `V` of normal-form coordinates on which the obstruction is `C^k`, the image under `f`
-of the critical points whose chart image lies in `V` has empty interior. This is the fibrewise
-Morse--Sard step (the hypothesis `hslice`) applied to the obstruction slices. -/
+/-- On a set `V` of normal-form coordinates on which the obstruction is `C^k`, with
+`k > dim ker - dim coker`, the image under `f` of the critical points whose chart image lies in
+`V` has empty interior. This is the finite-dimensional Morse--Sard theorem
+`TauCeti.interior_image_criticalPoints_eq_empty` applied fibrewise to the obstruction slices. -/
 private theorem interior_image_inter_not_surjective_eq_empty
     (pkg : ContinuousLinearMap.FredholmPackage T) (hT : HasStrictFDerivAt f T a) {k : ℕ}
-    (hslice : ∀ (X : Submodule ℝ E) (Y : Submodule ℝ F) [FiniteDimensional ℝ X]
-      [FiniteDimensional ℝ Y], finrank ℝ X = finrank ℝ T.ker →
-      finrank ℝ Y = finrank ℝ (F ⧸ T.range) → ∀ (g : X → Y) (V : Set X),
-      (∀ z ∈ V, ContDiffAt ℝ (k : ℕ∞ω) g z) →
-        interior (g '' (V ∩ {z | ¬ Surjective (fderiv ℝ g z)})) = ∅)
+    (hk : finrank ℝ T.ker - finrank ℝ (F ⧸ T.range) + 1 ≤ k)
     {V : Set (pkg.decCodom.X₁ × pkg.decDom.X₀)}
     (hVt : ∀ y ∈ V, y ∈ (pkg.normalFormOpenPartialHomeomorph hT).target)
     (hVq : ∀ y ∈ V, ContDiffAt ℝ (k : ℕ∞ω) (pkg.obstructionMap hT) y)
@@ -285,7 +282,7 @@ private theorem interior_image_inter_not_surjective_eq_empty
       intro z hz
       rw [funext (pkg.obstructionSlice_apply hT p₁), ← hqdef]
       exact (hVq _ hz).comp z (contDiffAt_const.prodMk contDiffAt_id)
-    exact hslice _ _ hker hcoker _ _ hUC
+    exact interior_image_criticalPoints_eq_empty hUC (by rw [hker, hcoker]; exact_mod_cast hk)
   have himg : f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)}) ⊆ Λ '' A := by
     rintro _ ⟨x, ⟨hxN, hxc⟩, rfl⟩
     have c₁ := hVt (Φ x) hxN.2
@@ -406,22 +403,31 @@ private theorem exists_mem_nhds_isClosed_isNowhereDense_image_of_isOpen
   exact interior_mono (Set.image_mono
     (Set.inter_subset_inter (fun z hz ↦ (hN'ball hz).1) (subset_refl _)))
 
-/-- **Sard--Smale, locally**, with the finite-dimensional input left as a hypothesis `hslice`: a
-Morse--Sard statement at regularity `C^k` for maps from a subspace of dimension `dim ker` of `E`
-to a subspace of dimension `dim coker` of `F`. The fibrewise step applies it to the obstruction
-slices of the Lyapunov--Schmidt normal form. The public local form below supplies it from the
-finite-dimensional Morse--Sard theorem. -/
-private theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_slice
-    {f : E → F} {a : E} {U : Set E} {k : ℕ} (hk : 1 ≤ k) (hf : ContDiffAt ℝ (k : ℕ∞ω) f a)
+/-- **Sard--Smale, locally.** Near a point where the derivative of `f` is a Fredholm operator of
+index `i`, and `f` is `C^k` with `k > max (i, 0)`, there is a neighbourhood, inside any
+prescribed neighbourhood `U` of the point, on which the critical values form a closed nowhere
+dense set. The neighbourhood can be confined to `U`, a region on which `f` is known to be the map
+of interest.
+
+Completeness of the target enters through Smale's local properness lemma, which supplies the
+compactness used to prove that the local critical-value image is closed.
+
+This is Smale's regularity threshold. The obstruction slices of the normal form are maps from a
+space of dimension `dim ker` to one of dimension `dim coker`, whose difference is `i`, so the
+finite-dimensional Morse--Sard theorem `TauCeti.interior_image_criticalPoints_eq_empty` applies to
+them at this regularity. -/
+theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
+    {f : E → F} {a : E} {U : Set E} {n : ℕ∞ω} (hf : ContDiffAt ℝ n f a)
     (hFred : (fderiv ℝ f a).IsFredholm)
-    (hslice : ∀ (X : Submodule ℝ E) (Y : Submodule ℝ F) [FiniteDimensional ℝ X]
-      [FiniteDimensional ℝ Y], finrank ℝ X = finrank ℝ (fderiv ℝ f a).ker →
-      finrank ℝ Y = finrank ℝ (F ⧸ (fderiv ℝ f a).range) → ∀ (g : X → Y) (V : Set X),
-      (∀ z ∈ V, ContDiffAt ℝ (k : ℕ∞ω) g z) →
-        interior (g '' (V ∩ {z | ¬ Surjective (fderiv ℝ g z)})) = ∅)
-    (hU : U ∈ 𝓝 a) :
+    (hn : (((fderiv ℝ f a).index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n) (hU : U ∈ 𝓝 a) :
     ∃ N ∈ 𝓝 a, N ⊆ U ∧ IsClosed (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) ∧
       IsNowhereDense (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
+  have hi := (fderiv ℝ f a).index_eq_finrank_sub
+  obtain ⟨k, hkn⟩ : ∃ k : ℕ, k = (fderiv ℝ f a).index.toNat + 1 := ⟨_, rfl⟩
+  have hk : 1 ≤ k := by omega
+  have hdim : finrank ℝ (fderiv ℝ f a).ker - finrank ℝ (F ⧸ (fderiv ℝ f a).range) + 1 ≤ k := by
+    omega
+  replace hf : ContDiffAt ℝ (k : ℕ∞ω) f a := hf.of_le (hkn ▸ hn)
   set T := fderiv ℝ f a
   have hk1 : (1 : ℕ∞ω) ≤ (k : ℕ∞ω) := by exact_mod_cast hk
   have hk0 : ((k : ℕ∞ω)) ≠ 0 := by
@@ -458,37 +464,12 @@ private theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_
     rwa [hNsymm x hx] at hiff
   have hVq : ∀ y ∈ V, ContDiffAt ℝ (k : ℕ∞ω) q y := fun y hy ↦ (hVP y hy).2.1
   -- The image of the critical set of `N` has empty interior, fibrewise by Morse--Sard.
-  have hNint := interior_image_inter_not_surjective_eq_empty pkg hT hslice
+  have hNint := interior_image_inter_not_surjective_eq_empty pkg hT hdim
     (fun y hy ↦ (hVP y hy).1) hVq hcrit
   -- The critical locus is relatively closed in `N`, again read off the finite-dimensional slice.
   have hregopen := isOpen_inter_setOf_surjective_fderiv pkg hT hk hVopen hVq hcrit
   exact exists_mem_nhds_isClosed_isNowhereDense_image_of_isOpen hT hFred hNopen haN hU
     (fun x hx ↦ (hfN x hx).continuousAt) hregopen hNint
-
-/-- **Sard--Smale, locally.** Near a point where the derivative of `f` is a Fredholm operator of
-index `i`, and `f` is `C^k` with `k > max (i, 0)`, there is a neighbourhood, inside any
-prescribed neighbourhood `U` of the point, on which the critical values form a closed nowhere
-dense set. The neighbourhood can be confined to `U`, a region on which `f` is known to be the map
-of interest.
-
-Completeness of the target enters through Smale's local properness lemma, which supplies the
-compactness used to prove that the local critical-value image is closed.
-
-This is Smale's regularity threshold. The obstruction slices of the normal form are maps from a
-space of dimension `dim ker` to one of dimension `dim coker`, whose difference is `i`, so the
-finite-dimensional Morse--Sard theorem `TauCeti.interior_image_criticalPoints_eq_empty` applies to
-them at this regularity. -/
-theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
-    {f : E → F} {a : E} {U : Set E} {n : ℕ∞ω} (hf : ContDiffAt ℝ n f a)
-    (hFred : (fderiv ℝ f a).IsFredholm)
-    (hn : (((fderiv ℝ f a).index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n) (hU : U ∈ 𝓝 a) :
-    ∃ N ∈ 𝓝 a, N ⊆ U ∧ IsClosed (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) ∧
-      IsNowhereDense (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
-  have hi := (fderiv ℝ f a).index_eq_finrank_sub
-  refine exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_slice (by omega)
-    (hf.of_le hn) hFred (fun X Y _ _ hX hY _ _ hg ↦ ?_) hU
-  refine interior_image_criticalPoints_eq_empty hg ?_
-  exact_mod_cast (show finrank ℝ X - finrank ℝ Y + 1 ≤ (fderiv ℝ f a).index.toNat + 1 by omega)
 
 end Local
 

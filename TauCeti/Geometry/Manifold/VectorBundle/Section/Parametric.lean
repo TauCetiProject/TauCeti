@@ -28,8 +28,8 @@ only at actual zeros.
 
 Smoothness of the section is required only at zeros, and all hypotheses are stated for the
 intrinsic linearizations. The manifold structure on the zeros also uses a smooth bundle. The
-finite differentiability threshold is the current Sard--Smale bound `(dim ker)² + 1`, not the
-optimal bound. No norm on the individual bundle fibers is needed.
+finite differentiability threshold is Smale's, `n > max (index, 0)` for the index of the
+linearization in the `M` direction. No norm on the individual bundle fibers is needed.
 
 The proof reads the section in a source chart and a bundle trivialization at each zero, applies
 the local parametric theorem for Banach-space equations to that coordinate expression, and takes
@@ -132,8 +132,8 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
     (hFred : ContinuousLinearMap.IsFredholm
       (sectionLinearization (F := F) 𝓘(ℝ, X) (fun y ↦ b (y, l)) (fun y ↦ s (y, l)) x))
     (htotal : Surjective (sectionLinearization (F := F) (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) b s (x, l)))
-    (hn : ((finrank ℝ (sectionLinearization (F := F) 𝓘(ℝ, X) (fun y ↦ b (y, l))
-      (fun y ↦ s (y, l)) x).ker ^ 2 + 1 : ℕ) : ℕ∞ω) ≤ n)
+    (hn : (((LinearMap.index (sectionLinearization (F := F) 𝓘(ℝ, X) (fun y ↦ b (y, l))
+      (fun y ↦ s (y, l)) x).toLinearMap).toNat + 1 : ℕ) : ℕ∞ω) ≤ n)
     (hz : s (x, l) = 0)
     (hb : ∀ w, s w = 0 → ContinuousAt b w) :
     ∃ Q ∈ 𝓝 (⟨(x, l), hz⟩ : ↥{w | s w = 0}), ∃ A : Set Λ, IsNowhereDense A ∧
@@ -187,9 +187,13 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
   have hFred' : ContinuousLinearMap.IsFredholm D₁ := by
     rw [hD₁]
     exact (isFredholm_sectionLinearization_iff hbl he hcl hz).mp hFred
-  have hn' : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≤ n := by
-    rw [ker_sectionLinearization hbl he hcl hz] at hn
-    rw [hD₁, ← pow_two]
+  have hidx : D₁.index =
+      ContinuousLinearMap.index (mvfderiv 𝓘(ℝ, X) (fun y ↦ c (y, l)) x : X →L[ℝ] F) := by
+    rw [hD₁]
+    rfl
+  have hn' : ((D₁.index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n := by
+    rw [index_sectionLinearization hbl he hcl hz] at hn
+    rw [hidx, ContinuousLinearMap.index_def]
     exact hn
   -- A section zero in the chart source and over the trivialization's base set is a coordinate
   -- zero.
@@ -213,9 +217,9 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
       (ContinuousLinearMap.inl ℝ X Λ))})
   obtain ⟨V, hV, hVsub⟩ := exists_mem_nhds_forall_mem_source_and_levelSetChart_mem hstrict
     hsurj (hFred'.closedComplemented_ker_coprod hsurj) hfzero hN
-  have hne : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≠ ∞ :=
+  have hne : ((D₁.index.toNat + 1 : ℕ) : ℕ∞ω) ≠ ∞ :=
     (fun m : ℕ ↦ (by simp : (m : ℕ∞ω) ≠ ∞)) _
-  have hne0 : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≠ 0 :=
+  have hne0 : ((D₁.index.toNat + 1 : ℕ) : ℕ∞ω) ≠ 0 :=
     (fun m : ℕ ↦ (by simp : ((m + 1 : ℕ) : ℕ∞ω) ≠ 0)) _
   have hdiff : {p | DifferentiableAt ℝ f p} ∈ 𝓝 (φ x, l) := by
     filter_upwards [(hfn.of_le hn').eventually hne] with p hp
@@ -293,8 +297,8 @@ variable [SecondCountableTopology ↥{z | s z = 0}] {n : ℕ∞ω}
       (sectionLinearization (F := F) 𝓘(ℝ, X) (fun y ↦ b (y, z.2)) (fun y ↦ s (y, z.2)) z.1))
     (htotal : ∀ z, s z = 0 →
       Surjective (sectionLinearization (F := F) (𝓘(ℝ, X).prod 𝓘(ℝ, Λ)) b s z))
-    (hn : ∀ z, s z = 0 → ((finrank ℝ (sectionLinearization (F := F) 𝓘(ℝ, X)
-      (fun y ↦ b (y, z.2)) (fun y ↦ s (y, z.2)) z.1).ker ^ 2 + 1 : ℕ) : ℕ∞ω) ≤ n)
+    (hn : ∀ z, s z = 0 → (((LinearMap.index (sectionLinearization (F := F) 𝓘(ℝ, X)
+      (fun y ↦ b (y, z.2)) (fun y ↦ s (y, z.2)) z.1).toLinearMap).toNat + 1 : ℕ) : ℕ∞ω) ≤ n)
 
 include hcont hFred htotal hn
 

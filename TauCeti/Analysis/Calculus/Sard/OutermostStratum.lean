@@ -149,7 +149,7 @@ private theorem addHaar_image_criticalPoints_eq_zero_aux (k : ℕ) (hk1 : 1 ≤ 
       · obtain ⟨c, hc⟩ := Nat.exists_eq_add_of_le hEF
         nlinarith [show c + 1 ≤ k by omega]
     refine measure_union_null (addHaar_image_eq_zero_of_fderiv_eq_zero ν (fun x hx ↦ hf x hx.1)
-      hdim fun x hx ↦ hx.2) ?_
+      le_rfl hdim fun x hx ↦ hx.2) ?_
     -- The outermost stratum, one point at a time.
     refine measure_image_null_of_locally_null (HereditarilyLindelofSpace.isLindelof _)
       fun a ha ↦ ?_

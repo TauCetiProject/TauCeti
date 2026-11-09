@@ -27,7 +27,7 @@ regularity in any codimension. The remaining critical points, at which the deriv
 but not surjective, are handled by a Fubini argument in
 `TauCeti.Analysis.Calculus.Sard.OutermostStratum`, where the theorem itself is assembled.
 
-The proof is Morse's. By the Morse criticality lemma `TauCeti.exists_cover_of_critical`, the
+The proof is Morse's. By the Morse criticality lemma `TauCeti.exists_cover_of_fderiv_eq_zero`, the
 locus is covered by a countable set and countably many bounded pieces on each of which
 `‖f y - f x‖ = o(‖y - x‖ ^ k)` uniformly. Such a piece has an image of `d`-dimensional Hausdorff
 measure at most a multiple of `ε ^ d` times its `k * d`-dimensional Hausdorff measure, for every
@@ -38,7 +38,8 @@ lowered by passing to lower-dimensional pieces, no derivatives are lost along th
 ## Main results
 
 * `TauCeti.addHaar_image_eq_zero_of_fderiv_eq_zero`: the image of a set of points at which the
-  derivative vanishes is null, for a map that is `C^k` at those points with `m ≤ k * d`.
+  derivative vanishes is null, for a map that is `C^n` at those points with `k ≤ n` and
+  `m ≤ k * d`.
 * `ContDiff.addHaar_image_vanishingFDeriv_eq_zero` and
   `ContDiff.dense_compl_image_vanishingFDeriv`: the global forms.
 * `TauCeti.setOf_not_surjective_fderiv_eq_setOf_fderiv_eq_zero_of_finrank_eq_one`: for a
@@ -77,7 +78,7 @@ private theorem addHaar_image_vanishingFDeriv_eq_zero_pi {m : ℕ} {u : (Fin m �
     (hu : ContDiff ℝ (k + 1) u) (hdim : m ≤ (k + 1) * finrank ℝ F) :
     ν (u '' {x | fderiv ℝ u x = 0}) = 0 := by
   obtain ⟨A₀, P, hA₀, hP, hcov, hmod⟩ :=
-    exists_cover_of_critical {x : Fin m → ℝ | fderiv ℝ u x = 0} hu fun x hx ↦ hx
+    exists_cover_of_fderiv_eq_zero {x : Fin m → ℝ | fderiv ℝ u x = 0} hu fun x hx ↦ hx
   refine measure_mono_null (image_mono hcov) ?_
   rw [image_union]
   refine measure_union_null ((hA₀.image u).measure_zero _) ?_
@@ -88,12 +89,14 @@ private theorem addHaar_image_vanishingFDeriv_eq_zero_pi {m : ℕ} {u : (Fin m �
 
 /-- **Sard's theorem on the locus where the derivative vanishes.** Let `f` be a map between
 finite-dimensional real normed spaces with nontrivial target, and let `s` be a set at each point
-of which `f` is `C^k` and its Fréchet derivative vanishes. If
+of which `f` is `C^n` and its Fréchet derivative vanishes. If `k ≤ n` and
 `finrank ℝ E ≤ k * finrank ℝ F`, then `f '' s` has additive Haar measure zero. The set `s` need
 not be open or measurable. -/
-theorem addHaar_image_eq_zero_of_fderiv_eq_zero (hf : ∀ x ∈ s, ContDiffAt ℝ k f x)
-    (hdim : finrank ℝ E ≤ k * finrank ℝ F) (hs : ∀ x ∈ s, fderiv ℝ f x = 0) :
-    ν (f '' s) = 0 := by
+theorem addHaar_image_eq_zero_of_fderiv_eq_zero {n : ℕ∞ω} (hf : ∀ x ∈ s, ContDiffAt ℝ n f x)
+    (hk : (k : ℕ∞ω) ≤ n) (hdim : finrank ℝ E ≤ k * finrank ℝ F)
+    (hs : ∀ x ∈ s, fderiv ℝ f x = 0) : ν (f '' s) = 0 := by
+  replace hf : ∀ x ∈ s, ContDiffAt ℝ k f x := fun x hx ↦ (hf x hx).of_le hk
+  clear hk
   rcases k with _ | k
   · have : Subsingleton E := Module.finrank_zero_iff.mp (by simpa using hdim)
     exact (Set.Subsingleton.image (fun x _ y _ ↦ Subsingleton.elim x y) f).measure_zero ν
@@ -111,20 +114,21 @@ theorem addHaar_image_eq_zero_of_fderiv_eq_zero (hf : ∀ x ∈ s, ContDiffAt �
   rintro _ ⟨y, hy, rfl⟩
   exact ⟨y, (hU hy.2).2.trans (hs y hy.1), (hU hy.2).1⟩
 
-/-- The image under a `C^k` map with nontrivial target of the whole locus where its Fréchet
-derivative vanishes has additive Haar measure zero, provided `finrank ℝ E ≤ k * finrank ℝ F`. -/
-theorem _root_.ContDiff.addHaar_image_vanishingFDeriv_eq_zero (hf : ContDiff ℝ k f)
-    (hdim : finrank ℝ E ≤ k * finrank ℝ F) :
+/-- The image under a `C^n` map with nontrivial target of the whole locus where its Fréchet
+derivative vanishes has additive Haar measure zero, provided `k ≤ n` and
+`finrank ℝ E ≤ k * finrank ℝ F`. -/
+theorem _root_.ContDiff.addHaar_image_vanishingFDeriv_eq_zero {n : ℕ∞ω} (hf : ContDiff ℝ n f)
+    (hk : (k : ℕ∞ω) ≤ n) (hdim : finrank ℝ E ≤ k * finrank ℝ F) :
     ν (f '' {x | fderiv ℝ f x = 0}) = 0 :=
-  addHaar_image_eq_zero_of_fderiv_eq_zero ν (fun _ _ ↦ hf.contDiffAt) hdim fun _ hx ↦ hx
+  addHaar_image_eq_zero_of_fderiv_eq_zero ν (fun _ _ ↦ hf.contDiffAt) hk hdim fun _ hx ↦ hx
 
-/-- The complement of the image of the locus where the derivative of a `C^k` map with nontrivial
-target vanishes is dense, provided `finrank ℝ E ≤ k * finrank ℝ F`. -/
-theorem _root_.ContDiff.dense_compl_image_vanishingFDeriv (hf : ContDiff ℝ k f)
-    (hdim : finrank ℝ E ≤ k * finrank ℝ F) :
+/-- The complement of the image of the locus where the derivative of a `C^n` map with nontrivial
+target vanishes is dense, provided `k ≤ n` and `finrank ℝ E ≤ k * finrank ℝ F`. -/
+theorem _root_.ContDiff.dense_compl_image_vanishingFDeriv {n : ℕ∞ω} (hf : ContDiff ℝ n f)
+    (hk : (k : ℕ∞ω) ≤ n) (hdim : finrank ℝ E ≤ k * finrank ℝ F) :
     Dense (f '' {x | fderiv ℝ f x = 0})ᶜ :=
   interior_eq_empty_iff_dense_compl.1 <| Measure.interior_eq_empty_of_null <|
-    hf.addHaar_image_vanishingFDeriv_eq_zero (ν := addHaar) hdim
+    hf.addHaar_image_vanishingFDeriv_eq_zero (ν := addHaar) hk hdim
 
 section OneDimensional
 
