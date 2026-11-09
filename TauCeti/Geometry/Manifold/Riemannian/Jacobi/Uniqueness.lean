@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Basic
+import TauCeti.Analysis.Calculus.TangentCone.Basic
 import TauCeti.Analysis.ODE.Gronwall
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed
@@ -183,10 +184,7 @@ theorem IsJacobiFieldOn.eq_of_eq_of_alongCurveWithin_eq_inter (hV : IsJacobiFiel
     V t = W t := by
   by_cases hnt : (s ∩ u).Nontrivial
   · obtain ⟨a, ha, b, hb, hab⟩ := hnt
-    have hsu' : UniqueDiffOn ℝ (s ∩ u) := by
-      have hord := isPreconnected_iff_ordConnected.1 hsu
-      refine uniqueDiffOn_convex hord.convex ((nonempty_Ioo.2 (min_lt_max.2 hab)).mono ?_)
-      exact isOpen_Ioo.subset_interior_iff.2 (Ioo_subset_Icc_self.trans (hord.uIcc_subset ha hb))
+    have hsu' : UniqueDiffOn ℝ (s ∩ u) := hsu.uniqueDiffOn ha hb hab
     exact (hV.mono hsu' inter_subset_left).eq_of_eq_of_alongCurveWithin_eq
       (hW.mono hsu' inter_subset_right) hsu ht₀ h₀
       (by rw [hV.alongCurveWithin_subset (hsu' t₀ ht₀) inter_subset_left ht₀,
