@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Coalgebra.Comodule.Unitary
+public import TauCeti.Algebra.Coalgebra.Comodule.Unitary.Basic
 public import TauCeti.Algebra.Coalgebra.Star
 public import TauCeti.Algebra.HopfAlgebra.Integral.Positive
 public import TauCeti.Analysis.Matrix.GramFactorization

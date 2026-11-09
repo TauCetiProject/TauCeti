@@ -18,6 +18,8 @@ with `F`, so one vanishes exactly when the other does.
 
 ## Main results
 
+* `TauCeti.mvfderiv_eq_fderiv_apply`: on normed spaces, `mvfderiv` applied to a tangent vector is
+  `fderiv` applied to it.
 * `TauCeti.mvfderiv_comp_apply_of_differentiableAt`: the chain rule when the outer map is
   between normed spaces.
 * `TauCeti.mvfderiv_scalar_comp`: the chain rule `d(φ ∘ g) = φ'(g x) • dg` for scalar `φ`.
@@ -67,6 +69,14 @@ theorem _root_.NormedSpace.fromTangentSpace_apply (x : E) (v : TangentSpace 𝓘
 As with `fromTangentSpace_apply`, this equation is for explicit tangent/model conversions. -/
 theorem _root_.NormedSpace.fromTangentSpace_symm_apply (x : E) (v : E) :
     (NormedSpace.fromTangentSpace (𝕜 := 𝕜) x).symm v = v := rfl
+
+/-- For maps between normed spaces, the vector-valued manifold derivative applied to a tangent
+vector is the Fréchet derivative applied to the same vector. Not `@[simp]`: `mvfderiv_eq_fderiv`
+already rewrites the left-hand side. -/
+theorem mvfderiv_eq_fderiv_apply (f : F → F') (x : F) (v : TangentSpace 𝓘(𝕜, F) x) :
+    mvfderiv 𝓘(𝕜, F) f x v = fderiv 𝕜 f x v := by
+  rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply]
+  exact congrArg _ (NormedSpace.fromTangentSpace_apply (𝕜 := 𝕜) x v)
 
 /-- For a normed vector-space target, evaluating `mvfderiv` agrees with evaluating
 `mfderiv` under the canonical tangent-space identification. -/
@@ -241,9 +251,7 @@ theorem mvfderiv_apply {ι : Type*} [Fintype ι] {F'' : ι → Type*}
     {x : M} (hΦ : MDifferentiableAt I 𝓘(𝕜, (i : ι) → F'' i) Φ x) (i : ι) :
     mvfderiv I (fun y ↦ Φ y i) x = (ContinuousLinearMap.proj i).comp (mvfderiv I Φ x) := by
   ext v
-  have := mvfderiv_comp_apply_of_differentiableAt
-    (ContinuousLinearMap.proj (R := 𝕜) (φ := F'') i).differentiableAt hΦ v
   -- The component `fun y ↦ Φ y i` is `proj i ∘ Φ` by definition of the projection.
-  rwa [ContinuousLinearMap.fderiv] at this
+  exact (ContinuousLinearMap.proj (R := 𝕜) (φ := F'') i).mvfderiv_comp_apply hΦ v
 
 end TauCeti
