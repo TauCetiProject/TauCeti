@@ -306,9 +306,9 @@ theorem exists_forall_le_mul_one_sub_sq {M : ℝ} (hδ : 0 < δ)
         mul_le_mul_of_nonneg_left (sq_le_mul_one_sub_sq hδ hti) (by positivity)
   · exact (h₀ x hx t ht hti).trans (by positivity)
 
-/-- **Choice of the constant on a compact set.** If `g` is continuous on `K × [δ, 1 - δ]` for a
-compact set `K` and `g ≤ 0` on the rest of the open slab, then `g ≤ K' t (1 - t²)` on `K × (0, 1)`
-for some `K' ≥ 0`. -/
+/-- **Choice of the constant on a compact set.** If `g` is continuous on `s ×ˢ [δ, 1 - δ]` for a
+compact set `s` and `g ≤ 0` on the rest of the open slab, then `g ≤ K t (1 - t²)` on `s × (0, 1)`
+for some `K ≥ 0`. -/
 theorem _root_.IsCompact.exists_forall_le_mul_one_sub_sq [TopologicalSpace X] (hs : IsCompact s)
     (hδ : 0 < δ) (hg : ContinuousOn (Function.uncurry g) (s ×ˢ Icc δ (1 - δ)))
     (h₀ : ∀ x ∈ s, ∀ t ∈ Ioo 0 1, t ∉ Icc δ (1 - δ) → g x t ≤ 0) :
@@ -324,6 +324,14 @@ end Constant
 section Trajectory
 
 variable {C δ c : ℝ} {τ b : ℝ → ℝ} {I : Set ℝ}
+
+/-- A predicate whose truth value is locally constant along a preconnected set `I` holds on all
+of `I` once it holds at one point of `I`. -/
+private theorem forall_of_eventually_iff (hI : IsPreconnected I) {p : ℝ → Prop}
+    (hloc : ∀ s ∈ I, ∀ᶠ r in 𝓝 s, (p r ↔ p s)) {s₀ : ℝ} (hs₀ : s₀ ∈ I) (hp : p s₀) :
+    ∀ s ∈ I, p s := fun _ hs ↦
+  (hI.induction₂ (fun x y ↦ (p y ↔ p x)) (fun x hx ↦ nhdsWithin_le_nhds (hloc x hx))
+    (fun _ _ _ _ _ _ h₁ h₂ ↦ h₂.trans h₁) (fun _ _ _ _ h ↦ h.symm) hs₀ hs).2 hp
 
 /-- Near a point where `τ` takes a zero `c` of the base field, with `b` vanishing while `τ` is
 within `δ` of `c`, the equation `τ' = C τ (1 - τ²) - b` is the base equation, whose solutions are
@@ -357,17 +365,11 @@ theorem eqOn_const_of_hasDerivAt_intervalBase (hc : c * (1 - c ^ 2) = 0) (hδ : 
     (hτ : ∀ s ∈ I, HasDerivAt τ (C * τ s * (1 - τ s ^ 2) - b s) s)
     (hb : ∀ s ∈ I, |τ s - c| < δ → b s = 0) {s₀ : ℝ} (hs₀ : s₀ ∈ I) (hτs₀ : τ s₀ = c) :
     EqOn τ (fun _ ↦ c) I := by
-  classical
   -- Whether `τ = c` is locally constant along `I`, hence constant on the preconnected set `I`.
-  have hloc : ∀ s ∈ I, ∀ᶠ r in 𝓝 s, (τ r = c ↔ τ s = c) := fun s hs ↦ by
-    by_cases h : τ s = c
-    · exact (eventuallyEq_const_of_hasDerivAt hc hδ hIo hτ hb hs h).mono fun r hr ↦ by simp [hr, h]
-    · exact ((hτ s hs).continuousAt.eventually_ne h).mono fun r hr ↦ by simp [hr, h]
-  have hcont : ContinuousOn (fun s ↦ decide (τ s = c)) I := fun s hs ↦
-    ((continuousAt_const : ContinuousAt (fun _ : ℝ ↦ decide (τ s = c)) s).congr
-      ((hloc s hs).mono fun r hr ↦ decide_eq_decide.2 hr.symm)).continuousWithinAt
-  intro s hs
-  simpa [hτs₀] using (hI.constant hcont hs₀ hs).symm
+  refine forall_of_eventually_iff hI (fun s hs ↦ ?_) hs₀ hτs₀
+  by_cases h : τ s = c
+  · exact (eventuallyEq_const_of_hasDerivAt hc hδ hIo hτ hb hs h).mono fun r hr ↦ by simp [hr, h]
+  · exact ((hτ s hs).continuousAt.eventually_ne h).mono fun r hr ↦ by simp [hr, h]
 
 /-- **Invariance of the open slab.** Let `τ' = C τ (1 - τ²) - b` on an open preconnected set `I`,
 where `b` vanishes whenever `τ` lies within `δ` of `0` or of `1`. If `τ` takes a value in `(0, 1)`
@@ -377,15 +379,8 @@ theorem mapsTo_Ioo_of_hasDerivAt_intervalBase (hδ : 0 < δ) (hIo : IsOpen I) (h
     (hb₀ : ∀ s ∈ I, |τ s| < δ → b s = 0) (hb₁ : ∀ s ∈ I, |τ s - 1| < δ → b s = 0) {s₀ : ℝ}
     (hs₀ : s₀ ∈ I) (hτs₀ : τ s₀ ∈ Ioo 0 1) :
     MapsTo τ I (Ioo 0 1) := by
-  classical
   -- Whether `τ ∈ (0, 1)` is locally constant along `I`, hence constant on the preconnected set `I`.
-  suffices hloc : ∀ s ∈ I, ∀ᶠ r in 𝓝 s, (τ r ∈ Ioo 0 1 ↔ τ s ∈ Ioo 0 1) by
-    have hcont : ContinuousOn (fun s ↦ decide (τ s ∈ Ioo 0 1)) I := fun s hs ↦
-      ((continuousAt_const : ContinuousAt (fun _ : ℝ ↦ decide (τ s ∈ Ioo 0 1)) s).congr
-        ((hloc s hs).mono fun r hr ↦ decide_eq_decide.2 hr.symm)).continuousWithinAt
-    intro s hs
-    simpa [hτs₀] using (hI.constant hcont hs₀ hs).symm
-  intro s hs
+  refine forall_of_eventually_iff (p := fun s ↦ τ s ∈ Ioo 0 1) hI (fun s hs ↦ ?_) hs₀ hτs₀
   have hcont := (hτ s hs).continuousAt
   by_cases h : τ s ∈ Ioo 0 1
   · exact (hcont.eventually_mem (isOpen_Ioo.mem_nhds h)).mono fun r hr ↦ by simp [hr, h]
