@@ -22,9 +22,15 @@ namespace MeasureTheory.Filtration
 variable {Ω ι : Type*} {m : MeasurableSpace Ω}
 
 /-- The right-continuation at `i` is contained in the filtration at every later time `j`. -/
-theorem rightCont_le_of_lt [LinearOrder ι] [DenselyOrdered ι]
+theorem rightCont_le_of_lt [PartialOrder ι]
     (ℱ : Filtration ι m) {i j : ι} (hij : i < j) : ℱ.rightCont i ≤ ℱ j := by
-  rw [ℱ.rightCont_eq_of_not_isMax (not_isMax_iff.mpr ⟨j, hij⟩)]
-  exact iInf₂_le j hij
+  classical
+  -- Use the order topology underlying `rightCont` to apply its pointwise formula.
+  let := Preorder.topology ι
+  have : OrderTopology ι := ⟨rfl⟩
+  rw [rightCont_apply]
+  split_ifs
+  · exact iInf₂_le j hij
+  · exact ℱ.mono hij.le
 
 end MeasureTheory.Filtration
