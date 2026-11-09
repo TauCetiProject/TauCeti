@@ -539,6 +539,14 @@ private theorem integrableOn_truncation_eval₂_mfderiv (ω : SmoothTwoForm I M)
 
 variable [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M}
 
+/-- If both ends of `[a₁, b₁]` lie in the part `±s > 1/2` of the end `q`, so does every point
+between them. -/
+private theorem lt_endSign_mul_of_mem_Icc {q : Puncture} {a₁ b₁ c : ℝ}
+    (ha : 1 / 2 < q.endSign * a₁) (hb : 1 / 2 < q.endSign * b₁) (hc : c ∈ Icc a₁ b₁) :
+    1 / 2 < q.endSign * c := by
+  obtain ⟨h₁, h₂⟩ := hc
+  rcases endSign_eq_one_or_eq_neg_one q with h | h <;> rw [h] at ha hb ⊢ <;> linarith
+
 /-- The cylinder-coordinate half of the energy identity over a rectangle of an end: over the strip
 `[a₁, b₁] × [-1/2, 1/2)` of the part `±s > 1/2` of the end coordinates, the pulled-back Floer
 energy is the symplectic area, plus the Hamiltonian boundary terms, minus the integrated
@@ -570,10 +578,7 @@ private theorem integral_floerEnergyDensity_endChart_rect (hω : ω.IsNondegener
           ω.hamiltonianCurvature (pairOfPantsEndComponent H q 1)
             (pairOfPantsEndComponent H q Complex.I) w (u (endChart q w)) := by
   set U : Set (ℝ × ℝ) := {z | 1 / 2 < q.endSign * z.1}
-  have hU₁ {z : ℝ × ℝ} (hz : z.1 ∈ Icc a₁ b₁) : z ∈ U := by
-    obtain ⟨h₁, h₂⟩ := hz
-    rcases endSign_eq_one_or_eq_neg_one q with h | h <;>
-      simp only [U, mem_ofPred_eq, h] at ha hb ⊢ <;> linarith
+  have hU₁ {z : ℝ × ℝ} (hz : z.1 ∈ Icc a₁ b₁) : z ∈ U := lt_endSign_mul_of_mem_Icc ha hb hz
   have hpos {z : ℝ × ℝ} (hz : z ∈ U) : 0 < q.endSign * z.1 := by
     have h : 1 / 2 < q.endSign * z.1 := hz
     linarith
@@ -662,9 +667,8 @@ private theorem integral_floerEnergyDensity_image_endChart (hω : ω.IsNondegene
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
   -- The rectangle lies in the part `±s > 1/2` of the end, where the end chart is an injective
   -- orientation-preserving change of coordinates into `S`.
-  have hsU {z : ℝ × ℝ} (hz : z ∈ s) : 1 / 2 < q.endSign * z.1 := by
-    obtain ⟨⟨h₁, h₂⟩, -⟩ := hz
-    rcases endSign_eq_one_or_eq_neg_one q with h | h <;> rw [h] at ha hb ⊢ <;> linarith
+  have hsU {z : ℝ × ℝ} (hz : z ∈ s) : 1 / 2 < q.endSign * z.1 :=
+    lt_endSign_mul_of_mem_Icc ha hb hz.1
   have hS {z : ℝ × ℝ} (hz : z ∈ s) : endChart q z ∈ thricePuncturedSphereReal :=
     endChart_mem_thricePuncturedSphereReal (by linarith [hsU hz])
   have hmeas : MeasurableSet s := measurableSet_Icc.prod measurableSet_Ico
@@ -945,16 +949,6 @@ private theorem contDiffOn_pairOfPantsPerturbation (hH : ∀ q, Periodic (H q) 1
 
 variable [FiniteDimensional ℝ V]
 
-/-- For the constant form `ω`, the intrinsic symplectic area density of `u` is
-`ω(∂_s u, ∂_t u)`. -/
-private theorem eval₂_constSmooth_mfderiv (ω : SymplecticForm V) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
-    SmoothBundleForm.eval₂ ω.constSmooth (u z)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, V) u z stdComplexLineReal)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, V) u z stdComplexLineImag) =
-        ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
-  rw [mfderiv_eq_fderiv]
-  exact constSmooth_apply ω _ _ _
-
 /-- **The curvature on an end.** The curvature is a two-form, so on the end `q` it is
 `±β'(±s - 1) H_q(t)` divided by the Jacobian of the end chart. -/
 private theorem det_mul_hamiltonianCurvature_pairOfPantsPerturbation_endChart
@@ -1031,7 +1025,9 @@ theorem integrableOn_truncation_pairOfPantsPerturbation (ω : SymplecticForm V)
   have h := ω.constSmooth.integrableOn_truncation_pairOfPantsPerturbation
     (isNondegenerate_constSmooth ω) hH (contMDiff_uncurry_of_contDiff hHs)
     (contMDiffOn_iff_contDiffOn.2 hu) R
-  simp only [eval₂_constSmooth_mfderiv, hamiltonianCurvature_constSmooth,
+  simp only [eval₂_constSmooth_mfderiv_eq ω u _ stdComplexLineReal stdComplexLineImag,
+    mvfderiv_eq_fderiv_apply u _ stdComplexLineReal,
+    mvfderiv_eq_fderiv_apply u _ stdComplexLineImag, hamiltonianCurvature_constSmooth,
     funext (floerEnergyDensity_constSmooth ω _ _ u)] at h
   exact h
 
@@ -1067,7 +1063,9 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation (ω : Sym
   have h := ω.constSmooth.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation
     (isNondegenerate_constSmooth ω) hH (contMDiff_uncurry_of_contDiff hHs)
     (contMDiffOn_iff_contDiffOn.2 hu) hR
-  simp only [eval₂_constSmooth_mfderiv, floerEnergyDensity_constSmooth,
+  simp only [eval₂_constSmooth_mfderiv_eq ω u _ stdComplexLineReal stdComplexLineImag,
+    mvfderiv_eq_fderiv_apply u _ stdComplexLineReal,
+    mvfderiv_eq_fderiv_apply u _ stdComplexLineImag, floerEnergyDensity_constSmooth,
     hamiltonianCurvature_constSmooth] at h
   exact h
 
@@ -1304,7 +1302,7 @@ theorem neg_sum_le_integral_add_sum_of_isComplexLinearMap (ω : SymplecticForm V
         ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (x q t) := by
   have hpos := setIntegral_nonneg (μ := volume) isOpen_thricePuncturedSphereReal.measurableSet
     fun z hz ↦ ω.floerEnergyDensity_nonneg (hJ z hz) (hfloer z hz)
-  rw [thricePuncturedSphereReal_eq] at hpos
+  rw [thricePuncturedSphereReal] at hpos
   have h := abs_le.1
     (abs_integral_floerEnergyDensity_pairOfPantsPerturbation_sub_le ω hH hHs hB hu hx hE hA)
   linarith [h.2]
@@ -1422,7 +1420,7 @@ theorem sum_mul_integral_le_setIntegral_hamiltonianCurvature_pairOfPantsPerturba
     measurable_image_of_fderivWithin (measurableSet_endStrip q)
       (fun ζ _ ↦ (hasFDerivAt_endChart q ζ).hasFDerivWithinAt) (injOn_endChart q)
   -- The curvature is supported in the images of the strips of the ends.
-  rw [← thricePuncturedSphereReal_eq,
+  rw [← thricePuncturedSphereReal.eq_1,
     setIntegral_eq_of_subset_of_forall_sdiff_eq_zero isOpen_thricePuncturedSphereReal.measurableSet
       (iUnion_subset hsub) fun z hz ↦ ?_,
     integral_iUnion_fintype hmeas pairwise_disjoint_image_endChart fun q ↦ hR.mono_set (hsub q)]

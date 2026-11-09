@@ -85,11 +85,6 @@ theorem mem_thricePuncturedSphereReal_iff {z : ℝ × ℝ} :
       Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1 :=
   Iff.rfl
 
-/-- The pair of pants `S`, written out as a set of real coordinates. -/
-theorem thricePuncturedSphereReal_eq : thricePuncturedSphereReal =
-    {z | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1} :=
-  rfl
-
 /-- The pair of pants is open in real coordinates. -/
 theorem isOpen_thricePuncturedSphereReal : IsOpen thricePuncturedSphereReal :=
   (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
