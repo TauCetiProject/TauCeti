@@ -9,13 +9,15 @@ Roadmap: <CanonicalAreaName or none>
 
 <!--
 Quality pass. Before you ask for review, run the checks at the end of this template over every
-declaration the PR adds or changes, then replace each `…` below with `changed`, `checked` or
-`n/a`, a dash, and a short note: for instance `changed — dropped [NeZero n] from foo, which follows
-from hn : 1 < n`, or for Q2 `checked — no change (searched TauCeti/ and the open PRs for the
-defining formula of foo)`. A PR that changes no Lean declaration may answer `n/a` throughout.
-When later commits add or change declarations, for instance to answer review findings, run the
-checks again over those and update the lines. The `quality-pass` review angle reads this block.
-Agents: `gh pr create --body` does not apply this template, so copy the block in yourself.
+declaration the PR adds or changes, then replace each `…` below with `changed`, `checked`,
+`declined` or `n/a`, a dash, and a short note: for instance, for Q3, `changed — foo: [NeZero n]
+derived from hn : 1 < n, hn kept (false for n = 1)`, or for Q2, `checked — no change (searched
+TauCeti/ and the open PRs for the defining formula of foo)`. A line with a finding you leave
+unfixed in this PR begins `declined` and gives the reason, so review sees it. A PR that changes
+no Lean declaration may answer `n/a` throughout. When later commits add or change declarations,
+for instance to answer review findings, run the checks again over those and update the lines. The
+`quality-pass` review angle reads this block. Agents: `gh pr create --body` does not apply this
+template, so copy the block in yourself.
 -->
 Quality pass:
 - Q1 Mathlib duplicates: …
@@ -24,14 +26,16 @@ Quality pass:
 - Q4 Section variables: …
 - Q5 Proofs of at most 50 lines: …
 - Q6 Elaboration speed: …
-- Q7 API for new definitions: …
+- Q7 API and simp lemmas: …
 - Q8 Tidy what the PR adds or changes: …
 - Q9 Statements re-read: …
 
 <!--
-Do each check with reasonable effort and your own judgment; beyond them, improve anything you can
-in what the PR adds or changes. Work a check suggests on code already on `main`, such as
-generalising an existing declaration, is a separate PR.
+Beyond the checks, improve anything you can in what the PR adds or changes. Work a check suggests
+on code already on `main`, such as generalising an existing declaration, is a separate PR. Run Q3
+and Q9 as a hostile reviewer would, in a fresh context that has not seen your reasons (for an
+agent, a subagent): assume each hypothesis removable and each strong word in a docstring false
+until shown otherwise.
 
 Q1. Search Mathlib for each new declaration, or a more general one, by name and by shape (`exact?`,
 `apply?`, grepping the conclusion's constants). If it exists, use it. A renamed Mathlib lemma or a
@@ -45,16 +49,25 @@ candidates). If one adds the same thing, do not add a second copy: build on it o
 if yours is better, say so on both PRs, each linking the other. The note says what you searched,
 on main and in the open PRs.
 
-Q3. Delete each hypothesis and instance argument of each theorem the PR adds or changes, including
-those from `variable` lines, and rebuild, before reasoning about whether it is needed. If the proof
-still works, leave it out, but check the conclusion is not weaker than the docstring promises
-(Q9). If it follows from the others, derive it in the proof: consistency with a related lemma is
-no reason to keep it. If the proof breaks only in a degenerate case (empty, `0`, `⊥`), handle that
-case. As in Mathlib, a statement that still holds there by convention, through a junk value such as
-`x / 0 = 0`, needs no hypothesis: keep one only when the statement is false without it (give the
-counterexample) or needs it to make sense. Weaken typeclasses to what the proof uses, at a level
-Mathlib uses (`Field` to `CommRing`, say). The note says what you dropped or weakened, and the
-counterexample for any hypothesis kept for a degenerate case.
+Q3. Take each theorem the PR adds or changes, and each of its hypotheses and instance arguments,
+including those from `variable` lines (`#check @foo` shows them all). Delete each and rebuild,
+but a failed rebuild only says the current proof uses it. Each ends in one of four states:
+dropped (the statement holds without it: change the proof if needed, even to a new argument),
+derived (it follows from the others: derive it in the proof), needed to state (the statement
+does not elaborate without it), or kept (the statement is false without it: give the
+counterexample). Nothing else keeps one: not that the proof uses it, not that a related lemma or
+the docstring has it (fix the docstring), not that removing it needs a new proof. Look especially
+for:
+- instances only the proof uses, or implied by another hypothesis (`[FiniteDimensional K V]` by
+  `0 < finrank K V`, `[IsDomain R]` by `IsFractionRing R K`, `[Nontrivial R]` by `x ≠ y`);
+- hypotheses implied by the others (`0 ≤ r` from a limit of nonnegative values);
+- degenerate cases (empty, subsingleton, `0`, `⊥`), where both sides are often trivial: as in
+  Mathlib, a statement that holds there through a junk value such as `x / 0 = 0` needs no
+  hypothesis;
+- classes stronger than the statement needs (`CommRing` where `Semiring` would do, `RCLike` where
+  any densely normed field works), weakened to a level Mathlib uses.
+The note lists each theorem's arguments by state, grouping theorems that share them, with the
+counterexample for each one kept.
 
 Q4. No declaration picks up a `variable` instance or binder it does not use: use `omit [...] in`,
 or restructure the `variable` blocks.
@@ -69,12 +82,16 @@ one lemma.
 Q6. Time the PR's declarations (time the file, or set `profiler` in a scratch file). Fix anything
 over about a second at its cause, often a broad `simp`, `decide`, instance search or unfolding,
 without changing the statement or raising `maxHeartbeats`. In a `module` file, `#check @f.eq_1`
-from a non-module file should return at once for each new definition.
+from a non-module file should return at once for each new definition. The note names the slowest
+declaration and its time.
 
 Q7. Inline a new definition used once with no API, unless the roadmap names it. For every other
 new definition, name the lemma that says what it is (`_def`, `_iff`, `_apply`, or the equation its
 proofs use). Only such lemmas should unfold it, so a proof that unfolds it by hand shows one is
-missing. Add the `ext` and `@[simp]` lemmas callers need. The note names each definition's lemma.
+missing. Add the `ext` and `@[simp]` lemmas callers need. Try each new `@[simp]` lemma by running
+`simp` on a goal it should help with: the result should be simpler, with no `cast` and nothing
+stuck, and `simp` should discharge the lemma's side conditions. The note names each definition's
+lemma.
 
 Q8. Docstrings are accurate, state every hypothesis, do not overclaim, and credit the mathematical
 source where there is one. Module docstrings list the file's main results, still match it, and
