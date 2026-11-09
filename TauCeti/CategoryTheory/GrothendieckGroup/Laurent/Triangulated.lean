@@ -77,7 +77,7 @@ public section
 
 namespace TauCeti
 
-open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated
+open CategoryTheory CategoryTheory.Limits CategoryTheory.Pretriangulated ZeroObject
 open LaurentPolynomial hiding C
 
 universe w w' w'' v v' v'' u u' u''
@@ -128,6 +128,22 @@ distinguished triangle is the sum of the classes of its outer terms. -/
 theorem of_distTriang {T : Triangle C} (hT : T ∈ distTriang C) :
     of e T.obj₂ = of e T.obj₁ + of e T.obj₃ := by
   rw [← ofTriangulatedK0_of, TriangulatedK0.of_distTriang hT, map_add, ofTriangulatedK0_of,
+    ofTriangulatedK0_of]
+
+/-- The class of the zero object vanishes. -/
+@[simp]
+theorem of_zero : of e (0 : C) = 0 := by
+  rw [← ofTriangulatedK0_of, TriangulatedK0.of_zero, map_zero]
+
+/-- The class of an object which is zero vanishes. -/
+@[simp]
+theorem of_eq_zero_of_isZero {X : C} (hX : IsZero X) : of e X = 0 := by
+  rw [← ofTriangulatedK0_of, TriangulatedK0.of_eq_zero_of_isZero hX, map_zero]
+
+/-- The class of a biproduct is the sum of the classes. -/
+@[simp]
+theorem of_biprod (X Y : C) : of e (X ⊞ Y) = of e X + of e Y := by
+  rw [← ofTriangulatedK0_of, TriangulatedK0.of_biprod, map_add, ofTriangulatedK0_of,
     ofTriangulatedK0_of]
 
 /-- **The suspension acts by a sign**, `[M⟦n⟧] = (-1)ⁿ [M]`, independently of the Laurent action of

@@ -27,8 +27,9 @@ The universal property `TauCeti.LaurentAEval.liftEquiv` identifies the `ℤ[T;T�
 of `LaurentAEval σ` into a `ℤ[T;T⁻¹]`-module `N` with the additive maps `f : G →+ N` satisfying
 `f (σ x) = T • f x`.
 
-Graded triangulated `K₀` becomes a module over `ℤ[q,q⁻¹]` in this way,
-`TauCeti.LaurentTriangulatedK0`, with `σ` the automorphism induced by the grading shift.
+Graded exact and graded triangulated `K₀` become modules over `ℤ[q,q⁻¹]` in this way,
+`TauCeti.LaurentK0` and `TauCeti.LaurentTriangulatedK0`, with `σ` the automorphism induced by the
+grading shift.
 
 ## Main definitions
 
