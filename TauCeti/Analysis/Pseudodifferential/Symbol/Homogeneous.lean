@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
+import TauCeti.Analysis.Pseudodifferential.CutoffSymbol
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -24,6 +25,10 @@ The main results are:
 
 * `TauCeti.HomogeneousSymbol.isSmoothing_cutoffSymbol_sub_cutoffSymbol`: changing the cutoff
   changes the cut-off term by a smoothing symbol;
+* `TauCeti.HomogeneousSymbol.spatialDeriv_cutoffSymbol` and
+  `HomogeneousSymbol.isSmoothing_frequencyDeriv_cutoffSymbol_sub_cutoffSymbol_frequencyDeriv`:
+  differentiating the cut-off term differentiates the homogeneous symbol, exactly in the position
+  and up to a smoothing symbol in the frequency;
 * `TauCeti.HomogeneousSymbol.eq_zero_of_coefficient_eq_cutoffSymbol`: the cut-off term has no
   order below `m` unless `a = 0`, since homogeneity transports any extra decay at large
   frequencies to every frequency.
@@ -102,6 +107,42 @@ theorem isSmoothing_cutoffSymbol_sub_cutoffSymbol
   rw [← Symbol.ext (Symbol.coefficient_ofBoundedFrequencySupport (m := m) _
     d.contDiff_coefficient 2 hR)]
   exact Symbol.isSmoothing_ofBoundedFrequencySupport _ _ 2 hR
+
+/-- A spatial derivative of the cut-off term is the cut-off term of the spatial derivative: the
+cutoff does not depend on the position. -/
+@[simp]
+theorem spatialDeriv_cutoffSymbol (j : Fin n)
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
+    Symbol.spatialDeriv j (cutoffSymbol χ a) =
+      cutoffSymbol χ (a.spatialDeriv (EuclideanSpace.single j 1)) := by
+  -- `cutoffSymbol` has the same coefficient as `toSymbol`, whose spatial derivative is known.
+  have h (b : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
+      cutoffSymbol χ b = toSymbol χ b :=
+    Symbol.ext <| funext fun p => by simp
+  rw [h, h, spatialDeriv_toSymbol]
+
+/-- A frequency derivative of the cut-off term is the cut-off term of the frequency derivative, up
+to a smoothing symbol: the two agree at all frequencies of norm greater than `2`, where the cutoff
+is identically `1`. -/
+theorem isSmoothing_frequencyDeriv_cutoffSymbol_sub_cutoffSymbol_frequencyDeriv (j : Fin n)
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
+    (Symbol.frequencyDeriv j (cutoffSymbol χ a) -
+      cutoffSymbol χ (a.frequencyDeriv (EuclideanSpace.single j 1))).IsSmoothing := by
+  set d := Symbol.frequencyDeriv j (cutoffSymbol χ a) -
+    cutoffSymbol χ (a.frequencyDeriv (EuclideanSpace.single j 1))
+  have hR : ∀ x ξ, 3 ≤ ‖ξ‖ → d.coefficient (x, ξ) = 0 := fun x ξ hξ => by
+    have hξ2 : 2 < ‖ξ‖ := by linarith
+    have hξ0 : ξ ≠ 0 := norm_pos_iff.1 (by linarith)
+    have hev : (fun η => χ η • a.coefficient (x, η)) =ᶠ[𝓝 ξ] fun η => a.coefficient (x, η) := by
+      filter_upwards [χ.eventuallyEq_one_of_two_lt_norm hξ2] with η hη
+      rw [hη, Pi.one_apply, one_smul]
+    simp only [d, Symbol.coefficient_sub, Pi.sub_apply, Symbol.coefficient_frequencyDeriv,
+      coefficient_cutoffSymbol, coordinateDeriv_cons, coordinateDeriv_nil]
+    rw [hev.fderiv_eq, χ.apply_eq_one_of_two_le_norm hξ2.le, one_smul,
+      coefficient_frequencyDeriv _ _ hξ0, sub_self]
+  rw [← Symbol.ext (Symbol.coefficient_ofBoundedFrequencySupport (m := m - 1) _
+    d.contDiff_coefficient 3 hR)]
+  exact Symbol.isSmoothing_ofBoundedFrequencySupport _ _ 3 hR
 
 /-- A homogeneous symbol of degree `m` whose cut-off term is a symbol of some order `m' < m`
 vanishes. -/

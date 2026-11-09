@@ -291,6 +291,11 @@ instance : Module ℂ (Symbol n V W m) :=
   coefficient_injective.module ℂ ⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩
     coefficient_smul
 
+@[simp]
+theorem coefficient_sum {ι : Type*} (s : Finset ι) (a : ι → Symbol n V W m) :
+    (∑ i ∈ s, a i).coefficient = ∑ i ∈ s, (a i).coefficient :=
+  map_sum (AddMonoidHom.mk' (coefficient : Symbol n V W m → _) coefficient_add) a s
+
 theorem IsUniform.add {a b : Symbol n V W m} (ha : a.IsUniform) (hb : b.IsUniform) :
     (a + b).IsUniform := by
   intro α β
@@ -505,6 +510,22 @@ theorem exists_norm_iteratedFDeriv_coordinateDeriv_le (a : Symbol n V W m)
   refine Finset.sum_le_sum fun w _ => ?_
   have h := hA (List.ofFn w) x hx ξ
   rwa [List.length_ofFn, mixedDeriv_eq_coordinateDeriv_snd a.contDiff_coefficient] at h
+
+/-- Frequency derivatives commute with the order inclusions. -/
+@[simp]
+theorem frequencyDeriv_inclusion (j : Fin n) (h : m ≤ m') (a : Symbol n V W m) :
+    frequencyDeriv j (inclusion h a) = inclusion (by linarith) (frequencyDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp
+
+/-- Spatial derivatives commute with the order inclusions. -/
+@[simp]
+theorem spatialDeriv_inclusion (j : Fin n) (h : m ≤ m') (a : Symbol n V W m) :
+    spatialDeriv j (inclusion h a) = inclusion h (spatialDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp
 
 theorem IsUniform.frequencyDeriv {a : Symbol n V W m} (ha : a.IsUniform) (j : Fin n) :
     (frequencyDeriv j a).IsUniform := by

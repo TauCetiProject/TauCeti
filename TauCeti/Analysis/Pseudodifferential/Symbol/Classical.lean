@@ -42,7 +42,12 @@ The homogeneous terms enter the expansion through their cut-off terms
   all of its homogeneous terms vanish; `TauCeti.ClassicalSymbol.ofIsSmoothing` makes every
   smoothing symbol classical;
 * `TauCeti.ClassicalSymbol.ofHomogeneous`: the classical symbol `χ(ξ) a(x, ξ)` of a single
-  homogeneous term, whose principal symbol is `a`.
+  homogeneous term, whose principal symbol is `a`;
+* `TauCeti.ClassicalSymbol.spatialDeriv` and `TauCeti.ClassicalSymbol.frequencyDeriv`: the
+  derivatives `∂_{x_j} a` and `∂_{ξ_j} a` of a classical symbol of order `m` are classical, of
+  orders `m` and `m - 1`, and their homogeneous terms are the derivatives of those of `a`. These
+  are the factors `∂_ξ^α a` and `∂_x^α b` of the terms of the composition expansion
+  `∑_α (1 / α!) ∂_ξ^α a D_x^α b`.
 
 ## References
 
@@ -387,6 +392,107 @@ theorem principal_surjective :
   fun a ↦ ⟨ofHomogeneous default a, principal_ofHomogeneous default a⟩
 
 end PrincipalKernel
+
+/-! ### Derivatives -/
+
+section Deriv
+
+/-- The remainder after `N` terms, included in the symbols of order `m`, is the full symbol minus
+the first `N` cut-off terms. -/
+private theorem inclusion_remainder (a : ClassicalSymbol n V W m)
+    (χ : FrequencyCutoff (CoordinateSpace n)) (N : ℕ) :
+    Symbol.inclusion (by simp) (a.remainder χ N) =
+      a.toSymbol - ∑ k ∈ Finset.range N, Symbol.inclusion (by simp) (cutoffSymbol χ (a.term k)) :=
+  Symbol.ext <| funext fun p => by simp
+
+/-- The spatial derivative `∂_{x_j} a` of a classical symbol of order `m`: a classical symbol of
+order `m`, whose homogeneous terms are the spatial derivatives `∂_{x_j} a_{m-k}` of those of
+`a`. -/
+def spatialDeriv (j : Fin n) : ClassicalSymbol n V W m →ₗ[ℂ] ClassicalSymbol n V W m where
+  toFun a :=
+    { toSymbol := Symbol.spatialDeriv j a.toSymbol
+      term k := (a.term k).spatialDeriv (EuclideanSpace.single j 1)
+      exists_remainder' := ⟨default, fun N => ⟨Symbol.spatialDeriv j (a.remainder default N),
+        fun p => by
+          -- Differentiate the identity `a = r_N + ∑_{k<N} χ(ξ) a_{m-k}` in the position.
+          simpa using
+            congrArg (fun s => (Symbol.spatialDeriv j s).coefficient p)
+              (a.inclusion_remainder default N)⟩⟩ }
+  map_add' a b := ext <| by simp
+  map_smul' c a := ext <| by simp
+
+@[simp]
+theorem toSymbol_spatialDeriv (j : Fin n) (a : ClassicalSymbol n V W m) :
+    (spatialDeriv j a).toSymbol = Symbol.spatialDeriv j a.toSymbol :=
+  (rfl)
+
+@[simp]
+theorem term_spatialDeriv (j : Fin n) (a : ClassicalSymbol n V W m) (k : ℕ) :
+    (spatialDeriv j a).term k = (a.term k).spatialDeriv (EuclideanSpace.single j 1) :=
+  (rfl)
+
+/-- The principal symbol of `∂_{x_j} a` is the spatial derivative of the principal symbol of
+`a`. -/
+@[simp]
+theorem principal_spatialDeriv (j : Fin n) (a : ClassicalSymbol n V W m) :
+    (spatialDeriv j a).principal = a.principal.spatialDeriv (EuclideanSpace.single j 1) :=
+  HomogeneousSymbol.ext_of_ne_zero fun x ξ hξ => by simp [hξ]
+
+/-- The remainder of the frequency derivative of a classical symbol after `N` terms has order
+`m - 1 - N`. -/
+private theorem exists_remainder_frequencyDeriv (a : ClassicalSymbol n V W m) (j : Fin n)
+    (χ : FrequencyCutoff (CoordinateSpace n)) (N : ℕ) :
+    ∃ r : Symbol n V W (m - 1 - N), ∀ p, r.coefficient p =
+      (Symbol.frequencyDeriv j a.toSymbol).coefficient p - ∑ k ∈ Finset.range N,
+        χ p.2 • ((a.term k).frequencyDeriv (EuclideanSpace.single j 1)).coefficient p := by
+  -- Differentiating `a = r_N + ∑_{k<N} χ(ξ) a_{m-k}` in the frequency gives `∂_{ξ_j} r_N`, of
+  -- order `m - N - 1`, plus the terms `∂_{ξ_j} (χ(ξ) a_{m-k})`, each of which differs from
+  -- `χ(ξ) ∂_{ξ_j} a_{m-k}` by a smoothing symbol.
+  choose s hs using fun k => Symbol.isSmoothing_iff.1
+    (isSmoothing_frequencyDeriv_cutoffSymbol_sub_cutoffSymbol_frequencyDeriv χ j (a.term k))
+    (m - 1 - N)
+  refine ⟨Symbol.inclusion (le_of_eq (by ring)) (Symbol.frequencyDeriv j (a.remainder χ N)) +
+    ∑ k ∈ Finset.range N, s k, fun p => ?_⟩
+  have h := congrArg (fun s => (Symbol.frequencyDeriv j s).coefficient p)
+    (a.inclusion_remainder χ N)
+  simp only [Symbol.frequencyDeriv_inclusion, Symbol.coefficient_inclusion, map_sub, map_sum,
+    Symbol.coefficient_sub, Symbol.coefficient_sum, Pi.sub_apply, Finset.sum_apply] at h
+  simp only [Symbol.coefficient_add, Symbol.coefficient_inclusion, Symbol.coefficient_sum,
+    Pi.add_apply, Finset.sum_apply, hs, h, Symbol.coefficient_sub, Pi.sub_apply,
+    Finset.sum_sub_distrib, coefficient_cutoffSymbol]
+  abel
+
+/-- The frequency derivative `∂_{ξ_j} a` of a classical symbol of order `m`: a classical symbol of
+order `m - 1`, whose homogeneous terms are the frequency derivatives `∂_{ξ_j} a_{m-k}` of those of
+`a`. -/
+def frequencyDeriv (j : Fin n) : ClassicalSymbol n V W m →ₗ[ℂ] ClassicalSymbol n V W (m - 1) where
+  toFun a :=
+    { toSymbol := Symbol.frequencyDeriv j a.toSymbol
+      term k := ((a.term k).frequencyDeriv (EuclideanSpace.single j 1)).castDegree (by ring)
+      exists_remainder' := ⟨default, fun N => by
+        simpa using a.exists_remainder_frequencyDeriv j default N⟩ }
+  map_add' a b := ext <| by simp
+  map_smul' c a := ext <| by simp
+
+@[simp]
+theorem toSymbol_frequencyDeriv (j : Fin n) (a : ClassicalSymbol n V W m) :
+    (frequencyDeriv j a).toSymbol = Symbol.frequencyDeriv j a.toSymbol :=
+  (rfl)
+
+@[simp]
+theorem term_frequencyDeriv (j : Fin n) (a : ClassicalSymbol n V W m) (k : ℕ) :
+    (frequencyDeriv j a).term k =
+      ((a.term k).frequencyDeriv (EuclideanSpace.single j 1)).castDegree (by ring) :=
+  (rfl)
+
+/-- The principal symbol of `∂_{ξ_j} a` is the frequency derivative of the principal symbol of
+`a`. -/
+@[simp]
+theorem principal_frequencyDeriv (j : Fin n) (a : ClassicalSymbol n V W m) :
+    (frequencyDeriv j a).principal = a.principal.frequencyDeriv (EuclideanSpace.single j 1) :=
+  HomogeneousSymbol.ext_of_ne_zero fun x ξ hξ => by simp [hξ]
+
+end Deriv
 
 end ClassicalSymbol
 
