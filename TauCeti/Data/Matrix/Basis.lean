@@ -15,8 +15,8 @@ identities into one formula for rectangular matrix units with arbitrary coeffici
 Only the shared index type needs to be finite. `Matrix.smul_vecMulVec_single_single` writes a
 scaled outer product of two coordinate vectors as a matrix unit, and
 `Matrix.one_add_single_mul_one_add_single_of_ne` multiplies two elementary matrices `1 + c Eᵢⱼ`
-and `1 + d Eₖₗ` with `j ≠ k`, whose cross term vanishes. `Matrix.map_eq_sum_sum_smul_single` expands
-a linear map on matrices along the matrix units.
+and `1 + d Eₖₗ` with `j ≠ k`, whose cross term vanishes. `LinearMap.apply_eq_sum_sum_smul_single`
+expands a linear map on matrices along the matrix units.
 -/
 
 /-- The product of two matrix units vanishes unless their inner indices agree. -/
@@ -47,7 +47,7 @@ public theorem Matrix.one_add_single_mul_one_add_single_of_ne {n R : Type*}
 
 /-- A linear map on matrices is determined by its values on the matrix units: it sends `A` to the
 sum of `A i j • f (single i j 1)`. -/
-public theorem Matrix.map_eq_sum_sum_smul_single {ι κ R M : Type*} [Fintype ι] [Fintype κ]
+public theorem LinearMap.apply_eq_sum_sum_smul_single {ι κ R M : Type*} [Fintype ι] [Fintype κ]
     [DecidableEq ι] [DecidableEq κ] [Semiring R] [AddCommMonoid M] [Module R M]
     (f : Matrix ι κ R →ₗ[R] M) (A : Matrix ι κ R) :
     f A = ∑ i, ∑ j, A i j • f (Matrix.single i j 1) := by

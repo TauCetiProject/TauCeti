@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.Data.Matrix.Basis
 
@@ -33,7 +32,7 @@ theorem existsUnique_trace_mul_eq (f : Matrix n n R →ₗ[R] R) :
     ∃! ρ : Matrix n n R, ∀ x, f x = (ρ * x).trace := by
   classical
   refine ⟨Matrix.of fun i j => f (Matrix.single j i 1), fun x => ?_, fun ρ hρ => ?_⟩
-  · rw [Matrix.map_eq_sum_sum_smul_single f x]
+  · rw [LinearMap.apply_eq_sum_sum_smul_single f x]
     simp only [smul_eq_mul, Matrix.trace, Matrix.diag, Matrix.mul_apply, Matrix.of_apply]
     rw [Finset.sum_comm]
     refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_

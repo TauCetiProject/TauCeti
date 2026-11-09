@@ -10,7 +10,6 @@ public import Mathlib.Data.Matrix.Mul
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Data.Matrix.BirkhoffContraction
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
-import Mathlib.Data.Matrix.Basis
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 import TauCeti.Data.Matrix.Basis
@@ -809,7 +808,7 @@ private theorem exists_forall_mem_eq_add_of_forall_sum_eq_zero (H : Matrix ι κ
       with hD_def
     have hTD : ∀ fg : (ι → ℝ) × (κ → ℝ), ∑ i, ∑ j, D i j * (fg.1 i + fg.2 j) = 0 := by
       intro fg
-      rw [← hφT (T fg) (LinearMap.mem_range_self T fg), map_eq_sum_sum_smul_single]
+      rw [← hφT (T fg) (LinearMap.mem_range_self T fg), LinearMap.apply_eq_sum_sum_smul_single]
       simp only [smul_eq_mul]
       refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
       rw [hT, hD_def, of_apply]
@@ -820,7 +819,7 @@ private theorem exists_forall_mem_eq_add_of_forall_sum_eq_zero (H : Matrix ι κ
       · simpa [Pi.single_apply] using hTD (0, Pi.single j 1)
     have hDs : ∀ i j, (i, j) ∉ s → D i j = 0 := fun i j h => by
       rw [hD_def, of_apply, ite_eq_right_iff.2 fun h' => absurd h' h]
-    rw [map_eq_sum_sum_smul_single]
+    rw [LinearMap.apply_eq_sum_sum_smul_single]
     simp only [smul_eq_mul]
     refine Eq.trans ?_ (hH D hDs hD)
     refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
