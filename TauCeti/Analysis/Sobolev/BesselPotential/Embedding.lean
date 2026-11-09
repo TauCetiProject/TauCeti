@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Lp
+import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 
 /-!
 # The Sobolev embedding `H^k(ℝⁿ) ⊆ C₀(ℝⁿ)` for `k > n / 2`
@@ -125,26 +126,22 @@ theorem MemSobolev.eLpNorm_one_add_norm_sq_rpow_smul_eq_enorm_toBesselPotentialS
     {f : 𝓢'(E, F)} (hf : MemSobolev s 2 f) {v : Lp F 1 (volume : Measure E)} (hv : 𝓕 f = v) :
     eLpNorm (fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ) 2 volume =
       ‖hf.toBesselPotentialSpace‖ₑ := by
-  set U := hf.toBesselPotentialSpace.toLp
-  have hU : besselPotential E F s f = U := by
-    simpa using hf.toBesselPotentialSpace.bessel_toDistr_eq_toLp
+  obtain ⟨G, hG⟩ := memSobolev_iff_exists_smulLeftCLM_fourier.1 hf
   have hwg : (fun ξ : E => (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth := by
     fun_prop
   have hwc : Continuous fun ξ : E => (1 + ‖ξ‖ ^ 2) ^ (s / 2) :=
     (by fun_prop : Continuous fun ξ : E => 1 + ‖ξ‖ ^ 2).rpow_const fun ξ =>
       Or.inl (by positivity : (0 : ℝ) < 1 + ‖ξ‖ ^ 2).ne'
-  -- The `L²` function `𝓕 U` represents the weight times `v`.
-  have hae : ((𝓕 U : Lp F 2 (volume : Measure E)) : E → F) =ᵐ[volume]
-      fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ := by
-    refine Lp.ae_eq_of_toTemperedDistribution_apply_eq (𝓕 U) ?_ fun φ => ?_
+  -- The `L²` function `G` representing the weighted Fourier transform is the weight times `v`.
+  have hae : (G : E → F) =ᵐ[volume] fun ξ => (1 + ‖ξ‖ ^ 2) ^ (s / 2) • v ξ := by
+    refine Lp.ae_eq_of_toTemperedDistribution_apply_eq G ?_ fun φ => ?_
     · refine locallyIntegrable_iff.2 fun K hK => ?_
       exact (L1.integrable_coeFn v).integrableOn.continuousOn_smul hwc.continuousOn hK
-    · rw [← Lp.fourier_toTemperedDistribution_eq U, ← hU,
-        fourier_besselPotential_eq_smulLeftCLM_fourier_apply, hv,
-        Lp.smulLeftCLM_toTemperedDistribution_apply hwg]
+    · rw [← hG, hv, Lp.smulLeftCLM_toTemperedDistribution_apply hwg]
       simp only [Complex.coe_smul]
   rw [eLpNorm_congr_ae hae.symm, ← Lp.enorm_def, ← ofReal_norm, ← ofReal_norm,
-    BesselPotentialSpace.norm_fourier_toLp_eq]
+    BesselPotentialSpace.norm_eq_of_smulLeftCLM_fourier_eq
+      (by rwa [hf.toBesselPotentialSpace_toDistr])]
 
 /-- If the Fourier transform of `f ∈ H^s` is an `L¹` function `v`, then
 `(1 + ‖ξ‖ ^ 2) ^ (s / 2) v` is square integrable. -/
