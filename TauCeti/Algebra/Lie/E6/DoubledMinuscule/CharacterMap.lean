@@ -48,8 +48,6 @@ theorem isCharacterMap_graphAutomorphismPoints (A : Type v) [CommRing A] :
 /-- The `p ^ k`-power Frobenius pulls characters back by multiplication by `p ^ k`. -/
 theorem isCharacterMap_frobenius (p k : ℕ) (A : Type v) [CommRing A] [ExpChar A p] :
     IsCharacterMap (weightTorusPoints A) (frobenius p k A) ((p ^ k : ℕ) • 1) :=
-  isCharacterMap_iff.mpr fun s => by
-    rw [frobenius_weightTorusPoints, torusPointMap_nsmul, torusPointMap_one,
-      MonoidHom.pow_apply, MonoidHom.id_apply]
+  IsCharacterMap.of_map_eq_pow (frobenius_weightTorusPoints p k A)
 
 end TauCeti.E6DoubledMinuscule

@@ -40,10 +40,7 @@ variable (d : TypeTwistedE6LieIndex)
 @[simp]
 theorem frobenius_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
     d.frobenius (d.weightTorus s) = d.weightTorus (s ^ d.1.fieldOrder) := by
-  rw [frobenius_def, weightTorus_apply,
-    isCharacterMap_iff.mp (E6DoubledMinuscule.isCharacterMap_frobenius
-      d.1.characteristic d.1.fieldExponent d.1.Closure),
-    torusPointMap_nsmul, torusPointMap_one, MonoidHom.pow_apply, MonoidHom.id_apply,
+  rw [frobenius_def, weightTorus_apply, E6DoubledMinuscule.frobenius_weightTorusPoints,
     weightTorus_apply, d.1.fieldOrder_eq_characteristic_pow]
   -- Reindexing by `finCongr` commutes definitionally with pointwise powers.
   rfl
@@ -53,22 +50,22 @@ theorem frobenius_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
 theorem graphAut_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
     d.graphAut (d.weightTorus s) =
       d.weightTorus (fun i => s (d.toGraphTwistedIndex.diagramPerm.symm i)) := by
-  obtain ⟨q, rfl⟩ := d.exists_eq_of
-  rw [graphAut_def]
-  -- The constructor's semireducible rank requires `erw` to apply the explicit torus equation.
-  erw [weightTorus_of,
+  have hcast (i : Fin 6) : finCongr d.rank_eq_six (finCongr d.rank_eq_six.symm i) = i :=
+    Fin.ext rfl
+  rw [graphAut_def, weightTorus_apply, ← MulEquiv.coe_toMonoidHom,
     isCharacterMap_iff.mp (E6DoubledMinuscule.isCharacterMap_graphAutomorphismPoints _),
-    torusPointMap_funCongrLeft,
-    weightTorus_of, GraphTwistedIndex.diagramPerm_twistedE6, graphPermE6_symm]
-  -- On a constructor index, `finCongr` preserves each coordinate definitionally.
-  rfl
+    torusPointMap_funCongrLeft, weightTorus_apply]
+  congr 1
+  funext i
+  congr 1
+  apply d.toGraphTwistedIndex.diagramPerm.injective
+  rw [Equiv.apply_symm_apply, diagramPerm_toGraphTwistedIndex, hcast,
+    Equiv.apply_symm_apply]
 
 /-- Frobenius pulls characters back by multiplication by the recorded field order. -/
 theorem isCharacterMap_frobenius :
-    IsCharacterMap d.weightTorus d.frobenius ((d.1.fieldOrder : ℕ) • 1) := by
-  refine isCharacterMap_iff.mpr fun s => ?_
-  rw [frobenius_weightTorus, torusPointMap_nsmul, torusPointMap_one,
-    MonoidHom.pow_apply, MonoidHom.id_apply]
+    IsCharacterMap d.weightTorus d.frobenius ((d.1.fieldOrder : ℕ) • 1) :=
+  IsCharacterMap.of_map_eq_pow d.frobenius_weightTorus
 
 /-- The graph factor has the inverse native datum graph action as character pullback. -/
 theorem isCharacterMap_graphAut :

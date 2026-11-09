@@ -180,12 +180,6 @@ theorem weightTorus_apply (s : Fin d.1.rank → d.1.Closureˣ) :
         (fun i => s (finCongr d.rank_eq_six.symm i)) :=
   (rfl)
 
-/-- On a constructor index, the rank identification leaves the torus coordinates unchanged. -/
-theorem weightTorus_of (q : PrimePower) (s : Fin 6 → (of q).1.Closureˣ) :
-    (of q).weightTorus s = E6DoubledMinuscule.weightTorusPoints (of q).1.Closure s := by
-  -- `erw` unfolds the constructor's semireducible rank to identify its coordinates with `Fin 6`.
-  erw [(of q).weightTorus_apply]
-
 /-! ## The diagram symmetry on the carrier's coordinates -/
 
 /-- **The coordinate involution of the doubled index set realizes the diagram permutation that the
