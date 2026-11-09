@@ -6,11 +6,11 @@ The policy is in `[services.fleet]` in `tauceti.toml`:
 | Build class | Preference order |
 | --- | --- |
 | PR | GitHub → fleet → Namespace |
-| Bors staging | fleet → Namespace → GitHub |
+| Bors staging | chungus2 → tauchonki2 → wait for chungus2 |
 
-`fleet` is a live pool of eligible runners in the configured GitHub runner group,
+For PR builds, `fleet` is a live pool of eligible runners in the configured GitHub runner group,
 not a list of machines in this repository. Adding or replacing a host requires
-no `tauceti.toml` machine-ID entry. Each host controls its concurrency and resource
+no `tauceti.toml` machine-ID entry for PR work. Each host controls its concurrency and resource
 limits; its credential controls which CI classes it may register. Registration,
 resizing and retirement update the capacity seen by subsequent pickers.
 
@@ -22,6 +22,13 @@ outside the approved group grant no eligibility. Hosts with missing or ambiguous
 permanent identities are ineligible, as are offline or busy runners. A PR-only
 host cannot receive staging work. Within the fleet tier, jobs spread across
 eligible registered slots; staging-only slots are preferred for staging.
+
+Staging remains restricted to the reserved capacity on chungus2 and tauchonki2.
+Their named entries are intentional staging policy, not the PR fleet membership
+list. The build workflow accepts only these named staging destinations; if both
+are occupied or selection fails, it queues on chungus2’s permanent machine label.
+There is no cloud fallback for staging, and an old `STAGING_RUNS_ON` value cannot
+override this restriction.
 Queued jobs already targeting a guest count against observed machine capacity.
 A simultaneous picker can still select the same guest; startup recovery handles
 jobs that fail to acquire it.
@@ -30,9 +37,9 @@ Namespace has an approximate cap of **20 queued or running build jobs**, shared
 across PR and staging. Picker, recovery, publisher, and finalizer jobs are excluded.
 The variable `NAMESPACE_BUILD_CAP` overrides the default in the configuration.
 Concurrent picker decisions can admit jobs above this snapshot-based cap. When Namespace is
-full, staging falls through to GitHub; if all eligible destinations are full or
-unknown, the build waits for a GitHub-hosted slot. A failed picker uses that same
-GitHub fallback. `HOSTED_RUNNER_BUDGET` defaults to 18 running GitHub-hosted jobs,
+full, ordinary PR work falls through to GitHub; if all eligible PR destinations
+are full or unknown, the PR build waits for a GitHub-hosted slot. A failed PR
+picker uses that same GitHub fallback. Staging keeps the reserved-host policy above. `HOSTED_RUNNER_BUDGET` defaults to 18 running GitHub-hosted jobs,
 including other GitHub-hosted control jobs. All runner pickers run on Namespace
 and do not count toward that budget. Set it below the provider's total job limit
 to preserve headroom for short control jobs.
@@ -46,8 +53,8 @@ authorize spare cloud capacity. Fleet placement uses complete online/idle runner
 inventory and class labels, retaining any observed queued guest
 reservations even when global queue coverage is incomplete. Concurrent or unseen
 reservations can still collide; the acquisition watcher below recovers those runs.
-Staging tries dedicated machines first. If no machine is eligible,
-staging uses the existing bounded cloud discovery and fallback.
+Staging tries only its two configured dedicated hosts. If neither has an idle
+runner, the workflow waits for chungus2 rather than using cloud capacity.
 The existing shared state service coalesces cloud and queued-target discovery;
 older snapshots can still answer the first GitHub preference. Every picker runs
 on the existing Namespace 2x4 priority-zero control profile with a run-specific
@@ -77,8 +84,8 @@ actual execution intervals, excluding control jobs; queued builds are included
 in the dispatcher's admission count as an additional precaution.
 
 Pool priority and live host configuration are managed separately. The repository
-sets the preference between GitHub, fleet and Namespace; operator changes to fleet
-membership or concurrency do not require a project commit. Follow the
+sets PR pool priority and the separate staging-host restriction. Operator changes
+to PR fleet membership or concurrency do not require a project commit. Follow the
 [Fleet enrollment instructions](https://github.com/TauCetiProject/TauCetiFleet/blob/main/services/ci-broker/README.md)
 to issue a machine's invitation with its allowed CI classes and shared slot limit.
 Run `enroll HOST` and `prepare HOST`, then explicitly activate CI with `enable HOST`,
