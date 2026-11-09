@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.Instances.AddCircle.Cover
 public import TauCeti.Geometry.Manifold.DifferentialForm.AddCircle
 public import TauCeti.Geometry.Symplectic.Manifold.Prod
 public import TauCeti.Geometry.Manifold.Instances.Cylinder
-import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
@@ -249,7 +248,9 @@ private theorem polarCanonicalCoords_polarCylinderMap {y : (ℝ × ℝ) × (AddC
   simp only [polarCanonicalCoords, polarCylinderMap_coe, norm_fst_polarCanonical h0 h1 h01,
     abs_of_pos hr, radialMomentum_polarCanonical h0 h1 h01 hr,
     polarAngle_polarCanonical h0 h1 h01 hr, angularMomentum_polarCanonical h0 h1 h01 hr.ne',
-    Real.Angle.coe_toReal_coe_addCircle]
+    Prod.mk.injEq, and_true, true_and]
+  -- `Real.Angle` is `AddCircle (2 * π)` and the two real coercions agree definitionally.
+  exact Real.Angle.coe_toReal (θ : Real.Angle)
 
 private theorem polarCylinderMap_polarCanonicalCoords {x : V × V} (hx : x.1 ≠ 0) :
     polarCylinderMap (b 0) (b 1) (polarCanonicalCoords b x) = x := by

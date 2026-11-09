@@ -28,10 +28,6 @@ order of the rank-two rotations in the geometric representation of a Coxeter gro
 
 ## Main results
 
-* `Real.Angle.coe_eq_coe_iff_addCircle`: two reals are equal as angles exactly when they are equal
-  in `AddCircle (2 * π)`.
-* `Real.Angle.coe_toReal_coe_addCircle`: the representative of a real angle in `(-π, π]` is
-  congruent to it modulo `2π`.
 * `Real.exists_int_eq_add_of_cos_sin_eq`: reals whose `cos` and `sin` at `2π` times them agree
   differ by an integer.
 * `TauCeti.dvd_of_cos_two_mul_pi_div_eq_one`: if `cos (2 n (π / m)) = 1` for a nonzero natural `m`,
@@ -49,22 +45,6 @@ order of the rank-two rotations in the geometric representation of a Coxeter gro
 public section
 
 namespace TauCeti
-
-/-- `Real.Angle` is the circle `AddCircle (2 * π)`: two reals are equal as angles exactly when they
-are equal in `AddCircle (2 * π)`. This transports equalities of angles to the circle carrying the
-quotient smooth structure. -/
-theorem _root_.Real.Angle.coe_eq_coe_iff_addCircle {x y : ℝ} :
-    (x : AddCircle (2 * Real.pi)) = y ↔ (x : Real.Angle) = (y : Real.Angle) := by
-  rw [Real.Angle.angle_eq_iff_two_pi_dvd_sub,
-    QuotientAddGroup.eq_iff_sub_mem (N := AddSubgroup.zmultiples (2 * Real.pi)),
-    AddSubgroup.mem_zmultiples_iff]
-  simp only [zsmul_eq_mul, mul_comm, eq_comm]
-
-/-- The real representative of an angle `θ` in `(-π, π]` is congruent to `θ` modulo `2π`. -/
-@[simp]
-theorem _root_.Real.Angle.coe_toReal_coe_addCircle (θ : ℝ) :
-    (((θ : Real.Angle).toReal : ℝ) : AddCircle (2 * Real.pi)) = θ :=
-  Real.Angle.coe_eq_coe_iff_addCircle.2 (Real.Angle.coe_toReal _)
 
 /-- **Equal angles are exactly equal normalisations.** Two reals agree in `Real.Angle` — that is,
 differ by an integer multiple of `2π` — exactly when their representatives in `[0, 2π)` agree,
