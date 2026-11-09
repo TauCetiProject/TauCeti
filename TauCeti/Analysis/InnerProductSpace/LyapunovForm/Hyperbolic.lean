@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Triangularizable
 public import TauCeti.Analysis.InnerProductSpace.Complexification
+public import TauCeti.Analysis.InnerProductSpace.Compression
 public import TauCeti.Analysis.InnerProductSpace.LyapunovForm.Basic
 
 /-!
@@ -27,7 +28,8 @@ In the splitting `F = ℂ u ⊕ K`, `A` is block upper triangular,
 
 `A (a u + k) = (λ a + ⟪u, A k⟫) u + Q k`,
 
-where `Q` is the compression of `A` to `K`. Every eigenvalue of `Q` is an eigenvalue of `A`, so `Q`
+where `Q` is the compression of `A` to `K`. Every eigenvalue of `Q` is an eigenvalue of `A`, by
+`ContinuousLinearMap.hasEigenvalue_of_hasEigenvalue_compression_orthogonal_span_singleton`, so `Q`
 has a Lyapunov form `S_K` by induction. Then `S = re λ • P_u + t • S_K P_K`, with `P_u` and `P_K`
 the orthogonal projections, satisfies
 
@@ -69,50 +71,6 @@ namespace ContinuousLinearMap
 section Complex
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
-
-/-- Every eigenvalue of the compression of `A` to the orthogonal complement of an eigenvector of
-`A` is an eigenvalue of `A`; so if no eigenvalue of `A` lies on the imaginary axis, neither does any
-eigenvalue of the compression. -/
-private theorem re_ne_zero_of_hasEigenvalue_compression {A : F →L[ℂ] F} {u : F} {lam : ℂ}
-    (hu : ‖u‖ = 1) (hAu : A u = lam • u)
-    (hA : ∀ μ, Module.End.HasEigenvalue (A : Module.End ℂ F) μ → μ.re ≠ 0) {μ : ℂ}
-    (hμ : Module.End.HasEigenvalue (((ℂ ∙ u)ᗮ.orthogonalProjectionOnto ∘L A ∘L
-      (ℂ ∙ u)ᗮ.subtypeL : (ℂ ∙ u)ᗮ →L[ℂ] (ℂ ∙ u)ᗮ) : Module.End ℂ (ℂ ∙ u)ᗮ) μ) :
-    μ.re ≠ 0 := by
-  set K := (ℂ ∙ u)ᗮ
-  obtain ⟨k, hk, hk0⟩ := hμ.exists_hasEigenvector
-  have hQk : K.orthogonalProjectionOnto (A k) = μ • k := Module.End.mem_eigenspace_iff.mp hk
-  set b := ⟪u, A k⟫_ℂ
-  -- Splitting `A k` along `ℂ u ⊕ K`.
-  have hAk : A k = b • u + μ • (k : F) := by
-    conv_lhs => rw [← (ℂ ∙ u).starProjection_add_starProjection_orthogonal (A k)]
-    rw [starProjection_unit_singleton ℂ hu, starProjection_apply, hQk, coe_smul]
-  have hu0 : u ≠ 0 := by
-    rintro rfl
-    simp at hu
-  by_cases hμl : μ = lam
-  · subst hμl
-    exact hA μ (Module.End.hasEigenvalue_of_hasEigenvector
-      ⟨Module.End.mem_eigenspace_iff.mpr hAu, hu0⟩)
-  -- Otherwise `k + b / (μ - λ) • u` is an eigenvector of `A` with eigenvalue `μ`.
-  have hne : μ - lam ≠ 0 := sub_ne_zero.mpr hμl
-  set z : F := (k : F) + (b / (μ - lam)) • u
-  have hAz : A z = μ • z := by
-    simp only [z, map_add, map_smul, hAk, hAu, smul_add, smul_smul]
-    have : b + b / (μ - lam) * lam = μ * (b / (μ - lam)) := by
-      field_simp
-      ring
-    rw [← this, add_smul]
-    abel
-  have hz0 : z ≠ 0 := by
-    intro hz
-    apply hk0
-    have := congrArg K.orthogonalProjectionOnto hz
-    rwa [map_add, map_smul, orthogonalProjectionOnto_mem_subspace_eq_self,
-      orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero, smul_zero, add_zero,
-      map_zero] at this
-  exact hA μ (Module.End.hasEigenvalue_of_hasEigenvector
-    ⟨Module.End.mem_eigenspace_iff.mpr hAz, hz0⟩)
 
 /-- The block form of the quadratic form `re ⟪S (A v), v⟫` along `F = ℂ u ⊕ u^⊥`, for a unit
 eigenvector `u` of `A` and `S = s • P_u + t • S_K P_K`: writing `v = a u + k` with `k ∈ u^⊥` and
@@ -228,7 +186,8 @@ private theorem exists_isSymmetric_forall_mul_norm_sq_le_re_inner_aux (n : ℕ) 
     set K := (ℂ ∙ u)ᗮ
     obtain ⟨SK, hSK, cK, hcK, hQ⟩ := ih K (finrank_orthogonal_span_singleton hu0)
       (K.orthogonalProjectionOnto ∘L A ∘L K.subtypeL)
-      fun μ hμ ↦ re_ne_zero_of_hasEigenvalue_compression hu hAu hA hμ
+      fun μ hμ ↦ hA μ (hasEigenvalue_of_hasEigenvalue_compression_orthogonal_span_singleton hu0 hAu
+        (by rwa [compression_def, adjoint_subtypeL]))
     refine ⟨_, ?_, lam.re ^ 2 / 2, by positivity,
       mul_norm_sq_le_re_inner_of_compression hu hAu hcK hQ⟩
     -- The form `re λ • P_u + t • S_K P_K` is symmetric.
