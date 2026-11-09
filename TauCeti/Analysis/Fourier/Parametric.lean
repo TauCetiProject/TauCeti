@@ -6,135 +6,95 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.FourierTransform
-public import TauCeti.Analysis.Calculus.CoordinateDeriv
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
-# Fourier transforms depending on a parameter
+# Fourier integrals of compactly supported functions of two variables
 
-For a function `f(y, ξ)` of a position `y` in a finite-dimensional real inner product space and a
-parameter `ξ`, which vanishes for positions outside a fixed compact set, this file studies the
-Fourier transforms `f̂(θ, ξ) = 𝓕 (fun y ↦ f (y, ξ)) θ` of the position slices. They are jointly
-continuous in `(θ, ξ)` when `f` is continuous, and for a `C¹` function of a parameter in `ℝⁿ` they
-are differentiable in the parameter, the partial derivatives being the Fourier transforms of the
-partial derivatives of `f`.
+Let `g : E × P → F` vanish for first variables outside a compact set `K`, where `E` is a
+finite-dimensional real inner-product space and `P` is a normed space. Its Fourier integral in the
+first variable, `(η, ξ) ↦ ∫ exp(-2πi ⟪y, η⟫) g(y, ξ) dy`, is jointly continuous in the dual
+variable `η` and the second variable `ξ` when `g` is continuous, and, when `g` is `C¹`, may be
+differentiated in `ξ` under the integral sign. Both facts reduce to Mathlib's results on parametric
+integrals of compactly supported functions.
 
-These are the regularity statements used for the Fourier transform `b̂(θ, ξ)` of a symbol with
-compact spatial support in the composition of pseudodifferential operators.
+These are the regularity properties of the Fourier transform `b̂(η, ξ)` of the position slices of a
+symbol with compact spatial support, used in the composition calculus of pseudodifferential
+operators.
 
 ## Main declarations
 
-* `TauCeti.continuous_fourier_slice`: `(θ, ξ) ↦ f̂(θ, ξ)` is continuous.
-* `TauCeti.hasFDerivAt_fourier_slice`: `∂_{ξ_j} f̂(θ, ξ) = (∂_{ξ_j} f)^(θ, ξ)`.
-
-## Implementation notes
-
-The target is an abstract complex normed space `G` rather than a space of operators such as
-`V →L[ℂ] W`: for the latter, the instance searches for the measurability and the norms of
-`CoordinateSpace n →L[ℝ] (V →L[ℂ] W)`-valued functions time out.
+* `TauCeti.hasFDerivAt_integral_fourierChar_smul`: differentiation in `ξ` under the Fourier
+  integral, with `TauCeti.integral_fourierChar_smul_fderiv_apply` evaluating the derivative in a
+  direction.
+* `TauCeti.continuous_integral_fourierChar_smul`: joint continuity of the Fourier integral.
 -/
 
 public section
 
-noncomputable section
-
 open MeasureTheory Real FourierTransform
-open scoped RealInnerProductSpace
+open scoped ContDiff RealInnerProductSpace
 
 namespace TauCeti
 
-variable {E G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup G] [NormedSpace ℂ G] {K : Set E}
+variable {E P F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup P] [NormedAddCommGroup F]
+  [NormedSpace ℂ F] {g : E × P → F} {K : Set E}
 
-/-- The Fourier transform `f̂(θ, ξ)` of the position slices `y ↦ f(y, ξ)` of a continuous function
-vanishing for positions outside a compact set is jointly continuous in `(θ, ξ)`. -/
-theorem continuous_fourier_slice {P : Type*} [TopologicalSpace P] [FirstCountableTopology P]
-    [LocallyCompactSpace P] {f : E × P → G} (hf : Continuous f) (hK : IsCompact K)
-    (hfK : ∀ y ∉ K, ∀ η, f (y, η) = 0) :
-    Continuous fun q : E × P ↦ 𝓕 (fun y ↦ f (y, q.2)) q.1 := by
-  have hF : (fun q : E × P ↦ 𝓕 (fun y ↦ f (y, q.2)) q.1) =
-      fun q ↦ ∫ y in K, 𝐞 (-⟪y, q.1⟫) • f (y, q.2) := by
-    funext q
-    rw [Real.fourier_eq]
-    exact (setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by
-      rw [hfK y hy, smul_zero]).symm
-  rw [hF]
-  exact continuous_parametric_integral_of_continuous
-    ((Real.continuous_fourierChar.comp (by fun_prop)).smul (hf.comp (by fun_prop))) hK
+/-- The integrand `y ↦ exp(-2πi ⟪y, η⟫) ∂_ξ g(y, ξ)` of the derivative of the Fourier integral is
+integrable. -/
+theorem integrable_fourierChar_smul_fderiv [NormedSpace ℝ P] (hg : ContDiff ℝ 1 g)
+    (hK : IsCompact K) (hKg : ∀ y ∉ K, ∀ ξ, g (y, ξ) = 0) (η : E) (ξ : P) :
+    Integrable fun y ↦ (𝐞 (-⟪y, η⟫) : ℂ) • fderiv ℝ (fun ξ ↦ g (y, ξ)) ξ := by
+  refine Continuous.integrable_of_hasCompactSupport ?_
+    (HasCompactSupport.intro hK fun y hy ↦ by simp [hKg y hy])
+  exact (by fun_prop : Continuous fun y : E ↦ (𝐞 (-⟪y, η⟫) : ℂ)).smul
+    (ContDiff.fderiv (f := fun (y : E) ξ ↦ g (y, ξ)) hg contDiff_const (n := 0)
+      (by simp)).continuous
 
-/-- **Differentiation of `f̂(θ, ξ)` in the parameter.** For a `C¹` function `f` of a position and
-a parameter in `ℝⁿ`, vanishing for positions outside a compact set, the Fourier transform of the
-position slices is differentiable in the parameter, with partial derivatives the Fourier
-transforms of the partial derivatives: `∂_{ξ_j} f̂(θ, ξ) = (∂_{ξ_j} f)^(θ, ξ)`. -/
-theorem hasFDerivAt_fourier_slice {n : ℕ} {f : E × CoordinateSpace n → G} (hf : ContDiff ℝ 1 f)
-    (hK : IsCompact K) (hfK : ∀ y ∉ K, ∀ η, f (y, η) = 0) (θ : E) (ξ : CoordinateSpace n) :
-    HasFDerivAt (fun η ↦ 𝓕 (fun y ↦ f (y, η)) θ)
-      (∑ j, (EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).smulRight
-        (𝓕 (fun y ↦ coordinateDeriv [j] (fun η ↦ f (y, η)) ξ) θ)) ξ := by
-  -- The phase factor, as a real-linear map, so that no complex scalars act on derivatives.
-  set e : E → G →L[ℝ] G := fun y ↦
-    ContinuousLinearMap.lsmul ℝ ℂ (𝐞 (-⟪y, θ⟫) : ℂ) with he_def
-  have he : Continuous e := (ContinuousLinearMap.lsmul ℝ ℂ).continuous.comp
-    (continuous_subtype_val.comp (Real.continuous_fourierChar.comp (by fun_prop)))
-  have he_norm (y : E) : ‖e y‖ ≤ 1 :=
-    (ContinuousLinearMap.opNorm_lsmul_apply_le _).trans (by simp)
-  -- The partial derivative of `f` in the frequency is jointly continuous.
-  have hD : Continuous fun q : E × CoordinateSpace n ↦
-      fderiv ℝ (fun η ↦ f (q.1, η)) q.2 :=
-    (ContDiff.fderiv (f := fun (q : E × CoordinateSpace n) η ↦ f (q.1, η))
-      (hf.comp ((contDiff_fst.comp contDiff_fst).prodMk contDiff_snd)) contDiff_snd
-      (n := 0) (by simp)).continuous
-  obtain ⟨C, hC⟩ := (hK.prod (isCompact_closedBall ξ 1)).exists_bound_of_continuousOn
-    hD.continuousOn
-  have hdiff (y : E) (η : CoordinateSpace n) : HasFDerivAt (fun η ↦ e y (f (y, η)))
-      ((e y).comp (fderiv ℝ (fun η ↦ f (y, η)) η)) η :=
-    (e y).hasFDerivAt.comp η
-      ((hf.comp (contDiff_prodMk_right y)).differentiable one_ne_zero η).hasFDerivAt
-  have hcont (η : CoordinateSpace n) : Continuous fun y ↦ e y (f (y, η)) :=
-    he.clm_apply (hf.continuous.comp (continuous_id.prodMk continuous_const))
-  have hcont' : Continuous fun y ↦ (e y).comp (fderiv ℝ (fun η ↦ f (y, η)) ξ) :=
-    he.clm_comp (hD.comp (continuous_id.prodMk continuous_const))
-  have hsupp (η : CoordinateSpace n) : HasCompactSupport fun y ↦ e y (f (y, η)) :=
-    HasCompactSupport.intro hK fun y hy ↦ by simp [hfK y hy]
-  have hzero (y : E) (hy : y ∉ K) (η : CoordinateSpace n) :
-      fderiv ℝ (fun η ↦ f (y, η)) η = 0 := by
-    have h0 : (fun η ↦ f (y, η)) = 0 := funext fun η ↦ hfK y hy η
-    simp [h0]
-  have hsupp' : HasCompactSupport fun y ↦ (e y).comp (fderiv ℝ (fun η ↦ f (y, η)) ξ) :=
-    HasCompactSupport.intro hK fun y hy ↦ by simp [hzero y hy]
-  have key := hasFDerivAt_integral_of_dominated_of_fderiv_le (μ := volume)
-    (F := fun η y ↦ e y (f (y, η)))
-    (F' := fun η y ↦ (e y).comp (fderiv ℝ (fun η ↦ f (y, η)) η))
-    (bound := K.indicator fun _ ↦ C) (Metric.ball_mem_nhds ξ one_pos)
-    (Filter.Eventually.of_forall fun η ↦ (hcont η).aestronglyMeasurable)
-    ((hcont ξ).integrable_of_hasCompactSupport (hsupp ξ)) hcont'.aestronglyMeasurable
-    (ae_of_all _ fun y η hη ↦ ?_)
-    ((integrable_indicator_iff hK.measurableSet).2 (integrableOn_const hK.measure_lt_top.ne))
-    (ae_of_all _ fun y η _ ↦ hdiff y η)
-  · have hF : (fun η ↦ 𝓕 (fun y ↦ f (y, η)) θ) = fun η ↦ ∫ y, e y (f (y, η)) := by
-      funext η
-      simp only [Real.fourier_eq, Circle.smul_def, he_def, ContinuousLinearMap.lsmul_apply]
-    rw [hF]
-    convert key using 1
-    refine ContinuousLinearMap.ext fun h ↦ ?_
-    have hint := hcont'.integrable_of_hasCompactSupport (μ := volume) hsupp'
-    rw [ContinuousLinearMap.integral_apply hint]
-    conv_rhs => enter [2, y]; rw [ContinuousLinearMap.apply_eq_sum_single _ h]
-    simp only [FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.smulRight_apply,
-      ContinuousLinearMap.comp_apply, PiLp.proj_apply]
-    rw [integral_finsetSum (f := fun j y ↦
-      h j • e y (fderiv ℝ (fun η ↦ f (y, η)) ξ (EuclideanSpace.single j 1))) _
-      fun j _ ↦ (hint.apply_continuousLinearMap _).smul (h j)]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [integral_smul]
-    congr 1
-    simp only [Real.fourier_eq, Circle.smul_def, coordinateDeriv_cons, coordinateDeriv_nil, he_def,
-      ContinuousLinearMap.lsmul_apply]
-  · refine ((e y).opNorm_comp_le _).trans ?_
-    by_cases hy : y ∈ K
-    · rw [Set.indicator_of_mem hy]
-      exact (mul_le_of_le_one_left (norm_nonneg _) (he_norm y)).trans
-        (hC _ (Set.mk_mem_prod hy (Metric.ball_subset_closedBall hη)))
-    · simp [hzero y hy, Set.indicator_of_notMem hy]
+/-- **Differentiation under the Fourier integral.** For a `C¹` function `g` vanishing for first
+variables outside a compact set, the Fourier integral in the first variable is differentiable in
+the second variable, with the Fourier integral of the derivative as derivative. -/
+theorem hasFDerivAt_integral_fourierChar_smul [NormedSpace ℝ P] (hg : ContDiff ℝ 1 g)
+    (hK : IsCompact K) (hKg : ∀ y ∉ K, ∀ ξ, g (y, ξ) = 0) (η : E) (ξ₀ : P) :
+    HasFDerivAt (fun ξ ↦ ∫ y, (𝐞 (-⟪y, η⟫) : ℂ) • g (y, ξ))
+      (∫ y, (𝐞 (-⟪y, η⟫) : ℂ) • fderiv ℝ (fun ξ ↦ g (y, ξ)) ξ₀) ξ₀ := by
+  have he : ContDiff ℝ 1 fun y : E ↦ (𝐞 (-⟪y, η⟫) : ℂ) := by
+    simp only [Real.fourierChar_apply]
+    exact Complex.contDiff_exp.comp ((Complex.ofRealCLM.contDiff.comp
+      (contDiff_const.mul (ContDiff.inner ℝ contDiff_id contDiff_const).neg)).mul contDiff_const)
+  have h := hasFDerivAt_integral_of_contDiffOn (μ := volume) (x₀ := ξ₀)
+    (f := fun ξ y ↦ (𝐞 (-⟪y, η⟫) : ℂ) • g (y, ξ)) Filter.univ_mem hK hK.measure_lt_top.ne
+    subset_rfl ((he.comp contDiff_snd).smul (hg.comp (contDiff_snd.prodMk contDiff_fst))).contDiffOn
+  have hI (ξ : P) : ∫ y in K, (𝐞 (-⟪y, η⟫) : ℂ) • g (y, ξ) = ∫ y, (𝐞 (-⟪y, η⟫) : ℂ) • g (y, ξ) :=
+    setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by simp [hKg y hy]
+  have hD (y : E) : fderiv ℝ (fun ξ ↦ (𝐞 (-⟪y, η⟫) : ℂ) • g (y, ξ)) ξ₀ =
+      (𝐞 (-⟪y, η⟫) : ℂ) • fderiv ℝ (fun ξ ↦ g (y, ξ)) ξ₀ :=
+    fderiv_const_smul ((hg.comp (contDiff_prodMk_right y)).differentiable one_ne_zero ξ₀) _
+  have hI' : ∫ y in K, (𝐞 (-⟪y, η⟫) : ℂ) • fderiv ℝ (fun ξ ↦ g (y, ξ)) ξ₀ =
+      ∫ y, (𝐞 (-⟪y, η⟫) : ℂ) • fderiv ℝ (fun ξ ↦ g (y, ξ)) ξ₀ :=
+    setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by simp [hKg y hy]
+  simpa only [hI, hD, hI'] using h
+
+/-- The derivative of the Fourier integral in a direction `v` is the Fourier integral of the
+derivative of `g` in the direction `v`. -/
+theorem integral_fourierChar_smul_fderiv_apply [NormedSpace ℝ P] (hg : ContDiff ℝ 1 g)
+    (hK : IsCompact K) (hKg : ∀ y ∉ K, ∀ ξ, g (y, ξ) = 0) (η : E) (ξ v : P) :
+    (∫ y, (𝐞 (-⟪y, η⟫) : ℂ) • fderiv ℝ (fun ξ ↦ g (y, ξ)) ξ) v =
+      ∫ y, (𝐞 (-⟪y, η⟫) : ℂ) • fderiv ℝ (fun ξ ↦ g (y, ξ)) ξ v := by
+  rw [ContinuousLinearMap.integral_apply (integrable_fourierChar_smul_fderiv hg hK hKg η ξ)]
+  simp only [smul_apply]
+
+/-- The Fourier integral in the first variable of a continuous `g` vanishing for first variables
+outside a compact set is jointly continuous in the dual variable and the second variable. -/
+theorem continuous_integral_fourierChar_smul (hg : Continuous g) (hK : IsCompact K)
+    (hKg : ∀ y ∉ K, ∀ ξ, g (y, ξ) = 0) :
+    Continuous fun q : E × P ↦ ∫ y, (𝐞 (-⟪y, q.1⟫) : ℂ) • g (y, q.2) :=
+  continuousOn_univ.1 <| continuousOn_integral_of_compact_support hK
+    (Continuous.continuousOn (by fun_prop)) fun q y _ hy ↦ by simp [hKg y hy]
 
 end TauCeti
