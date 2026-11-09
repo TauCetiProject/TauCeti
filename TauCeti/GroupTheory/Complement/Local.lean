@@ -282,6 +282,19 @@ theorem ker_rightProjection : h.rightProjection.ker = N.subgroupOf H := by
     MulEquiv.toMonoidHom_eq_coe, MonoidHom.ker_mulEquiv_comp, MonoidHom.ker_mulEquiv_comp,
     QuotientGroup.ker_mk']
 
+/-- The left projection of `x` is `n` exactly when `n⁻¹ * x` lies in the complementary
+subgroup. -/
+theorem leftProjection_eq_iff (x : H) (n : N) :
+    h.leftProjection x = n ↔ (n : G)⁻¹ * x ∈ K := by
+  constructor
+  · rintro rfl
+    rw [← h.leftProjection_mul_rightProjection x, inv_mul_cancel_left]
+    exact (h.rightProjection x).property
+  · intro hk
+    have hx : x = ⟨(n : G) * (⟨_, hk⟩ : K), H.mul_mem (h.left_le n.property) (h.right_le hk)⟩ :=
+      Subtype.ext (mul_inv_cancel_left _ _).symm
+    rw [hx, leftProjection_mul]
+
 /-- The left projection is trivial exactly on the complementary subgroup. -/
 @[simp]
 theorem leftProjection_eq_one_iff (x : H) : h.leftProjection x = 1 ↔ (x : G) ∈ K := by
