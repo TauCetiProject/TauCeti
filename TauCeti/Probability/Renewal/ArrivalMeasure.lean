@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Renewal.Exponential
 public import TauCeti.Probability.Renewal.Measure
+public import TauCeti.Probability.PointProcess.OccurrenceTime
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 
@@ -70,6 +71,23 @@ theorem renewalArrivalMeasure_Iic (ω : Ω) (t : ℝ≥0) :
     renewalArrivalMeasure T ω (Iic t) = renewalCount T t ω := by
   simp [renewalArrivalMeasure_apply, renewalCount_def,
     Set.indicator_apply]
+
+/-- Extracting occurrences from the arrival measure recovers every positive-index
+arrival, even with zero increments or explosion. The artificial index-zero arrival
+is not inserted by occurrence extraction. -/
+@[simp]
+theorem occurrenceTime_renewalArrivalMeasure (ω : Ω) (n : ℕ) :
+    (renewalArrivalMeasure T ω).occurrenceTime n = (arrival T (n + 1) ω : ℝ≥0∞) := by
+  apply le_antisymm
+  · apply Measure.occurrenceTime_le_of_le
+    rw [renewalArrivalMeasure_Iic]
+    simpa using (natCast_le_renewalCount_iff (T := T) (n := n + 1)).2 le_rfl
+  · rw [Measure.occurrenceTime_def]
+    refine le_iInf fun t => le_iInf fun ht => ?_
+    rw [renewalArrivalMeasure_Iic] at ht
+    have h : arrival T (n + 1) ω ≤ t :=
+      natCast_le_renewalCount_iff.1 (by simpa using ht)
+    exact_mod_cast h
 
 /-- Integration against the arrival measure sums the test function over all arrivals. -/
 @[simp]
