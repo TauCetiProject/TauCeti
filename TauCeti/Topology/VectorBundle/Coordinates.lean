@@ -21,6 +21,10 @@ charts, as required for quotient-bundle coordinate changes.
 `ContinuousLinearMap.inCoordinates_inverse` reads the inverse of a fibre map in coordinates
 as the inverse of its coordinate expression, which reduces smoothness of fibrewise inverses
 to smoothness of inversion of continuous linear maps.
+`ContinuousLinearMap.inCoordinates_eq_conjContinuousAlgEquiv` reads an endomorphism of a fibre
+in coordinates as its conjugate by the fibre equivalence of the trivialization, an algebra
+isomorphism, so that coordinate expressions of algebraic expressions in fibre endomorphisms are
+the same algebraic expressions in their coordinate expressions.
 `ContinuousLinearMap.isInvertible_inCoordinates_iff` reads invertibility of a fibre map
 off its coordinate expression, `ContinuousLinearMap.inCoordinates_comp` reads a composite
 of fibre maps as the composite of their coordinate expressions, and
@@ -267,6 +271,27 @@ theorem isInvertible_inCoordinates_iff {x₀ x : B} {y₀ y : B'} {ϕ : V x →L
   rw [inCoordinates_eq hx hy, isInvertible_equiv_comp, isInvertible_comp_equiv]
 
 end Inverse
+
+section Conj
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {B : Type*} [TopologicalSpace B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : B → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
+  [∀ x, ContinuousConstSMul 𝕜 (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+
+/-- In a preferred trivialization whose base set contains `x`, reading an endomorphism of `V x`
+in coordinates is conjugation by the fibre equivalence of the trivialization, an algebra
+isomorphism `(V x →L[𝕜] V x) ≃A[𝕜] (F →L[𝕜] F)`. -/
+theorem inCoordinates_eq_conjContinuousAlgEquiv {x₀ x : B}
+    (hx : x ∈ (trivializationAt F V x₀).baseSet) (A : V x →L[𝕜] V x) :
+    inCoordinates F V F V x₀ x x₀ x A =
+      ((trivializationAt F V x₀).continuousLinearEquivAt 𝕜 x hx).conjContinuousAlgEquiv A := by
+  simp only [inCoordinates_eq hx hx, ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
+
+end Conj
 
 section KerRange
 
