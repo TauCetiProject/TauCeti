@@ -58,6 +58,26 @@ def nodeBaseExtension : A →+* R :=
     contDiff_fst.contMDiff ((b, (0 : ℂ)), 0)).comp
       (stalkPrecomp 𝓘(ℂ, E × ℂ) (E × ℂ) Prod.fst contDiff_fst.contMDiff (b, 0))
 
+/-- Restriction of a function representative evaluates both vertical coordinates at zero. -/
+theorem toFilterGerm_nodeBaseRestriction {s : R} {f : (E × ℂ) × ℂ → ℂ}
+    (hs : toFilterGerm 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ) ((b, (0 : ℂ)), 0)
+      (𝓝 ((b, (0 : ℂ)), 0)) le_rfl s = f) :
+    toFilterGerm 𝓘(ℂ, E) E b (𝓝 b) le_rfl (nodeBaseRestriction b s) =
+      (fun e ↦ f ((e, 0), 0)) := by
+  rw [nodeBaseRestriction, RingHom.comp_apply, toFilterGerm_restrictHyperplane,
+    toFilterGerm_restrictHyperplane, hs, Germ.coe_compTendsto, Germ.coe_compTendsto]
+  rfl
+
+/-- Extension of a function representative forgets both vertical coordinates. -/
+theorem toFilterGerm_nodeBaseExtension {s : A} {f : E → ℂ}
+    (hs : toFilterGerm 𝓘(ℂ, E) E b (𝓝 b) le_rfl s = f) :
+    toFilterGerm 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ) ((b, (0 : ℂ)), 0)
+      (𝓝 ((b, (0 : ℂ)), 0)) le_rfl (nodeBaseExtension b s) =
+        (fun z : (E × ℂ) × ℂ ↦ f z.1.1) := by
+  rw [nodeBaseExtension, RingHom.comp_apply, toFilterGerm_stalkPrecomp,
+    toFilterGerm_stalkPrecomp, hs, Germ.coe_compTendsto, Germ.coe_compTendsto]
+  rfl
+
 /-- Restriction to the zero section is a left inverse to pullback from the base. -/
 @[simp]
 theorem nodeBaseRestriction_nodeBaseExtension (s : A) :
@@ -75,7 +95,7 @@ def nodeFstCoordinate : R :=
     ((b, (0 : ℂ)), 0) (hyperplaneCoordinateGerm b 0)
 
 /-- The second vertical coordinate of the ambient node chart, as a holomorphic germ. -/
-abbrev nodeSndCoordinate : R := hyperplaneCoordinateGerm (b, (0 : ℂ)) 0
+def nodeSndCoordinate : R := hyperplaneCoordinateGerm (b, (0 : ℂ)) 0
 
 /-- The first coordinate germ is represented by the first vertical projection. -/
 @[simp]
@@ -90,6 +110,15 @@ theorem toFilterGerm_nodeFstCoordinate :
   funext z
   simp
 
+/-- The second coordinate germ is represented by the second vertical projection. -/
+@[simp]
+theorem toFilterGerm_nodeSndCoordinate :
+    toFilterGerm 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ) ((b, (0 : ℂ)), 0)
+      (𝓝 ((b, (0 : ℂ)), 0)) le_rfl (nodeSndCoordinate b) =
+        (fun z : (E × ℂ) × ℂ ↦ z.2) := by
+  simp [nodeSndCoordinate,
+    OpenPartialHomeomorph.toFilterGerm_holomorphicLinearCoordinateGerm]
+
 /-- The first coordinate restricts to zero on the zero section. -/
 @[simp]
 theorem nodeBaseRestriction_nodeFstCoordinate :
@@ -101,7 +130,9 @@ theorem nodeBaseRestriction_nodeFstCoordinate :
 @[simp]
 theorem nodeBaseRestriction_nodeSndCoordinate :
     nodeBaseRestriction b (nodeSndCoordinate b) = 0 := by
-  simp [nodeBaseRestriction]
+  apply toFilterGerm_nhds_injective b
+  rw [toFilterGerm_nodeBaseRestriction b (toFilterGerm_nodeSndCoordinate b), map_zero]
+  rfl
 
 /-- A germ vanishes on the zero section exactly when it belongs to `(x,y)`. -/
 theorem ker_nodeBaseRestriction :
@@ -114,7 +145,7 @@ theorem ker_nodeBaseRestriction :
     rw [restrictHyperplane_stalkPrecomp_fst]
   rw [nodeBaseRestriction, ← RingHom.comap_ker, ker_restrictHyperplane, ← hmap,
     Ideal.comap_map_of_surjective r (restrictHyperplane_surjective _ _),
-    ← RingHom.ker_eq_comap_bot, ker_restrictHyperplane, Ideal.span_insert]
+    ← RingHom.ker_eq_comap_bot, ker_restrictHyperplane, Ideal.span_insert, nodeSndCoordinate]
 
 /-- The defining equation vanishes on the zero section precisely to the order of `s`:
 its restriction is `-s`. -/
@@ -123,9 +154,8 @@ theorem nodeBaseRestriction_nodeEquation (s : A) :
     nodeBaseRestriction b (nodeEquation b 0 0 s) = -s := by
   obtain ⟨f, _, hf⟩ := exists_toFilterGerm_eq b s
   apply toFilterGerm_nhds_injective b
-  simp only [nodeBaseRestriction, RingHom.comp_apply, toFilterGerm_restrictHyperplane]
-  rw [toFilterGerm_nodeEquation b 0 0 s (hf _ le_rfl), map_neg, hf _ le_rfl,
-    Germ.coe_compTendsto, Germ.coe_compTendsto, ← Germ.coe_neg]
+  rw [toFilterGerm_nodeBaseRestriction b (toFilterGerm_nodeEquation b 0 0 s (hf _ le_rfl)),
+    map_neg, hf _ le_rfl, ← Germ.coe_neg]
   congr 1
   funext z
   simp
@@ -143,14 +173,14 @@ theorem nodeCriticalIdeal_eq_span_sup_ker (s : A) :
 
 /-- Restriction sends the coordinate critical ideal to the unreduced principal ideal `(s)`. -/
 @[simp]
-theorem map_nodeCriticalIdeal (s : A) :
+theorem map_nodeBaseRestriction_nodeCriticalIdeal (s : A) :
     (nodeCriticalIdeal b s).map (nodeBaseRestriction b) = Ideal.span {s} := by
   simp [nodeCriticalIdeal, Ideal.map_span]
 
 /-- The coordinate critical ideal is exactly the inverse image of `(s)` under restriction. -/
 theorem nodeCriticalIdeal_eq_comap (s : A) :
     nodeCriticalIdeal b s = (Ideal.span {s}).comap (nodeBaseRestriction b) := by
-  rw [← map_nodeCriticalIdeal b s,
+  rw [← map_nodeBaseRestriction_nodeCriticalIdeal b s,
     Ideal.comap_map_of_surjective _ (nodeBaseRestriction_surjective b),
     nodeCriticalIdeal_eq_span_sup_ker]
   simp [← RingHom.ker_eq_comap_bot]
@@ -165,7 +195,7 @@ theorem mem_nodeCriticalIdeal_iff (s : A) (f : R) :
 /-- The ideal on the base cut out by the coordinate critical quotient is exactly `(s)`.
 No reduction or nonvanishing assumption on the smoothing germ is needed. -/
 @[simp]
-theorem comap_nodeCriticalIdeal (s : A) :
+theorem comap_nodeBaseExtension_nodeCriticalIdeal (s : A) :
     (nodeCriticalIdeal b s).comap (nodeBaseExtension b) = Ideal.span {s} := by
   ext f
   simp [Ideal.mem_comap, mem_nodeCriticalIdeal_iff, Ideal.mem_span_singleton]
@@ -240,6 +270,34 @@ theorem toFilterGerm_nodeAmbientPullback
   rw [nodeAmbientPullback, toFilterGerm_stalkPullback, hs, Germ.coe_compTendsto]
   simp only [Function.comp_def]
 
+/-- Restriction to the zero section commutes with local analytic base change. -/
+@[simp]
+theorem nodeBaseRestriction_nodeAmbientPullback
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ)).presheaf.stalk
+      ((φ a, (0 : ℂ)), 0)) :
+    nodeBaseRestriction a (nodeAmbientPullback hφ s) =
+      stalkPullback hφ (nodeBaseRestriction (φ a) s) := by
+  obtain ⟨f, _, hf⟩ := exists_toFilterGerm_eq ((φ a, (0 : ℂ)), 0) s
+  apply toFilterGerm_nhds_injective a
+  rw [toFilterGerm_nodeBaseRestriction a
+      (toFilterGerm_nodeAmbientPullback hφ (hf _ le_rfl)),
+    toFilterGerm_stalkPullback, toFilterGerm_nodeBaseRestriction (φ a) (hf _ le_rfl),
+    Germ.coe_compTendsto]
+  rfl
+
+/-- Extension from the base commutes with local analytic base change. -/
+@[simp]
+theorem nodeAmbientPullback_nodeBaseExtension
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk (φ a)) :
+    nodeAmbientPullback hφ (nodeBaseExtension (φ a) s) =
+      nodeBaseExtension a (stalkPullback hφ s) := by
+  obtain ⟨f, _, hf⟩ := exists_toFilterGerm_eq (φ a) s
+  apply toFilterGerm_nhds_injective ((a, (0 : ℂ)), 0)
+  rw [toFilterGerm_nodeAmbientPullback hφ (toFilterGerm_nodeBaseExtension (φ a) (hf _ le_rfl)),
+    toFilterGerm_nodeBaseExtension a (by
+      rw [toFilterGerm_stalkPullback, hf _ le_rfl, Germ.coe_compTendsto])]
+  rfl
+
 /-- Local analytic base change fixes the first vertical coordinate. -/
 @[simp]
 theorem nodeAmbientPullback_nodeFstCoordinate :
@@ -253,8 +311,8 @@ theorem nodeAmbientPullback_nodeFstCoordinate :
 theorem nodeAmbientPullback_nodeSndCoordinate :
     nodeAmbientPullback hφ (nodeSndCoordinate (φ a)) = nodeSndCoordinate a := by
   apply toFilterGerm_nhds_injective ((a, (0 : ℂ)), 0)
-  rw [toFilterGerm_nodeAmbientPullback hφ (f := Prod.snd) (by simp)]
-  simp
+  rw [toFilterGerm_nodeAmbientPullback hφ (toFilterGerm_nodeSndCoordinate (φ a)),
+    toFilterGerm_nodeSndCoordinate]
 
 /-- The pulled-back node equation has the pulled-back smoothing germ. -/
 @[simp]
@@ -277,5 +335,19 @@ theorem map_nodeCriticalIdeal_nodeAmbientPullback
     (nodeCriticalIdeal (φ a) s).map (nodeAmbientPullback hφ) =
       nodeCriticalIdeal a (stalkPullback hφ s) := by
   simp [nodeCriticalIdeal, Ideal.map_span]
+
+/-- The critical-quotient comparison commutes with the quotient maps induced by base change. -/
+theorem nodeCriticalQuotientEquiv_nodeAmbientPullback
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk (φ a))
+    (q : _ ⧸ nodeCriticalIdeal (φ a) s) :
+    nodeCriticalQuotientEquiv a (stalkPullback hφ s)
+        (Ideal.quotientMap _ (nodeAmbientPullback hφ)
+          (Ideal.map_le_iff_le_comap.mp
+            (map_nodeCriticalIdeal_nodeAmbientPullback hφ s).le) q) =
+      Ideal.quotientMap _ (stalkPullback hφ)
+        (Ideal.map_le_iff_le_comap.mp (by simp [Ideal.map_span]))
+        (nodeCriticalQuotientEquiv (φ a) s q) := by
+  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective q
+  simp
 
 end TauCeti.holomorphicStructureSheaf
