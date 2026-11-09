@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.MeasureTheory.Function.L2Space
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
 public import TauCeti.MeasureTheory.Integral.PiSystem
 
@@ -190,31 +189,32 @@ end MeasureTheory
 namespace ContinuousLinearMap
 
 open MeasureTheory
+open scoped ENNReal
 
-/-- A continuous linear map out of counting-measure L² that vanishes on all
+/-- A continuous linear map out of counting-measure `Lᵖ`, `p ≠ ∞`, that vanishes on all
 singleton-supported vectors is zero. No countability of the index space is needed. -/
 theorem eq_zero_of_apply_indicatorConstLp_singleton
-    {α 𝕜 E F : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [RCLike 𝕜]
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
-    (T : Lp E 2 (Measure.count : Measure α) →L[𝕜] F)
+    {α 𝕜 E F : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [NormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
+    (T : Lp E p (Measure.count : Measure α) →L[𝕜] F)
     (h : ∀ (i : α) (v : E),
-      T (indicatorConstLp 2 (measurableSet_singleton i) (by simp) v) = 0) : T = 0 := by
+      T (indicatorConstLp p (measurableSet_singleton i) (by simp) v) = 0) : T = 0 := by
   -- Finite sets are finite disjoint unions of singletons.
   have hfin (c : E) (t : Finset α) :
-      T (indicatorConstLp 2 t.measurableSet (by simp [Measure.count_apply_finset]) c) = 0 := by
+      T (indicatorConstLp p t.measurableSet (by simp [Measure.count_apply_finset]) c) = 0 := by
     classical
     induction t using Finset.induction_on with
     | empty => simp
     | insert i t hi ih =>
       have hd : Disjoint ({i} : Set α) (t : Set α) := by simpa using hi
-      have := indicatorConstLp_disjoint_union (p := 2) (μ := (Measure.count : Measure α))
+      have := indicatorConstLp_disjoint_union (p := p) (μ := (Measure.count : Measure α))
         (measurableSet_singleton i) t.measurableSet (by simp)
         (by simp [Measure.count_apply_finset]) hd c
       simp only [Finset.coe_insert, ← Set.singleton_union] at *
       rw [this, map_add, h, ih, add_zero]
   refine ContinuousLinearMap.ext fun f ↦ ?_
-  refine Lp.induction (p := 2) (by norm_num) (fun f ↦ T f = 0) ?_ ?_
+  refine Lp.induction (p := p) hp (fun f ↦ T f = 0) ?_ ?_
     (isClosed_eq T.continuous continuous_const) f
   · intro c s hs hμs
     obtain ⟨t, rfl⟩ := (Measure.count_apply_lt_top.mp hμs).exists_finset_coe

@@ -66,7 +66,8 @@ theorem fourierCoeff_one_star_mul_self_eq_zero_iff
     fourierCoeff α ρ hρ 1 (star x * x) = 0 ↔ x = 0 := by
   refine ⟨fun hx => ?_, ?_⟩
   · apply Subtype.ext
-    apply ContinuousLinearMap.eq_zero_of_apply_indicatorConstLp_singleton
+    refine ContinuousLinearMap.eq_zero_of_apply_indicatorConstLp_singleton
+      ENNReal.ofNat_ne_top _ ?_
     intro s v
     have h := inner_fourierCoeff_one_star_mul_self α ρ hρ x s v
     rw [hx, map_zero, map_zero, zero_apply, inner_zero_right] at h
