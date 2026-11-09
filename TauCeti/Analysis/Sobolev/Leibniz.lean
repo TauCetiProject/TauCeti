@@ -250,9 +250,9 @@ private theorem integral_lineDeriv_smul_normed_convolution_eq
     φ.integrable_smul h.locallyIntegrableOn
   have hw₂c : Integrable (fun x => (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] ψ) x •
       ((φ : E → ℝ) x • u' x)) μ :=
-    integrable_continuous_smul_of_forall_notMem_eq_zero φ.hasCompactSupport.isCompact
+    integrable_continuousOn_smul_of_forall_notMem_eq_zero φ.hasCompactSupport.isCompact
       (φ.integrable_smul h.locallyIntegrableOn_deriv)
-      (fun x hx => by simp [image_eq_zero_of_notMem_tsupport hx]) hsmooth.continuous
+      (fun x hx => by simp [image_eq_zero_of_notMem_tsupport hx]) hsmooth.continuous.continuousOn
   have h₃ : Integrable (fun x => fderiv ℝ (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] ψ) x v •
       ((φ : E → ℝ) x • u x)) μ :=
     hw₃.bdd_smul (K * ‖v‖) ((hsmooth.continuous_fderiv (by simp)).clm_apply
@@ -288,18 +288,18 @@ private theorem integral_lineDeriv_smul_lipschitzWith_smul_eq
   -- `w₁` and `w₂` vanish off the support of `φ`, so they stay integrable against continuous
   -- factors.
   have hw₁c : ∀ f : E → ℝ, Continuous f → Integrable (fun x => f x • w₁ x) μ := fun f hf =>
-    integrable_continuous_smul_of_forall_notMem_eq_zero φ.hasCompactSupport.isCompact hw₁
-      (fun x hx => by simp [w₁, lineDeriv_of_notMem_tsupport hx]) hf
+    integrable_continuousOn_smul_of_forall_notMem_eq_zero φ.hasCompactSupport.isCompact hw₁
+      (fun x hx => by simp [w₁, lineDeriv_of_notMem_tsupport hx]) hf.continuousOn
   have hw₂c : ∀ f : E → ℝ, Continuous f → Integrable (fun x => f x • w₂ x) μ := fun f hf =>
-    integrable_continuous_smul_of_forall_notMem_eq_zero φ.hasCompactSupport.isCompact hw₂
-      (fun x hx => by simp [w₂, image_eq_zero_of_notMem_tsupport hx]) hf
+    integrable_continuousOn_smul_of_forall_notMem_eq_zero φ.hasCompactSupport.isCompact hw₂
+      (fun x hx => by simp [w₂, image_eq_zero_of_notMem_tsupport hx]) hf.continuousOn
   -- Pass to the limit on both sides by dominated convergence.
   have hlimit := tendsto_nhds_unique
     (hψ.tendsto_integral_normed_convolution_smul hρ hw₁ (hw₁c ψ hψ.continuous))
     (((hψ.tendsto_integral_normed_convolution_smul hρ hw₂ (hw₂c ψ hψ.continuous)).add
       (hψ.tendsto_integral_fderiv_normed_convolution_apply_smul hρ h'ρ v hw₃)).neg.congr
         fun n => (integral_lineDeriv_smul_normed_convolution_eq h hψ (ρ n) φ).symm)
-  rw [← integral_add (hw₂c ψ hψ.continuous) (integrable_lineDeriv_smul_of_lipschitzWith hψ hw₃)]
+  rw [← integral_add (hw₂c ψ hψ.continuous) (hψ.integrable_lineDeriv_smul hw₃)]
     at hlimit
   convert hlimit using 2
   · ext x; simp only [w₁, smul_comm (ψ x)]
@@ -320,7 +320,7 @@ theorem HasWeakLineDerivOn.lipschitzWith_smul (h : HasWeakLineDerivOn μ Ω u u'
   have hu2 : LocallyIntegrableOn (fun x => lineDeriv ℝ ψ x v • u x) Ω μ := by
     rw [locallyIntegrableOn_iff hΩ]
     intro k hk hkc
-    exact integrable_lineDeriv_smul_of_lipschitzWith hψ
+    exact hψ.integrable_lineDeriv_smul
       (h.locallyIntegrableOn.integrableOn_compact_subset hk hkc)
   rw [hasWeakLineDerivOn_iff_testFunction]
   exact ⟨h.completeSpace, hu1,

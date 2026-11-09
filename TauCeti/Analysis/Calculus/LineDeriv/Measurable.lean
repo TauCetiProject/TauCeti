@@ -32,7 +32,7 @@ an arbitrary candidate `u'`; this is the form in which a.e. derivatives of local
 functions (Rademacher's theorem) enter the theory of weak derivatives.
 
 Finally, multiplying an integrable function by the directional derivative of a Lipschitz function
-keeps it integrable (`integrable_lineDeriv_smul_of_lipschitzWith`).
+keeps it integrable (`LipschitzWith.integrable_lineDeriv_smul`).
 -/
 
 public section
@@ -108,7 +108,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpa
 
 /-- Multiplying an integrable function by the directional derivative of a Lipschitz function
 keeps it integrable. -/
-theorem integrable_lineDeriv_smul_of_lipschitzWith
+theorem LipschitzWith.integrable_lineDeriv_smul
     (hψ : LipschitzWith K ψ) (hg : Integrable g ν) :
     Integrable (fun x => lineDeriv ℝ ψ x v • g x) ν :=
   hg.bdd_smul (K * ‖v‖) (measurable_lineDeriv hψ.continuous).aestronglyMeasurable
