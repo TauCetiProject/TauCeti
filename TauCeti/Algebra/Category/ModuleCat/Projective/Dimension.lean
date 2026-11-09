@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Category.ModuleCat.FiniteLength
 public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.RingTheory.Jacobson.Semiprimary
+import TauCeti.Algebra.Category.ModuleCat.Projective.Basic
 import TauCeti.LinearAlgebra.FreeModule.PID
 
 /-!
@@ -147,19 +148,6 @@ theorem _root_.LinearMap.hasProjectiveDimensionLE_succ_iff_ker {P M : Type v}
       HasProjectiveDimensionLE (ModuleCat.of R (LinearMap.ker f)) n :=
   (LinearMap.shortExact_shortComplexKer hf).hasProjectiveDimensionLT_X₃_iff n
     (inferInstanceAs (Projective (ModuleCat.of R P)))
-
-/-- A module `M` that is projective as an object of `ModuleCat` and receives a surjection from a
-projective module is projective: the identity of `M` lifts through the surjection, which
-splits it. -/
-theorem _root_.LinearMap.moduleProjective_of_projective_of_surjective {P M : Type v}
-    [AddCommGroup P] [Module R P] [Module.Projective R P] [AddCommGroup M] [Module R M]
-    [Projective (ModuleCat.of R M)] {f : P →ₗ[R] M} (hf : Function.Surjective f) :
-    Module.Projective R M := by
-  have : Epi (ModuleCat.ofHom f) := (ModuleCat.epi_iff_surjective _).mpr hf
-  let s := Projective.factorThru (𝟙 (ModuleCat.of R M)) (ModuleCat.ofHom f)
-  have hs : s ≫ ModuleCat.ofHom f = 𝟙 (ModuleCat.of R M) := Projective.factorThru_comp _ _
-  exact Module.Projective.of_split s.hom f
-    (by ext x; simpa using ConcreteCategory.congr_hom hs x)
 
 /-- For a surjection `f` from a projective module onto a module `M` that is not projective, the
 projective dimension of `M` is one more than that of `ker f`. -/
