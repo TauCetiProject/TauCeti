@@ -85,10 +85,9 @@ theorem markovChainLaw_restrict_map_stoppedValue_shift_iterate
       processShift_eq_shift_iterate (fun n (x : ℕ → α) => x n) n
   simpa only [hshift] using h
 
-/-- **The strong Markov property at a stopping time where the chain sits at a fixed state.** If
-`X τ = y` on `A ∩ {τ < ∞}`, as when `τ` is the entrance time of `{y}`, the future path on that
-event has law `ℙ(A ∩ {τ < ∞}) • ℙ_y`: it is a chain started at `y`, independent of `A`. -/
-theorem markovChainLaw_restrict_map_stoppedValue_shift_iterate_eq_smul
+/-- The strong Markov property at a stopping time where the chain sits at a fixed state, for a
+finite initial measure. -/
+private theorem markovChainLaw_restrict_map_stoppedValue_shift_iterate_eq_smul_of_isFiniteMeasure
     [IsFiniteMeasure ν] (hτ : IsStoppingTime (Filtration.piLE (X := fun _ : ℕ => α)) τ)
     {A : Set (ℕ → α)} (hA : MeasurableSet[hτ.measurableSpace] A) {y : α}
     (hy : ∀ x ∈ A ∩ {x | τ x ≠ ⊤}, stoppedValue (fun n x => x n) τ x = y) :
@@ -102,6 +101,40 @@ theorem markovChainLaw_restrict_map_stoppedValue_shift_iterate_eq_smul
     Measure.restrict_apply_univ]
   simp only [markovChainLaw_eq_comp]
   exact Measure.bind_smul _ _ κ.markovChainKernel.measurable.aemeasurable
+
+/-- **The strong Markov property at a stopping time where the chain sits at a fixed state.** If
+`X τ = y` on `A ∩ {τ < ∞}`, as when `τ` is the entrance time of `{y}`, the future path on that
+event has law `ℙ(A ∩ {τ < ∞}) • ℙ_y`: it is a chain started at `y`, independent of `A`. No
+finiteness of the initial measure is needed: the path law is a mixture of the path laws started at
+the points of the state space, each of which is the law of a chain with a finite initial measure. -/
+theorem markovChainLaw_restrict_map_stoppedValue_shift_iterate_eq_smul
+    (hτ : IsStoppingTime (Filtration.piLE (X := fun _ : ℕ => α)) τ)
+    {A : Set (ℕ → α)} (hA : MeasurableSet[hτ.measurableSpace] A) {y : α}
+    (hy : ∀ x ∈ A ∩ {x | τ x ≠ ⊤}, stoppedValue (fun n x => x n) τ x = y) :
+    ((markovChainLaw ν κ).restrict (A ∩ {x | τ x ≠ ⊤})).map
+        (stoppedValue (fun n => (shift α)^[n]) τ) =
+      markovChainLaw ν κ (A ∩ {x | τ x ≠ ⊤}) • markovChainLaw (Measure.dirac y) κ := by
+  have hS : MeasurableSet (A ∩ {x | τ x ≠ ⊤}) :=
+    hτ.measurableSpace_le _ hA |>.inter ((measurableSet_singleton ⊤).preimage hτ.measurable').compl
+  have hθ : Measurable (stoppedValue (fun n => (shift α)^[n]) τ) :=
+    measurable_stoppedValue_of_countable (fun n => measurable_shift_iterate n) hτ.measurable'
+  -- The identity at a Dirac start, where the initial measure is finite.
+  have key : ∀ a : α, ((κ.markovChainKernel a).restrict (A ∩ {x | τ x ≠ ⊤})).map
+      (stoppedValue (fun n => (shift α)^[n]) τ) =
+        κ.markovChainKernel a (A ∩ {x | τ x ≠ ⊤}) • markovChainLaw (Measure.dirac y) κ :=
+    fun a => by
+      rw [Kernel.markovChainKernel_apply]
+      exact markovChainLaw_restrict_map_stoppedValue_shift_iterate_eq_smul_of_isFiniteMeasure
+        (Measure.dirac a) κ hτ hA hy
+  ext s hs
+  rw [Measure.map_apply hθ hs, Measure.restrict_apply (hθ hs), markovChainLaw_eq_comp,
+    smul_apply, smul_eq_mul, Measure.bind_apply (hθ hs |>.inter hS)
+      (Kernel.aemeasurable _), Measure.bind_apply hS (Kernel.aemeasurable _),
+    ← lintegral_mul_const _ (Kernel.measurable_coe _ hS)]
+  refine lintegral_congr fun a => ?_
+  have := congrArg (fun m => m s) (key a)
+  simpa only [Measure.map_apply hθ hs, Measure.restrict_apply (hθ hs), smul_apply,
+    smul_eq_mul] using this
 
 /-- **The strong Markov property, for events.** For a stopping time `τ` of the natural filtration,
 an event `A` of the σ-algebra of `τ` and a measurable set `B` of paths,

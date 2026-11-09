@@ -237,10 +237,7 @@ theorem IsRecurrent.ae_hittingAfter_ne_top_of_isIrreducible [IsIrreducible Measu
     ∀ a b : S, κ.Reaches a b)
   rw [Measure.markovChainLaw_eq_comp]
   apply Measure.ae_comp_of_ae_ae
-    (((measurableSet_singleton ⊤).preimage
-      (Filtration.adapted_piLE.isStoppingTime_hittingAfter
-        (f := Filtration.piLE (X := fun _ : ℕ => S))
-        (measurableSet_singleton y)).measurable').compl)
+    (TauCeti.Probability.measurableSet_hittingAfter_coord_ne_top (measurableSet_singleton y) 0)
   exact Filter.Eventually.of_forall fun z => by
     rw [markovChainKernel_apply]
     exact (hx.of_reaches (hreaches x z)).ae_hittingAfter_ne_top (hreaches z y)
@@ -258,11 +255,9 @@ theorem IsRecurrent.ae_forall_infinite_setOf_eq [IsIrreducible Measure.count κ]
     ∀ᵐ ω ∂markovChainLaw ν κ, ∀ y, {n | ω n = y}.Infinite := by
   have := countable_of_isIrreducible_count (κ := κ)
   have hS : MeasurableSet {ω : ℕ → S | ∀ y, {n | ω n = y}.Infinite} := by
-    simp_rw [← forall_successiveVisit_lt_top_iff (X := fun n (ω : ℕ → S) => ω n),
-      lt_top_iff_ne_top, Set.ofPred_forall]
-    exact MeasurableSet.iInter fun y => MeasurableSet.iInter fun k =>
-      measurableSet_setOf_successiveVisit_ne_top (fun n => measurable_pi_apply n)
-        (measurableSet_singleton y) k
+    rw [Set.ofPred_forall]
+    exact MeasurableSet.iInter fun y => measurableSet_setOf_infinite_setOf_eq
+      (fun n => measurable_pi_apply n) (measurableSet_singleton y)
   rw [Measure.markovChainLaw_eq_comp]
   refine Measure.ae_comp_of_ae_ae hS (Filter.Eventually.of_forall fun w => ?_)
   rw [markovChainKernel_apply]

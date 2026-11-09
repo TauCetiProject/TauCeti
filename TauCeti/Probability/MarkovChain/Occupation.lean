@@ -33,9 +33,10 @@ Writing `r_y = (m_y⁻¹).toReal` with `m_y = κ.meanReturnTime y`, the limit ho
 with no recurrence hypothesis: started at `y`, the occupation frequency of `y` converges almost
 surely to `r_y` (`ProbabilityTheory.Kernel.ae_tendsto_visitCount_div_markovChainLaw_dirac`), since
 at a transient state the visits are almost surely finite and `m_y = ∞`. The first-entrance
-transfer then gives the limit from any finite initial law
-(`MeasureTheory.Measure.ae_tendsto_visitCount_div_markovChainLaw`) and the limit of the mean
-occupation frequency (`MeasureTheory.Measure.tendsto_integral_visitCount_div_markovChainLaw`).
+transfer then gives the almost-sure limit from any initial law
+(`MeasureTheory.Measure.ae_tendsto_visitCount_div_markovChainLaw`) and, from any finite initial
+law, the limit of the mean occupation frequency
+(`MeasureTheory.Measure.tendsto_integral_visitCount_div_markovChainLaw`).
 
 ## References
 

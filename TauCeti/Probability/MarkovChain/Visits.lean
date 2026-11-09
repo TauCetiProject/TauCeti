@@ -47,6 +47,8 @@ in `ℝ≥0∞`. In particular `y` satisfies `ρ_y = 1` exactly when `∑ n, (κ
 
 ## Main results
 
+* `TauCeti.Probability.measurableSet_hittingAfter_coord_ne_top`: the event that the coordinate
+  process enters a measurable set at some time at least `m` is measurable.
 * `MeasureTheory.Measure.markovChainLaw_setOf_successiveVisit_ne_top`: the geometric tail
   `ℙ_ν(visit k exists) = ℙ_ν(H_y < ∞) · ρ_y ^ k`.
 * `MeasureTheory.Measure.ae_infinite_setOf_eq_of_hittingAfter_ne_top` and
@@ -71,6 +73,19 @@ public section
 open ProbabilityTheory TauCeti.Probability
 
 open scoped ENNReal
+
+namespace TauCeti.Probability
+
+open MeasureTheory in
+/-- The event that the coordinate process enters a measurable set `s` at some time at least `m`
+is measurable. -/
+theorem measurableSet_hittingAfter_coord_ne_top {α : Type*} [MeasurableSpace α] {s : Set α}
+    (hs : MeasurableSet s) (m : ℕ) :
+    MeasurableSet {x : ℕ → α | hittingAfter (fun k (x : ℕ → α) => x k) s m x ≠ ⊤} :=
+  ((measurableSet_singleton ⊤).preimage
+    (Filtration.adapted_piLE.isStoppingTime_hittingAfter (n := m) hs).measurable').compl
+
+end TauCeti.Probability
 
 namespace MeasureTheory.Measure
 
@@ -113,32 +128,14 @@ theorem markovChainLaw_restrict_map_successiveVisit_eq_smul
         (stoppedValue (fun n => (shift α)^[n]) (successiveVisit (fun n x => x n) y k)) =
       markovChainLaw ν κ {x | successiveVisit (fun n x => x n) y k x ≠ ⊤} •
         markovChainLaw (dirac y) κ := by
-  set A := {x : ℕ → α | successiveVisit (fun n x => x n) y k x ≠ ⊤}
   have hσ := Filtration.adapted_piLE.isStoppingTime_successiveVisit
     (X := fun n (x : ℕ → α) => x n) (measurableSet_singleton y) k
-  have hA : MeasurableSet A := measurableSet_setOf_successiveVisit_ne_top
-    (fun n => measurable_pi_apply n) (measurableSet_singleton y) k
-  have hθ : Measurable (stoppedValue (fun n => (shift α)^[n])
-      (successiveVisit (fun n x => x n) y k)) :=
-    measurable_stoppedValue_of_countable (fun n => measurable_shift_iterate n) hσ.measurable'
-  -- The identity at a Dirac start, where the initial measure is finite.
-  have key : ∀ a : α, ((κ.markovChainKernel a).restrict A).map
-      (stoppedValue (fun n => (shift α)^[n]) (successiveVisit (fun n x => x n) y k)) =
-        κ.markovChainKernel a A • markovChainLaw (dirac y) κ := fun a => by
-    rw [Kernel.markovChainKernel_apply]
-    have hlaw := markovChainLaw_restrict_map_stoppedValue_shift_iterate_eq_smul (dirac a) κ hσ
-      MeasurableSet.univ (y := y) fun x hx => by
-        obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp hx.2
-        simp only [stoppedValue, ← hn, WithTop.untopD_coe]
-        exact (successiveVisit_eq_coe_iff.mp hn.symm).1
-    simpa only [Set.univ_inter] using hlaw
-  ext s hs
-  rw [map_apply hθ hs, restrict_apply (hθ hs), markovChainLaw_eq_comp, smul_apply, smul_eq_mul,
-    bind_apply (hθ hs |>.inter hA) (Kernel.aemeasurable _), bind_apply hA (Kernel.aemeasurable _),
-    ← lintegral_mul_const _ ((Kernel.measurable_coe _ hA))]
-  refine lintegral_congr fun a => ?_
-  have := congrArg (fun m => m s) (key a)
-  simpa only [map_apply hθ hs, restrict_apply (hθ hs), smul_apply, smul_eq_mul] using this
+  have hlaw := markovChainLaw_restrict_map_stoppedValue_shift_iterate_eq_smul ν κ hσ
+    MeasurableSet.univ (y := y) fun x hx => by
+      obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp hx.2
+      simp only [stoppedValue, ← hn, WithTop.untopD_coe]
+      exact (successiveVisit_eq_coe_iff.mp hn.symm).1
+  simpa only [Set.univ_inter] using hlaw
 
 /-- **The visits of a chain to a state have a geometric tail.** The visit to `y` indexed by `k`,
 counting the first entrance as visit zero, exists with probability
@@ -156,20 +153,10 @@ theorem markovChainLaw_setOf_successiveVisit_ne_top (y : α) (k : ℕ) :
     have hθ : Measurable (stoppedValue (fun n => (shift α)^[n]) σ) :=
       measurable_stoppedValue_of_countable (fun n => measurable_shift_iterate n) hσ.measurable'
     have hB : MeasurableSet {z : ℕ → α | hittingAfter (fun n z => z n) {y} 1 z ≠ ⊤} :=
-      (measurableSet_singleton ⊤).compl.preimage
-        (Filtration.adapted_piLE.isStoppingTime_hittingAfter
-          (f := Filtration.piLE (X := fun _ : ℕ => α)) (measurableSet_singleton y)).measurable'
+      measurableSet_hittingAfter_coord_ne_top (measurableSet_singleton y) 1
     rw [← setOf_successiveVisit_succ_ne_top, Set.inter_comm, ← restrict_apply (hB.preimage hθ),
       ← map_apply hθ hB, markovChainLaw_restrict_map_successiveVisit_eq_smul,
       smul_apply, smul_eq_mul, ih, pow_succ, mul_assoc]
-
-/-- The set of paths that visit `y` infinitely often is measurable. -/
-private theorem measurableSet_setOf_infinite_setOf_eq (y : α) :
-    MeasurableSet {x : ℕ → α | {n | x n = y}.Infinite} := by
-  simp_rw [← forall_successiveVisit_lt_top_iff (X := fun n (x : ℕ → α) => x n),
-    lt_top_iff_ne_top, Set.ofPred_forall]
-  exact MeasurableSet.iInter fun k => measurableSet_setOf_successiveVisit_ne_top
-    (fun n => measurable_pi_apply n) (measurableSet_singleton y) k
 
 /-- **A state that is returned to almost surely is visited infinitely often.** If the chain started
 at `y` returns to `y` almost surely, then for every initial measure, almost every path that
@@ -203,17 +190,11 @@ theorem ae_infinite_setOf_eq_of_hittingAfter_ne_top {y : α}
     filter_upwards [ae_all_iff.mpr hk] with x hx hH
     exact forall_successiveVisit_lt_top_iff.mp fun k => lt_top_iff_ne_top.mpr (hx k hH)
   have hH : MeasurableSet {x : ℕ → α | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤} :=
-    (measurableSet_singleton ⊤).compl.preimage
-      (Filtration.adapted_piLE.isStoppingTime_hittingAfter
-        (f := Filtration.piLE (X := fun _ : ℕ => α)) (measurableSet_singleton y)).measurable'
-  have hI := measurableSet_setOf_infinite_setOf_eq y
-  have hS : MeasurableSet {x : ℕ → α | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤ →
-      {n | x n = y}.Infinite} := by
-    have : {x : ℕ → α | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤ → {n | x n = y}.Infinite} =
-        {x | hittingAfter (fun n x => x n) {y} 0 x ≠ ⊤}ᶜ ∪ {x | {n | x n = y}.Infinite} := by
-      ext x; simp [imp_iff_not_or]
-    rw [this]
-    exact hH.compl.union hI
+    measurableSet_hittingAfter_coord_ne_top (measurableSet_singleton y) 0
+  have hI : MeasurableSet {x : ℕ → α | {n | x n = y}.Infinite} :=
+    measurableSet_setOf_infinite_setOf_eq (fun n => measurable_pi_apply n)
+      (measurableSet_singleton y)
+  have hS := hH.imp hI
   rw [markovChainLaw_eq_comp]
   refine ae_comp_of_ae_ae hS (Filter.Eventually.of_forall fun a => ?_)
   rw [Kernel.markovChainKernel_apply]
@@ -236,8 +217,8 @@ theorem markovChainLaw_setOf_infinite_setOf_eq_eq_zero {y : α}
     rw [← markovChainLaw_setOf_successiveVisit_ne_top]
     exact measure_mono fun x hx =>
       lt_top_iff_ne_top.mp (forall_successiveVisit_lt_top_iff.mpr hx k)
-  rw [markovChainLaw_eq_comp, bind_apply (measurableSet_setOf_infinite_setOf_eq y)
-    (Kernel.aemeasurable _)]
+  rw [markovChainLaw_eq_comp, bind_apply (measurableSet_setOf_infinite_setOf_eq
+    (fun n => measurable_pi_apply n) (measurableSet_singleton y)) (Kernel.aemeasurable _)]
   simp [Kernel.markovChainKernel_apply, key]
 
 /-- **The mean number of visits.** For any initial measure, the mean number of times the

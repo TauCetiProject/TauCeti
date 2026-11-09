@@ -12,9 +12,10 @@ public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 /-!
 # Transferring occupation limits through first entrance
 
-An almost-sure occupation limit for the chain started at `y` determines the limit from every
-finite initial measure: it is the same on paths that enter `y`, and zero on paths that never
-enter `y`. Bounded convergence gives the corresponding expected-frequency limit.
+An almost-sure occupation limit for the chain started at `y` determines the almost-sure limit from
+every initial measure: it is the same on paths that enter `y`, and zero on paths that never
+enter `y`. Bounded convergence gives the corresponding expected-frequency limit from every finite
+initial measure.
 
 These transfer theorems do not require recurrence, irreducibility or a finite mean return time.
 The candidate frequency is an arbitrary real number; identifying it from return cycles is a

@@ -14,7 +14,7 @@ public import TauCeti.Analysis.SpecificLimits.CentralBinomial
 
 The integer walk is recurrent exactly when its right-step probability is one half.
 Every other parameter, including the deterministic endpoints, gives a transient walk.
-For such a walk, from any finite initial law, almost every path visits each integer
+For such a walk, from any initial measure, almost every path visits each integer
 only finitely often. This statement also holds for arbitrary realizations of the path law.
 
 The diagonal Green function is the central-binomial series with parameter `p * (1 - p)`:
