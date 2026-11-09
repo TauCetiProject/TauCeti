@@ -114,6 +114,12 @@ instance : e.finiteProjectiveModulesEquivalence.functor.Additive := by
   unfold finiteProjectiveModulesEquivalence
   infer_instance
 
+open scoped ModuleCat.Algebra in
+/-- The restriction to finitely generated modules of an `R`-linear equivalence is `R`-linear. -/
+instance {R : Type*} [CommSemiring R] [Algebra R A] [Algebra R B] [e.functor.Linear R] :
+    e.finiteModulesEquivalence.functor.Linear R where
+  map_smul f r := ObjectProperty.hom_ext _ (e.functor.map_smul r f.hom)
+
 @[simp]
 theorem finiteModulesEquivalence_functor_obj_obj (M : FGModuleCat.{u} A) :
     (e.finiteModulesEquivalence.functor.obj M).obj = e.functor.obj M.obj :=
