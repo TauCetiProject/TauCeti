@@ -80,6 +80,11 @@ theorem tangentSpaceProdEquiv_prodVectorField (X : Π x : M, TangentSpace I x)
   rw [tangentSpaceProdEquiv_apply]
   rfl
 
+/-- The value of a product field is the pair of the values of its factors. -/
+theorem prodVectorField_apply (X : Π x : M, TangentSpace I x) (Y : Π y : N, TangentSpace J y)
+    (p : M × N) : prodVectorField X Y p = (X p.1, Y p.2) :=
+  (rfl)
+
 /-- The first component of a product field is the value of its first factor. -/
 @[simp]
 theorem prodVectorField_fst (X : Π x : M, TangentSpace I x) (Y : Π y : N, TangentSpace J y)
