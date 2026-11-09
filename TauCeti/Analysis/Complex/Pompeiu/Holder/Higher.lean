@@ -39,6 +39,8 @@ one-derivative Hölder gain of
   `C^{k,α}` data supported in `closedBall c r` to the derivative fields of orders through
   `k + 1` on `closedBall c R` with the supremum norm, together with the `α`-Hölder field of
   order `k + 1`. For `k = 0` it carries the same data as `TauCeti.cauchyTransformCLM`.
+* `TauCeti.contDiffOn_holderOnWith_fderiv_cauchyTransform_norm_rpow_mul`: the check that the
+  `C^{0,α}` source `‖z‖ ^ α χ(z)` has a `C^{1,α}` transform near `0`.
 
 ## References
 
@@ -521,5 +523,110 @@ theorem cauchyTransformCkCLM_apply_snd (k : ℕ) (hα : 0 < α) (hα1 : α < 1) 
   cauchyTop_apply hα hα1 hr hR f x
 
 end Operator
+
+section ConePoint
+
+/-- On `[0, ∞)` the power `t ↦ t ^ p` is `p`-Hölder with constant one, for `0 ≤ p ≤ 1`. -/
+private theorem abs_rpow_sub_rpow_le {a b p : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hp : 0 ≤ p)
+    (hp1 : p ≤ 1) : |a ^ p - b ^ p| ≤ |a - b| ^ p := by
+  wlog hab : b ≤ a generalizing a b
+  · rw [abs_sub_comm, abs_sub_comm a]
+    exact this hb ha (le_of_not_ge hab)
+  have h := Real.rpow_add_le_add_rpow (sub_nonneg.mpr hab) hb hp hp1
+  rw [sub_add_cancel] at h
+  rw [abs_of_nonneg (sub_nonneg.mpr (Real.rpow_le_rpow hb hab hp)),
+    abs_of_nonneg (sub_nonneg.mpr hab)]
+  linarith
+
+/-- The source `‖z‖ ^ α χ(z)` of the cone-point check is globally `α`-Hölder for a compactly
+supported `C¹` cutoff `χ`. -/
+private theorem exists_holderWith_norm_rpow_mul {α : ℝ≥0} (hα1 : α ≤ 1) {χ : ℂ → ℝ}
+    (hχ : ContDiff ℝ 1 χ) (hc : HasCompactSupport χ) :
+    ∃ H : ℝ≥0, HolderWith H α (fun z : ℂ ↦ ((‖z‖ ^ (α : ℝ) * χ z : ℝ) : ℂ)) := by
+  obtain ⟨ρ, -, hsub⟩ := hc.isCompact.isBounded.subset_closedBall_lt 0 (0 : ℂ)
+  obtain ⟨A, hA⟩ := hχ.continuous.bounded_above_of_compact_support hc
+  obtain ⟨L, hL⟩ := ContDiff.lipschitzWith_of_hasCompactSupport hc hχ one_ne_zero
+  have hχH := (hL.lipschitzOnWith (s := univ)).holderOnWith_of_norm_le (M := A.toNNReal)
+    (fun x _ ↦ (hA x).trans (Real.le_coe_toNNReal A)) hα1
+  let K : ℝ≥0 := A.toNNReal + (ρ ^ (α : ℝ)).toNNReal * (L + 2 * A.toNNReal)
+  -- The bound when `y` is the point closer to the origin, so that `‖y‖ ≤ ρ` unless both
+  -- values of `χ` vanish.
+  have key (x y : ℂ) (hxy : ‖y‖ ≤ ‖x‖) :
+      |‖x‖ ^ (α : ℝ) * χ x - ‖y‖ ^ (α : ℝ) * χ y| ≤ K * dist x y ^ (α : ℝ) := by
+    by_cases h0 : χ x = 0 ∧ χ y = 0
+    · rw [h0.1, h0.2, mul_zero, mul_zero, sub_zero, abs_zero]
+      positivity
+    have hy : ‖y‖ ≤ ρ := by
+      rcases not_and_or.mp h0 with h | h
+      · exact hxy.trans (by simpa using hsub (subset_tsupport _ h))
+      · simpa using hsub (subset_tsupport _ h)
+    have hρ : 0 ≤ ρ := (norm_nonneg y).trans hy
+    have h1 : |‖x‖ ^ (α : ℝ) - ‖y‖ ^ (α : ℝ)| ≤ dist x y ^ (α : ℝ) :=
+      (abs_rpow_sub_rpow_le (norm_nonneg _) (norm_nonneg _) α.coe_nonneg hα1).trans
+        (Real.rpow_le_rpow (abs_nonneg _) (by rw [dist_eq_norm]; exact abs_norm_sub_norm_le x y)
+          α.coe_nonneg)
+    have h2 : |χ x - χ y| ≤ (L + 2 * A.toNNReal : ℝ≥0) * dist x y ^ (α : ℝ) := by
+      rw [← Real.dist_eq]
+      exact hχH.dist_le (mem_univ _) (mem_univ _)
+    have h3 : |χ x| ≤ A.toNNReal := (hA x).trans (Real.le_coe_toNNReal A)
+    have h4 : ‖y‖ ^ (α : ℝ) ≤ ρ ^ (α : ℝ) := Real.rpow_le_rpow (norm_nonneg _) hy α.coe_nonneg
+    have e : ‖x‖ ^ (α : ℝ) * χ x - ‖y‖ ^ (α : ℝ) * χ y =
+        (‖x‖ ^ (α : ℝ) - ‖y‖ ^ (α : ℝ)) * χ x + ‖y‖ ^ (α : ℝ) * (χ x - χ y) := by ring
+    have hyα : 0 ≤ ‖y‖ ^ (α : ℝ) := by positivity
+    rw [e]
+    calc
+      _ ≤ |‖x‖ ^ (α : ℝ) - ‖y‖ ^ (α : ℝ)| * |χ x| + ‖y‖ ^ (α : ℝ) * |χ x - χ y| := by
+        refine (abs_add_le _ _).trans_eq ?_
+        rw [abs_mul, abs_mul, abs_of_nonneg hyα]
+      _ ≤ dist x y ^ (α : ℝ) * A.toNNReal +
+          ρ ^ (α : ℝ) * ((L + 2 * A.toNNReal : ℝ≥0) * dist x y ^ (α : ℝ)) := by
+        gcongr
+      _ = _ := by
+        simp only [K]
+        push_cast
+        rw [Real.coe_toNNReal _ (Real.rpow_nonneg hρ _)]
+        ring
+  refine ⟨K, holderOnWith_univ.mp (HolderOnWith.of_dist_le fun x _ y _ ↦ ?_)⟩
+  rw [dist_eq_norm, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
+  rcases le_total ‖y‖ ‖x‖ with h | h
+  · exact key x y h
+  · rw [abs_sub_comm, dist_comm]
+    exact key y x h
+
+/-- **The cone-point check for the Hölder gain.** For `0 < α < 1` and a compactly supported `C¹`
+cutoff `χ`, the source `‖z‖ ^ α χ(z)` is `α`-Hölder, and its Cauchy transform is `C¹` near every
+closed disc about `0`, with `α`-Hölder derivative there: one derivative better. -/
+theorem contDiffOn_holderOnWith_fderiv_cauchyTransform_norm_rpow_mul {α : ℝ≥0} (hα : 0 < α)
+    (hα1 : α < 1) {χ : ℂ → ℝ} (hχ : ContDiff ℝ 1 χ) (hc : HasCompactSupport χ) {R : ℝ}
+    (hR : 0 ≤ R) :
+    ContDiffOn ℝ 1 (cauchyTransform fun z : ℂ ↦ ((‖z‖ ^ (α : ℝ) * χ z : ℝ) : ℂ))
+        (ball 0 (R + 1)) ∧
+      ∃ C : ℝ≥0, HolderOnWith C α
+        (fderiv ℝ (cauchyTransform fun z : ℂ ↦ ((‖z‖ ^ (α : ℝ) * χ z : ℝ) : ℂ)))
+        (closedBall 0 R) := by
+  obtain ⟨H, hH⟩ := exists_holderWith_norm_rpow_mul hα1.le hχ hc
+  obtain ⟨ρ, hρ, hsub⟩ := hc.isCompact.isBounded.subset_closedBall_lt 0 (0 : ℂ)
+  obtain ⟨A, hA⟩ := hχ.continuous.bounded_above_of_compact_support hc
+  obtain ⟨C, hC⟩ :=
+    exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
+      (F := ℂ) hα hα1 0 hρ.le hR
+  have hs : Function.support (fun z : ℂ ↦ ((‖z‖ ^ (α : ℝ) * χ z : ℝ) : ℂ)) ⊆
+      closedBall 0 ρ := fun z hz ↦ by
+    refine hsub (subset_tsupport _ fun h ↦ hz ?_)
+    simp only [h, mul_zero, Complex.ofReal_zero]
+  have hM (z : ℂ) : ‖((‖z‖ ^ (α : ℝ) * χ z : ℝ) : ℂ)‖ ≤ (ρ ^ (α : ℝ) * A).toNNReal := by
+    refine le_trans ?_ (Real.le_coe_toNNReal _)
+    by_cases h : χ z = 0
+    · simp only [h, mul_zero, Complex.ofReal_zero, norm_zero]
+      exact mul_nonneg (by positivity) ((norm_nonneg _).trans (hA z))
+    have hz : ‖z‖ ≤ ρ := by simpa using hsub (subset_tsupport _ h)
+    rw [Complex.norm_real, Real.norm_eq_abs, abs_mul, abs_of_nonneg (by positivity)]
+    exact mul_le_mul (Real.rpow_le_rpow (norm_nonneg _) hz α.coe_nonneg) (hA z) (abs_nonneg _)
+      (by positivity)
+  obtain ⟨hcd, hD, -, -⟩ := hC hs hH hM
+  rw [funext (cauchyTransform_apply _)]
+  exact ⟨hcd, _, hD⟩
+
+end ConePoint
 
 end TauCeti
