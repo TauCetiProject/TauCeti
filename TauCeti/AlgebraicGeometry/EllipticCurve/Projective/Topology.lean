@@ -13,11 +13,13 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Projective.CoordinateRing
 # The analytic topology on projective Weierstrass points
 
 Give the native nonsingular projective points their subspace topology in projective space.
-Continuous nonzero homogeneous coordinates therefore give continuous point-valued maps. For a
-complex elliptic curve, every point of the projective cubic is nonsingular, so the comparison
-is a homeomorphism onto the closed zero locus of the Weierstrass polynomial. In particular the
-native point type is compact and Hausdorff. Compactness is an input to the construction of the
-complex elliptic exponential map by complete translation flows.
+Continuous nonzero homogeneous coordinates therefore give continuous point-valued maps.
+Conversely, over a topological field the points are an open quotient of the nonsingular
+homogeneous representatives, so continuity out of the points may be checked on representatives.
+For a complex elliptic curve, every point of the projective cubic is nonsingular, so the
+comparison is a homeomorphism onto the closed zero locus of the Weierstrass polynomial. In
+particular the native point type is compact and Hausdorff. Compactness is an input to the
+construction of the complex elliptic exponential map by complete translation flows.
 
 The ellipticity hypothesis in the compactness statement is essential: the nonsingular locus
 of a singular cubic need not be compact.
@@ -91,6 +93,29 @@ theorem continuousAt_of_eventually_eq_mk {X : Type*} [TopologicalSpace X] {f : X
   apply (hm.continuousAt.comp hc).congr
   filter_upwards [hf] with x hx
   simpa only [Function.comp_def, Q, dite_eq_left hx.choose] using hx.choose_spec
+
+/-- The native points are the quotient of the nonsingular homogeneous representatives: the map
+sending a representative to its point is an open quotient map. Continuity of a map out of the
+points, or out of a product of copies of them, can therefore be checked on representatives. -/
+theorem isOpenQuotientMap_mk [IsTopologicalRing F] :
+    IsOpenQuotientMap fun P : {P : Fin 3 → F // W.Nonsingular P} ↦
+      (Point.mk ((nonsingularLift_iff P.1).mpr P.2) : W.Point) := by
+  refine ⟨fun Q ↦ ?_, continuous_mk continuous_subtype_val Subtype.prop, fun U hU ↦ ?_⟩
+  · refine ⟨⟨Q.point.out, (nonsingularLift_iff _).mp ?_⟩, Point.ext (Quotient.out_eq _)⟩
+    simpa only [Quotient.out_eq] using Q.nonsingular
+  -- An open set of representatives is cut out by an open set `V` of coordinate vectors. Its
+  -- image is the set of points whose line meets `V`, which is open in projective space.
+  obtain ⟨V, hV, rfl⟩ := isOpen_induced_iff.mp hU
+  refine isEmbedding_toProjectivization.isOpen_iff.mpr
+    ⟨Projectivization.mk' F '' (Subtype.val ⁻¹' V),
+      Projectivization.isOpenMap_mk' _ (hV.preimage continuous_subtype_val), ?_⟩
+  ext Q
+  constructor
+  · rintro ⟨⟨P, hP₀⟩, hPV, hPQ⟩
+    have hP : W.Nonsingular P := (exists_toProjectivization_eq_mk_iff P hP₀).mp ⟨Q, hPQ.symm⟩
+    exact ⟨⟨P, hP⟩, hPV, toProjectivization_injective ((toProjectivization_mk _).trans hPQ)⟩
+  · rintro ⟨⟨P, hP⟩, hPV, rfl⟩
+    exact ⟨⟨P, ne_zero_of_nonsingular hP⟩, hPV, (toProjectivization_mk _).symm⟩
 
 end Topology
 
