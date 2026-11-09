@@ -461,7 +461,7 @@ theorem tvDist_finiteZipfMeasure_zipfMeasure {N : ℕ} (hN : 0 < N) {s : ℝ} (h
       2 * (1 - (zipfMeasure s).real (Iic N)) := by
   let _ := isProbabilityMeasure_zipfMeasure hs
   rw [finiteZipfMeasure_eq_cond N hs]
-  exact (zipfMeasure s).tvDist_cond_self measurableSet_Iic (zipfMeasure_Iic_ne_zero hN hs)
+  exact (zipfMeasure s).tvDist_cond_self (zipfMeasure_Iic_ne_zero hN hs)
 
 /-- Finite Zipf laws converge to the infinite Zipf law in total variation for `s > 1`. -/
 theorem tendsto_tvDist_finiteZipfMeasure_zipfMeasure {s : ℝ} (hs : 1 < s) :
@@ -474,6 +474,6 @@ theorem tendsto_tvDist_finiteZipfMeasure_zipfMeasure {s : ℝ} (hs : 1 < s) :
       (ENNReal.tendsto_toReal (measure_ne_top (zipfMeasure s) univ)).comp
         (tendsto_measure_Iic_atTop (zipfMeasure s))
   simp_rw [finiteZipfMeasure_eq_cond _ hs]
-  exact (zipfMeasure s).tendsto_tvDist_cond (Eventually.of_forall fun _ ↦ measurableSet_Iic) hmass
+  exact (zipfMeasure s).tendsto_tvDist_cond hmass
 
 end TauCeti.Probability
