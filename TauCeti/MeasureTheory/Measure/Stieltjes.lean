@@ -7,8 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Stieltjes
 public import Mathlib.MeasureTheory.Measure.Real
-public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import TauCeti.MeasureTheory.Measure.Interval
+public import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
 # Stieltjes measures, cumulative functions and measurable families
@@ -118,24 +118,22 @@ Unlike the probability-CDF criterion, this requires neither limits at infinity n
 total mass. -/
 theorem measurable_measure_of_measurable_eval {f : Ω → StieltjesFunction ℝ}
     (hf : ∀ t, Measurable fun ω ↦ f ω t) : Measurable fun ω ↦ (f ω).measure := by
-  refine Measure.measurable_of_measurable_coe _ fun s hs ↦ ?_
-  have hcover : (⋃ n : ℕ, Ioc (-(n : ℝ)) n) = univ := by
-    ext x
+  refine Measurable.measure_of_isPiSystem_of_iUnion
+    (B := fun n : ℕ ↦ Ioc (-(n + 1 : ℝ)) (n + 1))
+    (BorelSpace.measurable_eq.trans (borel_eq_generateFrom_Ioc ℝ))
+    (isPiSystem_Ioc id id) ?_ ?_ ?_ ?_ ?_
+  · intro n
+    exact ⟨_, _, by have := Nat.cast_nonneg (α := ℝ) n; linarith, rfl⟩
+  · intro i j hij
+    exact Ioc_subset_Ioc (neg_le_neg (by exact_mod_cast Nat.add_le_add_right hij 1))
+      (by exact_mod_cast Nat.add_le_add_right hij 1)
+  · ext x
     simp only [mem_iUnion, mem_Ioc, mem_univ, iff_true]
     obtain ⟨n, hn⟩ := exists_nat_gt |x|
-    exact ⟨n, by have := neg_abs_le x; linarith, (le_abs_self x).trans hn.le⟩
-  have hmono : Monotone (fun n : ℕ ↦ s ∩ Ioc (-(n : ℝ)) n) := by
-    intro i j hij
-    exact inter_subset_inter_right _
-      (Ioc_subset_Ioc (neg_le_neg (by exact_mod_cast hij)) (by exact_mod_cast hij))
-  have hmeas (n : ℕ) : Measurable fun ω ↦ (f ω).measure (s ∩ Ioc (-(n : ℝ)) n) := by
-    simpa only [Function.comp_def, Measure.restrict_apply hs] using
-      (Measure.measurable_coe hs).comp
-        (measurable_restrict_measure_Ioc (a := -(n : ℝ)) (b := n) fun t _ ↦ hf t)
-  have hlim (ω : Ω) : Tendsto (fun n : ℕ ↦ (f ω).measure (s ∩ Ioc (-(n : ℝ)) n))
-      atTop (𝓝 ((f ω).measure s)) := by
-    simpa only [← inter_iUnion, hcover, inter_univ, Function.comp_def] using
-      tendsto_measure_iUnion_atTop (μ := (f ω).measure) hmono
-  exact measurable_of_tendsto_metrizable hmeas (tendsto_pi_nhds.mpr hlim)
+    exact ⟨n, by have := neg_abs_le x; linarith, by have := le_abs_self x; linarith⟩
+  · intro ω n
+    simp only [measure_Ioc, ENNReal.ofReal_ne_top, ne_eq, not_false_eq_true]
+  · rintro _ ⟨a, b, _, rfl⟩
+    simpa only [measure_Ioc, Pi.sub_apply] using ((hf b).sub (hf a)).ennreal_ofReal
 
 end StieltjesFunction
