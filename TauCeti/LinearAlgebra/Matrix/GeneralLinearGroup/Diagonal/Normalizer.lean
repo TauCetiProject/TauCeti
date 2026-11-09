@@ -190,14 +190,6 @@ section Monomial
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] [Semiring k]
 
-/-- Every row of a matrix with a right inverse over a nontrivial semiring has a nonzero entry. -/
-private theorem exists_ne_zero_of_mul_eq_one [Nontrivial k] {G Ginv : Matrix ι ι k}
-    (hGGinv : G * Ginv = 1) (i : ι) : ∃ j, G i j ≠ 0 := by
-  by_contra h
-  push Not at h
-  have hii := congrArg (fun M : Matrix ι ι k ↦ M i i) hGGinv
-  simp [Matrix.mul_apply, h] at hii
-
 /-- An invertible matrix over a semiring is monomial, a diagonal matrix followed by a permutation
 matrix, as soon as every row has at most one nonzero entry. -/
 theorem exists_eq_diagGL_mul_permutationGL_of_forall_eq_of_ne_zero_of_ne_zero {g : GL ι k}
@@ -213,7 +205,12 @@ theorem exists_eq_diagGL_mul_permutationGL_of_forall_eq_of_ne_zero_of_ne_zero {g
     simpa only [G, Ginv, ← Units.inv_eq_val_inv] using g.mul_inv
   have hGinvG : Ginv * G = 1 := by
     simpa only [G, Ginv, ← Units.inv_eq_val_inv] using g.inv_mul
-  choose f hf using exists_ne_zero_of_mul_eq_one hGGinv
+  -- Every row of an invertible matrix has a nonzero entry.
+  have hex (i : ι) : ∃ j, G i j ≠ 0 := by
+    by_contra h
+    push Not at h
+    simpa [Matrix.mul_apply, h] using congr_fun₂ hGGinv i i
+  choose f hf using hex
   have hf_iff (i j : ι) : G i j ≠ 0 ↔ j = f i :=
     ⟨fun h ↦ hrow i j (f i) h (hf i), by rintro rfl; exact hf i⟩
   have hzero (i j : ι) (hj : j ≠ f i) : G i j = 0 := not_not.mp (mt (hf_iff i j).mp hj)
@@ -222,26 +219,18 @@ theorem exists_eq_diagGL_mul_permutationGL_of_forall_eq_of_ne_zero_of_ne_zero {g
     intro l
     by_contra h
     push Not at h
-    have hll := congrArg (fun M : Matrix ι ι k ↦ M l l) hGinvG
-    simp [Matrix.mul_apply, fun r ↦ hzero r l (Ne.symm (h r))] at hll
+    simpa [Matrix.mul_apply, fun r ↦ hzero r l (Ne.symm (h r))] using congr_fun₂ hGinvG l l
   have hinj : Function.Injective f := Finite.injective_iff_surjective.mpr hsurj
   let e : Equiv.Perm ι := Equiv.ofBijective f ⟨hinj, hsurj⟩
   have he (i : ι) : e i = f i := Equiv.ofBijective_apply _ _ i
   -- The sole nonzero entry of each row has its inverse in the inverse matrix.
   have hunit (i : ι) : G i (f i) * Ginv (f i) i = 1 := by
-    have hii := congrArg (fun M : Matrix ι ι k ↦ M i i) hGGinv
-    rw [Matrix.mul_apply, Finset.sum_eq_single (f i)] at hii
-    · simpa using hii
-    · intro j _ hj
-      simp [hzero i j hj]
-    · simp
+    simpa [Matrix.mul_apply, Fintype.sum_eq_single (f i) fun j hj ↦
+      mul_eq_zero_of_left (hzero i j hj) (Ginv j i)] using congr_fun₂ hGGinv i i
   have hunit' (i : ι) : Ginv (f i) i * G i (f i) = 1 := by
-    have hii := congrArg (fun M : Matrix ι ι k ↦ M (f i) (f i)) hGinvG
-    rw [Matrix.mul_apply, Finset.sum_eq_single i] at hii
-    · simpa using hii
-    · intro r _ hr
-      simp [hzero r (f i) fun h ↦ hr (hinj h).symm]
-    · simp
+    simpa [Matrix.mul_apply, Fintype.sum_eq_single i fun r hr ↦
+      mul_eq_zero_of_right (Ginv (f i) r) (hzero r (f i) fun h ↦ hr (hinj h).symm)]
+      using congr_fun₂ hGinvG (f i) (f i)
   refine ⟨fun i ↦ ⟨G i (f i), Ginv (f i) i, hunit i, hunit' i⟩, e.symm, ?_⟩
   apply Units.ext
   ext i j
