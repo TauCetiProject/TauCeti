@@ -151,10 +151,7 @@ private theorem exists_w1p_value_eq_inner_gradient (u : Wkp mu W p 2) (c : E) :
   obtain ⟨d, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value 1 u c
   have h1 : HasWeakLineDerivOn mu W (Wkp.value 2 u) (fun y => ⟪g y, c⟫_ℝ) c := by
     have h := (W1p.hasWeakFDerivOn (Wkp.firstOrder 1 u)).hasWeakLineDerivOn c
-    have hg : W1p.gradient (Wkp.firstOrder 1 u) = g := by
-      rw [Wkp.firstOrder_one]
-      exact (Wkp.iteratedGradient_zero _).symm
-    rw [Wkp.value_firstOrder, hg] at h
+    rw [Wkp.value_firstOrder, Wkp.gradient_firstOrder_one] at h
     simpa only [innerSL_apply_apply] using h
   have hvd : W1p.value d =ᵐ[mu.restrict W] (fun y => ⟪g y, c⟫_ℝ) := by
     rw [← Wkp.value_one]
@@ -201,8 +198,8 @@ theorem Wkp.exists_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤) (e : 
   set T := compCLE (mu := mu) hp e hUW
   have hqmp := quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := mu) e hUW
   set u₁ := Wkp.firstOrder 1 u
-  have hgrad : W1p.gradient u₁ = Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) := by
-    rw [Wkp.iteratedGradient_zero, ← Wkp.firstOrder_one]
+  have hgrad : W1p.gradient u₁ = Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) :=
+    Wkp.gradient_firstOrder_one u
   have hval := Wkp.value_firstOrder 1 u
   -- Each component `⟪∇u, c⟫` is the value of some `d c ∈ W^{1,p}(W)`, whose weak gradient has
   -- the components `⟪D²u f, c⟫`.
@@ -244,7 +241,7 @@ theorem Wkp.exists_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤) (e : 
     filter_upwards [ae_all_iff.2 fun i => ae_all_iff.2 fun j => hentry (b j) (b i)] with x hx
     exact ContinuousLinearMap.coe_injective (b.toBasis.ext fun i =>
       InnerProductSpace.ext_inner_right_basis b.toBasis fun j => by simpa using hx i j)
-  · rw [Wkp.firstOrder_succ, Wkp.firstOrder_zero, hw]
+  · rw [Wkp.firstOrder_one, hw]
     exact compCLE_mem_w1p0Submodule hp e hUW hu
 
 /-! ### Transferring Hessian estimates along a linear change of variables -/

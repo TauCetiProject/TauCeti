@@ -330,6 +330,12 @@ theorem iteratedGradient_zero (u : Wkp mu Omega p 1) :
 @[simp] theorem firstOrder_one (u : Wkp mu Omega p 2) : firstOrder 1 u = lowerOrder 1 u :=
   (firstOrder_succ 0 u).trans (firstOrder_zero _)
 
+/-- At second order, the weak gradient of the first-order part is the highest derivative of the
+lower-order part. -/
+theorem gradient_firstOrder_one (u : Wkp mu Omega p 2) :
+    W1p.gradient (firstOrder 1 u) = iteratedGradient 0 (lowerOrder 1 u) := by
+  rw [firstOrder_one, iteratedGradient_zero]
+
 /-- At second order, the `Lᵖ` value of the lower-order part is the `Lᵖ` value. -/
 @[simp] theorem value_lowerOrder_one (u : Wkp mu Omega p 2) :
     W1p.value (lowerOrder 1 u) = value 2 u :=

@@ -492,9 +492,7 @@ theorem Wkp.exists_value_ae_eq_sub_comp_normalReflection {a : ℝ}
     set w := (W1p0.extendByZeroL le_top ⟨Wkp.firstOrder 1 u, hu⟩ :
       W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p)
     have hval : W1p.value (Wkp.firstOrder 1 u) = Wkp.value 2 u := Wkp.value_firstOrder 1 u
-    have hgrad : W1p.gradient (Wkp.firstOrder 1 u) = g := by
-      rw [Wkp.firstOrder_one]
-      exact (Wkp.iteratedGradient_zero _).symm
+    have hgrad : W1p.gradient (Wkp.firstOrder 1 u) = g := Wkp.gradient_firstOrder_one u
     have hv := coeFn_extendByZeroLpₗᵢ ℝ hS (SetLike.coe_subset_coe.mpr le_top)
       (W1p.value (Wkp.firstOrder 1 u))
     have hg := coeFn_extendByZeroLpₗᵢ ℝ hS (SetLike.coe_subset_coe.mpr le_top)
