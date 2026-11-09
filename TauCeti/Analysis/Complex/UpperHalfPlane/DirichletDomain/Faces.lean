@@ -186,11 +186,8 @@ theorem disjoint_smul_interior_dirichletDomain {p : ℍ} {g : G} (hg : g • p �
   refine disjoint_left.2 fun z hz hz' ↦ ?_
   obtain ⟨w, hw, rfl⟩ := mem_smul_set.1 hz
   have hg' : g⁻¹ • p ≠ p := fun h ↦ hg ((smul_eq_iff_eq_inv_smul g).2 h.symm)
-  have h₁ := mem_dirichletDomain.mp (interior_subset hw) g⁻¹
-  have h₂ := mem_dirichletDomain.mp (interior_subset hz') g
-  have he : dist (g • w) p = dist w (g⁻¹ • p) := by rw [← dist_smul g w, smul_inv_smul]
-  rw [dist_smul, he] at h₂
-  exact (dirichletFace_subset_frontier hg'
-    (mem_dirichletFace.mpr ⟨interior_subset hw, le_antisymm h₁ h₂⟩)).2 hw
+  have hf := (inv_smul_mem_dirichletDomain_iff (interior_subset hw) g⁻¹).mp
+    (by simpa using interior_subset hz')
+  exact (dirichletFace_subset_frontier hg' hf).2 hw
 
 end TauCeti.UpperHalfPlane
