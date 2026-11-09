@@ -30,7 +30,7 @@ open scoped Graph
 namespace TauCeti.Examples.InfiniteEdgeMenger
 
 /-- The common graph constructor used by the two infinite-edge examples. -/
-@[expose] public def graphOfEnds {β : Type*}
+public def graphOfEnds {β : Type*}
     (ends : β → Sym2 (Fin 3)) : Graph (Fin 3) β where
   vertexSet := Set.univ
   edgeSet := Set.univ
@@ -52,20 +52,20 @@ namespace TauCeti.Examples.InfiniteEdgeMenger
   left_mem_of_isLink := by simp
 
 @[simp]
-private theorem graphOfEnds_isLink {β : Type*} (ends : β → Sym2 (Fin 3))
+public theorem graphOfEnds_isLink {β : Type*} (ends : β → Sym2 (Fin 3))
     (e : β) (x y : Fin 3) :
     (graphOfEnds ends).IsLink e x y ↔ s(x, y) = ends e :=
-  Iff.rfl
+  (Iff.rfl)
 
 @[simp]
-private theorem edgeSet_graphOfEnds {β : Type*} (ends : β → Sym2 (Fin 3)) :
+public theorem edgeSet_graphOfEnds {β : Type*} (ends : β → Sym2 (Fin 3)) :
     E(graphOfEnds ends) = Set.univ :=
-  rfl
+  (rfl)
 
 @[simp]
-private theorem vertexSet_graphOfEnds {β : Type*} (ends : β → Sym2 (Fin 3)) :
+public theorem vertexSet_graphOfEnds {β : Type*} (ends : β → Sym2 (Fin 3)) :
     V(graphOfEnds ends) = Set.univ :=
-  rfl
+  (rfl)
 
 private def pathWalk {β : Type*} (G : Graph (Fin 3) β) (e₀₁ e₁₂ : β)
     (h₀₁ : G.IsLink e₀₁ 0 1) (h₁₂ : G.IsLink e₁₂ 1 2) :
@@ -80,17 +80,18 @@ public def infiniteParallelPath : Graph (Fin 3) (Bool × ℕ) :=
   graphOfEnds fun e ↦ if e.1 then s(1, 2) else s(0, 1)
 
 @[simp]
-private theorem infiniteParallelPath_isLink (e : Bool × ℕ) (x y : Fin 3) :
-    infiniteParallelPath.IsLink e x y ↔ s(x, y) = infiniteParallelPathEnds e :=
-  Iff.rfl
+public theorem infiniteParallelPath_isLink (e : Bool × ℕ) (x y : Fin 3) :
+    infiniteParallelPath.IsLink e x y ↔
+      s(x, y) = if e.1 then s(1, 2) else s(0, 1) :=
+  (Iff.rfl)
 
 @[simp]
-private theorem edgeSet_infiniteParallelPath : E(infiniteParallelPath) = Set.univ :=
-  rfl
+public theorem edgeSet_infiniteParallelPath : E(infiniteParallelPath) = Set.univ :=
+  (rfl)
 
 @[simp]
-private theorem vertexSet_infiniteParallelPath : V(infiniteParallelPath) = Set.univ :=
-  rfl
+public theorem vertexSet_infiniteParallelPath : V(infiniteParallelPath) = Set.univ :=
+  (rfl)
 
 private def infiniteParallelPathWalkZeroOne :
     infiniteParallelPath.Walk (0 : Fin 3) 1 :=
@@ -111,12 +112,11 @@ private theorem one_mem_infiniteParallelPathWalkSupport
       rcases e with ⟨b, n⟩
       cases b
       · have hy : y = 1 := by
-          simp only [infiniteParallelPath_isLink, infiniteParallelPathEnds,
-            Bool.false_eq_true, ↓reduceIte] at h
+          simp only [infiniteParallelPath_isLink, Bool.false_eq_true, ↓reduceIte] at h
           simpa [Sym2.eq_iff] using h
         rw [Walk.support_cons, List.mem_cons]
         exact Or.inr (hy ▸ p.start_mem_support)
-      · simp [infiniteParallelPathEnds] at h
+      · simp at h
 
 private theorem infiniteParallelPath_connected : infiniteParallelPath.Connected := by
   refine connected_iff_forall_reachable.mpr ⟨by simp, ?_⟩
@@ -163,7 +163,7 @@ private theorem infiniteParallelPath_not_adj_zero_two :
     ¬infiniteParallelPath.Adj (0 : Fin 3) 2 := by
   rintro ⟨e, he⟩
   rcases e with ⟨b, n⟩
-  cases b <;> simp [infiniteParallelPathEnds] at he
+  cases b <;> simp at he
 
 /-- Nonadjacent vertex Menger gives a one-path family; deleting `{1}` separates the terminals and
 rules out a two-path family, without any finiteness assumption on the actual edge set. -/
@@ -200,21 +200,23 @@ public def infiniteParallelPathWithDirect : Graph (Fin 3) (Option (Bool × ℕ))
     | some e => if e.1 then s(1, 2) else s(0, 1)
 
 @[simp]
-private theorem infiniteParallelPathWithDirect_isLink (e : Option (Bool × ℕ))
+public theorem infiniteParallelPathWithDirect_isLink (e : Option (Bool × ℕ))
     (x y : Fin 3) :
     infiniteParallelPathWithDirect.IsLink e x y ↔
-      s(x, y) = infiniteParallelPathWithDirectEnds e :=
-  Iff.rfl
+      s(x, y) = match e with
+        | none => s(0, 2)
+        | some e => if e.1 then s(1, 2) else s(0, 1) :=
+  (Iff.rfl)
 
 @[simp]
-private theorem edgeSet_infiniteParallelPathWithDirect :
+public theorem edgeSet_infiniteParallelPathWithDirect :
     E(infiniteParallelPathWithDirect) = Set.univ :=
-  rfl
+  (rfl)
 
 @[simp]
-private theorem vertexSet_infiniteParallelPathWithDirect :
+public theorem vertexSet_infiniteParallelPathWithDirect :
     V(infiniteParallelPathWithDirect) = Set.univ :=
-  rfl
+  (rfl)
 
 private def directEdgeEquiv :
     {e : Option (Bool × ℕ) // infiniteParallelPathWithDirect.IsLink e 0 2} ≃ Unit where
@@ -226,8 +228,7 @@ private def directEdgeEquiv :
     rcases e with ⟨e, he⟩
     rcases e with _ | ⟨b, n⟩
     · rfl
-    · cases b <;> simp [infiniteParallelPathWithDirectEnds,
-        infiniteParallelPathEnds] at he
+    · cases b <;> simp at he
   right_inv _ := rfl
 
 private def infiniteParallelPathWithDirectWalk :
@@ -242,14 +243,13 @@ private theorem one_mem_infiniteParallelPathWithDirectWalkSupportAfterDelete
   cases p with
   | @cons _ y _ e h p =>
       rcases e with _ | ⟨b, n⟩
-      · simp [infiniteParallelPathWithDirectEnds] at h
+      · simp at h
       · cases b
         · have hy : y = 1 := by
-            simpa [infiniteParallelPathWithDirectEnds, infiniteParallelPathEnds,
-              Sym2.eq_iff] using h.1
+            simpa [Sym2.eq_iff] using h.1
           rw [Walk.support_cons, List.mem_cons]
           exact Or.inr (hy ▸ p.start_mem_support)
-        · simp [infiniteParallelPathWithDirectEnds, infiniteParallelPathEnds] at h
+        · simp at h
 
 private theorem infiniteParallelPathWithDirect_not_reachable_delete_direct_delete_one :
     ¬((infiniteParallelPathWithDirect.deleteEdges
@@ -302,8 +302,7 @@ example :
     rcases e with _ | ⟨b, n⟩
     · unfold infiniteParallelPathWithDirectWalk pathWalk at he
       simp at he
-    · cases b <;> simp [infiniteParallelPathWithDirectEnds,
-        infiniteParallelPathEnds] at hdirect
+    · cases b <;> simp at hdirect
   · rw [← forall_reachable_deleteEdges_deleteVerts_iff_exists_paths
       (G := infiniteParallelPathWithDirect) (s := (0 : Fin 3)) (t := 2) (by decide) 2]
     intro h
