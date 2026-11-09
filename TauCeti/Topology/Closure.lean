@@ -20,6 +20,9 @@ neighbourhood of `y₀` lies in a set disjoint from `B` together with `y₀` its
 point adherent to two disjoint sets but in neither has no neighbourhood that misses one of them
 away from the point.
 
+Membership in a closed set passes to limits, so pointwise limits of maps into a closed set map
+into it.
+
 ## Main declarations
 
 * `TauCeti.interior_compl_union_interior_eq_univ_iff`: the interiors of `sᶜ` and `t` cover the
@@ -28,6 +31,8 @@ away from the point.
   closed point and of a neighbourhood of that point cover the space.
 * `TauCeti.not_subset_union_singleton_of_mem_closure`: an open neighbourhood of a point of
   `closure B \ B` is not contained in `A ∪ {y₀}` for any `A` disjoint from `B`.
+* `TauCeti.mapsTo_of_tendsto_of_isClosed`: pointwise limits of maps into a closed set map into
+  it.
 -/
 
 public section
@@ -60,5 +65,13 @@ theorem not_subset_union_singleton_of_mem_closure {A B N : Set X} {y₀ : X} (hN
   rcases hNA hyN with hyA | rfl
   · exact disjoint_left.1 hAB hyA hyB
   · exact hy₀B hyB
+
+/-- Pointwise limits of maps into a closed set `L` map into `L`: if every `u m` maps `S` into
+`L` and `u m s → v s` for every `s ∈ S`, then `v` maps `S` into `L`. -/
+theorem mapsTo_of_tendsto_of_isClosed {α ι : Type*} {l : Filter ι} [l.NeBot] {L : Set X}
+    (hL : IsClosed L) {S : Set α} {u : ι → α → X} {v : α → X} (hu : ∀ m, MapsTo (u m) S L)
+    (hv : ∀ s ∈ S, Filter.Tendsto (fun m ↦ u m s) l (𝓝 (v s))) :
+    MapsTo v S L :=
+  fun s hs ↦ hL.mem_of_tendsto (hv s hs) (Filter.Eventually.of_forall fun m ↦ hu m hs)
 
 end TauCeti

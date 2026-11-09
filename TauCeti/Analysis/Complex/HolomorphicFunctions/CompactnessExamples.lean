@@ -8,7 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
-public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
+public import TauCeti.Topology.Closure
+public import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # The hypotheses of compactness for holomorphic sequences
@@ -26,7 +27,7 @@ example of this kind isolates the gradient bound: the sequence below violates th
 image bounds simultaneously.
 
 * Closedness of the boundary condition. Boundary values in a closed set pass to pointwise
-  limits (`mapsTo_of_tendsto_of_isClosed`). For `L = (0, 1) ⊆ ℝ ⊆ ℂ` the constant maps
+  limits (`TauCeti.mapsTo_of_tendsto_of_isClosed`). For `L = (0, 1) ⊆ ℝ ⊆ ℂ` the constant maps
   `u m = 1 / (m + 2)` take values in `L` and have derivative zero, but converge uniformly to the
   constant `0 ∉ L`; for the closed `L = ℝ` the general statement keeps the boundary values of
   the limit in `L`.
@@ -40,12 +41,10 @@ image bounds simultaneously.
 
 The non-convergence statements all come from one observation: a sequence whose values at one
 point have norms tending to infinity has no subsequence converging pointwise there
-(`not_tendstoLocallyUniformlyOn_comp_of_tendsto_norm_atTop`).
+(`TauCeti.not_tendstoLocallyUniformlyOn_comp_of_tendsto_norm_atTop`).
 
 ## Main results
 
-* `TauCeti.HolomorphicCompactness.mapsTo_of_tendsto_of_isClosed`: pointwise limits of maps into a
-  closed set map into it.
 * `TauCeti.HolomorphicCompactness.ofReal_inv_add_two_mem_image_Ioo`,
   `TauCeti.HolomorphicCompactness.tendstoUniformly_ofReal_inv_add_two`: the closedness witness.
 * `TauCeti.HolomorphicCompactness.eLpNorm_deriv_natCast_mul`,
@@ -71,28 +70,7 @@ open Complex Filter Metric MeasureTheory Set Topology
 
 namespace TauCeti.HolomorphicCompactness
 
-/-! ### A divergence criterion -/
-
-/-- If the values of `F m` at a point `z ∈ s` have norms tending to infinity, then no
-subsequence of `F` converges locally uniformly on `s`, since it would converge at `z`. -/
-theorem not_tendstoLocallyUniformlyOn_comp_of_tendsto_norm_atTop {α E : Type*}
-    [TopologicalSpace α] [SeminormedAddCommGroup E] {F : ℕ → α → E} {s : Set α} {z : α}
-    (hz : z ∈ s) (hF : Tendsto (fun m ↦ ‖F m z‖) atTop atTop) {φ : ℕ → ℕ}
-    (hφ : StrictMono φ) (g : α → E) :
-    ¬ TendstoLocallyUniformlyOn (fun m ↦ F (φ m)) g atTop s := by
-  intro h
-  exact not_tendsto_nhds_of_tendsto_atTop (hF.comp hφ.tendsto_atTop) ‖g z‖
-    ((h.tendsto_at hz).norm)
-
 /-! ### Closedness of the boundary condition -/
-
-/-- Boundary values in a closed set `L` pass to pointwise limits: if every `u m` maps `S` into
-`L` and `u m s → v s` for every `s ∈ S`, then `v` maps `S` into `L`. -/
-theorem mapsTo_of_tendsto_of_isClosed {α X ι : Type*} [TopologicalSpace X] {l : Filter ι}
-    [l.NeBot] {L : Set X} (hL : IsClosed L) {S : Set α} {u : ι → α → X} {v : α → X}
-    (hu : ∀ m, MapsTo (u m) S L) (hv : ∀ s ∈ S, Tendsto (fun m ↦ u m s) l (𝓝 (v s))) :
-    MapsTo v S L :=
-  fun s hs ↦ hL.mem_of_tendsto (hv s hs) (Eventually.of_forall fun m ↦ hu m hs)
 
 /-- The values `1 / (m + 2)` lie in `(0, 1) ⊆ ℝ ⊆ ℂ`, so the constant maps with these values
 satisfy the boundary condition for `L = (0, 1)`. -/
@@ -185,20 +163,9 @@ theorem tendstoLocallyUniformly_div_natCast {g : ℂ → ℂ} (hg : Continuous g
 tends to `0` locally uniformly on `ℂ`. -/
 theorem tendstoLocallyUniformly_iteratedDeriv_div_natCast (k : ℕ) :
     TendstoLocallyUniformly (fun (m : ℕ) ↦ iteratedDeriv k (fun z : ℂ ↦ z / m))
-      (fun _ ↦ 0) atTop := by
-  have h : ∀ m : ℕ, iteratedDeriv k (fun z : ℂ ↦ z / m) =
-      fun z ↦ iteratedDeriv k (fun z : ℂ ↦ z) z / m := by
-    intro m
-    ext z
-    simp only [div_eq_inv_mul]
-    exact iteratedDeriv_const_mul_field (m : ℂ)⁻¹ (fun z : ℂ ↦ z)
-  simp only [h]
-  refine tendstoLocallyUniformly_div_natCast ?_
-  have h' : iteratedDeriv k (fun z : ℂ ↦ z) =
-      fun z ↦ if k = 0 then z else if k = 1 then 1 else 0 :=
-    funext fun _ ↦ iteratedDeriv_id
-  rw [h']
-  split_ifs <;> fun_prop
+      (fun _ ↦ 0) atTop :=
+  (tendstoLocallyUniformly_div_natCast (contDiff_id.continuous_iteratedDeriv' k)).congr
+    fun _ _ ↦ (iteratedDeriv_div_const _ _).symm
 
 /-! ### The image bound -/
 
