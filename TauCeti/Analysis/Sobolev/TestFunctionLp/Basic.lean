@@ -209,15 +209,10 @@ theorem exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le {u : 
     ∃ g : Lp ℝ 2 (mu.restrict Omega), ‖g‖ ≤ C ∧ HasWeakLineDerivOn mu Omega u g v := by
   -- Test functions on `Omega` only see `mu.restrict Omega`, which is finite on compact sets, so
   -- the argument runs for that measure.
-  have hint {f : E → ℝ} (hf : ∀ x ∉ (Omega : Set E), f x = 0) :
-      ∫ x, f x ∂mu.restrict Omega = ∫ x, f x ∂mu :=
-    setIntegral_eq_integral_of_forall_compl_eq_zero hf
-  have hzero (phi : 𝓓(Omega, ℝ)) {x : E} (hx : x ∉ (Omega : Set E)) : (phi : E → ℝ) x = 0 :=
-    image_eq_zero_of_notMem_tsupport fun hc => hx (phi.tsupport_subset hc)
   have hld (phi : 𝓓(Omega, ℝ)) : ∫ x, lineDeriv ℝ (phi : E → ℝ) x v * u x ∂mu.restrict Omega =
-      ∫ x, lineDeriv ℝ (phi : E → ℝ) x v * u x ∂mu :=
-    hint fun x hx => by
-      rw [← TestFunction.lineDerivCLM_apply_of_le (𝕜 := ℝ) (k := ⊤) le_top, hzero _ hx, zero_mul]
+      ∫ x, lineDeriv ℝ (phi : E → ℝ) x v * u x ∂mu := by
+    simpa only [smul_eq_mul] using
+      setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul (μ := mu) (w := u) phi v
   obtain ⟨Λ, hΛnorm, hΛphi⟩ :=
     exists_dual_norm_le_of_abs_integral_lineDeriv_mul_le_eLpNorm (mu := mu.restrict Omega)
       (hu.mono_measure Measure.restrict_le_self) v hC fun phi => by
@@ -236,8 +231,11 @@ theorem exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le {u : 
     refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hu, hg, fun phi => ?_⟩
     have hinner : ⟪g, testFunctionLp (mu := mu.restrict Omega) 2 phi⟫_ℝ =
         ∫ x, (phi : E → ℝ) x • g x ∂mu := by
-      rw [← hint (f := fun x => (phi : E → ℝ) x • g x) fun x hx => by rw [hzero phi hx, zero_smul],
-        L2.inner_def, ← setIntegral_smul_eq_integral_smul phi]
+      rw [L2.inner_def, ← setIntegral_smul_eq_integral_smul (w := (g : E → ℝ)) phi]
+      have hrestrict (F : E → ℝ) :
+          ∫ x in Omega, F x ∂mu.restrict Omega = ∫ x in Omega, F x ∂mu := by
+        rw [hres]
+      refine Eq.trans ?_ (hrestrict fun x => phi x • g x)
       refine integral_congr_ae ?_
       filter_upwards [testFunctionLp_apply_ae (mu := mu.restrict Omega) 2 phi] with x hx
       simp [hx]
