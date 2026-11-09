@@ -33,7 +33,8 @@ This is how an almost-everywhere Hölder estimate becomes a Hölder continuous r
 of full measure for a measure that is positive on open sets is dense.
 
 Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants.
-Postcomposition with an isometry keeps the constant and the exponent.
+Postcomposition with an isometry keeps the constant and the exponent. A function bounded by `M` is
+Hölder of exponent zero with constant `2 M`.
 
 Finally, on a metric space the infimum defining Mathlib's extended Hölder seminorm `eHolderNorm r f`
 is attained, so the seminorm is the best constant in the Hölder inequality. Equivalently, it is the
@@ -65,6 +66,8 @@ By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölde
   preserves Hölder bounds.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `HolderOnWith.add`: sums of Hölder functions on a set.
+* `holderWith_zero_of_nnnorm_le`: a function bounded by `M` is Hölder of exponent zero with
+  constant `2 M`.
 * `IsCompact.exists_holderOnWith_thickening_and_norm_le`: a function which is Hölder on a ball
   around each point of a compact set `K` is Hölder with one constant, and bounded, on a thickening
   of `K`.
@@ -249,6 +252,16 @@ theorem HolderOnWith.add {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommG
   HolderOnWith.of_dist_le fun x hx y hy => by
     simp only [Pi.add_apply, NNReal.coe_add]
     linarith [dist_add_add_le (f x) (g x) (f y) (g y), hf.dist_le hx hy, hg.dist_le hx hy]
+
+/-- A function bounded by `M` has oscillation at most `2 M`, which is its Hölder bound of
+exponent zero. Compare Mathlib's `HolderWith.holderWith_zero_of_bounded`, which bounds the
+oscillation of a Hölder function on a bounded space instead. -/
+theorem holderWith_zero_of_nnnorm_le {X Y : Type*} [PseudoEMetricSpace X]
+    [SeminormedAddCommGroup Y] {f : X → Y} {M : ℝ≥0} (hf : ∀ x, ‖f x‖₊ ≤ M) :
+    HolderWith (2 * M) 0 f := fun x y ↦ by
+  rw [NNReal.coe_zero, ENNReal.rpow_zero, mul_one, edist_nndist, ENNReal.coe_le_coe,
+    nndist_eq_nnnorm, two_mul]
+  exact (nnnorm_sub_le _ _).trans (add_le_add (hf x) (hf y))
 
 /-- **Local Hölder bounds near a compact set are uniform on a thickening.** If `f` is `α`-Hölder on
 a ball around each point of a compact set `K`, with radii and constants depending on the point, then
