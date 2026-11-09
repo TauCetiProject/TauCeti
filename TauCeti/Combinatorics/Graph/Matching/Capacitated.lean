@@ -33,6 +33,8 @@ graph are all allowed.
 
 * `Graph.IsCapacitatedMatching G b x`: the edge multiplicities `x` form a multiset capacitated
   matching for the vertex capacities `b`.
+* `Graph.matchingEquivUnitCapacitated`: in a loopless multigraph, ordinary matchings correspond to
+  unit-capacity multiset matchings through their characteristic functions.
 
 ## Main results
 
@@ -93,40 +95,30 @@ theorem isCapacitatedMatching_zero : G.IsCapacitatedMatching b 0 :=
 
 /-- In a loopless multigraph, ordinary matchings are exactly unit-capacity multiset matchings
 whose multiplicities are the characteristic function of the selected edges. -/
-theorem isMatching_iff_isCapacitatedMatching_indicator [G.Loopless]
-    (M : Finset E(G)) :
-    G.IsMatching M ↔
-      G.IsCapacitatedMatching 1 ((M : Set E(G)).indicator (1 : E(G) → ℕ)) := by
-  rw [isMatching_iff, isCapacitatedMatching_def]
+theorem isMatching_iff_isCapacitatedMatching_indicator [G.Loopless] (M : Set E(G)) :
+    G.IsMatching M ↔ G.IsCapacitatedMatching 1 (M.indicator 1) := by
+  rw [isMatching_def, isCapacitatedMatching_def]
+  have hmem {e : E(G)} (he : M.indicator (1 : E(G) → ℕ) e ≠ 0) : e ∈ M := by
+    by_contra h
+    exact he (Set.indicator_of_notMem h _)
   constructor
-  · rintro ⟨_, huniq⟩ v
+  · rintro ⟨-, h⟩ v
     rw [Pi.one_apply, Finset.sum_le_one_iff]
     intro e f he hf he0 hf0
-    have heM : e ∈ M := by
-      have h := (not_congr (Set.indicator_eq_zero_iff_notMem ℕ)).1 he0
-      exact Finset.mem_coe.1 (not_not.1 h)
-    have hfM : f ∈ M := by
-      have h := (not_congr (Set.indicator_eq_zero_iff_notMem ℕ)).1 hf0
-      exact Finset.mem_coe.1 (not_not.1 h)
-    obtain ⟨w, hw, heInc⟩ := (Graph.mem_incidentEdges G).1 he
-    obtain ⟨z, hz, hfInc⟩ := (Graph.mem_incidentEdges G).1 hf
-    simp only [mem_singleton] at hw hz
-    subst w
-    subst z
-    exact ⟨huniq v e heM heInc f hfM hfInc,
-      (Set.indicator_eq_one_iff_mem ℕ).2 (Finset.mem_coe.2 heM)⟩
+    obtain ⟨w, hw, hev⟩ := (mem_incidentEdges G).1 he
+    obtain ⟨z, hz, hfv⟩ := (mem_incidentEdges G).1 hf
+    rw [Finset.mem_singleton] at hw hz
+    subst w z
+    refine ⟨by_contra fun hef ↦ h e (hmem he0) f (hmem hf0) hef v ⟨hev, hfv⟩, ?_⟩
+    exact Set.indicator_of_mem (hmem he0) _
   · intro h
-    refine ⟨fun e _ ↦ G.edgeEnds_not_isDiag e, ?_⟩
-    intro v e heM heInc f hfM hfInc
-    have hv := h v
+    refine ⟨fun e _ x ↦ G.not_isLoopAt e x, fun e he f hf hef v ⟨hev, hfv⟩ ↦ hef ?_⟩
+    let v' : V(G) := ⟨v, hev.vertex_mem⟩
+    have hv := h v'
     rw [Pi.one_apply, Finset.sum_le_one_iff] at hv
-    exact (hv e f
-      ((Graph.mem_incidentEdges G).2 ⟨v, by simp, heInc⟩)
-      ((Graph.mem_incidentEdges G).2 ⟨v, by simp, hfInc⟩)
-      ((not_congr (Set.indicator_eq_zero_iff_notMem ℕ)).2
-        (not_not.2 (Finset.mem_coe.2 heM)))
-      ((not_congr (Set.indicator_eq_zero_iff_notMem ℕ)).2
-        (not_not.2 (Finset.mem_coe.2 hfM)))).1
+    refine (hv e f ((mem_incidentEdges G).2 ⟨v', by simp, hev⟩)
+      ((mem_incidentEdges G).2 ⟨v', by simp, hfv⟩) ?_ ?_).1 <;>
+      simp [Set.indicator_of_mem, *]
 
 /-- In a unit-capacity multiset matching, every actual edge has multiplicity at most one. -/
 theorem IsCapacitatedMatching.apply_le_one (hx : G.IsCapacitatedMatching 1 x) (e : E(G)) :
@@ -134,73 +126,47 @@ theorem IsCapacitatedMatching.apply_le_one (hx : G.IsCapacitatedMatching 1 x) (e
   obtain ⟨u, v, huv⟩ := G.exists_isLink_of_mem_edgeSet e.2
   let u' : V(G) := ⟨u, huv.left_mem⟩
   have he : e ∈ G.incidentEdges {u'} :=
-    (Graph.mem_incidentEdges G).2 ⟨u', by simp, huv.inc_left⟩
+    (mem_incidentEdges G).2 ⟨u', by simp, huv.inc_left⟩
   exact (Finset.single_le_sum (fun _ _ ↦ Nat.zero_le _) he).trans (hx u')
 
-/-- The selected support of a unit-capacity edge multiplicity. -/
-noncomputable def unitSupport (x : E(G) → ℕ) : Finset E(G) := by
-  classical
-  exact Finset.univ.filter fun e ↦ x e = 1
-
-@[simp]
-theorem mem_unitSupport {x : E(G) → ℕ} {e : E(G)} :
-    e ∈ G.unitSupport x ↔ x e = 1 := by
-  classical
-  simp [unitSupport]
-
-/-- The indicator of the support of a unit-capacity multiset matching recovers its original
-multiplicity. -/
-theorem IsCapacitatedMatching.indicator_unitSupport
-    (hx : G.IsCapacitatedMatching 1 x) :
-    (G.unitSupport x : Set E(G)).indicator (1 : E(G) → ℕ) = x := by
+/-- The indicator of the edges of multiplicity one in a unit-capacity multiset matching recovers
+its multiplicities. -/
+theorem IsCapacitatedMatching.indicator_setOf_eq_one (hx : G.IsCapacitatedMatching 1 x) :
+    {e | x e = 1}.indicator 1 = x := by
   funext e
-  have hle := hx.apply_le_one e
   by_cases h : x e = 1
-  · calc
-      (G.unitSupport x : Set E(G)).indicator (1 : E(G) → ℕ) e = 1 :=
-        (Set.indicator_eq_one_iff_mem ℕ).2 (Finset.mem_coe.2 (mem_unitSupport.2 h))
-      _ = x e := h.symm
-  · have hz : x e = 0 := by omega
-    calc
-      (G.unitSupport x : Set E(G)).indicator (1 : E(G) → ℕ) e = 0 :=
-        (Set.indicator_eq_zero_iff_notMem ℕ).2
-          (by simpa only [Finset.mem_coe, mem_unitSupport])
-      _ = x e := hz.symm
+  · rw [Set.indicator_of_mem h, Pi.one_apply, h]
+  · rw [Set.indicator_of_notMem h]
+    have := hx.apply_le_one e
+    omega
 
 /-- A unit-capacity multiset matching on a loopless graph determines an ordinary matching by
 taking the edges of multiplicity one. -/
-theorem IsCapacitatedMatching.isMatching_unitSupport [G.Loopless]
-    (hx : G.IsCapacitatedMatching 1 x) : G.IsMatching (G.unitSupport x) := by
-  rw [isMatching_iff_isCapacitatedMatching_indicator, hx.indicator_unitSupport]
+theorem IsCapacitatedMatching.isMatching_setOf_eq_one [G.Loopless]
+    (hx : G.IsCapacitatedMatching 1 x) : G.IsMatching {e | x e = 1} := by
+  rw [isMatching_iff_isCapacitatedMatching_indicator, hx.indicator_setOf_eq_one]
   exact hx
 
 /-- Ordinary matchings in a finite loopless multigraph are equivalent to unit-capacity multiset
 matchings. The equivalence retains each selected edge identity as multiplicity one. -/
 @[expose] noncomputable def matchingEquivUnitCapacitated [G.Loopless] :
-    {M : Finset E(G) // G.IsMatching M} ≃
-      {x : E(G) → ℕ // G.IsCapacitatedMatching 1 x} where
-  toFun M := ⟨(M : Set E(G)).indicator (1 : E(G) → ℕ),
-    (G.isMatching_iff_isCapacitatedMatching_indicator M).1 M.2⟩
-  invFun x := ⟨G.unitSupport x, x.2.isMatching_unitSupport⟩
+    {M : Set E(G) // G.IsMatching M} ≃ {x : E(G) → ℕ // G.IsCapacitatedMatching 1 x} where
+  toFun M := ⟨M.1.indicator 1, (isMatching_iff_isCapacitatedMatching_indicator M.1).1 M.2⟩
+  invFun x := ⟨{e | x.1 e = 1}, x.2.isMatching_setOf_eq_one⟩
   left_inv M := by
-    apply Subtype.ext
     ext e
-    simp only [mem_unitSupport, Set.indicator_eq_one_iff_mem ℕ, Finset.mem_coe]
-  right_inv x := by
-    apply Subtype.ext
-    exact x.2.indicator_unitSupport
+    exact Set.indicator_eq_one_iff_mem ℕ
+  right_inv x := Subtype.ext x.2.indicator_setOf_eq_one
 
 @[simp]
-theorem matchingEquivUnitCapacitated_apply [G.Loopless]
-    (M : {M : Finset E(G) // G.IsMatching M}) :
-    (G.matchingEquivUnitCapacitated M : E(G) → ℕ) =
-      (M : Set E(G)).indicator (1 : E(G) → ℕ) := by
+theorem matchingEquivUnitCapacitated_apply [G.Loopless] (M : {M : Set E(G) // G.IsMatching M}) :
+    (G.matchingEquivUnitCapacitated M : E(G) → ℕ) = M.1.indicator 1 :=
   rfl
 
 @[simp]
 theorem matchingEquivUnitCapacitated_symm_apply [G.Loopless]
     (x : {x : E(G) → ℕ // G.IsCapacitatedMatching 1 x}) :
-    (G.matchingEquivUnitCapacitated.symm x : Finset E(G)) = G.unitSupport x := by
+    (G.matchingEquivUnitCapacitated.symm x : Set E(G)) = {e | x.1 e = 1} :=
   rfl
 
 namespace IsCapacitatedMatching

@@ -6,179 +6,317 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Graph.Delete
-public import TauCeti.Combinatorics.Graph.EdgeEnds
-public import TauCeti.Combinatorics.Graph.Incidence
+public import Mathlib.Combinatorics.Graph.Simple
 
 /-!
 # Matchings in multigraphs
 
-An ordinary matching in a multigraph is a finite set of actual edge identities, with no selected
-loop and with at most one selected edge incident to each actual vertex.  Parallel edges remain
-distinct, but two parallel edges cannot both belong to a matching because they share their ends.
+A matching in a multigraph is a set of actual edge identities with no loops and no two distinct
+members incident to a common vertex.  Thus parallel edges remain distinct choices, but at most one
+of them can belong to a matching.  A perfect matching is incident to every actual vertex.
 
-This file also constructs the graph traced by a finite set of actual edges.  Its vertices are
-exactly the ends of those edges and its edges are exactly the selected identities, so a matching
-has no artificial isolated vertices.  A perfect matching is a matching whose traced vertex set is
-the whole actual vertex set.
+The graph `Graph.matchingSubgraph G M` has exactly the edges selected by `M` and exactly their
+endpoints as vertices.  It has no isolated vertices, and `Graph.IsMatching` is equivalent to this
+subgraph being loopless with exactly one incident edge at every one of its vertices.  Perfectness
+is equivalently the assertion that this canonical subgraph is spanning.  This connects the
+edge-set representation, convenient for deleting and partitioning multigraph edges, with the
+subgraph viewpoint used by Mathlib for simple-graph matchings.
 
-These definitions provide the edge-identity interface used to decompose regular bipartite
-multigraphs into perfect matchings.  The comparison with unit-capacity multiset matchings is in
-`TauCeti.Combinatorics.Graph.Matching.Capacitated`.
+## Main definitions
+
+* `Graph.IsMatching G M`: the actual edges in `M` form a matching.
+* `Graph.IsPerfectMatching G M`: `M` is a matching incident to every actual vertex.
+* `Graph.matchingSubgraph G M`: the subgraph containing precisely the selected edges and their
+  endpoints.
 -/
 
 public section
 
-open Finset
+open Set
 open scoped Graph
 
 universe u v
 
 namespace Graph
 
-variable {α : Type u} {β : Type v} {G : Graph α β} {M N : Finset E(G)}
+variable {α : Type u} {β : Type v} {G : Graph α β} {M N : Set E(G)}
 
-/-- A finite set of actual multigraph edges is a matching when it contains no loop and at most one
-selected edge is incident to each actual vertex. -/
-def IsMatching (G : Graph α β) (M : Finset E(G)) : Prop :=
-  (∀ e ∈ M, ¬(G.edgeEnds e).IsDiag) ∧
-    ∀ x : V(G), ∀ e ∈ M, G.Inc e.1 x.1 →
-      ∀ f ∈ M, G.Inc f.1 x.1 → e = f
+/-- A set of actual multigraph edges is a matching when it contains no loop and no two distinct
+edges in it have a common incident vertex. -/
+def IsMatching (G : Graph α β) (M : Set E(G)) : Prop :=
+  (∀ e ∈ M, ∀ x, ¬G.IsLoopAt e x) ∧
+    ∀ e ∈ M, ∀ f ∈ M, e ≠ f → ∀ x, ¬(G.Inc e x ∧ G.Inc f x)
 
-/-- The defining characterization of a multigraph matching. -/
-theorem isMatching_iff : G.IsMatching M ↔
-    (∀ e ∈ M, ¬(G.edgeEnds e).IsDiag) ∧
-      ∀ x : V(G), ∀ e ∈ M, G.Inc e.1 x.1 →
-        ∀ f ∈ M, G.Inc f.1 x.1 → e = f :=
+/-- A perfect matching is a matching incident to every actual vertex. -/
+def IsPerfectMatching (G : Graph α β) (M : Set E(G)) : Prop :=
+  G.IsMatching M ∧ ∀ x : V(G), ∃ e ∈ M, G.Inc e x
+
+theorem isMatching_def :
+    G.IsMatching M ↔
+      (∀ e ∈ M, ∀ x, ¬G.IsLoopAt e x) ∧
+        ∀ e ∈ M, ∀ f ∈ M, e ≠ f → ∀ x, ¬(G.Inc e x ∧ G.Inc f x) :=
   Iff.rfl
 
-/-- The empty edge set is a matching. -/
+theorem isPerfectMatching_def :
+    G.IsPerfectMatching M ↔ G.IsMatching M ∧ ∀ x : V(G), ∃ e ∈ M, G.Inc e x :=
+  Iff.rfl
+
+/-- The empty set of edges is a matching. -/
 @[simp]
 theorem isMatching_empty (G : Graph α β) : G.IsMatching ∅ := by
-  simp [isMatching_iff]
+  simp [IsMatching]
 
-namespace IsMatching
+/-- A subset of a matching is a matching. -/
+theorem IsMatching.mono (hM : G.IsMatching M) (hNM : N ⊆ M) : G.IsMatching N := by
+  refine ⟨fun e he ↦ hM.1 e (hNM he), fun e he f hf ↦ ?_⟩
+  exact hM.2 e (hNM he) f (hNM hf)
 
-/-- Every selected edge of a matching has distinct ends. -/
-theorem not_isDiag (hM : G.IsMatching M) {e : E(G)} (he : e ∈ M) :
-    ¬(G.edgeEnds e).IsDiag :=
-  hM.1 e he
+/-- Every edge in a matching is a nonloop edge. -/
+theorem IsMatching.not_isLoopAt (hM : G.IsMatching M) {e : E(G)} (he : e ∈ M) (x : α) :
+    ¬G.IsLoopAt e x :=
+  hM.1 e he x
 
-/-- Two selected edges of a matching incident to the same vertex are equal. -/
-theorem eq_of_inc (hM : G.IsMatching M) {x : V(G)} {e f : E(G)}
-    (heM : e ∈ M) (he : G.Inc e.1 x.1) (hfM : f ∈ M) (hf : G.Inc f.1 x.1) :
-    e = f :=
-  hM.2 x e heM he f hfM hf
+/-- Two edges of a matching incident to the same vertex are equal. -/
+theorem IsMatching.eq_of_inc (hM : G.IsMatching M) {e f : E(G)} (he : e ∈ M) (hf : f ∈ M)
+    {x : α} (hex : G.Inc e x) (hfx : G.Inc f x) : e = f := by
+  by_contra hef
+  exact hM.2 e he f hf hef x ⟨hex, hfx⟩
 
-/-- Passing to a subset of the selected edges preserves a matching. -/
-theorem mono (hM : G.IsMatching M) (hNM : N ⊆ M) : G.IsMatching N := by
-  exact ⟨fun e he ↦ hM.not_isDiag (hNM he),
-    fun x e heN he f hfN hf ↦ hM.eq_of_inc (hNM heN) he (hNM hfN) hf⟩
+/-- At most one edge of a matching is incident to any given vertex. -/
+theorem IsMatching.existsUnique_of_exists_inc (hM : G.IsMatching M) {x : α}
+    (h : ∃ e ∈ M, G.Inc e x) : ∃! e, e ∈ M ∧ G.Inc e x := by
+  obtain ⟨e, he, hex⟩ := h
+  exact ⟨e, ⟨he, hex⟩, fun f hf ↦ hM.eq_of_inc hf.1 he hf.2 hex⟩
 
-end IsMatching
+/-- In a perfect matching, every actual vertex is incident to a unique selected edge. -/
+theorem IsPerfectMatching.existsUnique_inc (hM : G.IsPerfectMatching M) (x : V(G)) :
+    ∃! e, e ∈ M ∧ G.Inc e x :=
+  hM.1.existsUnique_of_exists_inc (hM.2 x)
 
-/-- The actual vertices incident to one of the selected edge identities. -/
-def matchingVertexSet (G : Graph α β) (M : Finset E(G)) : Set V(G) :=
-  {x | ∃ e ∈ M, G.Inc e.1 x.1}
+/-- A matching is perfect exactly when every actual vertex is incident to a unique selected edge. -/
+theorem IsMatching.isPerfectMatching_iff (hM : G.IsMatching M) :
+    G.IsPerfectMatching M ↔ ∀ x : V(G), ∃! e, e ∈ M ∧ G.Inc e x := by
+  refine ⟨fun h x ↦ h.existsUnique_inc x, fun h ↦ ⟨hM, fun x ↦ ?_⟩⟩
+  obtain ⟨e, he, -⟩ := h x
+  exact ⟨e, he.1, he.2⟩
 
-/-- Membership in the vertex set traced by selected edges means incidence with a selected edge. -/
-theorem mem_matchingVertexSet_iff {x : V(G)} :
-    x ∈ G.matchingVertexSet M ↔ ∃ e ∈ M, G.Inc e.1 x.1 :=
+/-- The vertices incident to a selected set of actual edges. -/
+def matchingSupport (G : Graph α β) (M : Set E(G)) : Set α :=
+  {x | ∃ e ∈ M, G.Inc e x}
+
+@[simp]
+theorem mem_matchingSupport {x : α} : x ∈ G.matchingSupport M ↔ ∃ e ∈ M, G.Inc e x :=
   Iff.rfl
 
-/-- The graph traced by selected actual edges. Its ambient vertices and edges are unchanged, but
-its actual vertices are exactly the selected edges' ends and its actual edges are exactly the
-selected identities. -/
-def matchingSubgraph (G : Graph α β) (M : Finset E(G)) : Graph α β :=
-  (G.induce (Subtype.val '' G.matchingVertexSet M)).restrict (Subtype.val '' (M : Set E(G)))
+/-- Every endpoint of a selected actual edge is an actual vertex. -/
+theorem matchingSupport_subset_vertexSet : G.matchingSupport M ⊆ V(G) := by
+  rintro x ⟨e, -, hex⟩
+  exact hex.vertex_mem
 
-/-- The actual vertices of the graph traced by `M` are exactly the ends of edges in `M`. -/
+/-- Enlarging the selected edge set enlarges its vertex support. -/
+theorem matchingSupport_mono (hMN : M ⊆ N) : G.matchingSupport M ⊆ G.matchingSupport N := by
+  rintro x ⟨e, he, hex⟩
+  exact ⟨e, hMN he, hex⟩
+
+/-- The empty edge set has empty vertex support. -/
 @[simp]
-theorem vertexSet_matchingSubgraph :
-    V(G.matchingSubgraph M) = Subtype.val '' G.matchingVertexSet M :=
+theorem matchingSupport_empty (G : Graph α β) : G.matchingSupport ∅ = ∅ := by
+  ext x
+  simp
+
+/-- The subgraph whose edges are exactly `M` and whose vertices are exactly their endpoints. -/
+def matchingSubgraph (G : Graph α β) (M : Set E(G)) : Graph α β :=
+  (G.restrict (Subtype.val '' M)).induce (G.matchingSupport M)
+
+@[simp]
+theorem vertexSet_matchingSubgraph : V(G.matchingSubgraph M) = G.matchingSupport M :=
+  by rw [matchingSubgraph, Graph.vertexSet_induce]
+
+@[simp]
+theorem edgeSet_matchingSubgraph : E(G.matchingSubgraph M) = Subtype.val '' M :=
   by
-    simp only [matchingSubgraph, Graph.vertexSet_restrict, Graph.vertexSet_induce]
+    ext e
+    constructor
+    · rintro ⟨x, y, ⟨⟨heM, -⟩, -, -⟩⟩
+      exact heM
+    · rintro ⟨e, heM, rfl⟩
+      obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.2
+      exact ⟨x, y, ⟨⟨⟨e, heM, rfl⟩, hxy⟩,
+        ⟨e, heM, hxy.inc_left⟩, ⟨e, heM, hxy.inc_right⟩⟩⟩
 
-/-- A selected actual edge belongs to the graph traced by the selected edges. -/
-theorem mem_edgeSet_matchingSubgraph_of_mem {e : E(G)} (he : e ∈ M) :
-    e.1 ∈ E(G.matchingSubgraph M) := by
-  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.2
-  have hx : (⟨x, hxy.left_mem⟩ : V(G)) ∈ G.matchingVertexSet M :=
-    ⟨e, he, hxy.inc_left⟩
-  have hy : (⟨y, hxy.right_mem⟩ : V(G)) ∈ G.matchingVertexSet M :=
-    ⟨e, he, hxy.inc_right⟩
-  exact ⟨⟨x, y, hxy, ⟨_, hx, rfl⟩, ⟨_, hy, rfl⟩⟩, e, by simpa, rfl⟩
-
-/-- The actual edges of the graph traced by `M` are exactly the selected edge identities. -/
 @[simp]
-theorem edgeSet_matchingSubgraph :
-    E(G.matchingSubgraph M) = Subtype.val '' (M : Set E(G)) := by
-  apply Set.Subset.antisymm
-  · exact Set.inter_subset_right
-  · rintro _ ⟨e, he, rfl⟩
-    exact mem_edgeSet_matchingSubgraph_of_mem he
+theorem matchingSubgraph_isLink {e : β} {x y : α} :
+    (G.matchingSubgraph M).IsLink e x y ↔
+      ∃ he : e ∈ E(G), (⟨e, he⟩ : E(G)) ∈ M ∧ G.IsLink e x y :=
+  by
+    constructor
+    · rintro ⟨⟨⟨f, hfM, hfe⟩, hxy⟩, -, -⟩
+      subst e
+      exact ⟨f.2, hfM, hxy⟩
+    · rintro ⟨heG, heM, hxy⟩
+      exact ⟨⟨⟨⟨e, heG⟩, heM, rfl⟩, hxy⟩,
+        ⟨⟨e, heG⟩, heM, hxy.inc_left⟩, ⟨⟨e, heG⟩, heM, hxy.inc_right⟩⟩
 
-/-- The graph traced by selected edges is a subgraph of the original graph. -/
-theorem matchingSubgraph_le : G.matchingSubgraph M ≤ G := by
-  apply Graph.IsSubgraph.trans Graph.restrict_le
-  apply Graph.induce_le
-  rintro _ ⟨x, -, rfl⟩
-  exact x.2
-
-/-- Incidence in the graph traced by `M` is incidence in `G` together with membership in `M`. -/
+/-- Incidence in the canonical subgraph is incidence in `G` by a selected edge. -/
 @[simp]
 theorem matchingSubgraph_inc {e : β} {x : α} :
     (G.matchingSubgraph M).Inc e x ↔
-      G.Inc e x ∧ ∃ he : e ∈ E(G), (⟨e, he⟩ : E(G)) ∈ M := by
+      ∃ he : e ∈ E(G), (⟨e, he⟩ : E(G)) ∈ M ∧ G.Inc e x := by
+  constructor
+  · rintro ⟨y, hxy⟩
+    obtain ⟨heG, heM, hxy⟩ := matchingSubgraph_isLink.mp hxy
+    exact ⟨heG, heM, hxy.inc_left⟩
+  · rintro ⟨heG, heM, y, hxy⟩
+    exact ⟨y, matchingSubgraph_isLink.mpr ⟨heG, heM, hxy⟩⟩
+
+/-- A loop of the canonical subgraph is precisely a selected loop of `G`. -/
+@[simp]
+theorem matchingSubgraph_isLoopAt {e : β} {x : α} :
+    (G.matchingSubgraph M).IsLoopAt e x ↔
+      ∃ he : e ∈ E(G), (⟨e, he⟩ : E(G)) ∈ M ∧ G.IsLoopAt e x :=
+  matchingSubgraph_isLink
+
+/-- The canonical subgraph construction remembers the selected set of actual edges. -/
+theorem matchingSubgraph_injective (G : Graph α β) :
+    Function.Injective (G.matchingSubgraph : Set E(G) → Graph α β) := by
+  intro M N h
+  apply Subtype.val_injective.image_injective
+  simpa only [edgeSet_matchingSubgraph] using congrArg Graph.edgeSet h
+
+/-- The canonical graph of selected edges is a subgraph of the original graph. -/
+theorem matchingSubgraph_le (G : Graph α β) (M : Set E(G)) : G.matchingSubgraph M ≤ G := by
+  refine ⟨fun x hx ↦ ?_, fun e x y h ↦ (matchingSubgraph_isLink.mp h).2.2⟩
+  rw [vertexSet_matchingSubgraph, mem_matchingSupport] at hx
+  obtain ⟨e, -, hex⟩ := hx
+  exact hex.vertex_mem
+
+/-- A subgraph with no isolated vertices is reconstructed from its set of actual edges. -/
+theorem matchingSubgraph_eq_of_le_of_exists_inc {H : Graph α β} (hHG : H ≤ G)
+    (hH : ∀ x ∈ V(H), ∃ e, H.Inc e x) :
+    G.matchingSubgraph {e : E(G) | (e : β) ∈ E(H)} = H := by
+  apply (Compatible.of_le_le (matchingSubgraph_le G _) hHG).ext
+  · ext x
+    constructor
+    · intro hx
+      rw [vertexSet_matchingSubgraph, mem_matchingSupport] at hx
+      obtain ⟨e, heH, hex⟩ := hx
+      exact ((hHG.inc_congr heH).mpr hex).vertex_mem
+    · intro hx
+      obtain ⟨e, hex⟩ := hH x hx
+      rw [vertexSet_matchingSubgraph, mem_matchingSupport]
+      exact ⟨⟨e, hHG.edgeSet_mono hex.edge_mem⟩, hex.edge_mem, hex.mono hHG⟩
+  · ext e
+    constructor
+    · rw [edgeSet_matchingSubgraph]
+      rintro ⟨f, hf, rfl⟩
+      exact hf
+    · intro he
+      rw [edgeSet_matchingSubgraph]
+      exact ⟨⟨e, hHG.edgeSet_mono he⟩, he, rfl⟩
+
+/-- Enlarging the selected edge set enlarges its canonical subgraph. -/
+theorem matchingSubgraph_mono (hMN : M ⊆ N) : G.matchingSubgraph M ≤ G.matchingSubgraph N := by
+  refine ⟨?_, fun e x y h ↦ ?_⟩
+  · rw [vertexSet_matchingSubgraph, vertexSet_matchingSubgraph]
+    exact matchingSupport_mono hMN
+  obtain ⟨heG, heM, hxy⟩ := matchingSubgraph_isLink.mp h
+  exact matchingSubgraph_isLink.mpr ⟨heG, hMN heM, hxy⟩
+
+/-- Selecting no edges gives the empty graph. -/
+@[simp]
+theorem matchingSubgraph_empty (G : Graph α β) : G.matchingSubgraph ∅ = ⊥ := by
+  apply Graph.ext
+  · simp
+  · simp
+
+/-- Every vertex of the canonical graph of selected edges is incident to one of its edges. -/
+theorem matchingSubgraph_exists_inc {x : α} (hx : x ∈ V(G.matchingSubgraph M)) :
+    ∃ e, (G.matchingSubgraph M).Inc e x := by
+  rw [vertexSet_matchingSubgraph, mem_matchingSupport] at hx
+  obtain ⟨e, heM, hex⟩ := hx
+  exact ⟨e, matchingSubgraph_inc.mpr ⟨e.2, heM, hex⟩⟩
+
+/-- A matching gives a loopless canonical subgraph. -/
+theorem IsMatching.matchingSubgraph_loopless (hM : G.IsMatching M) :
+    (G.matchingSubgraph M).Loopless where
+  not_isLoopAt e x h := by
+    obtain ⟨heG, heM, hG⟩ := matchingSubgraph_isLoopAt.mp h
+    exact hM.not_isLoopAt heM x hG
+
+/-- In the canonical subgraph of a matching, every vertex has a unique incident edge. -/
+theorem IsMatching.matchingSubgraph_existsUnique_inc (hM : G.IsMatching M) {x : α}
+    (hx : x ∈ V(G.matchingSubgraph M)) :
+    ∃! e, (G.matchingSubgraph M).Inc e x := by
+  obtain ⟨e, hex⟩ := matchingSubgraph_exists_inc hx
+  refine ⟨e, hex, fun f hfx ↦ ?_⟩
+  obtain ⟨heG, heM, hey⟩ := matchingSubgraph_inc.mp hex
+  obtain ⟨hfG, hfM, hfz⟩ := matchingSubgraph_inc.mp hfx
+  exact (congrArg Subtype.val <|
+    hM.eq_of_inc heM hfM hey hfz).symm
+
+/-- The edge-set definition of a matching is equivalent to saying that its canonical subgraph is
+loopless and has exactly one incident edge at every vertex. -/
+theorem isMatching_iff_matchingSubgraph :
+    G.IsMatching M ↔
+      (G.matchingSubgraph M).Loopless ∧
+        ∀ x, x ∈ V(G.matchingSubgraph M) → ∃! e, (G.matchingSubgraph M).Inc e x := by
+  constructor
+  · intro hM
+    exact ⟨hM.matchingSubgraph_loopless, fun _ ↦ hM.matchingSubgraph_existsUnique_inc⟩
+  · rintro ⟨hloopless, hunique⟩
+    constructor
+    · intro e he x hex
+      exact hloopless.not_isLoopAt e x (matchingSubgraph_isLoopAt.mpr ⟨e.2, he, hex⟩)
+    · intro e he f hf hef x hinc
+      obtain ⟨y, hey⟩ := hinc.1
+      obtain ⟨z, hfz⟩ := hinc.2
+      have he' : (G.matchingSubgraph M).Inc e x :=
+        matchingSubgraph_inc.mpr ⟨e.2, he, ⟨y, hey⟩⟩
+      have hf' : (G.matchingSubgraph M).Inc f x :=
+        matchingSubgraph_inc.mpr ⟨f.2, hf, ⟨z, hfz⟩⟩
+      have hx : x ∈ V(G.matchingSubgraph M) := he'.vertex_mem
+      exact hef (Subtype.ext ((hunique x hx).unique he' hf'))
+
+/-- A matching is perfect exactly when its canonical subgraph is spanning. -/
+theorem IsMatching.isPerfectMatching_iff_matchingSubgraph_spanning (hM : G.IsMatching M) :
+    G.IsPerfectMatching M ↔ G.matchingSubgraph M ≤s G := by
+  refine ⟨fun h ↦ ⟨matchingSubgraph_le G M, Set.Subset.antisymm
+      (matchingSubgraph_le G M).vertexSet_mono ?_⟩, fun h ↦ ⟨hM, fun x ↦ ?_⟩⟩
+  · intro x hx
+    obtain ⟨e, heM, hex⟩ := h.2 ⟨x, hx⟩
+    rw [vertexSet_matchingSubgraph, mem_matchingSupport]
+    exact ⟨e, heM, hex⟩
+  · have hx : (x : α) ∈ V(G.matchingSubgraph M) := h.vertexSet_eq.symm ▸ x.2
+    rw [vertexSet_matchingSubgraph, mem_matchingSupport] at hx
+    exact hx
+
+/-- The empty matching is perfect exactly when the graph has no actual vertices. -/
+@[simp]
+theorem isPerfectMatching_empty_iff : G.IsPerfectMatching ∅ ↔ V(G) = ∅ := by
   constructor
   · intro h
-    have hG := h.mono matchingSubgraph_le
-    have heM : e ∈ E(G.matchingSubgraph M) := h.edge_mem
-    rw [edgeSet_matchingSubgraph] at heM
-    obtain ⟨e', he', heq⟩ := heM
-    subst e
-    exact ⟨hG, e'.2, he'⟩
-  · rintro ⟨hx, he, heM⟩
-    obtain ⟨y, hxy⟩ := hx
-    refine ⟨y, ?_⟩
-    refine ⟨⟨⟨e, he⟩, heM, rfl⟩, hxy, ?_, ?_⟩
-    · exact ⟨⟨x, hxy.left_mem⟩, ⟨⟨e, he⟩, heM, hxy.inc_left⟩, rfl⟩
-    · exact ⟨⟨y, hxy.right_mem⟩, ⟨⟨e, he⟩, heM, hxy.inc_right⟩, rfl⟩
+    apply Set.eq_empty_iff_forall_notMem.2
+    intro x hx
+    obtain ⟨e, he, -⟩ := h.2 ⟨x, hx⟩
+    exact he
+  · intro h
+    refine ⟨isMatching_empty G, fun x ↦ ?_⟩
+    have : False := by simpa only [h, mem_empty_iff_false] using x.2
+    exact this.elim
 
-/-- Every actual vertex of a traced graph is incident to one of its actual edges; no isolated
-vertices are introduced. -/
-theorem exists_inc_matchingSubgraph_of_mem_vertexSet {x : α}
-    (hx : x ∈ V(G.matchingSubgraph M)) : ∃ e, (G.matchingSubgraph M).Inc e x := by
-  obtain ⟨x', ⟨e, heM, he⟩, rfl⟩ := hx
-  exact ⟨e.1, matchingSubgraph_inc.2 ⟨he, e.2, heM⟩⟩
-
-/-- A perfect matching is a matching whose selected edges are incident to every actual vertex. -/
-def IsPerfectMatching (G : Graph α β) (M : Finset E(G)) : Prop :=
-  G.IsMatching M ∧ G.matchingVertexSet M = Set.univ
-
-/-- A finite edge set is a perfect matching exactly when it is a matching and every actual vertex
-is incident to a selected edge. -/
-theorem isPerfectMatching_iff : G.IsPerfectMatching M ↔
-    G.IsMatching M ∧ ∀ x : V(G), ∃ e ∈ M, G.Inc e.1 x.1 := by
-  rw [IsPerfectMatching, Set.eq_univ_iff_forall]
-  rfl
-
-namespace IsPerfectMatching
-
-/-- A perfect matching is a matching. -/
-theorem isMatching (hM : G.IsPerfectMatching M) : G.IsMatching M :=
-  hM.1
-
-/-- Every actual vertex is incident to a selected edge of a perfect matching. -/
-theorem exists_inc (hM : G.IsPerfectMatching M) (x : V(G)) :
-    ∃ e ∈ M, G.Inc e.1 x.1 :=
-  isPerfectMatching_iff.1 hM |>.2 x
-
-/-- Every actual vertex is incident to a unique selected edge of a perfect matching. -/
-theorem existsUnique_inc (hM : G.IsPerfectMatching M) (x : V(G)) :
-    ∃! e : E(G), e ∈ M ∧ G.Inc e.1 x.1 := by
-  obtain ⟨e, heM, he⟩ := hM.exists_inc x
-  exact ⟨e, ⟨heM, he⟩, fun f hf ↦ hM.isMatching.eq_of_inc hf.1 hf.2 heM he⟩
-
-end IsPerfectMatching
+/-- The unique edge of a two-vertex single-edge multigraph is a perfect matching. -/
+theorem isPerfectMatching_univ_banana_singleton {u v : α} {e : β} (huv : u ≠ v) :
+    (banana u v {e}).IsPerfectMatching Set.univ := by
+  constructor
+  · constructor
+    · intro f _ x hloop
+      exact huv (banana_isLoopAt.mp hloop).2.2
+    · intro f _ g _ hfg x
+      have : f = g := Subtype.ext <| by simpa using f.2.trans g.2.symm
+      exact (hfg this).elim
+  · intro x
+    let f : E(banana u v {e}) := ⟨e, by simp⟩
+    refine ⟨f, Set.mem_univ f, ?_⟩
+    simpa [f, banana_inc] using x.2
 
 end Graph

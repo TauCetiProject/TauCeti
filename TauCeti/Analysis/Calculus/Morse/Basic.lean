@@ -186,8 +186,7 @@ theorem isNondegenerateCriticalPoint_iff_separatingLeft [FiniteDimensional ℝ E
         (fderiv ℝ (fderiv ℝ f) x).toBilinForm.SeparatingLeft := by
   refine ⟨fun h ↦ ⟨h.contDiffAt, h.fderiv_eq_zero, h.separatingLeft⟩,
     fun ⟨hd, h0, hnd⟩ ↦ ⟨hd, h0, ?_⟩⟩
-  exact ContinuousLinearMap.isInvertible_of_injective
-    ((ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective _).1 hnd)
+  exact ContinuousLinearMap.isInvertible_iff_separatingLeft.2 hnd
 
 /-- Nondegeneracy at a point depends only on the germ of the function there. -/
 theorem IsNondegenerateCriticalPoint.congr_of_eventuallyEq {g : E → ℝ}
