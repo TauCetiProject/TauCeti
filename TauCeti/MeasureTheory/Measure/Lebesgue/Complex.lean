@@ -13,7 +13,8 @@ import Mathlib.Topology.Order.Compact
 /-!
 # Planar area of coordinate lines and graphs
 
-Coordinate lines and continuous graphs over compact intervals have zero planar Lebesgue measure.
+Coordinate lines and continuous graphs over compact intervals have zero planar Lebesgue measure;
+in particular the open and closed upper half-planes agree almost everywhere.
 Interchanging the real and imaginary coordinates preserves planar area.
 Splitting complex vectors into real and imaginary blocks preserves product volume, using
 Mathlib's `Complex.volume_preserving_equiv_real_prod` coordinatewise and
@@ -45,6 +46,15 @@ theorem volume_setOf_im_eq (c : ℝ) : volume {z : ℂ | z.im = c} = 0 := by
   ext z
   simp only [mem_preimage, measurableEquivRealProd_apply, mem_prod,
     mem_singleton_iff, mem_univ, true_and, mem_ofPred_eq]
+
+/-- The open and closed upper half-planes agree up to the null real axis. -/
+theorem setOf_im_pos_ae_eq_setOf_im_nonneg :
+    {z : ℂ | 0 < z.im} =ᵐ[volume] {z : ℂ | 0 ≤ z.im} := by
+  refine ae_eq_set.2 ⟨?_, measure_mono_null (fun z hz ↦ ?_) (volume_setOf_im_eq 0)⟩
+  · rw [sdiff_eq_empty.2 fun z hz ↦ by
+      simp only [mem_ofPred_eq] at hz ⊢
+      exact hz.le, measure_empty]
+  · exact le_antisymm (not_lt.1 hz.2) hz.1
 
 /-- A continuous graph over a compact interval has zero planar area. -/
 theorem volume_setOf_re_mem_Icc_im_eq {a b : ℝ} {f : ℝ → ℝ} (hf : ContinuousOn f (Icc a b)) :

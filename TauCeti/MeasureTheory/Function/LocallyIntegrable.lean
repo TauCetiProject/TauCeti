@@ -40,6 +40,9 @@ Pointwise suprema and infima of locally integrable functions are locally integra
 normed lattice with solid norm, and finite sums of functions locally integrable on a set are
 locally integrable on it.
 
+Local integrability on the trace `U ∩ s` of a closed set on an open set is local integrability on
+`U` for the measure restricted to `s`.
+
 Pairing a locally integrable function with a fixed vector in an inner product space gives a
 locally integrable scalar function, as Mathlib records for `Integrable` and `MemLp`.
 
@@ -227,6 +230,24 @@ theorem locallyIntegrableOn_iff_forall_isCompact_closure :
     exact hf.filter_mono nhdsWithin_le_nhds
 
 end RelativelyCompactSubdomains
+
+/-- Local integrability on the trace `U ∩ s` of a closed set `s` on an open set `U` is local
+integrability on `U` for the restriction of the measure to `s`: near points of `U` off `s` the
+restricted measure vanishes. -/
+theorem LocallyIntegrableOn.restrict_of_inter [OpensMeasurableSpace X] {F : Type*}
+    [NormedAddCommGroup F] {f : X → F} {U s : Set X} (hU : IsOpen U) (hs : IsClosed s)
+    (hf : LocallyIntegrableOn f (U ∩ s) μ) : LocallyIntegrableOn f U (μ.restrict s) := by
+  intro x hx
+  by_cases hxs : x ∈ s
+  · obtain ⟨t, ht, hint⟩ := hf x ⟨hx, hxs⟩
+    obtain ⟨u, hu, hxu, hut⟩ := mem_nhdsWithin.1 ht
+    refine ⟨U ∩ u, inter_mem_nhdsWithin _ (hu.mem_nhds hxu), ?_⟩
+    rw [IntegrableOn, Measure.restrict_restrict (hU.inter hu).measurableSet]
+    exact hint.mono_set fun z hz ↦ hut ⟨hz.1.2, hz.1.1, hz.2⟩
+  · refine ⟨sᶜ, mem_nhdsWithin_of_mem_nhds (hs.isOpen_compl.mem_nhds hxs), ?_⟩
+    rw [IntegrableOn, Measure.restrict_restrict hs.isOpen_compl.measurableSet,
+      compl_inter_self, Measure.restrict_empty]
+    exact integrable_zero_measure
 
 /-- For a locally finite measure, the indicator of a constant on a set `t` that is null-measurable
 for the restriction of the measure to `s` is locally integrable on `s`. -/

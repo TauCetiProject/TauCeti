@@ -10,18 +10,21 @@ public import TauCeti.Analysis.Complex.Conformal.Reflection.Basic
 public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.Topology.Algebra.Module.Star
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.Bochner.Star
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Weak `\bar∂` equations with a real boundary condition, and weak Schwarz reflection
 
 `HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η` is the weak form of `\bar∂ξ = η` on the closed
-upper part `Ω ∩ {0 ≤ im}` of an open set `Ω ⊆ ℂ`, together with the boundary condition that `ξ`
-is real on the real axis. The coefficients lie in a complex Banach space `F` whose real structure
-is its `star` operation, so that `x` is real when `star x = x`; for `F = ℂⁿ`, as `Fin n → ℂ`, this
-is coordinatewise conjugation and the real vectors are `ℝⁿ`. Test functions are smooth, complex
+upper part `Ω ∩ {0 ≤ im}` of an open set `Ω ⊆ ℂ`, with the boundary condition that `ξ` is real
+on the real axis imposed weakly. The coefficients lie in a complex Banach space `F` whose real
+structure is its `star` operation, so that `x` is real when `star x = x`; for `F = ℂⁿ`, as
+`Fin n → ℂ`, this is coordinatewise conjugation and the real vectors are `ℝⁿ`. A locally
+integrable `ξ` has no values on the null real axis, so the boundary condition is not a pointwise
+statement about `ξ`: it is encoded by the choice of test functions, which are smooth, complex
 valued, compactly supported in `Ω`, real on the real axis, and need not vanish there. The
 identity tested is the real part of the normalized equation of
 `TauCeti.HasWeakConjWirtingerDerivOn`, integrated over the closed upper half-plane: this is
@@ -39,9 +42,9 @@ the tests on the axis, are both essential: for smooth data the identity has the 
 * `TauCeti.HasWeakConjWirtingerDerivRealBoundaryOn.exists_differentiableOn_ae_eq`: **weak
   Schwarz reflection**. With finite-dimensional coefficients and `η = 0`, `ξ` agrees almost
   everywhere on `Ω ∩ {0 ≤ im}` with a map holomorphic on all of `Ω`, real on `Ω ∩ ℝ` and
-  satisfying `v (conj z) = star (v z)`. This extends
-  `TauCeti.differentiableOn_schwarzReflection_of_symmetric` from continuous to locally integrable
-  boundary data.
+  satisfying `v (conj z) = star (v z)`. It is a weak analogue of
+  `TauCeti.differentiableOn_schwarzReflection_of_symmetric`; recovering that lemma from it would
+  also need the half-plane boundary-term computation for smooth data, which is not proved here.
 * Checks: the reflection of `z` is `z`, and the even reflection `s + i|t|`, which omits the
   conjugation, is not a weak solution below the axis.
 
@@ -86,8 +89,7 @@ theorem starSchwarzReflection_of_im_neg {z : ℂ} (hz : z.im < 0) :
 theorem starSchwarzReflection_eq_schwarzReflection (f : ℂ → ℂ) :
     starSchwarzReflection f = schwarzReflection f := by
   ext z
-  rw [schwarzReflection_def]
-  rfl
+  rw [schwarzReflection_def, starSchwarzReflection, Complex.star_def]
 
 @[simp]
 theorem starSchwarzReflection_zero : starSchwarzReflection (0 : ℂ → F) = 0 := by
@@ -114,57 +116,24 @@ end Reflection
 
 /-! ### Measure-theoretic preliminaries -/
 
-private theorem volume_im_eq_zero : volume {z : ℂ | z.im = 0} = 0 := by
-  have hker : {z : ℂ | z.im = 0} = (LinearMap.ker Complex.imLm : Set ℂ) := by
-    ext z
-    simp
-  rw [hker]
-  refine Measure.addHaar_submodule _ _ fun h ↦ ?_
-  have hI : I ∈ LinearMap.ker Complex.imLm := h ▸ Submodule.mem_top
-  simp at hI
+private theorem isClosed_im_nonneg : IsClosed {z : ℂ | 0 ≤ z.im} :=
+  isClosed_le continuous_const Complex.continuous_im
 
 private theorem measurableSet_im_nonneg : MeasurableSet {z : ℂ | 0 ≤ z.im} :=
-  measurableSet_le measurable_const Complex.measurable_im
-
-private theorem im_pos_ae_eq_im_nonneg :
-    ({z : ℂ | 0 < z.im} : Set ℂ) =ᵐ[volume] {z : ℂ | 0 ≤ z.im} := by
-  refine ae_eq_set.2 ⟨?_, measure_mono_null (fun z hz ↦ ?_) volume_im_eq_zero⟩
-  · rw [sdiff_eq_empty.2 fun z hz ↦ by
-      simp only [mem_ofPred_eq] at hz ⊢
-      exact hz.le, measure_empty]
-  · exact le_antisymm (not_lt.1 hz.2) hz.1
-
-/-- Local integrability up to the boundary is local integrability on `Ω` for the restriction of
-Lebesgue measure to the closed upper half-plane. -/
-private theorem locallyIntegrableOn_restrict_im_nonneg {f : ℂ → F}
-    (hf : LocallyIntegrableOn f ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) :
-    LocallyIntegrableOn f Ω (volume.restrict {z | 0 ≤ z.im}) := by
-  intro x hx
-  by_cases hxH : 0 ≤ x.im
-  · obtain ⟨t, ht, hint⟩ := hf x ⟨hx, hxH⟩
-    obtain ⟨u, hu, hxu, hut⟩ := mem_nhdsWithin.1 ht
-    refine ⟨(Ω : Set ℂ) ∩ u, inter_mem_nhdsWithin _ (hu.mem_nhds hxu), ?_⟩
-    rw [IntegrableOn, Measure.restrict_restrict (Ω.isOpen.inter hu).measurableSet]
-    exact hint.mono_set fun z hz ↦ hut ⟨hz.1.2, hz.1.1, hz.2⟩
-  · refine ⟨{z | z.im < 0}, mem_nhdsWithin_of_mem_nhds
-      ((isOpen_lt Complex.continuous_im continuous_const).mem_nhds (not_le.1 hxH)), ?_⟩
-    rw [IntegrableOn, Measure.restrict_restrict
-      (measurableSet_lt Complex.measurable_im measurable_const)]
-    have he : {z : ℂ | z.im < 0} ∩ {z | 0 ≤ z.im} = ∅ := by
-      ext z
-      simp
-    rw [he, Measure.restrict_empty]
-    exact integrable_zero_measure
+  isClosed_im_nonneg.measurableSet
 
 variable [NormedSpace ℂ F] [StarAddMonoid F] [StarModule ℂ F] {ξ η : ℂ → F}
 
 /-! ### The weak formulation up to a real boundary -/
 
 /-- The weak equation `\bar∂ξ = η` on the closed upper part `Ω ∩ {0 ≤ im}` of `Ω`, with the
-boundary condition that `ξ` is real on the real axis, where `x : F` is real when `star x = x`.
-The source and the derivative are locally integrable up to the boundary, and the real part of the
-normalized identity of `HasWeakConjWirtingerDerivOn`, integrated over `0 ≤ im`, holds for every
-smooth complex test function compactly supported in `Ω` and real on the real axis. -/
+boundary condition that `ξ` is real on the real axis imposed weakly, where `x : F` is real when
+`star x = x`. The source and the derivative are locally integrable up to the boundary, and the
+real part of the normalized identity of `HasWeakConjWirtingerDerivOn`, integrated over `0 ≤ im`,
+holds for every smooth complex test function compactly supported in `Ω` and real on the real
+axis. No pointwise condition on `ξ` along the axis is stated: the restriction of the tests to
+functions real on the axis, together with taking real parts, is what encodes the boundary
+condition. -/
 def HasWeakConjWirtingerDerivRealBoundaryOn (Ω : Opens ℂ) (ξ η : ℂ → F) : Prop :=
   CompleteSpace F ∧ LocallyIntegrableOn ξ ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) ∧
     LocallyIntegrableOn η ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) ∧
@@ -182,6 +151,7 @@ theorem hasWeakConjWirtingerDerivRealBoundaryOn_iff :
           ℜ (∫ z in {z : ℂ | 0 ≤ z.im},
               (lineDeriv ℝ (χ : ℂ → ℂ) z 1 + I * lineDeriv ℝ (χ : ℂ → ℂ) z I) • ξ z) =
             -(2 : ℝ) • ℜ (∫ z in {z : ℂ | 0 ≤ z.im}, χ z • η z) := Iff.rfl
+
 /-! ### Test functions -/
 
 /-- A real test function on a conjugation-invariant open set, composed with conjugation. -/
@@ -189,8 +159,7 @@ private def conjTest (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓(Ω, ℝ))
   ⟨(φ : ℂ → ℝ) ∘ conjLIE, φ.contDiff.comp conjLIE.toContinuousLinearEquiv.contDiff,
     φ.hasCompactSupport.comp_homeomorph conjLIE.toHomeomorph, by
       intro z hz
-      rw [show ((φ : ℂ → ℝ) ∘ conjLIE) = (φ : ℂ → ℝ) ∘ conjLIE.toHomeomorph from rfl,
-        tsupport_comp_eq_preimage] at hz
+      rw [← LinearIsometryEquiv.coe_toHomeomorph, tsupport_comp_eq_preimage] at hz
       simpa using hΩ (φ.tsupport_subset hz)⟩
 
 private theorem conjTest_apply (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓(Ω, ℝ)) (z : ℂ) :
@@ -214,6 +183,7 @@ private theorem lineDeriv_smulTest (ψ : 𝓓(Ω, ℝ)) (c : ℂ) (z v : ℂ) :
   have h := congrFun (congrArg DFunLike.coe (TestFunction.lineDerivCLM_postcompCLM
     (n := ⊤) (k := ⊤) ((ContinuousLinearMap.id ℝ ℝ).smulRight c) v ψ)) z
   simpa [smulTest] using h
+
 /-! ### The half-plane pairing -/
 
 /-- The normalized half-plane pairing of a real test function, whose real part the weak
@@ -231,10 +201,9 @@ private theorem halfPairing_add (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω 
     simp
   have hsum (v : ℂ) (z : ℂ) : lineDeriv ℝ ((ψ₁ + ψ₂ : 𝓓(Ω, ℝ)) : ℂ → ℝ) z v =
       lineDeriv ℝ (ψ₁ : ℂ → ℝ) z v + lineDeriv ℝ (ψ₂ : ℂ → ℝ) z v := by
-    rw [hd, hd ψ₁, hd ψ₂, map_add]
-    rfl
-  have hξ := locallyIntegrableOn_restrict_im_nonneg h.2.1
-  have hη := locallyIntegrableOn_restrict_im_nonneg h.2.2.1
+    rw [hd, hd ψ₁, hd ψ₂, map_add, add_apply]
+  have hξ := h.2.1.restrict_of_inter Ω.isOpen isClosed_im_nonneg
+  have hη := h.2.2.1.restrict_of_inter Ω.isOpen isClosed_im_nonneg
   simp only [halfPairing, hsum, add_smul, add_apply]
   rw [integral_add (integrable_lineDeriv_smul_of_locallyIntegrableOn hξ ψ₁ 1)
       (integrable_lineDeriv_smul_of_locallyIntegrableOn hξ ψ₂ 1),
@@ -257,8 +226,8 @@ half-plane pairing of `ψ`. -/
 private theorem realPart_smul_halfPairing (h : HasWeakConjWirtingerDerivRealBoundaryOn Ω ξ η)
     (ψ : 𝓓(Ω, ℝ)) (c : ℂ) (hc : ∀ x : ℝ, ψ (x : ℂ) * c.im = 0) :
     ℜ (c • halfPairing ξ η ψ) = 0 := by
-  have hξ := locallyIntegrableOn_restrict_im_nonneg h.2.1
-  have hη := locallyIntegrableOn_restrict_im_nonneg h.2.2.1
+  have hξ := h.2.1.restrict_of_inter Ω.isOpen isClosed_im_nonneg
+  have hη := h.2.2.1.restrict_of_inter Ω.isOpen isClosed_im_nonneg
   have key := h.2.2.2 (smulTest ψ c) fun x ↦ by simpa [smulTest_apply] using hc x
   have h1 : ∫ z in {z : ℂ | 0 ≤ z.im},
       (lineDeriv ℝ (smulTest ψ c : ℂ → ℂ) z 1 + I * lineDeriv ℝ (smulTest ψ c : ℂ → ℂ) z I) •
@@ -306,11 +275,8 @@ private theorem halfPairing_eq_zero (h : HasWeakConjWirtingerDerivRealBoundaryOn
   rw [realPart_I_smul, neg_eq_zero] at hi
   rw [← realPart_add_I_smul_imaginaryPart (halfPairing ξ η ψ), hr, hi]
   simp
-variable [ContinuousStar F]
 
-private theorem star_integral {μ : Measure ℂ} (f : ℂ → F) :
-    ∫ z, star (f z) ∂μ = star (∫ z, f z ∂μ) :=
-  (starL' ℝ : F ≃L[ℝ] F).integral_comp_comm f
+variable [ContinuousStar F]
 
 /-- The reflection of a function locally integrable up to the boundary is locally integrable on
 the doubled domain. -/
@@ -324,14 +290,13 @@ theorem locallyIntegrableOn_starSchwarzReflection
     measurableSet_lt Complex.measurable_im measurable_const
   have hup : IntegrableOn (starSchwarzReflection f) (K ∩ {z | 0 ≤ z.im}) := by
     refine (hf.integrableOn_compact_subset (inter_subset_inter_left _ hKΩ)
-      (hK.inter_right (isClosed_le continuous_const Complex.continuous_im))).congr_fun
+      (hK.inter_right isClosed_im_nonneg)).congr_fun
       (fun z hz ↦ (starSchwarzReflection_of_im_nonneg hz.2).symm)
       (hKm.inter measurableSet_im_nonneg)
   have hdown : IntegrableOn (starSchwarzReflection f) (K ∩ {z | z.im < 0}) := by
     let K' : Set ℂ := (conjLIE : ℂ → ℂ) ⁻¹' K ∩ {z | 0 ≤ z.im}
     have hK' : IsCompact K' :=
-      (conjLIE.toHomeomorph.isCompact_preimage.2 hK).inter_right
-        (isClosed_le continuous_const Complex.continuous_im)
+      (conjLIE.toHomeomorph.isCompact_preimage.2 hK).inter_right isClosed_im_nonneg
     have hK'Ω : K' ⊆ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} := fun z hz ↦
       ⟨by simpa using hΩ (hKΩ hz.1), hz.2⟩
     have hi : IntegrableOn (fun z ↦ f (conj z)) ((conjLIE : ℂ → ℂ) ⁻¹' K') := by
@@ -348,6 +313,7 @@ theorem locallyIntegrableOn_starSchwarzReflection
   by_cases h : 0 ≤ z.im
   · exact Or.inl ⟨hz, h⟩
   · exact Or.inr ⟨hz, not_le.1 h⟩
+
 /-! ### Splitting integrals on the doubled domain -/
 
 /-- An integral of a reflected function against a real test function on the doubled domain is the
@@ -365,13 +331,14 @@ private theorem integral_smul_starSchwarzReflection {f : ℂ → F} (a : ℂ →
       ext z
       simp
     rw [← conjLIE.measurePreserving.setIntegral_preimage_emb
-      conjLIE.toHomeomorph.measurableEmbedding, hpre, ← star_integral,
-      ← setIntegral_congr_set im_pos_ae_eq_im_nonneg]
+      conjLIE.toHomeomorph.measurableEmbedding, hpre, ← integral_star,
+      ← setIntegral_congr_set Complex.setOf_im_pos_ae_eq_setOf_im_nonneg]
     refine setIntegral_congr_fun (measurableSet_lt measurable_const Complex.measurable_im)
       fun z hz ↦ ?_
     simp only [conjLIE_apply]
     rw [starSchwarzReflection_of_im_neg (by simpa using hz), conj_conj, star_smul,
       star_trivial (a (conj z))]
+
 /-! ### Weak Schwarz reflection -/
 
 /-- **Reflection to the doubled domain.** On a conjugation-invariant open set, the reflections of
@@ -407,7 +374,7 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.hasWeakConjWirtingerDerivOn_star
     rw [lineDeriv_conjTest, map_one]
   have hI (z : ℂ) : lineDeriv ℝ (φ : ℂ → ℝ) (conj z) I = -lineDeriv ℝ (φs : ℂ → ℝ) z I := by
     rw [lineDeriv_conjTest, conj_I, lineDeriv_neg, neg_neg]
-  have h0 (z : ℂ) : (φ : ℂ → ℝ) (conj z) = (φs : ℂ → ℝ) z := rfl
+  have h0 (z : ℂ) : (φ : ℂ → ℝ) (conj z) = (φs : ℂ → ℝ) z := (conjTest_apply hΩ φ z).symm
   simp only [h1, hI, h0, neg_smul, integral_neg, star_neg]
   simp only [halfPairing, star_add, star_smul, conj_I, Complex.star_def, map_ofNat] at hsym
   rw [← sub_eq_zero, ← hsym]
@@ -437,7 +404,7 @@ theorem HasWeakConjWirtingerDerivRealBoundaryOn.exists_differentiableOn_ae_eq
     have hc := conjLIE.measurePreserving.quasiMeasurePreserving.ae hUv'
     have hne : ∀ᵐ z : ℂ, z.im ≠ 0 := by
       rw [ae_iff]
-      simpa using volume_im_eq_zero
+      simpa using Complex.volume_setOf_im_eq 0
     filter_upwards [hUv', hc, hne] with z hz hcz hnz hzΩ
     have hcz' := hcz (by simpa using hΩ hzΩ)
     simp only [conjLIE_apply] at hcz'
