@@ -165,6 +165,11 @@ theorem IsIntegralLattice.finiteDimensional (h : IsIntegralLattice i) :
   let _ := h.finite
   exact Module.Finite.equiv h.isBaseChange.equiv
 
+/-- The real basis attached to an integral basis of `N` sends `j` to the image of `b j`. -/
+theorem IsIntegralLattice.isBaseChange_basis_apply {ι : Type*} (h : IsIntegralLattice i)
+    (b : Module.Basis ι ℤ N) (j : ι) : h.isBaseChange.basis b j = i (b j) := by
+  simpa using h.isBaseChange.basis_apply b j
+
 /-- The range of an integral lattice is the `ℤ`-span of the real basis attached to an integral
 basis of `N`. -/
 theorem IsIntegralLattice.range_eq_span {ι : Type*} (h : IsIntegralLattice i)
@@ -179,9 +184,7 @@ theorem IsIntegralLattice.range_eq_span {ι : Type*} (h : IsIntegralLattice i)
 independent over the reals. -/
 theorem IsIntegralLattice.linearIndependent_basis {ι : Type*} (h : IsIntegralLattice i)
     (b : Module.Basis ι ℤ N) : LinearIndependent ℝ fun j ↦ i (b j) := by
-  have hB (j : ι) : h.isBaseChange.basis b j = i (b j) := by
-    simpa using h.isBaseChange.basis_apply b j
-  exact funext hB ▸ (h.isBaseChange.basis b).linearIndependent
+  exact funext (h.isBaseChange_basis_apply b) ▸ (h.isBaseChange.basis b).linearIndependent
 
 end Basic
 
@@ -241,6 +244,17 @@ theorem IsIntegralLattice.eq_realCharacter (h : IsIntegralLattice i) {m : N →+
     {φ : Module.Dual ℝ V} (hφ : ∀ n, φ (i n) = (m n : ℝ)) : φ = h.realCharacter m :=
   h.isBaseChange.algHom_ext φ (h.realCharacter m) fun n ↦ by
     simp only [AddMonoidHom.coe_toIntLinearMap, hφ, IsIntegralLattice.realCharacter_apply]
+
+/-- The real extension of an integral coordinate character is the corresponding coordinate of the
+real basis attached to an integral basis. -/
+theorem IsIntegralLattice.realCharacter_coord {ι : Type*} (h : IsIntegralLattice i)
+    (b : Module.Basis ι ℤ N) (j : ι) :
+    h.realCharacter (b.coord j).toAddMonoidHom = (h.isBaseChange.basis b).coord j := by
+  classical
+  refine (h.isBaseChange.basis b).ext fun k ↦ ?_
+  rw [Module.Basis.coord_apply, Module.Basis.repr_self, h.isBaseChange_basis_apply,
+    h.realCharacter_apply, Finsupp.single_apply]
+  simp [Module.Basis.coord_apply, Finsupp.single_apply, eq_comm]
 
 /-- A real-linear functional is the real extension of an integral character exactly when it takes
 integer values at every lattice point. -/

@@ -93,11 +93,6 @@ theorem finrank_quotient_direction (σ : OrientedCell h k) :
   have := σ.finrank_direction_add
   omega
 
-/-- The support of a cell is closed. -/
-theorem isClosed_carrier (σ : OrientedCell h k) : IsClosed σ.carrier := by
-  obtain ⟨P, hP⟩ := isRationalNormalPolyhedron_iff.mp σ.rational
-  exact hP ▸ P.isClosed
-
 /-- The same polyhedron with the opposite orientation. -/
 def reverse (σ : OrientedCell h k) : OrientedCell h k where
   carrier := σ.carrier
@@ -240,17 +235,29 @@ open OrientedCell
 variable (R : Type*) [Ring R] (h : TauCeti.Toric.IsIntegralLattice i)
   (E : Type*) [AddCommGroup E] [Module R E] (k : ℕ)
 
-/-- The generating relations of polyhedral cochains: reversal `(σ.reverse, c) + (σ, c)` and
+/-- The relators of polyhedral cochains: reversal `(σ.reverse, c) + (σ, c)` and
 subdivision `(σ, c) - ∑ τ ∈ Q, (τ, c)`. Additivity in the coefficient holds already in the
-finitely supported functions. The generating set does not depend on a ring of scalars. -/
-def cochainGenerators : Set (OrientedCell h k →₀ E) :=
+finitely supported functions. The set of relators does not depend on a ring of scalars. -/
+def cochainRelators : Set (OrientedCell h k →₀ E) :=
   {x | ∃ (σ : OrientedCell h k) (c : E), x = Finsupp.single σ.reverse c + Finsupp.single σ c} ∪
     {x | ∃ (σ : OrientedCell h k) (Q : Finset (OrientedCell h k)) (c : E),
       IsOrientedSubdivision σ Q ∧ x = Finsupp.single σ c - ∑ τ ∈ Q, Finsupp.single τ c}
 
-/-- The `R`-submodule of relations spanned by `cochainGenerators`. -/
+/-- Membership in `cochainRelators`: a reversal or a subdivision relator. -/
+theorem mem_cochainRelators_iff {x : OrientedCell h k →₀ E} :
+    x ∈ cochainRelators h E k ↔
+      (∃ (σ : OrientedCell h k) (c : E), x = Finsupp.single σ.reverse c + Finsupp.single σ c) ∨
+        ∃ (σ : OrientedCell h k) (Q : Finset (OrientedCell h k)) (c : E),
+          IsOrientedSubdivision σ Q ∧ x = Finsupp.single σ c - ∑ τ ∈ Q, Finsupp.single τ c :=
+  Iff.rfl
+
+/-- The `R`-submodule of relations spanned by `cochainRelators`. -/
 def cochainRelations : Submodule R (OrientedCell h k →₀ E) :=
-  Submodule.span R (cochainGenerators h E k)
+  Submodule.span R (cochainRelators h E k)
+
+/-- The relations are the span of the relators. -/
+theorem cochainRelations_def :
+    cochainRelations R h E k = Submodule.span R (cochainRelators h E k) := (rfl)
 
 /-- Polyhedral cochains of codimension `k` with coefficients in the `R`-module `E`: finite sums
 of oriented cells with coefficients in `E`, modulo reversal and subdivision. -/
@@ -301,7 +308,7 @@ theorem ofFinsupp_single (σ : OrientedCell h k) (c : E) :
 theorem mk_reverse (σ : OrientedCell h k) (c : E) :
     mk (R := R) σ.reverse c = -mk σ c := by
   rw [eq_neg_iff_add_eq_zero, ← ofFinsupp_single, ← ofFinsupp_single, ← map_add,
-    ofFinsupp_eq_zero_iff]
+    ofFinsupp_eq_zero_iff, cochainRelations_def]
   exact Submodule.subset_span (Or.inl ⟨σ, c, rfl⟩)
 
 /-- The class of a generator is the sum of the classes of the pieces of an oriented subdivision. -/
@@ -309,7 +316,7 @@ theorem mk_eq_sum_of_isOrientedSubdivision {σ : OrientedCell h k}
     {Q : Finset (OrientedCell h k)} (hQ : IsOrientedSubdivision σ Q) (c : E) :
     mk (R := R) σ c = ∑ τ ∈ Q, mk τ c := by
   rw [← sub_eq_zero]
-  simp only [← ofFinsupp_single, ← map_sum, ← map_sub, ofFinsupp_eq_zero_iff]
+  simp only [← ofFinsupp_single, ← map_sum, ← map_sub, ofFinsupp_eq_zero_iff, cochainRelations_def]
   exact Submodule.subset_span (Or.inr ⟨σ, Q, c, hQ, rfl⟩)
 
 /-- Every cochain is built from generator classes by addition. -/
@@ -337,13 +344,12 @@ def lift (φ : OrientedCell h k → E →ₗ[R] M) (reverse : ∀ σ, φ σ.reve
     (subdivision : ∀ σ Q, IsOrientedSubdivision σ Q → φ σ = ∑ τ ∈ Q, φ τ) :
     PolyhedralCochain R h E k →ₗ[R] M :=
   (cochainRelations R h E k).liftQ (Finsupp.lsum ℕ φ) <| by
-    rw [cochainRelations, Submodule.span_le]
+    rw [cochainRelations_def, Submodule.span_le]
     rintro x (⟨σ, c, rfl⟩ | ⟨σ, Q, c, hQ, rfl⟩)
-    · rw [SetLike.mem_coe, LinearMap.mem_ker, map_add, Finsupp.lsum_single,
-        Finsupp.lsum_single, reverse, LinearMap.neg_apply, neg_add_cancel]
-    · rw [SetLike.mem_coe, LinearMap.mem_ker, map_sub, map_sum, Finsupp.lsum_single,
-        subdivision σ Q hQ, LinearMap.sum_apply, sub_eq_zero]
-      exact Finset.sum_congr rfl fun τ _ => (Finsupp.lsum_single (S := ℕ) φ τ c).symm
+    · rw [SetLike.mem_coe, LinearMap.mem_ker, map_add]
+      simp [reverse]
+    · rw [SetLike.mem_coe, LinearMap.mem_ker, map_sub, map_sum]
+      simp [subdivision σ Q hQ, LinearMap.sum_apply]
 
 variable (φ : OrientedCell h k → E →ₗ[R] M) (reverse : ∀ σ, φ σ.reverse = -φ σ)
   (subdivision : ∀ σ Q, IsOrientedSubdivision σ Q → φ σ = ∑ τ ∈ Q, φ τ)
@@ -403,9 +409,9 @@ end map
 
 section restrictScalars
 
-private theorem smul_mem_span_cochainGenerators (r : R) {x : OrientedCell h k →₀ E}
-    (hx : x ∈ Submodule.span ℤ (cochainGenerators h E k)) :
-    r • x ∈ Submodule.span ℤ (cochainGenerators h E k) := by
+private theorem smul_mem_span_cochainRelators (r : R) {x : OrientedCell h k →₀ E}
+    (hx : x ∈ Submodule.span ℤ (cochainRelators h E k)) :
+    r • x ∈ Submodule.span ℤ (cochainRelators h E k) := by
   induction hx using Submodule.span_induction with
   | mem x hx =>
     apply Submodule.subset_span
@@ -424,7 +430,7 @@ theorem restrictScalars_cochainRelations :
   refine le_antisymm ?_ (Submodule.span_le_restrictScalars ℤ R _)
   let P : Submodule R (OrientedCell h k →₀ E) :=
     { (cochainRelations ℤ h E k).toAddSubmonoid with
-      smul_mem' := fun r _ hx => smul_mem_span_cochainGenerators r hx }
+      smul_mem' := fun r _ hx => smul_mem_span_cochainRelators r hx }
   exact Submodule.restrictScalars_mono ℤ
     (Submodule.span_le (p := P) |>.mpr Submodule.subset_span)
 
@@ -437,7 +443,12 @@ def restrictScalarsEquiv : PolyhedralCochain ℤ h E k ≃+ PolyhedralCochain R 
 
 @[simp]
 theorem restrictScalarsEquiv_mk (σ : OrientedCell h k) (c : E) :
-    restrictScalarsEquiv R h E k (mk σ c) = mk σ c := (rfl)
+    restrictScalarsEquiv R h E k (mk σ c) = mk σ c := by
+  change ((Submodule.quotEquivOfEq _ _ (restrictScalars_cochainRelations R h E k).symm).trans
+    (Submodule.Quotient.restrictScalarsEquiv ℤ (cochainRelations R h E k)))
+      (Submodule.Quotient.mk (Finsupp.single σ c)) = Submodule.Quotient.mk (Finsupp.single σ c)
+  rw [LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
+    Submodule.Quotient.restrictScalarsEquiv_mk]
 
 end restrictScalars
 
@@ -480,7 +491,7 @@ private theorem pointValue_subdivision (hk : k = finrank ℝ V) (x : V)
     have hτ : ∀ τ ∈ Q, τ.carrier ≠ {x} := by
       intro τ hτ hτx
       obtain ⟨y, hy⟩ := σ.exists_carrier_eq_singleton hk
-      have hxσ : x ∈ σ.carrier := hQ.carrier_subset hτ (hτx ▸ rfl)
+      have hxσ : x ∈ σ.carrier := hQ.carrier_subset hτ (by simp [hτx])
       rw [hy, Set.mem_singleton_iff] at hxσ
       exact hσ (hxσ ▸ hy)
     unfold pointValue
@@ -495,7 +506,7 @@ theorem mk_ne_zero_of_finrank_eq (hk : k = finrank ℝ V) (σ : OrientedCell h k
   intro hzero
   have := congrArg (lift (pointValue x σ.orientation) (pointValue_reverse hk x σ.orientation)
     fun _ _ hQ => pointValue_subdivision hk x σ.orientation hQ) hzero
-  rw [lift_mk, map_zero, pointValue, ite_eq_left hx, ite_eq_left rfl, LinearMap.id_apply] at this
+  simp only [lift_mk, map_zero, pointValue, hx, ite_eq_left, LinearMap.id_apply] at this
   exact hc this
 
 /-- For nonzero coefficients, the top-codimensional cochains form a nontrivial group. -/

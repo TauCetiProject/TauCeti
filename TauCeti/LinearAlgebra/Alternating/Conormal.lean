@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Orientation
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.Quotient.Basic
+public import TauCeti.LinearAlgebra.Multilinear.Quotient
 
 /-!
 # Conormal alternating forms
@@ -21,7 +22,8 @@ the representing form, and reversing a ray preserves it.
 Pullback from the quotient identifies alternating forms on `M ⧸ W` with conormal
 forms on `M` via `Submodule.conormalFormsEquiv`. In the top degree of the quotient, any two
 conormal orientations agree up to reversal (`Module.Ray.IsConormal.eq_or_eq_neg`), by descending
-through this equivalence and applying Mathlib's `Orientation.eq_or_eq_neg`.
+along the injective pullback `Submodule.conormalPullback` and applying Mathlib's
+`Orientation.eq_or_eq_neg`.
 
 ## Attribution
 
@@ -63,63 +65,66 @@ theorem conormalForms_bot : (⊥ : Submodule R M).conormalForms ι = ⊤ := by
 /-- A conormal form depends only on the classes of its arguments modulo the submodule. -/
 theorem conormalForms_apply_eq_of_sub_mem [Finite ι] {W : Submodule R M}
     {α : M [⋀^ι]→ₗ[R] R} (hα : α ∈ W.conormalForms ι) {x y : ι → M}
-    (hxy : ∀ j, x j - y j ∈ W) : α x = α y := by
+    (hxy : ∀ j, x j - y j ∈ W) : α x = α y :=
+  α.toMultilinearMap.apply_eq_of_mkQ_eq (fun _ => W)
+    (fun _ j _ hx => hα _ j (by simp [hx])) fun j => (Submodule.Quotient.eq W).mpr (hxy j)
+
+/-- A conormal form descends to an alternating form on the quotient. -/
+theorem exists_compLinearMap_mkQ_eq [Finite ι] {W : Submodule R M} {α : M [⋀^ι]→ₗ[R] R}
+    (hα : α ∈ W.conormalForms ι) : ∃ β : (M ⧸ W) [⋀^ι]→ₗ[R] R, β.compLinearMap W.mkQ = α := by
   classical
-  let := Fintype.ofFinite ι
-  have he : x = (x - y) + y := (sub_add_cancel x y).symm
-  rw [he, ← α.coe_multilinearMap, MultilinearMap.map_add_univ]
-  rw [Finset.sum_eq_single ∅ ?_ (by simp)]
-  · simp
-  · intro s _ hs
-    obtain ⟨j, hj⟩ := Finset.nonempty_iff_ne_empty.mpr hs
-    exact hα _ j (by simpa [Finset.piecewise, hj] using hxy j)
+  have hf : ∀ [DecidableEq ι] (m : ι → M) (j : ι) (x : M), x ∈ W →
+      α.toMultilinearMap (Function.update m j x) = 0 := fun _ j _ hx => hα _ j (by simp [hx])
+  refine ⟨{ α.toMultilinearMap.liftQ (fun _ => W) hf with
+    map_eq_zero_of_eq' := fun v i j hij hne => ?_ }, AlternatingMap.ext fun v => ?_⟩
+  · have := α.toMultilinearMap.liftQ_apply (fun _ => W) hf fun k => (v k).out
+    simp only [Submodule.Quotient.mk_out] at this
+    exact this.trans (α.map_eq_zero_of_eq _ (congrArg Quotient.out hij) hne)
+  · exact α.toMultilinearMap.liftQ_apply (fun _ => W) hf v
+
+/-- Pullback of alternating forms along the quotient map `M → M ⧸ W`. -/
+def conormalPullback (W : Submodule R M) :
+    ((M ⧸ W) [⋀^ι]→ₗ[R] R) →ₗ[R] (M [⋀^ι]→ₗ[R] R) where
+  toFun α := α.compLinearMap W.mkQ
+  map_add' α β := AlternatingMap.add_compLinearMap α β W.mkQ
+  map_smul' c α := AlternatingMap.ext fun v => by simp
+
+@[simp]
+theorem conormalPullback_apply (W : Submodule R M) (α : (M ⧸ W) [⋀^ι]→ₗ[R] R) :
+    W.conormalPullback α = α.compLinearMap W.mkQ := (rfl)
+
+theorem conormalPullback_injective (W : Submodule R M) :
+    Function.Injective (W.conormalPullback (ι := ι)) := fun _ _ he =>
+  AlternatingMap.compLinearMap_injective W.mkQ W.mkQ_surjective he
+
+/-- The pullback of a form on the quotient is conormal. -/
+theorem conormalPullback_mem (W : Submodule R M) (α : (M ⧸ W) [⋀^ι]→ₗ[R] R) :
+    W.conormalPullback α ∈ W.conormalForms ι := by
+  intro v j hv
+  apply α.map_coord_zero j
+  exact (Submodule.Quotient.mk_eq_zero W).mpr hv
 
 variable [Finite ι]
+
+/-- Pullback to conormal forms is bijective. -/
+theorem conormalPullback_codRestrict_bijective (W : Submodule R M) :
+    Function.Bijective
+      (W.conormalPullback.codRestrict (W.conormalForms ι) W.conormalPullback_mem) :=
+  ⟨fun _ _ he => W.conormalPullback_injective (congrArg Subtype.val he), fun α =>
+    let ⟨β, hβ⟩ := exists_compLinearMap_mkQ_eq α.property
+    ⟨β, Subtype.ext hβ⟩⟩
 
 /-- Pullback from the quotient identifies alternating forms with conormal forms.
 This is the linear version of orienting a normal quotient by conormal forms. -/
 noncomputable def conormalFormsEquiv (W : Submodule R M) :
-    ((M ⧸ W) [⋀^ι]→ₗ[R] R) ≃ₗ[R] W.conormalForms ι := by
-  classical
-  exact LinearEquiv.ofBijective
-    ({ toFun α := ⟨α.compLinearMap W.mkQ, by
-        intro v j hv
-        apply α.map_coord_zero j
-        exact (Submodule.Quotient.mk_eq_zero W).mpr hv⟩
-       map_add' := fun _ _ => Subtype.ext (AlternatingMap.add_compLinearMap _ _ _)
-       map_smul' := fun _ _ => Subtype.ext (by ext v; rfl) } :
-      ((M ⧸ W) [⋀^ι]→ₗ[R] R) →ₗ[R] W.conormalForms ι)
-    ⟨fun α β he => AlternatingMap.compLinearMap_injective W.mkQ W.mkQ_surjective
-      (congrArg Subtype.val he), by
-      intro α
-      let f : (ι → M ⧸ W) → R := fun v => α.val (fun j => (v j).out)
-      have hf (v : ι → M) : f (W.mkQ ∘ v) = α.val v := by
-        apply conormalForms_apply_eq_of_sub_mem α.property
-        intro j
-        exact (Submodule.Quotient.eq W).mp (Submodule.Quotient.mk_out _)
-      have hsurj : Function.Surjective (fun v : ι → M => W.mkQ ∘ v) := by
-        intro v
-        exact ⟨fun j => (v j).out, funext fun j => Submodule.Quotient.mk_out (v j)⟩
-      let β : (M ⧸ W) [⋀^ι]→ₗ[R] R :=
-        { toFun := f
-          map_update_add' := by
-            intro _ v j x y
-            obtain ⟨v, rfl⟩ := hsurj v
-            obtain ⟨x, rfl⟩ := W.mkQ_surjective x
-            obtain ⟨y, rfl⟩ := W.mkQ_surjective y
-            simp only [← map_add, ← Function.comp_update, hf, α.val.map_update_add]
-          map_update_smul' := by
-            intro _ v j c x
-            obtain ⟨v, rfl⟩ := hsurj v
-            obtain ⟨x, rfl⟩ := W.mkQ_surjective x
-            simp only [← map_smul, ← Function.comp_update, hf, α.val.map_update_smul]
-          map_eq_zero_of_eq' := fun v j l hjl hne =>
-            α.val.map_eq_zero_of_eq _ (congrArg Quotient.out hjl) hne }
-      exact ⟨β, Subtype.ext (AlternatingMap.ext hf)⟩⟩
+    ((M ⧸ W) [⋀^ι]→ₗ[R] R) ≃ₗ[R] W.conormalForms ι :=
+  LinearEquiv.ofBijective _ W.conormalPullback_codRestrict_bijective
 
 @[simp]
 theorem conormalFormsEquiv_apply (W : Submodule R M) (α : (M ⧸ W) [⋀^ι]→ₗ[R] R) :
-    (W.conormalFormsEquiv α).val = α.compLinearMap W.mkQ := (rfl)
+    (W.conormalFormsEquiv α).val = α.compLinearMap W.mkQ := by
+  rw [conormalFormsEquiv, LinearEquiv.ofBijective_apply, LinearMap.codRestrict_apply,
+    conormalPullback_apply]
 
 end CommRing
 
@@ -158,9 +163,25 @@ theorem isConormal_neg_iff {o : Module.Ray R (M [⋀^ι]→ₗ[R] R)} {W : Submo
       Submodule.neg_mem_iff]
 
 /-- Every ray of alternating forms is conormal to the zero submodule. -/
+@[simp]
 theorem isConormal_bot (o : Module.Ray R (M [⋀^ι]→ₗ[R] R)) : o.IsConormal ⊥ := by
   rw [IsConormal, Submodule.conormalForms_bot]
   exact Submodule.mem_top
+
+/-- A conormal ray is the pullback of a ray of alternating forms on the quotient. -/
+theorem IsConormal.exists_eq_rayOfNeZero_conormalPullback [Finite ι]
+    {o : Module.Ray R (M [⋀^ι]→ₗ[R] R)} {W : Submodule R M} (ho : o.IsConormal W) :
+    ∃ (α : (M ⧸ W) [⋀^ι]→ₗ[R] R) (hα : α ≠ 0),
+      o = rayOfNeZero R (W.conormalPullback α)
+        ((map_ne_zero_iff _ (W.conormalPullback_injective)).mpr hα) := by
+  obtain ⟨α, hα⟩ := Submodule.exists_compLinearMap_mkQ_eq ho
+  have hα0 : α ≠ 0 := by
+    rintro rfl
+    exact o.someVector_ne_zero (by rw [← hα]; simp)
+  refine ⟨α, hα0, ?_⟩
+  rw [← o.someVector_ray]
+  congr
+  exact hα.symm
 
 /-- Two conormal orientations in the top degree of a finite-dimensional normal
 quotient agree up to reversal. -/
@@ -168,34 +189,16 @@ theorem IsConormal.eq_or_eq_neg [Fintype ι] {o p : Module.Ray R (M [⋀^ι]→�
     {W : Submodule R M} [FiniteDimensional R (M ⧸ W)]
     (ho : o.IsConormal W) (hp : p.IsConormal W)
     (hk : finrank R (M ⧸ W) = Fintype.card ι) : o = p ∨ o = -p := by
-  let α := W.conormalFormsEquiv.symm ⟨o.someVector, ho⟩
-  let β := W.conormalFormsEquiv.symm ⟨p.someVector, hp⟩
-  let f := (W.conormalForms ι).subtype ∘ₗ W.conormalFormsEquiv.toLinearMap
-  have hα : f α = o.someVector :=
-    congrArg Subtype.val (W.conormalFormsEquiv.apply_symm_apply _)
-  have hβ : f β = p.someVector :=
-    congrArg Subtype.val (W.conormalFormsEquiv.apply_symm_apply _)
-  have hα0 : α ≠ 0 := by
-    intro hz
-    exact o.someVector_ne_zero (by rw [← hα, hz, map_zero])
-  have hβ0 : β ≠ 0 := by
-    intro hz
-    exact p.someVector_ne_zero (by rw [← hβ, hz, map_zero])
+  obtain ⟨α, hα, rfl⟩ := ho.exists_eq_rayOfNeZero_conormalPullback
+  obtain ⟨β, hβ, rfl⟩ := hp.exists_eq_rayOfNeZero_conormalPullback
   -- Descend to genuine orientations of the quotient, then pull their rays back.
-  rcases Orientation.eq_or_eq_neg (rayOfNeZero R α hα0) (rayOfNeZero R β hβ0) hk.symm
+  rcases Orientation.eq_or_eq_neg (rayOfNeZero R α hα) (rayOfNeZero R β hβ) hk.symm
     with he | he
-  · left
-    have hs := ((ray_eq_iff hα0 hβ0).mp he).map f
-    rw [hα, hβ] at hs
-    simpa only [Module.Ray.someVector_ray] using
-      (ray_eq_iff o.someVector_ne_zero p.someVector_ne_zero).mpr hs
+  · exact Or.inl ((ray_eq_iff _ _).mpr (((ray_eq_iff hα hβ).mp he).map W.conormalPullback))
   · right
     rw [neg_rayOfNeZero] at he
-    have hs := ((ray_eq_iff hα0 (neg_ne_zero.mpr hβ0)).mp he).map f
-    rw [hα, map_neg, hβ] at hs
-    exact o.someVector_ray.symm.trans
-      (((ray_eq_iff o.someVector_ne_zero (neg_ne_zero.mpr p.someVector_ne_zero)).mpr hs).trans
-        ((neg_rayOfNeZero R p.someVector p.someVector_ne_zero).symm.trans
-          (congrArg Neg.neg p.someVector_ray)))
+    rw [neg_rayOfNeZero, ray_eq_iff]
+    simpa only [map_neg] using
+      ((ray_eq_iff hα (neg_ne_zero.mpr hβ)).mp he).map W.conormalPullback
 
 end Module.Ray

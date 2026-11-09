@@ -289,12 +289,7 @@ theorem iInter {ι : Type*} [Finite ι] {P : ι → Set V}
       (Q a.1).inequality a.2) fun a => (Q a.1).rational_linear a.2, ?_⟩
   ext x
   rw [RationalAffinePolyhedron.mem_carrier_ofFinite, Set.mem_iInter]
-  refine ⟨fun hx j => ?_, fun hx a => ?_⟩
-  · rw [← hQ j]
-    exact fun k => hx ⟨j, k⟩
-  · have := hx a.1
-    rw [← hQ] at this
-    exact this a.2
+  simp only [Sigma.forall, ← hQ, RationalAffinePolyhedron.mem_carrier]
 
 variable {N' W : Type*} [AddCommGroup N'] [AddCommGroup W] [Module ℝ W]
   [TopologicalSpace W]
@@ -358,14 +353,6 @@ theorem isRationalNormalPolyhedron_singleton (h : TauCeti.Toric.IsIntegralLattic
   have := h.finiteDimensional
   let b := Module.Free.chooseBasis ℤ N
   let m : Module.Free.ChooseBasisIndex ℤ N → (N →+ ℤ) := fun j => (b.coord j).toAddMonoidHom
-  -- The real extensions of the coordinate characters are the coordinates of the real basis.
-  have hcoord (j) : (h.isBaseChange.basis b).coord j = h.realCharacter (m j) := by
-    refine (h.isBaseChange.basis b).ext fun k => ?_
-    have hk : h.isBaseChange.basis b k = i (b k) := by
-      simpa using h.isBaseChange.basis_apply b k
-    rw [Module.Basis.coord_apply, Module.Basis.repr_self, hk, h.realCharacter_apply,
-      Finsupp.single_apply]
-    simp [m, Module.Basis.coord_apply, Finsupp.single_apply, eq_comm]
   have hsingleton : ({x} : Set V) = ⋂ j, ({y | (h.realCharacter (m j)).toContinuousLinearMap y ≤
       (h.realCharacter (m j)).toContinuousLinearMap x} ∩
       {y | (-(h.realCharacter (m j))).toContinuousLinearMap y ≤
@@ -377,7 +364,7 @@ theorem isRationalNormalPolyhedron_singleton (h : TauCeti.Toric.IsIntegralLattic
     rw [← sub_eq_zero]
     refine (h.isBaseChange.basis b).ext_elem fun j => ?_
     have := le_antisymm (hy j).1 (hy j).2
-    rw [← Module.Basis.coord_apply, hcoord, map_sub, this, sub_self]
+    rw [← Module.Basis.coord_apply, ← h.realCharacter_coord, map_sub, this, sub_self]
     simp
   rw [hsingleton]
   exact IsRationalNormalPolyhedron.iInter fun j =>
