@@ -46,8 +46,8 @@ theorem natCast_mul_sum_mul_natCast {ι R : Type*} [CommSemiring R] (d : ℕ) (s
 open Finset in
 /-- Replacing the three factors of a triple product by constants one at a time: the difference of
 `∑ a b c` and the product of the three constants is a sum of three one-factor discrepancies. -/
-theorem sum_sum_sum_mul_sub_eq {α R : Type*} [CommRing R] (a b c : α → α → R) (p q r : R)
-    (s₀ s₁ s₂ : Finset α) :
+theorem sum_sum_sum_mul_sub_eq {α β γ R : Type*} [CommRing R] (a : α → β → R) (b : α → γ → R)
+    (c : β → γ → R) (p q r : R) (s₀ : Finset α) (s₁ : Finset β) (s₂ : Finset γ) :
     ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, a x y * b x z * c y z -
       (#s₀ * #s₁ * #s₂ : R) * (p * q * r) =
       ∑ z ∈ s₂, ∑ x ∈ s₀, ∑ y ∈ s₁, b x z * c y z * (a x y - p) +
