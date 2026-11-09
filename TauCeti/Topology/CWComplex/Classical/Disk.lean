@@ -9,6 +9,7 @@ public import Mathlib.Topology.CWComplex.Classical.Finite
 public import TauCeti.AlgebraicTopology.Disk
 public import TauCeti.Topology.CWComplex.Classical.Pushout
 public import TauCeti.Topology.CWComplex.Classical.Sigma
+public import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # The disk relative to its boundary sphere, and disjoint unions of disks
@@ -361,7 +362,7 @@ theorem coe_sigmaDiskIso_hom_ι_apply (i : ι) (x : TopCat.disk.{u} (n i)) :
       Σ i, TopCat.disk.{u} (n i)) = ⟨i, x⟩ := by
   rw [sigmaDiskIso, Iso.trans_hom, ConcreteCategory.comp_apply,
     TopCat.sigmaIsoSigma_hom_ι_apply]
-  rfl
+  simp
 
 /-- `TauCeti.sigmaDiskBoundaryIso` sends the point `x` of the `i`-th boundary sphere to the point
 of the base corresponding to `⟨i, x⟩`. -/
@@ -371,7 +372,7 @@ theorem sigmaDiskBoundaryIso_hom_ι_apply (i : ι) (x : TopCat.diskBoundary.{u} 
       (sigmaDiskBoundaryHomeomorph n).symm ⟨i, x⟩ := by
   rw [sigmaDiskBoundaryIso, Iso.trans_hom, ConcreteCategory.comp_apply,
     TopCat.sigmaIsoSigma_hom_ι_apply]
-  rfl
+  simp
 
 /-- **Attaching disks along a family of maps, as a pushout of coproducts.** For maps
 `a i : ∂D^{n i} → Y`, the adjunction space `Y ∪_a ⨆ᵢ D^{n i}` of
@@ -391,15 +392,16 @@ theorem isPushout_sigmaDiskAdjunctionSpace {Y : TopCat.{u}}
   · rw [Iso.symm_hom, Iso.eq_inv_comp, Iso.refl_hom, Category.comp_id]
     refine Sigma.hom_ext _ _ fun i ↦ ?_
     ext x
-    rw [Sigma.ι_comp_desc, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
-      sigmaDiskBoundaryIso_hom_ι_apply]
-    exact sigmaDiskAttachingMap_apply _ i x
+    simp only [Sigma.ι_comp_desc, ConcreteCategory.comp_apply]
+    -- `simp` does not fire the `ι_apply` lemmas here: the coercions in this goal agree with
+    -- theirs only up to definitional unfolding, which `rw` sees through.
+    rw [sigmaDiskBoundaryIso_hom_ι_apply]
+    simp
   · rw [Iso.symm_hom, Iso.symm_hom, Iso.eq_inv_comp, ← Category.assoc, Iso.comp_inv_eq]
     refine Sigma.hom_ext _ _ fun i ↦ ?_
     refine ConcreteCategory.hom_ext _ _ fun x ↦ Subtype.ext ?_
-    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, sigmaDiskBoundaryIso_hom_ι_apply,
-      Sigma.ι_map_assoc, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
-      coe_sigmaDiskIso_hom_ι_apply]
+    simp only [Sigma.ι_map_assoc, ConcreteCategory.comp_apply]
+    rw [sigmaDiskBoundaryIso_hom_ι_apply, coe_sigmaDiskIso_hom_ι_apply]
     simp
   · simp
   · simp
