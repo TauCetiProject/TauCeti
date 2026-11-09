@@ -92,7 +92,7 @@ private theorem primitive_lowered (i : Fin t.rank) : IsPrimitive (lowered t ht i
 /-- Every signed simple-root operator on the full-weight lattice admits a vector whose image
 is primitive and whose second image vanishes. This detects the integral root parameter without
 requiring either vector to belong to the chosen weight basis. -/
-theorem exists_isPrimitive_scLattice_rootOperator (i : Fin t.rank ⊕ Fin t.rank) :
+theorem exists_isPrimitive_kostantRootOperator_scLattice (i : Fin t.rank ⊕ Fin t.rank) :
     ∃ v : M, rootOp i (rootOp i v) = 0 ∧ IsPrimitive (rootOp i v) := by
   cases i with
   | inl j =>
@@ -110,7 +110,7 @@ theorem kostantRootSubgroupParam_scLattice_injective (A : Type*) [CommRing A]
       (t.kostantForm_apply_mem_scLattice ht) i
       (t.isNilpotent_representation_scModule_rootGenerator ht i) (CommAlgCat.of ℤ A)) := by
   -- Term elimination avoids reverting the large represented-module signature during cases.
-  exact (t.exists_isPrimitive_scLattice_rootOperator ht i).elim fun v hv =>
+  exact (t.exists_isPrimitive_kostantRootOperator_scLattice ht i).elim fun v hv =>
     kostantRootSubgroupParam_injective_of_isPrimitive
       (L := t.lieAlgebra ht) (V := t.scModule ht)
       (I := Fin t.rank ⊕ Fin t.rank) (κ := Fin t.rank) e h ρ M

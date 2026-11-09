@@ -19,13 +19,12 @@ rings and rings of small characteristic.
 
 The morphisms are the existing `kostantRootSubgroupToToral` on
 `TauCeti.DynkinType.scChevalleyDatum`, with target `TauCeti.DynkinType.chevalleyGroupScheme`.
-No new root maps or ambient group are introduced. For each signed simple root, the fundamental
-summand at its node supplies a primitive two-step string
-(`TauCeti.DynkinType.exists_isPrimitive_scLattice_rootOperator`). The basis-independent criterion
+For each signed simple root, the fundamental summand at its node supplies a primitive two-step
+string (`TauCeti.DynkinType.exists_isPrimitive_kostantRootOperator_scLattice`). The
+basis-independent criterion
 `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupCoordinateMap_surjective_of_isPrimitive`
 then proves that the root coordinate map is surjective. Factoring through the coordinate algebra
-of the toral closure preserves surjectivity. No change of weight basis or generation theorem
-for field-valued points is needed.
+of the toral closure preserves surjectivity.
 
 ## References
 
@@ -50,7 +49,8 @@ local notation "D" => t.scChevalleyDatum ht
 /-- Every numbered positive or negative simple-root morphism into the full-weight Chevalley
 scheme is a closed immersion over `ℤ`. In particular its parameter is faithful over all
 commutative value rings, not merely over fields. -/
-instance isClosedImmersion_scChevalleyDatum_rootSubgroup (i : Fin t.rank ⊕ Fin t.rank) :
+instance isClosedImmersion_kostantRootSubgroupToToral_scChevalleyDatum
+    (i : Fin t.rank ⊕ Fin t.rank) :
     IsClosedImmersion
       (kostantRootSubgroupToToral (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
         (D).representation (D).lattice (D).representation_mem_lattice
@@ -61,20 +61,12 @@ instance isClosedImmersion_scChevalleyDatum_rootSubgroup (i : Fin t.rank ⊕ Fin
   -- Expose the datum fields once, before using the primitive string on its actual lattice.
   dsimp only [scChevalleyDatum]
   -- Term elimination keeps the large represented-module signature out of tactic reversion.
-  exact (t.exists_isPrimitive_scLattice_rootOperator ht i).elim fun v hv =>
+  exact (t.exists_isPrimitive_kostantRootOperator_scLattice ht i).elim fun v hv =>
     kostantRootSubgroupCoordinateMap_surjective_of_isPrimitive
       (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
       (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
       (t.kostantForm_apply_mem_scLattice ht) i
       (t.isNilpotent_representation_scModule_rootGenerator ht i) (t.scWeightBasis ht) v hv.1 hv.2
-
-/-- The numbered simple-root morphisms of the full-weight datum are monomorphisms of group
-schemes, so they can be used as subgroup objects. -/
-instance mono_scChevalleyDatum_rootSubgroup (i : Fin t.rank ⊕ Fin t.rank) :
-    Mono (kostantRootSubgroupToToral (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-      (D).representation (D).lattice (D).representation_mem_lattice
-      (D).isNilpotent_representation_rootGenerator (D).basis (D).coordinateWeight i) :=
-  Grp.mono_of_mono_left _
 
 end
 
