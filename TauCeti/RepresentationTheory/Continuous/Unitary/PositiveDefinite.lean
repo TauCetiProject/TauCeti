@@ -98,8 +98,9 @@ private theorem dense_span_range_gnsVector :
 
 private theorem gnsVector_mul_dense (g : G) :
     (Submodule.span ℂ (Set.range fun h ↦ hφ.gnsVector (g * h))).topologicalClosure = ⊤ := by
-  rw [show Set.range (fun h ↦ hφ.gnsVector (g * h)) = Set.range hφ.gnsVector from
-    (Equiv.mulLeft g).surjective.range_comp hφ.gnsVector]
+  have hrange : Set.range (fun h ↦ hφ.gnsVector (g * h)) = Set.range hφ.gnsVector :=
+    (Equiv.mulLeft g).surjective.range_comp hφ.gnsVector
+  rw [hrange]
   exact hφ.gnsVector_dense
 
 /-- Left translation by `g` as a unitary operator on the GNS space, sending `gnsVector h` to
