@@ -12,6 +12,8 @@ public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
 public import TauCeti.NumberTheory.LocalField.WildInertia
 public import TauCeti.RingTheory.RootsOfUnity.TateModule
 
+import TauCeti.Algebra.CharP.Lemmas
+
 /-!
 # The tame character of the inertia group
 
