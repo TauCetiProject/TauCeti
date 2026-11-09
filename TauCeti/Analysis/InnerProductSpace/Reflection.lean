@@ -17,7 +17,9 @@ import Mathlib.Topology.MetricSpace.HausdorffDimension
 
 For a submodule `K` admitting an orthogonal projection, `Submodule.coe_reflection` expresses the
 reflection across `K`, as a bounded operator, as `2 P_K - 1`, and a linear isometry mapping `K`
-onto itself commutes with that reflection (`Submodule.reflection_apply_of_map_eq`).
+onto itself commutes with that reflection (`Submodule.reflection_apply_of_map_eq`). In Euclidean
+space, the reflection in the axis spanned by a basis vector `eᵢ` keeps the `i`-th coordinate and
+negates the others (`EuclideanSpace.reflection_singleton_single_apply`).
 
 The remaining lemmas describe reflection across the hyperplane perpendicular to a vector in a real
 inner product space. They supply the reflection identities used by the half-space Green kernel,
@@ -114,6 +116,23 @@ theorem inner_reflection_orthogonal_of_mem (K : Submodule 𝕜 E) [K.HasOrthogon
     LinearIsometryEquiv.inner_map_map]
 
 end Submodule
+
+namespace EuclideanSpace
+
+/-- The reflection of Euclidean space in the coordinate axis spanned by the basis vector `eᵢ`
+keeps the `i`-th coordinate and negates all the others. -/
+@[simp]
+theorem reflection_singleton_single_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (i : ι)
+    (w : EuclideanSpace ℝ ι) (j : ι) :
+    (ℝ ∙ EuclideanSpace.single i (1 : ℝ)).reflection w j = if j = i then w j else -w j := by
+  rw [Submodule.reflection_singleton_apply]
+  by_cases h : j = i
+  · subst h
+    simp [EuclideanSpace.inner_single_left]
+    ring
+  · simp [EuclideanSpace.inner_single_left, h]
+
+end EuclideanSpace
 
 namespace TauCeti
 

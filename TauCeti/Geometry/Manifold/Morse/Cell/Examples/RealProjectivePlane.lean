@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 public import TauCeti.Geometry.Manifold.Morse.Cell.Comparison
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 import TauCeti.Geometry.Sphere.Circle
+import TauCeti.Analysis.InnerProductSpace.Reflection
 
 /-!
 # Morse cells of the real projective plane
@@ -63,9 +64,11 @@ around the core of the Möbius band, in opposite directions for the two charts.
   `TauCeti.exists_iso_morseCellAttachment_realProjPlaneTopReflChart_realProjPlaneTopChart`:
   `α₋ = α₊ ∘ r` and `χ₋ = χ₊ ∘ r` strictly, and the resulting homeomorphism of cell attachments
   relative to `{f ≤ 2 - ε}`.
-* `TauCeti.realProjPlaneCoreDegree_eq_of_homotopic` and
+* `TauCeti.realProjPlaneCoreDegree_eq_of_homotopic`,
+  `TauCeti.coe_realProjPlaneCoreMap_apply` and
   `TauCeti.realProjPlaneCoreDegree_realProjPlaneCoreMap`: the core degree is a homotopy
-  invariant, and the core circle has core degree `1`.
+  invariant, and the core circle `(cos θ, sin θ) ↦ [cos (θ / 2) : sin (θ / 2) : 0]` has core
+  degree `1`.
 * `TauCeti.realProjPlaneCoreDegree_morseAttachingMap_realProjPlaneTopChart` and
   `TauCeti.realProjPlaneCoreDegree_morseAttachingMap_realProjPlaneTopReflChart`: `α₊`
   and `α₋` have core degrees `2` and `-2`.
@@ -92,101 +95,58 @@ namespace TauCeti
 
 /-! ### The normalized chart at the top point -/
 
-private theorem ellipse_fwd (a b : ℝ) :
-    ((√(1 + a ^ 2 + b ^ 2))⁻¹ * (√2 * a)) ^ 2 / 2 + ((√(1 + a ^ 2 + b ^ 2))⁻¹ * b) ^ 2 =
-      1 - (1 + a ^ 2 + b ^ 2)⁻¹ := by
-  have hs : 0 < 1 + a ^ 2 + b ^ 2 := by positivity
-  rw [mul_pow, mul_pow, mul_pow, inv_pow, Real.sq_sqrt hs.le, Real.sq_sqrt zero_le_two]
-  field_simp
-  ring
-
-private theorem ellipse_bwd {a b : ℝ} (h : a ^ 2 / 2 + b ^ 2 < 1) :
-    1 + ((√(1 - (a ^ 2 / 2 + b ^ 2)))⁻¹ * (a / √2)) ^ 2 +
-      ((√(1 - (a ^ 2 / 2 + b ^ 2)))⁻¹ * b) ^ 2 = (1 - (a ^ 2 / 2 + b ^ 2))⁻¹ := by
-  have hs : 0 < 1 - (a ^ 2 / 2 + b ^ 2) := by linarith
-  rw [mul_pow, mul_pow, div_pow, inv_pow, Real.sq_sqrt hs.le, Real.sq_sqrt zero_le_two]
-  linear_combination (-1 : ℝ) * inv_mul_cancel₀ hs.ne'
-
-private theorem continuous_ellipseFun :
-    Continuous fun z : Fin 2 → ℝ ↦
-      (√(1 + z 0 ^ 2 + z 1 ^ 2))⁻¹ • (!₂[√2 * z 0, z 1] : EuclideanSpace ℝ (Fin 2)) := by
-  have h (z : Fin 2 → ℝ) : √(1 + z 0 ^ 2 + z 1 ^ 2) ≠ 0 := (Real.sqrt_pos.2 (by positivity)).ne'
-  have hv : Continuous fun z : Fin 2 → ℝ ↦ (!₂[√2 * z 0, z 1] : EuclideanSpace ℝ (Fin 2)) :=
-    (PiLp.continuous_toLp 2 _).comp (by fun_prop)
-  have hs : Continuous fun z : Fin 2 → ℝ ↦ √(1 + z 0 ^ 2 + z 1 ^ 2) := by fun_prop
-  exact (hs.inv₀ h).smul hv
-
-private theorem continuousOn_ellipseInv :
-    ContinuousOn (fun w : EuclideanSpace ℝ (Fin 2) ↦
-      (√(1 - (w 0 ^ 2 / 2 + w 1 ^ 2)))⁻¹ • (![w 0 / √2, w 1] : Fin 2 → ℝ))
-      {w | w 0 ^ 2 / 2 + w 1 ^ 2 < 1} := by
-  intro w hw
-  have hw' : w 0 ^ 2 / 2 + w 1 ^ 2 < 1 := hw
-  have h : √(1 - (w 0 ^ 2 / 2 + w 1 ^ 2)) ≠ 0 := (Real.sqrt_pos.2 (sub_pos.2 hw')).ne'
-  have hv : Continuous fun w : EuclideanSpace ℝ (Fin 2) ↦ (![w 0 / √2, w 1] : Fin 2 → ℝ) :=
-    by fun_prop
-  have hs : Continuous fun w : EuclideanSpace ℝ (Fin 2) ↦ √(1 - (w 0 ^ 2 / 2 + w 1 ^ 2)) := by
-    fun_prop
-  exact ((hs.continuousAt.inv₀ h).smul hv.continuousAt).continuousWithinAt
+/-- The stretch `(u₀, u₁) ↦ (√2 u₀, u₁)` of `ℝ²`, carrying the open unit disc onto the open
+ellipse `{w | w₀² / 2 + w₁² < 1}`. -/
+private def stretchFirst : EuclideanSpace ℝ (Fin 2) ≃ₜ EuclideanSpace ℝ (Fin 2) where
+  toFun u := !₂[√2 * u 0, u 1]
+  invFun w := !₂[w 0 / √2, w 1]
+  left_inv u := by
+    ext j
+    fin_cases j <;> simp
+  right_inv w := by
+    ext j
+    fin_cases j <;> simp [mul_div_cancel₀ _ (Real.sqrt_ne_zero'.2 zero_lt_two)]
+  continuous_toFun := (PiLp.continuous_toLp 2 _).comp (by fun_prop)
+  continuous_invFun := (PiLp.continuous_toLp 2 _).comp (by fun_prop)
 
 /-- The change of coordinates `z ↦ (√2 z₀, z₁) / √(1 + z₀² + z₁²)` from the affine plane onto the
 open ellipse `{w | w₀² / 2 + w₁² < 1}` of `ℝ²`, with inverse
-`w ↦ (w₀ / √2, w₁) / √(1 - w₀² / 2 - w₁²)`. Read in the affine chart `z = (x / z, y / z)` of
-`ℝℙ²` at `[0 : 0 : 1]`, it gives the normalized coordinates in which
+`w ↦ (w₀ / √2, w₁) / √(1 - w₀² / 2 - w₁²)`: Mathlib's radial homeomorphism
+`OpenPartialHomeomorph.univUnitBall` onto the unit disc, followed by the stretch
+`(u₀, u₁) ↦ (√2 u₀, u₁)`. Read in the affine chart `z = (x / z, y / z)` of `ℝℙ²` at
+`[0 : 0 : 1]`, it gives the normalized coordinates in which
 `(y² + 2z²) / (x² + y² + z²) = 2 - w₀² - w₁²`. -/
-def realProjPlaneTopCoord : OpenPartialHomeomorph (Fin 2 → ℝ) (EuclideanSpace ℝ (Fin 2))
-    where
-  toFun z := (√(1 + z 0 ^ 2 + z 1 ^ 2))⁻¹ • !₂[√2 * z 0, z 1]
-  invFun w := (√(1 - (w 0 ^ 2 / 2 + w 1 ^ 2)))⁻¹ • ![w 0 / √2, w 1]
-  source := univ
-  target := {w | w 0 ^ 2 / 2 + w 1 ^ 2 < 1}
-  map_source' z _ := by
-    have : 0 < (1 + z 0 ^ 2 + z 1 ^ 2)⁻¹ := by positivity
-    simp only [mem_ofPred_eq, PiLp.smul_apply, smul_eq_mul, Matrix.cons_val_zero,
-      Matrix.cons_val_one, ellipse_fwd]
-    linarith
-  map_target' _ _ := mem_univ _
-  left_inv' z _ := by
-    have hs : 0 < 1 + z 0 ^ 2 + z 1 ^ 2 := by positivity
-    have hs' : √(1 + z 0 ^ 2 + z 1 ^ 2) ≠ 0 := (Real.sqrt_pos.2 hs).ne'
-    have h2 : √2 ≠ 0 := by positivity
-    simp only [PiLp.smul_apply, smul_eq_mul, Matrix.cons_val_zero, Matrix.cons_val_one,
-      ellipse_fwd, sub_sub_cancel, Real.sqrt_inv, inv_inv]
-    ext j
-    fin_cases j <;> simp <;> field_simp
-  right_inv' w hw := by
-    have hw' : w 0 ^ 2 / 2 + w 1 ^ 2 < 1 := hw
-    have hs : 0 < 1 - (w 0 ^ 2 / 2 + w 1 ^ 2) := sub_pos.2 hw'
-    have hs' : √(1 - (w 0 ^ 2 / 2 + w 1 ^ 2)) ≠ 0 := (Real.sqrt_pos.2 hs).ne'
-    have h2 : √2 ≠ 0 := by positivity
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, smul_eq_mul, Pi.smul_apply,
-      ellipse_bwd hw', Real.sqrt_inv, inv_inv]
-    ext j
-    fin_cases j <;> simp [h2, hs', mul_comm (√2), mul_assoc]
-  open_source := isOpen_univ
-  open_target := isOpen_lt (by fun_prop) continuous_const
-  continuousOn_toFun := continuous_ellipseFun.continuousOn
-  continuousOn_invFun := continuousOn_ellipseInv
+def realProjPlaneTopCoord : OpenPartialHomeomorph (Fin 2 → ℝ) (EuclideanSpace ℝ (Fin 2)) :=
+  ((EuclideanSpace.equiv (Fin 2) ℝ).symm.toHomeomorph.transOpenPartialHomeomorph
+    OpenPartialHomeomorph.univUnitBall).transHomeomorph stretchFirst
 
 @[simp]
 theorem realProjPlaneTopCoord_apply (z : Fin 2 → ℝ) :
-    realProjPlaneTopCoord z = (√(1 + z 0 ^ 2 + z 1 ^ 2))⁻¹ • !₂[√2 * z 0, z 1] :=
-  (rfl)
+    realProjPlaneTopCoord z = (√(1 + z 0 ^ 2 + z 1 ^ 2))⁻¹ • !₂[√2 * z 0, z 1] := by
+  ext j
+  fin_cases j <;>
+    simp [realProjPlaneTopCoord, stretchFirst, OpenPartialHomeomorph.univUnitBall_apply,
+      EuclideanSpace.norm_sq_eq, Fin.sum_univ_two, add_assoc, mul_left_comm]
 
 @[simp]
 theorem realProjPlaneTopCoord_symm_apply (w : EuclideanSpace ℝ (Fin 2)) :
     realProjPlaneTopCoord.symm w =
-      (√(1 - (w 0 ^ 2 / 2 + w 1 ^ 2)))⁻¹ • ![w 0 / √2, w 1] :=
-  (rfl)
+      (√(1 - (w 0 ^ 2 / 2 + w 1 ^ 2)))⁻¹ • ![w 0 / √2, w 1] := by
+  ext j
+  fin_cases j <;>
+    simp [realProjPlaneTopCoord, stretchFirst, OpenPartialHomeomorph.univUnitBall_symm_apply,
+      EuclideanSpace.norm_sq_eq, Fin.sum_univ_two, div_pow]
 
 @[simp]
-theorem realProjPlaneTopCoord_source : realProjPlaneTopCoord.source = univ :=
-  (rfl)
+theorem realProjPlaneTopCoord_source : realProjPlaneTopCoord.source = univ := by
+  simp [realProjPlaneTopCoord, OpenPartialHomeomorph.univUnitBall_source]
 
 @[simp]
 theorem realProjPlaneTopCoord_target :
-    realProjPlaneTopCoord.target = {w | w 0 ^ 2 / 2 + w 1 ^ 2 < 1} :=
-  (rfl)
+    realProjPlaneTopCoord.target = {w | w 0 ^ 2 / 2 + w 1 ^ 2 < 1} := by
+  ext w
+  simp [realProjPlaneTopCoord, stretchFirst, OpenPartialHomeomorph.univUnitBall_target,
+    ← sq_lt_one_iff₀ (norm_nonneg _), EuclideanSpace.norm_sq_eq, Fin.sum_univ_two, div_pow]
 
 /-- The normalized Morse chart of `f[x : y : z] = (y² + 2z²) / (x² + y² + z²)` on `ℝℙ²` at its
 maximum `[0 : 0 : 1]`: on the affine open `{z ≠ 0}` it is
@@ -268,21 +228,6 @@ theorem closedBall_subset_realProjPlaneTopChart_target {ε : ℝ} (hε : ε < 1)
     exact h.trans_lt (by rw [Real.sq_sqrt']; exact max_lt hε one_pos)
   rw [realProjPlaneTopChart_target, mem_ofPred_eq]
   nlinarith [sq_nonneg (w 0)]
-
-/-- The reflection `(w₀, w₁) ↦ (-w₀, w₁)` of `ℝ²` in the axis spanned by `e₁`, applied to the first
-coordinate. -/
-@[simp]
-private theorem reflection_single_one_apply_zero (w : EuclideanSpace ℝ (Fin 2)) :
-    (ℝ ∙ EuclideanSpace.single 1 (1 : ℝ)).reflection w 0 = -w 0 := by
-  rw [Submodule.reflection_singleton_apply]
-  simp
-
-@[simp]
-private theorem reflection_single_one_apply_one (w : EuclideanSpace ℝ (Fin 2)) :
-    (ℝ ∙ EuclideanSpace.single 1 (1 : ℝ)).reflection w 1 = w 1 := by
-  rw [Submodule.reflection_singleton_apply]
-  simp [EuclideanSpace.inner_single_left]
-  ring
 
 /-- The opposite normalized chart at `[0 : 0 : 1]`: `TauCeti.realProjPlaneTopChart` followed
 by the reflection `(w₀, w₁) ↦ (-w₀, w₁)` of the first negative coordinate. -/
@@ -527,16 +472,6 @@ private theorem continuousAt_sqDir {X : Type*} [TopologicalSpace X] {x y : X →
 private def ellipseAngle (a θ : ℝ) : ℂ :=
   sqDir (a * Real.cos θ) (Real.sin θ)
 
-private theorem sq_add_sq_pos {a : ℝ} (ha : a ≠ 0) (θ : ℝ) :
-    0 < (a * Real.cos θ) ^ 2 + Real.sin θ ^ 2 := by
-  rcases eq_or_ne (Real.sin θ) 0 with hs | hs
-  · have hc : Real.cos θ ^ 2 = 1 := by nlinarith [Real.sin_sq_add_cos_sq θ]
-    rw [hs, mul_pow, hc]
-    positivity
-  · have := pow_pos (abs_pos.2 hs) 2
-    rw [sq_abs] at this
-    positivity
-
 private theorem ellipseAngle_one (θ : ℝ) : ellipseAngle 1 θ = Circle.exp (2 * θ) := by
   rw [ellipseAngle, sqDir, Circle.coe_exp, one_mul, Real.cos_sq_add_sin_sq, ofReal_one, div_one,
     ofReal_cos, ofReal_sin, ← exp_mul_I, ← exp_nat_mul]
@@ -553,15 +488,24 @@ private theorem degree_eq_two_of_ellipseAngle {a : ℝ} (ha : 0 < a) {x : Circle
     have h₀ : (0 : ℝ) ≤ s := s.2.1
     have h₁ : (s : ℝ) ≤ 1 := s.2.2
     rcases le_or_gt (s : ℝ) (1 / 2) with h | h <;> nlinarith
+  -- The point `(b cos θ, sin θ)` of each ellipse is nonzero.
+  have hpos {b : ℝ} (hb : b ≠ 0) (θ : ℝ) : 0 < (b * Real.cos θ) ^ 2 + Real.sin θ ^ 2 := by
+    rcases eq_or_ne (Real.sin θ) 0 with hs | hs
+    · have hc : Real.cos θ ^ 2 = 1 := by nlinarith [Real.sin_sq_add_cos_sq θ]
+      rw [hs, mul_pow, hc]
+      positivity
+    · have := pow_pos (abs_pos.2 hs) 2
+      rw [sq_abs] at this
+      positivity
   let F : C(unitInterval × unitInterval, Circle) :=
     { toFun p := ⟨ellipseAngle ((1 - (p.1 : ℝ)) * a + p.1) (2 * Real.pi * p.2),
-        mem_sphere_zero_iff_norm.2 (norm_sqDir (sq_add_sq_pos (hb p.1) _))⟩
+        mem_sphere_zero_iff_norm.2 (norm_sqDir (hpos (hb p.1) _))⟩
       continuous_toFun := by
         refine Continuous.subtype_mk (continuous_iff_continuousAt.2 fun p ↦
           continuousAt_sqDir (x := fun p : unitInterval × unitInterval ↦
             ((1 - (p.1 : ℝ)) * a + p.1) * Real.cos (2 * Real.pi * p.2))
             (y := fun p : unitInterval × unitInterval ↦ Real.sin (2 * Real.pi * p.2))
-            (by fun_prop) (by fun_prop) (sq_add_sq_pos (hb p.1) _)) _ }
+            (by fun_prop) (by fun_prop) (hpos (hb p.1) _)) _ }
   have hF (p : unitInterval × unitInterval) :
       (F p : ℂ) = ellipseAngle ((1 - (p.1 : ℝ)) * a + p.1) (2 * Real.pi * p.2) := (rfl)
   let γ₁ := Circle.expLoop.map (continuous_pow 2)
@@ -585,12 +529,6 @@ private theorem degree_eq_two_of_ellipseAngle {a : ℝ} (ha : 0 < a) {x : Circle
 
 /-! ### The core angle of `ℝℙ² \ {[0 : 0 : 1]}` -/
 
-/-- A nonzero vector of `ℝ³` has positive squared length. -/
-private theorem sum_sq_pos {v : Fin 3 → ℝ} (hv : v ≠ 0) : 0 < v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2 := by
-  by_contra h
-  refine hv (funext fun j ↦ ?_)
-  fin_cases j <;> simp <;> nlinarith [sq_nonneg (v 0), sq_nonneg (v 1), sq_nonneg (v 2)]
-
 /-- `f[x : y : z] = (y² + 2z²) / (x² + y² + z²)` in homogeneous coordinates. -/
 private theorem projectiveMomentFunction_mk_eq (v : Fin 3 → ℝ) (hv : v ≠ 0) :
     projectiveMomentFunction ℝ ![0, 1, 2] (mk ℝ v hv) =
@@ -602,7 +540,11 @@ private theorem projectiveMomentFunction_mk_eq (v : Fin 3 → ℝ) (hv : v ≠ 0
 the point `[0 : 0 : 1]`, where `x² + y² > 0`. -/
 theorem projectiveMomentFunction_mk_lt_two_iff (v : Fin 3 → ℝ) (hv : v ≠ 0) :
     projectiveMomentFunction ℝ ![0, 1, 2] (mk ℝ v hv) < 2 ↔ 0 < v 0 ^ 2 + v 1 ^ 2 := by
-  rw [projectiveMomentFunction_mk_eq, div_lt_iff₀ (sum_sq_pos hv)]
+  obtain ⟨j, hj⟩ := Function.ne_iff.1 hv
+  have hv' : 0 < ∑ i, v i ^ 2 :=
+    Finset.sum_pos' (fun i _ ↦ sq_nonneg (v i)) ⟨j, Finset.mem_univ j, sq_pos_of_ne_zero hj⟩
+  rw [Fin.sum_univ_three] at hv'
+  rw [projectiveMomentFunction_mk_eq, div_lt_iff₀ hv']
   constructor <;> intro h <;> nlinarith [sq_nonneg (v 0), sq_nonneg (v 1)]
 
 /-- The squared direction of the first two homogeneous coordinates, `[x : y : z] ↦ (x + i y)² /
@@ -659,21 +601,18 @@ private theorem coe_realProjPlaneCoreAngle
     (realProjPlaneCoreAngle x : ℂ) = coreAngleFun x :=
   (rfl)
 
-/-- The counterclockwise parametrization `e^{iθ} ↦ (cos θ, sin θ)` of the boundary circle `∂D²`. -/
-private def circleToDiskBoundary : C(Circle, TopCat.diskBoundary.{0} 2) where
-  toFun z := ULift.up (EuclideanSpace.sphereHomeomorphCircle.symm z)
-  continuous_toFun := continuous_uliftUp.comp EuclideanSpace.sphereHomeomorphCircle.symm.continuous
+/-- The counterclockwise parametrization `(cos θ, sin θ) ↦ e^{iθ}` of the boundary circle
+`∂D² = TopCat.sphere 1`: `TauCeti.sphereOneHomeomorphCircle`, typed on `TopCat.diskBoundary 2`. -/
+private def diskBoundaryHomeomorphCircle : TopCat.diskBoundary.{0} 2 ≃ₜ Circle :=
+  sphereOneHomeomorphCircle.trans Homeomorph.ulift
 
-private theorem circleToDiskBoundary_apply_down (z : Circle) :
-    (circleToDiskBoundary z).down = EuclideanSpace.sphereHomeomorphCircle.symm z :=
-  (rfl)
+private theorem diskBoundaryHomeomorphCircle_apply (s : TopCat.diskBoundary.{0} 2) :
+    diskBoundaryHomeomorphCircle s = EuclideanSpace.sphereHomeomorphCircle s.down :=
+  sphereOneHomeomorphCircle_apply_down s
 
-private theorem coe_circleToDiskBoundary_exp (θ : ℝ) :
-    ((circleToDiskBoundary (Circle.exp θ)).down : EuclideanSpace ℝ (Fin 2)) =
-      !₂[Real.cos θ, Real.sin θ] := by
-  rw [circleToDiskBoundary_apply_down, EuclideanSpace.coe_sphereHomeomorphCircle_symm_apply]
-  ext j
-  fin_cases j <;> simp [exp_ofReal_mul_I_re, exp_ofReal_mul_I_im]
+private theorem diskBoundaryHomeomorphCircle_symm_apply_down (z : Circle) :
+    (diskBoundaryHomeomorphCircle.symm z).down = EuclideanSpace.sphereHomeomorphCircle.symm z :=
+  sphereOneHomeomorphCircle_symm_apply_down (ULift.up z)
 
 /-- The **core degree** of a map `g : ∂D² → ℝℙ² \ {[0 : 0 : 1]}`: the degree of the loop
 `θ ↦ ρ (g (cos θ, sin θ))` in the circle, where `ρ` is the core angle
@@ -685,15 +624,18 @@ def realProjPlaneCoreDegree
     (g : C(TopCat.diskBoundary.{0} 2,
       {x : ℙ ℝ (Fin 3 → ℝ) | projectiveMomentFunction ℝ ![0, 1, 2] x < 2})) : ℤ :=
   Circle.degree (Circle.expLoop.map
-    (realProjPlaneCoreAngle.comp (g.comp circleToDiskBoundary)).continuous)
+    (realProjPlaneCoreAngle.comp (g.comp diskBoundaryHomeomorphCircle.symm)).continuous)
 
 /-- The loop whose degree is the core degree, evaluated. -/
 private theorem coreDegreeLoop_apply
     (g : C(TopCat.diskBoundary.{0} 2,
       {x : ℙ ℝ (Fin 3 → ℝ) | projectiveMomentFunction ℝ ![0, 1, 2] x < 2})) (t : unitInterval) :
-    Circle.expLoop.map (realProjPlaneCoreAngle.comp (g.comp circleToDiskBoundary)).continuous t =
-      realProjPlaneCoreAngle (g (circleToDiskBoundary (Circle.exp (2 * Real.pi * t)))) := by
-  simp only [Path.map_coe, Function.comp_apply, Circle.expLoop_apply, ContinuousMap.comp_apply]
+    Circle.expLoop.map
+        (realProjPlaneCoreAngle.comp (g.comp diskBoundaryHomeomorphCircle.symm)).continuous t =
+      realProjPlaneCoreAngle
+        (g (diskBoundaryHomeomorphCircle.symm (Circle.exp (2 * Real.pi * t)))) := by
+  simp only [Path.map_coe, Function.comp_apply, Circle.expLoop_apply, ContinuousMap.comp_apply,
+    ContinuousMap.coe_ofClass]
 
 /-- **The core degree is a homotopy invariant.** -/
 theorem realProjPlaneCoreDegree_eq_of_homotopic
@@ -704,7 +646,9 @@ theorem realProjPlaneCoreDegree_eq_of_homotopic
   obtain ⟨H⟩ := h
   exact Circle.degree_eq_of_homotopy _ _
     (realProjPlaneCoreAngle.comp (H.toContinuousMap.comp
-      ((ContinuousMap.id _).prodMap (circleToDiskBoundary.comp Circle.expLoop.toContinuousMap))))
+      ((ContinuousMap.id _).prodMap
+        ((diskBoundaryHomeomorphCircle.symm : C(Circle, TopCat.diskBoundary.{0} 2)).comp
+          Circle.expLoop.toContinuousMap))))
     (fun t ↦ by simp) (fun t ↦ by simp) (fun s ↦ by simp)
 
 /-- The unit vector `(cos θ, sin θ, 0)` of `ℝ³` is nonzero. -/
@@ -746,20 +690,33 @@ theorem coe_realProjPlaneCoreLoop_apply (t : unitInterval) :
       mk ℝ _ (cos_sin_zero_ne_zero (Real.pi * t)) :=
   (rfl)
 
-/-- The inverse `(cos θ, sin θ) ↦ e^{iθ}` of `TauCeti.circleToDiskBoundary`. -/
-private def diskBoundaryToCircle : C(TopCat.diskBoundary.{0} 2, Circle) where
-  toFun s := EuclideanSpace.sphereHomeomorphCircle s.down
-  continuous_toFun := EuclideanSpace.sphereHomeomorphCircle.continuous.comp continuous_uliftDown
-
-private theorem diskBoundaryToCircle_circleToDiskBoundary (z : Circle) :
-    diskBoundaryToCircle (circleToDiskBoundary z) = z :=
-  EuclideanSpace.sphereHomeomorphCircle.apply_symm_apply z
-
-/-- The core circle as a map from `∂D²`: `(cos θ, sin θ) ↦ [cos (θ / 2) : sin (θ / 2) : 0]`. -/
+/-- The core circle as a map from `∂D²`: `(cos θ, sin θ) ↦ [cos (θ / 2) : sin (θ / 2) : 0]`
+(`TauCeti.coe_realProjPlaneCoreMap_apply`). -/
 def realProjPlaneCoreMap :
     C(TopCat.diskBoundary.{0} 2,
       {x : ℙ ℝ (Fin 3 → ℝ) | projectiveMomentFunction ℝ ![0, 1, 2] x < 2}) :=
-  realProjPlaneCoreLoop.toCircle.comp diskBoundaryToCircle
+  realProjPlaneCoreLoop.toCircle.comp diskBoundaryHomeomorphCircle
+
+/-- The core circle sends the boundary point `(cos θ, sin θ)`, `0 ≤ θ ≤ 2π`, to
+`[cos (θ / 2) : sin (θ / 2) : 0]`. -/
+theorem coe_realProjPlaneCoreMap_apply {s : TopCat.diskBoundary.{0} 2} {θ : ℝ}
+    (hθ : θ ∈ Icc 0 (2 * Real.pi))
+    (hs : (s.down : EuclideanSpace ℝ (Fin 2)) = !₂[Real.cos θ, Real.sin θ]) :
+    (realProjPlaneCoreMap s : ℙ ℝ (Fin 3 → ℝ)) = mk ℝ _ (cos_sin_zero_ne_zero (θ / 2)) := by
+  have hπ : 0 < 2 * Real.pi := by positivity
+  let t : unitInterval := ⟨θ / (2 * Real.pi), div_nonneg hθ.1 hπ.le, (div_le_one hπ).2 hθ.2⟩
+  have ht : 2 * Real.pi * t = θ := mul_div_cancel₀ θ hπ.ne'
+  have hs' : EuclideanSpace.sphereHomeomorphCircle s.down = Circle.exp (2 * Real.pi * t) := by
+    rw [ht, ← EuclideanSpace.sphereHomeomorphCircle.apply_symm_apply (Circle.exp θ)]
+    congr 1
+    exact Subtype.ext (hs.trans (EuclideanSpace.coe_sphereHomeomorphCircle_symm_exp θ).symm)
+  have h2 : Real.pi * t = θ / 2 := by
+    rw [← ht]
+    ring
+  rw [realProjPlaneCoreMap, ContinuousMap.comp_apply, ContinuousMap.coe_ofClass,
+    diskBoundaryHomeomorphCircle_apply, hs', Path.toCircle_exp, coe_realProjPlaneCoreLoop_apply]
+  congr 1
+  rw [h2]
 
 /-- **The core circle has core degree `1`.** The core angle sends
 `[cos θ : sin θ : 0]` to `e^{2iθ}`, which runs once around the circle for `0 ≤ θ ≤ π`. -/
@@ -767,10 +724,14 @@ theorem realProjPlaneCoreDegree_realProjPlaneCoreMap :
     realProjPlaneCoreDegree realProjPlaneCoreMap = 1 := by
   refine Circle.degree_eq_of_sub_eq _ (θ := fun t ↦ 2 * Real.pi * t) (by fun_prop) (fun t ↦ ?_)
     (by push_cast; ring)
-  rw [coreDegreeLoop_apply, realProjPlaneCoreMap, ContinuousMap.comp_apply,
-    diskBoundaryToCircle_circleToDiskBoundary, Path.toCircle_exp]
+  rw [coreDegreeLoop_apply]
   apply Circle.ext
-  rw [coe_realProjPlaneCoreAngle, coe_realProjPlaneCoreLoop_apply, coreAngleFun_mk]
+  rw [coe_realProjPlaneCoreAngle,
+    coe_realProjPlaneCoreMap_apply (s := diskBoundaryHomeomorphCircle.symm _)
+      (θ := 2 * Real.pi * t)
+      ⟨mul_nonneg (by positivity) t.2.1, mul_le_of_le_one_right (by positivity) t.2.2⟩
+      (by rw [diskBoundaryHomeomorphCircle_symm_apply_down,
+        EuclideanSpace.coe_sphereHomeomorphCircle_symm_exp]), coreAngleFun_mk]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
   rw [← one_mul (Real.cos _), ← ellipseAngle, ellipseAngle_one]
   ring_nf
@@ -783,19 +744,16 @@ variable {ε : ℝ}
 
 /-- The core angle of the point `ψ⁻¹(√ε w)` of the cell, for a unit vector `w`. -/
 private theorem coreAngleFun_realProjPlaneTopChart_symm_smul (hε₀ : 0 < ε) (hε₁ : ε < 1)
-    {w : EuclideanSpace ℝ (Fin 2)} (hw : w 0 ^ 2 + w 1 ^ 2 = 1) :
+    {w : EuclideanSpace ℝ (Fin 2)} (hw : ‖w‖ = 1) :
     coreAngleFun (realProjPlaneTopChart.symm (√ε • w)) = sqDir (w 0 / √2) (w 1) := by
+  replace hw : w 0 ^ 2 + w 1 ^ 2 = 1 := by
+    simpa [hw, Fin.sum_univ_two, eq_comm] using EuclideanSpace.norm_sq_eq w
   have hq : (√ε • w) 0 ^ 2 / 2 + (√ε • w) 1 ^ 2 < 1 := by
     simp only [PiLp.smul_apply, smul_eq_mul, mul_pow, Real.sq_sqrt hε₀.le]
     nlinarith [sq_nonneg (w 0)]
   rw [realProjPlaneTopChart_symm_apply_of_lt hq, coreAngleFun_mk]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, PiLp.smul_apply, smul_eq_mul, mul_div_assoc]
   exact sqDir_mul (Real.sqrt_pos.2 hε₀).ne' _ _
-
-private theorem cos_sq_add_sin_sq_circleToDiskBoundary (θ : ℝ) :
-    ((circleToDiskBoundary (Circle.exp θ)).down : EuclideanSpace ℝ (Fin 2)) 0 ^ 2 +
-      ((circleToDiskBoundary (Circle.exp θ)).down : EuclideanSpace ℝ (Fin 2)) 1 ^ 2 = 1 := by
-  simp [coe_circleToDiskBoundary_exp, Real.cos_sq_add_sin_sq]
 
 /-- **The attaching map `α₊` has core degree `2`.** Going once counterclockwise around `∂D²` in the
 normalized negative coordinates, the attaching map `α₊ : ∂D² → {f ≤ 2 - ε}` of the chart
@@ -815,7 +773,8 @@ theorem realProjPlaneCoreDegree_morseAttachingMap_realProjPlaneTopChart
   rw [ContinuousMap.comp_apply, ContinuousMap.inclusion_apply_coe, TopCat.Hom.hom,
     coe_morseAttachingMap_realProjPlaneTopChart_apply hε₀.le hε₁]
   rw [coreAngleFun_realProjPlaneTopChart_symm_smul hε₀ hε₁
-    (cos_sq_add_sin_sq_circleToDiskBoundary _), coe_circleToDiskBoundary_exp, ellipseAngle]
+    (mem_sphere_zero_iff_norm.1 (Subtype.prop _)), diskBoundaryHomeomorphCircle_symm_apply_down,
+    EuclideanSpace.coe_sphereHomeomorphCircle_symm_exp, ellipseAngle]
   simp [div_eq_inv_mul]
 
 /-- **The attaching map `α₋` has core degree `-2`.** The attaching map
@@ -839,11 +798,11 @@ theorem realProjPlaneCoreDegree_morseAttachingMap_realProjPlaneTopReflChart
     OpenPartialHomeomorph.coe_morseAttachingMap_apply, morseCellMap_realProjPlaneTopReflChart,
     morseCellMap_realProjPlaneTopChart, morseCellMap_realProjPlaneTopChart,
     coreAngleFun_realProjPlaneTopChart_symm_smul hε₀ hε₁
-      (cos_sq_add_sin_sq_circleToDiskBoundary _),
-    coreAngleFun_realProjPlaneTopChart_symm_smul hε₀ hε₁ (by
-      rw [reflection_single_one_apply_zero, reflection_single_one_apply_one, neg_sq]
-      exact cos_sq_add_sin_sq_circleToDiskBoundary _),
-    reflection_single_one_apply_zero, reflection_single_one_apply_one, neg_div, sqDir_neg_left]
+      (mem_sphere_zero_iff_norm.1 (Subtype.prop _)),
+    coreAngleFun_realProjPlaneTopChart_symm_smul hε₀ hε₁
+      ((LinearIsometryEquiv.norm_map _ _).trans (mem_sphere_zero_iff_norm.1 (Subtype.prop _)))]
+  simp only [EuclideanSpace.reflection_singleton_single_apply, Fin.isValue, zero_ne_one,
+    ite_false, ite_true, neg_div, sqDir_neg_left]
 
 /-- **The two attaching maps of the top cell of `ℝℙ²` are not homotopic.** For `0 < ε < 1` the
 attaching maps `α₊, α₋ : ∂D² → {f ≤ 2 - ε}` of the two normalized charts
