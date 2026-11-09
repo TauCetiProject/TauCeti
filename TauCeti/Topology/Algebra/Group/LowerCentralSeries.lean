@@ -71,8 +71,8 @@ see `TauCeti.Topology.Algebra.Group.Profinite.ProP.LowerCentralSeries`.
   killed by `p`.
 * `TauCeti.mk_conjNormal_eq`: conjugation by `G` acts trivially on `N ⧸ Nᵖ[N, G]`.
 * `TauCeti.pLowerCentralStep_subgroupOf_le_ker_iff`: a homomorphism on a normal subgroup `R` with
-  closed kernel kills `pLowerCentralStep p R` exactly when it kills `p`-th powers and is invariant
-  under conjugation by `G`.
+  closed kernel kills the trace `(pLowerCentralStep p R).subgroupOf R` of the ambient step on `R`
+  exactly when it kills `p`-th powers and is invariant under conjugation by `G`.
 * `TauCeti.pLowerCentralSeries_antitone`, `TauCeti.isClosed_pLowerCentralSeries`,
   `TauCeti.pLowerCentralSeries_normal`: the series is descending, closed and normal.
 * `TauCeti.pow_mem_pLowerCentralSeries`, `TauCeti.commutator_pLowerCentralSeries_top_le`,
@@ -325,8 +325,9 @@ theorem mk_conjNormal_eq {N : Subgroup G} [N.Normal] (g : G) (n : N) :
   exact (pLowerCentralStep p N).inv_mem (commutator_mem_pLowerCentralStep (N.inv_mem n.2) g)
 
 /-- **Homomorphisms out of `R` that factor through `R ⧸ Rᵖ[R, G]`.** For a normal subgroup `R`
-and a homomorphism `φ` on `R` with closed kernel, `φ` kills `pLowerCentralStep p R` exactly when it
-kills the `p`-th powers and is invariant under conjugation by `G`. -/
+and a homomorphism `φ` on `R` with closed kernel, `φ` kills the trace
+`(pLowerCentralStep p R).subgroupOf R` of the ambient step on `R` exactly when it kills the `p`-th
+powers and is invariant under conjugation by `G`. -/
 theorem pLowerCentralStep_subgroupOf_le_ker_iff {R : Subgroup G} [R.Normal] {A : Type*} [Group A]
     (φ : R →* A) (hφ : IsClosed (φ.ker : Set R)) :
     (pLowerCentralStep p R).subgroupOf R ≤ φ.ker ↔

@@ -20,7 +20,9 @@ the conjugacy classes of `G` in `N` (`mem_H1ConjInvariants_iff_of_smul_eq_self`)
 When `M` is killed by `p`, for instance `M = 𝔽_p`, such a homomorphism kills the `p`-th powers as
 well as the commutators `⁅N, G⁆`. If moreover `M` is a `T1Space`, so that the kernel of a continuous
 homomorphism into `M` is closed, the homomorphism factors through the quotient `N ⧸ Nᵖ[N, G]` of `N`
-by the closed subgroup `TauCeti.pLowerCentralStep p N`, and conversely. Hence
+by the trace `(TauCeti.pLowerCentralStep p N).subgroupOf N` of the closed subgroup
+`TauCeti.pLowerCentralStep p N` of `G` (which need not lie in `N` unless `N` is closed; here
+`N ⧸ Nᵖ[N, G]` denotes `N ⧸ (pLowerCentralStep p N).subgroupOf N`), and conversely. Hence
 `H¹(N, M)^G ≃ Hom_cont(N ⧸ Nᵖ[N, G], M)` (`H1ConjInvariantsEquivOfSmulEqSelf`), for a normal
 subgroup `N` and a `T1Space` `M` killed by `p`. For `M = 𝔽_p` the right-hand side is the
 continuous `𝔽_p`-dual of `N ⧸ Nᵖ[N, G]`; for a profinite group `G` its dimension is the topological
