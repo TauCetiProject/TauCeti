@@ -130,43 +130,23 @@ theorem condExp_comp_ae_eq_of_pair_law_eq {Ω α β : Type*} [mΩ : MeasurableSp
 -- Stated for an arbitrary conditioning σ-algebra `F` (no `F ≤ m₀`, no `[SigmaFinite (μ.trim)]`):
 -- the bound goes through Mathlib's Lᵖ contraction `eLpNorm_condExp_le_eLpNorm`, which holds at
 -- every `F` via the `condExp = 0` convention — whereas `condExpL1CLM` would require both. Proof:
--- bound `‖μ[Xlim|F] - Y‖₁` by `‖Xlim - Xn n‖₁` (triangle + `condExp_sub` + the contraction + the
--- vanishing `μ[Xn n|F] - Y` term), then let `n → ∞`. Consumed by the reverse-martingale
+-- `μ[Xlim|F] - Y` is a.e. `μ[Xlim - Xn n|F]` (`condExp_sub`), so by the contraction its `L¹` norm
+-- is at most `‖Xlim - Xn n‖₁`; then let `n → ∞`. Consumed by the reverse-martingale
 -- Lévy-downward theorem `MeasureTheory.tendsto_ae_condExp_iInf`.
 lemma condExp_ae_eq_of_forall_condExp_ae_eq_of_tendsto_eLpNorm
-    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
-    {F : MeasurableSpace Ω} {Xlim Y : Ω → ℝ} {Xn : ℕ → Ω → ℝ}
+    {Ω E : Type*} [MeasurableSpace Ω] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    {μ : Measure Ω} {F : MeasurableSpace Ω} {Xlim Y : Ω → E} {Xn : ℕ → Ω → E}
     (hXlimint : Integrable Xlim μ) (hXn_int : ∀ n, Integrable (Xn n) μ)
     (h_condExp : ∀ n, μ[Xn n | F] =ᵐ[μ] Y)
     (hL1 : Tendsto (fun n => eLpNorm (Xlim - Xn n) 1 μ) atTop (𝓝 0)) :
     μ[Xlim | F] =ᵐ[μ] Y := by
   have h_bound (n : ℕ) : eLpNorm (μ[Xlim | F] - Y) 1 μ ≤ eLpNorm (Xlim - Xn n) 1 μ := by
-    have htri : eLpNorm (μ[Xlim | F] - Y) 1 μ
-                ≤ eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ
-                  + eLpNorm (μ[Xn n | F] - Y) 1 μ := by
-      have : μ[Xlim | F] - Y = (μ[Xlim | F] - μ[Xn n | F]) + (μ[Xn n | F] - Y) := by ring
-      rw [this]
-      exact eLpNorm_add_le le_rfl
-    have hzero : eLpNorm (μ[Xn n | F] - Y) 1 μ = 0 := by
-      have h0 : μ[Xn n | F] - Y =ᵐ[μ] 0 := by
-        filter_upwards [h_condExp n] with ω hω; simp [hω]
-      rw [eLpNorm_congr_ae h0]; simp
-    have hfirst : eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ ≤ eLpNorm (Xlim - Xn n) 1 μ := by
-      have hsub : μ[Xlim | F] - μ[Xn n | F] =ᵐ[μ] μ[Xlim - Xn n | F] :=
-        (condExp_sub hXlimint (hXn_int n) F).symm
-      rw [eLpNorm_congr_ae hsub]
-      exact eLpNorm_condExp_le_eLpNorm _ le_rfl
-    calc eLpNorm (μ[Xlim | F] - Y) 1 μ
-        ≤ eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ + eLpNorm (μ[Xn n | F] - Y) 1 μ := htri
-      _ = eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ := by rw [hzero]; ring
-      _ ≤ eLpNorm (Xlim - Xn n) 1 μ := hfirst
-  have h_norm_zero : eLpNorm (μ[Xlim | F] - Y) 1 μ = 0 :=
-    le_antisymm
-      (le_of_tendsto_of_tendsto tendsto_const_nhds hL1 (Eventually.of_forall h_bound)) bot_le
-  rw [eLpNorm_eq_zero_iff one_ne_zero] at h_norm_zero
-  filter_upwards [h_norm_zero] with ω hω
-  simp only [Pi.zero_apply] at hω
-  exact sub_eq_zero.mp hω
+    refine (eLpNorm_congr_ae ?_).trans_le (eLpNorm_condExp_le_eLpNorm (m := F) _ le_rfl)
+    filter_upwards [condExp_sub hXlimint (hXn_int n) F, h_condExp n] with ω h₁ h₂
+    simp [h₁, h₂]
+  have h_zero := le_antisymm (ge_of_tendsto' hL1 h_bound) bot_le
+  filter_upwards [(eLpNorm_eq_zero_iff one_ne_zero).1 h_zero] with ω hω
+  exact sub_eq_zero.1 hω
 
 /-- Conditioning on a `μ`-trivial σ-algebra is integrating: if every `m'`-measurable set has
 measure `0` or `1`, then `μ[f | m']` is a.e. the constant `∫ f ∂μ`. For a non-integrable `f` both
@@ -187,16 +167,10 @@ theorem condExp_ae_eq_integral_of_forall_zero_or_one {Ω : Type*} {m0 : Measurab
   intro s hs _
   rcases htriv s hs with h0 | h1
   · rw [setIntegral_measure_zero _ h0, setIntegral_measure_zero _ h0]
-  · have hcompl : μ sᶜ = 0 := by
-      have := measure_compl (hm' s hs) (measure_ne_top μ s)
-      rw [h1] at this
-      simpa using this
-    have hs_int : ∫ x in s, f x ∂μ = ∫ x, f x ∂μ := by
-      rw [← integral_add_compl (hm' s hs) hf, setIntegral_measure_zero _ hcompl, add_zero]
-    rw [hs_int, setIntegral_const]
-    have hsr : μ.real s = 1 := by
-      rw [Measure.real, h1, ENNReal.toReal_one]
-    rw [hsr, one_smul]
+  · -- `s` has full measure, so integrating over it is integrating over the whole space.
+    rw [Measure.restrict_eq_self_of_ae_mem
+      (mem_ae_iff.2 ((prob_compl_eq_zero_iff (hm' s hs)).2 h1))]
+    simp
 
 /-- To identify a conditional expectation given a countable-valued observation, it suffices to
 compare integrals on its fibers. The candidate must be integrable and measurable with respect to
@@ -248,13 +222,32 @@ theorem condExp_ae_eq_of_le_of_le {Ω E : Type*} [NormedAddCommGroup E] [NormedS
 /-- **Conditioning on σ-algebras that agree up to null sets.** If `m₁ ≤ m₂` and every
 `m₂`-measurable set agrees `μ`-almost everywhere with an `m₁`-measurable set, then conditioning on
 `m₂` gives a.e. the same result as conditioning on `m₁`: σ-algebras that differ only by `μ`-null
-sets cannot be told apart by conditional expectations. -/
+sets cannot be told apart by conditional expectations. No σ-finiteness hypothesis is needed: `μ`
+trimmed to `m₁` is σ-finite exactly when it is trimmed to `m₂`, and otherwise both sides are `0`. -/
 theorem condExp_ae_eq_of_forall_exists_ae_eq {Ω E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [CompleteSpace E] {m₁ m₂ m₀ : MeasurableSpace Ω} {μ : Measure Ω}
-    {f : Ω → E} (h₁₂ : m₁ ≤ m₂) (h₂ : m₂ ≤ m₀) [SigmaFinite (μ.trim (h₁₂.trans h₂))]
+    {f : Ω → E} (h₁₂ : m₁ ≤ m₂) (h₂ : m₂ ≤ m₀)
     (h : ∀ s, MeasurableSet[m₂] s → ∃ t, MeasurableSet[m₁] t ∧ s =ᵐ[μ] t) :
     μ[f | m₂] =ᵐ[μ] μ[f | m₁] := by
-  have : SigmaFinite (μ.trim h₂) := sigmaFiniteTrim_mono h₂ h₁₂
+  by_cases hσ : SigmaFinite (μ.trim h₂)
+  case neg =>
+    have hσ₁ : ¬SigmaFinite (μ.trim (h₁₂.trans h₂)) := fun _ ↦ hσ (sigmaFiniteTrim_mono h₂ h₁₂)
+    rw [condExp_of_not_sigmaFinite h₂ hσ, condExp_of_not_sigmaFinite _ hσ₁]
+  -- The `m₁`-sets a.e. equal to the spanning sets of `μ.trim h₂`, together with the null
+  -- complement of their union, cover `Ω` by `m₁`-sets of finite measure.
+  have : SigmaFinite (μ.trim (h₁₂.trans h₂)) := by
+    choose T hT hST using fun n ↦ h _ (measurableSet_spanningSets (μ.trim h₂) n)
+    have hTU : (⋃ n, T n) =ᵐ[μ] Set.univ := by
+      rw [← iUnion_spanningSets (μ.trim h₂)]
+      exact (EventuallyEqSet.countable_iUnion hST).symm
+    refine Measure.sigmaFinite_of_countable ((Set.countable_range T).insert (⋃ n, T n)ᶜ) ?_
+      (by rw [Set.sUnion_insert, Set.sUnion_range, Set.compl_union_self])
+    rintro _ (rfl | ⟨n, rfl⟩)
+    · rw [trim_measurableSet_eq _ (MeasurableSet.iUnion hT).compl, ae_eq_univ.1 hTU]
+      exact ENNReal.zero_lt_top
+    · rw [trim_measurableSet_eq _ (hT n), ← measure_congr (hST n),
+        ← trim_measurableSet_eq h₂ (measurableSet_spanningSets _ n)]
+      exact measure_spanningSets_lt_top _ n
   by_cases hf : Integrable f μ
   case neg => rw [condExp_of_not_integrable hf, condExp_of_not_integrable hf]
   -- `μ[f | m₁]` is `m₂`-measurable, and its integral over an `m₂`-set `s` is its integral over an
