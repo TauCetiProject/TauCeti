@@ -65,10 +65,6 @@ theorem add_eq_mod_add_carry {m d n p q : ℕ} (hmd : m * d = n) (hp : p < d)
   · rw [Nat.mod_eq_of_lt (hlt' (not_le.1 h))]
     omega
 
-end TauCeti.Nat
-
-namespace Nat
-
 /-- For `i, j < N` and `d N = m n`, the carry after scaling by `d` modulo `n`, together with
 the quotients of the scaled summands, equals the scaled carry modulo `N` plus the quotient
 of the scaled remainder. -/

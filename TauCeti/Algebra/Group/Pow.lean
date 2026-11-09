@@ -22,7 +22,7 @@ import TauCeti.Data.Nat.Carry
   `a ^ i * b ^ j` multiply by adding their exponent vectors.
 * `TauCeti.eq_mul_zpow_sub_iff_mul_zpow_eq`: in a group, `a = b * h ^ (n - m)` if and only if
   `a * h ^ m = b * h ^ n`.
-* `TauCeti.pow_mul_mul_pow_mul_eq`: the carry of `TauCeti.Nat.add_eq_mod_add_carry`, read in the
+* `TauCeti.pow_mul_mul_pow_mul_eq`: the carry of `Nat.add_eq_mod_add_carry`, read in the
   powers of an `n`-th root of `a`.
 -/
 
@@ -65,7 +65,7 @@ modulo `d`. -/
 theorem pow_mul_mul_pow_mul_eq {α a : M} {n : ℕ} (hα : α ^ n = a) {m d p q : ℕ}
     (hmd : m * d = n) (hp : p < d) (hq : q < d) :
     α ^ (m * p) * α ^ (m * q) = α ^ ((m * p + m * q) % n) * if d ≤ p + q then a else 1 := by
-  rw [← pow_add, TauCeti.Nat.add_eq_mod_add_carry hmd hp hq, pow_add, pow_mul, hα]
+  rw [← pow_add, Nat.add_eq_mod_add_carry hmd hp hq, pow_add, pow_mul, hα]
   split_ifs <;> simp
 
 end TauCeti
