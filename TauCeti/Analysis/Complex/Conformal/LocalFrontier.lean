@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Complex.Angle
 public import TauCeti.Topology.ClusterSet
 
 import Mathlib.Analysis.Complex.Convex
-import TauCeti.Analysis.Complex.AtInfinity
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
