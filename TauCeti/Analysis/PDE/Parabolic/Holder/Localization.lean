@@ -126,22 +126,9 @@ theorem norm_parabolicOperatorL_mul_sub_mul_parabolicOperatorL_le :
   have hZ : ‖timeDerivL χ - spatialOperatorL hα A B 0 χ‖ ≤
       ‖timeDerivL χ‖ + ‖A‖ * ‖spatialSecondFDerivL χ‖ +
         ‖B‖ * ‖spatialFDerivHolderL hα χ‖ := by
-    have hsp : spatialOperatorL hα A B 0 χ =
-        (ContinuousLinearMap.id ℝ _).compHolder₂ A (spatialSecondFDerivL χ) +
-          (ContinuousLinearMap.id ℝ _).compHolder₂ B (spatialFDerivHolderL hα χ) := by
-      ext p
-      simp
-    rw [hsp]
-    calc
-      _ ≤ ‖timeDerivL χ‖ + ‖(ContinuousLinearMap.id ℝ _).compHolder₂ A
-          (spatialSecondFDerivL χ) + (ContinuousLinearMap.id ℝ _).compHolder₂ B
-            (spatialFDerivHolderL hα χ)‖ := norm_sub_le _ _
-      _ ≤ ‖timeDerivL χ‖ + (‖A‖ * ‖spatialSecondFDerivL χ‖ +
-          ‖B‖ * ‖spatialFDerivHolderL hα χ‖) := by
-        exact add_le_add le_rfl ((norm_add_le _ _).trans
-          (add_le_add (ContinuousLinearMap.norm_id_compHolder₂_apply_le A (spatialSecondFDerivL χ))
-            (ContinuousLinearMap.norm_id_compHolder₂_apply_le B (spatialFDerivHolderL hα χ))))
-      _ = _ := by ring
+    have h := norm_spatialOperatorL_apply_le (A := A) (B := B) (C := 0) hα χ
+    rw [norm_zero, zero_mul, add_zero] at h
+    linarith [norm_sub_le (timeDerivL χ) (spatialOperatorL hα A B 0 χ)]
   -- Combine the three errors; every factor involving the solution has order at most one.
   rw [parabolicOperatorL_mul_sub_mul_parabolicOperatorL]
   have hvalue := (ContinuousLinearMap.mul ℝ ℝ).norm_compHolder₂_apply_le

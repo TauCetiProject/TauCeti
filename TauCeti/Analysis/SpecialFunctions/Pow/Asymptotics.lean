@@ -31,6 +31,11 @@ These are the comparisons behind the order of growth of an entire function.
 
 As `h → 0⁺`, every multiple `A * h ^ θ` of a positive power falls below any positive constant.
 This is how polynomial rates in a small scale `h` become inequalities for all small `h`.
+
+## Comparing exponents
+
+If `(n + 1) ^ a ≤ C (n + 1) ^ b` for every natural number `n`, then `a ≤ b`: a power with a
+larger exponent outgrows every constant multiple of a smaller one.
 -/
 
 public section
@@ -114,5 +119,19 @@ theorem isBigO_norm_pow_exp_norm_rpow (n : ℕ) {b : ℝ} (hb : 0 < b) :
     filter_upwards [eventually_ge_atTop 0] with x hx
     rw [Function.comp_apply, ← Real.rpow_mul hx, mul_div_cancel₀ _ hb.ne', Real.rpow_natCast]
   exact h.comp_tendsto tendsto_norm_cobounded_atTop
+
+/-- If `(n + 1) ^ a ≤ C (n + 1) ^ b` for every natural number `n`, then `a ≤ b`. -/
+theorem le_of_forall_rpow_le_mul_rpow {a b C : ℝ}
+    (h : ∀ n : ℕ, ((n : ℝ) + 1) ^ a ≤ C * ((n : ℝ) + 1) ^ b) : a ≤ b := by
+  by_contra hab
+  push Not at hab
+  have ht : Tendsto (fun n : ℕ ↦ ((n : ℝ) + 1) ^ (a - b)) atTop atTop :=
+    (tendsto_rpow_atTop (sub_pos.2 hab)).comp
+      (tendsto_atTop_add_const_right _ 1 tendsto_natCast_atTop_atTop)
+  obtain ⟨n, hn⟩ := (ht.eventually_gt_atTop C).exists
+  have hpos : (0 : ℝ) < (n : ℝ) + 1 := by positivity
+  have := h n
+  rw [Real.rpow_sub hpos, lt_div_iff₀ (Real.rpow_pos_of_pos hpos _)] at hn
+  linarith
 
 end TauCeti
