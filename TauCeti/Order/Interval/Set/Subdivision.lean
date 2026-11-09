@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Finset.Max
 public import Mathlib.Data.Fintype.Basic
 public import Mathlib.Order.Interval.Set.Basic
+public import Mathlib.Order.Interval.Set.UnorderedInterval
 
 /-!
 # Intervals inside the cells of a finite subdivision
@@ -15,12 +16,17 @@ public import Mathlib.Order.Interval.Set.Basic
 A family `s : Fin (N + 1) → α` of points in a linear order cuts out the cells
 `[s i.castSucc, s i.succ]`, `i : Fin N`. If a nondegenerate interval `[c, d]` starts at or after
 `s 0`, ends at or before `s (Fin.last N)`, and no point of the family lies strictly between `c`
-and `d`, then `[c, d]` lies in a single cell. No monotonicity of `s` is needed.
+and `d`, then `[c, d]` lies in a single cell. No monotonicity of `s` is needed. For a monotone
+family from `a` to `b`, every point of the family lies in `[a, b]`.
 
 ## Main results
 
 * `TauCeti.exists_Icc_subset_Icc_castSucc_succ`: an interval meeting no point of the family in
-  its interior lies in a single cell.
+  its interior lies in a single cell;
+* `Monotone.mem_Icc_of_map_zero_of_map_last`: every point of a monotone subdivision from `a` to
+  `b` lies in `Icc a b`;
+* `Monotone.mem_uIcc_of_map_zero_of_map_last`: every point of a monotone subdivision from `a` to
+  `b` lies in `uIcc a b`.
 -/
 
 public section
@@ -56,5 +62,17 @@ theorem exists_Icc_subset_Icc_castSucc_succ {α : Type*} [LinearOrder α] {N : �
   refine ⟨j.castPred hjlast, fun t ht ↦ ⟨?_, ht.2.trans hhi⟩⟩
   rw [Fin.castSucc_castPred]
   exact hj.trans ht.1
+
+/-- Every point of a monotone subdivision `s` from `a` to `b` lies in `[a, b]`. -/
+theorem _root_.Monotone.mem_Icc_of_map_zero_of_map_last {α : Type*} [Preorder α]
+    {a b : α} {N : ℕ} {s : Fin (N + 1) → α} (hs : Monotone s) (ha : s 0 = a)
+    (hb : s (Fin.last N) = b) (i : Fin (N + 1)) : s i ∈ Icc a b :=
+  ha ▸ hb ▸ ⟨hs (Fin.zero_le _), hs (Fin.le_last _)⟩
+
+/-- Every point of a monotone subdivision `s` from `a` to `b` lies in `uIcc a b`. -/
+theorem _root_.Monotone.mem_uIcc_of_map_zero_of_map_last {α : Type*} [Lattice α]
+    {a b : α} {N : ℕ} {s : Fin (N + 1) → α} (hs : Monotone s) (ha : s 0 = a)
+    (hb : s (Fin.last N) = b) (i : Fin (N + 1)) : s i ∈ uIcc a b :=
+  Icc_subset_uIcc (hs.mem_Icc_of_map_zero_of_map_last ha hb i)
 
 end TauCeti

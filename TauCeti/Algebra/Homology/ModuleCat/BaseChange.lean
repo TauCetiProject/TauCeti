@@ -15,6 +15,7 @@ public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Basic
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
 public import TauCeti.Algebra.Homology.ModuleCat.FiniteFreeResolution
 public import TauCeti.Algebra.Homology.ModuleCat.FlatCycles
+import TauCeti.RingTheory.Flat.Pi
 
 /-!
 # Base change of bounded complexes of flat modules

@@ -126,7 +126,7 @@ theorem exists_tendsto_atTop_of_setOf_mapClusterPt_subset [T2Space X] (hK : IsCo
     (hu : ContinuousOn u (Ici a)) (hmaps : MapsTo u (Ici a) K) {C : Set X} (hC : C.Finite)
     (hsub : {x | MapClusterPt x atTop u} ⊆ C) : ∃ x ∈ C, Tendsto u atTop (𝓝 x) :=
   exists_tendsto_atTop_of_setOf_mapClusterPt_subset_of_isTotallyDisconnected hK hu hmaps
-    hC.isTotallyDisconnected hsub
+    hC.isDiscrete.isTotallyDisconnected hsub
 
 end TauCeti
 
