@@ -216,12 +216,28 @@ theorem IsSmoothForm.continuous_mpullback_apply {φ : RoughForm I M F k} (hφ : 
   have h := isSmoothForm_modelSpace_iff.mp (hφ.mpullback (by simpa using hu))
   exact (ContinuousAlternatingMap.apply ℝ E' F v).continuous.comp h.continuous
 
+/-- For a continuous two-form `φ` and a map `u` from a normed space which is `C¹` on an open set
+`U`, the form evaluated on the derivatives of `u` along two fixed vectors,
+`z ↦ φ (u z) (du_z a, du_z b)`, is continuous on `U`. -/
+theorem IsSmoothForm.continuousOn_apply_mfderiv {φ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 0 φ) {u : E' → M} {U : Set E'} (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, E') I 1 u U) (a b : E') :
+    ContinuousOn (fun z ↦ φ (u z) ![mfderiv 𝓘(ℝ, E') I u z a, mfderiv 𝓘(ℝ, E') I u z b]) U := by
+  intro z hz
+  -- Near `z` the pullback of `φ` along `u` is a continuous function into alternating maps.
+  have h := RoughForm.contDiffWithinAt_of_contMDiffWithinAt_modelSpace (s := univ)
+    (((hφ.contMDiff (u z)).mpullback_form (hu.contMDiffAt (hU.mem_nhds hz))
+      (by simp)).contMDiffWithinAt)
+  refine (((ContinuousAlternatingMap.apply ℝ E' F ![a, b]).continuous.continuousAt.comp
+    (contDiffWithinAt_univ.1 h).continuousAt).congr
+      (Eventually.of_forall fun y ↦ mpullback_apply_pair u φ y a b)).continuousWithinAt
+
 /-- For a continuous two-form `φ` and a `C¹` map `u` from a normed space, the form evaluated on
 the derivatives of `u` along two fixed vectors, `z ↦ φ (u z) (du_z a, du_z b)`, is continuous. -/
 theorem IsSmoothForm.continuous_apply_mfderiv {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ)
     {u : E' → M} (hu : ContMDiff 𝓘(ℝ, E') I 1 u) (a b : E') :
     Continuous fun z ↦ φ (u z) ![mfderiv 𝓘(ℝ, E') I u z a, mfderiv 𝓘(ℝ, E') I u z b] :=
-  (hφ.continuous_mpullback_apply hu ![a, b]).congr fun z ↦ mpullback_apply_pair u φ z a b
+  continuousOn_univ.1 (hφ.continuousOn_apply_mfderiv isOpen_univ hu.contMDiffOn a b)
 
 omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
 /-- Pulling a form back along a diffeomorphism and then along its inverse returns the form. -/
