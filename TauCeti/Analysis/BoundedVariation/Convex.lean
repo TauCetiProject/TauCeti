@@ -233,14 +233,30 @@ theorem perimeter_inter_halfSpace_le [OpensMeasurableSpace E] [IsFiniteMeasureOn
   refine le_of_tendsto' (ENNReal.tendsto_ofReal hlim) fun n => ?_
   exact ofReal_setIntegral_add_setIntegral_le_perimeter f c hφ (hψn n) (hφψ n) hs
 
+/-- The perimeter of a subset `t ⊆ s` with respect to `μ.restrict s` agrees with its perimeter with
+respect to `μ`, because the indicator of `t` vanishes off `s`. -/
+theorem perimeter_restrict_of_subset {t : Set E} (h : t ⊆ s) :
+    perimeter (μ.restrict s) Ω t = perimeter μ Ω t := by
+  rw [perimeter_def, perimeter_def, totalVariationOn_def, totalVariationOn_def]
+  refine iSup_congr fun φ => iSup_congr fun _ => congrArg ENNReal.ofReal ?_
+  exact setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
+    simp [indicator_of_notMem (fun hxt => hx (h hxt))]
+
 /-- **Cutting by finitely many half-spaces does not increase the perimeter.** For a
 null-measurable set `s` of finite measure and finitely many closed half-spaces `{g k ≤ c k}`,
 `k ∈ S`, the perimeter of `s ∩ ⋂ k ∈ S, {g k ≤ c k}` is at most `P(s)`. -/
 theorem perimeter_inter_biInter_halfSpace_le [OpensMeasurableSpace E]
-    [IsFiniteMeasureOnCompacts μ] {κ : Type*} (g : κ → StrongDual ℝ E)
+    {κ : Type*} (g : κ → StrongDual ℝ E)
     (c : κ → ℝ) (S : Finset κ) (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ∞) :
     perimeter μ ⊤ (s ∩ ⋂ k ∈ S, {x | g k x ≤ c k}) ≤ perimeter μ ⊤ s := by
   classical
+  -- Pass to the finite measure `μ.restrict s`, which sees the same perimeters of subsets of `s`.
+  have : IsFiniteMeasure (μ.restrict s) :=
+    ⟨by rw [Measure.restrict_apply_univ]; exact hμs.lt_top⟩
+  have hsν : NullMeasurableSet s (μ.restrict s) :=
+    hs.mono_ac Measure.restrict_le_self.absolutelyContinuous
+  rw [← perimeter_restrict_of_subset (inter_subset_left (t := ⋂ k ∈ S, {x | g k x ≤ c k})),
+    ← perimeter_restrict_of_subset (subset_refl s)]
   induction S using Finset.induction_on with
   | empty => simp
   | insert k S _ ih =>
@@ -251,10 +267,9 @@ theorem perimeter_inter_biInter_halfSpace_le [OpensMeasurableSpace E]
       simp only [mem_inter_iff]
       tauto
     rw [h]
-    refine (perimeter_inter_halfSpace_le _ _ ?_ ?_).trans ih
-    · exact hs.inter (S.measurableSet_biInter fun j _ =>
-        measurableSet_le (g j).continuous.measurable measurable_const).nullMeasurableSet
-    · exact measure_ne_top_of_subset inter_subset_left hμs
+    refine (perimeter_inter_halfSpace_le _ _ ?_ (measure_ne_top _ _)).trans ih
+    exact hsν.inter (S.measurableSet_biInter fun j _ =>
+      measurableSet_le (g j).continuous.measurable measurable_const).nullMeasurableSet
 
 /-- **Bounded truncation in perimeter.** A null-measurable set `s` of finite measure is the limit
 of an increasing sequence of bounded null-measurable subsets `t n ⊆ s`, converging to `s` in
@@ -262,8 +277,7 @@ measure, whose perimeters are at most `P(s)` and converge to `P(s)`. The perimet
 extended-valued, so `s` may have infinite perimeter. The finiteness of `μ s` cannot be dropped,
 since bounded subsets of a set of infinite measure do not converge to it in measure. -/
 theorem _root_.MeasureTheory.NullMeasurableSet.exists_isBounded_perimeter_approximation
-    [OpensMeasurableSpace E] [IsFiniteMeasureOnCompacts μ] (hs : NullMeasurableSet s μ)
-    (hμs : μ s ≠ ⊤) :
+    [OpensMeasurableSpace E] (hs : NullMeasurableSet s μ) (hμs : μ s ≠ ⊤) :
     ∃ t : ℕ → Set E, Monotone t ∧
       (∀ n, t n ⊆ s ∧ NullMeasurableSet (t n) μ ∧ Bornology.IsBounded (t n) ∧
         perimeter μ ⊤ (t n) ≤ perimeter μ ⊤ s) ∧
@@ -309,10 +323,19 @@ theorem _root_.MeasureTheory.NullMeasurableSet.exists_isBounded_perimeter_approx
   refine ⟨t, fun m n hmn => inter_subset_inter_right s (hQmono hmn),
     fun n => ⟨inter_subset_left, ht n, htb n, htP n⟩, hlim, ?_⟩
   refine tendsto_of_le_liminf_of_limsup_le ?_ (limsup_le_of_le (h := .of_forall htP))
-  refine perimeter_le_liminf (.of_forall ht) hs fun K _ _ => ?_
+  -- Lower semicontinuity for the finite measure `μ.restrict s`.
+  have : IsFiniteMeasure (μ.restrict s) :=
+    ⟨by rw [Measure.restrict_apply_univ]; exact hμs.lt_top⟩
+  have hac : μ.restrict s ≪ μ := Measure.restrict_le_self.absolutelyContinuous
+  have hts (n : ℕ) : t n ⊆ s := inter_subset_left
+  rw [show (fun n => perimeter μ ⊤ (t n)) = fun n => perimeter (μ.restrict s) ⊤ (t n) from
+    funext fun n => (perimeter_restrict_of_subset (hts n)).symm,
+    ← perimeter_restrict_of_subset (subset_refl s)]
+  refine perimeter_le_liminf (.of_forall fun n => (ht n).mono_ac hac) (hs.mono_ac hac)
+    fun K _ _ => ?_
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ => zero_le)
-    fun n => measure_mono ?_
-  rw [symmDiff_of_le (inter_subset_left : t n ⊆ s)]
+    fun n => (Measure.le_iff'.1 Measure.restrict_le_self _).trans (measure_mono ?_)
+  rw [symmDiff_of_le (hts n)]
   exact inter_subset_left
 
 /-- **Intersecting with a convex set does not increase the perimeter.** For a convex set `C` and
