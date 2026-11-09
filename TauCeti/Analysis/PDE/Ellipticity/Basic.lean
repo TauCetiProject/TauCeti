@@ -76,6 +76,8 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   boundedness of the bilinear form attached to a uniformly elliptic coefficient field.
 * `TauCeti.PDE.UniformlyEllipticOn.isBounded_image_matrixBilinearForm`: these bilinear forms
   are bounded uniformly over the domain.
+* `TauCeti.PDE.UniformlyEllipticOn.trace_le`: the trace of a uniformly elliptic coefficient
+  field is at most `card n` times the upper ellipticity constant.
 * `TauCeti.PDE.uniformlyEllipticOn_const`: a constant matrix with a lower quadratic bound is
   uniformly elliptic.
 * `TauCeti.PDE.continuousOn_of_continuousOn_matrixBilinearForm` and
@@ -652,6 +654,15 @@ lemma abs_apply_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω
     |a x i j| ≤ Lam := by
   simpa [dotProduct, Matrix.mulVec, Pi.single_apply] using
     h.upper_bound hx (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
+
+/-- At every point of the domain, the trace of the coefficient matrix is at most `card n` times
+the upper ellipticity constant. -/
+lemma trace_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) :
+    (a x).trace ≤ Fintype.card n * Lam := by
+  calc (a x).trace = ∑ i, a x i i := rfl
+    _ ≤ ∑ _i : n, Lam := Finset.sum_le_sum fun i _ ↦ (le_abs_self _).trans (h.abs_apply_le hx i i)
+    _ = Fintype.card n * Lam := by
+      rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
 
 /-- On the domain, the bilinear forms attached to a uniformly elliptic coefficient field form a
 bounded set, of operator norm at most the upper ellipticity constant. -/

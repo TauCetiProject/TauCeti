@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+import Mathlib.Analysis.InnerProductSpace.Convex
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
-import TauCeti.Analysis.InnerProductSpace.TangentBall
+import TauCeti.Analysis.Convex.StrictConvexSpace
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
-import TauCeti.Topology.MetricSpace.ProperSpace
 
 /-!
 # Hopf's boundary-point lemma for elliptic operators in non-divergence form
@@ -33,14 +34,15 @@ If `u` is `C²` on `B`, is a subsolution there, is continuous at `x₀` relative
 `u x < u x₀` for every `x ∈ B`, then `u` decreases at least linearly along the inward radius:
 there are `ε, δ > 0` with `ε t ≤ u x₀ - u (x₀ - t • e)` for `0 < t < δ`. This holds in each of
 the three classical cases: `c = 0`; `c ≥ 0` and `u x₀ ≥ 0`; and `u x₀ = 0` with no sign
-condition on `c`. When `u` is differentiable at `x₀`, the outward derivative is then positive,
-`0 < ∂ₑu(x₀)`.
+condition on `c`. When `u` has a derivative at `x₀` in the outward normal direction `e`, that
+derivative is then positive, `0 < ∂ₑu(x₀)`.
 
 The coefficients need no regularity, not even measurability, and `a` need not be symmetric. Unlike
 the weak maximum principle, the lemma also uses an upper bound on `a`, here only in the form of a
 trace bound `tr a ≤ T`; a coefficient field with `TauCeti.PDE.UniformlyEllipticOn (ball y R) a λ Λ`
-has `tr a ≤ (card ι) Λ`. The conclusion only involves `u` on `B` and at `x₀`, so for a domain `Ω`
-with an interior ball `B ⊆ Ω` touching `∂Ω` at `x₀` one applies the lemma to `B`.
+has `tr a ≤ (card ι) Λ` (`TauCeti.PDE.UniformlyEllipticOn.trace_le`). The conclusion only involves
+`u` on `B` and at `x₀`, so for a domain `Ω` with an interior ball `B ⊆ Ω` touching `∂Ω` at `x₀`
+one applies the lemma to `B`.
 
 The Laplacian with lower-order terms, `a = 1`, is
 `TauCeti.Analysis.InnerProductSpace.Laplacian.HopfLemma`, which works with a radial power
@@ -67,8 +69,8 @@ subtracting the constant `u x₀`.
 
 * `TauCeti.PDE.exists_mul_le_sub_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_lt_ball`:
   **Hopf's boundary-point lemma**, as a linear lower bound on the inward difference quotients.
-* `TauCeti.PDE.fderiv_pos_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_lt_ball`: its derivative
-  form, for `u` differentiable at `x₀`.
+* `TauCeti.PDE.lineDeriv_pos_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_lt_ball`: its
+  derivative form, for `u` with a derivative at `x₀` in the outward normal direction.
 
 ## References
 
@@ -155,6 +157,83 @@ private theorem add_mul_exp_neg_mul_norm_sub_sq_sub_le_of_mem_frontier {F : Type
     nlinarith [hmargin x hxs, mul_le_mul_of_nonneg_left (by linarith : Real.exp (-α * ‖x - y‖ ^ 2) -
       Real.exp (-α * R ^ 2) ≤ 1) hδ₀]
 
+/-- **The barrier comparison.** Let `u` be a subsolution of `-L + c`, `0 ≤ c ≤ γ`, on `ball y R`,
+continuous on the closed ball, with `u ≤ M` on the sphere, `0 ≤ M`, and `u ≤ M - δ₀` on the inner
+sphere of radius `ρ > 0`. If `α ≥ 1` is large enough for the Gaussian barrier
+`v = exp (-α ‖x - y‖²) - exp (-α R²)` to be a subsolution on the annulus `ρ ≤ ‖x - y‖ ≤ R`, then
+the weak maximum principle gives `u + δ₀ v ≤ M` on that annulus. -/
+private theorem add_mul_exp_neg_mul_norm_sub_sq_sub_le_of_le_sphere [Nonempty ι]
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {c u : EuclideanSpace ℝ ι → ℝ} {y : EuclideanSpace ℝ ι} {R ρ lam T β γ α δ₀ M : ℝ}
+    (hR : 0 < R) (hρ : 0 < ρ) (hlam : 0 < lam)
+    (ha : ∀ x ∈ ball y R, ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
+    (htr : ∀ x ∈ ball y R, (a x).trace ≤ T) (hb : ∀ x ∈ ball y R, ‖b x‖ ≤ β)
+    (hc : ∀ x ∈ ball y R, 0 ≤ c x) (hcγ : ∀ x ∈ ball y R, c x ≤ γ)
+    (hu : ∀ x ∈ ball y R, ContDiffAt ℝ 2 u x)
+    (hsub : ∀ x ∈ ball y R, c x * u x ≤ ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ u) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) + fderiv ℝ u x (b x))
+    (hucont : ContinuousOn u (closedBall y R)) (hle : ∀ x ∈ sphere y R, u x ≤ M) (hM : 0 ≤ M)
+    (hδ₀ : 0 ≤ δ₀) (hmargin : ∀ x ∈ sphere y ρ, u x ≤ M - δ₀) (hα1 : 1 ≤ α)
+    (hαρ : max T 0 + β * R + γ ≤ α * lam * ρ ^ 2) :
+    ∀ x ∈ closedBall y R \ ball y ρ,
+      u x + δ₀ * (Real.exp (-α * ‖x - y‖ ^ 2) - Real.exp (-α * R ^ 2)) ≤ M := by
+  set v : EuclideanSpace ℝ ι → ℝ := fun z ↦ Real.exp (-α * ‖z - y‖ ^ 2) - Real.exp (-α * R ^ 2)
+    with hv
+  have hvcd : ContDiff ℝ 2 v := by
+    have hq : ContDiff ℝ 2 fun z : EuclideanSpace ℝ ι ↦ ‖z - y‖ ^ 2 :=
+      (contDiff_norm_sq ℝ).comp (contDiff_id.sub contDiff_const)
+    exact (Real.contDiff_exp.comp (contDiff_const.mul hq)).sub contDiff_const
+  set K := closedBall y R \ ball y ρ with hK
+  have hKc : IsCompact K := (isCompact_closedBall y R).diff isOpen_ball
+  have hKint : ∀ x ∈ interior K, x ∈ ball y R ∧ ρ ≤ ‖x - y‖ := fun x hx ↦ by
+    have hx' : x ∈ ball y R := by
+      rw [← interior_closedBall y hR.ne']
+      exact interior_mono sdiff_subset hx
+    have hxK := interior_subset hx
+    rw [hK, Set.mem_sdiff, mem_ball, dist_eq_norm, not_lt] at hxK
+    exact ⟨hx', hxK.2⟩
+  intro x hx
+  have hmax : (u + δ₀ • v) x ≤ M := by
+    refine le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier hKc hlam
+      (fun x hx ↦ ha x (hKint x hx).1) (fun x hx ↦ hb x (hKint x hx).1)
+      (fun x hx ↦ hc x (hKint x hx).1) hM
+      ((hucont.mono sdiff_subset).add (hvcd.continuous.continuousOn.const_smul δ₀))
+      (fun x hx ↦ (hu x (hKint x hx).1).add (hvcd.contDiffAt.const_smul δ₀)) ?_ ?_ hx
+    · intro x hx
+      obtain ⟨hxB, hρx⟩ := hKint x hx
+      have hxR : ‖x - y‖ ≤ R := by
+        rw [mem_ball, dist_eq_norm] at hxB
+        exact hxB.le
+      rw [sum_mul_fderiv_fderiv_add_fderiv_add_smul (hu x hxB) hvcd.contDiffAt]
+      have hbar := mul_le_sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq_sub
+        (ha x hxB) (htr x hxB) (hb x hxB) (hc x hxB) (hcγ x hxB) hρ.le hρx hxR hα1 hlam.le hαρ
+      simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+      nlinarith [hsub x hxB, mul_le_mul_of_nonneg_left hbar hδ₀]
+    · exact fun x hx ↦ add_mul_exp_neg_mul_norm_sub_sq_sub_le_of_mem_frontier (by linarith) hδ₀
+        hle hmargin hx
+  simpa only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, hv] using hmax
+
+/-- Along the inward radius from `x₀ = y + R • e`, the Gaussian barrier grows at least linearly, so
+a bound `u + δ₀ v ≤ u x₀` on the annulus `ρ ≤ ‖x - y‖ ≤ R` gives a linear lower bound on the
+decrease of `u` along that radius. -/
+private theorem mul_le_sub_of_add_mul_exp_neg_mul_norm_sub_sq_sub_le {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {u : F → ℝ} {y e : F} {R ρ α δ₀ : ℝ}
+    (he : ‖e‖ = 1) (hρ : 0 ≤ ρ) (hα : 0 ≤ α) (hδ₀ : 0 ≤ δ₀)
+    (hle : ∀ x ∈ closedBall y R \ ball y ρ,
+      u x + δ₀ * (Real.exp (-α * ‖x - y‖ ^ 2) - Real.exp (-α * R ^ 2)) ≤ u (y + R • e)) :
+    ∀ t ∈ Ioo 0 (R - ρ),
+      δ₀ * (α * R * Real.exp (-α * R ^ 2)) * t ≤ u (y + R • e) - u (y + R • e - t • e) := by
+  intro t ht
+  have hnorm : ‖(y + R • e - t • e) - y‖ = R - t := by
+    have : (y + R • e - t • e) - y = (R - t) • e := by rw [sub_smul]; abel
+    rw [this, norm_smul, he, mul_one, Real.norm_of_nonneg (by linarith [ht.2])]
+  have h := hle (y + R • e - t • e) (by
+    rw [Set.mem_sdiff, mem_closedBall, mem_ball, dist_eq_norm, hnorm, not_lt]
+    constructor <;> linarith [ht.1, ht.2])
+  rw [hnorm] at h
+  have hgrow := mul_exp_le_exp_neg_mul_sub_sq_sub hα ht.1.le (by linarith [ht.2] : t ≤ R)
+  nlinarith [mul_le_mul_of_nonneg_left hgrow hδ₀]
+
 /-- **Hopf's lemma on a closed ball, in the case `c ≥ 0`, `u x₀ ≥ 0`.** Here `u` is continuous on
 the closed ball, strictly below `u x₀` inside and weakly below it on the sphere. On the annulus
 `R / 2 ≤ ‖x - y‖ ≤ R`, the weak maximum principle bounds `u + δ₀ v` by `u x₀`, where `v` is the
@@ -175,14 +254,16 @@ private theorem exists_mul_le_sub_of_lt_ball_of_le_sphere_of_nonneg [Nonempty ι
     ∃ ε > 0, ∃ δ > 0, ∀ t ∈ Ioo 0 δ, ε * t ≤ u (y + R • e) - u (y + R • e - t • e) := by
   have hβ : 0 ≤ β := (norm_nonneg _).trans (hb y (mem_ball_self hR))
   have hγ : 0 ≤ γ := (hc y (mem_ball_self hR)).trans (hcγ y (mem_ball_self hR))
-  set x₀ := y + R • e with hx₀
   -- The inner sphere of radius `ρ = R / 2` lies in the ball, so `u` stays a margin `δ₀` below
   -- `u x₀` there.
   set ρ := R / 2 with hρ
   have hρ0 : 0 < ρ := by positivity
-  obtain ⟨δ₀, hδ₀, hmargin⟩ :=
-    exists_forall_closedBall_le_sub_of_lt_ball (half_lt_self hR) hucont hlt
-  -- The barrier `v`, with an exponent `α` large enough for the annulus `ρ ≤ ‖x - y‖ ≤ R`.
+  have hsphere : sphere y ρ ⊆ ball y R :=
+    sphere_subset_closedBall.trans (closedBall_subset_ball (half_lt_self hR))
+  obtain ⟨δ₀, hδ₀, hmargin⟩ := (isCompact_sphere y ρ).exists_forall_le' (a := 0)
+    (continuousOn_const.sub (hucont.mono (hsphere.trans ball_subset_closedBall)))
+    fun x hx ↦ sub_pos.2 (hlt x (hsphere hx))
+  -- An exponent `α` large enough for the barrier on the annulus `ρ ≤ ‖x - y‖ ≤ R`.
   set α := 1 + (max T 0 + β * R + γ) / (lam * ρ ^ 2) with hα
   have hlamρ : 0 < lam * ρ ^ 2 := by positivity
   have hα1 : 1 ≤ α := le_add_of_nonneg_right (by positivity)
@@ -191,53 +272,10 @@ private theorem exists_mul_le_sub_of_lt_ball_of_le_sphere_of_nonneg [Nonempty ι
       rw [hα]
       field_simp
     linarith
-  set v : EuclideanSpace ℝ ι → ℝ := fun z ↦ Real.exp (-α * ‖z - y‖ ^ 2) - Real.exp (-α * R ^ 2)
-    with hv
-  have hvcd : ContDiff ℝ 2 v := by
-    have hq : ContDiff ℝ 2 fun z : EuclideanSpace ℝ ι ↦ ‖z - y‖ ^ 2 :=
-      (contDiff_norm_sq ℝ).comp (contDiff_id.sub contDiff_const)
-    exact (Real.contDiff_exp.comp (contDiff_const.mul hq)).sub contDiff_const
-  set K := closedBall y R \ ball y ρ with hK
-  have hKc : IsCompact K := (isCompact_closedBall y R).diff isOpen_ball
-  have hKint : ∀ x ∈ interior K, x ∈ ball y R ∧ ρ ≤ ‖x - y‖ := fun x hx ↦ by
-    have hx' : x ∈ ball y R := by
-      rw [← interior_closedBall y hR.ne']
-      exact interior_mono sdiff_subset hx
-    have hxK := interior_subset hx
-    rw [hK, Set.mem_sdiff, mem_ball, dist_eq_norm, not_lt] at hxK
-    exact ⟨hx', hxK.2⟩
-  -- The weak maximum principle bounds `u + δ₀ v` by `u x₀` on the annulus `K`.
-  have hfmax : ∀ x ∈ K, (u + δ₀ • v) x ≤ u x₀ := by
-    refine fun x hx ↦ le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier hKc hlam
-      (fun x hx ↦ ha x (hKint x hx).1) (fun x hx ↦ hb x (hKint x hx).1)
-      (fun x hx ↦ hc x (hKint x hx).1) hnonneg
-      ((hucont.mono sdiff_subset).add (hvcd.continuous.continuousOn.const_smul δ₀))
-      (fun x hx ↦ (hu x (hKint x hx).1).add (hvcd.contDiffAt.const_smul δ₀)) ?_ ?_ hx
-    · intro x hx
-      obtain ⟨hxB, hρx⟩ := hKint x hx
-      have hxR : ‖x - y‖ ≤ R := by
-        rw [mem_ball, dist_eq_norm] at hxB
-        exact hxB.le
-      rw [sum_mul_fderiv_fderiv_add_fderiv_add_smul (hu x hxB) hvcd.contDiffAt]
-      have hbar := mul_le_sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq_sub
-        (ha x hxB) (htr x hxB) (hb x hxB) (hc x hxB) (hcγ x hxB) hρ0.le hρx hxR hα1 hlam.le hαρ
-      simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-      nlinarith [hsub x hxB, mul_le_mul_of_nonneg_left hbar hδ₀.le]
-    · exact fun x hx ↦ add_mul_exp_neg_mul_norm_sub_sq_sub_le_of_mem_frontier (by linarith) hδ₀.le
-        hle (fun x hx ↦ hmargin x (sphere_subset_closedBall hx)) hx
-  -- Along the inward radius, the barrier grows linearly.
-  refine ⟨δ₀ * (α * R * Real.exp (-α * R ^ 2)), by positivity, ρ, hρ0, fun t ht ↦ ?_⟩
-  have hnorm : ‖(x₀ - t • e) - y‖ = R - t := by
-    have : (x₀ - t • e) - y = (R - t) • e := by rw [hx₀, sub_smul]; abel
-    rw [this, norm_smul, he, mul_one, Real.norm_of_nonneg (by linarith [ht.2])]
-  have hpK : x₀ - t • e ∈ K := by
-    rw [hK, Set.mem_sdiff, mem_closedBall, mem_ball, dist_eq_norm, hnorm, not_lt]
-    constructor <;> linarith [ht.1, ht.2]
-  have h := hfmax _ hpK
-  simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, hv, hnorm] at h
-  have hgrow := mul_exp_le_exp_neg_mul_sub_sq_sub (by linarith : (0 : ℝ) ≤ α) ht.1.le
-    (by linarith [ht.2] : t ≤ R)
-  nlinarith [mul_le_mul_of_nonneg_left hgrow hδ₀.le]
+  refine ⟨δ₀ * (α * R * Real.exp (-α * R ^ 2)), by positivity, R - ρ, by linarith, ?_⟩
+  exact mul_le_sub_of_add_mul_exp_neg_mul_norm_sub_sq_sub_le he hρ0.le (by linarith) hδ₀.le
+    (add_mul_exp_neg_mul_norm_sub_sq_sub_le_of_le_sphere hR hρ0 hlam ha htr hb hc hcγ hu hsub
+      hucont hle hnonneg hδ₀.le (fun x hx ↦ le_sub_comm.1 (hmargin x hx)) hα1 hαρ)
 
 /-- **Hopf's lemma in the case `c ≥ 0`, `u x₀ ≥ 0`.** The ball of radius `R / 2` internally
 tangent to `ball y R` at `x₀` has closure inside `ball y R ∪ {x₀}`, so `u` is continuous on it
@@ -266,12 +304,9 @@ private theorem exists_mul_le_sub_of_lt_ball_of_nonneg
   have hr0 : 0 < r := by positivity
   have hx₀' : x₀ = y' + r • e := by
     rw [hx₀, hy', add_assoc, ← add_smul, hr, add_halves]
-  have hball : ball y' r ⊆ ball y R := fun x hx ↦ by
-    rw [mem_ball, dist_eq_norm] at hx ⊢
-    calc ‖x - y‖ = ‖(x - y') + r • e‖ := by rw [hy']; congr 1; abel
-      _ ≤ ‖x - y'‖ + ‖r • e‖ := norm_add_le _ _
-      _ < r + r := by rw [norm_smul, he, mul_one, Real.norm_of_nonneg hr0.le]; linarith
-      _ = R := add_halves R
+  have hball : ball y' r ⊆ ball y R := ball_subset_ball' <| by
+    rw [hy', dist_eq_norm, add_sub_cancel_left, norm_smul, he, mul_one,
+      Real.norm_of_nonneg hr0.le, hr, add_halves]
   have htangent : ∀ x ∈ closedBall y' r, x = x₀ ∨ x ∈ ball y R := fun x hx ↦
     eq_or_mem_ball_of_mem_closedBall_add_half_smul he hx
   have hucont : ContinuousOn u (closedBall y' r) := by
@@ -349,10 +384,11 @@ theorem exists_mul_le_sub_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_lt_ball
   · exact exists_mul_le_sub_of_lt_ball_of_eq_zero hR he hlam ha htr hb hc hu hsub hcont hlt hzero
 
 /-- **Hopf's boundary-point lemma, derivative form.** Under the hypotheses of
-`TauCeti.PDE.exists_mul_le_sub_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_lt_ball`, if `u` is
-moreover differentiable at `x₀ = y + R • e`, then its derivative at `x₀` in the outward normal
-direction `e` is positive. -/
-theorem fderiv_pos_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_lt_ball
+`TauCeti.PDE.exists_mul_le_sub_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_lt_ball`, if `u`
+moreover has a derivative at `x₀ = y + R • e` in the outward normal direction `e`, then that
+derivative is positive. For `u` differentiable at `x₀` it is `fderiv ℝ u x₀ e`
+(`DifferentiableAt.lineDeriv_eq_fderiv`). -/
+theorem lineDeriv_pos_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_lt_ball
     {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
     {c u : EuclideanSpace ℝ ι → ℝ} {y e : EuclideanSpace ℝ ι} {R lam T β γ : ℝ}
     (hR : 0 < R) (he : ‖e‖ = 1) (hlam : 0 < lam)
@@ -361,16 +397,17 @@ theorem fderiv_pos_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_lt_ball
     (hc : ∀ x ∈ ball y R, c x ≤ γ) (hu : ∀ x ∈ ball y R, ContDiffAt ℝ 2 u x)
     (hsub : ∀ x ∈ ball y R, c x * u x ≤ ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ u) x
         (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) + fderiv ℝ u x (b x))
-    (hderiv : DifferentiableAt ℝ u (y + R • e))
+    (hcont : ContinuousWithinAt u (ball y R) (y + R • e))
+    (hderiv : LineDifferentiableAt ℝ u (y + R • e) e)
     (hlt : ∀ x ∈ ball y R, u x < u (y + R • e))
     (hsign : (∀ x ∈ ball y R, c x = 0) ∨ ((∀ x ∈ ball y R, 0 ≤ c x) ∧ 0 ≤ u (y + R • e)) ∨
       u (y + R • e) = 0) :
-    0 < fderiv ℝ u (y + R • e) e := by
+    0 < lineDeriv ℝ u (y + R • e) e := by
   obtain ⟨ε, hε, δ, hδ, h⟩ :=
     exists_mul_le_sub_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_lt_ball hR he hlam ha htr hb
-      hc hu hsub hderiv.continuousAt.continuousWithinAt hlt hsign
+      hc hu hsub hcont hlt hsign
   -- The inward decrease of `u` dominates `t ↦ ε t`, whose derivative at `0` is `ε`.
-  refine hε.trans_le (le_fderiv_apply_of_le_sub_sub_smul hderiv
+  refine hε.trans_le (hderiv.hasLineDerivAt.le_of_le_sub_sub_smul
     (by simpa using (hasDerivAt_id (0 : ℝ)).const_mul ε) (mul_zero ε) ?_)
   filter_upwards [Ioo_mem_nhdsGT hδ] with t ht
   exact h t ht

@@ -9,10 +9,8 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.LowerOrderMaximumPrinciple
 import TauCeti.Analysis.InnerProductSpace.NormPow
-import TauCeti.Topology.MetricSpace.ProperSpace
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
-import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Normed.Module.RCLike.Real
 import Mathlib.Topology.MetricSpace.Bounded
 
@@ -215,7 +213,8 @@ private theorem fderiv_pos_of_add_mul_hopfBarrier_le {u : E → ℝ} {y e : E} {
     simpa only [mul_neg, mul_one, neg_mul] using hbase.congr_of_eventuallyEq hev
   -- Along the inward ray, the decrease of `u` dominates the barrier term.
   have hkey : ε * (-p * R ^ (p - 1)) ≤ fderiv ℝ u x₀ e := by
-    refine le_fderiv_apply_of_le_sub_sub_smul hderiv (h2.const_mul ε) (by simp [hz]) ?_
+    refine (hderiv.hasFDerivAt.hasLineDerivAt e).le_of_le_sub_sub_smul (h2.const_mul ε)
+      (by simp [hz]) ?_
     filter_upwards [Ioc_mem_nhdsGT hδ] with h hh
     linarith [hray h hh]
   have hεpos' : 0 < ε * (-p * R ^ (p - 1)) :=
@@ -349,10 +348,13 @@ theorem fderiv_pos_of_mul_le_laplacian_add_fderiv_of_lt_ball_of_le_sphere {u c :
     rw [hpdef]
     nlinarith [mul_nonneg hβ hR.le, mul_nonneg hγ (sq_nonneg R)]
   -- The inner sphere carries a uniform positive margin below the maximum `u x₀`.
-  obtain ⟨δ, hδpos, hball_le⟩ :=
-    exists_forall_closedBall_le_sub_of_lt_ball (half_lt_self hR) hucont hlt
+  have hsphere_ball : sphere y (R / 2) ⊆ ball y R :=
+    sphere_subset_closedBall.trans (closedBall_subset_ball (half_lt_self hR))
+  obtain ⟨δ, hδpos, hmargin⟩ := (isCompact_sphere y (R / 2)).exists_forall_le' (a := 0)
+    (continuousOn_const.sub (hucont.mono (hsphere_ball.trans ball_subset_closedBall)))
+    fun w hw ↦ sub_pos.2 (hlt w (hsphere_ball hw))
   have hsphere_le : ∀ w ∈ sphere y (R / 2), u w ≤ u x₀ - δ := fun w hw ↦
-    hball_le w (sphere_subset_closedBall hw)
+    le_sub_comm.1 (hmargin w hw)
   -- The closed annulus on which the barrier is controlled.
   set K : Set E := closedBall y R \ ball y (R / 2) with hKdef
   have hKsub : K ⊆ closedBall y R := sdiff_subset

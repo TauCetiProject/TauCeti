@@ -11,7 +11,7 @@ import Mathlib.Analysis.Convex.Mul
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 
 /-!
-# Convexity of powers of the norm
+# Convexity of powers of the norm, and internally tangent balls
 
 In every real seminormed space, the `q`-th power of the norm is a convex function for every exponent
 `1 ≤ q`, as the composition of the convex norm with the convex nondecreasing function `t ↦ t ^ q`
@@ -26,6 +26,13 @@ ray.
 This is the pointwise input for strict convexity of the spaces `Lᵖ(μ; E)` with `1 < p < ∞`
 (`MeasureTheory.Lp.strictConvexSpace`).
 
+In a strictly convex real normed space, let `e` be a unit vector and let `x₀ = y + R • e` be the
+point where the ray from `y` in the direction `e` meets the sphere of radius `R` about `y`. The
+closed ball of radius `R / 2` about `y + (R / 2) • e` is internally tangent to `ball y R` at `x₀`:
+it meets the complement of `ball y R` only at `x₀`, by the equality case of the triangle
+inequality. This is the reduction used in boundary-point lemmas: a function continuous on
+`ball y R` and at `x₀` relative to it is continuous on the closed tangent ball.
+
 ## Main statements
 
 * `TauCeti.convexOn_norm_rpow` — `x ↦ ‖x‖ ^ q` is convex on a real seminormed space, for `1 ≤ q`.
@@ -33,6 +40,8 @@ This is the pointwise input for strict convexity of the spaces `Lᵖ(μ; E)` wit
   `0 ≤ a`.
 * `TauCeti.strictConvexOn_norm_rpow` — `x ↦ ‖x‖ ^ q` is strictly convex on a strictly convex real
   normed space, for `1 < q`.
+* `TauCeti.eq_or_mem_ball_of_mem_closedBall_add_half_smul` — a point of the closed ball internally
+  tangent to `ball y R` at `x₀` is `x₀` or lies in `ball y R`.
 -/
 
 public section
@@ -92,5 +101,28 @@ theorem strictConvexOn_norm_rpow {q : ℝ} (hq : 1 < q) :
       norm_combo_lt_of_ne le_rfl hn.symm.le hxy ha hb hab
     calc ‖a • x + b • y‖ ^ q < ‖x‖ ^ q := Real.rpow_lt_rpow (norm_nonneg _) hlt hq0
       _ = a * ‖x‖ ^ q + b * ‖y‖ ^ q := by rw [← hn, ← add_mul, hab, one_mul]
+
+/-- In a strictly convex real normed space, the closed ball of radius `R / 2` internally tangent to
+`ball y R` at `y + R • e`, for a unit vector `e`, meets the complement of `ball y R` only at the
+point of tangency. -/
+theorem eq_or_mem_ball_of_mem_closedBall_add_half_smul {y e x : E} {R : ℝ} (he : ‖e‖ = 1)
+    (hx : x ∈ Metric.closedBall (y + (R / 2) • e) (R / 2)) :
+    x = y + R • e ∨ x ∈ Metric.ball y R := by
+  rw [Metric.mem_closedBall, dist_eq_norm] at hx
+  rw [Metric.mem_ball, dist_eq_norm]
+  have hR : 0 ≤ R / 2 := (norm_nonneg _).trans hx
+  have hb : ‖(R / 2) • e‖ = R / 2 := by rw [norm_smul, he, mul_one, Real.norm_of_nonneg hR]
+  have hxy : x - (y + (R / 2) • e) + (R / 2) • e = x - y := by abel
+  have htri := norm_add_le (x - (y + (R / 2) • e)) ((R / 2) • e)
+  rw [hxy, hb] at htri
+  by_cases hlt : ‖x - y‖ < R
+  · exact Or.inr hlt
+  -- Equality in the triangle inequality forces `x - (y + (R / 2) • e) = (R / 2) • e`.
+  left
+  have ha : ‖x - (y + (R / 2) • e)‖ = ‖(R / 2) • e‖ := by rw [hb]; linarith
+  have heq := eq_of_norm_eq_of_norm_add_eq ha (by rw [hxy, ha, hb]; linarith)
+  rw [sub_eq_iff_eq_add] at heq
+  rw [heq]
+  module
 
 end TauCeti
