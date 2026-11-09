@@ -117,25 +117,6 @@ theorem isEven_comap_iff [NormedSpace ℝ E] [NormedSpace ℝ F] (L : Submodule 
   refine ⟨fun h y hy ↦ ?_, fun h x hx ↦ e.norm_map x ▸ h _ hx⟩
   simpa using h (e.symm y) (by rwa [e.apply_symm_apply])
 
-/-- A lattice whose squared norms are all multiples `c m` (`m : ℤ`) of a constant `c ≥ 1` is
-discrete: a vector of norm less than `1` has squared norm less than `c`, hence zero. -/
-private theorem discreteTopology_of_norm_sq_mem_int_mul {L : Submodule ℤ E} {c : ℝ} (hc : 1 ≤ c)
-    (h : ∀ x ∈ L, ∃ m : ℤ, ‖x‖ ^ 2 = c * m) : DiscreteTopology L := by
-  refine discreteTopology_of_isOpen_singleton_zero
-    (Metric.isOpen_singleton_iff.2 ⟨1, one_pos, fun y hy ↦ ?_⟩)
-  have hy1 : ‖(y : E)‖ < 1 := by simpa [Subtype.dist_eq] using hy
-  obtain ⟨m, hm⟩ := h y y.2
-  have hlt : ‖(y : E)‖ ^ 2 < 1 := pow_lt_one₀ (norm_nonneg _) hy1 two_ne_zero
-  have hm0 : m = 0 := by
-    have h0 : (0 : ℝ) ≤ m := by
-      by_contra hneg
-      nlinarith [sq_nonneg ‖(y : E)‖]
-    have h1 : (m : ℝ) < 1 := by nlinarith
-    have : (0 : ℤ) ≤ m := by exact_mod_cast h0
-    have : m < 1 := by exact_mod_cast h1
-    omega
-  exact Subtype.ext (by simpa [hm0] using hm)
-
 /-- An even lattice is discrete: a nonzero vector has squared norm at least `2`. -/
 theorem IsEven.discreteTopology {L : Submodule ℤ E} (hL : IsEven L) : DiscreteTopology L :=
   discreteTopology_of_norm_sq_mem_int_mul (c := 2) (by norm_num) hL

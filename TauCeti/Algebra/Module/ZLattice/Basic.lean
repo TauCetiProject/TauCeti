@@ -42,6 +42,8 @@ equivalence.
 * `ZLattice.instDiscreteTopologyComapLinearIsometryEquiv`,
   `ZLattice.instIsZLatticeComapLinearIsometryEquiv`: the pull-back of a discrete subgroup, or of a
   full lattice, along a linear isometry equivalence is again one.
+* `ZLattice.discreteTopology_of_norm_sq_mem_int_mul`: a lattice whose squared norms are all
+  multiples of a constant `c ≥ 1` by integers is discrete.
 * `TauCeti.discreteTopology_span_one`: the integer span of `1` in `ℝ` is discrete.
 -/
 
@@ -181,6 +183,23 @@ instance instIsZLatticeComapLinearIsometryEquiv [IsZLattice K L] :
   inferInstanceAs (IsZLattice K (ZLattice.comap K L e.toContinuousLinearEquiv.toLinearMap))
 
 end LinearIsometryEquiv
+
+/-- A lattice whose squared norms are all multiples `c m` (`m : ℤ`) of a constant `c ≥ 1` is
+discrete: a nonzero vector has squared norm at least `c`, hence norm at least `1`. -/
+theorem discreteTopology_of_norm_sq_mem_int_mul {E : Type*} [NormedAddCommGroup E]
+    {L : Submodule ℤ E} {c : ℝ} (hc : 1 ≤ c) (h : ∀ x ∈ L, ∃ m : ℤ, ‖x‖ ^ 2 = c * m) :
+    DiscreteTopology L := by
+  refine DiscreteTopology.of_forall_le_norm one_pos fun y hy ↦ ?_
+  obtain ⟨m, hm⟩ := h y y.2
+  have hy0 : 0 < ‖(y : E)‖ := norm_pos_iff.2 fun h0 ↦ hy (Subtype.ext h0)
+  have hm1 : (1 : ℝ) ≤ m := by
+    have hmpos : (0 : ℝ) < m := by
+      by_contra hneg
+      nlinarith [pow_pos hy0 2]
+    exact_mod_cast (Int.cast_pos.1 hmpos : 0 < m)
+  have h1 : 1 ≤ ‖(y : E)‖ ^ 2 := by nlinarith
+  have h2 : 1 ≤ ‖(y : E)‖ := ((one_le_sq_iff_one_le_abs _).1 h1).trans_eq (abs_of_pos hy0)
+  exact h2.trans_eq (Submodule.norm_coe y)
 
 variable (K : Type*) [NormedField K] [LinearOrder K] [IsStrictOrderedRing K] [HasSolidNorm K]
   [FloorRing K] {E : Type u} [NormedAddCommGroup E] [NormedSpace K E] [FiniteDimensional K E]
