@@ -25,9 +25,10 @@ divisor of `X` for every canonical divisor `K` of `Y`
 
 For a map to the Riemann sphere, pulling back the canonical divisor `-2[∞]` of `dz` gives a
 canonical divisor of `X` of degree `-2 deg f + deg R_f`
-(`TauCeti.RiemannSurface.exists_isCanonicalDivisor_degree_eq`). Once all canonical divisors are
-known to have the same degree `2g - 2`, this is the analytic Riemann–Hurwitz formula
-`2g - 2 = -2 deg f + deg R_f`; that comparison is not made here.
+(`exists_isCanonicalDivisor_degree_eq_neg_two_mul_degree_add_ramificationDegree` in the namespace
+`TauCeti.RiemannSurface.FiniteHolomorphicMap`). Once all canonical divisors are known to have the
+same degree `2g - 2`, this is the analytic Riemann–Hurwitz formula `2g - 2 = -2 deg f + deg R_f`;
+that comparison is not made here.
 
 ## References
 
@@ -51,15 +52,6 @@ variable {X Y : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold �
   [TopologicalSpace Y] [ChartedSpace ℂ Y] [IsManifold 𝓘(ℂ) 1 Y]
 
 namespace OneForm
-
-/-- The pullback of a `1`-form meromorphic and of finite order at `f x` by a finite holomorphic
-map has finite order at `x`. -/
-theorem order_pullback_ne_top {ω : OneForm Y} (f : FiniteHolomorphicMap X Y) {x : X}
-    (hω : ω.MeromorphicAt (f x)) (hω₀ : ω.order (f x) ≠ ⊤) : (ω.pullback f).order x ≠ ⊤ := by
-  rw [order_pullback hω (Eventually.of_forall fun y ↦ f.holomorphic y) (f.not_eventuallyConst x)]
-  lift ω.order (f x) to ℤ using hω₀ with k
-  exact WithTop.add_ne_top.2 ⟨WithTop.mul_ne_top (WithTop.coe_ne_top) (WithTop.natCast_ne_top _),
-    WithTop.coe_ne_top⟩
 
 variable [CompactSpace X] [CompactSpace Y]
 
@@ -98,15 +90,20 @@ theorem IsCanonicalDivisor.divisorPullback_add_ramificationDivisor {K : WeilDivi
 
 variable [T2Space X]
 
+namespace FiniteHolomorphicMap
+
 /-- **Riemann–Hurwitz for a canonical divisor.** A finite holomorphic map `f` from a compact
 Riemann surface to the Riemann sphere gives the canonical divisor `f*(-2[∞]) + R_f` of degree
 `-2 deg f + deg R_f`. -/
-theorem exists_isCanonicalDivisor_degree_eq (f : FiniteHolomorphicMap X (OnePoint ℂ)) :
+theorem exists_isCanonicalDivisor_degree_eq_neg_two_mul_degree_add_ramificationDegree
+    (f : FiniteHolomorphicMap X (OnePoint ℂ)) :
     ∃ K : WeilDivisor X, IsCanonicalDivisor K ∧
       WeilDivisor.degree K = -2 * (degree f : ℤ) + ramificationDegree f := by
   refine ⟨_, isCanonicalDivisor_neg_two_infty.divisorPullback_add_ramificationDivisor f, ?_⟩
   rw [map_add, degree_divisorPullback, degree_ramificationDivisor, map_zsmul,
     WeilDivisor.degree_ofPoint]
   ring
+
+end FiniteHolomorphicMap
 
 end TauCeti.RiemannSurface
