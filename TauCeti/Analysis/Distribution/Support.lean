@@ -323,7 +323,7 @@ end AugmentationGroup
 
 section Module
 
-variable [AddCommGroup V] [Module ℝ V] [FunLike 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕)
+variable [AddCommMonoid V] [Module ℝ V] [FunLike 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕)
 
 /-- The augmentation is homogeneous. -/
 theorem augmentation_smul (a : ℝ) (c : F) :
