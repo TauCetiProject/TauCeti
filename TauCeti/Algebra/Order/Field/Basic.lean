@@ -64,8 +64,8 @@ multiplied by a constant `C₀` times a ratio `Lam / lam` of ellipticity bounds.
 * `TauCeti.two_mul_div_add_sq_le_mul`: `2 t / (t² + ρ²) ≤ (2 t / r) (2 r / (r² + ρ²))` for
   `0 < t` and `0 < r ≤ ρ`.
 * `TauCeti.mul_le_one_of_le_inv_one_add`: `a * b ≤ 1` for `0 ≤ b` and `a ≤ (1 + b)⁻¹`.
-* `TauCeti.abs_mul_le_of_le_div_mul`: `|p| * (C₀ * (Lam / lam)) ≤ A` from
-  `|p| ≤ A / (C₀ + 1) * (lam / Lam)`, for `0 < A`, `0 ≤ C₀`, `0 < lam` and `0 ≤ Lam`.
+* `TauCeti.mul_le_of_le_div_mul`: `x * (C₀ * (Lam / lam)) ≤ A` from
+  `x ≤ A / (C₀ + 1) * (lam / Lam)`, for `0 ≤ A`, `0 ≤ C₀`, `0 ≤ lam` and `0 ≤ Lam`.
 * `TauCeti.sub_mul_mul_one_add_sq_neg_of_lt`: the strict inequality
   `r - ε * (c * (1 + n ^ 2)) < 0` for `r ≤ M`, `0 < ε`, `1 ≤ c` and `M / ε < n`.
 * `TauCeti.div_mul_add_mul_div_le_half`: `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2` when
@@ -215,21 +215,21 @@ theorem div_mul_add_mul_div_le_half {α : Type*} [Field α] [LinearOrder α]
         mul_le_mul_of_nonneg_left (by linarith) (by positivity)
     _ = ε / 2 := by field_simp
 
-/-- If `|p| ≤ A / (C₀ + 1) * (lam / Lam)` for `A > 0`, `C₀ ≥ 0`, `lam > 0` and `Lam ≥ 0`, then
-`|p| * (C₀ * (Lam / lam)) ≤ A`. -/
-theorem abs_mul_le_of_le_div_mul {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
-    {A C₀ lam Lam p : α} (hA : 0 < A) (hC₀ : 0 ≤ C₀) (hlam : 0 < lam) (hLam : 0 ≤ Lam)
-    (hp : |p| ≤ A / (C₀ + 1) * (lam / Lam)) :
-    |p| * (C₀ * (Lam / lam)) ≤ A := by
+/-- If `x ≤ A / (C₀ + 1) * (lam / Lam)` for `A ≥ 0`, `C₀ ≥ 0`, `lam ≥ 0` and `Lam ≥ 0`, then
+`x * (C₀ * (Lam / lam)) ≤ A`. -/
+theorem mul_le_of_le_div_mul {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    {A C₀ lam Lam x : α} (hA : 0 ≤ A) (hC₀ : 0 ≤ C₀) (hlam : 0 ≤ lam) (hLam : 0 ≤ Lam)
+    (hx : x ≤ A / (C₀ + 1) * (lam / Lam)) :
+    x * (C₀ * (Lam / lam)) ≤ A := by
   have hratio : lam / Lam * (Lam / lam) ≤ 1 := by
     rw [div_mul_div_comm, mul_comm lam]
     exact div_self_le_one _
-  calc |p| * (C₀ * (Lam / lam))
+  calc x * (C₀ * (Lam / lam))
       ≤ A / (C₀ + 1) * (lam / Lam) * (C₀ * (Lam / lam)) := by gcongr
     _ = A * (C₀ / (C₀ + 1)) * (lam / Lam * (Lam / lam)) := by field_simp
     _ ≤ A * 1 * 1 :=
         mul_le_mul (mul_le_mul_of_nonneg_left
-          (div_le_one_of_le₀ (by linarith) (by linarith)) hA.le) hratio (by positivity)
+          (div_le_one_of_le₀ (by linarith) (by linarith)) hA) hratio (by positivity)
           (by positivity)
     _ = A := by rw [mul_one, mul_one]
 

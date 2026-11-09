@@ -125,7 +125,7 @@ theorem exists_setAverage_rpow_mul_setAverage_rpow_neg_le [Nonempty ι] :
   -- For `|p| ≤ c λ/Λ` the John–Nirenberg crossover estimate applies to `log u` with `σ = p`.
   have hσ : |p| * M ≤ A := by
     rw [hMc]
-    exact TauCeti.abs_mul_le_of_le_div_mul hA hC₀ hlam h.upper_nonneg hp
+    exact TauCeti.mul_le_of_le_div_mul hA.le hC₀ hlam.le h.upper_nonneg hp
   have hJ := hJN (W1p.integrableOn_log_value (by simp) hε hεu
     ((ball_subset_ball (by linarith)).trans hball') measure_ball_lt_top.ne) hM hσ
   rw [hRr] at hJ
