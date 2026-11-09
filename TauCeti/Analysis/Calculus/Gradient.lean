@@ -17,7 +17,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
-import TauCeti.Analysis.Calculus.FDeriv.RadialField
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 
 /-!
 # The gradient is an isometric conjugate-linear image of the Fréchet derivative
