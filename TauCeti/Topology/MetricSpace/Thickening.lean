@@ -40,8 +40,8 @@ a vertical line contains a tube around it, whose radius is locally bounded below
 constants (`IsOpen.exists_tube_subset`).
 
 Under a `K`-Lipschitz map, the `R / K`-thickening of a preimage lies in the preimage of the
-`R`-thickening (`TauCeti.thickening_preimage_subset_preimage_thickening`), and likewise for closed
-thickenings (`TauCeti.cthickening_preimage_subset_preimage_cthickening`).
+`R`-thickening (`LipschitzWith.thickening_preimage_subset_preimage_thickening`), and likewise for
+closed thickenings (`LipschitzWith.cthickening_preimage_subset_preimage_cthickening`).
 -/
 
 public section
@@ -84,9 +84,9 @@ theorem compl_cthickening_eq_setOf_lt_infDist {X : Type*} [PseudoMetricSpace X] 
 
 /-- Under a `K`-Lipschitz map, the `R / K`-thickening of a preimage lies in the preimage of the
 `R`-thickening. -/
-theorem thickening_preimage_subset_preimage_thickening {X Y : Type*} [PseudoMetricSpace X]
-    [PseudoMetricSpace Y] {f : X → Y} {K : ℝ≥0} {R : ℝ} (hf : LipschitzWith K f)
-    (S : Set Y) : thickening (R / K) (f ⁻¹' S) ⊆ f ⁻¹' thickening R S := by
+theorem _root_.LipschitzWith.thickening_preimage_subset_preimage_thickening
+    {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y] {f : X → Y} {K : ℝ≥0} {R : ℝ}
+    (hf : LipschitzWith K f) (S : Set Y) : thickening (R / K) (f ⁻¹' S) ⊆ f ⁻¹' thickening R S := by
   rcases eq_or_ne K 0 with rfl | hK
   · simp [thickening_of_nonpos]
   intro y hy
@@ -98,9 +98,10 @@ theorem thickening_preimage_subset_preimage_thickening {X Y : Type*} [PseudoMetr
 
 /-- Under a `K`-Lipschitz map, the closed `R / K`-thickening of a preimage lies in the preimage of
 the closed `R`-thickening. -/
-theorem cthickening_preimage_subset_preimage_cthickening {X Y : Type*} [PseudoMetricSpace X]
-    [PseudoMetricSpace Y] {f : X → Y} {K : ℝ≥0} {R : ℝ} (hf : LipschitzWith K f)
-    (S : Set Y) : cthickening (R / K) (f ⁻¹' S) ⊆ f ⁻¹' cthickening R S := by
+theorem _root_.LipschitzWith.cthickening_preimage_subset_preimage_cthickening
+    {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y] {f : X → Y} {K : ℝ≥0} {R : ℝ}
+    (hf : LipschitzWith K f) (S : Set Y) :
+    cthickening (R / K) (f ⁻¹' S) ⊆ f ⁻¹' cthickening R S := by
   intro x hx
   rcases eq_or_ne K 0 with rfl | hK
   · -- `f` is constant, so `f x ∈ S` as soon as the preimage of `S` is nonempty.

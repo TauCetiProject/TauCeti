@@ -171,7 +171,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_laplacian {α : ℝ≥0} (hα 
   have hvV : W1p.value v =ᵐ[volume.restrict V] u :=
     ae_restrict_of_ae_restrict_of_subset (hVT ▸ subset_closure.trans hTW) hv
   -- The `L²` norm of `D²u` on `S_R` is finite.
-  have hfin := TauCeti.eLpNorm_iteratedFDeriv_two_thickening_ne_top hU hu hS hSU
+  have hfin := TauCeti.eLpNorm_iteratedFDeriv_two_thickening_ne_top volume hU hu hS hSU
   have hdiff : ∀ x ∈ U, DifferentiableAt ℝ (fderiv ℝ u) x := fun x hx =>
     ((hu.contDiffAt (hU.mem_nhds hx)).fderiv_right (m := 1) (by norm_num)).differentiableAt
       one_ne_zero
@@ -198,7 +198,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_laplacian {α : ℝ≥0} (hα 
     gcongr
     simp
   rw [mul_assoc]
-  have hHol := holderOnWith_iteratedFDeriv_two_of_dist_gradient_le b (α := α) (by positivity)
+  have hHol := b.holderOnWith_iteratedFDeriv_two_of_dist_gradient_le (α := α) (by positivity)
     (fun x hx => hdiff x (hVU (hSV hx))) hdir
   rwa [Fintype.card_fin, Nat.cast_add, Nat.cast_one] at hHol
 
@@ -289,14 +289,15 @@ private theorem holderOnWith_laplacian_comp {A : Matrix (Fin (n + 1)) (Fin (n + 
     hcthick (thickening_subset_cthickening _ _ hz)
   rw [hΔ u y (hu.contDiffAt (hU.mem_nhds (hyU hy))),
     hΔ u y' (hu.contDiffAt (hU.mem_nhds (hyU hy')))]
-  refine (hK.dist_le (hthick hy) (hthick hy')).trans ?_
-  calc (K : ℝ) * dist (e y) (e y') ^ (α : ℝ) ≤ K * (√Lam * dist y y') ^ (α : ℝ) := by
-        gcongr
-        simpa only [Real.coe_toNNReal _ (Real.sqrt_nonneg _)] using hlip.dist_le_mul y y'
-    _ = _ := by
-      rw [Real.mul_rpow (Real.sqrt_nonneg _) dist_nonneg, Real.sqrt_eq_rpow,
-        ← Real.rpow_mul hLam.le, NNReal.coe_mul, Real.coe_toNNReal _ (by positivity)]
-      ring_nf
+  have hc : K * (√Lam).toNNReal ^ (α : ℝ) = K * (Lam ^ ((α : ℝ) / 2)).toNNReal := by
+    congr 1
+    refine NNReal.eq ?_
+    rw [NNReal.coe_rpow, Real.coe_toNNReal _ (Real.sqrt_nonneg _),
+      Real.coe_toNNReal _ (by positivity), Real.sqrt_eq_rpow, ← Real.rpow_mul hLam.le]
+    ring_nf
+  have hcomp := hK.comp (hlip.holderWith.holderOnWith (thickening (R / √Lam) (e ⁻¹' S))) hthick
+  rw [mul_one, hc] at hcomp
+  exact hcomp.dist_le hy hy'
 
 /-- **Interior Schauder estimate for constant-coefficient operators, classical form.** Let
 `0 < α < 1`. There is a constant `C`, depending only on `n` and `α`, such that the following
@@ -337,11 +338,11 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv {α : �
     exact he' _
   have hthick : thickening R' (e ⁻¹' S) ⊆ e ⁻¹' thickening R S := by
     simpa only [Real.coe_toNNReal _ (Real.sqrt_nonneg _)] using
-      TauCeti.thickening_preimage_subset_preimage_thickening hlip S (R := R)
+      hlip.thickening_preimage_subset_preimage_thickening S (R := R)
   have hcthick : cthickening R' (e ⁻¹' S) ⊆ e ⁻¹' U := by
     refine (?_ : cthickening R' (e ⁻¹' S) ⊆ e ⁻¹' cthickening R S).trans (preimage_mono hSU)
     simpa only [Real.coe_toNNReal _ (Real.sqrt_nonneg _)] using
-      TauCeti.cthickening_preimage_subset_preimage_cthickening hlip S
+      hlip.cthickening_preimage_subset_preimage_cthickening S
   have hS' : Bornology.IsBounded (e ⁻¹' S) := by
     rw [← e.image_symm_eq_preimage]
     exact (e.symm : E →L[ℝ] E).lipschitzWith.isBounded_image hS
@@ -354,8 +355,10 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv {α : �
   have hMv : (eLpNorm (iteratedFDeriv ℝ 2 v) 2
         (volume.restrict (thickening R' (e ⁻¹' S)))).toReal ≤
       Lam * lam ^ (-(((n : ℝ) + 1) / 4)) *
-        (eLpNorm (iteratedFDeriv ℝ 2 u) 2 (volume.restrict (thickening R S))).toReal :=
-    TauCeti.toReal_eLpNorm_iteratedFDeriv_two_comp_le hlam hLam he' hesn hU hu hS hSU hthick
+        (eLpNorm (iteratedFDeriv ℝ 2 u) 2 (volume.restrict (thickening R S))).toReal := by
+    have h2 := TauCeti.toReal_eLpNorm_iteratedFDeriv_two_comp_le (volume : Measure E) hlam hLam
+      he' hesn hU hu hS hSU
+    rwa [finrank_euclideanSpace_fin, Nat.cast_add, Nat.cast_one] at h2
   -- Transfer the Hölder bound for `D²v` on `e⁻¹ S` back to `D²u` on `S`, at the cost of
   -- `‖e⁻¹‖^{2 + α} ≤ λ^{-1-α/2}`.
   refine (e.holderOnWith_iteratedFDeriv_of_comp_right hvhol).mono_const ?_

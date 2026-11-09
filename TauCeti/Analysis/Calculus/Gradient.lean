@@ -63,7 +63,7 @@ theorem about `‖Dφ‖`.
 * `TauCeti.norm_gradient_fderiv_apply_le`: `‖∇ (∂ᵥ f) x‖ ≤ ‖v‖ ‖D²f x‖`.
 * `TauCeti.norm_iteratedFDeriv_two_sub_le_sum`: the operator norm of `D²f x - D²f y` is at most
   the sum, over an orthonormal basis `(bᵢ)`, of `‖∇ (∂_{bᵢ} f) x - ∇ (∂_{bᵢ} f) y‖`.
-* `TauCeti.holderOnWith_iteratedFDeriv_two_of_dist_gradient_le`: if the gradients of the
+* `OrthonormalBasis.holderOnWith_iteratedFDeriv_two_of_dist_gradient_le`: if the gradients of the
   directional derivatives along an orthonormal basis are `α`-Hölder, so is `D²f`.
 -/
 
@@ -274,8 +274,9 @@ theorem norm_iteratedFDeriv_two_sub_le_sum {E ι : Type*} [NormedAddCommGroup E]
 /-- If the gradients of the directional derivatives `∂_{bᵢ} u` of a function `u`, along an
 orthonormal basis `b`, are `α`-Hölder on `S` with constant `D`, then `D²u` is `α`-Hölder on `S` with
 constant `(card ι) D`, wherever `fderiv ℝ u` is differentiable on `S`. -/
-theorem holderOnWith_iteratedFDeriv_two_of_dist_gradient_le {E ι : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [CompleteSpace E] [Fintype ι] (b : OrthonormalBasis ι ℝ E)
+theorem _root_.OrthonormalBasis.holderOnWith_iteratedFDeriv_two_of_dist_gradient_le
+    {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E] [Fintype ι]
+    (b : OrthonormalBasis ι ℝ E)
     {α : NNReal} {S : Set E} {u : E → ℝ} {D : ℝ} (hD : 0 ≤ D)
     (hdiff : ∀ x ∈ S, DifferentiableAt ℝ (fderiv ℝ u) x)
     (hdir : ∀ i, ∀ x ∈ S, ∀ y ∈ S,
