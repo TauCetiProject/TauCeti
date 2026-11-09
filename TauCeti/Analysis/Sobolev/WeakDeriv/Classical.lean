@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-import TauCeti.Analysis.Convolution.BumpApproximation
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Sobolev.Mollification.Interior
 import TauCeti.Topology.MetricSpace.Pseudo.Defs
 import Mathlib.Analysis.Calculus.BumpFunction.Convolution
@@ -75,7 +75,8 @@ private theorem HasWeakFDerivOn.hasFDerivAt_indicator_of_integrableOn_ball
   have hUx : ContinuousAt ((ball x r).indicator U) x :=
     hUc_ext.continuousAt (ball_mem_nhds x hr)
   have hunif : TendstoUniformlyOnFilter f' ((ball x r).indicator U) atTop (𝓝 x) :=
-    tendstoUniformlyOnFilter_convolution_normed hUm hUx hphi
+    by simpa only [f', convolution_flip] using
+      ContDiffBump.tendstoUniformlyOnFilter_normed_convolution hphi hUm hUx
   -- Eventually all translated kernel supports lie inside the original domain.
   have hsmall := Metric.eventually_add_dist_lt_of_tendsto_zero (x := x) hr hphi
   have hderiv : ∀ᶠ p : ℕ × E in atTop ×ˢ 𝓝 x, HasFDerivAt (f p.1) (f' p.1 p.2) p.2 := by

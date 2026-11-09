@@ -20,6 +20,9 @@ upgrades the pointwise convergence of Mathlib's
 simultaneous approximation of the derivatives of a compactly supported smooth function.
 Normalized-bump convolution also preserves a function's Lipschitz constant.
 
+Along an arbitrary filter of bump indices, convolution with normalized bumps also converges
+uniformly on a neighbourhood filter of a point of continuity of the function.
+
 The file also bounds the topological support of `ρ.normed μ ⋆ g` by the Minkowski sum
 `closedBall 0 ρ.rOut + tsupport g`, and provides the standard shrinking sequence of bumps
 `ContDiffBump.shrinking`, of radii `R / (n + 1)` and `R / (2 * (n + 1))`. These bumps are all
@@ -166,6 +169,25 @@ theorem tendstoUniformly_normed_convolution {ι : Type*} {l : Filter ι}
   refine ((ρ i).dist_normed_convolution_le (μ := μ) hg.continuous.aestronglyMeasurable
     (fun y hy => (hgδ ((mem_ball.1 hy).trans hi)).le)).trans_lt ?_
   exact half_lt_self hε
+
+/-- Normalized bumps of radius tending to zero along a filter approximate a function that is
+continuous at `x` uniformly on a neighbourhood filter of `x`. This upgrades Mathlib's joint
+convergence `ContDiffBump.convolution_tendsto_right` to the form needed for limit theorems of
+derivatives such as `hasFDerivAt_of_tendstoUniformlyOnFilter`. -/
+theorem tendstoUniformlyOnFilter_normed_convolution {ι : Type*} {l : Filter ι} {x : G}
+    {ρ : ι → ContDiffBump (0 : G)} (hρ : Tendsto (fun i => (ρ i).rOut) l (𝓝 0))
+    (hgm : AEStronglyMeasurable g μ) (hgx : ContinuousAt g x) :
+    TendstoUniformlyOnFilter (fun i => (ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] g) g l (𝓝 x) := by
+  have hconv : Tendsto (fun p : ι × G => ((ρ p.1).normed μ ⋆[lsmul ℝ ℝ, μ] g) p.2)
+      (l ×ˢ 𝓝 x) (𝓝 (g x)) :=
+    ContDiffBump.convolution_tendsto_right (hρ.comp tendsto_fst)
+      (Eventually.of_forall fun _ => hgm) (hgx.tendsto.comp tendsto_snd) tendsto_snd
+  have hdist : Tendsto (fun p : ι × G =>
+      dist (((ρ p.1).normed μ ⋆[lsmul ℝ ℝ, μ] g) p.2) (g p.2)) (l ×ˢ 𝓝 x) (𝓝 0) := by
+    simpa only [dist_self, Function.comp_apply] using hconv.dist (hgx.tendsto.comp tendsto_snd)
+  rw [Metric.tendstoUniformlyOnFilter_iff]
+  intro ε hε
+  simpa only [dist_comm] using (tendsto_order.1 hdist).2 ε hε
 
 /-- Mollifying a locally integrable function with values in `[a, b]` by a normalized bump keeps
 its values in `[a, b]`. -/
