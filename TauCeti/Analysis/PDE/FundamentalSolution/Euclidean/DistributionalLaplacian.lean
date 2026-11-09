@@ -213,7 +213,8 @@ theorem hasWeakFDerivOn_newtonianKernel (hn : 3 ≤ n) (Ω : Opens (EuclideanSpa
       simpa only [smul_eq_mul, mul_comm] using
         integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul hn hg hc v) Ω
 
-/-- Away from the pole, the gradient pairing `∇Gₙ · ∇f` is `-(n ωₙ)⁻¹ ‖x‖⁻ⁿ f' x x`. -/
+/-- The gradient pairing `∇Gₙ · ∇f` is `-(n ωₙ)⁻¹ ‖x‖⁻ⁿ f' x x`. It holds at every `x`, including
+the pole, where the right-hand side is `0` since `fderiv ℝ f 0 0 = 0`. -/
 private lemma sum_fderiv_newtonianKernel_mul_fderiv (hn : 3 ≤ n)
     (b : OrthonormalBasis (Fin n) ℝ (EuclideanSpace ℝ (Fin n)))
     (f : EuclideanSpace ℝ (Fin n) → ℝ) (x : EuclideanSpace ℝ (Fin n)) :
