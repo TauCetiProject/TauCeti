@@ -222,14 +222,17 @@ theorem image_add_sqrt_sq_add_eq_Ioi {p : ℝ} (hp : 0 < p) :
   field_simp
   ring
 
-/-- `√(2 A + 2 W² m) ≤ √2 √A + √2 W √m` for nonnegative `A`, `m`, `W`. -/
-theorem sqrt_two_mul_add_two_mul_sq_mul_le {A W m : ℝ} (hA : 0 ≤ A) (hm : 0 ≤ m) (hW : 0 ≤ W) :
-    √(2 * A + 2 * W ^ 2 * m) ≤ √2 * √A + √2 * W * √m := by
-  have h := rpow_add_le_add_rpow (p := 1 / 2) (a := 2 * A) (b := 2 * W ^ 2 * m)
-    (by positivity) (by positivity) (by norm_num) (by norm_num)
-  simp only [← sqrt_eq_rpow] at h
-  refine h.trans_eq ?_
-  rw [sqrt_mul zero_le_two, sqrt_mul (by positivity), sqrt_mul zero_le_two, sqrt_sq hW]
+/-- Subadditivity of the square root: `√(a + b) ≤ √a + √b`. -/
+theorem sqrt_add_le_add_sqrt (a b : ℝ) : √(a + b) ≤ √a + √b := by
+  rcases le_or_gt 0 a with ha | ha
+  · rcases le_or_gt 0 b with hb | hb
+    · have h := rpow_add_le_add_rpow (p := 1 / 2) (a := a) (b := b) ha hb (by norm_num)
+        (by norm_num)
+      simpa only [← sqrt_eq_rpow] using h
+    · rw [sqrt_eq_zero_of_nonpos hb.le, add_zero]
+      exact sqrt_le_sqrt (by linarith)
+  · rw [sqrt_eq_zero_of_nonpos ha.le, zero_add]
+    exact sqrt_le_sqrt (by linarith)
 
 end Real
 

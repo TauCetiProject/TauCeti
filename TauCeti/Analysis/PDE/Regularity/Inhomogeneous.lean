@@ -11,7 +11,7 @@ public import TauCeti.Analysis.PDE.Regularity.HolderContinuity
 import TauCeti.Analysis.SpecificLimits.DecayIteration
 import TauCeti.MeasureTheory.Function.EssSup
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
-import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -201,9 +201,12 @@ theorem exists_ae_abs_value_le_mul_add_of_memLp [Nonempty ι] {lam Lam : ℝ} {r
   have hgbound := hbound (Omega := B) (h.mono_set hball)
     (ha.mono_measure (Measure.restrict_mono hball le_rfl)) hg hR (subset_refl _)
   -- `‖g‖_{L²(B)} ≤ √2 ‖u‖_{L²(B)} + √2 W |B|^(1/2)`.
-  have hsqrt := MeasureTheory.sqrt_setIntegral_sq_le_of_ae_abs_sub_le mu x₀ hR hW
+  have : IsFiniteMeasure (mu.restrict (ball x₀ R)) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  have hsqrt := TauCeti.MeasureTheory.sqrt_integral_sq_le_of_ae_abs_sub_le hW
     (((Lp.memLp (W1p.value u)).integrable_sq).mono_measure (Measure.restrict_mono hball le_rfl))
     (hug.mono fun x hx => hx)
+  rw [measureReal_restrict_apply_univ, Measure.sqrt_addHaar_real_ball mu x₀ hR] at hsqrt
   rw [finrank_euclideanSpace] at hsqrt
   -- Combine: `|u| ≤ |g| + W`.
   have hR' : R ^ (-n / 2) * R ^ (n / 2) = 1 := by
@@ -219,7 +222,7 @@ theorem exists_ae_abs_value_le_mul_add_of_memLp [Nonempty ι] {lam Lam : ℝ} {r
         simpa using abs_add_le (W1p.value g x) (W1p.value u x - W1p.value g x)
     _ ≤ D₀ * R ^ (-n / 2) * √(∫ x in ball x₀ R, W1p.value g x ^ 2 ∂mu) + W := add_le_add hx hxu
     _ ≤ D₀ * R ^ (-n / 2) * (√2 * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu) +
-          √2 * W * √ω * R ^ (n / 2)) + W := by gcongr
+          √2 * W * (R ^ (n / 2) * √ω)) + W := by gcongr
     _ = √2 * D₀ * Q + (√2 * D₀ * √ω + 1) * K * P := by
         rw [hWP]
         linear_combination (√2 * D₀ * K * P * √ω) * hR'
@@ -421,9 +424,9 @@ private theorem max_two_mul_div_rpow_le {C₀ D N R α : ℝ} (hα : α ≤ 1) (
 omit [DecidableEq ι] in
 /-- The scaled norms `R^(-n/2) ‖u‖_{L²} + R^(2 - n/r) ‖f‖_{Lʳ} / λ` of `u` and `f` on a ball
 inside `Ω` are at most those on `Ω`. -/
-theorem scaled_norm_ball_le {Omega : Opens (EuclideanSpace ℝ ι)} {f : EuclideanSpace ℝ ι → ℝ}
-    {u : W1p mu Omega 2} {lam R : ℝ} {r : ℝ≥0} {x : EuclideanSpace ℝ ι} (hlam : 0 < lam)
-    (hR : 0 ≤ R) (hf : MemLp f r (mu.restrict Omega))
+private theorem scaled_norm_ball_le {Omega : Opens (EuclideanSpace ℝ ι)}
+    {f : EuclideanSpace ℝ ι → ℝ} {u : W1p mu Omega 2} {lam R : ℝ} {r : ℝ≥0}
+    {x : EuclideanSpace ℝ ι} (hlam : 0 < lam) (hR : 0 ≤ R) (hf : MemLp f r (mu.restrict Omega))
     (hball : ball x R ⊆ (Omega : Set (EuclideanSpace ℝ ι))) :
     R ^ (-(Fintype.card ι : ℝ) / 2) * √(∫ y in ball x R, W1p.value u y ^ 2 ∂mu) +
         R ^ (2 - (Fintype.card ι : ℝ) / r) * (eLpNorm f r (mu.restrict (ball x R))).toReal / lam ≤
