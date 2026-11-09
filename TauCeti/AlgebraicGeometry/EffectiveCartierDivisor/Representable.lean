@@ -117,10 +117,6 @@ theorem range_graphDivisor :
   rw [← Pi.one_def, ← exists_ker_graphSection_eq_iff_finrank_eq_one hD]
   refine exists_congr fun x ↦ ?_
   rw [Subtype.ext_iff, graphDivisor_app_apply_val]
-  -- The two sides differ only in how the type of ideal sheaves on `X_T` is written:
-  -- `(baseChangeIdealSheafFunctor f).obj T` against `(pullback T.unop.hom f).IdealSheafData`,
-  -- which agree by `baseChangeIdealSheafFunctor_obj`.
-  exact Iff.rfl
 
 /-- The **graph divisor of degree one**: for a smooth proper `f : X ⟶ S` of relative dimension
 one, the natural transformation from the functor of points `T ↦ Hom_S(T, X)` of `X` to the
