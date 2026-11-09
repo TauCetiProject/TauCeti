@@ -138,7 +138,7 @@ theorem ncard_crossingTimes (hs : poly.IsSimple ℝ) :
 theorem finite_crossingTimes (hs : poly.IsSimple ℝ)
     (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) : (poly.crossingTimes p₀ d).Finite :=
   Finite.of_finite_image
-    (by rw [image_boundaryParam_crossingTimes]; exact hπ.finite_doublePoints hs)
+    (by rw [image_boundaryParam_crossingTimes]; exact hπ.finite_doublePoints)
     (hs.injOn_boundaryParam.mono crossingTimes_subset_Ico)
 
 variable (poly p₀ d) in
