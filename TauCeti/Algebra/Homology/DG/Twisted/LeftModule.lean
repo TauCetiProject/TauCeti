@@ -79,7 +79,7 @@ section LeftModule
 variable {R : Type uR} {A : Type uA} {B : Type uB} {M : Type uM}
   [CommRing R] [Ring A] [Ring B] [Algebra R A] [Algebra R B]
   [AddCommGroup M] [Module R M] [Module A M] [Module Bᵐᵒᵖ M]
-  [IsScalarTower R A M] [IsScalarTower R Bᵐᵒᵖ M] [SMulCommClass R Bᵐᵒᵖ M] [SMulCommClass A Bᵐᵒᵖ M]
+  [IsScalarTower R A M] [IsScalarTower R Bᵐᵒᵖ M] [SMulCommClass A Bᵐᵒᵖ M]
   {P : Type uP} [Fintype P] {ind : P → ℤ}
   (m : P → P → B) {ℳ : ℤ → Submodule R M} [DirectSum.Decomposition ℳ] (dM : M →ₗ[R] M)
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {dA : A →ₗ[R] A} {hA : IsDGAlgebra 𝒜 dA}

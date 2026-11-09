@@ -354,6 +354,29 @@ theorem _root_.Module.Finite.of_isLattice (M : Submodule R V) [M.IsLattice A] :
 
 end Span
 
+section Squeeze
+
+variable {V : Type*} [AddCommGroup V] [Module ℚ V]
+
+open scoped Pointwise in
+/-- A submodule `M` of `V` squeezed between `D⁻¹ • N` and `D • N` for a nonzero integer `D` is a
+full lattice when `N` is. -/
+theorem IsLattice.of_nsmul_mem_of_nsmul_mem {N M : Submodule ℤ V} [N.IsLattice ℚ]
+    {D : ℕ} (hD0 : D ≠ 0) (hNM : ∀ v ∈ N, D • v ∈ M) (hMN : ∀ v ∈ M, D • v ∈ N) :
+    M.IsLattice ℚ := by
+  have hinj : Function.Injective (DistribSMul.toLinearMap ℤ V (D : ℤ)) := fun x y h ↦ by
+    simp only [DistribSMul.toLinearMap_apply, natCast_zsmul, ← Nat.cast_smul_eq_nsmul ℚ] at h
+    exact smul_right_injective V (Nat.cast_ne_zero.mpr hD0) h
+  have hfg : M.FG := fg_of_fg_map_injective _ hinj
+    (FG.of_le_of_isNoetherian (T := N) (map_le_iff_le_comap.mpr fun v hv ↦ by
+      simpa using hMN v hv))
+  let a : ℚˣ := Units.mk0 (D : ℚ) (Nat.cast_ne_zero.mpr hD0)
+  refine IsLattice.of_le_of_isLattice_of_fg ℚ (M := a • N) (fun x hx ↦ ?_) hfg
+  obtain ⟨v, hv, rfl⟩ := mem_smul_pointwise_iff_exists _ _ _ |>.mp hx
+  simpa [a, Units.smul_def, Nat.cast_smul_eq_nsmul] using hNM v hv
+
+end Squeeze
+
 end Submodule
 
 namespace TensorProduct

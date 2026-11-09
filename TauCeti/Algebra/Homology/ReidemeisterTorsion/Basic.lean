@@ -562,7 +562,7 @@ private def shortExactBoundaryBasis (h'' : C''.ExactAt (j + 1))
     (ht : ∀ k, (C''.d (j + 1) j).hom ((g.f (j + 1)).hom (t k)) = b'' k) :
     Basis (Fin (p' + p'')) F (LinearMap.range (C.d (j + 1) j).hom) :=
   (Basis.ofExactLift (f.boundaryMap_injective (j + 1) (hf j))
-    (Hom.exact_boundaryMap (by simp) (by simp) (hfg (j + 1)) (hfg j) (hg (j + 1 + 1)) h'') b' b''
+    (Hom.exact_boundaryMap (by simp) (by simp) (hfg (j + 1)) (hg (j + 1 + 1)) h'') b' b''
     (fun k ↦ ⟨(C.d (j + 1) j).hom (t k), t k, rfl⟩)
     fun k ↦ Subtype.ext ((Hom.coe_boundaryMap g _ _ _).trans
       ((Hom.comm_apply g _ _ _).symm.trans (ht k)))).reindex finSumFinEquiv

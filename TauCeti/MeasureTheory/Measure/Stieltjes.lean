@@ -10,13 +10,16 @@ public import Mathlib.MeasureTheory.Measure.Real
 public import TauCeti.MeasureTheory.Measure.Interval
 
 /-!
-# Stieltjes functions of measures with finite left tails
+# Stieltjes measures and cumulative functions
 
 A measure on the real line need not be finite to have a real-valued cumulative function:
 it suffices that every interval `(-∞, t]` has finite mass. This file bundles that cumulative
 function as a `StieltjesFunction` and proves that its Stieltjes measure is the original measure.
 In particular this applies to locally finite measures supported on the nonnegative half-line,
 without normalizing them to probability measures.
+
+On the nonnegative half-line, the cumulative mass of a Stieltjes measure is the increment
+of its Stieltjes function from zero.
 -/
 
 public section
@@ -24,7 +27,19 @@ public section
 noncomputable section
 
 open MeasureTheory Set Filter Topology
-open scoped ENNReal
+open scoped ENNReal NNReal
+
+namespace StieltjesFunction
+
+/-- The cumulative mass of a Stieltjes measure on the half-line is its increment from zero. -/
+@[simp]
+theorem measure_Iic_nnreal (f : StieltjesFunction ℝ≥0) (t : ℝ≥0) :
+    f.measure (Iic t) = ENNReal.ofReal (f t - f 0) := by
+  apply f.measure_Iic
+  rw [atBot_eq_pure_of_isBot (isBot_bot : IsBot (0 : ℝ≥0))]
+  exact tendsto_pure_nhds _ _
+
+end StieltjesFunction
 
 namespace MeasureTheory.Measure
 

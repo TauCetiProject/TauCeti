@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.LinearAlgebra.Orientation
+import TauCeti.LinearAlgebra.Ray
 
 /-!
 # Transporting orientations along linear equivalences
@@ -27,6 +28,8 @@ compatibility under linear equivalences.
 * `Orientation.intCast_units_smul_injective`: the two signs give distinct orientations.
 * `Orientation.reindex_perm`: reindexing along a permutation multiplies by its sign.
 * `Orientation.map_units_smul_eq_iff_det_mul_pos`: the signed-Jacobian compatibility criterion.
+* `Orientation.map_units_smul_eq_units_smul_map_iff_det_mul_pos`: the same criterion between two
+  spaces, relative to a reference linear equivalence.
 * `Orientation.intCast_units_smul_ite_eq`: the relative sign reconstructs an orientation.
 -/
 
@@ -135,6 +138,19 @@ theorem Orientation.map_units_smul_eq_iff_det_mul_pos [FiniteDimensional R M]
     0 < (u : R) / ((v : R) * LinearMap.det A.toLinearMap) ↔
       0 < (u : R) * ((v : R) * LinearMap.det A.toLinearMap))
   simpa only [div_eq_mul_inv, mul_inv_rev, mul_comm, mul_left_comm, mul_assoc] using h
+
+/-- The signed Jacobian criterion for transporting orientations between two spaces: a linear
+equivalence `A : M ≃ N` carries `u • o` to `v • C o`, where `C : M ≃ N` is a reference
+equivalence, exactly when `u v det (C⁻¹ ∘ A)` is positive. -/
+theorem Orientation.map_units_smul_eq_units_smul_map_iff_det_mul_pos [FiniteDimensional R M]
+    {N : Type*} [AddCommGroup N] [Module R N] (o : Orientation R M ι) (A C : M ≃ₗ[R] N)
+    (u v : Rˣ) (hι : Fintype.card ι = finrank R M) :
+    Orientation.map ι A (u • o) = v • Orientation.map ι C o ↔
+      0 < (u : R) * (v : R) * LinearMap.det (A.trans C.symm).toLinearMap := by
+  have hC : v • Orientation.map ι C o = Orientation.map ι C (v • o) := by
+    rw [Orientation.map, Module.Ray.map_units_smul]
+  rw [← map_units_smul_eq_iff_det_mul_pos o _ u v hι, hC, map_trans, ← map_symm,
+    Equiv.symm_apply_eq]
 
 open Classical in
 /-- The sign distinguishing two orientations reconstructs the second from the first when
