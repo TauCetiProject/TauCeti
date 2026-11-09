@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.UniformOn
 public import Mathlib.Data.Fintype.CardEmbedding
+import TauCeti.Data.Fintype.CardEmbedding
 
 /-!
 # Uniform sampling with and without replacement
@@ -45,6 +46,8 @@ estimate is the classical union bound over unordered coordinate pairs, using
   under sampling without and with replacement;
 * `uniformOn_injective_le_add_choose_two_div` and
   `uniformOn_univ_le_injective_add_choose_two_div` give the quantitative forms.
+* `uniformOn_injective_mem_range_and_mem_range` computes the probability that a uniform
+  injective map hits two given distinct elements.
 
 These comparisons feed quantitative finite de Finetti bounds.
 -/
@@ -53,7 +56,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory ProbabilityTheory
+open Finset Function MeasureTheory ProbabilityTheory
 open scoped ENNReal
 
 namespace TauCeti
@@ -356,6 +359,38 @@ theorem uniformOn_univ_le_injective_add_choose_two_div [MeasurableSpace κ]
       (Fintype.card ι).choose 2 / Fintype.card κ :=
   (uniformOn_univ_le_injective_add A).trans <|
     add_le_add le_rfl uniformOn_not_injective_le
+
+section TwoHit
+
+variable {a b : κ}
+
+/-- **Two-hit mass.** For distinct indices `a b : κ` and `|ι| ≤ |κ|`, a uniform injective index
+map `k : ι → κ` has both `a` and `b` in its range with probability
+`|ι| (|ι| - 1) / (|κ| (|κ| - 1))`.
+
+Without `|ι| ≤ |κ|` there is no injective index map, the left side is `0`, and the right side is
+positive once `|ι| ≥ 2`. -/
+theorem uniformOn_injective_mem_range_and_mem_range [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] (hab : a ≠ b) (hικ : Fintype.card ι ≤ Fintype.card κ) :
+    uniformOn {k : ι → κ | Injective k} {k | a ∈ Set.range k ∧ b ∈ Set.range k} =
+      (Fintype.card ι).descFactorial 2 / (Fintype.card κ).descFactorial 2 := by
+  classical
+  have hκ : 2 ≤ Fintype.card κ := Fintype.one_lt_card_iff.2 ⟨a, b, hab⟩
+  have h2 : ((Fintype.card κ).descFactorial 2 : ℝ≥0∞) ≠ 0 := by
+    exact_mod_cast (Nat.descFactorial_eq_zero_iff_lt.not.2 (not_lt.2 hκ))
+  have hm : ((Fintype.card κ).descFactorial (Fintype.card ι) : ℝ≥0∞) ≠ 0 := by
+    exact_mod_cast (Nat.descFactorial_eq_zero_iff_lt.not.2 (not_lt.2 hικ))
+  have hset : {k : ι → κ | Injective k} = (({k | Injective k} : Finset (ι → κ)) : Set _) := by
+    simp
+  have hevt : {k : ι → κ | a ∈ Set.range k ∧ b ∈ Set.range k} =
+      (({k | a ∈ Set.range k ∧ b ∈ Set.range k} : Finset (ι → κ)) : Set _) := by
+    simp
+  rw [hset, hevt, uniformOn_apply_finset, ← filter_and,
+    ← Fintype.card_subtype (fun k : ι → κ => Injective k), Fintype.card_subtype_injective,
+    ENNReal.div_eq_div_iff h2 (ENNReal.natCast_ne_top _) hm (ENNReal.natCast_ne_top _)]
+  exact_mod_cast descFactorial_two_mul_card_filter_injective_mem_range_and_mem_range hab
+
+end TwoHit
 
 end Probability
 

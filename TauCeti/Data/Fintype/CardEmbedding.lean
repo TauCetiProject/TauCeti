@@ -11,6 +11,7 @@ public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Data.Finset.Sort
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Finset.Pairwise
+import Mathlib.Combinatorics.Enumerative.DoubleCounting
 
 /-! # Counting embeddings
 
@@ -51,6 +52,11 @@ embeddings sending some increasing `m`-tuple into a prescribed set `T` of `m`-tu
   into `T`.
 * `Finset.card_filter_injective_exists_mem_le`: at most `n * #B * card V ^ (n - 1)` injective
   `n`-tuples meet a prescribed set `B` of vertices.
+* `Finset.card_filter_injective_mem_range_and_mem_range_eq`: the number of injective maps whose
+  range contains two given distinct elements does not depend on which two.
+* `Finset.descFactorial_two_mul_card_filter_injective_mem_range_and_mem_range`: for injective
+  maps `ι → κ`, that number times `(card κ).descFactorial 2` is
+  `(card κ).descFactorial (card ι) * (card ι).descFactorial 2`.
 -/
 
 public section
@@ -256,5 +262,78 @@ theorem card_filter_injective_exists_mem_le [Fintype V] [DecidableEq V] {n : ℕ
   have h := natCard_embedding_exists_comp_mem_le (β := Fin n) T
   rw [← Nat.card_congr e, Nat.card_eq_fintype_card, Fintype.card_subtype] at h
   simpa only [Fintype.card_fin, Nat.choose_one_right, hT] using h
+
+section TwoInRange
+
+variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ] {a b : κ}
+
+/-- Relabelling the codomain by a permutation `σ` shows that the number of injective maps
+`ι → κ` whose range contains two given distinct elements does not depend on which two. -/
+theorem card_filter_injective_mem_range_and_mem_range_eq {c d : κ} (hab : a ≠ b)
+    (hcd : c ≠ d) [DecidablePred fun k : ι → κ => Injective k] :
+    #{k : ι → κ | Injective k ∧ (c ∈ Set.range k ∧ d ∈ Set.range k)} =
+      #{k : ι → κ | Injective k ∧ (a ∈ Set.range k ∧ b ∈ Set.range k)} := by
+  classical
+  -- A permutation sending `a` to `c` and `b` to `d`.
+  let σ : Equiv.Perm κ := (Equiv.swap a c).trans (Equiv.swap (Equiv.swap a c b) d)
+  have hσa : σ a = c := by
+    have : c ≠ Equiv.swap a c b := fun h => hab (by
+      rw [eq_comm, Equiv.swap_apply_eq_iff, Equiv.swap_apply_right] at h
+      exact h.symm)
+    simp only [σ, Equiv.trans_apply, Equiv.swap_apply_left]
+    exact Equiv.swap_apply_of_ne_of_ne this hcd
+  have hσb : σ b = d := by simp [σ]
+  -- Postcomposition with `σ` carries the maps hitting `a` and `b` to those hitting `c` and `d`.
+  refine card_nbij' (σ.symm ∘ ·) (σ ∘ ·) (fun k hk => ?_) (fun k hk => ?_)
+    (fun k _ => by ext; simp) (fun k _ => by ext; simp)
+  · simp only [coe_filter, mem_univ, true_and] at hk ⊢
+    refine ⟨σ.symm.injective.comp hk.1, ?_⟩
+    simpa [Set.mem_range, Equiv.symm_apply_eq, hσa, hσb] using hk.2
+  · simp only [coe_filter, mem_univ, true_and] at hk ⊢
+    refine ⟨σ.injective.comp hk.1, ?_⟩
+    simpa [Set.mem_range, ← hσa, ← hσb] using hk.2
+
+/-- Double counting the triples `(k, c, d)` with `k` injective and `c ≠ d` both in the range of
+`k`: each injective `k` contributes `|ι| (|ι| - 1)` pairs, and each of the `|κ| (|κ| - 1)` pairs
+is hit by the same number of injective maps. -/
+theorem descFactorial_two_mul_card_filter_injective_mem_range_and_mem_range
+    (hab : a ≠ b) [DecidablePred fun k : ι → κ => Injective k] :
+    (Fintype.card κ).descFactorial 2 *
+        #{k : ι → κ | Injective k ∧ (a ∈ Set.range k ∧ b ∈ Set.range k)} =
+      (Fintype.card κ).descFactorial (Fintype.card ι) * (Fintype.card ι).descFactorial 2 := by
+  classical
+  let I : Finset (ι → κ) := {k | Injective k}
+  have hI : #I = (Fintype.card κ).descFactorial (Fintype.card ι) := by
+    rw [← Fintype.card_subtype]
+    exact Fintype.card_subtype_injective
+  have hd (x : ℕ) : x.descFactorial 2 = x * x - x := by
+    rw [Nat.descFactorial_succ, Nat.descFactorial_one, mul_comm, Nat.mul_sub_one]
+  -- Count the pairs `(p, k)` with `p` off the diagonal and both coordinates in the range of `k`.
+  have hdouble : ∑ p ∈ (univ : Finset κ).offDiag,
+        #{k ∈ I | p.1 ∈ Set.range k ∧ p.2 ∈ Set.range k} =
+      ∑ k ∈ I, #{p ∈ (univ : Finset κ).offDiag | p.1 ∈ Set.range k ∧ p.2 ∈ Set.range k} := by
+    exact sum_card_bipartiteAbove_eq_sum_card_bipartiteBelow
+      (r := fun (p : κ × κ) (k : ι → κ) => p.1 ∈ Set.range k ∧ p.2 ∈ Set.range k)
+  have hleft : ∑ p ∈ (univ : Finset κ).offDiag,
+        #{k ∈ I | p.1 ∈ Set.range k ∧ p.2 ∈ Set.range k} =
+      (Fintype.card κ).descFactorial 2 *
+        #{k : ι → κ | Injective k ∧ (a ∈ Set.range k ∧ b ∈ Set.range k)} := by
+    rw [sum_congr rfl fun p hp => ?_, sum_const, nsmul_eq_mul, Nat.cast_id, offDiag_card,
+      card_univ, hd]
+    rw [filter_filter]
+    exact card_filter_injective_mem_range_and_mem_range_eq hab (mem_offDiag.1 hp).2.2
+  have hright (k : ι → κ) (hk : k ∈ I) :
+      #{p ∈ (univ : Finset κ).offDiag | p.1 ∈ Set.range k ∧ p.2 ∈ Set.range k} =
+        (Fintype.card ι).descFactorial 2 := by
+    have hk : Injective k := by simpa [I] using hk
+    have hfilt : {p ∈ (univ : Finset κ).offDiag | p.1 ∈ Set.range k ∧ p.2 ∈ Set.range k} =
+        (univ.image k).offDiag := by
+      ext p
+      simp only [mem_filter, mem_offDiag, mem_univ, true_and, mem_image, Set.mem_range]
+      tauto
+    rw [hfilt, offDiag_card, card_image_of_injective _ hk, card_univ, hd]
+  rw [← hleft, hdouble, sum_congr rfl hright, sum_const, nsmul_eq_mul, Nat.cast_id, hI]
+
+end TwoInRange
 
 end Finset

@@ -5,23 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.UniformOn
 public import Mathlib.Data.Fintype.CardEmbedding
 public import Mathlib.Data.Set.Card
-import Mathlib.Combinatorics.Enumerative.DoubleCounting
-import TauCeti.Data.Fintype.CardEmbedding
+import Mathlib.Data.Finset.Preimage
 
 /-!
-# The one-pair population: fibres and the two-hit mass
+# The one-pair population: fibres
 
 For distinct indices `a b : κ`, the *one-pair population* `Function.update id b a : κ → κ` sends
 `b` to `a` and fixes every other index; it is the population with exactly one repeated value.
 Sampling it along an index map `f : ι → κ` gives the word `Function.update id b a ∘ f`. This file
-counts the index maps and the embeddings producing a given word, and computes the probability that
-a uniform injective index map hits both `a` and `b`. These are the combinatorial inputs for the
-exact discrepancy between sampling the one-pair population with and without replacement: the
-singleton masses of the two sampling laws are fibre counts divided by `|κ| ^ |ι|`, respectively by
-the number of injective index maps.
+counts the index maps and the embeddings producing a given word. These are the combinatorial inputs
+for the exact discrepancy between sampling the one-pair population with and without replacement:
+the singleton masses of the two sampling laws are fibre counts divided by `|κ| ^ |ι|`, respectively
+by the number of injective index maps. The probability that a uniform injective index map hits
+both `a` and `b` is `uniformOn_injective_mem_range_and_mem_range` in
+`TauCeti.Probability.UniformSampling`.
 
 Write `r` for the number of `i` with `Function.update id b a (f i) = a`, that is with
 `f i ∈ {a, b}`. For an injective `f`, `r ≤ 2`, and `r = 2` exactly when `a` and `b` both lie in the
@@ -32,22 +31,23 @@ one embedding if `r = 0` and by two (namely `f` and `Equiv.swap a b ∘ f`) othe
 
 * `update_id_apply_eq_iff`: the one-pair population takes the value `a` exactly at `a`
   and `b`;
+* `update_id_apply_eq_update_id_apply_iff`, `update_id_swap_apply`: two indices have the same
+  one-pair value exactly when they agree up to `Equiv.swap a b`;
 * `card_filter_update_id_apply_eq_le_two`, `card_filter_update_id_apply_eq_eq_two_iff`: an
   injective index map meets `{a, b}` at most twice, and twice exactly when it hits both;
 * `natCard_update_id_comp_eq_update_id_comp`: the number of index maps with the same word is
   `2 ^ r`;
+* `embedding_update_id_comp_eq_update_id_comp_iff`: the embeddings with the same word as an
+  embedding `f` are `f` and `Equiv.swap a b ∘ f`;
 * `natCard_embedding_update_id_comp_eq_update_id_comp`: the number of embeddings with the same
-  word is `1` if `r = 0` and `2` otherwise;
-* `uniformOn_injective_mem_range_and_mem_range`: a uniform injective index map hits both `a`
-  and `b` with probability `|ι| (|ι| - 1) / (|κ| (|κ| - 1))`, written with `Nat.descFactorial`.
+  word is `1` if `r = 0` and `2` otherwise.
 -/
 
 public section
 
 noncomputable section
 
-open Finset Function MeasureTheory ProbabilityTheory
-open scoped ENNReal
+open Finset Function
 
 namespace TauCeti
 
@@ -67,13 +67,14 @@ theorem update_id_apply_eq_iff {x : κ} : update id b a x = a ↔ x = a ∨ x = 
 
 /-- Two indices have the same one-pair value exactly when they agree up to swapping `a` and `b`.
 -/
-private theorem update_id_apply_eq_update_id_apply_iff {x y : κ} :
+theorem update_id_apply_eq_update_id_apply_iff {x y : κ} :
     update id b a y = update id b a x ↔ y = x ∨ y = Equiv.swap a b x := by
   simp only [update_apply, id_eq, Equiv.swap_apply_def]
   split_ifs <;> grind
 
 /-- The one-pair population is invariant under swapping the two identified indices. -/
-private theorem update_id_swap_apply (x : κ) :
+@[simp]
+theorem update_id_swap_apply (x : κ) :
     update id b a (Equiv.swap a b x) = update id b a x :=
   update_id_apply_eq_update_id_apply_iff.2 (Or.inr rfl)
 
@@ -82,12 +83,10 @@ elements of `{a, b}`, so they number the elements of `{a, b}` in its range. -/
 private theorem card_filter_update_id_apply_eq_eq_card_filter_mem_range [Fintype ι] {f : ι → κ}
     (hf : Injective f) :
     #{i | update id b a (f i) = a} = #(({a, b} : Finset κ).filter (· ∈ Set.range f)) := by
-  classical
-  refine card_nbij f (fun i hi => ?_) hf.injOn fun x hx => ?_
-  · simp_all
-  · simp only [coe_filter, mem_insert, mem_singleton] at hx
-    obtain ⟨hx, i, rfl⟩ := hx
-    exact ⟨i, by simpa using hx, rfl⟩
+  rw [← card_preimage _ f hf.injOn]
+  congr 1
+  ext i
+  simp
 
 /-- An injective index map sends at most two indices into `{a, b}`. -/
 theorem card_filter_update_id_apply_eq_le_two [Fintype ι] {f : ι → κ} (hf : Injective f) :
@@ -140,7 +139,7 @@ theorem natCard_update_id_comp_eq_update_id_comp [Fintype ι] (hab : a ≠ b) (f
 
 /-- The embeddings with the same one-pair word as an embedding `f` are `f` and
 `Equiv.swap a b ∘ f`. -/
-private theorem embedding_update_id_comp_eq_update_id_comp_iff (f g : ι ↪ κ) :
+theorem embedding_update_id_comp_eq_update_id_comp_iff (f g : ι ↪ κ) :
     update id b a ∘ g = update id b a ∘ f ↔ g = f ∨ g = f.trans (Equiv.swap a b).toEmbedding := by
   constructor
   · intro h
@@ -199,110 +198,6 @@ theorem natCard_embedding_update_id_comp_eq_update_id_comp [Fintype ι] (hab : a
   · exact Set.ncard_pair fun he => h (hfix.1 he.symm)
 
 end Fibres
-
-section TwoHit
-
-variable [Fintype ι] [Fintype κ]
-
-section Count
-
-variable [DecidableEq ι] [DecidableEq κ]
-
-/-- Relabelling the population by a permutation `σ` shows that the number of injective index
-maps whose range contains two given distinct indices does not depend on which two. -/
-private theorem card_filter_injective_mem_range_and_mem_range_eq {c d : κ} (hab : a ≠ b)
-    (hcd : c ≠ d) [DecidablePred fun k : ι → κ => Injective k] :
-    #{k : ι → κ | Injective k ∧ (c ∈ Set.range k ∧ d ∈ Set.range k)} =
-      #{k : ι → κ | Injective k ∧ (a ∈ Set.range k ∧ b ∈ Set.range k)} := by
-  classical
-  -- A permutation sending `a` to `c` and `b` to `d`.
-  let σ : Equiv.Perm κ := (Equiv.swap a c).trans (Equiv.swap (Equiv.swap a c b) d)
-  have hσa : σ a = c := by
-    have : c ≠ Equiv.swap a c b := fun h => hab (by
-      rw [eq_comm, Equiv.swap_apply_eq_iff, Equiv.swap_apply_right] at h
-      exact h.symm)
-    simp only [σ, Equiv.trans_apply, Equiv.swap_apply_left]
-    exact Equiv.swap_apply_of_ne_of_ne this hcd
-  have hσb : σ b = d := by simp [σ]
-  -- Postcomposition with `σ` carries the maps hitting `a` and `b` to those hitting `c` and `d`.
-  refine card_nbij' (σ.symm ∘ ·) (σ ∘ ·) (fun k hk => ?_) (fun k hk => ?_)
-    (fun k _ => by ext; simp) (fun k _ => by ext; simp)
-  · simp only [coe_filter, mem_univ, true_and] at hk ⊢
-    refine ⟨σ.symm.injective.comp hk.1, ?_⟩
-    simpa [Set.mem_range, Equiv.symm_apply_eq, hσa, hσb] using hk.2
-  · simp only [coe_filter, mem_univ, true_and] at hk ⊢
-    refine ⟨σ.injective.comp hk.1, ?_⟩
-    simpa [Set.mem_range, ← hσa, ← hσb] using hk.2
-
-/-- Double counting the triples `(k, c, d)` with `k` injective and `c ≠ d` both in the range of
-`k`: each injective `k` contributes `|ι| (|ι| - 1)` pairs, and each of the `|κ| (|κ| - 1)` pairs
-is hit by the same number of injective maps. -/
-private theorem descFactorial_two_mul_card_filter_injective_mem_range_and_mem_range
-    (hab : a ≠ b) [DecidablePred fun k : ι → κ => Injective k] :
-    (Fintype.card κ).descFactorial 2 *
-        #{k : ι → κ | Injective k ∧ (a ∈ Set.range k ∧ b ∈ Set.range k)} =
-      (Fintype.card κ).descFactorial (Fintype.card ι) * (Fintype.card ι).descFactorial 2 := by
-  classical
-  let I : Finset (ι → κ) := {k | Injective k}
-  have hI : #I = (Fintype.card κ).descFactorial (Fintype.card ι) := by
-    rw [← Fintype.card_subtype]
-    exact Fintype.card_subtype_injective
-  have hd (x : ℕ) : x.descFactorial 2 = x * x - x := by
-    rw [Nat.descFactorial_succ, Nat.descFactorial_one, mul_comm, Nat.mul_sub_one]
-  -- Count the pairs `(p, k)` with `p` off the diagonal and both coordinates in the range of `k`.
-  have hdouble : ∑ p ∈ (univ : Finset κ).offDiag,
-        #{k ∈ I | p.1 ∈ Set.range k ∧ p.2 ∈ Set.range k} =
-      ∑ k ∈ I, #{p ∈ (univ : Finset κ).offDiag | p.1 ∈ Set.range k ∧ p.2 ∈ Set.range k} := by
-    exact sum_card_bipartiteAbove_eq_sum_card_bipartiteBelow
-      (r := fun (p : κ × κ) (k : ι → κ) => p.1 ∈ Set.range k ∧ p.2 ∈ Set.range k)
-  have hleft : ∑ p ∈ (univ : Finset κ).offDiag,
-        #{k ∈ I | p.1 ∈ Set.range k ∧ p.2 ∈ Set.range k} =
-      (Fintype.card κ).descFactorial 2 *
-        #{k : ι → κ | Injective k ∧ (a ∈ Set.range k ∧ b ∈ Set.range k)} := by
-    rw [sum_congr rfl fun p hp => ?_, sum_const, smul_eq_mul, offDiag_card, card_univ, hd]
-    rw [filter_filter]
-    exact card_filter_injective_mem_range_and_mem_range_eq hab (mem_offDiag.1 hp).2.2
-  have hright (k : ι → κ) (hk : k ∈ I) :
-      #{p ∈ (univ : Finset κ).offDiag | p.1 ∈ Set.range k ∧ p.2 ∈ Set.range k} =
-        (Fintype.card ι).descFactorial 2 := by
-    have hk : Injective k := by simpa [I] using hk
-    have hfilt : {p ∈ (univ : Finset κ).offDiag | p.1 ∈ Set.range k ∧ p.2 ∈ Set.range k} =
-        (univ.image k).offDiag := by
-      ext p
-      simp only [mem_filter, mem_offDiag, mem_univ, true_and, mem_image, Set.mem_range]
-      tauto
-    rw [hfilt, offDiag_card, card_image_of_injective _ hk, card_univ, hd]
-  rw [← hleft, hdouble, sum_congr rfl hright, sum_const, smul_eq_mul, hI]
-
-end Count
-
-/-- **Two-hit mass.** For distinct indices `a b : κ` and `|ι| ≤ |κ|`, a uniform injective index
-map `k : ι → κ` has both `a` and `b` in its range with probability
-`|ι| (|ι| - 1) / (|κ| (|κ| - 1))`.
-
-Without `|ι| ≤ |κ|` there is no injective index map, the left side is `0`, and the right side is
-positive once `|ι| ≥ 2`. -/
-theorem uniformOn_injective_mem_range_and_mem_range [MeasurableSpace κ]
-    [MeasurableSingletonClass κ] (hab : a ≠ b) (hικ : Fintype.card ι ≤ Fintype.card κ) :
-    uniformOn {k : ι → κ | Injective k} {k | a ∈ Set.range k ∧ b ∈ Set.range k} =
-      (Fintype.card ι).descFactorial 2 / (Fintype.card κ).descFactorial 2 := by
-  classical
-  have hκ : 2 ≤ Fintype.card κ := Fintype.one_lt_card_iff.2 ⟨a, b, hab⟩
-  have h2 : ((Fintype.card κ).descFactorial 2 : ℝ≥0∞) ≠ 0 := by
-    exact_mod_cast (Nat.descFactorial_eq_zero_iff_lt.not.2 (not_lt.2 hκ))
-  have hm : ((Fintype.card κ).descFactorial (Fintype.card ι) : ℝ≥0∞) ≠ 0 := by
-    exact_mod_cast (Nat.descFactorial_eq_zero_iff_lt.not.2 (not_lt.2 hικ))
-  have hset : {k : ι → κ | Injective k} = (({k | Injective k} : Finset (ι → κ)) : Set _) := by
-    simp
-  have hevt : {k : ι → κ | a ∈ Set.range k ∧ b ∈ Set.range k} =
-      (({k | a ∈ Set.range k ∧ b ∈ Set.range k} : Finset (ι → κ)) : Set _) := by
-    simp
-  rw [hset, hevt, uniformOn_apply_finset, ← filter_and,
-    ← Fintype.card_subtype (fun k : ι → κ => Injective k), Fintype.card_subtype_injective,
-    ENNReal.div_eq_div_iff h2 (ENNReal.natCast_ne_top _) hm (ENNReal.natCast_ne_top _)]
-  exact_mod_cast descFactorial_two_mul_card_filter_injective_mem_range_and_mem_range hab
-
-end TwoHit
 
 end Probability
 
