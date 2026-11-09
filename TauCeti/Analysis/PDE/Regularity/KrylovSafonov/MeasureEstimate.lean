@@ -10,14 +10,15 @@ public import TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Calculus.SecondDerivative
-import TauCeti.Analysis.Matrix.PosSemidef.Determinant
+import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
 # The basic measure estimate of Krylov and Safonov
 
 Let `u` be a `C²` supersolution of a non-divergence-form equation
-`∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` on a ball `B(c, R) ⊆ ℝⁿ`, `n ≥ 1`, with a symmetric coefficient matrix
+`∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` on a ball `B(c, R) ⊆ ℝⁿ`, `n ≥ 1`, with a coefficient matrix
 satisfying `λ ‖ξ‖² ≤ ξᵀ a ξ` and `|ηᵀ a ξ| ≤ Λ ‖η‖ ‖ξ‖`, and `Λ ≤ κ λ`. The estimate says that if
 `u ≥ 0` on the boundary sphere and `u ≤ 1` somewhere in the concentric ball `B(c, τ R)`, then `u`
 stays below a fixed level `M` on a fixed fraction `μ` of the small ball `B(c, θ R)`, provided the
@@ -63,7 +64,10 @@ radius `1 / (2 R)` by an integral over the upper contact set of `v`. That contac
 
 The estimate is proved for classical supersolutions, the class to which
 `TauCeti.PDE.volume_ball_le_setLIntegral_upperContactSet` applies; no regularity of `a` beyond the
-pointwise bounds is used, not even measurability.
+pointwise bounds is used, not even measurability. Nor need `a` be symmetric: since the Hessian of
+`u` is symmetric, `a` may be replaced by its symmetric part
+(`TauCeti.PDE.sum_coefficientSymmetricPart_mul_fderiv_fderiv`), which has the same ellipticity
+constants.
 
 ## Main declarations
 
@@ -90,7 +94,7 @@ public section
 noncomputable section
 
 open InnerProductSpace Matrix Metric MeasureTheory Set
-open scoped ENNReal RealInnerProductSpace MatrixOrder
+open scoped ENNReal RealInnerProductSpace
 
 namespace TauCeti
 
@@ -98,31 +102,7 @@ namespace PDE
 
 section Profile
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-private theorem hasFDerivAt_mul_norm_sq_sub_add (σ ε : ℝ) (c y : E) :
-    HasFDerivAt (fun y : E ↦ σ * ‖y - c‖ ^ 2 + ε)
-      ((σ • 2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) (y - c)) y := by
-  simpa using (((hasFDerivAt_id y).sub_const c).norm_sq.const_mul σ).add_const ε
-
-private theorem fderiv_mul_norm_sq_sub_add_apply (σ ε : ℝ) (c x v : E) :
-    fderiv ℝ (fun y : E ↦ σ * ‖y - c‖ ^ 2 + ε) x v = 2 * σ * ⟪x - c, v⟫ := by
-  rw [(hasFDerivAt_mul_norm_sq_sub_add σ ε c x).fderiv]
-  simp only [smul_apply, smul_eq_mul]
-  rw [innerSL_apply_apply]
-  ring
-
-private theorem fderiv_fderiv_mul_norm_sq_sub_add_apply (σ ε : ℝ) (c x v w : E) :
-    fderiv ℝ (fderiv ℝ fun y : E ↦ σ * ‖y - c‖ ^ 2 + ε) x v w = 2 * σ * ⟪v, w⟫ := by
-  set L : E →L[ℝ] E →L[ℝ] ℝ := σ • 2 • innerSL ℝ
-  have hd : HasFDerivAt (fun y ↦ L (y - c)) L x :=
-    (L.hasFDerivAt.comp x ((hasFDerivAt_id x).sub_const c)).congr_fderiv L.comp_id
-  rw [funext fun y ↦ (hasFDerivAt_mul_norm_sq_sub_add σ ε c y).fderiv, hd.fderiv]
-  simp only [L, smul_apply, smul_eq_mul]
-  rw [innerSL_apply_apply]
-  ring
-
-variable {σ ε : ℝ} {c x : E}
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {σ ε : ℝ} {c x : E}
 
 private theorem contDiffAt_rpow_mul_norm_sq_sub_add (hσ : 0 ≤ σ) (hε : 0 < ε) (β : ℝ)
     {k : WithTop ℕ∞} : ContDiffAt ℝ k (fun y : E ↦ (σ * ‖y - c‖ ^ 2 + ε) ^ (-β)) x :=
@@ -136,17 +116,26 @@ private theorem fderiv_fderiv_rpow_mul_norm_sq_sub_add_apply (hσ : 0 ≤ σ) (h
       4 * σ ^ 2 * β * (β + 1) * (σ * ‖x - c‖ ^ 2 + ε) ^ (-β - 2) * ⟪x - c, v⟫ * ⟪x - c, w⟫ -
         2 * σ * β * (σ * ‖x - c‖ ^ 2 + ε) ^ (-β - 1) * ⟪v, w⟫ := by
   have hs : 0 < σ * ‖x - c‖ ^ 2 + ε := by positivity
-  have hf : ContDiffAt ℝ 2 (fun y : E ↦ σ * ‖y - c‖ ^ 2 + ε) x :=
-    (contDiffAt_const.mul ((contDiffAt_id.sub contDiffAt_const).norm_sq ℝ)).add contDiffAt_const
+  have hD : fderiv ℝ (fun y : E ↦ σ * ‖y - c‖ ^ 2 + ε) = fderiv ℝ (σ • fun y : E ↦ ‖y - c‖ ^ 2) :=
+    funext fun _ ↦ fderiv_add_const ε
+  have hid : fderiv ℝ (fun y : E ↦ y) = fun _ ↦ ContinuousLinearMap.id ℝ E :=
+    funext fun _ ↦ fderiv_fun_id
   have h := fderiv_fderiv_scalar_comp_apply (f := fun y : E ↦ σ * ‖y - c‖ ^ 2 + ε)
-    (Real.contDiffAt_rpow_const_of_ne (p := -β) hs.ne') hf v w
+    (Real.contDiffAt_rpow_const_of_ne (p := -β) hs.ne')
+    ((contDiffAt_const.mul ((contDiffAt_id.sub contDiffAt_const).norm_sq ℝ)).add contDiffAt_const)
+    v w
   simp only [Function.comp_def] at h
-  rw [h, iteratedDeriv_eq_iterate, Real.iter_deriv_rpow_const, Real.deriv_rpow_const,
-    fderiv_mul_norm_sq_sub_add_apply, fderiv_mul_norm_sq_sub_add_apply,
-    fderiv_fderiv_mul_norm_sq_sub_add_apply, smul_eq_mul, smul_eq_mul]
-  simp only [descPochhammer_succ_right, descPochhammer_zero, Polynomial.eval_mul,
-    Polynomial.eval_X, Polynomial.eval_sub, Polynomial.eval_one, Polynomial.eval_zero,
-    Nat.cast_one, Nat.cast_ofNat, Nat.cast_zero]
+  rw [h, hD, fderiv_fderiv_const_smul, fderiv_const_smul_field]
+  simp only [Pi.smul_apply, smul_apply, smul_eq_mul]
+  rw [fderiv_fderiv_norm_sq_sub_comp_apply (i := fun y ↦ y) contDiffAt_id,
+    fderiv_norm_sq_sub_comp (i := fun y ↦ y) differentiableAt_id, iteratedDeriv_eq_iterate,
+    Real.iter_deriv_rpow_const, Real.deriv_rpow_const]
+  simp only [hid, descPochhammer_succ_right, descPochhammer_zero, Polynomial.eval_mul,
+    Polynomial.eval_X, Polynomial.eval_sub, Polynomial.eval_one, Nat.cast_one, Nat.cast_ofNat,
+    Nat.cast_zero, map_sub, ContinuousLinearMap.comp_id,
+    smul_apply, sub_apply, innerSL_apply_apply, nsmul_eq_mul, sub_zero, mul_neg, one_mul,
+    neg_mul, ContinuousLinearMap.id_apply, fderiv_fun_const, Pi.zero_apply, zero_apply,
+    inner_zero_right, add_zero, inner_sub_left]
   ring_nf
 
 end Profile
@@ -157,7 +146,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {σ ε β lam T : ℝ} {c x 
 `s = σ ‖x - c‖² + ε`,
 `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ (σ ‖· - c‖² + ε)^(-β) (x) = 2 σ β s^(-β-2) (2 σ (β + 1) (x - c)ᵀ A (x - c) - s tr A)`.
 -/
-theorem sum_mul_fderiv_fderiv_rpow_mul_norm_sq_sub_add (A : Matrix ι ι ℝ) (hσ : 0 ≤ σ)
+theorem sum_mul_fderiv_fderiv_rpow_mul_norm_sq_sub_add {A : Matrix ι ι ℝ} (hσ : 0 ≤ σ)
     (hε : 0 < ε) (β : ℝ) :
     ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun y : EuclideanSpace ℝ ι ↦
         (σ * ‖y - c‖ ^ 2 + ε) ^ (-β)) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) =
@@ -198,7 +187,7 @@ theorem sum_mul_fderiv_fderiv_rpow_mul_norm_sq_sub_add_nonneg {A : Matrix ι ι 
     0 ≤ ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun y : EuclideanSpace ℝ ι ↦
         (σ * ‖y - c‖ ^ 2 + ε) ^ (-β)) x (EuclideanSpace.single i 1)
         (EuclideanSpace.single j 1) := by
-  rw [sum_mul_fderiv_fderiv_rpow_mul_norm_sq_sub_add A hσ hε]
+  rw [sum_mul_fderiv_fderiv_rpow_mul_norm_sq_sub_add hσ hε]
   have hs : 0 < σ * ‖x - c‖ ^ 2 + ε := by positivity
   refine mul_nonneg (by positivity) ?_
   have hQ := hA (x - c)
@@ -224,7 +213,7 @@ theorem neg_mul_le_sum_mul_fderiv_fderiv_rpow_mul_norm_sq_sub_add {A : Matrix ι
     -(2 * σ * β * ε ^ (-β - 1) * T) ≤ ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun y :
         EuclideanSpace ℝ ι ↦ (σ * ‖y - c‖ ^ 2 + ε) ^ (-β)) x (EuclideanSpace.single i 1)
         (EuclideanSpace.single j 1) := by
-  rw [sum_mul_fderiv_fderiv_rpow_mul_norm_sq_sub_add A hσ hε]
+  rw [sum_mul_fderiv_fderiv_rpow_mul_norm_sq_sub_add hσ hε]
   set s := σ * ‖x - c‖ ^ 2 + ε
   have hs : ε ≤ s := le_add_of_nonneg_left (by positivity)
   have hpow : s ^ (-β - 1) = s * s ^ (-β - 2) := by
@@ -242,22 +231,6 @@ theorem neg_mul_le_sum_mul_fderiv_fderiv_rpow_mul_norm_sq_sub_add {A : Matrix ι
     _ = 2 * σ * β * s ^ (-β - 2) * (0 - s * A.trace) := by rw [hpow]; ring
     _ ≤ 2 * σ * β * s ^ (-β - 2) * (2 * σ * (β + 1) * A.toQuadraticForm' (x - c) - s * A.trace) :=
         mul_le_mul_of_nonneg_left (by linarith) hP
-
-/-- A symmetric coefficient matrix with `λ ‖ξ‖² ≤ ξᵀ a ξ` has determinant at least `λⁿ`. -/
-private theorem pow_card_le_det {X : Type*} {Ω : Set X} {a : X → Matrix ι ι ℝ} {lam Lam : ℝ}
-    (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) (hsymm : (a x).IsSymm) :
-    lam ^ Fintype.card ι ≤ (a x).det := by
-  have h1 : (lam • (1 : Matrix ι ι ℝ)).PosSemidef := PosSemidef.one.smul h.pos.le
-  have h2 : lam • (1 : Matrix ι ι ℝ) ≤ a x := by
-    rw [Matrix.le_iff]
-    refine PosSemidef.of_dotProduct_mulVec_nonneg ?_ fun ξ => ?_
-    · exact isHermitian_iff_isSymm.2 (hsymm.sub (isSymm_one.smul lam))
-    · have := h.lower_bound hx (WithLp.toLp 2 ξ)
-      simp only [toQuadraticForm'_apply, EuclideanSpace.norm_sq_eq] at this
-      simp only [star_trivial, sub_mulVec, dotProduct_sub, smul_mulVec, one_mulVec,
-        dotProduct_smul, smul_eq_mul, sub_nonneg]
-      simpa [dotProduct, Real.norm_eq_abs, sq_abs, sq] using this
-  simpa [det_smul] using h1.det_le_det h2
 
 /-- The pointwise bound behind the Aleksandrov–Bakelman–Pucci integrand. -/
 private theorem div_pow_div_le {n : ℕ} {lam d F p q : ℝ} (hn : 0 < n) (hlam : 0 < lam)
@@ -280,25 +253,6 @@ private theorem div_pow_div_le {n : ℕ} {lam d F p q : ℝ} (hn : 0 < n) (hlam 
         rcases le_total p q with hpq | hpq
         · rw [max_eq_right hpq]; exact le_add_of_nonneg_left (by positivity)
         · rw [max_eq_left hpq]; exact le_add_of_nonneg_right (by positivity)
-
-/-- An `Lⁿ` bound on `f⁺` bounds `∫ (f⁺)ⁿ`. -/
-private theorem setLIntegral_ofReal_posPart_pow_le {X : Type*} [MeasurableSpace X] {μ : Measure X}
-    {f : X → ℝ} {n : ℕ} (hn : n ≠ 0) {B : ℝ} (hB : 0 ≤ B)
-    (h : eLpNorm (fun x ↦ (f x)⁺) n μ ≤ ENNReal.ofReal B) :
-    ∫⁻ x, ENNReal.ofReal ((f x)⁺ ^ n) ∂μ ≤ ENNReal.ofReal (B ^ n) := by
-  have hn' : (0 : ℝ) < n := Nat.cast_pos.2 (Nat.pos_of_ne_zero hn)
-  have heq := lintegral_rpow_enorm_eq_rpow_eLpNorm' (μ := μ) (f := fun x ↦ (f x)⁺) hn'
-  have hnorm : eLpNorm (fun x ↦ (f x)⁺) n μ = eLpNorm' (fun x ↦ (f x)⁺) n μ := by
-    simpa using eLpNorm_eq_eLpNorm' (μ := μ) (f := fun x ↦ (f x)⁺) (p := n) (by simpa using hn)
-      (ENNReal.natCast_ne_top n) (aestronglyMeasurable_of_eLpNorm_ne_top
-        (h.trans_lt ENNReal.ofReal_lt_top).ne)
-  have hint : ∫⁻ x, ENNReal.ofReal ((f x)⁺ ^ n) ∂μ = eLpNorm (fun x ↦ (f x)⁺) n μ ^ n := by
-    rw [hnorm, ← ENNReal.rpow_natCast, ← heq]
-    refine lintegral_congr fun x ↦ ?_
-    rw [Real.enorm_eq_ofReal (posPart_nonneg _), ENNReal.rpow_natCast,
-      ENNReal.ofReal_pow (posPart_nonneg _)]
-  rw [hint, ENNReal.ofReal_pow hB]
-  gcongr
 
 /-- The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ` applied to `r g - u - C` is
 `r (∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ g) - ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ u`. -/
@@ -479,9 +433,16 @@ private theorem ofReal_mul_volume_ball_le_of_volume_ball_le {Γ S : Set (Euclide
     rw [ENNReal.ofReal_div_of_pos hR, ENNReal.le_div_iff_mul_le
       (Or.inl (by simpa using hR)) (Or.inl ENNReal.ofReal_ne_top), mul_comm]
     exact hf
-  have h1 : ∫⁻ y in Γ, ENNReal.ofReal ((f y)⁺ ^ N) ≤ ENNReal.ofReal (B ^ N) :=
-    (lintegral_mono_set hΓ).trans (setLIntegral_ofReal_posPart_pow_le Fintype.card_ne_zero
-      (by positivity) hfn)
+  have h1 : ∫⁻ y in Γ, ENNReal.ofReal ((f y)⁺ ^ N) ≤ ENNReal.ofReal (B ^ N) := by
+    refine (lintegral_mono_set hΓ).trans ?_
+    have h := lintegral_rpow_enorm_le_rpow_eLpNorm (p := (N : NNReal)) (by simp [N])
+      (μ := volume.restrict (ball c R)) fun x ↦ (f x)⁺
+    simp only [NNReal.coe_natCast, ENNReal.coe_natCast, ENNReal.rpow_natCast] at h
+    calc ∫⁻ y in ball c R, ENNReal.ofReal ((f y)⁺ ^ N)
+        = ∫⁻ y in ball c R, ‖(f y)⁺‖ₑ ^ N := lintegral_congr fun y ↦ by
+          rw [Real.enorm_eq_ofReal (posPart_nonneg _), ENNReal.ofReal_pow (posPart_nonneg _)]
+      _ ≤ ENNReal.ofReal B ^ N := h.trans (by gcongr)
+      _ = ENNReal.ofReal (B ^ N) := (ENNReal.ofReal_pow (by positivity) N).symm
   have hvol (z : EuclideanSpace ℝ ι) {r : ℝ} (hr : 0 < r) :
       volume (ball z r) = ENNReal.ofReal (r ^ N * ω) := by
     rw [Measure.addHaar_ball_of_pos _ _ hr, finrank_euclideanSpace,
@@ -563,7 +524,7 @@ private theorem ofReal_mul_volume_ball_le_volume_lt_inter_ball {κ θ τ A lam L
   have h := volume_ball_le_of_upperContactSet (p := fun y ↦ (f y)⁺)
     (F := fun y ↦ -f y - (ball c (θ * R)).indicator (fun _ ↦ K) y) inter_subset_left hΩ' hvc
     hv2 hlam (fun y hy ↦ ⟨ha.posDef (hΓ hy) (hsymm _ (hΓ hy)),
-      pow_card_le_det ha (hΓ hy) (hsymm _ (hΓ hy))⟩)
+      ha.pow_card_le_det (hΓ hy) (hsymm _ (hΓ hy))⟩)
     (fun y hy ↦ by
       rw [sum_mul_fderiv_fderiv_mul_sub_sub_const _ (hu.contDiffAt (isOpen_ball.mem_nhds
         (hΓ hy))) (hg2 y)]
@@ -591,7 +552,7 @@ private theorem ofReal_mul_volume_ball_le_volume_lt_inter_ball {κ θ τ A lam L
 /-- **The basic measure estimate of Krylov and Safonov** (Caffarelli–Cabré, Lemma 4.5, for
 classical supersolutions of linear equations). Let `θ > 0`, `0 < τ < 1` and `κ > 0`. There are
 constants `M, μ, ε₀ > 0`, depending only on the dimension, `κ`, `θ` and `τ`, with the following
-property. Let `R > 0`, let the symmetric coefficient matrix `a` be uniformly elliptic on
+property. Let `R > 0`, let the coefficient matrix `a` be uniformly elliptic on
 `B(c, R)` with constants `λ ≤ Λ ≤ κ λ`, and let `u` be continuous on `closedBall c R`, `C²` in
 `B(c, R)`, nonnegative on the sphere `‖x - c‖ = R`, with `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu ≤ f` in `B(c, R)` and
 `R ‖f⁺‖_{Lⁿ(B(c, R))} ≤ ε₀ λ`. If `u ≤ 1` somewhere in `B(c, τ R)`, then
@@ -601,7 +562,7 @@ theorem exists_mul_volume_ball_le_volume_setOf_lt_inter_ball {κ θ τ : ℝ} (h
     ∃ M μ ε₀ : ℝ, 0 < M ∧ 0 < μ ∧ 0 < ε₀ ∧
       ∀ ⦃lam Lam R : ℝ⦄ ⦃c : EuclideanSpace ℝ ι⦄ ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄
         ⦃u f : EuclideanSpace ℝ ι → ℝ⦄, 0 < R → UniformlyEllipticOn (ball c R) a lam Lam →
-        Lam ≤ κ * lam → (∀ x ∈ ball c R, (a x).IsSymm) →
+        Lam ≤ κ * lam →
         ContinuousOn u (closedBall c R) → ContDiffOn ℝ 2 u (ball c R) →
         (∀ x ∈ sphere c R, 0 ≤ u x) →
         (∀ x ∈ ball c R, ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ u) x
@@ -626,9 +587,13 @@ theorem exists_mul_volume_ball_le_volume_setOf_lt_inter_ball {κ θ τ : ℝ} (h
     ENNReal.toReal_pos (measure_ball_pos volume _ one_pos).ne' measure_ball_lt_top.ne
   refine ⟨A * (θ ^ 2) ^ (-β), 1 / (2 ^ (N + 1) * (4 * A * β * κ * (θ ^ 2) ^ (-β - 1)) ^ N *
     θ ^ N), n * (ω / 2) ^ n⁻¹ / 4, by positivity, by positivity, by positivity, ?_⟩
-  intro lam Lam R c a u f hR ha hLam hsymm hcont hu hbdry hsuper hf ⟨x₀, hx₀, hux₀⟩
+  intro lam Lam R c a u f hR ha hLam hcont hu hbdry hsuper hf ⟨x₀, hx₀, hux₀⟩
+  -- Replace `a` by its symmetric part, which the Hessian of `u` cannot distinguish from `a`.
   exact ofReal_mul_volume_ball_le_volume_lt_inter_ball hκ hθ hτ hA
-    (div_mul_cancel₀ _ (sub_pos.2 hG).ne') hR ha hLam hsymm hcont hu hbdry hsuper hf hx₀ hux₀
+    (div_mul_cancel₀ _ (sub_pos.2 hG).ne') hR ha.coefficientSymmetricPart hLam
+    (fun _ _ ↦ coefficientSymmetricPart_isSymm _) hcont hu hbdry
+    (fun x hx ↦ (sum_coefficientSymmetricPart_mul_fderiv_fderiv
+      (hu.contDiffAt (isOpen_ball.mem_nhds hx))).trans_le (hsuper x hx)) hf hx₀ hux₀
 
 end PDE
 
