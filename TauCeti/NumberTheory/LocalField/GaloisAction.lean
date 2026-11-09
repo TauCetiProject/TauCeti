@@ -49,8 +49,8 @@ The homomorphism from field automorphisms to residue-field automorphisms is Math
   `AlgHom.residueFieldHom` is the induced automorphism `AlgEquiv.residueFieldEquiv`.
 * `AlgEquiv.valuation_apply_sub_pow_lt_one`: an automorphism acting on the residue field as the
   `m`-th power map satisfies `σ x ≡ x ^ m` modulo the maximal ideal on integral elements.
-* `TauCeti.valuation_smul`: a group acting on `L` and preserving `𝒪[L]` preserves the valuation of
-  every element.
+* `TauCeti.valuation_smul`: a group acting on `L` and preserving a discrete valuation ring `𝒪[L]`
+  preserves the valuation of every element.
 * `AlgEquiv.normalizedValuation_unitsMap`: an extension automorphism preserves the normalized
   valuation of a unit.
 
@@ -315,15 +315,15 @@ namespace TauCeti
 
 section ValuationSMul
 
-variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
+variable {L : Type*} [Field L] [ValuativeRel L]
 variable {G : Type*} [Group G] [MulSemiringAction G L] [IsInvariantSubring G 𝒪[L]]
 
-omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
 /-- The image of an integer of `L` under the action, read in `L`. This is `map_smul` for the
 equivariant inclusion `IsInvariantSubring.subtypeHom`. -/
 theorem coe_smul_integer (σ : G) (y : 𝒪[L]) : ((σ • y : 𝒪[L]) : L) = σ • (y : L) :=
   map_smul (IsInvariantSubring.subtypeHom G 𝒪[L]) σ y
 
+variable [IsDiscreteValuationRing 𝒪[L]] in
 /-- The action preserves the valuation of every integer of `L`. -/
 private theorem valuation_smul_integer (σ : G) (x : 𝒪[L]) :
     valuation L (σ • (x : L)) = valuation L (x : L) := by
@@ -349,6 +349,7 @@ private theorem valuation_smul_integer (σ : G) (x : 𝒪[L]) :
   simp only [Subring.coe_mul, Subring.coe_pow, map_mul, map_pow, hu, hu', one_mul]
   rw [coe_smul_integer, hirr π hπ]
 
+variable [IsDiscreteValuationRing 𝒪[L]] in
 /-- The action preserves the valuation of every element of `L`. -/
 @[simp]
 theorem valuation_smul (σ : G) (x : L) : valuation L (σ • x) = valuation L x := by
