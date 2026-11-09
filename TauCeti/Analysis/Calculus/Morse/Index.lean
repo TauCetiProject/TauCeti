@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.QuadraticForm.Real
 public import TauCeti.Analysis.Calculus.Morse.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
+import TauCeti.LinearAlgebra.QuadraticForm.Real
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # The Morse index
@@ -48,6 +51,8 @@ by the Morse complex in Lane M of the analytic Heegaard Floer roadmap.
 * `TauCeti.hessianQuadraticForm`: the quadratic form defined by the Hessian at a point.
 * `TauCeti.morseIndex`: the negative index of inertia of the Hessian quadratic form.
 * `TauCeti.morseIndex_comp`: invariance under a change of coordinates.
+* `TauCeti.morseIndex_slice_right`: along a critical zero section of a function on a product, the
+  Morse index is the index of the restriction to the fibre.
 * `TauCeti.eventually_morseIndex_le`: in finite dimensions the Morse index of a `C²` function is
   lower semicontinuous, also at degenerate and noncritical points.
 * `TauCeti.span_range_hessianQuadraticForm_comp_left`, `TauCeti.span_range_hessianQuadraticForm_pi`,
@@ -66,6 +71,9 @@ by the Morse complex in Lane M of the analytic Heegaard Floer roadmap.
   index characterizes a negative-definite Hessian at every point.
 * `TauCeti.IsNondegenerateCriticalPoint.exists_hessianQuadraticForm_equivalent_weightedSumSquares`:
   the Hessian has a diagonal `±1` normal form.
+* `TauCeti.exists_continuousLinearEquiv_inv_two_mul_fderiv_fderiv_eq_sum`: an invertible Hessian
+  is, in Euclidean coordinates, twice the signed sum of squares of the Morse index, with the
+  negative squares first.
 
 ## References
 
@@ -303,6 +311,35 @@ theorem morseIndex_comp {φ : F → E} {b : F} (hf : ContDiffAt ℝ 2 f (φ b))
     ⟨QuadraticMap.isometryEquivOfCompLinearEquiv
       (hessianQuadraticForm f (φ b)) e.toLinearEquiv⟩).symm
 
+/-- **The Morse index along a critical zero section is the index of the vertical Hessian.** If
+`f` is `C²` at `(a, 0)` and every point `(b, 0)` with `b` near `a` is critical, then the Morse
+index of `f` at `(a, 0)` is the Morse index at `0` of the fibre restriction `v ↦ f (a, v)`: the
+base directions are null for the Hessian at `(a, 0)` and orthogonal to the fibre directions. -/
+theorem morseIndex_slice_right [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] {f : E × F → ℝ}
+    {a : E} (hf : ContDiffAt ℝ 2 f (a, 0))
+    (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0) :
+    morseIndex (fun v ↦ f (a, v)) 0 = morseIndex f (a, 0) := by
+  -- The Hessian quadratic form at `(a, 0)` is the vertical one, pulled back along `Prod.snd`.
+  have hQ : hessianQuadraticForm f (a, 0) =
+      (0 : QuadraticForm ℝ E).prod (hessianQuadraticForm (fun v ↦ f (a, v)) 0) := by
+    ext ⟨u, v⟩
+    have hu : fderiv ℝ (fderiv ℝ f) (a, 0) (u, 0) = 0 := fderiv_fderiv_apply_inl_eq_zero hf hcrit u
+    have hvu : fderiv ℝ (fderiv ℝ f) (a, 0) (0, v) (u, 0) = 0 := by
+      rw [hf.isSymmSndFDerivAt (by simp) (0, v) (u, 0), hu]
+      rfl
+    have hsplit : ((u, v) : E × F) = (u, 0) + (0, v) := by simp
+    have h1 : fderiv ℝ (fderiv ℝ f) (a, 0) (u, v) = fderiv ℝ (fderiv ℝ f) (a, 0) (0, v) := by
+      rw [hsplit, map_add, hu, zero_add]
+    have h2 : fderiv ℝ (fderiv ℝ f) (a, 0) (0, v) (u, v) =
+        fderiv ℝ (fderiv ℝ f) (a, 0) (0, v) (0, v) := by
+      rw [hsplit, map_add, hvu, zero_add]
+    simp only [hessianQuadraticForm_apply, QuadraticMap.prod_apply, h1, h2]
+    rw [fderiv_fderiv_slice_right_apply hf]
+    simp
+  rw [morseIndex_def, morseIndex_def, hQ, QuadraticForm.sigNeg_prod,
+    (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero (0 : QuadraticForm ℝ E)).mp fun _ ↦ by simp,
+    zero_add]
+
 /-- **The Morse index is lower semicontinuous.** In finite dimensions, if `f` is `C²` at `x`, then
 at every point near `x` the Morse index of `f` is at least its Morse index at `x`. The point `x`
 need not be critical, nor nondegenerate: a degenerate Hessian can acquire new negative directions
@@ -404,5 +441,30 @@ theorem IsNondegenerateCriticalPoint.exists_hessianQuadraticForm_equivalent_weig
     exact h.separatingLeft
   exact QuadraticForm.equivalent_one_neg_one_weighted_sum_squared
     (hessianQuadraticForm f x) hassoc
+
+/-- **Sylvester coordinates for an invertible Hessian.** If `f` is `C²` at `x` and its second
+derivative there is invertible, then in suitable linear coordinates `T` on `E`, with values in
+Euclidean space of dimension `dim E`, half the Hessian is the signed sum of squares of the Morse
+index: `½ D²f(x)(u, u) = - Σ_{i < λ} (T u)ᵢ² + Σ_{i ≥ λ} (T u)ᵢ²`, where `λ = morseIndex f x`.
+These are the linear coordinates of a normalized Morse chart. -/
+theorem exists_continuousLinearEquiv_inv_two_mul_fderiv_fderiv_eq_sum [FiniteDimensional ℝ E]
+    (hf : ContDiffAt ℝ 2 f x) (hH : (fderiv ℝ (fderiv ℝ f) x).IsInvertible) :
+    ∃ T : E ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ E)), ∀ u,
+      (2 : ℝ)⁻¹ * fderiv ℝ (fderiv ℝ f) x u u =
+        ∑ i, (if i.val < morseIndex f x then -1 else 1) * T u i ^ 2 := by
+  have hQ : (hessianQuadraticForm f x).Nondegenerate := by
+    rw [QuadraticMap.nondegenerate_iff_radical_eq_bot, QuadraticMap.radical_eq_ker_associated,
+      associated_hessianQuadraticForm hf]
+    exact LinearMap.separatingLeft_iff_ker_eq_bot.mp
+      (ContinuousLinearMap.isInvertible_iff_separatingLeft.mp hH)
+  obtain ⟨e⟩ := QuadraticForm.equivalent_weightedSumSquares_ite_lt_sigNeg _ hQ
+  -- Divide the Sylvester coordinates by `√2` to absorb the factor `½`.
+  refine ⟨(e.toLinearEquiv.trans ((LinearEquiv.smulOfNeZero ℝ _ (√2)⁻¹ (by positivity)).trans
+    (EuclideanSpace.equiv _ ℝ).symm.toLinearEquiv)).toContinuousLinearEquiv, fun u ↦ ?_⟩
+  rw [← hessianQuadraticForm_apply, ← e.map_app, QuadraticMap.weightedSumSquares_apply,
+    Finset.mul_sum, morseIndex_def]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simp [mul_pow, Real.sq_sqrt zero_le_two]
+  split_ifs <;> ring
 
 end TauCeti
