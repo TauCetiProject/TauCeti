@@ -25,7 +25,7 @@ square-integrable field `y` is a *weak solution* of `L_x y = f`, for `f ∈ L²(
 `∫ ⟪y, L_x* η⟫ = ∫ ⟪f, η⟫`
 
 for every compactly supported `C²` test field `η`. This extends the classical notion: by the
-integration-by-parts identity `integral_inner_gaugeFixedOperator`, when `x` is continuous a
+integration-by-parts identity `integral_inner_gaugeFixedOperator`, for any `x` a
 compactly supported `C¹` field `y` is a weak solution of `L_x y = f` for `f` its classical image
 under `L_x`. The *weak kernel* of `L_x` consists of the weak solutions of `L_x y = 0`.
 
@@ -248,7 +248,7 @@ private theorem integral_sq_mul_inner_gaugeFixedOperator_eq_add
   -- Integration by parts: `∫ V² ⟪L_x L_x* η, η⟫ = ∫ ⟪L_x* η, L_x* (V² η)⟫`.
   have h₁ : ∫ z, V z ^ 2 * ⟪gaugeFixedOperator x (gaugeFixedAdjoint x η) z, η z⟫ ∂μ =
       ∫ z, ⟪gaugeFixedAdjoint x η z, H z⟫ ∂μ := by
-    rw [← integral_inner_gaugeFixedOperator hx.continuous hA hAc (hVη.of_le (by norm_num))]
+    rw [← integral_inner_gaugeFixedOperator hA hAc (hVη.of_le (by norm_num))]
     simp only [real_inner_smul_right]
   have h₂ := hweak _ hVη hVηc
   simp only [real_inner_smul_right] at h₂

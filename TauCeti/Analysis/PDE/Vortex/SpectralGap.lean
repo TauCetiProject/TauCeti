@@ -137,7 +137,7 @@ private theorem integral_le_integral_norm_sq_gaugeFixedAdjoint (hx : ContDiff �
         Δ (fun w ↦ ‖η w‖ ^ 2) z / 2) ∂μ := by
     rw [integral_add hi hΔ, integral_div,
       integral_laplacian_eq_zero_of_hasCompactSupport (hη.norm_sq ℝ) hnc, zero_div, add_zero,
-      integral_inner_gaugeFixedOperator hx.continuous hL hLc (hη.of_le (by norm_num))]
+      integral_inner_gaugeFixedOperator hL hLc (hη.of_le (by norm_num))]
     simp only [real_inner_self_eq_norm_sq]
   rw [hW]
   exact integral_mono hG (hi.fun_add hΔ) fun z ↦

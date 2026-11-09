@@ -142,7 +142,7 @@ theorem mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint
   simp only [Pi.add_apply] at hb
   rw [integral_const_mul, integral_add hi hΔ, integral_div,
     integral_laplacian_eq_zero_of_hasCompactSupport (hη.norm_sq ℝ) hnc,
-    zero_div, add_zero, integral_inner_gaugeFixedOperator hx.continuous hA hAc hη₁] at hb
+    zero_div, add_zero, integral_inner_gaugeFixedOperator hA hAc hη₁] at hb
   simpa only [real_inner_self_eq_norm_sq] using hb
 
 /-- For an actual vortex with unit-modulus end and `0 < c < 1/2`, there is a radius `R > 0`,

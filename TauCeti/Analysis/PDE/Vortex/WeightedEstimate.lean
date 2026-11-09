@@ -128,7 +128,7 @@ theorem integral_norm_sq_gaugeFixedAdjoint_fun_smul
     (hη.differentiable (by norm_num) _)]
   rw [integral_add hi he]
   congr 1
-  have hg := integral_inner_gaugeFixedOperator (μ := μ) hx.continuous hA hAc
+  have hg := integral_inner_gaugeFixedOperator (μ := μ) (x := x) hA hAc
     ((hw.pow 2).smul hη₁)
   simpa only [Pi.smul_def', real_inner_smul_right, real_inner_comm] using hg.symm
 
