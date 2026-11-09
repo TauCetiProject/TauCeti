@@ -9,8 +9,8 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
 public import TauCeti.MeasureTheory.Measure.Interval
 import Mathlib.Analysis.Normed.Group.Bounded
-import Mathlib.MeasureTheory.Integral.CompactlySupported
 import Mathlib.Topology.UniformSpace.HeineCantor
+import TauCeti.MeasureTheory.Integral.CompactlySupported
 import TauCeti.Topology.ContinuousMap.CompactlySupported
 
 /-!
@@ -24,8 +24,6 @@ continuous function of `x`.
 
 ## Main results
 
-* `CompactlySupportedContinuousMap.integrable_apply_sub`: the translates of a compactly
-  supported continuous function are integrable against a measure that is finite on compact sets.
 * `MeasureTheory.Measure.abs_integral_le_of_measure_Icc_add_one_le`: a function bounded by `A`
   and vanishing off `[a, a + n]` has integral at most `A * ((n + 1) * C)` in absolute value.
 * `MeasureTheory.Measure.exists_abs_integral_apply_sub_le`: the integrals of the translates of a
@@ -38,14 +36,6 @@ public section
 
 open Set Metric
 open scoped NNReal ENNReal CompactlySupported
-
-/-- The translates `y ↦ f (y - x)` of a compactly supported continuous function are integrable
-against a measure that is finite on compact sets. -/
-theorem CompactlySupportedContinuousMap.integrable_apply_sub {η : MeasureTheory.Measure ℝ}
-    [MeasureTheory.IsFiniteMeasureOnCompacts η] (f : C_c(ℝ, ℝ)) (x : ℝ) :
-    MeasureTheory.Integrable (fun y ↦ f (y - x)) η :=
-  (f.continuous.comp (continuous_id.sub continuous_const)).integrable_of_hasCompactSupport
-    (f.hasCompactSupport.comp_homeomorph (Homeomorph.subRight x))
 
 namespace MeasureTheory.Measure
 

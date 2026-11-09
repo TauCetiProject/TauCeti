@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Measure.Support
 import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Integral.CompactlySupported
 import TauCeti.MeasureTheory.Integral.UniformlyLocallyBounded
 
 /-!

@@ -12,6 +12,8 @@ public import Mathlib.MeasureTheory.Measure.Support
 public import Mathlib.NumberTheory.FrobeniusNumber
 public import Mathlib.Probability.ConditionalProbability
 public import Mathlib.Topology.Algebra.Order.Archimedean
+import Mathlib.Topology.Algebra.OpenSubgroup
+import Mathlib.Topology.Instances.ZMultiples
 
 /-!
 # Lattice laws on the half-line and their maximal span
@@ -364,13 +366,8 @@ theorem dense_addSubgroupClosure_support_map_coe_iff :
   constructor
   · rintro hd ⟨a, ha⟩
     -- The support lies in the closed set `a ℤ`, which leaves a gap `(0, a)` in `S`.
-    have hcl : IsClosed (AddSubgroup.zmultiples (a : ℝ) : Set ℝ) := by
-      have : (AddSubgroup.zmultiples (a : ℝ) : Set ℝ) = (· * (a : ℝ)) '' range ((↑) : ℤ → ℝ) := by
-        ext x
-        simp [AddSubgroup.mem_zmultiples_iff, zsmul_eq_mul]
-      rw [this]
-      exact (Homeomorph.mulRight₀ (a : ℝ) (by exact_mod_cast ha.pos.ne')).isClosedMap _
-        Real.isClosed_range_intCast
+    have hcl : IsClosed (AddSubgroup.zmultiples (a : ℝ) : Set ℝ) :=
+      AddSubgroup.isClosed_of_discreteTopology
     have hsupp : ν.support ⊆ AddSubgroup.zmultiples (a : ℝ) :=
       Measure.support_subset_of_isClosed hcl <| (ae_map_iff hcoe hcl.measurableSet).2 <|
         (isLatticeSpan_iff_ae_mem_zmultiples ha.pos).1 ha

@@ -19,6 +19,9 @@ sets is needed. In particular, no global finiteness or countability assumption i
 
 This is the partition-of-unity approximation used to lift convolution coefficients through
 dense coefficient maps. We use Mathlib's compactly supported partitions of unity.
+
+The file also records that the translates of a compactly supported continuous function on `ℝ`
+are integrable against every measure that is finite on compact sets.
 -/
 
 public section
@@ -109,5 +112,12 @@ theorem exists_integral_norm_sub_sum_smul_lt (f : C_c(X, E)) (μ : Measure X)
       dsimp [δ]
       rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
       nlinarith [measureReal_nonneg (μ := μ) (s := K)]
+
+/-- The translates `y ↦ f (y - x)` of a compactly supported continuous function are integrable
+against a measure that is finite on compact sets. -/
+theorem integrable_apply_sub {η : Measure ℝ} [IsFiniteMeasureOnCompacts η] (f : C_c(ℝ, ℝ))
+    (x : ℝ) : Integrable (fun y ↦ f (y - x)) η :=
+  (f.continuous.comp (continuous_id.sub continuous_const)).integrable_of_hasCompactSupport
+    (f.hasCompactSupport.comp_homeomorph (Homeomorph.subRight x))
 
 end CompactlySupportedContinuousMap

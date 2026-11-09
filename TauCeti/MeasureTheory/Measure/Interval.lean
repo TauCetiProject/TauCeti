@@ -134,11 +134,9 @@ theorem measure_Icc_add_natCast_le {η : Measure ℝ} {C : ℝ≥0∞}
   | succ n ih =>
     calc η (Icc a (a + (n + 1 : ℕ)))
         ≤ η (Icc a (a + n) ∪ Icc (a + n) (a + n + 1)) := by
-          refine measure_mono fun x hx ↦ ?_
-          push_cast at hx
-          rcases le_total x (a + n) with h | h
-          · exact Or.inl ⟨hx.1, h⟩
-          · exact Or.inr ⟨h, by linarith [hx.2]⟩
+          refine measure_mono ?_
+          simpa only [Nat.cast_add, Nat.cast_one, add_assoc] using
+            Icc_subset_Icc_union_Icc (a := a) (b := a + n) (c := a + n + 1)
       _ ≤ (n + 1) * C + C := (measure_union_le _ _).trans (add_le_add ih (hC _))
       _ = ((n + 1 : ℕ) + 1) * C := by push_cast; ring
 
