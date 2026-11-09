@@ -71,8 +71,12 @@ end Gradient
 
 variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E]
   [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
   {mu : Measure E} [mu.IsAddHaarMeasure] {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
+
+section CompleteSpace
+
+variable [CompleteSpace F]
 
 /-- The field `x ↦ u x • b` of a scalar Sobolev function has weak derivative
 `v ↦ ⟪∇u x, v⟫ • b`. -/
@@ -123,6 +127,8 @@ theorem prev_smulRightW1pL_ofTestFunctionₗ_ae_eq (b : F) (φ : 𝓓(Omega, ℝ
   filter_upwards [(ContinuousLinearMap.toSpanSingleton ℝ b).coeFn_compLpL
     (testFunctionLp (mu := mu) p φ), testFunctionLp_apply_ae (mu := mu) p φ] with x hx hφ
   rw [hx, ContinuousLinearMap.toSpanSingleton_apply, hφ]
+
+end CompleteSpace
 
 /-- **Coordinate reconstruction.** For a basis `b` of `F`, an `F`-valued Sobolev field is the sum
 of the fields `ℓᵢ ∘ u • bᵢ` built from its scalar coordinate projections. -/
