@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import TauCeti.Geometry.Manifold.Instances.Icc
+public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
@@ -44,6 +45,8 @@ are those of its summands, so its tangent coordinate changes are those of the su
 
 * `TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet`: the inverse of the extended
   chart at `x` maps its target into the base set of the canonical trivialization at `x`.
+* `TangentBundle.chartFrame`: the canonical tangent trivialization of the intrinsic chart source
+  at its centre, which covers the whole source.
 * `TangentBundle.mdifferentiableAt_trivializationAt_symm_apply` and
   `TangentBundle.trivializationAt_symm_apply_self`: a vector field with constant coordinates in
   the canonical trivialization at `x` is differentiable at `x` and takes the value `u` there.
@@ -165,6 +168,12 @@ theorem trivializationAt_chartSource_baseSet [IsManifold I 1 M] (x : M) :
   simp only [TangentBundle.trivializationAt_baseSet, TopologicalSpace.Opens.chartAt_eq,
     OpenPartialHomeomorph.subtypeRestr_source, Set.mem_preimage, Set.mem_univ, iff_true]
   exact y.property
+
+/-- The tangent frame of the intrinsic chart source at its centre; it covers the whole source
+(`TangentBundle.trivializationAt_chartSource_baseSet`). -/
+abbrev chartFrame [IsManifold I 1 M] (x : M) :=
+  trivializationAt E (TangentSpace I : TauCeti.chartSource (H := H) x → Type _)
+    (⟨x, mem_chart_source H x⟩ : TauCeti.chartSource (H := H) x)
 
 /-- The vector field with constant coordinates `u` in the trivialization of the tangent bundle at
 `x` is differentiable at `x`. -/
