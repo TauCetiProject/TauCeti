@@ -252,7 +252,7 @@ theorem exists_subseq_tendsto_broken_of_mem_level (h : hX.IsMorseSmale)
   have huw : ∀ j, hX.flow (-σ j) (w j) = u (n j) := fun j ↦ by
     simp only [w, ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]
   have hσ := hX.tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet hdf (hne i) hy hw
-    (σ := fun j ↦ -σ j) fun j ↦ by rw [huw, (hu (n j)).2, hτ]
+    (σ := fun j ↦ -σ j) (.of_forall fun j ↦ by rw [huw, (hu (n j)).2, hτ])
   have hlim := (hX.contMDiff_flow_uncurry.continuous.tendsto ((0 : ℝ), y)).comp
     (hσ.prodMk_nhds hw)
   simp only [Flow.map_zero_apply] at hlim

@@ -18,8 +18,8 @@ adapted to `f` satisfying the Morse–Smale condition, and `p`, `r` critical poi
 `ind p = ind r + 2`. This file embeds the one-dimensional space of trajectories from `p` to `r`
 in the compact space `M × M` and studies its closure there. It shows that the closure adds only
 trajectories broken once, at a critical point `q` of intermediate index, that it adds finitely many
-points, and that it is one-dimensional at the unbroken trajectories. It does not show that every
-broken trajectory is a limit of unbroken ones.
+points, and that it is one-dimensional at the unbroken trajectories. That every broken trajectory
+is also a limit of unbroken ones is proved in `TauCeti.Geometry.Manifold.Morse.Gluing.Broken`.
 
 A trajectory is recorded by its points on two levels `c₁` and `c₂` with
 `f r < c₂ < c₁ < f p`, chosen so that every critical value strictly between `f r` and `f p` lies
@@ -43,10 +43,14 @@ pairs in `M × M`; it is compact as a closed subset of the compact space `M × M
   subset of `ℝ`.
 
 The converse inclusion, that every broken trajectory is a limit of unbroken ones and has a
-neighbourhood homeomorphic to a half-open interval, is the gluing theorem and is not proved here.
-Together with `TauCeti.even_ncard_of_forall_exists_homeomorph_Ico` it would show that the broken
-trajectories are even in number, which is `∂ ∘ ∂ = 0` by
-`IsMorseSmale.morseBoundary_comp_morseBoundary_eq_zero_iff`.
+neighbourhood homeomorphic to a half-open interval, is the gluing theorem, proved in
+`TauCeti.Geometry.Manifold.Morse.Gluing.Broken`
+(`IsMorseSmale.mem_closure_of_mem_unstableSet_inter_stableSet` and
+`IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet`, stated for the unbroken
+pairs on the two levels of the broken pair). Assembled with the charts at unbroken pairs into
+charts of the compactified space, these half-open neighbourhoods are what
+`TauCeti.even_ncard_of_forall_exists_homeomorph_Ico` needs to show that the broken trajectories are
+even in number, which is `∂ ∘ ∂ = 0` by `IsMorseSmale.morseBoundary_comp_morseBoundary_eq_zero_iff`.
 
 ## Main declarations
 
@@ -149,7 +153,7 @@ theorem exists_homeomorph_morseTrajectoryPairs (hf : MDifferentiable 𝓘(ℝ, E
   have hg : Continuous fun y ↦ hX.flow (τ y) (y : M) := by
     refine continuous_iff_continuousAt.2 fun y ↦ ?_
     obtain ⟨σ, hσ, hlim⟩ := hX.exists_tendsto_flow_of_tendsto hf y.2.1 hr₂ h₂p
-      (continuous_subtype_val.tendsto y) (s := τ) hτ'
+      (continuous_subtype_val.tendsto y) (s := τ) (.of_forall hτ')
     rwa [(hτ y).unique hσ (hτ' y)] at hlim
   refine ⟨
     { toFun w := ⟨w.1.1, w.2.1, w.2.2.1⟩
@@ -313,7 +317,7 @@ theorem closure_morseTrajectoryPairs_subset {p r : M} (hp : mfderiv 𝓘(ℝ, E)
   rcases hcases with hy | ⟨q, z, t, hq, hpq, hqr, hz, hcases⟩
   · -- The limit is unbroken; its second point is where its orbit meets the level `c₂`.
     obtain ⟨σ, hσ, hlim⟩ := hX.exists_tendsto_flow_of_tendsto hdf hy hr₂
-      (h₂₁.trans h₁p) hyv (s := fun k ↦ s (n k)) fun k ↦ (hs (n k)).symm ▸ hv₂ (n k)
+      (h₂₁.trans h₁p) hyv (s := fun k ↦ s (n k)) (.of_forall fun k ↦ (hs (n k)).symm ▸ hv₂ (n k))
     have hw₂ : hX.flow σ w.1 = w.2 := tendsto_nhds_unique hlim (by
       simpa only [Function.comp_def, hs] using hv₂w.comp hn.tendsto_atTop)
     exact Or.inl ⟨hy, hyc, hw₂ ▸ hσ, σ, hw₂⟩
@@ -326,8 +330,8 @@ theorem closure_morseTrajectoryPairs_subset {p r : M} (hp : mfderiv 𝓘(ℝ, E)
     have hfz := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hdf hqr' hz'
     have hq₂ := (hgap q hqc ⟨hfz.1.trans hfz.2, hfy.2.trans' hfy.1⟩).1
     obtain ⟨σ, hσ, hlim⟩ := hX.exists_tendsto_flow_of_tendsto hdf hz' hr₂ hq₂ hz
-      (s := fun k ↦ s (n k) - t k) fun k ↦ by
-        rw [← Flow.map_add, sub_add_cancel, hs, hv₂]
+      (s := fun k ↦ s (n k) - t k) (.of_forall fun k ↦ by
+        rw [← Flow.map_add, sub_add_cancel, hs, hv₂])
     have hw₂ : hX.flow σ z = w.2 := tendsto_nhds_unique hlim (by
       simpa only [Function.comp_def, ← Flow.map_add, sub_add_cancel, hs] using
         hv₂w.comp hn.tendsto_atTop)

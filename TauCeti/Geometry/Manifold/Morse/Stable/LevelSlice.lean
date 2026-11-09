@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
-public import TauCeti.Dynamics.Flow.LevelCrossing
+import TauCeti.Dynamics.Flow.LevelCrossing
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
@@ -50,8 +50,6 @@ vector space.
 * `TauCeti.IsAdaptedPseudoGradient.tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet`:
   the time at which an orbit crosses the level of a point `y` of such a trajectory depends
   continuously on the orbit near `y`.
-* `TauCeti.IsAdaptedPseudoGradient.tendsto_flow_levelCrossingTime`: the point where an orbit
-  crosses a level depends continuously on the orbit near a connecting trajectory.
 * `TauCeti.IsAdaptedPseudoGradient.span_mtangentConeAt_unstableSet_inter_stableSet_sup_ker_eq_top`:
   every level of `f` is transverse to `W^u(a) ∩ W^s(b)`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_unstableSet_inter_stableSet_level_chart`: under
@@ -181,11 +179,11 @@ theorem eq_of_flow_eq_of_value_eq {y' : M}
 /-- **Level-crossing times depend continuously on the point.** Let `y` lie on a trajectory from a
 critical point `a` to a different critical point `b`, and let `w` tend to `y`. If the orbit of each
 `w i` meets the level of `y` at the time `σ i`, then `σ i` tends to `0`, the time at which the orbit
-of `y` meets that level. -/
+of `y` meets that level. It suffices that this holds eventually along `l`. -/
 theorem tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet {ι : Type*} {l : Filter ι}
     (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) (hab : a ≠ b)
     (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {w : ι → M} (hw : Tendsto w l (𝓝 y))
-    {σ : ι → ℝ} (hσ : ∀ i, f (hX.flow (σ i) (w i)) = f y) : Tendsto σ l (𝓝 0) := by
+    {σ : ι → ℝ} (hσ : ∀ᶠ i in l, f (hX.flow (σ i) (w i)) = f y) : Tendsto σ l (𝓝 0) := by
   have hfw : ∀ t, Tendsto (fun i ↦ f (hX.flow t (w i))) l (𝓝 (f (hX.flow t y))) := fun t ↦
     ((hf.continuous.comp (hX.contMDiff_flow_apply t).continuous).tendsto y).comp hw
   have hanti := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hab hy
@@ -193,70 +191,23 @@ theorem tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet {ι : Type*} 
   -- the orbit of `y`; since `f` decreases along orbits, it crosses the level between `0` and `t`.
   refine tendsto_order.2 ⟨fun t ht ↦ ?_, fun t ht ↦ ?_⟩
   · have hlt : f y < f (hX.flow t y) := by simpa using hanti ht
-    filter_upwards [(hfw t).eventually (lt_mem_nhds hlt)] with i hi
+    filter_upwards [(hfw t).eventually (lt_mem_nhds hlt), hσ] with i hi hσi
     by_contra! hle
-    exact (hX.antitone_flow hf (w i) hle).not_gt ((hσ i).trans_lt hi)
+    exact (hX.antitone_flow hf (w i) hle).not_gt (hσi.trans_lt hi)
   · have hlt : f (hX.flow t y) < f y := by simpa using hanti ht
-    filter_upwards [(hfw t).eventually (gt_mem_nhds hlt)] with i hi
+    filter_upwards [(hfw t).eventually (gt_mem_nhds hlt), hσ] with i hi hσi
     by_contra! hle
-    exact (hX.antitone_flow hf (w i) hle).not_gt (hi.trans_eq (hσ i).symm)
-
-/-- Orbits through points near a point `y` of a trajectory between distinct critical points cross
-the level of `y` at times in `[-δ, δ]`. -/
-theorem eventually_exists_mem_Icc_apply_flow_eq (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
-    (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {δ : ℝ} (hδ : 0 < δ) :
-    ∀ᶠ w in 𝓝 y, ∃ σ ∈ Icc (-δ) δ, f (hX.flow σ w) = f y := by
-  have hanti := hX.strictAnti_flow_of_mem_unstableSet_inter_stableSet hab hy
-  have hcont : ∀ t, Continuous fun w ↦ f (hX.flow t w) := fun t ↦
-    hf.continuous.comp (hX.contMDiff_flow_apply t).continuous
-  have h₁ : f (hX.flow δ y) < f y := by simpa using hanti hδ
-  have h₂ : f y < f (hX.flow (-δ) y) := by simpa using hanti (neg_lt_zero.2 hδ)
-  filter_upwards [(hcont δ).continuousAt.eventually (gt_mem_nhds h₁),
-    (hcont (-δ)).continuousAt.eventually (lt_mem_nhds h₂)] with w hw₁ hw₂
-  exact intermediate_value_Icc' (by linarith)
-    (hf.continuous.comp (hX.flow.continuous continuous_id continuous_const)).continuousOn
-    ⟨hw₁.le, hw₂.le⟩
-
-/-- **The level point of an orbit depends continuously on the orbit.** Let `y` lie on a trajectory
-between distinct critical points, with `f (flow σ₀ y) = c`. For points `w i` tending to `y` along
-whose orbits `f` strictly decreases, the points where these orbits cross the level `c` tend to
-`flow σ₀ y`. -/
-theorem tendsto_flow_levelCrossingTime (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) (hab : a ≠ b)
-    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) {σ₀ : ℝ}
-    (hσ₀ : f (hX.flow σ₀ y) = c) {ι : Type*} {l : Filter ι} {w : ι → M}
-    (hw : Tendsto w l (𝓝 y)) (hanti : ∀ᶠ i in l, StrictAnti fun t ↦ f (hX.flow t (w i))) :
-    Tendsto (fun i ↦ hX.flow (Flow.levelCrossingTime hX.flow f c (w i)) (w i)) l
-      (𝓝 (hX.flow σ₀ y)) := by
-  set z := hX.flow σ₀ y
-  have hz : z ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b :=
-    hX.flow.isInvariant_unstableSet_inter_stableSet a b σ₀ hy
-  have hw' : Tendsto (fun i ↦ hX.flow σ₀ (w i)) l (𝓝 z) :=
-    ((hX.flow.continuous_toFun σ₀).tendsto y).comp hw
-  set τ := fun i ↦ Flow.levelCrossingTime hX.flow f c (w i) - σ₀
-  -- The crossing time of `w i` differs from `σ₀` by a crossing time of `flow σ₀ (w i)` near `0`.
-  have hτ : ∀ δ > 0, ∀ᶠ i in l, τ i ∈ Icc (-δ) δ := fun δ hδ ↦ by
-    filter_upwards [hw'.eventually (hX.eventually_exists_mem_Icc_apply_flow_eq hf hab hz hδ),
-      hanti] with i ⟨σ, hσ, hσc⟩ hi
-    rw [hσ₀, ← Flow.map_add] at hσc
-    have := (Flow.eq_levelCrossingTime_iff hi ⟨_, hσc⟩).2 hσc
-    simp only [τ, ← this, add_sub_cancel_right]
-    exact hσ
-  have hτ0 : Tendsto τ l (𝓝 0) := tendsto_order.2
-    ⟨fun r hr ↦ (hτ (-r / 2) (by linarith)).mono fun i hi ↦ by linarith [hi.1],
-      fun r hr ↦ (hτ (r / 2) (by linarith)).mono fun i hi ↦ by linarith [hi.2]⟩
-  have h := (hX.flow.cont'.tendsto (0, z)).comp (hτ0.prodMk_nhds hw')
-  simp only [Function.comp_def, Function.uncurry_apply_pair, Flow.map_zero_apply] at h
-  refine h.congr fun i ↦ ?_
-  rw [← Flow.map_add, sub_add_cancel]
+    exact (hX.antitone_flow hf (w i) hle).not_gt (hi.trans_eq hσi.symm)
 
 /-- **Level crossings converge along converging orbits.** Let `w` lie on a trajectory from `a` to
 `b`, and `c` a value strictly between `f b` and `f a`. If `u i → w` and the orbit of `u i` meets
 the level `c` at time `s i`, then the crossing points converge to the point where the orbit of `w`
-meets the level `c`. -/
+meets the level `c`. It suffices that the orbit of `u i` meets the level at time `s i` eventually
+along `l`. -/
 theorem exists_tendsto_flow_of_tendsto (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {w : M}
     (hw : w ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) (hbc : f b < c)
     (hca : c < f a) {ι : Type*} {l : Filter ι} {u : ι → M} (hu : Tendsto u l (𝓝 w))
-    {s : ι → ℝ} (hs : ∀ i, f (hX.flow (s i) (u i)) = c) :
+    {s : ι → ℝ} (hs : ∀ᶠ i in l, f (hX.flow (s i) (u i)) = c) :
     ∃ σ : ℝ, f (hX.flow σ w) = c ∧
       Tendsto (fun i ↦ hX.flow (s i) (u i)) l (𝓝 (hX.flow σ w)) := by
   have hab : a ≠ b := by rintro rfl; exact (hbc.trans hca).false
@@ -266,7 +217,7 @@ theorem exists_tendsto_flow_of_tendsto (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(�
     ((hX.flow.continuous continuous_const continuous_id).tendsto w).comp hu
   have ht := hX.tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet hf hab
     (hX.flow.isInvariant_unstableSet_inter_stableSet a b σ hw) hu' (σ := fun i ↦ s i - σ)
-    fun i ↦ by rw [← Flow.map_add, sub_add_cancel, hs, hσ]
+    (hs.mono fun i hi ↦ by rw [← Flow.map_add, sub_add_cancel, hi, hσ])
   refine ⟨σ, hσ, ?_⟩
   simpa only [Function.comp_def, ← Flow.map_add, sub_add_cancel, zero_add] using
     ((hX.flow.continuous continuous_fst continuous_snd).tendsto (0, hX.flow σ w)).comp

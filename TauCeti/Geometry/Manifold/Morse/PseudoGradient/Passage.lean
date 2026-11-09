@@ -73,6 +73,28 @@ theorem splitCoord_linearFlow (t : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ)
 
 end MorseChart
 
+/-- Along the split hyperbolic flow, a bound on the norms of both factors at times `0` and `t`
+holds at every time between them, since `e^{-s}` and `e^s` are monotone in `s`. -/
+private theorem norm_splitQuadraticFlow_le_of_mem_uIcc {Eₛ Eᵤ : Type*} [NormedAddCommGroup Eₛ]
+    [NormedSpace ℝ Eₛ] [NormedAddCommGroup Eᵤ] [NormedSpace ℝ Eᵤ] {z : WithLp 2 (Eₛ × Eᵤ)}
+    {C t s : ℝ} (hs : s ∈ uIcc 0 t) (h₀ : ‖z.fst‖ ≤ C ∧ ‖z.snd‖ ≤ C)
+    (ht : ‖(splitQuadraticFlow t z).fst‖ ≤ C ∧ ‖(splitQuadraticFlow t z).snd‖ ≤ C) :
+    ‖(splitQuadraticFlow s z).fst‖ ≤ C ∧ ‖(splitQuadraticFlow s z).snd‖ ≤ C := by
+  rw [norm_fst_splitQuadraticFlow, norm_snd_splitQuadraticFlow] at ht ⊢
+  have hs₁ := (Real.exp_monotone.image_uIcc_subset (mem_image_of_mem _ hs)).2
+  have hs₂ := ((Real.exp_monotone.comp_antitone fun _ _ h ↦ neg_le_neg h).image_uIcc_subset
+    (mem_image_of_mem _ hs)).2
+  simp only [Function.comp_apply, neg_zero, Real.exp_zero] at hs₁ hs₂
+  constructor
+  · calc Real.exp (-s) * ‖z.fst‖ ≤ max 1 (Real.exp (-t)) * ‖z.fst‖ := by gcongr
+      _ = max ‖z.fst‖ (Real.exp (-t) * ‖z.fst‖) := by
+        rw [max_mul_of_nonneg _ _ (norm_nonneg _), one_mul]
+      _ ≤ C := max_le h₀.1 ht.1
+  · calc Real.exp s * ‖z.snd‖ ≤ max 1 (Real.exp t) * ‖z.snd‖ := by gcongr
+      _ = max ‖z.snd‖ (Real.exp t * ‖z.snd‖) := by
+        rw [max_mul_of_nonneg _ _ (norm_nonneg _), one_mul]
+      _ ≤ C := max_le h₀.2 ht.2
+
 namespace IsAdaptedPseudoGradient
 
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
@@ -156,34 +178,17 @@ theorem flow_splitEntryTime_of_norm_lt (hX : IsAdaptedPseudoGradient f X) (φ : 
   have hwz : φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)) = w := by
     rw [LinearEquiv.symm_apply_apply, φ.toChart_symm_coord_symm_coord hw]
   conv_lhs => rw [← hwz]
-  refine hX.flow_toChart_symm_splitCoord_symm φ hφ hε₂ fun s hs ↦ ?_
-  -- Bound `exp s` and `exp (-s)` on the time interval between `0` and `t`.
-  have hs₁ := (Real.exp_monotone.image_uIcc_subset (mem_image_of_mem _ hs)).2
-  have hs₂ := ((Real.exp_monotone.comp_antitone fun _ _ h ↦ neg_le_neg h).image_uIcc_subset
-    (mem_image_of_mem _ hs)).2
-  simp only [Function.comp_apply, neg_zero, Real.exp_zero] at hs₁ hs₂
-  rw [norm_fst_splitQuadraticFlow, norm_snd_splitQuadraticFlow]
-  rcases (norm_nonneg z.fst).eq_or_lt with h0 | h0
-  · have : s = 0 := by simpa [splitEntryTime_def, ← h0] using hs
-    subst this
-    simp only [neg_zero, Real.exp_zero, one_mul]
-    constructor <;> linarith
-  have hexp : Real.exp (splitEntryTime ε z) = ‖z.fst‖ / ε := by
-    rw [splitEntryTime_def]; exact Real.exp_log (by positivity)
-  rw [hexp] at hs₁
-  rw [Real.exp_neg (splitEntryTime ε z), hexp, inv_div] at hs₂
-  constructor
-  · calc Real.exp (-s) * ‖z.fst‖ ≤ max 1 (ε / ‖z.fst‖) * ‖z.fst‖ := by gcongr
-      _ ≤ 2 * ε := by
-        rcases le_total 1 (ε / ‖z.fst‖) with h | h
-        · rw [max_eq_right h, div_mul_cancel₀ _ h0.ne']; linarith
-        · rw [max_eq_left h]; linarith
-  · calc Real.exp s * ‖z.snd‖ ≤ max 1 (‖z.fst‖ / ε) * ‖z.snd‖ := by gcongr
-      _ ≤ 2 * ε := by
-        have : max 1 (‖z.fst‖ / ε) ≤ 2 :=
-          max_le one_le_two ((div_le_iff₀ hε).2 (by linarith))
-        nlinarith [norm_nonneg z.snd]
-
+  refine hX.flow_toChart_symm_splitCoord_symm φ hφ hε₂ fun s hs ↦
+    norm_splitQuadraticFlow_le_of_mem_uIcc hs ⟨hfst.le, by linarith⟩ ?_
+  -- At the entry time the contracting factor has norm `ε`, and the expanding one has grown by the
+  -- factor `‖z.fst‖ / ε < 2`.
+  rcases eq_or_ne z.fst 0 with h0 | h0
+  · simp only [norm_fst_splitQuadraticFlow, norm_snd_splitQuadraticFlow, splitEntryTime_def, h0,
+      norm_zero, zero_div, Real.log_zero, neg_zero, Real.exp_zero, one_mul, mul_zero]
+    exact ⟨by linarith, by linarith⟩
+  rw [norm_fst_splitQuadraticFlow_splitEntryTime hε h0,
+    norm_snd_splitQuadraticFlow_splitEntryTime hε h0, div_le_iff₀ hε]
+  exact ⟨by linarith, by nlinarith [norm_nonneg z.fst, norm_nonneg z.snd]⟩
 
 /-- **Leaving the Morse box.** Let `X` be linear in the Morse chart `φ`, whose coordinate cube of
 radius `2 ε` lies in the chart. Near the exit face, at a point `w` whose expanding split
@@ -204,33 +209,17 @@ theorem flow_splitExitTime_of_norm_lt (hX : IsAdaptedPseudoGradient f X) (φ : M
   have hwz : φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm z)) = w := by
     rw [LinearEquiv.symm_apply_apply, φ.toChart_symm_coord_symm_coord hw]
   conv_lhs => rw [← hwz]
-  refine hX.flow_toChart_symm_splitCoord_symm φ hφ hε₂ fun s hs ↦ ?_
-  -- Bound `exp s` and `exp (-s)` on the time interval between `0` and `t`.
-  have hs₁ := (Real.exp_monotone.image_uIcc_subset (mem_image_of_mem _ hs)).2
-  have hs₂ := ((Real.exp_monotone.comp_antitone fun _ _ h ↦ neg_le_neg h).image_uIcc_subset
-    (mem_image_of_mem _ hs)).2
-  simp only [Function.comp_apply, neg_zero, Real.exp_zero] at hs₁ hs₂
-  rw [norm_fst_splitQuadraticFlow, norm_snd_splitQuadraticFlow]
-  rcases (norm_nonneg z.snd).eq_or_lt with h0 | h0
-  · have : s = 0 := by simpa [splitExitTime_def, ← h0] using hs
-    subst this
-    simp only [neg_zero, Real.exp_zero, one_mul]
-    constructor <;> linarith
-  have hexp : Real.exp (splitExitTime ε z) = ε / ‖z.snd‖ := by
-    rw [splitExitTime_def]; exact Real.exp_log (by positivity)
-  rw [hexp] at hs₁
-  rw [Real.exp_neg (splitExitTime ε z), hexp, inv_div] at hs₂
-  constructor
-  · calc Real.exp (-s) * ‖z.fst‖ ≤ max 1 (‖z.snd‖ / ε) * ‖z.fst‖ := by gcongr
-      _ ≤ 2 * ε := by
-        have : max 1 (‖z.snd‖ / ε) ≤ 2 :=
-          max_le one_le_two ((div_le_iff₀ hε).2 (by linarith))
-        nlinarith [norm_nonneg z.fst]
-  · calc Real.exp s * ‖z.snd‖ ≤ max 1 (ε / ‖z.snd‖) * ‖z.snd‖ := by gcongr
-      _ ≤ 2 * ε := by
-        rcases le_total 1 (ε / ‖z.snd‖) with h | h
-        · rw [max_eq_right h, div_mul_cancel₀ _ h0.ne']; linarith
-        · rw [max_eq_left h]; linarith
+  refine hX.flow_toChart_symm_splitCoord_symm φ hφ hε₂ fun s hs ↦
+    norm_splitQuadraticFlow_le_of_mem_uIcc hs ⟨by linarith, hsnd.le⟩ ?_
+  -- At the exit time the expanding factor has norm `ε`, and the contracting one has shrunk by the
+  -- factor `ε / ‖z.snd‖ > 1 / 2`.
+  rcases eq_or_ne z.snd 0 with h0 | h0
+  · simp only [norm_fst_splitQuadraticFlow, norm_snd_splitQuadraticFlow, splitExitTime_def, h0,
+      norm_zero, div_zero, Real.log_zero, neg_zero, Real.exp_zero, one_mul, mul_zero]
+    exact ⟨by linarith, by linarith⟩
+  rw [norm_fst_splitQuadraticFlow_splitExitTime hε h0,
+    norm_snd_splitQuadraticFlow_splitExitTime hε h0, div_le_iff₀ hε]
+  exact ⟨by nlinarith [norm_nonneg z.fst, norm_nonneg z.snd], by linarith⟩
 
 end IsAdaptedPseudoGradient
 
