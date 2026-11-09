@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Unbundled.IsPowMulFaithful
 public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 public import TauCeti.Analysis.Normed.Unbundled.RootBound
+public import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
 
 /-!
 # Point norms and the supremum seminorm of an affinoid algebra
@@ -163,17 +164,8 @@ theorem IsAffinoidAlgebra.pointNorm_maximalSpectrumComap [IsUltrametricDist K] [
   congr 1
   exact MaximalSpectrum.ext (hB.maximalSpectrumComap_asIdeal φ x)
 
-/-- The spectral norm of an element that is transcendental over `K` is zero, since its minimal
-polynomial is `0`. -/
-theorem spectralNorm_eq_zero_of_not_isAlgebraic {L : Type*} [Field L] [Algebra K L] {y : L}
-    (hy : ¬ IsAlgebraic K y) : spectralNorm K L y = 0 := by
-  have h0 : spectralValueTerms (0 : K[X]) = 0 :=
-    funext fun n ↦ spectralValueTerms_of_natDegree_le _ (by simp)
-  rw [spectralNorm, minpoly.eq_zero fun h ↦ hy h.isAlgebraic, spectralValue, h0]
-  exact ciSup_const
-
 @[simp]
-theorem pointNorm_neg [IsUltrametricDist K] (x : MaximalSpectrum A) (f : A) :
+theorem _root_.MaximalSpectrum.pointNorm_neg [IsUltrametricDist K] (x : MaximalSpectrum A) (f : A) :
     pointNorm K x (-f) = pointNorm K x f := by
   let := Ideal.Quotient.field x.asIdeal
   simp only [pointNorm, map_neg]
@@ -184,7 +176,8 @@ theorem pointNorm_neg [IsUltrametricDist K] (x : MaximalSpectrum A) (f : A) :
 
 /-- The absolute value at a classical point is homogeneous for scalars of `K`:
 `|(c • f)(x)| = ‖c‖ * |f(x)|`. -/
-theorem pointNorm_smul [IsUltrametricDist K] (x : MaximalSpectrum A) (c : K) (f : A) :
+theorem _root_.MaximalSpectrum.pointNorm_smul [IsUltrametricDist K] (x : MaximalSpectrum A) (c : K)
+    (f : A) :
     pointNorm K x (c • f) = ‖c‖ * pointNorm K x f := by
   let := Ideal.Quotient.field x.asIdeal
   have hmk : Ideal.Quotient.mk x.asIdeal (c • f) = c • Ideal.Quotient.mk x.asIdeal f := by
@@ -201,7 +194,8 @@ theorem pointNorm_smul [IsUltrametricDist K] (x : MaximalSpectrum A) (c : K) (f 
 
 open Polynomial IntermediateField in
 /-- `|(f ^ n)(x)| = |f(x)| ^ n` at every classical point `x`. -/
-theorem pointNorm_pow [IsUltrametricDist K] (x : MaximalSpectrum A) (f : A) (n : ℕ) :
+theorem _root_.MaximalSpectrum.pointNorm_pow [IsUltrametricDist K] (x : MaximalSpectrum A) (f : A)
+    (n : ℕ) :
     pointNorm K x (f ^ n) = pointNorm K x f ^ n := by
   let := Ideal.Quotient.field x.asIdeal
   simp only [pointNorm, map_pow]
@@ -366,18 +360,18 @@ theorem isUnit_one_sub_of_supSeminorm_lt_one {a : A}
 
 @[simp]
 theorem supSeminorm_neg [IsUltrametricDist K] (f : A) : supSeminorm K (-f) = supSeminorm K f := by
-  simp only [supSeminorm, pointNorm_neg]
+  simp only [supSeminorm, MaximalSpectrum.pointNorm_neg]
 
 /-- The supremum seminorm is homogeneous for scalars of `K`: `|c • f|sup = ‖c‖ * |f|sup`. -/
 theorem supSeminorm_smul [IsUltrametricDist K] (c : K) (f : A) :
     supSeminorm K (c • f) = ‖c‖ * supSeminorm K f := by
-  simp only [supSeminorm, pointNorm_smul, Real.mul_iSup_of_nonneg (norm_nonneg c)]
+  simp only [supSeminorm, MaximalSpectrum.pointNorm_smul, Real.mul_iSup_of_nonneg (norm_nonneg c)]
 
 /-- `|f ^ n|sup = |f|sup ^ n` for `n ≠ 0`, including on the zero algebra. For `n = 0` the
 statement fails on the zero algebra. -/
 theorem supSeminorm_pow [IsUltrametricDist K] (f : A) {n : ℕ} (hn : n ≠ 0) :
     supSeminorm K (f ^ n) = supSeminorm K f ^ n := by
-  simp only [supSeminorm, pointNorm_pow,
+  simp only [supSeminorm, MaximalSpectrum.pointNorm_pow,
     Real.iSup_pow_of_ne_zero (fun _ ↦ pointNorm_nonneg f) hn]
 
 /-- The supremum seminorm is power-multiplicative: `|f ^ n|sup = |f|sup ^ n` for `n ≥ 1`. -/
