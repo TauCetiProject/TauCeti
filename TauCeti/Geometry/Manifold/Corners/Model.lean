@@ -93,14 +93,14 @@ theorem euclideanQuadrantFaceParam_nonneg (i : Fin (m + 1)) (q : EuclideanQuadra
 
 /-- The inclusion of the quadrant of dimension `m` onto the face `z i = 0` of the quadrant of
 dimension `m + 1`: reinsert a zero coordinate in slot `i`. -/
-@[expose] def euclideanQuadrantFaceInclusion (i : Fin (m + 1)) (q : EuclideanQuadrant m) :
+def euclideanQuadrantFaceInclusion (i : Fin (m + 1)) (q : EuclideanQuadrant m) :
     EuclideanQuadrant (m + 1) :=
   ⟨euclideanQuadrantFaceParam i q.1, euclideanQuadrantFaceParam_nonneg i q⟩
 
 @[simp]
 theorem coe_euclideanQuadrantFaceInclusion (i : Fin (m + 1)) (q : EuclideanQuadrant m) :
     (euclideanQuadrantFaceInclusion i q).1 = euclideanQuadrantFaceParam i q.1 :=
-  rfl
+  (rfl)
 
 theorem continuous_euclideanQuadrantFaceInclusion (i : Fin (m + 1)) :
     Continuous (euclideanQuadrantFaceInclusion (m := m) i) :=

@@ -95,6 +95,7 @@ private theorem faceInclusion_faceCoord
     (p : {p : M // p ∈ e.source ∧ e.extend (𝓡c (m + 1)) p i = 0}) :
     euclideanQuadrantFaceInclusion i (faceCoord e i p) = e p := by
   apply Subtype.ext
+  rw [coe_euclideanQuadrantFaceInclusion]
   exact euclideanQuadrantFaceParam_faceProj
     (by simpa [OpenPartialHomeomorph.extend_coe] using p.2.2)
 
@@ -116,11 +117,11 @@ private theorem range_faceCoord :
         e.extend (𝓡c (m + 1)) (e.symm (euclideanQuadrantFaceInclusion i q)) i = 0 := by
       refine ⟨e.map_target hq, ?_⟩
       rw [OpenPartialHomeomorph.extend_coe, comp_apply, e.right_inv hq]
-      simp [euclideanQuadrantFaceInclusion]
+      simp
     refine ⟨⟨_, hp⟩, Subtype.ext ?_⟩
     simp only [faceCoord]
     rw [e.right_inv hq]
-    simp [euclideanQuadrantFaceInclusion]
+    simp
 
 private theorem isOpenEmbedding_faceCoord : IsOpenEmbedding (faceCoord e i) := by
   refine .of_continuous_injective_isOpenMap continuous_faceCoord (fun p p' h ↦ ?_) ?_
@@ -222,7 +223,7 @@ theorem extend_faceChart_target :
   · rintro ⟨hy, q, rfl⟩
     rw [(𝓡c m).left_inv] at hy
     rw [modelWithCornersEuclideanQuadrant_symm_euclideanQuadrantFaceParam]
-    exact ⟨hy, euclideanQuadrantFaceInclusion i q, rfl⟩
+    exact ⟨hy, euclideanQuadrantFaceInclusion i q, coe_euclideanQuadrantFaceInclusion i q⟩
   · rintro ⟨hy, hyr⟩
     -- A vector whose zero extension lies in the quadrant lies in the quadrant.
     obtain ⟨q, rfl⟩ : y ∈ range (𝓡c m) := by
@@ -335,7 +336,7 @@ private theorem contDiffOn_faceChart_symm_trans [IsManifold (𝓡c (m + 1)) n M]
   · rintro _ ⟨hy, q, rfl⟩
     rw [mem_preimage, (𝓡c m).left_inv] at hy
     obtain ⟨p', hq, hp', -⟩ := key q hy
-    refine ⟨?_, euclideanQuadrantFaceInclusion i q, rfl⟩
+    refine ⟨?_, euclideanQuadrantFaceInclusion i q, coe_euclideanQuadrantFaceInclusion i q⟩
     rw [mem_preimage, modelWithCornersEuclideanQuadrant_symm_euclideanQuadrantFaceParam]
     refine ⟨hq, ?_⟩
     simp only [mem_preimage, OpenPartialHomeomorph.symm_symm, ← hp']
