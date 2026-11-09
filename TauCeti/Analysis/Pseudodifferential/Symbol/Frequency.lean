@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Examples of frequency-only symbols

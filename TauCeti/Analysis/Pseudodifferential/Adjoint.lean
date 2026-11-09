@@ -37,6 +37,9 @@ support.
   position.
 * `TauCeti.Symbol.spatialDeriv_adjoint`, `TauCeti.Symbol.frequencyDeriv_adjoint`: derivatives
   commute with taking adjoint symbols, `∂ (a*) = (∂ a)*`.
+* `TauCeti.Symbol.adjoint_zero`, `TauCeti.Symbol.adjoint_add`, `TauCeti.Symbol.adjoint_smul`,
+  `TauCeti.Symbol.adjoint_inclusion`: `a ↦ a*` is additive and conjugate-linear, and commutes
+  with raising the order.
 * `TauCeti.Symbol.integral_inner_quantizeSchwartzValue_adjoint`: the quantization of `a*` is the
   formal adjoint of the quantization of `a`.
 
@@ -114,7 +117,7 @@ private theorem HasCompactSpatialSupport.exists_norm_fourier_slice_sub_le
   -- The bracket `⟨θ⟩ ^ |m|` is at most `(1 + ‖θ‖) ^ k`.
   have hbr : (1 + ‖θ‖ ^ 2) ^ (|m| / 2) ≤ t ^ k := by
     calc (1 + ‖θ‖ ^ 2) ^ (|m| / 2) ≤ t ^ |m| :=
-          one_add_norm_sq_rpow_le_one_add_norm_rpow θ (abs_nonneg m)
+          one_add_norm_sq_rpow_half_le_one_add_norm_rpow θ (abs_nonneg m)
       _ ≤ t ^ (k : ℝ) := Real.rpow_le_rpow_of_exponent_le h1 (Nat.le_ceil _)
       _ = t ^ k := Real.rpow_natCast t k
   have hF := hdecay θ (ξ - (2 * π) • θ)
@@ -530,6 +533,9 @@ the quantization of `a` (`TauCeti.Symbol.integral_inner_quantizeSchwartzValue_ad
 def adjoint (a : Symbol n V W m) (ha : a.HasCompactSpatialSupport) : Symbol n W V m :=
   (leftSymbol a ha).map adjointRealCLM
 
+/-- The coefficient of the adjoint symbol is the Hilbert adjoint of the shifted Fourier integral:
+`a*(y, ξ) = (∫ exp(2πi ⟪θ, y⟫) â(θ, ξ - 2πθ) dθ)†`, where `â(θ, ξ)` is the Fourier transform of the
+position slice `x ↦ a(x, ξ)` at `θ`. -/
 theorem coefficient_adjoint (a : Symbol n V W m) (ha : a.HasCompactSpatialSupport)
     (y ξ : CoordinateSpace n) :
     (adjoint a ha).coefficient (y, ξ) = ContinuousLinearMap.adjoint
@@ -586,6 +592,53 @@ theorem frequencyDeriv_adjoint (a : Symbol n V W m) (ha : a.HasCompactSpatialSup
     (ha.contDiff_leftCoeff_infty.comp (contDiff_const.prodMk contDiff_id)).of_le (by simp)
   exact (adjointRealCLM.coordinateDeriv_comp_left [j] hf ξ).trans
     (congrArg adjointRealCLM (ha.coordinateDeriv_leftCoeff_snd j y ξ))
+
+/-! ### Algebraic properties of the adjoint symbol -/
+
+/-- The adjoint symbol of the zero symbol is zero. -/
+@[simp]
+theorem adjoint_zero (h : (0 : Symbol n V W m).HasCompactSpatialSupport) : adjoint 0 h = 0 := by
+  ext1
+  funext ⟨y, ξ⟩
+  simp [coefficient_adjoint, Real.fourier_eq, Circle.smul_def]
+
+/-- The adjoint symbol of a sum is the sum of the adjoint symbols. -/
+theorem adjoint_add {b : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) :
+    adjoint (a + b) (ha.add hb) = adjoint a ha + adjoint b hb := by
+  ext1
+  funext ⟨y, ξ⟩
+  have hs : ∀ {c : Symbol n V W m}, c.HasCompactSpatialSupport → ∀ ζ θ : CoordinateSpace n,
+      Integrable fun x ↦ 𝐞 (-⟪x, θ⟫) • c.coefficient (x, ζ) := fun {c} hc ζ θ ↦ by
+    obtain ⟨K, hK, hKc⟩ := hasCompactSpatialSupport_iff.mp hc
+    exact ((Real.continuous_fourierChar.comp (by fun_prop)).smul
+      (c.contDiff_coefficient_slice ζ).continuous).integrable_of_hasCompactSupport
+        (HasCompactSupport.intro hK fun x hx ↦ by simp [hKc x hx, Circle.smul_def])
+  rw [coefficient_add, Pi.add_apply, coefficient_adjoint, coefficient_adjoint,
+    coefficient_adjoint, ← map_add, ← integral_add (ha.integrable_leftCoeff_integrand (y, ξ))
+      (hb.integrable_leftCoeff_integrand (y, ξ))]
+  congr 2
+  funext θ
+  rw [← smul_add, Real.fourier_eq, Real.fourier_eq, Real.fourier_eq,
+    ← integral_add (hs ha _ θ) (hs hb _ θ)]
+  simp only [coefficient_add, Pi.add_apply, Circle.smul_def, smul_add]
+
+/-- The adjoint symbol of `c • a` is `conj c • a*`. -/
+@[simp]
+theorem adjoint_smul (c : ℂ) (ha : a.HasCompactSpatialSupport) :
+    adjoint (c • a) (ha.smul c) = (starRingEnd ℂ c) • adjoint a ha := by
+  ext1
+  funext ⟨y, ξ⟩
+  simp only [coefficient_smul, Pi.smul_apply, coefficient_adjoint, Real.fourier_eq, smul_comm _ c,
+    integral_smul, map_smulₛₗ]
+
+/-- Taking adjoint symbols commutes with raising the order of a symbol. -/
+@[simp]
+theorem adjoint_inclusion {m' : ℝ} (h : m ≤ m') (ha : a.HasCompactSpatialSupport) :
+    adjoint (inclusion h a) (ha.inclusion h) = inclusion h (adjoint a ha) := by
+  ext1
+  funext ⟨y, ξ⟩
+  simp only [coefficient_inclusion, coefficient_adjoint]
 
 /-! ### The adjoint identity -/
 

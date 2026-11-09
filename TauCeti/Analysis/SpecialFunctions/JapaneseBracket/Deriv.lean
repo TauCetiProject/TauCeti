@@ -41,8 +41,6 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
 * `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_sq_rpow_mul_le`: the derivative bounds for a
   bracket power times a smooth cutoff `χ` localized where `1 + ‖x‖ ^ 2 ≍ R ^ 2` and adapted to the
   scale `R`: the product is `O(R ^ s / R ^ k)` in its `k`-th derivative.
-* `TauCeti.one_add_norm_sq_rpow_half_le_one_add_norm_rpow`: for `p ≥ 0`,
-  `(1 + ‖x‖ ^ 2) ^ (p / 2) ≤ (1 + ‖x‖) ^ p`.
 * `TauCeti.exists_one_add_norm_smul_sq_rpow_le`,
   `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le`: the bracket power of a
   rescaled argument `c x` and its derivative bounds.
@@ -162,13 +160,6 @@ theorem one_add_norm_sq_rpow_half_le {a b R : ℝ} (ha : 0 < a) (hR : 0 < R) {ξ
           rw [hRu a ha]
           gcongr
           exact le_max_left _ _
-
-/-- For `p ≥ 0`, the bracket power `(1 + ‖x‖ ^ 2) ^ (p / 2)` is at most `(1 + ‖x‖) ^ p`. -/
-theorem one_add_norm_sq_rpow_half_le_one_add_norm_rpow (x : E) {p : ℝ} (hp : 0 ≤ p) :
-    (1 + ‖x‖ ^ 2) ^ (p / 2) ≤ (1 + ‖x‖) ^ p := by
-  rw [show p / 2 = 1 / 2 * p by ring, Real.rpow_mul (by positivity), ← Real.sqrt_eq_rpow]
-  gcongr
-  exact Real.sqrt_le_iff.2 ⟨by positivity, by nlinarith [norm_nonneg x]⟩
 
 section NormedSpace
 
