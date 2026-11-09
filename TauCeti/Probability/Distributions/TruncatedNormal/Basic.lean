@@ -254,11 +254,7 @@ theorem hasPDF_of_hasLaw_truncatedNormalMeasure {Ω : Type*} [MeasurableSpace Ω
     exact (cond_absolutelyContinuous).trans (gaussianReal_absolutelyContinuous m hv)
   have hfin : IsFiniteMeasure (truncatedNormalMeasure m v s) := by
     rw [truncatedNormalMeasure_def]
-    by_cases h : gaussianReal m v s = 0
-    · rw [cond_eq_zero_of_meas_eq_zero h]
-      infer_instance
-    · let _ := cond_isProbabilityMeasure h
-      infer_instance
+    infer_instance
   rw [hasPDF_iff_of_aemeasurable hX.aemeasurable, hX.map_eq]
   exact ⟨inferInstance, hac⟩
 
