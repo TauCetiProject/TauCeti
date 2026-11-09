@@ -27,7 +27,7 @@ public section
 
 open Polynomial
 
-namespace TauCeti
+namespace Ideal
 
 variable {R : Type*} [CommRing R]
 
@@ -35,7 +35,7 @@ variable {R : Type*} [CommRing R]
 coefficientwise modulo every power of an ideal whose power quotients are countable.
 The approximants belong to the given set.
 -/
-theorem _root_.Ideal.exists_countable_polynomial_approximations (I : Ideal R)
+theorem exists_countable_polynomial_approximations (I : Ideal R)
     (hI : ∀ k : ℕ, Countable (R ⧸ I ^ k))
     (s : Set R[X]) {n : ℕ} (hn : ∀ f ∈ s, f.natDegree ≤ n) :
     ∃ t ⊆ s, t.Countable ∧ ∀ f ∈ s, ∀ k : ℕ, ∃ g ∈ t,
@@ -69,4 +69,4 @@ theorem _root_.Ideal.exists_countable_polynomial_approximations (I : Ideal R)
       Polynomial.coeff_eq_zero_of_natDegree_lt ((hn f hf).trans_lt (by omega))
     simp [hgi, hfi]
 
-end TauCeti
+end Ideal
