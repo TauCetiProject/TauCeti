@@ -212,11 +212,6 @@ private theorem corner_iff {u v : ℝ} (hu : |u| < 1 / 2) (hv : |v| < 1 / 2) :
   · rintro ⟨h1, h2⟩
     refine ⟨⟨by nlinarith, by nlinarith⟩, by nlinarith, by nlinarith⟩
 
-/-- The absolute value on `ℝ` is `1`-Lipschitz. -/
-private theorem lipschitzWith_one_abs : LipschitzWith 1 (fun s : ℝ => |s|) :=
-  LipschitzWith.of_dist_le_mul fun x y => by
-    simpa [Real.dist_eq] using abs_abs_sub_abs_le_abs_sub x y
-
 /-- The vector `((√2)⁻¹, (√2)⁻¹)` has unit length. -/
 theorem inv_sqrt_two_sq_add_inv_sqrt_two_sq : ((√2)⁻¹ : ℝ) ^ 2 + ((√2)⁻¹ : ℝ) ^ 2 = 1 := by
   rw [inv_sqrt_two_sq]; norm_num
@@ -228,7 +223,7 @@ theorem isLipschitzChartWith_openUnitSquare_zero :
       (prodL2RotationChart 0 (√2)⁻¹ (√2)⁻¹ inv_sqrt_two_sq_add_inv_sqrt_two_sq)
       (fun s => |s|) (1 / 2) (1 / 2) := by
   refine isLipschitzChartWith_openUnitSquare_of 0 _ (by norm_num) (by norm_num) abs_zero
-    lipschitzWith_one_abs fun u v hu hv => ?_
+    (lipschitzWith_one_norm (E := ℝ)) fun u v hu hv => ?_
   refine Iff.trans ?_ (corner_iff hu hv)
   simp only [WithLp.zero_fst, WithLp.zero_snd, zero_add, mul_sub, mul_add]
 
@@ -305,7 +300,7 @@ theorem isLipschitzDomainWith_openUnitSquare :
     [refine ⟨_, _, hk0, ?_⟩; refine ⟨_, _, hk', ?_⟩; refine ⟨_, _, hk, ?_⟩;
       refine ⟨_, _, hk'', ?_⟩] <;>
   · refine ⟨fun s => |s|, 1 / 2, 1 / 2, isLipschitzChartWith_openUnitSquare_of x _
-      (by norm_num) (by norm_num) abs_zero lipschitzWith_one_abs fun u v hu hv => ?_⟩
+      (by norm_num) (by norm_num) abs_zero (lipschitzWith_one_norm (E := ℝ)) fun u v hu hv => ?_⟩
     refine Iff.trans ?_ (corner_iff hu hv)
     simp only [hs', ht', mem_Ioo]
     constructor <;> rintro ⟨⟨h1, h2⟩, h3, h4⟩ <;> refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> linarith
