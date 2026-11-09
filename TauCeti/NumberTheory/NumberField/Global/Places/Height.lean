@@ -47,6 +47,10 @@ normalized absolute value, `mulHeight x = ∏ᶠ v, max_i ‖x_i‖_v`.
   `|log ‖x‖_v| ≤ logHeight₁ x`.
 * `IsDedekindDomain.HeightOneSpectrum.abs_log_valuation_mul_log_absNorm_le_logHeight₁`: Liouville's
   inequality at a finite place, `|ord_v(x)| log N(v) ≤ logHeight₁ x`.
+* `NumberField.InfinitePlace.abs_mult_mul_log_le_logHeight₁` and
+  `NumberField.FinitePlace.abs_log_le_logHeight₁`: the same bound at a single place, for the
+  absolute value of an `InfinitePlace` weighted by its multiplicity and for that of a
+  `FinitePlace`.
 * `TauCeti.GlobalNumberFields.finsum_comp_log_normalizedAbsValue_eq_sum`: for `f` with `f 0 = 0`
   and `x` a unit outside a finite set `S` of finite places, `∑ᶠ v, f (log ‖x‖_v)` is a finite sum
   over `S` and the infinite places.
@@ -243,3 +247,32 @@ theorem abs_log_valuation_mul_log_absNorm_le_logHeight₁ (v : HeightOneSpectrum
   exact TauCeti.GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁ _ x
 
 end IsDedekindDomain.HeightOneSpectrum
+
+namespace NumberField.InfinitePlace
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- **Liouville's inequality at an infinite place.** The logarithm of the absolute value of an
+element `x` of a number field at an infinite place `w`, weighted by `w.mult`, is at most the
+logarithmic height of `x` in absolute value. Both sides vanish at `x = 0`. -/
+theorem abs_mult_mul_log_le_logHeight₁ (w : InfinitePlace K) (x : K) :
+    |w.mult * log (w x)| ≤ logHeight₁ x := by
+  simpa [log_pow] using
+    TauCeti.GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁ (Sum.inr w) x
+
+end NumberField.InfinitePlace
+
+namespace NumberField.FinitePlace
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- **Liouville's inequality at a finite place**, for the absolute value of a `FinitePlace`: the
+logarithm of the absolute value of an element `x` of a number field at a finite place `v` is at
+most the logarithmic height of `x` in absolute value. Both sides vanish at `x = 0`. -/
+theorem abs_log_le_logHeight₁ (v : FinitePlace K) (x : K) : |log (v x)| ≤ logHeight₁ x := by
+  have h := TauCeti.GlobalNumberFields.abs_log_normalizedAbsValue_le_logHeight₁
+    (Sum.inl v.maximalIdeal) x
+  rwa [TauCeti.GlobalNumberFields.normalizedAbsValue_inl, ← FinitePlace.norm_embedding,
+    ← FinitePlace.mk_apply, FinitePlace.mk_maximalIdeal] at h
+
+end NumberField.FinitePlace
