@@ -16,6 +16,7 @@ public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Topology.MetricSpace.Lipschitz
+import TauCeti.Analysis.Normed.Field.Lipschitz
 
 /-!
 # Uniform ellipticity for divergence-form PDE coefficients
@@ -54,6 +55,9 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   `C¹` entries on an open set has locally Lipschitz bilinear forms there.
 * `TauCeti.PDE.lipschitzOnWith_matrixBilinearForm_apply_apply`: the entries `⟪p, a(x) q⟫` of a
   coefficient field with Lipschitz bilinear forms are Lipschitz.
+* `TauCeti.PDE.exists_lipschitzOnWith_inv_matrixBilinearForm_self`: for a uniformly elliptic
+  coefficient field with Lipschitz bilinear forms, the reciprocal of the quadratic form of a
+  nonzero vector is bounded and Lipschitz.
 * `TauCeti.PDE.exists_lipschitzWith_matrixBilinearForm_eqOn`: a coefficient field with
   Lipschitz bilinear forms on a set agrees there with one that is Lipschitz on the whole space.
 * `TauCeti.PDE.matrixBilinearFormLinear`: the coefficient matrix-to-bilinear-form map as a
@@ -291,29 +295,6 @@ lemma norm_matrixBilinearForm_le_sum_abs (A : Matrix n n ℝ) :
   rw [abs_mul, abs_mul, mul_left_comm, mul_assoc]
   exact mul_le_mul_of_nonneg_left (mul_le_mul hη hξ (abs_nonneg _) (norm_nonneg _))
     (abs_nonneg _)
-
-/-- The matrix bilinear form is the inner product against the Euclidean operator of the matrix:
-`ηᵀ A ξ = ⟪η, A ξ⟫`. -/
-lemma matrixBilinearForm_eq_inner [DecidableEq n] (A : Matrix n n ℝ) (η ξ : EuclideanSpace ℝ n) :
-    matrixBilinearForm A η ξ = inner ℝ η (toEuclideanCLM (n := n) (𝕜 := ℝ) A ξ) := by
-  rw [matrixBilinearForm_apply, inner_toEuclideanCLM]
-
-/-- **Congruence of the matrix bilinear form.** The bilinear form of `M A Mᵀ` is the bilinear form
-of `A` evaluated at the images under the adjoint of the operator of `M`: `ηᵀ M A Mᵀ ξ =
-(Mᵀ η)ᵀ A (Mᵀ ξ)`. This is how the coefficients of a divergence-form operator change under a
-linear change of variables. -/
-lemma matrixBilinearForm_mul_mul_transpose [DecidableEq n] (M A : Matrix n n ℝ)
-    (η ξ : EuclideanSpace ℝ n) :
-    matrixBilinearForm (M * A * Mᵀ) η ξ =
-      matrixBilinearForm A (ContinuousLinearMap.adjoint (toEuclideanCLM (n := n) (𝕜 := ℝ) M) η)
-        (ContinuousLinearMap.adjoint (toEuclideanCLM (n := n) (𝕜 := ℝ) M) ξ) := by
-  -- Over `ℝ` the transpose is the star, whose operator is the adjoint.
-  have hMt : toEuclideanCLM (n := n) (𝕜 := ℝ) Mᵀ =
-      ContinuousLinearMap.adjoint (toEuclideanCLM (n := n) (𝕜 := ℝ) M) := by
-    rw [← conjTranspose_eq_transpose_of_trivial, ← star_eq_conjTranspose, map_star,
-      ContinuousLinearMap.star_eq_adjoint]
-  simp only [matrixBilinearForm_eq_inner, map_mul, hMt, mul_apply_eq_comp,
-    ContinuousLinearMap.adjoint_inner_left]
 
 /-- The action of a matrix on Euclidean space is bounded by the operator norm of its bilinear
 form: `‖A ξ‖² = (A ξ)ᵀ A ξ ≤ ‖A‖ ‖A ξ‖ ‖ξ‖`. -/
@@ -977,6 +958,32 @@ theorem lipschitzOnWith_matrixBilinearForm_apply_apply {X : Type*} [PseudoEMetri
     (ContinuousLinearMap.lipschitzWith_apply p)).comp_lipschitzOnWith hK
   have hc : ‖q‖₊ * ‖p‖₊ * K = K * ‖p‖₊ * ‖q‖₊ := by ring
   rwa [hc] at h
+
+/-- If `a` is uniformly elliptic and bounded on `s` and `x ↦ a(x)` is Lipschitz on `s` as a bilinear
+form, then for `w ≠ 0` the form `a(x)(w, w)` is nonzero on `s` and its reciprocal is bounded and
+Lipschitz on `s`. -/
+theorem exists_lipschitzOnWith_inv_matrixBilinearForm_self {X : Type*} [PseudoMetricSpace X]
+    [DecidableEq n] {a : X → Matrix n n ℝ} {s : Set X} {K : ℝ≥0} {lam Lam : ℝ}
+    (ha : UniformlyEllipticOn s a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) s)
+    {w : EuclideanSpace ℝ n} (hw : w ≠ 0) :
+    ∃ (L : ℝ≥0) (B : ℝ),
+      LipschitzOnWith L (fun x => (matrixBilinearForm (a x) w w)⁻¹) s ∧
+      (∀ x ∈ s, ‖(matrixBilinearForm (a x) w w)⁻¹‖ ≤ B) ∧
+      ∀ x ∈ s, matrixBilinearForm (a x) w w ≠ 0 := by
+  have hβL := lipschitzOnWith_matrixBilinearForm_apply_apply hK
+  set m : ℝ := lam * ‖w‖ ^ 2
+  have hm : 0 < m := mul_pos ha.pos (pow_pos (norm_pos_iff.2 hw) 2)
+  have hcm : ∀ x ∈ s, m ≤ matrixBilinearForm (a x) w w :=
+    fun x hx => by simpa only [m, matrixBilinearForm_self] using ha.lower_bound hx w
+  have hrL : LipschitzOnWith (K * ‖w‖₊ * ‖w‖₊ / ⟨m, hm.le⟩ ^ 2)
+      (fun x => (matrixBilinearForm (a x) w w)⁻¹) s :=
+    (hβL w w).inv_of_le_norm hm fun x hx =>
+      (hcm x hx).trans (Real.le_norm_self (matrixBilinearForm (a x) w w))
+  refine ⟨_, m⁻¹, hrL, fun x hx => ?_, fun x hx => (hm.trans_le (hcm x hx)).ne'⟩
+  have hx' := hm.trans_le (hcm x hx)
+  rw [Real.norm_eq_abs, abs_inv, abs_of_pos hx']
+  exact inv_anti₀ hm (hcm x hx)
 
 /-- **A field that is Lipschitz on a set extends to a Lipschitz field on the whole space.** If
 `x ↦ a x` is Lipschitz on `S` in the operator norm of its bilinear forms, then `a` agrees on `S`

@@ -6,469 +6,511 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
-public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
+public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
+public import Mathlib.Analysis.CStarAlgebra.Matrix
 
+import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Calculus.FDeriv.EuclideanMatrix
-import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.Analysis.Matrix.EuclideanLin
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
-# Divergence-form equations under a change of variables
+# Change of variables in divergence-form equations
 
-Let `Φ` map an open set `U ⊆ ℝⁿ` onto an open set `V ⊆ ℝⁿ`, with inverse `Ψ : V → U`, both
-changes of variables of order one (`TauCeti.Wkp.IsChangeOfVariables`: differentiable, with bounded
-derivative and Jacobian determinant bounded away from zero). Write `DΦ(y)` for the Jacobian matrix
-of `Φ` at `y` and `J(y) = |det DΦ(y)|`. This file shows that the weak formulation of the
-divergence-form equation
+Let `Φ` map an open set `U ⊆ ℝⁿ` injectively onto an open set `V`, with derivative `DΦ(x)` of
+Jacobian matrix `M(x)` and Jacobian determinant `J(x) = |det DΦ(x)|`. A weak solution
+`u ∈ H¹(V)` of the divergence-form equation
 
 `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u = f` in `V`
 
-is carried by `v = u ∘ Φ` to the weak formulation of an equation of the same form in `U`, with the
-coefficients
+becomes, after the change of variables `u' = u ∘ Φ`, a weak solution of an equation of the same
+form in `U`,
 
-* `a_Φ(y) = J(y) DΦ(y)⁻¹ a(Φ y) DΦ(y)⁻ᵀ` (`TauCeti.PDE.pullbackPrincipalCoeff`);
-* `b_Φ(y) = J(y) DΦ(y)⁻¹ b(Φ y)` (`TauCeti.PDE.pullbackDriftCoeff`);
-* `c_Φ(y) = J(y) c(Φ y)` and `f_Φ(y) = J(y) f(Φ y)` (`TauCeti.PDE.pullbackDensity`).
+`-∂ᵢ(a'ⁱʲ ∂ⱼu') + b'ⁱ ∂ᵢu' + c' u' = f'` in `U`,
 
-Precisely, for `u ∈ H¹(V)` and `z ∈ H¹(U)` the energy forms agree,
-`a_Φ(u ∘ Φ, z) = a(u, z ∘ Ψ)` (`TauCeti.PDE.energyFormH1_pullback_compL`), and so do the forcing
-terms, `∫_U f_Φ z = ∫_V f (z ∘ Ψ)`. Since `z ↦ z ∘ Ψ` maps `H¹₀(U)` into `H¹₀(V)`, a weak solution
-on `V` becomes a weak solution of the transported equation on `U`
-(`TauCeti.PDE.energyFormH1_pullback_compL_eq_setIntegral`). Uniform ellipticity is preserved, with
-constants controlled by the bounds on `DΦ`, `DΨ` and the Jacobians
-(`TauCeti.PDE.UniformlyEllipticOn.pullbackPrincipalCoeff`), and the transported lower-order
-coefficients and forcing stay bounded, respectively square integrable.
+with the pulled-back coefficients
 
-Only the first derivatives of `Φ` and `Ψ` enter. Regularity of the transported coefficients beyond
-measurability and boundedness, such as Lipschitz continuity of `a_Φ`, needs more derivatives of `Φ`
-and is not treated here. Changes of variables of this kind are how boundary regularity is proved
-for divergence-form equations on curved domains: flattening the boundary turns the equation near a
-boundary point into one of the same type near a flat boundary portion, where the half-space theory
-applies.
+* `a'(x) = J(x) M(x)⁻¹ a(Φ x) M(x)⁻ᵀ` (`TauCeti.PDE.pullbackPrincipal`),
+* `b'(x) = J(x) M(x)⁻¹ b(Φ x)` (`TauCeti.PDE.pullbackDrift`),
+* `c'(x) = J(x) c(Φ x)` and `f'(x) = J(x) f(Φ x)` (`TauCeti.PDE.pullbackDensity`).
 
-## The computation
+The zeroth-order coefficient and the right-hand side transform as densities, because the
+volume element changes by the factor `J`. The transformed principal coefficient is again
+uniformly elliptic and bounded when `DΦ` and its inverse are bounded and `J` is bounded below
+(`TauCeti.PDE.UniformlyEllipticOn.pullbackPrincipal`). If moreover `Φ` has an inverse change of
+variables, the transformed drift, zeroth-order coefficient and right-hand side stay in `Lᵖ`
+(`TauCeti.PDE.memLp_pullbackDrift`, `TauCeti.PDE.memLp_pullbackDensity`); with `p = ∞`, bounded
+lower-order coefficients stay bounded.
 
-By the chain rule `∇(u ∘ Φ)(y) = DΦ(y)ᵀ ∇u(Φ y)` and `∇(z ∘ Ψ)(Φ y) = DΦ(y)⁻ᵀ ∇z(y)`, since
-`DΨ(Φ y) = DΦ(y)⁻¹`. Substituting `x = Φ y` in `∫_V ⟨a ∇u, ∇(z ∘ Ψ)⟩` gives
-`∫_U J ⟨a(Φ y) DΦ⁻ᵀ ∇v, DΦ⁻ᵀ ∇z⟩ = ∫_U ⟨a_Φ ∇v, ∇z⟩`, and likewise for the lower-order terms
-(`TauCeti.PDE.energyIntegrand_pullback` is the pointwise identity). The substitution is Mathlib's
-change of variables formula `MeasureTheory.integral_image_eq_integral_abs_det_fderiv_smul`.
+This is the change of variables that flattens the boundary of a domain: if `Φ` maps a piece of a
+half-space onto a neighbourhood of a boundary point of `Ω`, a weak solution in `Ω` becomes a weak
+solution near a flat boundary portion, where regularity up to the boundary can be proved by
+difference quotients in the tangential directions.
+
+## The argument
+
+The chain rule for weak gradients (`TauCeti.W1p.gradient_compL_ae`) gives
+`∇u'(x) = DΦ(x)* ∇u(Φ x)`, so `∇u(Φ x) = M(x)⁻ᵀ ∇u'(x)` wherever `DΦ(x)` is invertible. Hence
+`⟪a(Φ x) ∇u(Φ x), ∇w(Φ x)⟫ J(x) = ⟪a'(x) ∇u'(x), ∇w'(x)⟫`, and similarly for the lower-order terms
+(`TauCeti.PDE.energyIntegrand_pullback`). The change of variables formula for integrals
+(`MeasureTheory.integral_image_eq_integral_abs_det_fderiv_smul`) turns the energy form on `V`
+into the transformed energy form on `U` (`TauCeti.PDE.energyFormH1_compL`). If `Ψ` is an inverse
+change of variables, precomposition with `Ψ` maps `H¹₀(U)` into `H¹₀(V)` and is inverse to
+precomposition with `Φ`, so every test function on `U` comes from one on `V`, and the weak
+formulation transfers (`TauCeti.PDE.energyFormH1_compL_eq_setIntegral`).
 
 ## Main declarations
 
-* `TauCeti.PDE.pullbackPrincipalCoeff`, `TauCeti.PDE.pullbackDriftCoeff`,
-  `TauCeti.PDE.pullbackDensity`: the transported coefficients.
-* `TauCeti.PDE.energyFormH1_pullback_compL`: the energy forms agree.
-* `TauCeti.PDE.setIntegral_pullbackDensity_mul_value`: the forcing terms agree.
-* `TauCeti.PDE.energyFormH1_pullback_compL_eq_setIntegral`: weak solutions are transported to weak
-  solutions.
-* `TauCeti.PDE.UniformlyEllipticOn.pullbackPrincipalCoeff`: uniform ellipticity of the transported
-  principal coefficient.
-* `TauCeti.PDE.memLp_pullbackDensity`, `TauCeti.PDE.memLp_pullbackDriftCoeff`: the
-  transported forcing, mass and drift stay in `Lᵖ`.
+* `TauCeti.PDE.pullbackPrincipal`, `TauCeti.PDE.pullbackDrift`, `TauCeti.PDE.pullbackDensity`:
+  the transformed coefficients.
+* `TauCeti.PDE.energyFormH1_compL`: the energy form is invariant under the change of variables.
+* `TauCeti.PDE.energyFormH1_compL_eq_setIntegral`: weak solutions are carried to weak solutions.
+* `TauCeti.PDE.UniformlyEllipticOn.pullbackPrincipal`: uniform ellipticity and boundedness are
+  preserved, with explicit constants.
+* `TauCeti.PDE.memLp_pullbackDensity`, `TauCeti.PDE.memLp_pullbackDrift`: the transformed
+  zeroth-order coefficient, right-hand side and drift stay in `Lᵖ`.
 
 ## References
 
-* L. C. Evans, *Partial Differential Equations*, 2nd ed., §6.3.2, proof of Theorem 4 (the
-  transformed equation after flattening the boundary).
+* L. C. Evans, *Partial Differential Equations*, 2nd ed., §6.3.2, proof of Theorem 4 (flattening
+  the boundary transforms the equation into one of the same form).
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Section 8.4, proof of Theorem 8.12 (global regularity via a flattening of the boundary).
+  §8.1 and the proof of Theorem 8.12.
 -/
 
 public section
 
 noncomputable section
 
-open MeasureTheory Set TopologicalSpace Matrix Filter
-open scoped InnerProductSpace Topology
+open MeasureTheory Matrix Set TopologicalSpace
+open scoped InnerProductSpace
 
 namespace TauCeti
 
 namespace PDE
 
-variable {ι : Type*} [Fintype ι]
-
-/-! ### Pointwise linear algebra -/
-
-section Pointwise
-
-variable [DecidableEq ι]
-
-/-- **The pointwise change of variables in the energy integrand.** Let `N` be a matrix whose
-operator `S` is a right inverse of `T`, `T ∘ S = id`, and let `J` be a scalar. The energy integrand
-with principal coefficient `J N A Nᵀ`, drift `J N b` and mass `J c`, evaluated at the jets
-`(s, Tᵀ g)` and `(t, k)`, is `J` times the energy integrand of `(A, b, c)` at the jets `(s, g)` and
-`(t, Sᵀ k)`.
-
-At `T = DΦ(y)`, `N = DΦ(y)⁻¹` and `J = |det DΦ(y)|` this is the identity between the integrands of
-the transported and the original energy form. -/
-theorem energyIntegrand_pullback {T : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι}
-    {N : Matrix ι ι ℝ} (h : T ∘L toEuclideanCLM (𝕜 := ℝ) N = ContinuousLinearMap.id ℝ _)
-    (A : Matrix ι ι ℝ) (b : EuclideanSpace ℝ ι) (c J s t : ℝ) (g k : EuclideanSpace ℝ ι) :
-    energyIntegrand (J • (N * A * Nᵀ)) (J • toEuclideanCLM (𝕜 := ℝ) N b) (J * c)
-        (s, ContinuousLinearMap.adjoint T g) (t, k) =
-      J * energyIntegrand A b c (s, g)
-        (t, ContinuousLinearMap.adjoint (toEuclideanCLM (𝕜 := ℝ) N) k) := by
-  have hST : ContinuousLinearMap.adjoint (toEuclideanCLM (𝕜 := ℝ) N)
-      (ContinuousLinearMap.adjoint T g) = g := by
-    rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp, h,
-      ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
-  have hTS : T (J • toEuclideanCLM (𝕜 := ℝ) N b) = J • b := by
-    rw [map_smul, ← ContinuousLinearMap.comp_apply, h, ContinuousLinearMap.id_apply]
-  rw [energyIntegrand_apply, energyIntegrand_apply, matrixBilinearForm_smul_apply,
-    matrixBilinearForm_mul_mul_transpose]
-  simp only [hST, driftForm_apply, massForm_apply, ContinuousLinearMap.adjoint_inner_right, hTS,
-    real_inner_smul_left]
-  ring
-
-end Pointwise
-
-/-! ### The transported coefficients -/
+/-! ### The transformed coefficients -/
 
 section Coefficients
 
-variable (Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-section Matrix
+/-- The transformed principal coefficient `a'(x) = J(x) M(x)⁻¹ a(Φ x) M(x)⁻ᵀ` of a
+divergence-form operator under the change of variables `Φ`, where `M(x)` is the Jacobian matrix
+of `Φ` at `x` and `J(x) = |det DΦ(x)|`. -/
+def pullbackPrincipal (Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)
+    (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ) (x : EuclideanSpace ℝ ι) : Matrix ι ι ℝ :=
+  |(fderiv ℝ Φ x).det| •
+    (((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ x))⁻¹ * a (Φ x) *
+      ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ x))⁻¹ᵀ)
 
-variable [DecidableEq ι]
-
-/-- The **principal coefficient transported along `Φ`**,
-`a_Φ(y) = |det DΦ(y)| DΦ(y)⁻¹ a(Φ y) DΦ(y)⁻ᵀ`, where `DΦ(y)` is the Jacobian matrix of `Φ` at `y`.
-If `u` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = 0` weakly, then `u ∘ Φ` solves `-∂ᵢ((a_Φ)ⁱʲ ∂ⱼ(u ∘ Φ)) = 0` weakly
-(`TauCeti.PDE.energyFormH1_pullback_compL_eq_setIntegral`). -/
-def pullbackPrincipalCoeff (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ) (y : EuclideanSpace ℝ ι) :
-    Matrix ι ι ℝ :=
-  |(fderiv ℝ Φ y).det| • (((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ y))⁻¹ * a (Φ y) *
-    (((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ y))⁻¹)ᵀ)
-
-/-- The **drift coefficient transported along `Φ`**, `b_Φ(y) = |det DΦ(y)| DΦ(y)⁻¹ b(Φ y)`. -/
-def pullbackDriftCoeff (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (y : EuclideanSpace ℝ ι) :
+/-- The transformed drift `b'(x) = J(x) M(x)⁻¹ b(Φ x)` of a divergence-form operator under the
+change of variables `Φ`, where `M(x)` is the Jacobian matrix of `Φ` at `x` and
+`J(x) = |det DΦ(x)|`. -/
+def pullbackDrift (Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)
+    (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (x : EuclideanSpace ℝ ι) :
     EuclideanSpace ℝ ι :=
-  |(fderiv ℝ Φ y).det| •
-    toEuclideanCLM (𝕜 := ℝ) ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ y))⁻¹ (b (Φ y))
+  |(fderiv ℝ Φ x).det| •
+    toEuclideanCLM (𝕜 := ℝ) ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ x))⁻¹ (b (Φ x))
 
-theorem pullbackPrincipalCoeff_def (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
-    (y : EuclideanSpace ℝ ι) :
-    pullbackPrincipalCoeff Φ a y =
-      |(fderiv ℝ Φ y).det| • (((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ y))⁻¹ * a (Φ y) *
-        (((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ y))⁻¹)ᵀ) :=
+/-- The pullback `x ↦ |det DΦ(x)| f(Φ x)` of a density `f` under the change of variables `Φ`.
+The zeroth-order coefficient and the right-hand side of a divergence-form equation transform in
+this way. -/
+def pullbackDensity {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (Φ : E → E)
+    (f : E → ℝ) (x : E) : ℝ :=
+  |(fderiv ℝ Φ x).det| * f (Φ x)
+
+theorem pullbackPrincipal_apply (Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)
+    (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ) (x : EuclideanSpace ℝ ι) :
+    pullbackPrincipal Φ a x = |(fderiv ℝ Φ x).det| •
+      (((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ x))⁻¹ * a (Φ x) *
+        ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ x))⁻¹ᵀ) :=
   (rfl)
 
-theorem pullbackDriftCoeff_def (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)
-    (y : EuclideanSpace ℝ ι) :
-    pullbackDriftCoeff Φ b y = |(fderiv ℝ Φ y).det| •
-      toEuclideanCLM (𝕜 := ℝ) ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ y))⁻¹ (b (Φ y)) :=
+theorem pullbackDrift_apply (Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)
+    (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (x : EuclideanSpace ℝ ι) :
+    pullbackDrift Φ b x = |(fderiv ℝ Φ x).det| •
+      toEuclideanCLM (𝕜 := ℝ) ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ x))⁻¹ (b (Φ x)) :=
   (rfl)
 
-end Matrix
-
-/-- A **scalar density transported along `Φ`**, `f_Φ(y) = |det DΦ(y)| f(Φ y)`. It is the transported
-mass coefficient and the transported forcing term, and `∫_U f_Φ = ∫_{Φ(U)} f` when `Φ` is an
-injective change of variables on `U`. -/
-def pullbackDensity (f : EuclideanSpace ℝ ι → ℝ) (y : EuclideanSpace ℝ ι) : ℝ :=
-  |(fderiv ℝ Φ y).det| * f (Φ y)
-
-omit [Fintype ι] in
 @[simp]
-theorem pullbackDensity_apply (f : EuclideanSpace ℝ ι → ℝ) (y : EuclideanSpace ℝ ι) :
-    pullbackDensity Φ f y = |(fderiv ℝ Φ y).det| * f (Φ y) :=
+theorem pullbackDensity_apply {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (Φ : E → E)
+    (f : E → ℝ) (x : E) : pullbackDensity Φ f x = |(fderiv ℝ Φ x).det| * f (Φ x) :=
   (rfl)
+
+/-- Where `DΦ(x)` is invertible, the map of the inverse Jacobian matrix is a right inverse of
+`DΦ(x)`. -/
+private theorem fderiv_apply_toEuclideanCLM_inv_apply {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {x : EuclideanSpace ℝ ι} (hx : (fderiv ℝ Φ x).det ≠ 0) (v : EuclideanSpace ℝ ι) :
+    fderiv ℝ Φ x (toEuclideanCLM (𝕜 := ℝ) ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ x))⁻¹ v) =
+      v := by
+  obtain ⟨M, hMD⟩ : ∃ M, toEuclideanCLM (𝕜 := ℝ) M = fderiv ℝ Φ x :=
+    ⟨_, StarAlgEquiv.apply_symm_apply _ _⟩
+  rw [← hMD, det_toEuclideanCLM] at hx
+  rw [← hMD, StarAlgEquiv.symm_apply_apply,
+    toEuclideanCLM_apply_toEuclideanCLM_nonsing_inv_apply hx]
+
+/-- Where `DΦ(x)` is invertible, the adjoint of the map of the inverse Jacobian matrix is a left
+inverse of `DΦ(x)*`. -/
+private theorem adjoint_toEuclideanCLM_inv_adjoint_fderiv_apply
+    {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {x : EuclideanSpace ℝ ι}
+    (hx : (fderiv ℝ Φ x).det ≠ 0) (v : EuclideanSpace ℝ ι) :
+    (toEuclideanCLM (𝕜 := ℝ) ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ x))⁻¹).adjoint
+      ((fderiv ℝ Φ x).adjoint v) = v := by
+  refine ext_inner_right ℝ fun w => ?_
+  rw [ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.adjoint_inner_left,
+    fderiv_apply_toEuclideanCLM_inv_apply hx]
+
+/-- **The transformed principal coefficient on pulled-back covectors.** Where `DΦ(x)` is
+invertible, the bilinear form of `a'(x)` evaluated on `DΦ(x)* η` and `DΦ(x)* ξ` is
+`|det DΦ(x)|` times the bilinear form of `a(Φ x)` evaluated on `η` and `ξ`. -/
+theorem matrixBilinearForm_pullbackPrincipal {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ) {x : EuclideanSpace ℝ ι}
+    (hx : (fderiv ℝ Φ x).det ≠ 0) (η ξ : EuclideanSpace ℝ ι) :
+    matrixBilinearForm (pullbackPrincipal Φ a x) ((fderiv ℝ Φ x).adjoint η)
+        ((fderiv ℝ Φ x).adjoint ξ) =
+      |(fderiv ℝ Φ x).det| * matrixBilinearForm (a (Φ x)) η ξ := by
+  -- As operators, `a'(x) = J T a(Φ x) T*` with `T* DΦ(x)* = id`, where `T` is the map of `M⁻¹`.
+  rw [pullbackPrincipal_apply, matrixBilinearForm_smul_apply, matrixBilinearForm_apply,
+    matrixBilinearForm_apply, ← inner_toEuclideanCLM, ← inner_toEuclideanCLM,
+    ← conjTranspose_eq_transpose_of_trivial, inner_toEuclideanCLM_mul_mul_conjTranspose,
+    ← adjoint_toEuclideanCLM, adjoint_toEuclideanCLM_inv_adjoint_fderiv_apply hx,
+    adjoint_toEuclideanCLM_inv_adjoint_fderiv_apply hx]
+
+/-- **The transformed drift on pulled-back covectors.** Where `DΦ(x)` is invertible,
+`⟪b'(x), DΦ(x)* ξ⟫ = |det DΦ(x)| ⟪b(Φ x), ξ⟫`. -/
+theorem inner_pullbackDrift_adjoint {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) {x : EuclideanSpace ℝ ι}
+    (hx : (fderiv ℝ Φ x).det ≠ 0) (ξ : EuclideanSpace ℝ ι) :
+    ⟪pullbackDrift Φ b x, (fderiv ℝ Φ x).adjoint ξ⟫_ℝ =
+      |(fderiv ℝ Φ x).det| * ⟪b (Φ x), ξ⟫_ℝ := by
+  rw [pullbackDrift_apply, real_inner_smul_left, ContinuousLinearMap.adjoint_inner_right,
+    fderiv_apply_toEuclideanCLM_inv_apply hx]
+
+/-- **The transformed energy integrand.** Where `DΦ(x)` is invertible, the energy integrand of
+the transformed coefficients on jets whose gradients are pulled back by `DΦ(x)*` is
+`|det DΦ(x)|` times the energy integrand of the original coefficients at `Φ x`. -/
+theorem energyIntegrand_pullback {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ) (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)
+    (c : EuclideanSpace ℝ ι → ℝ) {x : EuclideanSpace ℝ ι} (hx : (fderiv ℝ Φ x).det ≠ 0)
+    (U V : ℝ × EuclideanSpace ℝ ι) :
+    energyIntegrand (pullbackPrincipal Φ a x) (pullbackDrift Φ b x) (pullbackDensity Φ c x)
+        (U.1, (fderiv ℝ Φ x).adjoint U.2) (V.1, (fderiv ℝ Φ x).adjoint V.2) =
+      |(fderiv ℝ Φ x).det| * energyIntegrand (a (Φ x)) (b (Φ x)) (c (Φ x)) U V := by
+  simp only [energyIntegrand_apply, driftForm_apply, massForm_apply,
+    matrixBilinearForm_pullbackPrincipal a hx, inner_pullbackDrift_adjoint b hx,
+    pullbackDensity_apply]
+  ring
 
 end Coefficients
 
-/-! ### Transporting the weak formulation -/
+/-! ### Uniform ellipticity of the transformed principal coefficient -/
 
-section Transport
+section Ellipticity
 
-variable {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
-  {U V : Opens (EuclideanSpace ℝ ι)} {Φ Ψ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
-  {L L' κ κ' : ℝ}
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+  {L L' : ℝ}
 
-/-- **The forcing term under a change of variables.** With `Φ`, `Ψ` as in
-`TauCeti.PDE.energyFormH1_pullback_compL`, for every `f` and `z ∈ H¹(U)`,
-`∫_U f_Φ z = ∫_V f (z ∘ Ψ)`, where `f_Φ = |det DΦ| (f ∘ Φ)`. -/
-theorem setIntegral_pullbackDensity_mul_value (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
-    (hΨ : Wkp.IsChangeOfVariables 1 V U Ψ L' κ') (hΦΨ : RightInvOn Ψ Φ V)
-    (hΨΦ : LeftInvOn Ψ Φ U) (f : EuclideanSpace ℝ ι → ℝ) (z : W1p mu U 2) :
-    ∫ y in U, pullbackDensity Φ f y * W1p.value z y ∂mu =
-      ∫ x in V, f x * W1p.value (W1p.compL Ψ ENNReal.ofNat_ne_top hΨ.differentiableOn hΨ.injOn
-        hΨ.mapsTo hΨ.norm_fderiv_le hΨ.pos hΨ.le_abs_det z) x ∂mu := by
-  rw [hΦ.setIntegral_eq (hΦ.image_eq_of_rightInvOn hΨ.mapsTo hΦΨ)]
-  refine integral_congr_ae ?_
-  filter_upwards [hΦ.ae_comp (W1p.value_compL_ae Ψ ENNReal.ofNat_ne_top hΨ.differentiableOn
-      hΨ.injOn hΨ.mapsTo hΨ.norm_fderiv_le hΨ.pos hΨ.le_abs_det z),
-    ae_restrict_mem U.isOpen.measurableSet] with y hw hy
-  rw [hw, hΨΦ hy, pullbackDensity_apply, smul_eq_mul, mul_assoc]
+/-- The lower ellipticity bound of the transformed principal coefficient at a point: if `a(Φ x)`
+has lower constant `λ ≥ 0`, `‖DΦ(x)‖ ≤ L` and `c ≤ |det DΦ(x)|`, then `a'(x)` has lower constant
+`c λ / L²`. -/
+private theorem mul_norm_sq_le_toQuadraticForm'_pullbackPrincipal
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam c : ℝ} {x : EuclideanSpace ℝ ι}
+    (ha : ∀ ζ : EuclideanSpace ℝ ι, lam * ‖ζ‖ ^ 2 ≤ (a (Φ x)).toQuadraticForm' ζ) (hlam : 0 ≤ lam)
+    (hL0 : 0 < L) (hL : ‖fderiv ℝ Φ x‖ ≤ L) (hL' : ∀ v, ‖v‖ ≤ L' * ‖fderiv ℝ Φ x v‖)
+    (hL'0 : 0 ≤ L') (hc : 0 < c) (hdet : c ≤ |(fderiv ℝ Φ x).det|) (ξ : EuclideanSpace ℝ ι) :
+    c * lam / L ^ 2 * ‖ξ‖ ^ 2 ≤ (pullbackPrincipal Φ a x).toQuadraticForm' ξ := by
+  have hdet0 : (fderiv ℝ Φ x).det ≠ 0 := abs_pos.1 (hc.trans_le hdet)
+  have hunit : IsUnit (fderiv ℝ Φ x) := ContinuousLinearMap.isUnit_iff_bijective.2 <|
+    (Module.End.isUnit_iff _).1 ((LinearMap.isUnit_iff_isUnit_det _).2 hdet0.isUnit)
+  -- Write `ξ = DΦ(x)* ζ`; then `ξᵀ a' ξ = J ζᵀ a ζ ≥ c λ ‖ζ‖²` and `‖ξ‖ ≤ L ‖ζ‖`.
+  obtain ⟨ζ, rfl, -⟩ :=
+    (fderiv ℝ Φ x).exists_adjoint_apply_eq_and_norm_le hunit hL'0 hL' ξ
+  have hζ : ‖(fderiv ℝ Φ x).adjoint ζ‖ ≤ L * ‖ζ‖ := by
+    refine ((fderiv ℝ Φ x).adjoint.le_opNorm ζ).trans ?_
+    rw [LinearIsometryEquiv.norm_map]
+    exact mul_le_mul_of_nonneg_right hL (norm_nonneg _)
+  rw [toQuadraticForm'_apply, ← matrixBilinearForm_apply,
+    matrixBilinearForm_pullbackPrincipal a hdet0, matrixBilinearForm_apply,
+    ← toQuadraticForm'_apply]
+  calc c * lam / L ^ 2 * ‖(fderiv ℝ Φ x).adjoint ζ‖ ^ 2
+      ≤ c * lam / L ^ 2 * (L * ‖ζ‖) ^ 2 := by gcongr
+    _ = c * (lam * ‖ζ‖ ^ 2) := by field_simp
+    _ ≤ |(fderiv ℝ Φ x).det| * (a (Φ x)).toQuadraticForm' ζ :=
+        mul_le_mul hdet (ha ζ) (by positivity) (abs_nonneg _)
 
-variable [DecidableEq ι]
+/-- The upper bound of the transformed principal coefficient at a point: if `a(Φ x)` has upper
+constant `Λ ≥ 0`, `‖DΦ(x)‖ ≤ L` and `‖v‖ ≤ L' ‖DΦ(x) v‖`, then `a'(x)` has upper constant
+`Lⁿ L'² Λ`. -/
+private theorem abs_matrixBilinearForm_pullbackPrincipal_le
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {Lam : ℝ} {x : EuclideanSpace ℝ ι}
+    (ha : ∀ η ξ : EuclideanSpace ℝ ι, |matrixBilinearForm (a (Φ x)) η ξ| ≤ Lam * ‖η‖ * ‖ξ‖)
+    (hLam : 0 ≤ Lam) (hL : ‖fderiv ℝ Φ x‖ ≤ L) (hL' : ∀ v, ‖v‖ ≤ L' * ‖fderiv ℝ Φ x v‖)
+    (hL'0 : 0 ≤ L') (hdet0 : (fderiv ℝ Φ x).det ≠ 0) (η ξ : EuclideanSpace ℝ ι) :
+    |matrixBilinearForm (pullbackPrincipal Φ a x) η ξ| ≤
+      L ^ Fintype.card ι * L' ^ 2 * Lam * ‖η‖ * ‖ξ‖ := by
+  have hunit : IsUnit (fderiv ℝ Φ x) := ContinuousLinearMap.isUnit_iff_bijective.2 <|
+    (Module.End.isUnit_iff _).1 ((LinearMap.isUnit_iff_isUnit_det _).2 hdet0.isUnit)
+  -- Write `η = DΦ(x)* ζ'` and `ξ = DΦ(x)* ζ`, with `‖ζ'‖ ≤ L' ‖η‖` and `‖ζ‖ ≤ L' ‖ξ‖`, and
+  -- bound `|det DΦ(x)| ≤ ‖DΦ(x)‖ⁿ ≤ Lⁿ`.
+  obtain ⟨ζ', rfl, hζ'⟩ :=
+    (fderiv ℝ Φ x).exists_adjoint_apply_eq_and_norm_le hunit hL'0 hL' η
+  obtain ⟨ζ, rfl, hζ⟩ :=
+    (fderiv ℝ Φ x).exists_adjoint_apply_eq_and_norm_le hunit hL'0 hL' ξ
+  have hdetle : |(fderiv ℝ Φ x).det| ≤ L ^ Fintype.card ι := by
+    refine ((fderiv ℝ Φ x).abs_det_le_opNorm_pow).trans ?_
+    rw [finrank_euclideanSpace]
+    exact pow_le_pow_left₀ (norm_nonneg _) hL _
+  rw [matrixBilinearForm_pullbackPrincipal a hdet0, abs_mul, abs_abs]
+  calc |(fderiv ℝ Φ x).det| * |matrixBilinearForm (a (Φ x)) ζ' ζ|
+      ≤ L ^ Fintype.card ι * (Lam * ‖ζ'‖ * ‖ζ‖) :=
+        mul_le_mul hdetle (ha ζ' ζ) (abs_nonneg _) ((abs_nonneg _).trans hdetle)
+    _ ≤ L ^ Fintype.card ι * (Lam * (L' * ‖(fderiv ℝ Φ x).adjoint ζ'‖) *
+          (L' * ‖(fderiv ℝ Φ x).adjoint ζ‖)) := by
+        gcongr
+        exact (abs_nonneg _).trans hdetle
+    _ = L ^ Fintype.card ι * L' ^ 2 * Lam * ‖(fderiv ℝ Φ x).adjoint ζ'‖ *
+          ‖(fderiv ℝ Φ x).adjoint ζ‖ := by ring
 
-/-- **The energy form under a change of variables.** Let `Φ` be a change of variables of order one
-from `U` onto `V` with inverse `Ψ`, itself a change of variables of order one. For `u ∈ H¹(V)` and
-`z ∈ H¹(U)`, the energy form on `U` with the transported coefficients, evaluated at `u ∘ Φ` and `z`,
-equals the energy form on `V` evaluated at `u` and `z ∘ Ψ`:
+/-- **Uniform ellipticity is preserved by a change of variables.** Let `a` be uniformly elliptic
+and bounded on `t` with constants `λ ≤ Λ`, and let `Φ` map a nonempty set `s` into `t`, with
+`‖DΦ‖ ≤ L`, `‖v‖ ≤ L' ‖DΦ(x) v‖` for every `v`, and `c ≤ |det DΦ|` on `s` for some `c > 0`. Then
+the transformed principal coefficient `a'` is uniformly elliptic and bounded on `s` with
+constants `c λ / L²` and `Lⁿ L'² Λ`, where `n` is the dimension. -/
+theorem UniformlyEllipticOn.pullbackPrincipal [Nonempty ι] {s t : Set (EuclideanSpace ℝ ι)}
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam c : ℝ}
+    (ha : UniformlyEllipticOn t a lam Lam) (hmaps : MapsTo Φ s t) (hs : s.Nonempty)
+    (hL : ∀ x ∈ s, ‖fderiv ℝ Φ x‖ ≤ L) (hL' : ∀ x ∈ s, ∀ v, ‖v‖ ≤ L' * ‖fderiv ℝ Φ x v‖)
+    (hc : 0 < c) (hdet : ∀ x ∈ s, c ≤ |(fderiv ℝ Φ x).det|) :
+    UniformlyEllipticOn s (PDE.pullbackPrincipal Φ a) (c * lam / L ^ 2)
+      (L ^ Fintype.card ι * L' ^ 2 * Lam) := by
+  obtain ⟨hlam, hlamLam, ha⟩ := uniformlyEllipticOn_iff.1 ha
+  -- At a point `x₀ ∈ s`, `1 ≤ ‖DΦ(x₀)‖ L' ≤ L L'`, so `L' ≥ 0` and `L > 0`.
+  obtain ⟨x₀, hx₀⟩ := hs
+  have h1 := (fderiv ℝ Φ x₀).one_le_opNorm_mul_of_forall_norm_le (hL' x₀ hx₀)
+  have hL'0 : 0 ≤ L' := (pos_of_mul_pos_right (one_pos.trans_le h1) (norm_nonneg _)).le
+  have hLL' : 1 ≤ L * L' := h1.trans (mul_le_mul_of_nonneg_right (hL x₀ hx₀) hL'0)
+  have hL0 : 0 < L := pos_of_mul_pos_left (one_pos.trans_le hLL') hL'0
+  refine uniformlyEllipticOn_iff.2 ⟨by positivity, ?_, fun x hx => ⟨fun ξ => ?_, fun η ξ => ?_⟩⟩
+  · -- `c λ / L² ≤ Lⁿ λ L'² ≤ Lⁿ L'² Λ`, using `c ≤ |det DΦ| ≤ Lⁿ` and `1 ≤ L L'`.
+    have hcL : c ≤ L ^ Fintype.card ι := by
+      refine (hdet x₀ hx₀).trans (((fderiv ℝ Φ x₀).abs_det_le_opNorm_pow).trans ?_)
+      rw [finrank_euclideanSpace]
+      exact pow_le_pow_left₀ (norm_nonneg _) (hL x₀ hx₀) _
+    have hL'2 : 1 / L ^ 2 ≤ L' ^ 2 := by
+      rw [div_le_iff₀ (by positivity)]
+      nlinarith
+    have hΛ := mul_le_mul_of_nonneg_left hlamLam
+      (by positivity : (0 : ℝ) ≤ L ^ Fintype.card ι * L' ^ 2)
+    calc c * lam / L ^ 2 = c * lam * (1 / L ^ 2) := by ring
+      _ ≤ L ^ Fintype.card ι * lam * L' ^ 2 := by gcongr
+      _ ≤ L ^ Fintype.card ι * L' ^ 2 * Lam := by linarith
+  · exact mul_norm_sq_le_toQuadraticForm'_pullbackPrincipal (ha (hmaps hx)).1 hlam.le hL0
+      (hL x hx) (hL' x hx) hL'0 hc (hdet x hx) ξ
+  · rw [← matrixBilinearForm_apply]
+    refine abs_matrixBilinearForm_pullbackPrincipal_le (fun η ξ => ?_)
+      (hlam.le.trans hlamLam) (hL x hx) (hL' x hx) hL'0 (abs_pos.1 (hc.trans_le (hdet x hx))) η ξ
+    rw [matrixBilinearForm_apply]
+    exact (ha (hmaps hx)).2 η ξ
 
-`a_Φ(u ∘ Φ, z) = a(u, z ∘ Ψ)`.
+end Ellipticity
 
-No integrability of the coefficients is needed: the two integrands correspond under the
-substitution `x = Φ y`, integrable or not. -/
-theorem energyFormH1_pullback_compL (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
-    (hΨ : Wkp.IsChangeOfVariables 1 V U Ψ L' κ') (hΦΨ : RightInvOn Ψ Φ V)
-    (hΨΦ : LeftInvOn Ψ Φ U) (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+/-! ### The energy form and weak solutions under a change of variables -/
+
+section WeakSolution
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
+  [mu.IsAddHaarMeasure] {U V : Opens (EuclideanSpace ℝ ι)} {p : ENNReal} [Fact (1 ≤ p)]
+  {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {L c₀ : ℝ}
+
+omit [DecidableEq ι] in
+/-- **Change of variables in a density integral against a Sobolev function.** If `Φ` maps `U`
+onto `V`, then `∫_U f' (w ∘ Φ) = ∫_V f w` for every `w ∈ W^{1,p}(V)`, where
+`f' = |det DΦ| (f ∘ Φ)` is the pulled-back density. -/
+theorem setIntegral_pullbackDensity_mul_value_compL (hp : p ≠ ⊤) (hΦ : DifferentiableOn ℝ Φ U)
+    (hinj : InjOn Φ U) (hmaps : MapsTo Φ U V)
+    (hL : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)), ‖fderiv ℝ Φ x‖ ≤ L) (hc₀ : 0 < c₀)
+    (hdet : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)), c₀ ≤ |(fderiv ℝ Φ x).det|)
+    (himage : Φ '' U = V) (f : EuclideanSpace ℝ ι → ℝ) (w : W1p mu V p) :
+    ∫ x in U, pullbackDensity Φ f x * W1p.value (W1p.compL Φ hp hΦ hinj hmaps hL hc₀ hdet w) x
+        ∂mu =
+      ∫ y in V, f y * W1p.value w y ∂mu := by
+  have h := integral_image_eq_integral_abs_det_fderiv_smul mu U.isOpen.measurableSet
+    (fun x hx => ((hΦ x hx).differentiableAt (U.isOpen.mem_nhds hx)).hasFDerivAt.hasFDerivWithinAt)
+    hinj fun y => f y * W1p.value w y
+  rw [himage] at h
+  rw [h]
+  refine setIntegral_congr_ae U.isOpen.measurableSet ?_
+  filter_upwards [ae_restrict_iff' U.isOpen.measurableSet |>.1
+    (W1p.value_compL_ae Φ hp hΦ hinj hmaps hL hc₀ hdet w)] with x hx hxU
+  rw [hx hxU, pullbackDensity_apply, smul_eq_mul, mul_assoc]
+
+/-- **The energy form is invariant under a change of variables.** If `Φ` maps `U` onto `V`, the
+energy form on `V` with coefficients `a`, `b`, `c` of two functions `u, w ∈ H¹(V)` equals the
+energy form on `U` with the transformed coefficients `a'`, `b'`, `c'` of `u ∘ Φ` and `w ∘ Φ`. -/
+theorem energyFormH1_compL (hΦ : DifferentiableOn ℝ Φ U) (hinj : InjOn Φ U) (hmaps : MapsTo Φ U V)
+    (hL : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)), ‖fderiv ℝ Φ x‖ ≤ L) (hc₀ : 0 < c₀)
+    (hdet : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)), c₀ ≤ |(fderiv ℝ Φ x).det|)
+    (himage : Φ '' U = V) (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
     (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (c : EuclideanSpace ℝ ι → ℝ)
-    (u : W1p mu V 2) (z : W1p mu U 2) :
-    energyFormH1 (pullbackPrincipalCoeff Φ a) (pullbackDriftCoeff Φ b) (pullbackDensity Φ c)
-        (W1p.compL Φ ENNReal.ofNat_ne_top hΦ.differentiableOn hΦ.injOn hΦ.mapsTo
-          hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det u) z =
-      energyFormH1 a b c u
-        (W1p.compL Ψ ENNReal.ofNat_ne_top hΨ.differentiableOn hΨ.injOn hΨ.mapsTo
-          hΨ.norm_fderiv_le hΨ.pos hΨ.le_abs_det z) := by
-  set v := W1p.compL Φ ENNReal.ofNat_ne_top hΦ.differentiableOn hΦ.injOn hΦ.mapsTo
-    hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det u
-  set w := W1p.compL Ψ ENNReal.ofNat_ne_top hΨ.differentiableOn hΨ.injOn hΨ.mapsTo
-    hΨ.norm_fderiv_le hΨ.pos hΨ.le_abs_det z
-  rw [energyFormH1_def, energyFormH1_def,
-    hΦ.setIntegral_eq (hΦ.image_eq_of_rightInvOn hΨ.mapsTo hΦΨ)]
-  refine integral_congr_ae ?_
-  -- The jets of `v = u ∘ Φ` on `U`, and those of `w = z ∘ Ψ` at `Φ y`, by the chain rule.
-  filter_upwards [W1p.value_compL_ae Φ ENNReal.ofNat_ne_top hΦ.differentiableOn hΦ.injOn
-      hΦ.mapsTo hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det u,
-    W1p.gradient_compL_ae Φ ENNReal.ofNat_ne_top hΦ.differentiableOn hΦ.injOn
-      hΦ.mapsTo hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det u,
-    hΦ.ae_comp (W1p.value_compL_ae Ψ ENNReal.ofNat_ne_top hΨ.differentiableOn hΨ.injOn
-      hΨ.mapsTo hΨ.norm_fderiv_le hΨ.pos hΨ.le_abs_det z),
-    hΦ.ae_comp (W1p.gradient_compL_ae Ψ ENNReal.ofNat_ne_top hΨ.differentiableOn hΨ.injOn
-      hΨ.mapsTo hΨ.norm_fderiv_le hΨ.pos hΨ.le_abs_det z),
-    ae_restrict_mem U.isOpen.measurableSet] with y hv hgv hw hgw hy
-  rw [jetField_apply, jetField_apply, jetField_apply, jetField_apply, hv, hgv, hw, hgw,
-    hΨΦ hy]
-  rw [smul_eq_mul, pullbackPrincipalCoeff_def, pullbackDriftCoeff_def, pullbackDensity_apply,
-    ← toEuclideanCLM_inv_fderiv_of_invOn hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn
-      hΦΨ hΨΦ hy]
-  refine energyIntegrand_pullback ?_ _ _ _ _ _ _ _ _
-  rw [toEuclideanCLM_inv_fderiv_of_invOn hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn
-      hΦΨ hΨΦ hy,
-    fderiv_comp_fderiv_eq_id_of_invOn hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn hΦΨ
-      hΨΦ hy]
+    (u w : W1p mu V 2) :
+    energyFormH1 (pullbackPrincipal Φ a) (pullbackDrift Φ b) (pullbackDensity Φ c)
+        (W1p.compL Φ ENNReal.ofNat_ne_top hΦ hinj hmaps hL hc₀ hdet u)
+        (W1p.compL Φ ENNReal.ofNat_ne_top hΦ hinj hmaps hL hc₀ hdet w) =
+      energyFormH1 a b c u w := by
+  have h := integral_image_eq_integral_abs_det_fderiv_smul mu U.isOpen.measurableSet
+    (fun x hx => ((hΦ x hx).differentiableAt (U.isOpen.mem_nhds hx)).hasFDerivAt.hasFDerivWithinAt)
+    hinj fun y => energyIntegrand (a y) (b y) (c y) (jetField u y) (jetField w y)
+  rw [himage] at h
+  rw [energyFormH1_def, energyFormH1_def, h]
+  refine setIntegral_congr_ae U.isOpen.measurableSet ?_
+  filter_upwards [ae_restrict_iff' U.isOpen.measurableSet |>.1
+      (W1p.value_compL_ae Φ ENNReal.ofNat_ne_top hΦ hinj hmaps hL hc₀ hdet u),
+    ae_restrict_iff' U.isOpen.measurableSet |>.1
+      (W1p.gradient_compL_ae Φ ENNReal.ofNat_ne_top hΦ hinj hmaps hL hc₀ hdet u),
+    ae_restrict_iff' U.isOpen.measurableSet |>.1
+      (W1p.value_compL_ae Φ ENNReal.ofNat_ne_top hΦ hinj hmaps hL hc₀ hdet w),
+    ae_restrict_iff' U.isOpen.measurableSet |>.1
+      (W1p.gradient_compL_ae Φ ENNReal.ofNat_ne_top hΦ hinj hmaps hL hc₀ hdet w)]
+    with x hu hgu hw hgw hxU
+  rw [jetField_apply, jetField_apply, hu hxU, hgu hxU, hw hxU, hgw hxU, smul_eq_mul,
+    energyIntegrand_pullback a b c (abs_pos.1 (hc₀.trans_le (hdet x hxU)))
+      (W1p.value u (Φ x), W1p.gradient u (Φ x)) (W1p.value w (Φ x), W1p.gradient w (Φ x)),
+    jetField_apply, jetField_apply]
 
-/-- **Weak solutions under a change of variables.** Let `Φ` be a change of variables of order one
-from `U` onto `V` with inverse `Ψ`, itself a change of variables of order one. If `u ∈ H¹(V)` is a
-weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u = f` in `V`, tested against `H¹₀(V)`, then
-`u ∘ Φ ∈ H¹(U)` is a weak solution in `U` of the equation with the transported coefficients
-`a_Φ`, `b_Φ`, `c_Φ` and forcing `f_Φ = |det DΦ| (f ∘ Φ)`, tested against `H¹₀(U)`. -/
-theorem energyFormH1_pullback_compL_eq_setIntegral (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
-    (hΨ : Wkp.IsChangeOfVariables 1 V U Ψ L' κ') (hΦΨ : RightInvOn Ψ Φ V)
-    (hΨΦ : LeftInvOn Ψ Φ U) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+/-- **Weak solutions are carried to weak solutions by a change of variables.** Let `Φ` map `U`
+into `V` and `Ψ` map `V` into `U`, inverse to each other, both differentiable with bounded
+derivative and Jacobian bounded below. If `u ∈ H¹(V)` is a weak solution of
+`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u = f` in `V`, tested against `H¹₀(V)`, then `u ∘ Φ ∈ H¹(U)` is a weak
+solution of `-∂ᵢ(a'ⁱʲ ∂ⱼu') + b'ⁱ ∂ᵢu' + c' u' = f'` in `U`, tested against `H¹₀(U)`, with the
+transformed coefficients and the pulled-back right-hand side `f' = |det DΦ| (f ∘ Φ)`. -/
+theorem energyFormH1_compL_eq_setIntegral (hΦ : DifferentiableOn ℝ Φ U) (hinj : InjOn Φ U)
+    (hmaps : MapsTo Φ U V) (hL : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)), ‖fderiv ℝ Φ x‖ ≤ L)
+    (hc₀ : 0 < c₀) (hdet : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)), c₀ ≤ |(fderiv ℝ Φ x).det|)
+    {Ψ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {L' c₁ : ℝ} (hΨ : DifferentiableOn ℝ Ψ V)
+    (hΨmaps : MapsTo Ψ V U) (hΨL : ∀ y ∈ (V : Set (EuclideanSpace ℝ ι)), ‖fderiv ℝ Ψ y‖ ≤ L')
+    (hc₁ : 0 < c₁) (hΨdet : ∀ y ∈ (V : Set (EuclideanSpace ℝ ι)), c₁ ≤ |(fderiv ℝ Ψ y).det|)
+    (hΨΦ : LeftInvOn Ψ Φ U) (hΦΨ : RightInvOn Ψ Φ V) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c f : EuclideanSpace ℝ ι → ℝ}
     {u : W1p mu V 2}
     (hu : ∀ w : W1p0 mu V 2, energyFormH1 a b c u (w : W1p mu V 2) =
-      ∫ x in V, f x * W1p.value (w : W1p mu V 2) x ∂mu)
-    (z : W1p0 mu U 2) :
-    energyFormH1 (pullbackPrincipalCoeff Φ a) (pullbackDriftCoeff Φ b) (pullbackDensity Φ c)
-        (W1p.compL Φ ENNReal.ofNat_ne_top hΦ.differentiableOn hΦ.injOn hΦ.mapsTo
-          hΦ.norm_fderiv_le hΦ.pos hΦ.le_abs_det u) (z : W1p mu U 2) =
-      ∫ y in U, pullbackDensity Φ f y * W1p.value (z : W1p mu U 2) y ∂mu := by
-  have hz := W1p.compL_mem_w1p0Submodule_of_leftInvOn Ψ ENNReal.ofNat_ne_top hΨ.differentiableOn
-    hΨ.injOn hΨ.mapsTo hΨ.norm_fderiv_le hΨ.pos hΨ.le_abs_det hΦ.differentiableOn.continuousOn
-    hΦ.mapsTo hΦΨ z.2
-  rw [energyFormH1_pullback_compL hΦ hΨ hΦΨ hΨΦ,
-    setIntegral_pullbackDensity_mul_value hΦ hΨ hΦΨ hΨΦ]
-  exact hu ⟨_, hz⟩
+      ∫ y in V, f y * W1p.value (w : W1p mu V 2) y ∂mu)
+    (φ : W1p0 mu U 2) :
+    energyFormH1 (pullbackPrincipal Φ a) (pullbackDrift Φ b) (pullbackDensity Φ c)
+        (W1p.compL Φ ENNReal.ofNat_ne_top hΦ hinj hmaps hL hc₀ hdet u) (φ : W1p mu U 2) =
+      ∫ x in U, pullbackDensity Φ f x * W1p.value (φ : W1p mu U 2) x ∂mu := by
+  have hp : (2 : ENNReal) ≠ ⊤ := ENNReal.ofNat_ne_top
+  have himage : Φ '' U = V :=
+    Subset.antisymm hmaps.image_subset (hΦΨ.surjOn hΨmaps)
+  -- The test function `φ` on `U` is `w ∘ Φ` for `w = φ ∘ Ψ ∈ H¹₀(V)`.
+  set w := W1p.compL Ψ hp hΨ hΦΨ.injOn hΨmaps hΨL hc₁ hΨdet (φ : W1p mu U 2)
+  have hw : w ∈ w1p0Submodule mu V 2 :=
+    W1p.compL_mem_w1p0Submodule_of_leftInvOn Ψ hp hΨ hΦΨ.injOn hΨmaps hΨL hc₁
+      hΨdet hΦ.continuousOn hmaps hΦΨ φ.2
+  have hφ : W1p.compL Φ hp hΦ hinj hmaps hL hc₀ hdet w = φ :=
+    W1p.compL_compL_of_leftInvOn Φ hp hΦ hinj hmaps hL hc₀ hdet hΨ hΦΨ.injOn
+      hΨmaps hΨL hc₁ hΨdet hΨΦ (φ : W1p mu U 2)
+  rw [← hφ, energyFormH1_compL hΦ hinj hmaps hL hc₀ hdet himage,
+    setIntegral_pullbackDensity_mul_value_compL hp hΦ hinj hmaps hL hc₀ hdet himage]
+  exact hu ⟨w, hw⟩
 
+end WeakSolution
 
-/-! ### Ellipticity and bounds of the transported coefficients -/
+/-! ### Integrability of the transformed lower-order coefficients -/
 
-/-- The bilinear form of the transported principal coefficient at `y ∈ U` is
-`|det DΦ(y)|` times the bilinear form of `a(Φ y)` evaluated at `DΨ(Φ y)ᵀ η` and `DΨ(Φ y)ᵀ ξ`. -/
-theorem matrixBilinearForm_pullbackPrincipalCoeff (hΦ : DifferentiableOn ℝ Φ U)
-    (hmaps : MapsTo Φ U V) (hΨ : DifferentiableOn ℝ Ψ V) (hΦΨ : RightInvOn Ψ Φ V)
-    (hΨΦ : LeftInvOn Ψ Φ U) (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ) {y : EuclideanSpace ℝ ι}
-    (hy : y ∈ (U : Set (EuclideanSpace ℝ ι))) (η ξ : EuclideanSpace ℝ ι) :
-    matrixBilinearForm (pullbackPrincipalCoeff Φ a y) η ξ =
-      |(fderiv ℝ Φ y).det| * matrixBilinearForm (a (Φ y))
-        (ContinuousLinearMap.adjoint (fderiv ℝ Ψ (Φ y)) η)
-        (ContinuousLinearMap.adjoint (fderiv ℝ Ψ (Φ y)) ξ) := by
-  rw [pullbackPrincipalCoeff_def, matrixBilinearForm_smul_apply,
-    matrixBilinearForm_mul_mul_transpose,
-    toEuclideanCLM_inv_fderiv_of_invOn hΦ hmaps hΨ hΦΨ hΨΦ hy]
+section Integrability
 
-/-- The transported drift at `y ∈ U` is `|det DΦ(y)| DΨ(Φ y) b(Φ y)`. -/
-theorem pullbackDriftCoeff_eq (hΦ : DifferentiableOn ℝ Φ U) (hmaps : MapsTo Φ U V)
-    (hΨ : DifferentiableOn ℝ Ψ V) (hΦΨ : RightInvOn Ψ Φ V)
-    (hΨΦ : LeftInvOn Ψ Φ U) (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)
-    {y : EuclideanSpace ℝ ι} (hy : y ∈ (U : Set (EuclideanSpace ℝ ι))) :
-    pullbackDriftCoeff Φ b y = |(fderiv ℝ Φ y).det| • fderiv ℝ Ψ (Φ y) (b (Φ y)) := by
-  rw [pullbackDriftCoeff_def, toEuclideanCLM_inv_fderiv_of_invOn hΦ hmaps hΨ hΦΨ hΨΦ hy]
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
+  [mu.IsAddHaarMeasure] {U V : Opens (EuclideanSpace ℝ ι)}
+  {Φ Ψ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {L L' c₀ : ℝ}
 
-/-- The lower ellipticity bound of the transported principal coefficient at `y ∈ U`:
-`κ λ / L² ‖ξ‖² ≤ ξᵀ a_Φ(y) ξ`, since `‖ξ‖ ≤ L ‖DΨ(Φ y)ᵀ ξ‖` and `κ ≤ |det DΦ(y)|`. -/
-private theorem pullbackPrincipalCoeff_lower_bound {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    {lam Lam : ℝ} (ha : UniformlyEllipticOn (V : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ) (hΨ : Wkp.IsChangeOfVariables 1 V U Ψ L' κ')
-    (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U) (hL : 0 < L) {y : EuclideanSpace ℝ ι}
-    (hy : y ∈ (U : Set (EuclideanSpace ℝ ι))) (ξ : EuclideanSpace ℝ ι) :
-    κ * lam / L ^ 2 * ‖ξ‖ ^ 2 ≤ (pullbackPrincipalCoeff Φ a y).toQuadraticForm' ξ := by
-  set S := ContinuousLinearMap.adjoint (fderiv ℝ Ψ (Φ y))
-  -- `ξ = DΦ(y)ᵀ DΨ(Φ y)ᵀ ξ`, because `DΨ(Φ y) ∘ DΦ(y) = id`.
-  have hξ : ‖ξ‖ ≤ L * ‖S ξ‖ := by
-    have hST : fderiv ℝ Ψ (Φ y) ∘L fderiv ℝ Φ y = ContinuousLinearMap.id ℝ _ := by
-      have h := fderiv_comp_fderiv_eq_id_of_invOn hΨ.differentiableOn hΨ.mapsTo
-        hΦ.differentiableOn hΨΦ hΦΨ (hΦ.mapsTo hy)
-      rwa [hΨΦ hy] at h
-    have h : ContinuousLinearMap.adjoint (fderiv ℝ Φ y) (S ξ) = ξ := by
-      rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.adjoint_comp, hST,
-        ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
-    calc ‖ξ‖ = ‖ContinuousLinearMap.adjoint (fderiv ℝ Φ y) (S ξ)‖ := by rw [h]
-      _ ≤ ‖ContinuousLinearMap.adjoint (fderiv ℝ Φ y)‖ * ‖S ξ‖ :=
-        ContinuousLinearMap.le_opNorm _ _
-      _ ≤ L * ‖S ξ‖ := by
-        rw [LinearIsometryEquiv.norm_map]
-        exact mul_le_mul_of_nonneg_right (hΦ.norm_fderiv_le y hy) (norm_nonneg _)
-  rw [← matrixBilinearForm_self,
-    matrixBilinearForm_pullbackPrincipalCoeff hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn
-      hΦΨ hΨΦ a hy,
-    matrixBilinearForm_self]
-  have hsq : ‖ξ‖ ^ 2 / L ^ 2 ≤ ‖S ξ‖ ^ 2 := by
-    rw [div_le_iff₀ (by positivity)]
-    nlinarith [norm_nonneg ξ, norm_nonneg (S ξ)]
-  calc κ * lam / L ^ 2 * ‖ξ‖ ^ 2 = κ * (lam * (‖ξ‖ ^ 2 / L ^ 2)) := by ring
-    _ ≤ |(fderiv ℝ Φ y).det| * (lam * ‖S ξ‖ ^ 2) :=
-      mul_le_mul (hΦ.le_abs_det y hy) (mul_le_mul_of_nonneg_left hsq ha.pos.le)
-        (by have := ha.pos; positivity) (abs_nonneg _)
-    _ ≤ |(fderiv ℝ Φ y).det| * (a (Φ y)).toQuadraticForm' (S ξ) :=
-      mul_le_mul_of_nonneg_left (ha.lower_bound (hΦ.mapsTo hy) (S ξ)) (abs_nonneg _)
+/-- If `Φ` maps `U` into `V` with an inverse `Ψ` differentiable on `V`, the transformed drift at
+`x ∈ U` is `|det DΦ(x)| DΨ(Φ x) b(Φ x)`. -/
+theorem pullbackDrift_eq_of_invOn (hΦ : DifferentiableOn ℝ Φ U) (hmaps : MapsTo Φ U V)
+    (hΨ : DifferentiableOn ℝ Ψ V) (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U)
+    (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) {x : EuclideanSpace ℝ ι}
+    (hx : x ∈ (U : Set (EuclideanSpace ℝ ι))) :
+    pullbackDrift Φ b x = |(fderiv ℝ Φ x).det| • fderiv ℝ Ψ (Φ x) (b (Φ x)) := by
+  rw [pullbackDrift_apply, toEuclideanCLM_inv_fderiv_of_invOn hΦ hmaps hΨ hΦΨ hΨΦ hx]
 
-/-- The upper bound of the transported principal coefficient at `y ∈ U`:
-`|ηᵀ a_Φ(y) ξ| ≤ Λ L'² / κ' ‖η‖ ‖ξ‖`, since `‖DΨ(Φ y)‖ ≤ L'` and `|det DΦ(y)| ≤ 1 / κ'`. -/
-private theorem pullbackPrincipalCoeff_upper_bound {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    {lam Lam : ℝ} (ha : UniformlyEllipticOn (V : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ) (hΨ : Wkp.IsChangeOfVariables 1 V U Ψ L' κ')
-    (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U) {y : EuclideanSpace ℝ ι}
-    (hy : y ∈ (U : Set (EuclideanSpace ℝ ι))) (η ξ : EuclideanSpace ℝ ι) :
-    |η ⬝ᵥ (pullbackPrincipalCoeff Φ a y *ᵥ ξ)| ≤ Lam * L' ^ 2 / κ' * ‖η‖ * ‖ξ‖ := by
-  set S := ContinuousLinearMap.adjoint (fderiv ℝ Ψ (Φ y))
-  have hS : ‖S‖ ≤ L' := by
-    rw [LinearIsometryEquiv.norm_map]
-    exact hΨ.norm_fderiv_le _ (hΦ.mapsTo hy)
-  rw [← matrixBilinearForm_apply,
-    matrixBilinearForm_pullbackPrincipalCoeff hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn
-      hΦΨ hΨΦ a hy,
-    abs_mul, abs_abs, matrixBilinearForm_apply]
-  have hη : ‖S η‖ ≤ L' * ‖η‖ :=
-    (S.le_opNorm η).trans (mul_le_mul_of_nonneg_right hS (norm_nonneg _))
-  have hξ : ‖S ξ‖ ≤ L' * ‖ξ‖ :=
-    (S.le_opNorm ξ).trans (mul_le_mul_of_nonneg_right hS (norm_nonneg _))
-  have hκ' := inv_nonneg.2 hΨ.pos.le
-  calc |(fderiv ℝ Φ y).det| * |S η ⬝ᵥ (a (Φ y) *ᵥ S ξ)|
-      ≤ κ'⁻¹ * (Lam * ‖S η‖ * ‖S ξ‖) :=
-        mul_le_mul (hΦ.abs_det_le_inv hΨ hΦΨ hΨΦ hy) (ha.upper_bound (hΦ.mapsTo hy) (S η) (S ξ))
-          (abs_nonneg _) hκ'
-    _ ≤ κ'⁻¹ * (Lam * (L' * ‖η‖) * (L' * ‖ξ‖)) := by
-        have := ha.upper_nonneg
-        have := (norm_nonneg _).trans hS
-        gcongr
-    _ = Lam * L' ^ 2 / κ' * ‖η‖ * ‖ξ‖ := by ring
-
-/-- **Uniform ellipticity is preserved by a change of variables.** Let `Φ` be a change of variables
-of order one from a nonempty `U` onto `V`, with constants `L`, `κ` and inverse `Ψ`, a change of
-variables of order one with constants `L'`, `κ'`. If `a` is uniformly elliptic on `V` with
-constants `λ ≤ Λ`, then the transported principal coefficient is uniformly elliptic on `U` with
-constants `κ λ / L²` and `Λ L'² / κ'`. -/
-theorem UniformlyEllipticOn.pullbackPrincipalCoeff [Nonempty ι]
-    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
-    (ha : UniformlyEllipticOn (V : Set (EuclideanSpace ℝ ι)) a lam Lam)
-    (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ) (hΨ : Wkp.IsChangeOfVariables 1 V U Ψ L' κ')
-    (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U)
-    (hU : (U : Set (EuclideanSpace ℝ ι)).Nonempty) :
-    UniformlyEllipticOn (U : Set (EuclideanSpace ℝ ι)) (pullbackPrincipalCoeff Φ a)
-      (κ * lam / L ^ 2) (Lam * L' ^ 2 / κ') := by
-  -- `1 ≤ ‖DΦ(y)‖ ‖DΨ(Φ y)‖ ≤ L L'` at any point `y ∈ U`, because `DΦ(y) ∘ DΨ(Φ y) = id`.
-  obtain ⟨y₀, hy₀⟩ := hU
-  have hLL' : 1 ≤ L * L' := by
-    have h := ContinuousLinearMap.opNorm_comp_le (fderiv ℝ Φ y₀) (fderiv ℝ Ψ (Φ y₀))
-    rw [fderiv_comp_fderiv_eq_id_of_invOn hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn
-        hΦΨ hΨΦ hy₀,
-      ContinuousLinearMap.norm_id] at h
-    exact h.trans (mul_le_mul (hΦ.norm_fderiv_le y₀ hy₀) (hΨ.norm_fderiv_le _ (hΦ.mapsTo hy₀))
-      (norm_nonneg _) ((norm_nonneg _).trans (hΦ.norm_fderiv_le y₀ hy₀)))
-  have hL0 : 0 ≤ L := (norm_nonneg _).trans (hΦ.norm_fderiv_le y₀ hy₀)
-  have hL : 0 < L := lt_of_le_of_ne hL0 fun h => by rw [← h, zero_mul] at hLL'; linarith
-  have hκκ' : κ ≤ κ'⁻¹ :=
-    (hΦ.le_abs_det y₀ hy₀).trans (hΦ.abs_det_le_inv hΨ hΦΨ hΨΦ hy₀)
-  refine UniformlyEllipticOn.of_bounds (by have := ha.pos; have := hΦ.pos; positivity) ?_
-    (fun y hy ξ => pullbackPrincipalCoeff_lower_bound ha hΦ hΨ hΦΨ hΨΦ hL hy ξ)
-    (fun y hy η ξ => pullbackPrincipalCoeff_upper_bound ha hΦ hΨ hΦΨ hΨΦ hy η ξ)
-  -- `κ λ / L² ≤ λ κ'⁻¹ L'² ≤ Λ L'² / κ'`, since `κ ≤ κ'⁻¹` and `1 ≤ (L L')²`.
-  have hκ' := hΨ.pos
-  rw [div_le_div_iff₀ (by positivity) hκ']
-  have h1 : κ * κ' ≤ 1 :=
-    (mul_le_mul_of_nonneg_right hκκ' hκ'.le).trans (inv_mul_cancel₀ hκ'.ne').le
-  calc κ * lam * κ' = κ * κ' * lam := by ring
-    _ ≤ 1 * lam := mul_le_mul_of_nonneg_right h1 ha.pos.le
-    _ ≤ (L * L') ^ 2 * Lam := mul_le_mul (one_le_pow₀ hLL') ha.le ha.pos.le (by positivity)
-    _ = Lam * L' ^ 2 * L ^ 2 := by ring
-
-/-- The transported drift is bounded: if `‖b‖ ≤ β` at `Φ y`, then `‖b_Φ(y)‖ ≤ L' β / κ'`. -/
-theorem norm_pullbackDriftCoeff_le (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
-    (hΨ : Wkp.IsChangeOfVariables 1 V U Ψ L' κ') (hΦΨ : RightInvOn Ψ Φ V)
-    (hΨΦ : LeftInvOn Ψ Φ U) {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {β : ℝ}
-    {y : EuclideanSpace ℝ ι} (hy : y ∈ (U : Set (EuclideanSpace ℝ ι))) (hb : ‖b (Φ y)‖ ≤ β) :
-    ‖pullbackDriftCoeff Φ b y‖ ≤ L' * β / κ' := by
-  rw [pullbackDriftCoeff_eq hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn hΦΨ hΨΦ b hy,
-    norm_smul, Real.norm_eq_abs, abs_abs]
-  have hS := hΨ.norm_fderiv_le _ (hΦ.mapsTo hy)
-  have hJ := hΦ.abs_det_le_inv hΨ hΦΨ hΨΦ hy
-  have hβ : 0 ≤ β := (norm_nonneg _).trans hb
-  calc |(fderiv ℝ Φ y).det| * ‖fderiv ℝ Ψ (Φ y) (b (Φ y))‖
-      ≤ κ'⁻¹ * (L' * β) :=
-        mul_le_mul hJ (((fderiv ℝ Ψ (Φ y)).le_opNorm _).trans
-          (mul_le_mul hS hb (norm_nonneg _) ((norm_nonneg _).trans hS)))
-          (norm_nonneg _) (inv_nonneg.2 hΨ.pos.le)
-    _ = L' * β / κ' := by ring
+/-- **The transformed drift is bounded pointwise.** If `Φ` maps `U` into `V` with an inverse `Ψ`
+differentiable on `V`, `‖DΦ(x)‖ ≤ L` and `‖DΨ(Φ x)‖ ≤ L'`, then
+`‖b'(x)‖ ≤ Lⁿ L' ‖b(Φ x)‖`, where `n` is the dimension. -/
+theorem norm_pullbackDrift_le (hΦ : DifferentiableOn ℝ Φ U) (hmaps : MapsTo Φ U V)
+    (hΨ : DifferentiableOn ℝ Ψ V) (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U)
+    (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) {x : EuclideanSpace ℝ ι}
+    (hx : x ∈ (U : Set (EuclideanSpace ℝ ι))) (hL : ‖fderiv ℝ Φ x‖ ≤ L)
+    (hL' : ‖fderiv ℝ Ψ (Φ x)‖ ≤ L') :
+    ‖pullbackDrift Φ b x‖ ≤ L ^ Fintype.card ι * L' * ‖b (Φ x)‖ := by
+  have hdet : |(fderiv ℝ Φ x).det| ≤ L ^ Fintype.card ι := by
+    refine ((fderiv ℝ Φ x).abs_det_le_opNorm_pow).trans ?_
+    rw [finrank_euclideanSpace]
+    exact pow_le_pow_left₀ (norm_nonneg _) hL _
+  rw [pullbackDrift_eq_of_invOn hΦ hmaps hΨ hΦΨ hΨΦ b hx, norm_smul, Real.norm_eq_abs, abs_abs,
+    mul_assoc]
+  exact mul_le_mul hdet (((fderiv ℝ Ψ (Φ x)).le_opNorm _).trans
+      (mul_le_mul_of_nonneg_right hL' (norm_nonneg _)))
+    (norm_nonneg _) ((abs_nonneg _).trans hdet)
 
 omit [DecidableEq ι] in
-/-- **Transported densities stay in `Lᵖ`.** If `f ∈ Lᵖ(V)`, then
-`f_Φ = |det DΦ| (f ∘ Φ) ∈ Lᵖ(U)`. With `p = 2` this is the transported forcing term, and with
-`p = ∞` the transported mass coefficient. -/
-theorem memLp_pullbackDensity (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
-    (hΨ : Wkp.IsChangeOfVariables 1 V U Ψ L' κ') (hΦΨ : RightInvOn Ψ Φ V)
-    (hΨΦ : LeftInvOn Ψ Φ U) {p : ENNReal} {f : EuclideanSpace ℝ ι → ℝ}
-    (hf : MemLp f p (mu.restrict V)) : MemLp (pullbackDensity Φ f) p (mu.restrict U) := by
-  have hfΦ := hΦ.memLp_comp hf
-  have hJ : AEStronglyMeasurable (fun y => |(fderiv ℝ Φ y).det|) (mu.restrict U) :=
+/-- **Transformed densities stay in `Lᵖ`.** Let `Φ` map `U` injectively into `V`, with
+`‖DΦ‖ ≤ L` and `c₀ ≤ |det DΦ|` on `U` for some `c₀ > 0`. If `f ∈ Lᵖ(V)`, then
+`f' = |det DΦ| (f ∘ Φ) ∈ Lᵖ(U)`. This applies to the zeroth-order coefficient (`p = ∞`) and to
+the right-hand side (`p = 2`). -/
+theorem memLp_pullbackDensity (hΦ : DifferentiableOn ℝ Φ U) (hinj : InjOn Φ U)
+    (hmaps : MapsTo Φ U V) (hL : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)), ‖fderiv ℝ Φ x‖ ≤ L)
+    (hc₀ : 0 < c₀) (hdet : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)), c₀ ≤ |(fderiv ℝ Φ x).det|)
+    {p : ENNReal} {f : EuclideanSpace ℝ ι → ℝ} (hf : MemLp f p (mu.restrict V)) :
+    MemLp (pullbackDensity Φ f) p (mu.restrict U) := by
+  have hfΦ : MemLp (f ∘ Φ) p (mu.restrict U) :=
+    (hf.of_measure_le_smul (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hc₀).ne')
+      (map_restrict_le_smul_restrict_of_differentiableOn mu U.isOpen hΦ hinj hmaps hc₀
+        hdet)).comp_of_map (hΦ.continuousOn.aemeasurable U.isOpen.measurableSet)
+  have hJ : AEStronglyMeasurable (fun x => |(fderiv ℝ Φ x).det|) (mu.restrict U) :=
     (continuous_abs.measurable.comp (ContinuousLinearMap.continuous_det.measurable.comp
       (measurable_fderiv ℝ Φ))).aestronglyMeasurable
-  refine hfΦ.of_le_mul (c := κ'⁻¹) (hJ.mul hfΦ.aestronglyMeasurable) ?_
-  filter_upwards [ae_restrict_mem U.isOpen.measurableSet] with y hy
+  refine hfΦ.of_le_mul (c := L ^ Fintype.card ι) (hJ.mul hfΦ.aestronglyMeasurable) ?_
+  filter_upwards [ae_restrict_mem U.isOpen.measurableSet] with x hx
   rw [pullbackDensity_apply, norm_mul, Real.norm_eq_abs, abs_abs, Function.comp_apply]
-  exact mul_le_mul_of_nonneg_right (hΦ.abs_det_le_inv hΨ hΦΨ hΨΦ hy) (norm_nonneg _)
+  refine mul_le_mul_of_nonneg_right (((fderiv ℝ Φ x).abs_det_le_opNorm_pow).trans ?_)
+    (norm_nonneg _)
+  rw [finrank_euclideanSpace]
+  exact pow_le_pow_left₀ (norm_nonneg _) (hL x hx) _
 
-/-- **The transported drift stays in `Lᵖ`.** If `b ∈ Lᵖ(V)`, then the transported drift
-`b_Φ ∈ Lᵖ(U)`. With `p = ∞` this is the bounded drift of the half-space theory. -/
-theorem memLp_pullbackDriftCoeff (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
-    (hΨ : Wkp.IsChangeOfVariables 1 V U Ψ L' κ') (hΦΨ : RightInvOn Ψ Φ V)
-    (hΨΦ : LeftInvOn Ψ Φ U) {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
-    {p : ENNReal} (hb : MemLp b p (mu.restrict V)) :
-    MemLp (pullbackDriftCoeff Φ b) p (mu.restrict U) := by
-  have hbΦ := hΦ.memLp_comp hb
-  have hJ : AEStronglyMeasurable (fun y => |(fderiv ℝ Φ y).det|) (mu.restrict U) :=
+/-- **The transformed drift stays in `Lᵖ`.** Let `Φ` map `U` injectively into `V`, with
+`‖DΦ‖ ≤ L` and `c₀ ≤ |det DΦ|` on `U` for some `c₀ > 0`, and let `Ψ` be an inverse of `Φ`,
+differentiable on `V` with `‖DΨ‖ ≤ L'` there. If `b ∈ Lᵖ(V)`, then the transformed drift
+`b' = |det DΦ| DΦ⁻¹ (b ∘ Φ) ∈ Lᵖ(U)`. With `p = ∞`, a bounded drift stays bounded. -/
+theorem memLp_pullbackDrift (hΦ : DifferentiableOn ℝ Φ U) (hinj : InjOn Φ U)
+    (hmaps : MapsTo Φ U V) (hL : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)), ‖fderiv ℝ Φ x‖ ≤ L)
+    (hc₀ : 0 < c₀) (hdet : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)), c₀ ≤ |(fderiv ℝ Φ x).det|)
+    (hΨ : DifferentiableOn ℝ Ψ V) (hΨL : ∀ y ∈ (V : Set (EuclideanSpace ℝ ι)), ‖fderiv ℝ Ψ y‖ ≤ L')
+    (hΨΦ : LeftInvOn Ψ Φ U) (hΦΨ : RightInvOn Ψ Φ V) {p : ENNReal}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hb : MemLp b p (mu.restrict V)) :
+    MemLp (pullbackDrift Φ b) p (mu.restrict U) := by
+  have hbΦ : MemLp (b ∘ Φ) p (mu.restrict U) :=
+    (hb.of_measure_le_smul (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hc₀).ne')
+      (map_restrict_le_smul_restrict_of_differentiableOn mu U.isOpen hΦ hinj hmaps hc₀
+        hdet)).comp_of_map (hΦ.continuousOn.aemeasurable U.isOpen.measurableSet)
+  have hJ : AEStronglyMeasurable (fun x => |(fderiv ℝ Φ x).det|) (mu.restrict U) :=
     (continuous_abs.measurable.comp (ContinuousLinearMap.continuous_det.measurable.comp
       (measurable_fderiv ℝ Φ))).aestronglyMeasurable
-  -- On `U` the transported drift is `|det DΦ| DΨ(Φ ·) (b ∘ Φ)`, which is measurable.
-  have hmeas : AEStronglyMeasurable (fun y => |(fderiv ℝ Φ y).det| • fderiv ℝ Ψ (Φ y) (b (Φ y)))
+  -- On `U` the transformed drift is `|det DΦ| DΨ(Φ ·) (b ∘ Φ)`, which is measurable.
+  have hmeas : AEStronglyMeasurable (fun x => |(fderiv ℝ Φ x).det| • fderiv ℝ Ψ (Φ x) (b (Φ x)))
       (mu.restrict U) :=
     hJ.smul
       ((ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ ι)).aestronglyMeasurable_comp₂
         hbΦ.aestronglyMeasurable
-        ((measurable_fderiv ℝ Ψ).comp_aemeasurable hΦ.aemeasurable).aestronglyMeasurable)
-  refine hbΦ.of_le_mul (c := L' / κ') (hmeas.congr ?_) ?_
-  · filter_upwards [ae_restrict_mem U.isOpen.measurableSet] with y hy
-    exact (pullbackDriftCoeff_eq hΦ.differentiableOn hΦ.mapsTo hΨ.differentiableOn hΦΨ hΨΦ b
-      hy).symm
-  · filter_upwards [ae_restrict_mem U.isOpen.measurableSet] with y hy
-    rw [Function.comp_apply, div_mul_eq_mul_div]
-    exact norm_pullbackDriftCoeff_le hΦ hΨ hΦΨ hΨΦ hy le_rfl
+        ((measurable_fderiv ℝ Ψ).comp_aemeasurable
+          (hΦ.continuousOn.aemeasurable U.isOpen.measurableSet)).aestronglyMeasurable)
+  refine hbΦ.of_le_mul (c := L ^ Fintype.card ι * L') (hmeas.congr ?_) ?_
+  · filter_upwards [ae_restrict_mem U.isOpen.measurableSet] with x hx
+    exact (pullbackDrift_eq_of_invOn hΦ hmaps hΨ hΦΨ hΨΦ b hx).symm
+  · filter_upwards [ae_restrict_mem U.isOpen.measurableSet] with x hx
+    exact norm_pullbackDrift_le hΦ hmaps hΨ hΦΨ hΨΦ b hx (hL x hx) (hΨL _ (hmaps hx))
 
-end Transport
+end Integrability
 
 end PDE
 

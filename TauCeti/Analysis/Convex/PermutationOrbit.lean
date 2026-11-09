@@ -48,10 +48,10 @@ and its image under a transposition, so the transfer closure theorem applies.
 
 * `Matrix.mulVec_mem_convexHull_range_comp_perm`: if `M` is doubly stochastic, then `M *ᵥ w` lies
   in the convex hull of the permutation orbit of `w`.
+* `Equiv.Perm.comp_perm_mem_convexHull_range_comp_perm_iff`: the convex hull of a permutation
+  orbit is permutation invariant.
 * `TauCeti.mul_sqrt_sum_sq_sub_le_sum_sub_mul_of_mem_convexHull`: the separated-coordinate
   displacement estimate `(γ / √2) ‖w - c‖ ≤ ⟪w - c, w⟫`.
-* `TauCeti.comp_perm_mem_convexHull_range_comp_perm`: the convex hull of a permutation orbit is
-  permutation invariant.
 * `TauCeti.mem_convexHull_range_comp_perm_iff`,
   `TauCeti.mem_convexHull_range_comp_perm_iff_of_antitone`: Rado's theorem, the convex hull of
   the permutation orbit of a decreasing `w` consists of the tuples majorized by `w`.
@@ -91,6 +91,27 @@ theorem Matrix.mulVec_mem_convexHull_range_comp_perm {M : Matrix ι ι R}
 
 end Birkhoff
 
+/-- The convex hull of the permutation orbit of `w` is invariant under permutations of the
+coordinates: `x ∘ τ` lies in it exactly when `x` does. -/
+@[simp]
+theorem Equiv.Perm.comp_perm_mem_convexHull_range_comp_perm_iff {R ι : Type*} [Semiring R]
+    [PartialOrder R] {w x : ι → R} (τ : Equiv.Perm ι) :
+    x ∘ τ ∈ convexHull R (Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ) ↔
+      x ∈ convexHull R (Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ) := by
+  -- Precomposition with any `τ` maps the convex hull into itself.
+  have key (τ : Equiv.Perm ι) {x : ι → R}
+      (hx : x ∈ convexHull R (Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ)) :
+      x ∘ τ ∈ convexHull R (Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ) := by
+    have himage : LinearMap.funLeft R R τ '' Set.range (fun σ : Equiv.Perm ι ↦ w ∘ σ) ⊆
+        Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ := by
+      rintro _ ⟨_, ⟨σ, rfl⟩, rfl⟩
+      exact ⟨σ * τ, rfl⟩
+    refine convexHull_mono himage ?_
+    rw [← LinearMap.image_convexHull]
+    exact ⟨x, hx, rfl⟩
+  refine ⟨fun h ↦ ?_, key τ⟩
+  simpa [Function.comp_assoc] using key τ⁻¹ h
+
 namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
@@ -119,27 +140,19 @@ private theorem mul_sqrt_sum_sq_sub_comp_le {w : ι → ℝ} {γ : ℝ} (hγ : 0
     by_contra! h
     exact hσ (Equiv.ext h)
   have hi' : σ (σ i) ≠ σ i := fun h ↦ hi (σ.injective h)
+  -- These two coordinates each move by at least `γ`, so `2 γ² ≤ Q`.
   have h2 : 2 * γ ^ 2 ≤ Q := by
-    have hsub : ({i, σ i} : Finset ι) ⊆ univ := subset_univ _
-    calc 2 * γ ^ 2 = γ ^ 2 + γ ^ 2 := by ring
-      _ ≤ (w i - w (σ i)) ^ 2 + (w (σ i) - w (σ (σ i))) ^ 2 := by
-          rw [← sq_abs (w i - _), ← sq_abs (w (σ i) - _)]
-          exact add_le_add (pow_le_pow_left₀ hγ (hw hi.symm) 2)
-            (pow_le_pow_left₀ hγ (hw hi'.symm) 2)
-      _ = ∑ j ∈ {i, σ i}, (w j - w (σ j)) ^ 2 :=
-          (sum_pair (f := fun j ↦ (w j - w (σ j)) ^ 2) hi.symm).symm
-      _ ≤ Q := sum_le_sum_of_subset_of_nonneg hsub fun j _ _ ↦ sq_nonneg _
-  -- Hence `√2 γ ≤ √Q`, and `(γ / √2) √Q ≤ √Q * √Q / 2 = Q / 2`.
-  have h2' : 0 < √2 := by positivity
-  have hγQ : √2 * γ ≤ √Q := by
-    rw [← Real.sqrt_sq hγ, ← Real.sqrt_mul zero_le_two]
-    exact Real.sqrt_le_sqrt h2
-  calc γ / √2 * √Q = √2 * γ * √Q / 2 := by
-        field_simp
-        rw [Real.sq_sqrt zero_le_two]
-        ring
-    _ ≤ √Q * √Q / 2 := by gcongr
-    _ = Q / 2 := by rw [Real.mul_self_sqrt hQ0]
+    have h₁ := pow_le_pow_left₀ hγ (hw hi.symm) 2
+    have h₂ := pow_le_pow_left₀ hγ (hw hi'.symm) 2
+    have hsub := sum_le_sum_of_subset_of_nonneg (subset_univ {i, σ i})
+      fun j _ _ ↦ sq_nonneg (w j - w (σ j))
+    rw [sum_pair hi.symm] at hsub
+    rw [sq_abs] at h₁ h₂
+    linarith
+  -- Hence `(γ / √2 · √Q)² = γ² Q / 2 ≤ Q² / 4`.
+  refine (pow_le_pow_iff_left₀ (by positivity) (by positivity) two_ne_zero).1 ?_
+  rw [mul_pow, div_pow, div_pow, Real.sq_sqrt zero_le_two, Real.sq_sqrt hQ0]
+  nlinarith [mul_le_mul_of_nonneg_left h2 hQ0]
 
 /-- **Separated-coordinate displacement estimate.** Let `γ ≥ 0` and let the coordinates of
 `w : ι → ℝ` be pairwise at distance at least `γ`. If `c` lies in the convex hull of the
@@ -161,9 +174,8 @@ theorem mul_sqrt_sum_sq_sub_le_sum_sub_mul_of_mem_convexHull {w c : ι → ℝ} 
   -- The set where the estimate holds is convex: the left side is convex in `c` by the triangle
   -- inequality, and the right side is affine in `c`.
   intro x hx y hy a b ha hb hab
-  have hw' : w = a • w + b • w := by rw [← add_smul, hab, one_smul]
   have hsplit : w - (a • x + b • y) = a • (w - x) + b • (w - y) := by
-    rw [smul_sub, smul_sub, sub_add_sub_comm, ← hw']
+    rw [smul_sub, smul_sub, sub_add_sub_comm, ← add_smul, hab, one_smul]
   simp only [Set.mem_ofPred_eq] at hx hy ⊢
   calc γ / √2 * ‖WithLp.toLp 2 (w - (a • x + b • y))‖
       ≤ γ / √2 * (a * ‖WithLp.toLp 2 (w - x)‖ + b * ‖WithLp.toLp 2 (w - y)‖) := by
@@ -177,29 +189,14 @@ theorem mul_sqrt_sum_sq_sub_le_sum_sub_mul_of_mem_convexHull {w c : ι → ℝ} 
     _ = ∑ i, (w i - (a • x + b • y) i) * w i := by
         rw [mul_sum, mul_sum, ← sum_add_distrib]
         refine sum_congr rfl fun i _ ↦ ?_
-        have : a * w i + b * w i = w i := by rw [← add_mul, hab, one_mul]
         simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-        linear_combination w i * this
+        linear_combination w i ^ 2 * hab
 
 /-! ### Majorization -/
 
 section Majorization
 
 variable {R : Type*} {n : ℕ}
-
-omit [Fintype ι] in
-/-- The convex hull of the permutation orbit of `w` is invariant under permutations of the
-coordinates. -/
-theorem comp_perm_mem_convexHull_range_comp_perm [Semiring R] [PartialOrder R] {w x : ι → R}
-    (hx : x ∈ convexHull R (Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ)) (τ : Equiv.Perm ι) :
-    x ∘ τ ∈ convexHull R (Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ) := by
-  have himage : LinearMap.funLeft R R τ '' Set.range (fun σ : Equiv.Perm ι ↦ w ∘ σ) ⊆
-      Set.range fun σ : Equiv.Perm ι ↦ w ∘ σ := by
-    rintro _ ⟨_, ⟨σ, rfl⟩, rfl⟩
-    exact ⟨σ * τ, rfl⟩
-  refine convexHull_mono himage ?_
-  rw [← LinearMap.image_convexHull]
-  exact ⟨x, hx, rfl⟩
 
 /-- Every point of the convex hull of the permutation orbit of `w` has the total sum of `w`. -/
 theorem sum_eq_of_mem_convexHull_range_comp_perm [Semiring R] [PartialOrder R] {w x : ι → R}
@@ -214,17 +211,16 @@ theorem sum_eq_of_mem_convexHull_range_comp_perm [Semiring R] [PartialOrder R] {
 
 /-- For antitone `w`, every point of the convex hull of the permutation orbit of `w` has prefix
 sums bounded by those of `w`. -/
-theorem prefixSum_le_of_mem_convexHull_range_comp_perm [CommRing R] [LinearOrder R]
-    [IsStrictOrderedRing R] {w x : Fin n → R} (hw : Antitone w)
+theorem prefixSum_le_of_mem_convexHull_range_comp_perm [Semiring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [ExistsAddOfLE R] {w x : Fin n → R} (hw : Antitone w)
     (hx : x ∈ convexHull R (Set.range fun σ : Equiv.Perm (Fin n) ↦ w ∘ σ)) (k : ℕ) :
     prefixSum k x ≤ prefixSum k w := by
   -- A prefix sum is the pairing with the antitone indicator of the first `k` coordinates.
   set c : Fin n → R := fun i ↦ if (i : ℕ) < k then 1 else 0
   have hc : Antitone c := fun i j hij ↦ by
-    by_cases hj : (j : ℕ) < k
-    · simp [c, hj, (Fin.le_def.1 hij).trans_lt hj]
-    · simp only [c, hj, ite_false]
-      split_ifs <;> norm_num
+    have := Fin.le_def.1 hij
+    simp only [c]
+    split_ifs <;> first | exact le_rfl | exact zero_le_one | omega
   have hpair (v : Fin n → R) : prefixSum k v = ∑ i, c i * v i := by
     simp [prefixSum_def, c, sum_filter]
   refine convexHull_min (t := {x | prefixSum k x ≤ prefixSum k w}) ?_ ?_ hx
@@ -233,9 +229,9 @@ theorem prefixSum_le_of_mem_convexHull_range_comp_perm [CommRing R] [LinearOrder
     exact (hc.monovary hw).sum_mul_comp_perm_le_sum_mul
   · intro x hx y hy a b ha hb hab
     simp only [Set.mem_ofPred_eq, prefixSum_add, prefixSum_smul, smul_eq_mul] at hx hy ⊢
-    have hw' : a * prefixSum k w + b * prefixSum k w = prefixSum k w := by
-      rw [← add_mul, hab, one_mul]
-    linarith [mul_le_mul_of_nonneg_left hx ha, mul_le_mul_of_nonneg_left hy hb]
+    calc a * prefixSum k x + b * prefixSum k y ≤ a * prefixSum k w + b * prefixSum k w := by
+          gcongr
+      _ = prefixSum k w := by rw [← add_mul, hab, one_mul]
 
 /-- **Rado's theorem** for antitone tuples. For antitone `w` and `x`, the tuple `x` lies in the
 convex hull of the permutation orbit of `w` exactly when `x` is majorized by `w`: every prefix
@@ -249,7 +245,7 @@ theorem mem_convexHull_range_comp_perm_iff_of_antitone {w x : Fin n → ℝ} (hw
   refine mem_of_prefixSum_le_of_sum_eq (fun y hy i j δ hδ hδ' ↦ ?_)
     (subset_convexHull ℝ _ ⟨1, rfl⟩) hx hle hsum
   exact (convex_convexHull ℝ _).robinHood_mem hy
-    (comp_perm_mem_convexHull_range_comp_perm hy _) hδ hδ'
+    ((Equiv.Perm.comp_perm_mem_convexHull_range_comp_perm_iff _).2 hy) hδ hδ'
 
 /-- **Rado's theorem.** For antitone `w`, a tuple `x` lies in the convex hull of the permutation
 orbit of `w` exactly when `x` is majorized by `w`: the prefix sums of the decreasing
@@ -257,12 +253,8 @@ rearrangement of `x` are at most those of `w`, and the total sums agree. -/
 theorem mem_convexHull_range_comp_perm_iff {w x : Fin n → ℝ} (hw : Antitone w) :
     x ∈ convexHull ℝ (Set.range fun σ : Equiv.Perm (Fin n) ↦ w ∘ σ) ↔
       (∀ k, prefixSum k (x ∘ Tuple.sortDesc x) ≤ prefixSum k w) ∧ ∑ i, x i = ∑ i, w i := by
-  have hcomp : x ∈ convexHull ℝ (Set.range fun σ : Equiv.Perm (Fin n) ↦ w ∘ σ) ↔
-      x ∘ Tuple.sortDesc x ∈ convexHull ℝ (Set.range fun σ : Equiv.Perm (Fin n) ↦ w ∘ σ) :=
-    ⟨fun h ↦ comp_perm_mem_convexHull_range_comp_perm h _, fun h ↦ by
-      simpa [Function.comp_assoc] using
-        comp_perm_mem_convexHull_range_comp_perm h (Tuple.sortDesc x)⁻¹⟩
-  rw [hcomp, mem_convexHull_range_comp_perm_iff_of_antitone hw (Tuple.antitone_sortDesc x)]
+  rw [← (Tuple.sortDesc x).comp_perm_mem_convexHull_range_comp_perm_iff,
+    mem_convexHull_range_comp_perm_iff_of_antitone hw (Tuple.antitone_sortDesc x)]
   simp only [Function.comp_apply, Equiv.sum_comp]
 
 end Majorization
