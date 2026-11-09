@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Even.EquivEven
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
+import TauCeti.LinearAlgebra.End.Restrict
 
 /-!
 # The odd volume element under the dimension-raising equivalence
@@ -47,7 +48,13 @@ Consequently, on any module `E` over `Cℓ(ℂ ⊗ (V ⊕ ℝ), Q₁_ℂ)`, each
 stable under the image of `ψ`, since that image is even, and for the orientation
 `(e₁, …, eₙ, e₀)` the element `ω_ℂ` acts on `E^μ` through `ψ` by `-μ`. Thus `Cℓ(ℂ ⊗ V, Q_ℂ)`
 acts through `ψ` on the negative half-spinors `E⁻` with `ω_ℂ = 1`, and on the positive
-half-spinors `E⁺` with `ω_ℂ = -1`.
+half-spinors `E⁺` with `ω_ℂ = -1`. This restricted action is
+`CliffordAlgebra.EquivEven.eigenspaceComplexVolumeAction`.
+
+## Main definitions
+
+* `CliffordAlgebra.EquivEven.eigenspaceComplexVolumeAction`: the action of `Cℓ(ℂ ⊗ V, Q_ℂ)`
+  through `ψ` on an eigenspace `E^μ` of `Γ_(V ⊕ ℝ)`.
 
 ## Main results
 
@@ -59,6 +66,10 @@ half-spinors `E⁺` with `ω_ℂ = -1`.
   of `ψ` preserves each eigenspace `E^μ` of `Γ_(V ⊕ ℝ)`.
 * `CliffordAlgebra.EquivEven.equivOfIsometry_toEven_complexVolume_smul`: `ω_ℂ` acts on `E^μ`
   through `ψ` by `-μ`.
+* `CliffordAlgebra.EquivEven.eigenspaceComplexVolumeAction_complexVolume` and
+  `CliffordAlgebra.EquivEven.eigenspaceComplexVolumeAction_complexVolume_of_cons`: the same as
+  operators on `E^μ`, by `-μ` for the orientation `(e₁, …, eₙ, e₀)` and by `μ` for
+  `(e₀, e₁, …, eₙ)`.
 
 ## References
 
@@ -165,6 +176,58 @@ theorem equivOfIsometry_toEven_complexVolume_smul (hn : Odd n)
         (toEven (Q.baseChange ℂ) (complexVolume Q o)) • ψ = -μ • ψ := by
   simp only [Module.End.mem_eigenspace_iff, Algebra.lsmul_coe] at hψ
   rw [equivOfIsometry_toEven_complexVolume hQ₁ o o' hn b hb hQb ho', neg_smul, hψ, neg_smul]
+
+omit [Fact (finrank ℝ V = n)] in
+/-- **The action of `Cℓ(ℂ ⊗ V, Q_ℂ)` on a half-spinor space of `V ⊕ ℝ`**: the image of the
+complexified dimension-raising map `ψ` preserves each eigenspace `E^μ` of the normalized volume
+element `Γ` of `V ⊕ ℝ` on a module `E`
+(`CliffordAlgebra.EquivEven.equivOfIsometry_toEven_smul_mem_eigenspace_complexVolume`), so `x`
+acts on `E^μ` by the restriction of `ψ(x)`. -/
+noncomputable def eigenspaceComplexVolumeAction (μ : ℂ) :
+    CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ]
+      Module.End ℂ ((Algebra.lsmul ℂ ℂ E (complexVolume Q₁ o')).eigenspace μ) :=
+  ((Algebra.lsmul ℂ ℂ E).comp ((equivOfIsometry (complexProdIsometryEquiv hQ₁).symm).toAlgHom.comp
+      ((even _).val.comp (toEven (Q.baseChange ℂ))))).restrictEnd _ fun x _ hψ ↦
+    equivOfIsometry_toEven_smul_mem_eigenspace_complexVolume hQ₁ o' x hψ
+
+omit [Fact (finrank ℝ V = n)] in
+@[simp]
+theorem coe_eigenspaceComplexVolumeAction_apply (μ : ℂ) (x : CliffordAlgebra (Q.baseChange ℂ))
+    (ψ : (Algebra.lsmul ℂ ℂ E (complexVolume Q₁ o')).eigenspace μ) :
+    (eigenspaceComplexVolumeAction hQ₁ o' μ x ψ : E) =
+      equivOfIsometry (complexProdIsometryEquiv hQ₁).symm (toEven (Q.baseChange ℂ) x) • (ψ : E) :=
+  AlgHom.restrictEnd_apply_coe _ _ _ x ψ
+
+/-- **The label of the restricted half-spinors, as an operator**: for `n` odd and `V ⊕ ℝ`
+oriented by `(e₁, …, eₙ, e₀)`, the volume element `ω_ℂ` of `V` acts on the `μ`-eigenspace of the
+chirality element `Γ` of `V ⊕ ℝ` by the scalar `-μ`. -/
+theorem eigenspaceComplexVolumeAction_complexVolume (hn : Odd n)
+    (b : OrthonormalBasis (Fin n) ℝ V) (hb : b.toBasis.orientation = o)
+    (hQb : (QuadraticMap.associated Q).IsOrthoᵢ b.toBasis)
+    (ho' : ((b.prod (OrthonormalBasis.singleton (Fin 1) ℝ)).reindex
+      finSumFinEquiv).toBasis.orientation = o') (μ : ℂ) :
+    eigenspaceComplexVolumeAction (E := E) hQ₁ o' μ (complexVolume Q o) = algebraMap ℂ _ (-μ) := by
+  ext ψ
+  rw [coe_eigenspaceComplexVolumeAction_apply,
+    equivOfIsometry_toEven_complexVolume_smul hQ₁ o o' hn b hb hQb ho' ψ.2]
+  simp
+
+/-- **Putting `e₀` first keeps the label**: for `n` odd and `V ⊕ ℝ` oriented by
+`(e₀, e₁, …, eₙ)`, the volume element `ω_ℂ` of `V` acts on the `μ`-eigenspace of the chirality
+element `Γ` of `V ⊕ ℝ` by the scalar `μ`. -/
+theorem eigenspaceComplexVolumeAction_complexVolume_of_cons (hn : Odd n)
+    (b : OrthonormalBasis (Fin n) ℝ V) (hb : b.toBasis.orientation = o)
+    (hQb : (QuadraticMap.associated Q).IsOrthoᵢ b.toBasis)
+    (ho' : ((b.prod (OrthonormalBasis.singleton (Fin 1) ℝ)).reindex
+      (((Equiv.sumComm _ _).trans finSumFinEquiv).trans
+        (finCongr (add_comm 1 n)))).toBasis.orientation = o') (μ : ℂ) :
+    eigenspaceComplexVolumeAction (E := E) hQ₁ o' μ (complexVolume Q o) = algebraMap ℂ _ μ := by
+  ext ψ
+  have hψ := ψ.2
+  simp only [Module.End.mem_eigenspace_iff, Algebra.lsmul_coe] at hψ
+  rw [coe_eigenspaceComplexVolumeAction_apply,
+    equivOfIsometry_toEven_complexVolume_of_cons hQ₁ o o' hn b hb hQb ho', hψ]
+  simp
 
 end EquivEven
 
