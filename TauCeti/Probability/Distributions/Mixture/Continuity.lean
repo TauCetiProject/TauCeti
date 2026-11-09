@@ -31,17 +31,6 @@ namespace TauCeti.Probability
 
 variable {I B D : Type*} [Fintype I] [MeasurableSpace B]
 
-/-- Viewed as a finite measure, a probability mixture is the weighted sum of the finite
-measures associated to its components. -/
-@[simp]
-theorem toFiniteMeasure_finiteMixtureMeasure (p : StdSimplex ℝ≥0 I)
-    (K : I → ProbabilityMeasure B) :
-    (finiteMixtureMeasure p (fun i ↦ (K i : Measure B))).toProbabilityMeasure.toFiniteMeasure =
-      ∑ i, p.weights i • (K i).toFiniteMeasure := by
-  apply FiniteMeasure.toMeasure_injective
-  simp [finiteMixtureMeasure_def, ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
-    ← ENNReal.smul_def]
-
 variable [TopologicalSpace B] [OpensMeasurableSpace B]
 
 /-- Finite mixtures converge weakly if their weights converge and every component with
