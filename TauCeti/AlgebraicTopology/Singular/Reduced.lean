@@ -35,6 +35,8 @@ In degree zero, a chosen point identifies reduced homology with the coproduct of
 coefficient object indexed by the path components other than that of the point
 (`TauCeti.reducedSingularHomology₀Iso`); the generator at the component of `y` is the class
 `[y] - [x]`. This is the kernel of the codiagonal of Mathlib's `TopCat.singularHomology₀Iso`.
+An identification of the path components with a type `ι` reindexes this coproduct by the elements
+of `ι` other than the one of the point (`TauCeti.reducedSingularHomology₀IsoOfEquiv`).
 A morphism out of zeroth homology is determined by its values on the classes of points
 (`TauCeti.singularHomology₀_hom_ext`).
 With coefficients in a ring with the strong rank condition, such as a field, its rank is therefore
@@ -291,6 +293,39 @@ lemma ι_reducedSingularHomology₀Iso_inv_ι {X : TopCat.{w}} (x y : X)
         (reducedSingularHomology₀Iso R x).inv ≫ (reducedSingularHomologyι R 0).app X =
       singularHomology₀Section R y - singularHomology₀Section R x := by
   simp [reducedSingularHomology₀Iso, ← singularHomology₀Section_singularHomology₀Iso_hom]
+
+/-- An identification `e` of the path components of `Y` with `ι`, restricted to the components
+other than that of `y`. -/
+private def componentsNeEquiv {Y : TopCat.{w}} (y : Y) {ι : Type w} (e : ZerothHomotopy Y ≃ ι)
+    {i₀ : ι} (he : e (.mk y) = i₀) :
+    {c : ZerothHomotopy Y // c ≠ .mk y} ≃ {i : ι // i ≠ i₀} :=
+  e.subtypeEquiv fun _ ↦ by subst he; exact e.injective.ne_iff.symm
+
+/-- Reindex the reduced zeroth homology of a space along an identification `e` of its path
+components with a type `ι` sending the component of the basepoint to `i₀`. -/
+def reducedSingularHomology₀IsoOfEquiv {Y : TopCat.{w}} (y : Y) {ι : Type w}
+    (e : ZerothHomotopy Y ≃ ι) {i₀ : ι} (he : e (.mk y) = i₀) :
+    (reducedSingularHomologyFunctor R 0).obj Y ≅ ∐ fun _ : {i : ι // i ≠ i₀} ↦ R :=
+  reducedSingularHomology₀Iso R y ≪≫
+    (Sigma.reindex (componentsNeEquiv y e he).symm
+      (fun _ : {c : ZerothHomotopy Y // c ≠ .mk y} ↦ R)).symm
+
+/-- The generator of `TauCeti.reducedSingularHomology₀IsoOfEquiv` at the index of the component
+of `z` is the class `[z] - [y]`. -/
+@[reassoc]
+theorem ι_reducedSingularHomology₀IsoOfEquiv_inv_ι {Y : TopCat.{w}} (y z : Y) {ι : Type w}
+    (e : ZerothHomotopy Y ≃ ι) {i₀ : ι} (he : e (.mk y) = i₀) (h : e (.mk z) ≠ i₀) :
+    Sigma.ι (fun _ : {i : ι // i ≠ i₀} ↦ R) ⟨e (.mk z), h⟩ ≫
+        (reducedSingularHomology₀IsoOfEquiv R y e he).inv ≫
+          (reducedSingularHomologyι R 0).app Y =
+      singularHomology₀Section R z - singularHomology₀Section R y := by
+  have hz : ZerothHomotopy.mk z ≠ ZerothHomotopy.mk y := fun hzy ↦ h (hzy ▸ he)
+  rw [← ι_reducedSingularHomology₀Iso_inv_ι R y z hz, reducedSingularHomology₀IsoOfEquiv,
+    Iso.trans_inv, Iso.symm_inv, Category.assoc]
+  refine (Sigma.ι_reindex_hom_assoc (componentsNeEquiv y e he).symm
+    (fun _ : {c : ZerothHomotopy Y // c ≠ .mk y} ↦ R) ⟨e (.mk z), h⟩ _).trans ?_
+  congr 2
+  exact Subtype.ext (e.symm_apply_apply _)
 
 /-- The augmentation sequence split by the class of a chosen point. -/
 private def singularHomology₀Splitting {X : TopCat.{w}} (x : X) :

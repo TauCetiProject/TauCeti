@@ -56,7 +56,7 @@ Formally, this file follows and reuses
 generator family, defining ideal and factorization pattern for the full toral closure it
 specializes to a selected set of root indices, and it is the scheme-level counterpart of the
 pointwise subsystem subgroups in
-`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel`.
+`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel.Basic`.
 -/
 
 public section

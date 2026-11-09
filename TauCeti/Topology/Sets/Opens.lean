@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.Topology.Bases
+public import Mathlib.Topology.Compactness.SigmaCompact
 public import Mathlib.Topology.Sets.Opens
 public import Mathlib.Topology.Separation.Regular
 
@@ -28,6 +29,8 @@ indexed by.
   viewed as a subspace, is the trace of an open set contained in `Ω`.
 * `TopologicalSpace.Opens.exists_between_and_isCompact_closure` : in a locally compact regular
   space, a compact subset of an open set `U` lies in an open set with compact closure inside `U`.
+* `TopologicalSpace.Opens.sigmaCompactSpace_top` : the open subset `⊤` of a σ-compact space is
+  σ-compact.
 * `TopologicalSpace.Opens.IsBasis.exists_finset_sup_le_of_isCompact` : a compact subset of an
   open set has a neighbourhood inside it which is a finite union of basis members.
 -/
@@ -82,6 +85,10 @@ theorem exists_between_and_isCompact_closure [LocallyCompactSpace X] [RegularSpa
     ∃ V : Opens X, K ⊆ V ∧ closure (V : Set X) ⊆ U ∧ IsCompact (closure (V : Set X)) := by
   obtain ⟨V, hVo, hKV, hVU, hVc⟩ := exists_open_between_and_isCompact_closure hK U.isOpen hKU
   exact ⟨⟨V, hVo⟩, hKV, hVU, hVc⟩
+
+/-- The open subset `⊤` of a σ-compact space is σ-compact, being a closed subspace. -/
+instance sigmaCompactSpace_top [SigmaCompactSpace X] : SigmaCompactSpace (⊤ : Opens X) :=
+  IsClosed.sigmaCompactSpace (by simp)
 
 end TopologicalSpace.Opens
 
