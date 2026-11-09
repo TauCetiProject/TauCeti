@@ -34,7 +34,8 @@ compared in the proof of Poincaré duality.
   by `TopCat.compactSupportCohomologyι_comp_extend` and
   `TopCat.singularCohomologyMap_comp_compactSupportCohomologyι_comp_extend`.
 * `TopCat.compactSupportCohomologyExtend_id` and `TopCat.compactSupportCohomologyExtend_comp`:
-  functoriality.
+  functoriality, with `TopCat.singularCohomologyComplCompactsMapIso_hom_comp` and
+  `TopCat.singularCohomologyComplCompactsMapIso_inv_comp` for the excision isomorphisms.
 
 ## References
 
@@ -166,6 +167,22 @@ lemma singularCohomologyComplCompactsMapIso_hom_comp [T2Space Y] {f : U ⟶ Y} {
   exact fun x hx ↦
     mapsTo_compl_compacts_map hg.injective _ (mapsTo_compl_compacts_map hf.injective K hx)
 
+/-- The inverse excision isomorphisms of open embeddings `f : U ⟶ Y` and `g : Y ⟶ X` compose to the
+inverse excision isomorphism of `f ≫ g`, followed by the restriction from `(g ∘ f)(K)` to the
+equal compact set `g(f(K))`. -/
+@[reassoc]
+lemma singularCohomologyComplCompactsMapIso_inv_comp [T2Space Y] {f : U ⟶ Y} {g : Y ⟶ X}
+    (hf : IsOpenEmbedding f) (hg : IsOpenEmbedding g) (hfg : IsOpenEmbedding (f ≫ g))
+    (K : Compacts U) (hle : K.map (f ≫ g) (f ≫ g).hom.continuous ≤
+      (K.map f f.hom.continuous).map g g.hom.continuous) (n : ℕ) :
+    (singularCohomologyComplCompactsMapIso R k M hf K n).inv ≫
+        (singularCohomologyComplCompactsMapIso R k M hg (K.map f f.hom.continuous) n).inv =
+      (singularCohomologyComplCompactsMapIso R k M hfg K n).inv ≫
+        TopPair.singularCohomologyMap
+          (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl_compacts hle)) n := by
+  rw [Iso.eq_inv_comp, ← singularCohomologyComplCompactsMapIso_hom_comp hf hg hfg K hle n]
+  simp only [Category.assoc, Iso.hom_inv_id_assoc, Iso.hom_inv_id, Category.comp_id]
+
 /-- The **extension** `f_! : Hⁿ_c(U) ⟶ Hⁿ_c(X)` of compactly supported classes along an open
 embedding `f : U ⟶ X` into a Hausdorff space. A class of `Hⁿ(U, U ∖ K)` is carried to
 `Hⁿ(X, X ∖ f(K))` by the inverse of the excision isomorphism
@@ -235,5 +252,13 @@ lemma compactSupportCohomologyExtend_comp [T2Space Y] {f : U ⟶ Y} {g : Y ⟶ X
   simp only [compactSupportCohomologyι_comp_extend, compactSupportCohomologyι_comp_extend_assoc,
     ← singularCohomologyMap_comp_compactSupportCohomologyι n hle, ← hcomp, Iso.inv_comp_eq,
     Category.assoc, Iso.hom_inv_id_assoc]
+
+/-- Extensions along equal open embeddings are equal. -/
+lemma compactSupportCohomologyExtend_congr {f g : U ⟶ X} (h : f = g)
+    (hf : IsOpenEmbedding f) (hg : IsOpenEmbedding g) (n : ℕ) :
+    compactSupportCohomologyExtend (R := R) (k := k) (M := M) hf n =
+      compactSupportCohomologyExtend hg n := by
+  subst h
+  rfl
 
 end TopCat

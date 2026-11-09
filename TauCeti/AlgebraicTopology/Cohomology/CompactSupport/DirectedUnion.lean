@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Category.TopCat.Opens
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Extension
+public import TauCeti.Topology.Category.TopCat.Opens
 
 /-!
 # Cohomology with compact supports of a directed union of open sets
@@ -54,44 +54,12 @@ open CategoryTheory Limits TopologicalSpace Topology Opens
 
 universe v u
 
-namespace TopologicalSpace.Opens
-
-variable {X : TopCat.{v}}
-
-/-- The inclusion of an open set `V` into a larger open set `W` is an open embedding. -/
-lemma isOpenEmbedding_toTopCat_map {V W : Opens X} (h : V ⟶ W) :
-    IsOpenEmbedding ((toTopCat X).map h) :=
-  IsOpenEmbedding.of_comp _ W.isOpenEmbedding V.isOpenEmbedding
-
-/-- The inclusion of `V` into `W` followed by the inclusion of `W` is the inclusion of `V`. -/
-@[reassoc (attr := simp)]
-lemma toTopCat_map_comp_inclusion' {V W : Opens X} (h : V ⟶ W) :
-    (toTopCat X).map h ≫ inclusion' W = inclusion' V :=
-  rfl
-
-/-- An open subset of a Hausdorff space is Hausdorff. -/
-instance t2Space_toTopCat_obj [T2Space X] (V : Opens X) : T2Space ((toTopCat X).obj V) :=
-  inferInstanceAs (T2Space V)
-
-end TopologicalSpace.Opens
-
 namespace TopCat
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{v} C] [Abelian C] {R : C}
   {k : Type v} [Ring k] [Linear k C] {M : C} {X : TopCat.{v}}
 
 /-! ### Extension along one open embedding -/
-
-/-- Restricting along the identity of `X` from `X ∖ K` to `X ∖ L` and then to `X ∖ N` is the
-restriction from `X ∖ K` to `X ∖ N`. -/
-private lemma singularCohomologyMap_ofSubsetMap_id_trans {K L N : Compacts X} (h₁ : K ≤ L)
-    (h₂ : L ≤ N) (n : ℕ) :
-    TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
-        (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl_compacts h₁)) n ≫
-      TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl_compacts h₂)) n =
-    TopPair.singularCohomologyMap
-      (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl_compacts (h₁.trans h₂))) n :=
-  ((X.compactSupportCohomologyDiagram R k M n).map_comp (homOfLE h₁) (homOfLE h₂)).symm
 
 section OpenEmbedding
 
@@ -140,14 +108,6 @@ theorem compactSupportCohomologyι_eq_zero_of_restrict_eq_zero {f : U ⟶ X}
   have h' := congr((singularCohomologyComplCompactsMapIso R k M hf L' n).hom $h)
   rwa [Iso.inv_hom_id_apply, map_zero] at h'
 
-/-- Extensions along equal open embeddings are equal. -/
-lemma compactSupportCohomologyExtend_congr {f g : U ⟶ X} (h : f = g) (hf : IsOpenEmbedding f)
-    (hg : IsOpenEmbedding g) (n : ℕ) :
-    compactSupportCohomologyExtend (R := R) (k := k) (M := M) hf n =
-      compactSupportCohomologyExtend hg n := by
-  subst h
-  rfl
-
 end OpenEmbedding
 
 /-! ### Open subsets -/
@@ -187,20 +147,12 @@ def compactSupportCohomologyOpensCocone (n : ℕ) : Cocone (compactSupportCohomo
 
 variable {ι : Type*} [Preorder ι] [IsDirected ι (· ≤ ·)] [Nonempty ι] {U : ι → Opens X}
 
-omit [T2Space X] in
-/-- A compact subset of the union of a directed family of open sets lies in one of them. -/
-private lemma exists_compacts_le_of_iSup_eq_top (hU : Monotone U) (hcover : ⨆ i, U i = ⊤)
-    (K : Compacts X) : ∃ i, (K : Set X) ⊆ U i :=
-  K.isCompact.elim_directed_cover (fun i ↦ (U i : Set X)) (fun i ↦ (U i).isOpen)
-    (fun x _ ↦ by simp [← Opens.coe_iSup, hcover])
-    (hU.directed_le.mono_comp _ fun _ _ h ↦ h)
-
 /-- **Every compactly supported class of a directed open union comes from a member.** -/
 theorem exists_compactSupportCohomologyExtend_eq_of_iSup_eq_top (hU : Monotone U)
     (hcover : ⨆ i, U i = ⊤) {n : ℕ} (x : X.compactSupportCohomology R k M n) :
     ∃ i z, compactSupportCohomologyExtend (U i).isOpenEmbedding n z = x := by
   obtain ⟨K, -, y, rfl⟩ := exists_compactSupportCohomologyι_eq x ⊥
-  obtain ⟨i, hi⟩ := exists_compacts_le_of_iSup_eq_top hU hcover K
+  obtain ⟨i, hi⟩ := Compacts.exists_subset_of_iSup_eq_top hU.directed_le hcover K
   obtain ⟨z, hz⟩ := exists_compactSupportCohomologyExtend_eq (U i).isOpenEmbedding
     (fun x hx ↦ ⟨⟨x, hi hx⟩, rfl⟩) y
   exact ⟨i, z, hz⟩
@@ -217,13 +169,13 @@ theorem exists_compactSupportCohomologyExtend_map_eq_zero_of_iSup_eq_top (hU : M
   rw [← ConcreteCategory.comp_apply, compactSupportCohomologyι_comp_extend,
     ConcreteCategory.comp_apply, compactSupportCohomologyι_eq_zero_iff] at hz
   obtain ⟨L, hKL, hL⟩ := hz
-  obtain ⟨j₀, hj₀⟩ := exists_compacts_le_of_iSup_eq_top hU hcover L
+  obtain ⟨j₀, hj₀⟩ := Compacts.exists_subset_of_iSup_eq_top hU.directed_le hcover L
   obtain ⟨j, hij, hj₀j⟩ := exists_ge_ge i j₀
   refine ⟨j, hij, ?_⟩
   let g := (toTopCat X).map (homOfLE (hU hij))
   have hg := isOpenEmbedding_toTopCat_map (homOfLE (hU hij))
   -- the two images of `K` in `X`, directly and through `U j`, are the same compact set
-  have hle : K.map (inclusion' (U i)) (inclusion' (U i)).hom.continuous ≤
+  have hle : K.map (g ≫ inclusion' (U j)) (g ≫ inclusion' (U j)).hom.continuous ≤
       (K.map g g.hom.continuous).map (inclusion' (U j))
         (inclusion' (U j)).hom.continuous := fun x hx ↦ by
     obtain ⟨y, hy, rfl⟩ := hx
@@ -232,29 +184,13 @@ theorem exists_compactSupportCohomologyExtend_map_eq_zero_of_iSup_eq_top (hU : M
       (inclusion' (U j)).hom.continuous ≤ L := fun x hx ↦ by
     obtain ⟨-, ⟨y, hy, rfl⟩, rfl⟩ := hx
     exact hKL ⟨y, hy, rfl⟩
-  -- excising `K` from `U j` and then from `U i` is excising it from `X`
-  have hcomp : TopPair.singularCohomologyMap
-        (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl_compacts hle)) n ≫
-      (singularCohomologyComplCompactsMapIso R k M (U j).isOpenEmbedding
-        (K.map g g.hom.continuous) n).hom ≫
-          (singularCohomologyComplCompactsMapIso R k M hg K n).hom =
-      (singularCohomologyComplCompactsMapIso R k M (U i).isOpenEmbedding K n).hom :=
-    singularCohomologyComplCompactsMapIso_hom_comp hg (U j).isOpenEmbedding
-      (U i).isOpenEmbedding K hle n
-  have hinv : (singularCohomologyComplCompactsMapIso R k M hg K n).inv ≫
-      (singularCohomologyComplCompactsMapIso R k M (U j).isOpenEmbedding
-        (K.map g g.hom.continuous) n).inv =
-      (singularCohomologyComplCompactsMapIso R k M (U i).isOpenEmbedding K n).inv ≫
-        TopPair.singularCohomologyMap
-          (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl_compacts hle)) n := by
-    rw [Iso.eq_inv_comp, ← hcomp]
-    simp only [Category.assoc, Iso.hom_inv_id_assoc, Iso.hom_inv_id, Category.comp_id]
   rw [← ConcreteCategory.comp_apply, compactSupportCohomologyι_comp_extend,
     ConcreteCategory.comp_apply]
   refine compactSupportCohomologyι_eq_zero_of_restrict_eq_zero (U j).isOpenEmbedding _ hK₂L
     (fun x hx ↦ ⟨⟨x, hU hj₀j (hj₀ hx)⟩, rfl⟩) ?_
-  rw [← ConcreteCategory.comp_apply (singularCohomologyComplCompactsMapIso R k M hg K n).inv, hinv,
-    ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
+  rw [← ConcreteCategory.comp_apply (singularCohomologyComplCompactsMapIso R k M hg K n).inv,
+    singularCohomologyComplCompactsMapIso_inv_comp hg (U j).isOpenEmbedding (U i).isOpenEmbedding K
+      hle n, ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
     singularCohomologyMap_ofSubsetMap_id_trans hle hK₂L]
   exact hL
 
