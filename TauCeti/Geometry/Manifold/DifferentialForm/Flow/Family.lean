@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.ODE.ScalarLinear
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 
 /-!
@@ -85,22 +85,6 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
   [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
   {X : ℝ → (x : M) → TangentSpace I x} {α : RoughForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F k}
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [IsManifold I 2 M] in
-/-- The pullback of a form at `x` is the form at `f x` composed with the differential of `f`,
-read as an operator on alternating maps of the model spaces. The two sides agree up to unfolding
-the tangent spaces to the model spaces; this is the form in which pullbacks are differentiated. -/
-private theorem mpullback_apply_eq_compContinuousLinearMapCLM {E' H' M' : Type*}
-    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-    {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M'] (f : M → M')
-    (η : RoughForm I' M' F k) (x : M) :
-    mpullback I I' f η x =
-      compContinuousLinearMapCLM (ι := Fin k) (F := F) (mfderiv I I' f x : E →L[ℝ] E')
-        (η (f x)) := by
-  ext v
-  rw [mpullback_apply]
-  -- The right side is `η (f x)` evaluated on the vectors `mfderiv I I' f x (v i)`, up to unfolding.
-  rfl
-
 /-! ### Slices of Lie derivatives -/
 
 omit [FiniteDimensional ℝ E] [T2Space M] in
@@ -153,21 +137,6 @@ theorem hasDerivAt_mpullback_prodMk (t : ℝ) (x : M)
   have h := HasDerivAt.comp_sub_const (x := t) (a := t) (by rwa [sub_self])
   refine (h.congr_of_eventuallyEq (Eventually.of_forall hslice)).congr_deriv ?_
   exact (mpullback_apply_eq_compContinuousLinearMapCLM _ _ x).symm
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [IsManifold I 2 M] in
-/-- For a jointly `C^n` time-dependent vector field `X` and a real number `c`, the field `(c, X)`
-on `ℝ × M` is a `C^n` vector field. For `c = 0` it is the vertical field of `X`, and for `X = 0`
-and `c = 1` it is the unit field `∂_t` of the time coordinate. -/
-private theorem contMDiff_const_prod_field [IsManifold I 1 M] {n : ℕ∞ω} (c : ℝ)
-    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
-      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M))) :
-    ContMDiff (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod I).tangent n
-      (fun p : ℝ × M ↦ (⟨p, (c, X p.1 p.2)⟩ : TangentBundle (𝓘(ℝ, ℝ).prod I) (ℝ × M))) := by
-  have hclock : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ).tangent n
-      (fun s : ℝ ↦ (⟨s, c⟩ : TangentBundle 𝓘(ℝ, ℝ) ℝ)) :=
-    contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
-  exact (contMDiff_equivTangentBundleProd_symm (I := 𝓘(ℝ, ℝ)) (M := ℝ) (I' := I) (M' := M)).comp
-    ((hclock.comp contMDiff_fst).prodMk hX)
 
 variable (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
   (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
@@ -396,35 +365,23 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smu
       Real.exp (∫ u in s..t, g (u, timeDependentFlowOf X s u x)) •
         mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α x := by
   have hX₁ := hX.of_le (m := 1) one_le_two
-  -- The pullbacks at `x`, as alternating maps on the model space, and the integrated rate.
+  -- The pullbacks at `x`, as alternating maps on the model space.
   set P : ℝ → E [⋀^Fin k]→L[ℝ] F := fun u ↦
     mpullback I I (timeDependentFlowOf X s u) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) α) x
-  set G : ℝ → ℝ := fun u ↦ ∫ τ in s..u, g (τ, timeDependentFlowOf X s τ x)
   have hcont : Continuous fun τ ↦ g (τ, timeDependentFlowOf X s τ x) :=
     hg.comp (continuous_id.prodMk ((contMDiff_timeDependentFlowOf hc (n := 2) (by norm_num)
       hX).continuous.comp (by fun_prop : Continuous fun τ : ℝ ↦ ((s, τ), x))))
-  have hG (u : ℝ) : HasDerivAt G (g (u, timeDependentFlowOf X s u x)) u :=
-    (hcont.integral_hasStrictDerivAt s u).hasDerivAt
-  have hP (u : ℝ) : HasDerivAt P (g (u, timeDependentFlowOf X s u x) • P u) u := by
+  have hP (u : ℝ) (_ : u ∈ univ) : HasDerivAt P (g (u, timeDependentFlowOf X s u x) • P u) u := by
     have h := hasDerivAt_mpullback_timeDependentFlowOf_mpullback_prodMk hX hc s u x
       hα.contMDiffAt
     rwa [hL u, mpullback_fun_smul] at h
-  -- `u ↦ e^{-G u} P u` has zero derivative, so it is constant.
-  have hderiv (u : ℝ) : HasDerivAt (fun u ↦ Real.exp (-G u) • P u) 0 u := by
-    refine ((hG u).neg.exp.smul (hP u)).congr_deriv ?_
-    module
-  have hconst := is_const_of_deriv_eq_zero (fun u ↦ (hderiv u).differentiableAt)
-    (fun u ↦ (hderiv u).deriv) t s
-  have hG0 : G s = 0 := intervalIntegral.integral_same
   have hP0 : P s = mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α x := by
     have h : timeDependentFlowOf X s s = id := funext (timeDependentFlowOf_self hX₁ s)
     exact (congrArg (fun f ↦ mpullback I I f (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α) x)
       h).trans (congrFun (mpullback_id _) x)
-  rw [hG0, neg_zero, Real.exp_zero, one_smul, hP0] at hconst
-  have hPt : P t = Real.exp (G t) • (Real.exp (-G t) • P t) := by
-    rw [smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
-  rw [hconst] at hPt
-  exact hPt
+  rw [← hP0]
+  exact eq_exp_integral_smul_of_hasDerivAt_smul (V := E [⋀^Fin k]→L[ℝ] F) isOpen_univ
+    ordConnected_univ hcont.continuousOn hP (mem_univ s) (mem_univ t)
 
 /-- **Moser's principle for families of forms**, invariance case. Let `X` be a jointly `C²`
 time-dependent vector field with complete suspension and time-dependent flow `φ`, and let `α` be
