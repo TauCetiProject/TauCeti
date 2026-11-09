@@ -88,9 +88,11 @@ theorem tendsto_coeff_colemanDBounded_trunc (hB : B.IsEntire) (hF : F.IsEntire)
 products of the Coleman majorants of `B`. -/
 theorem norm_coeff_colemanDEntire_le {ρ : ℕ → ℝ} (hρ₀ : ∀ i, 0 ≤ ρ i)
     (hρ : Antitone ρ) (hbound : ∀ j, ‖coeff j F‖ ≤ ∏ i ∈ range j, ρ i)
-    (hB : B.IsEntire) (hF : F.IsEntire) (hB₀ : coeff 0 B = 0) (hF₀ : coeff 0 F = 1)
+    (hB : B.IsEntire) (hB₀ : coeff 0 B = 0) (hF₀ : coeff 0 F = 1)
     (k : ℕ) : ‖coeff k (colemanDEntire B F)‖ ≤ ∏ i ∈ range k, colemanMajorant B (ρ i) := by
-  exact le_of_tendsto (tendsto_coeff_colemanDBounded_trunc hB hF hB₀ hF₀ k).norm
+  rw [coeff_colemanDEntire]
+  exact le_of_tendsto (cauchySeq_coeff_colemanDBounded_trunc hρ₀ hρ hbound hF₀
+      (fun i ↦ hB.isRestricted _) hB₀ k).tendsto_limUnder.norm
     (Eventually.of_forall fun p ↦ norm_coeff_colemanDBounded_trunc_le hρ₀ hρ hbound
       (fun i ↦ hB.isRestricted _) hB₀ p.1 p.2 (p.2 + 1) (p.1 + 1) k)
 
@@ -101,13 +103,12 @@ theorem isEntire_colemanDEntire (hB : B.IsEntire) (hF : F.IsEntire)
   obtain ⟨ρ, hρ₀, hρ, hlim, hbound⟩ := hF.exists_newtonMajorant (by simp [hF₀])
   exact isEntire_of_norm_coeff_le_prod
     (tendsto_colemanMajorant (hB.isRestricted 1) zero_lt_one (fun i ↦ (hρ₀ i).le) hlim)
-    (norm_coeff_colemanDEntire_le (fun i ↦ (hρ₀ i).le) hρ hbound hB hF hB₀ hF₀)
+    (norm_coeff_colemanDEntire_le (fun i ↦ (hρ₀ i).le) hρ hbound hB hB₀ hF₀)
 
-/-- The finite transforms converge in every positive-radius Gauss norm, with the two
+/-- The finite transforms converge in the Gauss norm of every radius, with the two
 truncation orders tending to infinity independently. -/
 theorem tendsto_gaussNorm_colemanDBounded_trunc_sub_colemanDEntire
-    (hB : B.IsEntire) (hF : F.IsEntire) (hB₀ : coeff 0 B = 0) (hF₀ : coeff 0 F = 1)
-    {r : ℝ} (hr : 0 < r) :
+    (hB : B.IsEntire) (hF : F.IsEntire) (hB₀ : coeff 0 B = 0) (hF₀ : coeff 0 F = 1) (r : ℝ) :
     Tendsto (fun p : ℕ × ℕ ↦
       ((Polynomial.colemanDBounded (trunc (p.2 + 1) B) (trunc (p.1 + 1) F) p.1 p.2 : R⟦X⟧) -
         colemanDEntire B F).gaussNorm norm r) atTop (𝓝 0) := by
@@ -121,23 +122,24 @@ theorem tendsto_gaussNorm_colemanDBounded_trunc_sub_colemanDEntire
     isEntire_of_norm_coeff_le_prod hβ (fun k ↦ by
       rw [coeff_mk, Real.norm_eq_abs, abs_of_nonneg (prod_nonneg fun i _ ↦ hβ₀ i)])
   refine TauCeti.PowerSeries.tendsto_gaussNorm_zero_of_coeff_bound
-    (b := fun k ↦ (∏ i ∈ range k, β i) * r ^ k) ?_ ?_ ?_
+    (b := fun k ↦ (∏ i ∈ range k, β i) * |r| ^ k) ?_ ?_ ?_
   · intro k
     simpa only [map_sub, Polynomial.coeff_coe, sub_self] using
       (tendsto_coeff_colemanDBounded_trunc hB hF hB₀ hF₀ k).sub_const
         (coeff k (colemanDEntire B F))
   · intro p k
     rw [map_sub, Polynomial.coeff_coe]
-    refine mul_le_mul_of_nonneg_right ?_ (pow_nonneg hr.le _)
+    refine (mul_le_mul_of_nonneg_left (by simpa [abs_pow] using le_abs_self (r ^ k))
+      (norm_nonneg _)).trans (mul_le_mul_of_nonneg_right ?_ (pow_nonneg (abs_nonneg r) _))
     have hsub (x y : R) : ‖x - y‖ ≤ max ‖x‖ ‖y‖ := by
       simpa only [sub_eq_add_neg, norm_neg] using IsUltrametricDist.norm_add_le_max x (-y)
     exact (hsub _ _).trans (max_le
       (norm_coeff_colemanDBounded_trunc_le (fun i ↦ (hρ₀ i).le) hρ hbound
         (fun i ↦ hB.isRestricted _) hB₀ p.1 p.2 (p.2 + 1) (p.1 + 1) k)
-      (norm_coeff_colemanDEntire_le (fun i ↦ (hρ₀ i).le) hρ hbound hB hF hB₀ hF₀ k))
+      (norm_coeff_colemanDEntire_le (fun i ↦ (hρ₀ i).le) hρ hbound hB hB₀ hF₀ k))
   · simpa only [coeff_mk, Real.norm_eq_abs,
       abs_of_nonneg (prod_nonneg fun i _ ↦ hβ₀ i)] using
-      (isRestricted_iff' r _).mp (hprod.isRestricted r)
+      (isRestricted_iff' |r| _).mp (hprod.isRestricted |r|)
 
 end Entire
 
