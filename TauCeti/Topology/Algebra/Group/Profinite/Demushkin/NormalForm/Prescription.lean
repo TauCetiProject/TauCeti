@@ -58,8 +58,6 @@ vanishes, so the standard orientation has the prescription property.
 
 ## Main results
 
-* `TauCeti.IsCrossedHom.sum_map_labuteComm_eq_of_forall_eq_ite`: for a Kronecker delta, only
-  the commutator factor of a normal-form word containing the generator contributes.
 * `TauCeti.HasPrescriptionProperty.apply_presentedProPGen_eq_one_of_partner`: the partner step, a
   character with the prescription property is trivial at a generator whose partner in a
   commutator factor of the relators is covered by a vanishing hypothesis.
@@ -127,27 +125,6 @@ section Words
 variable {H : Type*} [Group H] {R : Type*} [CommRing R] {F' : Type*} [FunLike F' H Rˣ]
   [MonoidHomClass F' H Rˣ] {χ : F'} {F : H → R} (hF : IsCrossedHom χ F)
 include hF
-
-/-- For a crossed homomorphism `F` with `F (x_i) = δ_{ij}` for some `s ≤ j < 2 * m + s`, only the
-factor containing `x_j` contributes to the sum of its values on the commutators
-`(x_s, x_{s+1}), (x_{s+2}, x_{s+3}), …` (the `0`-based pairs `(x (2i+s), x (2i+s+1))` for `i < m`):
-the sum is the value on the factor `(x (2 ((j-s)/2) + s), x (2 ((j-s)/2) + s + 1))`. -/
-theorem IsCrossedHom.sum_map_labuteComm_eq_of_forall_eq_ite {s m j : ℕ} (hsj : s ≤ j)
-    (hj : j < 2 * m + s) {x : ℕ → H} (hFv : ∀ i, F (x i) = if i = j then 1 else 0) :
-    ∑ i ∈ range m, F (labuteComm (x (2 * i + s)) (x (2 * i + s + 1))) =
-      F (labuteComm (x (2 * ((j - s) / 2) + s)) (x (2 * ((j - s) / 2) + s + 1))) :=
-  Finset.sum_eq_single _
-    (fun i _ hi ↦ hF.map_labuteComm_eq_zero_of_eq_zero
-      (by rw [hFv, ite_eq_right (by omega)]) (by rw [hFv, ite_eq_right (by omega)]))
-    fun h0 ↦ absurd (mem_range.2 (by omega)) h0
-
-/-- For a crossed homomorphism `F` with `F (x_i) = δ_{ij}` for some `j < s`, the sum of its values
-on the commutators `(x (2i+s), x (2i+s+1))`, `i < m`, is `0`. -/
-theorem IsCrossedHom.sum_map_labuteComm_eq_zero_of_forall_eq_ite {s m j : ℕ} (hj : j < s)
-    {x : ℕ → H} (hFv : ∀ i, F (x i) = if i = j then 1 else 0) :
-    ∑ i ∈ range m, F (labuteComm (x (2 * i + s)) (x (2 * i + s + 1))) = 0 :=
-  Finset.sum_eq_zero fun i _ ↦ hF.map_labuteComm_eq_zero_of_eq_zero
-    (by rw [hFv, ite_eq_right (by omega)]) (by rw [hFv, ite_eq_right (by omega)])
 
 /-- The value of a crossed homomorphism on the `q ≠ 2` normal-form word
 `x₁^q (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`. -/
