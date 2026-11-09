@@ -549,7 +549,7 @@ theorem invariantDifferential_injective :
 noncomputable def logHom : TauCeti.FormalGroupHom F (𝔾ₐ (R := R)) where
   toPowerSeries := F.log
   zero_constantCoeff := F.constantCoeff_log
-  hom := (TauCeti.FormalGroupHom.hom_additive_iff F.constantCoeff_log).mpr
+  hom := TauCeti.FormalGroupHom.hom_additive_iff.mpr
     F.subst_toPowerSeries_log
 
 @[simp]
@@ -585,7 +585,7 @@ variable {F} in
 theorem _root_.TauCeti.FormalGroupHom.toPowerSeries_eq_coeff_one_smul_log
     (f : TauCeti.FormalGroupHom F (𝔾ₐ (R := R))) :
     f.toPowerSeries = PowerSeries.coeff 1 f.toPowerSeries • F.log := by
-  have h := (TauCeti.FormalGroupHom.hom_additive_iff f.zero_constantCoeff).mp f.hom
+  have h := TauCeti.FormalGroupHom.hom_additive_iff.mp f.hom
   obtain ⟨c, hc⟩ := F.subst_toPowerSeries_eq_add_iff.mp h
   have hc₁ := congrArg (PowerSeries.coeff 1) hc
   simp only [map_smul, coeff_one_log, smul_eq_mul, mul_one] at hc₁
