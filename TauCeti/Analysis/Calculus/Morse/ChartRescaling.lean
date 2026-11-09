@@ -170,22 +170,8 @@ theorem exists_parametric_small_disk_derivativeRescale
         -‖(derivativeRescale (T p) (D p 0) s y).1‖ ^ 2 +
             ‖(derivativeRescale (T p) (D p 0) s y).2‖ ^ 2 =
           -‖y.1‖ ^ 2 + ‖y.2‖ ^ 2 := by
-  obtain ⟨L, hL, hDL, d, hd, hbound⟩ :=
-    exists_parametric_norm_derivativeRescale_le (hU.mem_nhds h0U) hT hD
-  obtain ⟨r, hr, hrU⟩ := Metric.isOpen_iff.mp hU 0 h0U
-  obtain ⟨σ, hσ, hσV⟩ := Metric.mem_nhds_iff.mp hV
-  -- One radius below `d`, inside `U`, and small enough that the image ball lies in `V`.
-  let δ := min d (min (r / 2) (σ / (2 * L)))
-  have hδ : 0 < δ := lt_min hd (lt_min (by positivity) (by positivity))
-  have hδd : δ ≤ d := min_le_left _ _
-  have hδU : Metric.closedBall (0 : E × F) δ ⊆ U :=
-    (Metric.closedBall_subset_ball (lt_of_le_of_lt ((min_le_right _ _).trans (min_le_left _ _))
-      (by linarith))).trans hrU
-  have hδV : Metric.closedBall (0 : E × F) (L * δ) ⊆ V := by
-    refine (Metric.closedBall_subset_ball ?_).trans hσV
-    have hle : δ ≤ σ / (2 * L) := (min_le_right _ _).trans (min_le_right _ _)
-    have := (le_div_iff₀ (by positivity : 0 < 2 * L)).mp hle
-    nlinarith
+  obtain ⟨L, hL, hDL, δ, hδ, hδU, hδV, hbound⟩ :=
+    exists_parametric_derivativeRescale_closedBall_subset (hU.mem_nhds h0U) hT hD hV
   have hscale {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) {y : E × F}
       (hy : y ∈ Metric.closedBall 0 δ) : s • y ∈ Metric.closedBall 0 δ :=
     (convex_closedBall (0 : E × F) δ).smul_mem_of_zero_mem
@@ -204,7 +190,7 @@ theorem exists_parametric_small_disk_derivativeRescale
         |>.continuousWithinAt
   · have hsnorm : ‖s‖ ≤ 1 := by simpa [Real.norm_of_nonneg hs.1] using hs.2
     have hynorm : ‖y‖ ≤ δ := by simpa [Metric.mem_closedBall, dist_zero_right] using hy
-    have hb := hbound p s hsnorm y (hynorm.trans hδd)
+    have hb := hbound p s hsnorm y hynorm
     refine ⟨hb, hδV ?_, (hT p 0 h0U).derivativeRescale_neg_norm_fst_sq_add_norm_snd_sq_eq
       (hT0 p) (hQ p) (fun t ht ↦ hδU (hscale ht hy)) hs⟩
     simpa only [Metric.mem_closedBall, dist_zero_right] using

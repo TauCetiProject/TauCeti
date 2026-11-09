@@ -21,13 +21,17 @@ The continuity proof uses `HasFDerivWithinAt.lim`, the rescaled-difference chara
 of the derivative in Mathlib.
 
 For a family of real maps `f p` indexed by a topological space `P`, whose derivatives depend
-jointly continuously on the parameter and the point near the origin, the rescalings
-`derivativeRescale (f p) (f' p 0) t v` are jointly continuous in `(p, t, v)`
-(`TauCeti.continuousAt_parametric_derivativeRescale_zero`), and on a compact parameter space they
-satisfy one linear bound uniformly in `p` (`TauCeti.exists_parametric_norm_derivativeRescale_le`).
-Both rest on the mean value estimate `TauCeti.norm_derivativeRescale_sub_le`, which bounds the
-distance of a rescaling from the derivative by the oscillation of the derivative near the origin,
-made locally uniform in the parameter by
+jointly continuously on the parameter and the point at the origin, the rescalings
+`derivativeRescale (f p) (f' p 0) t v` are jointly continuous in `(p, t, v)` at scale zero
+(`TauCeti.continuousAt_parametric_derivativeRescale_zero`). Away from scale zero, joint continuity
+in `(p, t, v)` follows from joint continuity of the family itself, over any field
+(`TauCeti.continuousAt_parametric_derivativeRescale`). On a compact parameter space the rescalings
+satisfy one linear bound uniformly in `p` (`TauCeti.exists_parametric_norm_derivativeRescale_le`),
+also inside prescribed neighbourhoods of the origin
+(`TauCeti.exists_parametric_derivativeRescale_closedBall_subset`).
+The real results rest on the mean value estimate `TauCeti.norm_derivativeRescale_sub_le`, which
+bounds the distance of a rescaling from the derivative by the oscillation of the derivative near
+the origin, made locally uniform in the parameter by
 `TauCeti.exists_pos_eventually_norm_derivativeRescale_sub_le`.
 -/
 
@@ -98,19 +102,6 @@ theorem _root_.HasFDerivAt.continuousAt_derivativeRescale_zero
         (nhdsWithin_le_nhds (s := {p : 𝕜 × E | p.1 = 0}))
   · simpa only [univ_inter] using hlim
 
-/-- Away from scale zero, continuity of the original map suffices. -/
-theorem continuousAt_derivativeRescale {t : 𝕜} {v : E} (ht : t ≠ 0)
-    (hf : ContinuousAt f (t • v)) :
-    ContinuousAt (fun p : 𝕜 × E ↦ derivativeRescale f A p.1 p.2) (t, v) := by
-  have hmul : Continuous (fun p : 𝕜 × E ↦ p.1 • p.2) := continuous_fst.smul continuous_snd
-  have hcont : ContinuousAt (fun p : 𝕜 × E ↦ p.1⁻¹ • (f (p.1 • p.2) - f 0)) (t, v) :=
-    (continuous_fst.continuousAt.inv₀ ht).smul
-      ((hf.comp' (f := fun p : 𝕜 × E ↦ p.1 • p.2) hmul.continuousAt).sub continuousAt_const)
-  apply hcont.congr_of_eventuallyEq
-  filter_upwards [continuous_fst.continuousAt.preimage_mem_nhds (compl_singleton_mem_nhds ht)]
-    with p hp
-  exact derivativeRescale_of_ne_zero f A hp p.2
-
 /-- Away from scale zero, the rescalings of a family of maps are jointly continuous in the
 parameter, the scale and the point wherever the family is jointly continuous. -/
 theorem continuousAt_parametric_derivativeRescale {P : Type*} [TopologicalSpace P]
@@ -128,6 +119,14 @@ theorem continuousAt_parametric_derivativeRescale {P : Type*} [TopologicalSpace 
   filter_upwards [continuous_snd.fst.continuousAt.preimage_mem_nhds
     (compl_singleton_mem_nhds ht)] with q hq
   exact derivativeRescale_of_ne_zero (f q.1) (A q.1) hq q.2.2
+
+/-- Away from scale zero, continuity of the original map suffices. -/
+theorem continuousAt_derivativeRescale {t : 𝕜} {v : E} (ht : t ≠ 0)
+    (hf : ContinuousAt f (t • v)) :
+    ContinuousAt (fun p : 𝕜 × E ↦ derivativeRescale f A p.1 p.2) (t, v) :=
+  (continuousAt_parametric_derivativeRescale (p := ()) (f := fun _ ↦ f) (A := fun _ ↦ A) ht
+    (hf.comp (f := fun x : Unit × E ↦ x.2) continuous_snd.continuousAt) continuousAt_const).comp
+      (continuous_const.prodMk continuous_id).continuousAt
 
 /-- A map differentiable at the origin has one linear bound for all its small rescalings.
 No continuity away from the origin or finite dimensionality is required. -/
@@ -159,6 +158,23 @@ theorem _root_.HasFDerivAt.exists_norm_derivativeRescale_le
       _ ≤ max C (‖A‖ + 1) * ‖v‖ :=
         mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg v)
 
+/-- A radius `δ ≤ d` whose closed ball lies in `U` and whose `L`-fold enlargement lies in `V`. -/
+private theorem exists_closedBall_subset_closedBall_mul_subset {L d : ℝ} (hL : 0 < L)
+    (hd : 0 < d) {U : Set E} (hU : U ∈ 𝓝 0) {V : Set F} (hV : V ∈ 𝓝 0) :
+    ∃ δ > 0, δ ≤ d ∧ Metric.closedBall 0 δ ⊆ U ∧ Metric.closedBall 0 (L * δ) ⊆ V := by
+  obtain ⟨r, hr, hrU⟩ := Metric.mem_nhds_iff.mp hU
+  obtain ⟨s, hs, hsV⟩ := Metric.mem_nhds_iff.mp hV
+  let δ := min d (min (r / 2) (s / (2 * L)))
+  have hδ : 0 < δ := lt_min hd (lt_min (by positivity) (by positivity))
+  have hδr : δ < r := lt_of_le_of_lt
+    ((min_le_right _ _).trans (min_le_left _ _)) (by linarith)
+  have hδs : L * δ < s := by
+    have hle : δ ≤ s / (2 * L) := (min_le_right _ _).trans (min_le_right _ _)
+    have := (le_div_iff₀ (by positivity : 0 < 2 * L)).mp hle
+    nlinarith
+  exact ⟨δ, hδ, min_le_left _ _, (Metric.closedBall_subset_ball hδr).trans hrU,
+    (Metric.closedBall_subset_ball hδs).trans hsV⟩
+
 /-- Small rescaled balls stay in any prescribed target neighborhood, uniformly for `‖t‖ ≤ 1`.
 The original small ball can simultaneously be confined to a prescribed source neighborhood. -/
 theorem _root_.HasFDerivAt.exists_derivativeRescale_closedBall_subset
@@ -168,20 +184,8 @@ theorem _root_.HasFDerivAt.exists_derivativeRescale_closedBall_subset
       ∀ t : 𝕜, ‖t‖ ≤ 1 → ∀ v : E, ‖v‖ ≤ δ →
         ‖derivativeRescale f A t v‖ ≤ L * ‖v‖ := by
   obtain ⟨L, hL, hA, d, hd, hbound⟩ := hf.exists_norm_derivativeRescale_le
-  obtain ⟨r, hr, hrU⟩ := Metric.mem_nhds_iff.mp hU
-  obtain ⟨s, hs, hsV⟩ := Metric.mem_nhds_iff.mp hV
-  let δ := min d (min (r / 2) (s / (2 * L)))
-  have hδ : 0 < δ := lt_min hd (lt_min (by positivity) (by positivity))
-  have hδd : δ ≤ d := min_le_left _ _
-  have hδr : δ < r := lt_of_le_of_lt
-    ((min_le_right _ _).trans (min_le_left _ _)) (by linarith)
-  have hδs : L * δ < s := by
-    have hle : δ ≤ s / (2 * L) := (min_le_right _ _).trans (min_le_right _ _)
-    have := (le_div_iff₀ (by positivity : 0 < 2 * L)).mp hle
-    nlinarith
-  exact ⟨L, hL, hA, δ, hδ, (Metric.closedBall_subset_ball hδr).trans hrU,
-    (Metric.closedBall_subset_ball hδs).trans hsV,
-    fun t ht v hv ↦ hbound t ht v (hv.trans hδd)⟩
+  obtain ⟨δ, hδ, hδd, hδU, hδV⟩ := exists_closedBall_subset_closedBall_mul_subset hL hd hU hV
+  exact ⟨L, hL, hA, δ, hδ, hδU, hδV, fun t ht v hv ↦ hbound t ht v (hv.trans hδd)⟩
 
 end NontriviallyNormedField
 
@@ -254,7 +258,8 @@ theorem continuousAt_parametric_derivativeRescale_zero (hU : U ∈ 𝓝 0)
     ContinuousAt (fun q : P × ℝ × E ↦ derivativeRescale (f q.1) (f' q.1 0) q.2.1 q.2.2)
       (p₀, 0, v) := by
   have hD0 : ContinuousAt (fun q : P × ℝ × E ↦ f' q.1 0 q.2.2) (p₀, 0, v) :=
-    (hf'.comp_of_eq (continuous_fst.prodMk continuous_const).continuousAt rfl).clm_apply
+    (ContinuousAt.comp₂ (f := fun x : P × E ↦ f' x.1 x.2) (g := fun q : P × ℝ × E ↦ q.1)
+      (h := fun _ ↦ (0 : E)) hf' continuous_fst.continuousAt continuousAt_const).clm_apply
       continuous_snd.snd.continuousAt
   rw [ContinuousAt, derivativeRescale_zero]
   refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
@@ -297,8 +302,7 @@ theorem exists_parametric_norm_derivativeRescale_le [CompactSpace P] (hU : U ∈
     ∃ L > 0, (∀ p, ‖f' p 0‖ ≤ L) ∧ ∃ δ > 0, ∀ p, ∀ t : ℝ, ‖t‖ ≤ 1 → ∀ v : E, ‖v‖ ≤ δ →
       ‖derivativeRescale (f p) (f' p 0) t v‖ ≤ L * ‖v‖ := by
   have hc : Continuous fun p ↦ f' p 0 :=
-    continuous_iff_continuousAt.2 fun p ↦
-      (hf' p).comp_of_eq (continuous_id.prodMk continuous_const).continuousAt rfl
+    continuous_iff_continuousAt.2 fun p ↦ (hf' p).comp₂ continuousAt_id continuousAt_const
   obtain ⟨M, hM⟩ := isCompact_univ.exists_bound_of_continuousOn hc.continuousOn
   -- By the tube lemma, one ball around the origin keeps every derivative within `1` of its value
   -- at the origin, for every parameter.
@@ -327,6 +331,20 @@ theorem exists_parametric_norm_derivativeRescale_le [CompactSpace P] (hU : U ∈
         exact ((f' p 0).le_opNorm v).trans (mul_le_mul_of_nonneg_right
           ((hM p trivial).trans (le_max_left _ _)) (norm_nonneg v))
     _ = (max M 0 + 1) * ‖v‖ := by ring
+
+/-- On a compact parameter space, small rescaled balls stay in any prescribed target
+neighbourhood, uniformly in the parameter and for `‖t‖ ≤ 1`. The original small ball can
+simultaneously be confined to a prescribed source neighbourhood. -/
+theorem exists_parametric_derivativeRescale_closedBall_subset [CompactSpace P] (hU : U ∈ 𝓝 0)
+    (hf : ∀ p, ∀ z ∈ U, HasFDerivAt (f p) (f' p z) z)
+    (hf' : ∀ p, ContinuousAt (fun x : P × E ↦ f' x.1 x.2) (p, 0)) {V : Set F} (hV : V ∈ 𝓝 0) :
+    ∃ L > 0, (∀ p, ‖f' p 0‖ ≤ L) ∧ ∃ δ > 0,
+      Metric.closedBall 0 δ ⊆ U ∧ Metric.closedBall 0 (L * δ) ⊆ V ∧
+      ∀ p, ∀ t : ℝ, ‖t‖ ≤ 1 → ∀ v : E, ‖v‖ ≤ δ →
+        ‖derivativeRescale (f p) (f' p 0) t v‖ ≤ L * ‖v‖ := by
+  obtain ⟨L, hL, hA, d, hd, hbound⟩ := exists_parametric_norm_derivativeRescale_le hU hf hf'
+  obtain ⟨δ, hδ, hδd, hδU, hδV⟩ := exists_closedBall_subset_closedBall_mul_subset hL hd hU hV
+  exact ⟨L, hL, hA, δ, hδ, hδU, hδV, fun p t ht v hv ↦ hbound p t ht v (hv.trans hδd)⟩
 
 end Real
 
