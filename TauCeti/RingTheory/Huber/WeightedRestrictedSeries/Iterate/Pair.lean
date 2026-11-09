@@ -192,8 +192,8 @@ weights by an open quotient morphism `e` from the latter to the iterated complet
 `ι` embeds the first completion into the concatenated one as the first block of variables, so that
 `e ∘ ι` is the coefficient inclusion and `ι` preserves the coefficients from `A`. Moreover `e`
 sends the last variables to the corresponding variables of the iterated completion. -/
-theorem exists_iterate_pairHoms {k m : ℕ} {R : Fin k → Set A}
-    (hR : IsWeightFamily R) {W : Fin 1 → Set A}
+theorem exists_iterate_pairHoms {k n m : ℕ} {R : Fin k → Set A}
+    (hR : IsWeightFamily R) {W : Fin n → Set A}
     (hZ : IsWeightFamily (Fin.append R (Fin.append W fun _ : Fin m ↦ ({1} : Set A))))
     (hWD : IsWeightFamily (Fin.append
       (fun i ↦ algebraMap A (Completion (weightedRestrictedSubring R hR)) '' W i)
@@ -209,7 +209,7 @@ theorem exists_iterate_pairHoms {k m : ℕ} {R : Fin k → Set A}
       (∀ a : A, ι.toRingHom (algebraMap A (Completion (weightedRestrictedSubring R hR)) a) =
         algebraMap A (Completion (weightedRestrictedSubring _ hZ)) a) := by
   have hRZ : ∀ i, Fin.append R (Fin.append W fun _ : Fin m ↦ ({1} : Set A))
-      (Fin.castAdd (1 + m) i) = R i := fun i ↦ by simp
+      (Fin.castAdd (n + m) i) = R i := fun i ↦ by simp
   have hZW : ∀ j, algebraMap A (Completion (weightedRestrictedSubring R hR)) ''
       Fin.append R (Fin.append W fun _ : Fin m ↦ ({1} : Set A)) (Fin.natAdd k j) =
         Fin.append (fun i ↦ algebraMap A (Completion (weightedRestrictedSubring R hR)) '' W i)

@@ -237,23 +237,23 @@ coefficients and sends `Xⱼ` to `tⱼ X_{idx j}`, where every element of `Q i` 
 (`TauCeti/RingTheory/Huber/TopologicallyFiniteType/Comp.lean`): the second weights are moved to the
 original base and unweighted variables are added. The caller uses `Q = rationalWeight T s`. -/
 theorem exists_openQuotientMap_of_weighted_presentation
-    (f : Pair.Hom U V) (hf : f.IsTopologicallyFiniteType) {k : ℕ} {R : Fin k → Set A}
+    (f : Pair.Hom U V) (hf : f.IsTopologicallyFiniteType) {k n : ℕ} {R : Fin k → Set A}
     (hRfin : ∀ i, (R i).Finite)
     (hR : IsWeightFamily R) (π : Pair.Hom (U.weighted hR).completion V)
     (hπ : π.IsQuotientMapping)
     (hπf : π.comp (U.weightedCompletionHom hR) = f)
-    {Q : Fin 1 → Set B} (hQ : IsWeightFamily Q) (hQfin : ∀ i, (Q i).Finite) :
-    ∃ (m : ℕ) (idx : Fin m → Fin 1) (t : Fin m → B),
+    {Q : Fin n → Set B} (hQ : IsWeightFamily Q) (hQfin : ∀ i, (Q i).Finite) :
+    ∃ (m : ℕ) (idx : Fin m → Fin n) (t : Fin m → B),
       (∀ i, ∀ a ∈ Q i, ∃ j, idx j = i ∧ t j = a) ∧
-      ∃ (Z : Fin (k + (1 + m)) → Set A) (hZ : IsWeightFamily Z) (_ : ∀ i, (Z i).Finite)
+      ∃ (Z : Fin (k + (n + m)) → Set A) (hZ : IsWeightFamily Z) (_ : ∀ i, (Z i).Finite)
         (σ : Pair.Hom (U.weighted hZ).completion (V.weighted hQ).completion)
         (ι : Pair.Hom (U.weighted hR).completion (U.weighted hZ).completion),
-        IsOpenQuotientMap σ.toRingHom ∧ (∀ j, (1 : A) ∈ Z (Fin.natAdd k (Fin.natAdd 1 j))) ∧
+        IsOpenQuotientMap σ.toRingHom ∧ (∀ j, (1 : A) ∈ Z (Fin.natAdd k (Fin.natAdd n j))) ∧
         (∀ a, σ.toRingHom (algebraMap A (Completion (weightedRestrictedSubring Z hZ)) a) =
           algebraMap B (Completion (weightedRestrictedSubring Q hQ)) (f.toRingHom a)) ∧
         (∀ a, σ.toRingHom (ι.toRingHom a) =
           algebraMap B (Completion (weightedRestrictedSubring Q hQ)) (π.toRingHom a)) ∧
-        ∀ j, σ.toRingHom (weightedX Z hZ (Fin.natAdd k (Fin.natAdd 1 j)) :
+        ∀ j, σ.toRingHom (weightedX Z hZ (Fin.natAdd k (Fin.natAdd n j)) :
             weightedRestrictedSubring Z hZ) =
           algebraMap B (Completion (weightedRestrictedSubring Q hQ)) (t j) *
             (weightedX Q hQ (idx j) : weightedRestrictedSubring Q hQ) := by
@@ -263,15 +263,13 @@ theorem exists_openQuotientMap_of_weighted_presentation
     rw [← Pair.Hom.toRingHom_weightedCompletionHom, ← Pair.Hom.toRingHom_comp, hπf]
   obtain ⟨G, hW, hW', hG⟩ := exists_finset_weights_image_mem_plus f
     (fun _ hJ ↦ hf.isTopologicallyFiniteType_toRingHom.isOpen_map hJ) hQ
-  let W : Fin 1 → Set A := fun i ↦ (G i : Set A)
-  have hWfin (i : Fin 1) : (W i).Finite := (G i).finite_toSet
+  let W : Fin n → Set A := fun i ↦ (G i : Set A)
+  have hWfin (i : Fin n) : (W i).Finite := (G i).finite_toSet
   have hb : IsWeightedVarPowerBounded (algebraMap B (Completion (weightedRestrictedSubring Q hQ)))
       (fun i ↦ f.toRingHom '' W i)
       fun i ↦ (weightedX Q hQ i : weightedRestrictedSubring Q hQ) :=
-    (isWeightedVarPowerBounded_iff_of_finite fun i ↦ (hWfin i).image _).mpr fun i a ha ↦ by
-      obtain ⟨a, ha, rfl⟩ := ha
-      simpa only [algebraMap_completion_weightedRestrictedSubring_apply, ← Completion.coe_mul]
-        using (V.weighted hQ).completion.isRingOfIntegralElements.isPowerBounded_of_mem (hG i a ha)
+    V.isWeightedVarPowerBounded_weightedX_of_mem_plus hQ (fun i ↦ (hWfin i).image _)
+      fun i _ ⟨a, ha, h⟩ ↦ h ▸ hG i a ha
   obtain ⟨m, idx, t, ht, hcover, θ, hθ, hθB, hθX, hθY⟩ :=
     exists_isOpenQuotientMap_completion_weightedRestrictedSubring_append hQ hQfin hW' hb
   have hWD := (hR.image_algebraMap_completion hW).append (isWeightFamily_one_weight (k := m))
@@ -295,7 +293,7 @@ theorem exists_openQuotientMap_of_weighted_presentation
   obtain ⟨e, ι, he, heX, heι, hιA⟩ := Pair.exists_iterate_pairHoms (U := U) hR hZ hWD
   have hZfin := finite_append_append_weights (n := m) hRfin hWfin
   have hZ1 : ∀ j : Fin m, (1 : A) ∈ Fin.append R (Fin.append W fun _ : Fin m ↦ ({1} : Set A))
-      (Fin.natAdd k (Fin.natAdd 1 j)) := fun j ↦ by simp
+      (Fin.natAdd k (Fin.natAdd n j)) := fun j ↦ by simp
   obtain ⟨θ', hθ'⟩ := V.exists_hom_toRingHom_eq_of_weightedX hQ ht hW'
     (fun i _ ⟨a, ha, h⟩ ↦ h ▸ hG i a ha) θ hθ.continuous hθB hθX hθY
   have hσι (a) : (θ'.comp (β.comp e)).toRingHom (ι.toRingHom a) =
