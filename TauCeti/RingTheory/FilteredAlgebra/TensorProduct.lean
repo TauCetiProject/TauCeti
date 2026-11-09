@@ -36,10 +36,12 @@ open scoped TensorProduct
 
 namespace TauCeti.AlgFiltration
 
-variable (R : Type*) {A B : Type*} [CommRing R] [Ring A] [Ring B]
+section Filtration
+
+variable (R : Type*) {A B : Type*} [CommSemiring R] [Semiring A] [Semiring B]
   [Algebra R A] [Algebra R B] (F : TauCeti.AlgFiltration A) (G : TauCeti.AlgFiltration B)
 
-private theorem restrictScalars_ideal_mul_le {A : Type*} [Ring A] [Algebra R A]
+private theorem restrictScalars_ideal_mul_le {A : Type*} [Semiring A] [Algebra R A]
     (F : TauCeti.AlgFiltration A) (a b : ℕ) :
     (F.ideal a).restrictScalars R * (F.ideal b).restrictScalars R ≤
       (F.ideal (a + b)).restrictScalars R :=
@@ -84,6 +86,13 @@ theorem ideal_le_comap_includeRight (k : ℕ) :
       (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B) :=
   fun _ hb => F.tmul_mem_tensorProduct_ideal R G (a := 0) (b := k) (by omega) (by simp) hb
 
+end Filtration
+
+section Completion
+
+variable (R : Type*) {A B : Type*} [CommRing R] [Ring A] [Ring B]
+  [Algebra R A] [Algebra R B] (F : TauCeti.AlgFiltration A) (G : TauCeti.AlgFiltration B)
+
 /-- The left inclusion into the completed tensor product. -/
 noncomputable def includeLeftCompletion :
     F.completion →ₐ[R] (F.tensorProduct R G).completion :=
@@ -111,6 +120,7 @@ theorem includeRightCompletion_toCompletion (b : B) :
   G.mapCompletionₐ_toCompletion _ _ _ monotone_id _ b
 
 /-- The order-`k` component of the completed left inclusion is the induced quotient map. -/
+@[simp]
 theorem projection_includeLeftCompletion (k : ℕ) (x : F.completion) :
     (F.tensorProduct R G).projection k (F.includeLeftCompletion R G x) =
       Ideal.quotientMapₐ ((F.tensorProduct R G).ideal (k + 1))
@@ -119,6 +129,7 @@ theorem projection_includeLeftCompletion (k : ℕ) (x : F.completion) :
   F.projection_mapCompletionₐ _ _ _ monotone_id _ k x
 
 /-- The order-`k` component of the completed right inclusion is the induced quotient map. -/
+@[simp]
 theorem projection_includeRightCompletion (k : ℕ) (y : G.completion) :
     (F.tensorProduct R G).projection k (F.includeRightCompletion R G y) =
       Ideal.quotientMapₐ ((F.tensorProduct R G).ideal (k + 1))
@@ -188,5 +199,7 @@ theorem completedTensor_one_right (x : F.completion) :
 theorem completedTensor_one_left (y : G.completion) :
     F.completedTensor R G 1 y = F.includeRightCompletion R G y := by
   simp [completedTensor_apply]
+
+end Completion
 
 end TauCeti.AlgFiltration

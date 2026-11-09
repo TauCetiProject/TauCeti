@@ -90,12 +90,14 @@ theorem coe_mapCompletionₐ :
       F.mapCompletion G (f : A →+* B) l hl hf := (rfl)
 
 /-- The order-`k` projection is the induced quotient algebra map at source order `l k`. -/
+@[simp]
 theorem projection_mapCompletionₐ (k : ℕ) (x : F.completion) :
     G.projection k (F.mapCompletionₐ G f l hl hf x) =
       Ideal.quotientMapₐ (G.ideal (k + 1)) f (hf k) (F.projection (l k) x) :=
   F.projection_mapCompletion G (f : A →+* B) l hl hf k x
 
 /-- The induced algebra map extends the original map on canonical elements. -/
+@[simp]
 theorem mapCompletionₐ_toCompletion (a : A) :
     F.mapCompletionₐ G f l hl hf (F.toCompletion a) = G.toCompletion (f a) :=
   F.mapCompletion_toCompletion G (f : A →+* B) l hl hf a
