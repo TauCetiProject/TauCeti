@@ -71,6 +71,9 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.intCast_comp_vecCons_eq_zsmul_vecMul_inv`: the bottom row of
   `γ⁻¹` for `γ = [a, b; c, d] ∈ SL₂(ℤ)` is `(-c, a)`, in any commutative ring; and
   `Matrix.SpecialLinearGroup.neg_vecMul_inv`: replacing `γ` by `-γ` negates `v ᵥ* γ⁻¹`.
+* `Matrix.SpecialLinearGroup.vecMul_inv_apply_zero` and
+  `Matrix.SpecialLinearGroup.vecMul_inv_apply_one`: the coordinates of `x ᵥ* γ⁻¹` for
+  `γ ∈ SL₂(R)` in terms of those of `x` and `γ`.
 * `Matrix.SpecialLinearGroup` is countable when its coefficient ring is.
 * `Matrix.SpecialLinearGroup.coe_ne_zero`: a square matrix of determinant one over a nontrivial
   ring, indexed by a nonempty type, is nonzero.
@@ -236,6 +239,17 @@ theorem neg_vecMul_inv {R : Type*} [CommRing R] (v : Fin 2 → R) (γ : SL(2, �
     (-(v ᵥ* (γ⁻¹ : SL(2, ℤ))) : Fin 2 → R) = v ᵥ* ((-γ)⁻¹ : SL(2, ℤ)) := by
   ext i
   fin_cases i <;> simp [vecMul, dotProduct]
+
+/-- The first coordinate of `x γ⁻¹` for `γ ∈ SL₂(R)`. -/
+lemma vecMul_inv_apply_zero {R : Type*} [CommRing R] (x : Fin 2 → R) (γ : SL(2, R)) :
+    (x ᵥ* ((γ⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R)) 0 = x 0 * γ 1 1 - x 1 * γ 1 0 := by
+  simp [vecMul, dotProduct, Matrix.adjugate_fin_two]
+  ring
+
+/-- The second coordinate of `x γ⁻¹` for `γ ∈ SL₂(R)`. -/
+lemma vecMul_inv_apply_one {R : Type*} [CommRing R] (x : Fin 2 → R) (γ : SL(2, R)) :
+    (x ᵥ* ((γ⁻¹ : SL(2, R)) : Matrix (Fin 2) (Fin 2) R)) 1 = -(x 0 * γ 0 1) + x 1 * γ 0 0 := by
+  simp [vecMul, dotProduct, Matrix.adjugate_fin_two]
 
 /-- The determinant-one identity for an element of `SL₂(R)`, written in coordinates. -/
 lemma fin_two_mul_sub_mul_eq_one {R : Type*} [CommRing R] (g : SL(2, R)) :
