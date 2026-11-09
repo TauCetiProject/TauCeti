@@ -149,7 +149,7 @@ theorem flowOf_flowOf_neg {v : (x : M) → TangentSpace I x}
   rw [flowOf_apply, flowOf_apply,
     ← maximalIntegralCurve_add hv (hcomplete.mem_maximalIntegralCurveInterval x (-t))
       (hcomplete.mem_maximalIntegralCurveInterval x (-t + t)),
-    neg_add_cancel, maximalIntegralCurve_zero (hcomplete.mem_maximalIntegralCurveInterval x 0)]
+    neg_add_cancel, maximalIntegralCurve_zero]
 
 /-- For a complete `C¹` vector field, the time-`t` map of the maximal flow is surjective. -/
 theorem flowOf_surjective {v : (x : M) → TangentSpace I x}

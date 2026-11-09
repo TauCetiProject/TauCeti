@@ -144,7 +144,7 @@ witnesses. -/
     simpa only [zero_sub] using sub_mem_maximalIntegralCurveInterval hv ht h0
   have hback : maximalIntegralCurve v (maximalIntegralCurve v x t) (-t) = x := by
     rw [← maximalIntegralCurve_add hv ht]
-    · simpa only [add_neg_cancel] using maximalIntegralCurve_zero h0
+    · simpa only [add_neg_cancel] using maximalIntegralCurve_zero
     · simpa using h0
   constructor
   · intro hs
