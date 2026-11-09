@@ -62,6 +62,7 @@ theorem hilbertSchmidtEnergy_isometry_comp (U : F →L[𝕜] G) (hU : ∀ x, ‖
 
 variable [CompleteSpace E] [CompleteSpace F] [CompleteSpace G]
 
+omit [CompleteSpace F] [CompleteSpace G] in
 /-- **Left isometric invariance of the Hilbert–Schmidt norm.** If `U` preserves norms, then
 `‖U T‖_HS = ‖T‖_HS`. -/
 theorem hilbertSchmidtNorm_isometry_comp (U : F →L[𝕜] G) (hU : ∀ x, ‖U x‖ = ‖x‖)
@@ -101,7 +102,7 @@ theorem hilbertSchmidtEnergy_isometry_comp_coisometry (U : G →L[𝕜] H) (hU :
 /-- **Two-sided isometric invariance of the Hilbert–Schmidt norm.** If `U` and the adjoint of `V`
 preserve norms, then `‖U T V‖_HS = ‖T‖_HS`. In particular the Hilbert–Schmidt norm is invariant
 under conjugation by unitaries. -/
-theorem hilbertSchmidtNorm_isometry_comp_coisometry [CompleteSpace H] (U : G →L[𝕜] H)
+theorem hilbertSchmidtNorm_isometry_comp_coisometry (U : G →L[𝕜] H)
     (hU : ∀ x, ‖U x‖ = ‖x‖) (T : F →L[𝕜] G) (V : E →L[𝕜] F) (hV : ∀ x, ‖adjoint V x‖ = ‖x‖) :
     (U ∘L T ∘L V).hilbertSchmidtNorm = T.hilbertSchmidtNorm := by
   rw [hilbertSchmidtNorm_isometry_comp U hU, hilbertSchmidtNorm_comp_coisometry T V hV]

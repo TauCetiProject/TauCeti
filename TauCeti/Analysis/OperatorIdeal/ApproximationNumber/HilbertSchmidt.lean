@@ -110,6 +110,7 @@ theorem hilbertSchmidtEnergy_le_tsum_singularValue_sq (T : E →L[𝕜] F) (b : 
 
 variable [CompleteSpace E]
 
+omit [CompleteSpace E] in
 /-- Compressing `T` to a finite-dimensional subspace `V` of the source, with values in `T(V)`,
 does not increase the Hilbert–Schmidt energy. -/
 private theorem hilbertSchmidtEnergy_compression_le (T : E →L[𝕜] F) (V : Submodule 𝕜 E)
@@ -203,7 +204,7 @@ theorem hilbertSchmidtEnergy_ne_top_iff_summable_singularValue_sq (T : E →L[�
 
 /-- The square of the Hilbert–Schmidt norm is the sum of the squared approximation numbers,
 `‖T‖_HS² = ∑' n, aₙ(T)²`. When `T` has infinite energy both sides are `0`. -/
-theorem sq_hilbertSchmidtNorm_eq_tsum_singularValue_sq [CompleteSpace F] (T : E →L[𝕜] F) :
+theorem sq_hilbertSchmidtNorm_eq_tsum_singularValue_sq (T : E →L[𝕜] F) :
     T.hilbertSchmidtNorm ^ 2 = ∑' n, (T.singularValue n : ℝ) ^ 2 := by
   obtain ⟨_, b, -⟩ := exists_hilbertBasis 𝕜 E
   rw [T.sq_hilbertSchmidtNorm b, ← T.tsum_singularValue_sq_eq_hilbertSchmidtEnergy b,
