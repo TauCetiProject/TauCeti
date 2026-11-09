@@ -70,7 +70,7 @@ than over `k(x)`: the family is shown to be linearly independent over the `k`-su
 `k[x] = Algebra.adjoin k {x}`, and `LinearIndependent.iff_fractionRing` then upgrades this to
 `k(x) = k⟮x⟯`, which is the fraction field of `k[x]` by Mathlib's
 `IntermediateField.algebraAdjoinAdjoin` instances. Clearing the common power of `x` from a
-relation is `TauCeti.Polynomial.exists_common_X_pow_factor`, which runs on
+relation is `TauCeti.Polynomial.exists_polynomial_relation_of_sum_smul_eq_zero`, which runs on
 the least exponent with a nonzero coefficient across the family, so no denominators ever appear.
 
 ## References
@@ -134,35 +134,14 @@ private theorem linearIndependent_over_adjoin_of_linearIndependent_residue_of_or
   have hxmem : x ∈ P.integers := P.mem_integers_iff_ord_nonneg.mpr hx.le
   have ht : IsLocalRing.residue P.integers ⟨x, hxmem⟩ = 0 :=
     (P.residue_eq_zero_iff_ord_pos hx0).mpr hx
-  have hxtr : Transcendental k x := P.transcendental_of_ord_ne_zero hx.ne'
-  have hinj : Function.Injective (aeval x : k[X] →ₐ[k] F) := transcendental_iff_injective.mp hxtr
   rw [← LinearIndependent.iff_fractionRing (Algebra.adjoin k {x}) k⟮x⟯]
   rw [linearIndependent_iff']
   intro s g hsum i₀ hi₀
   by_contra hg0
-  -- Write the coefficients as polynomials in `x`.
-  have hrange : ∀ y : F, y ∈ Algebra.adjoin k ({x} : Set F) → ∃ p : k[X], aeval x p = y := by
-    intro y hy
-    rwa [Algebra.adjoin_singleton_eq_range_aeval, AlgHom.mem_range] at hy
-  choose p hp using fun i ↦ hrange (g i : F) (g i).2
-  -- The same identity read through the structure map of the subalgebra, which is how the
-  -- coefficients appear in the relation `hsum`.
-  have hpa : ∀ i, algebraMap (Algebra.adjoin k ({x} : Set F)) F (g i) = aeval x (p i) :=
-    fun i ↦ by rw [Subalgebra.algebraMap_apply]; exact (hp i).symm
-  have hpzero : ∀ i, p i = 0 ↔ g i = 0 := by
-    intro i
-    rw [← hinj.eq_iff, map_zero, hp i, ZeroMemClass.coe_eq_zero]
-  obtain ⟨m, q, hfactor, j, hjs, hqj⟩ := Polynomial.exists_common_X_pow_factor (s : Set ι) p
-    ⟨i₀, hi₀, fun h ↦ hg0 ((hpzero i₀).mp h)⟩
-  -- The relation, with the common factor `x ^ m` removed, lives in `𝒪_P`.
-  have hsumF : ∑ i ∈ s, aeval x (q i) * (z i : F) = 0 := by
-    have hx0' : (x : F) ^ m ≠ 0 := pow_ne_zero _ hx0
-    refine mul_left_cancel₀ hx0' ?_
-    rw [Finset.mul_sum, mul_zero]
-    rw [← hsum]
-    refine Finset.sum_congr rfl fun i hi ↦ ?_
-    rw [Algebra.smul_def, hpa i, hfactor i hi]
-    simp [mul_assoc]
+  -- Remove the common power of `x` from the relation; the result lives in `𝒪_P`.
+  obtain ⟨q, hsumF, j, hjs, hqj⟩ :=
+    TauCeti.Polynomial.exists_polynomial_relation_of_sum_smul_eq_zero hx0 s (fun i ↦ (z i : F)) g
+      hsum hi₀ hg0
   have hsumO : ∑ i ∈ s, aeval (⟨x, hxmem⟩ : P.integers) (q i) * z i = 0 := by
     apply Subtype.ext
     push_cast
