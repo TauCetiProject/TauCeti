@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.Period
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Basic
+public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Naturality
 import TauCeti.Topology.Connected.PathConnected
 
 /-!
@@ -23,7 +24,9 @@ point, and it recovers the periods on loops at every base point: the period homo
 as `π₁(M, x) → H₁(M; ℤ) → F` through the Hurewicz map (`TauCeti.homologyPeriodHom_hurewicz₁`).
 For a path-connected manifold, where the Hurewicz map identifies `H₁(M; ℤ)` with the
 abelianization of `π₁(M, x)`, this determines `homologyPeriodHom φ`
-(`TauCeti.homologyPeriodHom_hurewiczHomologyAddEquiv`).
+(`TauCeti.homologyPeriodHom_hurewiczHomologyAddEquiv`). The periods are natural: the periods of
+the pullback `f^* θ` along a `C²` map `f` are those of `θ` composed with the induced map
+`f_* : H₁(M; ℤ) → H₁(M'; ℤ)` (`TauCeti.homologyPeriodHom_singularHomologyMap`).
 
 For smooth real forms the homomorphism only depends on the de Rham class, and it determines the
 class, with no connectedness assumption: `TauCeti.deRhamCohomology.homologyPeriod` is an injective
@@ -46,6 +49,7 @@ in `Type`.
   closed `1`-form has a primitive `g`, paths from the point integrate the form to the change of `g`.
 * `TauCeti.exists_mextDeriv_eq_of_homologyPeriodHom_eq_zero`: a closed `1`-form whose periods on
   `H₁(M; ℤ)` vanish is exact.
+* `TauCeti.homologyPeriodHom_singularHomologyMap`: naturality of the periods under pullback.
 * `TauCeti.mem_exactForms_one_iff_homologyPeriodHom_eq_zero`: a closed smooth real `1`-form is
   exact exactly when its periods on `H₁(M; ℤ)` vanish.
 * `TauCeti.deRhamCohomology.homologyPeriod`: the periods of de Rham classes on `H₁(M; ℤ)`, an
@@ -194,6 +198,44 @@ theorem chainsDesc_pathClassIntegral_mextDeriv {ψ : RoughForm I M F 0} (hψ : I
     -- Both sides are the change of `ψ` between the endpoints of `s`.
     rw [toSSetObj₀Equiv_δ_zero, toSSetObj₀Equiv_δ_one, pathClassIntegral_mextDeriv hψ]
     simp [sub_eq_add_neg]
+
+/-! ### Naturality under pullback -/
+
+section Naturality
+
+variable {E' H' : Type*} {M' : Type} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M']
+  [FiniteDimensional ℝ E'] [T2Space M'] [IsManifold I' ∞ M'] {θ : RoughForm I' M' F 1}
+  {f : M → M'}
+
+/-- **Naturality of the periods on singular homology.** For a closed `C¹` form `θ` and a `C²`
+map `f`, the period of `θ` on the image `f_* c` of a class `c ∈ H₁(M; ℤ)` is the period of the
+pullback `f^* θ` on `c`. -/
+theorem homologyPeriodHom_singularHomologyMap (hf : ContMDiff I I' 2 f)
+    (hθ : IsSmoothForm I' 1 θ) (hclosed : mextDeriv θ = 0)
+    (c : ((singularChains ℤ).obj (.of M)).homology 1) :
+    homologyPeriodHom θ (ContinuousMap.singularHomologyMap ℤ 1 ⟨f, hf.continuous⟩ c) =
+      homologyPeriodHom (mpullback I I' f θ) c := by
+  have h : (homologyPeriodHom θ).comp
+      (ContinuousMap.singularHomologyMap ℤ 1 ⟨f, hf.continuous⟩).toAddMonoidHom =
+      homologyPeriodHom (mpullback I I' f θ) := by
+    refine homology_one_addMonoidHom_ext fun c ↦ ?_
+    rw [AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, ContinuousMap.singularHomologyMap,
+      homologyMap_H₁AddEquivHomology_mk, homologyPeriodHom_H₁AddEquivHomology_mk,
+      homologyPeriodHom_H₁AddEquivHomology_mk, ← LinearMap.comp_apply]
+    refine LinearMap.congr_fun (singularChains_linearMap_ext fun s ↦ ?_) _
+    rw [LinearMap.comp_apply, singularChains_map_f_simplexChain, chainsDesc_simplexChain_one,
+      chainsDesc_simplexChain_one, pathClassIntegral_mpullback hf hθ hclosed,
+      ← Path.Homotopic.Quotient.mk_map]
+    -- The pushed-forward simplex traces the image path; only the endpoints differ syntactically.
+    refine pathClassIntegral_mk_eq_of_apply_eq _ _ fun t ↦ ?_
+    conv_lhs => rw [← simplex₁_path₁ s]
+    rw [toSSet_map_app_simplex₁, path₁_simplex₁_apply]
+    -- Both sides are `f (path₁ s t)`.
+    rfl
+  exact DFunLike.congr_fun h c
+
+end Naturality
 
 /-! ### Periods of de Rham classes on singular homology -/
 
