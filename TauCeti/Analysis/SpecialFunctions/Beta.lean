@@ -425,8 +425,7 @@ section SecondIntegral
 variable {s : ℝ}
 
 /-- Under the chart `u ↦ u / (1 - u)` the integrand of Euler's second beta integral becomes the
-integrand of Euler's first one, for every `u < 1` (for negative `u` the real powers of negative
-numbers carry the same factor `cos ((a - 1) π)` on both sides). -/
+integrand of Euler's first one, for every `u < 1`. -/
 lemma abs_deriv_smul_one_add_rpow (a b : ℝ) {u : ℝ} (hu : u < 1) :
     |((1 - u) ^ 2)⁻¹| • ((u / (1 - u)) ^ (a - 1) * (1 + u / (1 - u)) ^ (-(a + b))) =
       u ^ (a - 1) * (1 - u) ^ (b - 1) := by
@@ -442,29 +441,12 @@ lemma abs_deriv_smul_one_add_rpow (a b : ℝ) {u : ℝ} (hu : u < 1) :
     rw [← Real.rpow_neg h1u.le, ← Real.rpow_add h1u, ← Real.rpow_add h1u]
     congr 1
     ring
-  -- the common factor: `(x / (1 - u)) ^ (a - 1) = x ^ (a - 1) / (1 - u) ^ (a - 1)` times `c`
-  have hmain (x c : ℝ) (hx : 0 ≤ x) (hxu : (u / (1 - u)) ^ (a - 1) = c * (x / (1 - u)) ^ (a - 1)) :
-      |((1 - u) ^ 2)⁻¹| • ((u / (1 - u)) ^ (a - 1) * (1 + u / (1 - u)) ^ (-(a + b))) =
-        c * x ^ (a - 1) * (1 - u) ^ (b - 1) := by
-    rw [smul_eq_mul, abs_of_nonneg (by positivity), hbase, hxu, Real.div_rpow hx h1u.le, e1, e2,
-      div_eq_mul_inv]
-    calc (1 - u) ^ (-2 : ℝ) * (c * (x ^ (a - 1) * ((1 - u) ^ (a - 1))⁻¹) * (1 - u) ^ (a + b))
-        = c * x ^ (a - 1) *
-          ((1 - u) ^ (-2 : ℝ) * (((1 - u) ^ (a - 1))⁻¹ * (1 - u) ^ (a + b))) := by ring
-      _ = c * x ^ (a - 1) * (1 - u) ^ (b - 1) := by rw [e3]
-  rcases lt_trichotomy u 0 with hu0 | rfl | hu0
-  · -- `u < 0`: both `u` and `u / (1 - u)` are negative, and `(-z) ^ (a - 1) = cos ((a - 1) π) *
-    -- z ^ (a - 1)` for `z > 0`
-    have hneg (z : ℝ) (hz : 0 < z) :
-        (-z) ^ (a - 1) = Real.cos ((a - 1) * Real.pi) * z ^ (a - 1) := by
-      rw [Real.rpow_def_of_neg (neg_lt_zero.2 hz), Real.log_neg_eq_log,
-        ← Real.rpow_def_of_pos hz, mul_comm]
-    have hq : 0 < -u / (1 - u) := div_pos (neg_pos.2 hu0) h1u
-    have hqu : u / (1 - u) = -(-u / (1 - u)) := by ring
-    rw [hmain (-u) (Real.cos ((a - 1) * Real.pi)) (neg_nonneg.2 hu0.le) (by
-      rw [hqu, hneg _ hq, neg_div]), ← neg_neg u, hneg _ (neg_pos.2 hu0), neg_neg]
-  · simp
-  · simpa only [one_mul] using hmain u 1 hu0.le (by rw [one_mul])
+  rw [smul_eq_mul, abs_of_nonneg (by positivity), hbase, Real.div_rpow_of_pos_right h1u u (a - 1),
+    e1, e2, div_eq_mul_inv]
+  calc (1 - u) ^ (-2 : ℝ) * (u ^ (a - 1) * ((1 - u) ^ (a - 1))⁻¹ * (1 - u) ^ (a + b))
+      = u ^ (a - 1) *
+        ((1 - u) ^ (-2 : ℝ) * (((1 - u) ^ (a - 1))⁻¹ * (1 - u) ^ (a + b))) := by ring
+    _ = u ^ (a - 1) * (1 - u) ^ (b - 1) := by rw [e3]
 
 /-- The integrand of Euler's second beta integral is integrable on the positive half-line
 whenever both parameters are positive. -/
