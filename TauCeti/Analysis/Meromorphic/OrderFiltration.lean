@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Meromorphic.Germ
 public import Mathlib.Analysis.Meromorphic.Order
-public import Mathlib.Algebra.Module.Submodule.Defs
+public import Mathlib.LinearAlgebra.Quotient.Defs
 
 /-!
 # The order filtration of meromorphic germs
@@ -90,6 +90,11 @@ theorem mem_orderGE (φ : meromorphicGerms 𝕜 a) (n : ℤ) :
 /-- Increasing the required order decreases the space of germs. -/
 theorem orderGE_antitone (a : 𝕜) : Antitone (orderGE a : ℤ → Submodule 𝕜 _) :=
   fun _ _ h _ hφ ↦ le_trans (WithTop.coe_le_coe.mpr h) hφ
+
+/-- The quotient of two order bounds, with the denominator viewed in the numerator.
+For `n ≤ m` it consists of the coefficients of orders `n, …, m - 1`. -/
+abbrev OrderWindow (a : 𝕜) (n m : ℤ) :=
+  orderGE a n ⧸ (orderGE a m).comap (orderGE a n).subtype
 
 /-- The coordinate vanishes to order exactly one. -/
 @[simp]

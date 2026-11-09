@@ -69,6 +69,10 @@ Morse-theoretic definitions that use them.
 * `TauCeti.fderiv_fderiv_comp_apply_of_fderiv_eq_zero`: for `C²` maps, where the differential of
   the outer function vanishes, the second derivative of a composition is the pullback of the
   second derivative along the differential of the inner function.
+* `TauCeti.fderiv_fderiv_slice_right_apply`: the second derivative of the restriction of a map on
+  a product to a fibre is its second derivative on fibre directions.
+* `TauCeti.fderiv_fderiv_apply_inl_eq_zero`: along a critical zero section of a map on a
+  product, the second derivative vanishes on base directions.
 * `TauCeti.fderiv_fderiv_comp_fst_add_comp_snd`: the second derivative of a separated sum on a
   product is block diagonal.
 * `TauCeti.fderiv_fderiv_sum_comp_eval_apply`: the second derivative of a separated sum of
@@ -179,6 +183,31 @@ theorem fderiv_fderiv_comp_apply_of_fderiv_eq_zero {f : E → G} {φ : F → E} 
     fderiv 𝕜 (fderiv 𝕜 (f ∘ φ)) b v w =
       fderiv 𝕜 (fderiv 𝕜 f) (φ b) (fderiv 𝕜 φ b v) (fderiv 𝕜 φ b w) := by
   simp [fderiv_fderiv_comp_apply hf hφ, hc]
+
+/-- The second derivative of the restriction `y ↦ f (a, y)` of a `C²` map on a product to a fibre
+is the second derivative of `f` evaluated on fibre directions. -/
+theorem fderiv_fderiv_slice_right_apply {f : E × F → G} {a : E} {b : F}
+    (hf : ContDiffAt 𝕜 2 f (a, b)) (v w : F) :
+    fderiv 𝕜 (fderiv 𝕜 (fun y ↦ f (a, y))) b v w =
+      fderiv 𝕜 (fderiv 𝕜 f) (a, b) (0, v) (0, w) := by
+  have hD : fderiv 𝕜 (fun y : F ↦ (a, y)) = fun _ ↦ ContinuousLinearMap.inr 𝕜 E F :=
+    funext fun y ↦ (hasFDerivAt_prodMk_right a y).fderiv
+  simpa [Function.comp_def, hD] using fderiv_fderiv_comp_apply (φ := fun y : F ↦ (a, y)) hf
+    (contDiffAt_const.prodMk contDiffAt_id) v w
+
+/-- **Base directions of a critical zero section are null for the second derivative.** If `f` is
+`C²` at `(a, 0)` and every point `(b, 0)` with `b` near `a` is a critical point of `f`, then the
+second derivative of `f` at `(a, 0)` vanishes on every base direction `(u, 0)`. -/
+theorem fderiv_fderiv_apply_inl_eq_zero {f : E × F → G} {a : E} (hf : ContDiffAt 𝕜 2 f (a, 0))
+    (hcrit : ∀ᶠ b in 𝓝 a, fderiv 𝕜 f (b, 0) = 0) (u : E) :
+    fderiv 𝕜 (fderiv 𝕜 f) (a, 0) (u, 0) = 0 := by
+  -- The map `b ↦ Df(b, 0)` vanishes near `a`, so its derivative `D²f(a, 0) ∘ inl` vanishes.
+  have hd : HasFDerivAt (fun b ↦ fderiv 𝕜 f (b, 0))
+      ((fderiv 𝕜 (fderiv 𝕜 f) (a, 0)).comp (ContinuousLinearMap.inl 𝕜 E F)) a :=
+    (hf.hasFDerivAt_fderiv le_rfl).comp a (hasFDerivAt_prodMk_left a 0)
+  have hzero :=
+    hd.unique ((hasFDerivAt_const (0 : E × F →L[𝕜] G) a).congr_of_eventuallyEq hcrit)
+  simpa using congr($hzero u)
 
 /-- The second derivative of a separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` at `(a, b)` is block
 diagonal: it sends `(v, w)` to the coproduct of `D²φ a v` and `D²ψ b w`, i.e. to the functional

@@ -34,6 +34,8 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
   power map is `μₙ`.
 * `TauCeti.rootsOfUnityPowOfDvd`: for `n ∣ m`, the power map `η ↦ η ^ (m / n)` from `μₘ(M)` to
   `μₙ(M)`.
+  Its kernel consists of the `(m / n)`-th roots of unity
+  (`TauCeti.mem_ker_rootsOfUnityPowOfDvd_iff`).
 
 ## Main results
 
@@ -65,6 +67,8 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
   finite when the `n`-th roots of unity are, for instance in a domain for `n ≠ 0`.
 * `TauCeti.natCard_powMonoidHom_ker`: with enough `n`-th roots of unity, the kernel of the `n`-th
   power map has `n` elements.
+* `TauCeti.exists_rootsOfUnity_isPrimitiveRoot_of_dvd`: for `k ∣ m`, if `M` has enough `k`-th roots
+  of unity, then some `m`-th root of unity is a primitive `k`-th root of unity.
 -/
 
 public section
@@ -326,6 +330,21 @@ def rootsOfUnityPowOfDvd {M : Type*} [CommMonoid M] {n m : ℕ} (h : n ∣ m) :
 theorem coe_rootsOfUnityPowOfDvd_apply {M : Type*} [CommMonoid M] {n m : ℕ} (h : n ∣ m)
     (η : rootsOfUnity m M) : (rootsOfUnityPowOfDvd h η : Mˣ) = (η : Mˣ) ^ (m / n) :=
   (rfl)
+
+/-- The kernel of the power map `rootsOfUnityPowOfDvd h` consists of the `m`-th roots of unity
+that are `(m / n)`-th roots of unity. -/
+theorem mem_ker_rootsOfUnityPowOfDvd_iff {M : Type*} [CommMonoid M] {n m : ℕ} (h : n ∣ m)
+    {η : rootsOfUnity m M} : η ∈ (rootsOfUnityPowOfDvd h).ker ↔ (η : Mˣ) ^ (m / n) = 1 := by
+  rw [MonoidHom.mem_ker, ← Subtype.coe_inj, coe_rootsOfUnityPowOfDvd_apply, OneMemClass.coe_one]
+
+/-- For `k ∣ m`, if `M` has enough `k`-th roots of unity (in particular a primitive one), then some
+`m`-th root of unity is a primitive `k`-th root of unity. -/
+theorem exists_rootsOfUnity_isPrimitiveRoot_of_dvd {M : Type*} [CommMonoid M] {k m : ℕ}
+    [NeZero k] (h : k ∣ m) [HasEnoughRootsOfUnity M k] :
+    ∃ η : rootsOfUnity m M, IsPrimitiveRoot (η : Mˣ) k := by
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot M k
+  exact ⟨⟨hζ.toRootsOfUnity, rootsOfUnity_le_of_dvd h hζ.toRootsOfUnity.2⟩,
+    IsPrimitiveRoot.coe_units_iff.mp (by simpa using hζ)⟩
 
 /-- The power transition at a nonzero order is the identity. -/
 @[simp]
