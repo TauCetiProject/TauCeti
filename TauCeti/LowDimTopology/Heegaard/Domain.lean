@@ -305,6 +305,12 @@ theorem add (hD : H.IsDomainBetween x y D) (hE : H.IsDomainBetween y w E) :
 theorem neg (hD : H.IsDomainBetween x y D) : H.IsDomainBetween y x (-D) := by
   refine ⟨?_, ?_⟩ <;> simp only [map_neg, hD.1, hD.2, neg_sub]
 
+/-- Every integer multiple of a domain from `x` to itself is a domain from `x` to itself. -/
+theorem zsmul {D : Region → ℤ} (hD : H.IsDomainBetween x x D) (k : ℤ) :
+    H.IsDomainBetween x x (k • D) := by
+  simp only [isDomainBetween_iff, sub_self, map_zsmul] at hD ⊢
+  exact ⟨by rw [hD.1, smul_zero], by rw [hD.2, smul_zero]⟩
+
 /-- On an `α`-curve where `x` and `y` differ, the point of `x` is a corner of every domain from
 `x` to `y`, at which the boundary of its `α`-part has coefficient `-1`. -/
 theorem alphaArcBoundary_alphaBoundary_point_left
