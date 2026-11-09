@@ -153,12 +153,24 @@ theorem conv_sum {ι : Type*} [Countable ι] (μ : Measure α) (ν : ι → Meas
 the product of their masses of `Iic t`, since `x + y ≤ t` forces `x ≤ t` and `y ≤ t`. -/
 theorem conv_Iic_le {M : Type*} [MeasurableSpace M] [AddCommMonoid M] [PartialOrder M]
     [CanonicallyOrderedAdd M] [MeasurableAdd₂ M] [TopologicalSpace M] [OrderClosedTopology M]
-    [OpensMeasurableSpace M] (μ ν : Measure M) [SFinite ν] (t : M) :
+    [OpensMeasurableSpace M] (μ ν : Measure M) (t : M) :
     (μ ∗ ν) (Set.Iic t) ≤ μ (Set.Iic t) * ν (Set.Iic t) := by
-  rw [conv, map_apply measurable_add measurableSet_Iic, ← prod_prod]
-  refine measure_mono fun p hp ↦ ?_
-  simp only [Set.mem_preimage, Set.mem_prod, Set.mem_Iic] at hp ⊢
-  exact ⟨le_self_add.trans hp, le_add_self.trans hp⟩
+  rw [conv, map_apply measurable_add measurableSet_Iic]
+  calc μ.prod ν ((fun x : M × M ↦ x.1 + x.2) ⁻¹' Set.Iic t)
+      ≤ μ.prod ν (Set.Iic t ×ˢ Set.Iic t) := by
+        refine measure_mono fun p hp ↦ ?_
+        simp only [Set.mem_preimage, Set.mem_prod, Set.mem_Iic] at hp ⊢
+        exact ⟨le_self_add.trans hp, le_add_self.trans hp⟩
+    _ ≤ ∫⁻ x, ν (Prod.mk x ⁻¹' (Set.Iic t ×ˢ Set.Iic t)) ∂μ :=
+        prod_apply_le (measurableSet_Iic.prod measurableSet_Iic)
+    _ = μ (Set.Iic t) * ν (Set.Iic t) := by
+        have hx (x : M) : ν (Prod.mk x ⁻¹' (Set.Iic t ×ˢ Set.Iic t)) =
+            (Set.Iic t).indicator (fun _ ↦ ν (Set.Iic t)) x := by
+          by_cases h : x ∈ Set.Iic t
+          · rw [Set.mk_preimage_prod_right h, Set.indicator_of_mem h]
+          · rw [Set.mk_preimage_prod_right_eq_empty h, Set.indicator_of_notMem h, measure_empty]
+        simp_rw [hx]
+        rw [lintegral_indicator measurableSet_Iic, setLIntegral_const, mul_comm]
 
 /-- Mixing a family of measures indexed by `ℕ` that turns addition into convolution commutes
 with convolution: `(ρ.bind K) ∗ (σ.bind K) = (ρ ∗ σ).bind K` when
