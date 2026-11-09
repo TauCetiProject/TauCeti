@@ -127,6 +127,8 @@ theorem exists_real_polynomial_relations {σ : Type*} {l : Filter (σ → ℝ)}
   have hg_apply (u : (σ → ℝ) → ℝ) : g (u : Germ l ℝ) = ((fun y ↦ (u y : ℂ) : (σ → ℝ) → ℂ) : B) :=
     RingHom.mapGermAlgHom_coe _ _ _ _
   have hg : Function.Injective g := by
+    -- The `show` turns the opaque local `g` into its definition, so that
+    -- `RingHom.coe_mapGermAlgHom` identifies `⇑g` with `(algebraMap ℝ ℂ).mapGerm l`.
     rw [show ⇑g = (algebraMap ℝ ℂ).mapGerm l from RingHom.coe_mapGermAlgHom _ _ _]
     exact (algebraMap ℝ ℂ).mapGerm_injective l Complex.ofReal_injective
   let j : B →ₐ[R] B := (starRingEnd ℂ).mapGermAlgHom l fun p ↦ by
