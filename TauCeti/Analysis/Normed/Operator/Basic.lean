@@ -43,9 +43,9 @@ same constant (`ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le`); a
 operator `A` on a normed space cancels against its inverse
 (`ContinuousLinearMap.ringInverse_apply_apply`, `ContinuousLinearMap.apply_ringInverse_apply`)
 and is bounded below by `‖A⁻¹‖⁻¹` (`ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply`),
-and conversely a lower bound `‖x‖ ≤ M ‖A x‖` bounds the norm of the inverse by `M`
-(`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`). An operator bounded below
-is invertible if a sufficiently nearby operator is invertible
+and conversely a lower bound `‖x‖ ≤ M ‖A x‖` bounds the norm of `Ring.inverse A` by `M`
+(`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`; trivial for non-units). An operator
+bounded below is invertible if a sufficiently nearby operator is invertible
 (`ContinuousLinearMap.isUnit_of_forall_mul_norm_le_of_norm_sub_lt`).
 
 The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm at
@@ -234,8 +234,8 @@ theorem norm_le_norm_ringInverse_mul_norm_apply {A : E →L[𝕜] E} (hA : IsUni
     ‖x‖ = ‖Ring.inverse A (A x)‖ := by rw [ringInverse_apply_apply hA]
     _ ≤ ‖Ring.inverse A‖ * ‖A x‖ := le_opNorm _ _
 
-/-- An operator bounded below by `M⁻¹` has an inverse of norm at most `M`. If `A` is not a unit,
-`Ring.inverse A = 0` and the bound is trivial. -/
+/-- If `‖x‖ ≤ M * ‖A x‖` for all `x` and `0 ≤ M`, then `‖Ring.inverse A‖ ≤ M`. When `A` is not a
+unit, `Ring.inverse A = 0`, so the bound carries no information about invertibility. -/
 theorem norm_ringInverse_le_of_forall_norm_le {A : E →L[𝕜] E} {M : ℝ}
     (hM : 0 ≤ M) (h : ∀ x, ‖x‖ ≤ M * ‖A x‖) : ‖Ring.inverse A‖ ≤ M := by
   by_cases hA : IsUnit A
