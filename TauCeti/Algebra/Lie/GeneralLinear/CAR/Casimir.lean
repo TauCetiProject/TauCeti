@@ -286,7 +286,7 @@ theorem casimir_sum_eq_rev {μ : Fin N → K}
   have hleft : (∑ i : Fin N, μ i * (μ i + (N : K) - 1 - 2 * (i : K))) =
       (∑ i : Fin N, (a i : K) * ((a i : K) + (N : K) - 2 * (i : K))) +
         ∑ i : Fin N, ((N : K) / 2 - 1 / 4 - (i : K)) := by
-    rw [← Fin.sum_shift_mul_eq a]
+    rw [← Fin.sum_shift_mul_eq fun i => (a i : K)]
     exact Finset.sum_congr rfl fun i _ => by rw [hμ i]
   have hrev (i : Fin N) : glHalfStaircase K N i = ((Fin.rev i : ℕ) : K) + (2 : K)⁻¹ := by
     simpa only [one_div] using
@@ -296,7 +296,7 @@ theorem casimir_sum_eq_rev {μ : Fin N → K}
       (∑ i : Fin N, ((Fin.rev i : ℕ) : K) *
         (((Fin.rev i : ℕ) : K) + (N : K) - 2 * (i : K))) +
         ∑ i : Fin N, ((N : K) / 2 - 1 / 4 - (i : K)) := by
-    rw [← Fin.sum_shift_mul_eq fun i => (Fin.rev i : ℕ)]
+    rw [← Fin.sum_shift_mul_eq fun i => ((Fin.rev i : ℕ) : K)]
     exact Finset.sum_congr rfl fun i _ => by rw [hrev i]
   rw [hleft, hright] at hfield
   exact add_right_cancel hfield

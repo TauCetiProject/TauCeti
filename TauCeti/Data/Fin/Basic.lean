@@ -208,10 +208,10 @@ theorem sum_rev_castLE (N k : ℕ) (hk : k ≤ N) :
 
 /-- The Casimir-type sum of the shifted coordinates `b i + 1/2` is the sum for the unshifted
 coordinates `b i` plus a constant independent of `b`. -/
-theorem sum_shift_mul_eq {K : Type*} [Field K] [CharZero K] {N : ℕ} (b : Fin N → ℕ) :
-    (∑ i : Fin N, ((b i : K) + (2 : K)⁻¹) *
-      ((b i : K) + (2 : K)⁻¹ + (N : K) - 1 - 2 * (i : K))) =
-      (∑ i : Fin N, (b i : K) * ((b i : K) + (N : K) - 2 * (i : K))) +
+theorem sum_shift_mul_eq {K : Type*} [Field K] [CharZero K] {N : ℕ} (b : Fin N → K) :
+    (∑ i : Fin N, (b i + (2 : K)⁻¹) *
+      (b i + (2 : K)⁻¹ + (N : K) - 1 - 2 * (i : K))) =
+      (∑ i : Fin N, b i * (b i + (N : K) - 2 * (i : K))) +
         ∑ i : Fin N, ((N : K) / 2 - 1 / 4 - (i : K)) := by
   rw [← Finset.sum_add_distrib]
   apply Finset.sum_congr rfl
