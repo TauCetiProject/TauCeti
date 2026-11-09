@@ -110,8 +110,6 @@ and letting the truncations increase to `F` gives the bound for `∫⁻ F ^ q`.
 * `TauCeti.maximalFunction`: the centred Hardy–Littlewood maximal function, with
   `TauCeti.setLAverage_le_maximalFunction`, `TauCeti.maximalFunction_le` and
   `TauCeti.lt_maximalFunction_iff` as its interface.
-* `TauCeti.setLIntegral_ball_le_measure_mul_maximalFunction`: the integral over a ball is at most
-  its measure times the maximal function at the centre.
 * `TauCeti.maximalFunction_const`: the maximal function of a constant is that constant, so the
   normalisation is the intended one.
 * `TauCeti.maximalFunction_mono_ae`, `TauCeti.maximalFunction_congr_ae`: `M` is monotone in `‖f‖ₑ`
@@ -132,8 +130,6 @@ and letting the truncations increase to `F` gives the bound for `∫⁻ F ^ q`.
   **maximal inequality**, in product and in quotient form.
 * `TauCeti.ae_maximalFunction_lt_top`: the maximal function of an `L¹` function is finite almost
   everywhere.
-* `TauCeti.ae_enorm_eq_zero_of_maximalFunction_eq_zero`: a maximal function vanishing at one point
-  forces `f = 0` almost everywhere.
 * `TauCeti.lintegral_rpow_maximalFunction_le`, `TauCeti.eLpNorm_maximalFunction_le`: the
   **strong type `(p, p)` maximal inequality** for `1 < p < ∞`, with an explicit constant.
 * `TauCeti.mul_setLIntegral_lt_maximalFunction_le`,
@@ -201,26 +197,6 @@ theorem maximalFunction_le (h : ∀ r > 0, ⨍⁻ y in ball x r, ‖f y‖ₑ �
     maximalFunction μ f x ≤ a := by
   rw [maximalFunction_def]
   exact iSup₂_le h
-
-/-- The integral of `‖f‖ₑ` over a ball of finite measure is at most the measure of the ball times
-the maximal function at its centre. -/
-theorem setLIntegral_ball_le_measure_mul_maximalFunction (μ : Measure X) (f : X → F) (x : X)
-    (hr : 0 < r) (hμ : μ (ball x r) ≠ ∞) :
-    ∫⁻ y in ball x r, ‖f y‖ₑ ∂μ ≤ μ (ball x r) * maximalFunction μ f x := by
-  rw [← measure_mul_setLAverage _ hμ]
-  exact mul_le_mul_right (setLAverage_le_maximalFunction μ f x hr) _
-
-/-- If the maximal function of `f` vanishes at a single point, then `f` vanishes almost
-everywhere: every ball is contained in a ball about that point, on which `‖f‖ₑ` has average
-zero. -/
-theorem ae_enorm_eq_zero_of_maximalFunction_eq_zero [ProperSpace X] (μ : Measure X)
-    [IsFiniteMeasureOnCompacts μ] {f : X → F} (hf : AEMeasurable (fun y => ‖f y‖ₑ) μ) {x : X}
-    (hx : maximalFunction μ f x = 0) : ∀ᵐ y ∂μ, ‖f y‖ₑ = 0 := by
-  have hball (k : ℕ) : ∀ᵐ y ∂μ.restrict (ball x (k + 1)), ‖f y‖ₑ = 0 := by
-    have h := setLIntegral_ball_le_measure_mul_maximalFunction μ f x (r := k + 1)
-      (by positivity) measure_ball_lt_top.ne
-    rwa [hx, mul_zero, nonpos_iff_eq_zero, lintegral_eq_zero_iff' hf.restrict] at h
-  simpa [iUnion_ball_nat_succ] using (ae_restrict_iUnion_iff _ _).2 hball
 
 /-- The maximal function exceeds `t` exactly when some ball average does. -/
 theorem lt_maximalFunction_iff :

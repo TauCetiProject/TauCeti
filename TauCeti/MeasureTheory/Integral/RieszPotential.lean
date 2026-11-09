@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Integral.MaximalFunction
 public import TauCeti.MeasureTheory.Integral.NormRpow
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
+import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Integral.SchurTest
@@ -106,6 +107,9 @@ Hardy–Littlewood–Sobolev inequality when `p > 1`. The strong-type bound fail
 * `TauCeti.exists_rieszPotential_le_mul_maximalFunction_rpow_mul_eLpNorm_rpow`: Hedberg's
   inequality.
 * `TauCeti.exists_eLpNorm_rieszPotential_le`: the Hardy–Littlewood–Sobolev inequality.
+* `TauCeti.enorm_integral_norm_sub_rpow_smul_le_rieszPotential`,
+  `TauCeti.exists_eLpNorm_integral_norm_sub_rpow_smul_le`: the potential of a vector-valued `f`
+  is dominated by `I_α f`, so it satisfies the Hardy–Littlewood–Sobolev inequality too.
 
 ## References
 
@@ -816,6 +820,64 @@ theorem exists_eLpNorm_rieszPotential_le [FiniteDimensional ℝ E] (μ : Measure
     exact le_top
   have hf := aestronglyMeasurable_of_eLpNorm_ne_top hN
   exact eLpNorm_rieszPotential_le_mul hα hp.le hαp hqp hq hf (hK₁ f hf.enorm)
+
+section VectorValued
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+
+omit [BorelSpace E] in
+/-- The Riesz potential of `f` dominates the Bochner integral of `f` against the Riesz kernel,
+for `f` with values in a real normed space. -/
+theorem enorm_integral_norm_sub_rpow_smul_le_rieszPotential (μ : Measure E) (α : ℝ) (f : E → G)
+    (x : E) : ‖∫ y, ‖x - y‖ ^ (α - finrank ℝ E) • f y ∂μ‖ₑ ≤ rieszPotential μ α f x := by
+  rw [rieszPotential_def]
+  refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun y => ?_)
+  rw [enorm_smul]
+  gcongr
+  -- The real kernel is the extended one, except at `y = x` for a negative exponent, where it is
+  -- `0` instead of `∞`.
+  rw [← enorm_norm (x - y)]
+  rcases lt_or_ge (α - finrank ℝ E) 0 with hγ | hγ
+  · rcases (norm_nonneg (x - y)).eq_or_lt with h | h
+    · rw [← h, enorm_zero, ENNReal.zero_rpow_of_neg hγ]
+      exact le_top
+    · rw [Real.enorm_of_nonneg (by positivity), Real.enorm_of_nonneg h.le,
+        ENNReal.ofReal_rpow_of_pos h]
+  · exact (Real.enorm_rpow_of_nonneg (norm_nonneg _) hγ).le
+
+/-- **The Hardy–Littlewood–Sobolev inequality** for the Bochner integral
+`∫ ‖x - y‖ ^ (α - n) • f y dμ(y)` of a function with values in a real normed space: for `0 < α`,
+`1 < p` and `1 / q = 1 / p - α / n`, there is `C`, depending only on `μ`, `α` and `p`, with
+`‖∫ ‖· - y‖ ^ (α - n) • f y dμ(y)‖_q ≤ C ‖f‖_p`. -/
+theorem exists_eLpNorm_integral_norm_sub_rpow_smul_le [FiniteDimensional ℝ E] (μ : Measure E)
+    [μ.IsAddHaarMeasure] (hα : 0 < α) {p q : ℝ≥0} (hp : 1 < p)
+    (hpq : (q : ℝ)⁻¹ = (p : ℝ)⁻¹ - α / finrank ℝ E) :
+    ∃ C : ℝ≥0, ∀ f : E → G,
+      eLpNorm (fun x => ∫ y, ‖x - y‖ ^ (α - finrank ℝ E) • f y ∂μ) q μ ≤ C * eLpNorm f p μ := by
+  obtain ⟨C, hC⟩ := exists_eLpNorm_rieszPotential_le (F := G) μ hα hp hpq
+  -- Enlarging `C` to `C + 1` makes it nonzero, for the case `‖f‖_p = ∞`.
+  refine ⟨C + 1, fun f => ?_⟩
+  by_cases hf : AEStronglyMeasurable f μ
+  swap
+  · rw [eLpNorm_of_not_aestronglyMeasurable hf, ENNReal.mul_top (by simp)]
+    exact le_top
+  have hk : Measurable fun z : E × E => ‖z.1 - z.2‖ ^ (α - finrank ℝ E) := by fun_prop
+  have hmeas : AEStronglyMeasurable
+      (fun x => ∫ y, ‖x - y‖ ^ (α - finrank ℝ E) • f y ∂μ) μ :=
+    AEStronglyMeasurable.integral_prod_right'
+      (f := fun z : E × E => ‖z.1 - z.2‖ ^ (α - finrank ℝ E) • f z.2)
+      (hk.aestronglyMeasurable.smul hf.comp_snd)
+  calc eLpNorm (fun x => ∫ y, ‖x - y‖ ^ (α - finrank ℝ E) • f y ∂μ) q μ
+      ≤ eLpNorm (rieszPotential μ α f) q μ := by
+        refine eLpNorm_mono_enorm hmeas fun x => ?_
+        rw [enorm_eq_self]
+        exact enorm_integral_norm_sub_rpow_smul_le_rieszPotential μ α f x
+    _ ≤ C * eLpNorm f p μ := hC f
+    _ ≤ (C + 1 : ℝ≥0) * eLpNorm f p μ := by
+        gcongr
+        exact le_self_add
+
+end VectorValued
 
 end WholeSpace
 
