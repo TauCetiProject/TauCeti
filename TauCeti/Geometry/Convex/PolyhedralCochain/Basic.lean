@@ -444,11 +444,12 @@ def restrictScalarsEquiv : PolyhedralCochain ℤ h E k ≃+ PolyhedralCochain R 
 @[simp]
 theorem restrictScalarsEquiv_mk (σ : OrientedCell h k) (c : E) :
     restrictScalarsEquiv R h E k (mk σ c) = mk σ c := by
-  change ((Submodule.quotEquivOfEq _ _ (restrictScalars_cochainRelations R h E k).symm).trans
-    (Submodule.Quotient.restrictScalarsEquiv ℤ (cochainRelations R h E k)))
-      (Submodule.Quotient.mk (Finsupp.single σ c)) = Submodule.Quotient.mk (Finsupp.single σ c)
-  rw [LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
-    Submodule.Quotient.restrictScalarsEquiv_mk]
+  -- `PolyhedralCochain` is not exposed, so the quotient API only applies after `change`
+  -- re-reads both sides as classes in the quotient `(OrientedCell h k →₀ E) ⧸ _`.
+  change Submodule.Quotient.restrictScalarsEquiv ℤ (cochainRelations R h E k)
+      (Submodule.quotEquivOfEq _ _ (restrictScalars_cochainRelations R h E k).symm
+        (Submodule.Quotient.mk (Finsupp.single σ c))) = Submodule.Quotient.mk (Finsupp.single σ c)
+  rw [Submodule.quotEquivOfEq_mk, Submodule.Quotient.restrictScalarsEquiv_mk]
 
 end restrictScalars
 
