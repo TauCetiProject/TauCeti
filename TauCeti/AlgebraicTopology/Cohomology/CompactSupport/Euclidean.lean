@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Basic
-public import TauCeti.AlgebraicTopology.Cohomology.HomotopyInvariance
 public import TauCeti.AlgebraicTopology.Cohomology.Local.Orientation
 public import TauCeti.Analysis.Convex.Topology
 
@@ -15,13 +14,12 @@ public import TauCeti.Analysis.Convex.Topology
 
 Let `E` be a real normed space and `y : E`. Every compact subset of `E` lies in a compact set
 which contains `y` and is star-convex about `y`, and for such a set `K` the inclusion
-`(E, E ∖ K) ⟶ (E, E ∖ {y})` induces isomorphisms on relative singular cohomology: both
-`E ∖ K` and `E ∖ {y}` deformation retract onto a large sphere about `y`
-(`StarConvex.complSphereHomotopyEquiv`). So the groups `Hⁿ(E, E ∖ {y})` are cofinal, up to
-isomorphism, in the diagram whose colimit is the cohomology with compact supports, and the map
-`Hⁿ(E, E ∖ {y}) ⟶ Hⁿ_c(E)` is an isomorphism. This is the base case of the proof of Poincaré
-duality (Hatcher, Theorem 3.35), where the duality map of `ℝᵐ` is compared with the local
-homology at a point.
+`(E, E ∖ K) ⟶ (E, E ∖ {y})` induces isomorphisms on relative singular cohomology
+(`TauCeti.isIso_singularCohomologyMap_compl_of_starConvex`). So the groups `Hⁿ(E, E ∖ {y})` are
+cofinal, up to isomorphism, in the diagram whose colimit is the cohomology with compact supports,
+and the map `Hⁿ(E, E ∖ {y}) ⟶ Hⁿ_c(E)` is an isomorphism. This is the base case of the proof of
+Poincaré duality (Hatcher, Theorem 3.35), where the duality map of `ℝᵐ` is compared with the
+local homology at a point.
 
 Combined with the computation of local cohomology, for `E` of finite dimension `d` the group
 `Hⁿ_c(E; R, N)` vanishes for `n ≠ d` when the coefficients `R` are projective, and over `ℤ` the
@@ -30,8 +28,6 @@ orientation of `E`.
 
 ## Main definitions and results
 
-* `TauCeti.isIso_singularCohomologyMap_compl_of_starConvex`: `(E, E ∖ K) ⟶ (E, E ∖ {y})`
-  induces isomorphisms on cohomology for bounded `K` star-convex about `y ∈ K`.
 * `TopCat.isIso_compactSupportCohomologyι_singleton`: `Hⁿ(E, E ∖ {y}) ⟶ Hⁿ_c(E)` is an
   isomorphism.
 * `TopCat.compactSupportCohomologyEuclideanIso`: `Hⁿ_c(E) ≅ Hⁿ(E, E ∖ {y})`.
@@ -51,66 +47,9 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits Metric TopologicalSpace Module
+open CategoryTheory Limits TopologicalSpace Module
 
 universe v u
-
-section StarConvex
-
-/-! ### Removing a bounded star-convex set -/
-
-namespace TauCeti
-
-variable {C : Type u} [Category.{v} C] [HasCoproducts.{v} C] [Abelian C] (R : C)
-  (k : Type*) [Ring k] [Linear k C] (M : C)
-  {E : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E] {K : Set E} {y : E}
-
-/-- **Removing a bounded star-convex set does not change cohomology.** If `K` contains `y`, is
-star-convex about `y` and is bounded, then the inclusion `(E, E ∖ K) ⟶ (E, E ∖ {y})` induces
-isomorphisms on relative singular cohomology. Both `E ∖ K` and `E ∖ {y}` deformation retract
-onto a sphere about `y` containing `K` in its interior (`StarConvex.complSphereHomotopyEquiv`), so
-the inclusion induces isomorphisms on the cohomology of the subspaces, and
-`TopPair.isIso_singularCohomologyMap_of_forall_isIso` applies. -/
-theorem isIso_singularCohomologyMap_compl_of_starConvex (hK : StarConvex ℝ y K) (hy : y ∈ K)
-    (hKb : Bornology.IsBounded K) (n : ℕ) :
-    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
-      (TopPair.ofSubsetMap (𝟙 (TopCat.of E)) (B := Kᶜ) (B' := {y}ᶜ)
-        (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 hy))) n) := by
-  obtain ⟨r, hKr⟩ := (isBounded_iff_subset_ball y).1 hKb
-  let e₁ := hK.complSphereHomotopyEquiv hy hKr
-  let e₂ := (starConvex_singleton y).complSphereHomotopyEquiv rfl
-    (Set.singleton_subset_iff.2 (hKr hy))
-  set f := TopPair.ofSubsetMap (𝟙 (TopCat.of E)) (B := Kᶜ) (B' := {y}ᶜ)
-    (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 hy))
-  refine TopPair.isIso_singularCohomologyMap_of_forall_isIso f (fun m ↦ ?_) (fun m ↦ ?_) n
-  · -- The ambient map is the identity of `E`, an isomorphism.
-    have : IsIso (TopPair.Hom.fst f) := by
-      rw [show TopPair.Hom.fst f = 𝟙 (TopCat.of E) from TopPair.ofSubsetMap_fst _ _]
-      exact IsIso.id (TopCat.of E)
-    exact (singularCohomologyFunctor R k M m).map_isIso (TopPair.Hom.fst f).op
-  · -- The inclusion of the sphere into `E ∖ K`, followed by the inclusion into `E ∖ {y}`, is the
-    -- inclusion of the sphere into `E ∖ {y}`; both sphere inclusions are homotopy equivalences.
-    let g₁ : TopCat.of (sphere y r) ⟶ (TopPair.ofSubset (Kᶜ : Set (TopCat.of E))).snd :=
-      TopCat.ofHom e₁.toFun
-    let g₂ : TopCat.of (sphere y r) ⟶ (TopPair.ofSubset ({y}ᶜ : Set (TopCat.of E))).snd :=
-      TopCat.ofHom e₂.toFun
-    have hfac : g₁ ≫ TopPair.Hom.snd f = g₂ := by
-      ext z
-      rw [ConcreteCategory.comp_apply]
-      exact Subtype.ext <| (TopPair.ofSubsetMap_snd_apply _ _ _).trans <|
-        (hK.coe_complSphereHomotopyEquiv_apply hy hKr z).trans
-          ((starConvex_singleton y).coe_complSphereHomotopyEquiv_apply rfl _ z).symm
-    have h₁ : IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) g₁ m) :=
-      e₁.isIso_singularCohomologyMap R k M m
-    have h₂ : IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M)
-        (TopPair.Hom.snd f) m ≫ TopCat.singularCohomologyMap g₁ m) := by
-      rw [← TopCat.singularCohomologyMap_comp, hfac]
-      exact e₂.isIso_singularCohomologyMap R k M m
-    exact IsIso.of_isIso_comp_right _ (TopCat.singularCohomologyMap g₁ m)
-
-end TauCeti
-
-end StarConvex
 
 namespace TopCat
 
@@ -120,19 +59,15 @@ variable {C : Type u} [Category.{v} C] [HasCoproducts.{v} C] [Abelian C] {R : C}
   {k : Type v} [Ring k] [Linear k C] {M : C}
   {E : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- The compact set `{y}`, as an element of the compact subsets of `E`. -/
-private abbrev singletonCompacts (y : E) : Compacts (TopCat.of E) :=
-  ⟨{y}, isCompact_singleton⟩
+private lemma singleton_le_starHull (y : E) (K : Compacts (TopCat.of E)) :
+    ({y} : Compacts (TopCat.of E)) ≤ Compacts.starHull (E := E) ℝ y K :=
+  Compacts.singleton_le_iff.2 (Compacts.mem_starHull_self (E := E) ℝ y K)
 
-private lemma singletonCompacts_le_starHull (y : E) (K : Compacts (TopCat.of E)) :
-    singletonCompacts y ≤ Compacts.starHull (E := E) ℝ y K :=
-  Set.singleton_subset_iff.2 (Compacts.mem_starHull_self (E := E) ℝ y K)
-
-private lemma isIso_singularCohomologyMap_singletonCompacts_starHull (y : E)
+private lemma isIso_singularCohomologyMap_singleton_starHull (y : E)
     (K : Compacts (TopCat.of E)) (n : ℕ) :
     IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
       (TopPair.ofSubsetMap (𝟙 (TopCat.of E))
-        (mapsTo_id_compl_compacts (singletonCompacts_le_starHull y K))) n) :=
+        (mapsTo_id_compl_compacts (singleton_le_starHull y K))) n) :=
   TauCeti.isIso_singularCohomologyMap_compl_of_starConvex R k M
     (Compacts.starConvex_starHull (E := E) ℝ y K) (Compacts.mem_starHull_self (E := E) ℝ y K)
     (Compacts.starHull (E := E) ℝ y K).isCompact.isBounded n
@@ -145,30 +80,29 @@ Every compact `K ⊆ E` lies in the compact union of the segments from `y` to th
 which is star-convex about `y`, and for such sets the restriction `Hⁿ(E, E ∖ {y}) ⟶ Hⁿ(E, E ∖ K)`
 is an isomorphism (`TauCeti.isIso_singularCohomologyMap_compl_of_starConvex`). -/
 instance isIso_compactSupportCohomologyι_singleton (y : E) (n : ℕ) :
-    IsIso (compactSupportCohomologyι (R := R) (k := k) (M := M) (X := TopCat.of E) n
-      ⟨{y}, isCompact_singleton⟩) := by
+    IsIso (compactSupportCohomologyι (R := R) (k := k) (M := M) (X := TopCat.of E) n {y}) := by
   rw [ConcreteCategory.isIso_iff_bijective]
   refine ⟨(injective_iff_map_eq_zero _).2 fun z hz ↦ ?_, fun x ↦ ?_⟩
   · obtain ⟨L, hL, hzL⟩ := (compactSupportCohomologyι_eq_zero_iff z).1 hz
-    have := isIso_singularCohomologyMap_singletonCompacts_starHull (R := R) (k := k)
+    have := isIso_singularCohomologyMap_singleton_starHull (R := R) (k := k)
       (M := M) y L n
     refine (injective_iff_map_eq_zero _).1
       ((ConcreteCategory.bijective_of_isIso (TopPair.singularCohomologyMap (R := R) (k := k)
         (M := M) (TopPair.ofSubsetMap (𝟙 (TopCat.of E))
-          (mapsTo_id_compl_compacts (singletonCompacts_le_starHull y L))) n)).1) z ?_
+          (mapsTo_id_compl_compacts (singleton_le_starHull y L))) n)).1) z ?_
     rw [← singularCohomologyMap_compl_compacts_comp_apply hL
       (Compacts.le_starHull (E := E) ℝ y L), hzL, map_zero]
-  · obtain ⟨L, -, w, rfl⟩ := exists_compactSupportCohomologyι_eq x (singletonCompacts y)
-    have := isIso_singularCohomologyMap_singletonCompacts_starHull (R := R) (k := k)
+  · obtain ⟨L, -, w, rfl⟩ := exists_compactSupportCohomologyι_eq x {y}
+    have := isIso_singularCohomologyMap_singleton_starHull (R := R) (k := k)
       (M := M) y L n
     obtain ⟨z, hz⟩ := (ConcreteCategory.bijective_of_isIso (TopPair.singularCohomologyMap
       (R := R) (k := k) (M := M) (TopPair.ofSubsetMap (𝟙 (TopCat.of E))
-        (mapsTo_id_compl_compacts (singletonCompacts_le_starHull y L))) n)).2
+        (mapsTo_id_compl_compacts (singleton_le_starHull y L))) n)).2
       (TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of E))
         (mapsTo_id_compl_compacts (Compacts.le_starHull (E := E) ℝ y L))) n w)
     refine ⟨z, ?_⟩
     rw [← singularCohomologyMap_comp_compactSupportCohomologyι_apply n
-      (singletonCompacts_le_starHull y L), hz,
+      (singleton_le_starHull y L), hz,
       singularCohomologyMap_comp_compactSupportCohomologyι_apply n
         (Compacts.le_starHull (E := E) ℝ y L)]
 
@@ -178,26 +112,25 @@ cohomology at `y` (`TopCat.isIso_compactSupportCohomologyι_singleton`). -/
 def compactSupportCohomologyEuclideanIso (y : E) (n : ℕ) :
     (TopCat.of E).compactSupportCohomology R k M n ≅
       (TopPair.ofSubset ({y}ᶜ : Set (TopCat.of E))).singularCohomology R k M n :=
-  (asIso (compactSupportCohomologyι (R := R) (k := k) (M := M) (X := TopCat.of E) n
-    ⟨{y}, isCompact_singleton⟩)).symm
+  (asIso (compactSupportCohomologyι (R := R) (k := k) (M := M) (X := TopCat.of E) n {y})).symm
 
 @[reassoc (attr := simp)]
 lemma compactSupportCohomologyι_compactSupportCohomologyEuclideanIso_hom (y : E) (n : ℕ) :
-    compactSupportCohomologyι (X := TopCat.of E) n ⟨{y}, isCompact_singleton⟩ ≫
+    compactSupportCohomologyι (X := TopCat.of E) n {y} ≫
         (compactSupportCohomologyEuclideanIso R k M y n).hom = 𝟙 _ := by
   simp [compactSupportCohomologyEuclideanIso]
 
 @[simp]
 lemma compactSupportCohomologyEuclideanIso_inv (y : E) (n : ℕ) :
     (compactSupportCohomologyEuclideanIso R k M y n).inv =
-      compactSupportCohomologyι (X := TopCat.of E) n ⟨{y}, isCompact_singleton⟩ :=
+      compactSupportCohomologyι (X := TopCat.of E) n {y} :=
   (rfl)
 
 /-- Every class with compact support on a real normed space comes from the local cohomology at
 any given point. -/
 lemma compactSupportCohomologyι_singleton_surjective (y : E) (n : ℕ) :
     Function.Surjective (compactSupportCohomologyι (R := R) (k := k) (M := M)
-      (X := TopCat.of E) n ⟨{y}, isCompact_singleton⟩) :=
+      (X := TopCat.of E) n {y}) :=
   (ConcreteCategory.bijective_of_isIso _).2
 
 /-! ### Vanishing and generators -/
@@ -230,8 +163,8 @@ the image of the local cohomology generator `ω.localCohomologyClass hF` of
 theorem span_compactSupportCohomologyι_localCohomologyClass (ω : Orientation ℝ F (Fin (n + 1)))
     (hF : finrank ℝ F = n + 1) :
     Submodule.span ℤ {(TopCat.compactSupportCohomologyι (R := ModuleCat.of ℤ (ULift.{0} ℤ))
-      (k := ℤ) (M := ModuleCat.of ℤ (ULift.{0} ℤ)) (X := TopCat.of F) (n + 1)
-        ⟨{0}, isCompact_singleton⟩ (ω.localCohomologyClass hF))} = ⊤ := by
+      (k := ℤ) (M := ModuleCat.of ℤ (ULift.{0} ℤ)) (X := TopCat.of F) (n + 1) {0}
+        (ω.localCohomologyClass hF))} = ⊤ := by
   rw [← Set.image_singleton, ← Submodule.map_span, ω.span_localCohomologyClass hF,
     Submodule.map_top, LinearMap.range_eq_top]
   exact TopCat.compactSupportCohomologyι_singleton_surjective _ _ _ _ _

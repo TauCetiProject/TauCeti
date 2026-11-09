@@ -25,6 +25,8 @@ open Set
 
 namespace TauCeti
 
+section LinearOrderedField
+
 variable {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup E]
   [Module 𝕜 E] {s : Set E} {a x : E}
 
@@ -41,11 +43,20 @@ theorem mem_convexHull_insert :
     exact ⟨y, hy, left_mem_segment 𝕜 x y⟩
   · exact ⟨y, hy, hxy⟩
 
+end LinearOrderedField
+
+section OrderedSemiring
+
+variable {𝕜 E : Type*} [Semiring 𝕜] [PartialOrder 𝕜] [IsOrderedRing 𝕜] [AddCommMonoid E]
+  [Module 𝕜 E]
+
 /-- The convex join of `{x}` with any set, the union of the segments from `x` to its points, is
 star-convex about `x`. -/
 theorem starConvex_convexJoin_singleton_left (x : E) (t : Set E) :
     StarConvex 𝕜 x (convexJoin 𝕜 {x} t) := by
   rw [convexJoin_singleton_left]
   exact starConvex_iUnion₂ fun y _ ↦ (convex_segment x y).starConvex (left_mem_segment 𝕜 x y)
+
+end OrderedSemiring
 
 end TauCeti

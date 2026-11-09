@@ -86,7 +86,7 @@ end TauCeti
 
 /-- The convex join of two compact sets is compact: it is the image of `s ×ˢ t ×ˢ [0, 1]` under
 `((a, b), θ) ↦ (1 - θ) • a + θ • b`. -/
-theorem IsCompact.convexJoin {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+theorem IsCompact.convexJoin {𝕜 E : Type*} [Ring 𝕜] [PartialOrder 𝕜] [IsOrderedRing 𝕜]
     [TopologicalSpace 𝕜] [CompactIccSpace 𝕜] [IsTopologicalRing 𝕜]
     [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E]
     [ContinuousSMul 𝕜 E] {s t : Set E} (hs : IsCompact s) (ht : IsCompact t) :
@@ -105,7 +105,7 @@ theorem IsCompact.convexJoin {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [I
 
 namespace TopologicalSpace.Compacts
 
-variable (𝕜 : Type*) {E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+variable (𝕜 : Type*) {E : Type*} [Ring 𝕜] [PartialOrder 𝕜] [IsOrderedRing 𝕜]
   [TopologicalSpace 𝕜] [CompactIccSpace 𝕜] [IsTopologicalRing 𝕜]
   [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E]
   [ContinuousSMul 𝕜 E] (y : E) (K : Compacts E)
