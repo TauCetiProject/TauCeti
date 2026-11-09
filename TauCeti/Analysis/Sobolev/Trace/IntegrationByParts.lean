@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Trace.Extension
-import TauCeti.MeasureTheory.Integral.WithLp
+import TauCeti.MeasureTheory.Integral.DivergenceTheorem.ProdHalfSpace
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Function.Holder
 
