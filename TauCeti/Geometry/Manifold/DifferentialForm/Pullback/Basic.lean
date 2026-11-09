@@ -355,6 +355,14 @@ theorem mpullback_add [ContinuousAdd F] (f : M → M') (ω η : RoughForm I' M' 
     mpullback I I' f (ω + η) = mpullback I I' f ω + mpullback I I' f η :=
   bundleMpullback_add f ω η
 
+/-- Pullback preserves subtraction. -/
+@[simp]
+theorem mpullback_sub [IsTopologicalAddGroup F] (f : M → M') (ω η : RoughForm I' M' F k) :
+    mpullback I I' f (ω - η) = mpullback I I' f ω - mpullback I I' f η := by
+  funext x
+  ext v
+  simp only [mpullback_apply, Pi.sub_apply, ContinuousAlternatingMap.sub_apply]
+
 /-- Within-set pullback respects scalar multiplication of the coefficients, by any scalars
 acting continuously on the coefficient space and commuting with the real action. -/
 @[simp]
@@ -437,6 +445,23 @@ theorem mpullback_comp {f : M → M'} {g : M' → M''}
     (ω : RoughForm I'' M'' F k) :
     mpullback I I'' (g ∘ f) ω = mpullback I I' f (mpullback I' I'' g ω) :=
   bundleMpullback_comp hf hg ω
+
+/-- Pullback reverses composition with a differentiable map `g` that does not change where the
+inner map `f` is differentiable. At points where `f` is not differentiable, the pullbacks of a
+form of positive degree both vanish, as the derivative is taken to be zero there; for a form of
+degree zero the pullbacks agree by composition of functions. -/
+theorem mpullback_comp_of_mdifferentiableAt_comp_iff {f : M → M'} {g : M' → M''}
+    (hg : MDifferentiable I' I'' g)
+    (hfg : ∀ x, MDifferentiableAt I I'' (g ∘ f) x ↔ MDifferentiableAt I I' f x)
+    (ω : RoughForm I'' M'' F k) :
+    mpullback I I'' (g ∘ f) ω = mpullback I I' f (mpullback I' I'' g ω) := by
+  funext x
+  by_cases hfx : MDifferentiableAt I I' f x
+  · exact mpullback_comp_at hfx (hg _) ω
+  · have hgf : ¬MDifferentiableAt I I'' (g ∘ f) x := (hfg x).not.mpr hfx
+    ext v
+    simp only [mpullback_apply, Function.comp_apply, mfderiv_zero_of_not_mdifferentiableAt hfx,
+      mfderiv_zero_of_not_mdifferentiableAt hgf, zero_apply, map_zero]
 
 /-- Pullback of a degree-zero form is composition of its underlying function. -/
 @[simp]
