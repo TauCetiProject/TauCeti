@@ -45,6 +45,8 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.locallyIntegrable_norm_sub_rpow`: local integrability after translation.
 * `TauCeti.setLIntegral_closedBall_enorm_sub_rpow`: the lower integral with any centre, over a
   closed ball.
+* `TauCeti.setLIntegral_compl_closedBall_enorm_sub_rpow`: the lower integral with any centre,
+  outside a closed ball, for `s < -d`.
 * `TauCeti.integral_norm_sub_rpow_one_sub_finrank_le`: the translated-ball bound, for `s = 1 - d`.
 * `Complex.setLIntegral_closedBall_enorm_ofReal_sub_rpow_lt_top`: for `e ∈ ℂ` and `s > -1`,
   `∫⁻ x in closedBall c R, ‖(x : ℂ) - e‖ₑ ^ s < ∞` over the real line.
@@ -285,6 +287,63 @@ theorem setLIntegral_closedBall_enorm_sub_rpow {s : ℝ} (hs : -(Module.finrank 
     with y hy
   have hxy : 0 < ‖x - y‖ := norm_pos_iff.mpr (sub_ne_zero.mpr fun h => hy (h ▸ rfl))
   rw [← ENNReal.ofReal_rpow_of_pos hxy, ofReal_norm]
+
+/-- The lower integral of the kernel with pole `x` and exponent `s < -dim E` outside the closed
+ball of radius `R > 0` about `x`: the far-field counterpart of
+`TauCeti.setLIntegral_closedBall_enorm_sub_rpow`. -/
+theorem setLIntegral_compl_closedBall_enorm_sub_rpow {s : ℝ}
+    (hs : s < -(Module.finrank ℝ E : ℝ)) {R : ℝ} (hR : 0 < R) (x : E) :
+    ∫⁻ y in (closedBall x R)ᶜ, ‖x - y‖ₑ ^ s ∂mu =
+      ENNReal.ofReal ((Module.finrank ℝ E : ℝ) * mu.real (ball (0 : E) 1) *
+        (R ^ ((Module.finrank ℝ E : ℝ) + s) / -((Module.finrank ℝ E : ℝ) + s))) := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- In dimension zero the closed ball is the whole space.
+    have h0 : (closedBall x R)ᶜ = ∅ := by
+      ext y
+      simp [Subsingleton.elim y x, hR.le]
+    simp [h0, Module.finrank_zero_of_subsingleton]
+  let d := Module.finrank ℝ E
+  have hd : 1 ≤ d := Module.finrank_pos
+  -- Translate the pole to the origin.
+  have hpres := measurePreserving_add_right mu x
+  have hemb := (MeasurableEquiv.addRight x : E ≃ᵐ E).measurableEmbedding
+  have hpre : (fun z : E => z + x) ⁻¹' (closedBall x R)ᶜ = (closedBall (0 : E) R)ᶜ := by
+    ext z
+    simp [mem_closedBall]
+  rw [← hpres.setLIntegral_comp_preimage_emb hemb, hpre]
+  -- Away from the pole the kernel is finite, so this is the Bochner integral of the real kernel.
+  have hint : IntegrableOn (fun z : E => ‖z‖ ^ s) (closedBall 0 R)ᶜ mu :=
+    (integrableOn_norm_rpow_compl_closedBall_iff hR).2 hs
+  have hlin : ∫⁻ z in (closedBall (0 : E) R)ᶜ, ‖x - (z + x)‖ₑ ^ s ∂mu =
+      ENNReal.ofReal (∫ z in (closedBall (0 : E) R)ᶜ, ‖z‖ ^ s ∂mu) := by
+    rw [ofReal_integral_eq_lintegral_ofReal hint (ae_of_all _ fun z => by positivity)]
+    refine setLIntegral_congr_fun measurableSet_closedBall.compl fun z hz => ?_
+    have hz0 : 0 < ‖z‖ := hR.trans (by simpa [mem_closedBall] using hz)
+    rw [show x - (z + x) = -z by abel, enorm_neg, ← ofReal_norm,
+      ENNReal.ofReal_rpow_of_pos hz0]
+  rw [hlin]
+  congr 1
+  -- The radial integral `∫_R^∞ r ^ (d - 1 + s) dr`.
+  let f : ℝ → ℝ := (Ioi R).indicator (fun r => r ^ s)
+  have hnorm : (fun z : E => f ‖z‖) =
+      (closedBall (0 : E) R)ᶜ.indicator (fun z => ‖z‖ ^ s) := by
+    funext z
+    simp [f, Set.indicator, mem_closedBall, not_le]
+  have heq : EqOn (fun r : ℝ => r ^ (d - 1) • f r)
+      ((Ioi R).indicator (fun r => r ^ ((d : ℝ) - 1 + s))) (Ioi 0) := by
+    intro r hr
+    have hr0 : 0 < r := hr
+    by_cases h : R < r
+    · have hrmem : r ∈ Ioi R := h
+      simp only [f, indicator_of_mem hrmem, smul_eq_mul]
+      rw [← Real.rpow_natCast, Nat.cast_sub hd, Nat.cast_one, ← Real.rpow_add hr0]
+    · simp [f, h]
+  rw [← integral_indicator measurableSet_closedBall.compl, ← hnorm,
+    integral_fun_norm_addHaar mu f, setIntegral_congr_fun measurableSet_Ioi heq,
+    setIntegral_indicator measurableSet_Ioi, inter_eq_right.mpr (Ioi_subset_Ioi hR.le),
+    integral_Ioi_rpow_of_lt (by linarith) hR]
+  rw [show (d : ℝ) - 1 + s + 1 = d + s by ring, neg_div, div_neg, nsmul_eq_mul, smul_eq_mul,
+    mul_assoc]
 
 end TauCeti
 

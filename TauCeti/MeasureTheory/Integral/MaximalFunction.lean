@@ -153,6 +153,18 @@ theorem setLIntegral_ball_le_measure_mul_maximalFunction (μ : Measure X) (f : X
   rw [← measure_mul_setLAverage _ hμ]
   exact mul_le_mul_right (setLAverage_le_maximalFunction μ f x hr) _
 
+/-- If the maximal function of `f` vanishes at a single point, then `f` vanishes almost
+everywhere: every ball is contained in a ball about that point, on which `‖f‖ₑ` has average
+zero. -/
+theorem ae_enorm_eq_zero_of_maximalFunction_eq_zero [ProperSpace X] (μ : Measure X)
+    [IsFiniteMeasureOnCompacts μ] {f : X → F} (hf : AEMeasurable (fun y => ‖f y‖ₑ) μ) {x : X}
+    (hx : maximalFunction μ f x = 0) : ∀ᵐ y ∂μ, ‖f y‖ₑ = 0 := by
+  have hball (k : ℕ) : ∀ᵐ y ∂μ.restrict (ball x (k + 1)), ‖f y‖ₑ = 0 := by
+    have h := setLIntegral_ball_le_measure_mul_maximalFunction μ f x (r := k + 1)
+      (by positivity) measure_ball_lt_top.ne
+    rwa [hx, mul_zero, nonpos_iff_eq_zero, lintegral_eq_zero_iff' hf.restrict] at h
+  simpa [iUnion_ball_nat_succ] using (ae_restrict_iUnion_iff _ _).2 hball
+
 /-- The maximal function exceeds `t` exactly when some ball average does. -/
 theorem lt_maximalFunction_iff :
     t < maximalFunction μ f x ↔ ∃ r > 0, t < ⨍⁻ y in ball x r, ‖f y‖ₑ ∂μ := by
@@ -417,19 +429,6 @@ theorem ae_maximalFunction_lt_top (μ : Measure E) [μ.IsAddHaarMeasure] (f : E 
       exact absurd hle (not_le.2 (ENNReal.lt_add_right hC one_ne_zero))
   rw [ae_iff]
   simpa only [not_lt, top_le_iff] using hm
-
-omit [BorelSpace E] in
-/-- If the maximal function of `f` vanishes at a single point, then `f` vanishes almost
-everywhere: every ball is contained in a ball about that point, on which `‖f‖ₑ` has average
-zero. -/
-theorem ae_enorm_eq_zero_of_maximalFunction_eq_zero (μ : Measure E) [μ.IsAddHaarMeasure]
-    {f : E → F} (hf : AEMeasurable (fun y => ‖f y‖ₑ) μ) {x : E}
-    (hx : maximalFunction μ f x = 0) : ∀ᵐ y ∂μ, ‖f y‖ₑ = 0 := by
-  have hball (k : ℕ) : ∀ᵐ y ∂μ.restrict (ball x (k + 1)), ‖f y‖ₑ = 0 := by
-    have h := setLIntegral_ball_le_measure_mul_maximalFunction μ f x (r := k + 1)
-      (by positivity) measure_ball_lt_top.ne
-    rwa [hx, mul_zero, nonpos_iff_eq_zero, lintegral_eq_zero_iff' hf.restrict] at h
-  simpa [iUnion_ball_nat_succ] using (ae_restrict_iUnion_iff _ _).2 hball
 
 section StrongType
 

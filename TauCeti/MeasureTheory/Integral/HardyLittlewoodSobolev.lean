@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.MaximalFunction
+import TauCeti.MeasureTheory.Integral.NormRpow
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Integral.MeanInequalities
 import Mathlib.MeasureTheory.Integral.Prod
@@ -24,36 +25,36 @@ derivatives in the scale of Lebesgue spaces: for `1 < p` and `q < ∞` with
 
 `‖I_α f‖_q ≤ C ‖f‖_p`
 
-(`TauCeti.eLpNorm_lintegral_enorm_sub_rpow_mul_enorm_le`, for the potential of `‖f‖`, and
-`TauCeti.eLpNorm_integral_norm_sub_rpow_smul_le`, for the Bochner integral of a function with
-values in a real normed space). On the line this is the time integration behind the Strichartz
-estimates, and in higher dimension it gives the Sobolev embeddings on the whole space. On a set
-of finite measure, Young's inequality alone gives the bound for every `q` strictly below this
-critical exponent (`TauCeti.eLpNorm_setLIntegral_enorm_sub_rpow_mul_le`); the critical exponent
-needs the maximal function.
+(`TauCeti.exists_eLpNorm_lintegral_enorm_sub_rpow_mul_enorm_le`, for the potential of `‖f‖`,
+and `TauCeti.exists_eLpNorm_integral_norm_sub_rpow_smul_le`, for the Bochner integral of a
+function with values in a real normed space). On the line this is the time integration behind the
+Strichartz estimates, and in higher dimension it gives the Sobolev embeddings on the whole space.
+On a set of finite measure, Young's inequality alone gives the bound for every `q` strictly below
+this critical exponent (`TauCeti.eLpNorm_setLIntegral_enorm_sub_rpow_mul_le`); the critical
+exponent needs the maximal function.
 
 The proof is Hedberg's. Split the potential at a radius `R` about `x`. The dyadic shells
 `R / 2 ^ (k + 1) < ‖x - y‖ ≤ R / 2 ^ k` inside the ball contribute at most a multiple of
 `R ^ α M f (x)`, where `M f` is the Hardy–Littlewood maximal function, because each shell lies in a
 ball about `x` of comparable radius. Outside the ball, Hölder's inequality with the exponent `q'`
 conjugate to `p` bounds the potential by `‖f‖_p` times the `L^{q'}` norm of the kernel there, which
-is a multiple of `R ^ (α - n / p)` because `(n - α) q' > n`; it is computed by summing over the
-dyadic shells `2 ^ k R ≤ ‖x - y‖ < 2 ^ (k + 1) R`. Choosing `R = (‖f‖_p / M f (x)) ^ (p / n)`
+is a multiple of `R ^ (α - n / p)` because `(n - α) q' > n`; it is computed exactly by
+`TauCeti.setLIntegral_compl_closedBall_enorm_sub_rpow`. Choosing `R = (‖f‖_p / M f (x)) ^ (p / n)`
 balances the two terms and gives **Hedberg's inequality**
 
 `I_α |f| (x) ≤ C (M f (x)) ^ (1 - α p / n) ‖f‖_p ^ (α p / n)`
 
-(`TauCeti.lintegral_enorm_sub_rpow_mul_enorm_le`). Since `(1 - α p / n) q = p`, raising it to the
-power `q` and integrating reduces the theorem to the strong-type `(p, p)` maximal inequality
-`TauCeti.lintegral_rpow_maximalFunction_le`.
+(`TauCeti.exists_lintegral_enorm_sub_rpow_mul_enorm_le`). Since `(1 - α p / n) q = p`, raising
+it to the power `q` and integrating reduces the theorem to the strong-type `(p, p)` maximal
+inequality `TauCeti.lintegral_rpow_maximalFunction_le`.
 
 ## Main declarations
 
-* `TauCeti.lintegral_enorm_sub_rpow_mul_enorm_le`: Hedberg's pointwise inequality.
-* `TauCeti.eLpNorm_lintegral_enorm_sub_rpow_mul_enorm_le`: the Hardy–Littlewood–Sobolev
+* `TauCeti.exists_lintegral_enorm_sub_rpow_mul_enorm_le`: Hedberg's pointwise inequality.
+* `TauCeti.exists_eLpNorm_lintegral_enorm_sub_rpow_mul_enorm_le`: the Hardy–Littlewood–Sobolev
   inequality for the potential of `‖f‖`.
-* `TauCeti.eLpNorm_integral_norm_sub_rpow_smul_le`: the Hardy–Littlewood–Sobolev inequality for
-  the vector-valued potential.
+* `TauCeti.exists_eLpNorm_integral_norm_sub_rpow_smul_le`: the Hardy–Littlewood–Sobolev
+  inequality for the vector-valued potential.
 
 ## References
 
@@ -128,29 +129,6 @@ private theorem indicator_closedBall_enorm_sub_rpow_le {x y : E} (hyx : y ≠ x)
   rw [div_le_iff₀ (by positivity)]
   linarith
 
-/-- Away from `x`, the kernel `‖x - y‖ ^ γ`, `γ ≤ 0`, is dominated on each dyadic shell
-`2 ^ i R ≤ ‖x - y‖ < 2 ^ (i + 1) R` by its value at the inner radius. -/
-private theorem indicator_compl_closedBall_enorm_sub_rpow_le (x y : E) {R γ : ℝ}
-    (hR : 0 < R) (hγ : γ ≤ 0) :
-    (closedBall x R)ᶜ.indicator (fun y ↦ ‖x - y‖ₑ ^ γ) y ≤
-      ∑' i : ℕ, (ball x (2 ^ (i + 1) * R)).indicator
-        (fun _ ↦ ENNReal.ofReal ((2 ^ i * R) ^ γ)) y := by
-  by_cases hy : y ∈ (closedBall x R)ᶜ
-  swap
-  · simp [hy]
-  rw [indicator_of_mem hy]
-  have htR : R < ‖x - y‖ := by
-    rwa [mem_compl_iff, mem_closedBall, not_le, dist_comm, dist_eq_norm] at hy
-  have ht : 0 < ‖x - y‖ := hR.trans htR
-  obtain ⟨i, hi₁, hi₂⟩ := exists_nat_pow_near ((one_le_div hR).2 htR.le) one_lt_two
-  rw [le_div_iff₀ hR] at hi₁
-  rw [div_lt_iff₀ hR] at hi₂
-  refine le_trans ?_ (le_tsum _ i)
-  have hmem : y ∈ ball x (2 ^ (i + 1) * R) := by
-    rwa [mem_ball, dist_comm, dist_eq_norm]
-  rw [indicator_of_mem hmem, ← ofReal_norm, ENNReal.ofReal_rpow_of_pos ht]
-  exact ENNReal.ofReal_le_ofReal (Real.rpow_le_rpow_of_nonpos (by positivity) hi₁ hγ)
-
 end Kernel
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -211,43 +189,6 @@ private theorem setLIntegral_closedBall_enorm_sub_rpow_mul_le (x : E) {R α : �
         simp only [ρ]
         field_simp
 
-/-- Outside the closed ball `closedBall x R`, the kernel `‖x - y‖ ^ (-s)` with `s > n = dim E` has
-integral at most a multiple of `R ^ (n - s)`. -/
-private theorem setLIntegral_compl_closedBall_enorm_sub_rpow_le (x : E) {R s : ℝ} (hR : 0 < R)
-    (hs : finrank ℝ E < s) :
-    ∫⁻ y in (closedBall x R)ᶜ, ‖x - y‖ₑ ^ (-s) ∂μ ≤
-      ENNReal.ofReal (2 ^ finrank ℝ E * R ^ (finrank ℝ E - s) * (1 - 2 ^ (finrank ℝ E - s))⁻¹) *
-        μ (ball 0 1) := by
-  set n := finrank ℝ E
-  set τ : ℝ := 2 ^ (n - s)
-  have hτ0 : 0 ≤ τ := by positivity
-  have hτ1 : τ < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith)
-  -- The `i`-th dyadic shell contributes `2ⁿ R^(n - s) τⁱ` times `ωₙ`.
-  have hterm (i : ℕ) : (2 ^ i * R) ^ (-s) * (2 ^ (i + 1) * R) ^ n =
-      2 ^ n * R ^ (n - s) * τ ^ i := by
-    have hv : 0 < 2 ^ i * R := by positivity
-    have h2 : (2 : ℝ) ^ (i + 1) * R = 2 * (2 ^ i * R) := by ring
-    rw [h2, mul_pow, mul_left_comm, ← Real.rpow_natCast (2 ^ i * R) n, ← Real.rpow_add hv,
-      neg_add_eq_sub, Real.mul_rpow (by positivity) hR.le, ← Real.rpow_pow_comm (by norm_num)]
-    ring
-  calc ∫⁻ y in (closedBall x R)ᶜ, ‖x - y‖ₑ ^ (-s) ∂μ
-      = ∫⁻ y, (closedBall x R)ᶜ.indicator (fun y ↦ ‖x - y‖ₑ ^ (-s)) y * 1 ∂μ := by
-        rw [← lintegral_indicator measurableSet_closedBall.compl]
-        simp
-    _ ≤ ∑' i : ℕ, ENNReal.ofReal ((2 ^ i * R) ^ (-s)) *
-          ∫⁻ _ in ball x (2 ^ (i + 1) * R), 1 ∂μ :=
-        lintegral_mul_le_tsum_mul_setLIntegral_ball μ aemeasurable_const _ _
-          (.of_forall fun y => indicator_compl_closedBall_enorm_sub_rpow_le x y hR
-            (by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]))
-    _ = ∑' i : ℕ, ENNReal.ofReal (2 ^ n * R ^ (n - s) * τ ^ i) * μ (ball 0 1) := by
-        refine tsum_congr fun i => ?_
-        rw [setLIntegral_one, Measure.addHaar_ball_of_pos μ _ (by positivity), ← mul_assoc,
-          ← ENNReal.ofReal_mul (by positivity), hterm]
-    _ = ENNReal.ofReal (2 ^ n * R ^ (n - s) * (1 - τ)⁻¹) * μ (ball 0 1) := by
-        rw [ENNReal.tsum_mul_right, ← ENNReal.ofReal_tsum_of_nonneg (fun i => by positivity)
-          ((summable_geometric_of_lt_one hτ0 hτ1).mul_left _), tsum_mul_left,
-          tsum_geometric_of_lt_one hτ0 hτ1]
-
 /-- Away from `x`, Hölder's inequality with conjugate exponents `p` and `q` bounds the part of the
 Riesz potential of order `α` coming from the complement of `closedBall x R` by the `Lᵖ` norm of
 `f`, provided `s = (n - α) q > n = dim E`. -/
@@ -255,9 +196,9 @@ private theorem setLIntegral_compl_closedBall_enorm_sub_rpow_mul_le (x : E) {R �
     (hR : 0 < R) (hpq : p.HolderConjugate q) (hs : finrank ℝ E < (finrank ℝ E - α) * q)
     {f : E → F} (hf : AEStronglyMeasurable f μ) :
     ∫⁻ y in (closedBall x R)ᶜ, ‖x - y‖ₑ ^ (α - finrank ℝ E) * ‖f y‖ₑ ∂μ ≤
-      (ENNReal.ofReal (2 ^ finrank ℝ E * R ^ (finrank ℝ E - (finrank ℝ E - α) * q) *
-        (1 - 2 ^ (finrank ℝ E - (finrank ℝ E - α) * q))⁻¹) * μ (ball 0 1)) ^ (1 / q) *
-        (∫⁻ y, ‖f y‖ₑ ^ p ∂μ) ^ (1 / p) := by
+      ENNReal.ofReal (finrank ℝ E * μ.real (ball 0 1) *
+        (R ^ (finrank ℝ E - (finrank ℝ E - α) * q) / ((finrank ℝ E - α) * q - finrank ℝ E))) ^
+          (1 / q) * (∫⁻ y, ‖f y‖ₑ ^ p ∂μ) ^ (1 / p) := by
   set n := finrank ℝ E
   have hk : AEMeasurable (fun y ↦ ‖x - y‖ₑ ^ (α - n)) (μ.restrict (closedBall x R)ᶜ) := by
     fun_prop
@@ -268,8 +209,9 @@ private theorem setLIntegral_compl_closedBall_enorm_sub_rpow_mul_le (x : E) {R �
     _ ≤ _ := by
         refine mul_le_mul' (ENNReal.rpow_le_rpow ?_ (by simpa using hpq.symm.nonneg))
           (ENNReal.rpow_le_rpow (setLIntegral_le_lintegral _ _) (by simpa using hpq.nonneg))
-        simp_rw [← ENNReal.rpow_mul, show (α - n) * q = -((n - α) * q) by ring]
-        exact setLIntegral_compl_closedBall_enorm_sub_rpow_le μ x hR hs
+        simp_rw [← ENNReal.rpow_mul]
+        rw [setLIntegral_compl_closedBall_enorm_sub_rpow (by linarith) hR x,
+          show (n : ℝ) + (α - n) * q = n - (n - α) * q by ring, neg_sub]
 
 /-- The two terms of Hedberg's splitting balance at the radius `R = (N / m) ^ (p / n)`: there,
 `R ^ α m` and `R ^ ((n - s) / q) N` are both `m ^ (1 - θ) N ^ θ`, where `θ = α p / n`,
@@ -302,7 +244,7 @@ constant `C`, depending only on `μ`, `α` and `p`, such that the Riesz potentia
 every `f` is bounded pointwise by its maximal function and its `Lᵖ` norm:
 
 `∫ ‖x - y‖ ^ (α - n) ‖f y‖ dy ≤ C (M f x) ^ (1 - α p / n) ‖f‖_p ^ (α p / n)`. -/
-theorem lintegral_enorm_sub_rpow_mul_enorm_le {α : ℝ} {p : ℝ≥0} (hα : 0 < α) (hp : 1 < p)
+theorem exists_lintegral_enorm_sub_rpow_mul_enorm_le {α : ℝ} {p : ℝ≥0} (hα : 0 < α) (hp : 1 < p)
     (hαp : α * p < finrank ℝ E) :
     ∃ C : ℝ≥0, ∀ f : E → F, AEStronglyMeasurable f μ → ∀ x : E,
       ∫⁻ y, ‖x - y‖ₑ ^ (α - finrank ℝ E) * ‖f y‖ₑ ∂μ ≤
@@ -326,15 +268,17 @@ theorem lintegral_enorm_sub_rpow_mul_enorm_le {α : ℝ} {p : ℝ≥0} (hα : 0 
   have hω0 : ω ≠ 0 := (measure_ball_pos μ 0 one_pos).ne'
   have hωtop : ω ≠ ∞ := measure_ball_lt_top.ne
   set A : ℝ := 4 ^ n / (2 ^ α - 1)
-  set B : ℝ := 2 ^ n * (1 - 2 ^ (n - (n - α) * q))⁻¹
+  have hD : 0 < (n - α) * q - n := by linarith
+  set B : ℝ := n / ((n - α) * q - n)
   have h2α : 0 < (2 : ℝ) ^ α - 1 := by linarith [Real.one_lt_rpow one_lt_two hα]
   have hA : 0 < A := div_pos (by positivity) h2α
-  have hB : 0 ≤ B := mul_nonneg (by positivity) (inv_nonneg.2 (sub_nonneg.2
-    (Real.rpow_le_one_of_one_le_of_nonpos one_le_two (by linarith))))
+  have hB : 0 ≤ B := div_nonneg (by positivity) hD.le
   set C : ℝ := A * ω.toReal + (B * ω.toReal) ^ (1 / q)
   have hC : 0 < C := add_pos_of_pos_of_nonneg (mul_pos hA (ENNReal.toReal_pos hω0 hωtop))
     (by positivity)
-  refine ⟨C.toNNReal, fun f hf x => ?_⟩
+  obtain ⟨C', hC'⟩ : ∃ C' : ℝ≥0, (C' : ℝ≥0∞) = ENNReal.ofReal C :=
+    ⟨_, (ENNReal.ofReal_eq_coe_nnreal hC.le).symm⟩
+  refine ⟨C', fun f hf x => ?_⟩
   set M := maximalFunction μ f x
   set N := eLpNorm f p μ
   have hN : N = (∫⁻ y, ‖f y‖ₑ ^ (p : ℝ) ∂μ) ^ (1 / (p : ℝ)) :=
@@ -348,7 +292,9 @@ theorem lintegral_enorm_sub_rpow_mul_enorm_le {α : ℝ} {p : ℝ≥0} (hα : 0 
   have hN0 : N ≠ 0 := fun h => hf0 <| by
     filter_upwards [(eLpNorm_eq_zero_iff (by positivity)).1 h] with y hy
     simp [hy]
-  have hC0 : (C.toNNReal : ℝ≥0∞) ≠ 0 := by simpa using hC
+  have hC0 : (C' : ℝ≥0∞) ≠ 0 := by
+    rw [hC']
+    exact (ENNReal.ofReal_pos.2 hC).ne'
   -- If `M f x` or `‖f‖_p` is infinite, so is the right-hand side.
   by_cases hMtop : M = ∞
   · rw [hMtop, ENNReal.top_rpow_of_pos (by linarith), ENNReal.mul_top hC0,
@@ -371,9 +317,8 @@ theorem lintegral_enorm_sub_rpow_mul_enorm_le {α : ℝ} {p : ℝ≥0} (hα : 0 
   have hωeq : ω = ENNReal.ofReal ω' := (ENNReal.ofReal_toReal hωtop).symm
   have hMeq : M = ENNReal.ofReal m := (ENNReal.ofReal_toReal hMtop).symm
   have hNeq : N = ENNReal.ofReal ν := (ENNReal.ofReal_toReal hNtop).symm
-  have hBR : 0 ≤ 2 ^ n * R ^ (n - (n - α) * q) * (1 - 2 ^ (n - (n - α) * q))⁻¹ := by
-    rw [mul_right_comm]
-    exact mul_nonneg hB (by positivity)
+  have hBR : 0 ≤ n * μ.real (ball 0 1) * (R ^ (n - (n - α) * q) / ((n - α) * q - n)) :=
+    mul_nonneg (by positivity) (div_nonneg (by positivity) hD.le)
   have hq0 : 0 ≤ 1 / q := by simpa using hpq.symm.nonneg
   have e₁ : ENNReal.ofReal (4 ^ n * R ^ α / (2 ^ α - 1)) * ω * M =
       ENNReal.ofReal (A * ω' * (R ^ α * m)) := by
@@ -382,23 +327,22 @@ theorem lintegral_enorm_sub_rpow_mul_enorm_le {α : ℝ} {p : ℝ≥0} (hα : 0 
     congr 1
     simp only [A]
     ring
-  have e₂ : (ENNReal.ofReal (2 ^ n * R ^ (n - (n - α) * q) * (1 - 2 ^ (n - (n - α) * q))⁻¹) *
-      ω) ^ (1 / q) * N =
+  have e₂ : ENNReal.ofReal (n * μ.real (ball 0 1) * (R ^ (n - (n - α) * q) / ((n - α) * q - n))) ^
+      (1 / q) * N =
       ENNReal.ofReal ((B * ω') ^ (1 / q) * ((R ^ (n - (n - α) * q)) ^ (1 / q) * ν)) := by
-    rw [hωeq, hNeq, ← ENNReal.ofReal_mul hBR,
-      ENNReal.ofReal_rpow_of_nonneg (mul_nonneg hBR hω') hq0, ← ENNReal.ofReal_mul (by positivity)]
+    rw [hNeq, ENNReal.ofReal_rpow_of_nonneg hBR hq0, ← ENNReal.ofReal_mul (by positivity)]
     congr 1
     rw [← mul_assoc, ← Real.mul_rpow (mul_nonneg hB hω') (by positivity)]
     congr 2
-    simp only [B]
+    simp only [B, ω', ω, measureReal_def]
     ring
   calc ∫⁻ y, ‖x - y‖ₑ ^ (α - n) * ‖f y‖ₑ ∂μ
       = ∫⁻ y in closedBall x R, ‖x - y‖ₑ ^ (α - n) * ‖f y‖ₑ ∂μ +
           ∫⁻ y in (closedBall x R)ᶜ, ‖x - y‖ₑ ^ (α - n) * ‖f y‖ₑ ∂μ :=
         (lintegral_add_compl _ measurableSet_closedBall).symm
     _ ≤ ENNReal.ofReal (4 ^ n * R ^ α / (2 ^ α - 1)) * ω * M +
-          (ENNReal.ofReal (2 ^ n * R ^ (n - (n - α) * q) * (1 - 2 ^ (n - (n - α) * q))⁻¹) *
-            ω) ^ (1 / q) * N := by
+          ENNReal.ofReal (n * μ.real (ball 0 1) * (R ^ (n - (n - α) * q) / ((n - α) * q - n))) ^
+            (1 / q) * N := by
         rw [hN]
         exact add_le_add (setLIntegral_closedBall_enorm_sub_rpow_mul_le μ x hR hα hαn hf)
           (setLIntegral_compl_closedBall_enorm_sub_rpow_mul_le μ x hR hpq hs hf)
@@ -407,11 +351,10 @@ theorem lintegral_enorm_sub_rpow_mul_enorm_le {α : ℝ} {p : ℝ≥0} (hα : 0 
         congr 1
         simp only [C, θ, ω']
         ring
-    _ = C.toNNReal * M ^ (1 - θ) * N ^ θ := by
+    _ = C' * M ^ (1 - θ) * N ^ θ := by
         rw [ENNReal.ofReal_mul hC.le, ENNReal.ofReal_mul (by positivity),
           ← ENNReal.ofReal_rpow_of_nonneg hm.le (by linarith),
-          ← ENNReal.ofReal_rpow_of_nonneg hν.le hθ0.le, ← hMeq, ← hNeq, mul_assoc]
-        rfl
+          ← ENNReal.ofReal_rpow_of_nonneg hν.le hθ0.le, ← hMeq, ← hNeq, mul_assoc, hC']
 
 /-- **The Hardy–Littlewood–Sobolev inequality.** Let `n = dim E`, `0 < α`, `1 < p` and let `q` be
 given by `1 / p - 1 / q = α / n`, with `q < ∞`. Then the Riesz potential of order `α`,
@@ -420,7 +363,7 @@ given by `1 / p - 1 / q = α / n`, with `q < ∞`. Then the Riesz potential of o
 
 maps `Lᵖ` to `L^q`: there is `C`, depending only on `μ`, `α` and `p`, with
 `‖I_α f‖_q ≤ C ‖f‖_p` for every `f`. -/
-theorem eLpNorm_lintegral_enorm_sub_rpow_mul_enorm_le {α : ℝ} {p q : ℝ≥0} (hα : 0 < α)
+theorem exists_eLpNorm_lintegral_enorm_sub_rpow_mul_enorm_le {α : ℝ} {p q : ℝ≥0} (hα : 0 < α)
     (hp : 1 < p) (hq : q ≠ 0) (hpq : (p : ℝ)⁻¹ - (q : ℝ)⁻¹ = α / finrank ℝ E) :
     ∃ C : ℝ≥0, ∀ f : E → F,
       eLpNorm (fun x ↦ ∫⁻ y, ‖x - y‖ₑ ^ (α - finrank ℝ E) * ‖f y‖ₑ ∂μ) q μ ≤
@@ -444,7 +387,7 @@ theorem eLpNorm_lintegral_enorm_sub_rpow_mul_enorm_le {α : ℝ} {p q : ℝ≥0}
   have hαp : α * p < n := by
     rw [← div_lt_one hn, hθ]
     linarith [div_pos hp0 hq0]
-  obtain ⟨C₁, hC₁⟩ := lintegral_enorm_sub_rpow_mul_enorm_le μ (F := F) hα hp hαp
+  obtain ⟨C₁, hC₁⟩ := exists_lintegral_enorm_sub_rpow_mul_enorm_le μ (F := F) hα hp hαp
   set K : ℝ≥0∞ := ENNReal.ofReal (2 * p * 2 ^ ((p : ℝ) - 1) / (p - 1)) * 4 ^ n
   have hK : K ≠ ∞ := ENNReal.mul_ne_top ENNReal.ofReal_ne_top (by simp)
   set C : ℝ≥0∞ := (C₁ + 1 : ℝ≥0) * K ^ (1 / (q : ℝ))
@@ -517,13 +460,13 @@ theorem eLpNorm_lintegral_enorm_sub_rpow_mul_enorm_le {α : ℝ} {p q : ℝ≥0}
 `I_α f (x) = ∫ ‖x - y‖ ^ (α - n) f y dy` of a function with values in a real normed space. Let
 `n = dim E`, `0 < α`, `1 < p` and `1 / p - 1 / q = α / n` with `q < ∞`. There is `C`, depending
 only on `μ`, `α` and `p`, with `‖I_α f‖_q ≤ C ‖f‖_p` for every `f`. -/
-theorem eLpNorm_integral_norm_sub_rpow_smul_le {G : Type*} [NormedAddCommGroup G]
+theorem exists_eLpNorm_integral_norm_sub_rpow_smul_le {G : Type*} [NormedAddCommGroup G]
     [NormedSpace ℝ G] {α : ℝ} {p q : ℝ≥0} (hα : 0 < α) (hp : 1 < p) (hq : q ≠ 0)
     (hpq : (p : ℝ)⁻¹ - (q : ℝ)⁻¹ = α / finrank ℝ E) :
     ∃ C : ℝ≥0, ∀ f : E → G,
       eLpNorm (fun x ↦ ∫ y, ‖x - y‖ ^ (α - finrank ℝ E) • f y ∂μ) q μ ≤ C * eLpNorm f p μ := by
   set n := finrank ℝ E
-  obtain ⟨C, hC⟩ := eLpNorm_lintegral_enorm_sub_rpow_mul_enorm_le μ (F := G) hα hp hq hpq
+  obtain ⟨C, hC⟩ := exists_eLpNorm_lintegral_enorm_sub_rpow_mul_enorm_le μ (F := G) hα hp hq hpq
   refine ⟨C + 1, fun f => ?_⟩
   by_cases hf : AEStronglyMeasurable f μ
   swap
