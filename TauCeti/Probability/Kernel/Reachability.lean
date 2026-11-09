@@ -120,6 +120,16 @@ theorem communicates_equivalence :
   · intro x y z hxy hyz
     exact hxy.trans hyz
 
+/-- Under counting-measure irreducibility every state reaches every other state. -/
+theorem exists_pos_pow_apply_singleton [IsIrreducible Measure.count κ] (x y : S) :
+    ∃ n, 0 < (κ ^ n) x {y} := by
+  by_contra! h
+  -- Without measurable singletons, use a measurable superset of `{y}` of the same mass for all `n`.
+  obtain ⟨A, hyA, hA, hEq⟩ := exists_measurable_superset_forall_eq (fun n : ℕ => (κ ^ n) x) {y}
+  obtain ⟨n, hn⟩ := IsIrreducible.irreducible (φ := Measure.count) (κ := κ) hA
+    (pos_iff_ne_zero.mpr (Measure.count_ne_zero_iff.mpr ⟨y, hyA rfl⟩)) x
+  exact hn.not_ge ((hEq n).trans_le (h n))
+
 /-- A kernel is irreducible with respect to the counting measure if and only if every state
 reaches every state. -/
 theorem isIrreducible_count_iff_forall_reaches [MeasurableSingletonClass S] :

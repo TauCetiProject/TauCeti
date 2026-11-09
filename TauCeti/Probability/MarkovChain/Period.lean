@@ -9,6 +9,7 @@ public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.Probability.Kernel.Irreducible
 public import TauCeti.NumberTheory.FrobeniusNumber
 public import TauCeti.Probability.Kernel.ClosedClass.Basic
+public import TauCeti.Probability.Kernel.Reachability
 
 /-!
 # The period of a state of a Markov chain
@@ -176,19 +177,6 @@ theorem eventually_pos_pow_apply_singleton_of_period_eq_one {a : ℕ} (hx : κ.p
   refine ⟨N + a, fun n hn ↦ ?_⟩
   rw [show n = (n - a) + a by lia]
   exact pow_add_apply_pos (hN _ (by lia)) hxy
-
-/-- Under counting-measure irreducibility every state reaches every other state. -/
-theorem exists_pos_pow_apply_singleton [IsIrreducible Measure.count κ] (x y : α) :
-    ∃ n, 0 < (κ ^ n) x {y} := by
-  by_contra! h
-  -- Without measurable singletons, intersect measurable null supersets of `{y}`.
-  choose B hyB hBm hB0 using fun n => exists_measurable_superset_of_null
-    (nonpos_iff_eq_zero.mp (h n))
-  have hA : MeasurableSet (⋂ n, B n) := MeasurableSet.iInter hBm
-  have hy : y ∈ ⋂ n, B n := Set.mem_iInter.mpr fun n => hyB n rfl
-  obtain ⟨n, hn⟩ := IsIrreducible.irreducible (φ := Measure.count) (κ := κ) hA
-    (pos_iff_ne_zero.mpr (Measure.count_ne_zero_iff.mpr ⟨y, hy⟩)) x
-  exact hn.not_ge ((measure_mono (Set.iInter_subset B n)).trans_eq (hB0 n))
 
 /-- All states of an irreducible kernel have the same period. -/
 theorem period_eq_period [IsIrreducible Measure.count κ] (x y : α) :
