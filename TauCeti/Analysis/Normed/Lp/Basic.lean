@@ -17,8 +17,10 @@ with `lp.evalCLM` without unfolding its construction as a bounded linear map, an
 the sum of the norms of the coordinates (`lp.hasSum_norm_one`); for `1 ≤ p` it bounds the
 `ℓ^p` norm (`lp.norm_le_tsum_norm`). For `0 < p ≤ q` the `ℓ^q` norm of a sequence is at most its
 `ℓᵖ` norm (`lp.norm_le_norm_of_exponent_le`), the norm form of Mathlib's inclusion
-`Memℓp.of_exponent_ge`. The scalar
-coordinate vectors are linearly independent, and vectors in their span vanish outside the
+`Memℓp.of_exponent_ge`. A sequence indexed by `ℕ` whose terms are bounded by a geometric
+sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓᵖ` with `p ≠ 0` (`Memℓp.of_norm_le_geometric`),
+and for `1 ≤ p` its `ℓᵖ` norm is at most `C (1 - r)⁻¹` (`lp.norm_le_of_norm_le_geometric`). The
+scalar coordinate vectors are linearly independent, and vectors in their span vanish outside the
 corresponding indices. These algebraic facts hold over normed rings at every exponent. In `ℓ²`,
 the squared norm of a finite sum of single-coordinate vectors is the sum of the squared norms of
 its coordinates (`lp.norm_sum_single_sq`, and `lp.enorm_sum_single` for the extended norm). It
@@ -188,3 +190,38 @@ theorem norm_sum_lsmul_comp_evalCLM_le (s : Finset ι) (a : ι → R) :
 end Operator
 
 end lp
+
+section Geometric
+
+variable {E : ℕ → Type*} [∀ i, NormedAddCommGroup (E i)] {p : ℝ≥0∞} {C r : ℝ}
+
+/-- A sequence whose terms are bounded by a geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in
+every `ℓᵖ` with `p ≠ 0`. -/
+theorem Memℓp.of_norm_le_geometric {f : ∀ i, E i} (hr0 : 0 ≤ r) (hr1 : r < 1)
+    (hf : ∀ i, ‖f i‖ ≤ C * r ^ i) (hp : p ≠ 0) : Memℓp f p := by
+  have hC : 0 ≤ C := (norm_nonneg _).trans ((hf 0).trans_eq (by simp))
+  have hgeom (t : ℝ≥0∞) (ht : 0 < t.toReal) : Memℓp f t := by
+    refine memℓp_gen <| Summable.of_nonneg_of_le (fun i ↦ by positivity) (fun i ↦ ?_)
+      ((summable_geometric_of_lt_one (by positivity)
+        (Real.rpow_lt_one hr0 hr1 ht)).mul_left (C ^ t.toReal))
+    calc ‖f i‖ ^ t.toReal ≤ (C * r ^ i) ^ t.toReal :=
+          Real.rpow_le_rpow (norm_nonneg _) (hf i) ht.le
+      _ = C ^ t.toReal * (r ^ t.toReal) ^ i := by
+          rw [Real.mul_rpow hC (by positivity), ← Real.rpow_natCast, ← Real.rpow_natCast,
+            ← Real.rpow_mul hr0, ← Real.rpow_mul hr0, mul_comm (i : ℝ)]
+  rcases eq_or_ne p ∞ with rfl | hptop
+  · exact (hgeom 1 (by simp)).of_exponent_ge le_top
+  · exact hgeom p (ENNReal.toReal_pos hp hptop)
+
+/-- For `1 ≤ p`, a sequence in `ℓᵖ` whose terms are bounded by a geometric sequence `C rⁱ` with
+`0 ≤ r < 1` has `ℓᵖ` norm at most `C (1 - r)⁻¹`. -/
+theorem lp.norm_le_of_norm_le_geometric [Fact (1 ≤ p)] {f : lp E p} (hr0 : 0 ≤ r) (hr1 : r < 1)
+    (hf : ∀ i, ‖f i‖ ≤ C * r ^ i) : ‖f‖ ≤ C * (1 - r)⁻¹ := by
+  have hgeom := (summable_geometric_of_lt_one hr0 hr1).mul_left C
+  calc ‖f‖ ≤ ∑' i, ‖f i‖ :=
+        lp.norm_le_tsum_norm f (hgeom.of_nonneg_of_le (fun _ ↦ norm_nonneg _) hf)
+    _ ≤ ∑' i, C * r ^ i :=
+        (hgeom.of_nonneg_of_le (fun _ ↦ norm_nonneg _) hf).tsum_le_tsum hf hgeom
+    _ = C * (1 - r)⁻¹ := by rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1]
+
+end Geometric

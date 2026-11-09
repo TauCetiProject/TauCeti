@@ -134,38 +134,24 @@ theorem MemBesov.mono {u : 𝓢'(E, F)} {s' : ℝ} {q' : ℝ≥0∞} (hu : u.Mem
   gcongr
   exact one_le_two
 
+/-- Lowering the order from `s` to `s'` multiplies the `j`-th weight `2^{js}` by
+`(2^{s' - s})^j`. -/
+private theorem two_rpow_mul_natCast_eq (s s' : ℝ) (j : ℕ) :
+    (2 : ℝ) ^ (s' * j) = (2 ^ (s' - s)) ^ j * 2 ^ (s * j) := by
+  rw [← Real.rpow_mul_natCast zero_le_two, ← Real.rpow_add two_pos, ← add_mul, sub_add_cancel]
+
 /-- **Strict monotonicity of the Besov scale.** `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' < s`, every
 `q` and every `q' ≠ 0`: the weighted blocks for `s'` decay geometrically. -/
 theorem MemBesov.of_lt {u : 𝓢'(E, F)} {s' : ℝ} {q' : ℝ≥0∞} (hu : u.MemBesov φ s p q)
     (hs : s' < s) (hq' : q' ≠ 0) : u.MemBesov φ s' p q' := by
   obtain ⟨f, hf, hmem⟩ := memBesov_iff.1 hu
   obtain ⟨C, hC⟩ := memℓp_infty_iff.1 (hmem.of_exponent_ge le_top)
-  set r : ℝ := 2 ^ (s' - s)
-  have hr0 : 0 ≤ r := Real.rpow_nonneg zero_le_two _
-  have hr1 : r < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs)
-  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC ⟨0, rfl⟩)
-  have hbound (j : ℕ) : ‖(2 : ℝ) ^ (s' * j) * ‖f j‖‖ ≤ C * r ^ j := by
-    have hj : ‖(2 : ℝ) ^ (s * j) * ‖f j‖‖ ≤ C := hC ⟨j, rfl⟩
-    rw [Real.norm_of_nonneg (by positivity)] at hj ⊢
-    calc (2 : ℝ) ^ (s' * j) * ‖f j‖ = r ^ j * ((2 : ℝ) ^ (s * j) * ‖f j‖) := by
-          rw [← Real.rpow_mul_natCast zero_le_two, ← mul_assoc, ← Real.rpow_add two_pos,
-            ← add_mul, sub_add_cancel]
-      _ ≤ r ^ j * C := mul_le_mul_of_nonneg_left hj (by positivity)
-      _ = C * r ^ j := mul_comm _ _
-  have hgeom (t : ℝ≥0∞) (ht : 0 < t.toReal) :
-      Memℓp (fun j : ℕ ↦ (2 : ℝ) ^ (s' * j) * ‖f j‖) t := by
-    refine memℓp_gen <| Summable.of_nonneg_of_le (fun j ↦ by positivity) (fun j ↦ ?_)
-      ((summable_geometric_of_lt_one (by positivity)
-        (Real.rpow_lt_one hr0 hr1 ht)).mul_left (C ^ t.toReal))
-    calc ‖(2 : ℝ) ^ (s' * j) * ‖f j‖‖ ^ t.toReal ≤ (C * r ^ j) ^ t.toReal :=
-          Real.rpow_le_rpow (norm_nonneg _) (hbound j) ht.le
-      _ = C ^ t.toReal * (r ^ t.toReal) ^ j := by
-          rw [Real.mul_rpow hC0 (by positivity), ← Real.rpow_natCast, ← Real.rpow_natCast,
-            ← Real.rpow_mul hr0, ← Real.rpow_mul hr0, mul_comm (j : ℝ)]
-  refine memBesov_iff.2 ⟨f, hf, ?_⟩
-  rcases eq_or_ne q' ∞ with rfl | hq'top
-  · exact (hgeom 1 (by simp)).of_exponent_ge le_top
-  · exact hgeom q' (ENNReal.toReal_pos hq' hq'top)
+  refine memBesov_iff.2 ⟨f, hf, Memℓp.of_norm_le_geometric (C := C) (by positivity)
+    (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs)) (fun j ↦ ?_) hq'⟩
+  have hj : ‖(2 : ℝ) ^ (s * j) * ‖f j‖‖ ≤ C := hC ⟨j, rfl⟩
+  rw [Real.norm_of_nonneg (by positivity)] at hj ⊢
+  rw [two_rpow_mul_natCast_eq s s' j, mul_assoc, mul_comm C]
+  exact mul_le_mul_of_nonneg_left hj (by positivity)
 
 theorem MemBesov.neg {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) : (-u).MemBesov φ s p q := by
   simpa using hu.smul (-1)
@@ -413,95 +399,46 @@ theorem norm_eq_ciSup (u : BesovSpace F φ s p ∞) :
 
 end Normed
 
-section ChangeOfOrder
+section Inclusion
 
-variable {s' : ℝ} {q' : ℝ≥0∞}
+variable {s' : ℝ} {q' : ℝ≥0∞} [Fact (1 ≤ q)] [Fact (1 ≤ q')]
 
-/-- The element of `B^{s'}_{p,q'}` with the same tempered distribution as `u ∈ B^s_{p,q}`, whose
-weighted blocks are those of `u` rescaled by `2^{(s' - s) j}`, assuming they lie in `ℓ^{q'}`. -/
-private def changeOrder (u : BesovSpace F φ s p q)
-    (h : Memℓp (fun j : ℕ ↦ (((2 : ℝ) ^ ((s' - s) * j) : ℝ) : ℂ) • u.weightedBlocks j) q') :
-    BesovSpace F φ s' p q' :=
-  -- The `j`-th entry of `⟨_, h⟩` is the rescaled block by definition, as in `memBesov_iff`.
-  ⟨u.toDistr, ⟨_, h⟩, fun j ↦ (Lp.toTemperedDistribution_smul _ _).trans <| by
-    rw [coe_weightedBlocks_apply, smul_smul, ← Complex.ofReal_mul, ← Real.rpow_add two_pos,
-      ← add_mul, sub_add_cancel]⟩
-
-private theorem changeOrder_apply (u : BesovSpace F φ s p q) (h) (j : ℕ) :
-    (changeOrder (s' := s') (q' := q') u h).weightedBlocks j =
-      (((2 : ℝ) ^ ((s' - s) * j) : ℝ) : ℂ) • u.weightedBlocks j := (rfl)
-
-/-- For `s' ≤ s` the rescaling factor `2^{(s' - s) j}` does not increase the weighted blocks. -/
-private theorem norm_changeOrder_apply_le_of_le (hs : s' ≤ s) (u : BesovSpace F φ s p q) (j : ℕ) :
-    ‖(((2 : ℝ) ^ ((s' - s) * j) : ℝ) : ℂ) • u.weightedBlocks j‖ ≤ ‖u.weightedBlocks j‖ := by
-  rw [norm_smul, Complex.norm_of_nonneg (by positivity)]
-  exact mul_le_of_le_one_left (norm_nonneg _) <| Real.rpow_le_one_of_one_le_of_nonpos one_le_two
-    (mul_nonpos_of_nonpos_of_nonneg (sub_nonpos.2 hs) j.cast_nonneg)
-
-private theorem memℓp_changeOrder_of_le (hs : s' ≤ s) (hq : q ≤ q') (u : BesovSpace F φ s p q) :
-    Memℓp (fun j : ℕ ↦ (((2 : ℝ) ^ ((s' - s) * j) : ℝ) : ℂ) • u.weightedBlocks j) q' :=
-  ((lp.memℓp u.weightedBlocks).of_exponent_ge hq).mono' (norm_changeOrder_apply_le_of_le hs u)
-
-variable [Fact (1 ≤ q)] [Fact (1 ≤ q')]
-
-private theorem norm_changeOrder_of_le (hs : s' ≤ s) (hq : q ≤ q') (u : BesovSpace F φ s p q) :
-    ‖changeOrder u (memℓp_changeOrder_of_le hs hq u)‖ ≤ ‖u‖ := by
+/-- For `s' ≤ s` and `q ≤ q'`, the `B^{s'}_{p,q'}` norm of a distribution is at most its
+`B^s_{p,q}` norm. -/
+private theorem norm_le_of_toDistr_eq_of_le (hs : s' ≤ s) (hq : q ≤ q')
+    {u : BesovSpace F φ s p q} {v : BesovSpace F φ s' p q'} (h : u.toDistr = v.toDistr) :
+    ‖v‖ ≤ ‖u‖ := by
   rw [← norm_weightedBlocks, ← norm_weightedBlocks]
   set w : lp (fun _ : ℕ ↦ Lp F p (volume : Measure E)) q' :=
     ⟨u.weightedBlocks, (lp.memℓp u.weightedBlocks).of_exponent_ge hq⟩
   calc _ ≤ ‖w‖ := lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ by
-          rw [changeOrder_apply]
-          exact norm_changeOrder_apply_le_of_le hs u j
+          change _ ≤ ‖u.weightedBlocks j‖
+          rw [norm_weightedBlocks_apply, norm_weightedBlocks_apply, block_eq_of_toDistr_eq h j]
+          gcongr
+          exact one_le_two
     _ ≤ _ := lp.norm_le_norm_of_exponent_le (zero_lt_one.trans_le Fact.out).ne' hq fun _ ↦ rfl
 
-private theorem norm_changeOrder_apply_le (u : BesovSpace F φ s p q) (j : ℕ) :
-    ‖(((2 : ℝ) ^ ((s' - s) * j) : ℝ) : ℂ) • u.weightedBlocks j‖ ≤
-      ‖u‖ * ((2 : ℝ) ^ (s' - s)) ^ j := by
-  rw [norm_smul, Complex.norm_of_nonneg (by positivity), Real.rpow_mul_natCast zero_le_two,
-    mul_comm]
-  exact mul_le_mul_of_nonneg_right
-    ((lp.norm_apply_le_norm (zero_lt_one.trans_le Fact.out).ne' _ j).trans_eq
-      (norm_weightedBlocks u)) (by positivity)
-
-private theorem memℓp_changeOrder_of_lt (hs : s' < s) (u : BesovSpace F φ s p q) :
-    Memℓp (fun j : ℕ ↦ (((2 : ℝ) ^ ((s' - s) * j) : ℝ) : ℂ) • u.weightedBlocks j) q' := by
-  refine Memℓp.of_exponent_ge (q := 1) ?_ Fact.out
-  refine Memℓp.mono (memℓp_gen ?_) (norm_changeOrder_apply_le u)
-  simpa [abs_of_nonneg (norm_nonneg u), abs_of_pos (Real.rpow_pos_of_pos two_pos (s' - s))] using
-    (summable_geometric_of_lt_one (by positivity)
-      (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs))).mul_left ‖u‖
-
-private theorem norm_changeOrder_of_lt (hs : s' < s) (u : BesovSpace F φ s p q) :
-    ‖changeOrder u (memℓp_changeOrder_of_lt (q' := q') hs u)‖ ≤
-      (1 - 2 ^ (s' - s))⁻¹ * ‖u‖ := by
-  have hr : (2 : ℝ) ^ (s' - s) < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs)
-  have hC : 0 ≤ (1 - (2 : ℝ) ^ (s' - s))⁻¹ * ‖u‖ :=
-    mul_nonneg (inv_nonneg.2 (sub_nonneg.2 hr.le)) (norm_nonneg u)
-  rw [← norm_weightedBlocks]
-  set w : lp (fun _ : ℕ ↦ Lp F p (volume : Measure E)) 1 :=
-    ⟨_, memℓp_changeOrder_of_lt (q' := 1) hs u⟩
-  calc _ ≤ ‖w‖ := lp.norm_le_norm_of_exponent_le (f := w)
-        (g := (changeOrder u (memℓp_changeOrder_of_lt (q' := q') hs u)).weightedBlocks)
-        one_ne_zero Fact.out fun _ ↦ rfl
-    _ ≤ _ := lp.norm_le_of_forall_sum_le (by simp) hC fun t ↦ ?_
-  simp only [ENNReal.toReal_one, Real.rpow_one]
-  calc ∑ j ∈ t, ‖w j‖ ≤ ∑ j ∈ t, ‖u‖ * ((2 : ℝ) ^ (s' - s)) ^ j :=
-        Finset.sum_le_sum fun j _ ↦ norm_changeOrder_apply_le u j
-    _ ≤ ∑' j, ‖u‖ * ((2 : ℝ) ^ (s' - s)) ^ j :=
-        ((summable_geometric_of_lt_one (by positivity) hr).mul_left ‖u‖).sum_le_tsum t
-          fun j _ ↦ by positivity
-    _ = (1 - 2 ^ (s' - s))⁻¹ * ‖u‖ := by
-        rw [tsum_mul_left, tsum_geometric_of_lt_one (by positivity) hr, mul_comm]
+/-- For `s' < s`, the `B^{s'}_{p,q'}` norm of a distribution is at most `(1 - 2^{s' - s})⁻¹` times
+its `B^s_{p,q}` norm: the weighted blocks for `s'` decay geometrically. -/
+private theorem norm_le_of_toDistr_eq_of_lt (hs : s' < s) {u : BesovSpace F φ s p q}
+    {v : BesovSpace F φ s' p q'} (h : u.toDistr = v.toDistr) :
+    ‖v‖ ≤ (1 - 2 ^ (s' - s))⁻¹ * ‖u‖ := by
+  rw [← norm_weightedBlocks, mul_comm]
+  refine lp.norm_le_of_norm_le_geometric (by positivity)
+    (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs)) fun j ↦ ?_
+  rw [norm_weightedBlocks_apply, ← block_eq_of_toDistr_eq h, two_rpow_mul_natCast_eq s s' j,
+    mul_assoc, mul_comm ‖u‖]
+  exact mul_le_mul_of_nonneg_left (rpow_mul_norm_block_le u j) (by positivity)
 
 variable (F φ p) in
 /-- **Monotonicity of the Besov scale.** For `s' ≤ s` and `q ≤ q'`, `B^s_{p,q} ⊆ B^{s'}_{p,q'}`
 with `‖u‖_{B^{s'}_{p,q'}} ≤ ‖u‖_{B^s_{p,q}}`. -/
 def inclusion (hs : s' ≤ s) (hq : q ≤ q') : BesovSpace F φ s p q →L[ℂ] BesovSpace F φ s' p q' :=
   LinearMap.mkContinuous
-    { toFun u := changeOrder u (memℓp_changeOrder_of_le hs hq u)
+    { toFun u := (u.memBesov_toDistr.mono hs hq).toBesovSpace
       map_add' _ _ := ext rfl
       map_smul' _ _ := ext rfl }
-    1 fun u ↦ by simpa using norm_changeOrder_of_le hs hq u
+    1 fun _ ↦ (norm_le_of_toDistr_eq_of_le hs hq rfl).trans_eq (one_mul _).symm
 
 @[simp]
 theorem toDistr_inclusion (hs : s' ≤ s) (hq : q ≤ q') (u : BesovSpace F φ s p q) :
@@ -514,7 +451,7 @@ theorem block_inclusion (hs : s' ≤ s) (hq : q ≤ q') (u : BesovSpace F φ s p
 
 theorem norm_inclusion_le (hs : s' ≤ s) (hq : q ≤ q') (u : BesovSpace F φ s p q) :
     ‖inclusion F φ p hs hq u‖ ≤ ‖u‖ :=
-  norm_changeOrder_of_le hs hq u
+  norm_le_of_toDistr_eq_of_le hs hq (toDistr_inclusion hs hq u).symm
 
 variable (F φ p q q') in
 /-- **Strict monotonicity of the Besov scale.** For `s' < s` and arbitrary fine indices `q, q'`,
@@ -522,10 +459,10 @@ variable (F φ p q q') in
 loss of smoothness absorbs every change of the fine index. -/
 def inclusionOfLT (hs : s' < s) : BesovSpace F φ s p q →L[ℂ] BesovSpace F φ s' p q' :=
   LinearMap.mkContinuous
-    { toFun u := changeOrder u (memℓp_changeOrder_of_lt hs u)
+    { toFun u := (u.memBesov_toDistr.of_lt hs (zero_lt_one.trans_le Fact.out).ne').toBesovSpace
       map_add' _ _ := ext rfl
       map_smul' _ _ := ext rfl }
-    (1 - 2 ^ (s' - s))⁻¹ (norm_changeOrder_of_lt hs)
+    (1 - 2 ^ (s' - s))⁻¹ fun _ ↦ norm_le_of_toDistr_eq_of_lt hs rfl
 
 @[simp]
 theorem toDistr_inclusionOfLT (hs : s' < s) (u : BesovSpace F φ s p q) :
@@ -538,9 +475,9 @@ theorem block_inclusionOfLT (hs : s' < s) (u : BesovSpace F φ s p q) (j : ℕ) 
 
 theorem norm_inclusionOfLT_le (hs : s' < s) (u : BesovSpace F φ s p q) :
     ‖inclusionOfLT F φ p q q' hs u‖ ≤ (1 - 2 ^ (s' - s))⁻¹ * ‖u‖ :=
-  norm_changeOrder_of_lt hs u
+  norm_le_of_toDistr_eq_of_lt hs (toDistr_inclusionOfLT hs u).symm
 
-end ChangeOfOrder
+end Inclusion
 
 section SingleBlock
 
