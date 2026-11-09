@@ -18,7 +18,7 @@ import Mathlib.RingTheory.PowerSeries.NoZeroDivisors
 import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.NumberTheory.Padics.PowerSeriesIdeal
 import TauCeti.RingTheory.Length
-import TauCeti.RingTheory.Support
+import TauCeti.RingTheory.Support.Basic
 
 /-!
 # The characteristic divisor of a torsion module
