@@ -372,7 +372,7 @@ for the almost complex structure of the complex curve exactly when it is a chart
 holomorphic maximal atlas. -/
 theorem isIsothermalChart_ofComplexManifold_iff :
     IsIsothermalChart (ofComplexManifold ℂ X) e ↔ e ∈ maximalAtlas 𝓘(ℂ) 1 X := by
-  refine ⟨fun he ↦ e.mem_maximalAtlas_of_contMDiffOn_symm one_ne_zero ?_, fun he ↦
+  refine ⟨fun he ↦ e.mem_maximalAtlas_of_contMDiffOn_symm ?_, fun he ↦
     ⟨IsManifold.maximalAtlas_subset_restrictScalars ℝ he, fun x hx ↦
       isPseudoholomorphicAt_ofComplexManifold_iff.2 (mdifferentiableAt_of_mem_maximalAtlas he hx)⟩⟩
   refine MDifferentiableOn.contMDiffOn (fun z hz ↦ ?_) e.open_target
