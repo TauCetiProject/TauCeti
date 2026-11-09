@@ -29,6 +29,8 @@ Interval integrals of elementary functions in closed form or as series, continui
   for `r < -1`.
 * `TauCeti.integral_const_mul_rpow_le`: `∫ t in δ..1, c * t ^ T ≤ c / (T + 1)` for `T > -1`,
   `c ≥ 0` and `δ ≥ 0`.
+* `TauCeti.integral_add_rpow_le_of_lt_neg_one`: `∫ s in 0..β, (r + s) ^ S ≤ r ^ (S + 1) / -(S + 1)`
+  for `0 < r`, `0 ≤ β` and `S < -1`.
 * `TauCeti.norm_integral_le_of_ae_norm_le_mul_sub_rpow`: an integral over `[0, t' - h]` of a
   function bounded by `A h (t' - s)^((α - 4)/2)` is at most `2 / (2 - α) A h^(α/2)` for `α < 2`.
 * `TauCeti.integral_one_div_sqrt_one_sub_sq`: `∫ x in a..b, 1 / √(1 - x²) = arcsin b - arcsin a`
@@ -387,6 +389,16 @@ theorem integral_comp_sin_sq_add_int_mul_pi (G : ℝ → ℝ)
           2 * n * ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
         rw [integral_comp_sin_sq_neg_pi_div_two G hG]
         ring
+
+/-- For `S < -1`, the integral of `(r + s) ^ S` over `[0, β]` is at most `r ^ (S + 1) / -(S + 1)`,
+uniformly in `β ≥ 0`. -/
+theorem integral_add_rpow_le_of_lt_neg_one {r β S : ℝ} (hr : 0 < r) (hβ : 0 ≤ β) (hS : S < -1) :
+    ∫ s in (0 : ℝ)..β, (r + s) ^ S ≤ r ^ (S + 1) / -(S + 1) := by
+  have h := integral_sub_rpow_le_of_lt_neg_one (a := 0) (b := r + β) (c := r) hS hr
+    (by linarith)
+  rw [intervalIntegral.integral_comp_sub_left (fun x : ℝ => x ^ S) (r + β)] at h
+  rw [intervalIntegral.integral_comp_add_left (fun x : ℝ => x ^ S) r]
+  convert h using 2 <;> ring
 
 end TauCeti
 
