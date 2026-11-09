@@ -41,8 +41,8 @@ function outside `(0, ∞)` remain irrelevant, and values of a complete Bernstei
   and `congr`.
 * `TauCeti.IsCompleteBernsteinFunction`: the representation-based predicate.
 * `TauCeti.representsCompleteBernstein_stieltjesBernsteinTransform` and
-  `TauCeti.isCompleteBernsteinFunction_stieltjesBernsteinTransform`: the transform of normalized,
-  integrable representing data carries the representation.
+  `TauCeti.isCompleteBernsteinFunction_stieltjesBernsteinTransform`: the transform of normalized
+  representing data carries the representation (integrable weight for the first).
 * `TauCeti.RepresentsCompleteBernstein.add`, `TauCeti.RepresentsCompleteBernstein.smul`,
   `TauCeti.IsCompleteBernsteinFunction.add` and `TauCeti.IsCompleteBernsteinFunction.smul`:
   complete Bernstein functions are closed under sums and nonnegative scalar multiples.
@@ -220,13 +220,39 @@ theorem representsCompleteBernstein_stieltjesBernsteinTransform
     RepresentsCompleteBernstein μ a b (stieltjesBernsteinTransform μ a b) :=
   ⟨hzero, hμ, fun _ _ => rfl⟩
 
-/-- The Stieltjes--Bernstein transform of normalized, integrable measure data is a complete
-Bernstein function. -/
+/-- If the transform kernel `x ↦ t / (t + x)` is integrable for some `t > 0`, then so is the
+Stieltjes weight `x ↦ (1 + x)⁻¹`. -/
+theorem integrable_stieltjesWeight_of_integrable_div {μ : Measure ℝ≥0} {t : ℝ} (ht : 0 < t)
+    (h : Integrable (fun x : ℝ≥0 => t / (t + x)) μ) : Integrable stieltjesWeight μ := by
+  refine (h.const_mul (max 1 t⁻¹)).mono' ?_ (ae_of_all _ fun x => ?_)
+  · exact measurable_stieltjesWeight.aestronglyMeasurable
+  · have hM1 : 1 ≤ max 1 t⁻¹ := le_max_left _ _
+    have hM2 : 1 ≤ max 1 t⁻¹ * t := by
+      calc (1 : ℝ) = t⁻¹ * t := (inv_mul_cancel₀ ht.ne').symm
+        _ ≤ max 1 t⁻¹ * t := by gcongr; exact le_max_right _ _
+    have hx : (0 : ℝ) ≤ x := x.2
+    rw [stieltjesWeight_apply, Real.norm_of_nonneg (by positivity), ← sub_nonneg]
+    have : max 1 t⁻¹ * (t / (t + x)) - (1 + (x : ℝ))⁻¹ =
+        (max 1 t⁻¹ * t * (1 + x) - (t + x)) / ((t + x) * (1 + x)) := by
+      field_simp
+    rw [this]
+    refine div_nonneg ?_ (by positivity)
+    nlinarith [mul_nonneg hx (sub_nonneg.2 hM2), mul_nonneg ht.le (sub_nonneg.2 hM1)]
+
+/-- The Stieltjes--Bernstein transform of normalized measure data is a complete Bernstein function.
+If the weight is not integrable, every transform integral is `0` by convention and the transform
+is the affine function `a + b t`, represented by the zero measure. -/
 theorem isCompleteBernsteinFunction_stieltjesBernsteinTransform
-    {μ : Measure ℝ≥0} {a b : ℝ≥0} (hzero : μ {0} = 0)
-    (hμ : Integrable stieltjesWeight μ) :
-    IsCompleteBernsteinFunction (stieltjesBernsteinTransform μ a b) :=
-  ⟨a, b, μ, representsCompleteBernstein_stieltjesBernsteinTransform hzero hμ⟩
+    {μ : Measure ℝ≥0} {a b : ℝ≥0} (hzero : μ {0} = 0) :
+    IsCompleteBernsteinFunction (stieltjesBernsteinTransform μ a b) := by
+  by_cases hμ : Integrable stieltjesWeight μ
+  · exact ⟨a, b, μ, representsCompleteBernstein_stieltjesBernsteinTransform hzero hμ⟩
+  refine ⟨a, b, 0, by simp, integrable_zero_measure, fun t ht => ?_⟩
+  rcases ht.eq_or_lt with rfl | ht
+  · simp [stieltjesBernsteinTransform_apply]
+  · rw [stieltjesBernsteinTransform_apply, stieltjesBernsteinTransform_apply,
+      integral_undef fun h => hμ (integrable_stieltjesWeight_of_integrable_div ht h)]
+    simp
 
 /-- **Stieltjes--complete-Bernstein correspondence.** A function `f` is Stieltjes exactly when
 its product `t ↦ t * f t` on `(0, ∞)` extends to a complete Bernstein function on `[0, ∞)`.
@@ -243,8 +269,7 @@ theorem isStieltjesFunction_iff_exists_isCompleteBernsteinFunction_eqOn_mul
     rw [isStieltjesFunction_iff] at hf
     obtain ⟨a, b, μ, hμ⟩ := hf
     exact ⟨stieltjesBernsteinTransform μ a b,
-      isCompleteBernsteinFunction_stieltjesBernsteinTransform hμ.measure_singleton_zero
-        hμ.integrable_weight,
+      isCompleteBernsteinFunction_stieltjesBernsteinTransform hμ.measure_singleton_zero,
       fun _ ht => hμ.stieltjesBernsteinTransform_eq_mul ht⟩
   · rintro ⟨g, ⟨a, b, μ, hμ⟩, hgf⟩
     rw [isStieltjesFunction_iff]

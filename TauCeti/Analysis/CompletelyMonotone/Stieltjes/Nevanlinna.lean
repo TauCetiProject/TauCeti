@@ -158,7 +158,7 @@ theorem exists_isCompleteBernsteinFunction_eqOn_of_eq_integral_reflected_nevanli
     positivity
   -- The reflected Nevanlinna integral in terms of the weighted measure.
   refine ⟨stieltjesBernsteinTransform μ (c - ∫ y : ℝ≥0, ((y : ℝ))⁻¹ ∂ν).toNNReal b.toNNReal,
-    isCompleteBernsteinFunction_stieltjesBernsteinTransform hμ0 hμw, fun t ht => ?_⟩
+    isCompleteBernsteinFunction_stieltjesBernsteinTransform hμ0, fun t ht => ?_⟩
   have ht := mem_Ioi.mp ht
   have hkey : ∫ y : ℝ≥0, d y • (t / (t + y)) ∂ν =
       ∫ y : ℝ≥0, (y : ℝ)⁻¹ ∂ν + ∫ y : ℝ≥0, (t * y - 1) / (t + y) ∂ν := by
