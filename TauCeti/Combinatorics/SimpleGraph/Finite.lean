@@ -21,6 +21,8 @@ an interval of the Boolean lattice `Finset (Sym2 V)`, where the finset interval 
 
 ## Main results
 
+* `SimpleGraph.neighborSetFintypeOfFinite` — a `Fintype` structure on the neighbour sets of a graph
+  on a finite vertex type, for local selection where decidable adjacency is unavailable.
 * `SimpleGraph.exists_minimum_weight_edge` — a finite nonempty edge set has a minimum-weight edge.
 * `SimpleGraph.edgeSet_fromEdgeSet_of_subset` — a set of edges of `G` is the edge set of the
   graph it generates.
@@ -37,6 +39,17 @@ open Finset
 namespace SimpleGraph
 
 variable {V K M : Type*}
+
+/-- The neighbour sets of a graph on a finite vertex type are finite, from finiteness alone. This
+is not an instance: with `DecidableRel G.Adj`, instance search finds the subtype `Fintype`
+(`Subtype.fintype`), and the two structures are not definitionally equal. Files that need a
+`Fintype` on neighbour sets without decidable adjacency select it as a local instance. It is
+exposed because it is instance-reducible: statements elaborated with it as a local instance
+record the unfolded `Fintype.ofFinite`, and importers must see the body to match them. -/
+@[instance_reducible, expose]
+noncomputable def neighborSetFintypeOfFinite [Finite V] (G : SimpleGraph V) (v : V) :
+    Fintype (G.neighborSet v) :=
+  Fintype.ofFinite _
 
 /-- A graph with a finite nonempty edge set has an edge of minimum weight. -/
 theorem exists_minimum_weight_edge (G : SimpleGraph V) [Finite G.edgeSet] (hG : G ≠ ⊥)
