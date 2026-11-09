@@ -126,8 +126,9 @@ variable [Fact (1 ≤ p)] {μ₀ : ProbabilityMeasure X}
 
 /-- **Completeness from geometrically controlled chains.** An anchored Wasserstein component is
 complete as soon as every chain of probability laws whose consecutive distances are strictly
-below `2⁻¹ ^ n` converges in Wasserstein distance to some probability law. The finite- and
-infinite-exponent completeness theorems both apply this criterion. -/
+below `2⁻¹ ^ n` converges in Wasserstein distance to some probability law. The completeness
+instance `TauCeti.WassersteinComponent.instCompleteSpace` applies this criterion at every
+exponent. -/
 theorem WassersteinComponent.completeSpace_of_exists_tendsto_wassersteinEDist
     (H : ∀ (μ : ℕ → Measure X) [∀ n, IsProbabilityMeasure (μ n)],
       (∀ n, wassersteinEDist p (μ n) (μ (n + 1)) < 2⁻¹ ^ n) →
