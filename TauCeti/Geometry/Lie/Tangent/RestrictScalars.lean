@@ -371,14 +371,10 @@ theorem realificationDerivationLieEquiv_complexStructure_lieMap
   simp only [LieEquiv.coe_toLinearEquiv,
     leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap,
     realificationDerivationLieEquiv_complexStructure_evaluation]
-  have h := realificationLieEquiv_complexStructure_groupLieAlgebraMap φ.toMonoidHom hφ
+  have h := realificationLieEquiv_complexStructure_groupLieAlgebraMap (MonoidHom.ofClass φ) hφ
     (leftInvariantDerivationLieEquivGroupLieAlgebra (I := 𝓘(ℝ, E)) (G := G)
       (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, E)) (n := ∞) (by simp) (1 : G)) D)
-  simp only [MonoidHom.groupLieAlgebraMap_apply] at h
-  -- The smooth morphism and its underlying monoid homomorphism have the same function.
-  have hcoe : (φ.toMonoidHom : G → K) = φ := rfl
-  rw [hcoe] at h
-  exact h
+  simpa only [MonoidHom.groupLieAlgebraMap_apply, MonoidHom.coe_ofClass] using h
 
 end Derivation
 
