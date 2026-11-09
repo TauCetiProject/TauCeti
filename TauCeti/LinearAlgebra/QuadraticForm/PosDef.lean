@@ -120,10 +120,12 @@ theorem posDef_toQuadraticMap_iff_isPosSemidef_and_nondegenerate {R M : Type*} [
     B.toQuadraticMap.PosDef ↔ B.IsPosSemidef ∧ B.Nondegenerate := by
   have hB' : LinearMap.IsSymm B := LinearMap.BilinForm.isSymm_iff.mp hB
   rw [isPosSemidef_iff_forall_nonneg B hB]
-  simp only [QuadraticMap.PosDef, LinearMap.BilinMap.toQuadraticMap_apply]
-  refine ⟨fun h ↦ ?_, fun ⟨hnn, hnd⟩ ↦ (LinearMap.BilinForm.nondegenerate_iff' B hnn hB').mp hnd⟩
-  have hnn : ∀ x, 0 ≤ B x x := fun x ↦ (show B.toQuadraticMap.PosDef from h).nonneg x
-  exact ⟨hnn, (LinearMap.BilinForm.nondegenerate_iff' B hnn hB').mpr h⟩
+  refine ⟨fun h ↦ ?_, fun ⟨hnn, hnd⟩ ↦ ?_⟩
+  · have hnn : ∀ x, 0 ≤ B x x := fun x ↦ by simpa using h.nonneg x
+    refine ⟨hnn, (LinearMap.BilinForm.nondegenerate_iff' B hnn hB').mpr ?_⟩
+    simpa only [QuadraticMap.PosDef, LinearMap.BilinMap.toQuadraticMap_apply] using h
+  · simpa only [QuadraticMap.PosDef, LinearMap.BilinMap.toQuadraticMap_apply] using
+      (LinearMap.BilinForm.nondegenerate_iff' B hnn hB').mp hnd
 
 end LinearMap.BilinForm
 
