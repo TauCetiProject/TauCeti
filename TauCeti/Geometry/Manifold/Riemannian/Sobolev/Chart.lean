@@ -159,16 +159,6 @@ private theorem norm_gradient_comp_le {p : M} {r C₁ : ℝ} (L : E ≃L[ℝ] F)
 variable [CompactSpace M] [MeasurableSpace M] [BorelSpace M]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
-/-- The `L²` norm of the length of the gradient of a smooth function is at most its `H¹` norm. -/
-private theorem norm_toLp_norm_mgradient_le (u : C^∞⟮I, M; ℝ⟯) :
-    ‖ContinuousMap.toLp 2 (riemannianVolume I M) ℝ
-        ⟨fun x ↦ ‖mgradient I u x‖,
-          continuous_norm_mgradient (u.contMDiff.of_le (by simp))⟩‖ ≤ ‖ofSmooth u‖ := by
-  rw [← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), ← real_inner_self_eq_norm_sq,
-    ContinuousMap.inner_toLp, norm_ofSmooth_sq]
-  simp only [ContinuousMap.coe_mk, conj_trivial, ← sq]
-  exact le_add_of_nonneg_left (integral_nonneg fun x ↦ sq_nonneg _)
-
 variable [MeasureSpace F] [BorelSpace F] [(volume : Measure F).IsAddHaarMeasure]
 
 /-- An element `U` of `W^{1,2}(Ω)` whose value and weak gradient are those of a smooth function `u`
@@ -323,11 +313,11 @@ theorem exists_continuousLinearMap_w1p_extChartAt (p : M) (L : E ≃L[ℝ] F) :
   let T₁ : PreSobolevH1 I M →ₗ[ℝ] W1p volume Ω 2 :=
     { toFun v := T₀ (PreSobolevH1.ofPreSobolevH1 v)
       map_add' v w := W1p.ext_value <| by
-        rw [map_add, hval, map_add, map_add, map_add, ← hval, ← hval]
         simp only [← W1p.valueL_apply, map_add]
+        simp only [W1p.valueL_apply, hval, map_add]
       map_smul' a v := W1p.ext_value <| by
-        rw [map_smul, hval, map_smul, map_smul, map_smul, ← hval, RingHom.id_apply]
-        simp only [← W1p.valueL_apply, map_smul] }
+        simp only [← W1p.valueL_apply, map_smul]
+        simp only [W1p.valueL_apply, hval, map_smul, RingHom.id_apply] }
   have hT₁u (u : C^∞⟮I, M; ℝ⟯) : T₁ (PreSobolevH1.toPreSobolevH1 u) = T₀ u := by
     simp only [T₁, LinearMap.coe_mk, AddHom.coe_mk, PreSobolevH1.ofPreSobolevH1_toPreSobolevH1]
   have hT₁ (v : PreSobolevH1 I M) : ‖T₁ v‖ ≤ A * ‖v‖ := by
