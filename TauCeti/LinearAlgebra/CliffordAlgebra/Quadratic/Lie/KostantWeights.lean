@@ -242,8 +242,6 @@ theorem eq_weylVector_of_isHighestWeightVector_kostant_of_casimirScalar_eq
     (hcas : casimirScalar base lam =
       casimirScalar base (weylVector (IsKilling.rootSystem H) base)) :
     lam = weylVector (IsKilling.rootSystem H) base := by
-  -- `TauCeti.isDominantIntegral_weylVector` fixes the instance `invertibleTwo`.
-  obtain rfl : ‹Invertible (2 : K)› = invertibleTwo := Subsingleton.elim _ _
   by_contra hne
   obtain ⟨S, hS, hlam⟩ := exists_eq_weylVector_sub_sum_kostant_of_forall_lie_eq_smul base
     hv.ne_zero hv.lie_eq_smul
