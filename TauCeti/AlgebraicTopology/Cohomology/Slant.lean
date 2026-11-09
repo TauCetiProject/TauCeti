@@ -164,6 +164,7 @@ lemma singularSlant_naturality {X Y X' Y' : TopCat.{w}} (f : X ⟶ X') (g : Y �
 `a ∈ Hⁿ(X; T, M)` and `x ∈ Hₚ(X; R)` with `p + q = n` and `q ≠ 0`, `pr₁^* a / x = 0`. In particular
 `pr₁^* a` contributes nothing to the slant products by the class of a point (`p = 0`) or by a loop
 (`p = 1`) of a class of degree two. -/
+@[simp]
 theorem singularSlant_singularCohomologyMap_fst_eq_zero (X Y : TopCat.{w}) (u : R ⊗ S ⟶ T)
     (p q n : ℕ) (h : p + q = n) (hq : q ≠ 0)
     (x : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj R).obj X)
@@ -182,6 +183,7 @@ theorem singularSlant_singularCohomologyMap_fst_eq_zero (X Y : TopCat.{w}) (u : 
 /-- **A class pulled back from the second factor has no slant products by classes of positive
 degree**: for `b ∈ Hⁿ(Y; T, M)` and `x ∈ Hₚ(X; R)` with `p + q = n` and `p ≠ 0`,
 `pr₂^* b / x = 0`. In particular `pr₂^* b` has no slant products by loops. -/
+@[simp]
 theorem singularSlant_singularCohomologyMap_snd_eq_zero (X Y : TopCat.{w}) (u : R ⊗ S ⟶ T)
     (p q n : ℕ) (h : p + q = n) (hp : p ≠ 0)
     (x : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj R).obj X)
