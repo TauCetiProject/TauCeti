@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.Morse.Index
+public import TauCeti.Analysis.Calculus.FDeriv.DiagonalQuadratic
 public import TauCeti.Analysis.Calculus.WittenLaplacian.Basic
 public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Basic
-import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
-import TauCeti.Analysis.Calculus.Morse.Pi
+import Mathlib.Algebra.BigOperators.Field
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Oscillator
 
@@ -22,7 +21,9 @@ harmonic oscillators. This file computes that local model exactly.
 
 Let `f = ∑ᵢ aᵢ xᵢ² / 2` on `ℝ^ι` (`TauCeti.diagonalQuadratic`), whose Hessian is diagonal with
 eigenvalues `aᵢ`. It has a nondegenerate critical point at the origin exactly when every `aᵢ` is
-nonzero, and then its Morse index is the number of negative `aᵢ`. By the frame formula
+nonzero, and then its Morse index is the number of negative `aᵢ`
+(`TauCeti.isNondegenerateCriticalPoint_diagonalQuadratic_zero_iff`,
+`TauCeti.morseIndex_diagonalQuadratic`). By the frame formula
 `TauCeti.euclideanWittenLaplacian_apply`, the Witten Laplacian acts on the coefficient of
 `dx^s` as the operator
 
@@ -34,47 +35,52 @@ a sum of one-dimensional harmonic oscillators of frequencies `ωᵢ = t |aᵢ|`,
 that depends on the degree of the form. For `f = x²` on the line (`a = 2`) the coefficient of a
 function is acted on by `-∂² + 4t² x² - 2t` and that of `dx` by `-∂² + 4t² x² + 2t`.
 
-The oscillator `-∂² + ω² x²` has the eigenfunctions `ψₖ(√ω x)`, with `ψₖ` the Hermite functions,
-and eigenvalues `ω (2k + 1)`. Hence for `t ≥ 0`, every multi-index `k : ι → ℕ` and every index set
+For `ω ≥ 0` the functions `ψₖ(√ω x)`, with `ψₖ` the Hermite functions, satisfy
+`-g'' + ω² x² g = ω (2k + 1) g`; for `ω > 0` they are the eigenfunctions of the oscillator
+`-∂² + ω² x²` on `L²(ℝ)`. Hence for `t ≥ 0`, every multi-index `k : ι → ℕ` and every index set
 `s`, the form
 
 `Ψ_{k,s}(x) = ∏ᵢ ψ_{kᵢ}(√(t |aᵢ|) xᵢ) dx^s`
 
-(`TauCeti.hermiteEigenform`) is an eigenform of the Witten Laplacian
-(`TauCeti.euclideanWittenLaplacian_hermiteEigenform`), with eigenvalue
+(`TauCeti.hermiteEigenform`) satisfies the differential identity `Δ_t Ψ_{k,s} = μ(k, s) Ψ_{k,s}`
+(`TauCeti.euclideanWittenLaplacian_hermiteEigenform`), with
 
 `μ(k, s) = t ∑ᵢ (|aᵢ| (2kᵢ + 1) ± aᵢ)` (`TauCeti.hermiteEigenvalue`).
+
+When `t > 0` and every `aᵢ` is nonzero, `Ψ_{k,s}` is a nonzero square-integrable form, so this is a
+genuine `L²` eigenform with eigenvalue `μ(k, s)`. If `t = 0` or some `aᵢ = 0`, a factor is the
+constant `ψ_{kᵢ}(0)`, which vanishes for odd `kᵢ` and is not square-integrable otherwise, so the
+identity is then only a formal one.
 
 Each summand `|aᵢ| (2kᵢ + 1) ± aᵢ` is `0` or at least `2 |aᵢ|`. So `μ ≥ 0`, and when every `aᵢ` is
 nonzero and `t > 0`, `μ(k, s) = 0` exactly when `k = 0` and `s` is the set of indices with
 `aᵢ < 0` (`TauCeti.hermiteEigenvalue_eq_zero_iff`): the ground state is a multiple of the
 Gaussian `e^{-t ∑ᵢ |aᵢ| xᵢ² / 2} dx^s` (`TauCeti.hermiteEigenform_zero_apply`), a form whose degree
-is the Morse index. Every other Hermite eigenform has eigenvalue at least `2t minᵢ |aᵢ|`
+is the Morse index. Every other Hermite eigenform has `μ(k, s)` at least `2t minᵢ |aᵢ|`
 (`TauCeti.two_mul_mul_le_hermiteEigenvalue`), a gap growing linearly in `t`. For the standard model
 `f = -|x⁻|² + |x⁺|²` all `|aᵢ|` are `2`, the ground state is a multiple of `e^{-t |x|²} dx^{I⁻}`
 and the gap is `4t`.
 
-In each degree `s`, the coefficients of the Hermite eigenforms are, after the dilation
-`xᵢ ↦ √(t |aᵢ|) xᵢ`, the multi-index Hermite functions, which form the Hilbert basis
+When `t > 0` and every `aᵢ` is nonzero, in each degree `s` the coefficients of the Hermite
+eigenforms are, after the invertible dilation `xᵢ ↦ √(t |aᵢ|) xᵢ`, the multi-index Hermite
+functions, which form the Hilbert basis
 `TauCeti.hermiteFunctionPiBasis` of `L²(ℝ^ι)`. This is the computation behind Witten's proof of
 the Morse inequalities, in which the low-lying spectrum of `Δ_t` is modelled near each critical
-point by the ground state of this oscillator. The diagonal quadratic function is the normal form
-of the Morse lemma, whose derivative also appears as `TauCeti.hasFDerivAt_diagonalQuadratic`.
+point by the ground state of this oscillator. The diagonal quadratic function, the normal form of
+the Morse lemma, and its derivatives are in `TauCeti.Analysis.Calculus.FDeriv.DiagonalQuadratic`.
 
 ## Main definitions
 
-* `TauCeti.diagonalQuadratic`: the diagonal quadratic function `∑ᵢ aᵢ xᵢ² / 2`.
 * `TauCeti.hermiteEigenform`: the Hermite eigenforms `Ψ_{k,s}` of its Witten Laplacian.
 * `TauCeti.hermiteEigenvalue`: their eigenvalues `μ(k, s)`.
 
 ## Main results
 
-* `TauCeti.isNondegenerateCriticalPoint_diagonalQuadratic_zero_iff`,
-  `TauCeti.morseIndex_diagonalQuadratic`: the origin is a nondegenerate critical point exactly when
-  every `aᵢ` is nonzero, of Morse index the number of negative `aᵢ`.
 * `TauCeti.euclideanWittenLaplacian_diagonalQuadratic_apply`: the Witten Laplacian of a diagonal
   quadratic function is a sum of shifted harmonic oscillators.
-* `TauCeti.euclideanWittenLaplacian_hermiteEigenform`: the Hermite eigenforms are eigenforms.
+* `TauCeti.contDiff_hermiteEigenform`: the Hermite eigenforms are smooth.
+* `TauCeti.euclideanWittenLaplacian_hermiteEigenform`: the Hermite eigenforms satisfy
+  `Δ_t Ψ_{k,s} = μ(k, s) Ψ_{k,s}`.
 * `TauCeti.hermiteEigenvalue_nonneg`, `TauCeti.hermiteEigenvalue_eq_zero_iff`,
   `TauCeti.two_mul_mul_le_hermiteEigenvalue`: the eigenvalues are nonnegative, vanish exactly at
   the Gaussian ground state in the degree of the Morse index, and are otherwise bounded below by
@@ -96,79 +102,6 @@ namespace TauCeti
 open Function
 
 variable {ι : Type*} [Fintype ι] [LinearOrder ι]
-
-section DiagonalQuadratic
-
-/-- The **diagonal quadratic function** `∑ᵢ aᵢ xᵢ² / 2` on `ℝ^ι`, whose Hessian is diagonal with
-eigenvalues `aᵢ`. -/
-def diagonalQuadratic (a : ι → ℝ) (x : ι → ℝ) : ℝ :=
-  ∑ i, a i * x i ^ 2 / 2
-
-omit [LinearOrder ι] in
-theorem diagonalQuadratic_apply (a x : ι → ℝ) :
-    diagonalQuadratic a x = ∑ i, a i * x i ^ 2 / 2 :=
-  (rfl)
-
-omit [LinearOrder ι] in
-theorem contDiff_diagonalQuadratic (a : ι → ℝ) {n : WithTop ℕ∞} :
-    ContDiff ℝ n (diagonalQuadratic a) := by
-  unfold diagonalQuadratic
-  fun_prop
-
-omit [LinearOrder ι] in
-/-- The summands of a diagonal quadratic function, as functions of one variable. -/
-private theorem deriv_mul_sq_div_two (c y : ℝ) : deriv (fun y : ℝ ↦ c * y ^ 2 / 2) y = c * y := by
-  have h := ((hasDerivAt_pow 2 y).const_mul c).div_const 2
-  rw [h.deriv]
-  ring
-
-omit [LinearOrder ι] in
-private theorem deriv_deriv_mul_sq_div_two (c y : ℝ) :
-    deriv (deriv fun y : ℝ ↦ c * y ^ 2 / 2) y = c := by
-  rw [funext (deriv_mul_sq_div_two c)]
-  simp
-
-omit [LinearOrder ι] in
-/-- The partial derivatives of `∑ᵢ aᵢ xᵢ² / 2` are `aᵢ xᵢ`. -/
-@[simp]
-theorem fderiv_diagonalQuadratic_apply_single [DecidableEq ι] (a x : ι → ℝ) (i : ι) :
-    fderiv ℝ (diagonalQuadratic a) x (Pi.single i 1) = a i * x i := by
-  unfold diagonalQuadratic
-  rw [fderiv_sum_comp_eval (φ := fun i y ↦ a i * y ^ 2 / 2) fun i ↦ by fun_prop]
-  simp only [deriv_mul_sq_div_two, FunLike.coe_sum, Finset.sum_apply,
-    smul_apply, ContinuousLinearMap.proj_apply, Pi.single_apply, smul_eq_mul,
-    mul_ite, mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
-
-omit [LinearOrder ι] in
-/-- The Hessian of `∑ᵢ aᵢ xᵢ² / 2` is the diagonal form `∑ᵢ aᵢ vᵢ wᵢ`. -/
-@[simp]
-theorem fderiv_fderiv_diagonalQuadratic_apply (a x v w : ι → ℝ) :
-    fderiv ℝ (fderiv ℝ (diagonalQuadratic a)) x v w = ∑ i, a i * v i * w i := by
-  unfold diagonalQuadratic
-  rw [fderiv_fderiv_sum_comp_eval_apply (φ := fun i y ↦ a i * y ^ 2 / 2) fun i ↦ by fun_prop]
-  simp [deriv_deriv_mul_sq_div_two]
-
-omit [LinearOrder ι] in
-/-- The origin is a nondegenerate critical point of `∑ᵢ aᵢ xᵢ² / 2` exactly when every `aᵢ` is
-nonzero. -/
-theorem isNondegenerateCriticalPoint_diagonalQuadratic_zero_iff (a : ι → ℝ) :
-    IsNondegenerateCriticalPoint (diagonalQuadratic a) 0 ↔ ∀ i, a i ≠ 0 := by
-  unfold diagonalQuadratic
-  rw [isNondegenerateCriticalPoint_sum_comp_eval_iff (φ := fun i y ↦ a i * y ^ 2 / 2)
-    fun i ↦ by fun_prop]
-  simp [deriv_deriv_mul_sq_div_two]
-
-omit [LinearOrder ι] in
-/-- The Morse index of `∑ᵢ aᵢ xᵢ² / 2` is the number of negative `aᵢ`. -/
-@[simp]
-theorem morseIndex_diagonalQuadratic (a x : ι → ℝ) :
-    morseIndex (diagonalQuadratic a) x = (Finset.univ.filter fun i ↦ a i < 0).card := by
-  classical
-  unfold diagonalQuadratic
-  rw [morseIndex_sum_comp_eval (φ := fun i y ↦ a i * y ^ 2 / 2) fun i ↦ by fun_prop]
-  simp [deriv_deriv_mul_sq_div_two, ← Set.ncard_coe_finset]
-
-end DiagonalQuadratic
 
 section Model
 
@@ -198,7 +131,8 @@ theorem euclideanWittenLaplacian_diagonalQuadratic_apply {x : ι → ℝ} (hφ :
 
 /-- The **Hermite eigenforms** of the Witten Laplacian of `∑ᵢ aᵢ xᵢ² / 2`: for a multi-index
 `k : ι → ℕ` and an index set `s`, the form `∏ᵢ ψ_{kᵢ}(√(t |aᵢ|) xᵢ) dx^s`, with `ψₖ` the Hermite
-functions. -/
+functions. They are nonzero `L²` eigenforms when `t > 0` and every `aᵢ` is nonzero; otherwise they
+only satisfy the eigenform equation as a differential identity. -/
 def hermiteEigenform (a : ι → ℝ) (t : ℝ) (k : ι → ℕ) (s : Finset ι) :
     (ι → ℝ) → Finset ι → ℝ :=
   fun x ↦ (∏ i, hermiteFunction (k i) (√(t * |a i|) * x i)) • Pi.single s 1
@@ -219,25 +153,15 @@ theorem hermiteEigenvalue_def (a : ι → ℝ) (t : ℝ) (k : ι → ℕ) (s : F
 
 omit [LinearOrder ι] in
 /-- The product of dilated Hermite functions underlying a Hermite eigenform. -/
-private theorem contDiff_hermiteProduct (c : ι → ℝ) (k : ι → ℕ) :
-    ContDiff ℝ 2 (fun x : ι → ℝ ↦ ∏ i, hermiteFunction (k i) (c i * x i)) :=
+private theorem contDiff_hermiteProduct (c : ι → ℝ) (k : ι → ℕ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (fun x : ι → ℝ ↦ ∏ i, hermiteFunction (k i) (c i * x i)) :=
   contDiff_prod fun i _ ↦ (contDiff_hermiteFunction (k i)).of_le le_top |>.comp
     (contDiff_const.mul (contDiff_apply ℝ (fun _ : ι ↦ ℝ) i))
 
-omit [LinearOrder ι] in
-/-- The second derivative of `x ↦ P x • v` is that of `P`, times `v`. -/
-private theorem fderiv_fderiv_smul_const_apply {P : (ι → ℝ) → ℝ} (hP : ContDiff ℝ 2 P)
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] (v : F) (x u w : ι → ℝ) :
-    fderiv ℝ (fderiv ℝ fun y ↦ P y • v) x u w = fderiv ℝ (fderiv ℝ P) x u w • v := by
-  have hP' : Differentiable ℝ P := hP.differentiable (by norm_num)
-  have hfd : fderiv ℝ (fun y ↦ P y • v) =
-      fun y ↦ (ContinuousLinearMap.smulRightL ℝ (ι → ℝ) F).flip v (fderiv ℝ P y) :=
-    funext fun y ↦ fderiv_smul_const (hP' y) v
-  have hd : DifferentiableAt ℝ (fderiv ℝ P) x :=
-    (hP.fderiv_right (m := 1) (by norm_num)).differentiable (by norm_num) x
-  rw [hfd, fderiv_fun_comp x ((ContinuousLinearMap.smulRightL ℝ (ι → ℝ) F).flip v).differentiableAt
-    hd]
-  simp
+/-- The Hermite eigenforms are smooth. -/
+theorem contDiff_hermiteEigenform (a : ι → ℝ) (t : ℝ) (k : ι → ℕ) (s : Finset ι)
+    {n : WithTop ℕ∞} : ContDiff ℝ n (hermiteEigenform a t k s) :=
+  (contDiff_hermiteProduct _ k).smul contDiff_const
 
 omit [LinearOrder ι] in
 /-- The second partial derivatives of a product of dilated Hermite functions: differentiating
@@ -250,17 +174,18 @@ private theorem fderiv_fderiv_hermiteProduct_apply_single_single [DecidableEq ι
         ∏ j, hermiteFunction (k j) (c j * x j) := by
   rw [fderiv_fderiv_prod_comp_eval_apply_single_single
       (φ := fun j y ↦ hermiteFunction (k j) (c j * y))
-      (fun j ↦ (contDiff_hermiteFunction (k j)).of_le le_top |>.comp
-        (contDiff_const.mul contDiff_id)) x i,
+      (fun j ↦ ((contDiff_hermiteFunction (k j)).of_le le_top |>.comp
+        (contDiff_const.mul contDiff_id)).contDiffAt) i,
     ← Finset.mul_prod_erase _ _ (Finset.mem_univ i),
     ← Finset.mul_prod_erase _ (fun j ↦ hermiteFunction (k j) (c j * x j)) (Finset.mem_univ i),
     update_self, deriv_deriv_hermiteFunction_comp_mul, mul_assoc]
   congr 2
   exact Finset.prod_congr rfl fun j hj ↦ by rw [update_of_ne (Finset.ne_of_mem_erase hj)]
 
-/-- **The Hermite eigenforms are eigenforms of the Witten Laplacian.** For `t ≥ 0`, the form
-`∏ᵢ ψ_{kᵢ}(√(t |aᵢ|) xᵢ) dx^s` is an eigenform of the Witten Laplacian of `∑ᵢ aᵢ xᵢ² / 2`, with
-eigenvalue `t ∑ᵢ (|aᵢ| (2kᵢ + 1) ± aᵢ)`. -/
+/-- **The eigenform equation for the Hermite eigenforms.** For `t ≥ 0`, the Witten Laplacian of
+`∑ᵢ aᵢ xᵢ² / 2` maps the form `∏ᵢ ψ_{kᵢ}(√(t |aᵢ|) xᵢ) dx^s` to its multiple by
+`t ∑ᵢ (|aᵢ| (2kᵢ + 1) ± aᵢ)`. This is an identity of differential operators; the form is a nonzero
+`L²` eigenform when moreover `t > 0` and every `aᵢ` is nonzero. -/
 theorem euclideanWittenLaplacian_hermiteEigenform (a : ι → ℝ) {t : ℝ} (ht : 0 ≤ t)
     (k : ι → ℕ) (s : Finset ι) :
     euclideanWittenLaplacian (diagonalQuadratic a) t (hermiteEigenform a t k s) =
@@ -270,10 +195,10 @@ theorem euclideanWittenLaplacian_hermiteEigenform (a : ι → ℝ) {t : ℝ} (ht
   set P : (ι → ℝ) → ℝ := fun x ↦ ∏ i, hermiteFunction (k i) (c i * x i) with hP_def
   have hP : ContDiff ℝ 2 P := contDiff_hermiteProduct c k
   have hΨ : hermiteEigenform a t k s = fun x ↦ P x • Pi.single s 1 := rfl
-  have hΨ2 : ContDiff ℝ 2 (hermiteEigenform a t k s) := hΨ ▸ hP.smul contDiff_const
   funext x r
-  rw [euclideanWittenLaplacian_diagonalQuadratic_apply hΨ2.contDiffAt, hΨ]
-  simp only [fderiv_fderiv_smul_const_apply hP, Pi.smul_apply, smul_eq_mul]
+  rw [euclideanWittenLaplacian_diagonalQuadratic_apply
+    (contDiff_hermiteEigenform a t k s).contDiffAt, hΨ]
+  simp only [fderiv_fderiv_smul_const_apply hP.contDiffAt, Pi.smul_apply, smul_eq_mul]
   simp only [hP_def, fderiv_fderiv_hermiteProduct_apply_single_single]
   by_cases hrs : r = s
   · subst hrs

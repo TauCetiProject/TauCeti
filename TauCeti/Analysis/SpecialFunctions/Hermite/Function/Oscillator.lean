@@ -35,8 +35,9 @@ The main results are the closed form of the second derivative, `TauCeti.deriv_de
 `-ψₙ'' + x²·ψₙ = (2n+1)·ψₙ`.
 
 Dilating, `g(x) = ψₙ(c x)` solves `-g'' + ω² x² g = ω (2n+1) g` with `ω = c²`
-(`TauCeti.hermiteFunction_comp_mul_oscillator`): the dilated Hermite functions are the
-eigenfunctions of the harmonic oscillator of frequency `ω`.
+(`TauCeti.hermiteFunction_comp_mul_oscillator`). For `c ≠ 0` the dilated Hermite functions are
+nonzero and square-integrable, so they are eigenfunctions of the harmonic oscillator of frequency
+`ω`; for `c = 0` the identity holds trivially for the constant `ψₙ(0)`.
 
 No case split on `n` is needed: the neighbour that would require the Nat-clamped index `n-1` never
 enters, because the derivation uses the creation identity at `n` and the annihilation identity at
@@ -123,9 +124,12 @@ theorem deriv_deriv_hermiteFunction_comp_mul (n : ℕ) (c x : ℝ) :
   ring
 
 /-- **The harmonic-oscillator eigen-equation at frequency `ω = c²`.** The dilated Hermite function
-`g(x) = ψₙ(c x)` is an eigenfunction of `-d²/dx² + ω² x²` with eigenvalue `ω (2n+1)`:
+`g(x) = ψₙ(c x)` satisfies
 
-`-g'' + ω² x² g = ω (2n+1) g`. -/
+`-g'' + ω² x² g = ω (2n+1) g`.
+
+For `c ≠ 0` it is a nonzero square-integrable eigenfunction of `-d²/dx² + ω² x²` with eigenvalue
+`ω (2n+1)`. -/
 theorem hermiteFunction_comp_mul_oscillator (n : ℕ) (c x : ℝ) :
     -deriv (deriv fun y ↦ hermiteFunction n (c * y)) x + (c ^ 2) ^ 2 * x ^ 2 *
         hermiteFunction n (c * x) =

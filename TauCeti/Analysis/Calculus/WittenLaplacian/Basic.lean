@@ -37,10 +37,13 @@ the point,
 `Δ_t φ = Δ φ + t² |df|² φ + t ∑_{i,j} Hess f(∂ᵢ, ∂ⱼ) ⁅εᵢ, ιⱼ⁆ φ`,
 
 where `Δ = -∑ᵢ ∂ᵢ²` is the Hodge Laplacian, acting coefficientwise, and `⁅εᵢ, ιⱼ⁆ = εᵢ ιⱼ - ιⱼ εᵢ`.
-The zeroth-order term `t² |df|²` is a potential that is large away from the critical points of
-`f` as `t → ∞`, and the Hessian term is a bounded endomorphism; this is why the low-lying spectrum
-of `Δ_t` concentrates near the critical points. The proof expands `d_t d_t^*` and `d_t^* d_t` and
-uses the canonical anticommutation relation `εᵢ ιⱼ + ιⱼ εᵢ = δᵢⱼ`
+The zeroth-order term `t² |df|²` is a potential that, at each point where `df ≠ 0`, grows like
+`t²` as `t → ∞`, while at each point the Hessian term is an endomorphism of the finite-dimensional
+fiber `Finset ι → ℝ`, of size linear in `t`. Under suitable global hypotheses, for instance
+finitely many critical points, all nondegenerate, `|df|` bounded below outside a compact set and
+the Hessian of `f` bounded, this is the mechanism by which the low-lying spectrum of `Δ_t`
+concentrates near the critical points; no spectral statement is proved here. The proof expands
+`d_t d_t^*` and `d_t^* d_t` and uses the canonical anticommutation relation `εᵢ ιⱼ + ιⱼ εᵢ = δᵢⱼ`
 (`Module.Basis.exteriorCreation_mul_exteriorContraction_add`), together with the symmetry of
 second derivatives of `C²` maps.
 
@@ -221,29 +224,6 @@ private theorem fderiv_sum_wittenSummand_apply {f : (ι → ℝ) → ℝ} {φ : 
   simp only [FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.comp_apply,
     LinearMap.coe_toContinuousLinearMap', fderiv_wittenSummand_apply hf hφ]
 
-/-- The algebraic core of the frame formula: for operators satisfying the canonical
-anticommutation relation, `εᵢ ιⱼ (Z + W) + ιⱼ εᵢ (Z - W)` sums to the diagonal of `Z` plus the
-commutators applied to `W`. -/
-private theorem sum_creation_contraction {V : Type*} [AddCommGroup V] [Module ℝ V]
-    (ε κ : ι → Module.End ℝ V) (hcar : ∀ i j, ε i * κ j + κ j * ε i = if i = j then 1 else 0)
-    (Z W : ι → ι → V) :
-    ∑ i, ∑ j, ε i (κ j (Z i j + W i j)) + ∑ i, ∑ j, κ j (ε i (Z i j - W i j)) =
-      ∑ i, Z i i + ∑ i, ∑ j, ⁅ε i, κ j⁆ (W i j) := by
-  have key : ∀ i j, ε i (κ j (Z i j + W i j)) + κ j (ε i (Z i j - W i j)) =
-      (if i = j then Z i j else 0) + ⁅ε i, κ j⁆ (W i j) := by
-    intro i j
-    have h := congrArg (fun T : Module.End ℝ V ↦ T (Z i j)) (hcar i j)
-    simp only [LinearMap.add_apply, mul_apply_eq_comp] at h
-    simp only [map_add, map_sub, Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp]
-    have h' : (if i = j then Z i j else 0) = ε i (κ j (Z i j)) + κ j (ε i (Z i j)) := by
-      rw [h]
-      split_ifs <;> simp
-    rw [h']
-    abel
-  rw [← Finset.sum_add_distrib]
-  simp_rw [← Finset.sum_add_distrib, key, Finset.sum_add_distrib, Finset.sum_ite_eq,
-    Finset.mem_univ, ite_true]
-
 /-- **Witten's frame formula.** For a function `f` and a form `φ` on `ℝ^ι` that are `C²` at `x`,
 the Witten Laplacian at `x` is
 
@@ -303,7 +283,8 @@ theorem euclideanWittenLaplacian_apply {f : (ι → ℝ) → ℝ} {φ : (ι → 
     simp only [ε, κ, Z, W, D, S, g, H, hS', hH', map_add, map_sub, map_smul, map_neg]
     module
   rw [euclideanWittenLaplacian_def, Pi.add_apply, h₁, h₂,
-    sum_creation_contraction ε κ (Pi.basisFun ℝ ι).exteriorCreation_mul_exteriorContraction_add,
+    sum_creation_contraction_of_anticommutator ε κ
+      (Pi.basisFun ℝ ι).exteriorCreation_mul_exteriorContraction_add,
     Finset.smul_sum]
   congr 1
   · refine Finset.sum_congr rfl fun i _ ↦ ?_

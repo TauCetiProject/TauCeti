@@ -82,6 +82,8 @@ Morse-theoretic definitions that use them.
 * `TauCeti.fderiv_fderiv_fderiv_apply_comm`: the third derivative of a sufficiently smooth map is
   symmetric in its last two directions.
 * `TauCeti.fderiv_fderiv_const_smul`: the second derivative of a constant multiple.
+* `TauCeti.fderiv_fderiv_smul_const_apply`: the second derivative of `y ↦ P y • v` is that of the
+  scalar function `P`, times `v`.
 * `TauCeti.fderiv_fderiv_mul_apply`: the second-order product rule.
 * `TauCeti.fderiv_fderiv_mul_apply_of_tsupport_subset`: the second-order product rule with a
   cutoff, at every point.
@@ -243,29 +245,32 @@ end SumCompEval
 
 section ProdCompEval
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] {φ : ι → 𝕜 → 𝕜}
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {φ : ι → 𝕜 → 𝕜} {y : ι → 𝕜}
 
-/-- **The second partial derivative of a separated product.** Differentiating
-`z ↦ ∏ j, φ j (z j)` twice in the `i`-th variable replaces the factor `φ i` by its second
-derivative. -/
-theorem fderiv_fderiv_prod_comp_eval_apply_single_single (hφ : ∀ j, ContDiff 𝕜 2 (φ j))
-    (y : ι → 𝕜) (i : ι) :
+/-- **The second partial derivative of a separated product.** At a point at which every factor is
+twice continuously differentiable, differentiating `z ↦ ∏ j, φ j (z j)` twice in the `i`-th variable
+replaces the factor `φ i` by its second derivative. -/
+theorem fderiv_fderiv_prod_comp_eval_apply_single_single (hφ : ∀ j, ContDiffAt 𝕜 2 (φ j) (y j))
+    (i : ι) :
     fderiv 𝕜 (fderiv 𝕜 (fun z : ι → 𝕜 ↦ ∏ j, φ j (z j))) y (Pi.single i 1) (Pi.single i 1) =
       ∏ j, Function.update φ i (deriv (deriv (φ i))) j (y j) := by
-  have hP : ContDiff 𝕜 2 (fun z : ι → 𝕜 ↦ ∏ j, φ j (z j)) :=
-    contDiff_prod fun j _ ↦ (hφ j).comp (contDiff_apply 𝕜 (fun _ : ι ↦ 𝕜) j)
-  have hd : ∀ j z, DifferentiableAt 𝕜 (φ j) z := fun j z ↦
-    ((hφ j).differentiable (by norm_num)) z
-  have hpartial : (fun z : ι → 𝕜 ↦ fderiv 𝕜 (fun z : ι → 𝕜 ↦ ∏ j, φ j (z j)) z (Pi.single i 1)) =
-      fun z ↦ ∏ j, Function.update φ i (deriv (φ i)) j (z j) :=
-    funext fun z ↦ fderiv_prod_comp_eval_apply_single (fun j ↦ hd j (z j)) i
-  have hd' : ∀ j, DifferentiableAt 𝕜 (Function.update φ i (deriv (φ i)) j) (y j) := by
+  have hP : ContDiffAt 𝕜 2 (fun z : ι → 𝕜 ↦ ∏ j, φ j (z j)) y :=
+    contDiffAt_prod fun j _ ↦ (hφ j).comp y (contDiffAt_apply 𝕜 (fun _ : ι ↦ 𝕜) j y)
+  have hdiff : ∀ j, ∀ᶠ z : ι → 𝕜 in 𝓝 y, DifferentiableAt 𝕜 (φ j) (z j) := fun j ↦
+    (continuous_apply j).continuousAt.eventually
+      (((hφ j).eventually (by simp)).mono fun t ht ↦ ht.differentiableAt (by simp))
+  -- Near `y` the partial derivative in the `i`-th variable is again a separated product.
+  have hpartial : (fun z ↦ fderiv 𝕜 (fun z : ι → 𝕜 ↦ ∏ j, φ j (z j)) z (Pi.single i 1)) =ᶠ[𝓝 y]
+      fun z ↦ ∏ j, Function.update φ i (deriv (φ i)) j (z j) := by
+    filter_upwards [eventually_all.2 hdiff] with z hz
+    exact fderiv_prod_comp_eval_apply_single hz i
+  have hd : ∀ j, DifferentiableAt 𝕜 (Function.update φ i (deriv (φ i)) j) (y j) := by
     intro j
     rcases eq_or_ne j i with rfl | hj
-    · simpa using (hφ j).differentiable_deriv_two (y j)
-    · simpa [Function.update_of_ne hj] using hd j (y j)
-  rw [← fderiv_clm_apply_const_apply ((hP.fderiv_right (m := 1) (by norm_num)).differentiable
-    (by norm_num) y), hpartial, fderiv_prod_comp_eval_apply_single hd' i]
+    · simpa using ((hφ j).derivWithin (m := 1) (by norm_num)).differentiableAt one_ne_zero
+    · simpa [Function.update_of_ne hj] using (hφ j).differentiableAt (by norm_num)
+  rw [← fderiv_clm_apply_const_apply (hP.hasFDerivAt_fderiv le_rfl).differentiableAt,
+    hpartial.fderiv_eq, fderiv_prod_comp_eval_apply_single hd i]
   simp
 
 end ProdCompEval
@@ -317,6 +322,19 @@ theorem fderiv_fderiv_fderiv_apply_comm {n : WithTop ℕ∞} {g : E → F} {x : 
 theorem fderiv_fderiv_const_smul (c : 𝕜) (g : E → F) (x : E) :
     fderiv 𝕜 (fderiv 𝕜 (c • g)) x = c • fderiv 𝕜 (fderiv 𝕜 g) x := by
   rw [fderiv_const_smul_field, fderiv_const_smul_field (𝕜 := 𝕜) (f := fderiv 𝕜 g), Pi.smul_apply]
+
+/-- The second derivative of `y ↦ P y • v` is that of the scalar function `P`, times `v`. -/
+theorem fderiv_fderiv_smul_const_apply {P : E → 𝕜} {x : E} (hP : ContDiffAt 𝕜 2 P x) (v : F)
+    (u w : E) :
+    fderiv 𝕜 (fderiv 𝕜 fun y ↦ P y • v) x u w = fderiv 𝕜 (fderiv 𝕜 P) x u w • v := by
+  have hfd : fderiv 𝕜 (fun y ↦ P y • v) =ᶠ[𝓝 x]
+      fun y ↦ (ContinuousLinearMap.smulRightL 𝕜 E F).flip v (fderiv 𝕜 P y) := by
+    filter_upwards [hP.eventually (by simp)] with y hy
+    exact fderiv_smul_const (hy.differentiableAt (by simp)) v
+  rw [hfd.fderiv_eq, fderiv_fun_comp x
+    ((ContinuousLinearMap.smulRightL 𝕜 E F).flip v).differentiableAt
+    (hP.hasFDerivAt_fderiv le_rfl).differentiableAt]
+  simp
 
 /-- **The second-order product rule.** For scalar-valued maps `f` and `g` which are `C²` at `x`,
 `D²(f g)(v, w) = f D²g(v, w) + g D²f(v, w) + Df(v) Dg(w) + Dg(v) Df(w)`. -/

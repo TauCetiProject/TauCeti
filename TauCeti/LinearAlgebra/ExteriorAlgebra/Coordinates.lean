@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.OfAssociative
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Exterior creation and contraction in the coordinates of an exterior basis
@@ -32,8 +33,11 @@ occupation projection onto the coordinates `s` containing `i`
 `⁅εᵢ, ιᵢ⁆` multiplies the coefficient of `s` by `1` if `i ∈ s` and by `-1` otherwise
 (`Module.Basis.lie_exteriorCreation_exteriorContraction_self_apply`), and `ιᵢ` is the transpose
 of `εᵢ` for the standard pairing of coordinate vectors
-(`Module.Basis.sum_exteriorCreation_apply_mul`). For an orthonormal basis of a Euclidean space the
-standard pairing is the induced inner product on `⋀ M`, so `ιᵢ` is the adjoint of `εᵢ`.
+(`Module.Basis.sum_exteriorCreation_apply_mul`). Combining the anticommutation relation with
+these commutators, a double sum of products `εᵢ ιⱼ` and `ιⱼ εᵢ` reduces to a diagonal term plus
+commutators (`TauCeti.sum_creation_contraction_of_anticommutator`). For an orthonormal basis of a
+Euclidean space the standard pairing is the induced inner product on `⋀ M`, so `ιᵢ` is the adjoint
+of `εᵢ`.
 
 Coordinate vectors are what one differentiates: a differential form on `ℝⁿ` is a function with
 values in the coordinate space `Finset (Fin n) → ℝ`, a finite-dimensional normed space, and the
@@ -167,14 +171,11 @@ theorem exteriorCreation_mul_exteriorContraction_self_apply (i : I) (φ : Finset
 theorem lie_exteriorCreation_exteriorContraction_self_apply (i : I) (φ : Finset I → R)
     (s : Finset I) :
     ⁅b.exteriorCreation i, b.exteriorContraction i⁆ φ s = if i ∈ s then φ s else -φ s := by
-  have h : b.exteriorContraction i * b.exteriorCreation i =
-      1 - b.exteriorCreation i * b.exteriorContraction i := by
-    rw [eq_sub_iff_add_eq, add_comm, b.exteriorCreation_mul_exteriorContraction_add,
-      ite_eq_left rfl]
-  rw [Ring.lie_def, h, sub_sub_eq_add_sub, ← two_mul, LinearMap.sub_apply, Pi.sub_apply,
-    two_mul, LinearMap.add_apply, Pi.add_apply,
-    b.exteriorCreation_mul_exteriorContraction_self_apply]
-  split_ifs <;> simp
+  have h := congr($(b.exteriorCreation_mul_exteriorContraction_add i i) φ s)
+  simp only [LinearMap.add_apply, Pi.add_apply, ↓reduceIte, one_apply_eq_self] at h
+  rw [Ring.lie_def, LinearMap.sub_apply, Pi.sub_apply]
+  have hp := b.exteriorCreation_mul_exteriorContraction_self_apply i φ s
+  split_ifs at hp ⊢ <;> linear_combination 2 * hp - h
 
 /-- `ιᵢ` is the transpose of `εᵢ` for the standard pairing `∑ s, φ s * ψ s` of coordinate
 vectors. -/
@@ -201,3 +202,33 @@ theorem sum_exteriorCreation_apply_mul (i : I) (φ ψ : Finset I → R) :
     ring
 
 end Module.Basis
+
+namespace TauCeti
+
+variable {R V I : Type*} [CommRing R] [AddCommGroup V] [Module R V] [Fintype I] [DecidableEq I]
+
+/-- **A frame identity for creation and contraction operators.** For families `εᵢ`, `ιⱼ` of
+operators satisfying the canonical anticommutation relation `εᵢ ιⱼ + ιⱼ εᵢ = δᵢⱼ`, such as
+`Module.Basis.exteriorCreation` and `Module.Basis.exteriorContraction`, the double sum of
+`εᵢ ιⱼ (Zᵢⱼ + Wᵢⱼ) + ιⱼ εᵢ (Zᵢⱼ - Wᵢⱼ)` is the diagonal `∑ᵢ Zᵢᵢ` plus the commutators
+`⁅εᵢ, ιⱼ⁆` applied to `Wᵢⱼ`. -/
+theorem sum_creation_contraction_of_anticommutator (ε κ : I → Module.End R V)
+    (hcar : ∀ i j, ε i * κ j + κ j * ε i = if i = j then 1 else 0) (Z W : I → I → V) :
+    ∑ i, ∑ j, ε i (κ j (Z i j + W i j)) + ∑ i, ∑ j, κ j (ε i (Z i j - W i j)) =
+      ∑ i, Z i i + ∑ i, ∑ j, ⁅ε i, κ j⁆ (W i j) := by
+  have key : ∀ i j, ε i (κ j (Z i j + W i j)) + κ j (ε i (Z i j - W i j)) =
+      (if i = j then Z i j else 0) + ⁅ε i, κ j⁆ (W i j) := by
+    intro i j
+    have h := congr($(hcar i j) (Z i j))
+    simp only [LinearMap.add_apply, mul_apply_eq_comp] at h
+    simp only [map_add, map_sub, Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp]
+    have h' : (if i = j then Z i j else 0) = ε i (κ j (Z i j)) + κ j (ε i (Z i j)) := by
+      rw [h]
+      split_ifs <;> simp
+    rw [h']
+    abel
+  rw [← Finset.sum_add_distrib]
+  simp_rw [← Finset.sum_add_distrib, key, Finset.sum_add_distrib, Finset.sum_ite_eq,
+    Finset.mem_univ, ite_true]
+
+end TauCeti

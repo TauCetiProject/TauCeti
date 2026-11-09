@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.FDeriv.DiagonalQuadratic
 public import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
 public import TauCeti.Analysis.Calculus.Morse.Index
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 
 /-!
@@ -18,7 +20,10 @@ For a finite family of functions `φ i : ℝ → ℝ`, the *separated sum* `y �
 derivatives of the summands. Consequently `y` is a critical point of the sum exactly when each
 `y i` is a critical point of `φ i`; it is a nondegenerate critical point exactly when, moreover,
 each second derivative `φ i'' (y i)` is nonzero; and its Morse index is the number of `i` with
-`φ i'' (y i) < 0`, by Sylvester's count `QuadraticForm.sigNeg_weightedSumSquares`.
+`φ i'' (y i) < 0`, by Sylvester's count `QuadraticForm.sigNeg_weightedSumSquares`. For the
+diagonal quadratic function `TauCeti.diagonalQuadratic a = ∑ i, aᵢ xᵢ² / 2`, the normal form of the
+Morse lemma, the origin is a nondegenerate critical point exactly when every `aᵢ` is nonzero, and
+the Morse index is the number of negative `aᵢ`.
 
 This is the calculus behind the standard Morse function `∑ i, cos (2π xᵢ / pᵢ)` on a torus
 `∀ i, AddCircle (p i)`, whose charts have the real coordinates of the factors as coordinates. The
@@ -35,6 +40,10 @@ diagonal second derivative `TauCeti.fderiv_fderiv_sum_comp_eval_apply` is in
   squares.
 * `TauCeti.isNondegenerateCriticalPoint_sum_comp_eval_iff`: its nondegenerate critical points.
 * `TauCeti.morseIndex_sum_comp_eval`: its Morse index counts the negative second derivatives.
+* `TauCeti.isNondegenerateCriticalPoint_diagonalQuadratic_zero_iff`,
+  `TauCeti.morseIndex_diagonalQuadratic`: the origin is a nondegenerate critical point of
+  `∑ i, aᵢ xᵢ² / 2` exactly when every `aᵢ` is nonzero, of Morse index the number of negative
+  `aᵢ`.
 
 ## References
 
@@ -93,6 +102,27 @@ theorem morseIndex_sum_comp_eval (hφ : ∀ i, ContDiffAt ℝ 2 (φ i) (y i)) :
       {i | deriv (deriv (φ i)) (y i) < 0}.ncard := by
   rw [morseIndex_def, hessianQuadraticForm_sum_comp_eval hφ,
     QuadraticForm.sigNeg_weightedSumSquares]
+
+/-- The origin is a nondegenerate critical point of `∑ᵢ aᵢ xᵢ² / 2` exactly when every `aᵢ` is
+nonzero. -/
+theorem isNondegenerateCriticalPoint_diagonalQuadratic_zero_iff (a : ι → ℝ) :
+    IsNondegenerateCriticalPoint (diagonalQuadratic a) 0 ↔ ∀ i, a i ≠ 0 := by
+  have h : ∀ c : ℝ, (deriv fun y : ℝ ↦ c * y ^ 2 / 2) = fun y ↦ c * y := fun c ↦
+    funext fun y ↦ by simp; ring
+  rw [funext (diagonalQuadratic_apply a),
+    isNondegenerateCriticalPoint_sum_comp_eval_iff (φ := fun i y ↦ a i * y ^ 2 / 2)
+      fun i ↦ by fun_prop]
+  simp [h]
+
+/-- The Morse index of `∑ᵢ aᵢ xᵢ² / 2` is the number of negative `aᵢ`. -/
+@[simp]
+theorem morseIndex_diagonalQuadratic (a x : ι → ℝ) :
+    morseIndex (diagonalQuadratic a) x = (Finset.univ.filter fun i ↦ a i < 0).card := by
+  have h : hessianQuadraticForm (diagonalQuadratic a) x = QuadraticMap.weightedSumSquares ℝ a := by
+    ext v
+    simp [mul_assoc]
+  rw [morseIndex_def, h, QuadraticForm.sigNeg_weightedSumSquares, ← Set.ncard_coe_finset]
+  simp
 
 end TauCeti
 
