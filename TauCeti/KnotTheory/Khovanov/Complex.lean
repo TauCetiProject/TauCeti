@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.Algebra.Homology.Embedding.Restriction.Shift
 public import TauCeti.KnotTheory.Khovanov.Resolution.Cube
+public import TauCeti.KnotTheory.Khovanov.Resolution.Support
 public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 
 /-!
@@ -369,5 +370,37 @@ theorem isZero_khovanovComplex_X_of_cochain_notMem_Icc {i : ℤ}
     IsZero ((D.khovanovComplex hD R j).X i) :=
   (D.khovanovComplex hD R j).isZero_X_of_notMem_Icc
     (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount (by simpa using hi)
+
+/-- The normalized chain groups vanish outside the translated extreme-resolution quantum
+interval. Circle counts include all crossing-free components. -/
+theorem isZero_khovanovComplex_X_of_quantum_notMem_Icc {j : ℤ}
+    (hj : j ∉ Set.Icc
+      ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount -
+        D.toPDCode.stateLoopCount (PDCode.cubeState ∅))
+      ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount + n +
+        D.toPDCode.stateLoopCount (PDCode.cubeState Finset.univ))) (i : ℤ) :
+    IsZero ((D.khovanovComplex hD R j).X i) := by
+  rw [khovanovComplex_X, ← PDCode.khovanovBracket_apply]
+  apply D.toPDCode.isZero_khovanovBracket_X_of_quantum_notMem_Icc hD R
+  intro h
+  rcases h with ⟨hl, hu⟩
+  exact hj ⟨by omega, by omega⟩
+
+/-- The normalized chain groups are supported in a finite rectangle in the two gradings
+jointly. -/
+theorem finite_bigradedSupport_khovanovComplex :
+    {p : ℤ × ℤ | ¬ IsZero ((D.khovanovComplex hD R p.2).X p.1)}.Finite := by
+  refine ((Set.finite_Icc (-(D.negativeCrossingCount : ℤ)) D.positiveCrossingCount).prod
+    (Set.finite_Icc
+      ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount -
+        D.toPDCode.stateLoopCount (PDCode.cubeState ∅))
+      ((D.positiveCrossingCount : ℤ) - 2 * D.negativeCrossingCount + n +
+        D.toPDCode.stateLoopCount (PDCode.cubeState Finset.univ)))).subset ?_
+  rintro ⟨i, j⟩ h
+  constructor
+  · by_contra hi
+    exact h (D.isZero_khovanovComplex_X_of_cochain_notMem_Icc hD R hi j)
+  · by_contra hj
+    exact h (D.isZero_khovanovComplex_X_of_quantum_notMem_Icc hD R hj i)
 
 end TauCeti.OrientedPDCode
