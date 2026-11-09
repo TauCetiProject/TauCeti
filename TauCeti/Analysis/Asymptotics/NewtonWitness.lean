@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Order.Filter.AtTopBot.Basic
-import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
 # Polynomial rates for the constants of a quantitative Newton step
@@ -20,7 +20,8 @@ the ball of radius `2 C ε` and has a fixed point `x₀` there. Put `γ = min (�
 Then `‖x₀‖ ≤ 2 C ε < γ / 2` (`TauCeti.IsNewtonWitness.two_mul_mul_lt_min_div_two`), and since
 `C L γ ≤ 1 / 2`, two solutions in the range of `Q` inside the ball of radius `γ` coincide. A
 solution recovered within `R ε` of the approximate solution, where `R` is the constant of a
-recovery estimate, is therefore the fixed point `x₀` as soon as `R ε < γ`.
+recovery estimate, is therefore the fixed point `x₀` as soon as `R ε < γ`, provided its
+correction also lies in the range of `Q`.
 `TauCeti.IsNewtonWitness C L δ ε R` records the three inequalities
 `2 C² L ε < 1 / 4`, `2 C ε < δ / 4` and `R ε < γ`.
 
@@ -68,7 +69,8 @@ namespace TauCeti
 /-- The smallness conditions of a quantitative Newton step for an equation whose linearization
 has a right inverse of norm at most `C`, whose quadratic remainder has constant `L` on the ball
 of radius `δ`, and whose residual has norm `ε`, together with the condition that a solution
-recovered within `R ε` lies in the uniqueness ball of radius `min (δ / 2) (2 C L)⁻¹`. -/
+recovered within `R ε` lies in the ball of radius `min (δ / 2) (2 C L)⁻¹`, inside which solutions
+whose corrections lie in the range of the right inverse are unique. -/
 structure IsNewtonWitness (C L δ ε R : ℝ) : Prop where
   /-- The contraction condition `2 C² L ε < 1 / 4`. -/
   two_mul_sq_mul_mul_lt : 2 * C ^ 2 * L * ε < 1 / 4
@@ -147,13 +149,6 @@ private theorem isNewtonWitness_of_le_mul_rpow {C L δ ε R h q p a b e Kc Kl Ke
   rw [← one_div, lt_div_iff₀ hCL]
   linarith
 
-/-- Near `0⁺`, a positive power of `h` with any coefficient is below any positive constant. -/
-private theorem eventually_mul_rpow_lt {θ : ℝ} (hθ : 0 < θ) (A : ℝ) {c : ℝ} (hc : 0 < c) :
-    ∀ᶠ h in 𝓝[>] (0 : ℝ), A * h ^ θ < c := by
-  have ht := (Real.continuousAt_rpow_const 0 θ (Or.inr hθ.le)).tendsto.const_mul A
-  rw [Real.zero_rpow hθ.ne', mul_zero] at ht
-  exact (ht.mono_left nhdsWithin_le_nhds).eventually (gt_mem_nhds hc)
-
 variable {ι : Type*} {C L δ : ι → ℝ → ℝ} {q p a b Kc Kl k : ℝ}
 
 /-- **Polynomial rates give a Newton witness.** Suppose that near `h = 0⁺`, uniformly in `i`,
@@ -170,11 +165,12 @@ theorem eventually_forall_isNewtonWitness {ε R : ι → ℝ → ℝ} {e Ke Kr :
     (h₁ : 2 * q + p < e) (h₂ : q + a < e) (h₃ : a + b < e) (h₄ : q + p + b < e) :
     ∀ᶠ h in 𝓝[>] 0, ∀ i, IsNewtonWitness (C i h) (L i h) (δ i h) (ε i h) (R i h) := by
   filter_upwards [hC, hL, hδ, hε, hR, self_mem_nhdsWithin,
-    eventually_mul_rpow_lt (θ := e - 2 * q - p) (by linarith) (2 * Kc ^ 2 * Kl * Ke)
-      (c := 1 / 4) (by norm_num),
-    eventually_mul_rpow_lt (θ := e - q - a) (by linarith) (8 * Kc * Ke) hk,
-    eventually_mul_rpow_lt (θ := e - a - b) (by linarith) (2 * Ke * Kr) hk,
-    eventually_mul_rpow_lt (θ := e - q - p - b) (by linarith) (2 * Kc * Kl * Ke * Kr) one_pos]
+    eventually_mul_rpow_lt_nhdsGT_zero (θ := e - 2 * q - p) (by linarith)
+      (2 * Kc ^ 2 * Kl * Ke) (c := 1 / 4) (by norm_num),
+    eventually_mul_rpow_lt_nhdsGT_zero (θ := e - q - a) (by linarith) (8 * Kc * Ke) hk,
+    eventually_mul_rpow_lt_nhdsGT_zero (θ := e - a - b) (by linarith) (2 * Ke * Kr) hk,
+    eventually_mul_rpow_lt_nhdsGT_zero (θ := e - q - p - b) (by linarith)
+      (2 * Kc * Kl * Ke * Kr) one_pos]
     with h hC hL hδ hε hR (hh : 0 < h) t₁ t₂ t₃ t₄ i
   exact isNewtonWitness_of_le_mul_rpow hh (hC i).1 (hC i).2 (hL i).1 (hL i).2 (hδ i) (hε i).1
     (hε i).2 (hR i).1 (hR i).2 t₁ t₂ t₃ t₄
