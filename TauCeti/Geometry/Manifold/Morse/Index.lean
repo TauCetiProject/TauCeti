@@ -108,10 +108,8 @@ theorem manifoldMorseIndex_modelSpace {V : Type*} [NormedAddCommGroup V] [Normed
 
 /-- The manifold Morse index is at most the dimension of the model space. -/
 theorem manifoldMorseIndex_le_finrank :
-    manifoldMorseIndex I f x ≤ Module.finrank ℝ E := by
-  rw [manifoldMorseIndex_def, morseIndex_def]
-  simpa only [sigPos_neg] using sigPos_le_finrank (-hessianQuadraticForm
-    (f ∘ (extChartAt I x).symm) (extChartAt I x x))
+    manifoldMorseIndex I f x ≤ Module.finrank ℝ E :=
+  morseIndex_le_finrank
 
 /-- At a local minimum of a `C²` function on a boundaryless manifold, the preferred-chart Morse
 index is zero. No nondegeneracy assumption is needed. -/
@@ -121,11 +119,11 @@ theorem manifoldMorseIndex_eq_zero_of_isLocalMin [I.Boundaryless]
   have hmin' : IsLocalMin (f ∘ (extChartAt I x).symm) (extChartAt I x x) := by
     have hm : IsLocalMin f ((extChartAt I x).symm (extChartAt I x x)) := by simpa using hmin
     exact hm.comp_continuous (continuousAt_extChartAt_symm x)
-  rw [manifoldMorseIndex_def, morseIndex_def]
+  rw [manifoldMorseIndex_def]
   by_cases hE : FiniteDimensional ℝ E
   swap
-  · simpa [Module.finrank_of_not_finite hE, manifoldMorseIndex_def, morseIndex_def] using
-      manifoldMorseIndex_le_finrank (I := I) (f := f) (x := x)
+  · exact morseIndex_eq_zero_of_not_finiteDimensional hE
+  rw [morseIndex_def]
   exact (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero _).mp fun v ↦ by
     rw [hessianQuadraticForm_apply]
     exact fderiv_fderiv_self_nonneg_of_isLocalMin hf.contDiffAt_comp_extChartAt_symm hmin' v
@@ -164,12 +162,6 @@ theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   have hfun : (-f) ∘ (extChartAt I x).symm = -(f ∘ (extChartAt I x).symm) := by
     funext y
     rfl
-  by_cases hE : FiniteDimensional ℝ E
-  swap
-  · have h₁ := manifoldMorseIndex_le_finrank (I := I) (f := -f) (x := x)
-    have h₂ := manifoldMorseIndex_le_finrank (I := I) (f := f) (x := x)
-    rw [Module.finrank_of_not_finite hE] at h₁ h₂ ⊢
-    omega
   rw [manifoldMorseIndex_def, manifoldMorseIndex_def, hfun]
   exact morseIndex_neg_add_morseIndex_eq_finrank h
 
