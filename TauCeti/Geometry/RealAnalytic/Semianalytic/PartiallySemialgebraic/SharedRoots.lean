@@ -38,6 +38,24 @@ namespace TauCeti
 variable {E κ : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Fintype κ]
   {F : κ → E → ℝ[X]} {x₀ : E} {d : κ → ℕ}
 
+private lemma isSemialgebraic_sharedRoots_ofFn (d : κ → ℕ)
+    (Ψ : Finset ℝ → ℝ → Prop)
+    (hΨ : ∀ G : Finset (MvPolynomial ((Σ k, Fin (d k + 1)) ⊕ Unit) ℝ)[X],
+      IsSemialgebraic {v | Ψ
+        (G.biUnion (fun p ↦ (p.map (MvPolynomial.eval v)).roots.toFinset)) (v (.inr ()))}) :
+    IsSemialgebraic {v : ((Σ k, Fin (d k + 1)) ⊕ Unit) → ℝ | Ψ
+      (Finset.univ.biUnion (fun k ↦
+        (Polynomial.ofFn (d k + 1) (fun j ↦ v (.inl ⟨k, j⟩))).roots.toFinset))
+      (v (.inr ()))} := by
+  classical
+  let P (k : κ) := Polynomial.ofFn (d k + 1)
+    (fun j : Fin (d k + 1) ↦
+      (MvPolynomial.X (.inl ⟨k, j⟩) : MvPolynomial ((Σ k, Fin (d k + 1)) ⊕ Unit) ℝ))
+  convert hΨ (Finset.univ.image P) using 1
+  ext v
+  simp only [Finset.image_biUnion, P, Polynomial.ofFn_eq_sum_monomial,
+    Polynomial.map_sum, Polynomial.map_monomial, MvPolynomial.eval_X, mem_ofPred_eq]
+
 /-- The locus of the `i`-th shared distinct root of a finite analytic polynomial family is
 partially semialgebraic. Root indexing starts at zero; zero polynomials contribute no roots. -/
 theorem partiallySemialgebraicAt_setOf_mem_biUnion_roots_card_lt
@@ -50,16 +68,12 @@ theorem partiallySemialgebraicAt_setOf_mem_biUnion_roots_card_lt
   apply partiallySemialgebraicAt_polynomialFamily_condition
     (fun P t ↦ t ∈ Finset.univ.biUnion (fun k ↦ (P k).roots.toFinset) ∧
       {r ∈ Finset.univ.biUnion (fun k ↦ (P k).roots.toFinset) | r < t}.card = i) ?_ hF hdeg
-  let P (k : κ) := Polynomial.ofFn (d k + 1)
-    (fun j : Fin (d k + 1) ↦
-      (MvPolynomial.X (.inl ⟨k, j⟩) : MvPolynomial ((Σ k, Fin (d k + 1)) ⊕ Unit) ℝ))
-  let G := Finset.univ.image P
-  convert (G.isSemialgebraic_setOf_mem_biUnion_roots_map_eval (MvPolynomial.X (.inr ()))).inter
-    (G.isSemialgebraic_setOf_card_biUnion_roots_map_eval_lt (MvPolynomial.X (.inr ())) i) using 1
-  ext v
-  simp only [G, Finset.image_biUnion, P, Polynomial.ofFn_eq_sum_monomial,
-    Polynomial.map_sum, Polynomial.map_monomial, MvPolynomial.eval_X, mem_inter_iff,
-    mem_ofPred_eq]
+  apply isSemialgebraic_sharedRoots_ofFn d
+    (fun Z t ↦ t ∈ Z ∧ (Z.filter (· < t)).card = i)
+  intro G
+  simpa only [ofPred_and, MvPolynomial.eval_X] using
+    (G.isSemialgebraic_setOf_mem_biUnion_roots_map_eval (MvPolynomial.X (.inr ()))).inter
+      (G.isSemialgebraic_setOf_card_biUnion_roots_map_eval_lt (MvPolynomial.X (.inr ())) i)
 
 /-- The locus of the `i`-th shared-root sector is partially semialgebraic. It consists of
 non-roots with exactly `i` shared distinct roots below them. If there are no roots, sector zero
@@ -74,16 +88,12 @@ theorem partiallySemialgebraicAt_setOf_notMem_biUnion_roots_card_lt
   apply partiallySemialgebraicAt_polynomialFamily_condition
     (fun P t ↦ t ∉ Finset.univ.biUnion (fun k ↦ (P k).roots.toFinset) ∧
       {r ∈ Finset.univ.biUnion (fun k ↦ (P k).roots.toFinset) | r < t}.card = i) ?_ hF hdeg
-  let P (k : κ) := Polynomial.ofFn (d k + 1)
-    (fun j : Fin (d k + 1) ↦
-      (MvPolynomial.X (.inl ⟨k, j⟩) : MvPolynomial ((Σ k, Fin (d k + 1)) ⊕ Unit) ℝ))
-  let G := Finset.univ.image P
-  convert ((G.isSemialgebraic_setOf_mem_biUnion_roots_map_eval
-    (MvPolynomial.X (.inr ()))).compl).inter
-    (G.isSemialgebraic_setOf_card_biUnion_roots_map_eval_lt (MvPolynomial.X (.inr ())) i) using 1
-  ext v
-  simp only [G, Finset.image_biUnion, P, Polynomial.ofFn_eq_sum_monomial,
-    Polynomial.map_sum, Polynomial.map_monomial, MvPolynomial.eval_X, mem_inter_iff,
-    mem_compl_iff, mem_ofPred_eq]
+  apply isSemialgebraic_sharedRoots_ofFn d
+    (fun Z t ↦ t ∉ Z ∧ (Z.filter (· < t)).card = i)
+  intro G
+  simpa only [ofPred_and, compl_ofPred, MvPolynomial.eval_X] using
+    (G.isSemialgebraic_setOf_mem_biUnion_roots_map_eval
+      (MvPolynomial.X (.inr ()))).compl.inter
+      (G.isSemialgebraic_setOf_card_biUnion_roots_map_eval_lt (MvPolynomial.X (.inr ())) i)
 
 end TauCeti

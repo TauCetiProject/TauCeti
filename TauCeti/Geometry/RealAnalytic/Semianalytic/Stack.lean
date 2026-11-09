@@ -41,6 +41,20 @@ namespace TauCeti.Delineation
 variable {n : ℕ} {κ : Type*} [Finite κ] {S : Set (Fin n → ℝ)}
   {F : κ → (Fin n → ℝ) → ℝ[X]} (D : Delineation fun k (x : S) ↦ F k x)
 
+private lemma semianalyticAt_preimage_tail_height {y : Fin (n + 1) → ℝ}
+    {T : Set ((Fin n → ℝ) × (Unit → ℝ))}
+    (h : PartiallySemialgebraicAt T (Fin.tail y)) :
+    SemianalyticAt ((fun v : Fin (n + 1) → ℝ ↦
+      (Fin.tail v, fun _ : Unit ↦ v 0)) ⁻¹' T) y := by
+  have ha : AnalyticAt ℝ
+      (fun v : Fin (n + 1) → ℝ ↦ (Fin.tail v, fun _ : Unit ↦ v 0)) y :=
+    (AnalyticAt.pi fun j : Fin n ↦
+      (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) ↦ ℝ) j.succ).analyticAt y).prod
+      (AnalyticAt.pi fun _ : Unit ↦
+        (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) ↦ ℝ) 0).analyticAt y)
+  exact (h.semianalyticAt (fun _ ↦ y 0)).preimage
+    (g := fun v : Fin (n + 1) → ℝ ↦ (Fin.tail v, fun _ : Unit ↦ v 0)) (x := y) ha
+
 /-- A section of a delineation is semianalytic at every height over a point where its base is
 semianalytic and its polynomial family has analytic coefficients of locally bounded degree.
 The coefficient assumptions hold in an ambient neighborhood, not merely on the base. -/
@@ -53,25 +67,10 @@ theorem semianalyticAt_image_cylinder_sectionSet {y : Fin (n + 1) → ℝ}
   cases nonempty_fintype κ
   have h := hS.partiallySemialgebraicAt_preimage_fst.inter
     (partiallySemialgebraicAt_setOf_mem_biUnion_roots_card_lt hF hdeg i.val)
-  have ha : AnalyticAt ℝ
-      (fun v : Fin (n + 1) → ℝ ↦ (Fin.tail v, fun _ : Unit ↦ v 0)) y :=
-    (AnalyticAt.pi fun j : Fin n ↦
-      (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) ↦ ℝ) j.succ).analyticAt y).prod
-      (AnalyticAt.pi fun _ : Unit ↦
-        (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) ↦ ℝ) 0).analyticAt y)
-  convert (h.semianalyticAt (fun _ ↦ y 0)).preimage
-    (g := fun v : Fin (n + 1) → ℝ ↦ (Fin.tail v, fun _ : Unit ↦ v 0)) (x := y) ha using 2
-  ext v
-  simp only [mem_image_cylinder, mem_preimage, mem_inter_iff, mem_ofPred_eq]
-  constructor
-  · rintro ⟨hv, hi⟩
-    refine ⟨hv, ?_⟩
-    rw [D.biUnion_roots_toFinset_eq ⟨Fin.tail v, hv⟩]
-    exact (mem_sectionSet_iff_mem_image_card_lt i _ (D.strictMono_root _)).1 hi
-  · rintro ⟨hv, hi⟩
-    refine ⟨hv, ?_⟩
-    rw [D.biUnion_roots_toFinset_eq ⟨Fin.tail v, hv⟩] at hi
-    exact (mem_sectionSet_iff_mem_image_card_lt i _ (D.strictMono_root _)).2 hi
+  rw [image_cylinder_sectionSet_eq_setOf_mem_card_lt
+    (fun x ↦ Finset.univ.biUnion (fun k ↦ (F k x).roots.toFinset))
+    D.biUnion_roots_toFinset_eq D.strictMono_root]
+  exact semianalyticAt_preimage_tail_height h
 
 /-- A sector of a delineation is semianalytic at every height over a point with a semianalytic
 base and analytic coefficients of locally bounded degree in an ambient neighborhood.
@@ -86,25 +85,10 @@ theorem semianalyticAt_image_cylinder_sectorSet {y : Fin (n + 1) → ℝ}
   cases nonempty_fintype κ
   have h := hS.partiallySemialgebraicAt_preimage_fst.inter
     (partiallySemialgebraicAt_setOf_notMem_biUnion_roots_card_lt hF hdeg i.val)
-  have ha : AnalyticAt ℝ
-      (fun v : Fin (n + 1) → ℝ ↦ (Fin.tail v, fun _ : Unit ↦ v 0)) y :=
-    (AnalyticAt.pi fun j : Fin n ↦
-      (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) ↦ ℝ) j.succ).analyticAt y).prod
-      (AnalyticAt.pi fun _ : Unit ↦
-        (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin (n + 1) ↦ ℝ) 0).analyticAt y)
-  convert (h.semianalyticAt (fun _ ↦ y 0)).preimage
-    (g := fun v : Fin (n + 1) → ℝ ↦ (Fin.tail v, fun _ : Unit ↦ v 0)) (x := y) ha using 2
-  ext v
-  simp only [mem_image_cylinder, mem_preimage, mem_inter_iff, mem_ofPred_eq]
-  constructor
-  · rintro ⟨hv, hi⟩
-    refine ⟨hv, ?_⟩
-    rw [D.biUnion_roots_toFinset_eq ⟨Fin.tail v, hv⟩]
-    exact (mem_sectorSet_iff_notMem_image_card_lt i _ (D.strictMono_root _)).1 hi
-  · rintro ⟨hv, hi⟩
-    refine ⟨hv, ?_⟩
-    rw [D.biUnion_roots_toFinset_eq ⟨Fin.tail v, hv⟩] at hi
-    exact (mem_sectorSet_iff_notMem_image_card_lt i _ (D.strictMono_root _)).2 hi
+  rw [image_cylinder_sectorSet_eq_setOf_notMem_card_lt
+    (fun x ↦ Finset.univ.biUnion (fun k ↦ (F k x).roots.toFinset))
+    D.biUnion_roots_toFinset_eq D.strictMono_root]
+  exact semianalyticAt_preimage_tail_height h
 
 /-- All cells of an analytic-coefficient delineation over a semianalytic base are semianalytic.
 Ambient analytic descriptions are needed only along the closure of the base. The local degree
