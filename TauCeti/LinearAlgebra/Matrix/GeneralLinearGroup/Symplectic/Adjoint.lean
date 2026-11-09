@@ -92,37 +92,23 @@ section CommRing
 
 variable {R : Type*} [CommRing R]
 
-/-- Conjugation by a symplectic matrix preserves the symplectic Lie algebra. -/
-theorem mul_mul_inv_mem_sp {A : GL (l ⊕ l) R} (hA : A ∈ GLSymplectic l R)
-    {X : Matrix (l ⊕ l) (l ⊕ l) R} (hX : X ∈ sp l R) :
-    (A : Matrix (l ⊕ l) (l ⊕ l) R) * X * ((A⁻¹ : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R) ∈
-      sp l R := by
-  rw [mem_sp] at hX ⊢
-  -- Mathlib's `Matrix.isAdjointPair_equiv` with `P = A`, using `Aᵀ J A = J`.
-  rw [← mem_iff'.mp hA, ← Matrix.mul_neg] at hX
-  simpa only [Matrix.IsAdjointPair, coe_units_inv, Matrix.mul_neg, Matrix.neg_mul] using
-    (isAdjointPair_equiv (J l R) X (-X) _ A.isUnit).mp hX
-
 /-- The conjugation `X ↦ A X A⁻¹` of `sp l R` by a symplectic matrix, as a Lie automorphism:
-Mathlib's `Matrix.lieConj` restricted to `sp l R`. -/
+Mathlib's `skewAdjointMatricesLieSubalgebraEquiv` for `P = A⁻¹`, using `(A⁻¹)ᵀ J A⁻¹ = J`.
+Here `sp l R` is by definition `skewAdjointMatricesLieSubalgebra (J l R)`. -/
 private def adjointAux (A : GLSymplectic l R) : sp l R ≃ₗ⁅R⁆ sp l R :=
-  (Matrix.lieConj ((A : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R) inferInstance).ofSubalgebras
-    (sp l R) (sp l R) (by
-      ext X
-      constructor
-      · rintro ⟨Y, hY, rfl⟩
-        rw [LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom, Matrix.lieConj_apply, ← coe_units_inv]
-        exact mul_mul_inv_mem_sp A.2 hY
-      · intro hX
-        refine ⟨_, mul_mul_inv_mem_sp (inv_mem A.2) hX, ?_⟩
-        simp [LieHom.coe_toLinearMap, ← coe_units_inv, Matrix.mul_assoc])
+  (skewAdjointMatricesLieSubalgebraEquiv (J l R)
+    (((A⁻¹ : GLSymplectic l R) : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R)
+    (Units.invertible _)).trans
+    (LieEquiv.ofEq _ _ (by rw [mem_iff'.mp (A⁻¹).2, sp]))
 
 /-- The matrix of `adjointAux A X` is `A X A⁻¹`. -/
 private theorem coe_adjointAux_apply (A : GLSymplectic l R) (X : sp l R) :
     (adjointAux A X : Matrix (l ⊕ l) (l ⊕ l) R) =
       ((A : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R) * X *
         ((A⁻¹ : GL (l ⊕ l) R) : Matrix (l ⊕ l) (l ⊕ l) R) := by
-  simp [adjointAux, coe_units_inv]
+  -- By definition, `adjointAux A X` is `(A⁻¹)⁻¹ X A⁻¹` as a matrix.
+  refine (skewAdjointMatricesLieSubalgebraEquiv_apply (J l R) _ (Units.invertible _) X).trans ?_
+  simp [coe_units_inv]
 
 variable (l R) in
 /-- **The adjoint action** `Ad(A) X = A X A⁻¹` of the symplectic group on its Lie algebra
@@ -313,7 +299,7 @@ theorem forall_killingForm_adjointAction_cartanInvolution_adjointAction_eq_iff
     rw [h, one_apply_eq_self]
 
 /-- **The compact part of the adjoint group.** For `A` in the symplectic group over an ordered
-field, `Ad(A)` is orthogonal for the Cartan metric `-κ(X, θ Y)` exactly when it is the adjointAction
+field, `Ad(A)` is orthogonal for the Cartan metric `-κ(X, θ Y)` exactly when it is the adjoint
 action of an orthogonal symplectic matrix. Over `ℝ` these are the adjoint actions of the
 realified unitary group `U(n)`. -/
 theorem adjointAction_mem_map_GLOrthogonal_subgroupOf_iff (A : GLSymplectic l K) :
