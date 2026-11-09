@@ -363,8 +363,9 @@ theorem IsNondegenerateCriticalPoint.hessianQuadraticForm_posDef_iff_morseIndex_
 
 /-- A positive-definite Hessian forces the Morse index to be zero; no nondegeneracy is needed. -/
 theorem morseIndex_eq_zero_of_posDef [FiniteDimensional ℝ E]
-    (h : (hessianQuadraticForm f x).PosDef) : morseIndex f x = 0 :=
-  ((QuadraticForm.posDef_iff_sigNeg_eq_zero_and_radical_eq_bot _).1 h).1
+    (h : (hessianQuadraticForm f x).PosDef) : morseIndex f x = 0 := by
+  rw [morseIndex_def]
+  exact ((QuadraticForm.posDef_iff_sigNeg_eq_zero_and_radical_eq_bot _).1 h).1
 
 /-- The negated Hessian is positive-definite exactly when the Morse index is the dimension of the
 ambient space. -/
