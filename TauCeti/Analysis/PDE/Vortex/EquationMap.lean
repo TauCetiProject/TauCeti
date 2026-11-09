@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
 import TauCeti.Analysis.PDE.Vortex.Multiplier
-import TauCeti.Analysis.PDE.Vortex.WindingPhase
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
@@ -36,10 +35,9 @@ concern `C¹` representatives. That every field of sufficiently high order has a
 representative is not proved here.
 
 The base point of the affine space is the smooth reference field `x_m`, equal to
-`(-i m dθ, (z / |z|)^m)` outside a disc. There it is the gauge transform of the vacuum by the
-winding phase `(z / |z|)^m`, so it solves the vortex equation
-(`TauCeti.Vortex.equation_referenceField_eq_zero`), and its defect is smooth with compact
-support. For `x = x_m + y` the equation expands exactly as
+`(-i m dθ, (z / |z|)^m)` outside a disc. There it solves the vortex equation
+(`TauCeti.Vortex.equation_referenceField_eq_zero`), so its defect is smooth with compact
+support (`TauCeti.Vortex.hasCompactSupport_equation_referenceField`). For `x = x_m + y` the equation expands exactly as
 `equation x = equation x_m + d₁ y + quadraticTerm y` (`TauCeti.Vortex.equation_add_smul`). The
 linear term involves the derivatives of `y` and the products of the coordinates of `x_m` with
 those of `y`. These coordinates do not decay, but all their derivatives are bounded, so they
@@ -66,46 +64,7 @@ namespace TauCeti.Vortex
 open Complex Filter MeasureTheory Metric TemperedDistribution
 open scoped ContDiff Topology
 
-/-! ### The reference field outside its cutoff disc -/
-
-/-- Outside its cutoff disc, the reference field is the gauge transform of the vacuum by the
-winding phase `(z / |z|)^m`. -/
-private theorem referenceField_eventuallyEq (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z : ℂ}
-    (hz : f.rOut < ‖z‖ ^ 2) :
-    referenceField f m =ᶠ[𝓝 z] gaugeTransform (windingPhase m) vacuumField := by
-  have hopen : IsOpen {w : ℂ | f.rOut < ‖w‖ ^ 2} :=
-    isOpen_lt continuous_const (continuous_norm.pow 2)
-  filter_upwards [hopen.mem_nhds hz] with w hw
-  have hw0 := ne_zero_of_rOut_le_norm_sq f hw.le
-  have hsec := referenceSection_eq_phase f m (le_of_lt hw)
-  ext i
-  fin_cases i
-  · simp [referenceField_apply, gaugeTransform_apply, vacuumField_apply,
-      referenceConnection_eq_angular f m (le_of_lt hw), gaugeForm_windingPhase m hw0]
-  · simp [referenceField_apply, gaugeTransform_apply, vacuumField_apply,
-      referenceConnection_eq_angular f m (le_of_lt hw), gaugeForm_windingPhase m hw0]
-  · simp [-referenceSection_apply, referenceField_apply, gaugeTransform_apply, vacuumField_apply,
-      hsec, coe_windingPhase m hw0, div_eq_mul_inv]
-  · simp [-referenceSection_apply, referenceField_apply, gaugeTransform_apply, vacuumField_apply,
-      hsec, coe_windingPhase m hw0, div_eq_mul_inv]
-
-/-- **The reference field is a vortex outside its cutoff disc.** Where the cutoff is inactive,
-the reference pair `(-i m dθ, (z / |z|)^m)` is a gauge transform of the vacuum. -/
-theorem equation_referenceField_eq_zero (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z : ℂ}
-    (hz : f.rOut < ‖z‖ ^ 2) : equation (referenceField f m) z = 0 := by
-  have hz0 := ne_zero_of_rOut_le_norm_sq f hz.le
-  rw [equation_eq_of_eventuallyEq (referenceField_eventuallyEq f m hz),
-    equation_gaugeTransform_eq_zero_iff (contDiffAt_windingPhase m hz0)
-      (fun i ↦ by simp [vacuumField_apply])]
-  exact equation_vacuumField z
-
-/-- The defect of the reference field vanishes outside a compact set. -/
-theorem hasCompactSupport_equation_referenceField (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
-    HasCompactSupport (equation (referenceField f m)) := by
-  refine HasCompactSupport.intro (isCompact_closedBall 0 (f.rOut + 1)) fun z hz ↦
-    equation_referenceField_eq_zero f m ?_
-  rw [mem_closedBall, dist_zero_right, not_le] at hz
-  nlinarith [f.rOut_pos]
+/-! ### The defect of the reference field -/
 
 /-- Every coordinate of the defect of the reference field is a smooth compactly supported
 function, hence lies in every Sobolev space. -/
@@ -113,7 +72,7 @@ theorem equation_referenceField_apply_mem_realSobolevFunctions (f : ContDiffBump
     (m : ℕ) (i : Fin 3) (s : ℝ) :
     (fun z ↦ equation (referenceField f m) z i) ∈ realSobolevFunctions ℂ s 2 :=
   mem_realSobolevFunctions_of_hasCompactSupport
-    (contDiff_euclidean.1 (contDiff_equation (contDiff_referenceField f m)) i)
+    (contDiff_euclidean.1 (contDiff_equation (contDiff_referenceField f m) le_top) i)
     ((hasCompactSupport_equation_referenceField f m).comp_left
       (g := fun v : EuclideanSpace ℝ (Fin 3) ↦ v i) rfl) s
 
