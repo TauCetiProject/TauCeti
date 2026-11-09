@@ -117,4 +117,32 @@ theorem laurent_eq_of_conj {u v : E × ℂ → ℂ} {x₀ : E} {m n : ℤ} {τ :
   filter_upwards [prod_mem_nhds (hU.mem_nhds hx₀) (hs.mem_nhds h0s)] with p hp
   exact hext p.1 hp.1 hp.2
 
+/-- **Conjugation matches Laurent forms of functions.** Let `D₁` and `D₂` be functions of
+`E × ℂ` with Laurent forms `p.2 ^ m * w₁ p` near `(x₀, 0)` and `p.2 ^ n * w₂ p` near `(τ x₀, 0)`
+off the hyperplane `p.2 = 0`, where `w₁`, `w₂` are analytic and nonvanishing at those points. If
+`D₁` is the conjugate of `D₂` along `(x, y) ↦ (τ x, conj y)` off the hyperplane, where `τ` is
+continuous at `x₀`, then `m = n` and, near `(x₀, 0)`, `w₁` is the conjugate of `w₂` pulled back
+along that map. -/
+theorem laurent_eq_of_conj_of_forms {D₁ D₂ w₁ w₂ : E × ℂ → ℂ} {x₀ : E} {m n : ℤ} {τ : E → E}
+    (hw₁ : AnalyticAt ℝ w₁ (x₀, 0)) (hw₁0 : w₁ (x₀, 0) ≠ 0)
+    (hw₂ : AnalyticAt ℝ w₂ (τ x₀, 0)) (hw₂0 : w₂ (τ x₀, 0) ≠ 0)
+    (hτ : ContinuousAt τ x₀)
+    (hform₁ : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), p.2 ≠ 0 → D₁ p = p.2 ^ m * w₁ p)
+    (hform₂ : ∀ᶠ p in 𝓝 (τ x₀, (0 : ℂ)), p.2 ≠ 0 → D₂ p = p.2 ^ n * w₂ p)
+    (hD : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), p.2 ≠ 0 → D₁ p = conj (D₂ (τ p.1, conj p.2))) :
+    m = n ∧ ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), w₁ p = conj (w₂ (τ p.1, conj p.2)) := by
+  let T : E × ℂ → E × ℂ := fun p ↦ (τ p.1, conj p.2)
+  have hTt : Tendsto T (𝓝 (x₀, (0 : ℂ))) (𝓝 (τ x₀, (0 : ℂ))) := by
+    simpa only [T, Prod.map_def, map_zero] using hτ.tendsto.prodMap_nhds
+      (Complex.continuous_conj.tendsto (0 : ℂ))
+  have hrelation : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), p.2 ≠ 0 →
+      p.2 ^ m * w₁ p = conj ((conj p.2) ^ n * w₂ (T p)) := by
+    filter_upwards [hform₁, hTt.eventually hform₂, hD] with p hp hTp hDp hp0
+    have hTp0 : (T p).2 ≠ 0 := by simpa [T] using hp0
+    calc _ = D₁ p := (hp hp0).symm
+      _ = conj (D₂ (T p)) := hDp hp0
+      _ = conj ((T p).2 ^ n * w₂ (T p)) := congrArg conj (hTp hTp0)
+      _ = _ := by simp [T, map_mul, map_zpow₀]
+  exact laurent_eq_of_conj hw₁ hw₁0 hw₂ hw₂0 hτ hrelation
+
 end AnalyticAt
