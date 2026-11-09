@@ -47,6 +47,8 @@ that depend continuously on the parameter in the operator norm.
 * `Module.Basis.continuous_equivFunL_symm_of_continuous`,
   `Module.Basis.continuous_equivFunL_of_continuous`: a family of bases whose vectors depend
   continuously on a parameter has continuously varying frame and coordinate maps.
+* `Module.Basis.isBounded_of_norm_apply_le`: a set of continuous linear maps whose values on a
+  finite basis are uniformly bounded is bounded.
 * `ContinuousLinearEquiv.piRing_apply`, `ContinuousLinearEquiv.piRing_symm_apply`: the
   identification of maps out of a coordinate space with their values on the standard basis.
 * `IsCompact.exists_continuousLinearEquiv_mapsTo_ball`: linear coordinates sending a compact set
@@ -194,6 +196,16 @@ theorem continuous_equivFunL_of_continuous (h : ∀ i, Continuous fun y ↦ B y 
   exact ContinuousAt.comp (g := ContinuousLinearMap.inverse)
     (contDiffAt_map_inverse (n := 0) (B y).equivFunL.symm).continuousAt
     (continuous_equivFunL_symm_of_continuous h).continuousAt
+
+/-- A set of continuous linear maps is bounded when their values on the vectors of a finite basis
+are uniformly bounded. -/
+theorem isBounded_of_norm_apply_le {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    (b : Basis ι 𝕜 F) {s : Set (F →L[𝕜] G)} {M : ℝ} (h : ∀ u ∈ s, ∀ i, ‖u (b i)‖ ≤ M) :
+    Bornology.IsBounded s := by
+  obtain ⟨C, -, hC⟩ := b.exists_opNorm_le (F := G)
+  refine (Metric.isBounded_iff_subset_closedBall 0).2 ⟨C * max M 0, fun u hu ↦ ?_⟩
+  rw [Metric.mem_closedBall, dist_zero_right]
+  exact hC (le_max_right _ _) fun i ↦ (h u hu i).trans (le_max_left _ _)
 
 end Module.Basis
 
