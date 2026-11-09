@@ -180,7 +180,7 @@ theorem exists_comp_homotopic_id (hK : IsCofibrationExhaustion K) (hL : IsCofibr
     liftCover_of_mem (S := P) (i := n) ⟨mem_univ t, x.2⟩
   have hFc : Continuous F := by
     refine IsCoherentWith.continuous_liftCover ?_ (fun n ↦ by fun_prop) _ hP
-    rw [show P = (univ ×ˢ ·) ∘ K from rfl, range_comp]
+    rw [range_comp' (univ ×ˢ ·) K]
     exact hK.isCoherentWith.univ_prod (by rw [sUnion_range, hK.iUnion_eq])
   have hF₀ : ∀ x, F (0, x) = G (φ x) := fun x ↦ by
     obtain ⟨n, hx⟩ := hK.exists_mem x
@@ -203,7 +203,9 @@ theorem exists_homotopyEquiv (hK : IsCofibrationExhaustion K) (hL : IsCofibratio
   obtain ⟨k, -, -, hkg⟩ := hL.exists_comp_homotopic_id hK g e' he'
   have hkφ : k.Homotopic φ := hkg.homotopic_of_comp_homotopic_id hgφ
   refine ⟨⟨φ, g, hgφ, (hkφ.symm.comp (.refl g)).trans hkg⟩, rfl, fun n y hy ↦ ?_⟩
-  exact he' n ⟨y, hy⟩ ▸ (e' n ⟨y, hy⟩).2
+  simp only [← HomotopyEquiv.coe_invFun]
+  rw [← he' n ⟨y, hy⟩]
+  exact (e' n ⟨y, hy⟩).2
 
 end IsCofibrationExhaustion
 
