@@ -269,6 +269,14 @@ private theorem subst_formalW_ne_zero {q : MvPowerSeries σ O} (hq : constantCoe
 
 variable [IsFractionRing (MvPowerSeries σ O) KK]
 
+/-- A commutative ring `R` is a domain as soon as its power series ring embeds in a field: `R`
+embeds in the field through `MvPowerSeries ι R`. -/
+private theorem isDomain_of_isFractionRing_mvPowerSeries {R : Type*} [CommRing R] (ι : Type*)
+    (K : Type*) [Field K] [Algebra (MvPowerSeries ι R) K] [IsFractionRing (MvPowerSeries ι R) K] :
+    IsDomain R :=
+  ((IsFractionRing.injective (MvPowerSeries ι R) K).comp C_injective).isDomain
+    ((algebraMap (MvPowerSeries ι R) K).comp C)
+
 /-- The `w`-expansion at a nonzero parameter stays nonzero after being pushed into `KK`: the
 localization map of a fraction field is injective, so it cannot introduce a zero.
 
@@ -277,9 +285,7 @@ form `subst_formalW_ne_zero` is actually used in. -/
 theorem algebraMap_subst_formalW_ne_zero {q : MvPowerSeries σ O}
     (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
     algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)) ≠ 0 := fun h ↦ by
-  -- `O` is a domain, since it embeds in the field `KK` through `MvPowerSeries σ O`.
-  have : IsDomain O := ((IsFractionRing.injective (MvPowerSeries σ O) KK).comp
-    C_injective).isDomain ((algebraMap (MvPowerSeries σ O) KK).comp C)
+  have : IsDomain O := isDomain_of_isFractionRing_mvPowerSeries σ KK
   exact W.subst_formalW_ne_zero hq hq0
     (IsFractionRing.injective (MvPowerSeries σ O) KK (by rw [h, map_zero]))
 
@@ -307,7 +313,7 @@ theorem thetaPoint_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0) {q : MvPowerSeri
     W.thetaPoint hΔ hq hq0 = .some _ _ h :=
   (rfl)
 
-variable [IsDomain O] [DecidableEq KK] in
+variable [DecidableEq KK] in
 /-- The sum of the parametrized points `θ(q₁)` and `θ(q₂)` is the point with affine coordinates
 `(T / w(T), (1 - a₁ T - a₃ w(T)) / w(T))`, where `T` is the third root of the chord. -/
 private theorem thetaPoint_add_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0)
@@ -325,6 +331,7 @@ private theorem thetaPoint_add_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0)
           algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst Tp (formalW W))) /
         algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst Tp (formalW W))),
       W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = Affine.Point.some _ _ h₃ := by
+  have : IsDomain O := isDomain_of_isFractionRing_mvPowerSeries σ KK
   classical
   set ρ := algebraMap (MvPowerSeries σ O) KK
   have hinj : Function.Injective ρ := IsFractionRing.injective (MvPowerSeries σ O) KK
@@ -443,7 +450,7 @@ private theorem some_eq_thetaPoint_formalAdd (hΔ : (fracCurve W σ KK).Δ ≠ 0
   · rw [hwFeq, div_eq_div_iff hwT0 (neg_ne_zero.mpr (mul_ne_zero hwT0 hsp0))]
     linear_combination (-(ρ wT)) * hu + (ρ wT * ρ sp) * hueq
 
-variable [IsDomain O] [DecidableEq KK] in
+variable [DecidableEq KK] in
 /-- **The chord addition of parametrized points**: `θ(q₁) + θ(q₂) = θ(F(q₁, q₂))`.
 
 The two parametrized points lie on `fracCurve W`, the chord through them meets the curve again at
@@ -459,6 +466,7 @@ private theorem thetaPoint_add (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     (hF0 : subst (pairSubstitution q₁ q₂)
       (formalAdd W) ≠ 0) :
     W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = W.thetaPoint hΔ hF hF0 := by
+  have : IsDomain O := isDomain_of_isFractionRing_mvPowerSeries σ KK
   classical
   obtain ⟨h₃, hadd⟩ := thetaPoint_add_eq_some W hΔ h₁ h₂ hq₁0 hq₂0 hN hx rfl
   exact hadd.trans (some_eq_thetaPoint_formalAdd W hΔ h₁ h₂ hN hF hF0 rfl h₃)
@@ -526,7 +534,6 @@ private theorem thetaPoint_inj (hΔ : (fracCurve W σ KK).Δ ≠ 0)
   rw [div_eq_div_iff hw₁0 hw₂0, hw] at h1
   exact mul_right_cancel₀ hw₂0 h1
 
-variable [IsDomain O] in
 /-- The intercept at a pair is nonzero as soon as the two parameters are distinct and not
 mutually inverse.
 
@@ -539,6 +546,7 @@ private theorem pair_intercept_ne_zero_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0
     (hne₂ : q₁ ≠ PowerSeries.subst q₂ (formalInverse W)) :
     subst (pairSubstitution q₁ q₂)
       (formalIntercept W) ≠ 0 := by
+  have : IsDomain O := isDomain_of_isFractionRing_mvPowerSeries σ KK
   classical
   intro h0
   set ρ := algebraMap (MvPowerSeries σ O) KK
@@ -572,7 +580,7 @@ private theorem pair_intercept_ne_zero_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0
   · rw [← W.thetaPoint_neg hΔ h₂ hq₂0 hi hi0] at hc
     exact hne₂ (W.thetaPoint_inj hΔ h₁ hi hq₁0 hi0 hc)
 
-variable [IsDomain O] [DecidableEq KK] in
+variable [DecidableEq KK] in
 /-- **The chord addition of parametrized points, from distinctness alone**: `θ(q₁) + θ(q₂) =
 θ(F(q₁, q₂))` as soon as `q₁` is neither `q₂` nor its formal inverse.
 
@@ -588,13 +596,14 @@ private theorem thetaPoint_add_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     (hF0 : subst (pairSubstitution q₁ q₂)
       (formalAdd W) ≠ 0) :
     W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = W.thetaPoint hΔ hF hF0 := by
+  have : IsDomain O := isDomain_of_isFractionRing_mvPowerSeries σ KK
   have hN := W.pair_intercept_ne_zero_of_ne hΔ h₁ h₂ hq₁0 hq₂0 hne₁ hne₂
   refine W.thetaPoint_add hΔ h₁ h₂ hq₁0 hq₂0 hN ?_ hF hF0
   rw [subst_pair_formalIntercept_mul_sub W h₁ h₂]
   exact mul_ne_zero hN (sub_ne_zero.mpr hne₁)
 
 
-variable [IsDomain O] [DecidableEq KK] in
+variable [DecidableEq KK] in
 /-- **The chord addition of parametrized points, from a separating substitution.**
 
 A single substitution sending `q₁` to `X` and `q₂` to `0` supplies both distinctness hypotheses of
@@ -609,8 +618,9 @@ theorem thetaPoint_add_of_subst_separates (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     (hF : constantCoeff (subst (pairSubstitution q₁ q₂) (formalAdd W)) = 0)
     (hF0 : subst (pairSubstitution q₁ q₂)
       (formalAdd W) ≠ 0) :
-    W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = W.thetaPoint hΔ hF hF0 :=
-  W.thetaPoint_add_of_ne hΔ h₁ h₂ hq₁0 hq₂0 (ne_of_subst_eq_X_of_subst_eq_zero hg₁ hg₂)
+    W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = W.thetaPoint hΔ hF hF0 := by
+  have : IsDomain O := isDomain_of_isFractionRing_mvPowerSeries σ KK
+  exact W.thetaPoint_add_of_ne hΔ h₁ h₂ hq₁0 hq₂0 (ne_of_subst_eq_X_of_subst_eq_zero hg₁ hg₂)
     (ne_of_subst_eq_X_of_subst_eq_zero hg₁ (subst_subst_formalInverse_eq_zero W hg h₂ hg₂)) hF hF0
 
 /-! ### Associativity -/
@@ -623,7 +633,6 @@ theorem fracCurve_Δ_ne_zero (hΔ : W.Δ ≠ 0) : (fracCurve W σ KK).Δ ≠ 0 :
     map_ne_zero_iff _ C_injective]
   exact hΔ
 
-variable [IsDomain O] in
 /-- **Associativity of the addition series, from two separating substitutions.**
 
 If a substitution `g` sends `q₁` to `X` and `q₂`, `q₃` to `0`, and a substitution `g'` sends `q₂`
@@ -638,6 +647,7 @@ private theorem subst_formalAdd_assoc_of_subst_separates (hΔ : (fracCurve W σ 
     (hg'2 : subst g' q₂ = PowerSeries.X) (hg'3 : subst g' q₃ = 0) :
     subst (pairSubstitution (subst (pairSubstitution q₁ q₂) (formalAdd W)) q₃) (formalAdd W) =
       subst (pairSubstitution q₁ (subst (pairSubstitution q₂ q₃) (formalAdd W))) (formalAdd W) := by
+  have : IsDomain O := isDomain_of_isFractionRing_mvPowerSeries σ KK
   classical
   -- the two inner sums
   set F₁₂ := subst (pairSubstitution q₁ q₂) (formalAdd W)
