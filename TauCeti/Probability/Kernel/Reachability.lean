@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Kernel.Irreducible
 public import TauCeti.Probability.Kernel.Composition.Power
+import Mathlib.Order.Preorder.Finite
 
 /-!
 # Reachability and communication for kernels
@@ -16,7 +17,8 @@ For a kernel `κ` on a measurable space, a state `y` is *reachable* from `x` if 
 mutually reachable. Reachability is reflexive; when the singletons are measurable it is
 transitive, communication is an equivalence relation, and Mathlib's `Kernel.IsIrreducible`
 with respect to the counting measure is equivalent to every state reaching every other state,
-equivalently to every pair of states communicating.
+equivalently to every pair of states communicating. A state with finitely many reachable states
+reaches a state from which every reachable state can return.
 -/
 
 public section
@@ -142,5 +144,15 @@ theorem isIrreducible_count_iff_forall_communicates [MeasurableSingletonClass S]
     IsIrreducible Measure.count κ ↔ ∀ x y : S, κ.Communicates x y := by
   rw [isIrreducible_count_iff_forall_reaches]
   exact ⟨fun h x y => ⟨h x y, h y x⟩, fun h x y => (h x y).1⟩
+
+/-- A state with finitely many reachable states reaches a state all of whose reachable states
+can reach it back. -/
+theorem exists_reaches_forall_reaches_reaches_of_finite (κ : Kernel S S) {x : S}
+    (hfinite : {y | κ.Reaches x y}.Finite) :
+    ∃ y, κ.Reaches x y ∧ ∀ z, κ.Reaches y z → κ.Reaches z y := by
+  -- Choose a minimal reachable set using the finite-order minimal-element theorem.
+  obtain ⟨y, hxy, hmin⟩ := hfinite.exists_minimalFor
+    (fun y => {z | κ.Reaches y z}) _ ⟨x, Reaches.refl x⟩
+  exact ⟨y, hxy, fun z hyz => hmin (hxy.trans hyz) (fun w hzw => hyz.trans hzw) (Reaches.refl y)⟩
 
 end ProbabilityTheory.Kernel

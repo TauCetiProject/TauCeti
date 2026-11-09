@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Kernel.Reachability
 public import TauCeti.Probability.Kernel.Composition.Power
 public import Mathlib.Probability.Kernel.Composition.CompMap
-public import Mathlib.Order.Preorder.Finite
 import TauCeti.Probability.Kernel.PMF
 
 /-!
@@ -272,17 +271,6 @@ theorem isIrreducible_subtype_communicatingClass [Countable S]
 section Finite
 
 variable [Countable S] [MeasurableSingletonClass S]
-
-omit [Countable S] [MeasurableSingletonClass S] in
-/-- A state with finitely many reachable states reaches a state all of whose reachable states
-can reach it back. -/
-theorem exists_reaches_forall_reaches_reaches_of_finite (κ : Kernel S S) {x : S}
-    (hfinite : {y | κ.Reaches x y}.Finite) :
-    ∃ y, κ.Reaches x y ∧ ∀ z, κ.Reaches y z → κ.Reaches z y := by
-  -- Choose a minimal reachable set using the finite-order minimal-element theorem.
-  obtain ⟨y, hxy, hmin⟩ := hfinite.exists_minimalFor
-    (fun y => {z | κ.Reaches y z}) _ ⟨x, Reaches.refl x⟩
-  exact ⟨y, hxy, fun z hyz => hmin (hxy.trans hyz) (fun w hzw => hyz.trans hzw) (Reaches.refl y)⟩
 
 omit [MeasurableSingletonClass S] in
 /-- A state with finitely many reachable states reaches a closed communicating class.
