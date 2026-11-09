@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.Norm.RationalPoint
 /-!
 # Norms from a radical extension at a split base change
 
-Let `L = K(s)` with `sⁿ = b ≠ 0`, and suppose that `K` contains a primitive `n`-th root of
+Let `L = K(s)` with `sⁿ = b`, and suppose that `K` contains a primitive `n`-th root of
 unity. If `b` has an `n`-th root in a field extension `F/K`, then the norm from `F ⊗[K] L`
 is surjective on units. The binomial need not be irreducible, and no assumption that `n` is
 prime or that `[L : K] = n` is made.
