@@ -199,14 +199,13 @@ private theorem adjoin_mem_and_wildExponent_eq_padicTwo {i : Fin 8} (hi : i ∈ 
   · simpa using htwo (m := -5) (by decide) (by rw [hy]; norm_num)
 
 /-- Square roots of representatives of distinct square classes of `ℚ_2` generate distinct
-fields, unless they lie in `ℚ_2`. -/
+fields. -/
 private theorem adjoin_ne_adjoin_padicTwo {i j : Fin 8} (hij : i ≠ j)
     {x y : SeparableClosure ℚ_[2]}
     (hx : x ^ 2 = algebraMap ℚ_[2] (SeparableClosure ℚ_[2]) (padicTwoSquareClassRep i))
-    (hy : y ^ 2 = algebraMap ℚ_[2] (SeparableClosure ℚ_[2]) (padicTwoSquareClassRep j))
-    (hxb : x ∉ (⊥ : IntermediateField ℚ_[2] (SeparableClosure ℚ_[2]))) :
+    (hy : y ^ 2 = algebraMap ℚ_[2] (SeparableClosure ℚ_[2]) (padicTwoSquareClassRep j)) :
     ℚ_[2]⟮x⟯ ≠ ℚ_[2]⟮y⟯ := fun hxy ↦ by
-  have h := IntermediateField.isSquare_mul_of_adjoin_simple_eq hx hy hxb hxy
+  have h := IntermediateField.isSquare_mul_of_adjoin_simple_eq hx hy hxy
   rw [← Units.val_mul, Units.isSquare_coe_iff, ← squareClass_eq_iff_isSquare_mul] at h
   exact hij (squareClass_padicTwoSquareClassRep_bijective.1 h)
 
@@ -228,16 +227,9 @@ distinct. -/
 private theorem injOn_adjoin_padicTwo {y : Fin 8 → SeparableClosure ℚ_[2]}
     (hy : ∀ i, y i ^ 2 = algebraMap ℚ_[2] (SeparableClosure ℚ_[2]) (padicTwoSquareClassRep i)) :
     Set.InjOn (fun i ↦ ℚ_[2]⟮y i⟯) ramifiedIndices := by
-  intro i hi j _ hij
+  intro i _ j _ hij
   by_contra hne
-  refine adjoin_ne_adjoin_padicTwo hne (hy i) (hy j) ?_ hij
-  -- `y i ∉ ℚ_2`, since `ℚ_2(y i)` has degree two.
-  rw [← IntermediateField.adjoin_simple_eq_bot_iff]
-  intro hbot
-  have h := (mem_totallyRamifiedOfDegree_iff.1
-    (adjoin_mem_and_wildExponent_eq_padicTwo hi (hy i)).1).1
-  rw [hbot, IntermediateField.finrank_bot] at h
-  omega
+  exact adjoin_ne_adjoin_padicTwo hne (hy i) (hy j) hij
 
 /-- **The totally ramified quadratic extensions of `ℚ_2`.** If `x₁, …, x₆` are square roots of
 `-1, -5, 2, -2, 10, -10` in the separable closure of `ℚ_2`, then

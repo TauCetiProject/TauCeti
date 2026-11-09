@@ -856,10 +856,6 @@ theorem hamiltonianCurvature_pssPlanePerturbation_eq_zero_of_two_lt (ω : Symple
     (w := w) (x := x) (contDiff_realChart (n := 2) p.contDiff_cylindricalEndLift).contDiffAt
     (PSSPlane.differentiableAt_perturbation_domain hH hH' _ _ 1)
     (PSSPlane.differentiableAt_perturbation_domain hH hH' _ _ Complex.I)
-    (mdifferentiableAt_iff_differentiableAt.1
-      (PSSPlane.mdifferentiableAt_perturbation_target hH hH' _ _ 1))
-    (mdifferentiableAt_iff_differentiableAt.1
-      (PSSPlane.mdifferentiableAt_perturbation_target hH hH' _ _ Complex.I))
   rw [SmoothTwoForm.perturbationPullback_realChart_cylindricalEndLift,
     SmoothTwoForm.perturbationPullback_realChart_cylindricalEndLift,
     equivRealProdCLM_symm_stdComplexLineReal,
