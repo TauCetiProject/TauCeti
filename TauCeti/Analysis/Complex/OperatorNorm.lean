@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.OperatorNorm
+import Mathlib.Analysis.InnerProductSpace.Dual
+import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
@@ -79,32 +81,9 @@ theorem norm_le_of_apply_I_eq {V : Type*} [SeminormedAddCommGroup V] [NormedSpac
 length of its values on the real basis `(1, I)`: `‖L‖ ^ 2 = L 1 ^ 2 + L I ^ 2`. -/
 theorem norm_sq_eq_apply_one_sq_add_apply_I_sq (L : ℂ →L[ℝ] ℝ) :
     ‖L‖ ^ 2 = L 1 ^ 2 + L Complex.I ^ 2 := by
-  set a := L 1
-  set b := L Complex.I
-  have hL (z : ℂ) : L z = z.re * a + z.im * b := by
-    simpa [smul_eq_mul] using L.apply_eq_re_smul_one_add_im_smul_I z
-  have hle : ‖L‖ ≤ √(a ^ 2 + b ^ 2) := by
-    refine L.opNorm_le_bound (Real.sqrt_nonneg _) fun z ↦ ?_
-    rw [hL, Real.norm_eq_abs, Complex.norm_def, ← Real.sqrt_mul (by positivity),
-      Complex.normSq_apply]
-    refine Real.abs_le_sqrt ?_
-    nlinarith [sq_nonneg (z.re * b - z.im * a)]
-  -- The bound is attained at `z = a + b I`.
-  have hge : √(a ^ 2 + b ^ 2) ≤ ‖L‖ := by
-    have hz := L.le_opNorm ⟨a, b⟩
-    have hn : ‖(⟨a, b⟩ : ℂ)‖ = √(a ^ 2 + b ^ 2) := by
-      rw [Complex.norm_def, Complex.normSq_apply]
-      ring_nf
-    rw [hL, Real.norm_eq_abs, hn, abs_of_nonneg (by simp only; nlinarith)] at hz
-    have hs : a * a + b * b = √(a ^ 2 + b ^ 2) * √(a ^ 2 + b ^ 2) := by
-      rw [Real.mul_self_sqrt (by positivity)]
-      ring
-    simp only at hz
-    rcases (Real.sqrt_nonneg (a ^ 2 + b ^ 2)).eq_or_lt with h0 | hpos
-    · rw [← h0]
-      exact norm_nonneg _
-    · exact le_of_mul_le_mul_right (hs ▸ hz) hpos
-  rw [le_antisymm hle hge, Real.sq_sqrt (by positivity)]
+  rw [Complex.orthonormalBasisOneI.norm_dual L, Fin.sum_univ_two,
+    Complex.coe_orthonormalBasisOneI]
+  simp
 
 end ContinuousLinearMap
 

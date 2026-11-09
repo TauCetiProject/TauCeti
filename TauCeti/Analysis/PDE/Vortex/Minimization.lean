@@ -14,6 +14,7 @@ import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.Normed.Module.WeakSpace.Bounded
 import TauCeti.Analysis.PDE.Vortex.Potential
 import TauCeti.Analysis.SpecialFunctions.Exp.Modular
+import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Topology.Algebra.Module.WeakSpace
@@ -33,16 +34,17 @@ functional is defined classically on compactly supported `C¹` functions, where 
 (`TauCeti.Vortex.exists_integral_le_of_reducedFunctional_le`). This file passes to the weak limit.
 
 The same expression makes sense for a square-integrable `u` with a weak derivative
-`U : ℂ → ℂ →L[ℝ] ℝ` in place of `Dw`: this is `TauCeti.Vortex.weakReducedFunctional P u U`, and
-for a `C¹` function with its classical derivative it is `I`
-(`TauCeti.Vortex.weakReducedFunctional_fderiv`). Along a minimizing sequence of compactly supported
-`C¹` functions, the coercivity estimates bound the `L²` norms of the functions and of their partial
-derivatives, so that a subsequence converges weakly in `L²(ℂ)`
-(`TauCeti.exists_strictMono_tendsto_toWeakSpace_of_norm_le`, using that Hilbert spaces are
+`U : ℂ → ℂ →L[ℝ] ℝ` in place of `Dw`: this is `TauCeti.Vortex.weakReducedFunctional P u U`, and for
+a `C¹` function with its classical derivative it is `I`
+(`TauCeti.Vortex.weakReducedFunctional_fderiv`). It only depends on `u` and `U` up to null sets
+(`TauCeti.Vortex.weakReducedFunctional_congr_ae`). Along a
+minimizing sequence of compactly supported `C¹` functions, the coercivity estimates bound the `L²`
+norms of the functions and of their partial derivatives, so that a subsequence converges weakly in
+`L²(ℂ)` (`TauCeti.exists_strictMono_tendsto_toWeakSpace_of_norm_le`, using that Hilbert spaces are
 reflexive). The limit `u` is weakly differentiable, its weak derivative being assembled from the
-weak limits of the partial derivatives, and each term of the functional passes to the limit: the
-Dirichlet energy by weak lower semicontinuity of the norm
-(`TauCeti.lowerSemicontinuous_norm_toWeakSpace_symm`), the potential by weak lower
+weak limits of the partial derivatives (`TauCeti.hasWeakLineDerivOn_of_tendsto_toWeakSpace`), and
+each term of the functional passes to the limit: the Dirichlet energy by weak lower semicontinuity
+of the norm (`TauCeti.lowerSemicontinuous_norm_toWeakSpace_symm`), the potential by weak lower
 semicontinuity of the convex potential
 (`TauCeti.Vortex.lowerSemicontinuous_lintegral_ofReal_mul_exp_sub_one_sub`), which also shows that
 it is finite, and the linear term by weak continuity. The main result,
@@ -98,24 +100,16 @@ theorem weakReducedFunctional_fderiv (P : Polynomial ℂ) (w : ℂ → ℝ) :
     weakReducedFunctional P w (fderiv ℝ w) = reducedFunctional P w := by
   rw [weakReducedFunctional_def, reducedFunctional_def]
 
-/-! ### Auxiliary identities -/
-
-/-- The integral of a product with a real square-integrable function is an `L²` inner product. -/
-private theorem integral_mul_eq_inner_toLp {f : ℂ → ℝ} (hf : MemLp f 2)
-    (g : Lp ℝ 2 (volume : Measure ℂ)) : ∫ z, f z * g z = inner ℝ (hf.toLp f) g := by
-  rw [L2.inner_toLp_left]
-  simp [mul_comm]
-
-/-- The integral of the square of a real `L²` class is its squared norm. -/
-private theorem integral_sq_eq_norm_sq (f : Lp ℝ 2 (volume : Measure ℂ)) :
-    ∫ z, f z ^ 2 = ‖f‖ ^ 2 := by
-  simp [L2.norm_sq_eq_integral_norm_sq]
-
-/-- The squared norm of `a • re + b • im` is `a ^ 2 + b ^ 2`. -/
-private theorem norm_smul_reCLM_add_smul_imCLM_sq (a b : ℝ) :
-    ‖a • Complex.reCLM + b • Complex.imCLM‖ ^ 2 = a ^ 2 + b ^ 2 := by
-  rw [ContinuousLinearMap.norm_sq_eq_apply_one_sq_add_apply_I_sq]
-  simp
+/-- Taubes's functional only depends on the function and its derivative up to null sets. -/
+theorem weakReducedFunctional_congr_ae (P : Polynomial ℂ) {u v : ℂ → ℝ}
+    {U V : ℂ → ℂ →L[ℝ] ℝ} (hu : u =ᵐ[volume] v) (hU : U =ᵐ[volume] V) :
+    weakReducedFunctional P u U = weakReducedFunctional P v V := by
+  rw [weakReducedFunctional_def, weakReducedFunctional_def]
+  congr 1
+  · congr 2
+    · exact integral_congr_ae (by filter_upwards [hU] with z hz; rw [hz])
+    · exact integral_congr_ae (by filter_upwards [hu] with z hz; rw [hz])
+  · exact integral_congr_ae (by filter_upwards [hu] with z hz; rw [hz])
 
 /-- **Weak derivatives of weak limits.** Let `w n` be `C¹` functions whose `L²` classes converge
 weakly to `u`, while the classes of the partial derivatives `∂₁ w n = Dw n 1` and
@@ -131,60 +125,28 @@ private theorem hasWeakFDerivOn_of_tendsto {w : ℕ → ℂ → ℝ}
     (hG₁ : Tendsto (fun n ↦ toWeakSpace ℝ _ (D₁ n)) atTop (𝓝 (toWeakSpace ℝ _ G₁)))
     (hG₂ : Tendsto (fun n ↦ toWeakSpace ℝ _ (D₂ n)) atTop (𝓝 (toWeakSpace ℝ _ G₂))) :
     HasWeakFDerivOn volume ⊤ u fun z ↦ G₁ z • Complex.reCLM + G₂ z • Complex.imCLM := by
-  have hli (f : Lp ℝ 2 (volume : Measure ℂ)) : LocallyIntegrableOn f ⊤ volume :=
-    ((Lp.memLp f).locallyIntegrable one_le_two).locallyIntegrableOn _
   refine hasWeakFDerivOn_iff.2 fun v ↦ ?_
-  have hUv : (fun z ↦ (G₁ z • Complex.reCLM + G₂ z • Complex.imCLM) v) =
-      fun z ↦ v.re * G₁ z + v.im * G₂ z := by
-    funext z; simp [mul_comm]
-  have hmemU : MemLp (fun z ↦ v.re * G₁ z + v.im * G₂ z) 2 :=
-    ((Lp.memLp G₁).const_mul v.re).add ((Lp.memLp G₂).const_mul v.im)
-  rw [hUv, hasWeakLineDerivOn_iff (hli u)
-    ((hmemU.locallyIntegrable one_le_two).locallyIntegrableOn _)]
-  intro φ hφ hφc _
-  have h1 : ContDiff ℝ 1 φ := hφ.of_le (by exact_mod_cast le_top)
-  have hφ2 : MemLp φ 2 := hφ.continuous.memLp_of_hasCompactSupport hφc
-  have hψ : MemLp (fun z ↦ lineDeriv ℝ φ z v) 2 := by
-    have he : (fun z ↦ lineDeriv ℝ φ z v) = fun z ↦ fderiv ℝ φ z v :=
-      funext fun z ↦ ((h1.differentiable one_ne_zero) z).lineDeriv_eq_fderiv
-    rw [he]
-    exact ((h1.continuous_fderiv one_ne_zero).clm_apply continuous_const).memLp_of_hasCompactSupport
-      (hφc.fderiv_apply (𝕜 := ℝ) v)
-  -- Integrals against `φ` of `a G₁ + b G₂`-type combinations are `L²` inner products.
-  have hcomb (f₁ f₂ : Lp ℝ 2 (volume : Measure ℂ)) (g : ℂ → ℝ)
-      (hg : g =ᵐ[volume] fun z ↦ v.re * f₁ z + v.im * f₂ z) :
-      ∫ z, φ z • g z = v.re * inner ℝ (hφ2.toLp φ) f₁ + v.im * inner ℝ (hφ2.toLp φ) f₂ := by
-    calc ∫ z, φ z • g z = ∫ z, (v.re * (φ z * f₁ z) + v.im * (φ z * f₂ z)) :=
-          integral_congr_ae (by filter_upwards [hg] with z hz; rw [hz, smul_eq_mul]; ring)
-      _ = _ := by
-        have i₁ : Integrable fun z ↦ φ z * f₁ z := hφ2.integrable_mul (Lp.memLp _)
-        have i₂ : Integrable fun z ↦ φ z * f₂ z := hφ2.integrable_mul (Lp.memLp _)
-        rw [integral_add (i₁.const_mul _) (i₂.const_mul _), integral_const_mul, integral_const_mul,
-          integral_mul_eq_inner_toLp, integral_mul_eq_inner_toLp]
-  -- The identity for each `w n`, written through `L²` inner products.
-  have hn (n : ℕ) : inner ℝ (hψ.toLp _) (W n) =
-      -(v.re * inner ℝ (hφ2.toLp φ) (D₁ n) + v.im * inner ℝ (hφ2.toLp φ) (D₂ n)) := by
-    have hwd := ((hw n).locallyLipschitz.locallyLipschitzOn
+  -- The derivative in the direction `v` is `v.re • ∂₁ + v.im • ∂₂`, in the limit as well.
+  have hcomb (f₁ f₂ : Lp ℝ 2 (volume : Measure ℂ)) :
+      ⇑(v.re • f₁ + v.im • f₂) =ᵐ[volume] fun z ↦ v.re * f₁ z + v.im * f₂ z := by
+    filter_upwards [Lp.coeFn_add (v.re • f₁) (v.im • f₂), Lp.coeFn_smul v.re f₁,
+      Lp.coeFn_smul v.im f₂] with z h h₁ h₂
+    rw [h, Pi.add_apply, h₁, h₂, Pi.smul_apply, Pi.smul_apply, smul_eq_mul, smul_eq_mul]
+  have hlim : Tendsto (fun n ↦ toWeakSpace ℝ _ (v.re • D₁ n + v.im • D₂ n)) atTop
+      (𝓝 (toWeakSpace ℝ _ (v.re • G₁ + v.im • G₂))) := by
+    simpa only [map_add, map_smul] using (hG₁.const_smul v.re).add (hG₂.const_smul v.im)
+  refine (hasWeakLineDerivOn_of_tendsto_toWeakSpace (fun n ↦ ?_) hu hlim).congr_ae_deriv
+    (ae_restrict_of_ae ?_)
+  · have hwd := ((hw n).locallyLipschitz.locallyLipschitzOn
       (s := ((⊤ : TopologicalSpace.Opens ℂ) : Set ℂ))).hasWeakFDerivOn_fderiv
       (μ := volume) |>.hasWeakLineDerivOn v
-    have key := (hasWeakLineDerivOn_iff hwd.locallyIntegrableOn hwd.locallyIntegrableOn_deriv).1
-      hwd φ hφ hφc (subset_univ _)
-    have hD : (fun z ↦ fderiv ℝ (w n) z v) =ᵐ[volume]
-        fun z ↦ v.re * D₁ n z + v.im * D₂ n z := by
-      filter_upwards [hD₁ n, hD₂ n] with z h1 h2
-      rw [h1, h2, (fderiv ℝ (w n) z).apply_eq_re_smul_one_add_im_smul_I v, smul_eq_mul,
-        smul_eq_mul]
-    rw [← hcomb _ _ _ hD, ← key, ← integral_mul_eq_inner_toLp]
-    exact integral_congr_ae (by filter_upwards [hW n] with z hz; simp [hz])
-  -- Pass to the weak limit on both sides.
-  have hlim₁ := tendsto_toWeakSpace_iff_forall_eval_tendsto.1 hu (innerSL ℝ (hψ.toLp _))
-  have hlim₂ := ((tendsto_toWeakSpace_iff_forall_eval_tendsto.1 hG₁
-    (innerSL ℝ (hφ2.toLp φ))).const_mul v.re).add
-    ((tendsto_toWeakSpace_iff_forall_eval_tendsto.1 hG₂ (innerSL ℝ (hφ2.toLp φ))).const_mul v.im)
-  simp only [innerSL_apply_apply] at hlim₁ hlim₂
-  have heq := tendsto_nhds_unique hlim₁ (by simpa only [hn] using hlim₂.neg)
-  rw [hcomb G₁ G₂ _ (Eventually.of_forall fun z ↦ rfl), ← heq, ← integral_mul_eq_inner_toLp]
-  simp only [smul_eq_mul]
+    refine (hwd.congr_ae (ae_restrict_of_ae (hW n).symm)).congr_ae_deriv (ae_restrict_of_ae ?_)
+    filter_upwards [hcomb (D₁ n) (D₂ n), hD₁ n, hD₂ n] with z h h₁ h₂
+    rw [h, h₁, h₂, (fderiv ℝ (w n) z).apply_eq_re_smul_one_add_im_smul_I v, smul_eq_mul,
+      smul_eq_mul]
+  · filter_upwards [hcomb G₁ G₂] with z h
+    rw [h]
+    simp [mul_comm]
 
 /-- Taubes's functional at a weakly differentiable function `u` with weak derivative
 `G₁ • re + G₂ • im`, written through `L²` norms and inner products. -/
@@ -198,11 +160,13 @@ private theorem weakReducedFunctional_eq (hc : MemLp (fun z ↦ 2 * ‖P.derivat
         inner ℝ (hc.toLp _) U := by
   have hcu : ∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
       (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * u z = inner ℝ (hc.toLp _) U := by
-    rw [← integral_mul_eq_inner_toLp]
-    exact integral_congr_ae (by filter_upwards [hU] with z hz; rw [hz])
-  rw [weakReducedFunctional_def, hcu, ← integral_sq_eq_norm_sq, ← integral_sq_eq_norm_sq,
-    ← integral_add (Lp.memLp G₁).integrable_sq (Lp.memLp G₂).integrable_sq]
-  simp_rw [norm_smul_reCLM_add_smul_imCLM_sq]
+    rw [L2.inner_toLp_left]
+    exact integral_congr_ae (by filter_upwards [hU] with z hz; simp [hz, mul_comm])
+  rw [weakReducedFunctional_def, hcu, L2.norm_sq_eq_integral_norm_sq,
+    L2.norm_sq_eq_integral_norm_sq,
+    ← integral_add (Lp.memLp G₁).norm.integrable_sq (Lp.memLp G₂).norm.integrable_sq]
+  simp_rw [ContinuousLinearMap.norm_sq_eq_apply_one_sq_add_apply_I_sq]
+  simp
 
 /-- The potential density `h (exp (2f) - 1 - 2f)`, `h = ‖P‖² / (1 + ‖P‖²)`, of Taubes's
 functional. -/
@@ -226,20 +190,6 @@ private theorem aestronglyMeasurable_pot {f : ℂ → ℝ} (hf : AEStronglyMeasu
     fun_prop (disch := intro z; positivity)
   have hΦ : Continuous fun t : ℝ ↦ Real.exp (2 * t) - 1 - 2 * t := by fun_prop
   exact hh.aestronglyMeasurable.mul (hΦ.comp_aestronglyMeasurable hf)
-
-/-- Taubes's functional only depends on the weak derivative up to null sets, through its
-values on `1` and `I`. -/
-private theorem weakReducedFunctional_congr_ae (P : Polynomial ℂ) (u : ℂ → ℝ)
-    (U : ℂ → ℂ →L[ℝ] ℝ) {G₁ G₂ : ℂ → ℝ} (h₁ : G₁ =ᵐ[volume] fun z ↦ U z 1)
-    (h₂ : G₂ =ᵐ[volume] fun z ↦ U z Complex.I) :
-    weakReducedFunctional P u (fun z ↦ G₁ z • Complex.reCLM + G₂ z • Complex.imCLM) =
-      weakReducedFunctional P u U := by
-  rw [weakReducedFunctional_def, weakReducedFunctional_def]
-  congr 3
-  refine integral_congr_ae ?_
-  filter_upwards [h₁, h₂] with z hz₁ hz₂
-  rw [norm_smul_reCLM_add_smul_imCLM_sq, hz₁, hz₂,
-    ContinuousLinearMap.norm_sq_eq_apply_one_sq_add_apply_I_sq]
 
 /-- **Lower semicontinuity of the potential.** Let `w n` be compactly supported `C¹` functions
 with bounded potentials whose `L²` classes converge weakly to `u`. Then `u` has finite potential,
@@ -333,8 +283,12 @@ private theorem integrable_and_weakReducedFunctional_le (hm : 0 < P.natDegree)
   obtain ⟨n, h₁, h₂, h₃, h₄, h₅⟩ :=
     ((hsq hG₁).and ((hsq hG₂).and ((hpot _ hδ).and (hlin.and (hI (ε / 4) hδ))))).exists
   have hIn := weakReducedFunctional_eq hc (w n) (hW n) (D₁ n) (D₂ n)
-  rw [weakReducedFunctional_congr_ae P (w n) (fderiv ℝ (w n)) (hD₁ n) (hD₂ n),
-    weakReducedFunctional_fderiv] at hIn
+  have hDn : (fun z ↦ D₁ n z • Complex.reCLM + D₂ n z • Complex.imCLM) =ᵐ[volume]
+      fderiv ℝ (w n) := by
+    filter_upwards [hD₁ n, hD₂ n] with z h₁ h₂
+    ext v
+    simp [h₁, h₂, (fderiv ℝ (w n) z).apply_eq_re_smul_one_add_im_smul_I v, mul_comm]
+  rw [weakReducedFunctional_congr_ae P EventuallyEq.rfl hDn, weakReducedFunctional_fderiv] at hIn
   rw [weakReducedFunctional_eq hc u (Eventually.of_forall fun _ ↦ rfl)]
   simp only [pot] at h₃
   linarith
@@ -363,9 +317,10 @@ private theorem exists_strictMono_tendsto_of_integral_le {w : ℕ → ℂ → �
   -- The `L²` norms of the partial derivatives are bounded by the Dirichlet energy.
   have hDle (n : ℕ) (v : ℂ) (hv : ‖v‖ = 1) : ‖(hmemD n v).toLp _‖ ≤ √C := by
     refine Real.le_sqrt_of_sq_le ?_
-    rw [← integral_sq_eq_norm_sq]
-    calc ∫ z, (hmemD n v).toLp _ z ^ 2 = ∫ z, fderiv ℝ (w n) z v ^ 2 :=
-          integral_congr_ae (by filter_upwards [(hmemD n v).coeFn_toLp] with z hz; rw [hz])
+    rw [L2.norm_sq_eq_integral_norm_sq]
+    calc ∫ z, ‖(hmemD n v).toLp _ z‖ ^ 2 = ∫ z, fderiv ℝ (w n) z v ^ 2 :=
+          integral_congr_ae (by
+            filter_upwards [(hmemD n v).coeFn_toLp] with z hz; rw [hz, Real.norm_eq_abs, sq_abs])
       _ ≤ ∫ z, ‖fderiv ℝ (w n) z‖ ^ 2 :=
           integral_mono (hmemD n v).integrable_sq (hint n) fun z ↦ by
             rw [← sq_abs]
@@ -374,9 +329,10 @@ private theorem exists_strictMono_tendsto_of_integral_le {w : ℕ → ℂ → �
       _ ≤ C := (hC n).1
   have hWle (n : ℕ) : ‖(hmem n).toLp _‖ ≤ √C := by
     refine Real.le_sqrt_of_sq_le ?_
-    rw [← integral_sq_eq_norm_sq]
-    calc ∫ z, (hmem n).toLp _ z ^ 2 = ∫ z, w n z ^ 2 :=
-          integral_congr_ae (by filter_upwards [(hmem n).coeFn_toLp] with z hz; rw [hz])
+    rw [L2.norm_sq_eq_integral_norm_sq]
+    calc ∫ z, ‖(hmem n).toLp _ z‖ ^ 2 = ∫ z, w n z ^ 2 :=
+          integral_congr_ae (by
+            filter_upwards [(hmem n).coeFn_toLp] with z hz; rw [hz, Real.norm_eq_abs, sq_abs])
       _ ≤ C := (hC n).2
   -- Extract three successive subsequences in the reflexive space `L²(ℂ)`.
   have hE := surjective_inclusionInDoubleDual_of_uniformConvexSpace (𝕜 := ℝ)

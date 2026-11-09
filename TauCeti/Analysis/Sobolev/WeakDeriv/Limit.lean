@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.L2Space
+public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Topology.Algebra.Module.WeakSpace
 
 /-!
 # Weak derivatives pass to `L¹` limits
@@ -26,10 +30,17 @@ Sobolev function: the smooth approximations have classical derivatives, and the 
 them weakly.  It is stated for an arbitrary filter of approximations, and with the `L¹` distance
 written as a lower Lebesgue integral so that no integrability of the differences is needed.
 
+Only the integrals against test functions need to converge, so weak derivatives also pass to
+distributional limits, and in particular to weak limits in `L²`.  This is the closure step of
+the direct method of the calculus of variations, where a minimizing sequence is only known to
+converge weakly.
+
 ## Main declarations
 
 * `TauCeti.hasWeakLineDerivOn_of_tendsto_lintegral_enorm_sub`: the directional statement.
 * `TauCeti.hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub`: the Fréchet statement.
+* `TauCeti.hasWeakLineDerivOn_of_tendsto_integral_smul`: the statement for distributional limits.
+* `TauCeti.hasWeakLineDerivOn_of_tendsto_toWeakSpace`: the statement for weak limits in `L²`.
 -/
 
 public section
@@ -112,5 +123,50 @@ theorem hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub [OpensMeasurableSpace E] 
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_
     (fun _ => zero_le) hbound
   simpa using ENNReal.Tendsto.const_mul (a := ‖v‖ₑ) hU (Or.inr enorm_ne_top)
+
+/-- **Weak directional derivatives pass to distributional limits.**  If each `uᵢ` has `uᵢ'` as a
+weak derivative in the direction `v` on `Ω`, and the integrals of both families against every test
+function on `Ω` converge to those of locally integrable limits, then the limit of the derivatives
+is a weak derivative of the limit. -/
+theorem hasWeakLineDerivOn_of_tendsto_integral_smul [l.NeBot] {u u' : ι → E → F} {w w' : E → F}
+    (hw : LocallyIntegrableOn w Ω μ) (hw' : LocallyIntegrableOn w' Ω μ)
+    (h : ∀ i, HasWeakLineDerivOn μ Ω (u i) (u' i) v)
+    (hu : ∀ φ : 𝓓(Ω, ℝ),
+      Tendsto (fun i => ∫ x, (φ : E → ℝ) x • u i x ∂μ) l (𝓝 (∫ x, (φ : E → ℝ) x • w x ∂μ)))
+    (hu' : ∀ φ : 𝓓(Ω, ℝ),
+      Tendsto (fun i => ∫ x, (φ : E → ℝ) x • u' i x ∂μ) l (𝓝 (∫ x, (φ : E → ℝ) x • w' x ∂μ))) :
+    HasWeakLineDerivOn μ Ω w w' v := by
+  have : Nonempty ι := nonempty_of_neBot l
+  have hcomplete : CompleteSpace F := (h (Classical.arbitrary ι)).completeSpace
+  refine hasWeakLineDerivOn_iff_testFunction.2 ⟨hcomplete, hw, hw', fun φ => ?_⟩
+  have hdφ : ((TestFunction.lineDerivCLM ℝ v φ : 𝓓(Ω, ℝ)) : E → ℝ) =
+      fun x => lineDeriv ℝ (φ : E → ℝ) x v :=
+    funext fun _ => TestFunction.lineDerivCLM_apply_of_le le_top
+  have h1 := hu (TestFunction.lineDerivCLM ℝ v φ)
+  rw [hdφ] at h1
+  refine tendsto_nhds_unique ?_ (hu' φ).neg
+  simpa only [(h _).integral_lineDeriv_smul_eq_neg_integral_smul φ] using h1
+
+/-- **Weak directional derivatives pass to weak limits in `L²`.**  If each `uᵢ` has `uᵢ'` as a
+weak derivative in the direction `v` on `Ω`, and both families converge weakly in `L²(μ)`, then
+the weak limit of the derivatives is a weak derivative of the weak limit of the functions. -/
+theorem hasWeakLineDerivOn_of_tendsto_toWeakSpace [OpensMeasurableSpace E]
+    [IsLocallyFiniteMeasure μ] [l.NeBot] {u u' : ι → Lp ℝ 2 μ} {w w' : Lp ℝ 2 μ}
+    (h : ∀ i, HasWeakLineDerivOn μ Ω (u i) (u' i) v)
+    (hu : Tendsto (fun i => toWeakSpace ℝ _ (u i)) l (𝓝 (toWeakSpace ℝ _ w)))
+    (hu' : Tendsto (fun i => toWeakSpace ℝ _ (u' i)) l (𝓝 (toWeakSpace ℝ _ w'))) :
+    HasWeakLineDerivOn μ Ω w w' v := by
+  have hli (f : Lp ℝ 2 μ) : LocallyIntegrableOn f Ω μ :=
+    ((Lp.memLp f).locallyIntegrable one_le_two).locallyIntegrableOn _
+  -- Integrals against a test function are `L²` inner products, which converge weakly.
+  have hlim {f : ι → Lp ℝ 2 μ} {g : Lp ℝ 2 μ}
+      (hf : Tendsto (fun i => toWeakSpace ℝ _ (f i)) l (𝓝 (toWeakSpace ℝ _ g)))
+      (φ : 𝓓(Ω, ℝ)) :
+      Tendsto (fun i => ∫ x, (φ : E → ℝ) x • f i x ∂μ) l (𝓝 (∫ x, (φ : E → ℝ) x • g x ∂μ)) := by
+    have hφ : MemLp (φ : E → ℝ) 2 μ := φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport
+    have h := tendsto_toWeakSpace_iff_forall_eval_tendsto.1 hf (innerSL ℝ (hφ.toLp _))
+    simpa only [innerSL_apply_apply, L2.inner_toLp_left, real_inner_eq_re_inner, RCLike.inner_apply,
+      conj_trivial, RCLike.re_to_real, smul_eq_mul, mul_comm] using h
+  exact hasWeakLineDerivOn_of_tendsto_integral_smul (hli w) (hli w') h (hlim hu) (hlim hu')
 
 end TauCeti

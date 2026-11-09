@@ -35,6 +35,15 @@ open scoped ComplexConjugate InnerProductSpace
 
 namespace MeasureTheory
 
+/-- The squared norm of an element of `L²` is the integral of its squared pointwise norm. -/
+theorem L2.norm_sq_eq_integral_norm_sq {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] (f : Lp E 2 μ) : ‖f‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂μ := by
+  have hint : 0 ≤ ∫ x, ‖f x‖ ^ (2 : ℝ) ∂μ := integral_nonneg fun x ↦ by positivity
+  rw [Lp.norm_def, (Lp.memLp f).eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top,
+    ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_ofNat, ← Real.rpow_natCast,
+    ← Real.rpow_mul hint]
+  norm_num
+
 variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
@@ -61,14 +70,6 @@ theorem L2.inner_toLp_left {f : α → E} (hf : MemLp f 2 μ) (g : Lp E 2 μ) :
   refine integral_congr_ae ?_
   filter_upwards [hf.coeFn_toLp] with x hx
   rw [hx]
-
-/-- The squared norm of an element of `L²` is the integral of its squared pointwise norm. -/
-theorem L2.norm_sq_eq_integral_norm_sq (f : Lp E 2 μ) : ‖f‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂μ := by
-  have hint : 0 ≤ ∫ x, ‖f x‖ ^ (2 : ℝ) ∂μ := integral_nonneg fun x ↦ by positivity
-  rw [Lp.norm_def, (Lp.memLp f).eLpNorm_eq_integral_rpow_norm two_ne_zero ENNReal.ofNat_ne_top,
-    ENNReal.toReal_ofReal (by positivity), ENNReal.toReal_ofNat, ← Real.rpow_natCast,
-    ← Real.rpow_mul hint]
-  norm_num
 
 /-- A counting-measure L² function orthogonal to every singleton-supported vector is zero.
 No countability of the underlying measurable space is needed. -/
