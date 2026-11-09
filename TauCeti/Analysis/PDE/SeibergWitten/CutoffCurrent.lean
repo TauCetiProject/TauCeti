@@ -411,8 +411,7 @@ theorem cutoffCurrent_apply_pair (hα : ContDiffAt ℝ 2 α x) (hb : Differentia
   · -- Near a zero of `α` the cutoff phase form vanishes, and so do `χ(0)` and `χ'(0)`.
     have hz : extDeriv (cutoffPhaseForm χ b α) x = 0 := by
       rw [(cutoffPhaseForm_eventuallyEq_zero hα.continuousAt (by simpa [h] using hχ₀)).extDeriv_eq,
-        Pi.zero_def, extDeriv_const]
-      rfl
+        Pi.zero_def, extDeriv_const, Pi.zero_apply]
     have hd : deriv χ 0 = 0 := by
       rw [hχ₀.deriv_eq]
       simp
@@ -796,8 +795,8 @@ near `0` and differentiable at `s = |α(x)|²`, with `i F_a = -db` and `∂_a α
 `|Θ(J v, J w) - Θ(v, w) - (1 - χ(s)) (i F_a(J v, J w) - i F_a(v, w))|
   ≤ 8 |χ'(s)| |∂_a α| |∂bar_a α| |v| |w|`.
 
-Where the curvature is nearly `J`-invariant and `∂bar_a α` is small, so is the anti-`J`-invariant
-part of `Θ`. -/
+Where the curvature is nearly `J`-invariant and `|χ'(s)| |∂_a α| |∂bar_a α|` is small, so is the
+anti-`J`-invariant part of `Θ`. -/
 theorem abs_cutoffCurrent_apply_pair_apply_sub_add_le (hα : ContDiffAt ℝ 2 α x)
     (hb : DifferentiableAt ℝ b x) (hχ : DifferentiableAt ℝ χ (normSq (α x)))
     (hχ₀ : χ =ᶠ[𝓝 0] 0) (v w : E) :
@@ -809,7 +808,8 @@ theorem abs_cutoffCurrent_apply_pair_apply_sub_add_le (hα : ContDiffAt ℝ 2 α
   rw [cutoffCurrent_apply_pair_apply_sub J hα hb hχ hχ₀, hcancel, abs_neg, abs_mul, abs_mul,
     abs_of_pos (by norm_num : (0 : ℝ) < 4)]
   set P := covariantDeriv b α x - covariantDBar J b α x
-  have hP (u : E) : covariantDeriv b α x u - covariantDBar J b α x u = P u := rfl
+  have hP (u : E) : covariantDeriv b α x u - covariantDBar J b α x u = P u :=
+    (_root_.sub_apply _ _ u).symm
   simp only [hP]
   set Q := covariantDBar J b α x
   -- Each mixed product is bounded by `‖P‖ ‖Q‖ ‖v‖ ‖w‖`.
