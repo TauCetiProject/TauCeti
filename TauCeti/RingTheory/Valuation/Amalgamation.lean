@@ -121,7 +121,8 @@ theorem exists_comap_eq_of_comap_eq (V₁ : ValuationSubring K₁) (V₂ : Valua
     (algebraMap _ _).comp (Ideal.Quotient.mk P₀)
   have hψ (x) : ψ x = 0 ↔ x ∈ P₀ := by
     simp [ψ, Ideal.Quotient.eq_zero_iff_mem]
-  obtain ⟨inj₁, inj₂⟩ := ψ.injective_comp_include_of_disjoint_nonZeroDivisors P₀ hψ hdisj
+  have hker : RingHom.ker ψ = P₀ := Ideal.ext fun x ↦ (hψ x)
+  obtain ⟨inj₁, inj₂⟩ := ψ.injective_comp_include_of_disjoint_nonZeroDivisors (by rwa [hker])
   let g₁ : K₁ →+* FractionRing (V₁ ⊗[V₀] V₂ ⧸ P₀) := IsFractionRing.lift inj₁
   let g₂ : K₂ →+* FractionRing (V₁ ⊗[V₀] V₂ ⧸ P₀) := IsFractionRing.lift inj₂
   have hg : g₁.comp (algebraMap K₀ K₁) = g₂.comp (algebraMap K₀ K₂) := by

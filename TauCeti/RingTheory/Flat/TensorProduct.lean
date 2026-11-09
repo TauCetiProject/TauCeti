@@ -375,23 +375,22 @@ namespace RingHom
 
 open scoped nonZeroDivisors
 
-/-- If `A` and `B` are flat domains over `R` and a ring map `ψ` out of `A ⊗[R] B` has kernel `P`
+/-- If `A` and `B` are flat domains over `R` and a ring map `ψ` out of `A ⊗[R] B` has kernel
 disjoint from the nonzerodivisors, then `ψ` is injective on both tensor factors. -/
 theorem injective_comp_include_of_disjoint_nonZeroDivisors {R A B L : Type*} [CommRing R]
     [CommRing A] [CommRing B] [IsDomain A] [IsDomain B] [Algebra R A] [Algebra R B]
-    [Module.Flat R A] [Module.Flat R B] [Ring L] (ψ : A ⊗[R] B →+* L) (P : Ideal (A ⊗[R] B))
-    (hψ : ∀ x, ψ x = 0 ↔ x ∈ P)
-    (hdisj : Disjoint (P : Set (A ⊗[R] B)) (nonZeroDivisors (A ⊗[R] B))) :
+    [Module.Flat R A] [Module.Flat R B] [Ring L] (ψ : A ⊗[R] B →+* L)
+    (hdisj : Disjoint (ker ψ : Set (A ⊗[R] B)) (nonZeroDivisors (A ⊗[R] B))) :
     Function.Injective (ψ.comp Algebra.TensorProduct.includeLeftRingHom) ∧
       Function.Injective
         (ψ.comp (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B).toRingHom) := by
   refine ⟨(injective_iff_map_eq_zero _).mpr fun b hb ↦ by_contra fun hb0 ↦ ?_,
     (injective_iff_map_eq_zero _).mpr fun c hc ↦ by_contra fun hc0 ↦ ?_⟩
-  · exact Set.disjoint_left.mp hdisj ((hψ _).mp hb)
+  · exact Set.disjoint_left.mp hdisj hb
       (Module.Flat.algebraMap_mem_nonZeroDivisors (mem_nonZeroDivisors_of_ne_zero hb0))
   · have hc' := Module.Flat.algebraMap_mem_nonZeroDivisors (A := B ⊗[R] A)
       (mem_nonZeroDivisors_of_ne_zero hc0)
-    exact Set.disjoint_left.mp hdisj ((hψ _).mp hc)
+    exact Set.disjoint_left.mp hdisj hc
       (mem_nonZeroDivisors_of_injective (f := Algebra.TensorProduct.comm R A B)
         (AlgEquiv.injective _) (by simpa using hc'))
 
