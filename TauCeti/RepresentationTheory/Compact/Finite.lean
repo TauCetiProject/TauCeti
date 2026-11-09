@@ -636,7 +636,7 @@ variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [Fintype G] [TopologicalSp
   [FiniteDimensional 𝕜 W]
   (π : ContRepresentation 𝕜 G V)
 
-omit [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W] in
+omit [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V] [NormedSpace ℝ W] [SMulCommClass ℝ 𝕜 W] in
 /-- **The off-diagonal branch of first (row) character orthogonality for a finite group**: for a
 *unitary* `π`, the group average of `conj χ_π · χ_ρ` vanishes when no nonzero continuous intertwiner
 `ρ → π` exists, which for a pair of irreducibles is Schur's lemma. Unitarity is asked of `π` alone,
