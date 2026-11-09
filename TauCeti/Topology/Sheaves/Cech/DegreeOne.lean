@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Limits
 public import Mathlib.CategoryTheory.Sites.SheafCohomology.Basic
 public import TauCeti.Topology.Sheaves.Cech.Colimit
 import Mathlib.Algebra.Category.Grp.AB
+import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Refinement
 import TauCeti.Algebra.Homology.Ext.Basic
 import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.LongExactSequence
@@ -50,6 +52,9 @@ So `ČH⁰(W, I) ⟶ ČH⁰(W, Q)` is onto. As `I` and `Q` are sheaves, this map
 
 * `CategoryTheory.Sheaf.subsingleton_H'_one_of_isZero_cechCohomology`: if the restriction of `F` to
   an open `W` has vanishing degree one Čech cohomology, then `H¹(W, F) = 0`.
+* `CategoryTheory.Sheaf.subsingleton_H'_one_of_isZero_cechCohomology_moduleCat`: the same for a
+  sheaf of modules, whose Čech cohomology is computed with module coefficients and whose sheaf
+  cohomology is that of its underlying sheaf of abelian groups.
 
 ## References
 
@@ -209,5 +214,20 @@ theorem subsingleton_H'_one_of_isZero_cechCohomology (W : Opens X)
   exact Sheaf.H'.subsingleton_X₁_one (injectiveCokernelSequence_shortExact F) _
     (surjective_app_functor_obj_top F W h)
     (subsingleton_H'_succ_of_isFlasque (Injective.under F) 0 _)
+
+/-- **Čech `H¹` vanishing implies sheaf `H¹` vanishing, for sheaves of modules.** Let `F` be a
+sheaf of `R`-modules on `X` and `W` an open subset. If the restriction of `F` to the subspace `W`
+has vanishing degree one Čech cohomology, then the sheaf cohomology `H¹(W, F)` of the underlying
+sheaf of abelian groups vanishes. -/
+theorem subsingleton_H'_one_of_isZero_cechCohomology_moduleCat {R : Type u} [Ring R]
+    (F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)) (W : Opens X)
+    (h : IsZero ((cechCohomology ((Opens.toTopCat X).obj W) (ModuleCat.{u} R) 1).obj
+      (W.isOpenEmbedding.isOpenMap.functor.op ⋙ F.obj))) :
+    Subsingleton (_root_.CategoryTheory.Sheaf.H'.{u}
+      ((sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u})).obj F) 1 W) :=
+  subsingleton_H'_one_of_isZero_cechCohomology _ W
+    (TauCeti.CategoryTheory.isZero_cechCohomology_obj_comp_forget₂
+      (PointOpenCover.toFormalCoproduct (X := (Opens.toTopCat X).obj W)) (fun _ _ h ↦ h) 1
+      (W.isOpenEmbedding.isOpenMap.functor.op ⋙ F.obj) h)
 
 end CategoryTheory.Sheaf

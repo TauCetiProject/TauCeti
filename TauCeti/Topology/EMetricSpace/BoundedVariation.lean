@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Uniform
 public import Mathlib.Topology.EMetricSpace.BoundedVariation
+public import Mathlib.Order.Interval.Set.ProjIcc
 public import Mathlib.Topology.CompactOpen
 
 /-!
@@ -15,8 +16,9 @@ public import Mathlib.Topology.CompactOpen
 This file transfers eventual upper bounds on the total variations of a family of maps to a
 `liminf` bound on the total variation of a pointwise limit. It also computes the variation of a
 composition with an antitone map on an interval, proves stability of bounded variation under
-addition and subtraction, and shows that the variation is unchanged by postcomposition with a map
-that preserves the distances between the values of the function.
+addition and subtraction, shows that the variation is unchanged by postcomposition with a map
+that preserves the distances between the values of the function, and proves bounded variation
+of constant extensions from closed intervals.
 Total variation on continuous maps is lower semicontinuous for the compact-open topology,
 allowing measurable path-space applications.
 
@@ -29,6 +31,8 @@ allowing measurable path-space applications.
   `eVariationOn.comp_inter_Icc_eq_of_monotoneOn`.
 * `eVariationOn.comp_eq_of_edist_eq`: postcomposition with a map preserving the distances between
   the values of a function does not change its variation.
+* `BoundedVariationOn.IccExtend`: constant extension from a closed interval preserves bounded
+  variation.
 -/
 
 public section
@@ -174,3 +178,13 @@ theorem LocallyBoundedVariationOn.sub
   fun a b ha hb ↦ (hf a b ha hb).sub (hg a b ha hb)
 
 end AdditionSubtraction
+
+/-- Constant extension of a path outside a closed interval preserves bounded variation. -/
+theorem BoundedVariationOn.IccExtend {α E : Type*} [LinearOrder α]
+    [TopologicalSpace E] [WeakPseudoEMetricSpace E] {f : α → E} {a b : α}
+    (hf : BoundedVariationOn f (Icc a b)) (hab : a ≤ b) :
+    BoundedVariationOn (IccExtend hab (f ∘ Subtype.val)) univ := by
+  exact ne_top_of_le_ne_top hf (eVariationOn.comp_le_of_monotoneOn f
+    (fun x : α ↦ (projIcc a b hab x : α))
+    (fun _ _ _ _ h ↦ (monotone_projIcc hab h : _ ≤ _))
+    (fun x _ ↦ (projIcc a b hab x).property))

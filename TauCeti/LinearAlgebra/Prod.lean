@@ -40,6 +40,13 @@ quadratic forms with the subgroup preserving both summands.
   automorphisms, independently of the off-diagonal block.
 * `LinearEquiv.nonempty_linearEquiv_of_isUnit_snd_comp_inr`: a linear equivalence `M × P ≃ N × P`
   whose lower-right block is invertible gives `M ≃ N`.
+* `LinearMap.finrank_graph`: the graph of a linear map `M → M₂` has the dimension of `M`.
+* `LinearMap.coprod_comp_prodComm`: precomposing `f.coprod g` with the exchange of factors gives
+  `g.coprod f`, the linear version of `ContinuousLinearMap.coprod_comp_prodComm`.
+* `LinearMap.coprod_neg_comp_prodComm`, `LinearMap.map_prodComm_ker_coprod_neg`,
+  `LinearMap.surjective_coprod_neg_comm`: the exchange of factors negates `(ξ, η) ↦ α ξ - β η`,
+  identifies the fibre product `{(ξ, η) | α ξ = β η}` of `α` and `β` with that of `β`
+  and `α`, and transversality, the surjectivity of `(ξ, η) ↦ α ξ - β η`, is symmetric.
 * `TauCeti.LinearMap.lsmul_restrictScalars_prodMap`: multiplication by a scalar on a product of
   complex modules is the product map of the two multiplications.
 -/
@@ -179,6 +186,61 @@ theorem nonempty_linearEquiv_of_isUnit_snd_comp_inr (e₁ : (M × P) ≃ₗ[A] (
 end Cancellation
 
 end LinearEquiv
+
+namespace LinearMap
+
+/-- The graph of a linear map `f : M → M₂` has the dimension of `M`. -/
+theorem finrank_graph {R M M₂ : Type*} [Ring R] [AddCommGroup M] [Module R M] [AddCommGroup M₂]
+    [Module R M₂] (f : M →ₗ[R] M₂) : Module.finrank R (graph f) = Module.finrank R M := by
+  rw [graph_eq_range_prod, finrank_range_of_inj]
+  intro x y h
+  exact congr(($h).1)
+
+section Semiring
+
+variable {R M₁ M₂ M₃ : Type*} [Semiring R] [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂]
+  [Module R M₂] [AddCommMonoid M₃] [Module R M₃]
+
+/-- Precomposing a map on a product with the exchange of the factors exchanges its components. -/
+theorem coprod_comp_prodComm (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₃) :
+    f.coprod g ∘ₗ (LinearEquiv.prodComm R M₂ M₁).toLinearMap = g.coprod f := by
+  ext <;> simp
+
+end Semiring
+
+section Ring
+
+variable {R X Y T : Type*} [Ring R] [AddCommGroup X] [Module R X] [AddCommGroup Y] [Module R Y]
+  [AddCommGroup T] [Module R T] (α : X →ₗ[R] T) (β : Y →ₗ[R] T)
+
+/-- Precomposing `(η, ξ) ↦ β η - α ξ` with the exchange of factors gives the negative of
+`(ξ, η) ↦ α ξ - β η`. -/
+theorem coprod_neg_comp_prodComm :
+    β.coprod (-α) ∘ₗ (LinearEquiv.prodComm R X Y).toLinearMap = -α.coprod (-β) := by
+  rw [coprod_comp_prodComm]
+  ext <;> simp
+
+/-- The exchange of factors carries the fibre product `{(ξ, η) | α ξ = β η}` of `α` and `β`
+onto that of `β` and `α`. -/
+theorem map_prodComm_ker_coprod_neg :
+    (ker (α.coprod (-β))).map (LinearEquiv.prodComm R X Y : X × Y →ₗ[R] Y × X) =
+      ker (β.coprod (-α)) := by
+  rw [Submodule.map_equiv_eq_comap_symm, ← ker_comp, LinearEquiv.symm_prodComm,
+    coprod_neg_comp_prodComm, ker_neg]
+
+/-- Transversality of `α` and `β`, the surjectivity of `(ξ, η) ↦ α ξ - β η`, is symmetric. -/
+theorem surjective_coprod_neg_comm (h : Function.Surjective (α.coprod (-β))) :
+    Function.Surjective (β.coprod (-α)) := by
+  intro z
+  obtain ⟨w, hw⟩ := h (-z)
+  refine ⟨LinearEquiv.prodComm R X Y w, ?_⟩
+  have hw' := LinearMap.congr_fun (coprod_neg_comp_prodComm α β) w
+  simp only [coe_comp, LinearEquiv.coe_coe, Function.comp_apply, LinearMap.neg_apply] at hw'
+  rw [hw', hw, neg_neg]
+
+end Ring
+
+end LinearMap
 
 namespace Module.Basis
 
