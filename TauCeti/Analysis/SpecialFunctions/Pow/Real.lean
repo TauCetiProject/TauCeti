@@ -272,6 +272,17 @@ theorem rpow_le_rpow_sub_mul_rpow {ρ R₁ β γ : ℝ} (hρ : 0 < ρ) (hρR : �
   calc ρ ^ γ = ρ ^ (γ - β) * ρ ^ β := by rw [← Real.rpow_add hρ, sub_add_cancel]
     _ ≤ R₁ ^ (γ - β) * ρ ^ β := by gcongr
 
+/-- Dividing the base of a real power by a positive number divides the power by the same power
+of that number, whatever the sign of the base. Mathlib's `Real.div_rpow` needs a nonnegative
+base. -/
+theorem div_rpow_of_pos_right {c : ℝ} (hc : 0 < c) (r a : ℝ) :
+    (r / c) ^ a = r ^ a / c ^ a := by
+  rcases lt_or_ge r 0 with hr | hr
+  · rw [rpow_def_of_neg hr, rpow_def_of_neg (div_neg_of_neg_of_pos hr hc),
+      rpow_def_of_pos hc, log_div hr.ne hc.ne', sub_mul, exp_sub]
+    ring
+  · exact div_rpow hr hc.le a
+
 end Real
 
 /-- Real powers `g i ^ f i` with finitely supported exponents `f` have finite multiplicative
