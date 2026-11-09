@@ -11,7 +11,9 @@ public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
 import Mathlib.Algebra.Category.ModuleCat.Projective
 import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
 import Mathlib.RingTheory.Flat.CategoryTheory
+import TauCeti.Algebra.Category.ModuleCat.End
 import TauCeti.Algebra.Homology.ShortComplex.Splitting
+import TauCeti.CategoryTheory.GradedObject
 import TauCeti.CategoryTheory.Monoidal.Tor
 
 /-!
@@ -457,12 +459,9 @@ private lemma nsmul_id_singularHomologyKunnethUnitShortComplex_X₁_eq_zero {e :
     (hY : ∀ q,
       e • 𝟙 (((singularHomologyFunctor _ (q + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj Y) = 0)
     (n : ℕ) : e • 𝟙 (singularHomologyKunnethUnitShortComplex k X Y n).X₁ = 0 := by
-  refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
-  rw [Preadditive.comp_nsmul, Category.comp_id, comp_zero, ← Category.id_comp
-    (GradedObject.Monoidal.ιTensorObj _ _ p q _ h), ← Preadditive.nsmul_comp]
-  convert zero_comp
+  refine GradedObject.nsmul_id_mapObj_eq_zero fun ⟨p, q⟩ h ↦ ?_
   rcases p with _ | p
-  · obtain rfl : q = n + 1 := by omega
+  · obtain rfl : q = n + 1 := by simpa using h
     exact nsmul_id_tensor_eq_zero_of_right (hY n) _
   · exact nsmul_id_tensor_eq_zero_of_left (hX p) _
 
@@ -473,10 +472,7 @@ private lemma nsmul_id_singularHomologyKunnethUnitShortComplex_X₃_eq_zero {e :
     (hX : ∀ p,
       e • 𝟙 (((singularHomologyFunctor _ (p + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj X) = 0)
     (n : ℕ) : e • 𝟙 (singularHomologyKunnethUnitShortComplex k X Y n).X₃ = 0 := by
-  refine GradedObject.mapBifunctorMapObj_ext _ _ fun p q h ↦ ?_
-  rw [Preadditive.comp_nsmul, Category.comp_id, comp_zero, ← Category.id_comp
-    (GradedObject.ιMapBifunctorMapObj _ _ _ _ p q _ h), ← Preadditive.nsmul_comp]
-  convert zero_comp
+  refine GradedObject.nsmul_id_mapObj_eq_zero fun ⟨p, q⟩ _ ↦ ?_
   rcases p with _ | p
   · -- Tensoring with the flat module `H₀(X; k)` is exact, so `Tor₁(H₀(X; k), -)` vanishes.
     let H₀ := ((singularHomologyFunctor _ 0).obj (𝟙_ (ModuleCat.{w} k))).obj X
@@ -499,18 +495,12 @@ theorem nsmul_singularHomology_tensor_eq_zero {e : ℕ}
     (n : ℕ) (z : ((singularHomologyFunctor _ (n + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj (X ⊗ Y)) :
     e • z = 0 := by
   -- Work with the endomorphisms `e • 𝟙` of the homology modules.
-  replace hX p : e • 𝟙 (((singularHomologyFunctor _ (p + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj X) =
-      0 := by
-    ext x
-    simpa using hX p x
-  replace hY q : e • 𝟙 (((singularHomologyFunctor _ (q + 1)).obj (𝟙_ (ModuleCat.{w} k))).obj Y) =
-      0 := by
-    ext y
-    simpa using hY q y
-  have h₂ := (singularHomologyKunnethUnitSplitting k X Y n).nsmul_id_X₂_eq_zero
-    (nsmul_id_singularHomologyKunnethUnitShortComplex_X₁_eq_zero k X Y hX hY n)
-    (nsmul_id_singularHomologyKunnethUnitShortComplex_X₃_eq_zero k X Y hX n)
-  simpa using congr($h₂ z)
+  replace hX p := ModuleCat.nsmul_id_eq_zero_iff.2 (hX p)
+  replace hY q := ModuleCat.nsmul_id_eq_zero_iff.2 (hY q)
+  exact ModuleCat.nsmul_id_eq_zero_iff.1
+    ((singularHomologyKunnethUnitSplitting k X Y n).nsmul_id_X₂_eq_zero
+      (nsmul_id_singularHomologyKunnethUnitShortComplex_X₁_eq_zero k X Y hX hY n)
+      (nsmul_id_singularHomologyKunnethUnitShortComplex_X₃_eq_zero k X Y hX n)) z
 
 end Unit
 
