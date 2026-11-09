@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.RingTheory.IntegralDomain
 public import TauCeti.Algebra.Group.Coprime
+public import TauCeti.RingTheory.RootsOfUnity.Basic
 public import TauCeti.Topology.Algebra.Projectivization
 
 /-!
@@ -228,18 +229,13 @@ theorem mem_stabilizer_weightedEllipsoid_iff_of_fst_eq_zero {z : weightedEllipso
   rw [mem_stabilizer_weightedEllipsoid_iff]
   simp [h₁, h₂]
 
-/-- Through `toUnits`, the circle elements with `u ^ n = 1` are the `n`-th roots of unity. -/
-private def kerPowEquivRootsOfUnity (n : ℕ) :
-    (powMonoidHom n : Circle →* Circle).ker ≃ rootsOfUnity n Circle :=
-  toUnits.toEquiv.subtypeEquiv fun u ↦ by simp [mem_rootsOfUnity, ← map_pow]
-
 /-- **The stabilizer on the axis `z₂ = 0` has order `a`.** -/
 theorem natCard_stabilizer_weightedEllipsoid_of_snd_eq_zero (ha : 0 < a)
     {z : weightedEllipsoid a b ε} (h₁ : (z : ℂ × ℂ).1 ≠ 0) (h₂ : (z : ℂ × ℂ).2 = 0) :
     Nat.card (MulAction.stabilizer Circle z) = a := by
   have : NeZero a := ⟨ha.ne'⟩
-  refine (Nat.card_congr <| (Equiv.subtypeEquivRight fun u ↦ ?_).trans
-    (kerPowEquivRootsOfUnity a)).trans (HasEnoughRootsOfUnity.natCard_rootsOfUnity Circle a)
+  refine (Nat.card_congr <| Equiv.subtypeEquivRight fun u ↦ ?_).trans
+    (natCard_powMonoidHom_ker Circle a)
   simp [mem_stabilizer_weightedEllipsoid_iff_of_snd_eq_zero h₁ h₂]
 
 /-- **The stabilizer on the axis `z₁ = 0` has order `b`.** -/
@@ -247,8 +243,8 @@ theorem natCard_stabilizer_weightedEllipsoid_of_fst_eq_zero (hb : 0 < b)
     {z : weightedEllipsoid a b ε} (h₁ : (z : ℂ × ℂ).1 = 0) (h₂ : (z : ℂ × ℂ).2 ≠ 0) :
     Nat.card (MulAction.stabilizer Circle z) = b := by
   have : NeZero b := ⟨hb.ne'⟩
-  refine (Nat.card_congr <| (Equiv.subtypeEquivRight fun u ↦ ?_).trans
-    (kerPowEquivRootsOfUnity b)).trans (HasEnoughRootsOfUnity.natCard_rootsOfUnity Circle b)
+  refine (Nat.card_congr <| Equiv.subtypeEquivRight fun u ↦ ?_).trans
+    (natCard_powMonoidHom_ker Circle b)
   simp [mem_stabilizer_weightedEllipsoid_iff_of_fst_eq_zero h₁ h₂]
 
 /-- **Every stabilizer on the ellipsoid is finite** for positive weights and `ε > 0`: it is
@@ -266,7 +262,7 @@ theorem finite_stabilizer_weightedEllipsoid (ha : 0 < a) (hb : 0 < b) (hε : 0 <
   · have : NeZero a := ⟨ha.ne'⟩
     have hle : MulAction.stabilizer Circle z ≤ (powMonoidHom a : Circle →* Circle).ker :=
       fun u hu ↦ by simpa using (mem_stabilizer_weightedEllipsoid_iff.1 hu).1 h₁
-    have := Finite.of_equiv _ (kerPowEquivRootsOfUnity a).symm
+    have := Finite.of_equiv _ (powMonoidHomKerEquivRootsOfUnity (G := Circle) a).toEquiv.symm
     exact Finite.of_injective _ (Subgroup.inclusion_injective hle)
 
 /-- **Every stabilizer on the ellipsoid is cyclic** for positive weights and `ε > 0`, being a
