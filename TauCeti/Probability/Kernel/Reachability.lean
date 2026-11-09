@@ -83,23 +83,11 @@ theorem reaches_of_pos {x y : S} (h : 0 < κ x {y}) : κ.Reaches x y := by
   simpa [pow_one] using h
 
 /-- Reachability is transitive. -/
-theorem Reaches.trans [MeasurableSingletonClass S] {x y z : S}
+theorem Reaches.trans {x y z : S}
     (hxy : κ.Reaches x y) (hyz : κ.Reaches y z) : κ.Reaches x z := by
   obtain ⟨n, hn⟩ := hxy
   obtain ⟨m, hm⟩ := hyz
-  use n + m
-  -- Chapman-Kolmogorov: (κ ^ (n + m)) x {z} = ∫⁻ b, (κ ^ m) b {z} ∂((κ ^ n) x); bound the
-  -- resulting integral below by its restriction to the single intermediate state y
-  have hyz_y : 0 < (κ ^ m) y {z} * (κ ^ n) x {y} := by
-    rw [ENNReal.mul_pos_iff]
-    exact ⟨hm, hn⟩
-  have hsum : 0 < ∫⁻ b in {y}, (κ ^ m) b {z} ∂((κ ^ n) x) := by
-    rw [lintegral_singleton (f := fun b => (κ ^ m) b {z}) y]
-    exact hyz_y
-  rw [Kernel.pow_add_apply_eq_lintegral _ n m _ (measurableSet_singleton z)]
-  have hsum' : 0 < ∫⁻ b in Set.univ, (κ ^ m) b {z} ∂((κ ^ n) x) :=
-    lt_of_lt_of_le hsum (lintegral_mono_set (Set.subset_univ {y}))
-  exact (Measure.restrict_univ : ((κ ^ n) x).restrict Set.univ = (κ ^ n) x) ▸ hsum'
+  exact ⟨n + m, pow_add_apply_pos hn hm⟩
 
 /-- Every state communicates with itself. -/
 @[simp] theorem Communicates.refl (x : S) : κ.Communicates x x :=
@@ -110,7 +98,7 @@ theorem Communicates.symm {x y : S} (h : κ.Communicates x y) : κ.Communicates 
   ⟨h.2, h.1⟩
 
 /-- Communication is transitive. -/
-theorem Communicates.trans [MeasurableSingletonClass S] {x y z : S}
+theorem Communicates.trans {x y z : S}
     (hxy : κ.Communicates x y) (hyz : κ.Communicates y z) : κ.Communicates x z :=
   ⟨hxy.1.trans hyz.1, hyz.2.trans hxy.2⟩
 
@@ -120,7 +108,7 @@ theorem communicates_comm (x y : S) : κ.Communicates x y ↔ κ.Communicates y 
   ⟨fun h => h.symm, fun h => h.symm⟩
 
 /-- Communication is an equivalence relation on the state space. -/
-theorem communicates_equivalence [MeasurableSingletonClass S] :
+theorem communicates_equivalence :
     Equivalence κ.Communicates := by
   refine ⟨?_, ?_, ?_⟩
   · intro x

@@ -147,20 +147,17 @@ private theorem not_hasContinuousLogOn_of_isBounded_connectedComponentIn (hK : I
   have haV : a ∈ V := mem_connectedComponentIn ha
   have hfr : frontier V ⊆ K := by
     simpa [hVdef] using frontier_connectedComponentIn_subset_compl (X := ℂ) hK.isOpen_compl a
-  have hclV : closure V ⊆ V ∪ K := by
+  have hbcl : b ∉ closure V := by
     rw [closure_eq_self_union_frontier]
-    exact union_subset_union_right _ hfr
-  have hbcl : b ∉ closure V := fun hmem => (hclV hmem).elim hab hb
+    exact fun hmem => hmem.elim hab fun h => hb (hfr h)
   -- extend the logarithm to the whole plane and exponentiate it
   obtain ⟨H, hH⟩ :=
     ContinuousMap.exists_restrict_eq (Y := ℂ) hK ⟨K.domRestrict h, hcont.domRestrict⟩
   have hHK : ∀ z ∈ K, H z = h z := fun z hz => by
     simpa using DFunLike.congr_fun hH ⟨z, hz⟩
   set G : ℂ → ℂ := fun z => Complex.exp (H z) with hGdef
-  have hGK : ∀ z ∈ K, G z = (z - a) / (z - b) := fun z hz => by
-    simp only [hGdef]
-    rw [hHK z hz]
-    exact heq z hz
+  have hGK : ∀ z ∈ K, G z = (z - a) / (z - b) := fun z hz =>
+    (congrArg Complex.exp (hHK z hz)).trans (heq z hz)
   -- the two sides of `closure V` glue into a zero-free continuous function
   set Φ : ℂ → ℂ := (closure V).piecewise (fun z => G z * (z - b)) (fun z => z - a) with hΦdef
   have hglue : ∀ z ∈ frontier (closure V), G z * (z - b) = z - a := fun z hz => by
@@ -179,25 +176,20 @@ private theorem not_hasContinuousLogOn_of_isBounded_connectedComponentIn (hK : I
       exact mul_ne_zero (Complex.exp_ne_zero _)
         (sub_ne_zero.mpr fun hzeq => hbcl (hzeq ▸ hz))
     · rw [hΦdef, piecewise_eq_of_notMem _ _ _ hz]
-      refine sub_ne_zero.mpr fun hzeq => hz ?_
-      rw [hzeq]
-      exact subset_closure haV
+      exact sub_ne_zero.mpr fun hzeq => hz (hzeq ▸ subset_closure haV)
   -- a large circle about `a` misses `closure V`, and there `Φ` is the map to the centre
   obtain ⟨R, hR, hRsub⟩ := hVb.closure.subset_ball_lt 0 a
   have hsphere : EqOn Φ (fun z => z - a) (sphere a R) := by
     intro z hz
-    have hzcl : z ∉ closure V := fun hmem => by
-      have h₁ : dist z a < R := mem_ball.mp (hRsub hmem)
-      have h₂ : dist z a = R := mem_sphere.mp hz
-      exact absurd h₂ h₁.ne
+    have hzcl : z ∉ closure V := fun hmem => (mem_ball.mp (hRsub hmem)).ne (mem_sphere.mp hz)
     rw [hΦdef, piecewise_eq_of_notMem _ _ _ hzcl]
-  have hΦlog : HasContinuousLogOn Φ univ := by
-    have hUc : IsSimplyConnected (univ : Set ℂ) :=
-      (Homeomorph.Set.univ ℂ).toHomotopyEquiv.simplyConnectedSpace
-    obtain ⟨h, hcont, heq⟩ := Complex.exists_continuousOn_eqOn_exp_comp hUc isOpen_univ
-      hΦc.continuousOn (by rintro ⟨z, -, hz⟩; exact hΦ0 z hz)
-    exact hasContinuousLogOn_iff.mpr
-      ⟨h, hcont, fun z hz => by simpa only [Function.comp_apply] using heq hz⟩
+  have hUc : IsSimplyConnected (univ : Set ℂ) :=
+    (Homeomorph.Set.univ ℂ).toHomotopyEquiv.simplyConnectedSpace
+  obtain ⟨L, hLc, hLeq⟩ := Complex.exists_continuousOn_eqOn_exp_comp hUc isOpen_univ
+    hΦc.continuousOn (by rintro ⟨z, _, hz⟩; exact hΦ0 z hz)
+  have hΦlog : HasContinuousLogOn Φ univ :=
+    hasContinuousLogOn_iff.mpr
+      ⟨L, hLc, fun z hz ↦ by simpa only [Function.comp_apply] using hLeq hz⟩
   exact not_hasContinuousLogOn_sub_sphere hR.le a
     ((hΦlog.mono (subset_univ _)).congr hsphere)
 

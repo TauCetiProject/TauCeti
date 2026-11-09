@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import Mathlib.RingTheory.LocalProperties.ProjectiveDimension
 public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
+import Mathlib.Algebra.Category.ModuleCat.ProjectiveDimension
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import TauCeti.Algebra.Module.PseudoCoherent.FaithfullyFlat
 import TauCeti.RingTheory.Regular.ProjectiveDimension
@@ -45,6 +46,8 @@ dimension is finite, and then it equals the Krull dimension.
   a field, has global dimension zero.
 * `TauCeti.globalDimension_eq_one_of_isPrincipalIdealRing`: a principal ideal domain that is not
   a field, for instance `ℤ`, has global dimension one.
+* `TauCeti.globalDimension_eq_globalDimension`: the global dimension does not depend on the
+  universe of the modules.
 
 ## Implementation notes
 
@@ -62,7 +65,7 @@ universe parameter `v` for the category of modules.
 
 public section
 
-universe v u
+universe v v' u
 
 open CategoryTheory
 
@@ -172,6 +175,30 @@ theorem globalDimension_eq_zero_of_isSemisimpleRing [IsSemisimpleRing R] [Nontri
       exact not_subsingleton R
     exact ((projectiveDimension_ge_zero_iff _).mpr hR).trans
       (ModuleCat.projectiveDimension_le_globalDimension _)
+
+/-- One inequality of `TauCeti.globalDimension_eq_globalDimension`: both sides are detected on
+the cyclic modules `R ⧸ I`, whose projective dimension does not depend on the universe. -/
+private theorem globalDimension_le_globalDimension [Small.{v} R] [Small.{v'} R] :
+    globalDimension.{v} R ≤ globalDimension.{v'} R := by
+  induction h : globalDimension.{v'} R using WithBot.recBotCoe with
+  | bot =>
+    exact ((globalDimension_eq_bot_iff.{v} R).mpr ((globalDimension_eq_bot_iff.{v'} R).mp h)).le
+  | coe d =>
+    induction d with
+    | top => exact le_top
+    | coe n =>
+      refine ((globalDimension_le_tfae.{v} R n).out 3 1).mp fun I ↦ ?_
+      let M := ModuleCat.of R (Shrink.{v'} (R ⧸ I))
+      have := (globalDimension_le_iff_hasProjectiveDimensionLE.{v'} R n).mp h.le M
+      exact ModuleCat.hasProjectiveDimensionLE_of_linearEquiv.{v', v} (M := M)
+        ((Shrink.linearEquiv.{v'} R (R ⧸ I)).trans (Shrink.linearEquiv.{v} R (R ⧸ I)).symm) n
+
+/-- **The global dimension does not depend on the universe of the modules**, as long as the ring
+is small in both universes. -/
+theorem globalDimension_eq_globalDimension [Small.{v} R] [Small.{v'} R] :
+    globalDimension.{v} R = globalDimension.{v'} R :=
+  le_antisymm (globalDimension_le_globalDimension.{v, v'} R)
+    (globalDimension_le_globalDimension.{v', v} R)
 
 end Ring
 

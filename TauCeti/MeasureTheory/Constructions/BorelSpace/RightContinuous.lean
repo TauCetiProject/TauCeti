@@ -13,8 +13,8 @@ public import TauCeti.Topology.Order.LeftRight
 
 The event `{∃ t ≤ T, a < X_t}` and the running maximum `sup_{t ≤ T} X_t` of a process `X` involve
 uncountably many times, so they need not be measurable even when every `X_t` is. If the paths of
-`X` are almost surely right-continuous before `T` and the time set is densely ordered and separable
-(for instance `ℝ≥0`), the running maximum agrees almost everywhere with a supremum over countably
+`X` are almost surely right-continuous before `T` and the time set is second countable (for
+instance `ℝ≥0` or `ℕ`), the running maximum agrees almost everywhere with a supremum over countably
 many times, hence is almost everywhere measurable whenever every `X_t` is.
 
 ## Main declarations
@@ -31,7 +31,7 @@ open scoped ENNReal
 namespace MeasureTheory
 
 variable {Ω ι : Type*} {m0 : MeasurableSpace Ω} {μ : Measure Ω} [LinearOrder ι]
-  [TopologicalSpace ι] [OrderTopology ι] [DenselyOrdered ι] [TopologicalSpace.SeparableSpace ι]
+  [TopologicalSpace ι] [OrderTopology ι] [SecondCountableTopology ι]
 
 /-- The running maximum `sup_{t ≤ T} X_t` of a process whose values `X_t` are almost everywhere
 measurable and whose paths are almost surely right-continuous before `T` is almost everywhere

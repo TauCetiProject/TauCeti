@@ -405,8 +405,10 @@ theorem nonempty_homeomorph_simplex_closedBall {V : Finset ι}
   let P := simplex (Finset.univ : Finset (Fin (n + 1)))
   have hP : P = (⊤ : AbstractSimplicialComplex (Fin (n + 1))).toPreAbstractSimplicialComplex := by
     simp only [P, simplex_univ, AbstractSimplicialComplex.top_toPreAbstractSimplicialComplex]
-  obtain ⟨r⟩ := nonempty_finsetRelabelingHomeomorph hV (fun f himage => by
-      rw [map_simplex, himage]) hP hA
+  obtain ⟨f, hf⟩ := Function.Embedding.exists_of_card_eq_finset (α := Fin (n + 1)) (s := V)
+    (by simpa using hV.symm)
+  let r := (P.realizationRelabelingHomeomorph (R := simplex V) f
+    (by rw [map_simplex, ← Finset.map_eq_image, hf]) hP hA).symm
   exact ⟨r.trans (AbstractSimplicialComplex.realizationTopHomeomorphClosedBall n)⟩
 
 end PreAbstractSimplicialComplex

@@ -308,7 +308,6 @@ theorem _root_.ContDiffOn.memWkpLoc [CompleteSpace F]
     refine ⟨(hf.continuousOn.mono hU).memLpLoc, fderiv ℝ f, ?_, ih hD⟩
     have hweak : HasWeakFDerivOn volume Ω f (fderiv ℝ f) := by
       apply hasWeakFDerivOn_of_differentiableOn
-        (hf.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet)
         (hD.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet)
       intro z hz
       exact (hf.differentiableOn (by simp)).differentiableAt (Ω.isOpen.mem_nhds hz)
