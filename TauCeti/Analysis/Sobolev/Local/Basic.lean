@@ -135,6 +135,16 @@ theorem MemLpLoc.clm_comp (hf : MemLpLoc p U f) (A : F →L[ℝ] G) :
     MemLpLoc p U (fun z => A (f z)) :=
   fun K hK hc => A.comp_memLp' (hf K hK hc)
 
+/-- A continuous linear change of codomain preserves and reflects local `Lᵖ` membership. -/
+@[simp]
+theorem _root_.ContinuousLinearEquiv.comp_memLpLoc_iff (e : F ≃L[ℝ] G) :
+    MemLpLoc p U (fun z => e (f z)) ↔ MemLpLoc p U f := by
+  constructor
+  · intro h
+    simpa only [ContinuousLinearEquiv.coe_coe, e.symm_apply_apply] using
+      h.clm_comp e.symm.toContinuousLinearMap
+  · exact fun h => h.clm_comp e.toContinuousLinearMap
+
 /-- The iterated weak derivatives through order `k` exist on `interior U` and are `Lᵖ` on
 every compact subset of `U`, including compact sets reaching its boundary.
 The first derivative takes values in `ℂ →L[ℝ] F`; higher derivatives iterate this construction.
@@ -272,6 +282,29 @@ theorem MemWkpLoc.clm_comp [CompleteSpace G] (hf : MemWkpLoc p U k f)
     obtain ⟨hp, D, hD, hk⟩ := hf
     exact ⟨hp.clm_comp A, fun z => A.comp (D z), hD.clm_comp A,
       ih hk ((ContinuousLinearMap.compL ℝ ℂ F G) A)⟩
+
+/-- A continuous linear change of codomain preserves and reflects every local weak
+Sobolev order. -/
+@[simp]
+theorem _root_.ContinuousLinearEquiv.comp_memWkpLoc_iff (e : F ≃L[ℝ] G) :
+    MemWkpLoc p U k (fun z => e (f z)) ↔ MemWkpLoc p U k f := by
+  cases k with
+  | zero =>
+    simpa only [memWkpLoc_zero_iff] using
+      (e.comp_memLpLoc_iff (p := p) (U := U) (f := f))
+  | succ k =>
+    constructor
+    · intro h
+      have : CompleteSpace G := h.completeSpace
+      have : CompleteSpace F :=
+        (e.isUniformEmbedding.isUniformInducing.completeSpace_congr e.surjective).mpr inferInstance
+      simpa only [ContinuousLinearEquiv.coe_coe, e.symm_apply_apply] using
+        h.clm_comp e.symm.toContinuousLinearMap
+    · intro h
+      have : CompleteSpace F := h.completeSpace
+      have : CompleteSpace G :=
+        (e.isUniformEmbedding.isUniformInducing.completeSpace_congr e.surjective).mp inferInstance
+      exact h.clm_comp e.toContinuousLinearMap
 
 /-- Constant functions belong to every local Sobolev class. -/
 @[simp]

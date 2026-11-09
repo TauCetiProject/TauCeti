@@ -32,7 +32,9 @@ the field.
   field.
 * `TauCeti.isMIntegralCurve_congr_vectorField`: being an integral curve only depends on the values
   of the vector field along the curve.
-* `IsMIntegralCurveAt.of_extChartAt_symm`: a coordinate solution gives a manifold integral curve.
+* `IsMIntegralCurveAt.of_extChartAt_symm`, `IsMIntegralCurveOn.of_extChartAt_symm`: a coordinate
+  solution, on a neighbourhood of a time or on an open set of times, gives a manifold integral
+  curve.
   Conversely, `HasMFDerivAt.hasDerivAt_extChartAt_comp` shows that a curve read in a fixed
   extended chart has the coordinate expression of its velocity as velocity, so an integral curve
   solves the coordinate equation there.
@@ -208,6 +210,20 @@ theorem IsMIntegralCurveAt.of_extChartAt_symm
   rw [show (extChartAt I x₀).symm (f t) = xₜ from rfl]
   rw [ContinuousLinearMap.smulRight_one_eq_toSpanSingleton]
   exact hasFDerivWithinAt_model_tangent_spaces hd'
+
+/-- A curve in the extended chart at `x₀` that solves the coordinate equation and stays in the
+interior of the chart target on an open set `s` is an integral curve of `v` on `s` once pulled back
+through the inverse chart. -/
+theorem IsMIntegralCurveOn.of_extChartAt_symm
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+    {x₀ : M} {Φ : ℝ → E} {s : Set ℝ} {v : (x : M) → TangentSpace I x} (hs : IsOpen s)
+    (hderiv : ∀ t ∈ s, HasDerivAt Φ ((tangentCoordChange I ((extChartAt I x₀).symm (Φ t)) x₀
+      ((extChartAt I x₀).symm (Φ t))) (v ((extChartAt I x₀).symm (Φ t)))) t)
+    (htarget : ∀ t ∈ s, Φ t ∈ interior (extChartAt I x₀).target) :
+    IsMIntegralCurveOn ((extChartAt I x₀).symm ∘ Φ) v s :=
+  IsMIntegralCurveAt.isMIntegralCurveOn fun t ht ↦ IsMIntegralCurveAt.of_extChartAt_symm
+    (by filter_upwards [hs.mem_nhds ht] with s hs using htarget s hs)
+    (by filter_upwards [hs.mem_nhds ht] with s hs using hderiv s hs)
 
 /-- **Local step of fixed-chart uniqueness.** Near a time of `Ioo a b` where two integral curves
 agree, they agree, provided one of them stays in a fixed extended chart, over an open set on which
