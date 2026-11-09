@@ -7,9 +7,10 @@ module
 
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Differential
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Horizontal
+public import Mathlib.RingTheory.Idempotents
 
 /-!
-# The matched subalgebra of the strands algebra
+# The matched subalgebra of the strands algebra and the algebra `A(Z)`
 
 A pointed matched circle `Z` has `4k` points on an oriented circle cut open at a basepoint, matched
 in pairs. Lipshitz, Ozsváth and Thurston define the algebra `A(Z)` of bordered Heegaard Floer
@@ -29,11 +30,28 @@ behaviour of crossings when a horizontal strand moves, developed in
 `TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Horizontal`: moving a strand identifies the
 factorizations of a diagram, and the diagrams resolving to it, with those of the moved diagram.
 
+The matched subalgebra does not contain the unit of the strands algebra, but it has a unit of its
+own, the sum `TauCeti.StrandsAlgebra.matchedUnit` of the idempotents `I(s)`. The type
+`TauCeti.MatchedAlgebra R M` is the matched subalgebra with this unit and with the restricted
+differential: a unital algebra, and over a ring of characteristic two an ungraded differential
+algebra, which is what type `D` structures and box tensor products
+(`TauCeti.LowDimTopology.Bordered.TypeD`) are built over. Its idempotents `I(s)` form a complete
+family of orthogonal idempotents. Grouping them by the number `i` of strands gives the occupancy
+idempotents, which are central because products preserve the number of strands, so the algebra
+splits as the product of its occupancy summands, the summands `A(Z, j)` of Lipshitz, Ozsváth and
+Thurston.
+
 ## Main definitions
 
 * `TauCeti.StrandsAlgebra.matchedSubalgebra R M`: the matched subalgebra, a non-unital subalgebra
   of the strands algebra.
 * `TauCeti.StrandsAlgebra.matchedIdem R M s`: the idempotent `I(s)`.
+* `TauCeti.StrandsAlgebra.matchedUnit R M`: the unit of the matched subalgebra, `∑ s, I(s)`.
+* `TauCeti.MatchedAlgebra R M`: the matched subalgebra as a unital algebra, with its
+  differential `TauCeti.MatchedAlgebra.differential` and idempotents `TauCeti.MatchedAlgebra.idem`.
+* `TauCeti.MatchedAlgebra.occupancyIdem R M i`: the idempotent of the summand with `i` strands.
+* `TauCeti.MatchedAlgebra.occupancyRingEquiv`: the matched algebra is the product of its
+  occupancy summands.
 
 ## Main results
 
@@ -44,12 +62,21 @@ factorizations of a diagram, and the diagrams resolving to it, with those of the
   `TauCeti.StrandsAlgebra.matchedIdem_mul_matchedIdem`: the `I(s)` are orthogonal idempotents of the
   matched subalgebra.
 * `TauCeti.StrandsAlgebra.differential_matchedIdem`: the `I(s)` are cycles.
+* `TauCeti.StrandsAlgebra.matchedUnit_mul_of_mem`, `TauCeti.StrandsAlgebra.mul_matchedUnit_of_mem`:
+  `∑ s, I(s)` is a two-sided unit for the matched subalgebra.
+* `TauCeti.MatchedAlgebra.isUngradedDGAlgebra_differential`: in characteristic two the matched
+  algebra is an ungraded differential algebra.
+* `TauCeti.MatchedAlgebra.completeOrthogonalIdempotents_idem`: the `I(s)` are a complete family of
+  orthogonal idempotents of the matched algebra.
+* `TauCeti.MatchedAlgebra.isMulCentral_occupancyIdem`,
+  `TauCeti.MatchedAlgebra.completeOrthogonalIdempotents_occupancyIdem`: the occupancy idempotents
+  are central and form a complete family of orthogonal idempotents.
 
 ## References
 
 * R. Lipshitz, P. Ozsváth and D. Thurston, *Bordered Heegaard Floer homology*, Mem. Amer. Math.
   Soc. **254** (2018), no. 1216, [arXiv:0810.0687](https://arxiv.org/abs/0810.0687), §3.2 (pointed
-  matched circles, the idempotents `I(s)` and the algebra `A(Z)`).
+  matched circles, the idempotents `I(s)`, the algebra `A(Z)` and its summands `A(Z, i)`).
 -/
 
 public section
@@ -279,8 +306,345 @@ theorem isIdempotentElem_matchedIdem (M : α → β) (s : Finset β) :
     IsIdempotentElem (matchedIdem R M s) := by
   simp [IsIdempotentElem, matchedIdem_mul_matchedIdem]
 
+/-- Multiplying a basis element `φ` on the left by `I(s)` keeps it exactly when `M` maps the
+source of `φ` bijectively onto `s`. -/
+theorem matchedIdem_mul_of (M : α → β) (s : Finset β) (φ : StrandDiagram α) :
+    matchedIdem R M s * of φ = if φ.source.image M = s ∧ #φ.source = #s then of φ else 0 := by
+  simp [matchedIdem_def, sum_mul, idem_mul_of]
+
+/-- Multiplying a basis element `φ` on the right by `I(t)` keeps it exactly when `M` maps the
+target of `φ` bijectively onto `t`. -/
+theorem of_mul_matchedIdem (M : α → β) (φ : StrandDiagram α) (t : Finset β) :
+    of φ * matchedIdem R M t = if φ.target.image M = t ∧ #φ.target = #t then of φ else 0 := by
+  simp [matchedIdem_def, mul_sum, of_mul_idem]
+
+/-- `I(s) x I(t)` vanishes when `s` and `t` have different sizes: the diagrams of the strands
+algebra have as many starting points as end points. -/
+theorem matchedIdem_mul_mul_matchedIdem_of_card_ne (M : α → β) {s t : Finset β} (h : #s ≠ #t)
+    (x : StrandsAlgebra R α) : matchedIdem R M s * x * matchedIdem R M t = 0 := by
+  induction x using induction_on with
+  | zero => simp
+  | add x y hx hy => simp [mul_add, add_mul, hx, hy]
+  | smul_of r φ =>
+    rw [mul_smul_comm, smul_mul_assoc, matchedIdem_mul_of]
+    split_ifs with hs
+    · rw [of_mul_matchedIdem,
+        ite_eq_right fun ht ↦ h (by rw [← hs.2, ← ht.2, card_target]), smul_zero]
+    · simp
+
+/-! ### The unit of the matched subalgebra -/
+
+variable [Fintype β]
+
+variable (R) in
+/-- The unit of the matched subalgebra: the sum of its idempotents `I(s)` over all sets `s` of
+values of the matching `M`. Equivalently, it is the sum of the idempotents `I(S)` of the strands
+algebra over the sets `S` on which `M` is injective. It is not the unit of the strands algebra. -/
+def matchedUnit (M : α → β) : StrandsAlgebra R α :=
+  ∑ s, matchedIdem R M s
+
+theorem matchedUnit_def (M : α → β) : matchedUnit R M = ∑ s, matchedIdem R M s :=
+  (rfl)
+
+/-- Multiplying a basis element `φ` on the left by the unit of the matched subalgebra keeps it
+exactly when `M` is injective on the source of `φ`. -/
+theorem matchedUnit_mul_of (M : α → β) (φ : StrandDiagram α) :
+    matchedUnit R M * of φ = if Set.InjOn M (φ.source : Set α) then of φ else 0 := by
+  simp only [matchedUnit_def, sum_mul, matchedIdem_mul_of, ite_and, sum_ite_eq, mem_univ,
+    ite_true]
+  exact if_congr (eq_comm.trans card_image_iff) rfl rfl
+
+/-- Multiplying a basis element `φ` on the right by the unit of the matched subalgebra keeps it
+exactly when `M` is injective on the target of `φ`. -/
+theorem of_mul_matchedUnit (M : α → β) (φ : StrandDiagram α) :
+    of φ * matchedUnit R M = if Set.InjOn M (φ.target : Set α) then of φ else 0 := by
+  simp only [matchedUnit_def, mul_sum, of_mul_matchedIdem, ite_and, sum_ite_eq, mem_univ,
+    ite_true]
+  exact if_congr (eq_comm.trans card_image_iff) rfl rfl
+
+/-- The unit of the matched subalgebra lies in it. -/
+theorem matchedUnit_mem_matchedSubalgebra (M : α → β) :
+    matchedUnit R M ∈ matchedSubalgebra R M :=
+  sum_mem fun s _ ↦ matchedIdem_mem_matchedSubalgebra M s
+
+/-- The unit of the matched subalgebra is a cycle. -/
+@[simp]
+theorem differential_matchedUnit (M : α → β) : differential R α (matchedUnit R M) = 0 := by
+  simp [matchedUnit_def]
+
+/-- **The unit of the matched subalgebra is a left unit for its elements.** -/
+theorem matchedUnit_mul_of_mem {M : α → β} {x : StrandsAlgebra R α}
+    (hx : x ∈ matchedSubalgebra R M) : matchedUnit R M * x = x := by
+  have := Fintype.ofFinite (StrandDiagram α)
+  conv_lhs => rw [← (basis R α).sum_repr x]
+  conv_rhs => rw [← (basis R α).sum_repr x]
+  simp only [mul_sum, mul_smul_comm, basis_apply, matchedUnit_mul_of]
+  refine sum_congr rfl fun φ _ ↦ ?_
+  by_cases h : (basis R α).repr x φ = 0
+  · simp [h]
+  · rw [ite_eq_left ((mem_matchedSubalgebra.1 hx).1 φ h).1]
+
+/-- **The unit of the matched subalgebra is a right unit for its elements.** -/
+theorem mul_matchedUnit_of_mem {M : α → β} {x : StrandsAlgebra R α}
+    (hx : x ∈ matchedSubalgebra R M) : x * matchedUnit R M = x := by
+  have := Fintype.ofFinite (StrandDiagram α)
+  conv_lhs => rw [← (basis R α).sum_repr x]
+  conv_rhs => rw [← (basis R α).sum_repr x]
+  simp only [sum_mul, smul_mul_assoc, basis_apply, of_mul_matchedUnit]
+  refine sum_congr rfl fun φ _ ↦ ?_
+  by_cases h : (basis R α).repr x φ = 0
+  · simp [h]
+  · rw [ite_eq_left ((mem_matchedSubalgebra.1 hx).1 φ h).2]
+
 end Idempotents
 
 end StrandsAlgebra
+
+open StrandsAlgebra
+
+variable {R α β : Type*} [CommSemiring R] [LinearOrder α] [Fintype α]
+
+/-! ### The matched algebra -/
+
+variable (R) in
+/-- The **matched algebra** of a matching `M : α → β`: the matched subalgebra
+`TauCeti.StrandsAlgebra.matchedSubalgebra R M` of the strands algebra, as a unital algebra whose
+unit is `TauCeti.StrandsAlgebra.matchedUnit R M`, the sum of its idempotents `I(s)`, together with
+the restriction of the differential of the strands algebra. For the matching of a pointed matched
+circle `Z` and `R = ZMod 2` it is the differential algebra `A(Z)` of Lipshitz, Ozsváth and
+Thurston. Its unit is not that of the strands algebra, so the inclusion
+`TauCeti.MatchedAlgebra.toStrandsAlgebra` is only a homomorphism of non-unital algebras. -/
+@[expose]
+def MatchedAlgebra (M : α → β) : Type _ :=
+  matchedSubalgebra R M
+
+namespace MatchedAlgebra
+
+variable {M : α → β}
+
+instance : NonUnitalSemiring (MatchedAlgebra R M) :=
+  inferInstanceAs (NonUnitalSemiring (matchedSubalgebra R M))
+
+instance : Module R (MatchedAlgebra R M) :=
+  inferInstanceAs (Module R (matchedSubalgebra R M))
+
+instance : IsScalarTower R (MatchedAlgebra R M) (MatchedAlgebra R M) :=
+  inferInstanceAs (IsScalarTower R (matchedSubalgebra R M) (matchedSubalgebra R M))
+
+instance : SMulCommClass R (MatchedAlgebra R M) (MatchedAlgebra R M) :=
+  inferInstanceAs (SMulCommClass R (matchedSubalgebra R M) (matchedSubalgebra R M))
+
+variable (R M) in
+/-- The inclusion of the matched algebra into the strands algebra, a homomorphism of non-unital
+algebras. -/
+def toStrandsAlgebra : MatchedAlgebra R M →ₙₐ[R] StrandsAlgebra R α :=
+  NonUnitalSubalgebraClass.subtype (matchedSubalgebra R M)
+
+theorem toStrandsAlgebra_injective : Function.Injective (toStrandsAlgebra R M) :=
+  Subtype.val_injective
+
+@[ext]
+theorem ext {x y : MatchedAlgebra R M} (h : toStrandsAlgebra R M x = toStrandsAlgebra R M y) :
+    x = y :=
+  toStrandsAlgebra_injective h
+
+/-- The image of the inclusion of the matched algebra is the matched subalgebra. -/
+@[simp]
+theorem range_toStrandsAlgebra :
+    NonUnitalAlgHom.range (toStrandsAlgebra R M) = matchedSubalgebra R M :=
+  NonUnitalSubalgebra.range_val (matchedSubalgebra R M)
+
+theorem toStrandsAlgebra_mem (x : MatchedAlgebra R M) :
+    toStrandsAlgebra R M x ∈ matchedSubalgebra R M :=
+  x.2
+
+variable (R M) in
+/-- The element of the matched algebra given by an element of the matched subalgebra. -/
+def mk (x : StrandsAlgebra R α) (hx : x ∈ matchedSubalgebra R M) : MatchedAlgebra R M :=
+  ⟨x, hx⟩
+
+@[simp]
+theorem toStrandsAlgebra_mk (x : StrandsAlgebra R α) (hx : x ∈ matchedSubalgebra R M) :
+    toStrandsAlgebra R M (mk R M x hx) = x :=
+  (rfl)
+
+instance {R : Type*} [CommRing R] : Neg (MatchedAlgebra R M) :=
+  ⟨fun x ↦ mk R M (-toStrandsAlgebra R M x) (neg_mem (toStrandsAlgebra_mem x))⟩
+
+/-! ### The differential of the matched algebra -/
+
+variable (R M) in
+/-- The differential of the matched algebra, the restriction of the differential of the strands
+algebra, which resolves crossings. -/
+def differential : MatchedAlgebra R M →ₗ[R] MatchedAlgebra R M where
+  toFun x := mk R M (StrandsAlgebra.differential R α (toStrandsAlgebra R M x))
+    (differential_mem_matchedSubalgebra (toStrandsAlgebra_mem x))
+  map_add' x y := ext (by simp)
+  map_smul' r x := ext (by simp)
+
+@[simp]
+theorem toStrandsAlgebra_differential (x : MatchedAlgebra R M) :
+    toStrandsAlgebra R M (differential R M x) =
+      StrandsAlgebra.differential R α (toStrandsAlgebra R M x) :=
+  (rfl)
+
+/-- **The Leibniz rule** for the differential of the matched algebra, over a ring of
+characteristic two. -/
+theorem differential_mul [CharP R 2] (x y : MatchedAlgebra R M) :
+    differential R M (x * y) = differential R M x * y + x * differential R M y :=
+  ext (by simp [StrandsAlgebra.differential_mul])
+
+/-- The differential of the matched algebra squares to zero over a ring of characteristic two. -/
+@[simp]
+theorem differential_differential [CharP R 2] (x : MatchedAlgebra R M) :
+    differential R M (differential R M x) = 0 :=
+  ext (by simp)
+
+/-! ### The idempotents of the matched algebra -/
+
+section Idempotents
+
+variable [DecidableEq β]
+
+variable (R M) in
+/-- The idempotent `I(s)` of the matched algebra, `TauCeti.StrandsAlgebra.matchedIdem R M s`. -/
+def idem (s : Finset β) : MatchedAlgebra R M :=
+  mk R M (matchedIdem R M s) (matchedIdem_mem_matchedSubalgebra M s)
+
+@[simp]
+theorem toStrandsAlgebra_idem (s : Finset β) :
+    toStrandsAlgebra R M (idem R M s) = matchedIdem R M s :=
+  (rfl)
+
+/-- The idempotents `I(s)` are cycles. -/
+@[simp]
+theorem differential_idem (s : Finset β) : differential R M (idem R M s) = 0 :=
+  ext (by simp)
+
+/-- The idempotents `I(s)` are orthogonal: `I(s) I(t)` is `I(s)` when `s = t` and zero otherwise. -/
+@[simp]
+theorem idem_mul_idem (s t : Finset β) :
+    idem R M s * idem R M t = if s = t then idem R M s else 0 := by
+  ext
+  split_ifs <;> simp [*]
+
+/-- `I(s) x I(t)` vanishes when `s` and `t` have different sizes. -/
+theorem idem_mul_mul_idem_of_card_ne {s t : Finset β} (h : #s ≠ #t) (x : MatchedAlgebra R M) :
+    idem R M s * x * idem R M t = 0 :=
+  ext (by simp [matchedIdem_mul_mul_matchedIdem_of_card_ne M h])
+
+/-! ### The unit of the matched algebra -/
+
+variable [Fintype β]
+
+instance : Semiring (MatchedAlgebra R M) where
+  __ : NonUnitalSemiring (MatchedAlgebra R M) := inferInstance
+  one := mk R M (matchedUnit R M) (matchedUnit_mem_matchedSubalgebra M)
+  -- `erw`: in these fields `1` is the `one` field just given, which `rw` does not see as an
+  -- application of `mk`.
+  one_mul x := ext (by
+    erw [map_mul, toStrandsAlgebra_mk]
+    exact matchedUnit_mul_of_mem (toStrandsAlgebra_mem x))
+  mul_one x := ext (by
+    erw [map_mul, toStrandsAlgebra_mk]
+    exact mul_matchedUnit_of_mem (toStrandsAlgebra_mem x))
+
+instance : Algebra R (MatchedAlgebra R M) :=
+  Algebra.ofModule smul_mul_assoc mul_smul_comm
+
+instance {R : Type*} [CommRing R] : Ring (MatchedAlgebra R M) where
+  __ : Semiring (MatchedAlgebra R M) := inferInstance
+  zsmul := zsmulRec
+  -- `erw`: `-x` unfolds to an application of `mk` only through the `Neg` instance.
+  neg_add_cancel x := ext (by
+    erw [map_add, toStrandsAlgebra_mk, neg_add_cancel, map_zero])
+
+/-- The unit of the matched algebra is the sum of the idempotents `I(s)`. -/
+@[simp]
+theorem toStrandsAlgebra_one : toStrandsAlgebra R M 1 = matchedUnit R M :=
+  (rfl)
+
+/-- Over a ring of characteristic two, such as `𝔽₂`, the matched algebra with its differential is
+an ungraded differential algebra. -/
+theorem isUngradedDGAlgebra_differential {R : Type*} [CommRing R] [CharP R 2] :
+    IsUngradedDGAlgebra (differential R M) :=
+  ⟨differential_mul, differential_differential⟩
+
+/-- **The idempotents `I(s)` of the matched algebra are a complete family of orthogonal
+idempotents**: they are idempotent, pairwise orthogonal, and sum to the unit. -/
+theorem completeOrthogonalIdempotents_idem :
+    CompleteOrthogonalIdempotents (idem R M) where
+  idem s := by simp [IsIdempotentElem]
+  ortho s t hst := by simp [hst]
+  complete := ext (by simp [matchedUnit_def])
+
+/-! ### The occupancy summands -/
+
+variable (R M) in
+/-- The idempotent of the summand of the matched algebra with `i` strands: the sum of the
+idempotents `I(s)` over the sets `s` of size `i`. For the matching of a pointed matched circle with
+`4k` points, `i = k + j` strands give the summand `A(Z, j)` of Lipshitz, Ozsváth and Thurston. -/
+def occupancyIdem (i : Fin (Fintype.card β + 1)) : MatchedAlgebra R M :=
+  ∑ s with #s = (i : ℕ), idem R M s
+
+theorem occupancyIdem_def (i : Fin (Fintype.card β + 1)) :
+    occupancyIdem R M i = ∑ s with #s = (i : ℕ), idem R M s :=
+  (rfl)
+
+/-- The occupancy idempotents are cycles. -/
+@[simp]
+theorem differential_occupancyIdem (i : Fin (Fintype.card β + 1)) :
+    differential R M (occupancyIdem R M i) = 0 := by
+  simp [occupancyIdem_def]
+
+/-- `e_i x e_j` vanishes for distinct occupancy idempotents `e_i` and `e_j`. -/
+theorem occupancyIdem_mul_mul_occupancyIdem_of_ne {i j : Fin (Fintype.card β + 1)} (h : i ≠ j)
+    (x : MatchedAlgebra R M) : occupancyIdem R M i * x * occupancyIdem R M j = 0 := by
+  simp only [occupancyIdem_def, sum_mul, mul_sum]
+  refine sum_eq_zero fun s hs ↦ sum_eq_zero fun t ht ↦ idem_mul_mul_idem_of_card_ne ?_ x
+  rw [(mem_filter.1 hs).2, (mem_filter.1 ht).2]
+  exact Fin.val_injective.ne h
+
+/-- **The occupancy idempotents are a complete family of orthogonal idempotents.** -/
+theorem completeOrthogonalIdempotents_occupancyIdem :
+    CompleteOrthogonalIdempotents (occupancyIdem R M) := by
+  refine (CompleteOrthogonalIdempotents.iff_ortho_complete).2 ⟨fun i j hij ↦ ?_, ?_⟩
+  · simpa [occupancyIdem_def, ← mul_assoc] using
+      occupancyIdem_mul_mul_occupancyIdem_of_ne (R := R) (M := M) hij 1
+  · rw [← completeOrthogonalIdempotents_idem.complete]
+    have hlt (s : Finset β) : #s < Fintype.card β + 1 := Nat.lt_succ_of_le (card_le_univ s)
+    rw [← sum_fiberwise univ (fun s ↦ (⟨#s, hlt s⟩ : Fin (Fintype.card β + 1))) (idem R M)]
+    refine sum_congr rfl fun i _ ↦ sum_congr ?_ fun _ _ ↦ rfl
+    ext s
+    simp [Fin.ext_iff]
+
+/-- **The occupancy idempotents are central**: the products in the matched algebra preserve the
+number of strands. -/
+theorem isMulCentral_occupancyIdem (i : Fin (Fintype.card β + 1)) :
+    IsMulCentral (occupancyIdem R M i) := by
+  refine Set.mem_center_iff.1 (Semigroup.mem_center_iff.2 fun x ↦ ?_)
+  have he := completeOrthogonalIdempotents_occupancyIdem (R := R) (M := M)
+  -- Both products equal `e_i x e_i`, by inserting `1 = ∑ j, e_j` on the other side.
+  have h₁ : x * occupancyIdem R M i = occupancyIdem R M i * x * occupancyIdem R M i := by
+    conv_lhs => rw [← one_mul x, ← he.complete, sum_mul, sum_mul]
+    exact sum_eq_single i (fun j _ hj ↦ occupancyIdem_mul_mul_occupancyIdem_of_ne hj x)
+      (by simp)
+  have h₂ : occupancyIdem R M i * x = occupancyIdem R M i * x * occupancyIdem R M i := by
+    conv_lhs => rw [← mul_one (_ * x), ← he.complete, mul_sum]
+    exact sum_eq_single i (fun j _ hj ↦ occupancyIdem_mul_mul_occupancyIdem_of_ne hj.symm x)
+      (by simp)
+  rw [h₁, h₂, mul_assoc, (he.idem i).eq]
+
+variable (R M) in
+/-- **The occupancy decomposition of the matched algebra.** The matched algebra is the product of
+its occupancy summands, the corners `e_i A e_i` of its central occupancy idempotents `e_i`. -/
+def occupancyRingEquiv :
+    MatchedAlgebra R M ≃+*
+      Π i, ((completeOrthogonalIdempotents_occupancyIdem (R := R) (M := M)).idem i).Corner :=
+  completeOrthogonalIdempotents_occupancyIdem.ringEquivOfIsMulCentral isMulCentral_occupancyIdem
+
+end Idempotents
+
+end MatchedAlgebra
 
 end TauCeti
