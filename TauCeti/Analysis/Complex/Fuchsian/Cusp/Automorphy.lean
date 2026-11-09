@@ -72,7 +72,7 @@ and `h` lifts `γ`, then `automorphyFrame D' s' k r (h • τ)` is `denom h τ ^
 constant times `automorphyFrame D s k r τ`
 (`TauCeti.Subgroup.CuspDatum.automorphyFrame_smul_of_smul_cusp_eq`). This is the transition
 function between the trivializations of the automorphy sheaf in the charts at two cusp data
-representing the same cusp of `Γ \ ℍ`.
+representing the same cusp of `X(Γ)`.
 
 At a regular cusp, or in even weight, `ε ^ k = 1`, so `r = 0`: the frame is `denom s τ ^ (-k)` and
 the coefficient is the usual expansion of `f ∣[k] s⁻¹` in `q`. At an irregular cusp in odd weight
