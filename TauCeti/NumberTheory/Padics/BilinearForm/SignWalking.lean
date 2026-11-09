@@ -16,8 +16,8 @@ import TauCeti.NumberTheory.Padics.BilinearForm.BinaryDiagonal
 import TauCeti.NumberTheory.Padics.BilinearForm.MixedSignWalking.Basic
 import TauCeti.NumberTheory.Padics.BilinearForm.MixedSignWalking.EvenLower
 import TauCeti.NumberTheory.Padics.BilinearForm.Oddity
-import TauCeti.NumberTheory.Padics.DyadicUnits
 import TauCeti.NumberTheory.Padics.PadicIntegers
+import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.NumberTheory.Padics.SerreSigns
 import TauCeti.RingTheory.Henselian.Basic
 
@@ -135,13 +135,6 @@ private theorem IsJordanSplitting.exists_mem_apply_eq_two_pow [Module.Free ℤ_[
   · exact .inl ⟨by rw [← hBC, he, mul_zero], by rw [← hBC, hf, mul_zero]⟩
   · exact .inr ⟨by rw [← hBC, he, pow_succ], by rw [← hBC, hf, pow_succ]⟩
 
-/-- The range of a triple is the union of the ranges of its first entry and of the other two. -/
-private theorem range_three {α : Type*} (z : Fin 3 → α) :
-    Set.range ![z 0] ∪ Set.range ![z 1, z 2] = Set.range z := by
-  ext y
-  simp only [Set.mem_union, Set.mem_range, Fin.exists_fin_succ, Fin.exists_fin_zero]
-  simp [Fin.succ_zero_eq_one, Fin.succ_one_eq_two, eq_comm]
-
 /-- Exchanging blocks of the constituents `N k` and `N l` whose Gram determinants change by `5`
 up to squares changes the Gram determinants of `N k` and `N l` by `5` up to squares. -/
 private theorem IsJordanSplitting.exists_signWalk_aux [Module.Free ℤ_[2] M] [Module.Finite ℤ_[2] M]
@@ -183,50 +176,6 @@ private theorem IsJordanSplitting.exists_signWalk_aux [Module.Free ℤ_[2] M] [M
       hDu hD'u hHu h5D hNl hN'l d d',
     ⟨m, t, G, hG, hGu, hvt, hv't, hNk, hN'k⟩, ⟨m', s, H, hH, hHu, hws, hw's, hNl, hN'l⟩⟩
 
-/-- `5 det U det V = -15` is a square in `ℤ_[2]`. -/
-private theorem isSquare_five_mul_det_hyperbolic_mul_det_anisotropic :
-    IsSquare (5 * (!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℤ_[2]).det *
-      (!![2, 1; 1, 2] : Matrix (Fin 2) (Fin 2) ℤ_[2]).det) := by
-  have hu : IsUnit (-15 : ℤ_[2]) := by
-    rw [PadicInt.isUnit_iff_toZModPow_three_mul_self, map_neg, map_ofNat]
-    decide
-  have := (PadicInt.isSquare_mul_iff_toZModPow_three_eq hu isUnit_one).mpr
-    (by rw [map_neg, map_ofNat, map_one]; decide)
-  rw [Matrix.det_fin_two_of, Matrix.det_fin_two_of]
-  convert this using 1
-  ring
-
-/-- The hyperbolic plane `U` is unimodular. -/
-private theorem isUnit_det_hyperbolic :
-    IsUnit (!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) ℤ_[2]).det := by
-  simp [Matrix.det_fin_two_of]
-
-/-- The anisotropic plane `V`, of determinant `3`, is unimodular. -/
-private theorem isUnit_det_anisotropic :
-    IsUnit (!![2, 1; 1, 2] : Matrix (Fin 2) (Fin 2) ℤ_[2]).det := by
-  rw [Matrix.det_fin_two_of, PadicInt.isUnit_iff_toZModPow_three_mul_self]
-  simp only [map_sub, map_mul, map_one, map_ofNat]
-  decide
-
-/-- The range of a pair is the union of the ranges of its two entries. -/
-private theorem range_two {α : Type*} (z : Fin 2 → α) :
-    Set.range ![z 0] ∪ Set.range ![z 1] = Set.range z := by
-  ext y
-  simp only [Set.mem_union, Set.mem_range, Fin.exists_fin_succ, Fin.exists_fin_zero]
-  simp [Fin.succ_zero_eq_one, eq_comm]
-
-/-- For a unit `a` of `ℤ_[2]`, a change of oddity by `5 a - a` is a change by `4` modulo `8`. -/
-private theorem eight_dvd_sub_sub_four {a : ℤ_[2]} (ha : IsUnit a) {c : ℤ_[2]}
-    (h : (8 : ℤ_[2]) ∣ c - (5 * a - a)) : (8 : ℤ_[2]) ∣ c - 4 := by
-  have h4 : (8 : ℤ_[2]) ∣ 4 - 4 * a := by
-    rw [PadicInt.eight_dvd_sub_iff_toZModPow_three_eq, map_mul, map_ofNat]
-    have hA := PadicInt.isUnit_iff_toZModPow_three_mul_self.mp ha
-    generalize PadicInt.toZModPow 3 a = A at hA ⊢
-    revert A
-    decide
-  rw [show c - 4 = c - (5 * a - a) - (4 - 4 * a) by ring]
-  exact dvd_sub h h4
-
 /-- Exchanging a vector `x` of `N u` with `B x x = 2 ^ u a` and a pair `e, f` of `N p` with Gram
 matrix `2 ^ p D` for vectors `z'` with Gram matrix `⟨2 ^ u 5 a⟩ ⊥ 2 ^ p D'`, spanning the same
 submodule, is a sign walk between `N u` and `N p` when `5 det D det D'` is a square. -/
@@ -255,7 +204,8 @@ private theorem IsJordanSplitting.exists_signWalk_unary_binary [Module.Free ℤ_
   have h5a : IsUnit (5 * a) := TauCeti.isUnit_five_padicInt.mul ha
   have hspan' : Submodule.span ℤ_[2] (Set.range ![z' 0] ∪ Set.range ![z' 1, z' 2]) =
       Submodule.span ℤ_[2] (Set.range ![x] ∪ Set.range ![e, f]) := by
-    rw [range_three z', hspan, ← range_three ![x, e, f]]
+    rw [Matrix.range_cons_empty (z' 0), Matrix.range_cons_empty x, ← Matrix.range_cons,
+      ← Matrix.range_cons, ← hspan, ← FinVec.etaExpand_eq z']
     rfl
   have h5A : IsSquare (5 * (!![a] : Matrix (Fin 1) (Fin 1) ℤ_[2]).det * (!![5 * a]).det) :=
     ⟨5 * a, by rw [Matrix.det_fin_one_of, Matrix.det_fin_one_of]⟩
@@ -268,9 +218,9 @@ private theorem IsJordanSplitting.exists_signWalk_unary_binary [Module.Free ℤ_
       (by simpa using ha) (by simpa using h5a) hDu hD'u
       (fun i j ↦ by fin_cases i; fin_cases j <;> simp [hz'1, hz'2]) hspan' h5A h5D
   refine ⟨N', hN', hagree, hdu, hdp, fun C C' w w' hC hC' hw hw' ↦ ?_⟩
-  exact eight_dvd_sub_sub_four ha (hB.eight_dvd_sub_sub_of_eq_span hxx hz'0 hG
-    (fun j ↦ by simpa using hvt 0 j) (fun j ↦ by simpa using hv't 0 j) ha h5a hGu hNu hN'u hC hC'
-    hw hw')
+  exact (PadicInt.eight_dvd_sub_five_mul_sub_self_iff ha).mp
+    (hB.eight_dvd_sub_sub_of_eq_span hxx hz'0 hG (fun j ↦ by simpa using hvt 0 j)
+      (fun j ↦ by simpa using hv't 0 j) ha h5a hGu hNu hN'u hC hC' hw hw')
 
 /-- **Sign walking from a constituent of type I to the constituent of type II above it.** Let `N`
 be a Jordan splitting with respect to `2` of a symmetric form `B` on a finite free `ℤ_[2]`-module.
@@ -319,8 +269,8 @@ theorem IsJordanSplitting.exists_signWalk_succ_of_odd_of_even [Module.Free ℤ_[
             simp [hxx, hxe, hxf, hef, hee, hff, hB.eq e x, hB.eq f x, hB.eq f e, h1])
         (TauCeti.equivalent_toBilin'_unary_two_hyperbolic k ha)
       refine ⟨z', !![0, 1; 1, 0], !![2, 1; 1, 2], fun i j ↦ ?_, fun i j ↦ ?_,
-        isUnit_det_hyperbolic, isUnit_det_anisotropic,
-        isSquare_five_mul_det_hyperbolic_mul_det_anisotropic, by simpa using hz' 0 0,
+        TauCeti.isUnit_det_hyperbolic, TauCeti.isUnit_det_anisotropic,
+        TauCeti.isSquare_five_mul_det_hyperbolic_mul_det_anisotropic, by simpa using hz' 0 0,
         by simpa using hz' 0 1, by simpa using hz' 0 2, hspan⟩
       · fin_cases i <;> fin_cases j <;> simp [hef, hee, hff, hB.eq f e]
       · fin_cases i <;> fin_cases j <;> simp [hz', h1] <;> ring
@@ -331,8 +281,9 @@ theorem IsJordanSplitting.exists_signWalk_succ_of_odd_of_even [Module.Free ℤ_[
             simp [hxx, hxe, hxf, hef, hee, hff, hB.eq e x, hB.eq f x, hB.eq f e, h1, h2])
         (TauCeti.equivalent_toBilin'_unary_two_anisotropic k ha)
       refine ⟨z', !![2, 1; 1, 2], !![0, 1; 1, 0], fun i j ↦ ?_, fun i j ↦ ?_,
-        isUnit_det_anisotropic, isUnit_det_hyperbolic,
-        by simpa only [mul_right_comm] using isSquare_five_mul_det_hyperbolic_mul_det_anisotropic,
+        TauCeti.isUnit_det_anisotropic, TauCeti.isUnit_det_hyperbolic,
+        by simpa only [mul_right_comm] using
+          TauCeti.isSquare_five_mul_det_hyperbolic_mul_det_anisotropic,
         by simpa using hz' 0 0, by simpa using hz' 0 1, by simpa using hz' 0 2, hspan⟩
       · fin_cases i <;> fin_cases j <;> simp [hef, hee, hff, hB.eq f e, h1] <;> ring
       · fin_cases i <;> fin_cases j <;> simp [hz', h1]
@@ -387,8 +338,8 @@ theorem IsJordanSplitting.exists_signWalk_succ_of_even_of_odd [Module.Free ℤ_[
         (TauCeti.equivalent_toBilin'_two_unary_hyperbolic k ha)
       have hz'00 : B (z' 0) (z' 0) = 2 ^ k * (10 * a) := by simpa using hz' 0 0
       refine ⟨z', !![0, 1; 1, 0], !![2, 1; 1, 2], fun i j ↦ ?_, fun i j ↦ ?_,
-        isUnit_det_hyperbolic, isUnit_det_anisotropic,
-        isSquare_five_mul_det_hyperbolic_mul_det_anisotropic,
+        TauCeti.isUnit_det_hyperbolic, TauCeti.isUnit_det_anisotropic,
+        TauCeti.isSquare_five_mul_det_hyperbolic_mul_det_anisotropic,
         by rw [h1]; linear_combination hz'00, by simpa using hz' 0 1, by simpa using hz' 0 2,
         hspan⟩
       · fin_cases i <;> fin_cases j <;> simp [hef, hee, hff, hB.eq f e]
@@ -402,8 +353,9 @@ theorem IsJordanSplitting.exists_signWalk_succ_of_even_of_odd [Module.Free ℤ_[
         (TauCeti.equivalent_toBilin'_two_unary_anisotropic k ha)
       have hz'00 : B (z' 0) (z' 0) = 2 ^ k * (10 * a) := by simpa using hz' 0 0
       refine ⟨z', !![2, 1; 1, 2], !![0, 1; 1, 0], fun i j ↦ ?_, fun i j ↦ ?_,
-        isUnit_det_anisotropic, isUnit_det_hyperbolic,
-        by simpa only [mul_right_comm] using isSquare_five_mul_det_hyperbolic_mul_det_anisotropic,
+        TauCeti.isUnit_det_anisotropic, TauCeti.isUnit_det_hyperbolic,
+        by simpa only [mul_right_comm] using
+          TauCeti.isSquare_five_mul_det_hyperbolic_mul_det_anisotropic,
         by rw [h1]; linear_combination hz'00, by simpa using hz' 0 1, by simpa using hz' 0 2,
         hspan⟩
       · fin_cases i <;> fin_cases j <;> simp [hef, hee, hff, hB.eq f e, h1]
@@ -455,7 +407,8 @@ theorem IsJordanSplitting.exists_signWalk_add_two_of_odd_of_odd [Module.Free ℤ
       fin_cases i <;> fin_cases j <;> simp [hxx, hyy, hxy, hB.eq y x, h2]; ring) hwalk
   have hspan' : Submodule.span ℤ_[2] (Set.range ![z' 0] ∪ Set.range ![z' 1]) =
       Submodule.span ℤ_[2] (Set.range ![x] ∪ Set.range ![y]) := by
-    rw [range_two z', hspan, ← range_two ![x, y]]
+    rw [Matrix.range_cons_empty (z' 0), Matrix.range_cons_empty x, ← Matrix.range_cons,
+      ← Matrix.range_cons, ← hspan, ← FinVec.etaExpand_eq z']
     rfl
   have hz'0 : B (z' 0) (z' 0) = 2 ^ k * (5 * a) := by simpa using hz' 0 0
   have hz'1 : B (z' 1) (z' 1) = 2 ^ (k + 2) * (5 * b) := by
@@ -476,11 +429,11 @@ theorem IsJordanSplitting.exists_signWalk_add_two_of_odd_of_odd [Module.Free ℤ
       (fun i j ↦ by fin_cases i; fin_cases j; simpa using hz' 0 1) hspan' (h5 a) (h5 b)
   refine ⟨N', hN', hagree, hdk, hdl, fun C C' w w' hC hC' hw hw' ↦ ?_,
     fun C C' w w' hC hC' hw hw' ↦ ?_⟩
-  · exact eight_dvd_sub_sub_four ha (hB.eight_dvd_sub_sub_of_eq_span hxx hz'0 hG
-      (fun j ↦ by simpa using hvt 0 j) (fun j ↦ by simpa using hv't 0 j) ha h5a hGu hNk hN'k hC
-      hC' hw hw')
-  · exact eight_dvd_sub_sub_four hb (hB.eight_dvd_sub_sub_of_eq_span hyy hz'1 hH
-      (fun j ↦ by simpa using hws 0 j) (fun j ↦ by simpa using hw's 0 j) hb h5b hHu hNl hN'l hC
-      hC' hw hw')
+  · exact (PadicInt.eight_dvd_sub_five_mul_sub_self_iff ha).mp
+      (hB.eight_dvd_sub_sub_of_eq_span hxx hz'0 hG (fun j ↦ by simpa using hvt 0 j)
+        (fun j ↦ by simpa using hv't 0 j) ha h5a hGu hNk hN'k hC hC' hw hw')
+  · exact (PadicInt.eight_dvd_sub_five_mul_sub_self_iff hb).mp
+      (hB.eight_dvd_sub_sub_of_eq_span hyy hz'1 hH (fun j ↦ by simpa using hws 0 j)
+        (fun j ↦ by simpa using hw's 0 j) hb h5b hHu hNl hN'l hC hC' hw hw')
 
 end LinearMap.BilinForm
