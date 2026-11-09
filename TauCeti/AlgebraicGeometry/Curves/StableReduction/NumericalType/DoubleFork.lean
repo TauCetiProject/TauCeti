@@ -456,9 +456,7 @@ lemma IsSelfIntersectionMinusTwoFork.eq_or_eq_or_exists_lt_eq_of_card_eq {t : �
   classical
   have hleft_ne : ∀ i < t, left ≠ c i := fun _ hi ↦ hl.branch_ne_reverse hi
   have hlr := hr.opposite_branch_ne hl (by omega)
-  have hr_notMem : right ∉ (range t).image c := by
-    simp only [mem_image, mem_range, not_exists, not_and]
-    exact fun i hi h ↦ hr.branch_ne i hi h.symm
+  have hr_notMem := hr.branch_notMem_image
   have hl_notMem : left ∉ insert right ((range t).image c) := by
     simp only [mem_insert, mem_image, mem_range, not_or, not_exists, not_and]
     exact ⟨hlr, fun i hi h ↦ hleft_ne i hi h.symm⟩

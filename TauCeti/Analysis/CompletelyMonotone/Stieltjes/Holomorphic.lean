@@ -8,9 +8,9 @@ module
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import TauCeti.Analysis.CompletelyMonotone.Stieltjes.CompleteBernstein
 import Mathlib.Analysis.Calculus.ParametricIntegral
-import Mathlib.Analysis.Complex.Convex
-import Mathlib.Analysis.Convex.PathConnected
+import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The holomorphic extension of a Stieltjes function
@@ -209,12 +209,6 @@ plane, `a / z + b + ∫ x, (z + x)⁻¹ ∂μ` is zero exactly when `a`, `b` and
 theorem stieltjesExtension_eq_zero_iff (hμ : Integrable stieltjesWeight μ) (hz : z ∈ slitPlane) :
     stieltjesExtension μ a b z = 0 ↔ a = 0 ∧ b = 0 ∧ μ = 0 := by
   refine ⟨fun h => ?_, fun ⟨ha, hb, hμ0⟩ => by simp [stieltjesExtension, ha, hb, hμ0]⟩
-  -- A measure against which an integrable, everywhere positive function has integral zero is zero.
-  have measure_eq_zero {g : ℝ≥0 → ℝ} (hg : ∀ x, 0 < g x) (hgi : Integrable g μ)
-      (h0 : ∫ x, g x ∂μ = 0) : μ = 0 := by
-    have hsupp : Function.support g = univ := eq_univ_of_forall fun x => (hg x).ne'
-    have := (integral_pos_iff_support_of_nonneg (fun x => (hg x).le) hgi).not.mp h0.not_gt
-    rwa [hsupp, not_lt, nonpos_iff_eq_zero, Measure.measure_univ_eq_zero] at this
   suffices ha : a = 0 ∧ μ = 0 by
     obtain ⟨ha, hμ0⟩ := ha
     simpa [stieltjesExtension, ha, hμ0] using h
@@ -236,7 +230,8 @@ theorem stieltjesExtension_eq_zero_iff (hμ : Integrable stieltjesWeight μ) (hz
     have hI := integral_nonneg (μ := μ) fun x => (hpos x).le
     have hat : 0 ≤ (a : ℝ) / t := by positivity
     have hb' := b.coe_nonneg
-    refine ⟨?_, measure_eq_zero hpos (integrable_inv_add hμ ht) (by linarith)⟩
+    refine ⟨?_, MeasureTheory.measure_eq_zero_of_integral_eq_zero_of_ae_pos
+      (Eventually.of_forall hpos) (integrable_inv_add hμ ht) (by linarith)⟩
     have : (a : ℝ) / t = 0 := by linarith
     rw [div_eq_zero_iff, or_iff_left ht.ne'] at this
     exact_mod_cast this
@@ -257,7 +252,8 @@ theorem stieltjesExtension_eq_zero_iff (hμ : Integrable stieltjesWeight μ) (hz
     rw [im_stieltjesExtension hμ hz, zero_im, mul_eq_zero, neg_eq_zero, or_iff_right him] at h0
     have hI := integral_nonneg (μ := μ) fun x => (hpos x).le
     have ha : 0 ≤ (a : ℝ) / normSq z := div_nonneg a.coe_nonneg (normSq_nonneg z)
-    refine ⟨?_, measure_eq_zero hpos hint (by linarith)⟩
+    refine ⟨?_, MeasureTheory.measure_eq_zero_of_integral_eq_zero_of_ae_pos
+      (Eventually.of_forall hpos) hint (by linarith)⟩
     have : (a : ℝ) / normSq z = 0 := by linarith
     rw [div_eq_zero_iff, or_iff_left hz0] at this
     exact_mod_cast this
@@ -277,23 +273,9 @@ theorem stieltjesExtension_ofReal (h : RepresentsStieltjes μ a b f) {t : ℝ} (
 agrees on `(0, ∞)` with a represented Stieltjes function is its complex Stieltjes transform. -/
 theorem eqOn_stieltjesExtension (h : RepresentsStieltjes μ a b f) {F : ℂ → ℂ}
     (hF : AnalyticOnNhd ℂ F slitPlane) (hFf : ∀ t : ℝ, 0 < t → F t = f t) :
-    EqOn F (stieltjesExtension μ a b) slitPlane := by
-  have hpre : IsPreconnected slitPlane :=
-    (starConvex_one_slitPlane.isPathConnected one_mem_slitPlane).isConnected.isPreconnected
-  refine hF.eqOn_of_preconnected_of_frequently_eq
-    (analyticOnNhd_stieltjesExtension h.integrable_weight) hpre one_mem_slitPlane ?_
-  -- The two functions agree at the real points `1 + 1 / (n + 1)`, which tend to `1`.
-  have htend : Tendsto (fun n : ℕ => (((1 : ℝ) + 1 / ((n : ℝ) + 1) : ℝ) : ℂ)) atTop
-      (𝓝[≠] (1 : ℂ)) := by
-    refine tendsto_nhdsWithin_iff.mpr ⟨?_, Eventually.of_forall fun n => ?_⟩
-    · have h1 : Tendsto (fun n : ℕ => (1 : ℝ) + 1 / ((n : ℝ) + 1)) atTop (𝓝 1) := by
-        simpa using tendsto_one_div_add_atTop_nhds_zero_nat.const_add (1 : ℝ)
-      simpa [Function.comp_def] using (continuous_ofReal.tendsto 1).comp h1
-    · simp only [mem_compl_iff, mem_singleton_iff, ← ofReal_one, ofReal_inj]
-      have : (0 : ℝ) < 1 / ((n : ℝ) + 1) := by positivity
-      linarith
-  exact htend.frequently (Frequently.of_forall fun n => by
-    rw [hFf _ (by positivity), h.stieltjesExtension_ofReal (by positivity)])
+    EqOn F (stieltjesExtension μ a b) slitPlane :=
+  hF.eqOn_slitPlane_of_ofReal_pos_eq (analyticOnNhd_stieltjesExtension h.integrable_weight)
+    fun t ht => (hFf t ht).trans (h.stieltjesExtension_ofReal ht).symm
 
 end RepresentsStieltjes
 

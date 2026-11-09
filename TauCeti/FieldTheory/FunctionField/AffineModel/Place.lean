@@ -31,7 +31,8 @@ integrally closed, then swallows everything integral over `k[x]`.
 
 ## Main results
 
-* `TauCeti.Place.adjoin_le_integers_iff`: `k[x] ⊆ 𝒪_P` exactly when `x ∈ 𝒪_P`.
+* `TauCeti.Place.mem_integers_of_isIntegral_adjoin`: everything integral over `k[x]` lies in `𝒪_P`
+  as soon as `x ∈ 𝒪_P`.
 * `TauCeti.Place.center`: the height one prime of an affine model below a place finite on it,
   with `TauCeti.Place.valuation_center` identifying the adic valuation of that prime with the
   valuation of the place, `TauCeti.Place.center_injective` showing that a place finite on a
@@ -63,15 +64,6 @@ universe u v w
 variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F] (P : Place k F)
 
 section Integers
-
-/-- **`k[x]` lies in the valuation ring of `P` exactly when `x` has no pole at `P`**: the
-criterion selecting the places on the finite chart of `x`. Its additive form is obtained from
-`TauCeti.Place.mem_integers_iff_ord_nonneg`. -/
-theorem adjoin_le_integers_iff {x : F} :
-    (∀ y ∈ Algebra.adjoin k ({x} : Set F), y ∈ P.integers) ↔ x ∈ P.integers :=
-  ⟨fun h ↦ h x (Algebra.self_mem_adjoin_singleton k x), fun hx _ hy ↦
-    Algebra.adjoin_le (S := Subalgebra.mk P.integers.toSubring.toSubsemiring
-      P.algebraMap_mem_integers) (Set.singleton_subset_iff.mpr (by simpa using hx)) hy⟩
 
 /-- Every element of `F` integral over `k[x]` lies in the valuation ring of `P`, as soon as `x`
 has no pole at `P`. This is what makes the integral closure of `k[x]` in `F` — the affine model

@@ -81,6 +81,30 @@ private theorem pSeriesError_zero : pSeriesError F G p 0 = 0 := by
   rw [pSeriesError, PowerSeries.subst_zero, PowerSeries.subst_zero_of_constantCoeff_zero
     (G.constantCoeff_nsmulSeries p), sub_zero]
 
+omit [CharP K p] [F.IsComm] [G.IsComm] in
+/-- A series with zero constant coefficient has zero constant coefficient after raising to the
+power `p ^ h`. -/
+private theorem constantCoeff_pow_eq_zero (x : PowerSeries K)
+    (hx : PowerSeries.constantCoeff x = 0) :
+    constantCoeff (x ^ p ^ h : MvPowerSeries Unit K) = 0 := by
+  rw [map_pow, ← PowerSeries.constantCoeff_eq, hx, zero_pow (pow_ne_zero h hp.out.ne_zero)]
+
+omit [G.IsComm] in
+/-- Composing `c Xᴹ` with `[p]_F` gives a series whose coefficient of `X ^ (M p ^ h)` is `c uᴹ`,
+where `u` is the coefficient of `X ^ (p ^ h)` in `[p]_F`. -/
+private theorem coeff_subst_nsmulSeries_smul_X_pow (hF : F.height p = h) (M : ℕ) (c : K) :
+    PowerSeries.coeff (M * p ^ h) (PowerSeries.subst (F.nsmulSeries p)
+      (c • PowerSeries.X ^ M : PowerSeries K)) =
+        c * PowerSeries.coeff (p ^ h) (F.nsmulSeries p) ^ M := by
+  have hFp' := PowerSeries.HasSubst.of_constantCoeff_zero' (F.constantCoeff_nsmulSeries p)
+  have hdvd : PowerSeries.X ^ p ^ h ∣ F.nsmulSeries p :=
+    PowerSeries.X_pow_dvd_iff.mpr fun m hm ↦ PowerSeries.coeff_of_lt_order m
+      (by rw [F.height_eq_natCast_iff.mp hF]; exact_mod_cast hm)
+  obtain ⟨w, hw⟩ := hdvd
+  rw [PowerSeries.subst_smul hFp', PowerSeries.subst_pow hFp', PowerSeries.subst_X hFp', hw,
+    mul_pow, ← pow_mul, PowerSeries.coeff_smul, mul_comm (p ^ h) M]
+  simp [PowerSeries.coeff_X_pow_mul']
+
 /-- The coefficients of `f([p]_F(X)) - [p]_G(f(X))` in degrees below `(M + 1) p ^ h` only depend
 on the coefficients of `f` in degrees at most `M`. -/
 private theorem le_order_pSeriesError_sub (hF : F.height p = h) (hG : G.height p = h)
@@ -92,9 +116,7 @@ private theorem le_order_pSeriesError_sub (hF : F.height p = h) (hG : G.height p
   set ψ := (G.heightFrobeniusIso hG).toHom.toPowerSeries
   have hψ : constantCoeff (ψ : MvPowerSeries Unit K) = 0 :=
     (G.heightFrobeniusIso hG).toHom.zero_constantCoeff
-  have hq₀ (x : PowerSeries K) (hx : PowerSeries.constantCoeff x = 0) :
-      constantCoeff (x ^ p ^ h : MvPowerSeries Unit K) = 0 := by
-    rw [map_pow, ← PowerSeries.constantCoeff_eq, hx, zero_pow (pow_ne_zero h hp.out.ne_zero)]
+  have hq₀ := constantCoeff_pow_eq_zero (K := K) (p := p) (h := h)
   -- `f(X) - g(X)` composed with `[p]_F`, of order `p ^ h`
   have h₁ : ((M * p ^ h : ℕ) : ℕ∞) ≤
       MvPowerSeries.order (PowerSeries.subst (F.nsmulSeries p) (f - g)) := by
@@ -144,6 +166,7 @@ private theorem coeff_pSeriesError_add (hF : F.height p = h) (hG : G.height p = 
   set ψ := (G.heightFrobeniusIso hG).toHom.toPowerSeries
   have hψ : constantCoeff (ψ : MvPowerSeries Unit K) = 0 :=
     (G.heightFrobeniusIso hG).toHom.zero_constantCoeff
+  have hq₀ := constantCoeff_pow_eq_zero (K := K) (p := p) (h := h)
   have hcX : PowerSeries.constantCoeff (c • PowerSeries.X ^ M : PowerSeries K) = 0 := by
     simp [hM]
   have hfc : PowerSeries.constantCoeff (f + c • PowerSeries.X ^ M) = 0 := by
@@ -151,17 +174,8 @@ private theorem coeff_pSeriesError_add (hF : F.height p = h) (hG : G.height p = 
   have hFp := F.constantCoeff_nsmulSeries p
   have hFp' := PowerSeries.HasSubst.of_constantCoeff_zero' hFp
   -- the perturbation composed with `[p]_F`: `c [p]_F ^ M`, whose coefficient is `c uᴹ`
-  have hF₁ : PowerSeries.coeff (M * q) (PowerSeries.subst (F.nsmulSeries p)
-      (c • PowerSeries.X ^ M : PowerSeries K)) = c * PowerSeries.coeff q (F.nsmulSeries p) ^ M := by
-    obtain ⟨w, hw⟩ := PowerSeries.X_pow_dvd_iff.mpr fun m hm ↦ PowerSeries.coeff_of_lt_order m
-      (by rw [F.height_eq_natCast_iff.mp hF]; exact_mod_cast hm)
-    rw [PowerSeries.subst_smul hFp', PowerSeries.subst_pow hFp', PowerSeries.subst_X hFp', hw,
-      mul_pow, ← pow_mul, PowerSeries.coeff_smul, mul_comm q M]
-    simp [q, PowerSeries.coeff_X_pow_mul']
+  have hF₁ := coeff_subst_nsmulSeries_smul_X_pow hF M c
   -- `ψ((f + c Xᴹ) ^ q) - ψ(f ^ q) = ψ(f ^ q + c ^ q X^(M q)) - ψ(f ^ q)`, of coefficient `v c ^ q`
-  have hq₀ (x : PowerSeries K) (hx : PowerSeries.constantCoeff x = 0) :
-      constantCoeff (x ^ q : MvPowerSeries Unit K) = 0 := by
-    rw [map_pow, ← PowerSeries.constantCoeff_eq, hx, zero_pow (pow_ne_zero h hp.out.ne_zero)]
   have hdiff : (f + c • PowerSeries.X ^ M) ^ q - f ^ q =
       (c ^ q • PowerSeries.X ^ (M * q) : PowerSeries K) := by
     rw [add_pow_char_pow, smul_pow, ← pow_mul, add_sub_cancel_left]
@@ -172,8 +186,7 @@ private theorem coeff_pSeriesError_add (hF : F.height p = h) (hG : G.height p = 
   have hG₁ := MvPowerSeries.coeff_subst_sub_subst_of_degree_le ψ
     (a := fun _ ↦ ((f + c • PowerSeries.X ^ M) ^ q : PowerSeries K))
     (b := fun _ ↦ (f ^ q : PowerSeries K))
-    (hasSubst_of_constantCoeff_zero fun _ ↦ hq₀ _ hfc)
-    (hasSubst_of_constantCoeff_zero fun _ ↦ hq₀ f hf) (fun _ ↦ hq₀ _ hfc) (fun _ ↦ hq₀ f hf)
+    (fun _ ↦ hq₀ _ hfc) (fun _ ↦ hq₀ f hf)
     (fun _ ↦ hord) (e := Finsupp.single () (M * q)) (by simp)
   have hG₁' : PowerSeries.coeff (M * q) (PowerSeries.subst ((f + c • PowerSeries.X ^ M) ^ q) ψ -
       PowerSeries.subst (f ^ q) ψ) = PowerSeries.coeff 1 ψ * c ^ q := by
@@ -210,6 +223,56 @@ private theorem coeff_pSeriesError_of_lt (hF : F.height p = h) (hG : G.height p 
       _ = (p ^ h : ℕ) * 1 := (mul_one _).symm
       _ ≤ (p ^ h : ℕ) * f.order := by gcongr
 
+/-- Let `f` be a homomorphism from `F` to `G` up to degree `N ≥ 1`, with `N + 1 = pᵏ`, whose
+`p`-series failure vanishes in the degrees `pʲ p ^ h` with `pʲ ≤ N`. Then the degree-`N + 1` part
+of the homomorphism defect vanishes. -/
+private theorem homogeneousComponent_homDefect_eq_zero_of_pow (hF : F.height p = h)
+    (hG : G.height p = h) {f : PowerSeries K} (hf : PowerSeries.constantCoeff f = 0) {N k : ℕ}
+    (hN : N ≠ 0) (hk : N + 1 = p ^ k) (hΦ : ((N + 1 : ℕ) : ℕ∞) ≤ (F.homDefect G f).order)
+    (hP : ∀ j, p ^ j ≤ N → PowerSeries.coeff (p ^ j * p ^ h) (pSeriesError F G p f) = 0) :
+    homogeneousComponent (N + 1) (F.homDefect G f) = 0 := by
+  have hp' := hp.out
+  have hh := F.ne_zero_of_height_eq_natCast hF
+  have hpK : (p : K) = 0 := CharP.cast_eq_zero K p
+  have hk₀ : k ≠ 0 := by
+    rintro rfl
+    simp only [pow_zero] at hk
+    omega
+  have hP₀ : PowerSeries.coeff (N + 1) (pSeriesError F G p f) = 0 := by
+    rcases lt_or_ge k h with hkh | hkh
+    · exact coeff_pSeriesError_of_lt hF hG hf (hk ▸ Nat.pow_lt_pow_right hp'.one_lt hkh)
+    · rw [hk, ← Nat.pow_sub_mul_pow p hkh]
+      refine hP (k - h) ?_
+      have := Nat.pow_lt_pow_right hp'.one_lt (show k - h < k by omega)
+      omega
+  rw [hk, homogeneousComponent_homDefect_eq_smul_lazardCocycle hf hp' hpK hk₀ (hk ▸ hΦ),
+    ← neg_sub, map_neg, ← pSeriesError, ← hk, hP₀, neg_zero, zero_smul, MvPolynomial.coe_zero]
+
+/-- Let `f` be a homomorphism from `F` to `G` up to degree `N`, with `N + 1` not a power of `p`.
+Then some multiple of `(X + Y)ᴹ - Xᴹ - Yᴹ` cancels the degree-`M = N + 1` part of the
+homomorphism defect: since `M` is not a power of `p`, `lazardGcd M` is invertible in `K`. -/
+private theorem exists_smul_add_homogeneousComponent_homDefect_eq_zero
+    {f : PowerSeries K} (hf : PowerSeries.constantCoeff f = 0) {N : ℕ}
+    (hpow : ¬∃ k, N + 1 = p ^ k) (hΦ : ((N + 1 : ℕ) : ℕ∞) ≤ (F.homDefect G f).order) :
+    ∃ c : K, ((c • ((MvPolynomial.X 0 + MvPolynomial.X 1) ^ (N + 1) -
+      MvPolynomial.X 0 ^ (N + 1) - MvPolynomial.X 1 ^ (N + 1)) : MvPolynomial (Fin 2) K) :
+        MvPowerSeries (Fin 2) K) + homogeneousComponent (N + 1) (F.homDefect G f) = 0 := by
+  have hp' := hp.out
+  have hpK : (p : K) = 0 := CharP.cast_eq_zero K p
+  obtain ⟨r, hr⟩ := exists_homogeneousComponent_homDefect_eq_smul_lazardCocycle hf
+    (by omega : N + 1 ≠ 0) hΦ
+  have hd : IsUnit ((TauCeti.lazardGcd (N + 1) : ℕ) : K) := by
+    have hcop : (TauCeti.lazardGcd (N + 1)).Coprime p := Nat.Coprime.symm <|
+      (Nat.Prime.coprime_iff_not_dvd hp').mpr fun h ↦
+        hpow ((TauCeti.prime_dvd_lazardGcd_iff hp' (by omega)).mp h)
+    have : IsCoprime ((TauCeti.lazardGcd (N + 1) : ℕ) : K) (p : K) := by
+      simpa using (Nat.isCoprime_iff_coprime.mpr hcop).intCast (R := K)
+    rwa [hpK, isCoprime_zero_right] at this
+  refine ⟨-r * ↑hd.unit⁻¹, ?_⟩
+  rw [hr, ← MvPolynomial.coe_add, ← TauCeti.lazardGcd_nsmul_lazardCocycle (by omega),
+    ← Nat.cast_smul_eq_nsmul K, smul_smul, mul_assoc, hd.val_inv_mul, mul_one, ← add_smul,
+    neg_add_cancel, zero_smul, MvPolynomial.coe_zero]
+
 /-- **The inductive step.** Let `F` and `G` have the same finite height `h` over a separably
 closed field, and let `f` be a homomorphism from `F` to `G` up to degree `N ≥ 1`, whose `p`-series
 failure vanishes in the degrees `pʲ p ^ h` with `pʲ ≤ N`. Then for a suitable `c`, `f + c X^(N + 1)`
@@ -229,18 +292,13 @@ private theorem exists_le_order_homDefect_add [IsSepClosed K] (hF : F.height p =
         (pSeriesError F G p (f + c • PowerSeries.X ^ (N + 1))) = 0 := by
   have hp' := hp.out
   have hpK : (p : K) = 0 := CharP.cast_eq_zero K p
-  have hh : h ≠ 0 := by
-    have := F.one_le_height (p := p)
-    rw [hF] at this
-    exact_mod_cast (Nat.one_le_iff_ne_zero.mp (by exact_mod_cast this))
+  have hh := F.ne_zero_of_height_eq_natCast hF
   set M := N + 1 with hM
-  have hcX (c : K) : PowerSeries.constantCoeff (c • PowerSeries.X ^ M : PowerSeries K) = 0 := by
-    simp [M]
   have hXM (c : K) : (M : ℕ∞) ≤ (f + c • PowerSeries.X ^ M - f).order := by
     rw [add_sub_cancel_left]
     exact PowerSeries.nat_le_order _ _ fun i hi ↦ by simp [PowerSeries.coeff_X_pow, hi.ne]
   have hfc (c : K) : PowerSeries.constantCoeff (f + c • PowerSeries.X ^ M) = 0 := by
-    rw [map_add, hf, hcX, _root_.add_zero]
+    simp [hf, M]
   -- after adding `c Xᴹ`, the defect in degree `M` changes by `c ((X + Y)ᴹ - Xᴹ - Yᴹ)`
   have hord (c : K) (hc : ((c • ((MvPolynomial.X 0 + MvPolynomial.X 1) ^ M -
       MvPolynomial.X 0 ^ M - MvPolynomial.X 1 ^ M) : MvPolynomial (Fin 2) K) :
@@ -262,31 +320,16 @@ private theorem exists_le_order_homDefect_add [IsSepClosed K] (hF : F.height p =
       exact_mod_cast Nat.mul_lt_mul_of_pos_right hj (pow_pos hp'.pos h))
   by_cases hpow : ∃ k, M = p ^ k
   · obtain ⟨k, hk⟩ := hpow
-    have hk₀ : k ≠ 0 := by
-      rintro rfl
-      simp only [pow_zero] at hk
-      omega
     -- the defect in degree `M = pᵏ` is read off the `p`-series failure, which vanishes there
-    have hΦ₀ : homogeneousComponent M (F.homDefect G f) = 0 := by
-      have hP₀ : PowerSeries.coeff M (pSeriesError F G p f) = 0 := by
-        rcases lt_or_ge k h with hkh | hkh
-        · exact coeff_pSeriesError_of_lt hF hG hf (hk ▸ Nat.pow_lt_pow_right hp'.one_lt hkh)
-        · rw [hk, ← Nat.pow_sub_mul_pow p hkh]
-          refine hP (k - h) ?_
-          have := Nat.pow_lt_pow_right hp'.one_lt (show k - h < k by omega)
-          omega
-      rw [hk, homogeneousComponent_homDefect_eq_smul_lazardCocycle hf hp' hpK hk₀ (hk ▸ hΦ),
-        ← neg_sub, map_neg, ← pSeriesError, ← hk, hP₀, neg_zero, zero_smul, MvPolynomial.coe_zero]
+    have hΦ₀ := homogeneousComponent_homDefect_eq_zero_of_pow hF hG hf hN hk hΦ hP
     -- choose `c` to make the `p`-series failure vanish in degree `M p ^ h`
-    have hu : PowerSeries.coeff (p ^ h) (F.nsmulSeries p) ≠ 0 := by
-      have := (F.heightFrobeniusIso hF).isUnit_coeff_one
-      rwa [coeff_heightFrobeniusIso, mul_one, isUnit_iff_ne_zero] at this
     obtain ⟨c, hc⟩ := IsSepClosed.exists_root_C_mul_X_pow_add_C_mul_X_add_C
       (-PowerSeries.coeff (p ^ h) (G.nsmulSeries p))
       (PowerSeries.coeff (p ^ h) (F.nsmulSeries p) ^ M)
       (PowerSeries.coeff (M * p ^ h) (pSeriesError F G p f))
       (by rw [Nat.cast_pow, hpK, zero_pow hh])
-      (by have := Nat.one_lt_pow hh hp'.one_lt; omega) (pow_ne_zero _ hu)
+      (by have := Nat.one_lt_pow hh hp'.one_lt; omega)
+      (pow_ne_zero _ (F.coeff_nsmulSeries_ne_zero_of_height_eq hF))
     refine ⟨c, hord c ?_, fun j hj ↦ ?_⟩
     · -- `(X + Y) ^ pᵏ = X ^ pᵏ + Y ^ pᵏ` in characteristic `p`
       rw [hΦ₀, _root_.add_zero, hk, add_pow_char_pow]
@@ -297,20 +340,9 @@ private theorem exists_le_order_homDefect_add [IsSepClosed K] (hF : F.height p =
         linear_combination hc
   · -- the defect in degree `M` is `r C_M`, where `d_M` is prime to `p`, hence a unit, and
     -- `r C_M = (r d_M⁻¹) ((X + Y)ᴹ - Xᴹ - Yᴹ)`
-    obtain ⟨r, hr⟩ := exists_homogeneousComponent_homDefect_eq_smul_lazardCocycle hf
-      (by omega : M ≠ 0) hΦ
-    have hd : IsUnit ((TauCeti.lazardGcd M : ℕ) : K) := by
-      have hcop : (TauCeti.lazardGcd M).Coprime p := Nat.Coprime.symm <|
-        (Nat.Prime.coprime_iff_not_dvd hp').mpr fun h ↦
-          hpow ((TauCeti.prime_dvd_lazardGcd_iff hp' (by omega)).mp h)
-      have : IsCoprime ((TauCeti.lazardGcd M : ℕ) : K) (p : K) := by
-        simpa using (Nat.isCoprime_iff_coprime.mpr hcop).intCast (R := K)
-      rwa [hpK, isCoprime_zero_right] at this
-    refine ⟨-r * ↑hd.unit⁻¹, hord _ ?_, fun j hj ↦
-      hlow _ (hj.lt_of_ne fun h ↦ hpow ⟨j, h.symm⟩)⟩
-    rw [hr, ← MvPolynomial.coe_add, ← TauCeti.lazardGcd_nsmul_lazardCocycle (by omega),
-      ← Nat.cast_smul_eq_nsmul K, smul_smul, mul_assoc, hd.val_inv_mul, mul_one, ← add_smul,
-      neg_add_cancel, zero_smul, MvPolynomial.coe_zero]
+    obtain ⟨c, hc⟩ :=
+      exists_smul_add_homogeneousComponent_homDefect_eq_zero (F := F) (G := G) hf hpow hΦ
+    exact ⟨c, hord c hc, fun j hj ↦ hlow _ (hj.lt_of_ne fun h ↦ hpow ⟨j, h.symm⟩)⟩
 
 section Construction
 
@@ -320,6 +352,72 @@ private noncomputable def approx (c₁ : K) (c : ℕ → PowerSeries K → K) : 
   | 0 => c₁ • PowerSeries.X ^ 1
   | n + 1 => approx c₁ c n + c n (approx c₁ c n) • PowerSeries.X ^ (n + 2)
 
+/-- A nonzero root of `x ^ (p ^ h - 1) = u / v`, where `u` and `v` are the coefficients of
+`X ^ (p ^ h)` in `[p]_F` and `[p]_G`; it is the linear coefficient of the isomorphism. -/
+private theorem exists_pow_sub_one_eq_div [IsSepClosed K] (hF : F.height p = h)
+    (hG : G.height p = h) : ∃ c₁ : K, c₁ ≠ 0 ∧ c₁ ^ (p ^ h - 1) =
+      PowerSeries.coeff (p ^ h) (F.nsmulSeries p) /
+        PowerSeries.coeff (p ^ h) (G.nsmulSeries p) := by
+  have hh := F.ne_zero_of_height_eq_natCast hF
+  have hpK : (p : K) = 0 := CharP.cast_eq_zero K p
+  have : NeZero ((p ^ h - 1 : ℕ) : K) := ⟨by
+    rw [Nat.cast_sub (by have := Nat.one_lt_pow hh hp.out.one_lt; omega), Nat.cast_pow, hpK,
+      zero_pow hh, Nat.cast_one, zero_sub]
+    exact neg_ne_zero.mpr one_ne_zero⟩
+  obtain ⟨c₁, hc₁⟩ := IsSepClosed.exists_pow_nat_eq
+    (PowerSeries.coeff (p ^ h) (F.nsmulSeries p) / PowerSeries.coeff (p ^ h) (G.nsmulSeries p))
+    (p ^ h - 1)
+  refine ⟨c₁, ?_, hc₁⟩
+  rintro rfl
+  have h1 := Nat.one_lt_pow hh hp.out.one_lt
+  rw [zero_pow (by omega)] at hc₁
+  exact div_ne_zero (F.coeff_nsmulSeries_ne_zero_of_height_eq hF)
+    (G.coeff_nsmulSeries_ne_zero_of_height_eq hG) hc₁.symm
+
+/-- The first approximation `c₁ X`, where `c₁ ^ (p ^ h - 1) = u / v`, has homomorphism defect
+vanishing below degree `2` (it is a homomorphism up to degree `1`) and satisfies the
+`p`-series condition in degree `p ^ h`. -/
+private theorem approx_zero_spec (hF : F.height p = h) (hG : G.height p = h) {c₁ : K}
+    (hc₁ : c₁ ^ (p ^ h - 1) = PowerSeries.coeff (p ^ h) (F.nsmulSeries p) /
+      PowerSeries.coeff (p ^ h) (G.nsmulSeries p)) :
+    PowerSeries.constantCoeff (c₁ • PowerSeries.X ^ 1 : PowerSeries K) = 0 ∧
+      PowerSeries.coeff 1 (c₁ • PowerSeries.X ^ 1 : PowerSeries K) = c₁ ∧
+      ((2 : ℕ) : ℕ∞) ≤ (F.homDefect G (c₁ • PowerSeries.X ^ 1 : PowerSeries K)).order ∧
+      ∀ j, p ^ j ≤ 1 → PowerSeries.coeff (p ^ j * p ^ h)
+        (pSeriesError F G p (c₁ • PowerSeries.X ^ 1 : PowerSeries K)) = 0 := by
+  have hp' := hp.out
+  have hu := F.coeff_nsmulSeries_ne_zero_of_height_eq hF
+  have hv := G.coeff_nsmulSeries_ne_zero_of_height_eq hG
+  have h₀ : (c₁ • PowerSeries.X ^ 1 : PowerSeries K) = 0 + c₁ • PowerSeries.X ^ 1 := by
+    rw [_root_.zero_add]
+  refine ⟨by simp, by simp, ?_, fun j hj ↦ ?_⟩
+  · have h₁ : ((1 : ℕ) : ℕ∞) ≤ (F.homDefect G (c₁ • PowerSeries.X ^ 1 : PowerSeries K)).order := by
+      rw [← sub_zero (F.homDefect G _), ← homDefect_zero (F := F) (G := G)]
+      refine le_order_homDefect_sub (by simp) (map_zero _) ?_
+      rw [sub_zero, Nat.cast_one]
+      exact PowerSeries.one_le_order_iff_constCoeff_eq_zero.mpr (by simp)
+    refine succ_le_order_of_homogeneousComponent_eq_zero h₁ ?_
+    have := homogeneousComponent_homDefect_add_sub (F := F) (G := G) (map_zero _)
+      one_ne_zero c₁
+    rw [← h₀, homDefect_zero, sub_zero] at this
+    rw [this]
+    simp
+  · obtain rfl : j = 0 := by
+      by_contra hj₀
+      have := Nat.one_lt_pow hj₀ hp'.one_lt
+      omega
+    have hc₁q : c₁ ^ p ^ h = c₁ * (PowerSeries.coeff (p ^ h) (F.nsmulSeries p) /
+        PowerSeries.coeff (p ^ h) (G.nsmulSeries p)) := by
+      rw [← hc₁, ← pow_succ']
+      congr 1
+      have := Nat.one_lt_pow (F.ne_zero_of_height_eq_natCast hF) hp'.one_lt
+      omega
+    rw [h₀, pow_zero, one_mul, ← one_mul (p ^ h),
+      coeff_pSeriesError_add hF hG (map_zero _) one_ne_zero, pSeriesError_zero, map_zero,
+      _root_.zero_add, pow_one, hc₁q]
+    field_simp
+    ring
+
 /-- **Existence of an isomorphism.** Two commutative formal group laws of the same finite height
 over a separably closed field of characteristic `p` are related by a homomorphism with nonzero
 linear coefficient. It is the limit of the approximations built by
@@ -328,30 +426,7 @@ linear coefficient. It is the limit of the approximations built by
 private theorem exists_formalGroupHom_coeff_one_ne_zero [IsSepClosed K] (hF : F.height p = h)
     (hG : G.height p = h) :
     ∃ f : TauCeti.FormalGroupHom F G, PowerSeries.coeff 1 f.toPowerSeries ≠ 0 := by
-  have hp' := hp.out
-  have hpK : (p : K) = 0 := CharP.cast_eq_zero K p
-  have hh : h ≠ 0 := by
-    have := F.one_le_height (p := p)
-    rw [hF] at this
-    exact_mod_cast (Nat.one_le_iff_ne_zero.mp (by exact_mod_cast this))
-  have hq : 2 ≤ p ^ h := by have := Nat.one_lt_pow hh hp'.one_lt; omega
-  set u := PowerSeries.coeff (p ^ h) (F.nsmulSeries p)
-  set v := PowerSeries.coeff (p ^ h) (G.nsmulSeries p)
-  have hu : u ≠ 0 := by
-    have := (F.heightFrobeniusIso hF).isUnit_coeff_one
-    rwa [coeff_heightFrobeniusIso, mul_one, isUnit_iff_ne_zero] at this
-  have hv : v ≠ 0 := by
-    have := (G.heightFrobeniusIso hG).isUnit_coeff_one
-    rwa [coeff_heightFrobeniusIso, mul_one, isUnit_iff_ne_zero] at this
-  -- the linear coefficient: a root of `x ^ (p ^ h - 1) = u / v`
-  have : NeZero ((p ^ h - 1 : ℕ) : K) := ⟨by
-    rw [Nat.cast_sub (by omega), Nat.cast_pow, hpK, zero_pow hh, Nat.cast_one, zero_sub]
-    exact neg_ne_zero.mpr one_ne_zero⟩
-  obtain ⟨c₁, hc₁⟩ := IsSepClosed.exists_pow_nat_eq (u / v) (p ^ h - 1)
-  have hc₁₀ : c₁ ≠ 0 := by
-    rintro rfl
-    rw [zero_pow (by omega)] at hc₁
-    exact div_ne_zero hu hv hc₁.symm
+  obtain ⟨c₁, hc₁₀, hc₁⟩ := exists_pow_sub_one_eq_div hF hG
   choose! c hc using fun (n : ℕ) (g : PowerSeries K) (hg : PowerSeries.constantCoeff g = 0)
     (hΦ : ((n + 2 : ℕ) : ℕ∞) ≤ (F.homDefect G g).order)
     (hP : ∀ j, p ^ j ≤ n + 1 → PowerSeries.coeff (p ^ j * p ^ h) (pSeriesError F G p g) = 0) ↦
@@ -363,33 +438,7 @@ private theorem exists_formalGroupHom_coeff_one_ne_zero [IsSepClosed K] (hF : F.
       ∀ j, p ^ j ≤ n + 1 →
         PowerSeries.coeff (p ^ j * p ^ h) (pSeriesError F G p (approx c₁ c n)) = 0 := by
     induction n with
-    | zero =>
-      have h₀ : approx c₁ c 0 = 0 + c₁ • PowerSeries.X ^ 1 := by rw [approx, _root_.zero_add]
-      refine ⟨by simp [approx], by simp [approx], ?_, fun j hj ↦ ?_⟩
-      · have h₁ : ((1 : ℕ) : ℕ∞) ≤ (F.homDefect G (approx c₁ c 0)).order := by
-          rw [← sub_zero (F.homDefect G _), ← homDefect_zero (F := F) (G := G)]
-          refine le_order_homDefect_sub (by simp [approx]) (map_zero _) ?_
-          rw [sub_zero, Nat.cast_one]
-          exact PowerSeries.one_le_order_iff_constCoeff_eq_zero.mpr (by simp [approx])
-        refine succ_le_order_of_homogeneousComponent_eq_zero h₁ ?_
-        have := homogeneousComponent_homDefect_add_sub (F := F) (G := G) (map_zero _)
-          one_ne_zero c₁
-        rw [← h₀, homDefect_zero, sub_zero] at this
-        rw [this]
-        simp
-      · obtain rfl : j = 0 := by
-          by_contra hj₀
-          have := Nat.one_lt_pow hj₀ hp'.one_lt
-          omega
-        have hc₁q : c₁ ^ p ^ h = c₁ * (u / v) := by
-          rw [← hc₁, ← pow_succ']
-          congr 1
-          omega
-        rw [h₀, pow_zero, one_mul, ← one_mul (p ^ h),
-          coeff_pSeriesError_add hF hG (map_zero _) one_ne_zero, pSeriesError_zero, map_zero,
-          _root_.zero_add, pow_one, hc₁q]
-        field_simp
-        ring
+    | zero => simpa only [approx, Nat.zero_add] using approx_zero_spec hF hG hc₁
     | succ n ih =>
       obtain ⟨h₀, h₁, hord, hP⟩ := ih
       obtain ⟨hord', hP'⟩ := hc n (approx c₁ c n) h₀ hord hP

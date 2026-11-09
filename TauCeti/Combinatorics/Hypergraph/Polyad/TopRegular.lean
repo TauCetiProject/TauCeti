@@ -95,6 +95,27 @@ theorem isTopRegularOverPolyad_iff : H.IsTopRegularOverPolyad P δ r ↔
       |(H.relDensityOn c (unionSupport Q) : ℝ) - H.relativeDensity c P| ≤ δ :=
   Iff.rfl
 
+variable (H r) in
+/-- Every polyad over `S` that is not `(δ, r)`-top-regular has `r` subpolyads whose union carries
+at least a `δ`-proportion of its support and whose relative density in some top color deviates
+from that of the polyad by at least `δ`. -/
+theorem exists_subpolyads_witnessing_irregularity (S : PairSkeleton3 κ₂ V) :
+    ∃ Q : (P : Polyad3 S) → Fin r → Subpolyad3 P, ∀ P : Polyad3 S,
+      ¬H.IsTopRegularOverPolyad P δ r → ∃ c,
+        δ * #P.support ≤ #(unionSupport (Q P)) ∧
+          δ ≤ |(H.relDensityOn c (unionSupport (Q P)) : ℝ) - H.relativeDensity c P| := by
+  classical
+  have hw (P : Polyad3 S) : ∃ Q : Fin r → Subpolyad3 P, ¬H.IsTopRegularOverPolyad P δ r →
+      ∃ c, δ * #P.support ≤ #(unionSupport Q) ∧
+        δ ≤ |(H.relDensityOn c (unionSupport Q) : ℝ) - H.relativeDensity c P| := by
+    by_cases hP : H.IsTopRegularOverPolyad P δ r
+    · exact ⟨fun _ ↦ ofSubcells P ∅ ∅ ∅, fun h ↦ (h hP).elim⟩
+    · simp only [isTopRegularOverPolyad_iff, not_forall, not_le] at hP
+      obtain ⟨c, Q, hQ, hdev⟩ := hP
+      exact ⟨Q, fun _ ↦ ⟨c, hQ, hdev.le⟩⟩
+  choose Q hQ using hw
+  exact ⟨Q, hQ⟩
+
 /-- **The rank-`r` test.** A `(δ, r)`-top-regular coloring passes the test on the union of any
 family of at most `r` subpolyads, indexed by an arbitrary finite type. -/
 theorem IsTopRegularOverPolyad.abs_relDensityOn_sub_le (h : H.IsTopRegularOverPolyad P δ r)
