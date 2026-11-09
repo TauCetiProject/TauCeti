@@ -27,7 +27,7 @@ The square root of a natural power of a nonnegative real is the real power with 
 an `n × n` matrix contributes to a volume density `√(det G)`.
 
 A real power of a nonnegative base can also be written as a power of its square:
-`(x ^ 2) ^ (s / 2) = x ^ s`.
+`(x ^ 2) ^ (s / 2) = x ^ s`, and as the square of a power: `(x ^ (s / 2)) ^ 2 = x ^ s`.
 
 For `i < d`, comparing the `(d - i)`-th root `x ^ (1 / (d - i))` with `y` is comparing `x` with
 the natural power `y ^ (d - i)`, the form in which spectral values of polynomials are bounded.
@@ -80,6 +80,7 @@ with the corresponding integral of `q`-th powers.
 * `Real.sqrt_pow_eq_rpow`: `√(x ^ n) = x ^ (n / 2)` for `0 ≤ x`.
 * `Real.pow_sqrt_eq_rpow`: `√x ^ n = x ^ (n / 2)` for `0 ≤ x`.
 * `Real.sq_rpow_div_two`: `(x ^ 2) ^ (s / 2) = x ^ s` for `0 ≤ x`.
+* `Real.rpow_div_two_sq`: `(x ^ (s / 2)) ^ 2 = x ^ s` for `0 ≤ x`.
 * `Real.rpow_one_div_natCast_sub_le_iff`: `x ^ (1 / (d - i)) ≤ y ↔ x ≤ y ^ (d - i)` for `i < d`
   and nonnegative `x`, `y`.
 * `Real.rpow_one_sub_inv_natCast_pow`: `(x ^ (1 - 1/n)) ^ n = x ^ (n - 1)` for `0 ≤ x` and
@@ -154,6 +155,11 @@ theorem pow_sqrt_eq_rpow {x : ℝ} (hx : 0 ≤ x) (n : ℕ) : √x ^ n = x ^ ((n
 @[simp]
 theorem sq_rpow_div_two {a : ℝ} (ha : 0 ≤ a) (s : ℝ) : (a ^ 2) ^ (s / 2) = a ^ s := by
   rw [rpow_div_two_eq_sqrt s (sq_nonneg a), sqrt_sq ha]
+
+/-- For a nonnegative real number `a`, squaring the real power `a ^ (s / 2)` gives `a ^ s`. -/
+@[simp]
+theorem rpow_div_two_sq {a : ℝ} (ha : 0 ≤ a) (s : ℝ) : (a ^ (s / 2)) ^ 2 = a ^ s := by
+  rw [← rpow_mul_natCast ha, Nat.cast_ofNat, div_mul_cancel₀ s two_ne_zero]
 
 /-- For `i < d`, the `(d - i)`-th root of a nonnegative `x` is at most a nonnegative `y` exactly
 when `x ≤ y ^ (d - i)`. -/

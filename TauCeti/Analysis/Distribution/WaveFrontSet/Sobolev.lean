@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
@@ -178,21 +179,6 @@ theorem isMicrolocallySobolevAt_of_memLp {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x : E} 
 
 /-! ### Comparison with the wave front set -/
 
-/-- `(1 + ‖η‖) ^ (-(d + 1))` is square integrable in dimension `d`. -/
-private theorem memLp_two_one_add_norm_rpow_neg :
-    MemLp (fun η : E ↦ (1 + ‖η‖) ^ (-((finrank ℝ E : ℝ) + 1))) 2 := by
-  have hcont : Continuous fun η : E ↦ (1 + ‖η‖) ^ (-((finrank ℝ E : ℝ) + 1)) :=
-    (continuous_const.add continuous_norm).rpow_const fun _ ↦
-      Or.inl (add_pos_of_pos_of_nonneg one_pos (norm_nonneg _)).ne'
-  refine (memLp_two_iff_integrable_sq_norm hcont.aestronglyMeasurable).2
-    ((integrable_one_add_norm (E := E) (μ := volume)
-      (r := 2 * ((finrank ℝ E : ℝ) + 1)) (by linarith)).congr (.of_forall fun η ↦ ?_))
-  beta_reduce
-  rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
-  congr 1
-  push_cast
-  ring
-
 /-- Microlocal smoothness implies being microlocally `H^s` for every `s`. -/
 theorem IsMicrolocallySmoothAt.isMicrolocallySobolevAt {T : 𝓓'(Ω, ℂ)} {x ξ : E}
     (h : T.IsMicrolocallySmoothAt x ξ) (s : ℝ) : T.IsMicrolocallySobolevAt s x ξ := by
@@ -200,7 +186,8 @@ theorem IsMicrolocallySmoothAt.isMicrolocallySobolevAt {T : 𝓓'(Ω, ℂ)} {x �
   refine IsMicrolocallySobolevAt.mono ?_ hk
   obtain ⟨φ, hφ, Γ, hΓ, hξ, hcone, hdecay⟩ := isMicrolocallySmoothAt_iff.1 h
   obtain ⟨C, hC⟩ := hdecay (k + finrank ℝ E + 1)
-  refine ⟨φ, hφ, Γ, hΓ, hξ, hcone, ((memLp_two_one_add_norm_rpow_neg.const_mul C).restrict Γ).mono
+  refine ⟨φ, hφ, Γ, hΓ, hξ, hcone, (((TauCeti.memLp_two_one_add_norm_rpow_neg (V := E) volume
+    (r := finrank ℝ E + 1) (by linarith)).const_mul C).restrict Γ).mono
     (aestronglyMeasurable_weight_smul_localFourier _ T φ _)
     ((ae_restrict_iff' hΓ.measurableSet).2 (.of_forall fun η hη ↦ ?_))⟩
   -- With `a = 1 + ‖η‖`, the weight is at most `a ^ k` and the decay bound gives
@@ -306,15 +293,6 @@ private theorem norm_weight_smul_localFourier_delta (s : ℝ) (x₀ : E) (φ : �
   rw [localFourier_delta, norm_smul, norm_mul, Circle.norm_coe, mul_one,
     Real.norm_of_nonneg (by positivity), mul_comm]
 
-/-- The square of the weight `y ^ (s / 2)` is the power `y ^ (-(-2 s) / 2)` in the form of
-`integrable_rpow_neg_one_add_norm_sq`. -/
-private theorem rpow_div_two_sq {y : ℝ} (hy : 0 ≤ y) (s : ℝ) :
-    (y ^ (s / 2)) ^ 2 = y ^ (-(-2 * s) / 2) := by
-  rw [← Real.rpow_natCast, ← Real.rpow_mul hy]
-  congr 1
-  push_cast
-  ring
-
 /-- **Point masses are `H^s` below the critical order.** In dimension `d`, the point mass at `x₀`
 has empty `H^s` wave front set for `s < -d / 2`. -/
 theorem sobolevWaveFrontSet_delta_eq_empty {s : ℝ} (hs : (finrank ℝ E : ℝ) < -2 * s) (x₀ : E) :
@@ -328,7 +306,8 @@ theorem sobolevWaveFrontSet_delta_eq_empty {s : ℝ} (hs : (finrank ℝ E : ℝ)
   refine ((integrable_rpow_neg_one_add_norm_sq (μ := volume) hs).const_mul (‖φ x₀‖ ^ 2)).congr
     (.of_forall fun η ↦ ?_)
   simp only [norm_weight_smul_localFourier_delta, mul_pow,
-    rpow_div_two_sq (by positivity : (0 : ℝ) ≤ 1 + ‖η‖ ^ 2)]
+    Real.rpow_div_two_sq (by positivity : (0 : ℝ) ≤ 1 + ‖η‖ ^ 2),
+    show -(-2 * s) / 2 = s by ring]
 
 /-- **The `H^s` wave front set of a point mass.** In dimension `d`, the point mass at `x₀ ∈ Ω`
 has `H^s` wave front set `{x₀} × (E \ {0})` for `s ≥ -d / 2`: its localized Fourier transform has
@@ -348,6 +327,7 @@ theorem sobolevWaveFrontSet_delta {s : ℝ} (hs : -2 * s ≤ finrank ℝ E) {x�
     ((hint.const_mul (‖φ x‖ ^ 2)⁻¹).congr (.of_forall fun η ↦ ?_))
   have hφ2 : ‖φ x‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 hφ)
   simp only [norm_weight_smul_localFourier_delta, mul_pow,
-    rpow_div_two_sq (by positivity : (0 : ℝ) ≤ 1 + ‖η‖ ^ 2), inv_mul_cancel_left₀ hφ2]
+    Real.rpow_div_two_sq (by positivity : (0 : ℝ) ≤ 1 + ‖η‖ ^ 2),
+    show -(-2 * s) / 2 = s by ring, inv_mul_cancel_left₀ hφ2]
 
 end Distribution

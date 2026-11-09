@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.Analysis.Distribution.ComplexPairing
 import TauCeti.Analysis.Distribution.Support
+import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Fourier.Decay
@@ -251,21 +252,6 @@ theorem waveFrontSet_smul {c : ℂ} (hc : c ≠ 0) (T : 𝓓'(Ω, ℂ)) :
 @[simp]
 theorem waveFrontSet_neg (T : 𝓓'(Ω, ℂ)) : (-T).waveFrontSet = T.waveFrontSet := by
   rw [← neg_one_smul ℂ T, waveFrontSet_smul (neg_ne_zero.2 one_ne_zero)]
-
-/-- Conjugating a complex test function twice gives it back. -/
-@[simp]
-theorem _root_.TestFunction.postcompCLM_conj_postcompCLM_conj (φ : 𝓓(Ω, ℂ)) :
-    postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap
-      (postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap φ) = φ := by
-  ext y
-  simp
-
-/-- Conjugating a complex distribution twice gives it back. -/
-@[simp]
-theorem mapCLM_conj_mapCLM_conj (T : 𝓓'(Ω, ℂ)) :
-    mapCLM conjCLE.toContinuousLinearMap (mapCLM conjCLE.toContinuousLinearMap T) = T := by
-  ext φ
-  simp [mapCLM_apply]
 
 /-- The localized Fourier transform of the complex conjugate distribution is the conjugate of the
 localized Fourier transform at the opposite frequency, with conjugate cutoff. -/

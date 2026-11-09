@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import TauCeti.Analysis.SpecialFunctions.Beta
 public import Mathlib.NumberTheory.Harmonic.Defs
 import Mathlib.MeasureTheory.Constructions.HaarToSphere
+import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Group.Integral
@@ -51,6 +52,8 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
 * `TauCeti.not_integrableOn_rpow_neg_one_add_norm_sq`: for `r ≤ d` the bracket
   `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is not integrable over any open cone containing a nonzero vector.
+* `TauCeti.memLp_two_one_add_norm_rpow_neg`: the power `x ↦ (1 + ‖x‖) ^ (-r)` is square
+  integrable for `d < 2 r`, for every additive Haar measure.
 * `TauCeti.integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq`,
   `TauCeti.integral_norm_rpow_mul_rpow_neg_one_add_norm_sq`: integrability and value of the
   radial moments of the Japanese bracket, for every additive Haar measure.
@@ -213,6 +216,21 @@ theorem not_integrableOn_rpow_neg_one_add_norm_sq (μ : Measure V) [μ.IsAddHaar
   exact lt_irrefl _ (hint.hasFiniteIntegral.trans_le htop)
 
 end Cone
+
+/-- The power `x ↦ (1 + ‖x‖) ^ (-r)` is square integrable for every additive Haar measure on a
+finite-dimensional real normed space of dimension `d < 2 r`. -/
+theorem memLp_two_one_add_norm_rpow_neg (μ : Measure V) [μ.IsAddHaarMeasure] {r : ℝ}
+    (hr : (finrank ℝ V : ℝ) < 2 * r) : MemLp (fun x : V ↦ (1 + ‖x‖) ^ (-r)) 2 μ := by
+  have hcont : Continuous fun x : V ↦ (1 + ‖x‖) ^ (-r) :=
+    (continuous_const.add continuous_norm).rpow_const fun _ ↦
+      Or.inl (add_pos_of_pos_of_nonneg one_pos (norm_nonneg _)).ne'
+  refine (memLp_two_iff_integrable_sq_norm hcont.aestronglyMeasurable).2
+    ((integrable_one_add_norm (μ := μ) hr).congr (.of_forall fun x ↦ ?_))
+  beta_reduce
+  rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
+  congr 1
+  push_cast
+  ring
 
 /-- The radial moment `x ↦ ‖x‖ ^ p (1 + ‖x‖ ^ 2) ^ (-r / 2)` of order `p ≥ 0` of the Japanese
 bracket is integrable for every additive Haar measure when its decay exponent exceeds
