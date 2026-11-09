@@ -27,6 +27,8 @@ operators.
 * `TauCeti.TotallyRealLoop.isMaximalTotallyReal`: every subspace of such a loop is maximal
   totally real.
 * `TauCeti.TotallyRealLoop.const`: the constant loop at a maximal totally real subspace.
+* `Continuous.continuousLinearEquiv_smulLeft`: scalar multiplication by a continuous family of
+  units is a continuous family of automorphisms, as in the frames of the rotations below.
 * `TauCeti.exists_frame_map`: composing a frame with a continuous family of automorphisms gives a
   frame of the image.
 * `TauCeti.TotallyRealLoop.map`: the pointwise image `t ↦ B t (Λ t)` under a loop `B` of
@@ -46,6 +48,19 @@ public section
 
 open Real
 open scoped unitInterval
+
+/-- Scalar multiplication by a continuous family of units is a continuous family of
+automorphisms. -/
+theorem Continuous.continuousLinearEquiv_smulLeft {𝕜 F X : Type*} [NontriviallyNormedField 𝕜]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace X] {u : X → 𝕜ˣ}
+    (hu : Continuous fun x => (u x : 𝕜)) :
+    Continuous fun x => ((ContinuousLinearEquiv.smulLeft (u x) : F ≃L[𝕜] F) : F →L[𝕜] F) := by
+  have h (x : X) : ((ContinuousLinearEquiv.smulLeft (u x) : F ≃L[𝕜] F) : F →L[𝕜] F) =
+      (u x : 𝕜) • ContinuousLinearMap.id 𝕜 F := by
+    ext y
+    simp [Units.smul_def]
+  simp_rw [h]
+  exact hu.smul continuous_const
 
 namespace TauCeti
 
@@ -178,13 +193,8 @@ private theorem rotationFrame_toLinearEquiv (a : ℝ) (t : I) :
   simp [rotationFrame]
 
 private theorem continuous_rotationFrame (a : ℝ) :
-    Continuous fun t => (rotationFrame (E := E) a t : E →L[ℂ] E) := by
-  have h (t : I) : (rotationFrame (E := E) a t : E →L[ℂ] E) =
-      Complex.exp ((a * t : ℝ) * Complex.I) • ContinuousLinearMap.id ℂ E := by
-    ext x
-    simp [rotationFrame]
-  simp_rw [h]
-  fun_prop
+    Continuous fun t => (rotationFrame (E := E) a t : E →L[ℂ] E) :=
+  Continuous.continuousLinearEquiv_smulLeft (by simp only [Units.val_mk0]; fun_prop)
 
 @[simp]
 private theorem lsmul_one_restrictScalars :

@@ -79,10 +79,7 @@ theorem isMaximalTotallyReal_span_one :
     intro z hz hz'
     obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.1 hz
     obtain ⟨b, hb⟩ := Submodule.mem_span_singleton.1 hz'
-    have := congrArg Complex.re hb
-    simp only [Complex.real_smul, Complex.mul_re, Complex.ofReal_re, Complex.I_re, mul_zero,
-      Complex.ofReal_im, Complex.I_im, mul_one, sub_self] at this
-    simp [← this]
+    simpa using (congrArg Complex.re hb).symm
   · rw [codisjoint_iff, eq_top_iff]
     intro z _
     refine Submodule.mem_sup.2 ⟨z.re • 1,

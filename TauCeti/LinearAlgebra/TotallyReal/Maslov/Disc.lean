@@ -83,9 +83,7 @@ theorem maslovIndex_map_of_continuousOn_closedBall (B : ℂ → E ≃L[ℂ] E)
   -- Contract the boundary circle to the centre through the circles of radius `s`.
   let H (p : I × I) : E ≃L[ℂ] E := B ((p.1 : ℝ) * (Circle.expLoop p.2 : ℂ))
   have hmem (p : I × I) : ((p.1 : ℝ) * (Circle.expLoop p.2 : ℂ) : ℂ) ∈ closedBall (0 : ℂ) 1 := by
-    rw [mem_closedBall_zero_iff, norm_mul, Circle.norm_coe, mul_one, Complex.norm_real,
-      Real.norm_eq_abs, abs_of_nonneg p.1.2.1]
-    exact p.1.2.2
+    simpa [abs_of_nonneg p.1.2.1, Complex.norm_exp] using p.1.2.2
   have hH : Continuous fun p => (H p : E →L[ℂ] E) :=
     hB.comp_continuous (by fun_prop) hmem
   have hH01 (s : I) : H (s, 0) = H (s, 1) := by
@@ -126,14 +124,7 @@ example (k : ℤ) :
     ((rotationZPow isMaximalTotallyReal_span_one k).map
       (fun t => ContinuousLinearEquiv.smulLeft
         (Units.mk0 (Circle.expLoop t : ℂ) (Circle.coe_ne_zero _)))
-      (by
-        have h (t : I) : ((ContinuousLinearEquiv.smulLeft
-            (Units.mk0 (Circle.expLoop t : ℂ) (Circle.coe_ne_zero _)) : ℂ ≃L[ℂ] ℂ) : ℂ →L[ℂ] ℂ) =
-            (Circle.expLoop t : ℂ) • ContinuousLinearMap.id ℂ ℂ := by
-          ext
-          simp
-        simp_rw [h]
-        fun_prop)
+      (Continuous.continuousLinearEquiv_smulLeft (by simp only [Units.val_mk0]; fun_prop))
       (by simp)).maslovIndex = k + 2 := by
   rw [maslovIndex_map _ _ _ _ (Circle.expLoop) fun t => ?_, Circle.degree_expLoop]
   · simp
