@@ -329,15 +329,15 @@ theorem lift_generator (x : GeneratorTuple q A) (g : Generator) :
     lift x (generator q g) = x.toFun g := by
   exact (RingQuot.liftAlgHom_mkAlgHom_apply ℂ _ _ _).trans (FreeAlgebra.lift_ι_apply _ _)
 
-/-- Two algebra maps from `UqSl2 q` agreeing on the four generators are equal. -/
+/-- Two algebra maps from `UqSl2 q` agreeing on `E`, `F` and `K` are equal; agreement on `K⁻¹`
+follows since it is the inverse of `K`. -/
 @[ext high]
 theorem hom_ext {F G : UqSl2 q →ₐ[ℂ] A}
     (he : F (e q) = G (e q)) (hf : F (f q) = G (f q))
     (hk : F (k q) = G (k q)) : F = G := by
   have hkInv : F (kInv q) = G (kInv q) :=
-    calc F (kInv q) = F (kInv q) * G (k q * kInv q) := by rw [k_mul_kInv, map_one, mul_one]
-      _ = (F (kInv q) * F (k q)) * G (kInv q) := by rw [map_mul, ← hk, mul_assoc]
-      _ = G (kInv q) := by rw [← map_mul, kInv_mul_k, map_one, one_mul]
+    left_inv_eq_right_inv (a := G (k q)) (by rw [← hk, ← map_mul, kInv_mul_k, map_one])
+      (by rw [← map_mul, k_mul_kInv, map_one])
   apply RingQuot.ringQuot_ext' ℂ F G
   apply FreeAlgebra.hom_ext
   funext g
