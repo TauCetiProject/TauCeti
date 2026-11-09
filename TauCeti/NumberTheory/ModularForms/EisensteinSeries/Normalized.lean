@@ -209,7 +209,6 @@ theorem qExpansion_normalizedCharEisensteinSeriesMFRaise (hk : 3 ≤ (k : ℤ))
   rw [normalizedCharEisensteinSeriesMFRaise]
   exact ModularForm.qExpansion_levelRaise
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _
 
 /-- The `q`-expansion of a raised normalized Eisenstein series is supported on the multiples of
@@ -224,7 +223,6 @@ theorem isSupportedOnDvd_qExpansion_normalizedCharEisensteinSeriesMFRaise
   rw [normalizedCharEisensteinSeriesMFRaise]
   exact ModularForm.isSupportedOnDvd_qExpansion_levelRaise
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _
 
 /-- The Fourier coefficients of a raised normalized Eisenstein series are the twisted divisor
@@ -240,7 +238,6 @@ theorem qExpansion_normalizedCharEisensteinSeriesMFRaise_coeff (hk : 3 ≤ (k : 
   rw [normalizedCharEisensteinSeriesMFRaise]
   rw [ModularForm.qExpansion_levelRaise_coeff
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
-    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
     (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv)]
   split_ifs with htn
   · rw [qExpansion_normalizedCharEisensteinSeriesMF_coeff psi phi hk dvd_rfl hpar hphi]
