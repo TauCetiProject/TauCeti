@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Filtered
-import TauCeti.Probability.Distributions.Gaussian.Moments
 import TauCeti.MeasureTheory.Function.L2Space
 import Mathlib.Probability.Independence.Integration
 
@@ -78,10 +77,7 @@ theorem integral_sq_mul_sub (hW : IsFilteredPreBrownianReal ℱ W P) (hst : s �
     (hξ : StronglyMeasurable[ℱ s] ξ) :
     ∫ ω, (ξ ω * (W t ω - W s ω)) ^ 2 ∂P =
       (∫ ω, ξ ω ^ 2 ∂P) * ((t : ℝ) - s) := by
-  have hΔ : ∫ ω, (W t ω - W s ω) ^ 2 ∂P = ((t : ℝ) - s) := by
-    have h := (hW.hasLaw_sub_of_le hst).integral_comp
-      (f := fun x : ℝ => x ^ 2) (by fun_prop)
-    simpa [Function.comp_def, integral_sq_gaussianReal, NNReal.coe_sub hst] using h
+  have hΔ := hW.toIsPreBrownianReal.integral_sq_sub_of_le hst
   simp_rw [mul_pow]
   have h := ((hW.indepFun_sub hst hξ.measurable).comp (measurable_id.pow_const 2)
     (measurable_id.pow_const 2)).integral_fun_mul_eq_mul_integral
