@@ -109,10 +109,8 @@ theorem sq_le_mul_one_add_div_pow_of_sq_le_mul_sub {D d e : ℕ → ℝ} {τ τ'
     have hd' : c / τ * d n ^ 2 ≤ 2 * c * (e n - e (n + 1)) := by
       rw [div_mul_eq_mul_div, div_le_iff₀ hτ]
       nlinarith [hstep n, (by positivity : (0 : ℝ) ≤ c)]
-    have hQ' : 4 * τ / τ' * D n ^ 2 ≤ 8 * τ / τ' * N n := by
-      rw [show 8 * τ / τ' * N n = 4 * τ / τ' * (2 * N n) by ring]
-      gcongr
-      exact hQ n
+    have hQ' : 4 * τ / τ' * D n ^ 2 ≤ 8 * τ / τ' * N n :=
+      (mul_le_mul_of_nonneg_left (hQ n) (by positivity)).trans_eq (by ring)
     simp only [hN] at hQ' ⊢
     linarith
   -- Iterating from `N 0 = 2c (e 0 - A) ≤ τ' (e 0 - A)`.
