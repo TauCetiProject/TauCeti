@@ -125,7 +125,8 @@ theorem transport_ofRestrictScalars_naturality
   exact htransport X
 
 /-- The transported complex structure commutes with the bracket in its first argument. -/
-@[simp]
+-- These are explicit rewrite rules: the existing transport application simp lemma expands
+-- their left-hand sides before the bracket laws can match.
 theorem transport_ofRestrictScalars_lie_left (X Y : L') :
     ⁅(AlmostComplexStructure.ofRestrictScalars L).transport e.restrictScalarsLinearEquiv X, Y⁆ =
       (AlmostComplexStructure.ofRestrictScalars L).transport
@@ -143,7 +144,6 @@ theorem transport_ofRestrictScalars_lie_left (X Y : L') :
     AddEquiv.apply_symm_apply, RestrictScalars.addEquiv_lie, smul_lie]
 
 /-- The transported complex structure commutes with the bracket in its second argument. -/
-@[simp]
 theorem transport_ofRestrictScalars_lie_right (X Y : L') :
     ⁅X, (AlmostComplexStructure.ofRestrictScalars L).transport e.restrictScalarsLinearEquiv Y⁆ =
       (AlmostComplexStructure.ofRestrictScalars L).transport
