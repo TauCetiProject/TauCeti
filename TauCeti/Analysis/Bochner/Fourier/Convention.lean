@@ -17,8 +17,9 @@ public import TauCeti.Analysis.PositiveDefinite.Pullback
 Mathlib's characteristic function of a finite measure is
 `t ↦ ∫ x, exp (⟪x, t⟫ * I) ∂μ`, while the Fourier side of the Bochner roadmap uses the
 `2π` convention `a ↦ ∫ q, exp (-2πi⟪a, q⟫) ∂μ`. This file records the conversion between these
-normalizations and then reuses the existing characteristic-function API to show that the
-Fourier-convention transform of a finite measure is continuous and positive definite.
+normalizations, shows continuity of the Fourier-convention transform of a finite measure directly
+by dominated convergence, and transports positive definiteness from the existing
+characteristic-function API.
 
 The file also bridges Mathlib's Fourier transform `𝓕` to the Fourier atom, and it carries the
 measure-uniqueness theorem — the uniqueness half of Bochner's theorem — consumed by
