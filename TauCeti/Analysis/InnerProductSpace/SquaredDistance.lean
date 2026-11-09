@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.Orthogonal
+public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import TauCeti.Analysis.Complex.Pseudoconvex
 
 /-!
@@ -27,11 +28,18 @@ These formulas are the local inner-product-space calculation behind squared-dist
 exhaustions of closed complex submanifolds. No immersion hypothesis is needed until strict
 positivity is deduced.
 
+The same calculus gives the first and second derivatives of the Gaussian
+`x ↦ exp (-α ‖x - a‖ ^ 2)` of the squared distance, the classical barrier of Hopf's
+boundary-point lemma for elliptic operators with variable coefficients.
+
 ## Main results
 
 * `TauCeti.fderiv_norm_sq_sub_comp`: the first derivative of squared distance along a map.
 * `TauCeti.fderiv_norm_sq_sub_comp_eq_zero_iff`: the critical-point normal-vector test.
 * `TauCeti.fderiv_fderiv_norm_sq_sub_comp_apply`: the full Hessian formula.
+* `TauCeti.hasFDerivAt_exp_neg_mul_norm_sub_sq`,
+  `TauCeti.fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply`: the first and second derivatives of
+  `x ↦ exp (-α ‖x - a‖ ^ 2)`.
 * `TauCeti.fderiv_fderiv_norm_sq_apply_complex`: the real second derivative of complex squared
   norm is twice the real part of the inner product.
 * `TauCeti.fderiv_fderiv_norm_sq_sub_comp_add_I_smul`: the complex Hessian identity.
@@ -119,6 +127,47 @@ theorem fderiv_fderiv_norm_sq_sub_comp_apply (hi : ContDiffAt ℝ 2 i x) (v w : 
   ring
 
 end Real
+
+section Exp
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- The derivative of the Gaussian `x ↦ exp (-α ‖x - a‖ ^ 2)` of the squared distance from `a`
+is `-2 α exp (-α ‖x - a‖ ^ 2) ⟪x - a, ·⟫`. -/
+theorem hasFDerivAt_exp_neg_mul_norm_sub_sq (α : ℝ) (a x : E) :
+    HasFDerivAt (fun z ↦ Real.exp (-α * ‖z - a‖ ^ 2))
+      ((-2 * α * Real.exp (-α * ‖x - a‖ ^ 2)) • innerSL ℝ (x - a)) x := by
+  have h := (((hasFDerivAt_id x).sub_const a).norm_sq.const_mul (-α)).exp
+  refine h.congr_fderiv ?_
+  ext v
+  simp
+  ring
+
+/-- The second derivative of the Gaussian `x ↦ exp (-α ‖x - a‖ ^ 2)` of the squared distance from
+`a` is `(4 α² ⟪x - a, v⟫ ⟪x - a, w⟫ - 2 α ⟪v, w⟫) exp (-α ‖x - a‖ ^ 2)`. -/
+theorem fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply (α : ℝ) (a x v w : E) :
+    fderiv ℝ (fderiv ℝ fun z ↦ Real.exp (-α * ‖z - a‖ ^ 2)) x v w =
+      (4 * α ^ 2 * inner ℝ (x - a) v * inner ℝ (x - a) w - 2 * α * inner ℝ v w) *
+        Real.exp (-α * ‖x - a‖ ^ 2) := by
+  have hD : fderiv ℝ (fun z ↦ Real.exp (-α * ‖z - a‖ ^ 2)) = fun x ↦
+      (-2 * α * Real.exp (-α * ‖x - a‖ ^ 2)) • innerSL ℝ (x - a) :=
+    funext fun x ↦ (hasFDerivAt_exp_neg_mul_norm_sub_sq α a x).fderiv
+  have h1 : HasFDerivAt (fun z : E ↦ -2 * α * Real.exp (-α * ‖z - a‖ ^ 2))
+      ((-2 * α) • ((-2 * α * Real.exp (-α * ‖x - a‖ ^ 2)) • innerSL ℝ (x - a))) x :=
+    (hasFDerivAt_exp_neg_mul_norm_sub_sq α a x).const_mul _
+  have h2 : HasFDerivAt (fun z : E ↦ innerSL ℝ (z - a)) (innerSL ℝ) x := by
+    simpa only [map_sub] using ((innerSL ℝ (E := E)).hasFDerivAt (x := x)).sub_const
+      (innerSL ℝ a)
+  have h3 : HasFDerivAt (fun z : E ↦
+      (-2 * α * Real.exp (-α * ‖z - a‖ ^ 2)) • innerSL ℝ (z - a)) _ x := h1.smul h2
+  rw [hD, h3.fderiv]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, innerSL_apply_apply,
+    smul_eq_mul]
+  -- `simp` leaves the term `innerSL ℝ v w` coming from the `smul` product rule unreduced.
+  rw [innerSL_apply_apply]
+  ring
+
+end Exp
 
 section Complex
 
