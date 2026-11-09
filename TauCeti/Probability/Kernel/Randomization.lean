@@ -194,18 +194,18 @@ composition-product of the parameter's law and the update kernel. -/
 theorem _root_.ProbabilityTheory.IndepFun.map_prodMk_eq_compProd_of_map
     {Ω ξ : Type*} [MeasurableSpace Ω] [MeasurableSpace ξ]
     {P : Measure Ω} [IsFiniteMeasure P] {W : Ω → β} {U : Ω → ξ}
-    (hindep : IndepFun W U P) (hW : Measurable W)
+    (hindep : IndepFun W U P) (hW : AEMeasurable W P)
     {ρ : Measure ξ} (hlaw : HasLaw U ρ P)
     (κ : Kernel β α) (f : β → ξ → α)
     (hf : Measurable (Function.uncurry f)) (hmap : ∀ w, ρ.map (f w) = κ w) :
     P.map (fun ω => (W ω, f (W ω) (U ω))) = (P.map W) ⊗ₘ κ := by
   have : IsFiniteMeasure ρ := hlaw.isFiniteMeasure_iff.mp inferInstance
-  have hpair := hindep.map_prod_eq_prod_map_map hW.aemeasurable hlaw.aemeasurable
+  have hpair := hindep.map_prod_eq_prod_map_map hW hlaw.aemeasurable
   rw [hlaw.map_eq] at hpair
   calc
     _ = ((P.map W).prod ρ).map (fun p => (p.1, f p.1 p.2)) := by
       rw [← hpair, AEMeasurable.map_map_of_aemeasurable (by fun_prop)
-        (hW.aemeasurable.prodMk hlaw.aemeasurable)]
+        (hW.prodMk hlaw.aemeasurable)]
       rfl
     _ = _ := κ.map_prod_eq_compProd_of_map ρ f hf hmap
 
