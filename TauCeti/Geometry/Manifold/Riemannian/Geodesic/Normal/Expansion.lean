@@ -113,6 +113,7 @@ private theorem riemannianExpPullbackMetric_eventuallyEq (p : M) {U : Set (Tange
     h.normalCoordinateField_riemannianExp hv]
 
 /-- The first derivative of the exponential pullback metric vanishes at the origin. -/
+@[simp]
 theorem fderiv_riemannianExpPullbackMetric_zero (p : M) :
     fderiv ℝ (riemannianExpPullbackMetric I M p) 0 = 0 := by
   have hf := (contDiffAt_riemannianExpPullbackMetric (I := I) p).differentiableAt (by simp)
