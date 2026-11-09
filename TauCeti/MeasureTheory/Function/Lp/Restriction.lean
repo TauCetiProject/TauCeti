@@ -21,6 +21,7 @@ useful whenever an `Lᵖ` identity is tested against integrals on finite-measure
 
 * `TauCeti.tendsto_setLIntegral_enorm_sub_of_tendsto_Lp`: convergence of representatives on a
   finite-measure set.
+* `TauCeti.tendsto_setLIntegral_enorm_add_sub`: convergence of sums of representatives on a set.
 * `MeasureTheory.MemLp.coeFn_toLp_indicator_restrict`: recover a function from its zero extension
   on a measurable subset.
 
@@ -233,6 +234,26 @@ theorem tendsto_setLIntegral_enorm_sub_of_tendsto_Lp
     with x h₁ h₂ h₃ h₄
   rw [Function.comp_apply, Pi.sub_apply]
   exact congrArg (fun z => ‖z‖ₑ) (congrArg₂ (· - ·) (h₁.trans h₃) (h₂.trans h₄))
+
+/-- If two families converge in `L¹` on `W`, so does their sum. Only the errors of the first
+family need to be almost everywhere strongly measurable. -/
+theorem tendsto_setLIntegral_enorm_add_sub {E H ι : Type*} [MeasurableSpace E]
+    [NormedAddCommGroup H] {μ : Measure E} {W : Set E} {l : Filter ι}
+    {a b : ι → E → H} {a₀ b₀ : E → H}
+    (ha : ∀ n, AEStronglyMeasurable (fun x => a n x - a₀ x) (μ.restrict W))
+    (h₁ : Tendsto (fun n => ∫⁻ x in W, ‖a n x - a₀ x‖ₑ ∂μ) l (𝓝 0))
+    (h₂ : Tendsto (fun n => ∫⁻ x in W, ‖b n x - b₀ x‖ₑ ∂μ) l (𝓝 0)) :
+    Tendsto (fun n => ∫⁻ x in W, ‖a n x + b n x - (a₀ x + b₀ x)‖ₑ ∂μ) l (𝓝 0) := by
+  have h := h₁.add h₂
+  rw [add_zero] at h
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h (fun _ => zero_le)
+    fun n => ?_
+  calc
+    _ ≤ ∫⁻ x in W, (‖a n x - a₀ x‖ₑ + ‖b n x - b₀ x‖ₑ) ∂μ := by
+      refine lintegral_mono fun x => ?_
+      rw [add_sub_add_comm]
+      exact enorm_add_le _ _
+    _ = _ := lintegral_add_left' (ha n).enorm _
 
 end TauCeti
 

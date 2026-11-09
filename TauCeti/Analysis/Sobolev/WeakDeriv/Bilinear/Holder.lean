@@ -12,6 +12,7 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Function.Lp.Holder
+import TauCeti.Data.ENNReal.Holder
 import TauCeti.Analysis.Calculus.LineDeriv.Bilinear
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Analysis.Calculus.BumpFunction.Normed
@@ -152,31 +153,16 @@ private theorem hasWeakLineDerivOn_bilin_of_memLp (B : F →L[ℝ] G →L[ℝ] H
   have hV'ae := hV'.coeFn_toLp_indicator_restrict W.isOpen.measurableSet hWΩ'
   have h₁ := tendsto_setLIntegral_enorm_bilin_sub (r := r₁) B hWμ hA' hC hA'ae hU'ae hCae hVae
   have h₂ := tendsto_setLIntegral_enorm_bilin_sub (r := r₂) B hWμ hA hC' hAae hUae hC'ae hV'ae
-  refine hasWeakLineDerivOn_of_tendsto_lintegral_enorm_sub (IntegrableOn.locallyIntegrableOn hlim)
-    (IntegrableOn.locallyIntegrableOn (hlim₁.add hlim₂)) hweak
-    (tendsto_setLIntegral_enorm_bilin_sub (r := r) B hWμ hA hC hAae hUae hCae hVae) ?_
   -- The derivative error is bounded by the sum of the two product errors.
-  have hcont' (n : ℕ) : Continuous (u' n) :=
-    (φ n).hasCompactSupport_normed.continuous_convolution_left
-      _ (φ n).continuous_normed hU'loc
-  have hcontw (n : ℕ) : Continuous (w n) :=
-    (φ n).hasCompactSupport_normed.continuous_convolution_left
-      _ (φ n).continuous_normed hVloc
-  have h₃ := h₁.add h₂
-  rw [add_zero] at h₃
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h₃ (fun _ => zero_le)
-    fun n => ?_
-  have hm₁ : AEMeasurable (fun x => ‖B (u' n x) (w n x) - B (f' x) (g x)‖ₑ)
+  have hm₁ (n : ℕ) : AEStronglyMeasurable (fun x => B (u' n x) (w n x) - B (f' x) (g x))
       (μ.restrict (W : Set E)) :=
-    ((B.continuous₂.comp ((hcont' n).prodMk (hcontw n))).aestronglyMeasurable.sub
-      hlim₁.aestronglyMeasurable).enorm
-  calc
-    _ ≤ ∫⁻ x in (W : Set E), (‖B (u' n x) (w n x) - B (f' x) (g x)‖ₑ +
-          ‖B (u n x) (w' n x) - B (f x) (g' x)‖ₑ) ∂μ := by
-      refine lintegral_mono fun x => ?_
-      rw [add_sub_add_comm]
-      exact enorm_add_le _ _
-    _ = _ := lintegral_add_left' hm₁ _
+    (B.continuous₂.comp_aestronglyMeasurable₂
+      ((Lp.aestronglyMeasurable _).congr (hA'ae n)).restrict
+      ((Lp.aestronglyMeasurable _).congr (hCae n)).restrict).sub hlim₁.aestronglyMeasurable
+  exact hasWeakLineDerivOn_of_tendsto_lintegral_enorm_sub (IntegrableOn.locallyIntegrableOn hlim)
+    (IntegrableOn.locallyIntegrableOn (hlim₁.add hlim₂)) hweak
+    (tendsto_setLIntegral_enorm_bilin_sub (r := r) B hWμ hA hC hAae hUae hCae hVae)
+    (tendsto_setLIntegral_enorm_add_sub hm₁ h₁ h₂)
 
 /-- The local bilinear weak Leibniz rule with separate finite exponents for each factor and its
 derivative. Only the three products in the identity must be locally integrable by Hölder; this
@@ -223,9 +209,7 @@ theorem HasWeakLineDerivOn.bilin_of_memLp (B : F →L[ℝ] G →L[ℝ] H)
     (hg'q : ∀ K, IsCompact K → K ⊆ Ω → MemLp g' q (μ.restrict K)) :
     HasWeakLineDerivOn μ Ω (fun x => B (f x) (g x))
       (fun x => B (f' x) (g x) + B (f x) (g' x)) v := by
-  have hpq : p⁻¹ + q⁻¹ ≤ 1 := by
-    rw [ENNReal.HolderTriple.inv_add_inv_eq_inv p q r]
-    exact ENNReal.inv_le_one.2 Fact.out
+  have hpq := ENNReal.HolderTriple.inv_add_inv_le_one p q r Fact.out
   exact hf.bilin_of_memLp_mixed B hp hp hq hq hpq hpq hpq hg hfp hf'p hgq hg'q
 
 /-- The Fréchet form of the bilinear weak Leibniz rule with separate finite exponents for each
@@ -267,9 +251,7 @@ theorem HasWeakFDerivOn.bilin_of_memLp (B : F →L[ℝ] G →L[ℝ] H)
     (hDgq : ∀ K, IsCompact K → K ⊆ Ω → MemLp Dg q (μ.restrict K)) :
     HasWeakFDerivOn μ Ω (fun x => B (f x) (g x))
       (fun x => B.precompL E (Df x) (g x) + B.precompR E (f x) (Dg x)) := by
-  have hpq : p⁻¹ + q⁻¹ ≤ 1 := by
-    rw [ENNReal.HolderTriple.inv_add_inv_eq_inv p q r]
-    exact ENNReal.inv_le_one.2 Fact.out
+  have hpq := ENNReal.HolderTriple.inv_add_inv_le_one p q r Fact.out
   exact hf.bilin_of_memLp_mixed B hp hp hq hq hpq hpq hpq hg hfp hDfp hgq hDgq
 
 end TauCeti

@@ -9,7 +9,8 @@ public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Sobolev.W1p.MixedMultiplication
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.WeakDeriv.Bilinear.Holder
-import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
+import TauCeti.Analysis.Sobolev.GraphStep.ScalarProjection
+import TauCeti.Data.ENNReal.Holder
 
 /-!
 # Mixed-exponent products of local Sobolev maps on planar domains
@@ -22,23 +23,22 @@ domain `Ω`.
 * Order zero: for `f ∈ Lᵖ_loc` and `g ∈ W^{1,q}_loc`, the product `B(f, g)` is in `L^q_loc`.
   This combines Hölder's inequality with the local gain of integrability `W^{1,q} ⊂ Lʳ`,
   where `1/p + 1/r = 1/q`, and it uses `p > 2`.
-* Order one: for `f ∈ W^{1,p}_loc` continuous on `Ω` and `g ∈ W^{1,q}_loc` with `1 < q`, the
-  product `B(f, g)` is in `W^{1,q}_loc`, with weak derivative `B(Df, g) + B(f, Dg)`.
-  At `q = p` this is the algebra property of `W^{1,p}_loc`.
+* Order one: for `f ∈ W^{1,p}_loc ∩ L^∞_loc` and `g ∈ W^{1,q}_loc` with `1 < q`, the product
+  `B(f, g)` is in `W^{1,q}_loc`, with weak derivative `B(Df, g) + B(f, Dg)`.
+  At `q = p` this is the algebra property of `W^{1,p}_loc`. When `F` is finite-dimensional, the
+  local boundedness of `f` follows from the local gain of integrability at `q = p`.
 
-Both come with local bounds that are uniform in the bilinear map. Continuity of the first factor
-is an explicit hypothesis of the order-one statements; it is automatic for `p > 2` by Morrey's
-embedding, which is not used here.
+Both come with local bounds that are uniform in the bilinear map.
 
 ## Main declarations
 
 * `TauCeti.MemWkpLoc.memLpLoc_of_holderTriple`: the local gain of integrability.
-* `TauCeti.exists_eLpNorm_bilin_le` and `TauCeti.MemLpLoc.bilin_memWkpLoc`: the order-zero
+* `TauCeti.exists_eLpNorm_bilin_le` and `TauCeti.MemLpLoc.bilin_of_memWkpLoc`: the order-zero
   bound and membership.
-* `TauCeti.HasWeakFDerivOn.bilin_of_continuousOn`: the weak Leibniz rule for the order-one
+* `TauCeti.HasWeakFDerivOn.bilin_of_memLpLoc_top`: the weak Leibniz rule for the order-one
   product.
-* `TauCeti.exists_eLpNorm_bilin_add_eLpNorm_deriv_le` and `TauCeti.MemWkpLoc.bilin`: the
-  order-one bound and membership.
+* `TauCeti.exists_eLpNorm_bilin_add_eLpNorm_deriv_le`, `TauCeti.MemWkpLoc.bilin_of_memLpLoc_top`
+  and `TauCeti.MemWkpLoc.bilin`: the order-one bound and membership.
 
 ## References
 
@@ -58,37 +58,6 @@ variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup H] [NormedSpace ℝ H]
   {Ω : Opens ℂ} {p q : ℝ≥0}
 
-/-- A real function with a weak derivative on `W`, both in `L^q(W)`, defines an element of
-`W^{1,q}(W)` whose norm is at most the sum of the two `L^q` norms. -/
-private theorem exists_w1p_of_hasWeakFDerivOn {s : ℝ≥0∞} [Fact (1 ≤ s)] {W : Opens ℂ}
-    {u : ℂ → ℝ} {D : ℂ → ℂ →L[ℝ] ℝ} (h : HasWeakFDerivOn volume W u D)
-    (hu : MemLp u s (volume.restrict W)) (hD : MemLp D s (volume.restrict W)) :
-    ∃ w : W1p volume W s, W1p.value w =ᵐ[volume.restrict W] u ∧
-      ‖w‖ₑ ≤ eLpNorm u s (volume.restrict W) + eLpNorm D s (volume.restrict W) := by
-  let e := (InnerProductSpace.toDual ℝ ℂ).symm
-  have hgm : AEStronglyMeasurable (fun x => e (D x)) (volume.restrict W) :=
-    e.continuous.comp_aestronglyMeasurable hD.aestronglyMeasurable
-  have hnorm : ∀ x, ‖e (D x)‖ = ‖D x‖ := fun x => e.norm_map (D x)
-  have hg : MemLp (fun x => e (D x)) s (volume.restrict W) :=
-    hD.of_le hgm (Filter.Eventually.of_forall fun x => (hnorm x).le)
-  have hderiv : (fun x => innerSL ℝ (hg.toLp _ x)) =ᵐ[volume.restrict W] D := by
-    filter_upwards [hg.coeFn_toLp] with x hx
-    ext v
-    rw [hx, innerSL_apply_apply, InnerProductSpace.toDual_symm_apply]
-  have hw : HasWeakFDerivOn volume W (hu.toLp u) (fun x => innerSL ℝ (hg.toLp _ x)) :=
-    (h.congr_ae hu.coeFn_toLp.symm).congr_ae_deriv hderiv.symm
-  refine ⟨W1p.mk _ _ hw, by rw [W1p.value_mk]; exact hu.coeFn_toLp, ?_⟩
-  calc
-    ‖W1p.mk _ _ hw‖ₑ ≤ ‖W1p.value (W1p.mk _ _ hw)‖ₑ + ‖W1p.gradient (W1p.mk _ _ hw)‖ₑ := by
-      rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm,
-        ← ENNReal.ofReal_add (norm_nonneg _) (norm_nonneg _)]
-      exact ENNReal.ofReal_le_ofReal (W1p.norm_le_norm_value_add_norm_gradient _)
-    _ = eLpNorm u s (volume.restrict W) + eLpNorm D s (volume.restrict W) := by
-      rw [W1p.value_mk, W1p.gradient_mk, Lp.enorm_def, Lp.enorm_def,
-        eLpNorm_congr_ae hu.coeFn_toLp, eLpNorm_congr_ae hg.coeFn_toLp]
-      congr 1
-      exact eLpNorm_congr_norm_ae hgm hD.aestronglyMeasurable (Filter.Eventually.of_forall hnorm)
-
 /-- A scalar `W^{1,q}(W)` bound into `Lʳ(V)` extends, coordinate by coordinate, to weakly
 differentiable maps with finite-dimensional values. -/
 private theorem exists_eLpNorm_le_of_w1p_bound [Fact (1 ≤ (q : ℝ≥0∞))] {r : ℝ≥0∞}
@@ -102,32 +71,51 @@ private theorem exists_eLpNorm_le_of_w1p_bound [Fact (1 ≤ (q : ℝ≥0∞))] {
   obtain ⟨C, hC⟩ := hbound
   let b := Module.finBasis ℝ G
   let c : Fin (finrank ℝ G) → G →L[ℝ] ℝ := fun i => (b.coord i).toContinuousLinearMap
-  refine ⟨∑ i, ‖b i‖₊ * C * ‖c i‖₊, fun g Dg hg hgq hDq => ?_⟩
-  set X := eLpNorm g q (volume.restrict W) + eLpNorm Dg q (volume.restrict W)
+  refine ⟨∑ i, ‖b i‖₊ * (2 * C * ‖c i‖₊), fun g Dg hg hgq hDq => ?_⟩
+  set X := eLpNorm g q (volume.restrict W) + eLpNorm Dg q (volume.restrict W) with hX
   have hVm := Measure.restrict_mono_set volume hVW
+  -- Package `g` with its weak derivative and project it to each coordinate in `W^{1,q}(W)`.
+  let base := ContinuousLinearMap.id ℝ (Lp G q (volume.restrict (W : Set ℂ)))
+  let u : WeakDerivStep volume W q base := WeakDerivStep.mk base (hgq.toLp g) (hDq.toLp Dg)
+    ((hg.congr_ae hgq.coeFn_toLp.symm).congr_ae_deriv hDq.coeFn_toLp.symm)
+  have hprev : WeakDerivStep.prev base u = hgq.toLp g := WeakDerivStep.prev_mk _ _ _ _
+  have hD : WeakDerivStep.weakFDeriv base u = hDq.toLp Dg := WeakDerivStep.weakFDeriv_mk _ _ _ _
+  have hu : ‖u‖ ≤ ‖hgq.toLp g‖ + ‖hDq.toLp Dg‖ := by
+    have h := WeakDerivStep.norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq base u
+    rw [hprev, hD] at h
+    refine (sq_le_sq₀ (norm_nonneg _) (by positivity)).1 ?_
+    rw [h]
+    nlinarith [norm_nonneg (hgq.toLp g), norm_nonneg (hDq.toLp Dg)]
   have key (i : Fin (finrank ℝ G)) :
-      eLpNorm (fun x => c i (g x)) r (volume.restrict V) ≤ C * ‖c i‖ₑ * X := by
-    have hci := (hasWeakFDerivOn_iff_coordinates b).1 hg i
-    obtain ⟨w, hw, hwn⟩ := exists_w1p_of_hasWeakFDerivOn hci
-      (hgq.continuousLinearMap_comp (c i))
-      (hDq.continuousLinearMap_comp (ContinuousLinearMap.compL ℝ ℂ G ℝ (c i)))
+      eLpNorm (fun x => c i (g x)) r (volume.restrict V) ≤ 2 * C * ‖c i‖ₑ * X := by
+    let w := WeakDerivStep.toW1pL base (c i) u
+    have hw : W1p.value w =ᵐ[volume.restrict W] fun x => c i (g x) := by
+      rw [WeakDerivStep.value_toW1pL, hprev, ContinuousLinearMap.id_apply]
+      filter_upwards [(c i).coeFn_compLpL (hgq.toLp g), hgq.coeFn_toLp] with x hx hx'
+      rw [hx, hx']
+    have hwn : ‖w‖ ≤ 2 * ‖c i‖ * (‖hgq.toLp g‖ + ‖hDq.toLp Dg‖) := by
+      have hbase : ‖base‖ ≤ 1 := ContinuousLinearMap.norm_id_le
+      calc
+        ‖w‖ ≤ ‖WeakDerivStep.toW1pL base (c i)‖ * ‖u‖ := ContinuousLinearMap.le_opNorm _ _
+        _ ≤ ‖c i‖ * (‖base‖ + 1) * (‖hgq.toLp g‖ + ‖hDq.toLp Dg‖) :=
+          mul_le_mul (WeakDerivStep.norm_toW1pL_le _ _) hu (norm_nonneg _) (by positivity)
+        _ ≤ 2 * ‖c i‖ * (‖hgq.toLp g‖ + ‖hDq.toLp Dg‖) :=
+          mul_le_mul_of_nonneg_right (by nlinarith [norm_nonneg (c i)]) (by positivity)
+    have hwe : ‖w‖ₑ ≤ 2 * ‖c i‖ₑ * X := by
+      have hwn' : ‖w‖₊ ≤ 2 * ‖c i‖₊ * (‖hgq.toLp g‖₊ + ‖hDq.toLp Dg‖₊) := by
+        rw [← NNReal.coe_le_coe]
+        push_cast
+        exact hwn
+      rw [hX, ← Lp.enorm_toLp hgq, ← Lp.enorm_toLp hDq]
+      simp only [enorm_eq_nnnorm]
+      exact_mod_cast hwn'
     calc
       eLpNorm (fun x => c i (g x)) r (volume.restrict V)
           = eLpNorm (W1p.value w) r (volume.restrict V) :=
         eLpNorm_congr_ae (hw.filter_mono (ae_mono hVm)).symm
       _ ≤ C * ‖w‖ₑ := hC w
-      _ ≤ C * (‖c i‖ₑ * eLpNorm g q (volume.restrict W) +
-          ‖c i‖ₑ * eLpNorm Dg q (volume.restrict W)) := by
-        gcongr
-        refine hwn.trans (add_le_add ?_ ?_)
-        · exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul'' _
-            ((c i).continuous.comp_aestronglyMeasurable hgq.aestronglyMeasurable)
-            (Filter.Eventually.of_forall fun x => (c i).le_opENorm (g x))
-        · exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul'' _
-            ((ContinuousLinearMap.compL ℝ ℂ G ℝ (c i)).continuous.comp_aestronglyMeasurable
-              hDq.aestronglyMeasurable)
-            (Filter.Eventually.of_forall fun x => (c i).opENorm_comp_le (Dg x))
-      _ = C * ‖c i‖ₑ * X := by rw [← mul_add, mul_assoc]
+      _ ≤ C * (2 * ‖c i‖ₑ * X) := by gcongr
+      _ = 2 * C * ‖c i‖ₑ * X := by ring
   have hsum : g = ∑ i, fun x => c i (g x) • b i := by
     funext x
     rw [Finset.sum_apply]
@@ -137,14 +125,14 @@ private theorem exists_eLpNorm_le_of_w1p_bound [Fact (1 ≤ (q : ℝ≥0∞))] {
         ≤ ∑ i, eLpNorm (fun x => c i (g x) • b i) r (volume.restrict V) := by
       conv_lhs => rw [hsum]
       exact eLpNorm_sum_le hr
-    _ ≤ ∑ i, ‖b i‖ₑ * (C * ‖c i‖ₑ * X) := by
+    _ ≤ ∑ i, ‖b i‖ₑ * (2 * C * ‖c i‖ₑ * X) := by
       refine Finset.sum_le_sum fun i _ => ?_
       refine (eLpNorm_le_mul_eLpNorm_of_ae_le_mul'' _ ?_
         (Filter.Eventually.of_forall fun x => ?_)).trans (by gcongr; exact key i)
       · exact (((c i).continuous.comp_aestronglyMeasurable
           (hgq.aestronglyMeasurable.mono_measure hVm)).smul_const (b i))
       · rw [enorm_smul, mul_comm]
-    _ = ↑(∑ i, ‖b i‖₊ * C * ‖c i‖₊) * X := by
+    _ = ↑(∑ i, ‖b i‖₊ * (2 * C * ‖c i‖₊)) * X := by
       push_cast
       rw [Finset.sum_mul]
       refine Finset.sum_congr rfl fun i _ => ?_
@@ -181,14 +169,6 @@ private theorem exists_opens_between {K : Set ℂ} (hK : IsCompact K) (hKΩ : K 
   obtain ⟨W, hWo, hKW, hWΩ, hWc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen hKΩ
   exact ⟨⟨W, hWo⟩, hKW, hWΩ, hWc⟩
 
-omit [NormedSpace ℝ F] [FiniteDimensional ℝ G] in
-/-- Local `Lᵖ` membership on `Ω` gives `Lᵖ` membership on an open set with compact closure
-in `Ω`. -/
-private theorem MemLpLoc.memLp_of_closure {s : ℝ≥0∞} {f : ℂ → F} (hf : MemLpLoc s Ω f)
-    {W : Set ℂ} (hWΩ : closure W ⊆ Ω) (hWc : IsCompact (closure W)) :
-    MemLp f s (volume.restrict W) :=
-  (memLpLoc_iff.1 hf _ hWΩ hWc).mono_measure (Measure.restrict_mono_set volume subset_closure)
-
 /-- **Local gain of integrability.** For `p > 2` and `1 ≤ q ≤ p`, a map in `W^{1,q}_loc` with
 finite-dimensional values is in `Lʳ_loc` for `1/p + 1/r = 1/q`. At `q = p` this is `r = ∞`. -/
 theorem MemWkpLoc.memLpLoc_of_holderTriple (hp : 2 < p) (hqp : q ≤ p) [Fact (1 ≤ (q : ℝ≥0∞))]
@@ -204,11 +184,6 @@ theorem MemWkpLoc.memLpLoc_of_holderTriple (hp : 2 < p) (hqp : q ≤ p) [Fact (1
     (ENNReal.mul_lt_top ENNReal.coe_lt_top
       (ENNReal.add_lt_top.2 ⟨hgW.eLpNorm_lt_top, hDW.eLpNorm_lt_top⟩))
 
-/-- The exponent `r` with `1/p + 1/r = 1/q`, for `q ≤ p`. -/
-private theorem holderTriple_inv_sub (hqp : q ≤ p) :
-    ENNReal.HolderTriple p ((q : ℝ≥0∞)⁻¹ - (p : ℝ≥0∞)⁻¹)⁻¹ q :=
-  ⟨by rw [inv_inv, add_tsub_cancel_of_le (ENNReal.inv_le_inv.2 (by exact_mod_cast hqp))]⟩
-
 /-- **Local bound for order-zero mixed products.** For `p > 2`, `1 ≤ q ≤ p`, a compact `K`
 and an open `W ⊇ K`, one constant bounds `‖B(f, g)‖_{L^q(K)}` by
 `‖B‖ ‖f‖_{Lᵖ(K)} (‖g‖_{L^q(W)} + ‖Dg‖_{L^q(W)})` for every bilinear map `B`, every `f`
@@ -221,7 +196,7 @@ theorem exists_eLpNorm_bilin_le (hp : 2 < p) (hqp : q ≤ p) [Fact (1 ≤ (q : �
       eLpNorm (fun z => B (f z) (g z)) q (volume.restrict K) ≤
         C * ‖B‖ₑ * eLpNorm f p (volume.restrict K) *
           (eLpNorm g q (volume.restrict W) + eLpNorm Dg q (volume.restrict W)) := by
-  let _ := holderTriple_inv_sub hqp
+  let _ := ENNReal.HolderTriple.of_le (p := (p : ℝ≥0∞)) (q := q) (by exact_mod_cast hqp)
   obtain ⟨C, hC⟩ := exists_eLpNorm_le_of_holderTriple (G := G)
     (r := ((q : ℝ≥0∞)⁻¹ - (p : ℝ≥0∞)⁻¹)⁻¹) hp hqp hK hKW
   refine ⟨C, fun B f g Dg hf hg hgq hDq => ?_⟩
@@ -237,7 +212,7 @@ theorem exists_eLpNorm_bilin_le (hp : 2 < p) (hqp : q ≤ p) [Fact (1 ≤ (q : �
 
 /-- **Order-zero mixed products.** For `p > 2` and `1 ≤ q ≤ p`, the product of a locally `Lᵖ`
 map with a `W^{1,q}_loc` map with finite-dimensional values is locally `L^q`. -/
-theorem MemLpLoc.bilin_memWkpLoc (B : F →L[ℝ] G →L[ℝ] H) (hp : 2 < p) (hqp : q ≤ p)
+theorem MemLpLoc.bilin_of_memWkpLoc (B : F →L[ℝ] G →L[ℝ] H) (hp : 2 < p) (hqp : q ≤ p)
     [Fact (1 ≤ (q : ℝ≥0∞))] {f : ℂ → F} {g : ℂ → G} (hf : MemLpLoc p Ω f)
     (hg : MemWkpLoc q Ω 1 g) : MemLpLoc q Ω (fun z => B (f z) (g z)) := by
   refine memLpLoc_iff.2 fun K hKΩ hK => ?_
@@ -254,12 +229,11 @@ theorem MemLpLoc.bilin_memWkpLoc (B : F →L[ℝ] G →L[ℝ] H) (hp : 2 < p) (h
       (ENNReal.add_lt_top.2 ⟨hgW.eLpNorm_lt_top, hDW.eLpNorm_lt_top⟩))
 
 /-- **The weak Leibniz rule for order-one mixed products.** For `p > 2` and `1 < q ≤ p`, let
-`f` be continuous on `Ω` with weak derivative `Df ∈ Lᵖ_loc`, and let `g ∈ L^q_loc` have weak
-derivative `Dg ∈ L^q_loc`. Then `B(f, g)` has weak derivative `B(Df, g) + B(f, Dg)`.
-The local gain of integrability of `g` pairs it with `Df`. -/
-theorem HasWeakFDerivOn.bilin_of_continuousOn [CompleteSpace H] (B : F →L[ℝ] G →L[ℝ] H)
+`f ∈ L^∞_loc` have weak derivative `Df ∈ Lᵖ_loc`, and let `g ∈ L^q_loc` have weak
+derivative `Dg ∈ L^q_loc`. Then `B(f, g)` has weak derivative `B(Df, g) + B(f, Dg)`. -/
+theorem HasWeakFDerivOn.bilin_of_memLpLoc_top [CompleteSpace H] (B : F →L[ℝ] G →L[ℝ] H)
     (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p) {f : ℂ → F} {Df : ℂ → ℂ →L[ℝ] F} {g : ℂ → G}
-    {Dg : ℂ → ℂ →L[ℝ] G} (hf : HasWeakFDerivOn volume Ω f Df) (hfc : ContinuousOn f Ω)
+    {Dg : ℂ → ℂ →L[ℝ] G} (hf : HasWeakFDerivOn volume Ω f Df) (hfi : MemLpLoc ∞ Ω f)
     (hDf : MemLpLoc p Ω Df) (hg : HasWeakFDerivOn volume Ω g Dg) (hgq : MemLpLoc q Ω g)
     (hDg : MemLpLoc q Ω Dg) :
     HasWeakFDerivOn volume Ω (fun z => B (f z) (g z))
@@ -283,7 +257,7 @@ theorem HasWeakFDerivOn.bilin_of_continuousOn [CompleteSpace H] (B : F →L[ℝ]
   have hbp : b⁻¹ ≤ p'⁻¹ := ENNReal.inv_le_inv.2 (le_max_right _ _)
   -- `g` lies in `L^b_loc` because `q ≤ b ≤ r` with `1/p + 1/r = 1/q`.
   let r := ((q : ℝ≥0∞)⁻¹ - (p : ℝ≥0∞)⁻¹)⁻¹
-  let _ := holderTriple_inv_sub hqp
+  let _ := ENNReal.HolderTriple.of_le (p := (p : ℝ≥0∞)) (q := q) (by exact_mod_cast hqp)
   have hgr : MemLpLoc r Ω g := MemWkpLoc.memLpLoc_of_holderTriple hp hqp
     (memWkpLoc_succ_iff_of_isOpen.2 ⟨hgq, Dg, hg, memWkpLoc_zero_iff.2 hDg⟩)
   have hbr : b ≤ r := by
@@ -292,12 +266,10 @@ theorem HasWeakFDerivOn.bilin_of_continuousOn [CompleteSpace H] (B : F →L[ℝ]
       exact tsub_le_self
     · rw [inv_inv, ← ENNReal.HolderConjugate.one_sub_inv (p : ℝ≥0∞) p']
       exact tsub_le_tsub_right (ENNReal.inv_le_one.2 hq1.le) _
-  have hgb : MemLpLoc b Ω g := memLpLoc_iff.2 fun K hKΩ hK =>
-    let _ : IsFiniteMeasure (volume.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
-    (memLpLoc_iff.1 hgr K hKΩ hK).mono_exponent hbr
+  have hgb : MemLpLoc b Ω g := hgr.mono_exponent hbr
   exact hf.bilin_of_memLp_mixed B ha ENNReal.coe_ne_top hb ENNReal.coe_ne_top
     ((add_le_add le_rfl hbq).trans haq.le) ((add_le_add le_rfl hbp).trans hpp.le) haq.le hg
-    (fun K hK hKΩ => memLpLoc_iff.1 hfc.memLpLoc K hKΩ hK)
+    (fun K hK hKΩ => memLpLoc_iff.1 (hfi.mono_exponent le_top) K hKΩ hK)
     (fun K hK hKΩ => memLpLoc_iff.1 hDf K hKΩ hK)
     (fun K hK hKΩ => memLpLoc_iff.1 hgb K hKΩ hK) (fun K hK hKΩ => memLpLoc_iff.1 hDg K hKΩ hK)
 
@@ -356,25 +328,35 @@ theorem exists_eLpNorm_bilin_add_eLpNorm_deriv_le (hp : 2 < p) (hqp : q ≤ p)
         _ = (2 + C) * (M + N) := by ring
     _ = ↑(2 + C) * ‖B‖ₑ * (M + N) * X := by push_cast; ring
 
-/-- **Order-one mixed products.** For `p > 2` and `1 < q ≤ p`, the product of a continuous
+/-- **Order-one mixed products.** For `p > 2` and `1 < q ≤ p`, the product of a locally bounded
 `W^{1,p}_loc` map with a `W^{1,q}_loc` map with finite-dimensional values is in
 `W^{1,q}_loc`. At `q = p` this is the algebra property of `W^{1,p}_loc` under continuous bilinear
 maps. -/
-theorem MemWkpLoc.bilin [CompleteSpace H] (B : F →L[ℝ] G →L[ℝ] H) (hp : 2 < p) (hq : 1 < q)
-    (hqp : q ≤ p) {f : ℂ → F} {g : ℂ → G} (hf : MemWkpLoc p Ω 1 f) (hfc : ContinuousOn f Ω)
-    (hg : MemWkpLoc q Ω 1 g) : MemWkpLoc q Ω 1 (fun z => B (f z) (g z)) := by
+theorem MemWkpLoc.bilin_of_memLpLoc_top [CompleteSpace H] (B : F →L[ℝ] G →L[ℝ] H) (hp : 2 < p)
+    (hq : 1 < q) (hqp : q ≤ p) {f : ℂ → F} {g : ℂ → G} (hf : MemWkpLoc p Ω 1 f)
+    (hfi : MemLpLoc ∞ Ω f) (hg : MemWkpLoc q Ω 1 g) :
+    MemWkpLoc q Ω 1 (fun z => B (f z) (g z)) := by
   let _ : Fact (1 ≤ (q : ℝ≥0∞)) := ⟨by exact_mod_cast hq.le⟩
   obtain ⟨Df, hDf, hDfp⟩ := hf.exists_weakFDeriv_of_isOpen
   obtain ⟨Dg, hDg, hDgq⟩ := hg.exists_weakFDeriv_of_isOpen
-  have hfi : MemLpLoc ∞ Ω f := hfc.memLpLoc
   have hgq := hg.memLpLoc
   rw [memWkpLoc_zero_iff] at hDfp hDgq
-  have hD := hDf.bilin_of_continuousOn B hp hq hqp hfc hDfp hDg hgq hDgq
+  have hD := hDf.bilin_of_memLpLoc_top B hp hq hqp hfi hDfp hDg hgq hDgq
   refine memWkpLoc_succ_iff_of_isOpen.2 ⟨memLpLoc_iff.2 fun K hKΩ hK => ?_, _, hD,
     memWkpLoc_zero_iff.2 (memLpLoc_iff.2 fun K hKΩ hK => ?_)⟩
   · exact B.memLp_of_bilin q (memLpLoc_iff.1 hfi K hKΩ hK) (memLpLoc_iff.1 hgq K hKΩ hK)
-  · exact (memLpLoc_iff.1 (MemLpLoc.bilin_memWkpLoc (B.precompL ℂ) hp hqp hDfp hg) K hKΩ
+  · exact (memLpLoc_iff.1 (MemLpLoc.bilin_of_memWkpLoc (B.precompL ℂ) hp hqp hDfp hg) K hKΩ
       hK).add ((B.precompR ℂ).memLp_of_bilin q (memLpLoc_iff.1 hfi K hKΩ hK)
         (memLpLoc_iff.1 hDgq K hKΩ hK))
+
+/-- **Order-one mixed products with finite-dimensional factors.** For `p > 2` and
+`1 < q ≤ p`, the product of a `W^{1,p}_loc` map with a `W^{1,q}_loc` map, both with
+finite-dimensional values, is in `W^{1,q}_loc`. The first factor is locally bounded by the local
+gain of integrability at `q = p`. -/
+theorem MemWkpLoc.bilin [FiniteDimensional ℝ F] [CompleteSpace H] (B : F →L[ℝ] G →L[ℝ] H)
+    (hp : 2 < p) (hq : 1 < q) (hqp : q ≤ p) {f : ℂ → F} {g : ℂ → G} (hf : MemWkpLoc p Ω 1 f)
+    (hg : MemWkpLoc q Ω 1 g) : MemWkpLoc q Ω 1 (fun z => B (f z) (g z)) := by
+  let _ : Fact (1 ≤ (p : ℝ≥0∞)) := ⟨by exact_mod_cast hq.le.trans hqp⟩
+  exact hf.bilin_of_memLpLoc_top B hp hq hqp (hf.memLpLoc_of_holderTriple hp le_rfl) hg
 
 end TauCeti
