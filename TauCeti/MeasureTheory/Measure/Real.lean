@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-public import Mathlib.Probability.CDF
+public import Mathlib.MeasureTheory.Measure.Real
 
 /-!
 # Elementary real-measure identities and maps
@@ -37,7 +37,7 @@ half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the 
 
 public section
 
-open MeasureTheory ProbabilityTheory Set
+open MeasureTheory Set
 
 private theorem measurable_abs : Measurable fun x : ℝ => |x| := continuous_abs.measurable
 
