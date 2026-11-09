@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
 public import TauCeti.Analysis.PDE.Vortex.Multiplier
-public import TauCeti.Analysis.PDE.Vortex.WindingPhase
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
@@ -32,15 +31,14 @@ are maps between the expected Sobolev spaces, for every integer `k ≥ 1`:
   (`TauCeti.Vortex.gaugeFixedAdjoint x`) map `C¹` fields in `H^(k+1)` to `H^k`
   (`gaugeFixedOperator_mem_sobolevFields`, `gaugeFixedAdjoint_mem_sobolevFields`).
 
-The reference field is an exact vortex outside the cutoff disc: there the gauge transformation by
-the inverse winding phase takes it to the vacuum (`equation_referenceField_eq_zero`). Its
-equation defect is therefore smooth with compact support, and lies in every `H^s`. The exact
-quadratic expansion `equation (x_m + y) = equation x_m + d₁ y + quadraticTerm y` about the
-reference field (`TauCeti.Vortex.equation_add_smul`) then reduces the equation map to three
-kinds of terms: first derivatives of `H^(k+1)` functions, which lie in `H^k`; products of a
-reference coordinate, which is smooth with bounded derivatives, with an `H^(k+1)` function; and
-products of two `H^(k+1)` functions, which lie in `H^(k+1)` because `H^(k+1)(ℂ)` is an algebra
-for `k ≥ 1` (`mul_mem_realSobolevFunctions_of_mem_framedFieldSpace`).
+The reference field is an exact vortex outside the cutoff disc, so its equation defect is smooth
+with compact support (`hasCompactSupport_equation_referenceField`) and lies in every `H^s`. The
+exact quadratic expansion `equation (x_m + y) = equation x_m + d₁ y + quadraticTerm y` about the
+reference field (`TauCeti.Vortex.equation_add_smul`) then reduces the equation map to three kinds of
+terms: first derivatives of `H^(k+1)` functions, which lie in `H^k`; products of a reference
+coordinate, which is smooth with bounded derivatives, with an `H^(k+1)` function; and products of
+two `H^(k+1)` functions, which lie in `H^(k+1)` because `H^(k+1)(ℂ)` is an algebra for `k ≥ 1`
+(`mul_mem_realSobolevFunctions_of_mem_framedFieldSpace`).
 
 The fields are pointwise representatives and the operators are classical differential
 expressions, so the statements assume `C¹` regularity of the field, variation or phase. These are
@@ -59,35 +57,10 @@ public section
 
 namespace TauCeti.Vortex
 
-open Complex Filter Metric TemperedDistribution
-open scoped Topology ContDiff
+open Complex TemperedDistribution
+open scoped ContDiff
 
 /-! ### The equation of the reference field -/
-
-/-- **The reference field is a vortex outside the cutoff disc.** There the gauge transformation
-by the inverse winding phase takes it to the vacuum. -/
-theorem equation_referenceField_eq_zero (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z : ℂ}
-    (hz : f.rOut < ‖z‖ ^ 2) : equation (referenceField f m) z = 0 := by
-  have hz₀ : z ≠ 0 := ne_zero_of_rOut_le_norm_sq f hz.le
-  have hu : ContDiffAt ℝ 2 (fun w ↦ (((windingPhase m)⁻¹ w : Circle) : ℂ)) z := by
-    have h := conjCLE.contDiff.contDiffAt.comp z (contDiffAt_windingPhase m hz₀ (n := 2))
-    simpa only [Pi.inv_apply, Circle.coe_inv_eq_conj, Function.comp_def, conjCLE_apply] using h
-  have hx (i : Fin 4) : DifferentiableAt ℝ (fun w ↦ referenceField f m w i) z :=
-    (contDiff_euclidean.1 (contDiff_referenceField f m) i).differentiable (by simp) z
-  rw [← equation_gaugeTransform_eq_zero_iff hu hx]
-  have hev : gaugeTransform (windingPhase m)⁻¹ (referenceField f m) =ᶠ[𝓝 z] vacuumField := by
-    filter_upwards [(isOpen_lt continuous_const (continuous_norm.pow 2)).mem_nhds hz] with w hw
-    exact gaugeTransform_inv_windingPhase_referenceField f m hw.le
-  rw [equation_eq_of_eventuallyEq hev, equation_vacuumField]
-
-/-- The equation defect of the reference field has compact support. -/
-theorem hasCompactSupport_equation_referenceField (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
-    HasCompactSupport (equation (referenceField f m)) := by
-  refine HasCompactSupport.intro (isCompact_closedBall (0 : ℂ) (max 1 f.rOut)) fun z hz ↦ ?_
-  rw [mem_closedBall_zero_iff, not_le] at hz
-  have h₁ : 1 < ‖z‖ := (le_max_left _ _).trans_lt hz
-  have h₂ : f.rOut < ‖z‖ := (le_max_right _ _).trans_lt hz
-  exact equation_referenceField_eq_zero f m (by nlinarith)
 
 /-- Each component of the equation defect of the reference field lies in every Sobolev space. -/
 theorem equation_referenceField_apply_mem_realSobolevFunctions (f : ContDiffBump (0 : ℝ))
