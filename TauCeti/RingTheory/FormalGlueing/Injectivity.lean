@@ -7,8 +7,9 @@ module
 
 public import TauCeti.RingTheory.FormalGlueing.Torsion
 public import Mathlib.Algebra.Module.LocalizedModule.Basic
-import TauCeti.LinearAlgebra.TensorProduct.Pullback
-import TauCeti.Algebra.Module.Torsion.PrimaryComponent
+import TauCeti.RingTheory.Flat.IsBaseChange
+import TauCeti.Algebra.Module.Torsion.Localization
+import TauCeti.Algebra.Module.LocalizedModule.Submodule
 
 /-!
 # Injectivity of formal-gluing comparison maps
@@ -110,14 +111,11 @@ theorem injective_liftBaseChange_snd_ker_coprod_of_formalGlueing
       (f.coprod (-g.restrictScalars R)).ker).liftBaseChange S) := by
   classical
   have ht : ((Ideal.span (G : Set R)).map (algebraMap R S)).primaryComponent g.ker = ⊤ := by
-    apply top_unique
-    intro n _
-    rw [← Ideal.primaryComponent_comap_subtype, Submodule.mem_comap,
-      Ideal.map_span, ← Finset.coe_image, Ideal.mem_primaryComponent_span_iff_localized]
+    rw [Ideal.map_span, ← Finset.coe_image,
+      Ideal.primaryComponent_span_eq_top_iff_subsingleton_localized]
     intro s hs
     obtain ⟨r, hr, rfl⟩ := Finset.mem_image.mp hs
-    apply (injective_iff_map_eq_zero _).mp (hloc r hr)
-    simp
+    exact (LinearMap.localizedMap_injective_iff_subsingleton_localized_ker _ g).mp (hloc r hr)
   have hg := TauCeti.isBaseChange_of_primaryComponent_eq_top hG ht
   exact injective_liftBaseChange_snd_ker_coprod f g hf hg.1
 
