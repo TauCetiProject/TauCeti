@@ -264,8 +264,10 @@ theorem map_mem_sheet_iff (hg : Continuous g) (hqg : ∀ e, q (g e) = p e) {I J 
     rw [tp.symm_apply_mk_proj (tp.mem_source.mpr (hVsub h1).1)] at h3
     exact ⟨by rw [hqg]; exact h1, by rw [h3, h2]⟩
 
-/-- The `p`-sheet of index `i` through a point `w` of a `q`-sheet is carried by `g` onto `w`
-when it lands in that `q`-sheet. -/
+/-- The point `tp.symm (q w, i)` of the `p`-sheet of index `i` lying over `q w` is mapped by `g`
+to `w`, provided `q w` lies in the connected set `V` and `w` is in the `q`-sheet of index `j`, and
+the image under `g` of the point of that `p`-sheet over the reference base point `x₀ ∈ V` lies in
+the same `q`-sheet of index `j`. -/
 theorem map_symm_eq_of_mem_sheet (hg : Continuous g) (hqg : ∀ e, q (g e) = p e)
     {I J : Type*} [TopologicalSpace I] [TopologicalSpace J] [DiscreteTopology J]
     (tp : Trivialization I p) (tq : Trivialization J q) {V : Set X} (hVconn : IsPreconnected V)
