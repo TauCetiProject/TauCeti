@@ -23,21 +23,18 @@ namespace LieSubalgebra
 variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L']
   [LieAlgebra R L'] (e : L ≃ₗ⁅R⁆ L') (H : LieSubalgebra R L)
 
-private theorem mem_map_lieEquiv_iff (K : LieSubalgebra R L) (y : L') :
-    y ∈ K.map (e : L →ₗ⁅R⁆ L') ↔ e.symm y ∈ K :=
-  ⟨fun ⟨z, hz, hzy⟩ ↦ by simpa [← hzy] using hz, fun hy ↦ ⟨e.symm y, hy, by simp⟩⟩
-
 /-- An equivalence of Lie algebras carries the normalizer of a Lie subalgebra to the normalizer of
 its image. -/
 theorem normalizer_map_lieEquiv :
     (H.map (e : L →ₗ⁅R⁆ L')).normalizer = H.normalizer.map (e : L →ₗ⁅R⁆ L') := by
   ext x
-  rw [mem_map_lieEquiv_iff e, mem_normalizer_iff, mem_normalizer_iff]
+  rw [mem_map_submodule, Submodule.mem_map_equiv, mem_toSubmodule,
+    mem_normalizer_iff, mem_normalizer_iff]
+  have hsymm (y : L') : e.toLinearEquiv.symm y = e.symm y := rfl
+  simp only [mem_map_submodule, Submodule.mem_map_equiv, mem_toSubmodule, hsymm]
   refine ⟨fun h y hy ↦ ?_, fun h y hy ↦ ?_⟩
-  · have := h (e y) ((mem_map_lieEquiv_iff e H _).2 (by simpa using hy))
-    rwa [mem_map_lieEquiv_iff e, LieEquiv.map_lie, LieEquiv.symm_apply_apply] at this
-  · rw [mem_map_lieEquiv_iff e, LieEquiv.map_lie]
-    exact h _ ((mem_map_lieEquiv_iff e H _).1 hy)
+  · simpa [LieEquiv.map_lie] using h (e y) (by simpa using hy)
+  · simpa [LieEquiv.map_lie] using h _ hy
 
 /-- **Cartan subalgebras are preserved by Lie algebra equivalences.** The image of a Lie subalgebra
 `H` under an equivalence of Lie algebras is a Cartan subalgebra exactly when `H` is. -/
@@ -50,7 +47,7 @@ theorem isCartanSubalgebra_map_lieEquiv_iff :
     rw [normalizer_map_lieEquiv]
     refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]⟩
     ext x
-    simpa [mem_map_lieEquiv_iff] using SetLike.ext_iff.1 h (e x)
+    simpa [mem_map_submodule, Submodule.mem_map_equiv] using SetLike.ext_iff.1 h (e x)
   exact ⟨fun ⟨h₁, h₂⟩ ↦ ⟨hnil.1 h₁, hnorm.1 h₂⟩, fun ⟨h₁, h₂⟩ ↦ ⟨hnil.2 h₁, hnorm.2 h₂⟩⟩
 
 end LieSubalgebra

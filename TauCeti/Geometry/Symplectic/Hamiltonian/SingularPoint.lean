@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Quotient.Bilinear
+public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.Geometry.Symplectic.Hamiltonian.NondegenerateRankZero
 public import TauCeti.Geometry.Symplectic.LinearReduction
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
@@ -108,21 +108,16 @@ private theorem polar_comp_subtype_eq_zero {Q : QuadraticForm ℝ V}
 def reducedQuadraticForm (Q : QuadraticForm ℝ V)
     (hQ : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar Q w u = 0) :
     QuadraticForm ℝ (ω.ReducedSpace U) :=
-  (2⁻¹ : ℝ) • LinearMap.BilinMap.toQuadraticMap
-    (LinearMap.liftQ₂ (LinearMap.ker (ω.toBilinForm.restrict U))
-      (LinearMap.ker (ω.toBilinForm.restrict U)) (QuadraticMap.polarBilin (Q.comp U.subtype))
-      (fun _ hw ↦ LinearMap.ext fun u ↦ polar_comp_subtype_eq_zero ω U hQ hw u)
-      (fun _ hw ↦ LinearMap.ext fun u ↦ by
-        simpa [QuadraticMap.polar_comm] using polar_comp_subtype_eq_zero ω U hQ hw u))
+  (Q.comp U.subtype).lift _ fun _ hw ↦ by
+    rw [QuadraticMap.radical_eq_ker_polarBilin]
+    exact LinearMap.ext fun u ↦ polar_comp_subtype_eq_zero ω U hQ hw u
 
 /-- The defining formula `Q_red [u] = Q u` of the induced quadratic form on the reduced space. -/
 @[simp]
 theorem reducedQuadraticForm_mk (Q : QuadraticForm ℝ V)
     (hQ : ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar Q w u = 0) (u : U) :
-    ω.reducedQuadraticForm U Q hQ (Submodule.Quotient.mk u) = Q u := by
-  change (2⁻¹ : ℝ) * QuadraticMap.polar (Q.comp U.subtype) u u = Q u
-  rw [QuadraticMap.polar_self, QuadraticMap.comp_apply, Submodule.subtype_apply, nsmul_eq_mul]
-  ring
+    ω.reducedQuadraticForm U Q hQ (Submodule.Quotient.mk u) = Q u :=
+  QuadraticMap.lift_mk _ u
 
 /-- The reduced space of the whole space is identified with `V` by a linear symplectomorphism. -/
 private def reducedSpaceTopEquiv : V ≃ₗ[ℝ] ω.ReducedSpace (⊤ : Submodule ℝ V) :=
@@ -373,9 +368,7 @@ private theorem isNondegenerateQuadraticFamily_reduction_iff_of_eq_top {ι : Typ
       ω.IsNondegenerateQuadraticFamily Q := by
   subst hU
   rw [← isNondegenerateQuadraticFamily_comp_iff (isSymplectomorphism_reducedSpaceTopEquiv ω)]
-  congr! with i
-  ext v
-  simp [reducedSpaceTopEquiv_apply]
+  congr!
 
 /-- **Comparison with rank zero.** At a critical point of `F`, the transversal space is the whole
 space and `x` is a nondegenerate point exactly when it is a nondegenerate rank-zero point. -/
