@@ -379,16 +379,7 @@ theorem expFDeriv_apply_eq_integral {𝕂 : Type*} [NontriviallyNormedField 𝕂
     [NormedAlgebra ℝ 𝕂] [NormedAlgebra 𝕂 A] (x y : A) :
     expFDeriv 𝕂 x y =
       ∫ t in (0 : ℝ)..1, exp ((1 - t) • x) * y * exp (t • x) := by
-  -- The two real structures on `A` agree: both are continuous and agree on `ℚ`.
-  have : IsScalarTower ℝ 𝕂 A := by
-    refine IsScalarTower.of_algebraMap_eq fun r ↦ ?_
-    have hq : (algebraMap ℝ A).comp (Rat.castHom ℝ) =
-        ((algebraMap 𝕂 A).comp (algebraMap ℝ 𝕂)).comp (Rat.castHom ℝ) := RingHom.ext_rat _ _
-    have h := (Rat.denseRange_cast (𝕜 := ℝ)).equalizer
-      (continuous_algebraMap ℝ A)
-      ((continuous_algebraMap 𝕂 A).comp (continuous_algebraMap ℝ 𝕂))
-      (funext fun q ↦ congrFun (congrArg DFunLike.coe hq) q)
-    exact congrFun h r
+  -- The two real structures on `A` agree, by Mathlib's instance `Real.isScalarTower`.
   let _ : CharZero 𝕂 := Algebra.charZero_of_charZero ℝ 𝕂
   let _ : IsScalarTower ℚ ℝ 𝕂 := IsScalarTower.of_algebraMap_eq fun q ↦ by simp [map_ratCast]
   let _ : ContinuousSMul ℚ 𝕂 := IsScalarTower.continuousSMul ℝ
