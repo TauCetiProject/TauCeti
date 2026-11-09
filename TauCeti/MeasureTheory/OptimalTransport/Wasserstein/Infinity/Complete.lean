@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Function.Lp.Complete
 public import TauCeti.MeasureTheory.OptimalTransport.Chain
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Infinity.Basic
 
@@ -79,39 +80,37 @@ theorem exists_isProbabilityMeasure_wassersteinEDist_top_le_tsum
   have hev : ∀ n, Measurable fun x : ℕ → X ↦ x n := fun n ↦ measurable_pi_apply n
   have hadj : ∀ n, P.map (fun x ↦ (x n, x (n + 1))) = π n :=
     TauCeti.Measure.map_adjacent_chainMeasure_of_isCoupling hπ
-  have hjump : ∀ n, ∀ᵐ x ∂P, edist (x n) (x (n + 1)) ≤ b n := fun n ↦ by
-    have hnorm : eLpNorm (fun x : ℕ → X ↦ edist (x n) (x (n + 1))) ∞ P ≤ b n := by
-      rw [← Function.comp_def (fun z : X × X ↦ edist z.1 z.2) fun x : ℕ → X ↦ (x n, x (n + 1)),
-        ← eLpNorm_map_measure measurable_edist.aestronglyMeasurable
-          ((hev n).prodMk (hev (n + 1))).aemeasurable, hadj n, hπopt n]
-      exact hμ n
-    filter_upwards [enorm_ae_le_eLpNormEssSup (fun x : ℕ → X ↦ edist (x n) (x (n + 1))) P]
-      with x hx
-    rw [enorm_eq_self] at hx
-    exact hx.trans (eLpNormEssSup_le_eLpNorm_top.trans hnorm)
-  have hcauchy : ∀ᵐ x ∂P, CauchySeq fun n ↦ x n := by
-    filter_upwards [ae_all_iff.2 hjump] with x hx
-    exact cauchySeq_of_edist_le_of_tsum_ne_top b
-      (fun n ↦ by simpa only [Nat.succ_eq_add_one] using hx n) hb
+  have hjumpNorm : ∀ n,
+      eLpNorm (fun x : ℕ → X ↦ edist (x n) (x (n + 1))) ∞ P ≤ b n := fun n ↦ by
+    calc
+      eLpNorm (fun x : ℕ → X ↦ edist (x n) (x (n + 1))) ∞ P
+          = eLpNorm (fun z : X × X ↦ edist z.1 z.2) ∞ (π n) := by
+            rw [← hadj n, eLpNorm_map_measure measurable_edist.aestronglyMeasurable
+              ((hev n).prodMk (hev (n + 1))).aemeasurable]
+            rfl
+      _ = wassersteinEDist ∞ (μ n) (μ (n + 1)) := hπopt n
+      _ ≤ b n := hμ n
+  -- the coordinate process converges almost everywhere in `L^∞` to a limit `g` with the tail bound
+  obtain ⟨g, -, hg, hgb⟩ :=
+    exists_eLpNorm_edist_le_tsum le_top (fun n ↦ (hev n).aestronglyMeasurable) hb hjumpNorm
   obtain ⟨Z, hZ, hZtendsto, hcoupling⟩ :=
-    TauCeti.Measure.exists_measurable_isCoupling_map_chainMeasure hπ hcauchy
+    TauCeti.Measure.exists_measurable_isCoupling_map_chainMeasure hπ
+      (hg.mono fun x hx ↦ hx.cauchySeq)
   refine ⟨P.map Z, (Measure.isProbabilityMeasure_map_iff hZ.aemeasurable).2 inferInstance,
     fun n ↦ ?_⟩
+  -- the two limits `Z` and `g` are almost everywhere at distance zero
   calc
     wassersteinEDist ∞ (μ n) (P.map Z)
         ≤ eLpNorm (fun z : X × X ↦ edist z.1 z.2) ∞ (P.map fun x ↦ (x n, Z x)) :=
       wassersteinEDist_le (hcoupling n) ∞
-    _ = eLpNorm (fun x : ℕ → X ↦ edist (x n) (Z x)) ∞ P := by
-      rw [eLpNorm_map_measure measurable_edist.aestronglyMeasurable
-        ((hev n).prodMk hZ).aemeasurable, Function.comp_def]
-    _ ≤ ∑' k, b (n + k) := by
-      have hm : AEStronglyMeasurable (fun x : ℕ → X ↦ edist (x n) (Z x)) P :=
-        ((hev n).edist hZ).aestronglyMeasurable
-      rw [eLpNorm_exponent_top hm]
-      refine eLpNormEssSup_le_of_ae_enorm_bound ?_
-      filter_upwards [ae_all_iff.2 hjump, hZtendsto] with x hx hxlim
-      simpa using edist_le_tsum_of_edist_le_of_tendsto b
-        (fun k ↦ by simpa only [Nat.succ_eq_add_one] using hx k) hxlim n
+    _ = eLpNorm (fun x : ℕ → X ↦ edist (x n) (Z x)) ∞ P :=
+      eLpNorm_map_measure measurable_edist.aestronglyMeasurable
+        ((hev n).prodMk hZ).aemeasurable
+    _ = eLpNorm (fun x : ℕ → X ↦ edist (x n) (g x)) ∞ P := by
+      refine eLpNorm_congr_ae ?_
+      filter_upwards [hZtendsto, hg] with x hZx hgx
+      exact edist_congr_left (tendsto_nhds_unique (hZx.edist hgx) (by simp))
+    _ ≤ ∑' k, b (n + k) := hgb n
 
 end Limit
 
