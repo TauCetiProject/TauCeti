@@ -52,10 +52,7 @@ theorem map_mem_glpos_iff {f : R →+* S} (hf : Monotone f) {g : GL n R} :
   rw [mem_glpos, mem_glpos, GeneralLinearGroup.map_det, Units.coe_map]
   constructor
   · intro h
-    by_contra hn
-    have hle := hf (le_of_not_gt hn)
-    simp only [map_zero] at hle
-    exact (not_le_of_gt h) hle
+    exact hf.reflect_lt (by simpa only [MonoidHom.coe_ofClass, map_zero] using h)
   · intro h
     exact lt_of_le_of_ne (by simpa using hf h.le) (Ne.symm (g.det.isUnit.map f).ne_zero)
 
