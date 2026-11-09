@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.Order.LeftRightNhds
+public import Mathlib.Topology.Algebra.Order.Group
+public import Mathlib.Topology.Algebra.Ring.Real
 
 /-!
 # Right-continuous functions on dense subsets
@@ -26,6 +28,7 @@ replaces a supremum over uncountably many times by a countable one.
   one countable set of times `≤ T` serves for every function right-continuous before `T`.
 * `TauCeti.le_of_forall_rat_add_le`: a function right-continuous at `t + h` that does not
   increase along rational increments from `t` does not increase along the real increment `h`.
+* `eventually_nhdsGT_pos_and_mul_abs_lt`: as `h → 0⁺`, eventually `0 < h` and `c * |h| < r`.
 -/
 
 public section
@@ -87,3 +90,13 @@ theorem TauCeti.le_of_forall_rat_add_le {β : Type*} [Preorder β] [TopologicalS
   exact hanti (r n) (by exact_mod_cast (hh.trans (hr n).le))
 
 end Rational
+
+open Filter Topology in
+/-- Along `h → 0⁺`, eventually `0 < h` and `c * |h| < r`, for any `c` and positive `r`. -/
+theorem eventually_nhdsGT_pos_and_mul_abs_lt (c : ℝ) {r : ℝ} (hr : 0 < r) :
+    ∀ᶠ h : ℝ in 𝓝[>] 0, 0 < h ∧ c * |h| < r := by
+  have hlt : ∀ᶠ h : ℝ in 𝓝 (0 : ℝ), c * |h| < r := by
+    have : Continuous fun h : ℝ ↦ c * |h| := continuous_const.mul continuous_abs
+    exact this.continuousAt.eventually_lt continuousAt_const (by simpa using hr)
+  exact (eventually_mem_nhdsWithin.and (hlt.filter_mono nhdsWithin_le_nhds)).mono fun h hh ↦
+    ⟨hh.1, hh.2⟩

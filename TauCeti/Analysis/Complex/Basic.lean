@@ -25,6 +25,10 @@ pseudo-hyperbolic expression.
 The scalar Cayley expression `1 + (z - conj z) / (r - z)` has unit norm for real `r`.
 When `z ≠ r`, it is the quotient `(r - conj z) / (r - z)` of a complex number's conjugate
 by itself; at `z = r`, Lean's totalized inverse gives value one.
+
+The file also records the coordinates, in the frame of a nonzero direction `v`, of the points
+`v (s ± h i) + z₀` on the two sides of the line through `v s + z₀` with direction `v`: their
+imaginary parts in that frame and their distance from `v s + z₀`.
 -/
 
 public section
@@ -86,6 +90,48 @@ theorem continuousOn_mapsTo_prodMap_conj (hτ : ContinuousOn τ U) (hτU : Set.M
     conj_mem_ball_of_im_eq_zero (by simp) hz
   exact ⟨hτ.prodMap Complex.continuous_conj.continuousOn, hτU.prodMap hconjBall,
     hτU.prodMap fun z hz ↦ ⟨hconjBall hz.1, by simpa using hz.2⟩⟩
+
+section LineThrough
+
+open Complex
+
+variable {v : ℂ} {s : ℝ}
+
+/-- Moving `h` units off the line `s ↦ v * s` in the direction `v * I` changes the coordinate
+along `v` by `h * I`. -/
+@[simp]
+theorem im_div_add_mul_I_sub (hv : v ≠ 0) (h : ℝ) :
+    ((v * (s + h * I) - v * s) / v).im = h := by
+  have : (v * (s + h * I) - v * s) / v = h * I := by
+    field_simp
+    ring
+  rw [this]
+  simp only [mul_im, ofReal_re, I_re, mul_zero, ofReal_im, I_im, mul_one, add_zero]
+
+/-- Moving `h` units off the line `s ↦ v * s` in the direction `-(v * I)` changes the coordinate
+along `v` by `-(h * I)`. -/
+@[simp]
+theorem im_div_sub_mul_I_sub (hv : v ≠ 0) (h : ℝ) :
+    ((v * (s - h * I) - v * s) / v).im = -h := by
+  have := im_div_add_mul_I_sub (v := v) (s := s) hv (-h)
+  rwa [ofReal_neg, neg_mul, ← sub_eq_add_neg] at this
+
+/-- The point `h` units off the line `s ↦ v * s` in the direction `v * I` is at distance
+`‖v‖ * |h|` from the line point. -/
+@[simp]
+theorem dist_add_mul_I (h : ℝ) : dist (v * (s + h * I)) (v * s) = ‖v‖ * |h| := by
+  rw [dist_eq_norm]
+  have : v * (s + h * I) - v * s = v * (h * I) := by ring
+  rw [this, norm_mul, norm_mul, Complex.norm_I, mul_one, Complex.norm_real, Real.norm_eq_abs]
+
+/-- The point `h` units off the line `s ↦ v * s` in the direction `-(v * I)` is at distance
+`‖v‖ * |h|` from the line point. -/
+@[simp]
+theorem dist_sub_mul_I (h : ℝ) : dist (v * (s - h * I)) (v * s) = ‖v‖ * |h| := by
+  have := dist_add_mul_I (v := v) (s := s) (-h)
+  rwa [ofReal_neg, neg_mul, ← sub_eq_add_neg, abs_neg] at this
+
+end LineThrough
 
 end TauCeti
 
