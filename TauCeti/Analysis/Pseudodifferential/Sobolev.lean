@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.Continuous
+import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.MeasureTheory.Integral.SchurTest
 
@@ -52,6 +53,10 @@ Since the `H^s` norm is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`, this is the est
 
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_one_add_norm_pow_mul_norm_fourier_le`: rapid
   decay of the Fourier transform in the position.
+* `TauCeti.Symbol.HasCompactSpatialSupport.continuous_fourier_slice`: continuity of `â(θ, ξ)`
+  jointly in `θ` and `ξ`.
+* `TauCeti.Symbol.HasCompactSpatialSupport.fourier_spatialDeriv_slice`: the Fourier transform of a
+  position slice of `∂_{x_j} a` is `2πi θ_j â(θ, ξ)`.
 * `TauCeti.Symbol.HasCompactSpatialSupport.fourier_quantizeSchwartzValue`: the Fourier transform
   of `Op(a) u`.
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le`:
@@ -177,6 +182,53 @@ theorem HasCompactSpatialSupport.exists_one_add_norm_pow_mul_norm_fourier_le
     _ ≤ 2 ^ N * (B₀ * (1 + ‖ξ‖ ^ 2) ^ (m / 2) + B₁ * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by gcongr
     _ = 2 ^ N * (B₀ + B₁) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by ring
 
+/-! ### Continuity and position derivatives of the Fourier slices -/
+
+/-- The Fourier transform `â(g t, h t)` of a position slice of a symbol with compact spatial
+support is continuous along continuous maps `g`, `h` into the dual position variable and the
+frequency. -/
+theorem HasCompactSpatialSupport.continuous_fourier_slice
+    (ha : a.HasCompactSpatialSupport) {X : Type*} [TopologicalSpace X] [FirstCountableTopology X]
+    {g h : X → CoordinateSpace n} (hg : Continuous g) (hh : Continuous h) :
+    Continuous fun t ↦ 𝓕 (fun x ↦ a.coefficient (x, h t)) (g t) := by
+  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
+  refine continuous_iff_continuousAt.2 fun t₀ ↦ ?_
+  obtain ⟨C, hC⟩ := (hK.prod (isCompact_closedBall (h t₀) 1)).exists_bound_of_continuousOn
+    a.contDiff_coefficient.continuous.continuousOn
+  simp only [Real.fourier_eq]
+  refine continuousAt_of_dominated (bound := K.indicator fun _ ↦ C) ?_ ?_ ?_ ?_
+  · exact .of_forall fun t ↦ ((Real.continuous_fourierChar.comp (by fun_prop)).smul
+      (a.contDiff_coefficient_slice _).continuous).aestronglyMeasurable
+  · filter_upwards [(hh.tendsto t₀).eventually
+      (Metric.closedBall_mem_nhds (h t₀) one_pos)] with t ht
+    refine .of_forall fun x ↦ ?_
+    by_cases hx : x ∈ K
+    · rw [Set.indicator_of_mem hx, Circle.norm_smul]
+      exact hC (x, h t) ⟨hx, ht⟩
+    · simp [Set.indicator_of_notMem hx, hKa x hx]
+  · exact (integrable_indicator_iff hK.measurableSet).2 (integrableOn_const hK.measure_lt_top.ne)
+  · refine .of_forall fun x ↦ ?_
+    exact ((Real.continuous_fourierChar.comp (continuous_const.inner hg).neg).smul
+      (a.contDiff_coefficient.continuous.comp (continuous_const.prodMk hh))).continuousAt
+
+/-- The Fourier transform of a position slice of `∂_{x_j} a` is `2πi θ_j` times that of `a`:
+`(∂_{x_j} a)^(θ, ξ) = 2πi θ_j â(θ, ξ)`. -/
+theorem HasCompactSpatialSupport.fourier_spatialDeriv_slice
+    (ha : a.HasCompactSpatialSupport) (j : Fin n) (θ ξ : CoordinateSpace n) :
+    𝓕 (fun x ↦ (Symbol.spatialDeriv j a).coefficient (x, ξ)) θ =
+      ((2 * π * Complex.I * θ j : ℂ)) • 𝓕 (fun x ↦ a.coefficient (x, ξ)) θ := by
+  have hslice : (fun x ↦ (Symbol.spatialDeriv j a).coefficient (x, ξ)) =
+      fun x ↦ fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x (EuclideanSpace.single j 1) := by
+    funext x
+    rw [← fderiv_coefficient_single]
+  have hf : ContDiff ℝ 1 fun y ↦ a.coefficient (y, ξ) :=
+    (a.contDiff_coefficient_slice ξ).of_le (by simp)
+  rw [hslice, fourier_fderiv_apply (hf.continuous.integrable_of_hasCompactSupport
+    (ha.hasCompactSupport_slice ξ)) (hf.differentiable one_ne_zero)
+    ((hf.continuous_fderiv one_ne_zero).integrable_of_hasCompactSupport
+      ((ha.hasCompactSupport_slice ξ).fderiv (𝕜 := ℝ))),
+    EuclideanSpace.inner_single_right, one_mul, conj_trivial]
+
 end Decay
 
 /-! ### The Fourier transform of the quantization -/
@@ -209,9 +261,7 @@ private theorem HasCompactSpatialSupport.integrable_fourierChar_smul_apply
   by_cases hx : p.1 ∈ K
   · rw [Set.indicator_of_mem hx, one_mul, Circle.norm_smul]
     refine ((a.coefficient _).le_opNorm _).trans ?_
-    have hscale := one_add_norm_sq_rpow_le_of_norm_eq_mul (c := 2 * π)
-      (by linarith [Real.two_le_pi]) m (x := (2 * π) • p.2) (y := p.2)
-      (by rw [norm_smul, Real.norm_of_nonneg Real.two_pi_pos.le])
+    have hscale := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) m p.2
     calc ‖a.coefficient (p.1, (2 * π) • p.2)‖ * ‖𝓕 u p.2‖
         ≤ C * (1 + ‖(2 * π) • p.2‖ ^ 2) ^ (m / 2) * ‖𝓕 u p.2‖ := by
           gcongr
@@ -269,9 +319,7 @@ private theorem rpow_mul_norm_fourier_apply_le {s C₀ : ℝ} {N : ℕ} (hC₀ :
   have hA : ‖A‖ ≤ C₀ * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) * (t ^ N)⁻¹ := by
     rw [le_mul_inv_iff₀ (by positivity), mul_comm]
     exact hdecay _ _
-  have hscale := one_add_norm_sq_rpow_le_of_norm_eq_mul (c := 2 * π)
-    (by linarith [Real.two_le_pi]) m (x := (2 * π) • ζ) (y := ζ)
-    (by rw [norm_smul, Real.norm_of_nonneg Real.two_pi_pos.le])
+  have hscale := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) m ζ
   have hpeetre := one_add_norm_sq_rpow_le_mul_sub (s - m) ξ ζ
   -- The bracket `⟨η⟩ ^ |s - m|` is at most `(1 + ‖η‖) ^ |s - m|`.
   have hbr : (1 + ‖ξ - ζ‖ ^ 2) ^ (|s - m| / 2) ≤ t ^ |s - m| := by

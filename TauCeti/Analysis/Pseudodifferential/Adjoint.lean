@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Pseudodifferential.Sobolev
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Normed.Affine.MazurUlam
-import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Fourier.Parametric
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.MeasureTheory.Function.L2Space
@@ -87,50 +86,6 @@ section Slice
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {a : Symbol n V W m}
 
-/-- The Fourier transform `â(g t, h t)` of a position slice of a symbol with compact spatial
-support is continuous along continuous maps `g`, `h` into the dual position variable and the
-frequency. -/
-private theorem HasCompactSpatialSupport.continuous_fourier_slice
-    (ha : a.HasCompactSpatialSupport) {X : Type*} [TopologicalSpace X] [FirstCountableTopology X]
-    {g h : X → CoordinateSpace n} (hg : Continuous g) (hh : Continuous h) :
-    Continuous fun t ↦ 𝓕 (fun x ↦ a.coefficient (x, h t)) (g t) := by
-  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
-  refine continuous_iff_continuousAt.2 fun t₀ ↦ ?_
-  obtain ⟨C, hC⟩ := (hK.prod (isCompact_closedBall (h t₀) 1)).exists_bound_of_continuousOn
-    a.contDiff_coefficient.continuous.continuousOn
-  simp only [Real.fourier_eq]
-  refine continuousAt_of_dominated (bound := K.indicator fun _ ↦ C) ?_ ?_ ?_ ?_
-  · exact .of_forall fun t ↦ ((Real.continuous_fourierChar.comp (by fun_prop)).smul
-      (a.contDiff_coefficient_slice _).continuous).aestronglyMeasurable
-  · filter_upwards [(hh.tendsto t₀).eventually
-      (Metric.closedBall_mem_nhds (h t₀) one_pos)] with t ht
-    refine .of_forall fun x ↦ ?_
-    by_cases hx : x ∈ K
-    · rw [Set.indicator_of_mem hx, Circle.norm_smul]
-      exact hC (x, h t) ⟨hx, ht⟩
-    · simp [Set.indicator_of_notMem hx, hKa x hx]
-  · exact (integrable_indicator_iff hK.measurableSet).2 (integrableOn_const hK.measure_lt_top.ne)
-  · refine .of_forall fun x ↦ ?_
-    exact ((Real.continuous_fourierChar.comp (continuous_const.inner hg).neg).smul
-      (a.contDiff_coefficient.continuous.comp (continuous_const.prodMk hh))).continuousAt
-
-/-- The Fourier transform of a position slice of `∂_{x_j} a` is `2πi θ_j` times that of `a`. -/
-private theorem HasCompactSpatialSupport.fourier_spatialDeriv_slice
-    (ha : a.HasCompactSpatialSupport) (j : Fin n) (θ ξ : CoordinateSpace n) :
-    𝓕 (fun x ↦ (Symbol.spatialDeriv j a).coefficient (x, ξ)) θ =
-      ((2 * π * Complex.I * θ j : ℂ)) • 𝓕 (fun x ↦ a.coefficient (x, ξ)) θ := by
-  have hslice : (fun x ↦ (Symbol.spatialDeriv j a).coefficient (x, ξ)) =
-      fun x ↦ fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x (EuclideanSpace.single j 1) := by
-    funext x
-    rw [← fderiv_coefficient_single]
-  have hf : ContDiff ℝ 1 fun y ↦ a.coefficient (y, ξ) :=
-    (a.contDiff_coefficient_slice ξ).of_le (by simp)
-  rw [hslice, fourier_fderiv_apply (hf.continuous.integrable_of_hasCompactSupport
-    (ha.hasCompactSupport_slice ξ)) (hf.differentiable one_ne_zero)
-    ((hf.continuous_fderiv one_ne_zero).integrable_of_hasCompactSupport
-      ((ha.hasCompactSupport_slice ξ).fderiv (𝕜 := ℝ))),
-    EuclideanSpace.inner_single_right, one_mul, conj_trivial]
-
 /-- The decay of `â(θ, ξ - 2πθ)`: for a symbol of order `m` with compact spatial support,
 `‖â(θ, ξ - 2πθ)‖ ≤ C (1 + ‖θ‖) ^ (-(n + 1)) ⟨ξ⟩ ^ m`, which is integrable in `θ`. The decay of `â`
 in its first variable absorbs the growth of Peetre's inequality in the shift `2πθ`. -/
@@ -147,9 +102,8 @@ private theorem HasCompactSpatialSupport.exists_norm_fourier_slice_sub_le
   have h1 : 1 ≤ t := le_add_of_nonneg_right (norm_nonneg θ)
   -- Peetre's inequality for the shift by `2πθ`.
   have hpeetre := one_add_norm_sq_rpow_le_mul_sub m (ξ - (2 * π) • θ) ξ
-  have hscale := one_add_norm_sq_rpow_le_of_norm_eq_mul (c := 2 * π)
-    (by linarith [Real.two_le_pi]) |m| (x := ξ - (2 * π) • θ - ξ) (y := θ)
-    (by rw [sub_sub_cancel_left, norm_neg, norm_smul, Real.norm_of_nonneg Real.two_pi_pos.le])
+  rw [sub_sub_cancel_left, norm_neg] at hpeetre
+  have hscale := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) |m| θ
   rw [abs_abs] at hscale
   -- The bracket `⟨θ⟩ ^ |m|` is at most `(1 + ‖θ‖) ^ k`.
   have hbr : (1 + ‖θ‖ ^ 2) ^ (|m| / 2) ≤ t ^ k := by
@@ -301,7 +255,9 @@ private theorem hasFDerivAt_integral_fourierChar_smul_shift
         ≤ ∑ _j : Fin n, g θ + ∑ _j : Fin n, g θ :=
           add_le_add (Finset.sum_le_sum fun j _ ↦ (hbound θ p.2 hp2 j).1)
             (Finset.sum_le_sum fun j _ ↦ (hbound θ p.2 hp2 j).2)
-      _ = (2 * n) * g θ := by simp; ring
+      _ = (2 * n) * g θ := by
+          rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+          ring
   -- Differentiate under the integral sign, then compute the integrated derivative coordinatewise.
   have key := hasFDerivAt_integral_of_dominated_of_fderiv_le (𝕜 := ℝ) (μ := volume)
     (s := Metric.ball p₀ 1)
@@ -442,7 +398,8 @@ private theorem HasCompactSpatialSupport.hasFDerivAt_leftCoeff
     (fun j θ ζ ↦ ha.fourier_spatialDeriv_slice j θ ζ)
     (fun θ ζ ↦ by
       simpa only [coefficient_frequencyDeriv] using
-        hasFDerivAt_fourier_slice ((a.contDiff_coefficient).of_le (by simp)) hK hKa θ ζ)
+        hasFDerivAt_fourier_slice_coordinateDeriv ((a.contDiff_coefficient).of_le (by simp)) hK hKa
+          θ ζ)
     (fun ξ ↦ ha.continuous_fourier_slice continuous_id (by fun_prop))
     (fun j ξ ↦ (ha.spatialDeriv j).continuous_fourier_slice continuous_id (by fun_prop))
     (fun j ξ ↦ (ha.frequencyDeriv j).continuous_fourier_slice continuous_id (by fun_prop))
@@ -575,11 +532,12 @@ variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [Complet
 private def adjointCLM : (V →L[ℂ] W) →L[ℝ] (W →L[ℂ] V) :=
   (IsometryEquiv.toRealLinearIsometryEquivOfMapZero
     (ContinuousLinearMap.adjoint (𝕜 := ℂ) (E := V) (F := W)).toIsometryEquiv
-    (map_zero ContinuousLinearMap.adjoint)).toContinuousLinearEquiv
+    (by simp)).toContinuousLinearEquiv
 
 private theorem adjointCLM_apply (T : V →L[ℂ] W) :
-    adjointCLM T = ContinuousLinearMap.adjoint T :=
-  rfl
+    adjointCLM T = ContinuousLinearMap.adjoint T := by
+  rw [adjointCLM, ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    IsometryEquiv.coe_toRealLinearIsometryEquivOfMapZero, LinearIsometryEquiv.coe_toIsometryEquiv]
 
 /-- **The adjoint symbol.** For a symbol `a` of order `m` with compact spatial support, the symbol
 `a*(y, ξ) = (∫ exp(2πi ⟪θ, y⟫) â(θ, ξ - 2πθ) dθ)†` of order `m`, where `â(θ, ξ)` is the Fourier
@@ -593,7 +551,8 @@ theorem coefficient_adjoint (a : Symbol n V W m) (ha : a.HasCompactSpatialSuppor
     (adjoint a ha).coefficient (y, ξ) = ContinuousLinearMap.adjoint
       (∫ θ, (𝐞 ⟪θ, y⟫ : ℂ) • 𝓕 (fun x ↦ a.coefficient (x, ξ - (2 * π) • θ)) θ) := by
   rw [adjoint, coefficient_map, adjointCLM_apply]
-  rfl
+  dsimp only [leftSymbol]
+  rw [leftCoeff]
 
 variable {a : Symbol n V W m}
 
@@ -703,9 +662,7 @@ private theorem HasCompactSpatialSupport.integrable_adjointIntegrand
   refine ((u.integrable.norm.mul_prod hg).const_mul (C * (2 * π) ^ |m|)).mono'
     hcont.aestronglyMeasurable (.of_forall fun q ↦ ?_)
   obtain ⟨y, η, θ⟩ := q
-  have hscale := one_add_norm_sq_rpow_le_of_norm_eq_mul (c := 2 * π)
-    (by linarith [Real.two_le_pi]) m (x := (2 * π) • η) (y := η)
-    (by rw [norm_smul, Real.norm_of_nonneg Real.two_pi_pos.le])
+  have hscale := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) m η
   have hF : ‖𝓕 (fun x ↦ a.coefficient (x, (2 * π) • (η - θ))) θ‖ ≤
       C * ((1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * ((2 * π) ^ |m| * (1 + ‖η‖ ^ 2) ^ (m / 2))) := by
     rw [smul_sub]
@@ -762,9 +719,7 @@ private theorem HasCompactSpatialSupport.integral_inner_quantizeSchwartzValue_eq
       (C * (2 * π) ^ |m|)).mono' ?_ (.of_forall fun ζ ↦ ?_)
     · exact ((ha.continuous_fourier_slice (by fun_prop) (by fun_prop)).clm_apply
         (𝓕 u).continuous).aestronglyMeasurable
-    · have hscale := one_add_norm_sq_rpow_le_of_norm_eq_mul (c := 2 * π)
-        (by linarith [Real.two_le_pi]) m (x := (2 * π) • ζ) (y := ζ)
-        (by rw [norm_smul, Real.norm_of_nonneg Real.two_pi_pos.le])
+    · have hscale := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) m ζ
       have h := hC (η - ζ) ((2 * π) • ζ)
       rw [pow_zero, one_mul] at h
       calc ‖𝓕 (fun x ↦ a.coefficient (x, (2 * π) • ζ)) (η - ζ) (𝓕 u ζ)‖
