@@ -145,6 +145,104 @@ private theorem exists_toIntervalLocalization_mul_pow_eq {a b : ℕ} (ha : a ≠
         = v (algebraMap O K c) * (ρ₂ ^ i * ρ₁ ^ (a - i)) := by
           field_simp
       _ ≤ v (algebraMap O K c) := mul_le_of_le_one_right (by positivity) hle
+/-- If `y = ∑_{i ≤ m} [yᵢ] pⁱ + p ^ (m + 1) h` and each Teichmüller term of `y / (p [ϖ]) ^ m` is
+`e i z₀ ^ j i`, with remainder `p h / [ϖ] ^ m = eh`, then `y / (p [ϖ]) ^ m` is the corresponding
+sum. -/
+private theorem mk'_eq_sum_add {z₀ : B₀} {y : 𝕎 O} {m : ℕ}
+    {s : Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)}
+    (hm : ((p : 𝕎 O) * teichmuller p ϖ) ^ m = s) {h : 𝕎 O}
+    (hy : y = ∑ i ∈ Finset.Iic m, teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ i +
+      (p : 𝕎 O) ^ (m + 1) * h) {e : ℕ → A₀} {j : ℕ → ℕ}
+    (he : ∀ i, g (e i) * z₀ ^ j i *
+        ((p : B₀) ^ (m - i) * algebraMap (𝕎 O) B₀ (teichmuller p ϖ ^ m)) =
+      algebraMap (𝕎 O) B₀ (teichmuller p (y.teichmullerCoeff i))) {eh : A₀}
+    (heh : g eh * algebraMap (𝕎 O) B₀ (teichmuller p ϖ ^ m) =
+      algebraMap (𝕎 O) B₀ ((p : 𝕎 O) * h)) :
+    IsLocalization.mk' B₀ y s = ∑ i ∈ Finset.Iic m, g (e i) * z₀ ^ j i + g eh := by
+  have hs : algebraMap (𝕎 O) B₀ s =
+      (p : B₀) ^ m * algebraMap (𝕎 O) B₀ (teichmuller p ϖ ^ m) := by
+    rw [← hm, map_pow, map_mul, map_natCast, mul_pow, map_pow]
+  apply (IsLocalization.map_units B₀ s).mul_right_cancel
+  rw [IsLocalization.mk'_spec, hs, add_mul, Finset.sum_mul]
+  conv_lhs => rw [hy]
+  rw [map_add, map_sum]
+  congr 1
+  · refine Finset.sum_congr rfl fun i hi ↦ ?_
+    have hpm : (p : B₀) ^ m = (p : B₀) ^ (m - i) * (p : B₀) ^ i := by
+      rw [← pow_add, Nat.sub_add_cancel (Finset.mem_Iic.mp hi)]
+    rw [map_mul, map_pow, map_natCast, ← he i, hpm]
+    ring
+  · rw [map_mul, map_pow, map_natCast, ← mul_assoc, pow_succ, mul_assoc _ (p : B₀),
+      ← map_natCast (algebraMap (𝕎 O) B₀) p, ← map_mul, ← heh]
+    ring
+
+/-- A Teichmüller term `[yᵢ] pⁱ` of `y` gives a coefficient `e` with `λ_{ρ₂}(e) ρ₁ ^ a` at most the
+norm of `y / (p [ϖ]) ^ m`, as soon as `e` satisfies the bound from
+`TauCeti.WittVector.IntervalLocalization.exists_toIntervalLocalization_mul_pow_eq`. -/
+private theorem norm_mul_pow_le_norm_mk' {a m i : ℕ}
+    {s : Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)}
+    (hm : ((p : 𝕎 O) * teichmuller p ϖ) ^ m = s) (y : 𝕎 O) (him : i ≤ m) {e : A₀}
+    (heb : ‖e‖ * ρ₁ ^ a * (ρ₁ ^ (m - i) * v (algebraMap O K ϖ) ^ m) ≤
+      v (algebraMap O K (y.teichmullerCoeff i))) :
+    ‖e‖ * ρ₁ ^ a ≤ ‖IsLocalization.mk' B₀ y s‖ := by
+  have hw : 0 < (v (algebraMap O K ϖ) : ℝ) :=
+    NNReal.coe_pos.mpr (hv.valuation_pos_iff_ne_zero.mpr hϖ)
+  have hρ₁0 : (0 : ℝ) < ρ₁ := hρ₁.1
+  have hyi : (v (algebraMap O K (y.teichmullerCoeff i)) : ℝ) * ρ₁ ^ i ≤
+      gaussValuation p hv ρ₁ hρ₁.2 y := by
+    exact_mod_cast le_gaussValuation hv hρ₁.2 y i
+  have hpow : (ρ₁ : ℝ) ^ m = ρ₁ ^ (m - i) * ρ₁ ^ i := by
+    rw [← pow_add, Nat.sub_add_cancel him]
+  have hvy : (v (algebraMap O K (y.teichmullerCoeff i)) : ℝ) ≤
+      gaussValuationAway p hv hϖ ρ₁ hρ₁ B₀ (IsLocalization.mk' B₀ y s) *
+        (ρ₁ ^ (m - i) * v (algebraMap O K ϖ) ^ m) := by
+    refine le_of_mul_le_mul_right (hyi.trans_eq ?_) (pow_pos hρ₁0 i)
+    rw [gaussValuation_eq_mul_gaussValuationAway_mk' B₀ hv hϖ hm hρ₁, hpow]
+    ring
+  have hD : (0 : ℝ) < ρ₁ ^ (m - i) * v (algebraMap O K ϖ) ^ m := by positivity
+  refine le_of_mul_le_mul_right ((heb).trans (hvy.trans ?_)) hD
+  rw [IntervalLocalization.norm_def]
+  gcongr
+  exact le_max_left _ _
+
+/-- The remainder `p h / [ϖ] ^ m` of the expansion of `y / (p [ϖ]) ^ m` has `λ_{ρ₂}`-norm, times
+`ρ₁ ^ a`, at most that of `y / (p [ϖ]) ^ m`. -/
+private theorem norm_mk'_mul_pow_le_norm_mk' {a m : ℕ}
+    {s : Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)}
+    (hm : ((p : 𝕎 O) * teichmuller p ϖ) ^ m = s) {y h : 𝕎 O}
+    (hh : y - ∑ i ∈ Finset.Iic m, teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ i =
+      (p : 𝕎 O) ^ (m + 1) * h) :
+    ‖IsLocalization.mk' A₀ ((p : 𝕎 O) * h)
+        (⟨teichmuller p ϖ ^ m, m, rfl⟩ : Submonoid.powers (teichmuller p ϖ))‖ * ρ₁ ^ a ≤
+      ‖IsLocalization.mk' B₀ y s‖ := by
+  have hw : 0 < (v (algebraMap O K ϖ) : ℝ) :=
+    NNReal.coe_pos.mpr (hv.valuation_pos_iff_ne_zero.mpr hϖ)
+  have hρ₂0 : (0 : ℝ) < ρ₂ := hρ₂.1
+  have hrem : gaussValuation p hv ρ₂ hρ₂.2 ((p : 𝕎 O) ^ (m + 1) * h) ≤
+      gaussValuation p hv ρ₂ hρ₂.2 y := by
+    have hb : y = ∑ i ∈ Finset.range (m + 1),
+        teichmuller p (y.teichmullerCoeff i) * (p : 𝕎 O) ^ i + (p : 𝕎 O) ^ (m + 1) * h := by
+      rw [Nat.range_succ_eq_Iic, ← hh]
+      ring
+    rw [map_mul, map_pow, gaussValuation_p, mul_comm]
+    exact gaussValuation_mul_pow_le_of_eq_sum_add_pow_mul hv hρ₂.2 hb
+  have hrem' : (ρ₂ : ℝ) ^ m * gaussValuation p hv ρ₂ hρ₂.2 ((p : 𝕎 O) * h) ≤
+      gaussValuationAway p hv hϖ ρ₂ hρ₂ B₀ (IsLocalization.mk' B₀ y s) *
+        (ρ₂ ^ m * v (algebraMap O K ϖ) ^ m) := by
+    rw [← gaussValuation_eq_mul_gaussValuationAway_mk' B₀ hv hϖ hm hρ₂]
+    simpa [pow_succ, mul_assoc, gaussValuation_p] using (NNReal.coe_le_coe.mpr hrem)
+  have hnorm : ‖IsLocalization.mk' A₀ ((p : 𝕎 O) * h)
+        (⟨teichmuller p ϖ ^ m, m, rfl⟩ : Submonoid.powers (teichmuller p ϖ))‖ =
+      gaussValuation p hv ρ₂ hρ₂.2 ((p : 𝕎 O) * h) * ((v (algebraMap O K ϖ) : ℝ) ^ m)⁻¹ := by
+    simp [RadiusLocalization.norm_mk', gaussValuation_teichmuller]
+  have hρa : (ρ₁ : ℝ) ^ a ≤ 1 := pow_le_one₀ (by positivity) hρ₁.2.le
+  refine (mul_le_of_le_one_right (norm_nonneg _) hρa).trans ?_
+  rw [hnorm, IntervalLocalization.norm_def]
+  refine le_trans ?_ (le_max_right _ _)
+  rw [mul_inv_le_iff₀ (by positivity)]
+  refine le_of_mul_le_mul_left ?_ (pow_pos hρ₂0 m)
+  linarith
+
 
 /-- **Approximation with control in `𝕎 O[1/(p [ϖ])]`.** Let `a ≠ 0`, `ρ₁ ^ a = v(ϖ) ^ b` and
 `z₀ p ^ a = [ϖ] ^ b`. Then every `x ∈ 𝕎 O[1/(p [ϖ])]` is a finite sum of elements `e z₀ ^ j`
@@ -155,7 +253,6 @@ private theorem mem_of_forall_toIntervalLocalization_mul_pow_mem {a b : ℕ} (ha
     (hz : z₀ * (p : B₀) ^ a = algebraMap (𝕎 O) B₀ (teichmuller p ϖ ^ b)) {H : AddSubgroup B₀}
     (x : B₀) (hH : ∀ (e : A₀) (j : ℕ), ‖e‖ * ρ₁ ^ a ≤ ‖x‖ → g e * z₀ ^ j ∈ H) : x ∈ H := by
   have := hv.isDomain
-  set ι := algebraMap (𝕎 O) B₀
   obtain ⟨⟨y, s⟩, hx⟩ := IsLocalization.mk'_surjective
     (Submonoid.powers ((p : 𝕎 O) * teichmuller p ϖ)) x
   dsimp only at hx
@@ -172,85 +269,17 @@ private theorem mem_of_forall_toIntervalLocalization_mul_pow_mem {a b : ℕ} (ha
     ring
   choose e j he heb using fun i ↦ exists_toIntervalLocalization_mul_pow_eq p hv hϖ hϖ' hρ₁ hρ₂
     ha hab hz (y.teichmullerCoeff i) (m - i) m
-  let t : Submonoid.powers (teichmuller p ϖ) := ⟨teichmuller p ϖ ^ m, m, rfl⟩
-  let eh : A₀ := IsLocalization.mk' A₀ ((p : 𝕎 O) * h) t
-  have heh : g eh * ι (teichmuller p ϖ ^ m) = ι ((p : 𝕎 O) * h) := by
+  let eh : A₀ := IsLocalization.mk' A₀ ((p : 𝕎 O) * h)
+    (⟨teichmuller p ϖ ^ m, m, rfl⟩ : Submonoid.powers (teichmuller p ϖ))
+  have heh : g eh * algebraMap (𝕎 O) B₀ (teichmuller p ϖ ^ m) =
+      algebraMap (𝕎 O) B₀ ((p : 𝕎 O) * h) := by
     simpa only [map_mul, AlgHom.commutes] using
-      congrArg g (IsLocalization.mk'_spec A₀ ((p : 𝕎 O) * h) t)
-  have hs : ι s = (p : B₀) ^ m * ι (teichmuller p ϖ ^ m) := by
-    rw [← hm, map_pow, map_mul, map_natCast, mul_pow, map_pow]
-  have hxeq : IsLocalization.mk' B₀ y s = ∑ i ∈ Finset.Iic m, g (e i) * z₀ ^ j i + g eh := by
-    apply (IsLocalization.map_units B₀ s).mul_right_cancel
-    rw [IsLocalization.mk'_spec, hs, add_mul, Finset.sum_mul]
-    conv_lhs => rw [hy]
-    rw [map_add, map_sum]
-    congr 1
-    · refine Finset.sum_congr rfl fun i hi ↦ ?_
-      have hpm : (p : B₀) ^ m = (p : B₀) ^ (m - i) * (p : B₀) ^ i := by
-        rw [← pow_add, Nat.sub_add_cancel (Finset.mem_Iic.mp hi)]
-      rw [map_mul, map_pow, map_natCast, ← he i, hpm]
-      ring
-    · rw [map_mul, map_pow, map_natCast, ← mul_assoc, pow_succ, mul_assoc _ (p : B₀),
-        ← map_natCast ι p, ← map_mul, ← heh]
-      ring
-  -- the bounds, from `λ_ρ(y) = λ_ρ(x) (ρ v(ϖ)) ^ m` at both radii
-  have hw : 0 < (v (algebraMap O K ϖ) : ℝ) := by
-    rw [NNReal.coe_pos, pos_iff_ne_zero, map_ne_zero, map_ne_zero_iff _ hv.hom_inj]
-    exact hϖ
-  have hgy {ρ : ℝ≥0} (hρ : ρ ∈ Set.Ioo 0 1) :
-      (gaussValuation p hv ρ hρ.2 y : ℝ) =
-        gaussValuationAway p hv hϖ ρ hρ B₀ (IsLocalization.mk' B₀ y s) *
-          (ρ ^ m * v (algebraMap O K ϖ) ^ m) := by
-    have hρ0 : (0 : ℝ) < ρ := hρ.1
-    rw [gaussValuationAway_mk', ← hm]
-    simp only [map_pow, map_mul, gaussValuation_p, gaussValuation_teichmuller, NNReal.coe_mul,
-      NNReal.coe_inv, NNReal.coe_pow]
-    field_simp
-    ring
-  rw [hxeq, ← mul_one (g eh), ← pow_zero z₀]
-  refine add_mem (sum_mem fun i hi ↦ hH _ _ ?_) (hH _ 0 ?_)
-  · -- `v(yᵢ) ρ₁ ^ i ≤ λ_{ρ₁}(y)`
-    have hρ₁0 : (0 : ℝ) < ρ₁ := hρ₁.1
-    have him : i ≤ m := Finset.mem_Iic.mp hi
-    have hyi : (v (algebraMap O K (y.teichmullerCoeff i)) : ℝ) * ρ₁ ^ i ≤
-        gaussValuation p hv ρ₁ hρ₁.2 y := by
-      exact_mod_cast le_gaussValuation hv hρ₁.2 y i
-    have hpow : (ρ₁ : ℝ) ^ m = ρ₁ ^ (m - i) * ρ₁ ^ i := by
-      rw [← pow_add, Nat.sub_add_cancel him]
-    have hvy : (v (algebraMap O K (y.teichmullerCoeff i)) : ℝ) ≤
-        gaussValuationAway p hv hϖ ρ₁ hρ₁ B₀ (IsLocalization.mk' B₀ y s) *
-          (ρ₁ ^ (m - i) * v (algebraMap O K ϖ) ^ m) := by
-      refine le_of_mul_le_mul_right (hyi.trans_eq ?_) (pow_pos hρ₁0 i)
-      rw [hgy hρ₁, hpow]
-      ring
-    have hD : (0 : ℝ) < ρ₁ ^ (m - i) * v (algebraMap O K ϖ) ^ m := by positivity
-    refine le_of_mul_le_mul_right ((heb i).trans (hvy.trans ?_)) hD
-    rw [IntervalLocalization.norm_def]
-    gcongr
-    exact le_max_left _ _
-  · -- `λ_{ρ₂}(p ^ (m + 1) h) ≤ λ_{ρ₂}(y)`, as each Teichmüller term is
-    have hρ₂0 : (0 : ℝ) < ρ₂ := hρ₂.1
-    have hrem : gaussValuation p hv ρ₂ hρ₂.2 ((p : 𝕎 O) ^ (m + 1) * h) ≤
-        gaussValuation p hv ρ₂ hρ₂.2 y := by
-      rw [← hh]
-      refine Valuation.map_sub_le _ le_rfl (Valuation.map_sum_le _ fun i _ ↦ ?_)
-      rw [gaussValuation_teichmuller_mul_pow]
-      exact le_gaussValuation hv hρ₂.2 y i
-    have hrem' : (ρ₂ : ℝ) ^ m * gaussValuation p hv ρ₂ hρ₂.2 ((p : 𝕎 O) * h) ≤
-        gaussValuationAway p hv hϖ ρ₂ hρ₂ B₀ (IsLocalization.mk' B₀ y s) *
-          (ρ₂ ^ m * v (algebraMap O K ϖ) ^ m) := by
-      rw [← hgy hρ₂]
-      simpa [pow_succ, mul_assoc, gaussValuation_p] using (NNReal.coe_le_coe.mpr hrem)
-    have hnorm : ‖eh‖ = gaussValuation p hv ρ₂ hρ₂.2 ((p : 𝕎 O) * h) *
-        ((v (algebraMap O K ϖ) : ℝ) ^ m)⁻¹ := by
-      simp [eh, t, RadiusLocalization.norm_mk', gaussValuation_teichmuller]
-    have hρa : (ρ₁ : ℝ) ^ a ≤ 1 := pow_le_one₀ (by positivity) hρ₁.2.le
-    refine (mul_le_of_le_one_right (norm_nonneg _) hρa).trans ?_
-    rw [hnorm, IntervalLocalization.norm_def]
-    refine le_trans ?_ (le_max_right _ _)
-    rw [mul_inv_le_iff₀ (by positivity)]
-    refine le_of_mul_le_mul_left ?_ (pow_pos hρ₂0 m)
-    linarith
+      congrArg g (IsLocalization.mk'_spec A₀ ((p : 𝕎 O) * h)
+        (⟨teichmuller p ϖ ^ m, m, rfl⟩ : Submonoid.powers (teichmuller p ϖ)))
+  rw [mk'_eq_sum_add p hv hϖ hϖ' hρ₁ hρ₂ hm hy he heh, ← mul_one (g eh), ← pow_zero z₀]
+  exact add_mem (sum_mem fun i hi ↦ hH _ _ (norm_mul_pow_le_norm_mk' p hv hϖ hϖ' hρ₁ hρ₂ hm y
+    (Finset.mem_Iic.mp hi) (heb i)))
+    (hH _ 0 (norm_mk'_mul_pow_le_norm_mk' p hv hϖ hϖ' hρ₁ hρ₂ hm hh))
 
 end IntervalLocalization
 
@@ -260,6 +289,54 @@ open TauCeti.Huber
 
 local notation "S" => weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A))
   isWeightFamily_one_weight
+
+/-- Every element of `𝕎 O[1/(p [ϖ])]` lies in the image of the subgroup `V` of series whose
+coefficients have norm at most `r`, as soon as its norm is less than `ρ₁ ^ a r`. -/
+private theorem mem_image_weightedNhd {a b : ℕ} (ha : a ≠ 0)
+    (hab : ρ₁ ^ a = v (algebraMap O K ϖ) ^ b) {ψ : S →+* B} {z₀ : B₀}
+    (hz₀ : z₀ * (p : B₀) ^ a = algebraMap (𝕎 O) B₀ (teichmuller p ϖ ^ b))
+    (hψmono : ∀ (e : A₀) (j : ℕ),
+      ψ (weightedC _ isWeightFamily_one_weight (e : A) *
+        weightedX _ isWeightFamily_one_weight 0 ^ j) = ((g e * z₀ ^ j : B₀) : B))
+    {r : ℝ} (hr : 0 < r) (x : B₀) (hx : ‖x‖ < ρ₁ ^ a * r) :
+    (x : B) ∈ ψ '' (weightedNhd (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight
+      (IsUltrametricDist.closedBall_openAddSubgroup A hr).toAddSubgroup : Set S) := by
+  have hρa : (0 : ℝ) < ρ₁ ^ a := pow_pos hρ₁.1 a
+  let H : AddSubgroup B₀ :=
+    ((weightedNhd (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight
+      (IsUltrametricDist.closedBall_openAddSubgroup A hr).toAddSubgroup).map
+        ψ.toAddMonoidHom).comap (Completion.toCompl : B₀ →+ B)
+  refine IntervalLocalization.mem_of_forall_toIntervalLocalization_mul_pow_mem p hv hϖ hϖ' hρ₁
+    hρ₂ ha hab hz₀ (H := H) x fun e j he ↦ ⟨_, ?_, hψmono e j⟩
+  refine weightedC_mul_weightedX_pow_mem_weightedNhd _ ?_
+  rw [weightMul_one_weight]
+  have : ‖e‖ < r := lt_of_mul_lt_mul_right ((he.trans_lt hx).trans_eq (mul_comm _ _)) hρa.le
+  simpa [IsUltrametricDist.closedBall_openAddSubgroup, Completion.norm_coe] using this.le
+
+/-- If every element of `𝕎 O[1/(p [ϖ])]` of norm less than `c r` has its image in `B` in the image
+of the subgroup of series with coefficients of norm at most `r`, then the closure of the image of
+every neighbourhood of zero is a neighbourhood of zero. -/
+private theorem closure_image_mem_nhds_zero (ψ : S →+* B) {c : ℝ} (hc : 0 < c)
+    (hmem : ∀ {r : ℝ} (hr : 0 < r), ∀ x : B₀, ‖x‖ < c * r →
+      (x : B) ∈ ψ '' (weightedNhd (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight
+        (IsUltrametricDist.closedBall_openAddSubgroup A hr).toAddSubgroup : Set S)) :
+    ∀ U ∈ 𝓝 (0 : S), closure (ψ '' U) ∈ 𝓝 (0 : B) := by
+  intro U hU
+  obtain ⟨W, -, hWU⟩ := (hasBasis_nhds_zero_weightedTopology isWeightFamily_one_weight).mem_iff.mp
+    hU
+  obtain ⟨ε, hε, hεW⟩ := Metric.mem_nhds_iff.mp (W.mem_nhds_zero)
+  have hr : 0 < ε / 2 := half_pos hε
+  have hVU : (weightedNhd (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight
+      (IsUltrametricDist.closedBall_openAddSubgroup A hr).toAddSubgroup : Set S) ⊆ U := by
+    refine subset_trans (SetLike.coe_subset_coe.mpr (weightedNhd_mono fun c hc ↦ hεW ?_)) hWU
+    have hc' : ‖c‖ ≤ ε / 2 := by
+      simpa [IsUltrametricDist.closedBall_openAddSubgroup] using hc
+    simpa using hc'.trans_lt (half_lt_self hε)
+  refine Filter.mem_of_superset (Metric.ball_mem_nhds 0 (mul_pos hc hr)) fun y hy ↦ ?_
+  refine closure_mono (Set.image_mono hVU) (closure_mono ?_
+    (Completion.denseRange_coe.open_subset_closure_inter Metric.isOpen_ball hy))
+  rintro _ ⟨hb, x, rfl⟩
+  exact hmem hr x (by simpa [Completion.norm_coe] using hb)
 
 /-- **The interval ring is an open quotient of restricted series over the radius ring** (Kedlaya,
 Lemma 4.9, third isomorphism, surjectivity). Let `ρ₁ ≤ ρ₂`, `a ≠ 0` and `ρ₁ ^ a = v(ϖ) ^ b`. A
@@ -297,35 +374,11 @@ theorem isOpenQuotientMap_restrictedSeries_toIntervalRing (hρ : ρ₁ ≤ ρ₂
   -- coefficients have norm at most `r`, as soon as its norm is less than `ρ₁ ^ a r`
   have hmem {r : ℝ} (hr : 0 < r) (x : B₀) (hx : ‖x‖ < ρ₁ ^ a * r) :
       (x : B) ∈ ψ '' (weightedNhd (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight
-        (IsUltrametricDist.closedBall_openAddSubgroup A hr).toAddSubgroup : Set S) := by
-    let H : AddSubgroup B₀ :=
-      ((weightedNhd (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight
-        (IsUltrametricDist.closedBall_openAddSubgroup A hr).toAddSubgroup).map
-          ψ.toAddMonoidHom).comap (Completion.toCompl : B₀ →+ B)
-    refine IntervalLocalization.mem_of_forall_toIntervalLocalization_mul_pow_mem p hv hϖ hϖ' hρ₁
-      hρ₂ ha hab hz₀ (H := H) x fun e j he ↦ ⟨_, ?_, hψmono e j⟩
-    refine weightedC_mul_weightedX_pow_mem_weightedNhd _ ?_
-    rw [weightMul_one_weight]
-    have : ‖e‖ < r := lt_of_mul_lt_mul_right ((he.trans_lt hx).trans_eq (mul_comm _ _)) hρa.le
-    simpa [IsUltrametricDist.closedBall_openAddSubgroup, Completion.norm_coe] using this.le
+        (IsUltrametricDist.closedBall_openAddSubgroup A hr).toAddSubgroup : Set S) :=
+    mem_image_weightedNhd p hv hϖ hϖ' hρ₁ hρ₂ ha hab hz₀ hψmono hr x hx
   -- the closure of the image of every neighbourhood of zero is a neighbourhood of zero
-  have hclosure : ∀ U ∈ 𝓝 (0 : S), closure (ψ '' U) ∈ 𝓝 (0 : B) := by
-    intro U hU
-    obtain ⟨W, -, hWU⟩ := (hasBasis_nhds_zero_weightedTopology isWeightFamily_one_weight).mem_iff.mp
-      hU
-    obtain ⟨ε, hε, hεW⟩ := Metric.mem_nhds_iff.mp (W.mem_nhds_zero)
-    have hr : 0 < ε / 2 := half_pos hε
-    have hVU : (weightedNhd (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight
-        (IsUltrametricDist.closedBall_openAddSubgroup A hr).toAddSubgroup : Set S) ⊆ U := by
-      refine subset_trans (SetLike.coe_subset_coe.mpr (weightedNhd_mono fun c hc ↦ hεW ?_)) hWU
-      have hc' : ‖c‖ ≤ ε / 2 := by
-        simpa [IsUltrametricDist.closedBall_openAddSubgroup] using hc
-      simpa using hc'.trans_lt (half_lt_self hε)
-    refine Filter.mem_of_superset (Metric.ball_mem_nhds 0 (mul_pos hρa hr)) fun y hy ↦ ?_
-    refine closure_mono (Set.image_mono hVU) (closure_mono ?_
-      (Completion.denseRange_coe.open_subset_closure_inter Metric.isOpen_ball hy))
-    rintro _ ⟨hb, x, rfl⟩
-    exact hmem hr x (by simpa [Completion.norm_coe] using hb)
+  have hclosure : ∀ U ∈ 𝓝 (0 : S), closure (ψ '' U) ∈ 𝓝 (0 : B) :=
+    closure_image_mem_nhds_zero p hv hϖ hϖ' hρ₁ hρ₂ ψ hρa hmem
   have hopen : IsOpenMap ψ :=
     isOpenMap_of_closure_image_mem_nhds ψ hψ.continuousAt hclosure
   -- the range is an open, hence closed, subgroup containing the dense image of `𝕎 O[1/(p [ϖ])]`
