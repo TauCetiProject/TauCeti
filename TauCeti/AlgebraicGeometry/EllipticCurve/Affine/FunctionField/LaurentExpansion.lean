@@ -62,6 +62,17 @@ theorem functionFieldLaurentExpansion_genericY :
   rw [Affine.genericY_def, AdjoinRoot.mk_X, functionFieldLaurentExpansion_algebraMap,
     laurentExpansion_root]
 
+/-- The function `-1/y` expands to the formal power series `w(z)`. -/
+@[simp]
+theorem functionFieldLaurentExpansion_neg_inv_genericY :
+    W.functionFieldLaurentExpansion (-W.toAffine.genericY⁻¹) = (formalW W : K⸨X⸩) := by
+  have hy := (map_ne_zero_iff W.functionFieldLaurentExpansion
+    W.functionFieldLaurentExpansion.injective).mpr W.toAffine.genericY_ne_zero
+  apply (mul_right_inj' hy).mp
+  rw [map_neg, map_inv₀, mul_neg, mul_inv_cancel₀ hy]
+  rw [Affine.genericY_def, AdjoinRoot.mk_X, functionFieldLaurentExpansion_algebraMap,
+    laurentExpansion_root_mul_formalW]
+
 /-- The local parameter `-x/y` expands to the power-series variable. -/
 -- Rewrite the parameter before simplification distributes the algebra map over division.
 @[simp↓]

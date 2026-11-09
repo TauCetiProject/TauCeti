@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.RatFunc.Valuation
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Norm
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GenericPoint.Basic
 
 /-!
 # The valuation at infinity on the function field of a Weierstrass curve
@@ -258,6 +259,19 @@ theorem infinityPlace.mk_Y :
     infinityPlace W (algebraMap W.CoordinateRing W.FunctionField (CoordinateRing.mk W Y))
       = WithZero.exp 3 := by
   simpa using infinityPlace_algebraMap_of_natDegree_norm W three_ne_zero (natDegree_norm_mk_Y W)
+
+/-- The generic ordinate has a triple pole at infinity. -/
+theorem infinityPlace_genericY :
+    W.infinityPlace W.genericY = WithZero.exp 3 := by
+  rw [genericY_def]
+  exact infinityPlace.mk_Y W
+
+/-- The generic ordinate is a nonzero rational function. -/
+theorem genericY_ne_zero : W.genericY ≠ 0 := by
+  intro h
+  have hv := W.infinityPlace_genericY
+  rw [h, map_zero] at hv
+  exact WithZero.exp_ne_zero hv.symm
 
 
 open scoped Classical in
