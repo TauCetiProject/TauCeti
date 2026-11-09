@@ -154,14 +154,23 @@ variable {E F M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   [TopologicalSpace M] [ChartedSpace E M] [TopologicalSpace N] [ChartedSpace F N]
 
+omit [FiniteDimensional ℝ E] in
 /-- **Invariance of domain.** Let `M` and `N` be topological manifolds without boundary, charted
-on finite-dimensional real normed spaces of the same dimension. If `f : M → N` is continuous and
-injective on an open set `U`, then `f '' U` is open. For `M` and `N` normed spaces, this is
-Brouwer's theorem that a continuous injection from an open subset of `ℝⁿ` to `ℝⁿ` has open
-image. -/
+on real normed spaces `E` and `F` with `F` finite dimensional and `finrank ℝ E = finrank ℝ F`. If
+`f : M → N` is continuous and injective on an open set `U`, then `f '' U` is open. For `M` and `N`
+normed spaces, this is Brouwer's theorem that a continuous injection from an open subset of `ℝⁿ`
+to `ℝⁿ` has open image. (If `E` is infinite dimensional then `F` is trivial, `N` is discrete and
+`U` is empty.) -/
 theorem IsOpen.image_of_continuousOn_of_injOn {f : M → N} {U : Set M} (hU : IsOpen U)
     (hf : ContinuousOn f U) (hinj : InjOn f U) (hEF : finrank ℝ E = finrank ℝ F) :
     IsOpen (f '' U) := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · -- `E` is infinite dimensional, so `finrank ℝ F = 0` and `N` is discrete: every subset of
+    -- `N` is open.
+    have hFs : Subsingleton F := Module.finrank_zero_iff.1 (hEF ▸ Module.finrank_of_not_finite hE)
+    have := ChartedSpace.discreteTopology (H := F) (M := N)
+    exact isOpen_discrete _
   rw [isOpen_iff_mem_nhds]
   rintro _ ⟨x, hx, rfl⟩
   -- Read `f` in charts near `x` and `f x`, on an open set `W` around `x`.
@@ -197,16 +206,19 @@ theorem IsOpen.image_of_continuousOn_of_injOn {f : M → N} {U : Set M} (hU : Is
     have hyW := hVW (hball (ball_subset_closedBall hy))
     exact ⟨φ.symm y, hyW.2.1, (ψ.left_inv hyW.2.2).symm⟩
 
+omit [FiniteDimensional ℝ E] in
 /-- **Invariance of domain, global form.** A continuous injection between topological manifolds
-without boundary, charted on finite-dimensional real normed spaces of the same dimension, is an
-open embedding. -/
+without boundary, charted on real normed spaces of the same `finrank`, the second finite
+dimensional, is an open embedding. -/
 theorem Continuous.isOpenEmbedding_of_injective {f : M → N} (hf : Continuous f)
     (hinj : Injective f) (hEF : finrank ℝ E = finrank ℝ F) : IsOpenEmbedding f :=
   .of_continuous_injective_isOpenMap hf hinj fun _ hU ↦
     hU.image_of_continuousOn_of_injOn hf.continuousOn hinj.injOn hEF
 
+omit [FiniteDimensional ℝ E] in
 /-- **Invariance of domain, restricted to an open set.** Let `M` and `N` be topological manifolds
-without boundary, charted on finite-dimensional real normed spaces of the same dimension. If
+without boundary, charted on real normed spaces of the same `finrank`, the second finite
+dimensional. If
 `f : M → N` is continuous and injective on an open set `U`, then its restriction to `U` is an open
 embedding. -/
 theorem IsOpen.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn {f : M → N} {U : Set M}
@@ -221,11 +233,12 @@ theorem IsOpen.isOpenEmbedding_domRestrict_of_continuousOn_of_injOn {f : M → N
   exact (hU.isOpenMap_subtype_val s hs).image_of_continuousOn_of_injOn (hf.mono hsU)
     (hinj.mono hsU) hEF
 
+omit [FiniteDimensional ℝ E] in
 /-- **A continuous injection of a compact manifold into a connected one is onto.** Let `M` and `N`
-be topological manifolds without boundary, charted on finite-dimensional real normed spaces of the
-same dimension, with `M` compact and nonempty and `N` Hausdorff and connected. Then a continuous
-injection `M → N` is surjective: its image is open by invariance of domain, and closed as a compact
-subset of a Hausdorff space. -/
+be topological manifolds without boundary, charted on real normed spaces of the same `finrank`, the
+second finite dimensional, with `M` compact and nonempty and `N` Hausdorff and connected. Then a
+continuous injection `M → N` is surjective: its image is open by invariance of domain, and closed
+as a compact subset of a Hausdorff space. -/
 theorem Continuous.surjective_of_injective [CompactSpace M] [Nonempty M] [T2Space N]
     [PreconnectedSpace N] {f : M → N} (hf : Continuous f) (hinj : Injective f)
     (hEF : finrank ℝ E = finrank ℝ F) : Surjective f :=
@@ -237,6 +250,7 @@ namespace Homeomorph
 
 variable {A : Set M} {B : Set N}
 
+omit [FiniteDimensional ℝ E] in
 /-- A homeomorphism between subsets of manifolds of the same dimension maps interior points to
 interior points. -/
 private theorem coe_apply_mem_interior (e : A ≃ₜ B) (hEF : finrank ℝ E = finrank ℝ F) {x : A}
@@ -283,12 +297,17 @@ namespace Topology.IsOpenEmbedding
 
 variable {X : Type*} [TopologicalSpace X]
 
-/-- **Invariance of dimension.** If a nonempty space has an open embedding into a
-finite-dimensional real normed space `F` and an embedding into a finite-dimensional real normed
-space `E`, then `finrank ℝ F ≤ finrank ℝ E`. In particular a nonempty open subset of `ℝᵐ` is
-homeomorphic to no subset of `ℝⁿ` for `n < m`. -/
+omit [FiniteDimensional ℝ F] in
+/-- **Invariance of dimension.** If a nonempty space has an open embedding into a real normed
+space `F` and an embedding into a finite-dimensional real normed space `E`, then
+`finrank ℝ F ≤ finrank ℝ E`. In particular a nonempty open subset of `ℝᵐ` is homeomorphic to no
+subset of `ℝⁿ` for `n < m`. -/
 theorem finrank_le_of_isEmbedding [Nonempty X] {g : X → F} (hg : IsOpenEmbedding g) {f : X → E}
     (hf : IsEmbedding f) : finrank ℝ F ≤ finrank ℝ E := by
+  by_cases hF : FiniteDimensional ℝ F
+  swap
+  · rw [Module.finrank_of_not_finite hF]
+    exact Nat.zero_le _
   by_contra! h
   -- Include `E` in `F` as a proper subspace `ι(E)`.
   obtain ⟨ι, hι⟩ := finrank_le_iff_exists_linearMap.1 h.le
