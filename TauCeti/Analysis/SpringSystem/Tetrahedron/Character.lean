@@ -49,7 +49,8 @@ rows of `TauCeti.symmetricGroupFourCharacterTable` gives the character identity
 * A. Knutson, *Group theory in physics: an example*, tetrahedron handout for Math 261 (Cornell,
   2001), pp. 3–5.
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, Springer GTM 129 (1991),
-  §2.3, for the standard representation of `S₄` as the rotations of the tetrahedron.
+  §2.3, for the standard representation of `S₄` as the orthogonal symmetries of the
+  tetrahedron.
 -/
 
 public section
