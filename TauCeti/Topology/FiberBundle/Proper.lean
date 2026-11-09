@@ -18,7 +18,7 @@ sets of the base are compact. No separation axiom and no compactness of the base
 
 ## Main results
 
-* `isProperMap_of_forall_exists_trivialization`: a locally trivial map with compact fibre is
+* `TauCeti.isProperMap_of_forall_exists_trivialization`: a locally trivial map with compact fibre is
   proper.
 * `FiberBundle.isProperMap_proj`: the projection of a fibre bundle with compact fibre is proper.
 -/
@@ -29,6 +29,8 @@ open Bundle Filter Set Topology
 
 variable {B F Z : Type*} [TopologicalSpace B] [TopologicalSpace F] [TopologicalSpace Z]
 
+namespace TauCeti
+
 /-- A map that is locally trivial with compact fibre is proper. -/
 theorem isProperMap_of_forall_exists_trivialization [CompactSpace F] {p : Z → B}
     (ht : ∀ x, ∃ e : Trivialization F p, x ∈ e.baseSet) : IsProperMap p := by
@@ -38,17 +40,19 @@ theorem isProperMap_of_forall_exists_trivialization [CompactSpace F] {p : Z → 
   obtain ⟨e, hxe⟩ := ht x
   have hsource : e.source ∈ U := e.source_eq ▸ hx (e.open_baseSet.mem_nhds hxe)
   obtain ⟨v, -, hv⟩ := isCompact_univ.ultrafilter_le_nhds' (U.map fun z ↦ (e z).2) univ_mem
-  have he : Tendsto e U (𝓝 (x, v)) :=
-    (hx.prodMk_nhds hv).congr' (mem_of_superset hsource fun z hz ↦
-      show (p z, (e z).2) = e z from Prod.ext (e.coe_fst hz).symm rfl)
+  have he : Tendsto e U (𝓝 (x, v)) := by
+    refine (hx.prodMk_nhds hv).congr' ?_
+    filter_upwards [hsource] with z hz using Prod.ext (e.coe_fst hz).symm rfl
   refine ⟨e.toOpenPartialHomeomorph.symm (x, v), e.proj_symm_apply' hxe, tendsto_id'.1 ?_⟩
   exact ((e.continuousAt_symm (e.mem_target.2 hxe)).tendsto.comp he).congr'
     (mem_of_superset hsource fun z hz ↦ e.left_inv hz)
+
+end TauCeti
 
 variable (F) in
 /-- The projection of a fibre bundle with compact fibre is proper. -/
 theorem FiberBundle.isProperMap_proj [CompactSpace F] (E : B → Type*)
     [TopologicalSpace (TotalSpace F E)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] :
     IsProperMap (π F E) :=
-  isProperMap_of_forall_exists_trivialization fun b ↦
+  TauCeti.isProperMap_of_forall_exists_trivialization fun b ↦
     ⟨trivializationAt F E b, mem_baseSet_trivializationAt F E b⟩
