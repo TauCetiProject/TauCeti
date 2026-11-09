@@ -59,6 +59,7 @@ than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
 * `TauCeti.mul_le_one_of_le_inv_one_add`: `a * b ≤ 1` for `0 ≤ b` and `a ≤ (1 + b)⁻¹`.
 * `TauCeti.sub_mul_mul_one_add_sq_neg_of_lt`: the strict inequality
   `r - ε * (c * (1 + n ^ 2)) < 0` for `r ≤ M`, `0 < ε`, `1 ≤ c` and `M / ε < n`.
+* `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
 -/
 
 public section
@@ -184,6 +185,12 @@ theorem sub_mul_mul_one_add_sq_neg_of_lt {α : Type*} [Field α] [LinearOrder α
   have h4 : ε * (1 + n ^ 2) ≤ ε * (c * (1 + n ^ 2)) :=
     mul_le_mul_of_nonneg_left (le_mul_of_one_le_left (by positivity) hc) hε.le
   nlinarith [mul_le_mul_of_nonneg_left h3 hε.le]
+
+/-- Absorbing the term `X * J` with `X ≤ 1 / 2` into the left side: `J ≤ Y + X * J` gives
+`J ≤ 2 * Y` for `0 ≤ J`. -/
+theorem le_two_mul_of_le_add_mul {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    {J X Y : α} (hJ : 0 ≤ J) (hX : X ≤ 1 / 2) (h : J ≤ Y + X * J) : J ≤ 2 * Y := by
+  nlinarith [mul_le_mul_of_nonneg_right hX hJ]
 
 end TauCeti
 
