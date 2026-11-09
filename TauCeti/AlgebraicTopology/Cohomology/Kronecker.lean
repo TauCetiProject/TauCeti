@@ -92,6 +92,16 @@ lemma singularKronecker_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (k : Type*) 
       ((singularHomologyFunctor C n).obj R).map f ≫ Y.singularKronecker k n α :=
   TauCeti.ChainComplex.kronecker_naturality (SSet.chainComplexMap (toSSet.map f) R) n α
 
+/-- Evaluation of singular cohomology on homology commutes with changing the coefficient
+object by postcomposition on singular cochains. -/
+lemma singularKronecker_coefficient_naturality (X : TopCat.{w}) (k : Type*) [Ring k]
+    [Linear k C] {N : C} (g : M ⟶ N) (n : ℕ) (α : X.singularCohomology R k M n) :
+    X.singularKronecker k n
+        (HomologicalComplex.homologyMap
+          (((toSSet.obj X).chainComplex R).linearYonedaObjMap k g) n α) =
+      X.singularKronecker k n α ≫ g :=
+  TauCeti.ChainComplex.kronecker_coefficient_naturality g n α
+
 /-- **The universal coefficient theorem for injective coefficients**: for an injective object
 `M`, the Kronecker map of singular cohomology is a `k`-linear equivalence
 `Hⁿ(X; R, M) ≃ₗ[k] (Hₙ(X; R) ⟶ M)`. -/

@@ -85,7 +85,7 @@ measurable on `(a, b)` for all `u, v ∈ V` as in Lions and Showalter, and essen
 `Λ`. This covers divergence-form operators with `L^∞` coefficients, which are in general not
 strongly measurable as maps into `V →L[ℝ] V*`. Measurability of `t ↦ A(t) u(t) φ(t)` for
 `u ∈ L²(a, b; V)` then follows from
-`MeasureTheory.AEStronglyMeasurable.apply_of_forall_of_continuous`, which approximates `(u, φ)`
+`MeasureTheory.AEStronglyMeasurable.apply_of_forall_of_continuousAt`, which approximates `(u, φ)`
 with simple functions, so the variational existence theorem needs no separability of `V`.
 
 For the weak derivative, test the variational formulation against `φ(t) = ψ(t) v` with `ψ`
@@ -171,8 +171,8 @@ private theorem exists_forall_integrable_and_abs_integral_le (ι : V →L[ℝ] H
   refine ⟨K * (μ univ ^ (1 - 1 / (2 : ℝ≥0∞).toReal)).toReal, fun u => ⟨?_, ?_⟩⟩
   · refine (((Lp.memLp u).integrable one_le_two).norm.const_mul K).mono' ?_ (hdom u)
     exact (((Lp.aestronglyMeasurable u).prodMk hφ.continuous.aestronglyMeasurable)
-      |>.apply_of_forall_of_continuous (g := fun t p => A t p.1 p.2)
-        (fun p => hA p.1 p.2) fun t => (A t).continuous₂).sub
+      |>.apply_of_forall_of_continuousAt (g := fun t p => A t p.1 p.2)
+        (fun p => hA p.1 p.2) (ae_of_all _ fun t => (A t).continuous₂.continuousAt)).sub
       ((ι.continuous.comp_aestronglyMeasurable (Lp.aestronglyMeasurable u)).inner
         (ι.continuous.comp hφ').aestronglyMeasurable)
   · simpa only [Real.norm_eq_abs] using Lp.norm_integral_le_of_ae_norm_le_mul u hK (hdom u)
@@ -211,8 +211,9 @@ private theorem mul_setIntegral_norm_sq_add_le (ι : V →L[ℝ] H) (hab : a ≤
       hφ.continuous.continuousOn.memLp_top_restrict_of_subset_isCompact isCompact_Icc
         measurableSet_Ioo Ioo_subset_Icc_self
     refine (MemLp.of_bound ((hφ.continuous.aestronglyMeasurable.prodMk
-      hφ.continuous.aestronglyMeasurable).apply_of_forall_of_continuous
-        (g := fun t p => A t p.1 p.2) (fun p => hA p.1 p.2) fun t => (A t).continuous₂)
+      hφ.continuous.aestronglyMeasurable).apply_of_forall_of_continuousAt
+        (g := fun t p => A t p.1 p.2) (fun p => hA p.1 p.2)
+        (ae_of_all _ fun t => (A t).continuous₂.continuousAt))
       (Λ * C * C) ?_).integrable le_rfl
     filter_upwards [hA_bound, hC] with t hAt hφt
     have hΛ : 0 ≤ Λ := (norm_nonneg (A t)).trans hAt

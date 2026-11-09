@@ -22,11 +22,11 @@ prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
 
 ## Main results
 
-* `TauCeti.mlieBracket_eq_lieBracket`: on a normed space, the manifold Lie bracket is the Lie
+* `VectorField.mlieBracket_eq_lieBracket`: on a normed space, the manifold Lie bracket is the Lie
   bracket of vector fields on that space.
-* `TauCeti.mlieBracket_const_model_space`: constant model-space vector fields have zero
+* `VectorField.mlieBracket_const_model_space`: constant model-space vector fields have zero
   manifold Lie bracket.
-* `TauCeti.mlieBracket_continuousLinearMap_model_space`: the manifold Lie bracket of the linear
+* `VectorField.mlieBracket_continuousLinearMap_model_space`: the manifold Lie bracket of the linear
   vector fields `y ↦ A y` and `y ↦ B y` is `x ↦ B (A x) - A (B x)`.
 * `mvfderiv_mlieBracket`: a differential sends the manifold bracket to the commutator of
   directional derivatives.
@@ -66,33 +66,7 @@ section
 
 variable [IsManifold I (minSmoothness 𝕜 2) M]
 
-namespace TauCeti
-
-/-- Constant vector fields on a normed vector space have zero manifold Lie bracket. -/
-@[simp]
-theorem mlieBracket_const_model_space (a b x : F) :
-    VectorField.mlieBracket 𝓘(𝕜, F) (fun _ : F ↦ a) (fun _ : F ↦ b) x = 0 := by
-  let A : ∀ y : F, TangentSpace 𝓘(𝕜, F) y := fun _ ↦ a
-  let B : ∀ y : F, TangentSpace 𝓘(𝕜, F) y := fun _ ↦ b
-  -- The explicit dependent fields expose the model-space representatives needed by the
-  -- ordinary Fréchet derivative formula for the Lie bracket.
-  change VectorField.mlieBracket 𝓘(𝕜, F) A B x = 0
-  have h := congrFun (VectorField.mlieBracketWithin_eq_lieBracketWithin
-    (V := A) (W := B) (s := Set.univ)) x
-  rw [VectorField.mlieBracketWithin_univ] at h
-  rw [h]
-  have hA : fderivWithin 𝕜 A Set.univ x = 0 := by
-    -- On the model space, `A` is definitionally the ordinary constant map with value `a`.
-    change fderivWithin 𝕜 (fun _ : F ↦ a) Set.univ x = 0
-    exact fderivWithin_const_apply (𝕜 := 𝕜) (E := F) (s := Set.univ) (x := x) a
-  have hB : fderivWithin 𝕜 B Set.univ x = 0 := by
-    -- On the model space, `B` is definitionally the ordinary constant map with value `b`.
-    change fderivWithin 𝕜 (fun _ : F ↦ b) Set.univ x = 0
-    exact fderivWithin_const_apply (𝕜 := 𝕜) (E := F) (s := Set.univ) (x := x) b
-  rw [VectorField.lieBracketWithin, hA, hB]
-  -- The tangent space of the model manifold is definitionally its model vector space.
-  change (0 : F) - 0 = 0
-  simp
+namespace VectorField
 
 /-- On a normed space, the manifold Lie bracket of two vector fields is their Lie bracket as maps
 of the space. -/
@@ -116,6 +90,12 @@ theorem mlieBracket_const_left_model_space (a : F) (W : ∀ y : F, TangentSpace 
   simp only [fderiv_const_apply, sub_eq_self]
   rfl
 
+/-- Constant vector fields on a normed vector space have zero manifold Lie bracket. -/
+@[simp]
+theorem mlieBracket_const_model_space (a b x : F) :
+    VectorField.mlieBracket 𝓘(𝕜, F) (fun _ : F ↦ a) (fun _ : F ↦ b) x = 0 :=
+  (mlieBracket_const_left_model_space a _ x).trans (by simp; rfl)
+
 /-- The manifold Lie bracket of a vector field `V` with a constant vector field `b` on a normed
 space is minus the derivative of `V` in the direction `b`. -/
 @[simp]
@@ -137,20 +117,20 @@ theorem mlieBracket_continuousLinearMap_model_space (A B : F →L[𝕜] F) (x : 
   refine (congrFun mlieBracket_eq_lieBracket x).trans ?_
   rw [VectorField.lieBracket, A.fderiv, B.fderiv]
 
-end TauCeti
+end VectorField
 
-/-- Let `f` have enough derivatives for symmetry of its second derivative at `x`, and let `V` and
-`W` be differentiable vector fields there. Then the differential of `f` on the manifold bracket is
-the commutator of its directional derivatives. This is the manifold counterpart of Mathlib's
-`fderivWithin_apply_lieBracket`. -/
-theorem mvfderiv_mlieBracket {f : M → F} {V W : ∀ x : M, TangentSpace I x} {x : M}
-    (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n)
-    (hV : MDiffAt (fun y ↦ (V y : TangentBundle I M)) x)
-    (hW : MDiffAt (fun y ↦ (W y : TangentBundle I M)) x) :
+omit [CompleteSpace E] in
+/-- The differential of `f` on the manifold bracket, read in the chart at `x`: it is the derivative
+of `f` in that chart applied to the flat bracket of the pulled-back vector fields. -/
+private theorem mvfderiv_mlieBracket_eq_fderivWithin_lieBracketWithin {f : M → F}
+    {V W : ∀ x : M, TangentSpace I x} {x : M} (hf : MDiffAt f x) :
     mvfderiv I f x (mlieBracket I V W x) =
-      mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) -
-        mvfderiv I (fun y ↦ mvfderiv I f y (V y)) x (W x) := by
-  -- Express the manifold bracket and the outer differential in the chart at `x`.
+      fderivWithin 𝕜 (f ∘ (extChartAt I x).symm) (Set.range I) (extChartAt I x x)
+        (lieBracketWithin 𝕜
+          (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (Set.range I))
+          (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm W (Set.range I))
+          (Set.range I) (extChartAt I x x)) := by
+  -- Express the manifold bracket in the chart at `x`.
   rw [← mlieBracketWithin_univ, mlieBracketWithin_apply]
   have hinv :
       (mfderiv% (extChartAt I x) x).inverse =
@@ -164,14 +144,10 @@ theorem mvfderiv_mlieBracket {f : M → F} {V W : ∀ x : M, TangentSpace I x} {
   -- Normalize the same definitional tangent-space representation before applying the chart chain
   -- rule. The following `change`s only expose applications of that single linear-map identity.
   change (mfderiv% f x) _ = _
-  have h2n : (2 : ℕ∞ω) ≤ n :=
-    (le_minSmoothness (𝕜 := 𝕜) (n := (2 : ℕ∞ω))).trans hn
-  have h1n : (1 : ℕ∞ω) ≤ n := (by norm_num : (1 : ℕ∞ω) ≤ 2).trans h2n
-  have hf' : MDiffAt f x := (hf.of_le h2n).mdifferentiableAt (by norm_num)
   have hchain := mfderiv_comp_mfderivWithin_of_eq
     (I := 𝓘(𝕜, E)) (I' := I) (I'' := 𝓘(𝕜, F))
     (f := (extChartAt I x).symm) (g := f) (s := Set.range I)
-    hf' (mdifferentiableWithinAt_extChartAt_symm (mem_extChartAt_target x))
+    hf (mdifferentiableWithinAt_extChartAt_symm (mem_extChartAt_target x))
     (by apply I.uniqueMDiffOn; exact Set.mem_range_self (f := I) _)
     (extChartAt_to_inv x)
   change @Eq (E →L[𝕜] F) _ _ at hchain
@@ -184,14 +160,29 @@ theorem mvfderiv_mlieBracket {f : M → F} {V W : ∀ x : M, TangentSpace I x} {
     (extChartAt I x).symm (extChartAt I x x)) Z) at hchain_apply
   change (mfderiv% f x) ((mfderiv[Set.range I]
     (extChartAt I x).symm (extChartAt I x x)) Z) = _
-  rw [← hchain_apply]
-  rw [mfderivWithin_eq_fderivWithin]
+  rw [← hchain_apply, mfderivWithin_eq_fderivWithin]
   -- The rewrite leaves `(fromTangentSpace _).symm ∘L fderivWithin … ∘L fromTangentSpace _`,
   -- typed at the `TangentSpace` instances. Mathlib has no evaluation lemma for
   -- `NormedSpace.fromTangentSpace` (it is `tangentSpaceCastModel`, the identity up to those
   -- instances), so no rewrite strips it; the plain `fderivWithin` on `E` is reached by unfolding.
   change (fderivWithin 𝕜 (f ∘ (extChartAt I x).symm) (Set.range I) (extChartAt I x x)) Z = _
-  -- Pull the vector fields back and invoke the normed-space bracket identity.
+  simp only [Z, Set.preimage_univ, Set.univ_inter]
+
+/-- Let `f` have enough derivatives for symmetry of its second derivative at `x`, and let `V` and
+`W` be differentiable vector fields there. Then the differential of `f` on the manifold bracket is
+the commutator of its directional derivatives. This is the manifold counterpart of Mathlib's
+`fderivWithin_apply_lieBracket`. -/
+theorem mvfderiv_mlieBracket {f : M → F} {V W : ∀ x : M, TangentSpace I x} {x : M}
+    (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n)
+    (hV : MDiffAt (fun y ↦ (V y : TangentBundle I M)) x)
+    (hW : MDiffAt (fun y ↦ (W y : TangentBundle I M)) x) :
+    mvfderiv I f x (mlieBracket I V W x) =
+      mvfderiv I (fun y ↦ mvfderiv I f y (W y)) x (V x) -
+        mvfderiv I (fun y ↦ mvfderiv I f y (V y)) x (W x) := by
+  have h2n : (2 : ℕ∞ω) ≤ n :=
+    (le_minSmoothness (𝕜 := 𝕜) (n := (2 : ℕ∞ω))).trans hn
+  have hf' : MDiffAt f x := (hf.of_le h2n).mdifferentiableAt (by norm_num)
+  rw [mvfderiv_mlieBracket_eq_fderivWithin_lieBracketWithin hf']
   have hfcoord := contMDiffWithinAt_iff_contDiffWithinAt.mp
     (contMDiffAt_iff_source.mp (hf.of_le hn))
   have hVcoord : DifferentiableWithinAt 𝕜
@@ -204,41 +195,11 @@ theorem mvfderiv_mlieBracket {f : M → F} {V W : ∀ x : M, TangentSpace I x} {
       (Set.range I) (extChartAt I x x) := by
     simpa using (hW.mdifferentiableWithinAt (s := Set.univ))
       |>.differentiableWithinAt_mpullbackWithin_vectorField
-  -- Identify chart directional derivatives with their manifold counterparts.
-  have hf_chart : MDiffAt f ((extChartAt I x).symm (extChartAt I x x)) := by
-    simpa only [extChartAt_to_inv] using hf'
-  have hVf := TauCeti.mdifferentiableAt_mvfderiv_apply hf hn hV
-  have hWf := TauCeti.mdifferentiableAt_mvfderiv_apply hf hn hW
-  have hcoordW := (TauCeti.eventuallyEq_fderivWithin_chart_apply_mpullbackWithin
-    (I := I) (U := W) hf h1n).fderivWithin_eq
-    (𝕜 := 𝕜) (by
-      simpa only [Function.comp_apply, extChartAt_to_inv] using
-        TauCeti.fderivWithin_chart_apply_mpullbackWithin
-          (I := I) (U := W) (mem_extChartAt_target x) hf_chart)
-  have hcoordV := (TauCeti.eventuallyEq_fderivWithin_chart_apply_mpullbackWithin
-    (I := I) (U := V) hf h1n).fderivWithin_eq
-    (𝕜 := 𝕜) (by
-      simpa only [Function.comp_apply, extChartAt_to_inv] using
-        TauCeti.fderivWithin_chart_apply_mpullbackWithin
-          (I := I) (U := V) (mem_extChartAt_target x) hf_chart)
-  have houterW := TauCeti.fderivWithin_chart_apply_mpullbackWithin
-    (I := I) (p := fun y ↦ mvfderiv I f y (W y)) (U := V)
-    (mem_extChartAt_target x) (by simpa only [extChartAt_to_inv] using hWf)
-  have houterV := TauCeti.fderivWithin_chart_apply_mpullbackWithin
-    (I := I) (p := fun y ↦ mvfderiv I f y (V y)) (U := W)
-    (mem_extChartAt_target x) (by simpa only [extChartAt_to_inv] using hVf)
-  rw [extChartAt_to_inv] at houterW houterV
-  have hZ : Z = lieBracketWithin 𝕜
-    (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (Set.range I))
-    (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm W (Set.range I))
-    (Set.range I) (extChartAt I x x) := by
-    simp only [Z, Set.preimage_univ, Set.univ_inter]
-  rw [hZ]
   rw [fderivWithin_apply_lieBracket hfcoord le_rfl I.uniqueDiffOn
     (I.range_subset_closure_interior (Set.mem_range_self (f := I) _))
-    (Set.mem_range_self (f := I) _) hWcoord hVcoord]
-  rw [hcoordW, hcoordV]
-  exact congrArg₂ (· - ·) houterW houterV
+    (Set.mem_range_self (f := I) _) hWcoord hVcoord,
+    TauCeti.fderivWithin_fderivWithin_chart_apply_mpullbackWithin hf hn hW,
+    TauCeti.fderivWithin_fderivWithin_chart_apply_mpullbackWithin hf hn hV]
 
 namespace TauCeti
 

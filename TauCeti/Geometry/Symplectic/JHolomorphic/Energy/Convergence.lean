@@ -76,12 +76,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
   let U : ℕ → C(D, V) := fun n ↦
     ⟨D.domRestrict (u (ψ n)), (hequi.continuousOn n).domRestrict⟩
   have hcompact : IsCompact (closure (range U)) :=
-    ArzelaAscoli.isCompact_closure_of_equicontinuous (by
-      rw [← Set.comp_rangeSplitting U]
-      exact (equicontinuous_restrict_iff _).mpr hequi |>.comp (Set.rangeSplitting U))
-      (fun x ↦ ⟨K, hK, by
-        rintro _ ⟨n, rfl⟩
-        exact huK (ψ n) x.2.1⟩)
+    ArzelaAscoli.isCompact_closure_range_of_equicontinuous
+      ((equicontinuous_restrict_iff _).mpr hequi) fun x ↦ ⟨K, hK, fun n ↦ huK (ψ n) x.2.1⟩
   obtain ⟨a, -, χ, hχ, hlim⟩ := hcompact.tendsto_subseq (x := U)
     (fun n ↦ subset_closure (mem_range_self n))
   -- Extend by zero only to express convergence on a subset of the original domain.

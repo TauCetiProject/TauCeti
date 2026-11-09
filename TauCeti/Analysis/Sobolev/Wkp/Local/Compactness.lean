@@ -71,7 +71,7 @@ private theorem isCompactOperator_of_components {X : Type*}
     simpa only [FunLike.coe_add, ContinuousLinearMap.coe_comp] using
       (hlo.clm_comp (ContinuousLinearMap.inl ℝ _ _)).add
         (hD.clm_comp (ContinuousLinearMap.inr ℝ _ _))
-  apply isCompactOperator_of_totallyBounded_image_closedBall (r := 1) zero_lt_one
+  apply (isCompactOperator_iff_totallyBounded_image_closedBall _ zero_lt_one).mpr
   apply (totallyBounded_image_iff (hj.isUniformInducing J.uniformContinuous)).mp
   simpa only [Set.image_image, ContinuousLinearMap.coe_coe,
     ContinuousLinearMap.coe_comp, Function.comp_def] using

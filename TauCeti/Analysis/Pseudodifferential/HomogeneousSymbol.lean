@@ -109,6 +109,12 @@ theorem ext_of_ne_zero {a b : HomogeneousSymbol X E V W m}
   · simp
   · exact h x ξ hξ
 
+/-- Rescaling the frequency by `t > 0` rescales the norm of a homogeneous symbol of degree `m` by
+`t ^ m`. -/
+theorem norm_homogeneous (a : HomogeneousSymbol X E V W m) (x : X) (ξ : E) {t : ℝ} (ht : 0 < t) :
+    ‖a.coefficient (x, t • ξ)‖ = t ^ m * ‖a.coefficient (x, ξ)‖ := by
+  rw [a.homogeneous x ξ t ht, norm_smul, Real.norm_of_nonneg (Real.rpow_nonneg ht.le m)]
+
 section Regularity
 
 variable (a : HomogeneousSymbol X E V W m)
