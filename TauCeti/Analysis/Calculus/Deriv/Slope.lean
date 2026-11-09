@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.LinearAlgebra.AffineSpace.Slope
+import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.LinearAlgebra.AffineSpace.Ordered
 
 /-!
 # Convergence of slopes in topological modules
@@ -23,10 +25,18 @@ zero and continuous nonnegative-rational scalar multiplication, so that `t / n` 
 both real and complex scalars qualify. This limit feeds the exponential power limit behind the
 Trotter product formula.
 
+For a real function, the sign of a positive one-sided derivative at `a` is read off from the
+slopes: if the right derivative at `a` is positive, then `f a < f x` for every `x > a` close to
+`a`, and if the left derivative at `a` is positive, then `f x < f a` for every `x < a` close to
+`a`.
+
 ## Main results
 
 * `HasDerivAtFilter.tendsto_slope`: slopes converge to the derivative away from the base point.
 * `HasDerivAt.tendsto_nsmul_sub_add_div`: `n • (f (x + t / n) - f x)` tends to `t • f'`.
+* `HasDerivWithinAt.eventually_nhdsGT_lt_of_pos`,
+  `HasDerivWithinAt.eventually_nhdsLT_lt_of_pos`: a positive right (left) derivative at `a`
+  makes `f` larger (smaller) than `f a` just to the right (left) of `a`.
 -/
 
 public section
@@ -65,3 +75,19 @@ theorem HasDerivAt.tendsto_nsmul_sub_add_div {𝕜 E : Type*} [NontriviallyNorme
   refine (((HasDerivAtFilter.tendsto_slope hf).comp hlim).const_smul t).congr' ?_
   filter_upwards [eventually_ne_atTop 0] with n hn
   simp [slope_def_module, smul_smul, mul_div_cancel₀ _ ht, Nat.cast_smul_eq_nsmul]
+
+/-- If `f : ℝ → ℝ` has positive right derivative at `a`, then `f a < f x` for every `x > a`
+close to `a`. -/
+theorem HasDerivWithinAt.eventually_nhdsGT_lt_of_pos {f : ℝ → ℝ} {f' a : ℝ}
+    (hf : HasDerivWithinAt f f' (Ioi a) a) (hf' : 0 < f') : ∀ᶠ x in 𝓝[>] a, f a < f x := by
+  filter_upwards [((hasDerivWithinAt_iff_tendsto_slope' self_notMem_Ioi).mp hf).eventually
+    (lt_mem_nhds hf'), self_mem_nhdsWithin] with x hx hax
+  exact (slope_pos_iff hax).mp hx
+
+/-- If `f : ℝ → ℝ` has positive left derivative at `a`, then `f x < f a` for every `x < a`
+close to `a`. -/
+theorem HasDerivWithinAt.eventually_nhdsLT_lt_of_pos {f : ℝ → ℝ} {f' a : ℝ}
+    (hf : HasDerivWithinAt f f' (Iio a) a) (hf' : 0 < f') : ∀ᶠ x in 𝓝[<] a, f x < f a := by
+  filter_upwards [((hasDerivWithinAt_iff_tendsto_slope' self_notMem_Iio).mp hf).eventually
+    (lt_mem_nhds hf'), self_mem_nhdsWithin] with x hx hxa
+  exact (slope_pos_iff_gt hxa).mp hx
