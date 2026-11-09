@@ -90,9 +90,8 @@ let alone a holomorphic map.
   lies on the image of the remainder and on the frontier of the image of the whole.
 * `TauCeti.frontier_inter_closure_eq_frontier_inter_frontier` — the frontier of a set meets the
   closure of a subset exactly where it meets that subset's frontier.
-* `TauCeti.frontier_image_subset_of_closure_subset` — for an open map, injective on the closure of
-  a set, whose image closure adds at most a set `t`, the frontier of the image lies on the image
-  of the frontier, together with `t`.
+* `TauCeti.frontier_image_subset_of_closure_subset` — for an open map whose image closure adds at
+  most a set `t`, the frontier of an image lies on the image of the frontier, together with `t`.
 -/
 
 public section
@@ -211,14 +210,13 @@ theorem frontier_inter_closure_eq_frontier_inter_frontier (hAV : A ⊆ V) :
 
 end Inside
 
-section OpenInjectiveImage
+section OpenImage
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {f : X → Y} {s : Set X}
   {t : Set Y}
 
 /-- **The frontier of an image lies on the image of the frontier, plus whatever the closure adds.**
-For an open map `f`, injective on `closure s`, whose image closure satisfies
-`closure (f '' s) ⊆ f '' closure s ∪ t`,
+For an open map `f` whose image closure satisfies `closure (f '' s) ⊆ f '' closure s ∪ t`,
 
 > `frontier (f '' s) ⊆ f '' frontier s ∪ t`.
 
@@ -228,16 +226,17 @@ as `f` sends a divergent sequence somewhere convergent. A consumer supplies `t` 
 closure hypothesis, typically from a compactness statement about the image; it is often a single
 point, but nothing in the argument needs that.
 
-Openness and injectivity are both used, and neither can be dropped: openness keeps the image of
-the interior inside the interior of the image, and injectivity on `closure s` is what turns a
-difference of images into the image of a difference. -/
-theorem frontier_image_subset_of_closure_subset (hf : IsOpenMap f) (hfi : InjOn f (closure s))
+Openness is what the argument uses: it keeps the image of the interior inside the interior of
+the image, and it cannot be dropped, as the inclusion of `[0, 1]` into `ℝ` with `s = univ` and
+`t = ∅` shows. No injectivity is needed, since a difference of images always lies in the image of
+the difference. -/
+theorem frontier_image_subset_of_closure_subset (hf : IsOpenMap f)
     (hcl : closure (f '' s) ⊆ f '' closure s ∪ t) :
     frontier (f '' s) ⊆ f '' frontier s ∪ t := by
   refine (Set.sdiff_subset_sdiff hcl (hf.image_interior_subset s)).trans ?_
-  rw [Set.union_sdiff_distrib, ← hfi.image_sdiff_subset interior_subset_closure]
-  exact Set.union_subset_union_right _ Set.sdiff_subset
+  rw [Set.union_sdiff_distrib]
+  exact Set.union_subset_union (Set.subset_image_sdiff f _ _) Set.sdiff_subset
 
-end OpenInjectiveImage
+end OpenImage
 
 end TauCeti
