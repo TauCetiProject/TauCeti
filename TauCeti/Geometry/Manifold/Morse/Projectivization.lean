@@ -409,8 +409,7 @@ theorem mk_single_mem_criticalPoints_projectiveMomentFunction (w : Fin (n + 1) �
       criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) := by
   rw [mem_criticalPoints, mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
     (affineOpenPartialHomeomorph_mem_maximalAtlas (I := 𝓘(ℝ, Fin n → 𝕜)) k)
-    (mk_single_mem_source k)
-    ((contMDiff_projectiveMomentFunction w (r := 1)) _ |>.mdifferentiableAt one_ne_zero),
+    (mk_single_mem_source k),
     projectiveMomentFunction_comp_extend_symm, affineOpenPartialHomeomorph_extend_mk_single]
   exact fderiv_model_zero _ _
 
@@ -422,8 +421,7 @@ theorem mem_criticalPoints_projectiveMomentFunction_iff {w : Fin (n + 1) → ℝ
       x = mk 𝕜 (Pi.single k 1) (by simp) := by
   have hs : x ∈ (affineOpenPartialHomeomorph (K := 𝕜) k).source := by simpa using hx
   rw [mem_criticalPoints, mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
-    (affineOpenPartialHomeomorph_mem_maximalAtlas k) hs
-    ((contMDiff_projectiveMomentFunction w (r := 1)) x |>.mdifferentiableAt one_ne_zero),
+    (affineOpenPartialHomeomorph_mem_maximalAtlas k) hs,
     projectiveMomentFunction_comp_extend_symm,
     fderiv_model_eq_zero_iff (ν := w ∘ k.succAbove) fun j ↦ hk _ (Fin.succAbove_ne k j),
     affineOpenPartialHomeomorph_extend_apply]
@@ -453,8 +451,7 @@ theorem mk_mem_criticalPoints_projectiveMomentFunction_iff {w : Fin (n + 1) → 
   have hz (j : Fin n) : affineChart k (mk 𝕜 v hv) j = 0 ↔ v (k.succAbove j) = 0 := by
     simp [affineChart_mk, hk]
   rw [mem_criticalPoints, mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
-    (affineOpenPartialHomeomorph_mem_maximalAtlas k) hs
-    ((contMDiff_projectiveMomentFunction w (r := 1)) _ |>.mdifferentiableAt one_ne_zero),
+    (affineOpenPartialHomeomorph_mem_maximalAtlas k) hs,
     projectiveMomentFunction_comp_extend_symm, fderiv_model_eq_zero_iff_forall,
     affineOpenPartialHomeomorph_extend_apply, Fin.forall_iff_succAbove k]
   simp only [hk, false_or, comp_apply]

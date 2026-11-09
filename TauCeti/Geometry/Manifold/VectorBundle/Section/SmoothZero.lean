@@ -115,7 +115,7 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
   -- self model its domain is all of the model space, exactly as in `D`.
   have hD (z : ↥{y | s y = 0}) :
       mvfderiv 𝓘(𝕜, X) (fun y ↦ (e z ⟨b y, s y⟩).2) z.1 = D z := by
-    rw [(hmd z).mvfderiv_eq_fderiv_comp_extChartAt_symm]
+    rw [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
     simp only [extChartAt, OpenPartialHomeomorph.extend_coe,
       OpenPartialHomeomorph.extend_coe_symm, modelWithCornersSelf_coe,
       modelWithCornersSelf_coe_symm, Function.comp_def]

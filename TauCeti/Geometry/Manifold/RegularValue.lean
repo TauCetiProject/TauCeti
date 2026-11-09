@@ -312,7 +312,7 @@ theorem IsRegularPoint.surjective_fderiv_comp_extChartAt_symm {g : M → E'}
   by_cases hg : MDifferentiableAt I 𝓘(𝕜, E') g x
   · have h' : Surjective (mvfderiv I g x) := (NormedSpace.fromTangentSpace (g x)).surjective.comp
       (isRegularPoint_iff.1 h)
-    rwa [hg.mvfderiv_eq_fderiv_comp_extChartAt_symm] at h'
+    rwa [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm] at h'
   · -- Without differentiability the manifold derivative is `0`, so `E'` is the zero space.
     rw [isRegularPoint_iff, mfderiv_zero_of_not_mdifferentiableAt hg] at h
     intro v
