@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Extreme
+public import Mathlib.Analysis.Convex.Intrinsic
 public import Mathlib.Analysis.Convex.SimplicialComplex.Basic
 public import Mathlib.Topology.Compactness.LocallyFinite
 import TauCeti.Analysis.Convex.Extreme
+import TauCeti.Analysis.Convex.Intrinsic
 
 /-!
 # Restricting a geometric simplicial complex to a set
@@ -145,5 +147,21 @@ theorem space_restrict_of_isExtreme (hB : IsExtreme 𝕜 K.space B) (hBc : Conve
   exact mem_space_iff.2 ⟨t, ht, hxt⟩
 
 end LinearOrderedField
+
+section Intrinsic
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- If a convex set `C` meets the simplicial complex `L` exactly in the subcomplex covering its
+intrinsic frontier, and its intrinsic interior avoids `|L|`, then the restriction of `L` to `C`
+has the intrinsic frontier of `C` as its space. -/
+theorem space_restrict_eq_intrinsicFrontier {L : SimplicialComplex ℝ E} {C : Set E}
+    (hCv : Convex ℝ C) (hfr : intrinsicFrontier ℝ C ⊆ (L.restrict C).space)
+    (hint : Disjoint (intrinsicInterior ℝ C) L.space) :
+    (L.restrict C).space = intrinsicFrontier ℝ C := by
+  exact ((space_restrict_subset hCv).trans fun _ ⟨hxL, hxC⟩ =>
+    TauCeti.inter_subset_intrinsicFrontier_of_disjoint hint ⟨hxC, hxL⟩).antisymm hfr
+
+end Intrinsic
 
 end Geometry.SimplicialComplex

@@ -375,7 +375,7 @@ theorem pointToGeneralLinear_mapDomain_geckRootSubgroupToBaseChangeCoordinateMap
       (t.geckCoordinateLattice ht).toAddSubgroup
       (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
       (t.isNilpotent_geckRepresentation_rootGenerator ht)
-      (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A (t.geckDefiningIdeal_def ht) i B q
+      (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht) A i B q
       using 1
   congr 1
   erw [BialgHom.mapDomain_apply, CommHopfAlgCat.quotientPointsHom_apply,

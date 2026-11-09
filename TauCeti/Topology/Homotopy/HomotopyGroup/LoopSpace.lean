@@ -40,7 +40,8 @@ concatenation in the matching direction.
 * `Homeomorph.genLoopHomotopic_iff`: a homeomorphism of generalized-loop spaces preserves and
   reflects homotopy.
 * `HomotopyGroup.congrEquiv`, `HomotopyGroup.congrMulEquiv`: reindexing the cube directions
-  along `M ≃ N`, natural in the space by `HomotopyGroup.map_congrEquiv`.
+  along `M ≃ N`, natural in the space by `HomotopyGroup.map_congrEquiv` and
+  `HomotopyGroup.map_eq_congrEquiv_symm_comp`.
 * `HomotopyGroup.zerothHomotopyEquiv`: **`π_N(X, x)` is the set of path components of
   `Ω^ N X x`**, with `Path.joined_iff_homotopic` its one-dimensional form and
   `HomotopyGroup.zerothHomotopyLoopSpaceEquivFundamentalGroup` the degree-zero shift
@@ -97,6 +98,14 @@ theorem map_congrEquiv {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (h
   -- both generalized loops are `f ∘ p ∘ (t ↦ t ∘ e)`
   refine congrArg _ (_root_.GenLoop.ext _ _ fun t => ?_)
   simp only [_root_.GenLoop.congr_apply, _root_.GenLoop.map_apply]
+
+/-- The map induced on the homotopy group indexed by `M` is the map induced on the group indexed
+by `N`, conjugated by the reindexing `e : M ≃ N` of the cube directions. -/
+theorem map_eq_congrEquiv_symm_comp {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y))
+    (hf : f x = y) (e : M ≃ N) :
+    map (N := M) f hf = (congrEquiv e).symm ∘ map f hf ∘ congrEquiv e := by
+  funext a
+  rw [Function.comp_apply, Function.comp_apply, map_congrEquiv, Equiv.symm_apply_apply]
 
 /-- In positive dimensions, reindexing the cube directions along `e : M ≃ N` is an isomorphism
 of homotopy groups. The target index type inherits its nonemptiness, hence its group structure,
