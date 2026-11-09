@@ -123,7 +123,7 @@ theorem laplacian_comp_eq_of_mvfderiv_comp_eq_neg
     exact J.inChart_inChart (u z) he v
   have hCRc : ∀ᶠ w in 𝓝 z, fderiv ℝ (extChartAt I (u z) ∘ u) w Complex.I =
       J.inChart (u z) ((extChartAt I (u z) ∘ u) w) (fderiv ℝ (extChartAt I (u z) ∘ u) w 1) := by
-    filter_upwards [hCR, hsrc, ContMDiffAt.eventually_mdifferentiableAt hu one_le_two]
+    filter_upwards [hCR, hsrc, ContMDiffAt.eventually_mdifferentiableAt hu two_ne_zero]
       with w hw hws hwd
     exact J.fderiv_extChartAt_comp_apply_eq_inChart (u z) hwd hws hw
   have hρJc : ∀ᶠ e in 𝓝 ((extChartAt I (u z) ∘ u) z),

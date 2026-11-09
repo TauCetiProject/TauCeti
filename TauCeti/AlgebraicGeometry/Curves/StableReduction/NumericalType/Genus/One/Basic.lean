@@ -599,7 +599,7 @@ theorem exists_weight_multiplicity_intersection_eq_of_card_eq_three
     exists_coefficients_of_univ_eq_triple hij hik hjk hu hi hj hk hik₀
   simp only [isGenusOneChainShape_iff]
   -- In each case, read off the shape; for the last four the chain runs from `k` to `i`.
-  rcases Int.cases_of_mul_add_mul_eq_four hα₀ hβ₀ hγ₀ hδ₀ hsum with
+  rcases (Int.mul_add_mul_eq_four_iff hα₀ hβ₀ hγ₀ hδ₀).1 hsum with
     ⟨rfl, rfl, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ | ⟨⟨rfl, rfl⟩ | ⟨rfl, rfl⟩, rfl, rfl⟩ |
       ⟨⟨rfl, rfl⟩ | ⟨rfl, rfl⟩, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩
   · exact ⟨i, k, .inl ⟨rfl, rfl⟩, .inr <| .inl <| by

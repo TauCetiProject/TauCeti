@@ -86,7 +86,7 @@ jobs:
     with:
       review_ref: 6b07b400ba129a0f2771d2d315a410f72d462244
       tools_repository: TauCetiProject/TauCetiTools
-      tools_ref: cc55ea7cbd272d688189c09230497d6a9f9ff101
+      tools_ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
       pr: ${{ needs.resolve.outputs.pr }}
       trigger: ${{ github.event_name }}
       # The queue service owns admission; this workflow only publishes review evidence.

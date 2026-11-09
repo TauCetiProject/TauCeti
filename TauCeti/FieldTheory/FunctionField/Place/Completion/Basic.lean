@@ -181,11 +181,14 @@ theorem exists_sub_completionEmbedding_mem_filtration (x : P.Completion) (b : �
   exact hy.le
 
 /-- An element of the completed filtration has an approximation in the original filtration,
-with error in any smaller step. -/
-theorem exists_filtration_sub_completionEmbedding_mem {a b : ℤ} (hab : a ≤ b)
+with error in any step; for a step below the given one, `0` already approximates. -/
+theorem exists_filtration_sub_completionEmbedding_mem {a : ℤ} (b : ℤ)
     (x : P.completionPlace.filtration a) :
     ∃ y : P.filtration a,
       (x : P.Completion) - P.completionEmbedding y ∈ P.completionPlace.filtration b := by
+  by_cases hab : a ≤ b
+  swap
+  · exact ⟨0, by simpa using P.completionPlace.filtration_antitone (not_le.mp hab).le x.2⟩
   obtain ⟨y, hy⟩ := P.exists_sub_completionEmbedding_mem_filtration x b
   have hya : P.completionEmbedding y ∈ P.completionPlace.filtration a := by
     have h := (P.completionPlace.filtration a).sub_mem x.2
@@ -205,7 +208,7 @@ theorem completionFiltrationMap_apply (a : ℤ) (x : P.filtration a) :
 
 /-- Completion preserves every finite interval of the order filtration. The isomorphism is
 induced by the canonical embedding, rather than by choices of representatives. -/
-noncomputable def completionFiltrationQuotientEquiv {a b : ℤ} (hab : a ≤ b) :
+noncomputable def completionFiltrationQuotientEquiv (a b : ℤ) :
     (P.filtration a ⧸ (P.filtration b).submoduleOf (P.filtration a)) ≃ₗ[k]
       (P.completionPlace.filtration a ⧸
         (P.completionPlace.filtration b).submoduleOf (P.completionPlace.filtration a)) := by
@@ -228,7 +231,7 @@ noncomputable def completionFiltrationQuotientEquiv {a b : ℤ} (hab : a ≤ b) 
     exact P.completionEmbedding_mem_filtration_iff.mp h'
   · intro x
     obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective q' x
-    obtain ⟨y, hy⟩ := P.exists_filtration_sub_completionEmbedding_mem hab x
+    obtain ⟨y, hy⟩ := P.exists_filtration_sub_completionEmbedding_mem b x
     refine ⟨Submodule.Quotient.mk y, ?_⟩
     rw [Submodule.mapQ_apply, Submodule.Quotient.eq]
     have h := (P.completionPlace.filtration b).neg_mem hy
@@ -238,9 +241,8 @@ noncomputable def completionFiltrationQuotientEquiv {a b : ℤ} (hab : a ≤ b) 
 /-- The filtration quotient equivalence sends the class of a function to the class of its
 canonical image in the completion. -/
 @[simp]
-theorem completionFiltrationQuotientEquiv_apply_mk {a b : ℤ} (hab : a ≤ b)
-    (x : P.filtration a) :
-    P.completionFiltrationQuotientEquiv hab (Submodule.Quotient.mk x) =
+theorem completionFiltrationQuotientEquiv_apply_mk (a b : ℤ) (x : P.filtration a) :
+    P.completionFiltrationQuotientEquiv a b (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk (P.completionFiltrationMap a x) := (rfl)
 
 /-- The canonical map of valuation rings induced by completion. -/
@@ -274,8 +276,7 @@ noncomputable def residueFieldEquivCompletion : P.ResidueField ≃ₐ[k]
   obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective (R := P.completionPlace.integers) x
   have hx : (x : P.Completion) ∈ P.completionPlace.filtration 0 :=
     P.completionPlace.mem_filtration_zero_iff.mpr x.2
-  obtain ⟨y, hy⟩ := P.exists_filtration_sub_completionEmbedding_mem (by norm_num : (0 : ℤ) ≤ 1)
-    ⟨x, hx⟩
+  obtain ⟨y, hy⟩ := P.exists_filtration_sub_completionEmbedding_mem 1 ⟨x, hx⟩
   let y' : P.integers := ⟨y, P.mem_filtration_zero_iff.mp y.2⟩
   refine ⟨IsLocalRing.residue P.integers y', ?_⟩
   rw [IsLocalRing.ResidueField.mapAlgHom_residue]

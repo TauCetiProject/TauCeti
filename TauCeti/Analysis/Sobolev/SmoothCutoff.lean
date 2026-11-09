@@ -93,8 +93,7 @@ theorem tendsto_eLpNorm_iteratedFDeriv_cutoff_sub
       ((hχ.comp (contDiff_const_smul _)).sub contDiff_const) hf x le_rfl).trans ?_
     refine (Finset.sum_le_sum fun i hi ↦ ?_).trans (le_abs_self _)
     have hi' : i ≤ k := Nat.le_of_lt_succ (Finset.mem_range.mp hi)
-    have hd := norm_iteratedFDeriv_comp_inv_smul_sub_const_le_add_norm
-      (hχ.of_le (by exact_mod_cast hi')) (hB i hi')
+    have hd := norm_iteratedFDeriv_comp_inv_smul_sub_const_le_add_norm (hB i hi')
       (by linarith [Nat.cast_nonneg (α := ℝ) n] : (1 : ℝ) ≤ (n : ℝ) + 1) 1 x
     exact mul_le_mul_of_nonneg_right
       (mul_le_mul_of_nonneg_left (by simpa [add_comm] using hd)

@@ -42,6 +42,9 @@ locus of such maps inside `E →L[𝕜] F`, not of any one of them.
 * `TauCeti.surjective_of_norm_sub_apply_le`: an additive endomorphism of a complete normed
   group (for instance a linear map over any ring) uniformly closer than `1` to the identity is
   surjective.
+* `ContinuousLinearMap.surjective_coprod_toSpanSingleton_iff`: a continuous linear map extended
+  by the line through a vector is surjective exactly when its range and the vector span the
+  target.
 -/
 
 public section
@@ -188,5 +191,14 @@ theorem surjective_of_norm_sub_lt_inv_rightInverse [CompleteSpace E]
   apply Submodule.eq_top_of_nonempty_interior'
   rw [LinearMap.coe_range, ContinuousLinearMap.coe_coe, hopen.interior_eq]
   exact ⟨0, 0, map_zero S⟩
+
+/-- A continuous linear map and a vector together span the target exactly when the map extended
+by the line through the vector is surjective. -/
+theorem surjective_coprod_toSpanSingleton_iff {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace 𝕜 V] (L : V →L[𝕜] F) (v : F) :
+    Function.Surjective (L.coprod (toSpanSingleton 𝕜 v)) ↔
+      LinearMap.range (L : V →ₗ[𝕜] F) ⊔ (𝕜 ∙ v) = ⊤ := by
+  rw [← coe_coe, ← LinearMap.range_eq_top, range_coprod, toLinearMap_toSpanSingleton,
+    LinearMap.range_toSpanSingleton]
 
 end ContinuousLinearMap

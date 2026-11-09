@@ -312,6 +312,11 @@ theorem mk_coe (μ : WassersteinSpace p X) :
     mk (μ : ProbabilityMeasure X) (hasFiniteMoment μ) = μ :=
   (rfl)
 
+/-- The Wasserstein space over an empty ground space is empty: there is no probability measure. -/
+theorem isEmpty_of_isEmpty [IsEmpty X] : IsEmpty (WassersteinSpace p X) :=
+  ⟨fun μ ↦ (nonempty_of_isProbabilityMeasure ((μ : ProbabilityMeasure X) : Measure X)).elim
+    isEmptyElim⟩
+
 end Basic
 
 section MetricGround

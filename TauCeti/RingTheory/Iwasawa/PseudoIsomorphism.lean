@@ -313,7 +313,7 @@ theorem IsPseudoIsomorphism.exists_reverse [IsNoetherianRing A] [Module.Finite A
     ∃ g : N →ₗ[A] M, IsPseudoIsomorphism g := by
   have := hf.finite_iff.mpr ‹Module.Finite A N›
   obtain ⟨γ, hker, hcoker, hγ⟩ := hf.exists_mem_annihilator_notMem hN
-  obtain ⟨g, hgf⟩ := f.exists_comp_eq_lsmul_of_mem_annihilator hker hcoker
+  obtain ⟨g, -, hgf⟩ := f.exists_comp_eq_lsmul_of_mem_annihilator hker hcoker
   refine ⟨g, .of_bijective_localizedModule_map fun 𝔭 h𝔭 ↦ ?_⟩
   have hfloc := hf.bijective_localizedModule_map 𝔭 h𝔭
   by_cases hmem : 𝔭 ∈ Module.support A N
