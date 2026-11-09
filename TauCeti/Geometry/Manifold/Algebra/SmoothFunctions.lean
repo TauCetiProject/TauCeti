@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Algebraic operations on smooth maps
@@ -13,7 +14,12 @@ public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 This file complements Mathlib's algebraic structures on spaces of smooth maps with the pointwise
 evaluation of finite sums, with the pullback of smooth functions along a smooth map, and with the
 transport of pointwise identities between scalar-valued smooth functions to identities in the
-algebra of smooth functions.
+algebra of smooth functions. It also bundles the coordinate functions of a basis of a
+finite-dimensional space as smooth functions.
+
+## Main definitions
+
+* `Module.Basis.smoothCoord`: the `i`-th coordinate function of a basis, as a smooth function.
 
 ## Main results
 
@@ -145,3 +151,20 @@ theorem sub_algebraMap_eq_sum_mul_sub_algebraMap {𝕜 : Type*} [NontriviallyNor
     _ = _ := by simp [Algebra.algebraMap_eq_smul_one]
 
 end TauCeti
+
+namespace Module.Basis
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {E : Type*}
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] {ι : Type*}
+  (b : Module.Basis ι 𝕜 E)
+
+/-- The `i`-th coordinate function of a basis `b` of a finite-dimensional space, as a smooth
+function. -/
+noncomputable def smoothCoord (i : ι) : C^∞⟮𝓘(𝕜, E), E; 𝕜⟯ :=
+  ⟨b.coord i, (LinearMap.toContinuousLinearMap (b.coord i)).contDiff.contMDiff⟩
+
+@[simp]
+theorem smoothCoord_apply (i : ι) (x : E) : b.smoothCoord i x = b.coord i x :=
+  (rfl)
+
+end Module.Basis
