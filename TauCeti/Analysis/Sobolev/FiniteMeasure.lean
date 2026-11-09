@@ -10,6 +10,7 @@ import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.Bochner.Holder
 import TauCeti.MeasureTheory.Integral.RieszPotential
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Sobolev inequalities on sets of finite measure
@@ -87,8 +88,7 @@ theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt (hu : ContDiff ℝ 
   set ω := μ.real (ball (0 : E) 1)
   have hn : (1 : ℝ) ≤ n := by exact_mod_cast finrank_pos
   have hn0 : (n : ℝ) ≠ 0 := by positivity
-  have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne'
-    measure_ball_lt_top.ne
+  have hω : 0 < ω := Metric.measureReal_ball_pos μ 0 one_pos
   have hcont := hu.continuous_fderiv one_ne_zero
   -- The Riesz potential of order one of `‖Du‖`, over `Ω`.
   set V : E → ℝ≥0∞ := fun x =>
@@ -187,8 +187,7 @@ theorem W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball [Nontrivial 
   set n := finrank ℝ E
   set ω := mu.real (ball (0 : E) 1)
   have hn : (0 : ℝ) < n := by exact_mod_cast finrank_pos
-  have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne'
-    measure_ball_lt_top.ne
+  have hω : 0 < ω := Metric.measureReal_ball_pos mu 0 one_pos
   have he : 0 ≤ (n : ℝ)⁻¹ - δ := sub_nonneg.2 hδn.le
   have h1δ : 0 ≤ 1 - δ := by
     have : (n : ℝ)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (by exact_mod_cast finrank_pos)

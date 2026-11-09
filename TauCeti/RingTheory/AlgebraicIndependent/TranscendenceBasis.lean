@@ -55,10 +55,21 @@ theorem isAlgebraic_of_trdeg_le (h : Algebra.trdeg R A ≤ Algebra.trdeg S A)
     ← Cardinal.add_le_add_iff_of_lt_aleph0 (Cardinal.lift_lt_aleph0.mpr hfin), zero_add]
   exact lift_trdeg_add_le.trans (Cardinal.lift_le.mpr h)
 
-/-- In an injective tower `R → S → A`, if `A` has transcendence degree one over both
-`R` and `S`, then `S` is algebraic over `R`. -/
+omit [FaithfulSMul R S] [FaithfulSMul S A] in
+/-- In a tower `R → S → A`, if `A` has transcendence degree one over both `R` and `S`, then `S` is
+algebraic over `R`. The structure maps are injective because the transcendence degrees are
+nonzero. -/
 theorem isAlgebraic_of_trdeg_eq_one (h : Algebra.trdeg R A = 1) (h' : Algebra.trdeg S A = 1) :
-    Algebra.IsAlgebraic R S :=
-  isAlgebraic_of_trdeg_le (h.trans h'.symm).le (h' ▸ Cardinal.one_lt_aleph0)
+    Algebra.IsAlgebraic R S := by
+  have hSA : Function.Injective (algebraMap S A) := by
+    by_contra hn
+    exact one_ne_zero (h'.symm.trans (trdeg_eq_zero_of_not_injective hn))
+  have hRA : Function.Injective (algebraMap R A) := by
+    by_contra hn
+    exact one_ne_zero (h.symm.trans (trdeg_eq_zero_of_not_injective hn))
+  rw [IsScalarTower.algebraMap_eq R S A, RingHom.coe_comp] at hRA
+  have : FaithfulSMul S A := (faithfulSMul_iff_algebraMap_injective S A).2 hSA
+  have : FaithfulSMul R S := (faithfulSMul_iff_algebraMap_injective R S).2 hRA.of_comp
+  exact isAlgebraic_of_trdeg_le (h.trans h'.symm).le (h' ▸ Cardinal.one_lt_aleph0)
 
 end TauCeti

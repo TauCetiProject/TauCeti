@@ -126,9 +126,8 @@ private theorem crossRecut_terminal_overlap
   have hrecut : E.toRectangleDecomposition.IsRecut D.toRectangleDecomposition := by
     rw [hDrect]
     exact E.toRectangleDecomposition.isRecut_recut hone hf hs
-  have hback := hrecut.symm hone hf hs
+  have hback := hrecut.symm hf hs
   have hDone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-    (E.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
   obtain ⟨hfr, hsr, -, -, -, -⟩ := E.crossRecut_geometry hcommon hone hf hs hrow
   rw [← hDrect] at hfr hsr
   have hDcommon : D.rectangle.right = D.pentagon.right := by
@@ -238,9 +237,8 @@ theorem mem_terminalCrossOverlapPartners_of_right_eq_left
   have hrecut : E.toRectangleDecomposition.IsRecut D.toRectangleDecomposition := by
     rw [hDrect]
     exact E.toRectangleDecomposition.isRecut_recut hone hf hs
-  have hback := hrecut.symm hone hf hs
+  have hback := hrecut.symm hf hs
   have hDone := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-    (E.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)
   obtain ⟨hDcommon, hDcol⟩ := E.crossRecut_terminal_overlap hcommon hone hf hs hrow hturn
   have hr := D.isEmpty_rectangle_of_isRecut hrecut
   have hp := D.isEmpty_pentagon_of_isRecut hrecut

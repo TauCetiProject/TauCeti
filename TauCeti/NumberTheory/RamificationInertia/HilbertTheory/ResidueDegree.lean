@@ -51,6 +51,7 @@ variable (A K L : Type*) {B : Type*} [CommRing A] [CommRing B] [Field K] [Field 
 
 variable (D : Type*) [Field D] [Algebra D L] [IsDecompositionField K L P D]
 
+omit [FiniteDimensional K L] in
 include K P in
 /-- The degree above the decomposition field is `e * f`, also for inseparable residue
 extensions. -/
