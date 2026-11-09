@@ -9,6 +9,8 @@ public import TauCeti.Algebra.AlgebraicGroup.Isogeny.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Etale
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Cotangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Cotangent
+import Mathlib.RingTheory.RingHom.Etale
+import TauCeti.Algebra.AlgebraicGroup.Tangent.FormallySmooth
 import TauCeti.Algebra.AlgebraicGroup.Tangent.KrullDimension
 import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.BaseChange
 import TauCeti.AlgebraicGeometry.Scheme.Regular.LocalRing
@@ -143,29 +145,28 @@ theorem lieEquivOfEtaleKernel_apply_apply (hf : IsIsogeny f)
   rw [lieEquivOfEtaleKernel_apply]
   exact algEquivSelf_derivationComp_apply f.hom d a
 
-omit [Algebra.Smooth k K] in
-/-- The differential of a smooth affine isogeny with étale kernel is bijective on
-cotangent duals. -/
+omit [Algebra.Smooth k H] [Algebra.Smooth k K] in
+/-- The differential of an isogeny with étale kernel is bijective on cotangent duals: the
+coordinate map is then étale, hence formally unramified and formally smooth. Neither group needs
+to be smooth or of finite type. -/
 theorem dualCotangentMap_bijective_of_etaleKernel (hf : IsIsogeny f)
     (hker : Algebra.Etale k (K ⧸ (kernelHopfIdeal f).toIdeal)) :
     Function.Bijective (Derivation.dualCotangentMap f.hom) := by
-  -- the coordinate map of an isogeny with étale kernel is étale, so `K` is smooth over `k`
   have hetale := (CommHopfAlgCat.etale_iff_algebraEtale_quotient_kernelHopfIdeal f
     hf.faithfullyFlat).mpr hker
-  let _ := f.hom.toAlgHom.toAlgebra
-  have : IsScalarTower k H K :=
-    IsScalarTower.of_algebraMap_eq fun x ↦ (f.hom.toAlgHom.commutes x).symm
-  have : Algebra.Etale H K := hetale
-  have : Algebra.Smooth k K := Algebra.Smooth.comp k H K
+  have hsmooth := ((RingHom.etale_iff_formallyUnramified_and_smooth _).mp hetale).2
+  -- the differential on counit-valued derivations is bijective
+  have hbij : Function.Bijective (derivationComp (B := k) f.hom) :=
+    ⟨derivationComp_injective_of_formallyUnramified f.hom hetale.formallyUnramified,
+      derivationComp_surjective_of_formallySmooth f.hom hsmooth.formallySmooth⟩
   let e := (Derivation.cotangentLinearEquiv (R := k) (A := K) (B := k)).trans
-    ((hf.lieEquivOfEtaleKernel hker).toLinearEquiv.trans
+    ((LinearEquiv.ofBijective (derivationComp (B := k) f.hom) hbij).trans
       (Derivation.cotangentLinearEquiv (R := k) (A := H) (B := k)).symm)
   have he (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
       e x = Derivation.dualCotangentMap f.hom x := by
     apply (Derivation.cotangentLinearEquiv (R := k) (A := H) (B := k)).injective
-    simp only [e, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply,
-      LieEquiv.coe_toLinearEquiv, lieEquivOfEtaleKernel_apply,
-      Derivation.cotangentLinearEquiv_dualCotangentMap]
+    rw [Derivation.cotangentLinearEquiv_dualCotangentMap]
+    exact (Derivation.cotangentLinearEquiv (R := k) (A := H) (B := k)).apply_symm_apply _
   exact (funext he : ⇑e = _) ▸ e.bijective
 
 /-- The differential of a smooth affine isogeny with étale kernel on the native
