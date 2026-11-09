@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
+import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.Prod
 
@@ -27,8 +28,15 @@ integrals of rational Laplace transforms. For the sine-compensated kernel
 `exp (i t x) - 1 - i t sin x` and its real counterpart `exp (-a * x) - 1 + a * sin x`,
 these Laplace transforms are computed explicitly.
 
+The substitution `t ↦ 1 / t` turns Euler's integral into
+`∫ t in Ioi 0, t ^ (-(a + 1)) * exp (-(r / t)) = (1 / r) ^ a * Γ(a)` for `0 < a` and `0 < r`, the
+normalization of the inverse-gamma density; averaging Gaussians `exp (-π ‖z‖² / t)` in the scale
+`t` against such powers produces the kernels `‖z‖ ^ (-2a)` of the Riesz potentials and transforms.
+
 ## Main results
 
+* `TauCeti.integral_rpow_mul_exp_neg_div_Ioi`, `TauCeti.integrableOn_rpow_mul_exp_neg_div_Ioi`:
+  Euler's integral in the inverted variable.
 * `TauCeti.integrable_rpow_mul_exp_neg_mul_smul_prod`: the joint integrand of the Gamma-mixture
   representation is integrable on the product of two half-lines, so Fubini's theorem applies.
 * `TauCeti.integrableOn_rpow_smul_integral_exp_neg_mul_smul`: the power-weighted Laplace
@@ -58,6 +66,32 @@ private lemma integral_rpow_mul_exp_neg_mul_Ioi_eq (hα : -1 < α) {x : ℝ} (hx
     ∫ s in Ioi (0 : ℝ), s ^ α * exp (-(x * s)) = x ^ (-(α + 1)) * Gamma (α + 1) := by
   have h := integral_rpow_mul_exp_neg_mul_Ioi (a := α + 1) (by linarith) hx
   rwa [add_sub_cancel_right, one_div, inv_rpow hx.le, ← rpow_neg hx.le] at h
+
+/-- **Euler's integral in the inverted variable**:
+`∫₀^∞ t ^ (-(a + 1)) exp (-r / t) dt = (1 / r) ^ a Γ(a)` for `0 < a` and `0 < r`, by the
+substitution `t ↦ 1 / t` in `Real.integral_rpow_mul_exp_neg_mul_Ioi`. -/
+theorem integral_rpow_mul_exp_neg_div_Ioi {a r : ℝ} (ha : 0 < a) (hr : 0 < r) :
+    ∫ t in Ioi (0 : ℝ), t ^ (-(a + 1)) * exp (-(r / t)) = (1 / r) ^ a * Gamma a := by
+  rw [← integral_rpow_mul_exp_neg_mul_Ioi ha hr,
+    ← integral_comp_rpow_Ioi (fun t ↦ t ^ (a - 1) * exp (-(r * t))) (p := -1) (by norm_num)]
+  refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
+  simp only [smul_eq_mul, abs_neg, abs_one, one_mul, rpow_neg_one]
+  rw [inv_rpow ht.le, ← rpow_neg ht.le, div_eq_mul_inv, ← mul_assoc, ← rpow_add ht]
+  ring_nf
+
+/-- The integrand `t ^ (-(a + 1)) exp (-r / t)` of Euler's integral in the inverted variable is
+integrable on the positive half-line for `0 < a` and `0 < r`. -/
+theorem integrableOn_rpow_mul_exp_neg_div_Ioi {a r : ℝ} (ha : 0 < a) (hr : 0 < r) :
+    IntegrableOn (fun t : ℝ ↦ t ^ (-(a + 1)) * exp (-(r / t))) (Ioi 0) := by
+  have h : IntegrableOn (fun t : ℝ ↦ t ^ (a - 1) * exp (-(r * t))) (Ioi 0) := by
+    refine (integrableOn_rpow_mul_exp_neg_mul_rpow (p := 1) (s := a - 1) (by linarith)
+      one_pos hr).congr_fun (fun t _ ↦ ?_) measurableSet_Ioi
+    simp [neg_mul]
+  rw [← integrableOn_Ioi_comp_rpow_iff _ (p := -1) (by norm_num)] at h
+  refine h.congr_fun (fun t (ht : 0 < t) ↦ ?_) measurableSet_Ioi
+  simp only [smul_eq_mul, abs_neg, abs_one, one_mul, rpow_neg_one]
+  rw [inv_rpow ht.le, ← rpow_neg ht.le, div_eq_mul_inv, ← mul_assoc, ← rpow_add ht]
+  ring_nf
 
 /-- The joint integrand `(x, s) ↦ s ^ α exp (-x s) • g x` of the Gamma-mixture representation is
 integrable on the product of two positive half-lines whenever `x ↦ x ^ (-(α + 1)) • g x` is
