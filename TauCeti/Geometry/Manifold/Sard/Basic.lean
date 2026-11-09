@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Measure
 public import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Analysis.Calculus.Sard.LowDimension
 import TauCeti.Analysis.Calculus.Sard.OutermostStratum
+import TauCeti.Analysis.Calculus.Sard.Scalar
 
 /-!
 # Sard's theorem for maps between manifolds of arbitrary dimensions
@@ -26,6 +27,7 @@ depends on the dimensions.
   theorem: Whitney's example shows that a `C¹` function on the plane can have critical values of
   positive measure.
 * In general, a `C^k` map with `k ≥ m² + 1` suffices, in particular a smooth map.
+* For a real-valued map, `k ≥ m` and `k ≥ 1` suffice in every source dimension.
 
 Each statement only asks for the regularity at the points of a given set `s` of critical points,
 so it applies to maps that are only defined, or only regular, on an open subset of `M`. Except in
@@ -50,6 +52,8 @@ case, which needs only first derivatives and allows boundary in the source, is
   `m² + 1`, for arbitrary dimensions.
 * `ContMDiff.isNullSet_image_criticalPoints` and `ContMDiff.dense_isRegularValue`: the critical
   values of a smooth map are null, and its regular values are dense.
+* `ContMDiff.isNullSet_image_criticalPoints_of_real` and
+  `ContMDiff.dense_isRegularValue_of_real`: the scalar forms at regularity `max 1 m`.
 
 ## References
 
@@ -210,5 +214,37 @@ theorem _root_.ContMDiff.dense_isRegularValue (hf : ContMDiff I J n f) (hn : ∞
   exact (hf.isNullSet_image_criticalPoints hn).dense_compl
 
 end Boundaryless
+
+section Scalar
+
+variable [I.Boundaryless] {n : ℕ∞ω} [IsManifold I n M] {g : M → ℝ}
+
+/-- **Scalar Morse--Sard on a manifold.** A real-valued map that is `C^n` at each point of a
+set of critical points has null image, if `n ≠ 0` and `finrank ℝ E ≤ n`. The source is a
+boundaryless Lindelöf manifold. No measurability or openness assumption on the set is needed. -/
+theorem isNullSet_image_of_not_isRegularPoint_of_real (hn : n ≠ 0)
+    (hk : (finrank ℝ E : ℕ∞ω) ≤ n)
+    (hg : ∀ x ∈ s, ContMDiffAt I 𝓘(ℝ, ℝ) n g x)
+    (hs : ∀ x ∈ s, ¬ IsRegularPoint I 𝓘(ℝ, ℝ) g x) :
+    IsNullSet 𝓘(ℝ, ℝ) (g '' s) :=
+  isNullSet_image_of_forall_addHaar_image_criticalPoints hn
+    (fun _ _ μ _ hf ↦ addHaar_image_criticalPoints_eq_zero_of_real μ hf hk) hg hs
+
+/-- The critical values of a real-valued `C^n` map on a boundaryless Lindelöf manifold are
+null when `n ≠ 0` and the source dimension is at most `n`. -/
+theorem _root_.ContMDiff.isNullSet_image_criticalPoints_of_real
+    (hg : ContMDiff I 𝓘(ℝ, ℝ) n g) (hn : n ≠ 0) (hk : (finrank ℝ E : ℕ∞ω) ≤ n) :
+    IsNullSet 𝓘(ℝ, ℝ) (g '' {x | ¬ IsRegularPoint I 𝓘(ℝ, ℝ) g x}) :=
+  isNullSet_image_of_not_isRegularPoint_of_real hn hk (fun x _ ↦ hg x) fun _ hx ↦ hx
+
+/-- The regular values of a real-valued `C^n` map on a boundaryless Lindelöf manifold are
+dense when `n ≠ 0` and the source dimension is at most `n`. -/
+theorem _root_.ContMDiff.dense_isRegularValue_of_real
+    (hg : ContMDiff I 𝓘(ℝ, ℝ) n g) (hn : n ≠ 0) (hk : (finrank ℝ E : ℕ∞ω) ≤ n) :
+    Dense {y | IsRegularValue I 𝓘(ℝ, ℝ) g y} := by
+  rw [setOf_isRegularValue_eq_compl_image]
+  exact (hg.isNullSet_image_criticalPoints_of_real hn hk).dense_compl
+
+end Scalar
 
 end TauCeti

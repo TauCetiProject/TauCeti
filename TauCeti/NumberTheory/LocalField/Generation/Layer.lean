@@ -42,6 +42,66 @@ open ContCohomology freeProfiniteGroup _root_.ValuativeRel
 variable {p : ℕ} [Fact p.Prime] (K : Type) [Field K] [PerfectField K] [ValuativeRel K]
   [TopologicalSpace K] [IsNonarchimedeanLocalField K] [CharP 𝓀[K] p]
 
+omit [Fact p.Prime] in
+/-- The arithmetic pro-`p` class-module extension of the tame layer surjects continuously onto the
+finite quotient `G_K / U`, compatibly with the projections to `Gal(tameLayer K U / K)` under
+`quotientTameLayerEquiv`. -/
+private theorem exists_surjection_galoisClassModuleExtension_quotient
+    (U : OpenNormalSubgroup (Field.absoluteGaloisGroup K))
+    (hU : ⁅wildInertiaSubgroup K, wildInertiaSubgroup K⁆ ≤ U.toSubgroup) :
+    let j := tameLayerEmbedding K U
+    letI := galoisClassModuleAction p K (tameLayer K U) j
+    ∃ π : (galoisClassModuleExtension p K (tameLayer K U) j).E →ₜ*
+        Field.absoluteGaloisGroup K ⧸ U.toSubgroup,
+      Function.Surjective π ∧ ∀ x, quotientTameLayerEquiv K U
+        (QuotientGroup.mapOfLE (by
+          simpa only [tameLayerSubgroup_toSubgroup] using
+            (le_sup_right : U.toSubgroup ≤ wildInertiaSubgroup K ⊔ U.toSubgroup)) (π x)) =
+        (galoisClassModuleExtension p K (tameLayer K U) j).toGroupExtension.rightHom x := by
+  intro j
+  let := galoisClassModuleAction p K (tameLayer K U) j
+  let W := (galoisSubgroup K (tameLayer K U) j).toSubgroup
+  let V := wildInertiaSubgroup K ⊔ U.toSubgroup
+  let Y := galoisClassModuleExtension p K (tameLayer K U) j
+  let a := absoluteGaloisGroupRestrictEquiv K
+  have hWV : W ≤ V.comap a.symm.toMulEquiv.toMonoidHom := by
+    intro σ hσ
+    have h := galoisSubgroup_tameLayerEmbedding_comap K U
+    have hm : a (a.symm σ) ∈ W := by
+      rw [a.apply_symm_apply]
+      exact hσ
+    exact (congrArg (a.symm σ ∈ ·) h).to_iff.mp hm
+  let c := abelianizationProPExtensionMap p a.symm.toMulEquiv.toMonoidHom
+    a.symm.continuous hWV
+  let q : abelianizationProPExtensionGroup p (Field.absoluteGaloisGroup K) V →ₜ*
+      Field.absoluteGaloisGroup K ⧸ U.toSubgroup :=
+    ⟨QuotientGroup.mapOfLE
+      (abelianizationProPExtensionKernel_le_of_commutator_wildInertiaSubgroup_le K p U hU),
+      QuotientGroup.continuous_mapOfLE _⟩
+  -- Relabelling the arithmetic extension changes only its projection, so its total
+  -- group is the canonical class-module quotient on which `c` is defined.
+  let π : Y.E →ₜ* Field.absoluteGaloisGroup K ⧸ U.toSubgroup := q.comp c
+  have hπ : Function.Surjective π :=
+    (QuotientGroup.mapOfLE_surjective _).comp
+      (abelianizationProPExtensionMap_surjective p _ _ hWV a.symm.surjective)
+  have hπmk (σ : AbsoluteGaloisGroup K) : π (QuotientGroup.mk σ) =
+      QuotientGroup.mk (a.symm σ) := by
+    exact (congrArg q (abelianizationProPExtensionMap_mk p a.symm.toMulEquiv.toMonoidHom
+      a.symm.continuous hWV σ)).trans (QuotientGroup.mapOfLE_mk _ _)
+  have hright (x : Y.E) : quotientTameLayerEquiv K U
+      (QuotientGroup.mapOfLE (by
+        simpa only [tameLayerSubgroup_toSubgroup] using
+          (le_sup_right : U.toSubgroup ≤ wildInertiaSubgroup K ⊔ U.toSubgroup)) (π x)) =
+      Y.toGroupExtension.rightHom x := by
+    induction x using QuotientGroup.induction_on with
+    | H σ =>
+      rw [hπmk, QuotientGroup.mapOfLE_mk]
+      exact (quotientTameLayerEquiv_mk K U (a.symm σ)).trans
+        (((tameLayerEmbedding_restrictNormalHom K U (a.symm σ)).symm.trans
+          (congrArg j.restrictNormalHom (a.apply_symm_apply σ))).trans
+          (galoisClassModuleExtension_rightHom_mk p K (tameLayer K U) j σ).symm)
+  exact ⟨π, hπ, hright⟩
+
 /-- A cohomologically bijective surjection onto the arithmetic class module of the tame
 layer lifts its Galois generators to generators of the original finite quotient.
 The tuple's images in the tame quotient are retained through `quotientTameLayerEquiv`. -/
@@ -89,62 +149,18 @@ theorem exists_generating_tuple_quotient_of_galoisClassModuleMap
   let := galoisClassModuleAction p K (tameLayer K U) j
   let := continuousSMul_galoisClassModuleAction p K (tameLayer K U) j
   intro f hf hs hc
-  let W := (galoisSubgroup K (tameLayer K U) j).toSubgroup
-  let V := wildInertiaSubgroup K ⊔ U.toSubgroup
+  obtain ⟨π, hπ, hright⟩ := exists_surjection_galoisClassModuleExtension_quotient (p := p) K U hU
   let Y := galoisClassModuleExtension p K (tameLayer K U) j
-  let a := absoluteGaloisGroupRestrictEquiv K
-  have hWV : W ≤ V.comap a.symm.toMulEquiv.toMonoidHom := by
-    intro σ hσ
-    have h := galoisSubgroup_tameLayerEmbedding_comap K U
-    have hm : a (a.symm σ) ∈ W := by
-      rw [a.apply_symm_apply]
-      exact hσ
-    exact (congrArg (a.symm σ ∈ ·) h).to_iff.mp hm
-  let c := abelianizationProPExtensionMap p a.symm.toMulEquiv.toMonoidHom
-    a.symm.continuous hWV
-  let q : abelianizationProPExtensionGroup p (Field.absoluteGaloisGroup K) V →ₜ*
-      Field.absoluteGaloisGroup K ⧸ U.toSubgroup :=
-    ⟨QuotientGroup.mapOfLE
-      (abelianizationProPExtensionKernel_le_of_commutator_wildInertiaSubgroup_le K p U hU),
-      QuotientGroup.continuous_mapOfLE _⟩
-  -- Relabelling the arithmetic extension changes only its projection, so its total
-  -- group is the canonical class-module quotient on which `c` is defined.
-  let π : Y.E →ₜ* Field.absoluteGaloisGroup K ⧸ U.toSubgroup := q.comp c
-  have hπ : Function.Surjective π :=
-    (QuotientGroup.mapOfLE_surjective _).comp
-      (abelianizationProPExtensionMap_surjective p _ _ hWV a.symm.surjective)
-  have hπmk (σ : AbsoluteGaloisGroup K) : π (QuotientGroup.mk σ) =
-      QuotientGroup.mk (a.symm σ) := by
-    exact (congrArg q (abelianizationProPExtensionMap_mk p a.symm.toMulEquiv.toMonoidHom
-      a.symm.continuous hWV σ)).trans (QuotientGroup.mapOfLE_mk _ _)
-  have hright (x : Y.E) : quotientTameLayerEquiv K U
-      (QuotientGroup.mapOfLE (by
-        simpa only [tameLayerSubgroup_toSubgroup] using
-          (le_sup_right : U.toSubgroup ≤ wildInertiaSubgroup K ⊔ U.toSubgroup)) (π x)) =
-      Y.toGroupExtension.rightHom x := by
-    induction x using QuotientGroup.induction_on with
-    | H σ =>
-      rw [hπmk, QuotientGroup.mapOfLE_mk]
-      exact (quotientTameLayerEquiv_mk K U (a.symm σ)).trans
-        (((tameLayerEmbedding_restrictNormalHom K U (a.symm σ)).symm.trans
-          (congrArg j.restrictNormalHom (a.apply_symm_apply σ))).trans
-          (galoisClassModuleExtension_rightHom_mk p K (tameLayer K U) j σ).symm)
   obtain ⟨hy, hcard⟩ := galoisClassModuleExtension_contCohomologyClass_generates
     (p := p) K (tameLayer K U) hp j
   obtain ⟨y, hyright, hygen⟩ :=
     exists_topologicalClosure_closure_range_eq_top_of_bijective_explicitCoeff2 p hd Y
       isProP_maximalProPQuotient hy ⟨_, hcard⟩ f hf hs hc
   refine ⟨fun i ↦ π (y i), ?_, fun i ↦ (hright (y i)).trans (hyright i)⟩
-  have h := hπ.denseRange.topologicalClosure_map_subgroup π.continuous hygen
-  rw [MonoidHom.map_closure, ← Set.range_comp] at h
   -- The finite quotient is discrete, so topological generation is algebraic generation.
   have : DiscreteTopology (Field.absoluteGaloisGroup K ⧸ U.toSubgroup) :=
     QuotientGroup.discreteTopology U.isOpen
-  apply SetLike.coe_injective
-  simpa only [Subgroup.topologicalClosure_coe, (isClosed_discrete _).closure_eq,
-    _root_.ContinuousMonoidHom.coe_toMonoidHom, MonoidHom.coe_ofClass,
-    Function.comp_def] using
-    congrArg (fun S : Subgroup (Field.absoluteGaloisGroup K ⧸ U.toSubgroup) ↦
-      (S : Set (Field.absoluteGaloisGroup K ⧸ U.toSubgroup))) h
+  have h := closure_image_eq_top_of_discreteTopology hygen π.continuous hπ
+  rwa [← Set.range_comp] at h
 
 end TauCeti

@@ -50,7 +50,10 @@ For a lower semicontinuous energy, the results below are the basic structural pr
 * `TauCeti.IsEVISolution.antitoneOn`: the energy is nonincreasing along a solution.
 * `TauCeti.IsEVISolution.exp_mul_dist_sq_sub_le`: the integrated form of the evolution variational
   inequality.
-* `TauCeti.IsEVISolution.apply_le`: the energy regularization estimate.
+* `TauCeti.IsEVISolution.apply_le` and `TauCeti.IsEVISolution.apply_le_of_nonneg`: the energy
+  regularization estimate from time zero and from any nonnegative starting time.
+* `TauCeti.isEVISolution_iff_apply_le`: the endpoint regularization estimates characterize
+  continuous EVI solutions of finite energy at positive times.
 * `TauCeti.IsEVISolution.dist_le`: the `λ`-contraction estimate, and
   `TauCeti.IsEVISolution.eqOn`: uniqueness of the solution with a given initial point.
 * `TauCeti.isEVISolution_exp_neg_smul`: the flow `t ↦ e⁻ᵗ x` of `‖x‖² / 2` on a real inner
@@ -292,6 +295,107 @@ theorem apply_le (h : IsEVISolution lam φ u) (hφ : LowerSemicontinuous φ) (hy
     have := hint (q - p) (by rw [hφy]; exact (EReal.coe_sub q p).ge)
     rw [← EReal.coe_add, EReal.coe_le_coe_iff, ← sub_le_iff_le_add', le_div_iff₀ (by positivity)]
     nlinarith
+
+/-- The energy regularization estimate on an interval starting at any nonnegative time. -/
+theorem apply_le_of_nonneg (h : IsEVISolution lam φ u) (hφ : LowerSemicontinuous φ)
+    (hy : φ y ≠ ⊤) (hs : 0 ≤ s) (hst : s < t) :
+    φ (u t) ≤ φ y + (((dist (u s) y ^ 2 - exp (lam * (t - s)) * dist (u t) y ^ 2) /
+      (2 * ∫ r in 0..(t - s), exp (lam * r)) : ℝ) : EReal) := by
+  simpa only [zero_add, sub_add_cancel] using
+    (h.comp_add_const hs).apply_le hφ hy (sub_pos.2 hst)
+
+end IsEVISolution
+
+/-- A lower bound on the endpoint energy turns the EVI regularization estimate into a
+comparison of squared-distance slopes with the scalar Grönwall solution. -/
+private theorem slope_le_gronwallBound_of_apply_le {b c : ℝ}
+    (hst : s < t) (hb : (b : EReal) = φ y) (hc : (c : EReal) ≤ φ (u t))
+    (hreg : φ (u t) ≤ φ y + (((dist (u s) y ^ 2 - exp (lam * (t - s)) *
+      dist (u t) y ^ 2) / (2 * ∫ r in 0..(t - s), exp (lam * r)) : ℝ) : EReal)) :
+    slope (fun r ↦ dist (u r) y ^ 2 / 2) s t ≤
+      slope (fun r ↦ gronwallBound (dist (u s) y ^ 2 / 2) (-lam) (b - c) (r - s)) s t := by
+  have hEpos := integral_exp_mul_pos lam (sub_pos.2 hst)
+  rw [← hb, ← EReal.coe_add] at hreg
+  have hreal := EReal.coe_le_coe_iff.1 (hc.trans hreg)
+  have hmul := (le_div_iff₀ (by positivity :
+    0 < 2 * ∫ r in 0..(t - s), exp (lam * r))).1 (sub_le_iff_le_add'.2 hreal)
+  have hdist : dist (u t) y ^ 2 / 2 ≤
+      gronwallBound (dist (u s) y ^ 2 / 2) (-lam) (b - c) (t - s) := by
+    apply (mul_le_mul_iff_right₀ (exp_pos (lam * (t - s)))).1
+    rw [exp_mul_gronwallBound_neg]
+    nlinarith
+  simp only [slope_def_field, sub_self, gronwallBound_x0]
+  exact div_le_div_of_nonneg_right (sub_le_sub_right hdist _) (sub_pos.2 hst).le
+
+/-- The endpoint energy regularization estimate on every positive-length time interval
+implies the EVI, provided the energy is lower semicontinuous and finite along the curve at
+positive times. -/
+theorem isEVISolution_of_apply_le (hφ : LowerSemicontinuous φ)
+    (hu : ContinuousOn u (Ici 0))
+    (htop : ∀ t > 0, φ (u t) ≠ ⊤) (hbot : ∀ t > 0, φ (u t) ≠ ⊥)
+    (h : ∀ y, φ y ≠ ⊤ → ∀ s t : ℝ, 0 ≤ s → s < t →
+      φ (u t) ≤ φ y + (((dist (u s) y ^ 2 - exp (lam * (t - s)) * dist (u t) y ^ 2) /
+        (2 * ∫ r in 0..(t - s), exp (lam * r)) : ℝ) : EReal)) :
+    IsEVISolution lam φ u where
+  continuousOn := hu
+  apply_ne_top := htop _
+  apply_ne_bot := hbot _
+  limsup_slope_add_le {y} hy {t} ht := by
+    have he := EReal.coe_toReal (htop t ht) (hbot t ht)
+    have hybot : φ y ≠ ⊥ := by
+      intro hybot
+      have hle := h y hy 0 t le_rfl ht
+      rw [hybot, EReal.bot_add] at hle
+      exact hbot t ht (le_bot_iff.1 hle)
+    have hey := EReal.coe_toReal hy hybot
+    set a := dist (u t) y ^ 2 / 2
+    set b := (φ y).toReal
+    set e := (φ (u t)).toReal
+    have hlim : limsup (fun s ↦ ((slope (fun r ↦ dist (u r) y ^ 2 / 2) t s : ℝ) : EReal))
+        (𝓝[>] t) ≤ ((b - e - lam * a : ℝ) : EReal) := by
+      apply EReal.le_of_forall_lt_iff_le.1
+      intro R hR
+      have hR' : b - e - lam * a < R := EReal.coe_lt_coe_iff.1 hR
+      let c := e - (R - (b - e - lam * a)) / 2
+      have hc : c < e := by dsimp [c]; linarith
+      have hcR : b - c - lam * a < R := by dsimp [c]; linarith
+      have hcu : ContinuousAt u t := hu.continuousAt (Ici_mem_nhds ht)
+      have henergy : ∀ᶠ r in 𝓝[>] t, (c : EReal) < φ (u r) :=
+        ((hφ (u t)).comp hcu) c (by simpa only [Function.comp_apply, ← he,
+          EReal.coe_lt_coe_iff] using hc) |>.filter_mono
+          nhdsWithin_le_nhds
+      -- Compare with the solution of q' + lam * q = b - c.
+      let q : ℝ → ℝ := fun r ↦ gronwallBound a (-lam) (b - c) (r - t)
+      have hq : HasDerivAt q (b - c - lam * a) t :=
+        (hasDerivAt_gronwallBound_shift a (-lam) (b - c) t t).congr_deriv
+          (by rw [sub_self, gronwallBound_x0]; ring)
+      have hbound : ∀ᶠ r in 𝓝[>] t,
+          slope (fun z ↦ dist (u z) y ^ 2 / 2) t r ≤ slope q t r := by
+        filter_upwards [henergy, self_mem_nhdsWithin] with r hr htr
+        exact slope_le_gronwallBound_of_apply_le htr hey hr.le (h y hy t r ht.le htr)
+      have hqR : ∀ᶠ r in 𝓝[>] t, slope q t r < R :=
+        hq.hasDerivWithinAt.limsup_slope_le' (lt_irrefl t) hcR
+      exact limsup_le_of_le (by isBoundedDefault)
+        ((hbound.and hqR).mono fun _ hr ↦ EReal.coe_le_coe_iff.2 (hr.1.trans hr.2.le))
+    rw [← hey, ← he, ← EReal.coe_sub]
+    calc _ ≤ ((b - e - lam * a : ℝ) : EReal) + ((lam * a : ℝ) : EReal) :=
+          add_le_add hlim le_rfl
+      _ = _ := by rw [← EReal.coe_add]; congr 1; ring
+
+/-- For a lower semicontinuous energy, continuous curves of finite energy at positive times
+are EVI solutions exactly when they satisfy every endpoint energy regularization estimate. -/
+theorem isEVISolution_iff_apply_le (hφ : LowerSemicontinuous φ) :
+    IsEVISolution lam φ u ↔ ContinuousOn u (Ici 0) ∧
+      (∀ t > 0, φ (u t) ≠ ⊤) ∧ (∀ t > 0, φ (u t) ≠ ⊥) ∧
+      ∀ y, φ y ≠ ⊤ → ∀ s t : ℝ, 0 ≤ s → s < t →
+        φ (u t) ≤ φ y + (((dist (u s) y ^ 2 - exp (lam * (t - s)) * dist (u t) y ^ 2) /
+          (2 * ∫ r in 0..(t - s), exp (lam * r)) : ℝ) : EReal) := by
+  refine ⟨fun h ↦ ⟨h.continuousOn, fun _ ht ↦ h.apply_ne_top ht,
+    fun _ ht ↦ h.apply_ne_bot ht, fun _ hy _ _ hs hst ↦ h.apply_le_of_nonneg hφ hy hs hst⟩, ?_⟩
+  rintro ⟨hu, htop, hbot, hreg⟩
+  exact isEVISolution_of_apply_le hφ hu htop hbot hreg
+
+namespace IsEVISolution
 
 /-- The difference quotients of `d(u ·, v ·)² / 2` for two `EVI_λ` solutions of a lower
 semicontinuous energy are eventually less than any `r > -2λ d(u t, v t)² / 2` from the right of a
