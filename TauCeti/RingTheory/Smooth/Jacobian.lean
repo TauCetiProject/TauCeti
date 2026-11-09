@@ -109,12 +109,12 @@ variable {τ κ : Type*} [Fintype ι] [Fintype τ] [Fintype κ] [IsLocalRing Q]
 
 /-- **Complementary relations and coordinates give a formally smooth quotient.** Let `Q` be a local
 formally smooth `K`-algebra whose differentials have a basis `b₀` consisting of the differentials
-of coordinates `x` generating the maximal ideal, and let `g : τ → Q` and `y : κ → Q` be finite
+of coordinates `x` lying in the maximal ideal, and let `g : τ → Q` and `y : κ → Q` be finite
 families with `card τ + card κ = card ι` which together generate the maximal ideal of `Q`. Then the
 differentials of `g` and `y` form a basis of `Ω[Q⁄K]`, so `Q ⧸ (range g)` is formally smooth by the
 Jacobian criterion. -/
 theorem _root_.Module.Basis.formallySmooth_quotient_of_coordinates
-    (b₀ : Module.Basis ι Q Ω[Q⁄K]) {x : ι → Q} (hx : maximalIdeal Q = Ideal.span (Set.range x))
+    (b₀ : Module.Basis ι Q Ω[Q⁄K]) {x : ι → Q} (hx : ∀ i, x i ∈ maximalIdeal Q)
     (hb₀ : ∀ i, b₀ i = D K Q (x i)) {g : τ → Q} {y : κ → Q}
     (hcard : Fintype.card τ + Fintype.card κ = Fintype.card ι)
     (hQy : maximalIdeal Q = Ideal.span (Set.range g) ⊔ Ideal.span (Set.range y)) :
@@ -129,7 +129,7 @@ theorem _root_.Module.Basis.formallySmooth_quotient_of_coordinates
     exact Sum.forall.2 ⟨fun t ↦ Ideal.mem_sup_left (Ideal.subset_span ⟨t, rfl⟩),
       fun j ↦ Ideal.mem_sup_right (Ideal.subset_span ⟨j, rfl⟩)⟩
   have hspan := span_residue_apply_eq_top_of_le_span_sup_sq
-    (fun i ↦ hx ▸ Ideal.subset_span ⟨i, rfl⟩) hD hw (by
+    hx hD hw (by
       rw [Set.Sum.elim_range, Ideal.span_union, ← hQy]
       exact le_sup_left)
   have hcard' : Fintype.card (τ ⊕ κ) = Fintype.card ι := by rw [Fintype.card_sum, hcard]
