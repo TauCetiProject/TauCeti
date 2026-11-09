@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Polynomial.Sturm.CauchyIndex.Sequence
 public import TauCeti.Data.List.PermanencesMinusVariations
 public import TauCeti.RingTheory.Polynomial.Subresultant.Euclidean
+import TauCeti.Algebra.Order.Field.SignPow
 import TauCeti.Data.List.Range
 
 /-! # Cauchy indices from signed subresultant coefficients
@@ -106,17 +107,11 @@ private theorem sign_mul_sign_signedPsc_scale {lc : K} {m n ρ : ℕ} (h : n < m
     (hk : Even (n - (ρ + 1))) :
     (SignType.sign ((-1 : K) ^ (m - n).choose 2 * lc ^ (m - n)) : ℤ) *
       SignType.sign ((-1 : K) ^ (m - n).choose 2 * lc ^ (m - ρ)) = SignType.sign lc := by
-  have hodd : Odd ((m - n) + (m - ρ)) := by
-    obtain ⟨i, hi⟩ := hk
-    exact ⟨m - n + i, by omega⟩
-  have h1 : ((-1 : K) ^ (m - n).choose 2) ^ 2 = 1 := by
-    rw [← pow_mul, mul_comm, pow_mul]
+  refine sign_mul_pow_mul_sign_mul_pow_of_sq_eq_one ?_ lc ?_
+  · rw [← pow_mul, mul_comm, pow_mul]
     simp
-  have hprod : (-1) ^ (m - n).choose 2 * lc ^ (m - n) *
-      ((-1) ^ (m - n).choose 2 * lc ^ (m - ρ)) = lc ^ ((m - n) + (m - ρ)) := by
-    linear_combination (lc ^ (m - n) * lc ^ (m - ρ)) * h1
-  rw [← SignType.coe_mul, ← sign_mul, hprod]
-  simp [sign_pow, SignType.pow_odd _ hodd]
+  · obtain ⟨i, hi⟩ := hk
+    exact ⟨m - n + i, by omega⟩
 
 /-- After the leading entry, the signed coefficients of `(p, q)` and of `(q, -(p % q))` have the
 same permanences minus variations. -/
