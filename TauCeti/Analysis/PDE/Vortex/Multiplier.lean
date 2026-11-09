@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
+import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
+import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplier
 
 /-!
@@ -21,9 +23,10 @@ by expanding the equation and gauge action about a nondecaying reference field.
 The matrix version allows mixing the connection and section coordinates and permits different
 bounds for each coefficient. In particular a smooth gauge with bounded derivatives through order
 `k` preserves the Sobolev fields under its linear action
-(`gaugeLinearAction_mem_sobolevFields_natCast`).
-These results assert membership, not boundedness of a completed operator or smoothness of the
-nonlinear equation map.
+(`gaugeLinearAction_mem_sobolevFields_natCast`). For `k > 1`, the coordinates of a framed field of
+`A_m^k` also multiply `H^k` into itself: the reference part is such a coefficient, and the Sobolev
+part multiplies in the algebra `H^k`. These results assert membership, not boundedness of a
+completed operator or smoothness of the nonlinear equation map.
 
 ## References
 
@@ -46,25 +49,12 @@ theorem mulVec_mem_sobolevFields_natCast (k : ℕ)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields k) :
     (fun z ↦ WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, A i j z * y z j)) ∈
       sobolevFields k := by
-  refine mem_sobolevFields.mpr fun i ↦ mem_realSobolevFunctions.mpr ?_
-  have hentry (j : Fin 4) : ∃ v : Lp ℝ 2 (volume : Measure ℂ),
-      v ∈ realSobolevSubmodule ℂ k 2 ∧
-        (v : ℂ → ℝ) =ᵐ[volume] fun z ↦ A i j z * y z j := by
-    obtain ⟨u, hu, huS⟩ := mem_realSobolevFunctions.mp (mem_sobolevFields.mp hy j)
+  refine mem_sobolevFields.mpr fun i ↦ ?_
+  have hentry (j : Fin 4) : (fun z ↦ A i j z * y z j) ∈ realSobolevFunctions ℂ k 2 := by
     obtain ⟨M, hM, hMbound⟩ := hbound i j
-    obtain ⟨v, hvS, hv⟩ :=
-      exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives
-        (by norm_num : (1 : ENNReal) < 2) (by norm_num : (2 : ENNReal) ≠ ⊤)
-        k (hA i j) hM hMbound (mem_realSobolevSubmodule.mpr huS)
-    refine ⟨v, hvS, ?_⟩
-    filter_upwards [hv, hu] with z hvz huz
-    rw [hvz, huz]
-  choose v hvS hv using hentry
-  refine ⟨∑ j, v j, ?_, mem_realSobolevSubmodule.mp
-    (Submodule.sum_mem _ fun j _ ↦ hvS j)⟩
-  filter_upwards [Lp.coeFn_finsetSum Finset.univ v, Filter.eventually_all.mpr hv] with z hz hvz
-  simp only [hz, Finset.sum_apply]
-  exact Finset.sum_congr rfl fun j _ ↦ hvz j
+    exact mul_mem_realSobolevFunctions_of_bounded_derivatives (by norm_num) (by norm_num) k
+      (hA i j) hM hMbound (mem_sobolevFields.mp hy j)
+  simpa only [Finset.sum_fn] using Submodule.sum_mem _ fun j (_ : j ∈ Finset.univ) ↦ hentry j
 
 /-- Multiplication by a smooth real coefficient with bounded derivatives through order `k`
 preserves the integer-order Sobolev direction space of plane-vortex fields. No decay of the
@@ -137,5 +127,28 @@ theorem gaugeLinearAction_mem_sobolevFields_natCast {k : ℕ} {u : ℂ → Circl
       Complex.reCLM_apply, Complex.imCLM_apply, Pi.add_apply, PiLp.add_apply, PiLp.smul_apply,
       smul_eq_mul, mul_zero, add_zero, zero_add, mul_neg] <;>
     ring
+
+/-- **Multiplication by a coordinate of a framed field.** For `k > 1`, the product of a real
+`H^k` function with a coordinate of a field of `A_m^k` lies in `H^k`, although the coordinate
+itself does not decay. -/
+theorem mul_mem_realSobolevFunctions_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m k : ℕ}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hk : 1 < k) (hx : x ∈ framedFieldSpace f m k) (i : Fin 4)
+    {g : ℂ → ℝ} (hg : g ∈ realSobolevFunctions ℂ k 2) :
+    (fun z ↦ x z i * g z) ∈ realSobolevFunctions ℂ k 2 := by
+  -- Split `x = x_m + (x - x_m)`: the reference coordinate is a bounded smooth multiplier and
+  -- the Sobolev coordinate multiplies in the algebra `H^k`.
+  have hy := mem_sobolevFields.1 (mem_framedFieldSpace.1 hx) i
+  choose C hC using exists_norm_iteratedFDeriv_referenceField_apply_le f m i
+  have hM : 0 ≤ ∑ j ∈ Finset.range (k + 1), |C j| := by positivity
+  have h₁ := mul_mem_realSobolevFunctions_of_bounded_derivatives (by norm_num) (by norm_num) k
+    (contDiff_euclidean.1 (contDiff_referenceField f m) i) hM
+    (fun j hj z ↦ (hC j z).trans ((le_abs_self _).trans (Finset.single_le_sum
+      (fun j _ ↦ abs_nonneg (C j)) (Finset.mem_range.2 (by omega))))) hg
+  have h₂ := mul_mem_realSobolevFunctions
+    (finrank_real_complex_lt_two_mul (by exact_mod_cast hk)) hy hg
+  convert add_mem h₁ h₂ using 1
+  ext z
+  simp only [Pi.add_apply, Pi.mul_apply, Pi.sub_apply, PiLp.sub_apply]
+  ring
 
 end TauCeti.Vortex
