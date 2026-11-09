@@ -10,7 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.Tannaka.PointFaithfu
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.ScalarExtension.Monoidal
 
 import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tmul
-import TauCeti.CategoryTheory.Monoidal.Conjugation
+import TauCeti.CategoryTheory.Conj
 
 /-!
 # Tensor automorphisms from algebraic-group points
@@ -233,7 +233,11 @@ theorem scalarExtensionComponent_tensor
         (aM ⊗ₘ aN) ≫ ((iM.hom ⊗ₘ iN.hom) ≫ d ≫ iMN.inv) := by
       simpa only [iM, iN, iMN, d, eqToIso.hom, eqToIso.inv] using htensor
     simpa only [Category.assoc] using hmon'
-  have hcat := comp_conj_eq_tensorHom_conj_comp iM iN iMN d aM aN aMN hmon
+  have hcat : d ≫ (iMN.inv ≫ aMN ≫ iMN.hom) =
+      ((iM.inv ≫ aM ≫ iM.hom) ⊗ₘ (iN.inv ≫ aN ≫ iN.hom)) ≫ d := by
+    simpa only [tensorIso_inv, tensorIso_hom, ← tensorHom_comp_tensorHom, Category.assoc] using
+      CategoryTheory.comp_conj_eq_conj_comp (iM ⊗ᵢ iN) iMN d (aM ⊗ₘ aN) aMN
+        (by simpa only [tensorIso_hom, Category.assoc] using hmon)
   -- Use the same bridge to replace all three transported maps before passing to linear maps.
   have hcat' :
       d ≫ SemimoduleCat.ofHom

@@ -34,13 +34,11 @@ theorem apply_tmul_of_comp_eq {X Y Z : Type u} [AddCommMonoid X] [Module A X]
     (E : (of A X ⊗ of A Y) ⟶ of A Z) {a : X →ₗ[A] X} {b : Y →ₗ[A] Y} {c : Z →ₗ[A] Z}
     (h : E ≫ ofHom c = (ofHom a ⊗ₘ ofHom b) ≫ E) (x : X) (y : Y) :
     c (E.hom (x ⊗ₜ[A] y)) = E.hom (a x ⊗ₜ[A] b y) := by
-  have hlin := congrArg Hom.hom h
-  rw [hom_comp, hom_comp, hom_tensorHom, hom_ofHom, hom_ofHom, hom_ofHom] at hlin
-  have h' := LinearMap.congr_fun hlin (x ⊗ₜ[A] y)
-  -- `LinearMap.comp_apply` and `TensorProduct.map_tmul` do not fire (also not under `simpa`): the
-  -- source of `E.hom` is the carrier of the monoidal product `of A X ⊗ of A Y`, whose module
-  -- structure agrees with that of `X ⊗[A] Y` only by unfolding, so `change` states the match.
-  change c (E.hom (x ⊗ₜ[A] y)) = E.hom (TensorProduct.map a b (x ⊗ₜ[A] y)) at h'
-  rwa [TensorProduct.map_tmul] at h'
+  -- Evaluate both sides of `h` at the pure tensor `x ⊗ₜ y`, then use Mathlib's `tensorHom_tmul`.
+  have t := (comp_apply E (ofHom c) ((x : of A X) ⊗ₜ[A] (y : of A Y))).symm.trans
+    ((ConcreteCategory.congr_hom h ((x : of A X) ⊗ₜ[A] (y : of A Y))).trans
+      (comp_apply (ofHom a ⊗ₘ ofHom b) E ((x : of A X) ⊗ₜ[A] (y : of A Y))))
+  rw [MonoidalCategory.tensorHom_tmul] at t
+  exact t
 
 end SemimoduleCat
