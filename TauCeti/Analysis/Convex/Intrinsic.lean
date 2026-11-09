@@ -178,6 +178,20 @@ theorem intrinsicInterior_inter_intrinsicInterior_subset :
 
 end AffineSpan
 
+section Frontier
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {C S : Set E}
+
+/-- A point of `C` lying in a set `S` which the intrinsic interior of `C` avoids lies in the
+intrinsic frontier of `C`. -/
+theorem inter_subset_intrinsicFrontier_of_disjoint
+    (hint : Disjoint (intrinsicInterior ℝ C) S) : C ∩ S ⊆ intrinsicFrontier ℝ C :=
+  fun x ⟨hxC, hxS⟩ => by
+    rw [← intrinsicClosure_sdiff_intrinsicInterior]
+    exact ⟨subset_intrinsicClosure hxC, fun hxi => Set.disjoint_left.1 hint hxi hxS⟩
+
+end Frontier
+
 section FiniteDimensional
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]

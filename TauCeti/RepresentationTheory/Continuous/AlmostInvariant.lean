@@ -15,12 +15,11 @@ import TauCeti.Algebra.BigOperators.Finset.Average
 
 A representation has almost invariant vectors if every finite set of group elements moves some
 unit vector by arbitrarily little. Restriction along a homomorphism preserves this condition.
+Its failure is characterized by a finite quadratic lower bound on orbit displacements.
 For finite groups it is equivalent to the existence of a nonzero invariant vector, without
 unitarity or completeness assumptions. The quantitative averaging lemma also produces an
 invariant vector close to a vector whose entire orbit is close to it. Almost invariant vectors
-also have arbitrarily small total squared displacement on a finite set. Their absence is
-equivalent to a finite sum-of-squares bound on the whole space, the normed-space criterion
-underlying spectral gap.
+also have arbitrarily small total squared displacement on any finite set.
 
 These results provide the finite-group averaging step in the theory of property (T).
 The definition follows Anantharaman–Popa, *An Introduction to II₁ Factors*, Definition 14.1.1.
@@ -105,38 +104,38 @@ theorem hasAlmostInvariantVectors_of_invariant {v : V} (hv : v ≠ 0)
   hasAlmostInvariantVectors_of_invariant_unit (norm_smul_inv_norm hv)
     (ρ.invariants.smul_mem (‖v‖⁻¹ : 𝕜) hfixed)
 
-/-- Absence of almost invariant vectors is equivalent to a finite sum-of-squares bound on the
-whole representation space. No unitarity, inner product, or completeness is needed. -/
-theorem not_hasAlmostInvariantVectors_iff_exists_norm_sq_le (ρ : ContRepresentation 𝕜 G V) :
-    ¬ ρ.HasAlmostInvariantVectors ↔
-      ∃ (F : Finset G) (C : ℝ), 0 < C ∧
-        ∀ v : V, ‖v‖ ^ 2 ≤ C * ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 := by
+/-- Failure of almost invariant vectors is equivalent to a uniform finite quadratic lower
+bound on orbit displacements. This applies to normed representations, without unitarity or
+completeness assumptions. -/
+theorem not_hasAlmostInvariantVectors_iff (ρ : ContRepresentation 𝕜 G V) :
+    ¬ρ.HasAlmostInvariantVectors ↔
+      ∃ (F : Finset G) (c : ℝ), 0 < c ∧
+        ∀ v : V, c * ‖v‖ ^ 2 ≤ ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 := by
   classical
   constructor
   · intro hρ
-    obtain ⟨F, ε, hε, hF⟩ : ∃ (F : Finset G) (ε : ℝ), 0 < ε ∧
-        ∀ v : V, ‖v‖ = 1 → ∃ g ∈ F, ε ≤ ‖ρ g v - v‖ := by
-      simpa only [HasAlmostInvariantVectors, not_forall, not_exists, not_and,
-        exists_prop, not_lt] using hρ
-    refine ⟨F, (ε ^ 2)⁻¹, by positivity, fun v ↦ ?_⟩
+    simp only [HasAlmostInvariantVectors, not_forall, not_exists, not_and,
+      not_lt, exists_prop] at hρ
+    obtain ⟨F, ε, hε, hF⟩ := hρ
+    refine ⟨F, ε ^ 2, sq_pos_of_pos hε, fun v ↦ ?_⟩
     by_cases hv : v = 0
     · simp [hv]
-    obtain ⟨g, hg, hmove⟩ := hF ((‖v‖⁻¹ : 𝕜) • v) (norm_smul_inv_norm hv)
-    have hnorm : 0 < ‖v‖ := norm_pos_iff.mpr hv
-    have hscaled : ε * ‖v‖ ≤ ‖ρ g v - v‖ := by
-      have : ε ≤ ‖ρ g v - v‖ / ‖v‖ := by
-        simpa [map_smul, ← smul_sub, norm_smul, div_eq_inv_mul] using hmove
-      exact (le_div_iff₀ hnorm).mp this
-    have hsq := (sq_le_sq₀ (by positivity : 0 ≤ ε * ‖v‖) (norm_nonneg _)).2 hscaled
-    have hsingle := Finset.single_le_sum (fun g (_ : g ∈ F) ↦ sq_nonneg ‖ρ g v - v‖) hg
-    apply (le_inv_mul_iff₀ (sq_pos_of_pos hε)).2
-    nlinarith
-  · rintro ⟨F, C, hC, hbound⟩ hρ
-    obtain ⟨v, hv, hsmall⟩ := hρ.exists_sum_norm_sq_lt F (inv_pos.mpr hC)
-    have h := hbound v
-    rw [hv, one_pow] at h
-    have := (mul_lt_mul_of_pos_left hsmall hC).trans_eq (mul_inv_cancel₀ hC.ne')
-    linarith
+    obtain ⟨g, hg, hgv⟩ := hF ((‖v‖⁻¹ : 𝕜) • v) (norm_smul_inv_norm hv)
+    have hnorm : ε * ‖v‖ ≤ ‖ρ g v - v‖ := by
+      simp only [map_smul, ← smul_sub, norm_smul, norm_inv,
+        RCLike.norm_ofReal, abs_norm] at hgv
+      exact (le_div_iff₀ (norm_pos_iff.mpr hv)).mp
+        (by simpa [div_eq_inv_mul] using hgv)
+    calc
+      ε ^ 2 * ‖v‖ ^ 2 = (ε * ‖v‖) ^ 2 := (mul_pow _ _ _).symm
+      _ ≤ ‖ρ g v - v‖ ^ 2 := pow_le_pow_left₀ (by positivity) hnorm 2
+      _ ≤ ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 :=
+        Finset.single_le_sum (fun i _ ↦ sq_nonneg ‖ρ i v - v‖) hg
+  · rintro ⟨F, c, hc, hF⟩ hρ
+    obtain ⟨v, hv, hsmall⟩ := hρ.exists_sum_norm_sq_lt F hc
+    have hbound := hF v
+    rw [hv, one_pow, mul_one] at hbound
+    exact (not_lt_of_ge hbound) hsmall
 
 end NormedSpace
 

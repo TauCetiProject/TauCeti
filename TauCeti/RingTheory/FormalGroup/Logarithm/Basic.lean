@@ -513,7 +513,7 @@ theorem derivative_exp :
     rw [← F.derivative_log, ← PowerSeries.derivative_subst hsub, F.subst_exp_log]
     exact PowerSeries.derivative_X
   have hi := congrArg (PowerSeries.subst F.exp) F.invariantDifferential_mul_subst_pderiv
-  rw [PowerSeries.subst_mul hsub, PowerSeries.subst_one hsub] at hi
+  rw [PowerSeries.subst_mul hsub, PowerSeries.subst_one] at hi
   calc
     PowerSeries.derivative F.exp =
         (PowerSeries.subst F.exp F.invariantDifferential *

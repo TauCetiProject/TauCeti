@@ -10,7 +10,7 @@ public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Analysis.Calculus.TangentCone.TransverseDisc
 public import TauCeti.Analysis.Calculus.TransverseIntersection
 public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Tangent cones of subsets of a manifold, and transverse intersections

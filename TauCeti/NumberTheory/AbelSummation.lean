@@ -13,9 +13,14 @@ public import Mathlib.NumberTheory.AbelSummation
 
 Mathlib's `Mathlib/NumberTheory/AbelSummation.lean` proves the summation-by-parts identity
 `∑_{k ≤ x} f k c k = f x ∑_{k ≤ x} c k - ∫ f' (t) ∑_{k ≤ t} c k dt` and derives convergence
-criteria from it. This file draws two further consequences from a growth hypothesis on the
-partial sums `∑_{1 ≤ k ≤ t} c k`.
+criteria from it. This file records the elementary properties of the partial-sum step function
+`t ↦ ∑_{1 ≤ k ≤ t} c k` that such arguments need, and draws two further consequences from a growth
+hypothesis on it.
 
+* **The step function.** It vanishes for `t < 1`, hence is `O(g)` near `0` for every `g`, and it
+  is locally integrable on `[0, ∞)`. Together with a bound `O(t ^ r)` at infinity (see
+  `Asymptotics.IsBigO.comp_natFloor_rpow`) these are the hypotheses of Mathlib's Mellin-transform
+  criteria, through which the partial-summation integral of an `L`-series is studied.
 * **A logarithmic weight.** Mathlib's `summable_mul_of_bigO_atTop'` converts a bound on the partial
   sums of a sequence into the convergence of a weighted series, provided the weight is
   differentiable and the derivative of the weight against the partial sums admits an integrable
@@ -32,6 +37,10 @@ partial sums `∑_{1 ≤ k ≤ t} c k`.
 
 ## Main declarations
 
+* `TauCeti.sum_Icc_one_natFloor_eq_zero`: `∑_{1 ≤ k ≤ t} c k = 0` for `t < 1`.
+* `TauCeti.isBigO_sum_Icc_natFloor_nhdsGT_zero`: the step function is `O(g)` as `t → 0⁺`.
+* `TauCeti.locallyIntegrableOn_sum_Icc_natFloor`: the step function is locally integrable on
+  `[0, ∞)`.
 * `TauCeti.summable_div_mul_one_add_log_cube`: if the partial sums `∑_{1 ≤ k ≤ t} u k` of a
   nonnegative sequence are `O(t log t)`, then `∑ u n / (n (1 + log n) ^ 3)` converges.
 * `TauCeti.sum_Icc_rpow_mul_eq`: the exact Abel-summation identity for the weight `t ^ τ`.
@@ -47,6 +56,28 @@ open Asymptotics Filter MeasureTheory Set
 open scoped Topology
 
 variable {t : ℝ}
+
+/-! ### The partial-sum step function -/
+
+/-- The partial-sum step function `t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, c k` vanishes below `1`. -/
+theorem sum_Icc_one_natFloor_eq_zero {M : Type*} [AddCommMonoid M] (c : ℕ → M) (ht : t < 1) :
+    ∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k = 0 := by
+  simp [Nat.floor_eq_zero.mpr ht]
+
+/-- The partial-sum step function `t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, c k` vanishes near `0`, so it is `O(g)`
+as `t → 0⁺` for every `g`. -/
+theorem isBigO_sum_Icc_natFloor_nhdsGT_zero {E F : Type*} [SeminormedAddCommGroup E] [Norm F]
+    (c : ℕ → E) (g : ℝ → F) :
+    (fun t : ℝ ↦ ∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k) =O[𝓝[>] 0] g := by
+  refine (isBigO_zero _ _).congr' ?_ EventuallyEq.rfl
+  filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
+  exact (sum_Icc_one_natFloor_eq_zero c ht.2).symm
+
+/-- The partial-sum step function `t ↦ ∑ k ∈ Icc m ⌊t⌋₊, c k` is locally integrable on
+`[0, ∞)`. -/
+theorem locallyIntegrableOn_sum_Icc_natFloor {𝕜 : Type*} [RCLike 𝕜] (c : ℕ → 𝕜) (m : ℕ) :
+    LocallyIntegrableOn (fun t : ℝ ↦ ∑ k ∈ Finset.Icc m ⌊t⌋₊, c k) (Ici 0) := by
+  simpa using locallyIntegrableOn_mul_sum_Icc c le_rfl (m := m) (locallyIntegrableOn_const 1)
 
 /-! ### The comparison weight -/
 

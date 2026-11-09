@@ -19,6 +19,10 @@ again invariant, so an invariant subspace admitting an orthogonal projection has
 complement. This is the averaging-free half of complete reducibility: it needs no measure, only
 that every action operator preserves the inner product.
 
+For the subspace of fixed vectors, its orthogonal complement is invariant even for a unitary
+*monoid* representation; `IsUnitary.invariantsOrthogonal` is the resulting representation,
+which has no nonzero invariant vectors.
+
 Invariance of a submodule is Mathlib's `Representation.invtSubmodule`, the sublattice of submodules
 invariant under every action operator, and semisimplicity is Mathlib's
 `Representation.IsSemisimpleRepresentation`, the statement that the lattice of subrepresentations is
@@ -26,8 +30,6 @@ complemented.
 
 ## Main definitions
 
-* `ContRepresentation.IsUnitary.invariantsOrthogonal`: the restricted representation on the
-  orthogonal complement of the fixed vectors; it is unitary and has no nonzero fixed vectors.
 * `ContRepresentation.IsUnitary.orthogonalSubrepresentation`: the orthogonal complement of
   a subrepresentation of a unitary representation, as a subrepresentation.
 * `ContRepresentation.IsUnitary.starProjectionIntertwiner`: the orthogonal projection onto
@@ -82,6 +84,53 @@ open scoped InnerProductSpace
 
 namespace ContRepresentation
 
+/-! ### The orthogonal complement of the fixed subspace -/
+
+section Monoid
+
+variable {𝕜 G V : Type*} [RCLike 𝕜] [Monoid G] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+
+namespace IsUnitary
+
+variable {ρ : ContRepresentation 𝕜 G V}
+
+/-- The restriction of a unitary representation to the orthogonal complement of its invariant
+vectors. -/
+def invariantsOrthogonal (hρ : ρ.IsUnitary) : ContRepresentation 𝕜 G ρ.invariantsᗮ :=
+  ρ.subrepresentation ρ.invariantsᗮ (fun g _ hv ↦ by
+    rw [Submodule.mem_orthogonal]
+    intro w hw
+    rw [← hw g, hρ.inner_map_map]
+    exact hv w hw)
+
+/-- The action on the orthogonal complement is the original action on underlying vectors. -/
+@[simp]
+theorem coe_invariantsOrthogonal_apply (hρ : ρ.IsUnitary) (g : G) (v : ρ.invariantsᗮ) :
+    (hρ.invariantsOrthogonal g v : V) = ρ g v :=
+  coe_subrepresentation_apply _ _
+
+/-- The orthogonal-complement representation is unitary. -/
+theorem isUnitary_invariantsOrthogonal (hρ : ρ.IsUnitary) :
+    hρ.invariantsOrthogonal.IsUnitary :=
+  hρ.subrepresentation _
+
+/-- Removing the invariant subspace leaves no nonzero invariant vectors. -/
+@[simp]
+theorem invariants_invariantsOrthogonal (hρ : ρ.IsUnitary) :
+    hρ.invariantsOrthogonal.invariants = ⊥ := by
+  apply eq_bot_iff.mpr
+  intro v hv
+  have hfixed : (v : V) ∈ ρ.invariants := by
+    intro g
+    simpa only [coe_invariantsOrthogonal_apply] using congrArg Subtype.val (hv g)
+  have hzero : (v : V) = 0 :=
+    (Submodule.disjoint_def.mp ρ.invariants.orthogonal_disjoint) v hfixed v.property
+  exact Subtype.ext hzero
+
+end IsUnitary
+
+end Monoid
+
 /-! ### The orthogonal complement of an invariant subspace -/
 
 section Unitary
@@ -101,32 +150,6 @@ theorem apply_mem_orthogonal (hπ : IsUnitary π) (hW : ∀ g, ∀ v ∈ W, π g
   intro u hu
   rw [hπ.inner_map_right]
   exact hv _ (hW g⁻¹ u hu)
-
-/-- The restriction of a unitary representation to the orthogonal complement of its fixed vectors.
-This is the representation on which absence of almost invariant vectors detects spectral gap. -/
-def invariantsOrthogonal (hρ : π.IsUnitary) : ContRepresentation 𝕜 G π.invariantsᗮ :=
-  π.subrepresentation _ (hρ.apply_mem_orthogonal (fun g v hv ↦ by simpa [hv g] using hv))
-
-/-- The action on the orthogonal complement of the fixed vectors agrees with the ambient action. -/
-@[simp]
-theorem coe_invariantsOrthogonal_apply (hρ : π.IsUnitary) (g : G) (v : π.invariantsᗮ) :
-    (hρ.invariantsOrthogonal g v : V) = π g (v : V) :=
-  coe_subrepresentation_apply g v
-
-/-- The orthogonal complement of the fixed vectors remains unitary. -/
-theorem isUnitary_invariantsOrthogonal (hρ : π.IsUnitary) : hρ.invariantsOrthogonal.IsUnitary :=
-  hρ.subrepresentation _
-
-/-- The orthogonal complement of the fixed vectors has no nonzero fixed vectors. -/
-@[simp]
-theorem invariants_invariantsOrthogonal (hρ : π.IsUnitary) :
-    hρ.invariantsOrthogonal.invariants = ⊥ := by
-  rw [Submodule.eq_bot_iff]
-  intro v hv
-  have hfixed : (v : V) ∈ π.invariants :=
-    mem_invariants_subrepresentation.mp hv
-  apply Subtype.ext
-  exact (Submodule.disjoint_def.mp π.invariants.orthogonal_disjoint) v hfixed v.property
 
 /-- **Invariant complements.** For a unitary representation of a group, the orthogonal complement
 of an invariant submodule is again invariant. -/

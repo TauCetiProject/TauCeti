@@ -134,10 +134,10 @@ jobs:
       # that the rest of this change exists to keep fresh. Restoring the retained generated set
       # first makes "keep the previous one" true for the generated data too.
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@18285517f50cf43fdf748e3fd0e858a812a68c65
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 18285517f50cf43fdf748e3fd0e858a812a68c65
+          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
           project-directory: .
       - name: Restore the last published data assets
         id: retained-data
@@ -555,10 +555,10 @@ jobs:
       # checkout above already carries the committed fallbacks, so the site still builds and
       # deploys, and report-data-freshness is what makes the run red about it.
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
           project-directory: .
       - name: Lay down the generated data
         id: site-data
@@ -580,8 +580,11 @@ jobs:
           ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
           ELAN_VER: v4.2.3
         run: |
-          curl -sSL -H "Accept: application/octet-stream" \
-            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          if ! curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz?download=1" -o elan.tar.gz; then
+            curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+              "https://api.github.com/repos/leanprover/elan/releases/assets/441516216" -o elan.tar.gz
+          fi
           echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
           tar -xzf elan.tar.gz elan-init
           ./elan-init -y --default-toolchain none

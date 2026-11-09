@@ -869,6 +869,22 @@ theorem adicCompletionEquiv_of {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ : K)�
   exact (congrArg (AdicCompletion.ofAlgEquiv _).symm (AdicCompletion.mapₐ_of _ _ f)).trans
     (AdicCompletion.ofAlgEquiv_symm_of _ _)
 
+/-- Reduction of the completion comparison agrees with the map induced by the inclusion
+of integral overconvergent series into integral restricted series. -/
+theorem mk_adicCompletionEquiv {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ : K)‖ < 1)
+    (n : ℕ) (z : AdicCompletion
+      (Ideal.span {algebraMap K° (intWashnitzerAlgebra σ K) ϖ}) (intWashnitzerAlgebra σ K)) :
+    Ideal.Quotient.mk (Ideal.span {toTate σ K (algebraMap K° _ ϖ)} ^ n)
+        (adicCompletionEquiv σ hϖ hϖ1 z) =
+      Ideal.quotientMap _ (toTate σ K)
+        ((Ideal.pow_right_mono span_algebraMap_le_comap_toTate n).trans
+          (Ideal.le_comap_pow _ n)) (AdicCompletion.evalₐ _ n z) := by
+  have := isAdicComplete_span_toTate_algebraMap (σ := σ) hϖ hϖ1
+  simp only [adicCompletionEquiv, RingEquiv.trans_apply, RingEquiv.ofBijective_apply,
+    AlgEquiv.coe_toRingEquiv, AdicCompletion.mk_ofAlgEquiv_symm]
+  exact AdicCompletion.evalₐ_mapₐ (toTate σ K).toIntAlgHom
+    span_algebraMap_le_comap_toTate n z
+
 end intWashnitzerAlgebra
 
 end NormedField

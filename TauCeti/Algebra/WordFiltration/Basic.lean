@@ -109,15 +109,7 @@ theorem span_prod_map_eq_range_pow_of_span {ι : Type*} (e : ι → M)
     Submodule.span R {a | ∃ l : List ι, l.length = n ∧
       (l.map fun i ↦ f (e i)).prod = a} = LinearMap.range f ^ n := by
   have hrange : LinearMap.range f = Submodule.span R (Set.range fun i ↦ f (e i)) := by
-    rw [LinearMap.range_eq_map, ← he, Submodule.map_span]
-    congr 2
-    ext a
-    simp only [Set.mem_image, Set.mem_range]
-    constructor
-    · rintro ⟨m, ⟨i, rfl⟩, rfl⟩
-      exact ⟨i, rfl⟩
-    · rintro ⟨i, rfl⟩
-      exact ⟨e i, ⟨i, rfl⟩, rfl⟩
+    rw [LinearMap.range_eq_map, ← he, Submodule.map_span, ← Set.range_comp, Function.comp_def]
   rw [hrange, Submodule.span_pow]
   congr 1
   ext a
@@ -167,51 +159,8 @@ theorem wordFiltration_le_iff {k : ℕ} {p : Submodule R A} :
         rintro _ ⟨m, rfl⟩ y hy
         apply ih (p := p.comap (LinearMap.mulLeft R (f m))) _ hy
         intro l hl
-        rw [Submodule.mem_comap, LinearMap.mulLeft_apply]
-        rw [← List.prod_cons, ← List.map_cons]
-        exact h (m :: l) (by simpa using Nat.succ_le_succ hl)
-
-/-- Products of at most `k` images of a spanning family span the `k`-th word-filtration step. -/
-theorem span_prod_map_eq_wordFiltration {ι : Type*} (e : ι → M)
-    (he : Submodule.span R (Set.range e) = ⊤) (k : ℕ) :
-    Submodule.span R {a | ∃ word : List ι, word.length ≤ k ∧
-      (word.map fun i ↦ f (e i)).prod = a} = wordFiltration f k := by
-  apply le_antisymm
-  · rw [Submodule.span_le]
-    rintro a ⟨word, hword, rfl⟩
-    have h := prod_map_mem_wordFiltration f (l := word.map e) (by simpa using hword)
-    simpa only [List.map_map, Function.comp_def, SetLike.mem_coe] using h
-  · rw [wordFiltration_le_iff]
-    intro word hword
-    induction word generalizing k with
-    | nil => exact Submodule.subset_span ⟨[], Nat.zero_le k, by simp⟩
-    | cons x word ih =>
-        cases k with
-        | zero => simp at hword
-        | succ k =>
-            have htail : word.length ≤ k := by simpa using hword
-            have ih := ih k htail
-            have hx : x ∈ Submodule.span R (Set.range e) := by rw [he]; exact Submodule.mem_top
-            refine Submodule.span_induction (p := fun y _ ↦
-              f y * (word.map f).prod ∈ Submodule.span R
-                {a | ∃ familyWord : List ι, familyWord.length ≤ k + 1 ∧
-                  (familyWord.map fun i ↦ f (e i)).prod = a}) ?_ ?_ ?_ ?_ hx
-            · intro y hy
-              obtain ⟨i, rfl⟩ := hy
-              have hcomap : (word.map f).prod ∈
-                  (Submodule.span R {a | ∃ familyWord : List ι, familyWord.length ≤ k + 1 ∧
-                    (familyWord.map fun i ↦ f (e i)).prod = a}).comap
-                      (LinearMap.mulLeft R (f (e i))) := by
-                refine (Submodule.span_le.mpr ?_) ih
-                rintro a ⟨tail, htail, rfl⟩
-                exact Submodule.subset_span
-                  ⟨i :: tail, by simpa using Nat.succ_le_succ htail, by simp⟩
-              simpa only [LinearMap.mulLeft_apply] using Submodule.mem_comap.mp hcomap
-            · simp
-            · intro y z _ _ hy hz
-              simpa only [map_add, add_mul] using Submodule.add_mem _ hy hz
-            · intro r y _ hy
-              simpa only [map_smul, smul_mul_assoc] using Submodule.smul_mem _ r hy
+        rw [Submodule.mem_comap, LinearMap.mulLeft_apply, ← List.prod_cons, ← List.map_cons]
+        exact h (m :: l) (by simpa using hl)
 
 section Map
 
@@ -308,14 +257,10 @@ theorem mul_mem_wordFiltrationPrevious_left {i j : ℕ} {x y : A}
     (hx : x ∈ wordFiltrationPrevious f i) (hy : y ∈ wordFiltration f j) :
     x * y ∈ wordFiltrationPrevious f (i + j) := by
   cases i with
-  | zero =>
-      simp only [wordFiltrationPrevious_zero, Submodule.mem_bot] at hx
-      subst x
-      simp
+  | zero => simp_all
   | succ i =>
       rw [wordFiltrationPrevious_succ] at hx
-      rw [Nat.add_assoc, Nat.add_comm 1 j, ← Nat.add_assoc,
-        wordFiltrationPrevious_succ]
+      rw [Nat.add_right_comm, wordFiltrationPrevious_succ]
       exact mul_mem_wordFiltration f hx hy
 
 /-- Multiplying an element of degree at most `i` by an element of degree strictly below `j`
@@ -324,10 +269,7 @@ theorem mul_mem_wordFiltrationPrevious_right {i j : ℕ} {x y : A}
     (hx : x ∈ wordFiltration f i) (hy : y ∈ wordFiltrationPrevious f j) :
     x * y ∈ wordFiltrationPrevious f (i + j) := by
   cases j with
-  | zero =>
-      simp only [wordFiltrationPrevious_zero, Submodule.mem_bot] at hy
-      subst y
-      simp
+  | zero => simp_all
   | succ j =>
       rw [wordFiltrationPrevious_succ] at hy
       rw [← Nat.add_assoc, wordFiltrationPrevious_succ]
@@ -344,6 +286,20 @@ theorem wordFiltration_eq_iSup_pow (k : ℕ) :
   refine le_antisymm ((wordFiltration_le_iff f).2 fun l hl => ?_) (iSup_le fun i => ?_)
   · exact Submodule.mem_iSup_of_mem ⟨l.length, hl⟩ (prod_map_mem_range_pow f l)
   · exact (range_pow_le_wordFiltration f i).trans (wordFiltration_mono f i.2)
+
+/-- Products of at most `k` images of a spanning family span the `k`-th word-filtration step. -/
+theorem span_prod_map_eq_wordFiltration {ι : Type*} (e : ι → M)
+    (he : Submodule.span R (Set.range e) = ⊤) (k : ℕ) :
+    Submodule.span R {a | ∃ word : List ι, word.length ≤ k ∧
+      (word.map fun i ↦ f (e i)).prod = a} = wordFiltration f k := by
+  refine le_antisymm (Submodule.span_le.2 ?_) ?_
+  · rintro _ ⟨word, hword, rfl⟩
+    simpa only [List.map_map, Function.comp_def, SetLike.mem_coe] using
+      prod_map_mem_wordFiltration f (l := word.map e) (by simpa using hword)
+  · rw [wordFiltration_eq_iSup_pow]
+    refine iSup_le fun n ↦ ?_
+    rw [← span_prod_map_eq_range_pow_of_span f e he]
+    exact Submodule.span_mono fun _ ⟨word, hword, ha⟩ ↦ ⟨word, hword.trans_le n.2, ha⟩
 
 /-- The successor filtration step adjoins words of exactly the new degree. -/
 theorem wordFiltration_succ_eq_sup (k : ℕ) :
@@ -390,11 +346,8 @@ theorem iSup_wordFiltration_eq_adjoin :
 /-- **An exhaustive word filtration covers the algebra elementwise**: if the filtration steps
 supremum to `⊤`, every element lies in one of them. -/
 theorem exists_mem_wordFiltration_of_iSup_eq_top (h : ⨆ k, wordFiltration f k = ⊤) (a : A) :
-    ∃ k, a ∈ wordFiltration f k := by
-  have hmem : a ∈ ⨆ k, wordFiltration f k := by
-    rw [h]
-    exact Submodule.mem_top
-  rwa [Submodule.mem_iSup_of_directed _ (wordFiltration_mono f).directed_le] at hmem
+    ∃ k, a ∈ wordFiltration f k :=
+  (Submodule.mem_iSup_of_directed _ (wordFiltration_mono f).directed_le).1 (h ▸ Submodule.mem_top)
 
 /-- **A nonzero element of an exhaustive word filtration has a leading degree**: a degree it
 belongs to but whose preceding step it misses. -/
@@ -443,8 +396,7 @@ theorem previousRestricted_succ (k : ℕ) :
 /-- Casting a filtered element between equal degrees does not change its value in the ambient
 algebra. -/
 @[simp]
-theorem wordFiltration_coe_cast {i j : ℕ}
-    (h : i = j) (x : wordFiltration f i) :
+theorem coe_cast {i j : ℕ} (h : i = j) (x : wordFiltration f i) :
     ((cast (congrArg (fun k => ↥(wordFiltration f k)) h) x : wordFiltration f j) :
       A) = x := by
   subst j
@@ -452,9 +404,8 @@ theorem wordFiltration_coe_cast {i j : ℕ}
 
 /-- Word filtrations are multiplicative families of submodules. -/
 instance instGradedMonoid : SetLike.GradedMonoid (wordFiltration f) where
-  one_mem := by simpa using one_mem_wordFiltration f 0
-  mul_mem := fun {i j} {x y} hx hy =>
-    mul_mem_wordFiltration (i := i) (j := j) (x := x) (y := y) f hx hy
+  one_mem := one_mem_wordFiltration f 0
+  mul_mem _ _ _ _ := mul_mem_wordFiltration f
 
 /-- The word filtration, with the preceding step at each degree, is a ring filtration. -/
 instance instIsRingFiltration :

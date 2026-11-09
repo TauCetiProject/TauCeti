@@ -7,7 +7,10 @@ module
 
 public import Mathlib.MeasureTheory.Group.Action
 public import Mathlib.MeasureTheory.Group.Measure
+public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Group.Measure
+import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
 # Integration on groups
@@ -17,7 +20,8 @@ inversion. This transports integrals between left and right Haar measures.
 
 For a measure invariant under addition, an integral over a ball can be translated to a ball
 about the origin. Only measurability of translations is needed; the measure need not be an
-additive Haar measure, and the function need not be integrable.
+additive Haar measure, and the function need not be integrable. If the measure is also invariant
+under negation, the centre of a ball is its barycentre.
 
 For a measure invariant under a group action, an integrand invariant under `g` has the same
 integral, and the same integrability, on `g • V` as on `V`.
@@ -26,6 +30,8 @@ integral, and the same integrability, on `g • V` as on `V`.
 
 * `TauCeti.setIntegral_ball_eq_setIntegral_ball_zero_add`: translating a ball integral to the
   origin.
+* `TauCeti.setIntegral_ball_sub_eq_zero`, `TauCeti.setAverage_ball_id`: for a measure invariant
+  under translation and negation, the centre of a ball is its barycentre.
 * `TauCeti.setIntegral_smul_set`, `TauCeti.integrableOn_smul_set_iff`: integrals and
   integrability of an invariant integrand over a translated set.
 -/
@@ -56,6 +62,36 @@ theorem setIntegral_ball_eq_setIntegral_ball_zero_add
     ∫ x in ball x₀ R, f x ∂μ = ∫ y in ball (0 : E) R, f (y + x₀) ∂μ := by
   simpa using ((measurePreserving_add_right μ x₀).setIntegral_preimage_emb
     (MeasurableEquiv.addRight x₀).measurableEmbedding f (ball x₀ R)).symm
+
+/-- For a measure invariant under right addition and under negation, such as an additive Haar
+measure on a finite-dimensional real normed space, the integral of `x - x₀` over `ball x₀ R`
+vanishes: the centre is the barycentre of the ball. -/
+@[simp]
+theorem setIntegral_ball_sub_eq_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace E] [MeasurableAdd E] [MeasurableNeg E] {μ : Measure E}
+    [μ.IsAddRightInvariant] [μ.IsNegInvariant] (x₀ : E) (R : ℝ) :
+    ∫ x in ball x₀ R, (x - x₀) ∂μ = 0 := by
+  rw [setIntegral_ball_eq_setIntegral_ball_zero_add]
+  simp only [add_sub_cancel_right]
+  -- Restricted to the symmetric set `ball 0 R`, `μ` is still invariant under negation.
+  have := Measure.isNegInvariant_restrict (μ := μ) (s := ball (0 : E) R) (by simp [neg_ball])
+  exact integral_eq_zero_of_odd (g := fun y : E ↦ y) fun _ ↦ rfl
+
+/-- For a measure invariant under right addition and under negation, such as an additive Haar
+measure on a finite-dimensional real normed space, the average of the identity over a ball of
+positive finite measure is its centre. -/
+theorem setAverage_ball_id {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+    {μ : Measure E}
+    [μ.IsAddRightInvariant] [μ.IsNegInvariant] {x₀ : E} {R : ℝ} (h0 : μ (ball x₀ R) ≠ 0)
+    (hR : μ (ball x₀ R) ≠ ⊤) : ⨍ x in ball x₀ R, x ∂μ = x₀ := by
+  have hint : IntegrableOn (fun x : E ↦ x - x₀) (ball x₀ R) μ :=
+    .of_bound hR.lt_top (continuous_id.sub continuous_const).aestronglyMeasurable R
+      (ae_restrict_of_forall_mem measurableSet_ball fun x hx ↦ (mem_ball_iff_norm.1 hx).le)
+  have h := integral_add hint (integrableOn_const (C := x₀) hR)
+  simp only [sub_add_cancel] at h
+  rw [setAverage_eq, h, setIntegral_ball_sub_eq_zero, setIntegral_const, zero_add,
+    inv_smul_smul₀ ((measureReal_ne_zero_iff hR).2 h0)]
 
 section SMulSet
 

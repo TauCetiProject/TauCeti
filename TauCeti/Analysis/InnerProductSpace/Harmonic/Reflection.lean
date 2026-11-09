@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
-public import TauCeti.Analysis.Sobolev.Trace.Reflection
+public import TauCeti.Analysis.Sobolev.Trace.Reflection.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
@@ -113,13 +113,6 @@ private theorem integral_fderiv_apply_eq_zero
   have hGK : Integrable (K.indicator G) :=
     (hw.locallyIntegrableOn_gradient.integrableOn_compact_subset hψU hKc).integrable_indicator
       hKc.measurableSet
-  have hint {χ : WithLp 2 (ℝ × E) → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
-      (hχK : tsupport χ ⊆ K) : Integrable fun x => fderiv ℝ χ x (G x) :=
-    (integrable_fderiv_apply (hχ.of_le (by simp)) hχc aestronglyMeasurable_id hGK).congr
-      (Eventually.of_forall fun x => by
-        by_cases hxK : x ∈ K
-        · simp [hxK]
-        · simp [hxK, fderiv_of_notMem_tsupport ℝ fun h => hxK (hχK h)])
   set η : ℕ → WithLp 2 (ℝ × E) → ℝ := fun n => normalCutoff a ((n : ℝ) + 1) with hη
   have hηψ (n : ℕ) : ContDiff ℝ ∞ (η n * ψ) := (contDiff_normalCutoff a _).mul hψ
   have hηψU (n : ℕ) : tsupport (η n * ψ) ⊆ (U ⊓ normalHalfSpace a : Opens _) := by
@@ -134,7 +127,9 @@ private theorem integral_fderiv_apply_eq_zero
     rw [(hw.mono inf_le_left).integral_laplacian_smul_eq_neg_integral_inner θ, neg_eq_zero,
       hθ] at h
     simpa only [inner_gradient_left] using h
-  have I1 : Integrable fun x => fderiv ℝ ψ x (G x) := hint hψ hψc subset_rfl
+  have I1 : Integrable fun x => fderiv ℝ ψ x (G x) :=
+    integrable_fderiv_apply_of_tsupport_subset (hψ.of_le (by simp)) hψc subset_rfl
+      aestronglyMeasurable_id hGK
   have I2 (n : ℕ) : Integrable fun x => η n x * fderiv ℝ ψ x (G x) :=
     I1.bdd_mul (contDiff_normalCutoff a _).continuous.aestronglyMeasurable
       (Eventually.of_forall fun x => by
@@ -149,8 +144,10 @@ private theorem integral_fderiv_apply_eq_zero
         (hψ.differentiable (by simp) x)]
       simp only [FunLike.coe_add, Pi.add_apply, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul]
       ring
-    rw [hfun, integral_sub (hint (hηψ n) hψc.mul_left tsupport_mul_subset_right) (I2 n), key n,
-      zero_sub]
+    have I3 : Integrable fun x => fderiv ℝ (η n * ψ) x (G x) :=
+      integrable_fderiv_apply_of_tsupport_subset ((hηψ n).of_le (by simp)) hψc.mul_left
+        tsupport_mul_subset_right aestronglyMeasurable_id hGK
+    rw [hfun, integral_sub I3 (I2 n), key n, zero_sub]
   -- The boundary-layer term tends to zero.
   have hlayer := tendsto_integral_mul_fderiv_normalCutoff_apply hGK.locallyIntegrable
     hψ hψc hψa

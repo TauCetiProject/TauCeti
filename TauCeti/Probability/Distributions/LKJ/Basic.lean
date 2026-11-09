@@ -5,8 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Distributions.LKJ.Normalizer
-public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Correlation
+public import TauCeti.Probability.Distributions.LKJ.CoordinateIntegral
 public import TauCeti.Probability.Density
 import Mathlib.Algebra.Order.Star.Real
 
@@ -21,9 +20,11 @@ The density vanishes away from the positive-definite cone, and nonpositive shape
 measure.
 
 This file defines the density and measure, proves their measurable and Radon--Nikodym interfaces,
-and records that the law is concentrated on positive-definite unit-diagonal matrices.  In
-dimensions zero and one the law is the Dirac mass at the identity.  Normalization in general
-dimension is the integral of the determinant power in partial-correlation coordinates.
+and records that the law is concentrated on positive-definite unit-diagonal matrices.  At positive
+shape the law is a probability measure, because the integral of the determinant power, computed in
+partial-correlation coordinates, is `lkjNormalizer p η`.  At shape one the density is constant on
+the positive-definite region, so the law is normalized correlation volume on that region.  In
+dimensions zero and one the law is the Dirac mass at the identity.
 
 ## Main definitions
 
@@ -35,6 +36,9 @@ dimension is the integral of the determinant power in partial-correlation coordi
 
 * `TauCeti.Probability.lkjMeasure_of_pos` and
   `TauCeti.Probability.lkjMeasure_of_nonpos` describe the valid and invalid branches.
+* `TauCeti.Probability.isProbabilityMeasure_lkjMeasure` proves normalization at positive shape.
+* `TauCeti.Probability.lkjMeasure_shape_one` identifies the shape-one law with conditioned
+  correlation volume.
 * `TauCeti.Probability.ae_posDef_lkjMeasure` and
   `TauCeti.Probability.ae_diag_eq_one_lkjMeasure` give the almost-sure carrier properties.
 * `TauCeti.Probability.hasPDF_of_hasLaw_lkjMeasure` and
@@ -275,6 +279,75 @@ theorem ae_diag_eq_one_lkjMeasure (p : ℕ) (η : ℝ) :
   · rw [lkjMeasure_of_pos hη]
     exact (withDensity_absolutelyContinuous _ _).ae_le (ae_correlationLebesgue_diag_eq_one p)
   · simp [lkjMeasure_of_nonpos (not_lt.mp hη)]
+
+/-! ### Normalization -/
+
+/-- The real-valued LKJ density is the indicator of the positive-definite cone times the
+determinant-power formula. -/
+theorem lkjPDFReal_eq_indicator (p : ℕ) (η : ℝ) :
+    lkjPDFReal p η =
+      {R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+          (R : Matrix (Fin p) (Fin p) ℝ).PosDef}.indicator
+        fun R ↦ (R : Matrix (Fin p) (Fin p) ℝ).det ^ (η - 1) / lkjNormalizer p η := by
+  funext R
+  by_cases hR : (R : Matrix (Fin p) (Fin p) ℝ).PosDef <;> simp [hR]
+
+/-- At positive shape the real-valued LKJ density is integrable against correlation Lebesgue
+measure. -/
+theorem integrable_lkjPDFReal (hη : 0 < η) :
+    Integrable (lkjPDFReal p η) (correlationLebesgue p) := by
+  rw [lkjPDFReal_eq_indicator, integrable_indicator_iff (measurableSet_posDefMatrix p)]
+  exact (integrableOn_rpow_det_correlationLebesgue p hη).div_const _
+
+/-- At positive shape the real-valued LKJ density integrates to one. -/
+theorem integral_lkjPDFReal_eq_one (hη : 0 < η) :
+    ∫ R, lkjPDFReal p η R ∂correlationLebesgue p = 1 := by
+  rw [lkjPDFReal_eq_indicator, integral_indicator (measurableSet_posDefMatrix p), integral_div,
+    setIntegral_rpow_det_correlationLebesgue p hη, div_self (lkjNormalizer_ne_zero hη)]
+
+/-- At positive shape the `ℝ≥0∞`-valued LKJ density integrates to one. -/
+theorem lintegral_lkjPDF_eq_one (hη : 0 < η) :
+    ∫⁻ R, lkjPDF p η R ∂correlationLebesgue p = 1 := by
+  simp_rw [lkjPDF_def]
+  rw [← ofReal_integral_eq_lintegral_ofReal (integrable_lkjPDFReal hη)
+    (ae_of_all _ (lkjPDFReal_nonneg hη)), integral_lkjPDFReal_eq_one hη, ENNReal.ofReal_one]
+
+/-- The LKJ law of positive shape is a probability measure. -/
+theorem isProbabilityMeasure_lkjMeasure (hη : 0 < η) : IsProbabilityMeasure (lkjMeasure p η) :=
+  ⟨by rw [lkjMeasure_of_pos hη, withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
+    lintegral_lkjPDF_eq_one hη]⟩
+
+variable (p) in
+/-- The positive-definite correlation matrices have correlation Lebesgue measure
+`lkjNormalizer p 1`, the LKJ normalizer at shape one. -/
+theorem correlationLebesgue_setOf_posDef_eq_lkjNormalizer :
+    correlationLebesgue p {R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+        (R : Matrix (Fin p) (Fin p) ℝ).PosDef} =
+      ENNReal.ofReal (lkjNormalizer p 1) := by
+  have h := setIntegral_rpow_det_correlationLebesgue p one_pos
+  simp only [sub_self, Real.rpow_zero, setIntegral_const, smul_eq_mul, mul_one] at h
+  have hfin := volume_posDefCorrelationRegion_lt_top p
+  rw [← correlationLebesgue_setOf_posDef] at hfin
+  rw [← h, measureReal_def, ENNReal.ofReal_toReal hfin.ne]
+
+variable (p) in
+/-- At shape one the LKJ law is uniform on the positive-definite correlation matrices: it is
+correlation Lebesgue measure conditioned on the positive-definite cone. -/
+theorem lkjMeasure_shape_one :
+    lkjMeasure p 1 = ProbabilityTheory.cond (correlationLebesgue p)
+      {R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+        (R : Matrix (Fin p) (Fin p) ℝ).PosDef} := by
+  have hZ := lkjNormalizer_pos (p := p) one_pos
+  have hpdf : lkjPDF p 1 =
+      {R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+          (R : Matrix (Fin p) (Fin p) ℝ).PosDef}.indicator
+        fun _ ↦ (correlationLebesgue p {R | (R : Matrix (Fin p) (Fin p) ℝ).PosDef})⁻¹ := by
+    funext R
+    by_cases hR : (R : Matrix (Fin p) (Fin p) ℝ).PosDef
+    · simp [hR, correlationLebesgue_setOf_posDef_eq_lkjNormalizer, ENNReal.ofReal_inv_of_pos hZ]
+    · simp [hR]
+  rw [lkjMeasure_of_pos one_pos, hpdf, withDensity_indicator (measurableSet_posDefMatrix p),
+    withDensity_const, ProbabilityTheory.cond]
 
 /-! ### Density interfaces -/
 

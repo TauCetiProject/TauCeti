@@ -121,12 +121,18 @@ theorem _root_.Valuation.X_pow_sub_C_irreducible_of_gcd_ord_eq_one (v : Valuatio
 
 /-- **The degree of a radical extension**: if `y` generates `E` over `F` with `y ^ n = a`,
 and `n` is coprime to the order of `a` at a discrete valuation, then `[E : F] = n`.
-This is the degree criterion used in Stichtenoth, Proposition 3.7.3. -/
+This is the degree criterion used in Stichtenoth, Proposition 3.7.3. The exponent is nonzero
+automatically: `n = 0` would make `a = 1`, of order `0`, and `Int.gcd 0 0 = 0`. -/
 theorem _root_.Valuation.finrank_eq_of_pow_eq_of_gcd_ord_eq_one
     {E : Type v} [Field E] [Algebra F E] (w : Valuation F ℤᵐ⁰)
     {y : E} {n : ℕ} {a : F} (htop : F⟮y⟯ = ⊤)
-    (hy : y ^ n = algebraMap F E a) (hn : n ≠ 0)
+    (hy : y ^ n = algebraMap F E a)
     (h : Int.gcd n (w.ord a) = 1) : Module.finrank F E = n := by
+  have hn : n ≠ 0 := by
+    rintro rfl
+    rw [pow_zero] at hy
+    obtain rfl : a = 1 := (algebraMap F E).injective (by rw [← hy, map_one])
+    simp [Valuation.ord_one] at h
   have hirr : Irreducible (X ^ n - C a) :=
     w.X_pow_sub_C_irreducible_of_gcd_ord_eq_one hn h
   have hroot : aeval y (X ^ n - C a) = 0 := by rw [map_sub, aeval_X_pow, aeval_C, hy, sub_self]

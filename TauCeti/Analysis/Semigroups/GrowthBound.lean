@@ -106,7 +106,7 @@ theorem StronglyContinuousSemigroup.HasGrowthBound.mono_const
 /-- A contraction semigroup has growth bound `(0, 1)`. -/
 theorem ContractionSemigroup.hasGrowthBound (S : ContractionSemigroup X) :
     S.toStronglyContinuousSemigroup.HasGrowthBound 0 1 :=
-  ⟨le_rfl, fun t ht => by simpa using S.contracting_real t ht⟩
+  ⟨le_rfl, fun t _ => by simpa using S.contracting_real t⟩
 
 /-- A contraction semigroup has every nonnegative exponential growth rate with constant `1`. -/
 theorem ContractionSemigroup.hasGrowthBound_of_nonneg_omega
@@ -134,7 +134,7 @@ variable [CompleteSpace X]
 ([EN] Prop. I.5.5, [Linares] Thm. 1). -/
 theorem StronglyContinuousSemigroup.existsGrowthBound (S : StronglyContinuousSemigroup X) :
     ∃ (ω : ℝ) (M : ℝ), S.HasGrowthBound ω M := by
-  obtain ⟨M, hM1, hMbound⟩ := S.normBoundedOnUnitInterval
+  obtain ⟨M, hM1, hMbound⟩ := S.exists_norm_realOperator_le_on_unitInterval
   have hM_pos : 0 < M := by linarith
   refine ⟨Real.log M, M, hM1, fun t ht => ?_⟩
   set n := ⌊t⌋₊

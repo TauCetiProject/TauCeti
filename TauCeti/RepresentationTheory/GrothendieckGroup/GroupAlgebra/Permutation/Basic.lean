@@ -127,7 +127,7 @@ theorem permK0_sum : permK0 k G (X ⊕ Y) = permK0 k G X + permK0 k G Y := by
 /-- The permutation class of the empty `G`-set is `0`. -/
 @[simp]
 theorem permK0_of_isEmpty (X : Type u) [MulAction G X] [IsEmpty X] : permK0 k G X = 0 :=
-  ExactK0.of_eq_zero_of_isZero <| FGModuleCat.isZero_of_subsingleton _
+  ExactK0.of_eq_zero_of_isZero <| FGModuleCat.isZero_iff_subsingleton.mpr <|
     ((Representation.ofMulAction k G X).asModuleEquiv.trans
       (MonoidAlgebra.coeffLinearEquiv k)).toEquiv.subsingleton
 

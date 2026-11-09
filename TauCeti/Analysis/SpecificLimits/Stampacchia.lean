@@ -47,6 +47,50 @@ namespace TauCeti
 
 open Filter Set Topology
 
+/-- The one-step recursion of `apply_add_eq_zero_of_le_div_sub_rpow_mul_rpow` along the levels
+`kⱼ = k₀ + d (1 - 2⁻ʲ)`, whose gaps are `d / 2 / 2 ^ j`. -/
+private lemma apply_level_succ_le {φ : ℝ → ℝ} {k₀ M α β d : ℝ} (hM : 0 < M) (hd : 0 < d)
+    (hrec : ∀ k h, k₀ ≤ k → k < h → φ h ≤ (M / (h - k)) ^ α * φ k ^ β) (j : ℕ)
+    (hkj : k₀ ≤ k₀ + d * (1 - (2 ^ j : ℝ)⁻¹)) :
+    φ (k₀ + d * (1 - (2 ^ (j + 1) : ℝ)⁻¹)) ≤
+      (2 * M / d) ^ α * (2 ^ α) ^ j * φ (k₀ + d * (1 - (2 ^ j : ℝ)⁻¹)) ^ (1 + (β - 1)) := by
+  have hgap : k₀ + d * (1 - (2 ^ (j + 1) : ℝ)⁻¹) - (k₀ + d * (1 - (2 ^ j : ℝ)⁻¹)) =
+      d / 2 / 2 ^ j := by
+    simp only [pow_succ]
+    field_simp
+    ring
+  have hlt : k₀ + d * (1 - (2 ^ j : ℝ)⁻¹) < k₀ + d * (1 - (2 ^ (j + 1) : ℝ)⁻¹) := by
+    rw [← sub_pos, hgap]
+    positivity
+  have h := hrec _ _ hkj hlt
+  rw [hgap] at h
+  have hdiv : M / (d / 2 / 2 ^ j) = 2 * M / d * 2 ^ j := by field_simp
+  have hsplit : (M / (d / 2 / 2 ^ j)) ^ α = (2 * M / d) ^ α * (2 ^ α) ^ j := by
+    rw [hdiv, Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_pow_comm zero_le_two]
+  simpa only [hsplit, add_sub_cancel] using h
+
+/-- The starting value is small enough for geometric decay: with `d = M * P ^ ((β - 1) / α) *
+2 ^ (β / (β - 1))`, one has `(2 M / d) ^ α * P ^ (β - 1) ≤ 2 ^ (-(α / (β - 1)))`. -/
+private lemma start_rpow_le_of_pos {M α β P : ℝ} (hM : 0 < M) (hα : 0 < α) (hβ : 1 < β)
+    (hP : 0 < P) :
+    (2 * M / (M * P ^ ((β - 1) / α) * 2 ^ (β / (β - 1)))) ^ α * P ^ (β - 1) ≤
+      2 ^ (-(α / (β - 1))) := by
+  have hβ1 : 0 < β - 1 := sub_pos.2 hβ
+  have hd : 0 < M * P ^ ((β - 1) / α) * 2 ^ (β / (β - 1)) := by positivity
+  have hdα : (M * P ^ ((β - 1) / α) * 2 ^ (β / (β - 1))) ^ α =
+      M ^ α * P ^ (β - 1) * 2 ^ (α * β / (β - 1)) := by
+    rw [Real.mul_rpow (by positivity) (by positivity),
+      Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_mul hP.le,
+      ← Real.rpow_mul zero_le_two, div_mul_cancel₀ _ hα.ne', mul_comm (β / (β - 1)),
+      mul_div_assoc]
+  have hexp : α - α * β / (β - 1) = -(α / (β - 1)) := by
+    field_simp
+    ring
+  apply le_of_eq
+  rw [Real.div_rpow (by positivity) hd.le, hdα, Real.mul_rpow zero_le_two hM.le]
+  simp only [← hexp, Real.rpow_sub two_pos]
+  field_simp
+
 /-- **Stampacchia's lemma.** Let `φ` be nonnegative and antitone on `[k₀, ∞)`, with
 
 `φ h ≤ (M / (h - k)) ^ α * φ k ^ β` whenever `k₀ ≤ k < h`,
@@ -78,27 +122,12 @@ theorem apply_add_eq_zero_of_le_div_sub_rpow_mul_rpow {φ : ℝ → ℝ} {k₀ M
     have : 0 ≤ d * (2 ^ j)⁻¹ := by positivity
     simp only [k]
     nlinarith
-  have hgap : ∀ j, k (j + 1) - k j = d / 2 / 2 ^ j := fun j => by
-    simp only [k, pow_succ]
-    field_simp
-    ring
   -- Along these levels the recursive inequality is a superlinear recurrence.
   set Y : ℕ → ℝ := fun j => φ (k j)
   have hY : ∀ j, 0 ≤ Y j := fun j => hφ _ (hk₀ j)
   have hY0 : Y 0 = P := by simp [Y, k, P]
-  have hrecY : ∀ j, Y (j + 1) ≤ (2 * M / d) ^ α * (2 ^ α) ^ j * Y j ^ (1 + (β - 1)) := by
-    intro j
-    have hlt : k j < k (j + 1) := by
-      rw [← sub_pos, hgap]
-      positivity
-    have h := hrec (k j) (k (j + 1)) (hk₀ j) hlt
-    rw [hgap] at h
-    have hdiv : M / (d / 2 / 2 ^ j) = 2 * M / d * 2 ^ j := by field_simp
-    have hsplit : (M / (d / 2 / 2 ^ j)) ^ α = (2 * M / d) ^ α * (2 ^ α) ^ j := by
-      rw [hdiv, Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_natCast,
-        ← Real.rpow_natCast, ← Real.rpow_mul zero_le_two, ← Real.rpow_mul zero_le_two,
-        mul_comm α]
-    simpa only [Y, hsplit, add_sub_cancel] using h
+  have hrecY : ∀ j, Y (j + 1) ≤ (2 * M / d) ^ α * (2 ^ α) ^ j * Y j ^ (1 + (β - 1)) :=
+    fun j => apply_level_succ_le hM hd hrec j (hk₀ j)
   -- The choice of `d` makes the starting value small enough for geometric decay.
   set q : ℝ := 2 ^ (-(α / (β - 1)))
   have hq0 : 0 ≤ q := by positivity
@@ -108,18 +137,8 @@ theorem apply_add_eq_zero_of_le_div_sub_rpow_mul_rpow {φ : ℝ → ℝ} {k₀ M
     rw [← Real.rpow_mul zero_le_two, neg_mul, div_mul_cancel₀ _ hβ1.ne', ← Real.rpow_add two_pos,
       add_neg_cancel, Real.rpow_zero]
   have hstart : (2 * M / d) ^ α * Y 0 ^ (β - 1) ≤ q := by
-    have hdα : d ^ α = M ^ α * P ^ (β - 1) * 2 ^ (α * β / (β - 1)) := by
-      rw [Real.mul_rpow (by positivity) (by positivity),
-        Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_mul hP,
-        ← Real.rpow_mul zero_le_two, div_mul_cancel₀ _ hα.ne', mul_comm (β / (β - 1)),
-        mul_div_assoc]
-    have hexp : α - α * β / (β - 1) = -(α / (β - 1)) := by
-      field_simp
-      ring
-    apply le_of_eq
-    rw [hY0, Real.div_rpow (by positivity) hd.le, hdα, Real.mul_rpow zero_le_two hM.le]
-    simp only [q, ← hexp, Real.rpow_sub two_pos]
-    field_simp
+    rw [hY0]
+    exact start_rpow_le_of_pos hM hα hβ hPpos
   have hlim : Tendsto Y atTop (𝓝 0) :=
     tendsto_atTop_zero_of_le_mul_pow_mul_rpow_of_ratio_lt_one hY (by positivity) hq0 hq1
       (by linarith) hbq hstart hrecY
