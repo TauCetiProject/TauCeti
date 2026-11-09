@@ -197,9 +197,11 @@ theorem cohomologyPresheaf_map_resolutionClass {U : C} (i : U ⟶ V) {n : ℕ}
     (F.cohomologyPresheaf n).map i.op (resolutionClass ι hι hι' hK V s hs) =
       resolutionClass ι hι hι' hK U ((K.X n).obj.map i.op s)
         (by rw [NatTrans.naturality_apply, hs, map_zero]) := by
-  refine (F.H'AddEquivExt n U).injective ?_
-  rw [cohomologyPresheaf_map_apply, resolutionClass_def, resolutionClass_def,
-    AddEquiv.apply_symm_apply, AddEquiv.apply_symm_apply, K.mk₀_comp_extMk]
+  change (F.cohomologyPresheaf n).map i.op
+      (K.extMk ι hι hι' hK ((freeYonedaSheafSectionsEquiv J V (K.X n)).symm s) _) =
+    K.extMk ι hι hι' hK
+      ((freeYonedaSheafSectionsEquiv J U (K.X n)).symm ((K.X n).obj.map i.op s)) _
+  erw [cohomologyPresheaf_map_apply, K.mk₀_comp_extMk]
   congr 1
   apply (freeYonedaSheafSectionsEquiv J U (K.X n)).injective
   rw [freeYonedaSheafSectionsEquiv_naturality_left, AddEquiv.apply_symm_apply,
