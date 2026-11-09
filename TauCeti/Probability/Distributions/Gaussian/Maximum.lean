@@ -11,6 +11,7 @@ import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.MeasureTheory.Order.Group.Lattice
 import Mathlib.Probability.Distributions.Gaussian.Fernique
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.Probability.Distributions.Gaussian.Cdf
 import TauCeti.Probability.Distributions.Relations
 
@@ -77,23 +78,6 @@ private theorem one_div_seven_le_mul_gaussianPDFReal {m : ℝ} (hm : 1 ≤ m) :
     _ ≤ m * gaussianPDFReal 0 1 (s + 1) := by
       rw [gaussianPDFReal_zero_one]
       gcongr
-
-/-- The supremum over a nonempty finset of integrable functions with values in a normed lattice
-is integrable. -/
-private theorem integrable_finset_sup' {β κ : Type*} [NormedAddCommGroup β] [Lattice β]
-    [HasSolidNorm β] [IsOrderedAddMonoid β] {s : Finset κ} (hs : s.Nonempty) {f : κ → Ω → β}
-    (hf : ∀ i ∈ s, Integrable (f i) P) : Integrable (fun ω => s.sup' hs fun i => f i ω) P := by
-  simpa only [← Finset.sup'_apply] using
-    Finset.sup'_induction (p := fun h => Integrable h P) hs f (fun _ h₁ _ h₂ => h₁.sup h₂) hf
-
-/-- The absolute value of a standard Gaussian exceeds `s ≥ 0` with probability at least the
-standard Gaussian density at `s + 1`. -/
-private theorem gaussianPDFReal_add_one_le_measureReal_map_abs_Ioi {s : ℝ} (hs : 0 ≤ s) :
-    gaussianPDFReal 0 1 (s + 1) ≤ ((gaussianReal 0 1).map fun x => |x|).real (Ioi s) := by
-  have h := mul_gaussianPDFReal_add_le_measureReal_Ioi_gaussianReal (m := 0) 1 hs (t := 1)
-  rw [one_mul] at h
-  rw [map_measureReal_apply measurable_abs measurableSet_Ioi]
-  exact h.trans (measureReal_mono fun x (hx : s < x) => hx.trans_le (le_abs_self x))
 
 /-- The maximum of the absolute values of `m` independent standard Gaussian random variables is
 at most `√(log m) / 4` with probability at most `7 / 8`. -/
