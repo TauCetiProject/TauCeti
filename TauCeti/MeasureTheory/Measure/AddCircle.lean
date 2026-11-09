@@ -63,18 +63,16 @@ theorem volume_preimage_coe_eq_zero_iff {s : Set (AddCircle T)} :
     volume (((↑) : ℝ → AddCircle T) ⁻¹' s) = 0 ↔ volume s = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · -- the circle volume of `s` is the real volume of its lift to one period
-    let e := measurableEquivIoc T 0
-    have hmp : MeasurePreserving e volume (Measure.comap Subtype.val volume) :=
-      measurePreserving_equivIoc T
-    have h1 := hmp.measure_preimage_equiv (e.symm ⁻¹' s)
-    rw [(MeasurableEmbedding.subtype_coe measurableSet_Ioc).comap_apply] at h1
-    have h2 : e ⁻¹' (e.symm ⁻¹' s) = s := by
-      ext x
-      simp
-    rw [h2] at h1
+    -- `measurableEquivIoc T 0` has underlying equivalence `equivIoc T 0`
+    have hemb : MeasurableEmbedding (equivIoc T 0) := (measurableEquivIoc T 0).measurableEmbedding
+    have h1 := (measurePreserving_equivIoc (T := T) (a := 0)).measure_preimage_emb hemb
+      ((equivIoc T 0).symm ⁻¹' s)
+    rw [(MeasurableEmbedding.subtype_coe measurableSet_Ioc).comap_apply,
+      Equiv.preimage_symm_preimage] at h1
     refine nonpos_iff_eq_zero.1 (h1.trans_le (h ▸ measure_mono ?_))
+    -- the inverse of `equivIoc` is the quotient map, so the lift of `y` is `y` itself
     rintro _ ⟨y, hy, rfl⟩
-    simpa [e, measurableEquivIoc, equivIoc] using hy
+    exact hy
   · -- cover by a measurable null set, then use that the intervals `(k • T, k • T + T]` cover `ℝ`
     have hs : MeasurableSet (toMeasurable volume s) := measurableSet_toMeasurable _ _
     have ht : volume (toMeasurable volume s) = 0 := by rwa [measure_toMeasurable]
@@ -100,19 +98,14 @@ theorem map_coe_equivIco_withDensity_haarAddCircle (a : ℝ) {f : AddCircle T �
     rw [volume_eq_smul_haarAddCircle, smul_smul,
       ENNReal.inv_mul_cancel (ENNReal.ofReal_pos.mpr hT.out).ne'
         ENNReal.ofReal_ne_top, one_smul]
-  ext s hs
-  have hs' := hemb.measurable hs
-  rw [Measure.map_apply hemb.measurable hs, withDensity_apply _ hs', withDensity_apply _ hs,
-    hvol, Measure.restrict_smul, lintegral_smul_measure, smul_eq_mul,
-    lintegral_const_mul' _ _ (by simpa using hT.out),
-    ← lintegral_indicator hs', ← lintegral_indicator hs]
-  congr 1
-  calc ∫⁻ θ, ((fun θ ↦ (equivIco T a θ : ℝ)) ⁻¹' s).indicator f θ
-      = ∫⁻ θ, s.indicator (fun x : ℝ ↦ f x) (equivIco T a θ : ℝ) := by
-        refine lintegral_congr fun θ ↦ ?_
-        by_cases h : (equivIco T a θ : ℝ) ∈ s <;> simp [indicator, h]
-    _ = ∫⁻ x, s.indicator (fun x : ℝ ↦ f x) x ∂(volume.restrict (Ico a (a + T))) := by
-        rw [← map_coe_equivIco_volume (T := T) a, hemb.lintegral_map]
+  have hf : f = (fun x : ℝ ↦ f x) ∘ fun θ : AddCircle T ↦ (equivIco T a θ : ℝ) :=
+    funext fun θ ↦ by simp [coe_equivIco]
+  have key := hemb.map_withDensity_comp (μ := (volume : Measure (AddCircle T))) fun x : ℝ ↦ f x
+  rw [← hf, map_coe_equivIco_volume] at key
+  rw [hvol, withDensity_smul_measure, Measure.map_smul, key,
+    ← withDensity_smul' _ _ (ENNReal.inv_ne_top.2 (by simpa using hT.out))]
+  · rfl
+  · exact hemb.measurable.aemeasurable
 
 section Periodization
 
