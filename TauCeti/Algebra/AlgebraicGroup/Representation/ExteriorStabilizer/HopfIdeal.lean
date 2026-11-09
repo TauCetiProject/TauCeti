@@ -18,7 +18,7 @@ detects nonreduced subgroup schemes.
 
 ## Main declarations
 
-* `TauCeti.Comodule.stabilizerHopfIdeal_range_exteriorPowerMap_finrank`: equality of the
+* `Submodule.stabilizerHopfIdeal_range_exteriorPowerMap_finrank`: equality of the
   defining Hopf ideals of the two stabilizers.
 
 ## References
@@ -28,9 +28,11 @@ detects nonreduced subgroup schemes.
 
 public section
 
-namespace TauCeti.Comodule
+namespace Submodule
 
-attribute [local instance] exteriorPower
+open TauCeti
+
+attribute [local instance] Comodule.exteriorPower
 
 variable {k H V : Type*} [Field k] [CommRing H] [HopfAlgebra k H]
   [AddCommGroup V] [Module k V] [Module.Finite k V] [Comodule k H V]
@@ -44,12 +46,8 @@ theorem stabilizerHopfIdeal_range_exteriorPowerMap_finrank (W : Submodule k V) :
     (H := _root_.CommHopfAlgCat.of k H)
   intro A
   ext g
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff,
-    CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-  change ((LinearMap.range (_root_.exteriorPower.map (Module.finrank k W)
-      W.subtype)).stabilizerHopfIdeal H).toIdeal ≤ RingHom.ker g.ofConv ↔
-    (W.stabilizerHopfIdeal H).toIdeal ≤ RingHom.ker g.ofConv
-  rw [Submodule.stabilizerHopfIdeal_le_ker_iff, Submodule.stabilizerHopfIdeal_le_ker_iff,
-    map_endOfPoint_baseChange_range_exteriorPowerMap_finrank_eq_iff]
+  rw [mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint,
+    mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint,
+    Comodule.map_endOfPoint_baseChange_range_exteriorPowerMap_finrank_eq_iff]
 
-end TauCeti.Comodule
+end Submodule

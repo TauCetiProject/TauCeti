@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
-public import TauCeti.Algebra.AlgebraicGroup.Representation.TensorProduct
+public import TauCeti.Algebra.AlgebraicGroup.Representation.TensorProduct.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.TensorFin
 public import TauCeti.LinearAlgebra.Unimodular
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
@@ -25,8 +25,9 @@ factor. Applying it to proportional pure tensors detects membership in each fact
 
 ## Main declarations
 
-* `TauCeti.Comodule.stabilizerHopfIdeal_span_tmul`: the binary tensor-line stabilizer identity.
-* `TauCeti.FGComoduleCat.stabilizerHopfIdeal_span_tensorFinVector`: the corresponding identity
+* `TauCeti.Comodule.stabilizerHopfIdeal_span_singleton_tmul`: the binary tensor-line stabilizer
+  identity.
+* `TauCeti.FGComoduleCat.stabilizerHopfIdeal_span_singleton_tensorFinVector`: the identity
   for a finite family, including the empty family.
 
 ## References
@@ -43,69 +44,15 @@ namespace TauCeti.Comodule
 
 noncomputable section
 
-private theorem mem_span_left_of_tmul_mem_span {R M N : Type*} [CommRing R]
-    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-    {x x' : M} {y y' : N} (hy' : Module.IsUnimodular R y')
-    (h : x' ⊗ₜ[R] y' ∈ R ∙ (x ⊗ₜ[R] y)) : x' ∈ R ∙ x := by
-  obtain ⟨ψ, hψ⟩ := Module.isUnimodular_iff.mp hy'
-  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp h
-  let f := (TensorProduct.rid R M).toLinearMap.comp (ψ.lTensor M)
-  have heq := congrArg f hc
-  exact Submodule.mem_span_singleton.mpr ⟨c * ψ y, by simpa [f, hψ, mul_smul] using heq⟩
-
-private theorem span_left_le_of_span_tmul_eq {R M N : Type*} [CommRing R]
-    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-    {x x' : M} {y y' : N} (hy' : Module.IsUnimodular R y')
-    (h : R ∙ (x' ⊗ₜ[R] y') = R ∙ (x ⊗ₜ[R] y)) : R ∙ x' ≤ R ∙ x :=
-  Submodule.span_le.mpr (Set.singleton_subset_iff.mpr
-    (mem_span_left_of_tmul_mem_span hy' (h ▸ Submodule.mem_span_singleton_self _)))
-
-private theorem span_tmul_eq_iff {R M N : Type*} [CommRing R]
-    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-    {x x' : M} {y y' : N}
-    (hx : Module.IsUnimodular R x) (hy : Module.IsUnimodular R y)
-    (hx' : Module.IsUnimodular R x') (hy' : Module.IsUnimodular R y') :
-    R ∙ (x' ⊗ₜ[R] y') = R ∙ (x ⊗ₜ[R] y) ↔ R ∙ x' = R ∙ x ∧ R ∙ y' = R ∙ y := by
-  constructor
-  · intro h
-    have hswap := congrArg (Submodule.map (TensorProduct.comm R M N).toLinearMap) h
-    simp only [Submodule.map_span, Set.image_singleton, LinearEquiv.coe_coe,
-      TensorProduct.comm_tmul] at hswap
-    exact ⟨le_antisymm (span_left_le_of_span_tmul_eq hy' h)
-      (span_left_le_of_span_tmul_eq hy h.symm),
-      le_antisymm (span_left_le_of_span_tmul_eq hx' hswap)
-        (span_left_le_of_span_tmul_eq hx hswap.symm)⟩
-  · rintro ⟨hM, hN⟩
-    obtain ⟨a, ha⟩ := (hx.span_singleton_eq_iff x').mp hM.symm
-    obtain ⟨b, hb⟩ := (hy.span_singleton_eq_iff y').mp hN.symm
-    rw [← ha, ← hb]
-    have ht : (a • x) ⊗ₜ[R] (b • y) = (a * b) • (x ⊗ₜ[R] y) := by
-      simp [Units.smul_def, TensorProduct.smul_tmul', TensorProduct.tmul_smul,
-        smul_smul, mul_comm]
-    rw [ht]
-    exact Submodule.span_singleton_group_smul_eq R (a * b) _
-
 attribute [local instance] tensor
 
 variable {k H M N : Type*} [Field k] [CommRing H] [HopfAlgebra k H]
 variable [AddCommGroup M] [Module k M] [Comodule k H M]
 variable [AddCommGroup N] [Module k N] [Comodule k H N]
 
-private theorem mem_lineStabilizer_iff {A : Type*} [CommRing A] [Algebra k A]
-    (v : M) (g : WithConv (H →ₐ[k] A)) :
-    g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
-        ((k ∙ v).stabilizerHopfIdeal H) (CommAlgCat.of k A) ↔
-      A ∙ pointsAction M g (1 ⊗ₜ[k] v) = A ∙ (1 ⊗ₜ[k] v) := by
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-  change ((k ∙ v).stabilizerHopfIdeal H).toIdeal ≤ RingHom.ker g.ofConv ↔ _
-  rw [Submodule.stabilizerHopfIdeal_le_ker_iff]
-  simp only [Submodule.baseChange_span, Set.image_singleton, TensorProduct.mk_apply,
-    ← pointsAction_toLinearMap, Submodule.map_span, Set.image_singleton,
-    LinearEquiv.coe_coe]
-
 /-- The scheme-theoretic stabilizer of a tensor product line is the intersection of the
 stabilizers of its factor lines, expressed as a supremum of defining Hopf ideals. -/
-theorem stabilizerHopfIdeal_span_tmul (m : M) (n : N)
+theorem stabilizerHopfIdeal_span_singleton_tmul (m : M) (n : N)
     (hm : Module.IsUnimodular k m) (hn : Module.IsUnimodular k n) :
     (k ∙ (m ⊗ₜ[k] n)).stabilizerHopfIdeal H =
       (k ∙ m).stabilizerHopfIdeal H ⊔ (k ∙ n).stabilizerHopfIdeal H := by
@@ -114,8 +61,10 @@ theorem stabilizerHopfIdeal_span_tmul (m : M) (n : N)
   intro A
   rw [CommHopfAlgCat.quotientPointsSubgroup_sup]
   ext g
-  rw [Subgroup.mem_inf, mem_lineStabilizer_iff, mem_lineStabilizer_iff,
-    mem_lineStabilizer_iff]
+  rw [Subgroup.mem_inf,
+    Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_span_singleton_iff,
+    Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_span_singleton_iff,
+    Submodule.mem_quotientPointsSubgroup_stabilizerHopfIdeal_span_singleton_iff]
   let e := TensorProduct.AlgebraTensorModule.distribBaseChange k A M N
   rw [← (Submodule.map_injective_of_injective e.injective).eq_iff]
   simp only [Submodule.map_span, Set.image_singleton, LinearEquiv.coe_coe]
@@ -125,7 +74,7 @@ theorem stabilizerHopfIdeal_span_tmul (m : M) (n : N)
       LinearEquiv.apply_symm_apply] using congrArg e
       (endOfPoint_tensor_tmul g.ofConv (1 : A) (1 : A) m n).symm
   rw [hact, TensorProduct.AlgebraTensorModule.distribBaseChange_tmul]
-  exact span_tmul_eq_iff (hm.one_tmul (S := A)) (hn.one_tmul (S := A))
+  exact Module.IsUnimodular.span_tmul_eq_iff (hm.one_tmul (S := A)) (hn.one_tmul (S := A))
     ((hm.one_tmul (S := A)).map_linearEquiv (pointsAction M g))
     ((hn.one_tmul (S := A)).map_linearEquiv (pointsAction N g))
 
@@ -143,24 +92,25 @@ variable {k : Type u} [Field k] {H : Type v} [CommRing H] [HopfAlgebra k H]
 
 /-- The scheme-theoretic stabilizer of a finite tensor product line is the intersection of
 all factor-line stabilizers. The empty tensor product has the full group as its stabilizer. -/
-theorem stabilizerHopfIdeal_span_tensorFinVector {d : ℕ}
+theorem stabilizerHopfIdeal_span_singleton_tensorFinVector {d : ℕ}
     (M : Fin d → FGComoduleCat.{u, v, u} k H) (m : (i : Fin d) → M i)
     (hm : ∀ i, Module.IsUnimodular k (m i)) :
     (k ∙ tensorFinVector k H M m).stabilizerHopfIdeal H =
       ⨆ i, (k ∙ m i).stabilizerHopfIdeal H := by
   induction d with
   | zero =>
-      simp only [tensorFinVector, iSup_of_empty]
+      simp only [tensorFinVector_zero, iSup_of_empty]
       rw [Submodule.stabilizerHopfIdeal_eq_bot_iff]
       intro w hw
       refine ⟨⟨w, hw⟩ ⊗ₜ[k] (1 : H), ?_⟩
       simp only [TensorProduct.map_tmul, Submodule.subtype_apply, LinearMap.id_apply]
       exact (Comodule.trivial_coact_apply w).symm
   | succ d ih =>
-      -- Expose the binary tensor carrier together with its diagonal coaction.
+      rw [tensorFinVector_succ]
+      -- Identify the recursively bundled carrier and coaction with the binary tensor instance.
       change (k ∙ (m 0 ⊗ₜ[k] tensorFinVector k H (fun i : Fin d ↦ M i.succ)
         (fun i ↦ m i.succ))).stabilizerHopfIdeal H = _
-      rw [Comodule.stabilizerHopfIdeal_span_tmul _ _ (hm 0)
+      rw [Comodule.stabilizerHopfIdeal_span_singleton_tmul _ _ (hm 0)
         (isUnimodular_tensorFinVector k H _ _ fun i ↦ hm i.succ),
         ih _ _ (fun i ↦ hm i.succ)]
       apply HopfIdeal.ext

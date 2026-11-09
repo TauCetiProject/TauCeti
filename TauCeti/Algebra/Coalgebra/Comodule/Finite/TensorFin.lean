@@ -45,14 +45,36 @@ noncomputable def tensorFin : (d : ℕ) →
   | 0, _ => tensorUnit R C
   | d + 1, M => tensor R C (M 0) (tensorFin d (fun i ↦ M i.succ))
 
+/-- The empty tensor product is the trivial tensor unit. -/
+@[simp]
+theorem tensorFin_zero (M : Fin 0 → FGComoduleCat.{u, v, u} R C) :
+    tensorFin R C 0 M = tensorUnit R C := by rfl
+
+/-- A nonempty finite tensor product separates its first factor. -/
+@[simp]
+theorem tensorFin_succ {d : ℕ} (M : Fin (d + 1) → FGComoduleCat.{u, v, u} R C) :
+    tensorFin R C (d + 1) M =
+      tensor R C (M 0) (tensorFin R C d (fun i ↦ M i.succ)) := by rfl
+
 /-- The pure tensor determined by a finite family of vectors. Its empty value is one in
 the trivial tensor unit. -/
-@[expose]
 noncomputable def tensorFinVector : {d : ℕ} →
     (M : Fin d → FGComoduleCat.{u, v, u} R C) →
     ((i : Fin d) → M i) → tensorFin R C d M
   | 0, _, _ => (1 : R)
   | d + 1, M, m => m 0 ⊗ₜ[R] tensorFinVector (fun i : Fin d ↦ M i.succ) (fun i ↦ m i.succ)
+
+/-- The empty pure tensor is one in the trivial tensor unit. -/
+@[simp]
+theorem tensorFinVector_zero (M : Fin 0 → FGComoduleCat.{u, v, u} R C)
+    (m : (i : Fin 0) → M i) : tensorFinVector R C M m = (1 : R) := by rfl
+
+/-- A nonempty pure tensor separates its first vector. -/
+@[simp]
+theorem tensorFinVector_succ {d : ℕ} (M : Fin (d + 1) → FGComoduleCat.{u, v, u} R C)
+    (m : (i : Fin (d + 1)) → M i) :
+    tensorFinVector R C M m =
+      m 0 ⊗ₜ[R] tensorFinVector R C (fun i : Fin d ↦ M i.succ) (fun i ↦ m i.succ) := by rfl
 
 /-- A pure tensor of a finite family of unimodular vectors is unimodular, including the
 empty pure tensor. -/
