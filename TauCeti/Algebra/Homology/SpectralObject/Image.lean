@@ -197,6 +197,7 @@ lemma spectralSequencePageXIsoImage_hom (r : ℤ) (hr : r₀ ≤ r) (pq : κ)
 and `i₀ ≤ i₁ ≤ i₂ ≤ i₃` those of `pq'` on page `r`. The differential from `pq` to `pq'` sends the
 element represented by `x ∈ H^n(i₂ ≤ i₄)` to the element represented by the image
 `δ x ∈ H^{n+1}(i₀ ≤ i₂)` of `x` under the connecting map of `X`. -/
+@[reassoc]
 lemma toE_spectralSequence_page_d (r : ℤ) (hr : r₀ ≤ r) (pq pq' : κ) (hpq : (c r).Rel pq pq')
     {i₀ i₁ i₂ i₃ i₄ i₅ : ι} (f₁ : i₀ ⟶ i₁) (f₂ : i₁ ⟶ i₂) (f₃ : i₂ ⟶ i₃)
     (f₄ : i₃ ⟶ i₄) (f₅ : i₄ ⟶ i₅) (f₁₂ : i₀ ⟶ i₂) (f₃₄ : i₂ ⟶ i₄)
