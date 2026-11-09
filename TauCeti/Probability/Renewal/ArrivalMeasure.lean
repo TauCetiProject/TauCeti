@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Renewal.Exponential
 public import TauCeti.Probability.Renewal.Measure
-public import TauCeti.Probability.PointProcess.OccurrenceTime
+public import TauCeti.Probability.PointProcess.OccurrenceTime.Basic
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 

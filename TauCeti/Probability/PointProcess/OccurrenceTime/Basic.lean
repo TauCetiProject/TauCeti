@@ -98,6 +98,20 @@ theorem occurrenceTime_le_iff (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ]
     (h.trans_lt (by exact_mod_cast hs))
   exact hu.trans (measure_mono (Iic_subset_Iic.2 (by exact_mod_cast hus.le)))
 
+/-- Local finiteness prevents an accumulation of occurrence times at a finite time.
+Finite configurations are included: their missing occurrences have time infinity. -/
+theorem tendsto_occurrenceTime (μ : Measure ℝ≥0) [IsLocallyFiniteMeasure μ] :
+    Tendsto μ.occurrenceTime atTop (𝓝 ∞) := by
+  apply ENNReal.tendsto_nhds_top
+  intro k
+  obtain ⟨n, hn⟩ := ENNReal.exists_nat_gt (measure_Iic_lt_top (μ := μ) (a := (k : ℝ≥0))).ne
+  filter_upwards [eventually_ge_atTop n] with m hm
+  apply lt_of_not_ge
+  intro hle
+  have hmass := (μ.occurrenceTime_le_iff m (k : ℝ≥0)).1 (by exact_mod_cast hle)
+  have hnm : (n : ℝ≥0∞) ≤ m := by exact_mod_cast hm
+  exact not_le_of_gt (hn.trans_le (hnm.trans (le_add_of_nonneg_right zero_le_one))) hmass
+
 /-- Restricting to a closed observation window retains exactly the occurrences in
 that window; all subsequent occurrence times become infinite. -/
 @[simp]
