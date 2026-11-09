@@ -49,7 +49,7 @@ one zero divisor (`TauCeti.HasZeroDivisor.unique`), its points are the zeros of 
 multiplication by a continuous nowhere-vanishing function does not change it, and under the
 degree-`m` end framing it has degree `m` (`TauCeti.HasZeroDivisor.card_eq`). Precomposing `f`
 with a translation or a nonzero scaling moves the divisor accordingly
-(`TauCeti.HasZeroDivisor.comp_add`, `TauCeti.HasZeroDivisor.comp_const_mul`).
+(`TauCeti.HasZeroDivisor.comp_add_const`, `TauCeti.HasZeroDivisor.comp_const_mul`).
 -/
 
 public section
@@ -333,7 +333,7 @@ theorem of_eq_mul (hD : HasZeroDivisor f D) {u : ℂ → ℂ} (hu : Continuous u
   ring
 
 /-- **Translation law.** Precomposing with `w ↦ w + a` moves the zero divisor by `-a`. -/
-theorem comp_add (hD : HasZeroDivisor f D) (a : ℂ) :
+theorem comp_add_const (hD : HasZeroDivisor f D) (a : ℂ) :
     HasZeroDivisor (fun w ↦ f (w + a)) (D.map (· - a)) := fun z ↦ by
   obtain ⟨v, hv, hv₀, hfv⟩ := hD (z + a)
   have hcount : (D.map (· - a)).count z = D.count (z + a) := by

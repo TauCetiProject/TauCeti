@@ -82,7 +82,7 @@ variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {D : Multiset ℂ}
 theorem hasZeroDivisor_sectionValue_translateField (hD : HasZeroDivisor (sectionValue x) D)
     (a : ℂ) : HasZeroDivisor (sectionValue (translateField a x)) (D.map (· - a)) := by
   rw [funext (sectionValue_translateField a x)]
-  exact hD.comp_add a
+  exact hD.comp_add_const a
 
 /-- **Rotation law.** The pullback by `z ↦ u z` rotates the zero divisor of the section by
 `u⁻¹`. -/
