@@ -13,10 +13,10 @@ import TauCeti.LinearAlgebra.BilinearForm.Isometry
 # Restricting an orthogonal map to an invariant submodule
 
 An orthogonal automorphism `g` of a quadratic module that maps a submodule `W` onto itself
-restricts to an orthogonal automorphism of `W` for the restricted form. Over a field in which `2`
-is invertible, the orthogonal complement of an invariant submodule is again invariant, so `g` also
-restricts to `W^⊥`; the case `W = K ∙ a` with `g a = a` is the restriction step of the dimension
-induction in the Cartan--Dieudonné theorem.
+restricts to an orthogonal automorphism of `W` for the restricted form. Over a commutative ring in
+which `2` is invertible, the orthogonal complement of an invariant submodule is again invariant, so
+`g` also restricts to `W^⊥`; the case `W = K ∙ a` with `g a = a` is the restriction step of the
+dimension induction in the Cartan--Dieudonné theorem.
 
 ## Main definitions
 
@@ -87,8 +87,8 @@ end Restrict
 
 section Orthogonal
 
-variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V] [Invertible (2 : K)]
-  {Q : QuadraticForm K V} {g : V ≃ₗ[K] V}
+variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M] [Invertible (2 : R)]
+  {Q : QuadraticForm R M} {g : M ≃ₗ[R] M}
 
 /-- An orthogonal map is an isometry of the associated bilinear form. -/
 theorem isIsometry_associated_of_mem_orthogonalGroup (hg : g ∈ orthogonalGroup Q) :
@@ -98,7 +98,7 @@ theorem isIsometry_associated_of_mem_orthogonalGroup (hg : g ∈ orthogonalGroup
       map_app_of_mem_orthogonalGroup hg]
 
 /-- An orthogonal map mapping `W` onto itself maps the orthogonal complement of `W` onto itself. -/
-theorem map_orthogonal_of_mem_orthogonalGroup (hg : g ∈ orthogonalGroup Q) {W : Submodule K V}
+theorem map_orthogonal_of_mem_orthogonalGroup (hg : g ∈ orthogonalGroup Q) {W : Submodule R M}
     (hW : W.map g.toLinearMap = W) :
     (LinearMap.BilinForm.orthogonal (QuadraticMap.associated Q) W).map g.toLinearMap =
       LinearMap.BilinForm.orthogonal (QuadraticMap.associated Q) W :=

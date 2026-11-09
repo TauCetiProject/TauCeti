@@ -56,6 +56,19 @@ private noncomputable def reflectionWord (Q : QuadraticForm K V)
     (l : List (AnisotropicVector Q)) : QuadraticMap.orthogonalGroup Q :=
   (l.map (anisotropicReflection Q)).prod
 
+private theorem reflectionWord_cons (Q : QuadraticForm K V) (a : AnisotropicVector Q)
+    (l : List (AnisotropicVector Q)) :
+    reflectionWord Q (a :: l) = anisotropicReflection Q a * reflectionWord Q l := by
+  simp [reflectionWord]
+
+private theorem coe_reflectionWord_cons_apply (Q : QuadraticForm K V) (a : AnisotropicVector Q)
+    (l : List (AnisotropicVector Q)) (y : V) :
+    ((reflectionWord Q (a :: l) : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y =
+      ((anisotropicReflection Q a : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V)
+        (((reflectionWord Q l : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y) := by
+  rw [reflectionWord_cons]
+  rfl
+
 /-- The determinant of a product of orthogonal reflections is the sign determined by the number
 of factors. -/
 theorem det_list_prod_of_reflectionOrthogonal [FiniteDimensional K V]
@@ -126,16 +139,16 @@ private theorem reflectionWord_restrict_apply (Q : QuadraticForm K V)
   induction l with
   | nil => simp [reflectionWord]
   | cons x l ih =>
-      simp only [List.map_cons, reflectionWord, List.prod_cons, Subgroup.coe_mul,
-        mul_apply_eq_comp]
-      -- Multiplication in the orthogonal subgroup evaluates by composing the underlying linear
-      -- equivalences; make that coercion explicit before applying the pointwise induction step.
-      change ((anisotropicReflection Q (anisotropicVectorOfRestrict Q U x) :
-        QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V)
-          (((reflectionWord Q (l.map (anisotropicVectorOfRestrict Q U)) :
-            QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y) = _
-      rw [ih]
+      rw [List.map_cons, coe_reflectionWord_cons_apply Q, ih,
+        coe_reflectionWord_cons_apply (Q.restrict U)]
       exact anisotropicReflection_restrict_apply Q U x _
+
+/-- A reflection word is `g` once the word of the remaining reflections is the reflection in the
+head times `g`. -/
+private theorem reflectionWord_cons_eq_of_eq (Q : QuadraticForm K V) (a : AnisotropicVector Q)
+    {l : List (AnisotropicVector Q)} {g : QuadraticMap.orthogonalGroup Q}
+    (h : reflectionWord Q l = anisotropicReflection Q a * g) : reflectionWord Q (a :: l) = g := by
+  rw [reflectionWord_cons, h, ← mul_assoc, anisotropicReflection_mul_self, one_mul]
 
 private theorem finrank_ne_one_of_exceptional
     [FiniteDimensional K V] [Invertible (2 : K)]
@@ -359,14 +372,7 @@ private theorem reflectionWord_restrict_apply_of_isOrtho (Q : QuadraticForm K V)
   induction l with
   | nil => simp [reflectionWord]
   | cons x l ih =>
-      simp only [List.map_cons, reflectionWord, List.prod_cons, Subgroup.coe_mul,
-        mul_apply_eq_comp]
-      -- Expose subgroup multiplication as composition of the underlying equivalences, as in
-      -- `reflectionWord_restrict_apply`.
-      change ((anisotropicReflection Q (anisotropicVectorOfRestrict Q U x) :
-        QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V)
-          (((reflectionWord Q (l.map (anisotropicVectorOfRestrict Q U)) :
-            QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) v) = v
+      rw [List.map_cons, coe_reflectionWord_cons_apply]
       rw [ih]
       exact anisotropicReflection_apply_of_isOrtho Q _ v (hv _ x.1.2)
 
@@ -443,10 +449,7 @@ private theorem exists_reflectionWord_of_good {n : ℕ} (Q : QuadraticForm K V)
         (QuadraticMap.map_app_of_mem_orthogonalGroup g.2 a)
     obtain ⟨l, hllen, hlprod⟩ := fixed (r * g) a hrfix
     refine ⟨d :: l, by simp only [List.length_cons]; omega, ?_⟩
-    -- Unfolding the cons word exposes the same ordered subgroup product as `hlprod`.
-    change r * reflectionWord Q l = g
-    rw [hlprod, ← mul_assoc, show r * r = 1 from anisotropicReflection_mul_self Q d,
-      one_mul]
+    exact reflectionWord_cons_eq_of_eq Q d hlprod
 
 /-- The exceptional case of the induction step: when every anisotropic vector is moved by an
 isotropic displacement, `dim V` is even and `det g = 1`. Precomposing with any reflection `r`
@@ -487,9 +490,7 @@ private theorem exists_reflectionWord_of_exceptional
     obtain ⟨j, hj⟩ := hodd
     simp only [List.length_cons]
     omega
-  · -- The cons reflection word is the subgroup product `r * reflectionWord Q l`.
-    change r * reflectionWord Q l = g
-    rw [hlprod, ← mul_assoc, show r * r = 1 from anisotropicReflection_mul_self Q a, one_mul]
+  · exact reflectionWord_cons_eq_of_eq Q a hlprod
 
 private theorem exists_reflectionWord_of_finrank_eq
     [FiniteDimensional K V] [Invertible (2 : K)]
