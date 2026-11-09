@@ -207,15 +207,10 @@ theorem integral_fderiv_apply_preimage_closedBall (ω : SymplecticForm V) {u : �
     (hu (equivRealProdCLM z) (by rwa [mem_preimage, ContinuousLinearEquiv.symm_apply_apply])).comp
       z equivRealProdCLM.contDiff.contDiffAt
   -- Pass to the complex coordinate.
-  have h₁ : equivRealProdCLM 1 = stdComplexLineReal := by
-    rw [← equivRealProdCLM_symm_stdComplexLineReal, ContinuousLinearEquiv.apply_symm_apply]
-  have hI : equivRealProdCLM I = stdComplexLineImag := by
-    rw [← equivRealProdCLM_symm_stdComplexLineImag, ContinuousLinearEquiv.apply_symm_apply]
   have hcoord : ∫ w in Metric.closedBall z₀ b, ω (fderiv ℝ v w 1) (fderiv ℝ v w I) =
       ∫ z in equivRealProdCLM.symm ⁻¹' Metric.closedBall z₀ b,
         ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
-    simp only [v, ContinuousLinearEquiv.comp_right_fderiv, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe, h₁, hI]
+    simp only [v, fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I]
     have hpre : measurableEquivRealProd ⁻¹'
         (equivRealProdCLM.symm ⁻¹' Metric.closedBall z₀ b) = Metric.closedBall z₀ b := by
       ext w
