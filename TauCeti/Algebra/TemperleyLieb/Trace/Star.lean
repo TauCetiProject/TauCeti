@@ -18,11 +18,10 @@ sesquilinear trace form `H(x, y) = tr (star x * y)` is Hermitian, and strand inc
 this form by the loop parameter. This holds over any commutative star semiring, without positivity
 or invertibility assumptions on the parameter.
 
-The adjoint identity follows from Markov uniqueness: conjugating both the input and output of
-the trace gives another Markov family. Together with
-`LinearMap.star_mem_traceRadical_iff` and `LinearMap.ker_traceSesqForm`, it shows that the trace
-radical is star-stable and is precisely the kernel of the Hermitian form. Positivity and the
-identification of that kernel with the zero-length vectors are separate questions.
+Together with `LinearMap.star_mem_traceRadical_iff` and `LinearMap.ker_traceSesqForm`, the adjoint
+identity shows that the trace radical is star-stable and is precisely the kernel of the Hermitian
+form. Positivity and the identification of that kernel with the zero-length vectors are separate
+questions.
 
 ## References
 
@@ -46,6 +45,8 @@ In particular, over `ℂ` with real loop parameter, the adjoint conjugates the t
 @[simp]
 theorem map_star (htr : IsMarkovTrace R δ tr) (n : ℕ) (x : TemperleyLieb R δ n) :
     tr n (star x) = star (tr n x) := by
+  -- Conjugating both the input and output gives another Markov family, so Markov uniqueness
+  -- yields the adjoint identity.
   let tr' (n : ℕ) := (star (WithConv.toConv (tr n))).ofConv
   have happly (n : ℕ) (x : TemperleyLieb R δ n) : tr' n x = star (tr n (star x)) := by
     simp [tr']
