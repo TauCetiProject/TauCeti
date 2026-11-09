@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Tight
+public import Mathlib.Topology.Metrizable.CompletelyMetrizable
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.Analysis.SpecificLimits.Basic
-public import Mathlib.Topology.Metrizable.CompletelyMetrizable
 
 /-!
 # Basic tightness criteria for measures
@@ -18,18 +18,17 @@ complete second-countable pseudo-metrizable space is tight, and `IsTightMeasureS
 that tightness survives a binary union. Together they give tightness of any *finite* set of
 finite measures, which is the form the Prokhorov extraction arguments need in order to discard
 the finitely many exceptional members of a family for which a uniform tail bound is unavailable.
-For real probability measures, a uniform bound on the second moment also gives tightness by
-Markov's inequality.
+For finite measures on the real line, uniformly bounded second moments also imply tightness.
 
 ## Main declarations
 
 * `TauCeti.isTightMeasureSet_of_finite`: a finite set of finite measures is tight.
 * `TauCeti.isTightMeasureSet_range_of_finite`: a family of finite measures indexed by a finite type
   has tight range.
-* `TauCeti.isTightProbabilityMeasureSet_of_integral_sq_le`: a set of real probability measures
-  with uniformly bounded second moments is tight.
-* `TauCeti.isTightMeasureSet_image_map_of_eventually_eq`: images under a map of finite measures that
-  are eventually equal to a fixed finite measure form a tight family.
+* `TauCeti.isTightMeasureSet_range_of_eventually_eq`: a family of finite measures that is equal to
+  a fixed measure off finitely many indices has tight range.
+* `TauCeti.isTightMeasureSet_of_integral_sq_le`: finite real measures with uniformly bounded
+  second moments form a tight set.
 
 ## References
 
@@ -39,7 +38,7 @@ Markov's inequality.
 
 public section
 
-open MeasureTheory Set Filter
+open Filter MeasureTheory Set
 open scoped Topology
 
 namespace TauCeti
@@ -56,21 +55,29 @@ theorem isTightMeasureSet_of_finite {S : Set (Measure α)} (hS : S.Finite)
   induction S, hS using Set.Finite.induction_on with
   | empty => exact (isTightMeasureSet_singleton (μ := (0 : Measure α))).subset (empty_subset _)
   | @insert ν S _ _ ih =>
-      have : IsFiniteMeasure ν := hfin ν (mem_insert _ _)
-      rw [insert_eq]
-      exact isTightMeasureSet_singleton.union (ih fun ρ hρ => hfin ρ (mem_insert_of_mem _ hρ))
+      have := hfin ν (mem_insert _ _)
+      exact isTightMeasureSet_singleton.union (ih fun ρ hρ ↦ hfin ρ (mem_insert_of_mem _ hρ))
 
 /-- **A family of finite measures indexed by a finite type has tight range.** -/
 theorem isTightMeasureSet_range_of_finite {ι : Type*} [Finite ι] (μ : ι → Measure α)
-    (hfin : ∀ i, IsFiniteMeasure (μ i)) : IsTightMeasureSet (range μ) :=
-  isTightMeasureSet_of_finite (finite_range μ) (by rintro ν ⟨i, rfl⟩; exact hfin i)
+    [∀ i, IsFiniteMeasure (μ i)] : IsTightMeasureSet (range μ) :=
+  isTightMeasureSet_of_finite (finite_range μ) (by rintro _ ⟨i, rfl⟩; infer_instance)
 
-/-- A set of probability measures on `ℝ` with uniformly bounded second moment is tight. -/
-theorem isTightProbabilityMeasureSet_of_integral_sq_le
-    {S : Set (ProbabilityMeasure ℝ)} {B : ℝ}
-    (hS : ∀ ρ ∈ S, Integrable (fun x : ℝ => x ^ 2) (ρ : Measure ℝ) ∧
-      ∫ x, x ^ 2 ∂(ρ : Measure ℝ) ≤ B) :
-    IsTightMeasureSet ((fun ρ : ProbabilityMeasure ℝ => (ρ : Measure ℝ)) '' S) := by
+/-- **Eventually constant families of finite measures are tight.** A family of finite measures
+that equals a fixed measure `ν` off finitely many indices has finite range, so it is tight. No
+finiteness assumption on `ν` is needed: `ν` lies in the range only if it is one of the `μ i`. -/
+theorem isTightMeasureSet_range_of_eventually_eq {ι : Type*} {μ : ι → Measure α}
+    [∀ i, IsFiniteMeasure (μ i)] {ν : Measure α} (h : ∀ᶠ i in cofinite, μ i = ν) :
+    IsTightMeasureSet (range μ) := by
+  refine isTightMeasureSet_of_finite (((eventually_cofinite.1 h).image μ).insert ν |>.subset ?_)
+    (by rintro _ ⟨i, rfl⟩; infer_instance)
+  rintro _ ⟨i, rfl⟩
+  exact (em (μ i = ν)).imp id fun hi ↦ ⟨i, hi, rfl⟩
+
+/-- A set of finite measures on `ℝ` with uniformly bounded second moment is tight. -/
+theorem isTightMeasureSet_of_integral_sq_le {S : Set (Measure ℝ)} {B : ℝ}
+    (hS : ∀ ρ ∈ S, IsFiniteMeasure ρ ∧ Integrable (fun x : ℝ => x ^ 2) ρ ∧
+      ∫ x, x ^ 2 ∂ρ ≤ B) : IsTightMeasureSet S := by
   refine isTightMeasureSet_iff_exists_isCompact_measure_compl_le.2 fun ε hε => ?_
   rcases eq_or_ne ε ⊤ with rfl | hεtop
   · exact ⟨∅, isCompact_empty, fun _ _ => le_top⟩
@@ -79,41 +86,21 @@ theorem isTightProbabilityMeasureSet_of_integral_sq_le
     tendsto_const_nhds.div_atTop (tendsto_pow_atTop two_ne_zero)
   obtain ⟨R, hR1, hR0⟩ := ((hlim.eventually (gt_mem_nhds hε')).and (eventually_gt_atTop 0)).exists
   refine ⟨Icc (-R) R, isCompact_Icc, fun ρ hρ => ?_⟩
-  obtain ⟨ρ, hρ, rfl⟩ := hρ
-  obtain ⟨hint, hB⟩ := hS ρ hρ
+  obtain ⟨hfin, hint, hB⟩ := hS ρ hρ
+  have : IsFiniteMeasure ρ := hfin
   have hmarkov := mul_meas_ge_le_integral_of_nonneg (μ := ρ) (f := fun x : ℝ => x ^ 2)
     (ae_of_all _ fun x => sq_nonneg x) hint (R ^ 2)
   have hsub : (Icc (-R) R)ᶜ ⊆ {x : ℝ | R ^ 2 ≤ x ^ 2} := fun x hx => by
     simp only [mem_compl_iff, mem_Icc, not_and_or, not_le] at hx
     simp only [mem_ofPred_eq]
     rcases hx with hx | hx <;> nlinarith
-  have hreal : (ρ : Measure ℝ).real (Icc (-R) R)ᶜ ≤ B / R ^ 2 := by
+  have hreal : ρ.real (Icc (-R) R)ᶜ ≤ B / R ^ 2 := by
     rw [le_div_iff₀ (by positivity)]
-    nlinarith [measureReal_mono (μ := (ρ : Measure ℝ)) hsub,
-      measureReal_nonneg (μ := (ρ : Measure ℝ)) (s := (Icc (-R) R)ᶜ),
-      sq_nonneg R]
+    nlinarith [measureReal_mono (μ := ρ) hsub,
+      measureReal_nonneg (μ := ρ) (s := (Icc (-R) R)ᶜ), sq_nonneg R]
   refine (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) hε'.le).2 ?_ |>.trans_eq
     (ENNReal.ofReal_toReal hεtop)
   exact hreal.trans hR1.le
-
-/-- **Eventually constant images of finite measures are tight.** If the images of finite measures
-`η n` under a map `f` are eventually equal to a finite measure `ν`, then the family of images is
-tight: it is a finite set together with the constant tail. -/
-theorem isTightMeasureSet_image_map_of_eventually_eq {Y : Type*} [MeasurableSpace Y]
-    (η : ℕ → Measure Y) [∀ n, IsFiniteMeasure (η n)] (f : Y → α) (ν : Measure α)
-    [IsFiniteMeasure ν] (m : ℕ) (h : ∀ n ≥ m, (η n).map f = ν) :
-    IsTightMeasureSet ((fun P : Measure Y ↦ P.map f) '' range η) := by
-  refine (isTightMeasureSet_of_finite (((finite_Iio m).image fun n ↦ (η n).map f).insert ν)
-    ?_).subset ?_
-  · rintro ρ (rfl | ⟨n, -, rfl⟩)
-    · infer_instance
-    · infer_instance
-  · rintro _ ⟨_, ⟨n, rfl⟩, rfl⟩
-    rcases lt_or_ge n m with hn | hn
-    · exact mem_insert_of_mem _ ⟨n, hn, rfl⟩
-    · dsimp only
-      rw [h n hn]
-      exact mem_insert _ _
 
 end TauCeti
 

@@ -73,7 +73,7 @@ theorem integral_eval_eq_sum_range {q : ℝ[X]}
 
 /-- If every monomial is eventually integrable against `μᵢ`, then eventually all monomials up to
 the degree of a given polynomial are integrable. -/
-theorem eventually_forall_le_natDegree_integrable {ι : Type*} {l : Filter ι}
+private theorem eventually_forall_le_natDegree_integrable {ι : Type*} {l : Filter ι}
     {μs : ι → Measure ℝ}
     (hμs : ∀ n, ∀ᶠ i in l, Integrable (fun x : ℝ => x ^ n) (μs i)) (p : ℝ[X]) :
     ∀ᶠ i in l, ∀ k ≤ p.natDegree, Integrable (fun x : ℝ => x ^ k) (μs i) :=

@@ -172,7 +172,8 @@ theorem tendsto_of_tendsto_integral_pow {μs : ι → ProbabilityMeasure ℝ}
   have hμ := integrable_pow_of_ae_abs_le hae
   have hpoly := tendsto_integral_eval_of_tendsto_integral_pow hμs hμ h
   have hpolyμs (p : ℝ[X]) : ∀ᶠ i in l, Integrable (fun x => p.eval x) (μs i : Measure ℝ) := by
-    filter_upwards [eventually_forall_le_natDegree_integrable hμs p] with i hi
+    filter_upwards [(eventually_all_finite (Set.finite_Iic p.natDegree)).2
+      (fun n _ => hμs n)] with i hi
     exact integrable_eval_of_forall_le_natDegree hi
   rw [ProbabilityMeasure.tendsto_iff_forall_integral_tendsto]
   intro f

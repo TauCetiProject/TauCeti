@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Tight
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Add
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
-public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Cluster
+public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import TauCeti.MeasureTheory.Measure.Tight.Basic
 import TauCeti.Algebra.Order.Group.MinMax
 
@@ -22,8 +22,8 @@ converge to those of a probability measure `μ`, and `μ` is determined by its m
 probability measures with all moments, then `μₙ → μ` weakly (the method of moments).
 
 The proof is the standard one: bounded moments give tightness, Prokhorov's theorem gives compactness
-of the sequence, and uniform integrability of the monomials (from the bounds on the higher moments)
-identifies the moments of every weak limit point with those of `μ`.
+of an eventual family, and uniform integrability of the monomials (from the bounds on higher
+moments) identifies the moments of every weak limit point with those of `μ`.
 
 ## Main results
 
@@ -152,29 +152,34 @@ private theorem tendsto_integral_clampPow (ν : Measure ℝ) (k : ℕ)
   exact pow_le_pow_left₀ (abs_nonneg _)
     (TauCeti.abs_max_min_le_abs (NNReal.coe_nonneg _) x) k
 
-/-- A weak cluster point of a sequence of probability measures with converging moments has
+/-- A weak cluster point of probability measures with converging moments has
 finite moments, equal to the limits. -/
 theorem _root_.MeasureTheory.ProbabilityMeasure.integrable_pow_and_integral_pow_eq_of_mapClusterPt
-    {μn : ℕ → ProbabilityMeasure ℝ} {ν : ProbabilityMeasure ℝ}
-    {m : ℕ → ℝ} (hint : ∀ k, ∀ᶠ n in atTop,
+    {ι : Type*} {l : Filter ι} [l.NeBot] {μn : ι → ProbabilityMeasure ℝ}
+    {ν : ProbabilityMeasure ℝ}
+    {m : ℕ → ℝ} (hint : ∀ k, ∀ᶠ n in l,
       Integrable (fun x : ℝ => x ^ k) (μn n : Measure ℝ))
-    (hlim : ∀ k, Tendsto (fun n => ∫ x, x ^ k ∂(μn n : Measure ℝ)) atTop (𝓝 (m k)))
-    (hν : MapClusterPt ν atTop μn) :
+    (hlim : ∀ k, Tendsto (fun n => ∫ x, x ^ k ∂(μn n : Measure ℝ)) l (𝓝 (m k)))
+    (hν : MapClusterPt ν l μn) :
     (∀ k, Integrable (fun x : ℝ => x ^ k) (ν : Measure ℝ)) ∧
       ∀ k, ∫ x, x ^ k ∂(ν : Measure ℝ) = m k := by
-  -- The convergent even moments give uniform bounds along the sequence.
-  choose B hB using fun k => (hlim (2 * k)).bddAbove_range
-  have hB' : ∀ k n, ∫ x, x ^ (2 * k) ∂(μn n : Measure ℝ) ≤ B k :=
-    fun k n => hB k ⟨n, rfl⟩
+  let B : ℕ → ℝ := fun k => m (2 * k) + 1
+  have hB : ∀ k, ∀ᶠ n in l, ∫ x, x ^ (2 * k) ∂(μn n : Measure ℝ) ≤ B k := by
+    intro k
+    exact ((hlim (2 * k)).eventually (Iio_mem_nhds (by dsimp [B]; linarith))).mono
+      fun _ h => h.le
   -- Bounded truncations transfer these bounds to the cluster point; Fatou then gives its even
   -- moments, and domination by `1 + x^(2k)` gives all remaining moments.
   have htrunc : ∀ k (R : ℝ≥0), ∫ x, clampPow R (2 * k) x ∂(ν : Measure ℝ) ≤ B k := by
     intro k R
-    refine MeasureTheory.ProbabilityMeasure.integral_mem_of_mapClusterPt hν
-      (clampPow R (2 * k) : ℝ →ᵇ ℝ) (isClosed_Iic (a := B k) ) ?_
-    filter_upwards [hint (2 * k)] with n hn
+    refine (isClosed_Iic (a := B k)).mem_of_mapClusterPt
+      (hν.continuousAt_comp
+        (f := fun p : ProbabilityMeasure ℝ => ∫ x, clampPow R (2 * k) x ∂(p : Measure ℝ))
+        (ProbabilityMeasure.continuous_integral_boundedContinuousFunction
+          (clampPow R (2 * k))).continuousAt) ?_
+    filter_upwards [hint (2 * k), hB k] with n hn hb
     exact (integral_mono (BoundedContinuousFunction.integrable _ _) hn
-      (clampPow_two_mul_le R k)).trans (hB' k n)
+      (clampPow_two_mul_le R k)).trans hb
   have hint2 := integrable_pow_two_mul_of_clampPow_integral_le htrunc
   have hint1 : ∀ k, Integrable (fun x : ℝ => x ^ k) (ν : Measure ℝ) := by
     intro k
@@ -199,18 +204,20 @@ theorem _root_.MeasureTheory.ProbabilityMeasure.integrable_pow_and_integral_pow_
       |∫ x, clampPow (N : ℝ≥0) k x ∂(ν : Measure ℝ) - m k| ≤ 2 * (B k / (N : ℝ) ^ k) := by
     intro N hN
     refine le_of_forall_pos_le_add fun δ hδ => ?_
-    have hmem := MeasureTheory.ProbabilityMeasure.integral_mem_of_mapClusterPt hν
-      (clampPow (N : ℝ≥0) k)
-      (Metric.isClosed_closedBall (x := m k) (ε := 2 * (B k / (N : ℝ) ^ k) + δ))
+    have hmem := (Metric.isClosed_closedBall
+      (x := m k) (ε := 2 * (B k / (N : ℝ) ^ k) + δ)).mem_of_mapClusterPt
+      (hν.continuousAt_comp
+        (ProbabilityMeasure.continuous_integral_boundedContinuousFunction
+          (clampPow (N : ℝ≥0) k)).continuousAt)
       (by
-        filter_upwards [hint k, hint (2 * k),
-          Metric.tendsto_nhds.1 (hlim k) δ hδ] with n hk h2k hn
+        filter_upwards [hint k, hint (2 * k), hB k,
+          Metric.tendsto_nhds.1 (hlim k) δ hδ] with n hk h2k hb hn
         rw [Metric.mem_closedBall, Real.dist_eq]
         have h1 := abs_integral_pow_sub_integral_clampPow_le (μn n : Measure ℝ)
           (R := (N : ℝ≥0)) (by exact_mod_cast hN) hk h2k
         have h2 : (∫ x, x ^ (2 * k) ∂(μn n : Measure ℝ)) / (N : ℝ) ^ k ≤
             B k / (N : ℝ) ^ k :=
-          div_le_div_of_nonneg_right (hB' k n) (by positivity)
+          div_le_div_of_nonneg_right hb (by positivity)
         rw [Real.dist_eq] at hn
         rw [abs_sub_comm] at h1
         rw [NNReal.coe_natCast] at h1
@@ -251,44 +258,35 @@ open TauCeti.MethodOfMoments
 eventually finite and converge to those of `μ`. If `μ` is determined by its moments among
 probability measures with finite moments, then `μn` converges weakly to `μ`. -/
 theorem tendsto_of_tendsto_integral_pow_of_determined_moments
-    {μn : ℕ → ProbabilityMeasure ℝ}
+    {ι : Type*} {l : Filter ι} {μn : ι → ProbabilityMeasure ℝ}
     {μ : ProbabilityMeasure ℝ}
-    (hint : ∀ k, ∀ᶠ n in atTop, Integrable (fun x : ℝ => x ^ k) (μn n : Measure ℝ))
-    (hlim : ∀ k, Tendsto (fun n => ∫ x, x ^ k ∂(μn n : Measure ℝ)) atTop
+    (hint : ∀ k, ∀ᶠ n in l, Integrable (fun x : ℝ => x ^ k) (μn n : Measure ℝ))
+    (hlim : ∀ k, Tendsto (fun n => ∫ x, x ^ k ∂(μn n : Measure ℝ)) l
       (𝓝 (∫ x, x ^ k ∂(μ : Measure ℝ))))
     (hdet : ∀ ν : ProbabilityMeasure ℝ, (∀ k, Integrable (fun x : ℝ => x ^ k) (ν : Measure ℝ)) →
       (∀ k, ∫ x, x ^ k ∂(ν : Measure ℝ) = ∫ x, x ^ k ∂(μ : Measure ℝ)) → ν = μ) :
-    Tendsto μn atTop (𝓝 μ) := by
-  obtain ⟨N, hN⟩ := Filter.eventually_atTop.1 (hint 2)
-  let μtail : ℕ → ProbabilityMeasure ℝ := fun n => μn (n + N)
-  have hint_tail : ∀ k, ∀ᶠ n in atTop,
-      Integrable (fun x : ℝ => x ^ k) (μtail n : Measure ℝ) := by
-    intro k
-    obtain ⟨Nk, hNk⟩ := Filter.eventually_atTop.1 (hint k)
-    filter_upwards [eventually_ge_atTop Nk] with n hn
-    exact hNk (n + N) (by omega)
-  have hint2_tail : ∀ n, Integrable (fun x : ℝ => x ^ 2) (μtail n : Measure ℝ) := by
-    intro n
-    exact hN (n + N) (by omega)
-  have hlim_tail : ∀ k, Tendsto (fun n => ∫ x, x ^ k ∂(μtail n : Measure ℝ)) atTop
-      (𝓝 (∫ x, x ^ k ∂(μ : Measure ℝ))) := by
-    intro k
-    -- Unfold the shifted sequence so the limit is a composition with addition by `N`.
-    change Tendsto
-      (fun n => (fun j => ∫ x, x ^ k ∂(μn j : Measure ℝ)) (n + N)) atTop _
-    exact (hlim k).comp (tendsto_add_atTop_nat N)
-  obtain ⟨B, hB⟩ := (hlim 2).bddAbove_range
+    Tendsto μn l (𝓝 μ) := by
+  by_cases hl : l = ⊥
+  · simp [hl]
+  have : l.NeBot := ⟨hl⟩
+  let B : ℝ := (∫ x, x ^ 2 ∂(μ : Measure ℝ)) + 1
+  let s : Set ι := {n | Integrable (fun x : ℝ => x ^ 2) (μn n : Measure ℝ) ∧
+    ∫ x, x ^ 2 ∂(μn n : Measure ℝ) ≤ B}
+  have hs : s ∈ l := by
+    filter_upwards [hint 2, (hlim 2).eventually
+      (Iio_mem_nhds (show (∫ x, x ^ 2 ∂(μ : Measure ℝ)) < B by dsimp [B]; linarith))] with n hi hb
+    exact ⟨hi, hb.le⟩
   have htight : IsTightMeasureSet
-      ((fun p : ProbabilityMeasure ℝ => (p : Measure ℝ)) '' Set.range μtail) := by
-    refine TauCeti.isTightProbabilityMeasureSet_of_integral_sq_le (B := B) ?_
-    rintro _ ⟨n, rfl⟩
-    exact ⟨hint2_tail n, hB ⟨n + N, rfl⟩⟩
-  have htail : Tendsto μtail atTop (𝓝 μ) := by
-    refine (isCompact_closure_of_isTightMeasureSet htight).tendsto_nhds_of_unique_mapClusterPt
-      (Eventually.of_forall fun n => subset_closure ⟨n, rfl⟩) fun ν _ hν => ?_
-    obtain ⟨h1, h2⟩ := integrable_pow_and_integral_pow_eq_of_mapClusterPt
-      hint_tail hlim_tail hν
-    exact hdet ν h1 h2
-  exact (tendsto_add_atTop_iff_nat N).mp (by simpa [μtail] using htail)
+      ((fun p : ProbabilityMeasure ℝ => (p : Measure ℝ)) '' (μn '' s)) := by
+    refine TauCeti.isTightMeasureSet_of_integral_sq_le (B := B) ?_
+    rintro _ ⟨_, ⟨n, hn, rfl⟩, rfl⟩
+    exact ⟨inferInstance, hn.1, hn.2⟩
+  have hevent : ∀ᶠ n in l, μn n ∈ closure (μn '' s) := by
+    filter_upwards [hs] with n hn
+    exact subset_closure ⟨n, hn, rfl⟩
+  refine (isCompact_closure_of_isTightMeasureSet htight).tendsto_nhds_of_unique_mapClusterPt
+    hevent fun ν _ hν => ?_
+  obtain ⟨h1, h2⟩ := integrable_pow_and_integral_pow_eq_of_mapClusterPt hint hlim hν
+  exact hdet ν h1 h2
 
 end MeasureTheory.ProbabilityMeasure

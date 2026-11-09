@@ -6,25 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Etale.Kaehler
-public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.LocalProperties.Submodule
 
 /-!
 # Localization of Kähler differentials
 
-Let `A` be a domain over a commutative ring `R`, with fraction field `F`. A rational
-differential in `Ω[F⁄R]` comes from `Ω[A⁄R]` if and only if it comes from the differentials
-of `A` localized at every maximal ideal. More generally, the image of the differentials of
-any localization of `A` is the localization of the image of `Ω[A⁄R]` in `Ω[F⁄R]`.
-This image equality and the maximal-local criterion hold for any commutative target
-algebra `F` receiving the localizations, not necessarily a fraction field.
+Let `A` be an `R`-algebra and `F` a commutative `A`-algebra. For a localization `B` of `A`
+receiving a compatible map to `F`, the image of `Ω[B⁄R]` in `Ω[F⁄R]` is the localization of
+the image of `Ω[A⁄R]`. Consequently, a differential in `Ω[F⁄R]` comes from `Ω[A⁄R]` if and
+only if it comes from the differentials of `A` localized at every maximal ideal. No
+domain, fraction-field, perfectness, finite type, or Noetherian hypothesis is needed.
 
-For a formally smooth domain `A` with fraction field `F`, the map `Ω[A⁄R] → Ω[F⁄R]` is
-injective. Thus regular differentials can be treated as rational differentials, and their
-regularity can be checked in the local rings. This is the affine-local input to identifying
-the differential sheaf of a smooth curve with a divisor sheaf in its rational differential space.
-
-No perfectness, finite type, or Noetherian hypothesis is needed for the local criterion.
+The main application is to a domain `A` with fraction field `F`: there the criterion says that
+regularity of a rational differential can be checked in the local rings of `A`. When
+`Ω[A⁄R]` is torsion-free, for instance when `A` is formally smooth over `R`, the map
+`Ω[A⁄R] → Ω[F⁄R]` is injective, so regular differentials can be treated as rational
+differentials. This injectivity is not restated here: it follows from Mathlib's
+`IsLocalizedModule.injective_iff_isRegular`, applied to the instance
+`KaehlerDifferential.isLocalizedModule_map`, together with
+`Module.Flat.isSMulRegular_of_nonZeroDivisors` in the formally smooth case.
 
 ## Main results
 
@@ -32,11 +32,6 @@ No perfectness, finite type, or Noetherian hypothesis is needed for the local cr
   localizes their image in the target differential module.
 * `TauCeti.KaehlerDifferential.mem_range_map_iff_forall_isMaximal`: membership in the global
   image can be checked using any family of maximal localizations.
-
-If `Ω[A⁄R]` is torsion-free and `F` is a fraction ring of `A`, the map
-`Ω[A⁄R] → Ω[F⁄R]` is injective. In this case, a rational differential has a unique
-preimage in `Ω[A⁄R]` exactly when it comes from the differentials of every maximal
-localization, using any compatible family of localization models.
 
 ## References
 
@@ -101,20 +96,17 @@ theorem mem_range_map_iff_forall_isMaximal (ω : Ω[F⁄R]) :
     ω ∈ (map R R A F).range ↔
       ∀ (P : Ideal A) [P.IsMaximal],
         ω ∈ ((map R R (Aₚ P) F).restrictScalars A).range := by
-  have hlocal : ∀ (P : Ideal A) [P.IsMaximal],
+  have hlocal (P : Ideal A) [P.IsMaximal] :
       IsLocalizedModule P.primeCompl (LinearMap.id : Ω[F⁄R] →ₗ[A] Ω[F⁄R]) :=
-    fun P _ ↦ isLocalizedModule_id P.primeCompl Ω[F⁄R] (Aₚ P)
-  constructor
-  · intro h P hP
-    rw [range_map_eq_localized₀_range R A (Aₚ P) F P.primeCompl]
+    isLocalizedModule_id P.primeCompl Ω[F⁄R] (Aₚ P)
+  refine ⟨fun h P _ ↦ ?_, fun h ↦ ?_⟩
+  · rw [range_map_eq_localized₀_range R A (Aₚ P) F P.primeCompl]
     exact ⟨ω, h, 1, by simp⟩
-  · intro h
-    -- Pass the localization family explicitly: instance synthesis does not recover this
+  · -- Pass the localization family explicitly: instance synthesis does not recover this
     -- higher-order family from `hlocal`. Name the module and map families to fix their roles.
     refine @Submodule.mem_of_localization_maximal (R := A) (M := Ω[F⁄R])
-      (Mₚ := fun _ _ ↦ Ω[F⁄R]) (f := fun _ _ ↦ LinearMap.id)
-      _ _ _ _ _ hlocal ω (map R R A F).range ?_
-    intro P hP
+      (Mₚ := fun _ _ ↦ Ω[F⁄R]) (f := fun _ _ ↦ LinearMap.id) _ _ _ _ _ hlocal ω _
+      fun P _ ↦ ?_
     rw [← range_map_eq_localized₀_range R A (Aₚ P) F P.primeCompl]
     exact h P
 
