@@ -16,11 +16,12 @@ For an initial variable `ξ` known at time zero, the explicit process
 
 `E[|S_t|^q] = E[|ξ|^q] exp ((q μ + q(q-1)σ²/2)t)`.
 
-Only the initial moment being estimated is assumed finite. Independence from the
-initial sigma algebra, not a higher initial moment and Hölder's inequality, gives
-integrability of the product. Signed and zero initial values and zero volatility
-are allowed. Real orders are allowed whenever the initial absolute power is
-integrable, with Mathlib's convention for real powers at zero.
+Integrability requires only finiteness of the initial moment being estimated.
+Independence from the initial sigma algebra, not a higher initial moment and
+Hölder's inequality, gives integrability of the product. The unconditional integral
+identity needs no moment hypothesis: nonintegrable functions have Bochner integral
+zero. Signed and zero initial values and zero volatility are allowed, as are real
+orders, with Mathlib's convention for real powers at zero.
 
 The exponentially normalized absolute powers are true martingales. Consequently
 the same growth factor gives conditional absolute moments between any two dates.
@@ -86,15 +87,18 @@ theorem integrable_abs_rpow_geometricBrownianMotion_random_initial
   exact (hW.integrable_initial_abs_rpow_mul_exponentialMartingale hξ hξq (q * σ) t).mul_const _
 
 /-- Exact absolute moments of geometric Brownian motion with an initial variable
-known at time zero. The only moment hypothesis is the initial absolute `q`th moment. -/
+known at time zero. No moment hypothesis is needed, using the Bochner integral's
+zero value for nonintegrable functions. -/
 theorem integral_abs_rpow_geometricBrownianMotion_random_initial
     (hW : IsFilteredPreBrownianReal ℱ W P) (hξ : Measurable[ℱ 0] ξ)
-    {q : ℝ} (hξq : Integrable (fun ω ↦ |ξ ω| ^ q) P) (μ σ : ℝ) (t : ℝ≥0) :
+    {q : ℝ} (μ σ : ℝ) (t : ℝ≥0) :
     ∫ ω, |geometricBrownianMotion (ξ ω) μ σ W t ω| ^ q ∂P =
       (∫ ω, |ξ ω| ^ q ∂P) * exp ((q * μ + q * (q - 1) * σ ^ 2 / 2) * t) := by
   have hindep := hW.indepFun_initial_abs_rpow_exponentialMartingale hξ q (q * σ) t
+  have hm := ((by fun_prop : Measurable fun x : ℝ ↦ |x| ^ q).comp
+    (hξ.mono (ℱ.le 0) le_rfl)).aestronglyMeasurable (μ := P)
   rw [abs_rpow_geometricBrownianMotion_random_initial_eq_mul, integral_mul_const,
-    hindep.integral_fun_mul_eq_mul_integral hξq.aestronglyMeasurable
+    hindep.integral_fun_mul_eq_mul_integral hm
       (hW.integrable_exponentialMartingale (q * σ) t).aestronglyMeasurable,
     hW.integral_exponentialMartingale, mul_one]
 
