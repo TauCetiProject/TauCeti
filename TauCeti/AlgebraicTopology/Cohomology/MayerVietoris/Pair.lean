@@ -599,22 +599,6 @@ variable {Y : TopCat.{w}} {A' B' C' D' : Set Y} (hCA' : C' ⊆ A') (hDB' : D' �
   (f : X ⟶ Y) (hfA : Set.MapsTo f A A') (hfB : Set.MapsTo f B B') (hfC : Set.MapsTo f C C')
   (hfD : Set.MapsTo f D D')
 
-/-- Two composites `(A₁, C₁) ⟶ (A₂, C₂) ⟶ (A₄, C₄)` and `(A₁, C₁) ⟶ (A₃, C₃) ⟶ (A₄, C₄)` of maps
-of pairs of subsets agree whenever the composites of the maps of the ambient subspaces agree. -/
-private lemma ofInclusionMap_comp_ofInclusionMap_eq {A₁ C₁ A₂ C₂ : Set X} {A₃ C₃ A₄ C₄ : Set Y}
-    {h₁ : C₁ ⊆ A₁} {h₂ : C₂ ⊆ A₂} {h₃ : C₃ ⊆ A₃} {h₄ : C₄ ⊆ A₄} (g₁ : ContinuousMap ↥A₁ ↥A₂)
-    (hg₁ : ∀ x : A₁, (x : X) ∈ C₁ → (g₁ x : X) ∈ C₂)
-    (g₂ : ContinuousMap ↥A₂ ↥A₄) (hg₂ : ∀ x : A₂, (x : X) ∈ C₂ → (g₂ x : Y) ∈ C₄)
-    (g₃ : ContinuousMap ↥A₁ ↥A₃) (hg₃ : ∀ x : A₁, (x : X) ∈ C₁ → (g₃ x : Y) ∈ C₃)
-    (g₄ : ContinuousMap ↥A₃ ↥A₄) (hg₄ : ∀ x : A₃, (x : Y) ∈ C₃ → (g₄ x : Y) ∈ C₄)
-    (h : ∀ x, (g₂ (g₁ x) : Y) = g₄ (g₃ x)) :
-    TopPair.ofInclusionMap h₁ h₂ g₁ hg₁ ≫ TopPair.ofInclusionMap h₂ h₄ g₂ hg₂ =
-      TopPair.ofInclusionMap h₁ h₃ g₃ hg₃ ≫ TopPair.ofInclusionMap h₃ h₄ g₄ hg₄ := by
-  rw [← TopPair.ofInclusionMap_comp, ← TopPair.ofInclusionMap_comp]
-  congr 1
-  ext x
-  exact h x
-
 /-- **Naturality of the connecting morphism of the Mayer–Vietoris sequence of two pairs.** A map
 `f : X ⟶ Y` carrying `A`, `B`, `C` and `D` into `A'`, `B'`, `C'` and `D'` commutes with the
 connecting morphisms, where `(A ∩ B, C ∩ D) ⟶ (A' ∩ B', C' ∩ D')` and
@@ -647,10 +631,10 @@ lemma singularCohomologyPairMayerVietorisδ_naturality (n m : ℕ) (h : n + 1 = 
     (isPushout_toSmallSingularPair_left hCA' hDB') (isPushout_toSmallSingularPair_right hCA' hDB')
     (by
       rw [← Functor.map_comp, ← Functor.map_comp]
-      exact congrArg _ (ofInclusionMap_comp_ofInclusionMap_eq _ _ _ _ _ _ _ _ fun _ ↦ rfl))
+      exact congrArg _ (TopPair.ofInclusionMap_comp_ofInclusionMap_eq _ _ _ _ _ _ _ _ fun _ ↦ rfl))
     (by
       rw [← Functor.map_comp, ← Functor.map_comp]
-      exact congrArg _ (ofInclusionMap_comp_ofInclusionMap_eq _ _ _ _ _ _ _ _ fun _ ↦ rfl))
+      exact congrArg _ (TopPair.ofInclusionMap_comp_ofInclusionMap_eq _ _ _ _ _ _ _ _ fun _ ↦ rfl))
     (toSmallSingularPair_comp_smallSingularPairMap _ _ _ _ f hfA hfB hfC hfD _ _ _ _ _ _ hfA hfC)
     (toSmallSingularPair_comp_smallSingularPairMap _ _ _ _ f hfA hfB hfC hfD _ _ _ _ _ _ hfB hfD)
     n m h
@@ -665,13 +649,11 @@ lemma singularCohomologyPairMayerVietorisδ_naturality (n m : ℕ) (h : n + 1 = 
           (smallSingularPairMap hCA hDB hCA' hDB' f hfA hfB hfC hfD)) m ≫
         inv (HomologicalComplex.homologyMap (SSetPair.cochainComplexMap (R := R) (k := k)
           (M := M) (smallSingularPairToUnion hCA hDB)) m) := by
-    rw [IsIso.inv_comp_eq, ← Category.assoc, IsIso.eq_comp_inv,
-      ← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp,
-      ← SSetPair.cochainComplexMap_comp, ← SSetPair.cochainComplexMap_comp,
-      smallSingularPairToUnion_comp_ofInclusionMap]
-  rw [singularCohomologyPairMayerVietorisδ, singularCohomologyPairMayerVietorisδ,
-    TopPair.singularCohomologyMap_eq, TopPair.singularCohomologyMap_eq, Category.assoc, hsmall,
-    ← Category.assoc, hnat, Category.assoc]
+    rw [IsIso.inv_comp_eq, ← Category.assoc, IsIso.eq_comp_inv]
+    simp only [← HomologicalComplex.homologyMap_comp, ← SSetPair.cochainComplexMap_comp]
+    rw [smallSingularPairToUnion_comp_ofInclusionMap]
+  simp only [singularCohomologyPairMayerVietorisδ, TopPair.singularCohomologyMap_eq,
+    Category.assoc, hsmall, reassoc_of% hnat]
 
 end Naturality
 
