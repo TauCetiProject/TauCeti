@@ -70,7 +70,7 @@ end Prod
 on `U`, is continuous. The function `a` need not be continuous off `U`, and `U` need not be
 open. -/
 theorem continuous_smul_of_continuousOn_of_tsupport_subset {Z 𝕜 F : Type*} [TopologicalSpace Z]
-    [TopologicalSpace 𝕜] [Zero F] [TopologicalSpace F] [T2Space F] [SMulZeroClass 𝕜 F]
+    [TopologicalSpace 𝕜] [Zero F] [TopologicalSpace F] [T1Space F] [SMulZeroClass 𝕜 F]
     [ContinuousSMul 𝕜 F] {a : Z → 𝕜} {b : Z → F} {U : Set Z} (hb : Continuous b)
     (hbU : tsupport b ⊆ U) (ha : ContinuousOn a U) : Continuous fun x ↦ a x • b x := by
   have hzero : ∀ x ∈ Uᶜ, b x = 0 := fun x hx ↦
@@ -80,7 +80,8 @@ theorem continuous_smul_of_continuousOn_of_tsupport_subset {Z 𝕜 F : Type*} [T
   · rw [← continuousWithinAt_univ, ← Set.union_compl_self U, continuousWithinAt_union]
     refine ⟨(ha x hxU).smul hb.continuousAt.continuousWithinAt, ?_⟩
     by_cases hx : x ∈ closure Uᶜ
-    · have hbx : b x = 0 := Set.EqOn.closure hzero hb continuous_const hx
+    · have hbx : b x = 0 :=
+        ((isClosed_singleton (x := (0 : F))).preimage hb).closure_subset_iff.2 hzero hx
       exact (continuousWithinAt_const (b := (0 : F))).congr
         (fun y hy ↦ by simp [hzero y hy]) (by simp [hbx])
     · exact continuousWithinAt_of_notMem_closure hx
