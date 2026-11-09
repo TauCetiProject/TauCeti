@@ -52,8 +52,11 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   `p / 2`.
 * `AddCircle.addOrderOf_period_div_of_ne_zero`: for a nonzero period and positive `n`, the class
   of `p / n` has additive order `n`.
-* `AddCircle.natCard_torsionBy`: the `n`-torsion of `AddCircle p` has exactly `n`
-  elements.
+* `AddCircle.infinite_of_neZero`: for a nonzero period in characteristic zero, `AddCircle p` is
+  infinite.
+* `AddCircle.natCard_torsionBy`: for positive `n`, the `n`-torsion of `AddCircle p` has exactly `n`
+  elements; for `n = 0` the statement holds only through the junk value `Nat.card = 0` of the
+  infinite group.
 * `AddCircle.eq_torsionBy_of_natCard_eq`: a subgroup of `AddCircle p` with `n` elements is the
   `n`-torsion; equivalently, `AddCircle.exists_eq_torsionBy` writes every finite subgroup as a
   torsion subgroup, and `AddCircle.isAddCyclic_of_finite` shows that it is cyclic.
@@ -288,7 +291,7 @@ theorem addOrderOf_period_div_of_ne_zero (hn : 0 < n) :
 
 /-- For a nonzero period in characteristic zero, `AddCircle p` is infinite: the classes of
 `p / (k + 1)` have pairwise distinct additive orders. -/
-theorem infinite_addCircle : Infinite (AddCircle p) :=
+theorem infinite_of_neZero : Infinite (AddCircle p) :=
   Infinite.of_injective (fun k : ℕ ↦ ((p / (k + 1 : ℕ) : 𝕜) : AddCircle p)) fun a b h ↦ by
     have := congrArg addOrderOf h
     rw [addOrderOf_period_div_of_ne_zero p (Nat.succ_pos _),
@@ -299,7 +302,7 @@ theorem infinite_addCircle : Infinite (AddCircle p) :=
 `Nat.card = 0` of the infinite group `AddCircle p`. -/
 theorem natCard_torsionBy : Nat.card ((AddCircle p)[(n : ℤ)]) = n := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
-  · have := infinite_addCircle p
+  · have := infinite_of_neZero p
     simp [Nat.card_eq_zero_of_infinite]
   rw [torsionBy_eq_zmultiples p (Nat.cast_ne_zero.mpr hn.ne'), Nat.card_zmultiples,
     addOrderOf_period_div_of_ne_zero p hn]
@@ -383,15 +386,17 @@ variable {n : ℕ} {H : Type*}
 
 An *invariant map* on a group `H` is an injective homomorphism `f : H →+ AddCircle p` whose
 image is the `n`-torsion. For `n` nonzero in the division ring, `H` is cyclic and the element
-of invariant `p / n` is a distinguished generator. For a nonzero period in characteristic zero,
-`H` has order exactly `n`. Over `ℚ` with `p = 1` this is the normalization that produces the
-fundamental class of a class formation from its invariant map. -/
+of invariant `p / n` is a distinguished generator. For a nonzero period in characteristic zero
+and positive `n`, `H` has order exactly `n`. Over `ℚ` with `p = 1` this is the normalization that
+produces the fundamental class of a class formation from its invariant map. -/
 
 section Card
 
 variable {𝕜 : Type*} [DivisionRing 𝕜] [CharZero 𝕜] (p : 𝕜) [NeZero p] {f : H → AddCircle p}
 
-/-- A type with an injective map onto the `n`-torsion has exactly `n` elements. -/
+/-- A type with an injective map onto the `n`-torsion has exactly `n` elements. For `n = 0` the map
+is a bijection onto the infinite group `AddCircle p`, and the statement holds only through the junk
+value `Nat.card = 0`. -/
 theorem natCard_eq_of_injective_of_range_eq_torsionBy (hf : Function.Injective f)
     (hr : Set.range f = ((AddCircle p)[(n : ℤ)] : Set (AddCircle p))) :
     Nat.card H = n := by
