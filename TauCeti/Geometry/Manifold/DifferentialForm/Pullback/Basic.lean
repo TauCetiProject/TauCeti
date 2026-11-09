@@ -355,6 +355,14 @@ theorem mpullback_add [ContinuousAdd F] (f : M → M') (ω η : RoughForm I' M' 
     mpullback I I' f (ω + η) = mpullback I I' f ω + mpullback I I' f η :=
   bundleMpullback_add f ω η
 
+/-- Pullback preserves subtraction. -/
+@[simp]
+theorem mpullback_sub [IsTopologicalAddGroup F] (f : M → M') (ω η : RoughForm I' M' F k) :
+    mpullback I I' f (ω - η) = mpullback I I' f ω - mpullback I I' f η := by
+  funext x
+  ext v
+  simp only [mpullback_apply, Pi.sub_apply, ContinuousAlternatingMap.sub_apply]
+
 /-- Within-set pullback respects scalar multiplication of the coefficients, by any scalars
 acting continuously on the coefficient space and commuting with the real action. -/
 @[simp]
