@@ -186,8 +186,8 @@ nonempty (`j < m`). This excludes the empty-determinant terminal case. -/
     simpa [zero_pow (Nat.ne_of_gt (Nat.sub_pos_of_lt hjm))] using h
   · simp [signedPsc_of_lt p 0 (not_le.mp hj), hjm.ne]
 
-/-- Lowering the right bound contributes a leading-coefficient power, with no
-additional sign. The smaller terminal index is included. -/
+/-- Lowering the right bound contributes a power of the coefficient at the left formal bound,
+with no additional sign. The smaller terminal index is included. -/
 theorem _root_.Polynomial.signedPsc_eq_coeff_pow_mul_of_right_degree_drop
     {p q : R[X]} {m n N j : ℕ} (hn : q.natDegree ≤ n)
     (hN : n ≤ N) (hjm : j ≤ m) (hjn : j ≤ n) :
