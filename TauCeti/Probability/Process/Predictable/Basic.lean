@@ -10,7 +10,10 @@ public import Mathlib.Topology.Order.Cadlag
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
-# Predictability of left-continuous adapted processes
+# Predictable rectangles and left-continuous adapted processes
+
+Elementary predictable rectangles form a π-system generating the predictable sigma-algebra
+for linearly ordered time with a least element and a countable cofinal sequence.
 
 Left-continuous adapted processes in nonnegative real time are strongly predictable. The proof uses
 left endpoint step approximations on countable regular partitions, including the initial value
@@ -26,6 +29,98 @@ public section
 
 open MeasureTheory Filter Set TopologicalSpace
 open scoped NNReal Topology
+
+namespace MeasureTheory.Filtration
+
+variable {ι Ω : Type*} [LinearOrder ι] [OrderBot ι] {mΩ : MeasurableSpace Ω}
+  (ℱ : Filtration ι mΩ)
+
+/-- Elementary predictable rectangles, including the initial slices. Positive-time rectangles
+use information at their left endpoint and are open on the left, closed on the right. -/
+def predictableRectangles : Set (Set (ι × Ω)) :=
+  {R | (∃ A, MeasurableSet[ℱ ⊥] A ∧ R = {⊥} ×ˢ A) ∨
+    ∃ s t A, MeasurableSet[ℱ s] A ∧ R = Ioc s t ×ˢ A}
+
+/-- Membership in the elementary predictable rectangle family. -/
+theorem mem_predictableRectangles {R : Set (ι × Ω)} :
+    R ∈ ℱ.predictableRectangles ↔
+      (∃ A, MeasurableSet[ℱ ⊥] A ∧ R = {⊥} ×ˢ A) ∨
+        ∃ s t A, MeasurableSet[ℱ s] A ∧ R = Ioc s t ×ˢ A := Iff.rfl
+
+/-- An initial slice is an elementary predictable rectangle. -/
+@[simp]
+theorem singleton_bot_prod_mem_predictableRectangles {A : Set Ω}
+    (hA : MeasurableSet[ℱ ⊥] A) : {⊥} ×ˢ A ∈ ℱ.predictableRectangles :=
+  Or.inl ⟨A, hA, rfl⟩
+
+/-- A bounded-time rectangle using information at its left endpoint is predictable. -/
+@[simp]
+theorem Ioc_prod_mem_predictableRectangles (s t : ι) {A : Set Ω}
+    (hA : MeasurableSet[ℱ s] A) : Ioc s t ×ˢ A ∈ ℱ.predictableRectangles :=
+  Or.inr ⟨s, t, A, hA, rfl⟩
+
+/-- Every elementary predictable rectangle is predictably measurable. -/
+theorem measurableSet_of_mem_predictableRectangles {R : Set (ι × Ω)}
+    (hR : R ∈ ℱ.predictableRectangles) : MeasurableSet[ℱ.predictable] R := by
+  rcases hR with ⟨A, hA, rfl⟩ | ⟨s, t, A, hA, rfl⟩
+  · exact measurableSet_predictable_singleton_bot_prod hA
+  · exact measurableSet_predictable_Ioc_prod s t hA
+
+/-- Elementary predictable rectangles are closed under nonempty intersections. -/
+theorem isPiSystem_predictableRectangles : IsPiSystem ℱ.predictableRectangles := by
+  rintro R (⟨A, hA, rfl⟩ | ⟨s, t, A, hA, rfl⟩)
+    Q (⟨B, hB, rfl⟩ | ⟨u, v, B, hB, rfl⟩) hne
+  · simpa only [prod_inter_prod, inter_self] using
+      ℱ.singleton_bot_prod_mem_predictableRectangles (hA.inter hB)
+  · exact False.elim (hne.not_disjoint (by simp [Set.disjoint_prod]))
+  · exact False.elim (hne.not_disjoint (by simp [Set.disjoint_prod]))
+  · simpa only [prod_inter_prod, Ioc_inter_Ioc] using
+      ℱ.Ioc_prod_mem_predictableRectangles (max s u) (min t v)
+        ((ℱ.mono (le_max_left _ _) _ hA).inter (ℱ.mono (le_max_right _ _) _ hB))
+
+/-- Every elementary rectangle has finite measure if bounded-time strips do. -/
+theorem measure_ne_top_of_mem_predictableRectangles
+    (μ : @Measure (ι × Ω) ℱ.predictable)
+    (hμ : ∀ t, μ (Iic t ×ˢ univ) ≠ ⊤) {R : Set (ι × Ω)}
+    (hR : R ∈ ℱ.predictableRectangles) : μ R ≠ ⊤ := by
+  rcases hR with ⟨A, hA, rfl⟩ | ⟨s, t, A, hA, rfl⟩
+  · exact ne_top_of_le_ne_top (hμ ⊥) (measure_mono (prod_mono
+      (singleton_subset_iff.2 self_mem_Iic) (subset_univ A)))
+  · exact ne_top_of_le_ne_top (hμ t) (measure_mono (prod_mono
+      Ioc_subset_Iic_self (subset_univ A)))
+
+variable [(atTop : Filter ι).IsCountablyGenerated]
+
+/-- Bounded-time elementary rectangles generate the native predictable sigma-algebra. -/
+theorem generateFrom_predictableRectangles :
+    MeasurableSpace.generateFrom ℱ.predictableRectangles = ℱ.predictable := by
+  obtain ⟨u, hu⟩ := exists_seq_tendsto (atTop : Filter ι)
+  apply le_antisymm
+  · exact MeasurableSpace.generateFrom_le fun R hR ↦
+      ℱ.measurableSet_of_mem_predictableRectangles hR
+  · refine measurableSpace_le_predictable_of_measurableSet (fun A hA ↦ ?_) (fun s A hA ↦ ?_)
+    · exact MeasurableSpace.measurableSet_generateFrom
+        (ℱ.singleton_bot_prod_mem_predictableRectangles hA)
+    · rw [← iUnion_Ioc_eq_Ioi_self_iff.2 (fun x _ ↦ (tendsto_atTop.1 hu x).exists),
+        iUnion_prod_const]
+      exact MeasurableSet.iUnion fun n ↦ MeasurableSpace.measurableSet_generateFrom
+        (ℱ.Ioc_prod_mem_predictableRectangles s (u n) hA)
+
+/-- Countably many elementary predictable rectangles cover the whole time-state space.
+The initial slice is included separately from the positive-time intervals. -/
+theorem exists_predictableRectangles_cover :
+    ∃ s : Option ℕ → Set (ι × Ω), (∀ n, s n ∈ ℱ.predictableRectangles) ∧ ⋃ n, s n = univ := by
+  obtain ⟨u, hu⟩ := exists_seq_tendsto (atTop : Filter ι)
+  refine ⟨fun n ↦ n.elim ({⊥} ×ˢ univ) (fun k ↦ Ioc ⊥ (u k) ×ˢ univ), ?_, ?_⟩
+  · rintro (_ | n)
+    · exact ℱ.singleton_bot_prod_mem_predictableRectangles MeasurableSet.univ
+    · exact ℱ.Ioc_prod_mem_predictableRectangles _ _ MeasurableSet.univ
+  · rw [iUnion_option]
+    simp only [Option.elim_none, Option.elim_some, ← iUnion_prod_const]
+    rw [iUnion_Ioc_eq_Ioi_self_iff.2 (fun x _ ↦ (tendsto_atTop.1 hu x).exists), ← union_prod]
+    simp only [← Iic_bot, Iic_union_Ioi, univ_prod_univ]
+
+end MeasureTheory.Filtration
 
 -- Unlike floor sampling on half-open intervals, this samples strictly before every positive
 -- time, including partition nodes. The cells are therefore predictable rectangles `(s, t]`.
