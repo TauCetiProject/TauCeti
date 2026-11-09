@@ -23,8 +23,8 @@ The derivatives of the cutoffs satisfy `‖D^k ψⱼ ξ‖ ≤ B 2^{-jk}`, and `
 support of `ψⱼ`, so `‖D^k ψⱼ ξ‖ ⟨ξ⟩ ^ k` is bounded independently of `j`: the cutoffs form a
 bounded family of symbols of order zero
 (`ContDiffBump.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_rpow_le`). The Leibniz
-rule (`TauCeti.norm_mixedDeriv_comp_snd_smul_le`) then gives symbol estimates for the pieces with
-constants independent of `j`.
+rule (`TauCeti.norm_mixedDeriv_comp_snd_smul_le_mul_rpow_weight`) then gives symbol estimates for
+the pieces with constants independent of `j`.
 
 ## Main declarations
 
@@ -64,9 +64,9 @@ namespace Symbol
 variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {m : ℝ} (φ : ContDiffBump (0 : CoordinateSpace n))
 
-/-! ### The Leibniz bound -/
+/-! ### The Leibniz constant -/
 
-/-- The constant in `norm_mixedDeriv_littlewoodPaley_smul_le`. -/
+/-- The constant in `norm_mixedDeriv_comp_snd_smul_le_mul_rpow_weight`. -/
 private def leibnizConst (B : ℕ → ℝ) (D : List (Fin n) → ℝ) (β : List (Fin n)) : ℝ :=
   ∑ i ∈ Finset.range (β.length + 1), (β.length.choose i : ℝ) * B i *
     ∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)
@@ -75,51 +75,6 @@ private theorem leibnizConst_nonneg {B : ℕ → ℝ} (hB : ∀ k, 0 ≤ B k) {D
     (hD : ∀ w, 0 ≤ D w) (β : List (Fin n)) : 0 ≤ leibnizConst B D β :=
   Finset.sum_nonneg fun i _ => mul_nonneg (mul_nonneg (by positivity) (hB i))
     (Finset.sum_nonneg fun w _ => hD _)
-
-/-- **Symbol estimates for the pieces.** Let `B k` bound `‖D^k ψⱼ ξ‖ ⟨ξ⟩ ^ k` for all scales `j`.
-If the mixed derivatives `∂ₓ^α ∂_ξ^w a` at `(x, ξ)` are bounded by `D w ⟨ξ⟩ ^ (m - |w|)`, then
-`∂ₓ^α ∂_ξ^β (ψⱼ(ξ) a(x, ξ))` is bounded by `leibnizConst B D β * ⟨ξ⟩ ^ (m - |β|)`, a constant
-independent of `j`. -/
-private theorem norm_mixedDeriv_littlewoodPaley_smul_le {B : ℕ → ℝ}
-    (hB : ∀ k j (ξ : CoordinateSpace n), ‖iteratedFDeriv ℝ k (φ.inhomogeneousLittlewoodPaley j) ξ‖ *
-      (1 + ‖ξ‖ ^ 2) ^ ((k : ℝ) / 2) ≤ B k)
-    {a : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (ha : ContDiff ℝ ∞ a)
-    {α : List (Fin n)} {x ξ : CoordinateSpace n} {D : List (Fin n) → ℝ} (hD0 : ∀ w, 0 ≤ D w)
-    (hD : ∀ w, ‖mixedDeriv α w a x ξ‖ ≤ D w * (1 + ‖ξ‖ ^ 2) ^ ((m - w.length) / 2))
-    (β : List (Fin n)) (j : ℕ) :
-    ‖mixedDeriv α β (fun p => φ.inhomogeneousLittlewoodPaley j p.2 • a p) x ξ‖ ≤
-      leibnizConst B D β * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  refine (norm_mixedDeriv_comp_snd_smul_le (φ.contDiff_inhomogeneousLittlewoodPaley j) ha α β x
-    ξ).trans ?_
-  rw [leibnizConst, Finset.sum_mul]
-  refine Finset.sum_le_sum fun i hi => ?_
-  have hi' : i ≤ β.length := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
-  -- `⟨ξ⟩ ^ (m - (|β| - i)) = ⟨ξ⟩ ^ i * ⟨ξ⟩ ^ (m - |β|)`
-  have hw (w : Fin (β.length - i) → Fin n) :
-      (1 + ‖ξ‖ ^ 2) ^ ((m - (List.ofFn w).length) / 2) =
-        (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-    rw [← Real.rpow_add (by positivity), List.length_ofFn, Nat.cast_sub hi']
-    ring_nf
-  have hsum : ∑ w : Fin (β.length - i) → Fin n, ‖mixedDeriv α (List.ofFn w) a x ξ‖ ≤
-      (∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
-        ((1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)) := by
-    rw [Finset.sum_mul]
-    exact Finset.sum_le_sum fun w _ => (hD _).trans_eq (by rw [hw])
-  have hS : 0 ≤ ∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w) :=
-    Finset.sum_nonneg fun w _ => hD0 _
-  calc (β.length.choose i : ℝ) * ‖iteratedFDeriv ℝ i (φ.inhomogeneousLittlewoodPaley j) ξ‖ *
-        ∑ w : Fin (β.length - i) → Fin n, ‖mixedDeriv α (List.ofFn w) a x ξ‖
-      ≤ (β.length.choose i : ℝ) * ‖iteratedFDeriv ℝ i (φ.inhomogeneousLittlewoodPaley j) ξ‖ *
-        ((∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
-          ((1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2))) := by
-        gcongr
-    _ = (β.length.choose i : ℝ) * (‖iteratedFDeriv ℝ i (φ.inhomogeneousLittlewoodPaley j) ξ‖ *
-          (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2)) * (∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
-          (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by ring
-    _ ≤ (β.length.choose i : ℝ) * B i * (∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) *
-          (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-        gcongr
-        exact hB i j ξ
 
 /-! ### The Littlewood–Paley pieces of a symbol -/
 
@@ -137,8 +92,9 @@ def littlewoodPaleyPiece (a : Symbol n V W m) (j : ℕ) : Symbol n V W m where
     choose B hB0 hB using φ.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_rpow_le
     choose D hD0 hD using fun w => a.exists_bound K hK α w
     exact ⟨leibnizConst B D β, leibnizConst_nonneg hB0 hD0 β, fun x hx ξ =>
-      norm_mixedDeriv_littlewoodPaley_smul_le φ hB a.contDiff_coefficient hD0
-        (fun w => hD w x hx ξ) β j⟩
+      (norm_mixedDeriv_comp_snd_smul_le_mul_rpow_weight
+        (φ.contDiff_inhomogeneousLittlewoodPaley j) a.contDiff_coefficient (fun i => hB i j ξ)
+        (fun w => hD w x hx ξ) β).trans_eq (by rw [leibnizConst])⟩
 
 @[simp]
 theorem coefficient_littlewoodPaleyPiece (a : Symbol n V W m) (j : ℕ)
@@ -192,8 +148,9 @@ theorem exists_norm_mixedDeriv_littlewoodPaleyPiece_le (a : Symbol n V W m)
   choose B hB0 hB using φ.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_rpow_le
   choose D hD0 hD using fun w => a.exists_bound K hK α w
   exact ⟨leibnizConst B D β, leibnizConst_nonneg hB0 hD0 β, fun j x hx ξ =>
-    norm_mixedDeriv_littlewoodPaley_smul_le φ hB a.contDiff_coefficient hD0
-      (fun w => hD w x hx ξ) β j⟩
+    (norm_mixedDeriv_comp_snd_smul_le_mul_rpow_weight (φ.contDiff_inhomogeneousLittlewoodPaley j)
+      a.contDiff_coefficient (fun i => hB i j ξ) (fun w => hD w x hx ξ) β).trans_eq
+      (by rw [leibnizConst])⟩
 
 /-- **The pieces of a uniform symbol form a bounded family of uniform symbols.** The symbol
 estimates of the pieces hold with constants independent of both the position and `j`. -/
@@ -205,8 +162,9 @@ theorem IsUniform.exists_norm_mixedDeriv_littlewoodPaleyPiece_le {a : Symbol n V
   choose B hB0 hB using φ.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_mul_rpow_le
   choose D hD0 hD using fun w => isUniform_iff.1 ha α w
   exact ⟨leibnizConst B D β, leibnizConst_nonneg hB0 hD0 β, fun j x ξ =>
-    norm_mixedDeriv_littlewoodPaley_smul_le φ hB a.contDiff_coefficient hD0
-      (fun w => hD w x ξ) β j⟩
+    (norm_mixedDeriv_comp_snd_smul_le_mul_rpow_weight (φ.contDiff_inhomogeneousLittlewoodPaley j)
+      a.contDiff_coefficient (fun i => hB i j ξ) (fun w => hD w x ξ) β).trans_eq
+      (by rw [leibnizConst])⟩
 
 /-- The Littlewood–Paley pieces of a uniform symbol are uniform. -/
 theorem IsUniform.littlewoodPaleyPiece {a : Symbol n V W m} (ha : a.IsUniform) (j : ℕ) :

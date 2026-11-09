@@ -75,30 +75,6 @@ theorem contDiff_cutoff_smul_coefficient (χ : FrequencyCutoff (CoordinateSpace 
     ContDiff ℝ ∞ fun p : CoordinateSpace n × CoordinateSpace n => χ (t⁻¹ • p.2) • a.coefficient p :=
   ((χ.contDiff (n := ⊤)).comp (contDiff_snd.const_smul t⁻¹)).smul a.contDiff_coefficient
 
-/-- Leibniz's rule bounds the mixed derivatives of `χ(ξ / t) a(x, ξ)` by the derivatives of the
-dilated cutoff and those of `∂_x^α a(x, ·)`. -/
-private theorem norm_mixedDeriv_cutoff_smul_le_sum (χ : FrequencyCutoff (CoordinateSpace n))
-    (t : ℝ) (a : Symbol n V W m) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
-    ‖mixedDeriv α β (fun p => χ (t⁻¹ • p.2) • a.coefficient p) x ξ‖ ≤
-      ∑ i ∈ Finset.range (β.length + 1), (β.length.choose i : ℝ) *
-        ‖iteratedFDeriv ℝ i (fun η => χ (t⁻¹ • η)) ξ‖ *
-        ‖iteratedFDeriv ℝ (β.length - i)
-          (fun η => coordinateDeriv α (fun y => a.coefficient (y, η)) x) ξ‖ := by
-  have hg : ContDiff ℝ ∞ fun η => coordinateDeriv α (fun y => a.coefficient (y, η)) x :=
-    (a.contDiff_coefficient.coordinateDeriv_fst α).comp (contDiff_prodMk_right x)
-  have hχ : ContDiff ℝ ∞ fun η : CoordinateSpace n => χ (t⁻¹ • η) :=
-    (χ.contDiff (n := ⊤)).comp (contDiff_const_smul t⁻¹)
-  rw [mixedDeriv_eq_coordinateDeriv_snd (a.contDiff_cutoff_smul_coefficient χ t)]
-  have hcomm : (fun η => coordinateDeriv α (fun y => χ (t⁻¹ • (y, η).2) • a.coefficient (y, η))
-      x) = fun η => χ (t⁻¹ • η) • coordinateDeriv α (fun y => a.coefficient (y, η)) x := by
-    funext η
-    exact congrFun (coordinateDeriv_const_smul α
-      (contDiff_infty.1 (a.contDiff_coefficient.comp (contDiff_prodMk_left η)) _)
-      (χ (t⁻¹ • η))) x
-  rw [hcomm]
-  exact (norm_coordinateDeriv_le β (contDiff_infty.1 (hχ.smul hg) _) ξ).trans
-    (norm_iteratedFDeriv_smul_le hχ hg ξ (mod_cast le_top))
-
 /-- The products `χ(ξ / t) a(x, ξ)` of a symbol `a` of order `m` with the dilated frequency cutoffs,
 `t ≥ 1`, satisfy the symbol estimates of every order `m' ≥ m` with constants `C t^(m - m')`, where
 `C` depends neither on `t` nor on `m'`. This is because `χ(ξ / t)` vanishes for `‖ξ‖ ≤ t`, and
@@ -108,45 +84,41 @@ theorem exists_norm_mixedDeriv_cutoff_smul_le (χ : FrequencyCutoff (CoordinateS
     ∃ C, 0 ≤ C ∧ ∀ t : ℝ, 1 ≤ t → ∀ m' : ℝ, m ≤ m' → ∀ x ∈ K, ∀ ξ,
       ‖mixedDeriv α β (fun p => χ (t⁻¹ • p.2) • a.coefficient p) x ξ‖ ≤
         C * t ^ (m - m') * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) := by
-  choose G hG0 hG using fun i : ℕ => a.exists_norm_iteratedFDeriv_coordinateDeriv_le hK α i
+  choose D hD0 hD using fun w => a.exists_bound K hK α w
   choose B hB0 hB using fun i : ℕ => χ.exists_norm_iteratedFDeriv_comp_inv_smul_le i
   set k := β.length
-  have hC0 : 0 ≤ ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * B i * G (k - i) :=
-    Finset.sum_nonneg fun i _ => mul_nonneg (mul_nonneg (Nat.cast_nonneg _) (hB0 i)) (hG0 _)
-  refine ⟨_, hC0, fun t ht m' hm' x hx ξ => ?_⟩
+  set C := ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * B i *
+    ∑ w : Fin (k - i) → Fin n, D (List.ofFn w)
+  have hC0 : 0 ≤ C := Finset.sum_nonneg fun i _ =>
+    mul_nonneg (mul_nonneg (Nat.cast_nonneg _) (hB0 i)) (Finset.sum_nonneg fun w _ => hD0 _)
+  refine ⟨C, hC0, fun t ht m' hm' x hx ξ => ?_⟩
   have ht0 : 0 < t := one_pos.trans_le ht
-  have hw : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
-  have hleib := norm_mixedDeriv_cutoff_smul_le_sum χ t a α β x ξ
+  have hχ : ContDiff ℝ ∞ fun η : CoordinateSpace n => χ (t⁻¹ • η) :=
+    (χ.contDiff (n := ⊤)).comp (contDiff_const_smul t⁻¹)
   by_cases hξ : ‖ξ‖ ≤ t
   · -- Below radius `t` the dilated cutoff vanishes to infinite order.
-    refine hleib.trans (le_of_eq_of_le (Finset.sum_eq_zero fun i _ => ?_) (by positivity))
+    refine (norm_mixedDeriv_comp_snd_smul_le hχ a.contDiff_coefficient α β x ξ).trans
+      (le_of_eq_of_le (Finset.sum_eq_zero fun i _ => ?_) (by positivity))
     rw [χ.iteratedFDeriv_comp_inv_smul_eq_zero i ht0 hξ, norm_zero, mul_zero, zero_mul]
+  -- `‖D^i χ(· / t) ξ‖ ≤ B i ⟨ξ⟩ ^ (-i)` is `‖D^i χ(· / t) ξ‖ ⟨ξ⟩ ^ i ≤ B i`
+  have hB' (i : ℕ) : ‖iteratedFDeriv ℝ i (fun η => χ (t⁻¹ • η)) ξ‖ *
+      (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) ≤ B i := by
+    calc ‖iteratedFDeriv ℝ i (fun η => χ (t⁻¹ • η)) ξ‖ * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2)
+        ≤ B i * (1 + ‖ξ‖ ^ 2) ^ (-(i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) := by
+          gcongr
+          exact hB i t ht ξ
+      _ = B i := by
+          rw [mul_assoc, ← Real.rpow_add (by positivity), neg_div, neg_add_cancel,
+            Real.rpow_zero, mul_one]
   have hweight : (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2) ≤
       t ^ (m - m') * (1 + ‖ξ‖ ^ 2) ^ ((m' - k) / 2) := by
     simpa only [sub_sub_sub_cancel_right] using
       rpow_weight_le_rpow_mul_rpow_weight ht0 (not_le.1 hξ).le (sub_le_sub_right hm' (k : ℝ))
   calc ‖mixedDeriv α β (fun p => χ (t⁻¹ • p.2) • a.coefficient p) x ξ‖
-      ≤ ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) *
-          (B i * (1 + ‖ξ‖ ^ 2) ^ (-(i : ℝ) / 2)) *
-          (G (k - i) * (1 + ‖ξ‖ ^ 2) ^ ((m - (k - i : ℕ)) / 2)) := by
-        refine hleib.trans (Finset.sum_le_sum fun i _ => ?_)
-        exact mul_le_mul (mul_le_mul_of_nonneg_left (hB i t ht ξ) (Nat.cast_nonneg _))
-          (hG (k - i) x hx ξ) (norm_nonneg _) (mul_nonneg (Nat.cast_nonneg _) (by
-            have := hB0 i
-            positivity))
-    _ = (∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * B i * G (k - i)) *
-          (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2) := by
-        rw [Finset.sum_mul]
-        refine Finset.sum_congr rfl fun i hi => ?_
-        have hik : i ≤ k := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
-        have hexp : (1 + ‖ξ‖ ^ 2) ^ (-(i : ℝ) / 2) *
-            (1 + ‖ξ‖ ^ 2) ^ ((m - (k - i : ℕ)) / 2) = (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2) := by
-          rw [← Real.rpow_add hw, Nat.cast_sub hik]
-          ring_nf
-        rw [← hexp]
-        ring
-    _ ≤ (∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * B i * G (k - i)) *
-          (t ^ (m - m') * (1 + ‖ξ‖ ^ 2) ^ ((m' - k) / 2)) :=
+      ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2) :=
+        norm_mixedDeriv_comp_snd_smul_le_mul_rpow_weight hχ a.contDiff_coefficient hB'
+          (fun w => hD w x hx ξ) β
+    _ ≤ C * (t ^ (m - m') * (1 + ‖ξ‖ ^ 2) ^ ((m' - k) / 2)) :=
         mul_le_mul_of_nonneg_left hweight hC0
     _ = _ := by ring
 
