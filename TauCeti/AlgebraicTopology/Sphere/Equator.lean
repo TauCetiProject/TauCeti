@@ -39,6 +39,9 @@ distinct and are the only two path components.
 * `TauCeti.equatorHomotopyEquiv`: the unit sphere minus `p` and `-p` is homotopy equivalent to
   the unit sphere of `(ℝ ∙ p)ᗮ`, with `TauCeti.coe_equatorHomotopyEquiv_apply` and
   `TauCeti.coe_equatorHomotopyEquiv_symm_apply` computing both maps.
+* `TauCeti.sphereEquator u`: the points of the unit sphere orthogonal to `u`, with
+  `TauCeti.sphereToEquator e` carrying the unit sphere onto it bijectively through a linear
+  isometry `e` onto `(ℝ ∙ u)ᗮ`.
 * `TauCeti.zerothHomotopy_mk_neg_ne_of_finrank_eq_two` and
   `TauCeti.zerothHomotopy_mk_eq_or_eq_neg_of_finrank_eq_two`: in dimension two, the circle minus
   `p` and `-p` has exactly two path components, those of `x` and of `-x`.
@@ -261,5 +264,55 @@ theorem zerothHomotopy_mk_eq_or_eq_neg_of_finrank_eq_two {x : sphere (0 : E) 1}
         (coe_neg_sphere _).symm)]
 
 end Circle
+
+/-! ### The equator orthogonal to a vector -/
+
+section sphereEquator
+
+open scoped RealInnerProductSpace
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [NormedAddCommGroup W]
+  [InnerProductSpace ℝ W]
+
+variable (u : V) in
+/-- The equator of the unit sphere orthogonal to `u`: the unit vectors orthogonal to `u`. For a
+unit vector `p` orthogonal to `u` it is the equator through `p` orthogonal to `u`. -/
+@[expose] def sphereEquator : Set (sphere (0 : V) 1) :=
+  {q | ⟪(q : V), u⟫ = 0}
+
+variable {u : V}
+
+@[simp]
+theorem mem_sphereEquator {q : sphere (0 : V) 1} : q ∈ sphereEquator u ↔ ⟪(q : V), u⟫ = 0 :=
+  Iff.rfl
+
+/-- A linear isometry onto the orthogonal complement of `u` carries the unit sphere onto the equator
+orthogonal to `u`. -/
+def sphereToEquator (e : W ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ) : C(sphere (0 : W) 1, sphereEquator u) where
+  toFun s := ⟨⟨(e s : V), by
+      rw [mem_sphere_zero_iff_norm, Submodule.norm_coe, LinearIsometryEquiv.norm_map,
+        norm_eq_of_mem_sphere]⟩,
+    Submodule.mem_orthogonal_singleton_iff_inner_left.1 (e s).2⟩
+  continuous_toFun := by fun_prop
+
+@[simp]
+theorem coe_sphereToEquator (e : W ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ) (s : sphere (0 : W) 1) :
+    ((sphereToEquator e s : sphere (0 : V) 1) : V) = e s :=
+  (rfl)
+
+/-- The map `TauCeti.sphereToEquator e` onto the equator is injective. -/
+theorem injective_sphereToEquator (e : W ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ) :
+    Function.Injective (sphereToEquator e) := fun _ _ h =>
+  Subtype.ext (e.injective (Subtype.ext (congrArg (fun r : sphereEquator u =>
+    ((r : sphere (0 : V) 1) : V)) h)))
+
+/-- The map `TauCeti.sphereToEquator e` onto the equator is surjective. -/
+theorem surjective_sphereToEquator (e : W ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ) :
+    Function.Surjective (sphereToEquator e) := fun q =>
+  ⟨⟨e.symm ⟨q.1.1, Submodule.mem_orthogonal_singleton_iff_inner_left.2 q.2⟩, by
+      simp [norm_eq_of_mem_sphere]⟩,
+    Subtype.ext (Subtype.ext (by simp))⟩
+
+end sphereEquator
 
 end TauCeti

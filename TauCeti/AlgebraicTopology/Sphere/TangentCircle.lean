@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Euclidean.Basic
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Sphere
-public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle
+public import TauCeti.AlgebraicTopology.Sphere.Equator
+public import TauCeti.Analysis.SpecialFunctions.Trigonometric.UnitInterval
 
 /-!
 # Sweeping a sphere by circles tangent to a direction
@@ -24,9 +26,9 @@ Every point of `S_V` other than `p` lies on exactly one of these circles, at exa
 strictly between `0` and `2π`: the component along `u` and the component orthogonal to `u`
 recover first `q`, on the ray from `p`, and then the angle
 (`TauCeti.eq_of_tangentCircle_eq`, `TauCeti.exists_tangentCircle_eq`). Hence the family of
-circles, read on a cube through a generalized loop `c` of `E` that collapses exactly the boundary
-of its cube onto `p` and covers `E` off `p`, is a generalized loop of `S_V` one dimension higher
-with the same two properties (`TauCeti.tangentCircleGenLoop`,
+circles, read on a cube through a generalized loop `c` of `E` that covers `E` off `p` and
+identifies only points of the boundary of its cube, is a generalized loop of `S_V` one dimension
+higher with the same two properties (`TauCeti.tangentCircleGenLoop`,
 `TauCeti.eq_or_of_tangentCircleGenLoop_eq`, `TauCeti.surjective_tangentCircleGenLoop`). Its
 pointed map out of the sphere is then a homeomorphism, so its Hurewicz class generates the top
 homology of `S_V` (`TauCeti.isIso_hurewicz_tangentCircleGenLoop`).
@@ -36,13 +38,12 @@ Example 6.20, and the statement that its adjoint represents a generator of the t
 homology of `S_V` is the first step of their Proposition 6.21. The two properties proved of the
 circles are those asked of `c`, which is what the composite `Σ_p → Ω_p E → Ω_p Ω_p Sⁿ` of
 Example 6.20 needs: there `c` is itself a family of circles, in a sphere of one dimension less.
-For a sphere of dimension `k + 1`, the cube collapse `TauCeti.cubeToSphere` onto the equator meets
-the hypotheses on `c` (`TauCeti.exists_genLoop_sphereEquator`).
+For a sphere of dimension `k + 1`, the cube collapse `TauCeti.cubeToSphere` onto the equator
+`TauCeti.sphereEquator u` meets the hypotheses on `c` (`TauCeti.exists_genLoop_sphereEquator`).
 
 ## Main declarations
 
 * `TauCeti.tangentCircle p u q θ`: the circle through `p` tangent to `u` and through `q`.
-* `TauCeti.sphereEquator u`: the points of the unit sphere orthogonal to `u`.
 * `TauCeti.tangentCircleGenLoop hu c`: the circles through the points of a generalized loop `c`
   of the equator, as a generalized loop of the sphere.
 * `TauCeti.isIso_hurewicz_tangentCircleGenLoop`: its Hurewicz class is an isomorphism
@@ -74,6 +75,12 @@ vectors orthogonal to the unit vector `u`, it runs on the unit sphere
 length, and back to `p` at `θ = 2π`. -/
 def tangentCircle (p u q : V) (θ : ℝ) : V :=
   ((1 + cos θ) / 2) • p + ((1 - cos θ) / 2) • q + (‖q - p‖ / 2 * sin θ) • u
+
+/-- The defining formula of `TauCeti.tangentCircle`. -/
+theorem tangentCircle_def (p u q : V) (θ : ℝ) :
+    tangentCircle p u q θ =
+      ((1 + cos θ) / 2) • p + ((1 - cos θ) / 2) • q + (‖q - p‖ / 2 * sin θ) • u :=
+  (rfl)
 
 @[simp]
 theorem tangentCircle_zero (p u q : V) : tangentCircle p u q 0 = p := by
@@ -143,35 +150,6 @@ theorem tangentCircle_eq_self_iff (hu : ‖u‖ = 1) (hpu : ⟪p, u⟫ = 0) (hqu
     · have hs : sin θ = 0 := by nlinarith [sin_sq_add_cos_sq θ]
       simp [tangentCircle, h, hs]
 
-/-- A point of the sphere whose component orthogonal to `u` is `p` is `p` itself. -/
-private lemma eq_of_sub_inner_smul_eq (hp : ‖p‖ = 1) (hpu : ⟪p, u⟫ = 0) {y : V} (hy : ‖y‖ = 1)
-    (h : y - ⟪y, u⟫ • u = p) : y = p := by
-  have hy' : y = p + ⟪y, u⟫ • u := by rw [← h]; abel
-  have hn : ‖y‖ ^ 2 = ‖p‖ ^ 2 + ⟪y, u⟫ ^ 2 * ‖u‖ ^ 2 := by
-    conv_lhs => rw [hy']
-    rw [norm_add_sq_real, real_inner_smul_right, hpu, norm_smul, Real.norm_eq_abs, mul_pow,
-      sq_abs]
-    ring
-  rw [hy, hp] at hn
-  have hs : ⟪y, u⟫ ^ 2 * ‖u‖ ^ 2 = 0 := by linarith
-  have hs' : ⟪y, u⟫ • u = 0 := by
-    rw [← norm_eq_zero, norm_smul, Real.norm_eq_abs, ← sq_eq_zero_iff, mul_pow, sq_abs]
-    exact hs
-  rw [← h, hs', sub_zero]
-
-/-- A line through a point `p` of the unit sphere meets the sphere in at most one other point. -/
-private lemma eq_of_norm_add_smul_eq_one (hp : ‖p‖ = 1) {w : V} (hw : w ≠ 0) {a b : ℝ}
-    (ha : a ≠ 0) (hb : b ≠ 0) (ha' : ‖p + a • w‖ = 1) (hb' : ‖p + b • w‖ = 1) : a = b := by
-  have key (c : ℝ) (hc : c ≠ 0) (hc' : ‖p + c • w‖ = 1) : 2 * ⟪p, w⟫ + c * ‖w‖ ^ 2 = 0 := by
-    have h := congrArg (· ^ 2) hc'
-    simp only [norm_add_sq_real, real_inner_smul_right, norm_smul, Real.norm_eq_abs, mul_pow,
-      sq_abs, hp, one_pow] at h
-    have : c * (2 * ⟪p, w⟫ + c * ‖w‖ ^ 2) = 0 := by linarith
-    exact (mul_eq_zero.1 this).resolve_left hc
-  have hw' : ‖w‖ ^ 2 ≠ 0 := pow_ne_zero 2 (norm_ne_zero_iff.2 hw)
-  have h := (key a ha ha').trans (key b hb hb').symm
-  exact mul_right_cancel₀ hw' (by linarith)
-
 /-- **The circles are disjoint off `p`.** Two points of these circles that agree and differ from
 `p` lie on the same circle, at angles with the same cosine and sine. -/
 theorem eq_of_tangentCircle_eq (hp : ‖p‖ = 1) (hu : ‖u‖ = 1) (hpu : ⟪p, u⟫ = 0) (hq : ‖q‖ = 1)
@@ -182,16 +160,27 @@ theorem eq_of_tangentCircle_eq (hp : ‖p‖ = 1) (hu : ‖u‖ = 1) (hpu : ⟪p
   have h₂ := tangentCircle_sub_inner_smul hu hpu hq'u θ'
   rw [← h, h₁, add_right_inj] at h₂
   set w := ((1 - cos θ) / 2) • (q - p) with hw
-  have hw0 : w ≠ 0 := fun h0 ↦ hne (eq_of_sub_inner_smul_eq hp hpu
-    (norm_tangentCircle hp hu hpu hq hqu θ) (by rw [h₁, h0, add_zero]))
+  have hw0 : w ≠ 0 := by
+    intro h0
+    rw [h0, add_zero] at h₁
+    -- A unit vector whose component orthogonal to `u` is `p` has inner product `‖p‖ ^ 2` with `p`.
+    have hyp := congrArg (⟪·, p⟫) h₁
+    simp only [inner_sub_left, real_inner_smul_left, real_inner_comm p u, hpu, mul_zero,
+      sub_zero] at hyp
+    exact hne (eq_of_norm_le_re_inner_eq_norm_sq (𝕜 := ℝ)
+      (by rw [norm_tangentCircle hp hu hpu hq hqu θ, hp]) (by simpa using hyp))
   have hb : (1 - cos θ) / 2 ≠ 0 := fun h0 ↦ hw0 (by rw [hw, h0, zero_smul])
   have hb' : (1 - cos θ') / 2 ≠ 0 := fun h0 ↦ hw0 (by rw [h₂, h0, zero_smul])
   have hqw : q = p + ((1 - cos θ) / 2)⁻¹ • w := by
     rw [hw, smul_smul, inv_mul_cancel₀ hb, one_smul, add_sub_cancel]
   have hq'w : q' = p + ((1 - cos θ') / 2)⁻¹ • w := by
     rw [h₂, smul_smul, inv_mul_cancel₀ hb', one_smul, add_sub_cancel]
-  have hab := eq_of_norm_add_smul_eq_one hp hw0 (inv_ne_zero hb) (inv_ne_zero hb')
-    (hqw ▸ hq) (hq'w ▸ hq')
+  -- The line through `p` along `w` meets the unit sphere at one nonzero parameter.
+  have hline (c : ℝ) (hc : c ≠ 0) (hc' : ‖p + c • w‖ = 1) :=
+    ((EuclideanGeometry.dist_smul_vadd_eq_dist p 0 hw0 c).1 (by
+      rw [vadd_eq_add, dist_zero_right, dist_zero_right, add_comm, hc', hp])).resolve_left hc
+  have hab := (hline _ (inv_ne_zero hb) (hqw ▸ hq)).trans
+    (hline _ (inv_ne_zero hb') (hq'w ▸ hq')).symm
   have hc : cos θ = cos θ' := by
     have := inv_injective hab
     linarith
@@ -203,17 +192,6 @@ theorem eq_of_tangentCircle_eq (hp : ‖p‖ = 1) (hu : ‖u‖ = 1) (hpu : ⟪p
   have hqp : ‖q - p‖ / 2 ≠ 0 := div_ne_zero (norm_ne_zero_iff.2 hqp0) two_ne_zero
   exact mul_left_cancel₀ hqp hs
 
-/-- Every point of the unit circle is `(cos θ, sin θ)`. -/
-private lemma exists_cos_sin_eq {a b : ℝ} (h : a ^ 2 + b ^ 2 = 1) :
-    ∃ θ : ℝ, cos θ = a ∧ sin θ = b := by
-  let z : ℂ := ⟨a, b⟩
-  have hz : ‖z‖ = 1 := by
-    rw [Complex.norm_def, Complex.normSq_mk, Real.sqrt_eq_one]
-    nlinarith
-  have hz0 : z ≠ 0 := fun h0 ↦ by simp [h0] at hz
-  exact ⟨Complex.arg z, by rw [Complex.cos_arg hz0, hz, div_one],
-    by rw [Complex.sin_arg, hz, div_one]⟩
-
 /-- **The circles sweep the sphere.** Every point `y` of the unit sphere lies on the circle through
 `p` tangent to `u` and through some unit vector `q` orthogonal to `u`. -/
 theorem exists_tangentCircle_eq (hp : ‖p‖ = 1) (hu : ‖u‖ = 1) (hpu : ⟪p, u⟫ = 0) {y : V}
@@ -224,8 +202,13 @@ theorem exists_tangentCircle_eq (hp : ‖p‖ = 1) (hu : ‖u‖ = 1) (hpu : ⟪
   set d := y - s • u - p with hd
   have hdu : ⟪d, u⟫ = 0 := by
     simp [hd, inner_sub_left, real_inner_smul_left, hu, hpu, ← hs]
-  have hd0 : d ≠ 0 := fun h0 ↦ hyp (eq_of_sub_inner_smul_eq hp hpu hy (by
-    rw [← sub_eq_zero, ← h0]))
+  have hd0 : d ≠ 0 := by
+    intro h0
+    -- A unit vector whose component orthogonal to `u` is `p` has inner product `‖p‖ ^ 2` with `p`.
+    have hyp' := congrArg (⟪·, p⟫) h0
+    simp only [hd, inner_sub_left, real_inner_smul_left, real_inner_comm p u, hpu, mul_zero,
+      sub_zero, inner_zero_left, sub_eq_zero] at hyp'
+    exact hyp (eq_of_norm_le_re_inner_eq_norm_sq (𝕜 := ℝ) (by rw [hy, hp]) (by simpa using hyp'))
   have hyd : y = p + d + s • u := by rw [hd]; abel
   set D := ‖d‖ ^ 2 with hD
   have hDpos : 0 < D := by positivity
@@ -251,70 +234,20 @@ theorem exists_tangentCircle_eq (hp : ‖p‖ = 1) (hu : ‖u‖ = 1) (hpu : ⟪
   have hqp : ‖q - p‖ = l * ‖d‖ := by
     rw [hq, add_sub_cancel_left, norm_smul, Real.norm_eq_abs, abs_of_pos hl0]
   have hnd : 0 < ‖d‖ := norm_pos_iff.2 hd0
-  obtain ⟨θ, hc, hsn⟩ := exists_cos_sin_eq (a := 1 - 2 / l) (b := 2 * s / (l * ‖d‖)) (by
-    field_simp
-    rw [← hD]
-    nlinarith)
-  refine ⟨q, hqn, hqu, θ, ?_⟩
-  have hb : (1 - cos θ) / 2 * l = 1 := by rw [hc]; field_simp; ring
-  have hsc : ‖q - p‖ / 2 * sin θ = s := by rw [hsn, hqp]; field_simp
-  calc tangentCircle p u q θ
-      = p + ((1 - cos θ) / 2 * l) • d + (‖q - p‖ / 2 * sin θ) • u := by
+  obtain ⟨t, hc, hsn⟩ := exists_cos_sin_two_pi_mul_eq (a := 1 - 2 / l) (b := 2 * s / (l * ‖d‖))
+    (by
+      field_simp
+      rw [← hD]
+      nlinarith)
+  refine ⟨q, hqn, hqu, 2 * π * t, ?_⟩
+  have hb : (1 - cos (2 * π * t)) / 2 * l = 1 := by rw [hc]; field_simp; ring
+  have hsc : ‖q - p‖ / 2 * sin (2 * π * t) = s := by rw [hsn, hqp]; field_simp
+  calc tangentCircle p u q (2 * π * t)
+      = p + ((1 - cos (2 * π * t)) / 2 * l) • d + (‖q - p‖ / 2 * sin (2 * π * t)) • u := by
         rw [tangentCircle, hq, mul_smul]; module
     _ = y := by rw [hb, hsc, one_smul, hyd]
 
-/-! ### Angles of the interval -/
-
-/-- On the interval, `cos 2πt = 1` only at the end points. -/
-private lemma eq_zero_or_eq_one_of_cos_eq_one {t : I} (h : cos (2 * π * t) = 1) :
-    t = 0 ∨ t = 1 := by
-  obtain ⟨n, hn⟩ := (Real.cos_eq_one_iff _).1 h
-  have hnt : (n : ℝ) = t := mul_right_cancel₀ (by positivity : (2 * π) ≠ 0) (by linarith)
-  have h0 : 0 ≤ n := by exact_mod_cast hnt ▸ t.2.1
-  have h1 : n ≤ 1 := by exact_mod_cast hnt ▸ t.2.2
-  obtain rfl | rfl : n = 0 ∨ n = 1 := by omega
-  · exact Or.inl (Subtype.ext (by simpa using hnt.symm))
-  · exact Or.inr (Subtype.ext (by simpa using hnt.symm))
-
-/-- On the interval, `cos 2πt` and `sin 2πt` determine `t` away from the end points. -/
-private lemma eq_of_cos_sin_eq {s t : I} (hc : cos (2 * π * s) = cos (2 * π * t))
-    (hs : sin (2 * π * s) = sin (2 * π * t)) (h1 : cos (2 * π * s) ≠ 1) : s = t := by
-  obtain ⟨n, hn⟩ := Real.exists_int_eq_add_of_cos_sin_eq hc hs
-  have hs0 := s.2.1
-  have hs1 := s.2.2
-  have ht0 := t.2.1
-  have ht1 := t.2.2
-  have hlo : (-1 : ℝ) ≤ n := by linarith
-  have hhi : (n : ℝ) ≤ 1 := by linarith
-  have hlo' : -1 ≤ n := by exact_mod_cast hlo
-  have hhi' : n ≤ 1 := by exact_mod_cast hhi
-  obtain rfl | rfl | rfl : n = -1 ∨ n = 0 ∨ n = 1 := by omega
-  · exact absurd (by rw [show (s : ℝ) = 0 by push_cast at hn; linarith]; simp) h1
-  · exact Subtype.ext (by simpa using hn)
-  · exact absurd (by rw [show (s : ℝ) = 1 by push_cast at hn; linarith]; simp) h1
-
-/-- Every angle is `2πt` for some `t` in the interval, up to its cosine and sine. -/
-private lemma exists_cos_sin_eq_two_pi_mul (θ : ℝ) :
-    ∃ t : I, cos (2 * π * t) = cos θ ∧ sin (2 * π * t) = sin θ := by
-  have hp : (0 : ℝ) < 2 * π := by positivity
-  have hr : toIcoMod hp 0 θ = θ - (toIcoDiv hp 0 θ : ℝ) * (2 * π) := by
-    rw [toIcoMod, zsmul_eq_mul]
-  have hmem := toIcoMod_mem_Ico' hp θ
-  refine ⟨⟨toIcoMod hp 0 θ / (2 * π), div_nonneg hmem.1 hp.le, (div_le_one hp).2 hmem.2.le⟩, ?_⟩
-  simp only [mul_div_cancel₀ _ hp.ne', hr, cos_sub_int_mul_two_pi, sin_sub_int_mul_two_pi,
-    and_self]
-
 /-! ### The family of circles as a generalized loop -/
-
-variable (u) in
-/-- The equator of the unit sphere orthogonal to `u`: the unit vectors orthogonal to `u`. For a
-unit vector `p` orthogonal to `u` it is the equator through `p` orthogonal to `u`. -/
-def sphereEquator : Set (sphere (0 : V) 1) :=
-  {q | ⟪(q : V), u⟫ = 0}
-
-@[simp]
-theorem mem_sphereEquator {q : sphere (0 : V) 1} : q ∈ sphereEquator u ↔ ⟪(q : V), u⟫ = 0 :=
-  Iff.rfl
 
 variable {k : ℕ} {p₀ : sphereEquator u}
 
@@ -381,7 +314,7 @@ private lemma mem_boundary_of_tangentCircleGenLoop_eq (hu : ‖u‖ = 1)
   rcases hy' with h | h
   · exact Cube.boundary_fin_succ_iff.2 (Or.inr (mem_boundary_of_eq c hsurj hinj
       (Subtype.ext (Subtype.ext h))))
-  · exact Cube.boundary_fin_succ_iff.2 (Or.inl (eq_zero_or_eq_one_of_cos_eq_one h))
+  · exact Cube.boundary_fin_succ_iff.2 (Or.inl (eq_zero_or_eq_one_of_cos_two_pi_mul_eq_one h))
 
 /-- **The circles identify only points of the boundary**, when `c` covers the equator off `p₀` and
 identifies only points of the boundary. -/
@@ -404,7 +337,11 @@ theorem eq_or_of_tangentCircleGenLoop_eq (hu : ‖u‖ = 1) (c : Ω^ (Fin k) (sp
     (congrArg Subtype.val h) hne
   have h1 : cos (2 * π * y 0) ≠ 1 := fun h1 ↦
     hne ((tangentCircle_eq_self_iff hu p₀.2 (c (Fin.tail y)).2 _).2 (Or.inr h1))
-  have h0 : y 0 = z 0 := eq_of_cos_sin_eq hc hs h1
+  have h0 : y 0 = z 0 := by
+    rcases eq_or_of_cos_sin_two_pi_mul_eq hc hs with h0 | ⟨h0, -⟩ | ⟨h0, -⟩
+    · exact h0
+    · simp [h0] at h1
+    · simp [h0] at h1
   have htail : Fin.tail y = Fin.tail z := by
     rcases hinj _ _ (Subtype.ext (Subtype.ext hq)) with h' | ⟨h', -⟩
     · exact h'
@@ -425,52 +362,25 @@ theorem surjective_tangentCircleGenLoop (hu : ‖u‖ = 1) (c : Ω^ (Fin k) (sph
     simp
   obtain ⟨y, hy⟩ := hsurj ⟨⟨q, mem_sphere_zero_iff_norm.2 hq⟩, hqu⟩
     fun h ↦ hqp (congrArg (fun r : sphereEquator u ↦ ((r : sphere (0 : V) 1) : V)) h)
-  obtain ⟨t, hc, hs⟩ := exists_cos_sin_eq_two_pi_mul θ
+  obtain ⟨t, hc, hs⟩ := exists_cos_sin_two_pi_mul_eq (cos_sq_add_sin_sq θ)
   refine ⟨Fin.cons t y, Subtype.ext ?_⟩
   rw [coe_tangentCircleGenLoop_apply, Fin.tail_cons, Fin.cons_zero, hy, ← hθ]
   simp only [tangentCircle, hc, hs]
 
 /-! ### The standard collapse onto the equator -/
 
-/-- A linear isometry of `ℝᵏ⁺¹` onto the orthogonal complement of `u` carries the unit sphere onto
-the equator orthogonal to `u`. -/
-private def sphereToEquator (e : EuclideanSpace ℝ (Fin (k + 1)) ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ) :
-    C(sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1, sphereEquator u) where
-  toFun s := ⟨⟨(e s : V), by
-      rw [mem_sphere_zero_iff_norm, Submodule.norm_coe, LinearIsometryEquiv.norm_map,
-        norm_eq_of_mem_sphere]⟩,
-    Submodule.mem_orthogonal_singleton_iff_inner_left.1 (e s).2⟩
-  continuous_toFun := by fun_prop
-
-private lemma coe_sphereToEquator (e : EuclideanSpace ℝ (Fin (k + 1)) ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ)
-    (s : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) :
-    ((sphereToEquator e s : sphere (0 : V) 1) : V) = e s :=
-  (rfl)
-
-private lemma injective_sphereToEquator (e : EuclideanSpace ℝ (Fin (k + 1)) ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ) :
-    Function.Injective (sphereToEquator e) := fun _ _ h ↦
-  Subtype.ext (e.injective (Subtype.ext (congrArg (fun r : sphereEquator u ↦
-    ((r : sphere (0 : V) 1) : V)) h)))
-
-private lemma surjective_sphereToEquator (e : EuclideanSpace ℝ (Fin (k + 1)) ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ) :
-    Function.Surjective (sphereToEquator e) := fun q ↦
-  ⟨⟨e.symm ⟨q.1.1, Submodule.mem_orthogonal_singleton_iff_inner_left.2 q.2⟩, by
-      simp [norm_eq_of_mem_sphere]⟩,
-    Subtype.ext (Subtype.ext (by simp [coe_sphereToEquator]))⟩
-
 /-- **The equator is a sphere collapsed from a cube.** If `V` has dimension `k + 2`, then for every
-point `p₀` of the equator orthogonal to the unit vector `u` there is a generalized loop of the
+point `p₀` of the equator orthogonal to the nonzero vector `u` there is a generalized loop of the
 equator at `p₀`, out of the cube `I^k`, that covers the equator off `p₀` and identifies only
 points of the boundary of the cube: the collapse `TauCeti.cubeToSphere` of the cube onto the unit
 sphere of `ℝᵏ⁺¹`, followed by a linear isometry of `ℝᵏ⁺¹` onto `u⊥` sending the north pole to
 `p₀`. So the hypotheses of `TauCeti.isIso_hurewicz_tangentCircleGenLoop` can be met. -/
-theorem exists_genLoop_sphereEquator [FiniteDimensional ℝ V] (hu : ‖u‖ = 1)
+theorem exists_genLoop_sphereEquator [FiniteDimensional ℝ V] (hu : u ≠ 0)
     (hV : Module.finrank ℝ V = k + 2) (p₀ : sphereEquator u) :
     ∃ c : Ω^ (Fin k) (sphereEquator u) p₀, (∀ q, q ≠ p₀ → ∃ y, c y = q) ∧
       ∀ y z, c y = c z → y = z ∨ y ∈ Cube.boundary (Fin k) ∧ z ∈ Cube.boundary (Fin k) := by
-  have hu0 : u ≠ 0 := norm_ne_zero_iff.1 (by rw [hu]; exact one_ne_zero)
   have : Fact (Module.finrank ℝ V = (k + 1) + 1) := ⟨hV⟩
-  have hK : Module.finrank ℝ (ℝ ∙ u)ᗮ = k + 1 := Submodule.finrank_orthogonal_span_singleton hu0
+  have hK : Module.finrank ℝ (ℝ ∙ u)ᗮ = k + 1 := Submodule.finrank_orthogonal_span_singleton hu
   let e₀ : EuclideanSpace ℝ (Fin (k + 1)) ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ :=
     ((stdOrthonormalBasis ℝ (ℝ ∙ u)ᗮ).reindex (finCongr hK)).repr.symm
   let P : (ℝ ∙ u)ᗮ := ⟨p₀.1.1, Submodule.mem_orthogonal_singleton_iff_inner_left.2 p₀.2⟩
