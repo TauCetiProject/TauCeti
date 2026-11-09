@@ -62,8 +62,8 @@ solve the second estimate for `Y` and substitute it into the first.
 * `TauCeti.mul_le_one_of_le_inv_one_add`: `a * b ≤ 1` for `0 ≤ b` and `a ≤ (1 + b)⁻¹`.
 * `TauCeti.sub_mul_mul_one_add_sq_neg_of_lt`: the strict inequality
   `r - ε * (c * (1 + n ^ 2)) < 0` for `r ≤ M`, `0 < ε`, `1 ≤ c` and `M / ε < n`.
-* `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
-  `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
+* `TauCeti.add_le_mul_add_of_le_of_le`: `U + Y ≤ (p + (q + 1) r (a + b)) (Z + W)` from
+  `U ≤ p Z + q Y` and `Y ≤ r (a Z + b W)`.
 -/
 
 public section
@@ -190,21 +190,17 @@ theorem sub_mul_mul_one_add_sq_neg_of_lt {α : Type*} [Field α] [LinearOrder α
     mul_le_mul_of_nonneg_left (le_mul_of_one_le_left (by positivity) hc) hε.le
   nlinarith [mul_le_mul_of_nonneg_left h3 hε.le]
 
-/-- If `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`, where `a, b ≥ 0`, `c > 0` and `Z, W ≥ 0`,
-then `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)`. -/
-theorem add_le_mul_add_mul_of_le_of_le {α : Type*} [Field α] [LinearOrder α]
-    [IsStrictOrderedRing α] {U Y Z W M a b c : α} (hc : 0 < c)
+/-- If `U ≤ p Z + q Y` and `Y ≤ r (a Z + b W)`, where `p, q, r, a, b, Z, W` are nonnegative, then
+`U + Y ≤ (p + (q + 1) r (a + b)) (Z + W)`. -/
+theorem add_le_mul_add_of_le_of_le {α : Type*} [CommRing α] [LinearOrder α]
+    [IsStrictOrderedRing α] {U Y Z W p q r a b : α} (hp : 0 ≤ p) (hq : 0 ≤ q) (hr : 0 ≤ r)
     (ha : 0 ≤ a) (hb : 0 ≤ b) (hZ : 0 ≤ Z) (hW : 0 ≤ W)
-    (hX : U ≤ 2 * Z + 2 * M ^ 2 * Y) (hY : c / 2 * Y ≤ a * Z + b * W) :
-    U + Y ≤ (2 + (2 * M ^ 2 + 1) * (2 / c) * (a + b)) * Z +
-      (2 + (2 * M ^ 2 + 1) * (2 / c) * (a + b)) * W := by
-  have hY' : Y ≤ 2 / c * (a * Z + b * W) := by
-    rw [div_mul_eq_mul_div, le_div_iff₀ hc]
-    linarith
-  have hk : 0 ≤ (2 * M ^ 2 + 1) * (2 / c) := by positivity
-  nlinarith [mul_le_mul_of_nonneg_left hY' (by positivity : (0 : α) ≤ 2 * M ^ 2 + 1),
+    (hX : U ≤ p * Z + q * Y) (hY : Y ≤ r * (a * Z + b * W)) :
+    U + Y ≤ (p + (q + 1) * r * (a + b)) * (Z + W) := by
+  have hk : 0 ≤ (q + 1) * r := by positivity
+  nlinarith [mul_le_mul_of_nonneg_left hY (by positivity : (0 : α) ≤ q + 1),
     mul_nonneg (mul_nonneg hk hb) hZ, mul_nonneg (mul_nonneg hk ha) hW,
-    mul_nonneg (mul_nonneg hk ha) hZ, mul_nonneg (mul_nonneg hk hb) hW]
+    mul_nonneg hp hW]
 
 end TauCeti
 

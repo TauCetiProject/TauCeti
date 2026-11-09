@@ -243,7 +243,9 @@ theorem exists_pos_nonneg_forall_integral_norm_deriv_sq_add_integral_norm_sq_le_
     (Real.le_norm_self _).trans (hK s hs)
   have hK₀ : 0 ≤ K := (by positivity : (0 : ℝ) ≤ ‖S 0‖ * ‖A 0‖ + ‖deriv S 0‖ / 2).trans
     (hK' 0 ⟨by linarith, by linarith⟩)
-  obtain ⟨MA, hMA⟩ := exists_forall_norm_le_of_tendsto hA hbot htop
+  obtain ⟨MA, hMA⟩ := isBounded_iff_forall_norm_le.mp
+    (hA.isBounded_range_of_tendsto_atTop_atBot hbot htop)
+  replace hMA (s : ℝ) : ‖A s‖ ≤ MA := hMA _ (mem_range_self s)
   set c := min cm cp
   have hc : 0 < c := lt_min hcm hcp
   refine ⟨R, hR, 2 + (2 * MA ^ 2 + 1) * (2 / c) * ((‖Sm‖ + ‖Sp - Sm‖) ^ 2 / (2 * c) + (K + c)),
@@ -266,6 +268,15 @@ theorem exists_pos_nonneg_forall_integral_norm_deriv_sq_add_integral_norm_sq_le_
   have hZ : 0 ≤ ∫ s, ‖deriv u s + A s (u s)‖ ^ 2 := integral_nonneg fun _ ↦ by positivity
   have hW : 0 ≤ ∫ s in Icc (-R) R, ‖u s‖ ^ 2 :=
     setIntegral_nonneg measurableSet_Icc fun _ _ ↦ by positivity
-  exact TauCeti.add_le_mul_add_mul_of_le_of_le hc (by positivity) (by positivity) hZ hW hX hY
+  -- Solve `hY` for `∫ ‖u‖²` and substitute the result into `hX`.
+  set a := (‖Sm‖ + ‖Sp - Sm‖) ^ 2 / (2 * c)
+  set b := K + c
+  have hY' : (∫ s, ‖u s‖ ^ 2) ≤ 2 / c * (a * (∫ s, ‖deriv u s + A s (u s)‖ ^ 2) +
+      b * ∫ s in Icc (-R) R, ‖u s‖ ^ 2) := by
+    rw [div_mul_eq_mul_div, le_div_iff₀ hc]
+    linarith
+  rw [← mul_add]
+  exact add_le_mul_add_of_le_of_le (by norm_num) (by positivity) (by positivity)
+    (by positivity) (by positivity) hZ hW hX hY'
 
 end TauCeti

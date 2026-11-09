@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Energy
 public import TauCeti.Analysis.Calculus.Morse.SpectralSplitting
 public import TauCeti.Analysis.ODE.EnergyEstimate.Index
-import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # The linearized operator along a gradient trajectory
@@ -103,8 +103,8 @@ theorem memLp_top_hessianOperator_comp (hf : ContDiff ℝ 2 f) (hγ : Continuous
   have hH := (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous
   have hcont : Continuous fun s ↦ hessianOperator f (γ s) := hH.comp hγ
   obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.1
-    (hcont.isBounded_range_iff_isBigO_atTop_atBot.2
-      ⟨((hH.tendsto q).comp htop).isBigO_one ℝ, ((hH.tendsto p).comp hbot).isBigO_one ℝ⟩)
+    (hcont.isBounded_range_of_tendsto_atTop_atBot ((hH.tendsto p).comp hbot)
+      ((hH.tendsto q).comp htop))
   exact memLp_top_of_bound hcont.aestronglyMeasurable C (.of_forall fun s ↦ hC _ ⟨s, rfl⟩)
 
 end ContDiff
