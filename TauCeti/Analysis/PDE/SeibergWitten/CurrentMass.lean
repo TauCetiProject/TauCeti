@@ -34,10 +34,11 @@ region where `|α|` is small. The `L¹` defect bound `r ∫ |1 - |α|² - |β|²
 (`TauCeti.SeibergWitten.integral_le_of_le_mul_max_one_sub`). Hence `∫ |F_a|` is bounded
 independently of `r` and of the solution, and so is the mass of `T_r`:
 
-* `exists_abs_integral_wedge_le_of_le_mul_max_one_sub`: if `‖ω‖ ≤ C r w₊ + C` on a set `K` of
-  finite volume carrying the two defect bounds, then `|∫ ω ∧ ζ| ≤ M sup ‖ζ‖ C (C + Vol K)` for
-  every form `ζ` vanishing outside `K`, with `M` depending only on the basis used to integrate;
-* `exists_mass_integral_wedge_le_of_le_mul_max_one_sub`: the same bound for the mass
+* `Module.Basis.exists_abs_integral_wedge_le_of_le_mul_max_one_sub`: if `‖ω‖ ≤ C r w₊ + C` on a
+  set `K` of finite volume carrying the two defect bounds, then
+  `|∫ ω ∧ ζ| ≤ M sup ‖ζ‖ C (C + Vol K)` for every form `ζ` vanishing outside `K`, with `M`
+  depending only on the basis used to integrate;
+* `Module.Basis.exists_mass_integral_wedge_le_of_le_mul_max_one_sub`: the same bound for the mass
   (`Distribution.mass`) of the current `ζ ↦ ∫ ω ∧ ζ` on test forms on an open set of finite
   volume;
 * `exists_mass_integral_wedge_le_of_add_hodgeStar_eq`: for solutions of the large-parameter
@@ -85,7 +86,7 @@ with `‖ζ‖ ≤ Z`,
 
 The right side does not depend on `r`. Top-degree coefficients are taken on `e` and integrated
 against its Haar measure. -/
-theorem exists_abs_integral_wedge_le_of_le_mul_max_one_sub
+theorem _root_.Module.Basis.exists_abs_integral_wedge_le_of_le_mul_max_one_sub
     (e : Module.Basis (Fin (k + n)) ℝ E) :
     ∃ M, 0 ≤ M ∧ ∀ ⦃ω : E → E [⋀^Fin k]→L[ℝ] ℝ⦄ ⦃ζ : E → E [⋀^Fin n]→L[ℝ] ℝ⦄
       ⦃α : E → A⦄ ⦃β : E → B⦄ ⦃K : Set E⦄ ⦃r C Z : ℝ⦄,
@@ -129,7 +130,7 @@ volume on which `r ∫_Ω |1 - |α|² - |β|²| ≤ C` and, almost everywhere,
 `|β|² ≤ (C / r) w₊ + C / r²`, where `w₊ = max (1 - |α|²) 0` and `2 C ≤ r`. If a `k`-form `ω`
 satisfies `‖ω‖ ≤ C r w₊ + C` on `Ω`, then the current `ζ ↦ ∫ ω ∧ ζ` on test forms of degree `n`
 on `Ω` has mass at most `M C (C + Vol Ω)`, independently of `r`. -/
-theorem exists_mass_integral_wedge_le_of_le_mul_max_one_sub
+theorem _root_.Module.Basis.exists_mass_integral_wedge_le_of_le_mul_max_one_sub
     (e : Module.Basis (Fin (k + n)) ℝ E) :
     ∃ M, 0 ≤ M ∧ ∀ ⦃Ω : Opens E⦄ ⦃ω : E → E [⋀^Fin k]→L[ℝ] ℝ⦄ ⦃α : E → A⦄ ⦃β : E → B⦄
       ⦃r C : ℝ⦄, e.addHaar Ω ≠ ⊤ → 0 < r → 0 ≤ C → 2 * C ≤ r →
@@ -141,7 +142,7 @@ theorem exists_mass_integral_wedge_le_of_le_mul_max_one_sub
       Distribution.mass (fun ζ : 𝓓^{m}(Ω, E [⋀^Fin n]→L[ℝ] ℝ) ↦
           ∫ x, wedge (ω x) (ζ x) e ∂e.addHaar) ≤
         ENNReal.ofReal (M * (C * (C + e.addHaar.real Ω))) := by
-  obtain ⟨M, hM, hI⟩ := exists_abs_integral_wedge_le_of_le_mul_max_one_sub (A := A) (B := B) e
+  obtain ⟨M, hM, hI⟩ := e.exists_abs_integral_wedge_le_of_le_mul_max_one_sub (A := A) (B := B)
   refine ⟨M, hM, ?_⟩
   intro Ω ω α β r C hΩ hr hC hCr hδ hL1 hβ hω hωΩ m
   refine Distribution.mass_le_iff.2 fun ζ hζ ↦ ?_
@@ -200,8 +201,8 @@ theorem exists_mass_integral_wedge_le_of_add_hodgeStar_eq (h₀ : J (e 0) = e 1)
       ∀ m : ℕ∞, Distribution.mass (fun ζ : 𝓓^{m}(Ω, V [⋀^Fin 2]→L[ℝ] ℝ) ↦
           ∫ x, wedge (alternatingFormEquiv V 2 (F x)) (ζ x) b ∂b.addHaar) ≤ ENNReal.ofReal M := by
   obtain ⟨M, -, hM⟩ :=
-    exists_mass_integral_wedge_le_of_le_mul_max_one_sub (A := positiveHalfSpinors o ρ)
-      (B := positiveHalfSpinors o ρ) b
+    b.exists_mass_integral_wedge_le_of_le_mul_max_one_sub (A := positiveHalfSpinors o ρ)
+      (B := positiveHalfSpinors o ρ)
   -- A single constant `C'` dominating every constant of the pointwise curvature bound.
   set c₀ := (2 * K + 1) / (2 * √2) + N + √2 * C
   set C' := max (max K 1) c₀

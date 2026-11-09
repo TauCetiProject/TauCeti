@@ -50,7 +50,8 @@ are:
   `|F⁻| ≤ (r / (4 √2)) w₊ + K / (2 √2) + |η| / 2 + √2 C` (`norm_smul_sub_hodgeStar_le`).
 * **The full curvature.** Adding the two bounds, `F = F⁺ + F⁻` satisfies
   `|F| ≤ (r / (2 √2)) w₊ + (2 K + 1) / (2 √2) + |η| + √2 C` (`norm_le_of_add_hodgeStar_eq`), so
-  `F` is bounded where `|α|` is close to one.
+  `F` is bounded independently of `r` where `w₊ = O(1 / r)`, provided `K`, `C` and `η` are
+  bounded.
 
 The analytic inputs (the bounds on `|α|² + |β|²` and on `|β|²`, and the lower bound on the
 Hermitian part) are hypotheses here; they come from the maximum principle and the coupled
@@ -350,8 +351,9 @@ two-vector `ω` of `J`, with `r ≥ 1`, `‖φ‖² + ‖β‖² ≤ 1 + K / r` 
 `‖β‖² ≤ (K / r) w₊ + K / r²`, where `w₊ = max (1 - ‖φ‖²) 0`, and the Hermitian part of `F`
 satisfies `B ≥ -C g`, then
 `‖F‖ ≤ (r / (2 √2)) w₊ + (2 K + 1) / (2 √2) + ‖η‖ + √2 C`.
-This is the sum of the self-dual and anti-self-dual bounds, since `F = F⁺ + F⁻`. Thus `F` is
-`O(1)` where `|α| ≈ 1`, and only of size `r` on the low-modulus region. -/
+This is the sum of the self-dual and anti-self-dual bounds, since `F = F⁺ + F⁻`. Thus, for
+bounded `K`, `C` and `η`, `F` is bounded independently of `r` where `w₊ = O(1 / r)`, and is of
+size `r` only where `w₊` is not small. -/
 theorem norm_le_of_add_hodgeStar_eq (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
     (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (hr : 1 ≤ r) {K : ℝ}
     (hβK : ‖β‖ ^ 2 ≤ K / r * max (1 - ‖φ‖ ^ 2) 0 + K / r ^ 2)
