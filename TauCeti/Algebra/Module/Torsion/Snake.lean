@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Finite
 public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
+public import TauCeti.LinearAlgebra.Exact
 
 /-!
 # The kernel–cokernel exact sequence of multiplication by a scalar
@@ -186,8 +187,7 @@ theorem exact_torsionByδ_quotSMulTop_map (hfg : Exact f g) (hf : Injective f)
 `g`. -/
 theorem finite_quotSMulTop_of_exact (hfg : Exact f g) (hf : Injective f)
     [Finite (torsionBy R M₃ r)] [Finite (QuotSMulTop r M₂)] : Finite (QuotSMulTop r M₁) := by
-  have hfg' : Exact f g.rangeRestrict := fun x ↦ by
-    simpa [LinearMap.mem_ker, Subtype.ext_iff] using hfg x
+  have hfg' := hfg.rangeRestrict
   have : Finite (torsionBy R (LinearMap.range g) r) := Finite.of_injective _
     (injective_torsionByMap (r := r) (LinearMap.range g).injective_subtype)
   let := Fintype.ofFinite (torsionBy R (LinearMap.range g) r)
