@@ -96,6 +96,30 @@ private theorem nonsingularReduction_eq_top_of_not_sq_dvd_Δ {ϖ : v.valuationSu
 
 variable [HenselianLocalRing v.valuationSubring]
 
+/-- **The index at the symbol `I₀*`.** If Tate's algorithm stops on the integral model at `I₀*`,
+the index `[W(F) : E₀(F)]` is one more than the number of roots of the residue cubic, so it is
+positive, at most `5` (the component count of `I₀*`), and at most `4`. -/
+private theorem index_nonsingularReduction_bounds_of_isTateTerminal_IStar_zero
+    {ϖ : v.valuationSubring} (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
+    (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ (.IStar 0)) :
+    0 < (W.nonsingularReduction v).index ∧
+      (W.nonsingularReduction v).index ≤ (TauCeti.ReductionSymbol.IStar 0).componentCount ∧
+      ((∀ n, TauCeti.ReductionSymbol.IStar 0 = .I (n + 1) →
+          ¬ (integralModel v.valuationSubring W).HasTateTangentRoot ϖ) →
+        (W.nonsingularReduction v).index ≤ 4) := by
+  classical
+  obtain ⟨-, ⟨A₂, h₂⟩, -, ⟨A₄, h₄⟩, ⟨A₆, h₆⟩, -⟩ := isTateTerminal_IStar_zero.1 h
+  rw [index_nonsingularReduction_eq_of_isTateTerminal_IStar_zero v hϖ h h₂ h₄ h₆]
+  have hϖ0 : ϖ ≠ 0 := h.ne_zero (by simp)
+  have hprime : Prime ϖ := by
+    rw [← Ideal.span_singleton_prime hϖ0, ← hϖ]
+    infer_instance
+  have hcard := h.natCard_tateCubicRoots_le hprime
+  rw [natCard_tateCubicRoots_eq hϖ hϖ0 h₂ h₄ h₆] at hcard
+  refine ⟨by omega, ?_, fun _ ↦ by omega⟩
+  simp only [TauCeti.ReductionSymbol.componentCount_IStar]
+  omega
+
 /-- **The index at a terminal symbol.** If Tate's algorithm stops on the integral model at `s`,
 then `[W(F) : E₀(F)]` is positive, at most the component count of `s`, and at most `4` unless `s` is
 a symbol `Iₙ` with split tangent quadratic. -/
@@ -151,23 +175,7 @@ private theorem index_nonsingularReduction_bounds {ϖ : v.valuationSubring}
       (by simp) (by norm_num)
   · exact hdvd (index_nonsingularReduction_dvd_three_of_isTateTerminal_IV v hϖ h) three_pos
       (by simp) (by norm_num)
-  · -- `I₀*`: the index is one more than the number of roots of the residue cubic
-    obtain ⟨-, ⟨A₂, h₂⟩, -, ⟨A₄, h₄⟩, ⟨A₆, h₆⟩, -⟩ := isTateTerminal_IStar_zero.1 h
-    rw [index_nonsingularReduction_eq_of_isTateTerminal_IStar_zero v hϖ h h₂ h₄ h₆]
-    set P : Cubic (ResidueField v.valuationSubring) :=
-      ⟨1, residue _ A₂, residue _ A₄, residue _ A₆⟩
-    have hP : {t : ResidueField v.valuationSubring |
-        t ^ 3 + residue _ A₂ * t ^ 2 + residue _ A₄ * t + residue _ A₆ = 0} =
-        ↑P.roots.toFinset := by
-      ext t
-      simp [Cubic.mem_roots_iff (Cubic.ne_zero_of_a_ne_zero (P := P) one_ne_zero), P]
-    have hcard : Nat.card {t : ResidueField v.valuationSubring |
-        t ^ 3 + residue _ A₂ * t ^ 2 + residue _ A₄ * t + residue _ A₆ = 0} ≤ 3 := by
-      rw [hP, Nat.card_coe_set_eq, Set.ncard_coe_finset]
-      exact P.card_roots_le
-    refine ⟨by omega, ?_, fun _ ↦ by omega⟩
-    simp only [TauCeti.ReductionSymbol.componentCount_IStar]
-    omega
+  · exact index_nonsingularReduction_bounds_of_isTateTerminal_IStar_zero v hϖ h
   · exact hdvd (index_nonsingularReduction_dvd_four_of_isTateTerminal_IStar v hϖ h) four_pos
       (by simp) le_rfl
   · exact hdvd (index_nonsingularReduction_dvd_three_of_isTateTerminal_IVStar v hϖ h) three_pos

@@ -94,7 +94,7 @@ theorem zeroSection_mem_normalExpDomain
   rw [map_zero]
   exact Manifold.zero_mem_expDomain (I := J) (M := N) (f x)
 
-omit [T2Space N] in
+omit [J.Boundaryless] [T2Space N] in
 /-- Every fibre slice of the natural normal-exponential domain is star-convex at zero. -/
 theorem starConvex_normalExpDomain_fiber
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (x : M) :
