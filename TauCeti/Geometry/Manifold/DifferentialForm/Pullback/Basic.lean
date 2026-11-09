@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Basic
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
-public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Pullback of rough bundle-valued differential forms
@@ -481,44 +481,13 @@ theorem mpullback_comp_apply_of_hasFDerivAt {u : E' → M} {L : E'' → E'} {A :
   rw [mpullback_comp_at hL.differentiableAt.mdifferentiableAt hu, mpullback_eq_flat]
   exact congrArg _ hL.fderiv
 
-/-- The derivative of a map differentiable at `z` vanishes on a direction `w` along which the map
-is constant. -/
-theorem mfderiv_apply_eq_zero_of_const_line {f : E'' → M} {z w : E''}
-    (hd : MDifferentiableAt 𝓘(ℝ, E'') I f z) (hconst : ∀ t : ℝ, f (z + t • w) = f z) :
-    mfderiv 𝓘(ℝ, E'') I f z w = 0 := by
-  let c : ℝ → E'' := fun t ↦ z + t • w
-  have hc : HasFDerivAt c ((1 : ℝ →L[ℝ] ℝ).smulRight w) 0 :=
-    ((hasFDerivAt_id (0 : ℝ)).smul_const w).const_add z
-  have hcomp := mfderiv_comp (I := 𝓘(ℝ, ℝ)) (I' := 𝓘(ℝ, E'')) (I'' := I) (0 : ℝ)
-    (by simpa [c] using hd) hc.differentiableAt.mdifferentiableAt
-  have hmc : mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, E'') c 0 = (1 : ℝ →L[ℝ] ℝ).smulRight w := by
-    rw [mfderiv_eq_fderiv, hc.fderiv]
-    -- Mathlib identifies model-space tangent spaces definitionally with the model spaces.
-    rfl
-  rw [show f ∘ c = fun _ ↦ f z from funext hconst, mfderiv_const, hmc] at hcomp
-  have key : mfderiv 𝓘(ℝ, E'') I f (c 0) ((1 : ℝ →L[ℝ] ℝ).smulRight w 1) = 0 :=
-    (DFunLike.congr_fun hcomp (1 : ℝ)).symm
-  rw [show c 0 = z by simp [c]] at key
-  simpa using key
-
 /-- The pullback of a form along `γ ∘ P`, for a continuous linear map `P` of normed spaces,
 vanishes on every family of vectors one of which lies in the kernel of `P`. -/
 theorem mpullback_comp_clm_apply_eq_zero (ω : RoughForm I M F k) (γ : E' → M)
     (P : E'' →L[ℝ] E') {z : E''} {v : Fin k → E''} {i : Fin k} (hv : P (v i) = 0) :
-    mpullback 𝓘(ℝ, E'') I (γ ∘ P) ω z v = 0 := by
-  -- Where `γ ∘ P` is differentiable, it is constant along the line through `z` in the direction
-  -- `v i`, so its derivative kills `v i`; where it is not, the derivative is zero by convention.
-  by_cases hd : MDifferentiableAt 𝓘(ℝ, E'') I (γ ∘ P) z
-  · refine (mpullback_apply (γ ∘ P) ω z v).trans ((ω _).map_coord_zero i ?_)
-    exact mfderiv_apply_eq_zero_of_const_line hd fun t ↦ by simp [hv]
-  · have h0 : mpullback 𝓘(ℝ, E'') I (γ ∘ P) ω z = 0 := by
-      ext w
-      rw [mpullback_apply, mfderiv_zero_of_not_mdifferentiableAt hd,
-        ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
-      exact (ω _).map_coord_zero i (zero_apply _)
-    -- The zero alternating map evaluates to zero.
-    rw [h0]
-    rfl
+    mpullback 𝓘(ℝ, E'') I (γ ∘ P) ω z v = 0 :=
+  (mpullback_apply _ ω z v).trans
+    ((ω _).map_coord_zero i (mfderiv_apply_eq_zero_of_const_line fun t ↦ by simp [hv]))
 
 end FixedCoefficients
 end TauCeti
