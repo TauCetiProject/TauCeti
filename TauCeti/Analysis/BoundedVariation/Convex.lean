@@ -13,8 +13,8 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.Analysis.BoundedVariation.Ball
+import TauCeti.Analysis.Distribution.TestFunction.Hyperplane
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import TauCeti.Analysis.Normed.Module.LipschitzHyperplane
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
@@ -92,55 +92,10 @@ private theorem exists_normal_extension (f : StrongDual ℝ E) (hf : f ≠ 0) (c
   have hnw : ‖f‖ * ‖w‖ = 1 := by
     rw [norm_smul, hnu, norm_inv, norm_pow, Real.norm_of_nonneg (norm_nonneg f)]
     field_simp
-  have hφc := φ.contDiff
-  -- `x - (f x - c) • w` is the projection of `x` to the hyperplane `{f = c}` along `w`, and
-  -- `ψ = η (f x) f (φ (x - (f x - c) • w)) • w`, with `η` a cutoff equal to one on
-  -- `[c, c + n]` and supported in `(c - 1, c + n + 1)`.
-  have hP (x : E) (t : ℝ) : x + t • w - (f (x + t • w) - c) • w = x - (f x - c) • w := by
-    simp only [map_add, map_smul, hw, smul_eq_mul, mul_one]
-    module
-  obtain ⟨ψ, hψ⟩ : ∃ ψ : 𝓓(⊤, E), ⇑ψ = fun x =>
-      ((Real.smoothTransition (f x - c + 1) * (1 - Real.smoothTransition (f x - (c + n)))) *
-        f (φ (x - (f x - c) • w))) • w := by
-    refine ⟨⟨_, ContDiff.smul (by fun_prop) contDiff_const, HasCompactSupport.intro
-      ((φ.hasCompactSupport.isCompact.prod (isCompact_Icc (a := (-1 : ℝ)) (b := n + 1))).image
-        (f := fun p : E × ℝ => p.1 + p.2 • w) (by fun_prop)) fun x hx => ?_, by simp⟩, rfl⟩
-    by_contra h
-    refine hx ⟨(x - (f x - c) • w, f x - c), ⟨subset_tsupport _ fun h' => h ?_, ?_⟩, by simp⟩
-    · simp [h']
-    have h₁ : Real.smoothTransition (f x - c + 1) ≠ 0 := fun h' => h (by simp [h'])
-    have h₂ : Real.smoothTransition (f x - (c + n)) ≠ 1 := fun h' => h (by simp [h'])
-    rw [Ne, Real.smoothTransition.zero_iff_nonpos] at h₁
-    rw [Ne, Real.smoothTransition.eq_one_iff_one_le] at h₂
-    constructor <;> linarith
+  obtain ⟨ψ, hψ⟩ := StrongDual.exists_coe_eq_cutoff_normal_field f c w φ n
   have hfφ (x : E) : ‖f (φ (x - (f x - c) • w))‖ ≤ ‖f‖ :=
     (f.le_opNorm _).trans (mul_le_of_le_one_right (norm_nonneg f) (hφ _))
-  -- Above the hyperplane, the divergence of `ψ` only sees the upper cutoff.
-  have hdivψ (x : E) (hx : c < f x) : divergenceCLM ψ x =
-      -(deriv Real.smoothTransition (f x - (c + n)) * f (φ (x - (f x - c) • w))) := by
-    set h : E → ℝ := fun y => (1 - Real.smoothTransition (f y - (c + n))) *
-      f (φ (y - (f y - c) • w))
-    have hloc : (ψ : E → E) =ᶠ[𝓝 x] fun y => h y • w := by
-      filter_upwards [(isOpen_lt continuous_const f.continuous).mem_nhds hx] with y hy
-      have hy : c < f y := hy
-      simp [hψ, h, Real.smoothTransition.one_of_one_le (show 1 ≤ f y - c + 1 by linarith)]
-    have hhd : DifferentiableAt ℝ h x := by
-      have := hφc.differentiable (by simp)
-      fun_prop
-    have hline : (fun t : ℝ => h (x + t • w)) =
-        fun t => (1 - Real.smoothTransition (f x + t - (c + n))) *
-          f (φ (x - (f x - c) • w)) := by
-      ext t
-      simp only [h, hP]
-      simp [hw]
-    have hd : HasDerivAt (fun t : ℝ => (1 - Real.smoothTransition (f x + t - (c + n))) *
-        f (φ (x - (f x - c) • w)))
-        (-(deriv Real.smoothTransition (f x - (c + n)) * f (φ (x - (f x - c) • w)))) 0 := by
-      have := (((((hasDerivAt_id (0 : ℝ)).const_add (f x)).sub_const (c + n)).smoothTransition
-        ).const_sub 1).mul_const (f (φ (x - (f x - c) • w)))
-      simpa using this
-    rw [divergenceCLM_apply, hloc.fderiv_eq, trace_fderiv_smul_const hhd,
-      ← hhd.lineDeriv_eq_fderiv, lineDeriv, hline, hd.deriv]
+  have hdivψ (x : E) (hx : c < f x) := StrongDual.divergenceCLM_cutoff_normal_field f c hw φ n hψ hx
   refine ⟨ψ, fun x => ?_, fun x hx => ?_, fun x hx => ?_, fun x hx hxn => ?_⟩
   · have h₀ := Real.smoothTransition.nonneg (f x - c + 1)
     have h₁ := Real.smoothTransition.le_one (f x - c + 1)
@@ -159,6 +114,7 @@ private theorem exists_normal_extension (f : StrongDual ℝ E) (hf : f ≠ 0) (c
     exact mul_le_mul (hM _) (hfφ x) (norm_nonneg _) ((norm_nonneg _).trans (hM 0))
   · rw [hdivψ x hx, Real.smoothTransition.deriv_of_neg (by linarith), zero_mul, neg_zero]
 
+
 variable [MeasurableSpace E] {μ : Measure E} {Ω : Opens E} {s : Set E}
 
 /-- **Gluing admissible vector fields along a hyperplane.** Let `φ` and `ψ` be test vector fields
@@ -172,124 +128,49 @@ theorem ofReal_setIntegral_add_setIntegral_le_perimeter [OpensMeasurableSpace E]
     (hs : NullMeasurableSet s μ) :
     ENNReal.ofReal ((∫ x in s ∩ {x | f x ≤ a}, divergenceCLM φ x ∂μ) +
       ∫ x in s ∩ {x | a < f x}, divergenceCLM ψ x ∂μ) ≤ perimeter μ Ω s := by
-  -- Interpolate by `Φₙ = φ + σₙ (ψ - φ)`, where `σₙ = ψ₀ ((n + 1) (f - a))` for the smooth
-  -- transition `ψ₀`; the error term `σₙ' f (ψ - φ)` lives on a slab of width `1 / (n + 1)`, where
-  -- `f (ψ - φ) = O (1 / (n + 1))`.
+  obtain ⟨Φ, hΦ, hdiv⟩ := StrongDual.exists_interpolation_divergence f a hφ hψ
   set χ : 𝓓(Ω, E) := ψ - φ
-  set σ : ℕ → E → ℝ := fun n x => Real.smoothTransition ((n + 1) * (f x - a))
-  have hσ (n : ℕ) : ContDiff ℝ (⊤ : ℕ∞) (σ n) := by fun_prop
-  have hσd (n : ℕ) (x : E) : HasFDerivAt (σ n)
-      (deriv Real.smoothTransition ((n + 1) * (f x - a)) • (((n : ℝ) + 1) • f)) x := by
-    refine HasFDerivAt.smoothTransition ?_
-    have := ((f.hasFDerivAt (x := x)).sub_const a).const_mul ((n : ℝ) + 1)
-    simpa using this
-  choose θ hθ using fun n => exists_coe_eq_smul_of_contDiffOn (hσ n).contDiffOn χ
-  set Φ : ℕ → 𝓓(Ω, E) := fun n => φ + θ n
-  have hΦ (n : ℕ) (x : E) : ‖Φ n x‖ ≤ 1 := by
-    have h0 : 0 ≤ σ n x := Real.smoothTransition.nonneg _
-    have h1 : 0 ≤ 1 - σ n x := sub_nonneg.2 (Real.smoothTransition.le_one _)
-    have : Φ n x = (1 - σ n x) • φ x + σ n x • ψ x := by
-      simp only [Φ, χ, add_apply, hθ, sub_apply]
-      module
-    rw [this, ← mem_closedBall_zero_iff]
-    exact convex_closedBall (0 : E) 1 (mem_closedBall_zero_iff.2 (hφ x))
-      (mem_closedBall_zero_iff.2 (hψ x)) h1 h0 (by ring)
-  have hdiv (n : ℕ) (x : E) : divergenceCLM (Φ n) x = divergenceCLM φ x +
-      σ n x * divergenceCLM χ x +
-        deriv Real.smoothTransition ((n + 1) * (f x - a)) * ((n + 1) * f (χ x)) := by
-    have hχd : DifferentiableAt ℝ χ x := χ.contDiff.differentiable (by simp) x
-    simp only [Φ, map_add, add_apply]
-    rw [add_assoc, divergenceCLM_apply (θ n), hθ, trace_fderiv_smul (hσd n x).differentiableAt hχd,
-      ← divergenceCLM_apply, (hσd n x).fderiv]
-    simp [smul_eq_mul]
-  -- The normal component of `χ` is `O (|f - a|)`, and the derivative of `ψ₀` is bounded.
-  obtain ⟨C, hC⟩ : ∃ C, ∀ x, |f (χ x)| ≤ C * |f x - a| := by
-    by_cases hf : f = 0
-    · exact ⟨0, fun x => by simp [hf]⟩
-    obtain ⟨v, hv⟩ : ∃ v, f v = 1 := by
-      obtain ⟨v₀, hv₀⟩ : ∃ v₀, f v₀ ≠ 0 := by
-        by_contra! h
-        exact hf (ContinuousLinearMap.ext h)
-      exact ⟨(f v₀)⁻¹ • v₀, by simp [hv₀]⟩
-    obtain ⟨L, hL⟩ := ContDiff.lipschitzWith_of_hasCompactSupport
-      (χ.hasCompactSupport.comp_left (g := f) f.map_zero)
-      (f.contDiff.comp (χ.contDiff.of_le (by simp))) one_ne_zero
-    exact ⟨L * ‖v‖, fun x => by
-      simpa using hL.norm_le_mul_abs_sub_of_eq_zero (f := f) hv
-        (fun x hx => by simp [χ, hφψ x hx]) x⟩
-  obtain ⟨M, hM⟩ := Continuous.bounded_above_of_compact_support
-    ((Real.smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl)
-    Real.smoothTransition.hasCompactSupport_deriv
-  set C' := max C 0
-  have hC' (x : E) : |f (χ x)| ≤ C' * |f x - a| :=
-    (hC x).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (abs_nonneg _))
-  have herr (n : ℕ) (x : E) :
-      |deriv Real.smoothTransition ((n + 1) * (f x - a)) * ((n + 1) * f (χ x))| ≤
-        (tsupport χ).indicator (fun _ => M * C') x := by
-    by_cases hx : x ∈ tsupport χ
-    · rw [indicator_of_mem hx]
-      exact Real.smoothTransition.abs_deriv_mul_mul_le hM (le_max_right _ _) (by positivity)
-        (hC' x)
-    · simp [image_eq_zero_of_notMem_tsupport hx, hx]
-  -- Dominated convergence on `s`.
-  set g : E → ℝ := fun x => {x | f x ≤ a}.indicator (divergenceCLM φ) x +
-    {x | a < f x}.indicator (divergenceCLM ψ) x
+  obtain ⟨K, hK⟩ := StrongDual.exists_abs_deriv_smoothTransition_mul_le_indicator f a
+    (χ := χ) fun x hx => by simp [χ, hφψ x hx]
   have hint (φ' : 𝓓(Ω, ℝ)) : Integrable φ' μ :=
     φ'.continuous.integrable_of_hasCompactSupport φ'.hasCompactSupport
-  have hmeas_le : MeasurableSet {x | f x ≤ a} := measurableSet_le f.continuous.measurable
-    measurable_const
-  have hmeas_lt : MeasurableSet {x | a < f x} := measurableSet_lt measurable_const
-    f.continuous.measurable
+  set g : E → ℝ := fun x => {x | f x ≤ a}.indicator (divergenceCLM φ) x +
+    {x | a < f x}.indicator (divergenceCLM ψ) x
   have hlim : Tendsto (fun n => ∫ x in s, divergenceCLM (Φ n) x ∂μ) atTop
       (𝓝 (∫ x in s, g x ∂μ)) := by
     refine tendsto_integral_of_dominated_convergence
       (fun x => |divergenceCLM φ x| + |divergenceCLM χ x| +
-        (tsupport χ).indicator (fun _ => M * C') x)
+        (tsupport χ).indicator (fun _ => K) x)
       (fun n => (divergenceCLM (Φ n)).continuous.aestronglyMeasurable) ?_ ?_ ?_
     · refine (((hint _).abs.add (hint _).abs).add ?_).integrableOn
       exact (integrable_indicator_iff (isClosed_tsupport _).measurableSet).2
         (integrableOn_const χ.hasCompactSupport.isCompact.measure_lt_top.ne)
     · refine fun n => Eventually.of_forall fun x => ?_
       rw [hdiv, Real.norm_eq_abs]
-      have hσ0 : 0 ≤ σ n x := Real.smoothTransition.nonneg _
-      have hσ1 : σ n x ≤ 1 := Real.smoothTransition.le_one _
+      have hσ0 : 0 ≤ Real.smoothTransition ((n + 1) * (f x - a)) := Real.smoothTransition.nonneg _
+      have hσ1 : Real.smoothTransition ((n + 1) * (f x - a)) ≤ 1 := Real.smoothTransition.le_one _
       refine (abs_add_le _ _).trans (add_le_add ((abs_add_le _ _).trans (add_le_add le_rfl ?_))
-        (herr n x))
+        (hK n x))
       rw [abs_mul, abs_of_nonneg hσ0]
       exact mul_le_of_le_one_left (abs_nonneg _) hσ1
     · refine Eventually.of_forall fun x => ?_
-      rcases lt_trichotomy (f x) a with hx | hx | hx
-      · -- Below the hyperplane, `σₙ` and its derivative vanish.
-        have ht (n : ℕ) : ((n : ℝ) + 1) * (f x - a) < 0 :=
-          mul_neg_of_pos_of_neg (by positivity) (by linarith)
-        simp only [hdiv, σ, Real.smoothTransition.zero_of_nonpos (ht _).le,
-          Real.smoothTransition.deriv_of_neg (ht _), g, indicator_of_mem (show x ∈ {x | f x ≤ a}
-            from hx.le), indicator_of_notMem (show x ∉ {x | a < f x} from not_lt.2 hx.le)]
-        simp
-      · -- On the hyperplane, `σₙ` and the normal component of `χ` vanish.
-        have hχx : f (χ x) = 0 := by simp [χ, hφψ x hx]
-        have h₁ : x ∈ {x | f x ≤ a} := hx.le
-        have h₂ : x ∉ {x | a < f x} := fun h => lt_irrefl a (hx ▸ h)
-        simp only [hdiv, σ, hx, sub_self, mul_zero, Real.smoothTransition.zero, hχx, g,
-          indicator_of_mem h₁, indicator_of_notMem h₂]
-        simp
-      · -- Above the hyperplane, eventually `σₙ = 1` and its derivative vanishes.
-        have hev : ∀ᶠ n : ℕ in atTop, 1 < ((n : ℝ) + 1) * (f x - a) :=
-          (Tendsto.atTop_mul_const (sub_pos.2 hx) (tendsto_natCast_atTop_atTop.atTop_add
-            tendsto_const_nhds)).eventually_gt_atTop 1
-        refine tendsto_const_nhds.congr' ?_
-        filter_upwards [hev] with n hn
-        simp only [hdiv, σ, Real.smoothTransition.one_of_one_le hn.le,
-          Real.smoothTransition.deriv_of_one_lt hn, g,
-          indicator_of_notMem (show x ∉ {x | f x ≤ a} from not_le.2 hx),
-          indicator_of_mem (show x ∈ {x | a < f x} from hx), χ, map_sub, sub_apply]
-        ring
-  have hg : ∫ x in s, g x ∂μ = (∫ x in s ∩ {x | f x ≤ a}, divergenceCLM φ x ∂μ) +
+      simp only [hdiv]
+      convert Real.smoothTransition.tendsto_add_mul_add_deriv_mul (d := divergenceCLM φ x)
+        (e := divergenceCLM χ x) (k := f (χ x)) (t := f x - a) using 2
+      by_cases hx : f x ≤ a
+      · simp [g, hx, sub_nonpos.2 hx]
+      · simp [g, hx, not_le.1 hx, χ]
+  have hmeas_le : MeasurableSet {x | f x ≤ a} := measurableSet_le f.continuous.measurable
+    measurable_const
+  have hmeas_lt : MeasurableSet {x | a < f x} := measurableSet_lt measurable_const
+    f.continuous.measurable
+  have hsplit : ∫ x in s, g x ∂μ = (∫ x in s ∩ {x | f x ≤ a}, divergenceCLM φ x ∂μ) +
       ∫ x in s ∩ {x | a < f x}, divergenceCLM ψ x ∂μ := by
-    rw [integral_add (((hint _).indicator hmeas_le).integrableOn)
-      (((hint _).indicator hmeas_lt).integrableOn), setIntegral_indicator hmeas_le,
+    simp only [g]
+    rw [integral_add ((hint _).indicator hmeas_le).integrableOn
+      ((hint _).indicator hmeas_lt).integrableOn, setIntegral_indicator hmeas_le,
       setIntegral_indicator hmeas_lt]
-  rw [← hg]
+  rw [← hsplit]
   refine le_of_tendsto' (ENNReal.tendsto_ofReal hlim) fun n => ?_
   rw [perimeter_eq_iSup hs]
   exact le_iSup₂_of_le (f := fun (φ : 𝓓(Ω, E)) (_ : ∀ x, ‖φ x‖ ≤ 1) =>

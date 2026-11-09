@@ -29,10 +29,12 @@ the two constructions produces the other: a conjugation on `V` presents `V` as a
 and a complexification carries a conjugation.  That is what makes conjugations the tool for
 realizing an object over `ℝ`.
 
-`LinearEquiv.conjugationOfComplexification` transports the existing tensor conjugation through a
-complexification equivalence `ℂ ⊗[ℝ] W ≃ₗ[ℂ] V`. Its exact fixed locus is the image of the real
-inclusion. The equivariant application is `Representation.IsRealForm.exists_isRealStructure`,
-downstream in `TauCeti.RepresentationTheory.RealForm`.
+The canonical `TauCeti.realPointsEquiv` intertwines `TauCeti.tmulConj` with the original
+conjugation `K`. For a chosen presentation `ℂ ⊗[ℝ] W ≃ₗ[ℂ] V`,
+`LinearEquiv.conjugationOfComplexification` transports the existing tensor conjugation through
+that equivalence. Its exact fixed locus is the image of the real inclusion. The equivariant
+application is `Representation.IsRealForm.exists_isRealStructure`, downstream in
+`TauCeti.RepresentationTheory.RealForm`.
 
 Everything is stated for an arbitrary `V`; no finite-dimensionality is used anywhere.
 
@@ -70,6 +72,8 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
   for any real structure compatible with the complex one.
 * `TauCeti.tmulConj_involutive`, `TauCeti.tmulConj_tmul` and `TauCeti.tmulConj_eq_self_iff`: the
   conjugation of a complexification and its real points.
+* `TauCeti.realPointsEquiv_tmulConj`: the canonical real-descent equivalence intertwines
+  tensor conjugation with `K`.
 * `TauCeti.tmulConj_baseChange`: that conjugation commutes with every base-changed map, which is
   what makes it equivariant for a base-changed action.
 
@@ -510,6 +514,15 @@ theorem tmulConj_eq_one_tmul_sub_I_tmul (u : ℂ ⊗[ℝ] W) :
     (one_tmul_realPart_add_I_tmul_imaginaryPart W (tmulConj W u)).symm
 
 end Complexification
+
+/-- Real descent intertwines tensor conjugation with the original conjugation. -/
+@[simp]
+theorem realPointsEquiv_tmulConj (hK : Function.Involutive K)
+    (x : ℂ ⊗[ℝ] realPoints K) :
+    realPointsEquiv hK (tmulConj (realPoints K) x) = K (realPointsEquiv hK x) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul z w => simp [mem_realPoints.mp w.property]
+  | add x y hx hy => simpa only [map_add] using congrArg₂ (· + ·) hx hy
 
 /-- **The conjugation of a complexification commutes with every base-changed map**, because
 `LinearMap.baseChange` leaves the conjugated factor alone. -/

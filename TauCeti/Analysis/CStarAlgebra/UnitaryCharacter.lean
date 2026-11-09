@@ -50,36 +50,26 @@ theorem _root_.MonoidHom.existsUnique_pontryaginDual_of_unitary_translate
   let : CStarAlgebra A := {}
   -- Translate one witnessing operator, and compare products and squared absolute values.
   let v (g : G) : A := ⟨ρ g * (a : B), hmem g⟩
-  have hv1 : v 1 = a := by
-    apply Subtype.ext
-    simp [v]
-  have hvmul (g h : G) : v (g * h) * a = v g * v h := by
-    apply Subtype.ext
-    simpa [v, map_mul, mul_assoc] using
-      congrArg (fun x : B => ρ g * x * (a : B)) (hcomm h).eq
-  have hvstar (g : G) : star (v g) * v g = star a * a := by
-    apply Subtype.ext
-    simp only [MulMemClass.coe_mul, StarMemClass.coe_star, v, star_mul]
-    rw [mul_assoc, ← mul_assoc (star (ρ g)), Unitary.star_mul_self_of_mem (hρ g)]
-    simp
+  have hvmul (g h : G) : v (g * h) * a = v g * v h := Subtype.ext <| by
+    simpa [v, mul_assoc] using congrArg (fun x : B => ρ g * x * (a : B)) (hcomm h).eq
   have hvnorm (g : G) : ‖ω (v g)‖ = ‖ω a‖ := by
-    have heq := congrArg (fun b : A => ‖ω b‖) (hvstar g)
+    have hvstar : star (v g) * v g = star a * a := Subtype.ext <| by
+      simp only [MulMemClass.coe_mul, StarMemClass.coe_star, v, star_mul]
+      rw [mul_assoc, ← mul_assoc (star (ρ g)), Unitary.star_mul_self_of_mem (hρ g), one_mul]
+    have heq := congrArg (‖ω ·‖) hvstar
     simp only [map_mul, map_star, norm_mul, norm_star] at heq
-    nlinarith [norm_nonneg (ω (v g)), norm_nonneg (ω a)]
+    exact (mul_self_inj (norm_nonneg _) (norm_nonneg _)).mp heq
   -- Dividing by the nonzero character value gives a circle-valued homomorphism.
   let c (g : G) : ℂ := ω (v g) / ω a
-  have hc1 : c 1 = 1 := by simp [c, hv1, ha]
   have hcmul (g h : G) : c (g * h) = c g * c h := by
     have heq := congrArg ω (hvmul g h)
     simp only [map_mul] at heq
-    dsimp only [c]
+    simp only [c]
     field_simp
     exact heq
-  have hcnorm (g : G) : ‖c g‖ = 1 := by
-    simp only [c, norm_div, hvnorm g, div_self (norm_ne_zero_iff.mpr ha)]
   let χ : PontryaginDual G :=
-    { toFun := fun g => ⟨c g, mem_sphere_zero_iff_norm.mpr (hcnorm g)⟩
-      map_one' := Circle.ext hc1
+    { toFun g := ⟨c g, mem_sphere_zero_iff_norm.mpr <| by simp [c, hvnorm g, ha]⟩
+      map_one' := Circle.ext <| by simp [c, v, ha]
       map_mul' g h := Circle.ext (hcmul g h)
       continuous_toFun :=
         (((CharacterSpace.toCLM ω).continuous.comp
@@ -88,22 +78,13 @@ theorem _root_.MonoidHom.existsUnique_pontryaginDual_of_unitary_translate
   have hχcoe (g : G) : (χ g : ℂ) = c g := rfl
   have hχ (g : G) (b : A) (hb : ρ g * (b : B) ∈ A) :
       ω ⟨ρ g * (b : B), hb⟩ = (χ g : ℂ) * ω b := by
-    have hcross : v g * b = a * ⟨ρ g * (b : B), hb⟩ := by
-      apply Subtype.ext
+    have hcross : v g * b = a * ⟨ρ g * (b : B), hb⟩ := Subtype.ext <| by
       simpa [v, mul_assoc] using congrArg (fun x : B => x * (b : B)) (hcomm g).eq
     have heq := congrArg ω hcross
     simp only [map_mul] at heq
-    rw [hχcoe]
-    dsimp only [c]
-    apply mul_right_cancel₀ ha
-    calc
-      ω ⟨ρ g * (b : B), hb⟩ * ω a = ω (v g) * ω b := by
-        simpa only [mul_comm] using heq.symm
-      _ = ω (v g) / ω a * ω b * ω a := by field_simp
-  refine ⟨χ, hχ, fun ψ hψ => ?_⟩
-  apply PontryaginDual.ext
-  intro g
-  apply Circle.ext
+    rw [hχcoe, div_mul_eq_mul_div, eq_div_iff ha]
+    linear_combination -heq
+  refine ⟨χ, hχ, fun ψ hψ => PontryaginDual.ext fun g => Circle.ext ?_⟩
   exact mul_right_cancel₀ ha ((hψ g a (hmem g)).symm.trans (hχ g a (hmem g)))
 
 end TauCeti
