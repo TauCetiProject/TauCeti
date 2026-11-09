@@ -10,6 +10,7 @@ import Mathlib.Analysis.Calculus.SmoothSeries
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
+import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
 /-!
@@ -30,6 +31,9 @@ derivatives of order `j` of the Fourier monomial `mFourier n` are bounded by
 on the monomials, weighted by the Fourier coefficients of `f`; in particular `T` is determined by
 these values. These expansions are the input to the Fourier-series proof of the Schwartz kernel
 theorem.
+
+Conversely, a trigonometric series `∑ n, c n • mFourier n` whose coefficients decrease rapidly
+converges in every `C^N` norm, so it is a smooth function, with Fourier coefficients `c`.
 
 ## Main definitions
 
@@ -52,6 +56,13 @@ theorem.
   function remain summable after multiplication by any polynomial weight `(1 + R ‖n‖) ^ N`.
 * `TauCeti.UnitAddTorus.eventually_derivBound_sub_sum`: the Fourier series of a smooth function
   converges to it in every `C^N` norm.
+* `TauCeti.UnitAddTorus.eq_of_mFourierCoeff_eq`: a smooth function is determined by its Fourier
+  coefficients.
+* `TauCeti.UnitAddTorus.mFourierCoeff_tsum_smul_mFourier`: the Fourier coefficients of an
+  absolutely convergent trigonometric series are its coefficients.
+* `TauCeti.UnitAddTorus.tsum_smul_mFourier_mem_smoothFunctions` and
+  `TauCeti.UnitAddTorus.tsum_smul_mFourier_mem_smoothFunctions_of_bounded`: a trigonometric series
+  with rapidly decreasing coefficients is a smooth function.
 * `LinearMap.hasSum_mFourierCoeff_smul_apply`: a continuous linear map applied to a
   smooth function `f` is the sum of its values on the Fourier monomials, weighted by the Fourier
   coefficients of `f`.
@@ -408,5 +419,111 @@ theorem linearMap_eq_of_apply_mFourierSmooth_eq {F : Type*} [NormedAddCommGroup 
   ext f
   refine (T.hasSum_mFourierCoeff_smul_apply hT f).unique ?_
   simpa only [h] using T'.hasSum_mFourierCoeff_smul_apply hT' f
+
+/-! ### Fourier coefficients determine smooth functions -/
+
+/-- The Fourier series of a smooth function on the torus converges to it pointwise. -/
+theorem hasSum_mFourierCoeff_smul_mFourier {f : UnitAddTorus d → ℂ}
+    (hf : f ∈ smoothFunctions d) :
+    HasSum (fun n ↦ mFourierCoeff f n • ⇑(mFourier n)) f := by
+  have hsum : Summable fun n ↦ mFourierCoeff f n :=
+    Summable.of_norm <| by simpa using summable_norm_mFourierCoeff_mul_pow hf le_rfl 0
+  exact Pi.hasSum.2 (hasSum_mFourier_series_apply_of_summable
+    (f := ⟨f, continuous_of_mem_smoothFunctions hf⟩) hsum)
+
+/-- Two smooth functions on the torus with the same Fourier coefficients are equal. -/
+theorem eq_of_mFourierCoeff_eq {f g : UnitAddTorus d → ℂ} (hf : f ∈ smoothFunctions d)
+    (hg : g ∈ smoothFunctions d) (h : ∀ n, mFourierCoeff f n = mFourierCoeff g n) : f = g :=
+  (hasSum_mFourierCoeff_smul_mFourier hf).unique <| by
+    simpa only [h] using hasSum_mFourierCoeff_smul_mFourier hg
+
+/-! ### Smooth functions from rapidly decreasing coefficients -/
+
+/-- The Fourier coefficients of the monomial `mFourier n` are those of the Kronecker delta at
+`n`. -/
+theorem mFourierCoeff_mFourier (n m : d → ℤ) :
+    mFourierCoeff (mFourier n) m = (Pi.single n 1 : (d → ℤ) → ℂ) m := by
+  have h : mFourierBasis.repr (mFourierBasis n) m = _ := mFourierBasis_repr _ m
+  rw [HilbertBasis.repr_self, lp.single_apply, coe_mFourierBasis, mFourierCoeff_toLp] at h
+  exact h.symm
+
+/-- The Fourier coefficients of an absolutely convergent trigonometric series
+`∑ n, c n • mFourier n` are the coefficients `c`. -/
+theorem mFourierCoeff_tsum_smul_mFourier {c : (d → ℤ) → ℂ} (hc : Summable fun n ↦ ‖c n‖)
+    (m : d → ℤ) : mFourierCoeff (fun z ↦ ∑' n, c n • mFourier n z) m = c m := by
+  classical
+  have hint (n : d → ℤ) : MeasureTheory.Integrable
+      (fun z : UnitAddTorus d ↦ mFourier (-m) z • (c n • mFourier n z)) :=
+    (by fun_prop : Continuous fun z : UnitAddTorus d ↦ mFourier (-m) z • (c n • mFourier n z))
+      |>.integrable_of_hasCompactSupport (.of_compactSpace _)
+  have hnorm (n : d → ℤ) :
+      ∫ z, ‖mFourier (-m) z • (c n • mFourier n z)‖ = ‖c n‖ := by
+    simp [norm_mFourier_apply, MeasureTheory.probReal_univ]
+  have hsum (z : UnitAddTorus d) : Summable fun n ↦ c n • mFourier n z :=
+    Summable.of_norm <| by simpa [norm_smul, norm_mFourier_apply] using hc
+  calc mFourierCoeff (fun z ↦ ∑' n, c n • mFourier n z) m
+      = ∫ z, ∑' n, mFourier (-m) z • (c n • mFourier n z) := by
+        rw [mFourierCoeff_eq_integral_volume]
+        refine MeasureTheory.integral_congr_ae (.of_forall fun z ↦ ?_)
+        exact ((hsum z).tsum_const_smul (mFourier (-m) z)).symm
+    _ = ∑' n, ∫ z, mFourier (-m) z • (c n • mFourier n z) :=
+        (MeasureTheory.integral_tsum_of_summable_integral_norm hint
+          (by simpa only [hnorm] using hc)).symm
+    _ = ∑' n, c n * (Pi.single n 1 : (d → ℤ) → ℂ) m := by
+        congr 1 with n
+        rw [← mFourierCoeff_mFourier, mFourierCoeff_eq_integral_volume, ← smul_eq_mul,
+          ← MeasureTheory.integral_smul]
+        refine MeasureTheory.integral_congr_ae (.of_forall fun z ↦ ?_)
+        simp only [smul_eq_mul]
+        ring
+    _ = c m := by
+        rw [tsum_eq_single m fun n hn ↦ by simp [Ne.symm hn]]
+        simp
+
+/-- **Rapidly decreasing coefficients give a smooth function.** If `‖c n‖ * ‖n‖ ^ k` is summable
+for every `k`, then the trigonometric series `∑ n, c n • mFourier n` is a smooth function on the
+torus. -/
+theorem tsum_smul_mFourier_mem_smoothFunctions {c : (d → ℤ) → ℂ}
+    (hc : ∀ k : ℕ, Summable fun n ↦ ‖c n‖ * ‖n‖ ^ k) :
+    (fun z ↦ ∑' n, c n • mFourier n z) ∈ smoothFunctions d := by
+  rw [mem_smoothFunctions]
+  refine contDiff_tsum (fun n ↦ (contDiff_mFourier_coe n).const_smul (c n))
+    (v := fun k n ↦ ‖c n‖ * (2 * π * Fintype.card d * ‖n‖) ^ k) (fun k _ ↦ ?_)
+    fun k n x _ ↦ ?_
+  · exact ((hc k).mul_left ((2 * π * Fintype.card d) ^ k)).congr fun n ↦ by ring
+  · rw [iteratedFDeriv_const_smul_apply' ((contDiff_mFourier_coe n).contDiffAt.of_le
+      (mod_cast le_top)), norm_smul]
+    exact mul_le_mul_of_nonneg_left (norm_iteratedFDeriv_mFourier_le n k x) (norm_nonneg _)
+
+/-- **Rapidly decreasing coefficients give a smooth function**, under the classical hypothesis
+that `‖n‖ ^ k * ‖c n‖` is bounded for every `k`. -/
+theorem tsum_smul_mFourier_mem_smoothFunctions_of_bounded {c : (d → ℤ) → ℂ}
+    (hc : ∀ k : ℕ, ∃ C, ∀ n, ‖n‖ ^ k * ‖c n‖ ≤ C) :
+    (fun z ↦ ∑' n, c n • mFourier n z) ∈ smoothFunctions d := by
+  refine tsum_smul_mFourier_mem_smoothFunctions fun k ↦ ?_
+  set K := k + Fintype.card d + 1
+  obtain ⟨C₀, hC₀⟩ := hc 0
+  obtain ⟨C, hC⟩ := hc K
+  refine Summable.of_nonneg_of_le (fun n ↦ by positivity) (fun n ↦ ?_)
+    (summable_pi_int_inv_one_add_norm_pow.mul_left (2 ^ K * (C₀ + C)))
+  have hpow : (1 + ‖n‖) ^ K ≤ 2 ^ K * (1 + ‖n‖ ^ K) := by
+    calc (1 + ‖n‖) ^ K ≤ 2 ^ (K - 1) * (1 ^ K + ‖n‖ ^ K) := add_pow_le zero_le_one (norm_nonneg n) K
+      _ ≤ 2 ^ K * (1 + ‖n‖ ^ K) := by
+          rw [one_pow]
+          gcongr
+          exacts [one_le_two, Nat.sub_le K 1]
+  have h0 := hC₀ n
+  rw [pow_zero, one_mul] at h0
+  have hK : (1 + ‖n‖) ^ K * ‖c n‖ ≤ 2 ^ K * (C₀ + C) :=
+    calc (1 + ‖n‖) ^ K * ‖c n‖ ≤ 2 ^ K * (1 + ‖n‖ ^ K) * ‖c n‖ := by gcongr
+      _ = 2 ^ K * (‖c n‖ + ‖n‖ ^ K * ‖c n‖) := by ring
+      _ ≤ 2 ^ K * (C₀ + C) := by gcongr; exact hC n
+  rw [← div_eq_mul_inv, le_div_iff₀ (by positivity)]
+  calc ‖c n‖ * ‖n‖ ^ k * (1 + ‖n‖) ^ (Fintype.card d + 1)
+      ≤ ‖c n‖ * (1 + ‖n‖) ^ k * (1 + ‖n‖) ^ (Fintype.card d + 1) := by
+        gcongr; linarith [norm_nonneg n]
+    _ = (1 + ‖n‖) ^ K * ‖c n‖ := by ring
+    _ ≤ 2 ^ K * (C₀ + C) := hK
+
 
 end TauCeti.UnitAddTorus
