@@ -25,6 +25,7 @@ diffeomorphism the differential within the source is the differential.
   differential.
 * `PartialDiffeomorph.mfderiv_apply_mfderiv_symm_apply`: the differential undoes the differential of
   the inverse.
+* `PartialDiffeomorph.surjective_mfderiv`: the differential at a point of the source is surjective.
 -/
 
 public section
@@ -65,5 +66,10 @@ theorem mfderiv_apply_mfderiv_symm_apply (Φ : PartialDiffeomorph I J M N n) (hn
     (hy : y ∈ Φ.target) (v : TangentSpace J y) :
     mfderiv I J Φ (Φ.symm y) (mfderiv J I Φ.symm y v) = v :=
   Φ.symm.mfderiv_symm_apply_mfderiv_apply hn hy v
+
+/-- The differential of a partial diffeomorphism at a point of its source is surjective. -/
+theorem surjective_mfderiv (Φ : PartialDiffeomorph I J M N n) (hn : n ≠ 0) {x : M}
+    (hx : x ∈ Φ.source) : Function.Surjective (mfderiv I J Φ x) :=
+  ((Φ.isLocalDiffeomorphAt I J n hx).isInvertible_mfderiv hn).surjective
 
 end PartialDiffeomorph

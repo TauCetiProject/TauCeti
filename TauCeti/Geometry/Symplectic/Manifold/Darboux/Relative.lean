@@ -17,6 +17,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Symplectic.Darboux.Relative
 
@@ -102,32 +103,29 @@ private def coordForm (σ : SmoothTwoForm I M) : X → X [⋀^Fin 2]→L[ℝ] �
   fun y ↦ (RoughForm.inChartAt σ.1 p (coordTransition χ p y)).compContinuousLinearMap
     (fderiv ℝ (coordTransition χ p) y)
 
-private theorem contDiffOn_inChartAt_target (σ : SmoothTwoForm I M) :
-    ContDiffOn ℝ ∞ (RoughForm.inChartAt σ.1 p) (extChartAt I p).target := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
-  have : IsManifold I (∞ + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  simpa only [(isOpen_extChartAt_target p).interior_eq] using
-    σ.isSmoothForm.contDiffOn_inChartAt_interior_target p
-
 private theorem contDiffOn_coordForm (σ : SmoothTwoForm I M) :
     ContDiffOn ℝ ∞ (coordForm χ p σ) (coordDomain χ p) := by
+  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
+  have : IsManifold I (∞ + 1) M := IsManifold.of_le (n := ∞) (by simp)
   have hτ := contDiffOn_coordTransition χ p
   have hDτ : ContDiffOn ℝ ∞ (fderiv ℝ (coordTransition χ p)) (coordDomain χ p) :=
     hτ.fderiv_of_isOpen (isOpen_coordDomain χ p) (by simp)
   exact ((ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM (𝕜 := ℝ) (E := X) (F := E)
     (G := ℝ) (ι := Fin 2) ∞).comp_contDiffOn hDτ).clm_apply
-    ((contDiffOn_inChartAt_target p σ).comp hτ (mapsTo_coordTransition χ p))
+    ((σ.isSmoothForm.contDiffOn_inChartAt_target p).comp hτ (mapsTo_coordTransition χ p))
 
 private theorem extDeriv_coordForm {σ : SmoothTwoForm I M} (hσ : σ.IsClosed) {y : X}
     (hy : y ∈ coordDomain χ p) : extDeriv (coordForm χ p σ) y = 0 := by
+  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
   have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
+  have : IsManifold I (∞ + 1) M := IsManifold.of_le (n := ∞) (by simp)
   have hτ : ContDiffAt ℝ ∞ (coordTransition χ p) y :=
     (contDiffOn_coordTransition χ p).contDiffAt ((isOpen_coordDomain χ p).mem_nhds hy)
   have hz : coordTransition χ p y ∈ interior (extChartAt I p).target := by
     rw [(isOpen_extChartAt_target p).interior_eq]
     exact mapsTo_coordTransition χ p hy
   have hη : DifferentiableAt ℝ (RoughForm.inChartAt σ.1 p) (coordTransition χ p y) :=
-    ((contDiffOn_inChartAt_target p σ).differentiableOn (by simp)).differentiableAt
+    ((σ.isSmoothForm.contDiffOn_inChartAt_target p).differentiableOn (by simp)).differentiableAt
       ((isOpen_extChartAt_target p).mem_nhds (interior_subset hz))
   unfold coordForm
   rw [extDeriv_pullback hη hτ (by simp), hσ.extDeriv_inChartAt_eq_zero p hz]
@@ -162,22 +160,14 @@ private theorem eval₂_eq_coordForm (σ : SmoothTwoForm I M) {x : M} (hx : x �
     ← heq.eq_of_nhds]
   rfl
 
-omit [I.Boundaryless] [IsManifold I ∞ M] in
-/-- The `χ`-derivative at a point of the source of `χ` is surjective. -/
-private theorem surjective_mvfderiv {x : M} (hx : x ∈ χ.source) :
-    Surjective (mvfderiv I χ x) := by
-  intro u
-  obtain ⟨v, hv⟩ := ((PartialDiffeomorph.isLocalDiffeomorphAt I 𝓘(ℝ, X) ∞ χ hx).isInvertible_mfderiv
-    (by simp)).surjective u
-  exact ⟨v, by rw [mvfderiv_apply_eq_mfderiv_apply, hv]⟩
-
 omit [I.Boundaryless] in
 /-- A two-form nondegenerate at a point of the chart domains has nondegenerate coordinate
 expression there. -/
 private theorem coordForm_nondegenerate {σ : SmoothTwoForm I M} {x : M} (hx : x ∈ χ.source)
     (hxp : x ∈ (extChartAt I p).source) (hnd : (σ.bilinFormAt x).Nondegenerate) (u : X)
     (hu : ∀ u', coordForm χ p σ (χ x) ![u, u'] = 0) : u = 0 := by
-  obtain ⟨v, rfl⟩ := surjective_mvfderiv χ hx u
+  obtain ⟨v, rfl⟩ := χ.surjective_mfderiv (by simp) hx u
+  rw [← mvfderiv_apply_eq_mfderiv_apply] at hu ⊢
   have hv : v = 0 := hnd.1 v fun w ↦ by
     rw [SmoothForm.bilinFormAt_apply, eval₂_eq_coordForm χ p σ hx hxp]
     exact hu _
@@ -368,8 +358,9 @@ private theorem coordForm_immersionChart_inl (p : M) {q : Q} (hq : q ∈ hi.domC
     rfl
   have hχq : χ (i q) = (hi.domChart.extend J q, 0) := immersionChart_apply hi hq
   ext a
-  obtain ⟨a₀, ha₀⟩ := surjective_mvfderiv φ hqφ (a 0)
-  obtain ⟨a₁, ha₁⟩ := surjective_mvfderiv φ hqφ (a 1)
+  obtain ⟨a₀, ha₀⟩ := φ.surjective_mfderiv (by simp) hqφ (a 0)
+  obtain ⟨a₁, ha₁⟩ := φ.surjective_mfderiv (by simp) hqφ (a 1)
+  rw [← mvfderiv_apply_eq_mfderiv_apply] at ha₀ ha₁
   have key (σ : SmoothTwoForm I M) :
       (coordForm χ p σ (hi.domChart.extend J q, 0)).compContinuousLinearMap
           (.inl ℝ E' hi.complement) a = mpullback J I i σ.1 q ![a₀, a₁] := by

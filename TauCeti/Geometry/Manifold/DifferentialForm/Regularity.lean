@@ -38,7 +38,9 @@ differentiation commutes with this extension.
   manifold, `C^n` regularity of chart expressions transfers between overlapping charts;
   `TauCeti.IsSmoothForm.contDiffOn_inChartAt_interior_target` and
   `TauCeti.IsSmoothForm.inChartAt_mextDeriv_eq_extDeriv` deduce `ContDiffOn` and ordinary flat
-  `extDeriv` on the interior of any preferred chart target.
+  `extDeriv` on the interior of any preferred chart target;
+  `TauCeti.IsSmoothForm.contDiffOn_inChartAt_target` gives `ContDiffOn` on the whole target for a
+  boundaryless model.
 * `TauCeti.contMDiffAt_mpullback_extChartAt`: a flat form that is `C^n` within the model range
   pulls back along a chart to a `C^n` section.
 * `TauCeti.contMDiffOn_mextDerivWithin`, `TauCeti.isSmoothBundleForm_mextDeriv`,
@@ -343,6 +345,15 @@ theorem IsSmoothForm.contDiffOn_inChartAt_interior_target {n : WithTop ℕ∞} [
     mem_of_superset (isOpen_interior.mem_nhds hz)
       (interior_subset.trans (extChartAt_target_subset_range α))
   exact (hrange.contDiffAt hnhds).contDiffWithinAt
+
+/-- For a boundaryless model, a `C^n` form on a `C^(n+1)` manifold has `C^n` coordinate expression
+on the whole target of any preferred chart. -/
+theorem IsSmoothForm.contDiffOn_inChartAt_target {n : WithTop ℕ∞} [IsManifold I 1 M]
+    [IsManifold I (n + 1) M] [I.Boundaryless] {φ : RoughForm I M F k}
+    (hφ : IsSmoothForm I n φ) (α : M) :
+    ContDiffOn ℝ n (φ.inChartAt α) (extChartAt I α).target := by
+  simpa only [(isOpen_extChartAt_target α).interior_eq] using
+    hφ.contDiffOn_inChartAt_interior_target α
 
 /-- On the interior of a preferred chart target on a `C²` manifold, the manifold exterior derivative
 of a `C¹` form read in that chart is the ordinary flat exterior derivative `extDeriv`. -/
