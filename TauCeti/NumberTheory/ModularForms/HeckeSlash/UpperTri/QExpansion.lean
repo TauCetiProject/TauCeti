@@ -87,28 +87,37 @@ namespace HeckeRing.GL2
 
 variable (k : ℤ) (p : ℕ)
 
-private lemma det_pos_of_coe_eq_upperTri (hp : 0 < p) {g : GL (Fin 2) ℚ} {b : ℚ}
+/-- A matrix `!![1, b; 0, p]` in `GL₂(ℚ)` has invertible determinant, so `0 < p`. -/
+private lemma pos_of_coe_eq_upperTri {g : GL (Fin 2) ℚ} {b : ℚ}
+    (hg : (g : Matrix (Fin 2) (Fin 2) ℚ) = !![1, b; 0, (p : ℚ)]) : 0 < p := by
+  refine Nat.pos_of_ne_zero ?_
+  rintro rfl
+  have h := g.det.ne_zero
+  rw [Matrix.GeneralLinearGroup.val_det_apply, hg] at h
+  simp at h
+
+private lemma det_pos_of_coe_eq_upperTri {g : GL (Fin 2) ℚ} {b : ℚ}
     (hg : (g : Matrix (Fin 2) (Fin 2) ℚ) = !![1, b; 0, (p : ℚ)]) :
     0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det := by
   rw [hg, Matrix.det_fin_two_of]
-  simpa using hp
+  simpa using pos_of_coe_eq_upperTri p hg
 
 /-- The Möbius image of `τ` under any rational matrix `!![1, b; 0, p]` is `(τ + b) / p`. -/
-lemma coe_smul_of_coe_eq_upperTri (hp : 0 < p) {g : GL (Fin 2) ℚ} {b : ℚ}
+lemma coe_smul_of_coe_eq_upperTri {g : GL (Fin 2) ℚ} {b : ℚ}
     (hg : (g : Matrix (Fin 2) (Fin 2) ℚ) = !![1, b; 0, (p : ℚ)]) (τ : ℍ) :
     ((Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) g • τ : ℍ) : ℂ) = ((τ : ℂ) + b) / p := by
   rw [UpperHalfPlane.coe_smul_of_det_pos
-    (ModularForm.det_map_ratCast_pos (det_pos_of_coe_eq_upperTri p hp hg))]
+    (ModularForm.det_map_ratCast_pos (det_pos_of_coe_eq_upperTri p hg))]
   simp [UpperHalfPlane.num, UpperHalfPlane.denom, hg]
 
 /-- **Slashing by a rational matrix `!![1, b; 0, p]`**: the determinant and the denominator are
 both `p`, so the automorphy factor collapses to `p ^ (k - 1) * p ^ (-k) = p⁻¹`, independent of
 the weight. -/
-lemma slash_apply_of_coe_eq_upperTri (hp : 0 < p) {g : GL (Fin 2) ℚ} {b : ℚ}
+lemma slash_apply_of_coe_eq_upperTri {g : GL (Fin 2) ℚ} {b : ℚ}
     (hg : (g : Matrix (Fin 2) (Fin 2) ℚ) = !![1, b; 0, (p : ℚ)]) (f : ℍ → ℂ) (τ : ℍ) :
     (f ∣[k] g) τ = (p : ℂ)⁻¹ * f (Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) g • τ) := by
-  have hp0 : (p : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hp.ne'
-  rw [ModularForm.rat_slash_apply_of_det_pos k (det_pos_of_coe_eq_upperTri p hp hg)]
+  have hp0 : (p : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (pos_of_coe_eq_upperTri p hg).ne'
+  rw [ModularForm.rat_slash_apply_of_det_pos k (det_pos_of_coe_eq_upperTri p hg)]
   have hdet : ((Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) g).det : ℝ) = (p : ℝ) := by
     rw [Matrix.GeneralLinearGroup.val_det_apply, Matrix.GeneralLinearGroup.val_map_apply,
       ← RingHom.mapMatrix_apply, ← RingHom.map_det, hg, Matrix.det_fin_two_of]
@@ -124,7 +133,7 @@ lemma slash_apply_of_coe_eq_upperTri (hp : 0 < p) {g : GL (Fin 2) ℚ} {b : ℚ}
 lemma coe_upperTriRep_smul (b : Fin p) (τ : ℍ) :
     ((Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (upperTriRep p b) • τ : ℍ) : ℂ)
       = ((τ : ℂ) + b) / p := by
-  simpa using coe_smul_of_coe_eq_upperTri p b.pos (coe_upperTriRep p b) τ
+  simpa using coe_smul_of_coe_eq_upperTri p (coe_upperTriRep p b) τ
 
 /-- The local parameter of width `1` at `(τ + b) / p` factors as the parameter of width `p`
 at `τ` times its value at the offset `b`. -/
@@ -142,7 +151,7 @@ lemma slash_upperTriRep_apply (f : ℍ → ℂ) (b : Fin p) (τ : ℍ) :
     (f ∣[k] (upperTriRep p b : GL (Fin 2) ℚ)) τ
       = (p : ℂ)⁻¹ *
           f (Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (upperTriRep p b) • τ) :=
-  slash_apply_of_coe_eq_upperTri k p b.pos (coe_upperTriRep p b) f τ
+  slash_apply_of_coe_eq_upperTri k p (coe_upperTriRep p b) f τ
 
 /-- **A sum of slashes by `!![1, N c; 0, p]` has the expansion of `f` at period `N` along
 `p ℕ`.** For an `N`-periodic `f`, slashing by `!![1, N c; 0, p]` scales the expansion at period
@@ -163,7 +172,7 @@ theorem hasSum_qExpansion_sum_slash_of_coe_eq_upperTri {N : ℕ} (hp : 0 < p) (h
   have hq : ∀ c : Fin p,
       𝕢 N ((Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (g c) • τ : ℍ) : ℂ) =
         𝕢 (p * N : ℝ) (τ : ℂ) * 𝕢 (p : ℝ) (c : ℂ) := fun c ↦ by
-    rw [coe_smul_of_coe_eq_upperTri p hp (hg c)]
+    rw [coe_smul_of_coe_eq_upperTri p (hg c)]
     have hN0 : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hN.ne'
     simp only [Function.Periodic.qParam, ← Complex.exp_add, Complex.ofReal_mul,
       Complex.ofReal_natCast]
@@ -173,7 +182,7 @@ theorem hasSum_qExpansion_sum_slash_of_coe_eq_upperTri {N : ℕ} (hp : 0 < p) (h
   -- The expansion of each slash is the expansion of `f`, scaled and twisted by a root of unity.
   have hterm : ∀ c : Fin p, HasSum (fun m : ℕ ↦ (p : ℂ)⁻¹ * ((qExpansion N f).coeff m *
       (𝕢 (p * N : ℝ) (τ : ℂ) ^ m * 𝕢 (p : ℝ) (c : ℂ) ^ m))) ((f ∣[k] g c) τ) := fun c ↦ by
-    rw [slash_apply_of_coe_eq_upperTri k p hp (hg c) f τ]
+    rw [slash_apply_of_coe_eq_upperTri k p (hg c) f τ]
     refine HasSum.mul_left _ ?_
     simpa only [hq, mul_pow, smul_eq_mul] using UpperHalfPlane.hasSum_qExpansion hN' hfper hfhol
       hfbdd (Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (g c) • τ)
