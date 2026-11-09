@@ -29,6 +29,12 @@ the metric that a manifold with a geometric structure receives through its chart
 
 ## Main results
 
+* `Bundle.trivializationAt_bilinearForm_apply`: a bilinear form on `T_x M`, read in the bundle
+  chart at `x₀`, is pulled back along the tangent coordinate change from `x₀` to `x`.
+* `Bundle.contMDiffAt_trivializationAt_bilinearForm_pullback`: the pullback of a `C^n` family of
+  bilinear forms along linear maps that are `C^n` in tangent coordinates, both depending on a
+  parameter, is `C^n` when read in a bundle chart. This gives the joint regularity of pullbacks
+  along families of maps.
 * `Bundle.contMDiffAt_bilinearForm_pullback_of_inTangentCoordinates`: the pullback of a `C^n`
   family of bilinear forms along a family of linear maps that is `C^n` in tangent coordinates is a
   `C^n` section.
@@ -68,10 +74,111 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N] {n : ℕ∞ω}
 
-/- The proof of `Bundle.contMDiffAt_bilinearForm_pullback_of_inTangentCoordinates`, which reads
-the pulled-back section in tangent coordinates, follows the proof pattern of
+/-! ### Bilinear forms on tangent spaces in bundle coordinates -/
+
+/-- A bilinear form on `T_x M`, read in the trivialization of the bundle of bilinear forms at
+`x₀`, is pulled back along the tangent coordinate change from the chart at `x₀` to the chart at
+`x`. -/
+theorem trivializationAt_bilinearForm_apply {x₀ x : M} (hx : x ∈ (chartAt H x₀).source)
+    (B : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (v w : E) :
+    (trivializationAt (E →L[ℝ] E →L[ℝ] ℝ)
+        (fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) x₀ ⟨x, B⟩).2 v w =
+      B (tangentCoordChange I x₀ x x v) (tangentCoordChange I x₀ x x w) := by
+  have hx' : x ∈ (trivializationAt E (TangentSpace I : M → Type _) x₀).baseSet := by
+    simpa using hx
+  simp only [hom_trivializationAt_apply]
+  rw [inCoordinates_apply_eq₂ hx' hx' (by simp)]
+  simp only [Trivial.fiberBundle_trivializationAt', Trivial.linearMapAt_trivialization,
+    LinearMap.id_coe, id_eq]
+  rw [← Trivialization.symmL_apply (R := ℝ) _ hx', ← Trivialization.symmL_apply (R := ℝ) _ hx',
+    TangentBundle.symmL_trivializationAt_eq_core hx]
+  -- `tangentCoordChange` is an abbreviation for this coordinate change of the tangent bundle.
+  rfl
+
+/-- Read in the trivialization at `x` itself, a bilinear form on `T_x M` is unchanged. -/
+@[simp]
+theorem trivializationAt_self_bilinearForm_apply (x : M)
+    (B : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (v w : E) :
+    (trivializationAt (E →L[ℝ] E →L[ℝ] ℝ)
+        (fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) x ⟨x, B⟩).2 v w =
+      B v w := by
+  rw [trivializationAt_bilinearForm_apply (mem_chart_source H x),
+    tangentCoordChange_self (mem_extChartAt_source x),
+    tangentCoordChange_self (mem_extChartAt_source x)]
+
+/-- A bilinear form on `T_x M`, read in the trivialization at `x₀`, as a continuous linear
+function of the form. -/
+theorem trivializationAt_bilinearForm_eq_pullbackBilinL {x₀ x : M}
+    (hx : x ∈ (chartAt H x₀).source) (B : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) :
+    (trivializationAt (E →L[ℝ] E →L[ℝ] ℝ)
+        (fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) x₀ ⟨x, B⟩).2 =
+      ContinuousLinearMap.pullbackBilinL (V := E) (W := E) (G := ℝ)
+        (tangentCoordChange I x₀ x x) B := by
+  ext v w
+  rw [trivializationAt_bilinearForm_apply hx]
+  exact (ContinuousLinearMap.pullbackBilinL_apply (V := E) (W := E) _ _ v w).symm
+
+/-! ### Pullbacks of bilinear forms -/
+
+/- The proof of `Bundle.contMDiffAt_trivializationAt_bilinearForm_pullback`, which reads the
+pulled-back forms in tangent coordinates, follows the proof pattern of
 `TauCeti.inducedRiemannianMetric` in https://github.com/TauCetiProject/TauCeti/pull/11460, which
 treats the case of a flat target. -/
+
+/-- Pull back a family `b p` of bilinear forms on the tangent spaces `T_{f p} N`, depending on a
+parameter `p` and `C^n` along `f` at `p₀`, along a family of linear maps
+`L p : T_{g p} M → T_{f p} N` that is `C^n` at `p₀` in tangent coordinates. Read in the
+trivialization of the bundle of bilinear forms on `T M` at `g p₀`, the resulting family of
+bilinear forms `(v, w) ↦ b p (L p v, L p w)` on `T_{g p} M` is `C^n` at `p₀`.
+
+For `g = id` this says that the pulled-back forms are a `C^n` section
+(`Bundle.contMDiffAt_bilinearForm_pullback_of_inTangentCoordinates`). Other choices of `g`, such
+as a projection `M × P → M`, give the joint regularity of pullbacks along families of maps. -/
+theorem contMDiffAt_trivializationAt_bilinearForm_pullback
+    {EP : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP]
+    {HP : Type*} [TopologicalSpace HP] {IP : ModelWithCorners ℝ EP HP}
+    {P : Type*} [TopologicalSpace P] [ChartedSpace HP P] {g : P → M} {f : P → N}
+    {b : ∀ p : P, TangentSpace J (f p) →L[ℝ] TangentSpace J (f p) →L[ℝ] ℝ}
+    {L : ∀ p : P, TangentSpace I (g p) →L[ℝ] TangentSpace J (f p)} {p₀ : P}
+    (hg : ContinuousAt g p₀)
+    (hb : ContMDiffAt IP (J.prod 𝓘(ℝ, F →L[ℝ] F →L[ℝ] ℝ)) n
+      (fun p ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ)
+        (E := fun y : N ↦ TangentSpace J y →L[ℝ] TangentSpace J y →L[ℝ] ℝ) (f p) (b p)) p₀)
+    (hL : ContMDiffAt IP 𝓘(ℝ, E →L[ℝ] F) n (inTangentCoordinates I J g f L p₀) p₀) :
+    ContMDiffAt IP 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ) n
+      (fun p ↦ (trivializationAt (E →L[ℝ] E →L[ℝ] ℝ)
+        (fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (g p₀)
+        ⟨g p, (ContinuousLinearMap.precomp ℝ (L p)).comp ((b p).comp (L p))⟩).2) p₀ := by
+  obtain ⟨hfn, hb'⟩ := contMDiffAt_totalSpace.1 hb
+  -- In the coordinates centred at `g p₀` and `f p₀`, the pulled-back form is the coordinate
+  -- expression of `b p` pulled back along `L p` read in those coordinates.
+  apply (ContinuousLinearMap.contDiff_precomp_comp.contMDiff.contMDiffAt.comp p₀
+    (hb'.prodMk_space hL)).congr_of_eventuallyEq
+  filter_upwards [hg.preimage_mem_nhds
+      ((trivializationAt E (TangentSpace I : M → Type _) (g p₀)).open_baseSet.mem_nhds
+        (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) (g p₀))),
+    hfn.continuousAt.preimage_mem_nhds
+      ((trivializationAt F (TangentSpace J : N → Type _) (f p₀)).open_baseSet.mem_nhds
+        (mem_baseSet_trivializationAt F (TangentSpace J : N → Type _) (f p₀)))] with y hy hfy
+  have hyhom : g y ∈ (trivializationAt (E →L[ℝ] ℝ)
+      (fun z : M ↦ TangentSpace I z →L[ℝ] ℝ) (g p₀)).baseSet := by
+    simpa using hy
+  have hfyhom : f y ∈ (trivializationAt (F →L[ℝ] ℝ)
+      (fun z : N ↦ TangentSpace J z →L[ℝ] ℝ) (f p₀)).baseSet := by
+    simpa using hfy
+  ext v w
+  simp only [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates, inTangentCoordinates,
+    Function.comp_apply, ContinuousLinearMap.coe_comp,
+    Trivialization.continuousLinearMapAt_apply, Trivialization.linearMapAt_apply, hyhom, hfyhom,
+    ite_true, Trivial.fiberBundle_trivializationAt', Trivial.trivialization_baseSet, Set.mem_univ,
+    Trivial.trivialization_apply, Set.mem_preimage.1 hfy, ContinuousLinearMap.precomp_apply]
+  -- Reading `L y v` in the trivialization at `f p₀` and back recovers it.
+  have key (u : TangentSpace J (f y)) :
+      (trivializationAt F (TangentSpace J) (f p₀)).symmL ℝ (f y)
+        ((trivializationAt F (TangentSpace J) (f p₀)) ⟨f y, u⟩).2 = u := by
+    rw [Trivialization.symmL_apply _ hfy]
+    exact Trivialization.symm_apply_apply_mk _ hfy u
+  rw [key, key]
 
 /-- Pull back a family `b x` of bilinear forms on the tangent spaces `T_{f x} N`, a `C^n` section
 along `f` at `x₀`, along a family of linear maps `L x : T_x M → T_{f x} N` that is `C^n` at `x₀` in
@@ -87,37 +194,9 @@ theorem contMDiffAt_bilinearForm_pullback_of_inTangentCoordinates {f : M → N}
     ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) x
-        ((ContinuousLinearMap.precomp ℝ (L x)).comp ((b x).comp (L x)))) x₀ := by
-  refine (contMDiffAt_section x₀).2 ?_
-  obtain ⟨hfn, hg⟩ := contMDiffAt_totalSpace.1 hb
-  -- In the coordinates centred at `x₀` and `f x₀`, the pulled-back form is the coordinate
-  -- expression of `b x` pulled back along `L x` read in those coordinates.
-  apply (ContinuousLinearMap.contDiff_precomp_comp.contMDiff.contMDiffAt.comp x₀
-    (hg.prodMk_space hL)).congr_of_eventuallyEq
-  filter_upwards [(trivializationAt E (TangentSpace I : M → Type _) x₀).open_baseSet.mem_nhds
-      (mem_baseSet_trivializationAt E (TangentSpace I : M → Type _) x₀),
-    hfn.continuousAt.preimage_mem_nhds
-      ((trivializationAt F (TangentSpace J : N → Type _) (f x₀)).open_baseSet.mem_nhds
-        (mem_baseSet_trivializationAt F (TangentSpace J : N → Type _) (f x₀)))] with y hy hfy
-  have hyhom : y ∈ (trivializationAt (E →L[ℝ] ℝ)
-      (fun z : M ↦ TangentSpace I z →L[ℝ] ℝ) x₀).baseSet := by
-    simpa using hy
-  have hfyhom : f y ∈ (trivializationAt (F →L[ℝ] ℝ)
-      (fun z : N ↦ TangentSpace J z →L[ℝ] ℝ) (f x₀)).baseSet := by
-    simpa using hfy
-  ext v w
-  simp only [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates, inTangentCoordinates,
-    Function.comp_apply, ContinuousLinearMap.coe_comp,
-    Trivialization.continuousLinearMapAt_apply, Trivialization.linearMapAt_apply, hyhom, hfyhom,
-    ite_true, Trivial.fiberBundle_trivializationAt', Trivial.trivialization_baseSet, Set.mem_univ,
-    Trivial.trivialization_apply, id, Set.mem_preimage.1 hfy, ContinuousLinearMap.precomp_apply]
-  -- Reading `L y v` in the trivialization at `f x₀` and back recovers it.
-  have key (u : TangentSpace J (f y)) :
-      (trivializationAt F (TangentSpace J) (f x₀)).symmL ℝ (f y)
-        ((trivializationAt F (TangentSpace J) (f x₀)) ⟨f y, u⟩).2 = u := by
-    rw [Trivialization.symmL_apply _ hfy]
-    exact Trivialization.symm_apply_apply_mk _ hfy u
-  rw [key, key]
+        ((ContinuousLinearMap.precomp ℝ (L x)).comp ((b x).comp (L x)))) x₀ :=
+  (contMDiffAt_section x₀).2 <|
+    contMDiffAt_trivializationAt_bilinearForm_pullback (g := id) continuousAt_id hb hL
 
 /-- The pullback of a family `b` of bilinear forms on the tangent spaces of `N` that is a `C^n`
 section at `f x₀`, along a map `f` that is `C^(n+1)` at `x₀`, is a `C^n` section at `x₀`: the family
