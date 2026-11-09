@@ -163,14 +163,22 @@ theorem matchedSetoid_swapHorizontal (hab : M a = M b) :
     matchedSetoid M φ (φ.swapHorizontal a b) :=
   matchedSetoid_iff.2 (.rel _ _ ⟨a, b, hab, rfl⟩)
 
+/-- A function on strand diagrams that is unchanged by moving a horizontal strand to a point with
+the same image under `M` is constant on the classes of `TauCeti.StrandDiagram.matchedSetoid M`. -/
+theorem apply_eq_of_matchedSetoid {γ : Type*} {f : StrandDiagram α → γ}
+    (hf : ∀ φ a b, M a = M b → f (φ.swapHorizontal a b) = f φ) (h : matchedSetoid M φ ψ) :
+    f φ = f ψ :=
+  Setoid.ker_def.1 <| Setoid.le_def.1 (Setoid.eqvGen_le (s := Setoid.ker f)
+    fun φ _ ⟨a, b, hab, e⟩ ↦ Setoid.ker_def.2 <| e ▸ (hf φ a b hab).symm) h
+
 /-- Diagrams related by `TauCeti.StrandDiagram.matchedSetoid M` both have, or both fail to have,
 pairwise unmatched starting points and pairwise unmatched end points. -/
 theorem injOn_source_and_target_iff_of_matchedSetoid (h : matchedSetoid M φ ψ) :
     Set.InjOn M (φ.source : Set α) ∧ Set.InjOn M (φ.target : Set α) ↔
       Set.InjOn M (ψ.source : Set α) ∧ Set.InjOn M (ψ.target : Set α) :=
-  (Setoid.ker_def.1 <| Setoid.le_def.1 (Setoid.eqvGen_le (s := Setoid.ker fun φ : StrandDiagram α ↦
+  (apply_eq_of_matchedSetoid (f := fun φ : StrandDiagram α ↦
     Set.InjOn M (φ.source : Set α) ∧ Set.InjOn M (φ.target : Set α))
-      fun φ _ ⟨_, _, hab, e⟩ ↦ Setoid.ker_def.2 <| e ▸ propext (by
+      (fun _ _ _ hab ↦ propext (by
         rw [injOn_source_swapHorizontal_iff hab, injOn_target_swapHorizontal_iff hab])) h).to_iff
 
 end StrandDiagram
@@ -407,9 +415,7 @@ horizontal strands to matched points. -/
 theorem repr_eq_of_matchedSetoid {x : StrandsAlgebra R α} (hx : x ∈ matchedSubalgebra R M)
     {φ ψ : StrandDiagram α} (h : matchedSetoid M φ ψ) :
     (basis R α).repr x φ = (basis R α).repr x ψ :=
-  Setoid.ker_def.1 <| Setoid.le_def.1 (Setoid.eqvGen_le (s := Setoid.ker ((basis R α).repr x))
-    fun φ _ ⟨a, b, hab, e⟩ ↦
-      Setoid.ker_def.2 <| e ▸ ((mem_matchedSubalgebra.1 hx).2 φ a b hab).symm) h
+  apply_eq_of_matchedSetoid (mem_matchedSubalgebra.1 hx).2 h
 
 variable (R M) in
 /-- The **matched completion sum** of a strand diagram `φ`: the sum of the diagrams obtained from
