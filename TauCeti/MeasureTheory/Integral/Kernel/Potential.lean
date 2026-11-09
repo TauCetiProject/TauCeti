@@ -92,8 +92,19 @@ theorem integral_norm_translated_kernel_mul_sub_le [NormedRing K] {k : G → K}
 end Translation
 
 section Product
+omit [MeasurableAdd G]
 variable [MeasurableSub₂ G] [SFinite ν]
 variable {K : Type*} {α : Type*} [MeasurableSpace α] {μ : Measure α}
+
+/-- On an additive group, measurability of subtraction gives measurability of translations. -/
+private theorem measurableAdd_of_measurableSub₂ : MeasurableAdd G :=
+  have hneg : Measurable fun x : G ↦ 0 - x := measurable_const.sub measurable_id
+  ⟨fun c ↦ by
+      have h : Measurable fun x : G ↦ c - (0 - x) := measurable_const.sub hneg
+      simpa using h,
+    fun c ↦ by
+      have h : Measurable fun x : G ↦ x - -c := measurable_id.sub_const (-c)
+      simpa using h⟩
 
 /-- An integrable kernel with integrable weights and a.e.-measurable shifts gives a jointly
 integrable function `(t, z) ↦ k (z - c t) * v t` for the product measure. -/
@@ -102,6 +113,7 @@ theorem integrable_prod_comp_sub_mul [NormedRing K] {k : G → K}
     {c : α → G} {v : α → K} (hc : AEMeasurable c μ)
     (hv : Integrable v μ) :
     Integrable (fun p : α × G ↦ k (p.2 - c p.1) * v p.1) (μ.prod ν) := by
+  have := measurableAdd_of_measurableSub₂ (G := G)
   have hm : AEStronglyMeasurable (fun p : α × G ↦ k (p.2 - c p.1) * v p.1)
       (μ.prod ν) :=
     (hk.aestronglyMeasurable.comp_prod_sub hc).mul hv.aestronglyMeasurable.comp_fst
@@ -133,6 +145,7 @@ theorem integrable_integral_norm_comp_sub_sub_mul_norm [NormedAddCommGroup K] {V
     {a b : α → G} {v : α → V} (ha : AEMeasurable a μ) (hb : AEMeasurable b μ)
     (hv : Integrable v μ) :
     Integrable (fun t ↦ (∫ z : G, ‖k (z - a t) - k (z - b t)‖ ∂ν) * ‖v t‖) μ := by
+  have := measurableAdd_of_measurableSub₂ (G := G)
   have hm : AEStronglyMeasurable
       (fun t ↦ (∫ z : G, ‖k (z - a t) - k (z - b t)‖ ∂ν) * ‖v t‖) μ := by
     have hprod : AEStronglyMeasurable
@@ -153,6 +166,7 @@ theorem integral_norm_kernel_potential_sub_le [NormedRing K] [NormedSpace ℝ K]
     (∫ z : G, ‖(∫ t, k (z - a t) * u t ∂μ) - (∫ t, k (z - b t) * v t ∂μ)‖ ∂ν) ≤
       (∫ z : G, ‖k z‖ ∂ν) * (∫ t, ‖u t - v t‖ ∂μ) +
       ∫ t, (∫ z : G, ‖k (z - a t) - k (z - b t)‖ ∂ν) * ‖v t‖ ∂μ := by
+  have := measurableAdd_of_measurableSub₂ (G := G)
   have hA := integrable_prod_comp_sub_mul hk ha hu
   have hB := integrable_prod_comp_sub_mul hk hb hv
   have hD := hA.sub hB
