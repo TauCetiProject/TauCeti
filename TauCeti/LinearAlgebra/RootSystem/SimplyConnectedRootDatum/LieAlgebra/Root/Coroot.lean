@@ -21,13 +21,13 @@ root-word identities at nonsimple roots.
 `TauCeti.DynkinType.chevalleyRootSubgroup_mul_mul_eq_kostantTorusPoints_mul` identifies
 `x_α(s) x_{-α}(-s⁻¹) x_α(s)` with the coroot value times the same word at `s = 1`,
 for every root on a Kostant-stable weight lattice over every commutative value ring.
-It requires that the coroot act nontrivially on the rational representation, as holds for a
-faithful Chevalley datum. The torus used here is the full-weight parametrization; the theorem
+The torus used here is the full-weight parametrization; the theorem
 identifies its coroot values and does not assert that this parametrization reaches the entire
 torus of an arbitrary datum.
 
-The coordinate transport uses `TauCeti.DynkinType.coroot_rootEquiv_eq_sum`, which generalizes
-the original type-F₄ calculation in `TauCeti/Algebra/Lie/F4/ChevalleyAction.lean`.
+The coordinate transport generalizes the type-F₄ simple-coroot calculation, using
+`TauCeti.DynkinType.coroot_rootEquiv_eq_sum` from
+`TauCeti/LinearAlgebra/RootSystem/SimplyConnectedRootDatum/LieAlgebra/Root/System.lean`.
 The root-word identity applies the generic
 `kostantRootSubgroupParam_mul_mul_eq_kostantCoordinateCocharacter_mul_kostantWeylGL`
 from `TauCeti.UniversalEnvelopingAlgebra` to the single Cartan vector of the chosen coroot;
@@ -122,13 +122,9 @@ variable (hwt : ∀ j, IsCartanWeightVector (t.lieBasis ht).h ρ (wt j) (b j : V
 
 include hwt in
 /-- Chevalley's rank-one identity at every numbered root. The torus parameter is the native
-coroot, including at nonsimple roots. The only nondegeneracy assumption is that this coroot acts
-nontrivially on the rational representation; in particular a faithful Chevalley datum qualifies.
+coroot, including at nonsimple roots. No faithfulness of the representation is required.
 The coefficient ring may have arbitrary characteristic and may be nonreduced. -/
 theorem chevalleyRootSubgroup_mul_mul_eq_kostantTorusPoints_mul (α : Fin t.numRoots)
-    (hH : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ
-      ((coroot (t.rootEquiv ht α : LieModule.Weight ℚ (t.cartanSubalgebra ht)
-        (t.lieAlgebra ht)) : t.cartanSubalgebra ht) : t.lieAlgebra ht)) ≠ 0)
     (A : CommAlgCat ℤ) (s : Aˣ) :
     chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd (s : A)) *
         chevalleyRootSubgroup ρ M hM hnil
@@ -149,8 +145,6 @@ theorem chevalleyRootSubgroup_mul_mul_eq_kostantTorusPoints_mul (α : Fin t.numR
   have hw j : IsCartanWeightVector H ρ (W j) (b j : V) := by
     rw [isCartanWeightVector_iff]
     exact fun _ => apply_ι_coroot_rootEquiv_of_isCartanWeightVector ρ (hwt j) α
-  have hT := (t.isSl2Triple_chevalleySystem ht α).map
-    (ρ.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)) hH
   have hα : ∀ j, ⁅H j, t.chevalleySystem ht α⁆ = ((fun _ : Unit => 2) j : ℚ) •
       t.chevalleySystem ht α := fun _ => (t.isSl2Triple_chevalleySystem ht α).lie_h_e_smul ℚ
   have hneg : ∀ j, ⁅H j, t.chevalleySystem ht
@@ -164,14 +158,51 @@ theorem chevalleyRootSubgroup_mul_mul_eq_kostantTorusPoints_mul (α : Fin t.numR
     simp only [Module.Basis.baseChange_apply, kostantCoordinateCocharacter_tmul_basis,
       kostantTorusPoints_tmul_basis, W, torusCharacter_def, ← zpow_mul,
       Finset.prod_zpow_eq_zpow_sum]
-  have h := kostantRootSubgroupParam_mul_mul_eq_kostantCoordinateCocharacter_mul_kostantWeylGL
-    (t.chevalleySystem ht) H ρ M hM' b W hw (c := ()) hT
-    (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
-    (isNilpotent_apply_ι_chevalleySystem ρ hnil _) hα hneg A s
-  rw [kostantWeylGL_eq_kostantRootSubgroupParam_mul] at h
-  -- Expose the local Cartan family so that the change-of-presentation lemma matches it.
-  dsimp only [H] at h
-  simpa only [rootSubgroupParam_coroot_eq ρ M hM hnil α _ A, htorus] using h
+  by_cases hH : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (H ())) = 0
+  · -- If the coroot acts trivially, both root operators and all coroot weights vanish.
+    let φ := ρ.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)
+    have he := congrArg φ (hα ())
+    have hf := congrArg φ (hneg ())
+    simp only [LieHom.map_lie, map_smul, map_neg] at he hf
+    simp only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply] at he hf
+    rw [hH, zero_lie] at he hf
+    have he0 : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht α)) = 0 :=
+      (smul_eq_zero.mp he.symm).resolve_left (by norm_num)
+    have hf0 : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht
+        ((t.simplyConnectedRootDatum ht).reflectionPerm α α))) = 0 := by
+      have hf' := neg_eq_zero.mp hf.symm
+      exact (smul_eq_zero.mp hf').resolve_left (by norm_num)
+    have hx (γ : Fin t.numRoots)
+        (hγ : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht γ)) = 0)
+        (u : Multiplicative A) : chevalleyRootSubgroup ρ M hM hnil γ A u = 1 := by
+      apply Units.ext
+      rw [chevalleyRootSubgroup_val,
+        baseChangeExp_of_pow_eq_zero _ M _ (k := 1) (by simpa only [pow_one] using hγ)]
+      simp
+    have hW (j : η) : W j () = 0 := by
+      have hj := hw j
+      rw [isCartanWeightVector_iff] at hj
+      specialize hj ()
+      rw [hH, LinearMap.zero_apply] at hj
+      have hb : (b j : V) ≠ 0 := fun hz => b.ne_zero j (Subtype.ext hz)
+      have hz : (W j () : ℚ) = 0 := (smul_eq_zero.mp hj.symm).resolve_right hb
+      exact_mod_cast hz
+    have htorus_one : kostantCoordinateCocharacter M b W A () s = 1 := by
+      refine Units.ext (Module.Basis.ext (b.baseChange A) fun j => ?_)
+      simp only [Module.Basis.baseChange_apply, kostantCoordinateCocharacter_tmul_basis,
+        hW, zpow_zero, Units.val_one, one_mul, one_apply_eq_self]
+    rw [← htorus, htorus_one]
+    simp only [hx α he0, hx _ hf0, mul_one]
+  · have hT := (t.isSl2Triple_chevalleySystem ht α).map
+      (ρ.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)) hH
+    have h := kostantRootSubgroupParam_mul_mul_eq_kostantCoordinateCocharacter_mul_kostantWeylGL
+      (t.chevalleySystem ht) H ρ M hM' b W hw (c := ()) hT
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil _) hα hneg A s
+    rw [kostantWeylGL_eq_kostantRootSubgroupParam_mul] at h
+    -- Expose the local Cartan family so that the change-of-presentation lemma matches it.
+    dsimp only [H] at h
+    simpa only [rootSubgroupParam_coroot_eq ρ M hM hnil α _ A, htorus] using h
 
 end Representation
 

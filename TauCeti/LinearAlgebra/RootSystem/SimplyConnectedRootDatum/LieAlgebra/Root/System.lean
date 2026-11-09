@@ -153,9 +153,7 @@ simple Killing coroot of the correspondingly numbered Lie-algebra generator. -/
 private theorem cartanBasis_eq_h' (i : Fin t.rank) : t.cartanBasis ht i = (t.lieBasis ht).h' i :=
   Subtype.ext (t.coe_cartanBasis ht i)
 
-/-- Every Killing coroot has the simple-coroot coordinates of the pinned integral datum.
-This generalizes the original type-F₄ coordinate calculation formerly in
-`TauCeti/Algebra/Lie/F4/ChevalleyAction.lean`. -/
+/-- Every Killing coroot has the simple-coroot coordinates of the pinned integral datum. -/
 theorem coroot_rootEquiv_eq_sum (α : Fin t.numRoots) :
     ((coroot (t.rootEquiv ht α : Weight ℚ (t.cartanSubalgebra ht)
         (t.lieAlgebra ht)) : t.cartanSubalgebra ht) : t.lieAlgebra ht) =
