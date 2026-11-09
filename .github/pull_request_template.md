@@ -12,7 +12,8 @@ Quality pass. Before you ask for review, run the checks explained at the end of 
 over every declaration the PR adds or changes. Then replace each `…` below with `changed`,
 `checked` or `n/a`, a dash, and a short note saying what you changed, what you checked, or why
 the check does not apply: for instance `changed — dropped [NeZero n] from foo, which follows
-from hn : 1 < n`. A PR that changes no Lean declaration may answer `n/a` throughout.
+from hn : 1 < n`, or for Q2 `checked — no change (searched TauCeti/ and the open PRs for the
+defining formula of foo)`. A PR that changes no Lean declaration may answer `n/a` throughout.
 
 When later commits add or change declarations, for instance to answer review findings, run the
 checks again over those and update the lines. The `quality-pass` review angle reads this block.
@@ -58,23 +59,25 @@ a person or the reviewers can choose. The note says what you searched, on main a
 pull requests.
 
 Q3. Hypotheses. For every hypothesis and instance binder of every theorem the PR adds or changes,
-including those pulled in from `variable` lines:
-- Delete it and rebuild. If the proof still works, leave it deleted.
+including those pulled in from `variable` lines, first delete it and rebuild. Do this before any
+reasoning about whether it is needed.
+- If the proof still works, leave it deleted, after checking the statement is still the intended
+  one: a hypothesis that looks unused can be the symptom of a conclusion weaker than the docstring
+  promises (Q9).
 - If it follows from the other hypotheses (`[NeZero n]` from `1 < n`, `[Finite K]` from a
   cardinality bound, `[Module.Free k M]` from a basis, `[T2Space G]` from a Lie group structure),
   derive it inside the proof instead of asking every caller for it.
 - If the proof breaks only in a degenerate case (an empty type, `0`, `⊥`, the zero ring), handle
   that case and drop the hypothesis when the statement holds there for a real reason (an empty
-  sum, an a.e. statement for the zero measure, contradictory hypotheses). Keep it when the
-  statement would hold there only through a junk value (`x / 0 = 0`, `(0 : ℝ)⁻¹ = 0`,
-  `ENNReal.toReal ⊤ = 0`, the `finrank` or `Nat.card` of something infinite being `0`).
+  sum, an a.e. statement for the zero measure, contradictory hypotheses). Keep it only when you can
+  show what goes wrong without it: the statement becomes false (give the counterexample), or holds
+  there only through a junk value (`x / 0 = 0`, `(0 : ℝ)⁻¹ = 0`, `ENNReal.toReal ⊤ = 0`, the
+  `finrank` or `Nat.card` of something infinite being `0`).
 - Weaken typeclasses to what the proof uses, at the level Mathlib's conventions use: `Field` to
   `CommRing` or `IsDomain`, `CommSemiring` to `Semiring`, `NontriviallyNormedField` to
   `NormedField`.
 - A hypothesis that a definition in the statement takes is needed to state it: leave it.
-- Before you drop one, check the statement is the intended one. A hypothesis that looks unused can
-  be the symptom of a conclusion weaker than the docstring promises: compare them.
-Update every caller.
+Update every caller. The note names each hypothesis you kept after its rebuild failed, and why.
 
 Q4. Section variables. No theorem the PR adds or changes carries an instance from a `variable`
 line that it does not use, and no definition takes a binder its body ignores. Use `omit [...] in`,
@@ -123,8 +126,9 @@ Q8. Tidy what the PR adds or changes. Leave the rest of an existing file alone.
   dot notation wants. A general helper is public in the file where it belongs, not `private` in a
   specific one.
 
-Q9. Statements re-read. Read each new statement as a mathematician would. Check that it says what
-the docstring and the source say, with nothing moved into the hypotheses, and that it is not
+Q9. Statements re-read. Read each new statement as a mathematician would. Write down what its
+docstring promises, part by part, and check that each part appears in the conclusion, with nothing
+moved into the hypotheses. Check that the statement says what the source says, and that it is not
 vacuous: the hypotheses can hold together, and the conclusion does not hold for a reason the
 docstring does not intend. A simple, correct lemma is fine.
 -->
