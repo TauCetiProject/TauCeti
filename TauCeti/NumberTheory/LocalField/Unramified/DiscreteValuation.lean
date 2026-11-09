@@ -44,7 +44,7 @@ theorem exists_algebraMap_veq (x : Unramified E) :
   let := finiteIntermediateFieldTopology E (AlgebraicClosure E) L
   have := finiteIntermediateField_isNonarchimedeanLocalField E (AlgebraicClosure E) L
   have := finiteIntermediateField_valuativeExtension E (AlgebraicClosure E) L
-  have : IsUnramified E L := isUnramified_unramifiedExtension hf
+  have : IsUnramified E L := isUnramified_unramifiedExtension
   let y : L := ⟨x, hxf⟩
   obtain ⟨r, hv⟩ := exists_algebraMap_veq_of_isUnramified (K := E) y
   let j : L →ₐ[E] Unramified E :=

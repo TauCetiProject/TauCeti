@@ -90,6 +90,19 @@ def coordinate : MeromorphicFunction (OnePoint ℂ) where
 theorem coordinate_apply (x : OnePoint ℂ) : coordinate x = x := by
   simp [coordinate]
 
+/-- The sphere coordinate is not the zero meromorphic function. -/
+@[simp]
+theorem coordinate_ne_zero : coordinate ≠ 0 := by
+  intro h
+  have := congrArg (fun g : MeromorphicFunction (OnePoint ℂ) ↦ g (1 : ℂ)) h
+  simp at this
+
+/-- The finite part of the sphere coordinate is the affine chart. -/
+@[simp]
+theorem finitePart_coordinate : coordinate.finitePart = (affineChart : OnePoint ℂ → ℂ) := by
+  funext x
+  simp [finitePart_def]
+
 /-- A polynomial `p` evaluated at the coordinate of the Riemann sphere takes the value `p(z)` at a
 finite point `z`. -/
 @[simp]

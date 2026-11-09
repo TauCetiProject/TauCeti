@@ -123,10 +123,10 @@ theorem isPreconnectedApproachAt_of_forall_mem_iff_im_div_pos {w q b : ℂ} {ρ 
   exact (hconv.inter (convex_ball w δ)).isPreconnected
 
 /-- If a set `U` coincides near `v`, away from `v` itself, with the open sector
-`{|arg ((z - v) / b)| < α}` of half-opening `α ≤ π`, then `U` has preconnected approach regions at
+`{|arg ((z - v) / b)| < α}` of half-opening `α`, then `U` has preconnected approach regions at
 `v`: in polar coordinates about `v` its traces on small punctured balls are rectangles. -/
 theorem isPreconnectedApproachAt_of_forall_mem_iff_abs_arg_lt {v b : ℂ} {ρ α : ℝ} (hρ : 0 < ρ)
-    (hb : b ≠ 0) (hα : α ≤ Real.pi)
+    (hb : b ≠ 0)
     (hU : ∀ z ∈ ball v ρ, z ≠ v → (z ∈ U ↔ |((z - v) / b).arg| < α)) :
     IsPreconnectedApproachAt U v := by
   refine isPreconnectedApproachAt_of_isPreconnected_inter_ball hρ fun δ hδ hδρ => ?_
@@ -137,7 +137,7 @@ theorem isPreconnectedApproachAt_of_forall_mem_iff_abs_arg_lt {v b : ℂ} {ρ α
   have hPc : Continuous P := by fun_prop
   -- away from the vertex, `U ∩ ball v δ` is the image of the polar rectangle `A`
   have hS : (U ∩ ball v δ) \ {v} = P '' A := by
-    rw [image_polar_rectangle_eq hb hα]
+    rw [image_polar_rectangle_eq hb]
     ext z
     exact ⟨fun ⟨⟨hzU, hzb⟩, hzv⟩ => ⟨hzb, hzv, (hU z (ball_subset_ball hδρ hzb) hzv).mp hzU⟩,
       fun ⟨hzb, hzv, harg⟩ => ⟨⟨(hU z (ball_subset_ball hδρ hzb) hzv).mpr harg, hzb⟩, hzv⟩⟩

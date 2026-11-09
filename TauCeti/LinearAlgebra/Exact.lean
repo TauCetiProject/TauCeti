@@ -24,8 +24,10 @@ cokernels induced by a map of two-term complexes whose cone `K₀ → C₀ × K�
 `Function.Exact.bijective_mapQ_range_of_prod_coprod`), the exact sequence
 `0 → ker f → ker (g ∘ f) → ker g → coker f → coker (g ∘ f) → coker g → 0` of a composition, with
 middle maps `LinearMap.kerCompToKer`, `LinearMap.kerToCoker` and `LinearMap.cokerToCokerComp`
-(`LinearMap.exact_kerCompToKer_kerToCoker` and its neighbours), the dimension of the homology of a
-complex of finite-dimensional vector spaces in terms of the two cokernels
+(`LinearMap.exact_kerCompToKer_kerToCoker` and its neighbours), the dimension
+`dim X + dim Y - dim T` of the transverse fibre product `{(ξ, η) | α ξ = β η}` of
+`α : X → T` and `β : Y → T` (`LinearMap.finrank_ker_coprod_neg_add`), the dimension of the
+homology of a complex of finite-dimensional vector spaces in terms of the two cokernels
 (`LinearMap.finrank_map_mkQ_ker_add_finrank`), and the vanishing of the alternating sum of
 dimensions along a long exact sequence of finite-dimensional vector spaces of the shape produced
 by a homology theory,
@@ -110,6 +112,18 @@ theorem _root_.Function.Exact.finrank_eq_add {k M N P : Type*} [DivisionRing k] 
   rw [← g.finrank_range_add_finrank_ker, LinearMap.range_eq_top.2 hg, finrank_top,
     h.linearMap_ker_eq, LinearMap.finrank_range_of_inj hf, add_comm]
 
+/-- For transverse `α : X → T` and `β : Y → T`, that is, when `(ξ, η) ↦ α ξ - β η` is surjective,
+the fibre product `{(ξ, η) | α ξ = β η}` has dimension `dim X + dim Y - dim T`. -/
+theorem _root_.LinearMap.finrank_ker_coprod_neg_add {k X Y T : Type*} [DivisionRing k]
+    [AddCommGroup X] [Module k X] [AddCommGroup Y] [Module k Y] [AddCommGroup T] [Module k T]
+    [FiniteDimensional k X] [FiniteDimensional k Y] {α : X →ₗ[k] T} {β : Y →ₗ[k] T}
+    (h : Function.Surjective (α.coprod (-β))) :
+    Module.finrank k (LinearMap.ker (α.coprod (-β))) + Module.finrank k T =
+      Module.finrank k X + Module.finrank k Y := by
+  have h' := (LinearMap.exact_subtype_ker_map _).finrank_eq_add (Submodule.injective_subtype _) h
+  rw [Module.finrank_prod] at h'
+  exact h'.symm
+
 section FiniteDimensionalExact
 
 variable {k : Type*} [DivisionRing k]
@@ -145,6 +159,26 @@ theorem _root_.LinearMap.finrank_sub_finrank_sub_finrank_of_exact
     congrArg (fun S : Submodule k D ↦ Module.finrank k S) hδf.linearMap_ker_eq
   omega
 
+/-- Let `A → B → C` and `A → B' → C'` be exact with `A → B` and `A → B'` injective, let
+`B → B' → W` be exact where `B' → W` is the composite of `B' → C'` with a map `C' → W`, and let
+this composite be surjective. If `B` and `W` are finite-dimensional, then the image of `B' → C'`
+has the dimension of the image of `B → C` plus that of `W`. -/
+theorem finrank_range_eq_finrank_range_add_of_exact_comp
+    {A B C B' C' W : Type*} [AddCommGroup A] [Module k A] [AddCommGroup B] [Module k B]
+    [AddCommGroup C] [Module k C] [AddCommGroup B'] [Module k B'] [AddCommGroup C']
+    [Module k C'] [AddCommGroup W] [Module k W] [FiniteDimensional k B]
+    [FiniteDimensional k W] {f : A →ₗ[k] B} {g : B →ₗ[k] C} {f' : A →ₗ[k] B'}
+    {g' : B' →ₗ[k] C'} {j : B →ₗ[k] B'} {π : C' →ₗ[k] W}
+    (hf : Function.Injective f) (hfg : Function.Exact f g) (hf' : Function.Injective f')
+    (hfg' : Function.Exact f' g') (hj : Function.Injective j)
+    (hjπ : Function.Exact j (π ∘ₗ g')) (hπg : Function.Surjective (π ∘ₗ g')) :
+    Module.finrank k (LinearMap.range g') =
+      Module.finrank k (LinearMap.range g) + Module.finrank k W := by
+  have : FiniteDimensional k B' := finiteDimensional_of_exact hjπ
+  have e₁ := hfg.rangeRestrict.finrank_eq_add hf g.surjective_rangeRestrict
+  have e₂ := hfg'.rangeRestrict.finrank_eq_add hf' g'.surjective_rangeRestrict
+  have e₃ := hjπ.finrank_eq_add hj hπg
+  omega
 end FiniteDimensionalExact
 
 /-- If `M --f--> N --g--> P` is exact at `N` and both `M` and `P` are trivial, then so is `N`. -/

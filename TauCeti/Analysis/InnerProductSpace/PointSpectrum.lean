@@ -69,6 +69,8 @@ spectrum from that of its orthogonal complement.
   has restricted point spectrum in `Ω`.
 * `Module.End.map_pointSpectralSubspace_le_of_commute`: an endomorphism commuting with `A`
   preserves the point-spectral subspaces of `A`.
+* `Module.End.pointSpectralSubspace_conj`: conjugating by a linear equivalence transports the
+  point-spectral subspaces.
 * `LinearMap.IsSymmetric.orthogonal_pointSpectralSubspace`: for symmetric `A` in finite dimension,
   `(A.pointSpectralSubspace Ω)ᗮ = A.pointSpectralSubspace Ωᶜ`.
 * `LinearMap.IsSymmetric.orthogonal_pointSpectralSubspace_Iio_zero` and
@@ -306,6 +308,19 @@ theorem pointSpectralSubspace_neg :
     exact eigenspace_le_pointSpectralSubspace (Set.neg_mem_neg.mpr hμ)
   · simpa only [h, neg_neg] using
       eigenspace_le_pointSpectralSubspace (A := -A) (Set.mem_neg.mp hμ)
+
+/-- Conjugating an endomorphism by a linear equivalence transports its point-spectral subspaces:
+the point-spectral subspace of `e ∘ A ∘ e⁻¹` selected by `Ω` is the image under `e` of that of
+`A`. -/
+theorem pointSpectralSubspace_conj {E' : Type*} [AddCommGroup E'] [Module 𝕜 E']
+    (e : E ≃ₗ[𝕜] E') :
+    (e.conj A).pointSpectralSubspace Ω = (A.pointSpectralSubspace Ω).map (e : E →ₗ[𝕜] E') := by
+  have h (μ : ℝ) :
+      (e.conj A).eigenspace (μ : 𝕜) = (A.eigenspace (μ : 𝕜)).map (e : E →ₗ[𝕜] E') := by
+    ext x
+    rw [Submodule.mem_map_equiv, mem_eigenspace_iff, mem_eigenspace_iff]
+    simp [LinearEquiv.conj_apply, ← e.symm.injective.eq_iff]
+  simp only [pointSpectralSubspace, Submodule.map_iSup, h]
 
 /-- For an injective endomorphism, also selecting the eigenvalue `0` does not change a
 point-spectral subspace. -/
@@ -549,7 +564,7 @@ theorem re_inner_apply_self_le_of_pointSpectrumIn (hA : A.IsSymmetric) (hU : ∀
     (h : A.PointSpectrumIn U (Set.Iic a)) {x : E} (hx : x ∈ U) :
     RCLike.re ⟪A x, x⟫_𝕜 ≤ a * ‖x‖ ^ 2 := by
   set hB := hA.restrict_invariant hU
-  have key := hB.re_inner_le_of_eigenbasis (hB.eigenvectorBasis rfl)
+  have key := LinearMap.re_inner_le_of_eigenbasis _ (hB.eigenvectorBasis rfl)
     (hB.apply_eigenvectorBasis rfl) (s := Set.univ)
     (fun i _ ↦ h (hA.eigenvalues_restrict_mem hU i)) (x := ⟨x, hx⟩)
     ((OrthonormalBasis.mem_spanIndices_iff _).mpr fun i hi ↦ (hi (Set.mem_univ i)).elim)
@@ -562,7 +577,7 @@ theorem le_re_inner_apply_self_of_pointSpectrumIn (hA : A.IsSymmetric) (hU : ∀
     (h : A.PointSpectrumIn U (Set.Ici a)) {x : E} (hx : x ∈ U) :
     a * ‖x‖ ^ 2 ≤ RCLike.re ⟪A x, x⟫_𝕜 := by
   set hB := hA.restrict_invariant hU
-  have key := hB.le_re_inner_of_eigenbasis (hB.eigenvectorBasis rfl)
+  have key := LinearMap.le_re_inner_of_eigenbasis _ (hB.eigenvectorBasis rfl)
     (hB.apply_eigenvectorBasis rfl) (s := Set.univ)
     (fun i _ ↦ h (hA.eigenvalues_restrict_mem hU i)) (x := ⟨x, hx⟩)
     ((OrthonormalBasis.mem_spanIndices_iff _).mpr fun i hi ↦ (hi (Set.mem_univ i)).elim)
