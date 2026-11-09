@@ -83,7 +83,6 @@ open TensorProduct
 
 /-- The underlying submodule of a base-changed subalgebra is the base change of its
 underlying submodule. -/
-@[simp]
 theorem Subalgebra.toSubmodule_baseChange {R S : Type*} [CommSemiring R] [Semiring S]
     [Algebra R S] (T : Type*) [CommSemiring T] [Algebra R T] (C : Subalgebra R S) :
     Subalgebra.toSubmodule (C.baseChange T) = (Subalgebra.toSubmodule C).baseChange T :=

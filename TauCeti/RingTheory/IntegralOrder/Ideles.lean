@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.IntegralOrder.Basic
 public import TauCeti.RingTheory.TensorProduct.Maps
 import Mathlib.RingTheory.DedekindDomain.Factorization
 import TauCeti.Algebra.Module.Lattice
+import TauCeti.LinearAlgebra.TensorProduct.Tower
 
 /-!
 # Finite ideles of an order and the lattices they define
@@ -98,6 +99,7 @@ in `𝒪_v ⊗[A] B` lies in `α_v Λ_v` for every `v`. -/
 noncomputable def lattice (α : FiniteIdeles F Λ) : Submodule A B :=
   glueCompletions F fun v ↦ α v • Subalgebra.toSubmodule (Λ.baseChange (v.adicCompletionIntegers F))
 
+@[simp]
 theorem mem_lattice_iff {α : FiniteIdeles F Λ} {x : B} :
     x ∈ lattice F Λ α ↔
       ∀ v : HeightOneSpectrum A, ↑(α v)⁻¹ * ((1 : v.adicCompletionIntegers F) ⊗ₜ[A] x) ∈
@@ -114,6 +116,7 @@ theorem mul_mem_lattice {α : FiniteIdeles F Λ} {x y : B} (hx : x ∈ lattice F
   rwa [mul_assoc, Algebra.TensorProduct.tmul_mul_tmul, mul_one] at this
 
 /-- **The identity idele gives `Λ`.** -/
+@[simp]
 theorem lattice_one (hA : ¬IsField A) : lattice F Λ 1 = Subalgebra.toSubmodule Λ := by
   conv_rhs => rw [← glueCompletions_baseChange (K := F) hA (Subalgebra.toSubmodule Λ)]
   ext x
@@ -138,9 +141,11 @@ noncomputable def principal (hΛ : span F (Λ : Set B) = ⊤) : Bˣ →* FiniteI
     rw [Set.mem_ofPred_eq, Ideal.dvd_span_singleton]
     by_contra h
     refine hv ⟨(Subalgebra.toSubmodule Λ).one_tmul_mem_baseChange_of_smul_mem
-      (fun h' ↦ h (Ideal.mul_mem_right _ _ h')) h₁,
+      ((v.isUnit_algebraMap_adicCompletionIntegers_iff (K := F) _).2
+        fun h' ↦ h (Ideal.mul_mem_right _ _ h')) h₁,
       (Subalgebra.toSubmodule Λ).one_tmul_mem_baseChange_of_smul_mem
-        (fun h' ↦ h (Ideal.mul_mem_left _ _ h')) h₂⟩
+        ((v.isUnit_algebraMap_adicCompletionIntegers_iff (K := F) _).2
+          fun h' ↦ h (Ideal.mul_mem_left _ _ h')) h₂⟩
   map_one' := RestrictedProduct.ext _ _ fun _ ↦ Units.ext (by simp)
   map_mul' _ _ := RestrictedProduct.ext _ _ fun _ ↦ Units.ext (by simp)
 
@@ -162,7 +167,7 @@ theorem exists_ne_zero_forall_smul_inv_mem_baseChange (hΛ : span F (Λ : Set B)
   have hS := Filter.eventually_cofinite.1 α.eventually
   set S := hS.toFinset
   choose c hc0 hc using fun v ↦
-    (Subalgebra.toSubmodule Λ).exists_ne_zero_smul_mem_baseChange hΛ
+    (Subalgebra.toSubmodule Λ).exists_ne_zero_smul_mem_baseChange F hΛ
       (↑(α v)⁻¹ : v.adicCompletionIntegers F ⊗[A] B)
   refine ⟨∏ v ∈ S, c v, Finset.prod_ne_zero_iff.2 fun v _ ↦ hc0 v, fun v ↦ ?_⟩
   by_cases hv : v ∈ S
@@ -229,8 +234,10 @@ theorem isLattice_lattice (hA : ¬IsField A) (hΛ : IntegralOrder.IsOrder F Λ)
   obtain ⟨a, ha, hav⟩ := exists_ne_zero_forall_smul_inv_mem_baseChange hΛ.span_eq_top α⁻¹
   have ha' : algebraMap A F a ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective A F)).2 ha
   have hinj : Function.Injective (LinearMap.lsmul A B a) := by
-    change Function.Injective fun x : B ↦ a • x
-    simpa only [← algebraMap_smul F a] using smul_right_injective B ha'
+    intro x y hxy
+    rw [LinearMap.lsmul_apply, LinearMap.lsmul_apply, ← algebraMap_smul F a x,
+      ← algebraMap_smul F a y] at hxy
+    exact smul_right_injective B ha' hxy
   refine fg_of_fg_map_injective _ hinj
     (FG.of_le (IntegralOrder.isOrder_iff_isLattice.1 hΛ).fg ?_)
   rw [← lattice_one (F := F) hA]

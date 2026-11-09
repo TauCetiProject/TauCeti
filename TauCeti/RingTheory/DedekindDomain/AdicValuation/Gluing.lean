@@ -61,45 +61,6 @@ public section
 
 open TensorProduct IsDedekindDomain Submodule
 
-namespace Submodule
-
-variable {R : Type*} [CommRing R] [IsDedekindDomain R]
-  {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
-  {V : Type*} [AddCommGroup V] [Module R V]
-
-/-- If `a • x` lies in a submodule and `a` is outside `v`, then the image of `x` lies in its
-completion at `v`, since `a` is a unit in the completion integers. -/
-theorem one_tmul_mem_baseChange_of_smul_mem (N : Submodule R V) {v : HeightOneSpectrum R}
-    {a : R} (ha : a ∉ v.asIdeal) {x : V} (hx : a • x ∈ N) :
-    (1 : v.adicCompletionIntegers K) ⊗ₜ x ∈ N.baseChange (v.adicCompletionIntegers K) := by
-  obtain ⟨u, hu⟩ := (v.isUnit_algebraMap_adicCompletionIntegers_iff (K := K) a).2 ha
-  have h := (N.baseChange (v.adicCompletionIntegers K)).smul_mem
-    (↑u⁻¹ : v.adicCompletionIntegers K) (tmul_mem_baseChange_of_mem 1 hx)
-  rwa [← smul_tmul, ← Algebra.algebraMap_eq_smul_one, ← hu, smul_tmul', smul_eq_mul,
-    Units.inv_mul] at h
-
-variable [Module K V] [IsScalarTower R K V]
-
-/-- Every element of the completed ambient space has a nonzero multiple in the completion of a
-submodule spanning the space over the fraction field. -/
-theorem exists_ne_zero_smul_mem_baseChange (N : Submodule R V)
-    (hN : span K (N : Set V) = ⊤) {v : HeightOneSpectrum R}
-    (z : v.adicCompletionIntegers K ⊗[R] V) :
-    ∃ a : R, a ≠ 0 ∧ a • z ∈ N.baseChange (v.adicCompletionIntegers K) := by
-  induction z using TensorProduct.inductionOn with
-  | tmul o x =>
-    obtain ⟨a, ha, hax⟩ := IsLattice.exists_ne_zero_smul_mem K N hN x
-    exact ⟨a, ha, by rw [← tmul_smul]; exact tmul_mem_baseChange_of_mem o hax⟩
-  | add z₁ z₂ h₁ h₂ =>
-    obtain ⟨a₁, ha₁, h₁⟩ := h₁
-    obtain ⟨a₂, ha₂, h₂⟩ := h₂
-    refine ⟨a₂ * a₁, mul_ne_zero ha₂ ha₁, ?_⟩
-    rw [smul_add, mul_smul, mul_comm, mul_smul]
-    exact add_mem ((N.baseChange _).smul_of_tower_mem a₂ h₁)
-      ((N.baseChange _).smul_of_tower_mem a₁ h₂)
-
-end Submodule
-
 namespace TauCeti
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
@@ -208,6 +169,7 @@ theorem baseChange_glueCompletions (hspan : span K (glueCompletions K L : Set V)
 omit [Module K V] [IsScalarTower R K V] in
 /-- Gluing the completions of a submodule gives back the submodule, since submodules are
 determined by their completions. -/
+@[simp]
 theorem glueCompletions_baseChange (hR : ¬IsField R) (M : Submodule R V) :
     glueCompletions K (fun v ↦ M.baseChange (v.adicCompletionIntegers K)) = M := by
   refine le_antisymm (fun x hx ↦ ?_) (le_glueCompletions_iff.2 fun _ ↦ le_rfl)
