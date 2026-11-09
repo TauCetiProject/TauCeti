@@ -14,6 +14,7 @@ import Mathlib.Analysis.Complex.ReImTopology
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
 import TauCeti.MeasureTheory.Integral.NormRpow
@@ -82,51 +83,29 @@ theorem memWkpLoc_one_norm : MemWkpLoc p U 1 (fun z : ℂ => ‖z‖) :=
 
 /-! ### The norm is not in `W^{2,p}` for `p ≥ 2` -/
 
-/-- Away from the origin the derivative of the norm is `‖z‖⁻¹ • innerSL ℝ z`. -/
-private theorem hasFDerivAt_norm_complex {z : ℂ} (hz : z ≠ 0) :
-    HasFDerivAt (fun y : ℂ => ‖y‖) (‖z‖⁻¹ • innerSL ℝ z) z := by
-  have hsq := (hasStrictFDerivAt_norm_sq z).hasFDerivAt
-  have hpos : 0 < ‖z‖ ^ 2 := by positivity
-  have h := (Real.hasDerivAt_sqrt hpos.ne').comp_hasFDerivAt z hsq
-  have hfun : (fun x => √x) ∘ (fun y : ℂ => ‖y‖ ^ 2) = fun y => ‖y‖ := by
-    funext y
-    simp [Real.sqrt_sq (norm_nonneg y)]
-  rw [hfun] at h
-  convert h using 1
-  rw [Real.sqrt_sq (norm_nonneg z)]
-  ext w
-  simp only [smul_apply, nsmul_eq_mul, Nat.cast_ofNat, smul_eq_mul]
-  field_simp
-
 /-- The derivative of the norm, as a map into `ℂ →L[ℝ] ℝ`, has derivative of norm at least
-`‖z‖⁻¹` away from the origin: in the tangential direction `I * z` it is `‖z‖⁻¹ • innerSL ℝ`. -/
+`‖z‖⁻¹` away from the origin: by the Hessian formula for `‖·‖ ^ p` with `p = 1`, it takes the
+value `‖z‖` on the tangential direction `I * z` twice. -/
 private theorem inv_norm_le_norm_fderiv_fderiv_norm {z : ℂ} (hz : z ≠ 0) :
     ‖z‖⁻¹ ≤ ‖fderiv ℝ (fderiv ℝ fun y : ℂ => ‖y‖) z‖ := by
-  set N : ℂ → ℂ →L[ℝ] ℝ := fun y => ‖y‖⁻¹ • innerSL ℝ y
-  have hN : fderiv ℝ (fun y : ℂ => ‖y‖) =ᶠ[𝓝 z] N := by
-    filter_upwards [isOpen_ne.mem_nhds hz] with y hy
-    exact (hasFDerivAt_norm_complex hy).fderiv
-  have hinv : HasFDerivAt (fun y : ℂ => ‖y‖⁻¹)
-      ((-(‖z‖ ^ 2)⁻¹) • (‖z‖⁻¹ • innerSL ℝ z)) z :=
-    (hasDerivAt_inv (norm_ne_zero_iff.2 hz)).comp_hasFDerivAt z (hasFDerivAt_norm_complex hz)
-  have hlin : HasFDerivAt (fun y : ℂ => innerSL ℝ y) (innerSL ℝ : ℂ →L[ℝ] ℂ →L[ℝ] ℝ) z :=
-    (innerSL ℝ : ℂ →L[ℝ] ℂ →L[ℝ] ℝ).hasFDerivAt
-  have hD := (hinv.smul hlin).congr_of_eventuallyEq hN
   set v : ℂ := Complex.I * z
   have hv : ‖v‖ = ‖z‖ := by simp [v]
   have hzv : inner ℝ z v = 0 := by
     simp only [v, Complex.inner, Complex.mul_re, Complex.mul_im, Complex.I_re, Complex.I_im,
       Complex.conj_re, Complex.conj_im]
     ring
-  obtain ⟨L, hDL, hLv⟩ : ∃ L : ℂ →L[ℝ] ℂ →L[ℝ] ℝ,
-      HasFDerivAt (fderiv ℝ fun y : ℂ => ‖y‖) L z ∧ L v = ‖z‖⁻¹ • innerSL ℝ v :=
-    ⟨_, hD, by simp [hzv]⟩
-  rw [hDL.fderiv]
   have hz0 : 0 < ‖z‖ := norm_pos_iff.2 hz
-  refine le_of_mul_le_mul_right ?_ hz0
-  have hle := L.le_opNorm v
-  rw [hLv, norm_smul, innerSL_apply_norm, hv, norm_inv, norm_norm] at hle
-  exact hle
+  have hH := iteratedFDeriv_two_norm_rpow_apply 1 hz v v
+  simp only [Real.rpow_one, iteratedFDeriv_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one, hzv, mul_zero, zero_add, one_mul, real_inner_self_eq_norm_sq,
+    hv] at hH
+  have hvv : fderiv ℝ (fderiv ℝ fun y : ℂ => ‖y‖) z v v = ‖z‖ := by
+    rw [hH, show (1 : ℝ) - 2 = -1 by norm_num, Real.rpow_neg_one]
+    field_simp
+  have hle := (fderiv ℝ (fderiv ℝ fun y : ℂ => ‖y‖) z).le_opNorm₂ v v
+  rw [hvv, Real.norm_of_nonneg hz0.le, hv, mul_assoc] at hle
+  rw [inv_le_iff_one_le_mul₀ hz0]
+  nlinarith
 
 /-- The norm `z ↦ ‖z‖` is not in the local class `W^{2,p}` on any set whose interior contains the
 origin, for `p ≥ 2`. Its second weak derivative has size `‖z‖⁻¹`, and `‖z‖ ^ (-2)` is not
