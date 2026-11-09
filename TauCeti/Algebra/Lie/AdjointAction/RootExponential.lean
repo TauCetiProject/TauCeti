@@ -11,7 +11,6 @@ public import TauCeti.RingTheory.MvPolynomial.Dominant
 public import TauCeti.Algebra.Lie.AdjointAction.Matrix
 public import TauCeti.RingTheory.MvPolynomial.MatrixExponential
 import Mathlib.Algebra.CharZero.Infinite
-import Mathlib.Algebra.Module.Submodule.Union
 import TauCeti.Algebra.Lie.Weights.Basic
 import TauCeti.LinearAlgebra.Matrix.ToLin
 
