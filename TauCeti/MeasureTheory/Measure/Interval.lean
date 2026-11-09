@@ -7,9 +7,9 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 public import Mathlib.MeasureTheory.Measure.Interval
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 public import Mathlib.MeasureTheory.Measure.Real
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
-import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 import Mathlib.Topology.Order.LeftRight
 import Mathlib.Topology.Order.AtTopBotIxx
 
@@ -20,6 +20,9 @@ Mathlib's `MeasureTheory.tendsto_measure_Ioc_atBot` lets the left endpoint of `(
 `-∞`. This file adds the analogous limits for `(x, a)` and `[x, a]`, and the right-continuity of
 `x ↦ μ (-∞, x]` and `x ↦ μ (-∞, x)` at `a` from the right, where both tend to `μ (-∞, a]`.
 Reflection exchanges the two open tails.
+
+On `ℝ`, a uniform bound `C` on the mass of the unit windows `[a, a + 1]` bounds the mass of
+longer windows linearly in their length, and so makes the measure locally finite.
 
 ## Main results
 
@@ -36,12 +39,16 @@ Reflection exchanges the two open tails.
 * `MeasureTheory.Measure.tendsto_measureReal_Icc_neg_mul_atTop`: the real mass of symmetric
   intervals with endpoints `±δx` tends to the total mass of a finite real measure when `δ > 0`.
 * `MeasureTheory.Measure.map_neg_real_Ioi`: the right tail of a reflected measure is its left tail.
+* `MeasureTheory.Measure.measure_Icc_add_natCast_le`,
+  `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Icc_add_one_le`: a measure on `ℝ`
+  whose unit windows `[a, a + 1]` have mass at most `C` gives `[a, a + n]` mass at most
+  `(n + 1) * C`, and is locally finite.
 -/
 
 public section
 
 open Set Filter
-open scoped Topology ENNReal
+open scoped Topology ENNReal NNReal
 
 namespace MeasureTheory
 
@@ -167,5 +174,35 @@ theorem Measure.tendsto_measureReal_Icc_neg_mul_atTop (μ : Measure ℝ) [IsFini
   rw [hcover] at hm
   exact ((ENNReal.tendsto_toReal (measure_ne_top μ univ)).comp hm).comp
     (tendsto_id.const_mul_atTop hδ)
+
+namespace Measure
+
+/-- A measure on `ℝ` whose unit windows `[a, a + 1]` have mass at most `C` gives every window
+`[a, a + n]` of natural length `n` mass at most `(n + 1) * C`. -/
+theorem measure_Icc_add_natCast_le {η : Measure ℝ} {C : ℝ≥0∞}
+    (hC : ∀ a : ℝ, η (Icc a (a + 1)) ≤ C) (a : ℝ) (n : ℕ) :
+    η (Icc a (a + n)) ≤ (n + 1) * C := by
+  induction n with
+  | zero =>
+    simp only [Nat.cast_zero, add_zero, zero_add, one_mul]
+    exact (measure_mono (Icc_subset_Icc_right (by linarith))).trans (hC a)
+  | succ n ih =>
+    calc η (Icc a (a + (n + 1 : ℕ)))
+        ≤ η (Icc a (a + n) ∪ Icc (a + n) (a + n + 1)) := by
+          refine measure_mono fun x hx ↦ ?_
+          push_cast at hx
+          rcases le_total x (a + n) with h | h
+          · exact Or.inl ⟨hx.1, h⟩
+          · exact Or.inr ⟨h, by linarith [hx.2]⟩
+      _ ≤ (n + 1) * C + C := (measure_union_le _ _).trans (add_le_add ih (hC _))
+      _ = ((n + 1 : ℕ) + 1) * C := by push_cast; ring
+
+/-- A measure on `ℝ` with uniformly bounded mass on unit windows is locally finite. -/
+theorem isLocallyFiniteMeasure_of_measure_Icc_add_one_le {η : Measure ℝ} {C : ℝ≥0}
+    (hC : ∀ a : ℝ, η (Icc a (a + 1)) ≤ C) : IsLocallyFiniteMeasure η :=
+  ⟨fun x ↦ ⟨Icc (x - 2⁻¹) (x - 2⁻¹ + 1), Icc_mem_nhds (by linarith) (by linarith),
+    (hC _).trans_lt ENNReal.coe_lt_top⟩⟩
+
+end Measure
 
 end MeasureTheory
