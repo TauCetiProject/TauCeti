@@ -87,6 +87,24 @@ theorem toFilterGerm_stalkPullback
         hf.self_of_nhds.continuousAt.tendsto :=
   (exists_stalkPullback hf s).choose_spec
 
+/-- Pullback is surjective if the map admits a holomorphic local left inverse near the
+base point. -/
+theorem stalkPullback_surjective_of_eventually_leftInverse {g : Y → X}
+    (hg : ∀ᶠ y in 𝓝 (f a), ContMDiffAt J I ω g y)
+    (hgf : (g ∘ f) =ᶠ[𝓝 a] id) : Function.Surjective (stalkPullback hf) := by
+  intro s
+  obtain ⟨u, hu, hus⟩ := exists_toFilterGerm_eq a s
+  have hga : g (f a) = a := hgf.self_of_nhds
+  have hnear : ∀ᶠ y in 𝓝 (f a), ContMDiffAt J 𝓘(ℂ) ω (u ∘ g) y := by
+    filter_upwards [hg, hg.self_of_nhds.continuousAt.tendsto.eventually (by
+      simpa only [hga] using hu)] with y hy huy
+    exact huy.comp y hy
+  obtain ⟨t, ht⟩ := exists_toFilterGerm_eq_of_eventually_contMDiffAt hnear
+  refine ⟨t, toFilterGerm_nhds_injective a ?_⟩
+  rw [toFilterGerm_stalkPullback, ht, Germ.coe_compTendsto, hus, Germ.coe_eq]
+  filter_upwards [hgf] with z hz
+  exact congrArg u hz
+
 /-- Pullback preserves the value of a holomorphic germ. -/
 @[simp]
 theorem eval_stalkPullback

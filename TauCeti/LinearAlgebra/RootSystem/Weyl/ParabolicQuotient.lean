@@ -120,6 +120,42 @@ lemma _root_.RootPairing.wallIndices_smul [NoZeroDivisors R] {c : R} (hc : c ≠
   ext i
   simp [map_smul, hc]
 
+section IntegerScaling
+
+variable (P : RootPairing ι ℤ M N) (b : P.Base)
+
+/-- A nonzero natural multiple of a weight lies on exactly the same simple walls. -/
+@[simp]
+theorem _root_.RootPairing.wallIndices_nsmul {n : ℕ} (hn : n ≠ 0) (lam : M) :
+    P.wallIndices b (n • lam) = P.wallIndices b lam := by
+  simpa only [Nat.cast_smul_eq_nsmul] using
+    (P.wallIndices_smul (b := b) (Int.natCast_ne_zero.mpr hn) lam)
+
+variable [Finite ι] [P.IsReduced]
+
+/-- Identify minimal wall-parabolic representatives before and after nonzero natural scaling.
+The underlying Weyl-group element is unchanged. -/
+def _root_.RootPairing.minimalCosetRepNsmulEquiv (lam : M) (n : ℕ) (hn : n ≠ 0) :
+    {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w} ≃
+      {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b (n • lam)) w} :=
+  Equiv.subtypeEquivRight fun _ ↦ by rw [P.wallIndices_nsmul b hn lam]
+
+/-- Scaling the shape preserves the Weyl-group element of a minimal representative. -/
+@[simp]
+theorem _root_.RootPairing.coe_minimalCosetRepNsmulEquiv (lam : M) (n : ℕ) (hn : n ≠ 0)
+    (w : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) w}) :
+    (P.minimalCosetRepNsmulEquiv b lam n hn w).1 = w.1 := by
+  simp only [minimalCosetRepNsmulEquiv, Equiv.subtypeEquivRight_apply]
+
+/-- Inverse scaling preserves the Weyl-group element of a minimal representative. -/
+@[simp]
+theorem _root_.RootPairing.coe_minimalCosetRepNsmulEquiv_symm (lam : M) (n : ℕ) (hn : n ≠ 0)
+    (w : {w // (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b (n • lam)) w}) :
+    ((P.minimalCosetRepNsmulEquiv b lam n hn).symm w).1 = w.1 := by
+  rfl
+
+end IntegerScaling
+
 /-- Adding a weight `χ` killed by the simple coroots, such as a central weight, does not change
 the walls through a weight. -/
 lemma _root_.RootPairing.wallIndices_add_of_forall_coroot'_eq_zero {x χ : M}
