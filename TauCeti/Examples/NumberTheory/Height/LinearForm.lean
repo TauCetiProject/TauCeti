@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.NumberTheory.Height.LocalLinearForm
+import TauCeti.NumberTheory.Height.LinearForm
 import TauCeti.NumberTheory.NumberField.Global.Places.Rat
 
 /-!
