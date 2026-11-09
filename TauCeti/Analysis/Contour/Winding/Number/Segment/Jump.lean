@@ -149,15 +149,6 @@ theorem tendsto_windingNumber_segment_sub (hv : v ≠ 0) (hs : s ∈ Ioo a b) :
 
 /-! ## The jump of a closed curve across a straight piece -/
 
-/-- Along `h → 0⁺`, eventually `0 < h` and `c * |h| < r`, for any `c` and positive `r`. -/
-private theorem eventually_nhdsGT_pos_and_mul_abs_lt (c : ℝ) {r : ℝ} (hr : 0 < r) :
-    ∀ᶠ h : ℝ in 𝓝[>] 0, 0 < h ∧ c * |h| < r := by
-  have hlt : ∀ᶠ h : ℝ in 𝓝 (0 : ℝ), c * |h| < r := by
-    have : Continuous fun h : ℝ ↦ c * |h| := continuous_const.mul continuous_abs
-    exact this.continuousAt.eventually_lt continuousAt_const (by simpa using hr)
-  exact (eventually_mem_nhdsWithin.and (hlt.filter_mono nhdsWithin_le_nhds)).mono fun h hh ↦
-    ⟨hh.1, hh.2⟩
-
 private theorem convex_ball_inter_halfSpace_gt (p v : ℂ) (r σ : ℝ) :
     Convex ℝ (ball p r ∩ {w : ℂ | 0 < σ * ((w - p) / v).im}) := by
   have hlin : IsLinearMap ℝ fun w : ℂ ↦ σ * (w / v).im :=
@@ -254,7 +245,11 @@ theorem exists_forall_windingNumber_eq_add_one_of_eqOn_segment {Γ : ℝ → ℂ
   obtain ⟨r, hr, hoff⟩ :=
     exists_ball_forall_notMem_image_of_eqOn_segment hΓ hbc hseg hv hs hp
   refine ⟨r, hr, ?_⟩
-  have h_small := eventually_nhdsGT_pos_and_mul_abs_lt ‖v‖ hr
+  have h_small : ∀ᶠ h : ℝ in 𝓝[>] 0, 0 < h ∧ ‖v‖ * |h| < r := by
+    have hlt : ∀ᶠ h : ℝ in 𝓝 0, ‖v‖ * |h| < r :=
+      (continuous_const.mul continuous_abs).continuousAt.eventually_lt continuousAt_const
+        (by simpa using hr)
+    exact eventually_mem_nhdsWithin.and (nhdsWithin_le_nhds hlt)
   have h_off_add : ∀ h : ℝ, 0 < h → ‖v‖ * |h| < r → v * (s + h * I) + z₀ ∉ Γ '' uIcc a c := by
     intro h hh hlt
     refine hoff _ (by rwa [Metric.mem_ball, dist_add_right, Complex.dist_mul_add_mul_I]) ?_
