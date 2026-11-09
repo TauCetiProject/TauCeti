@@ -1,5 +1,5 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Mei contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The Tau Ceti contributors
 -/
@@ -51,6 +51,13 @@ Every nonempty finset can be listed by a sequence strictly increasing on a finit
 
 If every element of `I` is at most `s ≤ t`, the sequence `⊥`, the elements of `I` in increasing
 order, `s`, then constantly `t`, is monotone in `ℕ`, `Finset.monotone_bot_orderEmbOfFin_snoc`.
+
+## Provenance
+
+`Finset.prod_map_sort_subset` and `Finset.prod_map_sort_swap` are adapted from
+`Mei/Algebra/BigOperators/Group/Finset/Ordered.lean` in
+[yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
+`7f1e4c7714fb020473694755ad8748c8f15d0e7f`, licensed under Apache 2.0.
 -/
 
 public section
