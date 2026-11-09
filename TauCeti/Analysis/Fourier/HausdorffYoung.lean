@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fourier.LpSpace
 public import TauCeti.MeasureTheory.Integral.RieszThorin
 import TauCeti.Data.ENNReal.InterpolatedExponent
+import TauCeti.MeasureTheory.Function.Lp.Indicator
 
 /-!
 # The Hausdorff–Young inequality
@@ -22,15 +23,17 @@ function `f` satisfies, for `1 ≤ p ≤ 2` and the conjugate exponent `p'` (`1 
 `f ∈ L¹ ∩ Lᵖ` (`MeasureTheory.Integrable.memLp_fourier`). The constant is `1`, with no dependence
 on the dimension, because the `2π` in the exponent makes both endpoint bounds exact.
 
-The inequality interpolates its two endpoints, `‖𝓕 f‖_∞ ≤ ‖f‖₁` and Plancherel's theorem
-`‖𝓕 f‖₂ = ‖f‖₂` on `L¹ ∩ L²` (`TauCeti.Analysis.Fourier.LpSpace`), by the Riesz–Thorin theorem
+The inequality interpolates its two endpoints, `‖𝓕 f‖_∞ ≤ ‖f‖₁`
+(`TauCeti.eLpNorm_fourier_top_le`) and Plancherel's theorem `‖𝓕 f‖₂ = ‖f‖₂` on `L¹ ∩ L²`
+(`TauCeti.Analysis.Fourier.LpSpace`), by the Riesz–Thorin theorem
 (`TauCeti.eLpNorm_le_rpow_mul_rpow_mul_eLpNorm`) with `1 / p = (1 - θ) + θ / 2` and
 `1 / p' = θ / 2`. Riesz–Thorin needs an operator that is linear on all simple functions, and the
 Fourier integral is only additive on integrable functions; so it is applied to `g ↦ 𝓕 (1_s g)` for
 a set `s` of finite measure, which is linear on simple functions. Taking for `s` the support of an
 integrable simple function gives the inequality on integrable simple functions. A general
 integrable `f ∈ Lᵖ` is the limit of integrable simple functions `gₙ` both in `L¹` and in `Lᵖ`
-(`MeasureTheory.SimpleFunc.approxOn`); the `L¹` convergence makes `𝓕 gₙ → 𝓕 f` uniformly, and
+(`MeasureTheory.SimpleFunc.approxOn`); the `L¹` convergence makes `𝓕 gₙ → 𝓕 f` uniformly
+(`MeasureTheory.Integrable.tendstoUniformly_fourier`), and
 Fatou's lemma for `L^{p'}` norms passes the inequality to the limit.
 
 ## Main declarations
@@ -61,35 +64,24 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 namespace TauCeti.HausdorffYoung
 
-/-- A simple function cut off to a set of finite measure is integrable. -/
-private theorem integrable_indicator {s : Set E} (hs : MeasurableSet s) (hsfin : volume s ≠ ∞)
-    (g : SimpleFunc E ℂ) : Integrable (s.indicator g) := by
-  have : IsFiniteMeasure (volume.restrict s) := isFiniteMeasure_restrict.2 hsfin
-  exact (integrable_indicator_iff hs).2 g.integrable_of_isFiniteMeasure
-
-/-- A simple function cut off to a set of finite measure is square integrable. -/
-private theorem memLp_two_indicator {s : Set E} (hs : MeasurableSet s) (hsfin : volume s ≠ ∞)
-    (g : SimpleFunc E ℂ) : MemLp (s.indicator g) 2 := by
-  have : IsFiniteMeasure (volume.restrict s) := isFiniteMeasure_restrict.2 hsfin
-  exact (memLp_indicator_iff_restrict hs.nullMeasurableSet).2 (g.memLp_of_isFiniteMeasure 2 _)
-
 /-- The Fourier integral of simple functions cut off to a set `s` of finite measure, as a linear
 map into almost-everywhere classes. It is the operator to which Riesz–Thorin is applied. -/
 private noncomputable def fourierIndicator {s : Set E} (hs : MeasurableSet s)
     (hsfin : volume s ≠ ∞) : (SimpleFunc E ℂ) →ₗ[ℂ] (E →ₘ[volume] ℂ) where
   toFun g := AEEqFun.mk (𝓕 (s.indicator g))
-    (integrable_indicator hs hsfin g).continuous_fourier.aestronglyMeasurable
+    (g.integrable_indicator hs hsfin).continuous_fourier.aestronglyMeasurable
   map_add' g h := by
     rw [AEEqFun.mk_add_mk]
     congr 1
     rw [FunLike.coe_add, indicator_add',
-      (integrable_indicator hs hsfin g).fourier_add (integrable_indicator hs hsfin h)]
+      (g.integrable_indicator hs hsfin).fourier_add (h.integrable_indicator hs hsfin)]
   map_smul' c g := by
     rw [AEEqFun.smul_mk]
     congr 1
-    rw [FunLike.coe_smul, show (c • ⇑g : E → ℂ) = fun x => c • g x from rfl,
-      indicator_const_smul]
-    exact VectorFourier.fourierIntegral_const_smul _ _ _ _ c
+    rw [FunLike.coe_smul, ← Real.fourier_const_smul]
+    congr 1
+    ext x
+    by_cases hx : x ∈ s <;> simp [hx]
 
 /-- The norms of `fourierIndicator` are those of the Fourier integral of the cut-off function. -/
 private theorem eLpNorm_fourierIndicator {s : Set E} (hs : MeasurableSet s)
@@ -97,47 +89,24 @@ private theorem eLpNorm_fourierIndicator {s : Set E} (hs : MeasurableSet s)
     eLpNorm (fourierIndicator hs hsfin g) q volume = eLpNorm (𝓕 (s.indicator g)) q volume :=
   eLpNorm_congr_ae (AEEqFun.coeFn_mk _ _)
 
-/-- The exponent of the Riesz–Thorin interpolation between `(1, ∞)` and `(2, 2)`: for
-`1 < p < 2`, `θ = 2 (1 - 1 / p)` lies in `(0, 1)` with `1 / p = (1 - θ) + θ / 2`. -/
-private theorem exists_theta {p : ℝ≥0∞} (hp₁ : 1 < p) (hp₂ : p < 2) :
-    ∃ θ ∈ Ioo (0 : ℝ) 1, p⁻¹ = ENNReal.ofReal (1 - θ) * 1⁻¹ + ENNReal.ofReal θ * 2⁻¹ := by
-  have hne : p⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 (zero_lt_one.trans hp₁).ne'
-  have h₁ : p⁻¹.toReal < 1 := by
-    simpa using ENNReal.toReal_strict_mono ENNReal.one_ne_top (ENNReal.inv_lt_one.2 hp₁)
-  have h₂ : 2⁻¹ < p⁻¹.toReal := by
-    simpa using ENNReal.toReal_strict_mono hne (ENNReal.inv_lt_inv.2 hp₂)
-  refine ⟨2 * (1 - p⁻¹.toReal), ⟨by linarith, by linarith⟩, ?_⟩
-  conv_lhs => rw [← ENNReal.ofReal_toReal hne]
-  rw [inv_one, mul_one,
-    show (2 : ℝ≥0∞)⁻¹ = ENNReal.ofReal 2⁻¹ by simp [ENNReal.ofReal_inv_of_pos],
-    ← ENNReal.ofReal_mul (by linarith), ← ENNReal.ofReal_add (by linarith) (by positivity)]
-  congr 1
-  ring
-
 /-- The Hausdorff–Young inequality for a simple function cut off to a set of finite measure. -/
 private theorem eLpNorm_fourier_indicator_le {s : Set E} (hs : MeasurableSet s)
     (hsfin : volume s ≠ ∞) (g : SimpleFunc E ℂ) {p : ℝ≥0∞} (hp₁ : 1 ≤ p) (hp₂ : p ≤ 2) :
     eLpNorm (𝓕 (s.indicator g)) p.conjExponent volume ≤ eLpNorm (s.indicator g) p volume := by
-  have hi := integrable_indicator hs hsfin g
-  have h₂ := memLp_two_indicator hs hsfin g
+  have hc₁ : (1 : ℝ≥0∞).conjExponent = ∞ :=
+    ENNReal.HolderConjugate.conjExponent_eq (h := .one_top)
+  have hc₂ : (2 : ℝ≥0∞).conjExponent = 2 := ENNReal.HolderConjugate.conjExponent_eq
   rcases hp₁.eq_or_lt with rfl | hp₁
-  · have : (1 : ℝ≥0∞).conjExponent = ∞ :=
-      ENNReal.HolderConjugate.conjExponent_eq (h := .one_top)
-    rw [this]
+  · rw [hc₁]
     exact eLpNorm_fourier_top_le _
   rcases hp₂.eq_or_lt with rfl | hp₂
-  · have : (2 : ℝ≥0∞).conjExponent = 2 :=
-      ENNReal.HolderConjugate.conjExponent_eq
-    rw [this, hi.eLpNorm_fourier_two_eq h₂]
-  obtain ⟨θ, hθ, hpθ⟩ := exists_theta hp₁ hp₂
+  · rw [hc₂, (g.integrable_indicator hs hsfin).eLpNorm_fourier_two_eq (g.memLp_indicator hs hsfin)]
+  -- Interpolate between `(1, ∞)` and `(2, 2)`.
+  obtain ⟨θ, hθ, hpθ⟩ := exists_inv_eq_of_mem_Ioo one_ne_zero ⟨hp₁, hp₂⟩
   have hqθ : p.conjExponent⁻¹ = ENNReal.ofReal (1 - θ) * (∞ : ℝ≥0∞)⁻¹ +
       ENNReal.ofReal θ * 2⁻¹ := by
-    have h := inv_conjExponent_eq_of_inv_eq le_rfl one_le_two (Ioo_subset_Icc_self hθ) hpθ
-    have h₁ : (1 : ℝ≥0∞).conjExponent = ∞ :=
-      ENNReal.HolderConjugate.conjExponent_eq (h := .one_top)
-    have h₂ : (2 : ℝ≥0∞).conjExponent = 2 :=
-      ENNReal.HolderConjugate.conjExponent_eq
-    rwa [h₁, h₂] at h
+    rw [← hc₁, ← hc₂]
+    exact inv_conjExponent_eq_of_inv_eq le_rfl one_le_two (Ioo_subset_Icc_self hθ) hpθ
   have key := eLpNorm_le_rpow_mul_rpow_mul_eLpNorm (μ := volume.restrict s) (ν := volume)
     (T := fourierIndicator hs hsfin) (M₀ := 1) (M₁ := 1) le_top one_le_two hθ hpθ hqθ
     (fun g' => ?_) (fun g' => ?_) g
@@ -148,7 +117,7 @@ private theorem eLpNorm_fourier_indicator_le {s : Set E} (hs : MeasurableSet s)
     exact eLpNorm_fourier_top_le _
   · rw [eLpNorm_fourierIndicator, ENNReal.coe_one, one_mul,
       ← eLpNorm_indicator_eq_eLpNorm_restrict hs.nullMeasurableSet,
-      (integrable_indicator hs hsfin g').eLpNorm_fourier_two_eq (memLp_two_indicator hs hsfin g')]
+      (g'.integrable_indicator hs hsfin).eLpNorm_fourier_two_eq (g'.memLp_indicator hs hsfin)]
 
 /-- The Hausdorff–Young inequality for an integrable simple function. -/
 private theorem eLpNorm_fourier_simpleFunc_le (g : SimpleFunc E ℂ) (hg : Integrable g) {p : ℝ≥0∞}
@@ -191,14 +160,8 @@ theorem eLpNorm_fourier_le {f : E → ℂ} (hf : Integrable f) {p : ℝ≥0∞} 
   have hgp : Tendsto (fun n => eLpNorm (⇑(g n) - f') p volume) atTop (𝓝 0) :=
     SimpleFunc.tendsto_approxOn_Lp_eLpNorm hf'm.measurable _ hp_top hcl (by simpa using h.lt_top)
   -- The `L¹` convergence makes the Fourier integrals converge at every point.
-  have hlim (ξ : E) : Tendsto (fun n => 𝓕 ⇑(g n) ξ) atTop (𝓝 (𝓕 f' ξ)) := by
-    rw [tendsto_iff_norm_sub_tendsto_zero]
-    refine squeeze_zero (fun n => norm_nonneg _) (fun n => ?_)
-      ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hg₁)
-    rw [← Pi.sub_apply (𝓕 ⇑(g n)), ← (hg n).fourier_sub hf'i, Function.comp_apply,
-      eLpNorm_one_eq_lintegral_enorm ((hg n).1.sub hf'i.1),
-      ← integral_norm_eq_lintegral_enorm ((hg n).1.sub hf'i.1)]
-    exact Real.norm_fourier_le_integral_norm _ _
+  have hlim (ξ : E) : Tendsto (fun n => 𝓕 ⇑(g n) ξ) atTop (𝓝 (𝓕 f' ξ)) :=
+    (hf'i.tendstoUniformly_fourier hg hg₁).tendsto_at ξ
   -- Fatou's lemma and the inequality for the simple functions `gₙ`.
   calc eLpNorm (𝓕 f') p.conjExponent volume
       ≤ atTop.liminf fun n => eLpNorm (𝓕 ⇑(g n)) p.conjExponent volume :=

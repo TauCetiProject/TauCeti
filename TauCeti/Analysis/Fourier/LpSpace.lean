@@ -10,33 +10,27 @@ public import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 public import TauCeti.Analysis.Fourier.Continuous
 
 /-!
-# The Fourier integral on `L¹` and on `L¹ ∩ L²`
+# The Fourier integral on `L¹ ∩ L²`
 
 On a finite-dimensional real inner product space `E`, Mathlib has two Fourier transforms: the
 Fourier integral `𝓕 f ξ = ∫ 𝐞(-⟪x, ξ⟫) • f x` of a function, and the Fourier transform on
 `L²(E, F)` (`MeasureTheory.Lp.fourierTransformₗᵢ`), obtained by extending the Fourier transform of
-Schwartz functions by continuity. This file records the two `Lᵖ` bounds for the Fourier integral
-that hold with constant `1`, together with its additivity on integrable functions:
+Schwartz functions by continuity. This file proves **Plancherel's theorem on `L¹ ∩ L²`**: if `f`
+is integrable and square integrable, then `𝓕 f` is square integrable with `‖𝓕 f‖₂ = ‖f‖₂`.
 
-* the `L¹ → L^∞` bound `‖𝓕 f‖_∞ ≤ ‖f‖₁`, for every `f`;
-* **Plancherel's theorem on `L¹ ∩ L²`**: if `f` is integrable and square integrable, then `𝓕 f`
-  is square integrable with `‖𝓕 f‖₂ = ‖f‖₂`.
-
-The second rests on the fact that the two transforms agree on `L¹ ∩ L²`: the `L²` Fourier
+It rests on the fact that the two transforms agree on `L¹ ∩ L²`: the `L²` Fourier
 transform of the class of such an `f` is almost everywhere the Fourier integral of `f`. Both are
 the Fourier transform of `f` as a tempered distribution
 (`MeasureTheory.Lp.fourier_toTemperedDistribution_eq`,
 `MeasureTheory.Lp.fourier_toTemperedDistribution_apply`), and an `L²` function is determined
 almost everywhere by its pairings with Schwartz functions.
 
-These are the two endpoint estimates which the Riesz–Thorin theorem interpolates to the
-Hausdorff–Young inequality, in `TauCeti.Analysis.Fourier.HausdorffYoung`.
+Together with the `L¹ → L^∞` bound `‖𝓕 f‖_∞ ≤ ‖f‖₁` (`TauCeti.eLpNorm_fourier_top_le`), these are
+the two endpoint estimates which the Riesz–Thorin theorem interpolates to the Hausdorff–Young
+inequality, in `TauCeti.Analysis.Fourier.HausdorffYoung`.
 
 ## Main declarations
 
-* `TauCeti.eLpNorm_fourier_top_le`: `‖𝓕 f‖_∞ ≤ ‖f‖₁`.
-* `MeasureTheory.Integrable.fourier_add`, `MeasureTheory.Integrable.fourier_sub`: the Fourier
-  integral is additive on integrable functions.
 * `MeasureTheory.Integrable.coeFn_fourier_toLp`: on `L¹ ∩ L²` the `L²` Fourier transform is the
   Fourier integral.
 * `MeasureTheory.Integrable.eLpNorm_fourier_two_eq`: Plancherel's theorem on `L¹ ∩ L²`.
@@ -58,51 +52,7 @@ open scoped ENNReal FourierTransform
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
-namespace TauCeti
-
-variable [NormedAddCommGroup F] [NormedSpace ℂ F]
-
-/-- The Fourier integral is bounded from `L¹` to `L^∞` with norm at most one:
-`‖𝓕 f‖_∞ ≤ ‖f‖₁`. No integrability is assumed; for a function outside `L¹` the bound is trivial. -/
-theorem eLpNorm_fourier_top_le (f : E → F) : eLpNorm (𝓕 f) ∞ volume ≤ eLpNorm f 1 volume := by
-  by_cases hf : Integrable f
-  · rw [eLpNorm_exponent_top hf.continuous_fourier.aestronglyMeasurable,
-      eLpNorm_one_eq_lintegral_enorm hf.aestronglyMeasurable]
-    refine eLpNormEssSup_le_of_ae_enorm_bound (ae_of_all _ fun ξ => ?_)
-    rw [Real.fourier_eq]
-    refine (enorm_integral_le_lintegral_enorm _).trans_eq ?_
-    simp only [Circle.enorm_smul]
-  · have h : eLpNorm f 1 volume = ∞ := by
-      by_contra h
-      exact hf (memLp_one_iff_integrable.1 (memLp_iff.2 (lt_top_iff_ne_top.2 h)))
-    rw [h]
-    exact le_top
-
-end TauCeti
-
 namespace MeasureTheory.Integrable
-
-section Additive
-
-variable [NormedAddCommGroup F] [NormedSpace ℂ F] {f g : E → F}
-
-/-- The Fourier integral is additive on integrable functions. -/
-theorem fourier_add (hf : Integrable f) (hg : Integrable g) : 𝓕 (f + g) = 𝓕 f + 𝓕 g :=
-  VectorFourier.fourierIntegral_add (L := innerₗ E) Real.continuous_fourierChar continuous_inner
-    hf hg
-
-/-- The Fourier integral of a difference of integrable functions is the difference of their
-Fourier integrals. -/
-theorem fourier_sub (hf : Integrable f) (hg : Integrable g) : 𝓕 (f - g) = 𝓕 f - 𝓕 g := by
-  -- On functions, `𝓕` is by definition the Fourier integral `VectorFourier.fourierIntegral` for
-  -- the pairing `innerₗ E` (`Real.instFourierTransform`), so its scaling lemma applies directly.
-  have h : 𝓕 (-g) = -𝓕 g := by
-    have h := VectorFourier.fourierIntegral_const_smul 𝐞 volume (innerₗ E) g (-1)
-    rw [neg_one_smul, neg_one_smul] at h
-    exact h
-  rw [sub_eq_add_neg, hf.fourier_add hg.neg, h, ← sub_eq_add_neg]
-
-end Additive
 
 variable [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] {f : E → F}
 
