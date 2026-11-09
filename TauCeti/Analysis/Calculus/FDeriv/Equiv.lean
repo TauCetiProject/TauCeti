@@ -23,6 +23,8 @@ to the identity.
 
 * `OpenPartialHomeomorph.fderiv_symm_comp_fderiv`: the derivative of the inverse is a left inverse
   of the derivative.
+* `OpenPartialHomeomorph.fderiv_comp_fderiv_symm`: the derivative of the inverse is a right
+  inverse of the derivative.
 -/
 
 public section
@@ -44,5 +46,14 @@ theorem fderiv_symm_comp_fderiv (e : OpenPartialHomeomorph E F) {p : F} (hp : p 
     exact hds.hasFDerivAt
   refine (hds'.comp _ hd.hasFDerivAt).unique ((hasFDerivAt_id _).congr_of_eventuallyEq ?_)
   exact eventually_of_mem (e.open_source.mem_nhds (e.map_target hp)) fun r hr ↦ e.left_inv hr
+
+/-- The derivative of the inverse of an open partial homeomorphism at a point of its target is a
+right inverse of the derivative at the corresponding point of its source. -/
+theorem fderiv_comp_fderiv_symm (e : OpenPartialHomeomorph E F) {p : F} (hp : p ∈ e.target)
+    (hd : DifferentiableAt 𝕜 e (e.symm p)) (hds : DifferentiableAt 𝕜 e.symm p) :
+    (fderiv 𝕜 e (e.symm p)).comp (fderiv 𝕜 e.symm p) = ContinuousLinearMap.id 𝕜 F :=
+  (hd.hasFDerivAt.comp p hds.hasFDerivAt).unique
+    ((hasFDerivAt_id p).congr_of_eventuallyEq
+      (eventually_of_mem (e.open_target.mem_nhds hp) fun _ hr ↦ e.right_inv hr))
 
 end OpenPartialHomeomorph

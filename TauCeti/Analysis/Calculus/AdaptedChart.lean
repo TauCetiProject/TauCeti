@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Operator.Banach
+public import TauCeti.Analysis.Calculus.FDeriv.Equiv
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Analysis.Calculus.NormalExtension
 public import TauCeti.LinearAlgebra.TotallyReal.Frame
@@ -72,22 +73,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 namespace OpenPartialHomeomorph
 
 variable {e : OpenPartialHomeomorph E F}
-
-/-- Where both are differentiable, the derivative of the inverse of a partial homeomorphism is
-a right inverse of the derivative. -/
-theorem fderiv_comp_fderiv_symm {y : F} (hy : y ∈ e.target)
-    (he : DifferentiableAt ℝ e (e.symm y)) (hs : DifferentiableAt ℝ e.symm y) :
-    (fderiv ℝ e (e.symm y)).comp (fderiv ℝ e.symm y) = ContinuousLinearMap.id ℝ F :=
-  (he.hasFDerivAt.comp y hs.hasFDerivAt).unique
-    ((hasFDerivAt_id y).congr_of_eventuallyEq (e.eventually_right_inverse hy))
-
-/-- Where both are differentiable, the derivative of the inverse of a partial homeomorphism is
-a left inverse of the derivative. -/
-theorem fderiv_symm_comp_fderiv {p : E} (hp : p ∈ e.source)
-    (he : DifferentiableAt ℝ e p) (hs : DifferentiableAt ℝ e.symm (e p)) :
-    (fderiv ℝ e.symm (e p)).comp (fderiv ℝ e p) = ContinuousLinearMap.id ℝ E :=
-  (hs.hasFDerivAt.comp p he.hasFDerivAt).unique
-    ((hasFDerivAt_id p).congr_of_eventuallyEq (e.eventually_left_inverse hp))
 
 /-- The pullback `(e^* J) p = (De_p)⁻¹ ∘ J (e p) ∘ De_p` of an endomorphism field along a
 partial homeomorphism, as a field on its source. The inverse of `De_p` is written as the
@@ -223,10 +208,8 @@ theorem fderiv_symm_apply_of_coe_eq_adaptedNormalExtension
     rw [← TauCeti.adaptedNormalExtension_zero γ J x, ← he]
     exact e.map_source hx
   have hright := e.fderiv_comp_fderiv_symm hγt (by rw [hsymm]; exact hD.differentiableAt) hs
-  have hleft := e.fderiv_symm_comp_fderiv hx hD.differentiableAt
-    (by rwa [he, TauCeti.adaptedNormalExtension_zero])
-  rw [hsymm] at hright
-  rw [he, TauCeti.adaptedNormalExtension_zero, ← he] at hleft
+  have hleft := e.fderiv_symm_comp_fderiv hγt (by rw [hsymm]; exact hD.differentiableAt) hs
+  rw [hsymm] at hright hleft
   set D := fderiv ℝ e (x, 0)
   set D' := fderiv ℝ e.symm (γ x)
   have hw : D (D' w) = w := by
@@ -253,8 +236,10 @@ theorem pullbackEnd_of_coe_eq_adaptedNormalExtension
   have hD := TauCeti.hasFDerivAt_adaptedNormalExtension_zero hγ hJ
   rw [← he] at hD
   have hex : e (x, 0) = γ x := by rw [he, TauCeti.adaptedNormalExtension_zero]
-  have hleft := e.fderiv_symm_comp_fderiv hx hD.differentiableAt (by rwa [hex])
-  rw [hex] at hleft
+  have hγt : γ x ∈ e.target := hex ▸ e.map_source hx
+  have hleft := e.fderiv_symm_comp_fderiv hγt
+    (by rw [← hex, e.left_inv hx]; exact hD.differentiableAt) hs
+  rw [← hex, e.left_inv hx, hex] at hleft
   refine ContinuousLinearMap.ext fun v ↦ ?_
   have hv : fderiv ℝ e.symm (γ x) (fderiv ℝ e (x, 0) v) = v := by
     simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] using
