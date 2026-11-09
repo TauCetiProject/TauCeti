@@ -39,9 +39,10 @@ Lipshitz, Ozsváth and Thurston.
 
 The subalgebra has its own unit `TauCeti.StrandsAlgebra.matchedOne`, the sum of the idempotents
 `I(S)` of the sets `S` with no two matched points, which is the sum of the idempotents `I(s)`. When
-`M` identifies two points it differs from the unit of the strands algebra. With this unit the
-subalgebra is an `R`-algebra, and over a ring of characteristic two the restricted differential
-makes it an ungraded differential algebra, over which type `D` structures are defined.
+`R` is nontrivial and `M` identifies two points it differs from the unit of the strands algebra.
+With this unit the subalgebra is an `R`-algebra, and over a ring of characteristic two the
+restricted differential makes it an ungraded differential algebra, over which type `D` structures
+are defined.
 
 ## Main definitions
 
@@ -554,7 +555,7 @@ instance : One (matchedSubalgebra R M) :=
   ⟨⟨matchedOne R M, matchedOne_mem_matchedSubalgebra⟩⟩
 
 /-- The unit of the matched subalgebra is `TauCeti.StrandsAlgebra.matchedOne`, which differs from
-the unit of the strands algebra when `M` identifies two points. -/
+the unit of the strands algebra when `R` is nontrivial and `M` identifies two points. -/
 @[simp]
 theorem coe_matchedSubalgebra_one :
     ((1 : matchedSubalgebra R M) : StrandsAlgebra R α) = matchedOne R M :=
@@ -583,10 +584,9 @@ variable {M : α → β}
 
 variable (R M) in
 /-- The differential of the strands algebra restricted to the matched subalgebra. -/
-def matchedDifferential : matchedSubalgebra R M →ₗ[R] matchedSubalgebra R M where
-  toFun x := ⟨differential R α x, differential_mem_matchedSubalgebra x.2⟩
-  map_add' _ _ := Subtype.ext (map_add _ _ _)
-  map_smul' _ _ := Subtype.ext (map_smul _ _ _)
+def matchedDifferential : matchedSubalgebra R M →ₗ[R] matchedSubalgebra R M :=
+  (differential R α).restrict (p := (matchedSubalgebra R M).toSubmodule)
+    (q := (matchedSubalgebra R M).toSubmodule) fun _ hx ↦ differential_mem_matchedSubalgebra hx
 
 @[simp]
 theorem coe_matchedDifferential (x : matchedSubalgebra R M) :
