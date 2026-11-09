@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Count
 public import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
+public import TauCeti.MeasureTheory.Function.LpSeminorm.EDist
 public import TauCeti.MeasureTheory.OptimalTransport.Existence.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.GraphPlan.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Gluing
@@ -666,23 +667,6 @@ end EMetricMoment
 section MetricMoment
 
 variable [PseudoMetricSpace X]
-
-/-- On an ordinary pseudometric space, the real-distance and extended-distance formulations of
-finite `p`-moment at a basepoint agree. -/
-theorem memLp_dist_iff_memLp_edist {x : X} {ν : Measure X} :
-    MemLp (fun y ↦ dist y x) p ν ↔ MemLp (fun y ↦ edist x y) p ν := by
-  have key (hd : AEStronglyMeasurable (fun y ↦ dist y x) ν) :
-      MemLp (fun y ↦ dist y x) p ν ↔ MemLp (fun y ↦ edist x y) p ν := by
-    apply memLp_congr_enorm
-    · exact hd
-    · exact (ENNReal.continuous_ofReal.comp_aestronglyMeasurable hd).congr
-        (.of_forall fun y ↦ by simp only [edist_dist, dist_comm])
-    · exact .of_forall fun y ↦ by
-        simp only [edist_dist, dist_comm, enorm_eq_self]
-        exact Real.enorm_eq_ofReal dist_nonneg
-  refine ⟨fun h ↦ (key h.aestronglyMeasurable).1 h, fun h ↦ (key ?_).2 h⟩
-  exact h.aestronglyMeasurable.aemeasurable.ennreal_toReal.aestronglyMeasurable.congr
-    (.of_forall fun y ↦ by simp only [← dist_edist, dist_comm])
 
 /-- On an ordinary pseudometric space, a finite measure with finite `p`-moment at some basepoint
 has finite `p`-moment at every basepoint whose distance section is almost-everywhere strongly
