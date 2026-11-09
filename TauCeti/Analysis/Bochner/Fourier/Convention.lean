@@ -149,19 +149,14 @@ section Topology
 variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W]
   [MeasurableSpace W] [BorelSpace W] {ν : Measure W} [IsFiniteMeasure ν]
 
-/-- The Fourier-convention transform of a finite measure is continuous. This is just Mathlib's
-continuity of `charFun`, transported through the `-2π` rescaling. -/
-theorem continuous_fourierConventionCharFun [SecondCountableTopology W] :
-    Continuous fun a : W => ∫ q, fourierAtom a q ∂ν := by
-  have hchar :
-      Continuous fun a : W => MeasureTheory.charFun ν ((-2 * Real.pi) • a) :=
-    by
-      simpa [Function.comp_def] using
-        (MeasureTheory.continuous_charFun (μ := ν)).comp
-          ((continuous_id : Continuous fun a : W => a).const_smul (-2 * Real.pi))
-  convert hchar using 1
-  ext a
-  exact integral_fourierAtom_eq_charFun_neg_two_pi_smul (μ := ν) a
+/-- The Fourier-convention transform of a finite measure is continuous. -/
+theorem continuous_fourierConventionCharFun :
+    Continuous fun a : W => ∫ q, fourierAtom a q ∂ν :=
+  continuous_of_dominated (bound := fun _ ↦ 1)
+    (fun a ↦ (continuous_fourierAtom a).aestronglyMeasurable)
+    (fun a ↦ ae_of_all _ fun q ↦ (norm_fourierAtom a q).le)
+    (integrable_const _)
+    (ae_of_all _ fun q ↦ (continuous_and_isPositiveDefiniteSub_fourierAtom q).1)
 
 end Topology
 

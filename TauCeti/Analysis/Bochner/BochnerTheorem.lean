@@ -228,11 +228,7 @@ theorem continuous_and_isPositiveDefiniteSub_of_integral_fourierAtom_eq {F : V �
     Continuous F ∧ IsPositiveDefiniteSub F := by
   refine ⟨?_, IsPositiveDefiniteSub.of_posSemidef ?_⟩
   · rw [funext hrep]
-    exact continuous_of_dominated (bound := fun _ ↦ 1)
-      (fun a ↦ (continuous_fourierAtom a).aestronglyMeasurable)
-      (fun a ↦ ae_of_all _ fun q ↦ by simp [fourierAtom_apply, Complex.norm_exp])
-      (integrable_const _)
-      (ae_of_all _ fun q ↦ (continuous_and_isPositiveDefiniteSub_fourierAtom q).1)
+    exact continuous_fourierConventionCharFun
   · have hfun : (fun a b : V => F (a - b)) =
         fun a b : V => ∫ q, fourierAtom (a - b) q ∂μ := by
       funext a b
