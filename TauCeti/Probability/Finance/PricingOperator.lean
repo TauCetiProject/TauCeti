@@ -50,11 +50,7 @@ side into an a priori estimate in terms of `P u` and the terminal trace alone. O
 bound on `r` enters: the zeroth-order coefficient `-r (1 - sigmoid y)` is then at most `γ`,
 since `0 < 1 - sigmoid y < 1`. For a nonnegative short rate the bound holds with `γ = 0`.
 
-The proof reads `u` backward from `t₁` and compares it on the whole line with the barrier
-`exp (γ τ) (M + τ K)` in the remaining time `τ`, by the comparison principle
-`TauCeti.PDE.le_of_deriv_sub_mul_deriv_deriv_add_mul_deriv_add_mul_le_of_le_initial`. Its growth
-conditions hold because the weighted coefficients are bounded. For a price
-`C(s, t) = (1 + s) u(log s, t)` the statements transfer through
+For a price `C(s, t) = (1 + s) u(log s, t)` the statements transfer through
 `TauCeti.Finance.weightedLogSpotPricingOperatorL_eq_spot`; in spot coordinates, uniqueness among
 all prices of linear growth is `TauCeti.Finance.eq_of_pde_eq_of_terminal_eq`.
 
@@ -220,19 +216,6 @@ section TerminalValue
 
 variable {a r}
 
-/-- At an interior remaining time `τ`, the slice through `y` read backward from `t₁` has the
-negated recorded time derivative as its ordinary derivative. -/
-private theorem hasDerivAt_reverse (u : ParabolicC2HolderSpace α ℝ ℝ ht) (y : ℝ) {τ : ℝ}
-    (h : τ ∈ Ioo 0 (t₁ - t₀)) :
-    HasDerivAt (fun σ ↦ u (slabMk y (projIcc t₀ t₁ ht.le (t₁ - σ))))
-      (-timeDerivL u (slabMk y (projIcc t₀ t₁ ht.le (t₁ - τ)))) τ := by
-  have hτ : ((projIcc t₀ t₁ ht.le (t₁ - τ) : Icc t₀ t₁) : ℝ) = t₁ - τ :=
-    congrArg Subtype.val (projIcc_of_mem ht.le ⟨by linarith [h.2], by linarith [h.1]⟩)
-  have hd := (u.hasTimeDerivWithinAt y (projIcc t₀ t₁ ht.le (t₁ - τ))).hasDerivAt
-    (Icc_mem_nhds (by rw [hτ]; linarith [h.2]) (by rw [hτ]; linarith [h.1]))
-  rw [hτ, timeExtension_def] at hd
-  exact (hd.comp τ ((hasDerivAt_id τ).const_sub t₁)).congr_deriv (by simp)
-
 /-- Read backward from `t₁`, the classical forward operator with the weighted coefficients is
 the negated weighted pricing operator at the corresponding slab point. -/
 private theorem reverse_operator_eq (u : ParabolicC2HolderSpace α ℝ ℝ ht) {τ : ℝ}
@@ -249,7 +232,7 @@ private theorem reverse_operator_eq (u : ParabolicC2HolderSpace α ℝ ℝ ht) {
   have hx : deriv (fun z ↦ u (slabMk z (projIcc t₀ t₁ ht.le (t₁ - τ)))) =
       fun z ↦ spatialFDerivL u (slabMk z (projIcc t₀ t₁ ht.le (t₁ - τ))) 1 :=
     funext (u.deriv_spatialSlice _)
-  rw [(hasDerivAt_reverse u y h).deriv, hx, u.deriv_spatialFDerivL_apply,
+  rw [(u.hasDerivAt_timeSlice_const_sub y h).deriv, hx, u.deriv_spatialFDerivL_apply,
     weightedLogSpotPricingOperatorL_apply]
   simp only [space_slabMk]
   ring
@@ -266,7 +249,9 @@ theorem le_exp_mul_mul_add_mul_of_le_weightedLogSpotPricingOperatorL (ha : ∀ p
     (p : slab (E := ℝ) t₀ t₁) :
     u p ≤ Real.exp (γ * (t₁ - slabTime p)) * (M + (t₁ - slabTime p) * K) := by
   -- Read `u` backward from `t₁` and compare it on the whole line with the barrier
-  -- `exp (γ τ) (M + τ K)` in the remaining time `τ`.
+  -- `exp (γ τ) (M + τ K)` in the remaining time `τ`, by the comparison principle
+  -- `PDE.le_of_deriv_sub_mul_deriv_deriv_add_mul_deriv_add_mul_le_of_le_initial`. Its growth
+  -- conditions hold because the weighted coefficients are bounded.
   have hcont : Continuous fun z : ℝ × ℝ ↦ u (slabMk z.2 (projIcc t₀ t₁ ht.le (t₁ - z.1))) :=
     (valueL u).continuous.comp (continuous_slabMk.comp (continuous_snd.prodMk
       ((continuous_projIcc (h := ht.le)).comp (continuous_const.sub continuous_fst))))
@@ -317,7 +302,7 @@ theorem le_exp_mul_mul_add_mul_of_le_weightedLogSpotPricingOperatorL (ha : ∀ p
       linarith⟩
     (fun τ _ y ↦ (u.contDiff_spatialSlice _).contDiffAt)
     (fun τ _ y ↦ contDiffAt_const)
-    (fun τ h y ↦ (hasDerivAt_reverse u y h).differentiableAt)
+    (fun τ h y ↦ (u.hasDerivAt_timeSlice_const_sub y h).differentiableAt)
     (fun τ _ y ↦ (hbar τ).differentiableAt)
     -- The reversed operator of `u` is `-P u ≤ K`, which the barrier's operator dominates.
     (fun τ h y ↦ by
