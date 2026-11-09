@@ -27,8 +27,8 @@ of the ring of series restricted at `c`. Evaluation at a point `x` with `‖x‖
 homomorphism on that ring, so it sends `e` to a unit, and the zeros of `f` in the disc are roots of
 `ω`. The field `L` is automatically ultrametric, since `K` is and `L` is a normed `K`-algebra.
 
-Counting zeros with their multiplicities, the orders of the good zeros of `f` in the closed disc
-add up to at most `s`, since they are root multiplicities of `ω`.
+At points of `K`, counting zeros with their multiplicities, the orders of the good zeros of `f` in
+the closed disc add up to at most `s`, since they are root multiplicities of `ω`.
 
 As a consequence, a series restricted at `c` that vanishes on an infinite subset of the closed disc
 of radius `c` is zero. The bound is sharp: `X ^ p - X` over `ℚ_p` is distinguished of degree `p` at

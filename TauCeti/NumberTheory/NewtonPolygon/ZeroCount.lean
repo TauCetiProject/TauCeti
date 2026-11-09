@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.NewtonPolygon.Roots
 public import TauCeti.NumberTheory.NewtonPolygon.Weierstrass
 public import TauCeti.RingTheory.PowerSeries.Restricted.GoodZero
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
+import TauCeti.RingTheory.PowerSeries.RootBound
 
 /-!
 # Counting zeros with multiplicity by Newton polygons
@@ -24,9 +25,9 @@ the good zero `PowerSeries.IsGoodZero f a h`, is the root multiplicity of `a` in
 its Newton polygon turns this into exact counts with multiplicity:
 
 * every root of `P` lies in the closed disc of radius `b ^ σ`
-  (`PowerSeries.norm_le_of_mem_roots_of_isUnit_mul`), so when `P` splits, the zeros of `f` in that
-  disc, counted with multiplicity, are the roots of `P` and there are exactly as many as the degree
-  in which `f` is distinguished at `b ^ σ`
+  (`TauCeti.PowerSeries.IsDistinguished.norm_le_of_mem_roots_of_isUnit_mul`, at any radius
+  `c > 0`), so when `P` splits, the zeros of `f` in that disc, counted with multiplicity, are the
+  roots of `P` and there are exactly as many as the degree in which `f` is distinguished there
   (`TauCeti.PowerSeries.IsDistinguished.exists_card_eq_isGoodZero`);
 * when the Newton polygon of `f` has a finite face of slope `σ` and `P` splits, the multiplicity
   of the slope `σ` is the number of roots of `P` on the sphere `‖a‖ = b ^ σ`, counted with
@@ -48,10 +49,10 @@ their algebraic multiplicities.
 
 ## Main results
 
-* `PowerSeries.norm_le_of_mem_roots_of_isUnit_mul`: the prepared polynomial has its roots in the
-  closed disc.
+* `TauCeti.PowerSeries.IsDistinguished.norm_le_of_mem_roots_of_isUnit_mul`: the prepared
+  polynomial has its roots in the closed disc.
 * `TauCeti.PowerSeries.IsDistinguished.exists_card_eq_isGoodZero`: over an algebraically closed
-  field, a series distinguished of degree `s` at `b ^ σ` has exactly `s` zeros in the closed disc,
+  field, a series distinguished of degree `s` at `c > 0` has exactly `s` zeros in the closed disc,
   counted with multiplicity.
 * `PowerSeries.newtonSlopeMultiplicity_eq_card_filter_roots_of_isUnit_mul`: when the prepared
   polynomial splits, the multiplicity of a slope is the number of its roots on the corresponding
@@ -80,6 +81,57 @@ public section
 
 open TauCeti
 
+namespace TauCeti.PowerSeries
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] {c : ℝ} {s : ℕ}
+  {f : _root_.PowerSeries K}
+
+/-- **The prepared polynomial has its roots in the closed disc.** If `f` is distinguished of degree
+`s` at `c > 0` and `f = u * P` with `u` a unit of the ring of series restricted at `c` and `P` a
+polynomial of degree at most `s`, then every root of `P` has norm at most `c`. -/
+theorem IsDistinguished.norm_le_of_mem_roots_of_isUnit_mul (hf : IsDistinguished c s f)
+    (hc : 0 < c) {u : _root_.PowerSeries.IsRestricted.subring (R := K) c} (hu : IsUnit u)
+    {P : Polynomial K} (hPdeg : P.natDegree ≤ s)
+    (hmul : (u : _root_.PowerSeries K) * (P : _root_.PowerSeries K) = f) {α : K}
+    (hα : α ∈ P.roots) : ‖α‖ ≤ c := by
+  have ha : P.leadingCoeff ≠ 0 :=
+    Polynomial.leadingCoeff_ne_zero.2 (Polynomial.ne_zero_of_mem_roots hα)
+  -- normalise `P` to the monic `Q = P.leadingCoeff⁻¹ • P`, which is still distinguished
+  set Q := Polynomial.C P.leadingCoeff⁻¹ * P
+  have hQm : Q.IsMonicOfDegree s :=
+    ⟨by rw [Polynomial.natDegree_C_mul (inv_ne_zero ha),
+        natDegree_eq_of_isUnit_mul hc hf hu hPdeg hmul],
+      by rw [Polynomial.Monic, Polynomial.leadingCoeff_C_mul_of_isUnit (inv_ne_zero ha).isUnit,
+        inv_mul_cancel₀ ha]⟩
+  have hPQ : ((algebraMap K (_root_.PowerSeries.IsRestricted.subring (R := K) c)
+      P.leadingCoeff : _) : _root_.PowerSeries K) * (Q : _root_.PowerSeries K) = P := by
+    rw [coe_algebraMap_isRestrictedSubring, Algebra.algebraMap_self_apply,
+      Polynomial.coe_mul, Polynomial.coe_C, ← mul_assoc, ← map_mul, mul_inv_cancel₀ ha, map_one,
+      one_mul]
+  have hQd : IsDistinguished c s (Q : _root_.PowerSeries K) :=
+    IsDistinguished.of_isUnit_mul (hPQ ▸ IsDistinguished.of_isUnit_mul (hmul ▸ hf) hc hu) hc
+      (ha.isUnit.map _)
+  refine hQd.norm_le_of_eval_eq_zero hc hQm ?_
+  rw [Polynomial.eval_mul, (Polynomial.isRoot_of_mem_roots hα).eq_zero, mul_zero]
+
+/-- **Zeros in a closed disc, with multiplicity.** Over an algebraically closed field, the zeros
+of a series `f` restricted at `c > 0` and distinguished of degree `s` there, in the closed disc of
+radius `c` and counted with multiplicity, form a multiset `Z` with exactly `s` elements: `f` has a
+good zero of order `Z.count a` at every `a` of norm at most `c`. -/
+theorem IsDistinguished.exists_card_eq_isGoodZero [CompleteSpace K] [IsAlgClosed K]
+    [DecidableEq K] (hfd : IsDistinguished c s f) (hc : 0 < c) (hfr : f.IsRestricted c) :
+    ∃ Z : Multiset K, Multiset.card Z = s ∧ (∀ a ∈ Z, ‖a‖ ≤ c) ∧
+      ∀ a, ‖a‖ ≤ c → f.IsGoodZero a (Z.count a) := by
+  obtain ⟨u, P, hu, hP, hmul⟩ :=
+    hfd.exists_isUnit_isMonicOfDegree_mul_eq hfd.coeff_ne_zero.isUnit hc hfr
+  refine ⟨P.roots, ?_, fun a ha ↦ (IsDistinguished.of_isUnit_mul (hmul ▸ hfd) hc hu
+      ).norm_le_of_eval_eq_zero hc hP (Polynomial.isRoot_of_mem_roots ha), fun a ha ↦ ?_⟩
+  · rw [← hP.natDegree_eq]
+    exact Polynomial.splits_iff_card_roots.1 (IsAlgClosed.splits P)
+  · exact _root_.PowerSeries.isGoodZero_count_roots_of_isUnit_mul hu hmul hfd.ne_zero ha
+
+end TauCeti.PowerSeries
+
 namespace PowerSeries
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K]
@@ -88,20 +140,6 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K]
   {f : K⟦X⟧} {σ : ℝ} {j : ℕ} {u : IsRestricted.subring (R := K) (b ^ σ)} {P : Polynomial K}
 
 include hb hv
-
-/-- **The prepared polynomial has its roots in the closed disc.** If `f` is distinguished of degree
-`j` at `b ^ σ` and `f = u * P` with `u` a unit of the ring of series restricted at `b ^ σ` and `P`
-a polynomial of degree at most `j`, then every root of `P` has norm at most `b ^ σ`. -/
-theorem norm_le_of_mem_roots_of_isUnit_mul (hf : PowerSeries.IsDistinguished (b ^ σ) j f)
-    (hu : IsUnit u) (hPdeg : P.natDegree ≤ j) (hmul : (u : K⟦X⟧) * (P : K⟦X⟧) = f) {α : K}
-    (hα : α ∈ P.roots) : ‖α‖ ≤ b ^ σ := by
-  rcases eq_or_ne α 0 with rfl | hα0
-  · simpa using (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ).le
-  have hs := le_of_mem_newtonSlopes_of_isUnit_mul v hb hv hf hu hPdeg hmul
-    (Polynomial.neg_untop₀_mem_newtonSlopes_of_isRoot (fun _ ↦ v.top_iff.mp)
-      (Polynomial.ne_zero_of_mem_roots hα) hα0 (Polynomial.isRoot_of_mem_roots hα))
-  rw [hv α hα0]
-  exact Real.rpow_le_rpow_of_exponent_le hb.le hs
 
 /-- **Slope multiplicity and roots on a sphere.** Suppose the Newton polygon of a series `f`
 restricted at `b ^ σ` has a finite face of slope `σ` ending at `j`, and `f = u * P` with `u` a
@@ -129,16 +167,15 @@ theorem newtonSlopeMultiplicity_eq_card_filter_roots_of_isUnit_mul
       rw [unitSlope_newtonPolygon_eq_of_isUnit_mul v hb hv hfd hu hPdeg hmul hi hij]
       exact ⟨⟨hi, hij⟩, hσ⟩
   rw [newtonSlopeMultiplicity_def, ← hedges, ← Polynomial.card_filter_newtonSlopes P v (· = σ),
-    Polynomial.newtonSlopes_eq_map_roots (fun _ ↦ v.top_iff.mp) hP, Multiset.filter_map,
-    Multiset.card_map, Multiset.filter_filter]
+    Polynomial.card_filter_newtonSlopes_eq (fun _ ↦ v.top_iff.mp) hP]
   -- a point has norm `b ^ σ` exactly when it is nonzero of valuation `-σ`
-  refine congrArg _ (Multiset.filter_congr fun α _ ↦ ⟨fun ⟨hσ, hα⟩ ↦ ?_, fun h ↦ ?_⟩)
+  refine congrArg _ (Multiset.filter_congr fun α _ ↦ ⟨fun ⟨hα, hσ⟩ ↦ ?_, fun h ↦ ?_⟩)
   · rw [hv α hα]
     exact congrArg _ hσ
   · have hα : α ≠ 0 := by
       rintro rfl
       exact (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ).ne (by simpa using h)
-    exact ⟨(Real.rpow_right_inj (zero_lt_one.trans hb) hb.ne').mp ((hv α hα).symm.trans h), hα⟩
+    exact ⟨hα, (Real.rpow_right_inj (zero_lt_one.trans hb) hb.ne').mp ((hv α hα).symm.trans h)⟩
 
 /-- **Roots in the open disc.** Under the hypotheses of
 `PowerSeries.newtonSlopeMultiplicity_eq_card_filter_roots_of_isUnit_mul`, with the finite face of
@@ -155,7 +192,8 @@ theorem card_filter_roots_norm_lt_of_isUnit_mul (hfr : f.IsRestricted (b ^ σ)) 
   -- the roots not in the open disc are those on the sphere, since all lie in the closed disc
   have hnot : (P.roots.filter fun α ↦ ¬‖α‖ < b ^ σ) = P.roots.filter fun α ↦ ‖α‖ = b ^ σ :=
     Multiset.filter_congr fun α hα ↦ ⟨fun h ↦ le_antisymm
-      (norm_le_of_mem_roots_of_isUnit_mul v hb hv hfd hu hPdeg hmul hα) (not_lt.1 h),
+      (hfd.norm_le_of_mem_roots_of_isUnit_mul (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) hu
+        hPdeg hmul hα) (not_lt.1 h),
       fun h ↦ h.not_lt⟩
   have hcard : Multiset.card P.roots = j := by
     rw [Polynomial.splits_iff_card_roots.1 hP, TauCeti.PowerSeries.natDegree_eq_of_isUnit_mul
@@ -219,33 +257,3 @@ theorem IsEntire.exists_card_eq_newtonSlopeMultiplicity_isGoodZero (hf : f.IsEnt
     hface
 
 end PowerSeries
-
-namespace TauCeti.PowerSeries
-
-variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] [IsAlgClosed K]
-  [DecidableEq K]
-  (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
-  (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀))
-  {f : _root_.PowerSeries K} {σ : ℝ} {s : ℕ}
-
-include hb hv
-
-/-- **Zeros in a closed disc, with multiplicity.** Over an algebraically closed field, the zeros
-of a series `f` restricted at `b ^ σ` and distinguished of degree `s` there, in the closed disc of
-radius `b ^ σ` and counted with multiplicity, form a multiset `Z` with exactly `s` elements: `f`
-has a good zero of order `Z.count a` at every `a` of norm at most `b ^ σ`. -/
-theorem IsDistinguished.exists_card_eq_isGoodZero (hfd : IsDistinguished (b ^ σ) s f)
-    (hfr : f.IsRestricted (b ^ σ)) :
-    ∃ Z : Multiset K, Multiset.card Z = s ∧ (∀ a ∈ Z, ‖a‖ ≤ b ^ σ) ∧
-      ∀ a, ‖a‖ ≤ b ^ σ → f.IsGoodZero a (Z.count a) := by
-  have hc : 0 < b ^ σ := Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ
-  obtain ⟨u, P, hu, hP, hmul⟩ :=
-    hfd.exists_isUnit_isMonicOfDegree_mul_eq hfd.coeff_ne_zero.isUnit hc hfr
-  refine ⟨P.roots, ?_,
-    fun a ha ↦ _root_.PowerSeries.norm_le_of_mem_roots_of_isUnit_mul v hb hv hfd hu
-      hP.natDegree_eq.le hmul ha, fun a ha ↦ ?_⟩
-  · rw [← hP.natDegree_eq]
-    exact Polynomial.splits_iff_card_roots.1 (IsAlgClosed.splits P)
-  · exact _root_.PowerSeries.isGoodZero_count_roots_of_isUnit_mul hu hmul hfd.ne_zero ha
-
-end TauCeti.PowerSeries
