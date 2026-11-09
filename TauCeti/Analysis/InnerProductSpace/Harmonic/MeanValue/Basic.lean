@@ -100,6 +100,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   [MeasurableSpace E] [BorelSpace E] [Nontrivial E] {μ : Measure E} [μ.IsAddHaarMeasure]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {u : E → F} {R : ℝ}
 
+omit [CompleteSpace F] in
 /-- The distributional derivative of the sphere integrals `Φ s = ∫ θ, u (s • θ) ∂μ.toSphere` of a
 `C²` function on `ball 0 R` is computed by the Laplacian: for every test function `ψ` on `(0, R)`
 there is a radial `χ`, vanishing outside the ball and nonpositive when `ψ` is nonnegative, with

@@ -72,23 +72,20 @@ theorem natCast_eq_neg_of_dvd_add {n b b' : ℕ} (h : n ∣ b + b') : (b' : ZMod
   exact h
 
 /-- Dividing a residue representative by `d` agrees modulo `m` with dividing the original
-integer, when `d` divides that integer and `m * d` divides the residue modulus. -/
-theorem natCast_val_div_eq_intCast_div {N m d : ℕ} [NeZero N] (hmd : m * d ∣ N)
-    {x : ℤ} (hd : (d : ℤ) ∣ x) :
+integer, when `m * d` divides the residue modulus. -/
+theorem natCast_val_div_eq_intCast_div {N m d : ℕ} [NeZero N] (hmd : m * d ∣ N) (x : ℤ) :
     (((x : ZMod N).val / d : ℕ) : ZMod m) = ((x / d : ℤ) : ZMod m) := by
   have hd0 : (d : ℤ) ≠ 0 := by
     intro hzero
     have hd0 : d = 0 := by exact_mod_cast hzero
     exact NeZero.ne N (by simpa [hd0] using hmd)
   have hmd' : (m : ℤ) * d ∣ N := by exact_mod_cast hmd
-  have hdiff : (m : ℤ) * d ∣ ((x : ZMod N).val : ℤ) - x :=
-    hmd'.trans
-      ((intCast_eq_intCast_iff_dvd_sub _ _ _).mp (by simp))
-  have hquot := Int.ediv_dvd_ediv (dvd_mul_left (d : ℤ) m) hdiff
-  rw [mul_comm (m : ℤ) d, Int.mul_ediv_cancel_left _ hd0,
-    Int.sub_ediv_of_dvd _ hd] at hquot
-  rw [← Int.cast_natCast, Int.natCast_div, intCast_eq_intCast_iff_dvd_sub]
-  exact (dvd_sub_comm).mp hquot
+  obtain ⟨k, hk⟩ : (m : ℤ) * d ∣ ((x : ZMod N).val : ℤ) - x :=
+    hmd'.trans ((intCast_eq_intCast_iff_dvd_sub _ _ _).mp (by simp))
+  have hval : ((x : ZMod N).val : ℤ) = x + d * (m * k) := by linarith
+  rw [← Int.cast_natCast, Int.natCast_div, hval, Int.add_mul_ediv_left _ _ hd0,
+    intCast_eq_intCast_iff_dvd_sub]
+  exact ⟨-k, by ring⟩
 
 /-- **A linear congruence with unit coefficient is solvable.** If `b` is a unit modulo `n`, then
 `n ∣ a - j.val * b` for some `j : ZMod n`, namely `j = a b⁻¹`. -/

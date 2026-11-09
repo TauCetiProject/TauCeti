@@ -118,12 +118,8 @@ theorem flowOf_eq_of_isMIntegralCurve [IsManifold I 1 M]
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     {γ : ℝ → M} (hγ : IsMIntegralCurve γ v) (t : ℝ) :
     flowOf v t (γ 0) = γ t := by
-  have h := (hγ.isMIntegralCurveOn (Ioo (-(|t| + 1)) (|t| + 1))).eqOn_maximalIntegralCurve hv
-    (by constructor <;> linarith [abs_nonneg t]) rfl
-  have ht : t ∈ Ioo (-(|t| + 1)) (|t| + 1) :=
-    ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
   rw [flowOf_apply]
-  exact h ht
+  exact hγ.maximalIntegralCurve_eq hv t
 
 omit [CompleteSpace E] in
 /-- The velocity of a maximal-flow trajectory is the vector field at the current point,
