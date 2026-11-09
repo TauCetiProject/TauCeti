@@ -166,9 +166,9 @@ theorem map_fiberProduct_comm :
     map (Fin q) ((LinearEquiv.prodComm K X Y).ofSubmodules _ _
         (LinearMap.map_prodComm_ker_coprod_neg α β)) (fiberProduct h ox oy ot hx hy ht hq) =
       (-1 : Kˣ) ^ (x * y + t * (x + y) + t) •
-        fiberProduct (LinearMap.surjective_coprod_neg_comm α β h) oy ox ot hy hx ht
+        fiberProduct ((LinearMap.surjective_coprod_neg_comm α β).1 h) oy ox ot hy hx ht
           (hq.trans (add_comm x y)) := by
-  set h' := LinearMap.surjective_coprod_neg_comm α β h
+  set h' := (LinearMap.surjective_coprod_neg_comm α β).1 h
   set σ := (LinearEquiv.prodComm K X Y).ofSubmodules _ _ (LinearMap.map_prodComm_ker_coprod_neg α β)
   have hQ := finrank_ker_coprod_neg h hx hy ht hq
   have hQ' : finrank K (LinearMap.ker (β.coprod (-α))) = q :=

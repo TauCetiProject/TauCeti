@@ -221,14 +221,10 @@ theorem map_prodComm_ker_coprod_neg :
     coprod_neg_comp_prodComm, ker_neg]
 
 /-- Transversality of `α` and `β`, the surjectivity of `(ξ, η) ↦ α ξ - β η`, is symmetric. -/
-theorem surjective_coprod_neg_comm (h : Function.Surjective (α.coprod (-β))) :
-    Function.Surjective (β.coprod (-α)) := by
-  intro z
-  obtain ⟨w, hw⟩ := h (-z)
-  refine ⟨LinearEquiv.prodComm R X Y w, ?_⟩
-  have hw' := LinearMap.congr_fun (coprod_neg_comp_prodComm α β) w
-  simp only [coe_comp, LinearEquiv.coe_coe, Function.comp_apply, LinearMap.neg_apply] at hw'
-  rw [hw', hw, neg_neg]
+theorem surjective_coprod_neg_comm :
+    Function.Surjective (α.coprod (-β)) ↔ Function.Surjective (β.coprod (-α)) := by
+  rw [← (LinearEquiv.prodComm R X Y).surjective.of_comp_iff, ← LinearEquiv.coe_coe,
+    ← coe_comp, coprod_neg_comp_prodComm, ← range_eq_top, ← range_eq_top, range_neg]
 
 end Ring
 
