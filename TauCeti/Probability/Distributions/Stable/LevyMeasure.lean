@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Pareto.PDF
 public import Mathlib.Probability.ConditionalProbability
-public import TauCeti.Analysis.SpecialFunctions.Gamma
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
 import TauCeti.Probability.Distributions.Pareto.Basic
 

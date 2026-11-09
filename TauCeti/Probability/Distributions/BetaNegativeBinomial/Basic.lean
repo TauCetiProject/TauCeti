@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Beta.Basic
 public import TauCeti.Probability.Distributions.NegativeBinomial.Measurability
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Probability.Distributions.Beta.Measurability
 import TauCeti.MeasureTheory.Measure.Measurability
 

@@ -102,6 +102,28 @@ theorem IsBernsteinFunction.pos_of_forall_ne_zero (hf : IsBernsteinFunction f)
 
 /-! ### The composition induction -/
 
+/-- The first derivative of the product `t ↦ g (f t) · h t` at a point of `(0, ∞)`, written as the
+negation of the sum of the two products the induction hypothesis is applied to. -/
+private theorem deriv_comp_mul_eq (hf : IsBernsteinFunction f) (hg : IsCompletelyMonotoneOnIoi g)
+    (hh : IsCompletelyMonotoneOnIoi h) (hpos : ∀ t : ℝ, 0 < t → 0 < f t) {u : ℝ}
+    (hu : u ∈ Ioi (0 : ℝ)) :
+    deriv (fun v => g (f v) * h v) u =
+      -(-deriv g (f u) * (deriv f u * h u) + g (f u) * -deriv h u) := by
+  have hdf : HasDerivAt f (deriv f u) u :=
+    (hf.differentiableOn.differentiableAt (isOpen_Ioi.mem_nhds hu)).hasDerivAt
+  have hdg : HasDerivAt g (deriv g (f u)) (f u) :=
+    ((hg.contDiffOn.differentiableOn (by simp)).differentiableAt
+      (isOpen_Ioi.mem_nhds (mem_Ioi.2 (hpos u hu)))).hasDerivAt
+  have hdh : HasDerivAt h (deriv h u) u :=
+    ((hh.contDiffOn.differentiableOn (by simp)).differentiableAt
+      (isOpen_Ioi.mem_nhds hu)).hasDerivAt
+  have hcomp : HasDerivAt (fun v => g (f v)) (deriv g (f u) * deriv f u) u :=
+    HasDerivAt.comp u hdg hdf
+  have hprod : HasDerivAt (fun v => g (f v) * h v)
+      (deriv g (f u) * deriv f u * h u + g (f u) * deriv h u) u := hcomp.mul hdh
+  rw [hprod.deriv]
+  ring
+
 /-- The induction behind the composition theorem: for a Bernstein function `f` that is positive
 on `(0, ∞)` and completely monotone `g` and `h`, every alternating derivative of the product
 `t ↦ g (f t) · h t` is nonnegative on `(0, ∞)`.
@@ -130,23 +152,7 @@ private theorem neg_one_pow_mul_iteratedDeriv_comp_mul_nonneg (hf : IsBernsteinF
         (hf.deriv_isCompletelyMonotoneOnIoi.mul hh).congr fun _ _ => rfl
       have hh₂ : IsCompletelyMonotoneOnIoi fun u => -deriv h u := hh.neg_deriv
       -- Differentiating once produces exactly the two pairs the induction hypothesis wants.
-      have hderiv : ∀ u ∈ Ioi (0 : ℝ), deriv (fun v => g (f v) * h v) u =
-          -(-deriv g (f u) * (deriv f u * h u) + g (f u) * -deriv h u) := by
-        intro u hu
-        have hdf : HasDerivAt f (deriv f u) u :=
-          (hf.differentiableOn.differentiableAt (isOpen_Ioi.mem_nhds hu)).hasDerivAt
-        have hdg : HasDerivAt g (deriv g (f u)) (f u) :=
-          ((hg.contDiffOn.differentiableOn (by simp)).differentiableAt
-            (isOpen_Ioi.mem_nhds (mem_Ioi.2 (hpos u hu)))).hasDerivAt
-        have hdh : HasDerivAt h (deriv h u) u :=
-          ((hh.contDiffOn.differentiableOn (by simp)).differentiableAt
-            (isOpen_Ioi.mem_nhds hu)).hasDerivAt
-        have hcomp : HasDerivAt (fun v => g (f v)) (deriv g (f u) * deriv f u) u :=
-          HasDerivAt.comp u hdg hdf
-        have hprod : HasDerivAt (fun v => g (f v) * h v)
-            (deriv g (f u) * deriv f u * h u + g (f u) * deriv h u) u := hcomp.mul hdh
-        rw [hprod.deriv]
-        ring
+      have hderiv := fun u (hu : u ∈ Ioi (0 : ℝ)) => deriv_comp_mul_eq hf hg hh hpos hu
       have hEq : deriv (fun v => g (f v) * h v) =ᶠ[𝓝 t]
           fun u => -(-deriv g (f u) * (deriv f u * h u) + g (f u) * -deriv h u) :=
         eventually_of_mem (isOpen_Ioi.mem_nhds ht) hderiv

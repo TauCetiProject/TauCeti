@@ -443,19 +443,18 @@ private lemma det_entrywise_div_eq_one (d : ℤ) (P : Matrix (Fin n) (Fin n) ℤ
   rw [← hdetc, h_mat_eq, det_smul, Fintype.card_fin, hdetc, hdet, inv_pow]
   exact inv_mul_cancel₀ (pow_ne_zero n hdQ)
 
-variable [NeZero n]
-
 /-- The integer matrix `(adj(A) * γ * A) / det(A)` has determinant 1
     when `det(γ) = 1`. -/
 private lemma conj_mat_det_one (A gamma : Matrix (Fin n) (Fin n) ℤ) (hgamma_det : gamma.det = 1)
     (hdvd : ∀ i j : Fin n, A.det ∣ (A.adjugate * gamma * A) i j) (hAdet : A.det ≠ 0) :
     (Matrix.of fun i j ↦ (A.adjugate * gamma * A) i j / A.det).det = 1 := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · exact Matrix.det_isEmpty
   apply det_entrywise_div_eq_one n A.det _ hdvd hAdet
   simp only [Matrix.det_mul, det_adjugate, hgamma_det]
   push_cast
-  rw [mul_one, Fintype.card_fin, ← pow_succ, Nat.sub_one_add_one_eq_of_pos (NeZero.pos n)]
+  rw [mul_one, Fintype.card_fin, ← pow_succ, Nat.sub_one_add_one_eq_of_pos hn]
 
-omit [NeZero n] in
 /-- The entrywise quotient `δ = (adj(A) * γ * A) / det(A)` satisfies `A * δ = γ * A`,
     given the entrywise divisibility and `det(A) ≠ 0`. -/
 private lemma int_mul_eq (A gamma : Matrix (Fin n) (Fin n) ℤ) (hAdet : A.det ≠ 0)
@@ -473,7 +472,6 @@ private lemma int_mul_eq (A gamma : Matrix (Fin n) (Fin n) ℤ) (hAdet : A.det �
   rw [← mul_smul_comm, ha, ← Matrix.mul_assoc, ← Matrix.mul_assoc,
     mul_adjugate, smul_mul_assoc, one_mul, smul_mul_assoc]
 
-omit [NeZero n] in
 /-- The integral matrix beneath an element of `GL_n(ℚ)` has nonzero determinant. -/
 private lemma det_ne_zero_of_val_eq (g : GL (Fin n) ℚ) {A : Matrix (Fin n) (Fin n) ℤ}
     (hA : (↑g : Matrix (Fin n) (Fin n) ℚ) = A.map (Int.cast : ℤ → ℚ)) : A.det ≠ 0 := by
@@ -518,8 +516,6 @@ lemma inv_conjugate_mem_SLnZ_of_mem_ker (g : GL (Fin n) ℚ) (A : Matrix (Fin n)
     rw [← h_unit_eq, inv_mul_cancel_left]
   rw [h_delta, mul_assoc]
 
-omit [NeZero n] in
-omit [NeZero n] in
 /-- The transposed conjugation product, entrywise: the bridge deriving each `_reverse` lemma
 from its forward counterpart applied to `Aᵀ` and `γᵀ`. -/
 private lemma transpose_conj_apply (A gamma : Matrix (Fin n) (Fin n) ℤ) (i j : Fin n) :
@@ -527,7 +523,6 @@ private lemma transpose_conj_apply (A gamma : Matrix (Fin n) (Fin n) ℤ) (i j :
   rw [← Matrix.adjugate_transpose, ← Matrix.transpose_mul, ← Matrix.transpose_mul,
     Matrix.transpose_apply, Matrix.mul_assoc]
 
-omit [NeZero n] in
 /-- Reverse direction of `adjugate_conj_dvd`, derived from it at `Aᵀ`, `γᵀ`:
 `d | (γ - I)` entry-wise implies `d | (A * γ * adj(A))` entry-wise. -/
 private lemma conj_dvd_reverse (A gamma : Matrix (Fin n) (Fin n) ℤ)
@@ -564,7 +559,6 @@ private lemma conj_mat_det_one_reverse
   rw [h_transpose, Matrix.det_transpose]
   exact h
 
-omit [NeZero n] in
 /-- Reverse direction of `int_mul_eq`, derived from it at `Aᵀ`, `γᵀ`: `δ * A = A * γ` where
 `δ = (A * γ * adj(A)) / det(A)`. -/
 private lemma int_mul_eq_reverse (A gamma : Matrix (Fin n) (Fin n) ℤ) (hAdet : A.det ≠ 0)
@@ -619,7 +613,6 @@ lemma conjugate_mem_SLnZ_of_mem_ker (g : GL (Fin n) ℚ) (A : Matrix (Fin n) (Fi
   rw [SLnZ, MonoidHom.mem_range, h_conj]
   exact ⟨delta, rfl⟩
 
-omit [NeZero n] in
 /-- The image in `GL_n(ℚ)` of the congruence kernel `Γ(d) = ker(SL_n(ℤ) → SL_n(ℤ/dℤ))`
     has nonzero relative index in `SL_n(ℤ)`: it is a finite-index congruence subgroup. -/
 private lemma congruence_ker_image_relIndex_ne_zero (d : ℕ) [NeZero d] :
@@ -720,8 +713,6 @@ open scoped HeckeCosetModule
 
 /-- The Hecke ring of `GL_n` over `ℤ`: the Hecke ring of the arithmetic triple. -/
 abbrev IntegralHeckeRing := 𝕋 (posDetInt n) (SLnZ n) ℤ
-
-variable [NeZero n]
 
 end API
 

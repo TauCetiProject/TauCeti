@@ -152,7 +152,7 @@ theorem exists_one_le_pow_mul_norm_gelfond_value (α β γ : K) (m : ℕ) (c : �
       1 ≤ c₂ ^ r * (r : ℝ) ^ ((finrank ℚ K - 1) * r) *
         ‖σ (∑ a, ∑ b, (η a b : K) * (((a + 1 : ℕ) : K) + (b + 1 : ℕ) * β) ^ r *
           (α ^ ((a + 1 : ℕ) * t₀) * γ ^ ((b + 1 : ℕ) * t₀)))‖ := by
-  obtain ⟨c₀, hc₀, H, hH, hc₀H, hterm⟩ := exists_intCast_pow_mul_gelfond_term α β γ
+  obtain ⟨c₀, hc₀, H, hH, hc₀H, hterm⟩ := exists_intCast_pow_mul_schneider_term α β γ
   set X := 16 * (m : ℝ) ^ 2 * max 1 |c| * H ^ (1 + 4 * m ^ 2)
   set H' := H ^ (1 + 4 * m ^ 2)
   have hH' : 1 ≤ H' := one_le_pow₀ hH

@@ -97,8 +97,9 @@ theorem martingale_add_initial [IsFiniteMeasure P]
       · have hbound : ‖ξ ω‖ ≤ (n : ℝ) := hω
         simpa only [Set.indicator_of_mem hω] using hbound
       · simp [hω]
-  have hinit := (martingale_const_fun ℱ P (hξ.indicator (hA n)) hξn).indicator hpos
-  convert (hZ.indicator (hA n)).add hinit using 1
+  have hinit := (martingale_const_fun ℱ P (hξ.indicator (hA n)) hξn).indicator
+    (fun t ↦ ℱ.mono bot_le _ hpos)
+  convert (hZ.indicator (fun t ↦ ℱ.mono bot_le _ (hA n))).add hinit using 1
   ext t ω
   by_cases hω : ω ∈ A n <;>
     simp [Z, τ, stoppedProcess, Set.indicator_apply, hω]

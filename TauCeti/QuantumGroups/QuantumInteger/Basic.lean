@@ -156,9 +156,12 @@ theorem quantumInteger_def (q : K) (r : ℤ) :
   rw [quantumInteger]
 
 /-- `(q - q⁻¹) [n]_q = q^n - q^(-n)` for natural `n`. -/
-theorem sub_inv_mul_quantumInteger_natCast {q : K} (hq : q - q⁻¹ ≠ 0) (n : ℕ) :
+theorem sub_inv_mul_quantumInteger_natCast (q : K) (n : ℕ) :
     (q - q⁻¹) * quantumInteger q n = q ^ n - q⁻¹ ^ n := by
-  rw [quantumInteger_def, mul_div_cancel₀ _ hq, zpow_neg, zpow_natCast, inv_pow]
+  by_cases hq : q - q⁻¹ = 0
+  · rw [hq, zero_mul]
+    exact (sub_eq_zero.mpr (congrArg (· ^ n) (sub_eq_zero.mp hq))).symm
+  · rw [quantumInteger_def, mul_div_cancel₀ _ hq, zpow_neg, zpow_natCast, inv_pow]
 
 /-- The zeroth quantum integer is zero. -/
 @[simp] theorem quantumInteger_zero (q : K) : quantumInteger q 0 = 0 := by

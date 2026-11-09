@@ -225,6 +225,22 @@ theorem norm_fderiv_newtonianKernel (n : ℕ) (hn : n ≠ 2)
     abs_of_pos (Real.rpow_pos_of_pos hnorm _), hsplit]
   ring
 
+/-- The operator norm of the derivative of the Newtonian kernel is at most
+`(n ωₙ)⁻¹ r ^ (1 - n)` at every point of norm at least `r > 0`. -/
+theorem norm_fderiv_newtonianKernel_le (n : ℕ) (hn : n ≠ 2)
+    {x : EuclideanSpace ℝ (Fin n)} {r : ℝ} (hr : 0 < r) (hx : r ≤ ‖x‖) :
+    ‖fderiv ℝ (newtonianKernel n) x‖ ≤
+      ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
+        r ^ (1 - (n : ℝ)) := by
+  have hx0 : x ≠ 0 := norm_pos_iff.1 (hr.trans_le hx)
+  have hn1 : (1 : ℝ) ≤ n := by
+    rcases Nat.eq_zero_or_pos n with rfl | h
+    · exact (hx0 (Subsingleton.elim _ _)).elim
+    · exact_mod_cast h
+  rw [norm_fderiv_newtonianKernel n hn hx0]
+  exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_nonpos hr hx (by linarith))
+    (inv_nonneg.2 (mul_nonneg (Nat.cast_nonneg n) (volume_real_unitBall_pos n).le))
+
 /-- Away from its pole, the Newtonian kernel is twice continuously differentiable. -/
 theorem contDiffAt_newtonianKernel (n : ℕ)
     {x : EuclideanSpace ℝ (Fin n)} (hx : x ≠ 0) :
