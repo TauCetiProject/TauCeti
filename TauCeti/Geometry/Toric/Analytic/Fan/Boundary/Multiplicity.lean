@@ -55,7 +55,6 @@ theorem exists_contMDiffOn_analyticBoundaryComponent_eq_zero_transverse_curve
       γ 0 = x ∧ (∀ t, γ t ∈ U) ∧
       (∀ y ∈ U, y ∈ Φ.analyticBoundaryComponent hΦ ρ ↔ F y = 0) ∧
       (∀ t, F (γ t) = t) := by
-  classical
   let := Φ.analyticChartedSpace hΦ
   obtain ⟨σ, x', rfl⟩ := Φ.exists_analyticAffineChartι_apply_eq hΦ x
   -- Read the bundled chart point as its affine algebra homomorphism before applying slice APIs.
@@ -91,10 +90,12 @@ theorem exists_contMDiffOn_analyticBoundaryComponent_eq_zero_transverse_curve
     exact mem_range_self x'
   · exact (Φ.contMDiff_analyticAffineChartι hΦ σ hB κ g ∞).comp
       (contMDiff_coneChartRaySlice Φ.lattice hσ.toIsToricCone hB κ g x' r ∞)
-  · have hx0 : (coneChartEquiv Φ.lattice hσ.toIsToricCone hB x0).1 r = 0 := hxρ
-    have hslice : coneChartRaySlice Φ.lattice hσ.toIsToricCone hB x0 r 0 = x0 := by
-      rw [← hx0, coneChartEquiv_fst_apply, coneChartRaySlice_self]
-    exact congrArg (Φ.analyticAffineChartι hΦ σ) hslice
+  · -- `hxρ` says that `x0` lies on the boundary component `ρ`, that is, its chart coordinate at `ρ`
+    -- is `0`; the `show` restates it in the form `coneChartEquiv_fst_apply` rewrites, since the
+    -- hypothesis is stated for the boundary coordinate rather than for the chart coordinate.
+    refine congrArg (Φ.analyticAffineChartι hΦ σ) ?_
+    rw [← show (coneChartEquiv Φ.lattice hσ.toIsToricCone hB x0).1 r = 0 from hxρ,
+      coneChartEquiv_fst_apply, coneChartRaySlice_self]
   · intro t
     rw [Φ.analyticAffineChartPartialDiffeomorph_target]
     exact mem_range_self _
@@ -106,8 +107,7 @@ theorem exists_contMDiffOn_analyticBoundaryComponent_eq_zero_transverse_curve
     exact (congrArg (fun c : ℂ ↦ c = 0)
       ((coneChartEquiv_fst_apply Φ.lattice hσ.toIsToricCone hB z r).trans (hF z).symm)).to_iff
   · intro t
-    have h := hF (coneChartRaySlice Φ.lattice hσ.toIsToricCone hB x0 r t)
-    refine h.trans ?_
+    refine (hF (coneChartRaySlice Φ.lattice hσ.toIsToricCone hB x0 r t)).trans ?_
     simp only [f, m, ← coneChartEquiv_fst_apply,
       coneChartEquiv_coneChartRaySlice, Function.update_self]
 
