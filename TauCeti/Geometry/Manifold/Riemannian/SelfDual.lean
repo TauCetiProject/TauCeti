@@ -555,20 +555,20 @@ theorem mem_selfDualForms {α : SmoothForm I M ℝ k} :
     α ∈ selfDualForms o ↔ hodgeStar o rfl α = α := by
   rw [selfDualForms, Module.End.mem_eigenspace_iff, one_smul]
 
-/-- A smooth self-dual two-form on a four-manifold is coclosed exactly when it is closed. -/
+/-- A smooth self-dual form of positive middle degree is coclosed exactly when it is closed. -/
 theorem codifferential_eq_zero_iff_mextDeriv_eq_zero_of_mem_selfDualForms
-    (o : Manifold.Orientation I M (Fin (2 + 2))) {γ : SmoothForm I M ℝ 2}
-    (hγ : γ ∈ selfDualForms o) :
-    codifferential o (show 1 + 1 + 2 = 2 + 2 from rfl) γ = 0 ↔ mextDerivₗ I 2 γ = 0 := by
+    (o : Manifold.Orientation I M (Fin ((k + 1) + (k + 1))))
+    {γ : SmoothForm I M ℝ (k + 1)} (hγ : γ ∈ selfDualForms o) :
+    codifferential o rfl γ = 0 ↔ mextDerivₗ I (k + 1) γ = 0 := by
   have hstar := mem_selfDualForms.mp hγ
   constructor
   · intro h
-    -- In degree two the identity ⋆d*γ = d⋆γ has positive sign, and ⋆γ = γ.
-    have hs := hodgeStar_codifferential o
-      (show 1 + 1 + 2 = 2 + 2 from rfl) (show 1 + (2 + 1) = 2 + 2 from rfl) γ
-    simpa only [h, map_zero, hstar, Nat.reduceAdd, neg_one_sq, one_smul] using hs.symm
+    -- The sign in ⋆d*γ = (-1)^(k+1) d⋆γ is nonzero, and ⋆γ = γ.
+    have hs := hodgeStar_codifferential o rfl (by omega) γ
+    rw [h, map_zero, hstar] at hs
+    exact (smul_eq_zero.mp hs.symm).resolve_left (pow_ne_zero _ (by norm_num))
   · intro h
-    simp [codifferential_apply o rfl rfl, hstar, h]
+    simp [codifferential_apply o rfl (by omega), hstar, h]
 
 variable {o} in
 /-- A smooth form is anti-self-dual exactly when `⋆α = -α`. -/
