@@ -127,8 +127,9 @@ private theorem weight_mul_decay_le (θ : CoordinateSpace n) :
       (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) := by
     rw [← Real.rpow_add (by positivity)]
     ring_nf
+  have hhalf : |m| / 2 = (1 / 2 : ℝ) * |m| := by ring
   have hθ : (1 + ‖θ‖ ^ 2) ^ (|m| / 2) ≤ (1 + ‖θ‖) ^ |m| := by
-    rw [show (|m| / 2) = (1 / 2 : ℝ) * |m| by ring, Real.rpow_mul (by positivity),
+    rw [hhalf, Real.rpow_mul (by positivity),
       ← Real.sqrt_eq_rpow]
     exact Real.rpow_le_rpow (by positivity) (sqrt_one_add_norm_sq_le θ) (abs_nonneg m)
   rw [← hsplit]
@@ -248,10 +249,10 @@ private theorem rightIntegrand_eq_integral (c : CoordinateSpace n × CoordinateS
     rfl
   rw [hshift, integral_add_left_eq_self g p.1, rightIntegrand, Real.fourier_eq, ← integral_smul]
   congr 1 with z
+  have hphase : -(⟪z, θ⟫ - ⟪p.1, θ⟫) = ⟪p.1, θ⟫ + -⟪z, θ⟫ := by ring
   simp only [g, Circle.smul_def, smul_smul, inner_sub_left]
   congr 1
-  rw [← Circle.coe_mul, ← AddChar.map_add_eq_mul, real_inner_comm p.1 θ,
-    show -(⟪z, θ⟫ - ⟪p.1, θ⟫) = ⟪p.1, θ⟫ + -⟪z, θ⟫ by ring]
+  rw [← Circle.coe_mul, ← AddChar.map_add_eq_mul, real_inner_comm p.1 θ, hphase]
 
 end Right
 
@@ -291,7 +292,8 @@ private theorem integrable_shift {G : Type*} [NormedAddCommGroup G] [NormedSpace
   refine Continuous.integrable_of_hasCompactSupport (by fun_prop) (HasCompactSupport.intro hS ?_)
   intro y hy
   have hK' : p.1 + y ∉ K := fun h ↦ hy (mem_image_sub_of_add_mem (by simp) h)
-  simp [show f (p + (y, (2 * π) • θ)) = 0 from hfK _ hK' _]
+  have hf0 : f (p + (y, (2 * π) • θ)) = 0 := hfK _ hK' _
+  simp [hf0]
 
 /-- **Differentiation under the position integral.** For a `C¹` function `f` vanishing for
 positions outside a compact set, `p ↦ ∫ exp(-2πi ⟪y, θ⟫) f(p + (y, 2πθ)) dy` has the derivative
@@ -371,45 +373,6 @@ section Smooth
 
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {c : Symbol n V W m}
-
-/-- The derivative of a symbol in the direction `v` through its first-order coordinate
-derivatives. -/
-private theorem fderiv_coefficient_apply (c : Symbol n V W m)
-    (q v : CoordinateSpace n × CoordinateSpace n) :
-    fderiv ℝ c.coefficient q v = ∑ j, v.1 j • (Symbol.spatialDeriv j c).coefficient q +
-      ∑ j, v.2 j • (Symbol.frequencyDeriv j c).coefficient q := by
-  obtain ⟨x, ξ⟩ := q
-  have hd : DifferentiableAt ℝ c.coefficient (x, ξ) :=
-    c.contDiff_coefficient.differentiable (by simp) _
-  have h₁ (y : CoordinateSpace n) :
-      fderiv ℝ c.coefficient (x, ξ) (y, 0) = fderiv ℝ (fun y ↦ c.coefficient (y, ξ)) x y := by
-    have h := hd.hasFDerivAt.comp x (hasFDerivAt_prodMk_left (𝕜 := ℝ) x ξ)
-    rw [Function.comp_def] at h
-    simp [h.fderiv]
-  have h₂ (η : CoordinateSpace n) :
-      fderiv ℝ c.coefficient (x, ξ) (0, η) = fderiv ℝ (fun η ↦ c.coefficient (x, η)) ξ η := by
-    have h := hd.hasFDerivAt.comp ξ (hasFDerivAt_prodMk_right (𝕜 := ℝ) x ξ)
-    rw [Function.comp_def] at h
-    simp [h.fderiv]
-  have hsum (w : CoordinateSpace n) : w = ∑ j, w j • EuclideanSpace.single j (1 : ℝ) := by
-    simpa using ((EuclideanSpace.basisFun (Fin n) ℝ).sum_repr w).symm
-  have hexp (L : CoordinateSpace n →L[ℝ] V →L[ℂ] W) (w : CoordinateSpace n) :
-      L w = ∑ j, w j • L (EuclideanSpace.single j 1) := by
-    conv_lhs => rw [hsum w]
-    rw [map_sum]
-    simp only [map_smul]
-  calc fderiv ℝ c.coefficient (x, ξ) v = fderiv ℝ c.coefficient (x, ξ) ((v.1, 0) + (0, v.2)) := by
-        congr 1
-        exact Prod.ext (by simp) (by simp)
-    _ = fderiv ℝ (fun y ↦ c.coefficient (y, ξ)) x v.1 +
-          fderiv ℝ (fun η ↦ c.coefficient (x, η)) ξ v.2 := by rw [map_add, h₁, h₂]
-    _ = _ := by
-        rw [hexp _ v.1, hexp _ v.2]
-        congr 1
-        · refine Finset.sum_congr rfl fun j _ ↦ ?_
-          rw [fderiv_coefficient_single]
-        · refine Finset.sum_congr rfl fun j _ ↦ ?_
-          rw [coefficient_frequencyDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
 
 /-- The shifted position integrand of a symbol with compact spatial support is integrable. -/
 private theorem HasCompactSpatialSupport.integrable_shift (hc : c.HasCompactSpatialSupport)
@@ -613,8 +576,9 @@ private theorem HasCompactSpatialSupport.exists_coordinateDeriv_snd_rightCoeff
     refine ⟨Symbol.inclusion (le_of_eq (by rw [List.length_cons, Nat.cast_succ]; ring))
       (Symbol.frequencyDeriv j c'),
       (hc'.frequencyDeriv j).inclusion _, fun x ξ ↦ ?_⟩
-    rw [coordinateDeriv_cons, show coordinateDeriv β (fun η ↦ rightCoeff c.coefficient (x, η)) =
-      fun η ↦ rightCoeff c'.coefficient (x, η) from funext (h x), coefficient_inclusion,
+    have hβ : coordinateDeriv β (fun η ↦ rightCoeff c.coefficient (x, η)) =
+        fun η ↦ rightCoeff c'.coefficient (x, η) := funext (h x)
+    rw [coordinateDeriv_cons, hβ, coefficient_inclusion,
       ← hc'.coordinateDeriv_snd_rightCoeff j x ξ, coordinateDeriv_cons, coordinateDeriv_nil]
 
 /-- Iterated position derivatives of the left symbol are left symbols of iterated position
@@ -630,9 +594,10 @@ private theorem HasCompactSpatialSupport.exists_coordinateDeriv_fst_rightCoeff
     intro m c hc
     obtain ⟨c', hc', h⟩ := ih hc
     refine ⟨Symbol.spatialDeriv j c', hc'.spatialDeriv j, fun x ξ ↦ ?_⟩
-    rw [coordinateDeriv_cons, show coordinateDeriv α (fun y ↦ rightCoeff c.coefficient (y, ξ)) =
-      fun y ↦ rightCoeff c'.coefficient (y, ξ) from funext fun y ↦ h y ξ,
-      ← hc'.coordinateDeriv_fst_rightCoeff j x ξ, coordinateDeriv_cons, coordinateDeriv_nil]
+    have hα : coordinateDeriv α (fun y ↦ rightCoeff c.coefficient (y, ξ)) =
+        fun y ↦ rightCoeff c'.coefficient (y, ξ) := funext fun y ↦ h y ξ
+    rw [coordinateDeriv_cons, hα, ← hc'.coordinateDeriv_fst_rightCoeff j x ξ, coordinateDeriv_cons,
+      coordinateDeriv_nil]
 
 /-- Every mixed derivative of the left symbol is the left symbol of a symbol of order
 `m - |β|` with compact spatial support. -/
@@ -643,8 +608,9 @@ private theorem HasCompactSpatialSupport.exists_mixedDeriv_rightCoeff
   obtain ⟨c₁, hc₁, h₁⟩ := hc.exists_coordinateDeriv_snd_rightCoeff β
   obtain ⟨c₂, hc₂, h₂⟩ := HasCompactSpatialSupport.exists_coordinateDeriv_fst_rightCoeff α hc₁
   refine ⟨c₂, hc₂, fun x ξ ↦ ?_⟩
-  rw [mixedDeriv_def, show (fun y ↦ coordinateDeriv β (fun η ↦ rightCoeff c.coefficient (y, η)) ξ) =
-    fun y ↦ rightCoeff c₁.coefficient (y, ξ) from funext fun y ↦ h₁ y ξ, h₂]
+  have hβ : (fun y ↦ coordinateDeriv β (fun η ↦ rightCoeff c.coefficient (y, η)) ξ) =
+      fun y ↦ rightCoeff c₁.coefficient (y, ξ) := funext fun y ↦ h₁ y ξ
+  rw [mixedDeriv_def, hβ, h₂]
 
 /-- The mixed derivatives of the left symbol satisfy the estimates of order `m`, uniformly in the
 position. -/
@@ -696,6 +662,7 @@ theorem isUniform_ofRight (hc : c.HasCompactSpatialSupport) : (c.ofRight hc).IsU
   isUniform_iff.2 fun α β ↦ hc.exists_norm_mixedDeriv_rightCoeff_le α β
 
 /-- Position derivatives commute with passing to the left symbol. -/
+@[simp]
 theorem spatialDeriv_ofRight (hc : c.HasCompactSpatialSupport) (j : Fin n) :
     spatialDeriv j (c.ofRight hc) = (spatialDeriv j c).ofRight (hc.spatialDeriv j) :=
   Symbol.ext (funext fun ⟨x, ξ⟩ ↦ by
@@ -703,6 +670,7 @@ theorem spatialDeriv_ofRight (hc : c.HasCompactSpatialSupport) (j : Fin n) :
     exact hc.coordinateDeriv_fst_rightCoeff j x ξ)
 
 /-- Frequency derivatives commute with passing to the left symbol. -/
+@[simp]
 theorem frequencyDeriv_ofRight (hc : c.HasCompactSpatialSupport) (j : Fin n) :
     frequencyDeriv j (c.ofRight hc) = (frequencyDeriv j c).ofRight (hc.frequencyDeriv j) :=
   Symbol.ext (funext fun ⟨x, ξ⟩ ↦ by

@@ -450,6 +450,45 @@ theorem fderiv_coefficient_single (a : Symbol n V W m) (j : Fin n) (x ξ : Coord
       (spatialDeriv j a).coefficient (x, ξ) := by
   rw [coefficient_spatialDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
 
+/-- The derivative of a symbol in a direction `v = (v₁, v₂)` is the combination
+`∑ⱼ v₁ⱼ ∂_{x_j} a + ∑ⱼ v₂ⱼ ∂_{ξ_j} a` of its first-order coordinate derivatives. -/
+theorem fderiv_coefficient_apply (c : Symbol n V W m)
+    (q v : CoordinateSpace n × CoordinateSpace n) :
+    fderiv ℝ c.coefficient q v = ∑ j, v.1 j • (spatialDeriv j c).coefficient q +
+      ∑ j, v.2 j • (frequencyDeriv j c).coefficient q := by
+  obtain ⟨x, ξ⟩ := q
+  have hd : DifferentiableAt ℝ c.coefficient (x, ξ) :=
+    c.contDiff_coefficient.differentiable (by simp) _
+  have h₁ (y : CoordinateSpace n) :
+      fderiv ℝ c.coefficient (x, ξ) (y, 0) = fderiv ℝ (fun y ↦ c.coefficient (y, ξ)) x y := by
+    have h := hd.hasFDerivAt.comp x (hasFDerivAt_prodMk_left (𝕜 := ℝ) x ξ)
+    rw [Function.comp_def] at h
+    simp [h.fderiv]
+  have h₂ (η : CoordinateSpace n) :
+      fderiv ℝ c.coefficient (x, ξ) (0, η) = fderiv ℝ (fun η ↦ c.coefficient (x, η)) ξ η := by
+    have h := hd.hasFDerivAt.comp ξ (hasFDerivAt_prodMk_right (𝕜 := ℝ) x ξ)
+    rw [Function.comp_def] at h
+    simp [h.fderiv]
+  have hsum (w : CoordinateSpace n) : w = ∑ j, w j • EuclideanSpace.single j (1 : ℝ) := by
+    simpa using ((EuclideanSpace.basisFun (Fin n) ℝ).sum_repr w).symm
+  have hexp (L : CoordinateSpace n →L[ℝ] V →L[ℂ] W) (w : CoordinateSpace n) :
+      L w = ∑ j, w j • L (EuclideanSpace.single j 1) := by
+    conv_lhs => rw [hsum w]
+    rw [map_sum]
+    simp only [map_smul]
+  calc fderiv ℝ c.coefficient (x, ξ) v = fderiv ℝ c.coefficient (x, ξ) ((v.1, 0) + (0, v.2)) := by
+        congr 1
+        exact Prod.ext (by simp) (by simp)
+    _ = fderiv ℝ (fun y ↦ c.coefficient (y, ξ)) x v.1 +
+          fderiv ℝ (fun η ↦ c.coefficient (x, η)) ξ v.2 := by rw [map_add, h₁, h₂]
+    _ = _ := by
+        rw [hexp _ v.1, hexp _ v.2]
+        congr 1
+        · refine Finset.sum_congr rfl fun j _ ↦ ?_
+          rw [fderiv_coefficient_single]
+        · refine Finset.sum_congr rfl fun j _ ↦ ?_
+          rw [coefficient_frequencyDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
+
 /-- The position derivative of a symbol of order `m` is bounded by `C ⟨ξ⟩ ^ m` locally uniformly in
 the position. -/
 theorem exists_bound_fderiv_coefficient (a : Symbol n V W m) (K : Set (CoordinateSpace n))

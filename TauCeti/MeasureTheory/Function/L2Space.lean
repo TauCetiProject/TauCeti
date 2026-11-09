@@ -25,8 +25,9 @@ L² function with a continuous function is an integral
 Indicators of any countably spanning generating π-system of finite-measure sets have
 dense real linear span in L².
 
-Mathlib's `integral_inner` takes a constant vector out of the right slot of the integral of an
-inner product; `MeasureTheory.integral_inner_left` is the version for the left slot.
+Mathlib's `integral_inner` integrates a function in the right slot of an inner product with a
+constant vector, `∫ ⟪c, f x⟫ = ⟪c, ∫ f⟫`; `MeasureTheory.integral_inner_left` is the version
+with the function in the left slot, `∫ ⟪f x, c⟫ = ⟪∫ f, c⟫`.
 -/
 
 public section
