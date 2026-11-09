@@ -68,15 +68,11 @@ theorem passportSize_passportOf_s3Triple :
     ConnectedTriple.passportOf_laminf, t, cycleData_s3Triple] using
     card_passportClasses_symmetric_three
 
-/-- For the degree-three symmetric passport, the normalizer formula reads
-`1 = 6 * 1 / 6`: there are six generating triples of the prescribed cycle types, the
-centralizer of the monodromy group is trivial, and its normalizer is the full symmetric group. -/
-theorem passportSize_formula_s3Triple :
+/-- For the degree-three symmetric passport there are six generating triples of the
+prescribed cycle types. -/
+private theorem genCountType_passportOf_s3Triple :
     let P := ConnectedTriple.passportOf ⟨s3Triple, isConnected_s3Triple⟩
-    P.G.genCountType P.lam0 P.lam1 P.laminf = 6 ∧
-      Nat.card (Subgroup.centralizer (P.G : Set (Perm (Fin 3)))) = 1 ∧
-      Nat.card (Subgroup.normalizer (P.G : Set (Perm (Fin 3)))) = 6 ∧
-      P.passportSize = 6 * 1 / 6 := by
+    P.G.genCountType P.lam0 P.lam1 P.laminf = 6 := by
   let t : ConnectedTriple 3 := ⟨s3Triple, isConnected_s3Triple⟩
   let P := t.passportOf
   have hPG : P.G = t.1.monodromyGroup := by simp [P]
@@ -84,18 +80,6 @@ theorem passportSize_formula_s3Triple :
   have htrans : MulAction.IsPretransitive P.G (Fin 3) := by
     rw [hPG]
     exact t.2.isPretransitive
-  -- The monodromy group is all of `S₃`; its centralizer is the already-computed automorphism
-  -- group of the triple, while its normalizer is all of `S₃` again.
-  have hcentralizer :
-      Nat.card (Subgroup.centralizer (P.G : Set (Perm (Fin 3)))) = 1 := by
-    rw [hG, ← monodromyGroup_s3Triple,
-      ← PermutationTriple.automorphismGroup_eq_centralizer_monodromyGroup,
-      automorphismGroup_s3Triple, Subgroup.card_bot]
-  have hnormalizer :
-      Nat.card (Subgroup.normalizer (P.G : Set (Perm (Fin 3)))) = 6 := by
-    have hnormal : P.G.Normal := hG.symm ▸ (inferInstance : (⊤ : Subgroup (Perm (Fin 3))).Normal)
-    rw [@Subgroup.normalizer_eq_top _ _ P.G hnormal, Subgroup.card_top, Nat.card_perm, Nat.card_fin]
-    norm_num
   -- Compute the raw passport fiber independently of the normalizer formula.
   let F := passportTriples (Finset.univ : Finset (Perm (Fin 3))) P.lam0 P.lam1 P.laminf
   have hF : F.card = 6 := by
@@ -137,6 +121,37 @@ theorem passportSize_formula_s3Triple :
   have hgen : P.G.genCountType P.lam0 P.lam1 P.laminf = 6 := by
     rw [← P.card_generatingTriples_eq_genCountType, ← P.card_generatingTriples]
     exact hgeneratingTriple
+  simpa only [P, t] using hgen
+
+/-- For the degree-three symmetric passport, the normalizer formula reads
+`1 = 6 * 1 / 6`: there are six generating triples of the prescribed cycle types, the
+centralizer of the monodromy group is trivial, and its normalizer is the full symmetric group. -/
+theorem passportSize_formula_s3Triple :
+    let P := ConnectedTriple.passportOf ⟨s3Triple, isConnected_s3Triple⟩
+    P.G.genCountType P.lam0 P.lam1 P.laminf = 6 ∧
+      Nat.card (Subgroup.centralizer (P.G : Set (Perm (Fin 3)))) = 1 ∧
+      Nat.card (Subgroup.normalizer (P.G : Set (Perm (Fin 3)))) = 6 ∧
+      P.passportSize = 6 * 1 / 6 := by
+  let t : ConnectedTriple 3 := ⟨s3Triple, isConnected_s3Triple⟩
+  let P := t.passportOf
+  have hPG : P.G = t.1.monodromyGroup := by simp [P]
+  have hG : P.G = ⊤ := by simp [P, t]
+  have htrans : MulAction.IsPretransitive P.G (Fin 3) := by
+    rw [hPG]
+    exact t.2.isPretransitive
+  -- The monodromy group is all of `S₃`; its centralizer is the already-computed automorphism
+  -- group of the triple, while its normalizer is all of `S₃` again.
+  have hcentralizer :
+      Nat.card (Subgroup.centralizer (P.G : Set (Perm (Fin 3)))) = 1 := by
+    rw [hG, ← monodromyGroup_s3Triple,
+      ← PermutationTriple.automorphismGroup_eq_centralizer_monodromyGroup,
+      automorphismGroup_s3Triple, Subgroup.card_bot]
+  have hnormalizer :
+      Nat.card (Subgroup.normalizer (P.G : Set (Perm (Fin 3)))) = 6 := by
+    have hnormal : P.G.Normal := hG.symm ▸ (inferInstance : (⊤ : Subgroup (Perm (Fin 3))).Normal)
+    rw [@Subgroup.normalizer_eq_top _ _ P.G hnormal, Subgroup.card_top, Nat.card_perm, Nat.card_fin]
+    norm_num
+  have hgen := genCountType_passportOf_s3Triple
   have hformula : P.passportSize = 6 * 1 / 6 := by
     rw [P.passportSize_eq_genCountType_mul_card_centralizer_div_card_normalizer
       (by decide) htrans, hgen, hcentralizer, hnormalizer]

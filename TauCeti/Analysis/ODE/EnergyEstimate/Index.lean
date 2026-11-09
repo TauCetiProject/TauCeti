@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Fredholm.ContinuousFamily
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
+public import TauCeti.Analysis.Normed.Operator.Basic
 public import TauCeti.Analysis.ODE.EnergyEstimate.Lyapunov
 public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 import Mathlib.Analysis.SpecialFunctions.Exponential
@@ -40,8 +41,8 @@ every real `t`, so each of its trajectory operators is Fredholm. The trajectory 
 continuously on its `L∞` coefficient (`TauCeti.WeakDerivStep.lipschitzWith_trajectoryOperator`),
 so the index is constant along this family. For the second, a constant coefficient `A₀` with a
 spectral gap gives an injective `D_{A₀}` and an injective formal adjoint `D_{-A₀}`, by the
-coercive estimate `TauCeti.WeakDerivStep.ker_trajectoryOperator_eq_bot`, so `D_{A₀}` has index
-zero; a family with equal limits `A₀` has the index of the constant family.
+coercive estimate `TauCeti.WeakDerivStep.ker_trajectoryOperator_eq_bot`, so `D_{A₀}` is bijective
+and has index zero; a family with equal limits `A₀` has the index of the constant family.
 
 The first statement is the invariance of the index under deformations of the coefficient family
 that fix its limits; the second is its value when the limits agree. Together they reduce the
@@ -65,6 +66,8 @@ which is `n⁻(A⁻) - n⁻(A⁺)`.
 
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_of_tendsto`: families with the same limits
   have trajectory operators of the same index.
+* `TauCeti.WeakDerivStep.bijective_trajectoryOperator_const`: a constant coefficient with a spectral
+  gap gives a bijective trajectory operator.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_zero_of_tendsto`: a family with equal limits
   at both ends gives index zero.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finrank_sub_finrank_of_isClosed_range`: when
@@ -142,15 +145,15 @@ theorem index_trajectoryOperator_eq_of_tendsto {A B : ℝ → E →L[ℝ] E}
     (isFredholm_trajectoryOperator_one_sub_smul_add_smul hA hB hminus hplus hAbot hAtop hBbot
       hBtop AL BL hAL hBL) 0 1
 
-/-- A constant coefficient gives index zero. For a symmetric operator `A₀` on a
-finite-dimensional real inner product space with `α ‖v‖ ≤ ‖A₀ v‖` for some `α > 0`, the trajectory
-operator `u ↦ u' + A₀ u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` has index zero. Both it and its formal
-adjoint `-d/ds + A₀` are injective. -/
-private theorem index_trajectoryOperator_const {A₀ : E →L[ℝ] E}
+/-- **A constant invertible coefficient gives a bijective trajectory operator.** For a symmetric
+operator `A₀` on a finite-dimensional real inner product space with `α ‖v‖ ≤ ‖A₀ v‖` for some
+`α > 0`, the trajectory operator `u ↦ u' + A₀ u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is bijective.
+Both it and its formal adjoint `-d/ds + A₀` are injective, and its range is closed. -/
+theorem bijective_trajectoryOperator_const {A₀ : E →L[ℝ] E}
     (hsym : (A₀ : E →ₗ[ℝ] E).IsSymmetric) {α : ℝ} (hα : 0 < α) (hgap : ∀ v, α * ‖v‖ ≤ ‖A₀ v‖)
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun _ ↦ A₀) :
-    (trajectoryOperator (p := 2) AL).index = 0 := by
+    Function.Bijective (trajectoryOperator (p := 2) AL) := by
   have hker := ker_trajectoryOperator_eq_bot (A := fun _ ↦ A₀) contDiff_const (fun _ ↦ hsym)
     hα.le (fun _ ↦ hgap) (β := 0) (fun _ v ↦ by simp) (by positivity) AL hAL
   have hnker := ker_trajectoryOperator_eq_bot (A := fun _ ↦ -A₀) contDiff_const
@@ -158,10 +161,20 @@ private theorem index_trajectoryOperator_const {A₀ : E →L[ℝ] E}
     (fun _ v ↦ by simp) (by positivity) (-AL)
     (by filter_upwards [Lp.coeFn_neg AL, hAL] with s hs hAs; simp only [hs, Pi.neg_apply, hAs])
   have hLF := ContinuousLinearMap.hasLyapunovForm_of_isSymmetric hsym hα hgap
-  rw [index_trajectoryOperator_of_hasLyapunovForm continuous_const hLF hLF tendsto_const_nhds
-    tendsto_const_nhds AL AL hAL (hAL.trans (.of_forall fun _ ↦ hsym.clm_adjoint_eq.symm)), hker,
-    hnker]
-  simp
+  refine ⟨LinearMap.ker_eq_bot.1 hker, (surjective_trajectoryOperator_iff_ker_neg_eq_bot
+    (ae_eq_adjoint_of_ae_eq hAL (hAL.trans (.of_forall fun _ ↦ hsym.clm_adjoint_eq.symm)))
+    (isClosed_range_trajectoryOperator_of_hasLyapunovForm continuous_const hLF hLF
+      tendsto_const_nhds tendsto_const_nhds AL hAL)).2 hnker⟩
+
+/-- A constant coefficient gives index zero: under the hypotheses of
+`TauCeti.WeakDerivStep.bijective_trajectoryOperator_const` the trajectory operator is bijective. -/
+private theorem index_trajectoryOperator_const {A₀ : E →L[ℝ] E}
+    (hsym : (A₀ : E →ₗ[ℝ] E).IsSymmetric) {α : ℝ} (hα : 0 < α) (hgap : ∀ v, α * ‖v‖ ≤ ‖A₀ v‖)
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun _ ↦ A₀) :
+    (trajectoryOperator (p := 2) AL).index = 0 :=
+  ContinuousLinearMap.index_eq_zero_of_bijective _
+    (bijective_trajectoryOperator_const hsym hα hgap AL hAL)
 
 /-- **Equal limits give index zero.** Let `A` be a continuous family of operators on a
 finite-dimensional real inner product space with the same invertible symmetric limit `A₀` at `-∞`
@@ -539,12 +552,6 @@ theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
     (trajectoryOperator (p := 2) AL).index =
       (Module.finrank ℝ (Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)) : ℤ) -
         Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0)) := by
-  have hker {B : E →L[ℝ] E} (hB : ∀ v, α * ‖v‖ ≤ ‖B v‖) : LinearMap.ker (B : E →ₗ[ℝ] E) = ⊥ :=
-    LinearMap.ker_eq_bot'.2 fun v hv ↦ by
-      have h := hB v
-      rw [ContinuousLinearMap.coe_coe] at hv
-      rw [hv, norm_zero] at h
-      exact norm_eq_zero.1 (le_antisymm (by nlinarith [norm_nonneg v]) (norm_nonneg v))
   -- Replace `A` by the model coefficient with the same limits, whose index is computable.
   set M := modelCoefficient Aminus Aplus
   set ML := (memLp_top_modelCoefficient (Aminus := Aminus) (Aplus := Aplus)
@@ -570,10 +577,14 @@ theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
   set U := Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)
   have hW : Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0) = Wᗮ := by
     rw [hsymplus.orthogonal_pointSpectralSubspace, compl_Ioi, ← Iio_insert,
-      Module.End.pointSpectralSubspace_insert_zero (hker hplus)]
+      Module.End.pointSpectralSubspace_insert_zero (LinearMap.ker_eq_bot.2
+        (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
+          (le_inv_mul_iff₀ hα).2 (hplus v)))]
   have hU : Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Ioi 0) = Uᗮ := by
     rw [hsymminus.orthogonal_pointSpectralSubspace, compl_Iio, ← Ioi_insert,
-      Module.End.pointSpectralSubspace_insert_zero (hker hminus)]
+      Module.End.pointSpectralSubspace_insert_zero (LinearMap.ker_eq_bot.2
+        (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
+          (le_inv_mul_iff₀ hα).2 (hminus v)))]
   rw [hW, hU, Submodule.inf_orthogonal]
   have h1 := Submodule.finrank_sup_add_finrank_inf_eq W U
   have h2 := (W ⊔ U).finrank_add_finrank_orthogonal

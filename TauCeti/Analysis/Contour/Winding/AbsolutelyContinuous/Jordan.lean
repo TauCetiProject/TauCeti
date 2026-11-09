@@ -224,6 +224,49 @@ private theorem isJordanCurve_uIcc {γ : ℝ → ℂ} {a b : ℝ} (hab : a < b)
   rw [uIcc_of_le hab.le]
   exact TauCeti.isJordanCurve_image_Icc hab (uIcc_of_le hab.le ▸ hγ.continuousOn) hclosed hinj
 
+/-- Pointwise form of the dichotomy: if two points `p`, `q` off the trace of a simple closed AC
+curve have winding numbers differing by `1`, then the winding number is `1` on all of
+`filledHull C \ C` with `p` inside and `q` outside, or the reverse with winding number `-1`. -/
+private theorem winding_dichotomy_of_points
+    {γ : ℝ → ℂ} {a b : ℝ} {p q : ℂ} (hab : a < b)
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
+    (hinj : InjOn γ (Ico a b)) (hp : p ∉ γ '' uIcc a b) (hq : q ∉ γ '' uIcc a b)
+    (hdiff : windingNumber γ a b p = windingNumber γ a b q + 1) :
+    ((∀ z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b), windingNumber γ a b z = 1) ∧
+      p ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b) ∧ q ∉ filledHull (γ '' uIcc a b)) ∨
+    ((∀ z ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b), windingNumber γ a b z = -1) ∧
+      q ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b) ∧ p ∉ filledHull (γ '' uIcc a b)) := by
+  set C := γ '' uIcc a b
+  have hC : TauCeti.IsJordanCurve C := isJordanCurve_uIcc hab hγ hclosed hinj
+  have hzero_out : ∀ {w : ℂ}, w ∉ filledHull C → windingNumber γ a b w = 0 :=
+    hγ.windingNumber_eq_zero_of_notMem_filledHull hclosed
+  by_cases hposF : p ∈ filledHull C
+  · by_cases hnegF : q ∈ filledHull C
+    · exfalso
+      have heq := hγ.windingNumber_eq_of_mem_connectedComponentIn hclosed
+        (hC.mem_connectedComponentIn_of_mem_filledHull_sdiff ⟨hnegF, hq⟩ ⟨hposF, hp⟩)
+      have h10 : (1 : ℂ) = 0 := by
+        rw [← add_sub_cancel_left (windingNumber γ a b q) 1,
+          ← hdiff, heq, sub_self]
+      exact one_ne_zero h10
+    · left
+      have hw1 : windingNumber γ a b p = 1 := by
+        rw [hdiff, hzero_out hnegF, zero_add]
+      refine ⟨fun z hz ↦ ?_, ⟨hposF, hp⟩, hnegF⟩
+      rw [hγ.windingNumber_eq_of_mem_connectedComponentIn hclosed
+        (hC.mem_connectedComponentIn_of_mem_filledHull_sdiff ⟨hposF, hp⟩ hz), hw1]
+  · by_cases hnegF : q ∈ filledHull C
+    · right
+      have hwn1 : windingNumber γ a b q = -1 := by
+        rw [hzero_out hposF] at hdiff
+        exact eq_neg_of_add_eq_zero_left hdiff.symm
+      refine ⟨fun z hz ↦ ?_, ⟨hnegF, hq⟩, hposF⟩
+      rw [hγ.windingNumber_eq_of_mem_connectedComponentIn hclosed
+        (hC.mem_connectedComponentIn_of_mem_filledHull_sdiff ⟨hnegF, hq⟩ hz), hwn1]
+    · exfalso
+      rw [hzero_out hposF, hzero_out hnegF, zero_add] at hdiff
+      exact zero_ne_one hdiff
+
 /-- Core dichotomy at any regular interior point of a simple closed AC curve: either the left
 normal ray enters `filledHull C \ C` with winding number `1` on all of `filledHull C \ C` and the
 right normal ray enters `(filledHull C)ᶜ`, or the reverse holds with winding number `-1`. -/
@@ -243,54 +286,22 @@ private theorem simple_closed_normal_dichotomy
   set C := γ '' uIcc a b
   have hC : TauCeti.IsJordanCurve C := isJordanCurve_uIcc hab hγ hclosed hinj
   have hjump := hγ.eventually_windingNumber_add_I_mul_eq_add_one hab hclosed hinj ht₀ hd hv
-  have hzero_out : ∀ {w : ℂ}, w ∉ filledHull C → windingNumber γ a b w = 0 :=
-    hγ.windingNumber_eq_zero_of_notMem_filledHull hclosed
-  have hpointwise : ∀ h : ℝ,
-      (γ t₀ + h • (I * v) ∉ C ∧ γ t₀ - h • (I * v) ∉ C ∧
-        windingNumber γ a b (γ t₀ + h • (I * v)) =
-          windingNumber γ a b (γ t₀ - h • (I * v)) + 1) →
-      ((∀ z ∈ filledHull C \ C, windingNumber γ a b z = 1) ∧
-        γ t₀ + h • (I * v) ∈ filledHull C \ C ∧ γ t₀ - h • (I * v) ∉ filledHull C) ∨
-      ((∀ z ∈ filledHull C \ C, windingNumber γ a b z = -1) ∧
-        γ t₀ - h • (I * v) ∈ filledHull C \ C ∧ γ t₀ + h • (I * v) ∉ filledHull C) := by
-    rintro h ⟨hposC, hnegC, hdiff⟩
-    by_cases hposF : γ t₀ + h • (I * v) ∈ filledHull C
-    · by_cases hnegF : γ t₀ - h • (I * v) ∈ filledHull C
-      · exfalso
-        have heq := hγ.windingNumber_eq_of_mem_connectedComponentIn hclosed
-          (hC.mem_connectedComponentIn_of_mem_filledHull_sdiff ⟨hnegF, hnegC⟩ ⟨hposF, hposC⟩)
-        have h10 : (1 : ℂ) = 0 := by
-          rw [← add_sub_cancel_left (windingNumber γ a b (γ t₀ - h • (I * v))) 1,
-            ← hdiff, heq, sub_self]
-        exact one_ne_zero h10
-      · left
-        have hw1 : windingNumber γ a b (γ t₀ + h • (I * v)) = 1 := by
-          rw [hdiff, hzero_out hnegF, zero_add]
-        refine ⟨fun z hz ↦ ?_, ⟨hposF, hposC⟩, hnegF⟩
-        rw [hγ.windingNumber_eq_of_mem_connectedComponentIn hclosed
-          (hC.mem_connectedComponentIn_of_mem_filledHull_sdiff ⟨hposF, hposC⟩ hz), hw1]
-    · by_cases hnegF : γ t₀ - h • (I * v) ∈ filledHull C
-      · right
-        have hwn1 : windingNumber γ a b (γ t₀ - h • (I * v)) = -1 := by
-          rw [hzero_out hposF] at hdiff
-          exact eq_neg_of_add_eq_zero_left hdiff.symm
-        refine ⟨fun z hz ↦ ?_, ⟨hnegF, hnegC⟩, hposF⟩
-        rw [hγ.windingNumber_eq_of_mem_connectedComponentIn hclosed
-          (hC.mem_connectedComponentIn_of_mem_filledHull_sdiff ⟨hnegF, hnegC⟩ hz), hwn1]
-      · exfalso
-        rw [hzero_out hposF, hzero_out hnegF, zero_add] at hdiff
-        exact zero_ne_one hdiff
+  have hpointwise := fun {h : ℝ} (hh : γ t₀ + h • (I * v) ∉ γ '' uIcc a b ∧
+      γ t₀ - h • (I * v) ∉ γ '' uIcc a b ∧
+      windingNumber γ a b (γ t₀ + h • (I * v)) =
+        windingNumber γ a b (γ t₀ - h • (I * v)) + 1) ↦
+    winding_dichotomy_of_points hab hγ hclosed hinj hh.1 hh.2.1 hh.2.2
   obtain ⟨z₀, hz₀⟩ := hC.nonempty_filledHull_sdiff
   obtain ⟨h₀, hh₀⟩ := hjump.exists
-  rcases hpointwise h₀ hh₀ with ⟨hall1, -, -⟩ | ⟨halln1, -, -⟩
+  rcases hpointwise hh₀ with ⟨hall1, -, -⟩ | ⟨halln1, -, -⟩
   · refine Or.inl ⟨hall1, hjump.mono fun h hh ↦ ?_⟩
-    rcases hpointwise h hh with ⟨-, hmem⟩ | ⟨halln1, -⟩
+    rcases hpointwise hh with ⟨-, hmem⟩ | ⟨halln1, -⟩
     · exact hmem
     · exfalso
       have heq : (1 : ℂ) = -1 := (hall1 z₀ hz₀).symm.trans (halln1 z₀ hz₀)
       norm_num at heq
   · refine Or.inr ⟨halln1, hjump.mono fun h hh ↦ ?_⟩
-    rcases hpointwise h hh with ⟨hall1, -⟩ | ⟨-, hmem⟩
+    rcases hpointwise hh with ⟨hall1, -⟩ | ⟨-, hmem⟩
     · exfalso
       have heq : (1 : ℂ) = -1 := (hall1 z₀ hz₀).symm.trans (halln1 z₀ hz₀)
       norm_num at heq

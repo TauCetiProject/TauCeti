@@ -109,7 +109,12 @@ def IsSmoothVertex (x : StrongDual ℝ V) : Prop :=
 /-- The facet presentation `(u, c)` in the integral lattice `i : N →+ V` describes a *Delzant
 polytope*: the polyhedron is bounded, the active normals at each vertex form a basis of `N`, and
 each constraint is the only active one at some point of the polyhedron, so that it contributes a
-facet. -/
+facet.
+
+The predicate does not include `IsIntegralLattice i`: results that need the lattice assume it
+separately. Without it a presentation can satisfy the predicate while the rank of `N` differs from
+the dimension of `V` (for example `i = 0 : ℤ →+ 0` with `u = 1`, `c = 0`), or describe a polytope
+that is not simple (the octahedron, via a non-injective map `ℤ⁴ →+ ℝ³`). -/
 structure IsDelzant : Prop where
   /-- The polyhedron is bounded, hence a polytope. -/
   isBounded : Bornology.IsBounded (facetPolyhedron i u c)

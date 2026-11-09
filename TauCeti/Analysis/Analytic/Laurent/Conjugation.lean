@@ -36,17 +36,14 @@ namespace AnalyticAt
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- Conjugate Laurent forms at corresponding parameters have the same integer exponent
-and conjugate unit germs, including on the exceptional hyperplane. No
-involutivity assumption on the parameter map is needed; continuity at the
-central parameter suffices. -/
-theorem laurent_eq_of_conj {u v : E × ℂ → ℂ} {x₀ : E} {m n : ℤ} {τ : E → E}
+/-- Conjugate Laurent forms at corresponding parameters have the same integer exponent. This is
+the exponent comparison on the central real slice, where conjugation is a real linear map. -/
+theorem laurent_exponent_eq_of_conj {u v : E × ℂ → ℂ} {x₀ : E} {m n : ℤ} {τ : E → E}
     (hu : AnalyticAt ℝ u (x₀, 0)) (hu0 : u (x₀, 0) ≠ 0)
     (hv : AnalyticAt ℝ v (τ x₀, 0)) (hv0 : v (τ x₀, 0) ≠ 0)
-    (hτ : ContinuousAt τ x₀)
     (heq : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), p.2 ≠ 0 →
       p.2 ^ m * u p = conj ((conj p.2) ^ n * v (τ p.1, conj p.2))) :
-    m = n ∧ ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), u p = conj (v (τ p.1, conj p.2)) := by
+    m = n := by
   -- Compare the exponents on the central real slice.
   let f : ℝ → ℂ := fun t ↦ (t : ℂ) ^ m * u (x₀, (t : ℂ))
   have hreal : AnalyticAt ℝ (fun t : ℝ ↦ (t : ℂ)) 0 := by
@@ -67,12 +64,25 @@ theorem laurent_eq_of_conj {u v : E × ℂ → ℂ} {x₀ : E} {m n : ℤ} {τ :
       simpa using (continuous_const.prodMk Complex.continuous_ofReal).tendsto (0 : ℝ)
     filter_upwards [ht.eventually heq] with t h tne
     simpa [f, map_mul, map_zpow₀, Complex.real_smul] using h (by exact_mod_cast tne)
-  have hmn : m = n := AnalyticAt.unique_eventuallyEq_zpow_smul_ne_zero
+  exact AnalyticAt.unique_eventuallyEq_zpow_smul_ne_zero
     (f := f) (z₀ := (0 : ℝ))
     ⟨_, huR, by simpa using hu0, by
       filter_upwards with t
       simp [f, Complex.real_smul]⟩
     ⟨_, hvR, by simpa using hv0, eventually_nhdsWithin_iff.mpr hslice⟩
+
+/-- Conjugate Laurent forms at corresponding parameters have the same integer exponent
+and conjugate unit germs, including on the exceptional hyperplane. No
+involutivity assumption on the parameter map is needed; continuity at the
+central parameter suffices. -/
+theorem laurent_eq_of_conj {u v : E × ℂ → ℂ} {x₀ : E} {m n : ℤ} {τ : E → E}
+    (hu : AnalyticAt ℝ u (x₀, 0)) (hu0 : u (x₀, 0) ≠ 0)
+    (hv : AnalyticAt ℝ v (τ x₀, 0)) (hv0 : v (τ x₀, 0) ≠ 0)
+    (hτ : ContinuousAt τ x₀)
+    (heq : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), p.2 ≠ 0 →
+      p.2 ^ m * u p = conj ((conj p.2) ^ n * v (τ p.1, conj p.2))) :
+    m = n ∧ ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), u p = conj (v (τ p.1, conj p.2)) := by
+  have hmn := laurent_exponent_eq_of_conj hu hu0 hv hv0 heq
   refine ⟨hmn, ?_⟩
   let T : E × ℂ → E × ℂ := fun p ↦ (τ p.1, conj p.2)
   have hTt : Tendsto T (𝓝 (x₀, (0 : ℂ))) (𝓝 (τ x₀, (0 : ℂ))) := by

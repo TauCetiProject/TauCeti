@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Basic
+public import TauCeti.Combinatorics.Graph.Serre.Cycle.Forest
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.Data.ZMod.Basic
 import Mathlib.Algebra.CharP.Two
@@ -222,6 +222,26 @@ theorem incidenceBoundary_mapDomain_inclusion {O' : Set Γ.E} (h : O ⊆ O')
 section
 
 variable {F : Set Γ.E} {R : Type*} [Ring R]
+
+/-- The difference of two vertex unit chains is a boundary whenever the vertices are
+connected in the support graph. No acyclicity hypothesis is needed. -/
+theorem single_sub_single_mem_range_incidenceBoundary {a b : Γ.V}
+    (h : (Γ.supportGraph F).Reachable a b) :
+    Finsupp.single b (1 : R) - Finsupp.single a 1 ∈
+      LinearMap.range (Γ.incidenceBoundary F R) := by
+  obtain ⟨p⟩ := h
+  induction p with
+  | nil => simp
+  | @cons a b c hab p ih =>
+    have hedge : Finsupp.single b (1 : R) - Finsupp.single a 1 ∈
+        LinearMap.range (Γ.incidenceBoundary F R) := by
+      rcases (Γ.supportGraph_adj F a b).mp hab with ⟨-, h | h⟩
+      · obtain ⟨e, he, rfl, rfl⟩ := h
+        exact ⟨Finsupp.single ⟨e, he⟩ 1, by simp⟩
+      · obtain ⟨e, he, rfl, rfl⟩ := h
+        exact ⟨-Finsupp.single ⟨e, he⟩ 1, by simp [neg_sub]⟩
+    convert (LinearMap.range (Γ.incidenceBoundary F R)).add_mem ih hedge using 1
+    exact (sub_add_sub_cancel _ _ _).symm
 
 /-- A boundary-zero chain supported on a dart set with injective boundary vanishes.
 The chain may be written in any larger ambient dart set. -/

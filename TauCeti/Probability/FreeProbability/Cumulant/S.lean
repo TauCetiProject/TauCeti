@@ -105,14 +105,14 @@ theorem X_mul_sSeries_eq_substInvOfIsUnit (hφ : φ 1 = 1) (ha : IsUnit (φ a)) 
   have hMI : (momentSeries φ a).subst I = 1 + X := by
     have h := (momentSeries φ a - 1).subst_substInvOfIsUnit_right
       (by simp [hφ]) (isUnit_coeff_one_momentSeries_sub_one φ a ha)
-    rw [subst_sub hI, subst_one hI] at h
+    rw [subst_sub hI, subst_one] at h
     exact (sub_eq_iff_eq_add.mp h).trans (add_comm _ _)
   have hcomp : (X * momentSeries φ a).subst I = (1 + X) * I := by
     rw [subst_mul hI, subst_X hI, hMI, mul_comm]
   rw [X_mul_sSeries]
   apply (freeCumulantSeries φ a - 1).eq_substInvOfIsUnit_of_subst_eq_X (by simp) _
     (.of_constantCoeff_zero' (by simp))
-  rw [← hcomp, ← subst_comp_subst_apply hM hI, subst_sub hM, subst_one hM,
+  rw [← hcomp, ← subst_comp_subst_apply hM hI, subst_sub hM, subst_one,
     freeCumulantSeries_subst_X_mul_momentSeries a hφ,
     subst_substInvOfIsUnit_right _ (by simp [hφ])]
 

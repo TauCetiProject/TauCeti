@@ -7,10 +7,15 @@ module
 
 public import Mathlib.Data.Nat.Choose.Central
 public import Mathlib.Analysis.PSeries
+public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 
 /-!
-# Summability of central-binomial series
+# Central-binomial probabilities and series
+
+The normalized central binomial coefficient has square at most `1 / (n + 1)`;
+in particular it tends to zero. This estimate gives vanishing individual return
+probabilities even when the return series diverges.
 
 For real `q`, the series with terms `Nat.centralBinom n * q ^ n` is summable
 exactly when `|q| < 1 / 4`. At the boundary, the elementary lower bound on central
@@ -25,7 +30,8 @@ This is the numerical input to the Green-function recurrence criterion.
 
 The random-walk application follows J. R. Norris, *Markov Chains* (1997), §1.6.
 The estimates used here are Mathlib's `Nat.centralBinom_le_four_pow` and
-`Nat.four_pow_le_two_mul_self_mul_centralBinom`.
+`Nat.four_pow_le_two_mul_self_mul_centralBinom`; the upper bound uses
+`Nat.succ_mul_centralBinom_succ`.
 -/
 
 public section
@@ -33,6 +39,45 @@ public section
 open scoped NNReal ENNReal
 
 namespace TauCeti
+
+/-- An elementary squared upper bound for the normalized central binomial coefficient. -/
+theorem centralBinom_div_four_pow_sq_le (n : ℕ) :
+    ((n.centralBinom : ℝ) / 4 ^ n) ^ 2 ≤ 1 / (n + 1) := by
+  have hb : ∀ n : ℕ, (n + 1 : ℝ) * ((n.centralBinom : ℝ) / 4 ^ n) ^ 2 ≤ 1 := by
+    intro n
+    induction n with
+    | zero => norm_num
+    | succ n ih =>
+      have hr : ((n + 1).centralBinom : ℝ) / 4 ^ (n + 1) =
+          (2 * n + 1) / (2 * (n + 1)) * ((n.centralBinom : ℝ) / 4 ^ n) := by
+        have h := congrArg (fun k : ℕ => (k : ℝ)) (Nat.succ_mul_centralBinom_succ n)
+        push_cast at h
+        rw [pow_succ]
+        field_simp
+        nlinarith
+      rw [hr]
+      push_cast
+      have hn : (0 : ℝ) < n + 1 := by positivity
+      have hfactor : (n + 2 : ℝ) * ((2 * n + 1) / (2 * (n + 1))) ^ 2 ≤ n + 1 := by
+        field_simp
+        nlinarith [Nat.cast_nonneg (α := ℝ) n]
+      calc
+        _ ≤ (n + 1) * ((n.centralBinom : ℝ) / 4 ^ n) ^ 2 := by
+          nlinarith [mul_le_mul_of_nonneg_right hfactor
+            (sq_nonneg ((n.centralBinom : ℝ) / 4 ^ n))]
+        _ ≤ 1 := ih
+  exact (le_div_iff₀ (by positivity)).2 (by nlinarith [hb n])
+
+/-- Central binomial probabilities tend to zero, despite their divergent sum. -/
+theorem tendsto_centralBinom_div_four_pow :
+    Filter.Tendsto (fun n : ℕ => (n.centralBinom : ℝ) / 4 ^ n)
+      Filter.atTop (nhds 0) := by
+  have hsq : Filter.Tendsto (fun n : ℕ => ((n.centralBinom : ℝ) / 4 ^ n) ^ 2)
+      Filter.atTop (nhds 0) :=
+    squeeze_zero (fun _ => sq_nonneg _) centralBinom_div_four_pow_sq_le
+      (by simpa using tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
+  simpa only [Real.sqrt_sq_eq_abs, abs_div, Nat.abs_cast, abs_pow, show |(4 : ℝ)| = 4 by norm_num,
+    Real.sqrt_zero] using hsq.sqrt
 
 /-- The central-binomial series diverges at its radius of convergence. -/
 theorem not_summable_centralBinom_div_four_pow :

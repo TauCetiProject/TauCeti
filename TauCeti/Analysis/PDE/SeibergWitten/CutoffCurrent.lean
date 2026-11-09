@@ -47,6 +47,10 @@ where `χ` is a cutoff function vanishing near `0` and equal to `1` above a thre
 * `Θ` and `χ(s) τ` are invariant under gauge transformations
   `(b, α) ↦ (b - Im (u⁻¹ du), u α)` by unit-modulus functions `u`, which is how they are defined
   on a nontrivial line from local trivializations (`cutoffCurrent_sub_phaseForm_mul`);
+* `Θ` and `χ(s) τ` are natural under pullback: for a map `f` that is `C²` at a point, the cutoff
+  current of the pair `(f^* b, α ∘ f)` there is `f^* Θ` (`cutoffCurrent_comp`), so the integral
+  of `Θ` over a smooth disc is the flux of the cutoff current of the pulled-back pair through a
+  disc in the plane;
 * on a disc in the plane on whose boundary circle `χ(s) = 1`, the integral of `Θ` is the winding
   integral `∮ Im (α⁻¹ dα)` of `α`, with no contribution from `b`
   (`integral_cutoffCurrent_closedBall`). The flux of `i F_a` instead retains the boundary term
@@ -65,8 +69,8 @@ Given an almost complex structure `J`, the cutoff phase form also has a modulus 
 (`abs_modulusPotential_le`, `norm_cutoffDBarForm_le`). Since `Θ - i F_a = d(χ(s) τ)`, its pairing
 with a test form `ζ` is the pairing of `χ(s) τ = d^c_J H(s) + E` with `dζ`; after an integration
 by parts in the first term, these pointwise bounds reduce that pairing to integral bounds on
-`1 - |α|²` and on `∂bar_a α`. Those integral bounds and the integration by parts are not part of
-this file.
+`1 - |α|²` and on `∂bar_a α`. This reduction is carried out in
+`TauCeti.Analysis.PDE.SeibergWitten.CurvatureComparison`.
 
 The cutoff phase form, the cutoff current, their regularity, support and gauge invariance are
 stated on an arbitrary real normed space, which plays the role of a coordinate chart; the gauge
@@ -123,6 +127,13 @@ theorem covariantDeriv_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → 
     covariantDeriv b α x v = fderiv ℝ α x v + I * b x (fun _ ↦ v) * α x := by
   simp [covariantDeriv, ofSubsingletonLIE_symm_apply]
   ring
+
+/-- The covariant derivative of a `C¹` section for a continuous connection form is
+continuous. -/
+theorem continuous_covariantDeriv (hα : ContDiff ℝ 1 α) (hb : Continuous b) :
+    Continuous (covariantDeriv b α) := by
+  unfold covariantDeriv
+  fun_prop
 
 /-- The phase form `τ = Im (α⁻¹ dα) + b` of a pair `(a, α)` with `a = i b`. Away from the zeros
 of `α` it is `Im (conj α ∇_a α) / |α|²` (`covariantPhaseForm_apply_eq_div`). -/
@@ -288,6 +299,46 @@ theorem cutoffCurrent_sub_phaseForm_mul (hu : ∀ y, ‖u y‖ = 1) (hu₂ : Con
       ((contDiffAt_phaseForm hu₂.contDiffAt hu₀ le_rfl).differentiableAt one_ne_zero),
     extDeriv_phaseForm hu₂.contDiffAt hu₀, sub_zero]
 
+/-! ### Naturality under pullback -/
+
+section Pullback
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {f : F → E}
+
+/-- **Naturality of the cutoff phase form.** The cutoff phase form of the pulled-back pair
+`(f^* b, α ∘ f)` is the pullback by `f` of the cutoff phase form of `(b, α)`. -/
+theorem cutoffPhaseForm_comp {y : F} (hα : DifferentiableAt ℝ α (f y))
+    (hf : DifferentiableAt ℝ f y) :
+    cutoffPhaseForm χ (fun z ↦ (b (f z)).compContinuousLinearMap (fderiv ℝ f z)) (α ∘ f) y =
+      (cutoffPhaseForm χ b α (f y)).compContinuousLinearMap (fderiv ℝ f y) := by
+  ext v
+  simp [phaseForm_comp hα hf]
+
+/-- **Naturality of the cutoff current.** For a map `f` that is `C²` at `y`, the cutoff current of
+the pulled-back pair `(f^* b, α ∘ f)` at `y` is the pullback by `f` of the cutoff current of
+`(b, α)` at `f y`. -/
+theorem cutoffCurrent_comp {y : F} (hα : ContDiffAt ℝ 2 α (f y)) (hb : ContDiffAt ℝ 1 b (f y))
+    (hχ : ContDiff ℝ 1 χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) (hf : ContDiffAt ℝ 2 f y) :
+    cutoffCurrent χ (fun z ↦ (b (f z)).compContinuousLinearMap (fderiv ℝ f z)) (α ∘ f) y =
+      (cutoffCurrent χ b α (f y)).compContinuousLinearMap (fderiv ℝ f y) := by
+  have hτ : ContDiffAt ℝ 1 (cutoffPhaseForm χ b α) (f y) :=
+    contDiffAt_cutoffPhaseForm hα hb hχ hχ₀
+  have hpull : cutoffPhaseForm χ (fun z ↦ (b (f z)).compContinuousLinearMap (fderiv ℝ f z))
+      (α ∘ f) =ᶠ[𝓝 y]
+        fun z ↦ (cutoffPhaseForm χ b α (f z)).compContinuousLinearMap (fderiv ℝ f z) := by
+    filter_upwards [hf.continuousAt.eventually (hα.eventually (by simp)), hf.eventually (by simp)]
+      with z hαz hfz
+    exact cutoffPhaseForm_comp (hαz.differentiableAt two_ne_zero)
+      (hfz.differentiableAt two_ne_zero)
+  rw [cutoffCurrent_apply, hpull.extDeriv_eq,
+    extDeriv_pullback (hτ.differentiableAt one_ne_zero) hf (by simp),
+    extDeriv_pullback (hb.differentiableAt one_ne_zero) hf (by simp),
+    cutoffCurrent_apply]
+  ext v
+  simp
+
+end Pullback
+
 /-! ### The flux through a disc -/
 
 /-- **The flux of the cutoff current through a disc.** For fields on the plane such that
@@ -340,6 +391,15 @@ theorem hasDerivAt_modulusPotential (hχ : Continuous χ) (hχ₀ : χ =ᶠ[𝓝
   let hcont := hχ.div_id_of_eventuallyEq_zero hχ₀
   intervalIntegral.integral_hasDerivAt_right (hcont.intervalIntegrable _ _)
     hcont.aestronglyMeasurable.stronglyMeasurableAtFilter hcont.continuousAt
+
+/-- The modulus potential of a continuous cutoff vanishing near `0` is `C¹`. -/
+theorem contDiff_modulusPotential (hχ : Continuous χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) :
+    ContDiff ℝ 1 (modulusPotential χ) := by
+  refine contDiff_one_iff_deriv.2
+    ⟨fun t ↦ (hasDerivAt_modulusPotential hχ hχ₀ t).differentiableAt, ?_⟩
+  rw [show deriv (modulusPotential χ) = fun t ↦ χ t / t from
+    funext fun t ↦ (hasDerivAt_modulusPotential hχ hχ₀ t).deriv]
+  exact hχ.div_id_of_eventuallyEq_zero hχ₀
 
 /-- The modulus potential is constant near `0`, for a continuous cutoff vanishing near `0`. -/
 theorem modulusPotential_eventuallyEq (hχ : Continuous χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) :
@@ -412,6 +472,13 @@ theorem covariantDBar_apply_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E
     (covariantDeriv b α x : E →ₗ[ℝ] ℂ)).apply v
   rw [← coe_covariantDBar_eq_complexAntilinearPart, DistribSMul.toLinearMap_apply] at h
   rw [h, smul_eq_mul, neg_mul]
+
+/-- `∂bar_a α` of a `C¹` section for a continuous connection form is continuous. -/
+theorem continuous_covariantDBar {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} (hα : ContDiff ℝ 1 α)
+    (hb : Continuous b) : Continuous (covariantDBar J b α) := by
+  have h := continuous_covariantDeriv hα hb
+  unfold covariantDBar
+  fun_prop
 
 /-- The correction one-form `E = 2 χ(|α|²) Re (α⁻¹ ∂bar_a α) ∘ J`. -/
 def cutoffDBarForm (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E) :

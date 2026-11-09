@@ -64,6 +64,13 @@ def generator : V →ₗ[R] SignedSym G :=
 @[simp]
 theorem quotient_ι (x : V) : quotient G (TensorAlgebra.ι R x) = generator G x := (rfl)
 
+/-- The class of a tensor word is the product of its generators in the same order. -/
+theorem quotient_tprod {n : ℕ} (x : Fin n → V) :
+    quotient G (TensorAlgebra.tprod R V n x) =
+      (List.ofFn fun i => generator G (x i)).prod := by
+  simp only [TensorAlgebra.tprod_apply, map_list_prod, List.map_ofFn,
+    Function.comp_def, quotient_ι]
+
 /-- Homogeneous generators supercommute with the Koszul sign. -/
 theorem generator_mul_generator {p q : ℤ} {x y : V}
     (hx : x ∈ G.piece p) (hy : y ∈ G.piece q) :
@@ -113,6 +120,13 @@ theorem lift_generator (f : V →ₗ[R] A) (hf) (x : V) :
   exact (RingQuot.liftAlgHom_mkAlgHom_apply R _ _ _).trans
     (TensorAlgebra.lift_ι_apply f x)
 
+/-- The extension to the signed quotient agrees with the tensor-algebra extension on every
+tensor representative. -/
+@[simp]
+theorem lift_quotient (f : V →ₗ[R] A) (hf) (x : TensorAlgebra R V) :
+    lift G f hf (quotient G x) = TensorAlgebra.lift R f x :=
+  RingQuot.liftAlgHom_mkAlgHom_apply R _ _ x
+
 /-- The extension is unique. -/
 theorem lift_unique (f : V →ₗ[R] A) (hf) (g : SignedSym G →ₐ[R] A)
     (hg : ∀ x, g (generator G x) = f x) : g = lift G f hf := by
@@ -152,22 +166,6 @@ theorem algebraMap_injective : Function.Injective (algebraMap R (SignedSym G)) :
 
 instance [Nontrivial R] : Nontrivial (SignedSym G) :=
   (algebraMap_injective G).nontrivial
-
-/-- Odd homogeneous generators square to their own negatives, over any coefficient ring. -/
-theorem generator_sq_eq_neg {p : ℤ} {x : V} (hx : x ∈ G.piece p) (hp : Odd p) :
-    generator G x ^ 2 = -(generator G x ^ 2) := by
-  simpa only [pow_two, Int.negOnePow_mul_self, Int.negOnePow_odd _ hp,
-    Units.val_neg, Units.val_one, neg_smul, one_smul] using
-    generator_mul_generator G hx hx
-
-/-- Odd homogeneous generators have square zero when 2 is invertible (in particular over ℚ). -/
-theorem generator_sq_eq_zero [Invertible (2 : R)] {p : ℤ} {x : V}
-    (hx : x ∈ G.piece p) (hp : Odd p) : generator G x ^ 2 = 0 := by
-  have h : (2 : R) • (generator G x ^ 2) = 0 := by
-    rw [two_smul]
-    exact eq_neg_iff_add_eq_zero.mp (generator_sq_eq_neg G hx hp)
-  have := congrArg (fun a : SignedSym G => (⅟(2 : R)) • a) h
-  simpa only [invOf_smul_smul, smul_zero] using this
 
 section Map
 

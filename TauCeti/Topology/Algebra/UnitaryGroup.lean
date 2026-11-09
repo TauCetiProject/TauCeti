@@ -150,6 +150,6 @@ variable {n : Type*} [Fintype n] [DecidableEq n] {𝕜 : Type*} [RCLike 𝕜]
 compact. -/
 theorem isCompact_unitarySubgroup :
     IsCompact ((unitarySubgroup (GL n 𝕜) : Subgroup (GL n 𝕜)) : Set (GL n 𝕜)) :=
-  TauCeti.isCompact_unitarySubgroup_units TauCeti.Matrix.isCompact_unitaryGroup
+  TauCeti.isCompact_unitarySubgroup_units_iff.mpr TauCeti.Matrix.isCompact_unitaryGroup
 
 end Matrix.GeneralLinearGroup

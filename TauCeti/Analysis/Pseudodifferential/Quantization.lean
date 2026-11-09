@@ -51,6 +51,8 @@ order `m` (`TauCeti.Symbol.spatialDeriv`), so iterating this rule shows that `Op
   growth bounds locally uniform in `x`.
 * `TauCeti.quantizeSchwartzCLM`: for continuous `a` with growth bounds uniform in `x`, the
   quantization is a continuous linear map from Schwartz space to bounded continuous functions.
+  `TauCeti.continuous_quantizeSchwartzValue_input` is the pointwise version: `u ↦ Op(a) u (x)`
+  is continuous when `ξ ↦ a(x, ξ)` is continuous with a growth bound at the single point `x`.
 * `TauCeti.quantizeSchwartzValue_id`, `TauCeti.quantizeSchwartzValue_comp_fst`,
   `TauCeti.quantizeSchwartzValue_eq_fourierMultiplierCLM` and
   `TauCeti.quantizeSchwartzValue_inner_eq_lineDerivOp`: the quantization of `1` is the
@@ -58,6 +60,12 @@ order `m` (`TauCeti.Symbol.spatialDeriv`), so iterating this rule shows that `Op
   gives Mathlib's Fourier multiplier `SchwartzMap.fourierMultiplierCLM` rescaled by `2π`, and
   `ξ ↦ ⟪ξ, v⟫` quantizes to `-i ∂_v`. In particular the differential symbol of `∂_v` is
   `i ⟪ξ, v⟫`.
+* `TauCeti.quantizeSchwartzValue_arrowCongr`: the quantization is compatible with isomorphisms
+  `V ≃L[ℂ] V'` and `W ≃L[ℂ] W'` of the coefficient spaces.
+* `TauCeti.Symbol.continuous_quantizeSchwartzValue_coefficient` and
+  `TauCeti.Symbol.HasCompactSpatialSupport.memLp_quantizeSchwartzValue`: for a symbol
+  `a : TauCeti.Symbol n V W m`, `Op(a) u` is continuous, and if `a` has compact spatial support
+  then so does `Op(a) u`, which therefore lies in every `Lᵖ`.
 * `TauCeti.differentiable_quantizeSchwartzValue` and
   `TauCeti.fderiv_quantizeSchwartzValue_apply`: `Op(a) u` is differentiable for a `C¹`
   coefficient whose values and position derivatives have growth bounds locally uniform in `x`,
@@ -101,6 +109,13 @@ def quantizeSchwartzValue (a : E × E → V →L[ℂ] W) (u : 𝓢(E, V)) (x : E
 theorem quantizeSchwartzValue_def (a : E × E → V →L[ℂ] W) (u : 𝓢(E, V)) (x : E) :
     quantizeSchwartzValue a u x = ∫ ζ, 𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ) (𝓕 u ζ) :=
   (rfl)
+
+/-- The quantization at `x` only depends on the frequency slice `ξ ↦ a (x, ξ)` of the coefficient
+at `x`. -/
+theorem quantizeSchwartzValue_congr_left {a b : E × E → V →L[ℂ] W} {x : E}
+    (h : ∀ ξ, a (x, ξ) = b (x, ξ)) (u : 𝓢(E, V)) :
+    quantizeSchwartzValue a u x = quantizeSchwartzValue b u x := by
+  simp only [quantizeSchwartzValue_def, h]
 
 /-- The quantization is the inverse Fourier transform of the rescaled coefficient applied to the
 Fourier transform of the input. -/
@@ -298,6 +313,27 @@ theorem continuous_quantizeSchwartzValue (ha : Continuous a)
   exact continuous_integral_integrand ha hC (𝓕 u)
 
 end Continuity
+
+section Transport
+
+variable {V' W' : Type*} [NormedAddCommGroup V'] [NormedSpace ℂ V'] [NormedAddCommGroup W']
+  [NormedSpace ℂ W']
+
+/-- **Change of coefficient spaces.** For isomorphisms `e₁ : V ≃L[ℂ] V'` and `e₂ : W ≃L[ℂ] W'`,
+quantizing the conjugated coefficient `e₂ ∘ a(x, ξ) ∘ e₁⁻¹` on `e₁ ∘ u` gives `e₂ ∘ Op(a) u`. -/
+theorem quantizeSchwartzValue_arrowCongr (e₁ : V ≃L[ℂ] V') (e₂ : W ≃L[ℂ] W')
+    (a : E × E → V →L[ℂ] W) (u : 𝓢(E, V)) (x : E) :
+    quantizeSchwartzValue (fun p ↦ e₁.arrowCongr e₂ (a p)) (u.postcompCLM (e₁ : V →L[ℂ] V')) x =
+      e₂ (quantizeSchwartzValue a u x) := by
+  have hF (ζ : E) : 𝓕 (u.postcompCLM (e₁ : V →L[ℂ] V')) ζ = e₁ (𝓕 u ζ) := by
+    simp only [SchwartzMap.fourier_coe, Real.fourier_eq, SchwartzMap.postcompCLM_apply,
+      ContinuousLinearEquiv.coe_coe, Circle.smul_def, ← map_smul]
+    exact e₁.integral_comp_comm _
+  simp only [quantizeSchwartzValue_def, hF, ContinuousLinearEquiv.arrowCongr_apply,
+    ContinuousLinearEquiv.symm_apply_apply, Circle.smul_def, ← map_smul]
+  exact e₂.integral_comp_comm _
+
+end Transport
 
 section Deriv
 
@@ -603,6 +639,21 @@ theorem quantizeSchwartzCLM_apply (ha : Continuous a)
     (x : E) : quantizeSchwartzCLM ha hbound u x = quantizeSchwartzValue a u x :=
   (rfl)
 
+/-- **Continuity in the input at a point.** If `ξ ↦ a(x, ξ)` is continuous with a growth bound
+`‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m` at the point `x`, then `u ↦ Op(a) u (x)` is continuous on Schwartz
+space. No regularity in the position is needed. -/
+theorem continuous_quantizeSchwartzValue_input {x : E} (hcont : Continuous fun ξ ↦ a (x, ξ))
+    {C m : ℝ} (hC : ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) :
+    Continuous fun u : 𝓢(E, V) ↦ quantizeSchwartzValue a u x := by
+  -- Freeze the position at `x`: the frozen coefficient satisfies the global hypotheses of
+  -- `quantizeSchwartzCLM` and has the same quantization at `x`.
+  have hfrozen : Continuous fun p : E × E ↦ a (x, p.2) := hcont.comp continuous_snd
+  refine ((BoundedContinuousFunction.evalCLM ℂ x).comp
+    (quantizeSchwartzCLM hfrozen ⟨C, m, fun _ ↦ hC⟩)).continuous.congr fun u ↦ ?_
+  simp only [ContinuousLinearMap.comp_apply, BoundedContinuousFunction.evalCLM_apply,
+    quantizeSchwartzCLM_apply]
+  exact quantizeSchwartzValue_congr_left (fun _ ↦ rfl) u
+
 end CLM
 
 section Examples
@@ -661,5 +712,38 @@ theorem quantizeSchwartzValue_inner_eq_lineDerivOp (v : E) (u : 𝓢(E, V)) (x :
         rw [← Real.fourierInv_eq, ← SchwartzMap.fourierInv_coe, fourierInv_fourier_eq]
 
 end Examples
+
+/-! ### Quantization of symbols -/
+
+namespace Symbol
+
+variable {n : ℕ} {m : ℝ} {a : Symbol n V W m}
+
+/-- The quantization `Op(a) u` of a symbol on a Schwartz function is continuous. -/
+theorem continuous_quantizeSchwartzValue_coefficient (a : Symbol n V W m)
+    (u : 𝓢(CoordinateSpace n, V)) : Continuous (quantizeSchwartzValue a.coefficient u) :=
+  continuous_quantizeSchwartzValue a.contDiff_coefficient.continuous
+    (fun K hK ↦ (a.exists_bound_coefficient K hK).imp fun _ hC ↦ hC.2) u
+
+/-- The quantization of a symbol with compact spatial support vanishes outside that support. -/
+theorem HasCompactSpatialSupport.hasCompactSupport_quantizeSchwartzValue
+    (ha : a.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, V)) :
+    HasCompactSupport (quantizeSchwartzValue a.coefficient u) := by
+  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
+  exact HasCompactSupport.intro hK fun x hx ↦ by simp [quantizeSchwartzValue_def, hKa x hx]
+
+theorem HasCompactSpatialSupport.integrable_quantizeSchwartzValue
+    (ha : a.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, V)) :
+    Integrable (quantizeSchwartzValue a.coefficient u) :=
+  (a.continuous_quantizeSchwartzValue_coefficient u).integrable_of_hasCompactSupport
+    (ha.hasCompactSupport_quantizeSchwartzValue u)
+
+theorem HasCompactSpatialSupport.memLp_quantizeSchwartzValue
+    (ha : a.HasCompactSpatialSupport) (u : 𝓢(CoordinateSpace n, V)) (p : ENNReal) :
+    MemLp (quantizeSchwartzValue a.coefficient u) p :=
+  (a.continuous_quantizeSchwartzValue_coefficient u).memLp_of_hasCompactSupport
+    (ha.hasCompactSupport_quantizeSchwartzValue u)
+
+end Symbol
 
 end TauCeti

@@ -47,10 +47,15 @@ canonical morphism `Spec κ(x) ⟶ X` on the opens containing `x`.
   `x` of `S`, the residue field map of `Spec S ⟶ Spec R` at `x` is an isomorphism iff the map of
   residue fields `κ(φ⁻¹ x) → κ(x)` is bijective. This translates conditions on residue fields
   between schemes and rings, for instance for étale neighbourhoods built from algebras.
+* `AlgebraicGeometry.Scheme.Hom.isIso_residueFieldMap_of_lift`: a lift along `f` of a morphism
+  `Spec A ⟶ X` from a local ring, inducing an isomorphism of residue fields, sends the closed point
+  to a preimage of `x` at which `f` induces an isomorphism of residue fields.
 * `AlgebraicGeometry.Scheme.residueField_hom_ext`: on a quasi-affine scheme, a ring map out of the
   residue field `κ(x)` is determined by its values on global functions evaluated at `x`.
 * `AlgebraicGeometry.Scheme.toSpecΓ_apply_asIdeal`: the point of `Spec Γ(X, ⊤)` under `x` is the
   prime ideal of global functions vanishing at `x`.
+* `AlgebraicGeometry.Spec.map_algebraMap_residueField_closedPoint`: the closed point of
+  `Spec κ(p)` lies over the prime `p` of `R`.
 
 The residue field map `f.residueFieldMap x` has source `κ(f x)`. When `f x` is known to equal a
 point `y` only propositionally, for instance when `f` is an automorphism fixing `x`, it is
@@ -164,6 +169,17 @@ theorem Spec.residueField_hom_ext {R : CommRingCat.{u}} {p : Spec R} {K : CommRi
     congr($(Scheme.Spec.algebraMap_residueFieldIso_inv R p).hom a)
   simpa [e] using congr($(h').hom a)
 
+/-- The closed point of `Spec κ(p)` lies over `p` in `Spec R`. -/
+@[simp]
+theorem Spec.map_algebraMap_residueField_closedPoint {R : Type u} [CommRing R]
+    (p : PrimeSpectrum R) :
+    Spec.map (CommRingCat.ofHom (algebraMap R p.asIdeal.ResidueField))
+      (IsLocalRing.closedPoint p.asIdeal.ResidueField) = p :=
+  -- `p` is the only point of `Spec R` in the image of `Spec κ(p)`.
+  -- `Spec.map_apply` is applied as a term: `rw` cannot find it, since the closed point is typed
+  -- as a point of `PrimeSpectrum κ(p)` rather than of `Spec (.of κ(p))`.
+  (Spec.map_apply _ _).trans ((PrimeSpectrum.residueField_comap p).subset ⟨_, rfl⟩)
+
 /-- On a quasi-affine scheme, a ring map out of the residue field `κ(x)` is determined by its
 values on global functions evaluated at `x`. -/
 theorem Scheme.residueField_hom_ext {X : Scheme.{u}} [X.IsQuasiAffine] {x : X}
@@ -231,6 +247,48 @@ theorem Scheme.Hom.isIso_residueFieldMap_of_comp {X Y Z : Scheme.{u}}
   change Function.Surjective ((f.residueFieldMap x).hom ∘
     (g.residueFieldMap (f x)).hom) at h
   exact h.of_comp_left (f.residueFieldMap x).hom.injective
+
+open IsLocalRing in
+/-- A lift of a morphism `Spec A ⟶ X` inducing an isomorphism of residue fields passes through a
+point with unchanged residue field: if `A` is local, `φ : 𝒪_{X,x} → A` is a local homomorphism
+inducing an isomorphism of residue fields, and `s : Spec A ⟶ U` lifts the morphism
+`Spec A ⟶ X` given by `φ` along `f`, then `s` maps the closed point to a preimage of `x` at which
+`f` induces an isomorphism of residue fields. -/
+theorem Scheme.Hom.isIso_residueFieldMap_of_lift {X U : Scheme.{u}} (f : U ⟶ X) {x : X}
+    {A : Type u} [CommRing A] [IsLocalRing A] (φ : X.presheaf.stalk x ⟶ CommRingCat.of A)
+    [IsLocalHom φ.hom]
+    (hφ : Function.Bijective (ResidueField.map φ.hom)) (s : Spec (.of A) ⟶ U)
+    (hs : s ≫ f = Spec.map φ ≫ X.fromSpecStalk x) :
+    f (s (closedPoint A)) = x ∧ IsIso (f.residueFieldMap (s (closedPoint A))) := by
+  -- Read off the point and the local homomorphism of `s ≫ f` from `Spec A`.
+  have h := (SpecToEquivOfLocalRing X (.of A)).apply_symm_apply
+    ⟨x, φ, ‹_›⟩
+  rw [show (SpecToEquivOfLocalRing X (.of A)).symm ⟨x, φ, ‹_›⟩ =
+    s ≫ f from hs.symm] at h
+  obtain ⟨hx, hφ'⟩ := SpecToEquivOfLocalRing_eq_iff.mp h
+  -- The components of `SpecToEquivOfLocalRing` are by definition the image of the closed point
+  -- and `stalkClosedPointTo`.
+  change f (s (closedPoint A)) = x at hx
+  subst hx
+  change Scheme.stalkClosedPointTo (s ≫ f) = _ ≫ φ at hφ'
+  rw [Scheme.stalkClosedPointTo_comp, TopCat.Presheaf.stalkCongr_hom] at hφ'
+  -- The specialization `x ⤳ x` in `hφ'` is stated for `(s ≫ f) c` rather than `f (s c)`, so
+  -- `stalkSpecializes_refl` only matches up to unfolding the composite.
+  erw [TopCat.Presheaf.stalkSpecializes_refl, Category.id_comp] at hφ'
+  -- `κ(f (s c)) → κ(s c) → κ(A)` is the bijection induced by `φ`.
+  have key (y) : ResidueField.map (Scheme.stalkClosedPointTo s).hom
+      (f.residueFieldMap (s (closedPoint A)) y) = ResidueField.map φ.hom y := by
+    obtain ⟨y, rfl⟩ := IsLocalRing.residue_surjective y
+    -- `f.residueFieldMap` is by definition the map of residue fields induced by `f.stalkMap`.
+    change ResidueField.map _ (ResidueField.map _ (IsLocalRing.residue _ y)) =
+      ResidueField.map _ (IsLocalRing.residue _ y)
+    rw [ResidueField.map_residue, ResidueField.map_residue, ResidueField.map_residue,
+      ← CommRingCat.comp_apply, hφ']
+  refine ⟨rfl, (ConcreteCategory.isIso_iff_bijective _).mpr ⟨RingHom.injective _, ?_⟩⟩
+  refine Function.Surjective.of_comp_left (f := ResidueField.map
+    (Scheme.stalkClosedPointTo s).hom) (fun z ↦ ?_) (RingHom.injective _)
+  obtain ⟨y, rfl⟩ := hφ.2 z
+  exact ⟨y, key y⟩
 
 namespace Scheme.Pullback
 

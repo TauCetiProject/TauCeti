@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Ext.AcyclicResolution
+public import TauCeti.Algebra.Homology.HomologicalComplex.FunctorCategory
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
 
 /-!
@@ -22,7 +23,13 @@ every class is of this form
 (`CategoryTheory.Sheaf.H'.resolutionClass_surjective`), and `[s] = 0` exactly when `s` is the
 image of a section of `Kⁿ⁻¹` over `V`, respectively when `s = 0` in degree `0`
 (`CategoryTheory.Sheaf.H'.resolutionClass_succ_eq_zero_iff` and
-`CategoryTheory.Sheaf.H'.resolutionClass_zero_eq_zero_iff`).
+`CategoryTheory.Sheaf.H'.resolutionClass_zero_eq_zero_iff`). Classes are compatible with
+restriction (`CategoryTheory.Sheaf.H'.cohomologyPresheaf_map_resolutionClass`). So when the terms
+of `K` are acyclic over every object, the homology of the complex of presheaves `K⁰ ⟶ K¹ ⟶ ⋯` is
+the cohomology presheaf `V ↦ Hⁿ(V, F)` (`CategoryTheory.Sheaf.H'.homologyIsoCohomologyPresheaf`).
+This is how higher direct images are computed from injective resolutions, and from resolutions of
+sheaves of modules, whose injective resolutions are flasque but not injective as abelian
+sheaves.
 
 Here `Hⁿ(V, F)` is Mathlib's `CategoryTheory.Sheaf.H'`, the group `Extⁿ(ℤ_V, F)` out of the free
 abelian sheaf `ℤ_V` on `V`, and morphisms `ℤ_V ⟶ G` are the sections of `G` over `V`
@@ -45,6 +52,9 @@ shown to vanish.
 * `CategoryTheory.Sheaf.H'.exists_d_hom_app_eq_of_resolution`: if `Hⁿ⁺¹(V, F) = 0` and the terms
   of a resolution `K` of `F` are acyclic over `V`, then every cycle of `K(V)` in degree `n + 1` is
   a boundary.
+* `CategoryTheory.Sheaf.H'.homologyIsoCohomologyPresheaf`: for a resolution `K` of `F` whose terms
+  are acyclic over every object, the homology of the underlying complex of presheaves is the
+  cohomology presheaf of `F`.
 
 ## References
 
@@ -63,6 +73,8 @@ namespace CategoryTheory
 namespace Sheaf
 
 namespace H'
+
+section
 
 variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
   [HasSheafify J AddCommGrpCat.{v}]
@@ -176,6 +188,170 @@ theorem exists_d_hom_app_eq_of_resolution (n : ℕ) (hF : Subsingleton (F.H' (n 
     (s : (K.X (n + 1)).obj.obj (op V)) (hs : (K.d (n + 1) (n + 2)).hom.app (op V) s = 0) :
     ∃ t : (K.X n).obj.obj (op V), (K.d n (n + 1)).hom.app (op V) t = s :=
   (resolutionClass_succ_eq_zero_iff ι hι hι' hK V hKV s hs).1 (Subsingleton.elim _ _)
+
+/-- **Classes of sections are compatible with restriction**: restricting the class of a section
+`s` of `Kⁿ` over `V` along `i : U ⟶ V` gives the class of the restricted section. -/
+@[simp]
+theorem cohomologyPresheaf_map_resolutionClass {U : C} (i : U ⟶ V) {n : ℕ}
+    (s : (K.X n).obj.obj (op V)) (hs : (K.d n (n + 1)).hom.app (op V) s = 0) :
+    (F.cohomologyPresheaf n).map i.op (resolutionClass ι hι hι' hK V s hs) =
+      resolutionClass ι hι hι' hK U ((K.X n).obj.map i.op s)
+        (by rw [NatTrans.naturality_apply, hs, map_zero]) := by
+  refine (F.H'AddEquivExt n U).injective ?_
+  rw [cohomologyPresheaf_map_apply, resolutionClass_def, resolutionClass_def,
+    AddEquiv.apply_symm_apply, AddEquiv.apply_symm_apply, K.mk₀_comp_extMk]
+  congr 1
+  apply (freeYonedaSheafSectionsEquiv J U (K.X n)).injective
+  rw [freeYonedaSheafSectionsEquiv_naturality_left, AddEquiv.apply_symm_apply,
+    AddEquiv.apply_symm_apply]
+
+end
+
+section Presheaf
+
+variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
+  [HasSheafify J AddCommGrpCat.{v}] [HasExt.{v} (Sheaf J AddCommGrpCat.{v})]
+  {F : Sheaf J AddCommGrpCat.{v}} {K : CochainComplex (Sheaf J AddCommGrpCat.{v}) ℕ}
+  (ι : F ⟶ K.X 0) [Mono ι] (hι : ι ≫ K.d 0 1 = 0)
+  (hι' : (ShortComplex.mk ι (K.d 0 1) hι).Exact) (hK : ∀ j, K.ExactAt (j + 1))
+  (hKV : ∀ V j k, Subsingleton ((K.X j).H' (k + 1) V)) (n : ℕ)
+
+/-- The complex of presheaves of abelian groups underlying a complex of sheaves. -/
+private abbrev sectionsComplex (K : CochainComplex (Sheaf J AddCommGrpCat.{v}) ℕ) :
+    CochainComplex (Cᵒᵖ ⥤ AddCommGrpCat.{v}) ℕ :=
+  ((sheafToPresheaf J AddCommGrpCat.{v}).mapHomologicalComplex _).obj K
+
+omit [HasSheafify J AddCommGrpCat.{v}] [HasExt.{v} (Sheaf J AddCommGrpCat.{v})] in
+/-- A cycle in degree `n` of the complex of sections over `U` of a complex of sheaves `K` is a
+section of `Kⁿ` over `U` killed by the differential. -/
+lemma d_hom_app_iCycles_app {U : Cᵒᵖ}
+    (z : ((((sheafToPresheaf J AddCommGrpCat.{v}).mapHomologicalComplex _).obj K).cycles n).obj
+      U) :
+    (K.d n (n + 1)).hom.app U
+      (((((sheafToPresheaf J AddCommGrpCat.{v}).mapHomologicalComplex _).obj K).iCycles n).app
+        U z) = 0 := by
+  have h := congrArg (fun φ ↦ φ.app U z)
+    ((((sheafToPresheaf J AddCommGrpCat.{v}).mapHomologicalComplex _).obj K).iCycles_d n (n + 1))
+  simpa using h
+
+/-- The class in `Hⁿ(U, F)` of a cycle of the complex of sections over `U`. -/
+private noncomputable def cyclesToH' (U : Cᵒᵖ) :
+    ((sectionsComplex K).cycles n).obj U →+ F.H' n U.unop :=
+  AddMonoidHom.mk' (fun z ↦ resolutionClass ι hι hι' hK U.unop
+      (((sectionsComplex K).iCycles n).app U z) (d_hom_app_iCycles_app n z))
+    (fun z w ↦ by
+      simp only [map_add]
+      exact resolutionClass_add ι hι hι' hK U.unop _ _ _ _)
+
+private lemma cyclesToH'_naturality {U V : Cᵒᵖ} (g : U ⟶ V)
+    (z : ((sectionsComplex K).cycles n).obj U) :
+    cyclesToH' ι hι hι' hK n V (((sectionsComplex K).cycles n).map g z) =
+      (F.cohomologyPresheaf n).map g (cyclesToH' ι hι hι' hK n U z) := by
+  have h := cohomologyPresheaf_map_resolutionClass ι hι hι' hK U.unop g.unop _
+    (d_hom_app_iCycles_app n z)
+  simp only [Quiver.Hom.op_unop] at h
+  simp only [cyclesToH', AddMonoidHom.mk'_apply]
+  rw [h]
+  congr 1
+  exact NatTrans.naturality_apply ((sectionsComplex K).iCycles n) g z
+
+/-- The classes of cycles, as a morphism from the presheaf of cycles to the cohomology presheaf. -/
+private noncomputable def cyclesToCohomologyPresheaf :
+    (sectionsComplex K).cycles n ⟶ F.cohomologyPresheaf n where
+  app U := AddCommGrpCat.ofHom (cyclesToH' ι hι hι' hK n U)
+  naturality U V g := by
+    ext z
+    exact cyclesToH'_naturality ι hι hι' hK n g z
+
+include hKV in
+/-- Boundaries have zero class. -/
+private lemma toCycles_comp_cyclesToCohomologyPresheaf (i : ℕ) :
+    (sectionsComplex K).toCycles i n ≫ cyclesToCohomologyPresheaf ι hι hι' hK n = 0 := by
+  by_cases hi : (ComplexShape.up ℕ).Rel i n
+  · obtain rfl : i + 1 = n := hi
+    ext U x
+    refine ((resolutionClass_succ_eq_zero_iff ι hι hι' hK U.unop (hKV U.unop) _
+      (d_hom_app_iCycles_app _ _)).2 ⟨x, ?_⟩)
+    exact ((sectionsComplex K).iCycles_app_toCycles_app i (i + 1) x).symm
+  · rw [(sectionsComplex K).toCycles_eq_zero hi, zero_comp]
+
+/-- The comparison map from the homology of the complex of sections to the cohomology presheaf,
+induced by the classes of cycles. -/
+private noncomputable def homologyToCohomologyPresheaf :
+    (sectionsComplex K).homology n ⟶ F.cohomologyPresheaf n :=
+  ((sectionsComplex K).homologyIsCokernel _ n rfl).desc
+    (CokernelCofork.ofπ _ (toCycles_comp_cyclesToCohomologyPresheaf ι hι hι' hK hKV n _))
+
+private lemma homologyπ_comp_homologyToCohomologyPresheaf :
+    (sectionsComplex K).homologyπ n ≫ homologyToCohomologyPresheaf ι hι hι' hK hKV n =
+      cyclesToCohomologyPresheaf ι hι hι' hK n :=
+  Cofork.IsColimit.π_desc ((sectionsComplex K).homologyIsCokernel _ n rfl)
+
+private lemma isIso_homologyToCohomologyPresheaf :
+    IsIso (homologyToCohomologyPresheaf ι hι hι' hK hKV n) := by
+  rw [NatTrans.isIso_iff_isIso_app]
+  intro U
+  rw [ConcreteCategory.isIso_iff_bijective]
+  have hπ : Function.Surjective (((sectionsComplex K).homologyπ n).app U) :=
+    (AddCommGrpCat.epi_iff_surjective _).1 inferInstance
+  have hi : Function.Injective (((sectionsComplex K).iCycles n).app U) :=
+    (AddCommGrpCat.mono_iff_injective _).1 inferInstance
+  have hfac (z : ((sectionsComplex K).cycles n).obj U) :
+      (homologyToCohomologyPresheaf ι hι hι' hK hKV n).app U
+        (((sectionsComplex K).homologyπ n).app U z) = cyclesToH' ι hι hι' hK n U z := by
+    have h := ConcreteCategory.congr_hom
+      (NatTrans.congr_app (homologyπ_comp_homologyToCohomologyPresheaf ι hι hι' hK hKV n) U) z
+    rw [NatTrans.comp_app, ConcreteCategory.comp_apply] at h
+    exact h
+  refine ⟨(injective_iff_map_eq_zero
+    ((homologyToCohomologyPresheaf ι hι hι' hK hKV n).app U).hom).2 ?_, fun x ↦ ?_⟩
+  · intro h hh
+    obtain ⟨z, rfl⟩ := hπ h
+    rw [hfac] at hh
+    cases n with
+    | zero =>
+      rw [cyclesToH', AddMonoidHom.mk'_apply, resolutionClass_zero_eq_zero_iff] at hh
+      rw [hi (hh.trans (map_zero _).symm), map_zero]
+    | succ p =>
+      obtain ⟨t, ht⟩ := (resolutionClass_succ_eq_zero_iff ι hι hι' hK U.unop (hKV U.unop) _
+        (d_hom_app_iCycles_app _ z)).1 hh
+      have hz : z = ((sectionsComplex K).toCycles p (p + 1)).app U t :=
+        hi (by rw [HomologicalComplex.iCycles_app_toCycles_app]; exact ht.symm)
+      rw [hz, ← ConcreteCategory.comp_apply, ← NatTrans.comp_app,
+        HomologicalComplex.toCycles_comp_homologyπ, NatTrans.app_zero]
+      rfl
+  · obtain ⟨s, hs, rfl⟩ := resolutionClass_surjective ι hι hι' hK U.unop (hKV U.unop) x
+    obtain ⟨z, rfl⟩ := (sectionsComplex K).exists_iCycles_app_eq (n + 1) (by simp) s hs
+    exact ⟨((sectionsComplex K).homologyπ n).app U z, hfac z⟩
+
+/-- **The sections of an acyclic resolution compute sheaf cohomology.** For a resolution
+`0 ⟶ F ⟶ K⁰ ⟶ K¹ ⟶ ⋯` of an abelian sheaf `F` whose terms have no cohomology in positive degrees
+over any object of the site, the homology in degree `n` of the complex of presheaves
+`K⁰ ⟶ K¹ ⟶ ⋯` is the cohomology presheaf `U ↦ Hⁿ(U, F)`. -/
+noncomputable def homologyIsoCohomologyPresheaf :
+    (((sheafToPresheaf J AddCommGrpCat.{v}).mapHomologicalComplex _).obj K).homology n ≅
+      F.cohomologyPresheaf n :=
+  haveI := isIso_homologyToCohomologyPresheaf ι hι hι' hK hKV n
+  asIso (homologyToCohomologyPresheaf ι hι hι' hK hKV n)
+
+/-- Under `homologyIsoCohomologyPresheaf`, the homology class of a cycle `s ∈ Kⁿ(U)` is its class
+`resolutionClass` in `Hⁿ(U, F)`. -/
+@[simp]
+lemma homologyIsoCohomologyPresheaf_hom_app_homologyπ_apply (U : Cᵒᵖ)
+    (z : ((((sheafToPresheaf J AddCommGrpCat.{v}).mapHomologicalComplex _).obj K).cycles n).obj
+      U) :
+    (homologyIsoCohomologyPresheaf ι hι hι' hK hKV n).hom.app U
+        (((((sheafToPresheaf J AddCommGrpCat.{v}).mapHomologicalComplex _).obj K).homologyπ
+          n).app U z) =
+      resolutionClass ι hι hι' hK U.unop
+        (((((sheafToPresheaf J AddCommGrpCat.{v}).mapHomologicalComplex _).obj K).iCycles n).app
+          U z) (d_hom_app_iCycles_app n z) := by
+  have h := ConcreteCategory.congr_hom
+    (NatTrans.congr_app (homologyπ_comp_homologyToCohomologyPresheaf ι hι hι' hK hKV n) U) z
+  rw [NatTrans.comp_app, ConcreteCategory.comp_apply] at h
+  exact h
+
+end Presheaf
 
 end H'
 

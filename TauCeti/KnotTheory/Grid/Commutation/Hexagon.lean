@@ -581,16 +581,20 @@ variable (R : Type*) [CommSemiring R]
 /-- The weight of a hexagon: the product of the variables of the `O`-markings it carries. -/
 noncomputable def hexagonWeight {a s s' : Fin n} {x y : GridState n}
     (P : GridHexagonBetween a s s' x y) : MvPolynomial (Fin n) R :=
-  ∏ c ∈ G.OColumnsOfSquares P.coveredSquares, MvPolynomial.X c
+  G.OMonomialOfSquares R P.coveredSquares
+
+/-- The weight of a hexagon is the monomial of the squares it covers. -/
+theorem hexagonWeight_eq_OMonomialOfSquares {a s s' : Fin n} {x y : GridState n}
+    (P : GridHexagonBetween a s s' x y) :
+    G.hexagonWeight R P = G.OMonomialOfSquares R P.coveredSquares :=
+  (rfl)
 
 /-- The weight of a hexagon is the squarefree monomial of the `O`-markings it carries. -/
 theorem hexagonWeight_eq_monomial {a s s' : Fin n} {x y : GridState n}
     (P : GridHexagonBetween a s s' x y) :
     G.hexagonWeight R P =
-      monomial (∑ c ∈ G.OColumnsOfSquares P.coveredSquares, Finsupp.single c 1) 1 := by
-  classical
-  rw [hexagonWeight, monomial_sum_one]
-  simp only [← X_pow_eq_monomial, pow_one]
+      monomial (∑ c ∈ G.OColumnsOfSquares P.coveredSquares, Finsupp.single c 1) 1 :=
+  G.OMonomialOfSquares_eq_monomial R _
 
 /-- The weight of a hexagon is the product, over the squares it covers, of the variable of the
 square's column at the `O`-marked squares and of `1` elsewhere. -/
@@ -598,7 +602,7 @@ theorem hexagonWeight_eq_prod_coveredSquares {a s s' : Fin n} {x y : GridState n
     (P : GridHexagonBetween a s s' x y) :
     G.hexagonWeight R P =
       ∏ p ∈ P.coveredSquares, if p ∈ G.OSet then MvPolynomial.X p.1 else 1 :=
-  (G.prod_ite_OSet_eq_prod_OColumnsOfSquares MvPolynomial.X _).symm
+  G.OMonomialOfSquares_eq_prod_ite R _
 
 /-- The weight of a hexagon of a validated column commutation times the variable of `C.column` is
 the weight of its underlying rectangle. -/
@@ -614,17 +618,22 @@ theorem X_mul_hexagonWeight {C : ColumnCommutationData G} {x y : GridState n}
 `O`-markings it carries. -/
 noncomputable def initialHexagonWeight {a s s' : Fin n} {x y : GridState n}
     (P : GridInitialHexagonBetween a s s' x y) : MvPolynomial (Fin n) R :=
-  ∏ c ∈ G.OColumnsOfSquares P.coveredSquares, MvPolynomial.X c
+  G.OMonomialOfSquares R P.coveredSquares
+
+/-- The weight of a hexagon turning on its initial side is the monomial of the squares it
+covers. -/
+theorem initialHexagonWeight_eq_OMonomialOfSquares {a s s' : Fin n} {x y : GridState n}
+    (P : GridInitialHexagonBetween a s s' x y) :
+    G.initialHexagonWeight R P = G.OMonomialOfSquares R P.coveredSquares :=
+  (rfl)
 
 /-- The weight of a hexagon turning on its initial side is the squarefree monomial of the
 `O`-markings it carries. -/
 theorem initialHexagonWeight_eq_monomial {a s s' : Fin n} {x y : GridState n}
     (P : GridInitialHexagonBetween a s s' x y) :
     G.initialHexagonWeight R P =
-      monomial (∑ c ∈ G.OColumnsOfSquares P.coveredSquares, Finsupp.single c 1) 1 := by
-  classical
-  rw [initialHexagonWeight, monomial_sum_one]
-  simp only [← X_pow_eq_monomial, pow_one]
+      monomial (∑ c ∈ G.OColumnsOfSquares P.coveredSquares, Finsupp.single c 1) 1 :=
+  G.OMonomialOfSquares_eq_monomial R _
 
 /-- The weight of a hexagon turning on its initial side is the product, over the squares it
 covers, of the variable of the square's column at the `O`-marked squares and of `1` elsewhere. -/
@@ -632,7 +641,7 @@ theorem initialHexagonWeight_eq_prod_coveredSquares {a s s' : Fin n} {x y : Grid
     (P : GridInitialHexagonBetween a s s' x y) :
     G.initialHexagonWeight R P =
       ∏ p ∈ P.coveredSquares, if p ∈ G.OSet then MvPolynomial.X p.1 else 1 :=
-  (G.prod_ite_OSet_eq_prod_OColumnsOfSquares MvPolynomial.X _).symm
+  G.OMonomialOfSquares_eq_prod_ite R _
 
 /-- The weight of a hexagon turning on its initial side times the variable of the column after
 `C.column` is the weight of its underlying rectangle. -/
@@ -675,43 +684,37 @@ turn on their terminal side, linear over the polynomial ring: a generator `x` go
 the counted hexagons from `x` of their weights times their targets. -/
 noncomputable def hexagonMap (C : ColumnCommutationData G) :
     GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
-  Finsupp.linearCombination (MvPolynomial (Fin n) R) fun x =>
-    Finsupp.equivFunOnFinite.symm fun y => G.hexagonCoefficient R C x y
+  GridChain.matrixMap R (G.hexagonCoefficient R C)
 
 /-- The matrix coefficients of the hexagon map. -/
 theorem hexagonMap_single_apply (C : ColumnCommutationData G) (x y : GridState n) :
     G.hexagonMap R C (Finsupp.single x 1) y = G.hexagonCoefficient R C x y := by
-  rw [hexagonMap, Finsupp.linearCombination_single, one_smul,
-    Finsupp.equivFunOnFinite_symm_apply_apply]
+  rw [hexagonMap, GridChain.matrixMap_single_apply, one_mul]
 
 /-- The coefficient formula for the hexagon map on an arbitrary chain. -/
 @[simp]
 theorem hexagonMap_apply_apply (C : ColumnCommutationData G) (c : GridChainMinus R n)
     (y : GridState n) :
-    G.hexagonMap R C c y = c.sum fun x p => p * G.hexagonCoefficient R C x y := by
-  rw [hexagonMap, Finsupp.linearCombination_apply]
-  simp [Finsupp.sum_apply]
+    G.hexagonMap R C c y = c.sum fun x p => p * G.hexagonCoefficient R C x y :=
+  GridChain.matrixMap_apply_apply R _ c y
 
 /-- The map `GC⁻(G) → GC⁻(G)` of the validated column commutation `C` counting the hexagons that
 turn on their initial side, linear over the polynomial ring. -/
 noncomputable def initialHexagonMap (C : ColumnCommutationData G) :
     GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
-  Finsupp.linearCombination (MvPolynomial (Fin n) R) fun x =>
-    Finsupp.equivFunOnFinite.symm fun y => G.initialHexagonCoefficient R C x y
+  GridChain.matrixMap R (G.initialHexagonCoefficient R C)
 
 /-- The matrix coefficients of the initial-side hexagon map. -/
 theorem initialHexagonMap_single_apply (C : ColumnCommutationData G) (x y : GridState n) :
     G.initialHexagonMap R C (Finsupp.single x 1) y = G.initialHexagonCoefficient R C x y := by
-  rw [initialHexagonMap, Finsupp.linearCombination_single, one_smul,
-    Finsupp.equivFunOnFinite_symm_apply_apply]
+  rw [initialHexagonMap, GridChain.matrixMap_single_apply, one_mul]
 
 /-- The coefficient formula for the initial-side hexagon map on an arbitrary chain. -/
 @[simp]
 theorem initialHexagonMap_apply_apply (C : ColumnCommutationData G) (c : GridChainMinus R n)
     (y : GridState n) :
-    G.initialHexagonMap R C c y = c.sum fun x p => p * G.initialHexagonCoefficient R C x y := by
-  rw [initialHexagonMap, Finsupp.linearCombination_apply]
-  simp [Finsupp.sum_apply]
+    G.initialHexagonMap R C c y = c.sum fun x p => p * G.initialHexagonCoefficient R C x y :=
+  GridChain.matrixMap_apply_apply R _ c y
 
 /-- The commutation homotopy `H : GC⁻(G) → GC⁻(G)` of the validated column commutation `C`: it
 counts the empty hexagons carrying no `X`-marking with corners at both intersection points, both

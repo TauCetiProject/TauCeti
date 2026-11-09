@@ -259,4 +259,19 @@ theorem homologyMap_comp_homologyZeroCechIso_hom
   ext x
   exact (_root_.CategoryTheory.Sheaf.H.equiv₀_symm_naturality isTerminalTop g x).symm
 
+/-- Refinement maps commute with the degree-zero global-sections identification. -/
+@[reassoc]
+theorem homologyMap_cechComplexMap_comp_homologyZeroCechIso_hom
+    {κ : Type u} (V : κ → Opens X) (hV : ⨆ i, V i = ⊤)
+    (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
+    HomologicalComplex.homologyMap (cechComplexMap F.obj φ) 0 ≫
+        (homologyZeroCechIso U hU F).hom = (homologyZeroCechIso V hV F).hom := by
+  have := quasiIsoAt_cechAugmentation_zero_of_iSup_eq_top V hV F
+  rw [← cancel_epi (HomologicalComplex.homologyMap (cechAugmentation V isTerminalTop F.obj) 0)]
+  simp only [homologyZeroCechIso, Iso.trans_hom, Iso.symm_hom, asIso_inv,
+    ← HomologicalComplex.homologyMap_comp_assoc, cechAugmentation_comp_cechComplexMap]
+  have := quasiIsoAt_cechAugmentation_zero_of_iSup_eq_top U hU F
+  simp only [IsIso.hom_inv_id_assoc]
+
 end TauCeti.Topology

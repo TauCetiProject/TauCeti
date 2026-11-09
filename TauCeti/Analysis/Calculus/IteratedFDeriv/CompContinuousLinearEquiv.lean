@@ -18,9 +18,10 @@ derivative of `f` at `e y` precomposed with `e` in every slot. Hence the norm of
 derivative of `f ∘ e` at `y` is at most `‖e‖ ^ i` times that of `f` at `e y`, and the norm of the
 `i`-th derivative of `f` at `e y` is at most `‖e⁻¹‖ ^ i` times that of `f ∘ e` at `y`. A Hölder
 bound for the `i`-th derivative of `f ∘ e` transfers to one for the `i`-th derivative of `f`, at
-the cost of the factor `‖e⁻¹‖ ^ (i + r)`. When `e` takes values in the scalar field, the second
-derivative of `f ∘ e` applied to `v` and `w` is `e v * e w` times the second derivative of `f`.
-No differentiability of `f` is needed.
+the cost of the factor `‖e⁻¹‖ ^ (i + r)`. The second Fréchet derivative of `f ∘ e` at `y`, applied
+to `v` and `w`, is that of `f` at `e y` applied to `e v` and `e w`; when `e` takes values in the
+scalar field, it is `e v * e w` times the second derivative of `f`. No differentiability of `f`
+is needed.
 -/
 
 public section
@@ -41,6 +42,17 @@ theorem iteratedFDeriv_comp_right (e : G ≃L[𝕜] E) (f : E → F) (x : G) (i 
       (iteratedFDeriv 𝕜 i f (e x)).compContinuousLinearMap fun _ => (e : G →L[𝕜] E) := by
   simpa only [← iteratedFDerivWithin_univ, Set.preimage_univ] using
     e.iteratedFDerivWithin_comp_right f uniqueDiffOn_univ (Set.mem_univ _) i
+
+/-- **Second derivatives under a linear change of variables.** For a continuous linear
+equivalence `e`, the second derivative of `f ∘ e` at `z`, applied to `v` and `w`, is the second
+derivative of `f` at `e z` applied to `e v` and `e w`. No differentiability of `f` is needed. -/
+theorem fderiv_fderiv_comp_right_apply_apply (e : G ≃L[𝕜] E) (f : E → F) (z v w : G) :
+    fderiv 𝕜 (fderiv 𝕜 (f ∘ e)) z v w = fderiv 𝕜 (fderiv 𝕜 f) (e z) (e v) (e w) := by
+  have h := iteratedFDeriv_two_apply (𝕜 := 𝕜) (f ∘ e) z ![v, w]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one] at h
+  rw [← h, e.iteratedFDeriv_comp_right, ContinuousMultilinearMap.compContinuousLinearMap_apply,
+    iteratedFDeriv_two_apply]
+  simp
 
 /-- **Second derivatives along a one-dimensional linear change of variables.** For a continuous
 linear equivalence `e` onto the scalar field and a function `f` of one variable, the second
