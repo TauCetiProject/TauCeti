@@ -75,23 +75,23 @@ theorem mapsTo_closedBall_of_forall_norm_le {α F : Type*} [SeminormedAddCommGro
   rw [mem_closedBall]
   linarith [dist_le_norm_add_norm (f y) (f c), hM y hy, hM c hc]
 
-/-- Constants joined by a chain of related indices are uniformly close, if constants at related
-indices are. -/
-theorem exists_enorm_sub_le_mul_of_reflTransGen {β F ι : Type*} [SeminormedAddCommGroup F]
-    {R : ι → ι → Prop} {i₀ : ι}
-    (P : β → (ι → F) → ℝ≥0∞ → Prop)
-    (hadj : ∀ i j, R i j → ∃ D : ℝ≥0, ∀ f a G, P f a G → ‖a j - a i‖ₑ ≤ D * G) {j : ι}
+/-- Families of vectors joined by a chain of related indices are uniformly close, if the vectors at
+related indices are: if `‖a k j - a k i‖ ≤ D * G k` for related `i j` and all `k`, then the
+same holds, with a constant `D'` independent of `k`, for any `j` reachable from `i₀`. -/
+theorem exists_enorm_sub_le_mul_of_reflTransGen {κ F ι : Type*} [SeminormedAddGroup F]
+    {R : ι → ι → Prop} {i₀ : ι} {a : κ → ι → F} {G : κ → ℝ≥0∞}
+    (hadj : ∀ i j, R i j → ∃ D : ℝ≥0, ∀ k, ‖a k j - a k i‖ₑ ≤ D * G k) {j : ι}
     (hj : Relation.ReflTransGen R i₀ j) :
-    ∃ D : ℝ≥0, ∀ f a G, P f a G → ‖a j - a i₀‖ₑ ≤ D * G := by
+    ∃ D : ℝ≥0, ∀ k, ‖a k j - a k i₀‖ₑ ≤ D * G k := by
   induction hj with
-  | refl => exact ⟨0, fun _ _ _ _ ↦ by simp⟩
-  | @tail j k _ hjk ih =>
+  | refl => exact ⟨0, fun _ ↦ by simp⟩
+  | @tail j l _ hjl ih =>
     obtain ⟨D₁, hD₁⟩ := ih
-    obtain ⟨D₂, hD₂⟩ := hadj j k hjk
-    refine ⟨D₂ + D₁, fun f a G hP ↦ ?_⟩
-    calc ‖a k - a i₀‖ₑ = ‖(a k - a j) + (a j - a i₀)‖ₑ := by rw [sub_add_sub_cancel]
-      _ ≤ ‖a k - a j‖ₑ + ‖a j - a i₀‖ₑ := enorm_add_le _ _
-      _ ≤ D₂ * G + D₁ * G := add_le_add (hD₂ f a G hP) (hD₁ f a G hP)
-      _ = ↑(D₂ + D₁) * G := by push_cast; ring
+    obtain ⟨D₂, hD₂⟩ := hadj j l hjl
+    refine ⟨D₂ + D₁, fun k ↦ ?_⟩
+    calc ‖a k l - a k i₀‖ₑ = ‖(a k l - a k j) + (a k j - a k i₀)‖ₑ := by rw [sub_add_sub_cancel]
+      _ ≤ ‖a k l - a k j‖ₑ + ‖a k j - a k i₀‖ₑ := enorm_add_le _ _
+      _ ≤ D₂ * G k + D₁ * G k := add_le_add (hD₂ k) (hD₁ k)
+      _ = ↑(D₂ + D₁) * G k := by push_cast; ring
 
 end TauCeti
