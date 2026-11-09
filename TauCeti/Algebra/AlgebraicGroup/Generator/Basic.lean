@@ -51,7 +51,7 @@ the functor `T ↦ {φ : A →* G(T) // IsAGenerator φ}`.
 
 ## Main results
 
-* `TauCeti.IsAGenerator.card_eq_finrank`: over a nontrivial ring, if a finite free `G` has an
+* `TauCeti.IsAGenerator.card_eq_finrank`: over a nontrivial ring, if a free `G` has an
   `A`-generator, the order of `A` is the rank of `G`.
 * `TauCeti.IsAGenerator.baseChange`, `TauCeti.IsAGenerator.of_baseChange` and
   `TauCeti.isAGenerator_baseChange_iff`: `A`-generators are stable under arbitrary base change and
@@ -99,13 +99,22 @@ variable {φ : A →* WithConv (H →ₐ[R] R)}
 theorem isAGenerator_iff : IsAGenerator φ ↔ IsFullSetOfSections fun a ↦ (φ a).ofConv :=
   Iff.rfl
 
-variable [Module.Finite R H]
-
-/-- Over a nontrivial ring, if a finite free `G` has an `A`-generator then the order of `A` is
+/-- Over a nontrivial ring, if a free `G` has an `A`-generator then the order of `A` is
 the rank of `G`. -/
 theorem IsAGenerator.card_eq_finrank [Module.Free R H] [Nontrivial R] (h : IsAGenerator φ) :
-    Fintype.card A = Module.finrank R H :=
-  IsFullSetOfSections.card_eq_finrank h
+    Fintype.card A = Module.finrank R H := by
+  by_cases hfin : Module.Finite R H
+  · exact IsFullSetOfSections.card_eq_finrank h
+  · exfalso
+    have : Module.Free R (R ⊗[R] H) :=
+      Module.Free.of_equiv (TensorProduct.lid R H).symm
+    have hn : ¬ Module.Finite R (R ⊗[R] H) :=
+      fun hf => hfin (Module.Finite.of_surjective _ (TensorProduct.lid R H).surjective)
+    have h0 := isFullSetOfSections_iff.1 h R (0 : R ⊗[R] H)
+    simp only [Algebra.norm_eq_one_of_not_module_finite hn, map_zero] at h0
+    exact one_ne_zero (h0.trans (Finset.prod_eq_zero (Finset.mem_univ 1) rfl))
+
+variable [Module.Finite R H]
 
 variable [Module.Flat R H]
 
