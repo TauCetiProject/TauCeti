@@ -219,7 +219,7 @@ theorem kummerBrauerClass_eq_neg_relBrInfl_cyclicClass (a b : Kˣ) {s : L}
   have hτβ := coe_toMul_eq_pow_kummerLog hζ (kummerCocycle hβ τ)
   rw [hχτ] at hτβ
   -- `α ^ (m p) α ^ (m q) = α ^ χ(σ τ) a ^ c`, with `c` the carry of `p + q` modulo `d`
-  have key := pow_mul_mul_pow_mul_eq hαn hmd hm0 hp hq
+  have key := pow_mul_mul_pow_mul_eq hαn hmd hp hq
   simp only [Pi.add_apply]
   rw [hWv, hR, kummerCoeffPairing_kummerCupPairing hζ, smul_kummerCoeff_eq_self hζ]
   beta_reduce

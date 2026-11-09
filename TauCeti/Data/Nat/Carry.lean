@@ -38,11 +38,14 @@ theorem carry_add_carry {n i j k : ℕ} (hi : i < n) (hj : j < n) (hk : k < n) :
   simp only [add_mod_eq_ite, mod_eq_of_lt hi, mod_eq_of_lt hj, mod_eq_of_lt hk]
   split_ifs <;> omega
 
-/-- **Carries under scaling.** For `n = m d` with `m > 0` and `p, q < d`, the carry of
+/-- **Carries under scaling.** For `n = m d` and `p, q < d`, the carry of
 `m p + m q` modulo `n` is the carry of `p + q` modulo `d`. -/
-theorem add_eq_mod_add_carry {m d n p q : ℕ} (hmd : m * d = n) (hm : 0 < m)
-    (hp : p < d) (hq : q < d) :
+theorem add_eq_mod_add_carry {m d n p q : ℕ} (hmd : m * d = n) (hp : p < d)
+    (hq : q < d) :
     m * p + m * q = (m * p + m * q) % n + n * if d ≤ p + q then 1 else 0 := by
+  rcases Nat.eq_zero_or_pos m with rfl | hm
+  · obtain rfl : n = 0 := by simpa using hmd.symm
+    simp
   have hlt : m * p + m * q < 2 * n := calc
     m * p + m * q = m * (p + q) := (mul_add _ _ _).symm
     _ < m * (2 * d) := Nat.mul_lt_mul_of_pos_left (by omega) hm
@@ -61,6 +64,10 @@ theorem add_eq_mod_add_carry {m d n p q : ℕ} (hmd : m * d = n) (hm : 0 < m)
     omega
   · rw [Nat.mod_eq_of_lt (hlt' (not_le.1 h))]
     omega
+
+end TauCeti.Nat
+
+namespace Nat
 
 /-- For `i, j < N` and `d N = m n`, the carry after scaling by `d` modulo `n`, together with
 the quotients of the scaled summands, equals the scaled carry modulo `N` plus the quotient
