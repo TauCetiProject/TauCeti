@@ -58,6 +58,9 @@ compact-support left and right inverse identities are available in this module.
   the Cauchy–Pompeiu formula.
 * `HasCompactSupport.hasFDerivAt_integral_sub_inv_smul`: the Cauchy transform of a compactly
   supported `C¹` map is differentiable, with derivative the transform of the derivative.
+* `HasCompactSupport.contDiff_cauchyTransform` and
+  `HasCompactSupport.fderiv_cauchyTransform_apply`: the normalized transform of compactly
+  supported data is as smooth as the data, and commutes with directional derivatives.
 * `HasCompactSupport.fderiv_apply_one_add_I_smul_apply_I_two_pi_inv_smul_integral_sub_inv_smul`:
   `D = 2 \bar∂` of the Cauchy transform of a compactly supported `C¹` map `f` is `f`.
 * `HasCompactSupport.conjWirtingerDeriv_integral_sub_inv_smul_apply_one`:
@@ -347,6 +350,27 @@ theorem _root_.HasCompactSupport.hasFDerivAt_cauchyTransform {f : ℂ → F}
     HasFDerivAt (cauchyTransform f)
       ((Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • fderiv ℝ f z) w :=
   (hc.hasFDerivAt_integral_sub_inv_smul hf w).const_smul _
+
+omit [CompleteSpace F] in
+/-- The Cauchy transform of compactly supported data is as smooth as the data. -/
+theorem _root_.HasCompactSupport.contDiff_cauchyTransform {n : ℕ∞} {f : ℂ → F}
+    (hc : HasCompactSupport f) (hf : ContDiff ℝ n f) : ContDiff ℝ n (cauchyTransform f) := by
+  rw [cauchyTransform_eq_convolution]
+  exact (hc.contDiff_convolution_right (L := ContinuousLinearMap.lsmul ℝ ℂ)
+    Complex.locallyIntegrable_inv hf).const_smul _
+
+omit [CompleteSpace F] in
+/-- The directional derivative of the Cauchy transform of compactly supported `C¹` data in the
+direction `v` is the Cauchy transform of the directional derivative of the data. -/
+theorem _root_.HasCompactSupport.fderiv_cauchyTransform_apply {f : ℂ → F}
+    (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) (w v : ℂ) :
+    fderiv ℝ (cauchyTransform f) w v = cauchyTransform (fun z ↦ fderiv ℝ f z v) w := by
+  have hint : Integrable fun z ↦ (w - z)⁻¹ • fderiv ℝ f z :=
+    (Complex.locallyIntegrable_sub_inv w).integrable_smul_right_of_hasCompactSupport
+      (hf.continuous_fderiv one_ne_zero) (hc.fderiv ℝ)
+  rw [(hc.hasFDerivAt_cauchyTransform hf w).fderiv, cauchyTransform_apply,
+    smul_apply, ContinuousLinearMap.integral_apply hint]
+  rfl
 
 /-- On compactly supported `C¹` data the normalized Cauchy transform is a right inverse of
 `bar∂ = (∂ₛ + i ∂ₜ) / 2`. -/
