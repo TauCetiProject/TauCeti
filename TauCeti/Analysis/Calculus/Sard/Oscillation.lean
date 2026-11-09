@@ -42,6 +42,26 @@ open scoped MeasureTheory NNReal ENNReal
 
 namespace TauCeti
 
+/-- A uniform little-o modulus of order `k` on `A` passes through a continuous linear map: if
+`‖f y - f x‖ ≤ ε * ‖y - x‖ ^ k` for nearby points of `A` and every `ε > 0`, then the same holds
+for `L ∘ f`. -/
+theorem _root_.ContinuousLinearMap.oscillation_pow_comp {E F G : Type*}
+    [SeminormedAddCommGroup E] [SeminormedAddCommGroup F] [NormedSpace ℝ F]
+    [SeminormedAddCommGroup G] [NormedSpace ℝ G] (L : F →L[ℝ] G) {A : Set E} {f : E → F} {k : ℕ}
+    (hosc : ∀ ε : ℝ, 0 < ε → ∃ δ : ℝ, 0 < δ ∧
+      ∀ x ∈ A, ∀ y ∈ A, ‖y - x‖ < δ → ‖f y - f x‖ ≤ ε * ‖y - x‖ ^ k) :
+    ∀ ε : ℝ, 0 < ε → ∃ δ : ℝ, 0 < δ ∧
+      ∀ x ∈ A, ∀ y ∈ A, ‖y - x‖ < δ → ‖L (f y) - L (f x)‖ ≤ ε * ‖y - x‖ ^ k := by
+  intro ε hε
+  have hC : 0 < ‖L‖ + 1 := by positivity
+  obtain ⟨δ, hδ, hd⟩ := hosc (ε / (‖L‖ + 1)) (div_pos hε hC)
+  refine ⟨δ, hδ, fun x hx y hy hxy ↦ ?_⟩
+  calc ‖L (f y) - L (f x)‖ = ‖L (f y - f x)‖ := by rw [map_sub]
+    _ ≤ ‖L‖ * ‖f y - f x‖ := L.le_opNorm _
+    _ ≤ (‖L‖ + 1) * (ε / (‖L‖ + 1) * ‖y - x‖ ^ k) :=
+        mul_le_mul (by linarith) (hd x hx y hy hxy) (norm_nonneg _) hC.le
+    _ = ε * ‖y - x‖ ^ k := by field_simp
+
 /-- The case of `TauCeti.addHaar_image_eq_zero_of_oscillation_pow` with target `Fin p → ℝ` and
 Lebesgue measure, where the target measure is the `p`-dimensional Hausdorff measure. -/
 private theorem volume_image_eq_zero_of_oscillation_pow {n k p : ℕ} (hp : p ≠ 0)
@@ -134,22 +154,11 @@ theorem addHaar_image_eq_zero_of_oscillation_pow {F : Type*} [NormedAddCommGroup
     (hosc : ∀ ε : ℝ, 0 < ε → ∃ δ : ℝ, 0 < δ ∧
       ∀ x ∈ A, ∀ y ∈ A, ‖y - x‖ < δ → ‖f y - f x‖ ≤ ε * ‖y - x‖ ^ k) :
     ν (f '' A) = 0 := by
-  -- Read `f` in coordinates `e : F ≃L[ℝ] (Fin p → ℝ)`, which rescale the modulus by `‖e‖`.
+  -- Read `f` in coordinates `e : F ≃L[ℝ] (Fin p → ℝ)`, which carry the modulus along.
   let e : F ≃L[ℝ] (Fin (Module.finrank ℝ F) → ℝ) := ContinuousLinearEquiv.ofFinrankEq (by simp)
-  set C : ℝ := ‖(e : F →L[ℝ] (Fin (Module.finrank ℝ F) → ℝ))‖ + 1 with hC
-  have hC0 : 0 < C := by positivity
-  have hnull : volume ((e ∘ f) '' A) = 0 := by
-    refine volume_image_eq_zero_of_oscillation_pow Module.finrank_pos.ne' hA hdim
-      fun ε hε ↦ ?_
-    obtain ⟨δ, hδ, hd⟩ := hosc (ε / C) (div_pos hε hC0)
-    refine ⟨δ, hδ, fun x hx y hy hxy ↦ ?_⟩
-    calc ‖(e ∘ f) y - (e ∘ f) x‖
-        = ‖(e : F →L[ℝ] (Fin (Module.finrank ℝ F) → ℝ)) (f y - f x)‖ := by simp
-      _ ≤ ‖(e : F →L[ℝ] (Fin (Module.finrank ℝ F) → ℝ))‖ * ‖f y - f x‖ :=
-          ContinuousLinearMap.le_opNorm _ _
-      _ ≤ C * (ε / C * ‖y - x‖ ^ k) :=
-          mul_le_mul (by linarith) (hd x hx y hy hxy) (norm_nonneg _) hC0.le
-      _ = ε * ‖y - x‖ ^ k := by field_simp
+  have hnull : volume ((e ∘ f) '' A) = 0 :=
+    volume_image_eq_zero_of_oscillation_pow Module.finrank_pos.ne' hA hdim (by
+      simpa using (e : F →L[ℝ] (Fin (Module.finrank ℝ F) → ℝ)).oscillation_pow_comp hosc)
   have hpre : ν (e ⁻¹' ((e ∘ f) '' A)) = 0 := by
     simpa only [ContinuousLinearEquiv.toContinuousAddEquiv_coe] using
       (e.toContinuousAddEquiv.quasiMeasurePreserving_addHaar ν volume).preimage_null hnull

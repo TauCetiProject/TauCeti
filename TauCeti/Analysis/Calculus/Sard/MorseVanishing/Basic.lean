@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Sard.MorseVanishing.Chart
 import TauCeti.Analysis.Calculus.ContDiff.FinInsertNth
 public import TauCeti.Analysis.Calculus.Sard.MorseVanishing.Disk
+import TauCeti.Analysis.Calculus.Sard.Oscillation
 
 /-! # The Morse vanishing lemma
 
@@ -395,36 +396,30 @@ theorem _root_.TauCeti.exists_cover_of_critical {F : Type*} [NormedAddCommGroup 
   obtain ⟨-, hq2, κ, hdisk⟩ := hcar q hq
   have hbody : IsCompact (q.parametrization '' closedBall (0 : Fin q.dimension → ℝ) 1) :=
     (isCompact_closedBall _ _).image ((isDisk_iff.mp hdisk).1.continuous)
-  refine ⟨hbody.isBounded.subset hq2, fun ε hε => ?_⟩
+  refine ⟨hbody.isBounded.subset hq2, ?_⟩
   -- Read `f` in coordinates `e : F ≃L[ℝ] (Fin d → ℝ)`; each coordinate is a scalar function
-  -- critical on `A`, and the coordinate moduli combine through the operator norm of `e.symm`.
+  -- critical on `A`, the coordinate moduli combine into one for `e ∘ f`, and `e.symm` carries it
+  -- back to `f`.
   let e : F ≃L[ℝ] (Fin (Module.finrank ℝ F) → ℝ) := ContinuousLinearEquiv.ofFinrankEq (by simp)
-  set C : ℝ := ‖(e.symm : (Fin (Module.finrank ℝ F) → ℝ) →L[ℝ] F)‖ + 1 with hC
-  have hC0 : 0 < C := by positivity
-  have hcomp : ∀ j, ∀ᶠ δ in 𝓝[>] (0 : ℝ), ∀ x ∈ q.carrier, ∀ y ∈ q.carrier, ‖y - x‖ < δ →
-      |e (f y) j - e (f x) j| ≤ ε / C * ‖y - x‖ ^ (k + 1) := by
-    intro j
-    let L : F →L[ℝ] ℝ := (ContinuousLinearMap.proj j).comp
-      (e : F →L[ℝ] (Fin (Module.finrank ℝ F) → ℝ))
-    have hfj : ContDiff ℝ (k + 1) fun x => L (f x) := L.contDiff.comp hf
-    have hAj : ∀ x ∈ A, fderiv ℝ (fun x => L (f x)) x = 0 := by
-      intro x hx
-      rw [fderiv_fun_comp x L.differentiableAt ((hf.differentiable (by simp)) x), L.fderiv, hA x hx,
-        ContinuousLinearMap.comp_zero]
-    obtain ⟨δ, hδ, hδspec⟩ := abs_sub_le_of_carries hcar hflat hfj hAj hq (div_pos hε hC0)
-    filter_upwards [Ioo_mem_nhdsGT hδ] with δ' hδ' x hx y hy hxy
-    exact hδspec x hx y hy (hxy.trans hδ'.2)
-  obtain ⟨δ, hδspec, hδ⟩ := ((Filter.eventually_all.2 hcomp).and self_mem_nhdsWithin).exists
-  refine ⟨δ, hδ, fun x hx y hy hxy => ?_⟩
-  have hcoord : ‖e (f y) - e (f x)‖ ≤ ε / C * ‖y - x‖ ^ (k + 1) :=
-    (pi_norm_le_iff_of_nonneg (by positivity)).2 fun j => by
-      simpa [Real.norm_eq_abs] using hδspec j x hx y hy hxy
-  calc ‖f y - f x‖ = ‖(e.symm : (Fin (Module.finrank ℝ F) → ℝ) →L[ℝ] F) (e (f y) - e (f x))‖ := by
-        simp
-    _ ≤ ‖(e.symm : (Fin (Module.finrank ℝ F) → ℝ) →L[ℝ] F)‖ * ‖e (f y) - e (f x)‖ :=
-        ContinuousLinearMap.le_opNorm _ _
-    _ ≤ C * (ε / C * ‖y - x‖ ^ (k + 1)) :=
-        mul_le_mul (by linarith) hcoord (norm_nonneg _) hC0.le
-    _ = ε * ‖y - x‖ ^ (k + 1) := by field_simp
+  have he : ∀ ε : ℝ, 0 < ε → ∃ δ : ℝ, 0 < δ ∧ ∀ x ∈ q.carrier, ∀ y ∈ q.carrier, ‖y - x‖ < δ →
+      ‖e (f y) - e (f x)‖ ≤ ε * ‖y - x‖ ^ (k + 1) := by
+    intro ε hε
+    have hcomp : ∀ j, ∀ᶠ δ in 𝓝[>] (0 : ℝ), ∀ x ∈ q.carrier, ∀ y ∈ q.carrier, ‖y - x‖ < δ →
+        |e (f y) j - e (f x) j| ≤ ε * ‖y - x‖ ^ (k + 1) := by
+      intro j
+      let L : F →L[ℝ] ℝ := (ContinuousLinearMap.proj j).comp
+        (e : F →L[ℝ] (Fin (Module.finrank ℝ F) → ℝ))
+      have hfj : ContDiff ℝ (k + 1) fun x => L (f x) := L.contDiff.comp hf
+      have hAj : ∀ x ∈ A, fderiv ℝ (fun x => L (f x)) x = 0 := by
+        intro x hx
+        rw [fderiv_fun_comp x L.differentiableAt ((hf.differentiable (by simp)) x), L.fderiv,
+          hA x hx, ContinuousLinearMap.comp_zero]
+      obtain ⟨δ, hδ, hδspec⟩ := abs_sub_le_of_carries hcar hflat hfj hAj hq hε
+      filter_upwards [Ioo_mem_nhdsGT hδ] with δ' hδ' x hx y hy hxy
+      exact hδspec x hx y hy (hxy.trans hδ'.2)
+    obtain ⟨δ, hδspec, hδ⟩ := ((Filter.eventually_all.2 hcomp).and self_mem_nhdsWithin).exists
+    exact ⟨δ, hδ, fun x hx y hy hxy => (pi_norm_le_iff_of_nonneg (by positivity)).2 fun j => by
+      simpa [Real.norm_eq_abs] using hδspec j x hx y hy hxy⟩
+  simpa using (e.symm : (Fin (Module.finrank ℝ F) → ℝ) →L[ℝ] F).oscillation_pow_comp he
 
 end TauCeti.MorseSard
