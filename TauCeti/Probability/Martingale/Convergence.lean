@@ -197,16 +197,19 @@ theorem tendsto_eLpNorm_condExp_iInf [IsFiniteMeasure μ] {𝔽 : ℕ → Measur
   (tendsto_ae_and_eLpNorm_condExp_iInf h_filtration h_le0 f).2
 
 /-- `Lᵖ` convergence of the conditional expectations of an essentially bounded function, for
-`1 ≤ p < ∞`, given their almost-everywhere convergence. -/
+`1 ≤ p < ∞`, given their convergence in `L¹`. -/
 theorem tendsto_eLpNorm_condExp_of_ae_bdd [IsFiniteMeasure μ]
     {𝔽 : ℕ → MeasurableSpace Ω} {m : MeasurableSpace Ω} {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞)
     {g : Ω → ℝ} {R : ℝ} (hR : ∀ᵐ ω ∂μ, |g ω| ≤ R)
-    (h_ae : ∀ᵐ ω ∂μ, Tendsto (fun n => μ[g | 𝔽 n] ω) atTop (𝓝 (μ[g | m] ω))) :
+    (h_L1 : Tendsto (fun n => eLpNorm (μ[g | 𝔽 n] - μ[g | m]) 1 μ) atTop (𝓝 0)) :
     Tendsto (fun n => eLpNorm (μ[g | 𝔽 n] - μ[g | m]) p μ) atTop (𝓝 0) := by
   -- The conditional expectations of `g` inherit its essential bound, so they are uniformly
-  -- integrable in `Lᵖ`, and Vitali's theorem upgrades the a.e. convergence to `Lᵖ` convergence.
-  refine tendsto_Lp_finite_of_tendsto_ae hp hp' (fun _ => integrable_condExp.aestronglyMeasurable)
-    (MemLp.of_bound integrable_condExp.aestronglyMeasurable R ?_) ?_ h_ae
+  -- integrable in `Lᵖ`, and Vitali's theorem upgrades the convergence in measure, which follows
+  -- from the `L¹` convergence, to `Lᵖ` convergence.
+  refine tendsto_Lp_finite_of_tendstoInMeasure hp hp'
+    (fun _ => integrable_condExp.aestronglyMeasurable)
+    (MemLp.of_bound integrable_condExp.aestronglyMeasurable R ?_) ?_
+    (tendstoInMeasure_of_tendsto_eLpNorm one_ne_zero h_L1)
   · simpa only [Real.norm_eq_abs] using ae_bdd_abs_condExp_of_ae_bdd_abs hR
   -- Above the level `R + 1` every `μ[g | 𝔽 n]` vanishes a.e., which is uniform integrability.
   refine unifIntegrable_of hp hp' (fun _ => integrable_condExp.aestronglyMeasurable)
@@ -222,7 +225,6 @@ theorem tendsto_eLpNorm_condExp_of_ae_bdd [IsFiniteMeasure μ]
 /-- The real case of `MemLp.tendsto_eLpNorm_condExp_of_tendsto`. -/
 private theorem tendsto_eLpNorm_condExp_of_tendsto_real [IsFiniteMeasure μ]
     {𝔽 : ℕ → MeasurableSpace Ω} {m : MeasurableSpace Ω}
-    (h_ae : ∀ g : Ω → ℝ, ∀ᵐ ω ∂μ, Tendsto (fun n => μ[g | 𝔽 n] ω) atTop (𝓝 (μ[g | m] ω)))
     (h_L1 : ∀ g : Ω → ℝ, Tendsto (fun n => eLpNorm (μ[g | 𝔽 n] - μ[g | m]) 1 μ) atTop (𝓝 0))
     {p : ℝ≥0∞} (hp : p ≠ ∞) {f : Ω → ℝ} (hf : MemLp f p μ) :
     Tendsto (fun n => eLpNorm (μ[f | 𝔽 n] - μ[f | m]) p μ) atTop (𝓝 0) := by
@@ -253,7 +255,7 @@ private theorem tendsto_eLpNorm_condExp_of_tendsto_real [IsFiniteMeasure μ]
   have hgi : Integrable g μ := hg.integrable hp1
   have hg_bdd : ∀ᵐ ω ∂μ, |g ω| ≤ C := ae_of_all _ fun ω => Real.norm_eq_abs (g ω) ▸ hC ω
   filter_upwards [ENNReal.tendsto_nhds_zero.1
-    (tendsto_eLpNorm_condExp_of_ae_bdd hp1 hp hg_bdd (h_ae g)) (ε / 3) hε3] with n hn
+    (tendsto_eLpNorm_condExp_of_ae_bdd hp1 hp hg_bdd (h_L1 g)) (ε / 3) hε3] with n hn
   have h_split : μ[f | 𝔽 n] - μ[f | m] =ᵐ[μ]
       (μ[⇑g | 𝔽 n] - μ[⇑g | m]) + (μ[f - ⇑g | 𝔽 n] - μ[f - ⇑g | m]) := by
     filter_upwards [condExp_sub hfi hgi (𝔽 n), condExp_sub hfi hgi m] with ω h₁ h₂
@@ -271,14 +273,12 @@ private theorem tendsto_eLpNorm_condExp_of_tendsto_real [IsFiniteMeasure μ]
     _ ≤ ε / 3 + (ε / 3 + ε / 3) := by gcongr <;> apply h_fg
     _ = ε := by rw [← add_assoc, ENNReal.add_thirds]
 
-/-- `Lᵖ` convergence of conditional expectations from their convergence almost everywhere and
-in `L¹`: if, for every real function `g`, `μ[g | 𝔽 n]` converges to `μ[g | m]` both almost
-everywhere and in `L¹`, then for a finite exponent `p` and a real or complex `f ∈ Lᵖ` the
-convergence holds in `Lᵖ`. This is the common step of Lévy's upward and downward theorems in
-`Lᵖ`. -/
+/-- `Lᵖ` convergence of conditional expectations from their convergence in `L¹`: if, for every
+real function `g`, `μ[g | 𝔽 n]` converges to `μ[g | m]` in `L¹`, then for a finite exponent `p`
+and a real or complex `f ∈ Lᵖ` the convergence holds in `Lᵖ`. This is the common step of Lévy's
+upward and downward theorems in `Lᵖ`. -/
 theorem MemLp.tendsto_eLpNorm_condExp_of_tendsto [IsFiniteMeasure μ]
     {𝔽 : ℕ → MeasurableSpace Ω} {m : MeasurableSpace Ω}
-    (h_ae : ∀ g : Ω → ℝ, ∀ᵐ ω ∂μ, Tendsto (fun n => μ[g | 𝔽 n] ω) atTop (𝓝 (μ[g | m] ω)))
     (h_L1 : ∀ g : Ω → ℝ, Tendsto (fun n => eLpNorm (μ[g | 𝔽 n] - μ[g | m]) 1 μ) atTop (𝓝 0))
     {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} (hp : p ≠ ∞) {f : Ω → 𝕜} (hf : MemLp f p μ) :
     Tendsto (fun n => eLpNorm (μ[f | 𝔽 n] - μ[f | m]) p μ) atTop (𝓝 0) := by
@@ -293,8 +293,8 @@ theorem MemLp.tendsto_eLpNorm_condExp_of_tendsto [IsFiniteMeasure μ]
   set re' : Ω → ℝ := fun ω => RCLike.re (f ω)
   set im' : Ω → ℝ := fun ω => RCLike.im (f ω)
   have h_lim := ENNReal.Tendsto.const_mul
-    ((tendsto_eLpNorm_condExp_of_tendsto_real h_ae h_L1 hp hf.re).add
-      (tendsto_eLpNorm_condExp_of_tendsto_real h_ae h_L1 hp hf.im))
+    ((tendsto_eLpNorm_condExp_of_tendsto_real h_L1 hp hf.re).add
+      (tendsto_eLpNorm_condExp_of_tendsto_real h_L1 hp hf.im))
     (.inr p.LpAddConst_lt_top.ne)
   rw [add_zero, mul_zero] at h_lim
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h_lim (fun _ => zero_le)
@@ -328,7 +328,7 @@ theorem MemLp.tendsto_eLpNorm_condExp_iInf [IsFiniteMeasure μ] {𝔽 : ℕ → 
     {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} (hp : p ≠ ∞)
     {f : Ω → 𝕜} (hf : MemLp f p μ) :
     Tendsto (fun n => eLpNorm (μ[f | 𝔽 n] - μ[f | ⨅ n, 𝔽 n]) p μ) atTop (𝓝 0) :=
-  hf.tendsto_eLpNorm_condExp_of_tendsto (tendsto_ae_condExp_iInf h_filtration h_le0)
+  hf.tendsto_eLpNorm_condExp_of_tendsto
     (MeasureTheory.tendsto_eLpNorm_condExp_iInf h_filtration h_le0) hp
 
 /-- **Conditional expectation converges in `Lᵖ` along a filtration (Lévy's upward theorem, `Lᵖ`
@@ -341,7 +341,7 @@ theorem MemLp.tendsto_eLpNorm_condExp [IsFiniteMeasure μ] {ℱ : Filtration ℕ
     {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} (hp : p ≠ ∞)
     {f : Ω → 𝕜} (hf : MemLp f p μ) :
     Tendsto (fun n => eLpNorm (μ[f | ℱ n] - μ[f | ⨆ n, ℱ n]) p μ) atTop (𝓝 0) :=
-  hf.tendsto_eLpNorm_condExp_of_tendsto (fun g => tendsto_ae_condExp g)
+  hf.tendsto_eLpNorm_condExp_of_tendsto
     (fun g => MeasureTheory.tendsto_eLpNorm_condExp g) hp
 
 /-- **Factorization along a decreasing filtration with trivial tail.** If `B' n` is `𝔽 n`-measurable
@@ -351,7 +351,7 @@ turns tail triviality into independence of events readable far apart. -/
 theorem measure_inter_eq_mul_of_forall_zero_or_one_iInf
     {𝔽 : ℕ → MeasurableSpace Ω} (hanti : Antitone 𝔽) (h𝔽 : 𝔽 0 ≤ ‹MeasurableSpace Ω›)
     (htriv : ∀ s, MeasurableSet[⨅ n, 𝔽 n] s → μ s = 0 ∨ μ s = 1)
-    {A B : Set Ω} (hA : MeasurableSet A) {B' : ℕ → Set Ω}
+    {A B : Set Ω} {B' : ℕ → Set Ω}
     (hB' : ∀ n, MeasurableSet[𝔽 n] (B' n)) (hBmass : ∀ n, μ (B' n) = μ B)
     (hjoint : ∀ n, μ (A ∩ B' n) = μ (A ∩ B)) :
     μ (A ∩ B) = μ A * μ B := by
@@ -360,12 +360,17 @@ theorem measure_inter_eq_mul_of_forall_zero_or_one_iInf
   · simp
   have h𝔽' : ∀ n, 𝔽 n ≤ ‹MeasurableSpace Ω› := fun n => (hanti (Nat.zero_le n)).trans h𝔽
   have hinf : (⨅ n, 𝔽 n) ≤ ‹MeasurableSpace Ω› := (iInf_le 𝔽 0).trans h𝔽
-  set f₀ : Ω → ℝ := A.indicator fun _ => 1 with hf₀def
+  -- Work with a measurable hull of `A`, which has the same mass against every `B' n`.
+  have hA : MeasurableSet (toMeasurable μ A) := measurableSet_toMeasurable μ A
+  have hAmass : μ (toMeasurable μ A) = μ A := measure_toMeasurable A
+  have hjoint' : ∀ n, μ (toMeasurable μ A ∩ B' n) = μ (A ∩ B) := fun n => by
+    rw [Measure.measure_toMeasurable_inter (h𝔽' n _ (hB' n)) (measure_ne_top μ A), hjoint n]
+  set f₀ : Ω → ℝ := (toMeasurable μ A).indicator fun _ => 1 with hf₀def
   have hf₀ : Integrable f₀ μ := (integrable_const 1).indicator hA
   have hconst : μ[f₀|⨅ n, 𝔽 n] =ᵐ[μ] fun _ => ∫ x, f₀ x ∂μ :=
     condExp_ae_eq_integral_of_forall_zero_or_one hinf htriv f₀
   have hc : ∫ x, f₀ x ∂μ = (μ A).toReal := by
-    rw [hf₀def, integral_indicator_const (1 : ℝ) hA, smul_eq_mul, mul_one, measureReal_def]
+    rw [hf₀def, integral_indicator_const (1 : ℝ) hA, smul_eq_mul, mul_one, measureReal_def, hAmass]
   have hbound : ∀ n, |(μ (A ∩ B)).toReal - (μ A).toReal * (μ B).toReal| ≤
       (eLpNorm (μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) 1 μ).toReal := by
     intro n
@@ -374,8 +379,8 @@ theorem measure_inter_eq_mul_of_forall_zero_or_one_iInf
       integrable_condExp.sub integrable_condExp
     have h1 : ∫ x in B' n, (μ[f₀|𝔽 n]) x ∂μ = (μ (A ∩ B)).toReal := by
       rw [setIntegral_condExp (h𝔽' n) hf₀ (hB' n), hf₀def, setIntegral_indicator hA,
-        setIntegral_const, smul_eq_mul, mul_one, Set.inter_comm (B' n) A, measureReal_def,
-        hjoint n]
+        setIntegral_const, smul_eq_mul, mul_one, Set.inter_comm (B' n) (toMeasurable μ A),
+        measureReal_def, hjoint' n]
     have h2 : ∫ x in B' n, (μ[f₀|⨅ m, 𝔽 m]) x ∂μ = (μ A).toReal * (μ B).toReal := by
       rw [setIntegral_congr_ae hBn (hconst.mono fun x hx _ => hx), setIntegral_const,
         smul_eq_mul, hc, measureReal_def, hBmass n, mul_comm]
