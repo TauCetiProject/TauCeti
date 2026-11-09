@@ -41,7 +41,7 @@ distinguished coordinate is conjugated. Labels related by `σ` have the same
 Laurent exponent, and their unit germs satisfy the corresponding conjugation
 identity on the full neighborhood. The root equations themselves are required
 only off the hyperplane, where poles are allowed. -/
-theorem exists_root_eq_zpow_mul_unit_conj {d a c : ℕ} (hd : 0 < d)
+theorem exists_root_eq_zpow_mul_unit_conj {d a c : ℕ}
     {P : E × ℂ → Polynomial ℂ} {r s : Fin d → E × ℂ → ℂ} {x₀ : E}
     {u v : E × ℂ → ℂ} (hs : ∀ i, AnalyticAt ℂ (s i) (x₀, 0))
     (hu : AnalyticAt ℂ u (x₀, 0)) (hu0 : u (x₀, 0) ≠ 0)
@@ -61,7 +61,7 @@ theorem exists_root_eq_zpow_mul_unit_conj {d a c : ℕ} (hd : 0 < d)
       ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), (∀ i, w i p ≠ 0) ∧
         (∀ i, w (σ i) p = conj (w i (τ p.1, conj p.2))) ∧
         (p.2 ≠ 0 → ∀ i, r i p = p.2 ^ e i * w i p) := by
-  obtain ⟨m, w, hw, hw0, hform⟩ := exists_root_eq_zpow_mul_unit hd hs hu hu0 hv hv0
+  obtain ⟨m, w, hw, hw0, hform⟩ := exists_root_eq_zpow_mul_unit hs hu hu0 hv hv0
     hnorm (by simpa using hlead) (by simpa using hconst) hscale
   let e : Fin d → ℤ := fun i ↦ (m i : ℤ) - c
   have hform' : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)),

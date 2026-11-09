@@ -24,17 +24,16 @@ are also those of the DG right modules of chains of a space with a right action 
 * `TauCeti.cubicalChainGrading G R`: the `ℤ`-grading of `normalizedCubicalChainAlgebra G R`, with
   `C^□_n` in degree `-n`.
 * `TauCeti.cubicalChainDifferential G R`: the boundary as an `R`-linear endomorphism.
+* `TauCeti.cubicalChainSumMap R f`: the push-forward `⨁ n, C^□_n(X; R) → ⨁ n, C^□_n(Y; R)` along
+  a continuous map `f : X → Y`.
 * The `GradedAlgebra` instance on `cubicalChainGrading G R`.
-* `TauCeti.cubicalChainPushforward R f`: the push-forward of all normalized cubical chains along a
-  continuous map `f`.
 
 ## Main results
 
+* `TauCeti.cubicalChainSumMap_id`, `TauCeti.cubicalChainSumMap_comp`,
+  `TauCeti.cubicalChainDifferential_cubicalChainSumMap`: the push-forward is a functorial chain map.
 * `TauCeti.cubicalChain_isDGAlgebra`: `normalizedCubicalChainAlgebra G R` with this grading and
   differential is a differential graded algebra.
-* `TauCeti.cubicalChainPushforward_mem`,
-  `TauCeti.cubicalChainDifferential_cubicalChainPushforward`: the push-forward preserves the
-  grading and commutes with the differential.
 
 ## References
 
@@ -82,6 +81,18 @@ theorem mem_cubicalChainGrading_iff {i : ℤ} {x : normalizedCubicalChainAlgebra
         exact ⟨y, rfl⟩
       exact key _ hn'
 
+/-- The cubical chains have no elements of positive cohomological degree. -/
+theorem cubicalChainGrading_eq_bot {i : ℤ} (hi : 0 < i) : cubicalChainGrading G R i = ⊥ := by
+  rw [cubicalChainGrading]
+  split_ifs with h
+  · omega
+  · rfl
+
+/-- A chain of positive cohomological degree vanishes. -/
+theorem eq_zero_of_mem_cubicalChainGrading_of_pos {i : ℤ} (hi : 0 < i)
+    {x : normalizedCubicalChainAlgebra G R} (hx : x ∈ cubicalChainGrading G R i) : x = 0 := by
+  rwa [cubicalChainGrading_eq_bot G R hi, Submodule.mem_bot] at hx
+
 /-- A chain of dimension `n` lies in cohomological degree `-n`. -/
 theorem cubicalChainLof_mem {n : ℕ} (y : NormalizedCubicalChain G R n) :
     cubicalChainLof G R n y ∈ cubicalChainGrading G R (-(n : ℤ)) :=
@@ -111,13 +122,6 @@ instance : DirectSum.Decomposition (cubicalChainGrading G R) :=
       · obtain rfl : i = -(n : ℤ) := by omega
         simp [cubicalChainDecompose, DirectSum.lof_eq_of]
         rfl)
-
-/-- The normalized cubical chains vanish in positive cohomological degrees. -/
-theorem cubicalChainGrading_eq_bot_of_pos {i : ℤ} (hi : 0 < i) : cubicalChainGrading G R i = ⊥ :=
-  eq_bot_iff.2 fun a ha ↦ by
-    rcases (mem_cubicalChainGrading_iff G R).1 ha with h | ⟨n, c, hn, -⟩
-    · exact (Submodule.mem_bot R).2 h
-    · omega
 
 variable [Monoid G] [ContinuousMul G]
 
@@ -227,6 +231,67 @@ theorem cubicalChainDifferential_cubicalChainDifferential
         boundary_boundary, LinearMap.zero_apply, map_zero]
   | add a b ha hb => rw [map_add, map_add, ha, hb, add_zero]
 
+section SumMap
+
+variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+
+/-- The **push-forward** `f_* : ⨁ n, C^□_n(X; R) → ⨁ n, C^□_n(Y; R)` along a continuous map,
+dimension by dimension. -/
+def cubicalChainSumMap (f : C(X, Y)) :
+    normalizedCubicalChainAlgebra X R →ₗ[R] normalizedCubicalChainAlgebra Y R :=
+  DirectSum.lmap fun n ↦ map R f n
+
+variable {R}
+
+/-- The push-forward on a chain of dimension `n`. -/
+@[simp]
+theorem cubicalChainSumMap_lof (f : C(X, Y)) {n : ℕ} (c : NormalizedCubicalChain X R n) :
+    cubicalChainSumMap R f (cubicalChainLof X R n c) = cubicalChainLof Y R n (map R f n c) :=
+  DirectSum.lmap_lof _ n c
+
+/-- The push-forward along the identity is the identity. -/
+@[simp]
+theorem cubicalChainSumMap_id : cubicalChainSumMap R (ContinuousMap.id X) = LinearMap.id :=
+  DirectSum.linearMap_ext R fun n ↦ LinearMap.ext fun c ↦ by
+    rw [LinearMap.comp_apply, cubicalChainSumMap_lof, NormalizedCubicalChain.map_id]
+    rfl
+
+/-- The push-forward along a composite is the composite of the push-forwards. -/
+theorem cubicalChainSumMap_comp (g : C(Y, Z)) (f : C(X, Y)) :
+    cubicalChainSumMap R (g.comp f) = cubicalChainSumMap R g ∘ₗ cubicalChainSumMap R f :=
+  DirectSum.linearMap_ext R fun n ↦ LinearMap.ext fun c ↦ by
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply, cubicalChainSumMap_lof,
+      cubicalChainSumMap_lof, cubicalChainSumMap_lof, NormalizedCubicalChain.map_comp,
+      LinearMap.comp_apply]
+
+/-- The push-forward preserves the cohomological degree. -/
+theorem cubicalChainSumMap_mem (f : C(X, Y)) {i : ℤ} {a : normalizedCubicalChainAlgebra X R}
+    (ha : a ∈ cubicalChainGrading X R i) :
+    cubicalChainSumMap R f a ∈ cubicalChainGrading Y R i := by
+  rcases (mem_cubicalChainGrading_iff X R).1 ha with rfl | ⟨n, c, hn, rfl⟩
+  · rw [map_zero]
+    exact zero_mem _
+  · exact (mem_cubicalChainGrading_iff Y R).2
+      (Or.inr ⟨n, _, hn, (cubicalChainSumMap_lof f c).symm⟩)
+
+/-- **The push-forward is a chain map**: it commutes with the boundary. -/
+theorem cubicalChainDifferential_cubicalChainSumMap (f : C(X, Y))
+    (a : normalizedCubicalChainAlgebra X R) :
+    cubicalChainDifferential Y R (cubicalChainSumMap R f a) =
+      cubicalChainSumMap R f (cubicalChainDifferential X R a) := by
+  induction a using DirectSum.induction_on with
+  | zero => simp
+  | add a a' ha ha' => rw [map_add, map_add, ha, ha', map_add, map_add]
+  | of n c =>
+    rw [← DirectSum.lof_eq_of R, cubicalChainSumMap_lof]
+    rcases n with _ | k
+    · rw [cubicalChainDifferential_lof_zero, cubicalChainDifferential_lof_zero, map_zero]
+    · rw [cubicalChainDifferential_lof_succ, cubicalChainDifferential_lof_succ,
+        cubicalChainSumMap_lof, ← LinearMap.comp_apply (map R f k), map_boundary,
+        LinearMap.comp_apply]
+
+end SumMap
+
 variable [Monoid G] [ContinuousMul G]
 
 /-- The graded Leibniz rule on homogeneous chains. -/
@@ -295,70 +360,6 @@ theorem cubicalChain_isDGAlgebra :
       abel
 
 end Differential
-
-section Pushforward
-
-variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
-  (R : Type*) [CommRing R]
-
-open NormalizedCubicalChain
-
-/-- The **push-forward of normalized cubical chains** along a continuous map `f : X → Y`, in all
-dimensions at once: the direct sum of the componentwise push-forwards. -/
-def cubicalChainPushforward (f : C(X, Y)) :
-    normalizedCubicalChainAlgebra X R →ₗ[R] normalizedCubicalChainAlgebra Y R :=
-  DirectSum.lmap fun n ↦ map R f n
-
-variable {R}
-
-/-- The push-forward of a chain of dimension `n`. -/
-@[simp]
-theorem cubicalChainPushforward_lof (f : C(X, Y)) (n : ℕ) (c : NormalizedCubicalChain X R n) :
-    cubicalChainPushforward R f (cubicalChainLof X R n c) = cubicalChainLof Y R n (map R f n c) :=
-  DirectSum.lmap_lof _ n c
-
-/-- The push-forward along the identity is the identity. -/
-@[simp]
-theorem cubicalChainPushforward_id (a : normalizedCubicalChainAlgebra X R) :
-    cubicalChainPushforward R (ContinuousMap.id X) a = a := by
-  simp only [cubicalChainPushforward, NormalizedCubicalChain.map_id, DirectSum.lmap_id,
-    LinearMap.id_apply]
-
-/-- The push-forward along a composite is the composite of the push-forwards. -/
-theorem cubicalChainPushforward_comp (g : C(Y, Z)) (f : C(X, Y))
-    (a : normalizedCubicalChainAlgebra X R) :
-    cubicalChainPushforward R (g.comp f) a =
-      cubicalChainPushforward R g (cubicalChainPushforward R f a) := by
-  simp only [cubicalChainPushforward, NormalizedCubicalChain.map_comp, DirectSum.lmap_comp,
-    LinearMap.comp_apply]
-
-/-- The push-forward preserves the cohomological degree. -/
-theorem cubicalChainPushforward_mem (f : C(X, Y)) {i : ℤ} {a : normalizedCubicalChainAlgebra X R}
-    (ha : a ∈ cubicalChainGrading X R i) :
-    cubicalChainPushforward R f a ∈ cubicalChainGrading Y R i := by
-  rcases (mem_cubicalChainGrading_iff X R).1 ha with rfl | ⟨n, c, hn, rfl⟩
-  · rw [map_zero]
-    exact zero_mem _
-  · rw [cubicalChainPushforward_lof]
-    exact (mem_cubicalChainGrading_iff Y R).2 (Or.inr ⟨n, _, hn, rfl⟩)
-
-/-- The push-forward commutes with the boundary. -/
-theorem cubicalChainDifferential_cubicalChainPushforward (f : C(X, Y))
-    (a : normalizedCubicalChainAlgebra X R) :
-    cubicalChainDifferential Y R (cubicalChainPushforward R f a) =
-      cubicalChainPushforward R f (cubicalChainDifferential X R a) := by
-  induction a using DirectSum.induction_on with
-  | zero => simp
-  | of n c =>
-    rw [← DirectSum.lof_eq_of R, cubicalChainPushforward_lof]
-    rcases n with _ | k
-    · rw [cubicalChainDifferential_lof_zero, cubicalChainDifferential_lof_zero, map_zero]
-    · rw [cubicalChainDifferential_lof_succ, cubicalChainDifferential_lof_succ,
-        cubicalChainPushforward_lof, ← LinearMap.comp_apply (boundary Y R k), ← map_boundary,
-        LinearMap.comp_apply]
-  | add a b ha hb => rw [map_add, map_add, ha, hb, map_add, map_add]
-
-end Pushforward
 
 end TauCeti
 

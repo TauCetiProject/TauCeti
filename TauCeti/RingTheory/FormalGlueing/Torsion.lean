@@ -252,6 +252,20 @@ theorem baseChangeHom_bijective_of_primaryComponent_eq_top_left (hIfg : I.FG) {N
     -- The goal is `h` with the codomain restriction applied to `m` unfolded.
     exact h
 
+/-- Postcomposition with `n ↦ 1 ⊗ n` detects linear maps from an `I`-power torsion module
+when `I` is finitely generated and the flat algebra preserves the quotient by `I`. -/
+theorem tensorProduct_mk_comp_injective_of_primaryComponent_eq_top (hIfg : I.FG)
+    {N : Type*} [AddCommGroup N] [Module R N] (hM : I.primaryComponent M = ⊤) :
+    Injective (fun f : M →ₗ[R] N ↦ (TensorProduct.mk R S N 1).comp f) := by
+  intro f g hfg
+  apply (baseChangeHom_bijective_of_primaryComponent_eq_top_left hI hIfg hM).1
+  apply TensorProduct.AlgebraTensorModule.ext
+  intro s m
+  have hm : (1 : S) ⊗ₜ[R] f m = 1 ⊗ₜ[R] g m := LinearMap.congr_fun hfg m
+  simpa only [LinearMap.baseChangeHom_apply, LinearMap.baseChange_tmul,
+    TensorProduct.smul_tmul', smul_eq_mul, mul_one] using
+      congrArg (fun t : S ⊗[R] N ↦ s • t) hm
+
 /-- An `S`-module that is `IS`-power torsion is the base change of its underlying `R`-module:
 the multiplication map `S ⊗[R] N → N` is bijective. -/
 @[stacks 05EC "(3), essential surjectivity"]
