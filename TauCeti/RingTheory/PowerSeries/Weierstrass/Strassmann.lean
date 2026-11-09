@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.Analysis.Normed.Algebra.Ultra
 public import TauCeti.RingTheory.PowerSeries.EvalAt
+public import TauCeti.RingTheory.PowerSeries.Restricted.GoodZero
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
 import TauCeti.Analysis.Normed.Group.Basic
 
@@ -26,6 +27,9 @@ of the ring of series restricted at `c`. Evaluation at a point `x` with `‖x‖
 homomorphism on that ring, so it sends `e` to a unit, and the zeros of `f` in the disc are roots of
 `ω`. The field `L` is automatically ultrametric, since `K` is and `L` is a normed `K`-algebra.
 
+Counting zeros with their multiplicities, the orders of the good zeros of `f` in the closed disc
+add up to at most `s`, since they are root multiplicities of `ω`.
+
 As a consequence, a series restricted at `c` that vanishes on an infinite subset of the closed disc
 of radius `c` is zero. The bound is sharp: `X ^ p - X` over `ℚ_p` is distinguished of degree `p` at
 the unit radius and vanishes at the `p` Teichmüller representatives in `ℤ_p`.
@@ -37,6 +41,8 @@ field extensions of `K`: each `φⱼ` turns such a series into a restricted seri
 ## Main results
 
 * `TauCeti.PowerSeries.IsDistinguished.encard_setOf_evalAt_eq_zero_le`: Strassmann's theorem.
+* `TauCeti.PowerSeries.IsDistinguished.sum_le_of_isGoodZero`: Strassmann's theorem with
+  multiplicities.
 * `PowerSeries.IsRestricted.eq_zero_of_infinite_of_evalAt_eq_zero`: the identity principle for
   restricted series.
 * `TauCeti.PowerSeries.eq_zero_of_hasSum_pow_smul`: the identity principle for series with
@@ -86,6 +92,29 @@ theorem IsDistinguished.encard_setOf_evalAt_eq_zero_le (hf : IsDistinguished c s
     _ ≤ (ω.map (algebraMap K L)).natDegree := Polynomial.card_roots' _
     _ ≤ ω.natDegree := Polynomial.natDegree_map_le
     _ = s := hω.natDegree_eq
+
+/-- **Strassmann's theorem with multiplicities.** Let `f` be restricted at `c > 0` and
+distinguished of degree `s` there. If `f` has a good zero of order `h a` at each point `a` of a
+finite set `S` in the closed disc of radius `c`, then `∑_{a ∈ S} h a ≤ s`. -/
+theorem IsDistinguished.sum_le_of_isGoodZero (hfd : IsDistinguished c s f) (hc : 0 < c)
+    (hfr : f.IsRestricted c) {S : Finset K} {h : K → ℕ}
+    (hS : ∀ a ∈ S, ‖a‖ ≤ c ∧ f.IsGoodZero a (h a)) :
+    ∑ a ∈ S, h a ≤ s := by
+  classical
+  obtain ⟨u, P, hu, hP, hmul⟩ :=
+    hfd.exists_isUnit_isMonicOfDegree_mul_eq hfd.coeff_ne_zero.isUnit hc hfr
+  have hroot : ∀ a ∈ S, h a = P.roots.count a := fun a ha ↦ by
+    rw [Polynomial.count_roots]
+    exact ((_root_.PowerSeries.isGoodZero_iff_rootMultiplicity_eq_of_isUnit_mul hu hmul
+      hfd.ne_zero (hS a ha).1).1 (hS a ha).2).symm
+  rw [Finset.sum_congr rfl hroot, ← hP.natDegree_eq]
+  calc ∑ a ∈ S, P.roots.count a ≤ ∑ a ∈ S ∪ P.roots.toFinset, P.roots.count a :=
+        Finset.sum_le_sum_of_subset Finset.subset_union_left
+    _ = ∑ a ∈ P.roots.toFinset, P.roots.count a :=
+        (Finset.sum_subset Finset.subset_union_right fun a _ ha ↦
+          Multiset.count_eq_zero.2 (by simpa using ha)).symm
+    _ = Multiset.card P.roots := Multiset.toFinset_sum_count_eq _
+    _ ≤ P.natDegree := Polynomial.card_roots' P
 
 end TauCeti.PowerSeries
 
