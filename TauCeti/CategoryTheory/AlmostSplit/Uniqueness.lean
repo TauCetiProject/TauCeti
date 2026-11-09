@@ -25,21 +25,27 @@ split monomorphism; the left almost-split lifting property of the second sequenc
 an isomorphism (`TauCeti.IsLeftAlmostSplit.isIso_of_isSplitMono_of_comm`).
 
 The ambient category is preadditive and balanced, so exactness supplies the kernel lifts
-used to construct comparison maps and the short five lemma applies.
+used to construct comparison maps and the short five lemma applies. Invertibility at the left-hand
+end needs balancedness only through the universal property of the kernel
+(`CategoryTheory.ShortComplex.IsAlmostSplit.isIso_τ₁_of_isIso_τ₃`), which is what makes it available
+for the conflations of an exact category.
 
 The rigidity input only needs non-splitness, not either lifting property. It is developed in
-`TauCeti.Algebra.Homology.ShortComplex.LocalEnd`, for exact short complexes with a local
+`TauCeti.Algebra.Homology.ShortComplex.LocalEnd`, for short complexes with a local
 endomorphism ring at the end opposite the fixed component. The same general results also
 supply the minimality criteria used to construct almost-split sequences.
 
 ## Main results
 
 * `TauCeti.IsRightAlmostSplit.exists_hom_τ₃_eq_of_not_isSplitEpi`: **the comparison morphism.** A
-  map into the right-hand end of an exact short complex with monic first map and right almost split
-  second map, whose composite with the first sequence's `g` is not a split epimorphism, is the third
-  component of a morphism of short complexes;
+  map into the right-hand end of a short complex whose first map is a kernel of its right almost
+  split second map, and whose composite with the first sequence's `g` is not a split epimorphism, is
+  the third component of a morphism of short complexes;
   `CategoryTheory.ShortComplex.IsAlmostSplit.exists_hom_τ₃_eq` is the case of an isomorphism
   between the right-hand ends of two almost-split sequences.
+* `CategoryTheory.ShortComplex.IsAlmostSplit.isIso_τ₁_of_isIso_τ₃`: a morphism between two
+  almost-split sequences that is invertible at the right-hand end is invertible at the left-hand
+  end, as soon as the first map of the source is a kernel of its second map.
 * `CategoryTheory.ShortComplex.IsAlmostSplit.isIso_of_isIso_τ₃`: **a morphism between two
   almost-split sequences that is invertible at the right-hand end is invertible**, the sharp form
   of uniqueness.
@@ -66,59 +72,65 @@ universe v u
 
 namespace TauCeti
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [Balanced C] {S S' : ShortComplex C}
+variable {C : Type u} [Category.{v} C] [Preadditive C] {S S' : ShortComplex C}
 
 /-! ### The comparison morphism -/
 
-/-- **A map `e` into the right-hand end of an exact short complex `S'` with monic first map and
+/-- **A map `e` into the right-hand end of a short complex `S'` whose first map is a kernel of its
 right almost split second map extends to a morphism of short complexes `S ⟶ S'`, as soon as
 `S.g ≫ e` is not a split epimorphism.**  No hypothesis on `S` beyond its being a short complex is
 needed. -/
 theorem IsRightAlmostSplit.exists_hom_τ₃_eq_of_not_isSplitEpi (hg : IsRightAlmostSplit S'.g)
-    (hS' : S'.Exact) [Mono S'.f] (e : S.X₃ ⟶ S'.X₃) (he : ¬ IsSplitEpi (S.g ≫ e)) :
-    ∃ φ : S ⟶ S', φ.τ₃ = e := by
+    (hS' : IsLimit (KernelFork.ofι S'.f S'.zero)) (e : S.X₃ ⟶ S'.X₃)
+    (he : ¬ IsSplitEpi (S.g ≫ e)) : ∃ φ : S ⟶ S', φ.τ₃ = e := by
   -- `S.g ≫ e` factors through the right almost split map `S'.g`.
   obtain ⟨β, hβ⟩ := hg.factors S.X₂ (S.g ≫ e) he
   -- The resulting map of middle terms carries `S.f` into the kernel of `S'.g`, which is `S'.f`.
   have hzero : (S.f ≫ β) ≫ S'.g = 0 := by
     rw [Category.assoc, hβ, ← Category.assoc, S.zero, zero_comp]
-  obtain ⟨α, hα⟩ := hS'.lift' (S.f ≫ β) hzero
+  obtain ⟨α, hα⟩ := KernelFork.IsLimit.lift' hS' (S.f ≫ β) hzero
   exact ⟨⟨α, β, e, hα, hβ⟩, rfl⟩
 
 end TauCeti
 
 namespace CategoryTheory.ShortComplex
 
-variable {C : Type u} [Category.{v} C] [Preadditive C] [Balanced C] {S S' : ShortComplex C}
+variable {C : Type u} [Category.{v} C] [Preadditive C] {S S' : ShortComplex C}
 
 namespace IsAlmostSplit
 
 /-! ### Uniqueness -/
 
+/-- **A morphism of almost-split sequences that is invertible at the right-hand end is invertible
+at the left-hand end**, when the first map of the source is a kernel of its second map. -/
+theorem isIso_τ₁_of_isIso_τ₃ (hS : S.IsAlmostSplit) (hS' : S'.IsAlmostSplit)
+    (hk : IsLimit (KernelFork.ofι S.f S.zero)) (φ : S ⟶ S') [IsIso φ.τ₃] : IsIso φ.τ₁ := by
+  have := hS.isLeftAlmostSplit_f.isLocalRing_end
+  -- A reverse comparison makes the composite invertible at the first sequence's left end.
+  obtain ⟨ψ, hψ⟩ := hS.isRightAlmostSplit_g.exists_hom_τ₃_eq_of_not_isSplitEpi hk (inv φ.τ₃)
+    (hS'.isRightAlmostSplit_g.comp_iso (inv φ.τ₃)).not_isSplitEpi
+  have hcomp : IsIso ((φ ≫ ψ).τ₁) :=
+    isIso_τ₁_of_τ₃_eq_id hk hS.isLeftAlmostSplit_f.not_isSplitMono (φ ≫ ψ) (by simp [hψ])
+  rw [comp_τ₁] at hcomp
+  have : IsSplitMono φ.τ₁ := TauCeti.isSplitMono_of_isSplitMono_comp φ.τ₁ ψ.τ₁
+  -- The second sequence's lifting property upgrades the split comparison to an isomorphism.
+  exact hS'.isLeftAlmostSplit_f.isIso_of_isSplitMono_of_comm
+    hS.isLeftAlmostSplit_f.not_isSplitMono φ.τ₁ φ.τ₂ φ.comm₁₂.symm
+
+variable [Balanced C]
+
 /-- **An isomorphism between the right-hand ends of two almost-split sequences is the third
 component of a morphism of short complexes between them.** -/
 theorem exists_hom_τ₃_eq (hS : S.IsAlmostSplit) (hS' : S'.IsAlmostSplit) (e : S.X₃ ≅ S'.X₃) :
-    ∃ φ : S ⟶ S', φ.τ₃ = e.hom := by
-  have hmono := hS'.shortExact.mono_f
-  exact hS'.isRightAlmostSplit_g.exists_hom_τ₃_eq_of_not_isSplitEpi hS'.shortExact.exact e.hom
+    ∃ φ : S ⟶ S', φ.τ₃ = e.hom :=
+  hS'.isRightAlmostSplit_g.exists_hom_τ₃_eq_of_not_isSplitEpi hS'.shortExact.fIsKernel e.hom
     (hS.isRightAlmostSplit_g.comp_iso e.hom).not_isSplitEpi
 
 /-- **A morphism of almost-split sequences that is invertible at the right-hand end is
 invertible**, the sharp form of uniqueness. -/
 theorem isIso_of_isIso_τ₃ (hS : S.IsAlmostSplit) (hS' : S'.IsAlmostSplit)
     (φ : S ⟶ S') [IsIso φ.τ₃] : IsIso φ := by
-  have := hS.isLeftAlmostSplit_f.isLocalRing_end
-  -- A reverse comparison makes the composite invertible at the first sequence's left end.
-  obtain ⟨ψ, hψ⟩ := hS'.exists_hom_τ₃_eq hS (asIso φ.τ₃).symm
-  have hmono := hS.shortExact.mono_f
-  have hcomp : IsIso ((φ ≫ ψ).τ₁) :=
-    hS.shortExact.exact.isIso_τ₁_of_τ₃_eq_id hS.isLeftAlmostSplit_f.not_isSplitMono
-      (φ ≫ ψ) (by simp [hψ])
-  rw [comp_τ₁] at hcomp
-  have : IsSplitMono φ.τ₁ := TauCeti.isSplitMono_of_isSplitMono_comp φ.τ₁ ψ.τ₁
-  -- The second sequence's lifting property upgrades the split comparison to an isomorphism.
-  have : IsIso φ.τ₁ := hS'.isLeftAlmostSplit_f.isIso_of_isSplitMono_of_comm
-    hS.isLeftAlmostSplit_f.not_isSplitMono φ.τ₁ φ.τ₂ φ.comm₁₂.symm
+  have : IsIso φ.τ₁ := hS.isIso_τ₁_of_isIso_τ₃ hS' hS.shortExact.fIsKernel φ
   have : IsIso φ.τ₂ := isIso₂_of_shortExact_of_isIso₁₃ φ hS.shortExact hS'.shortExact
   exact isIso_of_isIso φ
 

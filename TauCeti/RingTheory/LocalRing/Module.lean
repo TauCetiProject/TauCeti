@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
@@ -39,6 +41,8 @@ covers is how minimal free resolutions are built.
   basis.
 * `TauCeti.IsLocalRing.exists_surjective_ker_le_maximalIdeal_smul`: a finite module over a local
   ring `(R, 𝔪, k)` is a quotient of `R ^ dim_k (k ⊗ M)` by a submodule of `𝔪 • R ^ dim_k (k ⊗ M)`.
+* `TauCeti.IsLocalRing.exists_linearMap_quotient_eq_one`: an element of a module `M` outside
+  `𝔪 • M` is sent to `1` by a linear map `M → R ⧸ 𝔪`.
 
 ## References
 
@@ -141,5 +145,18 @@ theorem exists_surjective_ker_le_maximalIdeal_smul_shrink {R : Type u} [CommRing
   rw [LinearMap.ker_comp, Submodule.comap_equiv_eq_map_symm]
   refine (Submodule.map_mono hfker).trans ?_
   rw [Submodule.map_smul'', Submodule.map_top, LinearEquiv.range]
+
+/-- **An element of a module over a local ring outside `𝔪 • M` is sent to `1` by a linear map to
+the residue field**, since its class in the vector space `M ⧸ 𝔪 • M` is nonzero. -/
+theorem exists_linearMap_quotient_eq_one {m : M}
+    (hm : m ∉ _root_.IsLocalRing.maximalIdeal R • (⊤ : Submodule R M)) :
+    ∃ r : M →ₗ[R] R ⧸ _root_.IsLocalRing.maximalIdeal R, r m = 1 := by
+  let : Field (R ⧸ _root_.IsLocalRing.maximalIdeal R) := Ideal.Quotient.field _
+  have hx : (Submodule.Quotient.mk m : M ⧸ _root_.IsLocalRing.maximalIdeal R • (⊤ : Submodule R M))
+      ≠ 0 := by
+    rwa [Ne, Submodule.Quotient.mk_eq_zero]
+  obtain ⟨φ, hφ⟩ :=
+    Module.Projective.exists_dual_eq_one (R ⧸ _root_.IsLocalRing.maximalIdeal R) hx
+  exact ⟨(φ.restrictScalars R) ∘ₗ Submodule.mkQ _, hφ⟩
 
 end TauCeti.IsLocalRing

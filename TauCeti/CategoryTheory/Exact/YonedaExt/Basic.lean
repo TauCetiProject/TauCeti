@@ -118,6 +118,11 @@ abbrev shortComplex (e : E.Extension Z X) : ShortComplex C :=
 theorem isKernelCokernelPair (e : E.Extension Z X) : IsKernelCokernelPair e.shortComplex :=
   E.isKernelCokernelPair _ e.conflation
 
+/-- The conflation underlying an extension is short exact. -/
+theorem shortExact (e : E.Extension Z X) : e.shortComplex.ShortExact :=
+  have := e.isKernelCokernelPair.hasHomology
+  e.isKernelCokernelPair.shortExact
+
 /-- **A morphism of extensions is an isomorphism.** A morphism of middle terms compatible with
 the inflations and the deflations is invertible, by the short five lemma. -/
 theorem isIso_of_f_comp_eq_of_comp_g_eq {e e' : E.Extension Z X} (φ : e.obj ⟶ e'.obj)
