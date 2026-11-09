@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Abs
 public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.InnerProductSpace.Gram.Factor
 public import TauCeti.Analysis.Normed.Operator.RealAlgebra
+import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
 
 /-!
 # The modulus of a bounded operator
@@ -53,6 +54,8 @@ No finite dimension is assumed. For linear maps between finite-dimensional space
   commutes with `|T|`.
 * `ContinuousLinearMap.norm_modulus_comp`, `ContinuousLinearMap.norm_comp_modulus`: the
   composition laws `‖|T| D‖ = ‖T D‖` and `‖D |T|‖ = ‖D T†‖`.
+* `ContinuousLinearMap.continuous_modulus`: between real Hilbert spaces, the modulus depends
+  continuously on the operator.
 
 ## References
 
@@ -245,5 +248,21 @@ theorem isStrictlyPositive_modulus_of_forall_norm_le (T : E →L[𝕜] F)
     ((CFC.one_le_iff (R := ℝ) _ T.isSelfAdjoint_modulus).mp hP r hr)
 
 end RealAlgebra
+
+section Real
+
+variable {X Y : Type*} [NormedAddCommGroup X] [InnerProductSpace ℝ X] [CompleteSpace X]
+  [NormedAddCommGroup Y] [InnerProductSpace ℝ Y] [CompleteSpace Y]
+
+/-- Between real Hilbert spaces, the modulus `|T| = √(T† T)` depends continuously on `T` in the
+operator norm. -/
+theorem continuous_modulus : Continuous (modulus : (X →L[ℝ] Y) → X →L[ℝ] X) := by
+  have hgram : Continuous fun T : X →L[ℝ] Y ↦ T† ∘L T :=
+    (adjoint.continuous.comp continuous_id).clm_comp continuous_id
+  have h := CFC.continuousOn_sqrt.comp_continuous hgram
+    fun T ↦ nonneg_iff_isPositive.2 (isPositive_adjoint_comp_self T)
+  exact h.congr fun T ↦ (modulus_eq_sqrt T).symm
+
+end Real
 
 end ContinuousLinearMap

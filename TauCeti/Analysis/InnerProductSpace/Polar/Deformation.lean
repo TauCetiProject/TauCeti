@@ -19,7 +19,10 @@ coordinate ball or raising the negative quadratic value above its boundary value
 
 The construction uses `ContinuousLinearMap.polarFactor` and the positive modulus, together
 with real powers from the continuous functional calculus. It does not require a choice of
-eigenbasis or finite dimensionality.
+eigenbasis or finite dimensionality. The deformation is jointly continuous in the operator and
+the parameter on the operators with strictly positive modulus
+(`ContinuousLinearMap.continuousOn_polarDeformation`), so a continuous family of expanding
+operators deforms continuously to the family of its polar factors.
 
 ## References
 
@@ -28,7 +31,7 @@ eigenbasis or finite dimensionality.
 
 public section
 
-open Set
+open Set Topology
 
 namespace ContinuousLinearMap
 
@@ -60,16 +63,28 @@ theorem polarDeformation_one (T : E →L[ℝ] E) : T.polarDeformation 1 = T.pola
   rw [polarDeformation_def, sub_self, CFC.rpow_zero _ T.modulus_nonneg]
   rw [one_def, comp_id]
 
+/-- The polar deformation is jointly continuous in the operator and the parameter, on the
+operators whose modulus is strictly positive. -/
+theorem continuousOn_polarDeformation :
+    ContinuousOn (fun p : (E →L[ℝ] E) × ℝ ↦ p.1.polarDeformation p.2)
+      ({T | IsStrictlyPositive T.modulus} ×ˢ univ) := by
+  intro p hp
+  have hpow : ContinuousOn (fun q : (E →L[ℝ] E) × ℝ ↦ q.1.modulus ^ (1 - q.2))
+      ({T | IsStrictlyPositive T.modulus} ×ˢ univ) :=
+    CFC.continuousOn_rpow_prod.comp (f := fun q : (E →L[ℝ] E) × ℝ ↦ (q.1.modulus, 1 - q.2))
+      ((continuous_modulus.comp continuous_fst).prodMk
+        (continuous_const.sub continuous_snd)).continuousOn
+      fun q hq ↦ ⟨hq.1, trivial⟩
+  have hU : ContinuousAt (fun q : (E →L[ℝ] E) × ℝ ↦ q.1.polarFactor) p :=
+    (continuousAt_polarFactor hp.1.isUnit).comp continuous_fst.continuousAt
+  simpa only [polarDeformation_def] using hU.continuousWithinAt.clm_comp (hpow p hp)
+
 /-- The polar deformation is continuous in the parameter in operator norm when the modulus
 is strictly positive. -/
 theorem continuous_polarDeformation (T : E →L[ℝ] E) (hT : IsStrictlyPositive T.modulus) :
-    Continuous T.polarDeformation := by
-  have hp : Continuous (fun t : ℝ ↦ T.modulus ^ (1 - t)) := by
-    simp_rw [CFC.rpow_eq_exp_smul_log _ _ hT]
-    have hexp : Continuous (NormedSpace.exp : (E →L[ℝ] E) → (E →L[ℝ] E)) :=
-      continuous_iff_continuousAt.mpr fun A ↦ (NormedSpace.exp_analytic (𝕂 := ℝ) A).continuousAt
-    exact hexp.comp ((continuous_const.sub continuous_id).smul continuous_const)
-  exact continuous_const.clm_comp hp
+    Continuous T.polarDeformation :=
+  continuousOn_polarDeformation.comp_continuous (f := fun t ↦ (T, t)) (by fun_prop)
+    fun _ ↦ ⟨hT, trivial⟩
 
 /-- For an injective operator, the norm along the deformation is the norm of the corresponding
 power of its modulus. -/

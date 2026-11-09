@@ -43,6 +43,8 @@ isometry, and when `|T|` is invertible it is `T |T|⁻¹`.
 * `ContinuousLinearMap.modulus_adjoint_comp_polarFactor`: the left polar decomposition
   `|T†| U = T`.
 * `ContinuousLinearMap.polarFactor_eq_comp_inverse`: `U = T |T|⁻¹` when `|T|` is invertible.
+* `ContinuousLinearMap.continuousAt_polarFactor`: between real Hilbert spaces, the polar factor
+  is continuous at every operator whose modulus is invertible.
 * `ContinuousLinearMap.norm_sub_polarFactor_le`: `‖T - U‖ ≤ ‖|T| - 1‖` for an endomorphism `T`.
 
 ## References
@@ -228,5 +230,27 @@ theorem isUnit_polarFactor (T : E →L[𝕜] E) (hT : IsUnit T) : IsUnit T.polar
 /-- The polar factor `U` of an endomorphism `T` satisfies `‖T - U‖ ≤ ‖|T| - 1‖`. -/
 theorem norm_sub_polarFactor_le (T : E →L[𝕜] E) : ‖T - T.polarFactor‖ ≤ ‖T.modulus - 1‖ :=
   norm_sub_factorThru_le fun x ↦ (T.norm_modulus_apply x).ge
+
+section Real
+
+open Topology
+
+variable {X Y : Type*} [NormedAddCommGroup X] [InnerProductSpace ℝ X] [CompleteSpace X]
+  [NormedAddCommGroup Y] [InnerProductSpace ℝ Y] [CompleteSpace Y]
+
+/-- Between real Hilbert spaces, the polar factor depends continuously on the operator near every
+operator whose modulus is invertible, where it is `T |T|⁻¹`. -/
+theorem continuousAt_polarFactor {T : X →L[ℝ] Y} (hT : IsUnit T.modulus) :
+    ContinuousAt polarFactor T := by
+  have hunit : ∀ᶠ S in 𝓝 T, IsUnit S.modulus :=
+    continuous_modulus.continuousAt.eventually (Units.isOpen.mem_nhds hT)
+  obtain ⟨u, hu⟩ := hT
+  have hinv : ContinuousAt Ring.inverse T.modulus := hu ▸ NormedRing.inverse_continuousAt u
+  refine (continuousAt_id.clm_comp (hinv.comp continuous_modulus.continuousAt))
+    |>.congr_of_eventuallyEq ?_
+  filter_upwards [hunit] with S hS
+  exact polarFactor_eq_comp_inverse S hS
+
+end Real
 
 end ContinuousLinearMap
