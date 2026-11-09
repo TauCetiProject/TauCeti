@@ -79,16 +79,12 @@ theorem smul_of_continuousOn_of_tsupport_subset {Z 𝕜 F : Type*} [TopologicalS
     (hbU : tsupport b ⊆ U) (ha : ContinuousOn a U) : Continuous fun x ↦ a x • b x := by
   have hzero : ∀ x ∈ Uᶜ, b x = 0 := fun x hx ↦
     image_eq_zero_of_notMem_tsupport fun h ↦ hx (hbU h)
-  refine continuous_iff_continuousAt.2 fun x ↦ ?_
-  by_cases hxU : x ∈ U
-  · rw [← continuousWithinAt_univ, ← Set.union_compl_self U, continuousWithinAt_union]
-    refine ⟨(ha x hxU).smul hb.continuousAt.continuousWithinAt, ?_⟩
-    exact (continuousWithinAt_const.smul hb.continuousAt.continuousWithinAt).congr
-      (fun y hy ↦ by simp [hzero y hy]) rfl
-  · have hx : x ∉ tsupport b := fun h ↦ hxU (hbU h)
-    have hev : b =ᶠ[nhds x] 0 := notMem_tsupport_iff_eventuallyEq.1 hx
-    exact (continuousAt_const (y := (0 : F))).congr
-      (hev.mono fun y (hy : b y = 0) ↦ by simp [hy])
+  refine continuous_of_tsupport fun x hx ↦ ?_
+  have hxU : x ∈ U := hbU (tsupport_smul_subset_right _ _ hx)
+  rw [← continuousWithinAt_univ, ← Set.union_compl_self U, continuousWithinAt_union]
+  refine ⟨(ha x hxU).smul hb.continuousAt.continuousWithinAt, ?_⟩
+  exact (continuousWithinAt_const.smul hb.continuousAt.continuousWithinAt).congr
+    (fun y hy ↦ by simp [hzero y hy]) rfl
 
 end Continuous
 
