@@ -13,8 +13,8 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 
 The complex plane is linearly isometric to the `L²` product `WithLp 2 (ℝ × ℝ)`, the model space
 `WithLp 2 (ℝ × E)` with `E = ℝ` on which Lipschitz boundary charts, traces and the flat Sobolev
-theory are stated. `TauCeti.Complex.equivRealProdL2` reads the coordinates in the order
-`(re z, im z)`, while `TauCeti.Complex.equivRealProdL2Swap` reads them in the order `(im z, re z)`,
+theory are stated. `Complex.equivRealProdL2` reads the coordinates in the order
+`(re z, im z)`, while `Complex.equivRealProdL2Swap` reads them in the order `(im z, re z)`,
 so that the normal coordinate `im z` of the upper half-plane comes first, as in the model space.
 
 Both are linear isometries between finite-dimensional real inner product spaces, so they and their
@@ -27,20 +27,20 @@ and affine isometries.
 
 ## Main declarations
 
-* `TauCeti.Complex.equivRealProdL2`: the linear isometry `z ↦ (re z, im z)`.
-* `TauCeti.Complex.equivRealProdL2Swap`: the linear isometry `z ↦ (im z, re z)`.
+* `Complex.equivRealProdL2`: the linear isometry `z ↦ (re z, im z)`.
+* `Complex.equivRealProdL2Swap`: the linear isometry `z ↦ (im z, re z)`.
 -/
 
 public section
 
 noncomputable section
 
-namespace TauCeti.Complex
+namespace Complex
 
 /-- The complex plane as the Euclidean product: the linear isometry `z ↦ (re z, im z)` from `ℂ`
 to the `L²` product `WithLp 2 (ℝ × ℝ)`. -/
 def equivRealProdL2 : ℂ ≃ₗᵢ[ℝ] WithLp 2 (ℝ × ℝ) where
-  toLinearEquiv := Complex.equivRealProdLm.trans (WithLp.linearEquiv 2 ℝ (ℝ × ℝ)).symm
+  toLinearEquiv := equivRealProdLm.trans (WithLp.linearEquiv 2 ℝ (ℝ × ℝ)).symm
   norm_map' z := by
     simp [WithLp.prod_norm_eq_of_L2, Complex.norm_def, Complex.normSq_apply, ← sq]
 
@@ -65,4 +65,4 @@ theorem equivRealProdL2Swap_apply (z : ℂ) :
 theorem equivRealProdL2Swap_symm_apply (x : WithLp 2 (ℝ × ℝ)) :
     equivRealProdL2Swap.symm x = ⟨x.snd, x.fst⟩ := (rfl)
 
-end TauCeti.Complex
+end Complex
