@@ -19,6 +19,8 @@ transformation `z ↦ 1 / z`. It is an involution whose fixed set is the unit ci
 * `OnePoint.unitCircleInversion`: the inversion `w ↦ (conj w)⁻¹` of `OnePoint ℂ`.
 * `OnePoint.unitCircleInversion_unitCircleInversion`: it is an involution.
 * `OnePoint.unitCircleInversion_eq_self_iff`: it fixes exactly the unit circle.
+* `OnePoint.unitCircleInversion_coe_eq_coe_iff`: it maps a point of the closed unit disc into the
+  closed unit disc only on the unit circle.
 -/
 
 public section
@@ -76,9 +78,31 @@ theorem unitCircleInversion_eq_self_iff (x : OnePoint ℂ) :
   | coe z =>
     rcases eq_or_ne z 0 with rfl | hz
     · simp
-    · rw [unitCircleInversion_coe hz, coe_eq_coe]
-      simp only [coe_eq_coe, exists_eq_right]
-      rw [inv_eq_iff_eq_inv, ← mul_eq_one_iff_eq_inv₀ hz, mul_comm, mul_conj',
-        ← ofReal_pow, ofReal_eq_one, pow_eq_one_iff_of_nonneg (norm_nonneg z) two_ne_zero]
+    · rw [unitCircleInversion_coe hz, coe_eq_coe, inv_eq_iff_eq_inv, ← mul_eq_one_iff_eq_inv₀ hz,
+        mul_comm, mul_conj']
+      norm_cast
+      simp [pow_eq_one_iff_of_nonneg (norm_nonneg z) two_ne_zero]
+
+/-- On the unit circle the inversion is the identity. -/
+@[simp]
+theorem unitCircleInversion_coe_of_norm_eq_one {z : ℂ} (hz : ‖z‖ = 1) :
+    unitCircleInversion (z : OnePoint ℂ) = z :=
+  (unitCircleInversion_eq_self_iff _).2 ⟨z, hz, rfl⟩
+
+/-- The inversion carries a point of the closed unit disc into the closed unit disc only when it
+lies on the unit circle, where it is fixed. -/
+theorem unitCircleInversion_coe_eq_coe_iff {z w : ℂ} (hz : ‖z‖ ≤ 1) (hw : ‖w‖ ≤ 1) :
+    unitCircleInversion (w : OnePoint ℂ) = z ↔ ‖w‖ = 1 ∧ z = w := by
+  refine ⟨fun h ↦ ?_, fun ⟨hw1, h⟩ ↦ by rw [h, unitCircleInversion_coe_of_norm_eq_one hw1]⟩
+  rcases eq_or_ne w 0 with rfl | hw0
+  · simp at h
+  · rw [unitCircleInversion_coe hw0, coe_eq_coe] at h
+    have hnorm : ‖z‖ = ‖w‖⁻¹ := by rw [← h, norm_inv, norm_conj]
+    have hw1 : ‖w‖ = 1 :=
+      le_antisymm hw ((inv_le_one₀ (norm_pos_iff.2 hw0)).1 (hnorm ▸ hz))
+    refine ⟨hw1, ?_⟩
+    have := unitCircleInversion_coe_of_norm_eq_one hw1
+    rw [unitCircleInversion_coe hw0, coe_eq_coe] at this
+    rw [← h, this]
 
 end OnePoint

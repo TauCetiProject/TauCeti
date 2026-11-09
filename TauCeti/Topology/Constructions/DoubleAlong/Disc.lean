@@ -18,15 +18,14 @@ Under this homeomorphism the sheet exchange of the double becomes the inversion 
 circle, an orientation-reversing involution of the sphere whose fixed set is the unit circle, the
 image of the boundary.
 
-The file also records a topological analogue of the sign check for the Schottky double. Gluing
-the second sheet along the boundary by `z ↦ -conj z` rather than by the identity is the same as
-reparametrizing the second sheet of `DoubleAlong` by that map; the resulting sheet exchange fixes
-only the two boundary points `I` and `-I`, not the whole boundary circle.
+Gluing the two sheets along the boundary by `z ↦ -conj z` instead of the identity is the same as
+reparametrizing the second sheet of `DoubleAlong` by that map; the resulting sheet exchange is a
+homeomorphism fixing only the two boundary points `I` and `-I`, not the whole boundary circle.
 
 This identifies the topological Schottky double of the closed disc. The analytic atlas on the
 double is not constructed here, so neither is the antiholomorphy of the sheet exchange, nor the
-analytic sign check that gluing the boundary charts by `z ↦ -conj z` fails to match the complex
-structures of the two sheets.
+statement that gluing the boundary charts by `z ↦ -conj z` fails to match the complex structures
+of the two sheets.
 
 ## Main declarations
 
@@ -63,25 +62,6 @@ theorem mem_discBoundary {z : closedBall (0 : ℂ) 1} : z ∈ discBoundary ↔ �
 private theorem norm_le_one (z : closedBall (0 : ℂ) 1) : ‖(z : ℂ)‖ ≤ 1 :=
   mem_closedBall_zero_iff.1 z.2
 
-/-- On the unit circle the inversion is the identity. -/
-private theorem unitCircleInversion_coe_of_norm_eq_one {z : ℂ} (hz : ‖z‖ = 1) :
-    unitCircleInversion (z : OnePoint ℂ) = z :=
-  (unitCircleInversion_eq_self_iff _).2 ⟨z, hz, rfl⟩
-
-/-- A point of the second sheet lands on the closed disc only along the boundary. -/
-private theorem unitCircleInversion_coe_eq_coe {z w : ℂ} (hz : ‖z‖ ≤ 1) (hw : ‖w‖ ≤ 1)
-    (h : unitCircleInversion (w : OnePoint ℂ) = z) : ‖w‖ = 1 ∧ z = w := by
-  rcases eq_or_ne w 0 with rfl | hw0
-  · simp at h
-  · rw [unitCircleInversion_coe hw0, coe_eq_coe] at h
-    have hnorm : ‖z‖ = ‖w‖⁻¹ := by rw [← h, norm_inv, norm_conj]
-    have hw1 : ‖w‖ = 1 :=
-      le_antisymm hw ((inv_le_one₀ (norm_pos_iff.2 hw0)).1 (hnorm ▸ hz))
-    refine ⟨hw1, ?_⟩
-    have := unitCircleInversion_coe_of_norm_eq_one hw1
-    rw [unitCircleInversion_coe hw0, coe_eq_coe] at this
-    rw [← h, this]
-
 /-- The continuous map from the doubled disc to the sphere: the identity on the first sheet and the
 inversion in the unit circle on the second. -/
 private noncomputable def discDoubleMap : C(DoubleAlong discBoundary, OnePoint ℂ) :=
@@ -109,13 +89,14 @@ private theorem discDoubleMap_injective : Injective discDoubleMap := by
       rw [Subtype.ext hpq]
     | hr w =>
       rw [discDoubleMap_inl, discDoubleMap_inr] at hpq
-      obtain ⟨hw, h⟩ := unitCircleInversion_coe_eq_coe (norm_le_one z) (norm_le_one w) hpq.symm
+      obtain ⟨hw, h⟩ :=
+        (unitCircleInversion_coe_eq_coe_iff (norm_le_one z) (norm_le_one w)).1 hpq.symm
       exact (inl_eq_inr_iff _).2 ⟨Subtype.ext h, mem_discBoundary.2 (h ▸ hw)⟩
   | hr z =>
     induction q using induction_on with
     | hl w =>
       rw [discDoubleMap_inl, discDoubleMap_inr] at hpq
-      obtain ⟨hz, h⟩ := unitCircleInversion_coe_eq_coe (norm_le_one w) (norm_le_one z) hpq
+      obtain ⟨hz, h⟩ := (unitCircleInversion_coe_eq_coe_iff (norm_le_one w) (norm_le_one z)).1 hpq
       exact (inr_eq_inl_iff _).2 ⟨Subtype.ext h.symm, hz⟩
     | hr w =>
       rw [discDoubleMap_inr, discDoubleMap_inr, unitCircleInversion.injective.eq_iff,
@@ -184,9 +165,9 @@ theorem discDoubleHomeomorph_image_fixed_eq_unitCircleInversion_fixed :
   simp only [mem_image, mem_sphere_zero_iff_norm, mem_ofPred_eq,
     unitCircleInversion_eq_self_iff]
 
-/-! ### A topological analogue of the sign check -/
+/-! ### Gluing the sheets by `z ↦ -conj z` -/
 
-/-- The boundary reflection `z ↦ -conj z` of the closed unit disc. -/
+/-- The reflection `z ↦ -conj z` of the closed unit disc in the imaginary axis. -/
 def discNegConj (z : closedBall (0 : ℂ) 1) : closedBall (0 : ℂ) 1 :=
   ⟨-conj (z : ℂ), mem_closedBall_zero_iff.2 (by rw [norm_neg, norm_conj]; exact norm_le_one z)⟩
 
@@ -206,33 +187,59 @@ theorem discNegConj_mem_discBoundary {z : closedBall (0 : ℂ) 1} (hz : z ∈ di
   rw [mem_discBoundary, coe_discNegConj, norm_neg, norm_conj]
   exact hz
 
+/-- The continuous map underlying `discNegConjSwap`. -/
+private noncomputable def discNegConjSwapMap :
+    C(DoubleAlong discBoundary, DoubleAlong discBoundary) :=
+  desc discBoundary ((inr _).comp ⟨discNegConj, continuous_discNegConj⟩)
+    ((inl _).comp ⟨discNegConj, continuous_discNegConj⟩)
+    fun z ↦ (inl_coe_eq_inr _ ⟨discNegConj z, discNegConj_mem_discBoundary z.2⟩).symm
+
+private theorem discNegConjSwapMap_inl (z : closedBall (0 : ℂ) 1) :
+    discNegConjSwapMap (inl _ z) = inr _ (discNegConj z) :=
+  desc_inl _ _ _ _ z
+
+private theorem discNegConjSwapMap_inr (z : closedBall (0 : ℂ) 1) :
+    discNegConjSwapMap (inr _ z) = inl _ (discNegConj z) :=
+  desc_inr _ _ _ _ z
+
+private theorem discNegConjSwapMap_involutive : Involutive discNegConjSwapMap := fun p ↦ by
+  induction p using induction_on with
+  | hl z => simp [discNegConjSwapMap_inl, discNegConjSwapMap_inr]
+  | hr z => simp [discNegConjSwapMap_inl, discNegConjSwapMap_inr]
+
 /-- The sheet exchange for the double glued along the boundary by `z ↦ -conj z` instead of the
 identity. Reparametrizing the second sheet of that double by `z ↦ -conj z` identifies it with
 `DoubleAlong discBoundary`, and its sheet exchange becomes `inl z ↦ inr (-conj z)` and
 `inr z ↦ inl (-conj z)`. This is only the topological sheet exchange: no complex structure on the
 double is involved. -/
-noncomputable def discNegConjSwap : C(DoubleAlong discBoundary, DoubleAlong discBoundary) :=
-  desc discBoundary ((inr _).comp ⟨discNegConj, continuous_discNegConj⟩)
-    ((inl _).comp ⟨discNegConj, continuous_discNegConj⟩)
-    fun z ↦ (inl_coe_eq_inr _ ⟨discNegConj z, discNegConj_mem_discBoundary z.2⟩).symm
+noncomputable def discNegConjSwap : DoubleAlong discBoundary ≃ₜ DoubleAlong discBoundary where
+  toFun := discNegConjSwapMap
+  invFun := discNegConjSwapMap
+  left_inv := discNegConjSwapMap_involutive
+  right_inv := discNegConjSwapMap_involutive
+  continuous_toFun := discNegConjSwapMap.continuous
+  continuous_invFun := discNegConjSwapMap.continuous
 
 @[simp]
 theorem discNegConjSwap_inl (z : closedBall (0 : ℂ) 1) :
     discNegConjSwap (inl _ z) = inr _ (discNegConj z) :=
-  desc_inl _ _ _ _ z
+  discNegConjSwapMap_inl z
 
 @[simp]
 theorem discNegConjSwap_inr (z : closedBall (0 : ℂ) 1) :
     discNegConjSwap (inr _ z) = inl _ (discNegConj z) :=
-  desc_inr _ _ _ _ z
+  discNegConjSwapMap_inr z
 
 /-- The sheet exchange for the gluing by `z ↦ -conj z` is an involution. -/
 @[simp]
 theorem discNegConjSwap_discNegConjSwap (p : DoubleAlong discBoundary) :
-    discNegConjSwap (discNegConjSwap p) = p := by
-  induction p using induction_on with
-  | hl z => simp
-  | hr z => simp
+    discNegConjSwap (discNegConjSwap p) = p :=
+  discNegConjSwapMap_involutive p
+
+@[simp]
+theorem discNegConjSwap_symm : discNegConjSwap.symm = discNegConjSwap := by
+  ext p
+  rw [Homeomorph.symm_apply_eq, discNegConjSwap_discNegConjSwap]
 
 /-- The boundary points fixed by `z ↦ -conj z` are `I` and `-I`. -/
 private theorem discNegConj_eq_self_and_mem_iff (z : closedBall (0 : ℂ) 1) :
