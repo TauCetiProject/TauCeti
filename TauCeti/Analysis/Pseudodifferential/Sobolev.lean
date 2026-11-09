@@ -188,28 +188,31 @@ theorem HasCompactSpatialSupport.exists_one_add_norm_pow_mul_norm_fourier_le
 support is continuous along continuous maps `g`, `h` into the dual position variable and the
 frequency. -/
 theorem HasCompactSpatialSupport.continuous_fourier_slice
-    (ha : a.HasCompactSpatialSupport) {X : Type*} [TopologicalSpace X] [FirstCountableTopology X]
+    (ha : a.HasCompactSpatialSupport) {X : Type*} [TopologicalSpace X]
     {g h : X → CoordinateSpace n} (hg : Continuous g) (hh : Continuous h) :
     Continuous fun t ↦ 𝓕 (fun x ↦ a.coefficient (x, h t)) (g t) := by
+  suffices H : Continuous fun p : CoordinateSpace n × CoordinateSpace n ↦
+      𝓕 (fun x ↦ a.coefficient (x, p.2)) p.1 from (H.comp (hg.prodMk hh) :)
   obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
-  refine continuous_iff_continuousAt.2 fun t₀ ↦ ?_
-  obtain ⟨C, hC⟩ := (hK.prod (isCompact_closedBall (h t₀) 1)).exists_bound_of_continuousOn
+  refine continuous_iff_continuousAt.2 fun p₀ ↦ ?_
+  obtain ⟨C, hC⟩ := (hK.prod (isCompact_closedBall p₀.2 1)).exists_bound_of_continuousOn
     a.contDiff_coefficient.continuous.continuousOn
   simp only [Real.fourier_eq]
   refine continuousAt_of_dominated (bound := K.indicator fun _ ↦ C) ?_ ?_ ?_ ?_
-  · exact .of_forall fun t ↦ ((Real.continuous_fourierChar.comp (by fun_prop)).smul
+  · exact .of_forall fun p ↦ ((Real.continuous_fourierChar.comp (by fun_prop)).smul
       (a.contDiff_coefficient_slice _).continuous).aestronglyMeasurable
-  · filter_upwards [(hh.tendsto t₀).eventually
-      (Metric.closedBall_mem_nhds (h t₀) one_pos)] with t ht
+  · filter_upwards [(continuous_snd.tendsto p₀).eventually
+      (Metric.closedBall_mem_nhds p₀.2 one_pos)] with p hp
     refine .of_forall fun x ↦ ?_
     by_cases hx : x ∈ K
     · rw [Set.indicator_of_mem hx, Circle.norm_smul]
-      exact hC (x, h t) ⟨hx, ht⟩
+      exact hC (x, p.2) ⟨hx, hp⟩
     · simp [Set.indicator_of_notMem hx, hKa x hx]
   · exact (integrable_indicator_iff hK.measurableSet).2 (integrableOn_const hK.measure_lt_top.ne)
   · refine .of_forall fun x ↦ ?_
-    exact ((Real.continuous_fourierChar.comp (continuous_const.inner hg).neg).smul
-      (a.contDiff_coefficient.continuous.comp (continuous_const.prodMk hh))).continuousAt
+    exact ((Real.continuous_fourierChar.comp (continuous_const.inner continuous_fst).neg).smul
+      (a.contDiff_coefficient.continuous.comp
+        (continuous_const.prodMk continuous_snd))).continuousAt
 
 /-- The Fourier transform of a position slice of `∂_{x_j} a` is `2πi θ_j` times that of `a`:
 `(∂_{x_j} a)^(θ, ξ) = 2πi θ_j â(θ, ξ)`. -/

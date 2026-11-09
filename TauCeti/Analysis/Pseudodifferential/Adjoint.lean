@@ -9,8 +9,8 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.ParametricIntegral
-import Mathlib.Analysis.Normed.Affine.MazurUlam
 import TauCeti.Analysis.Fourier.Parametric
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.MeasureTheory.Function.L2Space
 
@@ -527,30 +527,20 @@ section Adjoint
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
 
-/-- The Hilbert space adjoint `T ↦ T†`, as a real-linear map: the conjugate-linear isometry
-`ContinuousLinearMap.adjoint` is real-linear by the Mazur-Ulam theorem. -/
-private def adjointCLM : (V →L[ℂ] W) →L[ℝ] (W →L[ℂ] V) :=
-  (IsometryEquiv.toRealLinearIsometryEquivOfMapZero
-    (ContinuousLinearMap.adjoint (𝕜 := ℂ) (E := V) (F := W)).toIsometryEquiv
-    (by simp)).toContinuousLinearEquiv
-
-private theorem adjointCLM_apply (T : V →L[ℂ] W) :
-    adjointCLM T = ContinuousLinearMap.adjoint T := by
-  rw [adjointCLM, ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    IsometryEquiv.coe_toRealLinearIsometryEquivOfMapZero, LinearIsometryEquiv.coe_toIsometryEquiv]
+open ContinuousLinearMap (adjointRealCLM adjointRealCLM_apply)
 
 /-- **The adjoint symbol.** For a symbol `a` of order `m` with compact spatial support, the symbol
 `a*(y, ξ) = (∫ exp(2πi ⟪θ, y⟫) â(θ, ξ - 2πθ) dθ)†` of order `m`, where `â(θ, ξ)` is the Fourier
 transform of the position slice `x ↦ a(x, ξ)` at `θ`. Its quantization is the formal adjoint of
 the quantization of `a` (`TauCeti.Symbol.integral_inner_quantizeSchwartzValue_adjoint`). -/
 def adjoint (a : Symbol n V W m) (ha : a.HasCompactSpatialSupport) : Symbol n W V m :=
-  (leftSymbol a ha).map adjointCLM
+  (leftSymbol a ha).map adjointRealCLM
 
 theorem coefficient_adjoint (a : Symbol n V W m) (ha : a.HasCompactSpatialSupport)
     (y ξ : CoordinateSpace n) :
     (adjoint a ha).coefficient (y, ξ) = ContinuousLinearMap.adjoint
       (∫ θ, (𝐞 ⟪θ, y⟫ : ℂ) • 𝓕 (fun x ↦ a.coefficient (x, ξ - (2 * π) • θ)) θ) := by
-  rw [adjoint, coefficient_map, adjointCLM_apply]
+  rw [adjoint, coefficient_map, adjointRealCLM_apply]
   dsimp only [leftSymbol]
   rw [leftCoeff]
 
@@ -558,22 +548,24 @@ variable {a : Symbol n V W m}
 
 private theorem HasCompactSpatialSupport.coefficient_adjoint_eq
     (ha : a.HasCompactSpatialSupport) :
-    (adjoint a ha).coefficient = adjointCLM ∘ leftCoeff a :=
+    (adjoint a ha).coefficient = adjointRealCLM ∘ leftCoeff a :=
   funext fun p ↦ coefficient_map _ _ p
 
 /-- The adjoint symbol satisfies its estimates uniformly in the position, although it need not
 have compact spatial support. -/
+@[simp]
 theorem isUniform_adjoint (a : Symbol n V W m) (ha : a.HasCompactSpatialSupport) :
     (adjoint a ha).IsUniform := by
   refine isUniform_iff.2 fun α β ↦ ?_
   obtain ⟨C, hC0, hC⟩ := ha.exists_norm_mixedDeriv_leftCoeff_le α β
-  refine ⟨‖(adjointCLM : (V →L[ℂ] W) →L[ℝ] (W →L[ℂ] V))‖ * C, by positivity, fun y ξ ↦ ?_⟩
+  refine ⟨‖(adjointRealCLM : (V →L[ℂ] W) →L[ℝ] (W →L[ℂ] V))‖ * C, by positivity, fun y ξ ↦ ?_⟩
   rw [ha.coefficient_adjoint_eq,
-    adjointCLM.mixedDeriv_comp_left ha.contDiff_leftCoeff_infty, mul_assoc]
-  exact adjointCLM.le_opNorm_of_le (hC y ξ)
+    adjointRealCLM.mixedDeriv_comp_left ha.contDiff_leftCoeff_infty, mul_assoc]
+  exact adjointRealCLM.le_opNorm_of_le (hC y ξ)
 
 /-- A position derivative of the adjoint symbol is the adjoint symbol of the position
 derivative: `∂_{y_j} a* = (∂_{x_j} a)*`. -/
+@[simp]
 theorem spatialDeriv_adjoint (a : Symbol n V W m) (ha : a.HasCompactSpatialSupport)
     (j : Fin n) :
     spatialDeriv j (adjoint a ha) = adjoint (spatialDeriv j a) (ha.spatialDeriv j) := by
@@ -583,11 +575,12 @@ theorem spatialDeriv_adjoint (a : Symbol n V W m) (ha : a.HasCompactSpatialSuppo
     (ha.spatialDeriv j).coefficient_adjoint_eq]
   have hf : ContDiff ℝ ([j] : List (Fin n)).length fun y ↦ leftCoeff a (y, ξ) :=
     (ha.contDiff_leftCoeff_infty.comp (contDiff_id.prodMk contDiff_const)).of_le (by simp)
-  exact (adjointCLM.coordinateDeriv_comp_left [j] hf y).trans
-    (congrArg adjointCLM (ha.coordinateDeriv_leftCoeff_fst j y ξ))
+  exact (adjointRealCLM.coordinateDeriv_comp_left [j] hf y).trans
+    (congrArg adjointRealCLM (ha.coordinateDeriv_leftCoeff_fst j y ξ))
 
 /-- A frequency derivative of the adjoint symbol is the adjoint symbol of the frequency
 derivative: `∂_{ξ_j} a* = (∂_{ξ_j} a)*`. -/
+@[simp]
 theorem frequencyDeriv_adjoint (a : Symbol n V W m) (ha : a.HasCompactSpatialSupport)
     (j : Fin n) :
     frequencyDeriv j (adjoint a ha) = adjoint (frequencyDeriv j a) (ha.frequencyDeriv j) := by
@@ -597,8 +590,8 @@ theorem frequencyDeriv_adjoint (a : Symbol n V W m) (ha : a.HasCompactSpatialSup
     (ha.frequencyDeriv j).coefficient_adjoint_eq]
   have hf : ContDiff ℝ ([j] : List (Fin n)).length fun η ↦ leftCoeff a (y, η) :=
     (ha.contDiff_leftCoeff_infty.comp (contDiff_const.prodMk contDiff_id)).of_le (by simp)
-  exact (adjointCLM.coordinateDeriv_comp_left [j] hf ξ).trans
-    (congrArg adjointCLM (ha.coordinateDeriv_leftCoeff_snd j y ξ))
+  exact (adjointRealCLM.coordinateDeriv_comp_left [j] hf ξ).trans
+    (congrArg adjointRealCLM (ha.coordinateDeriv_leftCoeff_snd j y ξ))
 
 /-! ### The adjoint identity -/
 
@@ -619,7 +612,7 @@ private theorem HasCompactSpatialSupport.inner_quantizeSchwartzValue_adjoint
   obtain ⟨C, -, hC⟩ := ha.exists_norm_leftCoeff_le
   have hbound : ∀ ξ, ‖(adjoint a ha).coefficient (y, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) :=
     fun ξ ↦ by
-      rw [ha.coefficient_adjoint_eq, Function.comp_apply, adjointCLM_apply,
+      rw [ha.coefficient_adjoint_eq, Function.comp_apply, adjointRealCLM_apply,
         LinearIsometryEquiv.norm_map]
       exact hC (y, ξ)
   rw [quantizeSchwartzValue_def, ← integral_inner (integrable_quantizeSchwartzValue_integrand
