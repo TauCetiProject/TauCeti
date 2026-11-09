@@ -705,39 +705,37 @@ theorem energyFormH1_add_right
 
 /-- **Subtractivity of the Sobolev energy form in its coefficients.** For two essentially
 bounded coefficient fields, the energy form of the difference of the coefficient triples is the
-difference of the energy forms. This is what turns an `L^∞` bound on the difference of two sets
-of coefficients into a bound on the difference of their energy forms. -/
+difference of the energy forms; this is the `H¹` form of `energyFormIntegral_sub`. It turns an
+`L^∞` bound on the difference of two sets of coefficients into a bound on the difference of their
+energy forms. -/
 theorem energyFormH1_sub {a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {b' : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c' : EuclideanSpace ℝ ι → ℝ}
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoeff' : MemLp (fun x => energyIntegrand (a' x) (b' x) (c' x)) ⊤ (mu.restrict Omega))
     (u v : W1p mu Omega 2) :
     energyFormH1 (a - a') (b - b') (c - c') u v =
-      energyFormH1 a b c u v - energyFormH1 a' b' c' u v := by
-  simp only [energyFormH1_def, Pi.sub_apply, energyIntegrand_sub_apply]
-  exact integral_sub (integrable_energyIntegrand_jetField hcoeff u v)
-    (integrable_energyIntegrand_jetField hcoeff' u v)
+      energyFormH1 a b c u v - energyFormH1 a' b' c' u v :=
+  energyFormIntegral_sub (h := integrable_energyIntegrand_jetField hcoeff u v)
+    (h' := integrable_energyIntegrand_jetField hcoeff' u v)
 
-/-- Boundedness of the Sobolev energy form from upper bounds alone. No lower ellipticity
-hypothesis is needed. -/
+/-- Boundedness of the Sobolev energy form from almost-everywhere upper bounds on `Ω` alone. No
+lower ellipticity hypothesis is needed. -/
 theorem norm_energyFormH1_le_of_bounds
     (hLam : 0 ≤ Lam)
-    (ha_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)),
+    (ha_bound : ∀ᵐ x ∂mu.restrict Omega,
       ∀ eta xi : EuclideanSpace ℝ ι,
         |dotProduct eta (Matrix.mulVec (a x) xi)| ≤ Lam * ‖eta‖ * ‖xi‖)
     (hbeta : 0 ≤ beta) (hgamma : 0 ≤ gamma)
-    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
-    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
+    (hb_bound : ∀ᵐ x ∂mu.restrict Omega, ‖b x‖ ≤ beta)
+    (hc_bound : ∀ᵐ x ∂mu.restrict Omega, ‖c x‖ ≤ gamma)
     (u v : W1p mu Omega 2) :
     ‖energyFormH1 a b c u v‖ ≤ (Lam + beta + gamma) * (‖u‖ * ‖v‖) := by
-  have hmem := ae_mem_restrict (mu := mu) (Omega := Omega)
   have hconst : 0 ≤ Lam + beta + gamma := by linarith
   have hmul : Integrable (fun x => ‖jetField u x‖ * ‖jetField v x‖) (mu.restrict Omega) :=
     (memLp_jetField u).norm.integrable_mul (memLp_jetField v).norm
   have key := norm_energyFormIntegral_le_of_bounds (μ := mu.restrict Omega)
     (a := a) (b := b) (c := c) (U := jetField u) (V := jetField v)
-    hLam (hmem.mono fun x hx => ha_bound x hx) (hmem.mono hb_bound) (hmem.mono hc_bound)
-      (hmul.const_mul (Lam + beta + gamma))
+    hLam ha_bound hb_bound hc_bound (hmul.const_mul (Lam + beta + gamma))
   refine key.trans ?_
   rw [integral_const_mul]
   exact mul_le_mul_of_nonneg_left (integral_norm_jetField_mul_le u v) hconst
@@ -757,7 +755,9 @@ theorem norm_energyFormH1L_le_of_bounds
   refine (energyFormH1L hcoeff).opNorm_le_bound₂ (by linarith) ?_
   intro u v
   rw [energyFormH1L_apply, mul_assoc]
-  exact norm_energyFormH1_le_of_bounds hLam ha_bound hbeta hgamma hb_bound hc_bound u v
+  have hmem := ae_mem_restrict (mu := mu) (Omega := Omega)
+  exact norm_energyFormH1_le_of_bounds hLam (hmem.mono ha_bound) hbeta hgamma
+    (hmem.mono hb_bound) (hmem.mono hc_bound) u v
 
 /-- The energy form on `H¹₀(Ω)` as a continuous bilinear form, obtained by restricting
 `energyFormH1L` along the closed-subspace inclusion. -/
@@ -908,9 +908,9 @@ theorem norm_energyFormH1_le
     (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
     (u v : W1p mu Omega 2) :
     ‖energyFormH1 a b c u v‖ ≤ (Lam + beta + gamma) * (‖u‖ * ‖v‖) :=
-  norm_energyFormH1_le_of_bounds h.upper_nonneg (fun _x hx eta xi => h.upper_bound hx eta xi)
-    hbeta hgamma
-    hb_bound hc_bound u v
+  norm_energyFormH1_le_of_bounds h.upper_nonneg
+    (ae_mem_restrict.mono fun _x hx eta xi => h.upper_bound hx eta xi) hbeta hgamma
+    (ae_mem_restrict.mono hb_bound) (ae_mem_restrict.mono hc_bound) u v
 
 /-- Gårding's inequality with a mass floor and any positive Young parameter `ε`. The
 coefficients `λ - ε` and `δ - β²/(4ε)` can both be positive exactly when `β² < 4λδ`.

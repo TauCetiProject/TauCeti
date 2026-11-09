@@ -61,7 +61,7 @@ attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpac
 Let `u ∈ H¹₀(Ω)` satisfy `B(u, v) = ℓ(v)` for every `v ∈ H¹₀(Ω)`, where `B` is the energy form of
 the coefficients `(a, b, c)` and satisfies `C ‖w‖² ≤ B(w, w)` on `H¹₀(Ω)` with `0 < C`, and let
 `u' ∈ H¹₀(Ω)` satisfy `B'(u', v) = ℓ'(v)` for the energy form `B'` of `(a', b', c')`. Suppose both
-coefficient fields are essentially bounded and that on `Ω`
+coefficient fields are essentially bounded and that almost everywhere on `Ω`
 `|ηᵀ (a - a') ξ| ≤ Λ ‖η‖ ‖ξ‖`, `‖b - b'‖ ≤ β` and `|c - c'| ≤ γ`. Then
 `‖u - u'‖ ≤ (‖ℓ - ℓ'‖ + (Λ + β + γ) ‖u'‖) / C`.
 
@@ -73,10 +73,10 @@ theorem norm_sub_le_of_forall_energyFormH1_eq
     (hlower : ∀ w : W1p0 mu Omega 2,
       C * ‖w‖ ^ 2 ≤ energyFormH1 a b c (w : W1p mu Omega 2) (w : W1p mu Omega 2))
     (hLam : 0 ≤ Lam)
-    (ha : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ∀ η ξ : EuclideanSpace ℝ ι,
+    (ha : ∀ᵐ x ∂mu.restrict Omega, ∀ η ξ : EuclideanSpace ℝ ι,
       |η ⬝ᵥ ((a x - a' x) *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
-    (hbeta : 0 ≤ beta) (hb : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x - b' x‖ ≤ beta)
-    (hgamma : 0 ≤ gamma) (hc : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x - c' x‖ ≤ gamma)
+    (hbeta : 0 ≤ beta) (hb : ∀ᵐ x ∂mu.restrict Omega, ‖b x - b' x‖ ≤ beta)
+    (hgamma : 0 ≤ gamma) (hc : ∀ᵐ x ∂mu.restrict Omega, ‖c x - c' x‖ ≤ gamma)
     {ℓ ℓ' : StrongDual ℝ (W1p0 mu Omega 2)} {u u' : W1p0 mu Omega 2}
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c (u : W1p mu Omega 2) v = ℓ v)
     (hu' : ∀ v : W1p0 mu Omega 2, energyFormH1 a' b' c' (u' : W1p mu Omega 2) v = ℓ' v) :
@@ -84,9 +84,7 @@ theorem norm_sub_le_of_forall_energyFormH1_eq
   set w := u - u'
   -- Test both equations against `w = u - u'` and compare the two energy forms at `u'`.
   have hdiff := norm_energyFormH1_le_of_bounds (a := a - a') (b := b - b') (c := c - c') hLam
-    (fun x hx η ξ ↦ by simpa only [Pi.sub_apply] using ha x hx η ξ) hbeta hgamma
-    (fun x hx ↦ by simpa only [Pi.sub_apply] using hb x hx)
-    (fun x hx ↦ by simpa only [Pi.sub_apply] using hc x hx) (u' : W1p mu Omega 2) w
+    ha hbeta hgamma hb hc (u' : W1p mu Omega 2) w
   have hnorm (v : W1p0 mu Omega 2) : ‖(v : W1p mu Omega 2)‖ = ‖v‖ := Submodule.norm_coe v
   rw [energyFormH1_sub hcoeff hcoeff', hnorm, hnorm] at hdiff
   have hw : energyFormH1 a b c (w : W1p mu Omega 2) w =
@@ -114,8 +112,8 @@ theorem norm_sub_le_of_forall_energyFormH1_eq
 /-- **Dependence of the weak solution on the coefficients.** Let `u` and `u'` be weak solutions
 in `H¹₀(Ω)` of the Dirichlet problems for the two coefficient triples `(a, b, c)` and
 `(a', b', c')` with the same right-hand side `f ∈ L²(Ω)`, whose energy forms are coercive on
-`H¹₀(Ω)` with constants `C` and `C'`. If on `Ω` the differences of the coefficients are bounded by
-`Λ`, `β` and `γ`, in the sense of the hypotheses of
+`H¹₀(Ω)` with constants `C` and `C'`. If almost everywhere on `Ω` the differences of the
+coefficients are bounded by `Λ`, `β` and `γ`, in the sense of the hypotheses of
 `norm_sub_le_of_forall_energyFormH1_eq`, then `‖u - u'‖ ≤ (Λ + β + γ) ‖f‖ / (C C')`. -/
 theorem norm_sub_le_of_isWeakSolutionDirichlet
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
@@ -127,10 +125,10 @@ theorem norm_sub_le_of_isWeakSolutionDirichlet
     (hlower' : ∀ w : W1p0 mu Omega 2,
       C' * ‖w‖ ^ 2 ≤ energyFormH1 a' b' c' (w : W1p mu Omega 2) (w : W1p mu Omega 2))
     (hLam : 0 ≤ Lam)
-    (ha : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ∀ η ξ : EuclideanSpace ℝ ι,
+    (ha : ∀ᵐ x ∂mu.restrict Omega, ∀ η ξ : EuclideanSpace ℝ ι,
       |η ⬝ᵥ ((a x - a' x) *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖)
-    (hbeta : 0 ≤ beta) (hb : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x - b' x‖ ≤ beta)
-    (hgamma : 0 ≤ gamma) (hc : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x - c' x‖ ≤ gamma)
+    (hbeta : 0 ≤ beta) (hb : ∀ᵐ x ∂mu.restrict Omega, ‖b x - b' x‖ ≤ beta)
+    (hgamma : 0 ≤ gamma) (hc : ∀ᵐ x ∂mu.restrict Omega, ‖c x - c' x‖ ≤ gamma)
     {f : Lp ℝ 2 (mu.restrict Omega)} {u u' : W1p0 mu Omega 2}
     (hu : IsWeakSolutionDirichlet a b c f u) (hu' : IsWeakSolutionDirichlet a' b' c' f u') :
     ‖u - u'‖ ≤ (Lam + beta + gamma) * ‖f‖ / (C * C') := by
@@ -146,9 +144,9 @@ theorem norm_sub_le_of_isWeakSolutionDirichlet
 solution in `H¹₀(Ω)` of the Dirichlet problem for `(a, b, c)` with right-hand side `f ∈ L²(Ω)`,
 whose energy form is coercive on `H¹₀(Ω)` with constant `C`, and let `u' i` be weak solutions for
 a family of coefficient triples `(a' i, b' i, c' i)` with the same `f`. If the bounds `Λ i`, `β i`
-and `γ i` on the differences `a - a' i`, `b - b' i` and `c - c' i` over `Ω`, in the sense of the
-hypotheses of `norm_sub_le_of_forall_energyFormH1_eq`, tend to `0` along a filter, then `u' i`
-tends to `u` in `H¹₀(Ω)`. The perturbed energy forms need not be coercive. -/
+and `γ i` on the differences `a - a' i`, `b - b' i` and `c - c' i` almost everywhere on `Ω`, in
+the sense of the hypotheses of `norm_sub_le_of_forall_energyFormH1_eq`, tend to `0` along a
+filter, then `u' i` tends to `u` in `H¹₀(Ω)`. The perturbed energy forms need not be coercive. -/
 theorem tendsto_of_isWeakSolutionDirichlet {α : Type*} {l : Filter α}
     {a' : α → EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b' : α → EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
     {c' : α → EuclideanSpace ℝ ι → ℝ} {Lam beta gamma : α → ℝ}
@@ -159,12 +157,12 @@ theorem tendsto_of_isWeakSolutionDirichlet {α : Type*} {l : Filter α}
     (hlower : ∀ w : W1p0 mu Omega 2,
       C * ‖w‖ ^ 2 ≤ energyFormH1 a b c (w : W1p mu Omega 2) (w : W1p mu Omega 2))
     (hLam : ∀ i, 0 ≤ Lam i)
-    (ha : ∀ i, ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ∀ η ξ : EuclideanSpace ℝ ι,
+    (ha : ∀ i, ∀ᵐ x ∂mu.restrict Omega, ∀ η ξ : EuclideanSpace ℝ ι,
       |η ⬝ᵥ ((a x - a' i x) *ᵥ ξ)| ≤ Lam i * ‖η‖ * ‖ξ‖)
     (hbeta : ∀ i, 0 ≤ beta i)
-    (hb : ∀ i, ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x - b' i x‖ ≤ beta i)
+    (hb : ∀ i, ∀ᵐ x ∂mu.restrict Omega, ‖b x - b' i x‖ ≤ beta i)
     (hgamma : ∀ i, 0 ≤ gamma i)
-    (hc : ∀ i, ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x - c' i x‖ ≤ gamma i)
+    (hc : ∀ i, ∀ᵐ x ∂mu.restrict Omega, ‖c x - c' i x‖ ≤ gamma i)
     (hlim : Filter.Tendsto (fun i => Lam i + beta i + gamma i) l (nhds 0))
     {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2} {u' : α → W1p0 mu Omega 2}
     (hu : IsWeakSolutionDirichlet a b c f u)
