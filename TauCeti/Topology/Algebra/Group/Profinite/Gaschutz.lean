@@ -60,7 +60,6 @@ theorem exists_comp_eq_and_topologicalClosure_closure_range_eq_top {f : G →* H
     (hh : (Subgroup.closure (Set.range h)).topologicalClosure = ⊤) :
     ∃ g' : ι → G, f ∘ g' = h ∧ (Subgroup.closure (Set.range g')).topologicalClosure = ⊤ := by
   classical
-  have hneIdx : Nonempty (OpenNormalSubgroup G) := ⟨openNormalSubgroupTop G⟩
   -- A continuous surjection of compact Hausdorff groups is an open map, so the image of an open
   -- normal subgroup `U ≤ G` is an open normal subgroup of `H`.
   have hopen : IsOpenMap f :=
@@ -123,7 +122,7 @@ theorem exists_comp_eq_and_topologicalClosure_closure_range_eq_top {f : G →* H
   obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed C hdir hne
     (fun U ↦ (hclosed U).isCompact) hclosed
   have hxU : ∀ U : OpenNormalSubgroup G, x ∈ C U := Set.mem_iInter.mp hx
-  refine ⟨x, funext fun i ↦ Set.mem_iInter.mp (hxU (openNormalSubgroupTop G)).2 i,
+  refine ⟨x, funext fun i ↦ Set.mem_iInter.mp (hxU ⊤).2 i,
     (Subgroup.topologicalClosure_eq_top_iff_forall_map_mk' _).mpr fun U ↦ ?_⟩
   exact (mem_generatingTuples_iff_map_closure ι U x).mp (hxU U).1
 
