@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.GradientFlow.MoreauYosida.Existence
+import TauCeti.Topology.EMetricSpace.Bounded
 public import TauCeti.Topology.EMetricSpace.Ascoli
 public import TauCeti.Topology.MetricSpace.Holder
 import Mathlib.Algebra.Order.Chebyshev
