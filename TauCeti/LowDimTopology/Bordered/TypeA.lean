@@ -417,22 +417,6 @@ private theorem Bound.typeABoxMap_add (hB : Bound N N' Mm U K) (F G : Matrix X X
   simp only [LinearMap.add_apply, Pi.add_apply, hB.typeABoxMap_apply_eq_sum 0, hE,
     MultilinearMap.map_update_add, LinearMap.add_apply, Pi.add_apply, sum_add_distrib]
 
-omit [DecidableEq X] [DecidableEq X'] in
-/-- The curvature `d C + C * C` of `C = fromBlocks δ F 0 δ'` is the differential `∂F` of `F`, in the
-off-diagonal block. -/
-private theorem map_fromBlocks_add_fromBlocks_mul_fromBlocks (F : Matrix X X' A) :
-    (Matrix.fromBlocks N.coeff F 0 N'.coeff).map d +
-        Matrix.fromBlocks N.coeff F 0 N'.coeff * Matrix.fromBlocks N.coeff F 0 N'.coeff =
-      Matrix.fromBlocks 0 (morphismDifferential N N' F) 0 0 := by
-  rw [Matrix.fromBlocks_map, Matrix.fromBlocks_multiply, Matrix.fromBlocks_add,
-    morphismDifferential_apply]
-  have h0 : (0 : Matrix X' X A).map d = 0 := Matrix.map_zero d (map_zero d)
-  congr 1
-  · simpa using N.map_coeff_add_coeff_mul_coeff
-  · abel
-  · simp [h0]
-  · simpa using N'.map_coeff_add_coeff_mul_coeff
-
 /-- The core of `TauCeti.TypeDStructure.typeABoxDifferential_typeABoxMap_of_act_eq_zero` and
 `TauCeti.TypeDStructure.typeABoxDifferential_typeABoxMap_of_lt`. -/
 private theorem Bound.typeABoxDifferential_typeABoxMap [CharP R 2] (hB : Bound N N' Mm U K)
@@ -442,7 +426,7 @@ private theorem Bound.typeABoxDifferential_typeABoxMap [CharP R 2] (hB : Bound N
       typeABoxMap N N' Mm (morphismDifferential N N' F) φ := by
   funext z
   set C := Matrix.fromBlocks N.coeff F 0 N'.coeff
-  have hcurv := map_fromBlocks_add_fromBlocks_mul_fromBlocks (N := N) (N' := N') F
+  have hcurv := map_fromBlocks_add_fromBlocks_mul_fromBlocks N N' F
   -- The square of the box tensor differential of `C` inserts its curvature `fromBlocks 0 ∂F 0 0`.
   have hsq := (Mm.matrix (X ⊕ X')).twistedDifferential_twistedDifferential_eq_sum
     (β := C) (U := U) (K := K) (hB.fromBlocks_mem F)
