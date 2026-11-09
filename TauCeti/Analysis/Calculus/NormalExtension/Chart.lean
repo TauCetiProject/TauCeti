@@ -43,8 +43,8 @@ and `TauCeti.exists_isAdaptedChart` constructs such a chart.
   locus, with derivative carrying the ambient structure to the standard one along it.
 * `OpenPartialHomeomorph.IsAdaptedChart.restrOpen`: adapted charts restrict to open subsets.
 * `TauCeti.exists_hasFDerivAt_adaptedNormalExtension_zero_iff`: the adapted normal extension has
-  an invertible derivative at `(x₀, 0)` exactly when the tangent space at `γ x₀` is maximal
-  totally real.
+  an invertible derivative at `(x₀, 0)` exactly when the derivative of `γ` at `x₀` is injective
+  and the tangent space at `γ x₀` is maximal totally real.
 * `TauCeti.exists_isAdaptedChart`: the existence of a `C^n` adapted chart near a point of a
   submanifold whose tangent space there is maximal totally real.
 
@@ -132,14 +132,14 @@ private theorem fderiv_symm_apply_of_coe_eq {γ : V → W} {J : W → W →L[�
 
 variable [CompleteSpace V] [CompleteSpace W]
 
-/-- **The adapted normal extension is a local diffeomorphism exactly at maximal totally real
-points.** Let `γ` be `C^1` at `x₀` and `J` continuous at `γ x₀`, with `J (γ x₀)` injective. The
-derivative of the adapted normal extension at `(x₀, 0)` is a continuous linear equivalence if and
-only if the derivative of `γ` at `x₀` is injective with maximal totally real range for
-`J (γ x₀)`. -/
+/-- **The adapted normal extension has invertible derivative exactly at maximal totally real
+points.** Let `γ` be `C^1` at `x₀` and `J` continuous at `γ x₀`, with `J (γ x₀)` injective on the
+range of the derivative of `γ` at `x₀`. The derivative of the adapted normal extension at
+`(x₀, 0)` is a continuous linear equivalence if and only if the derivative of `γ` at `x₀` is
+injective with maximal totally real range for `J (γ x₀)`. -/
 theorem exists_hasFDerivAt_adaptedNormalExtension_zero_iff {γ : V → W} {J : W → W →L[𝕂] W}
     {x₀ : V} (hγ : ContDiffAt 𝕂 1 γ x₀) (hJ : ContinuousAt J (γ x₀))
-    (hJ₀ : Injective (J (γ x₀))) :
+    (hJ₀ : Injective (J (γ x₀) ∘ fderiv 𝕂 γ x₀)) :
     (∃ e : (V × V) ≃L[𝕂] W,
         HasFDerivAt (adaptedNormalExtension γ J) (e : V × V →L[𝕂] W) (x₀, 0)) ↔
       Injective (fderiv 𝕂 γ x₀) ∧ IsMaximalTotallyReal (J (γ x₀) : W →ₗ[𝕂] W)
@@ -154,7 +154,7 @@ theorem exists_hasFDerivAt_adaptedNormalExtension_zero_iff {γ : V → W} {J : W
     exact congrArg Prod.fst h
   · rintro ⟨hD, htr⟩
     have hb : Bijective ((fderiv 𝕂 γ x₀).coprod ((J (γ x₀)).comp (fderiv 𝕂 γ x₀))) :=
-      htr.bijective_coprod hD (hJ₀.comp hD)
+      htr.bijective_coprod hD hJ₀
     refine ⟨ContinuousLinearEquiv.ofBijective _ (LinearMap.ker_eq_bot.2 hb.1)
       (LinearMap.range_eq_top.2 hb.2), ?_⟩
     rwa [ContinuousLinearEquiv.coe_ofBijective]
@@ -184,11 +184,11 @@ theorem exists_isAdaptedChart {γ : V → W} {J : W → W →L[𝕂] W} {U : Set
     (hγ.contDiffAt (hU.mem_nhds hx)).of_le (hn.trans le_self_add)
   have hJc : ∀ x ∈ U, ContinuousAt J (γ x) := fun x hx ↦
     hJ.continuousOn.continuousAt (hΩ.mem_nhds (hγΩ hx))
-  have hJinj : ∀ x ∈ U, Injective (J (γ x)) := fun x hx v w hvw ↦ by
-    simpa [hsq x hx] using congrArg (fun u ↦ -J (γ x) u) hvw
+  have hJinj : Injective (J (γ x₀)) := fun v w hvw ↦ by
+    simpa [hsq x₀ hx₀] using congrArg (fun u ↦ -J (γ x₀) u) hvw
   -- The inverse function theorem for the adapted normal extension.
   obtain ⟨e, he⟩ := (exists_hasFDerivAt_adaptedNormalExtension_zero_iff (hγ1 x₀ hx₀)
-    (hJc x₀ hx₀) (hJinj x₀ hx₀)).2 ⟨hD, htr⟩
+    (hJc x₀ hx₀) (hJinj.comp hD)).2 ⟨hD, htr⟩
   have hΦ : ContDiffOn 𝕂 n (adaptedNormalExtension γ J) (U ×ˢ univ) :=
     contDiffOn_adaptedNormalExtension hU hγ hJ hγΩ
   obtain ⟨Θ, hΘ, hx₀Θ, hΘU, hΘs⟩ := ContDiffOn.exists_openPartialHomeomorph hΦ
