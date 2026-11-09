@@ -272,7 +272,7 @@ one, where `1 / t = Re w / s`, whenever `u` has `Lˢ` norm at most one. -/
 private theorem eLpNorm_map_powSign_le_one (u : SimpleFunc γ ℂ) {s t : ℝ≥0∞} {w : ℂ}
     (hw : 0 ≤ w.re) (ht : t⁻¹ = ENNReal.ofReal w.re * s⁻¹) (hu : eLpNorm u s ρ ≤ 1) :
     eLpNorm (u.map (powSign w)) t ρ ≤ 1 :=
-  (eLpNorm_le_eLpNorm_rpow hw u.aestronglyMeasurable (u.map _).aestronglyMeasurable ht
+  (eLpNorm_le_eLpNorm_rpow hw (u.map _).aestronglyMeasurable ht
     (ae_of_all _ fun x => norm_powSign_le w (u x))).trans (ENNReal.rpow_le_one hu hw)
 
 /-- A fibre indicator of a simple function is in `Lᵗ` as soon as some member `u_w` of the
