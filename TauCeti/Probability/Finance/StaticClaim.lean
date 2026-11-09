@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Finance.SimpleStrategy
+public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 
 /-!
 # Trading a mispriced static claim against its replication

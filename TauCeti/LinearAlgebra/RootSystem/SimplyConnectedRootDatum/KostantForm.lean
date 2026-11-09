@@ -245,6 +245,14 @@ theorem lie_lieBasis_h_rootGenerator (i : Fin t.rank ⊕ Fin t.rank) (j : Fin t.
   rw [rootGeneratorWeight]
   exact (t.lieBasis ht).lie_h_rootGenerator i j
 
+/-- The negative simple-root generator has the opposite Cartan weight to the positive one. -/
+theorem lie_lieBasis_h_rootGenerator_inr_neg (i j : Fin t.rank) :
+    ⁅(t.lieBasis ht).h j, (t.lieBasis ht).rootGenerator (.inr i)⁆ =
+      -((t.rootGeneratorWeight ht (.inl i) j : ℚ) •
+        (t.lieBasis ht).rootGenerator (.inr i)) := by
+  rw [t.lie_lieBasis_h_rootGenerator ht, t.rootGeneratorWeight_inr,
+    t.rootGeneratorWeight_inl, Int.cast_neg, neg_smul]
+
 /-! ## The defining representation -/
 
 /-- **The defining representation of the pinned split Lie algebra**, extended to its universal
