@@ -30,9 +30,9 @@ within `Δᵖ⁺¹`. Pullback within `Δᵖ⁺¹` commutes with the exterior der
 (`TauCeti.extDerivWithin_mpullbackWithin`), which reduces the statement to Stokes' theorem on the
 standard simplex (`ContDiffOn.integral_extDerivWithin_fullSimplex`). Its boundary terms are the
 pullbacks along the affine face maps `simplexMapAmbient i.succAbove : ℝᵖ → ℝᵖ⁺¹`. These restrict to
-the face inclusions (`TauCeti.SmoothSimplex.toContinuousMap_δ`), so by the chain rule within the
-simplices (`TauCeti.mpullbackWithin_comp_simplexMapAmbient`) the boundary terms are the integrals
-over the faces of `σ`.
+the face inclusions (`TauCeti.SmoothSimplex.toContinuousMap_δ_apply`), so by the chain rule within
+the simplices (`TauCeti.mpullbackWithin_comp_simplexMapAmbient`) the boundary terms are the
+integrals over the faces of `σ`.
 
 ## Main results
 
@@ -124,7 +124,7 @@ theorem integral_mextDeriv [CompleteSpace F] (σ : SmoothSimplex I M (p + 1))
   -- Each boundary term is the integral over the corresponding face of the simplex.
   set A := simplexMapAmbient (m := p) (n := p + 1) i.succAbove
   rw [integral_eq_setIntegral_mpullbackWithin _ φ (g := g ∘ A) fun x ↦ by
-    rw [toContinuousMap_δ, Function.comp_apply, simplexMapAmbient_succAbove_coe]
+    rw [toContinuousMap_δ_apply, Function.comp_apply, simplexMapAmbient_succAbove_coe]
     exact σ.extension_coe _]
   refine setIntegral_congr_fun (isClosed_fullSimplex p).measurableSet fun y hy ↦ ?_
   rw [mpullbackWithin_comp_simplexMapAmbient _ hy ((σ.contMDiffOn_extension _
