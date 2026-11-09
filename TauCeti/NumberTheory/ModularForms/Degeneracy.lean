@@ -227,6 +227,7 @@ lemma inv_scaleGL_smul_vadd [NeZero d] (a : ℝ) (τ : ℍ) :
   ring
 
 /-- Scaling up commutes with translation, at the cost of multiplying the shift by `d`. -/
+@[simp]
 lemma scaleGL_smul_vadd [NeZero d] (a : ℝ) (τ : ℍ) :
     (scaleGL d • ((a : ℝ) +ᵥ τ) : ℍ) = ((d : ℝ) * a) +ᵥ (scaleGL d • τ) := by
   apply UpperHalfPlane.ext
