@@ -206,13 +206,16 @@ with `‖g y‖ ≤ C * ‖y‖`, gives a completely continuous map. Over Tate s
 linear map is bounded (`ContinuousLinearMap.IsCompletelyContinuous.clm_comp`). -/
 theorem IsCompletelyContinuous.clm_comp_of_bound {P : Type*} [SeminormedAddCommGroup P]
     [Module R P] {u : M →L[R] N} (hu : u.IsCompletelyContinuous) (g : N →L[R] P) {C : ℝ}
-    (hC : 0 < C) (hg : ∀ y, ‖g y‖ ≤ C * ‖y‖) : (g.comp u).IsCompletelyContinuous := by
+    (hg : ∀ y, ‖g y‖ ≤ C * ‖y‖) : (g.comp u).IsCompletelyContinuous := by
   intro ε hε
-  obtain ⟨v, hv, huv⟩ := hu (ε / C) (div_pos hε hC)
+  have hD : 0 < max C 1 := lt_max_of_lt_right one_pos
+  have hg' (y : N) : ‖g y‖ ≤ max C 1 * ‖y‖ :=
+    (hg y).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
+  obtain ⟨v, hv, huv⟩ := hu (ε / max C 1) (div_pos hε hD)
   refine ⟨g.comp v, by simpa using hv.comp_left (g : N →ₗ[R] P), fun x ↦ ?_⟩
   calc ‖g.comp u x - g.comp v x‖ = ‖g (u x - v x)‖ := by rw [comp_apply, comp_apply, map_sub]
-    _ ≤ C * ‖u x - v x‖ := hg _
-    _ ≤ C * (ε / C * ‖x‖) := by gcongr; exact huv x
+    _ ≤ max C 1 * ‖u x - v x‖ := hg' _
+    _ ≤ max C 1 * (ε / max C 1 * ‖x‖) := by gcongr; exact huv x
     _ = ε * ‖x‖ := by field_simp
 
 /-- Precomposing a completely continuous map with a continuous linear map bounded by `C`, that is
@@ -220,12 +223,15 @@ with `‖f x‖ ≤ C * ‖x‖`, gives a completely continuous map. Over Tate s
 linear map is bounded (`ContinuousLinearMap.IsCompletelyContinuous.comp_clm`). -/
 theorem IsCompletelyContinuous.comp_clm_of_bound {L : Type*} [SeminormedAddCommGroup L]
     [Module R L] {u : M →L[R] N} (hu : u.IsCompletelyContinuous) (f : L →L[R] M) {C : ℝ}
-    (hC : 0 < C) (hf : ∀ x, ‖f x‖ ≤ C * ‖x‖) : (u.comp f).IsCompletelyContinuous := by
+    (hf : ∀ x, ‖f x‖ ≤ C * ‖x‖) : (u.comp f).IsCompletelyContinuous := by
   intro ε hε
-  obtain ⟨v, hv, huv⟩ := hu (ε / C) (div_pos hε hC)
+  have hD : 0 < max C 1 := lt_max_of_lt_right one_pos
+  have hf' (x : L) : ‖f x‖ ≤ max C 1 * ‖x‖ :=
+    (hf x).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
+  obtain ⟨v, hv, huv⟩ := hu (ε / max C 1) (div_pos hε hD)
   refine ⟨v.comp f, by simpa using hv.comp_right (f : L →ₗ[R] M), fun x ↦ ?_⟩
-  calc ‖u.comp f x - v.comp f x‖ ≤ ε / C * ‖f x‖ := huv (f x)
-    _ ≤ ε / C * (C * ‖x‖) := by gcongr; exact hf x
+  calc ‖u.comp f x - v.comp f x‖ ≤ ε / max C 1 * ‖f x‖ := huv (f x)
+    _ ≤ ε / max C 1 * (max C 1 * ‖x‖) := by gcongr; exact hf' x
     _ = ε * ‖x‖ := by field_simp
 
 end Ring
@@ -303,16 +309,16 @@ omit [IsBoundedSMul R M] in
 gives a completely continuous map. -/
 theorem IsCompletelyContinuous.clm_comp {u : M →L[R] N} (hu : u.IsCompletelyContinuous)
     (g : N →L[R] P) : (g.comp u).IsCompletelyContinuous :=
-  have ⟨_, hC, hg⟩ := ringOpNorm_bound g
-  hu.clm_comp_of_bound g hC hg
+  have ⟨_, _, hg⟩ := ringOpNorm_bound g
+  hu.clm_comp_of_bound g hg
 
 omit [IsBoundedSMul R N] in
 /-- Over Tate scalars, precomposing a completely continuous map with a continuous linear map
 gives a completely continuous map. -/
 theorem IsCompletelyContinuous.comp_clm {u : M →L[R] N} (hu : u.IsCompletelyContinuous)
     (f : L →L[R] M) : (u.comp f).IsCompletelyContinuous :=
-  have ⟨_, hC, hf⟩ := ringOpNorm_bound f
-  hu.comp_clm_of_bound f hC hf
+  have ⟨_, _, hf⟩ := ringOpNorm_bound f
+  hu.comp_clm_of_bound f hf
 
 omit [IsBoundedSMul R M] in
 /-- Over Tate scalars, complete continuity is unchanged by postcomposition with a continuous linear
