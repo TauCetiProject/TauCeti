@@ -28,6 +28,9 @@ virtual characters induced from `p`-elementary subgroups.
 * `TauCeti.exists_zpow_mul_zpow_eq_of_coprime` and its additive form
   `TauCeti.exists_zsmul_add_zsmul_eq_of_coprime`: the factorization above, with coefficients
   independent of `y`.
+* `TauCeti.exists_pow_eq_and_pow_eq_of_coprime` and its additive form
+  `TauCeti.exists_nsmul_eq_and_nsmul_eq_of_coprime`: for coprime `n` and `m`, elements `x` and `y`
+  of a commutative group with `x ^ m = y ^ n` are `v ^ n` and `v ^ m` for a single `v`.
 * `TauCeti.mem_of_forall_prime_exists_pow_mem` and its additive form
   `TauCeti.mem_of_forall_prime_exists_nsmul_mem`: membership from prime-to-`p` powers, one
   prime at a time, in any subgroup (or additive subgroup) of a group.
@@ -53,6 +56,23 @@ theorem exists_zpow_mul_zpow_eq_of_coprime {G : Type*} [Group G] {n m : ℕ}
           rw [zpow_add, zpow_mul, zpow_mul, zpow_natCast, zpow_natCast]
       _ = y ^ ((Nat.gcd n m : ℕ) : ℤ) := by rw [← Nat.gcd_eq_gcd_ab]
       _ = y := by rw [h.gcd_eq_one, zpow_natCast, pow_one]⟩
+
+/-- **Common roots for coprime exponents.** For coprime `n` and `m`, two elements `x` and `y` of a
+commutative group with `x ^ m = y ^ n` are the `n`-th and `m`-th powers of a single element `v`.
+Writing `1 = n i + m j`, the element `v = x ^ i * y ^ j` works. -/
+@[to_additive /-- **Common divisions for coprime coefficients.** For coprime `n` and `m`, two
+elements `x` and `y` of an additive commutative group with `m • x = n • y` are the multiples `n • v`
+and `m • v` of a single element `v`. -/]
+theorem exists_pow_eq_and_pow_eq_of_coprime {G : Type*} [CommGroup G] {n m : ℕ}
+    (h : Nat.Coprime n m) {x y : G} (hxy : x ^ m = y ^ n) : ∃ v : G, v ^ n = x ∧ v ^ m = y := by
+  obtain ⟨i, j, hij⟩ := exists_zpow_mul_zpow_eq_of_coprime (G := G) h
+  have hcomm (g : G) (k : ℤ) (l : ℕ) : (g ^ k) ^ l = (g ^ l) ^ k := by
+    rw [← zpow_natCast, ← zpow_mul, ← zpow_natCast, ← zpow_mul, mul_comm]
+  refine ⟨x ^ i * y ^ j, ?_, ?_⟩
+  · rw [mul_pow, hcomm, hcomm, ← hxy]
+    exact hij x
+  · rw [mul_pow, hcomm, hcomm, hxy]
+    exact hij y
 
 /-- **Membership from prime-to-`p` powers.** If for every prime `p` some power `x ^ m` with
 `p ∤ m` lies in the subgroup `H`, then `x` lies in `H`. -/
