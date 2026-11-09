@@ -114,11 +114,6 @@ theorem coord_mfderiv_field {y : M} (hy : y ∈ φ.toChart.source) :
     (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) _ hy]
   simp [linearVectorField, linearField]
 
-include φ in
-/-- A space with a Morse chart is finite-dimensional. -/
-theorem finiteDimensional : FiniteDimensional ℝ E :=
-  Module.Finite.equiv φ.coord.symm
-
 end Basic
 
 section FiniteDimensional
@@ -610,14 +605,8 @@ theorem IsMorse.exists_isAdaptedPseudoGradient [CompactSpace M] [T2Space M]
   · exact ⟨fun y ↦ isEmptyElim y, ⟨fun y ↦ isEmptyElim y, fun y ↦ isEmptyElim y,
       fun y ↦ isEmptyElim y⟩⟩
   -- A nonempty compact manifold is locally compact, hence so is its model space.
-  have : FiniteDimensional ℝ E := by
-    obtain ⟨K, hKc, hKn, hKs⟩ := exists_compact_subset
-      (chartAt E x).open_source (mem_chart_source E x)
-    obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1
-      ((chartAt E x).image_mem_nhds (mem_chart_source E x) (mem_interior_iff_mem_nhds.1 hKn))
-    exact FiniteDimensional.of_isCompact_closedBall ℝ (half_pos hr)
-      ((hKc.image_of_continuousOn ((chartAt E x).continuousOn.mono hKs)).of_isClosed_subset
-        Metric.isClosed_closedBall ((Metric.closedBall_subset_ball (half_lt_self hr)).trans hball))
+  let : Nonempty M := ⟨x⟩
+  have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M 𝓘(ℝ, E)
   obtain ⟨U, hU, -, X, hX, hdesc, hchart⟩ :=
     hf.exists_contMDiff_pseudoGradientOn_nhds isCompact_univ
   have hUuniv : U = univ := univ_subset_iff.1 (subset_of_mem_nhdsSet hU)
