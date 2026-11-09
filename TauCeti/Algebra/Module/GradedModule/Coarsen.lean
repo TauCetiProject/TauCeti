@@ -5,15 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.ZMod.Basic
+public import Mathlib.Data.ZMod.IntUnitsPower
 public import TauCeti.Algebra.Module.GradedModule.Internal
+import TauCeti.Algebra.DirectSum.Internal
 
 /-!
 # Coarsening a grading along a map of index types
 
 A family of submodules `ℳ : ι → Submodule R M` and a map `f : ι → κ` of index types give a
 family indexed by `κ`: its degree-`k` piece is the sum of the pieces `ℳ i` with `f i = k`.  When
-`ℳ` is an internal direct-sum decomposition, so is the coarsened family, over any semiring.
+`ℳ` is an internal direct-sum decomposition, so is the coarsened family, over any semiring
+(`DirectSum.IsInternal.iSup_fiber`).
 
 The main example is the parity grading of an integer grading, obtained by reducing degrees
 modulo two: its even piece is the sum of the pieces of degree `2 * k`, and its odd piece is the
@@ -31,7 +33,6 @@ super (parity-graded) object, for example when Koszul signs only depend on parit
 
 * `TauCeti.coarsenGrading_le_iff`: the universal property of the coarsened pieces, and
   `TauCeti.coarsenGrading_induction`: the corresponding induction principle on elements.
-* `TauCeti.isInternal_coarsenGrading`: coarsening preserves internality.
 * `TauCeti.decompose_coarsenGrading`: the coarsened homogeneous components are the sums of the
   original components in each fibre.
 * `TauCeti.mem_coarsenGrading_iff`: an element lies in the coarsened piece of degree `k` exactly
@@ -39,6 +40,8 @@ super (parity-graded) object, for example when Koszul signs only depend on parit
 * `TauCeti.LinearMap.IsHomogeneous.coarsenGrading`: a homogeneous linear map of degree `q` is
   homogeneous of degree `f q` for gradings coarsened along an additive homomorphism `f`.
 * `TauCeti.parityGrading_zero` and `TauCeti.parityGrading_one`: the even and odd pieces.
+* `TauCeti.uzpow_intCast_eq_negOnePow`: the sign `(-1) ^ (n mod 2)` of a parity is the sign
+  `Int.negOnePow n` of any integer lift.
 -/
 
 public section
@@ -108,49 +111,12 @@ theorem coarsenGrading_coarsenGrading {ν : Type*} (ℳ : ι → Submodule R M) 
 
 variable [DecidableEq ι] [DecidableEq κ]
 
-/-- **Coarsening preserves internality.** If the pieces `ℳ i` form an internal direct sum, so do
-the coarsened pieces, over any semiring: the canonical map out of `⨁ i, ℳ i` factors through
-`⨁ k, coarsenGrading ℳ f k`, and the first factor is surjective. -/
-theorem isInternal_coarsenGrading {ℳ : ι → Submodule R M} (h : IsInternal ℳ) (f : ι → κ) :
-    IsInternal (coarsenGrading ℳ f) := by
-  let φ : (⨁ i, ℳ i) →ₗ[R] ⨁ k, coarsenGrading ℳ f k :=
-    toModule R ι _ fun i ↦ (lof R κ (fun k ↦ coarsenGrading ℳ f k) (f i)).comp
-      (Submodule.inclusion (le_coarsenGrading ℳ f i))
-  have hcomp : (coeLinearMap (coarsenGrading ℳ f)).comp φ = coeLinearMap ℳ := by
-    ext i x
-    simp [φ]
-  -- Every element `lof k c` lies in the range of `φ`: `c` is a sum of elements of the `ℳ i`.
-  have hφ : ∀ y, y ∈ LinearMap.range φ := by
-    intro y
-    induction y using DirectSum.induction_on with
-    | zero => exact zero_mem _
-    | add y z hy hz => exact add_mem hy hz
-    | of k c =>
-      obtain ⟨c, hc⟩ := c
-      have hle : coarsenGrading ℳ f k ≤
-          ((LinearMap.range φ).comap (lof R κ (fun k ↦ coarsenGrading ℳ f k) k)).map
-            (coarsenGrading ℳ f k).subtype := by
-        refine coarsenGrading_le_iff.2 fun i hi x hx ↦ ?_
-        subst hi
-        refine ⟨⟨x, le_coarsenGrading ℳ f i hx⟩, ⟨lof R ι (fun i ↦ ℳ i) i ⟨x, hx⟩, ?_⟩, rfl⟩
-        simp only [φ, toModule_lof, LinearMap.comp_apply]
-        rfl
-      obtain ⟨c', hc', rfl⟩ := hle hc
-      exact hc'
-  refine ⟨fun x y hxy ↦ ?_, fun x ↦ ?_⟩
-  · obtain ⟨x, rfl⟩ := hφ x
-    obtain ⟨y, rfl⟩ := hφ y
-    have hx := LinearMap.congr_fun hcomp x
-    have hy := LinearMap.congr_fun hcomp y
-    exact congrArg φ (h.injective ((hx.symm.trans hxy).trans hy))
-  · obtain ⟨y, hy⟩ := h.surjective x
-    exact ⟨φ y, (LinearMap.congr_fun hcomp y).trans hy⟩
-
-/-- The decomposition into coarsened pieces, chosen from `isInternal_coarsenGrading`; any two
-decompositions of the same family agree. -/
+/-- The decomposition into coarsened pieces, chosen from the internality of the coarsened family
+(`DirectSum.IsInternal.iSup_fiber`); any two decompositions of the same family agree. -/
 noncomputable instance (ℳ : ι → Submodule R M) [Decomposition ℳ] (f : ι → κ) :
     Decomposition (coarsenGrading ℳ f) :=
-  (isInternal_coarsenGrading (Decomposition.isInternal ℳ) f).chooseDecomposition
+  -- The internality proof is elaborated as a proof, where the body of `coarsenGrading` unfolds.
+  IsInternal.chooseDecomposition _ (by exact IsInternal.iSup_fiber (Decomposition.isInternal ℳ) f)
 
 variable (ℳ : ι → Submodule R M) [Decomposition ℳ] (f : ι → κ)
 
@@ -246,6 +212,10 @@ theorem parityGrading_one (ℳ : ℤ → Submodule R M) :
     exact le_iSup (fun k ↦ ℳ (2 * k + 1)) k
   · simpa [CharP.ofNat_eq_zero] using mem_parityGrading_of_mem hx
 
+/-- The sign `(-1) ^ i` of the parity `i` of an integer `n` is the sign `Int.negOnePow n`. -/
+theorem uzpow_intCast_eq_negOnePow (n : ℤ) : (-1 : ℤˣ) ^ (n : ZMod 2) = n.negOnePow := by
+  rw [uzpow_intCast, Int.negOnePow_def]
+
 end Parity
 
 namespace InternalGrading
@@ -256,7 +226,7 @@ variable {ι κ : Type} [DecidableEq ι] [DecidableEq κ]
 piece is the sum of the pieces whose degree lies in the fibre over `k`. -/
 noncomputable def coarsen (G : InternalGrading R M ι) (f : ι → κ) : InternalGrading R M κ where
   piece := coarsenGrading G.piece f
-  isInternal := isInternal_coarsenGrading G.isInternal f
+  isInternal := G.isInternal.iSup_fiber f
 
 @[simp]
 theorem coarsen_piece (G : InternalGrading R M ι) (f : ι → κ) :
@@ -267,7 +237,7 @@ piece is the sum of the pieces of degree `2 * k` and whose odd piece is the sum 
 degree `2 * k + 1`. -/
 noncomputable def parity (G : InternalGrading R M) : InternalGrading R M (ZMod 2) where
   piece := parityGrading G.piece
-  isInternal := isInternal_coarsenGrading G.isInternal _
+  isInternal := G.isInternal.iSup_fiber _
 
 @[simp]
 theorem parity_piece (G : InternalGrading R M) : G.parity.piece = parityGrading G.piece := (rfl)

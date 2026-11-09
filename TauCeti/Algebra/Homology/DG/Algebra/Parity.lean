@@ -69,7 +69,7 @@ theorem leibniz_parityGrading_of_leibniz
   refine coarsenGrading_induction
     (motive := fun a ↦ d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b)) ha
     (fun p hp a ha ↦ ?_) (by simp) fun x y hx hy ↦ ?_
-  · rw [hl ha b, ← hp, Int.coe_castAddHom, uzpow_intCast, Int.negOnePow_def]
+  · rw [hl ha b, ← hp, Int.coe_castAddHom, uzpow_intCast_eq_negOnePow]
   · rw [add_mul, map_add, hx, hy, map_add, add_mul, add_mul, smul_add]
     abel
 

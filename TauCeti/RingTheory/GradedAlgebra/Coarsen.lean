@@ -104,8 +104,7 @@ theorem mul_eq_uzpow_smul_mul_of_mem_parityGrading
     (fun p hp a ha ↦ ?_) (by simp) fun x y hx hy ↦ by rw [add_mul, mul_add, hx, hy, smul_add]
   refine coarsenGrading_induction (motive := fun b ↦ a * b = ((-1 : ℤˣ) ^ (i * j)) • (b * a)) hb
     (fun q hq b hb ↦ ?_) (by simp) fun x y hx hy ↦ by rw [mul_add, add_mul, hx, hy, smul_add]
-  rw [hcomm ha hb, ← hp, ← hq, Int.coe_castAddHom, ← Int.cast_mul, uzpow_intCast,
-    Int.negOnePow_def]
+  rw [hcomm ha hb, ← hp, ← hq, Int.coe_castAddHom, ← Int.cast_mul, uzpow_intCast_eq_negOnePow]
 
 end ParityComm
 
