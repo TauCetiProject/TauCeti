@@ -32,9 +32,9 @@ closed unit ball. For the unit circle of `ℂ` with its standard orientation, th
 positive tangent direction at `z` is `i z`, the counterclockwise one
 (`Complex.orientation_eq_orientationAt_sphereOrientation_iff`). Mathlib's stereographic
 atlas of the sphere is not coherently oriented, so the orientation is constructed instead from the
-nowhere-vanishing top form `(v₁, …, vₙ) ↦ vol(u, v₁, …, vₙ)`, the pullback to `Sⁿ` of the
-contraction of the volume form of `E` with the position vector, through
-`TauCeti.Manifold.Orientation.ofTopForm`. Reversing `o` reverses it.
+nowhere-vanishing top form `(v₁, …, vₙ) ↦ vol(u, v₁, …, vₙ)` (`Orientation.sphereVolumeForm`),
+the pullback to `Sⁿ` of the contraction of the volume form of `E` with the position vector,
+through `TauCeti.Manifold.Orientation.ofTopForm`. Reversing `o` reverses it.
 
 The antipodal map `u ↦ -u` pulls this top form back to `(-1)^(n+1)` times itself, since it negates
 both the point `u` and the tangent vectors. So it preserves the outward-normal orientation of `Sⁿ`
@@ -45,6 +45,7 @@ antipodal preimage, the antipodal map has degree `(-1)^(n+1)` at every value.
 
 ## Main declarations
 
+* `Orientation.sphereVolumeForm`: the nowhere-vanishing top form `vol(u, ·)` of the unit sphere.
 * `Orientation.sphereOrientation`: the outward-normal orientation of the unit sphere.
 * `Orientation.orientation_eq_orientationAt_sphereOrientation_iff`: a tangent basis at `u` is
   positive exactly when `u` followed by its image in `E` has positive volume, and
@@ -86,36 +87,42 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
 
 /-- The contraction `x ↦ vol(x, ·)` of the volume form of `E` with the position vector. -/
-private def radialVolumeForm (o : Orientation ℝ E (Fin (n + 1))) : RoughForm 𝓘(ℝ, E) E ℝ n :=
-  fun x ↦ o.volumeFormL.curryLeft x
+private def radialVolumeForm (o : Orientation ℝ E (Fin (n + 1))) : SmoothForm 𝓘(ℝ, E) E ℝ n :=
+  ⟨fun x ↦ o.volumeFormL.curryLeft x,
+    (isSmoothForm_modelSpace_iff.2
+      (o.volumeFormL.curryLeft : E →L[ℝ] _).contDiff).mem_smoothBundleForms⟩
 
-/-- The top form `(v₁, …, vₙ) ↦ vol(u, v₁, …, vₙ)` on the unit sphere: the pullback along the
-inclusion of the contraction of the volume form of `E` with the position vector. -/
-private def sphereTopForm (o : Orientation ℝ E (Fin (n + 1))) :
-    RoughForm (𝓡 n) (sphere (0 : E) 1) ℝ n :=
-  mpullback (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) (radialVolumeForm o)
+/-- The **volume form of the unit sphere** `Sⁿ` of an oriented real inner product space `E` of
+dimension `n + 1`: the top form `(v₁, …, vₙ) ↦ vol(u, v₁, …, vₙ)` at `u`, with the tangent vectors
+read in `E` (`Orientation.sphereVolumeForm_apply`). It is the pullback along the inclusion of the
+contraction of the volume form of `E` with the position vector, it vanishes nowhere
+(`Orientation.sphereVolumeForm_apply_ne_zero`), and it defines the outward-normal orientation
+`Orientation.sphereOrientation`. -/
+def _root_.Orientation.sphereVolumeForm (o : Orientation ℝ E (Fin (n + 1))) :
+    SmoothForm (𝓡 n) (sphere (0 : E) 1) ℝ n :=
+  SmoothForm.mpullback ((↑) : sphere (0 : E) 1 → E) contMDiff_coe_sphere (radialVolumeForm o)
 
-private theorem sphereTopForm_apply (o : Orientation ℝ E (Fin (n + 1))) (u : sphere (0 : E) 1)
-    (v : Fin n → TangentSpace (𝓡 n) u) :
-    sphereTopForm o u v = o.volumeForm
+/-- The volume form of the unit sphere evaluates tangent vectors `v₁, …, vₙ` at `u` as
+`vol(u, v₁, …, vₙ)`, with the tangent vectors read in `E` through the derivative of the
+inclusion. -/
+@[simp]
+theorem _root_.Orientation.sphereVolumeForm_apply (o : Orientation ℝ E (Fin (n + 1)))
+    (u : sphere (0 : E) 1) (v : Fin n → TangentSpace (𝓡 n) u) :
+    o.sphereVolumeForm.1 u v = o.volumeForm
       (Fin.cons (u : E) fun i ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) := by
-  rw [sphereTopForm, mpullback_apply]
+  rw [Orientation.sphereVolumeForm, SmoothForm.mpullback_apply]
   -- The radial form is `curryLeft` of the volume form, `Matrix.vecCons` is `Fin.cons`, and
   -- `mvfderiv` of the inclusion is its `mfderiv`, as `NormedSpace.fromTangentSpace` is the
   -- identity.
   exact (o.volumeFormL.curryLeft_apply_apply _ _).trans (o.volumeFormL_apply _)
 
-private theorem isSmoothForm_sphereTopForm (o : Orientation ℝ E (Fin (n + 1))) :
-    IsSmoothForm (𝓡 n) 0 (sphereTopForm o) :=
-  (isSmoothForm_modelSpace_iff.2 (o.volumeFormL.curryLeft : E →L[ℝ] _).contDiff).mpullback
-    contMDiff_coe_sphere
-
-private theorem sphereTopForm_ne_zero (o : Orientation ℝ E (Fin (n + 1)))
-    (u : sphere (0 : E) 1) : sphereTopForm o u ≠ 0 := by
+/-- The volume form of the unit sphere vanishes nowhere. -/
+theorem _root_.Orientation.sphereVolumeForm_apply_ne_zero (o : Orientation ℝ E (Fin (n + 1)))
+    (u : sphere (0 : E) 1) : o.sphereVolumeForm.1 u ≠ 0 := by
   let b := finBasisOfFinrankEq ℝ (TangentSpace (𝓡 n) u) (finrank_euclideanSpace_fin (𝕜 := ℝ))
   intro h
   have hb := DFunLike.congr_fun h ⇑b
-  rw [sphereTopForm_apply] at hb
+  rw [Orientation.sphereVolumeForm_apply] at hb
   exact Orientation.volumeForm_apply_ne_zero_iff.2
     (LinearIndependent.finCons_mvfderiv_coe_sphere u b.linearIndependent) (by simpa using hb)
 
@@ -125,8 +132,8 @@ space `E` of dimension `n + 1`: a tangent basis `v₁, …, vₙ` at `u` is posi
 (`Orientation.orientation_eq_orientationAt_sphereOrientation_iff`). -/
 def _root_.Orientation.sphereOrientation (o : Orientation ℝ E (Fin (n + 1))) :
     Manifold.Orientation (𝓡 n) (sphere (0 : E) 1) (Fin n) :=
-  Manifold.Orientation.ofTopForm finrank_euclideanSpace_fin (sphereTopForm o)
-    (isSmoothForm_sphereTopForm o) (sphereTopForm_ne_zero o)
+  Manifold.Orientation.ofTopForm finrank_euclideanSpace_fin o.sphereVolumeForm.1
+    (o.sphereVolumeForm.isSmoothForm.of_le zero_le) o.sphereVolumeForm_apply_ne_zero
 
 /-- A tangent basis `v` of the unit sphere at `u` is positive for the outward-normal orientation
 exactly when `u, v₁, …, vₙ`, read in `E` through the derivative of the inclusion, has positive
@@ -138,7 +145,8 @@ theorem _root_.Orientation.orientation_eq_orientationAt_sphereOrientation_iff
       0 < o.volumeForm
         (Fin.cons (u : E) fun i ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) := by
   rw [Orientation.sphereOrientation,
-    Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff, sphereTopForm_apply]
+    Manifold.Orientation.orientation_eq_orientationAt_ofTopForm_iff,
+    Orientation.sphereVolumeForm_apply]
 
 /-- A tangent basis `v` of the unit sphere at `u` is negative for the outward-normal orientation
 exactly when `u, v₁, …, vₙ`, read in `E` through the derivative of the inclusion, has negative
@@ -180,10 +188,10 @@ theorem _root_.Orientation.sphereOrientation_neg (o : Orientation ℝ E (Fin (n 
 
 /-- The antipodal map `u ↦ -u` pulls the top form `(v₁, …, vₙ) ↦ vol(u, v₁, …, vₙ)` of the sphere
 back to `(-1)^(n+1)` times itself: it negates both the point and the tangent vectors. -/
-private theorem mpullback_neg_sphereTopForm (o : Orientation ℝ E (Fin (n + 1)))
+private theorem mpullback_neg_sphereVolumeForm (o : Orientation ℝ E (Fin (n + 1)))
     (u : sphere (0 : E) 1) :
-    mpullback (𝓡 n) (𝓡 n) (fun y : sphere (0 : E) 1 ↦ -y) (sphereTopForm o) u =
-      ((-1 : ℝ) ^ (n + 1)) • sphereTopForm o u := by
+    mpullback (𝓡 n) (𝓡 n) (fun y : sphere (0 : E) 1 ↦ -y) o.sphereVolumeForm.1 u =
+      ((-1 : ℝ) ^ (n + 1)) • o.sphereVolumeForm.1 u := by
   have hneg : MDifferentiableAt (𝓡 n) (𝓡 n) (fun y : sphere (0 : E) 1 ↦ -y) u :=
     (contMDiff_neg_sphere (m := 1)).mdifferentiableAt one_ne_zero
   have hcoe : MDifferentiableAt (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) (-u) :=
@@ -196,8 +204,8 @@ private theorem mpullback_neg_sphereTopForm (o : Orientation ℝ E (Fin (n + 1))
       funext fun y ↦ coe_neg_sphere y
     rw [← mvfderiv_comp_apply u hcoe hneg, hcomp, mvfderiv_neg, neg_apply]
   ext v
-  rw [mpullback_apply, sphereTopForm_apply, ContinuousAlternatingMap.smul_apply,
-    sphereTopForm_apply, coe_neg_sphere]
+  rw [mpullback_apply, Orientation.sphereVolumeForm_apply, ContinuousAlternatingMap.smul_apply,
+    Orientation.sphereVolumeForm_apply, coe_neg_sphere]
   simp_rw [hd]
   have hcons : (Fin.cons (-(u : E))
       (fun i ↦ -mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) : Fin (n + 1) → E) =
@@ -215,7 +223,7 @@ theorem _root_.Orientation.isOrientationPreservingAt_neg_sphere
       (fun y ↦ -y) u := by
   rw [Orientation.sphereOrientation]
   refine Manifold.Orientation.isOrientationPreservingAt_ofTopForm_of_mpullback_eq_smul _ _ _ _ _ _
-    ?_ (mpullback_neg_sphereTopForm o u)
+    ?_ (mpullback_neg_sphereVolumeForm o u)
   rw [hn.add_one.neg_one_pow]
   exact one_pos
 
@@ -227,7 +235,7 @@ theorem _root_.Orientation.isOrientationReversingAt_neg_sphere
       (fun y ↦ -y) u := by
   rw [Orientation.sphereOrientation]
   refine Manifold.Orientation.isOrientationReversingAt_ofTopForm_of_mpullback_eq_smul _ _ _ _ _ _
-    ?_ (mpullback_neg_sphereTopForm o u)
+    ?_ (mpullback_neg_sphereVolumeForm o u)
   rw [hn.add_one.neg_one_pow]
   exact neg_one_lt_zero
 
