@@ -38,8 +38,22 @@ variable {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι] 
   [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {X : ι → Ω → E}
 
+omit [TopologicalSpace ι] [OrderTopology ι] [NormedSpace ℝ E] [CompleteSpace E] in
+private lemma stopped_indicator_apply (τ : Ω → WithTop ι) (t : ι) (ω : Ω) :
+    stoppedProcess (fun t ↦ {ω | ⊥ < τ ω}.indicator (X t)) τ t ω =
+      if ⊥ < τ ω then X (min (t : WithTop ι) (τ ω)).untopA ω else 0 := by
+  rw [stoppedProcess_indicator_comm]
+  simp only [Set.indicator_apply, Set.mem_ofPred_eq, stoppedProcess]
+
+omit [TopologicalSpace ι] [OrderTopology ι] [NormedSpace ℝ E] [CompleteSpace E] in
+private lemma stopped_indicator_bot (τ : Ω → WithTop ι) :
+    stoppedProcess (fun t ↦ {ω | ⊥ < τ ω}.indicator (X t)) τ ⊥ =
+      {ω | ⊥ < τ ω}.indicator (X ⊥) := by
+  ext ω
+  exact stoppedProcess_eq_of_le (by simp)
+
 /-- Subtracting the initial value preserves native local martingales, without an initial
-integrability or measurability assumption. The same localizing sequence works. -/
+integrability or measurability assumption. -/
 theorem martingale_sub_initialValue [SigmaFiniteFiltration P ℱ]
     (hX : Locally (fun Y ↦ Martingale Y ℱ P) ℱ X P) :
     Locally (fun Y ↦ Martingale Y ℱ P) ℱ (fun t ω ↦ X t ω - X ⊥ ω) P := by
@@ -50,15 +64,14 @@ theorem martingale_sub_initialValue [SigmaFiniteFiltration P ℱ]
   have hinit := martingale_const_fun ℱ P (hZ.stronglyMeasurable ⊥) (hZ.integrable ⊥)
   convert hZ.sub hinit using 1
   ext t ω
-  have hbot : Z ⊥ ω = {ω | ⊥ < hX.localSeq n ω}.indicator (X ⊥) ω :=
-    stoppedProcess_eq_of_le (by simp)
-  simp only [Pi.sub_apply, hbot]
-  simp [Z, stoppedProcess, Set.indicator_apply]
-  split_ifs <;> simp_all
+  have hbot : Z ⊥ = {ω | ⊥ < hX.localSeq n ω}.indicator (X ⊥) :=
+    stopped_indicator_bot _
+  simp only [Pi.sub_apply, hbot, Z, stopped_indicator_apply, Set.indicator_apply,
+    Set.mem_ofPred_eq]
+  split_ifs <;> simp only [sub_self]
 
-/-- Adding a random variable known at the initial time preserves native local martingales.
-The initial variable need not be integrable: cut off each localizer at zero when its norm
-exceeds the stage index. -/
+/-- Under a finite measure, adding a random variable strongly measurable at the initial time
+preserves native local martingales. The initial variable need not be integrable. -/
 theorem martingale_add_initial [IsFiniteMeasure P]
     (hX : Locally (fun Y ↦ Martingale Y ℱ P) ℱ X P) {ξ : Ω → E}
     (hξ : StronglyMeasurable[ℱ ⊥] ξ) :
@@ -67,12 +80,12 @@ theorem martingale_add_initial [IsFiniteMeasure P]
   let A : ℕ → Set Ω := fun n ↦ {ω | ‖ξ ω‖ ≤ (n : ℝ)}
   have hA (n : ℕ) : MeasurableSet[ℱ ⊥] (A n) :=
     measurableSet_le hξ.norm.measurable measurable_const
-  let τ : ℕ → Ω → WithTop ι := fun n ω ↦ if ω ∈ A n then hX.localSeq n ω else ⊥
+  let τ : ℕ → Ω → WithTop ι := fun n ↦
+    (A n).piecewise (hX.localSeq n) (fun _ ↦ ⊥)
   have hτ : IsLocalizingSequence ℱ τ P := by
     refine ⟨⟨fun n ↦ ?_, ?_⟩, ?_⟩
-    · simpa +unfoldPartialApp [Set.piecewise, τ] using
-        (hX.isLocalizingSequence_localSeq.isStoppingTime n).piecewise_of_le
-          (isStoppingTime_const ℱ ⊥) (i := ⊥) (by simp) (by simp) (hA n)
+    · exact (hX.isLocalizingSequence_localSeq.isStoppingTime n).piecewise_of_le
+        (isStoppingTime_const ℱ ⊥) (i := ⊥) (by simp) (by simp) (hA n)
     · filter_upwards [hX.isLocalizingSequence_localSeq.tendsto_top] with ω hω
       have hlarge : ∀ᶠ n : ℕ in atTop, ω ∈ A n :=
         (tendsto_natCast_atTop_atTop.eventually (eventually_ge_atTop ‖ξ ω‖))
@@ -81,8 +94,8 @@ theorem martingale_add_initial [IsFiniteMeasure P]
       by_cases hn : ω ∈ A n
       · have hn' : ‖ξ ω‖ ≤ (n : ℝ) := hn
         have hm : ω ∈ A m := hn'.trans (by exact_mod_cast hnm)
-        simpa [τ, hn, hm] using hω hnm
-      · simp [τ, hn]
+        simpa [τ, Set.piecewise, hn, hm] using hω hnm
+      · simp [τ, Set.piecewise, hn]
   refine ⟨τ, hτ, fun n ↦ ?_⟩
   let Z := stoppedProcess (fun t ↦ {ω | ⊥ < hX.localSeq n ω}.indicator (X t))
     (hX.localSeq n)
@@ -101,9 +114,12 @@ theorem martingale_add_initial [IsFiniteMeasure P]
     (fun t ↦ ℱ.mono bot_le _ hpos)
   convert (hZ.indicator (fun t ↦ ℱ.mono bot_le _ (hA n))).add hinit using 1
   ext t ω
-  by_cases hω : ω ∈ A n <;>
-    simp [Z, τ, stoppedProcess, Set.indicator_apply, hω]
-  split_ifs <;> simp_all
+  simp only [Pi.add_apply, Z, stopped_indicator_apply, Set.indicator_apply,
+    Set.mem_ofPred_eq]
+  by_cases hω : ω ∈ A n
+  · simp only [τ, Set.piecewise, hω, ↓reduceIte]
+    split_ifs <;> simp only [add_zero]
+  · simp only [τ, Set.piecewise, hω, ↓reduceIte, lt_self_iff_false, ite_self, add_zero]
 
 end ProbabilityTheory.Locally
 
