@@ -88,12 +88,12 @@ numbered simply connected root datum. At the numbered simple root `αᵢ`, the i
 `x_{±i}`. -/
 def canonicalRootSubgroup (γ : Fin d.dynkinType.numRoots) :
     Multiplicative d.Closure →* d.CanonicalAmbientGroup :=
-  (d.dynkinType.scChevalleyDatum d.dynkinType_valid).rootSubgroup γ d.Closure
+  (d.dynkinType.scChevalleyDatum d.dynkinType_valid).rootSubgroupPoints γ d.Closure
 
 /-- The canonical root subgroup is the root subgroup of the full-weight Chevalley datum. -/
 theorem canonicalRootSubgroup_def (γ : Fin d.dynkinType.numRoots) :
     d.canonicalRootSubgroup γ =
-      (d.dynkinType.scChevalleyDatum d.dynkinType_valid).rootSubgroup γ d.Closure :=
+      (d.dynkinType.scChevalleyDatum d.dynkinType_valid).rootSubgroupPoints γ d.Closure :=
   (rfl)
 
 /-- **The split torus** of the canonical ambient group, parametrized in fundamental-weight
@@ -125,7 +125,7 @@ theorem coe_canonicalTorus (s : Fin d.dynkinType.rank → d.Closureˣ) :
 /-- **Every canonical root subgroup is injective.** -/
 theorem canonicalRootSubgroup_injective (γ : Fin d.dynkinType.numRoots) :
     Function.Injective (d.canonicalRootSubgroup γ) :=
-  d.dynkinType.scChevalleyDatum_rootSubgroup_injective d.dynkinType_valid γ d.Closure
+  d.dynkinType.scChevalleyDatum_rootSubgroupPoints_injective d.dynkinType_valid γ d.Closure
 
 /-- **The canonical torus is injective**: the weights of the full-weight lattice span the whole
 weight lattice. -/
@@ -142,7 +142,7 @@ theorem canonicalTorus_conj_canonicalRootSubgroup (γ : Fin d.dynkinType.numRoot
       d.canonicalRootSubgroup γ (Multiplicative.ofAdd
         ((torusCharacter s ((d.dynkinType.simplyConnectedRootDatum d.dynkinType_valid).root γ) :
           d.Closure) * u)) := by
-  have h := (d.dynkinType.scChevalleyDatum d.dynkinType_valid).torusPoints_conj_rootSubgroup γ
+  have h := (d.dynkinType.scChevalleyDatum d.dynkinType_valid).torusPoints_conj_rootSubgroupPoints γ
     d.Closure s u
   rw [scChevalleyDatum_coordinateRoot] at h
   -- As in `coe_canonicalTorus`, the datum equation is used at the unfolded canonical maps.

@@ -54,7 +54,7 @@ point of `G_sc(t)` (`TauCeti.DynkinType.kostantTorusMatrix_mem_chevalleyGroup`).
 * `TauCeti.DynkinType.scChevalleyDatum_coordinateWeight`: the coordinate weights are `scWeight`.
 * `TauCeti.DynkinType.scChevalleyDatum_coordinateRoot`: the coordinate roots are the roots, so
   the torus acts on the root subgroup of `γ` through the character `γ`.
-* `TauCeti.DynkinType.scChevalleyDatum_rootSubgroup_injective`: every root subgroup of the
+* `TauCeti.DynkinType.scChevalleyDatum_rootSubgroupPoints_injective`: every root subgroup of the
   full-weight datum is injective, over every commutative ring.
 * `TauCeti.DynkinType.chevalleyGroupScheme`: the simply connected Chevalley group scheme
   `G_sc(t)` over `ℤ`.
@@ -169,11 +169,12 @@ theorem scChevalleyDatum_coordinateRoot (γ : Fin t.numRoots) :
 including nonreduced rings and rings of small characteristic. At a positive simple root the
 fundamental summand of that node detects the parameter, and every other root subgroup is a
 signed Weyl conjugate of one of these. -/
-theorem scChevalleyDatum_rootSubgroup_injective (γ : Fin t.numRoots) (A : Type v) [CommRing A] :
-    Function.Injective ((t.scChevalleyDatum ht).rootSubgroup γ A) := by
-  refine (t.scChevalleyDatum ht).rootSubgroup_injective_of_simple A (fun i u v huv => ?_) γ
+theorem scChevalleyDatum_rootSubgroupPoints_injective (γ : Fin t.numRoots) (A : Type v)
+    [CommRing A] :
+    Function.Injective ((t.scChevalleyDatum ht).rootSubgroupPoints γ A) := by
+  refine (t.scChevalleyDatum ht).rootSubgroupPoints_injective_of_simple A (fun i u v huv => ?_) γ
   have hmatrix := congrArg Subtype.val huv
-  rw [ChevalleyDatum.coe_rootSubgroup, ChevalleyDatum.coe_rootSubgroup,
+  rw [ChevalleyDatum.coe_rootSubgroupPoints, ChevalleyDatum.coe_rootSubgroupPoints,
     chevalleyRootSubgroup_simpleIndex] at hmatrix
   exact t.kostantRootSubgroupParam_scLattice_injective ht A (.inl i)
     (Units.map_injective (MulEquiv.injective _) hmatrix)
