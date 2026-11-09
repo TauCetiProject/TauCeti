@@ -448,6 +448,13 @@ theorem geometricRepresentation_simple (i : B) :
     cs.geometricRepresentation (cs.simple i) = M.geometricReflection i :=
   cs.lift_apply_simple M.isLiftable_geometricReflection i
 
+/-- The image of `αᵢ` under `w * s i` is the negative of its image under `w`. -/
+theorem geometricRepresentation_mul_simple_single (w : W) (i : B) :
+    cs.geometricRepresentation (w * cs.simple i) (Finsupp.single i 1) =
+      -cs.geometricRepresentation w (Finsupp.single i 1) := by
+  rw [map_mul, mul_apply_eq_comp, geometricRepresentation_simple,
+    M.geometricReflection_apply_single_self, map_neg]
+
 /-- **The geometric representation is orthogonal** for the canonical bilinear form. -/
 theorem geometricForm_geometricRepresentation (w : W) (u v : B →₀ ℝ) :
     M.geometricForm (cs.geometricRepresentation w u) (cs.geometricRepresentation w v) =

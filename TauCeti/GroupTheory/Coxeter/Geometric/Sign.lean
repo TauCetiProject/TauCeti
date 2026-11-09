@@ -93,15 +93,15 @@ theorem exists_nonneg_geometricRepresentation_of_mem_parabolic_pair {i j : I} {v
   rw [← hword]
   exact cs.rankTwo_nonnegative i j hk
 
-/-- An element without right descent at `i` sends `αᵢ` to a vector with nonnegative coefficients.
-A right descent `j` of `w` factors `w = u * v` along the standard parabolic subgroup on `{i, j}`,
-where lengths add and `u` is strictly shorter than `w`, which sets up the induction. -/
+/-- An element without right descent at `i` sends `αᵢ` to a vector with nonnegative coefficients. -/
 private theorem geometricRepresentation_single_nonneg {w : W} {i : I}
     (h : ¬cs.IsRightDescent w i) : 0 ≤ cs.geometricRepresentation w (Finsupp.single i 1) := by
   induction hn : cs.length w using Nat.strong_induction_on generalizing w i with
   | _ n ih =>
     rcases eq_or_ne w 1 with rfl | hw
     · simp
+    -- a right descent `j` of `w` factors `w = u * v` along the standard parabolic subgroup on
+    -- `{i, j}`, where lengths add and `u` is strictly shorter than `w`, which sets up the induction
     obtain ⟨j, hj⟩ := cs.exists_rightDescent_of_ne_one hw
     obtain ⟨⟨u, v⟩, ⟨hu, hv, huv⟩, -⟩ := cs.existsUnique_isMinimalCosetRep_mul {i, j} w
     dsimp only at hu hv huv
@@ -128,13 +128,6 @@ private theorem geometricRepresentation_single_pos {w : W} {i : I}
   lt_of_le_of_ne (cs.geometricRepresentation_single_nonneg h)
     ((map_ne_zero_iff _ (cs.geometricRepresentation.apply_bijective w).injective).mpr
       (Finsupp.single_ne_zero.mpr one_ne_zero)).symm
-
-/-- The image of `αᵢ` under `w * s i` is the negative of its image under `w`. -/
-private theorem geometricRepresentation_mul_simple_single (w : W) (i : I) :
-    cs.geometricRepresentation (w * cs.simple i) (Finsupp.single i 1) =
-      -cs.geometricRepresentation w (Finsupp.single i 1) := by
-  rw [map_mul, mul_apply_eq_comp, geometricRepresentation_simple,
-    M.geometricReflection_apply_single_self, map_neg]
 
 private theorem geometricRepresentation_single_neg {w : W} {i : I}
     (h : cs.IsRightDescent w i) : cs.geometricRepresentation w (Finsupp.single i 1) < 0 := by
