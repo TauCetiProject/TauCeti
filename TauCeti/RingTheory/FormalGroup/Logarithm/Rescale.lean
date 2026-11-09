@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 public import TauCeti.RingTheory.FormalGroup.Rescale.Basic
+import TauCeti.RingTheory.FormalGroup.Hom.Additive
 -- Proof-only: the derivative commutes with change of coefficients.
 import TauCeti.RingTheory.PowerSeries.Derivative
 
@@ -52,6 +53,8 @@ of the formal group `F(s 𝔪)` with the additive group `s 𝔪` through the log
   is the logarithm of `F^s`.
 * `FormalGroup.map_invHom_rescaleLogIso`: after base change to a `ℚ`-algebra, the inverse of the
   integral logarithm is the exponential of `F^s`.
+* `TauCeti.FormalGroupHom.subst_rescaleLog`: integral logarithms conjugate homomorphisms between
+  rescaled formal groups to multiplication by their linear coefficient.
 
 ## References
 
@@ -185,3 +188,41 @@ theorem map_invHom_rescaleLogIso [HasUniqueDiv R] {S : Type*} [CommRing S] [Alge
   simpa using ((F.rescaleLogIso hs).map f).subst_invHom_toHom
 
 end FormalGroup
+
+open FormalGroup
+
+namespace TauCeti.FormalGroupHom
+
+variable {R : Type*} [CommRing R] [HasUniqueDiv R]
+  {F G : FormalGroup R} {s t : R}
+  (hs : ∀ n : ℕ, (n + 1 : R) ∣ s ^ n)
+  (ht : ∀ n : ℕ, (n + 1 : R) ∣ t ^ n)
+
+/-- A homomorphism from a rescaled formal group to the additive law is its linear coefficient
+times the integral logarithm. -/
+theorem toPowerSeries_eq_coeff_one_smul_rescaleLog (f : FormalGroupHom (F.rescale s) 𝔾ₐ) :
+    f.toPowerSeries = PowerSeries.coeff 1 f.toPowerSeries • F.rescaleLog hs := by
+  let e := F.rescaleLogIso hs
+  have hinv : PowerSeries.coeff 1 e.invHom.toPowerSeries = 1 := by
+    simpa only [FormalGroupIso.symm_toHom] using
+      (FormalGroupIso.IsStrict.coeff_one (f := e.symm))
+  have h := (f.comp e.invHom).toPowerSeries_eq_coeff_one_smul_X
+  rw [coeff_one_comp, hinv, mul_one] at h
+  have heq : (f.comp e.invHom).comp e.toHom = f := by
+    rw [comp_assoc, e.invHom_comp_toHom, comp_id]
+  have := congrArg toPowerSeries heq
+  rw [comp_toPowerSeries, h, PowerSeries.subst_smul e.toHom.hasSubst,
+    PowerSeries.subst_X e.toHom.hasSubst] at this
+  simpa only [e, rescaleLogIso_toHom, rescaleLogHom_toPowerSeries] using this.symm
+
+/-- Integral logarithms are natural along homomorphisms, including when the tangent map is
+not a unit: `log_G(f(T)) = f'(0) log_F(T)`. -/
+theorem subst_rescaleLog (f : FormalGroupHom (F.rescale s) (G.rescale t)) :
+    PowerSeries.subst f.toPowerSeries (G.rescaleLog ht) =
+      PowerSeries.coeff 1 f.toPowerSeries • F.rescaleLog hs := by
+  have h := ((G.rescaleLogHom ht).comp f).toPowerSeries_eq_coeff_one_smul_rescaleLog hs
+  rw [coeff_one_comp, rescaleLogHom_toPowerSeries, coeff_one_rescaleLog, one_mul,
+    comp_toPowerSeries, rescaleLogHom_toPowerSeries] at h
+  exact h
+
+end TauCeti.FormalGroupHom
