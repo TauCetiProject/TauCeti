@@ -65,12 +65,13 @@ theorem addHaar_univ_of_isEmpty {V ι : Type*} [NormedAddCommGroup V] [NormedSpa
 
 section ChangeBasis
 
-variable {E ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [Fintype ι] [DecidableEq ι]
 
 /-- A change of basis rescales its normalized Haar measure by the inverse absolute determinant. -/
 theorem addHaar_eq_smul_of_basis (b b' : Basis ι ℝ E) :
     b'.addHaar = ENNReal.ofReal |(b.det b')⁻¹| • b.addHaar := by
+  have := b.finiteDimensional_of_finite
   let e : E ≃ₗ[ℝ] E := b.equiv b' (Equiv.refl ι)
   have hmap : b.map e = b' := by
     ext i
