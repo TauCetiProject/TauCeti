@@ -57,9 +57,10 @@ noncomputable def metricChangeCompositionCorrectionPath (h k : E →L[ℝ] E →
       (Unitary.linearIsometryEquiv.symm (h.metricChangeCompositionCorrection k hH hK)) where
   toFun t := Unitary.linearIsometryEquiv.symm
     ((AffineMap.lineMap k h (t : ℝ)).metricChangeCompositionCorrection k
-      (isStrictlyPositive_lineMap k h hK hH t t.2) hK)
+      (isStrictlyPositive_continuousLinearMapOfBilin_lineMap k h hK hH t t.2) hK)
   continuous_toFun := (Path.segment k h).continuous.metricChangeCompositionCorrection
-    continuous_const (fun t ↦ isStrictlyPositive_lineMap k h hK hH t t.2) (fun _ ↦ hK)
+    continuous_const
+    (fun t ↦ isStrictlyPositive_continuousLinearMapOfBilin_lineMap k h hK hH t t.2) (fun _ ↦ hK)
   source' := by simp [← LinearIsometryEquiv.one_def]
   target' := by simp
 
@@ -69,7 +70,7 @@ theorem metricChangeCompositionCorrectionPath_apply (h k : E →L[ℝ] E →L[�
     (hH : IsStrictlyPositive h♯) (hK : IsStrictlyPositive k♯) (t : unitInterval) (v : E) :
     (metricChangeCompositionCorrectionPath h k hH hK t : E →L[ℝ] E) v =
       (AffineMap.lineMap k h (t : ℝ)).metricChangeCompositionCorrection k
-        (isStrictlyPositive_lineMap k h hK hH t t.2) hK v :=
+        (isStrictlyPositive_continuousLinearMapOfBilin_lineMap k h hK hH t t.2) hK v :=
   (rfl)
 
 /-- The canonical correction paths depend jointly continuously on time and on a continuous
@@ -85,7 +86,8 @@ theorem _root_.Continuous.metricChangeCompositionCorrectionPath
     simp only [AffineMap.lineMap_apply_module]
     fun_prop
   exact (hline.metricChangeCompositionCorrection (hk.comp continuous_snd)
-    (fun p ↦ isStrictlyPositive_lineMap (k p.2) (h p.2) (kpos p.2) (hpos p.2) p.1 p.1.2)
+    (fun p ↦ isStrictlyPositive_continuousLinearMapOfBilin_lineMap
+      (k p.2) (h p.2) (kpos p.2) (hpos p.2) p.1 p.1.2)
     (fun p ↦ kpos p.2))
 
 /-- No correction path is introduced when the intermediate and final metrics agree. -/
@@ -145,6 +147,8 @@ noncomputable def metricChangeCompositionCorrectionSpecialOrthogonalPath
     Path (1 : TauCeti.specialOrthogonalGroup E)
       ⟨Unitary.linearIsometryEquiv.symm (h.metricChangeCompositionCorrection k hH hK),
         metricChangeCompositionCorrection_mem_specialOrthogonalGroup h k hH hK⟩ where
+  -- The Path coercion unfolds to toFun, so the value is definitionally the unitary
+  -- correction for the intermediate metric AffineMap.lineMap k h t and final metric k.
   toFun t := ⟨metricChangeCompositionCorrectionPath h k hH hK t,
     metricChangeCompositionCorrection_mem_specialOrthogonalGroup _ _ _ _⟩
   continuous_toFun := (metricChangeCompositionCorrectionPath h k hH hK).continuous.subtype_mk _

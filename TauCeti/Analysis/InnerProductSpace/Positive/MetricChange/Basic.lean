@@ -368,7 +368,8 @@ theorem convex_setOf_isStrictlyPositive_continuousLinearMapOfBilin [CompleteSpac
     simpa [hb1] using hk
 
 /-- The affine interpolation of positive metrics remains positive, including at its endpoints. -/
-theorem isStrictlyPositive_lineMap [CompleteSpace E] (h k : E →L[ℝ] E →L[ℝ] ℝ)
+theorem isStrictlyPositive_continuousLinearMapOfBilin_lineMap [CompleteSpace E]
+    (h k : E →L[ℝ] E →L[ℝ] ℝ)
     (hH : IsStrictlyPositive h♯) (hK : IsStrictlyPositive k♯)
     (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) :
     IsStrictlyPositive (AffineMap.lineMap h k t)♯ := by
