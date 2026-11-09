@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.Algebra.Homology.Embedding.Restriction.Shift
-public import TauCeti.KnotTheory.Khovanov.Resolution.Cube
 public import TauCeti.KnotTheory.Khovanov.Resolution.Support
-public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 
 /-!
 # The normalized Khovanov complex
