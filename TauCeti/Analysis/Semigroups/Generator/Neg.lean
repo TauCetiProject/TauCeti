@@ -78,8 +78,7 @@ private theorem hasDerivWithinAt_productOrbit {S T : StronglyContinuousSemigroup
     simpa only [a] using S.realOperator_hasDerivWithinAt_map_generator ⟨y, hyS⟩ hs
   simpa only [map_neg, neg_add_cancel] using
     S.hasDerivWithinAt_realOperator_apply_realOperator T (f := fun u => u) hs
-      (tendsto_id.mono_left nhdsWithin_le_nhds)
-      (eventually_nhdsWithin_of_forall fun u hu => hs.trans hu.le) hquot hslope
+      (tendsto_id.mono_left nhdsWithin_le_nhds) hquot hslope
 
 /-- On the generator domain, `S t` undoes `T t`: for `x ∈ D(T)` and `0 ≤ t`, `S t (T t x) = x`. -/
 private theorem realOperator_apply_apply_eq_self_of_generator_eq_neg_of_mem_domain
@@ -87,7 +86,7 @@ private theorem realOperator_apply_apply_eq_self_of_generator_eq_neg_of_mem_doma
     {t : ℝ} (ht : 0 ≤ t) {x : X} (hx : x ∈ T.domain) :
     S.realOperator t (T.realOperator t x) = x := by
   have h := S.realOperator_apply_eq_of_hasDerivWithinAt_zero (f := fun u => u)
-    (g := fun u => T.realOperator u x) continuousOn_id (fun _ hu => hu.1)
+    (g := fun u => T.realOperator u x) continuousOn_id
     ((T.realOperator_continuousOn_Ici x).mono fun u hu => hu.1)
     (fun _ hu => hasDerivWithinAt_productOrbit hgen hx hu.1) t (Set.right_mem_Icc.mpr ht)
   simpa only [S.realOperator_zero_apply, T.realOperator_zero_apply] using h
