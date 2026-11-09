@@ -44,7 +44,7 @@ namespace TauCeti
 the same exponent and conjugation-related unit germs near `(x, 0)`, including on the hyperplane
 `z = 0`. The branch `r₂` has Laurent form `z ^ n * W₂` near `(x, 0)` and `r₁` has form
 `z ^ m * W₁` near `(τ x, 0)`, with `r₂ b = conj (r₁ (τ b.1, conj b.2))` off the hyperplane. -/
-theorem exponent_eq_and_unit_conj {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+private theorem exponent_eq_and_unit_conj {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {r₁ r₂ W₁ W₂ : E × ℂ → ℂ} {m n : ℤ} {τ : E → E} {x : E} (hτ : ContinuousAt τ x)
     (hW₂a : AnalyticAt ℝ W₂ (x, 0)) (hW₂0 : W₂ (x, 0) ≠ 0)
     (hW₁a : AnalyticAt ℝ W₁ (τ x, 0)) (hW₁0 : W₁ (τ x, 0) ≠ 0)
