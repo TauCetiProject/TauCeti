@@ -151,19 +151,6 @@ theorem isPositive_neg_hessianOperator_of_mem_upperContactSet (hΩ : IsOpen Ω)
 
 variable [FiniteDimensional ℝ E]
 
-omit [InnerProductSpace ℝ E] [CompleteSpace E] [FiniteDimensional ℝ E] in
-/-- Uniform convergence on sets `U k` which eventually contain a ball around each point of `Ω`
-gives pointwise convergence on `Ω`. -/
-private theorem tendsto_of_eventually_abs_sub_le {U : ℕ → Set E} {v : ℕ → E → ℝ}
-    (hUball : ∀ z ∈ Ω, ∃ r > 0, ∀ᶠ k in atTop, closedBall z r ⊆ U k)
-    (hvu : ∀ ε > 0, ∀ᶠ k in atTop, ∀ z ∈ U k, |v k z - u z| ≤ ε) {z : E} (hz : z ∈ Ω) :
-    Tendsto (fun k => v k z) atTop (𝓝 (u z)) := by
-  obtain ⟨s, hs, hsb⟩ := hUball z hz
-  refine Metric.tendsto_nhds.2 fun ε hε => ?_
-  filter_upwards [hsb, hvu (ε / 2) (half_pos hε)] with k hk hk'
-  rw [Real.dist_eq]
-  exact (hk' z (hk (mem_closedBall_self hs.le))).trans_lt (half_lt_self hε)
-
 omit [CompleteSpace E] in
 /-- **Contact points pass to the limit.** Let `v k` converge to `u` uniformly on sets `U k ⊆ Ω`
 which eventually contain a ball around each point of `Ω`. If `y` lies in the upper contact set of
@@ -198,8 +185,12 @@ theorem mem_upperContactSet_of_frequently {U : ℕ → Set E} {v : ℕ → E →
   obtain ⟨q, -, ψ, hψ, hq⟩ := tendsto_subseq_of_bounded isBounded_closedBall hpb
   -- Pass to the limit in the supporting inequalities.
   have hφψ : Tendsto (fun j => φ (ψ j)) atTop atTop := hφ.tendsto_atTop.comp hψ.tendsto_atTop
-  have hlim {z : E} (hz : z ∈ Ω) : Tendsto (fun j => v (φ (ψ j)) z) atTop (𝓝 (u z)) :=
-    (tendsto_of_eventually_abs_sub_le hUball hvu hz).comp hφψ
+  have hlim {z : E} (hz : z ∈ Ω) : Tendsto (fun j => v (φ (ψ j)) z) atTop (𝓝 (u z)) := by
+    obtain ⟨s, hs, hsb⟩ := hUball z hz
+    refine Metric.tendsto_nhds.2 fun ε hε => ?_
+    filter_upwards [hφψ.eventually hsb, hφψ.eventually (hvu (ε / 2) (half_pos hε))] with j hj hj'
+    rw [Real.dist_eq]
+    exact (hj' z (hj (mem_closedBall_self hs.le))).trans_lt (half_lt_self hε)
   refine mem_upperContactSet.2 ⟨hyΩ, q, fun z hz => le_of_tendsto_of_tendsto (hlim hz)
     ((hlim hyΩ).add (hq.inner tendsto_const_nhds)) ?_⟩
   obtain ⟨s, hs, hsb⟩ := hUball z hz

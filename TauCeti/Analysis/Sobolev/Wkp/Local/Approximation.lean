@@ -83,7 +83,7 @@ theorem contDiff_smoothField {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ
     (ContinuousLinearMap.lsmul ℝ ℝ) phi.contDiff_normed (hmem.locallyIntegrable Fact.out)
 
 /-- Where the closed ball of the outer bump radius around `x` lies in `Ω`, the derivative of the
-mollified order-`k` weak derivative is the mollified order-`(k + 1)` weak derivative. -/
+mollified order-`(k + 1)` weak derivative is the mollified order-`(k + 2)` weak derivative. -/
 theorem fderiv_smoothField (k : ℕ) (u : Wkp mu Omega p (k + 2))
     (phi : ContDiffBump (0 : E)) (x : E)
     (hx : Metric.closedBall x phi.rOut ⊆ Omega) :

@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
-import TauCeti.Analysis.InnerProductSpace.Positive.Basic
-import TauCeti.Analysis.Normed.Module.Basic
+import TauCeti.Analysis.InnerProductSpace.WeakOperatorTopology
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -123,8 +122,9 @@ private theorem limsup_indicator_upperContactSet_le {U : ℕ → Set E} {v : ℕ
   · have hyΓ := mem_upperContactSet_of_frequently hu hUΩ hUball hvu hfreq
     have hT := hT (upperContactSet_subset hyΓ)
     have hHN : H y ∈ {T : E →L[ℝ] E | (-T).IsPositive} :=
-      (ContinuousLinearMap.isClosed_setOf_isPositive.preimage
-        continuous_neg).mem_of_frequently_of_tendsto
+      ((ContinuousLinearMapWOT.isClosed_setOf_isPositive.preimage
+        ContinuousLinearMapWOT.continuous_ofCLM).preimage
+          continuous_neg).mem_of_frequently_of_tendsto
         (hfreq.mono fun k hk => isPositive_neg_hessianOperator_of_mem_upperContactSet (hUo k)
           (hv k).contDiffOn hk) hT
     rw [indicator_of_mem (mem_inter hyΓ hHN)]
@@ -367,7 +367,7 @@ theorem addHaar_ball_le_lintegral_abs_det_iteratedGradient {p : ℝ≥0∞} [Fac
   have hvm : ∀ ε > 0, ∀ᶠ k in atTop, ∀ z ∈ frontier (U k), v k z ≤ m + ε := by
     intro ε hε
     obtain ⟨d, hd, hdm⟩ := Ω.isOpen.exists_pos_forall_lt_add_of_infDist_lt hΩb
-      (hΩb.nonempty_compl ℝ) hcont hm (half_pos hε)
+      (nonempty_of_mem hΩb.compl) hcont hm (half_pos hε)
     filter_upwards [hδ0.eventually (gt_mem_nhds hd), hclose (ε / 2) (half_pos hε)] with k hk hk'
       z hz
     have hz' : δ k = infDist z (Ω : Set E)ᶜ :=
@@ -380,7 +380,7 @@ theorem addHaar_ball_le_lintegral_abs_det_iteratedGradient {p : ℝ≥0∞} [Fac
     exact ENNReal.pow_ne_top (Lp.eLpNorm_lt_top _).ne
   exact addHaar_ball_le_of_tendsto μ hΩb Ω.isOpen (hcont.mono subset_closure) hx hUo hUΩ
     (fun z hz => Ω.isOpen.exists_eventually_closedBall_subset_setOf_lt_infDist
-      (hΩb.nonempty_compl ℝ) hδ0 hz)
+      (nonempty_of_mem hΩb.compl) hδ0 hz)
     (fun k => contDiff_infty.1 (Wkp.contDiff_smoothField _ _) 2)
     (fun ε hε => (hclose ε hε).mono fun k hk y hy => hk y (hball k (le_of_lt hy)))
     hvm (Lp.aestronglyMeasurable _) hH

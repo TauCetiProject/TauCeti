@@ -123,18 +123,12 @@ theorem measure_closedBall_le_of_frequently_le (μ : Measure X) {f : ℝ → ℝ
 of the smaller balls bounds the measure of the ball. -/
 theorem measure_ball_le_of_forall_lt (μ : Measure X) {x : X} {ρ : ℝ} {B : ℝ≥0∞}
     (h : ∀ r < ρ, μ (ball x r) ≤ B) : μ (ball x ρ) ≤ B := by
-  have hU : ⋃ i : ℕ, ball x (ρ - 1 / ((i : ℝ) + 1)) = ball x ρ := by
-    ext z
-    simp only [mem_iUnion, mem_ball]
-    refine ⟨fun ⟨i, hi⟩ => hi.trans (sub_lt_self _ Nat.one_div_pos_of_nat), fun hz => ?_⟩
-    obtain ⟨i, hi⟩ := exists_nat_one_div_lt (sub_pos.2 hz)
-    exact ⟨i, by linarith⟩
-  have hmono : Monotone fun i : ℕ => ball x (ρ - 1 / ((i : ℝ) + 1)) := fun i j hij =>
-    ball_subset_ball (sub_le_sub_left (one_div_le_one_div_of_le (by positivity)
-      (by exact_mod_cast Nat.add_le_add_right hij 1)) _)
-  rw [← hU]
-  exact le_of_tendsto' (tendsto_measure_iUnion_atTop hmono) fun i =>
-    h _ (sub_lt_self _ Nat.one_div_pos_of_nat)
+  obtain ⟨r, hr, hrρ, hlim⟩ := exists_seq_strictMono_tendsto ρ
+  have hU : ⋃ n, ball x (r n) = ball x ρ :=
+    (iUnion_subset fun n => ball_subset_ball (hrρ n).le).antisymm fun z hz =>
+      mem_iUnion.2 (hlim.eventually (lt_mem_nhds hz)).exists
+  rw [← hU, Monotone.measure_iUnion fun i j hij => ball_subset_ball (hr.monotone hij)]
+  exact iSup_le fun n => h _ (hrρ n)
 
 end MeasureTheory.Measure
 
