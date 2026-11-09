@@ -25,6 +25,10 @@ the dimension, not merely on the finite Euclidean identities.
 
 * A. Pietsch, *s-Numbers of operators in Banach spaces*, Studia Math. 51 (1974), §1.
 * A. Pietsch, *Eigenvalues and s-Numbers*, Cambridge University Press (1987), Chapter 2.
+* M. Ullrich, *Inequalities between s-numbers*, Adv. Oper. Theory 9 (2024), art. 82,
+  Remark 1, for the strict normalization (S5′) and its implication of (S5).
+* M. Ullrich, Lean-SNumbers (Apache-2.0), <https://github.com/mario-ullrich/Lean-SNumbers>,
+  `SNumbers/Basic.lean`: an earlier Lean formalization of the same axiom API.
 -/
 
 public section
@@ -70,7 +74,8 @@ structure IsSNumberSequence (s : SNumberFamily 𝕜) : Prop where
   normalize : ∀ n : ℕ, s (ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))) n = 1
 
 /-- A strict s-number sequence is normalized on the identity of every normed space at
-all indices strictly below its cardinal dimension, including infinite dimension. -/
+all indices strictly below its cardinal dimension, including infinite dimension
+(Ullrich 2024, Remark 1). -/
 structure IsStrictSNumberSequence (s : SNumberFamily 𝕜) : Prop
     extends IsSNumberSequence s where
   /-- Identity normalization below the dimension. -/

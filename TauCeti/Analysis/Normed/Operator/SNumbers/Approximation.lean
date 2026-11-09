@@ -24,6 +24,9 @@ completeness of the scalar field.
 
 * A. Pietsch, *s-Numbers of operators in Banach spaces*, Studia Math. 51 (1974), §§1–2.
 * A. Pietsch, *Eigenvalues and s-Numbers*, Cambridge University Press (1987), Chapter 2.
+* M. Ullrich, Lean-SNumbers (Apache-2.0), <https://github.com/mario-ullrich/Lean-SNumbers>,
+  `SNumbers/Approximation.lean`: an earlier Lean formalization of approximation numbers as
+  an s-number sequence.
 -/
 
 public section
