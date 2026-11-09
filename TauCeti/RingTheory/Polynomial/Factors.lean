@@ -110,6 +110,29 @@ lemma normalizedFactors_eq_map_univ_val [Fintype f.Factors] [DecidableEq K]
   rw [Polynomial.mem_normalizedFactors_iff hf, Multiset.mem_map]
   exact ⟨fun hp => ⟨⟨p, hp⟩, Finset.mem_univ _, rfl⟩, fun ⟨q, _, hq⟩ => hq ▸ q.2⟩
 
+/-- The zero polynomial has infinitely many monic irreducible factors, since every polynomial
+divides it: if there were finitely many, `X` times their product plus one would have a monic
+irreducible factor outside the list. -/
+lemma infinite_zero : Infinite (0 : K[X]).Factors := by
+  classical
+  refine Infinite.of_not_fintype fun hfin : Fintype (0 : K[X]).Factors ↦ ?_
+  set S : Finset K[X] := (Finset.univ : Finset (0 : K[X]).Factors).image Subtype.val with hS
+  have hSm : ∀ q ∈ S, q.Monic := fun q hq ↦ by
+    obtain ⟨⟨q, h⟩, -, rfl⟩ := Finset.mem_image.mp hq
+    exact h.2.1
+  have hPm : (X * ∏ q ∈ S, q).Monic := monic_X.mul (monic_prod_of_monic _ _ hSm)
+  have hPdeg : 0 < (X * ∏ q ∈ S, q).natDegree := by
+    rw [monic_X.natDegree_mul (monic_prod_of_monic _ _ hSm), natDegree_X]
+    omega
+  have hN : ¬IsUnit (X * ∏ q ∈ S, q + 1) := fun h ↦ by
+    have := natDegree_eq_zero_of_isUnit h
+    rw [natDegree_add_eq_left_of_natDegree_lt (by simpa using hPdeg)] at this
+    omega
+  obtain ⟨q, hqm, hqirr, hqdvd⟩ := exists_monic_irreducible_factor _ hN
+  have hqS : q ∈ S := Finset.mem_image.mpr ⟨⟨q, hqirr, hqm, dvd_zero q⟩, Finset.mem_univ _, rfl⟩
+  have h1 : q ∣ X * ∏ q ∈ S, q := dvd_mul_of_dvd_right (Finset.dvd_prod_of_mem _ hqS) X
+  exact hqirr.not_isUnit (isUnit_of_dvd_one ((dvd_add_right h1).mp hqdvd))
+
 lemma nonempty (hu : ¬ IsUnit f) : Nonempty f.Factors :=
   let ⟨p, hmonic, hirr, hdvd⟩ := f.exists_monic_irreducible_factor hu
   ⟨⟨p, hirr, hmonic, hdvd⟩⟩
