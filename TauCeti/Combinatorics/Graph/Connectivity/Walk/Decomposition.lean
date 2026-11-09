@@ -214,14 +214,17 @@ protected theorem IsPath.dropUntil {p : G.Walk x y} (hp : p.IsPath)
 
 end Split
 
-/-- A path from outside a vertex set to a vertex in it has an initial segment whose endpoint is
-the first visited vertex in the set.  Every other vertex of the segment is outside the set, and
-the segment uses only vertices and edge identities of the original path. -/
+/-- A path to a vertex in a vertex set has an initial segment whose endpoint is the first visited
+vertex in the set (the trivial segment when the path already starts in the set).  Every other vertex
+of the segment is outside the set, and the segment uses only vertices and edge identities of the
+original path. -/
 theorem IsPath.exists_initialSegment_to_set {p : G.Walk x y} (hp : p.IsPath)
-    {S : Set α} (hx : x ∉ S) (hy : y ∈ S) :
+    {S : Set α} (hy : y ∈ S) :
     ∃ (z : α) (q : G.Walk x z), q.IsPath ∧ z ∈ S ∧
       (∀ w ∈ q.support, w ≠ x → w ≠ z → w ∉ S) ∧
       q.support ⊆ p.support ∧ q.edges ⊆ p.edges := by
+  by_cases hx : x ∈ S
+  · exact ⟨x, .nil, by simp, hx, by simp, by simp, by simp⟩
   induction p with
   | nil => exact (hx hy).elim
   | @cons x y z e h p ih =>
@@ -242,7 +245,7 @@ theorem IsPath.exists_initialSegment_to_set {p : G.Walk x y} (hp : p.IsPath)
           · exact Or.inl rfl
           · exact Or.inr p.start_mem_support
         · simp
-      · obtain ⟨w, q, hq, hwS, hinter, hsupport, hedges⟩ := ih hp'.1 hyS hy
+      · obtain ⟨w, q, hq, hwS, hinter, hsupport, hedges⟩ := ih hp'.1 hy hyS
         refine ⟨w, .cons e h q, (isPath_cons e h q).mpr ⟨hq, ?_⟩, hwS, ?_, ?_, ?_⟩
         · exact fun hmem ↦ hp'.2 (hsupport hmem)
         · intro a ha hax haw
