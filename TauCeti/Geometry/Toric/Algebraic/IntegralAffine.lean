@@ -197,16 +197,6 @@ theorem eq_of_eqOn_open {e f : IntegralAffineEquiv h h'} {s : Set V}
   apply toAffineEquiv_injective
   exact AffineEquiv.ext_on (hs.affineSpan_eq_top hne) e.toAffineEquiv f.toAffineEquiv he
 
-/-- The continuous affine equivalence underlying an integral affine equivalence. -/
-def toContinuousAffineEquiv (e : IntegralAffineEquiv h h') : V ≃ᴬ[ℝ] V' :=
-  { e.toAffineEquiv with
-    continuous_toFun := e.continuous
-    continuous_invFun := e.symm.continuous }
-
-@[simp]
-theorem toContinuousAffineEquiv_apply (e : IntegralAffineEquiv h h') (x : V) :
-    e.toContinuousAffineEquiv x = e x := (rfl)
-
 /-- The underlying continuous affine map used to transport affine inequalities. -/
 def toContinuousAffineMap (e : IntegralAffineEquiv h h') : V →ᴬ[ℝ] V' :=
   { e.toAffineEquiv.toAffineMap with cont := e.continuous }
