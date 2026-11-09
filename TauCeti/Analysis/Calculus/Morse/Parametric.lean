@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.NormalForm
+import TauCeti.Analysis.Calculus.Bilinear
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 
 /-!
@@ -21,6 +23,13 @@ in `TauCeti.Analysis.Calculus.Morse.NormalForm`: apply its varying-reference con
 the integral average of the vertical Hessian, then invert the map `(b, v) ↦ (b, R (b, v) v)`.
 The Hessian convention is the second derivative itself, so the quadratic formula has a factor
 `1 / 2`. This is a local theorem on a product of Banach spaces; no bundle gluing is asserted.
+
+In finite dimensions the function need only be defined near the zero section:
+`TauCeti.exists_parametric_morse_chart_of_contDiffOn` assumes smoothness on an open set `W`, and
+criticality and nondegeneracy of the fibres at the points of the zero section in `W`. It cuts the
+function off to a globally smooth one and restricts the chart to a ball where the two agree. Its
+normal form is stated through the new chart alone: the function read in the chart is, on each
+fibre, its own vertical Hessian quadratic form, and these vertical Hessians are invertible.
 
 ## References
 
@@ -138,5 +147,139 @@ theorem exists_parametric_morse_chart [CompleteSpace P] (hf : ContDiff ℝ (n + 
   · exact hΘsymm.mono inter_subset_left
   · intro z hz
     simpa only [hψ] using hΦeq z (hΘsub (hWZ (hsource ▸ hz)))
+
+section Local
+
+variable [FiniteDimensional ℝ P]
+
+omit [NormedSpace ℝ P] [NormedSpace ℝ E] [CompleteSpace E] [FiniteDimensional ℝ P] in
+/-- Projecting to the zero section does not leave a ball about a point of the zero section. -/
+private theorem mk_fst_zero_mem_ball {z : P × E} {r : ℝ} (hz : z ∈ Metric.ball (a, 0) r) :
+    (z.1, (0 : E)) ∈ Metric.ball (a, 0) r := by
+  simp only [Metric.mem_ball, Prod.dist_eq, dist_self] at hz ⊢
+  exact (max_le_max le_rfl dist_nonneg).trans_lt hz
+
+omit [CompleteSpace E] in
+/-- The cutoff step of `TauCeti.exists_parametric_morse_chart_of_contDiffOn`: for `f` defined
+near the zero section, the parametric Morse chart of a cut-off copy of `f` gives the normal form
+of `f` itself on a ball about `(a, 0)`, with the vertical Hessians of `f`. -/
+private theorem exists_parametric_morse_chart_ball [FiniteDimensional ℝ E] {W : Set (P × E)}
+    (hW : IsOpen W) (haW : (a, 0) ∈ W) (hf : ContDiffOn ℝ (n + 2) f W)
+    (hcrit : ∀ b, (b, 0) ∈ W → fderiv ℝ (fun v ↦ f (b, v)) 0 = 0)
+    (hH : (fderiv ℝ (fderiv ℝ fun v ↦ f (a, v)) 0).IsInvertible) (hn : n ≠ 0) :
+    ∃ (θ : OpenPartialHomeomorph (P × E) (P × E)) (U : Set P) (V : Set E) (r : ℝ),
+      0 < r ∧ Metric.ball (a, 0) r ⊆ W ∧ a ∈ U ∧ (0 : E) ∈ V ∧ θ.source = U ×ˢ V ∧
+      (∀ z, (θ z).1 = z.1) ∧ (∀ b, θ (b, 0) = (b, 0)) ∧
+      ContDiffOn ℝ n θ θ.source ∧ ContDiffOn ℝ n θ.symm θ.target ∧
+      ∀ z ∈ θ.source, z ∈ Metric.ball (a, 0) r → f z = f (z.1, 0) + (2 : ℝ)⁻¹ *
+        fderiv ℝ (fderiv ℝ (fun v ↦ f (z.1, v))) 0 (θ z).2 (θ z).2 := by
+  -- Cut `f` off to a globally `C^{n+2}` function `g`, equal to `f` on a ball `B` about `(a, 0)`.
+  obtain ⟨χ, hχ, -, hχ1, -, hχW⟩ :=
+    isCompact_singleton.exists_contDiff_cutoff_eventuallyEq_one hW (singleton_subset_iff.2 haW)
+  set g : P × E → ℝ := fun z ↦ χ z • f z
+  have hg : ContDiff ℝ (n + 2) g :=
+    hf.contDiff_smul_of_tsupport_subset hW (hχ.of_le (WithTop.coe_le_coe.2 le_top)).contDiffOn hχW
+  obtain ⟨r, hr, hrW⟩ := Metric.eventually_nhds_iff_ball.1
+    ((hχ1 (a, 0) rfl).and (hW.mem_nhds haW))
+  set B := Metric.ball ((a, 0) : P × E) r
+  have hgf : ∀ z ∈ B, g z = f z := fun z hz ↦ by simp [g, (hrW z hz).1]
+  have hBW : B ⊆ W := fun z hz ↦ (hrW z hz).2
+  -- Near a point `(b, 0)` of `B` the fibres of `g` and `f` agree, with their vertical Hessians.
+  have hloc : ∀ b, (b, (0 : E)) ∈ B → (fun v ↦ g (b, v)) =ᶠ[𝓝 0] fun v ↦ f (b, v) := by
+    intro b hb
+    have hcont : Continuous fun v : E ↦ (b, v) := continuous_const.prodMk continuous_id
+    filter_upwards [hcont.continuousAt.preimage_mem_nhds (Metric.isOpen_ball.mem_nhds hb)]
+      with v hv using hgf _ hv
+  have hcrit' : ∀ᶠ b in 𝓝 a, fderiv ℝ (fun v ↦ g (b, v)) 0 = 0 := by
+    have hcont : Continuous fun b : P ↦ (b, (0 : E)) := continuous_id.prodMk continuous_const
+    filter_upwards [hcont.continuousAt.preimage_mem_nhds
+      (Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hr))] with b hb
+    rw [(hloc b hb).fderiv_eq]
+    exact hcrit b (hBW hb)
+  obtain ⟨θ, U, V, -, -, haU, h0V, hθs, hθfst, hθ0, -, hθ, hθsymm, hθeq⟩ :=
+    exists_parametric_morse_chart hg hcrit'
+      (by rw [(hloc a (Metric.mem_ball_self hr)).fderiv.fderiv_eq]; exact hH) hn
+  refine ⟨θ, U, V, r, hr, hBW, haU, h0V, hθs, hθfst, hθ0, hθ, hθsymm, fun z hz hzB ↦ ?_⟩
+  have hz0 : (z.1, (0 : E)) ∈ B := mk_fst_zero_mem_ball hzB
+  rw [← hgf z hzB, ← hgf _ hz0, ← (hloc z.1 hz0).fderiv.fderiv_eq]
+  exact hθeq z hz
+
+omit [CompleteSpace E] in
+/-- **The parametric Morse lemma for a function defined near the zero section.** Let `f` be
+`C^{n+2}` on an open set `W` of `P × E` containing `(a, 0)`, such that at every point `(b, 0)` of
+`W` the function `v ↦ f (b, v)` has a critical point at `0` with invertible Hessian. Then there is
+a `C^n` chart `ψ` near `(a, 0)`, inside `W`, which preserves the first coordinate and fixes the
+zero section, and in which `f` is its vertical Hessian quadratic form: at every point `z` of the
+target, `f (ψ.symm z)` is the value at `(z.1, 0)` plus half the vertical Hessian of `f ∘ ψ.symm`
+at `(z.1, 0)` evaluated on `z.2`. These vertical Hessians are invertible. -/
+theorem exists_parametric_morse_chart_of_contDiffOn [FiniteDimensional ℝ E] {W : Set (P × E)}
+    (hW : IsOpen W) (haW : (a, 0) ∈ W) (hf : ContDiffOn ℝ (n + 2) f W)
+    (hcrit : ∀ b, (b, 0) ∈ W → fderiv ℝ (fun v ↦ f (b, v)) 0 = 0)
+    (hH : ∀ b, (b, 0) ∈ W → (fderiv ℝ (fderiv ℝ fun v ↦ f (b, v)) 0).IsInvertible)
+    (hn : n ≠ 0) :
+    ∃ ψ : OpenPartialHomeomorph (P × E) (P × E),
+      (a, 0) ∈ ψ.source ∧ ψ.source ⊆ W ∧ (∀ z ∈ ψ.source, (ψ z).1 = z.1) ∧
+      (∀ z ∈ ψ.source, (z.1, 0) ∈ ψ.source ∧ ψ (z.1, 0) = (z.1, 0)) ∧
+      ContDiffOn ℝ n ψ ψ.source ∧ ContDiffOn ℝ n ψ.symm ψ.target ∧
+      (∀ z ∈ ψ.target, f (ψ.symm z) = f (z.1, 0) + 2⁻¹ *
+        fderiv ℝ (fderiv ℝ fun v ↦ f (ψ.symm (z.1, v))) 0 z.2 z.2) ∧
+      ∀ z ∈ ψ.target, (fderiv ℝ (fderiv ℝ fun v ↦ f (ψ.symm (z.1, v))) 0).IsInvertible := by
+  obtain ⟨θ, U, V, r, hr, hBW, haU, h0V, hθs, hθfst, hθ0, hθ, hθsymm, hθeq⟩ :=
+    exists_parametric_morse_chart_ball hW haW hf hcrit (hH a haW) hn
+  set B := Metric.ball ((a, 0) : P × E) r
+  set Q : P → E →L[ℝ] E →L[ℝ] ℝ := fun b ↦ fderiv ℝ (fderiv ℝ fun v ↦ f (b, v)) 0
+  -- Restrict the chart to the ball on which it is a normal form for `f`.
+  set ψ := θ.restrOpen B Metric.isOpen_ball
+  have hψs : ψ.source = U ×ˢ V ∩ B := by simp [ψ, hθs]
+  have hzero : ∀ z ∈ ψ.source, (z.1, (0 : E)) ∈ ψ.source ∧ ψ (z.1, 0) = (z.1, 0) := by
+    intro z hz
+    rw [hψs] at hz ⊢
+    exact ⟨⟨⟨hz.1.1, h0V⟩, mk_fst_zero_mem_ball hz.2⟩, by simpa [ψ] using hθ0 z.1⟩
+  -- A point of the target comes from a point of the source with the same first coordinate.
+  have htarget : ∀ z ∈ ψ.target, z ∈ θ.target ∧ ψ.symm z ∈ ψ.source ∧ (ψ.symm z).1 = z.1 := by
+    intro z hz
+    have hzt : z ∈ θ.target := by simpa [ψ] using hz.1
+    refine ⟨hzt, ψ.map_target hz, ?_⟩
+    have h := hθfst (θ.symm z)
+    rw [θ.right_inv hzt] at h
+    simpa [ψ] using h.symm
+  -- The normal form, with the vertical Hessians `Q` of `f` before the change of coordinates.
+  have hpre : ∀ z ∈ ψ.target, f (ψ.symm z) = f (z.1, 0) + 2⁻¹ * Q z.1 z.2 z.2 := by
+    intro z hz
+    obtain ⟨hzt, hy, hfst⟩ := htarget z hz
+    rw [hψs] at hy
+    have h := hθeq (ψ.symm z) (hθs ▸ hy.1) hy.2
+    rw [hfst] at h
+    simpa [ψ, θ.right_inv hzt] using h
+  -- On each fibre, `f ∘ ψ.symm` is the quadratic form of `Q`, so `Q` is its vertical Hessian.
+  have hquad : ∀ z ∈ ψ.target, fderiv ℝ (fderiv ℝ fun v ↦ f (ψ.symm (z.1, v))) 0 = Q z.1 := by
+    intro z hz
+    obtain ⟨-, hy, hfst⟩ := htarget z hz
+    have h0 := hzero _ hy
+    rw [hfst] at h0
+    have h0t : (z.1, (0 : E)) ∈ ψ.target := h0.2 ▸ ψ.map_source h0.1
+    have hcont : Continuous fun v : E ↦ (z.1, v) := continuous_const.prodMk continuous_id
+    have hev : (fun v ↦ f (ψ.symm (z.1, v))) =ᶠ[𝓝 0]
+        fun v ↦ f (z.1, 0) + ((2⁻¹ : ℝ) • Q z.1) v v := by
+      filter_upwards [hcont.continuousAt.preimage_mem_nhds (ψ.open_target.mem_nhds h0t)]
+        with v hv
+      simpa using hpre _ hv
+    -- `Q z.1` is symmetric, being the Hessian of a function `C²` near `0`.
+    have hsymm : IsSymmSndFDerivAt ℝ (fun v ↦ f (z.1, v)) 0 :=
+      ((hf.contDiffAt (hW.mem_nhds (hBW (hψs ▸ h0.1).2))).comp _
+        (contDiffAt_const.prodMk contDiffAt_id)).isSymmSndFDerivAt (by simp)
+    rw [hev.fderiv.fderiv_eq, ContinuousLinearMap.fderiv_fderiv_const_add_apply_self]
+    ext w w'
+    simp only [add_apply, ContinuousLinearMap.flip_apply, smul_apply, smul_eq_mul, Q, hsymm w' w]
+    ring
+  refine ⟨ψ, by rw [hψs]; exact ⟨⟨haU, h0V⟩, Metric.mem_ball_self hr⟩,
+    fun z hz ↦ hBW (hψs ▸ hz).2, fun z _ ↦ hθfst z, hzero,
+    hθ.mono fun z hz ↦ by simpa [hθs] using (hψs ▸ hz).1, hθsymm.mono fun z hz ↦ hz.1,
+    fun z hz ↦ by rw [hquad z hz]; exact hpre z hz, fun z hz ↦ ?_⟩
+  obtain ⟨-, hy, hfst⟩ := htarget z hz
+  rw [hquad z hz]
+  exact hH _ (hBW (hfst ▸ (hψs ▸ (hzero _ hy).1).2))
+
+end Local
 
 end TauCeti

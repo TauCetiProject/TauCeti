@@ -52,6 +52,10 @@ use.
   map into the dual is the kernel of the map.
 * `ContinuousLinearMap.inf_eq_bot_of_le_ker`: a subspace on which the diagonal of the form has no
   nonzero zeros meets every subspace of the kernel trivially.
+* `ContinuousLinearMap.finrank_ker_eq_of_congr`: congruent forms have kernels of the same
+  dimension.
+* `ContinuousLinearMap.isInvertible_bilinearComp_inr_of_finrank_ker_le`: a symmetric form on
+  `P × F` vanishing on `P × 0`, with kernel of dimension at most `dim P`, is invertible on `0 × F`.
 * `ContinuousLinearMap.isInvertible_of_injective` and
   `ContinuousLinearMap.isInvertible_of_surjective`: in finite dimensions an injective, equivalently
   a surjective, map into the dual is already invertible, the dual having the same dimension as the
@@ -134,6 +138,25 @@ theorem _root_.ContinuousLinearMap.inf_eq_bot_of_le_ker {L : E →L[𝕜] E →L
   have h : L x = 0 := hM hx.2
   exact hN x hx.1 hx0 (by simp [h])
 
+/-- Congruent continuous bilinear forms have kernels of the same dimension: if
+`D z z' = L (Λ z) (Λ z')` for a continuous linear equivalence `Λ`, the kernel of `D` is the image
+of the kernel of `L` under `Λ.symm`. -/
+theorem _root_.ContinuousLinearMap.finrank_ker_eq_of_congr {X : Type*} [AddCommGroup X]
+    [Module 𝕜 X] [TopologicalSpace X] (Λ : X ≃L[𝕜] E) {D : X →L[𝕜] X →L[𝕜] 𝕜}
+    {L : E →L[𝕜] E →L[𝕜] 𝕜} (hD : ∀ z z', D z z' = L (Λ z) (Λ z')) :
+    Module.finrank 𝕜 D.ker = Module.finrank 𝕜 L.ker := by
+  have hker : D.ker = L.ker.map (Λ.symm.toLinearEquiv : E →ₗ[𝕜] X) := by
+    ext z
+    rw [Submodule.mem_map_equiv]
+    simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
+      ContinuousLinearEquiv.toLinearEquiv_symm, LinearEquiv.symm_symm,
+      ContinuousLinearEquiv.coe_toLinearEquiv]
+    refine ⟨fun hz ↦ ContinuousLinearMap.ext fun y ↦ ?_,
+      fun hz ↦ ContinuousLinearMap.ext fun z' ↦ ?_⟩
+    · simpa [hD] using congrArg (fun T ↦ T (Λ.symm y)) hz
+    · simp [hD, hz]
+  rw [hker, LinearEquiv.finrank_map_eq]
+
 end
 
 section FiniteDimensional
@@ -195,6 +218,36 @@ theorem isInvertible_toContinuousBilinearMap_iff_separatingLeft
     ext v w
     simp
   rw [ContinuousLinearMap.isInvertible_iff_separatingLeft, hround]
+
+/-- A symmetric continuous bilinear form on a finite-dimensional product `P × F` which vanishes
+on `P × 0` and whose kernel has dimension at most `dim P` has kernel exactly `P × 0`, so its
+restriction to `0 × F` is invertible. This is the shape of the Hessian along a critical
+submanifold `P × 0` whose tangent space is the whole kernel. -/
+theorem _root_.ContinuousLinearMap.isInvertible_bilinearComp_inr_of_finrank_ker_le
+    {P F : Type*} [NormedAddCommGroup P] [NormedSpace 𝕜 P] [FiniteDimensional 𝕜 P]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+    {B : P × F →L[𝕜] P × F →L[𝕜] 𝕜} (hsymm : ∀ z z', B z z' = B z' z)
+    (hinl : ∀ u : P, B (u, 0) = 0) (hker : Module.finrank 𝕜 B.ker ≤ Module.finrank 𝕜 P) :
+    (B.bilinearComp (ContinuousLinearMap.inr 𝕜 P F) (ContinuousLinearMap.inr 𝕜 P F)).IsInvertible
+    := by
+  refine ContinuousLinearMap.isInvertible_of_injective ((injective_iff_map_eq_zero _).2 ?_)
+  intro w hw
+  -- `(0, w)` lies in the kernel of `B`: it pairs to zero with `0 × F` by assumption and with
+  -- `P × 0` by symmetry.
+  have hmem : ((0 : P), w) ∈ B.ker := by
+    refine ContinuousLinearMap.ext fun ⟨u, w'⟩ ↦ ?_
+    have h1 : B (0, w) (u, 0) = 0 := by rw [hsymm, hinl]; rfl
+    have h2 : B (0, w) (0, w') = 0 := by simpa using congrArg (fun T ↦ T w') hw
+    rw [ContinuousLinearMap.coe_coe, zero_apply,
+      show ((u, w') : P × F) = (u, 0) + (0, w') by simp, map_add, h1, h2, add_zero]
+  -- The kernel contains `P × 0` and has dimension at most `dim P`, so it is `P × 0`.
+  have hle : LinearMap.range (LinearMap.inl 𝕜 P F) ≤ B.ker := by
+    rintro _ ⟨u, rfl⟩
+    simpa using hinl u
+  have heq := Submodule.eq_of_le_of_finrank_le hle (by
+    rw [LinearMap.finrank_range_of_inj LinearMap.inl_injective]; exact hker)
+  obtain ⟨u, hu⟩ := heq ▸ hmem
+  simpa using (congrArg Prod.snd hu).symm
 
 end FiniteDimensional
 

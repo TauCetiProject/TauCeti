@@ -33,7 +33,8 @@ direction `w`; its derivative involves the second derivative of `u`.
 * `ContinuousLinearMap.hasFDerivAt_apply_self`, and its `fderiv` form
   `ContinuousLinearMap.fderiv_apply_self`.
 * `ContinuousLinearMap.fderiv_fderiv_apply_self`: the second derivative of `z ↦ B z z` is
-  the constant `B.flip + B`.
+  the constant `B.flip + B`, and so is that of `z ↦ c + B z z`
+  (`ContinuousLinearMap.fderiv_fderiv_const_add_apply_self`).
 * `ContinuousLinearMap.hasFDerivAt_bilinear_fderiv_apply`: the derivative of
   `y ↦ B (u y) (∂_w u y)` at a point where `u` is `C²`.
 * `ContinuousLinearMap.contDiffAt_bilinear_fderiv_apply`: `y ↦ B (u y) (∂_w u y)` is `C^n` at a
@@ -103,6 +104,14 @@ theorem _root_.ContinuousLinearMap.fderiv_fderiv_apply_self (B : E →L[𝕜] E 
     rw [ContinuousLinearMap.fderiv_apply_self, add_apply]
   rw [hEq]
   exact (B.flip + B).fderiv
+
+/-- The second derivative of `z ↦ c + B z z` is the constant `B.flip + B`, as for `z ↦ B z z`. -/
+@[simp]
+theorem _root_.ContinuousLinearMap.fderiv_fderiv_const_add_apply_self (c : F)
+    (B : E →L[𝕜] E →L[𝕜] F) (y : E) :
+    fderiv 𝕜 (fderiv 𝕜 fun z ↦ c + B z z) y = B.flip + B := by
+  rw [show (fderiv 𝕜 fun z ↦ c + B z z) = fderiv 𝕜 fun z ↦ B z z from
+    funext fun _ ↦ fderiv_const_add c, ContinuousLinearMap.fderiv_fderiv_apply_self]
 
 /-- The derivative of `y ↦ B (u y) (∂_w u y)` in the direction `v`, at a point where `u` is `C²`,
 is `B (u) (∂_v ∂_w u) + B (∂_v u) (∂_w u)`. -/
