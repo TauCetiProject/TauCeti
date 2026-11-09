@@ -83,34 +83,35 @@ variable {M : Type*} {H : Puncture → ℝ → M → ℝ}
 /-- The end Hamiltonians of the pair of pants with exchanged inputs: the Hamiltonian of the end at
 `0` is `H₁`, that of the end at `1` is `H₀`, and the output Hamiltonian is rotated by half a
 period, `t ↦ H_∞(t + 1/2)`, matching the half-period rotation of the end at `∞` under
-`w ↦ 1 - w`. -/
-def exchangeHamiltonians (H : Puncture → ℝ → M → ℝ) : Puncture → ℝ → M → ℝ
+`w ↦ 1 - w`. The same exchange applies to any other time-dependent end data, such as the almost
+complex structures `J_q(t)` of the ends. -/
+def exchangeHamiltonians {Y : Type*} (H : Puncture → ℝ → Y) : Puncture → ℝ → Y
   | .zero => H one
   | .one => H zero
   | .inf => fun t => H inf (t + 1 / 2)
 
 @[simp]
-theorem exchangeHamiltonians_zero (H : Puncture → ℝ → M → ℝ) :
+theorem exchangeHamiltonians_zero {Y : Type*} (H : Puncture → ℝ → Y) :
     exchangeHamiltonians H zero = H one :=
   (rfl)
 
 @[simp]
-theorem exchangeHamiltonians_one (H : Puncture → ℝ → M → ℝ) :
+theorem exchangeHamiltonians_one {Y : Type*} (H : Puncture → ℝ → Y) :
     exchangeHamiltonians H one = H zero :=
   (rfl)
 
 @[simp]
-theorem exchangeHamiltonians_inf (H : Puncture → ℝ → M → ℝ) :
+theorem exchangeHamiltonians_inf {Y : Type*} (H : Puncture → ℝ → Y) :
     exchangeHamiltonians H inf = fun t => H inf (t + 1 / 2) :=
   (rfl)
 
-/-- The exchanged Hamiltonians of period-one Hamiltonians have period one. -/
-theorem periodic_exchangeHamiltonians (hH : ∀ q, Periodic (H q) 1) (q : Puncture) :
-    Periodic (exchangeHamiltonians H q) 1 := by
+/-- The exchanged data of period-one end data have period one. -/
+theorem periodic_exchangeHamiltonians {Y : Type*} {G : Puncture → ℝ → Y}
+    (hG : ∀ q, Periodic (G q) 1) (q : Puncture) : Periodic (exchangeHamiltonians G q) 1 := by
   cases q
-  · simpa using hH one
-  · simpa using hH zero
-  · simpa using (hH inf).add_const (1 / 2)
+  · simpa using hG one
+  · simpa using hG zero
+  · simpa using (hG inf).add_const (1 / 2)
 
 /-! ### The family -/
 
@@ -200,7 +201,7 @@ private theorem norm_ofReal_sub_one_le {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c �
 
 /-- On the part `s > 0` of an input end `q`, the end lift stays within distance `1` of `0` or
 `1`, hence within distance `2` of every `c ∈ [0, 1]`. -/
-private theorem norm_cylindricalEndLift_sub_le {q : Puncture} (hq : q ≠ inf) {c : ℝ}
+theorem norm_cylindricalEndLift_sub_le {q : Puncture} (hq : q ≠ inf) {c : ℝ}
     (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {z : ℂ} (hz : 0 < z.re) :
     ‖q.cylindricalEndLift z - c‖ ≤ 2 := by
   have hφ : ‖q.cylindricalEndLift z - q.endCenter‖ ≤ 1 := by
@@ -233,13 +234,10 @@ private theorem pairOfPantsPerturbation_update_inf_eq_zero {w : ℂ} (h₀ : 1 /
     (h₁ : 1 / 2 ≤ ‖w - 1‖) (x : M) : pairOfPantsPerturbation (update H inf 0) w x = 0 := by
   -- On each input end the longitudinal coordinate is nonpositive at such points.
   have hre {q : Puncture} (hq : q ≠ inf) : (q.endCoord w).re ≤ 0 := by
-    have hn : 1 ≤ ‖(w - q.endCenter) / q.endScale‖ := by
-      rw [norm_div, norm_endScale hq, le_div_iff₀ (by norm_num), one_mul]
-      rcases q.endCenter_eq_zero_or_eq_one with h | h <;> rw [h]
-      · rwa [sub_zero]
-      · exact h₁
-    rw [re_endCoord, neg_div, neg_nonpos]
-    exact div_nonneg (Real.log_nonneg hn) (by positivity)
+    refine re_endCoord_nonpos_of_le_norm_sub_endCenter hq ?_
+    rcases q.endCenter_eq_zero_or_eq_one with h | h <;> rw [h]
+    · rwa [sub_zero]
+    · exact h₁
   have hcut {q : Puncture} (hq : q ≠ inf) :
       smoothTransition ((q.endCoord w).re - 1) = 0 :=
     smoothTransition.zero_of_nonpos (by linarith [hre hq])

@@ -238,6 +238,15 @@ theorem le_re_endCoord_of_norm_sub_endCenter_le {q : Puncture} (hq : q ≠ inf) 
     Real.log_le_iff_le_exp (by positivity), div_le_iff₀ (by norm_num), mul_comm r]
   linarith
 
+/-- Off the open disc of radius `1/2` about the center of a positive end `q`, the longitudinal
+coordinate of that end is nonpositive: the disc is bounded by the circle `s = 0` of the end. -/
+theorem re_endCoord_nonpos_of_le_norm_sub_endCenter {q : Puncture} (hq : q ≠ inf) {w : ℂ}
+    (h : 1 / 2 ≤ ‖w - q.endCenter‖) : (q.endCoord w).re ≤ 0 := by
+  have hn : 1 ≤ ‖(w - q.endCenter) / q.endScale‖ := by
+    rwa [norm_div, norm_endScale hq, le_div_iff₀ (by norm_num), one_mul]
+  rw [re_endCoord, neg_div, neg_nonpos]
+  exact div_nonneg (Real.log_nonneg hn) (by positivity)
+
 /-- Off the disc `‖w‖ < exp (-2π) / 2`, the longitudinal coordinate of the end at `0` is at most
 `1`. -/
 theorem re_endCoord_zero_le_one {w : ℂ} (hw : Real.exp (-(2 * π)) / 2 ≤ ‖w‖) :

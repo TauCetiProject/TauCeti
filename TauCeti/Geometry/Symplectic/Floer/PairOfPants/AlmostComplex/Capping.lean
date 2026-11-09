@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Plumbing
+import TauCeti.Analysis.Complex.ThricePuncturedSphere.Exchange
 
 /-!
 # Almost complex structures on the negative PSS plane and the capping families
@@ -52,6 +53,13 @@ where `q'` is the other input, jointly in the neck length.
   `J(t, x)` on the part `s ≤ -2` of the end.
 * `TauCeti.Floer.contMDiff_negativePlaneAlmostComplex`: for a period-one `C^n` family `J`, it is
   `C^n` on all of `ℂ × M`.
+* `TauCeti.Floer.negativePlaneAlmostComplex_neg`: the half turn `w ↦ -w` carries the plane
+  structure of `J` to that of `t ↦ J(t + 1/2)`.
+* `TauCeti.Floer.cayley_pairOfPantsAlmostComplex_eq_add`: the Cayley transform of the pair-of-pants
+  structure is the sum of those of its input part, the pair-of-pants structure with output
+  structure `J₀`, and of the negative plane structure of its output structure.
+* `TauCeti.Floer.pairOfPantsAlmostComplex_update_inf_base_eq`: the input part is `J₀` at distance
+  at least `1/2` from both inputs.
 * `TauCeti.Floer.plumbedAlmostComplex_update_inf_eq`: the capped structure is `J₀` on the disc of
   radius `exp (-2π(L - 1)) / 2` about the capped puncture.
 * `TauCeti.Floer.contMDiffAt_plumbedAlmostComplex_update_inf`: for `L > 4` the capped structure is
@@ -183,6 +191,79 @@ theorem negativePlaneAlmostComplex_cylindricalEndLift (h₀ : ω.Compatible J₀
   simpa using pairOfPantsAlmostComplex_cylindricalEndLift (q := inf)
     (hJ := tames_update_inf h₀.tames hJ) h₀ (by simpa using hJp) (z := z)
     (by simp only [endSign_inf]; linarith) x
+
+/-- **The half turn of the negative plane.** The half turn `ρ(w) = -w` rotates the end at `∞` by
+half a period, so the negative plane structure of the rotated family `t ↦ J(t + 1/2)` at `-w` is
+the negative plane structure of `J` at `w`, when `J` has period one in `t`. -/
+theorem negativePlaneAlmostComplex_neg (h₀ : ω.Compatible J₀) (hJp : Periodic J 1)
+    (hJ' : ∀ t x, ω.Tames (J (t + 1 / 2) x)) (w : ℂ) (x : M) :
+    negativePlaneAlmostComplex h₀ (fun t => J (t + 1 / 2)) hJ' (-w) x =
+      negativePlaneAlmostComplex h₀ J hJ w x := by
+  refine h₀.eq_of_cayley_eq (tames_negativePlaneAlmostComplex h₀ _ x)
+    (tames_negativePlaneAlmostComplex h₀ w x) ?_
+  rw [cayley_negativePlaneAlmostComplex, cayley_negativePlaneAlmostComplex, re_endCoord_inf_neg]
+  rcases eq_or_ne w 0 with rfl | hw
+  · -- At the pole both cutoffs vanish.
+    have h : (inf.endCoord 0).re = 0 := by simpa using re_endCoord_endCenter inf
+    simp [h, smoothTransition.zero_of_nonpos]
+  · obtain ⟨k, hk⟩ := exists_endCoord_inf_neg hw
+    have hcast : (1 / 2 + k : ℂ) = ((1 / 2 + k : ℝ) : ℂ) := by push_cast; ring
+    have him : (inf.endCoord (-w)).im + 1 / 2 = (inf.endCoord w).im + (k + 1) := by
+      rw [hk, Complex.add_im, Complex.mul_I_im, hcast, Complex.ofReal_re]
+      ring
+    have hp : J ((inf.endCoord w).im + (k + 1)) = J (inf.endCoord w).im := by
+      simpa using hJp.int_mul (k + 1) (inf.endCoord w).im
+    rw [him, hp]
+
+/-! ### The input part and the plane part of the pair-of-pants structure -/
+
+section Split
+
+variable {Jb : Puncture → ℝ → M → AlmostComplexStructure V} {hJb : ∀ q t x, ω.Tames (Jb q t x)}
+
+omit [FiniteDimensional ℝ V] in
+/-- The input structures of `Jb`, with the output structure replaced by the base structure `J₀`,
+are tame when `J₀` and `Jb` are. -/
+theorem tames_update_inf_base (h₀ : ω.Tames J₀) (hJb : ∀ q t x, ω.Tames (Jb q t x))
+    (q : Puncture) (t : ℝ) (x : M) : ω.Tames (update Jb inf (fun _ _ => J₀) q t x) := by
+  rcases eq_or_ne q inf with rfl | hq
+  · simpa using h₀
+  · simpa [update_of_ne hq] using hJb q t x
+
+/-- **The pair-of-pants structure splits into its input part and a plane part.** Relative to
+`J₀`, the Cayley transform of the pair-of-pants structure of `Jb` is the sum of the Cayley
+transforms of the pair-of-pants structure of its input structures, with the output structure
+replaced by `J₀`, and of the negative plane structure of its output structure `J_∞`. -/
+theorem cayley_pairOfPantsAlmostComplex_eq_add (h₀ : ω.Compatible J₀) (w : ℂ) (x : M) :
+    J₀.cayley (pairOfPantsAlmostComplex h₀ Jb hJb w x) =
+      J₀.cayley (pairOfPantsAlmostComplex h₀ (update Jb inf fun _ _ => J₀)
+          (tames_update_inf_base h₀.tames hJb) w x) +
+        J₀.cayley (negativePlaneAlmostComplex h₀ (Jb inf) (hJb inf) w x) := by
+  simp [cayley_pairOfPantsAlmostComplex, cayley_negativePlaneAlmostComplex, Puncture.sum_univ,
+    AlmostComplexStructure.cayley_self]
+
+/-- **The input part away from the inputs.** The pair-of-pants structure of the input structures
+of `Jb` is the base structure `J₀` at distance at least `1/2` from both inputs `0` and `1`, where
+the longitudinal coordinates of both input ends are nonpositive. -/
+theorem pairOfPantsAlmostComplex_update_inf_base_eq (h₀ : ω.Compatible J₀) {w : ℂ}
+    (hw₀ : 1 / 2 ≤ ‖w‖) (hw₁ : 1 / 2 ≤ ‖w - 1‖) (x : M) :
+    pairOfPantsAlmostComplex h₀ (update Jb inf fun _ _ => J₀)
+      (tames_update_inf_base h₀.tames hJb) w x = J₀ := by
+  have hcut {q : Puncture} (hq : q ≠ inf) :
+      smoothTransition (q.endSign * (q.endCoord w).re - 1) = 0 := by
+    refine smoothTransition.zero_of_nonpos ?_
+    have h := re_endCoord_nonpos_of_le_norm_sub_endCenter hq (w := w) (by
+      rcases q.endCenter_eq_zero_or_eq_one with h | h <;> rw [h]
+      · rwa [sub_zero]
+      · exact hw₁)
+    rw [endSign_eq_one hq, one_mul]
+    linarith
+  refine h₀.eq_of_cayley_eq (tames_pairOfPantsAlmostComplex h₀ w x) h₀.tames ?_
+  rw [cayley_pairOfPantsAlmostComplex, Puncture.sum_univ, hcut (q := zero) (by decide),
+    hcut (q := one) (by decide)]
+  simp [AlmostComplexStructure.cayley_self]
+
+end Split
 
 /-! ### Capping an input of the pair of pants -/
 
