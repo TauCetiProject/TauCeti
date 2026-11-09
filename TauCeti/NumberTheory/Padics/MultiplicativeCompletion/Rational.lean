@@ -15,6 +15,7 @@ import Mathlib.FieldTheory.Galois.NormalBasis
 import Mathlib.FieldTheory.Tower
 import TauCeti.LinearAlgebra.Dimension.Localization
 import TauCeti.NumberTheory.LocalField.DeepUnits.Basic
+import TauCeti.NumberTheory.LocalField.Logarithm
 import TauCeti.NumberTheory.LocalField.UnitFiltration.GaloisAction
 import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Finite
 import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.FreeQuotient

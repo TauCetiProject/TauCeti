@@ -9,6 +9,7 @@ public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.Algebra.Module.Torsion.Snake
 public import TauCeti.NumberTheory.LocalField.DeepUnits.Basic
 public import TauCeti.NumberTheory.LocalField.IntegerRing.LatticeDefect
+public import TauCeti.NumberTheory.LocalField.Logarithm
 public import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.GaloisAction
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Graded

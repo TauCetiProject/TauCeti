@@ -22,6 +22,8 @@ open unit ball about one. It also packages this local identity as an equality of
 * `NormedSpace.eventually_map_log`: naturality near one.
 * `NormedSpace.map_log_germ`: naturality as an equality of germs.
 * `NormedSpace.map_log_germ_continuousMapClass`: the `simp` form of `map_log_germ`.
+* `NormedSpace.map_log_of_continuous`: a ring automorphism that is a homeomorphism commutes with
+  `log` everywhere.
 
 ## See also
 
@@ -106,5 +108,29 @@ theorem map_log_germ_continuousMapClass {F : Type*} [FunLike F A B]
   map_log_germ f (map_continuous f)
 
 end Normed
+
+section RingEquiv
+
+variable {A : Type*} [Ring A] [TopologicalSpace A] [IsTopologicalRing A] [T2Space A]
+
+/-- A ring automorphism that is a homeomorphism commutes with `log` everywhere. The logarithm
+series of `x` is mapped termwise to that of `σ x`, and `σ` preserves summability and `tsum`
+because it has a continuous inverse. When `A` has no `ℚ`-algebra structure both sides are `0`. -/
+theorem map_log_of_continuous (σ : A ≃+* A) (hσ : Continuous σ) (hσ' : Continuous σ.symm)
+    (x : A) : σ (log x) = log (σ x) := by
+  by_cases hQ : Nonempty (Algebra ℚ A)
+  · let _ := hQ.some
+    have key (y : A) : log y = ∑' n : ℕ, ((-1) ^ (n + 1) / n : ℚ) • (y - 1) ^ n :=
+      congrFun (log_eq_tsum (𝔸 := A) ℚ) y
+    have hterm (n : ℕ) : σ (((-1) ^ (n + 1) / n : ℚ) • (x - 1) ^ n) =
+        ((-1) ^ (n + 1) / n : ℚ) • (σ x - 1) ^ n := by
+      rw [map_rat_smul, map_pow, map_sub, map_one]
+    rw [key, key]
+    exact (Function.LeftInverse.map_tsum (g := σ.toAddEquiv) _ hσ hσ' σ.symm_apply_apply).trans
+      (tsum_congr hterm)
+  · have : IsEmpty (Algebra ℚ A) := ⟨fun h => hQ ⟨h⟩⟩
+    rw [log_of_isEmpty_algebra_rat, log_of_isEmpty_algebra_rat, map_zero]
+
+end RingEquiv
 
 end NormedSpace

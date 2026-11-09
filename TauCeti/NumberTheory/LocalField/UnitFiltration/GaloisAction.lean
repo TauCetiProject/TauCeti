@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.GaloisAction
-public import TauCeti.NumberTheory.LocalField.Logarithm
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import Mathlib.RepresentationTheory.Rep.Basic
 
@@ -29,8 +28,6 @@ passing to successive quotients in ramification theory.
 * `AlgEquiv.coe_smul_unitFiltration`: the restricted action agrees with the action on `Lˣ`.
 * `AlgEquiv.val_coe_smul_unitFiltration`: the restricted action agrees with applying the
   automorphism on `L`.
-* `AlgEquiv.map_log`: the logarithm commutes with every automorphism of a finite extension of a
-  nonarchimedean local field.
 
 ## References
 
@@ -117,36 +114,6 @@ automorphism. -/
 theorem val_coe_smul_unitFiltration (σ : L ≃ₐ[K] L) {i : ℕ} (x : unitFiltration L i) :
     (((σ • x : unitFiltration L i) : Lˣ) : L) = σ ((x : Lˣ) : L) :=
   (rfl)
-
-/-- **The logarithm is Galois-equivariant.** Every automorphism of a finite extension `L/K` of
-nonarchimedean local fields commutes with the logarithm: `σ (log u) = log (σ u)`. The automorphism
-`σ` is a homeomorphism, so it maps the logarithm series of `u` termwise to that of `σ u` and
-preserves its summability. -/
-theorem map_log (σ : L ≃ₐ[K] L) (u : L) :
-    σ (NormedSpace.log u) = NormedSpace.log (σ u) := by
-  by_cases hQ : Nonempty (Algebra ℚ L)
-  · let _ := hQ.some
-    have key (x : L) :
-        NormedSpace.log x = ∑' n : ℕ, ((-1) ^ (n + 1) / n : ℚ) • (x - 1) ^ n := by
-      exact congrFun (NormedSpace.log_eq_tsum (𝔸 := L) ℚ) x
-    have hterm (n : ℕ) : σ (((-1) ^ (n + 1) / n : ℚ) • (u - 1) ^ n) =
-        ((-1) ^ (n + 1) / n : ℚ) • (σ u - 1) ^ n := by
-      rw [map_rat_smul, map_pow, map_sub, map_one]
-    have hc := σ.continuous_of_valuativeExtension
-    have hc' := σ.symm.continuous_of_valuativeExtension
-    rw [key, key]
-    by_cases hs : Summable fun n : ℕ => ((-1) ^ (n + 1) / n : ℚ) • (u - 1) ^ n
-    · exact Eq.trans (hs.hasSum.map σ.toAddMonoidHom hc).tsum_eq.symm (tsum_congr hterm)
-    · have hs' : ¬ Summable fun n : ℕ => ((-1) ^ (n + 1) / n : ℚ) • (σ u - 1) ^ n := by
-        intro h
-        refine hs ((h.map σ.symm.toAddMonoidHom hc').congr fun n => ?_)
-        have e : σ.symm (((-1) ^ (n + 1) / n : ℚ) • (σ u - 1) ^ n) =
-            ((-1) ^ (n + 1) / n : ℚ) • (u - 1) ^ n := by
-          rw [map_rat_smul, map_pow, map_sub, map_one, AlgEquiv.symm_apply_apply]
-        exact e
-      rw [tsum_eq_zero_of_not_summable hs, tsum_eq_zero_of_not_summable hs', map_zero]
-  · have : IsEmpty (Algebra ℚ L) := ⟨fun h => hQ ⟨h⟩⟩
-    rw [NormedSpace.log_of_isEmpty_algebra_rat, NormedSpace.log_of_isEmpty_algebra_rat, map_zero]
 
 end AlgEquiv
 
