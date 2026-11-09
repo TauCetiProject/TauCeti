@@ -103,9 +103,15 @@ lemma exists_dvd_sub_val_mul (n : ℕ) [NeZero n] (a b : ℤ)
 /-- **From equal reductions to an integer congruence.** Two units with the same image under the
 reduction `(ZMod N)ˣ → (ZMod d)ˣ` along `d ∣ N` have representatives congruent modulo `d`, as
 integers. This is the bridge from unit bookkeeping to statements about integer matrix entries. -/
-theorem natCast_dvd_val_sub_of_unitsMap_eq {N : ℕ} [NeZero N] {d : ℕ} (hd : d ∣ N)
+theorem natCast_dvd_val_sub_of_unitsMap_eq {N : ℕ} {d : ℕ} (hd : d ∣ N)
     (u u' : (ZMod N)ˣ) (h_eq : unitsMap hd u = unitsMap hd u') :
     (d : ℤ) ∣ (((u : ZMod N).val : ℤ) - ((u' : ZMod N).val : ℤ)) := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · -- `ZMod 0 = ℤ`: a unit is `±1`, so both representatives have the same `val`
+    have hval (w : (ZMod 0)ˣ) : (w : ZMod 0).val = 1 := by
+      rcases Int.units_eq_one_or w with rfl | rfl <;> rfl
+    simp [hval]
+  have : NeZero N := ⟨hN⟩
   have h_cast : castHom hd (ZMod d) (u : ZMod N) = castHom hd (ZMod d) (u' : ZMod N) := by
     have hh := congr_arg Units.val h_eq
     rwa [unitsMap_val, unitsMap_val] at hh
