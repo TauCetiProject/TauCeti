@@ -30,6 +30,8 @@ differences of the remaining columns.
 
 ## Main results
 
+* `Matrix.det_updateRow_updateRow_swap`: exchanging the vectors in two prescribed rows reverses
+  the determinant.
 * `Matrix.det_sum_unique`: the determinant of a matrix on `m ⊕ n`, for singletons `m` and `n`.
 * `Matrix.sum_neg_one_pow_mul_det_submatrix_succAbove_eq_zero`: the alternating sum of the maximal
   minors of a matrix with `n + 2` rows and `n + 1` columns whose rows sum to `1` vanishes.
@@ -94,5 +96,32 @@ theorem det_eq_det_of_col_zero_eq_one (N : Matrix (Fin (n + 1)) (Fin (n + 1)) R)
     (B := of (Fin.cons (N 0) fun i => N i.succ - N i.castSucc)) (fun _ => 1) (fun _ => rfl)
     (fun _ _ => by simp), det_succ_column_zero, Fin.sum_univ_succ]
   simp [hN, submatrix]
+
+end Matrix
+
+namespace Matrix
+
+/-- Interchanging the rows occupied by two prescribed vectors reverses the determinant. -/
+theorem det_updateRow_updateRow_swap {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+    (A : Matrix ι ι R) (j k : ι)
+    (a b : ι → R) (h : j ≠ k) :
+    ((A.updateRow j a).updateRow k b).det =
+      -((A.updateRow k a).updateRow j b).det := by
+  let M := (A.updateRow k a).updateRow j b
+  have hkj : k ≠ j := Ne.symm h
+  have he :
+      M.submatrix (Equiv.swap j k) id =
+        (A.updateRow j a).updateRow k b := by
+    ext r l
+    by_cases hrj : r = j
+    · subst r
+      simp [M, Matrix.submatrix_apply, Matrix.updateRow_apply, h, hkj]
+    · by_cases hrk : r = k
+      · subst r
+        simp [M, Matrix.submatrix_apply, Matrix.updateRow_apply]
+      · simp [M, Matrix.submatrix_apply, Matrix.updateRow_apply, hrj, hrk,
+          Equiv.swap_apply_of_ne_of_ne hrj hrk]
+  rw [← he, Matrix.det_permute]
+  simp [M, Equiv.Perm.sign_swap h]
 
 end Matrix

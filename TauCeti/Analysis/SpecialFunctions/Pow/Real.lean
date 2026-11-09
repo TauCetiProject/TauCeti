@@ -48,6 +48,8 @@ This is the image needed when a change of variables `y = x ^ a` is performed on 
 A real number whose natural powers grow at most polynomially, `r ^ n ≤ C * (1 + n) ^ s` for all
 `n`, is at most `1`. This is how a spectral radius bound is read off from polynomially growing
 norms, as for the monomials of a weighted Sobolev algebra.
+Likewise, if `n ^ b ≤ C * n ^ a` for every natural number `n`, then `b ≤ a`; this is how a
+power-law exponent is read off from testing an inequality on `n` copies of one vector.
 
 A two-sided real exponential with positive decay rate is little-o of every real power of
 `|x|` outside compact subsets of the real line.
@@ -58,6 +60,10 @@ A positive real raised to a finitely supported sum of exponents is the product o
 An exponential upper bound on a nonnegative base passes to its nonnegative real powers: if
 `0 ≤ A ≤ e^{-t}` and `0 ≤ c`, then `A ^ c ≤ e^{-c t}`. This is how a bound `|q| ≤ e^{-t}` on a
 nome is turned into bounds on the fractional powers `|q| ^ c` in a product estimate.
+
+A positive factor splits off a real power of any real number, including a negative one:
+`(a t) ^ z = a ^ z t ^ z` for `0 < a`. For `t < 0` both sides carry the factor `cos (z π)`. This is
+the form in which a positive rescaling is pulled out of a power without a sign hypothesis.
 
 For nonnegative `a`, `C`, `I` and `q > 0`, a bound `a ≤ C * I ^ (1 / q)` is equivalent to its
 `q`-th power `a ^ q ≤ C ^ q * I`. This is how a domination estimate by an `L^q` norm is compared
@@ -83,9 +89,11 @@ with the corresponding integral of `q`-th powers.
 * `Real.image_rpow_Ioo_zero_one`: a positive power maps the open unit interval onto itself.
 * `Real.tendsto_pow_div_mul_sub_pow_atTop`: `D ^ n / (n ω (D ^ n - ρ ^ n)) → (n ω)⁻¹` as `D → ∞`.
 * `Real.le_one_of_forall_pow_le_mul_rpow`: `r ≤ 1` when `r ^ n ≤ C * (1 + n) ^ s` for all `n`.
+* `Real.le_of_forall_natCast_rpow_le_mul_rpow`: `b ≤ a` when `n ^ b ≤ C * n ^ a` for all `n`.
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
+* `Real.mul_rpow_of_pos_left`: `(a t) ^ z = a ^ z t ^ z` for `0 < a` and every real `t`.
 * `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
   `a`, `C`, `I` and `0 < q`.
 * `Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow`: real powers with finitely supported
@@ -200,12 +208,37 @@ theorem le_one_of_forall_pow_le_mul_rpow {r C s : ℝ}
   calc r * r ^ n ≤ r * (C * (1 + n) ^ s) := by gcongr; exact h n
     _ = C * r * (1 + n) ^ s := by ring
 
+/-- If `n ^ b ≤ C * n ^ a` for every natural number `n`, then `b ≤ a`: otherwise
+`n ^ (b - a)` eventually exceeds `C`. -/
+theorem le_of_forall_natCast_rpow_le_mul_rpow {a b C : ℝ}
+    (h : ∀ n : ℕ, (n : ℝ) ^ b ≤ C * (n : ℝ) ^ a) : b ≤ a := by
+  by_contra! hab
+  have hev := ((tendsto_rpow_atTop (sub_pos.2 hab)).comp
+    tendsto_natCast_atTop_atTop).eventually (eventually_gt_atTop C)
+  obtain ⟨n, hCn, hn⟩ := (hev.and (eventually_gt_atTop 0)).exists
+  have hn' : (0 : ℝ) < n := by exact_mod_cast hn
+  have hb := h n
+  rw [← sub_add_cancel b a, rpow_add hn'] at hb
+  have hpos := rpow_pos_of_pos hn' a
+  simp only [Function.comp_apply] at hCn
+  nlinarith
+
 /-- If `0 ≤ A ≤ e^{-t}` and `0 ≤ c`, then `A ^ c ≤ e^{-c t}`. -/
 theorem rpow_le_exp_neg_mul {A t c : ℝ} (hA : 0 ≤ A) (hAt : A ≤ exp (-t)) (hc : 0 ≤ c) :
     A ^ c ≤ exp (-(c * t)) := by
   refine (rpow_le_rpow hA hAt hc).trans_eq ?_
   rw [← exp_mul]
   ring_nf
+
+/-- `(a t) ^ z = a ^ z t ^ z` for `a > 0` and every real `t`, including `t < 0`, where both sides
+carry the same factor `cos (z π)`. -/
+theorem mul_rpow_of_pos_left {a : ℝ} (ha : 0 < a) (t z : ℝ) :
+    (a * t) ^ z = a ^ z * t ^ z := by
+  rcases le_or_gt 0 t with ht | ht
+  · exact mul_rpow ha.le ht
+  · rw [rpow_def_of_neg (mul_neg_of_pos_of_neg ha ht), rpow_def_of_neg ht, rpow_def_of_pos ha,
+      log_mul ha.ne' ht.ne, add_mul, exp_add]
+    ring
 
 /-- For `a, C, I ≥ 0` and `q > 0`, `a ≤ C * I ^ (1 / q)` if and only if `a ^ q ≤ C ^ q * I`. -/
 theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (hI : 0 ≤ I)
@@ -232,6 +265,17 @@ theorem tendsto_pow_div_mul_sub_pow_atTop {n : ℕ} {ω : ℝ} (hn0 : n ≠ 0) (
     exact (sub_pos.2 this).ne'
   rw [div_pow, one_sub_div (pow_pos hD0 n).ne', inv_div]
   field_simp
+
+/-- Dividing the base of a real power by a positive number divides the power by the same power
+of that number, whatever the sign of the base. Mathlib's `Real.div_rpow` needs a nonnegative
+base. -/
+theorem div_rpow_of_pos_right {c : ℝ} (hc : 0 < c) (r a : ℝ) :
+    (r / c) ^ a = r ^ a / c ^ a := by
+  rcases lt_or_ge r 0 with hr | hr
+  · rw [rpow_def_of_neg hr, rpow_def_of_neg (div_neg_of_neg_of_pos hr hc),
+      rpow_def_of_pos hc, log_div hr.ne hc.ne', sub_mul, exp_sub]
+    ring
+  · exact div_rpow hr hc.le a
 
 end Real
 
