@@ -51,19 +51,52 @@ theorem HasConstantSpeedOnWith.lipschitzOnWith {E : Type*} [PseudoEMetricSpace E
   simpa only [edist_dist, Real.dist_eq, abs_of_nonpos (sub_nonpos.mpr hxy), neg_sub]
     using hdist.trans_eq hmul
 
-/-- The extended diameter of the set of cumulative variations from a base point of `s` is at most
-the total variation on `s`. -/
+/-- The extended diameter of the set of cumulative variations from any base point is at most the
+total variation on `s`. -/
 theorem variationOnFromTo.ediam_image_le {α E : Type*} [LinearOrder α] [TopologicalSpace E]
-    [WeakPseudoEMetricSpace E] (f : α → E) {s : Set α} {a : α} (ha : a ∈ s) :
+    [WeakPseudoEMetricSpace E] (f : α → E) {s : Set α} (a : α) :
     Metric.ediam (variationOnFromTo f s a '' s) ≤ eVariationOn f s := by
   by_cases hf : BoundedVariationOn f s
   swap
   · rw [BoundedVariationOn, not_ne_iff] at hf
     exact hf ▸ le_top
+  have hfin {t : Set α} (ht : t ⊆ s) : eVariationOn f t ≠ ⊤ :=
+    ne_top_of_le_ne_top hf (eVariationOn.mono f ht)
+  have hle {t : Set α} (ht : t ⊆ s) : (eVariationOn f t).toReal ≤ (eVariationOn f s).toReal :=
+    ENNReal.toReal_mono hf (eVariationOn.mono f ht)
+  have key {x y : α} (hx : x ∈ s) (hy : y ∈ s) (hxy : x ≤ y) :
+      |variationOnFromTo f s a x - variationOnFromTo f s a y| ≤ (eVariationOn f s).toReal := by
+    rcases le_total a x with h₁ | h₁
+    · rw [variationOnFromTo.eq_of_le f s h₁, variationOnFromTo.eq_of_le f s (h₁.trans hxy),
+        ← eVariationOn.Icc_add_Icc f h₁ hxy hx,
+        ENNReal.toReal_add (hfin inter_subset_left) (hfin inter_subset_left), abs_sub_comm,
+        add_sub_cancel_left, abs_of_nonneg ENNReal.toReal_nonneg]
+      exact hle inter_subset_left
+    rcases le_total a y with h₂ | h₂
+    · have h := (eVariationOn.add_le_union f (s := s ∩ Icc x a) (t := s ∩ Icc a y)
+        fun _ hu _ hv ↦ hu.2.2.trans hv.2.1).trans (eVariationOn.mono f
+          (union_subset inter_subset_left inter_subset_left : s ∩ Icc x a ∪ s ∩ Icc a y ⊆ s))
+      have h' := ENNReal.toReal_mono hf h
+      rw [ENNReal.toReal_add (hfin inter_subset_left) (hfin inter_subset_left)] at h'
+      rw [variationOnFromTo.eq_of_ge f s h₁, variationOnFromTo.eq_of_le f s h₂,
+        show -(eVariationOn f (s ∩ Icc x a)).toReal - (eVariationOn f (s ∩ Icc a y)).toReal =
+          -((eVariationOn f (s ∩ Icc x a)).toReal + (eVariationOn f (s ∩ Icc a y)).toReal) by ring,
+        abs_neg, abs_of_nonneg (by positivity)]
+      exact h'
+    · rw [variationOnFromTo.eq_of_ge f s h₁, variationOnFromTo.eq_of_ge f s h₂,
+        ← eVariationOn.Icc_add_Icc f hxy h₂ hy,
+        ENNReal.toReal_add (hfin inter_subset_left) (hfin inter_subset_left),
+        show -((eVariationOn f (s ∩ Icc x y)).toReal + (eVariationOn f (s ∩ Icc y a)).toReal) -
+          -(eVariationOn f (s ∩ Icc y a)).toReal = -(eVariationOn f (s ∩ Icc x y)).toReal by ring,
+        abs_neg, abs_of_nonneg ENNReal.toReal_nonneg]
+      exact hle inter_subset_left
   refine Metric.ediam_image_le_iff.2 fun x hx y hy ↦ ?_
-  rw [edist_dist, Real.dist_eq, variationOnFromTo.sub_right hf.locallyBoundedVariationOn ha hx hy,
-    ← ENNReal.ofReal_toReal hf]
-  exact ENNReal.ofReal_le_ofReal (variationOnFromTo.abs_le_eVariationOn hf)
+  rw [edist_dist, Real.dist_eq, ← ENNReal.ofReal_toReal hf]
+  refine ENNReal.ofReal_le_ofReal ?_
+  rcases le_total x y with hxy | hxy
+  · exact key hx hy hxy
+  · rw [abs_sub_comm]
+    exact key hy hx hxy
 
 /-- The image of a curve of locally bounded variation has Hausdorff dimension at most one,
 because its natural parameterization is Lipschitz on a subset of the real line. -/
@@ -109,7 +142,7 @@ theorem hausdorffMeasure_image_le (f : α → E) (s : Set α) :
       simpa using hφ.hausdorffMeasure_image_le zero_le_one
     _ = volume (v '' s) := by rw [hausdorffMeasure_real]
     _ ≤ Metric.ediam (v '' s) := Real.volume_le_diam _
-    _ ≤ eVariationOn f s := variationOnFromTo.ediam_image_le f ha
+    _ ≤ eVariationOn f s := variationOnFromTo.ediam_image_le f a
 
 /-- The Euclidean one-dimensional Hausdorff measure of the image of `s` under `f` is at most the
 total variation of `f` on `s`. In particular, the trace of a rectifiable curve has
