@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.AlgebraicTopology.Singular.Additivity
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Cells
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Disk
+public import TauCeti.Topology.MetricSpace.Pseudo.ULift
 
 /-!
 # The skeletal filtration of a Serre fibration and the fibres over the cells
@@ -69,6 +70,7 @@ noncomputable section
 universe u
 
 open CategoryTheory Limits Metric Set Topology Topology.RelCWComplex
+open Homeomorph (uliftClosedBall coe_uliftClosedBall_apply)
 
 namespace TauCeti
 
@@ -78,27 +80,15 @@ variable {E B : _root_.TopCat.{u}} {p : E ⟶ B} [T2Space B] {C D : Set B} [RelC
 
 section CellDisk
 
-/-- The closed unit ball of `ULift (Fin n → ℝ)`, with the sup norm, viewed as the closed unit ball
-of `Fin n → ℝ`. -/
-private def uliftBallHomeomorph (n : ℕ) :
-    closedBall (0 : ULift.{u} (Fin n → ℝ)) 1 ≃ₜ closedBall (0 : Fin n → ℝ) 1 :=
-  Homeomorph.ulift.subtype fun x ↦ by simp [Homeomorph.ulift]
-
-@[simp]
-private lemma coe_uliftBallHomeomorph_apply (n : ℕ)
-    (x : closedBall (0 : ULift.{u} (Fin n → ℝ)) 1) :
-    (uliftBallHomeomorph n x : Fin n → ℝ) = (x : ULift.{u} (Fin n → ℝ)).down :=
-  (rfl)
-
 variable (C) in
 /-- The characteristic map of the `n`-cell `j` on the closed unit ball of `ℝⁿ`, with the ball lifted
 to the universe of `B`. -/
 def cellULiftMap (n : ℕ) (j : cell C n) :
     _root_.TopCat.of (closedBall (0 : ULift.{u} (Fin n → ℝ)) 1) ⟶ B :=
-  _root_.TopCat.ofHom ⟨fun x ↦ map n j (uliftBallHomeomorph n x : Fin n → ℝ),
+  _root_.TopCat.ofHom ⟨fun x ↦ map n j (uliftClosedBall 0 1 x : Fin n → ℝ),
     (continuousOn n j).comp_continuous
-      (continuous_subtype_val.comp (uliftBallHomeomorph n).continuous)
-      fun x ↦ (uliftBallHomeomorph n x).2⟩
+      (continuous_subtype_val.comp (uliftClosedBall (0 : ULift.{u} (Fin n → ℝ)) 1).continuous)
+      fun x ↦ (uliftClosedBall 0 1 x).2⟩
 
 omit [T2Space B] in
 @[simp]
@@ -118,17 +108,18 @@ variable (p C) in
 pullback of `p` to the disks of all `n`-cells. -/
 private def cellDiskPullbackι (n : ℕ) (j : cell C n) :
     (cellDiskPullbackPair p C n j).fst ⟶ cellPullback p C n :=
-  _root_.TopCat.ofHom ⟨fun x ↦ ⟨(⟨j, uliftBallHomeomorph n x.1.1⟩, x.1.2),
+  _root_.TopCat.ofHom ⟨fun x ↦ ⟨(⟨j, uliftClosedBall 0 1 x.1.1⟩, x.1.2),
       (sigmaCellMap_apply C n _).trans x.2⟩,
     (((continuous_sigmaMk (σ := fun _ : cell C n ↦ closedBall (0 : Fin n → ℝ) 1)).comp
-      ((uliftBallHomeomorph n).continuous.comp (continuous_fst.comp continuous_subtype_val))).prodMk
+      ((uliftClosedBall (0 : ULift.{u} (Fin n → ℝ)) 1).continuous.comp
+        (continuous_fst.comp continuous_subtype_val))).prodMk
         (continuous_snd.comp continuous_subtype_val)).subtype_mk _⟩
 
 omit [T2Space B] in
 @[simp]
 private lemma coe_cellDiskPullbackι_apply (n : ℕ) (j : cell C n)
     (x : (cellDiskPullbackPair p C n j).fst) :
-    (cellDiskPullbackι p C n j x).1 = (⟨j, uliftBallHomeomorph n x.1.1⟩, x.1.2) :=
+    (cellDiskPullbackι p C n j x).1 = (⟨j, uliftClosedBall 0 1 x.1.1⟩, x.1.2) :=
   (rfl)
 
 variable (p C) in
@@ -137,7 +128,7 @@ into the pullback of `p` to the disks of all `n`-cells, as a map of pairs. -/
 def cellDiskPullbackPairι (n : ℕ) (j : cell C n) :
     cellDiskPullbackPair p C n j ⟶ cellPullbackPair p C n :=
   TopPair.ofSubsetMap (cellDiskPullbackι p C n j) fun x hx ↦ by
-    rw [mem_ofPred_eq, coe_cellDiskPullbackι_apply, coe_uliftBallHomeomorph_apply, ULift.norm_down]
+    rw [mem_ofPred_eq, coe_cellDiskPullbackι_apply, coe_uliftClosedBall_apply, ULift.norm_down]
     exact mem_sphere_zero_iff_norm.1 hx
 
 omit [T2Space B] in
@@ -161,7 +152,7 @@ lemma coe_cellDiskPullbackPairι_fst_apply_fst_snd (n : ℕ) (j : cell C n)
     (x : (cellDiskPullbackPair p C n j).fst) :
     ((TopPair.Hom.fst (cellDiskPullbackPairι p C n j) x).1.1.2 : Fin n → ℝ) =
       (x.1.1 : ULift.{u} (Fin n → ℝ)).down := by
-  rw [cellDiskPullbackPairι_fst_apply, coe_cellDiskPullbackι_apply, coe_uliftBallHomeomorph_apply]
+  rw [cellDiskPullbackPairι_fst_apply, coe_cellDiskPullbackι_apply, coe_uliftClosedBall_apply]
 
 omit [T2Space B] in
 /-- The inclusion of `Pⱼ` keeps the point of the total space. -/
@@ -174,20 +165,20 @@ lemma cellDiskPullbackPairι_fst_apply_snd (n : ℕ) (j : cell C n)
 omit [T2Space B] in
 /-- The point of `Pⱼ` over the point of the disk of `j` that a point of `P` over that disk lies
 over. -/
-private lemma cellULiftMap_uliftBallHomeomorph_symm (n : ℕ) (j : cell C n)
+private lemma cellULiftMap_uliftClosedBall_symm (n : ℕ) (j : cell C n)
     (b : closedBall (0 : Fin n → ℝ) 1) (e : E) (h : sigmaCellMap C n ⟨j, b⟩ = p e) :
-    cellULiftMap C n j ((uliftBallHomeomorph n).symm b) = p e := by
-  rw [← h, sigmaCellMap_apply, cellULiftMap_apply, ← coe_uliftBallHomeomorph_apply,
+    cellULiftMap C n j ((uliftClosedBall (0 : ULift.{u} (Fin n → ℝ)) 1).symm b) = p e := by
+  rw [← h, sigmaCellMap_apply, cellULiftMap_apply, ← coe_uliftClosedBall_apply,
     Homeomorph.apply_symm_apply]
 
 omit [T2Space B] in
 /-- `Pⱼ ⟶ P` is an open embedding onto the part of `P` over the disk of `j`. -/
 private lemma isOpenEmbedding_cellDiskPullbackι (n : ℕ) (j : cell C n) :
     IsOpenEmbedding (cellDiskPullbackι p C n j) := by
-  have hφ : IsEmbedding (Prod.map (fun b ↦ (⟨j, uliftBallHomeomorph n b⟩ :
+  have hφ : IsEmbedding (Prod.map (fun b ↦ (⟨j, uliftClosedBall 0 1 b⟩ :
       Σ _ : cell C n, closedBall (0 : Fin n → ℝ) 1)) (id : E → E)) :=
     (((IsOpenEmbedding.sigmaMk (σ := fun _ : cell C n ↦ closedBall (0 : Fin n → ℝ) 1)
-      (i := j)).comp (uliftBallHomeomorph n).isOpenEmbedding).prodMap
+      (i := j)).comp (uliftClosedBall (0 : ULift.{u} (Fin n → ℝ)) 1).isOpenEmbedding).prodMap
         IsOpenEmbedding.id).isEmbedding
   refine ⟨IsEmbedding.subtypeVal.of_comp_iff.1 (hφ.comp IsEmbedding.subtypeVal), ?_⟩
   -- The range is the part of `P` over the disk of `j`.
@@ -201,8 +192,8 @@ private lemma isOpenEmbedding_cellDiskPullbackι (n : ℕ) (j : cell C n) :
     · rintro ⟨b', hb'⟩
       obtain ⟨rfl, hb⟩ := Sigma.mk.inj_iff.1 hb'
       obtain rfl := eq_of_heq hb
-      exact ⟨⟨((uliftBallHomeomorph n).symm b', e),
-        cellULiftMap_uliftBallHomeomorph_symm n j b' e h⟩, Subtype.ext <|
+      exact ⟨⟨((uliftClosedBall (0 : ULift.{u} (Fin n → ℝ)) 1).symm b', e),
+        cellULiftMap_uliftClosedBall_symm n j b' e h⟩, Subtype.ext <|
           (coe_cellDiskPullbackι_apply n j _).trans (by rw [Homeomorph.apply_symm_apply])⟩
   rw [this]
   exact isOpen_range_sigmaMk.preimage (continuous_fst.comp continuous_subtype_val)
@@ -216,11 +207,11 @@ private lemma isHomeomorph_sigmaCellDiskPullbackι (n : ℕ) :
     isOpenMap_sigma.2 fun j ↦ (isOpenEmbedding_cellDiskPullbackι n j).isOpenMap, ?_⟩
   -- The inverse reads off the cell from the first coordinate.
   refine Function.bijective_iff_has_inverse.2
-    ⟨fun y ↦ ⟨y.1.1.1, ⟨((uliftBallHomeomorph n).symm y.1.1.2, y.1.2),
-      cellULiftMap_uliftBallHomeomorph_symm n _ _ _ y.2⟩⟩, fun x ↦ ?_, fun y ↦ ?_⟩
+    ⟨fun y ↦ ⟨y.1.1.1, ⟨((uliftClosedBall (0 : ULift.{u} (Fin n → ℝ)) 1).symm y.1.1.2, y.1.2),
+      cellULiftMap_uliftClosedBall_symm n _ _ _ y.2⟩⟩, fun x ↦ ?_, fun y ↦ ?_⟩
   · obtain ⟨j, ⟨⟨b, e⟩, h⟩⟩ := x
     exact Sigma.ext rfl <| heq_of_eq <| Subtype.ext <|
-      Prod.ext ((uliftBallHomeomorph n).symm_apply_apply b) rfl
+      Prod.ext ((uliftClosedBall (0 : ULift.{u} (Fin n → ℝ)) 1).symm_apply_apply b) rfl
   · obtain ⟨⟨⟨j, b⟩, e⟩, h⟩ := y
     exact Subtype.ext <|
       (coe_cellDiskPullbackι_apply n j _).trans (by rw [Homeomorph.apply_symm_apply])
@@ -245,7 +236,7 @@ def isColimitCofanCellDiskPullbackPairι (n : ℕ) :
     -- A point over a boundary sphere comes from the pullback to its cell, over the sphere.
     obtain ⟨x, hx⟩ := (isHomeomorph_sigmaCellDiskPullbackι (p := p) n).bijective.2 y.1
     have hy : ‖(y.1.1.1.2 : Fin n → ℝ)‖ = 1 := y.2
-    rw [← hx, coe_cellDiskPullbackι_apply] at hy
+    rw [← hx, coe_cellDiskPullbackι_apply, coe_uliftClosedBall_apply] at hy
     -- Membership in `∂Pⱼ` is membership of the point of the disk in the sphere.
     refine ⟨⟨x.1, x.2, (by simpa using hy : (x.2.1.1 : ULift.{u} (Fin n → ℝ)) ∈ sphere 0 1)⟩,
       Subtype.ext ?_⟩
