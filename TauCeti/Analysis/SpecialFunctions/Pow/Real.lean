@@ -107,6 +107,9 @@ with the corresponding integral of `q`-th powers.
   exponents have finite multiplicative support.
 * `Real.rpow_finsum_of_pos`: `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i` for `0 < a` and finitely supported
   `f`.
+* `Real.le_sqrt_mul_rpow_sub_one_of_sq_le`: `x ≤ √B * d ^ (β - 1)` when
+  `d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)` with `d > 0`, the step turning a mean-value bound on `d ^ 2 *
+  x ^ 2` into a pointwise power bound on `x`.
 -/
 
 public section
@@ -310,6 +313,23 @@ lemma mul_rpow_div_mul_le_two_mul {α C₀ N R r X C : ℝ} (hC₀ : 0 ≤ C₀)
     C₀ * (r / R) ^ α * X ≤ 2 * (C * r ^ α) :=
   calc _ ≤ C₀ * (r / R) ^ α * N := by gcongr
     _ = 2 * (C * r ^ α) := by rw [hC, Real.div_rpow hr hR.le]; field_simp
+
+/-- If `d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)` with `d > 0`, then `x ≤ √B * d ^ (β - 1)`. -/
+theorem le_sqrt_mul_rpow_sub_one_of_sq_le {x d B β : ℝ} (hd : 0 < d)
+    (h : d ^ 2 * x ^ 2 ≤ B * d ^ (2 * β)) : x ≤ Real.sqrt B * d ^ (β - 1) := by
+  have hB : 0 ≤ B := by
+    have h0 : 0 ≤ B * d ^ (2 * β) := (by positivity : 0 ≤ d ^ 2 * x ^ 2).trans h
+    exact nonneg_of_mul_nonneg_left h0 (Real.rpow_pos_of_pos hd _)
+  rcases lt_or_ge x 0 with hx | hx
+  · exact hx.le.trans (by positivity)
+  have hsq : (d * x) ^ 2 ≤ (Real.sqrt B * d ^ β) ^ 2 := by
+    have hp : d ^ (2 * β) = (d ^ β) ^ 2 := by
+      simpa only [Nat.cast_ofNat, mul_comm] using Real.rpow_mul_natCast hd.le β 2
+    rw [hp] at h
+    simpa only [mul_pow, Real.sq_sqrt hB] using h
+  have h' := (sq_le_sq₀ (by positivity) (by positivity)).mp hsq
+  rw [Real.rpow_sub_one hd.ne', ← mul_div_assoc, le_div_iff₀ hd]
+  nlinarith
 
 end Real
 
