@@ -43,6 +43,7 @@ The normed structure on matrices is Mathlib's `L∞` operator norm, available th
   of a finite-dimensional normed space is smooth over a complete field.
 * `Matrix.differentiable_det`: the determinant is differentiable at every matrix.
 * `Matrix.fderiv_det_eq_sum_updateRow`: its differential is the sum of row replacements.
+* `Matrix.fderiv_det_updateRow`: the row-replacement formula for a field with one row fixed.
 * `Matrix.fderiv_det_apply_adjugate`: Jacobi's formula, including singular matrices.
 * `Matrix.hasDerivAt_det_one_add_smul`: `t ↦ det (1 + t • B)` has derivative `trace B` at `0`.
 * `Matrix.hasFDerivAt_det_one`: the derivative at the identity is the trace.
@@ -86,6 +87,95 @@ theorem fderiv_det_eq_sum_updateRow (A H : Matrix n n 𝕜) :
   rw [(detMultilinear.hasFDerivAt (fun i => A i)).fderiv,
     ContinuousMultilinearMap.linearDeriv_apply]
   exact Finset.sum_congr rfl fun _ _ => rfl
+
+/-- The determinant of a differentiable matrix field with one row fixed has differential equal
+to the sum of row replacements over the other rows. No completeness assumption is needed. -/
+theorem fderiv_det_updateRow
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    (A : E → n → n → 𝕜) (x : E)
+    (hA : ∀ k l, DifferentiableAt 𝕜 (fun y => A y k l) x)
+    (j : n) (c : n → 𝕜) (v : E) :
+    fderiv 𝕜 (fun y => (Matrix.updateRow (A y) j c).det) x v =
+      ∑ k, if k = j then 0
+        else ((Matrix.updateRow (A x) j c).updateRow k
+          (fun l => fderiv 𝕜 (fun y => A y k l) x v)).det := by
+  let D : E →L[𝕜] n → n → 𝕜 :=
+    ContinuousLinearMap.pi (fun k =>
+      ContinuousLinearMap.pi (fun l =>
+        if k = j then (0 : E →L[𝕜] 𝕜)
+        else fderiv 𝕜 (fun y => A y k l) x))
+  let B : E → n → n → 𝕜 :=
+    fun y k l => if k = j then c l else A y k l
+  have hD : HasFDerivAt B D x := by
+    apply hasFDerivAt_pi.mpr
+    intro k
+    apply hasFDerivAt_pi.mpr
+    intro l
+    by_cases h : k = j
+    · simpa only [B, h, ite_true] using (hasFDerivAt_const (c l) x)
+    · simpa only [B, h, ite_false] using (hA k l).hasFDerivAt
+  have he :
+      (fun y => (Matrix.updateRow (A y) j c).det) =
+        (fun y => (Matrix.of (B y)).det) := by
+    funext y
+    congr 1
+    ext k l
+    exact Matrix.updateRow_apply
+  rw [he]
+  -- Transport the Pi-norm row derivative to the matrix operator norm before composing with det.
+  let rowsToMatrix : (n → n → 𝕜) →L[𝕜] Matrix n n 𝕜 :=
+    { toLinearMap := (Matrix.ofLinearEquiv 𝕜).toLinearMap
+      cont := by
+        simpa only [LinearMap.toFun_eq_coe, LinearEquiv.coe_toLinearMap,
+          Matrix.coe_ofLinearEquiv, id_eq] using
+          (continuous_id : Continuous (fun M : n → n → 𝕜 ↦ M)).matrixOf }
+  have rowsToMatrix_apply (M : n → n → 𝕜) : rowsToMatrix M = Matrix.of M := by
+    simpa only [LinearEquiv.coe_toLinearMap, Matrix.coe_ofLinearEquiv] using
+      congrFun (ContinuousLinearMap.coe_mk' (Matrix.ofLinearEquiv 𝕜).toLinearMap _) M
+  have hMatrix := rowsToMatrix.hasFDerivAt.comp x hD
+  have hdetComp :=
+    (Matrix.differentiable_det (rowsToMatrix (B x))).hasFDerivAt.comp x hMatrix
+  have hd :
+      fderiv 𝕜 (fun y => (Matrix.of (B y)).det) x v =
+        fderiv 𝕜 Matrix.det (Matrix.of (B x)) (Matrix.of (D v)) := by
+    have h := congrArg (fun L : E →L[𝕜] 𝕜 => L v) hdetComp.fderiv
+    have houter := ContinuousLinearMap.comp_apply
+      (fderiv 𝕜 Matrix.det (rowsToMatrix (B x))) (rowsToMatrix.comp D) v
+    have hinner := ContinuousLinearMap.comp_apply rowsToMatrix D v
+    have heval := h.trans (houter.trans
+      (congrArg (fderiv 𝕜 Matrix.det (rowsToMatrix (B x))) hinner))
+    simpa only [Function.comp_def, rowsToMatrix_apply] using heval
+  have hdet := fderiv_det_eq_sum_updateRow (Matrix.of (B x)) (Matrix.of (D v))
+  have hB : Matrix.of (B x) = Matrix.updateRow (Matrix.of (A x)) j c := by
+    ext k l
+    exact Matrix.updateRow_apply.symm
+  have hAof : Matrix.of (A x) = A x := by
+    ext k l
+    exact Matrix.of_apply (A x) k l
+  calc
+    fderiv 𝕜 (fun y => (Matrix.of (B y)).det) x v =
+        fderiv 𝕜 Matrix.det (Matrix.of (B x)) (Matrix.of (D v)) := hd
+    _ = ∑ k, ((Matrix.of (B x)).updateRow k (Matrix.of (D v) k)).det := hdet
+    _ = ∑ k, if k = j then 0
+        else ((Matrix.updateRow (A x) j c).updateRow k
+          (fun l => fderiv 𝕜 (fun y => A y k l) x v)).det := by
+      rw [hB, hAof]
+      apply Finset.sum_congr rfl
+      intro k _
+      by_cases h : k = j
+      · subst k
+        rw [ite_eq_left rfl]
+        apply Matrix.det_eq_zero_of_row_eq_zero j
+        intro l
+        rw [Matrix.updateRow_self]
+        simp [D]
+      · rw [ite_eq_right h]
+        have hr :
+            (Matrix.of (D v)) k =
+              fun l => fderiv 𝕜 (fun y => A y k l) x v := by
+          funext l
+          simp only [Matrix.of_apply, D, ContinuousLinearMap.pi_apply, ite_eq_right h]
+        rw [hr]
 
 /-- **Jacobi's adjugate formula**, valid at singular as well as invertible matrices. -/
 theorem fderiv_det_apply_adjugate (A H : Matrix n n 𝕜) :

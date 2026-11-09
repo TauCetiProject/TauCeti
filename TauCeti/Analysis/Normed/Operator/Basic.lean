@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Normed.Module.RCLike.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.LinearAlgebra.Pi
 
 /-!
 # Basic facts about bounded operators
@@ -31,9 +33,11 @@ A left inverse `S` of `T` modulo an error term gives the estimate
 (`ContinuousLinearMap.norm_le_opNorm_mul_norm_add_norm_comp_sub_one`).
 
 Finally, an operator bounded below is injective
-(`ContinuousLinearMap.injective_of_forall_norm_le`) and stays nonzero under a sufficiently small
-perturbation (`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), and is invertible if it
-is also surjective
+(`ContinuousLinearMap.injective_of_forall_norm_le`), its lower and upper bounds satisfy
+`1 ≤ ‖f‖ M` on a nontrivial space (`ContinuousLinearMap.one_le_opNorm_mul_of_forall_norm_le`),
+it stays nonzero under a sufficiently small perturbation
+(`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), and it is invertible if it is also
+surjective
 (`ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le`), with inverse bounded by the
 same constant (`ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le`); an invertible
 operator `A` on a normed space cancels against its inverse
@@ -59,6 +63,13 @@ A continuous bilinear map satisfies a Young-type bound
 A **metric quotient map**, an operator `q` with `‖q‖ ≤ 1` lifting every vector of norm less than
 `r` to a vector of norm less than `r`, maps each open ball about `0` onto the open ball of the same
 radius (`ContinuousLinearMap.image_ball_eq_ball`).
+
+Finite real products also admit coordinate-basis estimates and continuous linear equivalences
+obtained by replacing one coordinate. The coordinate arguments are adapted from
+[KLS](https://github.com/human-ai-mathematics/kls-lean), commit
+`65810c73f9dd7945fc646ab484cb19d673f5291d`,
+`formalization/FunctionalInequalities/Analysis/`, files `PiCoordinates.lean` and
+`Sard/CoordinateChange.lean`; the coordinate bound comes from `Sard/Disk.lean`.
 -/
 
 public section
@@ -169,6 +180,19 @@ theorem apply_add_ne_zero_of_forall_norm_le {F : Type*} [SeminormedAddCommGroup 
   have hpos : 0 < ‖x‖ := norm_pos_iff.2 hx
   have hM : 0 < M := pos_of_mul_pos_left (hpos.trans_le (h x)) (norm_nonneg _)
   nlinarith [h x, mul_le_mul_of_nonneg_left hfx hM.le]
+
+/-- On a nontrivial space, an operator bounded below, `‖x‖ ≤ M ‖f x‖`, satisfies
+`1 ≤ ‖f‖ M`. -/
+theorem one_le_opNorm_mul_of_forall_norm_le [Nontrivial E] {F : Type*}
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E →L[𝕜] F} {M : ℝ}
+    (h : ∀ x, ‖x‖ ≤ M * ‖f x‖) : 1 ≤ ‖f‖ * M := by
+  obtain ⟨x, hx⟩ := exists_ne (0 : E)
+  have hpos : 0 < ‖x‖ := norm_pos_iff.2 hx
+  have hM : 0 < M := pos_of_mul_pos_left (hpos.trans_le (h x)) (norm_nonneg _)
+  refine le_of_mul_le_mul_right ?_ hpos
+  calc 1 * ‖x‖ ≤ M * ‖f x‖ := by rw [one_mul]; exact h x
+    _ ≤ M * (‖f‖ * ‖x‖) := by gcongr; exact f.le_opNorm x
+    _ = ‖f‖ * M * ‖x‖ := by ring
 
 /-- A surjective continuous linear map that is bounded below, `‖x‖ ≤ C * ‖L x‖`, is invertible.
 Neither space needs to be complete. -/
@@ -378,3 +402,82 @@ public theorem opNorm_le_sqrt_of_forall_sq_norm_le
   simpa only [mul_pow, Real.sq_sqrt hc] using h x
 
 end ContinuousLinearMap
+
+public section
+
+/-- A nonzero functional on a finite real product is nonzero on some coordinate vector. -/
+theorem ContinuousLinearMap.exists_apply_single_ne_zero {ι : Type*} [Finite ι] [DecidableEq ι]
+    (α : (ι → ℝ) →L[ℝ] ℝ) (hα : α ≠ 0) : ∃ i : ι, α (Pi.single i (1 : ℝ)) ≠ 0 := by
+  let := Fintype.ofFinite ι
+  by_contra h
+  push Not at h
+  refine hα (ContinuousLinearMap.ext fun v => ?_)
+  have hv : v = ∑ i : ι, v i • Pi.single i (1 : ℝ) := by
+    funext k
+    simp [Finset.sum_apply, Pi.single_apply]
+  rw [hv]
+  simp [map_sum, h]
+
+/-- A coordinate bound for a functional on a finite real product bounds its value on every
+vector, using the cardinality of the index set and the product norm. -/
+theorem ContinuousLinearMap.abs_apply_le_card_mul_norm {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (L : (ι → ℝ) →L[ℝ] ℝ) (v : ι → ℝ) {M : ℝ}
+    (h : ∀ j, |L (Pi.single j (1 : ℝ))| ≤ M) :
+    |L v| ≤ Fintype.card ι * ‖v‖ * M := by
+  have hv : v = ∑ j : ι, v j • Pi.single j (1 : ℝ) := by
+    funext m
+    simp [Finset.sum_apply, Pi.single_apply]
+  calc |L v| = |∑ j : ι, v j * L (Pi.single j (1 : ℝ))| := by
+        conv_lhs => rw [hv]
+        simp [map_sum, smul_eq_mul]
+    _ ≤ ∑ j : ι, |v j * L (Pi.single j (1 : ℝ))| := Finset.abs_sum_le_sum_abs _ _
+    _ ≤ ∑ _j : ι, ‖v‖ * M := by
+        refine Finset.sum_le_sum fun j _ => ?_
+        rw [abs_mul]
+        exact mul_le_mul (by simpa [Real.norm_eq_abs] using norm_le_pi_norm v j) (h j)
+          (abs_nonneg _) (norm_nonneg _)
+    _ = Fintype.card ι * ‖v‖ * M := by simp [Finset.sum_const, mul_assoc]
+
+/-- Replacing one coordinate by a linear functional is injective when its coefficient at
+that coordinate is nonzero. -/
+theorem ContinuousLinearMap.pi_update_injective {ι : Type*} [DecidableEq ι]
+    (α : (ι → ℝ) →L[ℝ] ℝ) (i : ι) (hα : α (Pi.single i (1 : ℝ)) ≠ 0) :
+    Function.Injective (ContinuousLinearMap.pi fun m : ι ↦
+      if m = i then α else ContinuousLinearMap.proj m) := by
+  intro v₁ v₂ hv
+  rw [← sub_eq_zero]
+  set v : ι → ℝ := v₁ - v₂ with hvdef
+  have h0 : (ContinuousLinearMap.pi fun m : ι =>
+      if m = i then α else ContinuousLinearMap.proj m) v = 0 := by
+    rw [hvdef, map_sub, hv, sub_self]
+  have hoff : ∀ m, m ≠ i → v m = 0 := by
+    intro m hm
+    have := congrFun h0 m
+    simpa [ContinuousLinearMap.pi_apply, hm] using this
+  have hsingle : v = v i • Pi.single i (1 : ℝ) := by
+    funext m
+    rcases eq_or_ne m i with rfl | hm
+    · simp
+    · simp [hoff m hm, hm]
+  have hαv : α v = 0 := by
+    have := congrFun h0 i
+    simpa [ContinuousLinearMap.pi_apply] using this
+  rw [hsingle, map_smul, smul_eq_mul] at hαv
+  have hvi : v i = 0 := by
+    rcases mul_eq_zero.mp hαv with h | h
+    · exact h
+    · exact absurd h hα
+  rw [hsingle, hvi, zero_smul]
+
+/-- Replacing one coordinate by a functional with a nonzero coefficient at that coordinate
+is a continuous linear equivalence. -/
+theorem ContinuousLinearMap.exists_pi_update_equiv {ι : Type*} [Finite ι] [DecidableEq ι]
+    (α : (ι → ℝ) →L[ℝ] ℝ) (i : ι) (hα : α (Pi.single i (1 : ℝ)) ≠ 0) :
+    ∃ e : (ι → ℝ) ≃L[ℝ] (ι → ℝ),
+      (e : (ι → ℝ) →L[ℝ] (ι → ℝ)) =
+        ContinuousLinearMap.pi fun m : ι ↦ if m = i then α else ContinuousLinearMap.proj m := by
+  refine ⟨(LinearEquiv.ofInjectiveEndo _ (α.pi_update_injective i hα)).toContinuousLinearEquiv, ?_⟩
+  ext v m
+  rfl
+
+end

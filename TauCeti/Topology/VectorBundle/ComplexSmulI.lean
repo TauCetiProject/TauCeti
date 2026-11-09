@@ -105,7 +105,7 @@ variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedSpace ℂ
       (Complex.smulIEquiv (W x) : W x →L[ℝ] W x) = (Complex.smulIEquiv G : G →L[ℝ] G) := by
   have hW : (Complex.smulIEquiv (W x) : W x →L[ℝ] W x) = Complex.I • .id ℝ (W x) := by ext; simp
   have hG : (Complex.smulIEquiv G : G →L[ℝ] G) = Complex.I • .id ℝ G := by ext; simp
-  rw [hW, hG, ContinuousLinearMap.inCoordinates_smul _ _ hx,
+  rw [hW, hG, ContinuousLinearMap.inCoordinates_smul _ _,
     ContinuousLinearMap.inCoordinates_id hx]
 
 /-- Read in any preferred trivialization, `(Complex.smulIEquiv (W x)).symm` is
@@ -118,7 +118,7 @@ variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedSpace ℂ
   have hW : ((Complex.smulIEquiv (W x)).symm : W x →L[ℝ] W x) = (-Complex.I) • .id ℝ (W x) := by
     ext; simp
   have hG : ((Complex.smulIEquiv G).symm : G →L[ℝ] G) = (-Complex.I) • .id ℝ G := by ext; simp
-  rw [hW, hG, ContinuousLinearMap.inCoordinates_smul _ _ hx,
+  rw [hW, hG, ContinuousLinearMap.inCoordinates_smul _ _,
     ContinuousLinearMap.inCoordinates_id hx]
 
 variable [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)]
