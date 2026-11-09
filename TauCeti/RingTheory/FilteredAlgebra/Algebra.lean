@@ -13,7 +13,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 # Algebra structures on filtered ring completions
 
 The compatible-family completion of a filtered algebra is itself an algebra over the
-base ring, with scalars acting at each finite order. Its projections and the canonical
+base semiring, with scalars acting at each finite order. Its projections and the canonical
 map from the algebra are algebra homomorphisms, and an algebra homomorphism with a
 monotone cutoff modulus induces an algebra homomorphism of completions. The carrier
 and the ring structure are those of `TauCeti.AlgFiltration.completion`, so all
@@ -28,7 +28,7 @@ public section
 
 namespace TauCeti.AlgFiltration
 
-variable {R A B : Type*} [CommRing R] [Ring A] [Algebra R A] [Ring B] [Algebra R B]
+variable {R A B : Type*} [CommSemiring R] [Ring A] [Algebra R A] [Ring B] [Algebra R B]
   (F : TauCeti.AlgFiltration A) (G : TauCeti.AlgFiltration B)
 
 /-- Compatible quotient families form a subalgebra of the product of the quotient algebras. -/
@@ -37,10 +37,10 @@ def completionSubalgebra : Subalgebra R (∀ k : ℕᵒᵖ, A ⧸ F.ideal (k.uno
   algebraMap_mem' r := (F.mem_completion_iff _).mpr fun {_ _} h =>
     (Ideal.Quotient.factorₐ R (F.antitone (Nat.add_le_add_right h 1))).commutes r
 
-/-- Forgetting scalars recovers exactly the compatible-family ring completion. -/
+/-- Forgetting scalars recovers the completion's underlying subsemiring. -/
 @[simp]
-theorem completionSubalgebra_toSubring :
-    (F.completionSubalgebra (R := R)).toSubring = F.completion := (rfl)
+theorem completionSubalgebra_toSubsemiring :
+    (F.completionSubalgebra (R := R)).toSubsemiring = F.completion.toSubsemiring := (rfl)
 
 /-- The algebra structure on the ring completion is inherited from componentwise scalars. -/
 instance completionAlgebra : Algebra R F.completion :=

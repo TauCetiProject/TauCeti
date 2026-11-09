@@ -62,6 +62,7 @@ noncomputable def tensorProduct : TauCeti.AlgFiltration (A ⊗[R] B) where
       (restrictScalars_ideal_mul_le R G) _ _ (Submodule.mul_mem_mul hx hy)
 
 /-- Membership in the total-degree filtration is membership in the sum of tensor images. -/
+@[simp]
 theorem mem_tensorProduct_ideal_iff {n : ℕ} {t : A ⊗[R] B} :
     t ∈ (F.tensorProduct R G).ideal n ↔
       t ∈ tensorFiltrationTail (fun n => (F.ideal n).restrictScalars R)
@@ -90,7 +91,7 @@ end Filtration
 
 section Completion
 
-variable (R : Type*) {A B : Type*} [CommRing R] [Ring A] [Ring B]
+variable (R : Type*) {A B : Type*} [CommSemiring R] [Ring A] [Ring B]
   [Algebra R A] [Algebra R B] (F : TauCeti.AlgFiltration A) (G : TauCeti.AlgFiltration B)
 
 /-- The left inclusion into the completed tensor product. -/
