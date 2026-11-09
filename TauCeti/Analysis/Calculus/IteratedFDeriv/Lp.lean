@@ -15,7 +15,7 @@ import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 
 /-!
-# Iterated derivative seminorms under linear changes of variables
+# Iterated derivative seminorms: linear changes of variables and the Euclidean Hessian
 
 Composing a vector-valued function with a linear automorphism `e` multiplies the `Lᵖ` seminorm
 of its `i`-th derivative by at most `‖e‖ ^ i * |det e|^(-1 / p)`. The estimate compares a set
@@ -28,6 +28,11 @@ of a `C²` function on a thickening: the `L²` norm of `D²u` on a thickening of
 finite (`MeasureTheory.Measure.eLpNorm_iteratedFDeriv_two_thickening_ne_top`), and `D²(u ∘ e)` on
 the preimage thickening is controlled by `D²u` through the ellipticity constants of `e`
 (`MeasureTheory.Measure.toReal_eLpNorm_iteratedFDeriv_two_comp_le`).
+
+On a Euclidean space, the `L²` norm of the Hessian of a `C²` function whose second derivative is
+supported in a closed ball, with all second partial derivatives bounded by `B`, is at most the
+square root of the volume of the ball times `(card ι)² B`
+(`TauCeti.toReal_eLpNorm_iteratedFDeriv_two_le_of_support_subset_closedBall`).
 -/
 
 public section

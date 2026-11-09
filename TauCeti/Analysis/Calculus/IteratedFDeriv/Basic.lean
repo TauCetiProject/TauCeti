@@ -17,7 +17,9 @@ case `m = 1`, and lets bounds on all iterated derivatives of a function transfer
 derivative fields. The file also supplies the two-variable currying isometry used to identify
 continuous multilinear second derivatives with curried bilinear maps, and the corresponding
 exact comparison for differences of second derivatives, which transfers Hölder bounds between
-the two forms of the second derivative.
+the two forms of the second derivative. Where a function `ζ` equals one on a neighbourhood of a
+point, every iterated derivative of `ζ * u` there is that of `u`
+(`Filter.EventuallyEq.iteratedFDeriv_mul_eq`).
 -/
 
 public section

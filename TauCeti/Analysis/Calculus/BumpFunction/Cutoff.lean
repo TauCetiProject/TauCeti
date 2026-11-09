@@ -49,7 +49,11 @@ in `[c - r - 1, c + r + 1]` have `L²` mass at least `2 r` and derivative energy
 independently of `c` and `r` (`TauCeti.exists_forall_contDiff_plateau`). The squared gradient of a
 function supported in a closed ball with bounded gradient there has integral at most the squared
 bound times the volume of the ball
-(`TauCeti.setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall`).
+(`TauCeti.setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall`). Translating a cutoff
+keeps the global Hölder constant and the uniform bound of the cutoff and of its first and second
+derivatives (`TauCeti.holderWith_translate_cutoff`), and the translate of a `C²` cutoff is `C²` on
+a ball, equals one near the translated inner ball and is supported in the translated outer ball
+(`TauCeti.translate_cutoff_facts`).
 
 Finally, the space-time cut-offs `(t, x) ↦ χ (s • x) * φ (t, x)` of a function `φ` vanishing outside
 a time interval, for a bump `χ` and a small scale `s`, have compact support
