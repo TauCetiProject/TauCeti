@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.Affinoid.Continuity
 public import TauCeti.RingTheory.Affinoid.MaximalSpectrum
 public import Mathlib.Analysis.Normed.Unbundled.IsPowMulFaithful
-public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 public import TauCeti.Analysis.Normed.Unbundled.RootBound
 public import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
