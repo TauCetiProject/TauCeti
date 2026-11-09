@@ -242,7 +242,7 @@ theorem IsTamelyRamified.of_fieldRange_sup_fieldRange_eq_top (h₁ : IsTamelyRam
   -- `M` is generated over `L₂` by the image of `L₁`, so `M/L₂` is tamely ramified by base change,
   -- and `M/K` by transitivity.
   have hM := h₁.of_adjoin_range_eq_top (F := L₂) ι₁
-    ((TauCeti.IntermediateField.adjoin_range_eq_top_iff_fieldRange_sup_fieldRange_eq_top ι₁).2
+    (ι₁.adjoin_range_eq_top_iff_fieldRange_sup_fieldRange_eq_top.2
       ((sup_comm _ _).trans h))
   exact (isTamelyRamified_tower_iff (K := K) (L := L₂) M).2 ⟨h₂, hM⟩
 
