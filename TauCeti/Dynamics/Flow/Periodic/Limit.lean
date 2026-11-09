@@ -13,8 +13,6 @@ public import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Basic
 import TauCeti.AlgebraicTopology.SemilocallySimplyConnected.On
 import TauCeti.Dynamics.Flow.ClosedOrbit
 import TauCeti.Topology.Homotopy.AddCircle
-import TauCeti.Topology.Homotopy.Path
-import TauCeti.Topology.Homotopy.TubeNeighborhood
 
 /-!
 # Limits of periodic orbits of a flow
@@ -32,11 +30,11 @@ which turn such a family of periodic orbits into a periodic orbit through `x₀`
   limit loop `t ↦ ϕ t x₀` on `ℝ/T₀ℤ`, when `X` is locally path-connected and semilocally simply
   connected (`Flow.exists_nullhomotopic_of_tendsto`), as for instance every manifold is.
 
-For the last statement, the limit loop lies in a tube: a chain of open sets along a partition of
-the loop, in which any two paths with common ends are homotopic. Tubes are open in the
-compact-open topology, so the nearby loops lie in the same tube, and joining the base points of a
-nearby loop and of the limit loop by a short path at both ends of the tube shows that the limit
-loop is conjugate to the nearby loop by that path.
+For the last statement, the loops on the periodic orbits form a continuous family of based loops
+indexed by the periodic points, and in a semilocally simply connected space null-homotopy of such
+a family is locally constant
+(`TauCeti.eventually_homotopic_refl_iff_of_semilocallySimplyConnectedOn`); the limit loop is
+therefore null-homotopic as soon as a nearby loop is.
 
 These are the compactness steps by which closed orbits of bounded period on nearby energy levels,
 produced by a variational or capacity argument, give a closed orbit on the limiting level, as in
@@ -136,68 +134,35 @@ theorem exists_nullhomotopic_of_tendsto [LocallyPathConnectedSpace X]
       (ϕ.continuous continuous_id continuous_const)⟩
   have hg₀ (t : ℝ) : g₀ t = ϕ t x₀ := hper.lift_coe t
   refine ⟨g₀, (ϕ.nullhomotopic_iff_orbitLoop h₀ hg₀).2 ?_, hg₀⟩
-  set γ₀ := ϕ.orbitLoop h₀
-  -- The limit loop lies in a tube, and a path-connected neighbourhood `W` of `x₀` lies in the
-  -- vertex sets at both of its ends.
-  obtain ⟨n, part, U, hγ₀⟩ := γ₀.exists_isInTube_of_semilocallySimplyConnectedOn
-    (.of_semilocallySimplyConnectedSpace _)
-  cases n with
-  | zero => exact isEmptyElim part
-  | succ n =>
-  have hV : U.V 0 ∩ U.V (Fin.last (n + 1)) ∈ 𝓝 x₀ := by
-    refine inter_mem ((U.isOpen_V _).mem_nhds ?_) ((U.isOpen_V _).mem_nhds ?_)
-    · simpa using hγ₀.mem_V 0
-    · simpa using hγ₀.mem_V (Fin.last _)
-  obtain ⟨W, ⟨hWx, hW⟩, hWV⟩ := (path_connected_basis x₀).mem_iff.1 hV
-  -- Choose a nearby periodic orbit in the same tube, with base point in `W`.
-  have htube : ∀ᶠ i in l, Path.IsInTube (ϕ.orbitSegment (T i, x i)) part U :=
-    (ϕ.continuous_orbitSegment.tendsto (T₀, x₀)).comp (hT.prodMk_nhds hx)
-      |>.eventually ((U.isOpen_setOf_isInTube part).mem_nhds hγ₀)
-  obtain ⟨i, hi, hxi, hTi, g, hg, hgx⟩ :=
-    (htube.and ((hx.eventually_mem hWx).and ((hT.eventually (lt_mem_nhds hT₀)).and h))).exists
+  -- The loops `ϕ.orbitLoop` on the periodic orbits form a continuous family of based loops
+  -- indexed by the periodic points `(τ, y)`, and null-homotopy of such a family is locally
+  -- constant at the limit loop, where `X` is semilocally simply connected.
+  let Y := {p : ℝ × X // ϕ p.1 p.2 = p.2}
+  let γ : ∀ y : Y, Path y.1.2 y.1.2 := fun y ↦ ϕ.orbitLoop y.2
+  have hp : Continuous fun q : Y × I ↦ (q.1 : ℝ × X) := continuous_subtype_val.comp continuous_fst
+  have hγ : Continuous ↿γ :=
+    ϕ.continuous (β := Y × I) (t := fun q ↦ (q.2 : ℝ) * (q.1 : ℝ × X).1)
+      (f := fun q ↦ (q.1 : ℝ × X).2)
+      ((continuous_subtype_val.comp continuous_snd).mul (continuous_fst.comp hp))
+      (continuous_snd.comp hp)
+  let y₀ : Y := ⟨(T₀, x₀), h₀⟩
+  have hloc := eventually_homotopic_refl_iff_of_semilocallySimplyConnectedOn
+    (a := fun y : Y ↦ y.1.2) γ hγ (y₀ := y₀) (.of_semilocallySimplyConnectedSpace _)
+  -- Eventually `xᵢ` returns to itself at time `Tᵢ`, so `(Tᵢ, xᵢ)` tends to `(T₀, x₀)` in `Y`.
+  have hret : ∀ᶠ i in l, 0 < T i ∧ ϕ (T i) (x i) = x i := by
+    filter_upwards [hT.eventually (lt_mem_nhds hT₀), h] with i hTi hi
+    obtain ⟨g, -, hgx⟩ := hi
+    have : Fact (0 < T i) := ⟨hTi⟩
+    exact ⟨hTi, by rw [← hgx, AddCircle.coe_period, ← QuotientAddGroup.mk_zero, hgx,
+      ϕ.map_zero_apply]⟩
+  classical
+  let f : ι → Y := fun i ↦ if hi : ϕ (T i) (x i) = x i then ⟨(T i, x i), hi⟩ else y₀
+  have hf : Tendsto f l (𝓝 y₀) :=
+    tendsto_subtype_rng.2 <| (hT.prodMk_nhds hx).congr' (hret.mono fun i hi ↦ by simp [f, hi.2])
+  obtain ⟨i, ⟨hTi, hi⟩, ⟨g, hg, hgx⟩, hiff⟩ := (hret.and (h.and (hf.eventually hloc))).exists
   have : Fact (0 < T i) := ⟨hTi⟩
-  have hyi : ϕ (T i) (x i) = x i := by
-    rw [← hgx, AddCircle.coe_period, ← QuotientAddGroup.mk_zero, hgx, ϕ.map_zero_apply]
-  set γ := ϕ.orbitLoop hyi
-  have hγ : γ.Homotopic (Path.refl (x i)) := (ϕ.nullhomotopic_iff_orbitLoop hyi hgx).1 hg
-  -- Rungs between the two loops at the vertices of the partition: the same path `α` in `W` at
-  -- both ends, and any path in the vertex set elsewhere.
-  obtain ⟨α, hα⟩ := hW.joinedIn _ (mem_of_mem_nhds hWx) _ hxi
-  have hend {j : Fin (n + 2)} (hj : j = 0 ∨ j = Fin.last (n + 1)) :
-      γ₀ (part.t j) = x₀ ∧ γ (part.t j) = x i := by
-    rcases hj with rfl | rfl <;> simp
-  let rung (j : Fin (n + 2)) : Path (γ₀ (part.t j)) (γ (part.t j)) :=
-    if hj : j = 0 ∨ j = Fin.last (n + 1) then
-      α.cast (hend hj).1 (hend hj).2
-    else ((U.isPathConnected_V j).joinedIn _ (hγ₀.mem_V j) _ (hi.mem_V j)).somePath
-  have hrung (j : Fin (n + 2)) : range (rung j) ⊆ U.V j := by
-    by_cases hj : j = 0 ∨ j = Fin.last (n + 1)
-    · simp only [rung, hj, ↓reduceDIte]
-      rintro _ ⟨t, rfl⟩
-      refine (hWV (hα t)).elim fun h₀ h₁ ↦ ?_
-      rcases hj with rfl | rfl
-      exacts [h₀, h₁]
-    · simp only [rung, hj, ↓reduceDIte]
-      exact range_subset_iff.2 (JoinedIn.somePath_mem _)
-  have hrung_end {j : Fin (n + 2)} (hj : j = 0 ∨ j = Fin.last (n + 1)) :
-      (rung j).cast (hend hj).1.symm (hend hj).2.symm = α := by
-    ext t
-    simp [rung, hj]
-  -- On each segment, both loops and the rungs at its ends lie in one path-homotopy-trivial set.
-  have h_rect : ∀ k : Fin (n + 1),
-      ((γ₀.subpath (part.t k.castSucc) (part.t k.succ)).trans (rung k.succ)).Homotopic
-        ((rung k.castSucc).trans (γ.subpath (part.t k.castSucc) (part.t k.succ))) := fun k ↦
-    isPathHomotopyTrivial_def.mp (U.isPathHomotopyTrivial_U k) _ _
-      (by
-        rw [Path.trans_range]
-        exact union_subset (hγ₀.range_subpath_subset k) ((hrung _).trans (U.V_succ_subset k)))
-      (by
-        rw [Path.trans_range]
-        exact union_subset ((hrung _).trans (U.V_castSucc_subset k)) (hi.range_subpath_subset k))
-  have key := Path.Homotopic.trans_of_subpath_trans γ₀ γ part rung h_rect
-  rw [hrung_end (.inr rfl), hrung_end (.inl rfl)] at key
-  -- So `γ₀ · α ≃ α · γ ≃ α ≃ refl · α`, and `γ₀` is null-homotopic.
-  exact Path.Homotopic.trans_right_cancel <| key.trans <|
-    (Path.Homotopic.trans_right_of_nullhomotopic hγ).trans (Path.Homotopic.refl_trans _).symm
+  have hfi : f i = ⟨(T i, x i), hi⟩ := by simp [f, hi]
+  rw [hfi] at hiff
+  exact hiff.1 ((ϕ.nullhomotopic_iff_orbitLoop hi hgx).1 hg)
 
 end Flow
