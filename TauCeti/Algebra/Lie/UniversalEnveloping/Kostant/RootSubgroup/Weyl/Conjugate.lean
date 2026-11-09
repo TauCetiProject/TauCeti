@@ -21,9 +21,9 @@ raising and lowering elements act nilpotently, both on `L` and on `V`. Its Weyl 
 ```
 
 Since `n` and `n⁻¹` preserve `M`, the divided power `ρ(w x)⁽ᵏ⁾ = n ρ(x)⁽ᵏ⁾ n⁻¹` preserves `M`
-whenever `ρ(x)⁽ᵏ⁾` does. If moreover `ρ(x)` is nilpotent, so that the exponential sum is finite,
-then over every commutative ring of points the one-parameter subgroups `u ↦ ∑ₖ uᵏ ρ(x)⁽ᵏ⁾` of the
-two elements are conjugate:
+whenever `ρ(x)⁽ᵏ⁾` does. Then over every commutative ring of points the truncated exponentials
+`u ↦ ∑ₖ uᵏ ρ(x)⁽ᵏ⁾` of the two elements are conjugate (both are `0` if `ρ(x)` is not nilpotent,
+and one-parameter subgroups if it is):
 
 ```text
 n x_x(u) n⁻¹ = x_{w x}(u).
@@ -50,8 +50,8 @@ over every ring of points, in particular in characteristics two and three.
 * `TauCeti.UniversalEnvelopingAlgebra.dividedPower_weylAut_smul_mem`: a divided power of `w x`
   preserves `M` whenever the same divided power of `x` does.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantWeylPoints_conj_baseChangeExp_weylAut`: on points,
-  conjugating the one-parameter subgroup of a nilpotently acting `x` by the Weyl element gives
-  that of `w x`.
+  conjugating the truncated exponential of `x` by the Weyl element gives that of `w x`; for a
+  nilpotently acting `x` these are one-parameter subgroups.
 
 ## References
 
@@ -115,10 +115,12 @@ theorem dividedPower_weylAut_smul_mem {x : L} (n : ℕ)
 
 variable {A : Type*} [CommRing A] [Algebra ℤ A]
 
-/-- **Conjugating a one-parameter subgroup by the Weyl element.** Over every ring of points,
-`n x_x(u) n⁻¹ = x_{w x}(u)` for an element `x` acting nilpotently on `V` with divided powers
-preserving `M`, where `x_y(u) = ∑ₖ uᵏ ρ(y)⁽ᵏ⁾` and `w` is the Weyl automorphism of the `sl₂`
-triple `(h₀, eᵢ, eⱼ)` of `L`.
+/-- **Conjugating a truncated exponential by the Weyl element.** Over every ring of points,
+`n x_x(u) n⁻¹ = x_{w x}(u)` for an element `x` of `L` with divided powers of `ρ(x)` preserving `M`,
+where `x_y(u) = ∑ₖ uᵏ ρ(y)⁽ᵏ⁾` is the truncated exponential (`baseChangeExp`) and `w` is the Weyl
+automorphism of the `sl₂` triple `(h₀, eᵢ, eⱼ)` of `L`. If `ρ(x)` is not nilpotent, then neither is
+`ρ(w x)`, and both exponentials are `0`; when `ρ(x)` is nilpotent they are one-parameter
+subgroups.
 
 For `x = eᵢ` this recovers `n x_i(u) n⁻¹ = x_j(-u)`
 (`TauCeti.UniversalEnvelopingAlgebra.kostantWeylPoints_conj_baseChangeExp`), since `w eᵢ = -eⱼ`. -/

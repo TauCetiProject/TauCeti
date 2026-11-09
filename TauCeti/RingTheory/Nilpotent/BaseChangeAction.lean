@@ -546,8 +546,10 @@ theorem baseChangeExp_intCast (x : A) (M : S)
   exact h.symm
 
 /-- **Conjugating a base-changed exponential by an integral unit.** If a unit `u` of `A` preserves
-`M` together with its inverse, then conjugating the one-parameter subgroup of `x` by the induced
-automorphism of `R ⊗[ℤ] M` gives the one-parameter subgroup of the conjugate `u x u⁻¹`.
+`M` together with its inverse, then conjugating the truncated exponential `baseChangeExp x M hM t`
+by the induced automorphism of `R ⊗[ℤ] M` gives the truncated exponential of the conjugate
+`u x u⁻¹`. When `x` is not nilpotent, neither is `u x u⁻¹`, and both sides are `0`. For nilpotent
+`x` the exponentials are the one-parameter subgroup of `x` and that of `u x u⁻¹`.
 
 For the Weyl element `n_α` and a root vector `eα` this is Chevalley's relation
 `n_α x_α(t) n_α⁻¹ = x_{-α}(-t)`, obtained from the Lie-algebra identity `n_α eα n_α⁻¹ = -e_{-α}`
