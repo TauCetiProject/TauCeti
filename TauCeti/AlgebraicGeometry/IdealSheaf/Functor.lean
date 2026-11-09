@@ -50,12 +50,6 @@ of ideal sheaves along the induced morphism `X_{T'} ⟶ X_T`. -/
 def baseChangeIdealSheafFunctor : (Over S)ᵒᵖ ⥤ Type u where
   obj T := (pullback T.unop.hom f).IdealSheafData
   map φ := TypeCat.ofHom fun I ↦ I.comap ((Over.pullback f).map φ.unop).left
-  map_id T := by
-    ext I
-    simp
-  map_comp φ ψ := by
-    ext I
-    simp
 
 /-- The value of `baseChangeIdealSheafFunctor f` at `T` is the type of ideal sheaves on
 `T ×_S X`. -/
