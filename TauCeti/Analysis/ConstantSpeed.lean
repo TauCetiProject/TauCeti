@@ -122,9 +122,9 @@ theorem euclideanHausdorffMeasure_image_le (f : α → E) (s : Set α) :
 end eVariationOn
 
 /-- The image of a curve of locally bounded variation has zero additive Haar measure in every
-finite-dimensional real normed space of dimension greater than one. -/
+real normed space of dimension greater than one (so in particular finite-dimensional). -/
 theorem LocallyBoundedVariationOn.addHaar_image_eq_zero {α E : Type*} [LinearOrder α]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [NormedAddCommGroup E] [NormedSpace ℝ E]
     [MeasurableSpace E] [BorelSpace E] {f : α → E} {s : Set α}
     (hf : LocallyBoundedVariationOn f s) (μ : Measure E) [μ.IsAddHaarMeasure]
     (hd : 1 < Module.finrank ℝ E) : μ (f '' s) = 0 :=
