@@ -101,6 +101,7 @@ theorem coe_sInf (S : Set (VonNeumannAlgebra H)) :
     ((sInf S : VonNeumannAlgebra H) : Set (H →L[ℂ] H)) = ⋂ M ∈ S, (M : Set (H →L[ℂ] H)) :=
   VonNeumannAlgebra.gc.u_sInf
 
+@[simp]
 theorem mem_sInf {S : Set (VonNeumannAlgebra H)} : x ∈ sInf S ↔ ∀ M ∈ S, x ∈ M := by
   simp [← SetLike.mem_coe]
 
