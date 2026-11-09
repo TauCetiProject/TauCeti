@@ -348,6 +348,27 @@ theorem norm_toSynthesisCarrier_le (c : lp (fun _ : ℕ ↦ ℝ) 1) :
     ‖toSynthesisCarrier hp hpa c‖ ≤ ‖c‖ :=
   Submodule.Quotient.norm_mk_le _ c
 
+/-- Every element of the synthesis carrier is represented by a sequence whose `ℓ¹` norm exceeds
+the carrier norm by less than any given `ε > 0`. -/
+theorem exists_toSynthesisCarrier_eq_norm_lt (x : SynthesisCarrier hp hpa) {ε : ℝ} (hε : 0 < ε) :
+    ∃ c, toSynthesisCarrier hp hpa c = x ∧ ‖c‖ < ‖x‖ + ε :=
+  Submodule.Quotient.norm_mk_lt (S := (weightedSynthesis hp hpa).ker) x hε
+
+/-- The `m`-th seminorm of the synthesis carrier map is bounded by `synthesisBound a m` times the
+carrier norm. -/
+theorem seminorm_synthesisCarrierMap_le (m : ℕ) (x : SynthesisCarrier hp hpa) :
+    p m (synthesisCarrierMap hp hpa x) ≤ synthesisBound a m * ‖x‖ := by
+  refine le_of_forall_pos_lt_add fun ε hε ↦ ?_
+  have hB := synthesisBound_pos a m
+  obtain ⟨c, rfl, hc⟩ := exists_toSynthesisCarrier_eq_norm_lt hp hpa x
+    (div_pos hε (NNReal.coe_pos.2 hB))
+  calc p m (synthesisCarrierMap hp hpa (toSynthesisCarrier hp hpa c))
+      ≤ synthesisBound a m * ‖c‖ := seminorm_weightedSynthesis_le hp hpa m c
+    _ < synthesisBound a m * (‖toSynthesisCarrier hp hpa c‖ + ε / synthesisBound a m) := by
+        gcongr
+    _ = synthesisBound a m * ‖toSynthesisCarrier hp hpa c‖ + ε := by
+        rw [mul_add, mul_div_cancel₀ _ (NNReal.coe_ne_zero.2 hB.ne')]
+
 section Lift
 
 variable {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
@@ -365,6 +386,7 @@ theorem liftSynthesisCarrier_toSynthesisCarrier (f : lp (fun _ : ℕ ↦ ℝ) 1 
 
 /-- Two continuous linear maps on the synthesis carrier agreeing after composition with
 `TauCeti.toSynthesisCarrier` are equal. -/
+@[ext high]
 theorem synthesisCarrier_continuousLinearMap_ext {g₁ g₂ : SynthesisCarrier hp hpa →L[ℝ] F}
     (h : g₁ ∘L toSynthesisCarrier hp hpa = g₂ ∘L toSynthesisCarrier hp hpa) : g₁ = g₂ :=
   ContinuousLinearMap.ext fun x ↦ by
@@ -407,7 +429,7 @@ theorem apply_synthesisCarrierMap_le {A : E → ℝ≥0∞} (hA : LowerSemiconti
   have hB := synthesisBound_pos a m
   refine ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_
   -- Represent `x` by a sequence `c` whose norm exceeds that of `x` by less than `ε / B`.
-  obtain ⟨c, rfl, hc⟩ := Submodule.Quotient.norm_mk_lt (S := (weightedSynthesis hp hpa).ker) x
+  obtain ⟨c, rfl, hc⟩ := exists_toSynthesisCarrier_eq_norm_lt hp hpa x
     (div_pos (NNReal.coe_pos.2 hε) (NNReal.coe_pos.2 hB))
   calc A (synthesisCarrierMap hp hpa (toSynthesisCarrier hp hpa c))
       ≤ synthesisBound a m * ‖c‖ₑ := apply_weightedSynthesis_le hp hpa hA hadd hsmul hAa c
@@ -415,7 +437,6 @@ theorem apply_synthesisCarrierMap_le {A : E → ℝ≥0∞} (hA : LowerSemiconti
           ENNReal.ofReal (‖toSynthesisCarrier hp hpa c‖ + ε / synthesisBound a m) := by
         rw [← ofReal_norm]
         gcongr
-        exact hc.le
     _ = synthesisBound a m * ‖toSynthesisCarrier hp hpa c‖ₑ + ε := by
         rw [ENNReal.ofReal_add (norm_nonneg _) (by positivity), mul_add, ofReal_norm,
           ← NNReal.coe_div, ENNReal.ofReal_coe_nnreal, ← ENNReal.coe_mul,
