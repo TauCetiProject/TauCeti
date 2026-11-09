@@ -327,29 +327,30 @@ theorem one_le_five_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : |t| ≤ 2) (r : ℝ
     _ ≤ 5 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
         gcongr
 
+/-- For `0 < x`, `x ^ (-p) = (x ^ (p - 2))⁻¹ * (x ^ 2)⁻¹`. -/
+theorem rpow_neg_eq_inv_rpow_sub_two_mul_inv_sq {x : ℝ} (hx : 0 < x) (p : ℝ) :
+    x ^ (-p) = (x ^ (p - 2))⁻¹ * (x ^ 2)⁻¹ := by
+  rw [← rpow_neg hx.le, ← rpow_natCast, ← rpow_neg hx.le, ← rpow_add hx]
+  congr 1
+  push_cast
+  ring
+
 /-- The case `d < 0` of `Real.rpow_neg_le_one_div_two_mul_sq`: the real power of a negative base
 is `|d| ^ y * cos (y π)`, and `cos` has period `2π`. -/
 private theorem rpow_neg_le_one_div_two_mul_sq_of_neg {d p : ℝ} (hd : d < 0)
     (h2 : 2 ≤ d ^ (p - 2)) : d ^ (-p) ≤ 1 / (2 * d ^ 2) := by
   have hd' : 0 < -d := neg_pos.2 hd
-  have h1 : d ^ (p - 2) = Real.exp (Real.log (-d) * (p - 2)) * Real.cos (p * Real.pi) := by
-    rw [Real.rpow_def_of_neg hd, ← Real.log_neg_eq_log d,
-      show (p - 2) * Real.pi = p * Real.pi - 2 * Real.pi by ring, Real.cos_sub_two_pi]
-  have h3 : d ^ (-p) = Real.exp (Real.log (-d) * (-p)) * Real.cos (p * Real.pi) := by
-    rw [Real.rpow_def_of_neg hd, ← Real.log_neg_eq_log d,
-      show -p * Real.pi = -(p * Real.pi) by ring, Real.cos_neg]
-  have hd2 : d ^ 2 = Real.exp (Real.log (-d) * 2) := by
-    rw [mul_two, Real.exp_add, Real.exp_log hd']
-    ring
-  have hsplit : Real.exp (Real.log (-d) * (-p)) =
-      (Real.exp (Real.log (-d) * (p - 2)))⁻¹ * (d ^ 2)⁻¹ := by
-    rw [hd2, ← Real.exp_neg, ← Real.exp_neg, ← Real.exp_add]
-    congr 1
-    ring
+  have hneg (y : ℝ) : d ^ y = (-d) ^ y * Real.cos (y * Real.pi) := by
+    rw [Real.rpow_def_of_neg hd, Real.rpow_def_of_pos hd', Real.log_neg_eq_log]
+  have h1 : d ^ (p - 2) = (-d) ^ (p - 2) * Real.cos (p * Real.pi) := by
+    rw [hneg, show (p - 2) * Real.pi = p * Real.pi - 2 * Real.pi by ring, Real.cos_sub_two_pi]
+  have h3 : d ^ (-p) = (-d) ^ (-p) * Real.cos (p * Real.pi) := by
+    rw [hneg, show -p * Real.pi = -(p * Real.pi) by ring, Real.cos_neg]
+  have hsplit := rpow_neg_eq_inv_rpow_sub_two_mul_inv_sq hd' p
   rw [h1] at h2
-  rw [h3, hsplit]
-  have hE := Real.exp_pos (Real.log (-d) * (p - 2))
-  generalize Real.exp (Real.log (-d) * (p - 2)) = E at hE h2 ⊢
+  rw [h3, hsplit, show ((-d) ^ 2 : ℝ) = d ^ 2 from neg_sq d]
+  have hE := rpow_pos_of_pos hd' (p - 2)
+  generalize (-d) ^ (p - 2) = E at hE h2 ⊢
   have hc1 := Real.cos_le_one (p * Real.pi)
   generalize Real.cos (p * Real.pi) = c at hc1 h2 ⊢
   have hc0 : 0 < c := by
@@ -364,7 +365,6 @@ private theorem rpow_neg_le_one_div_two_mul_sq_of_neg {d p : ℝ} (hd : d < 0)
         gcongr
         rw [inv_mul_le_iff₀ hE]
         linarith
-    _ = 2⁻¹ * (d ^ 2)⁻¹ := rfl
 
 /-- If `2 ≤ d ^ (p - 2)`, then `d ^ (-p) ≤ 1 / (2 d ^ 2)`. (For `d = 0` the hypothesis fails, as
 `0 ^ x ≤ 1`.) -/
@@ -373,12 +373,7 @@ theorem rpow_neg_le_one_div_two_mul_sq {d p : ℝ} (h2 : 2 ≤ d ^ (p - 2)) :
   rcases lt_trichotomy d 0 with hd | rfl | hd
   · exact rpow_neg_le_one_div_two_mul_sq_of_neg hd h2
   · linarith [zero_rpow_le_one (p - 2)]
-  · have hsplit : d ^ (-p) = (d ^ (p - 2))⁻¹ * (d ^ 2)⁻¹ := by
-      rw [← rpow_neg hd.le, ← rpow_natCast, ← rpow_neg hd.le, ← rpow_add hd]
-      congr 1
-      push_cast
-      ring
-    rw [hsplit, one_div, mul_inv]
+  · rw [rpow_neg_eq_inv_rpow_sub_two_mul_inv_sq hd, one_div, mul_inv]
     gcongr
 
 /-- For `0 ≤ p ≤ 1`, a quantity at most `2 h` has `p`-th power at most `2 h^p`. -/
