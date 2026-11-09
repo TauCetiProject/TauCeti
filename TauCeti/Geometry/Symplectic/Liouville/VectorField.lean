@@ -42,6 +42,8 @@ form `-dλ`, the radial field `p ∂_p` is the Liouville field of the primitive 
   Liouville vector field exactly when `d (ι_Z ω) = ω`.
 * `TauCeti.isLiouvilleVectorField_mextDeriv_of_interior_eq`: `ι_Z dλ = λ` implies
   `L_Z dλ = dλ`.
+* `TauCeti.interior_eq_zero_of_interior_eq`, `TauCeti.apply_eq_zero_of_interior_eq`:
+  `ι_Z dλ = λ` implies `ι_Z λ = 0`.
 * `TauCeti.mlieDerivForm_eq_self_of_interior_eq`: `ι_Z dλ = λ` implies `L_Z λ = λ`.
 * `TauCeti.isLiouvilleVectorField_extDeriv_iff`: the characterization on a normed space.
 * `TauCeti.isLiouvilleVectorField_cotangentLiouvilleField`: the radial field of the linear
@@ -113,6 +115,23 @@ theorem isLiouvilleVectorField_mextDeriv_of_interior_eq [IsManifold I 2 M]
     IsLiouvilleVectorField (mextDeriv α) Z := by
   rw [isLiouvilleVectorField_mextDeriv_iff hα hZ, h]
 
+/-- **A primitive vanishes on its Liouville field.** If `ι_Z ω = α` for a two-form `ω`, then
+`ι_Z α = ω(Z, Z) = 0`. This applies in particular to the Liouville field of a primitive,
+`ι_Z dα = α`. -/
+theorem interior_eq_zero_of_interior_eq {F : Type*} [AddCommGroup F] [Module ℝ F]
+    [TopologicalSpace F] {ω : RoughForm I M F 2} {α : RoughForm I M F 1}
+    {Z : (x : M) → TangentSpace I x} (h : ω.interior Z = α) : α.interior Z = 0 := by
+  rw [← h]
+  exact RoughForm.interior_self Z ω
+
+/-- **A primitive vanishes on its Liouville field, pointwise.** If `ι_Z ω = α` for a two-form `ω`,
+then `α_y(Z_y) = 0` at every point `y`. -/
+theorem apply_eq_zero_of_interior_eq {F : Type*} [AddCommGroup F] [Module ℝ F]
+    [TopologicalSpace F] {ω : RoughForm I M F 2} {α : RoughForm I M F 1}
+    {Z : (x : M) → TangentSpace I x} (h : ω.interior Z = α) (y : M) : α y ![Z y] = 0 := by
+  have h0 := congrArg (fun β : RoughForm I M F 0 ↦ β y ![]) (interior_eq_zero_of_interior_eq h)
+  simpa only [RoughForm.interior_apply, Pi.zero_apply, ContinuousAlternatingMap.coe_zero] using h0
+
 /-- **A primitive has Lie derivative equal to itself along its Liouville field.** If the
 differentiable vector field `Z` satisfies `ι_Z dλ = λ` for a differentiable one-form `λ`, then
 `L_Z λ = λ`: by Cartan's formula `L_Z λ = ι_Z dλ + d (ι_Z λ)`, and `ι_Z λ = dλ (Z, Z) = 0`. -/
@@ -123,10 +142,8 @@ theorem mlieDerivForm_eq_self_of_interior_eq [IsManifold I 1 M] {α : RoughForm 
     (hZ : MDifferentiable I I.tangent (fun y ↦ (Z y : TangentBundle I M)))
     (h : (mextDeriv α).interior Z = α) :
     mlieDerivForm Z α = α := by
-  have h0 : α.interior Z = 0 := by
-    rw [← h]
-    exact RoughForm.interior_self Z (mextDeriv α)
-  rw [mlieDerivForm_eq_interior_mextDeriv_add hα hZ, h0, mextDeriv_zero, add_zero, h]
+  rw [mlieDerivForm_eq_interior_mextDeriv_add hα hZ, interior_eq_zero_of_interior_eq h,
+    mextDeriv_zero, add_zero, h]
 
 /-! ### Normed spaces -/
 

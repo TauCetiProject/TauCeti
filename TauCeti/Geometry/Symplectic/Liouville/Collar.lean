@@ -98,11 +98,6 @@ theorem mpullback_flowOf_comp_apply_eq_symplectization (hZα : (mextDeriv α.1).
     {p : ℝ × S} (hp : (p.1, ι p.2) ∈ flowDomain Z) :
     mpullback (𝓘(ℝ).prod J) I (fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2)) α.1 p =
       (SmoothForm.mpullback ι hι α).symplectization.1 p := by
-  -- The primitive vanishes on its Liouville field: `α(Z) = dα(Z, Z) = 0`.
-  have hαZ (y : M) : α.1 y ![Z y] = 0 := by
-    have h := congrArg (fun β ↦ β y ![]) (RoughForm.interior_self Z (mextDeriv α.1))
-    simpa only [hZα, RoughForm.interior_apply, Pi.zero_apply,
-      ContinuousAlternatingMap.coe_zero] using h
   -- The local flow rescales the primitive: `(φₜ^* α)_x = eᵗ α_x`.
   have hscale := mpullback_flowOf_apply_eq_exp_smul_of_interior_eq (hZ.of_le (by simp))
     α.mdifferentiable rfl hZα hp
@@ -115,8 +110,9 @@ theorem mpullback_flowOf_comp_apply_eq_symplectization (hZα : (mextDeriv α.1).
   rw [mpullback_apply, SmoothForm.symplectization_apply, SmoothForm.mpullback_apply]
   simp only [Matrix.cons_val_fin_one, ← Matrix.vec_single_eq_const,
     mfderiv_flowOf_comp_apply (hZ.of_le (by simp)) (hι.contMDiffAt.of_le (by simp)) hp,
-    ContinuousAlternatingMap.vecCons_add, ContinuousAlternatingMap.vecCons_smul, hαZ, smul_zero,
-    zero_add, Manifold.tangentSpaceProdEquiv_apply, hs]
+    ContinuousAlternatingMap.vecCons_add, ContinuousAlternatingMap.vecCons_smul,
+    apply_eq_zero_of_interior_eq hZα, smul_zero, zero_add, Manifold.tangentSpaceProdEquiv_apply,
+    hs]
 
 /-- **The local Liouville flow map pulls `dα` back to `d(eᵗ ι^* α)`.** Let the smooth vector field
 `Z` be the Liouville field of the one-form `α`, `ι_Z dα = α`, and let `ι : S → M` be smooth. At

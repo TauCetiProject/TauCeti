@@ -91,9 +91,7 @@ theorem mpullback_globalFlow_uncurry_eq_symplectization
   have hψ := contMDiff_globalFlow_uncurry hc le_top hZ
   -- The primitive vanishes on its Liouville field: `α(Z) = dα(Z, Z) = 0`.
   have hαZ (y : M) : SmoothForm.degreeOneEquiv α y (Z y) = 0 := by
-    have h := congrArg (fun β ↦ β y ![]) (RoughForm.interior_self Z (mextDeriv α.1))
-    simpa only [hZα, RoughForm.interior_apply, Pi.zero_apply, ContinuousAlternatingMap.coe_zero,
-      SmoothForm.degreeOneEquiv_apply_apply_vec] using h
+    rw [SmoothForm.degreeOneEquiv_apply_apply_vec, apply_eq_zero_of_interior_eq hZα]
   apply Subtype.ext
   funext p
   refine ContinuousAlternatingMap.ext fun v ↦ ?_
