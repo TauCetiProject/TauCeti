@@ -163,7 +163,7 @@ theorem summingENorm_eq_zero_of_norm_eq_zero {T : E →L[𝕜] F} (hT : ‖T‖ 
   refine le_antisymm ?_ bot_le
   rw [← ENNReal.ofReal_zero, summingENorm_le_ofReal_iff le_rfl]
   intro n x
-  simpa [hT] using PiLp.norm_toLp_comp_le (p := p) (norm_nonneg T) T.le_opNorm x
+  simpa [hT] using PiLp.norm_toLp_comp_le (p := p) T.le_opNorm x
 
 /-- The zero operator has zero gauge. -/
 @[simp]
@@ -211,7 +211,7 @@ theorem summingENorm_comp_left_le (A : F →L[𝕜] G) (T : E →L[𝕜] F) :
       ‖A‖ₑ * ‖WithLp.toLp p (fun i ↦ T (x i))‖ₑ := by
     rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul (norm_nonneg _)]
     exact ENNReal.ofReal_le_ofReal
-      (PiLp.norm_toLp_comp_le (norm_nonneg A) A.le_opNorm fun i ↦ T (x i))
+      (PiLp.norm_toLp_comp_le A.le_opNorm fun i ↦ T (x i))
   calc
     _ ≤ ‖A‖ₑ * ‖WithLp.toLp p (fun i ↦ T (x i))‖ₑ /
         ENNReal.ofReal (weakLpNorm (𝕜 := 𝕜) p x) := by gcongr
@@ -354,7 +354,7 @@ theorem summingENorm_top (T : E →L[𝕜] F) : T.summingENorm ∞ = ‖T‖ₑ 
   rw [← ofReal_norm, summingENorm_le_ofReal_iff (norm_nonneg T)]
   intro n x
   rw [weakLpNorm_top]
-  exact PiLp.norm_toLp_comp_le (norm_nonneg T) T.le_opNorm x
+  exact PiLp.norm_toLp_comp_le T.le_opNorm x
 
 /-- **Inclusion of summing operators.** The summing gauge decreases as the exponent grows:
 `π_q(T) ≤ π_p(T)` for `p ≤ q`. -/
