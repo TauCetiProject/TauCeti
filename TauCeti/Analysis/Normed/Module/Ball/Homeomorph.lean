@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.UnitInterval
+import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # Homeomorphisms onto the unit balls of normed spaces
@@ -320,8 +321,7 @@ theorem exists_homeomorph_unitInterval_closedBall {E : Type*} [NormedAddCommGrou
     (Homeomorph.setCongr (by rw [Real.closedBall_eq_Icc]; norm_num))
   refine ⟨i.trans (closedBallHomeomorphOfFinrankEq (by simp [hE])), fun t => ?_⟩
   have hi : ((i t : closedBall (0 : ℝ) 1) : ℝ) = 2 * t - 1 := by
-    change (((iccHomeoI (-1 : ℝ) 1 (by norm_num)).symm t : Icc (-1 : ℝ) 1) : ℝ) = _
-    rw [iccHomeoI_symm_apply_coe]
+    simp only [i, Homeomorph.trans_apply, Homeomorph.setCongr_apply, iccHomeoI_symm_apply_coe]
     ring
   simp only [Homeomorph.trans_apply, coe_closedBallHomeomorphOfFinrankEq_apply,
     ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff, hi, Real.norm_eq_abs,
