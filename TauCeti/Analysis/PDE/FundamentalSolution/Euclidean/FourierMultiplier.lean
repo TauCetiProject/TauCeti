@@ -12,7 +12,6 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Cutoff
 import TauCeti.Analysis.Normed.Lp.SmoothApprox
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Hessian
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.MeasureTheory.Function.Lp.IntegralBoundedSmul
 
 /-!
@@ -54,7 +53,7 @@ kernel: `D²u(x)(v, w) = ∫ D²Gₙ(x - y)(v, w) φ(y) dy`
 thickenings of `s`
 (`MeasureTheory.MemLp.exist_contDiff_tsupport_subset_eLpNorm_sub_le`).
 For `x ∉ s` the kernel is bounded on a fixed thickening of `s`, so the kernel integrals converge
-(`TauCeti.integrable_smul_and_norm_integral_smul_le`), while `T_{m_{v,w}}` of the approximations
+(`TauCeti.tendsto_integral_smul_of_tendsto_eLpNorm_sub`), while `T_{m_{v,w}}` of the approximations
 converges almost everywhere along a subsequence.
 
 ## Main declarations
@@ -109,24 +108,33 @@ private theorem laplacian_smul_add_eq_zero_of_norm_lt_or_lt_norm
     rw [(laplacian_congr_nhds h).eq_of_nhds, laplacian_const, hφx x hx2R, add_zero,
       Pi.zero_apply]
 
+/-- For `1 ≤ R` and `R / 2 ≤ y`, the faster decay `y ^ (1 - m)` is at most `2 (R / 2) ^ (2 - m)`. -/
+private theorem rpow_one_sub_le_two_mul_rpow_two_sub {m y R : ℝ} (hm : 1 ≤ m) (hR : 1 ≤ R)
+    (hy : R / 2 ≤ y) : y ^ (1 - m) ≤ 2 * (R / 2) ^ (2 - m) :=
+  have hR0 : 0 < R := zero_lt_one.trans_le hR
+  calc y ^ (1 - m) ≤ (R / 2) ^ (1 - m) :=
+        Real.rpow_le_rpow_of_nonpos (by positivity) hy (by linarith)
+    _ = (R / 2)⁻¹ * (R / 2) ^ (2 - m) := by
+        rw [show (1 : ℝ) - m = 2 - m - 1 by ring, Real.rpow_sub_one (by positivity),
+          div_eq_inv_mul]
+    _ ≤ 2 * (R / 2) ^ (2 - m) := mul_le_mul_of_nonneg_right
+        (by rw [inv_div, div_le_iff₀ hR0]; linarith) (by positivity)
+
 open scoped Laplacian Gradient in
-/-- **The truncation error of the Newtonian potential.** Let `φ` be smooth with support in
-`closedBall 0 R₀`, let `u = Gₙ ⋆ φ`, and let `χ` be a cutoff equal to `1` on `ball 0 R` and to `0`
-off `closedBall 0 (2R)` with `‖Dχ‖ ≤ C / R` and `|Δχ| ≤ C / R²`. Since `-Δu = φ`, the error
-`Δ(χ u) + φ = 2 Du(∇χ) + (Δχ) u` lives on the annulus `R ≤ ‖x‖ ≤ 2R`, where the decay of `u` and
-`Du` bounds it by a multiple of `R⁻¹ (R / 2) ^ (2 - n)`. -/
-private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le [CompleteSpace F]
+/-- The annulus case of `norm_laplacian_smul_newtonianKernel_convolution_add_le`: for
+`R ≤ ‖x‖`, the decay of `u = Gₙ ⋆ φ` and `Du` bounds `2 Du(∇χ) + (Δχ) u` by a multiple of
+`R⁻¹ (R / 2) ^ (2 - n)`. -/
+private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le_of_norm_mem_annulus
+    [CompleteSpace F]
     (hn : 3 ≤ n) (hφ : ContDiff ℝ ∞ φ) (hc : HasCompactSupport φ) {R₀ C R : ℝ}
     (hR₀ : tsupport φ ⊆ closedBall 0 R₀) (hR : 1 ≤ R) (hR₀R : 2 * R₀ ≤ R)
     {χ : EuclideanSpace ℝ (Fin n) → ℝ} (hχ : ContDiff ℝ ∞ χ)
-    (hχ1 : ∀ x, ‖x‖ < R → χ =ᶠ[𝓝 x] fun _ => 1) (hχ0 : ∀ x, 2 * R < ‖x‖ → χ =ᶠ[𝓝 x] fun _ => 0)
     (hχ' : ∀ x, ‖fderiv ℝ χ x‖ ≤ C / R) (hχ'' : ∀ x, ‖Δ χ x‖ ≤ C / R ^ 2)
-    (x : EuclideanSpace ℝ (Fin n)) :
+    {x : EuclideanSpace ℝ (Fin n)} (hxR : R ≤ ‖x‖) :
     ‖Δ (fun y => χ y • (newtonianKernel n ⋆ φ) y) x + φ x‖ ≤
-      (closedBall (0 : EuclideanSpace ℝ (Fin n)) (2 * R)).indicator (fun _ =>
-        (4 * ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ +
+      (4 * ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ +
           ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹) *
-          C * (∫ y, ‖φ y‖) * R⁻¹ * (R / 2) ^ (2 - (n : ℝ))) x := by
+          C * (∫ y, ‖φ y‖) * R⁻¹ * (R / 2) ^ (2 - (n : ℝ)) := by
   set u := newtonianKernel n ⋆ φ
   set Cd := ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹
   set Cn := ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹
@@ -143,30 +151,15 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le [Complete
   have hφx : ∀ y : EuclideanSpace ℝ (Fin n), R₀ < ‖y‖ → φ y = 0 := fun y hy =>
     image_eq_zero_of_notMem_tsupport fun h => (mem_closedBall_zero_iff.1 (hR₀ h)).not_gt hy
   have hA₀ := integral_nonneg (μ := volume) (f := fun y => ‖φ y‖) fun y => norm_nonneg _
-  by_cases hann : ‖x‖ < R ∨ 2 * R < ‖x‖
-  · rw [laplacian_smul_add_eq_zero_of_norm_lt_or_lt_norm hΔu
-      (fun y hy => hφx y (by linarith)) hχ1 hχ0 hann,
-      norm_zero]
-    exact indicator_nonneg (fun _ _ => by positivity) x
-  push Not at hann
-  obtain ⟨hxR, hx2R⟩ := hann
   -- On the annulus, expand `Δ(χ u)` by the Leibniz rule.
   have hxR₀ : R / 2 ≤ ‖x‖ - R₀ := by linarith
   have hpow : (‖x‖ - R₀) ^ (2 - (n : ℝ)) ≤ (R / 2) ^ (2 - (n : ℝ)) :=
     Real.rpow_le_rpow_of_nonpos (by positivity) hxR₀ (by linarith)
   -- Since `1 ≤ R`, the faster decay `(R / 2) ^ (1 - n)` of `Du` is at most `2 (R / 2) ^ (2 - n)`.
-  have hpow₁ : (‖x‖ - R₀) ^ (1 - (n : ℝ)) ≤ 2 * (R / 2) ^ (2 - (n : ℝ)) :=
-    calc (‖x‖ - R₀) ^ (1 - (n : ℝ)) ≤ (R / 2) ^ (1 - (n : ℝ)) :=
-          Real.rpow_le_rpow_of_nonpos (by positivity) hxR₀ (by linarith)
-      _ = (R / 2)⁻¹ * (R / 2) ^ (2 - (n : ℝ)) := by
-          rw [show (1 : ℝ) - n = 2 - n - 1 by ring, Real.rpow_sub_one (by positivity),
-            div_eq_inv_mul]
-      _ ≤ 2 * (R / 2) ^ (2 - (n : ℝ)) := mul_le_mul_of_nonneg_right
-          (by rw [inv_div, div_le_iff₀ hR0]; linarith) (by positivity)
+  have hpow₁ := rpow_one_sub_le_two_mul_rpow_two_sub (by linarith : (1 : ℝ) ≤ n) hR hxR₀
   have hgrad : ‖∇ χ x‖ ≤ C / R := by
     simpa only [gradient, LinearIsometryEquiv.norm_map] using hχ' x
-  rw [indicator_of_mem (mem_closedBall_zero_iff.2 hx2R),
-    (hχ.contDiffAt.of_le (by simp)).laplacian_fun_smul (hu.contDiffAt.of_le (by simp)), hΔu,
+  rw [(hχ.contDiffAt.of_le (by simp)).laplacian_fun_smul (hu.contDiffAt.of_le (by simp)), hΔu,
     Pi.neg_apply, hφx x (by linarith), neg_zero, smul_zero, zero_add, add_zero]
   have hR₀x : R₀ < ‖x‖ := by linarith
   have hφi := hφ.continuous.integrable_of_hasCompactSupport (μ := volume) hc
@@ -186,6 +179,51 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le [Complete
             (by positivity))
         · exact h₂.trans (by gcongr)
     _ = _ := by ring
+
+open scoped Laplacian Gradient in
+/-- **The truncation error of the Newtonian potential.** Let `φ` be smooth with support in
+`closedBall 0 R₀`, let `u = Gₙ ⋆ φ`, and let `χ` be a cutoff equal to `1` on `ball 0 R` and to `0`
+off `closedBall 0 (2R)` with `‖Dχ‖ ≤ C / R` and `|Δχ| ≤ C / R²`. Since `-Δu = φ`, the error
+`Δ(χ u) + φ = 2 Du(∇χ) + (Δχ) u` lives on the annulus `R ≤ ‖x‖ ≤ 2R`, where the decay of `u` and
+`Du` bounds it by a multiple of `R⁻¹ (R / 2) ^ (2 - n)`. -/
+private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le [CompleteSpace F]
+    (hn : 3 ≤ n) (hφ : ContDiff ℝ ∞ φ) (hc : HasCompactSupport φ) {R₀ C R : ℝ}
+    (hR₀ : tsupport φ ⊆ closedBall 0 R₀) (hR : 1 ≤ R) (hR₀R : 2 * R₀ ≤ R)
+    {χ : EuclideanSpace ℝ (Fin n) → ℝ} (hχ : ContDiff ℝ ∞ χ)
+    (hχ1 : ∀ x, ‖x‖ < R → χ =ᶠ[𝓝 x] fun _ => 1) (hχ0 : ∀ x, 2 * R < ‖x‖ → χ =ᶠ[𝓝 x] fun _ => 0)
+    (hχ' : ∀ x, ‖fderiv ℝ χ x‖ ≤ C / R) (hχ'' : ∀ x, ‖Δ χ x‖ ≤ C / R ^ 2)
+    (x : EuclideanSpace ℝ (Fin n)) :
+    ‖Δ (fun y => χ y • (newtonianKernel n ⋆ φ) y) x + φ x‖ ≤
+      (closedBall (0 : EuclideanSpace ℝ (Fin n)) (2 * R)).indicator (fun _ =>
+        (4 * ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ +
+          ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹) *
+          C * (∫ y, ‖φ y‖) * R⁻¹ * (R / 2) ^ (2 - (n : ℝ))) x := by
+  have hnℝ : (3 : ℝ) ≤ n := by exact_mod_cast hn
+  have hR0 : 0 < R := zero_lt_one.trans_le hR
+  have hC : 0 ≤ C := by
+    have := (norm_nonneg _).trans (hχ' 0)
+    rwa [le_div_iff₀ hR0, zero_mul] at this
+  have hCd : 0 ≤ ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ :=
+    inv_nonneg.2 (mul_nonneg (by linarith) (volume_real_unitBall_pos n).le)
+  have hCn :
+      0 ≤ ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ :=
+    inv_nonneg.2 (mul_nonneg (mul_nonneg (by linarith) (by linarith))
+      (volume_real_unitBall_pos n).le)
+  have hA₀ := integral_nonneg (μ := volume) (f := fun y => ‖φ y‖) fun y => norm_nonneg _
+  have hΔu : Δ (newtonianKernel n ⋆ φ) = -φ :=
+    laplacian_newtonianKernel_convolution hn (hφ.of_le (by simp)) hc
+  have hφx : ∀ y : EuclideanSpace ℝ (Fin n), R₀ < ‖y‖ → φ y = 0 := fun y hy =>
+    image_eq_zero_of_notMem_tsupport fun h => (mem_closedBall_zero_iff.1 (hR₀ h)).not_gt hy
+  by_cases hann : ‖x‖ < R ∨ 2 * R < ‖x‖
+  · rw [laplacian_smul_add_eq_zero_of_norm_lt_or_lt_norm hΔu
+      (fun y hy => hφx y (by linarith)) hχ1 hχ0 hann,
+      norm_zero]
+    exact indicator_nonneg (fun _ _ => by positivity) x
+  push Not at hann
+  obtain ⟨hxR, hx2R⟩ := hann
+  have hannB := norm_laplacian_smul_newtonianKernel_convolution_add_le_of_norm_mem_annulus hn hφ hc
+    hR₀ hR hR₀R hχ hχ' hχ'' hxR
+  rwa [indicator_of_mem (mem_closedBall_zero_iff.2 hx2R)]
 
 /-- For `n ≥ 3`, `K R⁻¹ (R / 2) ^ (2 - n) |B(0, 2R)| ^ (1/2) = O(R ^ (1 - n/2))` tends to zero as
 `R → ∞`: the `L²` norm of the truncation error of the Newtonian potential vanishes in the limit. -/
@@ -442,7 +480,7 @@ theorem ae_fourierMultiplierCLM_hessianSymbolLp_eq_neg_integral (hn : 3 ≤ n)
   have hW := hs.cthickening (r := η)
   have hconv := tendsto_integral_smul_of_tendsto_eLpNorm_sub (μ := volume)
     hW.measure_lt_top.ne hB (hkc.aestronglyMeasurable hW.measurableSet)
-    (ae_restrict_of_forall_mem hW.measurableSet hkB) one_le_two hφL hf'L
+    (ae_restrict_of_forall_mem hW.measurableSet hkB) one_le_two (Eventually.of_forall hφL) hf'L
     (hsmall.mono fun k hk => ae_of_all _ fun y hy =>
       image_eq_zero_of_notMem_tsupport fun h => hy (hφW k hk h))
     (ae_of_all _ fun y hy => hf'0 y fun h => hy (self_subset_cthickening s h)) hφlim

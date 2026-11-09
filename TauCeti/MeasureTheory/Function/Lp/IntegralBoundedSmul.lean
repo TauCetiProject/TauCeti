@@ -72,12 +72,14 @@ theorem integrable_smul_and_norm_integral_smul_le {𝕜 : Type*} [NormedRing �
     _ = _ := mul_comm _ _
 
 /-- **Continuity of kernel integrals in `Lᵖ`.** Let `k` be a.e. bounded by `B` on a set `W` of
-finite measure, and let `φ i` and `f` be in `Lᵖ`, `1 ≤ p`, and vanish a.e. off `W` (for `φ i`
-eventually along `l`). If `φ i → f` in `Lᵖ`, then `∫ k • φ i → ∫ k • f`. -/
-theorem tendsto_integral_smul_of_tendsto_eLpNorm_sub {ι : Type*} {l : Filter ι} {k : α → ℝ}
-    {W : Set α} (hμW : μ W ≠ ∞) {B : ℝ} (hB : 0 ≤ B) (hk : AEStronglyMeasurable k (μ.restrict W))
+finite measure, and let `φ i` and `f` be in `Lᵖ`, `1 ≤ p`, and vanish a.e. off `W` (for `φ i`,
+membership in `Lᵖ` and vanishing hold eventually along `l`). If `φ i → f` in `Lᵖ`, then
+`∫ k • φ i → ∫ k • f`. -/
+theorem tendsto_integral_smul_of_tendsto_eLpNorm_sub {𝕜 : Type*} [NormedRing 𝕜] [Module 𝕜 F]
+    [IsBoundedSMul 𝕜 F] {ι : Type*} {l : Filter ι} {k : α → 𝕜} {W : Set α} (hμW : μ W ≠ ∞)
+    {B : ℝ} (hB : 0 ≤ B) (hk : AEStronglyMeasurable k (μ.restrict W))
     (hkB : ∀ᵐ y ∂μ.restrict W, ‖k y‖ ≤ B) {p : ℝ≥0∞} (hp : 1 ≤ p) {φ : ι → α → F} {f : α → F}
-    (hφ : ∀ i, MemLp (φ i) p μ) (hf : MemLp f p μ)
+    (hφ : ∀ᶠ i in l, MemLp (φ i) p μ) (hf : MemLp f p μ)
     (hφ0 : ∀ᶠ i in l, ∀ᵐ y ∂μ, y ∉ W → φ i y = 0) (hf0 : ∀ᵐ y ∂μ, y ∉ W → f y = 0)
     (hlim : Tendsto (fun i => eLpNorm (φ i - f) p μ) l (𝓝 0)) :
     Tendsto (fun i => ∫ y, k y • φ i y ∂μ) l (𝓝 (∫ y, k y • f y ∂μ)) := by
@@ -89,10 +91,10 @@ theorem tendsto_integral_smul_of_tendsto_eLpNorm_sub {ι : Type*} {l : Filter ι
     rw [mul_zero] at h
     simpa using ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp h).const_mul B
   refine squeeze_zero_norm' ?_ hlim'
-  filter_upwards [hφ0] with i hi
-  obtain ⟨hint₁, -⟩ := integrable_smul_and_norm_integral_smul_le hμW hB hk hkB hp (hφ i) hi
+  filter_upwards [hφ, hφ0] with i hiL hi
+  obtain ⟨hint₁, -⟩ := integrable_smul_and_norm_integral_smul_le hμW hB hk hkB hp hiL hi
   obtain ⟨hint₂, -⟩ := integrable_smul_and_norm_integral_smul_le hμW hB hk hkB hp hf hf0
-  obtain ⟨-, hle⟩ := integrable_smul_and_norm_integral_smul_le hμW hB hk hkB hp ((hφ i).sub hf)
+  obtain ⟨-, hle⟩ := integrable_smul_and_norm_integral_smul_le hμW hB hk hkB hp (hiL.sub hf)
     ((hi.and hf0).mono fun y hy hyW => by simp [hy.1 hyW, hy.2 hyW])
   rw [norm_norm, ← integral_sub hint₁ hint₂]
   simp_rw [← smul_sub]
