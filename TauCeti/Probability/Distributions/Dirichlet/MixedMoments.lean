@@ -9,7 +9,7 @@ public import TauCeti.Probability.Distributions.Dirichlet.Density
 import TauCeti.Probability.Distributions.Dirichlet.Aggregation
 import TauCeti.Probability.Distributions.Dirichlet.StickBreaking
 import TauCeti.Probability.Distributions.Beta.Basic
-import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Mixed power moments of the Dirichlet distribution
@@ -196,14 +196,6 @@ private theorem prod_rpow_reindexed_dirichletStickInsert_ae {K : Type*}
     simp [mul_assoc]
   · intro j
     simp
-
-private theorem integrable_left_of_mul_prod_of_ae_pos {X Y : Type*}
-    [MeasurableSpace X] [MeasurableSpace Y] {f : X → ℝ} {g : Y → ℝ}
-    {mu : Measure X} {nu : Measure Y} [SFinite mu] [IsProbabilityMeasure nu]
-    (hfg : Integrable (fun z ↦ f z.1 * g z.2) (mu.prod nu))
-    (hg : ∀ᵐ y ∂nu, 0 < g y) : Integrable f mu := by
-  obtain ⟨y, hgy, hy⟩ := (hg.and hfg.prod_left_ae).exists
-  exact (integrable_mul_const_iff (isUnit_iff_ne_zero.2 hgy.ne') f).1 hy
 
 omit [Nonempty ι] in
 /-- For a Dirichlet law with at least two coordinates, a mixed real power is integrable exactly

@@ -11,6 +11,7 @@ public import Mathlib.Data.Fin.Tuple.Take
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
+public import TauCeti.Algebra.BigOperators.Finset.Fiber
 
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 
@@ -399,17 +400,6 @@ end EuclideanSpace
 namespace TauCeti
 
 variable {𝕜 : Type*} [RCLike 𝕜] {ι κ : Type*} [Fintype ι] [Fintype κ]
-
-omit [Fintype κ] in
-/-- Summing over a fibre of an equivalence selects the unique term in that fibre. -/
-@[simp]
-theorem _root_.Equiv.sum_fiber_eq {M : Type*} [AddCommMonoid M] [DecidableEq κ]
-    (e : ι ≃ κ) (b : ι → M) (j : κ) :
-    ∑ i with e i = j, b i = b (e.symm j) := by
-  classical
-  simp only [← e.eq_symm_apply]
-  rw [Finset.filter_eq' Finset.univ (e.symm j)]
-  simp
 
 /-- Sum the coordinates of a Euclidean vector over each fibre of `f`.
 
