@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.Nat.Prime.Basic
+public import TauCeti.NumberTheory.LocalField.RootsOfUnity.AlgebraicClosure
 public import TauCeti.NumberTheory.LocalField.Tame.Quotient
 public import TauCeti.RingTheory.RootsOfUnity.PadicTateTwist
 import TauCeti.Algebra.CharP.Lemmas
-import TauCeti.NumberTheory.LocalField.NatCastValuation
 import TauCeti.Topology.Algebra.ContinuousMulEquiv
 
 /-!
@@ -75,13 +75,6 @@ open PadicTateTwist _root_.ValuativeRel
 
 variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
   {ℓ : ℕ}
-
-/-- The algebraic closure has enough roots of unity at every order prime to the residue
-characteristic. -/
-theorem hasEnoughRootsOfUnity_algebraicClosure_of_coprime_ringChar {m : ℕ}
-    (hm : m.Coprime (ringChar 𝓀[K])) : HasEnoughRootsOfUnity (AlgebraicClosure K) m := by
-  have : NeZero (m : K) := ⟨natCast_ne_zero_of_coprime_ringChar hm⟩
-  infer_instance
 
 /-- **The `ℓ`-adic tame character** of `K`, for `ℓ` prime to the residue characteristic `p`: the
 continuous homomorphism `I_K →ₜ* ℤ_ℓ(1)`, written multiplicatively, sending `σ` to
