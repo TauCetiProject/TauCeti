@@ -16,12 +16,13 @@ public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Genus
 -- `F` a finite Galois extension of the fixed field, which the tameness hypothesis of the statements
 -- below needs in order to elaborate at all.
 public import TauCeti.FieldTheory.Galois.FixedField
-import Mathlib.FieldTheory.Galois.IsGaloisGroup
--- Non-public, all three in the proofs only: the numerical bound on the deficit of branch data, the
--- branch-data form of the tame different, and the tame Hurwitz genus formula.
+-- Non-public, all four in the proofs only: the numerical bound on the deficit of branch data, the
+-- branch-data form of the tame different, the tame Hurwitz genus formula, and the Galois group
+-- instance on fixed fields.
 import TauCeti.Data.Rat.BranchDeficit
 import TauCeti.FieldTheory.FunctionField.Different.Galois
 import TauCeti.FieldTheory.FunctionField.Different.Hurwitz
+import TauCeti.FieldTheory.Galois.IsGaloisGroup
 
 /-!
 # The Hurwitz bound on a tame automorphism group
@@ -78,16 +79,6 @@ universe u v
 
 variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F]
 
-/-- The order of a group `G` of automorphisms of `F` is the degree of `F` over its fixed field.
-This is Mathlib's `IsGaloisGroup.card_eq_finrank`; its proof for `FixedPoints.subfield G F` applies
-to `IntermediateField.fixedField G` because the latter unfolds to the former, so the two Galois
-group instances agree by `inferInstanceAs`. -/
-private theorem natCard_eq_finrank_fixedField (G : Subgroup (F ≃ₐ[k] F)) [Finite G] :
-    Nat.card G = Module.finrank ↥(IntermediateField.fixedField G) F := by
-  have : IsGaloisGroup G (IntermediateField.fixedField G) F :=
-    inferInstanceAs (IsGaloisGroup G (FixedPoints.subfield G F) F)
-  exact IsGaloisGroup.card_eq_finrank G (IntermediateField.fixedField G) F
-
 /-- **The Hurwitz bound** (Stichtenoth, Exercise 3.18): a finite group `G` of automorphisms of a
 function field of genus `g ≥ 2`, every place of which is tame over the fixed field, has order at
 most `84 (g - 1)`. -/
@@ -98,7 +89,7 @@ theorem natCard_le_eighty_four_mul_genus_sub_one (hF : IsFunctionField k F)
     Nat.card G ≤ 84 * (genus k F - 1) := by
   classical
   set E := IntermediateField.fixedField G
-  have hcard : Module.finrank ↥E F = Nat.card G := (natCard_eq_finrank_fixedField G).symm
+  have hcard : Module.finrank ↥E F = Nat.card G := (IsGaloisGroup.card_eq_finrank G E F).symm
   have hGpos : 0 < Nat.card G := Nat.card_pos
   have hFE : IsFunctionField k ↥E := hF.fixedField G
   have hexE : IsIntegrallyClosedIn k ↥E := E.val.isIntegrallyClosedIn E.val.injective hex
@@ -159,7 +150,7 @@ theorem natCard_le_eighty_four_mul_genus_sub_one_of_not_dvd [PerfectField k] (p 
   refine ⟨{Q : Place k F | Q.restrict k ↥(IntermediateField.fixedField G) =
       P.restrict k ↥(IntermediateField.fixedField G)}.ncard *
       Place.relativeDegree k ↥(IntermediateField.fixedField G) P, ?_⟩
-  rw [natCard_eq_finrank_fixedField G, ← hfund]
+  rw [IsGaloisGroup.card_eq_finrank G (IntermediateField.fixedField G) F, ← hfund]
   ring
 
 /-- **The Hurwitz bound in characteristic zero** (Stichtenoth, Exercise 3.18): a finite group of
