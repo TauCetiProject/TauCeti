@@ -10,6 +10,7 @@ public import Mathlib.Logic.Relation
 public import TauCeti.Analysis.Convex.Between
 public import TauCeti.Analysis.Convex.Combination
 public import TauCeti.Geometry.Polygon.Simple
+public import TauCeti.LinearAlgebra.AffineSpace.Basic
 public import TauCeti.LinearAlgebra.AffineSpace.Triangle.Chart
 
 /-!
@@ -323,14 +324,6 @@ theorem isDeltaMove_iff_of_isSimple_insertVertex (hq : (poly.insertVertex i c).I
 
 end Boundary
 
-omit [PartialOrder R] in
-include V in
-/-- A ring acting on a space with two distinct points is nontrivial. -/
-private theorem nontrivial_of_ne {a b : P} (hab : a ≠ b) : Nontrivial R := by
-  by_contra hR
-  have : Subsingleton R := not_nontrivial_iff_subsingleton.1 hR
-  exact hab (((AddTorsor.subsingleton_iff V P).1 (Module.subsingleton R V)).elim a b)
-
 section Simplicity
 
 variable [IsOrderedRing R]
@@ -344,7 +337,7 @@ include h
 was simple before. -/
 theorem isSimple_of_isSimple_insertVertex (hq : (poly.insertVertex i c).IsSimple R) :
     poly.IsSimple R := by
-  have := nontrivial_of_ne (R := R) (V := V) (hq.hasNondegenerateEdges 0)
+  have := AddTorsor.nontrivial_of_ne R V (hq.hasNondegenerateEdges 0)
   refine ⟨fun k => ?_, fun k₁ k₂ x hne hx₁ hx₂ => ?_⟩
   · by_cases hk : k = i
     · exact hk ▸ h.left_ne_right
@@ -381,7 +374,7 @@ theorem isSimple_of_isSimple_insertVertex (hq : (poly.insertVertex i c).IsSimple
 /-- **A Δ-move keeps a polygon simple.** -/
 theorem isSimple_insertVertex (hp : poly.IsSimple R) :
     (poly.insertVertex i c).IsSimple R := by
-  have := nontrivial_of_ne (R := R) (V := V) (hp.hasNondegenerateEdges i)
+  have := AddTorsor.nontrivial_of_ne R V (hp.hasNondegenerateEdges i)
   exact hp.insertVertex h.left_ne_apex h.apex_ne_right h.affineSegment_inter_affineSegment
     (fun _ hk _ hx ↦ h.edgeSet_inter_closedInterior_subset hk
       ⟨hx.1, hx.2.elim (fun hx ↦ h.affineSegment_left_subset_closedInterior hx)
