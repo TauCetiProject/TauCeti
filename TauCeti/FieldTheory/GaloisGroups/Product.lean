@@ -50,15 +50,15 @@ Separability is what makes `L/F` Galois, which the description of the image uses
 
 public section
 
-namespace TauCeti
+namespace Polynomial
 
-open Polynomial IntermediateField
+open IntermediateField
 
 variable {F : Type*} [Field F] {p q : F[X]}
 
 /-- The splitting field of a product of two separable polynomials is Galois, even though the
 product itself need not be separable. -/
-theorem _root_.Polynomial.Separable.isGalois_splittingField_mul (hp : p.Separable)
+theorem Separable.isGalois_splittingField_mul (hp : p.Separable)
     (hq : q.Separable) : IsGalois F (p * q).SplittingField := by
   have hsep : Algebra.IsSeparable F (p * q).SplittingField := by
     rw [← isSeparable_top,
@@ -74,7 +74,7 @@ theorem _root_.Polynomial.Separable.isGalois_splittingField_mul (hp : p.Separabl
 variable (p q) in
 /-- For nonzero `p * q`, `Polynomial.Gal.restrictProd` is the joint restriction from the splitting
 field of `p * q` to the splitting fields of `p` and `q`. -/
-theorem _root_.Polynomial.Gal.restrictProd_eq_restrict_prod_restrict (hpq : p * q ≠ 0)
+theorem Gal.restrictProd_eq_restrict_prod_restrict (hpq : p * q ≠ 0)
     [Fact ((p.map (algebraMap F (p * q).SplittingField)).Splits)]
     [Fact ((q.map (algebraMap F (p * q).SplittingField)).Splits)] :
     Gal.restrictProd p q = (Gal.restrict p (p * q).SplittingField).prod
@@ -88,7 +88,7 @@ theorem _root_.Polynomial.Gal.restrictProd_eq_restrict_prod_restrict (hpq : p * 
 `(σ, τ) : p.Gal × q.Gal` lies in the image of `Polynomial.Gal.restrictProd` if and only if `σ` and
 `τ` agree on the elements that the splitting fields of `p` and `q` have in common inside the
 splitting field of `p * q`. -/
-theorem _root_.Polynomial.Gal.mem_range_restrictProd_iff (hp : p.Separable) (hq : q.Separable)
+theorem Gal.mem_range_restrictProd_iff (hp : p.Separable) (hq : q.Separable)
     [Fact ((p.map (algebraMap F (p * q).SplittingField)).Splits)]
     [Fact ((q.map (algebraMap F (p * q).SplittingField)).Splits)] (σ : p.Gal) (τ : q.Gal) :
     (σ, τ) ∈ (Gal.restrictProd p q).range ↔
@@ -109,7 +109,7 @@ variable (p q)
 
 /-- Restriction from `p.Gal` to the Galois group of the intersection of the images of the
 splitting fields of `p` and `q` inside the splitting field of `p * q`. -/
-noncomputable def _root_.Polynomial.Gal.restrictInfLeft :
+noncomputable def Gal.restrictInfLeft :
     p.Gal →* Gal(↥((IsScalarTower.toAlgHom F p.SplittingField (p * q).SplittingField).fieldRange ⊓
       (IsScalarTower.toAlgHom F q.SplittingField (p * q).SplittingField).fieldRange)/F) :=
   (IsScalarTower.toAlgHom F p.SplittingField (p * q).SplittingField).restrictNormalHomOfLE
@@ -117,7 +117,7 @@ noncomputable def _root_.Polynomial.Gal.restrictInfLeft :
 
 /-- Restriction from `q.Gal` to the Galois group of the intersection of the images of the
 splitting fields of `p` and `q` inside the splitting field of `p * q`. -/
-noncomputable def _root_.Polynomial.Gal.restrictInfRight :
+noncomputable def Gal.restrictInfRight :
     q.Gal →* Gal(↥((IsScalarTower.toAlgHom F p.SplittingField (p * q).SplittingField).fieldRange ⊓
       (IsScalarTower.toAlgHom F q.SplittingField (p * q).SplittingField).fieldRange)/F) :=
   (IsScalarTower.toAlgHom F q.SplittingField (p * q).SplittingField).restrictNormalHomOfLE
@@ -125,7 +125,7 @@ noncomputable def _root_.Polynomial.Gal.restrictInfRight :
 
 /-- The left restriction is the general restriction along the splitting-field embedding.
 This allows the characteristic API of `AlgHom.restrictNormalHomOfLE` to be used for it. -/
-theorem _root_.Polynomial.Gal.restrictInfLeft_def :
+theorem Gal.restrictInfLeft_def :
     Gal.restrictInfLeft p q =
       (IsScalarTower.toAlgHom F p.SplittingField (p * q).SplittingField).restrictNormalHomOfLE
         (inf_le_left : _ ⊓
@@ -134,7 +134,7 @@ theorem _root_.Polynomial.Gal.restrictInfLeft_def :
 
 /-- The right restriction is the general restriction along the splitting-field embedding.
 This allows the characteristic API of `AlgHom.restrictNormalHomOfLE` to be used for it. -/
-theorem _root_.Polynomial.Gal.restrictInfRight_def :
+theorem Gal.restrictInfRight_def :
     Gal.restrictInfRight p q =
       (IsScalarTower.toAlgHom F q.SplittingField (p * q).SplittingField).restrictNormalHomOfLE
         (inf_le_right :
@@ -149,7 +149,7 @@ of `p * q`. A pair `(σ, τ) : p.Gal × q.Gal` lies in the image of `Polynomial.
 and only if `σ` and `τ` have the same restriction to `L_p ∩ L_q`, the two restriction maps
 `p.Gal →* Gal((L_p ∩ L_q)/F)` and `q.Gal →* Gal((L_p ∩ L_q)/F)` being
 `Polynomial.Gal.restrictInfLeft` and `Polynomial.Gal.restrictInfRight`. -/
-theorem _root_.Polynomial.Gal.mem_range_restrictProd_iff_restrictInfLeft_eq_restrictInfRight
+theorem Gal.mem_range_restrictProd_iff_restrictInfLeft_eq_restrictInfRight
     (hp : p.Separable) (hq : q.Separable)
     [Fact ((p.map (algebraMap F (p * q).SplittingField)).Splits)]
     [Fact ((q.map (algebraMap F (p * q).SplittingField)).Splits)] (σ : p.Gal) (τ : q.Gal) :
@@ -162,7 +162,7 @@ theorem _root_.Polynomial.Gal.mem_range_restrictProd_iff_restrictInfLeft_eq_rest
 
 /-- For separable `p` and `q`, `Polynomial.Gal.restrictProd` is surjective if and only if the
 splitting fields of `p` and `q` meet only in `F` inside the splitting field of `p * q`. -/
-theorem _root_.Polynomial.Gal.restrictProd_surjective_iff (hp : p.Separable) (hq : q.Separable)
+theorem Gal.restrictProd_surjective_iff (hp : p.Separable) (hq : q.Separable)
     [Fact ((p.map (algebraMap F (p * q).SplittingField)).Splits)]
     [Fact ((q.map (algebraMap F (p * q).SplittingField)).Splits)] :
     Function.Surjective (Gal.restrictProd p q) ↔
@@ -175,7 +175,7 @@ theorem _root_.Polynomial.Gal.restrictProd_surjective_iff (hp : p.Separable) (hq
 /-- For separable `p` and `q`, `Polynomial.Gal.restrictProd` is surjective exactly when the
 images of their splitting fields in the splitting field of `p * q` are linearly disjoint over
 the base field. -/
-theorem _root_.Polynomial.Gal.restrictProd_surjective_iff_linearDisjoint
+theorem Gal.restrictProd_surjective_iff_linearDisjoint
     (hp : p.Separable) (hq : q.Separable)
     [Fact ((p.map (algebraMap F (p * q).SplittingField)).Splits)]
     [Fact ((q.map (algebraMap F (p * q).SplittingField)).Splits)] :
@@ -196,7 +196,7 @@ theorem _root_.Polynomial.Gal.restrictProd_surjective_iff_linearDisjoint
 `p` and `q` whose splitting fields are linearly disjoint inside the splitting field of `p * q`,
 joint restriction is an isomorphism
 `(p * q).Gal ≃* p.Gal × q.Gal`. -/
-noncomputable def _root_.Polynomial.Gal.restrictProdMulEquiv
+noncomputable def Gal.restrictProdMulEquiv
     (hp : p.Separable) (hq : q.Separable)
     [Fact ((p.map (algebraMap F (p * q).SplittingField)).Splits)]
     [Fact ((q.map (algebraMap F (p * q).SplittingField)).Splits)]
@@ -210,7 +210,7 @@ noncomputable def _root_.Polynomial.Gal.restrictProdMulEquiv
 
 /-- The forward map of `Polynomial.Gal.restrictProdMulEquiv` is joint restriction. -/
 @[simp]
-theorem _root_.Polynomial.Gal.restrictProdMulEquiv_apply
+theorem Gal.restrictProdMulEquiv_apply
     (hp : p.Separable) (hq : q.Separable)
     [Fact ((p.map (algebraMap F (p * q).SplittingField)).Splits)]
     [Fact ((q.map (algebraMap F (p * q).SplittingField)).Splits)]
@@ -235,7 +235,7 @@ open scoped Classical in
 splits (hence each `g i` splits). The root set of `f` in `E` is the disjoint union of those of the
 `g i`, `ϕ` permutes each of them, and the full cycle type of `ϕ` on the roots of `f` is the sum
 of its full cycle types on the roots of the `g i`. -/
-theorem _root_.Polynomial.Gal.fullCycleType_galActionHom_restrict_prod (g : ι → F[X])
+theorem Gal.fullCycleType_galActionHom_restrict_prod (g : ι → F[X])
     (hsep : (∏ i, g i).Separable) [Fact (((∏ i, g i).map (algebraMap F E)).Splits)]
     (ϕ : Gal(E/F)) :
     let : ∀ i, Fact (((g i).map (algebraMap F E)).Splits) := fun i => ⟨by
@@ -289,4 +289,4 @@ theorem _root_.Polynomial.Gal.fullCycleType_galActionHom_restrict_prod (g : ι �
 
 end CycleType
 
-end TauCeti
+end Polynomial
