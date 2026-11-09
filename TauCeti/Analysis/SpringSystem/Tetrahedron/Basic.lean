@@ -141,7 +141,7 @@ theorem ext_of_mulVec_tetrahedronCenteredVertex {A B : Matrix (Fin 3) (Fin 3) �
 
 /-- The frame identity `∑ᵢ (qᵢ ⬝ qⱼ) fᵢ = fⱼ - ¼ ∑ᵢ fᵢ`, for any family `f` in a real vector
 space. -/
-private theorem sum_dotProduct_tetrahedronCenteredVertex_smul {M : Type*} [AddCommGroup M]
+theorem sum_dotProduct_tetrahedronCenteredVertex_smul {M : Type*} [AddCommGroup M]
     [Module ℝ M] (f : Fin 4 → M) (j : Fin 4) :
     ∑ i, (tetrahedronCenteredVertex i ⬝ᵥ tetrahedronCenteredVertex j) • f i =
       f j - (4 : ℝ)⁻¹ • ∑ i, f i := by
