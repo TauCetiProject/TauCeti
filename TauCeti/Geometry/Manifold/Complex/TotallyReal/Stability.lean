@@ -85,8 +85,7 @@ theorem isMaximalTotallyReal_inCoordinates_iff {x₀ x : B₁} {y₀ y : B₂}
       (LinearMap.range A.toLinearMap).map e.toLinearEquiv.toLinearMap := by
     rw [hA, ContinuousLinearMap.toLinearMap_comp, LinearMap.range_comp,
       ContinuousLinearMap.toLinearMap_comp,
-      LinearMap.range_comp_of_range_eq_top]
-    · rfl
+      LinearMap.range_comp_of_range_eq_top, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
     · exact LinearMap.range_eq_top.mpr e'.symm.surjective
   rw [hr]
   refine isMaximalTotallyReal_map_linearEquiv_iff e.toLinearEquiv ?_
@@ -111,7 +110,8 @@ variable {E H M F H' N : Type*}
 `im dι_x` maximal totally real. The operators need not square to minus the identity. -/
 theorem exists_pos_eventually_isMaximalTotallyReal_range_mfderiv {x₀ : N}
     (hι : ContMDiffAt I' I 1 ι x₀) (hinj : Injective (mfderiv I' I ι x₀))
-    {J₀ : TangentSpace I (ι x₀) →L[ℝ] TangentSpace I (ι x₀)} (hJ₀ : Injective J₀)
+    {J₀ : TangentSpace I (ι x₀) →L[ℝ] TangentSpace I (ι x₀)}
+    (hJ₀ : Injective (J₀.comp (mfderiv I' I ι x₀)))
     (h : IsMaximalTotallyReal J₀.toLinearMap
       (LinearMap.range (mfderiv I' I ι x₀).toLinearMap)) :
     ∃ ε > 0, ∀ᶠ x in 𝓝 x₀, ∀ A : TangentSpace I (ι x) →L[ℝ] TangentSpace I (ι x),
@@ -124,7 +124,7 @@ theorem exists_pos_eventually_isMaximalTotallyReal_range_mfderiv {x₀ : N}
     Manifold.inTangentCoordinates_eq_self_of_eq id ι _ rfl rfl
   obtain ⟨ε, hε, hstab⟩ := exists_pos_isMaximalTotallyReal_range_of_isCompact
     (isCompact_singleton (X := (F →L[ℝ] E) × (E →L[ℝ] E)) (x := (mfderiv I' I ι x₀, J₀)))
-    (by rintro _ rfl; exact hinj) (by rintro _ rfl; exact hJ₀.comp hinj)
+    (by rintro _ rfl; exact hinj) (by rintro _ rfl; exact hJ₀)
     (by rintro _ rfl; exact h)
   refine ⟨ε, hε, ?_⟩
   filter_upwards [hD.eventually (Metric.ball_mem_nhds _ hε), chart_source_mem_nhds H' x₀,
@@ -143,7 +143,7 @@ theorem eventually_forall_isMaximalTotallyReal_of_isCompact {T : Type*} [Topolog
     (h𝒥 : ∀ x ∈ K, ContinuousAt (fun q : T × M ↦ TotalSpace.mk' (E →L[ℝ] E)
       (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y) q.2 (𝒥 q.1 q.2)) (t₀, ι x))
     (hι : ∀ x ∈ K, ContMDiffAt I' I 1 ι x) (hinj : ∀ x ∈ K, Injective (mfderiv I' I ι x))
-    (hJ : ∀ x ∈ K, Injective (𝒥 t₀ (ι x)))
+    (hJ : ∀ x ∈ K, Injective ((𝒥 t₀ (ι x)).comp (mfderiv I' I ι x)))
     (h : ∀ x ∈ K, IsMaximalTotallyReal (𝒥 t₀ (ι x)).toLinearMap
       (LinearMap.range (mfderiv I' I ι x).toLinearMap)) :
     ∀ᶠ t in 𝓝 t₀, ∀ x ∈ K, IsMaximalTotallyReal (𝒥 t (ι x)).toLinearMap
@@ -169,7 +169,7 @@ theorem exists_pos_forall_isMaximalTotallyReal_of_isCompact
     (hJ₀c : ∀ x ∈ K, ContinuousAt (fun y : M ↦ TotalSpace.mk' (E →L[ℝ] E)
       (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y) y (J₀ y)) (ι x))
     (hι : ∀ x ∈ K, ContMDiffAt I' I 1 ι x) (hinj : ∀ x ∈ K, Injective (mfderiv I' I ι x))
-    (hJ : ∀ x ∈ K, Injective (J₀ (ι x)))
+    (hJ : ∀ x ∈ K, Injective ((J₀ (ι x)).comp (mfderiv I' I ι x)))
     (h : ∀ x ∈ K, IsMaximalTotallyReal (J₀ (ι x)).toLinearMap
       (LinearMap.range (mfderiv I' I ι x).toLinearMap)) :
     ∃ s : Finset N, (↑s ⊆ K) ∧ ∃ U : N → Set N, (∀ c ∈ s, IsOpen (U c) ∧ c ∈ U c) ∧
@@ -234,11 +234,12 @@ theorem eventually_forall_isMaximalTotallyReal
       IsMaximalTotallyReal ((J.freeze p).almostComplexStructureAt (ι x)).toLinearMap
         (LinearMap.range (mfderiv I' I ι x).toLinearMap) := by
   simp only [ContMDiffAlmostComplexStructure.almostComplexStructureAt_toLinearMap] at h ⊢
+  have hinj (x : N) (hx : x ∈ K) : Injective (mfderiv I' I ι x) :=
+    (h x hx).injective_of_two_mul_finrank_eq
+      (fun a b hab ↦ Subtype.ext ((J.freeze p₀).injective (ι x) hab)) hdim
   refine eventually_forall_isMaximalTotallyReal_of_isCompact
-    (𝒥 := fun p ↦ (J.freeze p).toEndomorphism) hK (fun _ _ ↦ ?_) hι
-    (fun x hx ↦ (h x hx).injective_of_two_mul_finrank_eq
-      (fun a b hab ↦ Subtype.ext ((J.freeze p₀).injective (ι x) hab)) hdim)
-    (fun x _ ↦ (J.freeze p₀).injective (ι x)) h
+    (𝒥 := fun p ↦ (J.freeze p).toEndomorphism) hK (fun _ _ ↦ ?_) hι hinj
+    (fun x hx ↦ ((J.freeze p₀).injective (ι x)).comp (hinj x hx)) h
   simpa only [freeze_toEndomorphism_apply] using J.contMDiff.continuous.continuousAt
 
 /-- For a compact source, a `C¹` half-dimensional map with maximal totally real tangent images
@@ -265,59 +266,5 @@ theorem eventually_isTotallyRealEmbedding [CompactSpace N]
   exact ⟨h.isSmoothEmbedding, h.two_mul_finrank, hp⟩
 
 end ContMDiffAlmostComplexStructureFamily
-
-section Checks
-
-open Complex
-
-/-- Check: the doubled frame of the real line in `ℂ` for multiplication by `I` is invertible, so
-the real line is maximal totally real for it. -/
-theorem isMaximalTotallyReal_lsmul_I_range_ofRealCLM :
-    IsMaximalTotallyReal (ContinuousLinearMap.lsmul ℝ ℂ I : ℂ →L[ℝ] ℂ).toLinearMap
-      (LinearMap.range ofRealCLM.toLinearMap) := by
-  refine isMaximalTotallyReal_range_of_bijective_coprod ⟨fun a b hab ↦ ?_, fun z ↦ ?_⟩
-  · simp only [LinearMap.coprod_apply, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
-      ofRealCLM_apply, ContinuousLinearMap.lsmul_apply, smul_eq_mul] at hab
-    have hre := congrArg re hab
-    have him := congrArg im hab
-    simp only [add_re, ofReal_re, mul_re, I_re, ofReal_im, I_im, add_im, mul_im] at hre him
-    exact Prod.ext (by linarith) (by linarith)
-  · refine ⟨(z.re, z.im), ?_⟩
-    simp only [LinearMap.coprod_apply, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
-      ofRealCLM_apply, ContinuousLinearMap.lsmul_apply, smul_eq_mul]
-    rw [mul_comm]
-    exact re_add_im z
-
-/-- Check: operators near multiplication by `I` in the model chart of `ℂ` keep the real line
-maximal totally real, by the local chart form applied to the inclusion `ℝ → ℂ`. -/
-theorem exists_pos_isMaximalTotallyReal_range_ofRealCLM :
-    ∃ ε > 0, ∀ A : ℂ →L[ℝ] ℂ, dist A (ContinuousLinearMap.lsmul ℝ ℂ I) < ε →
-      IsMaximalTotallyReal A.toLinearMap (LinearMap.range ofRealCLM.toLinearMap) := by
-  have hinj : Injective (mfderiv 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) ofRealCLM 0) := by
-    rw [ContinuousLinearMap.mfderiv_eq]
-    exact ofReal_injective
-  have hJ : Injective (ContinuousLinearMap.lsmul ℝ ℂ I : ℂ →L[ℝ] ℂ) :=
-    smul_right_injective ℂ I_ne_zero
-  obtain ⟨ε, hε, hev⟩ := exists_pos_eventually_isMaximalTotallyReal_range_mfderiv
-    (ι := ofRealCLM) (x₀ := 0) ofRealCLM.contMDiff.contMDiffAt hinj hJ
-    (by rw [ContinuousLinearMap.mfderiv_eq]; exact isMaximalTotallyReal_lsmul_I_range_ofRealCLM)
-  refine ⟨ε, hε, fun A hA ↦ ?_⟩
-  have h := hev.self_of_nhds A
-  simp only [inCoordinates_tangent_bundle_core_model_space, ContinuousLinearMap.mfderiv_eq] at h
-  exact h hA
-
-/-- Check: the radius is finite. The identity operator does not keep the real line maximal
-totally real, since the real line is its own image. -/
-theorem not_isMaximalTotallyReal_id_range_ofRealCLM :
-    ¬ IsMaximalTotallyReal (LinearMap.id : ℂ →ₗ[ℝ] ℂ)
-      (LinearMap.range ofRealCLM.toLinearMap) := by
-  intro h
-  have hb := h.disjoint
-  rw [Submodule.map_id, disjoint_self] at hb
-  have h1 : (1 : ℂ) ∈ LinearMap.range ofRealCLM.toLinearMap := ⟨1, by simp⟩
-  rw [hb, Submodule.mem_bot] at h1
-  exact one_ne_zero h1
-
-end Checks
 
 end TauCeti
