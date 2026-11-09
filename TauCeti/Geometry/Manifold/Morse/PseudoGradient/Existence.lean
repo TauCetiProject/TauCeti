@@ -110,7 +110,8 @@ theorem restr_field {s : Set M} (hs : IsOpen s) (hx : x ∈ s) : (φ.restr hs hx
 theorem coord_mfderiv_field {y : M} (hy : y ∈ φ.toChart.source) :
     φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (φ.field y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i) := by
-  rw [field, mfderiv_mpullback_apply φ.mem_maximalAtlas _ hy]
+  rw [field, mfderiv_mpullback_apply
+    (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) _ hy]
   simp [linearVectorField, linearField]
 
 end Basic
@@ -165,10 +166,10 @@ theorem hasFDerivAt_quadratic (z : E) :
           (φ.coordL : E →L[ℝ] (Fin (Module.finrank ℝ E) → ℝ))) z := by
   have h := (hasFDerivAt_diagonalQuadratic (f x) φ.weight (φ.coordL z)).comp z
     φ.coordL.hasFDerivAt
+  rw [coordL_apply] at h
   convert h using 1
-  · ext v
-    simp [quadratic, sq]
-  · simp
+  funext v
+  simp only [quadratic, Function.comp_apply, coordL_apply]
 
 /-- The derivative of the quadratic normal form is `v ↦ Σᵢ wᵢ (L z)ᵢ (L v)ᵢ`. -/
 theorem fderiv_quadratic_apply (z v : E) :
@@ -246,8 +247,8 @@ theorem contDiff_linearField : ContDiff ℝ ∞ φ.linearField := by
 /-- The derivative of `f` along the field of a Morse chart is `-Σᵢ (L (ψ y))ᵢ²`. -/
 theorem mvfderiv_field_apply {y : M} (hy : y ∈ φ.toChart.source) :
     mvfderiv 𝓘(ℝ, E) f y (φ.field y) = -∑ i, (φ.coord (φ.toChart y) i) ^ 2 := by
-  rw [field, mvfderiv_mpullback_apply φ.mem_maximalAtlas φ.eqOn_quadratic _ hy
-    (φ.differentiableAt_quadratic _)]
+  rw [field, mvfderiv_mpullback_apply
+    (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.eqOn_quadratic _ hy]
   exact φ.fderiv_quadratic_linearField _
 
 /-- `f` strictly decreases along the field away from the centre of the chart. -/
@@ -265,8 +266,7 @@ theorem mvfderiv_field_apply_lt_zero {y : M} (hy : y ∈ φ.toChart.source) (hyx
 theorem mfderiv_eq_zero_iff {y : M} (hy : y ∈ φ.toChart.source) :
     mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 ↔ y = x := by
   rw [mfderiv_eq_zero_iff_of_eqOn
-      (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.eqOn_quadratic hy
-      (φ.differentiableAt_quadratic _),
+      (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.eqOn_quadratic hy,
     φ.fderiv_quadratic_eq_zero_iff, φ.toChart_eq_zero_iff hy]
 
 end FiniteDimensional

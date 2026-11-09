@@ -223,23 +223,9 @@ theorem setLAverage_enorm_sub_setAverage_le_of_hormander_of_measure_closedBall_l
     filter_upwards [hf₂] with y h hy
     rw [h, indicator_of_notMem (notMem_compl_iff.2 hy)]
   obtain ⟨a, ha⟩ := exists_ae_enorm_apply_sub_le_of_hormander T hK hB hrep hM₂ hr hvan h0
-  -- The local part has `∫_Q ‖T f₁‖ ≤ √D ‖T‖ M μ Q`.
   have hloc : ∫⁻ x in closedBall c r, ‖T (f - f₂) x‖ₑ ∂μ ≤
-      D ^ (2⁻¹ : ℝ) * ‖T‖ₑ * M * μ (closedBall c r) := by
-    have hsq : μ (closedBall c r) ^ (2⁻¹ : ℝ) * μ (closedBall c r) ^ (2⁻¹ : ℝ) =
-        μ (closedBall c r) := by
-      rw [← ENNReal.rpow_add _ _ h0 htop]
-      norm_num
-    calc ∫⁻ x in closedBall c r, ‖T (f - f₂) x‖ₑ ∂μ
-        ≤ ‖T‖ₑ * (M * μ (closedBall c (5 * r)) ^ (2⁻¹ : ℝ)) * μ (closedBall c r) ^ (2⁻¹ : ℝ) :=
-          (setLIntegral_enorm_apply_le_of_ae_eq_indicator T h5 hf₁ _).trans_eq (by norm_num [M])
-      _ ≤ ‖T‖ₑ * (M * (D * μ (closedBall c r)) ^ (2⁻¹ : ℝ)) *
-            μ (closedBall c r) ^ (2⁻¹ : ℝ) := by gcongr
-      _ = D ^ (2⁻¹ : ℝ) * ‖T‖ₑ * M *
-            (μ (closedBall c r) ^ (2⁻¹ : ℝ) * μ (closedBall c r) ^ (2⁻¹ : ℝ)) := by
-          rw [ENNReal.mul_rpow_of_nonneg _ _ (by norm_num)]
-          ring
-      _ = D ^ (2⁻¹ : ℝ) * ‖T‖ₑ * M * μ (closedBall c r) := by rw [hsq]
+      D ^ (2⁻¹ : ℝ) * ‖T‖ₑ * M * μ (closedBall c r) :=
+    by simpa using T.setLIntegral_enorm_apply_le_of_ae_eq_indicator_of_measure_le h5 hf₁ hD htop
   -- Comparing `T f = T f₁ + T f₂` with the constant `a` bounds its mean oscillation.
   have hconst : ⨍⁻ x in closedBall c r, ‖T f x - a‖ₑ ∂μ ≤ (D ^ (2⁻¹ : ℝ) * ‖T‖ₑ + B) * M := by
     rw [setLAverage_eq, ENNReal.div_le_iff h0 htop]

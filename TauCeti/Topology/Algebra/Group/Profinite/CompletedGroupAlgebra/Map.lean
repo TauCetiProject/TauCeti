@@ -135,8 +135,9 @@ induced by `f` is injective. -/
 theorem proj_map_eq_zero_iff (V : OpenNormalSubgroup Δ) (x : completedGroupAlgebra R Γ) :
     proj R Δ V (map R f hf x) = 0 ↔ proj R Γ (V.comap f hf) x = 0 := by
   rw [proj_map]
-  exact (MonoidAlgebra.mapDomain_injective (QuotientGroup.map_injective_of_eq_comap f
-    V.toSubgroup (V.toSubgroup_comap f hf))).eq_iff' (MonoidAlgebra.mapDomain_zero (R := R) _)
+  exact (MonoidAlgebra.mapDomain_injective
+    ((QuotientGroup.map_injective_iff f V.toSubgroup _).mpr (V.toSubgroup_comap f hf))).eq_iff'
+      (MonoidAlgebra.mapDomain_zero (R := R) _)
 
 /-- The induced map sends the group element `γ` to the group element `f γ`. -/
 @[simp]
