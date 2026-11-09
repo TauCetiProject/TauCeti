@@ -108,7 +108,7 @@ theorem contMDiffAt_plumbedPerturbation {n : ℕ∞} (hq : q ≠ inf)
 omit [TopologicalSpace M] [ChartedSpace G M] in
 /-- Near a point off the collar `Re z ≥ L - 2` of the end `q`, the plumbed perturbation is the
 perturbation of the receiving pair of pants. -/
-theorem eventually_plumbedPerturbation_eq (hq : q ≠ inf) (hab : Hb q = Ha inf) {w : ℂ}
+private theorem eventually_plumbedPerturbation_eq (hq : q ≠ inf) (hab : Hb q = Ha inf) {w : ℂ}
     (hw : w ≠ q.endCenter) (h : (q.endCoord w).re < L - 2) :
     ∀ᶠ w' in 𝓝 w, plumbedPerturbation Ha Hb q L w' = pairOfPantsPerturbation Hb w' := by
   filter_upwards [((q.contDiffAt_re_endCoord hw (n := 0)).continuousAt).eventually
@@ -119,7 +119,7 @@ omit [TopologicalSpace M] [ChartedSpace G M] in
 /-- Near a point off the collar `Re z ≤ 2 - L` of the end at `∞` of the inserted pair of pants,
 the pullback of the plumbed perturbation along the plumbing map is the perturbation of the
 inserted pair of pants. -/
-theorem eventually_plumbedPerturbation_plumbingMap (hq : q ≠ inf) (hab : Hb q = Ha inf)
+private theorem eventually_plumbedPerturbation_plumbingMap (hq : q ≠ inf) (hab : Hb q = Ha inf)
     {w : ℂ} (hw : w ≠ 0) (h : 2 - L < (inf.endCoord w).re) :
     ∀ᶠ w' in 𝓝 w, ∀ x v, plumbedPerturbation Ha Hb q L (q.plumbingMap L w') x
       (q.plumbingFactor L * v) = pairOfPantsPerturbation Ha w' x v := by
@@ -127,13 +127,6 @@ theorem eventually_plumbedPerturbation_plumbingMap (hq : q ≠ inf) (hab : Hb q 
     (inf.contDiffAt_re_endCoord (by simpa using hw) (n := 0)).continuousAt
   filter_upwards [eventually_ne_nhds hw, hc.eventually (lt_mem_nhds h)] with w' hw' h' x v
   exact plumbedPerturbation_plumbingMap hq hab hw' h'.le x v
-
-/-- The plumbing map is smooth in real coordinates. -/
-theorem contDiff_realChart_plumbingMap (q : Puncture) (L : ℝ) {n : WithTop ℕ∞} :
-    ContDiff ℝ n (realChart (q.plumbingMap L)) := by
-  have hψ : q.plumbingMap L = fun w => q.endCenter + q.plumbingFactor L * w :=
-    funext (plumbingMap_apply q L)
-  exact contDiff_realChart (by rw [hψ]; fun_prop)
 
 end TauCeti.Floer
 
@@ -187,7 +180,7 @@ variable [IsManifold I ⊤ M]
 
 /-- Off the collar `Re z ≥ L/2` of the end `q`, the curvature of the plumbed perturbation is the
 curvature of the perturbation of the receiving pair of pants. -/
-private theorem hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le (ω : SmoothTwoForm I M)
+theorem hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le (ω : SmoothTwoForm I M)
     (hq : q ≠ inf) (hab : Hb q = Ha inf) (hL : 4 < L) {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter)
     (hre : (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2) :
@@ -205,13 +198,13 @@ private theorem hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le (ω :
     (hP.mono fun z' hz' ↦ funext fun x ↦ by simp only [hz'])
     (hP.mono fun z' hz' ↦ funext fun x ↦ by simp only [hz'])
 
-/-- Off the collar `Re z ≤ -L/2` of the end at `∞` of the inserted pair of pants, the curvature of
+/-- Off the collar `Re z ≤ 2 - L` of the end at `∞` of the inserted pair of pants, the curvature of
 the pullback of the plumbed perturbation along the plumbing chart is the curvature of the
 perturbation of the inserted pair of pants. -/
-private theorem hamiltonianCurvature_perturbationPullback_plumbedPerturbation
-    (ω : SmoothTwoForm I M) (hq : q ≠ inf) (hab : Hb q = Ha inf) (hL : 4 < L) {z : ℝ × ℝ}
+theorem hamiltonianCurvature_perturbationPullback_plumbedPerturbation
+    (ω : SmoothTwoForm I M) (hq : q ≠ inf) (hab : Hb q = Ha inf) {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ 0)
-    (hre : -(L / 2) < (inf.endCoord (Complex.equivRealProdCLM.symm z)).re) :
+    (hre : 2 - L < (inf.endCoord (Complex.equivRealProdCLM.symm z)).re) :
     ω.hamiltonianCurvature
         (perturbationPullback (realChart (q.plumbingMap L))
           (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
@@ -226,7 +219,7 @@ private theorem hamiltonianCurvature_perturbationPullback_plumbedPerturbation
         (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
         z := by
   have hP := (Complex.equivRealProdCLM.symm.continuous.tendsto z).eventually
-    (eventually_plumbedPerturbation_plumbingMap (L := L) hq hab hz (by linarith))
+    (eventually_plumbedPerturbation_plumbingMap (L := L) hq hab hz hre)
   have h₁ : Complex.equivRealProdCLM.symm stdComplexLineReal = 1 := by
     apply Complex.ext <;> simp [stdComplexLineReal_eq]
   have hI : Complex.equivRealProdCLM.symm stdComplexLineImag = Complex.I := by
@@ -319,8 +312,8 @@ private theorem setLIntegral_enorm_hamiltonianCurvature_plumbedPerturbation_le_i
           (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
           w ((u ∘ realChart (q.plumbingMap L)) w)‖ₑ :=
         setLIntegral_congr_fun hSm fun w hw ↦ by
-          rw [hamiltonianCurvature_perturbationPullback_plumbedPerturbation ω hq hab hL hw.1
-            hw.2.2, comp_apply]
+          rw [hamiltonianCurvature_perturbationPullback_plumbedPerturbation ω hq hab hw.1
+            (by linarith [hw.2.2]), comp_apply]
     _ ≤ _ := setLIntegral_le_lintegral _ _
     _ ≤ _ := lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le ω hHa hHas hBa _
 

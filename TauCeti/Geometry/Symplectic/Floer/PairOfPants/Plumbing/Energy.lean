@@ -7,11 +7,9 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Basic
+import TauCeti.Analysis.Calculus.ContDiff.Cutoff
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Floer.Pullback
-import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
-import Mathlib.RingTheory.Complex
-import Mathlib.RingTheory.Norm.Transitivity
 
 /-!
 # The energy identity on the plumbed four-punctured sphere
@@ -126,129 +124,6 @@ private theorem endCutoff_eventuallyEq_zero {r : Puncture} {R : ℝ} {z : ℝ ×
   filter_upwards [(continuousAt_endHeight hz).eventually (lt_mem_nhds h)] with z' hz'
   rw [endCutoff, smoothTransition.one_of_one_le (by linarith), sub_self]
 
-/-- Multiplying a map that is `C²` on an open set `W` by a cutoff that is `C²` on a set `U` and
-vanishes near every point of `U` outside `W` gives a map that is `C²` on `U`. -/
-private theorem contDiffOn_smul_of_eventuallyEq_zero {U W : Set (ℝ × ℝ)} (hW : IsOpen W)
-    {g : ℝ × ℝ → ℝ} {u : ℝ × ℝ → V} (hg : ∀ z ∈ U, ContDiffAt ℝ 2 g z)
-    (hu : ContDiffOn ℝ 2 u W) (h : ∀ z ∈ U, z ∉ W → g =ᶠ[𝓝 z] fun _ ↦ 0) :
-    ContDiffOn ℝ 2 (fun z ↦ g z • u z) U := by
-  intro z hz
-  by_cases hzW : z ∈ W
-  · exact ((hg z hz).smul (hu.contDiffAt (hW.mem_nhds hzW))).contDiffWithinAt
-  · refine (contDiffAt_const (c := (0 : V))).congr_of_eventuallyEq ?_ |>.contDiffWithinAt
-    filter_upwards [h z hz hzW] with z' hz'
-    rw [hz', zero_smul]
-
-/-! ### Geometry of the plumbed four-punctured sphere -/
-
-/-- The finite puncture other than `c_q` lies on the part `s < 0` of the end `q`. -/
-private theorem re_endCoord_lt_zero (hq : q ≠ inf) {v : ℂ} (hv : v = 0 ∨ v = 1)
-    (hvq : v ≠ q.endCenter) : (q.endCoord v).re < 0 := by
-  have hlog : 0 < Real.log 2 := Real.log_pos one_lt_two
-  cases q
-  · rcases hv with rfl | rfl
-    · simp at hvq
-    · rw [re_endCoord]
-      norm_num
-      exact div_neg_of_neg_of_pos (neg_neg_of_pos hlog) Real.two_pi_pos
-  · rcases hv with rfl | rfl
-    · rw [re_endCoord]
-      norm_num
-      exact div_neg_of_neg_of_pos (neg_neg_of_pos hlog) Real.two_pi_pos
-    · simp at hvq
-  · exact absurd rfl hq
-
-/-- The plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}`, in real coordinates, is open. -/
-private theorem isOpen_plumbedSphere (q : Puncture) (L : ℝ) :
-    IsOpen {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
-      Complex.equivRealProdCLM.symm z ≠ 1) ∧
-      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} :=
-  ((isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
-    (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)).inter
-    (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
-
-/-- The plumbing map preserves orientation in real coordinates. -/
-private theorem det_fderiv_realChart_plumbingMap_nonneg (q : Puncture) (L : ℝ) (w : ℝ × ℝ) :
-    0 ≤ (fderiv ℝ (realChart (q.plumbingMap L)) w).det := by
-  rw [(TauCeti.Complex.hasFDerivAt_realChart (q.hasDerivAt_plumbingMap L _)).fderiv]
-  simp [ContinuousLinearMap.det, LinearMap.det_restrictScalars, Algebra.norm_complex_apply,
-    Complex.normSq_nonneg]
-
-/-- In real coordinates, the plumbing map carries the preimage of a set `A` to the preimage of
-its image. -/
-private theorem preimage_image_plumbingMap (q : Puncture) (L : ℝ) (A : Set ℂ) :
-    Complex.equivRealProdCLM.symm ⁻¹' (q.plumbingMap L '' A) =
-      realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹' A) := by
-  ext z
-  constructor
-  · rintro ⟨w, hw, hwz⟩
-    refine ⟨Complex.equivRealProdCLM w,
-      by rwa [mem_preimage, ContinuousLinearEquiv.symm_apply_apply], ?_⟩
-    rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply, hwz,
-      ContinuousLinearEquiv.apply_symm_apply]
-  · rintro ⟨w, hw, rfl⟩
-    exact ⟨_, hw, by rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply]⟩
-
-/-- The receiving truncation `S_{L/2}` lies in the plumbed four-punctured sphere. -/
-private theorem mem_plumbedSphere_of_mem_truncation (hq : q ≠ inf) (hL : 4 < L) {w : ℂ}
-    (hw : w ∈ truncation (L / 2)) : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1 := by
-  rw [mem_truncation] at hw
-  refine ⟨⟨hw.1, hw.2.1⟩, fun h ↦ ?_⟩
-  have h₁ := hw.2.2 q
-  rw [h, endSign_eq_one hq, one_mul, re_endCoord_plumbingMap q L one_ne_zero] at h₁
-  linarith [re_endCoord_inf_one_pos]
-
-/-- The plumbing map carries the inserted truncation `S_{L/2}` into the part `s_q ≥ L/2` of the
-end `q` of the plumbed four-punctured sphere. -/
-private theorem le_re_endCoord_plumbingMap {w : ℂ}
-    (hw : w ∈ truncation (L / 2)) : L / 2 ≤ (q.endCoord (q.plumbingMap L w)).re := by
-  rw [mem_truncation] at hw
-  have h₁ := hw.2.2 inf
-  rw [endSign_inf, neg_one_mul] at h₁
-  rw [re_endCoord_plumbingMap q L hw.1]
-  linarith
-
-private theorem plumbingMap_mem_plumbedSphere_of_mem_truncation (hq : q ≠ inf) (hL : 4 < L)
-    {w : ℂ} (hw : w ∈ truncation (L / 2)) :
-    (q.plumbingMap L w ≠ 0 ∧ q.plumbingMap L w ≠ 1) ∧ q.plumbingMap L w ≠ q.plumbingMap L 1 := by
-  refine ⟨q.ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos ?_,
-    fun h ↦ (mem_truncation.1 hw).2.1 (q.plumbingMap_injective L h)⟩
-  rw [endSign_eq_one hq, one_mul]
-  linarith [le_re_endCoord_plumbingMap (q := q) hw]
-
-/-- The receiving and inserted truncations meet only on the circle `s_q = L/2`, a null set. -/
-private theorem aedisjoint_truncation_image (hq : q ≠ inf) :
-    AEDisjoint volume (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2))
-      (realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2))) := by
-  set C := Metric.sphere q.endCenter (‖q.endScale‖ * Real.exp (-(π * L)))
-  have hsub : Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2) ∩
-      realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)) ⊆
-      Complex.equivRealProdCLM.symm ⁻¹' C := by
-    rintro z ⟨hz, w, hw, rfl⟩
-    simp only [mem_preimage, realChart_apply, ContinuousLinearEquiv.symm_apply_apply] at hz ⊢
-    set p := q.plumbingMap L (Complex.equivRealProdCLM.symm w)
-    have h₁ := le_re_endCoord_plumbingMap (q := q) hw
-    have h₂ := (mem_truncation.1 hz).2.2 q
-    rw [endSign_eq_one hq, one_mul] at h₂
-    have hpos : 0 < ‖(p - q.endCenter) / q.endScale‖ :=
-      norm_pos_iff.2 (div_ne_zero (sub_ne_zero.2
-        (ne_endCenter ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩ q))
-        q.endScale_ne_zero)
-    have hlog : Real.log ‖(p - q.endCenter) / q.endScale‖ = -(π * L) := by
-      have heq := le_antisymm h₂ h₁
-      rw [re_endCoord] at heq
-      field_simp at heq
-      linarith
-    have hexp := Real.exp_log hpos
-    rw [hlog, norm_div, eq_div_iff (norm_ne_zero_iff.2 q.endScale_ne_zero)] at hexp
-    rw [Metric.mem_sphere, dist_eq_norm, ← hexp, mul_comm]
-  refine measure_mono_null hsub ?_
-  have hsymm : (Complex.equivRealProdCLM.symm : ℝ × ℝ → ℂ) = Complex.measurableEquivRealProd.symm :=
-    rfl
-  rw [hsymm, (Complex.volume_preserving_equiv_real_prod.symm _).measure_preimage
-    Metric.isClosed_sphere.measurableSet.nullMeasurableSet]
-  exact Measure.addHaar_sphere volume _ _
-
 /-- The cutoffs at height `L/2 + 1` are `1` on the boundary circles `±s = L/2` of the ends. -/
 private theorem endCutoff_cylindricalEndLift (hL : 0 < L) (r r' : Puncture) (t : ℝ) :
     endCutoff r' (L / 2 + 1) (Complex.equivRealProdCLM
@@ -257,16 +132,6 @@ private theorem endCutoff_cylindricalEndLift (hL : 0 < L) (r r' : Puncture) (t :
     (cylindricalEndLift_mem_truncation r (R := L / 2) (by linarith) t)).2.2 r'
   rw [endCutoff, ContinuousLinearEquiv.symm_apply_apply,
     smoothTransition.zero_of_nonpos (by linarith), sub_zero]
-
-/-- The plumbing map carries the circle `s = -L/2` of the end at `∞` of the inserted pair of pants
-to the circle `s = L/2` of the end `q` of the receiving one. -/
-private theorem plumbingMap_cylindricalEndLift_inf (hq : q ≠ inf) (t : ℝ) :
-    q.plumbingMap L (inf.cylindricalEndLift (↑(inf.endSign * (L / 2)) + ↑t * Complex.I)) =
-      q.cylindricalEndLift (↑(q.endSign * (L / 2)) + ↑t * Complex.I) := by
-  rw [← cylindricalEndLift_add_ofReal, endSign_inf, endSign_eq_one hq]
-  congr 1
-  push_cast
-  ring
 
 /-! ### The receiving and inserted pieces of a map -/
 
@@ -523,17 +388,13 @@ private theorem setIntegral_hamiltonianCurvature_receiving (ω : SymplecticForm 
   refine setIntegral_congr_fun ((isCompact_truncation _).isClosed.preimage
     Complex.equivRealProdCLM.symm.continuous).measurableSet fun z hz ↦ ?_
   have hz' := mem_truncation.1 hz
-  have hre : (q.endCoord (Complex.equivRealProdCLM.symm z)).re < L - 2 := by
+  have hre : (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2 := by
     have h := hz'.2.2 q
-    rw [endSign_eq_one hq, one_mul] at h
-    linarith
-  have hP := (Complex.equivRealProdCLM.symm.continuous.tendsto z).eventually
-    (eventually_plumbedPerturbation_eq (Ha := Ha) hq hab (ne_endCenter ⟨hz'.1, hz'.2.1⟩ q) hre)
+    rwa [endSign_eq_one hq, one_mul] at h
   have hu : endCutoff q (L / 2 + 1) z • u z = u z := (receivingPiece_eventuallyEq u hz).eq_of_nhds
-  rw [hu]
-  exact congrFun (ω.hamiltonianCurvature_congr_of_eventuallyEq
-    (hP.mono fun z' hz' ↦ funext fun x ↦ by simp only [hz'])
-    (hP.mono fun z' hz' ↦ funext fun x ↦ by simp only [hz'])) (u z)
+  rw [hu, ← hamiltonianCurvature_constSmooth, ← hamiltonianCurvature_constSmooth]
+  exact congrFun (SmoothTwoForm.hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le
+    ω.constSmooth hq hab hL (ne_endCenter ⟨hz'.1, hz'.2.1⟩ q) hre) (u z)
 
 /-- Over the image under the plumbing map of the inserted truncation `S_{L/2}`, the integrated
 curvature of the plumbed perturbation along `u` is the integrated curvature over `S` of the
@@ -581,18 +442,11 @@ private theorem setIntegral_hamiltonianCurvature_inserted (ω : SymplecticForm V
     have h := hw'.2.2 inf
     rw [endSign_inf, neg_one_mul] at h
     linarith
-  have hK := (Complex.equivRealProdCLM.symm.continuous.tendsto w).eventually
-    (eventually_plumbedPerturbation_plumbingMap (Hb := Hb) hq hab hw'.1 hre)
   have hu : endCutoff inf (L / 2 + 1) w • u (realChart (q.plumbingMap L) w) =
       u (realChart (q.plumbingMap L) w) := (insertedPiece_eventuallyEq u hw).eq_of_nhds
-  rw [hu]
-  exact congrFun (ω.hamiltonianCurvature_congr_of_eventuallyEq
-    (hK.mono fun z' hz' ↦ funext fun x ↦ by
-      rw [perturbationPullback_realChart _ (q.hasDerivAt_plumbingMap L _),
-        equivRealProdCLM_symm_stdComplexLineReal, hz'])
-    (hK.mono fun z' hz' ↦ funext fun x ↦ by
-      rw [perturbationPullback_realChart _ (q.hasDerivAt_plumbingMap L _),
-        equivRealProdCLM_symm_stdComplexLineImag, hz'])) _
+  rw [hu, ← hamiltonianCurvature_constSmooth, ← hamiltonianCurvature_constSmooth]
+  exact congrFun (SmoothTwoForm.hamiltonianCurvature_perturbationPullback_plumbedPerturbation
+    ω.constSmooth hq hab hw'.1 hre) _
 
 /-- A function continuous on the plumbed four-punctured sphere integrates over the plumbed
 truncation `S_{L/2} ∪ ψ(S_{L/2})` as the sum of its integrals over the two pieces. -/

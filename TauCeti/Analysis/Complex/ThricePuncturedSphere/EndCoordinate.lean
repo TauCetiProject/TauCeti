@@ -470,6 +470,23 @@ theorem endSign_mul_re_endCoord_nonpos {q r : Puncture} (hqr : q ≠ r) {w : ℂ
   exact cylindricalEndLift_ne_cylindricalEndLift hqr h h'
     ((q.cylindricalEndLift_endCoord hq).trans (r.cylindricalEndLift_endCoord hr).symm)
 
+/-- The finite puncture other than `c_q` lies on the part `s < 0` of the end `q`. -/
+theorem re_endCoord_lt_zero (hq : q ≠ inf) {v : ℂ} (hv : v = 0 ∨ v = 1)
+    (hvq : v ≠ q.endCenter) : (q.endCoord v).re < 0 := by
+  have hlog : 0 < Real.log 2 := Real.log_pos one_lt_two
+  cases q
+  · rcases hv with rfl | rfl
+    · simp at hvq
+    · rw [re_endCoord]
+      norm_num
+      exact div_neg_of_neg_of_pos (neg_neg_of_pos hlog) Real.two_pi_pos
+  · rcases hv with rfl | rfl
+    · rw [re_endCoord]
+      norm_num
+      exact div_neg_of_neg_of_pos (neg_neg_of_pos hlog) Real.two_pi_pos
+    · simp at hvq
+  · exact absurd rfl hq
+
 end TauCeti.ThricePuncturedSphere.Puncture
 
 namespace TauCeti.ThricePuncturedSphere
