@@ -57,6 +57,7 @@ lemma cubePoint_down (t : I) : (cubePoint.{w} t).down = fun _ ↦ t := by
   rw [cubePoint]
 
 /-- The parametrization `TauCeti.cubePoint` of the cube `I¹` is continuous. -/
+@[fun_prop]
 lemma continuous_cubePoint : Continuous (cubePoint.{w}) :=
   continuous_uliftUp.comp (continuous_pi fun _ ↦ continuous_id)
 
