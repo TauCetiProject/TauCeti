@@ -31,9 +31,7 @@ strictly stronger than nonconstancy.
 * `TauCeti.Divisor.degree_zeros` and `TauCeti.Divisor.degree_poles` compute the two effective
   parts of the principal divisor of a function transcendental over `k`.
   Consequently `TauCeti.Divisor.finrank_adjoin_le_degree_of_mem_riemannRochSpace` bounds
-  `[F : k(x)]` by `deg W` for a transcendental `x` in `L(W)` with `W` effective;
-  `TauCeti.Divisor.exists_ne_zero_transcendental_poles_le_and_finrank_adjoin_le_degree` shows
-  every nonconstant element of `L(W)` is of this kind when the constant field is exact.
+  `[F : k(x)]` by `deg W` for a transcendental `x` in `L(W)` with `W` effective.
 * `TauCeti.Divisor.degree_principal` is the product formula, and
   `TauCeti.Divisor.degree_zeros_eq_degree_poles` restates it as equality of the degrees of the
   zero and pole divisors.
@@ -246,21 +244,6 @@ theorem finrank_adjoin_le_degree_of_mem_riemannRochSpace (hF : IsFunctionField k
   have hdeg := degree_le_of_le
     ((poles_le_iff_mem_riemannRochSpace hF hW (Units.mk0 x hxt.ne_zero)).mpr hxW)
   rwa [degree_poles hF (Units.mk0 x hxt.ne_zero) hxt, Units.val_mk0] at hdeg
-
-/-- A nonconstant function `u` in the Riemann-Roch space of an effective divisor `B` is
-transcendental, has nonzero poles bounded by `B`, and generates a subfield of index at most the
-degree of `B`. -/
-theorem exists_ne_zero_transcendental_poles_le_and_finrank_adjoin_le_degree
-    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) {B : Divisor k F} (hB : 0 ≤ B)
-    {u : F} (huB : u ∈ riemannRochSpace B) (hu : u ∉ k ∙ (1 : F)) :
-    ∃ hu0 : u ≠ 0, Transcendental k u ∧ poles hF (Units.mk0 u hu0) ≤ B ∧
-      (Module.finrank k⟮u⟯ F : ℤ) ≤ degree B := by
-  have hut : Transcendental k u := fun halg ↦ by
-    obtain ⟨c, hc⟩ := isIntegrallyClosedIn_iff_forall_isAlgebraic.mp hex u halg
-    exact hu (hc ▸ Submodule.mem_span_singleton.mpr ⟨c, by simp [Algebra.smul_def]⟩)
-  have hu0 : u ≠ 0 := fun h ↦ hut (h ▸ isAlgebraic_zero)
-  exact ⟨hu0, hut, (poles_le_iff_mem_riemannRochSpace hF hB (Units.mk0 u hu0)).mpr huB,
-    finrank_adjoin_le_degree_of_mem_riemannRochSpace hF hB huB hut⟩
 
 /-- **The product formula for an algebraic function field** (Stichtenoth, Theorem 1.4.11):
 every principal divisor has degree zero. -/

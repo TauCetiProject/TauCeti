@@ -14,6 +14,7 @@ import TauCeti.FieldTheory.FunctionField.Consequences.GenusZero
 import TauCeti.FieldTheory.FunctionField.RiemannRoch.Conorm
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Transcendental
 import TauCeti.FieldTheory.Separable.PrimeDegree
+import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
 # Places with separable residue field
@@ -141,11 +142,16 @@ theorem exists_finrank_adjoin_le_two_and_isSeparable_of_genus_eq_zero (hF : IsFu
   have hindex (u : F) (huB : u ∈ riemannRochSpace B) (hu : u ∉ k ∙ (1 : F)) :
       ∃ hu0 : u ≠ 0, Transcendental k u ∧ Divisor.poles hF (Units.mk0 u hu0) ≤ B ∧
         Module.finrank k⟮u⟯ F ≤ 2 := by
-    obtain ⟨hu0, hut, hle, hd⟩ :=
-      Divisor.exists_ne_zero_transcendental_poles_le_and_finrank_adjoin_le_degree hF hex hB huB hu
+    have hut := transcendental_of_notMem_span_one hex hu
+    refine ⟨hut.ne_zero, hut,
+      (poles_le_iff_mem_riemannRochSpace hF hB _).mpr huB, ?_⟩
+    have hd := Divisor.finrank_adjoin_le_degree_of_mem_riemannRochSpace hF hB huB hut
     rw [hBdeg] at hd
-    exact ⟨hu0, hut, hle, by exact_mod_cast hd⟩
-  obtain ⟨x, hxB, hx1, z, hzB, hzx⟩ := exists_mem_riemannRochSpace_notMem_span_pair hF hdimB
+    exact_mod_cast hd
+  have hfin := finiteDimensional_riemannRochSpace hF B
+  rw [Divisor.dim_def] at hdimB
+  obtain ⟨x, hxB, hx1, z, hzB, hzx⟩ :=
+    Submodule.exists_mem_notMem_span_pair (V := riemannRochSpace B) (1 : F) hdimB
   obtain ⟨hx0, hxt, hxle, hx2⟩ := hindex x hxB hx1
   obtain ⟨-, hzt, -, hz2⟩ := hindex z hzB fun h ↦ hzx (Submodule.span_mono
     (Set.singleton_subset_iff.mpr (Set.mem_insert _ _)) h)

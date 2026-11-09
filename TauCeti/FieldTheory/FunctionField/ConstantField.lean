@@ -41,6 +41,8 @@ once `F' / F` is — a theorem, not a hypothesis, and the finiteness that makes 
   `TauCeti.isIntegrallyClosedIn_iff_forall_isAlgebraic`,
   `TauCeti.isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one`: the three faces of the
   exactness hypothesis on the field of constants.
+* `TauCeti.transcendental_of_notMem_span_one`: over an exact field of constants, every element
+  outside `k ∙ 1` is transcendental.
 * `TauCeti.isIntegrallyClosedIn_of_isAlgClosed`: an algebraically closed base field is exact in
   every domain algebra.
 * `TauCeti.IsFunctionField.algebraicClosure` and
@@ -129,6 +131,13 @@ theorem algebraicClosure_eq_bot_iff_isIntegrallyClosedIn :
 theorem isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one :
     IsIntegrallyClosedIn k F ↔ Module.finrank k (algebraicClosure k F) = 1 := by
   rw [IntermediateField.finrank_eq_one_iff, algebraicClosure_eq_bot_iff_isIntegrallyClosedIn]
+
+/-- Over an exact field of constants, an element of `F` outside the line `k ∙ 1` is
+transcendental over `k`. -/
+theorem transcendental_of_notMem_span_one (hex : IsIntegrallyClosedIn k F) {u : F}
+    (hu : u ∉ Submodule.span k {(1 : F)}) : Transcendental k u := fun halg ↦ by
+  obtain ⟨c, hc⟩ := isIntegrallyClosedIn_iff_forall_isAlgebraic.mp hex u halg
+  exact hu (hc ▸ Submodule.mem_span_singleton.mpr ⟨c, by simp [Algebra.smul_def]⟩)
 
 /-- The field of constants is exact in itself: nothing in `F` outside `algebraicClosure k F` is
 algebraic over `algebraicClosure k F`. -/
