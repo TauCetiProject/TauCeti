@@ -89,7 +89,7 @@ theorem isFiniteType_graphCartanMatrix_of_posDef {R : Type*} [Field R] [LinearOr
     hx (funext fun i ↦ by simpa using congrFun h0 i)
   have hpos := h.dotProduct_mulVec_pos hx'
   have hstar : star (Rat.castHom R ∘ x) = Rat.castHom R ∘ x :=
-    funext fun i ↦ star_ratCast (x i)
+    funext fun i ↦ by simp only [Pi.star_apply, Function.comp_apply, Rat.coe_castHom, star_ratCast]
   rw [← graphCartanMatrix_map G (Rat.castHom R), hstar] at hpos
   have hcast : Rat.castHom R (x ⬝ᵥ G.graphCartanMatrix ℚ *ᵥ x) =
       Rat.castHom R ∘ x ⬝ᵥ (G.graphCartanMatrix ℚ).map (Rat.castHom R) *ᵥ (Rat.castHom R ∘ x) := by
