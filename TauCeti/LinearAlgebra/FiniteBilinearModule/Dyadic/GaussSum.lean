@@ -114,7 +114,7 @@ private theorem gaussSign_dyadicCyclic_add_two [NeZero k] {θ : ℤ} (hθ : Odd 
   -- Both conditions are computed on `ℤ/2^{k+3}` itself, the carrier of the module.
   have hiso (x : ZMod (2 ^ (k + 1 + 2))) (hx : (2 : ℤ) • x = 0) :
       (dyadicCyclic (k + 1 + 2) θ).quadratic x = 0 := by
-    obtain ⟨t, rfl⟩ := ZMod.exists_eq_pow_mul_of_zsmul_eq_zero (p := 2) (n := k + 2) hx
+    obtain ⟨t, rfl⟩ := (ZMod.zsmul_eq_zero_iff_exists_eq_pow_mul (p := 2) (n := k + 2)).1 hx
     rw [dyadicCyclic_quadratic_intCast]
     exact (AddCircle.coe_eq_zero_iff (1 : ℚ)).2
       ⟨θ * 2 ^ k * t ^ 2, by push_cast; field_simp; ring⟩
@@ -146,9 +146,9 @@ private theorem gaussSign_dyadicV_add_two :
       (dyadicV (k + 2)).quadratic x = 0 := by
     obtain ⟨x₁, x₂⟩ := x
     obtain ⟨s, rfl⟩ :=
-      ZMod.exists_eq_pow_mul_of_zsmul_eq_zero (p := 2) (n := k + 1) (congrArg Prod.fst hx)
+      (ZMod.zsmul_eq_zero_iff_exists_eq_pow_mul (p := 2) (n := k + 1)).1 (congrArg Prod.fst hx)
     obtain ⟨t, rfl⟩ :=
-      ZMod.exists_eq_pow_mul_of_zsmul_eq_zero (p := 2) (n := k + 1) (congrArg Prod.snd hx)
+      (ZMod.zsmul_eq_zero_iff_exists_eq_pow_mul (p := 2) (n := k + 1)).1 (congrArg Prod.snd hx)
     rw [dyadicV_quadratic, intCast_sq_add_mul_add_sq, ZMod.toRatAddCircle_intCast]
     exact (AddCircle.coe_eq_zero_iff (1 : ℚ)).2
       ⟨2 ^ k * (s ^ 2 + s * t + t ^ 2), by push_cast; field_simp; ring⟩

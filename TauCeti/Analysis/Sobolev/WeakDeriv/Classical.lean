@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Sobolev.Mollification.Interior
+import TauCeti.Topology.MetricSpace.Pseudo.Defs
 import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 
@@ -72,29 +74,11 @@ private theorem HasWeakFDerivOn.hasFDerivAt_indicator_of_integrableOn_ball
   -- yields exactly the near-point uniform convergence required by the derivative limit theorem.
   have hUx : ContinuousAt ((ball x r).indicator U) x :=
     hUc_ext.continuousAt (ball_mem_nhds x hr)
-  have hconv : Tendsto (fun p : ℕ × E => f' p.1 p.2) (atTop ×ˢ 𝓝 x)
-      (𝓝 (((ball x r).indicator U) x)) := by
-    simp only [f', convolution_flip]
-    exact ContDiffBump.convolution_tendsto_right (hphi.comp tendsto_fst)
-      (Eventually.of_forall fun _ => hUm)
-      (hUx.tendsto.comp tendsto_snd) tendsto_snd
-  have hdist : Tendsto (fun p : ℕ × E => dist (f' p.1 p.2) (((ball x r).indicator U) p.2))
-      (atTop ×ˢ 𝓝 x) (𝓝 0) := by
-    simpa only [dist_self, Function.comp_apply] using hconv.dist (hUx.tendsto.comp tendsto_snd)
-  have hunif : TendstoUniformlyOnFilter f' ((ball x r).indicator U) atTop (𝓝 x) := by
-    rw [Metric.tendstoUniformlyOnFilter_iff]
-    intro ε hε
-    simpa only [dist_comm] using (tendsto_order.1 hdist).2 ε hε
+  have hunif : TendstoUniformlyOnFilter f' ((ball x r).indicator U) atTop (𝓝 x) :=
+    by simpa only [f', convolution_flip] using
+      ContDiffBump.tendstoUniformlyOnFilter_normed_convolution hphi hUm hUx
   -- Eventually all translated kernel supports lie inside the original domain.
-  have hsmall : ∀ᶠ p : ℕ × E in atTop ×ˢ 𝓝 x,
-      (phi p.1).rOut + dist p.2 x < r := by
-    have ht : Tendsto (fun p : ℕ × E => (phi p.1).rOut + dist p.2 x)
-        (atTop ×ˢ 𝓝 x) (𝓝 (0 + dist x x)) :=
-      (hphi.comp tendsto_fst).add
-        (((continuous_id.dist continuous_const).tendsto x).comp tendsto_snd)
-    have ht0 : Tendsto (fun p : ℕ × E => (phi p.1).rOut + dist p.2 x)
-        (atTop ×ˢ 𝓝 x) (𝓝 0) := by simpa only [dist_self, zero_add] using ht
-    exact (tendsto_order.1 ht0).2 r hr
+  have hsmall := Metric.eventually_add_dist_lt_of_tendsto_zero (x := x) hr hphi
   have hderiv : ∀ᶠ p : ℕ × E in atTop ×ˢ 𝓝 x, HasFDerivAt (f p.1) (f' p.1 p.2) p.2 := by
     filter_upwards [hsmall] with p hp
     exact h.hasFDerivAt_indicator_convolution_normed (memLp_one_iff_integrable.2 hu)

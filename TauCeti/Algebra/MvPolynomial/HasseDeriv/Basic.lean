@@ -14,6 +14,7 @@ public import TauCeti.Data.Finsupp.Choose
 public import TauCeti.Data.Finsupp.Interval
 
 import Mathlib.Algebra.Order.Ring.IsNonarchimedean
+import TauCeti.Algebra.Order.AbsoluteValue.Basic
 
 /-!
 # Hasse derivatives of multivariate polynomials
@@ -130,13 +131,10 @@ theorem hasseDeriv_coeff (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
 /-- An absolute value of a coefficient of a Hasse derivative is at most `2 ^ |m + d|` times that
 of the coefficient it comes from: `v([X^m] ∂^d P) ≤ 2 ^ |m + d| v([X^(m + d)] P)`. -/
 theorem abv_coeff_hasseDeriv_le {S : Type*} [Semiring S] [PartialOrder S] [IsOrderedRing S]
-    [IsDomain S] (abv : AbsoluteValue R S) (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
+    (abv : AbsoluteValue R S) (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
     abv ((hasseDeriv d P).coeff m) ≤ 2 ^ (m + d).degree * abv (P.coeff (m + d)) := by
-  rcases subsingleton_or_nontrivial R with _ | _
-  · rw [Subsingleton.elim ((hasseDeriv d P).coeff m) 0, abv.map_zero]
-    exact mul_nonneg (pow_nonneg zero_le_two _) (abv.nonneg _)
-  rw [hasseDeriv_coeff, abv.map_mul]
-  refine mul_le_mul_of_nonneg_right ((abv.apply_nat_le_self _).trans ?_) (abv.nonneg _)
+  rw [hasseDeriv_coeff]
+  refine (abv.apply_natCast_mul_le _ _).trans (mul_le_mul_of_nonneg_right ?_ (abv.nonneg _))
   have h : (d.prod fun j k ↦ (m j + k).choose k) = d.prod fun j k ↦ ((m + d) j).choose k :=
     Finsupp.prod_congr fun j _ ↦ by rw [Finsupp.add_apply]
   rw [h, ← Nat.cast_ofNat, ← Nat.cast_pow]
@@ -145,7 +143,7 @@ theorem abv_coeff_hasseDeriv_le {S : Type*} [Semiring S] [PartialOrder S] [IsOrd
 /-- If `P` has partial degrees `degreeOf i P ≤ r i`, then
 `v([X^m] ∂^d P) ≤ 2 ^ ∑ᵢ rᵢ * v([X^(m + d)] P)`. -/
 theorem abv_coeff_hasseDeriv_le_of_degreeOf_le {S : Type*} [Semiring S] [PartialOrder S]
-    [IsOrderedRing S] [IsDomain S] [Fintype σ] (abv : AbsoluteValue R S) {P : MvPolynomial σ R}
+    [IsOrderedRing S] [Fintype σ] (abv : AbsoluteValue R S) {P : MvPolynomial σ R}
     {r : σ → ℕ} (hdeg : ∀ i, P.degreeOf i ≤ r i) (d m : σ →₀ ℕ) :
     abv ((hasseDeriv d P).coeff m) ≤ 2 ^ (∑ i, r i) * abv (P.coeff (m + d)) := by
   by_cases hm : P.coeff (m + d) = 0
@@ -159,7 +157,7 @@ theorem abv_coeff_hasseDeriv_le_of_degreeOf_le {S : Type*} [Semiring S] [Partial
 `B`, then every coefficient of every Hasse derivative of `P` has absolute value at most
 `2 ^ ∑ᵢ rᵢ * B`. -/
 theorem abv_coeff_hasseDeriv_le_two_pow_mul {S : Type*} [Semiring S] [PartialOrder S]
-    [IsOrderedRing S] [IsDomain S] [Fintype σ] (abv : AbsoluteValue R S) {P : MvPolynomial σ R}
+    [IsOrderedRing S] [Fintype σ] (abv : AbsoluteValue R S) {P : MvPolynomial σ R}
     {r : σ → ℕ} (hdeg : ∀ i, P.degreeOf i ≤ r i) {B : S} (hB : ∀ μ, abv (P.coeff μ) ≤ B)
     (d m : σ →₀ ℕ) : abv ((hasseDeriv d P).coeff m) ≤ 2 ^ (∑ i, r i) * B :=
   (abv_coeff_hasseDeriv_le_of_degreeOf_le abv hdeg d m).trans
