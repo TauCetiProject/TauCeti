@@ -20,8 +20,14 @@ The inverse extends to a `C¹` function on all of `ℝ` and has derivative the r
 the original function on the integral's range. This supplies the real-calculus construction
 used in arc-length reparametrization.
 
+For a continuous function on `ℝ` bounded below by a positive constant, the accumulated integral is
+inverted by a `C¹` order isomorphism of `ℝ`, and the compact-interval result is derived from it.
+
 ## Main results
 
+* `TauCeti.exists_orderIso_contDiff_inverse_intervalIntegral`: the accumulated integral of a
+  continuous function bounded below by a positive constant is inverted by a `C¹` order
+  isomorphism of `ℝ`, with the reciprocal derivative.
 * `TauCeti.exists_contDiff_inverse_intervalIntegral`: an inverse for the accumulated integral,
   with both inverse identities and its derivative.
 -/
@@ -45,8 +51,10 @@ theorem exists_orderIso_contDiff_inverse_intervalIntegral {w : ℝ → ℝ} (hw 
   have hφ : ∀ t, HasDerivAt φ (w t) t := fun t ↦ (hw.integral_hasStrictDerivAt a t).hasDerivAt
   have hφcont : Continuous φ := continuous_iff_continuousAt.2 fun t ↦ (hφ t).continuousAt
   have hφmono : StrictMono φ := strictMono_of_hasDerivAt_pos hφ hwpos
-  obtain ⟨htop, hbot⟩ :=
-    tendsto_intervalIntegral_atTop_atBot (fun t ↦ hw.intervalIntegrable a t) hm (ae_of_all _ hwm)
+  have htop := tendsto_intervalIntegral_atTop (fun t ↦ hw.intervalIntegrable a t) hm
+    (ae_of_all _ hwm)
+  have hbot := tendsto_intervalIntegral_atBot (fun t ↦ hw.intervalIntegrable a t) hm
+    (ae_of_all _ hwm)
   let e : ℝ ≃o ℝ := StrictMono.orderIsoOfSurjective φ hφmono (hφcont.surjective htop hbot)
   have hφψ : ∀ s, φ (e.symm s) = s := e.apply_symm_apply
   have hψd : ∀ s, HasDerivAt e.symm (w (e.symm s))⁻¹ s := fun s ↦
