@@ -55,6 +55,8 @@ the factorization properties of almost-split conflations.
 * `TauCeti.ExactStructure.Ext1.pullback_id`, `TauCeti.ExactStructure.Ext1.pullback_pullback`,
   `TauCeti.ExactStructure.Ext1.pushout_id`, `TauCeti.ExactStructure.Ext1.pushout_pushout` and
   `TauCeti.ExactStructure.Ext1.pushout_pullback`: functoriality in both variables.
+* `TauCeti.ExactStructure.Ext1.pushout_mk_eq_pullback_mk`: a morphism of extensions identifies
+  cobase change along its first component with base change along its third component.
 * `TauCeti.ExactStructure.Ext1.mk_eq_zero_iff_isSplitEpi` and
   `TauCeti.ExactStructure.Ext1.mk_eq_zero_iff_isSplitMono`: the base point is the class of the
   split conflations.
@@ -72,8 +74,9 @@ the factorization properties of almost-split conflations.
   <https://arxiv.org/abs/0811.1480>. Proposition 2.12 describes base and cobase change of a
   conflation, and Corollary 3.2 is the short five lemma.
 * Saunders Mac Lane, *Homology*, Grundlehren **114**, Springer (1963), Chapter III, for the
-  Yoneda description of `Ext¹` by extensions, its functoriality by pullback and pushout, and the
-  exact sequences it satisfies, there for modules.
+  Yoneda description of `Ext¹` by extensions, its functoriality by pullback and pushout, the
+  congruence attached to a morphism of extensions, and the exact sequences it satisfies, there for
+  modules.
 -/
 
 public section
@@ -424,6 +427,16 @@ theorem pushout_pullback (ξ : E.Ext1 Z X) (v : X ⟶ X') (u : Z' ⟶ Z) :
     apply ((e.pushout v).isPullback u).hom_ext
     · simp [Extension.f_pushoutInl]
     · simp
+
+/-- **A morphism of extensions relates cobase and base change.** A morphism `h` of middle terms
+from `e` to `e'` which covers `a` on the first terms and `c` on the third terms identifies the
+cobase change `a_* [e]` with the base change `c^* [e']`. -/
+theorem pushout_mk_eq_pullback_mk {e : E.Extension Z X} {e' : E.Extension Z' X'} {a : X ⟶ X'}
+    {c : Z ⟶ Z'} (h : e.obj ⟶ e'.obj) (h₁ : e.f ≫ h = a ≫ e'.f) (h₂ : h ≫ e'.g = e.g ≫ c) :
+    (mk e).pushout a = (mk e').pullback c := by
+  rw [pushout_mk, pullback_mk, mk_eq_mk_iff]
+  refine Extension.pushout_rel ((e'.isPullback c).lift h e.g h₂) ?_ (by simp)
+  apply (e'.isPullback c).hom_ext <;> simp [h₁]
 
 /-! ### The base point -/
 
