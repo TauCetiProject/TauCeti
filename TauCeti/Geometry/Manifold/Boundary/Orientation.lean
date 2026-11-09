@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorField.Regularity
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.Boundary.TransitionNormal
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Outward-pointing vectors at the boundary
@@ -87,22 +88,7 @@ theorem isOutwardPointing_iff_mul_mvfderiv_neg {x : M}
     IsOutwardPointing x v ↔ s * mvfderiv (𝓡∂ (n + 1)) g x v < 0 := by
   -- The inward coordinate `t` of the preferred chart, and its derivative at `x`.
   set t : M → ℝ := EuclideanSpace.proj (0 : Fin (n + 1)) ∘ extChartAt (𝓡∂ (n + 1)) x with ht
-  -- The preferred chart is differentiable at its base point; this needs no smoothness of the atlas,
-  -- since the chart read in itself is the identity near `x`.
-  have hext : MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))
-      (extChartAt (𝓡∂ (n + 1)) x) x := by
-    rw [mdifferentiableAt_iff]
-    refine ⟨continuousAt_extChartAt x, ?_⟩
-    have h : writtenInExtChartAt (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))) x
-        (extChartAt (𝓡∂ (n + 1)) x) =ᶠ[𝓝[range (𝓡∂ (n + 1))] extChartAt (𝓡∂ (n + 1)) x x] id := by
-      filter_upwards [extChartAt_target_mem_nhdsWithin x] with y hy
-      simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
-        Function.comp_apply, id_eq]
-      exact (extChartAt (𝓡∂ (n + 1)) x).right_inv hy
-    refine differentiableWithinAt_id.congr_of_eventuallyEq h ?_
-    simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
-      Function.comp_apply, id_eq]
-    exact (extChartAt (𝓡∂ (n + 1)) x).right_inv (mem_extChartAt_target x)
+  have hext := (TauCeti.hasMFDerivAt_extChartAt_self (I := 𝓡∂ (n + 1)) x).mdifferentiableAt
   have hd : MDifferentiableAt (𝓡∂ (n + 1)) 𝓘(ℝ) t x :=
     (EuclideanSpace.proj (0 : Fin (n + 1)) :
       EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ).mdifferentiableAt.comp x hext
