@@ -32,7 +32,11 @@ concurrency:
   cancel-in-progress: true
 jobs:
   shadow:
-    runs-on: ubuntu-24.04
+    # Keep unbounded/long-running research and maintenance off the hosted
+    # capacity shared by small automation and roadmap merge builds.
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-8x16-with-features
+      - namespace-features:container.privileged=true;github.run-id=${{ github.run_id }}
     timeout-minutes: 60
     env:
       BWRAP_VER: 0.9.0-1build1
@@ -49,6 +53,10 @@ jobs:
         tools-repository: TauCetiProject/TauCetiTools
         tools-ref: 76688a6c293967d60ed0c33a154104f6e8313984
         project-directory: .
+    - name: Restore the project-owned toolchain-pin contract
+      # Match infrastructure-tests: the older shared overlay must not replace
+      # this repository's current verified-installer contract.
+      run: git restore --source=HEAD -- scripts/test_elan_pin.py
     - name: Install elan (pinned + checksum) and the toolchain
       env:
         ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
