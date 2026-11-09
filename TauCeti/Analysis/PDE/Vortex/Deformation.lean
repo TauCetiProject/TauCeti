@@ -299,6 +299,28 @@ theorem equation_apply_two (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
       x z 0 * x z 2 - x z 1 * x z 3 := by
   rfl
 
+/-- The equation defect at `z` depends only on the germ of the field at `z`. -/
+theorem equation_eq_of_eventuallyEq {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (h : x =ᶠ[nhds z] y) : equation x z = equation y z := by
+  have hi (i : Fin 4) : (fun w ↦ x w i) =ᶠ[nhds z] fun w ↦ y w i :=
+    h.mono fun w hw ↦ by simp only [hw]
+  ext i
+  fin_cases i <;> simp [(hi _).fderiv_eq, h.eq_of_nhds]
+
+/-- The equation defect of a `Cⁿ` field is `Cᵐ` when `m + 1 ≤ n`. -/
+theorem contDiff_equation {x : ℂ → EuclideanSpace ℝ (Fin 4)} {m n : WithTop ℕ∞}
+    (hx : ContDiff ℝ n x) (hmn : m + 1 ≤ n) : ContDiff ℝ m (equation x) := by
+  have hc (i : Fin 4) : ContDiff ℝ n fun w ↦ x w i := contDiff_euclidean.1 hx i
+  have hd (i : Fin 4) (v : ℂ) : ContDiff ℝ m fun z ↦ fderiv ℝ (fun w ↦ x w i) z v :=
+    ((hc i).fderiv_right hmn).clm_apply contDiff_const
+  have hv (i : Fin 4) : ContDiff ℝ m fun w ↦ x w i := (hc i).of_le (le_self_add.trans hmn)
+  refine contDiff_euclidean.2 fun i ↦ ?_
+  fin_cases i
+  · simpa using ((hd 0 I).sub (hd 1 1)).add
+      (((contDiff_const.mul (((hv 2).pow 2).add ((hv 3).pow 2))).sub contDiff_const).div_const 8)
+  · simpa using (((hd 2 1).sub (hd 3 I)).sub ((hv 0).mul (hv 3))).sub ((hv 1).mul (hv 2))
+  · simpa using (((hd 3 1).add (hd 2 I)).add ((hv 0).mul (hv 2))).sub ((hv 1).mul (hv 3))
+
 /-- At a solution of the vortex equation the curvature coefficient `∂₁ b₂ - ∂₂ b₁` of
 `F_a = i (∂₁ b₂ - ∂₂ b₁) ds ∧ dt` is `-(1 - |α|²) / 8`. -/
 theorem curvature_eq_of_equation_eq_zero {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
