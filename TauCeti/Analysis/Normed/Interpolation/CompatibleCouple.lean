@@ -36,6 +36,8 @@ We realise both spaces without choosing a norm on `V`:
   `fstToSum`, `sndToSum` and the injective map `sumSpaceEmbed` into `V`.
 * `TauCeti.CompatibleCouple.sumLift`: the extension to the sum of continuous linear maps on `X₀`
   and `X₁` that agree on the intersection.
+* `TauCeti.CompatibleCouple.continuous_of_comp_fstToSum_sndToSum`: a linear map of sum spaces
+  restricting to continuous linear maps `X₀ → Y₀` and `X₁ → Y₁` is continuous.
 * `TauCeti.CompatibleCouple.norm_sumSpace_lt_iff`, `TauCeti.CompatibleCouple.le_norm_sumSpace_iff`:
   the infimum description of the sum norm.
 * `TauCeti.CompatibleCouple.refl`: the couple `(X, X)`, for which both norms are the norm of `X`.
@@ -360,6 +362,29 @@ theorem sumLift_unique {f : C.SumSpace →L[𝕜] W} (h₀ : f.comp C.fstToSum =
   C.sumSpace_hom_ext (by rw [h₀, sumLift_comp_fstToSum]) (by rw [h₁, sumLift_comp_sndToSum])
 
 end Lift
+
+section Morphism
+
+variable {Y₀ Y₁ W : Type*} [NormedAddCommGroup Y₀] [NormedSpace 𝕜 Y₀] [NormedAddCommGroup Y₁]
+  [NormedSpace 𝕜 Y₁] [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace W] [ContinuousAdd W]
+  {D : CompatibleCouple 𝕜 Y₀ Y₁ W}
+
+/-- A linear map `T` of sum spaces that restricts to continuous linear maps `T₀ : X₀ →L Y₀` and
+`T₁ : X₁ →L Y₁` agrees with the continuous map `sumLift (fstToSum ∘ T₀) (sndToSum ∘ T₁)`; in
+particular it is continuous. -/
+theorem continuous_of_comp_fstToSum_sndToSum (T : C.SumSpace →ₗ[𝕜] D.SumSpace)
+    {T₀ : X₀ →L[𝕜] Y₀} {T₁ : X₁ →L[𝕜] Y₁} (hT₀ : ∀ x, T (C.fstToSum x) = D.fstToSum (T₀ x))
+    (hT₁ : ∀ x, T (C.sndToSum x) = D.sndToSum (T₁ x)) : Continuous T := by
+  have h (x : C.inter) : (D.fstToSum.comp T₀) (C.interFst x) =
+      (D.sndToSum.comp T₁) (C.interSnd x) := by
+    simp only [ContinuousLinearMap.comp_apply, ← hT₀, ← hT₁, C.fstToSum_interFst]
+  have hT : ⇑T = C.sumLift _ _ h := funext fun u => by
+    obtain ⟨x₀, x₁, rfl⟩ := C.exists_fstToSum_add_sndToSum_eq u
+    simp [hT₀, hT₁]
+  rw [hT]
+  exact (C.sumLift _ _ h).continuous
+
+end Morphism
 
 end Sum
 
