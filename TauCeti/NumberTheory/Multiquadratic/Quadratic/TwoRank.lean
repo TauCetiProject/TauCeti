@@ -137,11 +137,12 @@ theorem narrowTwoRank_le_ncard_ramifiedPrimes_sub_one
 
 /-- **The `2`-rank formula for the Gaussian field.** For `K = ℚ(√-1)`, the `2`-rank of `Cl(𝓞 K)` is
 `t - 1 = 0`: the ring of integers is a principal ideal domain and only `2` ramifies. -/
-theorem twoRank_eq_ncard_ramifiedPrimes_sub_one_of_eq_neg_one
+private theorem twoRank_eq_ncard_ramifiedPrimes_sub_one_of_eq_neg_one
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
-    (hsf : Squarefree d) (hgauss : d = -1) :
+    (hgauss : d = -1) :
     TauCeti.ClassGroup.twoRank (𝓞 K) = (ramifiedPrimes K).ncard - 1 := by
   subst d
+  have hsf : Squarefree (-1 : ℤ) := isUnit_one.neg.squarefree
   have hfin : Module.finrank ℚ K = 2 := NumberField.finrank_rat_eq_two hmin hgen
   have hdisc : NumberField.discr K = -4 := by
     simpa using NumberField.discr_eq_four_mul_of_mod_four_ne_one hmin hgen hsf (by norm_num)
@@ -167,9 +168,9 @@ theorem twoRank_eq_ncard_ramifiedPrimes_sub_one_of_eq_neg_one
 
 Forgetting total positivity is a surjection `Cl⁺(K) → Cl(K)`, so for `1 < |d|` the ordinary
 `2`-rank is at most the narrow one, which `narrowTwoRank_le_ncard_ramifiedPrimes_sub_one` bounds by
-`t - 1`; the remaining case `d = -1` is the Gaussian field
-(`twoRank_eq_ncard_ramifiedPrimes_sub_one_of_eq_neg_one`). For a real quadratic field the
-inequality can be strict: `ℚ(√3)` has `t = 2` and class number `1`. -/
+`t - 1`; in the remaining case `d = -1`, the Gaussian field, the class group is trivial and only
+`2` ramifies. For a real quadratic field the inequality can be strict: `ℚ(√3)` has `t = 2` and
+class number `1`. -/
 theorem twoRank_le_ncard_ramifiedPrimes_sub_one
     (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
     (hsf : Squarefree d) :
@@ -180,7 +181,7 @@ theorem twoRank_le_ncard_ramifiedPrimes_sub_one
   · have hne1 : d ≠ 1 := fun h =>
       NumberField.not_isSquare_radicand hmin ⟨1, by rw [h]; norm_num⟩
     have := hsf.ne_zero
-    exact (twoRank_eq_ncard_ramifiedPrimes_sub_one_of_eq_neg_one hmin hgen hsf (by omega)).le
+    exact (twoRank_eq_ncard_ramifiedPrimes_sub_one_of_eq_neg_one hmin hgen (by omega)).le
 
 /-- **The `2`-rank formula for an imaginary quadratic field.** For `K = ℚ(√d)` with `d < 0`
 squarefree, the `2`-rank of `Cl(𝓞 K)` is exactly `t - 1`, where `t` is the number of rational
@@ -192,7 +193,7 @@ theorem twoRank_eq_ncard_ramifiedPrimes_sub_one
   let _ : IsTotallyComplex K :=
     NumberField.isTotallyComplex_of_minpoly_eq_X_sq_sub_C_of_neg hmin hd
   by_cases hgauss : d = -1
-  · exact twoRank_eq_ncard_ramifiedPrimes_sub_one_of_eq_neg_one hmin hgen hsf hgauss
+  · exact twoRank_eq_ncard_ramifiedPrimes_sub_one_of_eq_neg_one hmin hgen hgauss
   · exact le_antisymm (twoRank_le_ncard_ramifiedPrimes_sub_one hmin hgen hsf)
       (ncard_ramifiedPrimes_sub_one_le_twoRank hmin hgen hsf (by omega))
 
