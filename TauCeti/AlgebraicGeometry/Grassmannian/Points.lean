@@ -329,6 +329,47 @@ theorem toSchemeHom_injective :
   exact ((specMap_comp_toSchemeHom_eq_iff N' _ _ _).1
     (h ▸ specMap_comp_toSchemeHom_chartSet a)).symm
 
+/-- The elements `a : A` such that a morphism `Spec A ⟶ G(k, M)` over `Spec R` restricts on the
+basic open `D(a)` to a morphism into a chart generate the unit ideal. -/
+private lemma span_factorsThroughChart_eq_top (h : Spec (.of A) ⟶ scheme R M k)
+    (hh : h ≫ toSpec R M k = Spec.map (CommRingCat.ofHom (algebraMap R A))) :
+    Ideal.span {a : A | ∃ (x : Fin k → M) (g : ChartAlgebra R x →ₐ[R] Localization.Away a),
+      Spec.map (CommRingCat.ofHom (algebraMap A (Localization.Away a))) ≫ h =
+        Spec.map (CommRingCat.ofHom (g : _ →+* Localization.Away a)) ≫ chartι R x} = ⊤ := by
+  by_contra hs
+  obtain ⟨m, hm, hsm⟩ := Ideal.exists_le_maximal _ hs
+  let p : Spec (.of A) := ⟨m, hm.isPrime⟩
+  obtain ⟨x, y, hy⟩ := chartι_jointly_surjective (h p)
+  -- a basic open `D(a)` around `p` on which `h` lands in the chart at `x`
+  obtain ⟨_, ⟨a, rfl⟩, hpa, hsub⟩ :=
+    PrimeSpectrum.isTopologicalBasis_basic_opens.exists_subset_of_mem_open
+      (a := p) (u := h ⁻¹' Set.range (chartι R x)) ⟨y, hy⟩
+      ((chartι R x).isOpenEmbedding.isOpen_range.preimage h.continuous)
+  have hrange :
+      Set.range (Spec.map (CommRingCat.ofHom (algebraMap A (Localization.Away a))) ≫ h) ⊆
+        Set.range (chartι R x) := by
+    rintro _ ⟨q, rfl⟩
+    exact hsub
+      ((PrimeSpectrum.localization_away_comap_range (Localization.Away a) a).le ⟨q, rfl⟩)
+  -- the lift of `h` to the chart is `Spec` of an `R`-algebra map
+  obtain ⟨φ, hφ⟩ := Spec.map_surjective (IsOpenImmersion.lift (chartι R x) _ hrange)
+  have hφR : CommRingCat.ofHom (algebraMap R (ChartAlgebra R x)) ≫ φ =
+      CommRingCat.ofHom (algebraMap R (Localization.Away a)) := by
+    refine Spec.map_injective ?_
+    have h₁ : Spec.map φ ≫ chartι R x = _ :=
+      (congrArg (· ≫ chartι R x) hφ).trans
+        (IsOpenImmersion.lift_fac (chartι R x) _ hrange)
+    calc _ = Spec.map φ ≫ chartι R x ≫ toSpec R M k := by
+          rw [Spec.map_comp, chartι_toSpec]
+      _ = _ := by
+        rw [reassoc_of% h₁, hh, ← Spec.map_comp]
+        congr 1
+  let g : ChartAlgebra R x →ₐ[R] Localization.Away a :=
+    { φ.hom with commutes' := fun r ↦ DFunLike.congr_fun (congrArg CommRingCat.Hom.hom hφR) r }
+  exact (PrimeSpectrum.mem_basicOpen _ _).1 hpa (hsm (Ideal.subset_span
+    ⟨x, g, (IsOpenImmersion.lift_fac (chartι R x) _ hrange).symm.trans
+      (congrArg (· ≫ chartι R x) hφ.symm)⟩))
+
 /-- Every morphism `Spec A ⟶ G(k, M)` over `Spec R` classifies a point. -/
 theorem exists_toSchemeHom_eq (h : Spec (.of A) ⟶ scheme R M k)
     (hh : h ≫ toSpec R M k = Spec.map (CommRingCat.ofHom (algebraMap R A))) :
@@ -337,40 +378,7 @@ theorem exists_toSchemeHom_eq (h : Spec (.of A) ⟶ scheme R M k)
   let s : Set A := {a | ∃ (x : Fin k → M) (g : ChartAlgebra R x →ₐ[R] Localization.Away a),
     Spec.map (CommRingCat.ofHom (algebraMap A (Localization.Away a))) ≫ h =
       Spec.map (CommRingCat.ofHom (g : _ →+* Localization.Away a)) ≫ chartι R x}
-  have hs : Ideal.span s = ⊤ := by
-    by_contra hs
-    obtain ⟨m, hm, hsm⟩ := Ideal.exists_le_maximal _ hs
-    let p : Spec (.of A) := ⟨m, hm.isPrime⟩
-    obtain ⟨x, y, hy⟩ := chartι_jointly_surjective (h p)
-    -- a basic open `D(a)` around `p` on which `h` lands in the chart at `x`
-    obtain ⟨_, ⟨a, rfl⟩, hpa, hsub⟩ :=
-      PrimeSpectrum.isTopologicalBasis_basic_opens.exists_subset_of_mem_open
-        (a := p) (u := h ⁻¹' Set.range (chartι R x)) ⟨y, hy⟩
-        ((chartι R x).isOpenEmbedding.isOpen_range.preimage h.continuous)
-    have hrange :
-        Set.range (Spec.map (CommRingCat.ofHom (algebraMap A (Localization.Away a))) ≫ h) ⊆
-          Set.range (chartι R x) := by
-      rintro _ ⟨q, rfl⟩
-      exact hsub
-        ((PrimeSpectrum.localization_away_comap_range (Localization.Away a) a).le ⟨q, rfl⟩)
-    -- the lift of `h` to the chart is `Spec` of an `R`-algebra map
-    obtain ⟨φ, hφ⟩ := Spec.map_surjective (IsOpenImmersion.lift (chartι R x) _ hrange)
-    have hφR : CommRingCat.ofHom (algebraMap R (ChartAlgebra R x)) ≫ φ =
-        CommRingCat.ofHom (algebraMap R (Localization.Away a)) := by
-      refine Spec.map_injective ?_
-      have h₁ : Spec.map φ ≫ chartι R x = _ :=
-        (congrArg (· ≫ chartι R x) hφ).trans
-          (IsOpenImmersion.lift_fac (chartι R x) _ hrange)
-      calc _ = Spec.map φ ≫ chartι R x ≫ toSpec R M k := by
-            rw [Spec.map_comp, chartι_toSpec]
-        _ = _ := by
-          rw [reassoc_of% h₁, hh, ← Spec.map_comp]
-          congr 1
-    let g : ChartAlgebra R x →ₐ[R] Localization.Away a :=
-      { φ.hom with commutes' := fun r ↦ DFunLike.congr_fun (congrArg CommRingCat.Hom.hom hφR) r }
-    have has : a ∈ s := ⟨x, g, (IsOpenImmersion.lift_fac (chartι R x) _ hrange).symm.trans
-      (congrArg (· ≫ chartι R x) hφ.symm)⟩
-    exact (PrimeSpectrum.mem_basicOpen _ _).1 hpa (hsm (Ideal.subset_span has))
+  have hs : Ideal.span s = ⊤ := span_factorsThroughChart_eq_top h hh
   -- over each `D(a)`, `a ∈ s`, the morphism `h` classifies a point; these points glue
   let x (r : s) : Fin k → M := r.2.choose
   let g (r : s) : ChartAlgebra R (x r) →ₐ[R] Localization.Away r.1 := r.2.choose_spec.choose

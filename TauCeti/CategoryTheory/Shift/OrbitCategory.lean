@@ -41,7 +41,8 @@ gives the descent of `G ⋙ H`. An additive functor `F : D ⥤ D'` commuting wit
 `map F : D/[n] ⥤ D'/[n]`, the descent of `F` followed by the projection; if `F ⋙ G' ≅ G`
 compatibly with periodicity isomorphisms, then `map F` followed by the descent of `G'` is the
 descent of `G`. This compares orbit functors defined on different categories, such as a homotopy
-category and its localization.
+category and its localization. On orbit hom groups `map F` is the direct sum of the maps
+`f ↦ f.map F` on homogeneous pieces, so it is bijective exactly when these are.
 
 The orbit category is constructed rather than axiomatized: its hom groups are the displayed
 direct sums, so additive maps out of them are determined by their values on homogeneous
@@ -75,6 +76,8 @@ to compare bounded derived categories with periodic derived categories.
 * `TauCeti.OrbitCategory.map_map_homOf`: the induced functor on homogeneous pieces.
 * `TauCeti.OrbitCategory.map_map_periodicity_hom_app`: the induced functor carries the
   periodicity isomorphism of the projection to the shift comparison followed by periodicity.
+* `TauCeti.OrbitCategory.map_map_bijective_iff`: the induced functor is bijective on orbit
+  morphisms exactly when `F` is bijective on shifted morphisms of every multiple of `n`.
 
 ## References
 
@@ -662,6 +665,31 @@ theorem map_map_homOf {X Y : D} (i : ℤ) (f : ShiftedHom X Y (n * i)) :
   refine (lift_map_homOf _ _ i f).trans ?_
   rw [mapPeriodicity_periodicityZPow_hom_app, homOf_eq_projection_map_comp_shiftIso_hom,
     ShiftedHom.map, Functor.map_comp, Category.assoc, Functor.comp_map]
+
+/-- On the orbit hom group from `X` to `Y`, the induced functor is the direct sum, over the
+degrees `j`, of the maps `f ↦ f.map F` on the homogeneous pieces `f : X ⟶ Y⟦n * j⟧`. -/
+theorem map_map_eq_directSumMap {X Y : D} (f : (⟨X⟩ : OrbitCategory D n) ⟶ ⟨Y⟩) :
+    (map F).map f = DirectSum.map (fun j ↦ AddMonoidHom.mk'
+      (fun g : ShiftedHom X Y (n * j) ↦ g.map F) fun _ _ ↦ ShiftedHom.map_add _ _ F) f := by
+  induction f using hom_induction_on with
+  | zero => exact (Functor.map_zero _ _ _).trans (map_zero _).symm
+  | homOf i g => rw [map_map_homOf, homOf_def, homOf_def, DirectSum.map_of, AddMonoidHom.mk'_apply]
+  | add f₁ f₂ h₁ h₂ =>
+    exact (Functor.map_add _).trans ((congrArg₂ _ h₁ h₂).trans (map_add _ _ _).symm)
+
+/-- The induced functor is bijective on the orbit morphisms from `X` to `Y` exactly when `F` is
+bijective on the shifted morphisms `X ⟶ Y⟦n * j⟧` of every degree `j`. -/
+theorem map_map_bijective_iff {X Y : D} :
+    Function.Bijective ((map (n := n) F).map : ((⟨X⟩ : OrbitCategory D n) ⟶ ⟨Y⟩) → _) ↔
+      ∀ j : ℤ, Function.Bijective (fun f : ShiftedHom X Y (n * j) ↦ f.map F) := by
+  have h : ((map (n := n) F).map : ((⟨X⟩ : OrbitCategory D n) ⟶ ⟨Y⟩) → _) =
+      DirectSum.map (fun j ↦ AddMonoidHom.mk'
+        (fun g : ShiftedHom X Y (n * j) ↦ g.map F) fun _ _ ↦ ShiftedHom.map_add _ _ F) :=
+    funext (map_map_eq_directSumMap F)
+  rw [h]
+  exact ⟨fun hb j ↦ ⟨(DirectSum.map_injective _).1 hb.1 j, (DirectSum.map_surjective _).1 hb.2 j⟩,
+    fun hb ↦ ⟨(DirectSum.map_injective _).2 fun j ↦ (hb j).1,
+      (DirectSum.map_surjective _).2 fun j ↦ (hb j).2⟩⟩
 
 variable {E : Type*} [Category E] [Preadditive E] {G : D ⥤ E} [G.Additive]
   {φ : shiftFunctor D n ⋙ G ≅ G} {G' : D' ⥤ E} [G'.Additive] {φ' : shiftFunctor D' n ⋙ G' ≅ G'}

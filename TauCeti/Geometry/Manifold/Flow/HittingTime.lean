@@ -289,6 +289,10 @@ theorem continuousAt_flowHittingTime : ContinuousAt (flowHittingTime v g T p) p 
 theorem continuousAt_flowTransition : ContinuousAt (flowTransition v g T p) p :=
   (contMDiffAt_flowTransition le_rfl hv hT hg hgv).continuousAt
 
+/-- The transition to a transverse section is differentiable at `p`. -/
+theorem mdifferentiableAt_flowTransition : MDifferentiableAt I I (flowTransition v g T p) p :=
+  (contMDiffAt_flowTransition le_rfl hv hT hg hgv).mdifferentiableAt one_ne_zero
+
 end Continuous
 
 end TauCeti

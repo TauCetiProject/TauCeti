@@ -49,7 +49,8 @@ together here as an `S`-algebra map `TauCeti.CentralBaseChange.lsmul` into
   `Λ`-linear map `M → N`, and `TauCeti.CentralBaseChange.mapHom`, the same as an `A`-linear map
   of `Hom` modules.
 * `TauCeti.CentralBaseChange.congr`: the `S ⊗[A] Λ`-linear equivalence induced by a `Λ`-linear
-  equivalence, and `TauCeti.CentralBaseChange.prodRight`, the compatibility with binary products.
+  equivalence, and `TauCeti.CentralBaseChange.prodRight` and `TauCeti.CentralBaseChange.piRight`,
+  the compatibilities with binary products and with finite powers of `Λ`.
 * `TauCeti.CentralBaseChange.freeHomEquiv`: an `S ⊗[A] Λ`-linear map out of `S ⊗[A] (ι → Λ)` is
   the same as a family of values on the basis vectors `1 ⊗ Pi.single i 1`.
 * `TauCeti.CentralBaseChange.homEquiv`: for flat `S` and finitely presented `M`, the `S`-linear
@@ -57,6 +58,8 @@ together here as an `S`-algebra map `TauCeti.CentralBaseChange.lsmul` into
 
 ## Main results
 
+* The instance `Module.Free (S ⊗[A] Λ) (S ⊗[A] (ι → Λ))` for finite `ι`: the base change of a
+  finite free `Λ`-module is free.
 * `TauCeti.CentralBaseChange.isBaseChange_mapHom`: for flat `S` and finitely presented `M`,
   `mapHom` exhibits the `Hom` module over `S ⊗[A] Λ` as the base change of the `Hom` module
   over `Λ`.
@@ -300,6 +303,27 @@ theorem freeHomEquiv_symm_apply_tmul_single (v : ι → S ⊗[A] N) (i : ι) :
     (freeHomEquiv A S Λ N ι).symm v ((1 : S) ⊗ₜ Pi.single i 1) = v i :=
   congrFun ((freeHomEquiv A S Λ N ι).apply_symm_apply v) i
 
+variable (A S Λ ι) in
+/-- Central base change commutes with finite powers of `Λ`: the `S ⊗[A] Λ`-linear equivalence
+`S ⊗[A] (ι → Λ) ≃ (ι → S ⊗[A] Λ)` of `TensorProduct.piRight`. -/
+noncomputable def piRight : S ⊗[A] (ι → Λ) ≃ₗ[S ⊗[A] Λ] (ι → S ⊗[A] Λ) where
+  __ := TensorProduct.piRight A S S fun _ : ι ↦ Λ
+  map_smul' t x := funext (piRightHom_smul t x)
+
+@[simp]
+theorem piRight_tmul (s : S) (v : ι → Λ) : piRight A S Λ ι (s ⊗ₜ[A] v) = fun i ↦ s ⊗ₜ v i :=
+  (rfl)
+
+@[simp]
+theorem piRight_symm_tmul (s : S) (v : ι → Λ) :
+    (piRight A S Λ ι).symm (fun i ↦ s ⊗ₜ[A] v i) = s ⊗ₜ v :=
+  TensorProduct.piRight_symm_apply A S S (fun _ : ι ↦ Λ) s v
+
+@[simp]
+theorem piRight_symm_single (s : S) (i : ι) (l : Λ) :
+    (piRight A S Λ ι).symm (Pi.single i (s ⊗ₜ[A] l)) = s ⊗ₜ Pi.single i l :=
+  TensorProduct.piRight_symm_single A S S (fun _ : ι ↦ Λ) s i l
+
 omit [Fintype ι] [DecidableEq ι] in
 /-- The comparison map is a base change for a finite free module: under evaluation at the
 standard basis it is the base change `Nⁱ → (S ⊗[A] N)ⁱ`. -/
@@ -311,6 +335,12 @@ private theorem isBaseChange_mapHom_pi [Finite ι] : IsBaseChange S (mapHom A S 
     (IsBaseChange.pi (fun _ ↦ TensorProduct.mk A S N 1) fun _ ↦ TensorProduct.isBaseChange A N S)
   refine LinearMap.ext fun φ ↦ funext fun i ↦ ?_
   simp [e, freeHomEquiv]
+
+/-- `S ⊗[A] (ι → Λ)` is a free `S ⊗[A] Λ`-module, with basis `1 ⊗ Pi.single i 1`. -/
+instance {ι : Type*} [Finite ι] : Module.Free (S ⊗[A] Λ) (S ⊗[A] (ι → Λ)) := by
+  classical
+  cases nonempty_fintype ι
+  exact .of_equiv (piRight A S Λ ι).symm
 
 end Free
 

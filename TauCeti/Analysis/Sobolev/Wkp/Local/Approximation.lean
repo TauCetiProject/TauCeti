@@ -154,19 +154,28 @@ private theorem localAverage_ae {F : Type*} [NormedAddCommGroup F] [NormedSpace 
   exact (Lp.coeFn_LpToLpOfMeasureLeSMul _ _ _).trans (by
     simpa only [Measure.restrict_univ, smoothField] using he')
 
+/-- The restriction to `U` of the `W^{k,p}(Ω)` element of a test function is represented on `U`
+by that test function. -/
+theorem value_restrictL_ofTestFunctionₗ_ae (hU : U ≤ Omega) (k : ℕ) (phi : 𝓓(Omega, ℝ)) :
+    (value k (restrictL hU k (ofTestFunctionₗ (mu := mu) (p := p) k phi)) : E → ℝ)
+      =ᵐ[mu.restrict U] phi := by
+  have hmono : ae (mu.restrict (U : Set E)) ≤ ae (mu.restrict (Omega : Set E)) :=
+    ae_mono (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU))
+  filter_upwards [value_restrictL_ae hU k (ofTestFunctionₗ (mu := mu) (p := p) k phi),
+    (testFunctionLp_apply_ae (mu := mu) p phi).filter_mono hmono] with x h1 h2
+  rw [h1, value_ofTestFunctionₗ, h2]
+
 private theorem value_restrict_localTest (hp : p ≠ ∞) (hU : U ≤ Omega)
     (chi : 𝓓(Omega, ℝ)) (hchi : ∀ x ∈ U, chi x = 1)
     (phi : ContDiffBump (0 : E)) (k : ℕ) (u : Wkp mu Omega p k) :
     value k (restrictL hU k (ofTestFunctionₗ (mu := mu) (p := p) k (localTest chi phi k u))) =
       localAverage hp phi (value k u) := by
   apply Lp.ext
-  filter_upwards [value_restrictL_ae hU k
-      (ofTestFunctionₗ (mu := mu) (p := p) k (localTest chi phi k u)),
-    testFunctionLp_apply_ae (mu := mu) p (localTest chi phi k u) |>.filter_mono
-      (ae_mono (Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hU))),
+  filter_upwards [value_restrictL_ofTestFunctionₗ_ae (mu := mu) (p := p) hU k
+      (localTest chi phi k u),
     localAverage_ae (U := U) hp phi (value k u), ae_restrict_mem U.isOpen.measurableSet]
-    with x hr ht ha hx
-  rw [hr, value_ofTestFunctionₗ, ht, ha]
+    with x hr ha hx
+  rw [hr, ha]
   simp [localTest, hchi x hx]
 
 private theorem iteratedGradient_restrict_localTest (hp : p ≠ ∞) (hU : U ≤ Omega)
@@ -255,12 +264,12 @@ theorem exists_testFunction_approximation_restrictL (hp : p ≠ ∞)
         (ofTestFunctionₗ (mu := mu) (p := p) k (psi j))) atTop
         (𝓝 (restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hclosure)) k u)) := by
   obtain ⟨chi, hchi, -, hchi_one, hchi_cpt, hchi_ts⟩ :=
-    hcompact.exists_contDiff_cutoff Omega.isOpen hclosure
+    hcompact.exists_contDiff_cutoff_eventuallyEq_one Omega.isOpen hclosure
   let chiTest : 𝓓(Omega, ℝ) := ⟨chi, hchi, hchi_cpt, hchi_ts⟩
   have hchiU : ∀ x ∈ U, chiTest x = 1 := by
     intro x hx
-    simpa only [chiTest, TestFunction.coe_mk, mem_preimage, mem_singleton_iff] using
-      (interior_subset (hchi_one (subset_closure hx)))
+    simpa only [chiTest, TestFunction.coe_mk] using
+      (hchi_one x (subset_closure hx)).self_of_nhds
   obtain ⟨δ, hδ, hδO⟩ := hcompact.exists_cthickening_subset_open Omega.isOpen hclosure
   let phi : ℕ → ContDiffBump (0 : E) := fun j =>
     ⟨(δ / ((j : ℝ) + 1)) / 2, δ / ((j : ℝ) + 1), by positivity,

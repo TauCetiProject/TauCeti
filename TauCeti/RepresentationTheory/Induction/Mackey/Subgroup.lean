@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Group.Subgroup.Finite
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
+public import TauCeti.Algebra.Group.Action.End
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.GroupTheory.DoubleCoset.Finite
 public import TauCeti.GroupTheory.DoubleCoset.Orbits

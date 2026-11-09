@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.VectorBundle.Basic
+public import Mathlib.Topology.VectorBundle.Constructions
+public import Mathlib.Topology.VectorBundle.Hom
 public import TauCeti.Topology.Algebra.Module.SymmetricBilinear.Basic
 
 /-!
@@ -21,6 +22,8 @@ Each trivialization `e` of `V` induces the trivialization `e.symmetricBilinearMa
 reads a symmetric bilinear map in the coordinates of `e`, pulling both arguments back along
 `e.symmL`. The coordinate changes are the pullbacks along the coordinate changes of `V`. The
 topology on the total space is then constructed by Mathlib's `VectorPrebundle` machinery.
+The inclusion into the bundle of all bilinear maps is continuous on total spaces; in induced
+frames it is simply the continuous linear inclusion of the symmetric model fibre.
 
 The construction follows Mathlib's bundle of continuous alternating maps,
 `Mathlib.Topology.VectorBundle.ContinuousAlternatingMap`, by Yury Kudryashov,
@@ -305,5 +308,47 @@ theorem target_trivializationAt_symmetricBilinearMaps (x₀ : B) :
         (fun x ↦ symmetricBilinearMaps 𝕜 (V x) G) x₀).target =
       (trivializationAt F V x₀).baseSet ×ˢ univ :=
   (rfl)
+
+end TauCeti
+
+namespace TauCeti
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {B : Type*} [TopologicalSpace B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {V : B → Type*}
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [TopologicalSpace (TotalSpace F V)]
+  [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- In the chosen trivializations, a symmetric bilinear map has the same coordinates in the
+symmetric bundle and in the bundle of all bilinear maps. -/
+theorem coe_trivializationAt_symmetricBilinearMaps_snd {x₀ x : B}
+    (hx : x ∈ (trivializationAt F V x₀).baseSet) (b : symmetricBilinearMaps 𝕜 (V x) G) :
+    ((trivializationAt (symmetricBilinearMaps 𝕜 F G)
+        (fun x ↦ symmetricBilinearMaps 𝕜 (V x) G) x₀ ⟨x, b⟩).2 :
+        F →L[𝕜] F →L[𝕜] G) =
+      (trivializationAt (F →L[𝕜] F →L[𝕜] G) (fun x ↦ V x →L[𝕜] V x →L[𝕜] G) x₀
+        ⟨x, (b : V x →L[𝕜] V x →L[𝕜] G)⟩).2 := by
+  ext v w
+  rw [hom_trivializationAt_apply, inCoordinates_apply_eq₂ hx hx (by simp)]
+  simp [trivializationAt_symmetricBilinearMaps_apply, Trivialization.symmL_apply _ hx]
+
+/-- The inclusion of symmetric bilinear maps into all bilinear maps is continuous on total
+spaces, including when the fibres have no chosen norms. -/
+theorem continuous_totalSpace_coe_symmetricBilinearMaps :
+    Continuous (fun p : TotalSpace (symmetricBilinearMaps 𝕜 F G)
+        (fun x ↦ symmetricBilinearMaps 𝕜 (V x) G) ↦
+      TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) (E := fun x ↦ V x →L[𝕜] V x →L[𝕜] G)
+        p.1 (p.2 : V p.1 →L[𝕜] V p.1 →L[𝕜] G)) := by
+  refine continuous_iff_continuousAt.mpr fun p ↦ ?_
+  have hc := (FiberBundle.continuousAt_totalSpace (symmetricBilinearMaps 𝕜 F G) _).mp
+    (continuousAt_id (x := p))
+  rw [FiberBundle.continuousAt_totalSpace]
+  refine ⟨hc.1, ?_⟩
+  have h := (symmetricBilinearMaps 𝕜 F G).subtypeL.continuous.continuousAt.comp hc.2
+  refine h.congr_of_eventuallyEq ?_
+  filter_upwards [hc.1.preimage_mem_nhds ((trivializationAt F V p.1).open_baseSet.mem_nhds
+    (mem_baseSet_trivializationAt F V p.1))] with q hq
+  exact (coe_trivializationAt_symmetricBilinearMaps_snd hq q.2).symm
 
 end TauCeti
