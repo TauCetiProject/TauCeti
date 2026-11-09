@@ -129,13 +129,13 @@ theorem exists_compactSupportCohomologyExtend_map_eq_zero_of_iSup_eq_top (hU : M
   -- the two images of `K` in `X`, directly and through `U j`, are the same compact set
   have hle : K.map (g ≫ inclusion' (U j)) (g ≫ inclusion' (U j)).hom.continuous ≤
       (K.map g g.hom.continuous).map (inclusion' (U j))
-        (inclusion' (U j)).hom.continuous := fun x hx ↦ by
-    obtain ⟨y, hy, rfl⟩ := hx
-    exact ⟨g y, ⟨y, hy, rfl⟩, rfl⟩
+        (inclusion' (U j)).hom.continuous :=
+    (Compacts.map_comp _ _ (inclusion' (U j)).hom.continuous g.hom.continuous K).le
   have hK₂L : (K.map g g.hom.continuous).map (inclusion' (U j))
-      (inclusion' (U j)).hom.continuous ≤ L := fun x hx ↦ by
-    obtain ⟨-, ⟨y, hy, rfl⟩, rfl⟩ := hx
-    exact hKL ⟨y, hy, rfl⟩
+      (inclusion' (U j)).hom.continuous ≤ L := by
+    rw [← Compacts.map_comp]
+    convert hKL using 2
+    simp only [← ContinuousMap.coe_comp, ← TopCat.hom_comp, g, toTopCat_map_comp_inclusion']
   rw [← ConcreteCategory.comp_apply, compactSupportCohomologyι_comp_extend,
     ConcreteCategory.comp_apply]
   refine compactSupportCohomologyι_eq_zero_of_restrict_eq_zero (U j).isOpenEmbedding _ hK₂L
