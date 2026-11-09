@@ -154,6 +154,40 @@ private theorem tendsto_schwarzChristoffelCornerRemainder_deriv_div_cpow
     field_simp
   simpa only [sub_self] using h.congr' heq.symm
 
+/-- For a point `z` of `ball p ρ ∩ upperHalfPlaneSet`, the points `p + t * (z - p)` with
+`0 < t ≤ 1` of the radial segment from `p` (the endpoint `p` excluded) lie in that set. -/
+private theorem radial_mem_ball_inter_upperHalfPlaneSet {p ρ : ℝ} {z : ℂ}
+    (hz : z ∈ Metric.ball (p : ℂ) ρ ∩ upperHalfPlaneSet) {t : ℝ} (ht0 : 0 < t) (ht1 : t ≤ 1) :
+    (p : ℂ) + (t : ℂ) * (z - (p : ℂ)) ∈ Metric.ball (p : ℂ) ρ ∩ upperHalfPlaneSet := by
+  constructor
+  · simp only [Metric.mem_ball, dist_eq_norm]
+    calc
+      ‖(p : ℂ) + (t : ℂ) * (z - (p : ℂ)) - (p : ℂ)‖ = t * ‖z - (p : ℂ)‖ := by
+        rw [add_sub_cancel_left, norm_mul, norm_real, Real.norm_eq_abs, abs_of_pos ht0]
+      _ ≤ ‖z - (p : ℂ)‖ := by nlinarith [norm_nonneg (z - (p : ℂ))]
+      _ < ρ := by simpa [dist_eq_norm] using Metric.mem_ball.mp hz.1
+  · have hzim : 0 < z.im := hz.2
+    simpa using mul_pos ht0 hzim
+
+/-- The derivative of the corner remainder along a radial segment from `p`. -/
+private theorem hasDerivAt_schwarzChristoffelCornerRemainder_radial (a e : ι → ℝ)
+    (z₀ : UpperHalfPlane) (p : ℝ) (he : -1 < ∑ i with a i = p, e i) {z : ℂ}
+    (hz : z ∈ upperHalfPlaneSet) {t : ℝ} (ht0 : 0 < t) :
+    HasDerivAt (fun t : ℝ => schwarzChristoffelCornerRemainder a e z₀ p
+        ((p : ℂ) + (t : ℂ) * (z - (p : ℂ))))
+      ((z - (p : ℂ)) * (schwarzChristoffelIntegrand a e ((p : ℂ) + (t : ℂ) * (z - (p : ℂ))) -
+        schwarzChristoffelPrevertexCoefficient a e p *
+          (((p : ℂ) + (t : ℂ) * (z - (p : ℂ))) - (p : ℂ)) ^
+            ((∑ i with a i = p, e i : ℝ) : ℂ))) t := by
+  have hinner : HasDerivAt (fun t : ℝ => (p : ℂ) + (t : ℂ) * (z - (p : ℂ))) (z - (p : ℂ)) t := by
+    simpa using ((Complex.ofRealCLM.hasDerivAt (x := t)).mul_const (z - (p : ℂ))).const_add
+      (p : ℂ)
+  have hmem : (p : ℂ) + (t : ℂ) * (z - (p : ℂ)) ∈ upperHalfPlaneSet := by
+    have hzim : 0 < z.im := hz
+    simpa using mul_pos ht0 hzim
+  have houter := hasDerivAt_schwarzChristoffelCornerRemainder a e z₀ p hmem he
+  simpa [Function.comp_def] using houter.scomp t hinner
+
 /-- A radial segment estimate for the corner remainder. -/
 private theorem norm_schwarzChristoffelCornerRemainder_sub_le (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) (p : ℝ) {ε ρ : ℝ}
@@ -177,38 +211,20 @@ private theorem norm_schwarzChristoffelCornerRemainder_sub_le (a e : ι → ℝ)
   let γ : ℝ → ℂ := fun t => q + (t : ℂ) * (z - q)
   let B : ℝ → ℝ := fun t => ε * ‖z - q‖ ^ (T + 1) * t ^ T
   have hz_ne : z ≠ q := by
-    intro h
-    have := hz.2
-    rw [h] at this
-    simp [q] at this
+    rintro rfl
+    simpa [q] using hz.2
   have hnorm : 0 < ‖z - q‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hz_ne)
   have hT1 : 0 < T + 1 := by dsimp [T]; linarith
-  have hγmem : ∀ t ∈ Icc δ 1, γ t ∈ Metric.ball q ρ ∩ upperHalfPlaneSet := by
-    intro t ht
-    have ht0 : 0 < t := hδ.1.trans_le ht.1
-    constructor
-    · simp only [Metric.mem_ball, γ, dist_eq_norm]
-      have ht1 : t ≤ 1 := ht.2
-      calc
-        ‖q + (t : ℂ) * (z - q) - q‖ = t * ‖z - q‖ := by
-          rw [add_sub_cancel_left, norm_mul, norm_real, Real.norm_eq_abs, abs_of_pos ht0]
-        _ ≤ ‖z - q‖ := by nlinarith
-        _ < ρ := by simpa [q, dist_eq_norm] using Metric.mem_ball.mp hz.1
-    · have hzim : 0 < z.im := hz.2
-      simpa [γ, q] using mul_pos ht0 hzim
   have hγderiv : ∀ t ∈ Icc δ 1, HasDerivAt (fun t : ℝ => R (γ t))
       ((z - q) * (schwarzChristoffelIntegrand a e (γ t) - C *
-        (γ t - q) ^ (T : ℂ))) t := by
-    intro t ht
-    have hinner : HasDerivAt γ (z - q) t := by
-      simpa [γ] using ((Complex.ofRealCLM.hasDerivAt (x := t)).mul_const (z - q)).const_add q
-    have houter := hasDerivAt_schwarzChristoffelCornerRemainder a e z₀ p (hγmem t ht).2 he
-    simpa [R, q, T, C, Function.comp_def] using houter.scomp t hinner
+        (γ t - q) ^ (T : ℂ))) t :=
+    fun t ht => hasDerivAt_schwarzChristoffelCornerRemainder_radial a e z₀ p he hz.2
+      (hδ.1.trans_le ht.1)
   have hderiv_le : ∀ t ∈ Icc δ 1, ‖deriv (fun t : ℝ => R (γ t)) t‖ ≤ B t := by
     intro t ht
     rw [(hγderiv t ht).deriv, norm_mul]
     have ht0 : 0 < t := hδ.1.trans_le ht.1
-    have hbound := hbd (γ t) (by simpa [q] using hγmem t ht)
+    have hbound := hbd (γ t) (radial_mem_ball_inter_upperHalfPlaneSet hz ht0 ht.2)
     have hdist : dist (γ t) q = t * ‖z - q‖ := by
       simp only [γ, dist_eq_norm, add_sub_cancel_left, norm_mul, norm_real,
         Real.norm_eq_abs, abs_of_pos ht0]
