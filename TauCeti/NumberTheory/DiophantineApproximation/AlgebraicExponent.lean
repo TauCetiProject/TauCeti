@@ -138,36 +138,19 @@ theorem algebraicApproximationExponent_zero (ξ : ℝ) : algebraicApproximationE
 
 /-! ### Comparison with Mahler's exponent -/
 
-/-- If infinitely many algebraic numbers of degree at most `n` approximate `ξ` with exponent `w`,
-then for every `0 ≤ w' < w` infinitely many integer polynomials `P` of degree at most `n` satisfy
-`0 < |P(ξ)| ≤ H(P) ^ (-w')`: the primitive minimal polynomials of all but finitely many of the
-approximations. -/
-private theorem infinite_linearFormApproximations_of_infinite {n : ℕ} {ξ w w' : ℝ}
-    (hw' : 0 ≤ w') (hww' : w' < w) (h : (algebraicApproximations n ξ w).Infinite) :
-    (linearFormApproximations (fun j : Fin n ↦ ξ ^ (j.val + 1)) w').Infinite := by
+/-- The estimate for a single approximation: if `α` is algebraic of degree at most `n`, is not a
+conjugate of `ξ`, and approximates `ξ` with exponent `w`, where
+`(n + 1) (2 + |ξ|) ^ n ≤ H(α) ^ (w - w')`, then the coefficient vector of its primitive minimal
+polynomial is a `w'`-approximation of the linear form in `ξ, ξ², …, ξⁿ`. -/
+private theorem coeffVec_primitiveMinpoly_mem_linearFormApproximations {n : ℕ} {ξ w w' : ℝ}
+    {α : ℂ} (hw' : 0 ≤ w') (hww' : w' < w) (halg : IsAlgebraic ℚ α)
+    (hdeg : (minpoly ℚ α).natDegree ≤ n)
+    (hle : ‖(ξ : ℂ) - α‖ ≤ naiveHeight α ^ (-w - 1)) (hconj : α ∉ (minpoly ℚ ξ).rootSet ℂ)
+    (hR : (n + 1) * (2 + |ξ|) ^ n ≤ naiveHeight α ^ (w - w')) :
+    coeffVec n (primitiveMinpoly α) ∈
+      linearFormApproximations (fun j : Fin n ↦ ξ ^ (j.val + 1)) w' := by
   set K : ℝ := (n + 1) * (2 + |ξ|) ^ n
-  obtain ⟨R, hR⟩ := eventually_atTop.1 <|
-    (tendsto_rpow_atTop (sub_pos.2 hww')).eventually_ge_atTop K
-  -- Discard the conjugates of `ξ` and the finitely many approximations of height at most `R`.
-  set S := algebraicApproximations n ξ w \ ((minpoly ℚ ξ).rootSet ℂ ∪
-    {α : ℂ | IsAlgebraic ℚ α ∧ (minpoly ℚ α).natDegree ≤ n ∧ naiveHeight α ≤ R})
-  have hS : S.Infinite :=
-    h.sdiff (((minpoly ℚ ξ).rootSet_finite ℂ).union (finite_setOf_naiveHeight_le n R).1)
-  -- Each polynomial has finitely many roots, so the primitive minimal polynomials of `S` form an
-  -- infinite set.
-  have hT : (primitiveMinpoly '' S).Infinite := fun hfin ↦
-    hS <| (hfin.biUnion fun P _ ↦ P.rootSet_finite ℂ).subset fun α hα ↦
-      Set.mem_biUnion (Set.mem_image_of_mem _ hα)
-        (mem_rootSet.2 ⟨primitiveMinpoly_ne_zero α, aeval_primitiveMinpoly hα.1.1⟩)
-  have hinj : Set.InjOn (coeffVec n) (primitiveMinpoly '' S) := (coeffVec_injOn n).mono <| by
-    rintro _ ⟨α, hα, rfl⟩
-    simpa using hα.1.2.1
-  refine (hT.image hinj).mono ?_
-  rintro _ ⟨_, ⟨α, ⟨⟨halg, hdeg, -, hle⟩, hα⟩, rfl⟩, rfl⟩
-  simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_and, not_le] at hα
-  obtain ⟨hconj, hR'⟩ := hα
   set H := naiveHeight α
-  have hH : R < H := hR' halg hdeg
   have hH₁ : 1 ≤ H := one_le_naiveHeight α
   have hH₀ : 0 < H := zero_lt_one.trans_le hH₁
   have hdegP : (primitiveMinpoly α).natDegree ≤ n := by rwa [natDegree_primitiveMinpoly]
@@ -200,13 +183,43 @@ private theorem infinite_linearFormApproximations_of_infinite {n : ℕ} {ξ w w'
         field_simp
     _ ≤ H ^ (w - w') * H ^ (-w) := by
         gcongr
-        exact hR H hH.le
     _ = H ^ (-w') := by
         rw [← Real.rpow_add hH₀]
         ring_nf
     _ ≤ ‖x‖ ^ (-w') :=
         Real.rpow_le_rpow_of_nonpos (norm_pos_iff.2 hx₀)
           ((norm_coeffVec_le n _).trans_eq (naiveHeight_def α).symm) (neg_nonpos.2 hw')
+
+/-- If infinitely many algebraic numbers of degree at most `n` approximate `ξ` with exponent `w`,
+then for every `0 ≤ w' < w` infinitely many integer polynomials `P` of degree at most `n` satisfy
+`0 < |P(ξ)| ≤ H(P) ^ (-w')`: the primitive minimal polynomials of all but finitely many of the
+approximations. -/
+private theorem infinite_linearFormApproximations_of_infinite {n : ℕ} {ξ w w' : ℝ}
+    (hw' : 0 ≤ w') (hww' : w' < w) (h : (algebraicApproximations n ξ w).Infinite) :
+    (linearFormApproximations (fun j : Fin n ↦ ξ ^ (j.val + 1)) w').Infinite := by
+  set K : ℝ := (n + 1) * (2 + |ξ|) ^ n
+  obtain ⟨R, hR⟩ := eventually_atTop.1 <|
+    (tendsto_rpow_atTop (sub_pos.2 hww')).eventually_ge_atTop K
+  -- Discard the conjugates of `ξ` and the finitely many approximations of height at most `R`.
+  set S := algebraicApproximations n ξ w \ ((minpoly ℚ ξ).rootSet ℂ ∪
+    {α : ℂ | IsAlgebraic ℚ α ∧ (minpoly ℚ α).natDegree ≤ n ∧ naiveHeight α ≤ R})
+  have hS : S.Infinite :=
+    h.sdiff (((minpoly ℚ ξ).rootSet_finite ℂ).union (finite_setOf_naiveHeight_le n R).1)
+  -- Each polynomial has finitely many roots, so the primitive minimal polynomials of `S` form an
+  -- infinite set.
+  have hT : (primitiveMinpoly '' S).Infinite := fun hfin ↦
+    hS <| (hfin.biUnion fun P _ ↦ P.rootSet_finite ℂ).subset fun α hα ↦
+      Set.mem_biUnion (Set.mem_image_of_mem _ hα)
+        (mem_rootSet.2 ⟨primitiveMinpoly_ne_zero α, aeval_primitiveMinpoly hα.1.1⟩)
+  have hinj : Set.InjOn (coeffVec n) (primitiveMinpoly '' S) := (coeffVec_injOn n).mono <| by
+    rintro _ ⟨α, hα, rfl⟩
+    simpa using hα.1.2.1
+  refine (hT.image hinj).mono ?_
+  rintro _ ⟨_, ⟨α, ⟨⟨halg, hdeg, -, hle⟩, hα⟩, rfl⟩, rfl⟩
+  simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_and, not_le] at hα
+  obtain ⟨hconj, hR'⟩ := hα
+  exact coeffVec_primitiveMinpoly_mem_linearFormApproximations hw' hww' halg hdeg hle hconj
+    (hR _ (hR' halg hdeg).le)
 
 /-- **Approximation by algebraic numbers versus small polynomial values** (Bugeaud,
 Theorem 2.5). For every real `ξ` and every `n`, Koksma's exponent is at most Mahler's exponent:
