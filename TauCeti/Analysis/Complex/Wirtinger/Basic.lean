@@ -275,6 +275,14 @@ theorem _root_.DifferentiableAt.wirtingerDeriv_eq_fderiv {g : V → W} {x : V}
   simp only [ContinuousLinearMap.coe_restrictScalars', map_smul, smul_smul, I_mul_I]
   module
 
+/-- The Wirtinger derivative of the identity is the identity: `∂z = 1`. -/
+theorem wirtingerDeriv_id : wirtingerDeriv (id : V → V) x = ContinuousLinearMap.id ℂ V := by
+  rw [(differentiableAt_id (𝕜 := ℂ)).wirtingerDeriv_eq_fderiv, fderiv_id]
+
+/-- The conjugate Wirtinger derivative of the identity vanishes: `\bar∂z = 0`. -/
+theorem conjWirtingerDeriv_id : conjWirtingerDeriv (id : V → V) x = 0 :=
+  (differentiableAt_id (𝕜 := ℂ)).conjWirtingerDeriv_eq_zero
+
 /-- For a real function, the conjugate Wirtinger derivative is the complex conjugate of the
 Wirtinger derivative. -/
 theorem conjWirtingerDeriv_ofReal_comp_apply (f : V → ℝ) (x v : V) :

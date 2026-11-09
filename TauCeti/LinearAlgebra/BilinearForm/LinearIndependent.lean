@@ -6,26 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Basic
-public import Mathlib.LinearAlgebra.LinearIndependent.Defs
-public import Mathlib.LinearAlgebra.Matrix.Nondegenerate
-import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import Mathlib.LinearAlgebra.Matrix.Nonsingular
 
 /-!
 # Linear independence from the Gram matrix of a bilinear form
 
-A family of vectors whose Gram matrix with respect to a bilinear form has nonzero determinant is
-linearly independent, over any commutative ring without zero divisors. A linear relation
-`∑ x, g x • c x = 0` pairs with every `c y` to give `G *ᵥ g = 0` for the Gram matrix `G`, and a
-square matrix with nonzero determinant has trivial kernel (`Matrix.eq_zero_of_mulVec_eq_zero`).
-Mathlib has the matrix statement but not the bilinear-form criterion.
-
-The more general unit-determinant criterion allows a common non-zero-divisor factor in the Gram
-matrix, without requiring the coefficient ring to have no zero divisors.
+A finite family `c` of vectors is linearly independent as soon as its Gram matrix
+`G x y = B (c x) (c y)` with respect to a bilinear form `B` is nonsingular: the rows of `G` are
+the images of the `c x` under the linear map `m ↦ (y ↦ B m (c y))`, and the rows of a nonsingular
+matrix are linearly independent (`Matrix.Nonsingular.linearIndependent_row`). Over a commutative
+ring a matrix is nonsingular exactly when its determinant is a non-zero-divisor
+(`Matrix.nonsingular_iff_det_mem_nonZeroDivisors`), which gives the determinant criteria below.
 
 ## Main results
 
-* `LinearMap.BilinForm.linearIndependent_of_det_ne_zero`: a family whose Gram matrix with respect
-  to a bilinear form has nonzero determinant is linearly independent.
+* `LinearMap.BilinForm.linearIndependent_of_nonsingular`: over a commutative semiring with
+  cancellative addition, a family whose Gram matrix is nonsingular is linearly independent.
+* `LinearMap.BilinForm.linearIndependent_of_det_ne_zero`: over a commutative ring without zero
+  divisors, a family whose Gram matrix has nonzero determinant is linearly independent.
+* `LinearMap.BilinForm.linearIndependent_of_isUnit_det`: a family whose Gram matrix is a
+  non-zero-divisor times a matrix of unit determinant is linearly independent.
 -/
 
 public section
@@ -35,38 +35,41 @@ namespace LinearMap.BilinForm
 open LinearMap (BilinForm)
 open Matrix
 
-variable {R M : Type*} [CommRing R] [NoZeroDivisors R] [AddCommGroup M] [Module R M]
+variable {R M ι : Type*} [AddCommMonoid M] [Fintype ι] [DecidableEq ι]
+
+section CommSemiring
+
+variable [CommSemiring R] [IsCancelAdd R] [Module R M]
+
+/-- A family whose Gram matrix with respect to a bilinear form is nonsingular is linearly
+independent. -/
+theorem linearIndependent_of_nonsingular (B : BilinForm R M) {c : ι → M}
+    (h : (Matrix.of fun x y => B (c x) (c y)).Nonsingular) : LinearIndependent R c :=
+  -- The map `m ↦ (y ↦ B m (c y))` sends `c x` to row `x` of the Gram matrix, by definition.
+  .of_comp (LinearMap.pi fun y => B.flip (c y)) h.linearIndependent_row
+
+end CommSemiring
+
+section CommRing
+
+variable [CommRing R] [Module R M]
 
 /-- A family whose Gram matrix with respect to a bilinear form has nonzero determinant is
 linearly independent. -/
-theorem linearIndependent_of_det_ne_zero {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (B : BilinForm R M) {c : ι → M}
-    (h : (Matrix.of fun x y => B (c x) (c y)).det ≠ 0) : LinearIndependent R c := by
-  rw [Fintype.linearIndependent_iff]
-  intro g hg
-  refine congrFun (Matrix.eq_zero_of_mulVec_eq_zero h (v := g) ?_)
-  funext y
-  calc Matrix.mulVec (Matrix.of fun x y => B (c x) (c y)) g y = B (c y) (∑ x, g x • c x) := by
-        simp [Matrix.mulVec, dotProduct, mul_comm]
-    _ = 0 := by rw [hg, map_zero]
+theorem linearIndependent_of_det_ne_zero [NoZeroDivisors R] (B : BilinForm R M) {c : ι → M}
+    (h : (Matrix.of fun x y => B (c x) (c y)).det ≠ 0) : LinearIndependent R c :=
+  B.linearIndependent_of_nonsingular <|
+    nonsingular_iff_det_mem_nonZeroDivisors.mpr <| mem_nonZeroDivisors_of_ne_zero h
 
-omit [NoZeroDivisors R] in
 /-- If the Gram matrix of a finite family `v` is `a` times a matrix of unit determinant, with `a` a
 non-zero-divisor, then `v` is linearly independent. -/
-theorem linearIndependent_of_isUnit_det {B : BilinForm R M} {a : R} {ι : Type*}
-    [Fintype ι] [DecidableEq ι] {v : ι → M}
+theorem linearIndependent_of_isUnit_det {B : BilinForm R M} {a : R} {v : ι → M}
     {G : Matrix ι ι R} (ha : a ∈ nonZeroDivisors R) (hG : ∀ i j, B (v i) (v j) = a * G i j)
     (hdet : IsUnit G.det) : LinearIndependent R v := by
-  refine Fintype.linearIndependent_iff.mpr fun g hg ↦ ?_
-  have hgG : g ᵥ* G = 0 := funext fun j ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp (by
-    have := congrArg (fun x ↦ B x (v j)) hg
-    simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul, hG,
-      map_zero, LinearMap.zero_apply] at this
-    rw [Pi.zero_apply, mul_zero, ← this, vecMul, dotProduct, Finset.mul_sum]
-    exact Finset.sum_congr rfl fun i _ ↦ by ring)
-  have hg0 : g = 0 := Matrix.vecMul_injective_of_isUnit
-    ((Matrix.isUnit_iff_isUnit_det G).mpr hdet) (hgG.trans (Matrix.zero_vecMul G).symm)
-  intro i
-  simpa only [Pi.zero_apply] using congrFun hg0 i
+  refine B.linearIndependent_of_nonsingular <| nonsingular_iff_det_mem_nonZeroDivisors.mpr ?_
+  rw [show (Matrix.of fun i j => B (v i) (v j)) = a • G by ext; simp [hG], det_smul]
+  exact mul_mem (pow_mem ha _) hdet.mem_nonZeroDivisors
+
+end CommRing
 
 end LinearMap.BilinForm

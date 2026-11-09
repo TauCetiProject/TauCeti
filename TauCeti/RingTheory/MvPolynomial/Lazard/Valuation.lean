@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Algebra.Polynomial.Degree.TrailingDegree
 public import Mathlib.RingTheory.MvPowerSeries.LexOrder
+public import TauCeti.Algebra.MvPolynomial.Equiv
 public import TauCeti.Data.Finsupp.MapDomain
 public import TauCeti.Data.Finsupp.Weight
 public import TauCeti.RingTheory.MvPolynomial.OrderAt
+import Mathlib.Algebra.MvPolynomial.Polynomial
 
 /-!
 # The Lazard valuation of a multivariate polynomial at a point
@@ -231,6 +233,27 @@ theorem coeff_aeval_monomialCurve (a : σ → R) (c : σ → ℕ) (p : MvPolynom
   conv_lhs => rw [aeval_monomialCurve, (taylor a p).as_sum, map_sum]
   simp only [aeval_X_pow_left_monomial, Polynomial.finsetSum_coeff, Polynomial.coeff_monomial,
     Finset.sum_ite, Finset.sum_const_zero, add_zero]
+
+/-- Substituting the monomial curve into the coefficient-mapped rotated polynomial and evaluating at
+the distinguished variable is the same as substituting the curve into the coefficients of `p`.
+Here `f` is the coefficient homomorphism. -/
+theorem aeval_monomialCurve_map_optionEquivRight_eval {S : Type*} [CommSemiring S] (f : R →+* S)
+    (p : Polynomial (MvPolynomial σ R)) (s : σ → S) (d : ℕ) (c : σ → ℕ) (y : S) :
+    (aeval (monomialCurve (Polynomial.C ∘ s) (d • c)) (map (Polynomial.mapRingHom f)
+      (optionEquivRight R σ ((optionEquivLeft R σ).symm p)))).eval (Polynomial.C y) =
+        p.map (eval₂Hom f (fun j ↦ s j + y ^ (d * c j))) := by
+  simp only [aeval_def, Polynomial.algebraMap_eq, polynomial_eval_eval₂, monomialCurve_apply,
+    Polynomial.eval_add, Polynomial.eval_C, Polynomial.eval_pow, Polynomial.eval_X,
+    Function.comp_apply, Pi.smul_apply, smul_eq_mul, ← Polynomial.C_pow, ← Polynomial.C_add]
+  rw [← coe_eval₂Hom, eval₂Hom_map_hom]
+  have hcoeff : ((Polynomial.evalRingHom (Polynomial.C y)).comp Polynomial.C).comp
+      (Polynomial.mapRingHom f) = Polynomial.mapRingHom f := by
+    apply RingHom.ext
+    intro b
+    simp only [RingHom.comp_apply, Polynomial.coe_evalRingHom, Polynomial.eval_C]
+  rw [hcoeff]
+  simpa only [AlgEquiv.trans_apply, Function.comp_def] using
+    eval₂Hom_optionEquivRight_optionEquivLeft_symm f (fun j ↦ s j + y ^ (d * c j)) p
 
 end Substitution
 

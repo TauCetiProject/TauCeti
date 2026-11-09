@@ -45,7 +45,7 @@ map may lose injectivity or local invertibility, so no canonical smooth global i
   a smaller closed tangent ball inside a larger normal ball has compact exponential image.
 * `TauCeti.Manifold.IsNormalDomain.isOpen_image`: a normal neighbourhood is open.
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_riemannianExp` and
-  `TauCeti.Manifold.IsNormalDomain.riemannianExp_riemannianLog`: the two inverse identities.
+  `TauCeti.Manifold.riemannianExp_riemannianLog`: the two inverse identities.
 * `TauCeti.Manifold.IsNormalDomain.riemannianLog_self`: the logarithm vanishes at the base point.
 * `TauCeti.Manifold.IsNormalDomain.contMDiffOn_riemannianLog`: the logarithm is smooth on the
   normal neighbourhood.
@@ -135,9 +135,11 @@ theorem smul_mem (h : IsNormalDomain I M p U) (hv : v ∈ U) (ht₀ : 0 ≤ t) (
 /-- **The radial geodesic of a normal domain is defined up to time one.**  The maximal geodesic
 from `p` with initial velocity a vector `v` of a normal domain exists on `[0, 1]`; by
 `riemannianExp_smul` its value at `t` is the exponential of `t • v`. -/
-theorem mem_geodesicInterval [I.Boundaryless] (h : IsNormalDomain I M p U) (hv : v ∈ U)
+theorem mem_geodesicInterval (h : IsNormalDomain I M p U) (hv : v ∈ U)
     (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) : t ∈ geodesicInterval I M p v :=
-  mem_geodesicInterval_iff_smul_mem_expDomain.2 (h.subset_expDomain (h.smul_mem hv ht₀ ht₁))
+  ordConnected_geodesicInterval.out
+    (zero_mem_geodesicInterval_of_mem (mem_expDomain_iff.1 (h.subset_expDomain hv)))
+    (mem_expDomain_iff.1 (h.subset_expDomain hv)) ⟨ht₀, ht₁⟩
 
 variable [I.Boundaryless] [T2Space M]
 
@@ -230,6 +232,24 @@ theorem riemannianLog_def (p : M) (U : Set (TangentSpace I p)) :
     riemannianLog I M p U = invFunOn (riemannianExp I M p) U := by
   rfl
 
+section
+
+variable {p : M} {U : Set (TangentSpace I p)} {q : M}
+
+/-- The logarithm of a point of `exp_p '' U` lies in `U`. -/
+theorem riemannianLog_mem (hq : q ∈ riemannianExp I M p '' U) :
+    riemannianLog I M p U q ∈ U := by
+  rw [riemannianLog_def]
+  exact invFunOn_mem hq
+
+/-- **The exponential map inverts the logarithm** on `exp_p '' U`. -/
+@[simp] theorem riemannianExp_riemannianLog (hq : q ∈ riemannianExp I M p '' U) :
+    riemannianExp I M p (riemannianLog I M p U q) = q := by
+  rw [riemannianLog_def]
+  exact invFunOn_eq hq
+
+end
+
 namespace IsNormalDomain
 
 variable {p : M} {U : Set (TangentSpace I p)} {v : TangentSpace I p} {q : M}
@@ -239,20 +259,6 @@ variable {p : M} {U : Set (TangentSpace I p)} {v : TangentSpace I p} {q : M}
     riemannianLog I M p U (riemannianExp I M p v) = v := by
   rw [riemannianLog_def]
   exact h.injOn.leftInvOn_invFunOn hv
-
-/-- The logarithm of a point of a normal neighbourhood lies in the normal domain. -/
-theorem riemannianLog_mem (h : IsNormalDomain I M p U) (hq : q ∈ riemannianExp I M p '' U) :
-    riemannianLog I M p U q ∈ U := by
-  obtain ⟨w, hw, rfl⟩ := hq
-  rw [h.riemannianLog_riemannianExp hw]
-  exact hw
-
-/-- **The exponential map inverts the logarithm** on a normal neighbourhood. -/
-@[simp] theorem riemannianExp_riemannianLog (h : IsNormalDomain I M p U)
-    (hq : q ∈ riemannianExp I M p '' U) :
-    riemannianExp I M p (riemannianLog I M p U q) = q := by
-  obtain ⟨w, hw, rfl⟩ := hq
-  rw [h.riemannianLog_riemannianExp hw]
 
 /-- **The Riemannian logarithm is smooth** on the normal neighbourhood it inverts. -/
 theorem contMDiffOn_riemannianLog (h : IsNormalDomain I M p U) :
@@ -302,6 +308,7 @@ def toPartialDiffeomorph (h : IsNormalDomain I M p U) :
 
 variable [I.Boundaryless] [T2Space M]
 
+omit [I.Boundaryless] [T2Space M] in
 /-- The differential of the logarithm at `exp_p v` is a left inverse of the differential of the
 exponential map at a vector `v` of the normal domain. -/
 theorem mfderiv_riemannianLog_comp_mfderiv_riemannianExp (h : IsNormalDomain I M p U)
@@ -314,10 +321,11 @@ theorem mfderiv_riemannianLog_comp_mfderiv_riemannianExp (h : IsNormalDomain I M
     Filter.eventually_of_mem (h.isOpen.mem_nhds hv) fun u hu ↦ h.riemannianLog_riemannianExp hu
   exact hasMFDerivAt_unique
     ((h.mdifferentiableAt_riemannianLog hq).hasMFDerivAt.comp v
-      ((contMDiffAt_riemannianExp (h.subset_expDomain hv)).mdifferentiableAt
+      ((h.isLocalDiffeomorphOn ⟨v, hv⟩).contMDiffAt.mdifferentiableAt
         (by simp)).hasMFDerivAt)
     ((hasMFDerivAt_id v).congr_of_eventuallyEq_abuse heq)
 
+omit [I.Boundaryless] [T2Space M] in
 /-- The differential of the logarithm at `exp_p v` is a right inverse of the differential of the
 exponential map at a vector `v` of the normal domain. -/
 theorem mfderiv_riemannianExp_comp_mfderiv_riemannianLog (h : IsNormalDomain I M p U)
@@ -328,17 +336,18 @@ theorem mfderiv_riemannianExp_comp_mfderiv_riemannianLog (h : IsNormalDomain I M
   have hq : riemannianExp I M p v ∈ riemannianExp I M p '' U := mem_image_of_mem _ hv
   have heq : riemannianExp I M p ∘ riemannianLog I M p U =ᶠ[𝓝 (riemannianExp I M p v)] id :=
     Filter.eventually_of_mem (h.isOpen_image.mem_nhds hq) fun q hq ↦
-      h.riemannianExp_riemannianLog hq
+      riemannianExp_riemannianLog hq
   have hexp : MDifferentiableAt 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p)
       (riemannianLog I M p U (riemannianExp I M p v)) := by
     rw [h.riemannianLog_riemannianExp hv]
-    exact (contMDiffAt_riemannianExp (h.subset_expDomain hv)).mdifferentiableAt (by simp)
+    exact (h.isLocalDiffeomorphOn ⟨v, hv⟩).contMDiffAt.mdifferentiableAt (by simp)
   have hcomp := hasMFDerivAt_unique
     (hexp.hasMFDerivAt.comp (riemannianExp I M p v)
       (h.mdifferentiableAt_riemannianLog hq).hasMFDerivAt)
     ((hasMFDerivAt_id (riemannianExp I M p v)).congr_of_eventuallyEq_abuse heq)
   rwa [h.riemannianLog_riemannianExp hv] at hcomp
 
+omit [I.Boundaryless] [T2Space M] in
 /-- The differential of the logarithm is invertible at every point of the normal
 neighbourhood. -/
 theorem isInvertible_mfderiv_riemannianLog (h : IsNormalDomain I M p U)
