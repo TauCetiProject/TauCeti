@@ -25,15 +25,20 @@ its preimage `p ⁻¹' E`, and a component `E'` of `X ×_K Spec L` to its image 
 irreducible components of a geometric fibre do not depend on the chosen algebraically closed
 field.
 
+The file also transports geometric irreducibility through surjective images, dominant maps
+over a field, and nonempty open subschemes, and supplies geometric connectedness.
+
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.geometricallyIrreducible_Spec_of_isAlgClosed`: over an algebraically
   closed field, a morphism from the spectrum of a domain is geometrically irreducible.
 
-* `TauCeti.AlgebraicGeometry.GeometricallyIrreducible.of_surjective`: geometric irreducibility
+* `TauCeti.AlgebraicGeometry.GeometricallyIrreducible.geometricallyConnected`: the low-priority
+  instance that geometric irreducibility implies geometric connectedness.
+* `TauCeti.AlgebraicGeometry.GeometricallyIrreducible.of_comp_surjective`: geometric irreducibility
   descends along a surjective morphism.
 * `TauCeti.AlgebraicGeometry.GeometricallyIrreducible.comp_of_isOpenImmersion` and
-  `TauCeti.AlgebraicGeometry.GeometricallyIrreducible.of_dense_open`: geometric irreducibility
+  `TauCeti.AlgebraicGeometry.GeometricallyIrreducible.of_comp_isDominant`: geometric irreducibility
   passes to nonempty opens and extends from dense opens.
 
 The image and dense-open results are adapted from Axel Delaval, Jie Xu, and Shitan Xu's Jacobian
@@ -80,17 +85,26 @@ instance (priority := low) GeometricallyIrreducible.geometricallyConnected
     GeometricallyIrreducible.geometrically_irreducibleSpace point first second square
   infer_instance
 
+/-- Base-changing the source of a geometrically irreducible composite to a field gives an
+irreducible scheme. -/
+lemma GeometricallyIrreducible.irreducibleSpace_pullback_of_comp
+    {source target base fiber : Scheme.{u}} (f : source ⟶ target) (g : target ⟶ base)
+    [GeometricallyIrreducible (f ≫ g)] {field : Type u} [Field field]
+    {point : Spec (.of field) ⟶ base} {first : fiber ⟶ target}
+    {second : fiber ⟶ Spec (.of field)} (square : IsPullback first second g point) :
+    IrreducibleSpace (pullback f first : Scheme.{u}) :=
+  GeometricallyIrreducible.geometrically_irreducibleSpace _ _ _
+    ((IsPullback.of_hasPullback f first).paste_vert square)
+
 /-- Geometric irreducibility descends along a surjective morphism of schemes. -/
-lemma GeometricallyIrreducible.of_surjective {source target base : Scheme.{u}}
+lemma GeometricallyIrreducible.of_comp_surjective {source target base : Scheme.{u}}
     (sourceToTarget : source ⟶ target) (targetToBase : target ⟶ base)
     [Surjective sourceToTarget] [GeometricallyIrreducible (sourceToTarget ≫ targetToBase)] :
     GeometricallyIrreducible targetToBase := by
   refine ⟨fun field _ point fiber first second square ↦ ?_⟩
-  have compositeSquare : IsPullback (pullback.fst sourceToTarget first)
-      (pullback.snd sourceToTarget first ≫ second) (sourceToTarget ≫ targetToBase) point :=
-    (IsPullback.of_hasPullback sourceToTarget first).paste_vert square
   have : IrreducibleSpace (pullback sourceToTarget first : Scheme.{u}) :=
-    GeometricallyIrreducible.geometrically_irreducibleSpace _ _ _ compositeSquare
+    GeometricallyIrreducible.irreducibleSpace_pullback_of_comp
+      sourceToTarget targetToBase square
   exact Function.Surjective.irreducibleSpace (pullback.snd sourceToTarget first).continuous
     (pullback.snd sourceToTarget first).surjective
 
@@ -105,26 +119,23 @@ lemma GeometricallyIrreducible.comp_of_isOpenImmersion {field : Type u} [Field f
     ⟨fun point ↦ ⟨Classical.choice ‹Nonempty source›, Subsingleton.elim _ point⟩⟩
   infer_instance
 
-/-- Geometric irreducibility over a field extends from a dense open subscheme. -/
-lemma GeometricallyIrreducible.of_dense_open {field : Type u} [Field field]
-    {source target : Scheme.{u}} (immersion : source ⟶ target) [IsOpenImmersion immersion]
-    (structureMap : target ⟶ Spec (.of field)) (denseRange : DenseRange immersion)
-    [GeometricallyIrreducible (immersion ≫ structureMap)] :
+/-- Geometric irreducibility of a composite over a field descends along a dominant morphism. -/
+lemma GeometricallyIrreducible.of_comp_isDominant {field : Type u} [Field field]
+    {source target : Scheme.{u}} (morphism : source ⟶ target) [IsDominant morphism]
+    (structureMap : target ⟶ Spec (.of field))
+    [GeometricallyIrreducible (morphism ≫ structureMap)] :
     GeometricallyIrreducible structureMap := by
   refine ⟨fun extensionField _ point fiber first second square ↦ ?_⟩
-  have compositeSquare : IsPullback (pullback.fst immersion first)
-      (pullback.snd immersion first ≫ second) (immersion ≫ structureMap) point :=
-    (IsPullback.of_hasPullback immersion first).paste_vert square
-  let : IrreducibleSpace (pullback immersion first : Scheme.{u}) :=
-    GeometricallyIrreducible.geometrically_irreducibleSpace _ _ _ compositeSquare
-  let : UniversallyOpen first := MorphismProperty.of_isPullback square.flip inferInstance
-  have denseImage : Dense (Set.range (pullback.snd immersion first)) := by
-    rw [IsOpenImmersion.range_pullbackSnd]
-    exact (show Dense (Set.range immersion) from denseRange).preimage first.isOpenMap
-  have irreducibleImage : IsIrreducible (Set.range (pullback.snd immersion first)) := by
+  have : IrreducibleSpace (pullback morphism first : Scheme.{u}) :=
+    GeometricallyIrreducible.irreducibleSpace_pullback_of_comp morphism structureMap square
+  have : UniversallyOpen first := MorphismProperty.of_isPullback square.flip inferInstance
+  have denseImage : Dense (Set.range (pullback.snd morphism first)) := by
+    rw [Scheme.Pullback.range_snd]
+    exact morphism.denseRange.preimage first.isOpenMap
+  have irreducibleImage : IsIrreducible (Set.range (pullback.snd morphism first)) := by
     simpa only [Set.image_univ] using
-      (IrreducibleSpace.isIrreducible_univ (pullback immersion first : Scheme.{u})).image
-        (pullback.snd immersion first) (pullback.snd immersion first).continuous.continuousOn
+      (IrreducibleSpace.isIrreducible_univ (pullback morphism first : Scheme.{u})).image
+        (pullback.snd morphism first) (pullback.snd morphism first).continuous.continuousOn
   apply (irreducibleSpace_def fiber).mpr
   simpa only [denseImage.closure_eq, Set.top_eq_univ] using irreducibleImage.closure
 
