@@ -43,7 +43,7 @@ noncomputable def pullback (ρ : puiseuxField K →A[K] puiseuxField K) :
   map_smul' f ω := by
     simp only [map_smul, smul_eq_mul, map_mul, mul_assoc]
     rw [← smul_eq_mul, map_smul]
-    rfl
+    simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ContinuousAlgHom.coe_coe]
 
 /-- In the frame `dt`, pullback includes the Jacobian `d(ρ(t))/dt`. -/
 @[simp]
@@ -72,7 +72,7 @@ theorem pullback_mk (ρ : puiseuxField K →A[K] puiseuxField K)
   | mem ω hω =>
     obtain ⟨x, rfl⟩ := hω
     rw [← D_apply, pullback_D, KaehlerDifferential.mapSemilinear_D, D_apply]
-    rfl
+    simp only [ContinuousAlgHom.coe_coe]
   | zero => rw [map_zero, map_zero, map_zero, map_zero]
   | add ω η _ _ hω hη => simp only [map_add, hω, hη]
   | smul a ω _ hω => simp only [map_smul, map_smulₛₗ, hω]
@@ -88,13 +88,7 @@ theorem eq_pullback_of_apply_D_single_one (ρ : puiseuxField K →A[K] puiseuxFi
 theorem pullback_injective (ρ : puiseuxField K →A[K] puiseuxField K) :
     Function.Injective (pullback ρ) := by
   have hJac : derivation K (ρ (single K 1 1)) ≠ 0 := by
-    intro hzero
-    obtain ⟨a, ha⟩ := derivation_eq_zero_iff.mp hzero
-    have ht : algebraMap K (puiseuxField K) a = single K 1 1 :=
-      ρ.toAlgHom.injective ((ρ.commutes a).trans ha)
-    have hd := congrArg (derivation K) ht
-    rw [Derivation.map_algebraMap, derivation_single_one] at hd
-    exact zero_ne_one hd
+    simpa only [ContinuousAlgHom.coe_coe] using derivation_map_single_one_ne_zero ρ.toAlgHom
   intro ω η h
   have hc := congrArg (equivPuiseuxField K) h
   rw [equivPuiseuxField_pullback, equivPuiseuxField_pullback,
