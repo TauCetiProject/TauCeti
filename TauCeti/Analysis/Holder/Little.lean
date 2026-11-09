@@ -31,11 +31,12 @@ difference quotients tend to zero at small scales: for every `ε > 0` there is `
 * `TauCeti.HolderSpace.isClosed_littleHolder`: the little Hölder space is closed in the
   supremum-plus-Hölder norm.
 * `TauCeti.HolderSpace.exists_contDiff_lipschitzWith_norm_sub_lt` and
-  `TauCeti.HolderSpace.littleHolder_eq_closure`: on a finite-dimensional real normed space and
-  for `α < 1`, the little Hölder space is the closure of the smooth Lipschitz functions. A little
-  Hölder function is approximated by its convolutions with normalized bumps at small scales. So
-  the Banach space `h^{0,α}` is the completion of the smooth Lipschitz functions in the
-  `C^{0,α}` norm.
+  `TauCeti.HolderSpace.littleHolder_eq_closure`: on a finite-dimensional real normed space, a
+  little Hölder function is approximated by its convolutions with normalized bumps at small
+  scales, which are smooth and Lipschitz. For `α < 1` Lipschitz functions are conversely little
+  Hölder, so the little Hölder space is the closure of the smooth Lipschitz functions, and the
+  Banach space `h^{0,α}` is the completion of the smooth Lipschitz functions in the `C^{0,α}`
+  norm.
 * `TauCeti.not_memLittleHolder_of_eqOn_norm_rpow`, `TauCeti.not_memLittleHolder_norm_rpow` and
   `TauCeti.HolderSpace.littleHolder_ne_top`: the cusp `x ↦ ‖x‖ ^ α`, `0 < α ≤ 1`, is `α`-Hölder
   (`TauCeti.holderWith_norm_rpow`) but has difference quotient `1` between `0` and every other
@@ -227,10 +228,10 @@ section Mollification
 variable {α : ℝ≥0} {E Y : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup Y] [NormedSpace ℝ Y] [CompleteSpace Y]
 
-/-- **Mollification approximates little Hölder functions.** For `α < 1`, a little `α`-Hölder
+/-- **Mollification approximates little Hölder functions.** A little `α`-Hölder
 function on a finite-dimensional space is approximated in the supremum-plus-Hölder norm by smooth
 Lipschitz functions: its convolutions with normalized bumps at small enough scales. -/
-theorem exists_contDiff_lipschitzWith_norm_sub_lt (hα : α < 1) (f : HolderSpace α E Y)
+theorem exists_contDiff_lipschitzWith_norm_sub_lt (f : HolderSpace α E Y)
     (hf : f ∈ littleHolder α E Y) {ε : ℝ} (hε : 0 < ε) :
     ∃ g : HolderSpace α E Y, ContDiff ℝ ∞ g ∧ (∃ K, LipschitzWith K g) ∧ ‖f - g‖ < ε := by
   borelize E
@@ -253,13 +254,14 @@ theorem exists_contDiff_lipschitzWith_norm_sub_lt (hα : α < 1) (f : HolderSpac
     (ρ.hasCompactSupport_normed (μ := μ)).lipschitzWith_convolution_left
       (ρ.contDiff_normed (n := 1)) f.continuous.locallyIntegrable hM
   have hg₀M : ∀ w, ‖g₀ w‖ ≤ M := ρ.norm_normed_convolution_le hM
-  -- `g₀` is bounded and Lipschitz, hence an element of the Hölder space.
+  -- `g₀` is bounded and inherits the Hölder bound of `f`, so it lies in the Hölder space.
   let g₁ : E →ᵇ Y := .ofNormedAddCommGroup g₀ hg₀smooth.continuous M hg₀M
   have hg₁ : MemHolder α (g₁ : E → Y) := by
     have hcoe : (g₁ : E → Y) = g₀ := by ext x; simp [g₁]
     rw [hcoe]
-    exact (holderOnWith_univ.1 ((hg₀lip.lipschitzOnWith (s := univ)).holderOnWith_of_norm_le
-      (M := ⟨M, norm_nonneg _⟩) (fun x _ ↦ hg₀M x) hα.le)).memHolder
+    refine ⟨‖f‖₊, holderOnWith_univ.1 <| HolderOnWith.of_dist_le fun x _ y _ ↦
+      ρ.dist_normed_convolution_le_of_dist_sub_le f.continuous fun t ↦ ?_⟩
+    simpa only [dist_sub_right] using f.holderWith_nnnorm.dist_le (x - t) (y - t)
   let g : HolderSpace α E Y := ofBoundedContinuousFunction g₁ hg₁
   have hg : (g : E → Y) = g₀ := funext fun x ↦ by simp [g, g₁]
   refine ⟨g, hg ▸ hg₀smooth, ⟨_, hg ▸ hg₀lip⟩, ?_⟩
@@ -288,7 +290,7 @@ theorem littleHolder_eq_closure (hα : α < 1) :
     (littleHolder α E Y : Set (HolderSpace α E Y)) =
       closure {g : HolderSpace α E Y | ContDiff ℝ ∞ g ∧ ∃ K, LipschitzWith K g} := by
   refine Subset.antisymm (fun f hf ↦ Metric.mem_closure_iff.2 fun ε hε ↦ ?_) ?_
-  · obtain ⟨g, hg, hgK, hfg⟩ := exists_contDiff_lipschitzWith_norm_sub_lt hα f hf hε
+  · obtain ⟨g, hg, hgK, hfg⟩ := exists_contDiff_lipschitzWith_norm_sub_lt f hf hε
     exact ⟨g, ⟨hg, hgK⟩, by rwa [dist_eq_norm]⟩
   · exact closure_minimal (fun g ⟨_, K, hK⟩ ↦ hK.memLittleHolder hα) isClosed_littleHolder
 
