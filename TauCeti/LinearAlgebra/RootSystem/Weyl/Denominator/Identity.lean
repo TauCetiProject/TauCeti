@@ -125,7 +125,7 @@ This is the case `λ = 0` of the Weyl character formula, in which the character 
 module is `1`. -/
 theorem weylDenominator_eq_weylNumerator_zero :
     weylDenominator P b = weylNumerator P b 0 := by
-  have := flip_isReduced P
+  have := P.flip_isReduced
   exact (isDotAlternating_weylDenominator P b).eq_weylNumerator
     (zero_mem_openDotDominantChamber P b) (coeff_weylDenominator_zero P b)
     fun _ hx hne => eq_zero_of_coeff_weylDenominator_ne_zero P b hne hx

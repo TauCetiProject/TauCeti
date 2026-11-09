@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.Defs
 public import Mathlib.Data.Int.Order.Units
+public import TauCeti.LinearAlgebra.RootSystem.Reduced
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.DotAction
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Sign
 
@@ -247,20 +248,11 @@ section Dominant
 variable [Invertible (2 : R)] [P.IsCrystallographic] [P.IsReduced] [Fintype P.weylGroup]
   [LinearOrder R] [IsStrictOrderedRing R]
 
-omit [Invertible (2 : R)] [P.IsCrystallographic] [Fintype P.weylGroup] in
-/-- A reduced root pairing has reduced coroots: both the weight and the coweight module are
-reflexive, being perfectly paired with each other, hence torsion free, which is what
-`RootPairing.instFlipIsReduced` needs. So `P.flip.IsReduced` need not be assumed separately. -/
-theorem flip_isReduced : P.flip.IsReduced :=
-  have : Module.IsReflexive R M := .of_isPerfPair P.toLinearMap
-  have : Module.IsReflexive R N := .of_isPerfPair P.flip.toLinearMap
-  inferInstance
-
 /-- **The numerator of a weight of the open dot chamber has coefficient `1` there.** -/
 @[simp]
 theorem coeff_weylNumerator_self_of_mem_openDotDominantChamber {lam : M}
     (hlam : lam ∈ openDotDominantChamber P b) : (weylNumerator P b lam).coeff lam = 1 := by
-  have := flip_isReduced P
+  have := P.flip_isReduced
   have h := coeff_weylNumerator_dotAction_of_injective P b
     (dotAction_injective_of_mem_openDotDominantChamber P b hlam) 1
   rwa [dotAction_one, map_one, Units.val_one] at h
@@ -271,7 +263,7 @@ by a unique Weyl-group element. -/
 private lemma injective_dotAction_of_mem_dominantChamber {lam : M}
     (hlam : lam ∈ dominantChamber P b) :
     Function.Injective fun w : P.weylGroup ↦ dotAction P b w lam :=
-  have := flip_isReduced P
+  have := P.flip_isReduced
   fun _ _ h ↦ ((dotAction_eq_dotAction_iff_of_mem_dominantChamber P b hlam hlam).mp h).2
 
 /-- **The numerator of a dominant weight is supported exactly on its dot orbit.** -/

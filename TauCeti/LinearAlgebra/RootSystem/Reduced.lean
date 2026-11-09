@@ -25,6 +25,7 @@ symmetric form of a simply-laced Cartan matrix.
 ## Main results
 
 * `RootPairing.isReduced_of_pairing_comm`: a root pairing with symmetric pairings is reduced.
+* `RootPairing.flip_isReduced`: a reduced root pairing on a finite index type has reduced coroots.
 * `RootPairing.ne_neg_of_root_eq_add_nsmul`: in a reduced root pairing, a root string through a
   root `j ≠ -s` in the direction `s` never reaches `-s`.
 -/
@@ -72,5 +73,14 @@ lemma ne_neg_of_root_eq_add_nsmul [CharZero R] [HasUniqueDiv M] [P.IsReduced] (s
     simp [← hkroot, -indexNeg_neg]
   · have _i : (n + 1).AtLeastTwo := ⟨by omega⟩
     exact P.nsmul_notMem_range_root (n := n + 1) (i := s) ⟨-j, hkroot⟩
+
+omit [NeZero (2 : R)] [Module.IsTorsionFree R M] in
+/-- A reduced root pairing has reduced coroots: both the weight and the coweight module are
+reflexive, being perfectly paired with each other, hence torsion free, which is what
+`RootPairing.instFlipIsReduced` needs. So `P.flip.IsReduced` need not be assumed separately. -/
+theorem flip_isReduced [Finite ι] [CharZero R] [P.IsReduced] : P.flip.IsReduced :=
+  have : Module.IsReflexive R M := .of_isPerfPair P.toLinearMap
+  have : Module.IsReflexive R N := .of_isPerfPair P.flip.toLinearMap
+  inferInstance
 
 end RootPairing
