@@ -339,7 +339,8 @@ theorem injOn_update_comp_const_sub_inv {α : Type*} [Zero α] {g : ℂ → α}
     exact inv_injective (sub_right_injective (hgi (hT hz hz0 hGz) (hT hz' hz0' hGz') h))
 
 /-- The map `w ↦ b / (f (-w⁻¹) - c)`, extended by `0` at the origin, is continuous on the part of
-the closed upper half-plane near `0`, when `f` tends to infinity at infinity. -/
+the closed upper half-plane in `ball 0 r`, when `f` is continuous on the closed upper half-plane,
+tends to infinity at infinity there, and `f (-w⁻¹) ≠ c` at every nonzero `w` of that half-ball. -/
 theorem continuousOn_update_div_sub_neg_inv {f : ℂ → ℂ} {r : ℝ} {c b : ℂ}
     (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
     (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
@@ -359,8 +360,8 @@ theorem continuousOn_update_div_sub_neg_inv {f : ℂ → ℂ} {r : ℝ} {c b : �
     simpa only [mul_zero, Function.comp_def, div_eq_mul_inv] using hlim
 
 /-- The map `w ↦ b / (f (-w⁻¹) - c)`, extended by `0` at the origin, is injective on the part of
-the closed upper half-plane near `0`, when `f` is injective on the closed upper half-plane and
-`b ≠ 0`. -/
+the closed upper half-plane in `ball 0 r`, when `f` is injective on the closed upper half-plane,
+`b ≠ 0`, and `f (-w⁻¹) ≠ c` at every nonzero `w` of that half-ball. -/
 theorem injOn_update_div_sub_neg_inv {f : ℂ → ℂ} {r : ℝ} {c b : ℂ} (hb : b ≠ 0)
     (hfi : InjOn f {z : ℂ | 0 ≤ z.im})
     (hne : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 → f (-w⁻¹) - c ≠ 0) :

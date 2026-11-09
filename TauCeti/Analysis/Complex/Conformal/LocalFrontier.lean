@@ -350,7 +350,8 @@ theorem exists_notMem_closure_of_forall_mem_notMem_halfStrip {c b : ℂ} {ρ : �
 
 /-- The map `w ↦ exp (π * I - (f (-w⁻¹) - c) / b)`, filled in with `0` at the origin, is continuous
 on the part of the closed upper half-plane near `0` where `(f (-w⁻¹) - c) / b` lies in the closed
-half-strip, when `f` tends to infinity at infinity. -/
+half-strip, when `f` is continuous on the closed upper half-plane and tends to infinity at
+infinity there. -/
 theorem continuousOn_update_exp_pi_mul_I_sub {f : ℂ → ℂ} {r : ℝ} {c b : ℂ} (hb : b ≠ 0)
     (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
     (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
