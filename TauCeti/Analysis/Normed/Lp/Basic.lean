@@ -13,7 +13,8 @@ public import Mathlib.LinearAlgebra.StdBasis
 
 The characteristic equation for Mathlib's bundled coordinate evaluation lets users compute
 with `lp.evalCLM` without unfolding its construction as a bounded linear map, and the ℓ¹ norm is
-the sum of the norms of the coordinates (`lp.hasSum_norm_one`). The scalar
+the sum of the norms of the coordinates (`lp.hasSum_norm_one`). A geometric sequence with ratio in
+`[0, 1)` lies in every `ℓ^q` with `q ≠ 0` (`memℓp_geometric_of_lt_one`). The scalar
 coordinate vectors are linearly independent, and vectors in their span vanish outside the
 corresponding indices. These algebraic facts hold over normed rings at every exponent.
 -/
@@ -21,6 +22,21 @@ corresponding indices. These algebraic facts hold over normed rings at every exp
 public section
 
 open scoped ENNReal
+
+/-- A geometric sequence `(ρ ^ j)ⱼ` with `0 ≤ ρ < 1` lies in `ℓ^q` for every `q ≠ 0`. -/
+theorem memℓp_geometric_of_lt_one {ρ : ℝ} (hρ₀ : 0 ≤ ρ) (hρ₁ : ρ < 1) {q : ℝ≥0∞} (hq : q ≠ 0) :
+    Memℓp (fun j : ℕ ↦ ρ ^ j) q := by
+  rcases q.trichotomy with rfl | rfl | hq'
+  · exact absurd rfl hq
+  · refine memℓp_infty ⟨1, ?_⟩
+    rintro _ ⟨j, rfl⟩
+    dsimp only
+    rw [Real.norm_of_nonneg (by positivity)]
+    exact pow_le_one₀ hρ₀ hρ₁.le
+  · refine memℓp_gen ((summable_geometric_of_lt_one (Real.rpow_nonneg hρ₀ _)
+      (Real.rpow_lt_one hρ₀ hρ₁ hq')).congr fun j ↦ ?_)
+    rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_natCast, ← Real.rpow_natCast,
+      ← Real.rpow_mul hρ₀, ← Real.rpow_mul hρ₀, mul_comm]
 
 namespace lp
 

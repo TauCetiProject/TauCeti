@@ -22,7 +22,8 @@ and a criterion for an operator into tempered distributions to take values in `L
 * An `Lᵖ` function is determined almost everywhere by its pairings with Schwartz functions,
   even when it is compared with a locally integrable function that need not lie in the same
   `Lᵖ` space. Mathlib's `MeasureTheory.Lp.ker_toTemperedDistributionCLM_eq_bot` is the case of
-  two functions in one `Lᵖ` space.
+  two functions in one `Lᵖ` space, restated as injectivity of the embedding
+  (`MeasureTheory.Lp.toTemperedDistribution_injective`).
 * The distributional Fourier transform and inverse Fourier transform of an integrable function
   `v` are the bounded continuous functions `𝓕 v` and `𝓕⁻ v`, given by the absolutely convergent
   Fourier integrals. This is the multiplication formula `∫ (𝓕⁻ φ) • v = ∫ φ • 𝓕⁻ v`, and its
@@ -47,6 +48,8 @@ function by a function of temperate growth multiplies the function pointwise
 * `MeasureTheory.Lp.ae_eq_of_toTemperedDistribution_apply_eq`: an `Lᵖ` function whose pairings
   with Schwartz functions agree with those of a locally integrable `g` is almost everywhere
   equal to `g`.
+* `MeasureTheory.Lp.toTemperedDistribution_injective`: an `Lᵖ` function is determined by its
+  tempered distribution.
 * `MeasureTheory.Lp.toTemperedDistribution_compLp_apply`: applying a continuous linear map to the
   values of an `Lᵖ` function applies it to its tempered distribution.
 * `SchwartzMap.toTemperedDistributionCLM_postcompCLM_apply`: the same for the values of a
@@ -100,6 +103,12 @@ theorem ae_eq_of_toTemperedDistribution_apply_eq {μ : Measure E} [μ.HasTempera
   have hψ₂ : ContDiff ℝ ∞ (Complex.ofRealCLM ∘ ψ) := by fun_prop
   have := h (hψ₁.toSchwartzMap hψ₂)
   simpa [Lp.toTemperedDistribution_apply] using this
+
+/-- An `Lᵖ` function is determined by its tempered distribution. -/
+theorem toTemperedDistribution_injective {μ : Measure E} [μ.HasTemperateGrowth]
+    [IsLocallyFiniteMeasure μ] {p : ENNReal} [Fact (1 ≤ p)] :
+    Function.Injective fun u : Lp F p μ ↦ (u : 𝓢'(E, F)) :=
+  LinearMap.ker_eq_bot.mp (ker_toTemperedDistributionCLM_eq_bot (F := F) (μ := μ))
 
 omit [FiniteDimensional ℝ E] in
 /-- Multiplying the tempered distribution of an `Lᵖ` function `u` by a function `g` of temperate

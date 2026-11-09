@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.Sobolev
+public import Mathlib.Analysis.Distribution.Support
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.Convolution
+import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
@@ -22,7 +24,9 @@ blocks** of a tempered distribution `u` are the Fourier multipliers
 `Δⱼ u = 𝓕⁻ (ψⱼ • 𝓕 u)`,
 
 so that `Δ₀ u` carries the frequencies of `u` in the ball of radius `φ.rOut` and `Δⱼ u` those in
-the annulus `2^{j-1} φ.rIn ≤ ‖ξ‖ ≤ 2^j φ.rOut`. Their partial sums are the low-pass truncations
+the annulus `2^{j-1} φ.rIn ≤ ‖ξ‖ ≤ 2^j φ.rOut`; in particular the Fourier transform of `Δⱼ u`
+vanishes outside the closed ball of radius `2^j φ.rOut`, which is what Bernstein's inequalities
+need. Their partial sums are the low-pass truncations
 `∑_{j ≤ N} Δⱼ u = 𝓕⁻ (φ (2^{-N} ·) • 𝓕 u)`, and these converge to `u`: every tempered
 distribution is reconstructed from its Littlewood–Paley blocks, `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`. This
 is deduced, by duality, from the convergence of the truncations `φ (2^{-N} ·) • f → f` of Schwartz
@@ -45,6 +49,8 @@ blocks `Δⱼ u`.
 ## Main declarations
 
 * `TemperedDistribution.littlewoodPaleyBlock`: the Littlewood–Paley block `Δⱼ`.
+* `TemperedDistribution.isVanishingOn_fourier_littlewoodPaleyBlock`: `Δⱼ u` is band-limited to
+  the closed ball of radius `2^j φ.rOut`.
 * `TemperedDistribution.sum_littlewoodPaleyBlock_range`: the partial sums are the low-pass
   truncations by `φ (2^{-N} ·)`.
 * `TemperedDistribution.tendsto_sum_littlewoodPaleyBlock`: `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`.
@@ -111,6 +117,17 @@ theorem littlewoodPaleyBlock_apply (j : ℕ) (u : 𝓢'(E, F)) :
     littlewoodPaleyBlock F φ j u =
       fourierMultiplierCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) u :=
   (rfl)
+
+/-- **The blocks are band-limited.** The Fourier transform of `Δⱼ u` vanishes outside the closed
+ball of radius `2^j φ.rOut`. -/
+theorem isVanishingOn_fourier_littlewoodPaleyBlock (j : ℕ) (u : 𝓢'(E, F)) :
+    Distribution.IsVanishingOn (𝓕 (littlewoodPaleyBlock F φ j u) : 𝓢'(E, F))
+      (Metric.closedBall 0 (2 ^ j * φ.rOut))ᶜ :=
+  isVanishingOn_fourier_fourierMultiplierCLM
+    (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)
+    (fun _ hξ ↦ by
+      rw [Set.mem_compl_iff, Metric.mem_closedBall, dist_zero_right, not_le] at hξ
+      rw [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm hξ.le, Complex.ofReal_zero]) u
 
 /-- The partial sums of the Littlewood–Paley blocks are the low-pass truncations:
 `∑_{j ≤ N} Δⱼ = 𝓕⁻ (φ (2^{-N} ·) • 𝓕 ·)`. -/
