@@ -22,6 +22,9 @@ This file supplements `Mathlib.Topology.OpenPartialHomeomorph.Composition`:
 * `Homeomorph.refl_transOpenPartialHomeomorph`: precomposing an open partial homeomorphism with
   `Homeomorph.refl` changes nothing; together with `Homeomorph.trans_transOpenPartialHomeomorph`
   this makes `Homeomorph.transOpenPartialHomeomorph` an action of homeomorphisms.
+* `Homeomorph.symm_transOpenPartialHomeomorph_transOpenPartialHomeomorph` and
+  `Homeomorph.transOpenPartialHomeomorph_symm_transOpenPartialHomeomorph`: precomposing with a
+  homeomorphism and then with its inverse, in either order, changes nothing.
 -/
 
 public section
@@ -75,5 +78,23 @@ unchanged. -/
 theorem refl_transOpenPartialHomeomorph (c : OpenPartialHomeomorph X Y) :
     (Homeomorph.refl X).transOpenPartialHomeomorph c = c := by
   simp [transOpenPartialHomeomorph_eq_trans]
+
+variable {Z : Type*} [TopologicalSpace Z]
+
+/-- Precomposing an open partial homeomorphism with a homeomorphism `h` and then with `h.symm`
+leaves it unchanged. -/
+@[simp, mfld_simps]
+theorem symm_transOpenPartialHomeomorph_transOpenPartialHomeomorph (h : X ≃ₜ Y)
+    (c : OpenPartialHomeomorph Y Z) :
+    h.symm.transOpenPartialHomeomorph (h.transOpenPartialHomeomorph c) = c := by
+  simp [← trans_transOpenPartialHomeomorph]
+
+/-- Precomposing an open partial homeomorphism with `h.symm` for a homeomorphism `h` and then
+with `h` leaves it unchanged. -/
+@[simp, mfld_simps]
+theorem transOpenPartialHomeomorph_symm_transOpenPartialHomeomorph (h : X ≃ₜ Y)
+    (c : OpenPartialHomeomorph X Z) :
+    h.transOpenPartialHomeomorph (h.symm.transOpenPartialHomeomorph c) = c := by
+  simp [← trans_transOpenPartialHomeomorph]
 
 end Homeomorph
