@@ -148,10 +148,8 @@ theorem restrictScalarsHomeomorph_apply (x : M) (v : TangentSpace 𝓘(𝕜', E)
 theorem restrictScalarsHomeomorph_mk (x : M)
     (v : RestrictScalars 𝕜 𝕜' (TangentSpace 𝓘(𝕜', E) x)) :
     restrictScalarsHomeomorph 𝕜 M ⟨x, RestrictScalars.addEquiv 𝕜 𝕜' _ v⟩ =
-      ⟨x, TangentSpace.restrictScalarsLinearEquiv 𝕜 (I := 𝓘(𝕜', E)) x v⟩ := by
-  rw [restrictScalarsHomeomorph_apply, TangentSpace.restrictScalarsLinearEquiv_apply]
-  -- Restriction of a self-model preserves its coordinate maps definitionally.
-  rfl
+      ⟨x, TangentSpace.restrictScalarsSelfLinearEquiv 𝕜 (A := 𝕜') x v⟩ := by
+  rw [restrictScalarsHomeomorph_apply, TangentSpace.restrictScalarsSelfLinearEquiv_apply]
 
 /-- The inverse scalar comparison reads the tangent vector in the same model coordinates. -/
 @[simp]
