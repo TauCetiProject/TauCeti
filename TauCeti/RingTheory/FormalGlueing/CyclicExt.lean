@@ -14,20 +14,21 @@ public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 
 For a flat algebra `S` over `R` inducing `R/I ≅ S/IS`, comparison of first Koszul
 cohomology through `N → S ⊗[R] N` implies comparison of `Ext¹_R(R/I, N)` through the
-same coefficient map. Here `I` is the finitely generated image ideal of the Koszul
-functional. The coefficient module is arbitrary; in particular it need not be torsion-free.
+same coefficient map. Here `I` is the image ideal of the Koszul functional. The coefficient
+module is arbitrary; in particular it need not be torsion-free.
 
 The obstruction in the Ext-to-Koszul exact sequence is Hom from first Koszul homology.
-Since this homology is annihilated by `I`, the existing formal-glueing Hom comparison
-detects its maps into `N`. Thus one needs only the cohomology comparison, not exactness
-of the Koszul complex or a regular sequence. This is the cyclic kernel-comparison step
-in the extension-descent argument of Stacks 05EG, not the cohomology comparison itself.
+Since this homology is annihilated by `I`,
+`TauCeti.tensorProduct_mk_comp_injective_of_primaryComponent_eq_top` detects its maps into `N`.
+Thus one needs only the cohomology comparison, not exactness of the Koszul complex or a regular
+sequence. This is the cyclic kernel-comparison step in the extension-descent argument of Stacks
+05EG, not the cohomology comparison itself.
 
 ## References
 
 * [Stacks Project, Lemma 15.91.8](https://stacks.math.columbia.edu/tag/05EG).
 * The central formal inputs are `TauCeti.koszulComplex.exact_extToCohomology_kronecker`
-  and `TauCeti.baseChangeHom_bijective_of_primaryComponent_eq_top_left`.
+  and `TauCeti.tensorProduct_mk_comp_injective_of_primaryComponent_eq_top`.
 -/
 
 public section
