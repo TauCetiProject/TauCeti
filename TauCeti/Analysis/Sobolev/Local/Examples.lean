@@ -15,18 +15,21 @@ import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.Sobolev.Local.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
 import TauCeti.MeasureTheory.Integral.NormRpow
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Membership and non-membership examples for local Sobolev classes
 
 This file tests `TauCeti.MemWkpLoc` against explicit planar functions.
 
-* The identity of `ℂ` is in every local Sobolev class, although it is not globally `Lᵖ`.
-* A globally Lipschitz map into a finite-dimensional space is in every local `W^{1,p}` class,
-  with its Fréchet derivative as weak derivative. In particular `z ↦ ‖z‖` is.
+* The identity of `ℂ` is in every local Sobolev class, although it is not globally `Lᵖ` for
+  `0 < p`.
+* The map `z ↦ ‖z‖` is in every local `W^{1,p}` class, as a Lipschitz map
+  (`LipschitzWith.memWkpLoc_one`).
 * The map `z ↦ ‖z‖` is not in the local class `W^{2,p}` near the origin for `p ≥ 2`: away from
   the origin its second derivative has norm at least `‖z‖⁻¹`, and `‖z‖ ^ (-2)` is not integrable
   near the origin of the plane.
@@ -54,27 +57,12 @@ namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ENNReal} {U : Set ℂ}
 
-/-! ### The identity and Lipschitz maps -/
+/-! ### The identity and the norm -/
 
-/-- The identity of `ℂ` is in every local Sobolev class on every set, although it is not in
-`Lᵖ` of the whole plane: the local class imposes no bound at infinity. -/
+/-- The identity of `ℂ` is in every local Sobolev class on every set, although for `0 < p` it is
+not in `Lᵖ` of the whole plane: the local class imposes no bound at infinity. -/
 theorem memWkpLoc_id (p : ENNReal) (U : Set ℂ) (k : ℕ) : MemWkpLoc p U k (fun z : ℂ => z) :=
   (contDiff_id.contDiffOn : ContDiffOn ℝ k id ((⊤ : Opens ℂ) : Set ℂ)).memWkpLoc (subset_univ U)
-
-/-- A globally Lipschitz map from the plane into a finite-dimensional space is in the local
-class `W^{1,p}` on every set, for every exponent: its Fréchet derivative is a weak derivative
-bounded by the Lipschitz constant. -/
-theorem _root_.LipschitzWith.memWkpLoc_one [FiniteDimensional ℝ F] {K : NNReal} {u : ℂ → F}
-    (hu : LipschitzWith K u) : MemWkpLoc p U 1 u := by
-  refine memWkpLoc_succ_iff.2 ⟨hu.continuous.continuousOn.memLpLoc, fderiv ℝ u, ?_,
-    memWkpLoc_zero_iff.2 ?_⟩
-  · have hΩ : LocallyLipschitzOn ((⊤ : Opens ℂ) : Set ℂ) u :=
-      hu.locallyLipschitz.locallyLipschitzOn
-    exact (hΩ.hasWeakFDerivOn_fderiv (μ := volume)).mono le_top
-  · refine memLpLoc_iff.2 fun L _ hL => ?_
-    have : IsFiniteMeasure (volume.restrict L) := ⟨by simpa using hL.measure_lt_top⟩
-    exact MemLp.of_bound (measurable_fderiv ℝ u).aestronglyMeasurable K
-      (Eventually.of_forall fun _ => norm_fderiv_le_of_lipschitz ℝ hu)
 
 /-- The norm `z ↦ ‖z‖` is in the local class `W^{1,p}` on every set, for every exponent: its
 weak gradient `z / ‖z‖` is bounded. -/
@@ -175,18 +163,6 @@ theorem not_memWkpLoc_two_norm (hp : 2 ≤ p) (h0 : (0 : ℂ) ∈ interior U) :
 
 /-! ### A jump across a line -/
 
-/-- The imaginary axis is a null set of the plane. -/
-private theorem ae_re_ne_zero : ∀ᵐ z : ℂ, z.re ≠ 0 := by
-  have hset : {z : ℂ | z.re = 0} = (LinearMap.ker Complex.reLm : Set ℂ) := by
-    ext z
-    simp
-  have hnull : volume {z : ℂ | z.re = 0} = 0 := by
-    rw [hset]
-    refine Measure.addHaar_submodule _ _ fun h => ?_
-    have h1 : (1 : ℂ) ∈ LinearMap.ker Complex.reLm := h ▸ Submodule.mem_top
-    simp at h1
-  exact measure_eq_zero_iff_ae_notMem.1 hnull
-
 /-- The indicator of the right half-plane is locally `Lᵖ` on every set, for every exponent. -/
 theorem memLpLoc_indicator_re_pos :
     MemLpLoc p U ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) := by
@@ -220,7 +196,8 @@ theorem not_hasWeakFDerivOn_indicator_re_pos {Ω : Opens ℂ} {z₀ : ℂ} (hz�
   have hDn := (ae_restrict_iff' Ωn.isOpen.measurableSet).1 ((hD.mono inf_le_left).ae_eq hn)
   have hD0 : D =ᵐ[volume.restrict Ω] 0 := by
     refine (ae_restrict_iff' Ω.isOpen.measurableSet).2 ?_
-    filter_upwards [hDp, hDn, ae_re_ne_zero] with z hzp hzn hz0 hzΩ
+    filter_upwards [hDp, hDn, measure_eq_zero_iff_ae_notMem.1 (Complex.volume_setOf_re_eq 0)]
+      with z hzp hzn hz0 hzΩ
     rcases lt_or_gt_of_ne hz0 with h | h
     · exact hzn ⟨hzΩ, h⟩
     · exact hzp ⟨hzΩ, h⟩
@@ -248,6 +225,7 @@ theorem not_hasWeakFDerivOn_indicator_re_pos {Ω : Opens ℂ} {z₀ : ℂ} (hz�
   let φ : 𝓓(Ω, ℝ) := ⟨f, (a.contDiff.comp Complex.reCLM.contDiff).mul
       (b.contDiff.comp Complex.imCLM.contDiff),
     (isCompact_closedBall z₀ _).of_isClosed_subset (isClosed_tsupport f) hfs, hfΩ⟩
+  have hφ : (φ : ℂ → ℝ) = f := TestFunction.coe_mk
   have hkey := hline.integral_lineDeriv_smul_eq_neg_integral_smul φ
   simp only [Pi.zero_apply, zero_apply, smul_zero, integral_zero, neg_zero] at hkey
   -- Compute the pairing by Fubini.
@@ -261,8 +239,7 @@ theorem not_hasWeakFDerivOn_indicator_re_pos {Ω : Opens ℂ} {z₀ : ℂ} (hz�
     simp only [add_zero] at h
     convert h using 1
     funext t
-    change f (z + t • (1 : ℂ)) = _
-    simp [f]
+    simp [hφ, f]
   have hint : ∫ z : ℂ, lineDeriv ℝ (φ : ℂ → ℝ) z 1 • u z =
       ∫ q : ℝ × ℝ, (deriv a q.1 * (Ioi (0 : ℝ)).indicator 1 q.1) * b q.2 := by
     rw [← Complex.volume_preserving_equiv_real_prod.integral_comp
@@ -303,43 +280,6 @@ theorem not_memWkpLoc_indicator_re_pos {k : ℕ} {z₀ : ℂ} (hz₀ : z₀ ∈ 
   exact not_hasWeakFDerivOn_indicator_re_pos (Ω := Opens.interior U) hz₀ hre D hD
 
 /-! ### A square-root profile on the half-disc -/
-
-/-- The real axis is a null set of the plane. -/
-private theorem ae_im_ne_zero : ∀ᵐ z : ℂ, z.im ≠ 0 := by
-  have hset : {z : ℂ | z.im = 0} = (LinearMap.ker Complex.imLm : Set ℂ) := by
-    ext z
-    simp
-  have hnull : volume {z : ℂ | z.im = 0} = 0 := by
-    rw [hset]
-    refine Measure.addHaar_submodule _ _ fun h => ?_
-    have hI : Complex.I ∈ LinearMap.ker Complex.imLm := h ▸ Submodule.mem_top
-    simp at hI
-  exact measure_eq_zero_iff_ae_notMem.1 hnull
-
-/-- Restricted to a rectangle, Lebesgue measure on `ℂ` is the product of the restrictions to
-its sides. -/
-private theorem measurePreserving_reProdIm {s t : Set ℝ} (hs : MeasurableSet s)
-    (ht : MeasurableSet t) :
-    MeasurePreserving Complex.measurableEquivRealProd (volume.restrict (s ×ℂ t))
-      ((volume.restrict s).prod (volume.restrict t)) := by
-  have h := Complex.volume_preserving_equiv_real_prod.restrict_preimage (hs.prod ht)
-  rw [Measure.volume_eq_prod, ← Measure.prod_restrict] at h
-  exact h
-
-/-- A function of `Im z` integrable on a rectangle of positive width is integrable on the
-vertical side. -/
-private theorem integrable_of_integrable_comp_im {s t : Set ℝ} (hs : MeasurableSet s)
-    (ht : MeasurableSet t) (hs0 : volume s ≠ 0) (hsfin : volume s ≠ ⊤) {g : ℝ → ℝ}
-    (h : Integrable (fun z : ℂ => g z.im) (volume.restrict (s ×ℂ t))) :
-    Integrable g (volume.restrict t) := by
-  have : IsFiniteMeasure (volume.restrict s) := ⟨by simpa using hsfin.lt_top⟩
-  have h2 := ((measurePreserving_reProdIm hs ht).integrable_comp_emb
-    (MeasurableEquiv.measurableEmbedding _) (g := fun q : ℝ × ℝ => g q.2)).1
-    (by
-      convert h using 1
-      funext z
-      simp [Complex.measurableEquivRealProd])
-  exact (Integrable.comp_snd_iff (μ := volume.restrict s) (by simpa using hs0)).1 h2
 
 /-- The derivative of `z ↦ √z.im` in the open upper half-plane. -/
 private theorem hasFDerivAt_sqrt_im {z : ℂ} (hz : 0 < z.im) :
@@ -412,8 +352,7 @@ theorem memWkpLoc_sqrt_im_iff :
     rw [interior_inter, isOpen_ball.interior_eq, Complex.interior_setOfPred_le_im]
   have hDU : HasWeakFDerivOn volume (Opens.interior U) (fun z : ℂ => √z.im) D :=
     hasWeakFDerivOn_sqrt_im.mono fun z hz => by
-      change z ∈ interior U at hz
-      rw [hint] at hz
+      rw [Opens.mem_interior, hint] at hz
       exact hz.2
   constructor
   · intro h
@@ -434,10 +373,10 @@ theorem memWkpLoc_sqrt_im_iff :
     have hD'2 := (memLpLoc_iff.1 hL K hKU hKc).mono_exponent hp
     have haeK : D' =ᵐ[volume.restrict K] D := by
       rw [EventuallyEq, ae_restrict_iff' hKc.isClosed.measurableSet]
-      filter_upwards [hae, ae_im_ne_zero] with z hz hz0 hzK
+      filter_upwards [hae, measure_eq_zero_iff_ae_notMem.1 (Complex.volume_setOf_im_eq 0)]
+        with z hz hz0 hzK
       refine hz ?_
-      change z ∈ interior U
-      rw [hint]
+      rw [Opens.coe_interior, hint]
       exact ⟨(hKU hzK).1, lt_of_le_of_ne (hKU hzK).2 (Ne.symm hz0)⟩
     have hgK : MemLp (fun z : ℂ => 1 / (2 * √z.im)) 2 (volume.restrict K) :=
       (hD'2.ae_eq haeK).congr_norm
@@ -447,8 +386,8 @@ theorem memWkpLoc_sqrt_im_iff :
       ENNReal.ofNat_ne_top).2 hgK
     have hg : IntegrableOn (fun t : ℝ => ‖1 / (2 * √t)‖ ^ (2 : ENNReal).toReal)
         (Icc 0 (1 / 4)) :=
-      integrable_of_integrable_comp_im measurableSet_Icc measurableSet_Icc
-        (by simp [Real.volume_Icc]; norm_num) (by simp [Real.volume_Icc]) hiK
+      Complex.integrableOn_of_integrableOn_comp_im_reProdIm measurableSet_Icc measurableSet_Icc
+        (by simp [Real.volume_Icc]; norm_num) hiK
     have hinv : IntegrableOn (fun t : ℝ => t ^ (-1 : ℝ)) (Ioo 0 (1 / 4)) := by
       refine (integrableOn_congr_fun (fun t ht => ?_) measurableSet_Ioo).1
         ((hg.mono_set Ioo_subset_Icc_self).const_mul 4)
@@ -471,7 +410,9 @@ theorem memWkpLoc_sqrt_im_iff :
     have hR : MemLp (fun z : ℂ => 1 / (2 * √z.im)) p
         (volume.restrict (Icc (-1) 1 ×ℂ Icc 0 1)) :=
       ((memLp_inv_two_sqrt hp one_pos).comp_snd (volume.restrict (Icc (-1 : ℝ) 1)))
-        |>.comp_measurePreserving (measurePreserving_reProdIm measurableSet_Icc measurableSet_Icc)
+        |>.comp_measurePreserving
+          (Complex.measurePreserving_measurableEquivRealProd_reProdIm measurableSet_Icc
+            measurableSet_Icc)
     refine (hR.congr_norm ?_ (Eventually.of_forall fun z => (norm_sqrt_im_deriv z).symm))
       |>.mono_measure (Measure.restrict_mono hKR le_rfl)
     exact ((by fun_prop : Measurable fun z : ℂ => 1 / (2 * √z.im)).smul_const
