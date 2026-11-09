@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Reciprocity
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Range
+public import TauCeti.NumberTheory.NumberField.LocalGlobal.Semilocal.Norm.LocalNorm
 import TauCeti.NumberTheory.NumberField.LocalGlobal.DecompositionGroup
 
 /-!
@@ -39,12 +40,19 @@ This is the inclusion of the "Kummer idele subgroup" in the norms of the Kummer 
 norm half of the computation of the norm index of a Kummer extension through `S`-units in the
 proof of the second fundamental inequality and of global existence.
 
+For a global element the finite and infinite cases combine: every `n`-th power in `Kˣ` is a norm at
+every place (`isLocalNormEverywhere_pow_of_exponent_dvd`). For a biquadratic extension, `n = 2`,
+this is the local half of the failure of the Hasse norm principle: squares are local norms
+everywhere, but need not be global norms.
+
 ## Main results
 
 * `TauCeti.ClassFieldTheory.pow_mem_range_normUnits_adicCompletion`: at a finite place every
   `n`-th power is a local norm.
 * `TauCeti.ClassFieldTheory.mem_range_ideleNormMap_of_exponent_dvd`: the ideles displayed above
   are idele norms from `L`.
+* `TauCeti.ClassFieldTheory.isLocalNormEverywhere_pow_of_exponent_dvd`: every `n`-th power of
+  `Kˣ` is a local norm everywhere.
 
 ## References
 
@@ -118,5 +126,17 @@ theorem mem_range_ideleNormMap_of_exponent_dvd {n : ℕ} (hn : Monoid.exponent G
       exact (mem_range_normUnits_adicCompletion_iff K L v _).2 ⟨u, hu⟩
   · obtain ⟨y, hy⟩ := (mem_powerSubgroup_iff n).1 (hxinf v)
     exact hy ▸ pow_mem_range_normUnits_completion K L hn v y
+
+/-- **`n`-th powers are local norms everywhere.** If `n` kills `Gal(L/K)`, then for every
+`x ∈ Kˣ` the power `xⁿ` is a norm from the local étale algebra `K_v ⊗[K] L` at every finite and
+every infinite place `v` of `K`. -/
+theorem isLocalNormEverywhere_pow_of_exponent_dvd {n : ℕ} (hn : Monoid.exponent Gal(L/K) ∣ n)
+    (x : Kˣ) : GlobalNumberFields.IsLocalNormEverywhere K L (x ^ n) :=
+  (GlobalNumberFields.isLocalNormEverywhere_def _).2 ⟨fun v ↦ by
+    rw [GlobalNumberFields.isFiniteLocalNorm_def, map_pow]
+    exact pow_mem_range_normUnits_adicCompletion K L hn v _,
+   fun v ↦ by
+    rw [GlobalNumberFields.isInfiniteLocalNorm_def, map_pow]
+    exact pow_mem_range_normUnits_completion K L hn v _⟩
 
 end TauCeti.ClassFieldTheory
