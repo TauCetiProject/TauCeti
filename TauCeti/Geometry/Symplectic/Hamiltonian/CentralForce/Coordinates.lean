@@ -60,13 +60,17 @@ are the momenta conjugate to `r` and `θ`: the values of the covector `p` on the
 ## Main results
 
 * `TauCeti.contMDiffOn_polarCylinderMap`, `TauCeti.isLocalDiffeomorphAt_polarCylinderMap`: the
-  parametrization is smooth on `r > 0` and a local diffeomorphism there.
+  parametrization is smooth on `r ≠ 0` and a local diffeomorphism there.
 * `TauCeti.coe_polarCanonicalDiffeomorph_symm_apply`: the inverse coordinates.
 * `TauCeti.mpullback_polarCanonicalDiffeomorph`: `ω₀ = dr ∧ dp_r + dθ ∧ dL`.
 * `TauCeti.inner_snd_polarCanonicalDiffeomorph_mfderiv_fst`: `⟪p, dq⟫ = p_r dr + L dθ`.
 * `TauCeti.centralForceHamiltonian_polarCanonicalDiffeomorph`: `H = p_r² / (2m) + U_L(r)`.
 * `TauCeti.fst_polarCanonicalDiffeomorph`: the coordinates cover the polar coordinates of the
   plane.
+
+The descent along the quotient map `ℝ → AddCircle (2 * π)` and the passage from a bijective local
+diffeomorphism to a global diffeomorphism follow the oscillator action-angle coordinates of
+`TauCeti.Geometry.Symplectic.Hamiltonian.Oscillator.Coordinates`.
 
 ## References
 
@@ -143,26 +147,29 @@ private theorem mfderiv_polarCover (x : (ℝ × ℝ) × (ℝ × ℝ)) :
   -- The product tangent model is `(ℝ × ℝ) × (ℝ × ℝ)`; both factor derivatives are identities.
   rfl
 
-/-- The parametrization on the circle of angles is smooth on `r > 0`. -/
+/-- The parametrization on the circle of angles is smooth at every point with `r ≠ 0`. -/
+theorem contMDiffAt_polarCylinderMap (u w : V) {x : (ℝ × ℝ) × (AddCircle (2 * π) × ℝ)}
+    (hr : x.1.1 ≠ 0) :
+    ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod (𝓘(ℝ).prod 𝓘(ℝ))) 𝓘(ℝ, V × V) ∞ (polarCylinderMap u w) x := by
+  obtain ⟨rp, a, L⟩ := x
+  obtain ⟨θ, rfl⟩ := QuotientAddGroup.mk_surjective a
+  have hs := contDiffAt_polarCanonical u w (n := ∞) (x := (rp, (θ, L))) hr
+  exact ((isLocalDiffeomorph_polarCover (rp, (θ, L))).contMDiffAt_comp_iff le_rfl).1
+    (by rw [polarCylinderMap_comp_polarCover]; exact hs.contMDiffAt)
+
+/-- The parametrization on the circle of angles is smooth on `r ≠ 0`. -/
 theorem contMDiffOn_polarCylinderMap (u w : V) :
     ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod (𝓘(ℝ).prod 𝓘(ℝ))) 𝓘(ℝ, V × V) ∞ (polarCylinderMap u w)
-      polarCanonicalCylinder := by
-  rintro ⟨rp, a, L⟩ hr
-  obtain ⟨θ, rfl⟩ := QuotientAddGroup.mk_surjective a
-  have hs := contDiffAt_polarCanonical u w (n := ∞) (x := (rp, (θ, L)))
-    (mem_polarCanonicalCylinder.1 hr).ne'
-  exact ((isLocalDiffeomorph_polarCover (rp, (θ, L))).contMDiffAt_comp_iff le_rfl).1
-    (by rw [polarCylinderMap_comp_polarCover]; exact hs.contMDiffAt) |>.contMDiffWithinAt
+      {x | x.1.1 ≠ 0} :=
+  fun _ hr ↦ (contMDiffAt_polarCylinderMap u w hr).contMDiffWithinAt
 
 /-- The differential of the parametrization on the circle, read at a real lift of the angle, is
 the derivative of the polar canonical parametrization. -/
-theorem mfderiv_polarCylinderMap_coe (u w : V) {rp : ℝ × ℝ} (θ L : ℝ) (hr : 0 < rp.1) :
+theorem mfderiv_polarCylinderMap_coe (u w : V) {rp : ℝ × ℝ} (θ L : ℝ) (hr : rp.1 ≠ 0) :
     mfderiv (𝓘(ℝ, ℝ × ℝ).prod (𝓘(ℝ).prod 𝓘(ℝ))) 𝓘(ℝ, V × V) (polarCylinderMap u w)
         (rp, ((θ : AddCircle (2 * π)), L)) = fderiv ℝ (polarCanonical u w) (rp, (θ, L)) := by
-  have hy : (rp, ((θ : AddCircle (2 * π)), L)) ∈ polarCanonicalCylinder :=
-    mem_polarCanonicalCylinder.2 hr
-  have hf := ((contMDiffOn_polarCylinderMap u w).contMDiffAt
-    (polarCanonicalCylinder.isOpen.mem_nhds hy)).mdifferentiableAt (by simp)
+  have hf := (contMDiffAt_polarCylinderMap u w (x := (rp, ((θ : AddCircle (2 * π)), L)))
+    hr).mdifferentiableAt (by simp)
   have h := mfderiv_comp (rp, (θ, L)) hf
     ((isLocalDiffeomorph_polarCover (rp, (θ, L))).mdifferentiableAt (by simp))
   rw [polarCylinderMap_comp_polarCover, mfderiv_polarCover] at h
@@ -212,22 +219,17 @@ theorem isLocalDiffeomorphAt_polarCanonical {x : (ℝ × ℝ) × (ℝ × ℝ)} (
   -- The self-model tangent equivalences act as identities; `ofBijective` retains the derivative.
   rfl
 
-/-- On `r > 0`, the parametrization on the circle of angles is a local diffeomorphism, including
+/-- On `r ≠ 0`, the parametrization on the circle of angles is a local diffeomorphism, including
 across the angle seam. -/
 theorem isLocalDiffeomorphAt_polarCylinderMap {y : (ℝ × ℝ) × (AddCircle (2 * π) × ℝ)}
-    (hy : y ∈ polarCanonicalCylinder) :
+    (hy : y.1.1 ≠ 0) :
     IsLocalDiffeomorphAt (𝓘(ℝ, ℝ × ℝ).prod (𝓘(ℝ).prod 𝓘(ℝ))) 𝓘(ℝ, V × V) ∞
       (polarCylinderMap (b 0) (b 1)) y := by
   obtain ⟨rp, a, L⟩ := y
   obtain ⟨θ, rfl⟩ := QuotientAddGroup.mk_surjective a
-  have hf := isLocalDiffeomorphAt_polarCanonical b (x := (rp, (θ, L))) (ne_of_gt hy)
+  have hf := isLocalDiffeomorphAt_polarCanonical b (x := (rp, (θ, L))) hy
   rw [← polarCylinderMap_comp_polarCover] at hf
   exact hf.of_comp_right (isLocalDiffeomorph_polarCover (rp, (θ, L)))
-
-/-- The real representative of an angle `θ` in `(-π, π]` is congruent to `θ` modulo `2π`. -/
-private theorem coe_toReal_coe_angle (θ : ℝ) :
-    (((θ : Real.Angle).toReal : ℝ) : AddCircle (2 * π)) = θ :=
-  Real.Angle.coe_eq_coe_iff_addCircle.2 (Real.Angle.coe_toReal _)
 
 /-- The polar canonical coordinates `((‖q‖, p_r), (θ, L))` of a phase point `(q, p)`, with the
 radial momentum `p_r`, the circle-valued polar angle `θ` and the angular momentum `L`. -/
@@ -243,11 +245,11 @@ private theorem polarCanonicalCoords_polarCylinderMap {y : (ℝ × ℝ) × (AddC
   have h0 := b.norm_eq_one 0
   have h1 := b.norm_eq_one 1
   have h01 : ⟪b 0, b 1⟫_ℝ = 0 := b.inner_eq_zero (by decide)
-  have hr : 0 < ((r, pᵣ), (θ, L)).1.1 := hy
+  have hr : 0 < ((r, pᵣ), (θ, L)).1.1 := mem_polarCanonicalCylinder.1 hy
   simp only [polarCanonicalCoords, polarCylinderMap_coe, norm_fst_polarCanonical h0 h1 h01,
     abs_of_pos hr, radialMomentum_polarCanonical h0 h1 h01 hr,
     polarAngle_polarCanonical h0 h1 h01 hr, angularMomentum_polarCanonical h0 h1 h01 hr.ne',
-    coe_toReal_coe_angle]
+    Real.Angle.coe_toReal_coe_addCircle]
 
 private theorem polarCylinderMap_polarCanonicalCoords {x : V × V} (hx : x.1 ≠ 0) :
     polarCylinderMap (b 0) (b 1) (polarCanonicalCoords b x) = x := by
@@ -265,14 +267,14 @@ space. -/
 private def polarCanonicalCoordinates (y : polarCanonicalCylinder) : puncturedPhaseSpace V :=
   ⟨polarCylinderMap (b 0) (b 1) y, by
     rw [mem_puncturedPhaseSpace, ← norm_ne_zero_iff, norm_fst_polarCylinderMap b y.property]
-    exact y.property.ne'⟩
+    exact (mem_polarCanonicalCylinder.1 y.property).ne'⟩
 
 private theorem bijective_polarCanonicalCoordinates : Bijective (polarCanonicalCoordinates b) := by
   refine ⟨fun y z hyz ↦ Subtype.ext ?_, fun x ↦ ⟨⟨polarCanonicalCoords b x, ?_⟩, ?_⟩⟩
   · rw [← polarCanonicalCoords_polarCylinderMap b y.property,
       ← polarCanonicalCoords_polarCylinderMap b z.property]
     exact congrArg (fun x : puncturedPhaseSpace V ↦ polarCanonicalCoords b x) hyz
-  · exact norm_pos_iff.2 (mem_puncturedPhaseSpace.1 x.property)
+  · exact mem_polarCanonicalCylinder.2 (norm_pos_iff.2 (mem_puncturedPhaseSpace.1 x.property))
   · exact Subtype.ext
       (polarCylinderMap_polarCanonicalCoords b (mem_puncturedPhaseSpace.1 x.property))
 
@@ -283,7 +285,7 @@ private theorem isLocalDiffeomorph_polarCanonicalCoordinates :
   have hf : IsLocalDiffeomorphAt (𝓘(ℝ, ℝ × ℝ).prod (𝓘(ℝ).prod 𝓘(ℝ))) 𝓘(ℝ, V × V) ∞
       (Subtype.val ∘ polarCanonicalCoordinates b) y :=
     (isLocalDiffeomorph_subtype_val (U := polarCanonicalCylinder) (n := ∞) y).comp
-      (hg := isLocalDiffeomorphAt_polarCylinderMap b y.property)
+      (hg := isLocalDiffeomorphAt_polarCylinderMap b (mem_polarCanonicalCylinder.1 y.property).ne')
   exact hf.of_comp_left (isLocalDiffeomorph_subtype_val (U := puncturedPhaseSpace V) _)
     ((Topology.IsInducing.subtypeVal.continuousAt_iff).mpr hf.contMDiffAt.continuousAt)
 
@@ -328,14 +330,15 @@ private theorem mfderiv_polarCylinderMap_subtype_apply {rp : ℝ × ℝ} (θ L :
         (fun z : polarCanonicalCylinder ↦ (polarCanonicalDiffeomorph b z : V × V))
         ⟨(rp, ((θ : AddCircle (2 * π)), L)), hr⟩ v =
       fderiv ℝ (polarCanonical (b 0) (b 1)) (rp, (θ, L)) v := by
-  have hf := ((contMDiffOn_polarCylinderMap (b 0) (b 1)).contMDiffAt
-    (polarCanonicalCylinder.isOpen.mem_nhds hr)).mdifferentiableAt (by simp)
+  have hr' : rp.1 ≠ 0 := (mem_polarCanonicalCylinder.1 hr).ne'
+  have hf := (contMDiffAt_polarCylinderMap (b 0) (b 1)
+    (x := (rp, ((θ : AddCircle (2 * π)), L))) hr').mdifferentiableAt (by simp)
   have hcoe : (fun z : polarCanonicalCylinder ↦ (polarCanonicalDiffeomorph b z : V × V)) =
       polarCylinderMap (b 0) (b 1) ∘ Subtype.val :=
     funext (coe_polarCanonicalDiffeomorph_apply b)
   rw [hcoe]
   exact (Manifold.mfderiv_comp_subtype_val_apply hf v).trans
-    (DFunLike.congr_fun (mfderiv_polarCylinderMap_coe (b 0) (b 1) θ L hr) v)
+    (DFunLike.congr_fun (mfderiv_polarCylinderMap_coe (b 0) (b 1) θ L hr') v)
 
 /-- **The Liouville form in global polar coordinates is `p_r dr + L dθ`.** The polar canonical
 diffeomorphism pulls the Liouville form `⟪p, dq⟫` of `V × V` back to the one-form sending a tangent
@@ -352,7 +355,7 @@ theorem inner_snd_polarCanonicalDiffeomorph_mfderiv_fst (y : polarCanonicalCylin
   rw [mfderiv_polarCylinderMap_subtype_apply b θ L hr, coe_polarCanonicalDiffeomorph_apply,
     polarCylinderMap_coe]
   exact inner_snd_polarCanonical_fderiv_fst (b.norm_eq_one 0) (b.norm_eq_one 1)
-    (b.inner_eq_zero (by decide)) (x := (rp, (θ, L))) (ne_of_gt hr) v
+    (b.inner_eq_zero (by decide)) (x := (rp, (θ, L))) (mem_polarCanonicalCylinder.1 hr).ne' v
 
 /-- **The central-force Hamiltonian in global polar coordinates.** At the point with coordinates
 `((r, p_r), (θ, L))`, the energy `‖p‖² / (2m) + U(‖q‖)` is `p_r² / (2m) + U_L(r)`, with the
@@ -367,7 +370,7 @@ theorem centralForceHamiltonian_polarCanonicalDiffeomorph (m : ℝ) (U : ℝ →
   obtain ⟨θ, rfl⟩ := QuotientAddGroup.mk_surjective a
   rw [coe_polarCanonicalDiffeomorph_apply, polarCylinderMap_coe]
   exact centralForceHamiltonian_polarCanonical (b.norm_eq_one 0) (b.norm_eq_one 1)
-    (b.inner_eq_zero (by decide)) m U (x := (rp, (θ, L))) hr
+    (b.inner_eq_zero (by decide)) m U (x := (rp, (θ, L))) (mem_polarCanonicalCylinder.1 hr)
 
 variable [FiniteDimensional ℝ V]
 
@@ -393,20 +396,20 @@ theorem mpullback_polarCanonicalDiffeomorph :
   apply SmoothBundleForm.ext_eval₂
   rintro ⟨⟨rp, a, L⟩, hr⟩ v w
   obtain ⟨θ, rfl⟩ := QuotientAddGroup.mk_surjective a
-  rw [SmoothForm.eval₂_mpullback, SmoothForm.eval₂_mpullback, Manifold.mfderiv_subtype_val,
+  simp only [SmoothForm.eval₂_mpullback, Manifold.mfderiv_subtype_val,
     ContinuousLinearEquiv.coe_coe, SymplecticForm.fromTangentSpace_constSmooth_apply,
-    NormedSpace.fromTangentSpace_apply, NormedSpace.fromTangentSpace_apply,
-    mfderiv_polarCylinderMap_subtype_apply b θ L hr,
-    mfderiv_polarCylinderMap_subtype_apply b θ L hr]
+    NormedSpace.fromTangentSpace_apply]
+  simp only [mfderiv_polarCylinderMap_subtype_apply b θ L hr]
   refine (stdSymplecticForm_fderiv_polarCanonical (b.norm_eq_one 0) (b.norm_eq_one 1)
-    (b.inner_eq_zero (by decide)) (x := (rp, (θ, L))) (ne_of_gt hr) v w).trans ?_
+    (b.inner_eq_zero (by decide)) (x := (rp, (θ, L))) (mem_polarCanonicalCylinder.1 hr).ne'
+    v w).trans ?_
   refine (SymplecticForm.prod_apply _ _ (v : (ℝ × ℝ) × (ℝ × ℝ)) w).trans ?_
-  rw [SmoothTwoForm.eval₂_prod, AddCircle.eval₂_wedge_timeForm_realLineCoordForm,
-    SymplecticForm.fromTangentSpace_constSmooth_apply, NormedSpace.fromTangentSpace_apply,
-    NormedSpace.fromTangentSpace_apply, Manifold.tangentSpaceProdEquiv_apply,
-    Manifold.tangentSpaceProdEquiv_apply, Manifold.tangentSpaceOpenEquiv_apply,
-    Manifold.tangentSpaceOpenEquiv_apply, stdSymplecticForm_apply, stdSymplecticForm_apply]
-  simp only [RCLike.inner_apply, conj_trivial]
+  simp only [SmoothTwoForm.eval₂_prod, AddCircle.eval₂_wedge_timeForm_realLineCoordForm,
+    SymplecticForm.fromTangentSpace_constSmooth_apply, NormedSpace.fromTangentSpace_apply]
+  -- The tangent-space equivalences retype `v` and `w`, so only `rw` can remove them.
+  rw [Manifold.tangentSpaceProdEquiv_apply, Manifold.tangentSpaceProdEquiv_apply,
+    Manifold.tangentSpaceOpenEquiv_apply, Manifold.tangentSpaceOpenEquiv_apply]
+  simp only [stdSymplecticForm_apply, RCLike.inner_apply, conj_trivial]
   ring
 
 end Basis
@@ -466,8 +469,18 @@ variable (b : OrthonormalBasis (Fin 2) ℝ V)
 /-- The position of the point with polar coordinates `(r, θ)`, `r > 0`, has length `r`. -/
 theorem norm_polarPlaneMap {y : ℝ × AddCircle (2 * π)} (hy : y ∈ polarHalfCylinder) :
     ‖polarPlaneMap (b 0) (b 1) y‖ = y.1 := by
-  have h := norm_fst_polarCylinderMap b (y := ((y.1, 0), (y.2, 0))) hy
+  have h := norm_fst_polarCylinderMap b (y := ((y.1, 0), (y.2, 0)))
+    (mem_polarCanonicalCylinder.2 (mem_polarHalfCylinder.1 hy))
   rwa [fst_polarCylinderMap] at h
+
+/-- The radius and angle components of the inverse polar canonical coordinates of `(q, p)`, `q ≠ 0`,
+are the length and the polar angle modulo `2π` of `q`. -/
+private theorem radius_angle_polarCanonicalDiffeomorph_symm (x : puncturedPhaseSpace V) :
+    ((((polarCanonicalDiffeomorph b).symm x : (ℝ × ℝ) × (AddCircle (2 * π) × ℝ)).1.1,
+        ((polarCanonicalDiffeomorph b).symm x : (ℝ × ℝ) × (AddCircle (2 * π) × ℝ)).2.1) :
+        ℝ × AddCircle (2 * π)) =
+      (‖x.1.1‖, (((polarAngle (b 0) (b 1) x.1.1).toReal : ℝ) : AddCircle (2 * π))) := by
+  rw [coe_polarCanonicalDiffeomorph_symm_apply]
 
 /-- **Smooth polar coordinates of the plane.** For an orthonormal basis `b` of a plane `V`, the map
 `(r, θ) ↦ r (cos θ b₀ + sin θ b₁)`, with `θ ∈ AddCircle (2 * π)`, is a diffeomorphism from the
@@ -476,16 +489,15 @@ def polarPlaneDiffeomorph :
     polarHalfCylinder ≃ₘ⟮𝓘(ℝ).prod 𝓘(ℝ), 𝓘(ℝ, V)⟯ puncturedSpace V where
   toFun y := ⟨polarPlaneMap (b 0) (b 1) y, by
     rw [mem_puncturedSpace, ← norm_ne_zero_iff, norm_polarPlaneMap b y.property]
-    exact y.property.ne'⟩
+    exact (mem_polarHalfCylinder.1 y.property).ne'⟩
   invFun q := ⟨(‖(q : V)‖, (((polarAngle (b 0) (b 1) q).toReal : ℝ) : AddCircle (2 * π))),
-    norm_pos_iff.2 (mem_puncturedSpace.1 q.property)⟩
+    mem_polarHalfCylinder.2 (norm_pos_iff.2 (mem_puncturedSpace.1 q.property))⟩
   left_inv y := by
-    have h := coe_polarCanonicalDiffeomorph_symm_apply b
-      (polarCanonicalDiffeomorph b ⟨((y.1.1, 0), (y.1.2, 0)), y.property⟩)
+    have h := radius_angle_polarCanonicalDiffeomorph_symm b (polarCanonicalDiffeomorph b
+      ⟨((y.1.1, 0), (y.1.2, 0)), mem_polarCanonicalCylinder.2 (mem_polarHalfCylinder.1 y.property)⟩)
     rw [Diffeomorph.symm_apply_apply, coe_polarCanonicalDiffeomorph_apply,
       fst_polarCylinderMap] at h
-    exact Subtype.ext (Prod.ext (congrArg (fun z ↦ z.1.1) h).symm
-      (congrArg (fun z ↦ z.2.1) h).symm)
+    exact Subtype.ext h.symm
   right_inv q := by
     have hq := polarCanonical_polarAngle b 0 (mem_puncturedSpace.1 q.property)
       (Real.Angle.coe_toReal _)
@@ -499,7 +511,8 @@ def polarPlaneDiffeomorph :
       ⟨((q : V), 0), mem_puncturedPhaseSpace.2 (mem_puncturedSpace.1 q.property)⟩
     let proj : polarCanonicalCylinder → polarHalfCylinder := fun z ↦
       ⟨((z : (ℝ × ℝ) × (AddCircle (2 * π) × ℝ)).1.1,
-        (z : (ℝ × ℝ) × (AddCircle (2 * π) × ℝ)).2.1), z.property⟩
+        (z : (ℝ × ℝ) × (AddCircle (2 * π) × ℝ)).2.1),
+        mem_polarHalfCylinder.2 (mem_polarCanonicalCylinder.1 z.property)⟩
     have hincl : ContMDiff 𝓘(ℝ, V) 𝓘(ℝ, V × V) ∞ incl :=
       (ContMDiff.subtypeVal_comp_iff (puncturedPhaseSpace V) _).1
         (contMDiff_subtype_val.prodMk_space contMDiff_const)
@@ -509,9 +522,7 @@ def polarPlaneDiffeomorph :
           contMDiff_fst).prodMk (contMDiff_fst.comp contMDiff_snd) |>.comp contMDiff_subtype_val)
     refine (hproj.comp ((polarCanonicalDiffeomorph b).symm.contMDiff.comp hincl)).congr
       fun q ↦ ?_
-    have h := coe_polarCanonicalDiffeomorph_symm_apply b (incl q)
-    exact Subtype.ext (Prod.ext (congrArg (fun z ↦ z.1.1) h).symm
-      (congrArg (fun z ↦ z.2.1) h).symm)
+    exact Subtype.ext (radius_angle_polarCanonicalDiffeomorph_symm b (incl q)).symm
 
 @[simp]
 theorem coe_polarPlaneDiffeomorph_apply (y : polarHalfCylinder) :
