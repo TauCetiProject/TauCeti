@@ -30,10 +30,11 @@ public section
 
 open Set Metric Filter Topology
 
-variable {α β : Type*} [TopologicalSpace α] [MetricSpace β]
+variable {α β : Type*} [TopologicalSpace α] [PseudoMetricSpace β]
 
 namespace TauCeti
 
+variable [T2Space β] in
 /-- The nested images `G k '' K (k + 1)` of compact sets with diameters tending to `0` shrink to a
 point `q`, and every `G m x` with `m ≥ k` and `x ∈ K (k + 1)` lies within `1 / (k + 1)` of `q`. -/
 theorem exists_mem_image_and_dist_lt {K : ℕ → Set α} (hK : ∀ i, IsCompact (K i))
