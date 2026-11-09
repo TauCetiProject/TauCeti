@@ -96,18 +96,51 @@ instance : Group (IntegralAffineEquiv h h) where
   mul_one := refl_trans
   inv_mul_cancel := self_trans_symm
 
+/-- The product `e * f` applies `f` first. -/
+theorem mul_def (e f : IntegralAffineEquiv h h) : e * f = f.trans e := (rfl)
+
+/-- The identity of the group is the identity equivalence. -/
+theorem one_def : (1 : IntegralAffineEquiv h h) = refl h := (rfl)
+
+/-- The inverse in the group is the symmetric equivalence. -/
+theorem inv_def (e : IntegralAffineEquiv h h) : e⁻¹ = e.symm := (rfl)
+
+/-- A product acts by composing the actions. -/
+@[simp]
+theorem coe_mul (e f : IntegralAffineEquiv h h) (x : V) : (e * f) x = e (f x) := by
+  rw [mul_def, trans_apply]
+
+/-- The identity of the group acts as the identity map. -/
+@[simp]
+theorem coe_one (x : V) : (1 : IntegralAffineEquiv h h) x = x := by
+  rw [one_def, refl_apply]
+
+/-- The lattice equivalence of a product is the composite of the lattice equivalences. -/
+@[simp]
+theorem mul_latticeEquiv (e f : IntegralAffineEquiv h h) :
+    (e * f).latticeEquiv = f.latticeEquiv.trans e.latticeEquiv := by
+  rw [mul_def, trans_latticeEquiv]
+
+/-- The identity of the group has the identity lattice equivalence. -/
+@[simp]
+theorem one_latticeEquiv : (1 : IntegralAffineEquiv h h).latticeEquiv = AddEquiv.refl N := by
+  rw [one_def, refl_latticeEquiv]
+
+/-- The inverse has the inverse lattice equivalence. -/
+@[simp]
+theorem inv_latticeEquiv (e : IntegralAffineEquiv h h) :
+    (e⁻¹).latticeEquiv = e.latticeEquiv.symm := by
+  rw [inv_def, symm_latticeEquiv]
+
+/-- Integral affine self-equivalences act on the ambient space by evaluation. -/
 instance : MulAction (IntegralAffineEquiv h h) V where
   smul e x := e x
-  one_smul x := by
-    change (refl h).toAffineEquiv x = x
-    rw [refl_toAffineEquiv, AffineEquiv.refl_apply]
-  mul_smul e f x := by
-    change (f.trans e).toAffineEquiv x = e (f x)
-    rw [trans_toAffineEquiv, AffineEquiv.trans_apply]
+  one_smul x := coe_one x
+  mul_smul e f x := coe_mul e f x
 
 /-- The action of an integral affine self-equivalence on the ambient space is evaluation. -/
 @[simp]
-theorem smul_def (e : IntegralAffineEquiv h h) (x : V) : e • x = e x := rfl
+theorem smul_def (e : IntegralAffineEquiv h h) (x : V) : e • x = e x := (rfl)
 
 instance : ContinuousConstSMul (IntegralAffineEquiv h h) V :=
   ⟨fun e => by simpa only [smul_def] using e.continuous⟩
@@ -119,6 +152,19 @@ variable (h) in
 ambient space that are locally given by an integral affine self-equivalence. -/
 abbrev integralAffineGroupoid : StructureGroupoid V :=
   smulGroupoid (IntegralAffineEquiv h h) V
+
+/-- An open partial homeomorphism is an integral affine chart change exactly when near each point
+of its source it agrees with an integral affine self-equivalence. -/
+theorem mem_integralAffineGroupoid_iff {e : OpenPartialHomeomorph V V} :
+    e ∈ integralAffineGroupoid h ↔
+      ∀ x ∈ e.source, ∃ a : IntegralAffineEquiv h h, e =ᶠ[𝓝 x] a :=
+  mem_smulGroupoid_iff
+
+/-- A global integral affine self-equivalence, as a homeomorphism, is an integral affine chart
+change. -/
+theorem IntegralAffineEquiv.mem_integralAffineGroupoid (a : IntegralAffineEquiv h h) :
+    (Homeomorph.smul a : V ≃ₜ V).toOpenPartialHomeomorph ∈ integralAffineGroupoid h :=
+  smul_mem_smulGroupoid a
 
 /-- A connected nonempty chart-change domain has a unique global integral affine extension. -/
 theorem existsUnique_extension_of_mem_integralAffineGroupoid

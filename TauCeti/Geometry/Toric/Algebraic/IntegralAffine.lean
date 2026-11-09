@@ -124,6 +124,13 @@ theorem trans_toAffineEquiv (e : IntegralAffineEquiv h h') (f : IntegralAffineEq
 theorem trans_latticeEquiv (e : IntegralAffineEquiv h h') (f : IntegralAffineEquiv h' h'') :
     (e.trans f).latticeEquiv = e.latticeEquiv.trans f.latticeEquiv := (rfl)
 
+/-- The identity acts as the identity map. -/
+theorem refl_apply (h : IsIntegralLattice i) (x : V) : refl h x = x := (rfl)
+
+/-- Composition applies the first equivalence and then the second. -/
+theorem trans_apply (e : IntegralAffineEquiv h h') (f : IntegralAffineEquiv h' h'') (x : V) :
+    e.trans f x = f (e x) := (rfl)
+
 /-- Inverting twice recovers the integral affine equivalence. -/
 @[simp]
 theorem symm_symm (e : IntegralAffineEquiv h h') : e.symm.symm = e := by
