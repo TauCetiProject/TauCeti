@@ -48,6 +48,9 @@ are:
   `|F⁻| ≤ (r / (4 √2)) (1 - |α|² + |β|²) - ⟪ω, η⟫ / (2 √2) + √2 C`
   (`norm_smul_sub_hodgeStar_le_of_forall_le_hermitianForm`), hence into the refined bound
   `|F⁻| ≤ (r / (4 √2)) w₊ + K / (2 √2) + |η| / 2 + √2 C` (`norm_smul_sub_hodgeStar_le`).
+* **The full curvature.** Adding the two bounds, `F = F⁺ + F⁻` satisfies
+  `|F| ≤ (r / (2 √2)) w₊ + (2 K + 1) / (2 √2) + |η| + √2 C` (`norm_le_of_add_hodgeStar_eq`), so
+  `F` is bounded where `|α|` is close to one.
 
 The analytic inputs (the bounds on `|α|² + |β|²` and on `|β|²`, and the lower bound on the
 Hermitian part) are hypotheses here; they come from the maximum principle and the coupled
@@ -341,6 +344,43 @@ theorem norm_smul_sub_hodgeStar_le (hr : 1 ≤ r) {K : ℝ}
     rw [div_le_div_iff₀ (by positivity) two_pos]
     nlinarith [Real.sq_sqrt (zero_le_two : (0 : ℝ) ≤ 2)]
   linarith [neg_div (2 * √2) ⟪J.kahlerForm, η⟫]
+
+/-- **The full curvature bound**: if `F + ⋆F = (r / 4) ω - q(√r (φ + β)) - η` for the Kähler
+two-vector `ω` of `J`, with `r ≥ 1`, `‖φ‖² + ‖β‖² ≤ 1 + K / r` and
+`‖β‖² ≤ (K / r) w₊ + K / r²`, where `w₊ = max (1 - ‖φ‖²) 0`, and the Hermitian part of `F`
+satisfies `B ≥ -C g`, then
+`‖F‖ ≤ (r / (2 √2)) w₊ + (2 K + 1) / (2 √2) + ‖η‖ + √2 C`.
+This is the sum of the self-dual and anti-self-dual bounds, since `F = F⁺ + F⁻`. Thus `F` is
+`O(1)` where `|α| ≈ 1`, and only of size `r` on the low-modulus region. -/
+theorem norm_le_of_add_hodgeStar_eq (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v))
+    (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2) (hr : 1 ≤ r) {K : ℝ}
+    (hβK : ‖β‖ ^ 2 ≤ K / r * max (1 - ‖φ‖ ^ 2) 0 + K / r ^ 2)
+    (hφβ : ‖φ‖ ^ 2 + ‖β‖ ^ 2 ≤ 1 + K / r)
+    (hF : F + o.hodgeStar hkl F = (r / 4) • J.kahlerForm -
+      (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - η)
+    {C : ℝ} (hC : ∀ v, -C * ‖v‖ ^ 2 ≤ J.hermitianForm F v v) :
+    ‖F‖ ≤ r / (2 * √2) * max (1 - ‖φ‖ ^ 2) 0 + (2 * K + 1) / (2 * √2) + ‖η‖ + √2 * C := by
+  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := by
+    rw [AlmostComplexStructure.norm_kahlerForm_sq
+      (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃),
+      Fact.out (p := finrank ℝ V = 4)]
+    norm_num
+  have hplus := norm_smul_add_hodgeStar_le hQ hkl
+    (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he) hω₂ hφ hβ hρ h₂ hr hβK hφβ hF
+  have hminus := norm_smul_sub_hodgeStar_le h₀ h₂₃ hQ hkl he hφ hβ hr hβK hF hC
+  have hsplit : F = (2⁻¹ : ℝ) • (F + o.hodgeStar hkl F) + (2⁻¹ : ℝ) • (F - o.hodgeStar hkl F) := by
+    rw [← smul_add, add_add_sub_cancel, ← two_smul ℝ F, smul_smul]
+    norm_num
+  have hs2 : 0 < √2 := Real.sqrt_pos.2 two_pos
+  calc ‖F‖ ≤ ‖(2⁻¹ : ℝ) • (F + o.hodgeStar hkl F)‖ + ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ := by
+        nth_rewrite 1 [hsplit]
+        exact norm_add_le _ _
+    _ ≤ (r / (4 * √2) * max (1 - ‖φ‖ ^ 2) 0 + (K + 1) / (2 * √2) + ‖η‖ / 2) +
+          (r / (4 * √2) * max (1 - ‖φ‖ ^ 2) 0 + K / (2 * √2) + ‖η‖ / 2 + √2 * C) :=
+        add_le_add hplus hminus
+    _ = _ := by
+        field_simp
+        ring
 
 end AntiSelfDual
 
