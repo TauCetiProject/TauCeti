@@ -85,8 +85,8 @@ theorem exists_forall_contDiff_cutoff_ball_norm_laplacian_le :
 satisfies `Δ(χ u) + φ = 0`: it equals `u` inside `ball 0 R`, and it and `φ` vanish off
 `closedBall 0 (2R)`. -/
 theorem laplacian_smul_add_eq_zero_of_norm_lt_or_lt_norm {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {u φ : E → F} {χ : E → ℝ} {R₀ R : ℝ} (hΔu : Δ u = -φ)
-    (hφx : ∀ y : E, R₀ < ‖y‖ → φ y = 0) (hR₀R : R₀ ≤ 2 * R)
+    [NormedSpace ℝ F] {u φ : E → F} {χ : E → ℝ} {R : ℝ} (hΔu : Δ u = -φ)
+    (hφx : ∀ y : E, 2 * R < ‖y‖ → φ y = 0)
     (hχ1 : ∀ x, ‖x‖ < R → χ =ᶠ[𝓝 x] fun _ => 1) (hχ0 : ∀ x, 2 * R < ‖x‖ → χ =ᶠ[𝓝 x] fun _ => 0)
     {x : E} (hx : ‖x‖ < R ∨ 2 * R < ‖x‖) :
     Δ (fun y => χ y • u y) x + φ x = 0 := by
@@ -100,7 +100,7 @@ theorem laplacian_smul_add_eq_zero_of_norm_lt_or_lt_norm {F : Type*} [NormedAddC
     have h : (fun y => χ y • u y) =ᶠ[𝓝 x] fun _ => (0 : F) := by
       filter_upwards [hχ0 x hx2R] with y hy
       rw [hy, zero_smul]
-    rw [(laplacian_congr_nhds h).eq_of_nhds, laplacian_const, hφx x (by linarith), add_zero,
+    rw [(laplacian_congr_nhds h).eq_of_nhds, laplacian_const, hφx x hx2R, add_zero,
       Pi.zero_apply]
 
 section Limits

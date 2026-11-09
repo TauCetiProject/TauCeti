@@ -404,16 +404,12 @@ theorem exists_rpow_le_of_le_add_of_le_two_sub_mul {q δ : ℝ} (hq : 1 < q) (h�
         rw [hr_def, div_rpow ht hs.le]
         field_simp
 
-/-- For `1 ≤ m` and `R / 2 ≤ t` with `1 ≤ R`, the faster decay `t ^ (1 - m)` is at most
-`2 (R / 2) ^ (2 - m)`. -/
-theorem rpow_one_sub_le_two_mul_rpow_two_sub {m R t : ℝ} (hm : 1 ≤ m) (hR : 1 ≤ R)
-    (ht : R / 2 ≤ t) : t ^ (1 - m) ≤ 2 * (R / 2) ^ (2 - m) := by
-  have hR0 : 0 < R := zero_lt_one.trans_le hR
+/-- For `1 ≤ m` and `0 < s ≤ t`, the faster decay `t ^ (1 - m)` is at most `s⁻¹ * s ^ (2 - m)`. -/
+theorem rpow_one_sub_le_inv_mul_rpow_two_sub {m s t : ℝ} (hm : 1 ≤ m) (hs : 0 < s)
+    (hst : s ≤ t) : t ^ (1 - m) ≤ s⁻¹ * s ^ (2 - m) := by
   have hexp : 1 - m = 2 - m - 1 := by ring
-  refine (Real.rpow_le_rpow_of_nonpos (by positivity) ht (by linarith)).trans ?_
-  rw [hexp, Real.rpow_sub_one (by positivity), div_le_iff₀ (by positivity)]
-  have : 0 ≤ (R / 2) ^ (2 - m) := by positivity
-  nlinarith
+  refine (Real.rpow_le_rpow_of_nonpos hs hst (by linarith)).trans_eq ?_
+  rw [hexp, Real.rpow_sub_one hs.ne', div_eq_inv_mul]
 
 end Real
 
