@@ -235,16 +235,11 @@ theorem coarsen_piece (G : InternalGrading R M ι) (f : ι → κ) :
 /-- The parity grading of an internal integer grading: the internal `ZMod 2`-grading whose even
 piece is the sum of the pieces of degree `2 * k` and whose odd piece is the sum of the pieces of
 degree `2 * k + 1`. -/
-noncomputable def parity (G : InternalGrading R M) : InternalGrading R M (ZMod 2) where
-  piece := parityGrading G.piece
-  isInternal := G.isInternal.iSup_fiber _
+noncomputable def parity (G : InternalGrading R M) : InternalGrading R M (ZMod 2) :=
+  G.coarsen (Int.castAddHom (ZMod 2))
 
 @[simp]
 theorem parity_piece (G : InternalGrading R M) : G.parity.piece = parityGrading G.piece := (rfl)
-
-/-- The parity grading is the coarsening along reduction modulo two. -/
-theorem parity_eq_coarsen (G : InternalGrading R M) :
-    G.parity = G.coarsen (Int.castAddHom (ZMod 2)) := (rfl)
 
 end InternalGrading
 

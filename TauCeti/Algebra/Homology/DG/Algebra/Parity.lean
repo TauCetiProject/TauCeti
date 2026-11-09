@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.IntUnitsPower
-public import TauCeti.Algebra.Homology.DG.Algebra.Defs
 public import TauCeti.Algebra.Module.GradedModule.Coarsen
 
 /-!
@@ -17,8 +16,9 @@ Leibniz rule `d (a * b) = d a * b + (-1) ^ p * (a * d b)` for `a` of degree `p` 
 reducing degrees modulo two, an odd map for the parity grading `TauCeti.parityGrading 𝒜` that
 satisfies the Leibniz rule with the sign `(-1) ^ i` for `a` of parity `i : ZMod 2`.  The sign is
 written with Mathlib's power of a unit of `ℤ` by an element of `ZMod 2`.  In particular the
-differential of a (nonunital) differential graded algebra is an odd signed derivation of the
-underlying super algebra.
+differential of a nonunital differential graded algebra `h : TauCeti.IsNonUnitalDGAlgebra 𝒜 d`
+is an odd signed derivation of the underlying super algebra: apply the theorems below to
+`h.map_mem` and `h.leibniz`.
 
 Only the forward direction holds in general: a parity datum does not determine an integer lift.
 
@@ -27,9 +27,6 @@ Only the forward direction holds in general: a parity datum does not determine a
 * `TauCeti.map_mem_parityGrading_of_map_mem`: a map raising integer degree by one is odd.
 * `TauCeti.leibniz_parityGrading_of_leibniz`: the integer Leibniz rule implies the parity Leibniz
   rule.
-* `TauCeti.IsNonUnitalDGAlgebra.map_mem_parityGrading` and
-  `TauCeti.IsNonUnitalDGAlgebra.leibniz_parityGrading`: the specializations to the differential of
-  a nonunital differential graded algebra.
 -/
 
 public section
@@ -74,26 +71,5 @@ theorem leibniz_parityGrading_of_leibniz
     abel
 
 end Leibniz
-
-namespace IsNonUnitalDGAlgebra
-
-variable {R A : Type*} [CommRing R] [NonUnitalRing A] [Module R A]
-  [IsScalarTower R A A] [SMulCommClass R A A]
-  {𝒜 : ℤ → Submodule R A} [SetLike.GradedMul 𝒜] [DirectSum.Decomposition 𝒜]
-  {d : A →ₗ[R] A}
-
-/-- The differential of a nonunital differential graded algebra is odd for the parity grading. -/
-theorem map_mem_parityGrading (h : IsNonUnitalDGAlgebra 𝒜 d) {i : ZMod 2} {a : A}
-    (ha : a ∈ parityGrading 𝒜 i) : d a ∈ parityGrading 𝒜 (i + 1) :=
-  map_mem_parityGrading_of_map_mem h.map_mem ha
-
-/-- The differential of a nonunital differential graded algebra satisfies the Leibniz rule with
-the sign `(-1) ^ i` on a left factor of parity `i`. -/
-theorem leibniz_parityGrading (h : IsNonUnitalDGAlgebra 𝒜 d) {i : ZMod 2} {a : A}
-    (ha : a ∈ parityGrading 𝒜 i) (b : A) :
-    d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b) :=
-  leibniz_parityGrading_of_leibniz h.leibniz ha b
-
-end IsNonUnitalDGAlgebra
 
 end TauCeti
