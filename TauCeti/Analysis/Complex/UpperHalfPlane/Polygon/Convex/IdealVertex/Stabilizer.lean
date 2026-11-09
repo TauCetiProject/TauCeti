@@ -53,9 +53,9 @@ namespace TauCeti.UpperHalfPlane.ConvexPolygon
 variable {n : ℕ} [NeZero n] {P : ConvexPolygon n}
 
 /-- A contracting affine map at an ideal vertex destroys local finiteness: if `g` moves the ideal
-vertex `ξ` of `P` to `∞` and `g S g⁻¹` acts as `z ↦ μ * z + c` with `0 < μ < 1`, then the
-translates of `P` by the powers of `S` accumulate at `g⁻¹ • (x₀ + i)`, where `x₀` is the fixed point
-of `z ↦ μ * z + c` on `ℝ`. -/
+vertex `ξ` of `P` to `∞` and `g S g⁻¹` acts as `z ↦ μ * z + c` with `μ < 1` (necessarily `0 < μ`,
+as the map preserves `ℍ`), then the translates of `P` by the powers of `S` accumulate at
+`g⁻¹ • (x₀ + i)`, where `x₀` is the fixed point of `z ↦ μ * z + c` on `ℝ`. -/
 private theorem not_locallyFinite_of_coe_conj_smul_eq {j : Fin n} {ξ : OnePoint ℝ}
     (hj : P.vertex j = .inr ξ) {g : PSL(2, ℝ)} (hg : g • ξ = ∞) {Γ : Subgroup PSL(2, ℝ)}
     {S : PSL(2, ℝ)} (hS : S ∈ Γ) {μ c : ℝ} (hμ₁ : μ < 1)
