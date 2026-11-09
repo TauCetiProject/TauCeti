@@ -16,6 +16,9 @@ A sphere of positive radius `r < R` lies in the open ball of radius `R` about th
 For `R > 0` and a ratio `c > 1`, the annuli `R c ^ k ≤ dist y x < R c ^ (k + 1)`, `k ∈ ℤ`, cover
 the points at positive distance from `x` (`Metric.iUnion_ball_diff_ball_mul_zpow`). With `c = 2`
 this is the dyadic decomposition used to split singular integrals into shells.
+
+On the real line, the extended distance from `b` to `a ≤ b` is `b - a`
+(`Real.edist_eq_ofReal_sub_of_le`).
 -/
 
 public section
@@ -46,3 +49,8 @@ theorem Metric.iUnion_ball_diff_ball_mul_zpow {X : Type*} [PseudoMetricSpace X] 
     refine ⟨k, ?_, ?_⟩
     · rwa [div_lt_iff₀ hR, mul_comm] at hk₂
     · rwa [le_div_iff₀ hR, mul_comm] at hk₁
+
+/-- On the real line, the extended distance from `b` to `a ≤ b` is `b - a`. -/
+theorem Real.edist_eq_ofReal_sub_of_le {a b : ℝ} (h : a ≤ b) :
+    edist b a = ENNReal.ofReal (b - a) := by
+  rw [edist_dist, Real.dist_eq, abs_of_nonneg (sub_nonneg.mpr h)]
