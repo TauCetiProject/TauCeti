@@ -26,10 +26,10 @@ particular for the split quadratic model.
 Throughout, `∇ f` is Mathlib's gradient: a function defined for every `f`, taking the value `0`
 wherever `f` is not differentiable.  What is constructed below is therefore the flow of the vector
 field `-∇ f`, and no differentiability of `f` is assumed for it, exactly as the predicate
-`Flow.IsNegativeGradient` it witnesses assumes none.  Differentiability of `f` is what makes that
-field the gradient field of `f`, and it enters where the flow is used as a *gradient* flow rather
-than as the flow of a Lipschitz field: `TauCeti.negativeGradientFlow_orbit_antitone` records
-Lyapunov descent along every orbit.
+`Flow.IsNegativeGradient` it witnesses assumes none.  Lyapunov descent
+(`TauCeti.negativeGradientFlow_orbit_antitone`) needs no additional differentiability assumption
+either: an orbit meeting the locus where `f` is not differentiable is constant there, because the
+totalized gradient vanishes, and every other orbit stays inside the differentiability locus.
 
 ## Main declarations
 
