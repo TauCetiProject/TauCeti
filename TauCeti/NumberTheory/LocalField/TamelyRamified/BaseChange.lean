@@ -105,8 +105,9 @@ theorem isTamelyRamified_of_adjoin_eq_top_of_pow_eq {n : ℕ} (hn : ¬ ringChar 
   have hLE : ramificationIndex K L = ramificationIndex E L :=
     (IsUnramified.ramificationIndex_tower_eq K E L).symm
   have hfin : Module.finrank E L ≤ e' :=
-    TauCeti.IntermediateField.finrank_le_of_adjoin_simple_eq_top_of_pow_mem hβ
-      (Nat.pos_of_ne_zero fun h ↦ hn0 (by simp [hne, h])) (mem_adjoin_simple_self K _)
+    TauCeti.IntermediateField.finrank_le_of_adjoin_simple_eq_top_of_pow_mem
+      (adjoin_eq_top_of_adjoin_eq_top K hβ) (fun h ↦ hn0 (by simp [hne, h]))
+      ⟨⟨_, mem_adjoin_simple_self K _⟩, rfl⟩
   have hle : ramificationIndex E L ≤ e' :=
     (Nat.le_of_dvd Module.finrank_pos
       (Dvd.intro _ (ramificationIndex_mul_inertiaDegree E L))).trans hfin
@@ -241,7 +242,7 @@ theorem IsTamelyRamified.of_fieldRange_sup_fieldRange_eq_top (h₁ : IsTamelyRam
   -- `M` is generated over `L₂` by the image of `L₁`, so `M/L₂` is tamely ramified by base change,
   -- and `M/K` by transitivity.
   have hM := h₁.of_adjoin_range_eq_top (F := L₂) ι₁
-    (TauCeti.IntermediateField.adjoin_range_eq_top_of_fieldRange_sup_fieldRange_eq_top ι₁
+    ((TauCeti.IntermediateField.adjoin_range_eq_top_iff_fieldRange_sup_fieldRange_eq_top ι₁).2
       ((sup_comm _ _).trans h))
   exact (isTamelyRamified_tower_iff (K := K) (L := L₂) M).2 ⟨h₂, hM⟩
 

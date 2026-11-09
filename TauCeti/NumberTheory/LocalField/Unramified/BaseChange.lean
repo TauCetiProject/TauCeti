@@ -115,7 +115,7 @@ theorem IsUnramified.of_fieldRange_sup_fieldRange_eq_top [IsUnramified K L₁] [
   -- `M` is generated over `L₂` by the image of `L₁`, so `M/L₂` is unramified by base change, and
   -- `M/K` by transitivity.
   have := IsUnramified.of_adjoin_range_eq_top (F := L₂) ι₁
-    (IntermediateField.adjoin_range_eq_top_of_fieldRange_sup_fieldRange_eq_top ι₁
+    ((IntermediateField.adjoin_range_eq_top_iff_fieldRange_sup_fieldRange_eq_top ι₁).2
       ((sup_comm _ _).trans h))
   exact IsUnramified.trans K L₂ M
 
