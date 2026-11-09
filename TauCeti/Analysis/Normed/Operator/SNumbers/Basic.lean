@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import Mathlib.Topology.MetricSpace.Lipschitz
 
 /-!
 # s-number sequences
