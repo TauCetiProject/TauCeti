@@ -305,7 +305,13 @@ theorem measurePreserving_update_update (μ : ∀ i, Measure (α i))
   refine hrefresh.congr (by fun_prop) (ae_of_all _ fun w => ?_)
   -- `MeasurePreserving.comp` stores the composite function definitionally, so the pointwise
   -- statement of the helper applies as it stands.
-  exact MeasurableEquiv.piEquivPiSubtypeProd_symm_piFinsetUnion_apply hab w.1 w.2.1 w.2.2
+  change splitEquiv.symm
+      (MeasurableEquiv.piFinsetUnion α hdis (singleA w.2.1, singleB w.2.2),
+        (splitEquiv w.1).2) = update (update w.1 a w.2.1) b w.2.2
+  rw [Function.update_eq_updateFinset, Function.update_eq_updateFinset,
+    Function.updateFinset_updateFinset hdis]
+  exact TauCeti.MeasureTheory.piEquivPiSubtypeProd_symm_apply_updateFinset (s ∪ t) w.1
+    (Equiv.piFinsetUnion α hdis (singleA w.2.1, singleB w.2.2))
 
 section FinArrow
 

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.MeasureTheory.MeasurableSpace.Embedding
-import TauCeti.MeasureTheory.MeasurableSpace.Embedding
 
 /-!
 # Splitting a finite block of coordinates into consecutive subblocks
@@ -20,8 +19,9 @@ subblock.
 It also records that extending a family along an arbitrary map of index types, with a fixed
 default outside the range, is measurable in the family (`TauCeti.MeasureTheory.measurable_extend`).
 
-It also records how gluing the singleton blocks `{a}` and `{b}` back into a point of a dependent
-product is a double update (`MeasurableEquiv.piEquivPiSubtypeProd_symm_piFinsetUnion_apply`).
+It also records that recombining a block `z` on a finset `s` with the remaining coordinates of a
+point `w` of a dependent product is the finset update of `w` by `z`
+(`TauCeti.MeasureTheory.piEquivPiSubtypeProd_symm_apply_updateFinset`).
 
 These are general measurable product constructions, independent of any measure or stochastic
 process.
@@ -89,25 +89,18 @@ theorem measurable_extend {ι κ : Type*} (f : ι → κ) (e : κ → α) :
   simp only [Function.extend]
   split_ifs <;> fun_prop
 
+/-- Recombining a block `z` on a finset `s` with the coordinates of `w` outside `s` is the update
+of `w` on `s` by `z`. -/
+theorem piEquivPiSubtypeProd_symm_apply_updateFinset {ι : Type*} [DecidableEq ι]
+    {π : ι → Type*} [∀ i, MeasurableSpace (π i)] (s : Finset ι) (w : ∀ i, π i)
+    (z : ∀ i : s, π i) :
+    (MeasurableEquiv.piEquivPiSubtypeProd π fun i => i ∈ s).symm
+      (z, (MeasurableEquiv.piEquivPiSubtypeProd π (fun i => i ∈ s) w).2) =
+      Function.updateFinset w s z := by
+  ext i
+  simp only [MeasurableEquiv.piEquivPiSubtypeProd_symm_apply,
+    MeasurableEquiv.piEquivPiSubtypeProd_apply, Function.updateFinset_def]
+
 end MeasureTheory
 
 end TauCeti
-
-/-- Recombining the glued pair `(u, v)` on the coordinates `{a, b}` with the remaining coordinates
-of `w` is the double update of `w`. -/
-theorem MeasurableEquiv.piEquivPiSubtypeProd_symm_piFinsetUnion_apply {ι : Type*} [DecidableEq ι]
-    {α : ι → Type*} [∀ i, MeasurableSpace (α i)] {a b : ι} (hab : a ≠ b)
-    (w : ∀ i, α i) (u : α a) (v : α b) :
-    (MeasurableEquiv.piEquivPiSubtypeProd α fun i => i ∈ ({a} : Finset ι) ∪ {b}).symm
-      ((MeasurableEquiv.piFinsetUnion α (Finset.disjoint_singleton.2 hab)
-        ((MeasurableEquiv.piUnique fun i : ({a} : Finset ι) => α i).symm u,
-          (MeasurableEquiv.piUnique fun i : ({b} : Finset ι) => α i).symm v)),
-        (MeasurableEquiv.piEquivPiSubtypeProd α (fun i => i ∈ ({a} : Finset ι) ∪ {b}) w).2) =
-      Function.update (Function.update w a u) b v := by
-  rw [Function.update_eq_updateFinset, Function.update_eq_updateFinset,
-    Function.updateFinset_updateFinset (Finset.disjoint_singleton.2 hab)]
-  simp only [MeasurableEquiv.piUnique_symm_apply, MeasurableEquiv.coe_piFinsetUnion]
-  ext i
-  simp only [MeasurableEquiv.piEquivPiSubtypeProd, MeasurableEquiv.symm_mk, MeasurableEquiv.coe_mk,
-    Equiv.piEquivPiSubtypeProd_symm_apply, Equiv.piEquivPiSubtypeProd_apply,
-    Function.updateFinset_def]
