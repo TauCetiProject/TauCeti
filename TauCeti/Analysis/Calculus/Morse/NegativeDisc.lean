@@ -18,9 +18,10 @@ split quadratic form `Q(u, v) = -‖u‖² + ‖v‖²`, with derivative `A` at 
 theory `T` is the transition `φ₀ ∘ φ₁⁻¹` between two Morse charts at the same critical point, and
 the negative discs `u ↦ (u, 0)` of the two charts are to be compared. The negative block
 `N u = (A (u, 0)).1` of the derivative expands norms
-(`ContinuousLinearMap.norm_le_norm_fst_of_norm_sq_sub`), so in finite dimension it is invertible
-and has a polar decomposition `N = h P` with `h` orthogonal (`ContinuousLinearMap.polarFactor`)
-and `P ≥ 1`.
+(`ContinuousLinearMap.norm_le_norm_fst_of_norm_sq_sub`), so it is injective and has a polar
+decomposition `N = h P` with `h` a linear isometry (`ContinuousLinearMap.polarFactor`) and `P ≥ 1`.
+In finite dimension `h` is orthogonal (`LinearIsometry.toLinearIsometryEquiv`). Only completeness
+of `E` is assumed.
 
 This file shows that on every sufficiently small disc `‖u‖ ≤ δ` of `E`, the map `u ↦ T (u, 0)`
 is homotopic to the linear map `u ↦ (h u, 0)` through maps `g` which stay in a prescribed
@@ -50,7 +51,7 @@ open Filter Set Metric Topology unitInterval
 
 namespace TauCeti
 
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
 section Linear
@@ -65,12 +66,12 @@ private noncomputable def positiveContraction (L : E →L[ℝ] E × F) :
   map_zero_left u := by simp
   map_one_left u := by simp
 
-omit [FiniteDimensional ℝ E] in
+omit [CompleteSpace E] in
 private theorem positiveContraction_apply (L : E →L[ℝ] E × F) (p : I × E) :
     positiveContraction L p = ((L p.2).1, (1 - (p.1 : ℝ)) • (L p.2).2) :=
   (rfl)
 
-omit [FiniteDimensional ℝ E] in
+omit [CompleteSpace E] in
 private theorem norm_positiveContraction_le (L : E →L[ℝ] E × F) (p : I × E) :
     ‖positiveContraction L p‖ ≤ ‖L p.2‖ := by
   rw [positiveContraction_apply]
@@ -80,7 +81,7 @@ private theorem norm_positiveContraction_le (L : E →L[ℝ] E × F) (p : I × E
     constructor <;> linarith [p.1.2.1, p.1.2.2]
   exact (mul_le_of_le_one_left (norm_nonneg _) ht).trans (norm_snd_le _)
 
-omit [FiniteDimensional ℝ E] in
+omit [CompleteSpace E] in
 /-- Contracting the positive component keeps `Q` at most `-‖u‖²` when `L` pulls `Q` back to
 `-‖u‖²`. -/
 private theorem positiveContraction_neg_norm_sq_add_le (L : E →L[ℝ] E × F)
@@ -97,7 +98,6 @@ private noncomputable def polarStage (N : E →L[ℝ] E) (hN : ∀ x, ‖x‖ �
       ⟨fun u ↦ (N.polarFactor u, 0), by fun_prop⟩ where
   toFun p := (N.polarDeformation p.1 p.2, 0)
   continuous_toFun := by
-    have := FiniteDimensional.complete ℝ E
     have hc : Continuous fun t : I ↦ N.polarDeformation t :=
       (N.continuous_polarDeformation
         (N.isStrictlyPositive_modulus_of_forall_norm_le hN)).comp continuous_subtype_val
@@ -113,7 +113,6 @@ private theorem polarStage_apply (N : E →L[ℝ] E) (hN : ∀ x, ‖x‖ ≤ �
 omit [InnerProductSpace ℝ F] in
 private theorem norm_polarStage_le (N : E →L[ℝ] E) (hN : ∀ x, ‖x‖ ≤ ‖N x‖) (p : I × E) :
     ‖polarStage (F := F) N hN p‖ ≤ ‖N p.2‖ := by
-  have := FiniteDimensional.complete ℝ E
   rw [polarStage_apply]
   exact norm_prod_le_iff.2
     ⟨(N.norm_le_norm_polarDeformation_apply_le hN p.1.2 p.2).2, by simp⟩
@@ -124,7 +123,6 @@ private theorem polarStage_neg_norm_sq_add_le (N : E →L[ℝ] E) (hN : ∀ x, �
     (p : I × E) :
     -‖(polarStage (F := F) N hN p).1‖ ^ 2 + ‖(polarStage (F := F) N hN p).2‖ ^ 2 ≤
       -‖p.2‖ ^ 2 := by
-  have := FiniteDimensional.complete ℝ E
   rw [polarStage_apply]
   simpa using pow_le_pow_left₀ (norm_nonneg _)
     (N.norm_le_norm_polarDeformation_apply_le hN p.1.2 p.2).1 2
@@ -133,7 +131,7 @@ end Linear
 
 variable {T : E × F → E × F} {A : (E × F) →L[ℝ] E × F} {U V : Set (E × F)}
 
-omit [FiniteDimensional ℝ E] in
+omit [CompleteSpace E] in
 /-- The negative column `u ↦ A (u, 0)` of the derivative of a `Q`-preserving change of
 coordinates pulls `Q` back to `-‖u‖²`. -/
 private theorem norm_sq_sub_comp_inl (hT : HasFDerivAt T A 0) (hT0 : T 0 = 0)
@@ -156,13 +154,12 @@ theorem _root_.HasFDerivAt.exists_negativeDisc_homotopy
     (hU : IsOpen U) (h0U : (0 : E × F) ∈ U) (hc : ContinuousOn T U)
     (hQ : ∀ y ∈ U, -‖(T y).1‖ ^ 2 + ‖(T y).2‖ ^ 2 = -‖y.1‖ ^ 2 + ‖y.2‖ ^ 2)
     (hV : V ∈ 𝓝 0) :
-    ∃ h : E ≃ₗᵢ[ℝ] E, ⇑h = ((ContinuousLinearMap.fst ℝ E F).comp
+    ∃ h : E →ₗᵢ[ℝ] E, ⇑h = ((ContinuousLinearMap.fst ℝ E F).comp
         (A.comp (ContinuousLinearMap.inl ℝ E F))).polarFactor ∧
       ∃ δ₀ > 0, ∀ δ ∈ Ioc 0 δ₀, (∀ w ∈ closedBall (0 : E) δ, (w, (0 : F)) ∈ U) ∧
         ∃ H : C(I × closedBall (0 : E) δ, E × F),
           (∀ w, H (0, w) = T ((w : E), 0)) ∧ (∀ w, H (1, w) = (h w, 0)) ∧
           ∀ t w, H (t, w) ∈ V ∧ -‖(H (t, w)).1‖ ^ 2 + ‖(H (t, w)).2‖ ^ 2 ≤ -‖(w : E)‖ ^ 2 := by
-  have := FiniteDimensional.complete ℝ E
   obtain ⟨L, hL, hAL, δ₀, hδ₀, hδU, hδV, hcont, hbound⟩ :=
     hT.exists_small_disk_derivativeRescale hT0 hU h0U hc hQ hV
   -- The negative column of `A` pulls `Q` back to `-‖u‖²`, so its negative block expands norms.
@@ -171,12 +168,12 @@ theorem _root_.HasFDerivAt.exists_negativeDisc_homotopy
     norm_sq_sub_comp_inl hT hT0 hU h0U hQ u
   let N : E →L[ℝ] E := (ContinuousLinearMap.fst ℝ E F).comp C
   have hN : ∀ u, ‖u‖ ≤ ‖N u‖ := C.norm_le_norm_fst_of_norm_sq_sub hC
-  -- Its polar factor is a linear isometry equivalence.
+  -- Its polar factor is a linear isometry.
   let h₀ : E →ₗᵢ[ℝ] E :=
     { toLinearMap := N.polarFactor
       norm_map' := N.norm_polarFactor_apply_of_injective
         (ContinuousLinearMap.injective_of_forall_norm_le (M := 1) fun x ↦ by simpa using hN x) }
-  refine ⟨h₀.toLinearIsometryEquiv rfl, rfl, δ₀, hδ₀, fun δ hδ ↦ ?_⟩
+  refine ⟨h₀, rfl, δ₀, hδ₀, fun δ hδ ↦ ?_⟩
   let ι : C(closedBall (0 : E) δ, E) := ⟨Subtype.val, continuous_subtype_val⟩
   have hw (w : closedBall (0 : E) δ) : ((w : E), (0 : F)) ∈ closedBall (0 : E × F) δ₀ := by
     have := mem_closedBall_zero_iff.mp w.2

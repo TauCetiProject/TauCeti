@@ -307,6 +307,8 @@ private theorem false_of_ord_term_lt {φ : F[X]} {y : F'} (hy : aeval y φ = 0) 
       (Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)) hne fun hc ↦ hi0 (by simp [hc]))
     hsum
 
+section Integral
+
 variable (k F) [Algebra.IsIntegral F F']
 
 /-- For a polynomial Eisenstein at the place below `P'`, a lower-order term `c_i y ^ i` with
@@ -381,7 +383,9 @@ theorem natDegree_mul_ord_eq_ramificationIdx {φ : F[X]}
         linarith
   rw [hkey]
 
-variable [FiniteDimensional F F']
+end Integral
+
+variable (k F) [FiniteDimensional F F']
 
 private theorem ramificationIdx_eq_and_ord_eq_one {y : F'}
     (htop : IntermediateField.adjoin F {y} = ⊤)
