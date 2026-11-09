@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.Geometry.Manifold.Morse.Bott.Basic
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Metric
-import TauCeti.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.InnerProductSpace.Spectral.Inertia
 import TauCeti.Geometry.Manifold.Morse.Bott.Index
 
@@ -158,8 +157,7 @@ theorem mem_positiveNormalSpace_iff {s : S} {p : i.NormalSpace s hn} :
 theorem negativeNormalSpace_neg (s : S) :
     i.negativeNormalSpace (-f) s hn = i.positiveNormalSpace f s hn := by
   rw [negativeNormalSpace_def, positiveNormalSpace_def, criticalHessian_neg,
-    continuousLinearMapOfBilin_neg, ContinuousLinearMap.toLinearMap_neg,
-    pointSpectralSubspace_neg, neg_Iio, neg_zero]
+    pointSpectralSubspace_continuousLinearMapOfBilin_neg_Iio_zero]
 
 /-- The positive normal space of `-f` is the negative normal space of `f`. -/
 @[simp]

@@ -30,6 +30,8 @@ critical submanifold, where `B` is the normal Hessian and the inner product is a
 
 ## Main results
 
+* `InnerProductSpace.pointSpectralSubspace_continuousLinearMapOfBilin_neg`: negating `B` negates
+  the eigenvalues selecting a point-spectral subspace.
 * `InnerProductSpace.apply_eq_zero_of_mem_pointSpectralSubspace`: point-spectral subspaces for
   disjoint sets of eigenvalues are `B`-orthogonal.
 * `InnerProductSpace.apply_self_neg_of_mem_pointSpectralSubspace_Iio` and
@@ -56,6 +58,27 @@ namespace InnerProductSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
   {B : V →L[ℝ] V →L[ℝ] ℝ}
+
+/-- The point-spectral subspace of the Riesz operator of `-B` selected by `Ω` is the point-spectral
+subspace of the Riesz operator of `B` selected by `-Ω`. -/
+theorem pointSpectralSubspace_continuousLinearMapOfBilin_neg (B : V →L[ℝ] V →L[ℝ] ℝ)
+    (Ω : Set ℝ) :
+    pointSpectralSubspace (continuousLinearMapOfBilin (-B) : V →ₗ[ℝ] V) Ω =
+      pointSpectralSubspace (continuousLinearMapOfBilin B : V →ₗ[ℝ] V) (-Ω) := by
+  rw [continuousLinearMapOfBilin_neg, ContinuousLinearMap.toLinearMap_neg,
+    pointSpectralSubspace_neg]
+
+/-- The negative point-spectral subspace of the Riesz operator of `-B` is the positive
+point-spectral subspace of the Riesz operator of `B`. -/
+theorem pointSpectralSubspace_continuousLinearMapOfBilin_neg_Iio_zero (B : V →L[ℝ] V →L[ℝ] ℝ) :
+    pointSpectralSubspace (continuousLinearMapOfBilin (-B) : V →ₗ[ℝ] V) (Iio 0) =
+      pointSpectralSubspace (continuousLinearMapOfBilin B : V →ₗ[ℝ] V) (Ioi 0) := by
+  rw [pointSpectralSubspace_continuousLinearMapOfBilin_neg, neg_Iio, neg_zero]
+
+omit [CompleteSpace V] in
+/-- The negative of a symmetric form is symmetric. -/
+private theorem neg_apply_comm (hB : ∀ u v, B u v = B v u) (u v : V) : (-B) u v = (-B) v u := by
+  simp [hB u v]
 
 /-- Point-spectral subspaces of the Riesz operator of a symmetric form `B`, selected by disjoint
 sets of eigenvalues, are orthogonal for `B`. -/
@@ -105,12 +128,9 @@ spanned by the eigenvectors with positive eigenvalues. -/
 theorem apply_self_pos_of_mem_pointSpectralSubspace_Ioi (hB : ∀ u v, B u v = B v u) {v : V}
     (hv : v ∈ pointSpectralSubspace (continuousLinearMapOfBilin B : V →ₗ[ℝ] V) (Ioi 0))
     (hv0 : v ≠ 0) : 0 < B v v := by
-  have hneg : ∀ u w, (-B) u w = (-B) w u := fun u w ↦ by simp [hB u w]
   have hv' : v ∈ pointSpectralSubspace (continuousLinearMapOfBilin (-B) : V →ₗ[ℝ] V) (Iio 0) := by
-    rw [continuousLinearMapOfBilin_neg, ContinuousLinearMap.toLinearMap_neg,
-      pointSpectralSubspace_neg, neg_Iio, neg_zero]
-    exact hv
-  simpa using apply_self_neg_of_mem_pointSpectralSubspace_Iio hneg hv' hv0
+    rwa [pointSpectralSubspace_continuousLinearMapOfBilin_neg_Iio_zero]
+  simpa using apply_self_neg_of_mem_pointSpectralSubspace_Iio (neg_apply_comm hB) hv' hv0
 
 /-- A symmetric form is positive semidefinite on the point-spectral subspace of its Riesz operator
 spanned by the eigenvectors with nonnegative eigenvalues. -/
@@ -151,10 +171,8 @@ eigenvalues has dimension `sigPos B`. -/
 theorem finrank_pointSpectralSubspace_Ioi_zero (hB : ∀ u v, B u v = B v u) :
     finrank ℝ (pointSpectralSubspace (continuousLinearMapOfBilin B : V →ₗ[ℝ] V) (Ioi 0)) =
       sigPos B.toBilinForm.toQuadraticMap := by
-  have hneg : ∀ u w, (-B) u w = (-B) w u := fun u w ↦ by simp [hB u w]
-  have h := finrank_pointSpectralSubspace_Iio_zero hneg
-  rw [continuousLinearMapOfBilin_neg, ContinuousLinearMap.toLinearMap_neg,
-    pointSpectralSubspace_neg, neg_Iio, neg_zero] at h
+  have h := finrank_pointSpectralSubspace_Iio_zero (neg_apply_comm hB)
+  rw [pointSpectralSubspace_continuousLinearMapOfBilin_neg_Iio_zero] at h
   have hQ : (-B).toBilinForm.toQuadraticMap = -B.toBilinForm.toQuadraticMap := by
     ext v
     simp
