@@ -24,10 +24,10 @@ that the constant in an interior estimate for `D` must depend on a bound for `S`
 
 ## Main results
 
-* `TauCeti.crOperator_differentiated_system`: for `C²` `ξ`, `C¹` `J, S` and
-  `η = ∂_s ξ + J ∂_t ξ + S ξ`, the pair `Ξ = (∂_s ξ, ∂_t ξ)` solves
-  `∂_s Ξ + J₂ ∂_t Ξ + S₂ Ξ = (∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)` with `J₂ = diag(J, J)` and
-  `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]`.
+* `TauCeti.crOperator_differentiated_system`: for `ξ` that is `C²` near `z`, `J, S`
+  differentiable at `z` and `η = ∂_s ξ + J ∂_t ξ + S ξ`, the pair `Ξ = (∂_s ξ, ∂_t ξ)` solves
+  at `z` the equation `∂_s Ξ + J₂ ∂_t Ξ + S₂ Ξ = (∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)` with
+  `J₂ = diag(J, J)` and `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]`.
 * `TauCeti.crOperator_differentiated_system_diag_ne`: for a non-constant complex structure `J`
   on `ℝ²`, the plausible wrong coefficient `S₂ = diag(S, S)` gives a false equation.
 * `TauCeti.eLpNorm_partialS_expNegRe`: for `J = i`, `S = m` and `m ≥ 0`, the function
@@ -60,29 +60,28 @@ section Differentiated
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- **The differentiated system.** For a `C²` map `ξ`, `C¹` coefficients `J, S` and
-`η = ∂_s ξ + J ∂_t ξ + S ξ`, the pair `Ξ = (∂_s ξ, ∂_t ξ)` solves
-`∂_s Ξ + J₂ ∂_t Ξ + S₂ Ξ = (∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)` with `J₂ = diag(J, J)` and
-`S₂ = [[S, ∂_s J], [0, S + ∂_t J]]`. The off-diagonal `∂_s J` and the `∂_t J` term come from
-differentiating the coefficient `J`. -/
+/-- **The differentiated system.** For a map `ξ` that is `C²` near `z`, coefficients `J, S`
+differentiable at `z` and `η = ∂_s ξ + J ∂_t ξ + S ξ`, the pair `Ξ = (∂_s ξ, ∂_t ξ)` solves
+at `z` the equation `∂_s Ξ + J₂ ∂_t Ξ + S₂ Ξ = (∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)` with
+`J₂ = diag(J, J)` and `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]`. The off-diagonal `∂_s J` and the
+`∂_t J` term come from differentiating the coefficient `J`. -/
 theorem crOperator_differentiated_system {ξ η : ℂ → V} {Ξ : ℂ → V × V} {J S : ℂ → V →L[ℝ] V}
-    (hξ : ContDiff ℝ 2 ξ) (hJ : ContDiff ℝ 1 J) (hS : ContDiff ℝ 1 S)
+    {z : ℂ} (hξ : ContDiffAt ℝ 2 ξ z) (hJ : DifferentiableAt ℝ J z)
+    (hS : DifferentiableAt ℝ S z)
     (hη : η = fun w => fderiv ℝ ξ w 1 + J w (fderiv ℝ ξ w I) + S w (ξ w))
-    (hΞ : Ξ = fun w => (fderiv ℝ ξ w 1, fderiv ℝ ξ w I)) (z : ℂ) :
+    (hΞ : Ξ = fun w => (fderiv ℝ ξ w 1, fderiv ℝ ξ w I)) :
     fderiv ℝ Ξ z 1 + (J z).prodMap (J z) (fderiv ℝ Ξ z I) +
         (((S z).coprod (fderiv ℝ J z 1)).prod
           ((0 : V →L[ℝ] V).coprod (S z + fderiv ℝ J z I))) (Ξ z) =
       (fderiv ℝ η z 1 - fderiv ℝ S z 1 (ξ z), fderiv ℝ η z I - fderiv ℝ S z I (ξ z)) := by
   subst hη hΞ
   set D2 := fderiv ℝ (fderiv ℝ ξ) z
-  have hsymm : ∀ v w, D2 v w = D2 w v :=
-    (hξ.contDiffAt (x := z)).isSymmSndFDerivAt (by simp)
+  have hsymm : ∀ v w, D2 v w = D2 w v := hξ.isSymmSndFDerivAt (by simp)
   have hDξ : HasFDerivAt (fderiv ℝ ξ) D2 z :=
-    ((hξ.fderiv_right (m := 1) le_rfl).differentiable one_ne_zero z).hasFDerivAt
-  have hξz : HasFDerivAt ξ (fderiv ℝ ξ z) z :=
-    (hξ.differentiable two_ne_zero z).hasFDerivAt
-  have hJz : HasFDerivAt J (fderiv ℝ J z) z := (hJ.differentiable one_ne_zero z).hasFDerivAt
-  have hSz : HasFDerivAt S (fderiv ℝ S z) z := (hS.differentiable one_ne_zero z).hasFDerivAt
+    ((hξ.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero).hasFDerivAt
+  have hξz : HasFDerivAt ξ (fderiv ℝ ξ z) z := (hξ.differentiableAt two_ne_zero).hasFDerivAt
+  have hJz : HasFDerivAt J (fderiv ℝ J z) z := hJ.hasFDerivAt
+  have hSz : HasFDerivAt S (fderiv ℝ S z) z := hS.hasFDerivAt
   have hpart (u : ℂ) : HasFDerivAt (fun w => fderiv ℝ ξ w u) (D2.flip u) z := by
     simpa using hDξ.clm_apply (hasFDerivAt_const u z)
   have hΞd : HasFDerivAt (fun w => (fderiv ℝ ξ w 1, fderiv ℝ ξ w I))
