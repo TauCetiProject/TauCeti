@@ -32,10 +32,13 @@ namespace ProbabilityTheory.HasSubgaussianMGF
 /-- A sub-Gaussian bound on the centered variable implies a sub-exponential bound. -/
 theorem hasSubexponentialMGF_of_centered {Ω : Type*} [MeasurableSpace Ω]
     {μ : Measure Ω} [IsProbabilityMeasure μ] {X : Ω → ℝ} {c : ℝ≥0} {K : ℝ}
-    (hX : Integrable X μ)
     (hcenter : HasSubgaussianMGF (fun ω ↦ X ω - μ[X]) c μ)
     (hK : 0 < K) (hc : (c : ℝ) / 2 ≤ K ^ 2) :
     TauCeti.Probability.HasSubexponentialMGF X K μ := by
+  have hX : Integrable X μ := by
+    convert hcenter.integrable.add (integrable_const μ[X]) using 1
+    funext ω
+    simp
   refine ⟨hK, hX, ?_, ?_⟩
   · intro t ht
     exact hcenter.integrable_exp_mul t
@@ -51,7 +54,7 @@ theorem hasSubexponentialMGF {Ω : Type*} [MeasurableSpace Ω]
     (hX : HasSubgaussianMGF X c μ)
     (hK : 0 < K) (hc : (c : ℝ) / 2 ≤ K ^ 2) :
     TauCeti.Probability.HasSubexponentialMGF X K μ := by
-  apply hasSubexponentialMGF_of_centered hX.integrable _ hK hc
+  apply hasSubexponentialMGF_of_centered _ hK hc
   simpa only [hX.integral_eq_zero, sub_zero] using hX
 
 end ProbabilityTheory.HasSubgaussianMGF
@@ -75,11 +78,7 @@ theorem hasSubexponentialMGF_fun_id_gaussianReal {m : ℝ} {v : ℝ≥0} {K : �
     convert h using 1
     funext x
     rfl
-  have hi : Integrable (fun x : ℝ ↦ x) (gaussianReal m v) := by
-    convert hcenter.integrable.add (integrable_const m) using 1
-    funext x
-    simp only [Pi.add_apply, sub_add_cancel]
-  apply ProbabilityTheory.HasSubgaussianMGF.hasSubexponentialMGF_of_centered hi _ hK hv
+  apply ProbabilityTheory.HasSubgaussianMGF.hasSubexponentialMGF_of_centered _ hK hv
   simpa [integral_id_gaussianReal] using hcenter
 
 end TauCeti.Probability
