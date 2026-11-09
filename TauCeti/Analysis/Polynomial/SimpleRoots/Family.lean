@@ -58,7 +58,7 @@ the family of coefficient blocks, provided `φ i` is analytic at every represent
 private theorem analyticAt_pi_coeffEquiv_map_coeffEquiv_symm
     {φ : ι → 𝕜 → 𝕜} {c₀ z : ∀ i, Fin (m i) → 𝕜}
     (hz : ∀ i, Function.Injective (z i))
-    (hc₀ : ∀ i, (coeffEquiv 𝕜 (m i)).symm (c₀ i) = ofFn (z i))
+    (hc₀ : ∀ i, (coeffEquiv 𝕜 (m i)).symm (c₀ i) = Sym.ofFn (z i))
     (hφ : ∀ i j, AnalyticAt 𝕜 (φ i) (z i j)) :
     AnalyticAt 𝕜
       (fun c i => coeffEquiv 𝕜 (m i)
@@ -78,7 +78,7 @@ theorem analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm
     (e e' : (Σ i, Fin (m i)) ≃ Fin n)
     {φ : ι → 𝕜 → 𝕜} {c₀ z : ∀ i, Fin (m i) → 𝕜}
     (hz : ∀ i, Function.Injective (z i))
-    (hc₀ : ∀ i, (coeffEquiv 𝕜 (m i)).symm (c₀ i) = ofFn (z i))
+    (hc₀ : ∀ i, (coeffEquiv 𝕜 (m i)).symm (c₀ i) = Sym.ofFn (z i))
     (hφ : ∀ i j, AnalyticAt 𝕜 (φ i) (z i j)) :
     AnalyticAt 𝕜
       (fun c => piSigmaConstHomeomorph 𝕜 e' (fun i =>

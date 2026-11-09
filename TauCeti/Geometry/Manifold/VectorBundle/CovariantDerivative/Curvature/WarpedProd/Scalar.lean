@@ -118,7 +118,7 @@ private theorem IsWarpedProduct.sum_vertical_curvature :
         (tangentSpaceProdEquiv p).symm (0, (f p.1)⁻¹ • c k)⟫_ℝ =
       (⟪(leviCivitaConnection J N).curvatureTensor p.2 (c k) (c j) (c j), c k⟫_ℝ -
         ‖mgradient I f p.1‖ ^ 2 * (1 - if k = j then 1 else 0)) / f p.1 ^ 2 := by
-    rw [h.inner_eq, h.tangentSpaceProdEquiv_curvatureTensor_vertical hf p hf₀]
+    rw [h.inner_eq, h.tangentSpaceProdEquiv_curvatureTensor_vertical hf p]
     simp only [ContinuousLinearEquiv.apply_symm_apply, inner_zero_left, zero_add,
       inner_sub_left, map_smul, LinearMap.smul_apply, inner_smul_left, inner_smul_right,
       c.inner_eq_one]

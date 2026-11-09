@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Probability.Process.LocalProperty
 public import Mathlib.MeasureTheory.Constructions.Polish.StronglyMeasurable
+import TauCeti.Probability.Process.Stopping
 
 /-!
-# Adapted representatives of local processes
+# Adapted representatives of local processes and filtration enlargement
 
 A native local property controls the stopped processes
 `stoppedProcess (fun t ↦ {ω | ⊥ < τ n ω}.indicator (X t)) (τ n)`.
@@ -26,6 +27,12 @@ therefore gives the adapted representative. Any almost-sure path property, such 
 continuity, transfers along this simultaneous-time equality. This does not by itself
 assert that the new representative satisfies the original local property: stopping a
 merely adapted replacement at a general stopping time requires additional measurability.
+
+For any native local property, the stopped stages converge almost surely at each fixed time
+to the original process (`ProbabilityTheory.Locally.ae_tendsto_stoppedProcess_localSeq`).
+
+Enlarging a filtration preserves its localizing sequences. The stopping-time property
+transports to the larger filtration, while monotonicity and divergence are unchanged.
 
 ## References
 
@@ -95,3 +102,42 @@ theorem Locally.exists_stronglyAdapted_ae_eq [TopologicalSpace E]
     simp only [Y, ite_eq_left hex, hlim.limUnder_eq]
 
 end ProbabilityTheory
+
+namespace ProbabilityTheory.IsLocalizingSequence
+
+open MeasureTheory
+
+/-- A localizing sequence for a filtration also localizes any larger filtration. -/
+theorem mono_filtration {ι Ω : Type*} [Preorder ι] [TopologicalSpace ι] [OrderTopology ι]
+    {mΩ : MeasurableSpace Ω} {μ : Measure Ω} {ℱ 𝒢 : Filtration ι mΩ}
+    {τ : ℕ → Ω → WithTop ι} (hτ : IsLocalizingSequence ℱ τ μ) (h : ℱ ≤ 𝒢) :
+    IsLocalizingSequence 𝒢 τ μ where
+  isStoppingTime n := (hτ.isStoppingTime n).mono_filtration h
+  tendsto_top := hτ.tendsto_top
+  mono := hτ.mono
+
+end ProbabilityTheory.IsLocalizingSequence
+
+namespace ProbabilityTheory.Locally
+
+open Filter MeasureTheory
+
+variable {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+  [TopologicalSpace ι] [OrderTopology ι] [Zero E] [TopologicalSpace E]
+  {mΩ : MeasurableSpace Ω} {P : Measure Ω} {ℱ : Filtration ι mΩ}
+  {X : ι → Ω → E} {p : (ι → Ω → E) → Prop}
+
+/-- At each fixed time, the native stopped stages of any local property converge almost surely
+to the original process, including the indicator of a strictly positive localizing time. -/
+theorem ae_tendsto_stoppedProcess_localSeq (hX : Locally p ℱ X P) (t : ι) :
+    ∀ᵐ ω ∂P, Tendsto (fun n ↦ stoppedProcess
+      (fun u ↦ {ω | ⊥ < hX.localSeq n ω}.indicator (X u)) (hX.localSeq n) t ω)
+      atTop (𝓝 (X t ω)) := by
+  filter_upwards [hX.isLocalizingSequence_localSeq.tendsto_top] with ω hω
+  have ht := hω.eventually (eventually_gt_nhds (WithTop.coe_lt_top t))
+  apply tendsto_const_nhds.congr'
+  filter_upwards [ht] with n hn
+  rw [stoppedProcess_eq_of_le hn.le, Set.indicator_of_mem]
+  exact lt_of_le_of_lt (WithTop.coe_le_coe.mpr bot_le) hn
+
+end ProbabilityTheory.Locally

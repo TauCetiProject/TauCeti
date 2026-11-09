@@ -608,6 +608,16 @@ theorem IsMorse.finite_singularHomology (hf : IsMorse I f) (n : ℕ) :
   have := (h n).1
   exact Module.Finite.equiv (he n).some.symm.toLinearEquiv
 
+/-- On a compact boundaryless manifold carrying a Morse function, the singular homology with
+coefficients in a finite-dimensional module `V` has rank in `ℕ∞` equal to its `finrank`. -/
+theorem IsMorse.toENat_rank_singularHomology (hf : IsMorse I f) (n : ℕ) :
+    (Module.rank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj V).obj
+      (TopCat.of M))).toENat =
+    finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).obj V).obj
+      (TopCat.of M)) := by
+  have := hf.finite_singularHomology V n
+  rw [← finrank_eq_rank, Cardinal.toENat_nat]
+
 /-- **The weak Morse inequalities.** For a Morse function `f` on a compact boundaryless manifold
 `M`, the singular homology `Hₙ(M; V)` has dimension at most `dim V` times the number of critical
 points of index `n`. -/
