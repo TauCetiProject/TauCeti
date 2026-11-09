@@ -210,7 +210,7 @@ private theorem toZModPow_localCyclotomicCharacter_of_mk_eq_artinMap {u : ℤ_[p
   set m := p ^ n * N
   have : NeZero m := ⟨mul_ne_zero (pow_ne_zero n hp.ne_zero)
     (Nat.sub_ne_zero_of_lt (Nat.one_lt_pow hf hp.one_lt))⟩
-  have hpN : p.Coprime N := Nat.coprime_pow_sub_one p f hp.one_lt hf
+  have hpN : p.Coprime N := Nat.coprime_pow_sub_one hp.ne_zero hf
   have hdN : N ∣ m := dvd_mul_left N _
   have hdP : p ^ n ∣ m := dvd_mul_right _ N
   have hgN := apply_eq_pow_of_mk_eq_artinMap_padic_uniformizer p hx g hg hf

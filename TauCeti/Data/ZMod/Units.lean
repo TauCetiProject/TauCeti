@@ -283,12 +283,12 @@ theorem unitOfIsCoprime_div_eq_iff {n : ℕ} {a b a' b' : ℤ} (ha : IsCoprime a
 `(ZMod (q ^ N - 1))ˣ` has exact order `N`. This is the elementary arithmetic behind the choice of
 cyclotomic modulus in Milne's global existence argument. -/
 theorem orderOf_unitOfCoprime_pow_sub_one (q N : ℕ) (hq : 1 < q) (hN : N ≠ 0) :
-    orderOf (ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one q N hq hN)) = N := by
+    orderOf (ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one (Nat.ne_zero_of_lt hq) hN)) = N := by
   let _ : NeZero (q ^ N - 1) := ⟨by
     have : 1 < q ^ N := one_lt_pow₀ hq hN
     omega⟩
   let m := q ^ N - 1
-  let u := ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one q N hq hN)
+  let u := ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one (Nat.ne_zero_of_lt hq) hN)
   have hpow : 1 ≤ q ^ N := Nat.one_le_iff_ne_zero.mpr
     (pow_ne_zero N (Nat.ne_zero_of_lt hq))
   have huN : u ^ N = 1 := by
@@ -335,7 +335,8 @@ theorem ZMod.unitsMap_eq_of_zpow_of_unitsMap_eq {p m n : ℕ} (hp : 1 < p)
     (hqN' : (r : ZMod m).cast = (p : ZMod (p ^ (p ^ n).totient - 1))) :
     ZMod.unitsMap hdP r = ZMod.unitsMap hdP a := by
   have hf : (p ^ n).totient ≠ 0 := (Nat.totient_pos.2 (pow_pos (zero_lt_one.trans hp) n)).ne'
-  have hpN : p.Coprime (p ^ (p ^ n).totient - 1) := Nat.coprime_pow_sub_one p _ hp hf
+  have hpN : p.Coprime (p ^ (p ^ n).totient - 1) :=
+    Nat.coprime_pow_sub_one (Nat.ne_zero_of_lt hp) hf
   have hqN₁ : ZMod.unitsMap hdN a = ZMod.unitOfCoprime p hpN :=
     Units.ext (by rw [ZMod.unitsMap_val, hqN, ZMod.coe_unitOfCoprime])
   have hqN₂ : ZMod.unitsMap hdN r = ZMod.unitOfCoprime p hpN :=

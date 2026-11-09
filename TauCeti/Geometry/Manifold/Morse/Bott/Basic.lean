@@ -371,7 +371,7 @@ private theorem snd_eq_zero_of_criticalHessian_comp_snd_apply_eq_zero {q : V →
     (hv : criticalHessian (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) (x, 0) v = 0) : v.2 = 0 := by
   have hD₂ : fderiv ℝ (fderiv ℝ q) 0 v.2 = 0 := ContinuousLinearMap.ext fun w ↦ by
     have hw := congrArg (fun L ↦ L ((0 : E), w)) hv
-    exact (criticalHessian_comp_snd_apply hq.contDiffAt hq.fderiv_eq_zero x v (0, w)).symm.trans
+    exact (criticalHessian_comp_snd_apply hq.contDiffAt x v (0, w)).symm.trans
       hw
   exact hq.isInvertible.injective (hD₂.trans (map_zero _).symm)
 

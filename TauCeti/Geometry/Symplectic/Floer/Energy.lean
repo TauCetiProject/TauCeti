@@ -87,13 +87,14 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
   along a line near which the perturbation is cylindrical.
 * `SymplecticForm.hamiltonianCurvature_congr_of_eventuallyEq`,
   `SymplecticForm.hamiltonianCurvature_comp_add_right`: the curvature is local in the domain and
-  commutes with domain translations, and likewise for the perturbed derivative
+  commutes with domain translations (so data that agree on an open set have the same integrated
+  curvature over it, `SymplecticForm.setLIntegral_enorm_hamiltonianCurvature_congr_of_isOpen`),
+  and likewise for the perturbed derivative
   (`SymplecticForm.perturbedFDeriv_congr_of_eventuallyEq`,
   `SymplecticForm.perturbedFDeriv_comp_add_right`) and the energy density
   (`SymplecticForm.floerEnergyDensity_congr_of_eventuallyEq`,
   `SymplecticForm.floerEnergyDensity_comp_add_right`); hence translations preserve the energy
-  (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`) and the integrated curvature
-  (`SymplecticForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`).
+  (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`).
 
 ## References
 
@@ -205,6 +206,16 @@ theorem hamiltonianCurvature_congr_of_eventuallyEq (ω : SymplecticForm V)
   have ht' : (fun w ↦ Kt w x) =ᶠ[𝓝 z] fun w ↦ Kt' w x := ht.mono fun _ hw ↦ congrFun hw x
   rw [hamiltonianCurvature_def, hamiltonianCurvature_def, hs'.fderiv_eq, ht'.fderiv_eq,
     hs.eq_of_nhds, ht.eq_of_nhds]
+
+/-- Perturbation data that agree on an open set have the same integrated curvature over it. -/
+theorem setLIntegral_enorm_hamiltonianCurvature_congr_of_isOpen (ω : SymplecticForm V)
+    {Ks Kt Ks' Kt' : ℝ × ℝ → V → ℝ} {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hs : EqOn Ks Ks' U)
+    (ht : EqOn Kt Kt' U) (u : ℝ × ℝ → V) :
+    ∫⁻ z in U, ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ =
+      ∫⁻ z in U, ‖ω.hamiltonianCurvature Ks' Kt' z (u z)‖ₑ :=
+  setLIntegral_congr_fun hU.measurableSet fun z hz ↦ by
+    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hs.eventuallyEq_of_mem (hU.mem_nhds hz))
+      (ht.eventuallyEq_of_mem (hU.mem_nhds hz))]
 
 /-- Curvature commutes with translations of the domain. -/
 theorem hamiltonianCurvature_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
@@ -520,17 +531,6 @@ theorem lintegral_floerEnergyDensity_comp_add_right (ω : SymplecticForm V)
   exact hv.setLIntegral_comp_preimage_emb (measurableEmbedding_addRight v)
     (fun z ↦ ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z)) S
 
-/-- Translations of the domain preserve the integrated curvature along a map. -/
-theorem lintegral_enorm_hamiltonianCurvature_comp_add_right (ω : SymplecticForm V)
-    (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (v : ℝ × ℝ) :
-    ∫⁻ z, ‖ω.hamiltonianCurvature (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) z (u (z + v))‖ₑ =
-      ∫⁻ z, ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ := by
-  have hv : MeasurePreserving (· + v) volume volume :=
-    (measurePreserving_add_right volume v.1).prod (measurePreserving_add_right volume v.2)
-  simp only [hamiltonianCurvature_comp_add_right]
-  exact hv.lintegral_comp_emb (measurableEmbedding_addRight v)
-    (fun z ↦ ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ)
-
 variable {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
 
 /-- For a map and perturbation data that are `C¹` over an open set `U` of the domain, the Floer
@@ -542,9 +542,9 @@ theorem continuousOn_floerEnergyDensity (ω : SymplecticForm V) {U : Set (ℝ ×
   have hdu := hu.continuousOn_fderiv_of_isOpen hU le_rfl
   refine (ω.continuousOn_apply_comp
     ((hdu.clm_apply (continuousOn_const (c := stdComplexLineReal))).sub
-      (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hU hu.continuousOn hKs))
+      (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hu.continuousOn hKs))
     ((hdu.clm_apply (continuousOn_const (c := stdComplexLineImag))).sub
-      (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hU hu.continuousOn hKt))).congr
+      (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hu.continuousOn hKt))).congr
     fun z _ ↦ ?_
   simp only [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
     perturbedFDeriv_apply_stdComplexLineImag, Pi.sub_apply]
@@ -575,8 +575,8 @@ theorem continuousOn_hamiltonianCurvature_comp (ω : SymplecticForm V) {U : Set 
     (((hD Kt hKt).clm_apply continuousOn_const).sub
       ((hD Ks hKs).clm_apply continuousOn_const)).sub
         (ω.continuousOn_apply_comp
-          (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hU hu hKs)
-          (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hU hu hKt))
+          (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hu hKs)
+          (ω.continuousOn_hamiltonianVectorField_comp_of_contDiffOn hu hKt))
   refine h.congr fun z hz ↦ ?_
   simp only [hamiltonianCurvature_def, poissonBracket_def, hslice Ks hKs hz, hslice Kt hKt hz]
 
