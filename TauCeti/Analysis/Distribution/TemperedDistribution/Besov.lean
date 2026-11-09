@@ -79,6 +79,12 @@ variable (s p q) in
 def MemBesov (u : 𝓢'(E, F)) : Prop :=
   besovENorm φ s p q u < ∞
 
+/-- The defining formula of the Besov norm as the `ℓ^q` norm of the weighted block norms. -/
+theorem besovENorm_def (u : 𝓢'(E, F)) :
+    besovENorm φ s p q u = MeasureTheory.eLpNorm
+      (fun j : ℕ ↦ 2 ^ (s * j) * eLpNorm p (littlewoodPaleyBlock F φ j u)) q .count :=
+  (rfl)
+
 theorem memBesov_iff {u : 𝓢'(E, F)} : MemBesov φ s p q u ↔ besovENorm φ s p q u < ∞ :=
   Iff.rfl
 
@@ -111,6 +117,7 @@ theorem besovENorm_zero : besovENorm φ s p q (0 : 𝓢'(E, F)) = 0 := by
 
 /-- The Besov norm vanishes only at `0`, since a tempered distribution is the sum of its
 Littlewood–Paley blocks. -/
+@[simp]
 theorem besovENorm_eq_zero_iff (hq : q ≠ 0) {u : 𝓢'(E, F)} :
     besovENorm φ s p q u = 0 ↔ u = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ besovENorm_zero (p := p) φ⟩
@@ -145,7 +152,7 @@ theorem besovENorm_smul (c : ℂ) (u : 𝓢'(E, F)) :
 theorem besovENorm_neg (u : 𝓢'(E, F)) : besovENorm φ s p q (-u) = besovENorm φ s p q u := by
   simpa using besovENorm_smul φ (s := s) (p := p) (q := q) (-1) u
 
-/-- The Besov norm **decreases with the smoothness**: `‖u‖_{B^{s'}_{p,q}} ≤ ‖u‖_{B^s_{p,q}}` for
+/-- The Besov norm **increases with the smoothness**: `‖u‖_{B^{s'}_{p,q}} ≤ ‖u‖_{B^s_{p,q}}` for
 `s' ≤ s`. -/
 theorem besovENorm_le_of_smoothness_le (hs : s' ≤ s) (u : 𝓢'(E, F)) :
     besovENorm φ s' p q u ≤ besovENorm φ s p q u := by

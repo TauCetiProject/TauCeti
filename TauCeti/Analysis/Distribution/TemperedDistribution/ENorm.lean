@@ -38,6 +38,14 @@ noncomputable section
 open MeasureTheory (Lp Measure)
 open scoped ENNReal SchwartzMap
 
+/-- An `Lᵖ` function is determined by its tempered distribution. -/
+theorem MeasureTheory.Lp.toTemperedDistribution_injective {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F] {μ : Measure E}
+    [μ.HasTemperateGrowth] [MeasureTheory.IsLocallyFiniteMeasure μ] {p : ℝ≥0∞} [Fact (1 ≤ p)] :
+    Function.Injective (fun f : Lp F p μ ↦ (f : 𝓢'(E, F))) :=
+  LinearMap.ker_eq_bot.mp MeasureTheory.Lp.ker_toTemperedDistributionCLM_eq_bot
+
 namespace TemperedDistribution
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -49,12 +57,6 @@ variable (p) in
 distribution of `f ∈ Lᵖ`, and `∞` when `u` is not an `Lᵖ` function. -/
 def eLpNorm (u : 𝓢'(E, F)) : ℝ≥0∞ :=
   ⨅ (f : Lp F p (MeasureTheory.volume : Measure E)) (_ : (f : 𝓢'(E, F)) = u), ‖f‖ₑ
-
-/-- An `Lᵖ` function is determined by its tempered distribution. -/
-theorem _root_.MeasureTheory.Lp.toTemperedDistribution_injective :
-    Function.Injective
-      (fun f : Lp F p (MeasureTheory.volume : Measure E) ↦ (f : 𝓢'(E, F))) :=
-  LinearMap.ker_eq_bot.mp MeasureTheory.Lp.ker_toTemperedDistributionCLM_eq_bot
 
 /-- The `Lᵖ` norm of the tempered distribution of `f ∈ Lᵖ` is `‖f‖ₑ`. -/
 @[simp]
