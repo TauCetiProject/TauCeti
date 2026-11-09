@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -47,6 +49,9 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   the Japanese bracket `(1 + ‖ξ‖ ^ 2) ^ (1 / 2)`.
 * `ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm`: a smooth map which agrees outside a
   ball with a map of bounded order-`n` derivative has a bounded order-`n` derivative.
+* `ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear`: along any filter, if the derivatives of
+  order at most `n` of `f` and `g` are `O(ρ₁)` and `O(ρ₂)`, then the order-`n` derivative of
+  `y ↦ B (f y) (g y)` is `O(ρ₁ ρ₂)`.
 -/
 
 public section
@@ -182,3 +187,24 @@ theorem ContDiff.exists_norm_iteratedFDeriv_le_of_eq_of_lt_norm [ProperSpace E] 
     exact hfg y hy
   rw [(hfg'.iteratedFDeriv 𝕜 n).eq_of_nhds]
   exact (hg x hx).trans (le_max_right _ _)
+
+open Asymptotics in
+/-- **Asymptotic bounds on the derivatives of a bilinear expression.** Along any filter, if the
+derivatives of order at most `n` of `f` and `g` are `O(ρ₁)` and `O(ρ₂)`, then the order-`n`
+derivative of `y ↦ B (f y) (g y)` is `O(ρ₁ ρ₂)`, by the Leibniz bound
+`ContinuousLinearMap.norm_iteratedFDeriv_le_of_bilinear`. -/
+theorem ContinuousLinearMap.isBigO_iteratedFDeriv_of_bilinear {D : Type*} [NormedAddCommGroup D]
+    [NormedSpace 𝕜 D] (B : E →L[𝕜] F →L[𝕜] G) {f : D → E} {g : D → F} {N : WithTop ℕ∞}
+    (hf : ContDiff 𝕜 N f) (hg : ContDiff 𝕜 N g) {n : ℕ} (hn : n ≤ N) {l : Filter D}
+    {ρ₁ ρ₂ : D → ℝ} (hfn : ∀ i ≤ n, iteratedFDeriv 𝕜 i f =O[l] ρ₁)
+    (hgn : ∀ i ≤ n, iteratedFDeriv 𝕜 i g =O[l] ρ₂) :
+    iteratedFDeriv 𝕜 n (fun y ↦ B (f y) (g y)) =O[l] fun y ↦ ρ₁ y * ρ₂ y := by
+  have hsum : (fun y ↦ ‖B‖ * ∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ) *
+      ‖iteratedFDeriv 𝕜 i f y‖ * ‖iteratedFDeriv 𝕜 (n - i) g y‖) =O[l]
+        fun y ↦ ρ₁ y * ρ₂ y := by
+    refine IsBigO.const_mul_left (IsBigO.fun_sum fun i hi ↦ ?_) _
+    have hi' : i ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
+    exact ((hfn i hi').norm_left.const_mul_left _).mul (hgn (n - i) (Nat.sub_le n i)).norm_left
+  refine IsBigO.trans (IsBigO.of_bound 1 (Filter.Eventually.of_forall fun y ↦ ?_)) hsum
+  rw [one_mul, Real.norm_eq_abs]
+  exact (B.norm_iteratedFDeriv_le_of_bilinear hf hg y hn).trans (le_abs_self _)
