@@ -352,8 +352,7 @@ theorem locallyIntegrableOn_starSchwarzReflection
 
 /-- An integral of a reflected function against a real test function on the doubled domain is the
 upper half-plane integral plus the conjugate of the reflected upper half-plane integral. -/
-private theorem integral_smul_starSchwarzReflection [CompleteSpace F]
-    {f : ℂ → F} (a : ℂ → ℝ)
+private theorem integral_smul_starSchwarzReflection {f : ℂ → F} (a : ℂ → ℝ)
     (ha : Integrable (fun z ↦ a z • starSchwarzReflection f z)) :
     ∫ z, a z • starSchwarzReflection f z =
       (∫ z in {z : ℂ | 0 ≤ z.im}, a z • f z) +
