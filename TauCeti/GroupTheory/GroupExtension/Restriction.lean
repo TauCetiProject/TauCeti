@@ -18,8 +18,8 @@ factor set are preserved.
 
 These comparisons allow crossed systems presented by sections to be restricted
 without choosing new lifts or replacing a noncentral kernel by an abelian one.
-In particular they apply to Clifford extensions with kernel the units of the
-full endomorphism algebra.
+In particular they apply to Clifford extensions with kernel `End_N(A)ˣ`, the unit
+group of the equivariant endomorphism algebra (the commutant).
 -/
 
 public section
