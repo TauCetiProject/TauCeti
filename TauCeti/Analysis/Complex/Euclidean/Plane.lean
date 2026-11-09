@@ -18,8 +18,9 @@ theory are stated. `TauCeti.Complex.equivRealProdL2` reads the coordinates in th
 so that the normal coordinate `im z` of the upper half-plane comes first, as in the model space.
 
 Both are linear isometries between finite-dimensional real inner product spaces, so they and their
-inverses preserve the volume measure (`MeasureTheory.MeasurePreserving`, from Mathlib's
-`LinearIsometryEquiv.measurePreserving`). The volume of `ℂ` is the measure of its real inner
+inverses preserve the volume measure: `equivRealProdL2.measurePreserving` and
+`equivRealProdL2Swap.symm.measurePreserving` are instances of Mathlib's
+`LinearIsometryEquiv.measurePreserving`. The volume of `ℂ` is the measure of its real inner
 product space structure, so Lebesgue integrals, `Lᵖ` seminorms, weak derivatives and Lipschitz
 domains transport through these equivalences with the generic lemmas for measure-preserving maps
 and affine isometries.
@@ -28,15 +29,11 @@ and affine isometries.
 
 * `TauCeti.Complex.equivRealProdL2`: the linear isometry `z ↦ (re z, im z)`.
 * `TauCeti.Complex.equivRealProdL2Swap`: the linear isometry `z ↦ (im z, re z)`.
-* `TauCeti.Complex.measurePreserving_equivRealProdL2`,
-  `TauCeti.Complex.measurePreserving_equivRealProdL2Swap`: both preserve the volume measure.
 -/
 
 public section
 
 noncomputable section
-
-open MeasureTheory
 
 namespace TauCeti.Complex
 
@@ -67,22 +64,5 @@ theorem equivRealProdL2Swap_apply (z : ℂ) :
 @[simp]
 theorem equivRealProdL2Swap_symm_apply (x : WithLp 2 (ℝ × ℝ)) :
     equivRealProdL2Swap.symm x = ⟨x.snd, x.fst⟩ := (rfl)
-
-/-- The coordinates `(re z, im z)` preserve the volume measure. -/
-theorem measurePreserving_equivRealProdL2 : MeasurePreserving equivRealProdL2 :=
-  equivRealProdL2.measurePreserving
-
-/-- The inverse of the coordinates `(re z, im z)` preserves the volume measure. -/
-theorem measurePreserving_equivRealProdL2_symm : MeasurePreserving equivRealProdL2.symm :=
-  equivRealProdL2.symm.measurePreserving
-
-/-- The coordinates `(im z, re z)` preserve the volume measure. -/
-theorem measurePreserving_equivRealProdL2Swap : MeasurePreserving equivRealProdL2Swap :=
-  equivRealProdL2Swap.measurePreserving
-
-/-- The inverse of the coordinates `(im z, re z)` preserves the volume measure. -/
-theorem measurePreserving_equivRealProdL2Swap_symm :
-    MeasurePreserving equivRealProdL2Swap.symm :=
-  equivRealProdL2Swap.symm.measurePreserving
 
 end TauCeti.Complex
