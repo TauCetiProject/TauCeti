@@ -298,31 +298,36 @@ theorem isClosedEmbedding_presentationLimitMap_laurentCoverOpen_of_isClosedEmbed
       (eqToIso (completionLocObj_obj P (p b).num (p b).den _ (p b).hasDenominatorPower))))
   -- After these changes of coordinates, the desired restriction map is the ring-level map in
   -- `hemb`; it remains to verify that the resulting square commutes.
-  -- The `cast` below only changes the function underlying the embedding.  The two functions agree
-  -- by `rfl` after unfolding `Function.comp`, `Homeomorph.prodCongr`, `Homeomorph.trans`,
-  -- `TopCat.homeoOfIso` applied to `Functor.mapIso`, and `RingHom.prod_apply`; `E b z` is
-  -- definitionally `(eqToHom _).1 ((presentationLimitRationalIso ..).hom.hom.1 z)`.
+  have E_apply (b : Bool) (z : presentationLimit (P := P) Aplus (laurentCoverOpen Aplus f b)) :
+      E b z = (eqToHom (completionLocObj_obj P (p b).num (p b).den _
+        (p b).hasDenominatorPower)).1
+          ((presentationLimitRationalIso Aplus hAplus (p b) (hp b)).hom.hom.1 z) := (rfl)
+  have d_apply (z : presentationLimit (P := P) Aplus ⊤) : d z =
+      (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).1
+        ((presentationLimitTopIso (P := P) Aplus hAplus).hom.hom.1 z) := (rfl)
+  -- Transport the closed embedding `hemb ∘ d` along the coordinate change on the target; the
+  -- remaining goal is the commuting square of the two functions underlying the embeddings.
   refine ((E true).prodCongr (E false)).isClosedEmbedding.of_comp_iff.mp
-    (cast (congrArg IsClosedEmbedding (funext fun x ↦ ?_))
+    ((iff_of_eq (congrArg IsClosedEmbedding ?_)).mpr
       ((hemb (p false).hasDenominatorPower).comp d.isClosedEmbedding))
   -- Check commutativity pointwise after writing a global section as the image of some `c : A`.
-  symm
+  funext x
   have := isIso_toPresentationLimit_top (P := P) Aplus hAplus
   obtain ⟨c, rfl⟩ : ∃ c, (toPresentationLimit (P := P) Aplus ⊤).hom.1 c = x :=
     Function.RightInverse.surjective
       (asIso (toPresentationLimit (P := P) Aplus ⊤)).inv_hom_id_apply x
   -- The source comparison cancels on `c`; the target comparisons are `rationalIso_map_top_apply`.
-  -- `d` unfolds definitionally to the composite `(eqToHom _).1 ∘ (presentationLimitTopIso ..).hom`,
-  -- so `hd` is `congrArg (eqToHom _).1` of the identity `inv_hom_id_apply` for
-  -- `toPresentationLimit`.
   have hd : d ((toPresentationLimit (P := P) Aplus ⊤).hom.1 c) =
       (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).1 c := by
+    rw [d_apply]
     have h := (presentationLimitTopIso (P := P) Aplus hAplus).inv_hom_id_apply c
     rw [presentationLimitTopIso_inv] at h
     exact congrArg (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).1 h
+  simp only [Function.comp_apply, RingHom.prod_apply, Homeomorph.coe_prodCongr]
+  rw [hd]
   exact Prod.ext
-    ((rationalIso_map_top_apply hAplus (p true) (hp true) c).trans (congrArg _ hd.symm))
-    ((rationalIso_map_top_apply hAplus (p false) (hp false) c).trans (congrArg _ hd.symm))
+    ((E_apply true _).trans (rationalIso_map_top_apply hAplus (p true) (hp true) c))
+    ((E_apply false _).trans (rationalIso_map_top_apply hAplus (p false) (hp false) c))
 
 -- Sections over the two Laurent pieces that agree on their overlap are, read through
 -- `presentationLimitRationalIso`, the images of one `c : A` under the structure maps `A → A⟨p b⟩`,
@@ -540,10 +545,11 @@ theorem surjective_presentationLimitMap_sub_laurentCoverOpen
   simp only [Function.comp_apply, map_sub, presentationLimitMap_apply_presentationLimitMap_apply,
     rationalIso_map_apply hAplus (p true) q (hp true) hq f rfl hT₁,
     rationalIso_map_apply hAplus (p false) q (hp false) hq 1 (mul_comm 1 f) hT₂]
-  -- `huv` is the same statement up to definitional unfolding: the pointwise difference
-  -- `restrictionRingHom .. u - restrictionRingHom .. v` is `AddMonoidHom.sub_apply` of the
-  -- compositions with `AddMonoidHom.fst`/`snd` of `RingHom.toAddMonoidHom`, and the localisations
-  -- `Localization.Away (1 * f)` and `{f * f, f, 1}` agree with `q.den`/`q.num` by `rfl`.
+  -- After rewriting `huv` with the `AddMonoidHom` coercion lemmas it is the same statement as the
+  -- goal; the localisations `Localization.Away (1 * f)` and `{f * f, f, 1}` agree with
+  -- `q.den`/`q.num` by `rfl`.
+  simp only [AddMonoidHom.sub_apply, AddMonoidHom.comp_apply, AddMonoidHom.coe_fst,
+    AddMonoidHom.coe_snd, RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_ofClass] at huv
   exact huv
 
 end TauCeti.ValuationSpectrum
