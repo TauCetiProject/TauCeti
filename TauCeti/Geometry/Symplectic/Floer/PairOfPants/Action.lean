@@ -157,7 +157,7 @@ theorem setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_eq_truncation
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) :=
   setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation fun z hz q hq ↦
-    ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs hz (by linarith) _
+    ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs (by linarith) _
 
 /-- **The energy identity on the truncated pair of pants, in terms of actions.** Let `K` be the
 pair-of-pants perturbation of period-one `C¹` Hamiltonians `H_q` on the three ends of
@@ -673,7 +673,7 @@ private theorem setIntegral_hamiltonianCurvature_eq_inter (ω : SymplecticForm V
       2 < r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re := by
     by_contra! h
     exact hz.2 ⟨mem_truncation.2 ⟨hz.1.1, hz.1.2, fun r ↦ (h r).trans hR⟩, (h q).trans hc⟩
-  exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs hz.1 hr _
+  exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs hr _
 
 /-- **The energy identity on a truncated pair of pants with one end cut short.** Let `K` be the
 pair-of-pants perturbation of period-one `C¹` Hamiltonians `H_r`, and let `2 ≤ c ≤ R`. Cut the

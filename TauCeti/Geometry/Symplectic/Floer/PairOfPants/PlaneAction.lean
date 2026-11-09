@@ -130,9 +130,6 @@ private theorem hamiltonianCurvature_negativePlanePerturbation_eq_zero (ω : Sym
   have hw₀ : w ≠ 0 := fun h ↦ by
     rw [h, norm_zero] at hw
     linarith
-  have hw₁ : w ≠ 1 := fun h ↦ by
-    rw [h, norm_one] at hw
-    linarith
   -- The point lies on the part `-s > 2` of the end.
   have hs : 2 < inf.endSign * (inf.endCoord w).re := by
     rw [endSign_inf, re_endCoord, endCenter_inf, endScale_inf, sub_zero, neg_one_mul, neg_div,
@@ -152,8 +149,7 @@ private theorem hamiltonianCurvature_negativePlanePerturbation_eq_zero (ω : Sym
     · simpa using hHs
     · rw [Pi.single_eq_of_ne hq]
       exact contDiff_const
-  have h := ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH' hHs'
-    ⟨hw₀, hw₁⟩ hs x
+  have h := ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH' hHs' hs x
   rwa [pairOfPantsPerturbation_single_inf] at h
 
 /-- For `R ≥ 2`, the curvature integral over the disc `‖w‖ ≤ 2 exp (2πR)` is the curvature

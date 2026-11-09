@@ -930,7 +930,6 @@ the coordinates of that end, and its curvature vanishes. Together with
 the collars `1 ≤ ±s ≤ 2` of the three ends, a compact part of `S`. -/
 theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {z : ℝ × ℝ}
-    (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1)
     {q : Puncture} (hq : 2 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re)
     (x : V) :
     ω.hamiltonianCurvature
@@ -938,7 +937,8 @@ theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (ω : Sym
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
       z x = 0 := by
   simpa using ω.constSmooth.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH
-    (contMDiff_uncurry_of_contDiff hHs) hz hq x
+    (contMDiff_uncurry_of_contDiff hHs)
+    (q.ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos (by linarith)) hq x
 
 omit [FiniteDimensional ℝ V] in
 /-- The components of the perturbation in real coordinates are `C¹` jointly in the domain point

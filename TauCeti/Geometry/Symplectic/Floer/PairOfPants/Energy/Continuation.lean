@@ -296,7 +296,7 @@ theorem integral_floerEnergyDensity_pairOfPantsContinuationPerturbation_truncati
     (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
     z (u z)) fun z hz q hq ↦
       hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt ω hH hHs
-        (mem_thricePuncturedSphereReal_iff.1 hz) (by linarith) _
+        (by linarith) _
   have hP := integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction
     ω hH hHs hu hR
   beta_reduce at hRc hRp
