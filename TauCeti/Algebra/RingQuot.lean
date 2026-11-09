@@ -9,6 +9,7 @@ public import Mathlib.Algebra.RingQuot
 public import Mathlib.RingTheory.Ideal.Maps
 public import Mathlib.RingTheory.TwoSidedIdeal.Kernel
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
+public import TauCeti.RingTheory.TwoSidedIdeal.Homogeneous
 
 /-!
 # The relation ideal of a ring quotient
@@ -51,5 +52,15 @@ theorem ker_mkRingHom_eq_span (r : A → A → Prop) :
     simpa only [f, lift_mkRingHom_apply, map_zero] using h
   · intro ha
     exact (TwoSidedIdeal.mem_ker (mkRingHom r)).mp (hI ha)
+
+/-- A relation quotient has homogeneous kernel if every defining difference is homogeneous. -/
+theorem isHomogeneous_ker_mkAlgHom {R ι : Type*} [CommSemiring R] [Algebra R A]
+    [DecidableEq ι] [AddMonoid ι] (𝒜 : ι → Submodule R A) [GradedAlgebra 𝒜]
+    (r : A → A → Prop) (hr : ∀ a b, r a b → SetLike.IsHomogeneousElem 𝒜 (a - b)) :
+    (RingHom.ker (mkAlgHom R r)).IsHomogeneous 𝒜 := by
+  rw [AlgHom.ker_coe, mkAlgHom_coe, ker_mkRingHom_eq_span]
+  refine TwoSidedIdeal.homogeneous_span _ ?_
+  rintro _ ⟨a, b, hab, rfl⟩
+  exact hr a b hab
 
 end RingQuot
