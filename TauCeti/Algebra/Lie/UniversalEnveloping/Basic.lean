@@ -135,6 +135,14 @@ theorem representation_ι_ad (x : L) :
     representation R L L (_root_.UniversalEnvelopingAlgebra.ι R x) = LieAlgebra.ad R L x :=
   representation_ι R L L x
 
+/-- The representation of `U(L)` on a faithful Lie module is injective on the canonical Lie
+generators. -/
+theorem representation_ι_injective [LieModule.IsFaithful R L M] :
+    Function.Injective fun x : L =>
+      representation R L M (_root_.UniversalEnvelopingAlgebra.ι R x) := by
+  simpa only [representation_ι] using
+    LieModule.IsFaithful.injective_toEnd (R := R) (L := L) (M := M)
+
 /-- The `simp`-normal form of `TauCeti.UniversalEnvelopingAlgebra.representation_ι`, stated for
 the canonical generators as `simp` writes them. -/
 @[simp]

@@ -14,14 +14,13 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 A Lie subalgebra `K` of square matrices acts faithfully on coordinate vectors `n → R`. The
 representation of its universal enveloping algebra on this Lie module is
 `TauCeti.UniversalEnvelopingAlgebra.representation R K (n → R)`. This file records the values of
-that representation on Lie generators in matrix terms, its faithfulness on the Lie algebra, and
+that representation on Lie generators in matrix terms and
 that a Lie generator acts nilpotently exactly when its underlying matrix is nilpotent.
 
 ## Main results
 
 * `TauCeti.UniversalEnvelopingAlgebra.representation_ι_matrix`: a Lie generator acts through its
   underlying matrix.
-* `LieSubalgebra.representation_ι_matrix_injective`: faithfulness on the Lie algebra.
 * `TauCeti.UniversalEnvelopingAlgebra.isNilpotent_representation_ι_matrix_iff`: a Lie generator
   acts nilpotently exactly when its underlying matrix is nilpotent.
 -/
@@ -58,20 +57,3 @@ theorem isNilpotent_representation_ι_matrix_iff {K : LieSubalgebra R (Matrix n 
   rw [representation_ι_matrix, IsNilpotent.map_iff toLinAlgEquiv'.injective]
 
 end TauCeti.UniversalEnvelopingAlgebra
-
-namespace LieSubalgebra
-
-variable {R n : Type*} [CommRing R] [Fintype n] [DecidableEq n]
-
-attribute [local instance 100] LieRing.ofAssociativeRing
-
-/-- The defining representation of a matrix Lie subalgebra is faithful on the Lie algebra. -/
-theorem representation_ι_matrix_injective (K : LieSubalgebra R (Matrix n n R)) :
-    Function.Injective fun x : K =>
-      TauCeti.UniversalEnvelopingAlgebra.representation R K (n → R)
-        (_root_.UniversalEnvelopingAlgebra.ι R x) := by
-  intro x y hxy
-  simpa only [TauCeti.UniversalEnvelopingAlgebra.representation_ι_matrix,
-    EmbeddingLike.apply_eq_iff_eq, SetLike.coe_eq_coe] using hxy
-
-end LieSubalgebra
