@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.Grp.Colimits
 public import Mathlib.Algebra.Category.Grp.EpiMono
+public import Mathlib.Algebra.Category.Grp.Preadditive
 public import Mathlib.Algebra.Homology.ShortComplex.Ab
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
@@ -14,6 +15,7 @@ public import Mathlib.CategoryTheory.ObjectProperty.FullSubcategory
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 public import Mathlib.CategoryTheory.Preadditive.Yoneda.Basic
+public import Mathlib.CategoryTheory.Yoneda
 
 /-!
 # The preadditive Yoneda and coYoneda functors
@@ -46,6 +48,10 @@ For an additive functor `G : C ⥤ D`, Mathlib's natural transformation
 full, and the morphisms `f` with `(-, f)` killed by it are those killed by `G`. For the quotient
 functor by an ideal `I` of `C`, its target is the quotient `(-, X) / I(-, X)`.
 
+Dually, for an additive functor `G : C ⥤ Ab` corepresented by an object `P`, the bijection
+`(P ⟶ X) ≃ G(X)` of the corepresentation is additive: it preserves zero, and so does its inverse,
+which is moreover additive.
+
 ## Main declarations
 
 * `CategoryTheory.preadditiveYoneda_map_app_apply`: the natural transformation `(-, f)` acts by
@@ -68,11 +74,16 @@ functor by an ideal `I` of `C`, its target is the quotient `(-, X) / I(-, X)`.
   the functor `X ↦ (-, X)|_P` is the preadditive Yoneda embedding.
 * `CategoryTheory.ObjectProperty.epi_map_restrictedPreadditiveYoneda`: restriction to projective
   objects preserves epimorphisms.
+* `CategoryTheory.Functor.CorepresentableBy.homEquiv_zero` and
+  `CategoryTheory.Functor.CorepresentableBy.homEquiv_symm_zero`: the corepresentation and its
+  inverse preserve zero.
+* `CategoryTheory.Functor.CorepresentableBy.homEquiv_symm_add`: the inverse of the
+  corepresentation is additive.
 -/
 
 public section
 
-universe v u u'
+universe t v u u'
 
 open Opposite CategoryTheory.Limits
 
@@ -259,5 +270,31 @@ theorem epi_map_restrictedPreadditiveYoneda (hP : P ≤ isProjective C) {X Y : C
     Projective.factorThru_comp (P := Q.unop.obj) v π⟩
 
 end ObjectProperty
+
+namespace Functor.CorepresentableBy
+
+variable {G : C ⥤ AddCommGrpCat.{t}} [G.Additive]
+  {P : C} (R : (G ⋙ forget AddCommGrpCat).CorepresentableBy P)
+
+/-- The corepresentation of an additive functor `G : C ⥤ Ab` sends the zero morphism to zero. -/
+lemma homEquiv_zero {X : C} : R.homEquiv (0 : P ⟶ X) = (0 : G.obj X) := by
+  rw [R.homEquiv_eq, Functor.comp_map, G.map_zero]
+  rfl
+
+/-- The inverse of the corepresentation of an additive functor `G : C ⥤ Ab` sends zero to the zero
+morphism. -/
+lemma homEquiv_symm_zero {X : C} : R.homEquiv.symm (0 : G.obj X) = 0 :=
+  R.homEquiv.symm_apply_eq.2 R.homEquiv_zero.symm
+
+/-- The inverse of the corepresentation `(P ⟶ X) ≃ G(X)` of an additive functor `G : C ⥤ Ab` is
+additive. -/
+lemma homEquiv_symm_add {X : C} (x y : G.obj X) :
+    R.homEquiv.symm (x + y) = R.homEquiv.symm x + R.homEquiv.symm y := by
+  have h (z : G.obj X) : G.map (R.homEquiv.symm z) (R.homEquiv (𝟙 P)) = z :=
+    (R.homEquiv_eq _).symm.trans (R.homEquiv.apply_symm_apply z)
+  rw [R.homEquiv.symm_apply_eq, R.homEquiv_eq, Functor.comp_map, G.map_add]
+  exact (congrArg₂ (· + ·) (h x) (h y)).symm
+
+end Functor.CorepresentableBy
 
 end CategoryTheory

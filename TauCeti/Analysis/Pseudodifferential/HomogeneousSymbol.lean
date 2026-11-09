@@ -11,7 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
-public import TauCeti.Analysis.Pseudodifferential.FrequencyCutoff
+public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 import TauCeti.Analysis.Normed.Module.Multilinear.Basic
@@ -34,7 +34,8 @@ The file develops:
 
 * the module structure on homogeneous symbols of a fixed degree, over every scalar ring acting
   on `V →L[ℂ] W` compatibly with `ℝ` (in particular `ℝ` and `ℂ`), and the pointwise
-  composition `HomogeneousSymbol.comp`, which adds degrees;
+  composition `HomogeneousSymbol.comp`, which adds degrees and has the identity symbol
+  `HomogeneousSymbol.id` of degree `0` as its unit;
 * the pullback `HomogeneousSymbol.compPosition` of the position along a smooth map, which keeps
   the degree and in particular restricts a symbol to a set of positions;
 * the derivatives `HomogeneousSymbol.spatialDeriv` in a position direction, which keeps the
@@ -370,6 +371,32 @@ theorem comp_assoc {U' : Type*} [NormedAddCommGroup U'] [NormedSpace ℂ U'] {m'
     (a : HomogeneousSymbol X E V W m) :
     (c.comp b).comp a = (c.comp (b.comp a)).castDegree (add_assoc m'' m' m).symm :=
   (rfl)
+
+variable (X E V) in
+/-- The identity homogeneous symbol of degree `0`: the identity of `V` at every nonzero
+frequency, and zero at the zero frequency by the convention of `HomogeneousSymbol`. It is the
+unit for `HomogeneousSymbol.comp`. -/
+noncomputable def id : HomogeneousSymbol X E V V 0 :=
+  mk' (fun _ ↦ ContinuousLinearMap.id ℂ V) contDiffOn_const fun _ _ _ _ _ ↦ by simp
+
+@[simp]
+theorem coefficient_id {x : X} {ξ : E} (hξ : ξ ≠ 0) :
+    (id X E V).coefficient (x, ξ) = ContinuousLinearMap.id ℂ V :=
+  coefficient_mk'_of_ne_zero _ _ _ hξ
+
+/-- Composing with the identity symbol on the right does nothing, up to transport of the
+degree. -/
+@[simp]
+theorem comp_id (b : HomogeneousSymbol X E V W m) :
+    b.comp (id X E V) = b.castDegree (add_zero m).symm :=
+  ext_of_ne_zero fun _ _ hξ ↦ by simp [hξ]
+
+/-- Composing with the identity symbol on the left does nothing, up to transport of the
+degree. -/
+@[simp]
+theorem id_comp (a : HomogeneousSymbol X E V W m) :
+    (id X E W).comp a = a.castDegree (zero_add m).symm :=
+  ext_of_ne_zero fun _ _ hξ ↦ by simp [hξ]
 
 /-! ### Pullback in the position -/
 
