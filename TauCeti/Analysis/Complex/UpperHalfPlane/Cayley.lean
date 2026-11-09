@@ -243,9 +243,27 @@ theorem hasDerivAt_I_mul_one_add_div_one_sub {w : ℂ} (hw : w ≠ 1) :
   field_simp
   ring
 
-/-- The pre-Schwarzian of the inverse Cayley transform is `2 / (1 - ζ)`. -/
-theorem logDeriv_deriv_I_mul_one_add_div_one_sub {ζ : ℂ} (hζ : ζ ≠ 1) :
+/-- The pre-Schwarzian of the inverse Cayley transform is `2 / (1 - ζ)` (at its pole `ζ = 1` both
+sides are `0` by convention). -/
+theorem logDeriv_deriv_I_mul_one_add_div_one_sub {ζ : ℂ} :
     logDeriv (deriv fun ξ : ℂ => I * (1 + ξ) / (1 - ξ)) ζ = 2 / (1 - ζ) := by
+  rcases eq_or_ne ζ 1 with rfl | hζ
+  · -- at the pole the map is not differentiable, so its derivative is `0` by convention
+    have hnd : ¬ DifferentiableAt ℂ (fun ξ : ℂ => I * (1 + ξ) / (1 - ξ)) 1 := by
+      intro hd
+      have h₁ : Tendsto (fun ξ : ℂ => (1 - ξ) * (I * (1 + ξ) / (1 - ξ))) (𝓝[≠] 1) (𝓝 0) := by
+        have hc : ContinuousAt (fun ξ : ℂ => (1 - ξ) * (I * (1 + ξ) / (1 - ξ))) 1 :=
+          (by fun_prop : Continuous fun ξ : ℂ => 1 - ξ).continuousAt.mul hd.continuousAt
+        simpa using hc.tendsto.mono_left nhdsWithin_le_nhds
+      have h₂ : Tendsto (fun ξ : ℂ => (1 - ξ) * (I * (1 + ξ) / (1 - ξ))) (𝓝[≠] 1)
+          (𝓝 (I * (1 + 1))) := by
+        refine ((by fun_prop : Continuous fun ξ : ℂ => I * (1 + ξ)).tendsto 1
+          |>.mono_left nhdsWithin_le_nhds).congr' ?_
+        filter_upwards [self_mem_nhdsWithin] with ξ hξ
+        exact (mul_div_cancel₀ _ (sub_ne_zero.mpr (Ne.symm hξ))).symm
+      have := tendsto_nhds_unique h₁ h₂
+      simp at this
+    simp [logDeriv_apply, deriv_zero_of_not_differentiableAt hnd]
   have heq : (deriv fun ξ : ℂ => I * (1 + ξ) / (1 - ξ)) =ᶠ[𝓝 ζ]
       fun ξ => 2 * I / (1 - ξ) ^ 2 :=
     eventuallyEq_of_mem (isOpen_ne.mem_nhds hζ) fun _ hξ =>
