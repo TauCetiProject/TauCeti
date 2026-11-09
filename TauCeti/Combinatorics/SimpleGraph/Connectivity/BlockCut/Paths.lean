@@ -10,15 +10,15 @@ public import TauCeti.Combinatorics.SimpleGraph.Connectivity.BlockCut.Forest
 /-!
 # Separation along paths in the block--cut forest
 
-The block--cut forest records exactly how cut vertices separate the original graph. If blocks
-`B` and `C` contain vertices `x` and `y`, respectively, then an `x`--`y` walk avoiding a cut
-vertex `c` exists exactly when a walk from `B` to `C` in the block--cut forest avoids the vertex
-corresponding to `c`.
+For a finite vertex type, the block--cut forest records exactly how cut vertices separate the
+original graph. If blocks `B` and `C` contain vertices `x` and `y`, respectively, and both `x`
+and `y` differ from a cut vertex `c`, then an `x`--`y` walk avoiding `c` exists exactly when a
+walk from `B` to `C` in the block--cut forest avoids the vertex corresponding to `c`.
 
-Consequently, `c` belongs to every `x`--`y` walk exactly when its block--cut vertex belongs to
-every walk between `B` and `C`. Since the block--cut graph is a forest, it is enough to inspect
-its unique path. This is the path correspondence that turns the block--cut forest into a usable
-description of vertex separation in the original graph.
+Under the same finiteness and endpoint hypotheses, `c` belongs to every `x`--`y` walk exactly
+when its block--cut vertex belongs to every walk between `B` and `C`. Since the block--cut graph
+is a forest, it is enough to inspect its unique path. This is the path correspondence that turns
+the block--cut forest into a usable description of vertex separation in the original graph.
 -/
 
 public section
@@ -75,8 +75,8 @@ private theorem exists_blockCutGraph_walk_notMem_support_of_walk [Finite V]
       obtain ⟨r, hr⟩ := ih D' (hxD (by simp)) hyC hcp.2
       exact ⟨q.append r, by simpa only [Walk.mem_support_append_iff, not_or] using ⟨hq, hr⟩⟩
 
-/-- Walks between endpoint blocks avoid a cut vertex in the block--cut forest exactly when walks
-between the corresponding original vertices avoid that cut vertex. -/
+/-- Some walk between the endpoint blocks avoids the node of a cut vertex `c` exactly when some
+walk between corresponding original vertices, both different from `c`, avoids `c`. -/
 theorem exists_blockCutGraph_walk_notMem_support_iff [Finite V]
     (B C : G.BlockVertex) {x y : V} (hxB : x ∈ (B : Set V)) (hyC : y ∈ (C : Set V))
     (c : G.CutVertex) (hxc : x ≠ c) (hyc : y ≠ c) :
@@ -90,8 +90,9 @@ theorem exists_blockCutGraph_walk_notMem_support_iff [Finite V]
   · rintro ⟨p, hp⟩
     exact exists_blockCutGraph_walk_notMem_support_of_walk p B C hxB hyC c hp
 
-/-- Mandatory occurrence of a cut vertex agrees in the original graph and the block--cut graph:
-it belongs to every walk on one side precisely when it belongs to every walk on the other. -/
+/-- When both original endpoints differ from a cut vertex `c`, mandatory occurrence of `c` agrees
+in the original graph and the block--cut graph: it belongs to every walk on one side precisely
+when it belongs to every walk on the other. -/
 theorem forall_blockCutGraph_walk_mem_support_iff [Finite V]
     (B C : G.BlockVertex) {x y : V} (hxB : x ∈ (B : Set V)) (hyC : y ∈ (C : Set V))
     (c : G.CutVertex) (hxc : x ≠ c) (hyc : y ≠ c) :
@@ -102,8 +103,9 @@ theorem forall_blockCutGraph_walk_mem_support_iff [Finite V]
   simpa only [not_exists, not_not] using
     not_congr (exists_blockCutGraph_walk_notMem_support_iff B C hxB hyC c hxc hyc)
 
-/-- On the unique path between two blocks of the block--cut forest, the cut-vertex node `c`
-occurs exactly when `c` belongs to every walk between corresponding original vertices. -/
+/-- When both original endpoints differ from a cut vertex `c`, the node of `c` occurs on the
+unique path between two blocks exactly when `c` belongs to every walk between the corresponding
+original vertices. -/
 theorem Walk.mem_support_cutVertex_iff [Finite V]
     {B C : G.BlockVertex} (q : G.blockCutGraph.Walk (.inl B) (.inl C)) (hq : q.IsPath)
     {x y : V} (hxB : x ∈ (B : Set V)) (hyC : y ∈ (C : Set V))
