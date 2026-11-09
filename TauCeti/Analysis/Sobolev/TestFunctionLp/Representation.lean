@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
 public import TauCeti.MeasureTheory.Function.Lp.Dual
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
+import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!
 # Weak derivatives from `Lᵠ` test bounds
@@ -15,8 +17,10 @@ import TauCeti.MeasureTheory.Function.LocallyIntegrable
 For conjugate exponents `1 < p, q < ∞`, a distributional directional derivative bounded by
 the `Lᵠ` norm of test functions is represented by an `Lᵖ` weak derivative, with the same
 bound. This applies to locally integrable functions without assuming differentiability or a
-weak derivative in advance. The proof extends the distributional functional from the image
-of test functions in `Lᵠ` by Hahn–Banach, then uses the integral representation of the dual.
+weak derivative in advance. For a finite-dimensional real codomain the same holds coordinatewise,
+with a constant depending only on the codomain. The proof extends the distributional functional
+from the image of test functions in `Lᵠ` by Hahn–Banach, then uses the integral representation
+of the dual.
 
 The result assumes σ-finiteness on the open domain. The Hilbert-space theorem in
 `TestFunctionLp/Basic` remains available without that measure hypothesis.
@@ -32,8 +36,8 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Set TopologicalSpace
-open scoped ContDiff Distributions ENNReal
+open MeasureTheory Set TopologicalSpace Filter
+open scoped ContDiff Distributions ENNReal NNReal
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [OpensMeasurableSpace E] {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
@@ -70,5 +74,68 @@ theorem exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le_eLpNo
            _ = _ := hpair.trans (congrArg Neg.neg (hΛφ φ))
     rw [hrepr, neg_neg]
     simp only [smul_eq_mul]
+
+/-- **Vector-valued `Lᵖ` representation.** For a finite-dimensional real codomain, a
+distributional directional derivative bounded by `M` times the conjugate `Lᵠ` test norm is an
+`Lᵖ` weak derivative of norm at most `C * M`. The constant depends only on the codomain. -/
+theorem exists_eLpNorm_le_hasWeakLineDerivOn_of_enorm_integral_lineDeriv_smul_le {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G] (hq : 1 < q)
+    (hq_top : q ≠ ⊤) :
+    ∃ C : ℝ≥0, ∀ u : E → G, LocallyIntegrableOn u Ω μ → ∀ (v : E) (M : ℝ≥0∞), M ≠ ⊤ →
+      (∀ φ : 𝓓(Ω, ℝ), ‖∫ x, lineDeriv ℝ (φ : E → ℝ) x v • u x ∂μ‖ₑ ≤
+        M * eLpNorm (φ : E → ℝ) q μ) →
+      ∃ g : E → G, HasWeakLineDerivOn μ Ω u g v ∧ eLpNorm g p (μ.restrict Ω) ≤ C * M := by
+  classical
+  have := FiniteDimensional.complete ℝ G
+  let b := Module.finBasis ℝ G
+  let c : Fin (Module.finrank ℝ G) → G →L[ℝ] ℝ := fun i => LinearMap.toContinuousLinearMap
+    (b.coord i)
+  refine ⟨∑ i, ‖c i‖₊ * ‖b i‖₊, fun u hu v M hM hbound => ?_⟩
+  have hcu (i) : LocallyIntegrableOn (fun z => c i (u z)) Ω μ :=
+    (c i).locallyIntegrableOn_comp hu
+  have hscalar (i) : ∃ g : Lp ℝ p (μ.restrict (Ω : Set E)), ‖g‖ ≤ ‖c i‖ * M.toReal ∧
+      HasWeakLineDerivOn μ Ω (fun z => c i (u z)) g v := by
+    refine exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le_eLpNorm hq hq_top
+      (hcu i) v (by positivity) fun φ => ?_
+    have hφ : eLpNorm (φ : E → ℝ) q μ ≠ ⊤ :=
+      (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).eLpNorm_ne_top
+    have hint : ∫ z, lineDeriv ℝ (φ : E → ℝ) z v * c i (u z) ∂μ =
+        c i (∫ z, lineDeriv ℝ (φ : E → ℝ) z v • u z ∂μ) := by
+      rw [← (c i).integral_comp_comm (integrable_lineDeriv_smul_of_locallyIntegrableOn hu φ v)]
+      simp only [map_smul, smul_eq_mul]
+    have hreal : ‖∫ z, lineDeriv ℝ (φ : E → ℝ) z v • u z ∂μ‖ ≤
+        M.toReal * (eLpNorm (φ : E → ℝ) q μ).toReal := by
+      rw [← ENNReal.toReal_mul, ← toReal_enorm]
+      exact ENNReal.toReal_mono (ENNReal.mul_ne_top hM hφ) (hbound φ)
+    rw [hint, ← Real.norm_eq_abs, mul_assoc]
+    exact ((c i).le_opNorm _).trans (mul_le_mul_of_nonneg_left hreal (norm_nonneg _))
+  choose g hgn hg using hscalar
+  let w : E → G := fun z => ∑ i, (g i : E → ℝ) z • b i
+  refine ⟨w, ?_, ?_⟩
+  · refine (hasWeakLineDerivOn_iff_coordinates b).2 fun i => ?_
+    refine (hg i).congr_ae_deriv (Eventually.of_forall fun z => ?_)
+    simp [w, Finsupp.single_apply]
+  · have hw : w = ∑ i, fun z => (g i : E → ℝ) z • b i := by
+      funext z
+      simp [w, Finset.sum_apply]
+    rw [hw]
+    refine (eLpNorm_sum_le Fact.out).trans ?_
+    push_cast
+    rw [Finset.sum_mul]
+    refine Finset.sum_le_sum fun i _ => ?_
+    have hmeas : AEStronglyMeasurable (fun z => (g i : E → ℝ) z • b i)
+        (μ.restrict (Ω : Set E)) :=
+      (Lp.aestronglyMeasurable (g i)).smul_const _
+    calc eLpNorm (fun z => (g i : E → ℝ) z • b i) p (μ.restrict (Ω : Set E))
+        ≤ ‖b i‖₊ * eLpNorm (g i : E → ℝ) p (μ.restrict (Ω : Set E)) :=
+          eLpNorm_le_mul_eLpNorm_of_ae_le_mul' hmeas
+            (Eventually.of_forall fun z => by rw [enorm_smul, mul_comm, enorm_eq_nnnorm]) p
+      _ ≤ ‖b i‖₊ * (‖c i‖₊ * M) := by
+          gcongr
+          calc eLpNorm (g i : E → ℝ) p (μ.restrict (Ω : Set E))
+              = ENNReal.ofReal ‖g i‖ := by simp [← Lp.enorm_def]
+            _ ≤ ENNReal.ofReal (‖c i‖ * M.toReal) := ENNReal.ofReal_le_ofReal (hgn i)
+            _ = ‖c i‖₊ * M := by simp [ENNReal.ofReal_mul, hM, enorm_eq_nnnorm]
+      _ = ↑(‖c i‖₊ * ‖b i‖₊) * M := by push_cast; ring
 
 end TauCeti
