@@ -31,7 +31,9 @@ half-plane, and so transfers limits at infinity in it to limits at `0`.  More ge
 continuous on the closed upper half-plane with a limit at infinity, precomposed with this map and
 given that limit at `0`, stays continuous there, and now tends at infinity to its value at `c`. If
 the function is injective away from its zeros, so is the new one, provided the value at `0` is not
-a nonzero value of the old one.
+a nonzero value of the old one. Likewise, for a function `f` continuous on the closed upper
+half-plane and tending to infinity there, the map `w ↦ b / (f (-w⁻¹) - c)` extended by `0` at the
+origin is continuous, and injective when `f` is, on a half-ball where `f (-w⁻¹) ≠ c` at nonzero `w`.
 
 A function on the upper half-plane, extended to `ℂ` by `ofComplex`, is periodic with a real
 period exactly when the original function is invariant under the corresponding translation.
@@ -64,6 +66,8 @@ many points, such as the vertices of a tessellation, therefore keeps `ℍ` conne
   `TauCeti.tendsto_update_comp_const_sub_inv_cobounded`,
   `TauCeti.insert_image_update_comp_const_sub_inv`,
   `TauCeti.injOn_update_comp_const_sub_inv`: moving infinity to a real point.
+* `TauCeti.continuousOn_update_div_sub_neg_inv`, `TauCeti.injOn_update_div_sub_neg_inv`: the
+  reciprocal `b / (f (-w⁻¹) - c)`, extended by `0` at the origin.
 * `TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff`.
 * `TauCeti.UpperHalfPlane.closure_preimage_re`, `closure_setOfPred_lt_re`,
   `closure_setOfPred_re_lt`.

@@ -23,7 +23,10 @@ an open half-strip, its frontier far out lies on the two bounding rays, and agai
 outside its closure; the same holds when far out it misses an open half-strip. The exponential
 coordinate `exp (π * I - ζ)` is injective on the closed strip `0 ≤ im ζ ≤ π`, real on its bounding
 lines and in the upper half-plane inside it, and on the closed half-strip it tends to `0` at
-infinity. These facts supply the boundary conditions for polygonal conformal maps.
+infinity. Composed with `f (-w⁻¹)` and filled in by `0` at the origin, this coordinate is
+continuous and injective on a half-ball (`TauCeti.continuousOn_update_exp_pi_mul_I_sub`,
+`TauCeti.injOn_update_exp_pi_mul_I_sub`). These facts supply the boundary conditions for polygonal
+conformal maps.
 -/
 
 public section
@@ -349,9 +352,9 @@ theorem exists_notMem_closure_of_forall_mem_notMem_halfStrip {c b : ℂ} {ρ : �
   exact hU z hzρ hzU ⟨hzre, hzim⟩
 
 /-- For `b ≠ 0`, the map `w ↦ exp (π * I - (f (-w⁻¹) - c) / b)`, filled in with `0` at the origin,
-is continuous on the part of the closed upper half-plane near `0` where `(f (-w⁻¹) - c) / b` lies
-in the closed half-strip, when `f` is continuous on the closed upper half-plane and tends to
-infinity at infinity there. -/
+is continuous on the part of the closed upper half-plane in `ball 0 r`, when `f` is continuous on
+the closed upper half-plane and tends to infinity at infinity there, and `(f (-w⁻¹) - c) / b` lies
+in the closed half-strip at every nonzero `w` of that half-ball. -/
 theorem continuousOn_update_exp_pi_mul_I_sub {f : ℂ → ℂ} {r : ℝ} {c b : ℂ} (hb : b ≠ 0)
     (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
     (hp : Tendsto f (cobounded ℂ ⊓ 𝓟 {z : ℂ | 0 ≤ z.im}) (cobounded ℂ))
@@ -373,8 +376,9 @@ theorem continuousOn_update_exp_pi_mul_I_sub {f : ℂ → ℂ} {r : ℝ} {c b : 
       (nhdsWithin_mono _ (sdiff_subset_sdiff_left (inter_subset_right (s := ball (0 : ℂ) r)))))
 
 /-- For `b ≠ 0`, the map `w ↦ exp (π * I - (f (-w⁻¹) - c) / b)`, filled in with `0` at the origin,
-is injective on the part of the closed upper half-plane near `0` where `im ((f (-w⁻¹) - c) / b)`
-lies in `[0, π]`, when `f` is injective on it. -/
+is injective on the part of the closed upper half-plane in `ball 0 r`, when `f` is injective on
+the closed upper half-plane and `im ((f (-w⁻¹) - c) / b)` lies in `[0, π]` at every nonzero `w` of
+that half-ball. -/
 theorem injOn_update_exp_pi_mul_I_sub {f : ℂ → ℂ} {r : ℝ} {c b : ℂ} (hb : b ≠ 0)
     (hfi : InjOn f {z : ℂ | 0 ≤ z.im})
     (hζ : ∀ w ∈ ball (0 : ℂ) r, 0 ≤ w.im → w ≠ 0 →
