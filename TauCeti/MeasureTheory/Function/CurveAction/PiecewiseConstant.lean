@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Function.CurveAction.Basic
 import TauCeti.Algebra.Order.Floor.Semifield
+import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Topology.EMetricSpace.Basic
 import TauCeti.Topology.Instances.ENNReal
 
@@ -98,17 +99,6 @@ private lemma edist_ceil_div_rpow_le (hp : 1 ≤ p) {s t : ℝ} (hst : s ≤ t) 
         rw [Nat.card_Ico, ← ENNReal.ofReal_natCast]
         exact ENNReal.ofReal_le_ofReal
           (natCast_ceil_div_sub_ceil_div_lt (NNReal.coe_nonneg τ) hst).le
-
-/-- The measure of a finite union of pairwise disjoint intervals `Ι (a i) (b i)` is the sum of their
-lengths `max (a i) (b i) - min (a i) (b i)`. -/
-private lemma volume_biUnion_uIoc_eq_ofReal_sum {ι : Type*} (I : Finset ι) (a b : ι → ℝ)
-    (h : (I : Set ι).PairwiseDisjoint fun i ↦ Ι (a i) (b i)) :
-    volume (⋃ i ∈ I, Ι (a i) (b i)) =
-      ENNReal.ofReal (∑ i ∈ I, (max (a i) (b i) - min (a i) (b i))) := by
-  rw [measure_biUnion_finset h fun _ _ ↦ measurableSet_uIoc,
-    ENNReal.ofReal_sum_of_nonneg fun i _ ↦ sub_nonneg.2 min_le_max]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [Real.volume_uIoc, ← max_sub_min_eq_abs', max_comm, min_comm]
 
 /-- **Discrete Hölder estimate** for a disjoint family of intervals `(sᵢ, tᵢ]` in `[0, T]`: the
 `p`-th power of the sum of the distances between the piecewise constant interpolant at times `sᵢ`
