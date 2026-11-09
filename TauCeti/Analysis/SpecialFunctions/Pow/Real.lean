@@ -59,10 +59,6 @@ An exponential upper bound on a nonnegative base passes to its nonnegative real 
 `0 ≤ A ≤ e^{-t}` and `0 ≤ c`, then `A ^ c ≤ e^{-c t}`. This is how a bound `|q| ≤ e^{-t}` on a
 nome is turned into bounds on the fractional powers `|q| ^ c` in a product estimate.
 
-Every nonnegative real power is dominated by the exponential: `x ^ p ≤ (1 + ⌈p⌉₊!) e^x` for
-`0 ≤ x` and `0 ≤ p`. This is how exponential integrability of a function yields integrability of
-all its powers, as in the `Lᵖ` form of the John–Nirenberg inequality.
-
 For nonnegative `a`, `C`, `I` and `q > 0`, a bound `a ≤ C * I ^ (1 / q)` is equivalent to its
 `q`-th power `a ^ q ≤ C ^ q * I`. This is how a domination estimate by an `L^q` norm is compared
 with the corresponding integral of `q`-th powers.
@@ -210,21 +206,6 @@ theorem rpow_le_exp_neg_mul {A t c : ℝ} (hA : 0 ≤ A) (hAt : A ≤ exp (-t)) 
   refine (rpow_le_rpow hA hAt hc).trans_eq ?_
   rw [← exp_mul]
   ring_nf
-
-/-- A nonnegative real power is dominated by the exponential: for `0 ≤ x` and `0 ≤ p`,
-`x ^ p ≤ (1 + ⌈p⌉₊!) e^x`. -/
-theorem rpow_le_mul_exp {x p : ℝ} (hx : 0 ≤ x) (hp : 0 ≤ p) :
-    x ^ p ≤ (1 + (⌈p⌉₊).factorial) * exp x := by
-  have h1 : 1 ≤ exp x := one_le_exp hx
-  have h2 : x ^ ⌈p⌉₊ ≤ (⌈p⌉₊).factorial * exp x :=
-    (div_le_iff₀' (by positivity)).1 (pow_div_factorial_le_exp x hx _)
-  rcases le_total x 1 with hx1 | hx1
-  · calc x ^ p ≤ 1 := rpow_le_one hx hx1 hp
-      _ ≤ (1 + (⌈p⌉₊).factorial) * exp x := by
-        nlinarith [Nat.cast_nonneg (α := ℝ) (⌈p⌉₊).factorial]
-  · calc x ^ p ≤ x ^ (⌈p⌉₊ : ℝ) := rpow_le_rpow_of_exponent_le hx1 (Nat.le_ceil p)
-      _ = x ^ ⌈p⌉₊ := rpow_natCast x _
-      _ ≤ (1 + (⌈p⌉₊).factorial) * exp x := by nlinarith
 
 /-- For `a, C, I ≥ 0` and `q > 0`, `a ≤ C * I ^ (1 / q)` if and only if `a ^ q ≤ C ^ q * I`. -/
 theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (hI : 0 ≤ I)

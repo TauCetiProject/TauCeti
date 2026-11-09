@@ -8,8 +8,8 @@ module
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
 public import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
+import Mathlib.Probability.Moments.IntegrableExpMul
 import TauCeti.Analysis.Normed.Module.Ball
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The John–Nirenberg inequality
@@ -1167,9 +1167,9 @@ theorem exists_setLIntegral_exp_mul_mul_setLIntegral_exp_neg_mul_ball_le :
 
 /-! ### The `Lᵖ` form
 
-Since `t ^ p ≤ (1 + ⌈p⌉₊!) exp t` for `t ≥ 0`, exponential integrability of `σ ‖f - f_B‖` at
-the rate `σ = A / ‖f‖_{BMO}` controls every power `‖f - f_B‖ ^ p`, with a constant of order
-`‖f‖_{BMO} ^ p`. -/
+Since `t ^ p ≤ (p / σ) ^ p exp (σ t)` for `t ≥ 0` and `σ > 0`, exponential integrability of
+`σ ‖f - f_B‖` at the rate `σ = A / ‖f‖_{BMO}` controls every power `‖f - f_B‖ ^ p`, with a
+constant of order `‖f‖_{BMO} ^ p`. -/
 
 section Lp
 
@@ -1186,42 +1186,40 @@ private theorem exists_setLAverage_enorm_sub_setAverage_rpow_le_of_bmoSeminorm_l
         ⨍⁻ x in ball x₀ r, ‖f x - ⨍ y in ball x₀ r, f y ∂μ‖ₑ ^ p ∂μ ≤ C * (M : ℝ≥0∞) ^ p := by
   obtain ⟨A, hA, C₀, hJN⟩ :=
     exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_le (ι := ι)
-  set K : ℝ := 1 + (⌈p⌉₊).factorial
-  have hAp : 0 < A ^ p := Real.rpow_pos_of_pos hA p
+  set K : ℝ := (p / A) ^ p
   -- `C₀ + 1` rather than `C₀` keeps the constant positive.
-  refine ⟨(K / A ^ p).toNNReal * (C₀ + 1), mul_pos (Real.toNNReal_pos.2 (by positivity))
+  refine ⟨K.toNNReal * (C₀ + 1), mul_pos (Real.toNNReal_pos.2 (by positivity))
     (add_pos_of_nonneg_of_pos zero_le one_pos), fun {E} _ _ _ μ _ f M hf hM0 hfM x₀ r => ?_⟩
   set B := ball x₀ r
   set c := ⨍ y in B, f y ∂μ
   -- John–Nirenberg at the rate `σ = A / M`.
   set σ := A / M
+  have hσ : 0 < σ := div_pos hA (NNReal.coe_pos.2 hM0)
   have hint :
       ∫⁻ x in B, ENNReal.ofReal (Real.exp (σ * ‖f x - c‖)) ∂μ ≤ (C₀ + 1 : ℝ≥0) * μ B :=
     (hJN hf hfM (div_mul_cancel₀ A (NNReal.coe_ne_zero.2 hM0.ne')).le x₀ r).trans
       (by gcongr; exact_mod_cast le_self_add)
-  -- Pointwise, `‖v‖ ^ p = (M / A) ^ p (σ ‖v‖) ^ p ≤ (K / A ^ p) M ^ p exp (σ ‖v‖)`.
+  -- Pointwise, `‖v‖ ^ p ≤ (p / σ) ^ p exp (σ ‖v‖) = K M ^ p exp (σ ‖v‖)`.
   have hpt (x : EuclideanSpace ℝ ι) : ‖f x - c‖ₑ ^ p ≤
-      ENNReal.ofReal (K / A ^ p * (M : ℝ) ^ p) * ENNReal.ofReal (Real.exp (σ * ‖f x - c‖)) := by
+      ENNReal.ofReal (K * (M : ℝ) ^ p) * ENNReal.ofReal (Real.exp (σ * ‖f x - c‖)) := by
     rw [← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hp.le,
       ← ENNReal.ofReal_mul (by positivity)]
     refine ENNReal.ofReal_le_ofReal ?_
-    have h := Real.rpow_le_mul_exp (x := σ * ‖f x - c‖) (by positivity) hp.le
-    have hσp : σ ^ p = A ^ p / (M : ℝ) ^ p := Real.div_rpow hA.le M.coe_nonneg p
-    rw [Real.mul_rpow (by positivity) (norm_nonneg _), hσp] at h
-    have hMp : 0 < (M : ℝ) ^ p := Real.rpow_pos_of_pos hM0 p
-    calc ‖f x - c‖ ^ p = (M : ℝ) ^ p / A ^ p * (A ^ p / M ^ p * ‖f x - c‖ ^ p) := by
-          field_simp
-      _ ≤ (M : ℝ) ^ p / A ^ p * (K * Real.exp (σ * ‖f x - c‖)) := by gcongr
-      _ = K / A ^ p * M ^ p * Real.exp (σ * ‖f x - c‖) := by ring
+    have h := ProbabilityTheory.rpow_abs_le_mul_exp_abs ‖f x - c‖ hp.le hσ.ne'
+    rw [abs_norm, abs_of_pos hσ] at h
+    have hpσ : p / σ = p / A * M := by
+      simp only [σ]
+      field_simp [hA.ne', NNReal.coe_ne_zero.2 hM0.ne']
+    rwa [hpσ, Real.mul_rpow (by positivity) M.coe_nonneg] at h
   rw [setLAverage_eq]
   refine ENNReal.div_le_of_le_mul ?_
   calc ∫⁻ x in B, ‖f x - c‖ₑ ^ p ∂μ
-      ≤ ∫⁻ x in B, ENNReal.ofReal (K / A ^ p * (M : ℝ) ^ p) *
+      ≤ ∫⁻ x in B, ENNReal.ofReal (K * (M : ℝ) ^ p) *
           ENNReal.ofReal (Real.exp (σ * ‖f x - c‖)) ∂μ := lintegral_mono hpt
-    _ ≤ ENNReal.ofReal (K / A ^ p * (M : ℝ) ^ p) * ((C₀ + 1 : ℝ≥0) * μ B) := by
+    _ ≤ ENNReal.ofReal (K * (M : ℝ) ^ p) * ((C₀ + 1 : ℝ≥0) * μ B) := by
         rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
         gcongr
-    _ = ((K / A ^ p).toNNReal * (C₀ + 1) : ℝ≥0) * (M : ℝ≥0∞) ^ p * μ B := by
+    _ = (K.toNNReal * (C₀ + 1) : ℝ≥0) * (M : ℝ≥0∞) ^ p * μ B := by
         rw [ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_rpow_of_nonneg M.coe_nonneg hp.le,
           ENNReal.ofReal_coe_nnreal, ENNReal.coe_mul, ENNReal.ofNNReal_toNNReal]
         ring
