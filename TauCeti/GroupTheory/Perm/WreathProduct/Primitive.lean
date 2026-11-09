@@ -141,18 +141,13 @@ private lemma update_mem_of_forall_update_mem [DecidableEq ι] {B : Set (ι → 
     simp [r, c]
   have hrB : r • B = B := hB.smul_eq_of_mem hc (hrc.symm ▸ hc)
   have hr : r • Function.update c i z = Function.update c j z := by
-    funext k
-    by_cases hij : i = j
-    · subst j
-      simp [r, q, c]
-    · by_cases hki : k = i
-      · subst k
-        simpa [r, q, c, hij] using
-          (Function.update_of_ne (Ne.symm hij) z c)
-      · by_cases hkj : k = j
-        · subst k
-          simp [r, q, c]
-        · simp [r, q, c, Equiv.swap_apply_def, hki, hkj]
+    -- `r` acts by precomposition with `q⁻¹ = q`, which moves the updated coordinate from `i`
+    -- to `j`.
+    have h : r • Function.update c i z = Function.update c i z ∘ q.symm := by
+      funext k
+      simp [r]
+    rw [h, Function.update_comp_equiv]
+    simp [q, c, Function.comp_def]
   rw [← hr, ← hrB]
   exact Set.smul_mem_smul_set (hvary z)
 
@@ -208,8 +203,8 @@ private lemma exists_update_mem_ne [DecidableEq ι] [FaithfulSMul D Λ]
     product_inl_mulSingle_smul i d z
   clear_value s
   have hsc : s • c = c := by
-    rw [hsy_eq, show c i = a from rfl, mem_stabilizer_iff.mp hda]
-    exact Function.update_eq_self i c
+    rw [hsy_eq]
+    simp [c, mem_stabilizer_iff.mp hda]
   have hsB : s • B = B := hB.smul_eq_of_mem hc (hsc.symm ▸ hc)
   have hsy : s • y ∈ B := hsB ▸ Set.smul_mem_smul_set hy
   choose t ht using fun j ↦ exists_smul_eq D (y j) a
