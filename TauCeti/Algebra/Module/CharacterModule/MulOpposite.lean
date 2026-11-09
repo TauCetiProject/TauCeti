@@ -53,15 +53,8 @@ variable {M : Type v} [AddCommGroup M] [Module A M] {N : Type w} [AddCommGroup N
 /-- The character module `Hom_ℤ(M, ℚ / ℤ)` of a left `A`-module `M` is a right `A`-module, by
 `(χ · a) m = χ (a m)`. This instance is scoped: over a commutative ring it would compete with
 Mathlib's action on the character module of an `Aᵐᵒᵖ`-module. -/
-scoped instance instModuleMulOpposite : Module Aᵐᵒᵖ (CharacterModule M) where
-  smul a χ := AddMonoidHom.comp χ (DistribSMul.toAddMonoidHom M a.unop)
-  one_smul χ := DFunLike.ext _ _ fun m ↦ congrArg χ (one_smul A m)
-  mul_smul a b χ := DFunLike.ext _ _ fun m ↦ congrArg χ (mul_smul b.unop a.unop m)
-  smul_zero _ := rfl
-  smul_add _ _ _ := rfl
-  add_smul a b χ := DFunLike.ext _ _ fun m ↦
-    (congrArg χ (add_smul a.unop b.unop m)).trans (map_add χ _ _)
-  zero_smul χ := DFunLike.ext _ _ fun m ↦ (congrArg χ (zero_smul A m)).trans (map_zero χ)
+scoped instance instModuleMulOpposite : Module Aᵐᵒᵖ (CharacterModule M) :=
+  inferInstanceAs (Module Aᵈᵐᵃ (M →+ AddCircle (1 : ℚ)))
 
 /-- The right action on a character module is precomposition with the left action. -/
 @[simp]
@@ -149,10 +142,6 @@ theorem injective_of_projective {P : Type v} [AddCommGroup P] [Module A P]
                (DFunLike.congr_fun (h.map_smul a.unop p) y).symm },
       fun x ↦ DFunLike.ext _ _ fun p ↦ DFunLike.congr_fun (LinearMap.congr_fun hh p) x⟩
 
-private theorem sum_apply {ι X : Type*} [AddCommGroup X] (s : Finset ι)
-    (f : ι → CharacterModule X) (x : X) : (∑ i ∈ s, f i) x = ∑ i ∈ s, f i x :=
-  map_sum (AddMonoidHom.mk' (fun ψ : CharacterModule X ↦ ψ x) fun _ _ ↦ rfl) f s
-
 /-- Characters detect the image of a homomorphism of abelian groups: an element lies in the image
 exactly when every character vanishing on the image vanishes on it. -/
 theorem _root_.AddMonoidHom.mem_range_iff_forall_characterModule {X Y : Type*} [AddCommGroup X]
@@ -189,8 +178,8 @@ private theorem exists_comp_subtype_eq_id_of_section {n : ℕ} {L : Submodule A 
         rw [Finset.univ_sum_single]
         funext i
         simp [Φ, Pi.single_apply, smul_ite]
-      rw [sum_apply]
-      refine Eq.trans ?_ ((congrArg χ hΦ).trans (hχ _))
+      refine (AddMonoidHom.finsetSum_apply _ _ _).trans <|
+        Eq.trans ?_ ((congrArg χ hΦ).trans (hχ _))
       rw [map_sum]
       rfl
     have hsum : ∀ i, c i (b i) = ∑ j, σ (op (r i j) • c i) (Pi.single j 1) := fun i ↦ by
@@ -203,8 +192,9 @@ private theorem exists_comp_subtype_eq_id_of_section {n : ℕ} {L : Submodule A 
           conv_lhs => rw [← Finset.univ_sum_single b, map_sum]
           rfl
       _ = ∑ j, σ (∑ i, op (r i j) • c i) (Pi.single j 1) := by
-          simp_rw [hsum, map_sum, sum_apply]
-          exact Finset.sum_comm
+          simp_rw [hsum, map_sum]
+          exact Finset.sum_comm.trans
+            (Finset.sum_congr rfl fun _ _ ↦ (AddMonoidHom.finsetSum_apply _ _ _).symm)
       _ = 0 := Finset.sum_eq_zero fun j _ ↦ by
           rw [hc, map_zero]
           rfl
