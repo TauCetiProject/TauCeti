@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 public import Mathlib.Topology.MetricSpace.Lipschitz
+public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 
 import TauCeti.Analysis.Convolution.Basic
 
@@ -30,7 +31,7 @@ normalized forms reduce to one kernel (`ContDiffBump.integral_shrinking_normed_m
 public section
 
 open ContinuousLinearMap MeasureTheory Filter Metric
-open scoped Convolution Topology Pointwise NNReal
+open scoped Convolution Topology Pointwise NNReal ContDiff
 
 namespace ContDiffBump
 
@@ -180,6 +181,24 @@ theorem normed_convolution_mem_Icc (φ : ContDiffBump (0 : G)) {w : G → ℝ} {
     φ.nonneg_normed φ.integral_normed hexists fun y _ => (hwab y).2⟩
 
 end ContDiffBump
+
+/-- Every available Fréchet derivative of compactly supported finite-regularity data commutes
+with normalized-bump convolution. -/
+theorem HasCompactSupport.iteratedFDeriv_normed_convolution
+    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {μ : Measure E} [μ.IsAddHaarMeasure] {f : E → F} {N : ℕ∞} {k : ℕ}
+    (hfc : HasCompactSupport f) (hf : ContDiff ℝ N f) (ρ : ContDiffBump (0 : E))
+    (hk : k ≤ N) :
+    iteratedFDeriv ℝ k (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f) =
+      ρ.normed μ ⋆[lsmul ℝ ℝ, μ] iteratedFDeriv ℝ k f := by
+  have hL : (compContinuousMultilinearMapL ℝ (fun _ : Fin k ↦ E) F F).comp
+      (lsmul ℝ ℝ) = lsmul ℝ ℝ := by
+    ext a m
+    simp
+  rw [← hL]
+  exact hfc.iteratedFDeriv_convolution_right (lsmul ℝ ℝ)
+    ρ.continuous_normed.locallyIntegrable hf hk
 
 /-- Convolution with a nonnegative normalized bump preserves the Lipschitz constant,
 including for Banach-valued functions. -/
