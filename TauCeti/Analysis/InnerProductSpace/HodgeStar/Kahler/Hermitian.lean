@@ -60,6 +60,8 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `twoVectorContraction_apply_apply_of_lieMap_eq_zero`, `hermitianForm_apply_of_lieMap_eq_zero`:
   for an orthogonal `J` and a `J`-invariant `η`, the contraction by `η` commutes with `J` and
   `B(v, w) = η(v, J w)`.
+* `hermitianForm_lieMap`: the anti-`J`-invariant part `D_J ξ` of a two-form has zero Hermitian
+  part.
 * `abs_hermitianForm_apply_self_le_of_inner_kahlerForm_eq_zero`: `|B(v, v)| ≤ (‖η‖ / √2) ‖v‖²`
   for `η` orthogonal to `ω`.
 * `inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg`: `ω` is orthogonal to every anti-self-dual form.
@@ -156,6 +158,25 @@ theorem hermitianForm_apply_of_lieMap_eq_zero {J : AlmostComplexStructure V}
       twoVectorContraction_apply_apply_of_lieMap_eq_zero hJ hη, real_inner_comm _ w,
       inner_apply_left hJ, neg_neg]
   rw [hermitianForm_apply, h, add_self_div_two]
+
+/-- `D_J (v ∧ J w) + D_J (w ∧ J v) = 0`. -/
+private theorem lieMap_ιMulti_add_lieMap_ιMulti (J : AlmostComplexStructure V) (v w : V) :
+    lieMap 2 J.toLinearMap (ιMulti ℝ 2 ![v, J w]) +
+      lieMap 2 J.toLinearMap (ιMulti ℝ 2 ![w, J v]) = 0 := by
+  refine ext_inner_ιMulti_two fun a b ↦ ?_
+  simp only [lieMap_two_apply_ιMulti, inner_add_left, inner_ιMulti_two, inner_zero_left,
+    apply_apply, inner_neg_left]
+  ring
+
+/-- **The anti-`J`-invariant part of a two-form has zero Hermitian part**: `B(D_J ξ) = 0` for an
+orthogonal `J`, because `D_J` is skew-adjoint. -/
+theorem hermitianForm_lieMap {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
+    (ξ : ⋀[ℝ]^2 V) : J.hermitianForm (lieMap 2 J.toLinearMap ξ) = 0 := by
+  ext v w
+  rw [hermitianForm_apply, inner_lieMap_left (inner_apply_left hJ),
+    inner_lieMap_left (inner_apply_left hJ), ← neg_add, ← inner_add_right,
+    lieMap_ιMulti_add_lieMap_ιMulti, inner_zero_right, neg_zero, zero_div, LinearMap.zero_apply,
+    LinearMap.zero_apply]
 
 /-- **The Hermitian part of a form orthogonal to `ω` is bounded by `‖μ‖ / √2`** in dimension
 four: if `⟪ω, μ⟫ = 0`, then `|B(v, v)| ≤ (‖μ‖ / √2) ‖v‖²`. This applies to every anti-self-dual
