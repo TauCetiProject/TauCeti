@@ -272,8 +272,10 @@ instance hasTrivialRadical_quotient_radical [IsNoetherian R L] :
 
 variable {R L}
 
-/-- **The radical is the smallest ideal whose quotient has trivial radical.** Every ideal `I`
-whose quotient `L ⧸ I` has trivial radical contains the radical of `L`. -/
+/-- **The radical is contained in every ideal whose quotient has trivial radical.** Every ideal
+`I` whose quotient `L ⧸ I` has trivial radical contains the radical of `L`; combined with
+`hasTrivialRadical_quotient_radical`, the radical is the smallest such ideal when `L` is
+Noetherian. -/
 theorem radical_le_of_hasTrivialRadical_quotient (I : LieIdeal R L)
     [HasTrivialRadical R (L ⧸ I)] : radical R L ≤ I :=
   sSup_le fun J (hJ : IsSolvable J) => by
