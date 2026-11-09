@@ -22,12 +22,13 @@ terms of arrows alone, this means that source and target agree on a neighbourhoo
 
 The ineffective arrows contain the identities and are closed under inversion, composition and
 conjugation by arbitrary arrows. Closure under composition and conjugation holds because
-composition is open in an étale groupoid (`TauCeti.eventually_exists_comp_eq`). Consequently the
-ineffective automorphisms of an object `x` form a normal subgroup `TauCeti.ineffectiveKernel hs x`
-of `Aut x`, the ineffective kernel, and an isomorphism `x ≅ y` carries the ineffective kernel at
-`x` onto the one at `y`. In particular its order only depends on the isomorphism class of `x`.
-When the source-target map is also proper, the automorphism groups are finite
-(`TauCeti.finite_hom_of_proper_source_target`), hence so are the ineffective kernels.
+composition is open when the source is open (`TauCeti.eventually_exists_comp_eq`). Consequently
+the ineffective automorphisms of an object `x` form a normal subgroup
+`TauCeti.ineffectiveKernel hs x` of `Aut x`, the ineffective kernel, and an isomorphism `x ≅ y`
+carries the ineffective kernel at `x` onto the one at `y`. In particular its order only depends
+on the isomorphism class of `x`. When the source-target map is also proper, the automorphism
+groups are finite (`TauCeti.finite_hom_of_proper_source_target`), hence so are the ineffective
+kernels.
 
 Two parallel arrows are related by the germ relation `TauCeti.germRel C` when they induce the same
 germ, that is, when one followed by the inverse of the other is ineffective. This is a congruence,
@@ -275,13 +276,12 @@ theorem inv_mem_ineffectiveArrows_iff {a : Quiver.Total C} :
   simp only [IsTopologicalGroupoid.inverseHomeomorph_apply]
   exact eventually_congr (.of_forall fun _ ↦ eq_comm)
 
-include hs in
-/-- In an étale groupoid the composite of two ineffective arrows is ineffective. -/
-theorem comp_mem_ineffectiveArrows {a b : Quiver.Total C} (ha : a ∈ ineffectiveArrows C)
-    (hb : b ∈ ineffectiveArrows C) (h : a.right = b.left) :
-    a.comp b h ∈ ineffectiveArrows C := by
+/-- When the source is open, the composite of two ineffective arrows is ineffective. -/
+theorem comp_mem_ineffectiveArrows (ho : IsOpenMap (Quiver.Total.left : Quiver.Total C → C))
+    {a b : Quiver.Total C} (ha : a ∈ ineffectiveArrows C) (hb : b ∈ ineffectiveArrows C)
+    (h : a.right = b.left) : a.comp b h ∈ ineffectiveArrows C := by
   rw [mem_ineffectiveArrows_iff] at ha hb ⊢
-  filter_upwards [eventually_exists_comp_eq hs h (A := {a | a.left = a.right})
+  filter_upwards [eventually_exists_comp_eq ho h (A := {a | a.left = a.right})
     (B := {a | a.left = a.right}) ha hb] with c ⟨a', ha', b', hb', h', hc⟩
   rw [← hc, Quiver.Total.comp_left, Quiver.Total.comp_right]
   exact (ha' : a'.left = a'.right).trans (h'.trans hb')
@@ -300,9 +300,11 @@ private theorem conj_mem_ineffectiveArrows {x y : C} (f : x ⟶ y) {g : y ⟶ y}
       𝓝 (⟨y, x, inv f⟩ : Quiver.Total C) :=
     IsTopologicalGroupoid.continuous_inverse.continuousAt.preimage_mem_nhds (by simpa using hW)
   rw [mem_ineffectiveArrows_iff] at hg ⊢
-  have hN := eventually_exists_comp_eq hs (a := ⟨y, y, g⟩) (b := ⟨y, x, inv f⟩) rfl hg hW'
+  have hN := eventually_exists_comp_eq hs.isOpenMap (a := ⟨y, y, g⟩) (b := ⟨y, x, inv f⟩) rfl hg
+    hW'
   rw [Quiver.Total.mk_comp_mk] at hN
-  have key := eventually_exists_comp_eq hs (a := ⟨x, y, f⟩) (b := ⟨y, x, g ≫ inv f⟩) rfl hW hN
+  have key := eventually_exists_comp_eq hs.isOpenMap (a := ⟨x, y, f⟩) (b := ⟨y, x, g ≫ inv f⟩)
+    rfl hW hN
   rw [Quiver.Total.mk_comp_mk] at key
   -- Near `f ≫ g ≫ f⁻¹`, an arrow `c` is `f' ≫ g' ≫ k` with `f'` and `k⁻¹` in `W` and `g'` with
   -- equal endpoints. Then `k⁻¹` and `f'` have the same target, so they agree.
@@ -334,7 +336,7 @@ def ineffectiveKernel (x : C) : Subgroup (Aut x) where
   carrier := {g | (⟨x, x, g.asIso.hom⟩ : Quiver.Total C) ∈ ineffectiveArrows C}
   one_mem' := by simpa using id_mem_ineffectiveArrows hs x
   mul_mem' {g h} hg hh := by
-    simpa using comp_mem_ineffectiveArrows hs hh hg rfl
+    simpa using comp_mem_ineffectiveArrows hs.isOpenMap hh hg rfl
   inv_mem' {g} hg := by
     simpa using inv_mem_ineffectiveArrows_iff.mpr hg
 
@@ -373,7 +375,8 @@ theorem congruence_germRel : Congruence (germRel C) where
   equivalence :=
     { refl _ := by simpa [germRel_iff] using id_mem_ineffectiveArrows hs _
       symm h := by simpa [germRel_iff] using inv_mem_ineffectiveArrows_iff.mpr h
-      trans h h' := by simpa [germRel_iff] using comp_mem_ineffectiveArrows hs h h' rfl }
+      trans h h' := by
+        simpa [germRel_iff] using comp_mem_ineffectiveArrows hs.isOpenMap h h' rfl }
   comp_left f g g' h := by
     simpa [germRel_iff] using (conj_mem_ineffectiveArrows_iff hs f).mpr h
   comp_right g h := by

@@ -23,10 +23,9 @@ Inversion is a homeomorphism, units embed the object space, and openness of sour
 are equivalent, as is their being local homeomorphisms. These facts let smooth groupoids use the
 same topology when their smooth structure is forgotten.
 
-When the source is a local homeomorphism, composition is open: every arrow near a composite
-`a ≫ b` is a composite of an arrow near `a` with an arrow near `b`
-(`TauCeti.eventually_exists_comp_eq`). The proof factors a nearby arrow through a local section
-of the source through `a`.
+When the source is an open map, composition is open: every arrow near a composite `a ≫ b` is a
+composite of an arrow near `a` with an arrow near `b` (`TauCeti.eventually_exists_comp_eq`). The
+proof factors a nearby arrow through an arrow near `a` with the same source.
 
 Composition follows categorical order: `a.comp b h` first traverses `a`, then `b`.
 Thus the product written `gh` in the opposite, geometric order is `h.comp g`.
@@ -122,79 +121,45 @@ theorem isOpenMap_target_of_local_source_sections
 
 end IsTopologicalGroupoid
 
-section Etale
+section OpenSource
 
-variable {C : Type*} [Category C] [IsGroupoid C]
+variable {C : Type*} [Category C] [IsGroupoid C] [TopologicalSpace C]
+  [TopologicalSpace (Quiver.Total C)] [IsTopologicalGroupoid C]
 
-/-- Following `a` by the composite of its inverse with `c` gives back `c`. -/
-private theorem comp_inv_comp (a c : Quiver.Total C) (h : a.left = c.left)
-    (h' : a.right = ((⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).comp c h).left) :
-    a.comp ((⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).comp c h) h' = c := by
-  obtain ⟨x, y, f⟩ := a
-  obtain ⟨x', z, g⟩ := c
-  dsimp only at h
-  subst h
-  simp [Quiver.Total.comp_def]
-
-/-- Following the inverse of `a` by the composite of `a` with `b` gives back `b`. -/
-private theorem inv_comp_comp (a b : Quiver.Total C) (h : a.right = b.left)
-    (h' : (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).right = (a.comp b h).left) :
-    (⟨a.right, a.left, inv a.hom⟩ : Quiver.Total C).comp (a.comp b h) h' = b := by
-  obtain ⟨x, y, f⟩ := a
-  obtain ⟨y', z, g⟩ := b
-  dsimp only at h
-  subst h
-  simp [Quiver.Total.comp_def]
-
-variable [TopologicalSpace C] [TopologicalSpace (Quiver.Total C)] [IsTopologicalGroupoid C]
-
-/-- **Composition is open in an étale groupoid.** If the source is a local homeomorphism, then
-every arrow near a composite `a ≫ b` is the composite of an arrow near `a` with an arrow near `b`:
+/-- **Composition is open when the source is open.** If the source is an open map, then every
+arrow near a composite `a ≫ b` is the composite of an arrow near `a` with an arrow near `b`:
 for neighbourhoods `A` of `a` and `B` of `b`, the composites of arrows of `A` with arrows of `B`
-form a neighbourhood of `a ≫ b`. -/
+form a neighbourhood of `a ≫ b`. This applies in particular to étale groupoids. -/
 theorem eventually_exists_comp_eq
-    (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C))
+    (hs : IsOpenMap (Quiver.Total.left : Quiver.Total C → C))
     {a b : Quiver.Total C} (h : a.right = b.left) {A B : Set (Quiver.Total C)} (hA : A ∈ 𝓝 a)
     (hB : B ∈ 𝓝 b) :
     ∀ᶠ c in 𝓝 (a.comp b h), ∃ a' ∈ A, ∃ b' ∈ B, ∃ h' : a'.right = b'.left, a'.comp b' h' = c := by
-  obtain ⟨e, hae, he⟩ := hs a
-  -- The inverse `e.symm` of the source near `a` is a continuous local section of the source.
-  have hσl (y : C) (hy : y ∈ e.target) : (e.symm y).left = y := by
-    rw [he]
-    exact e.right_inv hy
-  have hea : e a = a.left := by rw [he]
-  have hσa : e.symm a.left = a := by
-    rw [← hea]
-    exact e.left_inv hae
-  have hat : a.left ∈ e.target := hea ▸ e.map_source hae
-  let D : Set (Quiver.Total C) := Quiver.Total.left ⁻¹' e.target
-  have hD : IsOpen D := e.open_target.preimage IsTopologicalGroupoid.continuous_source
-  have hcD : a.comp b h ∈ D := by
-    simpa only [D, Set.mem_preimage, Quiver.Total.comp_left] using hat
-  -- On `D`, an arrow `c` is `τ c` followed by `Ψ c`, the inverse of `τ c` followed by `c`.
-  let τ : D → Quiver.Total C := fun c ↦ e.symm c.1.left
-  have hτ : Continuous τ := e.continuousOn_symm.comp_continuous
-    (IsTopologicalGroupoid.continuous_source.comp continuous_subtype_val) fun c ↦ c.2
-  let Ψ : D → Quiver.Total C := fun c ↦
-    (⟨(τ c).right, (τ c).left, inv (τ c).hom⟩ : Quiver.Total C).comp c.1 (hσl _ c.2)
+  -- For arrows `a'` and `c` with the same source, `Ψ` is the inverse of `a'` followed by `c`,
+  -- so that `c` is `a'` followed by `Ψ`. It sends `(a, a ≫ b)` to `b`.
+  let Ψ : {p : Quiver.Total C × Quiver.Total C // p.1.left = p.2.left} → Quiver.Total C := fun p ↦
+    (⟨p.1.1.right, p.1.1.left, inv p.1.1.hom⟩ : Quiver.Total C).comp p.1.2 p.2
   have hΨ : Continuous Ψ := IsTopologicalGroupoid.continuous_comp.comp
-    (((IsTopologicalGroupoid.continuous_inverse.comp hτ).prodMk continuous_subtype_val).subtype_mk
-      fun c ↦ hσl _ c.2)
-  have hτc : τ ⟨_, hcD⟩ = a := by
-    simp only [τ, Quiver.Total.comp_left, hσa]
-  have hΨc : Ψ ⟨_, hcD⟩ = b :=
-    (Quiver.Total.comp_congr (by rw [hτc]) rfl _ (Quiver.Total.comp_left _ _ _).symm).trans
-      (inv_comp_comp a b h _)
-  have hmap : Filter.map Subtype.val (𝓝 (⟨_, hcD⟩ : D)) = 𝓝 (a.comp b h) :=
-    hD.isOpenMap_subtype_val.map_nhds_eq continuous_subtype_val.continuousAt
-  rw [← hmap]
-  refine Filter.eventually_map.2 ?_
-  filter_upwards [hτ.continuousAt.preimage_mem_nhds (by rwa [hτc] : A ∈ 𝓝 (τ ⟨_, hcD⟩)),
-    hΨ.continuousAt.preimage_mem_nhds (by rwa [hΨc] : B ∈ 𝓝 (Ψ ⟨_, hcD⟩))] with c hcA hcB
-  exact ⟨τ c, hcA, Ψ c, hcB, (Quiver.Total.comp_left
-    (⟨(τ c).right, (τ c).left, inv (τ c).hom⟩ : Quiver.Total C) c.1 (hσl _ c.2)).symm,
-    comp_inv_comp _ _ (hσl _ c.2) _⟩
+    (((IsTopologicalGroupoid.continuous_inverse.comp
+      (continuous_fst.comp continuous_subtype_val)).prodMk
+        (continuous_snd.comp continuous_subtype_val)).subtype_mk fun p ↦ p.2)
+  let p₀ : {p : Quiver.Total C × Quiver.Total C // p.1.left = p.2.left} :=
+    ⟨(a, a.comp b h), (Quiver.Total.comp_left a b h).symm⟩
+  have hΨp₀ : Ψ p₀ = b := Quiver.Total.inv_comp_comp a b h _
+  -- Pairs `(a', c)` with `a'` in `A'` and `c` in `C'` are sent into `B` by `Ψ`.
+  have hpre : Ψ ⁻¹' B ∈ 𝓝 p₀ := hΨ.continuousAt.preimage_mem_nhds (by rwa [hΨp₀])
+  obtain ⟨u, hu, hsub⟩ := Filter.mem_comap.mp (nhds_induced Subtype.val p₀ ▸ hpre)
+  obtain ⟨A', hA', C', hC', hprod⟩ := mem_nhds_prod_iff.mp hu
+  -- Since the source is open, an arrow near `a ≫ b` has the source of some `a'` in `A ∩ A'`.
+  have hL : Quiver.Total.left '' (A ∩ A') ∈ 𝓝 (a.comp b h).left := by
+    rw [Quiver.Total.comp_left]
+    exact hs.image_mem_nhds (Filter.inter_mem hA hA')
+  filter_upwards [hC', IsTopologicalGroupoid.continuous_source.continuousAt.preimage_mem_nhds hL]
+    with c hcC ⟨a', ⟨ha'A, ha'A'⟩, ha'c⟩
+  exact ⟨a', ha'A, Ψ ⟨(a', c), ha'c⟩, hsub (hprod ⟨ha'A', hcC⟩),
+    (Quiver.Total.comp_left (⟨a'.right, a'.left, inv a'.hom⟩ : Quiver.Total C) c ha'c).symm,
+    Quiver.Total.comp_inv_comp a' c ha'c _⟩
 
-end Etale
+end OpenSource
 
 end TauCeti
