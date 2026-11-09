@@ -30,7 +30,7 @@ bounded by the `L^∞` bounds `Λ, β, γ` of `a - a'`, `b - b'` and `c - c'`. H
 * `TauCeti.PDE.norm_sub_le_of_isWeakSolutionDirichlet`: for a common right-hand side
   `f ∈ L²(Ω)` and coercivity constants `C, C'`, `‖u - u'‖ ≤ (Λ + β + γ) ‖f‖ / (C C')`.
 * `TauCeti.PDE.tendsto_of_isWeakSolutionDirichlet`: weak solutions for coefficients converging in
-  `L^∞(Ω)`, with a common coercivity constant, converge in `H¹₀(Ω)`.
+  `L^∞(Ω)` to coefficients with a coercive energy form converge in `H¹₀(Ω)`.
 
 ## References
 
@@ -144,11 +144,11 @@ theorem norm_sub_le_of_isWeakSolutionDirichlet
 
 /-- **Continuous dependence of the weak solution on the coefficients.** Let `u` be a weak
 solution in `H¹₀(Ω)` of the Dirichlet problem for `(a, b, c)` with right-hand side `f ∈ L²(Ω)`,
-and let `u' i` be weak solutions for a family of coefficient triples `(a' i, b' i, c' i)` with
-the same `f`, whose energy forms are coercive on `H¹₀(Ω)` with a common constant `C`. If the
-bounds `Λ i`, `β i` and `γ i` on the differences `a' i - a`, `b' i - b` and `c' i - c` over `Ω`,
-in the sense of the hypotheses of `norm_sub_le_of_forall_energyFormH1_eq`, tend to `0` along a
-filter, then `u' i` tends to `u` in `H¹₀(Ω)`. -/
+whose energy form is coercive on `H¹₀(Ω)` with constant `C`, and let `u' i` be weak solutions for
+a family of coefficient triples `(a' i, b' i, c' i)` with the same `f`. If the bounds `Λ i`, `β i`
+and `γ i` on the differences `a - a' i`, `b - b' i` and `c - c' i` over `Ω`, in the sense of the
+hypotheses of `norm_sub_le_of_forall_energyFormH1_eq`, tend to `0` along a filter, then `u' i`
+tends to `u` in `H¹₀(Ω)`. The perturbed energy forms need not be coercive. -/
 theorem tendsto_of_isWeakSolutionDirichlet {α : Type*} {l : Filter α}
     {a' : α → EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b' : α → EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
     {c' : α → EuclideanSpace ℝ ι → ℝ} {Lam beta gamma : α → ℝ}
@@ -156,28 +156,37 @@ theorem tendsto_of_isWeakSolutionDirichlet {α : Type*} {l : Filter α}
     (hcoeff' : ∀ i,
       MemLp (fun x => energyIntegrand (a' i x) (b' i x) (c' i x)) ⊤ (mu.restrict Omega))
     (hC : 0 < C)
-    (hlower' : ∀ i, ∀ w : W1p0 mu Omega 2,
-      C * ‖w‖ ^ 2 ≤ energyFormH1 (a' i) (b' i) (c' i) (w : W1p mu Omega 2) (w : W1p mu Omega 2))
+    (hlower : ∀ w : W1p0 mu Omega 2,
+      C * ‖w‖ ^ 2 ≤ energyFormH1 a b c (w : W1p mu Omega 2) (w : W1p mu Omega 2))
     (hLam : ∀ i, 0 ≤ Lam i)
     (ha : ∀ i, ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ∀ η ξ : EuclideanSpace ℝ ι,
-      |η ⬝ᵥ ((a' i x - a x) *ᵥ ξ)| ≤ Lam i * ‖η‖ * ‖ξ‖)
+      |η ⬝ᵥ ((a x - a' i x) *ᵥ ξ)| ≤ Lam i * ‖η‖ * ‖ξ‖)
     (hbeta : ∀ i, 0 ≤ beta i)
-    (hb : ∀ i, ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b' i x - b x‖ ≤ beta i)
+    (hb : ∀ i, ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x - b' i x‖ ≤ beta i)
     (hgamma : ∀ i, 0 ≤ gamma i)
-    (hc : ∀ i, ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c' i x - c x‖ ≤ gamma i)
+    (hc : ∀ i, ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x - c' i x‖ ≤ gamma i)
     (hlim : Filter.Tendsto (fun i => Lam i + beta i + gamma i) l (nhds 0))
     {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2} {u' : α → W1p0 mu Omega 2}
     (hu : IsWeakSolutionDirichlet a b c f u)
     (hu' : ∀ i, IsWeakSolutionDirichlet (a' i) (b' i) (c' i) f (u' i)) :
     Filter.Tendsto u' l (nhds u) := by
   rw [tendsto_iff_norm_sub_tendsto_zero]
-  -- Each `u' i` is within `(Λ i + β i + γ i) ‖u‖ / C` of `u`, and these bounds tend to `0`.
-  refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun i ↦ ?_)
-    ((hlim.mul_const ‖u‖).div_const C |>.trans (by rw [zero_mul, zero_div]))
-  have h := norm_sub_le_of_forall_energyFormH1_eq (hcoeff' i) hcoeff hC (hlower' i) (hLam i)
-    (ha i) (hbeta i) (hb i) (hgamma i) (hc i) (hu' i).energyFormH1_eq_dirichletForcing
-    hu.energyFormH1_eq_dirichletForcing
-  rwa [sub_self (dirichletForcing f), ContinuousLinearMap.opNorm_zero, zero_add] at h
+  -- `‖u - u' i‖ ≤ (Λ i + β i + γ i) ‖u' i‖ / C`, so once `Λ i + β i + γ i ≤ C / 2` we get
+  -- `‖u' i - u‖ ≤ 2 (Λ i + β i + γ i) ‖u‖ / C`, and these bounds tend to `0`.
+  refine squeeze_zero' (Filter.Eventually.of_forall fun _ ↦ norm_nonneg _) ?_
+    (((hlim.const_mul 2).mul_const ‖u‖).div_const C |>.trans
+      (by rw [mul_zero, zero_mul, zero_div]))
+  filter_upwards [hlim.eventually (ge_mem_nhds (half_pos hC))] with i hi
+  have h := norm_sub_le_of_forall_energyFormH1_eq hcoeff (hcoeff' i) hC hlower (hLam i)
+    (ha i) (hbeta i) (hb i) (hgamma i) (hc i) hu.energyFormH1_eq_dirichletForcing
+    (hu' i).energyFormH1_eq_dirichletForcing
+  rw [sub_self (dirichletForcing f), ContinuousLinearMap.opNorm_zero, zero_add,
+    le_div_iff₀ hC] at h
+  have htri := norm_le_norm_add_norm_sub u (u' i)
+  have hδ : 0 ≤ Lam i + beta i + gamma i := by linarith [hLam i, hbeta i, hgamma i]
+  rw [norm_sub_rev, le_div_iff₀ hC]
+  nlinarith [mul_le_mul_of_nonneg_right hi (norm_nonneg (u - u' i)),
+    mul_le_mul_of_nonneg_left htri hδ]
 
 end PDE
 
