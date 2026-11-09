@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Subgraph
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.CutVertex
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.VertexConnectivity
@@ -153,6 +154,41 @@ theorem isBlock_singleton_iff_isIsolated (G : SimpleGraph V) (v : V) :
 theorem Adj.exists_isBlock_superset_pair [Finite V] (h : G.Adj u v) :
     ∃ B, G.IsBlock B ∧ {u, v} ⊆ B :=
   exists_isBlock_superset (G.induce_pair_connected_of_adj h) (G.not_isCutVertex_induce_pair u v)
+
+/-- In an acyclic simple graph, the endpoints of every edge form a block. -/
+theorem IsAcyclic.isBlock_pair (hG : G.IsAcyclic) (h : G.Adj u v) :
+    G.IsBlock ({u, v} : Set V) := by
+  rw [isBlock_iff]
+  refine ⟨G.induce_pair_connected_of_adj h, G.not_isCutVertex_induce_pair u v, ?_⟩
+  intro C hconn hcut huvC
+  apply Set.Subset.antisymm huvC
+  intro x hxC
+  by_contra hxuv
+  have hxu : x ≠ u := fun hxu ↦ hxuv (by simp [hxu])
+  have hxv : x ≠ v := fun hxv ↦ hxuv (by simp [hxv])
+  have hthree : ({u, v, x} : Set V) ⊆ C := by
+    intro y hy
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hy
+    rcases hy with rfl | rfl | rfl
+    · exact huvC (by simp)
+    · exact huvC (by simp)
+    · exact hxC
+  have hcard : 3 ≤ C.encard := by
+    have := Set.encard_le_encard hthree
+    have hencard : ({u, v, x} : Set V).encard = 3 := by
+      rw [Set.encard_insert_of_notMem (by simp [h.ne, Ne.symm hxu]),
+        Set.encard_insert_of_notMem (by simp [Ne.symm hxv]), Set.encard_singleton]
+      norm_num
+    rwa [hencard] at this
+  have hvertex : (G.induce C).IsVertexConnected 2 := by
+    rw [isVertexConnected_two_iff, ENat.card_coe_set_eq]
+    exact ⟨hcard, hconn, hcut⟩
+  let uC : C := ⟨u, huvC (by simp)⟩
+  let vC : C := ⟨v, huvC (by simp)⟩
+  have huv : (G.induce C).Adj uC vC := h
+  have hbridge : (G.induce C).IsBridge s(uC, vC) :=
+    isAcyclic_iff_forall_adj_isBridge.mp (hG.induce C) huv
+  exact (isEdgeConnected_two_iff_forall_not_isBridge.mp hvertex.isEdgeConnected s(uC, vC)) hbridge
 
 /-! ### Intersections and edge uniqueness -/
 
