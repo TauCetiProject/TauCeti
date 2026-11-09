@@ -200,7 +200,51 @@ private theorem eLpNorm_indicator_closedBall_two (c R : ℝ) :
     show ((2 : ℝ))⁻¹ = ((2 : ℕ) : ℝ)⁻¹ by norm_num, ENNReal.pow_rpow_inv_natCast two_ne_zero,
     Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_mul (abs_nonneg c)]
 
+/-- For cutoffs at radius `R = a + n` with derivative at most `A / R`, against data of decay
+`M / R`, the `L²` norm of the error bound on the disc of radius `2 R` is `O(1 / R)`. -/
+private theorem tendsto_eLpNorm_indicator_closedBall {a A M : ℝ} (ha : 0 < a) (hA : 0 ≤ A)
+    (hM : 0 ≤ M) :
+    Tendsto (fun n : ℕ ↦ eLpNorm ((closedBall (0 : ℂ) (2 * (a + n))).indicator
+      fun _ ↦ A * (a + n)⁻¹ * (M / (a + n))) 2 volume) atTop (𝓝 0) := by
+  have hbeq (n : ℕ) : eLpNorm ((closedBall (0 : ℂ) (2 * (a + n))).indicator
+      fun _ ↦ A * (a + n)⁻¹ * (M / (a + n))) 2 volume =
+        ENNReal.ofReal (2 * A * M / (a + n)) * (NNReal.pi : ℝ≥0∞) ^ (2⁻¹ : ℝ) := by
+    have hn : 0 < a + n := by positivity
+    rw [eLpNorm_indicator_closedBall_two, abs_of_nonneg (by positivity)]
+    congr 2
+    field_simp
+  simp_rw [hbeq]
+  rw [← zero_mul ((NNReal.pi : ℝ≥0∞) ^ (2⁻¹ : ℝ))]
+  refine ENNReal.Tendsto.mul_const ?_ (.inr (by simp))
+  rw [← ENNReal.ofReal_zero]
+  exact ENNReal.tendsto_ofReal (tendsto_const_nhds.div_atTop
+    (tendsto_atTop_add_const_left _ _ tendsto_natCast_atTop_atTop))
+
 end Cutoff
+
+/-- The Beurling identity `B bar∂ = ∂` with an error: for Schwartz `g` and `φ`,
+`‖B g - ∂φ‖_{L²}` is controlled by `‖g - bar∂φ‖_{L²}` through any `L²` bound for `B`. -/
+private theorem eLpNorm_beurlingL2_sub_wirtingerDeriv_le {C : ℝ≥0}
+    (hC : ∀ v : Lp F 2 (volume : Measure ℂ),
+      eLpNorm (beurlingL2 F v) 2 volume ≤ C * eLpNorm v 2 volume) (g φ : 𝓢(ℂ, F)) :
+    eLpNorm (fun x ↦ beurlingL2 F (g.toLp 2 volume) x - wirtingerDeriv (⇑φ) x 1) 2 volume ≤
+      C * eLpNorm (fun x ↦ g x - conjWirtingerDeriv (⇑φ) x 1) 2 volume := by
+  set v : Lp F 2 (volume : Measure ℂ) :=
+    g.toLp 2 volume - (SchwartzMap.conjWirtingerDerivCLM F φ).toLp 2 volume
+  have hvae : ⇑v =ᵐ[volume] fun x ↦ g x - conjWirtingerDeriv (⇑φ) x 1 := by
+    filter_upwards [Lp.coeFn_sub (g.toLp 2 volume)
+      ((SchwartzMap.conjWirtingerDerivCLM F φ).toLp 2 volume), g.coeFn_toLp 2 volume,
+      (SchwartzMap.conjWirtingerDerivCLM F φ).coeFn_toLp 2 volume] with x h₁ h₂ h₃
+    rw [h₁, Pi.sub_apply, h₂, h₃, SchwartzMap.conjWirtingerDerivCLM_apply]
+  have hBae : ⇑(beurlingL2 F v) =ᵐ[volume]
+      fun x ↦ beurlingL2 F (g.toLp 2 volume) x - wirtingerDeriv (⇑φ) x 1 := by
+    rw [map_sub, beurlingL2_toLp_conjWirtingerDerivCLM]
+    filter_upwards [Lp.coeFn_sub (beurlingL2 F (g.toLp 2 volume))
+      ((SchwartzMap.wirtingerDerivCLM F φ).toLp 2 volume),
+      (SchwartzMap.wirtingerDerivCLM F φ).coeFn_toLp 2 volume] with x h₁ h₂
+    rw [h₁, Pi.sub_apply, h₂, SchwartzMap.wirtingerDerivCLM_apply]
+  rw [← eLpNorm_congr_ae hBae, ← eLpNorm_congr_ae hvae]
+  exact hC v
 
 /-- **`∂ (T f) = B f` in `L²`.** For smooth compactly supported `f`, the Wirtinger derivative of
 the Cauchy transform agrees almost everywhere with the spectral `L²` Beurling operator applied
@@ -233,7 +277,7 @@ theorem _root_.HasCompactSupport.wirtingerDeriv_cauchyTransform_ae_eq_beurlingL2
   obtain ⟨C₀, hC₀, hcut⟩ := exists_cutoff_fderiv_bound (E := ℂ)
   set R : ℕ → ℝ := fun n ↦ 2 * r + n
   have hR (n : ℕ) : 0 < R n := by positivity
-  choose χ χ' hχs hχ01 hχ1 hχ0 hχd hχ' using fun n ↦ hcut 0 (R n) (hR n)
+  choose χ χ' hχs _ hχ1 hχ0 hχd hχ' using fun n ↦ hcut 0 (R n) (hR n)
   have hχfd (n : ℕ) (x : ℂ) : ‖fderiv ℝ (χ n) x‖ ≤ C₀ * (R n)⁻¹ := by
     rw [(hχd n x).fderiv]
     exact hχ' n x
@@ -256,83 +300,45 @@ theorem _root_.HasCompactSupport.wirtingerDeriv_cauchyTransform_ae_eq_beurlingL2
   have hdecay' (n : ℕ) (x : ℂ) (hx : R n ≤ ‖x‖) : ‖x‖ * ‖u x‖ ≤ M :=
     hdecay x (le_trans (by simp only [R]; linarith [n.cast_nonneg (α := ℝ)]) hx)
   set c : ℕ → ℝ := fun n ↦ C₀ * (R n)⁻¹ * (M / R n)
-  have hind (n : ℕ) (x : ℂ) : ‖fderiv ℝ (χ n) x‖ * ‖u x‖ ≤
-      (closedBall (0 : ℂ) (2 * R n)).indicator (fun _ ↦ c n) x :=
-    norm_fderiv_mul_norm_le_indicator (hR n) (hχ1 n) (hχ0 n) (hχfd n) (hdecay' n) x
-  have he (n : ℕ) (x : ℂ) : ‖conjWirtingerDeriv (φ n) x 1 - f x‖ ≤
-      (closedBall (0 : ℂ) (2 * R n)).indicator (fun _ ↦ c n) x := by
-    have h := norm_conjWirtingerDeriv_smul_sub_smul_le (hχdiff n x)
-      (hu.differentiable (by simp) x) (1 : ℂ)
-    rw [hcu, hχf, norm_one, mul_one] at h
-    exact h.trans (hind n x)
-  have hd (n : ℕ) (x : ℂ) : ‖wirtingerDeriv (φ n) x 1 - χ n x • wirtingerDeriv u x 1‖ ≤
-      (closedBall (0 : ℂ) (2 * R n)).indicator (fun _ ↦ c n) x := by
-    have h := norm_wirtingerDeriv_smul_sub_smul_le (hχdiff n x)
-      (hu.differentiable (by simp) x) (1 : ℂ)
-    rw [norm_one, mul_one] at h
-    exact h.trans (hind n x)
-  -- The `L²` size of the errors tends to zero.
   set b : ℕ → ℝ≥0∞ := fun n ↦ eLpNorm ((closedBall (0 : ℂ) (2 * R n)).indicator
     fun _ ↦ c n) 2 volume
   have hb : Tendsto b atTop (𝓝 0) := by
     have hM : 0 ≤ M := by
       have : 0 ≤ ∫ z, ‖f z‖ := integral_nonneg fun z ↦ norm_nonneg (f z)
       positivity
-    have hbeq (n : ℕ) : b n = ENNReal.ofReal (2 * C₀ * M / R n) *
-        (NNReal.pi : ℝ≥0∞) ^ (2⁻¹ : ℝ) := by
-      simp only [b]
-      rw [eLpNorm_indicator_closedBall_two]
-      congr 2
-      have hRn := (hR n).ne'
-      rw [abs_of_nonneg (by simp only [c]; positivity)]
-      simp only [c]
-      field_simp
-    rw [show b = _ from funext hbeq]
-    rw [← zero_mul ((NNReal.pi : ℝ≥0∞) ^ (2⁻¹ : ℝ))]
-    refine ENNReal.Tendsto.mul_const ?_ (.inr (by simp))
-    rw [← ENNReal.ofReal_zero]
-    refine ENNReal.tendsto_ofReal (tendsto_const_nhds.div_atTop ?_)
-    exact tendsto_atTop_add_const_left _ _ tendsto_natCast_atTop_atTop
-  -- `χ n • ∂ (T f) → B f` in `L²`.
+    exact tendsto_eLpNorm_indicator_closedBall (by positivity) hC₀ hM
+  have hind (n : ℕ) (x : ℂ) : ‖fderiv ℝ (χ n) x‖ * ‖u x‖ ≤
+      (closedBall (0 : ℂ) (2 * R n)).indicator (fun _ ↦ c n) x :=
+    norm_fderiv_mul_norm_le_indicator (hR n) (hχ1 n) (hχ0 n) (hχfd n) (hdecay' n) x
+  -- `χ n • ∂ (T f) → B f` in `L²`: both cutoff errors have `L²` norm at most `b n`.
   obtain ⟨Cb, hCb⟩ := exists_eLpNorm_beurlingL2_le (F := F) (p := 2) (by norm_num)
     ENNReal.ofNat_ne_top
   have hmeasG : AEStronglyMeasurable G volume := Lp.aestronglyMeasurable G
   have hbound (n : ℕ) : eLpNorm (fun x ↦ G x - χ n x • wirtingerDeriv u x 1) 2 volume ≤
       Cb * b n + b n := by
-    set v : Lp F 2 (volume : Measure ℂ) :=
-      fS.toLp 2 volume - (SchwartzMap.conjWirtingerDerivCLM F (Φ n)).toLp 2 volume
-    have hBv : beurlingL2 F v = G - (SchwartzMap.wirtingerDerivCLM F (Φ n)).toLp 2 volume := by
-      rw [map_sub, beurlingL2_toLp_conjWirtingerDerivCLM]
-    have hvae : ⇑v =ᵐ[volume] fun x ↦ f x - conjWirtingerDeriv (φ n) x 1 := by
-      filter_upwards [Lp.coeFn_sub (fS.toLp 2 volume)
-        ((SchwartzMap.conjWirtingerDerivCLM F (Φ n)).toLp 2 volume), fS.coeFn_toLp 2 volume,
-        (SchwartzMap.conjWirtingerDerivCLM F (Φ n)).coeFn_toLp 2 volume] with x h₁ h₂ h₃
-      rw [h₁, Pi.sub_apply, h₂, h₃, SchwartzMap.conjWirtingerDerivCLM_apply, hΦ]
-      rfl
-    have hBae : ⇑(beurlingL2 F v) =ᵐ[volume] fun x ↦ G x - wirtingerDeriv (φ n) x 1 := by
-      rw [hBv]
-      filter_upwards [Lp.coeFn_sub G ((SchwartzMap.wirtingerDerivCLM F (Φ n)).toLp 2 volume),
-        (SchwartzMap.wirtingerDerivCLM F (Φ n)).coeFn_toLp 2 volume] with x h₁ h₂
-      rw [h₁, Pi.sub_apply, h₂, SchwartzMap.wirtingerDerivCLM_apply, hΦ]
     have hwφ : Continuous fun x ↦ wirtingerDeriv (φ n) x 1 := by
-      have := (SchwartzMap.wirtingerDerivCLM F (Φ n)).continuous
-      simpa only [funext (SchwartzMap.wirtingerDerivCLM_apply (Φ n)), hΦ] using this
+      simpa only [funext (SchwartzMap.wirtingerDerivCLM_apply (Φ n)), hΦ] using
+        (SchwartzMap.wirtingerDerivCLM F (Φ n)).continuous
+    have hcφ : Continuous fun x ↦ conjWirtingerDeriv (φ n) x 1 := by
+      simpa only [funext (SchwartzMap.conjWirtingerDerivCLM_apply (Φ n)), hΦ] using
+        (SchwartzMap.conjWirtingerDerivCLM F (Φ n)).continuous
     have hχn : Continuous (χ n) := (hχs n 0).continuous
     have h₁ : eLpNorm (fun x ↦ G x - wirtingerDeriv (φ n) x 1) 2 volume ≤ Cb * b n := by
-      rw [← eLpNorm_congr_ae hBae]
-      refine (hCb v).trans ?_
+      refine (eLpNorm_beurlingL2_sub_wirtingerDeriv_le hCb fS (Φ n)).trans ?_
       gcongr
-      rw [eLpNorm_congr_ae hvae]
-      refine eLpNorm_mono_real ?_ fun x ↦ ?_
-      · exact (hf.continuous.sub (by
-          have := (SchwartzMap.conjWirtingerDerivCLM F (Φ n)).continuous
-          simpa only [funext (SchwartzMap.conjWirtingerDerivCLM_apply (Φ n)), hΦ]
-            using this)).aestronglyMeasurable
-      · rw [norm_sub_rev]
-        exact he n x
+      refine eLpNorm_mono_real (hf.continuous.sub hcφ).aestronglyMeasurable fun x ↦ ?_
+      have h := norm_conjWirtingerDeriv_smul_sub_smul_le (hχdiff n x)
+        (hu.differentiable (by simp) x) (1 : ℂ)
+      rw [hcu, hχf, norm_one, mul_one] at h
+      rw [norm_sub_rev]
+      exact h.trans (hind n x)
     have h₂ : eLpNorm (fun x ↦ wirtingerDeriv (φ n) x 1 - χ n x • wirtingerDeriv u x 1) 2
-        volume ≤ b n :=
-      eLpNorm_mono_real (hwφ.sub (hχn.smul hwu)).aestronglyMeasurable (hd n)
+        volume ≤ b n := by
+      refine eLpNorm_mono_real (hwφ.sub (hχn.smul hwu)).aestronglyMeasurable fun x ↦ ?_
+      have h := norm_wirtingerDeriv_smul_sub_smul_le (hχdiff n x)
+        (hu.differentiable (by simp) x) (1 : ℂ)
+      rw [norm_one, mul_one] at h
+      exact h.trans (hind n x)
     calc eLpNorm (fun x ↦ G x - χ n x • wirtingerDeriv u x 1) 2 volume
         = eLpNorm ((fun x ↦ G x - wirtingerDeriv (φ n) x 1) +
             fun x ↦ wirtingerDeriv (φ n) x 1 - χ n x • wirtingerDeriv u x 1) 2 volume := by
