@@ -201,8 +201,9 @@ private theorem tanThetaResidualWitness_scalar
     (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i)
   simp only [← LinearIsometry.coe_toLinearMap, ← LinearMap.comp_apply,
     ← LinearMap.sub_apply] at hgal
-  rw [Submodule.singularValues_eq_div_sqrt_of_singularValues_eq_principalTangents U X tanTheta0
-    htan i]
+  rw [show tanTheta0.singularValues i = (LinearMap.range X.toLinearMap).principalTangents U i from
+    congrArg (fun z : ℕ →₀ ℝ => z (i : ℕ)) htan,
+    Submodule.principalTangents_range_apply_eq_div_singularValues U X i]
   by_cases hσzero : (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i = 0
   · rw [tanThetaResidualWitness_of_singularValues_eq_zero U X hσzero, hσzero, zero_div, mul_zero,
       hgal, map_zero]
