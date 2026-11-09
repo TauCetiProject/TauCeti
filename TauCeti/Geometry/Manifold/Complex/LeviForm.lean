@@ -298,17 +298,8 @@ theorem leviForm_comp_symm_apply_of_mem_maximalAtlas
   -- The holomorphic transition map from the preferred chart to `e`.
   set φ : E → E := e ∘ (chartAt E x).symm
   have hφy : φ y = e x := by simp only [φ, comp_apply, hy]
-  have hφ : ContDiffAt ℂ 2 φ y := by
-    -- Membership in the maximal atlas makes the transition from the atlas chart at `x` smooth.
-    have hG := (mem_maximalAtlas_iff.1 he (chartAt E x) (chart_mem_atlas E x)).2
-    rw [contDiffGroupoid, mem_groupoid_of_pregroupoid] at hG
-    have hy' : y ∈ ((chartAt E x).symm ≫ₕ e).source := by
-      refine ⟨mem_chart_target E x, ?_⟩
-      change (chartAt E x).symm y ∈ e.source
-      rwa [hy]
-    have hn := ((chartAt E x).symm ≫ₕ e).open_source.mem_nhds hy'
-    exact hG.1.contDiffAt (by simpa only [modelWithCornersSelf_coe,
-      modelWithCornersSelf_coe_symm, preimage_id, range_id, inter_univ] using hn)
+  have hφ : ContDiffAt ℂ 2 φ y :=
+    (contMDiffAt_of_mem_maximalAtlas he hx).contDiffAt_comp_chartAt_symm
   have hDφ : fderiv ℂ φ y = mfderiv 𝓘(ℂ, E) 𝓘(ℂ, E) e x := by
     rw [(mdifferentiableAt_of_mem_maximalAtlas
       (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx).mfderiv_abuse]
