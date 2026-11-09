@@ -37,7 +37,7 @@ The boundary of the domain of a triangle with corners `x`, `y`, `w` runs along `
 (`TauCeti.HeegaardTripleRegionSystem.IsTriangleDomain`). With this orientation, juxtaposing a
 domain from `x` to `x'` in the `(α, β)` diagram with a triangle domain at `x'` gives a triangle
 domain at `x`, and likewise at the other two corners; these are the actions of the disk classes
-`π₂(x, x')`, `π₂(y, y')` and `π₂(w', w)` on the triangle classes `π₂(x, y, w)` used to show that
+`π₂(x, x')`, `π₂(y, y')` and `π₂(w, w')` on the triangle classes `π₂(x, y, w)` used to show that
 triangle maps are chain maps.
 
 Two triangle domains with the same corners and basepoint multiplicities differ by a *triply
@@ -111,8 +111,6 @@ implies the spin^c-wise conditions of Ozsváth and Szabó.
 -/
 
 public section
-
-open Finset
 
 namespace TauCeti
 
@@ -862,21 +860,8 @@ def WeaklyAdmissible : Prop :=
 /-- A triple is weakly admissible exactly when its only nonnegative sum of doubly periodic domains
 is zero. -/
 theorem weaklyAdmissible_iff :
-    T.WeaklyAdmissible ↔ ∀ P ∈ T.doublyPeriodicDomains, 0 ≤ P → P = 0 := by
-  constructor
-  · intro h P hP hnonneg
-    by_contra hne
-    obtain ⟨r, hr⟩ := (h P hP hne).2
-    exact (hnonneg r).not_gt hr
-  · intro h P hP hne
-    refine ⟨?_, ?_⟩
-    · by_contra hpos
-      push Not at hpos
-      refine hne (neg_eq_zero.mp (h (-P) (neg_mem hP) fun r => ?_))
-      simpa using hpos r
-    · by_contra hneg
-      push Not at hneg
-      exact hne (h P hP hneg)
+    T.WeaklyAdmissible ↔ ∀ P ∈ T.doublyPeriodicDomains, 0 ≤ P → P = 0 :=
+  T.doublyPeriodicDomains.forall_exists_pos_and_neg_iff_forall_nonneg_eq_zero
 
 theorem alphaBetaPeriodicDomains_le_doublyPeriodicDomains :
     T.alphaBetaPeriodicDomains ≤ T.doublyPeriodicDomains :=
@@ -897,15 +882,7 @@ theorem weaklyAdmissible_iff_exists_pos_forall_sum_mul_eq_zero [Fintype Region] 
     T.WeaklyAdmissible ↔
       ∃ A : Region → ℝ, (∀ r, 0 < A r) ∧
         ∀ P ∈ T.doublyPeriodicDomains, ∑ r, A r * P r = 0 := by
-  rw [weaklyAdmissible_iff]
-  refine ⟨fun h => ?_, fun ⟨A, hA, hAP⟩ P hP hP₀ => ?_⟩
-  · -- Integer weights from the lattice form of Stiemke's theorem are real weights.
-    obtain ⟨c, hc, hcP⟩ := T.doublyPeriodicDomains.exists_pos_dotProduct_eq_zero_iff.2 h
-    refine ⟨fun r => c r, fun r => Int.cast_pos.2 (hc r), fun P hP => ?_⟩
-    simpa [dotProduct] using congrArg (Int.cast : ℤ → ℝ) (hcP P hP)
-  · have hP₀' : (0 : Region → ℝ) ≤ fun r => (P r : ℝ) := fun r => Int.cast_nonneg (hP₀ r)
-    have := (dotProduct_eq_zero_iff_of_pos hA hP₀').1 (hAP P hP)
-    exact funext fun r => by simpa using congrFun this r
+  rw [weaklyAdmissible_iff, T.doublyPeriodicDomains.exists_pos_sum_mul_intCast_eq_zero_iff]
 
 /-- If an area form `A` vanishes on the sums of doubly periodic domains, then two domains whose
 difference is such a sum, for instance two triangle domains in the same class, have the same
@@ -913,9 +890,8 @@ area. -/
 theorem sum_mul_eq_of_sub_mem [Fintype Region] {A : Region → ℝ}
     (hA : ∀ P ∈ T.doublyPeriodicDomains, ∑ r, A r * P r = 0) {D D' : Region → ℤ}
     (h : D' - D ∈ T.doublyPeriodicDomains) :
-    ∑ r, A r * D' r = ∑ r, A r * D r := by
-  have := hA (D' - D) h
-  simpa [mul_sub, sum_sub_distrib, sub_eq_zero] using this
+    ∑ r, A r * D' r = ∑ r, A r * D r :=
+  sum_mul_intCast_eq_of_sub_mem hA h
 
 /-- In a weakly admissible triple with finitely many regions, each class `D₀ + P`, with `P` ranging
 over the sums of doubly periodic domains, contains only finitely many nonnegative domains. When
