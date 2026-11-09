@@ -220,8 +220,9 @@ theorem ofReal_integral_sub_log_integral_exp_le_klDiv [IsProbabilityMeasure μ]
 theorem ofReal_mul_measureReal_sub_le_klDiv [IsFiniteMeasure μ] [IsFiniteMeasure ν] {s : Set α}
     (t : ℝ) : ENNReal.ofReal (t * μ.real s - (exp t - 1) * ν.real s) ≤ klDiv μ ν := by
   obtain ⟨u, -, hu, hμu, hνu⟩ := exists_measurable_superset₂ μ ν s
-  rw [show μ.real s = μ.real u by simp [Measure.real, hμu],
-    show ν.real s = ν.real u by simp [Measure.real, hνu]]
+  have hμu' : μ.real s = μ.real u := congrArg ENNReal.toReal hμu.symm
+  have hνu' : ν.real s = ν.real u := congrArg ENNReal.toReal hνu.symm
+  rw [hμu', hνu']
   have hexp : (fun x ↦ exp (u.indicator (fun _ ↦ t) x) - 1) = u.indicator fun _ ↦ exp t - 1 := by
     ext x
     by_cases hx : x ∈ u <;> simp [hx]
@@ -530,7 +531,7 @@ end Topological
 
 section Tight
 
-variable [TopologicalSpace α] [R1Space α]
+variable [TopologicalSpace α]
 
 /-- **Sublevel sets of relative entropy are tight.** If a finite measure `ν` is tight, then so is
 the set of finite measures `μ` with `klDiv μ ν ≤ C`, for every finite `C`. -/
@@ -547,10 +548,9 @@ theorem isTightMeasureSet_setOf_klDiv_le [IsFiniteMeasure ν] (hν : IsTightMeas
   have hC1 : 0 < C.toReal + 1 := by positivity
   have ht : 0 < t := div_pos hC1 he
   obtain ⟨K, hK, hνK⟩ := hν (ENNReal.ofReal (exp (-t))) (ENNReal.ofReal_pos.2 (exp_pos _))
-  refine ⟨closure K, hK.closure, fun μ ⟨hμ, hkl⟩ ↦ ?_⟩
-  set s := (closure K)ᶜ
-  have hνs : ν.real s ≤ exp (-t) := ENNReal.toReal_le_of_le_ofReal (exp_pos _).le
-    ((measure_mono (compl_subset_compl.2 subset_closure)).trans (hνK ν rfl))
+  refine ⟨K, hK, fun μ ⟨hμ, hkl⟩ ↦ ?_⟩
+  set s := Kᶜ
+  have hνs : ν.real s ≤ exp (-t) := ENNReal.toReal_le_of_le_ofReal (exp_pos _).le (hνK ν rfl)
   have h1 : (exp t - 1) * ν.real s ≤ 1 :=
     calc (exp t - 1) * ν.real s ≤ exp t * exp (-t) :=
           mul_le_mul (sub_le_self _ zero_le_one) hνs measureReal_nonneg (exp_pos _).le
