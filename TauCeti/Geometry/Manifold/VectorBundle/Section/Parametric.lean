@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.SmoothZero
 public import TauCeti.Analysis.Fredholm.LevelSet.GlobalParametric
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
@@ -216,9 +217,8 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
       (ContinuousLinearMap.inl ℝ X Λ))})
   obtain ⟨V, hV, hVsub⟩ := exists_mem_nhds_forall_mem_source_and_levelSetChart_mem hstrict
     hsurj (hFred'.closedComplemented_ker_coprod hsurj) hfzero hN
-  have hdiff : {p | DifferentiableAt ℝ f p} ∈ 𝓝 (φ x, l) := by
-    filter_upwards [(hfn.of_le hn.one_le).eventually (by simp)] with p hp
-    exact hp.differentiableAt one_ne_zero
+  have hdiff : {p | DifferentiableAt ℝ f p} ∈ 𝓝 (φ x, l) :=
+    hfn.eventually_differentiableAt hn.one_le
   -- Points near `(x, l)` are read in the chart at `x`.
   let ψ : M × Λ → X × Λ := fun w ↦ (φ w.1, w.2)
   have hψ : ContinuousAt ψ (x, l) :=

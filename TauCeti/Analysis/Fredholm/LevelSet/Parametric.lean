@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Fredholm.LevelSet.Tangent
 public import TauCeti.Analysis.Fredholm.SardSmale
 public import TauCeti.Analysis.Fredholm.UniversalLevelSet
 import Mathlib.Analysis.Calculus.ContDiff.Comp
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 
 /-!
 # Parameter maps on universal Fredholm level sets
@@ -482,9 +483,8 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetPar
           (((levelSetChart hf (LinearMap.range_eq_top.mpr hD)
               (hD₁.closedComplemented_ker_coprod hD) hxl).symm k : ↥{z | f z = c}) :
             E × Λ)).comp (ContinuousLinearMap.inl ℝ E Λ))})) := by
-  have hdiff : ∀ᶠ w in 𝓝 ((x, l) : E × Λ), DifferentiableAt ℝ f w := by
-    filter_upwards [(hcont.of_le hn.one_le).eventually (by simp)] with w hw
-    exact hw.differentiableAt one_ne_zero
+  have hdiff : ∀ᶠ w in 𝓝 ((x, l) : E × Λ), DifferentiableAt ℝ f w :=
+    hcont.eventually_differentiableAt hn.one_le
   obtain ⟨W, hW, hWopen, hW0⟩ := eventually_nhds_iff.1
     (eventually_mem_target_and_surjective_fderiv_levelSetParameterMap_iff hf hdiff hD
       (hD₁.closedComplemented_ker_coprod hD) hxl)
