@@ -6,61 +6,43 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
-public import Mathlib.Analysis.Fourier.Convolution
-import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Fourier.ChangeOfVariables
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Sobolev.Dilation
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 
 /-!
-# Bernstein's inequalities
+# The reverse Bernstein inequality
 
-Let `E` be a finite-dimensional real inner product space of dimension `d`, and let `f` be a
-Schwartz function on `E` whose Fourier transform vanishes outside the closed ball of radius
-`R > 0`. **Bernstein's inequality** bounds every derivative of `f` in `L^q` by `f` in `Lᵖ`: for
-`1 ≤ p ≤ q ≤ ∞` and every order `k` there is `C`, independent of `R` and `f`, with
-
-`‖Dᵏ f‖_q ≤ C R ^ (k + d (1/p - 1/q)) ‖f‖_p`
-
-(`SchwartzMap.exists_eLpNorm_iteratedFDeriv_le_of_support_fourier_subset`). The case `k = 0`,
-`‖f‖_q ≤ C R ^ (d (1/p - 1/q)) ‖f‖_p`, is `SchwartzMap.exists_eLpNorm_le_of_support_fourier_subset`.
-Here `1/p` stands for `p.toReal⁻¹`, which is `0` at `p = ∞`.
-
-If instead the Fourier transform of `f` vanishes outside the annulus `R ≤ ‖ξ‖ ≤ θ R`, the
-derivatives of `f` also control `f` itself: for `1 ≤ p ≤ ∞` there is `C`, depending on `θ` but not
-on `R` or `f`, with
+Let `E` be a finite-dimensional real inner product space, and let `f` be a Schwartz function on
+`E` whose Fourier transform vanishes outside the annulus `R ≤ ‖ξ‖ ≤ θ R`, for some `R > 0`. The
+**reverse Bernstein inequality** says that the derivatives of `f` control `f` itself: for
+`1 ≤ p ≤ ∞` and every order `k` there is `C`, depending on `θ` but not on `R` or `f`, with
 
 `‖f‖_p ≤ C R ^ (-k) ‖Dᵏ f‖_p`
 
-(`SchwartzMap.exists_eLpNorm_le_eLpNorm_iteratedFDeriv_of_support_fourier_subset`).
+(`SchwartzMap.exists_eLpNorm_le_eLpNorm_iteratedFDeriv_of_support_fourier_subset`). It complements
+Bernstein's inequality for frequencies in a ball,
+`TauCeti.exists_iteratedLineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier`, which bounds the
+derivatives by the function.
 
 These are the basic estimates of Littlewood–Paley theory: a dyadic block whose frequencies have
 size `2 ^ j` behaves like a function at the single scale `2 ^ (-j)`, so that each derivative costs
-exactly a factor `2 ^ j`, and passing from `Lᵖ` to `L^q` costs `2 ^ (j d (1/p - 1/q))`. They give
-the Bernstein embeddings between Besov spaces and identify Besov norms of positive regularity
+exactly a factor `2 ^ j`. The reverse inequality identifies Besov norms of positive regularity
 through derivatives.
 
 ## Implementation notes
 
-Both inequalities are proved at frequency scale `R = 1` and transported to every `R` by the
-dilation `f ↦ f (R⁻¹ • ·)`, which rescales frequencies by `R⁻¹` and `Lᵖ` norms by `R ^ (d/p)`.
-At scale `1`, a Schwartz symbol `σ` equal to `1` on the unit ball reproduces `f`, so that
-`∂^m f = (∂^m 𝓕⁻ σ) ⋆ f` for every tuple of directions `m`, and convolution with the Schwartz
-kernel `∂^m 𝓕⁻ σ` maps `Lᵖ` to `L^q` (`SchwartzMap.exists_eLpNorm_convolution_le`). On the
-annulus, the symbols `⟪bᵢ, ξ⟫ / (2πi ‖ξ‖²)`, cut off by a Littlewood–Paley partition, invert the
-partial derivatives: `f = ∑ᵢ T_{σᵢ} (∂_{bᵢ} f)`. In both cases the full derivative `Dᵏ f` is
-compared with its entries on an orthonormal basis.
+The inequality is proved at frequency scale `R = 1` and transported to every `R` by the dilation
+`f ↦ f (R⁻¹ • ·)`, which rescales frequencies by `R⁻¹` and `Lᵖ` norms by `R ^ (d/p)`, where `d`
+is the dimension of `E`. At scale `1`, the symbols `⟪bᵢ, ξ⟫ / (2πi ‖ξ‖²)`, cut off by a
+Littlewood–Paley partition, invert the partial derivatives: `f = ∑ᵢ T_{σᵢ} (∂_{bᵢ} f)`. The full
+derivative `Dᵏ f` is then compared with its entries on an orthonormal basis.
 
 ## Main declarations
 
-* `SchwartzMap.exists_eLpNorm_iteratedFDeriv_le_of_support_fourier_subset`: Bernstein's
-  inequality for frequencies in a ball.
-* `SchwartzMap.exists_eLpNorm_le_of_support_fourier_subset`: its case `k = 0`, comparing
-  `Lᵖ` and `L^q` norms.
 * `SchwartzMap.exists_eLpNorm_le_eLpNorm_iteratedFDeriv_of_support_fourier_subset`: the reverse
   Bernstein inequality for frequencies in an annulus.
 
@@ -74,172 +56,11 @@ public section
 
 namespace SchwartzMap
 
-open MeasureTheory ContinuousLinearMap Module Metric LineDeriv
-open scoped ENNReal NNReal FourierTransform Convolution Pointwise
+open MeasureTheory Module LineDeriv
+open scoped ENNReal NNReal FourierTransform Pointwise
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
-
-/-! ### Dilations -/
-
-/-- The dilation `f ↦ f (R⁻¹ • ·)` of Schwartz functions, which rescales frequencies by `R⁻¹`. -/
-private noncomputable def dilate (R : ℝ) (hR : 0 < R) : 𝓢(E, F) →L[ℝ] 𝓢(E, F) :=
-  compCLMOfContinuousLinearEquiv ℝ
-    (LinearEquiv.smulOfNeZero ℝ E R⁻¹ (inv_ne_zero hR.ne')).toContinuousLinearEquiv
-
-omit [MeasurableSpace E] [BorelSpace E] in
-private theorem coe_dilate {R : ℝ} (hR : 0 < R) (f : 𝓢(E, F)) :
-    ⇑(dilate R hR f) = fun x => f (R⁻¹ • x) :=
-  rfl
-
-/-- The frequencies of the dilation `f (R⁻¹ • ·)` are those of `f`, scaled by `R⁻¹`. -/
-private theorem support_fourier_dilate {R : ℝ} (hR : 0 < R) (f : 𝓢(E, F)) :
-    Function.support ⇑(𝓕 (dilate R hR f) : 𝓢(E, F)) =
-      R⁻¹ • Function.support ⇑(𝓕 f : 𝓢(E, F)) := by
-  rw [fourier_coe, fourier_coe, coe_dilate,
-    TauCeti.support_fourier_comp_smul _ (inv_ne_zero hR.ne')]
-
-private theorem eLpNorm_dilate {R : ℝ} (hR : 0 < R) (f : 𝓢(E, F)) (p : ℝ≥0∞) :
-    eLpNorm (dilate R hR f) p = ENNReal.ofReal (R ^ (finrank ℝ E / p.toReal)) * eLpNorm f p := by
-  rw [coe_dilate, Measure.eLpNorm_comp_inv_smul volume _ hR.ne' p, abs_of_pos hR]
-
-private theorem eLpNorm_iteratedFDeriv_dilate {R : ℝ} (hR : 0 < R) (f : 𝓢(E, F)) (k : ℕ)
-    (p : ℝ≥0∞) :
-    eLpNorm (iteratedFDeriv ℝ k (dilate R hR f)) p =
-      ENNReal.ofReal (R⁻¹ ^ k * R ^ (finrank ℝ E / p.toReal)) *
-        eLpNorm (iteratedFDeriv ℝ k f) p := by
-  rw [coe_dilate, Measure.eLpNorm_iteratedFDeriv_comp_inv_smul volume (f.smooth k) hR.ne' p,
-    abs_of_pos hR, Real.rpow_sub hR, Real.rpow_natCast, inv_pow, div_eq_inv_mul]
-
-variable [CompleteSpace F]
-
-/-! ### Bernstein's inequality on a ball -/
-
-/-- A Schwartz symbol whose Fourier multiplier fixes every Schwartz function with frequencies in
-the closed unit ball. -/
-private theorem exists_fourierMultiplierCLM_eq_self :
-    ∃ σ : 𝓢(E, ℂ), ∀ f : 𝓢(E, F), Function.support ⇑(𝓕 f : 𝓢(E, F)) ⊆ closedBall 0 1 →
-      fourierMultiplierCLM F σ f = f := by
-  let φ : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
-  have hc : HasCompactSupport fun ξ => (φ ξ : ℂ) :=
-    φ.hasCompactSupport.comp_left Complex.ofReal_zero
-  have hs : ContDiff ℝ (⊤ : ℕ∞) fun ξ => (φ ξ : ℂ) := Complex.ofRealCLM.contDiff.comp φ.contDiff
-  refine ⟨hc.toSchwartzMap hs, fun f hf => ?_⟩
-  have h : smulLeftCLM F (hc.toSchwartzMap hs : E → ℂ) (𝓕 f) = 𝓕 f := by
-    ext ξ
-    rw [smulLeftCLM_apply_apply (hc.toSchwartzMap hs).hasTemperateGrowth]
-    by_cases hξ : 𝓕 f ξ = 0
-    · simp [hξ]
-    · have : φ ξ = 1 := φ.one_of_mem_closedBall (by simpa using hf hξ)
-      simp [this]
-  rw [fourierMultiplierCLM_apply, h, FourierTransform.fourierInv_fourier_eq]
-
-/-- Bernstein's inequality for one iterated line derivative, at frequency scale `1`. -/
-private theorem exists_eLpNorm_iteratedLineDerivOp_le_of_support_fourier_subset_closedBall_one
-    {n : ℕ} (m : Fin n → E) {p q : ℝ≥0∞} (hp : 1 ≤ p) (hpq : p ≤ q) :
-    ∃ C : ℝ≥0, ∀ f : 𝓢(E, F), Function.support ⇑(𝓕 f : 𝓢(E, F)) ⊆ closedBall 0 1 →
-      eLpNorm ⇑(∂^{m} f : 𝓢(E, F)) q ≤ C * eLpNorm f p := by
-  obtain ⟨σ, hσ⟩ := exists_fourierMultiplierCLM_eq_self (E := E) (F := F)
-  obtain ⟨C, hC⟩ := exists_eLpNorm_convolution_le (F := F) (∂^{m} (𝓕⁻ σ)) hp hpq
-  refine ⟨C, fun f hf => ?_⟩
-  have h : ⇑(∂^{m} f : 𝓢(E, F)) = ⇑(∂^{m} (𝓕⁻ σ) : 𝓢(E, ℂ)) ⋆[lsmul ℂ ℂ] f := by
-    conv_lhs => rw [← hσ f hf]
-    rw [fourierMultiplierCLM_eq_convolution, iteratedLineDerivOp_convolution_lsmul]
-    exact funext (convolution_apply _ _ _)
-  rw [h]
-  exact hC f f.continuous.aestronglyMeasurable
-
-/-- Bernstein's inequality for the iterated derivative, at frequency scale `1`. -/
-private theorem exists_eLpNorm_iteratedFDeriv_le_of_support_fourier_subset_closedBall_one
-    (k : ℕ) {p q : ℝ≥0∞} (hp : 1 ≤ p) (hpq : p ≤ q) :
-    ∃ C : ℝ≥0, ∀ f : 𝓢(E, F), Function.support ⇑(𝓕 f : 𝓢(E, F)) ⊆ closedBall 0 1 →
-      eLpNorm (iteratedFDeriv ℝ k f) q ≤ C * eLpNorm f p := by
-  let b := stdOrthonormalBasis ℝ E
-  choose C hC using fun r : Fin k → Fin (finrank ℝ E) =>
-    exists_eLpNorm_iteratedLineDerivOp_le_of_support_fourier_subset_closedBall_one (F := F)
-      (fun j => b (r j)) hp hpq
-  refine ⟨∑ r : Fin k → Fin (finrank ℝ E), C r, fun f hf => ?_⟩
-  have hq : 1 ≤ q := hp.trans hpq
-  let g : (Fin k → Fin (finrank ℝ E)) → E → ℝ := fun r x => ‖∂^{fun j => b (r j)} f x‖
-  have h1 : eLpNorm (iteratedFDeriv ℝ k f) q ≤ eLpNorm (∑ r, g r) q := by
-    refine eLpNorm_mono_real ((f.smooth k).continuous_iteratedFDeriv
-      (by exact_mod_cast le_rfl)).aestronglyMeasurable fun x => ?_
-    refine ((iteratedFDeriv ℝ k f x).opNorm_le_sum_norm_apply_orthonormalBasis
-      fun _ => b).trans_eq ?_
-    rw [Finset.sum_apply]
-    -- The two sums run over `Finset.univ` for different `DecidableEq` instances on `Fin k`.
-    refine Finset.sum_congr ?_ fun r _ => by simp only [g, iteratedLineDerivOp_eq_iteratedFDeriv]
-    congr
-    exact Subsingleton.elim _ _
-  have h2 : eLpNorm (∑ r, g r) q ≤ ∑ r, eLpNorm (g r) q := eLpNorm_sum_le hq
-  have h3 (r : Fin k → Fin (finrank ℝ E)) : eLpNorm (g r) q ≤ C r * eLpNorm f p :=
-    (eLpNorm_norm _ (∂^{fun j => b (r j)} f).continuous.aestronglyMeasurable).le.trans
-      (hC r f hf)
-  calc eLpNorm (iteratedFDeriv ℝ k f) q ≤ ∑ r, (C r : ℝ≥0∞) * eLpNorm f p :=
-        h1.trans (h2.trans (Finset.sum_le_sum fun r _ => h3 r))
-    _ = ((∑ r, C r : ℝ≥0) : ℝ≥0∞) * eLpNorm f p := by push_cast; rw [Finset.sum_mul]
-
-/-- **Bernstein's inequality.** For `1 ≤ p ≤ q ≤ ∞` and `k : ℕ` there is `C` such that every
-Schwartz function `f` whose Fourier transform vanishes outside the closed ball of radius `R > 0`
-satisfies `‖Dᵏ f‖_q ≤ C R ^ (k + d (1/p - 1/q)) ‖f‖_p`, where `d` is the dimension of `E` and
-`1/p` stands for `p.toReal⁻¹`. -/
-theorem exists_eLpNorm_iteratedFDeriv_le_of_support_fourier_subset (k : ℕ) {p q : ℝ≥0∞}
-    (hp : 1 ≤ p) (hpq : p ≤ q) :
-    ∃ C : ℝ≥0, ∀ {R : ℝ}, 0 < R → ∀ f : 𝓢(E, F),
-      Function.support ⇑(𝓕 f : 𝓢(E, F)) ⊆ closedBall 0 R →
-      eLpNorm (iteratedFDeriv ℝ k f) q ≤
-        C * ENNReal.ofReal (R ^ ((k : ℝ) + finrank ℝ E * (p.toReal⁻¹ - q.toReal⁻¹))) *
-          eLpNorm f p := by
-  obtain ⟨C, hC⟩ :=
-    exists_eLpNorm_iteratedFDeriv_le_of_support_fourier_subset_closedBall_one (E := E) (F := F) k
-      hp hpq
-  refine ⟨C, fun {R} hR f hf => ?_⟩
-  -- The dilation `f (R⁻¹ • ·)` has its frequencies in the closed unit ball.
-  have hgsupp : Function.support ⇑(𝓕 (dilate R hR f) : 𝓢(E, F)) ⊆ closedBall 0 1 := by
-    rw [support_fourier_dilate]
-    rintro _ ⟨ξ, hξ, rfl⟩
-    have h := mem_closedBall_zero_iff.1 (hf hξ)
-    rw [mem_closedBall_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg hR.le]
-    exact inv_mul_le_one_of_le₀ h hR.le
-  have hmain := hC _ hgsupp
-  rw [eLpNorm_iteratedFDeriv_dilate, eLpNorm_dilate] at hmain
-  set a : ℝ := R⁻¹ ^ k * R ^ (finrank ℝ E / q.toReal) with ha_def
-  have ha : 0 < a := by positivity
-  have hexp : a⁻¹ * R ^ (finrank ℝ E / p.toReal) =
-      R ^ ((k : ℝ) + finrank ℝ E * (p.toReal⁻¹ - q.toReal⁻¹)) := by
-    have hsplit : (k : ℝ) + finrank ℝ E * (p.toReal⁻¹ - q.toReal⁻¹) =
-        k + finrank ℝ E / p.toReal - finrank ℝ E / q.toReal := by ring
-    rw [hsplit, ha_def, Real.rpow_sub hR, Real.rpow_add hR, Real.rpow_natCast, inv_pow]
-    field_simp
-  calc eLpNorm (iteratedFDeriv ℝ k f) q
-      = ENNReal.ofReal a⁻¹ * (ENNReal.ofReal a * eLpNorm (iteratedFDeriv ℝ k f) q) := by
-        rw [← mul_assoc, ← ENNReal.ofReal_mul (inv_nonneg.2 ha.le), inv_mul_cancel₀ ha.ne',
-          ENNReal.ofReal_one, one_mul]
-    _ ≤ ENNReal.ofReal a⁻¹ * (C * (ENNReal.ofReal (R ^ (finrank ℝ E / p.toReal)) *
-          eLpNorm f p)) := by gcongr
-    _ = C * ENNReal.ofReal (R ^ ((k : ℝ) + finrank ℝ E * (p.toReal⁻¹ - q.toReal⁻¹))) *
-          eLpNorm f p := by
-        rw [← hexp, ENNReal.ofReal_mul (inv_nonneg.2 ha.le)]
-        ring
-
-/-- **Bernstein's inequality** at order `0`: for `1 ≤ p ≤ q ≤ ∞` there is `C` such that every
-Schwartz function `f` whose Fourier transform vanishes outside the closed ball of radius `R > 0`
-satisfies `‖f‖_q ≤ C R ^ (d (1/p - 1/q)) ‖f‖_p`, where `d` is the dimension of `E` and `1/p`
-stands for `p.toReal⁻¹`. -/
-theorem exists_eLpNorm_le_of_support_fourier_subset {p q : ℝ≥0∞} (hp : 1 ≤ p) (hpq : p ≤ q) :
-    ∃ C : ℝ≥0, ∀ {R : ℝ}, 0 < R → ∀ f : 𝓢(E, F),
-      Function.support ⇑(𝓕 f : 𝓢(E, F)) ⊆ closedBall 0 R →
-      eLpNorm f q ≤
-        C * ENNReal.ofReal (R ^ (finrank ℝ E * (p.toReal⁻¹ - q.toReal⁻¹))) * eLpNorm f p := by
-  obtain ⟨C, hC⟩ := exists_eLpNorm_iteratedFDeriv_le_of_support_fourier_subset (E := E) (F := F)
-    0 hp hpq
-  refine ⟨C, fun hR f hf => ?_⟩
-  have h := hC hR f hf
-  rwa [Nat.cast_zero, zero_add, eLpNorm_congr_norm_ae
-    (f.smooth 0).continuous_iteratedFDeriv'.aestronglyMeasurable f.continuous.aestronglyMeasurable
-    (ae_of_all _ fun x => norm_iteratedFDeriv_zero)] at h
-
-/-! ### The reverse Bernstein inequality on an annulus -/
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
 
 /-- A Schwartz function with frequencies in the annulus `1 ≤ ‖ξ‖ ≤ θ` is a sum of Fourier
 multipliers with Schwartz symbols applied to its partial derivatives: on the annulus, the
@@ -395,16 +216,21 @@ theorem exists_eLpNorm_le_eLpNorm_iteratedFDeriv_of_support_fourier_subset (k : 
   obtain ⟨C, hC⟩ :=
     exists_eLpNorm_le_eLpNorm_iteratedFDeriv_of_one_le_norm (E := E) (F := F) θ hp k
   refine ⟨C, fun {R} hR f hf => ?_⟩
-  -- The dilation `f (R⁻¹ • ·)` has its frequencies in the annulus `1 ≤ ‖ξ‖ ≤ θ`.
-  have hgsupp : Function.support ⇑(𝓕 (dilate R hR f) : 𝓢(E, F)) ⊆
-      {ξ | 1 ≤ ‖ξ‖ ∧ ‖ξ‖ ≤ θ} := by
-    rw [support_fourier_dilate]
+  -- The dilation `g = f (R⁻¹ • ·)` has its frequencies in the annulus `1 ≤ ‖ξ‖ ≤ θ`.
+  let g : 𝓢(E, F) := compCLMOfContinuousLinearEquiv ℝ
+    (LinearEquiv.smulOfNeZero ℝ E R⁻¹ (inv_ne_zero hR.ne')).toContinuousLinearEquiv f
+  have hg : ⇑g = fun x => f (R⁻¹ • x) := rfl
+  have hgsupp : Function.support ⇑(𝓕 g : 𝓢(E, F)) ⊆ {ξ | 1 ≤ ‖ξ‖ ∧ ‖ξ‖ ≤ θ} := by
+    rw [fourier_coe, hg, TauCeti.support_fourier_comp_smul _ (inv_ne_zero hR.ne'), ← fourier_coe]
     rintro _ ⟨ξ, hξ, rfl⟩
     obtain ⟨h1, h2⟩ := hf hξ
     refine ⟨?_, ?_⟩ <;> rw [norm_smul, norm_inv, Real.norm_of_nonneg hR.le]
     exacts [(le_inv_mul_iff₀ hR).2 (by linarith), (inv_mul_le_iff₀ hR).2 (by linarith)]
-  have hmain := hC _ hgsupp
-  rw [eLpNorm_iteratedFDeriv_dilate, eLpNorm_dilate, ENNReal.ofReal_mul (by positivity)] at hmain
+  have hmain := hC g hgsupp
+  rw [hg, Measure.eLpNorm_iteratedFDeriv_comp_inv_smul volume (f.smooth k) hR.ne' p,
+    Measure.eLpNorm_comp_inv_smul volume _ hR.ne' p, abs_of_pos hR, Real.rpow_sub hR,
+    Real.rpow_natCast, div_eq_mul_inv _ (R ^ k), ← inv_pow,
+    ENNReal.ofReal_mul (by positivity)] at hmain
   have h0 : ENNReal.ofReal (R ^ (finrank ℝ E / p.toReal)) ≠ 0 := by
     simpa using Real.rpow_pos_of_pos hR _
   refine (ENNReal.mul_le_mul_iff_right h0 ENNReal.ofReal_ne_top).1 ?_
