@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.PDE.SeibergWitten.CliffordRestriction
 public import TauCeti.Analysis.PDE.SeibergWitten.TracePairing
 
+import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
+
 /-!
 # The quadratic two-form of the Seiberg–Witten equations
 
@@ -45,7 +47,7 @@ are only real-linear.
 * `norm_quadraticTwoForm`, `norm_quadraticTwoForm_sq`: `‖q(ψ)‖ = ‖ψ‖² / (2 √2)`, that is
   `‖q(ψ)‖² = ‖ψ‖⁴ / 8`; in particular `q(ψ) = 0` only for `ψ = 0`
   (`quadraticTwoForm_eq_zero_iff`).
-* `inner_quadraticTwoForm_eq_re_inner`: `⟪q(ψ), ω⟫ = Re⟪ψ, C(iω) ψ⟫ / 4` for self-dual `ω`.
+* `inner_quadraticTwoForm_eq_re_inner`: `⟪q(ψ), ω⟫ = Re⟪ψ, C(iω) ψ⟫ / 4` for every two-form `ω`.
 * `cliffordRestriction_quadraticTwoFormPolar`: `C(i q'(ψ, φ)) = φψ* + ψφ* - Re⟪ψ, φ⟫ Id`.
 * `quadraticTwoForm_add`: `q(ψ + φ) = q(ψ) + q(φ) + q'(ψ, φ)`.
 * `quadraticTwoFormPolar_smul_self`: `q'(ψ, c ψ) = 2 Re(c) q(ψ)`, so the derivative of `q` kills
@@ -195,9 +197,10 @@ theorem quadraticTwoForm_eq_zero_iff (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v
   simp
 
 include hQ in
-/-- The pairing of `q` with a self-dual form: `⟪q(ψ), ω⟫ = Re⟪ψ, C(iω) ψ⟫ / 4`. -/
-theorem inner_quadraticTwoForm_eq_re_inner {ω : ⋀[ℝ]^2 V} (hω : o.hodgeStar hkl ω = ω)
-    (ψ : positiveHalfSpinors o ρ) :
+/-- The pairing of `q` with a self-dual form, the case of `inner_quadraticTwoForm_eq_re_inner`
+where `ω` lies in the domain of `τ`. -/
+private theorem inner_quadraticTwoForm_eq_re_inner_of_hodgeStar_eq_self {ω : ⋀[ℝ]^2 V}
+    (hω : o.hodgeStar hkl ω = ω) (ψ : positiveHalfSpinors o ρ) :
     ⟪(quadraticTwoForm o ρ hkl ψ : ⋀[ℝ]^2 V), ω⟫ =
       (⟪ψ, cliffordRestriction o ρ ω ψ⟫_ℂ).re / 4 := by
   have hmem : ω ∈ Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 :=
@@ -208,6 +211,31 @@ theorem inner_quadraticTwoForm_eq_re_inner {ω : ⋀[ℝ]^2 V} (hω : o.hodgeSta
   simp only [Submodule.coe_inner] at h ⊢
   rw [h]
   ring
+
+include hQ in
+/-- The pairing of `q` with a two-form: `⟪q(ψ), ω⟫ = Re⟪ψ, C(iω) ψ⟫ / 4`. The form `ω` need not be
+self-dual: `q(ψ)` is self-dual, so it pairs with `ω` as with its self-dual part
+`(ω + ⋆ω) / 2`, and `C` kills the anti-self-dual part `(ω - ⋆ω) / 2`. -/
+theorem inner_quadraticTwoForm_eq_re_inner (ω : ⋀[ℝ]^2 V) (ψ : positiveHalfSpinors o ρ) :
+    ⟪(quadraticTwoForm o ρ hkl ψ : ⋀[ℝ]^2 V), ω⟫ =
+      (⟪ψ, cliffordRestriction o ρ ω ψ⟫_ℂ).re / 4 := by
+  have hstar := o.hodgeStar_hodgeStar_of_even even_two hkl ω
+  -- The self-dual part of `ω`, and the vanishing of `C` on the anti-self-dual part.
+  have hplus : o.hodgeStar hkl ((2 : ℝ)⁻¹ • (ω + o.hodgeStar hkl ω)) =
+      (2 : ℝ)⁻¹ • (ω + o.hodgeStar hkl ω) := by
+    rw [map_smul, map_add, hstar, add_comm]
+  have hminus : cliffordRestriction o ρ (ω - o.hodgeStar hkl ω) = 0 :=
+    cliffordRestriction_eq_zero_of_hodgeStar_eq_neg o ρ hQ hkl (by rw [map_sub, hstar, neg_sub])
+  have hC : cliffordRestriction o ρ ((2 : ℝ)⁻¹ • (ω + o.hodgeStar hkl ω)) =
+      cliffordRestriction o ρ ω := by
+    rw [map_sub, sub_eq_zero] at hminus
+    rw [map_smul, map_add, ← hminus, ← two_smul ℝ, smul_smul, inv_mul_cancel₀ two_ne_zero,
+      one_smul]
+  have hq := o.inner_hodgeStar_right_of_hodgeStar_eq_self even_two hkl
+    (o.hodgeStar_coe_of_mem_eigenspace_one hkl (quadraticTwoForm o ρ hkl ψ)) ω
+  have h := inner_quadraticTwoForm_eq_re_inner_of_hodgeStar_eq_self o ρ hQ hkl hplus ψ
+  rw [hC, real_inner_smul_right, inner_add_right, hq] at h
+  linarith
 
 /-! ### Polarization and derivative -/
 
