@@ -67,8 +67,6 @@ theorem contMDiffAt_plumbedPerturbation_family {n : ℕ∞} (hq : q ≠ inf)
       with p hp
     exact plumbedPerturbation_of_re_endCoord_le hq hab (by linarith) p.2.2
   · have h2 : 2 < (q.endCoord w).re := by linarith
-    have hw' := (q.plumbingPreimage L ⟨w, hw.1⟩ hw.2).2
-    rw [coe_plumbingPreimage] at hw'
     have hcoord : ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
         (fun p : ℝ × (ℂ × M) => (p.2.1 - q.endCenter) / q.plumbingFactor p.1) (L, (w, x)) :=
       (q.contDiff_inverse_plumbingMap (n := n)).contDiffAt.contMDiffAt.comp
@@ -82,7 +80,8 @@ theorem contMDiffAt_plumbedPerturbation_family {n : ℕ∞} (hq : q ≠ inf)
         (L, (w, x)) :=
       (((ContinuousLinearMap.mul ℝ ℂ).contDiff.comp hscale).contMDiff.contMDiffAt).comp
         (L, (w, x)) contMDiffAt_fst
-    have hK := ((contMDiffAt_pairOfPantsPerturbation hHa hHas ⟨_, hw'⟩ x).comp
+    have hK := ((contMDiffAt_pairOfPantsPerturbation hHa hHas
+      ⟨_, q.sub_endCenter_div_plumbingFactor_ne_zero_and_ne_one L hw⟩ x).comp
       (L, (w, x)) (hcoord.prodMk (contMDiffAt_snd.comp _ contMDiffAt_snd))).clm_comp hmul
     refine hK.congr_of_eventuallyEq ?_
     filter_upwards [hcont.eventually (lt_mem_nhds h2)] with p hp

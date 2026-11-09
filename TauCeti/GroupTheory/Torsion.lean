@@ -44,26 +44,20 @@ of the quotient identification is `TauCeti.quotientTorsionContinuousMulEquiv` in
 # `p`-primary torsion abelian groups
 
 An additive commutative group `M` is `p`-primary torsion when every element is annihilated by
-some power of `p`, that is, when Mathlib's `p`-primary component `AddCommGroup.primaryComponent M p`
-is all of `M`. This is the additive counterpart of Mathlib's `IsPGroup`, and it is the class of
-coefficient modules that cohomological dimension at `p` is tested on.
+some power of `p`: this is Mathlib's `IsAddPGroup p M`, and it says that Mathlib's `p`-primary
+component `AddCommGroup.primaryComponent M p` is all of `M`. It is the class of coefficient
+modules that cohomological dimension at `p` is tested on.
 
 Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
 `⨁ₖ ZMod (p ^ k)` is `p`-primary torsion but is killed by no single power of `p`.
 
 ## Main results
 
-* `TauCeti.IsPPrimaryTorsion`: every element of `M` lies in the `p`-primary component.
-* `TauCeti.isPPrimaryTorsion_iff`: every element is killed by some power of `p`.
+* `TauCeti.isAddPGroup_iff_primaryComponent_eq_top`: `M` is `p`-primary torsion exactly when its
+  `p`-primary component is all of `M`.
 * `TauCeti.primaryComponent_eq_bot_of_injective_nsmul`: injective multiplication by `p`
   makes the `p`-primary component trivial.
-* `TauCeti.isPPrimaryTorsion_additive_iff`: for a multiplicative group `M`, `Additive M` is
-  `p`-primary torsion exactly when `M` is a `p`-group.
-* `TauCeti.IsPPrimaryTorsion.of_injective`, `TauCeti.IsPPrimaryTorsion.of_surjective`: the
-  condition passes to subgroups and to quotients.
-* `TauCeti.IsPPrimaryTorsion.isAddTorsion`: a `p`-primary torsion group is torsion when `p ≠ 0`.
-* `TauCeti.IsPPrimaryTorsion.exists_pow_smul_eq_zero`: a finite `p`-primary torsion group is
-  annihilated by one power of `p`.
+* `IsAddPGroup.isAddTorsion`: a `p`-primary torsion group is torsion when `p ≠ 0`.
 * `TauCeti.exists_mem_primaryComponent_apply_eq`: for prime `p`, a `p`-primary image of an element
   of finite order is already the image of a `p`-primary element.
 -/
@@ -216,26 +210,12 @@ theorem quotientTorsionMulEquiv_symm_apply (hT : IsAddTorsion T) (e : A ≃* Mul
 
 end Quotient
 
-variable {p : ℕ} {M N : Type*} [AddCommGroup M] [AddCommGroup N]
-
-/-- An additive commutative group is `p`-primary torsion when every element lies in its
-`p`-primary component, that is, is annihilated by some power of `p`. -/
-def IsPPrimaryTorsion (p : ℕ) (M : Type*) [AddCommGroup M] : Prop :=
-  ∀ m : M, m ∈ AddCommGroup.primaryComponent M p
-
-/-- Every element of a `p`-primary torsion group lies in the `p`-primary component. -/
-theorem IsPPrimaryTorsion.mem (h : IsPPrimaryTorsion p M) (m : M) :
-    m ∈ AddCommGroup.primaryComponent M p :=
-  h m
-
-/-- A group is `p`-primary torsion exactly when every element is killed by some power of `p`. -/
-theorem isPPrimaryTorsion_iff : IsPPrimaryTorsion p M ↔ ∀ m : M, ∃ k : ℕ, p ^ k • m = 0 :=
-  Iff.rfl
+variable {p : ℕ} {M : Type*} [AddCommGroup M]
 
 /-- A group is `p`-primary torsion exactly when its `p`-primary component is everything. -/
-theorem isPPrimaryTorsion_iff_primaryComponent_eq_top :
-    IsPPrimaryTorsion p M ↔ AddCommGroup.primaryComponent M p = ⊤ :=
-  (AddSubgroup.eq_top_iff' _).symm
+theorem isAddPGroup_iff_primaryComponent_eq_top :
+    IsAddPGroup p M ↔ AddCommGroup.primaryComponent M p = ⊤ :=
+  (AddSubgroup.eq_top_iff' (AddCommGroup.primaryComponent M p)).symm
 
 /-- If multiplication by `p` is injective, the `p`-primary component is trivial. -/
 theorem primaryComponent_eq_bot_of_injective_nsmul
@@ -249,54 +229,11 @@ theorem primaryComponent_eq_bot_of_injective_nsmul
     exact hp.iterate m
   exact hpPow (by simpa using hm)
 
-/-- For a multiplicative commutative group `M`, `Additive M` is `p`-primary torsion exactly when
-`M` is a `p`-group. -/
-theorem isPPrimaryTorsion_additive_iff {M : Type*} [CommGroup M] :
-    IsPPrimaryTorsion p (Additive M) ↔ IsPGroup p M := by
-  simp [isPPrimaryTorsion_iff, IsPGroup, Additive.forall, ← ofMul_pow]
-
-/-- A group of order `p ^ k` is `p`-primary torsion: the additive form of `IsPGroup.of_card`. -/
-theorem isPPrimaryTorsion_of_natCard_eq_pow {k : ℕ} (h : Nat.card M = p ^ k) :
-    IsPPrimaryTorsion p M :=
-  (isPPrimaryTorsion_additive_iff (M := Multiplicative M)).2 (IsPGroup.of_card h)
-
-namespace IsPPrimaryTorsion
-
-variable {F : Type*} [FunLike F M N] [AddMonoidHomClass F M N]
-
-/-- A group embedding into a `p`-primary torsion group is `p`-primary torsion. -/
-theorem of_injective (h : IsPPrimaryTorsion p N) (f : F) (hf : Function.Injective f) :
-    IsPPrimaryTorsion p M :=
-  (isPPrimaryTorsion_additive_iff (M := Multiplicative M)).2
-    (((isPPrimaryTorsion_additive_iff (M := Multiplicative N)).1 h).of_injective
-      (AddMonoidHom.toMultiplicative (f : M →+ N)) hf)
-
-/-- The image of a `p`-primary torsion group under a surjective homomorphism is `p`-primary
-torsion. -/
-theorem of_surjective (h : IsPPrimaryTorsion p M) (f : F) (hf : Function.Surjective f) :
-    IsPPrimaryTorsion p N :=
-  (isPPrimaryTorsion_additive_iff (M := Multiplicative N)).2
-    (((isPPrimaryTorsion_additive_iff (M := Multiplicative M)).1 h).of_surjective
-      (AddMonoidHom.toMultiplicative (f : M →+ N)) hf)
-
 /-- A `p`-primary torsion group is torsion, for `p ≠ 0`: the power of `p` killing an element is a
 positive natural number. The hypothesis is used, since `0 ^ k • m = 0` holds for `k = 1` and
 every `m`. -/
-theorem isAddTorsion (h : IsPPrimaryTorsion p M) (hp : p ≠ 0) : IsAddTorsion M := fun m ↦ by
-  obtain ⟨k, hk⟩ := isPPrimaryTorsion_iff.1 h m
-  exact isOfFinAddOrder_iff_nsmul_eq_zero.2 ⟨p ^ k, pow_pos (Nat.pos_of_ne_zero hp) k, hk⟩
-
-/-- A finite `p`-primary torsion group is annihilated by one power of `p`. -/
-theorem exists_pow_smul_eq_zero [Finite M] (h : IsPPrimaryTorsion p M) :
-    ∃ k : ℕ, ∀ m : M, p ^ k • m = 0 := by
-  have hp : IsPGroup p (Multiplicative M) :=
-    (isPPrimaryTorsion_additive_iff (M := Multiplicative M)).1 h
-  obtain ⟨k, hk⟩ := isPGroup_iff_exists_pow_pow_eq_one.mp hp
-  exact ⟨k, fun m ↦ by
-    have hm := congrArg Multiplicative.toAdd (hk (Multiplicative.ofAdd m))
-    simpa using hm⟩
-
-end IsPPrimaryTorsion
+theorem _root_.IsAddPGroup.isAddTorsion {M : Type*} [AddGroup M] (h : IsAddPGroup p M)
+    (hp : p ≠ 0) : IsAddTorsion M := fun m ↦ h.isOfFinAddOrder hp m
 
 /-- **A `p`-primary image of an element of finite order has a `p`-primary preimage.** For prime
 `p`, a homomorphism `f` of additive commutative monoids and an element `m` of finite order with
