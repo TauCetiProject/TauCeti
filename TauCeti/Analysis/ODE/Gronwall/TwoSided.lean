@@ -69,11 +69,7 @@ theorem norm_le_gronwallBound_of_norm_derivWithin_le
   have hr : ∀ s ∈ Ico 0 r,
       HasDerivWithinAt (f ∘ φ) (σ • f' (φ s)) (Ici s) s := by
     intro s hs
-    apply (hd s ⟨hs.1, hs.2.le⟩).mono_of_mem_nhdsWithin
-    rw [mem_nhdsWithin_iff_exists_mem_nhds_inter]
-    refine ⟨Ioo (-1) r, Ioo_mem_nhds (by linarith [hs.1]) hs.2, ?_⟩
-    intro u hu
-    exact ⟨hs.1.trans hu.2, hu.1.2.le⟩
+    exact (hd s ⟨hs.1, hs.2.le⟩).mono_of_mem_nhdsWithin (Icc_mem_nhdsGE_of_mem hs)
   have hb : ∀ s ∈ Ico 0 r, ‖σ • f' (φ s)‖ ≤ K * ‖(f ∘ φ) s‖ + ε := by
     intro s hs
     simpa only [norm_smul, Real.norm_eq_abs, hσ, one_mul, Function.comp_apply] using
