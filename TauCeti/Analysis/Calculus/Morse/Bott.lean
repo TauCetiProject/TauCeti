@@ -52,8 +52,6 @@ orthogonal to the fibre.
 * `TauCeti.isInvertible_fderiv_fderiv_slice_right_of_ker_le`: the vertical Hessian at a
   Morse–Bott point of the zero section is invertible.
 * `TauCeti.exists_morseBott_chart_of_contDiffOn`: the Morse–Bott lemma in product coordinates.
-* `TauCeti.morseIndex_slice_right`: along a critical zero section, the Morse index is the index
-  of the vertical Hessian.
 * `TauCeti.exists_congruence_fderiv_fderiv_slice_right`: nearby vertical Hessians are congruent
   by a `C^n` family of invertible operators.
 * `OpenPartialHomeomorph.exists_normalized_morseBott_chart`: normalizing the fibre form of a
@@ -191,34 +189,6 @@ theorem exists_morseBott_chart_of_contDiffOn (hW : W ∈ 𝓝 (a, 0))
   rw [hsource'] at hz
   rw [← hconst z.1 hz.1]
   exact hψf z (hsource ▸ ⟨(hball z.1 hz.1).1, hz.2⟩)
-
-/-- **The Morse index along a critical zero section is the index of the vertical Hessian.** If
-`f` is `C²` at `(a, 0)` and every point `(b, 0)` with `b` near `a` is critical, then the Morse
-index of `f` at `(a, 0)` is the Morse index at `0` of the fibre restriction `v ↦ f (a, v)`: the
-base directions are null for the Hessian at `(a, 0)` and orthogonal to the fibre directions. -/
-theorem morseIndex_slice_right (hf : ContDiffAt ℝ 2 f (a, 0))
-    (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0) :
-    morseIndex (fun v ↦ f (a, v)) 0 = morseIndex f (a, 0) := by
-  -- The Hessian quadratic form at `(a, 0)` is the vertical one, pulled back along `Prod.snd`.
-  have hQ : hessianQuadraticForm f (a, 0) =
-      (0 : QuadraticForm ℝ P).prod (hessianQuadraticForm (fun v ↦ f (a, v)) 0) := by
-    ext ⟨u, v⟩
-    have hu : fderiv ℝ (fderiv ℝ f) (a, 0) (u, 0) = 0 := fderiv_fderiv_apply_inl_eq_zero hf hcrit u
-    have hvu : fderiv ℝ (fderiv ℝ f) (a, 0) (0, v) (u, 0) = 0 := by
-      rw [hf.isSymmSndFDerivAt (by simp) (0, v) (u, 0), hu]
-      rfl
-    have hsplit : ((u, v) : P × F) = (u, 0) + (0, v) := by simp
-    have h1 : fderiv ℝ (fderiv ℝ f) (a, 0) (u, v) = fderiv ℝ (fderiv ℝ f) (a, 0) (0, v) := by
-      rw [hsplit, map_add, hu, zero_add]
-    have h2 : fderiv ℝ (fderiv ℝ f) (a, 0) (0, v) (u, v) =
-        fderiv ℝ (fderiv ℝ f) (a, 0) (0, v) (0, v) := by
-      rw [hsplit, map_add, hvu, zero_add]
-    simp only [hessianQuadraticForm_apply, QuadraticMap.prod_apply, h1, h2]
-    rw [fderiv_fderiv_slice_right_apply hf]
-    simp
-  rw [morseIndex_def, morseIndex_def, hQ, QuadraticForm.sigNeg_prod,
-    (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero (0 : QuadraticForm ℝ P)).mp fun _ ↦ by simp,
-    zero_add]
 
 /-- **The vertical Hessians are locally congruent.** If `g` is `C^{n+2}` near `(a, 0)` and its
 vertical Hessian `D²(g (a, ·))(0)` is invertible, then near `a` every vertical Hessian

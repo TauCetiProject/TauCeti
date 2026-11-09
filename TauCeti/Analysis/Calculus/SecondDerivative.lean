@@ -203,21 +203,12 @@ to the fibre over `x`, is `C^n` at `a`. -/
 theorem contDiffAt_fderiv_fderiv_slice_right {n : WithTop ℕ∞} {f : E × F → G} {a : E} {b : F}
     (hf : ContDiffAt 𝕜 (n + 2) f (a, b)) :
     ContDiffAt 𝕜 n (fun x ↦ fderiv 𝕜 (fderiv 𝕜 (fun y ↦ f (x, y))) b) a := by
-  -- Near `a` the family is the second derivative of `f` restricted to fibre directions.
-  let C : (E × F →L[𝕜] G) →L[𝕜] F →L[𝕜] G :=
-    (ContinuousLinearMap.compL 𝕜 F (E × F) G).flip (ContinuousLinearMap.inr 𝕜 E F)
-  have hD : ContDiffAt 𝕜 n (fderiv 𝕜 (fderiv 𝕜 f)) (a, b) :=
-    (hf.fderiv_right (m := n + 1) (by rw [add_assoc]; rfl)).fderiv_right le_rfl
-  have hC2 : ∀ᶠ x in 𝓝 a, ContDiffAt 𝕜 2 f (x, b) :=
-    (continuous_id.prodMk continuous_const).continuousAt.eventually
-      ((hf.of_le le_add_self).eventually (by simp))
-  refine ContDiffAt.congr_of_eventuallyEq (f := fun x ↦
-    C.comp ((fderiv 𝕜 (fderiv 𝕜 f) (x, b)).comp (ContinuousLinearMap.inr 𝕜 E F))) ?_ ?_
-  · exact contDiffAt_const.clm_comp ((hD.comp a (contDiffAt_id.prodMk contDiffAt_const)).clm_comp
-      contDiffAt_const)
-  · filter_upwards [hC2] with x hx
-    ext v w
-    simp [C, fderiv_fderiv_slice_right_apply hx v w]
+  -- Differentiate the fibre restrictions in the fibre variable twice, as smooth families.
+  have h1 : ContDiffAt 𝕜 (n + 1) (fun p : E × F ↦ fderiv 𝕜 (fun y ↦ f (p.1, y)) p.2) (a, b) :=
+    ContDiffAt.fderiv (f := fun p y ↦ f (p.1, y))
+      (hf.comp ((a, b), b) ((contDiffAt_fst.comp _ contDiffAt_fst).prodMk contDiffAt_snd))
+      contDiffAt_snd (by rw [add_assoc]; rfl)
+  exact ContDiffAt.fderiv (f := fun x y ↦ fderiv 𝕜 (fun v ↦ f (x, v)) y) h1 contDiffAt_const le_rfl
 
 /-- **Base directions of a critical zero section are null for the second derivative.** If `f` is
 `C²` at `(a, 0)` and every point `(b, 0)` with `b` near `a` is a critical point of `f`, then the
