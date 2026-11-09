@@ -158,11 +158,17 @@ theorem _root_.MonoidHom.apply_eq_self_of_iterate_pow_eq_self [Fact p.Prime] {A 
     _ = a ^ (m ^ p ^ k) := zpow_eq_zpow_iff_modEq.2 hmod.symm
     _ = a := (hiter _ a).symm.trans (hf a)
 
-/-- The subgroups of a finite cyclic `p`-group are totally ordered by inclusion: in a cyclic group
-one subgroup contains another exactly when its order is divisible by the other's, and here every
-order is a power of `p`. -/
-theorem _root_.IsPGroup.le_total_of_isCyclic [Fact p.Prime] [Finite G] [IsCyclic G]
+/-- The subgroups of a cyclic `p`-group are totally ordered by inclusion: such a group is finite,
+in a cyclic group one subgroup contains another exactly when its order is divisible by the other's,
+and here every order is a power of `p`. -/
+theorem _root_.IsPGroup.le_total_of_isCyclic [Fact p.Prime] [IsCyclic G]
     (hG : IsPGroup p G) (H K : Subgroup G) : H ≤ K ∨ K ≤ H := by
+  -- a generator has finite order, since it is killed by a power of `p`
+  obtain ⟨g, hg⟩ := IsCyclic.exists_generator (α := G)
+  have hfin : Finite (Subgroup.zpowers g) :=
+    (hG.isOfFinOrder (Fact.out : p.Prime).ne_zero g).finite_zpowers
+  have : Finite G := Finite.of_surjective (fun x : Subgroup.zpowers g ↦ (x : G))
+    fun x ↦ ⟨⟨x, hg x⟩, rfl⟩
   obtain ⟨a, ha⟩ := IsPGroup.iff_card.1 (hG.to_subgroup H)
   obtain ⟨b, hb⟩ := IsPGroup.iff_card.1 (hG.to_subgroup K)
   simp only [IsCyclic.subgroup_le_iff_card_dvd, ha, hb]

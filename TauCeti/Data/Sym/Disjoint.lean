@@ -19,14 +19,12 @@ is in `TauCeti/Topology/Sym/Disjoint.lean`.
 
 ## Main declarations
 
-* `TauCeti.Sym.ofFn_map_injective`: ordered tuples mapped into pairwise disjoint ranges are
-  determined by the unordered tuples they present, with `TauCeti.Sym.mem_range_ofFn_map`
-  describing those unordered tuples.
+* `Sym.ofFn_map_injective`: ordered tuples mapped into pairwise disjoint ranges are determined by
+  the unordered tuples they present, with `Sym.mem_range_ofFn_map` describing those unordered
+  tuples.
 -/
 
 public section
-
-namespace TauCeti
 
 namespace Sym
 
@@ -75,13 +73,13 @@ private lemma card_filter_ofFn_map_eq_one {X : Fin n → Type*} (f : ∀ i, X i 
     rw [Multiset.mem_filter, Multiset.mem_singleton]
     constructor
     · rintro ⟨hb, hbi⟩
-      obtain ⟨j, hj⟩ := mem_ofFn.1 (_root_.Sym.mem_coe.1 hb)
+      obtain ⟨j, hj⟩ := mem_ofFn.1 (Sym.mem_coe.1 hb)
       have hji : j = i := by
         by_contra hne
         exact Set.disjoint_left.1 (h hne) ⟨x j, hj⟩ hbi
       simpa [hji] using hj.symm
     · rintro rfl
-      exact ⟨_root_.Sym.mem_coe.2 (mem_ofFn.2 ⟨i, rfl⟩), Set.mem_range_self (x i)⟩
+      exact ⟨Sym.mem_coe.2 (mem_ofFn.2 ⟨i, rfl⟩), Set.mem_range_self (x i)⟩
   rw [hfilter]
   simp
 
@@ -100,7 +98,7 @@ private lemma exists_ofFn_map_eq_of_card_filter_eq_one {X : Fin n → Type*} (f 
       rw [hcount i]
       exact Nat.zero_lt_succ 0
     obtain ⟨a, ha⟩ := Multiset.card_pos_iff_exists_mem.1 hpos
-    exact ⟨a, (_root_.Sym.mem_coe.1 (Multiset.mem_filter.1 ha).1),
+    exact ⟨a, (Sym.mem_coe.1 (Multiset.mem_filter.1 ha).1),
       (Multiset.mem_filter.1 ha).2⟩
   choose a ha using hex
   have haw : ∀ i, a i ∈ w := fun i => (ha i).1
@@ -114,8 +112,8 @@ private lemma exists_ofFn_map_eq_of_card_filter_eq_one {X : Fin n → Type*} (f 
   have hle : (↑(List.ofFn a) : Multiset α) ≤ (w : Multiset α) :=
     (Multiset.le_iff_subset hnodup).2 fun b hb => by
       rw [← coe_ofFn] at hb
-      obtain ⟨i, hi⟩ := mem_ofFn.1 (_root_.Sym.mem_coe.1 hb)
-      exact _root_.Sym.mem_coe.2 (hi ▸ haw i)
+      obtain ⟨i, hi⟩ := mem_ofFn.1 (Sym.mem_coe.1 hb)
+      exact Sym.mem_coe.2 (hi ▸ haw i)
   have heq : (↑(List.ofFn a) : Multiset α) = (w : Multiset α) :=
     Multiset.eq_of_le_of_card_le hle (by simp)
   have hofa : ofFn a = w := Sym.coe_injective (by simpa using heq)
@@ -136,5 +134,3 @@ theorem mem_range_ofFn_map {X : Fin n → Type*} (f : ∀ i, X i → α)
     exact exists_ofFn_map_eq_of_card_filter_eq_one f h hcount
 
 end Sym
-
-end TauCeti

@@ -16,7 +16,7 @@ Given open embeddings with pairwise disjoint ranges, ordered tuples mapped point
 embeddings embed openly as unordered tuples. In particular, given pairwise disjoint open
 neighbourhoods `U i` of `n` distinct points, their product is an open subspace of `Sym α n`;
 obtaining such neighbourhoods in a Hausdorff space is a separate step. The proof comes from
-`TauCeti.Sym.ofFn` being continuous and open together with `IsOpenEmbedding.piMap`.
+`Sym.ofFn` being continuous and open together with `IsOpenEmbedding.piMap`.
 
 Splitting over the distinct points of a tuple, with the multiplicities as the degrees, is how the
 symmetric power of a surface is charted: a neighbourhood of a tuple with
@@ -56,9 +56,9 @@ in a Hausdorff space is a separate step. -/
 theorem isOpenEmbedding_ofFn_map {X : Fin n → Type*} [∀ i, TopologicalSpace (X i)]
     (f : ∀ i, X i → α) (hf : ∀ i, IsOpenEmbedding (f i))
     (h : Pairwise (Function.onFun Disjoint fun i => Set.range (f i))) :
-    IsOpenEmbedding fun x : ∀ i, X i => ofFn fun i => f i (x i) := by
+    IsOpenEmbedding fun x : ∀ i, X i => Sym.ofFn fun i => f i (x i) := by
   refine .of_continuous_injective_isOpenMap ?_
-    (ofFn_map_injective f (fun i => (hf i).injective) h) ?_
+    (Sym.ofFn_map_injective f (fun i => (hf i).injective) h) ?_
   · exact continuous_ofFn.comp (Continuous.piMap fun i => (hf i).continuous)
   · exact isOpenMap_ofFn.comp (IsOpenEmbedding.piMap hf).isOpenMap
 
