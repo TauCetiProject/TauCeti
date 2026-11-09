@@ -314,13 +314,12 @@ theorem isNondegenerateCriticalPoint_add_const_iff (c : ℝ) :
   · simpa [hfun] using h.isInvertible
 
 /-- **Nondegenerate critical points pull back through a chart.** If `k` has nondegenerate critical
-points on the target of an open partial homeomorphism `Φ`, is `C²` there, and `Φ` is `C²` with
-invertible differential on its source, then every function that equals `k ∘ Φ + r` on the source
-has nondegenerate critical points on the source. -/
+points on the target of an open partial homeomorphism `Φ`, and `Φ` is `C²` with invertible
+differential on its source, then every function that equals `k ∘ Φ + r` on the source has
+nondegenerate critical points on the source. -/
 theorem HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const
     {Φ : OpenPartialHomeomorph F E} {k : E → ℝ} {h : F → ℝ} {r : ℝ}
     (hk : HasNondegenerateCriticalPointsOn k Φ.target)
-    (hkd : ∀ w ∈ Φ.target, ContDiffAt ℝ 2 k w)
     (hΦ : ∀ u ∈ Φ.source, ContDiffAt ℝ 2 Φ u ∧ (fderiv ℝ Φ u).IsInvertible)
     (hev : ∀ u ∈ Φ.source, h u = k (Φ u) + r) :
     HasNondegenerateCriticalPointsOn h Φ.source := by
@@ -330,10 +329,11 @@ theorem HasNondegenerateCriticalPointsOn.of_eqOn_comp_add_const
     eventually_of_mem (Φ.open_source.mem_nhds hu) hev
   -- Criticality passes to `k` at `Φ u`, since the differential of `Φ` there is invertible.
   have hkcrit : fderiv ℝ k (Φ u) = 0 := by
-    rw [hev'.fderiv_eq, fderiv_comp_eq_zero_iff_of_isInvertible
-      (((hkd _ (Φ.map_source hu)).add contDiffAt_const).differentiableAt (by norm_num))
-      (hΦu.differentiableAt (by norm_num)) hinv] at hcrit
-    simpa [fderiv_add_const] using hcrit
+    by_cases hd : DifferentiableAt ℝ k (Φ u)
+    · rw [hev'.fderiv_eq, fderiv_comp_eq_zero_iff_of_isInvertible (hd.add_const r)
+        (hΦu.differentiableAt (by norm_num)) hinv] at hcrit
+      simpa [fderiv_add_const] using hcrit
+    · exact fderiv_zero_of_not_differentiableAt hd
   have hnd : IsNondegenerateCriticalPoint (fun w ↦ k w + r) (Φ u) :=
     (isNondegenerateCriticalPoint_add_const_iff _).2
       (hasNondegenerateCriticalPointsOn_iff.1 hk (Φ.map_source hu) hkcrit)

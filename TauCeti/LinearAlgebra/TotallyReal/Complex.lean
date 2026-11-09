@@ -151,13 +151,11 @@ theorem map_linearEquiv (A : E ≃ₗ[ℂ] E) :
   rw [isMaximalTotallyReal_iff, ← Submodule.map_comp, hcomm, Submodule.map_comp]
   exact Submodule.isCompl_map (A.restrictScalars ℝ) hL.isCompl
 
-variable [FiniteDimensional ℂ E]
-
 /-- A maximal totally real subspace has real dimension equal to the complex dimension of the
 ambient module. -/
 theorem finrank_eq_finrank_complex : finrank ℝ L = finrank ℂ E := by
-  have : FiniteDimensional ℝ E := Module.Finite.trans ℂ E
-  rw [finrank_eq_card_basis (hL.complexBasis (Module.finBasis ℝ L)), Fintype.card_fin]
+  rw [finrank_eq_nat_card_basis (Module.Free.chooseBasis ℝ L),
+    finrank_eq_nat_card_basis (hL.complexBasis (Module.Free.chooseBasis ℝ L))]
 
 /-- A complex-linear endomorphism `f` preserving a maximal totally real subspace `L` is the
 complexification of its restriction to `L`, so its determinant is the (real) determinant of that
@@ -165,14 +163,21 @@ restriction. -/
 theorem det_eq_det_restrict (f : E →ₗ[ℂ] E) (hf : ∀ x ∈ L, f x ∈ L) :
     LinearMap.det f = ((LinearMap.det ((f.restrictScalars ℝ).restrict hf) : ℝ) : ℂ) := by
   classical
-  have : FiniteDimensional ℝ E := Module.Finite.trans ℂ E
-  let b := Module.finBasis ℝ L
-  rw [← LinearMap.det_toMatrix (hL.complexBasis b), ← LinearMap.det_toMatrix b]
-  refine ((Complex.ofRealHom.map_det _).trans (congrArg Matrix.det ?_)).symm
-  ext i j
-  rw [RingHom.mapMatrix_apply, Matrix.map_apply, LinearMap.toMatrix_apply,
-    LinearMap.toMatrix_apply, complexBasis_apply]
-  exact (hL.complexBasis_repr_coe b ((f.restrictScalars ℝ).restrict hf (b j)) i).symm
+  let b := Module.Free.chooseBasis ℝ L
+  by_cases hfin : Finite (Module.Free.ChooseBasisIndex ℝ L)
+  · have := Fintype.ofFinite (Module.Free.ChooseBasisIndex ℝ L)
+    rw [← LinearMap.det_toMatrix (hL.complexBasis b), ← LinearMap.det_toMatrix b]
+    refine ((Complex.ofRealHom.map_det _).trans (congrArg Matrix.det ?_)).symm
+    ext i j
+    rw [RingHom.mapMatrix_apply, Matrix.map_apply, LinearMap.toMatrix_apply,
+      LinearMap.toMatrix_apply, complexBasis_apply]
+    exact (hL.complexBasis_repr_coe b ((f.restrictScalars ℝ).restrict hf (b j)) i).symm
+  · have h1 : ¬ Module.Finite ℝ L := fun h => hfin (Module.Finite.finite_basis b)
+    have h2 : ¬ Module.Finite ℂ E := fun h => hfin (Module.Finite.finite_basis (hL.complexBasis b))
+    rw [LinearMap.det_eq_one_of_not_module_finite h2,
+      LinearMap.det_eq_one_of_not_module_finite h1, Complex.ofReal_one]
+
+variable [FiniteDimensional ℂ E]
 
 /-- The complex-linear automorphisms act transitively on the maximal totally real subspaces of a
 finite-dimensional complex module. -/
