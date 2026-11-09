@@ -22,6 +22,9 @@ A nonempty product `f₀ f₁ ⋯ fₙ` is the left fold of `f₁, …, fₙ` st
 (`List.prod_ofFn_eq_foldl`), and multiplicative maps, not necessarily unital, preserve such left
 folds (`List.map_foldl_ofFn_mul`). Together they move nonempty products through nonunital
 homomorphisms.
+
+The product of a word whose letters all equal `c` except for a single letter `a` in position `p`
+is `c ^ p * a * c ^ (n - p)` (`List.prod_ofFn_ite`).
 -/
 
 public section
@@ -63,5 +66,24 @@ theorem map_foldl_ofFn_mul {F R S : Type*} [Mul R] [Mul S] [FunLike F R S]
     g ((List.ofFn f).foldl (· * ·) x) = (List.ofFn fun i ↦ g (f i)).foldl (· * ·) (g x) := by
   rw [← Function.comp_def, ← List.map_ofFn, List.foldl_map,
     List.foldl_hom g fun x y ↦ (map_mul g x y).symm]
+
+/-- The product of a word of length `n + 1` whose letters all equal `c` except for the letter `a` in
+position `p` is `c ^ p * a * c ^ (n - p)`. -/
+theorem prod_ofFn_ite {M : Type*} [Monoid M] (a c : M) :
+    ∀ (n : ℕ) (p : Fin (n + 1)),
+      (List.ofFn fun i : Fin (n + 1) ↦ if i = p then a else c).prod =
+        c ^ (p : ℕ) * a * c ^ (n - p)
+  | 0, p => by
+    obtain rfl : p = 0 := Fin.fin_one_eq_zero p
+    simp
+  | n + 1, p => by
+    rw [List.ofFn_succ, List.prod_cons]
+    refine Fin.cases ?_ (fun q ↦ ?_) p
+    · simp [List.ofFn_const, pow_succ']
+    · have h := prod_ofFn_ite a c n q
+      have h0 : ¬ ((0 : Fin (n + 1 + 1)) = q.succ) := (Fin.succ_ne_zero q).symm
+      simp only [Fin.succ_inj, h0, ite_false, Fin.val_succ] at h ⊢
+      rw [h, pow_succ']
+      simp [mul_assoc, Nat.add_sub_add_right]
 
 end List
