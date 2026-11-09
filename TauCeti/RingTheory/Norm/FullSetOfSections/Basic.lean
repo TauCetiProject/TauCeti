@@ -84,6 +84,8 @@ In the remaining results, `B` is free of finite rank over `A`.
   sections if and only if the norm form factors into linear forms,
   `Norm (∑ j, Xⱼ ⊗ bⱼ) = ∏ i, ∑ j, sᵢ(bⱼ) • Xⱼ` in `MvPolynomial κ A`.
 * `TauCeti.IsFullSetOfSections.trace_eq_sum`: the trace is the sum of the values at the sections.
+* `TauCeti.IsFullSetOfSections.finite_of_nonempty`: over a nontrivial ring, a free algebra with a
+  nonempty full set of sections is finite.
 * `TauCeti.IsFullSetOfSections.card_eq_finrank`: over a nontrivial ring, a full set of sections
   has exactly `rank B` members.
 * `TauCeti.isFullSetOfSections_evalAlgHom`: the coordinate projections of `ι → A`, the sections
@@ -468,14 +470,38 @@ theorem IsFullSetOfSections.trace_eq_sum (h : IsFullSetOfSections s) (b : B) :
     (fun i _ ↦ Polynomial.monic_X_sub_C _)]
   simp
 
-/-- Over a nontrivial ring, a full set of sections has as many members as the rank of `B`. -/
-theorem IsFullSetOfSections.card_eq_finrank [Nontrivial A] (h : IsFullSetOfSections s) :
-    Fintype.card ι = Module.finrank A B := by
-  have := h.norm_eq (Polynomial A) (algebraMap (Polynomial A) _ Polynomial.X)
-  rw [Algebra.norm_algebraMap, Module.finrank_baseChange] at this
-  simpa using congrArg Polynomial.natDegree this.symm
-
 end Free
+
+section NonFinite
+
+variable [Module.Free A B] [Nontrivial A]
+
+/-- Over a nontrivial ring, a free algebra with a nonempty full set of sections is finite: for an
+algebra that is not finite, the norm is `1`, which contradicts the vanishing of the norm of `0`
+at a section. -/
+theorem IsFullSetOfSections.finite_of_nonempty [Nonempty ι] (h : IsFullSetOfSections s) :
+    Module.Finite A B := by
+  by_contra hfin
+  have : Module.Free A (A ⊗[A] B) := Module.Free.of_equiv (TensorProduct.lid A B).symm
+  have hn : ¬ Module.Finite A (A ⊗[A] B) :=
+    fun hf => hfin (Module.Finite.of_surjective _ (TensorProduct.lid A B).surjective)
+  have h0 := isFullSetOfSections_iff.1 h A (0 : A ⊗[A] B)
+  simp only [Algebra.norm_eq_one_of_not_module_finite hn, map_zero] at h0
+  exact one_ne_zero
+    (h0.trans (Finset.prod_eq_zero (Finset.mem_univ (Classical.arbitrary ι)) rfl))
+
+/-- Over a nontrivial ring, a full set of sections of a free algebra has as many members as the
+rank of `B`. -/
+theorem IsFullSetOfSections.card_eq_finrank (h : IsFullSetOfSections s) :
+    Fintype.card ι = Module.finrank A B := by
+  by_cases hfin : Module.Finite A B
+  · have := h.norm_eq (Polynomial A) (algebraMap (Polynomial A) _ Polynomial.X)
+    rw [Algebra.norm_algebraMap, Module.finrank_baseChange] at this
+    simpa using congrArg Polynomial.natDegree this.symm
+  · have : IsEmpty ι := not_nonempty_iff.1 fun hne => hfin (h.finite_of_nonempty)
+    simp [Module.finrank_of_not_finite hfin]
+
+end NonFinite
 
 /-- The coordinate projections `ι → A`, the sections of the constant finite scheme
 `⨆_{i ∈ ι} Spec A`, form a full set of sections. -/
