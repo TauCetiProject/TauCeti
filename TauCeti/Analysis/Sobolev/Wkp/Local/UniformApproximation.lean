@@ -48,7 +48,7 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
-local instance : (mu.restrict (univ : Set E)).IsAddHaarMeasure := by
+private local instance : (mu.restrict (univ : Set E)).IsAddHaarMeasure := by
   rw [Measure.restrict_univ]
   infer_instance
 
