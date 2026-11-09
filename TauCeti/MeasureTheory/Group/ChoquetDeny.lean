@@ -191,7 +191,7 @@ theorem eq_smul_volume_of_conv_eq_self (hν : Dense (AddSubgroup.closure ν.supp
     have hh (x : ℝ) : ∫ y, f (y - x) ∂η = ∫ t, (∫ y, f (y - (x - t)) ∂η) ∂ν := by
       calc ∫ y, f (y - x) ∂η = ∫ y, f (y - x) ∂(ν ∗ η) := by rw [hη]
         _ = ∫ t, ∫ y, f (t + y - x) ∂η ∂ν :=
-          integral_conv (by rw [hη]; exact integrable_apply_sub f x)
+          integral_conv (by rw [hη]; exact f.integrable_apply_sub x)
         _ = _ := by congr with t; congr with y; congr 1; ring
     simpa using ν.apply_eq_of_forall_eq_integral_sub hν hB
       (uniformContinuous_integral_apply_sub hC f) hh (-a) 0

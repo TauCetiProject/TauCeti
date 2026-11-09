@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Measure.Interval
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.MeasureTheory.Integral.CompactlySupported
 import Mathlib.Topology.UniformSpace.HeineCantor
+import TauCeti.Topology.ContinuousMap.CompactlySupported
 
 /-!
 # Integrals against uniformly locally bounded measures on `ℝ`
@@ -23,8 +24,8 @@ continuous function of `x`.
 
 ## Main results
 
-* `MeasureTheory.Measure.integrable_apply_sub`: the translates of a compactly supported continuous
-  function are integrable against a measure that is finite on compact sets.
+* `CompactlySupportedContinuousMap.integrable_apply_sub`: the translates of a compactly
+  supported continuous function are integrable against a measure that is finite on compact sets.
 * `MeasureTheory.Measure.abs_integral_le_of_measure_Icc_add_one_le`: a function bounded by `A`
   and vanishing off `[a, a + n]` has integral at most `A * ((n + 1) * C)` in absolute value.
 * `MeasureTheory.Measure.exists_abs_integral_apply_sub_le`: the integrals of the translates of a
@@ -37,6 +38,14 @@ public section
 
 open Set Metric
 open scoped NNReal ENNReal CompactlySupported
+
+/-- The translates `y ↦ f (y - x)` of a compactly supported continuous function are integrable
+against a measure that is finite on compact sets. -/
+theorem CompactlySupportedContinuousMap.integrable_apply_sub {η : MeasureTheory.Measure ℝ}
+    [MeasureTheory.IsFiniteMeasureOnCompacts η] (f : C_c(ℝ, ℝ)) (x : ℝ) :
+    MeasureTheory.Integrable (fun y ↦ f (y - x)) η :=
+  (f.continuous.comp (continuous_id.sub continuous_const)).integrable_of_hasCompactSupport
+    (f.hasCompactSupport.comp_homeomorph (Homeomorph.subRight x))
 
 namespace MeasureTheory.Measure
 
@@ -60,28 +69,11 @@ theorem abs_integral_le_of_measure_Icc_add_one_le (hC : ∀ a : ℝ, η (Icc a (
   rw [measureReal_def, ← hreal]
   exact ENNReal.toReal_mono (by finiteness) hmass
 
-/-- The translates `y ↦ f (y - x)` of a compactly supported continuous function are integrable
-against a measure that is finite on compact sets. -/
-theorem integrable_apply_sub [IsFiniteMeasureOnCompacts η] (f : C_c(ℝ, ℝ)) (x : ℝ) :
-    Integrable (fun y ↦ f (y - x)) η :=
-  (f.continuous.comp (continuous_id.sub continuous_const)).integrable_of_hasCompactSupport
-    (f.hasCompactSupport.comp_homeomorph (Homeomorph.subRight x))
-
-/-- A compactly supported continuous function on `ℝ` has translates `y ↦ f (y - c)` vanishing
-off a window `[c - R, c + R]` whose half-length `R` is a natural number. -/
-private theorem exists_natCast_apply_sub_eq_zero (f : C_c(ℝ, ℝ)) :
-    ∃ R : ℕ, ∀ y c : ℝ, (y < c - R ∨ c + R < y) → f (y - c) = 0 := by
-  obtain ⟨r, -, hr⟩ := f.hasCompactSupport.exists_pos_le_norm
-  refine ⟨⌈r⌉₊, fun y c h ↦ hr _ ?_⟩
-  rw [Real.norm_eq_abs, le_abs]
-  rcases h with h | h
-  exacts [Or.inr (by linarith [Nat.le_ceil r]), Or.inl (by linarith [Nat.le_ceil r])]
-
 /-- The integrals of the translates `y ↦ f (y - x)` of a compactly supported continuous function
 against a uniformly locally bounded measure are uniformly bounded. -/
 theorem exists_abs_integral_apply_sub_le (hC : ∀ a : ℝ, η (Icc a (a + 1)) ≤ C)
     (f : C_c(ℝ, ℝ)) : ∃ B, ∀ x, |∫ y, f (y - x) ∂η| ≤ B := by
-  obtain ⟨R, hR⟩ := exists_natCast_apply_sub_eq_zero f
+  obtain ⟨R, hR⟩ := f.exists_natCast_apply_sub_eq_zero
   obtain ⟨A, hA⟩ := f.continuous.bounded_above_of_compact_support f.hasCompactSupport
   refine ⟨A * ((2 * R + 1) * C), fun x ↦ ?_⟩
   -- The translate vanishes off the window `[x - R, x + R]` of length `2 * R`.
@@ -98,7 +90,7 @@ against a uniformly locally bounded measure depend uniformly continuously on `x`
 theorem uniformContinuous_integral_apply_sub (hC : ∀ a : ℝ, η (Icc a (a + 1)) ≤ C)
     (f : C_c(ℝ, ℝ)) : UniformContinuous fun x ↦ ∫ y, f (y - x) ∂η := by
   have := isLocallyFiniteMeasure_of_measure_Icc_add_one_le hC
-  obtain ⟨R, hR⟩ := exists_natCast_apply_sub_eq_zero f
+  obtain ⟨R, hR⟩ := f.exists_natCast_apply_sub_eq_zero
   rw [Metric.uniformContinuous_iff]
   intro ε hε
   -- `K` exceeds the mass bound `(2 * R + 3) * C` of the windows of length `2 * R + 2`.
@@ -111,7 +103,7 @@ theorem uniformContinuous_integral_apply_sub (hC : ∀ a : ℝ, η (Icc a (a + 1
   have hxx'1 : |x - x'| < 1 := by
     simpa [Real.dist_eq] using hxx'.trans_le (min_le_right _ _)
   rw [abs_lt] at hxx'1
-  rw [Real.dist_eq, ← integral_sub (integrable_apply_sub f x) (integrable_apply_sub f x')]
+  rw [Real.dist_eq, ← integral_sub (f.integrable_apply_sub x) (f.integrable_apply_sub x')]
   -- The difference of the two translates is small and vanishes off `[x - R - 1, x + R + 1]`.
   have := abs_integral_le_of_measure_Icc_add_one_le hC
     (φ := fun y ↦ f (y - x) - f (y - x')) (A := ε / (2 * K))
