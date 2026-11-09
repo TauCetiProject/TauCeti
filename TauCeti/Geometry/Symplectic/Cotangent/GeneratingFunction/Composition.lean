@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Legendre
-import TauCeti.Analysis.Calculus.ContDiff.Prod
+import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Analysis.Calculus.ImplicitContDiff
 
@@ -221,9 +221,9 @@ theorem exists_cotangentGeneratingComposition {n : WithTop ℕ∞}
       (hFat.of_le (by gcongr; norm_num : n + 1 ≤ n + 2)).comp (q, Q)
         (contDiffAt_id.prodMk hb)
   have hs := (hS₂.eventually_differentiableAt_comp (a := ((q, Q), a))
-      (g := fun x ↦ (x.1.1, x.2)) (by fun_prop) (by simp) (by simp)).and
+      (g := fun x ↦ (x.1.1, x.2)) (by fun_prop) (by norm_num)).and
     (hT₂.eventually_differentiableAt_comp (a := ((q, Q), a))
-      (g := fun x ↦ (x.2, x.1.2)) (by fun_prop) (by simp) (by simp))
+      (g := fun x ↦ (x.2, x.1.2)) (by fun_prop) (by norm_num))
   have hmatching : ∀ᶠ x in 𝓝 ((q, Q), a),
       cotangentGeneratingTarget S (x.1.1, x.2) =
         cotangentGeneratingSource T (x.2, x.1.2) ↔ b x.1 = x.2 := by

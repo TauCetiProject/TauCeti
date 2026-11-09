@@ -21,6 +21,8 @@ within `s` at) `x` with `1 ≤ n` is differentiable near `x`. Lowering to order 
   `DifferentiableWithinAt` eventually in `𝓝[insert x s] x`.
 * `ContDiffAt.eventually_differentiableAt`: `C^n` at `x` (`1 ≤ n`) implies `DifferentiableAt`
   eventually in `𝓝 x`.
+* `ContDiffAt.eventually_differentiableAt_comp`: if `f` is `C^n` at `g a` (`1 ≤ n`) and `g` is
+  continuous at `a`, then `f` is differentiable at `g z` for all `z` near `a`.
 -/
 
 public section
@@ -43,5 +45,12 @@ theorem ContDiffWithinAt.eventually_differentiableWithinAt
 theorem ContDiffAt.eventually_differentiableAt (hf : ContDiffAt 𝕜 n f x) (hn : 1 ≤ n) :
     ∀ᶠ y in 𝓝 x, DifferentiableAt 𝕜 f y :=
   ((hf.of_le hn).eventually (by simp)).mono fun _ hy ↦ hy.differentiableAt_one
+
+/-- If `f` is `C^n` at `g a` with `1 ≤ n` and `g` is continuous at `a`, then `f` is differentiable
+at `g z` for all `z` near `a`. -/
+theorem ContDiffAt.eventually_differentiableAt_comp {α : Type*} [TopologicalSpace α] {g : α → E}
+    {a : α} (hf : ContDiffAt 𝕜 n f (g a)) (hg : ContinuousAt g a) (hn : 1 ≤ n) :
+    ∀ᶠ z in 𝓝 a, DifferentiableAt 𝕜 f (g z) :=
+  hg.eventually (hf.eventually_differentiableAt hn)
 
 end
