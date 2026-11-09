@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
+import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
@@ -32,6 +35,8 @@ a doubly (twisted) periodic map are used.
   integral over a nondegenerate rectangle vanishes on it.
 * `TauCeti.setIntegral_Icc_prod_le_of_comp_add_le`: comparison of the integrals of `f` and `M` over
   a translated strip `[c + L, d + L] × I` and the original one, when `f (z + (L, 0)) ≤ M z`.
+* `TauCeti.neg_mul_setIntegral_le_setIntegral_deriv_mul`: for a monotone `C¹` profile `β` and
+  `-B(t) ≤ f`, the lower bound `-(β(b₁) - β(a₁)) ∫ B ≤ ∫∫ β'(s) f`.
 -/
 
 public section
@@ -138,6 +143,35 @@ theorem setIntegral_Icc_prod_le_of_comp_add_le {f M : ℝ × ℝ → ℝ} {c d L
   rw [← he.setIntegral_preimage_emb hemb f, hpre]
   rw [← he.integrableOn_comp_preimage hemb, hpre] at hfi
   exact setIntegral_mono_on hfi hMi (measurableSet_Icc.prod hI) hfM
+
+/-- **The integrated curvature bound of a monotone profile.** Let `β` be a monotone `C¹` profile
+and `f` a function continuous on `[a₁, b₁] × [a₂, b₂]` with `-B(t) ≤ f` there, for a function `B`
+integrable on `[a₂, b₂]`. Then `-(β(b₁) - β(a₁)) ∫ B ≤ ∫∫ β'(s) f(s, t)`. Applied to
+`f = (H₁ - H₀)(t, u)` with `H₀ - H₁ ≤ B`, this bounds the curvature term `-∫∫ ∂_s H` of a linear
+homotopy `H = H₀ + β(s) (H₁ - H₀)` along a map `u`. -/
+theorem neg_mul_setIntegral_le_setIntegral_deriv_mul {β : ℝ → ℝ} (hβ : ContDiff ℝ 1 β)
+    (hβm : Monotone β) (hab : a₁ ≤ b₁) {f : ℝ × ℝ → ℝ}
+    (hf : ContinuousOn f (Icc a₁ b₁ ×ˢ Icc a₂ b₂)) {B : ℝ → ℝ} (hB : IntegrableOn B (Icc a₂ b₂))
+    (hfB : ∀ z ∈ Icc a₁ b₁ ×ˢ Icc a₂ b₂, -B z.2 ≤ f z) :
+    -((β b₁ - β a₁) * ∫ t in Icc a₂ b₂, B t) ≤
+      ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, deriv β z.1 * f z := by
+  have hβ' : Continuous (deriv β) := hβ.continuous_deriv le_rfl
+  have hfi : IntegrableOn (fun z : ℝ × ℝ ↦ deriv β z.1 * f z) (Icc a₁ b₁ ×ˢ Icc a₂ b₂) :=
+    ((hβ'.comp continuous_fst).continuousOn.mul hf).integrableOn_compact
+      (isCompact_Icc.prod isCompact_Icc)
+  have hvol : (volume : Measure (ℝ × ℝ)) = volume.prod volume := Measure.volume_eq_prod ℝ ℝ
+  have hgi : IntegrableOn (fun z : ℝ × ℝ ↦ deriv β z.1 * B z.2) (Icc a₁ b₁ ×ˢ Icc a₂ b₂) := by
+    rw [IntegrableOn, hvol, ← Measure.prod_restrict]
+    exact hβ'.continuousOn.integrableOn_Icc.mul_prod hB
+  have hle : ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, -(deriv β z.1 * B z.2) ≤
+      ∫ z in Icc a₁ b₁ ×ˢ Icc a₂ b₂, deriv β z.1 * f z :=
+    setIntegral_mono_on hgi.neg hfi (measurableSet_Icc.prod measurableSet_Icc) fun z hz ↦ by
+      simpa only [mul_neg] using mul_le_mul_of_nonneg_left (hfB z hz) hβm.deriv_nonneg
+  have hftc : ∫ s in Icc a₁ b₁, deriv β s = β b₁ - β a₁ := by
+    rw [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hab,
+      intervalIntegral.integral_deriv_eq_sub (fun x _ ↦ hβ.differentiable one_ne_zero x)
+        (hβ'.intervalIntegrable _ _)]
+  rwa [integral_neg, hvol, setIntegral_prod_mul (deriv β) B, ← hvol, hftc] at hle
 
 end TauCeti
 
