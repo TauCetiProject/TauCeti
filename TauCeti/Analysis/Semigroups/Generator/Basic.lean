@@ -236,15 +236,13 @@ theorem StronglyContinuousSemigroup.tendsto_average_orbit_zero
   have h := tendsto_average_Ioc_zero_of_stronglyMeasurableAtFilter_continuousWithinAt_Ioi
     (g := fun u => S.realOperator u x)
     (h_cont_Ioi.stronglyMeasurableAtFilter_nhdsWithin measurableSet_Ioi 0)
-    ((S.realOperator_continuousWithinAt x 0 le_rfl).mono Set.Ioi_subset_Ici_self)
+    ((S.realOperator_continuousWithinAt x 0).mono Set.Ioi_subset_Ici_self)
   simpa using h
 
 private theorem StronglyContinuousSemigroup.intervalIntegrable_orbit
     (S : StronglyContinuousSemigroup X) (x : X) {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
-    IntervalIntegrable (fun u => S.realOperator u x) volume a b := by
-  have h_cont : ContinuousOn (fun u => S.realOperator u x) (Set.Ici 0) :=
-    fun u hu => S.realOperator_continuousWithinAt x u hu
-  exact (h_cont.mono fun u hu => by
+    IntervalIntegrable (fun u => S.realOperator u x) volume a b :=
+  ((S.realOperator_continuousOn_Ici x).mono fun _ hu => by
     exact (le_inf ha hb).trans hu.1).intervalIntegrable
 
 private theorem StronglyContinuousSemigroup.local_integral_shift_identity
@@ -284,16 +282,13 @@ private theorem StronglyContinuousSemigroup.tendsto_average_orbit_at
     Filter.Tendsto (fun h => (1 / h) • ∫ u in t..t + h, S.realOperator u x)
       (nhdsWithin 0 (Set.Ioi 0)) (nhds (S.realOperator t x)) := by
   set f := fun u => S.realOperator u x
-  have h_cont_at : ContinuousAt f t := by
-    exact (S.realOperator_continuousWithinAt x t ht.le).continuousAt (Ici_mem_nhds ht)
+  have h_cont_at : ContinuousAt f t := (S.continuous_realOperator_apply x).continuousAt
   have h_ftc : HasDerivAt (fun u => ∫ z in t..u, f z) (f t) t :=
     intervalIntegral.integral_hasDerivAt_right
       IntervalIntegrable.refl
       ((ContinuousAt.stronglyMeasurableAtFilter (μ := volume) isOpen_Ioi
-        (s := Set.Ioi (0 : ℝ)) (f := f) (by
-          intro u hu
-          exact (S.realOperator_continuousWithinAt x u hu.le).continuousAt
-            (Ici_mem_nhds hu))) t ht)
+        (s := Set.Ioi (0 : ℝ)) (f := f)
+        fun _ _ => (S.continuous_realOperator_apply x).continuousAt) t ht)
       h_cont_at
   have h_slope := h_ftc.tendsto_slope_zero_right
   simpa [f, one_div, intervalIntegral.integral_same] using h_slope
