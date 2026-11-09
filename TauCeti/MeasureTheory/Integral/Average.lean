@@ -71,6 +71,8 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   the average of the extended norm over the set.
 * `TauCeti.measure_mul_enorm_setAverage_le`: the measure of a set times the extended norm of the
   average over it is at most the integral of the extended norm over it.
+* `TauCeti.setLAverage_enorm_eq_ofReal_setAverage_norm`: the mean of the extended norm of an
+  integrable function over a set is the `ENNReal.ofReal` of the mean of its norm.
 * `TauCeti.setLAverage_enorm_sub_setAverage_le`: the mean oscillation of `f` about its
   average is at most twice its mean oscillation about any constant.
 * `TauCeti.eLpNorm_sub_setAverage_le`: the same factor-`2` comparison for the `Lᵖ` deviation on a
@@ -132,6 +134,9 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   of `s` converge to those over `s`.
 * `TauCeti.exists_lt_of_measure_lt_of_le_setIntegral`: a set of measure below `δ / c` with
   integral at least `δ` contains a point where the function exceeds `c`.
+* `TauCeti.setAverage_mul_setAverage_le_of_setLIntegral_mul_le`: a bound `C μ(B)²` on the product of
+  the integrals of two almost everywhere nonnegative functions over `B` is a bound `C` on the
+  product of their averages.
 * `TauCeti.integrable_and_average_rpow_le`: if `(f + δ) ^ s` is integrable then so is `f ^ s`, with
   a smaller average.
 * `TauCeti.ae_eq_zero_of_setAverage_rpow_eq_zero`: a nonnegative `Lᵠ` function whose `p`-th power
@@ -174,6 +179,15 @@ theorem measure_mul_enorm_setAverage_le (μ : Measure α) (f : α → E) (s : Se
   · rw [← measure_mul_setLAverage _ hs]
     gcongr
     exact enorm_setAverage_le_setLAverage μ f s
+
+omit [NormedSpace ℝ E] in
+/-- The mean of the extended norm of an integrable function over a set is the `ENNReal.ofReal` of
+the mean of its norm. -/
+theorem setLAverage_enorm_eq_ofReal_setAverage_norm {μ : Measure α} {s : Set α} {g : α → E}
+    (hg : IntegrableOn g s μ) :
+    ⨍⁻ x in s, ‖g x‖ₑ ∂μ = ENNReal.ofReal (⨍ x in s, ‖g x‖ ∂μ) := by
+  rw [setLAverage_eq, ofReal_setAverage hg.norm (ae_of_all _ fun _ => norm_nonneg _)]
+  simp only [ofReal_norm]
 
 end ENorm
 
@@ -1018,6 +1032,55 @@ theorem _root_.ContinuousLinearMap.average_apply {H : X → E →L[𝕜] F} (hH 
   rw [average_eq, average_eq, smul_apply, ContinuousLinearMap.integral_apply hH]
 
 end ContinuousLinearMap
+
+section Product
+
+/-- If two almost everywhere nonnegative functions on `B` have a product of integrals at most
+`C μ(B)²`, then the product of their averages over `B` is at most `C`. A function which is not
+almost everywhere strongly measurable on `B` has average zero. -/
+theorem setAverage_mul_setAverage_le_of_setLIntegral_mul_le {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {B : Set α} {f₁ f₂ : α → ℝ} {C : NNReal}
+    (h₁ : ∀ᵐ x ∂μ.restrict B, 0 ≤ f₁ x) (h₂ : ∀ᵐ x ∂μ.restrict B, 0 ≤ f₂ x)
+    (h : (∫⁻ x in B, ENNReal.ofReal (f₁ x) ∂μ) * ∫⁻ x in B, ENNReal.ofReal (f₂ x) ∂μ ≤
+      C * μ B ^ 2) :
+    (⨍ x in B, f₁ x ∂μ) * (⨍ x in B, f₂ x ∂μ) ≤ C := by
+  have havg {f : α → ℝ} (hf : ∀ᵐ x ∂μ.restrict B, 0 ≤ f x)
+      (hm : AEStronglyMeasurable f (μ.restrict B)) :
+      ⨍ x in B, f x ∂μ = (μ.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (f x) ∂μ).toReal := by
+    rw [setAverage_eq, smul_eq_mul, integral_eq_lintegral_of_nonneg_ae hf hm]
+  have hzero {f : α → ℝ} (hm : ¬AEStronglyMeasurable f (μ.restrict B)) : ⨍ x in B, f x ∂μ = 0 := by
+    rw [setAverage_eq, integral_non_aestronglyMeasurable hm, smul_zero]
+  by_cases hm₁ : AEStronglyMeasurable f₁ (μ.restrict B)
+  swap
+  · rw [hzero hm₁, zero_mul]
+    exact C.coe_nonneg
+  by_cases hm₂ : AEStronglyMeasurable f₂ (μ.restrict B)
+  swap
+  · rw [hzero hm₂, mul_zero]
+    exact C.coe_nonneg
+  by_cases hB : μ B = 0 ∨ μ B = ⊤
+  · have hB0 : μ.real B = 0 := by
+      rcases hB with hB | hB <;> simp [measureReal_def, hB]
+    rw [havg h₁ hm₁, havg h₂ hm₂, hB0]
+    simp
+  have hB0 : μ B ≠ 0 := fun h0 => hB (Or.inl h0)
+  have hBt : μ B ≠ ⊤ := fun ht => hB (Or.inr ht)
+  have hBpos : 0 < μ.real B := ENNReal.toReal_pos hB0 hBt
+  rw [havg h₁ hm₁, havg h₂ hm₂]
+  calc (μ.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (f₁ x) ∂μ).toReal *
+        ((μ.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (f₂ x) ∂μ).toReal)
+      = (μ.real B)⁻¹ ^ 2 * ((∫⁻ x in B, ENNReal.ofReal (f₁ x) ∂μ) *
+          ∫⁻ x in B, ENNReal.ofReal (f₂ x) ∂μ).toReal := by
+        rw [ENNReal.toReal_mul]
+        ring
+    _ ≤ (μ.real B)⁻¹ ^ 2 * ((C : ℝ≥0∞) * μ B ^ 2).toReal := by
+        gcongr
+        exact ENNReal.mul_ne_top ENNReal.coe_ne_top (ENNReal.pow_ne_top hBt)
+    _ = C := by
+        rw [ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.coe_toReal, ← measureReal_def]
+        field_simp
+
+end Product
 
 section Subsingleton
 

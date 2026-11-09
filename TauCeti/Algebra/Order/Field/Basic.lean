@@ -43,7 +43,11 @@ and `K` dominates `a + b` then `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2`.
 Finally, it records a polynomial barrier bound: if `r ≤ M`, `0 < ε`, `1 ≤ c` and `n` is larger
 than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
 
-It also records the power inequality `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n)`
+It also records that `|p| * (C₀ * (Lam / lam)) ≤ A` follows from
+`|p| ≤ A / (C₀ + 1) * (lam / Lam)`, the choice of exponent range in an estimate where `p` is
+multiplied by a constant `C₀` times a ratio `Lam / lam` of ellipticity bounds.
+
+It further records the power inequality `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n)`
 from `L / (2 r) < m + 1`, which bounds the volume of a convex set containing a ball and a point.
 
 It also records how to bound a sum `U + Y` from `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`:
@@ -66,6 +70,8 @@ solve the second estimate for `Y` and substitute it into the first.
 * `TauCeti.two_mul_div_add_sq_le_mul`: `2 t / (t² + ρ²) ≤ (2 t / r) (2 r / (r² + ρ²))` for
   `0 < t` and `0 < r ≤ ρ`.
 * `TauCeti.mul_le_one_of_le_inv_one_add`: `a * b ≤ 1` for `0 ≤ b` and `a ≤ (1 + b)⁻¹`.
+* `TauCeti.mul_le_of_le_div_mul`: `x * (C₀ * (Lam / lam)) ≤ A` from
+  `x ≤ A / (C₀ + 1) * (lam / Lam)`, for `0 ≤ A`, `0 ≤ C₀`, `0 ≤ lam` and `0 ≤ Lam`.
 * `TauCeti.sub_mul_mul_one_add_sq_neg_of_lt`: the strict inequality
   `r - ε * (c * (1 + n ^ 2)) < 0` for `r ≤ M`, `0 < ε`, `1 ≤ c` and `M / ε < n`.
 * `TauCeti.div_mul_add_mul_div_le_half`: `ε / (2 K) * a + b * (ε / (2 K)) ≤ ε / 2` when
@@ -218,6 +224,24 @@ theorem div_mul_add_mul_div_le_half {α : Type*} [Field α] [LinearOrder α]
     _ ≤ ε / (2 * K) * K :=
         mul_le_mul_of_nonneg_left (by linarith) (by positivity)
     _ = ε / 2 := by field_simp
+
+/-- If `x ≤ A / (C₀ + 1) * (lam / Lam)` for `A ≥ 0`, `C₀ ≥ 0`, `lam ≥ 0` and `Lam ≥ 0`, then
+`x * (C₀ * (Lam / lam)) ≤ A`. -/
+theorem mul_le_of_le_div_mul {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    {A C₀ lam Lam x : α} (hA : 0 ≤ A) (hC₀ : 0 ≤ C₀) (hlam : 0 ≤ lam) (hLam : 0 ≤ Lam)
+    (hx : x ≤ A / (C₀ + 1) * (lam / Lam)) :
+    x * (C₀ * (Lam / lam)) ≤ A := by
+  have hratio : lam / Lam * (Lam / lam) ≤ 1 := by
+    rw [div_mul_div_comm, mul_comm lam]
+    exact div_self_le_one _
+  calc x * (C₀ * (Lam / lam))
+      ≤ A / (C₀ + 1) * (lam / Lam) * (C₀ * (Lam / lam)) := by gcongr
+    _ = A * (C₀ / (C₀ + 1)) * (lam / Lam * (Lam / lam)) := by field_simp
+    _ ≤ A * 1 * 1 :=
+        mul_le_mul (mul_le_mul_of_nonneg_left
+          (div_le_one_of_le₀ (by linarith) (by linarith)) hA) hratio (by positivity)
+          (by positivity)
+    _ = A := by rw [mul_one, mul_one]
 
 /-- The inequality behind the volume bound for a convex set containing a ball and a point: if
 `L / (2 r) < m + 1` then `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n)`. -/
