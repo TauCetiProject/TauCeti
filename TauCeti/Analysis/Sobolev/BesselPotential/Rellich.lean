@@ -12,7 +12,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
-import TauCeti.MeasureTheory.Function.Lp.Operator.Compact
+import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Compact
 
 /-!
 # The Rellich theorem for Bessel-potential spaces
