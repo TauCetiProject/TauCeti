@@ -114,13 +114,15 @@ private theorem chartMeasure_restrict_overlap (φ : RoughForm I M ℝ k) (α β 
     (isOpen_extChartAt_source α).measurableSet.inter (isOpen_extChartAt_source β).measurableSet
   ext s hs
   have hcov := φ.setLIntegral_ofReal_abs_inChartAt_mpullback (finBasisOfFinrankEq ℝ E hk.out)
-    (injOn_id _) (fun x _ ↦ mdifferentiableAt_id) (hs.inter hU).isChartMeasurable
+    (.refl ℝ E) (injOn_id _) (fun x _ ↦ mdifferentiableAt_id) (hs.inter hU).isChartMeasurable
     (inter_subset_right : s ∩ U ⊆ U) (finBasisOfFinrankEq ℝ E hk.out).addHaar
-  rw [mpullback_id, image_id] at hcov
+  rw [mpullback_id, image_id, ContinuousLinearEquiv.coe_refl', Measure.map_id] at hcov
   rw [Measure.restrict_apply hs, Measure.restrict_apply hs, chartMeasure_apply φ α (hs.inter hU),
     chartMeasure_apply φ β (hs.inter hU),
     inter_eq_left.2 (inter_subset_right.trans inter_subset_left),
     inter_eq_left.2 (inter_subset_right.trans inter_subset_right), hcov]
+  -- Mapping a basis along the identity equivalence gives back the same basis definitionally.
+  rfl
 
 variable [LindelofSpace M]
 
@@ -320,9 +322,11 @@ theorem measurePreserving_measure_mpullback (Φ : M ≃ₜ N) (hΦ : MDifferenti
     simpa only [mem_preimage, Homeomorph.symm_apply_apply] using hx.2.2
   rw [Measure.restrict_apply hs, Measure.restrict_apply hs, Measure.map_apply Φ.measurable hsU,
     RoughForm.measure_apply_of_subset _ hpre (hsub.trans inter_subset_left),
-    ψ.setLIntegral_ofReal_abs_inChartAt_mpullback _ Φ.injective.injOn (fun x _ ↦ hΦ x)
-      hpre.isChartMeasurable hsub,
+    ψ.setLIntegral_ofReal_abs_inChartAt_mpullback _ (.refl ℝ E) Φ.injective.injOn
+      (fun x _ ↦ hΦ x) hpre.isChartMeasurable hsub, ContinuousLinearEquiv.coe_refl', Measure.map_id,
     image_preimage_eq _ Φ.surjective,
     ψ.measure_apply_of_subset hsU (inter_subset_right.trans inter_subset_left)]
+  -- Mapping a basis along the identity equivalence gives back the same basis definitionally.
+  rfl
 
 end Homeomorph
