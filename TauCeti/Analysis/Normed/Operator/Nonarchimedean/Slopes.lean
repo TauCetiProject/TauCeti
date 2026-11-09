@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszProjection.PrModule
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Splitting
 public import TauCeti.NumberTheory.NewtonPolygon.Multiplicity
+public import TauCeti.NumberTheory.NewtonPolygon.Zeros
 
 /-!
 # Slopes of the Fredholm series of a compact operator
@@ -39,6 +41,21 @@ The slopes behave as eigenvalue valuations should:
 The scaling and finite comparisons hold over every complete ultrametric coefficient ring with
 Tate scalars.
 
+Over an algebraically closed `K` the slopes are exactly the valuations of the nonzero eigenvalues,
+counted with algebraic multiplicity: the multiplicity of `σ` is the sum, over the eigenvalues `μ`
+with `v μ = σ`, of the dimensions of the maximal generalised eigenspaces of `u` at `μ`
+(`ContinuousLinearMap.IsPrCompact.newtonSlopeMultiplicity_charPowerSeries_eq_finsum_finrank`).
+Only finitely many terms of this sum are nonzero. Thus every finite slope is the valuation of an
+eigenvalue
+(`ContinuousLinearMap.IsPrCompact.exists_hasEigenvalue_of_newtonSlopeMultiplicity_ne_zero`).
+The zeros of `H_u` of norm `b ^ σ`, counted with the orders of the zeros, number the multiplicity
+of `σ` (`PowerSeries.IsEntire.newtonSlopeMultiplicity_eq_finsum_order_taylor`), and the order of
+the zero at `μ⁻¹` is the algebraic multiplicity of `μ`
+(`ContinuousLinearMap.IsPrCompact.finrank_maxGenEigenspace`). Over a field that is not
+algebraically closed a slope need not be the valuation of an eigenvalue: the Fredholm series
+`1 - p T ^ 2` over `ℚ_p` has the slope `1 / 2` twice, while its eigenvalues `±√p` are not in
+`ℚ_p`.
+
 ## Main results
 
 * `ContinuousLinearMap.IsPrCompact.exists_isFiniteFace_newtonPolygon_charPowerSeries`: the
@@ -52,6 +69,11 @@ Tate scalars.
   add multiplicities.
 * `ContinuousLinearMap.newtonSlopeMultiplicity_charPowerSeries_of_finite`: comparison with the
   finite slope multiset on a finitely generated module.
+* `ContinuousLinearMap.IsPrCompact.newtonSlopeMultiplicity_charPowerSeries_eq_finsum_finrank`:
+  over an algebraically closed field, the multiplicity of a slope is the sum of the algebraic
+  multiplicities of the eigenvalues of that valuation.
+* `ContinuousLinearMap.IsPrCompact.exists_hasEigenvalue_of_newtonSlopeMultiplicity_ne_zero`: over
+  an algebraically closed field, every finite slope is the valuation of an eigenvalue.
 
 ## References
 
@@ -139,6 +161,74 @@ theorem newtonSlopeMultiplicity_charPowerSeries_prodMap (hu : u.IsPrCompact)
   rw [charPowerSeries_prodMap hu hw]
   exact hu.isEntire_charPowerSeries.newtonSlopeMultiplicity_mul v hb hv
     hw.isEntire_charPowerSeries u.charPowerSeries_ne_zero w.charPowerSeries_ne_zero σ
+
+/-- **Slopes are the valuations of the eigenvalues, with multiplicity.** Over a complete
+algebraically closed ultrametric field, the multiplicity of the slope `σ` in the Fredholm polygon
+of a row-compact endomorphism `u` of a module with property (Pr) is the sum of the algebraic
+multiplicities `dim (maxGenEigenspace u μ)` over the eigenvalues `μ` of valuation `σ`. Only
+finitely many of these terms are nonzero. -/
+theorem newtonSlopeMultiplicity_charPowerSeries_eq_finsum_finrank [IsAlgClosed K]
+    [IsBoundedSMul K M] (hu : u.IsPrCompact) (σ : ℝ) :
+    u.charPowerSeries.newtonSlopeMultiplicity v σ =
+      ∑ᶠ μ ∈ {μ : K | v μ = σ},
+        Module.finrank K (Module.End.maxGenEigenspace (u : Module.End K M) μ) := by
+  have hH := hu.isEntire_charPowerSeries
+  have hH0 := u.charPowerSeries_ne_zero
+  have hb0 : 0 < b := zero_lt_one.trans hb
+  -- An eigenvalue of valuation `σ` is the inverse of a point of norm `b ^ σ`.
+  have hmem (μ : K) : v μ = σ ↔ ‖μ⁻¹‖ = b ^ σ := by
+    rcases eq_or_ne μ 0 with rfl | hμ
+    · simp [(Real.rpow_pos_of_pos hb0 σ).ne]
+    obtain ⟨t, ht⟩ := WithTop.ne_top_iff_exists.mp (v.ne_top_iff.mpr hμ)
+    rw [norm_inv, hv μ hμ, ← Real.rpow_neg hb0.le, neg_neg, Real.rpow_right_inj hb0 hb.ne', ← ht,
+      WithTop.untop₀_coe, WithTop.coe_inj]
+  have hbij : Set.BijOn (·⁻¹) {μ : K | v μ = σ} (Metric.sphere 0 (b ^ σ)) := by
+    refine ⟨fun μ hμ ↦ ?_, inv_injective.injOn, fun x hx ↦ ⟨x⁻¹, ?_, inv_inv x⟩⟩
+    · simpa using (hmem μ).mp hμ
+    · rw [Set.mem_ofPred_eq, hmem, inv_inv]
+      simpa using hx
+  -- The algebraic multiplicity of `μ` is the order of the zero of the Fredholm series at `μ⁻¹`.
+  have hord {μ : K} (hμ : v μ = σ) :
+      (Module.finrank K (Module.End.maxGenEigenspace (u : Module.End K M) μ) : ℕ∞) =
+        (PowerSeries.taylor μ⁻¹ u.charPowerSeries).order := by
+    have hμ0 : μ ≠ 0 := by
+      rintro rfl
+      simp at hμ
+    obtain ⟨h, hh⟩ := hH.exists_isGoodZero hH0 μ⁻¹
+    rw [hu.finrank_maxGenEigenspace hμ0 hh, PowerSeries.isGoodZero_iff_order_taylor_eq.mp hh]
+  -- Only the inverses of the finitely many zeros on the sphere contribute.
+  have hfin : ({μ : K | v μ = σ} ∩ Function.support fun μ ↦
+      Module.finrank K (Module.End.maxGenEigenspace (u : Module.End K M) μ)).Finite := by
+    refine ((hH.finite_setOf_norm_eq_and_evalAt_eq_zero v hb hv hH0 σ).image (·⁻¹)).subset ?_
+    rintro μ ⟨hμσ, hμ⟩
+    have hμ0 : μ ≠ 0 := by
+      rintro rfl
+      simp at hμσ
+    obtain ⟨h, hh⟩ := hH.exists_isGoodZero hH0 μ⁻¹
+    rw [Function.mem_support, hu.finrank_maxGenEigenspace hμ0 hh] at hμ
+    exact ⟨μ⁻¹, ⟨(hmem μ).mp hμσ, hh.evalAt_eq_zero (Nat.pos_of_ne_zero hμ)⟩, inv_inv μ⟩
+  have key : (u.charPowerSeries.newtonSlopeMultiplicity v σ : ℕ∞) =
+      ((∑ᶠ μ ∈ {μ : K | v μ = σ},
+        Module.finrank K (Module.End.maxGenEigenspace (u : Module.End K M) μ) : ℕ) : ℕ∞) := by
+    rw [hH.newtonSlopeMultiplicity_eq_finsum_order_taylor v hb hv hH0 σ,
+      ← Nat.coe_castAddMonoidHom, (Nat.castAddMonoidHom ℕ∞).map_finsum_mem' hfin]
+    exact (finsum_mem_eq_of_bijOn _ hbij fun μ hμ ↦ hord hμ).symm
+  exact_mod_cast key
+
+/-- **Eigenvalues at every slope.** Over a complete algebraically closed ultrametric field, every
+finite slope `σ` of the Fredholm polygon of a row-compact endomorphism `u` of a module with
+property (Pr) is the valuation of an eigenvalue of `u`. -/
+theorem exists_hasEigenvalue_of_newtonSlopeMultiplicity_ne_zero [IsAlgClosed K]
+    [IsBoundedSMul K M] (hu : u.IsPrCompact) {σ : ℝ}
+    (hσ : u.charPowerSeries.newtonSlopeMultiplicity v σ ≠ 0) :
+    ∃ μ : K, v μ = σ ∧ Module.End.HasEigenvalue (u : Module.End K M) μ := by
+  rw [newtonSlopeMultiplicity_charPowerSeries_eq_finsum_finrank v hb hv hu] at hσ
+  obtain ⟨μ, hμσ, hμ⟩ := exists_ne_zero_of_finsum_mem_ne_zero hσ
+  refine ⟨μ, hμσ, ?_⟩
+  -- A nonzero maximal generalised eigenspace contains an eigenvector.
+  have hgen : Module.End.HasUnifEigenvalue (u : Module.End K M) μ ⊤ := fun hbot ↦
+    hμ (by rw [Module.End.maxGenEigenspace, hbot, finrank_bot])
+  exact (Module.End.hasUnifEigenvalue_iff_hasUnifEigenvalue_one (by simp)).mp hgen
 
 end IsPrCompact
 
