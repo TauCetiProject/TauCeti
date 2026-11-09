@@ -96,6 +96,8 @@ def moveHorizontal (φ : StrandDiagram α) (p q : α) : StrandDiagram α :=
 
 variable {φ ψ : StrandDiagram α} {p q : α}
 
+/-- The partial bijection of the moved diagram is that of `φ` conjugated by the transposition of
+`p` and `q`. -/
 theorem toPEquiv_moveHorizontal (hp : p ∈ φ p) (hs : q ∉ φ.source) (ht : q ∉ φ.target) :
     (φ.moveHorizontal p q).toPEquiv =
       (Equiv.swap p q).toPEquiv.trans (φ.toPEquiv.trans (Equiv.swap p q).toPEquiv) := by
