@@ -180,16 +180,18 @@ theorem coe_binaryDihedralRotation :
 theorem coe_binaryDihedralRotation_eq_toComplexMatrix :
     (binaryDihedralRotation n : Matrix (Fin 2) (Fin 2) ℂ) =
       Quaternion.toComplexMatrix ⟨Real.cos (π / n), Real.sin (π / n), 0, 0⟩ := by
-  have hexp : Complex.exp (π * Complex.I / n) =
-      (Real.cos (π / n) : ℂ) + Real.sin (π / n) * Complex.I := by
-    rw [show (π : ℂ) * Complex.I / n = ((π / n : ℝ) : ℂ) * Complex.I by push_cast; ring,
-      Complex.exp_mul_I, ← Complex.ofReal_cos, ← Complex.ofReal_sin]
-  have hexp' : Complex.exp (-(π * Complex.I / n)) =
-      (Real.cos (π / n) : ℂ) - Real.sin (π / n) * Complex.I := by
-    rw [show -((π : ℂ) * Complex.I / n) = ((-(π / n) : ℝ) : ℂ) * Complex.I by push_cast; ring,
-      Complex.exp_mul_I, ← Complex.ofReal_cos, ← Complex.ofReal_sin, Real.cos_neg, Real.sin_neg]
+  -- Euler's formula `Complex.exp_mul_I` needs the exponent as a real angle times `I`.
+  have harg : (π : ℂ) * Complex.I / n = ((π / n : ℝ) : ℂ) * Complex.I := by
     push_cast
     ring
+  have hexp : Complex.exp (π * Complex.I / n) =
+      (Real.cos (π / n) : ℂ) + Real.sin (π / n) * Complex.I := by
+    rw [harg, Complex.exp_mul_I, ← Complex.ofReal_cos, ← Complex.ofReal_sin]
+  have hexp' : Complex.exp (-(π * Complex.I / n)) =
+      (Real.cos (π / n) : ℂ) - Real.sin (π / n) * Complex.I := by
+    rw [harg, ← neg_mul, ← Complex.ofReal_neg, Complex.exp_mul_I, ← Complex.ofReal_cos,
+      ← Complex.ofReal_sin, Real.cos_neg, Real.sin_neg, Complex.ofReal_neg, neg_mul,
+      ← sub_eq_add_neg]
   rw [coe_binaryDihedralRotation, Quaternion.toComplexMatrix_apply]
   ext i j
   fin_cases i <;> fin_cases j <;> simp [hexp, hexp']
