@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
+import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
 
 /-!
 # Restricting the scalars of manifold derivatives
@@ -42,7 +43,7 @@ its complex tangent coordinate changes regarded as `ℝ`-linear maps.
 * `MDifferentiableWithinAt.restrictScalars_mfderivWithin`,
   `MDifferentiableAt.mfderiv_restrictScalars`: the derivative over `𝕜` is the derivative over `𝕜'`
   with scalars restricted to `𝕜`.
-* `MDifferentiableAt.injective_mfderiv_restrictScalars`: an immersion for the models over `𝕜'` is
+* `TauCeti.injective_mfderiv_restrictScalars`: an immersion for the models over `𝕜'` is
   an immersion for the models over `𝕜`.
 * `TauCeti.tangentCoordChange_restrictScalars`: the tangent coordinate changes over `𝕜` are those
   over `𝕜'` with scalars restricted to `𝕜`; in particular they are `𝕜'`-linear
@@ -186,21 +187,25 @@ theorem MDifferentiableAt.mfderiv_restrictScalars
   simpa only [mfderivWithin_univ] using
     (h.mdifferentiableWithinAt.restrictScalars_mfderivWithin 𝕜 (uniqueMDiffWithinAt_univ _)).symm
 
-/-- At a point where `f` is differentiable for the models over `𝕜'`, if its derivative over `𝕜'`
-is injective then so is its derivative over the smaller field `𝕜`. For instance, a holomorphic
-immersion between complex manifolds is a real immersion. -/
-theorem MDifferentiableAt.injective_mfderiv_restrictScalars
-    (h : MDifferentiableAt 𝓘(𝕜', E) 𝓘(𝕜', E') f x)
+namespace TauCeti
+
+/-- If the derivative of `f` at `x` over `𝕜'` is injective, then so is its derivative over the
+smaller field `𝕜`. For instance, a holomorphic immersion between complex manifolds is a real
+immersion. Where `f` is not differentiable over `𝕜'` its derivative over `𝕜'` is `0`, and
+injectivity of that derivative forces the tangent space to be trivial. -/
+theorem injective_mfderiv_restrictScalars
     (hinj : Function.Injective (mfderiv 𝓘(𝕜', E) 𝓘(𝕜', E') f x)) :
     Function.Injective (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E') f x) := by
-  intro v w hvw
-  have hv := DFunLike.congr_fun (h.mfderiv_restrictScalars 𝕜) v
-  have hw := DFunLike.congr_fun (h.mfderiv_restrictScalars 𝕜) w
-  -- The identifications `tangentSpaceCastModel` are the identity of the model spaces, so `hv`
-  -- and `hw` compare the two derivatives on the same vectors `v` and `w` of `E`.
-  exact hinj (hv.symm.trans (hvw ▸ hw))
-
-namespace TauCeti
+  by_cases h : MDifferentiableAt 𝓘(𝕜', E) 𝓘(𝕜', E') f x
+  · intro v w hvw
+    have hv := DFunLike.congr_fun (h.mfderiv_restrictScalars 𝕜) v
+    have hw := DFunLike.congr_fun (h.mfderiv_restrictScalars 𝕜) w
+    -- The identifications `tangentSpaceCastModel` are the identity of the model spaces, so `hv`
+    -- and `hw` compare the two derivatives on the same vectors `v` and `w` of `E`.
+    exact hinj (hv.symm.trans (hvw ▸ hw))
+  · rw [mfderiv_zero_of_not_mdifferentiableAt h] at hinj
+    intro v w _
+    exact hinj (a₁ := v) (a₂ := w) rfl
 
 /-- On the overlap of the charts at `x` and `y`, the tangent coordinate change for the model over
 `𝕜` is the tangent coordinate change for the model over `𝕜'`, with scalars restricted to `𝕜`: both
@@ -229,12 +234,13 @@ theorem tangentCoordChange_smul [IsManifold 𝓘(𝕜', E) 1 M] [IsManifold 𝓘
 `𝕜'`-linear: it is a tangent coordinate change. For instance, on a complex manifold, regarded as
 a real manifold, the real derivative of the inverse of a chart commutes with multiplication by
 `i`. -/
-theorem mfderivWithin_extChartAt_symm_smul [IsManifold 𝓘(𝕜', E) 1 M] [IsManifold 𝓘(𝕜, E) 1 M]
+theorem mfderivWithin_extChartAt_symm_smul [IsManifold 𝓘(𝕜', E) 1 M]
     {z : E} (hz : z ∈ (extChartAt 𝓘(𝕜, E) x).target) (c : 𝕜') (w : E) :
     mfderivWithin 𝓘(𝕜, E) 𝓘(𝕜, E) (extChartAt 𝓘(𝕜, E) x).symm (range 𝓘(𝕜, E)) z
         ((c • ContinuousLinearMap.id 𝕜 E) w) =
       (c • ContinuousLinearMap.id 𝕜 E)
         (mfderivWithin 𝓘(𝕜, E) 𝓘(𝕜, E) (extChartAt 𝓘(𝕜, E) x).symm (range 𝓘(𝕜, E)) z w) := by
+  have : IsManifold 𝓘(𝕜, E) 1 M := IsManifold.restrictScalars 𝕜 (𝕜' := 𝕜') inferInstance
   have hy : (extChartAt 𝓘(𝕜, E) x).symm z ∈ (chartAt E x).source := by
     simpa only [extChartAt_source] using (extChartAt 𝓘(𝕜, E) x).map_target hz
   rw [← (extChartAt 𝓘(𝕜, E) x).right_inv hz, ← TangentBundle.symmL_trivializationAt hy,
