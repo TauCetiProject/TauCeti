@@ -64,6 +64,8 @@ Since the `H^s` norm is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`, this is the est
   `TauCeti.Symbol.HasCompactSpatialSupport.coordinateDeriv_fourier_slice`), and
   `(∂_{x_j} a)^(η, ξ) = 2πi ηⱼ â(η, ξ)`
   (`TauCeti.Symbol.HasCompactSpatialSupport.fourier_spatialDeriv_slice`).
+* `TauCeti.Symbol.HasCompactSpatialSupport.integral_fourierChar_smul_fourier_slice`: Fourier
+  inversion `∫ exp(2πi ⟪η, x⟫) â(η, ξ) dη = a(x, ξ)` of the position slices.
 * `TauCeti.Symbol.HasCompactSpatialSupport.fourier_quantizeSchwartzValue`: the Fourier transform
   of `Op(a) u`.
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_eLpNorm_smul_fourier_quantizeSchwartzValue_le`:
@@ -292,6 +294,25 @@ theorem HasCompactSpatialSupport.coordinateDeriv_fourier_slice (ha : a.HasCompac
     Real.fourier_eq]
   simp only [Circle.smul_def, coefficient_frequencyDeriv, coordinateDeriv_cons,
     coordinateDeriv_nil]
+
+/-! ### Fourier inversion of the position slices -/
+
+/-- The Fourier inversion integrand `η ↦ exp(2πi ⟪η, x⟫) â(η, ξ)` of a symbol with compact
+spatial support is integrable. -/
+theorem HasCompactSpatialSupport.integrable_fourierChar_smul_fourier_slice
+    (ha : a.HasCompactSpatialSupport) (x ξ : CoordinateSpace n) :
+    Integrable fun η ↦ 𝐞 ⟪η, x⟫ • 𝓕 (fun y ↦ a.coefficient (y, ξ)) η := by
+  simpa [inner_neg_right, ha.fourier_sliceSchwartz] using
+    (Real.fourierIntegral_convergent_iff (μ := volume) (-x)).2 (𝓕 (ha.sliceSchwartz ξ)).integrable
+
+/-- **Fourier inversion of the position slices.** For a symbol with compact spatial support,
+`∫ exp(2πi ⟪η, x⟫) â(η, ξ) dη = a(x, ξ)`. -/
+theorem HasCompactSpatialSupport.integral_fourierChar_smul_fourier_slice [CompleteSpace W]
+    (ha : a.HasCompactSpatialSupport) (x ξ : CoordinateSpace n) :
+    ∫ η, 𝐞 ⟪η, x⟫ • 𝓕 (fun y ↦ a.coefficient (y, ξ)) η = a.coefficient (x, ξ) := by
+  simp_rw [← ha.fourier_sliceSchwartz]
+  rw [← Real.fourierInv_eq, ← SchwartzMap.fourierInv_coe, fourierInv_fourier_eq,
+    ha.coe_sliceSchwartz]
 
 end Decay
 

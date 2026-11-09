@@ -77,6 +77,16 @@ theorem one_add_norm_sq_rpow_mul_norm_le {E : Type*} [NormedAddCommGroup E] (x :
   gcongr
   exact Real.le_sqrt_of_sq_le (by linarith)
 
+/-- A power `‖x‖ ^ k` is at most the corresponding power `⟨x⟩ ^ k` of the Japanese bracket. -/
+theorem norm_pow_le_one_add_norm_sq_rpow {E : Type*} [NormedAddCommGroup E] (x : E) (k : ℕ) :
+    ‖x‖ ^ k ≤ (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [pow_succ, Nat.cast_succ]
+    calc ‖x‖ ^ k * ‖x‖ ≤ (1 + ‖x‖ ^ 2) ^ ((k : ℝ) / 2) * ‖x‖ := by gcongr
+      _ ≤ _ := one_add_norm_sq_rpow_mul_norm_le x k
+
 variable {V : Type*} [NormedAddCommGroup V] [MeasurableSpace V] [BorelSpace V]
 
 section Integrability

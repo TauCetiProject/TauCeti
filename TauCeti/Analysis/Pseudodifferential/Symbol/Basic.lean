@@ -291,6 +291,12 @@ instance : Module ℂ (Symbol n V W m) :=
   coefficient_injective.module ℂ ⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩
     coefficient_smul
 
+@[simp]
+theorem coefficient_sum {ι : Type*} (s : Finset ι) (a : ι → Symbol n V W m) :
+    (∑ i ∈ s, a i).coefficient = ∑ i ∈ s, (a i).coefficient :=
+  map_sum (⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩ :
+    Symbol n V W m →+ CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W) a s
+
 theorem IsUniform.add {a b : Symbol n V W m} (ha : a.IsUniform) (hb : b.IsUniform) :
     (a + b).IsUniform := by
   intro α β
@@ -463,6 +469,20 @@ theorem mixedDeriv_spatialDeriv (j : Fin n) (a : Symbol n V W m) (α β : List (
       fun p => coordinateDeriv [j] (fun y => a.coefficient (y, p.2)) p.1 :=
     funext fun p => coefficient_spatialDeriv j a p.1 p.2
   rw [h, mixedDeriv_coordinateDeriv_fst a.contDiff_coefficient]
+
+/-- Frequency derivatives commute with the inclusions of symbol classes. -/
+theorem frequencyDeriv_inclusion {m' : ℝ} (h : m ≤ m') (j : Fin n) (a : Symbol n V W m) :
+    frequencyDeriv j (inclusion h a) = inclusion (by linarith) (frequencyDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp only [coefficient_frequencyDeriv, coefficient_inclusion]
+
+/-- Spatial derivatives commute with the inclusions of symbol classes. -/
+theorem spatialDeriv_inclusion {m' : ℝ} (h : m ≤ m') (j : Fin n) (a : Symbol n V W m) :
+    spatialDeriv j (inclusion h a) = inclusion h (spatialDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp only [coefficient_spatialDeriv, coefficient_inclusion]
 
 /-- The position derivative of a symbol in the `j`-th coordinate direction is the coefficient of
 its spatial derivative `∂_{x_j} a`. -/

@@ -11,6 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Data.List.Sublists
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ParametricFDeriv
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # Iterated coordinate derivatives on `ℝⁿ`
@@ -52,6 +53,8 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
 * `TauCeti.CoordinateSpace n`: the Euclidean space `ℝⁿ = EuclideanSpace ℝ (Fin n)`.
 * `TauCeti.coordinateDeriv`: the iterated coordinate derivative along a word of indices.
 * `TauCeti.coordinateDeriv_eq_iteratedFDeriv`: its comparison with `iteratedFDeriv`.
+* `TauCeti.coordinateDeriv_perm`: for a smooth enough function it does not depend on the order of
+  the letters of the word.
 * `TauCeti.norm_iteratedFDeriv_le_sum_coordinateDeriv`,
   `TauCeti.norm_iteratedFDeriv_succ_le_sum_coordinateDeriv`: the converse estimates, bounding a
   Fréchet derivative by coordinate derivatives, or by Fréchet derivatives of the first partial
@@ -60,12 +63,15 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
 * `TauCeti.coordinateDeriv_coordinateDeriv_comm`: partial derivatives in different variables
   commute.
 * `TauCeti.mixedDeriv`: the mixed position-frequency derivative `∂_x^α ∂_ξ^β`.
+* `TauCeti.mixedDeriv_mixedDeriv`: mixed derivatives of a mixed derivative concatenate the words.
 * `TauCeti.mixedDeriv_eq_iteratedFDeriv`, `TauCeti.mixedDeriv_eq_iteratedFDeriv_append`: its
   comparison with `iteratedFDeriv` on the directions `TauCeti.mixedDirections`.
 * `ContinuousLinearMap.coordinateDeriv_of_bilinear`, `ContinuousLinearMap.mixedDeriv_of_bilinear`:
   the Leibniz rules.
 * `ContinuousLinearMap.apply_eq_sum_single`, `ContinuousLinearMap.opNorm_le_of_apply_eq_sum`:
   a continuous linear map on `ℝⁿ` (or on `ℝⁿ × ℝⁿ`) in terms of its values on the standard basis.
+* `ContinuousMultilinearMap.apply_eq_sum_single`: a continuous multilinear map on `ℝⁿ` in terms of
+  its values on tuples of standard basis vectors.
 * `TauCeti.fderiv_apply_eq_sum_coordinateDeriv`: the derivative of a function of a position and a
   frequency in terms of its first-order coordinate derivatives in the two variables.
 -/
@@ -124,6 +130,29 @@ theorem _root_.ContDiff.coordinateDeriv {f : CoordinateSpace n → A} (hf : Cont
     (α : List (Fin n)) : ContDiff ℝ ∞ (coordinateDeriv α f) :=
   hf.coordinateDeriv_of_le α (by simp)
 
+/-- **Symmetry of iterated coordinate derivatives.** For a `C^k` function, the coordinate
+derivative along a word of length `k` does not depend on the order of the letters. -/
+theorem coordinateDeriv_perm {α β : List (Fin n)} (h : α.Perm β) {f : CoordinateSpace n → A}
+    (hf : ContDiff ℝ α.length f) : coordinateDeriv α f = coordinateDeriv β f := by
+  induction h with
+  | nil => rfl
+  | cons j _ ih =>
+    funext x
+    rw [coordinateDeriv_cons, coordinateDeriv_cons, ih (hf.of_le (by simp))]
+  | swap i j l =>
+    funext x
+    have hg : ContDiff ℝ 2 (coordinateDeriv l f) :=
+      hf.coordinateDeriv_of_le l (by simp only [List.length_cons]; norm_cast; omega)
+    have hd : Differentiable ℝ (fderiv ℝ (coordinateDeriv l f)) :=
+      (hg.fderiv_right (m := 1) (by norm_num)).differentiable one_ne_zero
+    have hfun (k : Fin n) : coordinateDeriv (k :: l) f =
+        fun y => fderiv ℝ (coordinateDeriv l f) y (EuclideanSpace.single k 1) :=
+      funext (coordinateDeriv_cons k l f)
+    rw [coordinateDeriv_cons, coordinateDeriv_cons, hfun, hfun,
+      fderiv_clm_apply_const_apply (hd x), fderiv_clm_apply_const_apply (hd x),
+      (hg.contDiffAt.isSymmSndFDerivAt (by simp [minSmoothness_of_isRCLikeNormedField])).eq]
+  | trans h₁ _ ih₁ ih₂ => rw [ih₁ hf, ih₂ (h₁.length_eq ▸ hf)]
+
 /-- A coordinate derivative of a `C^k` function along a word of length `k` is its `k`-th Fréchet
 derivative, evaluated on the standard basis vectors named by the word, in the same order. -/
 theorem coordinateDeriv_eq_iteratedFDeriv (α : List (Fin n)) {f : CoordinateSpace n → A}
@@ -167,25 +196,34 @@ theorem coordinateDeriv_ofFn_eq_iteratedFDeriv {k : ℕ} (r : Fin k → Fin n)
   congr 1 with i
   rw [hl, Fin.cast_eq_self]
 
+/-- A continuous multilinear map on `ℝⁿ` in terms of its values on the standard basis vectors:
+`M v = ∑_r (∏ i, v i (r i)) • M (e_{r 0}, …, e_{r (k - 1)})`. -/
+theorem _root_.ContinuousMultilinearMap.apply_eq_sum_single {k : ℕ}
+    (M : ContinuousMultilinearMap ℝ (fun _ : Fin k => CoordinateSpace n) A)
+    (v : Fin k → CoordinateSpace n) :
+    M v = ∑ r : Fin k → Fin n, (∏ i, v i (r i)) • M fun i => EuclideanSpace.single (r i) 1 := by
+  classical
+  have hv : v = fun i => ∑ j, v i j • EuclideanSpace.single j (1 : ℝ) := by
+    funext i
+    simpa [EuclideanSpace.basisFun_repr, EuclideanSpace.basisFun_apply] using
+      ((EuclideanSpace.basisFun (Fin n) ℝ).sum_repr (v i)).symm
+  conv_lhs => rw [hv]
+  rw [M.map_sum]
+  exact Finset.sum_congr rfl fun r _ => M.map_smul_univ _ _
+
 /-- A continuous multilinear map on `ℝⁿ` has norm at most the sum of the norms of its values on
 tuples of standard basis vectors. -/
 theorem _root_.ContinuousMultilinearMap.norm_le_sum_single {k : ℕ}
     (M : ContinuousMultilinearMap ℝ (fun _ : Fin k => CoordinateSpace n) A) :
     ‖M‖ ≤ ∑ r : Fin k → Fin n, ‖M fun i => EuclideanSpace.single (r i) 1‖ := by
-  classical
   refine M.opNorm_le_bound (Finset.sum_nonneg fun _ _ => norm_nonneg _) fun v => ?_
-  have hv : v = fun i => ∑ j, v i j • EuclideanSpace.single j (1 : ℝ) := by
-    funext i
-    simpa [EuclideanSpace.basisFun_repr, EuclideanSpace.basisFun_apply] using
-      ((EuclideanSpace.basisFun (Fin n) ℝ).sum_repr (v i)).symm
-  rw [hv, M.map_sum, Finset.sum_mul]
+  rw [M.apply_eq_sum_single v, Finset.sum_mul]
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun r _ => ?_)
-  rw [M.map_smul_univ, norm_smul, mul_comm]
+  rw [norm_smul, mul_comm]
   refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
   rw [norm_prod]
   gcongr with i
-  calc ‖v i (r i)‖ ≤ ‖v i‖ := PiLp.norm_apply_le (v i) (r i)
-    _ = ‖∑ j, v i j • EuclideanSpace.single j (1 : ℝ)‖ := by rw [← congrFun hv i]
+  exact PiLp.norm_apply_le (v i) (r i)
 
 /-- Conversely to `TauCeti.norm_coordinateDeriv_le`, the `k`-th Fréchet derivative of a `C^k`
 function is bounded by the sum of the norms of its coordinate derivatives along the words of
@@ -440,6 +478,19 @@ theorem mixedDeriv_coordinateDeriv_fst {a : CoordinateSpace n × CoordinateSpace
   congr 1
   funext y
   exact coordinateDeriv_coordinateDeriv_comm ha [j] β y ξ
+
+/-- A mixed derivative of a mixed derivative of a smooth function is the mixed derivative along
+the concatenated words. -/
+theorem mixedDeriv_mixedDeriv {a : CoordinateSpace n × CoordinateSpace n → A}
+    (ha : ContDiff ℝ ∞ a) (α β α' β' : List (Fin n)) (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (fun p => mixedDeriv α' β' a p.1 p.2) x ξ =
+      mixedDeriv (α ++ α') (β ++ β') a x ξ := by
+  rw [mixedDeriv_def, mixedDeriv_def, coordinateDeriv_append]
+  congr 1
+  funext y
+  simp only [mixedDeriv_def]
+  rw [coordinateDeriv_coordinateDeriv_comm (ha.coordinateDeriv_snd β') α' β y ξ]
+  simp only [coordinateDeriv_append]
 
 /-- A frequency-independent function has no frequency derivatives. -/
 theorem mixedDeriv_comp_fst (f : CoordinateSpace n → A) (α : List (Fin n))

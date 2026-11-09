@@ -576,6 +576,14 @@ theorem coefficient_sharp (hb : b.HasCompactSpatialSupport) (x ξ : CoordinateSp
       (a.coefficient (x, ξ + (2 * π) • η)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η) :=
   (rfl)
 
+/-- The integrand `exp(2πi ⟪η, x⟫) a(x, ξ + 2πη) ∘ b̂(η, ξ)` of the composition symbol is
+integrable in `η`. -/
+theorem integrable_coefficient_sharp_integrand (hb : b.HasCompactSpatialSupport)
+    (x ξ : CoordinateSpace n) :
+    Integrable fun η ↦ (𝐞 ⟪η, x⟫ : ℂ) •
+      (a.coefficient (x, ξ + (2 * π) • η)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η) :=
+  integrable_compIntegrand hb (x, ξ)
+
 /-- **Leibniz rule in the position** for the composition symbol. -/
 theorem spatialDeriv_sharp (hb : b.HasCompactSpatialSupport) (j : Fin n) :
     Symbol.spatialDeriv j (a.sharp b hb) =
