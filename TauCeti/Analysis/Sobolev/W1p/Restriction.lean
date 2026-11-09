@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import Mathlib.MeasureTheory.Integral.Average
-import TauCeti.MeasureTheory.Function.Lp.L1Convergence
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 
@@ -288,6 +287,7 @@ theorem W1p.continuous_setAverage_value (hSU : S ⊆ (U : Set E))
   exact continuous_const.mul
     (hF.comp' (W1p.valueL (mu := mu) (Omega := U) (p := p)).continuous)
 
+omit [FiniteDimensional ℝ E] in
 /-- If Sobolev classes `a n` converge to `u`, their gradients converge in `L¹` on any open set
 `V` of finite measure contained in the domain. -/
 theorem W1p.tendsto_lintegral_gradient_sub (hV : V ≤ Omega)
@@ -295,16 +295,17 @@ theorem W1p.tendsto_lintegral_gradient_sub (hV : V ≤ Omega)
     [IsFiniteMeasure (mu.restrict (V : Set E))] :
     Tendsto (fun n => ∫⁻ x in (V : Set E), ‖W1p.gradient (a n) x - W1p.gradient u x‖ₑ ∂mu)
       atTop (𝓝 0) := by
-  have hgrad : Tendsto (fun n => W1p.gradient (W1p.restrictL hV (a n))) atTop
-      (𝓝 (W1p.gradient (W1p.restrictL hV u))) := by
+  have hrs : (mu.restrict (Omega : Set E)).restrict (V : Set E) = mu.restrict (V : Set E) :=
+    Measure.restrict_restrict_of_subset hV
+  have hlt : (mu.restrict (Omega : Set E)) (V : Set E) < ⊤ := by
+    rw [← Measure.restrict_apply_univ, hrs, Measure.restrict_apply_univ]
+    simpa only [Measure.restrict_apply_univ] using
+      measure_lt_top (mu.restrict (V : Set E)) Set.univ
+  have hgrad : Tendsto (fun n => W1p.gradient (a n)) atTop (𝓝 (W1p.gradient u)) := by
     simpa only [Function.comp_def, W1p.gradientL_apply] using
-      ((W1p.gradientL (mu := mu) (Omega := V) (p := p)).continuous.tendsto
-        (W1p.restrictL hV u)).comp
-          ((W1p.restrictL hV).continuous.tendsto u |>.comp ha)
-  refine (tendsto_lintegral_enorm_sub_of_tendsto_Lp hgrad).congr fun n => ?_
-  apply lintegral_congr_ae
-  filter_upwards [W1p.gradient_restrictL_ae hV (a n),
-    W1p.gradient_restrictL_ae hV u] with x han hu
-  rw [han, hu]
+      ((W1p.gradientL (mu := mu) (Omega := Omega) (p := p)).continuous.tendsto u).comp ha
+  simpa only [hrs] using tendsto_setLIntegral_enorm_sub_of_tendsto_Lp hlt hgrad
+    (a := fun n => W1p.gradient (a n)) (a₀ := W1p.gradient u) (fun n => ae_eq_refl _)
+    (ae_eq_refl _)
 
 end TauCeti
