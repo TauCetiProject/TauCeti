@@ -32,14 +32,16 @@ along the filter `atBot ×ˢ ⊤`.
 
 * A period `c` of `u` with nonzero `s`-component forces `u` to be constant: iterating `c` towards
   the constant end, the value of `u` at each point is the limit `x`
-  (`Function.Periodic.eq_of_tendsto_atBot`, `Function.Periodic.eq_of_tendsto_atTop`).
+  (`Function.Periodic.eq_of_tendsto_atBot`). So if `u` is not invariant under all time rotations,
+  each of its periods has zero `s`-component (`Function.Periodic.fst_eq_zero_of_tendsto_atBot`).
 * If `u` is continuous, `1`-periodic in `t` and not invariant under all time rotations, its time
   periods are the multiples of `1 / n` for some `n ≥ 1`
-  (`TauCeti.exists_periods_translationFlow_eq_zmultiples_inv`): modulo `1`, the stabilizer of `u`
-  for the rotation action of the circle `ℝ / ℤ` is the finite cyclic group of order `n`.
+  (`Function.Periodic.exists_periods_translationFlow_eq_zmultiples_inv`): modulo `1`, the
+  stabilizer of `u` for the rotation action of the circle `ℝ / ℤ` is the finite cyclic group of
+  order `n`.
 * Hence, with a constant end, the periods of such a map are exactly `{0} × (1 / n) ℤ`
-  (`TauCeti.exists_periodic_iff_of_tendsto_atBot`): translations act freely, and the stabilizer of
-  the action of `ℝ × ℝ / ℤ` is finite.
+  (`Function.Periodic.exists_periodic_iff_of_tendsto_atBot`): translations act freely, and the
+  stabilizer of the action of `ℝ × ℝ / ℤ` is finite.
 
 These are the topological facts about stabilizers used in the dimension count for autonomous Floer
 cylinders: away from the time-invariant cylinders, the translation and rotation action has finite
@@ -51,14 +53,15 @@ stabilizers. Only continuity is used; no equation is involved.
 
 ## Main results
 
+* `TauCeti.translationFlow_comm`: translation flows along two vectors commute.
 * `TauCeti.mem_periods_translationFlow`: the periods of the translation flow at `u` are the
   times `t` with `Function.Periodic u (t • v)`.
 * `Function.Periodic.eq_of_tendsto_atBot`: a map on `ℝ × Y` with a constant end at `-∞` and a
   period with nonzero first component is constant.
-* `TauCeti.exists_periods_translationFlow_eq_zmultiples_inv`: the time-rotation periods of a
-  cylinder which is not time-invariant are `(1 / n) ℤ`.
-* `TauCeti.exists_periodic_iff_of_tendsto_atBot`: the periods of a cylinder with a constant end
-  which is not time-invariant are `{0} × (1 / n) ℤ`.
+* `Function.Periodic.exists_periods_translationFlow_eq_zmultiples_inv`: the time-rotation periods
+  of a cylinder which is not time-invariant are `(1 / n) ℤ`.
+* `Function.Periodic.exists_periodic_iff_of_tendsto_atBot`: the periods of a cylinder with a
+  constant end which is not time-invariant are `{0} × (1 / n) ℤ`.
 
 ## References
 
@@ -103,20 +106,14 @@ theorem eq_of_tendsto_atBot (h : Periodic u c) (hc : c.1 ≠ 0)
   exact tendsto_atBot_add_const_left _ _
     (Tendsto.atTop_mul_const_of_neg hd₀ tendsto_natCast_atTop_atTop)
 
-/-- **A period moving towards a constant end.** If `u : ℝ × Y → X` tends to `x` as the first
-coordinate tends to `+∞`, uniformly in the second, then every period `c` of `u` with `c.1 ≠ 0`
-forces `u` to be constant equal to `x`. -/
-theorem eq_of_tendsto_atTop (h : Periodic u c) (hc : c.1 ≠ 0)
-    (hu : Tendsto u (atTop ×ˢ ⊤) (𝓝 x)) (z : ℝ × Y) : u z = x := by
-  -- Replace `c` by `-c` if necessary, so that its first component is positive.
-  obtain ⟨d, hd, hd₀⟩ : ∃ d, Periodic u d ∧ 0 < d.1 := by
-    rcases hc.lt_or_gt with hc | hc
-    · exact ⟨-c, h.neg, by simpa using hc⟩
-    · exact ⟨c, h, hc⟩
-  refine hd.eq_of_tendsto_of_tendsto_add_nsmul hu (tendsto_prod_iff'.2 ⟨?_, tendsto_top⟩)
-  simp only [Prod.fst_add, Prod.smul_fst, nsmul_eq_mul]
-  exact tendsto_atTop_add_const_left _ _
-    (Tendsto.atTop_mul_const hd₀ tendsto_natCast_atTop_atTop)
+/-- For a map with a constant end at `-∞` which is not invariant under every translation `(0, θ)`
+of the second coordinate, every period has zero first component. -/
+theorem fst_eq_zero_of_tendsto_atBot (h : Periodic u c) (hu : Tendsto u (atBot ×ˢ ⊤) (𝓝 x))
+    (hθ : ∃ θ : Y, ¬Periodic u (0, θ)) : c.1 = 0 := by
+  -- A period with nonzero first component makes `u` constant, hence invariant.
+  by_contra hc
+  obtain ⟨θ, hθ⟩ := hθ
+  exact hθ fun z ↦ by rw [h.eq_of_tendsto_atBot hc hu, h.eq_of_tendsto_atBot hc hu]
 
 end Function.Periodic
 
@@ -150,6 +147,12 @@ theorem translationFlow_apply (v : G) (t : ℝ) (u : C(G, X)) (z : G) :
     translationFlow v t u z = u (z + t • v) :=
   (rfl)
 
+/-- The translation flows along any two vectors commute. -/
+theorem translationFlow_comm (v w : G) (s t : ℝ) (u : C(G, X)) :
+    translationFlow v s (translationFlow w t u) = translationFlow w t (translationFlow v s u) := by
+  ext z
+  simp only [translationFlow_apply, add_right_comm]
+
 /-- The periods of the translation flow along `v` at `u` are the times `t` for which `t • v` is a
 period of `u`. -/
 theorem mem_periods_translationFlow {v : G} {t : ℝ} {u : C(G, X)} :
@@ -158,9 +161,13 @@ theorem mem_periods_translationFlow {v : G} {t : ℝ} {u : C(G, X)} :
 
 end TranslationFlow
 
+end TauCeti
+
 /-! ### Periods of cylinders -/
 
-section Cylinder
+namespace Function.Periodic
+
+open TauCeti
 
 variable {X : Type*} [TopologicalSpace X] [T2Space X] {u : C(ℝ × ℝ, X)}
 
@@ -173,24 +180,12 @@ theorem exists_periods_translationFlow_eq_zmultiples_inv (h₁ : Periodic u (0, 
     ∃ n : ℕ, 0 < n ∧
       (translationFlow ((0, 1) : ℝ × ℝ)).periods u = AddSubgroup.zmultiples ((n : ℝ)⁻¹) := by
   have hθ (θ : ℝ) : θ • ((0, 1) : ℝ × ℝ) = (0, θ) := by simp
-  have hx : ∃ θ, translationFlow ((0, 1) : ℝ × ℝ) θ u ≠ u := by
-    obtain ⟨θ, hθu⟩ := hu
+  refine (translationFlow ((0, 1) : ℝ × ℝ)).exists_periods_eq_zmultiples_inv ?_ ?_
+  · rwa [← Flow.mem_periods, mem_periods_translationFlow, hθ]
+  · obtain ⟨θ, hθu⟩ := hu
     refine ⟨θ, fun h ↦ hθu ?_⟩
     rw [← hθ, ← mem_periods_translationFlow]
     exact (translationFlow _).mem_periods.2 h
-  have hP := (translationFlow ((0, 1) : ℝ × ℝ)).periods_eq_zmultiples_minimalPeriod hx
-  set p := (translationFlow ((0, 1) : ℝ × ℝ)).minimalPeriod u
-  -- The period `1` is an integer multiple `k • p` of the minimal period, with `k ≥ 1`.
-  have h1 : (1 : ℝ) ∈ (translationFlow ((0, 1) : ℝ × ℝ)).periods u := by
-    rwa [mem_periods_translationFlow, hθ]
-  rw [hP, AddSubgroup.mem_zmultiples_iff] at h1
-  obtain ⟨k, hk⟩ := h1
-  rw [zsmul_eq_mul] at hk
-  have hp : 0 ≤ p := (translationFlow ((0, 1) : ℝ × ℝ)).minimalPeriod_nonneg u
-  have hk₀ : (0 : ℝ) < k := pos_of_mul_pos_left (hk ▸ one_pos) hp
-  lift k to ℕ using (by exact_mod_cast hk₀.le)
-  have hpk : p = (k : ℝ)⁻¹ := eq_inv_of_mul_eq_one_right (by exact_mod_cast hk)
-  exact ⟨k, by exact_mod_cast hk₀, by rw [hP, hpk]⟩
 
 /-- **The stabilizer of a cylinder with a constant end.** Let `u` be a continuous map on the
 cylinder, `1`-periodic in `t`, tending to `x` as `s → -∞` uniformly in `t`, and not invariant under
@@ -201,20 +196,14 @@ theorem exists_periodic_iff_of_tendsto_atBot (h₁ : Periodic u (0, 1))
     (hu : ∃ θ : ℝ, ¬Periodic u (0, θ)) {x : X} (hx : Tendsto u (atBot ×ˢ ⊤) (𝓝 x)) :
     ∃ n : ℕ, 0 < n ∧
       ∀ c : ℝ × ℝ, Periodic u c ↔ c.1 = 0 ∧ c.2 ∈ AddSubgroup.zmultiples ((n : ℝ)⁻¹) := by
-  obtain ⟨n, hn, hP⟩ := exists_periods_translationFlow_eq_zmultiples_inv h₁ hu
+  obtain ⟨n, hn, hP⟩ := h₁.exists_periods_translationFlow_eq_zmultiples_inv hu
   -- A vector with zero `s`-component is a multiple of `(0, 1)`.
   have hc₂ (c : ℝ × ℝ) (hc₁ : c.1 = 0) : c.2 • ((0, 1) : ℝ × ℝ) = c := by
     ext <;> simp [hc₁]
   refine ⟨n, hn, fun c ↦ ⟨fun hc ↦ ?_, fun ⟨hc₁, hc₂'⟩ ↦ ?_⟩⟩
-  · -- A period with nonzero `s`-component makes `u` constant, hence time-invariant.
-    have hc₁ : c.1 = 0 := by
-      by_contra hc₁
-      obtain ⟨θ, hθ⟩ := hu
-      exact hθ fun z ↦ by rw [hc.eq_of_tendsto_atBot hc₁ hx, hc.eq_of_tendsto_atBot hc₁ hx]
+  · have hc₁ := hc.fst_eq_zero_of_tendsto_atBot hx hu
     refine ⟨hc₁, ?_⟩
     rwa [← hP, mem_periods_translationFlow, hc₂ c hc₁]
   · rwa [← hP, mem_periods_translationFlow, hc₂ c hc₁] at hc₂'
 
-end Cylinder
-
-end TauCeti
+end Function.Periodic

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Dynamics.Flow.Translation
 public import TauCeti.Geometry.Manifold.MFDeriv.Translation
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
 
@@ -28,16 +29,22 @@ The maps fixed by all time rotations are those with `∂_t u = 0`
 ordinary differential equation `∂_s u = J X_H(u)`
 (`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_autonomous_iff`). Away from them, for
 cylinders with a constant end, the stabilizer of the translation and rotation action is finite
-(`TauCeti.exists_periodic_iff_of_tendsto_atBot`), and no constant combination of `∂_s u` and
-`∂_t u` vanishes identically (`MDifferentiable.eq_zero_of_forall_mfderiv_apply_eq_zero`). These
-are the inputs, on classical solutions, to the dimension count for autonomous Floer cylinders
-which are not time-independent.
+(`Function.Periodic.exists_periodic_iff_of_tendsto_atBot`). Infinitesimally, a constant
+combination `a ∂_s u + b ∂_t u` is the derivative of `u` in the direction `(a, b)`; if it vanishes
+identically, `u` is invariant under all translations along `(a, b)`, so for such a cylinder
+`(a, b) = 0`: `∂_s u` and `∂_t u` are linearly independent as global sections
+(`MDifferentiable.eq_zero_of_forall_mfderiv_apply_eq_zero_of_tendsto_atBot`). These are the
+inputs, on classical solutions, to the dimension count for autonomous Floer cylinders which are
+not time-independent.
 
 These are statements about classical solutions; no Sobolev completion, regularity or
 transversality is asserted.
 
 ## Main results
 
+* `MDifferentiable.eq_zero_of_forall_mfderiv_apply_eq_zero_of_tendsto_atBot`: for a cylinder with
+  a constant end which is not invariant under every time rotation, a direction in which the
+  derivative vanishes everywhere is zero.
 * `TauCeti.SmoothTwoForm.perturbedMFDeriv_comp_add_right`: the perturbed derivative of a
   translate is the translate of the perturbed derivative, for the translated data.
 * `TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_add_right`: translates of
@@ -58,8 +65,34 @@ transversality is asserted.
 
 public section
 
-open Function
+open Filter Function Topology
 open scoped Manifold
+
+namespace MDifferentiable
+
+variable {F H M : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ F H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+
+/-- **Independence of `∂_s u` and `∂_t u` for a cylinder with a constant end.** Let `u` be a
+differentiable map on the cylinder `ℝ × ℝ` tending to `x` as `s → -∞` uniformly in `t`, and not
+invariant under every time rotation `(s, t) ↦ (s, t + θ)`. If the derivative of `u` in the
+direction `w = (a, b)`, that is `a ∂_s u + b ∂_t u`, vanishes everywhere, then `w = 0`. -/
+theorem eq_zero_of_forall_mfderiv_apply_eq_zero_of_tendsto_atBot [T2Space M] {u : ℝ × ℝ → M}
+    (hu : MDifferentiable 𝓘(ℝ, ℝ × ℝ) I u) {x : M} (hx : Tendsto u (atBot ×ˢ ⊤) (𝓝 x))
+    (hθ : ∃ θ : ℝ, ¬Periodic u (0, θ)) {w : ℝ × ℝ}
+    (hw : ∀ z, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z w = 0) : w = 0 := by
+  have hper := hu.forall_periodic_smul_iff.2 hw
+  have hw₁ : w.1 = 0 := by simpa using (hper 1).fst_eq_zero_of_tendsto_atBot hx hθ
+  -- Then the multiples of `w` are time rotations, and all of them would be periods.
+  have hw₂ : w.2 = 0 := by
+    by_contra hw₂
+    obtain ⟨θ, hθ⟩ := hθ
+    refine hθ ?_
+    convert hper (θ / w.2) using 1
+    ext <;> simp [hw₁, div_mul_cancel₀ θ hw₂]
+  exact Prod.ext hw₁ hw₂
+
+end MDifferentiable
 
 namespace TauCeti.SmoothTwoForm
 
@@ -74,7 +107,7 @@ theorem perturbedMFDeriv_comp_add_right (Ks Kt : ℝ × ℝ → M → ℝ) {u : 
     ω.perturbedMFDeriv (fun w ↦ Ks (w + c)) (fun w ↦ Kt (w + c)) (fun w ↦ u (w + c)) z =
       ω.perturbedMFDeriv Ks Kt u (z + c) := by
   refine ContinuousLinearMap.ext fun v ↦ ?_
-  rw [perturbedMFDeriv_apply, perturbedMFDeriv_apply, mfderiv_comp_add_right hu]
+  rw [perturbedMFDeriv_apply, perturbedMFDeriv_apply, hu.mfderiv_comp_add_right]
   -- The two sides differ only in how the tangent spaces at `u (z + c)` are written.
   rfl
 
@@ -126,8 +159,7 @@ theorem isComplexLinearMap_perturbedMFDeriv_autonomous_iff (H : M → ℝ) {u : 
     IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
         (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun _ ↦ H) u z).toLinearMap ↔
       mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (1, 0) = J (ω.hamiltonianVectorField H (u z)) := by
-  rw [isComplexLinearMap_perturbedMFDeriv_iff, stdComplexLineImag_eq, stdComplexLineReal_eq, hz,
-    hamiltonianVectorField_const, Pi.zero_apply, sub_zero, zero_sub, map_neg, ← sub_eq_add_neg,
-    sub_eq_zero]
+  rw [isComplexLinearMap_perturbedMFDeriv_iff, stdComplexLineImag_eq, stdComplexLineReal_eq, hz]
+  simp [hamiltonianVectorField_const, add_neg_eq_zero]
 
 end TauCeti.SmoothTwoForm
