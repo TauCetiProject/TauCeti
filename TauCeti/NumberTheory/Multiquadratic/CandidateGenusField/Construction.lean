@@ -35,8 +35,8 @@ classical; see D. A. Cox, *Primes of the Form x² + ny²*, and F. Lemmermeyer, *
 ## Main results
 
 * `TauCeti.Multiquadratic.exists_mem_adjoin_sq_eq_of_prod_primeDiscriminant_eq`: for a finset of
-  prime discriminants whose product is `fundamentalDiscriminant d`, the compositum of the roots of
-  their radicands contains an element squaring to `d`.
+  integers (in the application, prime discriminants) whose product is `fundamentalDiscriminant d`,
+  the compositum of the roots of their radicands contains an element squaring to `d`.
 * `TauCeti.Multiquadratic.exists_finset_primeDiscriminant_and_exists_mem_adjoin_sq_eq_of_squarefree`
   packages that with the factorization: for squarefree `d`, the prime-discriminant factorization of
   `fundamentalDiscriminant d` exists (with its at-most-one-even property) and its radicand
@@ -49,15 +49,9 @@ namespace TauCeti.Multiquadratic
 
 open Finset
 
-/-- A prime discriminant is a nonzero square (`1` or `2²`) times its radicand. -/
-private lemma primeDiscriminant_eq_sq_mul_radicand (P : ℤ) :
-    ∃ c : ℤ, c ≠ 0 ∧ P = c ^ 2 * primeDiscriminantRadicand P := by
-  rcases primeDiscriminant_eq_radicand_or_eq_four_mul_radicand P with h | h
-  · exact ⟨1, one_ne_zero, by linear_combination h⟩
-  · exact ⟨2, two_ne_zero, by linear_combination h⟩
-
-/-- The product of the radicands of prime discriminants whose product is
-`fundamentalDiscriminant d` is a nonzero rational square times `d`. -/
+/-- The product of the radicands of a finset of integers (in the application, prime
+discriminants) whose product is `fundamentalDiscriminant d` is a nonzero rational square
+times `d`. -/
 theorem exists_prod_radicand_eq_sq_mul_of_prod_primeDiscriminant_eq {d : ℤ} {s : Finset ℤ}
     (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d) :
     ∃ a : ℚ, a ≠ 0 ∧
@@ -93,10 +87,11 @@ theorem exists_prod_radicand_eq_sq_mul_of_prod_primeDiscriminant_eq {d : ℤ} {s
   exact hRa
 
 /-- **A square root of `d` in the prime-discriminant compositum.** Let `d : ℤ` and let `s` be a
-finite set of prime discriminants whose product is the fundamental discriminant
-`fundamentalDiscriminant d`. For any chosen square roots `root` of the radicands of the members of
-`s` in a field `L` over `ℚ`, the compositum `adjoin ℚ (Set.range root)` contains an element
-squaring to `d`. This is the square-class containment underlying the genus-field construction. -/
+finite set of integers whose product is the fundamental discriminant `fundamentalDiscriminant d`
+(in the application, the prime discriminants dividing it). For any chosen square roots `root` of
+the radicands of the members of `s` in a field `L` over `ℚ`, the compositum
+`adjoin ℚ (Set.range root)` contains an element squaring to `d`. This is the square-class
+containment underlying the genus-field construction. -/
 theorem exists_mem_adjoin_sq_eq_of_prod_primeDiscriminant_eq {d : ℤ} {s : Finset ℤ}
     (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d)
     {L : Type*} [Field L] [Algebra ℚ L] (root : {P // P ∈ s} → L) (hroot : ∀ P : {P // P ∈ s},

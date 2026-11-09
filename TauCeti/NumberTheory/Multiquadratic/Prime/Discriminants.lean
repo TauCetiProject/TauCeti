@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Even
 public import Mathlib.Data.Rat.Lemmas
 import Mathlib.Algebra.GCDMonoid.FinsetLemmas
 import Mathlib.Data.Int.NatAbs
+import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Prime.Basic
 
 /-!
@@ -173,8 +174,9 @@ theorem primeDiscriminantRadicand_oddPrimeDiscriminant {p : ℕ} (hodd : Odd p) 
     simpa [IsEvenPrimeDiscriminant] using not_isEvenPrimeDiscriminant_oddPrimeDiscriminant hodd
   simp [primeDiscriminantRadicand, hnot]
 
-/-- A prime discriminant is either its own radicand, or four times its radicand in the even
-cases. -/
+/-- Every integer `D` is either its own radicand or four times its radicand: the radicand is
+`D / 4` for the three even prime discriminants `-4`, `8`, `-8`, and `D` otherwise (for `D = 9`,
+for example, it is `9`). -/
 theorem primeDiscriminant_eq_radicand_or_eq_four_mul_radicand (D : ℤ) :
     D = primeDiscriminantRadicand D ∨ D = 4 * primeDiscriminantRadicand D := by
   by_cases hD : IsEvenPrimeDiscriminant D
@@ -184,7 +186,16 @@ theorem primeDiscriminant_eq_radicand_or_eq_four_mul_radicand (D : ℤ) :
   · have h : ¬ (D = -4 ∨ D = 8 ∨ D = -8) := hD
     exact Or.inl (by simp [primeDiscriminantRadicand, h])
 
-/-- A prime discriminant and its squarefree radicand have the same sign. -/
+/-- Every integer `D` is a nonzero square (`1` or `2²`) times its radicand
+`primeDiscriminantRadicand D`; the radicand is squarefree only when `D` is a prime
+discriminant. -/
+theorem primeDiscriminant_eq_sq_mul_radicand (D : ℤ) :
+    ∃ c : ℤ, c ≠ 0 ∧ D = c ^ 2 * primeDiscriminantRadicand D := by
+  rcases primeDiscriminant_eq_radicand_or_eq_four_mul_radicand D with h | h
+  · exact ⟨1, one_ne_zero, by linear_combination h⟩
+  · exact ⟨2, two_ne_zero, by linear_combination h⟩
+
+/-- An integer and its radicand `primeDiscriminantRadicand` have the same sign. -/
 @[simp] theorem primeDiscriminantRadicand_neg_iff (D : ℤ) :
     primeDiscriminantRadicand D < 0 ↔ D < 0 := by
   by_cases hD : IsEvenPrimeDiscriminant D
@@ -446,7 +457,8 @@ theorem prime_primeDiscriminantPrime {D : ℤ} (hD : IsPrimeDiscriminant D) :
     exact Nat.prime_two
   · rwa [primeDiscriminantPrime_oddPrimeDiscriminant hodd]
 
-/-- The prime under a prime discriminant divides it. -/
+/-- The natural number `primeDiscriminantPrime D` divides `D`, for every integer `D`; for a prime
+discriminant it is the prime under `D`, and otherwise it is `D.natAbs`. -/
 theorem primeDiscriminantPrime_dvd (D : ℤ) : (primeDiscriminantPrime D : ℤ) ∣ D := by
   by_cases hev : IsEvenPrimeDiscriminant D
   · rw [primeDiscriminantPrime_of_isEvenPrimeDiscriminant hev]
