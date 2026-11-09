@@ -226,7 +226,15 @@ namespace Module.Basis
 
 variable {𝕜 E ι : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [AddCommGroup E]
   [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E] [T2Space E]
-  [Fintype ι]
+
+/-- Forgetting continuity in the coordinate equivalence recovers the algebraic coordinate
+equivalence. -/
+@[simp] theorem equivFunL_toLinearEquiv [Finite ι] (v : Basis ι 𝕜 E) :
+    v.equivFunL.toLinearEquiv = v.equivFun := by
+  ext x i
+  simp [equivFun_apply]
+
+variable [Fintype ι]
 
 /-- The inverse of the continuous coordinate equivalence of a finite basis `v` sends a coordinate
 vector `x` to the linear combination `∑ i, x i • v i`. -/

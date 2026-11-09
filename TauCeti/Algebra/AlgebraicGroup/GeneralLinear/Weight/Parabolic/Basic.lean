@@ -34,7 +34,9 @@ block-triangular invertible matrix is block triangular.
 * `TauCeti.GeneralLinear.weightParabolicGroupScheme`: the resulting closed subgroup scheme.
 * `TauCeti.GeneralLinear.weightParabolicInclusion`: its closed immersion into `GL_N`.
 * `TauCeti.GeneralLinear.weightParabolicPoints`: the matrix-valued points over any commutative
-  algebra, characterized by `mem_weightParabolicPoints_iff`.
+  algebra, characterized by `mem_weightParabolicPoints_iff`; by
+  `pointsMulEquiv_mem_weightParabolicPoints_iff` it is the matrix image of the subgroup cut
+  out by the ideal.
 * `TauCeti.GeneralLinear.mem_weightParabolicDefiningPointsSubgroup_iff_blockTriangular`: a point
   of `GL_N` over an `R`-algebra lies in the subgroup cut out by the ideal exactly when its matrix
   is block triangular for the order dual of `w`, that is, its `(i,j)` entry vanishes whenever
@@ -333,6 +335,15 @@ theorem weightParabolicPoints_eq_hopfIdealPointsSubgroup
   ext g
   rw [weightParabolicPoints, Subgroup.mem_map_equiv,
     CommHopfAlgCat.mem_quotientPointsSubgroup_iff, mem_hopfIdealPointsSubgroup_iff]
+
+/-- The matrix of a point of `GL_N` lies in the weight parabolic exactly when the point lies in
+the subgroup cut out by the weight-parabolic ideal. -/
+theorem pointsMulEquiv_mem_weightParabolicPoints_iff {A : Type v} [CommRing A] [Algebra R A]
+    (g : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R N) (CommAlgCat.of R A)) :
+    pointsMulEquiv N g ∈ weightParabolicPoints R w A ↔
+      g ∈ CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R N)
+        (weightParabolicDefiningHopfIdeal R w) (CommAlgCat.of R A) := by
+  rw [weightParabolicPoints, Subgroup.mem_map_equiv, MulEquiv.symm_apply_apply]
 
 /-- A matrix belongs to the weight parabolic precisely when all entries increasing the
 weight vanish. This holds over nonreduced value algebras as well. -/
