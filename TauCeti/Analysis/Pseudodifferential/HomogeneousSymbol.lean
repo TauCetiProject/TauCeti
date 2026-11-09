@@ -220,6 +220,11 @@ instance {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)] [SMulCommClass ℝ 
     { toFun := coefficient, map_zero' := coefficient_zero, map_add' := coefficient_add }
     coefficient_smul
 
+@[simp]
+theorem coefficient_sum {ι : Type*} (s : Finset ι) (f : ι → HomogeneousSymbol X E V W m) :
+    (∑ i ∈ s, f i).coefficient = ∑ i ∈ s, (f i).coefficient :=
+  map_sum (AddMonoidHom.mk' coefficient coefficient_add) f s
+
 /-! ### Changing the degree -/
 
 /-- Transport a homogeneous symbol along an equality of degrees, for instance to identify the
@@ -244,6 +249,14 @@ theorem castDegree_castDegree {m'' : ℝ} (h : m = m') (h' : m' = m'')
     (a : HomogeneousSymbol X E V W m) :
     (a.castDegree h).castDegree h' = a.castDegree (h.trans h') :=
   (rfl)
+
+/-- In a family `a i` of homogeneous symbols whose degrees depend on the index, the coefficient of
+`a i` depends only on the value of `i`, although the types of `a i` and `a i'` differ. -/
+theorem coefficient_congr_index {ι : Type*} {d : ι → ℝ}
+    (a : (i : ι) → HomogeneousSymbol X E V W (d i)) {i i' : ι} (h : i = i') :
+    (a i).coefficient = (a i').coefficient := by
+  subst h
+  rfl
 
 /-! Transport along an equality of degrees commutes with the vector space operations. -/
 

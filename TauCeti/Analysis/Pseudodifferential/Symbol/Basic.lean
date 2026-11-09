@@ -264,6 +264,12 @@ instance : Module ℂ (Symbol n V W m) :=
   coefficient_injective.module ℂ ⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩
     coefficient_smul
 
+/-- A finite sum of coefficients of symbols, possibly of different orders, is smooth. -/
+theorem contDiff_sum_coefficient {ι : Type*} (s : Finset ι) {d : ι → ℝ}
+    (a : (i : ι) → Symbol n V W (d i)) : ContDiff ℝ ∞ (∑ i ∈ s, (a i).coefficient) := by
+  rw [Finset.sum_fn]
+  exact ContDiff.sum fun i _ => (a i).contDiff_coefficient
+
 theorem IsUniform.add {a b : Symbol n V W m} (ha : a.IsUniform) (hb : b.IsUniform) :
     (a + b).IsUniform := by
   intro α β
