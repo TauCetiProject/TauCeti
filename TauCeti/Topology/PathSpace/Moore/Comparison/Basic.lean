@@ -372,6 +372,14 @@ theorem toPath_one : (1 : MooreLoopSpace X x).toPath = Path.refl x := by
   ext t
   simp [toPath_apply]
 
+/-- Normalizing a Moore loop commutes with based continuous maps. -/
+@[simp]
+theorem toPath_map {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (hf : f x = y)
+    (γ : MooreLoopSpace X x) :
+    (map f hf γ).toPath = (γ.toPath.map f.continuous).cast hf.symm hf.symm := by
+  ext s
+  simp [toPath_apply, MoorePath.map_apply]
+
 /-- A loop on the unit interval at `x`, as a Moore loop of length one. -/
 def _root_.Path.toMooreLoop (p : Path x x) : MooreLoopSpace X x :=
   ⟨p.toMoorePath, Path.source_toMoorePath p, Path.target_toMoorePath p⟩
@@ -407,6 +415,13 @@ theorem toLengthOne_apply (γ : MooreLoopSpace X x) : toLengthOne γ = γ.toPath
 theorem toMoorePath_toLengthOne (γ : MooreLoopSpace X x) :
     (toLengthOne γ).toMoorePath = MoorePath.toLengthOne γ.toMoorePath :=
   (rfl)
+
+/-- A Moore loop, normalized to the unit interval and read back as a Moore path, is its
+reparametrization to length one. -/
+theorem toMoorePath_toPath (γ : MooreLoopSpace X x) :
+    γ.toPath.toMoorePath = γ.toMoorePath.rescale 1 := by
+  rw [← Path.toMoorePath_toMooreLoop, ← toLengthOne_apply, toMoorePath_toLengthOne,
+    MoorePath.toLengthOne_eq_rescale_one]
 
 /-- The homotopy from `toLengthOne` to the identity of the Moore loops at `x`: the restriction of
 `MoorePath.unitHomotopy`, which preserves the end points, to the loops. -/

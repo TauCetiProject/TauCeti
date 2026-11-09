@@ -111,8 +111,6 @@ theorem fundamentalGroupHom_map (f : C(X, Y)) (hf : f x = y) (γ : MooreLoopSpac
     FundamentalGroup.mapOfEq_apply]
   congr 1
   refine CategoryTheory.End.ext ?_
-  apply congrArg Path.Homotopic.Quotient.mk
-  ext t
-  simp [toPath_apply, Path.cast_coe, toMoorePath_map, MoorePath.map_apply]
+  exact congrArg Path.Homotopic.Quotient.mk (toPath_map f hf γ)
 
 end TauCeti.MooreLoopSpace

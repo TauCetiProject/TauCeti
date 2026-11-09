@@ -465,6 +465,14 @@ theorem rescale_zero (γ : MoorePath X) : γ.rescale 0 = refl γ.source :=
   ext (by rw [length_rescale, length_refl]) fun t ↦ by
     rw [rescale_apply, div_zero, refl_apply, source_def]
 
+/-- Rescaling twice is rescaling once, provided the intermediate length is nonzero. -/
+theorem rescale_rescale (γ : MoorePath X) {ℓ : ℝ≥0} (hℓ : ℓ ≠ 0) (ℓ' : ℝ≥0) :
+    (γ.rescale ℓ).rescale ℓ' = γ.rescale ℓ' :=
+  ext rfl fun t ↦ by
+    simp only [rescale_apply, length_rescale]
+    congr 1
+    field_simp
+
 /-- Rescaling is continuous in the path and in the length, for nonzero lengths. -/
 @[fun_prop]
 theorem _root_.Continuous.moorePath_rescale {f : Y → MoorePath X} {g : Y → ℝ≥0}
@@ -682,6 +690,12 @@ theorem length_toMoorePath (γ : MooreLoopSpace X x) : γ.toMoorePath.length = �
 theorem length_one : (1 : MooreLoopSpace X x).length = 0 :=
   (rfl)
 
+/-- A Moore loop has length zero exactly when it is the unit. -/
+theorem length_eq_zero_iff {γ : MooreLoopSpace X x} : γ.length = 0 ↔ γ = 1 :=
+  ⟨fun h ↦ ext <| (MoorePath.eq_refl_of_length_eq_zero h).trans <| by
+      rw [γ.source_eq, toMoorePath_one],
+    fun h ↦ h ▸ length_one⟩
+
 @[simp]
 theorem length_mul (γ δ : MooreLoopSpace X x) : (γ * δ).length = γ.length + δ.length :=
   (rfl)
@@ -781,6 +795,11 @@ def map (f : C(X, Y)) (hf : f x = y) : MooreLoopSpace X x →ₜ* MooreLoopSpace
 @[simp]
 theorem toMoorePath_map (f : C(X, Y)) (hf : f x = y) (γ : MooreLoopSpace X x) :
     (map f hf γ).toMoorePath = γ.toMoorePath.map f :=
+  (rfl)
+
+@[simp]
+theorem length_map (f : C(X, Y)) (hf : f x = y) (γ : MooreLoopSpace X x) :
+    (map f hf γ).length = γ.length :=
   (rfl)
 
 @[simp]

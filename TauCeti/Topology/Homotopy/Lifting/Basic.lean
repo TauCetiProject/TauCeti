@@ -17,7 +17,8 @@ spaces in arbitrary universes.  Covering maps have it for every space
 (`IsCoveringMap.hasHomotopyLiftingProperty`), as do product projections
 (`TauCeti.hasHomotopyLiftingProperty_fst`) and homeomorphisms
 (`Homeomorph.hasHomotopyLiftingProperty`); it is closed under composition
-(`TauCeti.HasHomotopyLiftingProperty.comp`), base change
+(`TauCeti.HasHomotopyLiftingProperty.comp`), products of maps
+(`TauCeti.HasHomotopyLiftingProperty.prodMap`), base change
 (`TauCeti.HasHomotopyLiftingProperty.pullback`) and restriction over a subset of the base
 (`TauCeti.HasHomotopyLiftingProperty.restrictPreimage`), and homotopy lifting of
 `U.restrictPreimage p` lifts homotopies valued in `U`
@@ -93,6 +94,19 @@ theorem HasHomotopyLiftingProperty.comp {C : Type*} [TopologicalSpace C] {q : B 
   obtain ⟨G₁, hG₁, hG₁₀⟩ := hq ((ContinuousMap.mk p hpc).comp f) H hH
   obtain ⟨G₂, hG₂, hG₂₀⟩ := hp f G₁ hG₁₀
   exact ⟨G₂, by rw [Function.comp_assoc, hG₂, hG₁], hG₂₀⟩
+
+/-- The homotopy lifting property is closed under products of maps: a homotopy in `B' × B` lifts
+coordinatewise. -/
+theorem HasHomotopyLiftingProperty.prodMap {E' : Type*} {B' : Type*} [TopologicalSpace E']
+    [TopologicalSpace B'] {q : E' → B'} (hq : HasHomotopyLiftingProperty q A)
+    (hp : HasHomotopyLiftingProperty p A) : HasHomotopyLiftingProperty (Prod.map q p) A := by
+  intro f H hH
+  obtain ⟨G₁, hG₁, hG₁₀⟩ := hq ((ContinuousMap.fst).comp f) ((ContinuousMap.fst).comp H)
+    fun a ↦ congrArg Prod.fst (hH a)
+  obtain ⟨G₂, hG₂, hG₂₀⟩ := hp ((ContinuousMap.snd).comp f) ((ContinuousMap.snd).comp H)
+    fun a ↦ congrArg Prod.snd (hH a)
+  exact ⟨G₁.prodMk G₂, funext fun x ↦ Prod.ext (congrFun hG₁ x) (congrFun hG₂ x),
+    fun a ↦ Prod.ext (hG₁₀ a) (hG₂₀ a)⟩
 
 /-- The homotopy lifting property passes to the base change `{(b', e) | g b' = p e} → B'` along
 any continuous map `g : B' → B`. -/
