@@ -164,6 +164,14 @@ theorem quaternionUnitaryIsometry_apply (A : unitary (Matrix ι ι ℍ))
     quaternionUnitaryIsometry ι A x = WithLp.toLp 2 (A.1 *ᵥ WithLp.ofLp x) :=
   (rfl)
 
+/-- The inverse of the action of a quaternionic unitary matrix `A` on `ℍⁿ` multiplies column
+vectors by the conjugate transpose `star A`. -/
+@[simp]
+theorem quaternionUnitaryIsometry_symm_apply (A : unitary (Matrix ι ι ℍ))
+    (x : PiLp 2 fun _ : ι ↦ ℍ) :
+    (quaternionUnitaryIsometry ι A).symm x = WithLp.toLp 2 ((star A).1 *ᵥ WithLp.ofLp x) :=
+  (rfl)
+
 /-- The action of a quaternionic unitary matrix on `ℍⁿ` commutes with quaternionic scalars acting
 on the right: `A (x q) = (A x) q`. -/
 theorem quaternionUnitaryIsometry_op_smul (A : unitary (Matrix ι ι ℍ))
