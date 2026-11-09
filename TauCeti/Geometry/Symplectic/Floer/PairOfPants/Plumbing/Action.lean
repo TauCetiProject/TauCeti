@@ -66,7 +66,8 @@ public noncomputable section
 
 open Set Real Function
 open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
-open TauCeti.Complex (realChart realChart_apply det_fderiv_realChart_nonneg)
+open TauCeti.Complex (realChart det_fderiv_realChart_nonneg equivRealProdCLM_symm_realChart
+  realChart_equivRealProdCLM)
 
 namespace TauCeti.Floer
 
@@ -98,12 +99,11 @@ theorem preimage_plumbedTruncation (hq : q ≠ inf) (L R : ℝ) :
     · exact Or.inl h
     · refine Or.inr ⟨Complex.equivRealProdCLM w, by
         rw [ContinuousLinearEquiv.symm_apply_apply]; exact hw, ?_⟩
-      rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply, hwz,
-        ContinuousLinearEquiv.apply_symm_apply]
+      rw [realChart_equivRealProdCLM, hwz, ContinuousLinearEquiv.apply_symm_apply]
   · rintro (h | ⟨w, hw, rfl⟩)
     · exact Or.inl h
     · refine Or.inr ⟨Complex.equivRealProdCLM.symm w, hw, ?_⟩
-      rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
+      rw [equivRealProdCLM_symm_realChart]
 
 /-- The truncation `Σ_R` of the plumbed sphere is compact in the real coordinates. -/
 theorem isCompact_preimage_plumbedTruncation (q : Puncture) (L R : ℝ) :
@@ -144,14 +144,13 @@ private theorem volume_inter_image_realChart_plumbingMap (hq : q ≠ inf) {L : �
       hzA.2
     have h₂ : inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm w)).re ≤ L / 2 :=
       hwB.2
-    rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply,
-      re_endCoord_plumbingMap q L hw0, endSign_eq_one hq, one_mul] at h₁
+    rw [equivRealProdCLM_symm_realChart, re_endCoord_plumbingMap q L hw0, endSign_eq_one hq,
+      one_mul] at h₁
     rw [endSign_inf] at h₂
     rw [image_endChart_prod_Ico fun s hs ↦ by
       rw [mem_singleton_iff.1 hs, endSign_eq_one hq]; linarith]
     refine ⟨⟨(mem_truncation.1 hzA.1).1, (mem_truncation.1 hzA.1).2.1⟩, ?_⟩
-    rw [mem_singleton_iff, realChart_apply, ContinuousLinearEquiv.symm_apply_apply,
-      re_endCoord_plumbingMap q L hw0]
+    rw [mem_singleton_iff, equivRealProdCLM_symm_realChart, re_endCoord_plumbingMap q L hw0]
     linarith
   · rw [Measure.volume_eq_prod]
     have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
@@ -336,10 +335,10 @@ private theorem integral_floerEnergyDensity_plumbedPerturbation_inserted (ω : S
       have hre : -(inf.endCoord (Complex.equivRealProdCLM.symm z)).re < L / 2 + 1 := by
         simpa [endSign_inf] using hz.2.2
       refine ⟨q.ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos ?_, fun h ↦ hz.2.1 ?_⟩
-      · rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply, endSign_eq_one hq,
-          one_mul, re_endCoord_plumbingMap q L hz.1]
+      · rw [equivRealProdCLM_symm_realChart, endSign_eq_one hq, one_mul,
+          re_endCoord_plumbingMap q L hz.1]
         linarith
-      · rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply] at h
+      · rw [equivRealProdCLM_symm_realChart] at h
         exact q.plumbingMap_injective L h)
   -- The loop along the cut is the loop along the circle `Re z = L/2` of the end `q`, and the
   -- loops along the input ends are the images under the plumbing map.
@@ -348,8 +347,7 @@ private theorem integral_floerEnergyDensity_plumbedPerturbation_inserted (ω : S
       fun t : ℝ ↦ u (Complex.equivRealProdCLM
         (q.cylindricalEndLift (↑(L / 2) + ↑t * Complex.I))) := by
     funext t
-    rw [comp_apply, realChart_apply, ContinuousLinearEquiv.symm_apply_apply,
-      ← cylindricalEndLift_add_ofReal, endSign_inf]
+    rw [comp_apply, realChart_equivRealProdCLM, ← cylindricalEndLift_add_ofReal, endSign_inf]
     congr 3
     push_cast
     ring
@@ -361,7 +359,7 @@ private theorem integral_floerEnergyDensity_plumbedPerturbation_inserted (ω : S
           (q.plumbingMap L (r.cylindricalEndLift (↑R + ↑t * Complex.I))))) :=
     Finset.sum_congr rfl fun r hr ↦ by
       simp only [endSign_eq_one (Finset.ne_of_mem_erase hr), one_mul, comp_apply,
-        realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
+        realChart_equivRealProdCLM]
   rw [← hB, hneck, hsum, ← hab, endSign_inf, neg_one_mul] at h
   linarith
 

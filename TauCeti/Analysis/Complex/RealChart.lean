@@ -37,6 +37,17 @@ theorem realChart_apply (f : ℂ → ℂ) (z : ℝ × ℝ) :
     realChart f z = Complex.equivRealProdCLM (f (Complex.equivRealProdCLM.symm z)) :=
   (rfl)
 
+/-- In complex coordinates, the real chart of `f` is `f`. -/
+@[simp]
+theorem equivRealProdCLM_symm_realChart (f : ℂ → ℂ) (z : ℝ × ℝ) :
+    Complex.equivRealProdCLM.symm (realChart f z) = f (Complex.equivRealProdCLM.symm z) :=
+  Complex.equivRealProdCLM.symm_apply_apply _
+
+/-- The real chart of `f` at the real coordinates of `w` is the real coordinates of `f w`. -/
+theorem realChart_equivRealProdCLM (f : ℂ → ℂ) (w : ℂ) :
+    realChart f (Complex.equivRealProdCLM w) = Complex.equivRealProdCLM (f w) := by
+  rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
+
 /-- In real coordinates, the derivative of a map with complex derivative `f'` is multiplication
 by `f'`. -/
 theorem hasFDerivAt_realChart {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ}
