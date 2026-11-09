@@ -88,12 +88,6 @@ namespace TauCeti.SymmetricSpectrum
 
 open PointedSSet
 
-/-- The free spectrum `F_n (K₊)` on a simplicial set with a disjoint basepoint is left adjoint to
-the underlying simplicial set of level `n`. -/
-noncomputable def freeAddBasepointAdjunction (n : ℕ) :
-    addBasepoint ⋙ free n ⊣ evaluation n ⋙ forgetBasepoint :=
-  addBasepointForgetAdjunction.comp (freeEvaluationAdjunction n)
-
 /-- The maps of symmetric spectra whose underlying map of simplicial sets lies in `W` in every
 level. -/
 def levelwise (W : MorphismProperty SSet.{0}) : MorphismProperty SymmetricSpectrum :=
@@ -113,11 +107,16 @@ levels `n`. -/
 def freeCells (T : MorphismProperty SSet.{0}) : MorphismProperty SymmetricSpectrum :=
   ⨆ n, T.strictMap (addBasepoint ⋙ free n)
 
+/-- A map is a free cell on `T` exactly when it is the image of a map of `T` under
+`K ↦ F_n (K₊)` for some level `n`. -/
+lemma freeCells_iff {T : MorphismProperty SSet.{0}} {E E' : SymmetricSpectrum} (f : E ⟶ E') :
+    freeCells T f ↔ ∃ n, T.strictMap (addBasepoint ⋙ free n) f := by
+  simp only [freeCells, iSup_iff]
+
 /-- The free cell `F_n (i₊)` on a map `i` of `T`. -/
 lemma map_mem_freeCells {T : MorphismProperty SSet.{0}} {A B : SSet.{0}} {i : A ⟶ B} (hi : T i)
-    (n : ℕ) : freeCells T ((free n).map (addBasepoint.map i)) := by
-  simp only [freeCells, iSup_iff]
-  exact ⟨n, ⟨hi⟩⟩
+    (n : ℕ) : freeCells T ((free n).map (addBasepoint.map i)) :=
+  (freeCells_iff _).2 ⟨n, ⟨hi⟩⟩
 
 /-- A map has the right lifting property against the free cells on `T` exactly when the
 underlying map of each of its levels has the right lifting property against `T`. -/
@@ -151,9 +150,8 @@ lemma isCardinalForSmallObjectArgument_freeCells (T : MorphismProperty SSet.{0})
     IsCardinalForSmallObjectArgument (freeCells T) Cardinal.aleph0.{0} where
   preservesColimit {A B X Y} i hi f hf := by
     have : IsFinitelyPresentable.{0} A := by
-      simp only [freeCells, iSup_iff] at hi
-      obtain ⟨n, ⟨hi⟩⟩ := hi
-      have := hT _ hi
+      obtain ⟨n, ⟨hT'⟩⟩ := (freeCells_iff _).1 hi
+      have := hT _ hT'
       exact isFinitelyPresentable_free_obj_addBasepoint n _
     infer_instance
 
@@ -201,18 +199,21 @@ def projectiveCofibrations : MorphismProperty SymmetricSpectrum :=
 
 /-- A map is a level fibration exactly when its underlying map in every level is a Kan
 fibration. -/
+@[simp]
 lemma levelFibrations_iff {E E' : SymmetricSpectrum} (f : E ⟶ E') :
     levelFibrations f ↔ ∀ n, Fibration ((evaluation n).map f).right := by
   simp only [levelFibrations, levelwise_iff, HomotopicalAlgebra.fibration_iff]
 
 /-- A map is a level trivial fibration exactly when its underlying map in every level lifts
 against all monomorphisms. -/
+@[simp]
 lemma levelTrivialFibrations_iff {E E' : SymmetricSpectrum} (f : E ⟶ E') :
     levelTrivialFibrations f ↔ ∀ n, (monomorphisms SSet.{0}).rlp ((evaluation n).map f).right :=
   levelwise_iff _ f
 
 /-- A map is a level equivalence exactly when its underlying map in every level is a weak
 equivalence of simplicial sets. -/
+@[simp]
 lemma levelEquivalences_iff {E E' : SymmetricSpectrum} (f : E ⟶ E') :
     levelEquivalences f ↔ ∀ n, WeakEquivalence ((evaluation n).map f).right := by
   simp only [levelEquivalences, levelwise_iff, HomotopicalAlgebra.weakEquivalence_iff]
