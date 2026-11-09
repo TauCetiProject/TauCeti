@@ -31,7 +31,8 @@ where `ᵀ` is the Hilbert adjoint `ContinuousLinearMap.adjoint` and `∂_t J = 
 file defines `TauCeti.crFormalAdjoint` and the weak equation
 
 `TauCeti.IsWeakCRSolution q Ω J DJ S ξ η`: `ξ` is locally `L^q`, `η` is locally integrable, and
-`∫ ⟪D* φ, ξ⟫ = ∫ ⟪φ, η⟫` for every test function `φ ∈ 𝓓(Ω, V)`.
+for every test function `φ ∈ 𝓓(Ω, V)` the pairing `⟪D* φ, ξ⟫` is integrable with
+`∫ ⟪D* φ, ξ⟫ = ∫ ⟪φ, η⟫`.
 
 This is the weak formulation of the PseudoholomorphicCurveAnalysis roadmap's interior regularity
 theorem with Sobolev coefficients (McDuff–Salamon, §B.4). The weak equation itself makes no
@@ -199,25 +200,29 @@ theorem crFormalAdjoint_of_notMem_tsupport {φ : ℂ → V} {z : ℂ} (hz : z �
 
 /-- `IsWeakCRSolution q Ω J DJ S ξ η` says that `ξ` is a **weak solution** of
 `∂_s ξ + J ∂_t ξ + S ξ = η` on the open set `Ω`, with `DJ` standing for the weak derivative of
-`J`: `ξ` is locally `L^q` on `Ω`, `η` is locally integrable on `Ω`, and
+`J`: `ξ` is locally `L^q` on `Ω`, `η` is locally integrable on `Ω`, and for every test function
+`φ ∈ 𝓓(Ω, V)` the pairing `⟪D* φ, ξ⟫` is integrable with
 
-`∫ ⟪D* φ, ξ⟫ = ∫ ⟪φ, η⟫`
+`∫ ⟪D* φ, ξ⟫ = ∫ ⟪φ, η⟫`,
 
-for every test function `φ ∈ 𝓓(Ω, V)`, where `D*` is `TauCeti.crFormalAdjoint J DJ S`.
+where `D*` is `TauCeti.crFormalAdjoint J DJ S`.
 
-The integrability of `ξ` and `η` is part of the definition, since the Bochner integral of a
-non-integrable function is `0`. The coefficients are unconstrained here; the theorems using the
-weak equation assume `TauCeti.IsSobolevCRCoefficients`. -/
+The integrability of `ξ`, `η` and `⟪D* φ, ξ⟫` is part of the definition, since the Bochner
+integral of a non-integrable function is `0`. The coefficients are unconstrained here; the
+theorems using the weak equation assume `TauCeti.IsSobolevCRCoefficients`, under which the
+pairing is automatically integrable
+(`TauCeti.IsSobolevCRCoefficients.integrable_inner_crFormalAdjoint`). -/
 def IsWeakCRSolution (q : ℝ≥0∞) (Ω : Opens ℂ) (J : ℂ → V →L[ℝ] V)
     (DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V) (S : ℂ → V →L[ℝ] V) (ξ η : ℂ → V) : Prop :=
   MemLpLoc q Ω ξ ∧ LocallyIntegrableOn η Ω ∧
-    ∀ φ : 𝓓(Ω, V), ∫ z, ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ = ∫ z, ⟪(φ : ℂ → V) z, η z⟫_ℝ
+    ∀ φ : 𝓓(Ω, V), Integrable (fun z => ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ) ∧
+      ∫ z, ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ = ∫ z, ⟪(φ : ℂ → V) z, η z⟫_ℝ
 
 /-- The constructor-and-eliminator form of `TauCeti.IsWeakCRSolution`. -/
 theorem isWeakCRSolution_iff : IsWeakCRSolution q Ω J DJ S ξ η ↔
     MemLpLoc q Ω ξ ∧ LocallyIntegrableOn η Ω ∧
-      ∀ φ : 𝓓(Ω, V), ∫ z, ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ =
-        ∫ z, ⟪(φ : ℂ → V) z, η z⟫_ℝ :=
+      ∀ φ : 𝓓(Ω, V), Integrable (fun z => ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ) ∧
+        ∫ z, ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ = ∫ z, ⟪(φ : ℂ → V) z, η z⟫_ℝ :=
   Iff.rfl
 
 namespace IsWeakCRSolution
@@ -229,23 +234,28 @@ theorem memLpLoc (h : IsWeakCRSolution q Ω J DJ S ξ η) : MemLpLoc q Ω ξ := 
 theorem locallyIntegrableOn (h : IsWeakCRSolution q Ω J DJ S ξ η) :
     LocallyIntegrableOn η Ω := h.2.1
 
+/-- The pairing of the formal adjoint of a test function with a weak solution is integrable. -/
+theorem integrable_inner_crFormalAdjoint (h : IsWeakCRSolution q Ω J DJ S ξ η) (φ : 𝓓(Ω, V)) :
+    Integrable (fun z => ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ) := (h.2.2 φ).1
+
 /-- The integral identity defining a weak solution. -/
 theorem integral_inner_crFormalAdjoint (h : IsWeakCRSolution q Ω J DJ S ξ η) (φ : 𝓓(Ω, V)) :
-    ∫ z, ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ = ∫ z, ⟪(φ : ℂ → V) z, η z⟫_ℝ := h.2.2 φ
+    ∫ z, ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ = ∫ z, ⟪(φ : ℂ → V) z, η z⟫_ℝ := (h.2.2 φ).2
 
 /-- A weak solution on `Ω` is a weak solution on every open subset of `Ω`. -/
 theorem mono (h : IsWeakCRSolution q Ω J DJ S ξ η) (hΩ : Ω' ≤ Ω) :
     IsWeakCRSolution q Ω' J DJ S ξ η :=
   ⟨h.memLpLoc.mono_set hΩ, h.locallyIntegrableOn.mono_set hΩ, fun φ =>
-    h.integral_inner_crFormalAdjoint
-      ⟨φ, φ.contDiff, φ.hasCompactSupport, φ.tsupport_subset.trans hΩ⟩⟩
+    h.2.2 ⟨φ, φ.contDiff, φ.hasCompactSupport, φ.tsupport_subset.trans hΩ⟩⟩
 
 /-- The weak equation is homogeneous in `(ξ, η)`. -/
 theorem const_smul (h : IsWeakCRSolution q Ω J DJ S ξ η) (c : ℝ) :
     IsWeakCRSolution q Ω J DJ S (c • ξ) (c • η) := by
-  refine ⟨h.memLpLoc.const_smul c, h.locallyIntegrableOn.smul c, fun φ => ?_⟩
-  simp only [Pi.smul_apply, inner_smul_right, integral_const_mul,
-    h.integral_inner_crFormalAdjoint φ]
+  refine ⟨h.memLpLoc.const_smul c, h.locallyIntegrableOn.smul c, fun φ => ⟨?_, ?_⟩⟩
+  · simpa only [Pi.smul_apply, inner_smul_right] using
+      (h.integrable_inner_crFormalAdjoint φ).const_mul c
+  · simp only [Pi.smul_apply, inner_smul_right, integral_const_mul,
+      h.integral_inner_crFormalAdjoint φ]
 
 /-- The weak equation is compatible with negation of `(ξ, η)`. -/
 theorem neg (h : IsWeakCRSolution q Ω J DJ S ξ η) : IsWeakCRSolution q Ω J DJ S (-ξ) (-η) := by
@@ -271,16 +281,15 @@ theorem isWeakCRSolution_congr_ae (hJ : J =ᵐ[volume.restrict Ω] J')
     by_cases hzΩ : z ∈ (Ω : Set ℂ)
     · rw [hz hzΩ]
     · simp [image_eq_zero_of_notMem_tsupport fun h' => hzΩ (φ.tsupport_subset h')]
-  have hlhs (φ : 𝓓(Ω, V)) : ∫ z, ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ =
-      ∫ z, ⟪crFormalAdjoint J' DJ' S' φ z, ξ' z⟫_ℝ := by
-    refine integral_congr_ae ?_
+  have hlhs (φ : 𝓓(Ω, V)) : (fun z => ⟪crFormalAdjoint J DJ S φ z, ξ z⟫_ℝ) =ᵐ[volume]
+      fun z => ⟪crFormalAdjoint J' DJ' S' φ z, ξ' z⟫_ℝ := by
     filter_upwards [ae_imp_of_ae_restrict hJ, ae_imp_of_ae_restrict hDJ,
       ae_imp_of_ae_restrict hS, ae_imp_of_ae_restrict hξ] with z hJz hDJz hSz hξz
     by_cases hzΩ : z ∈ (Ω : Set ℂ)
     · simp only [crFormalAdjoint, hJz hzΩ, hDJz hzΩ, hSz hzΩ, hξz hzΩ]
     · have hz : z ∉ tsupport (φ : ℂ → V) := fun h' => hzΩ (φ.tsupport_subset h')
       simp [crFormalAdjoint_of_notMem_tsupport hz]
-  simp only [isWeakCRSolution_iff, hrhs, hlhs]
+  simp only [isWeakCRSolution_iff, hrhs, integral_congr_ae (hlhs _), integrable_congr (hlhs _)]
   exact and_congr ⟨fun h => h.congr_ae hξ, fun h => h.congr_ae hξ.symm⟩
     (and_congr ⟨fun h => h.congr hη, fun h => h.congr hη.symm⟩ Iff.rfl)
 
@@ -455,7 +464,7 @@ theorem IsSobolevCRCoefficients.isWeakCRSolution_iff_ae [FiniteDimensional ℝ V
         (hDξq.clm_comp (ContinuousLinearMap.apply ℝ V I)))).add
       (locallyIntegrableOn_apply hpq hc.memLpLoc_zeroth hξq)
   simp only [isWeakCRSolution_iff, hc.integral_inner_crFormalAdjoint hpq hp hq hξ hξq hDξq,
-    hξq, hη, true_and]
+    hc.integrable_inner_crFormalAdjoint hpq hξq, hξq, hη, true_and]
   refine ⟨ae_eq_of_forall_integral_inner_eq hL hη, fun h φ => integral_congr_ae ?_⟩
   filter_upwards [ae_imp_of_ae_restrict h] with z hz
   by_cases hzΩ : z ∈ (Ω : Set ℂ)
@@ -466,26 +475,24 @@ end Holder
 
 namespace IsWeakCRSolution
 
-/-- Under Sobolev coefficients and `1/p + 1/q ≤ 1`, the weak equation is additive in
-`(ξ, η)`. -/
-theorem add (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1)
-    (h : IsWeakCRSolution q Ω J DJ S ξ η) (h' : IsWeakCRSolution q Ω J DJ S ξ' η') :
+/-- The weak equation is additive in `(ξ, η)`. -/
+theorem add (h : IsWeakCRSolution q Ω J DJ S ξ η) (h' : IsWeakCRSolution q Ω J DJ S ξ' η') :
     IsWeakCRSolution q Ω J DJ S (ξ + ξ') (η + η') := by
   refine ⟨h.memLpLoc.add h'.memLpLoc, h.locallyIntegrableOn.add h'.locallyIntegrableOn,
-    fun φ => ?_⟩
-  simp only [Pi.add_apply, inner_add_right]
-  rw [integral_add (hc.integrable_inner_crFormalAdjoint hpq h.memLpLoc φ)
-      (hc.integrable_inner_crFormalAdjoint hpq h'.memLpLoc φ),
-    integral_add (integrable_inner_testFunction h.locallyIntegrableOn φ)
-      (integrable_inner_testFunction h'.locallyIntegrableOn φ),
-    h.integral_inner_crFormalAdjoint φ, h'.integral_inner_crFormalAdjoint φ]
+    fun φ => ⟨?_, ?_⟩⟩
+  · simp only [Pi.add_apply, inner_add_right]
+    exact (h.integrable_inner_crFormalAdjoint φ).add (h'.integrable_inner_crFormalAdjoint φ)
+  · simp only [Pi.add_apply, inner_add_right]
+    rw [integral_add (h.integrable_inner_crFormalAdjoint φ)
+        (h'.integrable_inner_crFormalAdjoint φ),
+      integral_add (integrable_inner_testFunction h.locallyIntegrableOn φ)
+        (integrable_inner_testFunction h'.locallyIntegrableOn φ),
+      h.integral_inner_crFormalAdjoint φ, h'.integral_inner_crFormalAdjoint φ]
 
-/-- Under Sobolev coefficients and `1/p + 1/q ≤ 1`, the weak equation is compatible with
-subtraction of `(ξ, η)`. -/
-theorem sub (hc : IsSobolevCRCoefficients p Ω J DJ S) (hpq : p⁻¹ + q⁻¹ ≤ 1)
-    (h : IsWeakCRSolution q Ω J DJ S ξ η) (h' : IsWeakCRSolution q Ω J DJ S ξ' η') :
+/-- The weak equation is compatible with subtraction of `(ξ, η)`. -/
+theorem sub (h : IsWeakCRSolution q Ω J DJ S ξ η) (h' : IsWeakCRSolution q Ω J DJ S ξ' η') :
     IsWeakCRSolution q Ω J DJ S (ξ - ξ') (η - η') := by
-  simpa [sub_eq_add_neg] using h.add hc hpq h'.neg
+  simpa [sub_eq_add_neg] using h.add h'.neg
 
 end IsWeakCRSolution
 
