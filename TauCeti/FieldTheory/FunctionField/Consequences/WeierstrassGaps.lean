@@ -337,14 +337,15 @@ theorem one_mem_weierstrassGaps (hF : IsFunctionField k F)
 /-! ### Gaps and the canonical divisor -/
 
 /-- **Gaps are the jumps of the canonical filtration**: if `W` satisfies the Riemann--Roch
-identity, then a positive integer `n` is a gap at a rational place `P` exactly when
-`ℓ(W - nP) < ℓ(W - (n - 1)P)`. -/
+identity, then `n` is a gap at a rational place `P` exactly when
+`ℓ(W - nP) < ℓ(W - (n - 1)P)`. For `n = 0` both sides are false. -/
 theorem isGap_iff_dim_sub_lt (hF : IsFunctionField k F) {W : Divisor k F} {g₀ : ℕ}
-    (hW : W.IsRiemannRochDivisor g₀) {P : Place k F} (hP : P.degree = 1) {n : ℕ}
-    (hn : 0 < n) :
+    (hW : W.IsRiemannRochDivisor g₀) {P : Place k F} (hP : P.degree = 1) {n : ℕ} :
     P.IsGap n ↔
       Divisor.dim (W - (n : ℤ) • WeilDivisor.ofPoint P) <
         Divisor.dim (W - ((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp
   have h₁ := Divisor.isRiemannRochDivisor_iff.mp hW ((n : ℤ) • WeilDivisor.ofPoint P)
   have h₂ := Divisor.isRiemannRochDivisor_iff.mp hW (((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P)
   simp only [Divisor.degree_zsmul, Divisor.degree_ofPoint, hP, Nat.cast_one, mul_one] at h₁ h₂
@@ -380,7 +381,7 @@ theorem isGap_iff_exists_mem_riemannRochSpace_ord_eq (hF : IsFunctionField k F)
   have hle : riemannRochSpace (E - WeilDivisor.ofPoint P) ≤ riemannRochSpace E :=
     riemannRochSpace_mono (sub_le_self _ hP0)
   have := finiteDimensional_riemannRochSpace hF E
-  rw [P.isGap_iff_dim_sub_lt hF hW hP hn, hsub, Divisor.dim_def, Divisor.dim_def]
+  rw [P.isGap_iff_dim_sub_lt hF hW hP, hsub, Divisor.dim_def, Divisor.dim_def]
   constructor
   · intro hlt
     obtain ⟨f, hfE, hfnot⟩ :=
