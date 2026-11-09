@@ -68,15 +68,15 @@ theorem _root_.ENNReal.toReal_sub_add_toReal_sub {a b : ℝ≥0∞} (ha : a ≠ 
       abs_of_nonneg (sub_nonneg.2 (ENNReal.toReal_mono ha h))]
 
 /-- For weights summing to `1` and a threshold `t` with `2 t ≤ ∑ j, w j * a j`, the weighted sum is
-at most twice its part over the indices with `t ≤ a j`: the other terms contribute at most `t`.
-For `t = ∞` the sum is `∞`, so some term with `a j = ∞` and a nonzero weight lies in the part. -/
+at most twice its part over the indices with `t ≤ a j`: the other terms contribute at most `t`. -/
 theorem sum_mul_le_two_mul_sum_mul_ite {J : Type*} [Fintype J] {w : J → ℝ≥0}
     (hw : ∑ j, w j = 1) (a : J → ℝ≥0∞) {t : ℝ≥0∞}
     (h : 2 * t ≤ ∑ j, (w j : ℝ≥0∞) * a j) :
     ∑ j, (w j : ℝ≥0∞) * a j ≤ 2 * ∑ j, (w j : ℝ≥0∞) * if t ≤ a j then a j else 0 := by
   set B := ∑ j, (w j : ℝ≥0∞) * if t ≤ a j then a j else 0
   by_cases ht : t = ∞
-  · subst ht
+  · -- The sum is `∞`, so some term with `a j = ∞` and a nonzero weight lies in the part.
+    subst ht
     rw [ENNReal.mul_top two_ne_zero, top_le_iff, ENNReal.sum_eq_top] at h
     obtain ⟨j, -, hj⟩ := h
     obtain ⟨hwj, haj⟩ : (w j : ℝ≥0∞) ≠ 0 ∧ a j = ∞ := by
