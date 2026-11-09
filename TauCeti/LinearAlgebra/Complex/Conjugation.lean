@@ -566,12 +566,18 @@ theorem conjugationOfComplexification_apply {W : Type*} [AddCommGroup W] [Module
   simp only [conjugationOfComplexification, LinearMap.coe_comp, Function.comp_apply,
     LinearEquiv.coe_coe]
 
-/-- Transported tensor conjugation is involutive. -/
-theorem conjugationOfComplexification_involutive {W : Type*} [AddCommGroup W] [Module ℝ W]
-    (e : (ℂ ⊗[ℝ] W) ≃ₗ[ℂ] V) : Function.Involutive (conjugationOfComplexification e) := by
-  intro v
+/-- Applying the transported tensor conjugation twice gives back the input. -/
+@[simp]
+theorem conjugationOfComplexification_conjugationOfComplexification {W : Type*} [AddCommGroup W]
+    [Module ℝ W] (e : (ℂ ⊗[ℝ] W) ≃ₗ[ℂ] V) (v : V) :
+    conjugationOfComplexification e (conjugationOfComplexification e v) = v := by
   simp only [conjugationOfComplexification_apply, e.symm_apply_apply, tmulConj_tmulConj,
     e.apply_symm_apply]
+
+/-- Transported tensor conjugation is involutive. -/
+theorem conjugationOfComplexification_involutive {W : Type*} [AddCommGroup W] [Module ℝ W]
+    (e : (ℂ ⊗[ℝ] W) ≃ₗ[ℂ] V) : Function.Involutive (conjugationOfComplexification e) :=
+  conjugationOfComplexification_conjugationOfComplexification e
 
 /-- The exact fixed locus is the image of the real inclusion `w ↦ e (1 ⊗ w)`. -/
 @[simp]

@@ -142,14 +142,25 @@ theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_apply
         (tmulConj W ((f.isBaseChange_complex_of_isMaximalTotallyReal hf hmax).equiv.symm v)) := by
   rw [LinearMap.conjugationOfMaximalTotallyReal, LinearEquiv.conjugationOfComplexification_apply]
 
+/-- Applying the conjugation of a maximal real form twice gives back the input. -/
+@[simp]
+theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_conjugationOfMaximalTotallyReal
+    {W : Type*} [AddCommGroup W] [Module ℝ W] (f : W →ₗ[ℝ] E)
+    (hf : Function.Injective f)
+    (hmax : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) f.range)
+    (v : E) :
+    f.conjugationOfMaximalTotallyReal hf hmax
+      (f.conjugationOfMaximalTotallyReal hf hmax v) = v := by
+  rw [LinearMap.conjugationOfMaximalTotallyReal,
+    LinearEquiv.conjugationOfComplexification_conjugationOfComplexification]
+
 /-- Conjugation of a maximal real form is involutive. -/
 theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_involutive
     {W : Type*} [AddCommGroup W] [Module ℝ W] (f : W →ₗ[ℝ] E)
     (hf : Function.Injective f)
     (hmax : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) f.range) :
-    Function.Involutive (f.conjugationOfMaximalTotallyReal hf hmax) := by
-  unfold LinearMap.conjugationOfMaximalTotallyReal
-  exact LinearEquiv.conjugationOfComplexification_involutive _
+    Function.Involutive (f.conjugationOfMaximalTotallyReal hf hmax) :=
+  f.conjugationOfMaximalTotallyReal_conjugationOfMaximalTotallyReal hf hmax
 
 /-- The fixed vectors are exactly the image of the given real inclusion. -/
 @[simp]

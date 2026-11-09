@@ -55,67 +55,57 @@ variable [FiniteDimensional ℝ F]
   [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)]
   [∀ x, ContinuousSMul ℝ (V x)]
 
-/-- The canonical complexification equivalence of a finite-rank maximal totally real inclusion.
-Continuity of the inverse follows from finite dimensionality over the real scalars. -/
-def maximalRealFormComplexificationEquiv (i : ∀ x, W x →L[ℝ] V x)
-    (hinj : ∀ x, Injective (i x))
-    (hmax : ∀ x, IsMaximalTotallyReal
+/-- The canonical complexification equivalence of a finite-rank maximal totally real inclusion
+at one fiber: `ContinuousLinearMap.complexificationEquivOfIsMaximalTotallyReal`, with the
+finite rank and Hausdorff fibers supplied by the bundle structures. -/
+def maximalRealFormComplexificationEquiv
+    (i : ∀ x, W x →L[ℝ] V x) (x : B)
+    (hinj : Injective (i x))
+    (hmax : IsMaximalTotallyReal
       ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (i x).toLinearMap.range)
-    (x : B) : (ℂ ⊗[ℝ] W x) ≃L[ℂ] V x :=
-  let := FiberBundle.t2Space F W x
+    : (ℂ ⊗[ℝ] W x) ≃L[ℂ] V x :=
   let := FiberBundle.t2Space G V x
   let := VectorBundle.finiteDimensional ℝ F W x
-  let : FiniteDimensional ℝ (ℂ ⊗[ℝ] W x) :=
-    (complexificationLinearEquivProd (W x)).symm.finiteDimensional
-  let e := ((i x).toLinearMap.isBaseChange_complex_of_isMaximalTotallyReal (hinj x) (hmax x)).equiv
-  let r := (e.restrictScalars ℝ).toContinuousLinearEquiv
-  { toLinearEquiv := e
-    continuous_toFun := by
-      rw [LinearEquiv.toFun_eq_coe]
-      exact r.continuous.congr fun u ↦ by
-        simp only [r, LinearEquiv.coe_toContinuousLinearEquiv', LinearEquiv.restrictScalars_apply]
-    continuous_invFun := by
-      rw [LinearEquiv.invFun_eq_symm]
-      exact r.symm.continuous.congr fun u ↦ by
-        simp only [r, LinearEquiv.coe_toContinuousLinearEquiv_symm',
-          LinearEquiv.restrictScalars_symm_apply] }
-
-/-- The characteristic action of the canonical equivalence on actual tensors. -/
-@[simp]
-theorem maximalRealFormComplexificationEquiv_tmul (i : ∀ x, W x →L[ℝ] V x)
-    (hinj : ∀ x, Injective (i x))
-    (hmax : ∀ x, IsMaximalTotallyReal
-      ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (i x).toLinearMap.range)
-    (x : B) (c : ℂ) (w : W x) :
-    maximalRealFormComplexificationEquiv (F := F) (G := G) i hinj hmax x (c ⊗ₜ[ℝ] w) =
-      c • i x w := by
-  unfold maximalRealFormComplexificationEquiv
-  exact IsBaseChange.equiv_tmul _ c w
+  (i x).complexificationEquivOfIsMaximalTotallyReal hinj hmax
 
 /-- Forgetting continuity recovers the canonical native algebraic base-change equivalence. -/
 @[simp]
-theorem maximalRealFormComplexificationEquiv_toLinearEquiv (i : ∀ x, W x →L[ℝ] V x)
-    (hinj : ∀ x, Injective (i x))
-    (hmax : ∀ x, IsMaximalTotallyReal
+theorem maximalRealFormComplexificationEquiv_toLinearEquiv
+    (i : ∀ x, W x →L[ℝ] V x) (x : B)
+    (hinj : Injective (i x))
+    (hmax : IsMaximalTotallyReal
+      ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (i x).toLinearMap.range) :
+    (maximalRealFormComplexificationEquiv (F := F) (G := G) i x hinj hmax).toLinearEquiv =
+      ((i x).toLinearMap.isBaseChange_complex_of_isMaximalTotallyReal hinj hmax).equiv := by
+  simp only [maximalRealFormComplexificationEquiv,
+    ContinuousLinearMap.complexificationEquivOfIsMaximalTotallyReal_toLinearEquiv]
+
+/-- The characteristic action of the canonical equivalence on actual tensors. -/
+@[simp]
+theorem maximalRealFormComplexificationEquiv_tmul
+    (i : ∀ x, W x →L[ℝ] V x) (x : B)
+    (hinj : Injective (i x))
+    (hmax : IsMaximalTotallyReal
       ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (i x).toLinearMap.range)
-    (x : B) :
-    (maximalRealFormComplexificationEquiv (F := F) (G := G) i hinj hmax x).toLinearEquiv =
-      ((i x).toLinearMap.isBaseChange_complex_of_isMaximalTotallyReal (hinj x) (hmax x)).equiv := by
-  unfold maximalRealFormComplexificationEquiv
-  rfl
+    (c : ℂ) (w : W x) :
+    maximalRealFormComplexificationEquiv (F := F) (G := G) i x hinj hmax (c ⊗ₜ[ℝ] w) =
+      c • i x w := by
+  rw [← ContinuousLinearEquiv.coe_toLinearEquiv, maximalRealFormComplexificationEquiv_toLinearEquiv,
+    IsBaseChange.equiv_tmul, ContinuousLinearMap.coe_coe]
 
 variable [∀ x, ContinuousConstSMul ℂ (V x)]
 
 /-- The equivalence is the actual canonical continuous complex-linear base-change lift. -/
-theorem maximalRealFormComplexificationEquiv_apply (i : ∀ x, W x →L[ℝ] V x)
-    (hinj : ∀ x, Injective (i x))
-    (hmax : ∀ x, IsMaximalTotallyReal
+theorem maximalRealFormComplexificationEquiv_apply
+    (i : ∀ x, W x →L[ℝ] V x) (x : B)
+    (hinj : Injective (i x))
+    (hmax : IsMaximalTotallyReal
       ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (i x).toLinearMap.range)
-    (x : B) (u : ℂ ⊗[ℝ] W x) :
-    maximalRealFormComplexificationEquiv (F := F) (G := G) i hinj hmax x u =
-      (i x).liftBaseChangeComplex u := by
-  exact DFunLike.congr_fun ((i x).liftBaseChangeComplex_unique
-    (maximalRealFormComplexificationEquiv (F := F) (G := G) i hinj hmax x).toContinuousLinearMap
+    (u : ℂ ⊗[ℝ] W x) :
+    maximalRealFormComplexificationEquiv (F := F) (G := G) i x hinj hmax u =
+      (i x).liftBaseChangeComplex u :=
+  DFunLike.congr_fun ((i x).liftBaseChangeComplex_unique
+    (maximalRealFormComplexificationEquiv (F := F) (G := G) i x hinj hmax).toContinuousLinearMap
     (fun w ↦ by simp)) u
 
 end Equivalence
@@ -143,7 +133,8 @@ def maximalRealFormComplexificationDiffeomorph (i : ∀ x, W x →L[ℝ] V x)
   let : FiniteDimensional ℝ (Complexification F) :=
     (Complexification.equivProd F).symm.finiteDimensional
   bundleDiffeomorph (fun x ↦
-    (maximalRealFormComplexificationEquiv (F := F) (G := G) i hinj hmax x).restrictScalars' ℝ)
+    (maximalRealFormComplexificationEquiv (F := F) (G := G) i x (hinj x)
+      (hmax x)).restrictScalars' ℝ)
     (by
       simpa only [ContinuousLinearEquiv.coe_restrictScalars',
         maximalRealFormComplexificationEquiv_apply] using
@@ -159,7 +150,8 @@ theorem maximalRealFormComplexificationDiffeomorph_apply (i : ∀ x, W x →L[�
       ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (i x).toLinearMap.range)
     (p : TotalSpace (Complexification F) (fun x ↦ ℂ ⊗[ℝ] W x)) :
     maximalRealFormComplexificationDiffeomorph i hi hinj hmax p =
-      ⟨p.proj, maximalRealFormComplexificationEquiv (F := F) (G := G) i hinj hmax p.proj p.2⟩ := by
+      ⟨p.proj, maximalRealFormComplexificationEquiv (F := F) (G := G) i p.proj (hinj p.proj)
+        (hmax p.proj) p.2⟩ := by
   simp only [maximalRealFormComplexificationDiffeomorph, bundleDiffeomorph_apply,
     ContinuousLinearEquiv.coe_restrictScalars']
 
@@ -173,8 +165,8 @@ theorem maximalRealFormComplexificationDiffeomorph_symm_apply (i : ∀ x, W x �
       ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (i x).toLinearMap.range)
     (p : TotalSpace G V) :
     (maximalRealFormComplexificationDiffeomorph i hi hinj hmax).symm p =
-      ⟨p.proj, (maximalRealFormComplexificationEquiv (F := F) (G := G) i hinj hmax p.proj).symm
-        p.2⟩ := by
+      ⟨p.proj, (maximalRealFormComplexificationEquiv (F := F) (G := G) i p.proj (hinj p.proj)
+        (hmax p.proj)).symm p.2⟩ := by
   simp only [maximalRealFormComplexificationDiffeomorph, bundleDiffeomorph_symm_apply,
     ContinuousLinearEquiv.coe_restrictScalars'_symm]
 
@@ -209,6 +201,22 @@ theorem maximalRealFormConjugationDiffeomorph_apply (i : ∀ x, W x →L[ℝ] V 
   simp only [← ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.toLinearEquiv_symm,
     maximalRealFormComplexificationEquiv_toLinearEquiv]
 
+/-- Applying the smooth conjugation twice gives back the input point of the total space. This is
+not tagged `@[simp]`: `simp` already proves it from `maximalRealFormConjugationDiffeomorph_apply`
+and the fiberwise simp lemma
+`LinearMap.conjugationOfMaximalTotallyReal_conjugationOfMaximalTotallyReal`. -/
+theorem maximalRealFormConjugationDiffeomorph_apply_apply (i : ∀ x, W x →L[ℝ] V x)
+    (hi : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, G)) n
+      (fun p : TotalSpace F W ↦ (⟨p.proj, i p.proj p.2⟩ : TotalSpace G V)))
+    (hinj : ∀ x, Injective (i x))
+    (hmax : ∀ x, IsMaximalTotallyReal
+      ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (i x).toLinearMap.range)
+    (p : TotalSpace G V) :
+    maximalRealFormConjugationDiffeomorph i hi hinj hmax
+      (maximalRealFormConjugationDiffeomorph i hi hinj hmax p) = p := by
+  simp only [maximalRealFormConjugationDiffeomorph_apply,
+    LinearMap.conjugationOfMaximalTotallyReal_conjugationOfMaximalTotallyReal]
+
 /-- The smooth conjugation is an involution on the actual total space. -/
 theorem maximalRealFormConjugationDiffeomorph_involutive (i : ∀ x, W x →L[ℝ] V x)
     (hi : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, G)) n
@@ -216,11 +224,8 @@ theorem maximalRealFormConjugationDiffeomorph_involutive (i : ∀ x, W x →L[�
     (hinj : ∀ x, Injective (i x))
     (hmax : ∀ x, IsMaximalTotallyReal
       ((LinearMap.lsmul ℂ (V x) Complex.I).restrictScalars ℝ) (i x).toLinearMap.range) :
-    Involutive (maximalRealFormConjugationDiffeomorph i hi hinj hmax) := by
-  rintro ⟨x, v⟩
-  simp only [maximalRealFormConjugationDiffeomorph_apply]
-  exact congrArg (TotalSpace.mk x)
-    ((i x).toLinearMap.conjugationOfMaximalTotallyReal_involutive (hinj x) (hmax x) v)
+    Involutive (maximalRealFormConjugationDiffeomorph i hi hinj hmax) :=
+  maximalRealFormConjugationDiffeomorph_apply_apply i hi hinj hmax
 
 /-- The exact fixed locus is the given real range, rather than an assumed real-point carrier. -/
 theorem maximalRealFormConjugationDiffeomorph_eq_self_iff (i : ∀ x, W x →L[ℝ] V x)
@@ -248,8 +253,7 @@ variable (i : ∀ x, W x →L[ℝ] V x)
 theorem maximalRealFormConjugationDiffeomorph_smul (x : B) (c : ℂ) (v : V x) :
     maximalRealFormConjugationDiffeomorph i hi hinj hmax ⟨x, c • v⟩ =
       ⟨x, star c • (i x).toLinearMap.conjugationOfMaximalTotallyReal (hinj x) (hmax x) v⟩ := by
-  rw [maximalRealFormConjugationDiffeomorph_apply, map_smulₛₗ]
-  rfl
+  rw [maximalRealFormConjugationDiffeomorph_apply, map_smulₛₗ, starRingEnd_apply]
 
 /-- Any family of conjugate-linear maps fixing the given real inclusion is the actual smooth
 conjugation. No continuity or involution hypothesis on the competing family is necessary. -/
