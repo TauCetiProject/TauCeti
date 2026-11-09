@@ -29,7 +29,7 @@ public section
 
 namespace TauCeti
 
-open Filter MeasureTheory
+open Filter _root_.MeasureTheory
 open scoped ENNReal Topology
 
 /-- **On a finite measure space, `Lᵖ` convergence implies `L¹` convergence.** -/
