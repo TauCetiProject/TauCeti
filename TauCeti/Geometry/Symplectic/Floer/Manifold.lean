@@ -776,17 +776,7 @@ theorem setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero (ω : Symplectic
     (isNondegenerate_constSmooth ω).setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero hU
     (contMDiffOn_iff_contDiffOn.mpr hu) (hK' hKs) (hK' hKt) hC hCU hKsC hKtC hD hCD
     (hE' ▸ hE) (hR' ▸ hR)
-  have harea (z : ℝ × ℝ) :
-      SmoothBundleForm.eval₂ ω.constSmooth (u z)
-          (mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, V) u z stdComplexLineReal)
-          (mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, V) u z stdComplexLineImag) =
-      ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
-    refine (eval₂_constSmooth_mfderiv_eq ω u z stdComplexLineReal stdComplexLineImag).trans ?_
-    simp only [mvfderiv_eq_fderiv, ContinuousLinearMap.coe_comp, Function.comp_def,
-      ContinuousLinearEquiv.coe_coe]
-    rw [NormedSpace.fromTangentSpace_apply (𝕜 := ℝ) z stdComplexLineReal,
-      NormedSpace.fromTangentSpace_apply (𝕜 := ℝ) z stdComplexLineImag]
-  simpa only [hE', hR', harea] using h
+  simpa only [hE', hR', eval₂_constSmooth_mfderiv_eq_fderiv] using h
 
 
 end TauCeti.SymplecticForm

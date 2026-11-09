@@ -838,14 +838,8 @@ theorem integral_floerEnergyDensity_pssPlanePerturbation_closedBall (ω : Symple
           ω.hamiltonianCurvature
             (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
             (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
-  -- The symplectic area density of the constant form is `ω(∂_s u, ∂_t u)`.
-  have harea (z : ℝ × ℝ) : SmoothBundleForm.eval₂ ω.constSmooth (u z)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, V) u z stdComplexLineReal)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, V) u z stdComplexLineImag) =
-        ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
-    rw [← SmoothTwoForm.floerEnergyDensity_zero, floerEnergyDensity_constSmooth,
-      floerEnergyDensity_zero]
-  simpa only [floerEnergyDensity_constSmooth, hamiltonianCurvature_constSmooth, harea] using
+  simpa only [floerEnergyDensity_constSmooth, hamiltonianCurvature_constSmooth,
+    eval₂_constSmooth_mfderiv_eq_fderiv] using
     (isNondegenerate_constSmooth ω).integral_floerEnergyDensity_pssPlanePerturbation_closedBall
       (p := p) hH (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff) hu.contMDiff hR
 

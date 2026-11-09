@@ -59,9 +59,10 @@ example.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.tames_iff`, `invariant_iff`, and `compatible_iff`: these
   relations characterized fiber by fiber through the linear theory.
 * `TauCeti.SymplecticForm.constSmooth`: a symplectic form as a constant smooth two-form, which is
-  symplectic (`TauCeti.SymplecticForm.isSymplectic_constSmooth`), together with its `mvfderiv` and
-  partial-diffeomorphism pullback characterizations
+  symplectic (`TauCeti.SymplecticForm.isSymplectic_constSmooth`), together with its `mvfderiv`,
+  `fderiv` and partial-diffeomorphism pullback characterizations
   (`TauCeti.SymplecticForm.eval₂_constSmooth_mfderiv_eq`,
+  `TauCeti.SymplecticForm.eval₂_constSmooth_mfderiv_eq_fderiv`,
   `TauCeti.SmoothTwoForm.mpullback_constSmooth_eq_mpullback_subtype_val_iff`).
 
 The definitions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
@@ -390,6 +391,17 @@ theorem eval₂_constSmooth_mfderiv_eq (omegaForm : SymplecticForm V) (f : M →
   rw [fromTangentSpace_constSmooth_apply, mvfderiv_apply_eq_mfderiv_apply,
     mvfderiv_apply_eq_mfderiv_apply, NormedSpace.fromTangentSpace_apply,
     NormedSpace.fromTangentSpace_apply]
+
+/-- For a map between vector spaces, evaluating the constant smooth two-form
+`omegaForm.constSmooth` on `mfderiv` agrees with evaluating `omegaForm` on `fderiv`. -/
+theorem eval₂_constSmooth_mfderiv_eq_fderiv (omegaForm : SymplecticForm V) (f : E → V)
+    (x v w : E) :
+    omegaForm.constSmooth.eval₂ (f x) (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, V) f x v)
+        (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, V) f x w) =
+      omegaForm (fderiv ℝ f x v) (fderiv ℝ f x w) := by
+  exact (eval₂_constSmooth_mfderiv_eq omegaForm f x v w).trans <|
+    congrArg₂ (fun a b ↦ omegaForm a b) (mvfderiv_eq_fderiv_apply f x v)
+      (mvfderiv_eq_fderiv_apply f x w)
 
 /-- A constant smooth symplectic form is fiberwise nondegenerate. -/
 @[simp]
