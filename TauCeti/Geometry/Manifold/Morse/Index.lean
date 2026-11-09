@@ -151,7 +151,7 @@ theorem manifoldMorseIndex_transContinuousLinearEquiv (e : E ≃L[ℝ] E') :
 
 /-- If the preferred-chart Hessian is nondegenerate, the manifold Morse indices of a function and
 its negation add to the dimension of the model space. -/
-theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank [FiniteDimensional ℝ E]
+theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     (h : (hessianQuadraticForm (f ∘ (extChartAt I x).symm)
       (extChartAt I x x)).Nondegenerate) :
     manifoldMorseIndex I (-f) x + manifoldMorseIndex I f x = Module.finrank ℝ E := by
@@ -165,7 +165,7 @@ namespace IsManifoldNondegenerateCriticalPoint
 
 /-- At a nondegenerate critical point, the Morse indices of a function and its negation add to
 the dimension of the manifold. -/
-theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank [FiniteDimensional ℝ E]
+theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     (h : IsManifoldNondegenerateCriticalPoint I f x) :
     manifoldMorseIndex I (-f) x + manifoldMorseIndex I f x = Module.finrank ℝ E := by
   exact TauCeti.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
