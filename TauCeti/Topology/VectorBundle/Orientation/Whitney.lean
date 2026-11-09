@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cohomology.Cup.Relative
+public import TauCeti.AlgebraicTopology.Cohomology.Local.Cross
 public import TauCeti.Topology.VectorBundle.Orientation.EulerClass
 public import TauCeti.Topology.VectorBundle.Orientation.Prod
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
@@ -26,13 +26,9 @@ nonzero vectors are those whose first or second component is nonzero, so the Tho
 spaces `E₁_b` and `E₂_b` (`TauCeti.singularCohomologyMap_fiberThomPairMap_thomPairCup`), and its
 Euler class is the cup product of the Euler classes
 (`TauCeti.eulerClass_thomPairCup`): the zero section of `E₁ ⊕ E₂` followed by `pᵢ` is the zero
-section of `Eᵢ`. For the model fibres, the product
-`Hᵖ(F₁, F₁ ∖ {0}) × H^q(F₂, F₂ ∖ {0}) ⟶ Hᵖ⁺^q(F₁ × F₂, (F₁ × F₂) ∖ {0})` is
-`TauCeti.complZeroPairCross`. For fibres with closed points, the restriction of
-`TauCeti.thomPairCup` to the fibre over `b` is this product for `E₁_b` and `E₂_b`
-(`TauCeti.singularCohomologyMap_fiberThomPairMap_thomPairCup_eq_complZeroPairCross`). It is
-natural under products of continuous linear equivalences
-(`TauCeti.complZeroPairCross_singularCohomologyMap_complZeroPairIso_hom`).
+section of `Eᵢ`. For fibres with closed points, the restriction of `TauCeti.thomPairCup` to the
+fibre over `b` is the product `TauCeti.complZeroPairCross` of local classes for `E₁_b` and `E₂_b`
+(`TauCeti.singularCohomologyMap_fiberThomPairMap_thomPairCup_eq_complZeroPairCross`).
 
 For orientations `o₁` and `o₂`, the direct sum carries the orientation `o₁.prod o₂`, the first
 factor before the second. Normalize Thom classes as in
@@ -42,10 +38,13 @@ sum, normalized by `ω₁.prod ω₂` and the product of `g₁` and `g₂`, is t
 classes** (`TauCeti.VectorBundleOrientation.thomClassOfModel_prod`), and so **the Euler class of
 the direct sum is the cup product of the Euler classes**
 (`TauCeti.VectorBundleOrientation.eulerClass_thomClassOfModel_prod`), the Whitney product formula
-`e(E₁ ⊕ E₂) = e(E₁) ⌣ e(E₂)`. Both hold for arbitrary coefficient modules and pairings, and over
-an arbitrary base. The proof reads both sides on the fibre over each point in the product of the
-preferred trivializations: it reads the product orientation as the product of the two readings,
-and reversing either factor reverses both the orientation and the product of the model classes.
+`e(E₁ ⊕ E₂) = e(E₁) ⌣ e(E₂)`. Both hold over an arbitrary base, for any commutative ring `K`,
+projective coefficient modules `R₁`, `R₂`, `R₃` over `K`, arbitrary coefficient modules `M₁`,
+`M₂`, `M₃` and arbitrary pairings; `TauCeti.thomPairCup` and `TauCeti.eulerClass_thomPairCup`
+hold more generally in any abelian monoidal category of coefficients. The proof reads both sides
+on the fibre over each point in the product of the preferred trivializations: it reads the
+product orientation as the product of the two readings, and reversing either factor reverses
+both the orientation and the product of the model classes.
 
 The integral Thom class `TauCeti.VectorBundleOrientation.thomClass` is normalized by the
 generators `Orientation.localCohomologyClass`; the integral form of the formula further needs the
@@ -58,8 +57,6 @@ product of the generators selected by `ω₁` and `ω₂` to be the generator se
   `E₁ ⊕ E₂` onto those of `E₁` and `E₂`.
 * `TauCeti.thomPairCup`: the product of classes of the Thom pairs of `E₁` and `E₂`, a class of
   the Thom pair of `E₁ ⊕ E₂`.
-* `TauCeti.complZeroPairCross`: the product of classes of the pairs `(V₁, V₁ ∖ {0})` and
-  `(V₂, V₂ ∖ {0})`, a class of `(V₁ × V₂, (V₁ × V₂) ∖ {0})`.
 
 ## Main results
 
@@ -68,8 +65,6 @@ product of the generators selected by `ω₁` and `ω₂` to be the generator se
   restriction of the product to a fibre.
 * `TauCeti.eulerClass_thomPairCup`: the Euler class of the product is the cup product of the
   Euler classes.
-* `TauCeti.complZeroPairCross_singularCohomologyMap_complZeroPairIso_hom`: naturality of the
-  fibre product under products of continuous linear equivalences.
 * `TauCeti.VectorBundleOrientation.thomClassOfModel_prod`: the Thom class of the direct sum is the
   product of the Thom classes.
 * `TauCeti.VectorBundleOrientation.eulerClass_thomClassOfModel_prod`: the Whitney product formula
@@ -137,54 +132,7 @@ theorem zeroSectionCompl_prod_subset :
   simp only [mem_union, mem_preimage, mem_zeroSectionCompl, not_or, not_not] at hc
   exact mem_zeroSectionCompl.1 hv (Prod.ext hc.1 hc.2)
 
-/-- If a vector of a product of two spaces with zero is nonzero, then one of its components is
-nonzero. -/
-theorem compl_zero_prod_subset (V₁ V₂ : Type w) [TopologicalSpace V₁] [TopologicalSpace V₂]
-    [Zero V₁] [Zero V₂] :
-    ({0}ᶜ : Set (TopCat.of (V₁ × V₂))) ⊆
-      (TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁))) ⁻¹' {0}ᶜ ∪
-        (TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂))) ⁻¹' {0}ᶜ := by
-  intro v hv
-  by_contra hc
-  simp only [mem_union, mem_preimage, mem_compl_singleton_iff, not_or, not_not] at hc
-  exact hv (Prod.ext hc.1 hc.2)
-
 end Prod
-
-section ComplZeroPairCross
-
-variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [MonoidalCategory C]
-  [MonoidalPreadditive C] {R S T M N L : C} (k : Type*) [CommRing k] [Linear k C]
-  [MonoidalLinear k C]
-
-/-- **The product of classes of the pairs `(V, V ∖ {0})`.** For spaces `V₁` and `V₂` with a zero
-and closed points, such as finite-dimensional real vector spaces, this is the pairing
-`Hᵖ(V₁, V₁ ∖ {0}; R, M) × H^q(V₂, V₂ ∖ {0}; S, N) ⟶ Hⁿ(V₁ × V₂, (V₁ × V₂) ∖ {0}; T, L)`,
-`p + q = n`, sending `(g₁, g₂)` to the relative cup product of their pull-backs along the two
-projections (`TopCat.singularRelativeCupPullback`). It is the fibre value of the product of Thom
-pair classes `TauCeti.thomPairCup`
-(`TauCeti.singularCohomologyMap_fiberThomPairMap_thomPairCup_eq_complZeroPairCross`). -/
-def complZeroPairCross (V₁ V₂ : Type w) [TopologicalSpace V₁] [Zero V₁] [T1Space V₁]
-    [TopologicalSpace V₂] [Zero V₂] [T1Space V₂] (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L)
-    (p q n : ℕ) (h : p + q = n) :
-    (TopPair.ofSubset (X := TopCat.of V₁) ({0}ᶜ : Set V₁)).singularCohomology R k M p →ₗ[k]
-      (TopPair.ofSubset (X := TopCat.of V₂) ({0}ᶜ : Set V₂)).singularCohomology S k N q →ₗ[k]
-        (TopPair.ofSubset (X := TopCat.of (V₁ × V₂)) ({0}ᶜ : Set (V₁ × V₂))).singularCohomology T
-          k L n :=
-  TopCat.singularRelativeCupPullback k u μ (TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁)))
-    (TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂))) isOpen_compl_singleton
-    isOpen_compl_singleton (compl_zero_prod_subset V₁ V₂) p q n h
-
-theorem complZeroPairCross_def (V₁ V₂ : Type w) [TopologicalSpace V₁] [Zero V₁] [T1Space V₁]
-    [TopologicalSpace V₂] [Zero V₂] [T1Space V₂] (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L)
-    (p q n : ℕ) (h : p + q = n) :
-    complZeroPairCross k V₁ V₂ u μ p q n h =
-      TopCat.singularRelativeCupPullback k u μ (TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁)))
-        (TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂))) isOpen_compl_singleton
-        isOpen_compl_singleton (compl_zero_prod_subset V₁ V₂) p q n h :=
-  (rfl)
-
-end ComplZeroPairCross
 
 section ThomPairCup
 
@@ -279,8 +227,9 @@ theorem singularCohomologyMap_fiberThomPairMap_thomPairCup_eq_complZeroPairCross
         (thomPairCup k F₁ E₁ F₂ E₂ u μ p q n h a a') =
       complZeroPairCross k (E₁ b) (E₂ b) u μ p q n h
         (TopPair.singularCohomologyMap (fiberThomPairMap F₁ E₁ b) p a)
-        (TopPair.singularCohomologyMap (fiberThomPairMap F₂ E₂ b) q a') :=
-  singularCohomologyMap_fiberThomPairMap_thomPairCup k u μ p q n h b a a'
+        (TopPair.singularCohomologyMap (fiberThomPairMap F₂ E₂ b) q a') := by
+  rw [complZeroPairCross_def]
+  exact singularCohomologyMap_fiberThomPairMap_thomPairCup k u μ p q n h b a a'
 
 variable (F₁ E₁ F₂ E₂) in
 /-- The zero section of `E₁ ⊕ E₂` followed by the projection onto `E₁` is the zero section of
@@ -312,8 +261,7 @@ theorem zeroSectionHom_comp_totalSpaceProdSnd :
 
 variable (F₁ E₁ F₂ E₂) in
 /-- **The Euler class of a product of Thom pair classes is the cup product of the Euler classes**:
-the zero section of `E₁ ⊕ E₂` followed by the projection onto `Eᵢ` is the zero section of
-`Eᵢ`. -/
+the Euler class of `thomPairCup a a'` is the cup product of the Euler classes of `a` and `a'`. -/
 @[simp]
 theorem eulerClass_thomPairCup (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) (p q n : ℕ) (h : p + q = n)
     (a : (thomPair F₁ E₁).singularCohomology R k M p)
@@ -325,6 +273,7 @@ theorem eulerClass_thomPairCup (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) (p q n :
     TopCat.singularCohomologyπ_singularRelativeCupPullback]
   refine (TopCat.singularCup_naturality _ k u μ p q n h _ _).symm.trans ?_
   rw [eulerClass_def, eulerClass_def]
+  -- The zero section of `E₁ ⊕ E₂` followed by the projection onto `Eᵢ` is the zero section of `Eᵢ`.
   refine congrArg₂ (fun x y ↦ (TopCat.of B).singularCup k u μ p q n h x y) ?_ ?_
   · rw [← zeroSectionHom_comp_totalSpaceProdFst F₁ E₁ F₂ E₂]
     exact (ConcreteCategory.congr_hom (TopCat.singularCohomologyMap_comp (R := R) (k := k)
@@ -334,59 +283,6 @@ theorem eulerClass_thomPairCup (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ L) (p q n :
       (M := N) (zeroSectionHom (F₁ × F₂) (E₁ ×ᵇ E₂)) (totalSpaceProdSnd F₁ E₁ F₂ E₂) q) _).symm
 
 end ThomPairCup
-
-section LinearEquiv
-
-variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [MonoidalCategory C]
-  [MonoidalPreadditive C] {R S T M N L : C} (k : Type*) [CommRing k] [Linear k C]
-  [MonoidalLinear k C]
-  {𝕜 : Type*} [Semiring 𝕜] {V₁ V₂ W₁ W₂ : Type w}
-  [TopologicalSpace V₁] [AddCommMonoid V₁] [Module 𝕜 V₁]
-  [TopologicalSpace V₂] [AddCommMonoid V₂] [Module 𝕜 V₂]
-  [TopologicalSpace W₁] [AddCommMonoid W₁] [Module 𝕜 W₁]
-  [TopologicalSpace W₂] [AddCommMonoid W₂] [Module 𝕜 W₂]
-  [T1Space V₁] [T1Space V₂] [T1Space W₁] [T1Space W₂]
-
-/-- **Naturality of the product of local classes under product equivalences.** For continuous
-linear equivalences `f₁ : V₁ ≃L W₁` and `f₂ : V₂ ≃L W₂`, the product, for `V₁ × V₂`, of the
-pull-backs along `f₁` and `f₂` of classes `g₁ ∈ Hᵖ(W₁, W₁ ∖ {0})` and `g₂ ∈ H^q(W₂, W₂ ∖ {0})` is
-the pull-back along `f₁ × f₂` of their product for `W₁ × W₂`. -/
-theorem complZeroPairCross_singularCohomologyMap_complZeroPairIso_hom (u : T ⟶ R ⊗ S)
-    (μ : M ⊗ N ⟶ L) (f₁ : V₁ ≃L[𝕜] W₁) (f₂ : V₂ ≃L[𝕜] W₂) (p q n : ℕ) (h : p + q = n)
-    (g₁ : (TopPair.ofSubset (X := TopCat.of W₁) ({0}ᶜ : Set W₁)).singularCohomology R k M p)
-    (g₂ : (TopPair.ofSubset (X := TopCat.of W₂) ({0}ᶜ : Set W₂)).singularCohomology S k N q) :
-    complZeroPairCross k V₁ V₂ u μ p q n h
-        (TopPair.singularCohomologyMap f₁.complZeroPairIso.hom p g₁)
-        (TopPair.singularCohomologyMap f₂.complZeroPairIso.hom q g₂) =
-      TopPair.singularCohomologyMap (f₁.prodCongr f₂).complZeroPairIso.hom n
-        (complZeroPairCross k W₁ W₂ u μ p q n h g₁ g₂) := by
-  -- A nonzero vector of `V₁ × V₂` has a component with nonzero image.
-  have hZ (x : V₁ × V₂) (hx : x ≠ 0) : f₁ x.1 ≠ 0 ∨ f₂ x.2 ≠ 0 := by
-    rcases compl_zero_prod_subset V₁ V₂ hx with h | h
-    exacts [Or.inl ((map_ne_zero_iff _ f₁.injective).2 h),
-      Or.inr ((map_ne_zero_iff _ f₂.injective).2 h)]
-  rw [complZeroPairCross_def, complZeroPairCross_def, ContinuousLinearEquiv.complZeroPairIso_hom,
-    ContinuousLinearEquiv.complZeroPairIso_hom, ContinuousLinearEquiv.complZeroPairIso_hom]
-  refine (TopCat.singularRelativeCupPullback_singularCohomologyMap k u μ _ _ _ _
-    isOpen_compl_singleton isOpen_compl_singleton isOpen_compl_singleton isOpen_compl_singleton
-    _ _ _ ?hZ₁ p q n h g₁ g₂).trans ?_
-  case hZ₁ => exact fun x hx ↦ hZ x hx
-  refine Eq.trans ?_ (TopCat.singularCohomologyMap_singularRelativeCupPullback k u μ _ _ _ _ _ _
-    _ ?hZ₂ p q n h g₁ g₂).symm
-  case hZ₂ => exact fun x hx ↦ hZ x hx
-  have h₁ : TopCat.ofHom (ContinuousMap.fst : C(V₁ × V₂, V₁)) ≫
-      TopCat.ofHom ((f₁ : V₁ →L[𝕜] W₁) : C(V₁, W₁)) =
-      TopCat.ofHom (((f₁.prodCongr f₂ : (V₁ × V₂) ≃L[𝕜] (W₁ × W₂)) : (V₁ × V₂) →L[𝕜] (W₁ × W₂)) :
-        C(V₁ × V₂, W₁ × W₂)) ≫ TopCat.ofHom (ContinuousMap.fst : C(W₁ × W₂, W₁)) :=
-    TopCat.ext fun _ ↦ rfl
-  have h₂ : TopCat.ofHom (ContinuousMap.snd : C(V₁ × V₂, V₂)) ≫
-      TopCat.ofHom ((f₂ : V₂ →L[𝕜] W₂) : C(V₂, W₂)) =
-      TopCat.ofHom (((f₁.prodCongr f₂ : (V₁ × V₂) ≃L[𝕜] (W₁ × W₂)) : (V₁ × V₂) →L[𝕜] (W₁ × W₂)) :
-        C(V₁ × V₂, W₁ × W₂)) ≫ TopCat.ofHom (ContinuousMap.snd : C(W₁ × W₂, W₂)) :=
-    TopCat.ext fun _ ↦ rfl
-  simp only [h₁, h₂]
-
-end LinearEquiv
 
 namespace VectorBundleOrientation
 

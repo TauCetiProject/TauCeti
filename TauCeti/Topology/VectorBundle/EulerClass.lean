@@ -192,8 +192,7 @@ variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [N
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
 
 variable (F E) in
-/-- **The nonzero vectors of a real vector bundle form an open set**: over the base set of a
-linear trivialization, a vector is nonzero exactly when its coordinate in the model fibre is. -/
+/-- The nonzero vectors of a real vector bundle form an open set. -/
 theorem isOpen_zeroSectionCompl : IsOpen (zeroSectionCompl F E) := by
   refine isOpen_iff_forall_mem_open.2 fun v hv ↦ ?_
   let e := trivializationAt F E v.proj
