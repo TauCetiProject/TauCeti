@@ -305,6 +305,7 @@ theorem contMDiff_cappedAlmostComplex (hJp : ∀ q, Function.Periodic (J q) 1)
   -- Away from the poles, the Cayley coordinate is a sum of the end structures read at the
   -- angular coordinates, with weights that are smooth there.
   have hq (q : Puncture) : f y₀ ≠ q.endCenter := ne_endCenter (not_or.mp hS) q
+  simp only [cappedAlmostComplex_toEndomorphism]
   refine h₀.contMDiffAt_of_cayley_eq_sum
     (K := fun y => cappedAt h₀ J hJ (r y) (L y) (f y) (b y))
     (L := fun q y => J q (q.endCoord (f y)).im)

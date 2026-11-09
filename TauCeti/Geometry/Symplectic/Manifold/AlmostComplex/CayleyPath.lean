@@ -109,6 +109,31 @@ private theorem cayleyPathEnd_eq (t : ℝ) (x : M) :
     (h₁.compatibleAt x) t (J₀.almostComplexStructureAt_toLinearMap x).symm
     (J₁.almostComplexStructureAt_toLinearMap x).symm
 
+include h₀ in
+/-- Read in the tangent trivialization at `x₀`, the Cayley denominator `1 - J₀ L` of a tame
+structure `L` is invertible at `x₀`. -/
+private theorem isUnit_one_sub_inCoordinates_mul {L : SmoothAlmostComplexStructure I M}
+    (hL : σ.Tames L) (x₀ : M) :
+    IsUnit (1 - ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x₀ x₀ x₀ x₀
+        (J₀.toEndomorphism x₀) *
+      ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x₀ x₀ x₀ x₀
+        (L.toEndomorphism x₀)) := by
+  let : NormedAddCommGroup (TangentSpace I x₀) := inferInstanceAs (NormedAddCommGroup E)
+  let : NormedSpace ℝ (TangentSpace I x₀) := inferInstanceAs (NormedSpace ℝ E)
+  let e := trivializationAt E (TangentSpace I) x₀
+  have hx₀ : x₀ ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x₀
+  let φ₀ := (e.continuousLinearEquivAt ℝ x₀ hx₀).conjContinuousAlgEquiv
+  -- Reading in coordinates at `x₀` is conjugation by an algebra isomorphism.
+  have hconj (A : TangentSpace I x₀ →L[ℝ] TangentSpace I x₀) :
+      ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x₀ x₀ x₀ x₀ A =
+        φ₀ A := by
+    simp only [φ₀, e, ContinuousLinearMap.inCoordinates_eq hx₀ hx₀,
+      ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
+  rw [hconj, hconj, ← map_mul, ← map_one φ₀, ← map_sub]
+  exact ((h₀.compatibleAt x₀).tames.isUnit_one_sub_mul_of_toLinearMap
+    (h₀.isNondegenerate.tames_iff.mp hL x₀) (J₀.almostComplexStructureAt_toLinearMap x₀).symm
+    (L.almostComplexStructureAt_toLinearMap x₀).symm).map φ₀
+
 section Family
 
 variable {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP] [TopologicalSpace HP]
@@ -155,12 +180,8 @@ private theorem contMDiff_cayleyPathEnd_family {K₀ K₁ : P → SmoothAlmostCo
   -- The two denominators are invertible at `q₀`, since conjugation preserves units.
   let φ₀ := (e.continuousLinearEquivAt ℝ x₀ hx₀).conjContinuousAlgEquiv
   have hu₁ : IsUnit (1 - coord x₀ ((K₀ q₀.1).toEndomorphism x₀) *
-      coord x₀ ((K₁ q₀.1).toEndomorphism x₀)) := by
-    rw [hconj hx₀, hconj hx₀, ← map_mul, ← map_one φ₀, ← map_sub]
-    exact (SymplecticForm.Tames.isUnit_one_sub_mul_of_toLinearMap (V := E)
-      ((hc₀ q₀.1).compatibleAt x₀).tames ((hc₁ q₀.1).compatibleAt x₀).tames
-      ((K₀ q₀.1).almostComplexStructureAt_toLinearMap x₀).symm
-      ((K₁ q₀.1).almostComplexStructureAt_toLinearMap x₀).symm).map φ₀
+      coord x₀ ((K₁ q₀.1).toEndomorphism x₀)) :=
+    isUnit_one_sub_inCoordinates_mul (hc₀ q₀.1) (hc₁ q₀.1).tames x₀
   have hu₂ : IsUnit (1 - smoothTransition (τ q₀.1) •
       cayleyFormula (coord x₀ ((K₀ q₀.1).toEndomorphism x₀))
         (coord x₀ ((K₁ q₀.1).toEndomorphism x₀))) := by
@@ -243,10 +264,9 @@ path. -/
 private theorem cayleyPath_eq_of_forall {t : ℝ} {J : SmoothAlmostComplexStructure I M}
     (h : ∀ x, SymplecticForm.Compatible.cayleyPath (V := E) (h₀.compatibleAt x)
       (h₁.compatibleAt x) t = J.almostComplexStructureAt x) :
-    h₀.cayleyPath h₁ t = J := by
-  ext x v
-  rw [← (h₀.cayleyPath h₁ t).almostComplexStructureAt_apply x v,
-    ← J.almostComplexStructureAt_apply x v, almostComplexStructureAt_cayleyPath, h x]
+    h₀.cayleyPath h₁ t = J :=
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
+    rw [almostComplexStructureAt_cayleyPath, h x]
 
 /-- At every point, the Cayley coordinate of `J_t` relative to `J₀` is the Cayley coordinate of
 `J₁` scaled by `smoothTransition t`. Since compatible structures are determined by their Cayley
@@ -399,31 +419,6 @@ private theorem toContinuousLinearMap_eq_of_cayley_eq_sum {ι : Type*} [Fintype 
     B * (1 + LinearMap.toContinuousLinearMap ((J₀.almostComplexStructureAt x).cayley K)) *
       Ring.inverse (1 - LinearMap.toContinuousLinearMap
         ((J₀.almostComplexStructureAt x).cayley K))) hbase)
-
-include h₀ in
-/-- Read in the tangent trivialization at `x₀`, the Cayley denominator `1 - J₀ L` of a tame
-structure `L` is invertible at `x₀`. -/
-private theorem isUnit_one_sub_inCoordinates_mul {L : SmoothAlmostComplexStructure I M}
-    (hL : σ.Tames L) (x₀ : M) :
-    IsUnit (1 - ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x₀ x₀ x₀ x₀
-        (J₀.toEndomorphism x₀) *
-      ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x₀ x₀ x₀ x₀
-        (L.toEndomorphism x₀)) := by
-  let : NormedAddCommGroup (TangentSpace I x₀) := inferInstanceAs (NormedAddCommGroup E)
-  let : NormedSpace ℝ (TangentSpace I x₀) := inferInstanceAs (NormedSpace ℝ E)
-  let e := trivializationAt E (TangentSpace I) x₀
-  have hx₀ : x₀ ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x₀
-  let φ₀ := (e.continuousLinearEquivAt ℝ x₀ hx₀).conjContinuousAlgEquiv
-  -- Reading in coordinates at `x₀` is conjugation by an algebra isomorphism.
-  have hconj (A : TangentSpace I x₀ →L[ℝ] TangentSpace I x₀) :
-      ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x₀ x₀ x₀ x₀ A =
-        φ₀ A := by
-    simp only [φ₀, e, ContinuousLinearMap.inCoordinates_eq hx₀ hx₀,
-      ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
-  rw [hconj, hconj, ← map_mul, ← map_one φ₀, ← map_sub]
-  exact ((h₀.compatibleAt x₀).tames.isUnit_one_sub_mul_of_toLinearMap
-    (h₀.isNondegenerate.tames_iff.mp hL x₀) (J₀.almostComplexStructureAt_toLinearMap x₀).symm
-    (L.almostComplexStructureAt_toLinearMap x₀).symm).map φ₀
 
 /-- **Smoothness from Cayley coordinates.** Let `K y` be tame structures on the tangent spaces at
 the points `b y` of a `C^n` family, for `y` in a manifold `N`. If the Cayley coordinate of each

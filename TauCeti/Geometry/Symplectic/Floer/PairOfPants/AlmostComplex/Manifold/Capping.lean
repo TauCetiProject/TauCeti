@@ -196,6 +196,7 @@ theorem contMDiff_negativePlaneAlmostComplex {F G N : Type*} [NormedAddCommGroup
   have hp : Function.Periodic (fun t (x : M) => TotalSpace.mk' (E →L[ℝ] E)
       (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
       x ((J t).toEndomorphism x)) 1 := fun t => by simp only [hJp t]
+  simp only [negativePlaneAlmostComplex_toEndomorphism]
   exact h₀.contMDiffAt_of_cayley_eq_sum
     (K := fun y => negativePlaneAt h₀ J hJ (f y) (b y))
     (L := fun _ y => J (inf.endCoord (f y)).im)
