@@ -11,7 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 /-!
 # Real powers
 
-The inverse square root is the real power with exponent `-1/2`: `(√x)⁻¹ = x ^ (-2⁻¹)`. Like
+The inverse square root is the real power with exponent `-1/2`: `(√x)⁻¹ = x ^ (-1 / 2)`. Like
 Mathlib's `Real.sqrt_eq_rpow`, this holds for every real `x`. For `x < 0` both sides vanish: the
 square root is `0`, and `x ^ y = exp (log x * y) * cos (y * π)` has the factor `cos (-π / 2) = 0`.
 This is the form in which a kernel `1 / √d` is compared with the singular powers `|x - c| ^ (-1/2)`.
@@ -65,7 +65,7 @@ with the corresponding integral of `q`-th powers.
 
 ## Main results
 
-* `Real.inv_sqrt_eq_rpow`: `(√x)⁻¹ = x ^ (-2⁻¹)` for every real `x`.
+* `Real.inv_sqrt_eq_rpow`: `(√x)⁻¹ = x ^ (-1 / 2)` for every real `x`.
 * `Real.inv_sqrt_pow_eq_rpow`: `(√t)⁻¹ ^ n = t ^ (-n/2)` for `0 ≤ t`.
 * `Real.one_sub_mul_one_sub_sq_rpow_neg_one_div_two`:
   `(1 - x) (1 - x²)^(-1/2) = √(1 - x) / √(1 + x)` for every real `x`.
@@ -100,9 +100,10 @@ open Filter Topology Asymptotics
 
 namespace Real
 
-/-- The inverse square root is the real power with exponent `-1/2`: `(√x)⁻¹ = x ^ (-2⁻¹)`, for
-every real `x`. -/
-theorem inv_sqrt_eq_rpow (x : ℝ) : (√x)⁻¹ = x ^ (-2⁻¹ : ℝ) := by
+/-- The inverse square root is the real power with exponent `-1 / 2`: `(√x)⁻¹ = x ^ (-1 / 2)`,
+for every real `x`. -/
+theorem inv_sqrt_eq_rpow (x : ℝ) : (√x)⁻¹ = x ^ (-1 / 2 : ℝ) := by
+  rw [show (-1 / 2 : ℝ) = -2⁻¹ by norm_num]
   rcases le_or_gt 0 x with hx | hx
   · rw [sqrt_eq_rpow, rpow_neg hx, one_div]
   · rw [sqrt_eq_zero'.mpr hx.le, inv_zero, rpow_def_of_neg hx, neg_mul, cos_neg, inv_mul_eq_div,
@@ -119,7 +120,7 @@ sides vanish, and at `x = -1` both are `0` by the conventions `0 ^ y = 0` for `y
 complete elliptic integral is bounded. -/
 theorem one_sub_mul_one_sub_sq_rpow_neg_one_div_two (x : ℝ) :
     (1 - x) * (1 - x ^ 2) ^ (-1 / 2 : ℝ) = √(1 - x) / √(1 + x) := by
-  rw [show (-1 / 2 : ℝ) = -2⁻¹ by norm_num, ← inv_sqrt_eq_rpow,
+  rw [← inv_sqrt_eq_rpow,
     show 1 - x ^ 2 = (1 - x) * (1 + x) by ring]
   rcases le_or_gt 0 (1 - x) with h | h
   · have hs := mul_self_mul_inv √(1 - x)
