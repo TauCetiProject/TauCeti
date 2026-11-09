@@ -416,9 +416,10 @@ variable [LinearOrder X]
 class of `r` in `gr_1(F)` has a nonzero `p`-power coordinate, that is, when some exponent sum of
 `r` is not divisible by `p ^ 2`. -/
 theorem demushkinQ_presentedProP_eq_iff_exists_degreeOneBasis_repr_inl_ne_zero
-    (hr : r ∈ proPFrattini p (freeProP p X)) (hG : IsDemushkin p (presentedProP p X {r})) :
+    (hG : IsDemushkin p (presentedProP p X {r})) :
     demushkinQ hG = p ↔ ∃ i, (freeProP.degreeOneBasis p X).repr (gradedMk p (freeProP p X) 1
-      ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr⟩) (Sum.inl i) ≠ 0 := by
+      ⟨r, (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le
+        hG.mem_proPFrattini_of_presentedProP_singleton⟩) (Sum.inl i) ≠ 0 := by
   rw [demushkinQ_presentedProP_eq_iff_exists_not_dvd hG]
   simp only [ne_eq, freeProP.degreeOneBasis_repr_gradedMk_inl_eq_zero_iff]
 

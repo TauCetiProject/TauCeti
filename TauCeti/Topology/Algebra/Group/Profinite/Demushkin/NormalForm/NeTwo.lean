@@ -187,10 +187,12 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_toAdd_exponentS
 Demushkin group `G = ⟨x₁, …, x_n ∣ r⟩` with `q`-invariant `q(G) ≠ p`. Then a continuous
 automorphism of `F` carries `r` to `x₁^{q(G)} (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`. -/
 theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne
-    {r : freeProP p (Fin n)} (hr : r ∈ proPFrattini p (freeProP p (Fin n)))
+    {r : freeProP p (Fin n)}
     (hG : IsDemushkin p (presentedProP p (Fin n) {r})) (hq : demushkinQ hG ≠ p) :
     ∃ e : freeProP p (Fin n) ≃ₜ* freeProP p (Fin n),
       e r = demushkinWordNeTwo (demushkinQ hG) n (freeProPGen p n) := by
+  have hr : r ∈ proPFrattini p (freeProP p (Fin n)) :=
+    hG.mem_proPFrattini_of_presentedProP_singleton
   have hn : 0 < n := by simpa using hG.card_pos_presentedProP
   have hr₁ : r ∈ pLowerCentralSeries p (freeProP p (Fin n)) 1 :=
     (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr
@@ -276,14 +278,14 @@ theorem exists_continuousMulEquiv_apply_demushkinWordNeTwo_zero_mul_eq (hn : Eve
       (by rw [hcls]; exact nondegenerate_degreeOneForm_demushkinWordNeTwo hn (dvd_zero p))
   -- The class has no `p`-power part, so the `q`-invariant is not `p`.
   have hq : demushkinQ hG ≠ p := by
-    rw [Ne, demushkinQ_presentedProP_eq_iff_exists_degreeOneBasis_repr_inl_ne_zero hr hG,
+    rw [Ne, demushkinQ_presentedProP_eq_iff_exists_degreeOneBasis_repr_inl_ne_zero hG,
       not_exists]
     intro i hi
     apply hi
     rw [hcls, degreeOneBasis_repr_gradedMk_inl_eq_zero_iff, toAdd_exponentSum_demushkinWordNeTwo,
       Nat.cast_zero, zero_smul, Pi.zero_apply]
     exact dvd_zero _
-  obtain ⟨e, he⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne hr hG hq
+  obtain ⟨e, he⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne hG hq
   refine ⟨e, demushkinQ hG, ?_, he⟩
   by_cases h0 : demushkinQ hG = 0
   · exact Or.inl h0
@@ -304,8 +306,8 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne_t
     rw [hqp]
     exact exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_odd hp _
       (hG.nondegenerate_degreeOneForm hr (ContinuousMulEquiv.refl _))
-      ((demushkinQ_presentedProP_eq_iff_exists_degreeOneBasis_repr_inl_ne_zero hr hG).1 hqp)
-  · exact exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne hr hG hqp
+      ((demushkinQ_presentedProP_eq_iff_exists_degreeOneBasis_repr_inl_ne_zero hG).1 hqp)
+  · exact exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_demushkinQ_ne hG hqp
 
 /-- **Labute's normal form for a one-relator Demushkin group with `q ≠ 2`.** Let `r ∈ Φ(F)` be a
 relator of the free pro-`p` group on `n` generators presenting a Demushkin group with
