@@ -366,7 +366,7 @@ private theorem isBounded_intervalIntegrable_cauchyPV_of_interior_crossings
   have hγ_cont : ContinuousOn γ (Icc a b) := h_imm.continuousOn.mono (uIcc_of_le hab).ge
   have h_int_tr : ∀ ε : ℝ, 0 < ε → IntervalIntegrable
       (fun t ↦ if ‖γ t - s‖ > ε then (γ t - s)⁻¹ * deriv γ t else 0) volume a b :=
-    fun _ hε ↦ intervalIntegrable_inv_sub_truncated h_imm.continuousOn
+    fun _ hε ↦ intervalIntegrable_inv_sub_truncated
       h_imm.isPiecewiseC1On.intervalIntegrable_deriv hε
   -- Each crossing gets a window radius carrying its bounded, integrable and principal-value facts.
   choose! R hR_pos hR_bdd hR_int hR_win using fun t₀ (ht₀ : t₀ ∈ T) ↦
