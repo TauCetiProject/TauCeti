@@ -264,6 +264,18 @@ theorem partialCorrelationGram_apply_self {z : strictLowerTriangle p → ℝ}
   simpa [partialCorrelationGram, Matrix.mul_apply, Matrix.transpose_apply, pow_two] using
     sum_sq_partialCorrelationCholesky hz i
 
+/-- The first column of a partial-correlation Gram matrix consists of the first-column partial
+correlations, for arbitrary coordinates. -/
+@[simp]
+theorem partialCorrelationGram_apply_zero {n : ℕ} (z : strictLowerTriangle (n + 1) → ℝ)
+    {i : Fin (n + 1)} (hi : 0 < i) : partialCorrelationGram z i 0 = z ⟨(i, 0), hi⟩ := by
+  have hIic : Finset.Iic (0 : Fin (n + 1)) = {0} := by
+    ext k
+    simp
+  have hrow : (Finset.univ.filter fun ij : strictLowerTriangle (n + 1) ↦ ij.1.1 = 0) = ∅ :=
+    Finset.filter_eq_empty_iff.2 fun ij _ h ↦ Fin.not_lt_zero _ (h ▸ ij.2)
+  simp [partialCorrelationGram_apply_eq_sum_Iic, hIic, hi, hrow]
+
 /-- A partial-correlation Gram matrix is positive semidefinite for arbitrary coordinates. -/
 theorem posSemidef_partialCorrelationGram (z : strictLowerTriangle p → ℝ) :
     (partialCorrelationGram z).PosSemidef := by

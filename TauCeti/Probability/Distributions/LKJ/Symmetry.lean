@@ -30,6 +30,8 @@ Sign symmetry determines the mean. Flipping the sign of axis `i` negates every o
 in row `i`, so these entries have mean zero, while the diagonal entries are almost surely one.
 Every entry is bounded by one in absolute value, so the LKJ matrix is integrable, and for `η > 0`
 its mean is the identity matrix.
+Flipping the sign of an axis that indexes one of two distinct strictly lower entries but not the
+other negates only the first, so the two entries are uncorrelated.
 
 ## Main results
 
@@ -40,6 +42,8 @@ its mean is the identity matrix.
 * `TauCeti.Probability.map_symmetricCongruenceLinearMap_diagonal_lkjMeasure`: sign invariance.
 * `TauCeti.Probability.integrable_id_lkjMeasure` and `TauCeti.Probability.integral_id_lkjMeasure`:
   the LKJ matrix is integrable with mean the identity.
+* `TauCeti.Probability.covariance_coe_apply_lkjMeasure`: distinct strictly lower entries have
+  zero covariance.
 
 Independent symmetric partial correlations give a Gram law invariant under conjugation by
 any diagonal sign matrix. Off-diagonal integrals and covariances of distinct strictly lower
@@ -199,6 +203,52 @@ theorem integral_id_lkjMeasure (hη : 0 < η) :
   simp only [symmetricCoordinates_apply]
   exact integral_coe_apply_lkjMeasure hη ij.1.1 ij.1.2
 
+/-! ### Covariance -/
+
+/-- Distinct strictly lower positions `ij ≠ kl` have an index of `ij` that is not an index of
+`kl`. Flipping the sign of that axis negates entry `ij` and fixes entry `kl`. -/
+private theorem exists_index_ne_ne_of_ne {ij kl : strictLowerTriangle p} (hne : ij ≠ kl) :
+    ∃ v : Fin p, (v = ij.1.1 ∨ v = ij.1.2) ∧ v ≠ kl.1.1 ∧ v ≠ kl.1.2 := by
+  have hp : ij.1 ≠ kl.1 := Subtype.coe_injective.ne hne
+  have hij := ij.2
+  have hkl := kl.2
+  by_cases h : ij.1.1 = kl.1.1 ∨ ij.1.1 = kl.1.2
+  · refine ⟨ij.1.2, Or.inr rfl, ?_, ?_⟩
+    all_goals rcases h with h | h
+    all_goals intro h'
+    all_goals first | exact hp (Prod.ext h h') | omega
+  · exact ⟨ij.1.1, Or.inl rfl, fun h' ↦ h (Or.inl h'), fun h' ↦ h (Or.inr h')⟩
+
+/-- **Uncorrelated LKJ entries.** Distinct strictly lower entries of an LKJ matrix have zero
+covariance. Zero covariance does not assert independence of the entries. -/
+theorem covariance_coe_apply_lkjMeasure {ij kl : strictLowerTriangle p} (hne : ij ≠ kl) :
+    cov[fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+        (R : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2,
+      fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+        (R : Matrix (Fin p) (Fin p) ℝ) kl.1.1 kl.1.2; lkjMeasure p η] = 0 := by
+  obtain ⟨v, hv, hvk, hvl⟩ := exists_index_ne_ne_of_ne hne
+  have hij := ij.2
+  set s : Fin p → ℝ := fun k ↦ if k = v then -1 else 1
+  have hs : ∀ k, |s k| = 1 := fun k ↦ by by_cases hk : k = v <;> simp [s, hk]
+  have h := covariance_map_fun (μ := lkjMeasure p η)
+    (Z := Matrix.symmetricCongruenceLinearMap (Matrix.diagonal s))
+    (selfAdjoint.measurable_coe_apply ij.1.1 ij.1.2).aestronglyMeasurable
+    (selfAdjoint.measurable_coe_apply kl.1.1 kl.1.2).aestronglyMeasurable
+    (LinearMap.continuous_of_finiteDimensional _).measurable.aemeasurable
+  rw [map_symmetricCongruenceLinearMap_diagonal_lkjMeasure p η hs] at h
+  simp only [Matrix.coe_symmetricCongruenceLinearMap_apply, Matrix.diagonal_transpose,
+    Matrix.mul_diagonal, Matrix.diagonal_mul, s, Ne.symm hvk, Ne.symm hvl, ↓reduceIte,
+    one_mul, mul_one] at h
+  have hneg : (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+      (if ij.1.1 = v then -1 else 1) * (R : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 *
+        if ij.1.2 = v then -1 else 1) =
+      -fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+        (R : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 := by
+    funext R
+    rcases hv with rfl | rfl <;> simp [hij.ne, hij.ne']
+  rw [hneg, covariance_neg_left] at h
+  linarith
+
 /-! ### Sign symmetry and moments of partial-correlation Gram laws -/
 
 /-- Independent negation-invariant partial correlations give a Gram law invariant under
@@ -264,17 +314,9 @@ theorem covariance_apply_map_partialCorrelationGram_pi
     cov[fun R : Matrix (Fin p) (Fin p) ℝ ↦ R ij.1.1 ij.1.2,
         fun R : Matrix (Fin p) (Fin p) ℝ ↦ R kl.1.1 kl.1.2;
       (Measure.pi μ).map partialCorrelationGram] = 0 := by
-  have hp : ij.1 ≠ kl.1 := Subtype.coe_injective.ne hne
   have hij := ij.2
   have hkl := kl.2
-  obtain ⟨v, hv, hvk, hvl⟩ : ∃ v : Fin p,
-      (v = ij.1.1 ∨ v = ij.1.2) ∧ v ≠ kl.1.1 ∧ v ≠ kl.1.2 := by
-    by_cases h : ij.1.1 = kl.1.1 ∨ ij.1.1 = kl.1.2
-    · refine ⟨ij.1.2, Or.inr rfl, ?_, ?_⟩
-      all_goals rcases h with h | h
-      all_goals intro h'
-      all_goals first | exact hp (Prod.ext h h') | omega
-    · exact ⟨ij.1.1, Or.inl rfl, fun h' ↦ h (Or.inl h'), fun h' ↦ h (Or.inr h')⟩
+  obtain ⟨v, hv, hvk, hvl⟩ := exists_index_ne_ne_of_ne hne
   let s : Fin p → ℝ := fun k ↦ if k = v then -1 else 1
   have hs : ∀ k, |s k| = 1 := by intro k; simp [s]; split_ifs <;> norm_num
   have hsign : s ij.1.1 * s ij.1.2 = -1 := by
