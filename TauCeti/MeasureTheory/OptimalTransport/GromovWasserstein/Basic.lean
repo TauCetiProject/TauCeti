@@ -610,17 +610,16 @@ variable [MeasurableSingletonClass Y]
 coupling with the Dirac measure `δ_y`, so the Gromov–Wasserstein distance from `({y}, δ_y, ωY)` to
 `(X, μ, ωX)` is the `L^p (μ ⊗ μ)` size of `ωX` about the point `ωY (y, y)`. -/
 theorem gromovWassersteinEDist_dirac_left (y : Y) (ωY : Y × Y → Z) [IsProbabilityMeasure μ]
-    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (p : ℝ≥0∞) :
+    (p : ℝ≥0∞) :
     gromovWassersteinEDist p (Measure.dirac y) ωY μ ωX =
       eLpNorm (fun q : X × X ↦ edist (ωY (y, y)) (ωX q)) p (μ.prod μ) := by
-  have hy : MeasurePreserving (fun _ : X ↦ y) μ (Measure.dirac y) :=
-    ⟨measurable_const, by rw [Measure.map_const, measure_univ, one_smul]⟩
-  have hωY : AEStronglyMeasurable ωY ((Measure.dirac y).prod (Measure.dirac y)) := by
-    rw [Measure.dirac_prod_dirac]
-    exact aestronglyMeasurable_dirac
   have key : gromovWassersteinDistortion p ωY ωX (μ.map (Prod.mk y)) =
-      eLpNorm (fun q : X × X ↦ edist (ωY (y, y)) (ωX q)) p (μ.prod μ) :=
-    gromovWassersteinDistortion_map_prodMk hy (MeasurePreserving.id μ) hωY hωX p
+      eLpNorm (fun q : X × X ↦ edist (ωY (y, y)) (ωX q)) p (μ.prod μ) := by
+    rw [gromovWassersteinDistortion_def,
+      Measure.map_prod_map μ μ measurable_prodMk_left measurable_prodMk_left,
+      ((measurableEmbedding_prodMk_left y).prodMap
+        (measurableEmbedding_prodMk_left y)).eLpNorm_map_measure]
+    rfl
   refine le_antisymm ((gromovWassersteinEDist_le (isCoupling_map_prodMk y μ) p ωY ωX).trans_eq
     key) (le_gromovWassersteinEDist fun π hπ ↦ ?_)
   rw [hπ.eq_map_prodMk, key]
@@ -629,10 +628,10 @@ theorem gromovWassersteinEDist_dirac_left (y : Y) (ωY : Y × Y → Z) [IsProbab
 Gromov–Wasserstein distance from `(X, μ, ωX)` to `({y}, δ_y, ωY)` is the `L^p (μ ⊗ μ)` size of
 `ωX` about the point `ωY (y, y)`. -/
 theorem gromovWassersteinEDist_dirac_right (y : Y) (ωY : Y × Y → Z) [IsProbabilityMeasure μ]
-    (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (p : ℝ≥0∞) :
+    (p : ℝ≥0∞) :
     gromovWassersteinEDist p μ ωX (Measure.dirac y) ωY =
       eLpNorm (fun q : X × X ↦ edist (ωX q) (ωY (y, y))) p (μ.prod μ) := by
-  rw [gromovWassersteinEDist_comm, gromovWassersteinEDist_dirac_left y ωY hωX]
+  rw [gromovWassersteinEDist_comm, gromovWassersteinEDist_dirac_left y ωY]
   exact eLpNorm_congr_ae (.of_forall fun q ↦ edist_comm _ _)
 
 end Dirac
