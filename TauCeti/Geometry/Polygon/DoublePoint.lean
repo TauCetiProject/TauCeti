@@ -370,6 +370,7 @@ private theorem IsRegularProjection.eq_of_two_edgePairs (hπ : poly.IsRegularPro
     {i j : Fin n} {x y x' y' : P} (hx : x ∈ poly.edgeSet R i) (hy : y ∈ poly.edgeSet R j)
     (hxy : π x = π y) (hx' : x' ∈ poly.edgeSet R i) (hy' : y' ∈ poly.edgeSet R j)
     (hxy' : π x' = π y') (hxx : x ≠ x') : x = y ∧ x' = y' := by
+  rw [edgeSet_eq_image_edgePath] at hx hy hx' hy'
   obtain ⟨s, hsI, rfl⟩ := hx
   obtain ⟨s', hsI', rfl⟩ := hx'
   obtain ⟨t, ht, rfl⟩ := hy
