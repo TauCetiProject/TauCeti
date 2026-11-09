@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Cohomology
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Brauer
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.WeilPairing.Isogeny
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.FiniteModule
 
@@ -67,6 +67,15 @@ theorem localTateWeilPairing_apply (a b : H1 (AbsoluteGaloisGroup K) (W.TorsionC
       h2MuEquivZMod K hm (muNRepH2Equiv m K (W.torsionH1WeilPairing m hm a b)) :=
   (rfl)
 
+/-- The local Tate pairing, embedded in `ℚ/ℤ` by `k ↦ k/m`, is the Brauer invariant of the
+Weil cup product. The exponent need only be invertible in the field, not in its residue field. -/
+theorem toRatAddCircle_localTateWeilPairing
+    (a b : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) :
+    ZMod.toRatAddCircle m (W.localTateWeilPairing m hm a b) =
+      invMap K (W.torsionWeilBrauerPairing m hm a b) := by
+  rw [W.localTateWeilPairing_apply m hm, W.torsionWeilBrauerPairing_apply m hm]
+  exact toRatAddCircle_h2MuEquivZMod K hm _
+
 /-- **Perfect local Tate duality for `E[m]`.** Pairing with a class gives a bijection from
 `H¹(K, E[m])` to its additive characters with values in `ℤ/m`. -/
 theorem localTateWeilPairing_bijective : Function.Bijective (W.localTateWeilPairing m hm) := by
@@ -109,6 +118,18 @@ theorem localTateKerWeilPairing_apply (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny
     φ.localTateKerWeilPairing hn a b =
       h2MuEquivZMod K hn (muNRepH2Equiv φ.degree K (φ.kerH1WeilPairing hn a b)) :=
   (rfl)
+
+/-- The local Tate pairings are compatible with inclusion into degree-torsion and
+projection onto the dual kernel. No restriction on the residue characteristic is needed. -/
+theorem localTateKerWeilPairing_explicitCoeff1_torsionCoeffToDualKerCoeff
+    (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
+    (b : H1 (AbsoluteGaloisGroup K) (W₁.TorsionCoeff φ.degree)) :
+    φ.localTateKerWeilPairing hn a
+        (explicitCoeff1 _ _ φ.torsionCoeffToDualKerCoeff continuous_of_discreteTopology b) =
+      W₁.localTateWeilPairing φ.degree hn
+        (explicitCoeff1 _ _ φ.kerCoeffToTorsionCoeff continuous_of_discreteTopology a) b := by
+  simp only [localTateKerWeilPairing_apply, localTateWeilPairing_apply,
+    kerH1WeilPairing_explicitCoeff1_torsionCoeffToDualKerCoeff]
 
 /-- **Perfect local Tate duality for the kernels of an isogeny and of its dual.** Pairing with a
 class gives a bijection from `H¹(K, E₁[φ])` to the additive characters of `H¹(K, E₂[φ̂])` with

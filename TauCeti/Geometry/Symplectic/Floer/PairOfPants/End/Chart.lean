@@ -45,6 +45,8 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
 * `TauCeti.Floer.pairwise_disjoint_image_endChart`: the images of the three strips are disjoint.
 * `TauCeti.Floer.mem_image_endChart`: they contain every point of `S` with signed longitudinal
   coordinate greater than `1/2` on some end.
+* `TauCeti.Floer.injOn_endChart_univ_prod_Ico`: the end chart is injective on every band of
+  angular width one.
 * `TauCeti.Floer.perturbationPullback_endChart_eq_cylindricalEndLift`: the pullback of a
   perturbation along the end chart is the perturbation evaluated on the image of a tangent vector
   under the end lift.
@@ -121,9 +123,8 @@ theorem equivRealProdCLM_symm_endChart (q : Puncture) (z : ℝ × ℝ) :
 /-- The longitudinal coordinate of the end `q` at the image of `(s, t)` is `s`. -/
 theorem re_endCoord_endChart (q : Puncture) (z : ℝ × ℝ) :
     (q.endCoord (Complex.equivRealProdCLM.symm (endChart q z))).re = z.1 := by
-  obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm z)
-  rw [equivRealProdCLM_symm_endChart, hk]
-  simp
+  rw [equivRealProdCLM_symm_endChart, re_endCoord_cylindricalEndLift]
+  simp [Complex.equivRealProdCLM_symm_apply]
 
 /-- The end chart sends the part `±s > 0` of the end into `S`. -/
 theorem endChart_mem_thricePuncturedSphereReal {q : Puncture} {z : ℝ × ℝ}
@@ -215,13 +216,19 @@ theorem perturbationPullback_endChart (q : Puncture) (v : ℝ × ℝ) :
   funext z x
   rw [pairOfPantsEndComponent_def, Complex.equivRealProdCLM_symm_apply, ← Complex.mk_eq_add_mul_I]
 
-/-- The end lift is injective on the strip `endStrip q`, whose angular coordinate ranges over one
-period. -/
-theorem injOn_endChart (q : Puncture) : InjOn (endChart q) (endStrip q) := by
+/-- The end chart is injective on every band `ℝ × [t₀, t₀ + 1)` of angular width one: two points
+with the same image differ by an integer multiple of `i`. -/
+theorem injOn_endChart_univ_prod_Ico (q : Puncture) (t₀ : ℝ) :
+    InjOn (endChart q) (univ ×ˢ Ico t₀ (t₀ + 1)) := by
   intro a ha b hb hab
-  have h := q.injOn_cylindricalEndLift (by simpa using ha.2) (by simpa using hb.2)
+  have h := q.injOn_cylindricalEndLift t₀ (by simpa using ha.2) (by simpa using hb.2)
     (Complex.equivRealProdCLM.injective hab)
   exact Complex.equivRealProdCLM.symm.injective h
+
+/-- The end lift is injective on the strip `endStrip q`, whose angular coordinate ranges over one
+period. -/
+theorem injOn_endChart (q : Puncture) : InjOn (endChart q) (endStrip q) :=
+  (injOn_endChart_univ_prod_Ico q (-1 / 2)).mono (prod_mono (subset_univ _) (by norm_num))
 
 /-- Every point of `S` where some end has signed longitudinal coordinate greater than `1/2` is the
 image of a point of that end's strip. -/

@@ -24,7 +24,7 @@ because the bound on the partial sums passes to their limit through the closed s
 
 public section
 
-open Set Topology
+open Topology
 
 namespace TauCeti
 
@@ -36,8 +36,8 @@ theorem lowerSemicontinuous_iSup_nhds (G : Set X → β) :
   intro x c hc
   obtain ⟨s, hcs⟩ := lt_iSup_iff.1 hc
   obtain ⟨hs, hcs⟩ := lt_iSup_iff.1 hcs
-  filter_upwards [interior_mem_nhds.2 hs] with y hy
-  exact hcs.trans_le (le_iSup₂ (f := fun s (_ : s ∈ 𝓝 y) ↦ G s) s (mem_interior_iff_mem_nhds.1 hy))
+  filter_upwards [eventually_mem_nhds_iff.2 hs] with y hy
+  exact hcs.trans_le (le_iSup₂_of_le s hy le_rfl)
 
 end TauCeti
 

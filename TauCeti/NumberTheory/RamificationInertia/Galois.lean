@@ -96,9 +96,10 @@ equals the order of the Galois group iff the common ramification index and inert
 both `1`. -/
 theorem ncard_primesOver_eq_natCard_iff_of_isGaloisGroup {A B : Type*}
     [CommRing A] [IsDomain A] [CommRing B] [IsDomain B] [Algebra A B] [Module.Finite A B]
-    [Module.Flat A B] (G : Type*) [Group G] [Finite G] [MulSemiringAction G B]
+    [Module.Flat A B] (G : Type*) [Group G] [MulSemiringAction G B]
     [IsGaloisGroup G A B] (P : Ideal A) [P.IsPrime] : (primesOver P B).ncard = Nat.card G ↔
       P.ramificationIdxIn B = 1 ∧ P.inertiaDegIn B = 1 := by
+  have := IsGaloisGroup.finite G A B
   have h := ncard_primesOver_mul_ramificationIdxIn_mul_inertiaDegIn P B G
   rw [← mul_eq_one, ← h, left_eq_mul₀ (left_ne_zero_of_mul (h ▸ Nat.card_pos.ne'))]
 
@@ -173,7 +174,7 @@ section DecompositionGroup
 open MulAction
 
 variable {R S G : Type*} [CommRing R] [CommRing S] [Algebra R S] [Group G]
-  [MulSemiringAction G S] [IsGaloisGroup G R S] [Finite G]
+  [MulSemiringAction G S] [IsGaloisGroup G R S]
   [IsDomain R] [IsDomain S] [Module.Finite R S] [Module.Flat R S]
 
 include G
@@ -183,6 +184,7 @@ residue extension and for an arbitrary prime `P`. -/
 theorem card_stabilizer_eq_ramificationIdxIn_mul_inertiaDegIn (p : Ideal R) [p.IsPrime]
     (P : Ideal S) [P.LiesOver p] [P.IsPrime] :
     Nat.card (stabilizer G P) = p.ramificationIdxIn S * p.inertiaDegIn S := by
+  have := IsGaloisGroup.finite G R S
   have horbit : (p.primesOver S).ncard * Nat.card (stabilizer G P) = Nat.card G := by
     rw [← Algebra.IsInvariant.orbit_eq_primesOver R S G p P, ← index_stabilizer,
       Subgroup.index_mul_card]
@@ -193,6 +195,7 @@ theorem card_stabilizer_eq_ramificationIdxIn_mul_inertiaDegIn (p : Ideal R) [p.I
 degree of the upstairs ideal. -/
 theorem card_stabilizer_eq_ramificationIdx_mul_inertiaDeg (P : Ideal S) [P.IsPrime] :
     Nat.card (stabilizer G P) = P.ramificationIdx R * P.inertiaDeg R := by
+  have := IsGaloisGroup.finite G R S
   rw [← ramificationIdxIn_eq_ramificationIdx (P.under R) P G,
     ← inertiaDegIn_eq_inertiaDeg (P.under R) P G]
   exact card_stabilizer_eq_ramificationIdxIn_mul_inertiaDegIn (G := G) (P.under R) P
@@ -204,9 +207,10 @@ This is `Ideal.card_inertia_eq_ramificationIdxIn` stated with the ramification i
 itself rather than with `Ideal.ramificationIdxIn` of the ideal below it. -/
 theorem card_inertia_eq_ramificationIdx (R : Type*) {S : Type*} [CommRing R] [CommRing S]
     [Algebra R S] [IsDomain R] [IsDomain S] [Module.Finite R S] [Module.Flat R S] (G : Type*)
-    [Group G] [Finite G] [MulSemiringAction G S] [IsGaloisGroup G R S] (P : Ideal S) [P.IsPrime]
+    [Group G] [MulSemiringAction G S] [IsGaloisGroup G R S] (P : Ideal S) [P.IsPrime]
     [Algebra.HasSeparableResidueFieldsAt R S (P.under R)] :
     Nat.card (P.inertia G) = P.ramificationIdx R :=
+  have := IsGaloisGroup.finite G R S
   (card_inertia_eq_ramificationIdxIn (G := G) (P.under R) P).trans
     (ramificationIdxIn_eq_ramificationIdx (P.under R) P G)
 
