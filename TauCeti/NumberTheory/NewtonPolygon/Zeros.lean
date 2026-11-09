@@ -19,7 +19,8 @@ Let `K` be a complete ultrametric normed field whose norm comes from a real addi
 `v` with base `b > 1`, so `‖x‖ = b ^ (-v x)` for `x ≠ 0`. The *multiplicity* of a zero `x` of a
 power series `f` is the order at zero of its Taylor translate `taylor x f = f(x + T)`
 (`PowerSeries.taylor`); for an entire series it is the order of the good zero of `f` at `x`
-(`PowerSeries.isGoodZero_iff_order_taylor_eq`), and it is `0` exactly when `f(x) ≠ 0`.
+(`PowerSeries.isGoodZero_iff_order_taylor_eq`), and it is `0` exactly when `f(x) ≠ 0`
+(`PowerSeries.order_taylor_ne_zero_iff`).
 
 When `K` is algebraically closed, the zeros of a nonzero entire series `f` on the sphere
 `‖x‖ = b ^ σ`, counted with multiplicity, number exactly the multiplicity of the slope `σ` in the
@@ -178,13 +179,6 @@ theorem IsEntire.newtonSlopeMultiplicity_eq_finsum_order_taylor [IsAlgClosed K]
   rw [hsum, finsum_mem_eq_sum_of_inter_support_eq]
   ext x
   simp only [Set.mem_inter_iff, mem_sphere_iff_norm, sub_zero, Function.mem_support,
-    Finset.mem_coe, hs x, ne_eq]
-  obtain ⟨h, hxh⟩ := hf.exists_isGoodZero hf0 x
-  rw [isGoodZero_iff_order_taylor_eq.mp hxh, Nat.cast_eq_zero]
-  have : f.evalAt x = 0 ↔ h ≠ 0 := by
-    rcases Nat.eq_zero_or_pos h with rfl | hh
-    · simpa using (isGoodZero_zero_iff.mp hxh).ne_zero
-    · simpa [hh.ne'] using hxh.evalAt_eq_zero hh
-  tauto
+    Finset.mem_coe, hs x, order_taylor_ne_zero_iff, and_self_right]
 
 end PowerSeries
