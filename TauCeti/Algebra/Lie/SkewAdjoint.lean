@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.Algebra.Lie.Killing.DualBasis
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 
+import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
@@ -190,9 +191,7 @@ theorem skewAdjointLieSubalgebra.eq_zero_of_apply_left {R M : Type*} [CommRing R
   have h := skewAdjointLieSubalgebra.apply_left A u w
   rw [← hA] at h
   have h2 : (2 : R) * B ((A : Module.End R M) u) w = 0 := by
-    rw [two_mul]
-    nth_rw 1 [h]
-    exact neg_add_cancel _
+    linear_combination h
   exact (mul_eq_zero.1 h2).resolve_left two_ne_zero
 
 namespace TauCeti.LieAlgebra

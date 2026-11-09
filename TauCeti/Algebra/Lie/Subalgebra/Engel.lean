@@ -25,7 +25,7 @@ centralizer of `x`.
 
 For commuting elements `x`, `y` of a Lie subalgebra of an associative algebra with `x * x = 1` and
 `y * y = -1`, the operators `ad x` and `ad y` satisfy the cubics `(ad x)³ = 4 ad x` and
-`(ad y)³ = -4 ad y` (`LieAlgebra.ad_pow_three_eq_smul_ad`). These force every element of the
+`(ad y)³ = -4 ad y` (`LieSubalgebra.ad_pow_three_eq_smul_ad`). These force every element of the
 Engel subalgebra of `x + y` to commute with `x` and with `y`
 (`Module.End.apply_eq_zero_and_apply_eq_zero_of_pow_add_apply_eq_zero`).
 
@@ -86,14 +86,8 @@ theorem lie_eq_zero_and_lie_eq_zero_of_mem_engel_add {K : LieSubalgebra R A} {x 
     (hx : (x : A) * x = 1) (hy : (y : A) * y = -1) (hxy : ⁅x, y⁆ = 0)
     (hz : z ∈ LieSubalgebra.engel R (x + y)) :
     ⁅x, z⁆ = 0 ∧ ⁅y, z⁆ = 0 := by
-  have hcube : ∀ {u : K} {c : R}, (u : A) * u = c • 1 →
-      LieAlgebra.ad R K u ^ 3 = (4 * c) • LieAlgebra.ad R K u := fun {u c} hu ↦ by
-    ext1 v
-    apply Subtype.ext
-    rw [coe_ad_pow, LinearMap.smul_apply, SetLike.val_smul, coe_ad,
-      LieAlgebra.ad_pow_three_eq_smul_ad hu, LinearMap.smul_apply]
-  have hN := hcube (c := 1) (by rw [hx, one_smul])
-  have hP := hcube (c := -1) (by rw [hy, neg_smul, one_smul])
+  have hN := ad_pow_three_eq_smul_ad (u := x) (c := (1 : R)) (by rw [hx, one_smul])
+  have hP := ad_pow_three_eq_smul_ad (u := y) (c := (-1 : R)) (by rw [hy, neg_smul, one_smul])
   rw [mul_one] at hN
   rw [mul_neg_one, neg_smul] at hP
   have hNP : Commute (LieAlgebra.ad R K x) (LieAlgebra.ad R K y) := by
