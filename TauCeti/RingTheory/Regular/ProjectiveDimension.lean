@@ -173,8 +173,8 @@ theorem hasProjectiveDimensionLE_quotient_smul_top (hx : x ∈ nonZeroDivisors R
     have : Projective M := projective_iff_hasProjectiveDimensionLT_one.mpr ‹_›
     have : Module.Projective R M := M.projective_of_module_projective
     have : Module.Projective (R ⧸ span {x}) (M ⧸ span {x} • (⊤ : Submodule R M)) :=
-      .quotient_smul_top _ Ideal.Quotient.mk_surjective (Ideal.mk_ker (I := span {x})).ge
-        fun _ _ ↦ rfl
+      (Ideal.Quotient.mk (span {x})).projective_quotient_smul_top Ideal.Quotient.mk_surjective
+        (Ideal.mk_ker (I := span {x})).ge fun _ _ ↦ rfl
     exact projective_iff_hasProjectiveDimensionLT_one.mp inferInstance
   | succ n ih =>
     -- Reduce a projective presentation `0 → K → P → M → 0` modulo `x`.
@@ -182,8 +182,8 @@ theorem hasProjectiveDimensionLE_quotient_smul_top (hx : x ∈ nonZeroDivisors R
     let S := M.projectiveShortComplex
     have : Module.Projective R S.X₂ := S.X₂.projective_of_module_projective
     have : Module.Projective (R ⧸ span {x}) (S.X₂ ⧸ span {x} • (⊤ : Submodule R S.X₂)) :=
-      .quotient_smul_top _ Ideal.Quotient.mk_surjective (Ideal.mk_ker (I := span {x})).ge
-        fun _ _ ↦ rfl
+      (Ideal.Quotient.mk (span {x})).projective_quotient_smul_top Ideal.Quotient.mk_surjective
+        (Ideal.mk_ker (I := span {x})).ge fun _ _ ↦ rfl
     have hK : IsSMulRegular S.X₁ x :=
       (Module.Flat.isSMulRegular_of_nonZeroDivisors hx).of_injective S.f.hom hS.injective_f
     have : HasProjectiveDimensionLE S.X₁ n :=
