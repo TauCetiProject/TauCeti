@@ -50,6 +50,8 @@ the Laplacian.
 * `TauCeti.setIntegral_ball_zero_eq_integral_Ioo`,
   `TauCeti.integral_Ioo_pow_mul_toSphere_real_univ`: integration over a ball about the origin in
   polar coordinates, and the corresponding formula for the measure of the ball.
+* `TauCeti.integrableOn_fun_norm_sub_addHaar`: a function of the distance to a point `c` is
+  integrable on a ball about `c` if and only if its radial integrand is integrable.
 * `LinearIsometryEquiv.map_toSphere`: a linear isometric equivalence carries the surface
   measure of `μ` to the surface measure of the image of `μ`.
 -/
@@ -219,6 +221,23 @@ theorem integral_Ioo_pow_mul_toSphere_real_univ {R : ℝ} :
     (integrableOn_const measure_ball_lt_top.ne)
   simp only [integral_const, smul_eq_mul, mul_one, measureReal_restrict_apply_univ] at h
   rw [h, ← integral_mul_const]
+
+/-- **Integrability of a radial function about a point.** A function `x ↦ f ‖x - c‖` of the
+distance to `c` is integrable on `ball c r` if and only if `y ↦ y ^ (d - 1) • f y` is integrable
+on `(0, r)`. This translates Mathlib's `MeasureTheory.integrableOn_fun_norm_addHaar` from the
+origin to an arbitrary center. -/
+theorem integrableOn_fun_norm_sub_addHaar {f : ℝ → F} {c : E} {r : ℝ} :
+    IntegrableOn (fun x ↦ f ‖x - c‖) (ball c r) μ ↔
+      IntegrableOn (fun y ↦ y ^ (Module.finrank ℝ E - 1) • f y) (Ioo 0 r) := by
+  rw [← integrableOn_fun_norm_addHaar μ, ← integrable_indicator_iff measurableSet_ball,
+    ← integrable_indicator_iff measurableSet_ball]
+  have h : (ball c r).indicator (fun x ↦ f ‖x - c‖) =
+      fun x ↦ (ball (0 : E) r).indicator (fun x ↦ f ‖x‖) (x - c) := funext fun x ↦ by
+    simp only [indicator, mem_ball, dist_eq_norm, sub_zero]
+  rw [h]
+  refine ⟨fun hf ↦ (hf.comp_add_right c).congr (ae_of_all _ fun x ↦ ?_),
+    fun hf ↦ hf.comp_sub_right c⟩
+  simp
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- Along the ray through a point `u` of the unit sphere, the radially weighted integrand of the

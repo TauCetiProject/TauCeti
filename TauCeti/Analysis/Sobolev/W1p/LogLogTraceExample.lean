@@ -11,7 +11,7 @@ import TauCeti.Analysis.Calculus.Gradient
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.Sqrt
-import Mathlib.MeasureTheory.Constructions.HaarToSphere
+import TauCeti.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -50,8 +50,9 @@ of the distance to the tangent line of the circle, which is not square integrabl
 Any constant larger than `2` keeps `log (C / ‖1 - z‖)` bounded below on `D`, and `4` is the
 simplest choice.
 
-All integrability statements are reduced to one-variable integrals by Mathlib's polar formula
-`integrableOn_fun_norm_addHaar` after translating the singularity to the origin.
+All integrability statements are reduced to one-variable integrals by
+`TauCeti.integrableOn_fun_norm_sub_addHaar`, Mathlib's polar formula
+`integrableOn_fun_norm_addHaar` translated to the singularity `1`.
 
 ## References
 
@@ -72,15 +73,19 @@ open scoped ContDiff Gradient Topology
 
 /-- The function `f(z) = log log (4 / ‖1 - z‖)`. On the unit disc it is smooth and lies in
 `W^{1,2}`, but it tends to `∞` at the boundary point `1`. -/
-@[expose] def logLogTraceExample (z : ℂ) : ℝ :=
+def logLogTraceExample (z : ℂ) : ℝ :=
   Real.log (Real.log (4 / ‖1 - z‖))
+
+/-- The defining formula of `TauCeti.logLogTraceExample`. -/
+theorem logLogTraceExample_def (z : ℂ) :
+    logLogTraceExample z = Real.log (Real.log (4 / ‖1 - z‖)) := (rfl)
 
 /-- The radial profile `r ↦ log log (4 / r)` of `TauCeti.logLogTraceExample` about `1`. -/
 private def profile (r : ℝ) : ℝ :=
   Real.log (Real.log (4 / r))
 
 private theorem logLogTraceExample_eq (z : ℂ) : logLogTraceExample z = profile ‖z - 1‖ := by
-  rw [logLogTraceExample, norm_sub_rev]
+  rw [logLogTraceExample_def, norm_sub_rev]
   rfl
 
 /-- On the unit disc the distance to `1` lies in `(0, 2)`. -/
@@ -209,8 +214,9 @@ private theorem integrableOn_mul_inv_mul_log_sq :
       rw [ContinuousWithinAt, hG0]
       exact tendsto_inv_atTop_zero.comp (Real.tendsto_log_atTop.comp h4)
     · have hL : 0 < Real.log (4 / r) := Real.log_pos (by rw [lt_div_iff₀ h0]; linarith [hr.2])
+      have hdiv : (4 : ℝ) / r ≠ 0 := by positivity
       exact (((continuousAt_const (y := (4 : ℝ))).div continuousAt_id h0.ne').log
-        (by change (4 : ℝ) / r ≠ 0; positivity)).inv₀ hL.ne' |>.continuousWithinAt
+        hdiv).inv₀ hL.ne' |>.continuousWithinAt
   have hderiv : ∀ r ∈ Ioo (0 : ℝ) 2,
       HasDerivAt G (r * ((r * Real.log (4 / r))⁻¹) ^ 2) r := by
     rintro r ⟨h0, h2⟩
@@ -223,19 +229,6 @@ private theorem integrableOn_mul_inv_mul_log_sq :
   exact (intervalIntegral.integrableOn_deriv_of_nonneg hcont hderiv hnonneg).mono_set
     Ioo_subset_Ioc_self
 
-/-- A radial function about `1` is integrable on the unit disc as soon as its one-variable polar
-integrand is integrable on `(0, 2)`. -/
-private theorem integrableOn_ball_of_integrableOn_mul {h : ℝ → ℝ}
-    (hh : IntegrableOn (fun r : ℝ => r * h r) (Ioo 0 2)) :
-    IntegrableOn (fun z : ℂ => h ‖z - 1‖) (ball 0 1) := by
-  have h1 : IntegrableOn (fun w : ℂ => h ‖w‖) (ball 0 2) :=
-    (integrableOn_fun_norm_addHaar volume).2 (by simpa [Complex.finrank_real_complex] using hh)
-  have h2 : IntegrableOn (fun z : ℂ => h ‖z - 1‖) (ball 1 2) := by
-    rw [← integrable_indicator_iff measurableSet_ball] at h1 ⊢
-    refine (h1.comp_sub_right 1).congr (ae_of_all _ fun z => ?_)
-    simp only [indicator, mem_ball, dist_eq_norm, sub_zero]
-  exact h2.mono_set (ball_subset_ball' (by norm_num))
-
 /-- The function `f(z) = log log (4 / ‖1 - z‖)` is square integrable on the unit disc. -/
 theorem memLp_logLogTraceExample :
     MemLp logLogTraceExample 2 (volume.restrict (ball (0 : ℂ) 1)) := by
@@ -244,8 +237,10 @@ theorem memLp_logLogTraceExample :
   have e : (fun z => logLogTraceExample z ^ 2) = fun z => profile ‖z - 1‖ ^ 2 :=
     funext fun z => by rw [logLogTraceExample_eq]
   rw [e]
-  exact integrableOn_ball_of_integrableOn_mul (h := fun r => profile r ^ 2)
-    integrableOn_mul_profile_sq
+  have h : IntegrableOn (fun z : ℂ => profile ‖z - 1‖ ^ 2) (ball 1 2) := by
+    refine (integrableOn_fun_norm_sub_addHaar (f := fun r => profile r ^ 2)).2 ?_
+    simpa [Complex.finrank_real_complex] using integrableOn_mul_profile_sq
+  exact h.mono_set (ball_subset_ball' (by norm_num))
 
 /-- The classical gradient of `f(z) = log log (4 / ‖1 - z‖)` is square integrable on the unit
 disc. -/
@@ -256,9 +251,12 @@ theorem memLp_gradient_logLogTraceExample :
       (contDiffOn_logLogTraceExample.continuousOn_fderiv_of_isOpen isOpen_ball (by simp))
   have hm := hc.aestronglyMeasurable (μ := volume) measurableSet_ball
   refine (memLp_two_iff_integrable_sq_norm hm).2 ?_
-  refine Integrable.mono' (integrableOn_ball_of_integrableOn_mul
-    (h := fun r => ((r * Real.log (4 / r))⁻¹) ^ 2) integrableOn_mul_inv_mul_log_sq)
-    (hm.norm.pow 2) (ae_restrict_of_forall_mem measurableSet_ball fun z hz => ?_)
+  have h : IntegrableOn (fun z : ℂ => ((‖z - 1‖ * Real.log (4 / ‖z - 1‖))⁻¹) ^ 2) (ball 1 2) := by
+    refine (integrableOn_fun_norm_sub_addHaar
+      (f := fun r => ((r * Real.log (4 / r))⁻¹) ^ 2)).2 ?_
+    simpa [Complex.finrank_real_complex] using integrableOn_mul_inv_mul_log_sq
+  refine Integrable.mono' (h.mono_set (ball_subset_ball' (by norm_num))) (hm.norm.pow 2)
+    (ae_restrict_of_forall_mem measurableSet_ball fun z hz => ?_)
   rw [Real.norm_of_nonneg (sq_nonneg _)]
   exact pow_le_pow_left₀ (norm_nonneg _) (norm_gradient_logLogTraceExample_le hz) 2
 
