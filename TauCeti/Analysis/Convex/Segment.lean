@@ -344,12 +344,13 @@ end InnerProduct
 
 section Antipode
 
-variable {E : Type*} [AddCommGroup E] [Module ℝ E] {x y : E} {c : ℝ}
+variable {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup E]
+  [Module 𝕜 E] {x y : E} {c : 𝕜}
 
 /-- If the segment from `x` to a positive multiple `c • y` of `y` misses the origin, then `x` is
 not the antipode of `y`: the point of the segment with weights `c / (1 + c)` and `1 / (1 + c)`
 would be `0`. -/
-theorem ne_neg_of_zero_notMem_segment_smul (hc : 0 < c) (h : (0 : E) ∉ [x -[ℝ] c • y]) :
+theorem ne_neg_of_zero_notMem_segment_smul (hc : 0 < c) (h : (0 : E) ∉ [x -[𝕜] c • y]) :
     x ≠ -y := by
   rintro rfl
   refine h ⟨c / (1 + c), 1 / (1 + c), by positivity, by positivity, ?_, ?_⟩
