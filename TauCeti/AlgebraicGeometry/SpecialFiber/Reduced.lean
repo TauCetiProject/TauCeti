@@ -53,9 +53,7 @@ theorem isReduced_specialFiber_iff_specialFiberMultiplicity_eq_one
     IsReduced (specialFiber R toBase).left ↔
       ∀ x : CodimensionOnePoint X, toBase x = closedPoint R →
         toBase.specialFiberMultiplicity π x = 1 := by
-  have hR : maximalIdeal R ≠ ⊥ := fun h ↦ hη (PrimeSpectrum.ext (le_antisymm
-    (le_maximalIdeal (toBase (genericPoint X)).isPrime.ne_top) (h.le.trans bot_le)))
-  have hπ0 : π ≠ 0 := fun h ↦ hR (by rw [hπ, h, Ideal.span_singleton_eq_bot])
+  have hπ0 := toBase.ne_zero_of_base_ne_closedPoint hη hπ
   have hπm : π ∈ maximalIdeal R := hπ ▸ Ideal.mem_span_singleton_self π
   have hiso := ObjectProperty.prop_iff_of_iso (IsReduced ·) (specialFiberIsoSubscheme R toBase)
   rw [hπ, Ideal.map_span, Set.image_singleton, RingHom.comp_apply] at hiso

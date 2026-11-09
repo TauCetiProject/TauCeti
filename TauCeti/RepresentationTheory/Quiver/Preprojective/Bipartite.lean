@@ -151,8 +151,8 @@ theorem not_exists_forall_vertexCorner_eq_smul_of_odd_length {ε : ∀ ⦃i j : 
         exact (IsUnit.neg_iff (c v)).1 (hεa ▸ hε a)
   -- Going round the walk negates `c v`.
   have hround : c v = -c v := by
-    have h := eq_neg_one_pow_mul_of_path k hsym p
-    rwa [hp.neg_one_pow, neg_one_mul] at h
+    have h := eq_iterate_neg_of_path hsym p
+    rwa [neg_involutive.iterate_odd hp] at h
   have h2c : (2 : k) * c v = 0 := by
     rw [two_mul]
     nth_rewrite 2 [hround]

@@ -76,7 +76,7 @@ theorem exists_inertiaDeg_eq_iff_of_mem_frobeniusPrimeSet
     · exact (artinSymbol_eq_mk_of_isArithFrobAt 𝔭.asIdeal
         (isUnramifiedAt_of_mem_frobeniusPrimeSet h𝔭) Q.asIdeal σ hσ).symm.trans
           ((mem_frobeniusPrimeSet_iff.mp h𝔭).choose_spec)
-    · rw [← Ideal.inertiaDeg_under_fixedField_eq_relIndex Q.asIdeal Q.ne_bot H hσ,
+    · rw [← Ideal.inertiaDeg_under_fixedField_eq_relIndex Q.asIdeal H hσ,
         ← HeightOneSpectrum.under_asIdeal, hQ, hn]
   · rintro ⟨σ, hσC, hn⟩
     have hpσ : 𝔭 ∈ frobeniusPrimeSet K L (ConjClasses.mk σ) :=
@@ -90,7 +90,7 @@ theorem exists_inertiaDeg_eq_iff_of_mem_frobeniusPrimeSet
     · rw [HeightOneSpectrum.under_under]
       exact HeightOneSpectrum.ext Q.2.2.over.symm
     · rw [HeightOneSpectrum.under_asIdeal]
-      exact (Ideal.inertiaDeg_under_fixedField_eq_relIndex Q.1 hσ.ne_bot H hσ).trans hn
+      exact (Ideal.inertiaDeg_under_fixedField_eq_relIndex Q.1 H hσ).trans hn
 
 variable (K L) in
 open scoped Classical in

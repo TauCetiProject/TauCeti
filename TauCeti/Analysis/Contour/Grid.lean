@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Data.Int.Interval
 public import Mathlib.Topology.MetricSpace.Thickening
 public import TauCeti.Topology.Algebra.Order.Floor
@@ -72,6 +73,11 @@ theorem mem_gridSquare :
 /-- Every grid square is compact. -/
 theorem isCompact_gridSquare (δ : ℝ) (p : ℤ × ℤ) : IsCompact (gridSquare δ p) :=
   isCompact_Icc.reProdIm isCompact_Icc
+
+/-- Every grid square is convex. -/
+theorem convex_gridSquare (δ : ℝ) (p : ℤ × ℤ) : Convex ℝ (gridSquare δ p) :=
+  ((convex_Icc _ _).linear_preimage Complex.reLm).inter
+    ((convex_Icc _ _).linear_preimage Complex.imLm)
 
 /-- Two points of the same grid square of side `δ` are at distance at most `√2 δ`. -/
 theorem dist_le_of_mem_gridSquare (hz : z ∈ gridSquare δ p) (hw : w ∈ gridSquare δ p) :

@@ -9,7 +9,7 @@ public import TauCeti.Probability.Distributions.Gamma.Basic
 public import TauCeti.Probability.Distributions.Poisson.Measurability
 import TauCeti.Probability.Distributions.Gamma.Poisson
 import TauCeti.MeasureTheory.Measure.Measurability
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 
 /-!
 # Negative-multinomial distributions

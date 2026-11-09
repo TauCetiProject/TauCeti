@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
-public import TauCeti.RingTheory.FormalGroup.Rescale
+public import TauCeti.RingTheory.FormalGroup.Rescale.Basic
 -- Proof-only: the derivative commutes with change of coefficients.
 import TauCeti.RingTheory.PowerSeries.Derivative
 

@@ -348,6 +348,22 @@ theorem defectExponent_mul_sq (a c : Kˣ) :
   norm_cast at h1 h2 ⊢
   omega
 
+/-- An element of even valuation and finite defect exponent `d` has a square multiple
+that is a unit with defect exponent `d - v_K(a)`, even when `v_K(a)` is negative. -/
+theorem exists_defectExponent_mul_sq_eq_sub_of_even_valuation {a : Kˣ} {d : ℤ}
+    (hd : defectExponent a = d) (ha : Even (normalizedValuation K a).toAdd) :
+    ∃ c : Kˣ, valuation K ((a * c ^ 2 : Kˣ) : K) = 1 ∧
+      defectExponent (a * c ^ 2) = ((d - (normalizedValuation K a).toAdd : ℤ) : WithTop ℤ) := by
+  obtain ⟨k, hk⟩ := ha
+  obtain ⟨c, hc⟩ := normalizedValuation_surjective (K := K) (Multiplicative.ofAdd (-k))
+  have hv : (normalizedValuation K (a * c ^ 2)).toAdd = 0 := by
+    simp only [map_mul, map_pow, toAdd_mul, toAdd_pow, hc, toAdd_ofAdd, nsmul_eq_mul]
+    omega
+  refine ⟨c, (normalizedValuation_eq_one_iff _).mp (toAdd_eq_zero.mp hv), ?_⟩
+  rw [defectExponent_mul_sq, hd, hc, toAdd_ofAdd, ← WithTop.coe_add]
+  congr 1
+  omega
+
 /-- For `a` of odd valuation, `v(a - ξ²) = min (v(a), 2 v(ξ))` never exceeds `v(a)`. -/
 private theorem valuation_le_valuation_sub_sq {a : Kˣ}
     (ha : ¬Even (normalizedValuation K a).toAdd) (ξ : K) :
@@ -357,8 +373,7 @@ private theorem valuation_le_valuation_sub_sq {a : Kˣ}
   have hne : valuation K (ξ ^ 2) ≠ valuation K (a : K) := fun h => ha <| by
     have e : (normalizedValuation K (Units.mk0 ξ hξ ^ 2)).toAdd =
         (normalizedValuation K a).toAdd :=
-      le_antisymm ((toAdd_normalizedValuation_le_iff_valuation_le _ _).mpr (by simpa using h.ge))
-        ((toAdd_normalizedValuation_le_iff_valuation_le _ _).mpr (by simpa using h.le))
+      (toAdd_normalizedValuation_eq_iff_valuation_eq _ _).mpr (by simpa using h)
     rw [← e, map_pow, toAdd_pow]
     exact ⟨_, two_nsmul _⟩
   rcases hne.lt_or_gt with h | h

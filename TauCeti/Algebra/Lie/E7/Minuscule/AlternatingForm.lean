@@ -167,8 +167,8 @@ private theorem rootSubgroupPoints_preserves_alternatingForm (k : Fin 7 ⊕ Fin 
 
 /-! ## Universal root and torus identities -/
 
-local notation "rootGen" => TauCeti.serreRootGenerator (CartanMatrix.E 7)
-local notation "cartanGen" => TauCeti.serreH ℚ (CartanMatrix.E 7)
+local notation "rootGen" => TauCeti.serreRootGenerator weightTable.cartanMatrix
+local notation "cartanGen" => TauCeti.serreH ℚ weightTable.cartanMatrix
 
 private theorem rootMatrix_preserves_alternatingForm (A : Type*) [CommRing A]
     (k : Fin 7 ⊕ Fin 7) (p : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :

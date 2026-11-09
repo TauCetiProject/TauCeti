@@ -19,8 +19,8 @@ nonnegative on positively oriented ones, and adds over adjacent parameter interv
 parameter set `s` containing the interval, it may equally be computed from the within-set velocity
 `TauCeti.Manifold.curveVelocityWithin`, which is the form used for geodesics on closed intervals,
 where the unrestricted velocity can take junk values at the endpoints.  Its first
-variation is in `TauCeti.Geometry.Manifold.Riemannian.FirstVariation`, and its value on geodesic
-segments is in `TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed`.
+variation is in `TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Basic`, and its value on
+geodesic segments is in `TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed`.
 
 ## Main definitions and results
 
@@ -31,6 +31,8 @@ segments is in `TauCeti.Geometry.Manifold.Riemannian.Geodesic.ConstantSpeed`.
   orientation of the parameter interval and nonnegative on positively oriented ones.
 * `TauCeti.Manifold.energy_add_adjacent`: the energy is additive over adjacent parameter
   intervals.
+* `TauCeti.Manifold.energy_congr`: energy depends only on the open-interval restriction.
+* `TauCeti.Manifold.sum_energy_adjacent_intervals`: energy is additive over finite partitions.
 * `TauCeti.Manifold.energy_eq_integral_curveVelocityWithin`: the energy computed from the velocity
   within any parameter set containing the interval.
 
@@ -95,6 +97,56 @@ theorem energy_add_adjacent (γ : ℝ → M) {a b c : ℝ}
     energy I γ a b + energy I γ b c = energy I γ a c := by
   rw [energy_def, energy_def, energy_def, ← add_div,
     intervalIntegral.integral_add_adjacent_intervals hab hbc]
+
+/-- Curves agreeing near a parameter have the same Riemannian speed there. -/
+theorem _root_.Filter.EventuallyEq.norm_curveVelocity_eq {γ δ : ℝ → M} {t : ℝ}
+    (h : γ =ᶠ[𝓝 t] δ) : ‖curveVelocity I γ t‖ = ‖curveVelocity I δ t‖ := by
+  -- The manifold derivative equality transports its target tangent space. Evaluate it before
+  -- rewriting the base point, so the Riemannian norms use the same fibre metric.
+  have hv : curveVelocity I γ t =
+      tangentSpaceCast I (δ t) (γ t) (curveVelocity I δ t) := by
+    rw [curveVelocity_apply, curveVelocity_apply]
+    exact congrArg (fun L : TangentSpace 𝓘(ℝ, ℝ) t →L[ℝ] TangentSpace I (γ t) ↦
+      L ((1 : ℝ) : TangentSpace 𝓘(ℝ, ℝ) t)) (h.mfderiv_eq (I := 𝓘(ℝ, ℝ)) (I' := I))
+  rw [hv, h.self_of_nhds]
+  rfl
+
+/-- Energy depends only on the curve on the open parameter interval; values at its endpoints
+and outside the interval do not affect the integral. -/
+theorem energy_congr {γ δ : ℝ → M} {a b : ℝ} (h : EqOn γ δ (uIoo a b)) :
+    energy I γ a b = energy I δ a b := by
+  rw [energy_def, energy_def]
+  congr 1
+  apply intervalIntegral.integral_congr_uIoo
+  intro t ht
+  exact congrArg (· ^ 2) (Filter.EventuallyEq.norm_curveVelocity_eq (I := I)
+    (Filter.eventuallyEq_of_mem (isOpen_Ioo.mem_nhds ht) h))
+
+/-- Energy is additive over any finite partition on which the squared speed is integrable.
+The partition need not be strict or increasing. -/
+theorem sum_energy_adjacent_intervals (γ : ℝ → M) {n : ℕ} (τ : Fin (n + 1) → ℝ)
+    (hint : ∀ i : Fin n, IntervalIntegrable (fun t ↦ ‖curveVelocity I γ t‖ ^ 2)
+      MeasureTheory.volume (τ i.castSucc) (τ i.succ)) :
+    ∑ i : Fin n, energy I γ (τ i.castSucc) (τ i.succ) =
+      energy I γ (τ 0) (τ (Fin.last n)) := by
+  let a (k : ℕ) := τ (Fin.ofNat (n + 1) k)
+  have ha (i : Fin (n + 1)) : a i = τ i := by
+    simp [a, Fin.ofNat_eq_cast]
+  simp_rw [energy_def]
+  rw [← Finset.sum_div]
+  congr 1
+  have hint' (k : ℕ) (hk : k < n) : IntervalIntegrable
+      (fun t ↦ ‖curveVelocity I γ t‖ ^ 2) MeasureTheory.volume (a k) (a (k + 1)) := by
+    simpa only [← ha (⟨k, hk⟩ : Fin n).castSucc, ← ha (⟨k, hk⟩ : Fin n).succ,
+      Fin.val_castSucc, Fin.val_succ, Fin.val_mk] using hint ⟨k, hk⟩
+  have h0 : a 0 = τ 0 := by simpa only [Fin.val_zero] using ha 0
+  have hn : a n = τ (Fin.last n) := by simpa only [Fin.val_last] using ha (Fin.last n)
+  have hsum := intervalIntegral.sum_integral_adjacent_intervals hint'
+  rw [← Fin.sum_univ_eq_sum_range, h0, hn] at hsum
+  rw [← hsum]
+  apply Finset.sum_congr rfl
+  intro i _
+  simp only [← ha i.castSucc, ← ha i.succ, Fin.val_castSucc, Fin.val_succ]
 
 /-- On any parameter set `s` containing the interval between `a` and `b`, the energy may be
 computed from the velocity within `s`.  The two velocities agree on the open interval, so no

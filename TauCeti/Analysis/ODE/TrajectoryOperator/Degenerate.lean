@@ -23,11 +23,12 @@ because `A` has a limit `A⁺` with `A⁺ v = 0`, then the trajectory operator
 
 `D_A u = u' + A u : W^{1,2}(ℝ, F) → L²(ℝ, F)`
 
-is not Fredholm. Together with `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator`, this shows
-that for a `C¹` family of symmetric operators on a finite-dimensional inner product space with
-limits `A±` and derivative tending to zero, `D_A` is Fredholm exactly when both limits are
-injective, that is, invertible (`TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_iff`, in
-`TauCeti.Analysis.ODE.EnergyEstimate.Fredholm`).
+is not Fredholm. Together with
+`TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_of_hasLyapunovForm`, this shows that for a
+continuous family of operators on a finite-dimensional inner product space with symmetric limits
+`A±`, `D_A` is Fredholm exactly when both limits are injective, that is, invertible
+(`TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_iff`, in
+`TauCeti.Analysis.ODE.EnergyEstimate.Lyapunov`).
 
 The proof constructs an escaping approximate kernel. Fix a smooth bump `ψ` supported in
 `(-1, 1)`, and put `uₙ(s) = (n + 1)^(-1/2) ψ((s - cₙ) / (n + 1)) v` up to a normalizing constant,

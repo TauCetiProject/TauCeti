@@ -115,8 +115,11 @@ jobs:
             echo "::error::the staging build used '$REPORTED' but the revision pins '$TOOLCHAIN'"
             exit 1
           fi
-          curl -sSL -H "Accept: application/octet-stream" \
-            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          if ! curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz?download=1" -o elan.tar.gz; then
+            curl --fail --retry 3 --retry-all-errors --connect-timeout 15 --max-time 60 -sSL -H "Accept: application/octet-stream" \
+              "https://api.github.com/repos/leanprover/elan/releases/assets/441516216" -o elan.tar.gz
+          fi
           echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
           tar -xzf elan.tar.gz elan-init
           ./elan-init -y --default-toolchain none

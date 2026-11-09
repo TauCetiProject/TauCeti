@@ -30,6 +30,31 @@ theorem linearMap_apply_of_injective {ι κ : Type*} {e : ι → κ} (he : Injec
     (v : ι → M) (i : ι) : linearMap R M e v (e i) = v i :=
   he.extend_apply v 0 i
 
+/-- Extension by zero vanishes outside the range of the index map. -/
+theorem linearMap_apply_of_notMem_range {ι κ : Type*} {e : ι → κ} (v : ι → M)
+    {j : κ} (hj : j ∉ Set.range e) : linearMap R M e v j = 0 :=
+  Function.extend_apply' v (0 : κ → M) j hj
+
+/-- Extension by zero along an injective index map sends the basis vector at `i` to the basis
+vector at `e i`. -/
+theorem linearMap_single {ι κ : Type*} [DecidableEq ι] [DecidableEq κ] {e : ι → κ}
+    (he : Injective e) (i : ι) (a : M) : linearMap R M e (Pi.single i a) = Pi.single (e i) a :=
+  he.extend_single i a
+
+/-- Extension by zero along a composite of injective index maps is the composite of the
+extensions. -/
+theorem linearMap_comp {ι κ η : Type*} {e : ι → κ} {e' : κ → η} (he : Injective e)
+    (he' : Injective e') :
+    linearMap R M (e' ∘ e) = linearMap R M e' ∘ₗ linearMap R M e := by
+  ext v : 1
+  exact he.extend_comp he' v 0
+
+/-- Extension by zero along the identity is the identity. -/
+@[simp]
+theorem linearMap_id {ι : Type*} : linearMap R M (id : ι → ι) = LinearMap.id := by
+  ext v : 1
+  exact extend_id v 0
+
 variable {N : ℕ}
 
 /-- Taking the initial segment undoes the extension by zero along `Fin.castSucc`. -/

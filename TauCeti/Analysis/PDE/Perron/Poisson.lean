@@ -111,7 +111,7 @@ theorem exists_contDiffOn_continuousOn_closure_laplacian_eq {α : ℝ≥0} (hα 
     MemLp.of_bound hmeas.restrict _ (ae_of_all _ hbound)
   -- The weak solution of `-Δw = h` in `H¹₀(B)`.
   obtain ⟨u, hu, -⟩ := existsUnique_isWeakSolutionDirichlet_laplacian_of_subset_ball (Omega := B)
-    (z := 0) (by positivity) subset_rfl ((hLp 2).toLp h)
+    (z := 0) subset_rfl ((hLp 2).toLp h)
   have hu' : ∀ v : W1p0 volume B 2,
       energyFormH1 (fun _ => 1) 0 0 (u : W1p volume B 2) (v : W1p volume B 2) =
         ∫ x in B, h x * W1p.value (v : W1p volume B 2) x := fun v => by

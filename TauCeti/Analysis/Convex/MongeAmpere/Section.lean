@@ -107,6 +107,15 @@ theorem mongeAmpereMeasure_ite_mul_norm_sq_add {U : Set E} [DecidablePred (· �
     ContinuousLinearMap.coe_id, LinearMap.det_smul, LinearMap.det_id, mul_one]
   exact withDensity_const _
 
+/-- On a positive-dimensional space, a constant potential on an open convex set,
+extended by `⊤` outside it, has zero Monge–Ampère measure. -/
+theorem mongeAmpereMeasure_ite_const [Nontrivial E] {U : Set E}
+    [DecidablePred (· ∈ U)] (hU : IsOpen U) (hUc : Convex ℝ U) (c : ℝ) :
+    mongeAmpereMeasure μ (fun y => if y ∈ U then (c : EReal) else ⊤) = 0 := by
+  have hdim : finrank ℝ E ≠ 0 := (finrank_pos (R := ℝ) (M := E)).ne'
+  simpa only [zero_div, zero_mul, zero_add, zero_pow hdim, ENNReal.ofReal_zero, zero_smul]
+    using mongeAmpereMeasure_ite_mul_norm_sq_add μ hU hUc (a := 0) le_rfl c
+
 /-- **Subtracting a plane on a section.** Let `u` be convex on an open set `Ω`, and let
 `S = {y ∈ Ω | u y < u x + ℓ (y - x) + h}`. The Monge–Ampère measure of `u + L + c`, extended by
 `⊤` off `S`, is the restriction to `S` of the Monge–Ampère measure of `u` extended by `⊤` off
@@ -187,6 +196,73 @@ theorem abs_sub_le_on_convexSection_of_smul_le_mongeAmpereMeasure_le_smul {Ω : 
   rw [heq]
   exact hcomparison y hy
 
+omit [MeasurableSpace E] [BorelSpace E] [Nontrivial E] in
+/-- Pulling a convex function back along an affine equivalence `T.symm` preserves openness of the
+domain, the frontier, convexity and continuity on the closure. -/
+private lemma isOpen_frontier_convexOn_continuousOn_preimage_symm (T : E ≃ᵃ[ℝ] E) {G : Set E}
+    {v : E → ℝ} (hGo : IsOpen G) (hv : ConvexOn ℝ G v) (hvc : ContinuousOn v (closure G)) :
+    IsOpen (T.symm ⁻¹' G) ∧ frontier (T.symm ⁻¹' G) = T.symm ⁻¹' frontier G ∧
+      ConvexOn ℝ (T.symm ⁻¹' G) (fun y => v (T.symm y)) ∧
+      ContinuousOn (fun y => v (T.symm y)) (closure (T.symm ⁻¹' G)) := by
+  set H := (AffineEquiv.toContinuousAffineEquiv T.symm).toHomeomorph
+  refine ⟨hGo.preimage H.continuous, (H.preimage_frontier G).symm,
+    hv.comp_affineMap (T.symm : E →ᵃ[ℝ] E), ?_⟩
+  have hcl : closure (T.symm ⁻¹' G) = T.symm ⁻¹' closure G := (H.preimage_closure G).symm
+  rw [hcl]
+  exact hvc.comp H.continuous.continuousOn fun y hy => hy
+
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [Nontrivial E] in
+/-- In a set of diameter at most `2`, the product of a power of the diameter and a distance to
+the complement is controlled by the corresponding powers of `2` and the distance bound. -/
+private lemma ofReal_diam_pow_mul_infDist_le {s : Set E} {x : E} {d : ℝ} (n : ℕ)
+    (hdiam : diam s ≤ 2) (hdist : infDist x sᶜ ≤ d) :
+    ENNReal.ofReal (diam s ^ n * infDist x sᶜ) ≤ ENNReal.ofReal (2 ^ n) * ENNReal.ofReal d := by
+  rw [← ENNReal.ofReal_mul (by positivity)]
+  exact ENNReal.ofReal_le_ofReal (mul_le_mul (pow_le_pow_left₀ diam_nonneg hdiam _) hdist
+    infDist_nonneg (by positivity))
+
+include μ in
+/-- **Comparison with a quadratic.** In a bounded open set `G` containing `ball 0 r`, if a convex
+function `f` that is nonpositive on the frontier and at least `-h` on `G` has Monge–Ampère
+measure at least that of the quadratic `y ↦ (a / 2) (‖y‖² - r²)`, then `a r² / 2 ≤ h`. -/
+private lemma mul_sq_div_two_le_of_mongeAmpereMeasure_le {G : Set E} [DecidablePred (· ∈ G)]
+    {f : E → ℝ} {a r h : ℝ} (hr : 0 < r) (ha : 0 ≤ a) (hGo : IsOpen G)
+    (hGb : Bornology.IsBounded G) (hconv : ConvexOn ℝ G f) (hcont : ContinuousOn f (closure G))
+    (hfr : ∀ y ∈ frontier G, f y ≤ 0) (hball : ball (0 : E) r ⊆ G) (hlow : ∀ y ∈ G, -h ≤ f y)
+    (hle : mongeAmpereMeasure μ (fun y => if y ∈ G then
+        ((a / 2 * ‖y‖ ^ 2 + -(a / 2 * r ^ 2) : ℝ) : EReal) else ⊤) ≤
+      mongeAmpereMeasure μ (fun y => if y ∈ G then (f y : EReal) else ⊤)) :
+    a * r ^ 2 / 2 ≤ h := by
+  have h0 : (0 : E) ∈ G := hball (mem_ball_self hr)
+  -- The comparison principle: `f ≤ w`, since `w ≥ 0 ≥ f` on the frontier.
+  have hcomp := le_of_mongeAmpereMeasure_le_of_le_frontier μ hGo hGb
+    (convexOn_mul_norm_sq_add hconv.1 ha _) hconv (by fun_prop) hcont hle (fun y hy => ?_) h0
+  rotate_left
+  · -- On the frontier of `G`, `‖y‖ ≥ r` and `f y ≤ 0`.
+    have hyG : y ∉ G := by rw [hGo.frontier_eq] at hy; exact hy.2
+    have hry : r ≤ ‖y‖ := by
+      by_contra! hlt
+      exact hyG (hball (mem_ball_zero_iff.2 hlt))
+    nlinarith [hfr y hy, mul_le_mul hry hry hr.le (norm_nonneg y)]
+  simp only [norm_zero] at hcomp
+  linarith [hlow _ h0]
+
+/-- The final estimate for the volume bound: from `λ d² ≤ (2 / r²)ⁿ hⁿ` and `μ(G) ≤ d B` one gets
+`λ μ(G)² ≤ (2 / r²)ⁿ B² hⁿ`. -/
+private lemma mul_sq_le_ofReal_mul_ofReal_pow {lam : ℝ≥0} {d h r : ℝ} {n : ℕ} {B S : ℝ≥0∞}
+    (hd : 0 ≤ d) (hh : 0 ≤ h) (hpow : (lam : ℝ) * d ^ 2 ≤ (2 / r ^ 2) ^ n * h ^ n)
+    (hS : S ≤ ENNReal.ofReal d * B) :
+    (lam : ℝ≥0∞) * S ^ 2 ≤ ENNReal.ofReal ((2 / r ^ 2) ^ n) * B ^ 2 * ENNReal.ofReal h ^ n := by
+  calc (lam : ℝ≥0∞) * S ^ 2 ≤ lam * (ENNReal.ofReal d * B) ^ 2 := by gcongr
+    _ = ENNReal.ofReal (lam * d ^ 2) * B ^ 2 := by
+      rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow hd, ENNReal.ofReal_coe_nnreal]
+      ring
+    _ ≤ ENNReal.ofReal ((2 / r ^ 2) ^ n * h ^ n) * B ^ 2 := by gcongr
+    _ = _ := by
+      rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow hh]
+      ring
+
 /-- **The depth of a convex function is controlled by its distance to the boundary, volume and
 Monge–Ampère mass.** There is a constant `C`, depending only on `E` and `μ`, with the following
 property. Let `G` be a bounded open set, `v` convex on `G`, continuous on its closure and
@@ -225,19 +301,13 @@ theorem exists_ofReal_neg_pow_le_mul_ofReal_mul_measure_mul_mongeAmpereMeasure :
   have hdist := hd T hT1
   rw [show T '' G = T.symm ⁻¹' G from T.toEquiv.image_eq_preimage_symm G] at hTr hT1 hdist
   set G' := T.symm ⁻¹' G
-  set H := (AffineEquiv.toContinuousAffineEquiv T.symm).toHomeomorph
   set D := ENNReal.ofReal |LinearMap.det (T.symm.linear : E →ₗ[ℝ] E)|
   have hμG : μ G = D * μ G' := by
     rw [← addHaar_image_affineEquiv μ T.symm, image_preimage_eq _ T.symm.surjective]
-  have hG'o : IsOpen G' := hGo.preimage H.continuous
+  obtain ⟨hG'o, hfr', hconv', hcont'⟩ :=
+    isOpen_frontier_convexOn_continuousOn_preimage_symm T hGo hv hvc
   have hG'b : Bornology.IsBounded G' := isBounded_ball.subset hT1
-  have hcl : closure G' = T.symm ⁻¹' closure G := (H.preimage_closure G).symm
-  have hfr' : frontier G' = T.symm ⁻¹' frontier G := (H.preimage_frontier G).symm
   -- The Aleksandrov maximum principle for `v ∘ T⁻¹` on `G'`, at `T x₀`.
-  have hconv' : ConvexOn ℝ G' fun y => v (T.symm y) := hv.comp_affineMap (T.symm : E →ᵃ[ℝ] E)
-  have hcont' : ContinuousOn (fun y => v (T.symm y)) (closure G') := by
-    rw [hcl]
-    exact hvc.comp H.continuous.continuousOn fun y hy => hy
   have hmax := ofReal_neg_pow_mul_addHaar_ball_le_mul_mongeAmpereMeasure μ hG'o hG'b hconv'
     hcont' (fun y hy => hfr _ (by rw [hfr'] at hy; exact hy)) (x₀ := T x₀)
     (by simpa [G'] using hx₀)
@@ -246,11 +316,7 @@ theorem exists_ofReal_neg_pow_le_mul_ofReal_mul_measure_mul_mongeAmpereMeasure :
   -- Bound the diameter and the distance to the complement in normalized position.
   have hdiam : diam G' ≤ 2 :=
     (diam_mono hT1 isBounded_ball).trans ((diam_ball zero_le_one).trans_eq (mul_one 2))
-  have hgeom : ENNReal.ofReal (diam G' ^ (n - 1) * infDist (T x₀) G'ᶜ) ≤
-      ENNReal.ofReal (2 ^ (n - 1)) * ENNReal.ofReal d := by
-    rw [← ENNReal.ofReal_mul (by positivity)]
-    exact ENNReal.ofReal_le_ofReal (mul_le_mul (pow_le_pow_left₀ diam_nonneg hdiam _) hdist
-      infDist_nonneg (by positivity))
+  have hgeom := ofReal_diam_pow_mul_infDist_le (x := T x₀) (n - 1) hdiam hdist
   -- The volume of `G'` is at least that of `ball 0 r`.
   have hRG' : R ≤ μ G' := (addHaar_ball μ 0 hr.le).symm.trans_le (measure_mono hTr)
   set M := mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤) G
@@ -320,19 +386,13 @@ theorem exists_mul_measure_sq_le_mul_ofReal_pow :
   obtain ⟨T, hTr, hT1⟩ := hnorm G hv.1 hGb ⟨x₀, hGo.interior_eq.symm ▸ hx₀⟩
   rw [show T '' G = T.symm ⁻¹' G from T.toEquiv.image_eq_preimage_symm G] at hTr hT1
   set G' := T.symm ⁻¹' G
-  set H := (AffineEquiv.toContinuousAffineEquiv T.symm).toHomeomorph
   set d := |LinearMap.det (T.symm.linear : E →ₗ[ℝ] E)|
   have hμG : μ G = ENNReal.ofReal d * μ G' := by
     rw [← addHaar_image_affineEquiv μ T.symm, image_preimage_eq _ T.symm.surjective]
-  have hG'o : IsOpen G' := hGo.preimage H.continuous
+  obtain ⟨hG'o, hfr', hconv', hcont'⟩ :=
+    isOpen_frontier_convexOn_continuousOn_preimage_symm T hGo hv hvc
   have hG'b : Bornology.IsBounded G' := isBounded_ball.subset hT1
-  have hcl : closure G' = T.symm ⁻¹' closure G := (H.preimage_closure G).symm
-  have hfr' : frontier G' = T.symm ⁻¹' frontier G := (H.preimage_frontier G).symm
   have h0 : (0 : E) ∈ G' := hTr (mem_ball_self hr)
-  have hconv' : ConvexOn ℝ G' fun y => v (T.symm y) := hv.comp_affineMap (T.symm : E →ᵃ[ℝ] E)
-  have hcont' : ContinuousOn (fun y => v (T.symm y)) (closure G') := by
-    rw [hcl]
-    exact hvc.comp H.continuous.continuousOn fun y hy => hy
   -- The comparison function `w y = (a / 2) (‖y‖² - r²)` with `aⁿ = λ d²`.
   set a := ((lam : ℝ) * d ^ 2) ^ (n⁻¹ : ℝ)
   have ha : 0 ≤ a := by positivity
@@ -350,41 +410,19 @@ theorem exists_mul_measure_sq_le_mul_ofReal_pow :
       addHaar_image_affineEquiv μ T.symm, ENNReal.ofReal_mul (by positivity),
       ENNReal.ofReal_pow (abs_nonneg _), ENNReal.ofReal_coe_nnreal]
     exact le_of_eq (by ring)
-  -- The comparison principle on `G'`: `v ∘ T⁻¹ ≤ w`, since `w ≥ 0 ≥ v ∘ T⁻¹` on the frontier.
-  have hcomp := le_of_mongeAmpereMeasure_le_of_le_frontier μ hG'o hG'b
-    (convexOn_mul_norm_sq_add hconv'.1 ha _) hconv' (by fun_prop) hcont' hle
-    (fun y hy => ?_) h0
-  rotate_left
-  · -- On the frontier of `G'`, `‖y‖ ≥ r` and `v (T⁻¹ y) ≤ 0`.
-    have hyG' : y ∉ G' := by rw [hG'o.frontier_eq] at hy; exact hy.2
-    have hry : r ≤ ‖y‖ := by
-      by_contra! hlt
-      exact hyG' (hTr (mem_ball_zero_iff.2 hlt))
-    have hvy : v (T.symm y) ≤ 0 := hfr _ (by rw [hfr'] at hy; exact hy)
-    nlinarith [mul_le_mul hry hry hr.le (norm_nonneg y)]
-  simp only [norm_zero] at hcomp
   -- Hence `a r² / 2 ≤ h`, so `λ d² ≤ (2 h / r²)ⁿ`.
-  have hvh := hlow _ h0
+  have hah := mul_sq_div_two_le_of_mongeAmpereMeasure_le μ hr ha hG'o hG'b hconv' hcont'
+    (fun y hy => hfr _ (by rw [hfr'] at hy; exact hy)) hTr (fun y hy => hlow _ hy) hle
+  have hh : 0 ≤ h := by nlinarith [mul_nonneg ha (sq_nonneg r)]
   have har : a ≤ 2 * h / r ^ 2 := by
     rw [le_div_iff₀ (by positivity)]
     nlinarith
-  have hh : 0 ≤ h := by nlinarith [mul_nonneg ha (sq_nonneg r)]
   have hpow : (lam : ℝ) * d ^ 2 ≤ (2 / r ^ 2) ^ n * h ^ n := by
     rw [← han, ← mul_pow]
     exact pow_le_pow_left₀ ha (by rw [div_mul_eq_mul_div]; exact har) n
   -- Finally `μ(G) = d μ(G') ≤ d μ(ball 0 1)`.
-  have hμG' : μ G ≤ ENNReal.ofReal d * B := by
-    rw [hμG]
-    exact mul_le_mul' le_rfl (measure_mono hT1)
-  calc (lam : ℝ≥0∞) * μ G ^ 2 ≤ lam * (ENNReal.ofReal d * B) ^ 2 := by gcongr
-    _ = ENNReal.ofReal (lam * d ^ 2) * B ^ 2 := by
-      rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow (abs_nonneg _),
-        ENNReal.ofReal_coe_nnreal]
-      ring
-    _ ≤ ENNReal.ofReal ((2 / r ^ 2) ^ n * h ^ n) * B ^ 2 := by gcongr
-    _ = K * ENNReal.ofReal h ^ n := by
-      rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow hh]
-      ring
+  exact mul_sq_le_ofReal_mul_ofReal_pow (abs_nonneg _) hh hpow
+    (hμG ▸ mul_le_mul' le_rfl (measure_mono hT1))
 /-! ### Sections -/
 
 /-- **Lower volume estimate for sections.** There is a constant `C`, depending only on `E` and

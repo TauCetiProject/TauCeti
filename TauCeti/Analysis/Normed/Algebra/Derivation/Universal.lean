@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Algebra.ApproximateDiagonal
-public import TauCeti.Analysis.Normed.Module.Unitization
+public import TauCeti.Analysis.Normed.Module.Unitization.Basic
 public import TauCeti.Analysis.Normed.Operator.Restrict
 
 /-!

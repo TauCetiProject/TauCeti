@@ -76,16 +76,12 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_specialFiberι_eq_prod_vanishing
     (hη : toBase (genericPoint X) ≠ closedPoint R) {π : R}
     (hπ : maximalIdeal R = Ideal.span {π}) :
     (specialFiberι R toBase).ker = ∏ η ∈ (toBase.finite_setOf_base_eq_closedPoint
-        (fun h ↦ hη (PrimeSpectrum.ext (le_antisymm
-          (le_maximalIdeal (toBase (genericPoint X)).isPrime.ne_top) (h.le.trans bot_le))))
-        hη).toFinset,
+        (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset,
       Scheme.IdealSheafData.vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩ ^
         toBase.specialFiberMultiplicity π η := by
   have hπm : π ∈ maximalIdeal R := hπ ▸ Ideal.mem_span_singleton_self π
   -- If `R` is a field, then the generic point maps to the closed point, the only point of `Spec R`.
-  have hR : maximalIdeal R ≠ ⊥ := fun h ↦ hη (PrimeSpectrum.ext (le_antisymm
-    (le_maximalIdeal (toBase (genericPoint X)).isPrime.ne_top) (h.le.trans bot_le)))
-  have hπ0 : π ≠ 0 := fun h ↦ hR (by rw [hπ, h, Ideal.span_singleton_eq_bot])
+  have hπ0 := toBase.ne_zero_of_base_ne_closedPoint hη hπ
   have := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
   rw [ker_specialFiberι_eq_ofIdealTop_span toBase hπ,
     Scheme.IdealSheafData.ofIdealTop_span_singleton_eq_prod_vanishingIdeal

@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.DysonSeries
+public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
+public import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 public import TauCeti.Geometry.Symplectic.Floer.Linearization
+public import TauCeti.Geometry.Symplectic.Hamiltonian.TimeDependent
+import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.MeasureTheory.Integral.Rectangle
@@ -38,11 +42,33 @@ symmetric for the `L²` pairing `∫₀¹ g_t(·, ·) dt` on one-periodic loops
 The kernel of `A` consists of the solutions of the linearized Hamiltonian equation
 `ζ' = S_t ζ` (`Floer.asymptoticOperator_eq_zero_iff`). Every such solution is `ζ(t) = Ψ(t) ζ(0)`
 for the propagator `Ψ = TauCeti.dysonSeriesLeft S` of that equation, so `A` has a nonzero
-one-periodic kernel element exactly when `det (1 - Ψ(1)) = 0`
-(`Floer.exists_ne_zero_asymptoticOperator_eq_zero_iff_det_eq_zero`). When `Ψ(1)` is the
-derivative of the time-one map at `x(0)`, which is the content of the variational equation of
-the Hamiltonian flow (not proved here), this says that `A` is injective on one-periodic loops
-exactly when the orbit is nondegenerate.
+one-periodic kernel element exactly when `Ψ(1)` fixes a nonzero vector, that is, when
+`det (1 - Ψ(1)) = 0`
+(`Floer.exists_ne_zero_asymptoticOperator_eq_zero_iff_exists_ne_zero_dysonSeriesLeft_apply_eq_self`
+and `Floer.exists_ne_zero_asymptoticOperator_eq_zero_iff_det_eq_zero`).
+
+For an actual orbit, with `S_t = dX_{H_t}(x(t))`, the variational equation of the Hamiltonian
+evolution `φ` identifies the propagator with its derivative along the orbit,
+`Ψ(t) = dφ(0, t)(x(0))` (`SymplecticForm.fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft`),
+which is therefore a path of symplectic maps starting at the identity
+(`SymplecticForm.apply_dysonSeriesLeft_fderiv_hamiltonianVectorField`).
+So `Ψ(1)` is the derivative of the time-one map at `x(0)`, and for a one-periodic orbit of a
+one-periodic Hamiltonian the asymptotic operator has no nonzero one-periodic kernel element
+exactly when the orbit is nondegenerate, that is, when `x(0)` is a nondegenerate fixed point of
+the time-one map
+(`SymplecticForm.isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero`).
+This holds for every family `J_t`, compatible or not. It is the Hamiltonian case of the same
+criterion for a one-periodic orbit of any jointly `C¹` one-periodic vector field `v` on a Banach
+space, with `S_t = D(v_t)(x(t))` (`Floer.isNondegenerateFixedPt_timeDependentFlow_iff`).
+
+Operators on cylindrical ends act on maps decaying like `e^{-δ s}`. Conjugation by the weight
+turns `D` into the operator `∂s + A - δ` (`Floer.stationaryCylinderOperator_exp_smul`), and
+`A - δ` is the asymptotic operator of `S_t - δ J_t` (`Floer.asymptoticOperator_sub_smul`). For
+continuous one-periodic `S` and `J` the weights `δ` at which `A - δ` has a nonzero one-periodic
+kernel element form a closed set (`Floer.isClosed_setOf_exists_asymptoticOperator_eq_smul`),
+because the return map of `S_t - δ J_t` depends continuously on `δ`. In particular, if `A` is
+injective on one-periodic loops, then so is `A - δ` for all small `δ`; at a nondegenerate
+orbit this is `SymplecticForm.eventually_eq_zero_of_asymptoticOperator_eq_smul`.
 
 On the cylinder, the same cancellation gives the integrated form of `D* D = -∂s² + A²` over
 `[a, b] × [0, 1]`, in which the cross term only contributes the slice pairings
@@ -70,6 +96,7 @@ constant orthogonal complex structure on an inner product space is the operator
 public section
 
 open Function Filter Set MeasureTheory Topology
+open scoped Manifold NNReal
 
 namespace TauCeti
 
@@ -200,6 +227,27 @@ theorem asymptoticOperator_dysonSeriesLeft_apply_eq_zero (hSc : Continuous S) (v
 
 end Kernel
 
+/-- **The kernel of the asymptotic operator and the return map.** For a continuous one-periodic
+family `S`, the asymptotic operator has a nonzero differentiable one-periodic kernel element
+exactly when the return map `Ψ(1)` of the linearized Hamiltonian equation `ζ' = S_t ζ` fixes a
+nonzero vector. -/
+theorem exists_ne_zero_asymptoticOperator_eq_zero_iff_exists_ne_zero_dysonSeriesLeft_apply_eq_self
+    [CompleteSpace V] (hSc : Continuous S) (hSp : Periodic S 1) :
+    (∃ ζ : ℝ → V, Differentiable ℝ ζ ∧ Periodic ζ 1 ∧ ζ ≠ 0 ∧
+      ∀ t, asymptoticOperator J S ζ t = 0) ↔
+      ∃ v ≠ 0, dysonSeriesLeft S 1 v = v := by
+  constructor
+  · rintro ⟨ζ, hζ, hζp, hne, h⟩
+    have heq := apply_eq_dysonSeriesLeft_apply_of_asymptoticOperator_eq_zero hSc hζ h
+    refine ⟨ζ 0, fun h0 ↦ hne (funext fun t ↦ by rw [heq, h0, map_zero, Pi.zero_apply]), ?_⟩
+    rw [← heq, ← zero_add (1 : ℝ), hζp 0]
+  · rintro ⟨v, hne, hΨv⟩
+    exact ⟨fun t ↦ dysonSeriesLeft S t v,
+      fun t ↦ (hasDerivAt_dysonSeriesLeft_apply hSc v t).differentiableAt,
+      (periodic_dysonSeriesLeft_apply_iff hSc hSp v).2 hΨv,
+      fun h ↦ hne (by simpa using congrFun h 0),
+      asymptoticOperator_dysonSeriesLeft_apply_eq_zero hSc v⟩
+
 /-- **Nondegeneracy and the kernel of the asymptotic operator.** For a continuous one-periodic
 family `S`, the asymptotic operator has a nonzero differentiable one-periodic kernel element
 exactly when `1` is an eigenvalue of the return map `Ψ(1)` of the linearized Hamiltonian
@@ -209,24 +257,101 @@ theorem exists_ne_zero_asymptoticOperator_eq_zero_iff_det_eq_zero [FiniteDimensi
     (∃ ζ : ℝ → V, Differentiable ℝ ζ ∧ Periodic ζ 1 ∧ ζ ≠ 0 ∧
       ∀ t, asymptoticOperator J S ζ t = 0) ↔
       LinearMap.det ((1 - dysonSeriesLeft S 1 : V →L[ℝ] V) : V →ₗ[ℝ] V) = 0 := by
-  rw [LinearMap.det_eq_zero_iff_ker_ne_bot, Submodule.ne_bot_iff]
+  rw [exists_ne_zero_asymptoticOperator_eq_zero_iff_exists_ne_zero_dysonSeriesLeft_apply_eq_self
+      hSc hSp, LinearMap.det_eq_zero_iff_ker_ne_bot, Submodule.ne_bot_iff]
+  simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, sub_apply, one_apply_eq_self,
+    sub_eq_zero]
+  exact ⟨fun ⟨v, h0, hv⟩ ↦ ⟨v, hv.symm, h0⟩, fun ⟨v, hv, h0⟩ ↦ ⟨v, h0, hv.symm⟩⟩
+
+/-- **Nondegenerate orbits are those whose asymptotic operator has no periodic kernel.** Let `x`
+be a one-periodic orbit of a one-periodic, jointly `C¹` time-dependent vector field `v` on a
+Banach space whose suspension is globally Lipschitz, and let `J_t` be any family of almost complex
+structures. Then `x(0)` is a nondegenerate fixed point of the time-one map of `v` exactly when the
+asymptotic operator `A ζ = J_t (ζ' - S_t ζ)` along `x`, with `S_t = D(v_t)(x(t))`, has no nonzero
+differentiable one-periodic kernel element. -/
+theorem isNondegenerateFixedPt_timeDependentFlow_iff [CompleteSpace V] {v : ℝ → V → V}
+    {K : ℝ≥0} (hv : LipschitzWith K (timeDependentSuspension v))
+    (hvs : ContDiff ℝ 1 fun p : ℝ × V ↦ v p.1 p.2) (hvp : Periodic v 1) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (v t (x t)) t) (hxp : Periodic x 1)
+    (J : ℝ → AlmostComplexStructure V) :
+    IsNondegenerateFixedPt 𝓘(ℝ, V) (timeDependentFlow v hv 0 1) (x 0) ↔
+      ∀ ζ : ℝ → V, Differentiable ℝ ζ → Periodic ζ 1 →
+        (∀ t, asymptoticOperator J (fun t ↦ fderiv ℝ (v t) (x t)) ζ t = 0) → ζ = 0 := by
+  set S := fun t ↦ fderiv ℝ (v t) (x t)
+  have hSc : Continuous S := (hvs.fderiv (contDiff_zero.2
+    (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt)) le_rfl).continuous
+  have hSp : Periodic S 1 := fun t ↦ by simp only [S, hvp t, hxp t]
+  -- The time-one map fixes `x(0)`, with derivative the return map `Ψ(1)` there.
+  have horbit (r : ℝ) := (eq_timeDependentFlow v hv hx 0 r).symm
+  have hfix : IsFixedPt (timeDependentFlow v hv 0 1) (x 0) := by
+    rw [IsFixedPt, horbit, ← zero_add (1 : ℝ), hxp 0]
+  have hD := (differentiable_timeDependentFlow hv hvs 0 1 (x 0)).hasFDerivAt.hasMFDerivAt
+  rw [isNondegenerateFixedPt_iff, hD.mfderiv, fderiv_timeDependentFlow_eq_dysonSeriesLeft hv hvs]
+  simp only [zero_add, sub_zero, horbit, hfix, hD.mdifferentiableAt, true_and]
+  -- Both sides say that there is no nonzero periodic solution of `ζ' = S_t ζ`.
+  have hker :=
+    exists_ne_zero_asymptoticOperator_eq_zero_iff_exists_ne_zero_dysonSeriesLeft_apply_eq_self
+      (J := J) hSc hSp
   constructor
-  · rintro ⟨ζ, hζ, hζp, hne, h⟩
-    have heq := apply_eq_dysonSeriesLeft_apply_of_asymptoticOperator_eq_zero hSc hζ h
-    refine ⟨ζ 0, ?_, fun h0 ↦ hne (funext fun t ↦ by rw [heq, h0, map_zero, Pi.zero_apply])⟩
-    have h1 : dysonSeriesLeft S 1 (ζ 0) = ζ 0 := by rw [← heq, ← zero_add (1 : ℝ), hζp 0]
-    simp [h1]
-  · rintro ⟨v, hv, hne⟩
-    have hΨv : dysonSeriesLeft S 1 v = v := by
-      rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, sub_apply, one_apply_eq_self,
-        sub_eq_zero] at hv
-      exact hv.symm
-    refine ⟨fun t ↦ dysonSeriesLeft S t v,
-      fun t ↦ (hasDerivAt_dysonSeriesLeft_apply hSc v t).differentiableAt, fun t ↦ ?_,
-      fun h ↦ hne (by simpa using congrFun h 0),
-      asymptoticOperator_dysonSeriesLeft_apply_eq_zero hSc v⟩
-    dsimp only
-    rw [dysonSeriesLeft_add_of_periodic hSc hSp t, mul_apply_eq_comp, hΨv]
+  · intro h ζ hζ hζp hA
+    by_contra hne
+    obtain ⟨w, hw0, hw⟩ := hker.1 ⟨ζ, hζ, hζp, hne, hA⟩
+    exact hw0 (h w hw)
+  · intro h w hw
+    by_contra hw0
+    obtain ⟨ζ, hζ, hζp, hne, hA⟩ := hker.2 ⟨w, hw0, hw⟩
+    exact hne (h ζ hζ hζp hA)
+
+section Weight
+
+/-! ### Weighted operators
+
+Floer operators on cylindrical ends act on maps decaying like `e^{-δ s}`. Conjugating by the
+weight shifts the asymptotic operator `A` to `A - δ`, and `A - δ` is again an asymptotic
+operator, for the linearized field `S_t - δ J_t`. -/
+
+variable [FiniteDimensional ℝ V]
+
+/-- **Shifting the asymptotic operator by a weight.** Replacing `S_t` by `S_t - δ J_t` shifts the
+asymptotic operator by `-δ`. -/
+theorem asymptoticOperator_sub_smul (δ : ℝ) (ζ : ℝ → V) (t : ℝ) :
+    asymptoticOperator J
+        (fun t ↦ S t - δ • LinearMap.toContinuousLinearMap (J t).toLinearMap) ζ t =
+      asymptoticOperator J S ζ t - δ • ζ t := by
+  have h : J t (J t (ζ t)) = -ζ t := AlmostComplexStructure.apply_apply _ _
+  simp only [asymptoticOperator_def, sub_apply, smul_apply, LinearMap.coe_toContinuousLinearMap',
+    sub_sub_eq_add_sub, map_add, map_sub, map_smul] at h ⊢
+  rw [h]
+  module
+
+/-- **The periodic spectrum of the asymptotic operator is closed.** For continuous one-periodic
+families `S` and `J`, the real weights `δ` for which `A ζ = δ ζ` has a nonzero differentiable
+one-periodic solution form a closed set: the zero set of `δ ↦ det (1 - Ψ_δ(1))`, where `Ψ_δ`
+is the propagator of `ζ' = (S_t - δ J_t) ζ`. -/
+theorem isClosed_setOf_exists_asymptoticOperator_eq_smul (hSc : Continuous S)
+    (hSp : Periodic S 1) (hJc : Continuous J) (hJp : Periodic J 1) :
+    IsClosed {δ : ℝ | ∃ ζ : ℝ → V, Differentiable ℝ ζ ∧ Periodic ζ 1 ∧ ζ ≠ 0 ∧
+      ∀ t, asymptoticOperator J S ζ t = δ • ζ t} := by
+  set Jc : ℝ → V →L[ℝ] V := fun t ↦ LinearMap.toContinuousLinearMap (J t).toLinearMap
+  have hJc' : Continuous Jc := AlmostComplexStructure.continuous_iff.1 hJc
+  have hp : Continuous (Function.uncurry fun (δ : ℝ) t ↦ S t - δ • Jc t) :=
+    (hSc.comp continuous_snd).sub (continuous_fst.smul (hJc'.comp continuous_snd))
+  have hset : {δ : ℝ | ∃ ζ : ℝ → V, Differentiable ℝ ζ ∧ Periodic ζ 1 ∧ ζ ≠ 0 ∧
+      ∀ t, asymptoticOperator J S ζ t = δ • ζ t} =
+      (fun δ ↦ LinearMap.det
+        ((1 - dysonSeriesLeft (fun t ↦ S t - δ • Jc t) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V)) ⁻¹' {0} := by
+    ext δ
+    refine Iff.trans ?_ (exists_ne_zero_asymptoticOperator_eq_zero_iff_det_eq_zero (J := J)
+      (S := fun t ↦ S t - δ • Jc t) (hSc.sub (hJc'.const_smul δ))
+      fun t ↦ by simp only [Jc, hSp t, hJp t])
+    simp only [Jc, asymptoticOperator_sub_smul, sub_eq_zero]
+    exact Iff.rfl
+  rw [hset]
+  exact isClosed_singleton.preimage <| ContinuousLinearMap.continuous_det.comp <|
+    continuous_const.sub <| (continuous_parametric_dysonSeriesLeft hp).comp <|
+      continuous_id.prodMk continuous_const
+
+end Weight
 
 section Cylinder
 
@@ -288,6 +413,28 @@ private theorem fderiv_add_one_snd (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (
   simpa using hp.fderiv (s, t)
 
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V}
+
+/-- **The weighted end operator.** Conjugating the stationary cylinder operator by the weight
+`e^{δ s}` shifts it by `-δ`: `D(e^{-δ s} ξ) = e^{-δ s} (D - δ) ξ`, where `D - δ` is the stationary
+cylinder operator of `S_t - δ J_t`. Hence `D` on maps of the form `e^{-δ s} ξ` is the operator
+`∂s + A - δ` on `ξ`. -/
+theorem stationaryCylinderOperator_exp_smul (δ : ℝ) (hξ : DifferentiableAt ℝ ξ z) :
+    stationaryCylinderOperator J S (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) z =
+      Real.exp (-(δ * z.1)) • stationaryCylinderOperator J
+        (fun t ↦ S t - δ • LinearMap.toContinuousLinearMap (J t).toLinearMap) ξ z := by
+  have hc : HasFDerivAt (fun w : ℝ × ℝ ↦ Real.exp (-(δ * w.1)))
+      (Real.exp (-(δ * z.1)) • -(δ • ContinuousLinearMap.fst ℝ ℝ ℝ)) z := by
+    simpa using ((hasFDerivAt_fst (p := z)).const_smul δ).neg.exp
+  have h : J z.2 (J z.2 (ξ z)) = -ξ z := AlmostComplexStructure.apply_apply _ _
+  have hd : HasFDerivAt (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) _ z := hc.smul hξ.hasFDerivAt
+  rw [stationaryCylinderOperator_def, hd.fderiv, stationaryCylinderOperator_def]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, neg_apply,
+    ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst,
+    sub_apply, LinearMap.coe_toContinuousLinearMap', map_add, map_sub,
+    map_smul, sub_sub_eq_add_sub, smul_eq_mul, mul_zero, mul_one, neg_zero, zero_smul,
+    add_zero] at h ⊢
+  rw [h]
+  module
 
 /-- For continuously varying `J_t`, the norm `g_t(f, f)` of a continuous map `f` of the cylinder
 for `g_t = ω(·, J_t ·)` is continuous. -/
@@ -581,6 +728,56 @@ theorem floerLinearization_eq_stationaryCylinderOperator (ω : SymplecticForm V)
   rw [floerLinearization_def, Floer.stationaryCylinderOperator_def, hxt, sub_self, map_zero,
     hamiltonianVectorField_const]
   simp
+
+/-- **Nondegenerate orbits are those whose asymptotic operator has no periodic kernel.** Let `x`
+be a one-periodic orbit of a one-periodic, jointly `C²` time-dependent Hamiltonian `H` whose
+suspended vector field is globally Lipschitz, and let `J_t` be any family of almost complex
+structures. Then `x(0)` is a nondegenerate fixed point of the time-one map of `H` exactly when the
+asymptotic operator `A ζ = J_t (ζ' - S_t ζ)` along `x`, with `S_t = dX_{H_t}(x(t))`, has no
+nonzero differentiable one-periodic kernel element. -/
+theorem isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero
+    (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 2 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
+    (J : ℝ → AlmostComplexStructure V) :
+    IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0) ↔
+      ∀ ζ : ℝ → V, Differentiable ℝ ζ → Periodic ζ 1 →
+        (∀ t, Floer.asymptoticOperator J
+          (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) ζ t = 0) → ζ = 0 := by
+  rw [ω.timeDependentHamiltonianFlow_eq H hX]
+  exact Floer.isNondegenerateFixedPt_timeDependentFlow_iff _
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH)
+    (fun t ↦ funext fun y ↦ by simp only [hHp t]) hx hxp J
+
+/-- **Small weights preserve nondegeneracy.** At a nondegenerate one-periodic orbit `x` of a
+one-periodic, jointly `C²` time-dependent Hamiltonian `H` whose suspended vector field is globally
+Lipschitz, and for continuous one-periodic almost complex structures `J_t`, the weighted
+asymptotic operator `A - δ` along `x` has no nonzero differentiable one-periodic kernel element
+for every weight `δ` close enough to `0`. -/
+theorem eventually_eq_zero_of_asymptoticOperator_eq_smul
+    (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 2 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
+    {J : ℝ → AlmostComplexStructure V} (hJc : Continuous J) (hJp : Periodic J 1) :
+    ∀ᶠ δ in 𝓝 (0 : ℝ), ∀ ζ : ℝ → V, Differentiable ℝ ζ → Periodic ζ 1 →
+      (∀ t, Floer.asymptoticOperator J
+        (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) ζ t = δ • ζ t) → ζ = 0 := by
+  have hSc : Continuous fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) :=
+    ω.continuous_fderiv_hamiltonianVectorField_comp hH
+      (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt)
+  have hSp : Periodic (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 :=
+    fun t ↦ by simp only [hHp t, hxp t]
+  have hclosed := Floer.isClosed_setOf_exists_asymptoticOperator_eq_smul hSc hSp hJc hJp
+  have h₀ :=
+    (isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero ω hX hH hHp hx hxp
+      J).1 hnd
+  refine Eventually.mono (hclosed.isOpen_compl.mem_nhds fun ⟨ζ, hζ, hζp, hne, hA⟩ ↦
+    hne (h₀ ζ hζ hζp fun t ↦ by simpa using hA t)) fun δ hδ ζ hζ hζp hA ↦ ?_
+  by_contra hne
+  exact hδ ⟨ζ, hζ, hζp, hne, hA⟩
 
 end SymplecticForm
 

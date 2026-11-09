@@ -72,6 +72,7 @@ identification is exact.
 public section
 
 open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup DoubleCoset HeckeRing.GLn
+open TauCeti
 
 open scoped MatrixGroups ModularForm Pointwise
 

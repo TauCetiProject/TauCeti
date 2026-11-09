@@ -93,9 +93,8 @@ private theorem centralizerMap_of_map_eq
     ext a
     rfl
   have h := (RingHom.finite_isStableUnderBaseChange.and
-    RingHom.FaithfullyFlat.isStableUnderBaseChange).quotientMap
-    (RingHom.finite_respectsIso.and RingHom.FaithfullyFlat.respectsIso)
-    (f.hom : H →+* K) (centralizerHopfIdeal H (dualCotangentMap f.hom x)).toIdeal
+    RingHom.FaithfullyFlat.isStableUnderBaseChange).quotientMap (f.hom : H →+* K)
+      (centralizerHopfIdeal H (dualCotangentMap f.hom x)).toIdeal
       (hcoe ▸ ⟨hf.finite, hf.faithfullyFlat⟩)
   rw [HopfIdeal.map_toIdeal] at hI
   have h' := (RingHom.finite_respectsIso.and RingHom.FaithfullyFlat.respectsIso).left

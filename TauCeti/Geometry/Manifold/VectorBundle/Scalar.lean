@@ -5,11 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
-public import Mathlib.Geometry.Manifold.Algebra.LieGroup
-public import Mathlib.Geometry.Manifold.Algebra.SMul
-public import Mathlib.Geometry.Manifold.Diffeomorph
 
 /-!
 # Smooth scalar rescaling of vector bundles
@@ -59,8 +55,7 @@ theorem ContMDiffWithinAt.smul_totalSpace {a : M → 𝕜'} {g : M → TotalSpac
   have he : ∀ᶠ y in 𝓝[s] x, (g y).proj ∈ e.baseSet :=
     hb.continuousWithinAt.preimage_mem_nhdsWithin
       (e.open_baseSet.mem_nhds (mem_baseSet_trivializationAt F V (g x).proj))
-  refine ((contDiff_smul (𝕜 := 𝕜) (𝕜' := 𝕜') (F := F) (n := n)).comp_contMDiffWithinAt
-    (ha.prodMk_space hv)).congr_of_eventuallyEq ?_ ?_
+  refine (contDiff_smul.comp_contMDiffWithinAt (ha.prodMk_space hv)).congr_of_eventuallyEq ?_ ?_
   · filter_upwards [he] with y hy
     exact (e.linear 𝕜' hy).map_smul (a y) (g y).2
   · exact (e.linear 𝕜' (mem_baseSet_trivializationAt F V (g x).proj)).map_smul
@@ -72,9 +67,8 @@ theorem ContMDiffAt.smul_totalSpace {a : M → 𝕜'} {g : M → TotalSpace F V}
     (ha : ContMDiffAt J 𝓘(𝕜, 𝕜') n a x)
     (hg : ContMDiffAt J (I.prod 𝓘(𝕜, F)) n g x) :
     ContMDiffAt J (I.prod 𝓘(𝕜, F)) n
-      (fun y => (⟨(g y).proj, a y • (g y).2⟩ : TotalSpace F V)) x := by
-  rw [← contMDiffWithinAt_univ]
-  exact ha.contMDiffWithinAt.smul_totalSpace hg.contMDiffWithinAt
+      (fun y => (⟨(g y).proj, a y • (g y).2⟩ : TotalSpace F V)) x :=
+  contMDiffWithinAt_univ.mp (ha.contMDiffWithinAt.smul_totalSpace hg.contMDiffWithinAt)
 
 /-- Multiplying a bundle-valued map by a scalar-valued map preserves `C^n` regularity
 on a set. -/
@@ -88,10 +82,8 @@ theorem ContMDiffOn.smul_totalSpace {a : M → 𝕜'} {g : M → TotalSpace F V}
 theorem ContMDiff.smul_totalSpace {a : M → 𝕜'} {g : M → TotalSpace F V}
     (ha : ContMDiff J 𝓘(𝕜, 𝕜') n a) (hg : ContMDiff J (I.prod 𝓘(𝕜, F)) n g) :
     ContMDiff J (I.prod 𝓘(𝕜, F)) n
-      (fun y => (⟨(g y).proj, a y • (g y).2⟩ : TotalSpace F V)) := by
-  intro x
-  rw [← contMDiffWithinAt_univ]
-  exact (ha x).contMDiffWithinAt.smul_totalSpace (hg x).contMDiffWithinAt
+      (fun y => (⟨(g y).proj, a y • (g y).2⟩ : TotalSpace F V)) :=
+  fun x => (ha x).smul_totalSpace (hg x)
 
 namespace TauCeti
 
@@ -146,8 +138,8 @@ theorem vectorBundleScalarDiffeomorph_symm (a : B → 𝕜')
       vectorBundleScalarDiffeomorph (fun b => (a b)⁻¹)
         (ContMDiff.congr (fun b => (contDiffAt_inv 𝕜 (ha0 b)).comp_contMDiffAt (ha b))
           fun _ => rfl)
-        (fun b => inv_ne_zero (ha0 b)) := by
-  exact Diffeomorph.ext fun _ => rfl
+        (fun b => inv_ne_zero (ha0 b)) :=
+  Diffeomorph.ext fun _ => rfl
 
 section Norm
 

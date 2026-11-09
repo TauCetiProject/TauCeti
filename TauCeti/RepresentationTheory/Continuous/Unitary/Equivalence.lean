@@ -46,32 +46,17 @@ private local instance instCompleteSpaceUnitaryEquivalence {E : Type*} [NormedAd
   FiniteDimensional.complete 𝕜 E
 
 /-- An equivalence between unitary continuous representations, with finite-dimensional irreducible
-source, can be replaced by a linear isometry equivalence transporting the source onto the target.
-The target is automatically finite-dimensional because it is equivalent to the source. -/
-theorem exists_linearIsometryEquiv_congr_eq {π : ContRepresentation 𝕜 G V}
+source, scales norms by a positive constant, by Schur's lemma applied to `T† ∘ T`. -/
+private theorem exists_norm_toContIntertwiningMap_eq {π : ContRepresentation 𝕜 G V}
     {ρ : ContRepresentation 𝕜 G W} (hπu : IsUnitary π) (hρu : IsUnitary ρ)
     (hirr : π.toRepresentation.IsIrreducible) (φ : Equiv π ρ) :
-    ∃ e : V ≃ₗᵢ[𝕜] W, ContinuousLinearEquiv.congr e.toContinuousLinearEquiv π = ρ := by
+    ∃ r : ℝ, 0 < r ∧ ∀ v : V, ‖φ.toContIntertwiningMap v‖ = r * ‖v‖ := by
   let : FiniteDimensional 𝕜 W := φ.toLinearEquiv.finiteDimensional
   set T : V →L[𝕜] W := φ.toContIntertwiningMap.toContinuousLinearMap with hTdef
-  have hT : ∀ g : G, T ∘L π g = ρ g ∘L T := fun g ↦ by
-    rw [hTdef, ← φ.toContinuousLinearEquiv_toContinuousLinearMap]
-    exact φ.isIntertwining g
-  have hTapp : ∀ (g : G) (v : V), T (π g v) = ρ g (T v) := fun g v ↦ by
-    simpa only [← φ.toContIntertwiningMap.toContinuousLinearMap_apply, ← hTdef] using
-      φ.toContIntertwiningMap.isIntertwining g v
   -- The adjoint intertwines the other way, so `T† ∘ T` is a self-intertwiner of `π`
-  have hadj : ∀ g : G, (ContinuousLinearMap.adjoint T) ∘L ρ g
-      = π g ∘L ContinuousLinearMap.adjoint T := fun g ↦ by
-    simpa only [ContinuousLinearMap.adjoint_comp, hπu.adjoint_eq_inv,
-      hρu.adjoint_eq_inv, inv_inv] using
-      (congrArg ContinuousLinearMap.adjoint (hT g⁻¹)).symm
-  set Tadj : ContIntertwiningMap ρ π :=
-    { toContinuousLinearMap := ContinuousLinearMap.adjoint T, isIntertwining' := hadj }
-    with hTadjDef
-  -- Project the field supplied in this local constructor before evaluating the composite.
+  let Tadj : ContIntertwiningMap ρ π := φ.toContIntertwiningMap.adjoint hπu hρu
   have hTadj : Tadj.toContinuousLinearMap = ContinuousLinearMap.adjoint T :=
-    congrArg ContIntertwiningMap.toContinuousLinearMap hTadjDef
+    φ.toContIntertwiningMap.toContinuousLinearMap_adjoint hπu hρu
   -- Schur's lemma makes the composite intertwiner a scalar.
   obtain ⟨c, hc⟩ := π.exists_eq_smul_one_of_isIrreducible hirr
     (Tadj.comp φ.toContIntertwiningMap)
@@ -99,14 +84,30 @@ theorem exists_linearIsometryEquiv_congr_eq {π : ContRepresentation 𝕜 G V}
     hv₀ (hTinj (by simpa using h))
   have hcpos : 0 < ‖c‖ := (mul_pos_iff_of_pos_right (sq_pos_of_pos hv₀norm)).mp
     ((hnormSq v₀) ▸ sq_pos_of_pos hTv₀)
-  have hnorm : ∀ v : V, ‖T v‖ = Real.sqrt ‖c‖ * ‖v‖ := fun v ↦ by
-    rw [← Real.sqrt_sq (norm_nonneg (T v)), hnormSq v,
-      Real.sqrt_mul (norm_nonneg c), Real.sqrt_sq (norm_nonneg v)]
-  -- Rescaling by `1/√‖c‖` turns `T` into an isometry, which still intertwines
-  have hsqrt : (0 : ℝ) < Real.sqrt ‖c‖ := Real.sqrt_pos.2 hcpos
-  set b : 𝕜 := ((Real.sqrt ‖c‖ : ℝ) : 𝕜)⁻¹ with hb
+  refine ⟨Real.sqrt ‖c‖, Real.sqrt_pos.2 hcpos, fun v ↦ ?_⟩
+  rw [← φ.toContIntertwiningMap.toContinuousLinearMap_apply, ← hTdef,
+    ← Real.sqrt_sq (norm_nonneg (T v)), hnormSq v,
+    Real.sqrt_mul (norm_nonneg c), Real.sqrt_sq (norm_nonneg v)]
+
+/-- An equivalence between unitary continuous representations, with finite-dimensional irreducible
+source, can be replaced by a linear isometry equivalence transporting the source onto the target.
+The target is automatically finite-dimensional because it is equivalent to the source. -/
+theorem exists_linearIsometryEquiv_congr_eq {π : ContRepresentation 𝕜 G V}
+    {ρ : ContRepresentation 𝕜 G W} (hπu : IsUnitary π) (hρu : IsUnitary ρ)
+    (hirr : π.toRepresentation.IsIrreducible) (φ : Equiv π ρ) :
+    ∃ e : V ≃ₗᵢ[𝕜] W, ContinuousLinearEquiv.congr e.toContinuousLinearEquiv π = ρ := by
+  let : FiniteDimensional 𝕜 W := φ.toLinearEquiv.finiteDimensional
+  set T : V →L[𝕜] W := φ.toContIntertwiningMap.toContinuousLinearMap with hTdef
+  have hTapp : ∀ (g : G) (v : V), T (π g v) = ρ g (T v) := fun g v ↦ by
+    simpa only [← φ.toContIntertwiningMap.toContinuousLinearMap_apply, ← hTdef] using
+      φ.toContIntertwiningMap.isIntertwining g v
+  obtain ⟨r, hsqrt, hrnorm⟩ := exists_norm_toContIntertwiningMap_eq hπu hρu hirr φ
+  have hnorm : ∀ v : V, ‖T v‖ = r * ‖v‖ := fun v ↦ by
+    rw [hTdef, ContIntertwiningMap.toContinuousLinearMap_apply, hrnorm]
+  -- Rescaling by `1/r` turns `T` into an isometry, which still intertwines
+  set b : 𝕜 := ((r : ℝ) : 𝕜)⁻¹ with hb
   have hbne : b ≠ 0 := inv_ne_zero (by simpa using hsqrt.ne')
-  have hbnorm : ‖b‖ = (Real.sqrt ‖c‖)⁻¹ := by
+  have hbnorm : ‖b‖ = r⁻¹ := by
     rw [hb, norm_inv, RCLike.norm_ofReal, abs_of_pos hsqrt]
   let L : V ≃ₗ[𝕜] W :=
     φ.toContinuousLinearEquiv.toLinearEquiv.trans (LinearEquiv.smulOfNeZero 𝕜 W b hbne)
