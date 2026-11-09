@@ -10,8 +10,10 @@ public import TauCeti.Analysis.Complex.Conformal.Reflection.Basic
 public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.Topology.Algebra.Module.Star
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Bochner.Star
+import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
@@ -156,14 +158,15 @@ theorem hasWeakConjWirtingerDerivRealBoundaryOn_iff :
 
 /-- A real test function on a conjugation-invariant open set, composed with conjugation. -/
 private def conjTest (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓(Ω, ℝ)) : 𝓓(Ω, ℝ) :=
-  ⟨(φ : ℂ → ℝ) ∘ conjLIE, φ.contDiff.comp conjLIE.toContinuousLinearEquiv.contDiff,
-    φ.hasCompactSupport.comp_homeomorph conjLIE.toHomeomorph, by
-      intro z hz
-      rw [← LinearIsometryEquiv.coe_toHomeomorph, tsupport_comp_eq_preimage] at hz
-      simpa using hΩ (φ.tsupport_subset hz)⟩
+  conjLIE.toContinuousLinearEquiv.transportTestFunction
+    (show MapsTo (conjLIE.toContinuousLinearEquiv : ℂ → ℂ) Ω Ω from fun z hz ↦ by
+      simpa using hΩ hz) φ
 
 private theorem conjTest_apply (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓(Ω, ℝ)) (z : ℂ) :
-    conjTest hΩ φ z = φ (conj z) := rfl
+    conjTest hΩ φ z = φ (conj z) := by
+  rw [conjTest, ContinuousLinearEquiv.transportTestFunction_apply,
+    ← LinearIsometryEquiv.toContinuousLinearEquiv_symm, conjLIE_symm,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, conjLIE_apply]
 
 private theorem lineDeriv_conjTest (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (φ : 𝓓(Ω, ℝ))
     (z v : ℂ) :
@@ -330,9 +333,13 @@ private theorem integral_smul_starSchwarzReflection {f : ℂ → F} (a : ℂ →
   · have hpre : (conjLIE : ℂ → ℂ) ⁻¹' {z : ℂ | 0 ≤ z.im}ᶜ = {z : ℂ | 0 < z.im} := by
       ext z
       simp
+    -- The open and closed upper half-planes agree up to the null real axis.
+    have hae : {z : ℂ | 0 < z.im} =ᵐ[volume] {z : ℂ | 0 ≤ z.im} := by
+      simpa [Complex.inner, neg_nonpos, neg_neg_iff_pos] using
+        (setOf_inner_le_ae_eq_setOf_inner_lt (μ := volume) (neg_ne_zero.2 I_ne_zero) 0).symm
     rw [← conjLIE.measurePreserving.setIntegral_preimage_emb
       conjLIE.toHomeomorph.measurableEmbedding, hpre, ← integral_star,
-      ← setIntegral_congr_set Complex.setOf_im_pos_ae_eq_setOf_im_nonneg]
+      ← setIntegral_congr_set hae]
     refine setIntegral_congr_fun (measurableSet_lt measurable_const Complex.measurable_im)
       fun z hz ↦ ?_
     simp only [conjLIE_apply]
