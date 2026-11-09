@@ -27,7 +27,8 @@ In coordinates `εᵢ` moves the coefficient of `s` to `insert i s` and `ιᵢ` 
 `s` to `s.erase i`, each with the shuffle sign `TauCeti.ExteriorAlgebra.basisEraseSign` that moves
 `i` to the front (`Module.Basis.exteriorCreation_apply`, `Module.Basis.exteriorContraction_apply`).
 They satisfy the canonical anticommutation relation `εᵢ ιⱼ + ιⱼ εᵢ = δᵢⱼ`
-(`Module.Basis.exteriorCreation_mul_exteriorContraction_add`), the product `εᵢ ιᵢ` is the
+(`Module.Basis.exteriorCreation_mul_exteriorContraction_add`), creations anticommute among
+themselves (`Module.Basis.exteriorCreation_mul_exteriorCreation_add`), the product `εᵢ ιᵢ` is the
 occupation projection onto the coordinates `s` containing `i`
 (`Module.Basis.exteriorCreation_mul_exteriorContraction_self_apply`), so the commutator
 `⁅εᵢ, ιᵢ⁆` multiplies the coefficient of `s` by `1` if `i ∈ s` and by `-1` otherwise
@@ -153,6 +154,16 @@ theorem exteriorCreation_mul_exteriorContraction_add (i j : I) :
   · subst h
     simp
   · simp
+
+/-- **Exterior creations anticommute**: `εᵢ εⱼ + εⱼ εᵢ = 0`. -/
+theorem exteriorCreation_mul_exteriorCreation_add (i j : I) :
+    b.exteriorCreation i * b.exteriorCreation j + b.exteriorCreation j * b.exteriorCreation i =
+      0 := by
+  refine LinearMap.ext fun φ ↦ ?_
+  obtain ⟨x, rfl⟩ := b.ExteriorAlgebra.equivFun.surjective φ
+  simp only [LinearMap.add_apply, mul_apply_eq_comp, exteriorCreation_equivFun, ← map_add,
+    ← mul_assoc, ← add_mul, ExteriorAlgebra.ι_add_mul_swap, zero_mul, map_zero,
+    LinearMap.zero_apply]
 
 /-- **The occupation projection**: `εᵢ ιᵢ` keeps the coefficients of the index sets containing `i`
 and kills the others. -/

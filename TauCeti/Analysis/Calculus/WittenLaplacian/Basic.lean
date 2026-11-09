@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Coordinates
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
@@ -55,6 +56,9 @@ second derivatives of `C²` maps.
 
 ## Main results
 
+* `TauCeti.euclideanWittenDiff_apply_eq_exp_smul`: the conjugation formula
+  `d_t = e^{-tf} d e^{tf}`.
+* `TauCeti.euclideanWittenDiff_euclideanWittenDiff_apply`: `d_t d_t = 0` on `C²` forms.
 * `TauCeti.sum_euclideanWittenDiff_mul_sub_sum_mul_euclideanWittenCodiff`: the Lagrange identity
   exhibiting `d_t^*` as the formal adjoint of `d_t`.
 * `TauCeti.euclideanWittenLaplacian_apply`: Witten's frame formula for the Witten Laplacian.
@@ -113,6 +117,66 @@ theorem euclideanWittenLaplacian_def (f : (ι → ℝ) → ℝ) (t : ℝ) (φ : 
       euclideanWittenDiff f t (euclideanWittenCodiff f t φ) +
         euclideanWittenCodiff f t (euclideanWittenDiff f t φ) :=
   (rfl)
+
+/-- At `t = 0` the Witten differential is the exterior derivative `d = ∑ᵢ εᵢ ∂ᵢ`. -/
+theorem euclideanWittenDiff_zero_apply (f : (ι → ℝ) → ℝ) (φ : (ι → ℝ) → Finset ι → ℝ)
+    (x : ι → ℝ) :
+    euclideanWittenDiff f 0 φ x =
+      ∑ i, (Pi.basisFun ℝ ι).exteriorCreation i (fderiv ℝ φ x (Pi.single i 1)) := by
+  simp only [euclideanWittenDiff_apply, zero_mul, zero_smul, add_zero]
+
+/-- At `t = 0` the Witten codifferential is the Euclidean codifferential `d^* = -∑ᵢ ιᵢ ∂ᵢ`. -/
+theorem euclideanWittenCodiff_zero_apply (f : (ι → ℝ) → ℝ) (φ : (ι → ℝ) → Finset ι → ℝ)
+    (x : ι → ℝ) :
+    euclideanWittenCodiff f 0 φ x =
+      -∑ i, (Pi.basisFun ℝ ι).exteriorContraction i (fderiv ℝ φ x (Pi.single i 1)) := by
+  simp only [euclideanWittenCodiff_apply, zero_mul, zero_smul, add_zero, map_neg,
+    Finset.sum_neg_distrib]
+
+theorem euclideanWittenDiff_add_apply (f : (ι → ℝ) → ℝ) (t : ℝ) {φ ψ : (ι → ℝ) → Finset ι → ℝ}
+    {x : ι → ℝ} (hφ : DifferentiableAt ℝ φ x) (hψ : DifferentiableAt ℝ ψ x) :
+    euclideanWittenDiff f t (φ + ψ) x =
+      euclideanWittenDiff f t φ x + euclideanWittenDiff f t ψ x := by
+  simp only [euclideanWittenDiff_apply, fderiv_add hφ hψ, ← Finset.sum_add_distrib, ← map_add,
+    add_apply, Pi.add_apply, smul_add]
+  refine Finset.sum_congr rfl fun i _ ↦ congrArg _ ?_
+  abel
+
+theorem euclideanWittenCodiff_add_apply (f : (ι → ℝ) → ℝ) (t : ℝ) {φ ψ : (ι → ℝ) → Finset ι → ℝ}
+    {x : ι → ℝ} (hφ : DifferentiableAt ℝ φ x) (hψ : DifferentiableAt ℝ ψ x) :
+    euclideanWittenCodiff f t (φ + ψ) x =
+      euclideanWittenCodiff f t φ x + euclideanWittenCodiff f t ψ x := by
+  simp only [euclideanWittenCodiff_apply, fderiv_add hφ hψ, ← Finset.sum_add_distrib, ← map_add,
+    add_apply, Pi.add_apply, smul_add, neg_add]
+  refine Finset.sum_congr rfl fun i _ ↦ congrArg _ ?_
+  abel
+
+theorem euclideanWittenDiff_smul (f : (ι → ℝ) → ℝ) (t c : ℝ) (φ : (ι → ℝ) → Finset ι → ℝ) :
+    euclideanWittenDiff f t (c • φ) = c • euclideanWittenDiff f t φ := by
+  funext x
+  simp only [euclideanWittenDiff_apply, fderiv_const_smul_field, Pi.smul_apply, Finset.smul_sum,
+    ← map_smul, smul_apply, smul_add, smul_comm c]
+
+theorem euclideanWittenCodiff_smul (f : (ι → ℝ) → ℝ) (t c : ℝ) (φ : (ι → ℝ) → Finset ι → ℝ) :
+    euclideanWittenCodiff f t (c • φ) = c • euclideanWittenCodiff f t φ := by
+  funext x
+  simp only [euclideanWittenCodiff_apply, fderiv_const_smul_field, Pi.smul_apply, Finset.smul_sum,
+    ← map_smul, smul_apply, smul_add, smul_neg, smul_comm c]
+
+/-- **The Witten differential is the conjugate `d_t = e^{-tf} d e^{tf}` of the exterior
+derivative.** For `f` and `φ` differentiable at `x`, `d_t φ = e^{-tf} d (e^{tf} φ)` at `x`. -/
+theorem euclideanWittenDiff_apply_eq_exp_smul {f : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → Finset ι → ℝ}
+    {x : ι → ℝ} (hf : DifferentiableAt ℝ f x) (hφ : DifferentiableAt ℝ φ x) (t : ℝ) :
+    euclideanWittenDiff f t φ x =
+      Real.exp (-(t * f x)) • euclideanWittenDiff f 0 (fun y ↦ Real.exp (t * f y) • φ y) x := by
+  have h := ((hf.hasFDerivAt.const_mul t).exp).fun_smul hφ.hasFDerivAt
+  rw [euclideanWittenDiff_zero_apply, h.fderiv, euclideanWittenDiff_apply, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [← map_smul]
+  congr 1
+  simp only [add_apply, smul_apply,
+    ContinuousLinearMap.smulRight_apply, smul_add, smul_smul, smul_eq_mul, ← mul_assoc,
+    ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_mul, one_smul]
 
 /-- **The Lagrange identity: `d_t^*` is the formal adjoint of `d_t`.** For forms `φ`, `ψ`
 differentiable at `x`, the pointwise pairings `⟨d_t φ, ψ⟩` and `⟨φ, d_t^* ψ⟩` differ by the
@@ -223,6 +287,50 @@ private theorem fderiv_sum_wittenSummand_apply {f : (ι → ℝ) → ℝ} {φ : 
   rw [(HasFDerivAt.fun_sum fun i _ ↦ h i).fderiv]
   simp only [FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.comp_apply,
     LinearMap.coe_toContinuousLinearMap', fderiv_wittenSummand_apply hf hφ]
+
+/-- A double sum `∑ⱼ ∑ᵢ εⱼ εᵢ Xⱼᵢ` with symmetric coefficients vanishes, since creations
+anticommute. -/
+private theorem sum_sum_exteriorCreation_exteriorCreation_eq_zero (X : ι → ι → Finset ι → ℝ)
+    (hX : ∀ i j, X i j = X j i) :
+    ∑ j, ∑ i, (Pi.basisFun ℝ ι).exteriorCreation j
+      ((Pi.basisFun ℝ ι).exteriorCreation i (X j i)) = 0 := by
+  set ε := (Pi.basisFun ℝ ι).exteriorCreation
+  have hanti : ∀ i j v, ε i (ε j v) = -ε j (ε i v) := fun i j v ↦
+    eq_neg_of_add_eq_zero_left congr($((Pi.basisFun ℝ ι).exteriorCreation_mul_exteriorCreation_add
+      i j) v)
+  have h : ∑ j, ∑ i, ε j (ε i (X j i)) = -∑ j, ∑ i, ε j (ε i (X j i)) := by
+    conv_lhs => rw [Finset.sum_comm]
+    simp only [← Finset.sum_neg_distrib]
+    refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [hanti i j, hX i j]
+  exact self_eq_neg.mp h
+
+/-- **The Witten differential squares to zero**: `d_t d_t φ = 0` at `x` for `f` and `φ` that are
+`C²` at `x`. -/
+theorem euclideanWittenDiff_euclideanWittenDiff_apply {f : (ι → ℝ) → ℝ}
+    {φ : (ι → ℝ) → Finset ι → ℝ} {x : ι → ℝ} (hf : ContDiffAt ℝ 2 f x) (hφ : ContDiffAt ℝ 2 φ x)
+    (t : ℝ) : euclideanWittenDiff f t (euclideanWittenDiff f t φ) x = 0 := by
+  set ε := (Pi.basisFun ℝ ι).exteriorCreation
+  set D : ι → Finset ι → ℝ := fun i ↦ fderiv ℝ φ x (Pi.single i 1)
+  set S : ι → ι → Finset ι → ℝ := fun i j ↦ fderiv ℝ (fderiv ℝ φ) x (Pi.single i 1) (Pi.single j 1)
+  set g : ι → ℝ := fun i ↦ fderiv ℝ f x (Pi.single i 1)
+  set H : ι → ι → ℝ := fun i j ↦ fderiv ℝ (fderiv ℝ f) x (Pi.single i 1) (Pi.single j 1)
+  have hS : ∀ i j, S i j = S j i := fun i j ↦ (hφ.isSymmSndFDerivAt (by simp)) _ _
+  have hH : ∀ i j, H i j = H j i := fun i j ↦ (hf.isSymmSndFDerivAt (by simp)) _ _
+  set X : ι → ι → Finset ι → ℝ := fun j i ↦
+    S j i + (t * H j i) • φ x + (t * g i) • D j + (t * g j) • D i + (t ^ 2 * g j * g i) • φ x
+  have hdiff : euclideanWittenDiff f t φ = fun y ↦ ∑ i, ε i ((1 : ℝ) •
+      fderiv ℝ φ y (Pi.single i 1) + (t * fderiv ℝ f y (Pi.single i 1)) • φ y) := by
+    funext y
+    simp only [euclideanWittenDiff_apply, one_smul, ε]
+  rw [euclideanWittenDiff_apply, ← sum_sum_exteriorCreation_exteriorCreation_eq_zero X
+    fun i j ↦ by simp only [X, hS i j, hH i j]; module]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [hdiff, fderiv_sum_wittenSummand_apply hf hφ t 1 ε (Pi.single j 1), ← hdiff,
+    euclideanWittenDiff_apply, Finset.smul_sum, ← Finset.sum_add_distrib, map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simp only [ε, X, D, S, g, H, map_add, map_smul]
+  module
 
 /-- **Witten's frame formula.** For a function `f` and a form `φ` on `ℝ^ι` that are `C²` at `x`,
 the Witten Laplacian at `x` is
