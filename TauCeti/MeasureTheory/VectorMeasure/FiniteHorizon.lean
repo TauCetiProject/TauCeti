@@ -17,9 +17,9 @@ A bounded-variation path on a closed interval in a densely ordered space with co
 is extended constantly at both ends before forming its native derivative vector measure and
 restricting it to `(a,b]`.
 This gives a finite-horizon Stieltjes measure without making assumptions on the path outside the
-interval. In particular, a right-continuous path contributes no atom at the initial time, while a
-jump at the terminal time is retained.
-These are the endpoint conventions for pathwise finite-variation integration.
+interval. The initial time never carries an atom because of the restriction to `(a,b]`, while a
+jump at the terminal time is retained. Right continuity within the horizon yields the usual
+increment formulas. These are the endpoint conventions for pathwise finite-variation integration.
 
 The construction uses Mathlib's `BoundedVariationOn.vectorMeasure` and `Set.IccExtend`.
 
@@ -105,9 +105,10 @@ instance isFiniteMeasure_variation_vectorMeasureIcc
   rw [vectorMeasureIcc_def]
   infer_instance
 
-/-- At every time strictly after the initial time, including the terminal time, the atom
-is the jump from the left. The unrestricted left limit is legitimate here because a left
-neighborhood of this time lies inside the horizon. -/
+/-- At a time in `(a,b]` where the path is right-continuous within the horizon, the atom is
+its jump from the left. This continuity is automatic at `b`. The unrestricted left limit is
+legitimate because a left neighborhood of this time lies inside the horizon. -/
+@[simp]
 theorem vectorMeasureIcc_singleton (hf : BoundedVariationOn f (Icc a b)) (hab : a ≤ b)
     (hfr : ContinuousWithinAt f (Icc x b) x) (hx : x ∈ Ioc a b) :
     hf.vectorMeasureIcc hab {x} = f x - f.leftLim x := by
@@ -140,7 +141,8 @@ theorem vectorMeasureIcc_singleton_left (hf : BoundedVariationOn f (Icc a b)) (h
   simp [vectorMeasureIcc_def, VectorMeasure.restrict_apply, measurableSet_Ioc,
     Set.singleton_inter_eq_empty.mpr]
 
-/-- The total mass is the path's net change over the horizon. -/
+/-- For a path right-continuous at the initial time within the horizon, the total mass is
+its net change over the horizon. -/
 @[simp]
 theorem vectorMeasureIcc_univ (hf : BoundedVariationOn f (Icc a b)) (hab : a ≤ b)
     (hfr : ContinuousWithinAt f (Icc a b) a) :
@@ -150,7 +152,8 @@ theorem vectorMeasureIcc_univ (hf : BoundedVariationOn f (Icc a b)) (hab : a ≤
   rw [← h, hf.vectorMeasureIcc_Ioc hab hfr (by simp) (left_mem_Icc.mpr hab)
     (right_mem_Icc.mpr hab) hab]
 
-/-- The cumulative mass within the horizon is the change since the initial time. -/
+/-- For a path right-continuous within the horizon at the initial time and at `x`, the
+cumulative mass up to `x` is the change since the initial time. -/
 @[simp]
 theorem vectorMeasureIcc_Iic (hf : BoundedVariationOn f (Icc a b)) (hab : a ≤ b)
     (hfa : ContinuousWithinAt f (Icc a b) a) (hfx : ContinuousWithinAt f (Icc x b) x)
@@ -162,8 +165,9 @@ theorem vectorMeasureIcc_Iic (hf : BoundedVariationOn f (Icc a b)) (hab : a ≤ 
     Iic_inter_Ioc_of_le hx.2] at h
   rw [← h, hf.vectorMeasureIcc_Ioc hab hfa hfx (left_mem_Icc.mpr hab) hx hx.1]
 
-/-- Characterization and uniqueness of the finite-horizon Stieltjes measure by its carrier
-and cumulative increments. No behavior of the path outside `[a,b]` enters this criterion. -/
+/-- For a path right-continuous within the horizon, its finite-horizon Stieltjes measure is
+characterized by its carrier and cumulative increments. No behavior of the path outside `[a,b]`
+enters this criterion. -/
 theorem eq_vectorMeasureIcc_iff (hf : BoundedVariationOn f (Icc a b)) (hab : a ≤ b)
     (hfr : ∀ x ∈ Icc a b, ContinuousWithinAt f (Icc x b) x) (ν : VectorMeasure α E) :
     ν = hf.vectorMeasureIcc hab ↔ ν.restrict (Ioc a b) = ν ∧
@@ -179,7 +183,8 @@ theorem eq_vectorMeasureIcc_iff (hf : BoundedVariationOn f (Icc a b)) (hab : a �
         (hf.vectorMeasureIcc_Ioc hab (hfr a (left_mem_Icc.mpr hab)) (hfr x hx)
           (left_mem_Icc.mpr hab) hx hx.1).symm)
 
-/-- Restriction to a shorter horizon agrees with the measure constructed on that horizon. -/
+/-- For a path right-continuous within the horizon, restriction to a shorter horizon agrees
+with the measure constructed on that horizon. -/
 theorem vectorMeasureIcc_restrict_Ioc (hf : BoundedVariationOn f (Icc a b)) (hab : a ≤ b)
     (hfr : ∀ x ∈ Icc a b, ContinuousWithinAt f (Icc x b) x)
     (hc : c ∈ Icc a b) (hd : d ∈ Icc a b) (hcd : c ≤ d) :
