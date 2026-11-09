@@ -317,12 +317,10 @@ end Band
 
 section BandInclusion
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {s t : Set E}
-  {a b c d : E →ᴬ[ℝ] ℝ}
+variable {E : Type*} [AddCommGroup E] [Module ℝ E] {s t : Set E} {a b c d : E →ᵃ[ℝ] ℝ}
 
-/-- The closed band between two continuous affine functions over the convex hull of `t ⊆ s` lies
-in the closed band between two continuous affine functions over the convex hull of `s` that bound
-them on `t`. -/
+/-- The closed band between two affine functions over the convex hull of `t ⊆ s` lies in the
+closed band between two affine functions over the convex hull of `s` that bound them on `t`. -/
 theorem closedRegionBetween_convexHull_subset_of_le (hts : t ⊆ s) (hac : ∀ v ∈ t, a v ≤ c v)
     (hdb : ∀ v ∈ t, d v ≤ b v) :
     closedRegionBetween c d (convexHull ℝ t) ⊆ closedRegionBetween a b (convexHull ℝ s) := by
