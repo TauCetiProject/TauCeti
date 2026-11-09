@@ -6,53 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.Normed.Operator.NNNorm
+public import Mathlib.LinearAlgebra.Dimension.LinearMap
 
 /-!
-# s-number sequences
+# Axioms for s-number sequences
 
-An *s-number family* assigns to every bounded operator `T : X →L[𝕜] Y` between normed spaces in
-one universe a sequence `n ↦ s T n` in `ℝ≥0`. Pietsch's axioms single out the families that
-behave like the singular values of Hilbert-space operators:
+An s-number family assigns a nonnegative sequence to every bounded operator between normed
+spaces over a fixed field. Pietsch's axioms abstract the common calculus of approximation,
+Gelfand, Kolmogorov, Bernstein and Hilbert numbers. The indexing is zero-based: the first
+term is the operator norm, and the term at index `n` vanishes on operators of rank at most `n`.
 
-* (S1) `s T 0 = ‖T‖` and `n ↦ s T n` is antitone;
-* (S2) `s (S + T) n ≤ s S n + ‖T‖`;
-* (S3) `s (B ∘ T ∘ A) n ≤ ‖B‖ * s T n * ‖A‖`;
-* (S4) `s T n = 0` when `rank T ≤ n`;
-* (S5) `s (id : ℓ₂^{n+1} → ℓ₂^{n+1}) n = 1`.
-
-A *strict* s-number sequence satisfies, in place of the normalization (S5) alone, the stronger
-(S5′): `s (id_X) n = 1` for every normed space `X` with `n < rank X`, including
-infinite-dimensional `X`. Classically, the approximation, Gelfand, Kolmogorov and Bernstein
-numbers are strict s-number sequences, while the Hilbert numbers are s-number sequences that are
-not strict.
-
-The indexing is zero-based, so `s₀(T) = ‖T‖`. This file defines the family type and the two
-predicates, and proves the consequences every s-number sequence shares: the bound by the operator
-norm, the vanishing on the zero operator, the one-sided ideal inequalities, Lipschitz continuity
-in operator norm, and scalar homogeneity.
-
-## Main declarations
-
-* `TauCeti.SNumberFamily`: an `ℝ≥0`-valued sequence for every bounded operator between normed
-  `𝕜`-spaces in one universe.
-* `TauCeti.IsSNumberSequence`: Pietsch's axioms (S1)–(S5).
-* `TauCeti.IsStrictSNumberSequence`: the axioms together with the strict normalization (S5′).
-* `TauCeti.IsStrictSNumberSequence.of_id_of_lt_rank`: (S1)–(S4) and (S5′) give a strict s-number
-  sequence, with (S5) derived from (S5′).
-* `TauCeti.IsSNumberSequence.le_nnnorm`: `s T n ≤ ‖T‖`.
-* `TauCeti.IsSNumberSequence.abs_sub_le`: `|s S n - s T n| ≤ ‖S - T‖`.
-* `TauCeti.IsSNumberSequence.continuous`: `T ↦ s T n` is continuous in operator norm.
-* `TauCeti.IsSNumberSequence.smul`: `s (c • T) n = ‖c‖ * s T n`.
+This file defines the ordinary and strict axioms and derives the norm bound, Lipschitz
+continuity and scalar homogeneity. Strictness means normalization on every identity below
+the dimension, not merely on the finite Euclidean identities.
 
 ## References
 
-* A. Pietsch, *s-Numbers of operators in Banach spaces*, Studia Math. **51** (1974), 201–223, §1.
-* A. Pietsch, *Eigenvalues and s-Numbers*, Cambridge Studies in Advanced Mathematics 13,
-  Cambridge University Press (1987), §2.2.
-* M. Ullrich, *Inequalities between s-numbers*, Adv. Oper. Theory **9** (2024), art. 82,
-  Remark 1, for the strict normalization (S5′).
-* M. Ullrich, *Lean-SNumbers*, https://github.com/mario-ullrich/Lean-SNumbers (Apache-2.0),
-  `SNumbers/Basic.lean`: an earlier Lean formalization of the axioms.
+* A. Pietsch, *s-Numbers of operators in Banach spaces*, Studia Math. 51 (1974), §1.
+* A. Pietsch, *Eigenvalues and s-Numbers*, Cambridge University Press (1987), Chapter 2.
 -/
 
 public section
@@ -61,153 +33,165 @@ open scoped NNReal
 
 universe u
 
-namespace TauCeti
+namespace TauCeti.SNumbers
 
-/-- An s-number family over `𝕜`: one `ℝ≥0`-valued sequence `s T : ℕ → ℝ≥0` for every bounded
-linear map `T : X →L[𝕜] Y` between normed `𝕜`-spaces `X`, `Y` in the universe of `𝕜`. -/
+/-- A family of nonnegative sequences on bounded operators between all normed spaces in
+one universe over the given field. -/
 abbrev SNumberFamily (𝕜 : Type u) [NontriviallyNormedField 𝕜] :=
   ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
     [NormedAddCommGroup Y] [NormedSpace 𝕜 Y], (X →L[𝕜] Y) → ℕ → ℝ≥0
 
 variable {𝕜 : Type u} [NontriviallyNormedField 𝕜]
 
-/-- **Pietsch's axioms.** An s-number sequence is an s-number family with
-(S1) `s T 0 = ‖T‖` and `n ↦ s T n` antitone; (S2) `s (S + T) n ≤ s S n + ‖T‖`;
-(S3) `s (B ∘ T ∘ A) n ≤ ‖B‖ * s T n * ‖A‖`; (S4) `s T n = 0` when `rank T ≤ n`;
-(S5) `s (id : ℓ₂^{n+1} → ℓ₂^{n+1}) n = 1`, for the Euclidean space `ℓ₂^{n+1}` over `𝕜`. -/
+/-- Pietsch's five s-number axioms, with zero-based indexing and Euclidean normalization.
+The norm and monotonicity clauses together constitute the first axiom. -/
 structure IsSNumberSequence (s : SNumberFamily 𝕜) : Prop where
-  /-- (S1) The zeroth term is the operator norm. -/
-  apply_zero : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+  /-- The zeroth term is the operator norm. -/
+  norm : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
     [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (T : X →L[𝕜] Y), s T 0 = ‖T‖₊
-  /-- (S1) The sequence is nonincreasing. -/
+  /-- The terms decrease with the index. -/
   antitone : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
     [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (T : X →L[𝕜] Y), Antitone (s T)
-  /-- (S2) Additivity against the operator norm. -/
+  /-- Perturbing an operator changes each term by at most the perturbation norm. -/
   add_le : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
     [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (S T : X →L[𝕜] Y) (n : ℕ),
     s (S + T) n ≤ s S n + ‖T‖₊
-  /-- (S3) The two-sided ideal inequality. -/
-  comp_comp_le : ∀ {W X Y Z : Type u} [NormedAddCommGroup W] [NormedSpace 𝕜 W]
-    [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
-    [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+  /-- The two-sided ideal inequality. -/
+  comp_le : ∀ {W X Y Z : Type u}
+    [NormedAddCommGroup W] [NormedSpace 𝕜 W] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
     (B : Y →L[𝕜] Z) (T : X →L[𝕜] Y) (A : W →L[𝕜] X) (n : ℕ),
     s (B ∘L T ∘L A) n ≤ ‖B‖₊ * s T n * ‖A‖₊
-  /-- (S4) The rank property: the terms vanish from the rank onwards. -/
+  /-- Rank at most `n` forces vanishing at index `n`. -/
   eq_zero_of_rank_le : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
-    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (T : X →L[𝕜] Y) {n : ℕ},
+    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] {T : X →L[𝕜] Y} {n : ℕ},
     T.rank ≤ n → s T n = 0
-  /-- (S5) The normalization on the Euclidean identities. -/
-  id_euclideanSpace : ∀ n : ℕ, s (ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))) n = 1
+  /-- The identity on Euclidean space of dimension `n + 1` has term `1` at index `n`. -/
+  normalize : ∀ n : ℕ, s (ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))) n = 1
 
-/-- **Strict s-number sequences.** An s-number sequence with the strict normalization (S5′):
-`s (id_X) n = 1` for every normed space `X` with `n < rank X`, including infinite-dimensional
-`X`. Since `ℓ₂^{n+1}` has rank `n + 1`, (S5′) contains (S5). -/
+/-- A strict s-number sequence is normalized on the identity of every normed space at
+all indices strictly below its cardinal dimension, including infinite dimension. -/
 structure IsStrictSNumberSequence (s : SNumberFamily 𝕜) : Prop
     extends IsSNumberSequence s where
-  /-- (S5′) The identity of a space of rank greater than `n` has `n`-th term `1`. -/
-  id_of_lt_rank : ∀ {X : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X] {n : ℕ},
-    n < Module.rank 𝕜 X → s (ContinuousLinearMap.id 𝕜 X) n = 1
+  /-- Identity normalization below the dimension. -/
+  normalize_of_lt_rank : ∀ {X : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    (n : ℕ), (n : Cardinal) < Module.rank 𝕜 X → s (ContinuousLinearMap.id 𝕜 X) n = 1
 
-/-- Build a strict s-number sequence from (S1)–(S4) and the strict normalization (S5′); the
-normalization (S5) follows from (S5′) since `ℓ₂^{n+1}` has rank `n + 1`. -/
-theorem IsStrictSNumberSequence.of_id_of_lt_rank {s : SNumberFamily 𝕜}
-    (apply_zero : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+/-- Build a strict s-number sequence from the first four axioms and identity normalization
+below the dimension. The Euclidean normalization follows, since the Euclidean space of
+dimension `n + 1` has rank `n + 1 > n`. -/
+theorem IsStrictSNumberSequence.of_normalize_of_lt_rank {s : SNumberFamily 𝕜}
+    (norm : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
       [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (T : X →L[𝕜] Y), s T 0 = ‖T‖₊)
     (antitone : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
       [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (T : X →L[𝕜] Y), Antitone (s T))
     (add_le : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
       [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (S T : X →L[𝕜] Y) (n : ℕ),
       s (S + T) n ≤ s S n + ‖T‖₊)
-    (comp_comp_le : ∀ {W X Y Z : Type u} [NormedAddCommGroup W] [NormedSpace 𝕜 W]
-      [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
-      [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+    (comp_le : ∀ {W X Y Z : Type u}
+      [NormedAddCommGroup W] [NormedSpace 𝕜 W] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+      [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
       (B : Y →L[𝕜] Z) (T : X →L[𝕜] Y) (A : W →L[𝕜] X) (n : ℕ),
       s (B ∘L T ∘L A) n ≤ ‖B‖₊ * s T n * ‖A‖₊)
     (eq_zero_of_rank_le : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
-      [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (T : X →L[𝕜] Y) {n : ℕ},
+      [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] {T : X →L[𝕜] Y} {n : ℕ},
       T.rank ≤ n → s T n = 0)
-    (id_of_lt_rank : ∀ {X : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X] {n : ℕ},
-      n < Module.rank 𝕜 X → s (ContinuousLinearMap.id 𝕜 X) n = 1) :
+    (normalize_of_lt_rank : ∀ {X : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+      (n : ℕ), (n : Cardinal) < Module.rank 𝕜 X → s (ContinuousLinearMap.id 𝕜 X) n = 1) :
     IsStrictSNumberSequence s where
-  apply_zero := apply_zero
+  norm := norm
   antitone := antitone
   add_le := add_le
-  comp_comp_le := comp_comp_le
+  comp_le := comp_le
   eq_zero_of_rank_le := eq_zero_of_rank_le
-  id_euclideanSpace n := id_of_lt_rank <| by
+  normalize n := normalize_of_lt_rank n <| by
     rw [(WithLp.linearEquiv 2 𝕜 (Fin (n + 1) → 𝕜)).rank_eq, rank_fin_fun]
     exact_mod_cast n.lt_succ_self
-  id_of_lt_rank := id_of_lt_rank
+  normalize_of_lt_rank := normalize_of_lt_rank
 
 namespace IsSNumberSequence
 
 variable {s : SNumberFamily 𝕜} (hs : IsSNumberSequence s)
-variable {X Y Z : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
-  [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+
 include hs
+variable {W X Y Z : Type u}
+  [NormedAddCommGroup W] [NormedSpace 𝕜 W] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+  [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
 
-/-- Every term of an s-number sequence is bounded by the operator norm. -/
+/-- Every term is bounded by the operator norm. -/
 theorem le_nnnorm (T : X →L[𝕜] Y) (n : ℕ) : s T n ≤ ‖T‖₊ :=
-  hs.apply_zero T ▸ hs.antitone T (Nat.zero_le n)
+  (hs.antitone T (Nat.zero_le n)).trans_eq (hs.norm T)
 
-/-- The zero operator has vanishing s-numbers. -/
-theorem map_zero (n : ℕ) : s (0 : X →L[𝕜] Y) n = 0 :=
-  nonpos_iff_eq_zero.mp <| (hs.le_nnnorm 0 n).trans_eq nnnorm_zero
+/-- All terms of the zero operator vanish. -/
+theorem zero (n : ℕ) : s (0 : X →L[𝕜] Y) n = 0 := by
+  simpa using hs.le_nnnorm (0 : X →L[𝕜] Y) n
 
-/-- **Left ideal inequality.** `s (B ∘ T) n ≤ ‖B‖ * s T n`. -/
-theorem comp_le_left (B : Y →L[𝕜] Z) (T : X →L[𝕜] Y) (n : ℕ) :
-    s (B ∘L T) n ≤ ‖B‖₊ * s T n := by
-  have h := hs.comp_comp_le B T (ContinuousLinearMap.id 𝕜 X) n
-  rw [ContinuousLinearMap.comp_id] at h
-  calc s (B ∘L T) n ≤ ‖B‖₊ * s T n * ‖ContinuousLinearMap.id 𝕜 X‖₊ := h
-    _ ≤ ‖B‖₊ * s T n * 1 := by gcongr; exact_mod_cast ContinuousLinearMap.norm_id_le
-    _ = ‖B‖₊ * s T n := by rw [mul_one]
-
-/-- **Right ideal inequality.** `s (T ∘ A) n ≤ s T n * ‖A‖`. -/
-theorem comp_le_right (T : Y →L[𝕜] Z) (A : X →L[𝕜] Y) (n : ℕ) :
-    s (T ∘L A) n ≤ s T n * ‖A‖₊ := by
-  have h := hs.comp_comp_le (ContinuousLinearMap.id 𝕜 Z) T A n
-  rw [ContinuousLinearMap.id_comp] at h
-  calc s (T ∘L A) n ≤ ‖ContinuousLinearMap.id 𝕜 Z‖₊ * s T n * ‖A‖₊ := h
-    _ ≤ 1 * s T n * ‖A‖₊ := by gcongr; exact_mod_cast ContinuousLinearMap.norm_id_le
-    _ = s T n * ‖A‖₊ := by rw [one_mul]
-
-/-- At a fixed index an s-number sequence moves by at most the operator-norm distance:
-`s S n ≤ s T n + ‖S - T‖`. -/
-theorem le_add_nnnorm_sub (S T : X →L[𝕜] Y) (n : ℕ) : s S n ≤ s T n + ‖S - T‖₊ := by
-  simpa using hs.add_le T (S - T) n
-
-/-- **Lipschitz bound.** `|s S n - s T n| ≤ ‖S - T‖`. -/
-theorem abs_sub_le (S T : X →L[𝕜] Y) (n : ℕ) : |(s S n : ℝ) - s T n| ≤ ‖S - T‖ := by
-  have key (S T : X →L[𝕜] Y) : (s S n : ℝ) ≤ s T n + ‖S - T‖ :=
-    mod_cast hs.le_add_nnnorm_sub S T n
+/-- Each term is `1`-Lipschitz with respect to the operator norm. -/
+theorem abs_sub_le (S T : X →L[𝕜] Y) (n : ℕ) :
+    |(s S n : ℝ) - s T n| ≤ ‖S - T‖ := by
+  have key (S T : X →L[𝕜] Y) : (s S n : ℝ) ≤ s T n + ‖S - T‖ := by
+    have h := hs.add_le T (S - T) n
+    rw [add_sub_cancel] at h
+    exact_mod_cast h
   rw [abs_sub_le_iff]
-  exact ⟨sub_le_iff_le_add'.mpr (key S T), sub_le_iff_le_add'.mpr (norm_sub_rev T S ▸ key T S)⟩
+  exact ⟨sub_le_iff_le_add'.mpr (key S T),
+    sub_le_iff_le_add'.mpr (norm_sub_rev T S ▸ key T S)⟩
 
-/-- At each index, `T ↦ s T n` is `1`-Lipschitz in operator norm. -/
-theorem lipschitzWith (n : ℕ) : LipschitzWith 1 fun T : X →L[𝕜] Y ↦ s T n :=
+/-- At each index an s-number sequence is `1`-Lipschitz. -/
+theorem lipschitzWith (n : ℕ) : LipschitzWith 1 (fun T : X →L[𝕜] Y ↦ s T n) :=
   LipschitzWith.of_dist_le_mul fun S T ↦ by
     simpa [NNReal.dist_eq, dist_eq_norm] using hs.abs_sub_le S T n
 
-/-- **Norm continuity.** At each index, `T ↦ s T n` is continuous in operator norm. -/
-theorem continuous (n : ℕ) : Continuous fun T : X →L[𝕜] Y ↦ s T n :=
+/-- Each term depends continuously on the operator in operator norm. -/
+theorem continuous (n : ℕ) : Continuous (fun T : X →L[𝕜] Y ↦ s T n) :=
   (hs.lipschitzWith n).continuous
 
-/-- **Homogeneity.** `s (c • T) n = ‖c‖ * s T n`. -/
+/-- Postcomposition scales s-numbers by at most the operator norm. -/
+theorem comp_le_left (B : Y →L[𝕜] Z) (T : X →L[𝕜] Y) (n : ℕ) :
+    s (B ∘L T) n ≤ ‖B‖₊ * s T n := by
+  have hid : ‖ContinuousLinearMap.id 𝕜 X‖₊ ≤ 1 := by
+    exact_mod_cast ContinuousLinearMap.norm_id_le (𝕜 := 𝕜) (E := X)
+  calc
+    s (B ∘L T) n ≤ ‖B‖₊ * s T n * ‖ContinuousLinearMap.id 𝕜 X‖₊ := by
+      simpa using hs.comp_le B T (ContinuousLinearMap.id 𝕜 X) n
+    _ ≤ ‖B‖₊ * s T n := mul_le_of_le_one_right' hid
+
+/-- Precomposition scales s-numbers by at most the operator norm. -/
+theorem comp_le_right (T : X →L[𝕜] Y) (A : W →L[𝕜] X) (n : ℕ) :
+    s (T ∘L A) n ≤ s T n * ‖A‖₊ := by
+  have hid : ‖ContinuousLinearMap.id 𝕜 Y‖₊ ≤ 1 := by
+    exact_mod_cast ContinuousLinearMap.norm_id_le (𝕜 := 𝕜) (E := Y)
+  calc
+    s (T ∘L A) n ≤ ‖ContinuousLinearMap.id 𝕜 Y‖₊ * s T n * ‖A‖₊ := by
+      simpa using hs.comp_le (ContinuousLinearMap.id 𝕜 Y) T A n
+    _ ≤ s T n * ‖A‖₊ := by gcongr; exact mul_le_of_le_one_left' hid
+
+private theorem smul_le (c : 𝕜) (T : X →L[𝕜] Y) (n : ℕ) :
+    s (c • T) n ≤ ‖c‖₊ * s T n := by
+  have hid : ‖ContinuousLinearMap.id 𝕜 Y‖₊ ≤ 1 := by
+    exact_mod_cast ContinuousLinearMap.norm_id_le (𝕜 := 𝕜) (E := Y)
+  calc
+    s (c • T) n ≤ ‖c • ContinuousLinearMap.id 𝕜 Y‖₊ * s T n := by
+      simpa using hs.comp_le_left (c • ContinuousLinearMap.id 𝕜 Y) T n
+    _ ≤ (‖c‖₊ * ‖ContinuousLinearMap.id 𝕜 Y‖₊) * s T n := by
+      gcongr
+      exact nnnorm_smul_le _ _
+    _ ≤ ‖c‖₊ * s T n := by gcongr; exact mul_le_of_le_one_right' hid
+
+/-- Every s-number sequence is absolutely homogeneous. -/
 theorem smul (c : 𝕜) (T : X →L[𝕜] Y) (n : ℕ) : s (c • T) n = ‖c‖₊ * s T n := by
-  have hle (c : 𝕜) (T : X →L[𝕜] Y) : s (c • T) n ≤ ‖c‖₊ * s T n := by
-    have h := hs.comp_le_left (c • ContinuousLinearMap.id 𝕜 Y) T n
-    rw [ContinuousLinearMap.smul_comp, ContinuousLinearMap.id_comp] at h
-    refine h.trans ?_
-    gcongr
-    exact (nnnorm_smul_le c _).trans (mul_le_of_le_one_right' ContinuousLinearMap.norm_id_le)
-  refine (hle c T).antisymm ?_
+  refine (hs.smul_le c T n).antisymm ?_
   rcases eq_or_ne c 0 with rfl | hc
-  · simp
-  calc ‖c‖₊ * s T n = ‖c‖₊ * s (c⁻¹ • c • T) n := by rw [inv_smul_smul₀ hc]
-    _ ≤ ‖c‖₊ * (‖c⁻¹‖₊ * s (c • T) n) := by gcongr; exact hle _ _
-    _ = s (c • T) n := by rw [nnnorm_inv, ← mul_assoc, mul_inv_cancel₀ (by simpa), one_mul]
+  · simp [hs.zero]
+  calc
+    ‖c‖₊ * s T n = ‖c‖₊ * s (c⁻¹ • c • T) n := by rw [inv_smul_smul₀ hc]
+    _ ≤ ‖c‖₊ * (‖c⁻¹‖₊ * s (c • T) n) := by gcongr; exact hs.smul_le _ _ _
+    _ = s (c • T) n := by simp [hc]
+
+/-- Negation leaves every term unchanged. -/
+theorem neg (T : X →L[𝕜] Y) (n : ℕ) : s (-T) n = s T n := by
+  simpa using hs.smul (-1) T n
 
 end IsSNumberSequence
 
-end TauCeti
+end TauCeti.SNumbers

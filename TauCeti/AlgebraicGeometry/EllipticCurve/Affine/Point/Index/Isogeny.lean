@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.PrimaryReduct
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
 
 import TauCeti.Algebra.Group.Primary.Card
+import TauCeti.Algebra.Module.Torsion.Int
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FinitePoint
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralReduction
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Isogeny
@@ -115,17 +116,12 @@ theorem index_range_mul_index_range_dual_eq_card_ker_mul_card_ker_dual_mul
         Nat.card (u.adicCompletionIntegers F ⧸
           Ideal.span {(f.degree : u.adicCompletionIntegers F)}) := by
   have hidx := WeierstrassCurve.index_range_nsmul_eq_natCard_torsionBy_mul u W₁ hf
-  have hker : Nat.card (nsmulAddMonoidHom (α := W₁.toAffine.Point) f.degree).ker =
-      Nat.card (Submodule.torsionBy ℤ W₁.toAffine.Point f.degree) :=
-    Nat.card_congr (Equiv.subtypeEquivRight fun P ↦ by
-      rw [AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply, Submodule.mem_torsionBy_iff,
-        natCast_zsmul])
   -- `E₁(F_u)[n]` is finite, as `#(E₁(F_u) ⧸ n E₁(F_u)) = #E₁(F_u)[n] · #(O_u ⧸ n O_u)` is nonzero
   have hT : Nat.card (Submodule.torsionBy ℤ W₁.toAffine.Point f.degree) ≠ 0 :=
     left_ne_zero_of_mul <| hidx ▸ (WeierstrassCurve.finiteIndex_range_nsmul u W₁ hf).index_ne_zero
   -- `z(f̂) · z(f) = z([n])`, and `z([n]) = #(O_u ⧸ n O_u)`
   have h := f.index_range_nsmul_mul_card_ker_mul_card_ker_dual
-  rw [hker, hidx] at h
+  rw [TauCeti.natCard_ker_nsmulAddMonoidHom_eq_natCard_torsionBy, hidx] at h
   refine Nat.eq_of_mul_eq_mul_left (Nat.pos_of_ne_zero hT) ?_
   linear_combination h.symm
 
