@@ -35,6 +35,8 @@ point of the disc has a well-defined multiplicity (`PowerSeries.IsRestricted.exi
   the point.
 * `PowerSeries.isGoodZero_iff_rootMultiplicity_eq_of_isUnit_mul`: the multiplicity
   of a zero in the closed disc is its root multiplicity in the Weierstrass polynomial.
+* `PowerSeries.isGoodZero_count_roots_of_isUnit_mul`: the same multiplicity, as the number of
+  occurrences of the point among the roots of the Weierstrass polynomial.
 * `PowerSeries.IsRestricted.exists_isGoodZero`: every point of the closed disc has a
   multiplicity.
 
@@ -88,6 +90,17 @@ theorem isGoodZero_iff_rootMultiplicity_eq_of_isUnit_mul
   rw [← hmul, mul_comm,
     (TauCeti.PowerSeries.isRestricted_polynomial P).isGoodZero_mul_iff_of_isUnit u.2 ha hua,
     isGoodZero_coe_iff_of_field, and_iff_right hP]
+
+/-- **Multiplicity as a count of roots.** Let `f = u * P` be a nonzero series, where `u` is a unit
+of the ring of series restricted at `c` and `P` is a polynomial. At every point `a` of the closed
+disc of radius `c`, `f` has a good zero of order the number of times `a` occurs among the roots of
+`P`. -/
+theorem isGoodZero_count_roots_of_isUnit_mul [DecidableEq K]
+    {u : IsRestricted.subring (R := K) c} (hu : IsUnit u) {P : Polynomial K}
+    (hmul : (u : K⟦X⟧) * (P : K⟦X⟧) = f) (hf : f ≠ 0) (ha : ‖a‖ ≤ c) :
+    f.IsGoodZero a (P.roots.count a) := by
+  rw [Polynomial.count_roots]
+  exact (isGoodZero_iff_rootMultiplicity_eq_of_isUnit_mul hu hmul hf ha).2 rfl
 
 /-- **Existence of multiplicities.** A nonzero series restricted at `c > 0` has a good zero of some
 order at every point of the closed disc of radius `c`. -/

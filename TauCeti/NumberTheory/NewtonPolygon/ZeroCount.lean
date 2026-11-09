@@ -28,14 +28,14 @@ its Newton polygon turns this into exact counts with multiplicity:
   disc, counted with multiplicity, are the roots of `P` and there are exactly as many as the degree
   in which `f` is distinguished at `b ^ σ`
   (`TauCeti.PowerSeries.IsDistinguished.exists_card_eq_isGoodZero`);
-* when the Newton polygon of `f` has a finite face of slope `σ`, the multiplicity of the slope `σ`
-  is the number of roots of `P` on the sphere `‖a‖ = b ^ σ`, counted with multiplicity
-  (`PowerSeries.newtonSlopeMultiplicity_eq_card_filter_roots_of_isUnit_mul`). Over an
+* when the Newton polygon of `f` has a finite face of slope `σ` and `P` splits, the multiplicity
+  of the slope `σ` is the number of roots of `P` on the sphere `‖a‖ = b ^ σ`, counted with
+  multiplicity (`PowerSeries.newtonSlopeMultiplicity_eq_card_filter_roots_of_isUnit_mul`). Over an
   algebraically closed `K` it is therefore the number of zeros of `f` of norm `b ^ σ`, counted
   with multiplicity (`PowerSeries.exists_card_eq_newtonSlopeMultiplicity_isGoodZero`). If that
-  face runs from `l` to `j`, then `P` has exactly `l` roots in the open disc `‖a‖ < b ^ σ`
-  (`PowerSeries.card_filter_roots_norm_lt_of_isUnit_mul`), so over an algebraically closed `K`
-  the zeros of `f` there number `l`, counted with multiplicity
+  face runs from `l` to `j` and `P` splits, then `P` has exactly `l` roots in the open disc
+  `‖a‖ < b ^ σ` (`PowerSeries.card_filter_roots_norm_lt_of_isUnit_mul`), so over an algebraically
+  closed `K` the zeros of `f` there number `l`, counted with multiplicity
   (`PowerSeries.exists_card_eq_isGoodZero_of_isFiniteFace`).
 
 A nonzero entire series has a finite face of every slope, so over an algebraically closed field
@@ -53,10 +53,11 @@ their algebraic multiplicities.
 * `TauCeti.PowerSeries.IsDistinguished.exists_card_eq_isGoodZero`: over an algebraically closed
   field, a series distinguished of degree `s` at `b ^ σ` has exactly `s` zeros in the closed disc,
   counted with multiplicity.
-* `PowerSeries.newtonSlopeMultiplicity_eq_card_filter_roots_of_isUnit_mul`: the multiplicity of
-  a slope is the number of roots of the prepared polynomial on the corresponding sphere.
-* `PowerSeries.card_filter_roots_norm_lt_of_isUnit_mul`: the left endpoint of a finite face is
-  the number of roots of the prepared polynomial in the corresponding open disc.
+* `PowerSeries.newtonSlopeMultiplicity_eq_card_filter_roots_of_isUnit_mul`: when the prepared
+  polynomial splits, the multiplicity of a slope is the number of its roots on the corresponding
+  sphere.
+* `PowerSeries.card_filter_roots_norm_lt_of_isUnit_mul`: when the prepared polynomial splits, the
+  left endpoint of a finite face is the number of its roots in the corresponding open disc.
 * `PowerSeries.exists_card_eq_newtonSlopeMultiplicity_isGoodZero`,
   `PowerSeries.IsEntire.exists_card_eq_newtonSlopeMultiplicity_isGoodZero`: over an
   algebraically closed field, the multiplicity of a slope `σ` is the number of zeros of norm
@@ -183,8 +184,8 @@ theorem exists_card_eq_newtonSlopeMultiplicity_isGoodZero (hfr : f.IsRestricted 
     (newtonSlopeMultiplicity_eq_card_filter_roots_of_isUnit_mul v hb hv hfr hface hu
       hP.natDegree_eq.le hmul (IsAlgClosed.splits P)).symm,
     fun a ha ↦ (Multiset.mem_filter.1 ha).2, fun a ha ↦ ?_⟩
-  rw [Multiset.count_filter_of_pos (p := fun α ↦ ‖α‖ = b ^ σ) ha, Polynomial.count_roots]
-  exact (isGoodZero_iff_rootMultiplicity_eq_of_isUnit_mul hu hmul hfd.ne_zero ha.le).2 rfl
+  rw [Multiset.count_filter_of_pos (p := fun α ↦ ‖α‖ = b ^ σ) ha]
+  exact isGoodZero_count_roots_of_isUnit_mul hu hmul hfd.ne_zero ha.le
 
 /-- **Zeros in an open disc, with multiplicity.** Over an algebraically closed field, if the Newton
 polygon of a series `f` restricted at `b ^ σ` has a finite face of slope `σ` from `l` to `j`, the
@@ -202,8 +203,8 @@ theorem exists_card_eq_isGoodZero_of_isFiniteFace (hfr : f.IsRestricted (b ^ σ)
     card_filter_roots_norm_lt_of_isUnit_mul v hb hv hfr hface hu hP.natDegree_eq.le hmul
       (IsAlgClosed.splits P),
     fun a ha ↦ (Multiset.mem_filter.1 ha).2, fun a ha ↦ ?_⟩
-  rw [Multiset.count_filter_of_pos (p := fun α ↦ ‖α‖ < b ^ σ) ha, Polynomial.count_roots]
-  exact (isGoodZero_iff_rootMultiplicity_eq_of_isUnit_mul hu hmul hfd.ne_zero ha.le).2 rfl
+  rw [Multiset.count_filter_of_pos (p := fun α ↦ ‖α‖ < b ^ σ) ha]
+  exact isGoodZero_count_roots_of_isUnit_mul hu hmul hfd.ne_zero ha.le
 
 /-- **Zeros of an entire series on a sphere, with multiplicity.** Over an algebraically closed
 field, for every real `σ` the zeros of a nonzero entire series `f` of norm `b ^ σ`, counted with
@@ -245,8 +246,6 @@ theorem IsDistinguished.exists_card_eq_isGoodZero (hfd : IsDistinguished (b ^ σ
       hP.natDegree_eq.le hmul ha, fun a ha ↦ ?_⟩
   · rw [← hP.natDegree_eq]
     exact Polynomial.splits_iff_card_roots.1 (IsAlgClosed.splits P)
-  · rw [Polynomial.count_roots]
-    exact (_root_.PowerSeries.isGoodZero_iff_rootMultiplicity_eq_of_isUnit_mul hu hmul
-      hfd.ne_zero ha).2 rfl
+  · exact _root_.PowerSeries.isGoodZero_count_roots_of_isUnit_mul hu hmul hfd.ne_zero ha
 
 end TauCeti.PowerSeries

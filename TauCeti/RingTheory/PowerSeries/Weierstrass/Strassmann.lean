@@ -103,17 +103,13 @@ theorem IsDistinguished.sum_le_of_isGoodZero (hfd : IsDistinguished c s f) (hc :
   classical
   obtain ⟨u, P, hu, hP, hmul⟩ :=
     hfd.exists_isUnit_isMonicOfDegree_mul_eq hfd.coeff_ne_zero.isUnit hc hfr
-  have hroot : ∀ a ∈ S, h a = P.roots.count a := fun a ha ↦ by
-    rw [Polynomial.count_roots]
-    exact ((_root_.PowerSeries.isGoodZero_iff_rootMultiplicity_eq_of_isUnit_mul hu hmul
-      hfd.ne_zero (hS a ha).1).1 (hS a ha).2).symm
+  have hroot : ∀ a ∈ S, h a = P.roots.count a := fun a ha ↦ (hS a ha).2.unique
+    (_root_.PowerSeries.isGoodZero_count_roots_of_isUnit_mul hu hmul hfd.ne_zero (hS a ha).1)
   rw [Finset.sum_congr rfl hroot, ← hP.natDegree_eq]
   calc ∑ a ∈ S, P.roots.count a ≤ ∑ a ∈ S ∪ P.roots.toFinset, P.roots.count a :=
         Finset.sum_le_sum_of_subset Finset.subset_union_left
-    _ = ∑ a ∈ P.roots.toFinset, P.roots.count a :=
-        (Finset.sum_subset Finset.subset_union_right fun a _ ha ↦
-          Multiset.count_eq_zero.2 (by simpa using ha)).symm
-    _ = Multiset.card P.roots := Multiset.toFinset_sum_count_eq _
+    _ = Multiset.card P.roots :=
+        Multiset.sum_count_eq_card fun a ha ↦ Finset.mem_union_right _ (Multiset.mem_toFinset.2 ha)
     _ ≤ P.natDegree := Polynomial.card_roots' P
 
 end TauCeti.PowerSeries
