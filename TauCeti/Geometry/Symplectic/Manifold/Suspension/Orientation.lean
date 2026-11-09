@@ -233,7 +233,8 @@ theorem exists_diffeomorph_orbitTorus_comp_eq_of_integralTopForm_eq_zero
     exists_isLocalDiffeomorph_orbitTorus_comp_eq_of_integralTopForm_eq_zero h hu ho hhol hS hV
       htame h0 hinj hc hd
   have hvinj : Injective v := fun a b hab ↦ hu₁ (by rw [← hτv, comp_apply, hab, comp_apply])
-  have hΦ : ⇑(hloc.diffeomorphOfBijective ⟨hvinj, hsurj⟩) = v := coe_diffeomorphOfBijective
+  have hΦ : ⇑(hloc.diffeomorphOfBijective ⟨hvinj, hsurj⟩) = v :=
+    hloc.coe_diffeomorphOfBijective _
   refine ⟨hloc.diffeomorphOfBijective ⟨hvinj, hsurj⟩,
     (congrArg (orbitTorus φ h ∘ ·) hΦ).trans hτv, fun c' ↦ ?_⟩
   rw [hΦ]
