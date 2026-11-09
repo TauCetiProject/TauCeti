@@ -23,7 +23,9 @@ Let `M` be a manifold without boundary carrying a smooth almost complex structur
 On the cylindrical end of a Liouville completion, `ρ` is the radial coordinate and `α` the Liouville
 primitive, and this is the condition that `J` is of contact type. A map `u : ℂ → M`, with
 `s + i t` the coordinate on `ℂ`, is `J`-holomorphic when it solves the Cauchy--Riemann equation
-`∂ₜu = J(u) ∂ₛu`, written here with the manifold derivative of `u`. For such a curve
+`∂ₜu = J_z(u) ∂ₛu`, written here with the manifold derivative of `u`. The almost complex structure
+`J_z` may depend on the point `z` of the domain, with no regularity in `z`, as for continuation
+strips and parametrized families of Floer strips. For such a curve
 
 `Δ(ρ ∘ u) = dα(∂ₛu, ∂ₜu) = dα(∂ₛu, J ∂ₛu)`
 
@@ -40,8 +42,9 @@ above hold on `{ρ > R}`: a curve on a compact domain whose boundary is mapped i
 boundary lines and two ends `|ℜ z| ≥ T` are mapped into `{ρ ≤ R}`
 (`TauCeti.Pseudoholomorphic.comp_le_of_comp_le_strip_boundary_of_comp_le_ends`). These are the
 manifold forms of the statements in local coordinates in
-`TauCeti/Geometry/Symplectic/JHolomorphic/MaximumPrinciple.lean`. The almost complex structure does
-not depend on the point of the domain, and the equation carries no Hamiltonian term.
+`TauCeti/Geometry/Symplectic/JHolomorphic/MaximumPrinciple.lean`. The curve need only be `C²` and
+solve the Cauchy--Riemann equation at the points which it maps into `{ρ > R}`, so the statements
+apply to Floer strips whose Hamiltonian vector fields vanish on `{ρ > R}`.
 
 The results live in the organisational namespace `TauCeti.Pseudoholomorphic`, the manifold
 counterpart of `TauCeti.JHolomorphic` (see `TauCeti/Geometry/Symplectic/Manifold/JHolomorphic.lean`
@@ -74,23 +77,26 @@ open scoped _root_.Manifold ContDiff
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I ∞ M] {J : SmoothAlmostComplexStructure I M} {α : RoughForm I M ℝ 1}
+  [IsManifold I ∞ M] {J : ℂ → SmoothAlmostComplexStructure I M} {α : RoughForm I M ℝ 1}
   {ρ : M → ℝ} {u : ℂ → M} {z : ℂ}
 
 /-- **The Laplacian of `ρ` along a `J`-holomorphic curve in a manifold.** Let `u : ℂ → M` be
-`C²` at `z` and solve the Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu` near `z`. Let `α` be a
-one-form differentiable at `u z` and `ρ` a function `C²` at `u z` with `dρ ∘ J = -α` near `u z`.
-Then
+`C²` at `z` and solve the Cauchy--Riemann equation `∂ₜu = J_w(u) ∂ₛu` near `z`, for a family of
+almost complex structures `J_w` depending on the point `w` of the domain. Let `α` be a one-form
+differentiable at `u z` and `ρ` a function `C²` at `u z` with `dρ ∘ J_w = -α` at `u w` for `w`
+near `z`. Then
 
-`Δ(ρ ∘ u)(z) = dα(∂ₛu, ∂ₜu)`. -/
+`Δ(ρ ∘ u)(z) = dα(∂ₛu, ∂ₜu)`.
+
+No regularity of `J_w` in `w` is needed. -/
 theorem laplacian_comp_eq_of_mvfderiv_comp_eq_neg
     (hu : ContMDiffAt 𝓘(ℝ, ℂ) I 2 u z)
     (hCR : ∀ᶠ w in 𝓝 z,
-      mfderiv 𝓘(ℝ, ℂ) I u w (Complex.I : ℂ) = J (u w) (mfderiv 𝓘(ℝ, ℂ) I u w (1 : ℂ)))
+      mfderiv 𝓘(ℝ, ℂ) I u w (Complex.I : ℂ) = J w (u w) (mfderiv 𝓘(ℝ, ℂ) I u w (1 : ℂ)))
     (hρ : ContMDiffAt I 𝓘(ℝ) 2 ρ (u z))
     (hα : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) (u z))
-    (hρJ : ∀ᶠ y in 𝓝 (u z), ∀ v, mvfderiv I ρ y (J y v) = -α y ![v]) :
+    (hρJ : ∀ᶠ w in 𝓝 z, ∀ v, mvfderiv I ρ (u w) (J w (u w) v) = -α (u w) ![v]) :
     Δ (ρ ∘ u) z = mextDeriv α (u z)
       ![mfderiv 𝓘(ℝ, ℂ) I u z (1 : ℂ), mfderiv 𝓘(ℝ, ℂ) I u z (Complex.I : ℂ)] := by
   -- Read `u`, `ρ`, `J` and `α` in the extended chart `φ` at `u z`, check the hypotheses of the
@@ -116,33 +122,37 @@ theorem laplacian_comp_eq_of_mvfderiv_comp_eq_neg
     exact contMDiffAt_iff_contDiffAt.1 (hρ.comp_of_eq h (extChartAt_to_inv (u z)))
   have hω : DifferentiableAt ℝ (α.inChartAt (u z)) ((extChartAt I (u z) ∘ u) z) :=
     α.differentiableAt_inChartAt hα
-  -- The three identities of the computation in local coordinates.
-  have hJsq : ∀ᶠ e in 𝓝 ((extChartAt I (u z) ∘ u) z),
-      ∀ v, J.inChart (u z) e (J.inChart (u z) e v) = -v := by
-    filter_upwards [htgt] with e he v
-    exact J.inChart_inChart (u z) he v
+  -- The three identities of the computation in local coordinates, for the structures `J_w` read
+  -- in the chart at `u z`.
+  have hJsq : ∀ᶠ w in 𝓝 z, ∀ v, (J w).inChart (u z) ((extChartAt I (u z) ∘ u) w)
+      ((J w).inChart (u z) ((extChartAt I (u z) ∘ u) w) v) = -v := by
+    filter_upwards [hsrc] with w hw v
+    exact (J w).inChart_inChart (u z) ((extChartAt I (u z)).map_source hw) v
   have hCRc : ∀ᶠ w in 𝓝 z, fderiv ℝ (extChartAt I (u z) ∘ u) w Complex.I =
-      J.inChart (u z) ((extChartAt I (u z) ∘ u) w) (fderiv ℝ (extChartAt I (u z) ∘ u) w 1) := by
+      (J w).inChart (u z) ((extChartAt I (u z) ∘ u) w)
+        (fderiv ℝ (extChartAt I (u z) ∘ u) w 1) := by
     filter_upwards [hCR, hsrc, ContMDiffAt.eventually_mdifferentiableAt hu two_ne_zero]
       with w hw hws hwd
-    exact J.fderiv_extChartAt_comp_apply_eq_inChart (u z) hwd hws hw
-  have hρJc : ∀ᶠ e in 𝓝 ((extChartAt I (u z) ∘ u) z),
-      (fderiv ℝ (ρ ∘ (extChartAt I (u z)).symm) e).comp (J.inChart (u z) e) =
-        -L (α.inChartAt (u z) e) := by
-    have hsymm := continuousAt_extChartAt_symm (I := I) (u z)
-    rw [ContinuousAt, extChartAt_to_inv] at hsymm
-    filter_upwards [htgt, (hρc.eventually (by simp)).mono fun e he ↦
-      he.differentiableAt (by norm_num), hsymm.eventually hρJ] with e he hed hJ
+    exact (J w).fderiv_extChartAt_comp_apply_eq_inChart (u z) hwd hws hw
+  have hρJc : ∀ᶠ w in 𝓝 z,
+      (fderiv ℝ (ρ ∘ (extChartAt I (u z)).symm) ((extChartAt I (u z) ∘ u) w)).comp
+        ((J w).inChart (u z) ((extChartAt I (u z) ∘ u) w)) =
+        -L (α.inChartAt (u z) ((extChartAt I (u z) ∘ u) w)) := by
+    filter_upwards [hsrc, huc.continuousAt.eventually ((hρc.eventually (by simp)).mono
+      fun e he ↦ he.differentiableAt (by norm_num)), hρJ] with w hws hed hJ
+    have he := (extChartAt I (u z)).map_source hws
     ext v
-    rw [ContinuousLinearMap.comp_apply, neg_apply, hL,
-      J.fderiv_comp_extChartAt_symm_inChart_apply (u z) he hed, hJ, RoughForm.inChartAt_apply]
+    rw [ContinuousLinearMap.comp_apply, neg_apply, hL, Function.comp_apply,
+      (J w).fderiv_comp_extChartAt_symm_inChart_apply (u z) he hed,
+      (extChartAt I (u z)).left_inv hws, hJ, RoughForm.inChartAt_apply,
+      (extChartAt I (u z)).left_inv hws]
     congr 2
     funext i
     fin_cases i
     rfl
   -- The computation in the chart, transported back.
-  have hloc := JHolomorphic.laplacian_comp_eq_of_fderiv_comp_eq_neg huc hCRc hρc
-    (L.differentiableAt.comp _ hω) hJsq hρJc
+  have hloc := JHolomorphic.laplacian_comp_eq_of_fderiv_comp_eq_neg
+    (J := fun w ↦ (J w).inChart (u z)) huc hCRc hρc (L.differentiableAt.comp _ hω) hJsq hρJc
   have heq : ρ ∘ u =ᶠ[𝓝 z] (ρ ∘ (extChartAt I (u z)).symm) ∘ (extChartAt I (u z) ∘ u) := by
     filter_upwards [hsrc] with w hw
     simp only [Function.comp_apply, (extChartAt I (u z)).left_inv hw]
@@ -168,52 +178,59 @@ theorem laplacian_comp_eq_of_mvfderiv_comp_eq_neg
 
 /-- **The radial coordinate is subharmonic along a `J`-holomorphic curve in a manifold.** Under
 the hypotheses of `TauCeti.Pseudoholomorphic.laplacian_comp_eq_of_mvfderiv_comp_eq_neg`, if the
-exterior derivative `dα` tames `J` at `u z`, that is `dα(v, J v) ≥ 0` for every `v`, then
+exterior derivative `dα` tames `J_z` at `u z`, that is `dα(v, J_z v) ≥ 0` for every `v`, then
 `Δ(ρ ∘ u)(z) ≥ 0`. -/
 theorem laplacian_comp_nonneg_of_mvfderiv_comp_eq_neg (hu : ContMDiffAt 𝓘(ℝ, ℂ) I 2 u z)
     (hCR : ∀ᶠ w in 𝓝 z,
-      mfderiv 𝓘(ℝ, ℂ) I u w (Complex.I : ℂ) = J (u w) (mfderiv 𝓘(ℝ, ℂ) I u w (1 : ℂ)))
+      mfderiv 𝓘(ℝ, ℂ) I u w (Complex.I : ℂ) = J w (u w) (mfderiv 𝓘(ℝ, ℂ) I u w (1 : ℂ)))
     (hρ : ContMDiffAt I 𝓘(ℝ) 2 ρ (u z))
     (hα : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) (u z))
-    (hρJ : ∀ᶠ y in 𝓝 (u z), ∀ v, mvfderiv I ρ y (J y v) = -α y ![v])
-    (htame : ∀ v, 0 ≤ mextDeriv α (u z) ![v, J (u z) v]) :
+    (hρJ : ∀ᶠ w in 𝓝 z, ∀ v, mvfderiv I ρ (u w) (J w (u w) v) = -α (u w) ![v])
+    (htame : ∀ v, 0 ≤ mextDeriv α (u z) ![v, J z (u z) v]) :
     0 ≤ Δ (ρ ∘ u) z := by
   rw [laplacian_comp_eq_of_mvfderiv_comp_eq_neg hu hCR hρ hα hρJ, hCR.self_of_nhds]
   exact htame _
 
-/-- `ρ ∘ u` is `C²` and subharmonic at a point of an open set on which `u` is `C²` and
-`J`-holomorphic, provided `ρ ∘ u` exceeds `R` there and the hypotheses of the maximum principle
-hold on `{ρ > R}`. -/
+/-- `ρ ∘ u` is `C²` and subharmonic at a point of an open set `U` at which it exceeds `R`, provided
+`u` is `C²` and `J`-holomorphic at the points of `U` which it maps into `{ρ > R}`, and the
+hypotheses of the maximum principle hold on `{ρ > R}` for every `J_w`. -/
 private theorem contDiffAt_and_laplacian_nonneg {R : ℝ} {U : Set ℂ} (hU : IsOpen U) (hz : z ∈ U)
-    (hu : ∀ z ∈ U, ContMDiffAt 𝓘(ℝ, ℂ) I 2 u z)
-    (hCR : ∀ z ∈ U,
-      mfderiv 𝓘(ℝ, ℂ) I u z (Complex.I : ℂ) = J (u z) (mfderiv 𝓘(ℝ, ℂ) I u z (1 : ℂ)))
+    (hu : ∀ z ∈ U, R < ρ (u z) → ContMDiffAt 𝓘(ℝ, ℂ) I 2 u z)
+    (hCR : ∀ z ∈ U, R < ρ (u z) →
+      mfderiv 𝓘(ℝ, ℂ) I u z (Complex.I : ℂ) = J z (u z) (mfderiv 𝓘(ℝ, ℂ) I u z (1 : ℂ)))
     (hρ : ∀ x, R < ρ x → ContMDiffAt I 𝓘(ℝ) 2 ρ x)
     (hα : ∀ x, R < ρ x → MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x)
-    (hρJ : ∀ x, R < ρ x → ∀ v, mvfderiv I ρ x (J x v) = -α x ![v])
-    (htame : ∀ x, R < ρ x → ∀ v, 0 ≤ mextDeriv α x ![v, J x v]) (hRz : R < ρ (u z)) :
+    (hρJ : ∀ w x, R < ρ x → ∀ v, mvfderiv I ρ x (J w x v) = -α x ![v])
+    (htame : ∀ w x, R < ρ x → ∀ v, 0 ≤ mextDeriv α x ![v, J w x v]) (hRz : R < ρ (u z)) :
     ContDiffAt ℝ 2 (ρ ∘ u) z ∧ 0 ≤ Δ (ρ ∘ u) z := by
-  refine ⟨contMDiffAt_iff_contDiffAt.1 ((hρ _ hRz).comp z (hu z hz)), ?_⟩
-  have hnhds : ∀ᶠ x in 𝓝 (u z), R < ρ x := (hρ _ hRz).continuousAt.eventually (lt_mem_nhds hRz)
-  exact laplacian_comp_nonneg_of_mvfderiv_comp_eq_neg (hu z hz)
-    (eventually_of_mem (hU.mem_nhds hz) hCR) (hρ _ hRz) (hα _ hRz) (hnhds.mono hρJ) (htame _ hRz)
+  have hf : ContDiffAt ℝ 2 (ρ ∘ u) z :=
+    contMDiffAt_iff_contDiffAt.1 ((hρ _ hRz).comp z (hu z hz hRz))
+  -- Near `z` the curve stays in `U` and in `{ρ > R}`, where it solves the equation.
+  have hnear : ∀ᶠ y in 𝓝 z, y ∈ U ∧ R < ρ (u y) :=
+    Filter.Eventually.and (hU.mem_nhds hz) (hf.continuousAt.eventually (lt_mem_nhds hRz))
+  exact ⟨hf, laplacian_comp_nonneg_of_mvfderiv_comp_eq_neg (hu z hz hRz)
+    (hnear.mono fun y hy ↦ hCR y hy.1 hy.2) (hρ _ hRz) (hα _ hRz)
+    (hnear.mono fun y hy ↦ hρJ y (u y) hy.2) (htame z (u z) hRz)⟩
 
-/-- **The maximum principle for `J`-holomorphic curves in a manifold.** Suppose that on the region
-`{ρ > R}` the function `ρ` is `C²`, `dρ ∘ J = -α` for a one-form `α` differentiable there, and
-`dα` tames `J`. Let `K ⊆ ℂ` be compact and `u` be `C²` and `J`-holomorphic on the interior of
-`K`, with `ρ ∘ u` continuous on `K`. If `u` maps the frontier of `K` into `{ρ ≤ R}`, then it
-maps all of `K` into `{ρ ≤ R}`. -/
+/-- **The maximum principle for `J`-holomorphic curves in a manifold.** Let `J_w` be a family of
+almost complex structures depending on the point `w` of the domain. Suppose that on the region
+`{ρ > R}` the function `ρ` is `C²`, and for every `w`, `dρ ∘ J_w = -α` for a one-form `α`
+differentiable there, and `dα` tames `J_w`. Let `K ⊆ ℂ` be compact, with `ρ ∘ u` continuous on
+`K`, and let `u` be `C²` and solve `∂ₜu = J_w(u) ∂ₛu` at the points `w` of the interior of `K`
+which it maps into `{ρ > R}`. If `u` maps the frontier of `K` into `{ρ ≤ R}`, then it maps all of
+`K` into `{ρ ≤ R}`. -/
 theorem comp_le_of_comp_le_frontier {R : ℝ} {K : Set ℂ} (hK : IsCompact K)
-    (hf : ContinuousOn (ρ ∘ u) K) (hu : ∀ z ∈ interior K, ContMDiffAt 𝓘(ℝ, ℂ) I 2 u z)
-    (hCR : ∀ z ∈ interior K,
-      mfderiv 𝓘(ℝ, ℂ) I u z (Complex.I : ℂ) = J (u z) (mfderiv 𝓘(ℝ, ℂ) I u z (1 : ℂ)))
+    (hf : ContinuousOn (ρ ∘ u) K)
+    (hu : ∀ z ∈ interior K, R < ρ (u z) → ContMDiffAt 𝓘(ℝ, ℂ) I 2 u z)
+    (hCR : ∀ z ∈ interior K, R < ρ (u z) →
+      mfderiv 𝓘(ℝ, ℂ) I u z (Complex.I : ℂ) = J z (u z) (mfderiv 𝓘(ℝ, ℂ) I u z (1 : ℂ)))
     (hρ : ∀ x, R < ρ x → ContMDiffAt I 𝓘(ℝ) 2 ρ x)
     (hα : ∀ x, R < ρ x → MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x)
-    (hρJ : ∀ x, R < ρ x → ∀ v, mvfderiv I ρ x (J x v) = -α x ![v])
-    (htame : ∀ x, R < ρ x → ∀ v, 0 ≤ mextDeriv α x ![v, J x v])
+    (hρJ : ∀ w x, R < ρ x → ∀ v, mvfderiv I ρ x (J w x v) = -α x ![v])
+    (htame : ∀ w x, R < ρ x → ∀ v, 0 ≤ mextDeriv α x ![v, J w x v])
     (hbdry : ∀ z ∈ frontier K, ρ (u z) ≤ R) (hz : z ∈ K) : ρ (u z) ≤ R :=
   le_of_laplacian_nonneg_of_lt_le_frontier hK hf
     (fun _ hw hRw ↦ (contDiffAt_and_laplacian_nonneg isOpen_interior hw hu hCR hρ hα hρJ htame
@@ -222,35 +239,32 @@ theorem comp_le_of_comp_le_frontier {R : ℝ} {K : Set ℂ} (hK : IsCompact K)
       hRw).2)
     (fun w hw ↦ hbdry w hw) hz
 
-/-- **No escape for strips in a manifold.** Suppose that on the region `{ρ > R}` the function `ρ`
-is `C²`, `dρ ∘ J = -α` for a one-form `α` differentiable there, and `dα` tames `J`. Let `u` be
-`C²` and `J`-holomorphic on the open strip `ℝ × (0, 1)`, with `ρ ∘ u` continuous on the closed
-strip `ℝ × [0, 1]`. If `u` maps both boundary lines `ℑ z = 0` and `ℑ z = 1` into `{ρ ≤ R}`, and
-also the two ends `|ℜ z| ≥ T` of the strip for some `T`, then `u` maps the whole strip into
-`{ρ ≤ R}`. -/
+/-- **No escape for strips in a manifold.** Let `J_w` be a family of almost complex structures
+depending on the point `w` of the strip. Suppose that on the region `{ρ > R}` the function `ρ` is
+`C²`, and for every `w`, `dρ ∘ J_w = -α` for a one-form `α` differentiable there, and `dα` tames
+`J_w`. Let `ρ ∘ u` be continuous on the closed strip `ℝ × [0, 1]`, and let `u` be `C²` and solve
+`∂ₜu = J_w(u) ∂ₛu` at the points `w` of the open strip `ℝ × (0, 1)` which it maps into
+`{ρ > R}`. If `u` maps both boundary lines `ℑ z = 0` and `ℑ z = 1` into `{ρ ≤ R}`, and also the
+two ends `|ℜ z| ≥ T` of the strip for some `T`, then `u` maps the whole strip into `{ρ ≤ R}`. -/
 theorem comp_le_of_comp_le_strip_boundary_of_comp_le_ends {R T : ℝ}
     (hf : ContinuousOn (ρ ∘ u) (univ ×ℂ Icc 0 1))
-    (hu : ∀ z : ℂ, 0 < z.im → z.im < 1 → ContMDiffAt 𝓘(ℝ, ℂ) I 2 u z)
-    (hCR : ∀ z : ℂ, 0 < z.im → z.im < 1 →
-      mfderiv 𝓘(ℝ, ℂ) I u z (Complex.I : ℂ) = J (u z) (mfderiv 𝓘(ℝ, ℂ) I u z (1 : ℂ)))
+    (hu : ∀ z : ℂ, 0 < z.im → z.im < 1 → R < ρ (u z) → ContMDiffAt 𝓘(ℝ, ℂ) I 2 u z)
+    (hCR : ∀ z : ℂ, 0 < z.im → z.im < 1 → R < ρ (u z) →
+      mfderiv 𝓘(ℝ, ℂ) I u z (Complex.I : ℂ) = J z (u z) (mfderiv 𝓘(ℝ, ℂ) I u z (1 : ℂ)))
     (hρ : ∀ x, R < ρ x → ContMDiffAt I 𝓘(ℝ) 2 ρ x)
     (hα : ∀ x, R < ρ x → MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
       (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x)
-    (hρJ : ∀ x, R < ρ x → ∀ v, mvfderiv I ρ x (J x v) = -α x ![v])
-    (htame : ∀ x, R < ρ x → ∀ v, 0 ≤ mextDeriv α x ![v, J x v])
+    (hρJ : ∀ w x, R < ρ x → ∀ v, mvfderiv I ρ x (J w x v) = -α x ![v])
+    (htame : ∀ w x, R < ρ x → ∀ v, 0 ≤ mextDeriv α x ![v, J w x v])
     (h₀ : ∀ z : ℂ, z.im = 0 → ρ (u z) ≤ R) (h₁ : ∀ z : ℂ, z.im = 1 → ρ (u z) ≤ R)
     (hends : ∀ z : ℂ, T ≤ |z.re| → 0 ≤ z.im → z.im ≤ 1 → ρ (u z) ≤ R)
     (hz₀ : 0 ≤ z.im) (hz₁ : z.im ≤ 1) : ρ (u z) ≤ R := by
   have hU : IsOpen {w : ℂ | 0 < w.im ∧ w.im < 1} :=
     (isOpen_lt continuous_const continuous_im).inter (isOpen_lt continuous_im continuous_const)
-  have hu' : ∀ w ∈ {w : ℂ | 0 < w.im ∧ w.im < 1}, ContMDiffAt 𝓘(ℝ, ℂ) I 2 u w :=
-    fun w hw ↦ hu w hw.1 hw.2
-  have hCR' : ∀ w ∈ {w : ℂ | 0 < w.im ∧ w.im < 1}, mfderiv 𝓘(ℝ, ℂ) I u w (Complex.I : ℂ) =
-      J (u w) (mfderiv 𝓘(ℝ, ℂ) I u w (1 : ℂ)) := fun w hw ↦ hCR w hw.1 hw.2
-  exact le_of_laplacian_nonneg_of_lt_le_strip hf
-    (fun w hw₀ hw₁ hRw ↦ (contDiffAt_and_laplacian_nonneg hU ⟨hw₀, hw₁⟩ hu' hCR' hρ hα hρJ htame
-      hRw).1)
-    (fun w hw₀ hw₁ hRw ↦ (contDiffAt_and_laplacian_nonneg hU ⟨hw₀, hw₁⟩ hu' hCR' hρ hα hρJ htame
-      hRw).2) h₀ h₁ hends hz₀ hz₁
+  have hint (w : ℂ) (h₀ : 0 < w.im) (h₁ : w.im < 1) (hRw : R < ρ (u w)) :=
+    contDiffAt_and_laplacian_nonneg hU (z := w) ⟨h₀, h₁⟩ (fun y hy ↦ hu y hy.1 hy.2)
+      (fun y hy ↦ hCR y hy.1 hy.2) hρ hα hρJ htame hRw
+  exact le_of_laplacian_nonneg_of_lt_le_strip hf (fun w h₀ h₁ hRw ↦ (hint w h₀ h₁ hRw).1)
+    (fun w h₀ h₁ hRw ↦ (hint w h₀ h₁ hRw).2) h₀ h₁ hends hz₀ hz₁
 
 end TauCeti.Pseudoholomorphic
