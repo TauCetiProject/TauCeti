@@ -171,7 +171,7 @@ theorem isLagrangianMap_graph_comp {φ : M₁ → M₂} {ψ : M₂ → M₃} (h�
   h₁.relComp (hσ₁ := hσ₁) (hσ₂ := hσ₂) (hσ₃ := hσ₃) (a := id) (b := φ) h₂
     (mdifferentiable_id.prodMk hφ) (mdifferentiable_id.prodMk hψ)
     mdifferentiable_id hφ (fun _ ↦ rfl) fun x u w h ↦ ⟨u, by simp, by
-      rw [Manifold.mfderiv_graph_snd_apply (hφ _), Manifold.mfderiv_graph_fst_apply (hψ _)] at h
+      rw [Manifold.mfderiv_graph_snd_apply (f := φ), Manifold.mfderiv_graph_fst_apply (hψ _)] at h
       exact h⟩
 
 end TauCeti.SmoothTwoForm.IsNondegenerate
