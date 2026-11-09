@@ -80,6 +80,9 @@ theorem map_alternatingGroup_symmetricGroupFourMatchingHom :
 private def threeCycle : alternatingGroup (Fin 3) :=
   ⟨[0, 1, 2].formPerm, by simp [List.formPerm_cons_cons, Perm.mem_alternatingGroup]⟩
 
+private theorem coe_threeCycle : (threeCycle : Perm (Fin 3)) = [0, 1, 2].formPerm :=
+  rfl
+
 /-- The powers of `(0 1 2)` identify `ZMod 3` with `A₃`, which has prime order three. -/
 private noncomputable def threeCyclePowEquiv :
     Multiplicative (ZMod 3) ≃* alternatingGroup (Fin 3) :=
@@ -96,8 +99,7 @@ private theorem coe_threeCyclePowEquiv (r : Multiplicative (ZMod 3)) :
   conv_lhs => rw [← ofAdd_toAdd r, ← ZMod.natCast_zmod_val (Multiplicative.toAdd r),
     ← Int.cast_natCast]
   rw [threeCyclePowEquiv, zmodMulEquivOfGenerator_apply_ofAdd_intCast, zpow_natCast,
-    Subgroup.coe_pow]
-  rfl
+    Subgroup.coe_pow, coe_threeCycle]
 
 /-- **The homomorphism `κ : A₄ →* ℤ/3ℤ`**: for `g ∈ A₄`, the image `q g ∈ A₃` of `g` under the
 action on the three perfect matchings is `c ^ κ(g)` for the three-cycle `c = (0 1 2)` of the
@@ -118,7 +120,7 @@ theorem symmetricGroupFourMatchingHom_coe_eq_pow (g : alternatingGroup (Fin 4)) 
       [0, 1, 2].formPerm ^ (Multiplicative.toAdd (alternatingGroupFourZModThreeHom g)).val := by
   rw [← coe_threeCyclePowEquiv, alternatingGroupFourZModThreeHom, MonoidHom.comp_apply,
     MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply]
-  rfl
+  simp only [MonoidHom.codRestrict_apply, MonoidHom.comp_apply, Subgroup.coe_subtype]
 
 /-- `κ(g)` is the unique `r` with `q g = c ^ r` for the three-cycle `c = (0 1 2)` of the
 matchings. -/
@@ -128,7 +130,7 @@ theorem alternatingGroupFourZModThreeHom_eq_iff {g : alternatingGroup (Fin 4)}
       symmetricGroupFourMatchingHom g = [0, 1, 2].formPerm ^ (Multiplicative.toAdd r).val := by
   rw [← coe_threeCyclePowEquiv, alternatingGroupFourZModThreeHom, MonoidHom.comp_apply,
     MulEquiv.coe_toMonoidHom, MulEquiv.symm_apply_eq, Subtype.ext_iff]
-  rfl
+  simp only [MonoidHom.codRestrict_apply, MonoidHom.comp_apply, Subgroup.coe_subtype]
 
 /-- **The kernel of `κ` is the Klein four-group** `alternatingGroup.kleinFour (Fin 4)`: it is the
 kernel of the action `q` on the three perfect matchings, read inside `A₄`. -/
