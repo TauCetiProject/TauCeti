@@ -75,25 +75,15 @@ theorem ExchangeableAt.prefixLaw_singleton_comp
     (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) (w : Fin n → α)
     (σ : Equiv.Perm (Fin n)) :
     prefixLaw μ X n {w ∘ σ} = prefixLaw μ X n {w} := by
-  have hmeas : Measurable fun x : Fin n → α => fun i => x (σ⁻¹ i) :=
-    Measurable.of_eval fun i => measurable_pi_apply (σ⁻¹ i)
-  have hmap : (prefixLaw μ X n).map (fun x : Fin n → α => fun i => x (σ⁻¹ i)) =
-      prefixLaw μ X n := by
-    conv_lhs => rw [prefixLaw_def]
+  set e := MeasurableEquiv.arrowCongr' σ (MeasurableEquiv.refl α)
+  have he : ⇑e = fun x : Fin n → α => fun i => x (σ⁻¹ i) := rfl
+  have hmap : (prefixLaw μ X n).map e = prefixLaw μ X n := by
+    conv_lhs => rw [prefixLaw_def, he]
     rw [map_blockLaw_reindex μ (fun i : Fin n => i.val) (fun i => σ⁻¹ i) hX]
     exact h σ⁻¹
   conv_rhs => rw [← hmap]
-  have hemb : MeasurableEmbedding fun x : Fin n → α => fun i => x (σ⁻¹ i) :=
-    ⟨fun x y hxy => funext fun i => by simpa using congr_fun hxy (σ i), hmeas, fun s hs => by
-      have himg : (fun x : Fin n → α => fun i => x (σ⁻¹ i)) '' s =
-          (fun x : Fin n → α => fun i => x (σ i)) ⁻¹' s := by
-        ext y
-        refine ⟨?_, fun hy => ⟨_, hy, by simp⟩⟩
-        rintro ⟨x, hx, rfl⟩
-        simpa using hx
-      rw [himg]
-      exact hs.preimage (Measurable.of_eval fun i => measurable_pi_apply (σ i))⟩
-  rw [hemb.map_apply]
+  rw [e.map_apply]
+  simp only [he]
   congr 1
   ext x
   simp only [Set.mem_preimage, Set.mem_singleton_iff, funext_iff, Function.comp_apply]
