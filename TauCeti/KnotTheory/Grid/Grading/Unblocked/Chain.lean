@@ -621,6 +621,38 @@ theorem alexanderChainMinusGrading_piece (R : Type*) [CommRing R] (a : ℤ) :
     (G.alexanderChainMinusGrading R).piece a = G.alexanderChainMinusPiece R a :=
   (rfl)
 
+/-- The degree-`a` component of the Alexander grading retains exactly the monomials of
+Alexander degree `a`. -/
+@[simp]
+theorem coeff_decompose_alexanderChainMinusGrading (R : Type*) [CommRing R]
+    (a : ℤ) (c : GridChainMinus R n) (x : GridState n) (e : Fin n →₀ ℕ) :
+    ((DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a :
+      GridChainMinus R n) x).coeff e =
+        if G.alexanderℤ x - (e.degree : ℤ) = a then (c x).coeff e else 0 := by
+  classical
+  induction c using Finsupp.induction_linear with
+  | zero => simp
+  | add c d hc hd =>
+    simp only [DirectSum.decompose_add, DirectSum.add_apply, Submodule.coe_add,
+      Finsupp.add_apply, AddMonoidAlgebra.coeff_add, hc, hd]
+    split_ifs <;> simp
+  | single y p =>
+    induction p using MvPolynomial.induction_on' with
+    | add p q hp hq =>
+      simp only [Finsupp.single_add, DirectSum.decompose_add, DirectSum.add_apply,
+        Submodule.coe_add, Finsupp.add_apply, AddMonoidAlgebra.coeff_add, hp, hq]
+      split_ifs <;> simp
+    | monomial d r =>
+      have hm : Finsupp.single y (monomial d r) ∈
+          (G.alexanderChainMinusGrading R).piece (G.alexanderℤ y - (d.degree : ℤ)) := by
+        simpa only [alexanderChainMinusGrading_piece, monomialBidegree_snd, bidegree_snd] using
+          G.bigradedChainMinusPiece_le_alexanderChainMinusPiece R _ _
+            (G.single_monomial_mem_bigradedChainMinusPiece R y d r)
+      by_cases ha : G.alexanderℤ y - (d.degree : ℤ) = a <;>
+        [rw [DirectSum.decompose_of_mem_same _ (ha ▸ hm)];
+          rw [DirectSum.decompose_of_mem_ne _ hm ha]] <;>
+        by_cases hy : y = x <;> by_cases he : d = e <;> simp_all
+
 /-- The unblocked grid differential is homogeneous of degree zero for the Alexander grading. -/
 theorem isHomogeneous_unblockedDifferential_alexanderChainMinusGrading (R : Type*) [CommRing R] :
     LinearMap.IsHomogeneous (G.1.unblockedDifferential R) (G.alexanderChainMinusGrading R).piece

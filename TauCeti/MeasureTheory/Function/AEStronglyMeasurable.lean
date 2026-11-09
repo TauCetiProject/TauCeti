@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Group.Defs
 public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import Mathlib.MeasureTheory.Group.Measure
+import Mathlib.Topology.Metrizable.Urysohn
 
 /-!
 # Almost everywhere strong measurability
@@ -59,8 +60,7 @@ namespace TauCeti
 namespace MeasureTheory
 
 variable {β : Type*} [ConditionallyCompleteLinearOrder β] [TopologicalSpace β] [OrderTopology β]
-  [SecondCountableTopology β] [TopologicalSpace.PseudoMetrizableSpace β] [MeasurableSpace β]
-  [BorelSpace β]
+  [SecondCountableTopology β] [MeasurableSpace β] [BorelSpace β]
 
 /-- `AEStronglyMeasurable` for the infimum of an antitone sequence of σ-algebras.
 
