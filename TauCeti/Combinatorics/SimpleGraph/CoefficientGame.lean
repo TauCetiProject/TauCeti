@@ -23,7 +23,8 @@ edges and hence throughout a preconnected graph. Consequently nonzero nonnegativ
 are strictly positive, allowing the positive-additive-function theory to be applied.
 
 All constructions commute with actual graph isomorphisms. Integer vectors give the coefficient
-game, while the order-theoretic statements hold over any linearly ordered ring.
+game. The Cartan criteria require only a partial order compatible with addition; the
+no-precarious-vertices criterion additionally requires a linear order.
 -/
 
 public section
@@ -106,7 +107,9 @@ theorem coefficientReflection_apply_same_eq_sub_mulVec (i : V) (a : V → R) :
   rw [coefficientReflection_apply_same, graphCartanMatrix_mulVec_apply, two_mul]
   abel
 
-variable [LinearOrder R] [IsStrictOrderedRing R]
+section PartialOrder
+
+variable [PartialOrder R] [IsOrderedAddMonoid R]
 
 /-- A vector is stuck exactly when its Cartan image is coordinatewise nonnegative. -/
 theorem isStuck_iff_graphCartanMatrix_mulVec_nonneg (a : V → R) :
@@ -119,6 +122,10 @@ require the vector to be stuck. -/
 theorem isPrecarious_iff_graphCartanMatrix_mulVec_pos (a : V → R) (i : V) :
     G.IsPrecarious a i ↔ 0 < (G.graphCartanMatrix R *ᵥ a) i := by
   simp only [IsPrecarious, coefficientReflection_apply_same_eq_sub_mulVec, sub_lt_self_iff]
+
+end PartialOrder
+
+variable [LinearOrder R] [IsOrderedAddMonoid R]
 
 /-- Stuck vectors without precarious vertices are exactly the null vectors of `2I - A`. -/
 theorem isStuck_and_not_isPrecarious_iff (a : V → R) :
