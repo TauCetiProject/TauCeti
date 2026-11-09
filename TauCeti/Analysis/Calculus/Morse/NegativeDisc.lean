@@ -66,43 +66,6 @@ section Linear
 
 variable {X : Type*} [TopologicalSpace X]
 
-/-- The contraction of the positive component of a continuous family of linear maps
-`L x : E → E × F`, evaluated along `u`, from `x ↦ L x (u x)` to `x ↦ ((L x (u x)).1, 0)`. -/
-private noncomputable def positiveContraction (L : C(X, E →L[ℝ] E × F)) (u : C(X, E)) :
-    ContinuousMap.Homotopy (⟨fun x ↦ L x (u x), by fun_prop⟩ : C(X, E × F))
-      ⟨fun x ↦ ((L x (u x)).1, 0), by fun_prop⟩ where
-  toFun p := ((L p.2 (u p.2)).1, (1 - (p.1 : ℝ)) • (L p.2 (u p.2)).2)
-  continuous_toFun := by fun_prop
-  map_zero_left x := by simp
-  map_one_left x := by simp
-
-omit [CompleteSpace E] in
-private theorem positiveContraction_apply (L : C(X, E →L[ℝ] E × F)) (u : C(X, E))
-    (p : I × X) :
-    positiveContraction L u p = ((L p.2 (u p.2)).1, (1 - (p.1 : ℝ)) • (L p.2 (u p.2)).2) :=
-  (rfl)
-
-omit [CompleteSpace E] in
-private theorem norm_positiveContraction_le (L : C(X, E →L[ℝ] E × F)) (u : C(X, E))
-    (p : I × X) : ‖positiveContraction L u p‖ ≤ ‖L p.2 (u p.2)‖ := by
-  rw [positiveContraction_apply]
-  refine norm_prod_le_iff.2 ⟨norm_fst_le (L p.2 (u p.2)), (norm_smul_le _ _).trans ?_⟩
-  have ht : ‖1 - (p.1 : ℝ)‖ ≤ 1 := by
-    rw [Real.norm_eq_abs, abs_le]
-    constructor <;> linarith [p.1.2.1, p.1.2.2]
-  exact (mul_le_of_le_one_left (norm_nonneg _) ht).trans (norm_snd_le _)
-
-omit [CompleteSpace E] in
-/-- Contracting the positive component keeps `Q` at most `-‖u‖²` when every `L x` pulls `Q` back
-to `-‖u‖²`. -/
-private theorem positiveContraction_neg_norm_sq_add_le (L : C(X, E →L[ℝ] E × F)) (u : C(X, E))
-    (hL : ∀ x v, ‖(L x v).1‖ ^ 2 - ‖(L x v).2‖ ^ 2 = ‖v‖ ^ 2) (p : I × X) :
-    -‖(positiveContraction L u p).1‖ ^ 2 + ‖(positiveContraction L u p).2‖ ^ 2 ≤
-      -‖u p.2‖ ^ 2 := by
-  rw [positiveContraction_apply]
-  exact (L p.2).neg_norm_fst_sq_add_norm_smul_snd_sq_le_of_norm_sq_sub (hL p.2)
-    (abs_le.mpr ⟨by linarith [p.1.2.2], by linarith [p.1.2.1]⟩) (u p.2)
-
 /-- The polar factors of the negative blocks `(C x ·).1` of a continuous family of linear maps
 `C x : E → E × F` depend continuously on `x` when the negative blocks expand norms. -/
 private theorem continuous_polarFactor_fst_comp (C : C(X, E →L[ℝ] E × F))
@@ -112,80 +75,6 @@ private theorem continuous_polarFactor_fst_comp (C : C(X, E →L[ℝ] E × F))
   exact continuous_iff_continuousAt.2 fun x ↦ (ContinuousLinearMap.continuousAt_polarFactor
     (ContinuousLinearMap.isStrictlyPositive_modulus_of_forall_norm_le _ (hC x)).isUnit).comp
       (f := fun x ↦ (ContinuousLinearMap.fst ℝ E F).comp (C x)) hN.continuousAt
-
-/-- The polar deformation of the negative blocks `(C x ·).1` of a continuous family of linear maps
-`C x : E → E × F`, all expanding norms, evaluated along `u`: from `x ↦ ((C x (u x)).1, 0)` to the
-polar factors `x ↦ ((C x ·).1.polarFactor (u x), 0)`. -/
-private noncomputable def polarStage (C : C(X, E →L[ℝ] E × F)) (hC : ∀ x v, ‖v‖ ≤ ‖(C x v).1‖)
-    (u : C(X, E)) :
-    ContinuousMap.Homotopy (⟨fun x ↦ ((C x (u x)).1, (0 : F)), by fun_prop⟩ : C(X, E × F))
-      ⟨fun x ↦ (((ContinuousLinearMap.fst ℝ E F).comp (C x)).polarFactor (u x), 0), by
-        have := continuous_polarFactor_fst_comp C hC
-        fun_prop⟩ where
-  toFun p := (((ContinuousLinearMap.fst ℝ E F).comp (C p.2)).polarDeformation p.1 (u p.2), 0)
-  continuous_toFun := by
-    have hc : Continuous fun p : I × X ↦
-        ((ContinuousLinearMap.fst ℝ E F).comp (C p.2)).polarDeformation p.1 :=
-      ContinuousLinearMap.continuousOn_polarDeformation.comp_continuous
-        (f := fun p : I × X ↦ ((ContinuousLinearMap.fst ℝ E F).comp (C p.2), (p.1 : ℝ)))
-        (by fun_prop) fun p ↦
-          ⟨ContinuousLinearMap.isStrictlyPositive_modulus_of_forall_norm_le _ (hC p.2), trivial⟩
-    exact (hc.clm_apply (u.continuous.comp continuous_snd)).prodMk continuous_const
-  map_zero_left x := by simp
-  map_one_left x := by simp
-
-private theorem polarStage_apply (C : C(X, E →L[ℝ] E × F)) (hC : ∀ x v, ‖v‖ ≤ ‖(C x v).1‖)
-    (u : C(X, E)) (p : I × X) :
-    polarStage C hC u p =
-      (((ContinuousLinearMap.fst ℝ E F).comp (C p.2)).polarDeformation p.1 (u p.2), 0) :=
-  (rfl)
-
-private theorem norm_polarStage_le (C : C(X, E →L[ℝ] E × F)) (hC : ∀ x v, ‖v‖ ≤ ‖(C x v).1‖)
-    (u : C(X, E)) (p : I × X) : ‖polarStage C hC u p‖ ≤ ‖C p.2 (u p.2)‖ := by
-  rw [polarStage_apply]
-  refine norm_prod_le_iff.2 ⟨?_, by simp⟩
-  exact (((ContinuousLinearMap.fst ℝ E F).comp (C p.2)).norm_le_norm_polarDeformation_apply_le
-    (hC p.2) p.1.2 (u p.2)).2.trans (norm_fst_le _)
-
-/-- The polar deformation of expanding negative blocks keeps `Q` at most `-‖u‖²`. -/
-private theorem polarStage_neg_norm_sq_add_le (C : C(X, E →L[ℝ] E × F))
-    (hC : ∀ x v, ‖v‖ ≤ ‖(C x v).1‖) (u : C(X, E)) (p : I × X) :
-    -‖(polarStage C hC u p).1‖ ^ 2 + ‖(polarStage C hC u p).2‖ ^ 2 ≤ -‖u p.2‖ ^ 2 := by
-  rw [polarStage_apply]
-  simpa using pow_le_pow_left₀ (norm_nonneg _)
-    (((ContinuousLinearMap.fst ℝ E F).comp (C p.2)).norm_le_norm_polarDeformation_apply_le
-      (hC p.2) p.1.2 (u p.2)).1 2
-
-/-- Stages 2 and 3 of the comparison, for a continuous family of linear maps `C x : E → E × F`
-pulling `Q` back to `-‖u‖²`, evaluated along `u`: contract the positive components, then deform
-the negative blocks `(C x ·).1` to their polar factors. If every `C x (u x)` lies in a closed ball
-of radius `R` contained in `V`, all maps of the homotopy take values in `V` and keep `Q` at most
-`-‖u‖²`. -/
-private noncomputable def negativeDiscTail (C : C(X, E →L[ℝ] E × F)) (u : C(X, E))
-    (hC : ∀ x v, ‖(C x v).1‖ ^ 2 - ‖(C x v).2‖ ^ 2 = ‖v‖ ^ 2) {V : Set (E × F)} {R : ℝ}
-    (hRV : closedBall (0 : E × F) R ⊆ V) (hCR : ∀ x, ‖C x (u x)‖ ≤ R) :
-    ContinuousMap.HomotopyWith (⟨fun x ↦ C x (u x), by fun_prop⟩ : C(X, E × F))
-      ⟨fun x ↦ (((ContinuousLinearMap.fst ℝ E F).comp (C x)).polarFactor (u x), 0), by
-        have := continuous_polarFactor_fst_comp C
-          fun x ↦ (C x).norm_le_norm_fst_of_norm_sq_sub (hC x)
-        fun_prop⟩
-      fun g ↦ ∀ x, g x ∈ V ∧ -‖(g x).1‖ ^ 2 + ‖(g x).2‖ ^ 2 ≤ -‖u x‖ ^ 2 :=
-  have hN (x : X) (v : E) : ‖v‖ ≤ ‖(C x v).1‖ := (C x).norm_le_norm_fst_of_norm_sq_sub (hC x) v
-  have hP {z : E × F} (x : X) (hz : ‖z‖ ≤ ‖C x (u x)‖)
-      (hq : -‖z.1‖ ^ 2 + ‖z.2‖ ^ 2 ≤ -‖u x‖ ^ 2) :
-      z ∈ V ∧ -‖z.1‖ ^ 2 + ‖z.2‖ ^ 2 ≤ -‖u x‖ ^ 2 :=
-    ⟨hRV (mem_closedBall_zero_iff.mpr (hz.trans (hCR x))), hq⟩
-  ContinuousMap.HomotopyWith.trans
-    { toHomotopy := positiveContraction C u
-      prop' := fun t x ↦ by
-        have h₁ := norm_positiveContraction_le C u (t, x)
-        have h₂ := positiveContraction_neg_norm_sq_add_le C u hC (t, x)
-        exact hP x h₁ h₂ }
-    { toHomotopy := polarStage C hN u
-      prop' := fun t x ↦ by
-        have h₁ := norm_polarStage_le C hN u (t, x)
-        have h₂ := polarStage_neg_norm_sq_add_le C hN u (t, x)
-        exact hP x h₁ h₂ }
 
 /-- The polar factor of an operator which expands norms, as a linear isometry. -/
 private noncomputable def polarFactorIsometry (N : E →L[ℝ] E) (hN : ∀ u, ‖u‖ ≤ ‖N u‖) :
@@ -216,11 +105,12 @@ private theorem continuous_rescaleStage_start (T : X → E × F → E × F)
 
 /-- All three stages of the comparison, for a family of transitions `T x` with continuous
 derivatives `A x` at the origin, evaluated along `u`: rescale `T x` to `A x`, contract the positive
-components, then deform the negative blocks to their polar factors. The rescalings must be jointly
+components, then deform the negative blocks to their polar factors
+(`ContinuousMap.exists_homotopy_polarFactor_of_norm_sq_sub`). The rescalings must be jointly
 continuous and keep values in `V` and the exact value of `Q` on the ball of radius `δ`, which
 contains every `(u x, 0)`, and the ball of radius `L * δ` must lie in `V` for a bound `L` on the
 derivatives. -/
-private noncomputable def negativeDiscHomotopy (T : X → E × F → E × F)
+private theorem exists_negativeDiscHomotopy (T : X → E × F → E × F)
     (A : C(X, (E × F) →L[ℝ] E × F)) (u : C(X, E)) (hT0 : ∀ x, T x 0 = 0)
     (hC : ∀ x v, ‖((A x).comp (ContinuousLinearMap.inl ℝ E F) v).1‖ ^ 2 -
       ‖((A x).comp (ContinuousLinearMap.inl ℝ E F) v).2‖ ^ 2 = ‖v‖ ^ 2) {δ L : ℝ}
@@ -234,16 +124,10 @@ private noncomputable def negativeDiscHomotopy (T : X → E × F → E × F)
           -‖y.1‖ ^ 2 + ‖y.2‖ ^ 2)
     (hu : ∀ x, ‖u x‖ ≤ δ) (hAL : ∀ x, ‖A x‖ ≤ L) (hL : 0 ≤ L)
     (hLV : closedBall (0 : E × F) (L * δ) ⊆ V) :
-    ContinuousMap.HomotopyWith
-      (⟨fun x ↦ T x (u x, 0), continuous_rescaleStage_start T A u hT0 hcont hu⟩ : C(X, E × F))
-      ⟨fun x ↦ (((ContinuousLinearMap.fst ℝ E F).comp
-        ((A x).comp (ContinuousLinearMap.inl ℝ E F))).polarFactor (u x), 0), by
-        have := continuous_polarFactor_fst_comp
-          ⟨fun x ↦ (A x).comp (ContinuousLinearMap.inl ℝ E F), by fun_prop⟩
-          fun x ↦ ((A x).comp (ContinuousLinearMap.inl ℝ E F)).norm_le_norm_fst_of_norm_sq_sub
-            (hC x)
-        fun_prop⟩
-      fun g ↦ ∀ x, g x ∈ V ∧ -‖(g x).1‖ ^ 2 + ‖(g x).2‖ ^ 2 ≤ -‖u x‖ ^ 2 :=
+    ∃ H : C(I × X, E × F), (∀ x, H (0, x) = T x (u x, 0)) ∧
+      (∀ x, H (1, x) = (((ContinuousLinearMap.fst ℝ E F).comp
+        ((A x).comp (ContinuousLinearMap.inl ℝ E F))).polarFactor (u x), 0)) ∧
+      ∀ t x, H (t, x) ∈ V ∧ -‖(H (t, x)).1‖ ^ 2 + ‖(H (t, x)).2‖ ^ 2 ≤ -‖u x‖ ^ 2 := by
   have hw (x : X) : (u x, (0 : F)) ∈ closedBall (0 : E × F) δ := by
     simpa [Prod.norm_def] using hu x
   let C : C(X, E →L[ℝ] E × F) :=
@@ -251,23 +135,36 @@ private noncomputable def negativeDiscHomotopy (T : X → E × F → E × F)
   have hCu (x : X) : ‖C x (u x)‖ ≤ L * δ :=
     calc ‖C x (u x)‖ ≤ ‖A x‖ * ‖(u x, (0 : F))‖ := (A x).le_opNorm _
       _ ≤ L * δ := mul_le_mul (hAL x) (mem_closedBall_zero_iff.mp (hw x)) (norm_nonneg _) hL
+  obtain ⟨K, hK₀, hK₁, hK⟩ := C.exists_homotopy_polarFactor_of_norm_sq_sub u hC
+  let P : C(X, E × F) → Prop :=
+    fun g ↦ ∀ x, g x ∈ V ∧ -‖(g x).1‖ ^ 2 + ‖(g x).2‖ ^ 2 ≤ -‖u x‖ ^ 2
+  let g₁ : C(X, E × F) := ⟨fun x ↦ C x (u x), by fun_prop⟩
+  let g₂ : C(X, E × F) :=
+    ⟨fun x ↦ (((ContinuousLinearMap.fst ℝ E F).comp (C x)).polarFactor (u x), 0),
+      (K.continuous.comp (Continuous.prodMk_right (1 : I))).congr hK₁⟩
   -- Stage 1: rescale every `T x` to its derivative, keeping values in `V` and `Q = -‖u‖²`.
   let H₁ : ContinuousMap.HomotopyWith
-      ⟨fun x ↦ T x (u x, 0), continuous_rescaleStage_start T A u hT0 hcont hu⟩
-      ⟨fun x ↦ C x (u x), by fun_prop⟩
-      fun g ↦ ∀ x, g x ∈ V ∧ -‖(g x).1‖ ^ 2 + ‖(g x).2‖ ^ 2 ≤ -‖u x‖ ^ 2 :=
+      ⟨fun x ↦ T x (u x, 0), continuous_rescaleStage_start T A u hT0 hcont hu⟩ g₁ P :=
     { toFun := fun p ↦ derivativeRescale (T p.2) (A p.2) (σ p.1 : ℝ) (u p.2, 0)
       continuous_toFun := hcont.comp_continuous
         (f := fun p : I × X ↦ (p.2, (σ p.1 : ℝ), (u p.2, (0 : F)))) (by fun_prop) fun p ↦
           ⟨trivial, ⟨(σ p.1).2.1, (σ p.1).2.2⟩, hw p.2⟩
       map_zero_left := fun x ↦ by simp [hT0]
-      map_one_left := fun x ↦ by simp [C]
+      map_one_left := fun x ↦ by simp [g₁, C]
       prop' := fun t x ↦ by
         obtain ⟨hV', hq⟩ := hbound x _ ⟨(σ t).2.1, (σ t).2.2⟩ _ (hw x)
         exact ⟨hV', le_of_eq (by simpa using hq)⟩ }
   -- Stages 2 and 3: contract the positive components, then deform the negative blocks to their
   -- polar factors.
-  H₁.trans (negativeDiscTail C u hC hLV hCu)
+  let H₂ : g₁.HomotopyWith g₂ P :=
+    { toFun := K
+      continuous_toFun := K.continuous
+      map_zero_left := hK₀
+      map_one_left := hK₁
+      prop' := fun t x ↦
+        ⟨hLV (mem_closedBall_zero_iff.mpr ((hK (t, x)).1.trans (hCu x))), (hK (t, x)).2⟩ }
+  let H := H₁.trans H₂
+  exact ⟨H.toContinuousMap, fun x ↦ H.apply_zero x, fun x ↦ H.apply_one x, fun t x ↦ H.prop t x⟩
 
 end Homotopy
 
@@ -313,12 +210,11 @@ theorem _root_.HasFDerivAt.exists_negativeDisc_homotopy
   have hw {w : E} (hw : w ∈ closedBall (0 : E) δ) : (w, (0 : F)) ∈ closedBall (0 : E × F) δ₀ := by
     simpa [Prod.norm_def] using (mem_closedBall_zero_iff.mp hw).trans hδ.2
   let ι : C(closedBall (0 : E) δ, E) := ⟨Subtype.val, continuous_subtype_val⟩
-  let H := negativeDiscHomotopy (fun _ ↦ T) (ContinuousMap.const _ A) ι (fun _ ↦ hT0)
-    (fun _ ↦ hC) (hcont.comp continuous_snd.continuousOn fun _ hq ↦ hq.2)
+  obtain ⟨H, hH₀, hH₁, hH⟩ := exists_negativeDiscHomotopy (fun _ ↦ T) (ContinuousMap.const _ A)
+    ι (fun _ ↦ hT0) (fun _ ↦ hC) (hcont.comp continuous_snd.continuousOn fun _ hq ↦ hq.2)
     (fun _ s hs y hy ↦ (hbound s hs y hy).2) (fun w ↦ (mem_closedBall_zero_iff.mp w.2).trans hδ.2)
     (fun _ ↦ hAL) hL.le hδV
-  exact ⟨fun w hw' ↦ hδU (hw hw'), H.toContinuousMap, fun w ↦ H.apply_zero w,
-    fun w ↦ H.apply_one w, fun t w ↦ H.prop t w⟩
+  exact ⟨fun w hw' ↦ hδU (hw hw'), H, hH₀, hH₁, hH⟩
 
 section Parametric
 
@@ -374,11 +270,11 @@ theorem exists_parametric_negativeDisc_homotopy
       (univ ×ˢ (Icc (0 : ℝ) 1 ×ˢ closedBall 0 δ₀)) :=
     hcont.comp (by fun_prop : Continuous fun q : (P × closedBall (0 : E) δ) × ℝ × (E × F) ↦
       (q.1.1, q.2)).continuousOn fun _ hq ↦ ⟨trivial, hq.2⟩
-  let H := negativeDiscHomotopy (fun x ↦ T x.1) A ι (fun x ↦ hT0 x.1) (fun x ↦ hC x.1) hcont'
-    (fun x s hs y hy ↦ (hbound x.1 s hs y hy).2)
+  obtain ⟨H, hH₀, hH₁, hH⟩ := exists_negativeDiscHomotopy (fun x ↦ T x.1) A ι (fun x ↦ hT0 x.1)
+    (fun x ↦ hC x.1) hcont' (fun x s hs y hy ↦ (hbound x.1 s hs y hy).2)
     (fun x ↦ (mem_closedBall_zero_iff.mp x.2.2).trans hδ.2) (fun x ↦ hDL x.1) hL.le hδV
-  exact ⟨fun w hw' ↦ hδU (hw hw'), H.toContinuousMap, fun p w ↦ H.apply_zero (p, w),
-    fun p w ↦ H.apply_one (p, w), fun t p w ↦ H.prop t (p, w)⟩
+  exact ⟨fun w hw' ↦ hδU (hw hw'), H, fun p w ↦ hH₀ (p, w), fun p w ↦ hH₁ (p, w),
+    fun t p w ↦ hH t (p, w)⟩
 
 end Parametric
 

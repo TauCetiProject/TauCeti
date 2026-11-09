@@ -43,7 +43,10 @@ not increase `Q`. Then `A_uu = h P` is deformed to `h` through `h P^(1-t)`
 (`ContinuousLinearMap.polarDeformation`); since `A` preserves `Q`, the block `A_uu` expands
 norms, and so does every stage of this deformation. Along the whole homotopy the point over `u`
 stays in a prescribed neighborhood of the origin and satisfies `Q ≤ -‖u‖²`, so a boundary sphere
-`‖u‖ = δ` never rises above the level `-δ²`.
+`‖u‖ = δ` never rises above the level `-δ²`. The two linear stages also apply to a continuous
+family of linear maps evaluated along a continuous map
+(`ContinuousMap.exists_homotopy_polarFactor_of_norm_sq_sub`), which is how the parametric
+comparison of negative disks uses them.
 
 ## References
 
@@ -198,6 +201,68 @@ theorem exists_parametric_small_disk_derivativeRescale
 
 end Parametric
 
+/-- **The linear stages of the negative disk comparison, for a family.** Let `C x : E →L[ℝ] E × F`
+depend continuously on `x`, each pulling `‖u‖² - ‖v‖²` back to `‖u‖²`, and evaluate it along a
+continuous `u`. Then `x ↦ C x (u x)` is homotopic to `x ↦ (h x (u x), 0)`, where `h x` is the
+polar factor of the negative block `fst ∘ C x`. First the positive components are contracted to
+zero, then the negative blocks `h x P x` are deformed to `h x` through `h x (P x)^(1-t)`. Along the
+homotopy the point over `x` has norm at most `‖C x (u x)‖` and satisfies
+`-‖u'‖² + ‖v'‖² ≤ -‖u x‖²`. -/
+theorem _root_.ContinuousMap.exists_homotopy_polarFactor_of_norm_sq_sub
+    {X E F : Type*} [TopologicalSpace X] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    (C : C(X, E →L[ℝ] E × F)) (u : C(X, E))
+    (hC : ∀ x v, ‖(C x v).1‖ ^ 2 - ‖(C x v).2‖ ^ 2 = ‖v‖ ^ 2) :
+    ∃ H : C(unitInterval × X, E × F),
+      (∀ x, H (0, x) = C x (u x)) ∧
+      (∀ x, H (1, x) = (((ContinuousLinearMap.fst ℝ E F).comp (C x)).polarFactor (u x), 0)) ∧
+      ∀ p, ‖H p‖ ≤ ‖C p.2 (u p.2)‖ ∧ -‖(H p).1‖ ^ 2 + ‖(H p).2‖ ^ 2 ≤ -‖u p.2‖ ^ 2 := by
+  set B : X → E →L[ℝ] E := fun x ↦ (ContinuousLinearMap.fst ℝ E F).comp (C x)
+  -- Since `C x` pulls `Q` back to `-‖u‖²`, its negative block expands norms.
+  have hexp (x : X) : ∀ v, ‖v‖ ≤ ‖B x v‖ := (C x).norm_le_norm_fst_of_norm_sq_sub (hC x)
+  have hσ (t : unitInterval) : |(unitInterval.symm t : ℝ)| ≤ 1 :=
+    abs_le.2 ⟨by linarith [(unitInterval.symm t).2.1], (unitInterval.symm t).2.2⟩
+  have hdef : Continuous fun p : unitInterval × X ↦ (B p.2).polarDeformation p.1 (u p.2) :=
+    (ContinuousLinearMap.continuousOn_polarDeformation.comp_continuous
+      (f := fun p : unitInterval × X ↦ (B p.2, (p.1 : ℝ))) (by fun_prop) fun p ↦
+        ⟨(B p.2).isStrictlyPositive_modulus_of_forall_norm_le (hexp p.2), trivial⟩).clm_apply
+      (u.continuous.comp continuous_snd)
+  let P : C(X, E × F) → Prop := fun g ↦
+    ∀ x, ‖g x‖ ≤ ‖C x (u x)‖ ∧ -‖(g x).1‖ ^ 2 + ‖(g x).2‖ ^ 2 ≤ -‖u x‖ ^ 2
+  let g₁ : C(X, E × F) := ⟨fun x ↦ C x (u x), by fun_prop⟩
+  let g₂ : C(X, E × F) := ⟨fun x ↦ (B x (u x), 0), by fun_prop⟩
+  let g₃ : C(X, E × F) := ⟨fun x ↦ ((B x).polarFactor (u x), 0),
+    ((hdef.comp (f := fun x ↦ ((1 : unitInterval), x)) (by fun_prop)).prodMk
+      (continuous_const (y := (0 : F)))).congr fun x ↦ by simp⟩
+  -- Contract the positive components.
+  let F₂ : g₁.HomotopyWith g₂ P :=
+    { toFun := fun p : unitInterval × X ↦
+        ((C p.2 (u p.2)).1, (unitInterval.symm p.1 : ℝ) • (C p.2 (u p.2)).2)
+      continuous_toFun := by fun_prop
+      map_zero_left := fun x ↦ by simp [g₁]
+      map_one_left := fun x ↦ by simp [g₂, B]
+      prop' := fun t x ↦ by
+        simp only [ContinuousMap.coe_mk]
+        refine ⟨?_,
+          (C x).neg_norm_fst_sq_add_norm_smul_snd_sq_le_of_norm_sq_sub (hC x) (hσ t) (u x)⟩
+        rw [Prod.norm_def, Prod.norm_def, norm_smul, Real.norm_eq_abs]
+        exact max_le_max le_rfl (mul_le_of_le_one_left (norm_nonneg _) (hσ t)) }
+  -- Deform the negative blocks to their polar factors.
+  let F₃ : g₂.HomotopyWith g₃ P :=
+    { toFun := fun p : unitInterval × X ↦ ((B p.2).polarDeformation p.1 (u p.2), 0)
+      continuous_toFun := hdef.prodMk continuous_const
+      map_zero_left := fun x ↦ by simp [g₂]
+      map_one_left := fun x ↦ by simp [g₃]
+      prop' := fun t x ↦ by
+        obtain ⟨hlo, hhi⟩ := (B x).norm_le_norm_polarDeformation_apply_le (hexp x) t.2 (u x)
+        simp only [ContinuousMap.coe_mk]
+        refine ⟨?_, ?_⟩
+        · simpa [Prod.norm_def] using hhi.trans (norm_fst_le (C x (u x)))
+        · simpa using pow_le_pow_left₀ (norm_nonneg _) hlo 2 }
+  let K := F₂.trans F₃
+  exact ⟨K.toHomotopy.toContinuousMap, fun x ↦ K.apply_zero x, fun x ↦ K.apply_one x,
+    fun p ↦ K.prop p.1 p.2⟩
+
 /-- **The linear stages of the negative disk comparison.** If `C : E →L[ℝ] E × F` pulls
 `‖u‖² - ‖v‖²` back to `‖u‖²`, then `C` is homotopic to `u ↦ (h u, 0)`, where `h` is the polar
 factor of the negative block `fst ∘ C`. First the positive component of `C u` is contracted to
@@ -210,45 +275,9 @@ theorem _root_.ContinuousLinearMap.exists_homotopy_polarFactor_of_norm_sq_sub
     ∃ H : C(unitInterval × E, E × F),
       (∀ u, H (0, u) = C u) ∧
       (∀ u, H (1, u) = (((ContinuousLinearMap.fst ℝ E F).comp C).polarFactor u, 0)) ∧
-      ∀ p, ‖H p‖ ≤ ‖C p.2‖ ∧ -‖(H p).1‖ ^ 2 + ‖(H p).2‖ ^ 2 ≤ -‖p.2‖ ^ 2 := by
-  set B := (ContinuousLinearMap.fst ℝ E F).comp C
-  -- Since `C` pulls `Q` back to `-‖u‖²`, its negative block expands norms.
-  have hexp : ∀ u, ‖u‖ ≤ ‖B u‖ := C.norm_le_norm_fst_of_norm_sq_sub hC
-  have hσ (t : unitInterval) : |(unitInterval.symm t : ℝ)| ≤ 1 :=
-    abs_le.2 ⟨by linarith [(unitInterval.symm t).2.1], (unitInterval.symm t).2.2⟩
-  let P : C(E, E × F) → Prop := fun g ↦
-    ∀ u, ‖g u‖ ≤ ‖C u‖ ∧ -‖(g u).1‖ ^ 2 + ‖(g u).2‖ ^ 2 ≤ -‖u‖ ^ 2
-  let g₁ : C(E, E × F) := ⟨fun u ↦ C u, by fun_prop⟩
-  let g₂ : C(E, E × F) := ⟨fun u ↦ (B u, 0), by fun_prop⟩
-  let g₃ : C(E, E × F) := ⟨fun u ↦ (B.polarFactor u, 0), by fun_prop⟩
-  -- Contract the positive component.
-  let F₂ : g₁.HomotopyWith g₂ P :=
-    { toFun := fun p : unitInterval × E ↦ ((C p.2).1, (unitInterval.symm p.1 : ℝ) • (C p.2).2)
-      continuous_toFun := by fun_prop
-      map_zero_left := fun u ↦ by simp [g₁]
-      map_one_left := fun u ↦ by simp [g₂, B]
-      prop' := fun t u ↦ by
-        simp only [ContinuousMap.coe_mk]
-        refine ⟨?_, C.neg_norm_fst_sq_add_norm_smul_snd_sq_le_of_norm_sq_sub hC (hσ t) u⟩
-        rw [Prod.norm_def, Prod.norm_def, norm_smul, Real.norm_eq_abs]
-        exact max_le_max le_rfl (mul_le_of_le_one_left (norm_nonneg _) (hσ t)) }
-  -- Deform the negative block to its polar factor.
-  let F₃ : g₂.HomotopyWith g₃ P :=
-    { toFun := fun p : unitInterval × E ↦ (B.polarDeformation p.1 p.2, 0)
-      continuous_toFun := by
-        have := B.continuous_polarDeformation (B.isStrictlyPositive_modulus_of_forall_norm_le hexp)
-        fun_prop
-      map_zero_left := fun u ↦ by simp [g₂]
-      map_one_left := fun u ↦ by simp [g₃]
-      prop' := fun t u ↦ by
-        obtain ⟨hlo, hhi⟩ := B.norm_le_norm_polarDeformation_apply_le hexp t.2 u
-        simp only [ContinuousMap.coe_mk]
-        refine ⟨?_, ?_⟩
-        · simpa [Prod.norm_def] using hhi.trans (norm_fst_le (C u))
-        · simpa using pow_le_pow_left₀ (norm_nonneg _) hlo 2 }
-  let K := F₂.trans F₃
-  exact ⟨K.toHomotopy.toContinuousMap, fun u ↦ K.apply_zero u, fun u ↦ K.apply_one u,
-    fun p ↦ K.prop p.1 p.2⟩
+      ∀ p, ‖H p‖ ≤ ‖C p.2‖ ∧ -‖(H p).1‖ ^ 2 + ‖(H p).2‖ ^ 2 ≤ -‖p.2‖ ^ 2 :=
+  (ContinuousMap.const E C).exists_homotopy_polarFactor_of_norm_sq_sub (ContinuousMap.id E)
+    fun _ ↦ hC
 
 /-- **The small negative disks of two Morse coordinate systems are homotopic.** Let `T`, fixing
 the origin and differentiable there with derivative `A`, preserve `Q(u,v) = -‖u‖² + ‖v‖²` near
