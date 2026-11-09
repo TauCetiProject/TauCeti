@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Functoriality
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Smooth
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Commutator
-import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.RingTheory.FiniteType.PointSeparation
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure

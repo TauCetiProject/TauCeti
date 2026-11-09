@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Smooth
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Perfect
 public import TauCeti.Algebra.AlgebraicGroup.Derived.Character
-import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Perfect
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure

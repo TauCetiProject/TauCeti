@@ -13,9 +13,10 @@ import Mathlib.Tactic.Group
 /-!
 # Maps of subgroups
 
-Lemmas on how homomorphisms act on subgroups: images of centres and derived subgroups under
-surjections, conjugation and images of subgroups, coset spaces and quotient maps, subgroup closure,
-and the action of a subgroup on a `G`-set.
+Lemmas on how homomorphisms act on subgroups: the centre and kernels of surjections, the
+derived subgroup transported along isomorphisms, conjugation and images of subgroups, coset
+spaces and quotient maps, subgroup closure, and
+the action of a subgroup on a `G`-set.
 
 An isomorphism carrying a subgroup `A` onto a subgroup `B` restricts to an isomorphism `↥A ≃* ↥B`,
 and carries the coset space `G ⧸ A` bijectively onto `H ⧸ B`.
