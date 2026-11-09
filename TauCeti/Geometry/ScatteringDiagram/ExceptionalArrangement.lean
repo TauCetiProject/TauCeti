@@ -19,8 +19,7 @@ In a finite-dimensional real normed space, the generic points of an arrangement 
 set, and the common generic points of countably many arrangements form a dense `Gδ` set. The common
 generic locus of infinitely many arrangements need not be open, and a common generic point need not
 have a generic neighbourhood: `ExceptionalArrangement.point` for the points `1 / (j + 1)` of the
-real line gives a family of single-point arrangements whose common generic locus contains `0` but
-is not a neighbourhood of it.
+real line gives a family of single-point arrangements whose common generic locus is not open.
 
 A line starting at a generic point meets an arrangement at only finitely many parameters.
 
@@ -96,10 +95,11 @@ open Classical in
 theorem exceptions_map (E : ExceptionalArrangement V) (e : V ≃ᵃ[ℝ] W) :
     (E.map e).exceptions = E.exceptions.image (AffineSubspace.map e.toAffineMap) := (rfl)
 
-/-- Transport preserves genericity of the corresponding points. -/
+/-- A point is generic for a transported arrangement exactly when its preimage is generic. -/
 @[simp]
-theorem isGeneric_map_iff {E : ExceptionalArrangement V} (e : V ≃ᵃ[ℝ] W) {x : V} :
-    (E.map e).IsGeneric (e x) ↔ E.IsGeneric x := by
+theorem isGeneric_map_iff {E : ExceptionalArrangement V} {e : V ≃ᵃ[ℝ] W} {y : W} :
+    (E.map e).IsGeneric y ↔ E.IsGeneric (e.symm y) := by
+  obtain ⟨x, rfl⟩ := e.surjective y
   classical
   simp [IsGeneric, map]
 
@@ -119,13 +119,19 @@ theorem exceptions_comap (E : ExceptionalArrangement W) (e : V ≃ᵃ[ℝ] W) :
 @[simp]
 theorem isGeneric_comap_iff {E : ExceptionalArrangement W} {e : V ≃ᵃ[ℝ] W} {x : V} :
     (E.comap e).IsGeneric x ↔ E.IsGeneric (e x) := by
-  simpa [comap] using (isGeneric_map_iff (E := E) e.symm (x := e x))
+  -- `e.symm.symm x` is `e x` by unfolding `AffineEquiv.symm`; Mathlib has no `symm_symm` lemma
+  exact isGeneric_map_iff
 
 /-- The arrangement whose only exception is a point, in a nontrivial space. -/
 noncomputable def point [Nontrivial V] (p : V) : ExceptionalArrangement V :=
   ⟨{AffineSubspace.mk' p ⊥}, fun S hS htop => by
     obtain rfl := Finset.mem_singleton.mp hS
     simpa [AffineSubspace.direction_mk'] using congrArg AffineSubspace.direction htop⟩
+
+/-- The only exception of `point p` is the subspace `{p}`. -/
+@[simp]
+theorem exceptions_point [Nontrivial V] (p : V) :
+    (point p).exceptions = {AffineSubspace.mk' p ⊥} := (rfl)
 
 /-- A point is generic for `point p` exactly when it differs from `p`. -/
 @[simp]
@@ -177,9 +183,9 @@ theorem isGδ_setOf_forall_isGeneric {ι : Type*} [Countable ι]
 
 end Topology
 
-/-- The common generic locus of the arrangements `point (1 / (j + 1))` of the real line contains
-`0` but is not open: the exceptional points `1 / (j + 1)` accumulate at `0`. This contrasts with
-the finite case `isOpen_setOf_isGeneric`. -/
+/-- The common generic locus of the arrangements `point (1 / (j + 1))` of the real line is not
+open: the exceptional points `1 / (j + 1)` accumulate at `0`, which is a common generic point.
+This contrasts with the finite case `isOpen_setOf_isGeneric`. -/
 theorem not_isOpen_setOf_forall_isGeneric_point :
     ¬ IsOpen {x : ℝ | ∀ j : ℕ, (point (1 / ((j : ℝ) + 1))).IsGeneric x} := by
   intro hopen
