@@ -417,7 +417,9 @@ theorem hasFDerivAt_integral_smul_of_analyticAt {p : V} (hK : IsCompact K) (hφ 
     (hφK : ∀ a, φ a ∈ K) (hf : ∀ y ∈ K, AnalyticAt ℂ f (p, y)) (hg : Integrable g μ) :
     HasFDerivAt (fun q ↦ ∫ a, g a • f (q, φ a) ∂μ)
       (∫ a, g a • (fderiv ℂ f (p, φ a)).comp (ContinuousLinearMap.inl ℂ V Y) ∂μ) p := by
-  -- Discard the trivial case where `E` is not complete, as all integrals vanish.
+  -- Discard the trivial case where `E` is not complete, as all integrals vanish. This incomplete
+  -- case argument is adapted from the proof of Mathlib's
+  -- `hasFDerivAt_integral_of_dominated_loc_of_lip'`.
   by_cases hE : CompleteSpace E; swap
   · rcases subsingleton_or_nontrivial V with hV | hV
     · have : Subsingleton (V →L[ℂ] E) := inferInstance
@@ -480,7 +482,9 @@ theorem analyticAt_integral_smul [FiniteDimensional ℂ V] {p : V} (hK : IsCompa
     (hφ : Continuous φ) (hφK : ∀ a, φ a ∈ K) (hf : ∀ y ∈ K, AnalyticAt ℂ f (p, y))
     (hg : Integrable g μ) :
     AnalyticAt ℂ (fun q ↦ ∫ a, g a • f (q, φ a) ∂μ) p := by
-  -- Discard the trivial case where `E` is not complete, as all integrals vanish.
+  -- Discard the trivial case where `E` is not complete, as all integrals vanish (the shortened
+  -- variant of the incomplete case argument in Mathlib's
+  -- `hasFDerivAt_integral_of_dominated_loc_of_lip'`).
   by_cases hE : CompleteSpace E; swap
   · simp only [integral_of_not_completeSpace hE]
     exact analyticAt_const
