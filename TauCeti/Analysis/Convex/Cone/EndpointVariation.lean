@@ -23,7 +23,7 @@ is stable under translation by the vectors of a convex cone `C`, and `σ s - σ 
 lies in `S` as well. If `γ` lies in an open set `V`, so does `G s` for `s` close to `0`, by
 compactness of `[a, b]`.
 
-The two cases of interest are a translated convex cone `{y | y - σ 0 ∈ C}` and a closed halfspace
+The two cases of interest are a translated convex cone `{y | y - σ 0 ∈ C}` and a halfspace
 `{y | 0 ≤ L y}`: they describe, in a chart, a domain near a corner or near a smooth boundary
 point. The resulting variations are the competitors of a curve that is constrained to such a
 domain and whose initial point moves along a curve in the domain, for instance in the first
@@ -36,7 +36,7 @@ only.
 * `TauCeti.exists_contDiffAt_endpointVariation_of_add_mem`: the general statement, for a set `S`
   stable under translation by a convex cone `C`.
 * `TauCeti.exists_contDiffAt_coneEndpointVariation`: the case of a translated convex cone.
-* `TauCeti.exists_contDiffAt_halfspaceEndpointVariation`: the case of a closed halfspace.
+* `TauCeti.exists_contDiffAt_halfspaceEndpointVariation`: the case of a halfspace.
 -/
 
 public section
@@ -99,7 +99,7 @@ theorem exists_contDiffAt_coneEndpointVariation (hl : l ≤ 𝓝 0) (hab : a < b
     (fun x hx v hv ↦ by simpa only [mem_ofPred_eq, add_sub_right_comm] using C.add_mem hx hv)
     hV hγ hσ hγσ hγCV hσC
 
-/-- **Endpoint variations inside a closed halfspace.** A `C^n` curve `γ` on `[a, b]` with values
+/-- **Endpoint variations inside a halfspace.** A `C^n` curve `γ` on `[a, b]` with values
 in `{y | 0 ≤ L y} ∩ V`, where `L` is a linear functional and `V` is open, has a variation `G`,
 `C^n` along `{0} × [a, b]`, whose curves start at `σ s` and end at `γ b`, and stay in
 `{y | 0 ≤ L y} ∩ V` for `s` along any filter `l ≤ 𝓝 0` on which `L (σ 0) ≤ L (σ s)`. This
