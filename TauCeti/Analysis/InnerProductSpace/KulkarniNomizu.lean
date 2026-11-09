@@ -63,6 +63,7 @@ theorem sum_kulkarniNomizu_innerₗ {ι : Type*} [Fintype ι] (h : BilinForm ℝ
 
 /-- **In dimension at least `3`, the Kulkarni–Nomizu product with the inner product is
 injective**: `h ⊙ g = 0` only for `h = 0`. -/
+@[simp]
 theorem kulkarniNomizu_innerₗ_eq_zero_iff (hW : 3 ≤ Module.finrank ℝ W) {h : BilinForm ℝ W} :
     kulkarniNomizu h (innerₗ W) = 0 ↔ h = 0 := by
   refine ⟨fun H ↦ ?_, fun H ↦ by simp [H]⟩
