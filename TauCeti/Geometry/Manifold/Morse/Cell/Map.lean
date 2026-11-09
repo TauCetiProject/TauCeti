@@ -244,11 +244,18 @@ theorem apply_morseCellMap_eq_sub_mul_norm_sq (hk : k ≤ n) (hε : 0 ≤ ε) (h
     EuclideanSpace.sum_ite_neg_one_mul_sq_eq, hv, hnorm, norm_zero]
   ring
 
-/-- The unit disc is sent into the sublevel `{f ≤ c}`. -/
-theorem apply_morseCellMap_le (hk : k ≤ n) (hε : 0 ≤ ε) (hw : ‖w‖ ≤ 1) :
+/-- The unit disc is sent into the sublevel `{f ≤ c}`. For `ε < 0` the whole disc is sent to the
+centre `ψ⁻¹ 0` of the chart, where `f = c`. -/
+theorem apply_morseCellMap_le (hk : k ≤ n) (hw : ‖w‖ ≤ 1) :
     f (morseCellMap ψ hk ε w) ≤ c := by
-  rw [apply_morseCellMap_eq_sub_mul_norm_sq hball hf hk hε hw]
-  exact sub_le_self _ (by positivity)
+  by_cases hε : 0 ≤ ε
+  · rw [apply_morseCellMap_eq_sub_mul_norm_sq hball hf hk hε hw]
+    exact sub_le_self _ (by positivity)
+  · have h0 : (0 : EuclideanSpace ℝ (Fin n)) ∈ ψ.target :=
+      hball (mem_closedBall_self (Real.sqrt_nonneg _))
+    rw [morseCellMap_def, Real.sqrt_eq_zero_of_nonpos (not_le.1 hε).le, zero_smul,
+      hf _ (ψ.map_target h0), ψ.right_inv h0]
+    simp
 
 /-- The boundary sphere of the unit disc is sent into the level `f⁻¹(c - ε)`. -/
 theorem apply_morseCellMap_of_norm_eq_one (hk : k ≤ n) (hε : 0 ≤ ε) (hw : ‖w‖ = 1) :
@@ -278,7 +285,7 @@ def morseCharacteristicMap (ψ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fi
     (hf : ∀ y ∈ ψ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ y j ^ 2) :
     TopCat.disk.{u} k ⟶ TopCat.of {x | f x ≤ c + ε} :=
   TopCat.ofHom
-    { toFun w := ⟨morseCellMap ψ hk ε w.down, (apply_morseCellMap_le hball hf hk hε
+    { toFun w := ⟨morseCellMap ψ hk ε w.down, (apply_morseCellMap_le hball hf hk
         (mem_closedBall_zero_iff.1 w.down.2)).trans (le_add_of_nonneg_right hε)⟩
       continuous_toFun := ((continuousOn_morseCellMap hball hk).comp_continuous
         (continuous_subtype_val.comp continuous_uliftDown) fun w ↦ w.down.2).subtype_mk _ }
