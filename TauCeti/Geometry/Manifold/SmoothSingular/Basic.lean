@@ -48,6 +48,8 @@ singular cohomology. Only a charted space is required for the definitions.
 * `TauCeti.SmoothSimplex.toContinuousMap`, `TauCeti.SmoothSimplex.mk`: a smooth simplex as a
   continuous map on `Δᵖ`, and back.
 * `TauCeti.SmoothSimplex.extension`: a smooth simplex extended to `ℝᵖ`, smooth within `Δᵖ`.
+* `TauCeti.SmoothSimplex.toContinuousMap_δ`: the faces of a smooth simplex are its composites with
+  the face inclusions.
 * `TauCeti.SmoothSimplex.toContinuousMap_smoothSingularSubcomplexMap_app`: a smooth map acts on
   smooth simplices by composition.
 
@@ -135,6 +137,16 @@ identification of `Δᵖ` with the barycentric standard simplex. -/
 theorem toContinuousMap_apply (σ : SmoothSimplex I M p) (x : fullSimplex p) :
     σ.toContinuousMap x = (TopCat.of M).toSSetObjEquiv _ σ.1 (fullSimplexEquivStdSimplex p x) :=
   (rfl)
+
+/-- The `i`-th face of a smooth simplex, read on `Δᵖ`, is the simplex composed with the `i`-th face
+inclusion `Δᵖ → Δᵖ⁺¹`. -/
+theorem toContinuousMap_δ (σ : SmoothSimplex I M (p + 1)) (i : Fin (p + 2)) (x : fullSimplex p) :
+    toContinuousMap ((smoothSingularSubcomplex I M : SSet).δ i σ) x =
+      σ.toContinuousMap (simplexFace p i x) := by
+  rw [toContinuousMap_apply, toContinuousMap_apply, fullSimplexEquivStdSimplex_simplexFace]
+  -- The face of a simplex of a subcomplex is the face of the underlying singular simplex, and
+  -- `TopCat.toSSetObjEquiv` reads faces through `StdSimplex.map`, both by definition.
+  rfl
 
 /-- A smooth singular simplex is smooth on `Δᵖ` in the sense of maps on arbitrary subsets. -/
 theorem contMDiffOnSubset_toContinuousMap (σ : SmoothSimplex I M p) :
