@@ -68,9 +68,11 @@ dimension:
 `TauCeti.AlmostComplexStructure.isLeast_hermitianForm_apply_self`: the positive cone is a round
 cone about `ω`.
 
-Integrated over a tube, the last inequality bounds the mass of an approximately positive closed
-current by its pairing with a closed taming form, which is a topological quantity, plus its
-integrated distance to the positive cone. The Hodge star preserves the cone
+Integrated over a tube, the last inequality bounds the mass of an approximately positive current
+by its pairing with a taming form plus its integrated distance to the positive cone. That pairing
+is topological only under boundary conditions: for instance when the current is closed with compact
+support in the interior of the tube and the taming form is closed; otherwise a boundary term
+appears. The Hodge star preserves the cone
 (`hodgeStar_mem_positiveCone_iff`), so the positivity of the current `ζ ↦ ∫ Θ ∧ ζ`, whose
 representing two-vector is `⋆Θ`, is the positivity of `Θ`, and both have the same distance to the
 cone (`infDist_hodgeStar_positiveCone`).
@@ -349,13 +351,10 @@ theorem hodgeStar_mem_positiveCone_iff {η : ⋀[ℝ]^2 V} :
       (2⁻¹ : ℝ) • (o.hodgeStar hkl F - o.hodgeStar hkl (o.hodgeStar hkl F)) =
         -((2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)) := by
     rw [o.hodgeStar_hodgeStar_of_even even_two, ← smul_neg, neg_sub]
-  -- The star of a `J`-invariant form `c ω + κ⁻` is `c ω - κ⁻`, again `J`-invariant.
+  -- The star commutes with `D_J`, since `J` is skew-adjoint, so it preserves `J`-invariance.
   have hD (F : ⋀[ℝ]^2 V) (hF : lieMap 2 J.toLinearMap F = 0) :
       lieMap 2 J.toLinearMap (o.hodgeStar hkl F) = 0 := by
-    have hm := o.hodgeStar_smul_sub_hodgeStar even_two hkl F
-    rw [eq_smul_kahlerForm_add_of_lieMap_eq_zero h₀ h₂ hkl he hF, map_add, map_smul,
-      hodgeStar_kahlerForm h₀ h₂ hkl he, hm, map_add, map_smul, map_neg, lieMap_kahlerForm hJ,
-      lieMap_of_hodgeStar_eq_neg h₀ h₂ hkl he hm, neg_zero, smul_zero, add_zero]
+    rw [← o.hodgeStar_lieMap hkl (inner_apply_left hJ), hF, map_zero]
   have hdir (F : ⋀[ℝ]^2 V) (hF : F ∈ J.positiveCone) : o.hodgeStar hkl F ∈ J.positiveCone := by
     rw [mem_positiveCone_iff_norm_smul_sub_hodgeStar_le h₀ h₂ hkl he] at hF ⊢
     refine ⟨hD F hF.1, ?_⟩
