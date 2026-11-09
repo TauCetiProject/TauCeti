@@ -24,6 +24,9 @@ positive otherwise.
 In a linearly ordered ring, prescribing the signs of finitely many elements amounts to a single
 equation, the vanishing of a sum of squares, together with finitely many strict inequalities.
 
+Multiplying `lc ^ a` and `lc ^ b` by a common nonzero factor `u` does not change the sign of the
+product, so when `a + b` is odd the two signs multiply to the sign of `lc`.
+
 ## Main results
 
 * `TauCeti.sign_eq_div_abs`: `sign x = x / |x|`.
@@ -32,6 +35,8 @@ equation, the vanishing of a sum of squares, together with finitely many strict 
 * `TauCeti.sign_one_sub_pow`: the sign of a nonzero `1 - x ^ k`.
 * `TauCeti.forall_sign_eq_iff_sum_sq_eq_zero_and_pos`: prescribed signs of the entries of a finite
   family as one sum-of-squares equation and positivity conditions.
+* `TauCeti.sign_mul_pow_mul_sign_mul_pow_of_ne_zero`: the product of the signs of `u * lc ^ a`
+  and `u * lc ^ b` is the sign of `lc` when `u ≠ 0` and `a + b` is odd.
 -/
 
 public section
@@ -91,5 +96,14 @@ theorem forall_sign_eq_iff_sum_sq_eq_zero_and_pos {ι R : Type*} [Fintype ι] [R
     rcases δ with _ | _ | _ <;> simp [sign_eq_zero_iff, sign_eq_neg_one_iff, sign_eq_one_iff]
   simp only [Finset.sum_sq_eq_zero_iff, Finset.mem_filter, Finset.mem_univ, true_and, this,
     forall_and]
+
+/-- If `u ≠ 0` and `a + b` is odd, the signs of `u * lc ^ a` and `u * lc ^ b` multiply to the sign
+of `lc`. -/
+theorem sign_mul_pow_mul_sign_mul_pow_of_ne_zero {K : Type*} [Ring K] [LinearOrder K]
+    [IsStrictOrderedRing K] {u : K} (hu : u ≠ 0) (lc : K) {a b : ℕ} (hab : Odd (a + b)) :
+    (SignType.sign (u * lc ^ a) : ℤ) * SignType.sign (u * lc ^ b) = SignType.sign lc := by
+  have hsq : ∀ s : SignType, s ≠ 0 → s * s = 1 := by decide
+  rw [← SignType.coe_mul, sign_mul, sign_mul, sign_pow, sign_pow,
+    mul_mul_mul_comm, hsq _ (sign_ne_zero.2 hu), one_mul, ← pow_add, SignType.pow_odd _ hab]
 
 end TauCeti
