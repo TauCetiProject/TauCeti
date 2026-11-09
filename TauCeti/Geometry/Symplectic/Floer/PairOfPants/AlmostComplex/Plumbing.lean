@@ -25,7 +25,8 @@ and external manifold parameter. In particular the moving seam introduces no los
 regularity: near it both formulas are the same cylindrical structure.
 
 The structures act on a fixed symplectic vector space; the external parameter may be a target
-point. This is not a construction of sections of the tangent bundle of a general target.
+point. The construction on the tangent bundle of a manifold target, which applies this one in
+each tangent fiber, is `TauCeti.SmoothTwoForm.Compatible.plumbedAlmostComplex`.
 The two pieces may use different compatible base structures in their Cayley constructions.
 
 ## References
