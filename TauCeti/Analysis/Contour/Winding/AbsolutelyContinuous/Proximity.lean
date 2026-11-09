@@ -132,11 +132,14 @@ that domain once the approximation is sufficiently close. -/
 theorem _root_.AbsolutelyContinuousOnInterval.eventually_windingNumber_eq_on_compl
     {γ : ℝ → ℂ} {a b : ℝ} {U : Set ℂ} {γn : ℕ → ℝ → ℂ} (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hγn : ∀ n, AbsolutelyContinuousOnInterval (γn n) a b)
-    (hclosed : γ a = γ b) (hclosedn : ∀ n, γn n a = γn n b)
+    (hclosedn : ∀ n, γn n a = γn n b)
     (hconv : TendstoUniformlyOn γn γ atTop (uIcc a b))
     (hU : IsOpen U) (htrace : γ '' uIcc a b ⊆ U) :
     ∀ᶠ n in atTop, γn n '' uIcc a b ⊆ U ∧
       ∀ z ∉ U, windingNumber (γn n) a b z = windingNumber γ a b z := by
+  have hclosed : γ a = γ b :=
+    tendsto_nhds_unique (hconv.tendsto_at left_mem_uIcc)
+      (by simpa only [← hclosedn] using hconv.tendsto_at right_mem_uIcc)
   obtain ⟨ε, hε, hεU⟩ :=
     (isCompact_uIcc.image_of_continuousOn hγ.continuousOn).exists_thickening_subset_open hU htrace
   filter_upwards [Metric.tendstoUniformlyOn_iff.mp hconv ε hε] with n hn
@@ -163,7 +166,6 @@ the total integer-weighted index without any individual index-vanishing assumpti
 theorem eventually_sum_windingNumber_eq_on_compl_of_tendstoUniformlyOn
     (hγ : ∀ i ∈ s, AbsolutelyContinuousOnInterval (γ i) (a i) (b i))
     (hγn : ∀ n, ∀ i ∈ s, AbsolutelyContinuousOnInterval (γn n i) (a i) (b i))
-    (hclosed : ∀ i ∈ s, γ i (a i) = γ i (b i))
     (hclosedn : ∀ n, ∀ i ∈ s, γn n i (a i) = γn n i (b i))
     (hconv : ∀ i ∈ s, TendstoUniformlyOn (fun n ↦ γn n i) (γ i) atTop (uIcc (a i) (b i)))
     (hU : IsOpen U) (htrace : ∀ i ∈ s, γ i '' uIcc (a i) (b i) ⊆ U) :
@@ -172,7 +174,7 @@ theorem eventually_sum_windingNumber_eq_on_compl_of_tendstoUniformlyOn
         ∑ i ∈ s, (w i : ℂ) * Contour.windingNumber (γ i) (a i) (b i) z := by
   have he := (Filter.eventually_all_finset s).mpr fun i hi ↦
     AbsolutelyContinuousOnInterval.eventually_windingNumber_eq_on_compl (hγ i hi)
-      (fun n ↦ hγn n i hi) (hclosed i hi) (fun n ↦ hclosedn n i hi)
+      (fun n ↦ hγn n i hi) (fun n ↦ hclosedn n i hi)
       (hconv i hi) hU (htrace i hi)
   filter_upwards [he] with n hn
   refine ⟨fun i hi ↦ (hn i hi).1, fun z hz ↦ ?_⟩
