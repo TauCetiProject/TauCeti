@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Poincare.Potential
+import Mathlib.Analysis.Convex.Measure
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Integral.Average
@@ -221,14 +222,32 @@ theorem eLpNorm_sub_setAverage_le_of_convex (hΩ : IsOpen Ω) (hΩc : Convex ℝ
       (by simpa using ENNReal.toReal_mono hp' hp))
 
 /-- **The Poincaré–Wirtinger inequality on a convex domain**, for `p = 2` and Bochner integrals.
-If `u` is `C¹`, `Ω` is a bounded convex open set and `S ⊆ Ω` has positive measure, the integral
+If `u` is `C¹`, `Ω` is a bounded convex set and `S ⊆ Ω` has positive measure, the integral
 over `Ω` of the squared deviation of `u` from its mean over `S` is at most `C ^ 2` times the
 integral of `‖Du‖ ^ 2` over `Ω`, where `C = μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S)`. -/
-theorem setIntegral_norm_sub_setAverage_sq_le_of_convex (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+theorem setIntegral_norm_sub_setAverage_sq_le_of_convex (hΩc : Convex ℝ Ω)
     (hb : Bornology.IsBounded Ω) (hu : ContDiff ℝ 1 u) (hS : S ⊆ Ω) (hS₀ : μ S ≠ 0) :
     ∫ x in Ω, ‖u x - ⨍ y in S, u y ∂μ‖ ^ 2 ∂μ ≤
       (μ.real (ball 0 1) * diam Ω ^ (finrank ℝ E + 1) / μ.real S) ^ 2 *
         ∫ x in Ω, ‖fderiv ℝ u x‖ ^ 2 ∂μ := by
+  wlog hΩ : IsOpen Ω generalizing Ω S
+  · -- A convex set differs from its interior by a null set, and the interior is no larger.
+    have hΩae : interior Ω =ᵐ[μ] Ω :=
+      interior_ae_eq_of_null_frontier (Convex.addHaar_frontier μ hΩc)
+    have hSae : S ∩ interior Ω =ᵐ[μ] S := by
+      simpa [inter_eq_left.2 hS] using
+        Filter.EventuallyEqSet.inter (rfl : S = S).eventuallyEqSet hΩae
+    have hS₀' : μ (S ∩ interior Ω) ≠ 0 := by rwa [measure_congr hSae]
+    have hd : diam (interior Ω) ≤ diam Ω := diam_mono interior_subset hb
+    have hint : ∀ f : E → ℝ, ∫ x in interior Ω, f x ∂μ = ∫ x in Ω, f x ∂μ := fun f =>
+      setIntegral_congr_set hΩae
+    have hbi : Bornology.IsBounded (interior Ω) := hb.subset interior_subset
+    have h := this (Ω := interior Ω) (S := S ∩ interior Ω) hΩc.interior hbi inter_subset_right
+      hS₀' isOpen_interior
+    rw [hint, hint, Measure.restrict_congr_set hSae, measureReal_congr hSae] at h
+    refine h.trans (mul_le_mul_of_nonneg_right ?_ (setIntegral_nonneg_of_ae_restrict
+      (ae_of_all _ fun _ => by positivity)))
+    gcongr
   have h := lintegral_enorm_sub_setAverage_rpow_le_of_convex (μ := μ) hΩ hΩc hb hu.contDiffOn
     hS hS₀ one_le_two
   have hpowF (v : F) : ENNReal.ofReal (‖v‖ ^ 2) = ‖v‖ₑ ^ 2 := by
@@ -250,11 +269,11 @@ theorem setIntegral_norm_sub_setAverage_sq_le_of_convex (hΩ : IsOpen Ω) (hΩc 
 
 
 /-- **The Poincaré inequality on a convex domain, relative to a subset.** If `u` is `C¹`, `Ω` is a
-bounded convex open set and `S ⊆ Ω` is measurable with positive measure, then `∫_Ω ‖u‖²` is at
+bounded convex open set and `S ⊆ Ω` has positive measure, then `∫_Ω ‖u‖²` is at
 most `(2 + 4 μ(Ω) / μ(S)) C ^ 2 ∫_Ω ‖Du‖² + (4 μ(Ω) / μ(S)) ∫_S ‖u‖²`, where
 `C = μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S)` is the Poincaré–Wirtinger constant. -/
 theorem setIntegral_norm_sq_le_of_convex (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
-    (hb : Bornology.IsBounded Ω) (hu : ContDiff ℝ 1 u) (hSm : MeasurableSet S) (hS : S ⊆ Ω)
+    (hb : Bornology.IsBounded Ω) (hu : ContDiff ℝ 1 u) (hS : S ⊆ Ω)
     (hS₀ : μ S ≠ 0) :
     ∫ x in Ω, ‖u x‖ ^ 2 ∂μ ≤
       (2 + 4 * μ.real Ω / μ.real S) *
@@ -272,7 +291,7 @@ theorem setIntegral_norm_sq_le_of_convex (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω
     ((Continuous.continuousOn (by fun_prop)).integrableOn_compact hcpt).mono_set subset_closure
   have hsq : IntegrableOn (fun x ↦ ‖u x‖ ^ 2) Ω μ :=
     ((Continuous.continuousOn (by fun_prop)).integrableOn_compact hcpt).mono_set subset_closure
-  have hX := setIntegral_norm_sub_setAverage_sq_le_of_convex (μ := μ) hΩ hΩc hb hu hS hS₀
+  have hX := setIntegral_norm_sub_setAverage_sq_le_of_convex (μ := μ) hΩc hb hu hS hS₀
   -- The mean over `S` is controlled by the deviation and by `∫_S ‖u‖²`.
   have hm : μ.real S * ‖m‖ ^ 2 ≤
       2 * ∫ x in Ω, ‖u x - m‖ ^ 2 ∂μ + 2 * ∫ x in S, ‖u x‖ ^ 2 ∂μ := by
@@ -282,9 +301,9 @@ theorem setIntegral_norm_sq_le_of_convex (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω
       nlinarith [sq_nonneg (‖u x‖ - ‖u x - m‖), norm_nonneg m]
     calc μ.real S * ‖m‖ ^ 2 = ∫ _ in S, ‖m‖ ^ 2 ∂μ := by rw [setIntegral_const, smul_eq_mul]
       _ ≤ ∫ x in S, (2 * ‖u x - m‖ ^ 2 + 2 * ‖u x‖ ^ 2) ∂μ :=
-        setIntegral_mono_on (integrableOn_const ((measure_mono hS).trans_lt
+        setIntegral_mono_ae_restrict (integrableOn_const ((measure_mono hS).trans_lt
           hb.measure_lt_top).ne) (((hdev.mono_set hS).const_mul 2).fun_add
-          ((hsq.mono_set hS).const_mul 2)) hSm fun x _ ↦ hpt x
+          ((hsq.mono_set hS).const_mul 2)) (ae_of_all _ hpt)
       _ = 2 * ∫ x in S, ‖u x - m‖ ^ 2 ∂μ + 2 * ∫ x in S, ‖u x‖ ^ 2 ∂μ := by
         rw [integral_add ((hdev.mono_set hS).const_mul 2) ((hsq.mono_set hS).const_mul 2),
           integral_const_mul, integral_const_mul]

@@ -100,7 +100,7 @@ theorem exists_pos_mul_integral_norm_sq_le_integral_norm_fderiv_sq_add_integral_
   have hQ₀ : ∀ᵐ z ∂μ, 0 ≤ P z * ‖u z‖ ^ 2 := hP₀.mono fun z h ↦ mul_nonneg h (by positivity)
   -- Inside `Ω`, the Poincaré inequality relative to `S`.
   have hΩ := setIntegral_norm_sq_le_of_convex (μ := μ) isOpen_ball (convex_ball 0 (ρ + 1))
-    isBounded_ball hu hS hSΩ hS₀
+    isBounded_ball hu hSΩ hS₀
   have hDΩ : ∫ z in Ω, ‖fderiv ℝ u z‖ ^ 2 ∂μ ≤ ∫ z, ‖fderiv ℝ u z‖ ^ 2 ∂μ :=
     setIntegral_le_integral hD (ae_of_all _ fun _ ↦ by positivity)
   -- Where `P ≥ a`, the potential term controls `‖u‖²`.
