@@ -18,7 +18,7 @@ reachability in the restricted family with ambient reachability avoiding the dis
 
 * `Set.inducedHom`: the arrow family induced on a vertex set.
 * `TauCeti.ArrowWalk.coeInduced`: the ambient walk underlying a walk in an induced family.
-* `TauCeti.Set.reachableAvoiding_inducedHom_iff`: reachability in an induced family is ambient
+* `Set.reachableAvoiding_inducedHom_iff`: reachability in an induced family is ambient
   reachability avoiding both discarded vertices and a further set of induced vertices.
 -/
 
@@ -35,22 +35,22 @@ abbrev inducedHom (S : Set V) (Q : V → V → Type v) (x y : S) : Type v :=
   Q x y
 
 /-- The inclusion of the arrow family induced on `S` into its ambient arrow family. -/
-abbrev inducedHomInclusion (S : Set V) (Q : V → V → Type v) :
+abbrev inducedHomIncl (S : Set V) (Q : V → V → Type v) :
     @Prefunctor S (Quiver.mk fun x y ↦ S.inducedHom Q x y) V (Quiver.mk Q) :=
   @Prefunctor.mk S (Quiver.mk fun x y ↦ S.inducedHom Q x y) V (Quiver.mk Q)
     Subtype.val fun e ↦ e
 
 @[simp]
-theorem inducedHomInclusion_obj (S : Set V) (Q : V → V → Type v) (x : S) :
+theorem inducedHomIncl_obj (S : Set V) (Q : V → V → Type v) (x : S) :
     @Prefunctor.obj S (Quiver.mk fun x y ↦ S.inducedHom Q x y) V (Quiver.mk Q)
-      (S.inducedHomInclusion Q) x = x :=
+      (S.inducedHomIncl Q) x = x :=
   (rfl)
 
 @[simp]
-theorem inducedHomInclusion_map (S : Set V) (Q : V → V → Type v) {x y : S}
+theorem inducedHomIncl_map (S : Set V) (Q : V → V → Type v) {x y : S}
     (e : S.inducedHom Q x y) :
     @Prefunctor.map S (Quiver.mk fun x y ↦ S.inducedHom Q x y) V (Quiver.mk Q)
-      (S.inducedHomInclusion Q) x y e = e :=
+      (S.inducedHomIncl Q) x y e = e :=
   (rfl)
 
 end Set
@@ -65,7 +65,7 @@ namespace ArrowWalk
 def coeInduced {S : Set V} {s t : S} (p : ArrowWalk (S.inducedHom Q) s t) :
     ArrowWalk Q s t :=
   @Prefunctor.mapPath S (Quiver.mk fun x y ↦ S.inducedHom Q x y) V (Quiver.mk Q)
-    (S.inducedHomInclusion Q) s t p
+    (S.inducedHomIncl Q) s t p
 
 @[simp]
 theorem coeInduced_nil {S : Set V} (s : S) :
@@ -80,14 +80,13 @@ theorem coeInduced_cons {S : Set V} {s t x : S} (p : ArrowWalk (S.inducedHom Q) 
 @[simp]
 theorem vertices_coeInduced {S : Set V} {s t : S}
     (p : ArrowWalk (S.inducedHom Q) s t) :
-    (coeInduced p).vertices = p.vertices.map Subtype.val := by
-  induction p with
-  | nil => rfl
-  | cons p e ih => simp [ih]
+    (coeInduced p).vertices = p.vertices.map Subtype.val :=
+  @Prefunctor.vertices_mapPath S V (Quiver.mk fun x y ↦ S.inducedHom Q x y) (Quiver.mk Q)
+    (S.inducedHomIncl Q) s t p
 
 /-- A walk all of whose vertices lie in `S` lifts to the induced arrow family on `S`, without
 changing its ambient walk. -/
-theorem exists_induced_coe_eq {S : Set V} {s t : V} (p : ArrowWalk Q s t)
+theorem exists_mapPath_inducedHomIncl_eq {S : Set V} {s t : V} (p : ArrowWalk Q s t)
     (hs : s ∈ S) (ht : t ∈ S) (hp : ∀ x ∈ p.vertices, x ∈ S) :
     ∃ p' : ArrowWalk (S.inducedHom Q) ⟨s, hs⟩ ⟨t, ht⟩, p'.coeInduced = p := by
   induction p with
@@ -108,13 +107,17 @@ theorem exists_induced_coe_eq {S : Set V} {s t : V} (p : ArrowWalk Q s t)
 
 end ArrowWalk
 
+end TauCeti
+
 namespace Set
 
-variable {S : Set V} {X : Set S} {s t : S}
+open TauCeti
+
+variable {V : Type u} {Q : V → V → Type v}
 
 /-- Avoiding `X` in the arrow family induced on `S` is the same as avoiding the discarded
 vertices and the ambient image of `X` in the original arrow family. -/
-theorem reachableAvoiding_inducedHom_iff :
+theorem reachableAvoiding_inducedHom_iff (S : Set V) {X : Set S} {s t : S} :
     ReachableAvoiding (S.inducedHom Q) X s t ↔
       ReachableAvoiding Q (Sᶜ ∪ Subtype.val '' X) s t := by
   rw [reachableAvoiding_def, reachableAvoiding_def]
@@ -133,11 +136,9 @@ theorem reachableAvoiding_inducedHom_iff :
     have hmem : ∀ x ∈ p.vertices, x ∈ S := fun x hx ↦ by
       by_contra hxc
       exact hp x hx (.inl (by simpa using hxc))
-    obtain ⟨p', hp'⟩ := p.exists_induced_coe_eq hs ht hmem
+    obtain ⟨p', hp'⟩ := p.exists_mapPath_inducedHomIncl_eq hs ht hmem
     refine ⟨p', fun x hx hX ↦ ?_⟩
     exact hp x.1 (by rw [← hp', ArrowWalk.vertices_coeInduced]; exact List.mem_map.2 ⟨x, hx, rfl⟩)
       (.inr ⟨x, hX, rfl⟩)
 
 end Set
-
-end TauCeti

@@ -61,7 +61,7 @@ theorem IsVertexStrong.inducedHom_compl {X : Finset V}
       Set.encard_coe_eq_coe_finsetCard] at hcard
     rw [ENat.card_coe_set_eq]
     exact (ENat.add_lt_add_iff_left (by simp : (X.card : ℕ∞) ≠ ⊤)).1 hcard
-  · rw [Set.reachableAvoiding_inducedHom_iff]
+  · rw [((X : Set V)ᶜ).reachableAvoiding_inducedHom_iff]
     let Z : Finset V := X ∪ Y.image Subtype.val
     have hZ : #Z < #X + k := by
       calc
