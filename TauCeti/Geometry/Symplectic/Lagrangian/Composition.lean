@@ -22,9 +22,10 @@ with smooth maps `a : C → L₁` and `b : C → L₂` landing in the fibre prod
 `h c = ((f (a c)).1, (g (b c)).2)`. The tangent hypothesis is that `(da, db)` maps `T_c C` onto
 the linear fibre product of tangent spaces: every pair `(u, w)` with `(df u).2 = (dg w).1` is
 `(da ξ, db ξ)` for some `ξ`. This is the tangent property of the manifold structure on a
-transverse or clean fibre product, which is not constructed here. Under it, the tangent image
-of `h` at `c` is the composite of the linear canonical relations `df(T L₁)` and `dg(T L₂)`
-(`Submodule.range_prod_eq_relComp_range`), which is Lagrangian by
+transverse or clean fibre product. The transverse fibre-product manifold is used in
+`TauCeti.Geometry.Symplectic.Lagrangian.Composition.Transverse`. Under the tangent hypothesis,
+the tangent image of `h` at `c` is the composite of the linear canonical relations `df(T L₁)`
+and `dg(T L₂)` (`Submodule.range_prod_eq_relComp_range`), which is Lagrangian by
 `TauCeti.SymplecticForm.IsLagrangian.relComp`. The matching condition on tangent vectors,
 `(df (da ξ)).2 = (dg (db ξ)).1`, is the derivative of the fibre-product condition
 (`MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct`). Hence
