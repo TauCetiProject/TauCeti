@@ -329,7 +329,6 @@ theorem demushkinQ_presentedProP_eq_zero_iff (hG : IsDemushkin p (presentedProP 
     (presentedProP.oneRelatorAbelianizationEquiv r x₀ w hw q hr).toMulEquiv hpq hq] at h
   exact pow_ne_zero _ (Fact.out : p.Prime).ne_zero h
 
-include hw hr in
 /-- **The `q`-invariant of a one-relator Demushkin group vanishes exactly when the relator lies in
 the closed commutator subgroup** of the free pro-`p` group. The divisibility `p ∣ q` is automatic: a
 relator of a Demushkin presentation lies in the Frattini subgroup, so all its exponent sums are
@@ -337,6 +336,9 @@ divisible by `p`. -/
 theorem demushkinQ_presentedProP_eq_zero_iff_mem_topologicalClosure_commutator
     (hG : IsDemushkin p (presentedProP p X {r})) :
     demushkinQ hG = 0 ↔ r ∈ (commutator (freeProP p X)).topologicalClosure := by
+  have : Nonempty X := (Nat.card_pos_iff.1 hG.card_pos_presentedProP).1
+  obtain ⟨x₀, q, w, hw, hr⟩ :=
+    PadicInt.exists_apply_eq_one_and_eq_smul (freeProP.exponentSum p X r).toAdd
   have hpq : (p : ℤ_[p]) ∣ q := by
     have := freeProP.dvd_exponentSum_of_mem_proPFrattini p X
       hG.mem_proPFrattini_of_presentedProP_singleton x₀
