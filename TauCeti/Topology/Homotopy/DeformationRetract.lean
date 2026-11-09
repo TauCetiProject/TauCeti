@@ -226,6 +226,14 @@ theorem coe_ofRetraction_apply (hAB : A ⊆ B) (r : C(B, A))
     (ofRetraction hAB r hr G a : X) = a :=
   (rfl)
 
+/-- The homotopy inverse of `ContinuousMap.HomotopyEquiv.ofRetraction` is the retraction. -/
+@[simp]
+theorem coe_ofRetraction_symm_apply (hAB : A ⊆ B) (r : C(B, A))
+    (hr : ∀ a, r (ContinuousMap.inclusion hAB a) = a)
+    (G : ((ContinuousMap.inclusion hAB).comp r).Homotopy (ContinuousMap.id B)) (b : B) :
+    (ofRetraction hAB r hr G).symm b = r b :=
+  (rfl)
+
 end ContinuousMap.HomotopyEquiv
 
 namespace Topology.IsOpenEmbedding
