@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Bipartition
+public import TauCeti.Combinatorics.Graph.Matching.Basic
 public import TauCeti.Combinatorics.Network.Menger.SetToSet
 
 /-!
@@ -36,6 +37,9 @@ graph are all allowed.
 
 * `Graph.IsCapacitatedMatching.sum_le_sum_of_isVertexCover`: **weak duality**, the size of a
   multiset capacitated matching is at most the weight of any vertex cover.
+* `Graph.IsCapacitatedMatching.isMatching`: in a loopless multigraph, the edges used by a multiset
+  capacitated matching for unit capacities form a matching, and a perfect one when every actual
+  vertex is used exactly once (`Graph.isPerfectMatching_of_sum_incidentEdges_eq_one`).
 * `Graph.IsBipartition.exists_isCapacitatedMatching_isVertexCover_sum_eq`: **Kőnig's theorem** for
   multiset capacitated matchings in bipartite multigraphs, in witness form.
 
@@ -123,7 +127,30 @@ theorem sum_le_sum_of_isVertexCover (hx : G.IsCapacitatedMatching b x) {C : Fins
         (G.sum_sum_incidentEdges_eq_sum_sum_filter_inc C x).symm
     _ ≤ ∑ v ∈ C, b v := sum_le_sum fun v _ ↦ hx v
 
+/-- In a loopless multigraph, the edges used by a multiset capacitated matching for the unit
+capacities form a matching. -/
+theorem isMatching [G.Loopless] (hx : G.IsCapacitatedMatching 1 x) :
+    G.IsMatching {e | x e ≠ 0} := by
+  classical
+  refine isMatching_def.2 ⟨fun e _ v ↦ G.not_isLoopAt _ v, fun e he f hf hef v ⟨hev, hfv⟩ ↦ ?_⟩
+  -- Two distinct used edges at `v` would use `v` at least twice.
+  have := (sum_pair (f := x) hef).symm.trans_le <|
+    sum_le_sum_of_subset (f := x) (t := G.incidentEdges {⟨v, hev.vertex_mem⟩}) <| by
+      simp [insert_subset_iff, hev, hfv]
+  have := hx ⟨v, hev.vertex_mem⟩
+  simp only [Set.mem_ofPred_eq, Pi.one_apply] at he hf this
+  omega
+
 end IsCapacitatedMatching
+
+/-- In a loopless multigraph, if edge multiplicities `x` use every actual vertex exactly once, then
+the edges they use form a perfect matching. -/
+theorem isPerfectMatching_of_sum_incidentEdges_eq_one [G.Loopless]
+    (hx : ∀ v, ∑ e ∈ G.incidentEdges {v}, x e = 1) :
+    G.IsPerfectMatching {e | x e ≠ 0} := by
+  refine isPerfectMatching_def.2 ⟨IsCapacitatedMatching.isMatching fun v ↦ (hx v).le, fun v ↦ ?_⟩
+  obtain ⟨e, he, hxe⟩ := exists_ne_zero_of_sum_ne_zero ((hx v).trans_ne one_ne_zero)
+  exact ⟨e, hxe, by simpa using he⟩
 
 /-! ### Kőnig's theorem -/
 
