@@ -115,3 +115,22 @@ theorem IsCompact.isPreconnected_image_iff_of_injOn {β : Type*} [TopologicalSpa
   rw [isPreconnected_iff_preconnectedSpace (s := K), preconnectedSpace_iff_univ,
     ← (hf.domRestrict.isClosedEmbedding hinj.injective).isInducing.isPreconnected_image, image_univ,
     range_domRestrict]
+
+namespace TauCeti
+
+/-- **Chains of overlaps in a connected open cover.** If the union of the open sets `V i`, `i ∈ t`,
+is preconnected, every nonempty `V j` is joined to a nonempty piece `V i₀` by a chain of pairwise
+overlapping pieces. -/
+theorem reflTransGen_inter_nonempty_of_isOpen_cover {t : Set ι} {V : ι → Set α}
+    (hU : IsPreconnected (⋃ i ∈ t, V i)) (hV : ∀ i ∈ t, IsOpen (V i))
+    {i₀ : ι} (hi₀ : i₀ ∈ t) (hVi₀ : (V i₀).Nonempty) {j : ι} (hj : j ∈ t)
+    (hVj : (V j).Nonempty) :
+    Relation.ReflTransGen (fun i j ↦ i ∈ t ∧ j ∈ t ∧ (V i ∩ V j).Nonempty) i₀ j := by
+  have hU' : IsPreconnected (⋃ k : t, V k) := by
+    convert hU using 1
+    ext
+    simp
+  exact (hU'.transGen_of_iUnion (fun k ↦ hV k k.2) ⟨i₀, hi₀⟩ ⟨j, hj⟩
+    hVi₀ hVj).to_reflTransGen.lift Subtype.val (fun k l hkl ↦ ⟨k.2, l.2, hkl⟩)
+
+end TauCeti

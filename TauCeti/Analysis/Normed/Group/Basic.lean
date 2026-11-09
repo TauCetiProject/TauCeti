@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Basic
+public import Mathlib.Analysis.Normed.Group.Continuity
 import Mathlib.Topology.MetricSpace.Bounded
 
 /-!
@@ -30,6 +31,8 @@ values there.
 * `TauCeti.not_isBounded_inter_lt_norm_sub` -- the part of an unbounded set outside a closed ball
   is unbounded.
 * `Set.Nontrivial.pos_of_forall_norm_le` -- a bound on the norms of a nontrivial set is positive.
+* `TauCeti.exists_enorm_sub_le_mul_of_reflTransGen` -- constants joined by a chain of related
+  indices are uniformly close if constants at related indices are.
 * `TauCeti.mapsTo_closedBall_of_forall_norm_le` -- a map bounded by `M` on `s` sends `s` into the
   closed ball of radius `2 * M` around any of its values on `s`.
 -/
@@ -37,6 +40,7 @@ values there.
 public section
 
 open Bornology Metric
+open scoped ENNReal NNReal
 
 namespace TauCeti
 
@@ -70,5 +74,24 @@ theorem mapsTo_closedBall_of_forall_norm_le {α F : Type*} [SeminormedAddCommGro
     Set.MapsTo f s (closedBall (f c) (2 * M)) := fun y hy => by
   rw [mem_closedBall]
   linarith [dist_le_norm_add_norm (f y) (f c), hM y hy, hM c hc]
+
+/-- Families of vectors joined by a chain of related indices are uniformly close, if the vectors at
+related indices are: if `‖a k j - a k i‖ ≤ D * G k` for related `i j` and all `k`, then the
+same holds, with a constant `D'` independent of `k`, for any `j` reachable from `i₀`. -/
+theorem exists_enorm_sub_le_mul_of_reflTransGen {κ F ι : Type*} [SeminormedAddGroup F]
+    {R : ι → ι → Prop} {i₀ : ι} {a : κ → ι → F} {G : κ → ℝ≥0∞}
+    (hadj : ∀ i j, R i j → ∃ D : ℝ≥0, ∀ k, ‖a k j - a k i‖ₑ ≤ D * G k) {j : ι}
+    (hj : Relation.ReflTransGen R i₀ j) :
+    ∃ D : ℝ≥0, ∀ k, ‖a k j - a k i₀‖ₑ ≤ D * G k := by
+  induction hj with
+  | refl => exact ⟨0, fun _ ↦ by simp⟩
+  | @tail j l _ hjl ih =>
+    obtain ⟨D₁, hD₁⟩ := ih
+    obtain ⟨D₂, hD₂⟩ := hadj j l hjl
+    refine ⟨D₂ + D₁, fun k ↦ ?_⟩
+    calc ‖a k l - a k i₀‖ₑ = ‖(a k l - a k j) + (a k j - a k i₀)‖ₑ := by rw [sub_add_sub_cancel]
+      _ ≤ ‖a k l - a k j‖ₑ + ‖a k j - a k i₀‖ₑ := enorm_add_le _ _
+      _ ≤ D₂ * G k + D₁ * G k := add_le_add (hD₂ k) (hD₁ k)
+      _ = ↑(D₂ + D₁) * G k := by push_cast; ring
 
 end TauCeti
