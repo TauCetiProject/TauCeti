@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.GL2.Subgroups
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Parabolic.Basic
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Dynamic.Weight.Levi.DiagonalTorus
 
 /-!
 # Representability of the dynamic subgroups of `GL₂`
@@ -97,15 +98,18 @@ theorem coe_borelPointsIsoParabolicFunctor_hom_app_apply
 
 /-! ## The dynamic Levi -/
 
-/-- The diagonal-torus point map, with codomain restricted to the dynamic Levi. -/
-private noncomputable def splitTorusToLevi (A : CommAlgCat.{w} R) :
-    HopfAlgebra.points
+/-- The rank-two split-torus coordinate Hopf algebra represents the dynamic Levi functor for
+`t ↦ diag(t, 1)`: the general weight-Levi isomorphism for the injective weights `Borel.weights`,
+read through the identification of the weight-Levi coordinate algebra with the split-torus one. -/
+noncomputable def splitTorusPointsIsoLeviFunctor :
+    HopfAlgebra.pointsFunctor
         (R := R)
-        (H := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin 2) →₀ ℤ))) A →*
-      Cocharacter.levi A (dynamicCocharacter (R := R)) :=
-  (diagonalTorusPoints (R := R) (N := 2) (A := A)).codRestrict _ fun f ↦
-    (mem_dynamicLevi_iff_exists_diagonalTorusPoint
-      (R := R) (A := A) (diagonalTorusPoints f)).mpr ⟨f, rfl⟩
+        (H := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin 2) →₀ ℤ))) ≅
+      Cocharacter.leviFunctor (dynamicCocharacter (R := R)) := by
+  rw [dynamicCocharacter_eq_weightCocharacter]
+  exact (CommHopfAlgCat.pointsFunctor (R := R)).mapIso
+      (weightLeviDiagonalCoordinateIso R Borel.weights (UpperTriangular.weights_injective 2)).op ≪≫
+    weightLeviPointsIso R Borel.weights
 
 /-- The pointwise equivalence from the rank-two split torus to the dynamic Levi. -/
 noncomputable def splitTorusLeviMulEquiv (A : CommAlgCat.{w} R) :
@@ -113,57 +117,7 @@ noncomputable def splitTorusLeviMulEquiv (A : CommAlgCat.{w} R) :
         (R := R)
         (H := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin 2) →₀ ℤ))) A ≃*
       Cocharacter.levi A (dynamicCocharacter (R := R)) :=
-  MulEquiv.ofBijective (splitTorusToLevi A) ⟨
-    fun _ _ h ↦ diagonalTorusPoints_injective (congrArg Subtype.val h),
-    fun g ↦ by
-      obtain ⟨f, hf⟩ :=
-        (mem_dynamicLevi_iff_exists_diagonalTorusPoint (R := R) (A := A) g).mp g.2
-      exact ⟨f, Subtype.ext hf⟩⟩
-
-@[simp]
-theorem coe_splitTorusLeviMulEquiv_apply (A : CommAlgCat.{w} R)
-    (f : HopfAlgebra.points
-      (R := R)
-      (H := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin 2) →₀ ℤ))) A) :
-    ((splitTorusLeviMulEquiv A f :
-        Cocharacter.levi A (dynamicCocharacter (R := R))) :
-      WithConv (coordinateHopfAlgebra R 2 →ₐ[R] A)) =
-      diagonalTorusPoints f := by
-  unfold splitTorusLeviMulEquiv splitTorusToLevi
-  rfl
-
-/-- The rank-two split-torus coordinate Hopf algebra represents the dynamic Levi functor for
-`t ↦ diag(t, 1)`. -/
-noncomputable def splitTorusPointsIsoLeviFunctor :
-    HopfAlgebra.pointsFunctor
-        (R := R)
-        (H := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin 2) →₀ ℤ))) ≅
-      Cocharacter.leviFunctor (dynamicCocharacter (R := R)) :=
-  NatIso.ofComponents
-    (fun A ↦ (splitTorusLeviMulEquiv A).toGrpIso)
-    (by
-      intro A B φ
-      rw [Cocharacter.leviFunctor_map]
-      apply GrpCat.hom_ext
-      apply MonoidHom.ext
-      intro (f : HopfAlgebra.points
-        (R := R)
-        (H := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin 2) →₀ ℤ))) A)
-      apply Subtype.ext
-      -- Both component maps are restrictions of the corresponding ambient point maps.
-      unfold HopfAlgebra.pointsFunctor
-      change ((splitTorusLeviMulEquiv B
-          (HopfAlgebra.mapPoints
-            (H := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin 2) →₀ ℤ))) φ f) :
-              Cocharacter.levi B (dynamicCocharacter (R := R))) :
-            WithConv (coordinateHopfAlgebra R 2 →ₐ[R] B)) =
-        ((Cocharacter.mapLevi (dynamicCocharacter (R := R)) φ
-            (splitTorusLeviMulEquiv A f) :
-              Cocharacter.levi B (dynamicCocharacter (R := R))) :
-            WithConv (coordinateHopfAlgebra R 2 →ₐ[R] B))
-      rw [coe_splitTorusLeviMulEquiv_apply, Cocharacter.coe_mapLevi_apply,
-        coe_splitTorusLeviMulEquiv_apply]
-      exact (mapValue_diagonalTorusPoints φ.hom f).symm)
+  ((splitTorusPointsIsoLeviFunctor (R := R)).app A).groupIsoToMulEquiv
 
 /-- The forward component of `splitTorusPointsIsoLeviFunctor` is the pointwise split-torus
 equivalence. -/
@@ -174,7 +128,7 @@ theorem splitTorusPointsIsoLeviFunctor_hom_app_apply (A : CommAlgCat.{w} R)
       (H := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin 2) →₀ ℤ))) A) :
     (splitTorusPointsIsoLeviFunctor (R := R)).hom.app A f =
       splitTorusLeviMulEquiv A f := by
-  unfold splitTorusPointsIsoLeviFunctor
+  unfold splitTorusLeviMulEquiv
   rfl
 
 /-- The inverse component of `splitTorusPointsIsoLeviFunctor` is the inverse pointwise
@@ -184,7 +138,66 @@ theorem splitTorusPointsIsoLeviFunctor_inv_app_apply (A : CommAlgCat.{w} R)
     (g : Cocharacter.levi A (dynamicCocharacter (R := R))) :
     (splitTorusPointsIsoLeviFunctor (R := R)).inv.app A g =
       (splitTorusLeviMulEquiv A).symm g := by
+  unfold splitTorusLeviMulEquiv
+  rfl
+
+/-- Transport of a points-functor isomorphism along an equality of cocharacters does not change
+the ambient point underlying its components. -/
+private theorem coe_eqToHom_levi_hom_app_mpr
+    {l l' : coordinateHopfAlgebra R 2 →ₐc[R] LaurentPolynomial R} (h : l' = l)
+    (e : HopfAlgebra.pointsFunctor (R := R)
+        (H := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin 2) →₀ ℤ))) ≅
+      Cocharacter.leviFunctor l)
+    (A : CommAlgCat.{w} R)
+    (f : HopfAlgebra.points (R := R)
+      (H := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin 2) →₀ ℤ))) A) :
+    (((eqToHom (Cocharacter.leviFunctor_obj l' A))
+      ((Eq.mpr (id (congrArg (fun a ↦ HopfAlgebra.pointsFunctor (R := R)
+          (H := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin 2) →₀ ℤ))) ≅
+            Cocharacter.leviFunctor a) h)) e).hom.app A f) : Cocharacter.levi A l') :
+      HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 2) A) =
+      (((eqToHom (Cocharacter.leviFunctor_obj l A)) (e.hom.app A f) : Cocharacter.levi A l) :
+        HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 2) A) := by
+  subst h
+  rfl
+
+/-- The ambient point underlying the represented dynamic-Levi point of a split-torus point is its
+diagonal-torus point. -/
+@[simp]
+theorem coe_splitTorusLeviMulEquiv_apply (A : CommAlgCat.{w} R)
+    (f : HopfAlgebra.points
+      (R := R)
+      (H := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin 2) →₀ ℤ))) A) :
+    ((splitTorusLeviMulEquiv A f :
+        Cocharacter.levi A (dynamicCocharacter (R := R))) :
+      WithConv (coordinateHopfAlgebra R 2 →ₐ[R] A)) =
+      diagonalTorusPoints f := by
+  -- The group equivalence `splitTorusLeviMulEquiv` is the component at `A` of the functor
+  -- isomorphism `splitTorusPointsIsoLeviFunctor`, whose codomain is
+  -- `(Cocharacter.leviFunctor l).obj A`, only propositionally equal to `Cocharacter.levi A l`
+  -- (`Cocharacter.leviFunctor_obj`). The `change` exposes this identification as `eqToHom`
+  -- applied to the component; both sides are definitionally the same ambient point, because
+  -- `groupIsoToMulEquiv` and `eqToHom` on these subgroup-valued objects are transparent. Then
+  -- `coe_eqToHom_levi_hom_app_mpr` moves the transport across the cocharacter equality.
+  change (((eqToHom (Cocharacter.leviFunctor_obj (dynamicCocharacter (R := R)) A))
+      ((splitTorusPointsIsoLeviFunctor (R := R)).hom.app A f) :
+      Cocharacter.levi A (dynamicCocharacter (R := R))) :
+      HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 2) A) = _
   unfold splitTorusPointsIsoLeviFunctor
+  rw [coe_eqToHom_levi_hom_app_mpr dynamicCocharacter_eq_weightCocharacter]
+  -- The composite isomorphism acts componentwise: first the coordinate identification, then the
+  -- general weight-Levi representing isomorphism.
+  change (((eqToHom (Cocharacter.leviFunctor_obj (weightCocharacter (R := R) Borel.weights) A))
+      ((weightLeviPointsIso R Borel.weights).hom.app A
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (weightLeviDiagonalCoordinateIso R Borel.weights
+          (UpperTriangular.weights_injective 2)).hom).app A f)) :
+      Cocharacter.levi A (weightCocharacter (R := R) Borel.weights)) :
+      HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R 2) A) = _
+  refine (coe_weightLeviPointsIso_hom_app_apply R Borel.weights (A := A) _).trans ?_
+  rw [← mapPointsFunctor_diagonalTorusCoordinateMap_app,
+    ← weightLeviCoordinateMap_comp_weightLeviDiagonalCoordinateIso_hom R Borel.weights
+      (UpperTriangular.weights_injective 2),
+    CommHopfAlgCat.Hom.mapPointsFunctor_comp, NatTrans.comp_app]
   rfl
 
 /-! ## The dynamic unipotent subgroup -/

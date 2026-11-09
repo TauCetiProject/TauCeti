@@ -94,9 +94,8 @@ theorem indexEquiv_reflectionPerm (f : P.Hom P₂) (i j : ι) :
     f.indexEquiv (P.reflectionPerm i j) =
       P₂.reflectionPerm (f.indexEquiv i) (f.indexEquiv j) := by
   refine P₂.root.injective ?_
-  rw [← Hom.root_weightMap_apply P P₂ _ f, root_reflectionPerm, root_reflectionPerm,
-    reflection_apply_root, reflection_apply_root, map_sub, map_smul, f.pairing,
-    Hom.root_weightMap_apply, Hom.root_weightMap_apply]
+  rw [← Hom.root_weightMap_apply]
+  simp [root_reflectionPerm, reflection_apply_root, Hom.root_weightMap_apply]
 
 variable (f : P.Hom P₂) (hf : Injective f.weightMap)
 include hf
@@ -105,10 +104,7 @@ include hf
 nothing else to a root. -/
 theorem weightMap_mem_range_root_iff {m : M} :
     f.weightMap m ∈ range P₂.root ↔ m ∈ range P.root := by
-  refine ⟨fun ⟨l, hl⟩ => ⟨f.indexEquiv.symm l, hf ?_⟩,
-    fun ⟨i, hi⟩ => ⟨f.indexEquiv i, ?_⟩⟩
-  · rw [Hom.root_weightMap_apply, Equiv.apply_symm_apply, hl]
-  · rw [← hi, Hom.root_weightMap_apply]
+  rw [← hf.mem_set_image, ← range_comp, f.root_weightMap, EquivLike.range_comp]
 
 /-- The index bijection of a homomorphism with injective weight map preserves and reflects
 the relation `α = β + γ` between roots. -/
@@ -116,9 +112,7 @@ the relation `α = β + γ` between roots. -/
 theorem root_indexEquiv_eq_add_iff (k i j : ι) :
     P₂.root (f.indexEquiv k) = P₂.root (f.indexEquiv i) + P₂.root (f.indexEquiv j) ↔
       P.root k = P.root i + P.root j := by
-  rw [← Hom.root_weightMap_apply, ← Hom.root_weightMap_apply, ← Hom.root_weightMap_apply,
-    ← map_add]
-  exact hf.eq_iff
+  simp only [← Hom.root_weightMap_apply, ← map_add, hf.eq_iff]
 
 /-- The index bijection of a homomorphism with injective weight map preserves and reflects
 the relation `α = β - γ` between roots. -/
@@ -126,9 +120,7 @@ the relation `α = β - γ` between roots. -/
 theorem root_indexEquiv_eq_sub_iff (k j i : ι) :
     P₂.root (f.indexEquiv k) = P₂.root (f.indexEquiv j) - P₂.root (f.indexEquiv i) ↔
       P.root k = P.root j - P.root i := by
-  rw [← Hom.root_weightMap_apply, ← Hom.root_weightMap_apply, ← Hom.root_weightMap_apply,
-    ← map_sub]
-  exact hf.eq_iff
+  simp only [← Hom.root_weightMap_apply, ← map_sub, hf.eq_iff]
 
 /-- The index bijection of a homomorphism with injective weight map preserves and reflects linear
 independence of a pair of roots. -/
@@ -136,20 +128,17 @@ independence of a pair of roots. -/
 theorem linearIndependent_root_indexEquiv_iff (i j : ι) :
     LinearIndependent R ![P₂.root (f.indexEquiv i), P₂.root (f.indexEquiv j)] ↔
       LinearIndependent R ![P.root i, P.root j] := by
-  have key : ![P₂.root (f.indexEquiv i), P₂.root (f.indexEquiv j)] =
-      f.weightMap ∘ ![P.root i, P.root j] := by
-    ext k
-    fin_cases k <;> simp [Hom.root_weightMap_apply]
-  rw [key]
-  exact f.weightMap.linearIndependent_iff
-    (LinearMap.ker_eq_bot_of_injective hf)
+  rw [← f.weightMap.linearIndependent_iff_of_injOn hf.injOn]
+  congr!
+  ext k
+  fin_cases k <;> simp [Hom.root_weightMap_apply]
 
 section Chain
 
 variable [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic]
 
-/-- The index bijection of a homomorphism with injective weight map preserves the number of steps
-one may add `α` to `β` and stay among the roots. -/
+/-- The index bijection of a homomorphism with injective weight map preserves the number of times
+one may add `P.root i` to `P.root j` and stay among the roots. -/
 @[simp]
 theorem chainTopCoeff_indexEquiv (i j : ι) :
     letI := Finite.of_equiv ι f.indexEquiv
@@ -159,20 +148,16 @@ theorem chainTopCoeff_indexEquiv (i j : ι) :
   let := f.isValuedIn ℤ
   by_cases h : LinearIndependent R ![P.root i, P.root j]
   · have h' := (f.linearIndependent_root_indexEquiv_iff hf i j).mpr h
-    have key : ∀ n : ℕ, P₂.root (f.indexEquiv j) + n • P₂.root (f.indexEquiv i) ∈ range P₂.root ↔
-        P.root j + n • P.root i ∈ range P.root := fun n => by
-      rw [← Hom.root_weightMap_apply, ← Hom.root_weightMap_apply, ← map_nsmul, ← map_add]
-      exact f.weightMap_mem_range_root_iff hf
-    refine le_antisymm ?_ ?_
-    · rw [← P.root_add_nsmul_mem_range_iff_le_chainTopCoeff h, ← key]
-      exact (P₂.root_add_nsmul_mem_range_iff_le_chainTopCoeff h').mpr le_rfl
-    · rw [← P₂.root_add_nsmul_mem_range_iff_le_chainTopCoeff h', key]
-      exact (P.root_add_nsmul_mem_range_iff_le_chainTopCoeff h).mpr le_rfl
+    refine eq_of_forall_le_iff fun n => ?_
+    rw [← P.root_add_nsmul_mem_range_iff_le_chainTopCoeff h,
+      ← P₂.root_add_nsmul_mem_range_iff_le_chainTopCoeff h',
+      ← f.weightMap_mem_range_root_iff hf]
+    simp only [map_add, map_nsmul, Hom.root_weightMap_apply]
   · rw [chainTopCoeff_of_not_linearIndependent h, chainTopCoeff_of_not_linearIndependent
-      fun hc => h ((f.linearIndependent_root_indexEquiv_iff hf i j).mp hc)]
+      ((f.linearIndependent_root_indexEquiv_iff hf i j).not.mpr h)]
 
-/-- The index bijection of a homomorphism with injective weight map preserves the number of steps
-one may subtract `α` from `β` and stay among the roots. -/
+/-- The index bijection of a homomorphism with injective weight map preserves the number of times
+one may subtract `P.root i` from `P.root j` and stay among the roots. -/
 @[simp]
 theorem chainBotCoeff_indexEquiv (i j : ι) :
     letI := Finite.of_equiv ι f.indexEquiv
