@@ -590,7 +590,7 @@ theorem tendsto_subseq_of_forall_mem_moreauYosidaResolvent
     rwa [hU0] at this
   have hK t ⦃w : ℕ → X⦄ (hw : ∀ n, w n ∈ K t) :
       ∃ y, ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ Tendsto (w ∘ ψ) atTop (l y) :=
-    exists_strictMono_tendsto_of_edist_le hcpt (by finiteness) hw
+    hcpt E (ediam_range_ne_top_of_edist_le (by finiteness) fun n ↦ (hw n).2) fun n ↦ (hw n).1
   -- The asymptotic modulus `ω s t = (2 |t - s| (E - A) (1 + B (max s t))) ^ (1 / 2)`.
   set ω : ℝ≥0 → ℝ≥0 → ℝ≥0∞ := fun s t ↦
     ENNReal.ofReal (2 * |(t : ℝ) - s| * (E - A) * (1 + B (max (s : ℝ) t))) ^ (2⁻¹ : ℝ)
@@ -800,15 +800,8 @@ theorem apply_add_curveAction_div_le_liminf_of_forall_mem_moreauYosidaResolvent
       · exact le_max_of_le_left (Finset.le_sup (f := fun k ↦ edist x₀ (U k (N k)))
           (Finset.mem_range.2 hk))
       · exact le_max_of_le_right (hk₀ k hk _ le_rfl).2
-    refine hφ (ne_top_of_le_ne_top (b := 2 * max M R)
-      (ENNReal.mul_ne_top ENNReal.ofNat_ne_top (max_lt hM.lt_top hR.lt_top).ne)
-      (Metric.ediam_le ?_))
+    exact hφ (ediam_range_ne_top_of_edist_le (max_lt hM.lt_top hR.lt_top).ne hbound)
       (hu T ⟨hT, le_rfl⟩)
-    rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩
-    calc edist (U i (N i)) (U j (N j)) ≤ edist x₀ (U i (N i)) + edist x₀ (U j (N j)) :=
-          edist_triangle_left _ _ _
-      _ ≤ max M R + max M R := add_le_add (hbound i) (hbound j)
-      _ = 2 * max M R := (two_mul _).symm
   calc φ (u T) + ((curveAction 2 u 0 T / 2 : ℝ≥0∞) : EReal)
       ≤ liminf (fun k ↦ φ (U k (N k))) atTop + liminf (fun k ↦ (P k : EReal)) atTop := by
         refine add_le_add hE ((EReal.coe_ennreal_le_coe_ennreal_iff.2 hA).trans_eq ?_)

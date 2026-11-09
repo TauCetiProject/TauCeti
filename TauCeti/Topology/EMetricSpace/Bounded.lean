@@ -5,21 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.EReal.Basic
-public import Mathlib.Order.Filter.AtTopBot.Defs
 public import Mathlib.Topology.EMetricSpace.Diam
 
 /-!
-# Sequences at bounded distance from a point
+# Families at bounded distance from a point
 
-A sequence at distance at most `R ≠ ⊤` from a point has range of finite diameter, so a compactness
-hypothesis for sequences of finite diameter applies to every sublevel set of a function `φ`
-intersected with such a ball.
+A family at distance at most `R ≠ ⊤` from a point has range of finite diameter.
+
+## Main results
+
+* `TauCeti.ediam_range_ne_top_of_edist_le`: the range of such a family has finite diameter.
 -/
 
 public section
 
-open Filter Set Topology
+open Set
 open scoped ENNReal
 
 namespace TauCeti
@@ -33,16 +33,5 @@ theorem ediam_range_ne_top_of_edist_le {ι : Type*} {R : ℝ≥0∞} (hR : R ≠
     ((Metric.ediam_mono (t := Metric.closedEBall x R) ?_).trans Metric.ediam_closedEBall_le)
   rintro _ ⟨i, rfl⟩
   exact Metric.mem_closedEBall.2 (by rw [edist_comm]; exact hw i)
-
-/-- A sequence of energy at most `c` at distance at most `R ≠ ⊤` from a point `x` has a
-subsequence converging for the auxiliary convergence `l`, if `l` has compactness for sequences of
-finite diameter. -/
-theorem exists_strictMono_tendsto_of_edist_le {φ : X → EReal} {l : X → Filter X}
-    (hcpt : ∀ (c : ℝ) ⦃v : ℕ → X⦄, Metric.ediam (range v) ≠ ⊤ → (∀ n, φ (v n) ≤ c) →
-      ∃ y, ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ Tendsto (v ∘ ψ) atTop (l y))
-    {c : ℝ} {R : ℝ≥0∞} (hR : R ≠ ⊤) {w : ℕ → X}
-    (hw : ∀ n, φ (w n) ≤ c ∧ edist x (w n) ≤ R) :
-    ∃ y, ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ Tendsto (w ∘ ψ) atTop (l y) :=
-  hcpt c (ediam_range_ne_top_of_edist_le hR fun n ↦ (hw n).2) fun n ↦ (hw n).1
 
 end TauCeti
