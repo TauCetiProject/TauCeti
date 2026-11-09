@@ -39,9 +39,10 @@ only these need to be nondegenerate: if they are, there are finitely many of the
 
 For an autonomous `C²` Hamiltonian `F` on a closed manifold, the `1`-periodic orbits of `ε F`, for
 `ε > 0` small, are exactly the constant curves at the critical points of `F`
-(`TauCeti.SmoothTwoForm.IsNondegenerate.exists_pos_forall_periodicSolutions_smul_eq`): a
-nonconstant one would be a periodic orbit of `X_F` of period `ε`, and short periodic orbits of a
-`C¹` vector field on a compact manifold are constant by Yorke's theorem
+(`exists_pos_forall_periodicSolutions_hamiltonianVectorField_smul_eq_image_criticalPoints`
+in the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`): a nonconstant one would be a periodic
+orbit of `X_F` of period `ε`, and short periodic orbits of a `C¹` vector field on a compact
+manifold are constant by Yorke's theorem
 (`TauCeti.exists_pos_forall_isMIntegralCurve_eq_const_of_periodic`). This is the starting point of
 the comparison of the Floer homology of a `C²`-small Morse function with its Morse homology.
 
@@ -50,8 +51,9 @@ the comparison of the Floer homology of a `C²`-small Morse function with its Mo
 * `TauCeti.SmoothTwoForm.IsNondegenerate.finite_periodicSolutions_hamiltonianVectorField`: a
   time-dependent Hamiltonian on a closed manifold whose 1-periodic orbits are all nondegenerate has
   finitely many 1-periodic orbits.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.exists_pos_forall_periodicSolutions_smul_eq`: for small
-  `ε > 0`, the 1-periodic orbits of `ε F` are the constant curves at the critical points of `F`.
+* `exists_pos_forall_periodicSolutions_hamiltonianVectorField_smul_eq_image_criticalPoints`
+  (in `TauCeti.SmoothTwoForm.IsNondegenerate`): for small `ε > 0`, the 1-periodic orbits of `ε F`
+  are the constant curves at the critical points of `F`.
 * `SmoothTwoForm.IsNondegenerate.finite_contractiblePeriodicSolutions_hamiltonianVectorField`: a
   time-dependent Hamiltonian on a closed manifold whose contractible 1-periodic orbits are all
   nondegenerate has finitely many contractible 1-periodic orbits.
@@ -99,8 +101,8 @@ theorem finite_periodicSolutions_hamiltonianVectorField [CompactSpace M] (h : σ
 nondegenerate two-form on a compact boundaryless manifold modelled on a finite-dimensional space,
 and `F` a `C²` function. There is `ε₀ > 0` such that for `0 < ε ≤ ε₀` the 1-periodic orbits of the
 autonomous Hamiltonian `ε F` are exactly the constant curves at the critical points of `F`. -/
-theorem exists_pos_forall_periodicSolutions_smul_eq [CompactSpace M] (h : σ.IsNondegenerate)
-    {F : M → ℝ} (hF : ContMDiff I 𝓘(ℝ) 2 F) :
+theorem exists_pos_forall_periodicSolutions_hamiltonianVectorField_smul_eq_image_criticalPoints
+    [CompactSpace M] (h : σ.IsNondegenerate) {F : M → ℝ} (hF : ContMDiff I 𝓘(ℝ) 2 F) :
     ∃ ε₀ > (0 : ℝ), ∀ ε, 0 < ε → ε ≤ ε₀ →
       periodicSolutions (fun _ ↦ σ.hamiltonianVectorField (ε • F)) 1 =
         (fun x _ ↦ x) '' criticalPoints I F := by
