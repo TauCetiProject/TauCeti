@@ -118,10 +118,12 @@ theorem differentIdeal_ne_bot_of_isSeparable [IsDedekindDomain S] [IsTorsionFree
   simp
 
 include K in
+omit [IsFractionRing S L] in
 /-- A generator of the different has nonzero image in the separable fraction-field extension. -/
 theorem algebraMap_ne_zero_of_differentIdeal_eq_span
     [IsDedekindDomain S] [IsTorsionFree R S] {δ : S}
     (hδ : differentIdeal R S = Ideal.span {δ}) : algebraMap S L δ ≠ 0 := by
+  have := IsIntegralClosure.isFractionRing_of_finite_extension R K L S
   rw [ne_eq, map_eq_zero_iff _ (IsFractionRing.injective S L)]
   rintro rfl
   exact differentIdeal_ne_bot_of_isSeparable (K := K) (L := L) (by simpa using hδ)
