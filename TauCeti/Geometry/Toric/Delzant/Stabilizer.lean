@@ -36,8 +36,7 @@ properties are in `TauCeti.Geometry.Toric.Delzant.Torus`.
   (`TauCeti.Toric.faceSubtorus_eq_bot_iff`, `TauCeti.Toric.faceSubtorus_eq_top_iff`). Both use
   that the lattice is countable while every nonzero real line is not. Hence, when the normals
   are nonzero, the residual torus acts freely on the orbit over `y` exactly when `y` lies on no
-  facet; when the normals generate the lattice, it fixes that orbit exactly when `y` is a vertex
-  of `Δ`.
+  facet; when the normals span `V`, it fixes that orbit exactly when `y` is a vertex of `Δ`.
 * **Fibres.** The points of `ℂ^ι` with moment value `y` form a single orbit of `(ℝ / 2πℤ)^ι`
   (`TauCeti.Toric.setOf_forall_eq_eq_range_weightRotation_neg`), so the fibre of the residual
   moment map over each `y ∈ Δ` is a single orbit of the residual torus.
@@ -156,10 +155,10 @@ theorem forall_exists_weightRotation_neg_apply_eq_iff_eq_zero_iff_activeSet_eq_e
     exact forall₂_congr fun j _ ↦ by simpa using hu₀ j ∘ (map_eq_zero_iff i hi.injective).1
 
 /-- **The residual torus fixes exactly the orbits over the vertices.** Suppose that the normals
-generate the integral lattice. If `μ(x) = β_ℝ^* y`, every element of the residual torus moves `x`
+span `V`. If `μ(x) = β_ℝ^* y`, every element of the residual torus moves `x`
 within its orbit under the kernel torus exactly when `y` is a vertex of `Δ`. -/
 theorem forall_exists_weightRotation_neg_apply_eq_iff_mem_extremePoints
-    (hi : IsIntegralLattice i) (hu : Function.Surjective (Fintype.linearCombination ℤ u))
+    (hi : IsIntegralLattice i) (hu : Submodule.span ℝ (Set.range fun j ↦ i (u j)) = ⊤)
     (hy : ∀ j, (x.1 j ^ 2 + x.2 j ^ 2) / 2 + c j = y (i (u j))) :
     (∀ θ : ι → ℝ, ∃ t : ι → ℝ,
         (fun j ↦ (t j : AddCircle (2 * π))) ∈ (facetTorusHom i u (2 * π)).ker ∧
@@ -172,7 +171,7 @@ theorem forall_exists_weightRotation_neg_apply_eq_iff_mem_extremePoints
   rw [mem_extremePoints_facetPolyhedron_iff_span_eq_top, ← faceSubtorus_eq_top_iff (p := 2 * π),
     and_iff_right (mem_facetPolyhedron_of_forall_eq c hy), eq_top_iff]
   refine ⟨fun h q _ ↦ ?_, fun h θ ↦ h (AddSubgroup.mem_top _)⟩
-  obtain ⟨θ, rfl⟩ := exists_facetTorusHom_eq hi.span_range_eq_top hu q
+  obtain ⟨θ, rfl⟩ := exists_facetTorusHom_eq hu q
   exact h θ
 
 /-- **Moment fibres are torus orbits.** If `μ(x) = β_ℝ^* y`, the points `x'` of `ℂ^ι` with
@@ -207,7 +206,8 @@ theorem exists_mem_delzantLevel_forall_exists_weightRotation_neg_apply_eq_iff :
         (fun j ↦ (t j : AddCircle (2 * π))) ∈ (facetTorusHom i u (2 * π)).ker ∧
           weightRotation (-θ) x = weightRotation (-t) x) ↔
         facetTorusHom i u (2 * π) (fun j ↦ (θ j : AddCircle (2 * π))) = 0 := by
-  obtain ⟨y, hy, hA⟩ := hΔ.exists_activeSet_eq_empty hi
+  have := hi.finiteDimensional
+  obtain ⟨y, hy, hA⟩ := hΔ.exists_activeSet_eq_empty hi.injective
   rw [← setOf_exists_mem_delzantLevel i u c] at hy
   obtain ⟨x, hx, hxy⟩ := hy
   refine ⟨x, hx, fun θ ↦ ?_⟩

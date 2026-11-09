@@ -81,8 +81,6 @@ points.
 * `TauCeti.Toric.faceSubtorus_eq_bot_iff`, `TauCeti.Toric.faceSubtorus_eq_top_iff`: for a
   countable lattice, the face subtorus is trivial exactly when its normals vanish, and is the
   whole torus exactly when they span `V`.
-* `TauCeti.Toric.IsDelzant.exists_activeSet_eq_empty`: a Delzant polytope has a point on no
-  facet.
 
 ## References
 
@@ -197,21 +195,26 @@ theorem isConnected_ker_facetTorusHom
   exact ((Submodule.convex _).isConnected ⟨0, Submodule.zero_mem _⟩).image _
     (continuous_pi fun j ↦ (AddCircle.continuous_mk' p).comp (continuous_apply j)).continuousOn
 
-/-- If the normals generate the lattice and the lattice spans `V`, every element of
-`V / p i(N)` is the class `facetTorusHom [θ]` of some real angles `θ`. -/
-theorem exists_facetTorusHom_eq (hi : Submodule.span ℝ (Set.range i) = ⊤)
-    (hu : Function.Surjective (Fintype.linearCombination ℤ u)) (q : V ⧸ (p • i).range) :
+/-- If the normals span `V` over `ℝ`, every element of `V / p i(N)` is the class
+`facetTorusHom [θ]` of some real angles `θ`. -/
+theorem exists_facetTorusHom_eq (hu : Submodule.span ℝ (Set.range fun j ↦ i (u j)) = ⊤)
+    (q : V ⧸ (p • i).range) :
     ∃ θ : ι → ℝ, facetTorusHom i u p (fun j ↦ (θ j : AddCircle p)) = q := by
   obtain ⟨v, rfl⟩ := QuotientAddGroup.mk_surjective q
-  obtain ⟨t, rfl⟩ := surjective_linearCombination_real hi hu v
+  obtain ⟨t, rfl⟩ : v ∈ LinearMap.range (Fintype.linearCombination ℝ fun j ↦ i (u j)) := by
+    rw [Fintype.range_linearCombination, hu]
+    exact Submodule.mem_top
   exact ⟨t, facetTorusHom_coe i u p t⟩
 
 /-- If the normals generate the lattice and the lattice spans `V`, the homomorphism
 `(ℝ / pℤ)^ι → V / p i(N)` is surjective. -/
 theorem surjective_facetTorusHom (hi : Submodule.span ℝ (Set.range i) = ⊤)
     (hu : Function.Surjective (Fintype.linearCombination ℤ u)) :
-    Function.Surjective (facetTorusHom i u p) :=
-  fun q ↦ let ⟨_, h⟩ := exists_facetTorusHom_eq hi hu q; ⟨_, h⟩
+    Function.Surjective (facetTorusHom i u p) := by
+  have hspan : Submodule.span ℝ (Set.range fun j ↦ i (u j)) = ⊤ := by
+    rw [← Fintype.range_linearCombination, LinearMap.range_eq_top]
+    exact surjective_linearCombination_real hi hu
+  exact fun q ↦ let ⟨_, h⟩ := exists_facetTorusHom_eq hspan q; ⟨_, h⟩
 
 /-- **The kernel torus meets a coordinate subtorus of a lattice basis trivially.** Suppose that
 the normals `u j` with `j ∈ s` form a basis of the integral lattice `N`. An element of the kernel
@@ -389,43 +392,6 @@ theorem finrank_ker_linearCombination_real_add_finrank (hi : IsIntegralLattice i
       Module.finrank ℝ V = Fintype.card ι :=
   Toric.finrank_ker_linearCombination_real_add_finrank hi.span_range_eq_top
     hΔ.surjective_linearCombination
-
-omit [FiniteDimensional ℝ V] [Fintype ι] in
-open Filter Topology in
-/-- **A Delzant polytope has a point on no facet.** Some point of the polytope satisfies every
-facet inequality strictly. -/
-theorem exists_activeSet_eq_empty [Finite ι] (hi : IsIntegralLattice i) :
-    ∃ y ∈ facetPolyhedron i u c, activeSet (facetPairing i u) c y = ∅ := by
-  classical
-  have := Fintype.ofFinite ι
-  have := hi.finiteDimensional
-  obtain ⟨v, hv⟩ := hΔ.extremePoints_nonempty
-  obtain ⟨b, hb⟩ := isSmoothVertex_def.1 (hΔ.isSmoothVertex v hv)
-  -- Move from `v` along a functional `w` that is `1` on the active normals; for small positive
-  -- times every constraint is strict. Take for `w` the real extension of the integral character
-  -- `n ↦ Σ_j b.coord j n`, which is `1` on the lattice basis of active normals.
-  let w : StrongDual ℝ V :=
-    LinearMap.toContinuousLinearMap (hi.realCharacter (∑ j, (b.coord j).toAddMonoidHom))
-  have hw (j : ι) (hj : j ∈ activeSet (facetPairing i u) c v) : w (i (u j)) = 1 := by
-    simp [w, ← hb ⟨j, hj⟩, Finsupp.single_apply]
-  have hev (j : ι) : ∀ᶠ ε in 𝓝[>] (0 : ℝ), c j < (v + ε • w) (i (u j)) := by
-    by_cases hj : j ∈ activeSet (facetPairing i u) c v
-    · filter_upwards [self_mem_nhdsWithin] with ε (hε : 0 < ε)
-      have hvj : v (i (u j)) = c j := by simpa using hj
-      simp [hvj, hw j hj, hε]
-    · have hlt : c j < v (i (u j)) :=
-        (mem_facetPolyhedron.1 (extremePoints_subset hv) j).lt_of_ne fun h ↦
-          hj (by simpa using h.symm)
-      have hT : Tendsto (fun ε : ℝ ↦ (v + ε • w) (i (u j))) (𝓝[>] 0) (𝓝 (v (i (u j)))) := by
-        have hc : Continuous fun ε : ℝ ↦ (v + ε • w) (i (u j)) := by
-          simp only [add_apply, smul_apply, smul_eq_mul]
-          fun_prop
-        simpa using (hc.tendsto 0).mono_left nhdsWithin_le_nhds
-      exact hT.eventually_const_lt hlt
-  obtain ⟨ε, hε⟩ := (eventually_all.2 hev).exists
-  refine ⟨v + ε • w, mem_facetPolyhedron.2 fun j ↦ (hε j).le, eq_empty_iff_forall_notMem.2
-    fun j hj ↦ (hε j).ne' ?_⟩
-  simpa using hj
 
 end IsDelzant
 
