@@ -110,10 +110,11 @@ theorem contDiff_norm_rpow_of_lt {k : ℕ} {p : ℝ}
     let θ : E := ‖x‖⁻¹ • x
     have hθ : ‖θ‖ = 1 := by simp [θ, norm_smul, hx]
     have hθ0 : θ ≠ 0 := norm_ne_zero_iff.mp (by rw [hθ]; norm_num)
-    have hscale := norm_iteratedFDeriv_smul_of_homogeneous (hf.of_le (by exact_mod_cast hj))
-      (p := p) (fun t ht y ↦ by simp only [norm_smul, Real.norm_of_nonneg ht.le,
+    have hscale := norm_iteratedFDeriv_smul_of_homogeneous
+      (f := fun x : E ↦ ‖x‖ ^ p) (p := p) (j := j)
+      (fun t ht y ↦ by simp only [norm_smul, Real.norm_of_nonneg ht.le,
         Real.mul_rpow ht.le (norm_nonneg y), smul_eq_mul])
-      (norm_pos_iff.mpr hx) hθ0
+      (norm_pos_iff.mpr hx) (x := θ)
     have hnorm := norm_iteratedFDeriv_eq_of_norm_eq p j (hθ.trans he.symm)
     simpa only [θ, smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.mpr hx), one_smul,
       hnorm, mul_comm] using hscale.le
