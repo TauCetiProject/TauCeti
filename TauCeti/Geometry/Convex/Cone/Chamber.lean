@@ -78,6 +78,13 @@ theorem mem_positiveChamber_iff_of_closure_eq {s : Set M} (hs : closure s = P)
     θ ∈ P.positiveChamber i ↔ ∀ n ∈ s, n ≠ 0 → 0 < θ (i n) :=
   forall_pos_iff_of_closure_eq hs (θ.toLinearMap.toAddMonoidHom.comp i)
 
+/-- On a generated monoid, negative chamber membership is a test on the nonzero generators. -/
+theorem mem_negativeChamber_iff_of_closure_eq {s : Set M} (hs : closure s = P)
+    {θ : V →L[ℝ] ℝ} :
+    θ ∈ P.negativeChamber i ↔ ∀ n ∈ s, n ≠ 0 → θ (i n) < 0 := by
+  rw [negativeChamber_eq_preimage_neg, mem_preimage, P.mem_positiveChamber_iff_of_closure_eq i hs]
+  simp
+
 /-- The positive chamber is convex, without finite generation. -/
 theorem convex_positiveChamber : Convex ℝ (P.positiveChamber i) := by
   have heq : P.positiveChamber i =

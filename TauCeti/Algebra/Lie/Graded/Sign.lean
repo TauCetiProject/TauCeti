@@ -48,7 +48,7 @@ namespace TauCeti
 
 variable {ι R L A : Type*} [AddCommMonoid ι]
   [CommRing R] [LieRing L] [LieAlgebra R L]
-  [AddCommGroup A] [LinearOrder A] [IsOrderedAddMonoid A]
+  [AddCommMonoid A] [LinearOrder A] [IsOrderedAddMonoid A]
   (ℒ : ι → Submodule R L) [SetLike.GradedBracket ℒ ℒ] (θ : ι →+ A)
 
 /-- The sum of homogeneous pieces whose degree has sign `s` under `θ`.
@@ -71,10 +71,10 @@ def signSubalgebra (s : SignType) : LieSubalgebra R L where
       | zero => simp_all
       | neg =>
         simp only [SignType.neg_eq_neg_one, sign_eq_neg_one_iff] at hn hm ⊢
-        exact add_neg hn hm
+        exact Left.add_neg_of_neg_of_nonpos hn hm.le
       | pos =>
         simp only [SignType.pos_eq_one, sign_eq_one_iff] at hn hm ⊢
-        exact add_pos hn hm
+        exact Left.add_pos_of_pos_of_nonneg hn hm.le
     exact Submodule.mem_iSup_of_mem ⟨n.val + m.val, hnm⟩
       (SetLike.GradedBracket.bracket_mem hx hy)
 
@@ -100,22 +100,6 @@ theorem map_signSubalgebra {L' : Type*} [LieRing L'] [LieAlgebra R L']
   apply LieSubalgebra.toSubmodule_injective
   simp only [LieSubalgebra.map, signSubalgebra_toSubmodule, Submodule.map_iSup, hf]
 
-/-- Sign subalgebras depend only on the signs of degrees with nonzero pieces. -/
-theorem signSubalgebra_eq_of_sign_eq (φ : ι →+ A)
-    (h : ∀ n, ℒ n ≠ ⊥ → SignType.sign (θ n) = SignType.sign (φ n))
-    (s : SignType) : signSubalgebra ℒ θ s = signSubalgebra ℒ φ s := by
-  apply LieSubalgebra.toSubmodule_injective
-  simp only [signSubalgebra_toSubmodule]
-  apply le_antisymm
-  · refine iSup_le fun n => ?_
-    by_cases he : ℒ n = ⊥
-    · simp [he]
-    · exact le_iSup_of_le ⟨n, (h n he).symm.trans n.property⟩ le_rfl
-  · refine iSup_le fun n => ?_
-    by_cases he : ℒ n = ⊥
-    · simp [he]
-    · exact le_iSup_of_le ⟨n, (h n he).trans n.property⟩ le_rfl
-
 /-- An implication between sign fibers on nonzero homogeneous pieces induces
 an inclusion of the corresponding sign subalgebras. -/
 theorem signSubalgebra_le_of_sign_imp (φ : ι →+ A) (s t : SignType)
@@ -127,6 +111,14 @@ theorem signSubalgebra_le_of_sign_imp (φ : ι →+ A) (s t : SignType)
   by_cases hn : ℒ n = ⊥
   · simp [hn]
   · exact le_iSup_of_le ⟨n, h n hn n.property⟩ le_rfl
+
+/-- Sign subalgebras depend only on the signs of degrees with nonzero pieces. -/
+theorem signSubalgebra_eq_of_sign_eq (φ : ι →+ A)
+    (h : ∀ n, ℒ n ≠ ⊥ → SignType.sign (θ n) = SignType.sign (φ n))
+    (s : SignType) : signSubalgebra ℒ θ s = signSubalgebra ℒ φ s :=
+  le_antisymm
+    (signSubalgebra_le_of_sign_imp ℒ θ φ s s fun n hn h' => (h n hn).symm.trans h')
+    (signSubalgebra_le_of_sign_imp ℒ φ θ s s fun n hn h' => (h n hn).trans h')
 
 variable {L' : Type*} [LieRing L'] [LieAlgebra R L']
   (ℳ : ι → Submodule R L') [SetLike.GradedBracket ℳ ℳ]
@@ -144,7 +136,6 @@ theorem map_mem_signSubalgebra (f : L →+ L')
 variable [DecidableEq ι] [DirectSum.Decomposition ℒ]
 
 /-- Membership is characterized by vanishing of the components of other signs. -/
-@[simp]
 theorem mem_signSubalgebra_iff {s : SignType} {x : L} :
     x ∈ signSubalgebra ℒ θ s ↔
       ∀ n, SignType.sign (θ n) ≠ s → (DirectSum.decompose ℒ x n : L) = 0 := by
@@ -167,7 +158,7 @@ theorem mem_signSubalgebra_iff {s : SignType} {x : L} :
       exact Submodule.zero_mem _
 
 /-- Sign subalgebras are stable under every homogeneous projection. -/
-theorem signSubalgebra_isHomogeneous (s : SignType) :
+theorem isHomogeneous_signSubalgebra (s : SignType) :
     DirectSum.SetLike.IsHomogeneous ℒ (signSubalgebra ℒ θ s) := by
   intro n x hx
   by_cases hs : SignType.sign (θ n) = s
@@ -182,36 +173,15 @@ theorem isInternal_signSubalgebra :
   simp only [signSubalgebra_toSubmodule, iSup_subtype]
   exact (DirectSum.Decomposition.isInternal ℒ).iSup_fiber (fun n => SignType.sign (θ n))
 
+/-- The sign subalgebras form a decomposition of the Lie algebra as a module. -/
+instance : DirectSum.Decomposition (fun s => (signSubalgebra ℒ θ s).toSubmodule) :=
+  (isInternal_signSubalgebra ℒ θ).chooseDecomposition
+
 /-- The canonical linear decomposition into the three sign subalgebras.
 It is a module equivalence, with inverse given by addition, rather than a Lie
 equivalence to a product Lie algebra. -/
 def signDecomposition : L ≃ₗ[R] ⨁ s, (signSubalgebra ℒ θ s).toSubmodule :=
-  (LinearEquiv.ofBijective (DirectSum.coeLinearMap _)
-    (isInternal_signSubalgebra ℒ θ)).symm
-
-/-- Recombination of sign components is the canonical direct-sum addition map. -/
-@[simp]
-theorem signDecomposition_symm_apply
-    (x : ⨁ s, (signSubalgebra ℒ θ s).toSubmodule) :
-    (signDecomposition ℒ θ).symm x = DirectSum.coeLinearMap _ x := (rfl)
-
-/-- An element of one sign subalgebra has just that sign component. -/
-@[simp]
-theorem signDecomposition_coe (s : SignType) (x : signSubalgebra ℒ θ s) :
-    signDecomposition ℒ θ x =
-      DirectSum.of (fun s => (signSubalgebra ℒ θ s).toSubmodule) s x := by
-  apply (signDecomposition ℒ θ).symm.injective
-  simp [signDecomposition_symm_apply]
-
-/-- A homogeneous element is recovered in exactly its own sign component. -/
-theorem signDecomposition_apply_of_mem {n : ι} {x : L} (hx : x ∈ ℒ n) (s : SignType) :
-    (signDecomposition ℒ θ x s : L) =
-      if SignType.sign (θ n) = s then x else 0 := by
-  have he := signDecomposition_coe ℒ θ (SignType.sign (θ n))
-    ⟨x, le_signSubalgebra ℒ θ n hx⟩
-  rw [he]
-  simp only [DirectSum.coe_of_apply]
-  split <;> rfl
+  DirectSum.decomposeLinearEquiv _
 
 open scoped Classical in
 /-- A sign component is the finite sum of the homogeneous components of that sign. -/
@@ -219,11 +189,15 @@ theorem signDecomposition_apply (x : L) (s : SignType) :
     (signDecomposition ℒ θ x s : L) =
       ∑ n ∈ (DirectSum.decompose ℒ x).support,
         if SignType.sign (θ n) = s then (DirectSum.decompose ℒ x n : L) else 0 := by
-  classical
   conv_lhs => rw [← DirectSum.sum_support_decompose ℒ x]
   simp only [map_sum, DirectSum.sum_apply, AddSubmonoidClass.coe_finsetSum]
-  exact Finset.sum_congr rfl fun n _ =>
-    signDecomposition_apply_of_mem ℒ θ (DirectSum.decompose ℒ x n).property s
+  refine Finset.sum_congr rfl fun n _ => ?_
+  have hn := (DirectSum.decompose ℒ x n).property
+  have he := DirectSum.decompose_coe (fun s => (signSubalgebra ℒ θ s).toSubmodule)
+    (i := SignType.sign (θ n)) ⟨_, le_signSubalgebra ℒ θ n hn⟩
+  simp only [signDecomposition, DirectSum.decomposeLinearEquiv_apply, he,
+    DirectSum.coe_of_apply]
+  split <;> rfl
 
 /-- Sign projections preserve homogeneous submodules. In particular, they preserve
 the homogeneous ideals used in graded nilpotent truncations. -/
@@ -239,28 +213,12 @@ theorem signDecomposition_mem (K : Submodule R L)
   · exact K.zero_mem
 
 /-- Adding the three sign components recovers the original element. -/
-@[simp]
 theorem sum_signDecomposition (x : L) :
     ∑ s : SignType, (signDecomposition ℒ θ x s : L) = x := by
-  have h := congrArg (signDecomposition ℒ θ).symm
-    (DirectSum.sum_univ_of (signDecomposition ℒ θ x))
-  simpa only [map_sum, signDecomposition_symm_apply,
-    DirectSum.coeLinearMap_of, LinearEquiv.symm_apply_apply] using h
-
-/-- The three sign components are uniquely determined by their sum. -/
-theorem signDecomposition_eq_iff (x : L)
-    (a : ∀ s, signSubalgebra ℒ θ s) :
-    (∀ s, signDecomposition ℒ θ x s = a s) ↔ ∑ s, (a s : L) = x := by
-  constructor
-  · intro ha
-    rw [← sum_signDecomposition ℒ θ x]
-    exact Finset.sum_congr rfl fun s _ => congrArg Subtype.val (ha s).symm
-  · intro ha
-    have he : x = ∑ s, (a s : L) := ha.symm
-    intro s
-    apply Subtype.ext
-    rw [he, map_sum]
-    simp [signDecomposition_coe, DirectSum.sum_apply, DirectSum.coe_of_apply, apply_ite]
+  have h := DirectSum.Decomposition.left_inv (M := L)
+    (ℳ := fun s => (signSubalgebra ℒ θ s).toSubmodule) x
+  rw [← DirectSum.sum_univ_of (DirectSum.Decomposition.decompose' x)] at h
+  simpa [signDecomposition, DirectSum.decomposeLinearEquiv_apply] using h
 
 /-- A functional with one sign on every nonzero piece has the whole Lie algebra as its subalgebra
 of that sign. -/
@@ -288,7 +246,13 @@ theorem map_signDecomposition (f : L →+ L')
       map_mem_signSubalgebra ℒ θ ℳ f hf (signDecomposition ℒ θ x s).property⟩
   have hsum : ∑ s, (a s : L') = f x := by
     simpa only [a, ← map_sum] using congrArg f (sum_signDecomposition ℒ θ x)
-  exact (congrArg Subtype.val ((signDecomposition_eq_iff ℳ θ (f x) a).mpr hsum s)).symm
-
+  have h := congrArg (fun y => (signDecomposition ℳ θ y s : L')) hsum
+  have hc : ∀ t, signDecomposition ℳ θ (a t : L') =
+      DirectSum.of (fun s => (signSubalgebra ℳ θ s).toSubmodule) t (a t) := fun t =>
+    DirectSum.decompose_coe (fun s => (signSubalgebra ℳ θ s).toSubmodule) (a t)
+  simp only [map_sum, hc, DirectSum.sum_apply, AddSubmonoidClass.coe_finsetSum,
+    DirectSum.coe_of_apply, apply_ite, ZeroMemClass.coe_zero, Finset.sum_ite_eq',
+    Finset.mem_univ, ite_true] at h
+  exact h
 
 end TauCeti
