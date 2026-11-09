@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.Perfect
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
+public import Mathlib.RingTheory.EssentialFiniteness
 public import Mathlib.RingTheory.Etale.Basic
 
 import Mathlib.Algebra.Algebra.Shrink
@@ -17,6 +18,7 @@ import Mathlib.RingTheory.Etale.Field
 import Mathlib.RingTheory.FractionalIdeal.Operations
 import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.Algebra.Module.LocalizedModule.Submodule
+import TauCeti.FieldTheory.AlgebraicClosure
 import TauCeti.FieldTheory.Normal.FixedField
 import TauCeti.RingTheory.IntegralClosure.Transfer
 import TauCeti.RingTheory.Localization.Away.FractionRing
@@ -47,7 +49,8 @@ need to be tested.
 * `TauCeti.Ring.IsN1 R`: the domain `R` is N-1.
 * `TauCeti.Ring.IsJapanese R`: the domain `R` is Japanese (N-2).
 * `TauCeti.Ring.IsJapanese.finite_integralClosure`: the defining property of a Japanese ring for
-  an arbitrary model `K` of its fraction field and a finite extension `L` of `K` in any universe.
+  an arbitrary model `K` of its fraction field and a finitely generated, possibly transcendental,
+  field extension `L` of `K` in any universe.
 * `TauCeti.Ring.IsN1.of_isIntegrallyClosed`: an integrally closed ring is N-1.
 * `TauCeti.Ring.IsJapanese.of_field`: a field is Japanese.
 * `TauCeti.Ring.IsJapanese.of_isIntegrallyClosed`: a Noetherian integrally closed domain with
@@ -156,12 +159,12 @@ namespace IsJapanese
 
 variable [IsDomain R]
 
-/-- The defining property of a Japanese domain `R`, for an arbitrary model `K` of the fraction
-field and a finite extension `L` of `K` in an arbitrary universe: the integral closure of `R` in
-`L` is a finite `R`-module. -/
-theorem finite_integralClosure [IsJapanese R] (K : Type v) (L : Type w) [Field K] [Field L]
-    [Algebra R K] [IsFractionRing R K] [Algebra K L] [Algebra R L] [IsScalarTower R K L]
-    [FiniteDimensional K L] : Module.Finite R (integralClosure R L) := by
+/-- The case of `finite_integralClosure` where `L` is a finite extension of `K`: the integral
+closure of the Japanese domain `R` in `L` is a finite `R`-module. -/
+private theorem finite_integralClosure_of_finiteDimensional [IsJapanese R] (K : Type v)
+    (L : Type w) [Field K] [Field L] [Algebra R K] [IsFractionRing R K] [Algebra K L]
+    [Algebra R L] [IsScalarTower R K L] [FiniteDimensional K L] :
+    Module.Finite R (integralClosure R L) := by
   -- Replace `L` by an isomorphic copy `L'` in the universe of `R`, viewed as an extension of
   -- `FractionRing R` through the isomorphism `FractionRing R ≃ K`.
   let e : FractionRing R ≃ₐ[R] K := FractionRing.algEquiv R K
@@ -183,6 +186,21 @@ theorem finite_integralClosure [IsJapanese R] (K : Type v) (L : Type w) [Field K
   have : FiniteDimensional (FractionRing R) L' := Module.Finite.trans K L'
   have := finite_integralClosure_fractionRing (R := R) L'
   exact .equiv (Shrink.algEquiv R L).mapIntegralClosure.toLinearEquiv
+
+/-- The defining property of a Japanese domain `R`, for an arbitrary model `K` of the fraction
+field and a finitely generated field extension `L` of `K`, transcendental or not, in an arbitrary
+universe: the integral closure of `R` in `L` is a finite `R`-module. -/
+theorem finite_integralClosure [IsJapanese R] (K : Type v) (L : Type w)
+    [Field K] [Field L] [Algebra R K] [IsFractionRing R K] [Algebra K L] [Algebra R L]
+    [IsScalarTower R K L] [Algebra.EssFiniteType K L] :
+    Module.Finite R (integralClosure R L) := by
+  -- The elements of `L` integral over `R` are algebraic over `K`, so they lie in the relative
+  -- algebraic closure of `K` in `L`, a finite extension of `K`.
+  have := finite_integralClosure_of_finiteDimensional (R := R) K (algebraicClosure K L)
+  let i : algebraicClosure K L →ₐ[R] L := (algebraicClosure K L).val.restrictScalars R
+  refine .of_surjective i.mapIntegralClosure.toLinearMap fun ⟨y, hy⟩ ↦ ?_
+  have hyA : y ∈ algebraicClosure K L := mem_algebraicClosure_iff'.mpr (hy.tower_top (A := K))
+  exact ⟨⟨⟨y, hyA⟩, (isIntegral_algHom_iff i Subtype.val_injective).mp hy⟩, rfl⟩
 
 /-- A domain `R` is Japanese as soon as its integral closure in every finite extension of some
 model `K` of its fraction field, in the universe of `R`, is a finite `R`-module. -/
