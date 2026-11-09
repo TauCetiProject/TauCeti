@@ -31,11 +31,11 @@ PseudoholomorphicCurveAnalysis roadmap (McDuff–Salamon, §B.4).
   lower bound `p/(p-1) < q` cannot be relaxed to `≤`.
 * `TauCeti.crOperator_differentiated_system`: for `C²` `ξ`, `C¹` `J, S` and
   `η = ∂_s ξ + J ∂_t ξ + S ξ`, the pair `Ξ = (∂_s ξ, ∂_t ξ)` solves
-  `∂_s Ξ + J̃ ∂_t Ξ + S̃ Ξ = (∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)` with `J̃ = diag(J, J)` and
-  `S̃ = [[S, ∂_s J], [0, S + ∂_t J]]`.
-* `TauCeti.prodMap_mul_self_eq_neg_one`: `J̃² = -1` whenever `J² = -1`.
+  `∂_s Ξ + J₂ ∂_t Ξ + S₂ Ξ = (∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)` with `J₂ = diag(J, J)` and
+  `S₂ = [[S, ∂_s J], [0, S + ∂_t J]]`.
+* `TauCeti.prodMap_mul_self_eq_neg_one`: `J₂² = -1` whenever `J² = -1`.
 * `TauCeti.crOperator_differentiated_system_diag_ne`: for a non-constant complex structure `J`
-  on `ℝ²`, the plausible wrong coefficient `S̃ = diag(S, S)` gives a false equation.
+  on `ℝ²`, the plausible wrong coefficient `S₂ = diag(S, S)` gives a false equation.
 * `TauCeti.eLpNorm_partialS_expNegRe`: for `J = i` and `S = m`, the function `ξ = e^{-m s}`
   solves `D ξ = 0` and `‖∂_s ξ‖_{L^q} = m ‖ξ‖_{L^q}` for every measure, in particular on every
   box `K`.
@@ -106,7 +106,7 @@ section Differentiated
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- If `J² = -1`, then `J̃ = diag(J, J)` satisfies `J̃² = -1`. -/
+/-- If `J² = -1`, then `J₂ = diag(J, J)` satisfies `J₂² = -1`. -/
 theorem prodMap_mul_self_eq_neg_one {A : V →L[ℝ] V} (hA : A * A = -1) :
     A.prodMap A * A.prodMap A = -1 := by
   have h (v : V) : A (A v) = -v := by simpa using congr($hA v)
@@ -114,8 +114,8 @@ theorem prodMap_mul_self_eq_neg_one {A : V →L[ℝ] V} (hA : A * A = -1) :
 
 /-- **The differentiated system.** For a `C²` map `ξ`, `C¹` coefficients `J, S` and
 `η = ∂_s ξ + J ∂_t ξ + S ξ`, the pair `Ξ = (∂_s ξ, ∂_t ξ)` solves
-`∂_s Ξ + J̃ ∂_t Ξ + S̃ Ξ = (∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)` with `J̃ = diag(J, J)` and
-`S̃ = [[S, ∂_s J], [0, S + ∂_t J]]`. The off-diagonal `∂_s J` and the `∂_t J` term come from
+`∂_s Ξ + J₂ ∂_t Ξ + S₂ Ξ = (∂_s η - (∂_s S) ξ, ∂_t η - (∂_t S) ξ)` with `J₂ = diag(J, J)` and
+`S₂ = [[S, ∂_s J], [0, S + ∂_t J]]`. The off-diagonal `∂_s J` and the `∂_t J` term come from
 differentiating the coefficient `J`. -/
 theorem crOperator_differentiated_system {ξ η : ℂ → V} {Ξ : ℂ → V × V} {J S : ℂ → V →L[ℝ] V}
     (hξ : ContDiff ℝ 2 ξ) (hJ : ContDiff ℝ 1 J) (hS : ContDiff ℝ 1 S)
@@ -162,10 +162,10 @@ theorem shearComplexStructure_mul_self (z : ℂ) :
   refine ContinuousLinearMap.ext fun x => Prod.ext ?_ ?_ <;>
     simp [shearComplexStructure_apply] <;> ring
 
-/-- The plausible wrong coefficient `S̃ = diag(S, S)` fails. Take the non-constant complex
+/-- The plausible wrong coefficient `S₂ = diag(S, S)` fails. Take the non-constant complex
 structure `J = TauCeti.shearComplexStructure`, `S = 0` and `ξ (s + i t) = (t, 0)`, so that
-`η = J ∂_t ξ` and `diag(S, S) = 0`. Then `∂_s Ξ + J̃ ∂_t Ξ ≠ (∂_s η, ∂_t η)` at `0`: the
-`∂_s J` entry of `S̃` cannot be dropped. -/
+`η = J ∂_t ξ` and `diag(S, S) = 0`. Then `∂_s Ξ + J₂ ∂_t Ξ ≠ (∂_s η, ∂_t η)` at `0`: the
+`∂_s J` entry of `S₂` cannot be dropped. -/
 theorem crOperator_differentiated_system_diag_ne {η : ℂ → ℝ × ℝ} {Ξ : ℂ → (ℝ × ℝ) × (ℝ × ℝ)}
     (hη : η = fun w => fderiv ℝ (fun w : ℂ => (w.im, (0 : ℝ))) w 1 +
       shearComplexStructure w (fderiv ℝ (fun w : ℂ => (w.im, (0 : ℝ))) w I))
