@@ -359,9 +359,7 @@ theorem isLagrangianImmersion_cotangentGeneratingSource_comp_coe :
       (cotangentGeneratingSource S ∘
         (Subtype.val : {x | cotangentFamilyFiberDeriv S x = 0} → V × A)) := fun z ↦
     (hι z).contMDiffAt.comp z (contMDiff_coe_cotangentFamilyCriticalSet hS hsurj z)
-  refine ⟨isImmersion_iff_forall_isImmersionAt.2 fun z ↦
-    (hsmooth.contMDiffOn.isImmersionAt_iff_injective_mfderiv isOpen_univ (Set.mem_univ z)
-      (by simp)).2 ?_, ?_, ?_⟩
+  refine ⟨hsmooth.isImmersion_of_injective_mfderiv (by simp) fun z ↦ ?_, ?_, ?_⟩
   · -- The inclusion is injective with tangent image the kernel, on which `dι_S` is injective.
     intro v w hvw
     rw [mfderiv_comp_coe_cotangentFamilyCriticalSet_apply hS hsurj z

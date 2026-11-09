@@ -29,6 +29,13 @@ continuous monoid homomorphism `φ` is continuous on total arrows, and jointly c
 parameter when `f` varies continuously (`TauCeti.ActionGroupoid.continuous_mapTotal_map`,
 `TauCeti.ActionGroupoid.continuous_uncurry_mapTotal_map`).
 
+In these coordinates, the functor `CategoryTheory.ActionCategory.map φ f` induced by a map `f`
+equivariant along a homomorphism `φ` acts on total arrows as `Prod.map φ f`
+(`TauCeti.ActionGroupoid.mapTotal_map_eq`), so it is an embedding or an open embedding on total
+arrows when `φ` and `f` both are. In particular, the inclusion
+`CategoryTheory.ActionCategory.restrict U` of the action groupoid on an invariant subset is an
+embedding on total arrows (`TauCeti.ActionGroupoid.isEmbedding_mapTotal_restrict`).
+
 ## References
 
 * I. Moerdijk and J. Mrčun, *Introduction to foliations and Lie groupoids*, Section 5.1.
@@ -232,6 +239,52 @@ theorem eventually_back_right_eq_smul (f : Quiver.Total (ActionCategory G X)) :
 end Discrete
 
 end Monoid
+
+section Map
+
+variable {G X} {N Y : Type*} [Monoid G] [Monoid N] [MulAction G X] [MulAction N Y]
+  [TopologicalSpace G] [TopologicalSpace N] [TopologicalSpace X] [TopologicalSpace Y]
+  (φ : G →* N) (f : X →ₑ[φ] Y)
+
+/-- In label-source coordinates, the functor induced by a map `f` equivariant along `φ` acts on
+total arrows as the product of `φ` and `f`. -/
+theorem mapTotal_map_eq : (map φ f).toPrefunctor.mapTotal =
+    (arrowHomeomorph N Y).symm ∘ Prod.map φ f ∘ arrowHomeomorph G X := by
+  funext ⟨_, _, g⟩
+  apply (arrowHomeomorph N Y).injective
+  simp [objEquiv]
+
+/-- The functor induced by an equivariant embedding along an embedding of monoids is an embedding
+on total arrows. -/
+theorem isEmbedding_mapTotal_map (hφ : IsEmbedding φ) (hf : IsEmbedding f) :
+    IsEmbedding (map φ f).toPrefunctor.mapTotal := by
+  rw [mapTotal_map_eq]
+  exact (arrowHomeomorph N Y).symm.isEmbedding.comp
+    ((hφ.prodMap hf).comp (arrowHomeomorph G X).isEmbedding)
+
+/-- The functor induced by an equivariant open embedding along an open embedding of monoids is an
+open embedding on total arrows. -/
+theorem isOpenEmbedding_mapTotal_map (hφ : IsOpenEmbedding φ) (hf : IsOpenEmbedding f) :
+    IsOpenEmbedding (map φ f).toPrefunctor.mapTotal := by
+  rw [mapTotal_map_eq]
+  exact (arrowHomeomorph N Y).symm.isOpenEmbedding.comp
+    ((hφ.prodMap hf).comp (arrowHomeomorph G X).isOpenEmbedding)
+
+end Map
+
+section Restrict
+
+variable {M X : Type*} [Monoid M] [MulAction M X] (U : SubMulAction M X)
+  [TopologicalSpace M] [TopologicalSpace X]
+
+/-- The inclusion of the action groupoid on an invariant subset is an embedding on total arrows.
+In label-source coordinates it is the product of the identity of `M` and the inclusion of the
+subset. -/
+theorem isEmbedding_mapTotal_restrict : IsEmbedding (restrict U).toPrefunctor.mapTotal := by
+  rw [restrict_eq_map]
+  exact isEmbedding_mapTotal_map _ _ IsEmbedding.id IsEmbedding.subtypeVal
+
+end Restrict
 
 section Group
 

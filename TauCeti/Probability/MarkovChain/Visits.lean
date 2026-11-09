@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.Lebesgue.Encard
-public import TauCeti.Probability.MarkovChain.StrongMarkov
+public import TauCeti.Probability.MarkovChain.StrongMarkov.Basic
 public import TauCeti.Probability.Process.SuccessiveVisits
 
 /-!
@@ -104,6 +104,24 @@ private theorem setOf_successiveVisit_succ_ne_top (y : α) (k : ℕ) :
 variable [MeasurableSpace α] [MeasurableSingletonClass α] (ν : Measure α) (κ : Kernel α α)
   [IsMarkovKernel κ]
 
+/-- At the visit to `y` indexed by `k`, the stopped future has the law of a chain started at `y`,
+scaled by the mass of paths on which that visit exists. The first entrance is visit zero. -/
+theorem markovChainLaw_restrict_map_successiveVisit_eq_smul [IsFiniteMeasure ν]
+    (y : α) (k : ℕ) :
+    ((markovChainLaw ν κ).restrict
+      {x | successiveVisit (fun n x => x n) y k x ≠ ⊤}).map
+        (stoppedValue (fun n => (shift α)^[n]) (successiveVisit (fun n x => x n) y k)) =
+      markovChainLaw ν κ {x | successiveVisit (fun n x => x n) y k x ≠ ⊤} •
+        markovChainLaw (dirac y) κ := by
+  have hσ := Filtration.adapted_piLE.isStoppingTime_successiveVisit
+    (X := fun n (x : ℕ → α) => x n) (measurableSet_singleton y) k
+  have hlaw := markovChainLaw_restrict_map_stoppedValue_shift_iterate_eq_smul ν κ hσ
+    MeasurableSet.univ (y := y) fun x hx => by
+      obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp hx.2
+      simp only [stoppedValue, ← hn, WithTop.untopD_coe]
+      exact (successiveVisit_eq_coe_iff.mp hn.symm).1
+  simpa only [Set.univ_inter] using hlaw
+
 /-- **The visits of a chain to a state have a geometric tail.** The visit to `y` indexed by `k`,
 counting the first entrance as visit zero, exists with probability
 `ℙ_ν(H_y < ∞) · ρ_y ^ k`, where `ρ_y = ℙ_y(T_y⁺ < ∞)` is the return probability of `y`. -/
@@ -123,15 +141,9 @@ theorem markovChainLaw_setOf_successiveVisit_ne_top [IsFiniteMeasure ν] (y : α
       (measurableSet_singleton ⊤).compl.preimage
         (Filtration.adapted_piLE.isStoppingTime_hittingAfter
           (f := Filtration.piLE (X := fun _ : ℕ => α)) (measurableSet_singleton y)).measurable'
-    -- At an existing visit the chain is at `y`, so the path after it is a chain started at `y`.
-    have hlaw := markovChainLaw_restrict_map_stoppedValue_shift_iterate_eq_smul ν κ hσ
-      MeasurableSet.univ (y := y) fun x hx => by
-        obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp hx.2
-        simp only [stoppedValue, ← hn, WithTop.untopD_coe]
-        exact (successiveVisit_eq_coe_iff.mp hn.symm).1
-    simp only [Set.univ_inter] at hlaw
     rw [← setOf_successiveVisit_succ_ne_top, Set.inter_comm, ← restrict_apply (hB.preimage hθ),
-      ← map_apply hθ hB, hlaw, smul_apply, smul_eq_mul, ih, pow_succ, mul_assoc]
+      ← map_apply hθ hB, markovChainLaw_restrict_map_successiveVisit_eq_smul,
+      smul_apply, smul_eq_mul, ih, pow_succ, mul_assoc]
 
 /-- **A state that is returned to almost surely is visited infinitely often.** If the chain started
 at `y` returns to `y` almost surely, then for every finite initial measure, almost every path that

@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Differential
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Root.Subgroup
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Root.Differential
+import TauCeti.LinearAlgebra.Matrix.Polynomial
 
 /-!
 # Differentials at every root of the short-root F₄ carrier
@@ -15,7 +16,8 @@ public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Root.Differential
 Differentiate the closed additive subgroup at each of the forty-eight roots of the carrier
 generated over 𝔽₂. Its tangent line is exactly the image of the root-subgroup differential,
 and its normalized vector is nonzero over every nontrivial coefficient algebra. Its matrix
-is the Weyl conjugate of the numbered simple-root matrix. The formulas hold over arbitrary
+is also the linear coefficient of the polynomial root curve, and is the Weyl conjugate of the
+numbered simple-root matrix. The formulas hold over arbitrary
 commutative 𝔽₂-algebras, including nonreduced ones, and commute with coefficient change.
 
 The normalization uses the same selected Weyl word as the root subgroup. At positive simple
@@ -162,6 +164,44 @@ theorem tangentMatrix_rootDerivationAt (B : Type*) [CommRing B] [Algebra R B]
     ← LinearMap.comp_apply, ← derivationComp_comp, rootSubgroupCoordinateMapAt_def,
     tangentMatrix_derivationComp_weylRootSubgroupCoordinateMap,
     LinearEquiv.apply_symm_apply, one_smul]
+
+/-- The coefficient of the linear parameter in a selected root curve is its normalized
+root differential. The scalar parameter is retained over every coefficient algebra. -/
+theorem map_coeff_one_rootSubgroupPointsAt (B : Type*) [CommRing B] [Algebra R B]
+    (k : Fin F4.numRoots) (c : B) :
+    (((rootSubgroupPointsAt k (Polynomial B)
+        (Multiplicative.ofAdd (Polynomial.C c * Polynomial.X)) :
+        Matrix.GeneralLinearGroup (Fin 26) (Polynomial B)) :
+        Matrix (Fin 26) (Fin 26) (Polynomial B)).map (fun p ↦ p.coeff 1)) =
+      c • GeneralLinear.tangentMatrix 26
+        (HopfIdeal.quotientLieHom J (rootDerivationAt B k)) := by
+  let l := (F4ShortRoot.rootSubgroupPresentation k).1
+  let i := (F4ShortRoot.rootSubgroupPresentation k).2
+  have hW := congrArg Units.val (coe_pointsMap (Polynomial.CAlgHom : B →ₐ[R] Polynomial B)
+    (weylWordPoint l B))
+  have hWinv := congrArg Units.val (coe_pointsMap (Polynomial.CAlgHom : B →ₐ[R] Polynomial B)
+    ((weylWordPoint l B)⁻¹))
+  simp only [Matrix.GeneralLinearGroup.val_map_apply, AlgHom.coe_toRingHom] at hW hWinv
+  simp only [map_inv, pointsMap_weylWordPoint, Subgroup.coe_inv,
+    funext (@Polynomial.CAlgHom_apply (ZMod 2) B _ _ _)] at hW hWinv
+  rw [rootSubgroupPointsAt_def, weylRootSubgroupPoints_apply]
+  simp only [Subgroup.coe_mul, Subgroup.coe_inv, Units.val_mul]
+  rw [hW, hWinv]
+  rw [Matrix.map_coeff_mul_map_C, Matrix.map_coeff_map_C_mul]
+  have hroot : (((rootSubgroupPoints (.inl i) (Polynomial B)
+      (Multiplicative.ofAdd (Polynomial.C c * Polynomial.X)) :
+        Matrix.GeneralLinearGroup (Fin 26) (Polynomial B)) :
+        Matrix (Fin 26) (Fin 26) (Polynomial B)).map (fun p ↦ p.coeff 1)) =
+      c • (rootMatrix (.inl i)).map (Int.cast : ℤ → B) := by
+    rw [coe_rootSubgroupPoints, F4ShortRoot.coe_rootSubgroupPoints_eq]
+    ext a b
+    simp only [Matrix.map_apply, Matrix.add_apply, Matrix.smul_apply,
+      toAdd_ofAdd, smul_eq_mul]
+    simp only [mul_pow, ← Polynomial.C_pow, ← Polynomial.C_eq_intCast]
+    by_cases hab : a = b <;>
+      simp [Matrix.one_apply, hab, mul_assoc, Polynomial.coeff_one,
+        Polynomial.coeff_X_pow, -map_pow, -map_intCast]
+  rw [hroot, Matrix.mul_smul, Matrix.smul_mul, tangentMatrix_rootDerivationAt]
 
 end
 

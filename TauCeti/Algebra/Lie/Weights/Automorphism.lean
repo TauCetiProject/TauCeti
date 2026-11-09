@@ -397,23 +397,25 @@ private theorem lie_coe_rootVector_neg (y : H) : ⁅(y : L), x (-α)⁆ = -(α y
 /-- **The Weyl automorphism of a root is the coreflection on the Cartan subalgebra.** It sends
 `y ∈ H` to `y - α(y) α^∨`. -/
 theorem weylAut_apply_coe (y : H) :
-    weylAut (hx.isSl2Triple α hα) (hx.isNilpotent_ad_rootVector α)
-        (hx.isNilpotent_ad_rootVector (-α)) y = (y - α y • coroot α : H) := by
+    weylAut (hx.isSl2Triple α hα) (hx.isNilpotent_ad_rootVector α).exists_pow_apply_eq_zero
+        (hx.isNilpotent_ad_rootVector (-α)).exists_pow_apply_eq_zero y =
+      (y - α y • coroot α : H) := by
   rw [weylAut_apply_of_lie_eq_smul _ _ _ (hx.lie_coe_rootVector y)
     (hx.lie_coe_rootVector_neg y)]
   simp
 
 /-- The coreflection is an involution: the Weyl automorphism sends `y - α(y) α^∨` back to `y`. -/
 private theorem weylAut_apply_coe_sub_smul (y : H) :
-    weylAut (hx.isSl2Triple α hα) (hx.isNilpotent_ad_rootVector α)
-        (hx.isNilpotent_ad_rootVector (-α)) (y - α y • coroot α : H) = y := by
+    weylAut (hx.isSl2Triple α hα) (hx.isNilpotent_ad_rootVector α).exists_pow_apply_eq_zero
+        (hx.isNilpotent_ad_rootVector (-α)).exists_pow_apply_eq_zero
+        (y - α y • coroot α : H) = y := by
   push_cast
   exact weylAut_apply_sub_smul _ _ _ (hx.lie_coe_rootVector y) (hx.lie_coe_rootVector_neg y)
 
 /-- **The Weyl automorphism of a root normalises the Cartan subalgebra.** -/
 theorem map_weylAut_eq_self :
-    H.map (weylAut (hx.isSl2Triple α hα) (hx.isNilpotent_ad_rootVector α)
-      (hx.isNilpotent_ad_rootVector (-α)) : L →ₗ⁅K⁆ L) = H := by
+    H.map (weylAut (hx.isSl2Triple α hα) (hx.isNilpotent_ad_rootVector α).exists_pow_apply_eq_zero
+      (hx.isNilpotent_ad_rootVector (-α)).exists_pow_apply_eq_zero : L →ₗ⁅K⁆ L) = H := by
   refine le_antisymm ?_ fun y hy => ?_
   · rintro _ ⟨y, hy, rfl⟩
     exact hx.weylAut_apply_coe hα ⟨y, hy⟩ ▸ Subtype.property _
@@ -424,8 +426,10 @@ theorem map_weylAut_eq_self :
 permuted weight of `β` is `β - β(α^∨) α`. -/
 theorem weightPerm_weylAut_apply (β : Weight K H L) (y : H) :
     weightPerm _ (hx.map_weylAut_eq_self hα) β y = β y - α y * β (coroot α) := by
-  have hsymm : ((weylAut (hx.isSl2Triple α hα) (hx.isNilpotent_ad_rootVector α)
-      (hx.isNilpotent_ad_rootVector (-α))).ofSubalgebras H H (hx.map_weylAut_eq_self hα)).symm y =
+  have hsymm : ((weylAut (hx.isSl2Triple α hα)
+      (hx.isNilpotent_ad_rootVector α).exists_pow_apply_eq_zero
+      (hx.isNilpotent_ad_rootVector (-α)).exists_pow_apply_eq_zero).ofSubalgebras H H
+        (hx.map_weylAut_eq_self hα)).symm y =
       y - α y • coroot α := by
     rw [LieEquiv.symm_apply_eq]
     exact Subtype.ext (hx.weylAut_apply_coe_sub_smul hα y).symm

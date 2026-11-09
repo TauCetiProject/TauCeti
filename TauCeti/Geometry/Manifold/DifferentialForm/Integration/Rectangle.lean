@@ -142,7 +142,7 @@ private theorem rectangle_coordinate_integral (f : ℝ × ℝ → ℝ) :
         (TauCeti.measurableEmbedding_euclideanSpace_proj (ι := Fin 1) 0))
   have ht : (extChartAt ((𝓡∂ 1).prod (𝓡∂ 1)) (⊥ : Icc a b × Icc c d)).target =
       T ⁻¹' (Ico a b ×ˢ Ico c d) := by
-    rw [extChartAt_prod, PartialEquiv.prod_target, extChartAt_Icc_target,
+    rw [TauCeti.extChartAt_prod_target, extChartAt_Icc_target,
       extChartAt_Icc_target]
     ext z
     simp only [mem_prod, mem_preimage, mem_Ico, T]

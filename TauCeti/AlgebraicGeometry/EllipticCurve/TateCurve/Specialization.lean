@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 public import Mathlib.Analysis.Normed.Field.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Basic
 public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Evaluation
+import TauCeti.Analysis.Normed.Group.Ultra
 
 /-!
 # Specialization of the Tate equation
@@ -18,10 +20,17 @@ This remains true in residue characteristics `2` and `3`: the sixth coefficient 
 its integral coefficients, with no division in the target ring.
 
 For a unit parameter in the open unit ball of a complete non-archimedean normed commutative ring,
-these sums give a nonsingular Tate equation. The discriminant and the coefficient `a₆` have the
+these sums give a nonsingular Tate equation, whose affine points are the solutions of
+`y² + xy = x³ + a₄(q) x + a₆(q)`. The discriminant and the coefficient `a₆` have the
 same norm as the parameter, even when the ring norm is only submultiplicative, and the coefficient
 `a₄` has norm at most that of the parameter. The invariant `c₄` has norm one under `NormOneClass`
 (`‖1‖ = 1`). Over a field, `|j| = 1 / |q| > 1`. Point uniformisation requires further arguments.
+
+Over an ultrametric field, a solution of an equation `y² + xy = x³ + A₄x + A₆` with
+`‖A₄‖, ‖A₆‖ ≤ 1` whose first coordinate has norm above one satisfies `‖x‖ < ‖x + y‖`
+(`TauCeti.norm_lt_norm_add_of_equation`), and a line through the origin meets such a curve in at
+most one point whose first coordinate has norm above one
+(`TauCeti.eq_of_mul_eq_mul_of_one_lt_norm`).
 
 ## References
 
@@ -98,6 +107,15 @@ theorem tateCurveAt_def (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
     (tateCurveAt q hq).a₆ = tateCurveA₆ (q : K) hq := by
   simp only [tateCurveAt, WeierstrassCurve.map, tateCurveA₆]
 
+/-- A point lies on `tateCurveAt q hq` exactly when it solves the Tate equation
+`y² + xy = x³ + a₄(q) x + a₆(q)`. -/
+theorem tateCurveAt_equation_iff (q : Kˣ) (hq : ‖(q : K)‖ < 1) {x y : K} :
+    (tateCurveAt q hq).toAffine.Equation x y ↔
+      y ^ 2 + x * y = x ^ 3 + tateCurveA₄ (q : K) hq * x + tateCurveA₆ (q : K) hq := by
+  rw [WeierstrassCurve.Affine.equation_iff]
+  simp only [tateCurveAt_a₁, tateCurveAt_a₂, tateCurveAt_a₃, tateCurveAt_a₄, tateCurveAt_a₆]
+  constructor <;> intro h <;> linear_combination h
+
 /-- The discriminant of the specialized Tate equation is the evaluation of the formal
 discriminant of the Tate curve. -/
 theorem tateCurveAt_Δ (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
@@ -158,6 +176,72 @@ of that of the parameter. In particular `|j| > 1`, so `j` is not integral. -/
     ‖(tateCurveAt q hq).j‖ = ‖(q : K)‖⁻¹ := by
   rw [WeierstrassCurve.j, norm_mul, norm_pow, norm_tateCurveAt_c₄, Units.val_inv_eq_inv_val,
     WeierstrassCurve.coe_Δ', norm_inv, norm_tateCurveAt_Δ, one_pow, mul_one]
+
+end
+
+section
+
+variable {K : Type*} [NormedField K] [IsUltrametricDist K]
+
+/-! ### Solutions of the Tate equation with a pole -/
+
+/-- On a curve `y² + xy = x³ + A₄x + A₆` with `‖A₄‖, ‖A₆‖ ≤ 1`, a solution with `‖x‖ > 1` has
+`‖x‖ < ‖x + y‖`. -/
+theorem norm_lt_norm_add_of_equation {A₄ A₆ x y : K} (hA₄ : ‖A₄‖ ≤ 1) (hA₆ : ‖A₆‖ ≤ 1)
+    (hx : 1 < ‖x‖) (h : y ^ 2 + x * y = x ^ 3 + A₄ * x + A₆) : ‖x‖ < ‖x + y‖ := by
+  have hx₀ : 0 < ‖x‖ := one_pos.trans hx
+  have hx₃ : ‖x‖ < ‖x‖ ^ 3 := lt_self_pow₀ hx (by norm_num)
+  -- the right-hand side has the norm `‖x‖³` of its leading term
+  have hsmall : ‖A₄ * x + A₆‖ < ‖x ^ 3‖ := by
+    rw [norm_pow]
+    refine (IsUltrametricDist.norm_add_le_max _ _).trans_lt (max_lt ?_ ?_)
+    · rw [norm_mul]
+      nlinarith
+    · linarith
+  have hr : ‖y * (x + y)‖ = ‖x‖ ^ 3 := by
+    rw [← norm_pow, show y * (x + y) = x ^ 3 + (A₄ * x + A₆) by linear_combination h,
+      IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm hsmall.ne', max_eq_left hsmall.le]
+  -- if `‖x + y‖ ≤ ‖x‖`, then also `‖y‖ ≤ ‖x‖`, and the left-hand side is too small
+  by_contra! hle
+  have hy : ‖y‖ ≤ ‖x‖ := by
+    simpa using (IsUltrametricDist.norm_sub_le_max (x + y) x).trans (max_le hle le_rfl)
+  have h₂ : ‖x‖ ^ 3 ≤ ‖x‖ * ‖x‖ := by
+    rw [← hr, norm_mul]
+    exact mul_le_mul hy hle (norm_nonneg _) hx₀.le
+  nlinarith [mul_lt_mul_of_pos_left hx (mul_pos hx₀ hx₀)]
+
+/-- **A line through the origin meets the curve in at most one point with a pole.** If `(x, y)`
+and `(X, Y)` solve `y² + xy = x³ + A₄x + A₆` with `‖A₄‖, ‖A₆‖ ≤ 1`, both first coordinates have
+norm above one and `x Y = y X`, then the two points are equal. -/
+theorem eq_of_mul_eq_mul_of_one_lt_norm {A₄ A₆ x y X Y : K} (hA₄ : ‖A₄‖ ≤ 1)
+    (hA₆ : ‖A₆‖ ≤ 1) (hx : 1 < ‖x‖) (hX : 1 < ‖X‖) (h₁ : y ^ 2 + x * y = x ^ 3 + A₄ * x + A₆)
+    (h₂ : Y ^ 2 + X * Y = X ^ 3 + A₄ * X + A₆) (h : x * Y = y * X) : X = x ∧ Y = y := by
+  have key : (x - X) * (x ^ 2 * X ^ 2 - (A₄ * x * X + A₆ * (x + X))) = 0 := by
+    linear_combination x ^ 2 * h₂ - X ^ 2 * h₁ - (x * Y + y * X + x * X) * h
+  have hx₀ : 0 < ‖x‖ := one_pos.trans hx
+  have hX₀ : 0 < ‖X‖ := one_pos.trans hX
+  have hxX : ‖x‖ * ‖X‖ < ‖x‖ ^ 2 * ‖X‖ ^ 2 :=
+    (lt_self_pow₀ (one_lt_mul_of_lt_of_le hx hX.le) one_lt_two).trans_eq (by ring)
+  -- the cofactor of `x - X` is dominated by `x² X²`, so it does not vanish
+  have hlt : ‖A₄ * x * X + A₆ * (x + X)‖ < ‖x ^ 2 * X ^ 2‖ := by
+    rw [norm_mul, norm_pow, norm_pow]
+    refine (IsUltrametricDist.norm_add_le_max _ _).trans_lt (max_lt ?_ ?_)
+    · rw [norm_mul, norm_mul, mul_assoc]
+      exact (mul_le_of_le_one_left (mul_pos hx₀ hX₀).le hA₄).trans_lt hxX
+    · have hsum : ‖x + X‖ ≤ ‖x‖ * ‖X‖ :=
+        (IsUltrametricDist.norm_add_le_max _ _).trans
+          (max_le (le_mul_of_one_le_right hx₀.le hX.le) (le_mul_of_one_le_left hX₀.le hx.le))
+      rw [norm_mul]
+      calc ‖A₆‖ * ‖x + X‖ ≤ ‖A₆‖ * (‖x‖ * ‖X‖) := by gcongr
+        _ ≤ ‖x‖ * ‖X‖ := mul_le_of_le_one_left (mul_pos hx₀ hX₀).le hA₆
+        _ < ‖x‖ ^ 2 * ‖X‖ ^ 2 := hxX
+  have hne : x ^ 2 * X ^ 2 - (A₄ * x * X + A₆ * (x + X)) ≠ 0 := fun h₀ ↦ by
+    rw [sub_eq_zero.mp h₀] at hlt
+    exact lt_irrefl _ hlt
+  have hXx : X = x := (sub_eq_zero.mp ((mul_eq_zero.mp key).resolve_right hne)).symm
+  refine ⟨hXx, ?_⟩
+  rw [hXx, mul_comm y] at h
+  exact mul_left_cancel₀ (norm_pos_iff.mp hx₀) h
 
 end
 

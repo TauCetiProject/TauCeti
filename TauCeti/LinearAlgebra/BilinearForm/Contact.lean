@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.BilinearForm.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
@@ -26,7 +27,10 @@ scalar. Together these give the pointwise form of the rescaling law for contact 
 contact together whenever `f` vanishes nowhere.
 
 For an alternating `B`, the hyperplane `ker a` carries a nondegenerate alternating form, so it has
-even dimension and `V` has odd dimension (`Module.Dual.IsContact.odd_finrank`).
+even dimension and `V` has odd dimension (`Module.Dual.IsContact.odd_finrank`). A subspace of
+`ker a` on which `B` vanishes has at most half the dimension of `ker a`, so `2 dim W + 1 ≤ dim V`
+(`Module.Dual.IsContact.two_mul_finrank_add_one_le`). This is the dimension bound for isotropic and
+Legendrian submanifolds of a contact manifold.
 
 Contact covectors arise on hyperplanes transverse to a vector. If `B` is nondegenerate and
 alternating, `L : U → V` is injective and `z` is a vector outside the range of `L` which together
@@ -64,6 +68,8 @@ pointwise form of the Reeb vector field of a contact form and of its rescaling l
   under nonzero rescaling of `a` and of `B`.
 * `Module.Dual.IsContact.even_finrank_ker`, `Module.Dual.IsContact.odd_finrank`: the dimension
   count.
+* `Module.Dual.IsContact.two_mul_finrank_add_one_le`: the dimension bound for subspaces of `ker a`
+  on which `B` vanishes.
 * `Module.Dual.isContact_comp_compl₁₂`: the covector `B z` restricted to a hyperplane transverse to
   `z` is contact for the restriction of a nondegenerate alternating `B`.
 * `Module.Dual.isContact_comp_linearEquiv_compl₁₂_iff`,
@@ -162,6 +168,22 @@ theorem IsContact.odd_finrank [FiniteDimensional K V] (hB : B.IsAlt) (h : a.IsCo
     Odd (finrank K V) := by
   rw [← finrank_ker_add_one_of_ne_zero h.ne_zero]
   exact (h.even_finrank_ker hB).add_one
+
+/-- **Isotropic subspaces of a contact hyperplane.** If `a` is contact for `B`, then a subspace `W`
+of `ker a` on which `B` vanishes identically satisfies `2 dim W + 1 ≤ dim V`. No symmetry
+assumption on `B` is needed. -/
+theorem IsContact.two_mul_finrank_add_one_le [FiniteDimensional K V] (h : a.IsContact B)
+    {W : Submodule K V} (hWa : W ≤ LinearMap.ker a) (hWB : ∀ v ∈ W, ∀ w ∈ W, B v w = 0) :
+    2 * finrank K W + 1 ≤ finrank K V := by
+  -- `W`, read inside `ker a`, is contained in its orthogonal for the nondegenerate restriction.
+  have hle : W.comap (LinearMap.ker a).subtype ≤
+      (B.restrict (LinearMap.ker a)).orthogonal (W.comap (LinearMap.ker a).subtype) :=
+    fun v hv ↦ LinearMap.BilinForm.mem_orthogonal_iff.2 fun w hw ↦ hWB w hw v hv
+  have hW := LinearMap.BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal
+    h.nondegenerate_restrict hle
+  rw [(Submodule.comapSubtypeEquivOfLe hWa).finrank_eq] at hW
+  have hker := finrank_ker_add_one_of_ne_zero h.ne_zero
+  omega
 
 /-! ### Hyperplanes transverse to a vector -/
 

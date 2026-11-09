@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
+import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
+import TauCeti.AlgebraicGeometry.ResidueDegree
 
 /-!
 # Local dimension of schemes locally of finite type over a field
@@ -20,7 +22,9 @@ at `x` (`TauCeti.topologicalKrullDimAt`):
 * `dim {x}⁻ = trdeg_k κ(x)`;
 * `dim_x X = dim O_{X,x} + trdeg_k κ(x) = dim O_{X,x} + dim {x}⁻`;
 * `dim_x X` is the supremum of `dim Z` over the irreducible components `Z` of `X` through `x`,
-  that is, of `trdeg_k κ(ξ)` over their generic points `ξ`.
+  that is, of `trdeg_k κ(ξ)` over their generic points `ξ`;
+* for `X` irreducible, `dim O_{X,x} + dim {x}⁻ = dim X`: the codimension of `x` and the dimension
+  of its closure add up to the dimension of `X`.
 
 The first two statements are local on `X`. On an affine chart `Spec A ⟶ X` through `x`, with `A` a
 finitely generated `k`-algebra and `x` corresponding to a prime `p`, they are the affine statements
@@ -48,6 +52,10 @@ All in the namespace `TauCeti.AlgebraicGeometry`:
   supremum of the dimensions of the irreducible components through `x`.
 * `topologicalKrullDimAt_eq_iSup_toNat_trdeg_residueField`: `dim_x X` is the supremum of
   `trdeg_k κ(ξ)` over the generic points `ξ` of the irreducible components through `x`.
+* `coheight_add_height_eq_topologicalKrullDim`: for `X` irreducible, `codim x + dim {x}⁻ = dim X`.
+* `height_eq_toNat_trdeg_residueField`: the height of `x` is `trdeg_k κ(x)`.
+* `height_apply_eq_height_of_residueDegree_ne_zero`: a morphism over `k` preserves the height of
+  a point with finite residue field extension.
 
 ## References
 
@@ -161,6 +169,20 @@ theorem topologicalKrullDimAt_eq_iSup_topologicalKrullDim_irreducibleComponents 
       (isClosed_of_mem_irreducibleComponents Z hZ) U.2.1 ⟨x, hxZ, U.2.2⟩]
     exact (IsEmbedding.inclusion Set.inter_subset_right).isInducing.topologicalKrullDim_le
 
+include k in
+/-- **Dimension formula.** On an irreducible scheme `X` locally of finite type over a field, the
+codimension and the dimension of the closure of any point add up to the dimension of `X`:
+`coheight x + height x = dim X`, where `height x = dim {x}⁻` for the specialization order. -/
+theorem coheight_add_height_eq_topologicalKrullDim [IrreducibleSpace X] (x : X) :
+    (Order.coheight x : WithBot ℕ∞) + Order.height x = topologicalKrullDim X := by
+  -- `X` is its only irreducible component, so the local dimension at `x` is the dimension of `X`.
+  have hx := topologicalKrullDimAt_eq_ringKrullDim_stalk_add_topologicalKrullDim_closure k x
+  rw [topologicalKrullDimAt_eq_iSup_topologicalKrullDim_irreducibleComponents k,
+    irreducibleComponents_eq_singleton, iSup_singleton, iSup_pos (Set.mem_univ x),
+    (Homeomorph.Set.univ X).isHomeomorph.topologicalKrullDim_eq, ringKrullDim_stalk_eq_coheight,
+    ← height_eq_topologicalKrullDim_closure_singleton] at hx
+  exact hx.symm
+
 /-- **Local dimension via generic points.** On a scheme `X` locally of finite type over a field
 `k`, the local Krull dimension at a point `x` is the supremum of the transcendence degrees over `k`
 of the residue fields at the generic points `ξ` of the irreducible components of `X` through `x`.
@@ -180,6 +202,34 @@ theorem topologicalKrullDimAt_eq_iSup_toNat_trdeg_residueField (x : X) :
     rw [← topologicalKrullDim_closure_singleton_eq_toNat_trdeg_residueField k, hξ]
   · rw [← topologicalKrullDim_closure_singleton_eq_toNat_trdeg_residueField k]
     exact le_iSup₂_of_le _ hξ (le_iSup_of_le (specializes_iff_mem_closure.1 hξx) le_rfl)
+
+/-- **Height of a point.** On a scheme `X` locally of finite type over a field `k`, the height of a
+point `x` for the specialization order, that is the dimension of its closure, is the transcendence
+degree of the residue field `κ(x)` over `k`. -/
+theorem height_eq_toNat_trdeg_residueField (x : X) :
+    Order.height x = (Algebra.trdeg k (X.residueField x)).toNat := by
+  have h := (height_eq_topologicalKrullDim_closure_singleton x).trans
+    (topologicalKrullDim_closure_singleton_eq_toNat_trdeg_residueField k x)
+  exact_mod_cast h
+
+/-- **Points with finite residue extension have the same dimension.** Let `f : X ⟶ Y` be a
+morphism of schemes locally of finite type over a field `k`, and let `x ∈ X` be a point whose
+residue field `κ(x)` is finite over `κ(f x)`, that is, `f.residueDegree x ≠ 0`. Then the closures
+of `x` and of `f x` have the same dimension: both are the transcendence degree of `κ(x)` over `k`.
+-/
+theorem height_apply_eq_height_of_residueDegree_ne_zero {Y : Scheme.{u}} [Y.Over (Spec (.of k))]
+    [LocallyOfFiniteType (Y ↘ Spec (.of k))] (f : X ⟶ Y) [f.IsOver (Spec (.of k))] {x : X}
+    (hx : f.residueDegree x ≠ 0) : Order.height (f x) = Order.height x := by
+  let : Algebra (Y.residueField (f x)) (X.residueField x) := (f.residueFieldMap x).hom.toAlgebra
+  have : IsScalarTower k (Y.residueField (f x)) (X.residueField x) :=
+    IsScalarTower.of_algebraMap_eq fun c ↦ (f.residueFieldMap_algebraMap k x c).symm
+  have : Module.Finite (Y.residueField (f x)) (X.residueField x) :=
+    (residueDegree_ne_zero_iff f x).mp hx
+  -- `κ(x)` is algebraic over `κ(f x)`, so both residue fields have the same transcendence degree
+  -- over `k`.
+  rw [height_eq_toNat_trdeg_residueField k, height_eq_toNat_trdeg_residueField k,
+    ← trdeg_add_eq k (Y.residueField (f x)) (A := X.residueField x),
+    trdeg_eq_zero (R := Y.residueField (f x)), add_zero]
 
 end AlgebraicGeometry
 

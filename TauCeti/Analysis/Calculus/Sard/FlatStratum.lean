@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Topology.MetricSpace.HausdorffDimension
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Measure.Haar.Hausdorff
+import TauCeti.MeasureTheory.Measure.LocallyNull
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -37,6 +39,14 @@ The flat-stratum estimate combines with local parametrizations of the other stra
 nullity for the full locus where the first derivative vanishes, by induction on the source
 dimension.
 
+At the sharp regularity the stratum is the set where the derivatives of order `1 ≤ i ≤ k` vanish
+for a map that is only `C^k`. The Hölder bound then has exponent `k` and a constant that can be
+made arbitrarily small on small convex pieces, because `D^k f` is uniformly continuous on compact
+sets and vanishes on the stratum. Summing over a fine countable partition of a ball gives that
+the image has `finrank ℝ E / k`-dimensional Hausdorff measure zero, not merely Hausdorff dimension
+at most `finrank ℝ E / k`; this is what the borderline case `finrank ℝ E = k * finrank ℝ F` of
+the Morse--Sard theorem requires.
+
 ## Main results
 
 * `TauCeti.norm_sub_le_pow_of_iteratedFDeriv_eq_zero`: the Taylor-type estimate obtained from the
@@ -49,11 +59,18 @@ dimension.
   `TauCeti.ContDiff.addHaar_image_flatStratum_eq_zero` its global form on the whole stratum.
 * `TauCeti.ContDiff.dense_compl_image_flatStratum`: the complement of the image of the stratum is
   dense.
+* `TauCeti.hausdorffMeasure_image_eq_zero_of_iteratedFDeriv_eq_zero`: at the sharp regularity
+  `C^k`, the image of the stratum has `finrank ℝ E / k`-dimensional Hausdorff measure zero.
+* `TauCeti.addHaar_image_eq_zero_of_iteratedFDeriv_eq_zero_of_finrank_le_mul`: hence it is null
+  for additive Haar measure as soon as `finrank ℝ E ≤ k * finrank ℝ F`.
 
 ## References
 
 The proof is the first step of Morse's argument as presented in J. Milnor, *Topology from the
-Differentiable Viewpoint*, §3, and in M. Hirsch, *Differential Topology*, Chapter 3.
+Differentiable Viewpoint*, §3, and in M. Hirsch, *Differential Topology*, Chapter 3. The sharp
+Hausdorff-measure estimate is the one in A. Sard, *The measure of the critical values of
+differentiable maps*, Bull. Amer. Math. Soc. 48 (1942), 883–890; see also H. Federer,
+*Geometric Measure Theory*, 3.4.3.
 The Hausdorff-dimension proof architecture is adapted from the sibling module
 `TauCeti/Analysis/Calculus/Sard/LowDimension.lean`.
 -/
@@ -231,6 +248,169 @@ theorem ContDiff.dense_compl_image_flatStratum (hf : ContDiff ℝ (k + 1 : ℕ) 
   simpa only [ofPred_mem_eq, t] using Measure.dense_of_ae htc
 
 end Measure
+
+section SharpMeasure
+
+variable [FiniteDimensional ℝ E] [MeasurableSpace F] [BorelSpace F] {U : Set E}
+
+omit [FiniteDimensional ℝ E] in
+/-- The Hölder estimate on one piece of the partition behind
+`TauCeti.hausdorffMeasure_image_inter_ball_le`: if `T` lies in a ball of radius `δ / 2`, where `δ`
+is a modulus of uniform continuity of `D^{j+1} f` on the closed ball with tolerance `ε`, then the
+`d`-dimensional measure of the image of `s ∩ ball x₀ r ∩ T` is at most `ε ^ d` times the
+`finrank ℝ E`-dimensional measure of `ball x₀ r ∩ T`. -/
+private theorem hausdorffMeasure_image_inter_ball_inter_le [MeasurableSpace E] [BorelSpace E]
+    {j : ℕ} {x₀ c : E} {r d δ : ℝ} {ε : ℝ≥0} {T : Set E} (hU : IsOpen U)
+    (hf : ContDiffOn ℝ (j + 1 : ℕ) f U) (hKU : Metric.closedBall x₀ r ⊆ U)
+    (hzero : ∀ x ∈ s, ∀ i, 1 ≤ i → i ≤ j + 1 → iteratedFDeriv ℝ i f x = 0)
+    (hd : ((j + 1 : ℕ) : ℝ) * d = finrank ℝ E) (hd0 : 0 ≤ d)
+    (hδK : ∀ y ∈ Metric.closedBall x₀ r, ∀ x ∈ Metric.closedBall x₀ r, dist y x < δ →
+      dist (iteratedFDeriv ℝ (j + 1) f y) (iteratedFDeriv ℝ (j + 1) f x) < ε)
+    (hT : T ⊆ Metric.ball c (δ / 2)) :
+    μH[d] (f '' (s ∩ Metric.ball x₀ r ∩ T)) ≤
+      (ε : ℝ≥0∞) ^ d * μH[(finrank ℝ E : ℝ)] (Metric.ball x₀ r ∩ T) := by
+  rcases (s ∩ Metric.ball x₀ r ∩ T).eq_empty_or_nonempty with h | ⟨x₁, hx₁⟩
+  · simp [h]
+  have hhol : HolderOnWith ε ((j : ℝ≥0) + 1) f (s ∩ Metric.ball x₀ r ∩ T) := by
+    refine holderOnWith_of_iteratedFDeriv_eq_zero (V := Metric.ball x₀ r ∩ Metric.ball c (δ / 2))
+      (fun y hy ↦ hf.contDiffAt (hU.mem_nhds (hKU (Metric.ball_subset_closedBall hy.1))))
+      ((convex_ball _ _).inter (convex_ball _ _)) (fun y hy ↦ ?_)
+      (fun y hy ↦ ⟨hy.1.2, hT hy.2⟩)
+      fun x hx i hi1 hij ↦ hzero x hx.1.1 i hi1 (by omega)
+    have hdist : dist y x₁ < δ := by
+      have h1 := hy.2
+      have h2 := hT hx₁.2
+      rw [Metric.mem_ball] at h1 h2
+      calc dist y x₁ ≤ dist y c + dist x₁ c := dist_triangle_right _ _ _
+        _ < δ / 2 + δ / 2 := add_lt_add h1 h2
+        _ = δ := by ring
+    have := hδK y (Metric.ball_subset_closedBall hy.1) x₁
+      (Metric.ball_subset_closedBall hx₁.1.2) hdist
+    rw [hzero x₁ hx₁.1.1 (j + 1) (by omega) le_rfl, dist_zero_right] at this
+    exact this.le
+  have hexp : (((j : ℝ≥0) + 1 : ℝ≥0) : ℝ) * d = finrank ℝ E := by
+    rw [← hd]; push_cast; ring
+  calc μH[d] (f '' (s ∩ Metric.ball x₀ r ∩ T))
+      ≤ (ε : ℝ≥0∞) ^ d * μH[((j : ℝ≥0) + 1 : ℝ≥0) * d] (s ∩ Metric.ball x₀ r ∩ T) :=
+        hhol.hausdorffMeasure_image_le (by positivity) hd0
+    _ ≤ (ε : ℝ≥0∞) ^ d * μH[(finrank ℝ E : ℝ)] (Metric.ball x₀ r ∩ T) := by
+        rw [hexp]
+        gcongr
+        exact inter_subset_right
+
+/-- The covering estimate behind `TauCeti.hausdorffMeasure_image_eq_zero_of_iteratedFDeriv_eq_zero`.
+Let `f` be `C^{j+1}` on an open set containing the closed ball `K` of centre `x₀` and radius `r`,
+and let every derivative of order `1 ≤ i ≤ j + 1` vanish on `s`. For every `ε > 0`, the
+`d`-dimensional measure of the image of `s ∩ ball x₀ r`, where `(j + 1) * d = finrank ℝ E`, is at
+most `ε ^ d` times the `finrank ℝ E`-dimensional measure of the ball.
+
+Since `D^{j+1} f` is uniformly continuous on `K` and vanishes on `s`, it is smaller than `ε` on
+every convex piece of `K` of small diameter meeting `s`, so `f` is Hölder on `s` there with
+exponent `j + 1` and constant `ε`; a countable disjoint partition of the ball into such pieces
+sums these bounds. -/
+private theorem hausdorffMeasure_image_inter_ball_le [MeasurableSpace E] [BorelSpace E]
+    {j : ℕ} {x₀ : E} {r d : ℝ} {ε : ℝ≥0} (hU : IsOpen U)
+    (hf : ContDiffOn ℝ (j + 1 : ℕ) f U) (hKU : Metric.closedBall x₀ r ⊆ U)
+    (hzero : ∀ x ∈ s, ∀ i, 1 ≤ i → i ≤ j + 1 → iteratedFDeriv ℝ i f x = 0)
+    (hd : ((j + 1 : ℕ) : ℝ) * d = finrank ℝ E) (hd0 : 0 ≤ d) (hε : 0 < ε) :
+    μH[d] (f '' (s ∩ Metric.ball x₀ r)) ≤
+      (ε : ℝ≥0∞) ^ d * μH[(finrank ℝ E : ℝ)] (Metric.ball x₀ r) := by
+  set B : Set E := Metric.ball x₀ r
+  set K : Set E := Metric.closedBall x₀ r
+  have hBK : B ⊆ K := Metric.ball_subset_closedBall
+  have hcont : ContinuousOn (iteratedFDeriv ℝ (j + 1) f) U :=
+    (hf.continuousOn_iteratedFDerivWithin le_rfl hU.uniqueDiffOn).congr
+      (iteratedFDerivWithin_of_isOpen (𝕜 := ℝ) (f := f) (j + 1) hU).symm
+  obtain ⟨δ, hδ, hδK⟩ := Metric.uniformContinuousOn_iff.1
+    ((isCompact_closedBall x₀ r).uniformContinuousOn_of_continuous (hcont.mono hKU)) ε hε
+  -- A countable disjoint measurable partition of `E` into pieces of diameter less than `δ`.
+  obtain ⟨c, hc⟩ := TopologicalSpace.exists_dense_seq E
+  set T : ℕ → Set E := disjointed fun n ↦ Metric.ball (c n) (δ / 2)
+  have hTsub : ∀ n, T n ⊆ Metric.ball (c n) (δ / 2) := disjointed_subset _
+  have hTunion : ⋃ n, T n = univ := by
+    rw [iUnion_disjointed, eq_univ_iff_forall]
+    intro y
+    obtain ⟨n, hn⟩ := Metric.denseRange_iff.1 hc y (δ / 2) (by linarith)
+    exact mem_iUnion.2 ⟨n, hn⟩
+  calc μH[d] (f '' (s ∩ B))
+      ≤ μH[d] (⋃ n, f '' (s ∩ B ∩ T n)) := by
+        refine measure_mono ?_
+        rw [← image_iUnion, ← inter_iUnion, hTunion, inter_univ]
+    _ ≤ ∑' n, μH[d] (f '' (s ∩ B ∩ T n)) := measure_iUnion_le _
+    _ ≤ ∑' n, (ε : ℝ≥0∞) ^ d * μH[(finrank ℝ E : ℝ)] (B ∩ T n) := tsum_le_tsum fun n ↦
+      hausdorffMeasure_image_inter_ball_inter_le hU hf hKU hzero hd hd0 hδK (hTsub n)
+    _ = (ε : ℝ≥0∞) ^ d * μH[(finrank ℝ E : ℝ)] B := by
+        rw [ENNReal.tsum_mul_left, ← measure_iUnion
+          (fun m n hmn ↦ ((disjoint_disjointed _ hmn).mono inter_subset_right inter_subset_right))
+          (fun n ↦ measurableSet_ball.inter (MeasurableSet.disjointed (fun _ ↦ measurableSet_ball)
+            n)), ← inter_iUnion, hTunion, inter_univ]
+
+/-- **Sard's lemma on the flat stratum, in Hausdorff measure.** Let `f` be `C^k` on an open set
+`U` of a nontrivial finite-dimensional real normed space, with `0 < k`, and let `s ⊆ U` be a set
+at each point of which every iterated derivative of order `1 ≤ i ≤ k` vanishes. Then `f '' s` has
+`finrank ℝ E / k`-dimensional Hausdorff measure zero. -/
+theorem hausdorffMeasure_image_eq_zero_of_iteratedFDeriv_eq_zero [Nontrivial E] (hU : IsOpen U)
+    (hf : ContDiffOn ℝ k f U) (hsU : s ⊆ U) (hk : 0 < k)
+    (hzero : ∀ x ∈ s, ∀ i, 1 ≤ i → i ≤ k → iteratedFDeriv ℝ i f x = 0) :
+    μH[finrank ℝ E / k] (f '' s) = 0 := by
+  borelize E
+  obtain ⟨j, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
+  set d : ℝ := finrank ℝ E / (j + 1 : ℕ) with hd
+  have hdpos : 0 < d := by
+    have : 0 < finrank ℝ E := finrank_pos
+    positivity
+  have hdmul : ((j + 1 : ℕ) : ℝ) * d = finrank ℝ E := by
+    rw [hd]; field_simp
+  -- Near each point of `s`, the image of `s` meets a ball in a set whose measure is at most
+  -- `ε ^ d` times that of the ball, for every `ε > 0`.
+  refine measure_image_null_of_locally_null (HereditarilyLindelofSpace.isLindelof _)
+    fun x₀ hx₀ ↦ ?_
+  obtain ⟨r, hr, hrU⟩ := Metric.isOpen_iff.1 hU x₀ (hsU hx₀)
+  have hKU : Metric.closedBall x₀ (r / 2) ⊆ U :=
+    (Metric.closedBall_subset_ball (by linarith)).trans hrU
+  refine ⟨s ∩ Metric.ball x₀ (r / 2),
+    inter_mem_nhdsWithin s (Metric.ball_mem_nhds x₀ (by linarith)), ?_⟩
+  have hM : μH[(finrank ℝ E : ℝ)] (Metric.ball x₀ (r / 2)) ≠ ∞ :=
+    ((isCompact_closedBall x₀ (r / 2)).measure_lt_top.trans_le'
+      (measure_mono Metric.ball_subset_closedBall)).ne
+  -- Letting `ε` tend to zero.
+  have htend : Filter.Tendsto
+      (fun ε : ℝ≥0 ↦ (ε : ℝ≥0∞) ^ d * μH[(finrank ℝ E : ℝ)] (Metric.ball x₀ (r / 2)))
+      (𝓝[>] 0) (𝓝 0) := by
+    have h0 : Filter.Tendsto (fun ε : ℝ≥0 ↦ (ε : ℝ≥0∞) ^ d) (𝓝 0) (𝓝 0) := by
+      have := ((ENNReal.continuous_rpow_const (y := d)).comp ENNReal.continuous_coe).tendsto 0
+      simpa [Function.comp_def, ENNReal.zero_rpow_of_pos hdpos] using this
+    simpa using (ENNReal.Tendsto.mul_const h0 (Or.inr hM)).mono_left nhdsWithin_le_nhds
+  exact le_antisymm (ge_of_tendsto htend (eventually_nhdsWithin_of_forall fun ε hε ↦
+    hausdorffMeasure_image_inter_ball_le hU hf hKU hzero hdmul hdpos.le hε)) bot_le
+
+/-- **Sard's lemma on the flat stratum at the sharp regularity.** Let `f` be `C^k` on an open
+set `U` of a finite-dimensional real normed space, and let `s ⊆ U` be a set at each point of which
+every iterated derivative of order `1 ≤ i ≤ k` vanishes. If `finrank ℝ E ≤ k * finrank ℝ F` and
+the target is nontrivial, then `f '' s` has additive Haar measure zero.
+
+Compared with `TauCeti.addHaar_image_eq_zero_of_iteratedFDeriv_eq_zero`, the regularity drops from
+`C^{k+1}` to `C^k`, while the dimension hypothesis tightens from
+`finrank ℝ E < (k + 1) * finrank ℝ F` to `finrank ℝ E ≤ k * finrank ℝ F`. -/
+theorem addHaar_image_eq_zero_of_iteratedFDeriv_eq_zero_of_finrank_le_mul
+    [FiniteDimensional ℝ F] [Nontrivial F] (ν : Measure F) [IsAddHaarMeasure ν]
+    (hU : IsOpen U) (hf : ContDiffOn ℝ k f U) (hsU : s ⊆ U)
+    (hzero : ∀ x ∈ s, ∀ i, 1 ≤ i → i ≤ k → iteratedFDeriv ℝ i f x = 0)
+    (hdim : finrank ℝ E ≤ k * finrank ℝ F) :
+    ν (f '' s) = 0 := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · exact (Set.Subsingleton.image (fun x _ y _ ↦ Subsingleton.elim x y) f).measure_zero ν
+  have hE0 : 0 < finrank ℝ E := finrank_pos
+  have hk : 0 < k := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hdim; omega
+  have hle : (finrank ℝ E : ℝ) / k ≤ finrank ℝ F := by
+    rw [div_le_iff₀ (by exact_mod_cast hk)]
+    exact_mod_cast (by rwa [mul_comm] at hdim : finrank ℝ E ≤ finrank ℝ F * k)
+  have hnull : μH[(finrank ℝ F : ℝ)] (f '' s) = 0 :=
+    le_antisymm ((hausdorffMeasure_mono hle _).trans
+      (hausdorffMeasure_image_eq_zero_of_iteratedFDeriv_eq_zero hU hf hsU hk hzero).le) bot_le
+  exact Measure.absolutelyContinuous_isAddHaarMeasure ν _ hnull
+
+end SharpMeasure
 
 /-- A point at which the first derivative vanishes is a critical point, as long as the target is
 nontrivial. In particular the flat stratum of `f` for `1 ≤ k` consists of critical points, so

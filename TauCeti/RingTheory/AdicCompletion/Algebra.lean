@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.RingTheory.AdicCompletion.Completeness
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 
@@ -19,6 +20,9 @@ the `I R̂`-adic filtration of `R̂` with the kernels of the projections, so tha
 preimage of `I ^ n R̂`, and every element of `R̂` is congruent modulo `I ^ n R̂` to the image of an
 element of `R`, so the image of `R` is dense in `R̂` for the `I R̂`-adic topology.
 
+If `R` is Hausdorff for the `I`-adic topology, then `R → R̂` is injective, so `R̂` has the
+exponential characteristic of `R`.
+
 ## Main results
 
 * `AdicCompletion.ker_evalₐ_eq_map_pow`: the kernel of `R̂ → R ⧸ I ^ n` is `I ^ n R̂`.
@@ -28,8 +32,12 @@ element of `R`, so the image of `R` is dense in `R̂` for the `I R̂`-adic topol
   only if `x ∈ I ^ n`.
 * `AdicCompletion.exists_sub_algebraMap_mem_map_pow`: every element of `R̂` is congruent
   modulo `I ^ n R̂` to the image of an element of `R`.
+* `AdicCompletion.quotientMap_algebraMap_bijective`: the map `R ⧸ I ^ n → R̂ ⧸ (I R̂) ^ n` induced
+  by `R → R̂` is bijective.
 * `AdicCompletion.denseRange_algebraMap`: the image of `R` is dense in `R̂` for the `I R̂`-adic
   topology.
+* `AdicCompletion.expChar`: the `I`-adic completion of an `I`-adically Hausdorff ring has the
+  exponential characteristic of the ring.
 
 ## References
 
@@ -85,6 +93,19 @@ theorem exists_sub_algebraMap_mem_map_pow (fg : I.FG) (n : ℕ) (x : AdicComplet
   rw [← ker_evalₐ_eq_map_pow fg, RingHom.mem_ker, map_sub, ← hy]
   exact sub_eq_zero.mpr (evalₐ_of I n y).symm
 
+/-- For a finitely generated ideal `I`, the map `R ⧸ I ^ n → R̂ ⧸ (I R̂) ^ n` induced by the
+canonical map `R → R̂` is bijective: `R` and its `I`-adic completion have the same reductions. -/
+theorem quotientMap_algebraMap_bijective (fg : I.FG) (n : ℕ)
+    {H : I ^ n ≤ ((I.map (algebraMap R (AdicCompletion I R))) ^ n).comap
+      (algebraMap R (AdicCompletion I R))} :
+    Function.Bijective (Ideal.quotientMap _ (algebraMap R (AdicCompletion I R)) H) := by
+  refine ⟨Ideal.quotientMap_injective' fun x hx ↦ ?_, fun x ↦ ?_⟩
+  · rwa [Ideal.mem_comap, ← Ideal.map_pow, algebraMap_mem_map_pow_iff fg] at hx
+  · obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+    obtain ⟨y, hy⟩ := exists_sub_algebraMap_mem_map_pow fg n x
+    rw [Ideal.map_pow] at hy
+    exact ⟨Ideal.Quotient.mk _ y, (Ideal.Quotient.eq.mpr hy).symm⟩
+
 open Topology in
 /-- For a finitely generated ideal `I`, the image of `R` is dense in the adic completion for the
 adic topology of the extension of `I`. -/
@@ -97,5 +118,11 @@ theorem denseRange_algebraMap [TopologicalSpace (AdicCompletion I R)] (fg : I.FG
   rw [Ideal.map_pow] at hy
   refine ⟨_, hn ⟨_, neg_mem hy, ?_⟩, y, rfl⟩
   simp only [neg_sub, add_sub_cancel]
+
+/-- The completion of an `I`-adically Hausdorff ring has the exponential characteristic of the
+ring, since the ring embeds into it. -/
+instance expChar [IsHausdorff I R] (p : ℕ) [ExpChar R p] :
+    ExpChar (AdicCompletion I R) p :=
+  expChar_of_injective_algebraMap (of_injective I R) p
 
 end AdicCompletion

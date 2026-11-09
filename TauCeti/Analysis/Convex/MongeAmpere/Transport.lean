@@ -246,10 +246,8 @@ theorem mongeAmpereMeasure_withDensity_eq_of_hasLaw (hf : Convex ℝ {p : E × �
   have hTT' : T =ᵐ[μ] T' := hT.aemeasurable.ae_eq_mk
   have hlaw : HasLaw T' (ν.withDensity h) (μ.withDensity fun x => h (T' x)) := by
     refine ⟨hT.aemeasurable.measurable_mk.aemeasurable,
-      map_withDensity_eq_withDensity hT.aemeasurable.measurable_mk measurable_one hh ?_
-        (ae_of_all _ fun x => one_mul _)⟩
-    rw [withDensity_one]
-    exact (hT.congr hTT'.symm).map_eq
+      (map_withDensity_comp hT.aemeasurable.measurable_mk hh).trans
+        (by rw [(hT.congr hTT'.symm).map_eq])⟩
   have hac := withDensity_absolutelyContinuous μ fun x => h (T' x)
   have hcongr : (μ.withDensity fun x => h (T x)) = μ.withDensity fun x => h (T' x) :=
     withDensity_congr_ae (by filter_upwards [hTT'] with x hx; rw [hx])

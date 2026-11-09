@@ -65,6 +65,14 @@ theorem resCoindAdjunction_counit_app_hom_apply
     ((Rep.resCoindAdjunction.{t} k φ).counit.app A).hom f = f.1 1 :=
   rfl
 
+/-- The inverse restriction–coinduction reciprocity evaluates the coinduced function at `1`. -/
+theorem resCoindHomEquiv_symm_hom_apply {k : Type u} {G : Type v} {H : Type w}
+    [CommRing k] [Monoid G] [Monoid H] (φ : G →* H)
+    (B : Rep.{max w t} k H) (A : Rep.{max w t} k G)
+    (f : B ⟶ coind φ A) (b : B) :
+    ((resCoindHomEquiv.{t, u, v, w} φ B A).symm f).hom b = (f.hom b).1 1 :=
+  rfl
+
 variable {G : Type v} [Group G]
 
 /-- Subgroup coinduction preserves homology of short complexes of representations. -/
@@ -221,21 +229,36 @@ variable {G P ι : Type*} [Group G] [MulAction G P] {p : ι → P} {M : ι → T
 /-- **Coinduction from a stabilizer.** Let `B` be a representation of `G` that decomposes as a
 product `∏_{i : ι} M i` on which `g` carries the factor at `i` to the factor at `j` along
 `T g : M i ≃ M j` whenever `p j = g • p i`, and let `A` be a representation of the stabilizer of
-`p w` whose underlying type is identified with `M w`, the action of the stabilizer being given by
-`T`. If `G` permutes the factors transitively, every element of `G` carries some factor to `w`,
-and the transport maps compose, then the map `B ⟶ Coind A` adjoint to the projection
-`f : B ⟶ A` to the factor at `w` is bijective. -/
+`p w` whose underlying type is identified with `M w` compatibly with a morphism `f : B ⟶ A` that is
+the projection to the factor at `w`. If `G` permutes the factors transitively and every element
+of `G` carries some factor to `w`, then the map `B ⟶ Coind A` adjoint to `f` is bijective. The
+composition of the transport maps and the stabilizer action on `A` are then forced by `e`. -/
 theorem resCoindToHom_bijective_of_transport {k : Type*} [CommRing k] {B : Rep k G}
     {A : Rep k (MulAction.stabilizer G (p w))}
     (f : Rep.res (MulAction.stabilizer G (p w)).subtype B ⟶ A) (e : B ≃ ∀ i, M i)
     (he : ∀ (g : G) (x : B) {i j : ι} (h : p j = g • p i), e (B.ρ g x) j = T g h (e x i))
     (eA : A ≃ M w) (hf : ∀ x, eA (f.hom x) = e x w)
-    (hA : ∀ (d : MulAction.stabilizer G (p w)) (a : A),
-      eA (A.ρ d a) = T d (MulAction.mem_stabilizer_iff.mp d.2).symm (eA a))
-    (hT : ∀ (g g' : G) {i j k : ι} (h : p j = g • p i) (h' : p k = g' • p j) (a : M i),
-      T g' h' (T g h a) = T (g' * g) (by rw [h', h, mul_smul]) a)
     (htrans : ∀ i, ∃ g : G, p w = g • p i) (hsurj : ∀ g : G, ∃ i, p w = g • p i) :
     Function.Bijective (Rep.resCoindToHom _ B A f).hom := by
+  classical
+  -- every element of a factor is a component of some element of `B`
+  have hcomp : ∀ (i : ι) (a : M i), ∃ x : B, e x i = a := fun i a ↦
+    ⟨e.symm (Function.update (e 0) i a), by simp⟩
+  have hT : ∀ (g g' : G) {i j k : ι} (h : p j = g • p i) (h' : p k = g' • p j) (a : M i),
+      T g' h' (T g h a) = T (g' * g) (by rw [h', h, mul_smul]) a := by
+    intro g g' i j k h h' a
+    obtain ⟨x, rfl⟩ := hcomp i a
+    rw [← he g x h, ← he g' _ h', ← he (g' * g) x _, map_mul]
+    rfl
+  have hA : ∀ (d : MulAction.stabilizer G (p w)) (a : A),
+      eA (A.ρ d a) = T d (MulAction.mem_stabilizer_iff.mp d.2).symm (eA a) := by
+    intro d a
+    obtain ⟨x, hx⟩ := hcomp w (eA a)
+    obtain rfl : f.hom x = a := eA.injective ((hf x).trans hx)
+    have := Rep.hom_comm_apply f d x
+    simp only [Rep.res_obj_ρ] at this
+    rw [← this, hf, hf, MonoidHom.comp_apply, Subgroup.subtype_apply,
+      he d.1 x (MulAction.mem_stabilizer_iff.mp d.2).symm]
   refine ⟨fun x x' h ↦ e.eq_of_forall_transport_component_eq T he htrans fun g ↦ ?_,
     fun F ↦ ?_⟩
   · rw [← hf, ← hf]

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Abelianization.Defs
+public import Mathlib.GroupTheory.QuotientGroup.Basic
 
 /-!
 # Elementary facts about the abelianization
@@ -16,6 +17,9 @@ and written additively, the abelianization map sends products to sums in either 
 the commutator subgroup (`Abelianization.of_eq_one_iff`), so the abelianization map of a
 commutative group is injective (`Abelianization.of_injective`), and isomorphisms out of an
 abelianization are determined by their values on classes (`Abelianization.mulEquiv_ext`).
+Every element of the additive abelianization is the class of a group element
+(`Abelianization.exists_eq_ofMul_of`). The abelianization of a product of two groups is the
+product of their abelianizations (`Abelianization.prodMulEquiv`).
 -/
 
 public section
@@ -42,6 +46,11 @@ subgroup. -/
 theorem of_eq_one_iff {g : G} : of g = 1 ↔ g ∈ commutator G := by
   rw [← MonoidHom.mem_ker, ker_of]
 
+/-- Written additively, every element of the abelianization is the class of a group element. -/
+theorem exists_eq_ofMul_of (x : Additive (Abelianization G)) : ∃ g : G, x = .ofMul (of g) := by
+  obtain ⟨g, hg⟩ : ∃ g, of g = x.toMul := QuotientGroup.mk_surjective x.toMul
+  exact ⟨g, by rw [hg, ofMul_toMul]⟩
+
 /-- The abelianization map of a commutative group is injective. -/
 theorem of_injective [IsMulCommutative G] : Function.Injective (of (G := G)) :=
   (MonoidHom.ker_eq_bot_iff _).1 (by rw [ker_of, commutator_eq_bot])
@@ -50,5 +59,18 @@ theorem of_injective [IsMulCommutative G] : Function.Injective (of (G := G)) :=
 theorem mulEquiv_ext {M : Type*} [Monoid M] {e e' : Abelianization G ≃* M}
     (h : ∀ x : G, e (of x) = e' (of x)) : e = e' :=
   MulEquiv.toMonoidHom_injective (hom_ext _ _ (MonoidHom.ext h))
+
+/-- **The abelianization of a product** of two groups is the product of their abelianizations:
+the class of `(g, h)` corresponds to the pair of the classes of `g` and `h`. -/
+def prodMulEquiv (H : Type*) [Group H] :
+    Abelianization (G × H) ≃* Abelianization G × Abelianization H :=
+  (QuotientGroup.quotientMulEquivOfEq (by
+    rw [commutator_def, commutator_def, commutator_def, ← Subgroup.top_prod_top,
+      Subgroup.commutator_prod_prod])).trans (QuotientGroup.prodMulEquiv _ _)
+
+@[simp]
+theorem prodMulEquiv_of (H : Type*) [Group H] (gh : G × H) :
+    prodMulEquiv H (of gh) = (of gh.1, of gh.2) :=
+  (rfl)
 
 end Abelianization

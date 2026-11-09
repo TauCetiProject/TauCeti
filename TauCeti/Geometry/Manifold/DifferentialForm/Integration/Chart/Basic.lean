@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Function.L1Space.Integrable
 public import TauCeti.Geometry.Manifold.DifferentialForm.Chart
-public import TauCeti.Geometry.Manifold.MFDeriv.Chart
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Support
 public import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
@@ -81,6 +81,19 @@ theorem signedInChartAt_apply_of_mem_source (φ : RoughForm I M ℝ k)
           {x : M // x ∈ (extChartAt I α).source}) = ⟨x, hx⟩ :=
     Subtype.ext ((extChartAt I α).left_inv hx)
   rw [he]
+
+/-- Signed coefficients only read the values of the form: two forms that agree on a subset of a
+chart source have the same signed coefficients on its coordinate image. -/
+theorem eqOn_signedInChartAt_image {φ ψ : RoughForm I M ℝ k} {s : Set M} (h : ∀ x ∈ s, φ x = ψ x)
+    (b : Module.Basis (Fin k) ℝ E) (α : M) (σ : {x : M // x ∈ (extChartAt I α).source} → ℤˣ)
+    (hs : s ⊆ (extChartAt I α).source) :
+    EqOn (φ.signedInChartAt b α σ) (ψ.signedInChartAt b α σ) ((extChartAt I α) '' s) := by
+  rintro _ ⟨x, hx, rfl⟩
+  have hc : φ.inChartAt α (extChartAt I α x) = ψ.inChartAt α (extChartAt I α x) := by
+    ext v
+    rw [inChartAt_apply, inChartAt_apply, (extChartAt I α).left_inv (hs hx), h x hx]
+  rw [signedInChartAt_apply_of_mem_source _ _ _ _ (hs hx),
+    signedInChartAt_apply_of_mem_source _ _ _ _ (hs hx), hc]
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 

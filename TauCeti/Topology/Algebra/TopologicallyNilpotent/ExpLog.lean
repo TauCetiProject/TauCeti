@@ -65,10 +65,13 @@ logarithm series termwise, and the geometric series for `u⁻¹` gives `u * D (l
 * `IsTopologicallyNilpotent.exp_add`, `IsTopologicallyNilpotent.log_mul`: the functional
   equations.
 * `IsTopologicallyNilpotent.hasSum_log_one_sub`: `log (1 - a) = -∑ aⁿ⁺¹ / (n + 1)`.
+* `IsTopologicallyNilpotent.hasSum_log_prod_one_sub`: for a finite product `∏_μ (1 - μ a)`, its
+  logarithm is `-∑ₖ (∑_μ μᵏ⁺¹) aᵏ⁺¹ / (k + 1)`.
 * `HasSum.exp_of_mem_ideal`: inside an ideal of topologically nilpotent elements, the exponential
   turns convergent sums into convergent products.
 * `IsTopologicallyNilpotent.mul_derivation_log`: a continuous derivation `D` satisfies
   `u * D (log u) = D u`.
+* `IsTopologicallyNilpotent.map_log`: continuous ring homomorphisms commute with the logarithm.
 -/
 
 public section
@@ -224,6 +227,23 @@ theorem hasSum_log_one_sub (ha : IsTopologicallyNilpotent a) :
     simp only [smul_smul, hsign, neg_smul]
   · simp
 
+/-- For a multiset `s` of scalars, the logarithm of `∏_{μ ∈ s} (1 - μ a)` is
+`-∑ₖ (∑_{μ ∈ s} μᵏ⁺¹) aᵏ⁺¹ / (k + 1)`. -/
+theorem hasSum_log_prod_one_sub {K : Type*} [CommRing K] [Algebra K S]
+    (ha : IsTopologicallyNilpotent a) (s : Multiset K) :
+    HasSum (fun k : ℕ ↦ -(((k + 1 : ℕ) : ℚ)⁻¹ • ((s.map (· ^ (k + 1))).sum • a ^ (k + 1))))
+      (NormedSpace.log (s.map fun μ ↦ 1 - algebraMap K S μ * a).prod) := by
+  induction s using Multiset.induction_on with
+  | empty => simp [NormedSpace.log_one]
+  | cons μ s ih =>
+    have hμ : IsTopologicallyNilpotent (algebraMap K S μ * a) := ha.mul_left _
+    have h1 : IsTopologicallyNilpotent ((1 - algebraMap K S μ * a) - 1) := by simpa using hμ.neg
+    rw [Multiset.map_cons, Multiset.prod_cons, h1.log_mul (ha.prod_one_sub_sub_one s)]
+    convert hμ.hasSum_log_one_sub.add ih using 1
+    funext k
+    simp only [Multiset.map_cons, Multiset.sum_cons, ← Algebra.smul_def, smul_pow,
+      add_smul, smul_add, neg_add]
+
 /-- A continuous derivation `D` differentiates the logarithm as `D (log u) = u⁻¹ * D u`, in the
 form `u * D (log u) = D u`, when `u - 1` is topologically nilpotent. -/
 theorem mul_derivation_log {R : Type*} [CommSemiring R] [Algebra R S] (D : Derivation R S S)
@@ -251,6 +271,18 @@ theorem mul_derivation_log {R : Type*} [CommSemiring R] [Algebra R S] (D : Deriv
   -- identity `(1 - q) * ∑ qⁿ = 1` applies.
   nth_rw 1 [show u = 1 - -(u - 1) by ring]
   rw [hgeom.one_sub_mul_tsum_pow, one_mul, map_sub, Derivation.map_one_eq_zero, sub_zero]
+
+/-- A continuous ring homomorphism `ψ` commutes with the logarithm: `ψ (log u) = log (ψ u)` when
+`u - 1` is topologically nilpotent. -/
+theorem map_log {S' : Type*} [CommRing S'] [UniformSpace S'] [IsUniformAddGroup S']
+    [IsTopologicalRing S'] [IsLinearTopology S' S'] [T2Space S'] [CompleteSpace S']
+    [Algebra ℚ S'] (hu : IsTopologicallyNilpotent (u - 1)) (ψ : S →+* S') (hψ : Continuous ψ) :
+    ψ (NormedSpace.log u) = NormedSpace.log (ψ u) := by
+  have hu' : IsTopologicallyNilpotent (ψ u - 1) := by
+    simpa using IsTopologicallyNilpotent.map hψ hu
+  refine (hu.hasSum_log.map ψ hψ).unique ?_
+  convert hu'.hasSum_log using 2 with k
+  simp [map_rat_smul]
 
 end IsTopologicallyNilpotent
 

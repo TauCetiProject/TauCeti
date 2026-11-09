@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.FDeriv.Linear
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Analysis.Calculus.ApproximatesLinearOn
@@ -47,6 +48,8 @@ sends `N ∩ f ⁻¹' L` into a compact box; being anti-Lipschitz, it reflects t
 * `TauCeti.locallyCompactSpace_preimage` and `TauCeti.locallyCompactSpace_preimage_singleton`: the
   preimage of a compact set, and in particular a level set, along which the derivative is Fredholm
   is locally compact.
+* `ContinuousLinearMap.tendsto_subseq_of_isBounded`: for an upper semi-Fredholm operator, a bounded
+  sequence with convergent image has a convergent subsequence.
 
 At a regular point, the zero set of a Fredholm map is a manifold of dimension its index;
 `TauCeti.Analysis.Fredholm.LevelSet.Basic` supplies those charts. Local properness complements
@@ -189,5 +192,35 @@ theorem locallyCompactSpace_preimage_singleton {D : E → E →L[𝕜] F} {c : F
     (hcompl : ∀ x ∈ f ⁻¹' {c}, (D x).ker.ClosedComplemented) :
     LocallyCompactSpace (f ⁻¹' {c}) :=
   locallyCompactSpace_preimage isCompact_singleton hf hclosed hfinite hcompl
+
+/-- **Upper semi-Fredholm operators are proper on bounded sets.** If `T` has closed range and
+finite-dimensional complemented kernel, then every bounded sequence `x` along which `T x`
+converges has a convergent subsequence. Equivalently, `T` admits no singular sequence: a bounded
+sequence with `T x → 0` and no convergent subsequence, such as a sequence of approximate kernel
+elements escaping to infinity, rules out the Fredholm property. -/
+theorem _root_.ContinuousLinearMap.tendsto_subseq_of_isBounded {T : E →L[𝕜] F}
+    (hclosed : IsClosed (T.range : Set F)) (hfinite : FiniteDimensional 𝕜 T.ker)
+    (hcompl : T.ker.ClosedComplemented) {x : ℕ → E} (hx : Bornology.IsBounded (range x))
+    {b : F} (hb : Tendsto (fun n => T (x n)) atTop (𝓝 b)) :
+    ∃ a, ∃ φ : ℕ → ℕ, StrictMono φ ∧ Tendsto (x ∘ φ) atTop (𝓝 a) := by
+  obtain ⟨N, hN, hK⟩ :=
+    (T.hasStrictFDerivAt (x := 0)).exists_mem_nhds_forall_isCompact_inter_preimage
+      hclosed hfinite hcompl
+  obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhds_iff.1 hN
+  obtain ⟨C, hC, hxC⟩ := hx.exists_pos_norm_le
+  -- Shrink the sequence into the neighbourhood `N` on which `T` is proper.
+  obtain ⟨t, ht, htδ⟩ := NormedField.exists_norm_lt 𝕜 (div_pos hδ hC)
+  have hy (n : ℕ) : t • x n ∈ N ∩ T ⁻¹' insert (t • b) (range fun n => T (t • x n)) := by
+    refine ⟨hball (mem_ball_zero_iff.2 ?_), Or.inr ⟨n, rfl⟩⟩
+    calc ‖t • x n‖ = ‖t‖ * ‖x n‖ := norm_smul t (x n)
+      _ ≤ ‖t‖ * C := by gcongr; exact hxC _ ⟨n, rfl⟩
+      _ < δ / C * C := by gcongr
+      _ = δ := div_mul_cancel₀ δ hC.ne'
+  have hTy : Tendsto (fun n => T (t • x n)) atTop (𝓝 (t • b)) := by
+    simpa only [map_smul] using hb.const_smul t
+  obtain ⟨a, -, φ, hφ, ha⟩ := (hK _ hTy.isCompact_insert_range).tendsto_subseq hy
+  refine ⟨t⁻¹ • a, φ, hφ, ?_⟩
+  have ht0 : t ≠ 0 := norm_pos_iff.1 ht
+  simpa [Function.comp_def, smul_smul, inv_mul_cancel₀ ht0] using ha.const_smul t⁻¹
 
 end TauCeti

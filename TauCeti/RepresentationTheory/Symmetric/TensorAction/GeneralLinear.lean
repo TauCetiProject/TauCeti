@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower
+public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower.Basic
 public import TauCeti.RepresentationTheory.Symmetric.TensorAction.SchurWeyl
 
 /-!
@@ -21,10 +21,10 @@ centralizers.
 `TauCeti/RepresentationTheory/Symmetric/TensorAction/SchurWeyl.lean` proves the duality with the
 span of *all* the diagonal operators `f^{⊗d}`, for `f` an arbitrary endomorphism of `kⁿ`, in place
 of the image of `k[GLₙ]`. The imported module
-`TauCeti/RepresentationTheory/ClassicalGroups/TensorPower.lean` identifies the two: the image of a
-monoid algebra is the span of the image of the monoid, and over an infinite field the invertible
-diagonal operators already span all diagonal operators. This file combines that identification
-with the span-level duality to obtain both mutual-commutant statements.
+`TauCeti/RepresentationTheory/ClassicalGroups/TensorPower/Basic.lean` identifies the two: the image
+of a monoid algebra is the span of the image of the monoid, and over an infinite field the
+invertible diagonal operators already span all diagonal operators. This file combines that
+identification with the span-level duality to obtain both mutual-commutant statements.
 
 The two hypotheses on the field play different roles: that `d !` is nonzero is Maschke's theorem for
 `S_d`, which the semisimple half of the duality needs, while the infinitude of `k` is what the

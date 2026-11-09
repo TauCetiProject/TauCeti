@@ -24,6 +24,8 @@ weight-space theory. The transport and finrank identities hold over any commutat
   weight space with the intersection of the target weight space and its range.
 * `LieModule.map_weightSpace_eq`: a Lie-module equivalence maps each weight space onto the
   corresponding weight space.
+* `LieModule.isTriangularizable_of_iSup_genWeightSpace_eq_top`: a module spanned by its
+  generalized weight spaces is triangularizable, over any commutative ring and without finiteness.
 * `LieModule.genWeightSpaceOf_eq_iSup_genWeightSpace`: for a finite-dimensional triangularizable
   module, a generalized eigenspace of one element is the sum of the generalized weight spaces of
   the weights taking that eigenvalue there.
@@ -133,6 +135,26 @@ theorem map_weightSpace_eq (e : LieModuleEquiv R L M M₂) (χ : L → R) :
     (weightSpace M χ).map e = weightSpace M₂ χ := by
   simp [map_weightSpace_eq_of_injective χ e.injective]
 
+section Triangularizable
+
+variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing.IsNilpotent L]
+  [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+
+/-- **A module spanned by its generalized weight spaces is triangularizable.** The generalized
+weight space of `χ` lies in the generalized `χ x`-eigenspace of each `x : L`, so if the weight
+spaces span `M` then so do the generalized eigenspaces of every `x`. No finiteness is assumed; for a
+finite-dimensional module over a field this is the converse of
+`LieModule.iSup_genWeightSpace_eq_top`. -/
+theorem isTriangularizable_of_iSup_genWeightSpace_eq_top
+    (h : ⨆ χ : L → R, genWeightSpace M χ = ⊤) : IsTriangularizable R L M := by
+  have h' := congrArg LieSubmodule.toSubmodule h
+  rw [LieSubmodule.iSup_toSubmodule, LieSubmodule.top_toSubmodule] at h'
+  refine ⟨fun x => top_unique (h' ▸ iSup_le fun χ => le_iSup_of_le (χ x) fun m hm => ?_)⟩
+  exact (Module.End.mem_maxGenEigenspace _ _ _).mpr
+    ((mem_genWeightSpaceOf M (χ x) x m).mp (genWeightSpace_le_genWeightSpaceOf M x χ hm))
+
+end Triangularizable
+
 section Field
 
 variable {K L M : Type*} [Field K] [LieRing L] [LieAlgebra K L] [LieRing.IsNilpotent L]
@@ -230,6 +252,23 @@ theorem finrank_inf_genWeightSpace {K : Type*} [CommRing K] [LieAlgebra K L]
     (f := N.incl.restrictLie H) (injective_incl N)).toLinearEquiv.finrank_eq.symm
 
 end LieSubmodule
+
+namespace LieModule.Weight
+
+variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
+
+/-- Consecutive weights on an ascending string differ by its step root. -/
+theorem coe_eq_add_of_coe_eq_add_natCast_smul_succ
+    (δ : Weight K H L) {α β γ : Weight K H L} {n : ℕ}
+    (hγ : (γ : H → K) = (β : H → K) + (n : K) • (α : H → K))
+    (hδ : (δ : H → K) = (β : H → K) + ((n + 1 : ℕ) : K) • (α : H → K)) :
+    (δ : H → K) = (α : H → K) + γ := by
+  rw [hδ, hγ]
+  push_cast
+  module
+
+end LieModule.Weight
 
 namespace TauCeti
 

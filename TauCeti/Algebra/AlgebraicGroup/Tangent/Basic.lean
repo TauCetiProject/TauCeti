@@ -256,6 +256,20 @@ lemma Bialgebra.CounitAlgebra.algEquivSelf_apply_mul
         algebraMap R B (Coalgebra.counit b) * Bialgebra.CounitAlgebra.algEquivSelf R A B (d a) := by
   simp only [d.leibniz, map_add, Bialgebra.CounitAlgebra.algEquivSelf_smul]
 
+/-- The Leibniz rule of a counit-valued derivation with coefficients in the base ring, for the
+linear functional `δ = algEquivSelf ∘ d`: `δ (a * b) = δ a * ε b + ε a * δ b`. This is the
+splitting hypothesis of the contraction lemmas for tensor products and products. -/
+lemma Bialgebra.CounitAlgebra.algEquivSelf_comp_apply_mul
+    (d : Derivation R A (Bialgebra.CounitAlgebra R A R)) (a b : A) :
+    ((Bialgebra.CounitAlgebra.algEquivSelf R A R).toLinearMap ∘ₗ d.toLinearMap) (a * b) =
+      ((Bialgebra.CounitAlgebra.algEquivSelf R A R).toLinearMap ∘ₗ d.toLinearMap) a *
+          Coalgebra.counit (R := R) b +
+        Coalgebra.counit (R := R) a *
+          ((Bialgebra.CounitAlgebra.algEquivSelf R A R).toLinearMap ∘ₗ d.toLinearMap) b := by
+  simp only [LinearMap.comp_apply, Derivation.coeFn_coe, AlgEquiv.toLinearMap_apply,
+    Bialgebra.CounitAlgebra.algEquivSelf_apply_mul, Algebra.algebraMap_self, RingHom.id_apply]
+  ring
+
 end DerivationCoefficients
 
 section CounitAlgebraMap

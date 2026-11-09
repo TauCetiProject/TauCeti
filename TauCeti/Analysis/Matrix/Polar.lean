@@ -38,6 +38,7 @@ or the symplectic group (`W = J`), contains the polar factors of its elements.
   definite.
 * `Matrix.GeneralLinearGroup.existsUnique_posDef_mul_unitary`: existence and uniqueness of the
   polar decomposition `A = P U` with `P` positive definite and `U` unitary.
+* `Matrix.GeneralLinearGroup.coe_mul_inv_toUnits_polarUnitary`: the positive factor is `A U⁻¹`.
 * `Matrix.det_sqrt_mul_star`, `Matrix.GeneralLinearGroup.det_polarUnitary`: the determinants of
   the two factors; the first holds for every square matrix.
 * `Matrix.GeneralLinearGroup.exists_scalar_mul_mul_toGL_eq`: every invertible matrix is a scalar
@@ -91,6 +92,15 @@ theorem existsUnique_posDef_mul_unitary :
   rintro ⟨P, U⟩ ⟨hP, h⟩
   exact Prod.ext (Units.sqrt_mul_star_eq_of_mul_eq A hP.posSemidef.nonneg h).symm
     (Units.polarUnitary_eq_of_mul_eq A hP.posSemidef.nonneg h).symm
+
+/-- The positive factor `√(A Aᴴ)` of the polar decomposition `A = P U` is `A U⁻¹`, computed in
+`GL n 𝕜`. -/
+theorem coe_mul_inv_toUnits_polarUnitary :
+    ((A * (Unitary.toUnits (Units.polarUnitary A))⁻¹ : GL n 𝕜) : Matrix n n 𝕜) =
+      CFC.sqrt ((A : Matrix n n 𝕜) * star (A : Matrix n n 𝕜)) := by
+  apply (Unitary.mul_left_inj (Units.polarUnitary A)).mp
+  rw [Units.sqrt_mul_star_mul_polarUnitary]
+  exact congrArg Units.val (inv_mul_cancel_right A (Unitary.toUnits (Units.polarUnitary A)))
 
 /-- The determinant of the unitary factor of `A` is `det A / ‖det A‖`. -/
 theorem det_polarUnitary :

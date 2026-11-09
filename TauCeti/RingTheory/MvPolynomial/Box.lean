@@ -117,6 +117,13 @@ theorem ofBox_apply (x : (∀ j, Fin (d j + 1)) → R) :
     ofBox d x = ∑ I, monomial (boxMonomial d I) (x I) := by
   simp [ofBox, LinearMap.sum_apply]
 
+/-- Mapping the coefficients of a polynomial on a box maps its coefficient vector entrywise. -/
+@[simp]
+theorem map_ofBox {S : Type*} [CommSemiring S] (f : R →+* S)
+    (x : (∀ j, Fin (d j + 1)) → R) :
+    map f (ofBox d x) = ofBox d (fun I ↦ f (x I)) := by
+  simp [ofBox_apply]
+
 @[simp]
 theorem coeff_ofBox (x : (∀ j, Fin (d j + 1)) → R) (I : ∀ j, Fin (d j + 1)) :
     (ofBox d x).coeff (boxMonomial d I) = x I := by

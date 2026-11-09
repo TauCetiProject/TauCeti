@@ -33,10 +33,17 @@ public section
 namespace TestFunction
 
 open TopologicalSpace ContinuousLinearMap
-open scoped Distributions
+open scoped Distributions BoundedContinuousFunction
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E}
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ∞}
+
+/-- A test function is zero as a bounded continuous function exactly when it is zero. -/
+@[simp]
+theorem toBoundedContinuousFunction_eq_zero (φ : 𝓓^{n}(Ω, F)) :
+    (φ : E →ᵇ F) = 0 ↔ φ = 0 := by
+  simpa only [map_zero, toBoundedContinuousFunctionCLM_apply] using
+    ((injective_toBoundedContinuousFunctionCLM ℝ).eq_iff (a := φ) (b := 0))
 
 /-- Postcomposing a test function with `L₁` and then with `L₂` is postcomposing it with
 `L₂ ∘L L₁`. Unlike `SchwartzMap.postcompCLM_postcompCLM`, this is not a simp lemma: it would merge

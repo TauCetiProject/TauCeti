@@ -14,7 +14,9 @@ For an element `a` of an `R`-algebra `A`, Mathlib's resolvent is `resolvent a r 
 with the junk value `0` on the spectrum. This file records algebraic identities used when
 integrating resolvents: on the resolvent set, multiplication by the scalar `r` gives
 `r (r1 - a)⁻¹ = 1 + a (r1 - a)⁻¹`, so that over a field `(r1 - a)⁻¹ - r⁻¹1 = r⁻¹ a (r1 - a)⁻¹`
-for `r ≠ 0`, and every element commuting with `a` commutes with all resolvents of `a`.
+for `r ≠ 0`. The first resolvent identity
+`(r1 - a)⁻¹ - (s1 - a)⁻¹ = (s - r) (r1 - a)⁻¹ (s1 - a)⁻¹` turns products of resolvents into
+differences. Every element commuting with `a` commutes with all resolvents of `a`.
 -/
 
 public section
@@ -39,6 +41,15 @@ theorem resolvent_sub_inv_smul_one {𝕜 : Type*} [Field 𝕜] [Algebra 𝕜 A] 
     rw [smul_resolvent_eq_one_add_mul_resolvent hr]
     abel
   rw [h, smul_sub, smul_smul, inv_mul_cancel₀ hr0, one_smul]
+
+/-- **The first resolvent identity.** For `r` and `s` in the resolvent set of `a`,
+`(r1 - a)⁻¹ - (s1 - a)⁻¹ = (s - r) (r1 - a)⁻¹ (s1 - a)⁻¹`. -/
+theorem resolvent_sub_resolvent_eq_smul_mul {S : Type*} [CommRing S] [Algebra S A] {a : A}
+    {r s : S} (hr : r ∈ resolventSet S a) (hs : s ∈ resolventSet S a) :
+    resolvent a r - resolvent a s = (s - r) • (resolvent a r * resolvent a s) := by
+  rw [resolvent, resolvent, Ring.inverse_sub_inverse
+      (iff_of_true (mem_resolventSet_iff.mp hr) (mem_resolventSet_iff.mp hs)),
+    sub_sub_sub_cancel_right, ← map_sub, Algebra.smul_def, mul_assoc, Algebra.left_comm]
 
 end spectrum
 

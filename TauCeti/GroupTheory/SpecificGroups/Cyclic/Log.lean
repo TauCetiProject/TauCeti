@@ -58,8 +58,9 @@ theorem cyclicLog_mul (x y : G) :
 
 /-- A homomorphism of finite cyclic groups sending the generator `g` to `g' ^ d` multiplies
 exponents by `d`, modulo the order of `g'`. -/
-theorem cyclicLog_map {G' : Type*} [Group G'] [Finite G'] (f : G →* G') {g' : G'}
-    (hg' : ∀ x, x ∈ Subgroup.zpowers g') {d : ℕ} (hfg : f g = g' ^ d) (x : G) :
+theorem cyclicLog_map {G' F : Type*} [Group G'] [Finite G'] [FunLike F G G']
+    [MonoidHomClass F G G'] (f : F) {g' : G'} (hg' : ∀ x, x ∈ Subgroup.zpowers g') {d : ℕ}
+    (hfg : f g = g' ^ d) (x : G) :
     cyclicLog g' hg' (f x) = d * cyclicLog g hg x % orderOf g' := by
   rw [← cyclicLog_pow, pow_mul, ← hfg, ← map_pow, pow_cyclicLog]
 

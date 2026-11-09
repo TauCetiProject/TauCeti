@@ -419,12 +419,9 @@ theorem exists_isNeighbor_of_not_dvd_discriminant [L.IsNondegenerate] (hp : p.Pr
     (hv₀ : (p : ℚ)⁻¹ • (v : V) ∉ L.carrier) :
     ∃ M : IntegralLattice V, L.IsNeighbor M p ∧ L.carrier ⊓ M.carrier = L.neighborKernel p v ∧
       (L.IsEven → M.IsEven) := by
-  have : NeZero p := ⟨hp.ne_zero⟩
-  obtain ⟨w, hw⟩ : ∃ w : L, ¬(p : ℤ) ∣ L.integralForm v w := by
-    by_contra! h
-    exact hv₀
-      (L.inv_smul_mem_carrier_of_forall_dvd ((Nat.Prime.coprime_iff_not_dvd hp).mpr hdisc) h)
-  exact exists_isNeighbor_of_dvd_integralNorm (hp.odd_of_ne_two hp₂) hv
-    ((Prime.coprime_iff_not_dvd (Nat.prime_iff_prime_int.mp hp)).mpr hw).symm
+  obtain ⟨w, hw⟩ := L.exists_isCoprime_integralForm hp
+    ((Nat.Prime.coprime_iff_not_dvd hp).mpr hdisc) (v := v) fun y hy ↦ hv₀ <| by
+      simp [hy, ← Nat.cast_smul_eq_nsmul ℚ, hp.ne_zero]
+  exact exists_isNeighbor_of_dvd_integralNorm (hp.odd_of_ne_two hp₂) hv hw
 
 end TauCeti.IntegralLattice

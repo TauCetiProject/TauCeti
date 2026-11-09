@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.DerivationMap
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
 import TauCeti.Algebra.Polynomial.Laurent.Basic
 
 /-!
@@ -25,6 +27,8 @@ even when `B` is noncommutative. For commutative `B`, the tangent Lie bracket va
   equivalent to `B`.
 * `TauCeti.MultiplicativeGroup.tangent_bracket_eq_zero`: the tangent Lie bracket of `𝔾ₘ`
   vanishes.
+* `TauCeti.MultiplicativeGroup.mapValue_derivationComp_tangentLinearEquiv_symm_one`:
+  coefficient change preserves a cocharacter's unit tangent differential.
 
 ## References
 
@@ -172,6 +176,26 @@ theorem tangentLinearEquiv_symm_apply_T (b : B) (n : ℤ) :
     simpa only [tangentLinearEquiv_apply] using
       (tangentLinearEquiv (R := R) (B := B)).apply_symm_apply b
   rw [derivation_T_zsmul, map_zsmul, h]
+
+/-- Coefficient change preserves the image of the multiplicative unit tangent vector under
+any cocharacter's differential. -/
+theorem mapValue_derivationComp_tangentLinearEquiv_symm_one
+    {D A : Type*} [Ring D] [Algebra R D] [CommSemiring A] [Bialgebra R A]
+    (ψ : B →ₐ[R] D) (φ : A →ₐc[R] H) :
+    Derivation.mapValue ψ (derivationComp (B := B) φ
+      ((tangentLinearEquiv (R := R) (B := B)).symm 1)) =
+      derivationComp (B := D) φ ((tangentLinearEquiv (R := R) (B := D)).symm 1) := by
+  have hgm : Derivation.mapValue ψ ((tangentLinearEquiv (R := R) (B := B)).symm 1) =
+      (tangentLinearEquiv (R := R) (B := D)).symm 1 := by
+    apply (tangentLinearEquiv (R := R) (B := D)).injective
+    simp only [tangentLinearEquiv_apply, Derivation.mapValue_apply,
+      CounitAlgebra.algEquivSelf_map, tangentLinearEquiv_symm_apply_T, one_zsmul, map_one]
+  ext a
+  simp only [Derivation.mapValue_apply, derivationComp_apply]
+  have h := DFunLike.congr_fun hgm (φ a)
+  simp only [Derivation.mapValue_apply] at h
+  -- Evaluation erases the counit-algebra indexing introduced by precomposition.
+  exact h
 
 end Ring
 

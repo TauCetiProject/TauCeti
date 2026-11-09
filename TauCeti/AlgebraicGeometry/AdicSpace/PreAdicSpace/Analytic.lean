@@ -73,6 +73,9 @@ constructions on Tate affinoids, such as completed tensor products, apply to non
   open immersion neither creates nor destroys the preservation of analytic points.
 * `TauCeti.ValuationSpectrum.analyticPoints_presentationLimitPreAdicSpace_of_isTateRing`: every
   point of the adic spectrum of a Tate ring is analytic.
+* `TauCeti.ValuationSpectrum.exists_mem_propOpens_of_mem_analyticPoints` and
+  `TauCeti.PreAdicSpace.exists_mem_propOpens_of_mem_analyticPoints`: covering analytic points by
+  standard analytic rational opens in `propOpens Q`, on `Spa(A, A⁺)` and across an affinoid chart.
 * `TauCeti.ValuationSpectrum.mapsTo_analyticPoints_presentationLimitPreAdicSpaceComap_iff`: the
   morphism of adic spectra induced by a morphism of Huber pairs with complete target sends
   analytic points to analytic points exactly when the ring homomorphism is adic (Wedhorn,
@@ -373,7 +376,63 @@ theorem analyticPoints_presentationLimitPreAdicSpace_of_isTateRing [IsTateRing A
   rw [analyticPoints_presentationLimitPreAdicSpace, spaAnalytic_eq_spa_of_isTateRing]
   exact Set.eq_univ_of_forall fun x ↦ x.2
 
+/-- **Covering analytic points of `Spa(A, A⁺)` by standard analytic rational opens.** Let `Q` be a
+property of objects of `𝒱^pre` that holds on every rational open `R(T/s)` of `Spa(A, A⁺)` with `T`
+spanning an open ideal and `s` topologically nilpotent. Then every analytic point of `Spa(A, A⁺)`
+lies in an open of `propOpens Q`, namely one of the charts `R(G/g)` where `G` is a finite generating
+set of `P.idealOfDefinition`. -/
+theorem exists_mem_propOpens_of_mem_analyticPoints (Q : ObjectProperty PreAdicSpace.{u})
+    (hQ : ∀ {T : Finset A} {s : A},
+      IsOpen (Ideal.span (T : Set A) : Set A) → IsTopologicallyNilpotent s →
+      spaBasicOpen Aplus T s ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).propOpens Q)
+    {y : presentationLimitPreAdicSpace P Aplus hAplus hP}
+    (hy : y ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).analyticPoints) :
+    ∃ W ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).propOpens Q, y ∈ W := by
+  classical
+  obtain ⟨G, hG⟩ := P.fg_idealOfDefinition
+  -- `presentationLimitPreAdicSpace` has underlying type `spa Aplus`, so `Set.mem_preimage`
+  -- views `y` as an element of `spa Aplus`.
+  have hy' : (y : spa Aplus).1 ∈ spaAnalytic Aplus :=
+    Set.mem_preimage.mp (by rwa [analyticPoints_presentationLimitPreAdicSpace] at hy)
+  rw [spaAnalytic_eq_biUnion_rationalSubset P Aplus G hG] at hy'
+  obtain ⟨g, hg, hyg⟩ := Set.mem_iUnion₂.mp hy'
+  refine ⟨spaBasicOpen Aplus (G.image (↑)) g, hQ ?_ ?_, mem_spaBasicOpen.mpr hyg⟩
+  · exact P.span_image_eq_extendedIdealOfDefinition G hG ▸ P.isOpen_extendedIdealOfDefinition
+  · exact P.isTopologicallyNilpotent_of_mem_idealOfDefinition
+      (hG ▸ Ideal.subset_span (Finset.mem_coe.mpr hg))
+
 end ValuationSpectrum
+
+namespace PreAdicSpace
+
+open ValuationSpectrum
+
+/-- Transporting a standard analytic rational open from an affinoid chart `X|_V ≅ Spa(A, A⁺)` back
+to `X`: if `x` is an analytic point of `X` lying in `V` and `Q` holds on rational opens of
+`Spa(A, A⁺)` with topologically nilpotent denominator, then `x` lies in an open of `X.propOpens Q`.
+-/
+theorem exists_mem_propOpens_of_mem_analyticPoints {X : PreAdicSpace.{u}}
+    (Q : ObjectProperty PreAdicSpace.{u}) [Q.IsClosedUnderIsomorphisms]
+    {x : X} (hx : x ∈ X.analyticPoints) {V : Opens X} (hxV : x ∈ V)
+    {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+    (P : PairOfDefinition A) (Aplus : Subring A)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (hP : P.ringOfDefinition ≤ Aplus)
+    (e : X.restrict V.isOpenEmbedding ≅ presentationLimitPreAdicSpace P Aplus hAplus hP)
+    (hQ : ∀ {T : Finset A} {s : A},
+      IsOpen (Ideal.span (T : Set A) : Set A) → IsTopologicallyNilpotent s →
+      spaBasicOpen Aplus T s ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).propOpens Q) :
+    ∃ U ∈ X.propOpens Q, x ∈ U := by
+  let x' : X.restrict V.isOpenEmbedding := ⟨x, hxV⟩
+  have hx' : x' ∈ (X.restrict V.isOpenEmbedding).analyticPoints := by
+    rwa [analyticPoints_restrict]
+  obtain ⟨W, hW, hyW⟩ := ValuationSpectrum.exists_mem_propOpens_of_mem_analyticPoints
+    P Aplus hAplus hP Q hQ (mapsTo_analyticPoints_of_isOpenImmersion e.hom hx')
+  exact ⟨V.isOpenEmbedding.isOpenMap.functor.obj ((Opens.map e.hom.base).obj W),
+    (mem_propOpens_restrict_iff X V.isOpenEmbedding Q _).mp
+      ((map_hom_base_mem_propOpens_iff Q e).mpr hW),
+    ⟨x', hyW, rfl⟩⟩
+
+end PreAdicSpace
 
 namespace ValuationSpectrum
 
@@ -461,6 +520,54 @@ theorem analyticLocus.ι_hom :
 instance : PreAdicSpace.IsOpenImmersion (analyticLocus.ι X).hom := by
   rw [analyticLocus.ι_hom]
   infer_instance
+
+variable {X} {T : AdicSpace.{u}}
+
+/-- The image of the analytic-locus inclusion is the set of analytic points. -/
+-- Not a simp lemma: `analyticLocus.ι_hom` already simplifies the underlying morphism.
+theorem analyticLocus.range_ι (X : AdicSpace.{u}) :
+    Set.range (analyticLocus.ι X).hom.base = X.obj.analyticPoints := by
+  have he : Function.Surjective
+      (eqToHom (analyticLocus_obj X) : X.analyticLocus.obj ⟶ X.obj.analyticLocus).base :=
+    (TopCat.homeoOfIso (PreAdicSpace.forgetToTop.mapIso
+      (eqToIso (analyticLocus_obj X)))).surjective
+  rw [analyticLocus.ι_hom, PreAdicSpace.comp_base, TopCat.coe_comp, he.range_comp]
+  exact PreAdicSpace.analyticLocus.range_ι X.obj
+
+instance (X : AdicSpace.{u}) : Mono (analyticLocus.ι X) :=
+  (ObjectProperty.ι _).mono_of_mono_map
+    (inferInstanceAs (Mono (analyticLocus.ι X).hom))
+
+/-- A map whose image consists of analytic points factors through the analytic locus. -/
+noncomputable def analyticLocus.lift (g : T ⟶ X)
+    (hg : Set.range g.hom.base ⊆ X.obj.analyticPoints) : T ⟶ X.analyticLocus :=
+  ObjectProperty.homMk (PreAdicSpace.analyticLocus.lift g.hom hg ≫
+    eqToHom (analyticLocus_obj X).symm)
+
+/-- Composing the factorization with the open inclusion recovers the original map. -/
+@[reassoc (attr := simp)]
+theorem analyticLocus.lift_ι (g : T ⟶ X)
+    (hg : Set.range g.hom.base ⊆ X.obj.analyticPoints) :
+    analyticLocus.lift g hg ≫ analyticLocus.ι X = g := by
+  apply ObjectProperty.hom_ext
+  simp [analyticLocus.lift, analyticLocus.ι_hom]
+
+/-- The factorization through the analytic locus is unique. -/
+theorem analyticLocus.lift_uniq (g : T ⟶ X)
+    (hg : Set.range g.hom.base ⊆ X.obj.analyticPoints)
+    (l : T ⟶ X.analyticLocus) (hl : l ≫ analyticLocus.ι X = g) :
+    l = analyticLocus.lift g hg := by
+  rw [← cancel_mono (analyticLocus.ι X), hl, analyticLocus.lift_ι]
+
+/-- A morphism factors through the analytic locus exactly when its image is analytic. -/
+theorem analyticLocus.exists_comp_ι_eq_iff (g : T ⟶ X) :
+    (∃ l : T ⟶ X.analyticLocus, l ≫ analyticLocus.ι X = g) ↔
+      Set.range g.hom.base ⊆ X.obj.analyticPoints := by
+  refine ⟨?_, fun hg ↦ ⟨analyticLocus.lift g hg, analyticLocus.lift_ι g hg⟩⟩
+  rintro ⟨l, rfl⟩
+  rw [← analyticLocus.range_ι X, ObjectProperty.FullSubcategory.comp_hom,
+    PreAdicSpace.comp_base, TopCat.coe_comp]
+  exact Set.range_comp_subset_range _ _
 
 end AdicSpace
 

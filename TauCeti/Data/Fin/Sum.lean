@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Finite.Defs
 public import Mathlib.Logic.Embedding.Basic
 public import Mathlib.Logic.Equiv.Defs
 import Mathlib.Data.Fintype.EquivFin
@@ -18,45 +19,46 @@ type arises: one variable per named slot, or one variable per numeral. Translati
 is pure bookkeeping, needed wherever an object indexed by named slots must be presented against
 an API indexed by `Fin n`.
 
-More generally, an embedding of a type `α` into `Fin n` identifies `Fin n` with the sum of `α`
-and a finite complementary type.  This packages the standard splitting of a finite type along
-the range of an embedding.
+More generally, an embedding of a type `α` into a finite type `β` identifies `β` with the sum of
+`α` and a finite complementary type `Fin l`. This packages the standard splitting of a finite
+type along the range of an embedding.
 
 The two `Unit`-sum equivalences are Mathlib's own compositions — `finOneEquiv` on each summand,
 then `finSumFinEquiv` — given a name and their evaluation lemmas, so that call sites reindexing a
 two- or three-variable object can rewrite rather than unfold them.
 
-## Main definitions
+## Main declarations
 
-* `unitSumUnitEquivFinTwo`: the equivalence `Unit ⊕ Unit ≃ Fin 2`, sending the left summand to
-  `0` and the right to `1`.
-* `unitSumUnitSumUnitEquivFinThree`: the equivalence `Unit ⊕ Unit ⊕ Unit ≃ Fin 3`, sending the
-  outer left summand to `0` and the two inner ones to `1` and `2`.
-* `Function.Embedding.exists_equiv_sum_fin`: an embedding into `Fin n` extends to an equivalence
-  from the sum with a finite complement.
+* `TauCeti.unitSumUnitEquivFinTwo`: the equivalence `Unit ⊕ Unit ≃ Fin 2`, sending the left
+  summand to `0` and the right to `1`.
+* `TauCeti.unitSumUnitSumUnitEquivFinThree`: the equivalence `Unit ⊕ Unit ⊕ Unit ≃ Fin 3`,
+  sending the outer left summand to `0` and the two inner ones to `1` and `2`.
+* `Function.Embedding.exists_equiv_sum_fin`: an embedding into a finite type extends to an
+  equivalence from the sum with a finite complement.
 
 ## Implementation notes
 
 The constructions are implementation details: `Mathlib.Data.Fintype.EquivFin` and
 `Mathlib.Logic.Equiv.Fin.Basic` are imported privately rather than re-exported. Only the
-equivalence and embedding interfaces needed by the declaration types are public.
+finiteness, equivalence and embedding interfaces needed by the declaration types are public.
 -/
 
 public section
 
 namespace Function.Embedding
 
-/-- An embedding `s : α ↪ Fin n` extends to an equivalence from `α` together with a finite
-complement to `Fin n`. -/
-theorem exists_equiv_sum_fin {α : Type*} {n : ℕ} (s : α ↪ Fin n) :
-    ∃ (l : ℕ) (e : α ⊕ Fin l ≃ Fin n), ∀ a, e (Sum.inl a) = s a := by
+/-- An embedding `s : α ↪ β` into a finite type extends to an equivalence from `α` together with
+a finite complement to `β`. -/
+theorem exists_equiv_sum_fin {α β : Type*} [Finite β] (s : α ↪ β) :
+    ∃ (l : ℕ) (e : α ⊕ Fin l ≃ β), ∀ a, e (Sum.inl a) = s a := by
   classical
-  have _ : Fintype α := Fintype.ofInjective s s.injective
-  exact ⟨Fintype.card {j : Fin n // j ∉ Set.range s},
-    (Equiv.sumCongr (Equiv.ofInjective s s.injective) (Fintype.equivFin _).symm).trans
-      (Equiv.sumCompl fun j : Fin n ↦ j ∈ Set.range s), fun a ↦ by simp⟩
+  obtain ⟨l, ⟨f⟩⟩ := Finite.exists_equiv_fin {b : β // b ∉ Set.range s}
+  exact ⟨l, (Equiv.sumCongr (Equiv.ofInjective s s.injective) f.symm).trans
+    (Equiv.sumCompl (· ∈ Set.range s)), fun a ↦ by simp⟩
 
 end Function.Embedding
+
+namespace TauCeti
 
 /-- The equivalence `Unit ⊕ Unit ≃ Fin 2`, sending the left summand to `0` and the right to `1`.
 
@@ -111,3 +113,5 @@ theorem unitSumUnitSumUnitEquivFinThree_symm_one :
 @[simp]
 theorem unitSumUnitSumUnitEquivFinThree_symm_two :
     unitSumUnitSumUnitEquivFinThree.symm 2 = Sum.inr (Sum.inr ()) := by decide
+
+end TauCeti

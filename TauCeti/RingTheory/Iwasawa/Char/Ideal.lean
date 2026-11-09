@@ -10,8 +10,6 @@ public import TauCeti.RingTheory.Iwasawa.Char.Divisor
 
 import Mathlib.RingTheory.Ideal.IsPrincipal
 import Mathlib.RingTheory.Ideal.UFD
-import Mathlib.RingTheory.OrderOfVanishing.Basic
-import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.NumberTheory.Padics.PowerSeriesIdeal
 import TauCeti.RingTheory.FittingIdeal.Basic
 import TauCeti.RingTheory.RegularLocalRing.PowerSeries
@@ -191,7 +189,6 @@ theorem charIdeal_quotient_of_height_eq_one {𝔭 : Ideal A} [𝔭.IsPrime] (h :
   rw [charIdeal_def, charDivisor_quotient_of_height_eq_one h, Finsupp.prod_single_index (by simp),
     pow_one]
 
-open scoped Pointwise in
 /-- **The characteristic ideal of a cyclic torsion module.** Over a noetherian unique
 factorization domain, the characteristic ideal of `A ⧸ (f)` is `(f)` for every `f ≠ 0`. -/
 @[simp]
@@ -204,23 +201,16 @@ theorem charIdeal_quotient_span_singleton [IsDomain A] [IsNoetherianRing A]
     rw [Ideal.span_singleton_eq_top.mpr hu]
     exact charIdeal_of_subsingleton
   | h₃ a p ha hp ih =>
-    -- Multiplication by `p` gives the exact sequence `0 → A ⧸ (a) → A ⧸ (p a) → A ⧸ (p) → 0`,
-    -- and `(p)` is a prime of height one.
-    have hpa : p • Ideal.span {a} = Ideal.span {p * a} := by
-      rw [← Submodule.ideal_span_singleton_smul, smul_eq_mul,
-        Ideal.span_singleton_mul_span_singleton]
+    -- The divisor of `A ⧸ (p a)` is that of `A ⧸ (p)` plus that of `A ⧸ (a)`, and `(p)` is a
+    -- prime of height one.
     have hp₀ : p ∈ nonZeroDivisors A := mem_nonZeroDivisors_of_ne_zero hp.ne_zero
-    have hN : Module.IsTorsion A (A ⧸ p • Ideal.span {a}) :=
-      Ideal.isTorsion_quotient_of_mem
-        (Submodule.smul_mem_pointwise_smul _ _ _ (Ideal.mem_span_singleton_self a))
-        (mem_nonZeroDivisors_of_ne_zero hf)
     have := (Ideal.span_singleton_prime hp.ne_zero).mpr hp
-    rw [← (Submodule.quotEquivOfEq _ _ hpa).charIdeal_eq,
-      charIdeal_eq_mul_of_exact hN (Ideal.exact_mulQuot_quotOfMul _)
-        (Ideal.mulQuot_injective _ hp₀) (Ideal.quotOfMul_surjective _),
-      ih ha, charIdeal_quotient_of_height_eq_one
+    rw [charIdeal_def, charDivisor_quotient_span_singleton_mul hp₀
+        (mem_nonZeroDivisors_of_ne_zero ha),
+      Finsupp.prod_add_index' (fun _ ↦ pow_zero _) fun _ ↦ pow_add _, ← charIdeal_def,
+      ← charIdeal_def, ih ha, charIdeal_quotient_of_height_eq_one
         (Ideal.height_span_singleton_eq_one_of_mem_nonZeroDivisors hp₀ hp.not_isUnit),
-      Ideal.span_singleton_mul_span_singleton, mul_comm]
+      Ideal.span_singleton_mul_span_singleton]
 
 open _root_.PowerSeries in
 -- Over the factorial ring `Λ = ℤ_p⟦T⟧`, the characteristic ideal of `Λ ⧸ (T² - p)` is `(T² - p)`.

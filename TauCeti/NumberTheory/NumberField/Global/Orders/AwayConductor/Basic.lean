@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.NumberField.Global.RayClass.Modulus
 public import TauCeti.RingTheory.Ideal.Conductor
 import Mathlib.LinearAlgebra.FreeModule.IdealQuotient
 import TauCeti.RingTheory.ClassGroup.CoprimeRepresentative
-import TauCeti.RingTheory.Ideal.Quotient.Artinian
+import TauCeti.RingTheory.Ideal.Quotient.Semilocal
 
 /-!
 # Ideals of an order away from its conductor
@@ -92,6 +92,12 @@ theorem conductorModulus_infinitePart : O.conductorModulus.infinitePart = ∅ :=
 theorem conductorModulus_maximalNumberFieldOrder :
     (maximalNumberFieldOrder K).conductorModulus = Modulus.one K :=
   Modulus.ext (by simp) (by simp)
+
+/-- Enlarging an order makes its conductor modulus a divisor of the conductor modulus of the
+smaller order. -/
+theorem conductorModulus_dvd_conductorModulus {O O' : NumberFieldOrder K}
+    (h : O.toSubalgebra ≤ O'.toSubalgebra) : O'.conductorModulus ∣ O.conductorModulus :=
+  Modulus.dvd_iff.mpr ⟨Ideal.dvd_iff_le.mpr (conductor_mono h), by simp⟩
 
 /-- An ideal of `𝓞 K` is prime to the conductor modulus exactly when it is nonzero and coprime
 to the conductor. -/

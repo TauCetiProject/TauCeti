@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.RegularLocalRing.Polynomial
-public import TauCeti.RingTheory.LocalRing.Polynomial
+public import TauCeti.RingTheory.LocalRing.Localization
 public import TauCeti.RingTheory.Node.Localization
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 public import TauCeti.RingTheory.Smooth.Regular
@@ -33,8 +33,9 @@ the point `(𝔪_R, x, y)` does not lie on the model at all, since `xy = 1` ther
 
 Away from the origin, that is at a prime not containing both coordinates, the model is smooth over
 `R`, hence regular whenever `R` is a regular ring. Over a discrete valuation ring with uniformizer
-`π`, the origin is the only prime of `R[x, y] ⧸ (xy - π)` containing both coordinates, so the
-whole ring `R[x, y] ⧸ (xy - πⁿ)` is regular exactly when `n ≤ 1`.
+`π`, the origin is the only prime of `R[x, y] ⧸ (xy - πⁿ)` containing both coordinates. So the
+model is regular away from its origin, and the whole ring `R[x, y] ⧸ (xy - πⁿ)` is regular
+exactly when `n ≤ 1`.
 
 This is the regularity statement behind the resolution of the singularities of a nodal model of a
 curve over a discrete valuation ring by repeated blowups, each of which replaces `n` by `n - 2`,
@@ -50,6 +51,10 @@ until the thickness of every node is at most one.
   same statement for a uniformizer `π` of a discrete valuation ring.
 * `TauCeti.NodeAlgebra.isRegularLocalRing_localization_of_coord_notMem`: over a regular ring,
   `R[x, y] ⧸ (xy - a)` is regular at every prime not containing both coordinates.
+* `TauCeti.NodeAlgebra.isRegularLocalRing_localization_of_ne`: for a uniformizer `π` of a
+  discrete valuation ring, `R[x, y] ⧸ (xy - πⁿ)` is regular at every prime other than the origin;
+  for `n ≥ 2` it is singular exactly at the origin
+  (`TauCeti.NodeAlgebra.isRegularLocalRing_localization_iff_ne`).
 * `TauCeti.NodeAlgebra.isRegularRing_of_isUnit`: over a regular ring, `R[x, y] ⧸ (xy - a)` is a
   regular ring when `a` is a unit.
 * `TauCeti.NodeAlgebra.isRegularRing_pow_iff`: for a uniformizer `π` of a discrete valuation
@@ -121,7 +126,7 @@ theorem isRegularLocalRing_quotient_X_mul_X_sub_C_pow_iff (hπ : π ∈ maximalI
       (pow_le_pow_right (by omega) (pow_mem_pow hπ n))
   · -- for `n = 1` the constant coefficient `-π` of the equation does not lie in `𝔪_R²`
     rintro rfl
-    exact algebraMap_notMem_maximalIdeal_sq (by simpa using hπ2)
+    exact algebraMap_notMem_maximalIdeal_pow (by simpa using hπ2)
 
 /-- **The local ring of `R[x, y] ⧸ (xy - πⁿ)` at the origin of its special fibre is regular exactly
 when `n = 1`.** Here `π ∈ 𝔪_R \ 𝔪_R²` for a regular local ring `R`, and the origin is the image of
@@ -201,14 +206,22 @@ section IsDiscreteValuationRing
 
 variable {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R] {π : R}
 
-/-- Over a discrete valuation ring with uniformizer `π`, the only prime of `R[x, y] ⧸ (xy - π)`
+/-- Over a discrete valuation ring with uniformizer `π`, the only prime of `R[x, y] ⧸ (xy - πⁿ)`
 containing both coordinates is the origin, the image of `(π, x, y)`. -/
-private theorem map_eq_of_coord_mem (hπ : Irreducible π) (P : Ideal (NodeAlgebra R (π ^ 1)))
-    [P.IsPrime] (h : ∀ i, coord (π ^ 1) i ∈ P) :
+private theorem map_eq_of_coord_mem (hπ : Irreducible π) {n : ℕ}
+    (P : Ideal (NodeAlgebra R (π ^ n))) [hP : P.IsPrime] (h : ∀ i, coord (π ^ n) i ∈ P) :
     ((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
-      (NodeAlgebra.mk (π ^ 1)) = P := by
+      (NodeAlgebra.mk (π ^ n)) = P := by
   set 𝔪 := (maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)
-  set q := NodeAlgebra.mk (π ^ 1)
+  set q := NodeAlgebra.mk (π ^ n)
+  -- `πⁿ = xy` lies in `P`, hence so does `π`, and `πⁿ` is not a unit
+  have hπnP : algebraMap R (NodeAlgebra R (π ^ n)) (π ^ n) ∈ P := by
+    rw [← coord_zero_mul_coord_one]
+    exact P.mul_mem_right _ (h 0)
+  have hπP : algebraMap R (NodeAlgebra R (π ^ n)) π ∈ P :=
+    hP.mem_of_pow_mem n (by rwa [map_pow] at hπnP)
+  have hπn : π ^ n ∈ maximalIdeal R := (mem_maximalIdeal _).mpr (mem_nonunits_iff.mpr
+    fun hu ↦ hP.ne_top (P.eq_top_of_isUnit_mem hπnP (hu.map _)))
   have hle : 𝔪.map q ≤ P := by
     rw [map_le_iff_le_comap]
     intro p hp
@@ -223,17 +236,40 @@ private theorem map_eq_of_coord_mem (hπ : Irreducible π) (P : Ideal (NodeAlgeb
       simp [constantCoeff_eq]
     have hvars : idealOfVars (Fin 2) R ≤ P.comap q :=
       span_le.mpr (Set.range_subset_iff.mpr fun i ↦ by simpa [q] using h i)
-    -- `p(0, 0) = rπ` and `π = xy` lies in `P`
-    have hC : q (C (constantCoeff p)) =
-        algebraMap R _ r * (coord (π ^ 1) 0 * coord (π ^ 1) 1) := by
-      rw [← pow_one π] at hr
-      rw [coord_zero_mul_coord_one, ← map_mul, hr]
+    -- `p(0, 0) = rπ` lies in `P`
+    have hC : q (C (constantCoeff p)) = algebraMap R _ r * algebraMap R _ π := by
+      rw [← hr, ← map_mul]
       simp [q, ← algebraMap_eq]
     rw [← sub_add_cancel p (C (constantCoeff p)), map_add, hC]
-    exact add_mem (hvars hX) (mul_mem_left _ _ (mul_mem_right _ _ (h 0)))
-  have : 𝔪.IsMaximal := comap_isMaximal_of_surjective _ fun r ↦ ⟨C r, constantCoeff_C _ r⟩
-  refine ((map_eq_top_or_isMaximal_of_surjective q (NodeAlgebra.mk_surjective _) this).resolve_left
-    fun htop ↦ IsPrime.ne_top' (top_le_iff.mp (htop ▸ hle))).eq_of_le IsPrime.ne_top' hle
+    exact add_mem (hvars hX) (P.mul_mem_left _ hπP)
+  exact (isMaximal_map_quotient_X_mul_X_sub_C hπn).eq_of_le hP.ne_top hle
+
+/-- **The node `xy = πⁿ` is regular away from its origin.** For a uniformizer `π` of a discrete
+valuation ring `R`, the local ring of `R[x, y] ⧸ (xy - πⁿ)` at every prime other than the origin,
+the image of `(π, x, y)`, is regular. -/
+theorem isRegularLocalRing_localization_of_ne (hπ : Irreducible π) (n : ℕ)
+    (P : Ideal (NodeAlgebra R (π ^ n))) [P.IsPrime]
+    (hP : P ≠ ((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
+      (NodeAlgebra.mk (π ^ n))) :
+    IsRegularLocalRing (Localization.AtPrime P) := by
+  by_cases h : ∃ i, coord (π ^ n) i ∉ P
+  · exact isRegularLocalRing_localization_of_coord_notMem _ P h
+  -- a prime containing both coordinates is the origin
+  simp only [not_exists, not_not] at h
+  exact absurd (map_eq_of_coord_mem hπ P h).symm hP
+
+/-- **The singular locus of the node `xy = πⁿ` is its origin for `n ≥ 2`.** For a uniformizer `π`
+of a discrete valuation ring `R` and `n ≥ 2`, the local ring of `R[x, y] ⧸ (xy - πⁿ)` at a prime
+is regular exactly when the prime is not the origin, the image of `(π, x, y)`. -/
+theorem isRegularLocalRing_localization_iff_ne (hπ : Irreducible π) {n : ℕ} (hn : 2 ≤ n)
+    (P : Ideal (NodeAlgebra R (π ^ n))) [P.IsPrime] :
+    IsRegularLocalRing (Localization.AtPrime P) ↔
+      P ≠ ((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
+        (NodeAlgebra.mk (π ^ n)) := by
+  refine ⟨?_, isRegularLocalRing_localization_of_ne hπ n P⟩
+  rintro h rfl
+  have := (isRegularLocalRing_localization_quotient_X_mul_X_sub_C_pow_iff_of_irreducible hπ n).mp h
+  omega
 
 /-- **The node `xy = πⁿ` over a discrete valuation ring is regular exactly when `n ≤ 1`.** For a
 uniformizer `π` of a discrete valuation ring `R`, every local ring of `R[x, y] ⧸ (xy - πⁿ)` is
@@ -254,12 +290,12 @@ theorem isRegularRing_pow_iff (hπ : Irreducible π) (n : ℕ) :
   · rw [pow_zero]
     exact isRegularRing_of_isUnit isUnit_one
   refine isRegularRing_iff.mpr fun P _ ↦ ?_
-  by_cases h : ∃ i, coord (π ^ 1) i ∉ P
-  · exact isRegularLocalRing_localization_of_coord_notMem _ P h
-  -- a prime containing both coordinates is the origin
-  simp only [not_exists, not_not] at h
-  obtain rfl := map_eq_of_coord_mem hπ P h
-  exact (isRegularLocalRing_localization_quotient_X_mul_X_sub_C_pow_iff_of_irreducible hπ 1).mpr rfl
+  by_cases hP : P = ((maximalIdeal R).comap (constantCoeff : MvPolynomial (Fin 2) R →+* R)).map
+    (NodeAlgebra.mk (π ^ 1))
+  · subst hP
+    exact (isRegularLocalRing_localization_quotient_X_mul_X_sub_C_pow_iff_of_irreducible hπ 1).mpr
+      rfl
+  · exact isRegularLocalRing_localization_of_ne hπ 1 P hP
 
 end IsDiscreteValuationRing
 

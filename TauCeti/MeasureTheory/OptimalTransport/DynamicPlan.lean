@@ -63,6 +63,8 @@ Mathlib's `MeasureTheory.Measure`, where dot notation such as `η.timeMarginal t
 * `MeasureTheory.Measure.eq_of_endpointLaw_eq_of_ae_subsingleton`: on a Polish metric space, two
   dynamic plans concentrated on geodesics with the same endpoint law are equal when almost every
   pair of endpoints is joined by at most one geodesic path.
+* `TauCeti.ae_timeMarginal_mem_closedBall`: if the laws at times `0` and `1` of a dynamic plan
+  concentrated on geodesics are carried by closed balls about a point, so is its law at every time.
 * `TauCeti.eLpNorm_edist_map_eq`: for a dynamic plan concentrated on geodesics, the `Lᵖ`
   displacement of its joint law at times `s` and `t` is `|s - t|` times that of its endpoint law.
 * `TauCeti.wassersteinEDist_timeMarginal_le`: the displacement bound between the laws at two times
@@ -392,6 +394,30 @@ end QuadraticOptimal
 end MeasureTheory.Measure
 
 namespace TauCeti
+
+section Carrier
+
+variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [BorelSpace X]
+
+/-- **Geodesic plans stay near their endpoints.** If a dynamic plan `η` concentrated on geodesic
+paths has its laws at times `0` and `1` carried by the closed balls of radii `r₀` and `r₁` about
+`x`, then its law at time `t` is carried by the closed ball of radius `(1 - t) (r₀ + r₁) + r₁`
+about `x`: the point at time `t` is within `1 - t` times the endpoint distance of the endpoint at
+time `1`. -/
+theorem ae_timeMarginal_mem_closedBall {η : Measure C(I, X)} (hη : ∀ᵐ γ ∂η, γ ∈ geodesicPaths X)
+    {x : X} {r₀ r₁ : ℝ} (h₀ : ∀ᵐ y ∂η.timeMarginal 0, y ∈ Metric.closedBall x r₀)
+    (h₁ : ∀ᵐ y ∂η.timeMarginal 1, y ∈ Metric.closedBall x r₁) (t : I) :
+    ∀ᵐ y ∂η.timeMarginal t, y ∈ Metric.closedBall x ((1 - t) * (r₀ + r₁) + r₁) := by
+  refine (Measure.ae_timeMarginal_iff measurableSet_closedBall).2 ?_
+  filter_upwards [hη, (Measure.ae_timeMarginal_iff measurableSet_closedBall).1 h₀,
+    (Measure.ae_timeMarginal_iff measurableSet_closedBall).1 h₁] with γ hγ hγ₀ hγ₁
+  have hγt := mem_geodesicPaths_iff.1 hγ t 1
+  rw [Icc.coe_one, abs_sub_comm, abs_of_nonneg (sub_nonneg.2 t.2.2)] at hγt
+  have hd : dist (γ 0) (γ 1) ≤ r₀ + r₁ := by
+    linarith [dist_triangle (γ 0) x (γ 1), dist_comm x (γ 1)]
+  nlinarith [dist_triangle (γ t) (γ 1) x, mul_le_mul_of_nonneg_left hd (sub_nonneg.2 t.2.2)]
+
+end Carrier
 
 section Displacement
 

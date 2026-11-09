@@ -157,6 +157,11 @@ theorem localMass_sub_le : localMass (f - g) U ≤ localMass f U + localMass g U
 theorem mass_sub_le : mass (f - g) ≤ mass f + mass g := by
   simpa [sub_eq_add_neg] using mass_add_le (f := f) (g := -g)
 
+/-- The mass of a finite sum is at most the sum of the masses. -/
+theorem mass_sum_le {ι : Type*} (s : Finset ι) (f : ι → 𝓓^{n}(Ω, F) → V) :
+    mass (∑ i ∈ s, f i) ≤ ∑ i ∈ s, mass (f i) :=
+  Finset.le_sum_of_subadditive _ mass_zero.le (fun _ _ ↦ mass_add_le) s f
+
 /-- Changing the values of test functions by a linear isometric equivalence preserves mass. -/
 @[simp]
 theorem mass_comp_postcompCLM_linearIsometryEquiv {G : Type*} [NormedAddCommGroup G]
@@ -323,6 +328,12 @@ theorem mass_comp_monoCLM {Ω' : Opens E} (h : Ω' ≤ Ω) :
     have hψ : ι ψ = φ := TestFunction.ext fun x => by simp [hι, ψ]
     simpa [hψ] using enorm_le_mass (f := f ∘ ι) (φ := ψ) hφ
 
+/-- Restriction to an open subset does not increase mass. -/
+theorem mass_comp_monoCLM_le {Ω' : Opens E} (h : Ω' ≤ Ω) :
+    mass (f ∘ (TestFunction.monoCLM ℝ : 𝓓^{n}(Ω', F) →L[ℝ] 𝓓^{n}(Ω, F))) ≤ mass f := by
+  rw [mass_comp_monoCLM h]
+  exact localMass_le_mass
+
 /-- The local mass of an open restriction is the local mass on the intersection with its domain.
 The testing set `U` need not be open or measurable. -/
 theorem localMass_comp_monoCLM {Ω' : Opens E} (f : 𝓓^{n}(Ω, F) → V) (h : Ω' ≤ Ω) (U : Set E) :
@@ -449,6 +460,23 @@ theorem hasLocallyFiniteMass_of_mass_ne_top (T : 𝓕) (hT : mass T ≠ ⊤) :
     HasLocallyFiniteMass T :=
   (hasLocallyFiniteMass_iff_localMass_ne_top T).2 fun _ _ _ =>
     ne_top_of_le_ne_top hT localMass_le_mass
+
+/-- **Locally finite mass implies continuity.** A linear map on test functions with locally finite
+mass is continuous for the test-function topology, so it is a distribution of order zero. -/
+theorem HasLocallyFiniteMass.continuous {L : 𝓓^{n}(Ω, F) →ₗ[ℝ] V}
+    (hL : HasLocallyFiniteMass L) : Continuous L := by
+  refine (TestFunction.continuous_iff_continuous_comp L).2 fun K hK => ?_
+  obtain ⟨C, hC0, hC⟩ := hasLocallyFiniteMass_def.1 hL K K.isCompact hK
+  -- On the tests supported in `K`, `L` is bounded by `C` times the seminorm `N[ℝ]_{K, n, 0}`.
+  let LK : 𝓓^{n}_{K}(E, F) →ₗ[ℝ] V := L ∘ₗ (TestFunction.ofSupportedInCLM ℝ hK).toLinearMap
+  have hLK (ψ : 𝓓^{n}_{K}(E, F)) :
+      ‖LK ψ‖ ≤ C * (({0} : Finset ℕ).sup fun i => N[ℝ]_{K, n, i}) ψ := by
+    have hψ : ((TestFunction.ofSupportedIn hK ψ : 𝓓^{n}(Ω, F)) : E →ᵇ F) = (ψ : E →ᵇ F) :=
+      BoundedContinuousFunction.ext fun x => by simp
+    rw [Finset.sup_singleton, ← ContDiffMapSupportedIn.norm_toBoundedContinuousFunction ℝ, ← hψ]
+    simpa [LK] using hC (TestFunction.ofSupportedIn hK ψ) (by simpa using ψ.tsupport_subset)
+  exact (ContDiffMapSupportedIn.withSeminorms ℝ E F n K).continuous_normedSpace_rng V LK
+    ⟨{0}, ⟨C, hC0⟩, hLK⟩
 
 end LocallyFinite
 

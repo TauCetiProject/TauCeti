@@ -174,8 +174,8 @@ theorem nonempty_linearEquiv_prod_of_pPowerTorsion_linearEquiv
   have : IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) Q₀ := .of_compHom _ _ _
   let _ : Module ℤ_[p] N := .compHom N (algebraMap ℤ_[p] (MonoidAlgebra ℤ_[p] G))
   have : IsScalarTower ℤ_[p] (MonoidAlgebra ℤ_[p] G) N := .of_compHom _ _ _
-  have : Module.Projective ℤ_[p] P₀ := .trans (S := MonoidAlgebra ℤ_[p] G)
-  have : Module.Projective ℤ_[p] Q₀ := .trans (S := MonoidAlgebra ℤ_[p] G)
+  have : Module.Projective ℤ_[p] P₀ := .trans (MonoidAlgebra ℤ_[p] G) P₀
+  have : Module.Projective ℤ_[p] Q₀ := .trans (MonoidAlgebra ℤ_[p] G) Q₀
   have : Module.Finite (MonoidAlgebra ℤ_[p] G) M := .of_surjective π hπ
   have : Module.Finite ℤ_[p] M := .trans (MonoidAlgebra ℤ_[p] G) M
   have : Module.Finite (MonoidAlgebra ℤ_[p] G) N := .of_surjective ρ hρ

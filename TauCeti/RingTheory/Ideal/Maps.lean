@@ -8,8 +8,9 @@ module
 public import Mathlib.RingTheory.Ideal.Maps
 
 /-!
-# Transport of ideals along equivalences
+# Transport of ideals along ring homomorphisms
 
+Taking radicals before extending an ideal does not change the radical of its extension.
 Powers of ideals commute with pullback along a ring equivalence, and extension along a bijective
 ring homomorphism preserves and reflects primality. Extending an ideal to an algebra and then along
 an algebra homomorphism is extending it directly. An algebra equivalence
@@ -21,6 +22,14 @@ to ideals extended from a common commutative semiring, without assuming the alge
 public section
 
 namespace Ideal
+
+/-- Taking the radical before extending an ideal does not change the radical of its extension. -/
+@[simp]
+theorem radical_map_radical {R S F : Type*} [CommSemiring R] [CommSemiring S]
+    [FunLike F R S] [RingHomClass F R S] (I : Ideal R) (f : F) :
+    (I.radical.map f).radical = (I.map f).radical :=
+  le_antisymm (radical_le_radical_iff.mpr (map_radical_le f))
+    (radical_mono (map_mono le_radical))
 
 /-- Pullback along a ring equivalence commutes with powers of ideals. -/
 @[simp]

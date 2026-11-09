@@ -73,26 +73,15 @@ namespace ResolutionEquiv
 variable {D : PDCode n} {D' : PDCode m} {D'' : PDCode r} (E : D.ResolutionEquiv D')
   (hD : D.IsPlanar) (hD' : D'.IsPlanar) (R : Type u) [CommRing R] (j : ℤ)
 
-/-- The vertex isomorphism as a linear equivalence: reindexing along the bijection of resolved
-circles, restricted to the quantum pieces, which are the images of the vertex inclusions. -/
-private def resolutionCubeLinearEquiv (S : Finset (Fin n)) :
-    (D.resolutionCube hD R j).obj S ≃ₗ[R]
-      (D'.resolutionCube hD' R j).obj (S.map E.crossingEquiv.toEmbedding) :=
-  (LinearEquiv.ofInjective _ (D.resolutionCubeι_injective hD R j S)).trans <|
-    (LinearEquiv.ofEq _ _ (D.range_resolutionCubeι hD R j S)).trans <|
-      ((reindex R (fun _ ↦ R[ε])
-        (E.smoothingEquiv (cubeState_map_apply E.crossingEquiv S)).resolvedCircleCongr).ofSubmodules
-          _ _ (by rw [Khovanov.map_reindex_circleQuantumGrading_piece, card_map])).trans <|
-        (LinearEquiv.ofEq _ _ (D'.range_resolutionCubeι hD' R j _).symm).trans <|
-          (LinearEquiv.ofInjective _ (D'.resolutionCubeι_injective hD' R j _)).symm
-
 /-- The vertex isomorphism from the vertex `S` of the degree-`j` cube of resolutions of `D` to the
 vertex `S.map E.crossingEquiv` of that of `D'`: it reindexes the circle tensor of the resolution
 of `S` along the bijection of resolved circles induced by `E`. -/
 def resolutionCubeIso (S : Finset (Fin n)) :
     (D.resolutionCube hD R j).obj S ≅
       (D'.resolutionCube hD' R j).obj (S.map E.crossingEquiv.toEmbedding) :=
-  (E.resolutionCubeLinearEquiv hD hD' R j S).toModuleIso
+  (D.resolutionCubeObjCongr hD R j hD'
+    (E.smoothingEquiv (cubeState_map_apply E.crossingEquiv S)).resolvedCircleCongr
+    (by rw [card_map])).toModuleIso
 
 /-- The vertex isomorphism reindexes the circle tensor along the bijection of resolved circles
 induced by `E`. -/
@@ -104,7 +93,7 @@ theorem resolutionCubeIso_hom_comp_resolutionCubeι (S : Finset (Fin n)) :
         (E.smoothingEquiv (cubeState_map_apply E.crossingEquiv S)).resolvedCircleCongr).toLinearMap
     := by
   ext x
-  simp [resolutionCubeIso, resolutionCubeLinearEquiv]
+  exact D.resolutionCubeι_resolutionCubeObjCongr hD R j hD' _ _ x
 
 /-- The vertex isomorphism, followed by an identification of its target vertex with an equal
 vertex `T`, reindexes the circle tensor along the bijection of resolved circles induced by `E`

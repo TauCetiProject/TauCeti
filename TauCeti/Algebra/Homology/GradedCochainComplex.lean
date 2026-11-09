@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Basic
 import Mathlib.Algebra.Category.ModuleCat.Ulift
 public import Mathlib.Algebra.Homology.Homotopy
 import Mathlib.Algebra.Homology.Additive
+import Mathlib.Algebra.Category.ModuleCat.EpiMono
 import Mathlib.Algebra.Homology.HomotopyCategory.HomComplex
 import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Basic
 public import TauCeti.LinearAlgebra.Graded.LinearMap
@@ -317,6 +318,56 @@ theorem gradedCochainComplexInclusion_apply (h : ∀ n, ℳ n ≤ 𝒩 n) (n : �
         (hdegN := hdegN) (hsqN := hsqN) h).f n).hom x) : M) =
       gradedCochainComplexXEquiv (hdeg := hdeg) (hsq := hsq) n x :=
   gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply _ _ _ n x
+
+/-- The cochain inclusion of a family of grading submodules into itself is the identity. -/
+@[simp]
+theorem gradedCochainComplexInclusion_refl :
+    gradedCochainComplexInclusion (hdeg := hdeg) (hsq := hsq) (hdegN := hdeg) (hsqN := hsq)
+      (fun n ↦ le_refl (ℳ n)) = 𝟙 _ :=
+  gradedCochainComplex_hom_ext fun _ _ ↦ by
+    simp only [gradedCochainComplexInclusion_apply, HomologicalComplex.id_f, ModuleCat.hom_id,
+      LinearMap.id_apply]
+
+/-- Cochain inclusions of grading submodules compose. -/
+@[reassoc (attr := simp)]
+theorem gradedCochainComplexInclusion_comp {𝒦 : ℤ → Submodule R M}
+    {hdegP : LinearMap.IsHomogeneous dM 𝒦 𝒦 1} {hsqP : ∀ p (x : 𝒦 p), dM (dM x) = 0}
+    (h : ∀ n, ℳ n ≤ 𝒩 n) (h' : ∀ n, 𝒩 n ≤ 𝒦 n) :
+    gradedCochainComplexInclusion (hdeg := hdeg) (hsq := hsq) (hdegN := hdegN) (hsqN := hsqN) h ≫
+        gradedCochainComplexInclusion (hdegN := hdegP) (hsqN := hsqP) h' =
+      gradedCochainComplexInclusion fun n ↦ (h n).trans (h' n) :=
+  gradedCochainComplex_hom_ext fun _ _ ↦ by
+    simp only [gradedCochainComplexInclusion_apply, HomologicalComplex.comp_f, ModuleCat.hom_comp,
+      LinearMap.comp_apply]
+
+/-- A cochain inclusion of grading submodules is injective in each degree. -/
+theorem injective_gradedCochainComplexInclusion_f (h : ∀ n, ℳ n ≤ 𝒩 n) (n : ℤ) :
+    Function.Injective ((gradedCochainComplexInclusion (hdeg := hdeg) (hsq := hsq)
+      (hdegN := hdegN) (hsqN := hsqN) h).f n) := fun x y hxy ↦
+  (gradedCochainComplexXEquiv n).injective <| Subtype.ext <| by
+    simpa only [gradedCochainComplexInclusion_apply] using
+      congrArg (fun z ↦ (gradedCochainComplexXEquiv (hdeg := hdegN) (hsq := hsqN) n z : M)) hxy
+
+instance mono_gradedCochainComplexInclusion (h : ∀ n, ℳ n ≤ 𝒩 n) :
+    Mono (gradedCochainComplexInclusion (hdeg := hdeg) (hsq := hsq)
+      (hdegN := hdegN) (hsqN := hsqN) h) :=
+  HomologicalComplex.mono_of_mono_f _ fun n ↦
+    (ModuleCat.mono_iff_injective _).mpr (injective_gradedCochainComplexInclusion_f h n)
+
+/-- The image of a cochain inclusion of grading submodules consists, in degree `n`, of the
+elements lying in the smaller submodule `ℳ n`. -/
+theorem mem_range_gradedCochainComplexInclusion_f_iff (h : ∀ n, ℳ n ≤ 𝒩 n) (n : ℤ)
+    (x : (gradedCochainComplex 𝒩 dM hdegN hsqN).X n) :
+    x ∈ LinearMap.range ((gradedCochainComplexInclusion (hdeg := hdeg) (hsq := hsq) h).f n).hom ↔
+      (gradedCochainComplexXEquiv n x : M) ∈ ℳ n := by
+  constructor
+  · rintro ⟨y, rfl⟩
+    rw [gradedCochainComplexInclusion_apply]
+    exact (gradedCochainComplexXEquiv n y).2
+  · intro hx
+    refine ⟨(gradedCochainComplexXEquiv n).symm ⟨_, hx⟩,
+      (gradedCochainComplexXEquiv n).injective (Subtype.ext ?_)⟩
+    simp only [gradedCochainComplexInclusion_apply, LinearEquiv.apply_symm_apply]
 
 end Inclusion
 

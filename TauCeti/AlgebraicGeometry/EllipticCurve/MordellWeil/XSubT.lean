@@ -19,6 +19,7 @@ public import TauCeti.Algebra.Polynomial.LinearFactor
 public import TauCeti.GroupTheory.QuotientGroup.PowMonoidHom
 public import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.Algebra.Group.PowMonoidHom
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Collinear
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 
 /-!
@@ -680,19 +681,11 @@ lemma Point.exists_polynomial_factorization_of_some_add_some_add_some_eq_zero
     (hP : W.Nonsingular xP yP) (hQ : W.Nonsingular xQ yQ) (hR : W.Nonsingular xR yR)
     (hPQR : some xP yP hP + some xQ yQ hQ + some xR yR hR = 0) :
     ∃ pol, (X - C xP) * (X - C xQ) * (X - C xR) = W.f - pol ^ 2 ∧ pol.natDegree ≤ 1 := by
-  refine ⟨linePolynomial xP yP <| W.slope xP xQ yP yQ, ?_, ?_⟩
-  · have hgeneric : ¬(xP = xQ ∧ yP = W.negY xQ yQ) := by
-      by_contra H
-      simp [add_of_Y_eq H.1 H.2] at hPQR
-    have := addPolynomial_slope hP.1 hQ.1 hgeneric |>.symm
-    rw [neg_eq_iff_eq_neg] at this
-    convert this using 1
-    · congr
-      rw [add_eq_zero_iff_eq_neg, neg_some, add_some hgeneric] at hPQR
-      grind
-    · simp [addPolynomial, polynomial]
-  · simp only [linePolynomial, natDegree_add_C]
-    compute_degree
+  obtain ⟨ℓ, ν, -, -, -, h⟩ := (some_add_some_add_some_eq_zero_iff hP hQ hR).1 hPQR
+  refine ⟨C ℓ * X + C ν, ?_, natDegree_linear_le⟩
+  have hf : W.polynomial.eval (C ℓ * X + C ν) = (C ℓ * X + C ν) ^ 2 - W.f := by
+    simp [polynomial]
+  linear_combination h - hf
 
 open Point in
 private lemma xQ_ne_xP_of_eval_f_eq_zero {xP yP xQ yQ xR yR : K} (hP : W.Nonsingular xP yP)

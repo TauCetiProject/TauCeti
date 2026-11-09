@@ -61,6 +61,8 @@ injective, and kills a monomial whose exponent is not in the range of `φ`.
   finite set of exponents in the fibre containing the nonzero coefficients there.
 * `TauCeti.NovikovSeries.map_surjective`: pushforward along surjective coefficient and exponent
   maps is surjective, even when the exponent map has infinite kernel.
+* `TauCeti.NovikovSeries.map_injective`: pushforward along injective coefficient and exponent
+  maps is injective.
 * `TauCeti.NovikovSeries.map_id` and `TauCeti.NovikovSeries.map_map`: the identity and composition
   laws of the pushforward.
 * `TauCeti.NovikovSeries.map_ofFinsupp`: the pushforward of a finitely supported series is the
@@ -292,6 +294,11 @@ coefficient. -/
 theorem coeff_map_id_right (a : NovikovSeries R H N) (h : H) :
     (map ρ (AddMonoidHom.id H) exists_period_rescale_id a).coeff h = ρ (a.coeff h) :=
   coeff_map_of_injective ρ _ _ injective_id a h
+
+/-- Pushforward along injective coefficient and exponent maps is injective. -/
+theorem map_injective (hρ : Injective ρ) (hinj : Injective φ) : Injective (map ρ φ hφ) :=
+  fun a b hab => ext fun h => hρ <| by
+    rw [← coeff_map_of_injective ρ φ hφ hinj, hab, coeff_map_of_injective ρ φ hφ hinj]
 
 /-- The pushforward sends a series vanishing below the period cutoff `C` to a series vanishing
 below `c * C`, where `c` is the period rescaling factor of `φ`. -/

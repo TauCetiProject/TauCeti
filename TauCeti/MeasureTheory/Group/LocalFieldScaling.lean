@@ -125,7 +125,7 @@ of `ϖ` clears the denominators of the coordinates of `x`, since `K` is the loca
 away from `ϖ`. -/
 theorem exists_mem_scaledIntegerBox [IsDiscreteValuationRing 𝒪[K]] {ι : Type*} [Finite ι]
     {ϖ : 𝒪[K]} (hϖ : Irreducible ϖ) (x : ι → K) : ∃ k, x ∈ scaledIntegerBox ι (ϖ : K) k := by
-  have := isLocalizationAway_fractionRing (K := K) hϖ
+  have := hϖ.isLocalizationAway_fractionRing (K := K)
   have h (i : ι) : ∀ᶠ k in Filter.atTop, (ϖ : K) ^ k * x i ∈ 𝒪[K] := by
     obtain ⟨n, a, ha⟩ := IsLocalization.Away.surj ϖ (x i)
     simp only [Algebra.algebraMap_ofSubsemiring_apply] at ha

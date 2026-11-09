@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Probability.Distributions.Pareto.PDF
 public import Mathlib.Probability.ConditionalProbability
-public import TauCeti.Analysis.SpecialFunctions.Gamma
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.Probability.Distributions.Pareto.Basic
 
 /-!
 # The Lévy measure of a scalar stable law
@@ -18,9 +19,11 @@ For `0 < α < 2` and `|β| ≤ 1`, the stable Lévy measure has density proporti
 negative half-lines. It has no atom at zero. Parameters outside this non-Gaussian range
 give the zero measure.
 
-Restricting to either tail gives a multiple of a Pareto law or its reflection. In particular,
+Restricting to either tail gives a multiple of a Pareto law or its reflection, and at full
+skewness `|β| = 1` the measure lives on a single half-line. In particular,
 removing a positive neighbourhood of zero leaves positive finite mass, and conditioning on
-that set gives a probability jump law for compound Poisson approximations.
+that set gives a probability jump law for compound Poisson approximations. The absolute jump
+size under this conditioned law is Pareto, independently of skewness.
 
 Integrability against the Lévy measure is Lebesgue integrability after multiplying by the
 density, and integrals against it split into power-weighted integrals over the two half-lines.
@@ -117,6 +120,12 @@ theorem measurable_stableLevyDensity :
       Gamma (1 + p.1.1) * sin (π * p.1.1 / 2) / π := by fun_prop
   exact Measurable.ite (by measurability)
     ((hcoeff.mul hsign).mul (by fun_prop)) measurable_const
+
+/-- For fixed shapes, the Lévy density is measurable in the jump size. -/
+@[fun_prop]
+theorem measurable_stableLevyDensity_apply (α β : ℝ) : Measurable (stableLevyDensity α β) :=
+  measurable_stableLevyDensity.comp
+    (measurable_const.prodMk measurable_id : Measurable (fun x : ℝ ↦ ((α, β), x)))
 
 /-- The full totalized Lévy measure family is Giry measurable. -/
 @[fun_prop]
@@ -215,6 +224,26 @@ theorem stableLevyMeasure_Iio (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0
   have := isProbabilityMeasure_paretoMeasure hε hα.1
   simpa [Measure.map_apply measurable_neg] using congrArg (fun μ : Measure ℝ ↦ μ univ)
     (stableLevyMeasure_restrict_Iio hα hβ hε)
+
+/-- At full skewness the stable Lévy measure lives on one half-line: if `β * t ≤ 0`, then
+`t * x ≤ 0` for almost every jump `x`. -/
+theorem ae_mul_nonpos_stableLevyMeasure {t : ℝ} (hβ : |β| = 1) (ht : β * t ≤ 0) :
+    ∀ᵐ x ∂stableLevyMeasure α β, t * x ≤ 0 := by
+  -- The density vanishes wherever `0 < t * x`, since there the skewness weight is zero.
+  have hzero (x : ℝ) (hx : 0 < t * x) : stableLevyDensity α β x = 0 := by
+    have hx0 : x ≠ 0 := by rintro rfl; simp at hx
+    by_cases hα : α ∈ Ioo 0 2
+    · rw [stableLevyDensity_of_ne_zero hα hβ.le hx0]
+      rcases (abs_eq zero_le_one).mp hβ with rfl | rfl
+      · have hx0 : ¬ 0 < x := fun h ↦ by nlinarith
+        simp [hx0]
+      · have hx0 : 0 < x := by nlinarith
+        simp [hx0]
+    · exact stableLevyDensity_eq_zero_of_not (fun h ↦ hα ⟨h.1, h.2.1⟩) x
+  rw [stableLevyMeasure_def,
+    ae_withDensity_iff (measurable_stableLevyDensity_apply α β).ennreal_ofReal]
+  refine ae_of_all _ fun x hx ↦ not_lt.mp fun h ↦ hx ?_
+  rw [hzero x h, ENNReal.ofReal_zero]
 
 /-- Removing a positive neighbourhood of zero leaves finite mass independent of skewness. -/
 theorem stableLevyMeasure_abs_gt (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) :
@@ -315,6 +344,54 @@ theorem isProbabilityMeasure_cond_stableLevyMeasure (hα : α ∈ Ioo 0 2) (hβ 
   exact cond_isProbabilityMeasure_of_finite (stableLevyMeasure_abs_gt_pos hα hβ hε).ne'
     (stableLevyMeasure_abs_gt_ne_top hε)
 
+/-- The absolute-value pushforward of the large-jump intensity is a multiple of a Pareto
+law. Its mass includes both tails, even when one of them vanishes at full skewness. -/
+theorem map_abs_restrict_stableLevyMeasure (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
+    (hε : 0 < ε) :
+    ((stableLevyMeasure α β).restrict {x : ℝ | ε < |x|}).map abs =
+      stableLevyMeasure α β {x : ℝ | ε < |x|} • paretoMeasure ε α := by
+  have hset : {x : ℝ | ε < |x|} = Iio (-ε) ∪ Ioi ε := by
+    ext x
+    simp only [mem_ofPred_eq, mem_union, mem_Iio, mem_Ioi, lt_abs, lt_neg, or_comm]
+  have hd : Disjoint (Iio (-ε)) (Ioi ε) := by
+    apply disjoint_left.mpr
+    intro x hx hy
+    simp only [mem_Iio, mem_Ioi] at hx hy
+    linarith
+  have hmap : (paretoMeasure ε α).map abs = paretoMeasure ε α := by
+    calc
+      _ = (paretoMeasure ε α).map id := Measure.map_congr <|
+        (ae_paretoMeasure_mem_Ici ε α).mono fun x hx ↦ abs_of_nonneg (hε.le.trans hx)
+      _ = _ := Measure.map_id
+  have hneg : ((paretoMeasure ε α).map (fun x ↦ -x)).map abs = paretoMeasure ε α := by
+    rw [Measure.map_map continuous_abs.measurable measurable_neg]
+    simpa only [Function.comp_def, abs_neg] using hmap
+  calc
+    _ = ((stableLevyMeasure α β).restrict (Iio (-ε))).map abs +
+        ((stableLevyMeasure α β).restrict (Ioi ε)).map abs := by
+      rw [hset, Measure.restrict_union hd measurableSet_Ioi,
+        Measure.map_add _ _ continuous_abs.measurable]
+    _ = stableLevyMeasure α β (Iio (-ε)) • paretoMeasure ε α +
+        stableLevyMeasure α β (Ioi ε) • paretoMeasure ε α := by
+      simp only [stableLevyMeasure_restrict_Iio hα hβ hε,
+        stableLevyMeasure_restrict_Ioi hα hβ hε,
+        Measure.map_smul _ continuous_abs.measurable.aemeasurable, hneg, hmap,
+        stableLevyMeasure_Iio hα hβ hε, stableLevyMeasure_Ioi hα hβ hε]
+    _ = (stableLevyMeasure α β (Iio (-ε)) + stableLevyMeasure α β (Ioi ε)) •
+        paretoMeasure ε α := (add_smul _ _ _).symm
+    _ = _ := by rw [hset, measure_union hd measurableSet_Ioi]
+
+/-- The size of a stable Lévy jump conditioned to exceed a positive cutoff is Pareto,
+independently of the skewness parameter. -/
+@[simp]
+theorem map_abs_cond_stableLevyMeasure (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
+    (hε : 0 < ε) :
+    (cond (stableLevyMeasure α β) {x : ℝ | ε < |x|}).map abs = paretoMeasure ε α := by
+  rw [ProbabilityTheory.cond, Measure.map_smul _ continuous_abs.measurable.aemeasurable,
+    map_abs_restrict_stableLevyMeasure hα hβ hε, smul_smul,
+    ENNReal.inv_mul_cancel (stableLevyMeasure_abs_gt_pos hα hβ hε).ne'
+      (stableLevyMeasure_abs_gt_ne_top hε), one_smul]
+
 /-- For valid parameters, every nonempty stable jump band gives a probability jump law. -/
 theorem isProbabilityMeasure_cond_stableLevyMeasure_smallJumpBand {α β ε r : ℝ}
     (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) (hεr : ε < r) :
@@ -331,9 +408,7 @@ theorem integrable_stableLevyDensity_smul_iff {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (α β : ℝ) {g : ℝ → E} :
     Integrable g (stableLevyMeasure α β) ↔
       Integrable (fun x ↦ stableLevyDensity α β x • g x) := by
-  have hd : Measurable (stableLevyDensity α β) :=
-    measurable_stableLevyDensity.comp
-      (measurable_const.prodMk measurable_id : Measurable (fun x : ℝ ↦ ((α, β), x)))
+  have hd := measurable_stableLevyDensity_apply α β
   rw [stableLevyMeasure_def, integrable_withDensity_iff_integrable_smul' hd.ennreal_ofReal
     (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
   simp only [ENNReal.toReal_ofReal (stableLevyDensity_nonneg _ _ _)]
@@ -347,9 +422,7 @@ theorem integral_stableLevyMeasure_eq {E : Type*} [NormedAddCommGroup E] [Normed
           (∫ x in Ioi (0 : ℝ), x ^ (-(α + 1)) • g x) +
         (Gamma (1 + α) * sin (π * α / 2) / π * (1 - β)) •
           ∫ x in Ioi (0 : ℝ), x ^ (-(α + 1)) • g (-x) := by
-  have hd : Measurable (stableLevyDensity α β) :=
-    measurable_stableLevyDensity.comp
-      (measurable_const.prodMk measurable_id : Measurable (fun x : ℝ ↦ ((α, β), x)))
+  have hd := measurable_stableLevyDensity_apply α β
   have hint := (integrable_stableLevyDensity_smul_iff α β).mp hg
   rw [stableLevyMeasure_def, integral_withDensity_eq_integral_toReal_smul hd.ennreal_ofReal
     (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]

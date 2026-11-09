@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.LeftExact
+public import TauCeti.Algebra.Module.Injective.Cogenerator
 public import TauCeti.Algebra.Module.Injective.Envelope.Basic
-public import TauCeti.Algebra.Module.Injective.Hom
-public import TauCeti.RingTheory.Length
+public import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
 # Matlis duality for modules of finite length
@@ -19,7 +18,8 @@ the finite-length case of Matlis duality: `D` preserves length, and the evaluati
 `M → D(D(M))` is an isomorphism for every module of finite length. No Noetherian hypothesis is
 needed. These are the base cases from which the duality between Artinian modules and finite
 modules over the completion is built, by passing to the submodules killed by powers of the
-maximal ideal.
+maximal ideal. Length preservation and biduality are the cogenerator criteria of
+`TauCeti/Algebra/Module/Injective/Cogenerator.lean`, applied to the computation of `D(κ)`.
 
 ## Main declarations
 
@@ -32,6 +32,10 @@ maximal ideal.
   of finite length or not.
 * `TauCeti.IsInjectiveEnvelope.bijective_applyₗ` and `TauCeti.IsInjectiveEnvelope.evalEquiv`:
   biduality for modules of finite length.
+* `TauCeti.annihilator_torsionBySet_of_injective`: if `E` is injective and contains a copy of
+  `κ`, then the annihilator of `E[J]` is `J`, for every ideal `J`.
+* `TauCeti.IsInjectiveEnvelope.exists_eq_smul_subtype`: for an ideal `J` with `R ⧸ J` of finite
+  length, every linear map `E[J] → E` is the inclusion multiplied by a scalar.
 
 ## References
 
@@ -80,18 +84,11 @@ theorem residueFieldLinearMapEquiv_apply_apply (hι : Function.Injective ι)
     residueFieldLinearMapEquiv hι hess a b = ι (a * b) :=
   (rfl)
 
-/-- The Matlis dual of a simple module has length one. -/
-private theorem length_linearMap_of_isSimpleModule (hι : Function.Injective ι)
-    (hess : IsEssential (LinearMap.range ι)) {S : Type w} [AddCommGroup S] [Module R S]
-    [IsSimpleModule R S] : Module.length R (S →ₗ[R] E) = 1 := by
-  obtain ⟨I, hI, ⟨e⟩⟩ := isSimpleModule_iff_quot_maximal.mp ‹IsSimpleModule R S›
-  -- `R ⧸ I` is the residue field: `I` is the maximal ideal, the kernel of `residue`.
-  have hker : LinearMap.ker (Algebra.linearMap R (ResidueField R)) = I := by
-    ext r
-    simp [eq_maximalIdeal hI, ResidueField.algebraMap_eq, residue_eq_zero_iff]
-  let e' : S ≃ₗ[R] ResidueField R := e ≪≫ₗ Submodule.quotEquivOfEq _ _ hker.symm ≪≫ₗ
-    (Algebra.linearMap R (ResidueField R)).quotKerEquivOfSurjective residue_surjective
-  rw [(e'.arrowCongr (LinearEquiv.refl R E)).length_eq,
+/-- The Matlis dual of `R ⧸ 𝔪` has length one, for the maximal ideal `𝔪`. -/
+private theorem length_quotient_linearMap (hι : Function.Injective ι)
+    (hess : IsEssential (LinearMap.range ι)) (𝔪 : Ideal R) (h𝔪 : 𝔪.IsMaximal) :
+    Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1 := by
+  rw [((quotientEquivResidueField h𝔪).arrowCongr (LinearEquiv.refl R E)).length_eq,
     ← (residueFieldLinearMapEquiv hι hess).length_eq]
   exact length_residueField_eq_one
 
@@ -101,64 +98,43 @@ variable [Small.{v} R]
 evaluation map `M → Hom_R(Hom_R(M, E), E)` is injective for every module `M`. -/
 theorem injective_applyₗ_of_injective [Module.Injective R E] (hι : Function.Injective ι)
     {M : Type w} [AddCommGroup M] [Module R M] :
-    Function.Injective (LinearMap.applyₗ : M →ₗ[R] (M →ₗ[R] E) →ₗ[R] E) := by
-  refine (injective_iff_map_eq_zero _).mpr fun m hm => ?_
-  by_contra hm0
-  -- A nonzero `m` has annihilator inside the maximal ideal, so it can be sent to `ι 1`.
-  obtain ⟨f, hf⟩ := (exists_linearMap_apply_eq_iff_forall_smul_eq_zero (a := m) (x := ι 1)).mpr
-    fun r hr => by
-      have hr' : r ∈ maximalIdeal R := by
-        by_contra h
-        exact hm0 ((notMem_maximalIdeal.mp h).smul_eq_zero.mp hr)
-      rw [← map_smul, Algebra.smul_def, mul_one, ResidueField.algebraMap_eq,
-        (residue_eq_zero_iff r).mpr hr', map_zero]
-  have h1 : ι 1 = ι 0 := by simpa [hf] using LinearMap.congr_fun hm f
-  exact one_ne_zero (hι h1)
+    Function.Injective (LinearMap.applyₗ : M →ₗ[R] (M →ₗ[R] E) →ₗ[R] E) :=
+  injective_applyₗ_of_forall_isMaximal fun _ h𝔪 =>
+    ⟨ι ∘ₗ (quotientEquivResidueField h𝔪).toLinearMap, 0, fun h => one_ne_zero <| hι <| by
+      simpa using LinearMap.congr_fun h ((quotientEquivResidueField h𝔪).symm 1)⟩
 
-/-- The Matlis dual of a module of finite length has the same length. -/
-private theorem IsInjectiveEnvelope.length_linearMap_of_isFiniteLength
-    (hι : IsInjectiveEnvelope ι) {M : Type w} [AddCommGroup M] [Module R M]
-    (hM : IsFiniteLength R M) : Module.length R (M →ₗ[R] E) = Module.length R M := by
-  have := hι.moduleInjective
-  induction hM with
-  | of_subsingleton => simp [Module.length_eq_zero]
-  | @of_simple_quotient M _ _ N _ _ ih =>
-    -- Dualize `0 → N → M → M ⧸ N → 0` to the short exact `0 → D(M ⧸ N) → D(M) → D(N) → 0`.
-    have hsurj : Function.Surjective (N.subtype.lcomp R E) := fun g =>
-      Module.Injective.extension_property R E N M N.subtype N.injective_subtype g
-    rw [Module.length_eq_add_of_exact _ _ N.injective_subtype N.mkQ_surjective
-        (LinearMap.exact_subtype_mkQ N),
-      Module.length_eq_add_of_exact _ _ (lcomp_injective_of_surjective _ N.mkQ_surjective) hsurj
-        (exact_lcomp_of_exact_of_surjective E (LinearMap.exact_subtype_mkQ N) N.mkQ_surjective),
-      ih, length_linearMap_of_isSimpleModule (S := M ⧸ N) hι.injective hι.isEssential_range,
-      Module.length_eq_one R (M ⧸ N), add_comm]
+/-- If `E` is injective and contains a copy of the residue field, then the elements of `E`
+killed by an ideal `J` have annihilator exactly `J`. -/
+theorem annihilator_torsionBySet_of_injective [Module.Injective R E]
+    (hι : Function.Injective ι) (J : Ideal R) : (Submodule.torsionBySet R E J).annihilator = J := by
+  refine le_antisymm (fun r hr => ?_) fun r hr => Submodule.mem_annihilator.mpr fun x hx =>
+    (Submodule.mem_torsionBySet_iff _ _).mp hx ⟨r, hr⟩
+  -- `E` cogenerates `R ⧸ J`, so the class of `r` is detected by a map `R ⧸ J → E`; that map
+  -- sends `1` into `E[J]`, which `r` kills.
+  rw [← Ideal.Quotient.eq_zero_iff_mem]
+  refine (injective_iff_map_eq_zero _).mp
+    (injective_applyₗ_of_injective (M := R ⧸ J) hι) _ (LinearMap.ext fun f => ?_)
+  simpa [f.apply_quotient_mk_eq_smul_apply_one] using
+    Submodule.mem_annihilator.mp hr _ (J.quotientLinearMapEquivTorsionBySet E f).prop
 
 /-- **Matlis duality preserves length.** For an injective envelope `E` of the residue field of a
 local ring, `Hom_R(M, E)` has the same length as `M`, for every module `M`. In particular `M` has
 finite length exactly when its Matlis dual does. -/
 theorem IsInjectiveEnvelope.length_linearMap (hι : IsInjectiveEnvelope ι) (M : Type w)
-    [AddCommGroup M] [Module R M] : Module.length R (M →ₗ[R] E) = Module.length R M := by
-  by_cases hM : IsFiniteLength R M
-  · exact hι.length_linearMap_of_isFiniteLength hM
-  -- If `D(M)` had finite length, `M` would embed in the module `D(D(M))` of finite length.
+    [AddCommGroup M] [Module R M] : Module.length R (M →ₗ[R] E) = Module.length R M :=
   have := hι.moduleInjective
-  have hD : ¬ IsFiniteLength R (M →ₗ[R] E) := fun hD => hM <| by
-    refine IsFiniteLength.of_injective ?_ (injective_applyₗ_of_injective hι.injective)
-    rw [← Module.length_ne_top_iff, hι.length_linearMap_of_isFiniteLength hD]
-    exact Module.length_ne_top_iff.mpr hD
-  rw [← Module.length_ne_top_iff, not_not] at hM hD
-  rw [hM, hD]
+  length_linearMap_of_forall_isMaximal (length_quotient_linearMap hι.injective hι.isEssential_range)
+    M
 
 /-- **Matlis biduality for modules of finite length.** For an injective envelope `E` of the
 residue field of a local ring, the evaluation map `M → Hom_R(Hom_R(M, E), E)` is bijective for
 every module `M` of finite length. -/
 theorem IsInjectiveEnvelope.bijective_applyₗ (hι : IsInjectiveEnvelope ι) {M : Type w}
     [AddCommGroup M] [Module R M] (hM : IsFiniteLength R M) :
-    Function.Bijective (LinearMap.applyₗ : M →ₗ[R] (M →ₗ[R] E) →ₗ[R] E) := by
+    Function.Bijective (LinearMap.applyₗ : M →ₗ[R] (M →ₗ[R] E) →ₗ[R] E) :=
   have := hι.moduleInjective
-  have hinj := injective_applyₗ_of_injective (M := M) hι.injective
-  refine ⟨hinj, surjective_of_injective_of_length_eq hinj (Module.length_ne_top_iff.mpr hM) ?_⟩
-  rw [hι.length_linearMap, hι.length_linearMap]
+  bijective_applyₗ_of_forall_isMaximal
+    (length_quotient_linearMap hι.injective hι.isEssential_range) hM
 
 /-- Matlis biduality for a module `M` of finite length, as the linear equivalence
 `M ≃ Hom_R(Hom_R(M, E), E)` given by evaluation. -/
@@ -171,5 +147,19 @@ theorem IsInjectiveEnvelope.evalEquiv_apply_apply (hι : IsInjectiveEnvelope ι)
     [AddCommGroup M] [Module R M] (hM : IsFiniteLength R M) (m : M) (f : M →ₗ[R] E) :
     hι.evalEquiv hM m f = f m :=
   (rfl)
+
+/-- **Linear maps out of a layer of the hull are scalar.** Let `E` be an injective envelope of the
+residue field and `J` an ideal with `R ⧸ J` of finite length. Every linear map `E[J] → E` is the
+inclusion multiplied by a scalar. -/
+theorem IsInjectiveEnvelope.exists_eq_smul_subtype (hι : IsInjectiveEnvelope ι) {J : Ideal R}
+    (hJ : IsFiniteLength R (R ⧸ J)) (g : Submodule.torsionBySet R E J →ₗ[R] E) :
+    ∃ r : R, g = r • (Submodule.torsionBySet R E J).subtype := by
+  -- `E[J]` is the Matlis dual of `R ⧸ J` through evaluation at `1`, and the composite of `g` with
+  -- this identification is evaluation at some class `[r]`, by finite-length biduality.
+  obtain ⟨m, hm⟩ := (hι.bijective_applyₗ hJ).2
+    (g ∘ₗ (J.quotientLinearMapEquivTorsionBySet E).toLinearMap)
+  obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective m
+  refine ⟨r, LinearMap.ext fun x => ?_⟩
+  simpa using (LinearMap.congr_fun hm ((J.quotientLinearMapEquivTorsionBySet E).symm x)).symm
 
 end TauCeti

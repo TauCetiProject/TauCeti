@@ -34,6 +34,10 @@ into the expansion at another, and so preserves the submodule; in Deligne–Serr
 
 ## Main results
 
+* `TauCeti.ModularForm.mem_integralAtCusps_SL2Z_iff`,
+  `TauCeti.ModularForm.mem_integralAtCusps_intCast_SL2Z_iff`: at level one (`𝒮ℒ`), cusp
+  integrality reduces to `qExpansion 1` having coefficients in `R` (for `ℤ`, lying in the image of
+  `ℤ⟦X⟧`).
 * `TauCeti.ModularForm.mem_integralAtCusps_iff_qExpansion_coeff_mem`: on a group containing
   `Γ(N)`, integrality can be tested on the expansions of all the translates `f ∣ γ` at the
   single common period `N`.
@@ -87,6 +91,26 @@ theorem qExpansion_coeff_mem_of_mem_integralAtCusps {f : ModularForm Γ k}
     (hf : f ∈ integralAtCusps R Γ k) (n : ℕ) :
     (qExpansion Γ.strictWidthInfty f).coeff n ∈ R := by
   simpa only [qExpansionAt_one] using hf 1 n
+
+/-- At level one (`Γ = 𝒮ℒ`), `SL₂(ℤ)` has a single cusp `∞` of width `1`, so a form lies in
+`integralAtCusps R 𝒮ℒ k` if and only if every coefficient of `qExpansion 1 f` lies in `R`. -/
+theorem mem_integralAtCusps_SL2Z_iff {f : ModularForm 𝒮ℒ k} :
+    f ∈ integralAtCusps R 𝒮ℒ k ↔ ∀ n : ℕ, (qExpansion 1 f).coeff n ∈ R := by
+  simp
+
+/-- A level-one modular form is `ℤ`-integral at the cusp (`(Int.castRingHom ℂ).range`) if and only
+if its `q`-expansion is the image of a formal power series in `ℤ⟦X⟧`. -/
+theorem mem_integralAtCusps_intCast_SL2Z_iff {f : ModularForm 𝒮ℒ k} :
+    f ∈ integralAtCusps (Int.castRingHom ℂ).range 𝒮ℒ k ↔
+      ∃ P : PowerSeries ℤ, qExpansion 1 f = P.map (Int.castRingHom ℂ) := by
+  rw [mem_integralAtCusps_SL2Z_iff]
+  refine ⟨fun hf ↦ ⟨PowerSeries.mk fun n ↦ (hf n).choose, ?_⟩, ?_⟩
+  · ext n
+    simpa only [PowerSeries.coeff_map, PowerSeries.coeff_mk, Int.coe_castRingHom] using
+      (hf n).choose_spec.symm
+  · rintro ⟨P, hP⟩ n
+    rw [hP, PowerSeries.coeff_map]
+    exact ⟨P.coeff n, rfl⟩
 
 /-- **Integrality at a common period.** If `Γ` contains `Γ(N)`, a form is integral at every
 cusp exactly when every translate `f ∣ γ` has its expansion at period `N` in `R`: at each cusp

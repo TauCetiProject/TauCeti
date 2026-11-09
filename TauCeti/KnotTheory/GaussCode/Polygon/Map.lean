@@ -24,7 +24,13 @@ it depends on them only as it should.
   (`Polygon.crossingTimes_map`), and `e` carries the over/under data and the oriented frames of
   the crossings along.
 * **The orientation.** Only the orientation `b.orientation` matters: two bases defining the same
-  orientation give the same Gauss code (`Polygon.gaussCode_eq_of_orientation_eq`).
+  orientation give the same Gauss code (`Polygon.gaussCode_eq_of_orientation_eq`), and two bases
+  defining opposite orientations give mirror Gauss codes, with every crossing sign negated
+  (`Polygon.gaussCode_eq_mirror_of_orientation_eq_neg`). Hence the image of a polygonal knot under
+  an orientation-reversing affine equivalence, such as its reflection in a plane containing the
+  direction of projection, has the mirror Gauss code (`Polygon.gaussCode_map_eq_mirror`). This is
+  the convention of Lickorish, Chapter 1: the mirror image of an oriented knot is its reflection,
+  and reflection negates every crossing sign.
 * **The direction.** Only the ray of `d` matters, and not the origin of the projection:
   projecting along `c • d`, for `c > 0`, from any origin, gives the same Gauss code
   (`Polygon.gaussCode_smul`).
@@ -48,6 +54,10 @@ in `Polygon.gaussCode_insertVertex`.
   space, moving the direction and the basis along.
 * `Polygon.gaussCode_eq_of_orientation_eq`: the Gauss code only depends on the orientation of the
   ambient space.
+* `Polygon.gaussCode_eq_mirror_of_orientation_eq_neg`: reversing the orientation of the ambient
+  space mirrors the Gauss code.
+* `Polygon.gaussCode_map_eq_mirror`: the image of a polygonal knot under an orientation-reversing
+  affine equivalence has the mirror Gauss code.
 * `Polygon.gaussCode_smul`: the Gauss code only depends on the ray of the direction of the
   projection, and not on its origin.
 
@@ -151,6 +161,56 @@ theorem gaussCode_eq_of_orientation_eq (hs : poly.IsSimple ℝ)
     (fun _ _ ↦ Iff.rfl) (fun _ _ ↦ Iff.rfl) fun i j ↦ by
       rw [b'.det.eq_smul_basis_det b, smul_apply, smul_eq_mul, sign_mul, sign_pos hpos, one_mul]
   exact eq_of_heq (Sigma.mk.inj_iff.1 this).2
+
+/-- **Opposite orientations give mirror Gauss codes.** Two bases `b` and `b'` defining opposite
+orientations of the ambient space give Gauss codes that are mirror images of each other: the
+traversal and the over/under data agree, and every crossing sign is negated. -/
+theorem gaussCode_eq_mirror_of_orientation_eq_neg (hs : poly.IsSimple ℝ)
+    (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) {b b' : Basis (Fin 3) ℝ V}
+    (h : b'.orientation = -b.orientation) : gaussCode hs hπ b' = (gaussCode hs hπ b).mirror := by
+  have hneg : b'.det b < 0 := by
+    refine lt_of_le_of_ne (not_lt.1 fun hpos ↦ ?_) (b'.isUnit_det b).ne_zero
+    exact Module.Ray.ne_neg_self b.orientation
+      (h.symm.trans ((b'.orientation_eq_iff_det_pos b).2 hpos)).symm
+  set D := gaussCode hs hπ b with hD
+  set D' := gaussCode hs hπ b'
+  -- The partner visits do not depend on the basis.
+  have hpartner (j) : D'.partner.val j = D.partner.val j := by
+    simpa only [Fin.cast_eq_self, Equiv.refl_symm, Equiv.refl_apply] using
+      gaussCode_partner_cast_eq_of_boundaryParam_eq b hs hπ b' hs hπ (injOn_id _)
+        (fun _ hx ↦ doublePoints_subset_boundary hx) (fun _ _ _ _ hxy ↦ hxy) rfl (Equiv.refl _)
+        (fun _ ↦ by simp only [Fin.cast_eq_self, Equiv.refl_apply, id_eq]) j
+  have hover (j) : D'.over j = D.over j := by
+    rw [Bool.eq_iff_iff, gaussCode_over_eq_true_iff, gaussCode_over_eq_true_iff, hpartner]
+  refine BasedOrientedGaussCode.ext_of_visit_lt_visit_iff (fun i j ↦ ?_)
+    (funext fun j ↦ by rw [hover, BasedOrientedGaussCode.over_mirror]) fun i hi ↦ ?_
+  · rw [BasedOrientedGaussCode.visit_mirror, gaussCode_visit_lt_visit_iff,
+      gaussCode_visit_lt_visit_iff, hpartner, hpartner]
+  · -- The determinant with respect to `b'` is a negative multiple of that with respect to `b`.
+    refine Units.ext ?_
+    rw [gaussCode_sign_visit b' hs hπ hi, BasedOrientedGaussCode.visit_mirror,
+      BasedOrientedGaussCode.sign_mirror, Units.val_neg,
+      gaussCode_sign_visit b hs hπ (by rwa [← hover]), hpartner, b'.det.eq_smul_basis_det b]
+    simp [← hD, sign_mul, sign_neg hneg]
+
+/-- **An orientation-reversing motion mirrors the Gauss code.** Let `e` be an affine equivalence
+of the ambient space whose linear part has negative determinant, such as the reflection in a plane
+containing `d`. Then the Gauss code of the image `poly.map e`, projected along `e.linear d` and
+oriented by the same basis `b`, is the mirror image of the Gauss code of `poly`. The numbers of
+crossings agree, and the codes are compared together with them. -/
+theorem gaussCode_map_eq_mirror (hs : poly.IsSimple ℝ)
+    (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) (e : P ≃ᵃ[ℝ] P)
+    (he : LinearMap.det (e.linear : V →ₗ[ℝ] V) < 0) {q₀ : P} (hs' : (poly.map e).IsSimple ℝ)
+    (hπ' : (poly.map e).IsRegularProjection ℝ (projAlong ℝ q₀ (e.linear d)))
+    (b : Basis (Fin 3) ℝ V) :
+    (⟨_, gaussCode hs' hπ' b⟩ : Σ m, BasedOrientedGaussCode m) =
+      ⟨_, (gaussCode hs hπ b).mirror⟩ := by
+  have ho : b.orientation = -(b.map e.linear).orientation := by
+    rw [(b.orientation_comp_linearEquiv_eq_neg_iff_det_neg e.linear).2 he]
+    exact (neg_neg b.orientation).symm
+  rw [gaussCode_eq_mirror_of_orientation_eq_neg hs' hπ' ho]
+  exact congrArg (fun D : Σ m, BasedOrientedGaussCode m ↦
+    (⟨D.1, D.2.mirror⟩ : Σ m, BasedOrientedGaussCode m)) (gaussCode_map hs hπ e hs' hπ' b)
 
 /-! ### The direction of the projection -/
 

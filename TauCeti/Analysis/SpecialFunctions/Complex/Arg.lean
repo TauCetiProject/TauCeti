@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 
 /-!
 # The argument of a quotient, and rotations onto the nonpositive real axis
@@ -16,18 +18,30 @@ of a product exactly when the sum of the arguments lies in `(-π, π]`
 common instance: for two points of the open upper half-plane the arguments lie in `(0, π)`, so
 the argument of their quotient is the difference of their arguments. It also records that every
 complex number is rotated onto the nonpositive real axis by the square of a unit complex number.
-Finally, a sector `{|arg ((z - v) / b)| < α}` of half-opening `α ≤ π`, cut off by a punctured ball
-about its vertex, is the image of an open rectangle in polar coordinates.
+A sector `{|arg ((z - v) / b)| < α}` of half-opening `α ≤ π`, cut off by a punctured ball about its
+vertex, is the image of an open rectangle in polar coordinates. Finally, the argument is smooth on
+the slit plane, and although it jumps across the negative real axis, a smooth `2π`-periodic function
+of the argument is smooth on the whole punctured plane: near the negative real axis it is computed
+from the argument of `-z`. Since the argument is continuous on the slit plane and blind to positive
+real scaling, `arg (f x) → arg Q` as soon as some positive real multiple of `f x` tends to
+`Q ∈ slitPlane`.
 
 ## Main results
 
 * `Complex.arg_div_eq_sub_arg_iff`: `arg (x / y) = arg x - arg y` exactly when
   `arg x - arg y ∈ (-π, π]`.
 * `Complex.arg_div_of_im_pos`: if `0 < x.im` and `0 < y.im`, then `arg (x / y) = arg x - arg y`.
+* `Complex.abs_arg_div_comm`: swapping numerator and denominator preserves `|arg (x / y)|`.
 * `Complex.exists_norm_eq_one_mul_sq_eq_neg_norm`: every `c` has a unit `ω` with `c ω² = -‖c‖`.
 * `TauCeti.image_polar_rectangle_eq`: in polar coordinates about `v`, rotated and scaled by `b`,
   the punctured truncated sector `{|arg ((z - v) / b)| < α}`, `α ≤ π`, is the image of an open
   rectangle.
+* `Complex.inv_exp_arg_mul_le_exp_pi_mul_abs`: `(exp (arg u * r))⁻¹ ≤ exp (π * |r|)`.
+* `Complex.contDiffAt_arg`: the argument is smooth on the slit plane.
+* `Complex.tendsto_arg_of_tendsto_ofReal_mul`: if `c x * f x → Q ∈ slitPlane` with `c x > 0`
+  eventually, then `arg (f x) → arg Q`.
+* `ContDiff.contDiffAt_comp_arg`: a smooth `2π`-periodic function of the argument is smooth away
+  from the origin.
 -/
 
 public section
@@ -52,6 +66,11 @@ theorem arg_div_of_im_pos {x y : ℂ} (hx : 0 < x.im) (hy : 0 < y.im) :
     ⟨by linarith [arg_nonneg_iff.2 hx.le, arg_lt_pi_iff.2 (Or.inr hy.ne')],
       by linarith [arg_nonneg_iff.2 hy.le, arg_le_pi x]⟩
 
+/-- Swapping numerator and denominator preserves the absolute value of the argument of a
+quotient. -/
+theorem abs_arg_div_comm (a b : ℂ) : |(a / b).arg| = |(b / a).arg| := by
+  rw [← inv_div, abs_arg_inv]
+
 /-- Every complex number `c` is rotated onto the nonpositive real axis by the square of a unit:
 `c ω² = -‖c‖`. -/
 theorem exists_norm_eq_one_mul_sq_eq_neg_norm (c : ℂ) :
@@ -68,7 +87,58 @@ theorem exists_norm_eq_one_mul_sq_eq_neg_norm (c : ℂ) :
         rw [h, exp_pi_mul_I]
         ring
 
+/-- The inverse of `exp (arg u * r)` is at most `exp (π * |r|)`. -/
+theorem inv_exp_arg_mul_le_exp_pi_mul_abs (u : ℂ) (r : ℝ) :
+    (Real.exp (u.arg * r))⁻¹ ≤ Real.exp (Real.pi * |r|) := by
+  rw [← Real.exp_neg]
+  apply Real.exp_le_exp.mpr
+  calc -(u.arg * r) ≤ |u.arg * r| := neg_le_abs _
+    _ = |u.arg| * |r| := abs_mul _ _
+    _ ≤ Real.pi * |r| := by
+      gcongr
+      exact abs_arg_le_pi _
+
+/-- The argument is smooth on the slit plane, where it is the imaginary part of the principal
+logarithm. -/
+theorem contDiffAt_arg {z : ℂ} (hz : z ∈ slitPlane) {n : WithTop ℕ∞} : ContDiffAt ℝ n arg z := by
+  have h := (imCLM.contDiff.contDiffAt (n := n) (x := log z)).comp z
+    ((contDiffAt_log hz (n := n)).restrict_scalars ℝ)
+  exact h.congr_of_eventuallyEq (Filter.Eventually.of_forall fun w ↦ (log_im w).symm)
+
+open Filter Topology in
+/-- Positive real scaling does not move the argument: if `Q ∈ slitPlane`, eventually `0 < c x`,
+and `c x * f x → Q`, then `arg (f x) → arg Q`. -/
+theorem tendsto_arg_of_tendsto_ofReal_mul {α : Type*} {l : Filter α} {c : α → ℝ} {f : α → ℂ}
+    {Q : ℂ} (hQ : Q ∈ slitPlane) (hc : ∀ᶠ x in l, 0 < c x)
+    (h : Tendsto (fun x ↦ (c x : ℂ) * f x) l (𝓝 Q)) :
+    Tendsto (fun x ↦ arg (f x)) l (𝓝 (arg Q)) :=
+  ((continuousAt_arg hQ).tendsto.comp h).congr' (hc.mono fun _ hx ↦ arg_real_mul _ hx)
+
 end Complex
+
+/-- A `2π`-periodic function of the argument of a nonzero complex number `z` may be computed from
+the argument of `-z`, which differs from that of `z` by `π` modulo `2π`. -/
+theorem Function.Periodic.apply_arg_eq_apply_arg_neg_add_pi {α : Type*} {g : ℝ → α}
+    (hg : Function.Periodic g (2 * π)) {z : ℂ} (hz : z ≠ 0) :
+    g (Complex.arg z) = g (Complex.arg (-z) + π) := by
+  have h := Complex.arg_neg_coe_angle (neg_ne_zero.2 hz)
+  rw [neg_neg, ← Real.Angle.coe_add, Real.Angle.angle_eq_iff_two_pi_dvd_sub] at h
+  obtain ⟨k, hk⟩ := h
+  rw [show Complex.arg z = Complex.arg (-z) + π + k * (2 * π) by linarith]
+  exact hg.int_mul k _
+
+/-- A smooth `2π`-periodic function of the argument is smooth away from the origin, although the
+argument itself jumps across the negative real axis. -/
+theorem ContDiff.contDiffAt_comp_arg {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {g : ℝ → E} {n : WithTop ℕ∞} (hg : ContDiff ℝ n g) (hper : Function.Periodic g (2 * π))
+    {z : ℂ} (hz : z ≠ 0) : ContDiffAt ℝ n (fun w ↦ g (Complex.arg w)) z := by
+  rcases Complex.mem_slitPlane_or_neg_mem_slitPlane hz with h | h
+  · exact hg.contDiffAt.comp z (Complex.contDiffAt_arg h)
+  · have h' : ContDiffAt ℝ n (fun w : ℂ ↦ Complex.arg (-w) + π) z :=
+      ((Complex.contDiffAt_arg h).comp z contDiff_neg.contDiffAt).add contDiffAt_const
+    refine (hg.contDiffAt.comp z h').congr_of_eventuallyEq ?_
+    filter_upwards [isOpen_ne.mem_nhds hz] with w hw
+    exact hper.apply_arg_eq_apply_arg_neg_add_pi hw
 
 namespace TauCeti
 

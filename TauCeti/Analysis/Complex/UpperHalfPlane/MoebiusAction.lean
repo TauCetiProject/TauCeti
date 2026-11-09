@@ -38,12 +38,19 @@ unfolded by hand.
   along the coercion, the pointwise-image counterpart of Mathlib's `ModularGroup.sl_moeb`.
 * `ModularGroup.smul_eq_smul_of_eq_or_eq_neg`: elements of `SL(2, ℤ)` that agree up to sign act
   alike on `ℍ`.
-* `Matrix.SpecialLinearGroup.toGL_smul`: the `SL(2, ℝ)`-action on `ℍ` is the `GL(2, ℝ)`-action
-  of the underlying matrix, the `SL(2, ℝ)` counterpart of Mathlib's `ModularGroup.sl_moeb`.
+* `Matrix.SpecialLinearGroup.toGL_smul`, `Matrix.SpecialLinearGroup.mapGL_smul`: the
+  `SL(2, ℝ)`-action on `ℍ` is the `GL(2, ℝ)`-action of the underlying matrix, the `SL(2, ℝ)`
+  counterpart of Mathlib's `ModularGroup.sl_moeb`.
+* `Matrix.SpecialLinearGroup.denom_mapGL_mul`: the automorphy factor is a cocycle for the
+  `SL(2, ℝ)`-action.
 * `TauCeti.bijOn_sub_div_sub_upperHalfPlaneSet`: an ordered pair of real prevertices gives
   a fractional-linear bijection of the upper half-plane.
+* `TauCeti.im_neg_one_div_pos`: the inversion `S : τ ↦ -1/τ` maps a complex number with positive
+  imaginary part to one with positive imaginary part.
 * `ModularGroup.re_S_smul`, `ModularGroup.S_smul_S_smul`: the inversion `S` negates the real
   part up to a `normSq` factor, and is an involution of `ℍ`.
+* `ModularGroup.coe_S_smul`, `ModularGroup.coe_T_smul`: `S` and `T` act on `ℍ ⊆ ℂ` by
+  `τ ↦ -1 / τ` and `τ ↦ τ + 1`.
 * `ModularGroup.sq_smul_smul_eq_vadd_S_smul_vadd`: for `g = !![a, b; c, d] ∈ SL(2, ℤ)` with
   `c ≠ 0`, `c² (g • τ) = a c - 1 / (τ + d / c)`.
 
@@ -88,6 +95,21 @@ theorem _root_.Matrix.SpecialLinearGroup.toGL_smul (g : SL(2, ℝ)) (τ : ℍ) :
     ext i j
     simp [Matrix.SpecialLinearGroup.mapGL_coe_matrix]
   rw [MulAction.compHom_smul_def, h]
+
+/-- The `SL(2, ℝ)`-action on `ℍ` is the `GL(2, ℝ)`-action of its image under
+`Matrix.SpecialLinearGroup.mapGL`. -/
+theorem _root_.Matrix.SpecialLinearGroup.mapGL_smul (g : SL(2, ℝ)) (τ : ℍ) :
+    Matrix.SpecialLinearGroup.mapGL ℝ g • τ = g • τ :=
+  (MulAction.compHom_smul_def _ _ _).symm
+
+/-- The automorphy factor is a cocycle for the `SL(2, ℝ)`-action on `ℍ`:
+`denom (a * b) τ = denom a (b • τ) * denom b τ`. -/
+theorem _root_.Matrix.SpecialLinearGroup.denom_mapGL_mul (a b : SL(2, ℝ)) (τ : ℍ) :
+    denom (Matrix.SpecialLinearGroup.mapGL ℝ (a * b)) τ =
+      denom (Matrix.SpecialLinearGroup.mapGL ℝ a) ((b • τ : ℍ) : ℂ) *
+        denom (Matrix.SpecialLinearGroup.mapGL ℝ b) τ := by
+  rw [map_mul, denom_cocycle_σ, σ_eq_refl_of_det_pos (by simp), ContinuousAlgEquiv.refl_apply,
+    Matrix.SpecialLinearGroup.mapGL_smul]
 
 /-- The orientation-reversing involution `J : z ↦ -conj z` negates the real part. -/
 @[simp]
@@ -171,6 +193,16 @@ lemma re_S_smul (p : ℍ) : (S • p).re = -p.re / Complex.normSq (p : ℂ) := b
 lemma S_smul_S_smul (p : ℍ) : S • (S • p) = p := by
   rw [← SL_neg_smul, ← S_inv, inv_smul_smul]
 
+-- Not `@[simp]`, for the same reason as `re_S_smul` above.
+/-- The inversion `S` acts on `ℍ ⊆ ℂ` by `τ ↦ -1 / τ`. -/
+lemma coe_S_smul (τ : ℍ) : ((S • τ : ℍ) : ℂ) = -1 / τ := by
+  rw [modular_S_smul, coe_mk, neg_div, one_div, inv_neg]
+
+-- Not `@[simp]`, for the same reason as `re_S_smul` above.
+/-- The translation `T` acts on `ℍ ⊆ ℂ` by `τ ↦ τ + 1`. -/
+lemma coe_T_smul (τ : ℍ) : ((T • τ : ℍ) : ℂ) = τ + 1 := by
+  rw [modular_T_smul, coe_vadd, add_comm, Complex.ofReal_one]
+
 /-- For `g = !![a, b; c, d] ∈ SL(2, ℤ)` with `c ≠ 0`, scaling `g • τ` by `c²` gives
 `a c - 1 / (τ + d / c)`: in terms of the actions on `ℍ`,
 `c² • (g • τ) = a c +ᵥ S • (d / c +ᵥ τ)`. This is an explicit form of Mathlib's
@@ -201,6 +233,41 @@ theorem sq_smul_smul_eq_vadd_S_smul_vadd (g : SL(2, ℤ)) (hc : g 1 0 ≠ 0) (τ
   field_simp
   linear_combination -hdet
 
+open Matrix.SpecialLinearGroup in
+/-- The bottom row of `(S * T * S⁻¹) ^ r` in `SL₂(ℤ)` has entries `-r` and `1`, so its automorphy
+factor at `z` is `-r z + 1`. -/
+theorem denom_mapGL_STS_inv_pow (r : ℕ) (z : ℍ) :
+    denom (mapGL ℝ ((S * T * S⁻¹ : SL(2, ℤ)) ^ r)) z = -(r : ℂ) * z + 1 := by
+  let g : SL(2, ℤ) := (S * T * S⁻¹ : SL(2, ℤ)) ^ r
+  have hg : (S * T * S⁻¹ : SL(2, ℤ)) ^ r = g := rfl
+  have hp : g = S * T ^ r * S⁻¹ := by simp [g, conj_pow]
+  have h10 : (g : Matrix (Fin 2) (Fin 2) ℤ) 1 0 = -(r : ℤ) := by
+    rw [hp, ← zpow_natCast]
+    simp only [Matrix.SpecialLinearGroup.coe_mul, ModularGroup.S_inv,
+      Matrix.SpecialLinearGroup.coe_neg, coe_S, coe_T_zpow]
+    norm_num [Matrix.mul_apply, Fin.sum_univ_two]
+  have h11 : (g : Matrix (Fin 2) (Fin 2) ℤ) 1 1 = 1 := by
+    rw [hp, ← zpow_natCast]
+    simp only [Matrix.SpecialLinearGroup.coe_mul, ModularGroup.S_inv,
+      Matrix.SpecialLinearGroup.coe_neg, coe_S, coe_T_zpow]
+    norm_num [Matrix.mul_apply, Fin.sum_univ_two]
+  rw [hg, denom, mapGL_coe_matrix, map_apply_coe]
+  simp only [RingHom.mapMatrix_apply, Matrix.map_apply, h10, h11]
+  simp [algebraMap_int_eq]
+
+open Matrix.SpecialLinearGroup in
+/-- The denominators of `(S T S⁻¹) ^ (n * m)` at a point `z` are pairwise distinct as `m` varies,
+for `n > 0`. -/
+theorem denom_mapGL_STS_inv_pow_injective {n : ℕ} (hn : 0 < n) (z : ℍ) :
+    Function.Injective fun m : ℕ ↦ denom (mapGL ℝ ((S * T * S⁻¹ : SL(2, ℤ)) ^ (n * m))) z :=
+  fun m₁ m₂ hm ↦ by
+    have him := congrArg Complex.im hm
+    simp only [denom_mapGL_STS_inv_pow, Complex.add_im, Complex.one_im, add_zero,
+      Complex.neg_im, Complex.mul_im, Complex.natCast_im] at him
+    have hmul : ((n * m₁ : ℕ) : ℝ) = ((n * m₂ : ℕ) : ℝ) :=
+      mul_right_cancel₀ z.im_ne_zero (by simpa using him)
+    exact Nat.eq_of_mul_eq_mul_left hn (Nat.cast_injective hmul)
+
 end ModularGroup
 
 namespace TauCeti
@@ -227,5 +294,8 @@ theorem bijOn_sub_div_sub_upperHalfPlaneSet {p q : ℝ} (hpq : p < q) :
   simpa only [UpperHalfPlane.range_coe] using
     hsemi.bijOn_range (MulAction.toPerm g).bijective UpperHalfPlane.coe_injective
 
+/-- `S : τ ↦ -1/τ` preserves the upper half-plane: `0 < (-1/τ).im` whenever `0 < τ.im`. -/
+theorem im_neg_one_div_pos {τ : ℂ} (hτ : 0 < τ.im) : 0 < (-1 / τ).im := by
+  simpa [neg_div, inv_neg] using UpperHalfPlane.im_inv_neg_coe_pos ⟨τ, hτ⟩
 
 end TauCeti

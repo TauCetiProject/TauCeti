@@ -9,7 +9,9 @@ public import Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Mathlib.Data.Finset.Sort
 public import Mathlib.Data.List.Rotate
 public import Mathlib.Logic.Equiv.Fin.Rotate
+public import Mathlib.Order.Fin.Tuple
 import Mathlib.Data.List.Chain
+import Mathlib.Order.Interval.Finset.Fin
 
 /-!
 # Sorting finsets
@@ -26,12 +28,23 @@ Consecutive entries of the sorted list of `s` are the pairs of positions of `s` 
 `s` strictly between them, so a chain condition on the sorted list is a condition on such adjacent
 pairs.
 
+The `m`-th element of a finset `s` in increasing order, `s.orderEmbOfFin h m`, has exactly `m`
+elements of `s` below it.
+
 Mapping the sorted list of `s` along an embedding that is strictly antitone on `s` gives the
 sorted list of the image in reversed order; in particular, sorting the points of a finset of
 `Fin n` moved along the reversal `Fin.rev` reverses the list of their images.
 
 Moving the points of a finset `B` of `Fin n` along the rotation `finRotate n` (`i ↦ i + 1`, the
 last position going to `0`) commutes with sorting up to a cyclic rotation of the list.
+
+The `i`-th smallest element of `s` has exactly `i` elements of `s` below it.
+
+Removing the position of `i` from the increasing enumeration of `s` gives the increasing
+enumeration of `s.erase i`.
+
+Every nonempty finset can be listed by a sequence strictly increasing on a finite initial segment
+(`Finset.exists_strictMonoOn_Iic_surj`).
 -/
 
 public section
@@ -54,6 +67,33 @@ theorem sort_erase (s : Finset α) (a : α) : sort (s.erase a) r = (sort s r).er
 section LinearOrder
 
 variable {α β : Type*} [LinearOrder α] [LinearOrder β] {s : Finset α} {f : α → β}
+
+/-- A nonempty finset in a linear order can be listed by a sequence strictly increasing on
+`Set.Iic n`, with all entries on that segment in the finset and every element reached there. -/
+theorem exists_strictMonoOn_Iic_surj (d : Finset α) (hd : d.Nonempty) :
+    ∃ (n : ℕ) (τ : ℕ → α), StrictMonoOn τ (Set.Iic n) ∧
+      (∀ j ≤ n, τ j ∈ d) ∧ ∀ x ∈ d, ∃ j ≤ n, τ j = x := by
+  classical
+  have hcard : 0 < d.card := card_pos.mpr hd
+  let n := d.card - 1
+  have hn : n + 1 = d.card := by omega
+  let e := d.orderIsoOfFin hn.symm
+  -- Freeze the increasing enumeration after its last entry.
+  let τ : ℕ → α := fun j ↦ (e ⟨min j n, by omega⟩ : α)
+  have hτj (j : ℕ) (hj : j ≤ n) : τ j = (e ⟨j, by omega⟩ : α) := by
+    simp [τ, min_eq_left hj]
+  refine ⟨n, τ, ?_, ?_, ?_⟩
+  · intro i hi j hj hij
+    rw [hτj i hi, hτj j hj]
+    exact e.strictMono hij
+  · intro j hj
+    rw [hτj j hj]
+    exact (e ⟨j, by omega⟩).property
+  · intro x hx
+    let j := e.symm ⟨x, hx⟩
+    refine ⟨j, by omega, ?_⟩
+    rw [hτj j (by omega)]
+    exact congrArg Subtype.val (e.apply_symm_apply ⟨x, hx⟩)
 
 /-- Collapsing `j` onto its predecessor `i` in `s` is monotone on `s`, identifies only
 `i` and `j`, and strictly decreases the cardinality of the image of `s`. -/
@@ -134,6 +174,16 @@ theorem _root_.StrictAntiOn.map_finsetSort {e : α ↪ β} (he : StrictAntiOn e 
   rw [List.SortedLT.eq_of_mem_iff (sortedLT_sort (s.map e)) hgt.reverse fun x => by simp,
     List.reverse_reverse]
 
+/-- The `m`-th element of `s` in increasing order has exactly `m` elements of `s` below it. -/
+theorem card_filter_lt_orderEmbOfFin (s : Finset α) {k : ℕ} (h : #s = k) (m : Fin k) :
+    #{j ∈ s | j < s.orderEmbOfFin h m} = m := by
+  have e := map_orderEmbOfFin_univ s h
+  generalize s.orderEmbOfFin h = a at e ⊢
+  subst e
+  rw [filter_map, card_map]
+  simp only [Function.comp_def, RelEmbedding.coe_toEmbedding, OrderEmbedding.lt_iff_lt,
+    filter_gt_eq_Iio, Fin.card_Iio]
+
 /-- Sorting the points of a finset `B` of `Fin n` moved along the reversal `Fin.revPerm` lists the
 images under `Fin.rev` of the sorted points of `B` in reversed order. -/
 theorem sort_map_revPerm {n : ℕ} (B : Finset (Fin n)) :
@@ -181,6 +231,22 @@ theorem isRotated_sort_map_finRotate {n : ℕ} (B : Finset (Fin n)) :
       rw [hBC, hBC']
       simpa using List.isRotated_append (l := C.sort.map (finRotate (n + 1))) (l' := [0])
     · rw [hsort hB]
+
+/-- Removing the position of `i` from the increasing enumeration of `s` gives the increasing
+enumeration of `s.erase i`. -/
+theorem removeNth_orderEmbOfFin_symm_eq {I : Type*} [LinearOrder I]
+    (i : I) (s : Finset I) (hi : i ∈ s) (hsCard : s.card = (s.erase i).card + 1) :
+    ((s.orderIsoOfFin hsCard).symm ⟨i, hi⟩).removeNth (fun j ↦ s.orderEmbOfFin hsCard j) =
+      (s.erase i).orderEmbOfFin rfl := by
+  let e : Fin ((s.erase i).card + 1) ↪o I := s.orderEmbOfFin hsCard
+  let k : Fin ((s.erase i).card + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
+  have hek : e k = i :=
+    congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨i, hi⟩)
+  apply Finset.orderEmbOfFin_unique
+  · intro j
+    exact Finset.mem_erase.mpr ⟨fun h ↦ k.succAbove_ne j (e.injective (h.trans hek.symm)),
+      Finset.orderEmbOfFin_mem s hsCard _⟩
+  · exact e.strictMono.comp (Fin.strictMono_succAbove k)
 
 end LinearOrder
 

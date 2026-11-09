@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.Algebra.Structures
+public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.LocallyConvex.Bounded
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
@@ -22,7 +23,7 @@ Given Riemannian manifolds `M` and `N` and a nowhere vanishing function `f : M �
 at `(x, y)`. The fibres `{x} × N` are copies of `N` rescaled by the constant `f(x)²`, the
 horizontal slices `M × {y}` are isometric copies of `M`, and the two are orthogonal. A constant
 warping function `f = 1` gives the product metric, which
-`TauCeti.Geometry.Manifold.Riemannian.Prod` constructs as that case. Warped products are the
+`TauCeti.Geometry.Manifold.Riemannian.Prod.Basic` constructs as that case. Warped products are the
 standard models of rotationally symmetric metrics: the Euclidean metric away from the origin is
 `(0, ∞) ×_r S^(n-1)`, the round sphere minus two antipodal points is `(0, π) ×_(sin r) S^(n-1)`,
 and hyperbolic space minus a point is `(0, ∞) ×_(sinh r) S^(n-1)`.
@@ -44,6 +45,9 @@ that they apply both to the construction below and to any metric shown to have t
 
 ## Main results
 
+* `TauCeti.Manifold.IsWarpedProduct.tangentSpaceProdLinearIsometryEquiv`: multiplying the
+  vertical tangent component by the warping function identifies the warped tangent space
+  isometrically with the `L²` product of the factor tangent spaces.
 * `TauCeti.Manifold.isWarpedProduct_of_eq`: the warped product metric is a warped product.
 * `TauCeti.Manifold.IsWarpedProduct.isContMDiffRiemannianBundle`: a warped product of `C^n`
   metrics with a `C^n` warping function is `C^n`.
@@ -278,6 +282,48 @@ structure IsWarpedProduct [RiemannianBundle (fun p : M × N ↦ TangentSpace (I.
   inner_eq (p : M × N) (v w : TangentSpace (I.prod J) p) :
     inner ℝ v w = inner ℝ (tangentSpaceProdEquiv p v).1 (tangentSpaceProdEquiv p w).1 +
       f p.1 ^ 2 * inner ℝ (tangentSpaceProdEquiv p v).2 (tangentSpaceProdEquiv p w).2
+
+section TangentIsometry
+
+variable [RiemannianBundle (fun p : M × N ↦ TangentSpace (I.prod J) p)]
+
+/-- The tangent space of a warped product is isometric to the `L²` product of the factor
+tangent spaces after multiplying the vertical component by the warping function.
+The inverse divides the vertical component by that function, so it transports product
+orthonormal bases to orthonormal bases for the warped metric. -/
+def IsWarpedProduct.tangentSpaceProdLinearIsometryEquiv {f : M → ℝ}
+    (h : IsWarpedProduct I J N f) (p : M × N) (hf : f p.1 ≠ 0) :
+    TangentSpace (I.prod J) p ≃ₗᵢ[ℝ] WithLp 2 (TangentSpace I p.1 × TangentSpace J p.2) :=
+  ((tangentSpaceProdEquiv p).toLinearEquiv.trans
+    ((LinearEquiv.prodCongr (LinearEquiv.refl ℝ (TangentSpace I p.1))
+      (LinearEquiv.smulOfNeZero ℝ (TangentSpace J p.2) (f p.1) hf)).trans
+      (WithLp.linearEquiv 2 ℝ _).symm)).isometryOfInner fun v w ↦ by
+        simp only [LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply,
+          LinearEquiv.refl_apply, LinearEquiv.smulOfNeZero_apply,
+          WithLp.coe_symm_linearEquiv, WithLp.prod_inner_apply,
+          real_inner_smul_left, real_inner_smul_right, ContinuousLinearEquiv.coe_toLinearEquiv]
+        rw [h.inner_eq]
+        ring
+
+/-- The warped tangent isometry multiplies precisely the vertical component by `f`. -/
+@[simp]
+theorem IsWarpedProduct.tangentSpaceProdLinearIsometryEquiv_apply {f : M → ℝ}
+    (h : IsWarpedProduct I J N f) (p : M × N) (hf : f p.1 ≠ 0)
+    (v : TangentSpace (I.prod J) p) :
+    h.tangentSpaceProdLinearIsometryEquiv p hf v =
+      WithLp.toLp 2 ((tangentSpaceProdEquiv p v).1, f p.1 • (tangentSpaceProdEquiv p v).2) :=
+  (rfl)
+
+/-- The inverse warped tangent isometry divides the vertical component by `f`. -/
+@[simp]
+theorem IsWarpedProduct.tangentSpaceProdLinearIsometryEquiv_symm_apply {f : M → ℝ}
+    (h : IsWarpedProduct I J N f) (p : M × N) (hf : f p.1 ≠ 0)
+    (v : WithLp 2 (TangentSpace I p.1 × TangentSpace J p.2)) :
+    (h.tangentSpaceProdLinearIsometryEquiv p hf).symm v =
+      (tangentSpaceProdEquiv p).symm (v.ofLp.1, (f p.1)⁻¹ • v.ofLp.2) :=
+  (rfl)
+
+end TangentIsometry
 
 /-- A metric on `M × N` equal to the warped product metric
 `Bundle.RiemannianMetric.warpedProdTangentSpace` of the metrics of `M` and `N` is a warped

@@ -196,7 +196,8 @@ private theorem eq_of_hom_of_hom ⦃a b b' : AffineD m⦄ (e : a ⟶ b) (e' : a 
 
 /-- **The underlying graph of `TauCeti.Quiver.AffineD m` is acyclic**, so it is the tree `D~ₘ₊₄`. -/
 theorem isAcyclic_underlyingGraph : (underlyingGraph (AffineD m)).IsAcyclic :=
-  isAcyclic_underlyingGraph_of_lt height height_lt eq_of_hom_of_hom
+  isAcyclic_underlyingGraph_of_lt height (fun _ _ e _ ↦ height_lt e)
+    fun _ _ _ e e' _ _ ↦ eq_of_hom_of_hom e e'
 
 /-- Two vertices of `TauCeti.Quiver.AffineD m` are joined by at most one arrow, counted in both
 directions. -/

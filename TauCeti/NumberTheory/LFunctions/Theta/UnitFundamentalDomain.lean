@@ -26,6 +26,10 @@ This file sets up that action and its fundamental domains:
   (`archNorm_unitScale`), and its kernel on parameters with nonzero coordinates is the torsion
   (`unitScale_eq_self_iff`).
 * `normOneSurface K` is the hypersurface `S = {y > 0 | N(y) = 1}` on which the units act.
+  Coordinatewise inversion and translation by a point of `S` give the self-homeomorphisms
+  `surfaceInv` and `surfaceMul`. A bounded set of parameters meets `S` inside a box `[C⁻¹, C]`
+  (`exists_forall_mem_Icc_of_isBounded`), so a bounded subset of `S` stays uniformly away from
+  the coordinate hyperplanes (`exists_pos_le_of_isBounded_normOneSurface`).
 * `IsUnitFundamentalDomain K D` says that `D` is a bounded measurable subset of `S` meeting every
   unit orbit, and meeting the orbit of each of its points exactly in the torsion translates.
 * `unitFundamentalDomain K` is the set of points of `S` whose coordinatewise square root lies in
@@ -126,6 +130,19 @@ theorem archNorm_normAtAllPlaces (x : mixedSpace K) :
 theorem archNorm_pos {y : realSpace K} (hy : ∀ w, 0 < y w) : 0 < archNorm y :=
   prod_pos fun w _ ↦ pow_pos (hy w) _
 
+/-- The coordinatewise square root of a nonnegative parameter, read in the mixed space, has
+mixed norm `√(archNorm y)`. -/
+theorem norm_mixedSpaceOfRealSpace_sqrt {y : realSpace K} (hy : ∀ w, 0 ≤ y w) :
+    mixedEmbedding.norm (mixedSpaceOfRealSpace fun w ↦ √(y w)) = √(archNorm y) := by
+  have hsq : archNorm (fun w ↦ √(y w)) ^ 2 = archNorm y := by
+    rw [← map_pow]
+    congr 1
+    ext w
+    exact Real.sq_sqrt (hy w)
+  rw [← archNorm_normAtAllPlaces, normAtAllPlaces_mixedSpaceOfRealSpace fun _ ↦ Real.sqrt_nonneg _,
+    ← hsq, Real.sqrt_sq]
+  exact prod_nonneg fun w _ ↦ pow_nonneg (Real.sqrt_nonneg _) _
+
 theorem archNorm_inv (y : realSpace K) : archNorm y⁻¹ = (archNorm y)⁻¹ := by
   simp [archNorm_apply, inv_pow, prod_inv_distrib]
 
@@ -194,6 +211,56 @@ theorem mul_mem_normOneSurface {y z : realSpace K} (hy : y ∈ normOneSurface K)
     (hz : z ∈ normOneSurface K) : y * z ∈ normOneSurface K :=
   ⟨fun w ↦ mul_pos (hy.1 w) (hz.1 w), by rw [map_mul, hy.2, hz.2, one_mul]⟩
 
+variable (K) in
+/-- Coordinatewise inversion as a homeomorphism of the norm-one hypersurface. -/
+noncomputable def surfaceInv : normOneSurface K ≃ₜ normOneSurface K where
+  toFun x := ⟨(x : realSpace K)⁻¹, inv_mem_normOneSurface x.property⟩
+  invFun x := ⟨(x : realSpace K)⁻¹, inv_mem_normOneSurface x.property⟩
+  left_inv _ := Subtype.ext (inv_inv _)
+  right_inv _ := Subtype.ext (inv_inv _)
+  continuous_toFun := (continuous_pi fun w ↦
+    ((continuous_apply w).comp continuous_subtype_val).inv₀
+      fun x ↦ ((mem_normOneSurface.mp x.property).1 w).ne').subtype_mk _
+  continuous_invFun := (continuous_pi fun w ↦
+    ((continuous_apply w).comp continuous_subtype_val).inv₀
+      fun x ↦ ((mem_normOneSurface.mp x.property).1 w).ne').subtype_mk _
+
+@[simp]
+theorem surfaceInv_apply (x : normOneSurface K) :
+    (surfaceInv K x : realSpace K) = (x : realSpace K)⁻¹ := (rfl)
+
+@[simp]
+theorem surfaceInv_symm : (surfaceInv K).symm = surfaceInv K := (rfl)
+
+@[simp]
+theorem surfaceInv_surfaceInv (x : normOneSurface K) : surfaceInv K (surfaceInv K x) = x := by
+  simpa only [surfaceInv_symm] using (surfaceInv K).symm_apply_apply x
+
+/-- Translation by a norm-one parameter as a homeomorphism of the norm-one hypersurface. -/
+noncomputable def surfaceMul (c : normOneSurface K) :
+    normOneSurface K ≃ₜ normOneSurface K where
+  toFun x := ⟨(c : realSpace K) * x, mul_mem_normOneSurface c.property x.property⟩
+  invFun x := ⟨(c : realSpace K)⁻¹ * x,
+    mul_mem_normOneSurface (inv_mem_normOneSurface c.property) x.property⟩
+  left_inv x := Subtype.ext (by
+    ext w
+    simp [((mem_normOneSurface.mp c.property).1 w).ne'])
+  right_inv x := Subtype.ext (by
+    ext w
+    simp [((mem_normOneSurface.mp c.property).1 w).ne'])
+  continuous_toFun := (continuous_const.mul continuous_subtype_val).subtype_mk _
+  continuous_invFun := (continuous_const.mul continuous_subtype_val).subtype_mk _
+
+@[simp]
+theorem surfaceMul_apply (c x : normOneSurface K) :
+    (surfaceMul c x : realSpace K) = (c : realSpace K) * x := (rfl)
+
+@[simp]
+theorem surfaceMul_symm (c : normOneSurface K) :
+    (surfaceMul c).symm = surfaceMul (surfaceInv K c) := by
+  ext x : 1
+  rfl
+
 /-- A point of the norm-one hypersurface with coordinates at most `C` has inverse coordinates at
 most `C ^ [K : ℚ]`: the other coordinates cannot make up for a small one. -/
 theorem inv_le_pow_finrank_of_mem_normOneSurface {y : realSpace K} (hy : y ∈ normOneSurface K)
@@ -215,6 +282,28 @@ theorem inv_le_pow_finrank_of_mem_normOneSurface {y : realSpace K} (hy : y ∈ n
   rcases le_or_gt (y w)⁻¹ 1 with h | h
   · exact h.trans h1
   · exact (le_self_pow₀ h.le mult_ne_zero).trans hpow
+
+/-- A bounded set of parameters meets the norm-one hypersurface inside a box `[C⁻¹, C]`: on `S` an
+upper bound on the coordinates is also a positive lower bound. -/
+theorem exists_forall_mem_Icc_of_isBounded {D : Set (realSpace K)} (hD : IsBounded D) :
+    ∃ C : ℝ, 1 ≤ C ∧ ∀ y ∈ D, y ∈ normOneSurface K → ∀ w, y w ∈ Set.Icc C⁻¹ C := by
+  obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp hD
+  have hC' : 1 ≤ max C 1 := le_max_right _ _
+  refine ⟨max C 1 ^ Module.finrank ℚ K, one_le_pow₀ hC', fun y hy hyS w ↦ ⟨?_, ?_⟩⟩
+  · have hle (v : InfinitePlace K) : y v ≤ max C 1 :=
+      (Real.le_norm_self _).trans ((norm_le_pi_norm y v).trans ((hC y hy).trans (le_max_left _ _)))
+    rw [inv_le_comm₀ (by positivity) (hyS.1 w)]
+    exact inv_le_pow_finrank_of_mem_normOneSurface hyS hC' hle w
+  · exact (Real.le_norm_self _).trans ((norm_le_pi_norm y w).trans ((hC y hy).trans
+      ((le_max_left _ _).trans (le_self_pow₀ hC' Module.finrank_pos.ne'))))
+
+/-- A bounded subset of the norm-one surface stays uniformly away from every coordinate
+hyperplane. This makes Gaussian estimates uniform on unit fundamental domains. -/
+theorem exists_pos_le_of_isBounded_normOneSurface {D : Set (realSpace K)}
+    (hD : IsBounded D) (hS : D ⊆ normOneSurface K) :
+    ∃ b > 0, ∀ x ∈ D, ∀ w, b ≤ x w := by
+  obtain ⟨C, hC1, hC⟩ := exists_forall_mem_Icc_of_isBounded hD
+  exact ⟨C⁻¹, inv_pos.mpr (zero_lt_one.trans_le hC1), fun x hx w ↦ (hC x hx (hS hx) w).1⟩
 
 /-! ### Unit fundamental domains -/
 
@@ -263,14 +352,7 @@ private theorem unitScale_mem_fundamentalCone_iff (u : (𝓞 K)ˣ) (y : realSpac
 /-- The square root of a point of `S`, read in the mixed space, has norm `1`. -/
 private theorem norm_sqrt_of_mem_normOneSurface {y : realSpace K} (hy : y ∈ normOneSurface K) :
     mixedEmbedding.norm (mixedSpaceOfRealSpace (fun v ↦ √(y v))) = 1 := by
-  have hsq : archNorm (fun v ↦ √(y v)) ^ 2 = 1 := by
-    rw [← map_pow, ← hy.2]
-    congr 1
-    ext v
-    exact Real.sq_sqrt (hy.1 v).le
-  rw [← archNorm_normAtAllPlaces, normAtAllPlaces_mixedSpaceOfRealSpace fun _ ↦ Real.sqrt_nonneg _]
-  exact (pow_eq_one_iff_of_nonneg (archNorm_pos fun v ↦ Real.sqrt_pos.mpr (hy.1 v)).le
-    two_ne_zero).mp hsq
+  rw [norm_mixedSpaceOfRealSpace_sqrt fun v ↦ (hy.1 v).le, hy.2, Real.sqrt_one]
 
 private theorem measurableSet_unitFundamentalDomain :
     MeasurableSet (unitFundamentalDomain K) :=
@@ -319,16 +401,13 @@ theorem inv (hD : IsUnitFundamentalDomain K D) : IsUnitFundamentalDomain K D⁻�
   measurableSet := hD.measurableSet.preimage <|
     Measurable.of_eval fun w ↦ (measurable_pi_apply w).inv
   isBounded := by
-    obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp hD.isBounded
-    set C' := max C 1
-    refine isBounded_iff_forall_norm_le.mpr ⟨C' ^ Module.finrank ℚ K, fun y hy ↦ ?_⟩
+    obtain ⟨C, hC1, hC⟩ := exists_forall_mem_Icc_of_isBounded hD.isBounded
+    refine isBounded_iff_forall_norm_le.mpr ⟨C, fun y hy ↦ ?_⟩
     have hy' : y⁻¹ ∈ normOneSurface K := hD.subset hy
-    have hpos : ∀ w, 0 < y w := fun w ↦ inv_pos.mp (hy'.1 w)
-    refine (pi_norm_le_iff_of_nonneg (pow_nonneg (by positivity) _)).mpr fun w ↦ ?_
-    rw [Real.norm_of_nonneg (hpos w).le, ← inv_inv (y w)]
-    refine inv_le_pow_finrank_of_mem_normOneSurface hy' (le_max_right _ _) (fun v ↦ ?_) w
-    exact (Real.le_norm_self _).trans ((norm_le_pi_norm y⁻¹ v).trans
-      ((hC _ hy).trans (le_max_left _ _)))
+    refine (pi_norm_le_iff_of_nonneg (zero_le_one.trans hC1)).mpr fun w ↦ ?_
+    have hpos : 0 < y w := inv_pos.mp (hy'.1 w)
+    rw [Real.norm_of_nonneg hpos.le]
+    exact (inv_le_inv₀ (zero_lt_one.trans_le hC1) hpos).mp (hC _ hy hy' w).1
   exists_unitScale_mem y hy := by
     obtain ⟨u, hu⟩ := hD.exists_unitScale_mem _ (inv_mem_normOneSurface hy)
     refine ⟨u⁻¹, ?_⟩

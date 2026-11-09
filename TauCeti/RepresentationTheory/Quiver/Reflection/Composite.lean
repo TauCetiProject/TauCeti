@@ -112,8 +112,8 @@ noncomputable def reflectionFunctorList (k : Type u) {V : Type v} [fld : Field k
     ∀ (l : List V) (q : _root_.Quiver.{w} V)
       (_hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b)),
       Quiver.IsSinkAdmissible q l →
-      (@QuiverRep.{u, v, w, max v w x} k V fld q ⥤
-        @QuiverRep.{u, v, w, max v w x} k V fld (Quiver.reflectList q l))
+      (@QuiverRep.{u, v, w, max v w x} k V _ q ⥤
+        @QuiverRep.{u, v, w, max v w x} k V _ (Quiver.reflectList q l))
   | [], _, _, _ => 𝟭 _
   | i :: l, q, hq, hl => by
       letI := q
@@ -149,7 +149,7 @@ sink-admissible list opens with. -/
 theorem reflectionFunctorList_cons_obj (i : V) (l : List V) (q : _root_.Quiver.{w} V)
     (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
     (hl : Quiver.IsSinkAdmissible q (i :: l))
-    (M : @QuiverRep.{u, v, w, max v w x} k V fld q) :
+    (M : @QuiverRep.{u, v, w, max v w x} k V _ q) :
     (reflectionFunctorList.{u, v, w, x} k (i :: l) q hq hl).obj M
       = (reflectionFunctorList k l (Quiver.reflectAt q i) (@instFintypeReflectHom V q hq i)
           (Quiver.isSinkAdmissible_cons.mp hl).2).obj
@@ -164,7 +164,7 @@ vertex spaces is used at each stage, through `TauCeti.isZero_reflectRep`. -/
 theorem isZero_reflectionFunctorList_obj :
     ∀ (l : List V) (q : _root_.Quiver.{w} V)
       (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
-      (hl : Quiver.IsSinkAdmissible q l) (M : @QuiverRep.{u, v, w, max v w x} k V fld q),
+      (hl : Quiver.IsSinkAdmissible q l) (M : @QuiverRep.{u, v, w, max v w x} k V _ q),
       Limits.IsZero M → Limits.IsZero ((reflectionFunctorList k l q hq hl).obj M)
   | [], q, hq, hl, M, hM => by
       rw [reflectionFunctorList_nil]
@@ -186,7 +186,7 @@ stage apply the dimension-vector identities, which need finite-dimensional verte
 theorem isFinDim_reflectionFunctorList_obj :
     ∀ (l : List V) (q : _root_.Quiver.{w} V)
       (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
-      (hl : Quiver.IsSinkAdmissible q l) (M : @QuiverRep.{u, v, w, max v w x} k V fld q),
+      (hl : Quiver.IsSinkAdmissible q l) (M : @QuiverRep.{u, v, w, max v w x} k V _ q),
       @IsFinDim.{u, v, w, max v w x} k V fld q M →
       @IsFinDim.{u, v, w, max v w x} k V fld (Quiver.reflectList q l)
         ((reflectionFunctorList k l q hq hl).obj M)
@@ -222,7 +222,7 @@ stages act on successively reflected quivers. -/
 theorem indecomposable_and_dimVector_reflectionFunctorList_or_isZero [DecidableEq V] :
     ∀ (l : List V) (q : _root_.Quiver.{w} V)
       (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
-      (hl : Quiver.IsSinkAdmissible q l) (M : @QuiverRep.{u, v, w, max v w x} k V fld q),
+      (hl : Quiver.IsSinkAdmissible q l) (M : @QuiverRep.{u, v, w, max v w x} k V _ q),
       Indecomposable M → (∀ a : V, FiniteDimensional k (M.obj a)) →
       (Indecomposable ((reflectionFunctorList k l q hq hl).obj M) ∧
             (fun j : V ↦ (@dimVector k V fld (Quiver.reflectList q l)
@@ -278,32 +278,32 @@ reflection functors along a sink-admissible *ordering* back to its own quiver, w
 `TauCeti.Quiver.reflectList_eq_self` supplies the equality; the lemmas below are its whole
 interface, and each is the transport applied to a reflexive equality. -/
 private noncomputable def transportCodomain {q r : _root_.Quiver.{w} V} (h : r = q)
-    (F : @QuiverRep.{u, v, w, max v w x} k V fld q ⥤ @QuiverRep.{u, v, w, max v w x} k V fld r) :
-    @QuiverRep.{u, v, w, max v w x} k V fld q ⥤ @QuiverRep.{u, v, w, max v w x} k V fld q :=
+    (F : @QuiverRep.{u, v, w, max v w x} k V _ q ⥤ @QuiverRep.{u, v, w, max v w x} k V _ r) :
+    @QuiverRep.{u, v, w, max v w x} k V _ q ⥤ @QuiverRep.{u, v, w, max v w x} k V _ q :=
   h ▸ F
 
 omit fV in
 private theorem transportCodomain_eq_eqMp {q r : _root_.Quiver.{w} V} (h : r = q)
-    (F : @QuiverRep.{u, v, w, max v w x} k V fld q ⥤ @QuiverRep.{u, v, w, max v w x} k V fld r) :
+    (F : @QuiverRep.{u, v, w, max v w x} k V _ q ⥤ @QuiverRep.{u, v, w, max v w x} k V _ r) :
     transportCodomain h F =
       Eq.mp (congrArg (fun s : _root_.Quiver.{w} V ↦
-        @QuiverRep.{u, v, w, max v w x} k V fld q ⥤
-          @QuiverRep.{u, v, w, max v w x} k V fld s) h) F := by
+        @QuiverRep.{u, v, w, max v w x} k V _ q ⥤
+          @QuiverRep.{u, v, w, max v w x} k V _ s) h) F := by
   subst h
   rfl
 
 omit fV in
 private theorem indecomposable_transportCodomain_obj {q r : _root_.Quiver.{w} V} (h : r = q)
-    (F : @QuiverRep.{u, v, w, max v w x} k V fld q ⥤ @QuiverRep.{u, v, w, max v w x} k V fld r)
-    (M : @QuiverRep.{u, v, w, max v w x} k V fld q) :
+    (F : @QuiverRep.{u, v, w, max v w x} k V _ q ⥤ @QuiverRep.{u, v, w, max v w x} k V _ r)
+    (M : @QuiverRep.{u, v, w, max v w x} k V _ q) :
     Indecomposable ((transportCodomain h F).obj M) ↔ Indecomposable (F.obj M) := by
   subst h
   exact Iff.rfl
 
 omit fV in
 private theorem nonempty_iso_transportCodomain_obj {q r : _root_.Quiver.{w} V} (h : r = q)
-    (F : @QuiverRep.{u, v, w, max v w x} k V fld q ⥤ @QuiverRep.{u, v, w, max v w x} k V fld r)
-    (M N : @QuiverRep.{u, v, w, max v w x} k V fld q) :
+    (F : @QuiverRep.{u, v, w, max v w x} k V _ q ⥤ @QuiverRep.{u, v, w, max v w x} k V _ r)
+    (M N : @QuiverRep.{u, v, w, max v w x} k V _ q) :
     Nonempty ((transportCodomain h F).obj M ≅ (transportCodomain h F).obj N)
       ↔ Nonempty (F.obj M ≅ F.obj N) := by
   subst h
@@ -311,16 +311,16 @@ private theorem nonempty_iso_transportCodomain_obj {q r : _root_.Quiver.{w} V} (
 
 omit fV in
 private theorem isZero_transportCodomain_obj {q r : _root_.Quiver.{w} V} (h : r = q)
-    (F : @QuiverRep.{u, v, w, max v w x} k V fld q ⥤ @QuiverRep.{u, v, w, max v w x} k V fld r)
-    (M : @QuiverRep.{u, v, w, max v w x} k V fld q) :
+    (F : @QuiverRep.{u, v, w, max v w x} k V _ q ⥤ @QuiverRep.{u, v, w, max v w x} k V _ r)
+    (M : @QuiverRep.{u, v, w, max v w x} k V _ q) :
     Limits.IsZero ((transportCodomain h F).obj M) ↔ Limits.IsZero (F.obj M) := by
   subst h
   exact Iff.rfl
 
 omit fV in
 private theorem isFinDim_transportCodomain_obj {q r : _root_.Quiver.{w} V} (h : r = q)
-    (F : @QuiverRep.{u, v, w, max v w x} k V fld q ⥤ @QuiverRep.{u, v, w, max v w x} k V fld r)
-    (M : @QuiverRep.{u, v, w, max v w x} k V fld q) :
+    (F : @QuiverRep.{u, v, w, max v w x} k V _ q ⥤ @QuiverRep.{u, v, w, max v w x} k V _ r)
+    (M : @QuiverRep.{u, v, w, max v w x} k V _ q) :
     @IsFinDim.{u, v, w, max v w x} k V fld q ((transportCodomain h F).obj M)
       ↔ @IsFinDim.{u, v, w, max v w x} k V fld r (F.obj M) := by
   subst h
@@ -328,8 +328,8 @@ private theorem isFinDim_transportCodomain_obj {q r : _root_.Quiver.{w} V} (h : 
 
 omit fV in
 private theorem finrank_end_transportCodomain_obj {q r : _root_.Quiver.{w} V} (h : r = q)
-    (F : @QuiverRep.{u, v, w, max v w x} k V fld q ⥤ @QuiverRep.{u, v, w, max v w x} k V fld r)
-    (M : @QuiverRep.{u, v, w, max v w x} k V fld q) :
+    (F : @QuiverRep.{u, v, w, max v w x} k V _ q ⥤ @QuiverRep.{u, v, w, max v w x} k V _ r)
+    (M : @QuiverRep.{u, v, w, max v w x} k V _ q) :
     Module.finrank k (End ((transportCodomain h F).obj M)) =
       Module.finrank k (End (F.obj M)) := by
   subst h
@@ -337,8 +337,8 @@ private theorem finrank_end_transportCodomain_obj {q r : _root_.Quiver.{w} V} (h
 
 omit fV in
 private theorem dimVector_transportCodomain_obj {q r : _root_.Quiver.{w} V} (h : r = q)
-    (F : @QuiverRep.{u, v, w, max v w x} k V fld q ⥤ @QuiverRep.{u, v, w, max v w x} k V fld r)
-    (M : @QuiverRep.{u, v, w, max v w x} k V fld q) :
+    (F : @QuiverRep.{u, v, w, max v w x} k V _ q ⥤ @QuiverRep.{u, v, w, max v w x} k V _ r)
+    (M : @QuiverRep.{u, v, w, max v w x} k V _ q) :
     @dimVector k V fld q ((transportCodomain h F).obj M) = @dimVector k V fld r (F.obj M) := by
   subst h
   rfl
@@ -357,7 +357,7 @@ noncomputable def coxeterFunctor (k : Type u) {V : Type v} [fld : Field k] [Fint
     (q : _root_.Quiver.{w} V) (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
     {l : List V} (hnd : l.Nodup) (hall : ∀ v : V, v ∈ l)
     (hl : Quiver.IsSinkAdmissible q l) :
-    @QuiverRep.{u, v, w, max v w x} k V fld q ⥤ @QuiverRep.{u, v, w, max v w x} k V fld q :=
+    @QuiverRep.{u, v, w, max v w x} k V _ q ⥤ @QuiverRep.{u, v, w, max v w x} k V _ q :=
   transportCodomain (Quiver.reflectList_eq_self q hnd hall) (reflectionFunctorList k l q hq hl)
 
 /-- The Coxeter functor is the reflection-functor composite transported along the equality between
@@ -367,8 +367,8 @@ theorem coxeterFunctor_def (q : _root_.Quiver.{w} V)
     (hall : ∀ v : V, v ∈ l) (hl : Quiver.IsSinkAdmissible q l) :
     coxeterFunctor.{u, v, w, x} k q hq hnd hall hl =
       Eq.mp (congrArg (fun r : _root_.Quiver.{w} V ↦
-        @QuiverRep.{u, v, w, max v w x} k V fld q ⥤
-          @QuiverRep.{u, v, w, max v w x} k V fld r)
+        @QuiverRep.{u, v, w, max v w x} k V _ q ⥤
+          @QuiverRep.{u, v, w, max v w x} k V _ r)
         (Quiver.reflectList_eq_self q hnd hall)) (reflectionFunctorList k l q hq hl) :=
   transportCodomain_eq_eqMp (Quiver.reflectList_eq_self q hnd hall)
     (reflectionFunctorList k l q hq hl)
@@ -378,7 +378,7 @@ dimension of its endomorphism space. -/
 theorem finrank_end_coxeterFunctor_obj (q : _root_.Quiver.{w} V)
     (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b)) {l : List V} (hnd : l.Nodup)
     (hall : ∀ v : V, v ∈ l) (hl : Quiver.IsSinkAdmissible q l)
-    (M : @QuiverRep.{u, v, w, max v w x} k V fld q) :
+    (M : @QuiverRep.{u, v, w, max v w x} k V _ q) :
     Module.finrank k (End ((coxeterFunctor.{u, v, w, x} k q hq hnd hall hl).obj M)) =
       Module.finrank k (End ((reflectionFunctorList k l q hq hl).obj M)) :=
   finrank_end_transportCodomain_obj (Quiver.reflectList_eq_self q hnd hall)
@@ -389,7 +389,7 @@ dimension vector. -/
 theorem dimVector_coxeterFunctor_obj (q : _root_.Quiver.{w} V)
     (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b)) {l : List V} (hnd : l.Nodup)
     (hall : ∀ v : V, v ∈ l) (hl : Quiver.IsSinkAdmissible q l)
-    (M : @QuiverRep.{u, v, w, max v w x} k V fld q) :
+    (M : @QuiverRep.{u, v, w, max v w x} k V _ q) :
     @dimVector k V fld q ((coxeterFunctor.{u, v, w, x} k q hq hnd hall hl).obj M) =
       @dimVector k V fld (Quiver.reflectList q l)
         ((reflectionFunctorList k l q hq hl).obj M) :=
@@ -400,7 +400,7 @@ dimension vector after coercion to integers. -/
 theorem intCast_dimVector_coxeterFunctor_obj (q : _root_.Quiver.{w} V)
     (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b)) {l : List V} (hnd : l.Nodup)
     (hall : ∀ v : V, v ∈ l) (hl : Quiver.IsSinkAdmissible q l)
-    (M : @QuiverRep.{u, v, w, max v w x} k V fld q) :
+    (M : @QuiverRep.{u, v, w, max v w x} k V _ q) :
     (fun j : V ↦
         (@dimVector k V fld q ((coxeterFunctor.{u, v, w, x} k q hq hnd hall hl).obj M) j : ℤ))
       = fun j : V ↦ (@dimVector k V fld (Quiver.reflectList q l)
@@ -413,7 +413,7 @@ reflection functors it transports does. -/
 theorem isFinDim_coxeterFunctor_obj (q : _root_.Quiver.{w} V)
     (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b)) {l : List V} (hnd : l.Nodup)
     (hall : ∀ v : V, v ∈ l) (hl : Quiver.IsSinkAdmissible q l)
-    (M : @QuiverRep.{u, v, w, max v w x} k V fld q)
+    (M : @QuiverRep.{u, v, w, max v w x} k V _ q)
     (hfd : @IsFinDim.{u, v, w, max v w x} k V fld q M) :
     @IsFinDim.{u, v, w, max v w x} k V fld q
       ((coxeterFunctor.{u, v, w, x} k q hq hnd hall hl).obj M) :=
@@ -426,7 +426,7 @@ proved one reflection at a time. -/
 theorem isZero_coxeterFunctor_obj_iff_isZero_reflectionFunctorList_obj (q : _root_.Quiver.{w} V)
     (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b)) {l : List V} (hnd : l.Nodup)
     (hall : ∀ v : V, v ∈ l) (hl : Quiver.IsSinkAdmissible q l)
-    (M : @QuiverRep.{u, v, w, max v w x} k V fld q) :
+    (M : @QuiverRep.{u, v, w, max v w x} k V _ q) :
     Limits.IsZero ((coxeterFunctor.{u, v, w, x} k q hq hnd hall hl).obj M)
       ↔ Limits.IsZero ((reflectionFunctorList k l q hq hl).obj M) :=
   isZero_transportCodomain_obj _ _ M
@@ -440,7 +440,7 @@ theorem nonempty_iso_coxeterFunctor_obj_iff_nonempty_iso_reflectionFunctorList_o
     (q : _root_.Quiver.{w} V)
     (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b)) {l : List V} (hnd : l.Nodup)
     (hall : ∀ v : V, v ∈ l) (hl : Quiver.IsSinkAdmissible q l)
-    (M N : @QuiverRep.{u, v, w, max v w x} k V fld q) :
+    (M N : @QuiverRep.{u, v, w, max v w x} k V _ q) :
     Nonempty ((coxeterFunctor.{u, v, w, x} k q hq hnd hall hl).obj M
         ≅ (coxeterFunctor.{u, v, w, x} k q hq hnd hall hl).obj N)
       ↔ Nonempty ((reflectionFunctorList k l q hq hl).obj M
@@ -451,7 +451,7 @@ theorem nonempty_iso_coxeterFunctor_obj_iff_nonempty_iso_reflectionFunctorList_o
 theorem isZero_coxeterFunctor_obj (q : _root_.Quiver.{w} V)
     (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b)) {l : List V} (hnd : l.Nodup)
     (hall : ∀ v : V, v ∈ l) (hl : Quiver.IsSinkAdmissible q l)
-    (M : @QuiverRep.{u, v, w, max v w x} k V fld q) (hM : Limits.IsZero M) :
+    (M : @QuiverRep.{u, v, w, max v w x} k V _ q) (hM : Limits.IsZero M) :
     Limits.IsZero ((coxeterFunctor.{u, v, w, x} k q hq hnd hall hl).obj M) :=
   (isZero_transportCodomain_obj _ _ M).mpr (isZero_reflectionFunctorList_obj l q hq hl M hM)
 
@@ -462,7 +462,7 @@ applied to the dimension vector of `M`, or it is the zero representation. This i
 theorem indecomposable_and_dimVector_coxeterFunctor_or_isZero [DecidableEq V]
     (q : _root_.Quiver.{w} V) (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b))
     {l : List V} (hnd : l.Nodup) (hall : ∀ v : V, v ∈ l) (hl : Quiver.IsSinkAdmissible q l)
-    (M : @QuiverRep.{u, v, w, max v w x} k V fld q) (hM : Indecomposable M)
+    (M : @QuiverRep.{u, v, w, max v w x} k V _ q) (hM : Indecomposable M)
     (hfd : ∀ a : V, FiniteDimensional k (M.obj a)) :
     (Indecomposable ((coxeterFunctor.{u, v, w, x} k q hq hnd hall hl).obj M) ∧
           (fun j : V ↦
@@ -487,7 +487,7 @@ of the nonnegative cone after finitely many Coxeter passes. -/
 theorem titsForm_dimVector_coxeterFunctor_obj (q : _root_.Quiver.{w} V)
     (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b)) {l : List V} (hnd : l.Nodup)
     (hall : ∀ v : V, v ∈ l) (hl : Quiver.IsSinkAdmissible q l)
-    (M : @QuiverRep.{u, v, w, max v w x} k V fld q) (hM : Indecomposable M)
+    (M : @QuiverRep.{u, v, w, max v w x} k V _ q) (hM : Indecomposable M)
     (hfd : ∀ a : V, FiniteDimensional k (M.obj a))
     (hne : ¬ Limits.IsZero ((coxeterFunctor.{u, v, w, x} k q hq hnd hall hl).obj M)) :
     @titsForm V q fV hq (fun j : V ↦

@@ -112,6 +112,14 @@ theorem commute_modulus_of_commute {T : E →L[𝕜] F} {S : E →L[𝕜] E}
     (h : Commute S (T† ∘L T)) : Commute S T.modulus :=
   (h.symm.cfcₙ_nnreal NNReal.sqrt).symm
 
+/-- The modulus of an invertible operator is strictly positive. -/
+theorem isStrictlyPositive_modulus_of_isUnit (T : E →L[𝕜] E) (hT : IsUnit T) :
+    IsStrictlyPositive T.modulus := by
+  refine ⟨T.modulus_nonneg, ?_⟩
+  rw [modulus, CFC.isUnit_sqrt_iff _
+    (nonneg_iff_isPositive.mpr T.isPositive_adjoint_comp_self)]
+  exact (isUnit_star.mpr hT).mul hT
+
 end RealAlgebra
 
 /-- The modulus is positive. -/
@@ -203,5 +211,39 @@ theorem norm_comp_modulus {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 
   calc ‖D ∘L T.modulus‖ = ‖(D ∘L T.modulus)†‖ := (adjoint.norm_map _).symm
     _ = ‖T ∘L D†‖ := by rw [adjoint_comp, adjoint_modulus, norm_modulus_comp]
     _ = ‖D ∘L T†‖ := by rw [← adjoint.norm_map, adjoint_comp, adjoint_adjoint]
+
+section RealAlgebra
+
+attribute [local instance] realAlgebra realIsScalarTower
+
+/-- The modulus of a pointwise expanding Hilbert space operator is at least the identity
+in Loewner order. -/
+theorem one_le_modulus_of_forall_norm_le (T : E →L[𝕜] F)
+    (hT : ∀ x, ‖x‖ ≤ ‖T x‖) : 1 ≤ T.modulus := by
+  have hgram : (1 : E →L[𝕜] E) ≤ T† ∘L T := by
+    rw [le_def, isPositive_iff]
+    refine ⟨(T.isPositive_adjoint_comp_self.isSelfAdjoint.sub
+      (IsSelfAdjoint.one _)).isSymmetric, fun x ↦ ?_⟩
+    have hsq : ‖x‖ ^ 2 ≤ ‖T x‖ ^ 2 := (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).mpr (hT x)
+    simpa [sub_apply, comp_apply, inner_sub_left, adjoint_inner_left,
+      inner_self_eq_norm_sq_to_K, RCLike.ofReal_sub, RCLike.ofReal_pow] using
+      (RCLike.ofReal_nonneg (K := 𝕜)).mpr (sub_nonneg.mpr hsq)
+  have hgram₀ : 0 ≤ T† ∘L T := zero_le_one.trans hgram
+  rw [modulus_eq_sqrt, CFC.sqrt_eq_rpow, CFC.rpow_eq_cfc_real hgram₀]
+  rw [← cfc_const_one ℝ (T† ∘L T)]
+  apply (cfc_le_iff (fun _ : ℝ ↦ 1) (fun r : ℝ ↦ r ^ (1 / 2 : ℝ)) (T† ∘L T)).mpr
+  intro r hr
+  exact Real.one_le_rpow ((CFC.one_le_iff (R := ℝ) _).mp hgram r hr) (by norm_num)
+
+/-- The modulus of a pointwise expanding Hilbert space operator is strictly positive. -/
+theorem isStrictlyPositive_modulus_of_forall_norm_le (T : E →L[𝕜] F)
+    (hT : ∀ x, ‖x‖ ≤ ‖T x‖) : IsStrictlyPositive T.modulus := by
+  have hP := T.one_le_modulus_of_forall_norm_le hT
+  refine (StarOrderedRing.isStrictlyPositive_iff_spectrum_pos (R := ℝ) T.modulus
+    T.isSelfAdjoint_modulus).mpr fun r hr ↦ ?_
+  exact zero_lt_one.trans_le
+    ((CFC.one_le_iff (R := ℝ) _ T.isSelfAdjoint_modulus).mp hP r hr)
+
+end RealAlgebra
 
 end ContinuousLinearMap

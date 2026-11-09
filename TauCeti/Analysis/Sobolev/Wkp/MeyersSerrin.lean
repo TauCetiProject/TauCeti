@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Extension
-public import TauCeti.Analysis.Sobolev.Wkp.LocalApproximation
+public import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
 public import TauCeti.Analysis.Sobolev.Wkp.Multiplication
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
@@ -79,6 +79,88 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
+/-- The Leibniz estimate makes the test functions `ζ ψ n`, extended by zero from `U` to `Ω`, a
+Cauchy sequence in `W^{k,p}(Ω)` whenever the restrictions of the `ψ n` to `U` are Cauchy in
+`W^{k,p}(U)`. -/
+private theorem cauchySeq_ofTestFunctionₗ_monoCLM_mul {U : Opens E} (hUO : U ≤ Omega)
+    {zeta : E → ℝ} (hzeta : ContDiff ℝ ∞ zeta) (k : ℕ) {M : ℝ} (hM0 : 0 ≤ M)
+    (hM : ∀ i ≤ k, ∀ x ∈ U, ‖iteratedFDeriv ℝ i zeta x‖ ≤ M)
+    (psi : ℕ → 𝓓(Omega, ℝ)) (PhiU : ℕ → 𝓓(U, ℝ)) (hPhiU : ∀ n x, PhiU n x = zeta x * psi n x)
+    (hpsi : CauchySeq fun n =>
+      restrictL hUO k (ofTestFunctionₗ (mu := mu) (p := p) k (psi n))) :
+    CauchySeq fun n => ofTestFunctionₗ (mu := mu) (p := p) k
+      (TestFunction.monoCLM ℝ (PhiU n) : 𝓓(Omega, ℝ)) := by
+  let r : ℕ → Wkp mu U p k := fun n => restrictL hUO k (ofTestFunctionₗ (mu := mu) (p := p) k
+    (psi n))
+  have hest : ∀ n m, ‖ofTestFunctionₗ (mu := mu) (p := p) k
+      (TestFunction.monoCLM ℝ (PhiU n) : 𝓓(Omega, ℝ)) -
+      ofTestFunctionₗ k (TestFunction.monoCLM ℝ (PhiU m) : 𝓓(Omega, ℝ))‖ ≤
+        2 ^ (k + 1) * M * ‖r n - r m‖ := by
+    intro n m
+    rw [← map_sub, ← map_sub, norm_ofTestFunctionₗ_monoCLM hUO k]
+    refine norm_ofTestFunctionₗ_le_of_eqOn_mul k hzeta hM0 hM (r n - r m)
+      (f := fun x => psi n x - psi m x)
+      ((((psi n).contDiff.sub (psi m).contDiff).of_le (by simp)).contDiffOn) ?_ _
+      (fun x _ => by simp [hPhiU, mul_sub])
+    rw [← valueL_apply, map_sub, valueL_apply, valueL_apply]
+    filter_upwards [Lp.coeFn_sub (value k (r n)) (value k (r m)),
+      value_restrictL_ofTestFunctionₗ_ae (mu := mu) (p := p) hUO k (psi n),
+      value_restrictL_ofTestFunctionₗ_ae (mu := mu) (p := p) hUO k (psi m)] with x h h1 h2
+    rw [h, Pi.sub_apply, h1, h2]
+  rw [Metric.cauchySeq_iff]
+  intro ε hε
+  obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.1 hpsi (ε / (2 ^ (k + 1) * M + 1)) (by positivity)
+  refine ⟨N, fun n hn m hm => ?_⟩
+  have hnm := hN n hn m hm
+  rw [dist_eq_norm] at hnm ⊢
+  calc _ ≤ 2 ^ (k + 1) * M * ‖r n - r m‖ := hest n m
+    _ ≤ (2 ^ (k + 1) * M + 1) * ‖r n - r m‖ := by gcongr; linarith
+    _ < (2 ^ (k + 1) * M + 1) * (ε / (2 ^ (k + 1) * M + 1)) := by gcongr
+    _ = ε := by field_simp
+
+/-- If the restrictions to `U` of the test functions `ψ n` converge to the restriction of `u`,
+and the test functions `Φ n = ζ ψ n` converge in `W^{k,p}(Ω)` to `v`, where `ζ` vanishes off `U`,
+then `v` has value `ζ u` almost everywhere on `Ω`. -/
+private theorem ae_eq_mul_of_tendsto_ofTestFunctionₗ {U : Opens E} (hUO : U ≤ Omega)
+    {zeta : E → ℝ} (hKV : tsupport zeta ⊆ U) (k : ℕ) (u v : Wkp mu Omega p k)
+    (psi Phi : ℕ → 𝓓(Omega, ℝ)) (hPhi : ∀ n x, Phi n x = zeta x * psi n x)
+    (hpsi : Tendsto (fun n => restrictL hUO k (ofTestFunctionₗ (mu := mu) (p := p) k (psi n)))
+      atTop (𝓝 (restrictL hUO k u)))
+    (hv : Tendsto (fun n => ofTestFunctionₗ (mu := mu) (p := p) k (Phi n)) atTop (𝓝 v)) :
+    (value k v : E → ℝ) =ᵐ[mu.restrict Omega] (fun x => zeta x * value k u x) := by
+  have hres : Tendsto (fun n => value k (restrictL hUO k (ofTestFunctionₗ (mu := mu) (p := p) k
+      (psi n)))) atTop (𝓝 (value k (restrictL hUO k u))) := by
+    simpa only [Function.comp_def, valueL_apply] using
+      ((valueL (mu := mu) (Omega := U) (p := p) k).continuous.tendsto _).comp hpsi
+  have hval : Tendsto (fun n => value k (ofTestFunctionₗ (mu := mu) (p := p) k (Phi n))) atTop
+      (𝓝 (value k v)) := by
+    simpa only [Function.comp_def, valueL_apply] using
+      ((valueL (mu := mu) (Omega := Omega) (p := p) k).continuous.tendsto v).comp hv
+  obtain ⟨ns, hns, h1⟩ := (tendstoInMeasure_of_tendsto_Lp hres).exists_seq_tendsto_ae
+  obtain ⟨ms, hms, h2⟩ :=
+    (tendstoInMeasure_of_tendsto_Lp (hval.comp hns.tendsto_atTop)).exists_seq_tendsto_ae
+  have hU : ∀ᵐ x ∂mu.restrict Omega, x ∈ U →
+      Tendsto (fun j => psi (ns j) x) atTop (𝓝 (value k u x)) := by
+    have h : ∀ᵐ x ∂mu.restrict U, Tendsto (fun j => psi (ns j) x) atTop (𝓝 (value k u x)) := by
+      filter_upwards [h1, value_restrictL_ae hUO k u,
+        ae_all_iff.2 fun n => value_restrictL_ofTestFunctionₗ_ae (mu := mu) (p := p) hUO k (psi n)]
+        with x hx hux hrx
+      simpa only [hux, hrx] using hx
+    exact ae_restrict_of_ae ((ae_restrict_iff' U.isOpen.measurableSet).1 h)
+  have hPhi_ae : ∀ᵐ x ∂mu.restrict Omega, ∀ n,
+      value k (ofTestFunctionₗ (mu := mu) (p := p) k (Phi n)) x = zeta x * psi n x := by
+    refine ae_all_iff.2 fun n => ?_
+    filter_upwards [testFunctionLp_apply_ae (mu := mu) p (Phi n)] with x hx
+    rw [value_ofTestFunctionₗ, hx, hPhi]
+  filter_upwards [h2, hU, hPhi_ae] with x hx hxU hPx
+  simp only [Function.comp_def, hPx] at hx
+  by_cases hxV : x ∈ U
+  · exact tendsto_nhds_unique hx
+      ((tendsto_const_nhds (x := zeta x)).mul ((hxU hxV).comp hms.tendsto_atTop))
+  · have hz : zeta x = 0 := image_eq_zero_of_notMem_tsupport fun h => hxV (hKV h)
+    simp only [hz, zero_mul] at hx ⊢
+    exact tendsto_nhds_unique hx tendsto_const_nhds
+
 /-- The cutoff `ζ u` of `u ∈ W^{k,p}(Ω)` by a smooth `ζ` compactly supported in `Ω` is a
 `W^{k,p}(Ω)` limit of test functions `ζ ψ n`, which vanish wherever `ζ` does. -/
 private theorem exists_tendsto_ofTestFunctionₗ_mul (hp : p ≠ ⊤) {zeta : E → ℝ}
@@ -107,80 +189,11 @@ private theorem exists_tendsto_ofTestFunctionₗ_mul (hp : p ≠ ⊤) {zeta : E 
   let Phi : ℕ → 𝓓(Omega, ℝ) := fun n => TestFunction.monoCLM ℝ (PhiU n)
   have hPhi : ∀ n x, Phi n x = zeta x * psi n x := fun n x => by
     simp [Phi, PhiU, hUO]
-  -- extension by zero from `U` to `Ω` preserves the norm of the test functions
-  have hnorm : ∀ n m, ‖ofTestFunctionₗ (mu := mu) (p := p) k (Phi n) -
-      ofTestFunctionₗ k (Phi m)‖ = ‖ofTestFunctionₗ (mu := mu) (p := p) k (PhiU n - PhiU m)‖ := by
-    intro n m
-    have h := (Wkp0.extendByZeroₗᵢ (mu := mu) (p := p) hUO k).norm_map
-      (Wkp0.ofTestFunctionₗ k (PhiU n - PhiU m))
-    rw [Wkp0.extendByZeroₗᵢ_ofTestFunctionₗ, map_sub, ← Submodule.norm_coe,
-      ← Submodule.norm_coe, Wkp0.coe_ofTestFunctionₗ, Wkp0.coe_ofTestFunctionₗ] at h
-    rwa [← map_sub]
-  -- the restrictions of the `ψ n` to `U`, which converge to the restriction of `u`
-  let r : ℕ → Wkp mu U p k := fun n => restrictL hUO k (ofTestFunctionₗ (mu := mu) (p := p) k
-    (psi n))
-  have hr : ∀ n, (value k (r n) : E → ℝ) =ᵐ[mu.restrict U] psi n := fun n => by
-    have hmono : ae (mu.restrict (U : Set E)) ≤ ae (mu.restrict (Omega : Set E)) :=
-      ae_mono (Measure.restrict_mono (SetLike.coe_subset_coe.mpr hUO) le_rfl)
-    filter_upwards [value_restrictL_ae hUO k (ofTestFunctionₗ (mu := mu) (p := p) k (psi n)),
-      (testFunctionLp_apply_ae (mu := mu) p (psi n)).filter_mono hmono] with x h1 h2
-    rw [h1, value_ofTestFunctionₗ, h2]
-  -- the Leibniz estimate makes the test functions `ζ ψ n` a Cauchy sequence in `W^{k,p}(Ω)`
-  have hest : ∀ n m, ‖ofTestFunctionₗ (mu := mu) (p := p) k (Phi n) -
-      ofTestFunctionₗ k (Phi m)‖ ≤ 2 ^ (k + 1) * M * ‖r n - r m‖ := by
-    intro n m
-    rw [hnorm]
-    refine norm_ofTestFunctionₗ_le_of_eqOn_mul k hzeta hM0 hM (r n - r m)
-      (f := fun x => psi n x - psi m x)
-      ((((psi n).contDiff.sub (psi m).contDiff).of_le (by simp)).contDiffOn) ?_ _
-      (fun x _ => by simp [PhiU, mul_sub])
-    rw [← valueL_apply, map_sub, valueL_apply, valueL_apply]
-    filter_upwards [Lp.coeFn_sub (value k (r n)) (value k (r m)), hr n, hr m] with x h h1 h2
-    rw [h, Pi.sub_apply, h1, h2]
-  have hcauchy : CauchySeq fun n => ofTestFunctionₗ (mu := mu) (p := p) k (Phi n) := by
-    rw [Metric.cauchySeq_iff]
-    intro ε hε
-    obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.1 hpsi.cauchySeq (ε / (2 ^ (k + 1) * M + 1))
-      (by positivity)
-    refine ⟨N, fun n hn m hm => ?_⟩
-    have hnm := hN n hn m hm
-    rw [dist_eq_norm] at hnm ⊢
-    calc _ ≤ 2 ^ (k + 1) * M * ‖r n - r m‖ := hest n m
-      _ ≤ (2 ^ (k + 1) * M + 1) * ‖r n - r m‖ := by gcongr; linarith
-      _ < (2 ^ (k + 1) * M + 1) * (ε / (2 ^ (k + 1) * M + 1)) := by gcongr
-      _ = ε := by field_simp
-  obtain ⟨v, hv⟩ := cauchySeq_tendsto_of_complete hcauchy
-  refine ⟨v, Phi, fun n x hx => by rw [hPhi, hx, zero_mul], ?_, hv⟩
-  -- identify the value of the limit through almost everywhere convergent subsequences
-  have hres : Tendsto (fun n => value k (r n)) atTop (𝓝 (value k (restrictL hUO k u))) := by
-    simpa only [Function.comp_def, valueL_apply] using
-      ((valueL (mu := mu) (Omega := U) (p := p) k).continuous.tendsto _).comp hpsi
-  have hval : Tendsto (fun n => value k (ofTestFunctionₗ (mu := mu) (p := p) k (Phi n))) atTop
-      (𝓝 (value k v)) := by
-    simpa only [Function.comp_def, valueL_apply] using
-      ((valueL (mu := mu) (Omega := Omega) (p := p) k).continuous.tendsto v).comp hv
-  obtain ⟨ns, hns, h1⟩ := (tendstoInMeasure_of_tendsto_Lp hres).exists_seq_tendsto_ae
-  obtain ⟨ms, hms, h2⟩ :=
-    (tendstoInMeasure_of_tendsto_Lp (hval.comp hns.tendsto_atTop)).exists_seq_tendsto_ae
-  have hU : ∀ᵐ x ∂mu.restrict Omega, x ∈ U →
-      Tendsto (fun j => psi (ns j) x) atTop (𝓝 (value k u x)) := by
-    have h : ∀ᵐ x ∂mu.restrict U, Tendsto (fun j => psi (ns j) x) atTop (𝓝 (value k u x)) := by
-      filter_upwards [h1, value_restrictL_ae hUO k u, ae_all_iff.2 hr] with x hx hux hrx
-      simpa only [hux, hrx] using hx
-    exact ae_restrict_of_ae ((ae_restrict_iff' U.isOpen.measurableSet).1 h)
-  have hPhi_ae : ∀ᵐ x ∂mu.restrict Omega, ∀ n,
-      value k (ofTestFunctionₗ (mu := mu) (p := p) k (Phi n)) x = zeta x * psi n x := by
-    refine ae_all_iff.2 fun n => ?_
-    filter_upwards [testFunctionLp_apply_ae (mu := mu) p (Phi n)] with x hx
-    rw [value_ofTestFunctionₗ, hx, hPhi]
-  filter_upwards [h2, hU, hPhi_ae] with x hx hxU hPx
-  simp only [Function.comp_def, hPx] at hx
-  by_cases hxV : x ∈ U
-  · exact tendsto_nhds_unique hx
-      ((tendsto_const_nhds (x := zeta x)).mul ((hxU hxV).comp hms.tendsto_atTop))
-  · have hz : zeta x = 0 := image_eq_zero_of_notMem_tsupport fun h => hxV (hKV h)
-    simp only [hz, zero_mul] at hx ⊢
-    exact tendsto_nhds_unique hx tendsto_const_nhds
+  obtain ⟨v, hv⟩ := cauchySeq_tendsto_of_complete
+    (cauchySeq_ofTestFunctionₗ_monoCLM_mul hUO hzeta k hM0 hM psi PhiU (fun n x => by simp [PhiU])
+      hpsi.cauchySeq)
+  exact ⟨v, Phi, fun n x hx => by rw [hPhi, hx, zero_mul],
+    ae_eq_mul_of_tendsto_ofTestFunctionₗ hUO hKV k u v psi Phi hPhi hpsi hv, hv⟩
 
 /-- **Cutoffs of Sobolev functions have zero boundary values.** If `1 ≤ p < ∞`, `u ∈ W^{k,p}(Ω)`
 and `ζ` is smooth with compact support inside `Ω`, then the product `ζ u` lies in
@@ -195,13 +208,57 @@ theorem exists_mem_wkp0Submodule_value_ae_eq_mul (hp : p ≠ ⊤) {zeta : E → 
   exact ⟨v, (wkp0Submodule mu Omega p k).isClosed.mem_of_tendsto hlim
     (Eventually.of_forall fun n => ofTestFunctionₗ_mem_wkp0Submodule k (Phi n)), hval⟩
 
+/-- The value of `∑' j, (Ψ j - b j)`, where `b j` has value `ζ j u`, is a.e. `f - u` on `Ω`,
+provided the partial sums of `Ψ j` and `ζ j` are eventually `f` and `1` at each point of `Ω`. -/
+private theorem ae_value_tsum_sub_eq {k : ℕ} (u : Wkp mu Omega p k) (zeta : ℕ → E → ℝ)
+    (Psi : ℕ → 𝓓(Omega, ℝ)) (b : ℕ → Wkp mu Omega p k) (f : E → ℝ)
+    (hb : ∀ j, (value k (b j) : E → ℝ) =ᵐ[mu.restrict Omega] fun x => zeta j x * value k u x)
+    (hsummable : Summable fun j => ofTestFunctionₗ (mu := mu) (p := p) k (Psi j) - b j)
+    (hf_local : ∀ x ∈ Omega, ∃ m, ∀ N, m ≤ N →
+      ∑ j ∈ Finset.range N, Psi j x = f x ∧ ∑ j ∈ Finset.range N, zeta j x = 1) :
+    ∀ᵐ x ∂mu.restrict Omega,
+      value k (∑' j, (ofTestFunctionₗ (mu := mu) (p := p) k (Psi j) - b j)) x =
+        f x - value k u x := by
+  let a : ℕ → Wkp mu Omega p k := fun j => ofTestFunctionₗ (mu := mu) (p := p) k (Psi j)
+  set w := ∑' j, (a j - b j)
+  -- identify the `Lᵖ` limit of the partial sums with their pointwise limit `f - u`
+  let S : ℕ → Wkp mu Omega p k := fun N => ∑ j ∈ Finset.range N, (a j - b j)
+  have hSv : Tendsto (fun N => value k (S N)) atTop (𝓝 (value k w)) := by
+    simpa only [Function.comp_def, valueL_apply] using
+      ((valueL (mu := mu) (Omega := Omega) (p := p) k).continuous.tendsto w).comp
+        hsummable.hasSum.tendsto_sum_nat
+  obtain ⟨ns, hns, hSlim⟩ := (tendstoInMeasure_of_tendsto_Lp hSv).exists_seq_tendsto_ae
+  have hpartial : ∀ᵐ x ∂mu.restrict Omega, ∀ N,
+      value k (S N) x = ∑ j ∈ Finset.range N, (Psi j x - zeta j x * value k u x) := by
+    rw [ae_all_iff]
+    intro N
+    have hS : value k (S N) = ∑ j ∈ Finset.range N, (value k (a j) - value k (b j)) := by
+      simp only [S, ← valueL_apply, map_sum, map_sub]
+    filter_upwards [Lp.coeFn_finsetSum (Finset.range N) fun j => value k (a j) - value k (b j),
+      ae_all_iff.2 fun j => Lp.coeFn_sub (value k (a j)) (value k (b j)), ae_all_iff.2 hb,
+      ae_all_iff.2 fun j => testFunctionLp_apply_ae (mu := mu) p (Psi j)] with x hx hsub hbx ha
+    rw [hS, hx, Finset.sum_apply]
+    refine Finset.sum_congr rfl fun j _ => ?_
+    rw [hsub j, Pi.sub_apply, hbx j, value_ofTestFunctionₗ, ha j]
+  have hw_ae : ∀ᵐ x ∂mu.restrict Omega, value k w x = f x - value k u x := by
+    filter_upwards [hSlim, hpartial, ae_restrict_mem Omega.isOpen.measurableSet]
+      with x hx hpx hxΩ
+    obtain ⟨m, hm⟩ := hf_local x hxΩ
+    have hconv : Tendsto (fun N => value k (S N) x) atTop (𝓝 (f x - value k u x)) := by
+      refine tendsto_const_nhds.congr' (eventually_atTop.2 ⟨m, fun N hN => Eq.symm ?_⟩)
+      beta_reduce
+      obtain ⟨hf_eq, hz_eq⟩ := hm N hN
+      rw [hpx, Finset.sum_sub_distrib, ← Finset.sum_mul, hf_eq, hz_eq, one_mul]
+    exact tendsto_nhds_unique hx (hconv.comp hns.tendsto_atTop)
+  exact hw_ae
+
 /-- Every `u ∈ W^{k,p}(Ω)`, `p < ∞`, is within `ε` of an element whose value is represented by a
 function smooth on `Ω`. -/
 private theorem exists_contDiffOn_norm_sub_lt (hp : p ≠ ⊤) (k : ℕ) (u : Wkp mu Omega p k)
     {ε : ℝ} (hε : 0 < ε) :
     ∃ (v : Wkp mu Omega p k) (f : E → ℝ), ContDiffOn ℝ ∞ f Omega ∧
       (value k v : E → ℝ) =ᵐ[mu.restrict Omega] f ∧ ‖v - u‖ < ε := by
-  obtain ⟨zeta, chi, hzeta, hchi, hchi_one, hfin⟩ :=
+  obtain ⟨zeta, chi, hzeta, -, -, hchi, hchi_one, hfin⟩ :=
     IsOpen.exists_contDiff_decomposition_cutoff Omega.isOpen
   -- the localized pieces `b j = ζ_j u`, and test functions `ζ_j ψ_j` within `ε 2^{-j-2}` of them
   choose b Phi hPhi_zero hb hlim using fun j =>
@@ -235,35 +292,7 @@ private theorem exists_contDiffOn_norm_sub_lt (hp : p ≠ ⊤) (k : ℕ) (u : Wk
     obtain ⟨m, hm⟩ := hfin x hx
     refine ⟨m, fun N hN => ⟨(tsum_eq_sum fun j hj => ?_).symm, hm.self_of_nhds.2 N hN⟩⟩
     exact hPsi_zero j x (hm.self_of_nhds.1 j (by simp at hj; omega))
-  -- identify the `Lᵖ` limit of the partial sums with their pointwise limit `f - u`
-  let S : ℕ → Wkp mu Omega p k := fun N => ∑ j ∈ Finset.range N, (a j - b j)
-  have hSv : Tendsto (fun N => value k (S N)) atTop (𝓝 (value k w)) := by
-    simpa only [Function.comp_def, valueL_apply] using
-      ((valueL (mu := mu) (Omega := Omega) (p := p) k).continuous.tendsto w).comp
-        hsummable.hasSum.tendsto_sum_nat
-  obtain ⟨ns, hns, hSlim⟩ := (tendstoInMeasure_of_tendsto_Lp hSv).exists_seq_tendsto_ae
-  have hpartial : ∀ᵐ x ∂mu.restrict Omega, ∀ N,
-      value k (S N) x = ∑ j ∈ Finset.range N, (Psi j x - zeta j x * value k u x) := by
-    rw [ae_all_iff]
-    intro N
-    have hS : value k (S N) = ∑ j ∈ Finset.range N, (value k (a j) - value k (b j)) := by
-      simp only [S, ← valueL_apply, map_sum, map_sub]
-    filter_upwards [Lp.coeFn_finsetSum (Finset.range N) fun j => value k (a j) - value k (b j),
-      ae_all_iff.2 fun j => Lp.coeFn_sub (value k (a j)) (value k (b j)), ae_all_iff.2 hb,
-      ae_all_iff.2 fun j => testFunctionLp_apply_ae (mu := mu) p (Psi j)] with x hx hsub hbx ha
-    rw [hS, hx, Finset.sum_apply]
-    refine Finset.sum_congr rfl fun j _ => ?_
-    rw [hsub j, Pi.sub_apply, hbx j, value_ofTestFunctionₗ, ha j]
-  have hw_ae : ∀ᵐ x ∂mu.restrict Omega, value k w x = f x - value k u x := by
-    filter_upwards [hSlim, hpartial, ae_restrict_mem Omega.isOpen.measurableSet]
-      with x hx hpx hxΩ
-    obtain ⟨m, hm⟩ := hf_local x hxΩ
-    have hconv : Tendsto (fun N => value k (S N) x) atTop (𝓝 (f x - value k u x)) := by
-      refine tendsto_const_nhds.congr' (eventually_atTop.2 ⟨m, fun N hN => Eq.symm ?_⟩)
-      beta_reduce
-      obtain ⟨hf_eq, hz_eq⟩ := hm N hN
-      rw [hpx, Finset.sum_sub_distrib, ← Finset.sum_mul, hf_eq, hz_eq, one_mul]
-    exact tendsto_nhds_unique hx (hconv.comp hns.tendsto_atTop)
+  have hw_ae := ae_value_tsum_sub_eq u zeta Psi b f hb hsummable hf_local
   refine ⟨u + w, f, hf, ?_, ?_⟩
   · filter_upwards [Lp.coeFn_add (value k u) (value k w), hw_ae] with x hx hwx
     rw [value_add, hx, Pi.add_apply, hwx, add_sub_cancel]

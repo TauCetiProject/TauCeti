@@ -53,9 +53,13 @@ and the regular injective area formula applies.
   have null images.
 * `LipschitzWith.euclideanHausdorffMeasure_image_setOf_normDet_fderiv_eq_zero`: the image of the
   set where the Jacobian of a Lipschitz map vanishes is null.
+* `LipschitzWith.exists_linear_approximation_cover`: for every `δ > 0`, countably many disjoint
+  Borel patches on which the map is within relative error `δ` of an injective linear map cover the
+  image up to a null set, using
+  `TauCeti.exists_partition_linear_approximation_of_hasFDerivWithinAt` on the regular points.
 * `LipschitzWith.exists_bilipschitz_cover`: countably many disjoint Borel patches with Lipschitz
-  inverse coordinates cover the image up to a null set, using
-  `TauCeti.exists_partition_lipschitz_antilipschitz_of_hasFDerivWithinAt` on the regular points.
+  inverse coordinates cover the image up to a null set; these are the patches of the previous
+  result for relative error `1 / 2`.
 * `LipschitzWith.lintegral_image_eq_lintegral_normDet_fderiv_mul`: the weighted area formula for
   a Lipschitz map injective on a measurable set.
 * `LipschitzWith.lintegral_normDet_fderiv_eq_euclideanHausdorffMeasure_image`: the area formula
@@ -66,6 +70,8 @@ and the regular injective area formula applies.
 * L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised edition,
   Section 3.3 (the area formula), whose proof of the zero Jacobian statement for Lipschitz maps,
   by lifting to `x ↦ (f x, ε x)`, this file follows.
+* H. Federer, *Geometric Measure Theory*, 3.2.18 (pieces on which a Lipschitz map is close to an
+  injective linear map).
 -/
 
 public section
@@ -203,6 +209,29 @@ theorem euclideanHausdorffMeasure_image_compl_setOf_regular (hf : LipschitzWith 
   · exact le_antisymm ((hf.lipschitzOnWith.euclideanHausdorffMeasure_image_le _).trans
       (by rw [hN, mul_zero])) bot_le
 
+/-- **Linear approximation of a Lipschitz map on pieces.** For every `δ > 0`, the image of a
+Lipschitz map `f : U → V` is covered, up to a `μHE[dim U]`-null set, by the images of countably
+many disjoint Borel pieces `P n`, each with an approximating linear map `A n` that is injective
+whenever the piece is nonempty and satisfies `‖f x - f y - A n (x - y)‖ ≤ δ ‖A n (x - y)‖` on the
+piece. -/
+theorem exists_linear_approximation_cover (hf : LipschitzWith K f) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ (P : ℕ → Set U) (A : ℕ → U →L[ℝ] V), (∀ n, MeasurableSet (P n)) ∧
+      Pairwise (Disjoint on P) ∧ (∀ n, (P n).Nonempty → Injective (A n)) ∧
+      (∀ n, ∀ x ∈ P n, ∀ y ∈ P n, ‖f x - f y - A n (x - y)‖ ≤ δ * ‖A n (x - y)‖) ∧
+      μHE[finrank ℝ U] (range f \ ⋃ n, f '' P n) = 0 := by
+  -- Partition the regular points, where `f` is differentiable with injective derivative.
+  obtain ⟨P, A, hPm, hdisj, hcover, hinj, happ⟩ :=
+    exists_partition_linear_approximation_of_hasFDerivWithinAt
+      (measurableSet_setOf_differentiableAt_normDet_ne_zero f)
+      (fun x hx ↦ hx.1.hasFDerivAt.hasFDerivWithinAt)
+      (fun x hx ↦ ((fderiv ℝ f x).toLinearMap.normDet_ne_zero_tfae.out 1 5).mp hx.2) hδ
+  refine ⟨P, A, hPm, hdisj, hinj, happ, ?_⟩
+  refine measure_mono_null ?_ hf.euclideanHausdorffMeasure_image_compl_setOf_regular
+  rintro _ ⟨⟨x, rfl⟩, hy⟩
+  refine ⟨x, fun hx ↦ hy ?_, rfl⟩
+  obtain ⟨n, hn⟩ := mem_iUnion.mp (hcover.symm.subset hx)
+  exact mem_iUnion.mpr ⟨n, x, hn, rfl⟩
+
 /-- The image of a Lipschitz map is covered up to a null set by images of countably many
 disjoint Borel sets on which the map has a Lipschitz inverse. The forward Lipschitz bound
 is inherited from the original map. -/
@@ -210,20 +239,10 @@ theorem exists_bilipschitz_cover (hf : LipschitzWith K f) :
     ∃ A : ℕ → Set U, (∀ n, MeasurableSet (A n)) ∧ Pairwise (Disjoint on A) ∧
       (∀ n, ∃ L : ℝ≥0, AntilipschitzWith L ((A n).domRestrict f)) ∧
       μHE[finrank ℝ U] (range f \ ⋃ n, f '' A n) = 0 := by
-  let G := {x | DifferentiableAt ℝ f x ∧ (fderiv ℝ f x).normDet ≠ 0}
-  have hG : MeasurableSet G := measurableSet_setOf_differentiableAt_normDet_ne_zero f
-  have hi (x : U) (hx : x ∈ G) : Injective (fderiv ℝ f x) :=
-    ((fderiv ℝ f x).toLinearMap.normDet_ne_zero_tfae.out 1 5).mp hx.2
-  obtain ⟨A, K', L', hAm, hdisj, hcover, hbi⟩ :=
-    TauCeti.exists_partition_lipschitz_antilipschitz_of_hasFDerivWithinAt hG
-      (fun x (hx : x ∈ G) ↦ hx.1.hasFDerivAt.hasFDerivWithinAt) hi
-  refine ⟨A, hAm, hdisj, fun n ↦ ⟨L' n, (hbi n).2⟩, ?_⟩
-  refine measure_mono_null ?_ hf.euclideanHausdorffMeasure_image_compl_setOf_regular
-  rintro y ⟨⟨x, rfl⟩, hy⟩
-  refine ⟨x, ?_, rfl⟩
-  intro hx
-  obtain ⟨n, hn⟩ := mem_iUnion.mp (hcover.symm.subset hx)
-  exact hy (mem_iUnion.mpr ⟨n, x, hn, rfl⟩)
+  obtain ⟨P, A, hPm, hdisj, hinj, happ, hnull⟩ :=
+    hf.exists_linear_approximation_cover (δ := 2⁻¹) (by norm_num)
+  exact ⟨P, hPm, hdisj,
+    fun n ↦ exists_antilipschitzWith_domRestrict_of_approx (hinj n) (by norm_num) (happ n), hnull⟩
 
 /-- **Sard's lemma for Lipschitz maps.** The image of the set where the `dim U`-dimensional
 Jacobian of a Lipschitz map `f : U → V` vanishes is null for the `dim U`-dimensional Euclidean

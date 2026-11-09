@@ -98,6 +98,12 @@ section Smooth
 def IsLoopSmooth (ρ : P →ₗ[R] Module.End R M) : Prop :=
   ∀ m : M, ∃ N : ℤ, ∀ n, N ≤ n → ∀ x : L, ρ (AddMonoidAlgebra.single n 1 ⊗ₜ x) m = 0
 
+/-- Polynomial smoothness means that all sufficiently high modes annihilate each vector. -/
+theorem isLoopSmooth_iff_modes {ρ : P →ₗ[R] Module.End R M} :
+    IsLoopSmooth ρ ↔ ∀ m : M, ∃ N : ℤ, ∀ n, N ≤ n → ∀ x : L,
+      ρ (AddMonoidAlgebra.single n 1 ⊗ₜ x) m = 0 :=
+  Iff.rfl
+
 /-- An action of formal currents is smooth if every vector is killed by all currents of order
 at least a cutoff depending on the vector. -/
 def IsSmooth (σ : C →ₗ[R] Module.End R M) : Prop :=

@@ -38,8 +38,9 @@ The content and its basic API live in `TauCeti.Algebra.Module.ZLattice.Content`.
 ## Main statements
 
 * `ZLattice.isEven_sqrt_level_smul_dual`: the Fricke partner `√N • L^∨` is even, for every `L`.
-* `ZLattice.IsIntegral.det_sqrt_level_smul_dual`: for a full integral lattice of rank `n`,
-  `det (√N • L^∨) = Nⁿ / det L`.
+* `ZLattice.IsIntegral.det_sqrt_level_smul_dual`,
+  `ZLattice.IsIntegral.mul_card_discriminantGroup_sqrt_level_smul_dual`: for a full integral
+  lattice of rank `n`, `det (√N • L^∨) = Nⁿ / det L` and `|A_L| * |A_{√N • L^∨}| = Nⁿ`.
 * `ZLattice.IsEven.level_sqrt_level_smul_dual`: for an even full lattice,
   `level (√N • L^∨) = N / gcd (N, c_L)`.
 * `ZLattice.IsEven.level_sqrt_level_smul_dual_dvd`: the level of the Fricke partner divides `N`.
@@ -87,6 +88,18 @@ theorem IsIntegral.det_sqrt_level_smul_dual [MeasurableSpace E] [BorelSpace E]
     (h : IsIntegral L) :
     det (√(level L : ℝ) • dual L) = level L ^ finrank ℝ E / det L := by
   rw [det_sqrt_smul _ h.level_pos.ne', det_dual, div_eq_mul_inv]
+
+/-- For an integral full lattice `L` of rank `n` and level `N`, the orders of the discriminant
+groups of `L` and of its Fricke partner `√N • L^∨` multiply to `Nⁿ`. -/
+theorem IsIntegral.mul_card_discriminantGroup_sqrt_level_smul_dual (h : IsIntegral L) :
+    Nat.card (DiscriminantGroup L) * Nat.card (DiscriminantGroup (√(level L : ℝ) • dual L)) =
+      level L ^ finrank ℝ E := by
+  borelize E
+  have : NeZero √(level L : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr h.level_pos)⟩
+  refine Nat.cast_injective (R := ℝ) ?_
+  rw [Nat.cast_mul, Nat.cast_pow, ← h.det_eq_card_discriminantGroup,
+    ← isIntegral_sqrt_level_smul_dual.det_eq_card_discriminantGroup, h.det_sqrt_level_smul_dual,
+    mul_div_cancel₀ _ (det_pos L).ne']
 
 /-- An integer `K` is a multiple of the level of the Fricke partner `√N • L^∨` of a full integral
 lattice `L` of level `N` exactly when `N` divides `K ‖x‖² / 2` for every `x ∈ L`: the dual of the

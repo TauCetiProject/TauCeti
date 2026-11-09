@@ -341,6 +341,21 @@ noncomputable def dualFiberEquiv (A : FiniteRankBundleCore 𝕜 B) (x : B) :
     (dualFiberEquiv A x).symm f i = f (Pi.single i 1) :=
   ContinuousLinearEquiv.piRing_apply (𝕜 := 𝕜) (E := 𝕜) f i
 
+/-- In a frame of the original bundle, the functional represented by a dual-core vector has
+as coefficient vector the coordinates of that vector in the dual frame. -/
+theorem dualFiberEquiv_inCoordinates (A : FiniteRankBundleCore 𝕜 B) (a x : B)
+    (hx : x ∈ A.core.baseSet a) (w : A.dual.core.Fiber x) :
+    ContinuousLinearMap.inCoordinates (Fin A.rank → 𝕜) A.core.Fiber 𝕜 (Trivial B 𝕜)
+        a x a x (dualFiberEquiv A x w) =
+      (ContinuousLinearEquiv.piRing (𝕜 := 𝕜) (E := 𝕜) (Fin A.rank)).symm
+        ((A.dual.core.localTriv a) ⟨x, w⟩).2 := by
+  have hb : x ∈ A.core.baseSet (A.core.indexAt a) := by rwa [A.indexAt_eq]
+  rw [ContinuousLinearMap.inCoordinates, A.core.trivializationAt_symmL hb]
+  simp only [Trivial.fiberBundle_trivializationAt', Trivial.continuousLinearMapAt_trivialization,
+    ContinuousLinearMap.id_comp, A.indexAt_eq, VectorBundleCore.localTriv_apply,
+    coordChange_dual]
+  exact (ContinuousLinearMap.piRing_symm_piTranspose _ _).symm
+
 /-- Reading dual coordinates as functionals is continuous on total spaces, for the topology of
 Mathlib's Hom bundle on the target. -/
 theorem continuous_dualFiberEquiv (A : FiniteRankBundleCore 𝕜 B) :
@@ -360,18 +375,8 @@ theorem continuous_dualFiberEquiv (A : FiniteRankBundleCore 𝕜 B) :
   refine ((ContinuousLinearEquiv.piRing (𝕜 := 𝕜) (E := 𝕜) (Fin A.rank)).symm.continuous
     |>.continuousAt.comp hc).congr ?_
   filter_upwards [hU] with q hq
-  have hq' : q.proj ∈ A.core.baseSet p.proj :=
-    (A.dual.core.mem_localTriv_source p.proj q).1 hq
-  have hb : q.proj ∈ A.core.baseSet (A.core.indexAt p.proj) := by
-    rwa [A.indexAt_eq]
-  have key : (dualFiberEquiv A q.proj q.2).comp (A.core.coordChange p.proj q.proj q.proj) =
-      (ContinuousLinearEquiv.piRing (𝕜 := 𝕜) (E := 𝕜) (Fin A.rank)).symm
-        ((A.core.coordChange p.proj q.proj q.proj).piTranspose q.2) :=
-    (ContinuousLinearMap.piRing_symm_piTranspose _ _).symm
-  rw [ContinuousLinearMap.inCoordinates, A.core.trivializationAt_symmL (b₀ := p.proj) hb]
-  simp only [Trivial.fiberBundle_trivializationAt', Trivial.continuousLinearMapAt_trivialization,
-    ContinuousLinearMap.id_comp, A.indexAt_eq]
-  exact key.symm
+  exact (A.dualFiberEquiv_inCoordinates p.proj q.proj
+    ((A.dual.core.mem_localTriv_source p.proj q).1 hq) q.2).symm
 
 /-- The reconstructed total space of the dual core is the total space of Mathlib's dual bundle
 of `A`, over the identity of the base and by `dualFiberEquiv` on each fibre. -/

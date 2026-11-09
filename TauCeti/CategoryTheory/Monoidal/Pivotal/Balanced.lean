@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.Braided.Balanced
+public import TauCeti.CategoryTheory.Monoidal.Braided.Balanced.Basic
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Symmetric
 
 /-!

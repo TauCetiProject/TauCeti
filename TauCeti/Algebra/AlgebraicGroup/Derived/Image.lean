@@ -114,8 +114,6 @@ theorem faithfullyFlat_derivedMap (f : H ⟶ K) (hf : Function.Injective f.hom) 
     (derivedMap f).hom.toAlgHom.toRingHom.FaithfullyFlat := by
   let _ := (smoothCommHopfAlgProperty_iff _).mp
     (smoothCommHopfAlgProperty_quotient_derivedDefiningIdeal H)
-  let _ : Algebra.IsGeometricallyReduced k (quotient H (derivedDefiningIdeal H)) :=
-    isGeometricallyReduced_of_smooth k _
   exact (faithfullyFlat_iff_injective_of_isGeometricallyReduced (derivedMap f)).mpr
     (derivedMap_injective f hf)
 

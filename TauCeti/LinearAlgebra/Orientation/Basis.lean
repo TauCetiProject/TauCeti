@@ -12,6 +12,8 @@ public import TauCeti.LinearAlgebra.Orientation.Basic
 
 The relative sign takes values in the integer units and compensates the sign of a change of
 basis. Empty index types are included, so both zero-dimensional orientations retain their sign.
+Two orientations are equal exactly when they agree on whether they are the orientation of a
+fixed basis (`Module.Basis.eq_iff_eq_orientation_iff`).
 -/
 
 public section
@@ -29,6 +31,17 @@ theorem orientation_eq_neg_iff_det_neg (b c : Basis ι R E) :
   rw [← c.orientation_ne_iff_eq_neg, ne_eq, b.orientation_eq_iff_det_pos,
     not_lt, le_iff_lt_or_eq]
   simp only [(b.isUnit_det c).ne_zero, or_false]
+
+/-- Two orientations are equal exactly when they agree on whether they are the orientation of a
+fixed basis `e`, since every orientation is that of `e` or its opposite. -/
+theorem eq_iff_eq_orientation_iff (e : Basis ι R E) (x y : Orientation R E ι) :
+    x = y ↔ (x = e.orientation ↔ y = e.orientation) := by
+  refine ⟨fun h ↦ h ▸ Iff.rfl, fun h ↦ ?_⟩
+  rcases e.orientation_eq_or_eq_neg x with hx | hx
+  · rw [hx, h.1 hx]
+  · rcases e.orientation_eq_or_eq_neg y with hy | hy
+    · exact absurd (h.2 hy) (hx ▸ (Module.Ray.ne_neg_self _).symm)
+    · rw [hx, hy]
 
 end Module.Basis
 
@@ -132,12 +145,13 @@ end Orientation
 Jacobian multiplied by the two relative signs is positive. -/
 theorem Orientation.signBasis_mul_units_mul_det_pos
     {R E ι : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
-    [AddCommGroup E] [Module R E] [FiniteDimensional R E] [Fintype ι] [DecidableEq ι]
+    [AddCommGroup E] [Module R E] [Fintype ι] [DecidableEq ι]
     (o : Orientation R E ι) (b : Module.Basis ι R E) (A : E ≃ₗ[R] E) (u : ℤˣ)
     (h : Orientation.map ι A ((Units.map (Int.castRingHom R).toMonoidHom u) • o) =
       b.orientation) :
     0 < (Orientation.signBasis o b : R) * (u : R) * A.toLinearMap.det := by
   classical
+  have := Module.Finite.of_basis b
   have hb : (Units.map (Int.castRingHom R).toMonoidHom (signBasis o b)) • o =
       b.orientation := by
     simpa only [signBasis, eq_comm] using

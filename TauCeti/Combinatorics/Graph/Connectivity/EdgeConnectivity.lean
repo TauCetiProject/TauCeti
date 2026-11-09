@@ -251,6 +251,13 @@ theorem isEdgeConnected_two_iff_connected_and_forall_not_isBridge (hV : V(G).Non
     connected_iff_forall_reachable, and_iff_right hV]
   exact and_congr_left' ⟨fun h _ _ hx hy ↦ h hx hy, fun h _ hx _ hy ↦ h hx hy⟩
 
+/-- The graph traced by a cycle is `2`-edge-connected. -/
+theorem Walk.IsCycle.isEdgeConnected_two_walkGraph {p : G.Walk x x} (hp : p.IsCycle) :
+    (G.walkGraph p).IsEdgeConnected 2 := by
+  rw [isEdgeConnected_two_iff_connected_and_forall_not_isBridge (by
+    exact ⟨x, by simp⟩)]
+  exact ⟨p.connected_walkGraph, hp.not_isBridge_walkGraph⟩
+
 /-! ### Graphs from simple graphs -/
 
 /-- Edge reachability in `Graph.ofSimpleGraph H` is simple-graph edge reachability in `H`. -/

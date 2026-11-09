@@ -146,8 +146,7 @@ private theorem card_le_degree_of_separated (hF : IsFunctionField k F) (L : Inte
   let : Algebra L E := ((algebraMap L F').codRestrict E
     (algebraMap_mem_constantCompositum F L F')).toAlgebra
   have : IsScalarTower L E F' := IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower k L E := IsScalarTower.of_algebraMap_eq fun c ↦
-    Subtype.ext (IsScalarTower.algebraMap_apply k L F' c)
+  have : IsScalarTower k L E := isScalarTower_base_constantCompositum k F L F'
   have hE : constantCompositum F L E = ⊤ := (constantCompositum_eq_top_iff F L F' E).mpr rfl
   let : FiniteDimensional F E := finiteDimensional_of_constantCompositum_eq_top (k := k) hE
   let : Algebra.IsAlgebraic E F' := Algebra.IsAlgebraic.tower_top (K := F) (L := E)

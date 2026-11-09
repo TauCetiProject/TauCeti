@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.CompactSupport
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Pullback
+public import Mathlib.Geometry.Manifold.Instances.Icc
+import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
 # Integrability of compactly supported continuous top forms
@@ -19,7 +21,9 @@ manifold is needed; a model basis records the actual top degree.
 
 The resulting chart formula characterizes the oriented integral of such forms; on a
 finite-dimensional normed space with a constant orientation it is the Haar integral of the
-coefficient in a positively oriented basis.
+coefficient in a positively oriented basis. On `ℝ` with its standard orientation
+`TauCeti.Manifold.Orientation.real` it is the Lebesgue integral of the value on `1`
+(`TauCeti.integralTopForm_real_eq_integral`).
 -/
 
 public section
@@ -36,12 +40,13 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   {k : ℕ} {n : WithTop ℕ∞} {φ : RoughForm I M ℝ k}
 
-omit [MeasurableSpace E] [BorelSpace E] in
+omit [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] in
 /-- A compactly supported C0 top form satisfies the canonical integrability predicate.
 The explicit basis records the degree; the model's Borel structure is used only internally. -/
 theorem IsSmoothForm.integrableTopForm (hφ : IsSmoothForm I n φ)
     (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ))
     (b : Module.Basis (Fin k) ℝ E) : IntegrableTopForm φ := by
+  have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   let : MeasurableSpace E := borel E
   let : BorelSpace E := ⟨rfl⟩
   let : LocallyCompactSpace H := I.locallyCompactSpace
@@ -53,6 +58,7 @@ theorem IsSmoothForm.integrableTopForm (hφ : IsSmoothForm I n φ)
     (hφ.continuousOn_inChartAt (β i))).mono (hu i).2.2.2.1).integrableOn_compact
       (hu i).2.2.1 (μ := b.addHaar)).mono_set (hu i).2.2.2.2
 
+omit [FiniteDimensional ℝ E] in
 /-- Every positive signed preferred-chart coefficient of a compactly supported C0 form is
 integrable, including when the manifold is nonorientable or non-Hausdorff. -/
 theorem IsSmoothForm.integrable_signedInChartAt_one (hφ : IsSmoothForm I n φ)
@@ -99,6 +105,19 @@ theorem integralTopForm_model_eq_integral (o : _root_.Orientation ℝ E (Fin k))
   rw [Manifold.OrientationLift.signAt_of_mem _ (by simp),
     Manifold.OrientationLift.ofHasGroupoid_sign]
   simp
+
+/-- Against the standard orientation of `ℝ`, the oriented integral of a compactly supported
+continuous `1`-form is the Lebesgue integral of its value on the unit vector. -/
+theorem integralTopForm_real_eq_integral {φ : RoughForm 𝓘(ℝ, ℝ) ℝ ℝ 1}
+    (hφ : IsSmoothForm 𝓘(ℝ, ℝ) 0 φ)
+    (hc : IsCompact (_root_.tsupport (α := ℝ [⋀^Fin 1]→L[ℝ] ℝ) φ)) :
+    integralTopForm Manifold.Orientation.real φ = ∫ t, φ t fun _ ↦ 1 := by
+  rw [Manifold.Orientation.real_eq_model,
+    integralTopForm_model_eq_integral _ _ hφ hc (Module.Basis.singleton (Fin 1) ℝ) rfl,
+    Module.Basis.addHaar_singleton,
+    Module.Basis.coe_singleton]
+  -- Mathlib's unit tangent vector `1 : TangentSpace 𝓘(ℝ) t` is defined to be `1 : ℝ`.
+  rfl
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- The oriented integral is additive for compactly supported C0 top forms. -/

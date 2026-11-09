@@ -45,8 +45,8 @@ that of `R`.
   discrete valuation ring.
 * `TauCeti.FiniteDVRExtension.isFractionRing_localRing`: its fraction field is the extension field.
 * `TauCeti.FiniteDVRExtension.under_prime`: the chosen place lies over the closed point of `R`.
-* `TauCeti.FiniteDVRExtension.isLocalHom_algebraMap` and
-  `TauCeti.FiniteDVRExtension.under_maximalIdeal_localRing`: the chosen local ring dominates `R`.
+* `TauCeti.FiniteDVRExtension.under_maximalIdeal_localRing` and
+  `TauCeti.FiniteDVRExtension.isLocalHom_algebraMap`: the chosen local ring dominates `R`.
 * `TauCeti.FiniteDVRExtension.exists_algEquiv_extensionField`: every finite separable extension of
   `K` is, as a `K`-algebra, the extension field of such a package, for some place above the closed
   point of `R`; to fix a specified place, use `TauCeti.FiniteDVRExtension.of`.
@@ -133,9 +133,6 @@ instance isNoetherian_integralClosure : IsNoetherian R E.integralClosure :=
   IsIntegralClosure.isNoetherian R K E.extensionField _
 
 instance faithfulSMul_extensionField : FaithfulSMul R E.extensionField :=
-  have : FaithfulSMul K E.extensionField :=
-    (faithfulSMul_iff_algebraMap_injective K E.extensionField).2
-      (algebraMap K E.extensionField).injective
   FaithfulSMul.trans R K E.extensionField
 
 instance faithfulSMul_integralClosure : FaithfulSMul R E.integralClosure :=
@@ -165,10 +162,7 @@ instance isDiscreteValuationRing_localRing : IsDiscreteValuationRing E.localRing
     E.prime_ne_bot _
 
 instance isScalarTower_localRing : IsScalarTower R E.localRing E.extensionField :=
-  .of_algebraMap_eq fun x ↦ by
-    rw [IsScalarTower.algebraMap_apply R E.integralClosure E.localRing,
-      ← IsScalarTower.algebraMap_apply E.integralClosure E.localRing E.extensionField,
-      ← IsScalarTower.algebraMap_apply R E.integralClosure E.extensionField]
+  .to₁₃₄ R E.integralClosure E.localRing E.extensionField
 
 instance faithfulSMul_localRing : FaithfulSMul R E.localRing :=
   have := IsLocalization.AtPrime.faithfulSMul E.localRing E.integralClosure E.prime
@@ -180,18 +174,15 @@ theorem under_maximalIdeal_integralClosure :
     (maximalIdeal E.localRing).under E.integralClosure = E.prime :=
   IsLocalization.AtPrime.under_maximalIdeal _ _
 
-/-- The local ring of the chosen place dominates `R`. -/
-instance isLocalHom_algebraMap : IsLocalHom (algebraMap R E.localRing) := by
-  refine ((IsLocalRing.local_hom_tfae (algebraMap R E.localRing)).out 4 1).1 fun x hx ↦ ?_
-  rw [Ideal.mem_comap, IsScalarTower.algebraMap_apply R E.integralClosure E.localRing]
-  exact (IsLocalization.AtPrime.to_map_mem_maximal_iff _ E.prime _).2
-    ((Ideal.mem_of_liesOver E.prime (maximalIdeal R) x).1 hx)
-
-/-- Domination spelled as a contraction of ideals: the closed point of `Spec R'` lies over the
-closed point of `Spec R`. -/
+/-- The local ring of the chosen place dominates `R`, spelled as a contraction of ideals: the
+closed point of `Spec R'` lies over the closed point of `Spec R`. -/
 @[simp]
-theorem under_maximalIdeal_localRing : (maximalIdeal E.localRing).under R = maximalIdeal R :=
-  IsLocalRing.maximalIdeal_comap _
+theorem under_maximalIdeal_localRing : (maximalIdeal E.localRing).under R = maximalIdeal R := by
+  rw [← Ideal.under_under (B := E.integralClosure), under_maximalIdeal_integralClosure, under_prime]
+
+/-- The local ring of the chosen place dominates `R`. -/
+instance isLocalHom_algebraMap : IsLocalHom (algebraMap R E.localRing) :=
+  ((local_hom_tfae _).out 1 5).2 E.under_maximalIdeal_localRing
 
 section Construction
 
@@ -301,8 +292,6 @@ ideal of `R`, and any such ideal cuts out a package whose extension field is `L`
 `K`-algebra. -/
 theorem exists_algEquiv_extensionField :
     ∃ E : FiniteDVRExtension R K, Nonempty (E.extensionField ≃ₐ[K] L) := by
-  have : FaithfulSMul K L :=
-    (faithfulSMul_iff_algebraMap_injective K L).2 (algebraMap K L).injective
   have : FaithfulSMul R L := FaithfulSMul.trans R K L
   have : FaithfulSMul R (_root_.integralClosure R L) :=
     FaithfulSMul.tower_bot R (_root_.integralClosure R L) L

@@ -28,6 +28,9 @@ particular family is measurable, and that is
 
 * `TauCeti.measurable_bernsteinMeasure`: measurable dependence on a parameter.
 * `TauCeti.bernsteinMeasureKernel`: the resulting kernel, with its finiteness criterion.
+* `TauCeti.exists_isContinuousCompletelyMonotoneOnIoi_ae_eq`: a family that is completely
+  monotone and bounded by `1` at `0` only almost everywhere agrees almost everywhere with one that
+  is so everywhere, as the kernel requires.
 
 ## References
 
@@ -107,5 +110,32 @@ theorem isMarkovKernel_bernsteinMeasureKernel
   refine ⟨fun a => ?_⟩
   rw [bernsteinMeasureKernel_apply]
   exact isProbabilityMeasure_bernsteinMeasure (hcm a) (hone a)
+
+/-- **Correcting a family on a null set.** Let `F` be a family of functions, indexed by a measure
+space, whose evaluations at the natural numbers are measurable in the parameter, and which for
+almost every parameter is continuous on `[0, ∞)`, completely monotone on `(0, ∞)` and bounded by
+`1` at `0`. Then some family `g` agreeing with `F` almost everywhere has these properties at
+*every* parameter and still has measurable evaluations at the natural numbers. These are the
+hypotheses of `bernsteinMeasureKernel` and `isFiniteKernel_bernsteinMeasureKernel`.
+
+The family `g` is `F` on a measurable set of full measure and `0` off it. -/
+theorem exists_isContinuousCompletelyMonotoneOnIoi_ae_eq {ν : Measure α} (F : α → ℝ → ℝ)
+    (hF : ∀ᵐ a ∂ν, IsContinuousCompletelyMonotoneOnIoi (F a) ∧ F a 0 ≤ 1)
+    (hmeas : ∀ n : ℕ, Measurable fun a => F a (n : ℝ)) :
+    ∃ g : α → ℝ → ℝ, (∀ a, IsContinuousCompletelyMonotoneOnIoi (g a)) ∧
+      (∀ n : ℕ, Measurable fun a => g a (n : ℝ)) ∧ (∀ a, g a 0 ≤ 1) ∧ ∀ᵐ a ∂ν, g a = F a := by
+  classical
+  obtain ⟨s, hs, hsm, hgood⟩ := hF.exists_measurable_mem
+  refine ⟨fun a => if a ∈ s then F a else 0, fun a => ?_, fun n => ?_, fun a => ?_, ?_⟩
+  · dsimp only
+    split_ifs with ha
+    exacts [(hgood a ha).1, representsLaplace_zero.isContinuousCompletelyMonotoneOnIoi]
+  · simp only [apply_ite (fun h : ℝ → ℝ => h n), Pi.zero_apply]
+    exact (hmeas n).ite hsm measurable_const
+  · dsimp only
+    split_ifs with ha
+    exacts [(hgood a ha).2, zero_le_one]
+  · filter_upwards [hs] with a ha
+    exact ite_eq_left ha
 
 end TauCeti

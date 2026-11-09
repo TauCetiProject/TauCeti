@@ -21,8 +21,12 @@ automorphisms over the field act transitively on closed points. This spreads the
 smooth locus to the whole scheme, following Andrew Yang's proof underlying Mathlib's
 `AlgebraicGeometry.smooth_of_grpObj`.
 
+Over an affine base `Spec R`, the smooth locus can also be tested directly on the
+localizations of affine source charts as `R`-algebras.
+
 ## Main results
 
+* `AlgebraicGeometry.Scheme.Hom.mem_smoothLocus_iff_isSmoothAt`: the affine-base chart criterion.
 * `AlgebraicGeometry.Scheme.Hom.smooth_smoothLocus_ι_comp`: the restriction of `f` to its smooth
   locus is smooth.
 * `AlgebraicGeometry.Scheme.Hom.preimage_smoothLocus_le_smoothLocus_pullback_snd`: the preimage
@@ -84,5 +88,33 @@ theorem smooth_of_transitive_on_closedPoints {k : Type u} [Field k] [PerfectFiel
     rw [mem_preimage, hyz]
     exact hz
   exact hy (by simpa only [preimage_smoothLocus_eq, he, SetLike.mem_coe] using hz')
+
+/-- Over an affine base, membership in the smooth locus is smoothness of the local algebra
+of any affine source neighbourhood, with scalars restricted along `R ≅ Γ(Spec R, ⊤)`. -/
+theorem mem_smoothLocus_iff_isSmoothAt {R : Type u} [CommRing R] {X : Scheme.{u}}
+    (f : X ⟶ Spec (.of R)) [LocallyOfFinitePresentation f]
+    {U : X.affineOpens} {x : X} (hx : x ∈ U.1) :
+    letI := ((Scheme.ΓSpecIso (.of R)).inv ≫ f.appLE ⊤ U.1 le_top).hom.toAlgebra
+    x ∈ f.smoothLocus ↔ Algebra.IsSmoothAt R (U.2.primeIdealOf ⟨x, hx⟩).asIdeal := by
+  let φ := f.appLE ⊤ U.1 le_top
+  let ψ := (Scheme.ΓSpecIso (.of R)).inv ≫ φ
+  let := φ.hom.toAlgebra
+  let := ψ.hom.toAlgebra
+  let q := (U.2.primeIdealOf ⟨x, hx⟩).asIdeal
+  let A := Localization.AtPrime q
+  rw [mem_smoothLocus, formallySmooth_stalkMap_iff ⊤ (isAffineOpen_top _) U.1 U.2 le_top hx]
+  have h := RingHom.FormallySmooth.respectsIso.cancel_left_isIso
+    (Scheme.ΓSpecIso (.of R)).inv (φ ≫ CommRingCat.ofHom (algebraMap Γ(X, U) A))
+  simp only [Algebra.smoothLocus, Set.mem_ofPred_eq, Algebra.IsSmoothAt]
+  rw [← RingHom.formallySmooth_algebraMap, ← RingHom.formallySmooth_algebraMap]
+  have hφ : (algebraMap Γ(X, U) A).comp φ.hom =
+      algebraMap Γ(Spec (.of R), ⊤) A :=
+    (IsScalarTower.algebraMap_eq Γ(Spec (.of R), ⊤) Γ(X, U) A).symm
+  have hψ : (algebraMap Γ(X, U) A).comp
+      (φ.hom.comp (Scheme.ΓSpecIso (.of R)).inv.hom) = algebraMap R A :=
+    (IsScalarTower.algebraMap_eq R Γ(X, U) A).symm
+  simp only [CommRingCat.hom_comp, CommRingCat.hom_ofHom] at h
+  rw [RingHom.comp_assoc, hψ, hφ] at h
+  exact h.symm
 
 end AlgebraicGeometry.Scheme.Hom

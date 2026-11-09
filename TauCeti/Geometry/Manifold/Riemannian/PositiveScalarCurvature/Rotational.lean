@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Instances.Cylinder
 public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Concordance
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Geometry.Manifold.MFDeriv.Prod

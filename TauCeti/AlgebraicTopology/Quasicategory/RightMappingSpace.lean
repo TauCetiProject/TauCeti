@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.SimplexCategory.JoinVertex
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
 public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal
 import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
+import TauCeti.AlgebraicTopology.SimplicialSet.Vertex
 
 /-!
 # Right mapping spaces of simplicial sets
@@ -39,12 +40,21 @@ If `X` is strict Segal, for instance the nerve of a category, then every simplex
 a single edge to `y`. Hence `Hom^R_X(x, y)` is the discrete simplicial set on the edges from `x`
 to `y`.
 
+A map of simplicial sets `f : X ⟶ Y` induces maps `Hom^R_X(x, y) ⟶ Hom^R_Y(f x, f y)`, which are
+the maps on mapping spaces whose invertibility up to weak equivalence makes `f` fully faithful.
+The projections of a product identify the right mapping spaces of `X ⊗ Y` with the products of
+those of `X` and `Y`.
+
 ## Main definitions
 
 * `SSet.rightMappingSpace X x y`: the right mapping space `Hom^R_X(x, y)`.
 * `SSet.rightMappingSpace.obj₀Equiv`: its vertices are the edges from `x` to `y`.
 * `SSet.rightMappingSpace.constEdgeIso`: for a strict Segal simplicial set, `Hom^R_X(x, y)` is
   the discrete simplicial set on the edges from `x` to `y`.
+* `SSet.rightMappingSpace.map x y f`: the map `Hom^R_X(x, y) ⟶ Hom^R_Y(f x, f y)` induced by
+  `f : X ⟶ Y`.
+* `SSet.rightMappingSpace.prodIso`: the isomorphism
+  `Hom^R_{X ⊗ Y}((x₀, y₀), (x₁, y₁)) ≅ Hom^R_X(x₀, x₁) ⊗ Hom^R_Y(y₀, y₁)`.
 
 ## Main results
 
@@ -55,6 +65,10 @@ to `y`.
   `i ≠ 0` in `Hom^R_X(x, y)` have fillers.
 * `SSet.rightMappingSpace.quasicategory`: the right mapping spaces of a quasicategory are
   quasicategories.
+* `SSet.rightMappingSpace.isIso_map_iff_bijective`: for strict Segal simplicial sets, `f` induces
+  an isomorphism of right mapping spaces exactly when it is bijective on edges.
+* `SSet.rightMappingSpace.isIso_map_ι`: a subcomplex containing all simplices of a right mapping
+  space has the same right mapping space.
 
 ## References
 
@@ -152,6 +166,18 @@ theorem coe_σ {n : ℕ} (j : Fin (n + 1)) (s : (X.rightMappingSpace x y : SSet.
     (SimplicialObject.σ (X.rightMappingSpace x y : SSet.{u}) j s).1 =
       X.σ j.castSucc (s.1 : X _⦋n + 1⦌) :=
   (ConcreteCategory.congr_hom (X.joinVertex_op_comp_σ j) s.1 :)
+
+/-- The first `n + 1` vertices of an `n`-simplex of `Hom^R_X(x, y)`, an `(n + 1)`-simplex of `X`,
+are `x`. -/
+theorem map_const_castSucc {n : ℕ} (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n⦌)
+    (j : Fin (n + 1)) :
+    X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ j.castSucc).op (s.1 : X _⦋n + 1⦌) = x :=
+  map_const_castSucc_of_δ_last ((mem_rightMappingSpace_iff _).1 s.2).1 j
+
+/-- The last vertex of an `n`-simplex of `Hom^R_X(x, y)`, an `(n + 1)`-simplex of `X`, is `y`. -/
+theorem map_const_last {n : ℕ} (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n⦌) :
+    X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ (Fin.last _)).op (s.1 : X _⦋n + 1⦌) = y :=
+  ((mem_rightMappingSpace_iff _).1 s.2).2
 
 /-! ### Horn filling -/
 
@@ -303,30 +329,9 @@ private theorem eq_map_const_of_isStrictSegal [X.IsStrictSegal] {n : ℕ}
 are discrete: sending an edge from `x` to `y` to the totally degenerate simplices at the
 corresponding vertex is an isomorphism from the discrete simplicial set on these edges. -/
 instance isIso_constHomEquiv_symm [X.IsStrictSegal] :
-    IsIso ((constHomEquiv (X.Edge x y)).symm (obj₀Equiv (x := x) (y := y)).symm) := by
-  rw [NatTrans.isIso_iff_isIso_app]
-  rintro ⟨⟨n⟩⟩
-  rw [isIso_iff_bijective]
-  -- The comparison sends an edge to the totally degenerate simplex at the corresponding vertex.
-  have happ (e : X.Edge x y) :
-      ((constHomEquiv (X.Edge x y)).symm (obj₀Equiv (x := x) (y := y)).symm).app (op ⦋n⦌) e =
-        (X.rightMappingSpace x y : SSet.{u}).map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op
-          (obj₀Equiv.symm e) := by
-    rw [← constHomEquiv_symm_app_zero (X.Edge x y) obj₀Equiv.symm e]
-    exact (NatTrans.naturality_apply ((constHomEquiv (X.Edge x y)).symm obj₀Equiv.symm)
-      (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op
-      (e : ((Functor.const SimplexCategoryᵒᵖ).obj (X.Edge x y)).obj (op ⦋0⦌)))
-  refine ⟨fun e e' h ↦ ?_, fun s ↦ ⟨obj₀Equiv ((X.rightMappingSpace x y : SSet.{u}).map
-    (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)).op s), ?_⟩⟩
-  · -- The last vertex of the totally degenerate simplex at a vertex is that vertex.
-    have h' := congrArg ((X.rightMappingSpace x y : SSet.{u}).map
-      (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)).op) ((happ e).symm.trans (h.trans (happ e')))
-    simp only [← Functor.map_comp_apply, ← op_comp, Subsingleton.elim
-      (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n) ≫ SimplexCategory.const ⦋n⦌ ⦋0⦌ 0) (𝟙 _),
-      op_id] at h'
-    exact obj₀Equiv.symm.injective (by simpa using h')
-  · rw [happ, Equiv.symm_apply_apply]
-    exact (eq_map_const_of_isStrictSegal s).symm
+    IsIso ((constHomEquiv (X.Edge x y)).symm (obj₀Equiv (x := x) (y := y)).symm) :=
+  SSet.isIso_constHomEquiv_symm obj₀Equiv.symm.bijective fun _ s ↦
+    ⟨_, (eq_map_const_of_isStrictSegal s).symm⟩
 
 variable (x y) in
 /-- The right mapping space `Hom^R_X(x, y)` of a strict Segal simplicial set, such as the nerve of
@@ -353,6 +358,188 @@ theorem constEdgeIso_inv_app_zero [X.IsStrictSegal]
   simp
 
 end IsStrictSegal
+
+/-! ### Functoriality -/
+
+section map
+
+variable {Y Z : SSet.{u}}
+
+/-- A map of simplicial sets `f : X ⟶ Y` sends the simplices of `Hom^R_X(x, y)` to simplices of
+`Hom^R_Y(f x, f y)`. -/
+private theorem range_le_rightMappingSpace (f : X ⟶ Y) (x y : X _⦋0⦌) :
+    Subcomplex.range ((X.rightMappingSpace x y).ι ≫ Functor.whiskerLeft joinVertex.op f) ≤
+      Y.rightMappingSpace (f.app _ x) (f.app _ y) := by
+  rintro m _ ⟨s, rfl⟩
+  -- The faces of `f σ` are the images under `f` of the faces of `σ`, by naturality of `f`.
+  exact ⟨(NatTrans.naturality_apply f _ s.1).symm.trans
+      ((congrArg (f.app _) s.2.1).trans (NatTrans.naturality_apply f _ x)),
+    (NatTrans.naturality_apply f _ s.1).symm.trans (congrArg (f.app _) s.2.2)⟩
+
+variable (x y) in
+/-- The map `Hom^R_X(x, y) ⟶ Hom^R_Y(f x, f y)` induced by a map of simplicial sets
+`f : X ⟶ Y`: it sends an `n`-simplex of `Hom^R_X(x, y)`, an `(n + 1)`-simplex of `X`, to its image
+under `f`. -/
+def map (f : X ⟶ Y) :
+    (X.rightMappingSpace x y : SSet.{u}) ⟶
+      (Y.rightMappingSpace (f.app _ x) (f.app _ y) : SSet.{u}) :=
+  Subcomplex.lift _ (range_le_rightMappingSpace f x y)
+
+variable (x y) in
+/-- The map induced on right mapping spaces is the restriction of the map induced by `f` on
+`joinVertex.op ⋙ X`. -/
+@[reassoc (attr := simp)]
+theorem map_ι (f : X ⟶ Y) :
+    map x y f ≫ (Y.rightMappingSpace (f.app _ x) (f.app _ y)).ι =
+      (X.rightMappingSpace x y).ι ≫ Functor.whiskerLeft joinVertex.op f :=
+  (rfl)
+
+/-- The map induced on right mapping spaces sends an `(n + 1)`-simplex of `X` to its image under
+`f`. -/
+@[simp]
+theorem map_app_coe (f : X ⟶ Y) {n : ℕ} (s : (X.rightMappingSpace x y : SSet.{u}) _⦋n⦌) :
+    dsimp% ((map x y f).app _ s).1 = f.app _ (s.1 : X _⦋n + 1⦌) :=
+  (rfl)
+
+variable (x y) in
+/-- The identity induces the identity of right mapping spaces. -/
+@[simp]
+theorem map_id : map x y (𝟙 X) = 𝟙 _ :=
+  (rfl)
+
+variable (x y) in
+/-- The maps induced on right mapping spaces are compatible with composition. -/
+@[simp]
+theorem map_comp (f : X ⟶ Y) (g : Y ⟶ Z) :
+    map x y (f ≫ g) = map x y f ≫ map (f.app _ x) (f.app _ y) g :=
+  (rfl)
+
+/-- On vertices, the map induced on right mapping spaces is the map of edges induced by `f`. -/
+@[simp]
+theorem obj₀Equiv_map_app (f : X ⟶ Y) (s : (X.rightMappingSpace x y : SSet.{u}) _⦋0⦌) :
+    dsimp% obj₀Equiv ((map x y f).app _ s) = (obj₀Equiv s).map f :=
+  Edge.ext (rfl)
+
+/-- Under the discreteness isomorphisms `constEdgeIso` of strict Segal simplicial sets, the map
+induced by `f` on right mapping spaces is the map of discrete simplicial sets induced by the map of
+edges. -/
+@[reassoc]
+theorem constEdgeIso_hom_comp_map [X.IsStrictSegal] [Y.IsStrictSegal] (f : X ⟶ Y) :
+    (constEdgeIso x y).hom ≫ map x y f =
+      (Functor.const SimplexCategoryᵒᵖ).map (↾fun e ↦ e.map f) ≫
+        (constEdgeIso (f.app _ x) (f.app _ y)).hom := by
+  refine (constHomEquiv _).injective (funext fun e ↦ obj₀Equiv.injective ?_)
+  -- Both sides are computed on vertices by `constEdgeIso_hom_app_zero`.
+  simp
+
+/-- For strict Segal simplicial sets, such as nerves of categories, the map induced by `f` on right
+mapping spaces is an isomorphism exactly when `f` induces a bijection on edges from `x` to `y`. -/
+theorem isIso_map_iff_bijective [X.IsStrictSegal] [Y.IsStrictSegal] (f : X ⟶ Y) :
+    IsIso (map x y f) ↔ Function.Bijective fun e : X.Edge x y ↦ e.map f := by
+  rw [← isIso_comp_left_iff (constEdgeIso x y).hom, constEdgeIso_hom_comp_map,
+    isIso_comp_right_iff]
+  -- A map of discrete simplicial sets is an isomorphism exactly when its map of vertices is.
+  refine ⟨fun _ ↦ (isIso_iff_bijective (↾fun e : X.Edge x y ↦ e.map f)).1
+    (inferInstanceAs (IsIso (((Functor.const _).map _).app (op ⦋0⦌)))), fun h ↦ ?_⟩
+  have := (isIso_iff_bijective (↾fun e : X.Edge x y ↦ e.map f)).2 h
+  infer_instance
+
+/-- A monomorphism induces monomorphisms of right mapping spaces. -/
+instance mono_map (f : X ⟶ Y) [Mono f] : Mono (map x y f) := by
+  have : Mono (Functor.whiskerLeft joinVertex.op f) := by
+    rw [NatTrans.mono_iff_mono_app]
+    intro m
+    exact (NatTrans.mono_iff_mono_app f).1 inferInstance _
+  exact mono_of_mono_fac (map_ι x y f)
+
+/-- The map induced on right mapping spaces by an isomorphism is an isomorphism. -/
+instance isIso_map (f : X ⟶ Y) [IsIso f] : IsIso (map x y f) := by
+  rw [NatTrans.isIso_iff_isIso_app]
+  rintro ⟨⟨n⟩⟩
+  rw [isIso_iff_bijective]
+  refine ⟨(mono_iff_injective _).1 inferInstance, fun s ↦ ?_⟩
+  -- The preimage of `s` is its image under the inverse of `f`, which lies in `Hom^R_X(x, y)`
+  -- because the inverse of `f` sends `f x` and `f y` back to `x` and `y`.
+  have hs : (inv f).app _ (s.1 : Y _⦋n + 1⦌) ∈ (X.rightMappingSpace ((inv f).app _ (f.app _ x))
+      ((inv f).app _ (f.app _ y))).obj (op ⦋n⦌) :=
+    ((map (f.app _ x) (f.app _ y) (inv f)).app _ s).2
+  have hx (z : X _⦋0⦌) : (inv f).app _ (f.app _ z) = z := by simp
+  rw [hx, hx] at hs
+  exact ⟨⟨_, hs⟩, Subtype.ext ((map_app_coe f _).trans (by simp))⟩
+
+/-- If a subcomplex `A` of `X` contains every simplex of `Hom^R_X(x, y)`, for vertices `x` and `y`
+of `A`, then the inclusion of `A` induces an isomorphism `Hom^R_A(x, y) ≅ Hom^R_X(x, y)`. -/
+theorem isIso_map_ι {A : X.Subcomplex} (x y : (A : SSet.{u}) _⦋0⦌)
+    (h : ∀ (n : ℕ) (s : (X.rightMappingSpace x.1 y.1 : SSet.{u}) _⦋n⦌),
+      (s.1 : X _⦋n + 1⦌) ∈ A.obj (op ⦋n + 1⦌)) :
+    IsIso (map x y A.ι) := by
+  rw [NatTrans.isIso_iff_isIso_app]
+  rintro ⟨⟨n⟩⟩
+  rw [isIso_iff_bijective]
+  refine ⟨(mono_iff_injective _).1 inferInstance, fun s ↦ ?_⟩
+  -- The simplex `s` of `Hom^R_X(x, y)` lies in `A`, and its faces in `A` are those in `X`.
+  obtain ⟨h₁, h₂⟩ := (mem_rightMappingSpace_iff _).1 s.2
+  refine ⟨⟨⟨s.1, h n s⟩, (mem_rightMappingSpace_iff _).2 ⟨Subtype.ext h₁, Subtype.ext h₂⟩⟩, ?_⟩
+  exact Subtype.ext (map_app_coe A.ι _)
+
+end map
+
+/-! ### Products -/
+
+section prod
+
+open MonoidalCategory CartesianMonoidalCategory
+
+variable {Y : SSet.{u}} {x₀ x₁ : X _⦋0⦌} {y₀ y₁ : Y _⦋0⦌}
+
+/-- A simplex of `joinVertex.op ⋙ (X ⊗ Y)` lies in `Hom^R_{X ⊗ Y}((x₀, y₀), (x₁, y₁))` exactly
+when its two components lie in `Hom^R_X(x₀, x₁)` and `Hom^R_Y(y₀, y₁)`. -/
+theorem mem_tensor_iff {m : SimplexCategoryᵒᵖ} (σ : (joinVertex.op ⋙ (X ⊗ Y)).obj m) :
+    σ ∈ ((X ⊗ Y).rightMappingSpace (x₀, y₀) (x₁, y₁)).obj m ↔
+      σ.1 ∈ (X.rightMappingSpace x₀ x₁).obj m ∧ σ.2 ∈ (Y.rightMappingSpace y₀ y₁).obj m :=
+  -- The simplicial operators of `X ⊗ Y` act componentwise.
+  (and_congr Prod.ext_iff Prod.ext_iff).trans and_and_and_comm
+
+variable (x₀ x₁ y₀ y₁) in
+/-- **Right mapping spaces of products are products**: the maps induced by the two projections
+identify `Hom^R_{X ⊗ Y}((x₀, y₀), (x₁, y₁))` with `Hom^R_X(x₀, x₁) ⊗ Hom^R_Y(y₀, y₁)`. -/
+noncomputable def prodIso :
+    ((X ⊗ Y).rightMappingSpace (x₀, y₀) (x₁, y₁) : SSet.{u}) ≅
+      (X.rightMappingSpace x₀ x₁ : SSet.{u}) ⊗ (Y.rightMappingSpace y₀ y₁ : SSet.{u}) where
+  hom := lift (map (x₀, y₀) (x₁, y₁) (fst X Y)) (map (x₀, y₀) (x₁, y₁) (snd X Y))
+  inv := Subcomplex.lift ((X.rightMappingSpace x₀ x₁).ι ⊗ₘ (Y.rightMappingSpace y₀ y₁).ι) (by
+    rintro m _ ⟨s, rfl⟩
+    exact (mem_tensor_iff _).2 ⟨s.1.2, s.2.2⟩)
+  hom_inv_id := by
+    ext m s
+    rfl
+  inv_hom_id := by
+    ext m s <;> rfl
+
+variable (x₀ x₁ y₀ y₁) in
+/-- The first component of `prodIso` is the map induced by the first projection. -/
+@[reassoc (attr := simp)]
+theorem prodIso_hom_fst :
+    (prodIso x₀ x₁ y₀ y₁).hom ≫ fst _ _ = map (x₀, y₀) (x₁, y₁) (fst X Y) :=
+  lift_fst _ _
+
+variable (x₀ x₁ y₀ y₁) in
+/-- The second component of `prodIso` is the map induced by the second projection. -/
+@[reassoc (attr := simp)]
+theorem prodIso_hom_snd :
+    (prodIso x₀ x₁ y₀ y₁).hom ≫ snd _ _ = map (x₀, y₀) (x₁, y₁) (snd X Y) :=
+  lift_snd _ _
+
+variable (x₀ x₁ y₀ y₁) in
+/-- The inverse of `prodIso` pairs a simplex of `Hom^R_X(x₀, x₁)` with a simplex of
+`Hom^R_Y(y₀, y₁)`. -/
+@[reassoc (attr := simp)]
+theorem prodIso_inv_ι :
+    (prodIso x₀ x₁ y₀ y₁).inv ≫ ((X ⊗ Y).rightMappingSpace (x₀, y₀) (x₁, y₁)).ι =
+      (X.rightMappingSpace x₀ x₁).ι ⊗ₘ (Y.rightMappingSpace y₀ y₁).ι :=
+  (rfl)
+
+end prod
 
 end rightMappingSpace
 

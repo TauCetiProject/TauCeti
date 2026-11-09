@@ -16,12 +16,17 @@ This file collects general facts about paths and cycles in a simple graph, compl
 ## Main results
 
 * `SimpleGraph.Walk.IsPath.start_notMem_tail_support`: a path does not return to its start.
+* `SimpleGraph.Walk.IsPath.exists_support_eq_cons_append`: the support of a path between distinct
+  endpoints splits as `a :: (I ++ [b])` with duplicate-free internal vertices and adjacent
+  predecessor and successor sublists.
 * `SimpleGraph.Walk.IsCycle.isPath_append_of_append_append`: cutting an arc of positive length
   out of a cycle leaves a path.
 * `SimpleGraph.Walk.mem_support_append_of_mem_support_append_append`: the vertices of a closed
   walk outside the interior of such an arc lie on the remaining path.
 * `SimpleGraph.Walk.IsPath.isCycle_append_append_reverse`: two paths from a common vertex close
   up with a third path into a cycle.
+* `SimpleGraph.Walk.IsPath.isCycle_cons_append_cons_reverse`: two vertex-disjoint paths joined at
+  both ends by distinct edges form a cycle.
 * `SimpleGraph.Walk.exists_eq_append_of_exists_mem_support`: a walk meeting a finset splits at
   its first vertex in it.
 * `SimpleGraph.Walk.exists_eq_append_append_of_countP_lt`: a walk starting in `F` with fewer
@@ -34,6 +39,7 @@ This file collects general facts about paths and cycles in a simple graph, compl
 public section
 
 open Finset
+open scoped List
 
 universe u
 
@@ -47,6 +53,46 @@ theorem IsPath.start_notMem_tail_support {u v : V} {p : G.Walk u v} (hp : p.IsPa
   have h := hp.support_nodup
   rw [← cons_tail_support] at h
   exact (List.nodup_cons.1 h).1
+
+/-- Decompose the support of a path `R : G.Walk a b` between distinct endpoints `a ≠ b` as
+`a :: (I ++ [b])`, where the internal-vertex list `I` is duplicate-free, contains neither endpoint,
+and gives every vertex in `I` both an adjacent predecessor and an adjacent successor in
+`R.support`. -/
+theorem IsPath.exists_support_eq_cons_append {a b : V} {R : G.Walk a b} (hR : R.IsPath)
+    (hab : a ≠ b) :
+    ∃ I : List V, R.support = a :: (I ++ [b]) ∧ I.Nodup ∧ (∀ v ∈ I, v ≠ a ∧ v ≠ b) ∧
+      (∀ v ∈ I, (∃ u, G.Adj u v ∧ [u, v] <+ R.support) ∧
+        (∃ w, G.Adj v w ∧ [v, w] <+ R.support)) := by
+  have hRnil : ¬R.Nil := fun h ↦ hab h.eq
+  let I := R.tail.support.dropLast
+  have hsupp_eq : R.support = a :: (I ++ [b]) := by
+    rw [← cons_support_tail hRnil, ← R.tail.dropLast_support_concat]
+  have hsupp_nd : (a :: (I ++ [b])).Nodup := hsupp_eq ▸ hR.support_nodup
+  refine ⟨I, hsupp_eq, (List.nodup_cons.1 hsupp_nd).2.of_append_left, fun v hvI ↦ ?_,
+    fun v hvI ↦ ?_⟩
+  · refine ⟨fun h ↦ (List.nodup_cons.1 hsupp_nd).1 (List.mem_append_left _ (h ▸ hvI)), ?_⟩
+    rintro rfl
+    exact (List.nodup_cons.1 hsupp_nd).2.disjoint hvI (List.mem_singleton_self v)
+  · obtain ⟨I₁, I₂, hI_eq⟩ := List.mem_iff_append.1 hvI
+    have h₁ : a :: I₁ ≠ [] := List.cons_ne_nil _ _
+    have h₂ : (a :: I₁) ++ [v] ≠ [] := by simp
+    have h₃ : I₂ ++ [b] ≠ [] := by simp
+    have hchain₁ : ((a :: I₁) ++ (v :: (I₂ ++ [b]))).IsChain G.Adj := by
+      simpa [hsupp_eq, hI_eq, List.cons_append, List.append_assoc] using R.isChain_adj_support
+    have hchain₂ : (((a :: I₁) ++ [v]) ++ (I₂ ++ [b])).IsChain G.Adj := by
+      simpa [hsupp_eq, hI_eq, List.cons_append, List.append_assoc] using R.isChain_adj_support
+    refine ⟨⟨(a :: I₁).getLast h₁,
+      by simpa using hchain₁.rel_getLast_head_of_append h₁ (List.cons_ne_nil _ _), ?_⟩,
+      ⟨(I₂ ++ [b]).head h₃, by simpa using hchain₂.rel_getLast_head_of_append h₂ h₃, ?_⟩⟩
+    · rw [hsupp_eq, hI_eq]
+      have hs₁ : [(a :: I₁).getLast h₁] <+ a :: I₁ :=
+        List.singleton_sublist.2 (List.getLast_mem h₁)
+      simpa only [List.cons_append, List.nil_append, List.append_assoc] using
+        hs₁.append (by simp : [v] <+ v :: (I₂ ++ [b]))
+    · rw [hsupp_eq, hI_eq]
+      have hs₂ : [(I₂ ++ [b]).head h₃] <+ I₂ ++ [b] := List.singleton_sublist.2 (List.head_mem h₃)
+      simpa only [List.cons_append, List.nil_append, List.append_assoc] using
+        (by simp : [v] <+ (a :: I₁) ++ [v]).append hs₂
 
 /-- Removing a subwalk of positive length from a cycle leaves a path: if `W₁`, `A`, `W₂` traverse
 a cycle in turn and `A` is not trivial, then `W₂` followed by `W₁` is a path. -/
@@ -97,6 +143,20 @@ theorem IsPath.isCycle_append_append_reverse {x a b : V} {P : G.Walk x a} {Q : G
     have h₂ : R.length ≠ 0 := fun h0 ↦ hab (eq_of_length_eq_zero h0).symm
     rw [length_append]
     omega
+
+/-- Two vertex-disjoint paths `P` from `x` to `y` and `Q` from `x'` to `y'`, joined by distinct
+edges `s(x, x')` and `s(y', y)`, close up into a cycle through both edges. -/
+theorem IsPath.isCycle_cons_append_cons_reverse {x x' y y' : V} {P : G.Walk x y}
+    {Q : G.Walk x' y'} (hP : P.IsPath) (hQ : Q.IsPath) (hPQ : P.support.Disjoint Q.support)
+    (hx : G.Adj x x') (hy : G.Adj y' y) (hxy : s(x, x') ≠ s(y', y)) :
+    (cons hx (Q.append (cons hy P.reverse))).IsCycle := by
+  rw [cons_isCycle_iff, isPath_append, edges_append, List.mem_append, edges_cons, List.mem_cons,
+    edges_reverse, List.mem_reverse]
+  refine ⟨⟨hQ, by simpa using hP, by simpa using hPQ.symm⟩, ?_⟩
+  rintro (h | h | h)
+  · exact hPQ P.start_mem_support (Q.fst_mem_support_of_mem_edges h)
+  · exact hxy h
+  · exact hPQ (P.snd_mem_support_of_mem_edges h) Q.start_mem_support
 
 /-- A walk meeting a set `F` splits at its first vertex `b` in `F`: the first part has `b` as its
 only vertex in `F`, occurring once. -/

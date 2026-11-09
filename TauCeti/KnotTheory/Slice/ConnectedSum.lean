@@ -7,15 +7,20 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.BallChord
 public import TauCeti.KnotTheory.ConnectedSum.Basic
+import Mathlib.Geometry.Manifold.Instances.Sphere
 import TauCeti.Geometry.Manifold.Boundary.Collar.Basic
-import TauCeti.Geometry.Manifold.LocallyFlat.Smooth
+import TauCeti.Geometry.Manifold.Immersion.Basic
+import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.Immersion.ModelChange
+import TauCeti.Geometry.Manifold.Instances.ClosedBall.Chord
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 /-!
 # A knot plus its reverse mirror image is slice
 
 The inverse of a knot `K` in the knot concordance group is its reverse mirror image `-K`: the
-connected sum `K # -K` is slice. This file proves that it is topologically slice, by an explicit
-locally flat slice disc.
+connected sum `K # -K` is slice. This file proves that it is smoothly slice, by an explicit smooth
+slice disc; in particular it is topologically slice.
 
 The knot is a smooth circle embedding `K : S¹ → Sⁿ` in connected-sum position for a great circle
 `ι` (`TauCeti.SmoothCircleEmbedding.IsConnectedSumPosition ι K`): its knotted arc `A`, the image of
@@ -28,29 +33,32 @@ the great sphere `⟪x, u⟫ = 0`. So `K # -K` is the arc `A` followed by its mi
 The slice disc is the union of the chords of the closed unit ball parallel to `u` through the
 points of `A`, together with its two endpoints `ι (±1)` on the equator, where the chords
 degenerate to points: the chord through `a ∈ A` joins `a` to `σ a`. In the chord coordinates of
-the ball off its equator (`TauCeti.hemisphereChord`), the open hemisphere times `[-1, 1]`, this
-disc minus its two endpoints is the product `A × [-1, 1]`, and in the same coordinates for the
-closed unit disc of `ℂ` minus `±1` it is the parametrization `(z, t) ↦ (K z, t)` of that product.
-Near the two points `±1` of the circle the knot is the great circle, so the disc is the flat disc
-`ι D²` there. It is locally flat for a different
-reason in each of the two regions:
+the ball off its equator (`TauCeti.hemisphereChordDiffeomorph`), a diffeomorphism of manifolds
+with boundary from the open hemisphere times `[-1, 1]`, this disc minus its two endpoints is the
+product `A × [-1, 1]`, and in the same coordinates for the closed unit disc of `ℂ` minus `±1` it is
+the parametrization `(z, t) ↦ (K z, t)` of that product. Near the two points `±1` of the circle the
+knot is the great circle, so the disc is the flat disc `ι D²` there. It is an immersion of
+manifolds with boundary for a different reason in each of the two regions:
 
-* near `±1` it is the flat disc `ι D²`, which is locally flat
-  (`TauCeti.isTopologicalSliceDisc_greatCircle_unitClosedBallMap`);
-* off the equator of the disc it is the product of the arc `A`, locally flat in the open hemisphere
-  because `K` is a smooth embedding, with the identity of `[-1, 1]`, read in chord coordinates; the
-  interval `[-1, 1]`, modelled on the half-line at both of its ends, gives the half-plane model of
-  the disc, flat up to the boundary sphere.
+* near `±1` it is the flat disc `ι D²`, the restriction of the linear isometry `ι` to the closed
+  unit balls (`LinearIsometry.isImmersionAt_unitClosedBallMap`);
+* off the equator of the disc it is the product of the arc `A`, an immersion into the open
+  hemisphere because `K` is a smooth embedding, with the identity of `[-1, 1]`, read in chord
+  coordinates. The product model of the open hemisphere times `[-1, 1]` is linearly the half-space
+  model of the ball (`TauCeti.EuclideanHalfSpace.exists_continuousLinearEquiv_image_range_prod`),
+  so the chord coordinates carry this normal form to the half-space charts
+  (`TauCeti.isImmersionAt_diffeomorph_comp_of_image_range_eq`).
 
-The smooth version, that `K # -K` is smoothly slice, needs the chord coordinates as a local
-diffeomorphism of manifolds with boundary and is not proved here. Nor is the identification of
-slice knots with the knots concordant to the unknot, which turns this into the inverse law of the
-concordance group.
+The disc is injective, meets the boundary sphere exactly along the boundary circle, and is compact,
+so it is a smooth embedding. The identification of slice knots with the knots concordant to the
+unknot, which turns this into the inverse law of the concordance group, is not proved here.
 
 ## Main results
 
-* `TauCeti.SmoothCircleEmbedding.isTopologicallySlice_connectedSum_reverseMirror`: for a knot `K`
-  in connected-sum position, `K # -K` is topologically slice.
+* `TauCeti.SmoothCircleEmbedding.isSmoothlySlice_connectedSum_reverseMirror`: for a knot `K` in
+  connected-sum position, `K # -K` is smoothly slice.
+* `TauCeti.SmoothCircleEmbedding.isTopologicallySlice_connectedSum_reverseMirror`: in particular
+  it is topologically slice.
 
 ## References
 
@@ -64,8 +72,8 @@ public section
 
 noncomputable section
 
-open Metric Module Set Topology Filter
-open scoped Manifold RealInnerProductSpace ComplexConjugate
+open Manifold Metric Module Set Topology Filter
+open scoped Manifold ContDiff RealInnerProductSpace ComplexConjugate
 
 namespace TauCeti
 
@@ -212,52 +220,73 @@ private theorem mem_or_chordTop_mem (h : IsConnectedSumPosition ι K) (z : close
   have hsqrt : √(1 - (z : ℂ).re ^ 2) = 0 := Real.sqrt_eq_zero'.2 (by linarith)
   simp [chordTop, hsqrt]
 
-/-! ### Local flatness -/
+/-! ### The disc of chords is a smooth immersion -/
 
-private theorem isLocallyFlat_chordDisc_comp_coe_of_mem (h : IsConnectedSumPosition ι K) :
-    IsLocallyFlat (EuclideanHalfSpace 2) (EuclideanSpace ℝ (Fin (n - 1)))
-      (chordDisc h ∘ ((↑) : OffEquator → _)) := by
-  have : Fact ((-1 : ℝ) < 1) := ⟨by norm_num⟩
-  have hK : IsLocallyFlat (EuclideanSpace ℝ (Fin 1)) (EuclideanSpace ℝ (Fin (n - 1))) K :=
-    IsLocallyFlat.of_isSmoothEmbedding_of_sub_eq K.isSmoothEmbedding rfl
-  have hO : IsOpen {x : Circle | 0 < ⟪(x : ℂ), ((axisC : sphere (0 : ℂ) 1) : ℂ)⟫} :=
-    isOpen_lt continuous_const (by fun_prop)
-  have hS : IsOpen {y : sphere (0 : E) 1 | 0 < ⟪(y : E), ((axis ι : sphere (0 : E) 1) : E)⟫} :=
-    isOpen_lt continuous_const (by fun_prop)
-  -- The arc of `K` over the upper half of the circle is locally flat in the open hemisphere.
-  have h₁ : IsLocallyFlat (EuclideanSpace ℝ (Fin 1)) (EuclideanSpace ℝ (Fin (n - 1)))
-      (upperArc h) :=
-    (hK.restrict hO).codRestrict hS fun x ↦ (upperArc h x).2
-  -- Its product with `[-1, 1]` is locally flat, with the half-plane as tangential model, and
-  -- the chord coordinates carry it onto the disc of chords.
-  have h₂ := ((h₁.prodMap_of_isOpenEmbedding (G := EuclideanHalfSpace 1)
-    (IsOpenEmbedding.id (X := Icc (-1 : ℝ) 1))).isOpenEmbedding_comp
-      (isOpenEmbedding_hemisphereChord (axis ι))).comp_homeomorph (hemisphereChord axisC).symm
-  convert h₂.transIsOpenEmbedding
-    (EuclideanHalfSpace.collarDiffeomorph (k := ⊤) 1).toHomeomorph.isOpenEmbedding using 1
+local instance : Fact ((-1 : ℝ) < 1) := ⟨by norm_num⟩
+
+/-- The arc of `K` over the open upper half of the circle is an immersion into the open upper
+hemisphere. -/
+private theorem isImmersionAt_upperArc (h : IsConnectedSumPosition ι K)
+    (x : hemisphereOpens axisC) :
+    IsImmersionAt (𝓡 1) (𝓡 n) ∞ (M := hemisphereOpens axisC) (N := hemisphereOpens (axis ι))
+      (upperArc h) x := by
+  have hK : IsImmersionAt (𝓡 1) (𝓡 n) ∞ (fun y : hemisphereOpens axisC ↦ K y.1) x :=
+    isImmersionAt_comp_subtypeVal_iff.2 (K.isSmoothEmbedding.isImmersion.isImmersionAt _)
+  exact (isImmersionAt_codRestrict_opens_iff (U := hemisphereOpens (axis ι))
+    (f := fun y : hemisphereOpens axisC ↦ K y.1) (fun y ↦ (upperArc h y).2)).2 hK
+
+/-- Off the equator, the disc of chords is the product of the arc of `K` with `[-1, 1]`, read in
+the chord coordinates of the disc and of the ball. -/
+private theorem chordDisc_comp_coe (h : IsConnectedSumPosition ι K) :
+    chordDisc h ∘ ((↑) : chordBallOpens axisC → closedBall (0 : ℂ) 1) =
+      ((↑) : chordBallOpens (axis ι) → closedBall (0 : E) 1) ∘
+        hemisphereChordDiffeomorph (n := n) (axis ι) ∘ Prod.map (upperArc h) id ∘
+          (hemisphereChordDiffeomorph (n := 1) axisC).symm := by
   funext z
-  exact chordDisc_of_mem h z.2
+  rw [Function.comp_apply, chordDisc_of_mem h z.2]
+  simp only [Function.comp_apply, coe_hemisphereChordDiffeomorph,
+    coe_hemisphereChordDiffeomorph_symm]
+  -- `⟨↑z, _⟩` is `z` itself, read in the subtype `OffEquator` underlying `chordBallOpens axisC`.
+  rfl
 
-private theorem isLocallyFlat_chordDisc_comp_coe_of_chordTop_mem (h : IsConnectedSumPosition ι K) :
-    IsLocallyFlat (EuclideanHalfSpace 2) (EuclideanSpace ℝ (Fin (n - 1)))
-      (chordDisc h ∘ ((↑) : chordTop ⁻¹' greatCircleLocus (n := n) ι K → _)) := by
-  convert (isTopologicalSliceDisc_greatCircle_unitClosedBallMap (n := n) ι).isLocallyFlat.restrict
-    isOpen_chordTop_preimage_greatCircleLocus using 1
-  funext z
-  exact chordDisc_eq_of_mem h z.2
+/-- Off the equator, the disc of chords is an immersion: in the chord coordinates it is the
+product of the immersed arc of `K` with the identity of `[-1, 1]`. -/
+private theorem isImmersionAt_chordDisc_of_mem (h : IsConnectedSumPosition ι K)
+    {z : closedBall (0 : ℂ) 1} (hz : z ∈ chordBallOpens axisC) :
+    IsImmersionAt (𝓡∂ 2) (𝓡∂ (n + 1)) ∞ (chordDisc h) z := by
+  -- The product models of the chord coordinates are linearly the half-space models.
+  obtain ⟨A, hA⟩ := EuclideanHalfSpace.exists_continuousLinearEquiv_image_range_prod 1
+  obtain ⟨B, hB⟩ := EuclideanHalfSpace.exists_continuousLinearEquiv_image_range_prod n
+  have hA' : A.symm '' range (𝓡∂ (1 + 1)) = range ((𝓡 1).prod (𝓡∂ 1)) := by
+    rw [← hA, ← image_comp]
+    simp
+  -- The product of the arc with the identity is an immersion.
+  set q := (hemisphereChordDiffeomorph (n := 1) axisC).symm ⟨z, hz⟩
+  have h₁ := (isImmersionAt_upperArc h q.1).prodMap
+    ((IsImmersion.id (I := 𝓡∂ 1) (n := ∞) (M := Icc (-1 : ℝ) 1)).isImmersionAt q.2)
+  -- Read it in the chord coordinates of the disc and of the ball.
+  have h₂ := isImmersionAt_diffeomorph_comp_of_image_range_eq B hB
+    (hemisphereChordDiffeomorph (n := n) (axis ι)) le_top
+    (isImmersionAt_comp_diffeomorph_of_image_range_eq A.symm hA'
+      (hemisphereChordDiffeomorph (n := 1) axisC).symm le_top (x := ⟨z, hz⟩) h₁)
+  have h₃ := isImmersionAt_isLocalDiffeomorphAt_comp
+    (isLocalDiffeomorph_subtype_val (I := 𝓡∂ (n + 1)) (n := ∞) _) h₂
+  rw [← chordDisc_comp_coe h] at h₃
+  exact isImmersionAt_comp_subtypeVal_iff.1 h₃
 
-/-- Every point of the closed unit disc has an open neighbourhood on which the disc of chords is
-locally flat, with tangential model the half-plane. -/
-private theorem exists_isLocallyFlat_chordDisc_comp_coe (h : IsConnectedSumPosition ι K)
-    (z : closedBall (0 : ℂ) 1) :
-    ∃ U : Set (closedBall (0 : ℂ) 1), IsOpen U ∧ z ∈ U ∧
-      IsLocallyFlat (EuclideanHalfSpace 2) (EuclideanSpace ℝ (Fin (n - 1)))
-        (chordDisc h ∘ ((↑) : U → _)) := by
-  rcases mem_or_chordTop_mem h z with hz | hz
-  · exact ⟨_, isOpen_setOf_norm_sq_sub_inner_sq_lt_one axisC, hz,
-      isLocallyFlat_chordDisc_comp_coe_of_mem h⟩
-  · exact ⟨_, isOpen_chordTop_preimage_greatCircleLocus, hz,
-      isLocallyFlat_chordDisc_comp_coe_of_chordTop_mem h⟩
+/-- Near `±1`, where `K` is the great circle, the disc of chords is the flat disc, which is an
+immersion. -/
+private theorem isImmersionAt_chordDisc_of_chordTop_mem (h : IsConnectedSumPosition ι K)
+    {z : closedBall (0 : ℂ) 1} (hz : chordTop z ∈ greatCircleLocus ι K) :
+    IsImmersionAt (𝓡∂ 2) (𝓡∂ (n + 1)) ∞ (chordDisc h) z :=
+  (ι.isImmersionAt_unitClosedBallMap z).congr_of_eventuallyEq <|
+    Filter.eventually_of_mem (isOpen_chordTop_preimage_greatCircleLocus.mem_nhds hz)
+      fun _ hw ↦ (chordDisc_eq_of_mem h hw).symm
+
+private theorem isImmersion_chordDisc (h : IsConnectedSumPosition ι K) :
+    IsImmersion (𝓡∂ 2) (𝓡∂ (n + 1)) ∞ (chordDisc h) :=
+  isImmersion_iff_forall_isImmersionAt.2 fun z ↦ (mem_or_chordTop_mem h z).elim
+    (isImmersionAt_chordDisc_of_mem h) (isImmersionAt_chordDisc_of_chordTop_mem h)
 
 /-! ### The disc of chords is a slice disc for `K # -K` -/
 
@@ -357,27 +386,31 @@ private theorem chordDisc_inclusion (h : IsConnectedSumPosition ι K) (z : Circl
     rw [chordDisc_of_not_mem h hU, LinearIsometry.coe_unitClosedBallMap_apply,
       connectedSum_apply_of_im_nonneg _ _ him.ge, h.apply_eq him.le, coe_greatCircle_apply]
 
-private theorem isTopologicalSliceDisc_chordDisc (h : IsConnectedSumPosition ι K) :
-    IsTopologicalSliceDisc (connectedSum K (reverseMirror ι K) h h.reverseMirror)
-      (chordDisc h) := by
-  have hloc := exists_isLocallyFlat_chordDisc_comp_coe h
-  have hcont : Continuous (chordDisc h) := by
-    refine continuous_iff_continuousAt.2 fun x ↦ ?_
-    obtain ⟨U, hU, hxU, hflat⟩ := hloc x
-    exact (continuousOn_iff_continuous_domRestrict.2 hflat.continuous).continuousAt
-      (hU.mem_nhds hxU)
+private theorem isSmoothSliceDisc_chordDisc (h : IsConnectedSumPosition ι K) :
+    IsSmoothSliceDisc (connectedSum K (reverseMirror ι K) h h.reverseMirror) (chordDisc h) := by
+  have himm := isImmersion_chordDisc h
+  have hcont : Continuous (chordDisc h) :=
+    continuous_iff_continuousAt.2 fun z ↦ (himm.isImmersionAt z).continuousAt
   have : CompactSpace (closedBall (0 : ℂ) 1) :=
     isCompact_iff_compactSpace.1 (isCompact_closedBall 0 1)
-  exact ⟨.of_forall_exists_isOpen (hcont.isClosedEmbedding (injective_chordDisc h)).isEmbedding
-    hloc, norm_chordDisc_eq_one_iff h, chordDisc_inclusion h⟩
+  refine ⟨⟨himm, (hcont.isClosedEmbedding (injective_chordDisc h)).isEmbedding⟩, ?_,
+    chordDisc_inclusion h⟩
+  ext z
+  simp [boundary_closedBall, norm_chordDisc_eq_one_iff h]
 
-/-- **A knot plus its reverse mirror image is topologically slice.** For a knot `K : S¹ → Sⁿ` in
+/-- **A knot plus its reverse mirror image is smoothly slice.** For a knot `K : S¹ → Sⁿ` in
 connected-sum position for the great circle `ι`, the connected sum `K # -K` of `K` with its reverse
-mirror image `TauCeti.SmoothCircleEmbedding.reverseMirror ι K` bounds a locally flat disc in
+mirror image `TauCeti.SmoothCircleEmbedding.reverseMirror ι K` bounds a smooth slice disc in
 `Dⁿ⁺¹`: the union of the chords parallel to `ι i` through the knotted arc of `K`. -/
+theorem isSmoothlySlice_connectedSum_reverseMirror (h : IsConnectedSumPosition ι K) :
+    IsSmoothlySlice (connectedSum K (reverseMirror ι K) h h.reverseMirror) :=
+  (isSmoothSliceDisc_chordDisc h).isSmoothlySlice
+
+/-- **A knot plus its reverse mirror image is topologically slice.** This follows from the smooth
+statement `TauCeti.SmoothCircleEmbedding.isSmoothlySlice_connectedSum_reverseMirror`. -/
 theorem isTopologicallySlice_connectedSum_reverseMirror (h : IsConnectedSumPosition ι K) :
     IsTopologicallySlice (connectedSum K (reverseMirror ι K) h h.reverseMirror) :=
-  (isTopologicalSliceDisc_chordDisc h).isTopologicallySlice
+  (isSmoothlySlice_connectedSum_reverseMirror h).isTopologicallySlice
 
 end SmoothCircleEmbedding
 

@@ -24,10 +24,16 @@ admit finite open chart covers whose coordinate images lie in compact subsets of
 even without Hausdorffness. On a sigma-compact Hausdorff manifold these compact coordinate sets
 can instead be chosen to give a locally finite cover of the whole manifold.
 
+The extended chart of a product manifold has the product of the targets of the factor charts as
+its target (`TauCeti.extChartAt_prod_target`).
+
 Coordinate changes transport images of subsets of chart overlaps and are injective there,
-without differentiability assumptions; for a boundaryless model, their domains are open. On an
-open subset, extended charts are restrictions of the ambient ones, so near a chart point the
-inverse charts of nested open subsets differ only by the inclusion. Over `ℝ`, every chart point has
+without differentiability assumptions; for a boundaryless model, their domains are open. A compact
+coordinate set of a chart is covered by finitely many compact pieces, each in the overlap with
+one of a given family of charts at points of the manifold. On an
+open subset, extended chart targets lie in the ambient chart targets, and inverse charts agree
+through inclusion on the smaller target. Near a chart point the inverse charts of nested open
+subsets likewise differ only by the inclusion. Over `ℝ`, every chart point has
 a convex neighbourhood within the model range, inside the chart target, on which flat calculus
 applies even when the manifold has boundary.
 
@@ -76,6 +82,15 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The target of the extended chart of a product manifold at `x` is the product of the targets
+of the extended charts of the factors at the components of `x`. -/
+theorem extChartAt_prod_target {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] (x : M × M') :
+    (extChartAt (I.prod I') x).target =
+      (extChartAt I x.1).target ×ˢ (extChartAt I' x.2).target := by
+  rw [extChartAt_prod, PartialEquiv.prod_target]
 
 /-- Near the center of an extended chart, composing a chart representative with the chart
 recovers the original function. No continuity of the function is needed. -/
@@ -144,6 +159,35 @@ theorem _root_.ModelWithCorners.extend_symm_comp_extendCoordChange_eventuallyEq 
   filter_upwards [I.extendCoordChange_source_mem_nhds hx hx'] with y hy
   exact (e'.extend I).left_inv hy.2
 
+open Set in
+omit [ChartedSpace H M] in
+/-- A compact coordinate set of a chart `e` is covered by finitely many compact pieces, each in
+the overlap of `e` with the chart `σ x` at some point `x`. -/
+theorem exists_finite_cover_extendCoordChange_source
+    (σ : M → OpenPartialHomeomorph M H) (hσ : ∀ x, x ∈ (σ x).source)
+    (e : OpenPartialHomeomorph M H) {K : Set E} (hK : IsCompact K)
+    (hKt : K ⊆ (e.extend I).target) :
+    ∃ (N : ℕ) (p : Fin N → M) (P : Fin N → Set E), (∀ j, IsCompact (P j)) ∧ (∀ j, P j ⊆ K) ∧
+      (∀ j, P j ⊆ (I.extendCoordChange e (σ (p j))).source) ∧ K ⊆ ⋃ j, P j := by
+  classical
+  -- Each point of `K` has an open neighbourhood whose trace on `K` lies in a chart overlap.
+  have hnhds (z : K) : (I.extendCoordChange e (σ ((e.extend I).symm z))).source ∈ 𝓝[K] (z : E) := by
+    refine nhdsWithin_mono _ (hKt.trans (e.extend_target_subset_range (I := I)))
+      (I.extendCoordChange_source_mem_nhdsWithin ?_)
+    rw [PartialEquiv.trans_source, PartialEquiv.symm_source, (σ _).extend_source]
+    exact ⟨hKt z.2, hσ _⟩
+  choose u hu hzu huK using fun z : K ↦ mem_nhdsWithin.mp (hnhds z)
+  obtain ⟨t, ht⟩ := hK.elim_finite_subcover u hu fun z hz ↦ mem_iUnion.mpr ⟨⟨z, hz⟩, hzu _⟩
+  obtain ⟨Q, hQc, hQu, hKQ⟩ := hK.finite_compact_cover t u (fun z _ ↦ hu z)
+    (by simpa only [iUnion_subtype] using ht)
+  have hQK (z : K) (hz : z ∈ t) : Q z ⊆ K := hKQ ▸ subset_biUnion_of_mem (u := Q) hz
+  refine ⟨t.card, fun j ↦ (e.extend I).symm (t.equivFin.symm j).1,
+    fun j ↦ Q (t.equivFin.symm j), fun j ↦ hQc _, fun j ↦ hQK _ (t.equivFin.symm j).2,
+    fun j w hw ↦ huK _ ⟨hQu _ hw, hQK _ (t.equivFin.symm j).2 hw⟩, fun z hz ↦ ?_⟩
+  rw [hKQ] at hz
+  obtain ⟨y, hy, hzy⟩ := mem_iUnion₂.mp hz
+  exact mem_iUnion.mpr ⟨t.equivFin ⟨y, hy⟩, by simpa using hzy⟩
+
 /-- The extended chart of an open subset at a point sends that point to the same coordinates as
 the extended chart of a larger open subset at its image under the inclusion. -/
 theorem extChartAt_inclusion_self {U V : TopologicalSpace.Opens M} (h : U ≤ V) (x : U) :
@@ -162,6 +206,32 @@ theorem extChartAt_inclusion_symm_eventuallyEq {U V : TopologicalSpace.Opens M} 
     simpa [extChartAt, TopologicalSpace.Opens.chartAt_eq] using
       I.continuous_symm.tendsto (extChartAt I x x)
   exact (TopologicalSpace.Opens.chartAt_inclusion_symm_eventuallyEq h).comp_tendsto hc
+
+namespace Manifold
+
+variable {M' : Type*} [TopologicalSpace M'] [ChartedSpace H M']
+
+/-- An extended chart centred in the left summand has the target of that summand's chart. -/
+theorem extChartAt_target_sumInl (x : M) :
+    (extChartAt I (Sum.inl x : M ⊕ M')).target = (extChartAt I x).target := by
+  simp [extChartAt, ChartedSpace.sum_chartAt_inl]
+
+/-- An extended chart centred in the right summand has the target of that summand's chart. -/
+theorem extChartAt_target_sumInr (x : M') :
+    (extChartAt I (Sum.inr x : M ⊕ M')).target = (extChartAt I x).target := by
+  simp [extChartAt, ChartedSpace.sum_chartAt_inr]
+
+/-- The inverse extended chart centred in the left summand lands in that summand. -/
+theorem extChartAt_symm_sumInl (x : M) (z : E) :
+    (extChartAt I (Sum.inl x : M ⊕ M')).symm z = Sum.inl ((extChartAt I x).symm z) := by
+  simp [extChartAt, ChartedSpace.sum_chartAt_inl]
+
+/-- The inverse extended chart centred in the right summand lands in that summand. -/
+theorem extChartAt_symm_sumInr (x : M') (z : E) :
+    (extChartAt I (Sum.inr x : M ⊕ M')).symm z = Sum.inr ((extChartAt I x).symm z) := by
+  simp [extChartAt, ChartedSpace.sum_chartAt_inr]
+
+end Manifold
 
 /-- An extended chart target is measurable in the model space. -/
 theorem measurableSet_extChartAt_target [MeasurableSpace E] [OpensMeasurableSpace E]
@@ -445,6 +515,83 @@ theorem exists_convex_uniqueDiffOn_mem_nhdsWithin_extChartAt {E H M : Type*}
       ⟨Metric.mem_ball_self hε, I.range_subset_closure_interior hx⟩
 
 end TauCeti
+
+namespace TopologicalSpace.Opens
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- An inherited extended chart restricts the ambient target to the points whose inverse
+coordinates lie in the open subset. -/
+theorem extChartAt_target_eq (U : Opens M) (x : U) :
+    (extChartAt I x).target = (extChartAt I (x : M)).target ∩
+      (extChartAt I (x : M)).symm ⁻¹' (U : Set M) := by
+  ext z
+  simp [extChartAt, chartAt_eq, OpenPartialHomeomorph.subtypeRestr_def,
+    PartialEquiv.trans_target, Function.comp_def, and_assoc]
+
+/-- The target of an inherited extended chart is contained in the ambient chart target. -/
+theorem extChartAt_target_subset (U : Opens M) (x : U) :
+    (extChartAt I x).target ⊆ (extChartAt I (x : M)).target := by
+  intro z hz
+  simp only [extChartAt, OpenPartialHomeomorph.extend_target] at hz ⊢
+  exact ⟨(chartAt H (x : M)).subtypeRestr_target_subset ⟨x⟩ hz.1, hz.2⟩
+
+/-- On the inherited chart target, the inverse extended chart followed by inclusion is the
+ambient inverse extended chart. -/
+theorem coe_extChartAt_symm_apply (U : Opens M) (x : U) {z : E}
+    (hz : z ∈ (extChartAt I x).target) :
+    ((extChartAt I x).symm z : M) = (extChartAt I (x : M)).symm z := by
+  simp only [extChartAt, OpenPartialHomeomorph.extend_target] at hz
+  simpa only [extChartAt, OpenPartialHomeomorph.extend_coe_symm, Function.comp_apply,
+    chartAt_eq] using (chartAt H (x : M)).subtypeRestr_symm_apply ⟨x⟩ hz.1
+
+/-- An ambient coordinate change into a chart on an open subset tends into the inherited
+chart target whenever the represented point belongs to that subset and chart source. -/
+theorem tendsto_extChartAt_restrict (U : Opens M) (x : M) (y : U) {z : E}
+    (hz : z ∈ (extChartAt I x).target)
+    (hy : (extChartAt I x).symm z ∈ U)
+    (hys : (extChartAt I x).symm z ∈ (extChartAt I (y : M)).source) :
+    Filter.Tendsto (fun w ↦ extChartAt I (y : M) ((extChartAt I x).symm w))
+      (𝓝[(extChartAt I x).target] z)
+      (𝓝[(extChartAt I y).target] extChartAt I (y : M) ((extChartAt I x).symm z)) := by
+  have hφ := continuousOn_extChartAt_symm (I := I) x z hz
+  have hψ := (continuousOn_extChartAt (I := I) (y : M)).continuousAt
+    ((isOpen_extChartAt_source (I := I) (y : M)).mem_nhds hys)
+  refine tendsto_nhdsWithin_iff.mpr ⟨hψ.tendsto.comp hφ, ?_⟩
+  have hU := hφ.eventually (U.isOpen.mem_nhds hy)
+  have hS := hφ.eventually ((isOpen_extChartAt_source (I := I) (y : M)).mem_nhds hys)
+  filter_upwards [hU, hS] with w hwU hwS
+  rw [U.extChartAt_target_eq y]
+  refine ⟨(extChartAt I (y : M)).map_source hwS, ?_⟩
+  rw [Set.mem_preimage, (extChartAt I (y : M)).left_inv hwS]
+  -- The eventual membership proof is expressed using the underlying carrier of the open set.
+  change U.carrier.Mem ((extChartAt I x).symm w)
+  exact hwU
+
+/-- Every inherited source chart of an open subset of a normed space has that open subset as
+its extended target. -/
+theorem extChartAt_opens_target (U : Opens E) (x : U) :
+    (extChartAt 𝓘(𝕜, E) x).target = (U : Set E) := by
+  simp [extChartAt, Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_def]
+
+/-- The target of an inherited chart is canonically homeomorphic to the open source. -/
+noncomputable def openChartTargetHomeomorph (U : Opens E) (x : U) :
+    (extChartAt 𝓘(𝕜, E) x).target ≃ₜ U :=
+  Homeomorph.setCongr (extChartAt_opens_target U x)
+
+/-- The chart-target homeomorphism retains the ambient coordinate value. -/
+theorem coe_openChartTargetHomeomorph_apply (U : Opens E) (x : U)
+    (z : (extChartAt 𝓘(𝕜, E) x).target) :
+    ((U.openChartTargetHomeomorph (𝕜 := 𝕜) x z : U) : E) = z := by
+  -- The set-congruence homeomorphism changes only the membership proof.
+  unfold openChartTargetHomeomorph
+  rfl
+
+
+end TopologicalSpace.Opens
 
 open scoped ContDiff
 

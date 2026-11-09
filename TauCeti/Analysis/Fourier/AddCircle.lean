@@ -58,6 +58,8 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
 
 * `TauCeti.fourier_injective`: `n ↦ fourier n` is injective, so distinct indices give distinct
   characters.
+* `TauCeti.fourier_apply_ne_zero`, `TauCeti.fourier_neg_mul_fourier`: the monomials vanish
+  nowhere, and `fourier (-n)` is the pointwise inverse of `fourier n`.
 * `TauCeti.fourier_one_coe_apply`, `TauCeti.fourier_neg_one_coe_apply`: the first harmonics
   `fourier (±1)` evaluated at a real point, in terms of the cosine and sine of `2π t / T`.
 * `ContinuousMap.eq_zero_of_forall_fourierCoeff_eq_zero`: a continuous function on the circle all
@@ -66,6 +68,8 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   Fourier monomial.**
 * `AddChar.norm_apply_eq_one_of_continuous`: consequently a continuous additive character of the
   circle takes values of modulus one.
+* `ContinuousMonoidHom.existsUnique_circle_eq_zpow`: every continuous character of the
+  multiplicative unit circle is a unique integer power.
 * `TauCeti.fourierCoeff_smul_fourierBasis`: multiplying the `L²` Fourier mode `e_m` by an
   essentially bounded function `a` shifts the Fourier coefficients of `a` by `m`.
 * `TauCeti.fourierCoeff_fourierLp_smul`: multiplying an `Lᵖ` function by the monomial `e_n`
@@ -74,6 +78,8 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   function are the conjugates of its reflected coefficients.
 * `TauCeti.fourierCoeff_fourierLp`: the Fourier coefficients of the `Lᵖ` monomial `e_n` are `1`
   at `n` and `0` elsewhere.
+* `TauCeti.fourierCoeff_comp_neg`: circle reflection reverses Fourier indices, including
+  the native `Lᵖ` pullback form `MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg`.
 
 ## Tags
 
@@ -135,6 +141,15 @@ theorem fourier_neg_one_coe_apply (t : ℝ) :
     ring
   rw [fourier_coe_apply, this, Complex.exp_mul_I]
   simp [sub_eq_add_neg]
+
+/-- The Fourier monomials take values in the unit circle, so they vanish nowhere. -/
+theorem fourier_apply_ne_zero (n : ℤ) (x : AddCircle T) : fourier n x ≠ 0 := by
+  rw [fourier_apply]
+  exact Circle.coe_ne_zero _
+
+/-- The monomial `fourier (-n)` is the pointwise inverse of `fourier n`. -/
+theorem fourier_neg_mul_fourier (n : ℤ) (x : AddCircle T) : fourier (-n) x * fourier n x = 1 := by
+  rw [← fourier_add, neg_add_cancel, fourier_zero]
 
 /-- **The `n`-th Fourier monomial as a bundled additive character of the circle.** It is Mathlib's
 `AddCircle.toCircle_addChar` precomposed with multiplication by `n` and postcomposed with the
@@ -209,6 +224,24 @@ end ContinuousMap
 
 namespace TauCeti
 
+/-- Reflection of a circle function reverses its Fourier indices. -/
+theorem fourierCoeff_comp_neg {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    (f : AddCircle T → E) (n : ℤ) :
+    fourierCoeff (fun x ↦ f (-x)) n = fourierCoeff f (-n) := by
+  rw [fourierCoeff, fourierCoeff, ← integral_neg_eq_self]
+  congr 1
+  funext x
+  simp only [fourier_apply, smul_neg, neg_smul, neg_neg]
+
+/-- Pulling back an `Lᵖ` function by circle reflection reverses its Fourier indices. -/
+theorem _root_.MeasureTheory.Lp.fourierCoeff_compMeasurePreserving_neg {p : ℝ≥0∞}
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    (f : Lp E p (haarAddCircle (T := T))) (n : ℤ) :
+    fourierCoeff (Lp.compMeasurePreserving (fun x ↦ -x)
+      (Measure.measurePreserving_neg haarAddCircle) f) n = fourierCoeff f (-n) := by
+  rw [fourierCoeff_congr_ae (Lp.coeFn_compMeasurePreserving f _)]
+  exact fourierCoeff_comp_neg f n
+
 /-- The `Lp` class of a Fourier monomial has modulus one almost everywhere. -/
 theorem ae_norm_fourierLp_eq_one (p : ℝ≥0∞) [Fact (1 ≤ p)] (n : ℤ) :
     ∀ᵐ x ∂haarAddCircle (T := T), ‖fourierLp (T := T) p n x‖ = 1 := by
@@ -245,6 +278,23 @@ theorem fourierLp_smul_fourierLp_smul {p : ℝ≥0∞} (m n : ℤ)
   filter_upwards [coeFn_fourierLp_smul m (fourierLp (T := T) ∞ n • f),
     coeFn_fourierLp_smul n f, coeFn_fourierLp_smul (m + n) f] with x h₁ h₂ h₃
   rw [h₁, h₂, h₃, fourier_add, mul_assoc]
+
+/-- Multiplying an `Lᵖ` function by the bounded Fourier monomial `e_0 = 1` leaves it unchanged. -/
+@[simp]
+theorem fourierLp_zero_smul {p : ℝ≥0∞} (f : Lp ℂ p (haarAddCircle (T := T))) :
+    (fourierLp (T := T) ∞ 0 • f : Lp ℂ p (haarAddCircle (T := T))) = f := by
+  apply Lp.ext
+  filter_upwards [coeFn_fourierLp_smul 0 f] with x hx
+  rw [hx, fourier_zero, one_mul]
+
+/-- The complex conjugate of the `Lᵖ` Fourier monomial `e_n` is `e_(-n)`. -/
+@[simp]
+theorem star_fourierLp (p : ℝ≥0∞) [Fact (1 ≤ p)] (n : ℤ) :
+    star (fourierLp (T := T) p n) = fourierLp (T := T) p (-n) := by
+  apply Lp.ext
+  filter_upwards [Lp.coeFn_star (fourierLp (T := T) p n), coeFn_fourierLp (T := T) p n,
+    coeFn_fourierLp (T := T) p (-n)] with x h hn hneg
+  rw [h, Pi.star_apply, hn, hneg, fourier_neg, RCLike.star_def]
 
 /-- Multiplying an `Lᵖ` function by the bounded Fourier monomial `e_n` shifts its Fourier
 coefficients by `n`. -/
@@ -350,6 +400,33 @@ theorem norm_apply_eq_one_of_continuous (χ : AddChar (AddCircle T) ℂ) (hχ : 
   exact Circle.norm_coe _
 
 end AddChar
+
+namespace ContinuousMonoidHom
+
+/-- A continuous character of the circle is a unique integer power. -/
+theorem existsUnique_circle_eq_zpow (χ : Circle →ₜ* Circle) :
+    ∃! n : ℤ, ∀ z : Circle, χ z = z ^ n := by
+  let ψ : AddChar (AddCircle (1 : ℝ)) ℂ :=
+    { toFun := fun x ↦ (χ (AddCircle.toCircle x) : ℂ)
+      map_zero_eq_one' := by simp
+      map_add_eq_mul' := fun x y ↦ by simp [AddCircle.toCircle_add] }
+  have hψ : Continuous ψ :=
+    (continuous_induced_dom (f := ((↑) : Circle → ℂ))).comp
+      (χ.continuous.comp AddCircle.continuous_toCircle)
+  obtain ⟨n, hn⟩ := AddChar.exists_fourierAddChar_eq ψ hψ
+  have hn' (z : Circle) : χ z = z ^ n := by
+    obtain ⟨x, rfl⟩ := (AddCircle.homeomorphCircle (T := (1 : ℝ)) one_ne_zero).surjective z
+    apply Circle.ext
+    simpa only [AddCircle.homeomorphCircle_apply, TauCeti.fourierAddChar_apply,
+      fourier_apply, AddCircle.toCircle_zsmul, ψ, AddChar.coe_mk] using
+      (DFunLike.congr_fun hn x).symm
+  refine ⟨n, hn', fun m hm ↦ ?_⟩
+  apply TauCeti.fourier_injective (T := (1 : ℝ)) one_ne_zero
+  ext x
+  simp only [fourier_apply, AddCircle.toCircle_zsmul]
+  exact congrArg (fun z : Circle ↦ (z : ℂ)) ((hm _).symm.trans (hn' _))
+
+end ContinuousMonoidHom
 
 namespace TauCeti
 

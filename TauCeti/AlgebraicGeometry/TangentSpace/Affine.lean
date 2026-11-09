@@ -26,10 +26,14 @@ of a commutative bialgebra with the Zariski cotangent space at its augmentation 
 
 ## Main declarations
 
-* `AlgHom.kernelResidueFieldAlgEquiv`: the canonical identification of its residue field with
-  `k`.
+* `AlgHom.isLocalization_atPrime_kernelStalk`: the stalk at the augmentation point is the
+  localization of `H` at `ker f`.
+* `AlgHom.kernelResidueFieldAlgEquiv`: the canonical identification of the residue field at the
+  augmentation point with `k`.
 * `AlgHom.kernelCotangentLinearEquivZariski`: the kernel cotangent space is the Zariski cotangent
   space at the augmentation point.
+* `AlgHom.finrank_kernelCotangent_eq_finrank_zariskiCotangentSpace`: the two cotangent spaces have
+  the same dimension over `k`.
 
 ## References
 
@@ -59,12 +63,12 @@ noncomputable instance kernelStalkBaseAlgebra :
   Algebra.restrictScalars k H _
 
 /-- Scalar extension from `k` through `H` to the stalk at an augmentation point is compatible. -/
-instance kernelStalkIsScalarTower :
+instance isScalarTower_kernelStalk :
     IsScalarTower k H ((Spec (CommRingCat.of H)).presheaf.stalk (kernelPoint f)) :=
   IsScalarTower.of_algebraMap_eq' rfl
 
 /-- The stalk at an augmentation point is the localization of `H` at the augmentation kernel. -/
-instance kernelStalkIsLocalization :
+instance isLocalization_atPrime_kernelStalk :
     IsLocalization.AtPrime
       ((Spec (CommRingCat.of H)).presheaf.stalk (kernelPoint f))
       (RingHom.ker (f : H →+* k)) := by
@@ -114,12 +118,12 @@ theorem kernelCotangentLinearEquivZariski_toCotangent (a : RingHom.ker (f : H �
               IsLocalization.AtPrime.under_maximalIdeal
                 ((Spec (CommRingCat.of H)).presheaf.stalk (kernelPoint f))
                 (RingHom.ker (f : H →+* k))]
-            exact a.2⟩ := by
-  exact Ideal.cotangentLocalizationEquiv_toCotangent (RingHom.ker (f : H →+* k))
+            exact a.2⟩ :=
+  Ideal.cotangentLocalizationEquiv_toCotangent (RingHom.ker (f : H →+* k))
     ((Spec (CommRingCat.of H)).presheaf.stalk (kernelPoint f)) a
 
 /-- The ground-field action on the Zariski cotangent space factors through the residue field. -/
-instance kernelCotangentIsScalarTower :
+instance isScalarTower_zariskiCotangentSpace :
     IsScalarTower k
       (IsLocalRing.ResidueField ((Spec (CommRingCat.of H)).presheaf.stalk (kernelPoint f)))
       (TauCeti.AlgebraicGeometry.ZariskiCotangentSpace

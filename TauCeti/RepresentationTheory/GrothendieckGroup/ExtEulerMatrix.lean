@@ -102,7 +102,8 @@ theorem cartanMatrix_transpose_mul_extEulerMatrix_eq_diagonal
       (ModuleCat.isFG A) (isExtensionClosed_finiteModules A)) →+
       ExactK0 ((ExactStructure.abelian (ModuleCat.{u} A)).fullSubcategory
         (ModuleCat.isFG A) (isExtensionClosed_finiteModules A)) →+ ℤ :=
-    extEulerPairing (isExtensionClosed_finiteModules A) (isExtensionClosed_finiteModules A) hadm
+    extEulerPairing (isExtensionClosed_finiteModules.{u, u} A)
+      (isExtensionClosed_finiteModules.{u, u} A) hadm
   have hΦ (X Y : FGModuleCat.{u} A) :
       Φ (ExactK0.of X) (ExactK0.of Y) = extEuler.{u} k (hadm.isEulerAdmissible X.2 Y.2) :=
     extEulerPairing_of_of _ _ hadm X Y

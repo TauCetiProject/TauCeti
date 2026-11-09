@@ -110,19 +110,21 @@ theorem setOf_isSemialgebraic_subset {ℬ : Set (Set (σ → R))} (hℬ : IsSetA
     (range_subset_iff.2 pos)
 
 /-- Induction principle for semialgebraic sets: a property of sets that holds for polynomial zero
-sets, polynomial positivity sets and the empty set, and is preserved by complements and binary
-unions, holds for every semialgebraic set. -/
+sets and polynomial positivity sets, and is preserved by complements and binary unions, holds for
+every semialgebraic set. -/
 @[elab_as_elim]
 theorem IsSemialgebraic.induction {motive : Set (σ → R) → Prop}
     (eq_zero : ∀ p : MvPolynomial σ R, motive {x | eval x p = 0})
     (pos : ∀ p : MvPolynomial σ R, motive {x | 0 < eval x p})
-    (empty : motive ∅) (compl : ∀ s, IsSemialgebraic s → motive s → motive sᶜ)
+    (compl : ∀ s, IsSemialgebraic s → motive s → motive sᶜ)
     (union : ∀ s t, IsSemialgebraic s → IsSemialgebraic t → motive s → motive t →
       motive (s ∪ t))
     {s : Set (σ → R)} (hs : IsSemialgebraic s) : motive s := by
   induction hs using generateSetAlgebra_induction with
   | base u hu => rcases hu with ⟨p, rfl⟩ | ⟨p, rfl⟩ <;> simp only [eq_zero, pos]
-  | empty => exact empty
+  | empty =>
+    have h : {x : σ → R | 0 < eval x (0 : MvPolynomial σ R)} = ∅ := by simp
+    exact h ▸ pos 0
   | compl u hu ih => exact compl u hu ih
   | union u v hu hv ihu ihv => exact union u v hu hv ihu ihv
 

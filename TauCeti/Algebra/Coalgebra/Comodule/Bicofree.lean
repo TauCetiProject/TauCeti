@@ -16,6 +16,10 @@ The extension first applies the left coproduct and then uses the
 cofree right-comodule adjunction. Both coproducts here are ordinary algebraic
 coproducts; no completion or infinite summation is involved.
 
+A right-comodule map whose left coaction is twisted is also determined by its two-counit
+component (`Hom.eq_cofreeLift_of_leftCoact`). This form of reconstruction applies to
+homogeneous bar maps, where the twist is the Koszul sign on the left word.
+
 This construction supplies the bar maps underlying morphisms of two-sided
 A-infinity modules. The bicomodule convention follows V. Lyubashenko and
 O. Manzyuk, *A-infinity-bimodules and Serre A-infinity-functors*.
@@ -123,14 +127,16 @@ theorem bicofree_ext
         (Coalgebra.counit (R := R) (A := D)).lTensor (C ⊗[R] N) ∘ₗ g.toLinearMap) : f = g := by
   rw [← bicofreeLift_counit_comp f hf, h, bicofreeLift_counit_comp g hg]
 
-/-- A right-comodule map with a possibly twisted left coaction vanishes if its two-counit
-component vanishes. This also detects commutators of differentials and bicomodule maps. -/
-theorem Hom.eq_zero_of_bicofree_counit_eq_zero
+/-- A right-comodule map with a twisted left coaction is recovered from its two-counit
+component. The twist acts on the left coalgebra factor in the reconstruction. -/
+theorem Hom.eq_cofreeLift_of_leftCoact
     (f : Hom R D ((C ⊗[R] M) ⊗[R] D) ((C ⊗[R] N) ⊗[R] D)) (τ : C →ₗ[R] C)
     (hf : leftCoactRTensor D (leftCofreeCoact R C N) ∘ₗ f.toLinearMap =
-      TensorProduct.map τ f.toLinearMap ∘ₗ leftCoactRTensor D (leftCofreeCoact R C M))
-    (h : leftCofreeCounit R C N ∘ₗ (TensorProduct.rid R (C ⊗[R] N)).toLinearMap ∘ₗ
-      (Coalgebra.counit (R := R) (A := D)).lTensor (C ⊗[R] N) ∘ₗ f.toLinearMap = 0) : f = 0 := by
+      TensorProduct.map τ f.toLinearMap ∘ₗ leftCoactRTensor D (leftCofreeCoact R C M)) :
+    f = Hom.cofreeLift (TensorProduct.map τ
+      (leftCofreeCounit R C N ∘ₗ (TensorProduct.rid R (C ⊗[R] N)).toLinearMap ∘ₗ
+        (Coalgebra.counit (R := R) (A := D)).lTensor (C ⊗[R] N) ∘ₗ f.toLinearMap) ∘ₗ
+          leftCoactRTensor D (leftCofreeCoact R C M)) := by
   let π := (TensorProduct.rid R (C ⊗[R] N)).toLinearMap ∘ₗ
     (Coalgebra.counit (R := R) (A := D)).lTensor (C ⊗[R] N)
   have hπ : leftCofreeCoact R C N ∘ₗ (π ∘ₗ f.toLinearMap) =
@@ -145,9 +151,21 @@ theorem Hom.eq_zero_of_bicofree_counit_eq_zero
     simpa only [π, LinearMap.comp_assoc] using hp'
   have hz := eq_add_of_leftCofreeCoact_comp_eq
     (leftCoactRTensor D (leftCofreeCoact R C M)) τ (K := 0) (by simpa using hπ)
-  have hc : leftCofreeCounit R C N ∘ₗ π ∘ₗ f.toLinearMap = 0 := h
-  rw [hc, TensorProduct.map_zero_right, LinearMap.comp_zero, LinearMap.zero_comp,
-    add_zero] at hz
-  exact (Hom.eq_zero_iff_counit f).2 hz
+  have he := congrArg (Hom.cofreeLift (C := D)) hz
+  simpa only [LinearMap.comp_zero, zero_add, π, LinearMap.comp_assoc,
+    Hom.cofreeLift_rid_comp_lTensor_counit_comp] using he
+
+/-- A right-comodule map with a possibly twisted left coaction vanishes if its two-counit
+component vanishes. This also detects commutators of differentials and bicomodule maps. -/
+theorem Hom.eq_zero_of_bicofree_counit_eq_zero
+    (f : Hom R D ((C ⊗[R] M) ⊗[R] D) ((C ⊗[R] N) ⊗[R] D)) (τ : C →ₗ[R] C)
+    (hf : leftCoactRTensor D (leftCofreeCoact R C N) ∘ₗ f.toLinearMap =
+      TensorProduct.map τ f.toLinearMap ∘ₗ leftCoactRTensor D (leftCofreeCoact R C M))
+    (h : leftCofreeCounit R C N ∘ₗ (TensorProduct.rid R (C ⊗[R] N)).toLinearMap ∘ₗ
+      (Coalgebra.counit (R := R) (A := D)).lTensor (C ⊗[R] N) ∘ₗ f.toLinearMap = 0) : f = 0 := by
+  rw [f.eq_cofreeLift_of_leftCoact τ hf, h, TensorProduct.map_zero_right,
+    LinearMap.zero_comp]
+  apply Hom.toLinearMap_injective
+  simp [Hom.cofreeLift_toLinearMap]
 
 end TauCeti.Comodule
