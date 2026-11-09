@@ -7,8 +7,9 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.Cholesky.Equiv
 public import TauCeti.Analysis.Matrix.Frobenius
-public import TauCeti.Topology.Instances.Matrix
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
+import Mathlib.Topology.Instances.Matrix
+import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Continuity and measurability of the Cholesky equivalence
@@ -91,9 +92,13 @@ theorem isProperMap_choleskyReconstruction :
   have hK'c : IsCompact ((fun A : PosDefMatrix p ↦ (A.1 : Matrix (Fin p) (Fin p) ℝ)) '' K) :=
     hK.image (continuous_subtype_val.comp continuous_subtype_val)
   obtain ⟨c, hc⟩ := hK'c.bddAbove_image (continuous_id.matrix_trace).continuousOn
+  have hTclosed : IsClosed {L : Matrix (Fin p) (Fin p) ℝ | L.IsLowerTriangular ∧ (∀ i, 0 ≤ L i i) ∧
+      L * Lᵀ ∈ (fun A : PosDefMatrix p ↦ (A.1 : Matrix (Fin p) (Fin p) ℝ)) '' K} :=
+    (isClosed_setOfPred_blockTriangular (b := OrderDual.toDual)).inter
+      (Matrix.isClosed_setOfPred_nonneg_diag.inter
+        (hK'c.isClosed.preimage (continuous_id.matrix_mul continuous_id.matrix_transpose)))
   have hTc := (isCompact_univ_pi fun _ ↦ isCompact_univ_pi fun _ ↦
-    isCompact_Icc (a := -√c) (b := √c)).of_isClosed_subset
-      (Matrix.isClosed_setOfPred_isLowerTriangular_nonneg_diag_mul_transpose_mem hK'c.isClosed)
+    isCompact_Icc (a := -√c) (b := √c)).of_isClosed_subset hTclosed
       (fun L hL i _ j _ ↦ abs_le.1 ((Matrix.abs_apply_le_sqrt_trace_mul_transpose L i j).trans
         (Real.sqrt_le_sqrt (hc ⟨_, hL.2.2, rfl⟩))))
   exact Topology.IsEmbedding.subtypeVal.isInducing.isCompact_iff.2

@@ -11,7 +11,6 @@ public import Mathlib.LinearAlgebra.Matrix.Kronecker
 public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Instances.Matrix
-public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 public import Mathlib.Topology.UniformSpace.Matrix
 public import Mathlib.Topology.Metrizable.Basic
@@ -58,9 +57,8 @@ Each characteristic coefficient is continuous over a commutative topological rin
 The Kronecker product of two continuously varying matrices is continuous in the product topology.
 In particular the ⋆-algebra homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗ₖ B` are continuous.
 
-The lower-triangular real matrices with nonnegative diagonal whose Gram matrix `L * Lᵀ` lies in a
-closed set form a closed set
-(`Matrix.isClosed_setOfPred_isLowerTriangular_nonneg_diag_mul_transpose_mem`).
+The matrices with nonnegative diagonal form a closed set
+(`Matrix.isClosed_setOfPred_nonneg_diag`).
 
 ## References
 
@@ -235,19 +233,10 @@ end Matrix
 
 namespace Matrix
 
-variable {n : Type*} [Fintype n] [LinearOrder n]
-
-/-- The lower-triangular matrices with nonnegative diagonal whose Gram matrix lies in a closed set
-form a closed set. -/
-theorem isClosed_setOfPred_isLowerTriangular_nonneg_diag_mul_transpose_mem {S : Set (Matrix n n ℝ)}
-    (hS : IsClosed S) :
-    IsClosed {L : Matrix n n ℝ | L.IsLowerTriangular ∧ (∀ i, 0 ≤ L i i) ∧ L * Lᵀ ∈ S} := by
-  have htri : IsClosed {L : Matrix n n ℝ | L.IsLowerTriangular} :=
-    isClosed_setOfPred_blockTriangular (b := OrderDual.toDual)
-  have hdiag : IsClosed {L : Matrix n n ℝ | ∀ i, 0 ≤ L i i} := by
-    simp only [Set.ofPred_forall]
-    exact isClosed_iInter fun i ↦ isClosed_le continuous_const (continuous_id.matrix_elem i i)
-  exact htri.inter (hdiag.inter
-    (hS.preimage (continuous_id.matrix_mul continuous_id.matrix_transpose)))
+/-- The matrices with nonnegative diagonal form a closed set. -/
+theorem isClosed_setOfPred_nonneg_diag {n R : Type*} [TopologicalSpace R] [Zero R] [Preorder R]
+    [OrderClosedTopology R] : IsClosed {M : Matrix n n R | ∀ i, 0 ≤ M i i} := by
+  simp only [Set.ofPred_forall]
+  exact isClosed_iInter fun i ↦ isClosed_le continuous_const (continuous_id.matrix_elem i i)
 
 end Matrix
