@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Sum
 public import Mathlib.Data.Nat.Factorial.DoubleFactorial
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 public import TauCeti.GroupTheory.Perm.Cycle.Reversal
+import Mathlib.Data.Fintype.Pigeonhole
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.GroupTheory.Perm.SwapFactors
 
@@ -646,10 +647,10 @@ theorem IsPerfectMatching.sign_eq [Fintype α] [DecidableEq α] {f : Equiv.Perm 
     Fintype.card_eq_zero_iff.mpr ⟨fun a => hf.2 a a.2⟩
   rw [Equiv.Perm.sign_of_pow_two_eq_one hsq, hfix, Nat.sub_zero]
 
-/-- Two points on a common orbit of a perfect matching are equal or partners. -/
-theorem IsPerfectMatching.eq_or_eq_apply_of_sameCycle {f : Equiv.Perm α}
-    (hf : IsPerfectMatching f) {x y : α} (h : f.SameCycle x y) : y = x ∨ y = f x := by
-  have hsq : f ^ (2 : ℤ) = 1 := Equiv.ext fun a => by simp [sq, hf.1 a]
+/-- Two points on a common orbit of an involutive permutation are equal or swapped by it. -/
+theorem _root_.Equiv.Perm.SameCycle.eq_or_eq_apply_of_involutive {f : Equiv.Perm α}
+    (hf : Function.Involutive f) {x y : α} (h : f.SameCycle x y) : y = x ∨ y = f x := by
+  have hsq : f ^ (2 : ℤ) = 1 := Equiv.ext fun a => by simp [sq, hf a]
   obtain ⟨k, rfl⟩ := h
   obtain ⟨j, rfl | rfl⟩ := Int.even_or_odd' k
   · left
@@ -659,35 +660,19 @@ theorem IsPerfectMatching.eq_or_eq_apply_of_sameCycle {f : Equiv.Perm α}
     rw [zpow_add_one, zpow_mul, hsq]
     simp
 
-/-- A perfect matching of an infinite type has infinitely many orbits, since each orbit has at
-most two points. -/
-theorem IsPerfectMatching.infinite_quotient_sameCycle [Infinite α] {f : Equiv.Perm α}
-    (hf : IsPerfectMatching f) : Infinite (Quotient (Equiv.Perm.SameCycle.setoid f)) := by
+/-- An involutive permutation of an infinite type has infinitely many orbits, since each orbit has
+at most two points. -/
+theorem _root_.Equiv.Perm.infinite_quotient_sameCycle_of_involutive [Infinite α]
+    {f : Equiv.Perm α} (hf : Function.Involutive f) :
+    Infinite (Quotient (Equiv.Perm.SameCycle.setoid f)) := by
   by_contra hQ
   rw [not_infinite_iff_finite] at hQ
-  classical
-  let r : α → α := fun a => (⟦a⟧ : Quotient (Equiv.Perm.SameCycle.setoid f)).out
-  have hr (a : α) : f.SameCycle (r a) a :=
-    Quotient.mk_out (s := Equiv.Perm.SameCycle.setoid f) a
-  have key (x a b : α) (ha : f.SameCycle x a) (hb : f.SameCycle x b) (h : a = x ↔ b = x) :
-      a = b := by
-    rcases hf.eq_or_eq_apply_of_sameCycle ha with ha | ha <;>
-      rcases hf.eq_or_eq_apply_of_sameCycle hb with hb | hb
-    · exact ha.trans hb.symm
-    · exact absurd (hb.symm.trans (h.1 ha)) (hf.2 x)
-    · exact absurd (ha.symm.trans (h.2 hb)) (hf.2 x)
-    · exact ha.trans hb.symm
-  have hinj : Function.Injective fun a : α =>
-      ((⟦a⟧ : Quotient (Equiv.Perm.SameCycle.setoid f)), decide (a = r a)) := by
-    intro a b hab
-    obtain ⟨hq, hd⟩ := Prod.mk.inj hab
-    have hrab : r b = r a := by simp only [r, hq]
-    have hrb : f.SameCycle (r a) b := hrab ▸ hr b
-    rw [hrab] at hd
-    rw [decide_eq_decide] at hd
-    exact key (r a) a b (hr a) hrb hd
-  have := Finite.of_injective _ hinj
-  exact not_finite α
+  obtain ⟨q, hq⟩ := Finite.exists_infinite_fiber
+    (Quotient.mk (Equiv.Perm.SameCycle.setoid f) : α → _)
+  refine (Set.infinite_coe_iff.mp hq) ((Set.toFinite {q.out, f q.out}).subset fun a ha => ?_)
+  have hq' : f.SameCycle q.out a :=
+    Quotient.exact (s := Equiv.Perm.SameCycle.setoid f) (q.out_eq.trans ha.symm)
+  exact (hq'.eq_or_eq_apply_of_involutive hf).imp id id
 
 /-- **A perfect matching has half as many orbits as points**: its orbits are its pairs. -/
 theorem IsPerfectMatching.two_mul_orbitCount {f : Equiv.Perm α}
@@ -706,7 +691,7 @@ theorem IsPerfectMatching.two_mul_orbitCount {f : Equiv.Perm α}
     refine .trans ?_ f.partition.parts_sum
     rw [Multiset.eq_replicate_of_mem hpair]
     simp [mul_comm]
-  · have := hf.infinite_quotient_sameCycle
+  · have := Equiv.Perm.infinite_quotient_sameCycle_of_involutive hf.1
     simp [orbitCount_def, Nat.card_eq_zero_of_infinite]
 
 end Parity
