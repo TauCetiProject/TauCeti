@@ -15,9 +15,9 @@ than `r` with positive first coordinate. The first coordinate is the normal coor
 space of Lipschitz boundary charts, so in the complex coordinate `z = s + it` it plays the role of
 `t = Im z`, and `halfDisc r` is the interior of the half-disc `{z | 0 ≤ Im z ∧ |z| < r}`.
 
-Its frontier consists of the segment `{0} × [-r, r]`, the arc of the circle of radius `r` with
-positive first coordinate, and the two corners `(0, ±r)`. Each frontier point has an explicit
-Lipschitz boundary chart:
+For `r ≤ 0` the half-disc and its frontier are empty. For `0 < r` its frontier consists of the
+segment `{0} × [-r, r]`, the arc of the circle of radius `r` with positive first coordinate, and
+the two corners `(0, ±r)`. Each frontier point has an explicit Lipschitz boundary chart:
 
 * on the open segment the chart is a translation and the graph is zero;
 * on the arc the normal direction points to the centre, and the graph is the lower boundary of the
@@ -54,21 +54,16 @@ namespace HalfDisc
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- Two points of `WithLp 2 (ℝ × ℝ)` with the same coordinates are equal. -/
-private theorem ext {x y : WithLp 2 (ℝ × ℝ)} (h₁ : x.fst = y.fst) (h₂ : x.snd = y.snd) :
-    x = y :=
-  WithLp.ofLp_injective 2 (Prod.ext h₁ h₂)
-
 /-- The rotation of `WithLp 2 (ℝ × ℝ)` with first row `(α, β)`. -/
 private def rotation (α β : ℝ) (h : α ^ 2 + β ^ 2 = 1) :
     WithLp 2 (ℝ × ℝ) ≃ₗᵢ[ℝ] WithLp 2 (ℝ × ℝ) where
   toFun x := WithLp.toLp 2 (α * x.fst + β * x.snd, -β * x.fst + α * x.snd)
   invFun z := WithLp.toLp 2 (α * z.fst - β * z.snd, β * z.fst + α * z.snd)
-  map_add' x y := ext (by simp; ring) (by simp; ring)
-  map_smul' c x := ext (by simp; ring) (by simp; ring)
-  left_inv x := ext (by simp; linear_combination x.fst * h)
+  map_add' x y := WithLp.ofLp_injective 2 <| Prod.ext (by simp; ring) (by simp; ring)
+  map_smul' c x := WithLp.ofLp_injective 2 <| Prod.ext (by simp; ring) (by simp; ring)
+  left_inv x := WithLp.ofLp_injective 2 <| Prod.ext (by simp; linear_combination x.fst * h)
     (by simp; linear_combination x.snd * h)
-  right_inv z := ext (by simp; linear_combination z.fst * h)
+  right_inv z := WithLp.ofLp_injective 2 <| Prod.ext (by simp; linear_combination z.fst * h)
     (by simp; linear_combination z.snd * h)
   norm_map' x := by
     simp only [LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk, WithLp.prod_norm_eq_of_L2,
@@ -106,25 +101,6 @@ private theorem chart_zero_snd (p : WithLp 2 (ℝ × ℝ)) (α β : ℝ) (h : α
     (chart p α β h 0).snd = β * p.fst - α * p.snd := by
   simp [chart, rotation]; ring
 
-/-- A chart whose cylinder meets `Ω` exactly above the graph of `γ` is a Lipschitz chart. -/
-private theorem isLipschitzChart_of_forall_mem_iff {Ω : Set (WithLp 2 (ℝ × E))}
-    {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)} {γ : E → ℝ} {K : ℝ≥0} {a b : ℝ}
-    (ha : 0 < a) (hb : 0 < b) (hγ : LipschitzWith K γ)
-    (hmem : ∀ z ∈ normalCylinder a b, e.symm z ∈ Ω ↔ γ z.snd < z.fst) :
-    Ω.IsLipschitzChart e γ K a b where
-  height_pos := ha
-  radius_pos := hb
-  lipschitzWith := hγ
-  image_inter_normalCylinder := by
-    ext z
-    simp only [mem_inter_iff, mem_ofPred_eq]
-    refine and_congr_left fun hz => ?_
-    rw [← hmem z hz]
-    constructor
-    · rintro ⟨x, hx, rfl⟩
-      simpa using hx
-    · exact fun h => ⟨_, h, e.apply_symm_apply z⟩
-
 /-- The lower boundary of `ball 0 r`, written in coordinates in which the centre of the ball is
 `c`, truncated at tangential distance `ρ` from `c` so that it is globally Lipschitz. -/
 private def ballGraph (c : WithLp 2 (ℝ × E)) (r ρ : ℝ) (v : E) : ℝ :=
@@ -154,8 +130,7 @@ private theorem lipschitzWith_ballGraph (c : WithLp 2 (ℝ × E)) {r ρ : ℝ} (
   have hxs : √(r ^ 2 - ρ ^ 2) ≤ x := Real.sqrt_le_sqrt (by nlinarith)
   have hys : √(r ^ 2 - ρ ^ 2) ≤ y := Real.sqrt_le_sqrt (by nlinarith)
   have hd : dist (ballGraph c r ρ v) (ballGraph c r ρ w) = |y - x| := by
-    simp only [ballGraph, Real.dist_eq]
-    rw [show c.fst - x - (c.fst - y) = y - x by ring]
+    rw [ballGraph, ballGraph, Real.dist_eq, sub_sub_sub_cancel_left]
   rw [hd, Real.coe_toNNReal _ (div_nonneg hρ0 hs.le), div_mul_eq_mul_div,
     le_div_iff₀ hs]
   -- `|y - x| (x + y) = |m - n| (m + n) ≤ 2 ρ dist v w`, and `x + y ≥ 2 √(r² - ρ²)`.
@@ -196,15 +171,16 @@ open HalfDisc
 
 /-- The open half-disc of radius `r` in `WithLp 2 (ℝ × ℝ)`: the points of norm less than `r` whose
 first coordinate, the normal coordinate of Lipschitz boundary charts, is positive. -/
-@[expose] def halfDisc (r : ℝ) : Opens (WithLp 2 (ℝ × ℝ)) :=
+def halfDisc (r : ℝ) : Opens (WithLp 2 (ℝ × ℝ)) :=
   ⟨ball 0 r ∩ {x | 0 < x.fst},
     isOpen_ball.inter (isOpen_lt continuous_const (WithLp.prod_continuous_ofLp 2 ℝ ℝ).fst)⟩
 
 @[simp]
 theorem coe_halfDisc (r : ℝ) :
-    (halfDisc r : Set (WithLp 2 (ℝ × ℝ))) = ball 0 r ∩ {x | 0 < x.fst} :=
-  rfl
+    (halfDisc r : Set (WithLp 2 (ℝ × ℝ))) = ball 0 r ∩ {x | 0 < x.fst} := by
+  rw [halfDisc, Opens.coe_mk]
 
+@[simp]
 theorem mem_halfDisc {r : ℝ} {x : WithLp 2 (ℝ × ℝ)} : x ∈ halfDisc r ↔ ‖x‖ < r ∧ 0 < x.fst := by
   rw [← SetLike.mem_coe, coe_halfDisc, mem_inter_iff, mem_ball_zero_iff, mem_ofPred_eq]
 
@@ -218,17 +194,14 @@ private theorem closure_halfDisc_subset (r : ℝ) :
     (isClosed_closedBall.inter (isClosed_le continuous_const
       (WithLp.prod_continuous_ofLp 2 ℝ ℝ).fst))
 
-private theorem norm_sq_eq (x : WithLp 2 (ℝ × ℝ)) : ‖x‖ ^ 2 = x.fst ^ 2 + x.snd ^ 2 := by
-  rw [WithLp.prod_norm_sq_eq_of_L2, Real.norm_eq_abs, Real.norm_eq_abs, sq_abs, sq_abs]
-
 /-- A Lipschitz chart of the half-disc centred at a point `p` of the arc `‖p‖ = r` with
 `p.fst > 0`, whose normal direction points to the centre of the disc. -/
 private theorem exists_isLipschitzChart_halfDisc_of_arc {r : ℝ} {p : WithLp 2 (ℝ × ℝ)}
     (hp : ‖p‖ = r) (hp₁ : 0 < p.fst) :
     ∃ (e : WithLp 2 (ℝ × ℝ) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × ℝ)) (γ : ℝ → ℝ) (K : ℝ≥0) (a b : ℝ),
       (halfDisc r : Set (WithLp 2 (ℝ × ℝ))).IsLipschitzChart e γ K a b ∧ e p = 0 := by
-  have hsq := norm_sq_eq p
-  rw [hp] at hsq
+  have hsq : r ^ 2 = p.fst ^ 2 + p.snd ^ 2 := by
+    simp only [← hp, WithLp.prod_norm_sq_eq_of_L2, Real.norm_eq_abs, sq_abs]
   have hr0 : 0 ≤ r := hp ▸ norm_nonneg p
   have hr : 0 < r := lt_of_le_of_ne hr0 fun h => by subst h; nlinarith
   have ht : p.fst ≤ r := by nlinarith
@@ -296,7 +269,7 @@ private theorem exists_isLipschitzChart_halfDisc_of_flat {r : ℝ} {p : WithLp 2
       nlinarith [abs_nonneg (p.snd + z.snd)]
     have hS := abs_nonneg p.snd
     refine (sq_lt_sq₀ (norm_nonneg _) (by linarith)).1 ?_
-    rw [norm_sq_eq, hfst, hsnd, ← sq_abs z.fst, ← sq_abs (p.snd + z.snd)]
+    rw [WithLp.prod_norm_sq_eq_of_L2, Real.norm_eq_abs, Real.norm_eq_abs, hfst, hsnd]
     nlinarith
   simp only [coe_halfDisc, mem_inter_iff, mem_ball_zero_iff, mem_ofPred_eq, hnorm, hfst, true_and]
 
@@ -323,8 +296,7 @@ private theorem exists_isLipschitzChart_halfDisc_of_corner {r : ℝ} {p : WithLp
     rw [chart_zero_fst, hp₁]
     linear_combination (4 / 5 : ℝ) * hσs
   have he₂ : ‖(e 0).snd‖ = 3 * r / 5 := by
-    rw [chart_zero_snd, hp₁, Real.norm_eq_abs, show -(4 / 5) * σ * 0 - 3 / 5 * p.snd =
-      -(3 / 5) * p.snd by ring, abs_mul, hp₂]
+    rw [chart_zero_snd, hp₁, mul_zero, zero_sub, Real.norm_eq_abs, abs_neg, abs_mul, hp₂]
     norm_num
     ring
   have hg : LipschitzWith 2 fun v : ℝ => -(4 / 3 * σ) * v := by
@@ -342,8 +314,9 @@ private theorem exists_isLipschitzChart_halfDisc_of_corner {r : ℝ} {p : WithLp
   have hball := symm_mem_ball_iff e hr.le (ρ := 4 * r / 5) (by linarith) (by linarith) hz
   simp only [coe_halfDisc, mem_inter_iff, mem_ofPred_eq, hball, hfst, max_lt_iff]
 
-/-- **The half-disc is a Lipschitz domain.** Its frontier consists of the flat part, the arc and
-the two corners `(0, ±r)`, and each point has a Lipschitz boundary chart. -/
+/-- **The half-disc is a Lipschitz domain.** For `0 < r` its frontier consists of the flat part,
+the arc and the two corners `(0, ±r)`, and each point has a Lipschitz boundary chart; for `r ≤ 0`
+the half-disc is empty. -/
 theorem isLipschitzDomain_halfDisc (r : ℝ) :
     (halfDisc r : Set (WithLp 2 (ℝ × ℝ))).IsLipschitzDomain ℝ := by
   refine Set.isLipschitzDomain_iff_exists_mem_normalCylinder.2 fun p hp => ?_
@@ -360,7 +333,8 @@ theorem isLipschitzDomain_halfDisc (r : ℝ) :
   rw [mem_inter_iff, mem_closedBall_zero_iff, mem_ofPred_eq] at hcl
   obtain ⟨hpr, hp₁⟩ := hcl
   rw [mem_halfDisc, not_and_or, not_lt, not_lt] at hnot
-  have hsq := norm_sq_eq p
+  have hsq : ‖p‖ ^ 2 = p.fst ^ 2 + p.snd ^ 2 := by
+    simp only [WithLp.prod_norm_sq_eq_of_L2, Real.norm_eq_abs, sq_abs]
   rcases hp₁.lt_or_eq with hp₁ | hp₁
   · exact exists_isLipschitzChart_halfDisc_of_arc (le_antisymm hpr (hnot.resolve_right
       hp₁.not_ge)) hp₁

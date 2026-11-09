@@ -42,6 +42,8 @@ support-containment lemmas provide the shared geometry for chart trace and exten
 ## Main declarations
 
 * `TauCeti.normalCylinder`: the product cylinder used by boundary charts.
+* `Set.isLipschitzChart_of_forall_mem_iff`: a chart whose cylinder meets a set exactly above a
+  Lipschitz graph is a Lipschitz boundary chart.
 * `Set.IsLipschitzChartWith`: a Lipschitz boundary chart with given coordinates, graph and radii.
 * `Set.IsLipschitzDomainAtWith`: the existence of a Lipschitz boundary chart centred at one point.
 * `Set.IsLipschitzDomainWith`: an open set with the local graph condition at every frontier point.
@@ -154,6 +156,24 @@ structure IsLipschitzChart (Ω : Set F) (e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E
   /-- Inside the cylinder, `Ω` is the region above the graph. -/
   image_inter_normalCylinder :
     e '' Ω ∩ normalCylinder h r = {x | γ x.snd < x.fst} ∩ normalCylinder h r
+
+/-- A chart whose cylinder meets `Ω` exactly above the graph of `γ` is a Lipschitz chart. -/
+theorem isLipschitzChart_of_forall_mem_iff {Ω : Set F} {e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)}
+    {γ : E → ℝ} {K : ℝ≥0} {h r : ℝ} (hh : 0 < h) (hr : 0 < r) (hγ : LipschitzWith K γ)
+    (hmem : ∀ z ∈ normalCylinder h r, e.symm z ∈ Ω ↔ γ z.snd < z.fst) :
+    IsLipschitzChart Ω e γ K h r where
+  height_pos := hh
+  radius_pos := hr
+  lipschitzWith := hγ
+  image_inter_normalCylinder := by
+    ext z
+    simp only [mem_inter_iff, mem_ofPred_eq]
+    refine and_congr_left fun hz => ?_
+    rw [← hmem z hz]
+    constructor
+    · rintro ⟨x, hx, rfl⟩
+      simpa using hx
+    · exact fun hx => ⟨_, hx, e.apply_symm_apply z⟩
 
 namespace IsLipschitzChart
 
@@ -453,16 +473,7 @@ theorem isLipschitzChartWith_iff (Omega : Set F) (L : ℝ≥0)
     exact ⟨h.height_pos, h.radius_pos, hφ, h.lipschitzWith,
       fun z hz ↦ by simpa using h.mem_iff (x := e.symm z) (by simpa using hz)⟩
   · rintro ⟨ha, hb, hφ, hLip, hmem⟩
-    refine ⟨hφ, ha, hb, hLip, ?_⟩
-    ext z
-    simp only [mem_inter_iff, mem_ofPred_eq]
-    apply and_congr_left
-    intro hz
-    constructor
-    · rintro ⟨x, hx, rfl⟩
-      exact (hmem (e x) hz).1 (by simpa using hx)
-    · intro hφz
-      exact ⟨e.symm z, (hmem z hz).2 hφz, e.apply_symm_apply z⟩
+    exact ⟨hφ, isLipschitzChart_of_forall_mem_iff ha hb hLip hmem⟩
 
 /-- A set is a Lipschitz domain at `x`, with graph constant at most `L`, if it has a Lipschitz
 boundary chart whose rigid coordinates take `x` to the origin. -/
