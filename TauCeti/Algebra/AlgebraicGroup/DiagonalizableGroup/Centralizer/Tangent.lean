@@ -95,17 +95,19 @@ private theorem snd_tangentPoint_conjugate {B : Type*} [CommRing B] [Algebra R B
     (Bialgebra.CounitAlgebra R H B)).restrictScalars R
   let D := toConv (↑d : H →ₗ[R] Bialgebra.CounitAlgebra R H B)
   let G := toConv g.ofConv.toLinearMap
-  have hqF := fstHom_comp_mapValue_inlAlgHom (R := R) (A := H) (B := B) g
-  have hqS := sndHom_comp_mapValue_inlAlgHom (R := R) (A := H) (B := B) g
-  have hpF := fstHom_comp_derivationMulEquivTangentKer (R := R) (A := H) (B := B)
+  have hqF := WithConv.fstHom_comp_mapValue_inlAlgHom (R := R) (A := H)
+    (C := Bialgebra.CounitAlgebra R H B) g
+  have hqS := WithConv.sndHom_comp_mapValue_inlAlgHom (R := R) (A := H)
+    (C := Bialgebra.CounitAlgebra R H B) g
+  have hpF := Multiplicative.fstHom_comp_derivationMulEquivTangentKer (R := R) (A := H) (B := B)
     (Multiplicative.ofAdd d)
-  have hpS := sndHom_comp_derivationMulEquivTangentKer (R := R) (A := H) (B := B)
+  have hpS := Multiplicative.sndHom_comp_derivationMulEquivTangentKer (R := R) (A := H) (B := B)
     (Multiplicative.ofAdd d)
   have hpinv : p⁻¹ = (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd (-d))).val := by
     rw [ofAdd_neg, map_inv, Subgroup.coe_inv]
-  have hpinvF := fstHom_comp_derivationMulEquivTangentKer (R := R) (A := H) (B := B)
+  have hpinvF := Multiplicative.fstHom_comp_derivationMulEquivTangentKer (R := R) (A := H) (B := B)
     (Multiplicative.ofAdd (-d))
-  have hpinvS := sndHom_comp_derivationMulEquivTangentKer (R := R) (A := H) (B := B)
+  have hpinvS := Multiplicative.sndHom_comp_derivationMulEquivTangentKer (R := R) (A := H) (B := B)
     (Multiplicative.ofAdd (-d))
   rw [← hpinv] at hpinvF hpinvS
   replace hpinvS : S ∘ₗ (p⁻¹).ofConv.toLinearMap = -D.ofConv := hpinvS
