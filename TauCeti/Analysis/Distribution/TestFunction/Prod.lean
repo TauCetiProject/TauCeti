@@ -11,7 +11,7 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Topology.Algebra.Support
 
 /-!
-# Tensor products of test functions with a fixed test function
+# Tensor products of test functions
 
 Let `Ω ⊆ E` and `O ⊆ D` be open subsets of real normed spaces and let `ψ` be a real test function
 on `O`. For a test function `φ` on `Ω`, the function `(x, t) ↦ ψ t • φ x` is a test function on
@@ -24,11 +24,19 @@ without enlarging their support in the first factor. Composed with a pullback al
 form `(x, t) ↦ (Φ (x, t), t)`, it cuts off the pullback of a test form along a map `Φ` that is
 proper only on bounded slabs `Ω × [c, d]`.
 
+For complex smooth functions `φ` supported in a compact set `K₁ ⊆ E` and `ψ` supported in a
+compact set `K₂ ⊆ D`, the tensor product `(x, y) ↦ φ x * ψ y` is a smooth function supported in
+`K₁ ×ˢ K₂` (`ContDiffMapSupportedIn.tensor`), bilinear in `φ` and `ψ`. These are the tensor
+products of test functions against which Schwartz kernels are tested.
+
 ## Main declarations
 
 * `TestFunction.prodSMulCLM`: the continuous linear map `φ ↦ ((x, t) ↦ ψ t • φ x)`.
 * `TestFunction.prodSMulCLM_apply`: its values.
 * `TestFunction.tsupport_prodSMulCLM_subset`: its support lies in `tsupport φ ×ˢ tsupport ψ`.
+* `ContDiffMapSupportedIn.tensor`: the tensor product `(x, y) ↦ φ x * ψ y` of complex smooth
+  functions `φ`, `ψ` supported in compact sets `K₁`, `K₂`, supported in `K₁ ×ˢ K₂`, with
+  `ContDiffMapSupportedIn.tensor_apply` and its bilinearity.
 -/
 
 public section
@@ -120,3 +128,42 @@ theorem tsupport_prodSMulCLM_subset (φ : 𝓓(Ω, F)) :
   tsupport_snd_smul_fst_subset _ _
 
 end TestFunction
+
+namespace ContDiffMapSupportedIn
+
+variable {E D : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup D]
+  [NormedSpace ℝ D] {K₁ : Compacts E} {K₂ : Compacts D}
+
+/-- The tensor product `(x, y) ↦ φ x * ψ y` of smooth functions `φ` supported in `K₁` and `ψ`
+supported in `K₂`, a smooth function supported in `K₁ ×ˢ K₂`. -/
+def tensor (φ : 𝓓_{K₁}(E, ℂ)) (ψ : 𝓓_{K₂}(D, ℂ)) : 𝓓_{K₁ ×ˢ K₂}(E × D, ℂ) :=
+  .of_support_subset ((φ.contDiff.comp contDiff_fst).mul (ψ.contDiff.comp contDiff_snd))
+    fun _ hp ↦ ⟨φ.support_subset (left_ne_zero_of_mul hp),
+      ψ.support_subset (right_ne_zero_of_mul hp)⟩
+
+@[simp]
+theorem tensor_apply (φ : 𝓓_{K₁}(E, ℂ)) (ψ : 𝓓_{K₂}(D, ℂ)) (p : E × D) :
+    φ.tensor ψ p = φ p.1 * ψ p.2 :=
+  (rfl)
+
+theorem tensor_add_left (φ φ' : 𝓓_{K₁}(E, ℂ)) (ψ : 𝓓_{K₂}(D, ℂ)) :
+    (φ + φ').tensor ψ = φ.tensor ψ + φ'.tensor ψ := by
+  ext p
+  simp [add_mul]
+
+theorem tensor_add_right (φ : 𝓓_{K₁}(E, ℂ)) (ψ ψ' : 𝓓_{K₂}(D, ℂ)) :
+    φ.tensor (ψ + ψ') = φ.tensor ψ + φ.tensor ψ' := by
+  ext p
+  simp [mul_add]
+
+theorem tensor_smul_left (c : ℂ) (φ : 𝓓_{K₁}(E, ℂ)) (ψ : 𝓓_{K₂}(D, ℂ)) :
+    (c • φ).tensor ψ = c • φ.tensor ψ := by
+  ext p
+  simp [mul_assoc]
+
+theorem tensor_smul_right (c : ℂ) (φ : 𝓓_{K₁}(E, ℂ)) (ψ : 𝓓_{K₂}(D, ℂ)) :
+    φ.tensor (c • ψ) = c • φ.tensor ψ := by
+  ext p
+  simp [mul_left_comm]
+
+end ContDiffMapSupportedIn
