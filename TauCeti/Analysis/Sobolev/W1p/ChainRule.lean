@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 public import TauCeti.MeasureTheory.Function.Lp.L1Convergence
+public import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
@@ -16,6 +17,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Topology.MetricSpace.Lipschitz.Basic
 
 /-!
 # The chain rule and the positive part in `W^{1,p}(Ω)` for `p < ∞`
@@ -187,6 +189,25 @@ private theorem locallyIntegrableOn_deriv_smul_gradient (hF : ContDiff ℝ 1 F)
   simp [real_inner_comm, real_inner_smul_right]
 
 
+/-- The chain rule for the restriction to `V ≤ Ω` of a test function on `Ω`. -/
+private theorem hasWeakFDerivOn_comp_restrictL_ofTestFunctionₗ (hF : ContDiff ℝ 1 F)
+    {V : Opens E} (hVΩ : V ≤ Omega) (phi : 𝓓(Omega, ℝ)) :
+    HasWeakFDerivOn mu V
+      (fun x => F (W1p.value (W1p.restrictL hVΩ (W1p.ofTestFunctionₗ mu Omega p phi)) x))
+      fun x => innerSL ℝ
+        (deriv F (W1p.value (W1p.restrictL hVΩ (W1p.ofTestFunctionₗ mu Omega p phi)) x) •
+          W1p.gradient (W1p.restrictL hVΩ (W1p.ofTestFunctionₗ mu Omega p phi)) x) := by
+  have hv := W1p.value_restrictL_ofTestFunctionₗ_ae (mu := mu) (p := p) hVΩ phi
+  have hg : ⇑(W1p.gradient (W1p.restrictL hVΩ (W1p.ofTestFunctionₗ mu Omega p phi)))
+      =ᵐ[mu.restrict (V : Set E)] fun x => ∇ (phi : E → ℝ) x :=
+    (W1p.gradient_restrictL_ae hVΩ _).trans (ae_restrict_of_ae_restrict_of_subset
+      (SetLike.coe_subset_coe.2 hVΩ) (by
+        rw [W1p.gradient_ofTestFunctionₗ]; exact gradientTestFunctionLp_apply_ae p _))
+  refine (((hasWeakFDerivOn_comp_testFunction (mu := mu) hF phi).mono hVΩ).congr_ae
+    ?_).congr_ae_deriv ?_
+  · filter_upwards [hv] with x hx; rw [hx]
+  · filter_upwards [hv, hg] with x hx hgx; rw [hx, hgx]
+
 /-- The chain rule on a subdomain relatively compact in `Ω`, where test functions on `Ω` are
 dense and the measure is finite. -/
 private theorem hasWeakFDerivOn_comp_aux (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F)
@@ -195,177 +216,53 @@ private theorem hasWeakFDerivOn_comp_aux (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F
     (hVO : closure (V : Set E) ⊆ (Omega : Set E)) :
     HasWeakFDerivOn mu V (fun x => F (W1p.value u x))
       fun x => innerSL ℝ (deriv F (W1p.value u x) • W1p.gradient u x) := by
-  classical
   have hlip : LipschitzWith M F :=
     lipschitzWith_of_nnnorm_deriv_le (hF.differentiable one_ne_zero) hM
   have hcont : Continuous (deriv F) := (contDiff_one_iff_deriv.mp hF).2
-  have hMr : ∀ t, ‖deriv F t‖ ≤ (M : ℝ) := fun t => by simpa [← NNReal.coe_le_coe] using hM t
   have hVΩ : V ≤ Omega := SetLike.coe_subset_coe.mp (subset_closure.trans hVO)
-  have hVsub : (V : Set E) ⊆ (Omega : Set E) := SetLike.coe_subset_coe.mpr hVΩ
-  have hres : mu.restrict (V : Set E) ≤ mu.restrict (Omega : Set E) :=
-    Measure.restrict_mono_set mu hVsub
-  have hfin : IsFiniteMeasure (mu.restrict (V : Set E)) :=
-    ⟨by
-      rw [Measure.restrict_apply_univ]
-      exact lt_of_le_of_lt (measure_mono subset_closure) hVc.measure_lt_top⟩
-  -- the value and the gradient of the limit, as functions
-  set fu : E → ℝ := ⇑(W1p.value u)
-  set gu : E → E := ⇑(W1p.gradient u)
-  have hfu_meas : AEStronglyMeasurable fu (mu.restrict (V : Set E)) :=
-    (Lp.aestronglyMeasurable (W1p.value u)).mono_measure hres
-  have hgu_meas : AEStronglyMeasurable gu (mu.restrict (V : Set E)) :=
-    (Lp.aestronglyMeasurable (W1p.gradient u)).mono_measure hres
-  have hgu_int : ∫⁻ x in (V : Set E), ‖gu x‖ₑ ∂mu ≠ ∞ := by
-    have h1 : MemLp gu 1 (mu.restrict (V : Set E)) :=
-      ((Lp.memLp (W1p.gradient u)).mono_measure hres).mono_exponent Fact.out
-    rw [← eLpNorm_one_eq_lintegral_enorm h1.aestronglyMeasurable]
-    exact h1.ne
-  -- approximation by test functions on `Ω`
-  obtain ⟨a, ha_mem, ha_tendsto⟩ := mem_closure_iff_seq_limit.mp
+  have : IsFiniteMeasure (mu.restrict (V : Set E)) := isFiniteMeasure_restrict.2
+    ((measure_mono subset_closure).trans_lt hVc.measure_lt_top).ne
+  -- approximation of `w = u|_V` by test functions on `Ω`, almost everywhere along `ns`
+  set w := W1p.restrictL hVΩ u
+  obtain ⟨a, ha_mem, ha⟩ := mem_closure_iff_seq_limit.mp
     (W1p.restrictL_mem_closure_range_ofTestFunctionₗ hp hVc hVO u)
   choose phi hphi using ha_mem
-  have hval : Tendsto (fun n => W1p.value (a n)) atTop (𝓝 (W1p.value (W1p.restrictL hVΩ u))) := by
+  have hval : Tendsto (fun n => W1p.value (a n)) atTop (𝓝 (W1p.value w)) := by
     simpa only [Function.comp_def, W1p.valueL_apply] using
-      (W1p.valueL.continuous.tendsto (W1p.restrictL hVΩ u)).comp ha_tendsto
-  have hgrad : Tendsto (fun n => W1p.gradient (a n))
-      atTop (𝓝 (W1p.gradient (W1p.restrictL hVΩ u))) := by
+      (W1p.valueL.continuous.tendsto w).comp ha
+  have hgrad : Tendsto (fun n => W1p.gradient (a n)) atTop (𝓝 (W1p.gradient w)) := by
     simpa only [Function.comp_def, W1p.gradientL_apply] using
-      (W1p.gradientL.continuous.tendsto (W1p.restrictL hVΩ u)).comp ha_tendsto
-  have hval1 : Tendsto (fun n => ∫⁻ x in (V : Set E), ‖W1p.value (a n) x - fu x‖ₑ ∂mu)
-      atTop (𝓝 0) := by
-    refine (tendsto_lintegral_enorm_sub_of_tendsto_Lp hval).congr fun n => ?_
-    refine lintegral_congr_ae ?_
-    filter_upwards [W1p.value_restrictL_ae hVΩ u] with x hx
-    rw [hx]
-  have hgrad1 : Tendsto (fun n => ∫⁻ x in (V : Set E), ‖W1p.gradient (a n) x - gu x‖ₑ ∂mu)
-      atTop (𝓝 0) := by
-    refine (tendsto_lintegral_enorm_sub_of_tendsto_Lp hgrad).congr fun n => ?_
-    refine lintegral_congr_ae ?_
-    filter_upwards [W1p.gradient_restrictL_ae hVΩ u] with x hx
-    rw [hx]
-  -- an almost-everywhere convergent subsequence of the values
-  have hInMeas : TendstoInMeasure (mu.restrict (V : Set E))
-      (fun n => ⇑(W1p.value (a n))) atTop fu := by
-    refine tendstoInMeasure_of_tendsto_eLpNorm (p := 1) one_ne_zero (hval1.congr fun n => ?_)
-    rw [eLpNorm_one_eq_lintegral_enorm ((Lp.aestronglyMeasurable _).sub hfu_meas)]
-    simp only [Pi.sub_apply]
-  obtain ⟨ns, hns, hns_ae⟩ := hInMeas.exists_seq_tendsto_ae
-  have hsub : ∀ h : ℕ → ℝ≥0∞, Tendsto h atTop (𝓝 0) → Tendsto (fun i => h (ns i)) atTop (𝓝 0) :=
-    fun h hh => hh.comp hns.tendsto_atTop
-  -- the chain rule holds for each approximant, because it is smooth
-  have hchain : ∀ i, HasWeakFDerivOn mu V (fun x => F (W1p.value (a (ns i)) x))
-      fun x => innerSL ℝ (deriv F (W1p.value (a (ns i)) x) • W1p.gradient (a (ns i)) x) := by
-    intro i
-    have hv : ⇑(W1p.value (a (ns i))) =ᵐ[mu.restrict (V : Set E)] (phi (ns i) : E → ℝ) := by
-      rw [← hphi (ns i)]
-      refine (W1p.value_restrictL_ae hVΩ _).trans ?_
-      rw [W1p.value_ofTestFunctionₗ]
-      exact (testFunctionLp_apply_ae (mu := mu) p (phi (ns i))).filter_mono (ae_mono hres)
-    have hg : ⇑(W1p.gradient (a (ns i))) =ᵐ[mu.restrict (V : Set E)]
-        fun x => ∇ ((phi (ns i) : E → ℝ)) x := by
-      rw [← hphi (ns i)]
-      refine (W1p.gradient_restrictL_ae hVΩ _).trans ?_
-      rw [W1p.gradient_ofTestFunctionₗ]
-      exact (gradientTestFunctionLp_apply_ae (mu := mu) p (phi (ns i))).filter_mono (ae_mono hres)
-    refine ((((hasWeakFDerivOn_comp_testFunction (mu := mu) hF (phi (ns i))).mono hVΩ).congr_ae
-      ?_).congr_ae_deriv ?_)
-    · filter_upwards [hv] with x hx; rw [hx]
-    · filter_upwards [hv, hg] with x hx hgx; rw [hx, hgx]
+      (W1p.gradientL.continuous.tendsto w).comp ha
+  obtain ⟨ns, hns, hns_ae⟩ := (tendstoInMeasure_of_tendsto_Lp hval).exists_seq_tendsto_ae
   -- the values converge in `L¹(V)`, because `F` is Lipschitz
   have hconv1 : Tendsto (fun i => ∫⁻ x in (V : Set E),
-      ‖F (W1p.value (a (ns i)) x) - F (fu x)‖ₑ ∂mu) atTop (𝓝 0) := by
-    have hb : ∀ i, ∫⁻ x in (V : Set E), ‖F (W1p.value (a (ns i)) x) - F (fu x)‖ₑ ∂mu ≤
-        (M : ℝ≥0∞) * ∫⁻ x in (V : Set E), ‖W1p.value (a (ns i)) x - fu x‖ₑ ∂mu := by
-      intro i
-      rw [← lintegral_const_mul' _ _ ENNReal.coe_ne_top]
-      refine lintegral_mono fun x => ?_
-      rw [← edist_eq_enorm_sub, ← edist_eq_enorm_sub]
-      exact hlip _ _
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_ (fun _ => zero_le) hb
-    simpa using ENNReal.Tendsto.const_mul (hsub _ hval1) (Or.inr ENNReal.coe_ne_top)
-  -- the gradients converge in `L¹(V)`: the coefficient is bounded and continuous
-  have hconv2 : Tendsto (fun i => ∫⁻ x in (V : Set E),
-      ‖innerSL ℝ (deriv F (W1p.value (a (ns i)) x) • W1p.gradient (a (ns i)) x) -
-        innerSL ℝ (deriv F (fu x) • gu x)‖ₑ ∂mu) atTop (𝓝 0) := by
-    have hnorm : ∀ i, ∀ x, ‖innerSL ℝ (deriv F (W1p.value (a (ns i)) x) • W1p.gradient (a (ns i)) x)
-        - innerSL ℝ (deriv F (fu x) • gu x)‖ₑ =
-        ‖deriv F (W1p.value (a (ns i)) x) • W1p.gradient (a (ns i)) x -
-          deriv F (fu x) • gu x‖ₑ := by
-      intro i x
-      exact enorm_innerSL_sub _ _
-    have hpt : ∀ i, ∀ x, ‖deriv F (W1p.value (a (ns i)) x) • W1p.gradient (a (ns i)) x -
-        deriv F (fu x) • gu x‖ₑ ≤
-        (M : ℝ≥0∞) * ‖W1p.gradient (a (ns i)) x - gu x‖ₑ +
-          ‖deriv F (W1p.value (a (ns i)) x) - deriv F (fu x)‖ₑ * ‖gu x‖ₑ := by
-      intro i x
-      have hsplit : deriv F (W1p.value (a (ns i)) x) • W1p.gradient (a (ns i)) x -
-          deriv F (fu x) • gu x =
-          deriv F (W1p.value (a (ns i)) x) • (W1p.gradient (a (ns i)) x - gu x) +
-            (deriv F (W1p.value (a (ns i)) x) - deriv F (fu x)) • gu x := by
-        rw [smul_sub, sub_smul]; abel
-      rw [hsplit]
-      refine le_trans (enorm_add_le _ _) (add_le_add ?_ ?_)
-      · rw [enorm_smul]
-        gcongr
-        simpa [← ofReal_norm] using ENNReal.ofReal_le_ofReal (hMr (W1p.value (a (ns i)) x))
-      · rw [enorm_smul]
-    have hmeas : ∀ i, AEMeasurable (fun x => (M : ℝ≥0∞) * ‖W1p.gradient (a (ns i)) x - gu x‖ₑ)
-        (mu.restrict (V : Set E)) := fun i =>
-      (((Lp.aestronglyMeasurable (W1p.gradient (a (ns i)))).sub hgu_meas).enorm).const_mul _
-    have hB : Tendsto (fun i => (M : ℝ≥0∞) *
-        ∫⁻ x in (V : Set E), ‖W1p.gradient (a (ns i)) x - gu x‖ₑ ∂mu) atTop (𝓝 0) := by
-      simpa using ENNReal.Tendsto.const_mul (hsub _ hgrad1) (Or.inr ENNReal.coe_ne_top)
-    have hC : Tendsto (fun i => ∫⁻ x in (V : Set E),
-        ‖deriv F (W1p.value (a (ns i)) x) - deriv F (fu x)‖ₑ * ‖gu x‖ₑ ∂mu) atTop (𝓝 0) := by
-      have h0 : (0 : ℝ≥0∞) = ∫⁻ _x in (V : Set E), (0 : ℝ≥0∞) ∂mu := by simp
-      rw [h0]
-      refine tendsto_lintegral_of_dominated_convergence'
-        (fun x => (2 * M : ℝ≥0∞) * ‖gu x‖ₑ)
-        (fun i => ((((hcont.comp_aestronglyMeasurable
-          (Lp.aestronglyMeasurable (W1p.value (a (ns i))))).sub
-          (hcont.comp_aestronglyMeasurable hfu_meas)).enorm).mul hgu_meas.enorm))
-        (fun i => ?_) ?_ ?_
-      · filter_upwards with x
-        gcongr
-        have h2 : ‖deriv F (W1p.value (a (ns i)) x) - deriv F (fu x)‖ ≤ 2 * (M : ℝ) :=
-          le_trans (norm_sub_le _ _) (by linarith [hMr (W1p.value (a (ns i)) x), hMr (fu x)])
-        calc ‖deriv F (W1p.value (a (ns i)) x) - deriv F (fu x)‖ₑ
-            ≤ ENNReal.ofReal (2 * (M : ℝ)) := by
-              simpa [← ofReal_norm] using ENNReal.ofReal_le_ofReal h2
-          _ = (2 * M : ℝ≥0∞) := by
-              rw [ENNReal.ofReal_mul (by norm_num)]
-              simp [ENNReal.ofReal_ofNat, ENNReal.ofReal_coe_nnreal]
-      · have h2M : (2 * M : ℝ≥0∞) ≠ ∞ := ENNReal.mul_ne_top (by simp) ENNReal.coe_ne_top
-        rw [lintegral_const_mul' _ _ h2M]
-        exact ENNReal.mul_ne_top h2M hgu_int
-      · filter_upwards [hns_ae] with x hx
-        have hd : Tendsto (fun i => deriv F (W1p.value (a (ns i)) x) - deriv F (fu x)) atTop
-            (𝓝 0) := by
-          have h1 : Tendsto (fun i => deriv F (W1p.value (a (ns i)) x)) atTop
-              (𝓝 (deriv F (fu x))) := (hcont.tendsto (fu x)).comp hx
-          simpa using h1.sub (tendsto_const_nhds (x := deriv F (fu x)))
-        have h2 : Tendsto (fun i => ‖deriv F (W1p.value (a (ns i)) x) - deriv F (fu x)‖ₑ) atTop
-            (𝓝 0) := by
-          simpa [Function.comp_def] using (continuous_enorm.tendsto (0 : ℝ)).comp hd
-        simpa using ENNReal.Tendsto.mul_const h2 (Or.inr enorm_ne_top)
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (by simpa using hB.add hC)
+      ‖F (W1p.value (a (ns i)) x) - F (W1p.value w x)‖ₑ ∂mu) atTop (𝓝 0) := by
+    have h1 := ENNReal.Tendsto.const_mul (a := M) ((tendsto_lintegral_enorm_sub_of_tendsto_Lp
+      hval).comp hns.tendsto_atTop) (Or.inr ENNReal.coe_ne_top)
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (by simpa using h1)
       (fun _ => zero_le) fun i => ?_
-    calc ∫⁻ x in (V : Set E), ‖innerSL ℝ (deriv F (W1p.value (a (ns i)) x) •
-            W1p.gradient (a (ns i)) x) - innerSL ℝ (deriv F (fu x) • gu x)‖ₑ ∂mu
-        = ∫⁻ x in (V : Set E), ‖deriv F (W1p.value (a (ns i)) x) • W1p.gradient (a (ns i)) x -
-            deriv F (fu x) • gu x‖ₑ ∂mu := by
-          exact lintegral_congr fun x => hnorm i x
-      _ ≤ ∫⁻ x in (V : Set E), ((M : ℝ≥0∞) * ‖W1p.gradient (a (ns i)) x - gu x‖ₑ +
-            ‖deriv F (W1p.value (a (ns i)) x) - deriv F (fu x)‖ₑ * ‖gu x‖ₑ) ∂mu :=
-          lintegral_mono fun x => hpt i x
-      _ = (M : ℝ≥0∞) * (∫⁻ x in (V : Set E), ‖W1p.gradient (a (ns i)) x - gu x‖ₑ ∂mu) +
-            ∫⁻ x in (V : Set E), ‖deriv F (W1p.value (a (ns i)) x) - deriv F (fu x)‖ₑ *
-              ‖gu x‖ₑ ∂mu := by
-          rw [lintegral_add_left' (hmeas i), lintegral_const_mul' _ _ ENNReal.coe_ne_top]
-  exact hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub
-    ((locallyIntegrableOn_comp_value hlip u).mono_set hVsub)
-    (fun v => (locallyIntegrableOn_deriv_smul_gradient hF hM u v).mono_set hVsub)
-    hchain hconv1 hconv2
+    rw [← lintegral_const_mul' _ _ ENNReal.coe_ne_top]
+    refine lintegral_mono fun x => ?_
+    rw [← edist_eq_enorm_sub, ← edist_eq_enorm_sub]
+    exact hlip _ _
+  -- the gradients converge in `L¹(V)`: the coefficient is bounded and continuous
+  refine ((hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub
+    (U := fun i x => innerSL ℝ
+      (deriv F (W1p.value (a (ns i)) x) • W1p.gradient (a (ns i)) x))
+    (locallyIntegrableOn_comp_value hlip w) (locallyIntegrableOn_deriv_smul_gradient hF hM w)
+    (fun i => hphi (ns i) ▸ hasWeakFDerivOn_comp_restrictL_ofTestFunctionₗ hF hVΩ _)
+    hconv1 (by simpa only [enorm_innerSL_sub] using (tendsto_lintegral_enorm_smul_sub
+      (fun i => hcont.comp_aestronglyMeasurable (Lp.aestronglyMeasurable _))
+      (fun i => Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _)
+      (fun _ => .of_forall fun _ => hM _)
+      (hns_ae.mono fun x hx => (hcont.tendsto _).comp hx)
+      ((Lp.memLp (W1p.gradient w)).integrable Fact.out).2.ne
+      ((tendsto_lintegral_enorm_sub_of_tendsto_Lp hgrad).comp hns.tendsto_atTop)))).congr_ae
+    ?_).congr_ae_deriv ?_
+  · filter_upwards [W1p.value_restrictL_ae hVΩ u] with x hx; rw [hx]
+  · filter_upwards [W1p.value_restrictL_ae hVΩ u, W1p.gradient_restrictL_ae hVΩ u] with x hx hg
+    rw [hx, hg]
+
 
 /-- **The local chain rule for `W^{1,p}(Ω)` when `1 ≤ p < ∞`.** If `F` is `C¹` with
 derivative bounded by `M`, then `F ∘ u` has the weak gradient `F'(u) ∇u` on `Ω`. No boundary
@@ -715,12 +612,8 @@ private theorem memLp_posPartAboveGradient (k : ℝ) (u : W1p mu Omega p) :
 
 /-- The pointwise truncation `(u - k)⁺` is in `Lᵖ` when `u` is and `k ≥ 0`. -/
 theorem W1p.memLp_posPartAbove {k : ℝ} (hk : 0 ≤ k) (u : W1p mu Omega p) :
-    MemLp (fun x => max (W1p.value u x - k) 0) p (mu.restrict Omega) := by
-  have hlip : LipschitzWith 1 (fun t : ℝ => max (t - k) 0) := by
-    refine LipschitzWith.of_dist_le_mul fun x y => ?_
-    simpa only [NNReal.coe_one, one_mul, dist_sub_right] using
-      MeasureTheory.Lp.lipschitzWith_pos_part.dist_le_mul (x - k) (y - k)
-  exact hlip.comp_memLp (by simp [hk]) (Lp.memLp (W1p.value u))
+    MemLp (fun x => max (W1p.value u x - k) 0) p (mu.restrict Omega) :=
+  (lipschitzWith_max_sub_const_zero k).comp_memLp (by simp [hk]) (Lp.memLp (W1p.value u))
 
 /-- Raising the level of an `Lᵖ` positive truncation preserves its `Lᵖ` membership. -/
 theorem W1p.memLp_posPartAbove_of_le (u : W1p mu Omega p) {k l : ℝ} (hkl : k ≤ l)
@@ -735,6 +628,22 @@ theorem W1p.memLp_posPartAbove_of_le (u : W1p mu Omega p) {k l : ℝ} (hkl : k �
 
 variable [FiniteDimensional ℝ E]
 
+/-- The chain rule for the smooth approximation `posPartApprox δ (u - k)` of `(u - k)⁺`. -/
+private theorem hasWeakFDerivOn_posPartApprox_comp (hp : p ≠ ∞) (k δ : ℝ)
+    (u : W1p mu Omega p) :
+    HasWeakFDerivOn mu Omega (fun x => posPartApprox δ (W1p.value u x - k))
+      fun x => innerSL ℝ (deriv (posPartApprox δ) (W1p.value u x - k) • W1p.gradient u x) := by
+  let F : ℝ → ℝ := fun t => posPartApprox δ (t - k)
+  have hderiv (t : ℝ) : deriv F t = deriv (posPartApprox δ) (t - k) := by
+    simpa [F, Function.comp_def, deriv_posPartApprox] using
+      ((hasDerivAt_posPartApprox δ (t - k)).comp t
+        (HasDerivAt.sub_const k (hasDerivAt_id t))).deriv
+  have hM : ∀ t, ‖deriv F t‖₊ ≤ 1 := fun t => by
+    rw [hderiv]
+    exact nnnorm_deriv_posPartApprox_le δ (t - k)
+  have hF : ContDiff ℝ 1 F := (contDiff_posPartApprox δ).comp (contDiff_id.sub contDiff_const)
+  simpa only [F, hderiv] using W1p.hasWeakFDerivOn_comp hp hF hM u
+
 /-- **For `1 ≤ p < ∞`, truncation above any real level is weakly differentiable**, with
 weak gradient `1_{u > k} ∇u`. -/
 theorem W1p.hasWeakFDerivOn_posPartAbove (hp : p ≠ ∞) (k : ℝ) (u : W1p mu Omega p) :
@@ -743,13 +652,7 @@ theorem W1p.hasWeakFDerivOn_posPartAbove (hp : p ≠ ∞) (k : ℝ) (u : W1p mu 
   set d : ℕ → ℝ := fun n => 1 / (n + 1 : ℝ)
   have hdpos : ∀ n, 0 < d n := fun n => by positivity
   have hd0 : Tendsto d atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat
-  -- local integrability of the two limits
-  have hlip : LipschitzWith 1 (fun t : ℝ => max (t - k) 0) := by
-    refine LipschitzWith.of_dist_le_mul fun x y => ?_
-    simpa only [NNReal.coe_one, one_mul, dist_sub_right] using
-      MeasureTheory.Lp.lipschitzWith_pos_part.dist_le_mul (x - k) (y - k)
-  have hvalLoc : LocallyIntegrableOn (fun x => max (W1p.value u x - k) 0) Omega mu :=
-    locallyIntegrableOn_comp_value hlip u
+  -- local integrability of the limit gradient
   have hgradLoc : ∀ v : E, LocallyIntegrableOn
       (fun x => innerSL ℝ (posPartAboveGradient k u x) v) Omega mu := by
     intro v
@@ -758,114 +661,43 @@ theorem W1p.hasWeakFDerivOn_posPartAbove (hp : p ≠ ∞) (k : ℝ) (u : W1p mu 
         |>.congr ?_)
     filter_upwards with x
     simp [real_inner_comm]
-  -- the chain rule applies to each smooth approximation of the positive part
-  have hchain : ∀ n,
-      HasWeakFDerivOn mu Omega (fun x => posPartApprox (d n) (W1p.value u x - k))
-        fun x => innerSL ℝ
-          (deriv (posPartApprox (d n)) (W1p.value u x - k) • W1p.gradient u x) := by
-    intro n
-    let F : ℝ → ℝ := fun t => posPartApprox (d n) (t - k)
-    have hF : ContDiff ℝ 1 F := by
-      exact (contDiff_posPartApprox (d n)).comp (contDiff_id.sub contDiff_const)
-    have hderiv (t : ℝ) : deriv F t = deriv (posPartApprox (d n)) (t - k) := by
-      simpa [F, Function.comp_def, deriv_posPartApprox] using
-        ((hasDerivAt_posPartApprox (d n) (t - k)).comp t
-          (HasDerivAt.sub_const k (hasDerivAt_id t))).deriv
-    have hM : ∀ t, ‖deriv F t‖₊ ≤ 1 := fun t => by
-      rw [hderiv]
-      exact nnnorm_deriv_posPartApprox_le (d n) (t - k)
-    simpa only [F, hderiv] using W1p.hasWeakFDerivOn_comp hp hF hM u
   rw [hasWeakFDerivOn_iff_forall_isCompact_closure]
   intro V hVc hVO
   have hVΩ : V ≤ Omega := SetLike.coe_subset_coe.mp (subset_closure.trans hVO)
-  have hVsub : (V : Set E) ⊆ (Omega : Set E) := SetLike.coe_subset_coe.mpr hVΩ
   have hres : mu.restrict (V : Set E) ≤ mu.restrict (Omega : Set E) :=
-    Measure.restrict_mono_set mu hVsub
-  have hfin : IsFiniteMeasure (mu.restrict (V : Set E)) :=
-    ⟨by
-      rw [Measure.restrict_apply_univ]
-      exact lt_of_le_of_lt (measure_mono subset_closure) hVc.measure_lt_top⟩
-  have hgu_meas : AEStronglyMeasurable (⇑(W1p.gradient u)) (mu.restrict (V : Set E)) :=
-    (Lp.aestronglyMeasurable (W1p.gradient u)).mono_measure hres
-  have hgu_int : ∫⁻ x in (V : Set E), ‖W1p.gradient u x‖ₑ ∂mu ≠ ∞ := by
-    have h1 : MemLp (⇑(W1p.gradient u)) 1 (mu.restrict (V : Set E)) :=
-      ((Lp.memLp (W1p.gradient u)).mono_measure hres).mono_exponent Fact.out
-    rw [← eLpNorm_one_eq_lintegral_enorm h1.aestronglyMeasurable]
-    exact h1.ne
+    Measure.restrict_mono_set mu (SetLike.coe_subset_coe.mpr hVΩ)
+  have hV : mu (V : Set E) ≠ ∞ := ((measure_mono subset_closure).trans_lt hVc.measure_lt_top).ne
+  have : IsFiniteMeasure (mu.restrict (V : Set E)) := isFiniteMeasure_restrict.2 hV
   -- the values converge uniformly, hence in `L¹(V)`
   have hconv1 : Tendsto (fun n => ∫⁻ x in (V : Set E),
       ‖posPartApprox (d n) (W1p.value u x - k) - max (W1p.value u x - k) 0‖ₑ ∂mu)
       atTop (𝓝 0) := by
-    have hb : ∀ n, ∫⁻ x in (V : Set E),
-        ‖posPartApprox (d n) (W1p.value u x - k) - max (W1p.value u x - k) 0‖ₑ ∂mu ≤
-        ENNReal.ofReal (d n) * mu (V : Set E) := by
-      intro n
-      calc ∫⁻ x in (V : Set E),
-            ‖posPartApprox (d n) (W1p.value u x - k) - max (W1p.value u x - k) 0‖ₑ ∂mu
-          ≤ ∫⁻ _x in (V : Set E), ENNReal.ofReal (d n) ∂mu := by
-            refine lintegral_mono fun x => ?_
-            rw [← ofReal_norm]
-            exact ENNReal.ofReal_le_ofReal
-              (by simpa [Real.norm_eq_abs] using abs_posPartApprox_sub_le (hdpos n) _)
-        _ = ENNReal.ofReal (d n) * mu (V : Set E) := by
-            rw [setLIntegral_const]
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_ (fun _ => zero_le) hb
-    have hV : mu (V : Set E) ≠ ∞ :=
-      (lt_of_le_of_lt (measure_mono subset_closure) hVc.measure_lt_top).ne
-    have : Tendsto (fun n => ENNReal.ofReal (d n)) atTop (𝓝 0) := by
-      simpa [Function.comp_def] using (ENNReal.continuous_ofReal.tendsto (0 : ℝ)).comp hd0
-    simpa using ENNReal.Tendsto.mul_const this (Or.inr hV)
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+      (by simpa using ENNReal.Tendsto.mul_const (ENNReal.tendsto_ofReal hd0) (Or.inr hV))
+      (fun _ => zero_le) fun n => ?_
+    rw [← setLIntegral_const]
+    refine lintegral_mono fun x => ?_
+    rw [← ofReal_norm]
+    exact ENNReal.ofReal_le_ofReal
+      (by simpa [Real.norm_eq_abs] using abs_posPartApprox_sub_le (hdpos n) _)
   -- the gradients converge by dominated convergence
-  have hconv2 : Tendsto (fun n => ∫⁻ x in (V : Set E),
-      ‖innerSL ℝ (deriv (posPartApprox (d n)) (W1p.value u x - k) • W1p.gradient u x) -
-        innerSL ℝ (posPartAboveGradient k u x)‖ₑ ∂mu) atTop (𝓝 0) := by
-    have h0 : (0 : ℝ≥0∞) = ∫⁻ _x in (V : Set E), (0 : ℝ≥0∞) ∂mu := by simp
-    rw [h0]
-    refine tendsto_lintegral_of_dominated_convergence' (fun x => ‖W1p.gradient u x‖ₑ)
-      (fun n => ?_) (fun n => ?_) hgu_int ?_
-    · refine AEStronglyMeasurable.enorm ?_
-      refine AEStronglyMeasurable.sub ?_ ?_
-      · exact (innerSL ℝ (E := E)).continuous.comp_aestronglyMeasurable
-          (((contDiff_one_iff_deriv.mp (contDiff_posPartApprox (d n))).2.comp_aestronglyMeasurable
-            (((Lp.aestronglyMeasurable (W1p.value u)).mono_measure hres).sub
-              aestronglyMeasurable_const)).smul hgu_meas)
-      · exact (innerSL ℝ (E := E)).continuous.comp_aestronglyMeasurable
-          ((aestronglyMeasurable_posPartAboveGradient k u).mono_measure hres)
-    · filter_upwards with x
-      have hnorm : ‖innerSL ℝ
-          (deriv (posPartApprox (d n)) (W1p.value u x - k) • W1p.gradient u x) -
-          innerSL ℝ (posPartAboveGradient k u x)‖ₑ =
-          ‖deriv (posPartApprox (d n)) (W1p.value u x - k) • W1p.gradient u x -
-            posPartAboveGradient k u x‖ₑ := by
-        exact enorm_innerSL_sub _ _
-      rw [hnorm, posPartAboveGradient_apply, ← sub_smul, enorm_smul]
-      refine mul_le_of_le_one_left' ?_
-      simp only [deriv_posPartApprox]
-      rw [← ofReal_norm, ← ENNReal.ofReal_one]
-      refine ENNReal.ofReal_le_ofReal ?_
-      have h1 := Real.smoothTransition.nonneg ((W1p.value u x - k) / d n)
-      have h2 := Real.smoothTransition.le_one ((W1p.value u x - k) / d n)
-      have hite : (if k < W1p.value u x then (1 : ℝ) else 0) = 1 ∨
-          (if k < W1p.value u x then (1 : ℝ) else 0) = 0 := by
-        by_cases h : k < W1p.value u x <;> simp [h]
-      rw [Real.norm_eq_abs, abs_le]
-      rcases hite with h | h <;> rw [h] <;> constructor <;> linarith
-    · filter_upwards with x
-      have hd := tendsto_deriv_posPartApprox_sub_smul_gradient k u hdpos hd0 x
-      have : Tendsto
-          (fun n => deriv (posPartApprox (d n)) (W1p.value u x - k) • W1p.gradient u x -
-            posPartAboveGradient k u x) atTop (𝓝 0) := by
-        simpa using hd.sub (tendsto_const_nhds (x := posPartAboveGradient k u x))
-      have henorm : Tendsto (fun n =>
-          ‖deriv (posPartApprox (d n)) (W1p.value u x - k) • W1p.gradient u x -
-            posPartAboveGradient k u x‖ₑ) atTop (𝓝 0) := by
-        simpa [Function.comp_def] using (continuous_enorm.tendsto (0 : E)).comp this
-      refine henorm.congr fun n => ?_
-      exact (enorm_innerSL_sub
-        (deriv (posPartApprox (d n)) (W1p.value u x - k) • W1p.gradient u x)
-        (posPartAboveGradient k u x)).symm
-  exact hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub (hvalLoc.mono_set hVsub)
-    (fun v => (hgradLoc v).mono_set hVsub) (fun n => (hchain n).mono hVΩ) hconv1 hconv2
+  have hconv2 := tendsto_lintegral_enorm_smul_sub (ν := mu.restrict V) (M := 1)
+    (c := fun n x => deriv (posPartApprox (d n)) (W1p.value u x - k))
+    (g := fun _ => W1p.gradient u) (c₀ := fun x => if k < W1p.value u x then 1 else 0)
+    (fun n => (contDiff_one_iff_deriv.mp (contDiff_posPartApprox (d n))).2.comp_aestronglyMeasurable
+      (((Lp.aestronglyMeasurable _).mono_measure hres).sub aestronglyMeasurable_const))
+    (fun _ => (Lp.aestronglyMeasurable _).mono_measure hres)
+    ((Lp.aestronglyMeasurable _).mono_measure hres)
+    (fun n => .of_forall fun x => nnnorm_deriv_posPartApprox_le _ _)
+    (.of_forall fun x => by
+      simpa only [sub_pos] using tendsto_deriv_posPartApprox hdpos hd0 (W1p.value u x - k))
+    (((Lp.memLp (W1p.gradient u)).mono_measure hres).integrable Fact.out).2.ne (by simp)
+  simp only [← posPartAboveGradient_apply] at hconv2
+  exact hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub
+    ((locallyIntegrableOn_comp_value (lipschitzWith_max_sub_const_zero k) u).mono_set hVΩ)
+    (fun v => (hgradLoc v).mono_set hVΩ)
+    (fun n => (hasWeakFDerivOn_posPartApprox_comp hp k (d n) u).mono hVΩ) hconv1
+    (by simpa only [enorm_innerSL_sub, posPartAboveGradient] using hconv2)
 
 /-- **For `1 ≤ p < ∞`, the positive part of a Sobolev function is weakly differentiable**, with
 weak gradient `1_{u > 0} ∇u`. -/
