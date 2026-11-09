@@ -373,30 +373,29 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_mul_rpow_mul_enorm_gradient_of_eq_ba
   rw [hB, ENNReal.ofReal_rpow_of_nonneg (by positivity) he, ← ENNReal.ofReal_mul (by
     rw [hOmega, hBreal]; positivity)]
   refine ENNReal.ofReal_le_ofReal ?_
-  rw [hOmega, hBreal]
-  -- `diam B(c, R) ≤ 2R`, and `ω ^ (1 - 1/n) (Rⁿ ω) ^ (1/n - δ) / (Rⁿ ω) = ω ^ (-δ) R ^ (-n δ)`.
+  rw [hOmega]
+  -- `ω ^ (1 - 1/n) (diam B) ^ n / μ(B) ≤ 2 ^ n ω ^ (-1/n)`, and
+  -- `ω ^ (-1/n) (Rⁿ ω) ^ (1/n - δ) = ω ^ (-δ) R ^ (1 - n δ)`.
   calc (n : ℝ)⁻¹ * ω ^ (1 - (n : ℝ)⁻¹) * ((1 - δ) / ((n : ℝ)⁻¹ - δ)) ^ (1 - δ) *
-        diam (ball c R) ^ n / (R ^ n * ω) * (R ^ n * ω) ^ ((n : ℝ)⁻¹ - δ)
-      ≤ (n : ℝ)⁻¹ * ω ^ (1 - (n : ℝ)⁻¹) * ((1 - δ) / ((n : ℝ)⁻¹ - δ)) ^ (1 - δ) *
-        (2 * R) ^ n / (R ^ n * ω) * (R ^ n * ω) ^ ((n : ℝ)⁻¹ - δ) := by
-        gcongr
-        exact diam_ball hR.le
+        diam (ball c R) ^ n / mu.real (ball c R) * (R ^ n * ω) ^ ((n : ℝ)⁻¹ - δ)
+      = (n : ℝ)⁻¹ * ((1 - δ) / ((n : ℝ)⁻¹ - δ)) ^ (1 - δ) *
+        (ω ^ (1 - (n : ℝ)⁻¹) * diam (ball c R) ^ n / mu.real (ball c R)) *
+        (R ^ n * ω) ^ ((n : ℝ)⁻¹ - δ) := by ring
+    _ ≤ (n : ℝ)⁻¹ * ((1 - δ) / ((n : ℝ)⁻¹ - δ)) ^ (1 - δ) * (2 ^ n / ω ^ (n : ℝ)⁻¹) *
+        (R ^ n * ω) ^ ((n : ℝ)⁻¹ - δ) := by
+        gcongr _ * ?_ * _
+        exact mu.addHaar_real_ball_rpow_mul_diam_ball_pow_div_le c hR
     _ = _ := by
         have hR1 : (R ^ n) ^ ((n : ℝ)⁻¹ - δ) = R ^ (1 - n * δ) := by
           rw [← Real.rpow_natCast, ← Real.rpow_mul hR.le]
           congr 1
           field_simp
-        have hω' : ω ^ (1 - (n : ℝ)⁻¹) * ω ^ ((n : ℝ)⁻¹ - δ) = ω * ω ^ (-δ) := by
-          rw [← Real.rpow_add hω, show 1 - (n : ℝ)⁻¹ + ((n : ℝ)⁻¹ - δ) = 1 + -δ by ring,
-            Real.rpow_add hω, Real.rpow_one]
-        have hR0 : R ≠ 0 := hR.ne'
-        have hω0 : ω ≠ 0 := hω.ne'
-        rw [Real.mul_rpow (by positivity) hω.le, hR1, mul_pow]
-        calc _ = (n : ℝ)⁻¹ * ((1 - δ) / ((n : ℝ)⁻¹ - δ)) ^ (1 - δ) * 2 ^ n * R ^ (1 - n * δ) *
-              (ω ^ (1 - (n : ℝ)⁻¹) * ω ^ ((n : ℝ)⁻¹ - δ)) * (R ^ n / (R ^ n * ω)) := by ring
-          _ = _ := by
-            rw [hω']
-            field_simp
+        have hω' : ω ^ ((n : ℝ)⁻¹ - δ) / ω ^ (n : ℝ)⁻¹ = ω ^ (-δ) := by
+          rw [← Real.rpow_sub hω]
+          congr 1
+          ring
+        rw [Real.mul_rpow (by positivity) hω.le, hR1, ← hω']
+        ring
 
 /-- **The Sobolev–Poincaré inequality on a ball inside the domain.** If `u ∈ W^{1,p}(Ω)` and
 `B(c, R) ⊆ Ω`, then for `p ≤ q < ∞` with `δ = 1/p - 1/q < 1/n`,
