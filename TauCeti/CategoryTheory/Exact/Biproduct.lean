@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.CategoryTheory.Exact.ExactStructure
-public import TauCeti.CategoryTheory.Exact.Split
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct
 
 /-!
@@ -30,8 +29,6 @@ so the componentwise short complex `CategoryTheory.ShortComplex.biprod` itself i
 * `TauCeti.ExactStructure.isInflation_biprod`: binary direct sums preserve inflations.
 * `TauCeti.ExactStructure.isDeflation_biprod`: binary direct sums preserve deflations.
 * `TauCeti.ExactStructure.conflation_biprod`: binary direct sums preserve conflations.
-* `TauCeti.ExactStructure.conflation_iso_hom_comp`: precomposing the inflation of a conflation
-  with an isomorphism gives a conflation.
 
 ## References
 
@@ -127,14 +124,6 @@ theorem conflation_biprod (E : ExactStructure C) {S₁ S₂ : ShortComplex C}
       change E.inflations (S₁.biprod S₂).f
       rw [ShortComplex.biprod_f]
       exact E.isInflation_biprod (E.isInflation_f hS₁) (E.isInflation_f hS₂))
-
-/-- Precomposing the inflation of a conflation with an isomorphism onto its first object gives a
-conflation. -/
-theorem conflation_iso_hom_comp (E : ExactStructure C) {S : ShortComplex C} {M : C}
-    (e : M ≅ S.X₁) (hS : E.Conflation S) :
-    E.Conflation (ShortComplex.mk (e.hom ≫ S.f) S.g (by simp)) :=
-  E.conflation_of_iso (ShortComplex.isoMk e.symm (Iso.refl _) (Iso.refl _)
-    (by simp) (by simp)) hS
 
 end ExactStructure
 
