@@ -74,6 +74,9 @@ the whole ball of radius `0` around its atom, so it is not finite.
 * `TauCeti.WassersteinSpace.dense_setOfPred_ae_mem_finset` — the finitely supported laws are dense
   in `P_p (X)` on a pseudometric ground space with `[StandardBorelSpace X]`, `[BorelSpace X]`,
   and `[SecondCountableTopology X]`;
+* `TauCeti.exists_natWeights_wassersteinEDist_le` — all three steps combined: a law of finite
+  moment is within `3 * δ` of a law with natural multiplicities on finitely many terms of a dense
+  sequence.
 * `TauCeti.wassersteinQuantizationError` and `TauCeti.tendsto_wassersteinQuantizationError` — the
   `N`-point quantization error and its convergence to `0`.
 
@@ -400,6 +403,50 @@ theorem dense_setOfPred_ae_mem_finset (hp_top : p ≠ ∞) :
   linarith
 
 end WassersteinSpace
+
+section NatWeightsDense
+
+/-- Approximation by laws with rational weights on a dense sequence: a law of finite `p`-moment is
+within `3 * δ` in `W_p` of a law with natural multiplicities on finitely many terms of the
+dense sequence `u`, by the three imported approximation steps (finite support, moving the atoms
+onto terms of `u`, rounding the weights) each costing `δ`. -/
+theorem exists_natWeights_wassersteinEDist_le [PseudoMetricSpace X] [StandardBorelSpace X]
+    [BorelSpace X] {u : ℕ → X} (hu : DenseRange u) (hp1 : 1 ≤ p)
+    (hp_top : p ≠ ∞)
+    {μ : Measure X} [IsProbabilityMeasure μ] (hμ : HasFiniteMoment p μ) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ (S : Finset X) (m : X → ℕ), (∀ x ∈ S, x ∈ Set.range u) ∧ 0 < ∑ x ∈ S, m x ∧
+      wassersteinEDist p μ
+        ((∑ x ∈ S, (m x : ℝ≥0∞))⁻¹ • ∑ x ∈ S, (m x : ℝ≥0∞) • Measure.dirac x) ≤
+        ENNReal.ofReal (3 * δ) := by
+  classical
+  have : TopologicalSpace.SeparableSpace X := ⟨⟨Set.range u, Set.countable_range u, hu⟩⟩
+  have hδ' : ENNReal.ofReal δ ≠ 0 := by simpa using hδ
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp1).ne'
+  -- step one: approximate by a law carried by a finite set
+  obtain ⟨s, ν₁, hν₁, hnull₁, -, hle₁⟩ := exists_ae_mem_finset_wassersteinEDist_le hp1 hp_top hμ hδ'
+  -- step two: move its atoms onto terms of the dense sequence
+  have : IsProbabilityMeasure ν₁ := hν₁
+  obtain ⟨T, hT, hTu, hle₂⟩ := exists_map_range_wassersteinEDist_le measurable_edist hu hδ ν₁ p
+  have hν₂ : IsProbabilityMeasure (ν₁.map T) := inferInstance
+  have hnull₂ : (ν₁.map T) ((↑(s.image T) : Set X)ᶜ) = 0 := by
+    rw [Measure.map_apply hT (s.image T).measurableSet.compl]
+    refine measure_mono_null (fun x hx ↦ ?_) hnull₁
+    simp only [Finset.coe_image, mem_preimage, mem_compl_iff, mem_image, Finset.mem_coe,
+      not_exists, not_and] at hx ⊢
+    exact fun hxs ↦ hx x hxs rfl
+  -- step three: round the weights to a common denominator
+  obtain ⟨m, hmpos, hle₃⟩ :=
+    exists_nat_weights_wassersteinEDist_le (ν := ν₁.map T) measurable_edist hp0 hp_top hnull₂ hδ'
+  refine ⟨s.image T, m, fun x hx ↦ ?_, hmpos, ?_⟩
+  · obtain ⟨y, -, rfl⟩ := Finset.mem_image.1 hx
+    exact hTu y
+  · refine (wassersteinEDist_triangle measurable_edist hp1 μ ν₁ _).trans ?_
+    refine (add_le_add hle₁ ((wassersteinEDist_triangle measurable_edist hp1 ν₁ (ν₁.map T) _).trans
+      (add_le_add hle₂ hle₃))).trans_eq ?_
+    rw [← ENNReal.ofReal_add hδ.le hδ.le, ← ENNReal.ofReal_add hδ.le (by positivity)]
+    ring_nf
+
+end NatWeightsDense
 
 section Quantization
 

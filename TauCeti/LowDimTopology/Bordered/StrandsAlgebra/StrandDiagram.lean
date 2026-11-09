@@ -96,6 +96,10 @@ theorem ext {φ ψ : StrandDiagram α} (h : ∀ i, φ i = ψ i) : φ = ψ :=
 theorem toPEquiv_injective : Function.Injective (toPEquiv : StrandDiagram α → α ≃. α) :=
   fun _ _ h ↦ ext fun i ↦ congrArg (fun f : α ≃. α ↦ f i) h
 
+/-- A finite linear order has finitely many strand diagrams. -/
+instance [Finite α] : Finite (StrandDiagram α) :=
+  Finite.of_injective _ DFunLike.coe_injective
+
 /-- Every strand of a diagram goes upwards. -/
 theorem le_of_mem (φ : StrandDiagram α) {i j : α} (h : j ∈ φ i) : i ≤ j :=
   φ.le_of_mem' h
@@ -161,14 +165,6 @@ theorem trans_assoc (φ ψ χ : StrandDiagram α) :
     (φ.trans ψ).trans χ = φ.trans (ψ.trans χ) :=
   toPEquiv_injective (PEquiv.trans_assoc _ _ _)
 
-/-- A strand of a composite is horizontal exactly when it is horizontal in both pieces. -/
-theorem mem_trans_self_iff {φ ψ : StrandDiagram α} {i : α} :
-    i ∈ φ.trans ψ i ↔ i ∈ φ i ∧ i ∈ ψ i := by
-  refine ⟨fun h ↦ ?_, fun h ↦ mem_trans.2 ⟨i, h⟩⟩
-  obtain ⟨j, hj, hj'⟩ := mem_trans.1 h
-  obtain rfl := le_antisymm (ψ.le_of_mem hj') (φ.le_of_mem hj)
-  exact ⟨hj, hj'⟩
-
 /-- The identity diagram on a finite set `s`: one horizontal strand at each point of `s`. -/
 def idOn (s : Finset α) : StrandDiagram α where
   toPEquiv := PEquiv.ofSet (s : Set α)
@@ -182,12 +178,12 @@ theorem mem_idOn {s : Finset α} {i j : α} : j ∈ idOn s i ↔ i = j ∧ i ∈
   rw [Option.mem_def, idOn_apply]
   split_ifs with h <;> simp [h]
 
-instance [Finite α] : Finite (StrandDiagram α) :=
-  Finite.of_injective _ (DFunLike.coe_injective (F := StrandDiagram α))
-
 section Finite
 
 variable [Fintype α]
+
+instance : DecidableEq (StrandDiagram α) :=
+  fun φ ψ ↦ decidable_of_iff (∀ i, φ i = ψ i) ⟨ext, fun h _ ↦ h ▸ rfl⟩
 
 /-- The starting points of the strands of `φ`, the set `S` of the partial bijection `φ : S → T`. -/
 def source (φ : StrandDiagram α) : Finset α :=
@@ -208,6 +204,35 @@ theorem mem_target {φ : StrandDiagram α} {j : α} : j ∈ φ.target ↔ ∃ i,
 theorem apply_eq_none_of_notMem_source {φ : StrandDiagram α} {i : α} (h : i ∉ φ.source) :
     φ i = none :=
   Option.eq_none_iff_forall_ne_some.2 fun j hj ↦ h (mem_source.2 ⟨j, hj⟩)
+
+/-- The end point of the strand starting at a point of the source. -/
+theorem getD_mem {φ : StrandDiagram α} {i : α} (hi : i ∈ φ.source) : (φ i).getD i ∈ φ i := by
+  obtain ⟨j, hj⟩ := mem_source.1 hi
+  rw [Option.mem_def] at hj ⊢
+  simp [hj]
+
+/-- The strand starting at a point of the source goes upwards. -/
+theorem le_getD {φ : StrandDiagram α} {i : α} (hi : i ∈ φ.source) : i ≤ (φ i).getD i :=
+  φ.le_of_mem (getD_mem hi)
+
+/-- The end points of a diagram are the images of its starting points. -/
+theorem target_eq_image (φ : StrandDiagram α) :
+    φ.target = φ.source.image fun i ↦ (φ i).getD i := by
+  ext j
+  simp only [mem_target, Finset.mem_image]
+  refine ⟨fun ⟨i, hi⟩ ↦ ⟨i, mem_source.2 ⟨j, hi⟩, ?_⟩, fun ⟨i, hi, hj⟩ ↦ ⟨i, hj ▸ getD_mem hi⟩⟩
+  rw [Option.mem_def] at hi
+  simp [hi]
+
+/-- Distinct strands of a diagram end at distinct points. -/
+theorem injOn_getD (φ : StrandDiagram α) : Set.InjOn (fun i ↦ (φ i).getD i) φ.source :=
+  fun i hi j hj h ↦ by
+    have h : (φ i).getD i = (φ j).getD j := h
+    exact φ.toPEquiv.inj (getD_mem hi) (h ▸ getD_mem hj)
+
+/-- A diagram has as many end points as starting points. -/
+theorem card_target (φ : StrandDiagram α) : #φ.target = #φ.source := by
+  rw [target_eq_image, card_image_of_injOn φ.injOn_getD]
 
 @[simp]
 theorem source_idOn (s : Finset α) : (idOn s).source = s := by
@@ -368,54 +393,6 @@ theorem inversions_idOn (s : Finset α) : (idOn s).inversions = ∅ := by
 @[simp]
 theorem inversionCount_idOn (s : Finset α) : (idOn s).inversionCount = 0 := by
   simp [inversionCount_def]
-
-/-- **Strands passing over a point.** Let `x` be a point that is not the end point of a strand of
-`φ` starting elsewhere. The starting points of `φ` below `x` are those of the strands passing over
-`x` and those of the strands ending below `x`, so the number of strands passing over `x` is the
-number of starting points below `x` minus the number of ending points below `x`. -/
-theorem card_filter_lt_lt_endpoint_add_card_filter_target_lt {φ : StrandDiagram α} {x : α}
-    (hx : x ∈ φ x ∨ x ∉ φ.target) :
-    #{i ∈ φ.source | i < x ∧ x < φ.endpoint i} + #{j ∈ φ.target | j < x} =
-      #{i ∈ φ.source | i < x} := by
-  have h := card_filter_add_card_filter_not (s := {i ∈ φ.source | i < x}) (x < φ.endpoint ·)
-  simp only [filter_filter] at h
-  rw [← h, card_nbij' (s := {i ∈ φ.source | i < x ∧ ¬x < φ.endpoint i}) φ.endpoint φ.startpoint]
-  · intro i hi
-    simp only [coe_filter, Set.mem_ofPred_eq, not_lt] at hi ⊢
-    refine ⟨endpoint_mem_target hi.1, lt_of_le_of_ne hi.2.2 fun he ↦ ?_⟩
-    have hmem : x ∈ φ i := he ▸ endpoint_mem hi.1
-    rcases hx with hx | hx
-    · exact hi.2.1.ne (φ.eq_of_mem_of_mem hmem hx)
-    · exact hx (mem_target.2 ⟨i, hmem⟩)
-  · intro j hj
-    simp only [coe_filter, Set.mem_ofPred_eq, not_lt] at hj ⊢
-    refine ⟨startpoint_mem_source hj.1, ?_, by rw [endpoint_startpoint hj.1]; exact hj.2.le⟩
-    exact (φ.le_of_mem (mem_startpoint hj.1)).trans_lt hj.2
-  · intro i hi
-    simp only [coe_filter, Set.mem_ofPred_eq] at hi
-    exact startpoint_endpoint hi.1
-  · intro j hj
-    simp only [coe_filter, Set.mem_ofPred_eq] at hj
-    exact endpoint_startpoint hj.1
-
-/-- **Crossings at a horizontal strand.** If `φ` has a horizontal strand at `p`, its crossings
-are those of the other strands among themselves, together with one crossing for each strand of `φ`
-passing over `p`. -/
-theorem inversionCount_eq_of_mem {φ : StrandDiagram α} {p : α} (hp : p ∈ φ p) :
-    φ.inversionCount = #((φ.source.erase p).inversions φ.endpoint) +
-      #{i ∈ φ.source | i < p ∧ p < φ.endpoint i} := by
-  have hpS : p ∈ φ.source := mem_source.2 ⟨p, hp⟩
-  have key := card_inversions_insert φ.endpoint (notMem_erase p φ.source)
-  rw [insert_erase hpS, endpoint_eq_of_mem hp] at key
-  have h₂ : #{b ∈ φ.source.erase p | b < p ∧ p < φ.endpoint b} =
-      #{i ∈ φ.source | i < p ∧ p < φ.endpoint i} := by
-    rw [filter_erase, erase_eq_of_notMem (by simp)]
-  have h₃ : #{b ∈ φ.source.erase p | p < b ∧ φ.endpoint b < p} = 0 := by
-    rw [card_eq_zero, filter_eq_empty_iff]
-    intro b hb ⟨hpb, hbp⟩
-    exact (hpb.trans_le (φ.le_of_mem (endpoint_mem (mem_of_mem_erase hb)))).not_gt hbp
-  rw [inversionCount_def, inversions_def, key]
-  omega
 
 /-- **Inversion counts are subadditive.** Every crossing of the concatenation of two strand
 diagrams comes from a crossing of one of them: either the two strands already cross in `φ`, or

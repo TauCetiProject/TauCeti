@@ -60,8 +60,6 @@ Hence `d (d φ)` is a sum of terms appearing twice, which is zero in characteris
 ## Main results
 
 * `TauCeti.StrandsAlgebra.differential_of`: the differential of a basis element.
-* `TauCeti.StrandsAlgebra.repr_differential_apply`: the coefficients of the differential, summed
-  over the resolutions giving a diagram.
 * `TauCeti.StrandsAlgebra.differential_idem`: the idempotents are cycles.
 * `TauCeti.StrandsAlgebra.differential_mul`: the Leibniz rule.
 * `TauCeti.StrandsAlgebra.differential_differential`: the differential squares to zero.
@@ -364,28 +362,26 @@ theorem differential_of (φ : StrandDiagram α) :
     differential R α (of φ) = ∑ p ∈ φ.resolvableInversions, of (φ.resolve p) := by
   rw [differential, ← basis_apply, Module.Basis.constr_basis]
 
-open scoped Classical in
-/-- The coefficients of the differential in the basis of strand diagrams: the coefficient of `χ`
-in the differential of `x` sums the coefficients of `x` over the pairs of a diagram and a
-resolvable crossing of it whose resolution is `χ`. -/
-theorem repr_differential_apply [Fintype (StrandDiagram α)] (x : StrandsAlgebra R α)
-    (χ : StrandDiagram α) :
-    (basis R α).repr (differential R α x) χ = ∑ π ∈ {π : StrandDiagram α × (α × α) |
-      π.2 ∈ π.1.resolvableInversions ∧ π.1.resolve π.2 = χ}, (basis R α).repr x π.1 := by
-  induction x using induction_on with
-  | zero => simp
-  | add x x' hx hx' => simp [hx, hx', Finset.sum_add_distrib]
-  | smul_of r φ =>
-    -- Only the pairs with first component `φ` contribute.
-    rw [Finset.sum_filter, Fintype.sum_prod_type,
-      Fintype.sum_eq_single φ fun φ' hne ↦ by simp [Ne.symm hne]]
-    simp [differential_of, Finsupp.single_apply, ← Finset.sum_filter, -mem_resolvableInversions,
-      Finset.filter_and, Finset.inter_filter, mul_comm]
-
 /-- The idempotents are cycles. -/
 @[simp]
 theorem differential_idem (s : Finset α) : differential R α (idem s) = 0 := by
   simp [idem_def, differential_of]
+
+/-- The coefficient of `χ` in the differential of `x` is the sum of the coefficients of the
+diagrams having `χ` as the resolution of a resolvable crossing. -/
+theorem repr_differential_apply [Fintype (StrandDiagram α)] (x : StrandsAlgebra R α)
+    (χ : StrandDiagram α) :
+    (basis R α).repr (differential R α x) χ = ∑ φ, ∑ q : α × α,
+      if q ∈ φ.resolvableInversions ∧ φ.resolve q = χ then (basis R α).repr x φ else 0 := by
+  conv_lhs => rw [← (basis R α).sum_repr x]
+  simp only [map_sum, map_smul, basis_apply, differential_of, Finset.sum_apply',
+    Finsupp.smul_apply, smul_eq_mul, mul_sum]
+  refine sum_congr rfl fun φ _ ↦ ?_
+  simp only [ite_and]
+  rw [Fintype.sum_ite_mem]
+  refine sum_congr rfl fun q _ ↦ ?_
+  rw [← basis_apply, Module.Basis.repr_self, Finsupp.single_apply]
+  split_ifs <;> simp
 
 /-- A sum over the resolvable crossings of `σ` as a sum over all increasing pairs of starting
 points. -/
