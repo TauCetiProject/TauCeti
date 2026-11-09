@@ -100,46 +100,6 @@ namespace TauCeti
 
 namespace PDE
 
-section Profile
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {σ ε : ℝ} {c x : E}
-
-private theorem contDiffAt_rpow_mul_norm_sq_sub_add (hσ : 0 ≤ σ) (hε : 0 < ε) (β : ℝ)
-    {k : WithTop ℕ∞} : ContDiffAt ℝ k (fun y : E ↦ (σ * ‖y - c‖ ^ 2 + ε) ^ (-β)) x :=
-  ((contDiffAt_const.mul ((contDiffAt_id.sub contDiffAt_const).norm_sq ℝ)).add
-    contDiffAt_const).rpow_const_of_ne (by positivity)
-
-/-- The second derivative of the barrier profile `(σ ‖y - c‖² + ε)^(-β)`. -/
-private theorem fderiv_fderiv_rpow_mul_norm_sq_sub_add_apply (hσ : 0 ≤ σ) (hε : 0 < ε) (β : ℝ)
-    (v w : E) :
-    fderiv ℝ (fderiv ℝ fun y : E ↦ (σ * ‖y - c‖ ^ 2 + ε) ^ (-β)) x v w =
-      4 * σ ^ 2 * β * (β + 1) * (σ * ‖x - c‖ ^ 2 + ε) ^ (-β - 2) * ⟪x - c, v⟫ * ⟪x - c, w⟫ -
-        2 * σ * β * (σ * ‖x - c‖ ^ 2 + ε) ^ (-β - 1) * ⟪v, w⟫ := by
-  have hs : 0 < σ * ‖x - c‖ ^ 2 + ε := by positivity
-  have hD : fderiv ℝ (fun y : E ↦ σ * ‖y - c‖ ^ 2 + ε) = fderiv ℝ (σ • fun y : E ↦ ‖y - c‖ ^ 2) :=
-    funext fun _ ↦ fderiv_add_const ε
-  have hid : fderiv ℝ (fun y : E ↦ y) = fun _ ↦ ContinuousLinearMap.id ℝ E :=
-    funext fun _ ↦ fderiv_fun_id
-  have h := fderiv_fderiv_scalar_comp_apply (f := fun y : E ↦ σ * ‖y - c‖ ^ 2 + ε)
-    (Real.contDiffAt_rpow_const_of_ne (p := -β) hs.ne')
-    ((contDiffAt_const.mul ((contDiffAt_id.sub contDiffAt_const).norm_sq ℝ)).add contDiffAt_const)
-    v w
-  simp only [Function.comp_def] at h
-  rw [h, hD, fderiv_fderiv_const_smul, fderiv_const_smul_field]
-  simp only [Pi.smul_apply, smul_apply, smul_eq_mul]
-  rw [fderiv_fderiv_norm_sq_sub_comp_apply (i := fun y ↦ y) contDiffAt_id,
-    fderiv_norm_sq_sub_comp (i := fun y ↦ y) differentiableAt_id, iteratedDeriv_eq_iterate,
-    Real.iter_deriv_rpow_const, Real.deriv_rpow_const]
-  simp only [hid, descPochhammer_succ_right, descPochhammer_zero, Polynomial.eval_mul,
-    Polynomial.eval_X, Polynomial.eval_sub, Polynomial.eval_one, Nat.cast_one, Nat.cast_ofNat,
-    Nat.cast_zero, map_sub, ContinuousLinearMap.comp_id,
-    smul_apply, sub_apply, innerSL_apply_apply, nsmul_eq_mul, sub_zero, mul_neg, one_mul,
-    neg_mul, ContinuousLinearMap.id_apply, fderiv_fun_const, Pi.zero_apply, zero_apply,
-    inner_zero_right, add_zero, inner_sub_left]
-  ring_nf
-
-end Profile
-
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {σ ε β lam T : ℝ} {c x : EuclideanSpace ℝ ι}
 
 /-- The exponent shift `s^(-β-1) = s s^(-β-2)` used to factor the barrier's second derivative. -/
