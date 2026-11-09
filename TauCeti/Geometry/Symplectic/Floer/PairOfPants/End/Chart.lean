@@ -37,7 +37,7 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
 ## Main results
 
 * `TauCeti.Floer.contDiffAt_uncurry_pairOfPantsPerturbation`,
-  `TauCeti.Floer.differentiableAt_pairOfPantsPerturbation`: in real coordinates, the
+  `TauCeti.Floer.differentiableAt_pairOfPantsPerturbation_target`: in real coordinates, the
   components of the perturbation are `Cⁿ` on `S × V` for `Cⁿ` Hamiltonians, and in particular
   differentiable in the target point for `C¹` Hamiltonians.
 * `TauCeti.Floer.endChart_mem_thricePuncturedSphereReal`, `TauCeti.Floer.re_endCoord_endChart`:
@@ -111,7 +111,7 @@ theorem contDiffAt_uncurry_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Per
 
 /-- In the real coordinates of `S`, the components of the pair-of-pants perturbation are
 differentiable in the target point, for `C¹` Hamiltonians. -/
-theorem differentiableAt_pairOfPantsPerturbation (hH : ∀ q, Periodic (H q) 1)
+theorem differentiableAt_pairOfPantsPerturbation_target (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
     (x : V) (v : ℂ) :
     DifferentiableAt ℝ (fun y ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) y v)

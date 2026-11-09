@@ -88,8 +88,8 @@ private theorem floerEnergyDensity_endChart_nonneg (ω : SymplecticForm V)
     (Kt := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
     (hasFDerivAt_endChart q ζ).differentiableAt
     ((hu.contDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hS)).differentiableAt two_ne_zero)
-    (differentiableAt_pairOfPantsPerturbation hH hHs hS _ 1)
-    (differentiableAt_pairOfPantsPerturbation hH hHs hS _ Complex.I)
+    (differentiableAt_pairOfPantsPerturbation_target hH hHs hS _ 1)
+    (differentiableAt_pairOfPantsPerturbation_target hH hHs hS _ Complex.I)
   -- In the end coordinates, the pulled-back datum is `H_q(t) dt` at `ζ`.
   have hKs : perturbationPullback (endChart q)
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)

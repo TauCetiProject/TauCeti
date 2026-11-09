@@ -122,8 +122,8 @@ private theorem isComplexLinearMap_signedEndChart (ω : SymplecticForm V)
   exact ω.isComplexLinearMap_perturbedFDeriv_perturbationPullback
     ((contDiff_signedEndChart q 1).differentiable one_ne_zero ζ)
     ((hu.contDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hS)).differentiableAt two_ne_zero)
-    (differentiableAt_pairOfPantsPerturbation hH hHs hS _ 1)
-    (differentiableAt_pairOfPantsPerturbation hH hHs hS _ Complex.I)
+    (differentiableAt_pairOfPantsPerturbation_target hH hHs hS _ 1)
+    (differentiableAt_pairOfPantsPerturbation_target hH hHs hS _ Complex.I)
     (isComplexLinearMap_fderiv_signedEndChart q ζ) hfloer
 
 /-- On the part `s ≥ 2` of the signed end chart, the energy density of the end half-cylinder is
@@ -143,8 +143,8 @@ private theorem floerEnergyDensity_signedEndChart (ω : SymplecticForm V)
   exact ω.floerEnergyDensity_perturbationPullback
     ((contDiff_signedEndChart q 1).differentiable one_ne_zero ζ)
     ((hu.contDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hS)).differentiableAt two_ne_zero)
-    (differentiableAt_pairOfPantsPerturbation hH hHs hS _ 1)
-    (differentiableAt_pairOfPantsPerturbation hH hHs hS _ Complex.I)
+    (differentiableAt_pairOfPantsPerturbation_target hH hHs hS _ 1)
+    (differentiableAt_pairOfPantsPerturbation_target hH hHs hS _ Complex.I)
 
 /-- A finite-energy pair of pants has finite energy on the end half-cylinder `s > 2` of each
 signed end chart. -/
