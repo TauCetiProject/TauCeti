@@ -414,14 +414,15 @@ omit [CompleteSpace X] in
 /-- **Converse of the Lumer--Phillips theorem**: the generator of a contraction semigroup is
 dissipative.
 
-For `x` in the domain and `t > 0`, contractivity gives
-`‖lambda x - t⁻¹ (S t x - x)‖ ≥ (lambda + t⁻¹) ‖x‖ - t⁻¹ ‖S t x‖ ≥ lambda ‖x‖`, and the left side
-tends to `‖lambda x - A x‖` as `t → 0⁺`. Together with
+This holds on any real normed space `X`: completeness is not needed. Together with
 `StronglyContinuousSemigroup.smul_sub_generator_surjective` and the density of the generator
 domain, it shows that the hypotheses of the Lumer--Phillips generation theorem are also
 necessary. -/
 theorem isDissipative_generator (S : ContractionSemigroup X) :
     IsDissipative S.toStronglyContinuousSemigroup.generator := by
+  -- For `x` in the domain and `t > 0`, contractivity gives
+  -- `‖lambda x - t⁻¹ (S t x - x)‖ ≥ (lambda + t⁻¹) ‖x‖ - t⁻¹ ‖S t x‖ ≥ lambda ‖x‖`, and the left
+  -- side tends to `‖lambda x - A x‖` as `t → 0⁺`.
   intro lambda hlambda x
   have hx : (x : X) ∈ S.toStronglyContinuousSemigroup.domain := by
     rw [← S.toStronglyContinuousSemigroup.generator_domain]
@@ -432,7 +433,7 @@ theorem isDissipative_generator (S : ContractionSemigroup X) :
   filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t)
   have hS : ‖S.toStronglyContinuousSemigroup.realOperator t (x : X)‖ ≤ ‖(x : X)‖ :=
     ((S.toStronglyContinuousSemigroup.realOperator t).le_opNorm _).trans
-      (by simpa using mul_le_mul_of_nonneg_right (S.contracting_real t ht.le) (norm_nonneg _))
+      (by simpa using mul_le_mul_of_nonneg_right (S.contracting_real t) (norm_nonneg _))
   have key : lambda • (x : X) - (1 / t) • (S.toStronglyContinuousSemigroup.realOperator t
       (x : X) - (x : X)) = (lambda + 1 / t) • (x : X) -
         (1 / t) • S.toStronglyContinuousSemigroup.realOperator t (x : X) := by
