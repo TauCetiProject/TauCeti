@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Cholesky.Equiv
-public import TauCeti.LinearAlgebra.Matrix.Trace.Basic
+public import TauCeti.Analysis.Matrix.Frobenius
 public import TauCeti.Topology.Instances.Matrix
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 
@@ -93,7 +93,7 @@ theorem isProperMap_choleskyReconstruction :
   obtain ⟨c, hc⟩ := hK'c.bddAbove_image (continuous_id.matrix_trace).continuousOn
   have hTc := (isCompact_univ_pi fun _ ↦ isCompact_univ_pi fun _ ↦
     isCompact_Icc (a := -√c) (b := √c)).of_isClosed_subset
-      (Matrix.isClosed_isLowerTriangular_nonneg_diag_mul_transpose_mem hK'c.isClosed)
+      (Matrix.isClosed_setOfPred_isLowerTriangular_nonneg_diag_mul_transpose_mem hK'c.isClosed)
       (fun L hL i _ j _ ↦ abs_le.1 ((Matrix.abs_apply_le_sqrt_trace_mul_transpose L i j).trans
         (Real.sqrt_le_sqrt (hc ⟨_, hL.2.2, rfl⟩))))
   exact Topology.IsEmbedding.subtypeVal.isInducing.isCompact_iff.2

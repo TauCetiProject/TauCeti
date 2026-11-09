@@ -58,6 +58,10 @@ Each characteristic coefficient is continuous over a commutative topological rin
 The Kronecker product of two continuously varying matrices is continuous in the product topology.
 In particular the ⋆-algebra homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗ₖ B` are continuous.
 
+The lower-triangular real matrices with nonnegative diagonal whose Gram matrix `L * Lᵀ` lies in a
+closed set form a closed set
+(`Matrix.isClosed_setOfPred_isLowerTriangular_nonneg_diag_mul_transpose_mem`).
+
 ## References
 
 * B. Conrad, *Weil and Grothendieck approaches to adelic points*, Enseign. Math. (2) 58 (2012),
@@ -235,7 +239,7 @@ variable {n : Type*} [Fintype n] [LinearOrder n]
 
 /-- The lower-triangular matrices with nonnegative diagonal whose Gram matrix lies in a closed set
 form a closed set. -/
-theorem isClosed_isLowerTriangular_nonneg_diag_mul_transpose_mem {S : Set (Matrix n n ℝ)}
+theorem isClosed_setOfPred_isLowerTriangular_nonneg_diag_mul_transpose_mem {S : Set (Matrix n n ℝ)}
     (hS : IsClosed S) :
     IsClosed {L : Matrix n n ℝ | L.IsLowerTriangular ∧ (∀ i, 0 ≤ L i i) ∧ L * Lᵀ ∈ S} := by
   have htri : IsClosed {L : Matrix n n ℝ | L.IsLowerTriangular} :=
