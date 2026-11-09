@@ -282,6 +282,14 @@ theorem coordinateOperator_apply_prod_pow_sub_mem {χ : A →ₐ[R] R} {t : ι �
 
 variable [Algebra ℚ R]
 
+omit [Fintype ι] in
+/-- A nonzero natural number is invertible in a `ℚ`-algebra, with inverse the image of its
+rational inverse. -/
+private theorem natCast_mul_algebraMap_inv {n : ℕ} (hn : n ≠ 0) :
+    (n : R) * algebraMap ℚ R (n : ℚ)⁻¹ = 1 := by
+  rw [← map_natCast (algebraMap ℚ R), ← map_mul, mul_inv_cancel₀ (Nat.cast_ne_zero.2 hn),
+    map_one]
+
 /-- The coefficients of the coordinate expression of `D : A →ₗ[R] N` in the coordinates `u`:
 `c α = (α!)⁻¹ ∑_{γ ≤ α} (α choose γ) (-u) ^ (α - γ) • D (u ^ γ)`. At a point `χ` this is
 `D ((u - χ u) ^ α) / α!` modulo `ker χ • N`
@@ -313,9 +321,8 @@ theorem factorial_smul_coordinateCoeff_sub_apply_mem (χ : A →ₐ[R] R) (u : �
     simp only [coef, map_prod, map_mul, map_pow, map_neg, map_natCast, Algebra.smul_def,
       ← prod_mul_distrib]
     exact prod_congr rfl fun i _ ↦ by ring
-  have hfac : ((∏ i, (α i)! : ℕ) : R) * algebraMap ℚ R ((∏ i, (α i)! : ℕ) : ℚ)⁻¹ = 1 := by
-    rw [← map_natCast (algebraMap ℚ R), ← map_mul, mul_inv_cancel₀ (by positivity), map_one]
-  rw [coordinateCoeff_def, smul_smul, hfac, one_smul, hbin, map_sum, ← sum_sub_distrib]
+  rw [coordinateCoeff_def, smul_smul, natCast_mul_algebraMap_inv (by positivity), one_smul, hbin,
+    map_sum, ← sum_sub_distrib]
   exact sum_mem fun γ _ ↦ by
     rw [map_smul]
     exact χ.smul_sub_smul_mem_smul_top _ _
@@ -327,6 +334,13 @@ variable {u : ι → A} (hdu : ∀ i j, d i (u j) = if j = i then 1 else 0)
   (hker : ∀ x, RingHom.ker (ev x) ≤
     Ideal.span (Set.range fun i ↦ u i - algebraMap R A (ev x (u i))))
   (hsep : ∀ y : N, (∀ x, y ∈ RingHom.ker (ev x) • (⊤ : Submodule A N)) → y = 0)
+
+omit [Fintype ι] [Algebra ℚ R] in
+include hdu in
+/-- The coordinates taken relative to their values at a point remain dual to the `∂ᵢ`. -/
+private theorem apply_sub_algebraMap_apply (χ : A →ₐ[R] R) (i j : ι) :
+    d i (u j - algebraMap R A (χ (u j))) = if j = i then 1 else 0 := by
+  simp [hdu]
 
 include hdu hker hsep in
 /-- **Differential operators in coordinates.** Let `uᵢ ∈ A` be coordinates with dual commuting
@@ -340,9 +354,8 @@ theorem eq_coordinateOperator_coordinateCoeff {D : A →ₗ[R] N} {m : ℕ}
   ext f
   rw [← sub_eq_zero]
   refine hsep _ fun x ↦ ?_
-  have hdt (i j : ι) : d i (u j - algebraMap R A (ev x (u j))) = if j = i then 1 else 0 := by
-    simp [hdu]
-  have ht (j : ι) : ev x (u j - algebraMap R A (ev x (u j))) = 0 := by simp
+  have hdt := apply_sub_algebraMap_apply d hdu (ev x)
+  have ht (j : ι) := RingHom.mem_ker.1 ((ev x).sub_algebraMap_apply_mem_ker (u j))
   have hT := sub_mem hD (coordinateOperator_mem_differentialOperators d hd m (coordinateCoeff u D))
   refine apply_mem_smul_top_of_forall_prod_pow_mem hT ht (hker x) (fun β hβ ↦ ?_) f
   have h₁ := factorial_smul_coordinateCoeff_sub_apply_mem (ev x) u D β
@@ -358,15 +371,12 @@ vanishes only when all its coefficients with `|α| ≤ m` vanish. -/
 theorem coordinateOperator_eq_zero_iff {m : ℕ} {c : (ι → ℕ) → N} :
     coordinateOperator d hd m c = 0 ↔ ∀ α : ι → ℕ, ∑ i, α i ≤ m → c α = 0 := by
   refine ⟨fun h α hα ↦ hsep _ fun x ↦ ?_, fun h ↦ ?_⟩
-  · have hdt (i j : ι) : d i (u j - algebraMap R A (ev x (u j))) = if j = i then 1 else 0 := by
-      simp [hdu]
-    have ht (j : ι) : ev x (u j - algebraMap R A (ev x (u j))) = 0 := by simp
-    have hmem := coordinateOperator_apply_prod_pow_sub_mem d hd hdt ht c hα
+  · have hmem := coordinateOperator_apply_prod_pow_sub_mem d hd
+      (apply_sub_algebraMap_apply d hdu (ev x))
+      (fun j ↦ RingHom.mem_ker.1 ((ev x).sub_algebraMap_apply_mem_ker (u j))) c hα
     rw [h, LinearMap.zero_apply, zero_sub, neg_mem_iff] at hmem
-    have hfac : algebraMap ℚ R ((∏ i, (α i)! : ℕ) : ℚ)⁻¹ * ((∏ i, (α i)! : ℕ) : R) = 1 := by
-      rw [← map_natCast (algebraMap ℚ R), ← map_mul, inv_mul_cancel₀ (by positivity), map_one]
     have := Submodule.smul_of_tower_mem _ (algebraMap ℚ R ((∏ i, (α i)! : ℕ) : ℚ)⁻¹) hmem
-    rwa [smul_smul, hfac, one_smul] at this
+    rwa [smul_smul, mul_comm, natCast_mul_algebraMap_inv (by positivity), one_smul] at this
   · ext f
     simp only [coordinateOperator_apply, LinearMap.zero_apply]
     refine sum_eq_zero fun k hk ↦ sum_eq_zero fun α hα ↦ ?_

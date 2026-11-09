@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.LinearAlgebra.Basis.Defs
 public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 import TauCeti.Analysis.Calculus.Hadamard
+import TauCeti.RingTheory.Ideal.IsAugmentation
 
 /-!
 # Hadamard's lemma for smooth functions on a normed space
@@ -109,9 +110,8 @@ theorem ker_evalAlgHom_eq_span {E : Type*} [NormedAddCommGroup E] [NormedSpace �
         algebraMap ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ (ContMDiffMap.evalAlgHom x (b.smoothCoord i))) := by
   have : Fintype ι := Fintype.ofFinite ι
   -- Each relative coordinate function vanishes at `x`, so only `≤` needs Hadamard's lemma.
-  refine le_antisymm (fun f hf ↦ ?_) (Ideal.span_le.2 (Set.range_subset_iff.2 fun i ↦ by
-    rw [SetLike.mem_coe, RingHom.mem_ker, map_sub, AlgHom.commutes, Algebra.algebraMap_self,
-      RingHom.id_apply, sub_self]))
+  refine le_antisymm (fun f hf ↦ ?_) (Ideal.span_le.2 (Set.range_subset_iff.2 fun i ↦
+    (ContMDiffMap.evalAlgHom x).sub_algebraMap_apply_mem_ker (b.smoothCoord i)))
   rw [RingHom.mem_ker, ContMDiffMap.evalAlgHom_apply] at hf
   obtain ⟨a, -, ha⟩ := ContMDiffMap.exists_hadamard_coords f x b
   have h := TauCeti.sub_algebraMap_eq_sum_mul_sub_algebraMap x f a b.smoothCoord (by simpa using ha)
