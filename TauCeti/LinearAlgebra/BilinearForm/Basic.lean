@@ -42,6 +42,7 @@ maps valued in an arbitrary module.
   preserves nondegeneracy.
 * `TauCeti.BilinForm.nondegenerate_neg_iff`: negating a bilinear form preserves nondegeneracy.
 * `Module.Basis.dualBasis_smul_apply`: the dual basis of a scalar multiple of a form.
+* `LinearMap.BilinForm.restrict_eq_compl₁₂`: restriction is pullback along inclusion.
 * `LinearMap.BilinForm.anisotropic_toQuadraticMap_iff`: anisotropy is diagonal vanishing
   only at zero.
 * `LinearMap.BilinForm.nondegenerate_of_anisotropic`: an anisotropic diagonal implies
@@ -106,6 +107,12 @@ theorem apply_smul_add_smul_det {R M N : Type*} [CommRing R] [AddCommGroup M] [M
 end LinearMap.IsAlt
 
 namespace LinearMap.BilinForm
+
+/-- Restriction to a submodule is pullback along its inclusion in both arguments. -/
+theorem restrict_eq_compl₁₂ {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    (B : LinearMap.BilinForm R M) (W : Submodule R M) :
+    B.restrict W = B.compl₁₂ W.subtype W.subtype := by
+  rfl
 
 /-- The diagonal of a bilinear form is anisotropic exactly when it vanishes only at zero. -/
 theorem anisotropic_toQuadraticMap_iff {R M : Type*} [CommSemiring R]

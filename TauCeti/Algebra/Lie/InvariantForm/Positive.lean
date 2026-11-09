@@ -59,12 +59,6 @@ open LieAlgebra
 
 variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L]
 
-/-- The linear map underlying an ideal inclusion is injective. -/
-private theorem injective_incl_toLinearMap (I : LieIdeal K L) :
-    Function.Injective I.incl.toLinearMap := by
-  rw [LieIdeal.incl_coe]
-  exact Subtype.val_injective
-
 /-- Every abelian ideal is central in a Lie algebra with an invariant form with anisotropic
 diagonal. -/
 theorem le_center_of_isLieAbelian_of_anisotropic (B : LinearMap.BilinForm K L)
@@ -92,10 +86,12 @@ theorem isCompl_center_derivedSeries_one_of_anisotropic (B : LinearMap.BilinForm
     (hinv : B.lieInvariant L) :
     IsCompl (center F L) (derivedSeries F L 1) := by
   have hnd := nondegenerate_of_anisotropic B hani
-  have hrestrict : (B.restrict (derivedSeries F L 1).toSubmodule).Nondegenerate :=
-    nondegenerate_of_anisotropic _
+  have hrestrict : (B.restrict (derivedSeries F L 1).toSubmodule).Nondegenerate := by
+    rw [restrict_eq_compl₁₂]
+    exact nondegenerate_of_anisotropic _
       (B.anisotropic_toQuadraticMap_compl₁₂ hani
-        (derivedSeries F L 1).toSubmodule.subtype Subtype.val_injective)
+        (derivedSeries F L 1).toSubmodule.subtype
+        (derivedSeries F L 1).toSubmodule.injective_subtype)
   have hcompl : IsCompl (derivedSeries F L 1)
       (LieAlgebra.InvariantForm.orthogonal B hinv (derivedSeries F L 1)) := by
     rw [← LieSubmodule.isCompl_toSubmodule, LieAlgebra.InvariantForm.orthogonal_toSubmodule]
@@ -113,7 +109,7 @@ theorem isSemisimple_derivedSeries_one_of_anisotropic (B : LinearMap.BilinForm F
   let BD : LinearMap.BilinForm F D := B.compl₁₂ D.incl.toLinearMap D.incl.toLinearMap
   have hreflD : BD.IsRefl := hrefl.compl₁₂ D.incl.toLinearMap
   have haniD : BD.toQuadraticMap.Anisotropic :=
-    B.anisotropic_toQuadraticMap_compl₁₂ hani D.incl.toLinearMap (injective_incl_toLinearMap D)
+    B.anisotropic_toQuadraticMap_compl₁₂ hani D.incl.toLinearMap D.incl_injective
   have hinvD := hinv.compl₁₂ D.incl
   apply LieAlgebra.InvariantForm.isSemisimple_of_nondegenerate BD
     (nondegenerate_of_anisotropic BD haniD) hinvD hreflD
@@ -187,7 +183,7 @@ theorem killingForm_derivedSeries_one_self_neg_of_posDef_of_ne_zero (B : LinearM
   let BD : LinearMap.BilinForm F D := B.compl₁₂ D.incl.toLinearMap D.incl.toLinearMap
   have hsymmD := hsymm.compl₁₂ D.incl.toLinearMap
   have hposD : BD.toQuadraticMap.PosDef :=
-    B.posDef_toQuadraticMap_compl₁₂ hpos D.incl.toLinearMap (injective_incl_toLinearMap D)
+    B.posDef_toQuadraticMap_compl₁₂ hpos D.incl.toLinearMap D.incl_injective
   have hinvD := hinv.compl₁₂ D.incl
   apply killingForm_self_neg_of_posDef_of_notMem_center BD hsymmD hposD hinvD x
   intro hcenter
