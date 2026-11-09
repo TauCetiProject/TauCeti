@@ -29,10 +29,13 @@ Both directions read the long exact homotopy sequence of the fibration
 (`TauCeti.TopCat.mem_range_fibrationBoundary_iff`,
 `TauCeti.TopCat.mem_range_homotopyGroupMap_fiberι_iff`,
 `TauCeti.TopCat.mem_range_homotopyGroupMap_iff_fibrationBoundary_eq`). At its low end, where
-`π_0` is only a pointed set, path lifting supplies the remaining comparisons: a path in `B`
-between the projections of two points of `E` lifts to a path from the first point into the fibre
-of the second, and a path from the image of `p` to a point `b` lifts to a point of the fibre over
-`b`.
+`π_0` is only a pointed set, the comparisons go through path components
+(`HomotopyGroup.map_injective_of_isEmpty_of_joined`,
+`HomotopyGroup.map_surjective_of_isEmpty_of_exists_joined`), and path lifting supplies them: a
+path in `B` between the projections of two points of `E` lifts to a path from the first point into
+the fibre of the second (`TauCeti.TopCat.joined_of_mem_serreFibrations`), and a path from the image
+of `p` to a point `b` lifts to a point of the fibre over `b`
+(`TauCeti.TopCat.nonempty_fiber_of_mem_serreFibrations`).
 
 ## Main results
 
@@ -59,22 +62,6 @@ namespace TauCeti.TopCat
 
 variable {E B : TopCat.{u}} {p : E ⟶ B} {n : ℕ}
 
-/-- **Path lifting into a path-connected fibre.** If the fibre of a Serre fibration over `p y` is
-path-connected, then a point `x` whose projection is joined to `p y` is joined to `y`. -/
-private theorem joined_of_joined_proj (hp : serreFibrations p) {x y : E}
-    (hy : ∀ a c : p.fiber (p y), Joined a c) (h : Joined (p x) (p y)) : Joined x y := by
-  obtain ⟨Γ, hΓ0, hΓ⟩ := exists_path_lift_of_mem_serreFibrations hp h.somePath
-  have hΓ1 : p (Γ 1) = p y := (congrFun hΓ 1).trans h.somePath.target
-  exact Joined.trans ⟨⟨Γ, hΓ0, rfl⟩⟩ ((hy ⟨Γ 1, hΓ1⟩ ⟨y, rfl⟩).map continuous_subtype_val)
-
-/-- **Lifting the base point of a path.** If every point of `B` is joined to the image of a Serre
-fibration `p`, then every fibre of `p` is nonempty. -/
-private theorem nonempty_fiber_of_exists_joined (hp : serreFibrations p)
-    (h : ∀ b, ∃ x, Joined (p x) b) (b : B) : Nonempty (p.fiber b) := by
-  obtain ⟨x, hx⟩ := h b
-  obtain ⟨Γ, -, hΓ⟩ := exists_path_lift_of_mem_serreFibrations hp hx.somePath
-  exact ⟨⟨Γ 1, (congrFun hΓ 1).trans hx.somePath.target⟩⟩
-
 /-- A Serre fibration whose fibres are nonempty and `(n - 1)`-connected is `n`-connected. -/
 private theorem isNConnected_of_forall_fiber (hp : serreFibrations p)
     (hF : ∀ b, Nonempty (p.fiber b) ∧
@@ -89,19 +76,10 @@ private theorem isNConnected_of_forall_fiber (hp : serreFibrations p)
   · cases k with
     | zero =>
       -- In degree zero, homotopy classes are path components, and paths lift into the fibre.
-      intro c d hcd
-      induction c using Quotient.inductionOn with | h γ => ?_
-      induction d using Quotient.inductionOn with | h δ => ?_
-      apply (homotopyGroupEquivZerothHomotopyOfIsEmpty (Fin 0) x).injective
-      have := congrArg (homotopyGroupEquivZerothHomotopyOfIsEmpty (Fin 0) _) hcd
-      rw [HomotopyGroup.map_mk, HomotopyGroup.map_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk,
-        homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply, GenLoop.map_apply] at this
-      rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_mk,
-        homotopyGroupEquivZerothHomotopyOfIsEmpty_mk]
-      refine ZerothHomotopy.sound (joined_of_joined_proj hp (fun a c ↦ ?_)
-        (Quotient.exact this)).somePath
-      exact ((pathConnectedSpace_iff_subsingleton_homotopyGroup_zero a).2
-        ((hF _).2 a 0 hk)).joined a c
+      refine HomotopyGroup.map_injective_of_isEmpty_of_joined _ rfl fun a c h ↦ ?_
+      have := (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (⟨c, rfl⟩ : p.fiber (p c))).2
+        ((hF _).2 _ 0 hk)
+      exact joined_of_mem_serreFibrations hp h
     | succ k =>
       -- In positive degrees the induced map is a homomorphism, and by exactness at `π_k(E)` its
       -- kernel comes from the trivial group `π_k(F)`.
@@ -114,15 +92,9 @@ private theorem isNConnected_of_forall_fiber (hp : serreFibrations p)
   · cases k with
     | zero =>
       -- In degree zero, every point of `B` is the projection of a point of its fibre.
-      intro c
-      induction c using Quotient.inductionOn with | h γ => ?_
-      obtain ⟨e⟩ := (hF (γ 0)).1
-      refine ⟨⟦(genLoopHomeoOfIsEmpty (Fin 0) x).symm e.1⟧,
-        (homotopyGroupEquivZerothHomotopyOfIsEmpty (Fin 0) _).injective ?_⟩
-      rw [HomotopyGroup.map_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk,
-        homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply,
-        ← genLoopHomeoOfIsEmpty_apply, Homeomorph.apply_symm_apply]
-      exact congrArg ZerothHomotopy.mk (Set.mem_singleton_iff.1 e.2)
+      refine HomotopyGroup.map_surjective_of_isEmpty_of_exists_joined _ rfl fun b ↦ ?_
+      obtain ⟨e⟩ := (hF b).1
+      exact ⟨e.1, by rw [Set.mem_singleton_iff.1 e.2]⟩
     | succ k =>
       -- Split off the first direction: by exactness at `π_{k+1}(B)`, a class lifts to `E` since
       -- its boundary lies in the trivial group `π_k(F)`.
@@ -163,7 +135,7 @@ and for `n = 0` the condition is that every fibre is nonempty. -/
 theorem isNConnected_iff_of_mem_serreFibrations (hp : serreFibrations p) (n : ℕ) :
     p.hom.IsNConnected n ↔ ∀ b, Nonempty (p.fiber b) ∧
       ∀ (e : p.fiber b) k, k < n → Subsingleton (π_ k (p.fiber b) e) :=
-  ⟨fun hf b ↦ ⟨nonempty_fiber_of_exists_joined hp hf.exists_joined b,
+  ⟨fun hf b ↦ ⟨(hf.exists_joined b).elim fun _ ↦ nonempty_fiber_of_mem_serreFibrations hp,
       fun e _ hk ↦ subsingleton_homotopyGroup_fiber hp hf e hk⟩,
     isNConnected_of_forall_fiber hp⟩
 

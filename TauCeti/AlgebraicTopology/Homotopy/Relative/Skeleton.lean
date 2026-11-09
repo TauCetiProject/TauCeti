@@ -114,14 +114,8 @@ theorem surjective_homotopyGroupMap_skeletonLT {N : Type v} [Finite N] (hN : Nat
   classical
   rcases isEmpty_or_nonempty N with hN₀ | ⟨⟨i⟩⟩
   · -- In degree zero, homotopy classes are path components.
-    intro c
-    induction c using Quotient.inductionOn with | h γ => ?_
-    obtain ⟨b, hb⟩ := exists_joined_skeletonLT hA hAC (γ 0)
-    refine ⟨⟦(genLoopHomeoOfIsEmpty N a).symm b⟧,
-      (homotopyGroupEquivZerothHomotopyOfIsEmpty N _).injective ?_⟩
-    rw [HomotopyGroup.map_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk,
-      homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply]
-    exact ZerothHomotopy.sound hb.somePath
+    exact HomotopyGroup.map_surjective_of_isEmpty_of_exists_joined _ rfl
+      (exists_joined_skeletonLT hA hAC)
   · -- Split off a direction `i` and use exactness of the pair at `π_k(C, a)`.
     let e := Equiv.optionSubtypeNe i
     have hcard : Nat.card {j // j ≠ i} < n := by
@@ -147,17 +141,8 @@ theorem injective_homotopyGroupMap_skeletonLT {N : Type v} [Finite N] (hN : Nat.
   classical
   rcases isEmpty_or_nonempty N with hN₀ | hN₀
   · -- In degree zero, homotopy classes are path components.
-    intro c d hcd
-    induction c using Quotient.inductionOn with | h γ => ?_
-    induction d using Quotient.inductionOn with | h δ => ?_
-    apply (homotopyGroupEquivZerothHomotopyOfIsEmpty N a).injective
-    have := congrArg (homotopyGroupEquivZerothHomotopyOfIsEmpty N _) hcd
-    rw [HomotopyGroup.map_mk, HomotopyGroup.map_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk,
-      homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply, GenLoop.map_apply] at this
-    rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_mk,
-      homotopyGroupEquivZerothHomotopyOfIsEmpty_mk]
-    exact ZerothHomotopy.sound
-      ((joined_skeletonLT_iff (by omega) hA hAC).1 (Quotient.exact this)).somePath
+    exact HomotopyGroup.map_injective_of_isEmpty_of_joined _ rfl
+      fun _ _ ↦ (joined_skeletonLT_iff (by omega) hA hAC).1
   · -- In positive degrees the induced map is a homomorphism, and by exactness of the pair at
     -- `π_k(A, a)` its kernel consists of boundaries, which are trivial.
     have := subsingleton_relHomotopyGroup_skeletonLT hN hA hAC a
