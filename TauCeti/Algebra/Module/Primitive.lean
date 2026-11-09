@@ -39,6 +39,8 @@ coordinate taking a nontorsion class to its positive divisibility.
 * `TauCeti.IsPrimitive.exists_eq_nsmul_iff_dvd`: the natural multipliers of `d • p`, for
   primitive `p`, are exactly the divisors of `d`.
 * `LinearEquiv.isPrimitive_iff`: primitivity is invariant under integer-linear equivalences.
+* `Units.isPrimitive_units_mul_iff`, `Units.isPrimitive_mul_units_iff`: in a ring, primitivity is
+  invariant under multiplication by a unit.
 * `TauCeti.exists_eq_zsmul_isPrimitive`: a nonzero vector in a free integer module is a
   positive integer multiple of a primitive vector.
 * `TauCeti.exists_integral_coordinate_of_notMem_torsion`: a nontorsion class in a finitely
@@ -140,6 +142,23 @@ theorem isPrimitive_iff (φ : M ≃ₗ[ℤ] N) {v : M} :
     exact ⟨f.comp (φ.symm : N →+ M).toIntLinearMap, by simpa using hf⟩
 
 end LinearEquiv
+
+namespace Units
+
+/-- Primitivity in a ring is invariant under left multiplication by a unit. For integral
+matrices this is invariance of the content under left multiplication by `GL(n, ℤ)`. -/
+@[simp]
+theorem isPrimitive_units_mul_iff {R : Type*} [Ring R] (u : Rˣ) {v : R} :
+    TauCeti.IsPrimitive (↑u * v) ↔ TauCeti.IsPrimitive v :=
+  (u.mulLeftLinearEquiv ℤ R).isPrimitive_iff
+
+/-- Primitivity in a ring is invariant under right multiplication by a unit. -/
+@[simp]
+theorem isPrimitive_mul_units_iff {R : Type*} [Ring R] (u : Rˣ) {v : R} :
+    TauCeti.IsPrimitive (v * ↑u) ↔ TauCeti.IsPrimitive v :=
+  (u.mulRightLinearEquiv ℤ).isPrimitive_iff
+
+end Units
 
 namespace TauCeti
 

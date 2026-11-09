@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.OpenSubgroup
+public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.RingTheory.Finiteness.Ideal
 public import TauCeti.RingTheory.Ideal.Maps
 
@@ -86,6 +87,11 @@ variable {R : Type*} [CommRing R] [TopologicalSpace R] {I : Ideal R}
 theorem isOpen_pow (hI : IsAdic I) (n : ℕ) : IsOpen ((I ^ n : Ideal R) : Set R) :=
   letI := I.adicTopology
   hI ▸ (I.openAddSubgroup n).isOpen
+
+/-- The quotient by an ideal of definition has the discrete quotient topology. -/
+theorem discreteTopology_quotient (hI : IsAdic I) : DiscreteTopology (R ⧸ I) := by
+  have : IsTopologicalRing R := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  exact QuotientAddGroup.discreteTopology_iff.mpr (by simpa using hI.isOpen_pow 1)
 
 /-- An adic topology transports along a ring equivalence that is an inducing map.
 
@@ -296,11 +302,19 @@ theorem of_radical_eq {J : Ideal R} (hI : IsAdic I) (hIfg : I.FG) (hJfg : J.FG)
     exact Ideal.pow_right_mono hm n
 
 /-- An open quotient of an adic ring has the adic topology of the extended ideal. Neither
-finite generation nor completeness of the defining ideal is required. -/
+finite generation nor completeness of the defining ideal is required, and the quotient needs no
+topological-ring assumption. -/
 theorem map_of_isOpenQuotientMap {R S : Type*} [CommRing R] [CommRing S]
-    [TopologicalSpace R] [TopologicalSpace S] [IsTopologicalRing S]
+    [TopologicalSpace R] [TopologicalSpace S]
     {I : Ideal R} (hI : IsAdic I) (f : R →+* S) (hf : IsOpenQuotientMap f) :
     IsAdic (I.map f) := by
+  have : IsTopologicalRing R := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  have hq : IsOpenQuotientMap (Prod.map f f) := hf.prodMap hf
+  have : IsTopologicalRing S := IsTopologicalSemiring.toIsTopologicalRing
+    { toContinuousAdd := ⟨hq.continuous_comp_iff.mp (by
+        simpa [Function.comp_def] using hf.continuous.comp continuous_add)⟩
+      toContinuousMul := ⟨hq.continuous_comp_iff.mp (by
+        simpa [Function.comp_def] using hf.continuous.comp continuous_mul)⟩ }
   have hmap (n : ℕ) : (((I.map f) ^ n : Ideal S) : Set S) =
       f '' ((I ^ n : Ideal R) : Set R) := by
     rw [← Ideal.map_pow, Ideal.map_eq_image_of_surjective f hf.surjective]
