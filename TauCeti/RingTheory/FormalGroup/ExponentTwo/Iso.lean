@@ -174,8 +174,7 @@ exponential of `F.map f`. -/
 theorem map_exponentTwoExp (f : R →+* S) :
     (F.exponentTwoExp hF).map f =
       (F.map f).exponentTwoExp (by rw [← F.map_nsmulSeries, hF, map_zero]) := by
-  rw [exponentTwoExp, PowerSeries.map_substInvOfIsUnit f (F.constantCoeff_exponentTwoLog hF),
-    exponentTwoExp]
+  rw [exponentTwoExp, PowerSeries.map_substInvOfIsUnit f, exponentTwoExp]
   congr 1
   exact F.map_exponentTwoLog hF f
 
