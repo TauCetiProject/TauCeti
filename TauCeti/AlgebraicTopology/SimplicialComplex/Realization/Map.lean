@@ -275,15 +275,16 @@ theorem realizationHomeomorph_symm_apply
     (hfg : f.comp g = id L.toPreAbstractSimplicialComplex) (x : Realization L) :
     (f.realizationHomeomorph g hgf hfg).symm x = g.realizationMap x := (rfl)
 
-/-- The realization of a simplicial map with a simplicial inverse is surjective. -/
+/-- The realization of a simplicial map with a simplicial right inverse is surjective. -/
 theorem realizationMap_surjective
     (f : SimplicialMap K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
     (g : SimplicialMap L.toPreAbstractSimplicialComplex K.toPreAbstractSimplicialComplex)
-    (hgf : g.comp f = id K.toPreAbstractSimplicialComplex)
     (hfg : f.comp g = id L.toPreAbstractSimplicialComplex) :
-    Function.Surjective f.realizationMap := by
-  simpa only [Function.Surjective, realizationHomeomorph_apply] using
-    (f.realizationHomeomorph g hgf hfg).surjective
+    Function.Surjective f.realizationMap := fun y ↦
+  ⟨g.realizationMap y, by
+    have h := realizationMap_comp f g
+    rw [hfg, realizationMap_id] at h
+    exact (DFunLike.congr_fun h y).symm⟩
 
 end PreAbstractSimplicialComplex.SimplicialMap
 
