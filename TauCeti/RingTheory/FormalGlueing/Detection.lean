@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.FormalGlueing.Torsion
 public import Mathlib.Algebra.Module.LocalizedModule.Submodule
-public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
+public import TauCeti.Algebra.Module.Torsion.Localization
 public import TauCeti.LinearAlgebra.TensorProduct.Quotient
 
 /-!

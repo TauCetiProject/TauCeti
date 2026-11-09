@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGlueing.Detection
-import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 
 /-!
 # Lifting compatible elements in formal glueing
