@@ -77,74 +77,8 @@ namespace TauCeti
 
 namespace PDE
 
-/-- The integral of `‖f‖²` over a set, read in `ℝ≥0∞`. -/
-private theorem ofReal_setIntegral_norm_sq_eq {X V : Type*} [MeasurableSpace X] {μ : Measure X}
-    [NormedAddCommGroup V] {f : X → V} {S : Set X}
-    (hf : IntegrableOn (fun x => ‖f x‖ ^ 2) S μ) :
-    ENNReal.ofReal (∫ x in S, ‖f x‖ ^ 2 ∂μ) = ∫⁻ x in S, ‖f x‖ₑ ^ (2 : ℝ) ∂μ := by
-  rw [ofReal_integral_eq_lintegral_ofReal hf (ae_of_all _ fun _ => sq_nonneg _)]
-  refine lintegral_congr fun x => ?_
-  rw [ENNReal.rpow_two, ← ofReal_norm, ENNReal.ofReal_pow (norm_nonneg _)]
-
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure]
-
-omit [DecidableEq ι] in
-/-- An estimate `∫_{B(y, ρ)} ‖g‖² ≤ α ∫_{B(y, 2ρ)} ‖f‖² + β ∫_{B(y, 2ρ)} ‖G‖²` between Bochner
-integrals, read as one between averages in `ℝ≥0∞`: the ratio of the measures of the two balls is
-`2ⁿ`. -/
-private theorem setLAverage_enorm_sq_le_of_setIntegral_le {V W X : Type*} [NormedAddCommGroup V]
-    [NormedAddCommGroup W] [NormedAddCommGroup X] {g : EuclideanSpace ℝ ι → V}
-    {f : EuclideanSpace ℝ ι → W} {G : EuclideanSpace ℝ ι → X} {y : EuclideanSpace ℝ ι}
-    {ρ α β : ℝ} (hρ : 0 < ρ) (hα : 0 ≤ α) (hβ : 0 ≤ β)
-    (hg : IntegrableOn (fun x => ‖g x‖ ^ 2) (ball y ρ) mu)
-    (hf : IntegrableOn (fun x => ‖f x‖ ^ 2) (ball y (2 * ρ)) mu)
-    (hG : IntegrableOn (fun x => ‖G x‖ ^ 2) (ball y (2 * ρ)) mu)
-    (h : ∫ x in ball y ρ, ‖g x‖ ^ 2 ∂mu ≤
-      α * ∫ x in ball y (2 * ρ), ‖f x‖ ^ 2 ∂mu + β * ∫ x in ball y (2 * ρ), ‖G x‖ ^ 2 ∂mu) :
-    ⨍⁻ x in ball y ρ, ‖g x‖ₑ ^ (2 : ℝ) ∂mu ≤
-      ENNReal.ofReal (2 ^ finrank ℝ (EuclideanSpace ℝ ι)) *
-        (ENNReal.ofReal α * ⨍⁻ x in ball y (2 * ρ), ‖f x‖ₑ ^ (2 : ℝ) ∂mu +
-          ENNReal.ofReal β * ⨍⁻ x in ball y (2 * ρ), ‖G x‖ₑ ^ (2 : ℝ) ∂mu) := by
-  have hμ2 : mu (ball y (2 * ρ)) =
-      ENNReal.ofReal (2 ^ finrank ℝ (EuclideanSpace ℝ ι)) * mu (ball y ρ) := by
-    rw [Measure.addHaar_ball_of_pos mu y (by positivity), Measure.addHaar_ball_of_pos mu y hρ,
-      mul_pow, ENNReal.ofReal_mul (by positivity), mul_assoc]
-  have hμ2top : mu (ball y (2 * ρ)) ≠ ∞ := measure_ball_lt_top.ne
-  rw [setLAverage_eq]
-  refine ENNReal.div_le_of_le_mul ?_
-  rw [← ofReal_setIntegral_norm_sq_eq hg]
-  calc ENNReal.ofReal (∫ x in ball y ρ, ‖g x‖ ^ 2 ∂mu)
-      ≤ ENNReal.ofReal (α * ∫ x in ball y (2 * ρ), ‖f x‖ ^ 2 ∂mu
-          + β * ∫ x in ball y (2 * ρ), ‖G x‖ ^ 2 ∂mu) := ENNReal.ofReal_le_ofReal h
-    _ = ENNReal.ofReal α * ENNReal.ofReal (∫ x in ball y (2 * ρ), ‖f x‖ ^ 2 ∂mu)
-          + ENNReal.ofReal β * ENNReal.ofReal (∫ x in ball y (2 * ρ), ‖G x‖ ^ 2 ∂mu) := by
-        have hP := setIntegral_nonneg (μ := mu) (measurableSet_ball (x := y) (ε := 2 * ρ))
-          fun x _ => sq_nonneg ‖f x‖
-        have hQ := setIntegral_nonneg (μ := mu) (measurableSet_ball (x := y) (ε := 2 * ρ))
-          fun x _ => sq_nonneg ‖G x‖
-        rw [ENNReal.ofReal_add (by positivity) (by positivity), ENNReal.ofReal_mul hα,
-          ENNReal.ofReal_mul hβ]
-    _ = ENNReal.ofReal α * (mu (ball y (2 * ρ)) * ⨍⁻ x in ball y (2 * ρ), ‖f x‖ₑ ^ (2 : ℝ) ∂mu)
-          + ENNReal.ofReal β *
-            (mu (ball y (2 * ρ)) * ⨍⁻ x in ball y (2 * ρ), ‖G x‖ₑ ^ (2 : ℝ) ∂mu) := by
-        rw [ofReal_setIntegral_norm_sq_eq hf, ofReal_setIntegral_norm_sq_eq hG,
-          measure_mul_setLAverage _ hμ2top, measure_mul_setLAverage _ hμ2top]
-    _ = _ := by
-        rw [hμ2]
-        ring
-
-/-- The datum term of the reverse Hölder inequality, with `λ` moved inside the average. -/
-private theorem ofReal_div_sq_mul_setLAverage_eq {X : Type*} [MeasurableSpace X] {μ : Measure X}
-    {S : Set X} (f : X → ℝ≥0∞) {lam : ℝ} (hlam : 0 < lam) (c : ℝ) :
-    ENNReal.ofReal (c / lam ^ 2) * ⨍⁻ x in S, f x ^ (2 : ℝ) ∂μ =
-      ENNReal.ofReal c * ⨍⁻ x in S, (f x / ENNReal.ofReal lam) ^ (2 : ℝ) ∂μ := by
-  rw [← laverage_const_mul ENNReal.ofReal_ne_top, ← laverage_const_mul ENNReal.ofReal_ne_top]
-  congr 1
-  funext x
-  rw [ENNReal.div_rpow_of_nonneg _ _ zero_le_two, ENNReal.ofReal_rpow_of_pos hlam, Real.rpow_two,
-    ENNReal.ofReal_div_of_pos (by positivity), div_eq_mul_inv, div_eq_mul_inv]
-  ring
 
 /-- The constants of the reverse Hölder inequality: `A (C/ρ)² (2cρ)² = A C² (2c)²` does not depend
 on `ρ`, and both coefficients are at most `2ⁿ (A C² (2c)² + 12)`. -/
@@ -255,8 +189,12 @@ theorem exists_setLAverage_enorm_gradient_sq_le_divergence [Nonempty ι] {s : �
   have hP := setLAverage_enorm_value_sub_setAverage_sq_le hs2 hsn u (by positivity) hball
   have : IsFiniteMeasure (mu.restrict (ball y (2 * ρ))) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hav := setLAverage_enorm_sq_le_of_setIntegral_le (f := fun x => W1p.value u x - m) hρ
-    (by positivity) (by positivity)
+  -- The ratio of the measures of the two balls is `2ⁿ`.
+  have hμ2 : mu (ball y (2 * ρ)) = ENNReal.ofReal (2 ^ n) * mu (ball y ρ) := by
+    rw [Measure.addHaar_ball_of_pos mu y (by positivity), Measure.addHaar_ball_of_pos mu y hρ,
+      mul_pow, ENNReal.ofReal_mul (by positivity), mul_assoc]
+  have hav := setLAverage_enorm_sq_le_of_setIntegral_le (f := fun x => W1p.value u x - m)
+    (by positivity) (by positivity) hμ2 measure_ball_lt_top.ne
     ((W1p.integrable_norm_gradient_sq u).mono_measure
       (Measure.restrict_mono ((ball_subset_ball (by linarith)).trans hball) le_rfl))
     ((((Lp.memLp (W1p.value u)).mono_measure (Measure.restrict_mono hball le_rfl)).sub

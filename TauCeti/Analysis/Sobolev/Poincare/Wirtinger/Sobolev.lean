@@ -27,8 +27,9 @@ with `K = ((1 - δ) / (1/n - δ)) ^ (1 - δ)`, first for `C¹` functions and the
 `u ∈ W^{1,p}(Ω)`. Unlike the Poincaré–Wirtinger inequality
 `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex`, the deviation from the mean is measured in
 a strictly better space `L^q`, `q > p`, than the gradient. The range `δ < 1/n` excludes the
-critical exponent `1/q = 1/p - 1/n`, but it is nonempty in every dimension, including `n = 1` and
-`n = 2`, where no critical exponent below `∞` is available.
+critical exponent `1/q = 1/p - 1/n`, but it is nonempty in every dimension. This matters where
+no critical exponent below `∞` is available: for every `p` when `n = 1`, and for the endpoint
+`p = 2` when `n = 2` (for `p < 2` the planar critical exponent `2p/(2 - p)` is finite).
 
 On a ball `B` of radius `r`, and written with averages, the inequality reads
 
@@ -113,7 +114,8 @@ theorem eLpNorm_sub_setAverage_le_mul_measure_rpow_of_convex (hΩ : IsOpen Ω)
     rw [enorm_eq_self]
     congr 1
     refine lintegral_congr fun y => ?_
-    rw [mul_comm, show (n : ℝ) * ((n : ℝ)⁻¹ - 1) = 1 - n by field_simp]
+    have hexp : (n : ℝ) * ((n : ℝ)⁻¹ - 1) = 1 - n := by field_simp
+    rw [mul_comm, hexp]
   -- The `Lᵖ`-`L^q` bound for the potential, with `κ = 1/n`.
   have hpot := eLpNorm_setLIntegral_enorm_sub_rpow_mul_le (μ := μ) (p := p) (q := q)
     (κ := (n : ℝ)⁻¹) hp hpq hδ hδn (inv_le_one_of_one_le₀ hn) hΩ.measurableSet
@@ -146,9 +148,9 @@ omit [FiniteDimensional ℝ E] in
 times the `Lᵖ` norm of their gradient form a **closed** subset of `W^{1,p}(Ω)`, for every
 exponent `q` and every `S ⊆ Ω` of finite measure.
 
-For `q ≠ p` the left-hand side is not continuous on `W^{1,p}(Ω)`, only lower semicontinuous:
-convergence in `W^{1,p}(Ω)` gives an almost everywhere convergent subsequence of values and
-convergent means, and Fatou's lemma applies. -/
+Continuity of the left-hand side on `W^{1,p}(Ω)` is not available in general, but it is lower
+semicontinuous: convergence in `W^{1,p}(Ω)` gives an almost everywhere convergent subsequence of
+values and convergent means, and Fatou's lemma applies. -/
 theorem W1p.isClosed_setOf_eLpNorm_value_sub_setAverage_le (hS : S ⊆ (Omega : Set E))
     (hSfin : mu S ≠ ∞) (q : ℝ≥0∞) (C : ℝ≥0) :
     IsClosed {u : W1p mu Omega p |
@@ -262,11 +264,14 @@ private theorem diam_pow_div_mul_div_mul_rpow_le {n : ℕ} {D r ω K κ δ : ℝ
       ≤ (2 * r) ^ n / n * (K * ω ^ (1 - κ)) / (r ^ n * ω) * (r ^ n * ω) ^ (κ - δ) := by
         gcongr
     _ = 2 ^ n / n * K * r * (r ^ n * ω) ^ (-δ) := by
-        rw [show κ - δ = κ + -δ by ring, Real.rpow_add hm, hmκ,
-          show (2 * r) ^ n / n * (K * ω ^ (1 - κ)) / (r ^ n * ω) *
+        -- Split `m ^ (κ - δ) = r ω ^ κ · m ^ (-δ)`, then collect the factor `rⁿ ω / m = 1`.
+        have hκδ : κ - δ = κ + -δ := sub_eq_add_neg κ δ
+        have hcollect : (2 * r) ^ n / n * (K * ω ^ (1 - κ)) / (r ^ n * ω) *
               (r * ω ^ κ * (r ^ n * ω) ^ (-δ)) =
-            2 ^ n / n * K * r * (r ^ n * ω) ^ (-δ) * (r ^ n * (ω ^ (1 - κ) * ω ^ κ) / (r ^ n * ω))
-            by ring, hωκ, div_self hm.ne', mul_one]
+            2 ^ n / n * K * r * (r ^ n * ω) ^ (-δ) *
+              (r ^ n * (ω ^ (1 - κ) * ω ^ κ) / (r ^ n * ω)) := by
+          ring
+        rw [hκδ, Real.rpow_add hm, hmκ, hcollect, hωκ, div_self hm.ne', mul_one]
 
 /-- **The Sobolev–Poincaré inequality on a ball, with averages.** Let `n ≥ 1` be the dimension,
 let `p ≤ q < ∞` with `δ = 1/p - 1/q < 1/n`, and let `Ω = B(c, r)`. Every `u ∈ W^{1,p}(Ω)`
