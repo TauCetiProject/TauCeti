@@ -293,7 +293,7 @@ theorem quotient_map_span_singleton (hS : IsCohenMacaulay S S) (hdim : ringKrull
   have hspan : algebraMap R S x • (⊤ : Ideal S) = (span {x}).map (algebraMap R S) := by
     simp [map_span, ← Submodule.ideal_span_singleton_smul]
   rw [(Submodule.quotEquivOfEq _ _ hspan).isCohenMacaulay_iff] at h
-  exact (isCohenMacaulay_iff_isCohenMacaulay_self_of_surjective Ideal.Quotient.mk_surjective).1 h
+  exact (isCohenMacaulay_iff_isCohenMacaulay_of_surjective Ideal.Quotient.mk_surjective).1 h
 
 /-- Under the hypotheses of `Module.IsCohenMacaulay.isSMulRegular_algebraMap`, the dimension
 formula `dim S = dim R + dim S ⧸ 𝔪_R S` passes to the local homomorphism `R ⧸ (x) → S ⧸ x S`.

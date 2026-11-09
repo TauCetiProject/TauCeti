@@ -18,6 +18,9 @@ This file collects general `Ext` API that Mathlib does not state in this form:
 
 * the transport of `Extⁿ(X, Y)` along isomorphisms `X ≅ X'` and `Y ≅ Y'`, additively as
   `TauCeti.extAddEquivOfIso` and `R`-linearly as `TauCeti.extLinearEquivOfIso`;
+* `CategoryTheory.Abelian.Ext.mk₀_sub` and `CategoryTheory.Abelian.Ext.sub_comp`: `Ext.mk₀` and
+  composition of `Ext` classes respect differences, complementing Mathlib's `mk₀_add`, `mk₀_neg`,
+  `add_comp` and `neg_comp`;
 * in degree zero, composition with `CategoryTheory.Abelian.Ext.mk₀ f` corresponds under
   `CategoryTheory.Abelian.Ext.addEquiv₀` to composition with `f`
   (`TauCeti.ext_addEquiv₀_mk₀_comp` and `TauCeti.ext_addEquiv₀_comp_mk₀`);
@@ -348,6 +351,23 @@ theorem exact_precompOfLinear₁ (R : Type t) [CommRing R] [Linear R C] (hS : S.
   exact exact_precomp₁ hS Y n₀ n₁ h
 
 end TauCeti
+
+namespace CategoryTheory.Abelian.Ext
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C]
+
+/-- `Ext.mk₀` takes differences of morphisms to differences. -/
+@[simp]
+theorem mk₀_sub {X Y : C} (f g : X ⟶ Y) : mk₀ (f - g) = mk₀ f - mk₀ g := by
+  rw [sub_eq_add_neg, mk₀_add, mk₀_neg, ← sub_eq_add_neg]
+
+/-- Composition of `Ext` classes is additive in the first argument: differences. -/
+@[simp]
+theorem sub_comp {X Y Z : C} {n : ℕ} (α β : Ext.{w} X Y n) {m : ℕ} (γ : Ext.{w} Y Z m) {p : ℕ}
+    (h : n + m = p) : (α - β).comp γ h = α.comp γ h - β.comp γ h := by
+  rw [sub_eq_add_neg, add_comp, neg_comp, ← sub_eq_add_neg]
+
+end CategoryTheory.Abelian.Ext
 
 namespace CategoryTheory.ShortComplex.ShortExact
 
