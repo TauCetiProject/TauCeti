@@ -239,11 +239,11 @@ theorem charWeight_vecMul_inv [NeZero N] (huv : u * v ∣ N) {γ : SL(2, ℤ)} (
   have hv0 : (v : ℤ) ≠ 0 := by
     exact_mod_cast right_ne_zero_of_mul (left_ne_zero_of_mul (NeZero.ne (u * v * n)))
   have hdet : γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 = 1 := γ.fin_two_mul_sub_mul_eq_one
+  rw [vecMul_inv_apply_zero, vecMul_inv_apply_one]
   set a := γ 0 0
   set b := γ 0 1
   set c := γ 1 0
   set d := γ 1 1
-  rw [vecMul_inv_apply_zero, vecMul_inv_apply_one]
   -- `d` is a unit modulo `v`, so divisibility of the first entry does not change
   have hcop : IsCoprime (v : ℤ) d :=
     ⟨-(u * n * t) * b, a, by rw [← hdet, ht]; push_cast; ring⟩
