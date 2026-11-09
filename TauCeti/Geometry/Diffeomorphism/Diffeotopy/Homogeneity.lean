@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Flow
 public import TauCeti.Geometry.Manifold.VectorField.Chart.Basic
+import TauCeti.Geometry.Manifold.Diffeomorph.PointMotion
 
 /-!
 # Homogeneity of connected manifolds
@@ -25,6 +26,11 @@ a compactly supported vector field on `M` whose flow line through `x` is the str
 `x` to `y` in the chart, so its compactly supported flow diffeotopy moves `x` to `y`. Diffeotopies
 compose and invert, and the points reachable in this way from a given point form an open and
 closed subset of `U`.
+
+The orbits of the whole group of `C^m` self-diffeomorphisms are open for any `1 ≤ m`, with no
+further smoothness of `M`: near each point, cut-off translations in a chart move it to every
+nearby point (`Diffeomorph.exists_contMDiff_family_apply_eq`), and unlike flows of vector fields
+they lose no derivative.
 
 This is the first step in comparing two ball embeddings in a connected manifold (the disc
 theorem): it moves the centre of one ball to the centre of the other.
@@ -136,30 +142,30 @@ theorem exists_diffeotopy_final_apply_eq [PreconnectedSpace M] (hm : 1 ≤ m)
 
 open MulAction
 
+variable [IsManifold I m M]
+
 /-- The orbits of the diffeomorphism group of a finite-dimensional boundaryless manifold are
 open. -/
-theorem isOpen_orbit_diffeomorph (hm : 1 ≤ m) (hmn : (m : ℕ∞ω) + 1 ≤ n) (x₀ : M) :
-    IsOpen (orbit (M ≃ₘ^m⟮I, I⟯ M) x₀) := by
-  refine isOpen_iff_mem_nhds.2 fun y hy ↦ ?_
-  obtain ⟨g, rfl⟩ := hy
-  filter_upwards [eventually_exists_diffeotopy_final_apply_eq (I := I) hm hmn isOpen_univ
-    (mem_univ (g • x₀))] with z hz
-  obtain ⟨Φ, -, -, -, -, hz⟩ := hz
-  refine ⟨Φ.final * g, ?_⟩
+theorem isOpen_orbit_diffeomorph (hm : 1 ≤ m) (x₀ : M) : IsOpen (orbit (M ≃ₘ^m⟮I, I⟯ M) x₀) := by
+  refine isOpen_iff_forall_mem_open.2 ?_
+  rintro _ ⟨g, rfl⟩
+  obtain ⟨U, hU, hgU, -, S, f, -, -, -, -, hS, -, -⟩ :=
+    Diffeomorph.exists_contMDiff_family_apply_eq (I := I) hm isOpen_univ (mem_univ (g • x₀))
+  refine ⟨U, fun z hz ↦ ⟨S (f z) * g, ?_⟩, hU, hgU⟩
   dsimp only
-  rw [mul_smul, Diffeomorph.smul_def, hz]
+  rw [mul_smul, Diffeomorph.smul_def (S (f z)), hS z hz]
 
 /-- The orbits of the diffeomorphism group of a finite-dimensional boundaryless manifold are open
 and closed. -/
-theorem isClopen_orbit_diffeomorph (hm : 1 ≤ m) (hmn : (m : ℕ∞ω) + 1 ≤ n) (x₀ : M) :
+theorem isClopen_orbit_diffeomorph (hm : 1 ≤ m) (x₀ : M) :
     IsClopen (orbit (M ≃ₘ^m⟮I, I⟯ M) x₀) :=
-  ⟨isClosed_orbit_of_forall_isOpen_orbit (isOpen_orbit_diffeomorph hm hmn) x₀,
-    isOpen_orbit_diffeomorph hm hmn x₀⟩
+  ⟨isClosed_orbit_of_forall_isOpen_orbit (isOpen_orbit_diffeomorph hm) x₀,
+    isOpen_orbit_diffeomorph hm x₀⟩
 
 /-- **Transitivity.** The diffeomorphism group of a connected finite-dimensional boundaryless
 manifold acts transitively. -/
-theorem orbit_diffeomorph_eq_univ [PreconnectedSpace M] (hm : 1 ≤ m) (hmn : (m : ℕ∞ω) + 1 ≤ n)
-    (x₀ : M) : orbit (M ≃ₘ^m⟮I, I⟯ M) x₀ = univ :=
-  (isClopen_orbit_diffeomorph (I := I) hm hmn x₀).eq_univ ⟨x₀, mem_orbit_self x₀⟩
+theorem orbit_diffeomorph_eq_univ [PreconnectedSpace M] (hm : 1 ≤ m) (x₀ : M) :
+    orbit (M ≃ₘ^m⟮I, I⟯ M) x₀ = univ :=
+  (isClopen_orbit_diffeomorph (I := I) hm x₀).eq_univ ⟨x₀, mem_orbit_self x₀⟩
 
 end TauCeti
