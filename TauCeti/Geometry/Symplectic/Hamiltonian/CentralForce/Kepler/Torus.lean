@@ -278,7 +278,6 @@ theorem isCompleteVectorField_hamiltonianVectorField_keplerBoundPhaseSpace
   rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
   intro x
   refine maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
-    (zero_mem_maximalIntegralCurveInterval hv.contMDiffAt)
     (isCompact_keplerBoundPhaseSpace_preimage_singleton b hm hκ x) fun t ht ↦ funext fun j ↦ ?_
   -- Both integrals are first integrals of each other, so the curves stay in the level of `x`.
   have hfirst := SmoothTwoForm.isFirstIntegral_iff.2

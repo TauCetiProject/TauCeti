@@ -424,18 +424,18 @@ theorem isCompleteVectorField_timeDependentSuspensionField {K : Set M} (hK : IsC
     exact ⟨⟨by linarith [hτab.1], by linarith [hτab.2]⟩, timeDependentFlowOf_mem_insert hX hXK hD⟩
   have hC (a b : ℝ) : IsCompact (Icc (s + a) (s + b) ×ˢ insert x K) :=
     isCompact_Icc.prod (hK.insert x)
-  refine maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow h0 ?_ ?_
+  refine maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow ?_ ?_
   · intro hbdd
     have hlub := isLUB_csSup ⟨0, h0⟩ hbdd
-    obtain ⟨a, ha, hb0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB h0 hlub
+    obtain ⟨a, ha, hb0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB hlub
     obtain ⟨τ, hτ, hτC⟩ := (Filter.Eventually.and (Ioo_mem_nhdsLT hb0)
-      (eventually_notMem_nhdsLT_maximalIntegralCurve hW h0 hlub (hC a (sSup _)))).exists
+      (eventually_notMem_nhdsLT_maximalIntegralCurve hW hlub (hC a (sSup _)))).exists
     exact hτC (hmem (hsub ⟨by linarith [hτ.1], hτ.2⟩) ⟨by linarith [hτ.1], hτ.2.le⟩)
   · intro hbdd
     have hglb := isGLB_csInf ⟨0, h0⟩ hbdd
-    obtain ⟨b, hb, ha0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isGLB h0 hglb
+    obtain ⟨b, hb, ha0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isGLB hglb
     obtain ⟨τ, hτ, hτC⟩ := (Filter.Eventually.and (Ioo_mem_nhdsGT ha0)
-      (eventually_notMem_nhdsGT_maximalIntegralCurve hW h0 hglb (hC (sInf _) b))).exists
+      (eventually_notMem_nhdsGT_maximalIntegralCurve hW hglb (hC (sInf _) b))).exists
     exact hτC (hmem (hsub ⟨hτ.1, by linarith [hτ.2]⟩) ⟨hτ.1.le, by linarith [hτ.2]⟩)
 
 /-- **Flowing back undoes the flow.** If the flow from time `s` to time `t` is defined at `x`, then

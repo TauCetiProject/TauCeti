@@ -225,8 +225,7 @@ theorem Ici_subset_maximalIntegralCurveInterval_neg_mgradient (hf : ContMDiff I 
     Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x :=
   have : CompleteSpace E := FiniteDimensional.complete ℝ E
   Ici_subset_maximalIntegralCurveInterval_of_isCompact_of_mapsTo
-    (contMDiff_neg_mgradient_one hf)
-    (zero_mem_maximalIntegralCurveInterval (contMDiff_neg_mgradient_one hf).contMDiffAt) hK hmem
+    (contMDiff_neg_mgradient_one hf) hK hmem
 
 /-- Along a trapped forward trajectory of `-grad f`, the function `f` converges to its value at
 every ω-limit point. -/

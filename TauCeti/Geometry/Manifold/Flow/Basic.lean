@@ -334,7 +334,6 @@ theorem eventually_flowOf_notMem [IsManifold I 1 M] {v : (x : M) → TangentSpac
     rw [← hdomain]
     exact hb
   simpa only [flowOf_apply] using
-    eventually_notMem_nhdsLT_maximalIntegralCurve hv
-      (mem_flowDomain.mp (mem_flowDomain_zero hv x)) hb' hK
+    eventually_notMem_nhdsLT_maximalIntegralCurve hv hb' hK
 
 end TauCeti
