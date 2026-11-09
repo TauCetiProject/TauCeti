@@ -27,8 +27,10 @@ vanishes. Metric compatibility proves inner-product preservation, and finite dim
 then gives linear isometry equivalences between the endpoint tangent spaces.
 
 The coefficient extension is auxiliary: all statements on the radial segment use the original
-geometric connection operator. Neither a prescribed parallel frame nor a model scalar equation
-is assumed.
+geometric connection operator. On a prescribed segment containing `0` the construction is
+geometric parallel transport from `p`, and so does not depend on the segment
+(`radialParallelLinearMap_eq_of_mem`); outside the segment it carries no geometric meaning.
+Neither a prescribed parallel frame nor a model scalar equation is assumed.
 
 See J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapter 4.
 -/
@@ -37,34 +39,6 @@ public noncomputable section
 
 open Bundle CovariantDerivative Filter Set
 open scoped ContDiff InnerProductSpace Manifold Topology
-
-section
-
-open TauCeti.Manifold
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-  {ι : Type*} [Fintype ι] [LinearOrder ι] [LocallyFiniteOrderBot ι]
-  {p : M} {U : Set (TangentSpace I p)}
-
-namespace OrthonormalBasis
-
-/-- Reconstruct an initial tangent vector in the normal orthonormal frame at another point. -/
-def normalFrameExpansion (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (q : M)
-    (a : TangentSpace I p) : TangentSpace I q :=
-  ∑ i, ⟪b i, a⟫_ℝ • normalOrthonormalFrame I M p U b i q
-
-/-- Frame reconstruction uses the initial orthonormal components. -/
-theorem normalFrameExpansion_apply (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (q : M)
-    (a : TangentSpace I p) : b.normalFrameExpansion (U := U) q a =
-      ∑ i, ⟪b i, a⟫_ℝ • normalOrthonormalFrame I M p U b i q := by rfl
-
-end OrthonormalBasis
-
-end
 
 namespace TauCeti.Manifold
 
@@ -113,7 +87,14 @@ private theorem radialConnectionExtension_eventuallyEq (h : IsNormalDomain I M p
         (riemannianExp I M p (s • v))) :=
   (Classical.choose_spec (h.exists_radialConnectionExtension b v hlr hseg)).2
 
-/-- The Dyson solution for the normal-frame parallel equation near a closed radial segment. -/
+/-- The Dyson solution for the normal-frame parallel equation near a closed radial segment.
+
+It is built from an auxiliary smooth extension of the connection coefficients, so it solves the
+geometric coefficient equation only at parameters of the prescribed segment `Icc l r`. When that
+segment contains `0`, its frame reconstruction is geometric parallel transport from `p` along
+the radial geodesic at every parameter of the segment, independently of the segment chosen
+(`radialParallelCoefficients_eq_of_mem`). Outside the segment its values depend on the
+auxiliary extension. -/
 def radialParallelCoefficients (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p)
     {l r : ℝ} (hlr : l ≤ r) (hseg : ∀ t ∈ Icc l r, t • v ∈ U) (t : ℝ) :
@@ -121,6 +102,7 @@ def radialParallelCoefficients (h : IsNormalDomain I M p U)
   TauCeti.dysonSeriesLeft (h.radialConnectionExtension b v hlr hseg) t
 
 /-- The coefficient propagator starts at the identity. -/
+@[simp]
 theorem radialParallelCoefficients_zero (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p)
     {l r : ℝ} (hlr : l ≤ r) (hseg : ∀ t ∈ Icc l r, t • v ∈ U) :
@@ -138,7 +120,12 @@ theorem contDiff_radialParallelCoefficients (h : IsNormalDomain I M p U)
     ((h.contDiff_radialConnectionExtension b v hlr hseg).of_le (m := (n : ℕ∞ω))
       (by simp))).of_le (by exact_mod_cast Nat.le_succ n)
 
-/-- Parallel transport along a radial geodesic, reconstructed as a tangent-space linear map. -/
+/-- The frame reconstruction of the coefficient propagator at the radial parameter `t`.
+
+When `t` and `0` both lie in the prescribed segment `Icc l r`, this is parallel transport from
+`p` along the radial geodesic `s ↦ exp_p (s • v)` (see `alongCurve_radialParallel_eq_zero` and
+`radialParallelLinearMap_eq_of_mem`). For other parameters it depends on the auxiliary
+coefficient extension and carries no geometric meaning. -/
 def radialParallelLinearMap (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p))
     (v : TangentSpace I p) {l r : ℝ} (hlr : l ≤ r) (hseg : ∀ t ∈ Icc l r, t • v ∈ U) (t : ℝ) :
@@ -152,7 +139,8 @@ def radialParallelLinearMap (h : IsNormalDomain I M p U)
     simp [OrthonormalBasis.normalFrameExpansion_apply, map_smul, real_inner_smul_right, smul_smul,
       Finset.smul_sum]
 
-/-- The radial transport map reconstructs the Dyson solution in the moving orthonormal frame. -/
+/-- The radial transport map reconstructs the Dyson solution in the moving orthonormal frame.
+This is parallel transport only at parameters of a prescribed segment containing `0`. -/
 theorem radialParallelLinearMap_apply (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p))
     (v : TangentSpace I p) {l r : ℝ} (hlr : l ≤ r)
@@ -160,31 +148,6 @@ theorem radialParallelLinearMap_apply (h : IsNormalDomain I M p U)
     radialParallelLinearMap (U := U) h b v hlr hseg t a =
       b.normalFrameExpansion (U := U) (riemannianExp I M p (t • v))
         (radialParallelCoefficients (U := U) h b v hlr hseg t a) := by rfl
-
-/-- The moving-frame components of a reconstructed vector are its original components. -/
-theorem inner_normalFrameExpansion (h : IsNormalDomain I M p U)
-    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) {q : M}
-    (hq : q ∈ riemannianExp I M p '' U) (a : TangentSpace I p) (k : ι) :
-    ⟪normalOrthonormalFrame I M p U b k q, b.normalFrameExpansion (U := U) q a⟫_ℝ =
-      ⟪b k, a⟫_ℝ := by
-  simp [OrthonormalBasis.normalFrameExpansion_apply, inner_sum, real_inner_smul_right,
-    orthonormal_iff_ite.mp (h.orthonormal_normalOrthonormalFrame b hq)]
-
-/-- Reconstruction in a normal orthonormal frame preserves inner products. -/
-theorem inner_normalFrameExpansion_pair (h : IsNormalDomain I M p U)
-    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) {q : M}
-    (hq : q ∈ riemannianExp I M p '' U) (a a' : TangentSpace I p) :
-    ⟪b.normalFrameExpansion (U := U) q a, b.normalFrameExpansion (U := U) q a'⟫_ℝ =
-      ⟪a, a'⟫_ℝ := by
-  rw [b.normalFrameExpansion_apply q a, sum_inner]
-  simp only [real_inner_smul_left, h.inner_normalFrameExpansion b hq]
-  simpa only [real_inner_comm a] using b.sum_inner_mul_inner a a'
-
-/-- At the centre, frame reconstruction is the identity. -/
-theorem normalFrameExpansion_self (h : IsNormalDomain I M p U)
-    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (a : TangentSpace I p) :
-    b.normalFrameExpansion (U := U) p a = a := by
-  simp [OrthonormalBasis.normalFrameExpansion_apply, h.normalOrthonormalFrame_self, b.sum_repr']
 
 /-- Covariant differentiation of a reconstructed field is its coefficient derivative plus
 connection. -/
@@ -198,7 +161,7 @@ theorem inner_alongCurve_normalFrameExpansion (h : IsNormalDomain I M p U)
         (fun s ↦ b.normalFrameExpansion (U := U) (riemannianExp I M p (s • v)) (y s)) t⟫_ℝ =
       ⟪b k, y' + b.normalFrameConnectionOperator (U := U) v
         (riemannianExp I M p (t • v)) (y t)⟫_ℝ := by
-  let γ := fun s : ℝ ↦ riemannianExp I M p (s • v)
+  set γ := fun s : ℝ ↦ riemannianExp I M p (s • v)
   let e := fun i s ↦ normalOrthonormalFrame I M p U b i (γ s)
   have hq : γ t ∈ riemannianExp I M p '' U := mem_image_of_mem _ ht
   have hlin : ContDiff ℝ ∞ (fun s : ℝ ↦ s • v) := contDiff_id.smul contDiff_const
@@ -221,15 +184,13 @@ theorem inner_alongCurve_normalFrameExpansion (h : IsNormalDomain I M p U)
       leviCivitaConnection I M (normalOrthonormalFrame I M p U b i) (γ t)
         (normalCoordinateField I M p U v (γ t)) := by
     rw [alongCurve_pullback (leviCivitaConnection I M) γ _
-      (hasMFDerivAt_curveVelocity hγ) (he i)]
-    rw [show curveVelocity I γ t = normalCoordinateField I M p U v (γ t) from
+      (hasMFDerivAt_curveVelocity hγ) (he i),
       h.curveVelocity_riemannianExp_smul_eq_normalCoordinateField ht]
   have hexp : (fun s ↦ b.normalFrameExpansion (U := U) (γ s) (y s)) =
       (fun s ↦ ∑ i, ⟪b i, y s⟫_ℝ • e i s) := by
     funext s
     exact b.normalFrameExpansion_apply (γ s) (y s)
-  rw [show (fun s : ℝ ↦ riemannianExp I M p (s • v)) = γ from rfl, hexp,
-    alongCurve_sum _ _ Finset.univ _ (fun i _ ↦ hterm i), inner_sum]
+  rw [hexp, alongCurve_sum _ _ Finset.univ _ (fun i _ ↦ hterm i), inner_sum]
   simp only [alongCurve_smul _ _ _ _ (hcoeff _).differentiableAt (hecoord _),
     (hcoeff _).deriv, hframe, inner_add_right, real_inner_smul_right]
   rw [Finset.sum_add_distrib, OrthonormalBasis.inner_normalFrameConnectionOperator]
@@ -255,7 +216,7 @@ theorem differentiableAt_sectionCoord_normalFrameExpansion (h : IsNormalDomain I
       (fun s : ℝ ↦ riemannianExp I M p (s • v))
       (fun s ↦ b.normalFrameExpansion (U := U) (riemannianExp I M p (s • v)) (y s))
       (riemannianExp I M p (t • v))) t := by
-  let γ := fun s : ℝ ↦ riemannianExp I M p (s • v)
+  set γ := fun s : ℝ ↦ riemannianExp I M p (s • v)
   have hq : γ t ∈ riemannianExp I M p '' U := mem_image_of_mem _ ht
   have hlin : ContDiff ℝ ∞ (fun s : ℝ ↦ s • v) := contDiff_id.smul contDiff_const
   have hγ : MDiffAt γ t :=
@@ -271,7 +232,7 @@ theorem differentiableAt_sectionCoord_normalFrameExpansion (h : IsNormalDomain I
       (fun s ↦ ∑ i, ⟪b i, y s⟫_ℝ • normalOrthonormalFrame I M p U b i (γ s)) := by
     funext s
     exact b.normalFrameExpansion_apply (γ s) (y s)
-  rw [show (fun s : ℝ ↦ riemannianExp I M p (s • v)) = γ from rfl, hexp, sectionCoord_sum]
+  rw [hexp, sectionCoord_sum]
   apply DifferentiableAt.fun_sum
   intro i _
   rw [sectionCoord_smul]
@@ -350,18 +311,18 @@ theorem inner_radialParallel (h : IsNormalDomain I M p U)
   have hparallel (z : TangentSpace I p) (s : ℝ) (hs : s ∈ Icc l r) :
       alongCurve (leviCivitaConnection I M) γ (P z) s = 0 :=
     h.alongCurve_radialParallel_eq_zero b v hlr.le hseg z hs
-  have hd (s : ℝ) (hs : s ∈ Icc l r) :
-      HasDerivAt (fun u ↦ ⟪P a u, P a' u⟫_ℝ) 0 s := by
-    simpa only [hparallel a s hs, hparallel a' s hs, inner_zero_left,
-      inner_zero_right, add_zero] using
-      (isMetricCompatible_leviCivitaConnection I).hasDerivAt_inner_alongCurve
-        (hγ s hs) (hcoord a s hs) (hcoord a' s hs)
+  have hrestrict (z : TangentSpace I p) (s : ℝ) (hs : s ∈ Icc l r) :
+      alongCurveWithin (leviCivitaConnection I M) γ (P z) (Icc l r) s = 0 := by
+    rw [alongCurveWithin_subset _ γ (P z) (subset_univ _) (uniqueDiffOn_Icc hlr s hs)
+      (hcoord z s hs).differentiableWithinAt
+      ((mdifferentiableAt_extChartAt (I := I) (mem_chart_source H (γ s))).comp s
+        (hγ s hs)).differentiableAt.differentiableWithinAt,
+      alongCurveWithin_univ, hparallel z s hs]
   have hconst : ⟪P a t, P a' t⟫_ℝ = ⟪P a 0, P a' 0⟫_ℝ :=
-    (convex_Icc l r).is_const_of_fderivWithin_eq_zero
-      (fun s hs ↦ (hd s hs).differentiableAt.differentiableWithinAt)
-      (fun s hs ↦ by
-        simpa using (hd s hs).hasDerivWithinAt.hasFDerivWithinAt.fderivWithin
-          (uniqueDiffOn_Icc hlr s hs)) ht h0
+    (isMetricCompatible_leviCivitaConnection I).inner_eq_of_alongCurveWithin_eq_zero
+      (uniqueDiffOn_Icc hlr) isPreconnected_Icc (fun s hs ↦ (hγ s hs).mdifferentiableWithinAt)
+      (fun s hs ↦ (hcoord a s hs).differentiableWithinAt)
+      (fun s hs ↦ (hcoord a' s hs).differentiableWithinAt) (hrestrict a) (hrestrict a') ht h0
   rw [hconst]
   dsimp only [P]
   rw [radialParallelCoefficients_zero, one_apply_eq_self, one_apply_eq_self]
@@ -369,6 +330,7 @@ theorem inner_radialParallel (h : IsNormalDomain I M p U)
 
 /-- The transported vector has the prescribed initial value, with its canonical tangent-space
 type. -/
+@[simp]
 theorem radialParallelLinearMap_apply_zero (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p)
     {l r : ℝ} (hlr : l ≤ r) (hseg : ∀ t ∈ Icc l r, t • v ∈ U) (a : TangentSpace I p) :
@@ -500,9 +462,8 @@ def radialTransverseIsometry (h : IsNormalDomain I M p U)
       TangentSpace I (riemannianExp I M p (t • v))) =
       (ℝ ∙ curveVelocity I (fun u : ℝ ↦ riemannianExp I M p (u • v)) t)ᗮ := by
     rw [Submodule.map_orthogonal_equiv, Submodule.map_span]
-    simp only [Set.image_singleton, LinearEquiv.coe_coe]
-    change (ℝ ∙ e v)ᗮ = _
-    rw [hev]
+    simp only [Set.image_singleton, LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv,
+      hev]
   exact (LinearIsometryEquiv.submoduleMap (ℝ ∙ v)ᗮ e).trans
     (LinearIsometryEquiv.ofEq _ _ hmap)
 
@@ -517,6 +478,99 @@ theorem radialTransverseIsometry_apply (h : IsNormalDomain I M p U)
         h.radialParallelLinearMap b v hr.le hseg t a := by
   simp only [radialTransverseIsometry, LinearIsometryEquiv.trans_apply]
   exact h.radialParallelIsometry_apply b v hr hseg ⟨le_rfl, hr.le⟩ htseg a
+
+/-- Radial parallel transport does not depend on the prescribed segment: for two segments
+containing `0`, the reconstructed transports agree at every common parameter. -/
+theorem radialParallelLinearMap_eq_of_mem (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p)
+    {l r l' r' : ℝ} (hlr : l ≤ r) (hseg : ∀ t ∈ Icc l r, t • v ∈ U) (h0 : 0 ∈ Icc l r)
+    (hlr' : l' ≤ r') (hseg' : ∀ t ∈ Icc l' r', t • v ∈ U) (h0' : 0 ∈ Icc l' r')
+    {t : ℝ} (ht : t ∈ Icc l r) (ht' : t ∈ Icc l' r') (a : TangentSpace I p) :
+    h.radialParallelLinearMap b v hlr hseg t a = h.radialParallelLinearMap b v hlr' hseg' t a := by
+  let γ := fun s : ℝ ↦ riemannianExp I M p (s • v)
+  let P := fun s : ℝ ↦ h.radialParallelLinearMap b v hlr hseg s a
+  let Q := fun s : ℝ ↦ h.radialParallelLinearMap b v hlr' hseg' s a
+  have hlin : ContDiff ℝ ∞ (fun s : ℝ ↦ s • v) := contDiff_id.smul contDiff_const
+  have hγ (s : ℝ) (hs : s ∈ Icc l r ∩ Icc l' r') : MDiffAt γ s :=
+    ((contMDiffAt_riemannianExp (h.subset_expDomain (hseg s hs.1))).comp s
+      hlin.contMDiff.contMDiffAt).mdifferentiableAt (by simp)
+  have hPcoord (s : ℝ) (hs : s ∈ Icc l r ∩ Icc l' r') :
+      DifferentiableAt ℝ (sectionCoord (F := E) γ P (γ s)) s :=
+    differentiableAt_sectionCoord γ P
+      ((h.contMDiffAt_radialParallelLinearMap_apply b v hlr hseg a
+        (hseg s hs.1)).mdifferentiableAt (by simp))
+      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ s))
+  have hQcoord (s : ℝ) (hs : s ∈ Icc l r ∩ Icc l' r') :
+      DifferentiableAt ℝ (sectionCoord (F := E) γ Q (γ s)) s :=
+    differentiableAt_sectionCoord γ Q
+      ((h.contMDiffAt_radialParallelLinearMap_apply b v hlr' hseg' a
+        (hseg s hs.1)).mdifferentiableAt (by simp))
+      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ s))
+  have hP (s : ℝ) (hs : s ∈ Icc l r ∩ Icc l' r') :
+      alongCurve (leviCivitaConnection I M) γ P s = 0 := by
+    have hexp : P = fun u ↦ b.normalFrameExpansion (U := U) (γ u)
+        (h.radialParallelCoefficients b v hlr hseg u a) :=
+      funext fun u ↦ h.radialParallelLinearMap_apply b v hlr hseg u a
+    rw [hexp]
+    exact h.alongCurve_radialParallel_eq_zero b v hlr hseg a hs.1
+  have hQ (s : ℝ) (hs : s ∈ Icc l r ∩ Icc l' r') :
+      alongCurve (leviCivitaConnection I M) γ Q s = 0 := by
+    have hexp : Q = fun u ↦ b.normalFrameExpansion (U := U) (γ u)
+        (h.radialParallelCoefficients b v hlr' hseg' u a) :=
+      funext fun u ↦ h.radialParallelLinearMap_apply b v hlr' hseg' u a
+    rw [hexp]
+    exact h.alongCurve_radialParallel_eq_zero b v hlr' hseg' a hs.2
+  have hconn : IsPreconnected (Icc l r ∩ Icc l' r') := by
+    rw [Icc_inter_Icc]
+    exact isPreconnected_Icc
+  apply (isMetricCompatible_leviCivitaConnection I).eq_of_alongCurve_eq_zero
+    hconn hγ hPcoord hQcoord hP hQ ⟨h0, h0'⟩ ⟨ht, ht'⟩
+  dsimp only [P, Q]
+  rw [h.radialParallelLinearMap_apply_zero b v hlr hseg a,
+    h.radialParallelLinearMap_apply_zero b v hlr' hseg' a]
+
+/-- The coefficient propagators for two segments containing `0` agree at every common
+parameter. -/
+theorem radialParallelCoefficients_eq_of_mem (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p)
+    {l r l' r' : ℝ} (hlr : l ≤ r) (hseg : ∀ t ∈ Icc l r, t • v ∈ U) (h0 : 0 ∈ Icc l r)
+    (hlr' : l' ≤ r') (hseg' : ∀ t ∈ Icc l' r', t • v ∈ U) (h0' : 0 ∈ Icc l' r')
+    {t : ℝ} (ht : t ∈ Icc l r) (ht' : t ∈ Icc l' r') :
+    h.radialParallelCoefficients b v hlr hseg t =
+      h.radialParallelCoefficients b v hlr' hseg' t := by
+  have hq : riemannianExp I M p (t • v) ∈ riemannianExp I M p '' U :=
+    mem_image_of_mem _ (hseg t ht)
+  ext a
+  refine b.toBasis.ext_elem fun k ↦ ?_
+  have hk := congrArg (fun x ↦ ⟪normalOrthonormalFrame I M p U b k _, x⟫_ℝ)
+    (h.radialParallelLinearMap_eq_of_mem b v hlr hseg h0 hlr' hseg' h0' ht ht' a)
+  simpa only [radialParallelLinearMap_apply, h.inner_normalFrameExpansion b hq,
+    OrthonormalBasis.coe_toBasis_repr_apply, OrthonormalBasis.repr_apply_apply] using hk
+
+/-- The radial parallel isometries for two segments containing `0` agree at every common
+parameter. -/
+theorem radialParallelIsometry_eq_of_mem (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p)
+    {l r l' r' : ℝ} (hlr : l < r) (hseg : ∀ t ∈ Icc l r, t • v ∈ U) (h0 : 0 ∈ Icc l r)
+    (hlr' : l' < r') (hseg' : ∀ t ∈ Icc l' r', t • v ∈ U) (h0' : 0 ∈ Icc l' r')
+    {t : ℝ} (ht : t ∈ Icc l r) (ht' : t ∈ Icc l' r') :
+    h.radialParallelIsometry b v hlr hseg h0 ht = h.radialParallelIsometry b v hlr' hseg' h0' ht' :=
+  LinearIsometryEquiv.ext fun a ↦ by
+    rw [radialParallelIsometry_apply, radialParallelIsometry_apply]
+    exact h.radialParallelLinearMap_eq_of_mem b v hlr.le hseg h0 hlr'.le hseg' h0' ht ht' a
+
+/-- The transverse isometries for two radial segments `Icc 0 r` and `Icc 0 r'` agree at every
+common parameter. -/
+theorem radialTransverseIsometry_eq_of_mem (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p) {r r' t : ℝ}
+    (hr : 0 < r) (hseg : ∀ u ∈ Icc 0 r, u • v ∈ U) (htseg : t ∈ Icc 0 r)
+    (hr' : 0 < r') (hseg' : ∀ u ∈ Icc 0 r', u • v ∈ U) (htseg' : t ∈ Icc 0 r') :
+    h.radialTransverseIsometry b v hr hseg htseg =
+      h.radialTransverseIsometry b v hr' hseg' htseg' :=
+  LinearIsometryEquiv.ext fun a ↦ Subtype.ext <| by
+    rw [radialTransverseIsometry_apply, radialTransverseIsometry_apply]
+    exact h.radialParallelLinearMap_eq_of_mem b v hr.le hseg ⟨le_rfl, hr.le⟩ hr'.le hseg'
+      ⟨le_rfl, hr'.le⟩ htseg htseg' a
 
 end IsNormalDomain
 end TauCeti.Manifold
