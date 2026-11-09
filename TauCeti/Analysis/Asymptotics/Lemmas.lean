@@ -240,6 +240,6 @@ group, has bounded range if it has limits at `atBot` and `atTop`. -/
 theorem Continuous.isBounded_range_of_tendsto_atTop_atBot {β E : Type*} [TopologicalSpace β]
     [LinearOrder β] [OrderClosedTopology β] [CompactIccSpace β] [NoMaxOrder β] [NoMinOrder β]
     [SeminormedAddCommGroup E] {f : β → E} {a b : E} (hf : Continuous f)
-    (hbot : Tendsto f atBot (𝓝 a)) (htop : Tendsto f atTop (𝓝 b)) :
+    (htop : Tendsto f atTop (𝓝 b)) (hbot : Tendsto f atBot (𝓝 a)) :
     Bornology.IsBounded (Set.range f) :=
   hf.isBounded_range_iff_isBigO_atTop_atBot.mpr ⟨htop.isBigO_one ℝ, hbot.isBigO_one ℝ⟩

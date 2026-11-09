@@ -206,6 +206,25 @@ theorem exists_pos_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
 
 /-! ### Hyperbolic limits -/
 
+/-- Away from `[-R, R]`, the interpolating family `S` agrees with `Sm` or `Sp`, so the Lyapunov
+inequalities of `Sm` and `Sp` at the nearby operators `A s` give the uniform one
+`min cm cp ‖v‖² ≤ ⟪S s (A s v), v⟫`. -/
+private lemma min_mul_norm_sq_le_inner_of_notMem_Icc {Sm Sp : E →L[ℝ] E} {S : ℝ → E →L[ℝ] E}
+    {cm cp R a b : ℝ} (hRa : -R ≤ a) (hRb : b ≤ R)
+    (ha : ∀ s ≤ a, ∀ v, cm * ‖v‖ ^ 2 ≤ ⟪Sm (A s v), v⟫_ℝ)
+    (hb : ∀ s ≥ b, ∀ v, cp * ‖v‖ ^ 2 ≤ ⟪Sp (A s v), v⟫_ℝ)
+    (hSbot : ∀ s ≤ -R, S s = Sm) (hStop : ∀ s ≥ R, S s = Sp)
+    {s : ℝ} (hs : s ∉ Icc (-R) R) (v : E) :
+    min cm cp * ‖v‖ ^ 2 ≤ ⟪S s (A s v), v⟫_ℝ := by
+  rcases lt_or_ge s (-R) with h₁ | h₁
+  · rw [hSbot s h₁.le]
+    exact (mul_le_mul_of_nonneg_right (min_le_left _ _) (sq_nonneg _)).trans
+      (ha s (by linarith) v)
+  · have h₂ : R < s := lt_of_not_ge fun h ↦ hs ⟨h₁, h⟩
+    rw [hStop s h₂.le]
+    exact (mul_le_mul_of_nonneg_right (min_le_right _ _) (sq_nonneg _)).trans
+      (hb s (by linarith) v)
+
 /-- **The trajectory estimate for hyperbolic limits on test paths.** Let `A` be a continuous
 family of operators whose limits `A±` at `±∞` have Lyapunov forms. Then there are `R > 0` and
 `C ≥ 0` with
@@ -244,7 +263,7 @@ theorem exists_pos_nonneg_forall_integral_norm_deriv_sq_add_integral_norm_sq_le_
   have hK₀ : 0 ≤ K := (by positivity : (0 : ℝ) ≤ ‖S 0‖ * ‖A 0‖ + ‖deriv S 0‖ / 2).trans
     (hK' 0 ⟨by linarith, by linarith⟩)
   obtain ⟨MA, hMA⟩ := isBounded_iff_forall_norm_le.mp
-    (hA.isBounded_range_of_tendsto_atTop_atBot hbot htop)
+    (hA.isBounded_range_of_tendsto_atTop_atBot htop hbot)
   replace hMA (s : ℝ) : ‖A s‖ ≤ MA := hMA _ (mem_range_self s)
   set c := min cm cp
   have hc : 0 < c := lt_min hcm hcp
@@ -253,14 +272,8 @@ theorem exists_pos_nonneg_forall_integral_norm_deriv_sq_add_integral_norm_sq_le_
   have hY := half_mul_integral_norm_sq_le hS hsym hA hu hcu measurableSet_Icc hc hM
     (I := Icc (-R) R) (K := K) (fun s hs v ↦ by
       rw [hdS s hs, zero_apply, inner_zero_left, zero_div, sub_zero]
-      rcases lt_or_ge s (-R) with h₁ | h₁
-      · rw [hSbot s h₁.le]
-        exact (mul_le_mul_of_nonneg_right (min_le_left _ _) (sq_nonneg _)).trans
-          ((ha s (by linarith)).1 v)
-      · have h₂ : R < s := lt_of_not_ge fun h ↦ hs ⟨h₁, h⟩
-        rw [hStop s h₂.le]
-        exact (mul_le_mul_of_nonneg_right (min_le_right _ _) (sq_nonneg _)).trans
-          ((hb s (by linarith)).1 v))
+      exact min_mul_norm_sq_le_inner_of_notMem_Icc hRa hRb (fun s hs ↦ (ha s hs).1)
+        (fun s hs ↦ (hb s hs).1) hSbot hStop hs v)
     (fun s hs v ↦ by
       have := mul_le_mul_of_nonneg_right (hK' s hs) (sq_nonneg ‖v‖)
       linarith [(S s).neg_mul_norm_sq_le_inner_sub (A s) (deriv S s) v])
