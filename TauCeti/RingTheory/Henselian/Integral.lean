@@ -14,7 +14,6 @@ import TauCeti.RingTheory.Henselian.Basic
 import TauCeti.RingTheory.Henselian.Factorization
 import TauCeti.RingTheory.Henselian.Radical
 import TauCeti.RingTheory.Idempotents.Polynomial
-import TauCeti.RingTheory.LocalRing.Monogenic
 
 /-!
 # Idempotents of integral algebras over a Henselian pair
@@ -37,7 +36,7 @@ pairs by their finite algebras, and by their integral algebras.
   monic `f`.
 * `Ideal.henselianRing_map_of_isIntegral`: if `(R, I)` is Henselian and `S` is an integral
   `R`-algebra, then `(S, IS)` is Henselian.
-* `TauCeti.HenselianLocalRing.of_finite`: a finite local algebra over a henselian local ring
+* `TauCeti.HenselianLocalRing.of_isIntegral`: an integral local algebra over a henselian local ring
   is henselian.
 * `TauCeti.henselianRing_iff_forall_bijOn_isIdempotentElem` and
   `TauCeti.henselianRing_iff_forall_bijOn_isIdempotentElem_of_isIntegral`: `(R, I)` is Henselian
@@ -172,18 +171,25 @@ end Ideal
 
 namespace TauCeti
 
-/-- A finite local algebra over a henselian local ring is henselian. -/
-theorem HenselianLocalRing.of_finite (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
-    [HenselianLocalRing R] [IsLocalRing S] [Module.Finite R S] : HenselianLocalRing S := by
+/-- An integral local algebra over a henselian local ring is henselian. -/
+theorem HenselianLocalRing.of_isIntegral (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
+    [HenselianLocalRing R] [IsLocalRing S] [Algebra.IsIntegral R S] : HenselianLocalRing S := by
   let I := (IsLocalRing.maximalIdeal R).map (algebraMap R S)
   have hrad : I.radical = IsLocalRing.maximalIdeal S := by
-    obtain ⟨n, hn⟩ := IsLocalRing.exists_maximalIdeal_pow_le_map (R := R) (S := S)
     apply le_antisymm
     · apply (Ideal.IsPrime.radical_le_iff inferInstance).mpr
       exact Ideal.map_le_iff_le_comap.mpr
         (Ideal.comap_eq_maximalIdeal_of_isIntegral (IsLocalRing.maximalIdeal S)).ge
-    · intro b hb
-      exact ⟨n, hn (Ideal.pow_mem_pow hb n)⟩
+    · rw [Ideal.radical_eq_sInf]
+      refine le_sInf fun P ⟨hIP, hP⟩ ↦ ?_
+      have : P.IsPrime := hP
+      have hcomap : P.under R = IsLocalRing.maximalIdeal R :=
+        ((inferInstance : (IsLocalRing.maximalIdeal R).IsMaximal).eq_of_le
+          (Ideal.comap_ne_top (algebraMap R S) hP.ne_top)
+          (Ideal.map_le_iff_le_comap.mp hIP)).symm
+      have hmax : P.IsMaximal := Ideal.isMaximal_of_isIntegral_of_isMaximal_under P
+        (by rw [hcomap]; infer_instance)
+      exact (IsLocalRing.eq_maximalIdeal hmax).ge
   have : HenselianRing S I := inferInstance
   have : HenselianRing S I.radical := inferInstance
   rw [hrad] at this
