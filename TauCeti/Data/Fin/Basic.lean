@@ -413,12 +413,12 @@ theorem finRotate_castSucc {n : ℕ} (i : Fin n) : finRotate (n + 1) i.castSucc 
   finRotate_of_lt i.isLt
 
 /-- The inverse cyclic rotation sends `k.succ` to `k.castSucc`. -/
-@[simp] theorem finRotate_symm_succ {m : ℕ} (k : Fin m) :
+theorem finRotate_symm_succ {m : ℕ} (k : Fin m) :
     (finRotate (m + 1)).symm k.succ = k.castSucc :=
   (finRotate _).symm_apply_eq.mpr (finRotate_castSucc k).symm
 
 /-- The inverse cyclic rotation sends `0` to `Fin.last m`. -/
-@[simp] theorem finRotate_symm_zero {m : ℕ} : (finRotate (m + 1)).symm 0 = last m :=
+theorem finRotate_symm_zero {m : ℕ} : (finRotate (m + 1)).symm 0 = last m :=
   (finRotate _).symm_apply_eq.mpr finRotate_last.symm
 
 /-- Rotating a tuple of even length alternating between two entries swaps the two entries. -/
