@@ -124,7 +124,7 @@ theorem toExt_eq_zero_iff (ξ : E.Ext1 Z X) : ξ.toExt = (0 : Ext.{w} Z X 1) ↔
 
 /-- Every derived degree-one class out of the end of a projective presentation is represented
 by a Yoneda extension for the canonical abelian exact structure. -/
-theorem toExt_surjective_of_projective_presentation {S : ShortComplex C}
+theorem toExt_surjective_of_shortExact {S : ShortComplex C}
     (hS : S.ShortExact) [Projective S.X₂] (X : C) :
     Function.Surjective
       (toExt : (ExactStructure.abelian C).Ext1 S.X₃ X → Ext.{w} S.X₃ X 1) := by
@@ -138,10 +138,10 @@ extension for the canonical abelian exact structure. -/
 theorem toExt_surjective [EnoughProjectives C] (Z X : C) :
     Function.Surjective
       (toExt : (ExactStructure.abelian C).Ext1 Z X → Ext.{w} Z X 1) := by
-  let S := ShortComplex.mk _ _ (kernel.condition (Projective.π Z))
-  have hS : S.ShortExact := by
-    simpa only [ShortComplex.kernelSequence] using kernelSequence_shortExact (Projective.π Z)
-  exact toExt_surjective_of_projective_presentation hS X
+  have : Projective (ShortComplex.kernelSequence (Projective.π Z)).X₂ := by
+    simp only [ShortComplex.kernelSequence_X₂]
+    infer_instance
+  exact toExt_surjective_of_shortExact (kernelSequence_shortExact (Projective.π Z)) X
 
 /-- Yoneda extensions for the abelian exact structure agree with Mathlib's degree-one Ext
 as pointed sets in a category with enough projectives. -/
@@ -160,6 +160,19 @@ theorem abelianEquiv_symm_toExt [EnoughProjectives C]
     (ξ : (ExactStructure.abelian C).Ext1 Z X) :
     (abelianEquiv Z X).symm ξ.toExt = ξ :=
   (abelianEquiv Z X).symm_apply_apply ξ
+
+/-- The inverse comparison represents the given derived extension class. -/
+@[simp]
+theorem toExt_abelianEquiv_symm [EnoughProjectives C] (α : Ext.{w} Z X 1) :
+    ((abelianEquiv Z X).symm α).toExt = α :=
+  (abelianEquiv Z X).apply_symm_apply α
+
+/-- The inverse comparison sends zero to the split Yoneda extension. -/
+@[simp]
+theorem abelianEquiv_symm_zero [EnoughProjectives C] :
+    (abelianEquiv Z X).symm (0 : Ext.{w} Z X 1) = 0 := by
+  apply toExt_injective
+  simp
 
 end Ext1
 
