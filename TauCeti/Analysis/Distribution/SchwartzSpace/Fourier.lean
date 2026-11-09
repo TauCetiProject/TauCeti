@@ -261,7 +261,7 @@ theorem fourier_cutoffExponential [CompleteSpace F] (φ : 𝓢(E, ℂ)) {ε : �
     rw [cutoffExponential_apply φ hε, TauCeti.exp_inner_mul_I_eq_fourierChar, Circle.smul_def,
       smul_smul]
   rw [fourier_coe, hmod, TauCeti.fourier_fourierChar_smul,
-    TauCeti.fourier_comp_smul (fun z ↦ φ z • v) hε, TauCeti.fourier_smul_const, fourier_coe]
+    TauCeti.fourier_comp_smul (fun z ↦ φ z • v), TauCeti.fourier_smul_const, fourier_coe]
 
 end CutoffExponential
 

@@ -85,14 +85,31 @@ theorem _root_.ContinuousLinearEquiv.fourierInv_comp (A : E ≃L[ℝ] E) (f : E 
   simp only [Real.fourierInv_eq_fourier_neg, A.fourier_comp, map_neg]
 
 /-- **Fourier transform of a dilation**: `𝓕 (f (c • ·)) y = |c ^ n|⁻¹ • 𝓕 f (c⁻¹ • y)`, where
-`n` is the dimension. -/
-theorem fourier_comp_smul (f : E → F) {c : ℝ} (hc : c ≠ 0) (y : E) :
+`n` is the dimension. For `c = 0` both sides vanish, or agree trivially in dimension zero. -/
+theorem fourier_comp_smul (f : E → F) (c : ℝ) (y : E) :
     𝓕 (fun x ↦ f (c • x)) y = |c ^ finrank ℝ E|⁻¹ • 𝓕 f (c⁻¹ • y) := by
-  have hinner (x : E) : ⟪x, y⟫ = ⟪c • x, c⁻¹ • y⟫ := by
-    rw [real_inner_smul_left, real_inner_smul_right, ← mul_assoc, mul_inv_cancel₀ hc, one_mul]
-  simp only [Real.fourier_eq]
-  simp_rw [hinner]
-  rw [Measure.integral_comp_smul volume (fun x ↦ 𝐞 (-⟪x, c⁻¹ • y⟫) • f x), abs_inv]
+  rcases eq_or_ne c 0 with rfl | hc
+  · rcases subsingleton_or_nontrivial E with hE | hE
+    · simp only [Real.fourier_eq, finrank_zero_of_subsingleton, pow_zero, abs_one, inv_one,
+        one_smul]
+      refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
+      simp [Subsingleton.elim x 0, Subsingleton.elim y 0]
+    · have hn : finrank ℝ E ≠ 0 := (finrank_pos (R := ℝ) (M := E)).ne'
+      simp only [Real.fourier_eq, zero_pow hn, abs_zero, inv_zero, zero_smul]
+      by_cases hi : Integrable (fun x : E ↦ 𝐞 (-⟪x, y⟫) • f 0)
+      · have h := hi.norm
+        simp only [Circle.norm_smul] at h
+        rw [integrable_const_iff] at h
+        rcases h with h | h
+        · simp [norm_eq_zero.1 h]
+        · exact absurd (measure_univ_of_isAddLeftInvariant (volume : Measure E))
+            (measure_lt_top (volume : Measure E) Set.univ).ne
+      · exact integral_undef hi
+  · have hinner (x : E) : ⟪x, y⟫ = ⟪c • x, c⁻¹ • y⟫ := by
+      rw [real_inner_smul_left, real_inner_smul_right, ← mul_assoc, mul_inv_cancel₀ hc, one_mul]
+    simp only [Real.fourier_eq]
+    simp_rw [hinner]
+    rw [Measure.integral_comp_smul volume (fun x ↦ 𝐞 (-⟪x, c⁻¹ • y⟫) • f x), abs_inv]
 
 /-- **Frequencies of a dilation**: the Fourier transform of `f (c • ·)` is supported on the dilate
 `c • support (𝓕 f)` of the support of `𝓕 f`. -/
@@ -100,19 +117,19 @@ theorem support_fourier_comp_smul (f : E → F) {c : ℝ} (hc : c ≠ 0) :
     Function.support (𝓕 (fun x ↦ f (c • x))) = c • Function.support (𝓕 f) := by
   ext y
   rw [Set.mem_smul_set_iff_inv_smul_mem₀ hc, Function.mem_support, Function.mem_support,
-    fourier_comp_smul f hc, smul_ne_zero_iff_right (by simp [hc])]
+    fourier_comp_smul f, smul_ne_zero_iff_right (by simp [hc])]
 
 /-- **Inverse Fourier transform of a dilation**:
 `𝓕⁻ (f (c • ·)) y = |c ^ n|⁻¹ • 𝓕⁻ f (c⁻¹ • y)`, where `n` is the dimension. -/
-theorem fourierInv_comp_smul (f : E → F) {c : ℝ} (hc : c ≠ 0) (y : E) :
+theorem fourierInv_comp_smul (f : E → F) (c : ℝ) (y : E) :
     𝓕⁻ (fun x ↦ f (c • x)) y = |c ^ finrank ℝ E|⁻¹ • 𝓕⁻ f (c⁻¹ • y) := by
-  simp only [Real.fourierInv_eq_fourier_neg, fourier_comp_smul f hc, smul_neg]
+  simp only [Real.fourierInv_eq_fourier_neg, fourier_comp_smul f, smul_neg]
 
 /-- Dilating a function does not change the `L¹` norm of its inverse Fourier transform:
 `∫ ‖𝓕⁻ (f (c • ·))‖ = ∫ ‖𝓕⁻ f‖`. -/
 theorem integral_norm_fourierInv_comp_smul (f : E → F) {c : ℝ} (hc : c ≠ 0) :
     ∫ y, ‖𝓕⁻ (fun x ↦ f (c • x)) y‖ = ∫ y, ‖𝓕⁻ f y‖ := by
-  simp_rw [fourierInv_comp_smul f hc, norm_smul, norm_inv, Real.norm_eq_abs, abs_abs]
+  simp_rw [fourierInv_comp_smul f, norm_smul, norm_inv, Real.norm_eq_abs, abs_abs]
   rw [integral_const_mul, Measure.integral_comp_inv_smul volume (fun y ↦ ‖𝓕⁻ f y‖), smul_eq_mul,
     ← mul_assoc, inv_mul_cancel₀ (abs_ne_zero.2 (pow_ne_zero _ hc)), one_mul]
 
@@ -126,7 +143,7 @@ theorem eLpNorm_fourierInv_comp_inv_smul (g : E → F) {R : ℝ} (hR : 0 < R) (r
   have h : (𝓕⁻ fun ξ ↦ g (R⁻¹ • ξ)) =
       (R ^ finrank ℝ E : ℝ) • fun x ↦ 𝓕⁻ g ((R⁻¹)⁻¹ • x) := by
     ext x
-    simp [fourierInv_comp_smul g (inv_ne_zero hR.ne'), abs_of_pos hR]
+    simp [fourierInv_comp_smul g, abs_of_pos hR]
   rw [h, eLpNorm_const_smul, Measure.eLpNorm_comp_inv_smul volume _ (inv_ne_zero hR.ne'),
     abs_of_pos (inv_pos.2 hR), ← mul_assoc,
     ← ofReal_norm, Real.norm_eq_abs, abs_of_pos (by positivity),
