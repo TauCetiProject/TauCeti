@@ -51,8 +51,9 @@ bound on `r` enters: the zeroth-order coefficient `-r (1 - sigmoid y)` is then a
 since `0 < 1 - sigmoid y < 1`. For a nonnegative short rate the bound holds with `γ = 0`.
 
 For a price `C(s, t) = (1 + s) u(log s, t)` the statements transfer through
-`TauCeti.Finance.weightedLogSpotPricingOperatorL_eq_spot`; in spot coordinates, uniqueness among
-all prices of linear growth is `TauCeti.Finance.eq_of_pde_eq_of_terminal_eq`.
+`TauCeti.Finance.weightedLogSpotPricingOperatorL_eq_spot`. In spot coordinates, uniqueness of
+classical prices of linear growth, for bounded volatility and a bounded rate depending on time
+only, is `TauCeti.Finance.eq_of_pde_eq_of_terminal_eq`.
 
 ## References
 
