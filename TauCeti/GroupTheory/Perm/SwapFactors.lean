@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.Perm.Basic
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+import TauCeti.GroupTheory.GroupAction.Closure
 import Mathlib.Dynamics.PeriodicPts.Lemmas
 
 /-!
@@ -277,8 +278,8 @@ private theorem periodicPts_or_and_not_sameCycle_swap_mul_of_sameCycle
       exact ⟨Or.inl h₁, h₂⟩
   · have hba : (σ ^ (n + 1)) b = a := by
       have h0 : ((n + 1 : ℕ) : ℤ) + Int.negSucc n = 0 := by omega
-      rw [← hk, ← Equiv.Perm.mul_apply, ← zpow_natCast, ← zpow_add, h0, zpow_zero]
-      rfl
+      rw [← hk, ← Equiv.Perm.mul_apply, ← zpow_natCast, ← zpow_add, h0, zpow_zero,
+        Equiv.Perm.one_apply]
     obtain ⟨h₁, h₂⟩ := mem_periodicPts_and_not_sameCycle_swap_mul_of_exists_pow_eq hab.symm
       ⟨n + 1, n.succ_pos, hba⟩
     rw [Equiv.swap_comm] at h₁ h₂
@@ -757,7 +758,9 @@ theorem card_orbitRelQuotient_closure_insert_swap_of_mem_orbit
   have hφψ : Function.LeftInverse φ
       (Setoid.map_of_le (MulAction.orbitRel_le_of_subgroup_le hle)) := fun q ↦ by
     induction q using Quotient.inductionOn with
-    | h z => exact (MulAction.orbitRelQuotientLift_mk z)
+    | h z =>
+      rw [TauCeti.Setoid.map_of_le_mk]
+      exact MulAction.orbitRelQuotientLift_mk z
   exact (Nat.card_congr (Equiv.ofBijective _
     ⟨hφψ.injective, Setoid.map_of_le_surjective _⟩)).symm
 
