@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.LocallyConvex.WeakSpace
 public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
 # Mazur's lemma
@@ -23,7 +24,9 @@ such combinations as a norm-convergent sequence. In both statements, the indices
 `n`th tail are written as `n + i`, so no coefficient can involve an earlier term.
 
 `Convex.mem_of_tendsto_weak` deduces that a closed real-convex set contains
-weak limits of families in it.
+weak limits of families in it. In particular the norm of a continuous linear image is weakly
+lower semicontinuous: `norm_apply_le_of_tendsto_weak` shows `‖T x‖ ≤ A` whenever `u n → x`
+weakly and `‖T (u n)‖ → A`.
 
 These results require neither completeness nor separability. They use Mathlib's
 `Convex.toWeakSpace_closure` to pass from weak convergence to norm approximation, and
@@ -111,5 +114,26 @@ theorem exists_tendsto_sum_smul_of_tendsto_weak {u : ℕ → E} {x : E}
   apply tendsto_iff_norm_sub_tendsto_zero.mpr
   exact squeeze_zero (fun _ ↦ norm_nonneg _) (fun n ↦ (hdist n).le)
     tendsto_one_div_add_atTop_nhds_zero_nat
+
+/-- **Weak lower semicontinuity of the norm** of a continuous linear image: if `u i → x` weakly
+and `‖T (u i)‖ → A`, then `‖T x‖ ≤ A`. -/
+theorem norm_apply_le_of_tendsto_weak {F : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [NormedSpace ℝ F] [IsScalarTower ℝ 𝕜 F] {ι : Type*} {l : Filter ι} [NeBot l]
+    {T : E →L[𝕜] F} {u : ι → E} {x : E} {A : ℝ}
+    (hu : Tendsto (fun i ↦ toWeakSpace 𝕜 E (u i)) l (𝓝 (toWeakSpace 𝕜 E x)))
+    (hA : Tendsto (fun i ↦ ‖T (u i)‖) l (𝓝 A)) :
+    ‖T x‖ ≤ A := by
+  refine le_of_forall_pos_le_add fun ε hε ↦ ?_
+  set s : Set E := T ⁻¹' Metric.closedBall 0 (A + ε)
+  have hs : Convex ℝ s :=
+    (convex_closedBall _ _).linear_preimage ((T : E →ₗ[𝕜] F).restrictScalars ℝ)
+  have hsc : IsClosed s := Metric.isClosed_closedBall.preimage T.continuous
+  have hws : IsClosed (toWeakSpace 𝕜 E '' s) := by
+    rw [← closure_eq_iff_isClosed, ← hs.toWeakSpace_closure 𝕜, hsc.closure_eq]
+  obtain ⟨y, hy, hyx⟩ := hws.mem_of_tendsto hu
+    ((hA.eventually_lt_const (lt_add_of_pos_right A hε)).mono fun i hi ↦
+      mem_image_of_mem _ (by simpa only [s, mem_preimage, mem_closedBall_zero_iff] using hi.le))
+  rw [(toWeakSpace 𝕜 E).injective hyx] at hy
+  simpa only [s, mem_preimage, mem_closedBall_zero_iff] using hy
 
 end TauCeti

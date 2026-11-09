@@ -62,6 +62,9 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
 * `TauCeti.W1p.valueL` and `TauCeti.W1p.gradientL`: the two components as continuous linear
   projections from the Sobolev space, with `TauCeti.W1p.value_coe` and
   `TauCeti.W1p.gradient_coe` identifying them with the components of the ambient jet.
+* `TauCeti.W1p.integral_sq_eq_norm_value_sq_of_ae_eq` and
+  `TauCeti.W1p.integral_norm_fderiv_sq_eq_norm_gradient_sq`: at exponent two, the squared `L²`
+  norms of the value and the weak gradient computed through almost everywhere representatives.
 * `TauCeti.W1p.locallyIntegrableOn_gradient`: the weak gradient is locally integrable on `Ω`.
 * `TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero`: the weak gradient vanishes wherever
   the value vanishes on an open subset, and with it the whole jet
@@ -538,6 +541,35 @@ theorem W1p.integral_value_sq_eq_norm_value_sq (u : W1p mu Omega 2) :
   rw [← Lp.integral_norm_sq_eq_norm_sq (W1p.value u)]
   exact integral_congr_ae (Filter.Eventually.of_forall fun x => by
     simp [Real.norm_eq_abs, sq_abs])
+
+/-- The integral over `Ω` of the square of an almost everywhere representative of a Sobolev value
+is the squared `L²` norm of the value. -/
+theorem W1p.integral_sq_eq_norm_value_sq_of_ae_eq {u : W1p mu Omega 2} {f : E → ℝ}
+    (hf : W1p.value u =ᵐ[mu.restrict Omega] f) :
+    ∫ x in Omega, f x ^ 2 ∂mu = ‖W1p.value u‖ ^ 2 := by
+  rw [← W1p.integral_value_sq_eq_norm_value_sq]
+  exact integral_congr_ae (hf.mono fun x hx => by simp only [hx])
+
+/-- The squared `L²(Ω)` distance between the values of two Sobolev functions, computed through an
+almost everywhere representative of the first value. -/
+theorem W1p.integral_sub_value_sq_eq_norm_sub_sq {u v : W1p mu Omega 2} {f : E → ℝ}
+    (hf : W1p.value v =ᵐ[mu.restrict Omega] f) :
+    ∫ x in Omega, (f x - W1p.value u x) ^ 2 ∂mu = ‖W1p.value v - W1p.value u‖ ^ 2 := by
+  have hsub : W1p.value v - W1p.value u = W1p.value (v - u) := by
+    simp only [← W1p.valueL_apply, map_sub]
+  rw [hsub]
+  refine W1p.integral_sq_eq_norm_value_sq_of_ae_eq ?_
+  filter_upwards [hf, W1p.value_sub_ae v u] with x hx hsub
+  rw [hsub, Pi.sub_apply, hx]
+
+open scoped Gradient in
+/-- If the weak gradient of a Sobolev function is almost everywhere the classical gradient `∇w`,
+then the integral over `Ω` of `‖Dw‖²` is the squared `L²` norm of the weak gradient. -/
+theorem W1p.integral_norm_fderiv_sq_eq_norm_gradient_sq [CompleteSpace E] {u : W1p mu Omega 2}
+    {w : E → ℝ} (hg : W1p.gradient u =ᵐ[mu.restrict Omega] ∇ w) :
+    ∫ x in Omega, ‖fderiv ℝ w x‖ ^ 2 ∂mu = ‖W1p.gradient u‖ ^ 2 := by
+  rw [← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq]
+  exact integral_congr_ae (hg.mono fun x hx => by simp only [hx, norm_gradient_eq_norm_fderiv])
 
 /-- The `L²` pairing of the value components of two Sobolev functions, as an integral over `Ω`. -/
 theorem W1p.inner_value_eq_setIntegral (u v : W1p mu Omega 2) :

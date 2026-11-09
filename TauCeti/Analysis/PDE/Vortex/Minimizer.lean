@@ -12,11 +12,12 @@ import Mathlib.Analysis.InnerProductSpace.Convex
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Topology.MetricSpace.Sequences
-import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Convex.Uniform.Basic
+import TauCeti.Analysis.Normed.Module.Mazur
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
 import TauCeti.Analysis.PDE.Vortex.Potential
+import TauCeti.Analysis.SpecialFunctions.Exp.Modular
 import TauCeti.Analysis.Sobolev.W1p.Density
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 import TauCeti.Topology.Algebra.Module.WeakSpace
@@ -115,10 +116,6 @@ theorem sobolevReducedFunctional_def (P : Polynomial ℂ) (u : W1p (volume : Mea
 
 /-! ### Pointwise facts -/
 
-/-- The integrand `exp (2t) - 1 - 2t` of the potential is nonnegative. -/
-private theorem exp_two_mul_sub_one_sub_nonneg (t : ℝ) : 0 ≤ Real.exp (2 * t) - 1 - 2 * t := by
-  linarith [Real.add_one_le_exp (2 * t)]
-
 private theorem weight_nonneg (P : Polynomial ℂ) (z : ℂ) :
     0 ≤ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) := by positivity
 
@@ -141,27 +138,6 @@ private theorem lintegral_restrict_top (f : ℂ → ℝ≥0∞) :
 
 /-! ### Sobolev representatives of compactly supported functions -/
 
-private theorem memLp_value (u : W1p (volume : Measure ℂ) ⊤ 2) :
-    MemLp (W1p.value u : ℂ → ℝ) 2 volume := by
-  have h := Lp.memLp (W1p.value u)
-  simpa using h
-
-private theorem integral_sq_eq_norm_value_sq {v : W1p (volume : Measure ℂ) ⊤ 2} {a : ℂ → ℝ}
-    (ha : W1p.value v =ᵐ[volume] a) : ∫ z, a z ^ 2 = ‖W1p.value v‖ ^ 2 := by
-  rw [← W1p.integral_value_sq_eq_norm_value_sq, integral_restrict_top]
-  exact integral_congr_ae (ha.mono fun z hz ↦ by simp only [hz])
-
-/-- The `L²` distance of a function from the value of `u`, through a Sobolev representative. -/
-private theorem integral_sub_value_sq_eq {v u : W1p (volume : Measure ℂ) ⊤ 2} {a : ℂ → ℝ}
-    (ha : W1p.value v =ᵐ[volume] a) :
-    ∫ z, (a z - W1p.value u z) ^ 2 = ‖W1p.value v - W1p.value u‖ ^ 2 := by
-  have hsub : W1p.value v - W1p.value u = W1p.value (v - u) := by
-    simp only [← W1p.valueL_apply, map_sub]
-  rw [hsub]
-  refine integral_sq_eq_norm_value_sq ?_
-  filter_upwards [ha, ae_restrict_top_iff.1 (W1p.value_sub_ae v u)] with z hz hsub
-  rw [hsub, Pi.sub_apply, hz]
-
 /-- The potential of a compactly supported `C¹` function is the real integral. -/
 private theorem sobolevReducedPotential_eq_ofReal {w : ℂ → ℝ} (hw : ContDiff ℝ 1 w)
     (hws : HasCompactSupport w) {u : W1p (volume : Measure ℂ) ⊤ 2}
@@ -171,17 +147,8 @@ private theorem sobolevReducedPotential_eq_ofReal {w : ℂ → ℝ} (hw : ContDi
   rw [ofReal_integral_eq_lintegral_ofReal
     (integrable_mul_exp_sub_one_sub P hw.continuous hws)
     (Eventually.of_forall fun z ↦ mul_nonneg (weight_nonneg P z)
-      (exp_two_mul_sub_one_sub_nonneg _)), sobolevReducedPotential_def]
+      (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)), sobolevReducedPotential_def]
   exact lintegral_congr_ae (hv.mono fun z hz ↦ by simp only [hz])
-
-/-- The squared Dirichlet energy of a compactly supported `C¹` function is the squared norm of
-the gradient of a Sobolev representative. -/
-private theorem integral_norm_fderiv_sq_eq {w : ℂ → ℝ} {u : W1p (volume : Measure ℂ) ⊤ 2}
-    (hg : W1p.gradient u =ᵐ[volume] ∇ w) :
-    ∫ z, ‖fderiv ℝ w z‖ ^ 2 = ‖W1p.gradient u‖ ^ 2 := by
-  rw [← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq, integral_restrict_top]
-  refine integral_congr_ae (hg.mono fun z hz ↦ ?_)
-  simp only [hz, norm_gradient_eq_norm_fderiv]
 
 /-! ### Agreement with the functional on test functions -/
 
@@ -196,9 +163,10 @@ theorem sobolevReducedFunctional_eq_reducedFunctional {w : ℂ → ℝ} (hw : Co
       ∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
         (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * w z :=
     integral_congr_ae (hv.mono fun z hz ↦ by simp only [hz])
-  have hE : 0 ≤ ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z) :=
-    integral_nonneg fun z ↦ mul_nonneg (weight_nonneg P z) (exp_two_mul_sub_one_sub_nonneg _)
-  rw [sobolevReducedFunctional_def, ← integral_norm_fderiv_sq_eq hg, hlin,
+  have hD := W1p.integral_norm_fderiv_sq_eq_norm_gradient_sq (ae_restrict_top_iff.2 hg)
+  have hE := integral_potential_nonneg (P := P) w
+  rw [integral_restrict_top] at hD
+  rw [sobolevReducedFunctional_def, ← hD, hlin,
     sobolevReducedPotential_eq_ofReal hw hws hv, ofReal_div_sixteen, EReal.coe_ennreal_ofReal,
     max_eq_left (by positivity), ← EReal.coe_add, reducedFunctional_def]
   congr 1
@@ -291,50 +259,6 @@ private theorem exp_trunc_le {K : ℝ} (hK : 0 < K) (t : ℝ) :
     have hpos := Real.exp_pos (2 * trunc K t)
     nlinarith
 
-/-- `|exp (2s) - 1| ≤ 2 |s| exp (2M)` for `s ≤ M` with `0 ≤ M`. -/
-private theorem abs_exp_two_mul_sub_one_le {M s : ℝ} (hM : 0 ≤ M) (hs : s ≤ M) :
-    |Real.exp (2 * s) - 1| ≤ 2 * |s| * Real.exp (2 * M) := by
-  have hexpM : 1 ≤ Real.exp (2 * M) := Real.one_le_exp (by linarith)
-  rcases le_total 0 s with h | h
-  · have h1 := Real.add_one_le_exp (-(2 * s))
-    have h2 : Real.exp (2 * s) * Real.exp (-(2 * s)) = 1 := by rw [← Real.exp_add]; simp
-    have h3 : Real.exp (2 * s) ≤ Real.exp (2 * M) := Real.exp_le_exp.2 (by linarith)
-    rw [abs_of_nonneg (by linarith [Real.one_le_exp (by linarith : 0 ≤ 2 * s)]), abs_of_nonneg h]
-    nlinarith [Real.exp_pos (2 * s)]
-  · have h1 := Real.add_one_le_exp (2 * s)
-    rw [abs_of_nonpos (by linarith [Real.exp_le_one_iff.2 (by linarith : 2 * s ≤ 0)]),
-      abs_of_nonpos h]
-    nlinarith
-
-/-- The potential integrand is locally Lipschitz with linear constant below a fixed level:
-`|Φ(a) - Φ(b)| ≤ 4 exp (2M) (|a| + |b|) |a - b|` for `a, b ≤ M`. -/
-private theorem abs_exp_sub_exp_sub_le {M a b : ℝ} (hM : 0 ≤ M) (ha : a ≤ M) (hb : b ≤ M) :
-    |(Real.exp (2 * a) - 1 - 2 * a) - (Real.exp (2 * b) - 1 - 2 * b)| ≤
-      4 * Real.exp (2 * M) * (|a| + |b|) * |a - b| := by
-  have hderiv (x : ℝ) : HasDerivWithinAt (fun s ↦ Real.exp (2 * s) - 1 - 2 * s)
-      (2 * (Real.exp (2 * x) - 1)) (uIcc b a) x := by
-    have h1 : HasDerivAt (fun s ↦ Real.exp (2 * s)) (Real.exp (2 * x) * 2) x := by
-      simpa using ((hasDerivAt_id x).const_mul 2).exp
-    have h2 : HasDerivAt (fun s : ℝ ↦ 2 * s) 2 x := by
-      simpa using (hasDerivAt_id x).const_mul (2 : ℝ)
-    refine (((h1.sub_const 1).sub h2).congr_deriv ?_).hasDerivWithinAt
-    ring
-  have h := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le (𝕜 := ℝ) (s := uIcc b a)
-    (x := b) (y := a) (C := 4 * Real.exp (2 * M) * (|a| + |b|)) (fun x _ ↦ hderiv x)
-    (fun x hx ↦ ?_) (convex_uIcc b a) left_mem_uIcc right_mem_uIcc
-  · simpa only [Real.norm_eq_abs] using h
-  · rw [Real.norm_eq_abs, abs_mul, abs_two]
-    have ha' := neg_abs_le a
-    have hb' := neg_abs_le b
-    have ha'' := le_abs_self a
-    have hb'' := le_abs_self b
-    have hxM : x ≤ M ∧ |x| ≤ |a| + |b| := by
-      rcases mem_uIcc.1 hx with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;>
-        exact ⟨by linarith, abs_le.2 ⟨by linarith, by linarith⟩⟩
-    have h := abs_exp_two_mul_sub_one_le hM hxM.1
-    have h' := mul_le_mul_of_nonneg_right hxM.2 (Real.exp_pos (2 * M)).le
-    nlinarith
-
 /-! ### Convergence of the truncated terms -/
 
 /-- The bound `|h Φ(θ_K s) - h Φ(θ_K t)| ≤ 4 exp (K π) (|s| + |t|) |s - t|` on the truncated
@@ -345,7 +269,7 @@ private theorem abs_weight_mul_exp_trunc_sub_le {K : ℝ} (hK : 0 < K) (z : ℂ)
       ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * trunc K t) - 1 - 2 * trunc K t)| ≤
       4 * Real.exp (2 * (K * (Real.pi / 2))) * (|s| + |t|) * |s - t| := by
   have hM : 0 ≤ K * (Real.pi / 2) := by positivity
-  have h := abs_exp_sub_exp_sub_le hM (trunc_le hK s) (trunc_le hK t)
+  have h := Real.abs_exp_two_mul_sub_one_sub_two_mul_sub_le hM (trunc_le hK s) (trunc_le hK t)
   have hst : (|trunc K s| + |trunc K t|) * |trunc K s - trunc K t| ≤ (|s| + |t|) * |s - t| :=
     mul_le_mul (add_le_add (abs_trunc_le hK s) (abs_trunc_le hK t)) (abs_trunc_sub_le hK s t)
       (abs_nonneg _) (by positivity)
@@ -397,7 +321,7 @@ private theorem tendsto_integral_weight_mul_exp_trunc {K : ℝ} (hK : 0 < K) {a 
   refine tendsto_integral_of_abs_sub_le_mul_abs_sub
     (fun n ↦ integrable_weight_mul_exp_trunc hK (ha n)) (integrable_weight_mul_exp_trunc hK hb)
     hk ha hb (M := 2 * C ^ 2 * (2 + 3 * ∫ z, b z ^ 2))
-    ?_ hab fun n z ↦ abs_weight_mul_exp_trunc_sub_le hK z (a n z) (b z)
+    ?_ hab fun n ↦ Eventually.of_forall fun z ↦ abs_weight_mul_exp_trunc_sub_le hK z (a n z) (b z)
   filter_upwards [hab.eventually (ge_mem_nhds zero_lt_one)] with n hn
   have hsub : Integrable (fun z ↦ (a n z - b z) ^ 2) := ((ha n).sub hb).integrable_sq
   calc ∫ z, (C * (|a n z| + |b z|)) ^ 2
@@ -424,7 +348,7 @@ private theorem tendsto_integral_coeff_mul_trunc (hm : 0 < P.natDegree) {K : ℝ
     (fun n ↦ hc.integrable_mul (memLp_trunc_comp hK (ha n)))
     (hc.integrable_mul (memLp_trunc_comp hK hb)) (fun _ ↦ hc.abs) ha hb
     (Eventually.of_forall fun n ↦ le_of_eq (integral_congr_ae (Eventually.of_forall fun z ↦
-      sq_abs _))) hab fun n z ↦ ?_
+      sq_abs _))) hab fun n ↦ Eventually.of_forall fun z ↦ ?_
   rw [← mul_sub, abs_mul]
   exact mul_le_mul_of_nonneg_left (abs_trunc_sub_le hK _ _) (abs_nonneg _)
 
@@ -478,7 +402,7 @@ private theorem integral_weight_mul_exp_trunc_le {K : ℝ} (hK : 0 < K) {b : ℂ
       (∫⁻ z, ENNReal.ofReal (‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
         (Real.exp (2 * b z) - 1 - 2 * b z))).toReal := by
   rw [integral_eq_lintegral_of_nonneg_ae (Eventually.of_forall fun z ↦
-    mul_nonneg (weight_nonneg P z) (exp_two_mul_sub_one_sub_nonneg _))
+    mul_nonneg (weight_nonneg P z) (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _))
     (integrable_weight_mul_exp_trunc hK hb).aestronglyMeasurable]
   refine ENNReal.toReal_mono hfin (lintegral_mono fun z ↦ ENNReal.ofReal_le_ofReal ?_)
   exact mul_le_mul_of_nonneg_left (exp_trunc_le hK _) (weight_nonneg P z)
@@ -497,7 +421,7 @@ theorem exists_reducedFunctional_lt_of_sobolevReducedFunctional_lt (hm : 0 < P.n
     rw [sobolevReducedFunctional_def, htop, ENNReal.top_div_of_ne_top (by norm_num),
       EReal.coe_ennreal_top, EReal.add_top_of_ne_bot (EReal.coe_ne_bot _)] at hu
     exact not_top_lt hu
-  have hf := memLp_value u
+  have hf : MemLp (W1p.value u : ℂ → ℝ) 2 := by simpa using Lp.memLp (W1p.value u)
   -- The real form `A + L + Q / 16 < t` of the hypothesis.
   have hreal : ‖W1p.gradient u‖ ^ 2 / 2 + (∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 /
       (1 + ‖P.eval z‖ ^ 2) ^ 2 - (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value u z) +
@@ -525,7 +449,8 @@ theorem exists_reducedFunctional_lt_of_sobolevReducedFunctional_lt (hm : 0 < P.n
     (φ n).continuous.memLp_of_hasCompactSupport (φ n).hasCompactSupport
   obtain ⟨hval, hgrad⟩ := W1p.tendsto_iff_value_gradient.1 hv_lim
   have hconv : Tendsto (fun n ↦ ∫ z, (φ n z - W1p.value u z) ^ 2) atTop (𝓝 0) := by
-    simp only [integral_sub_value_sq_eq (hgv _)]
+    simp only [← integral_restrict_top,
+      W1p.integral_sub_value_sq_eq_norm_sub_sq (ae_restrict_top_iff.2 (hgv _))]
     simpa using ((hval.sub_const (W1p.value u)).norm.pow 2)
   -- The truncated terms converge.
   have hB := ((hgrad.norm.pow 2).div_const 2).add
@@ -533,12 +458,19 @@ theorem exists_reducedFunctional_lt_of_sobolevReducedFunctional_lt (hm : 0 < P.n
       (tendsto_integral_coeff_mul_trunc hm hK hφL hf hconv))
   have hpot : _ ≤ (sobolevReducedPotential P u).toReal :=
     integral_weight_mul_exp_trunc_le (P := P) hK hf hfin
-  obtain ⟨n, hn⟩ := (hB.eventually_lt_const (show _ < t by linarith)).exists
+  have hlimlt : ‖W1p.gradient u‖ ^ 2 / 2 + ((∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+      (Real.exp (2 * trunc K (W1p.value u z)) - 1 - 2 * trunc K (W1p.value u z))) / 16 +
+      ∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
+        (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * trunc K (W1p.value u z)) < t := by
+    linarith
+  obtain ⟨n, hn⟩ := (hB.eventually_lt_const hlimlt).exists
   refine ⟨fun z ↦ trunc K (φ n z), (contDiff_trunc K).comp (φ n).contDiff,
     (φ n).hasCompactSupport.comp_left (trunc_zero K), ?_⟩
   have hD := integral_norm_fderiv_trunc_comp_sq_le hK
     ((φ n).contDiff.of_le (by exact_mod_cast le_top)) (φ n).hasCompactSupport
-  rw [integral_norm_fderiv_sq_eq (hgg n)] at hD
+  have hDn := W1p.integral_norm_fderiv_sq_eq_norm_gradient_sq (ae_restrict_top_iff.2 (hgg n))
+  rw [integral_restrict_top] at hDn
+  rw [hDn] at hD
   rw [reducedFunctional_def]
   linarith
 
@@ -555,27 +487,6 @@ private theorem exists_strongDual_eq_integral (hm : 0 < P.natDegree) :
     integral_restrict_top]
   refine integral_congr_ae (ae_restrict_top_iff.1 (hc.coeFn_toLp.mono fun z hz ↦ ?_))
   simp only [hz, RCLike.inner_apply, conj_trivial, mul_comm]
-
-/-- Weak lower semicontinuity of the Dirichlet energy on `W^{1,2}(ℂ)`. -/
-private theorem norm_gradient_le_of_tendsto_weak {U : ℕ → W1p (volume : Measure ℂ) ⊤ 2}
-    {w : W1p (volume : Measure ℂ) ⊤ 2} {A : ℝ}
-    (hlim : Tendsto (fun n ↦ toWeakSpace ℝ _ (U n)) atTop (𝓝 (toWeakSpace ℝ _ w)))
-    (hA : Tendsto (fun n ↦ ‖W1p.gradient (U n)‖) atTop (𝓝 A)) :
-    ‖W1p.gradient w‖ ≤ A := by
-  refine le_of_forall_pos_le_add fun ε hε ↦ ?_
-  set s : Set (W1p (volume : Measure ℂ) ⊤ 2) :=
-    W1p.gradientL ⁻¹' Metric.closedBall 0 (A + ε)
-  have hs : Convex ℝ s :=
-    (convex_closedBall _ _).is_linear_preimage W1p.gradientL.toLinearMap.isLinear
-  have hsc : IsClosed s := Metric.isClosed_closedBall.preimage W1p.gradientL.continuous
-  have hws : IsClosed (toWeakSpace ℝ _ '' s) := by
-    rw [← closure_eq_iff_isClosed, ← hs.toWeakSpace_closure ℝ, hsc.closure_eq]
-  have hmem := hws.mem_of_tendsto hlim ((hA.eventually_lt_const (lt_add_of_pos_right A hε)).mono
-    fun n hn ↦ mem_image_of_mem _ (by
-      simpa only [s, mem_preimage, mem_closedBall_zero_iff, W1p.gradientL_apply] using hn.le))
-  obtain ⟨v, hv, hvw⟩ := hmem
-  rw [(toWeakSpace ℝ _).injective hvw] at hv
-  simpa only [s, mem_preimage, mem_closedBall_zero_iff, W1p.gradientL_apply] using hv
 
 /-- Weak lower semicontinuity of the potential on `W^{1,2}(ℂ)`. -/
 private theorem sobolevReducedPotential_le_of_tendsto_weak
@@ -600,8 +511,8 @@ private theorem sobolevReducedPotential_le_of_tendsto_weak
         sobolevReducedPotential P v := by
     have hval : (toWeakSpace ℝ _).symm (WeakSpace.map W1p.valueL (toWeakSpace ℝ _ v)) =
         W1p.value v := by
-      rw [← W1p.valueL_apply]
-      rfl
+      rw [LinearEquiv.symm_apply_eq, ← W1p.valueL_apply]
+      exact WeakSpace.map_apply W1p.valueL v
     simp only [Function.comp_apply, hval, lintegral_restrict_top, sobolevReducedPotential_def]
   refine ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_
   have hmem := (hlsc.isClosed_preimage (ENNReal.ofReal (B + ε))).mem_of_tendsto hlim
@@ -623,18 +534,10 @@ private theorem exists_tendsto_reducedFunctional_of_le (hm : 0 < P.natDegree) :
     obtain ⟨C, hC⟩ := exists_le_reducedFunctional hm
     exact ⟨C, by rintro _ ⟨w, hw, hws, rfl⟩; exact hC w hw hws⟩
   have hSn : S.Nonempty := ⟨_, 0, contDiff_const, HasCompactSupport.zero, rfl⟩
-  have hseq (n : ℕ) : ∃ w : ℂ → ℝ, ContDiff ℝ 1 w ∧ HasCompactSupport w ∧
-      reducedFunctional P w < sInf S + 1 / ((n : ℝ) + 1) := by
-    obtain ⟨_, ⟨w, hw, hws, rfl⟩, hlt⟩ :=
-      exists_lt_of_csInf_lt hSn (lt_add_of_pos_right (sInf S)
-        (by positivity : (0 : ℝ) < 1 / ((n : ℝ) + 1)))
-    exact ⟨w, hw, hws, hlt⟩
-  choose w hw hws hwm using hseq
-  have hm_le (v : ℂ → ℝ) (hv : ContDiff ℝ 1 v) (hvs : HasCompactSupport v) :
-      sInf S ≤ reducedFunctional P v := csInf_le hSb ⟨v, hv, hvs, rfl⟩
-  refine ⟨sInf S, hm_le, w, hw, hws, tendsto_of_tendsto_of_tendsto_of_le_of_le
-    tendsto_const_nhds ?_ (fun n ↦ hm_le _ (hw n) (hws n)) fun n ↦ (hwm n).le⟩
-  simpa using tendsto_one_div_add_atTop_nhds_zero_nat.const_add (sInf S)
+  obtain ⟨r, -, hr, hrS⟩ := exists_seq_tendsto_sInf hSn hSb
+  choose w hw hws hwr using hrS
+  refine ⟨sInf S, fun v hv hvs ↦ csInf_le hSb ⟨v, hv, hvs, rfl⟩, w, hw, hws, ?_⟩
+  simpa only [hwr] using hr
 
 /-- **Compactness.** A sequence of compactly supported `C¹` functions whose values of Taubes's
 functional converge has Sobolev representatives with a subsequence that converges weakly in
@@ -657,7 +560,9 @@ private theorem exists_subseq_tendsto_weak (hm : 0 < P.natDegree) {w : ℕ → �
   choose u huv hug using hrep
   have hbd : ∀ᶠ n in atTop, ‖W1p.gradient (u n)‖ ^ 2 ≤ C ∧ ‖W1p.value (u n)‖ ^ 2 ≤ C := by
     filter_upwards [htend.eventually_le_const (lt_add_one m)] with n hn
-    rw [← integral_norm_fderiv_sq_eq (hug n), ← integral_sq_eq_norm_value_sq (huv n)]
+    rw [← W1p.integral_norm_fderiv_sq_eq_norm_gradient_sq (ae_restrict_top_iff.2 (hug n)),
+      ← W1p.integral_sq_eq_norm_value_sq_of_ae_eq (ae_restrict_top_iff.2 (huv n)),
+      integral_restrict_top, integral_restrict_top]
     exact hC _ (hw n) (hws n) hn
   obtain ⟨N, hN⟩ := eventually_atTop.1 hbd
   -- Closed balls of the Hilbert space `W^{1,2}(ℂ)` are weakly compact.
@@ -693,7 +598,8 @@ private theorem exists_sobolevReducedFunctional_le_of_tendsto (hm : 0 < P.natDeg
       (Real.exp (2 * w (k n) z) - 1 - 2 * w (k n) z) := ⟨_, rfl⟩
   have hsplit (n : ℕ) : reducedFunctional P (w (k n)) =
       ‖W1p.gradient (u n)‖ ^ 2 / 2 + b n / 16 + Λ (u n) := by
-    rw [reducedFunctional_def, integral_norm_fderiv_sq_eq (hug _), hΛ, hb_def]
+    rw [reducedFunctional_def, ← integral_restrict_top,
+      W1p.integral_norm_fderiv_sq_eq_norm_gradient_sq (ae_restrict_top_iff.2 (hug _)), hΛ, hb_def]
     congr 1
     exact integral_congr_ae ((huv n).mono fun z hz ↦ by simp only [hz])
   have hb : Tendsto b atTop (𝓝 (16 * (m - A ^ 2 / 2 - Λ u₀))) := by
@@ -702,10 +608,12 @@ private theorem exists_sobolevReducedFunctional_le_of_tendsto (hm : 0 < P.natDeg
     simp only [Function.comp_apply, hsplit]
     ring
   have hB : 0 ≤ 16 * (m - A ^ 2 / 2 - Λ u₀) :=
-    ge_of_tendsto' hb fun n ↦ hb_def ▸ integral_nonneg fun z ↦
-      mul_nonneg (weight_nonneg P z) (exp_two_mul_sub_one_sub_nonneg _)
+    ge_of_tendsto' hb fun n ↦ hb_def ▸ integral_potential_nonneg _
   -- Weak lower semicontinuity of the Dirichlet energy and of the potential.
-  have hgrad := norm_gradient_le_of_tendsto_weak hlim hA
+  have hgrad : ‖W1p.gradient u₀‖ ≤ A := by
+    simpa only [W1p.gradientL_apply] using norm_apply_le_of_tendsto_weak
+      (T := (W1p.gradientL : W1p (volume : Measure ℂ) ⊤ 2 →L[ℝ] _)) hlim
+      (by simpa only [W1p.gradientL_apply] using hA)
   have hpot := sobolevReducedPotential_le_of_tendsto_weak hlim hb
     fun n ↦ by rw [hb_def]; exact sobolevReducedPotential_eq_ofReal (hw _) (hws _) (huv _)
   refine ⟨u₀, ne_top_of_le_ne_top ENNReal.ofReal_ne_top hpot, ?_⟩

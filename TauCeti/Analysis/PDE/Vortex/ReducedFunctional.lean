@@ -154,7 +154,7 @@ private theorem integrable_potential {w : ℂ → ℝ} (hw : Continuous w)
   exact hc.integrable_of_hasCompactSupport (hws.mono fun z hz h0 ↦ hz (by simp [h0]))
 
 /-- The potential integral `∫ h (exp (2w) - 1 - 2w)` is nonnegative. -/
-private theorem integral_potential_nonneg (w : ℂ → ℝ) :
+theorem integral_potential_nonneg (w : ℂ → ℝ) :
     0 ≤ ∫ z, ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * (Real.exp (2 * w z) - 1 - 2 * w z) :=
   integral_nonneg fun z ↦
     mul_nonneg (by positivity) (Real.exp_two_mul_sub_one_sub_two_mul_nonneg _)

@@ -55,15 +55,15 @@ theorem sq_integral_mul_le_integral_sq_mul_integral_sq {α : Type*} [MeasurableS
     _ = (∫ x, f x ^ 2 ∂μ) * ∫ x, g x ^ 2 ∂μ := by
         rw [mul_pow, Real.sq_sqrt hF, Real.sq_sqrt hG]
 
-/-- **Convergence of integrals from an `L²` comparison.** If `|Fₙ - G| ≤ kₙ |aₙ - b|` pointwise,
-with `∫ kₙ²` eventually bounded and `∫ (aₙ - b)² → 0`, then `∫ Fₙ → ∫ G`. -/
+/-- **Convergence of integrals from an `L²` comparison.** If `|Fₙ - G| ≤ kₙ |aₙ - b|` almost
+everywhere, with `∫ kₙ²` eventually bounded and `∫ (aₙ - b)² → 0`, then `∫ Fₙ → ∫ G`. -/
 theorem tendsto_integral_of_abs_sub_le_mul_abs_sub {α : Type*} [MeasurableSpace α]
     {μ : Measure α} {F : ℕ → α → ℝ} {G : α → ℝ} {k a : ℕ → α → ℝ} {b : α → ℝ} {M : ℝ}
     (hF : ∀ n, Integrable (F n) μ) (hG : Integrable G μ) (hk : ∀ n, MemLp (k n) 2 μ)
     (ha : ∀ n, MemLp (a n) 2 μ) (hb : MemLp b 2 μ)
     (hkM : ∀ᶠ n in atTop, ∫ x, k n x ^ 2 ∂μ ≤ M)
     (hab : Tendsto (fun n ↦ ∫ x, (a n x - b x) ^ 2 ∂μ) atTop (𝓝 0))
-    (hle : ∀ n x, |F n x - G x| ≤ k n x * |a n x - b x|) :
+    (hle : ∀ n, ∀ᵐ x ∂μ, |F n x - G x| ≤ k n x * |a n x - b x|) :
     Tendsto (fun n ↦ ∫ x, F n x ∂μ) atTop (𝓝 (∫ x, G x ∂μ)) := by
   have hlim : Tendsto (fun n ↦ √(M * ∫ x, (a n x - b x) ^ 2 ∂μ)) atTop (𝓝 0) := by
     simpa using ((hab.const_mul M).sqrt)
@@ -74,7 +74,7 @@ theorem tendsto_integral_of_abs_sub_le_mul_abs_sub {α : Type*} [MeasurableSpace
   have hint : Integrable (fun x ↦ k n x * |a n x - b x|) μ := (hk n).integrable_mul hd
   have h1 : |(∫ x, F n x ∂μ) - ∫ x, G x ∂μ| ≤ ∫ x, k n x * |a n x - b x| ∂μ := by
     rw [← integral_sub (hF n) hG]
-    exact (abs_integral_le_integral_abs).trans (integral_mono ((hF n).sub hG).abs hint (hle n))
+    exact (abs_integral_le_integral_abs).trans (integral_mono_ae ((hF n).sub hG).abs hint (hle n))
   have h2 := sq_integral_mul_le_integral_sq_mul_integral_sq (hk n) hd
   simp only [sq_abs] at h2
   have hnn : 0 ≤ ∫ x, (a n x - b x) ^ 2 ∂μ := integral_nonneg fun x ↦ sq_nonneg _
