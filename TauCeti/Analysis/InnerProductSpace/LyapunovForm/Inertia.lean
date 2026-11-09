@@ -9,8 +9,6 @@ public import TauCeti.Analysis.InnerProductSpace.LyapunovForm
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.Analysis.ODE.Linear
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
-import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Exponential
 import TauCeti.Analysis.InnerProductSpace.Spectrum
 import TauCeti.Analysis.Normed.Algebra.Exponential
