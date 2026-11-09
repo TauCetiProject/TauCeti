@@ -6,7 +6,6 @@ Authors: Jon Crall, Claude Opus 5, OpenAI gpt-6.1-terra
 module
 
 public import TauCeti.Analysis.Complex.Pick.Nevanlinna
-import all TauCeti.Analysis.Complex.Pick.Nevanlinna
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Cayley
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Map
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Representation.OfRepresentation
@@ -59,7 +58,7 @@ theorem inverseCayleyCoord_def (w : ℂ) :
     inverseCayleyCoord (z : ℂ) = TauCeti.circleCayleyInv z := by
   by_cases hz : z = 1
   · subst z
-    simp [TauCeti.circleCayleyInv]
+    simp [TauCeti.circleCayleyInv_def]
   have hn := Circle.normSq_coe z
   rw [Complex.normSq_apply] at hn
   have hd : 1 - (z : ℂ).re ≠ 0 := by
@@ -69,7 +68,7 @@ theorem inverseCayleyCoord_def (w : ℂ) :
     apply hz
     apply Circle.ext
     apply Complex.ext <;> simp [hre, him]
-  simp only [inverseCayleyCoord, TauCeti.circleCayleyInv, div_re, mul_re, mul_im,
+  simp only [inverseCayleyCoord, TauCeti.circleCayleyInv_def, div_re, mul_re, mul_im,
     I_re, I_im, one_re, one_im, add_re, add_im, sub_re, sub_im, zero_mul,
     one_mul, zero_add, zero_sub, Complex.normSq_apply]
   have hquad : (1 - (z : ℂ).re) * (1 - (z : ℂ).re) +
@@ -118,7 +117,7 @@ theorem spectralPVM_def :
         (Complex.measurable_inverseCayleyCoord.comp measurable_subtype_coe) := (rfl)
 
 /-- Its projection of a Borel set is the Cayley spectral projection of the inverse image. -/
-@[simp] theorem spectralPVM_proj (B : Set ℝ) (hB : MeasurableSet B) :
+theorem spectralPVM_proj (B : Set ℝ) (hB : MeasurableSet B) :
     (spectralPVM hA).proj B hB =
       (ProjValMeasure.ofRepresentation (cfcHom hA.isStarNormal_cayley)).proj
         ((Complex.inverseCayleyCoord ∘ Subtype.val) ⁻¹' B)
@@ -126,7 +125,7 @@ theorem spectralPVM_def :
   rw [spectralPVM_def, ProjValMeasure.map_proj]
 
 /-- The diagonal scalar measures are the pushforwards of the Cayley representation measures. -/
-@[simp] theorem spectralPVM_diag (ξ : H) :
+theorem spectralPVM_diag (ξ : H) :
     (spectralPVM hA).diag ξ =
       Measure.map (Complex.inverseCayleyCoord ∘ Subtype.val)
         ((cfcHom hA.isStarNormal_cayley).representationDiagMeasure ξ) := by
