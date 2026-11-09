@@ -19,6 +19,10 @@ the components of `S.arrow`. A morphism of complexes into `L` factors through `S
 does degreewise, that is, as soon as each of its components lands in the range of the
 corresponding component of `S.arrow` (`CategoryTheory.Subobject.factors_of_forall_mem_range`).
 
+The degreewise ranges are monotone in the subcomplex
+(`CategoryTheory.Subobject.range_arrow_f_hom_le`) and stable under the differentials of `L`
+(`CategoryTheory.Subobject.d_mem_range_arrow_f_hom`).
+
 ## Main results
 
 * `CategoryTheory.Subobject.factors_iff_forall_mem_range`: a morphism factors through a subcomplex
@@ -62,5 +66,24 @@ theorem factors_iff_forall_mem_range :
   refine ⟨fun hS n x ↦ ⟨((S.factorThru g hS).f n).hom x, ?_⟩, factors_of_forall_mem_range S g⟩
   rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← HomologicalComplex.comp_f,
     Subobject.factorThru_arrow]
+
+variable {S} in
+/-- The degreewise ranges of the inclusions of subcomplexes are monotone in the subcomplex. -/
+theorem range_arrow_f_hom_le {T : Subobject L} (h : S ≤ T) (n : ι) :
+    LinearMap.range (S.arrow.f n).hom ≤ LinearMap.range (T.arrow.f n).hom := by
+  rintro _ ⟨x, rfl⟩
+  exact ⟨((Subobject.ofLE S T h).f n).hom x, by
+    rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← HomologicalComplex.comp_f,
+      Subobject.ofLE_arrow]⟩
+
+/-- The differentials of `L` send the degreewise range of the inclusion of a subcomplex into the
+range in the next degree. -/
+theorem d_mem_range_arrow_f_hom (i j : ι) {x : L.X i}
+    (hx : x ∈ LinearMap.range (S.arrow.f i).hom) :
+    (L.d i j).hom x ∈ LinearMap.range (S.arrow.f j).hom := by
+  obtain ⟨y, rfl⟩ := hx
+  exact ⟨((S : HomologicalComplex (ModuleCat R) c).d i j).hom y, by
+    rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← S.arrow.comm, ModuleCat.hom_comp,
+      LinearMap.comp_apply]⟩
 
 end CategoryTheory.Subobject
