@@ -38,6 +38,7 @@ variable {G : Type*} [Group G] [MulSemiringAction G L] [IsInvariantSubring G �
 
 /-- The image of an integer of `L` under the action, read in `L`. This is `map_smul` for the
 equivariant inclusion `IsInvariantSubring.subtypeHom`. -/
+@[simp]
 theorem coe_smul_integer (σ : G) (y : 𝒪[L]) : ((σ • y : 𝒪[L]) : L) = σ • (y : L) :=
   map_smul (IsInvariantSubring.subtypeHom G 𝒪[L]) σ y
 
