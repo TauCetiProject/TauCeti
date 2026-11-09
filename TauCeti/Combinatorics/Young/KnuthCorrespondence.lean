@@ -223,7 +223,7 @@ theorem isTableauRows_robinsonSchenstedKnuth_snd {ws : List (α × β)}
     have hws := (sortedLE_append_singleton.mp (by rwa [map_append] at h)).1
     have hP := isTableauRows_robinsonSchenstedKnuth_fst ws
     rw [robinsonSchenstedKnuth_append_singleton]
-    refine (ih hws).appendToRow (rowInsertIndex_le_length_snd ws w.2)
+    refine (ih hws).appendToRow
       (fun x hx => le_of_mem_flatten_snd h (mem_flatten_of_mem_getD hx)) fun i hi => ?_
     have hlen := length_getD_succ_lt_of_rowInsertIndex_eq_succ hP hi
     rw [← hi, length_getD_robinsonSchenstedKnuth_fst, length_getD_robinsonSchenstedKnuth_fst]

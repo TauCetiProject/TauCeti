@@ -349,11 +349,17 @@ theorem findIdx?_mem_appendToRow_of_ne [DecidableEq α] {a b : α} (hab : b ≠ 
 /-- **Appending to a row preserves tableaux** when the new cell is a corner of the new shape and
 its entry fits: it is at least every entry of its row, and greater than the entry above it. -/
 theorem _root_.List.IsTableauRows.appendToRow [Preorder α] {rows : List (List α)}
-    (h : rows.IsTableauRows) {a : α} {k : ℕ} (hk : k ≤ rows.length)
+    (h : rows.IsTableauRows) {a : α} {k : ℕ}
     (hle : ∀ x ∈ rows.getD k [], x ≤ a)
     (habove : ∀ i, k = i + 1 → ∃ hlen : (rows.getD k []).length < (rows.getD i []).length,
       (rows.getD i [])[(rows.getD k []).length] < a) :
     (appendToRow a k rows).IsTableauRows := by
+  -- A cell strictly below the last row has no row above it to rest on.
+  have hk : k ≤ rows.length := by
+    by_contra hlt
+    obtain ⟨hlen, -⟩ := habove (k - 1) (by omega)
+    rw [List.getD_eq_default _ _ (by omega), List.getD_eq_default _ _ (by omega)] at hlen
+    simp at hlen
   induction rows generalizing k with
   | nil =>
     obtain rfl : k = 0 := by simpa using hk
@@ -368,8 +374,8 @@ theorem _root_.List.IsTableauRows.appendToRow [Preorder α] {rows : List (List �
         pairwise_singleton _ _, fun x hx y hy => by
           simpa [mem_singleton.mp hy] using hle x (by simpa using hx)⟩)
     | succ k =>
-      refine isTableauRows_cons.mpr ⟨hne, hs, ?_, ih hrows (by simpa using hk)
-        (by simpa using hle) fun i hi => by simpa using habove (i + 1) (by omega)⟩
+      refine isTableauRows_cons.mpr ⟨hne, hs, ?_, ih hrows (by simpa using hle)
+        (fun i hi => by simpa using habove (i + 1) (by omega)) (by simpa using hk)⟩
       cases k with
       | zero =>
         obtain ⟨hlen, hlt⟩ := habove 0 rfl
