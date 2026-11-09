@@ -80,15 +80,16 @@ theorem convex_range_toFun_comp_weights (R : Type*) [Semiring R] [PartialOrder R
 
 /-- A coordinate of a point of the standard simplex is less than one if some other coordinate
 is positive. -/
-theorem apply_lt_one_of_mem_range_weights {ι : Type*} [Finite ι] {x : ι → ℝ}
-    (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) {i j : ι} (hij : j ≠ i)
+theorem apply_lt_one_of_mem_range_weights {R : Type*} [Semiring R] [LinearOrder R]
+    [IsStrictOrderedRing R] {ι : Type*} [Finite ι] {x : ι → R}
+    (hx : x ∈ range fun s : StdSimplex R ι => ⇑s.weights) {i j : ι} (hij : j ≠ i)
     (hxj : 0 < x j) : x i < 1 := by
   classical
   have := Fintype.ofFinite ι
   obtain ⟨hx0, hx1⟩ := mem_range_toFun_comp_weights_iff.1 hx
   have := sum_le_sum_of_subset_of_nonneg (subset_univ {i, j}) fun k _ _ => hx0 k
   rw [sum_pair hij.symm, hx1] at this
-  linarith
+  exact (lt_add_of_pos_right (x i) hxj).trans_le this
 
 end Convexity.StdSimplex
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Ring.Lemmas
-public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
 public import TauCeti.Analysis.Convex.StdSimplex
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
@@ -36,8 +35,9 @@ the weight of `α` is positive in the interior, the extension is strictly monoto
 The second part fills a gap `a ≤ b` over the simplex. Boundary heights `c` with `a ≤ c ≤ b` are
 normalized to `(c - a) / (b - a)`, extended, and rescaled to `a + (b - a) * E`
 (`TauCeti.stdSimplexGapExtension`). This recovers `c` on the boundary, lies strictly inside an
-open gap in the interior when `0 < α < 1`, and is continuous on the closed simplex provided the
-gap collapses only on faces of codimension at least two. At a collapsed point the normalized
+open gap in the interior when `0 < α < 1`, and is continuous on the closed simplex provided `a`
+and `b` are continuous on the simplex, `c` is continuous on its relative boundary, and the gap
+collapses only on faces of codimension at least two. At a collapsed point the normalized
 ratio may have no limit, but it is bounded and the width tends to zero.
 
 Such heights fill the gaps between consecutive section heights over a simplex when a cylindrical
