@@ -43,7 +43,7 @@ namespace AlgebraicGeometry.Scheme
 
 /-- Blowing up the singular subscheme of a syntomic relative curve changes nothing over its
 smooth locus. -/
-theorem isIso_blowup_singularLocus_restrict_smoothLocus
+theorem isIso_blowupToBase_singularLocus_restrict_smoothLocus
     {R : Type u} [CommRing R] (X : Scheme.{u}) [X.Over (Spec (.of R))]
     [SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R))] :
     IsIso ((X.singularLocus R).blowupToBase ∣_ (X ↘ Spec (.of R)).smoothLocus) := by
@@ -55,7 +55,7 @@ variable {K : Type u} [Field K] (X : Scheme.{u}) [X.Over (Spec (.of K))]
 
 /-- The blowup of a nodal curve at its singular subscheme is finite, including when the curve
 is not proper. Its fibres are singletons over smooth points and finite over nodes. -/
-theorem isFinite_blowup_singularLocus
+theorem isFinite_blowupToBase_singularLocus
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K))) :
     letI := hnodal.syntomic
     IsFinite (X.singularLocus K).blowupToBase := by
@@ -66,7 +66,7 @@ theorem isFinite_blowup_singularLocus
   have : IsFinite (X.branchSchemeToSingularLocus K) :=
     X.isFinite_branchSchemeToSingularLocus hnodal
   have : IsIso (f ∣_ (X ↘ Spec (.of K)).smoothLocus) :=
-    X.isIso_blowup_singularLocus_restrict_smoothLocus
+    X.isIso_blowupToBase_singularLocus_restrict_smoothLocus
   have : LocallyQuasiFinite f := by
     apply LocallyQuasiFinite.of_finite_preimage_singleton
     intro x
@@ -77,25 +77,22 @@ theorem isFinite_blowup_singularLocus
       rw [Set.image_singleton] at h
       rw [← h]
       exact ((X.branchSchemeToSingularLocus K).finite_preimage_singleton s).image _
-    · -- Over a smooth point the restricted blowup is injective.
+    · -- Over a smooth point use the finite fibre of the restriction isomorphism.
       have hxU : x ∈ (X ↘ Spec (.of K)).smoothLocus := by
-        simpa using hx
-      apply Set.Subsingleton.finite
-      intro y hy z hz
-      have hyU : y ∈ f ⁻¹ᵁ (X ↘ Spec (.of K)).smoothLocus :=
-        f.mem_preimage.mpr (hy.symm ▸ hxU)
-      have hzU : z ∈ f ⁻¹ᵁ (X ↘ Spec (.of K)).smoothLocus :=
-        f.mem_preimage.mpr (hz.symm ▸ hxU)
-      have heq : (f ∣_ (X ↘ Spec (.of K)).smoothLocus) ⟨y, hyU⟩ =
-          (f ∣_ (X ↘ Spec (.of K)).smoothLocus) ⟨z, hzU⟩ :=
-        Subtype.ext ((morphismRestrict_base_coe f _ ⟨y, hyU⟩).trans
-          (hy.trans (hz.symm.trans (morphismRestrict_base_coe f _ ⟨z, hzU⟩).symm)))
-      exact congrArg Subtype.val ((f ∣_ (X ↘ Spec (.of K)).smoothLocus).injective heq)
+        simpa only [mem_support_singularLocus_iff_notMem_smoothLocus, not_not] using hx
+      have h := image_preimage_eq_of_isPullback
+        (isPullback_morphismRestrict f (X ↘ Spec (.of K)).smoothLocus) {⟨x, hxU⟩}
+      rw [Set.image_singleton (f := (X ↘ Spec (.of K)).smoothLocus.ι)
+        (a := (⟨x, hxU⟩ : (X ↘ Spec (.of K)).smoothLocus.toScheme)),
+      Scheme.Opens.ι_apply] at h
+      rw [← h]
+      exact ((f ∣_ (X ↘ Spec (.of K)).smoothLocus).finite_preimage_singleton
+        ⟨x, hxU⟩).image _
   exact IsFinite.of_isProper_of_locallyQuasiFinite f
 
 /-- The blowup separating the branches of a nodal curve is surjective. In particular it does
 not discard any component, even when the curve is disconnected or has self-nodes. -/
-theorem surjective_blowup_singularLocus
+theorem surjective_blowupToBase_singularLocus
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K))) :
     letI := hnodal.syntomic
     Surjective (X.singularLocus K).blowupToBase := by
@@ -115,15 +112,23 @@ theorem surjective_blowup_singularLocus
     refine ⟨X.branchSchemeToBlowup K b, ?_⟩
     rw [← Scheme.Hom.comp_apply, ← X.branchSchemeToSingularLocus_subschemeι K,
       Scheme.Hom.comp_apply, hb]
-  · have hxU : x ∈ (X ↘ Spec (.of K)).smoothLocus := by simpa using hx
-    have := X.isIso_blowup_singularLocus_restrict_smoothLocus (R := K)
-    obtain ⟨y, hy⟩ := ((X.singularLocus K).blowupToBase ∣_
-      (X ↘ Spec (.of K)).smoothLocus).surjective ⟨x, hxU⟩
-    exact ⟨y.1, (morphismRestrict_base_coe _ _ y).symm.trans (congrArg Subtype.val hy)⟩
+  · have hxU : x ∈ (X ↘ Spec (.of K)).smoothLocus := by
+      simpa only [mem_support_singularLocus_iff_notMem_smoothLocus, not_not] using hx
+    let f := (X.singularLocus K).blowupToBase
+    have := X.isIso_blowupToBase_singularLocus_restrict_smoothLocus (R := K)
+    have h := image_preimage_eq_of_isPullback
+      (isPullback_morphismRestrict f (X ↘ Spec (.of K)).smoothLocus) {⟨x, hxU⟩}
+    rw [Set.image_singleton (f := (X ↘ Spec (.of K)).smoothLocus.ι)
+        (a := (⟨x, hxU⟩ : (X ↘ Spec (.of K)).smoothLocus.toScheme)),
+      Scheme.Opens.ι_apply] at h
+    have hne := (Set.preimage_singleton_nonempty.mpr
+      ((f ∣_ (X ↘ Spec (.of K)).smoothLocus).surjective ⟨x, hxU⟩)).image
+        (f ⁻¹ᵁ (X ↘ Spec (.of K)).smoothLocus).ι
+    rw [h] at hne
+    exact Set.preimage_singleton_nonempty.mp hne
 
 /-- Blowing up the singular subscheme resolves a nodal curve over any field: every local ring
-of the blowup is regular. Over the exceptional divisor regularity lifts from the étale branch
-scheme; away from it the blowup is the original smooth curve. -/
+of the blowup is regular. -/
 theorem isRegular_blowup_singularLocus
     (hnodal : AtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K))) :
     letI := hnodal.syntomic
@@ -139,12 +144,11 @@ theorem isRegular_blowup_singularLocus
     X.etale_singularLocus_subschemeι_comp hnodal
   let e : (I.comap f).subscheme ≅ X.branchScheme K :=
     I.comapIso f ≪≫ pullbackSymmetry _ _ ≪≫ (X.isPullback_branchScheme K).isoPullback.symm
-  have : Smooth (e.hom ≫ X.branchSchemeToSingularLocus K ≫
-      I.subschemeι ≫ (X ↘ Spec (.of K))) := inferInstance
-  have hE : IsRegular (I.comap f).subscheme := IsRegular.of_smooth
-    (e.hom ≫ X.branchSchemeToSingularLocus K ≫ I.subschemeι ≫ (X ↘ Spec (.of K)))
+  let g := e.hom ≫ X.branchSchemeToSingularLocus K ≫ I.subschemeι ≫ (X ↘ Spec (.of K))
+  have : Smooth g := inferInstance
+  have hE : IsRegular (I.comap f).subscheme := IsRegular.of_smooth g
   have : IsIso (f ∣_ (X ↘ Spec (.of K)).smoothLocus) :=
-    X.isIso_blowup_singularLocus_restrict_smoothLocus
+    X.isIso_blowupToBase_singularLocus_restrict_smoothLocus
   have hU : IsRegular ((X ↘ Spec (.of K)).smoothLocus.toScheme) :=
     IsRegular.of_smooth ((X ↘ Spec (.of K)).smoothLocus.ι ≫ (X ↘ Spec (.of K)))
   refine ⟨fun y ↦ ?_⟩
@@ -152,10 +156,10 @@ theorem isRegular_blowup_singularLocus
   · exact I.isEffectiveCartier_comap_blowupToBase.isRegularLocalRing_stalk_of_mem_support
       (fun _ ↦ inferInstance) hy
   · have hyU : y ∈ f ⁻¹ᵁ (X ↘ Spec (.of K)).smoothLocus := by
-      rw [IdealSheafData.support_comap] at hy
-      have hy' : f y ∉ I.support := hy
+      rw [IdealSheafData.support_comap, ← SetLike.mem_coe,
+        TopologicalSpace.Closeds.coe_preimage, Set.mem_preimage, SetLike.mem_coe] at hy
       apply f.mem_preimage.mpr
-      simpa only [I, mem_support_singularLocus_iff_notMem_smoothLocus, not_not] using hy'
+      simpa only [I, mem_support_singularLocus_iff_notMem_smoothLocus, not_not] using hy
     let y' : (f ⁻¹ᵁ (X ↘ Spec (.of K)).smoothLocus).toScheme := ⟨y, hyU⟩
     have : IsRegular (f ⁻¹ᵁ (X ↘ Spec (.of K)).smoothLocus).toScheme :=
       IsRegular.of_isOpenImmersion (f ∣_ (X ↘ Spec (.of K)).smoothLocus)
