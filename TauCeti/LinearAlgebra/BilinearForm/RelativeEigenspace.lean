@@ -34,7 +34,8 @@ definite they meet only in `0`. The spectral theory over finite-dimensional real
 * `LinearMap.BilinForm.apply_eq_zero_of_mem_relativeSpectralSubspace`: spectral subspaces for
   disjoint sets are orthogonal for `g` and for `q`;
   `LinearMap.BilinForm.disjoint_relativeSpectralSubspace`: for anisotropic `g` they meet only
-  in `0`.
+  in `0`, in particular for positive definite `g`
+  (`LinearMap.BilinForm.disjoint_relativeSpectralSubspace_of_pos`).
 -/
 
 public section
@@ -187,6 +188,13 @@ theorem disjoint_relativeSpectralSubspace (hg : g.IsSymm) (hg0 : ∀ v, g v v = 
     Disjoint (g.relativeSpectralSubspace q Ω) (g.relativeSpectralSubspace q Ω') :=
   Submodule.disjoint_def.mpr fun v hv hv' ↦
     hg0 v (apply_eq_zero_of_mem_relativeSpectralSubspace hg hq h hv hv').1
+
+/-- For a positive definite symmetric `g` and a symmetric `q`, the relative spectral subspaces
+selected by disjoint sets meet only in `0`. -/
+theorem disjoint_relativeSpectralSubspace_of_pos [Preorder K] (hg : g.IsSymm)
+    (hpos : ∀ v, v ≠ 0 → 0 < g v v) (hq : q.IsSymm) (h : Disjoint Ω Ω') :
+    Disjoint (g.relativeSpectralSubspace q Ω) (g.relativeSpectralSubspace q Ω') :=
+  disjoint_relativeSpectralSubspace hg (fun v h ↦ by_contra fun hv ↦ (hpos v hv).ne' h) hq h
 
 end Field
 

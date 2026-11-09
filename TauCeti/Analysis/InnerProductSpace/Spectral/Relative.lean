@@ -36,6 +36,8 @@ nondegenerate the negative and positive spectral subspaces are complementary.
 * `LinearMap.BilinForm.relativeEigenspace_innerₗ`: relative to an inner product, the relative
   eigenspaces are the eigenspaces of the operator representing `q`.
 * `LinearMap.BilinForm.relativeSpectralSubspace_univ`: the relative eigenvectors span.
+* `LinearMap.BilinForm.isCompl_relativeSpectralSubspace_compl`: the relative spectral subspaces
+  selected by `Ω` and by its complement are complementary.
 * `LinearMap.BilinForm.exists_neg_relativeSpectralSubspace_Iio_eq_Iic`: the negative relative
   eigenvalues are bounded away from `0`.
 * `LinearMap.BilinForm.apply_self_neg_of_mem_relativeSpectralSubspace_Iio` and
@@ -157,6 +159,13 @@ the relative eigenvectors of `q` span the space. -/
 theorem relativeSpectralSubspace_univ : g.relativeSpectralSubspace q univ = ⊤ := by
   simpa using relativeSpectralSubspace_sup_compl_eq_top hg hpos hq (Ω := univ)
 
+/-- For a positive definite symmetric `g` and a symmetric `q` on a finite-dimensional real space,
+the relative spectral subspaces selected by `Ω` and by its complement are complementary. -/
+theorem isCompl_relativeSpectralSubspace_compl :
+    IsCompl (g.relativeSpectralSubspace q Ω) (g.relativeSpectralSubspace q Ωᶜ) :=
+  ⟨disjoint_relativeSpectralSubspace_of_pos hg hpos hq disjoint_compl_right,
+    codisjoint_iff.mpr (relativeSpectralSubspace_sup_compl_eq_top hg hpos hq)⟩
+
 /-- **Upper form bound.** If every eigenvalue in `Ω` is at most `c`, then `q v v ≤ c * g v v` on
 the relative spectral subspace selected by `Ω`. -/
 theorem apply_self_le_mul_apply_self_of_mem_relativeSpectralSubspace (c : ℝ) (hΩ : Ω ⊆ Iic c)
@@ -216,11 +225,7 @@ theorem finrank_relativeSpectralSubspace_Iio :
   set N := g.relativeSpectralSubspace q (Iio 0)
   set P := g.relativeSpectralSubspace q (Ici 0)
   have hNP : IsCompl N P := by
-    refine ⟨disjoint_relativeSpectralSubspace hg
-      (fun v h ↦ by_contra fun hv ↦ (hpos v hv).ne' h) hq (Iio_disjoint_Ici le_rfl),
-      codisjoint_iff.mpr ?_⟩
-    simpa [N, P, compl_Iio] using relativeSpectralSubspace_sup_compl_eq_top hg hpos hq
-      (Ω := Iio 0)
+    simpa [N, P, compl_Iio] using isCompl_relativeSpectralSubspace_compl hg hpos hq (Ω := Iio 0)
   refine le_antisymm (le_sigNeg_of_negDef _ fun ⟨v, hv⟩ hv0 ↦ ?_) ?_
   · simpa using apply_self_neg_of_mem_relativeSpectralSubspace_Iio hg hpos hq hv
       (by simpa using hv0)
@@ -245,8 +250,7 @@ theorem finrank_relativeSpectralSubspace_Ioi :
 complementary. -/
 theorem isCompl_relativeSpectralSubspace_Iio_Ioi (hker : LinearMap.ker q = ⊥) :
     IsCompl (g.relativeSpectralSubspace q (Iio 0)) (g.relativeSpectralSubspace q (Ioi 0)) := by
-  refine ⟨disjoint_relativeSpectralSubspace hg
-    (fun v h ↦ by_contra fun hv ↦ (hpos v hv).ne' h) hq Iio_disjoint_Ioi_same,
+  refine ⟨disjoint_relativeSpectralSubspace_of_pos hg hpos hq Iio_disjoint_Ioi_same,
     codisjoint_iff.mpr ?_⟩
   · have hsplit : (univ : Set ℝ) = (Iio 0 ∪ Ioi 0) ∪ {0} := by
       ext x
