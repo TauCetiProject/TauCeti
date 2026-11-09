@@ -24,6 +24,10 @@ This file also groups products of linear factors according to their constant ter
 that a sum `∑ j ∈ range N, C (c j) * X ^ (N - j)` has no constant term, and computes the degree
 of geometric sums of mixed powers of equal-degree monic polynomials.
 
+It also records that the image of a finite product of polynomials under a ring homomorphism into a
+ring without zero divisors has degree the sum of the factors' degrees when each factor's image is
+nonzero, and is itself nonzero when the target ring is moreover nontrivial.
+
 Finally, `TauCeti.sum_range_monomial_add_monomial_eq_of_eq_add` turns coefficient relations
 `cᵢ = bᵢ + qᵢ + qᵢ₋₁` into the polynomial identity
 `∑ᵢ₌₀ⁿ cᵢ Xⁱ + qₙ Xⁿ⁺¹ = ∑ᵢ₌₀ⁿ bᵢ Xⁱ + (1 + X) ∑ᵢ₌₀ⁿ qᵢ Xⁱ`, the shape of the Morse polynomial
@@ -50,6 +54,28 @@ theorem coeff_zero_sum_C_mul_X_pow_sub (c : ℕ → R) (N : ℕ) :
   omega
 
 end Semiring
+
+section MapProd
+
+variable {ι R S : Type*} [CommSemiring R] [CommSemiring S] [NoZeroDivisors S]
+  [Nontrivial S] (f : R →+* S)
+
+/-- Over a nontrivial ring without zero divisors, the image of a finite product of polynomials is
+nonzero when the image of each factor is nonzero. -/
+theorem map_prod_ne_zero (s : Finset ι) (P : ι → R[X]) (h : ∀ k ∈ s, (P k).map f ≠ 0) :
+    (∏ k ∈ s, P k).map f ≠ 0 := by
+  rw [Polynomial.map_prod]
+  exact Finset.prod_ne_zero_iff.mpr h
+
+omit [Nontrivial S] in
+/-- Over a ring without zero divisors, the degree of the image of a finite product of polynomials
+is the sum of the degrees of the images of the factors, when each image is nonzero. -/
+theorem natDegree_map_prod (s : Finset ι) (P : ι → R[X]) (h : ∀ k ∈ s, (P k).map f ≠ 0) :
+    ((∏ k ∈ s, P k).map f).natDegree = ∑ k ∈ s, ((P k).map f).natDegree := by
+  rw [Polynomial.map_prod]
+  exact natDegree_prod _ _ h
+
+end MapProd
 
 variable {ι R : Type*} [CommSemiring R]
 
