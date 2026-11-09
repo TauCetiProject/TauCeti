@@ -169,9 +169,10 @@ theorem XMarkingClass_def : G.XMarkingClass R = G.unblockedHomologyClass R (G.XM
 
 /-- If every grid state has an even number of counted rectangles into the `X`-marking state, then
 no monomial in the grid variables kills its class in `GH⁻`. -/
-theorem monomial_smul_XMarkingClass_ne_zero [Nontrivial R]
+theorem monomial_smul_XMarkingClass_ne_zero
     (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card) (e : Fin n →₀ ℕ) :
     (monomial e (1 : R)) • G.XMarkingClass R ≠ 0 := by
+  have := CharP.nontrivial_of_char_ne_one (R := R) (v := 2) (by decide)
   intro h
   rw [XMarkingClass_def, ← map_smul, unblockedHomologyClass_eq_zero_iff, Submodule.coe_smul,
     coe_XMarkingCycle] at h
@@ -179,7 +180,7 @@ theorem monomial_smul_XMarkingClass_ne_zero [Nontrivial R]
 
 /-- If every grid state has an even number of counted rectangles into the `X`-marking state, then
 no power of a grid variable kills its class in `GH⁻`. -/
-theorem X_pow_smul_XMarkingClass_ne_zero [Nontrivial R]
+theorem X_pow_smul_XMarkingClass_ne_zero
     (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card) (i : Fin n) (k : ℕ) :
     (MvPolynomial.X i ^ k : MvPolynomial (Fin n) R) • G.XMarkingClass R ≠ 0 := by
   have h := G.monomial_smul_XMarkingClass_ne_zero R hX (Finsupp.single i k)
@@ -194,7 +195,7 @@ include hG
 
 /-- On a knot grid whose `X`-marking state receives an even number of counted rectangles from
 every grid state, no power of `U` kills the class of the `X`-marking state in `GH⁻`. -/
-theorem X_pow_smul_XMarkingClass_ne_zero [Nontrivial R]
+theorem X_pow_smul_XMarkingClass_ne_zero
     (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card) (k : ℕ) :
     letI := hG.unblockedHomologyModule R
     (Polynomial.X ^ k : Polynomial R) • G.XMarkingClass R ≠ 0 := by
