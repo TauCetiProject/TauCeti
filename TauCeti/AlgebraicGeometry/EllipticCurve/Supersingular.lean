@@ -139,15 +139,13 @@ section Elliptic
 
 variable [W.IsElliptic]
 
-/-- Over a separably closed field `Ω`, the `0`-torsion subgroup of the points of an elliptic curve,
-which is the whole group, is nontrivial, since the curve has a nonzero point. -/
+/-- Over a separably closed field `Ω`, the `0`-torsion subgroup of the points of an elliptic curve
+is not trivial, since the curve has infinitely many points. -/
 private theorem torsionBy_zero_baseChange_ne_bot (Ω : Type*) [Field Ω] [IsSepClosed Ω]
     [Algebra K Ω] [DecidableEq Ω] :
     AddSubgroup.torsionBy (W.baseChange Ω).toAffine.Point 0 ≠ ⊥ := by
   have : (W.baseChange Ω).IsElliptic := inferInstanceAs (W.map _).IsElliptic
-  obtain ⟨P, hP⟩ := exists_ne (0 : (W.baseChange Ω).toAffine.Point)
-  intro h
-  exact hP (AddSubgroup.eq_bot_iff_forall _ |>.mp h P (by simp))
+  exact AddSubgroup.torsionBy_zero_ne_bot _
 
 /-- **Supersingularity may be read over any algebraically closed extension** `Ω` of `K`: the
 `p`-torsion of `W` over `Ω` is trivial exactly when it is over `AlgebraicClosure K`, since
