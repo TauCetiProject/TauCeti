@@ -45,6 +45,8 @@ identity.
   map is the Jacobian of its restriction to the orthogonal complement of the kernel.
 * `LinearMap.normDet_adjoint_pos_iff`: the Jacobian of the adjoint is positive exactly for
   surjective maps.
+* `ContinuousLinearMap.normDet_adjoint_eq_norm`: the Jacobian of the adjoint of a linear functional
+  is its norm.
 * `LinearMap.normDet_coprod_of_orthogonal`: the Jacobian of a sum of maps with orthogonal ranges
   on a Euclidean product is the product of their Jacobians.
 * `ContinuousLinearMap.exists_ball_antilipschitzWith_normDet_le`: around an injective linear map
@@ -145,18 +147,25 @@ end LinearMap
 variable {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
   [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
+omit [FiniteDimensional ℝ V] in
 /-- The `m`-dimensional Jacobian `normDet` of a linear map `U →L[ℝ] V`, `m = dim U`, depends
 continuously on the map. -/
 theorem ContinuousLinearMap.continuous_normDet :
     Continuous fun A : U →L[ℝ] V => A.normDet := by
-  have h (A : U →L[ℝ] V) : A.normDet = √((ContinuousLinearMap.adjoint A ∘L A).det) := by
-    rw [← A.normDet_sq, RCLike.ofReal_real_eq_id, id, Real.sqrt_sq A.normDet_nonneg]
+  let b := stdOrthonormalBasis ℝ U
+  have h (A : U →L[ℝ] V) :
+      A.normDet = √(Matrix.gram ℝ fun i => A (b i)).det := by
+    have hsq := (A : U →ₗ[ℝ] V).normDet_sq_eq_det_gram b
+    simp only [RCLike.ofReal_real_eq_id, id] at hsq
+    exact (hsq ▸ Real.sqrt_sq A.normDet_nonneg).symm
   simp_rw [h]
-  exact (ContinuousLinearMap.continuous_det.comp
-    (ContinuousLinearMap.adjoint.continuous.clm_comp continuous_id)).sqrt
+  refine Continuous.sqrt (Continuous.matrix_det (continuous_matrix fun i j => ?_))
+  simp only [Matrix.gram_apply]
+  fun_prop
 
 namespace ContinuousLinearMap
 
+omit [FiniteDimensional ℝ V] in
 /-- Around an injective linear map `B` there is a ball on which the antilipschitz constant is
 uniform and the Jacobian varies by a factor at most `τ`: every `C` within distance `ρ` of `B` is
 `K`-antilipschitz, and `C.normDet` and `B.normDet` agree up to the factor `τ`. -/
@@ -234,3 +243,12 @@ theorem ContinuousLinearMap.normDet_normalGraphL (A : U →L[ℝ] ℝ) :
     simp only [RCLike.ofReal_real_eq_id, id_eq] at h
     rw [h, hgram, Matrix.det_one_add_replicateCol_mul_replicateRow, hu]
   rw [← Real.sqrt_sq A.normalGraphL.normDet_nonneg, hsq]
+
+omit [FiniteDimensional ℝ U] in
+/-- The Jacobian of the adjoint of a linear functional is its norm. This is the coarea Jacobian
+of a real-valued map, the norm of its gradient. -/
+theorem ContinuousLinearMap.normDet_adjoint_eq_norm [CompleteSpace U] (A : U →L[ℝ] ℝ) :
+    A.adjoint.normDet = ‖A‖ := by
+  rw [LinearMap.normDet_eq_norm_apply_one, ContinuousLinearMap.coe_coe,
+    ← ContinuousLinearMap.toSpanSingletonLIE_symm_apply ℝ U, LinearIsometryEquiv.norm_map,
+    LinearIsometryEquiv.norm_map]

@@ -99,7 +99,7 @@ namespace LinearMap.BilinForm
 
 open LinearMap (BilinForm)
 
-variable {R M M' : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup M']
+variable {R M M' : Type*} [CommRing R] [AddCommMonoid M] [Module R M] [AddCommMonoid M']
   [Module R M'] {C : BilinForm R M} {C' : BilinForm R M'} {a : R}
 
 /-- Scaling two bilinear forms by the same non-zero-divisor `a` neither creates nor destroys an
