@@ -274,10 +274,6 @@ theorem isMicrolocallySobolevAt_conj_iff {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x ξ : 
   have key {S : 𝓓'(Ω, ℂ)} {ζ : E} (h : S.IsMicrolocallySobolevAt s x (-ζ)) :
       (mapCLM conjCLE.toContinuousLinearMap S).IsMicrolocallySobolevAt s x ζ := by
     obtain ⟨φ, hφ, Γ, hΓ, hζ, hcone, hL⟩ := h
-    have hφφ : postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap
-        (postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap φ) = φ := by
-      ext y
-      simp
     have hneg : MeasurePreserving Neg.neg (volume.restrict (Neg.neg ⁻¹' Γ))
         (volume.restrict Γ) :=
       (Measure.measurePreserving_neg volume).restrict_preimage hΓ.measurableSet
@@ -286,13 +282,9 @@ theorem isMicrolocallySobolevAt_conj_iff {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x ξ : 
       (hL.comp_measurePreserving hneg).mono
         (aestronglyMeasurable_weight_smul_localFourier _ _ _ _) (.of_forall fun η ↦ ?_)⟩
     · simpa [smul_neg] using hcone t ht (-η) hη
-    · simp [localFourier_conj, hφφ]
-  have hconj : mapCLM conjCLE.toContinuousLinearMap (mapCLM conjCLE.toContinuousLinearMap T) =
-      T := by
-    ext φ
-    simp [mapCLM_apply]
+    · simp [localFourier_conj]
   refine ⟨fun h ↦ ?_, key⟩
-  rw [← hconj]
+  rw [← mapCLM_conj_mapCLM_conj T]
   exact key (by rwa [neg_neg])
 
 /-- Complex conjugation reflects the `H^s` wave front set in the frequency variable. -/

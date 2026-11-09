@@ -252,6 +252,21 @@ theorem waveFrontSet_smul {c : ℂ} (hc : c ≠ 0) (T : 𝓓'(Ω, ℂ)) :
 theorem waveFrontSet_neg (T : 𝓓'(Ω, ℂ)) : (-T).waveFrontSet = T.waveFrontSet := by
   rw [← neg_one_smul ℂ T, waveFrontSet_smul (neg_ne_zero.2 one_ne_zero)]
 
+/-- Conjugating a complex test function twice gives it back. -/
+@[simp]
+theorem _root_.TestFunction.postcompCLM_conj_postcompCLM_conj (φ : 𝓓(Ω, ℂ)) :
+    postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap
+      (postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap φ) = φ := by
+  ext y
+  simp
+
+/-- Conjugating a complex distribution twice gives it back. -/
+@[simp]
+theorem mapCLM_conj_mapCLM_conj (T : 𝓓'(Ω, ℂ)) :
+    mapCLM conjCLE.toContinuousLinearMap (mapCLM conjCLE.toContinuousLinearMap T) = T := by
+  ext φ
+  simp [mapCLM_apply]
+
 /-- The localized Fourier transform of the complex conjugate distribution is the conjugate of the
 localized Fourier transform at the opposite frequency, with conjugate cutoff. -/
 theorem localFourier_conj (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) (η : E) :
@@ -284,21 +299,13 @@ theorem isMicrolocallySmoothAt_conj_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E} :
   have key {S : 𝓓'(Ω, ℂ)} {ζ : E} (h : S.IsMicrolocallySmoothAt x (-ζ)) :
       (mapCLM conjCLE.toContinuousLinearMap S).IsMicrolocallySmoothAt x ζ := by
     obtain ⟨φ, hφ, Γ, hΓ, hζ, hcone, hdecay⟩ := h
-    have hφφ : postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap
-        (postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap φ) = φ := by
-      ext y
-      simp
     refine ⟨postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap φ, by simpa using hφ,
       Neg.neg ⁻¹' Γ, hΓ.preimage continuous_neg, hζ, fun t ht η hη => ?_, fun N => ?_⟩
     · simpa [smul_neg] using hcone t ht (-η) hη
     · obtain ⟨C, hC⟩ := hdecay N
-      exact ⟨C, fun η hη => by simpa [localFourier_conj, hφφ] using hC (-η) hη⟩
-  have hconj : mapCLM conjCLE.toContinuousLinearMap (mapCLM conjCLE.toContinuousLinearMap T) =
-      T := by
-    ext φ
-    simp [mapCLM_apply]
+      exact ⟨C, fun η hη => by simpa [localFourier_conj] using hC (-η) hη⟩
   refine ⟨fun h => ?_, key⟩
-  rw [← hconj]
+  rw [← mapCLM_conj_mapCLM_conj T]
   exact key (by rwa [neg_neg])
 
 /-- Complex conjugation reflects the wave front set in the frequency variable. -/
