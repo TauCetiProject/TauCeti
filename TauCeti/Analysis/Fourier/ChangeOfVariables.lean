@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Fourier.FourierTransform
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 /-!
 # Linear change of variables for the Fourier transform
@@ -32,12 +33,17 @@ complex normed space, including Schwartz functions by coercion.
 * `TauCeti.fourier_comp_smul`, `TauCeti.fourierInv_comp_smul`: the dilation formulas.
 * `TauCeti.integral_norm_fourierInv_comp_smul`: dilation preserves the `L¹` norm of the inverse
   Fourier transform.
+* `TauCeti.fourier_fourierChar_smul`: modulation by the character `𝐞 ⟪·, c⟫` translates the
+  Fourier transform by `c`.
+* `TauCeti.fourier_smul_const`: the Fourier transform of `f · • v` is `𝓕 f · • v`.
+* `TauCeti.exp_inner_mul_I_eq_fourierChar`: the exponential `exp(i ⟪y, ξ⟫)` is the Fourier
+  character at the frequency `ξ / 2π`.
 -/
 
 public section
 
 open MeasureTheory Module
-open scoped FourierTransform RealInnerProductSpace
+open scoped FourierTransform RealInnerProductSpace Real
 
 namespace TauCeti
 
@@ -94,5 +100,31 @@ theorem integral_norm_fourierInv_comp_smul (f : E → F) {c : ℝ} (hc : c ≠ 0
   simp_rw [fourierInv_comp_smul f hc, norm_smul, norm_inv, Real.norm_eq_abs, abs_abs]
   rw [integral_const_mul, Measure.integral_comp_inv_smul volume (fun y ↦ ‖𝓕⁻ f y‖), smul_eq_mul,
     ← mul_assoc, inv_mul_cancel₀ (abs_ne_zero.2 (pow_ne_zero _ hc)), one_mul]
+
+/-! ### Translation in frequency -/
+
+/-- **Modulation**: multiplying by the character `𝐞 ⟪·, c⟫` translates the Fourier transform,
+`𝓕 (𝐞 ⟪·, c⟫ • f) ζ = 𝓕 f (ζ - c)`. -/
+theorem fourier_fourierChar_smul (f : E → F) (c ζ : E) :
+    𝓕 (fun y ↦ 𝐞 ⟪y, c⟫ • f y) ζ = 𝓕 f (ζ - c) := by
+  simp only [Real.fourier_eq]
+  congr 1 with y
+  rw [smul_smul, ← AddChar.map_add_eq_mul, inner_sub_right, neg_sub, neg_add_eq_sub]
+
+/-- The Fourier transform of a scalar function times a constant vector:
+`𝓕 (f · • v) w = 𝓕 f w • v`. -/
+theorem fourier_smul_const [CompleteSpace F] (f : E → ℂ) (v : F) (w : E) :
+    𝓕 (fun z ↦ f z • v) w = 𝓕 f w • v := by
+  simp only [Real.fourier_eq, ← smul_assoc]
+  exact integral_smul_const _ v
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The exponential `exp(i ⟪y, ξ⟫)` is the Fourier character `𝐞 ⟪y, ξ / 2π⟫`. -/
+theorem exp_inner_mul_I_eq_fourierChar (y ξ : E) :
+    Complex.exp (⟪y, ξ⟫ * Complex.I) = 𝐞 ⟪y, (2 * π)⁻¹ • ξ⟫ := by
+  rw [Real.fourierChar_apply, inner_smul_right]
+  congr 2
+  push_cast
+  field_simp
 
 end TauCeti

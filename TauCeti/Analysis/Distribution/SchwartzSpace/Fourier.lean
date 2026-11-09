@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Fourier.LpSpace
+import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
 # Derivatives of Schwartz functions on the Fourier side
@@ -35,6 +36,10 @@ gives `𝓕⁻ (∂_m^N σ) x = (-2πi ⟪x, m⟫) ^ N 𝓕⁻ σ x`, the invers
 postcomposition by a continuous linear map, and Mathlib's `norm_fourier_toL2_eq` gives
 Plancherel's theorem `‖𝓕⁻ f‖_{L²} = ‖f‖_{L²}`.
 
+For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
+`y ↦ exp(i ⟪y, ξ⟫) φ(ε y) v` is a Schwartz function whose Fourier transform
+`|ε|⁻ⁿ 𝓕 φ (ε⁻¹ (ζ - ξ / 2π)) v` concentrates at the frequency `ξ / 2π` as `ε → 0`.
+
 ## Main declarations
 
 * `SchwartzMap.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
@@ -55,6 +60,8 @@ Plancherel's theorem `‖𝓕⁻ f‖_{L²} = ‖f‖_{L²}`.
   `‖𝓕⁻ (w • 𝓕 f)‖_{L²} = ‖w • 𝓕 f‖_{L²}`.
 * `SchwartzMap.sum_sum_norm_toLp_lineDerivOp_lineDerivOp_sq`: the squared `L²` norms of the
   second derivatives along an orthonormal basis sum to the squared `L²` norm of the Laplacian.
+* `SchwartzMap.cutoffExponential`: the cut-off exponential `y ↦ exp(i ⟪y, ξ⟫) φ(ε y) v`.
+* `SchwartzMap.fourier_cutoffExponential`: its Fourier transform.
 
 ## References
 
@@ -176,6 +183,55 @@ theorem fourierInv_postcompCLM_apply {G : Type*} [NormedAddCommGroup G] [NormedS
     · simp [Circle.norm_smul]
 
 end normed
+
+section CutoffExponential
+
+variable [NormedSpace ℂ F]
+
+/-- The *cut-off exponential* `y ↦ exp(i ⟪y, ξ⟫) φ(ε y) v` of the angular frequency `ξ`, a
+Schwartz function for `ε ≠ 0`. As `ε → 0` it tends to the exponential `exp(i ⟪y, ξ⟫) φ(0) v`
+locally uniformly, while its Fourier transform concentrates at `ξ / 2π`. For `ε = 0` it is `0`
+by convention (`SchwartzMap.cutoffExponential_zero`). -/
+noncomputable def cutoffExponential (φ : 𝓢(E, ℂ)) (ε : ℝ) (ξ : E) (v : F) : 𝓢(E, F) :=
+  if hε : ε = 0 then 0 else
+    postcompCLM (ContinuousLinearMap.toSpanSingleton ℂ v)
+      (smulLeftCLM ℂ (fun y : E ↦ Complex.exp (⟪y, ξ⟫ * Complex.I))
+        (compCLMOfContinuousLinearEquiv ℂ
+          (ContinuousLinearEquiv.smulLeft (Units.mk0 ε hε) : E ≃L[ℝ] E) φ))
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The cut-off exponential at scale `ε = 0` is `0` by convention. -/
+@[simp]
+theorem cutoffExponential_zero (φ : 𝓢(E, ℂ)) (ξ : E) (v : F) : φ.cutoffExponential 0 ξ v = 0 := by
+  simp [cutoffExponential]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The values of a cut-off exponential: `y ↦ exp(i ⟪y, ξ⟫) φ(ε y) v` for `ε ≠ 0`. -/
+@[simp]
+theorem cutoffExponential_apply (φ : 𝓢(E, ℂ)) {ε : ℝ} (hε : ε ≠ 0) (ξ : E) (v : F) (y : E) :
+    φ.cutoffExponential ε ξ v y = (Complex.exp (⟪y, ξ⟫ * Complex.I) * φ (ε • y)) • v := by
+  have hg : (fun y : E ↦ Complex.exp (⟪y, ξ⟫ * Complex.I)).HasTemperateGrowth :=
+    Complex.hasTemperateGrowth_exp_mul_I.comp
+      (by fun_prop : (inner ℝ · ξ : E → ℝ).HasTemperateGrowth)
+  simp [cutoffExponential, hε, smulLeftCLM_apply_apply hg]
+
+/-- **The Fourier transform of a cut-off exponential** is the rescaled Fourier transform of the
+cutoff, translated to the frequency `ξ / 2π`:
+`𝓕 (cutoffExponential φ ε ξ v) ζ = |ε|⁻ⁿ 𝓕 φ (ε⁻¹ (ζ - ξ / 2π)) v`. -/
+theorem fourier_cutoffExponential [CompleteSpace F] (φ : 𝓢(E, ℂ)) {ε : ℝ} (hε : ε ≠ 0) (ξ : E)
+    (v : F) (ζ : E) :
+    𝓕 (φ.cutoffExponential ε ξ v) ζ =
+      |ε ^ Module.finrank ℝ E|⁻¹ • (𝓕 φ (ε⁻¹ • (ζ - (2 * π)⁻¹ • ξ)) • v) := by
+  -- The factor `exp(i ⟪y, ξ⟫)` is the character `𝐞 ⟪y, ξ / 2π⟫`, a modulation.
+  have hmod : ⇑(φ.cutoffExponential ε ξ v) =
+      fun y ↦ 𝐞 ⟪y, (2 * π)⁻¹ • ξ⟫ • (φ (ε • y) • v) := by
+    ext y
+    rw [cutoffExponential_apply φ hε, TauCeti.exp_inner_mul_I_eq_fourierChar, Circle.smul_def,
+      smul_smul]
+  rw [fourier_coe, hmod, TauCeti.fourier_fourierChar_smul,
+    TauCeti.fourier_comp_smul (fun z ↦ φ z • v) hε, TauCeti.fourier_smul_const, fourier_coe]
+
+end CutoffExponential
 
 variable [InnerProductSpace ℂ F] [CompleteSpace F]
 
