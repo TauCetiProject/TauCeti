@@ -15,11 +15,11 @@ public import TauCeti.Geometry.Manifold.Sard.EqualDimension
 Let `F : ℝ × ℝ → M` be a map into a real manifold `M` modelled on a finite-dimensional space.
 This file records two null sets attached to `F`, in the sense of `TauCeti.IsNullSet`.
 
-* If `M` has dimension at least two and `F` is differentiable on a closed rectangle, the image of
-  the frontier of the rectangle is null. The frontier is the union of four segments, and each
-  segment is mapped by a differentiable map from `ℝ`, so Sard's theorem for a source of smaller
-  dimension applies. No injectivity or regularity of `F` is needed, and degenerate rectangles are
-  allowed.
+* If `M` has dimension at least two and `F` is differentiable on the frontier of a closed
+  rectangle, the image of that frontier is null. The frontier is the union of four segments, and
+  each segment is mapped by a differentiable map from `ℝ`, so Sard's theorem for a source of
+  smaller dimension applies. No injectivity or regularity of `F` is needed, and degenerate
+  rectangles are allowed.
 * If `M` has dimension two, the image of the points at which `F` is differentiable and the curve
   `s ↦ F (s, t)` has zero velocity is null. At such a point the differential of `F` kills the
   first coordinate vector, so it is not injective, and Sard's theorem in equal dimensions
@@ -49,32 +49,33 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {F : ℝ × ℝ → M}
 
 /-- The image of the frontier of a closed rectangle under a map that is differentiable on the
-rectangle is null in every manifold of dimension at least two. -/
+frontier is null in every manifold of dimension at least two. -/
 theorem isNullSet_image_frontier_Icc_prod_Icc {a b c d : ℝ} (hdim : 1 < finrank ℝ E)
-    (hF : ∀ z ∈ Icc a b ×ˢ Icc c d, MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I F z) :
+    (hF : ∀ z ∈ frontier (Icc a b ×ˢ Icc c d), MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I F z) :
     IsNullSet I (F '' frontier (Icc a b ×ˢ Icc c d)) := by
   have hdim' : finrank ℝ ℝ < finrank ℝ E := by simpa using hdim
   have hvert (x : ℝ) :
-      IsNullSet I ((fun t ↦ F (x, t)) '' {t | (x, t) ∈ Icc a b ×ˢ Icc c d}) :=
+      IsNullSet I ((fun t ↦ F (x, t)) '' {t | (x, t) ∈ frontier (Icc a b ×ˢ Icc c d)}) :=
     isNullSet_image_of_finrank_lt_finrank (I := 𝓘(ℝ)) hdim' fun t ht ↦ (hF _ ht).comp t
       ((contDiff_prodMk_right (n := 1) x).contMDiff.mdifferentiableAt one_ne_zero)
   have hhor (y : ℝ) :
-      IsNullSet I ((fun t ↦ F (t, y)) '' {t | (t, y) ∈ Icc a b ×ˢ Icc c d}) :=
+      IsNullSet I ((fun t ↦ F (t, y)) '' {t | (t, y) ∈ frontier (Icc a b ×ˢ Icc c d)}) :=
     isNullSet_image_of_finrank_lt_finrank (I := 𝓘(ℝ)) hdim' fun t ht ↦ (hF _ ht).comp t
       ((contDiff_prodMk_left (n := 1) y).contMDiff.mdifferentiableAt one_ne_zero)
-  rw [(isClosed_Icc.prod isClosed_Icc).frontier_eq, interior_prod_eq, interior_Icc,
-    interior_Icc]
   refine (((hvert a).union (hvert b)).union ((hhor c).union (hhor d))).mono ?_
-  rintro _ ⟨⟨x, y⟩, ⟨hR, hint⟩, rfl⟩
-  obtain ⟨⟨hax, hxb⟩, hcy, hyd⟩ := id hR
+  rintro _ ⟨⟨x, y⟩, hz, rfl⟩
+  have hz' := hz
+  rw [(isClosed_Icc.prod isClosed_Icc).frontier_eq, interior_prod_eq, interior_Icc,
+    interior_Icc] at hz'
+  obtain ⟨⟨⟨hax, hxb⟩, hcy, hyd⟩, hint⟩ := hz'
   rcases hax.eq_or_lt with rfl | hax
-  · exact Or.inl (Or.inl ⟨y, hR, rfl⟩)
+  · exact Or.inl (Or.inl ⟨y, hz, rfl⟩)
   rcases hxb.eq_or_lt with rfl | hxb
-  · exact Or.inl (Or.inr ⟨y, hR, rfl⟩)
+  · exact Or.inl (Or.inr ⟨y, hz, rfl⟩)
   rcases hcy.eq_or_lt with rfl | hcy
-  · exact Or.inr (Or.inl ⟨x, hR, rfl⟩)
+  · exact Or.inr (Or.inl ⟨x, hz, rfl⟩)
   rcases hyd.eq_or_lt with rfl | hyd
-  · exact Or.inr (Or.inr ⟨x, hR, rfl⟩)
+  · exact Or.inr (Or.inr ⟨x, hz, rfl⟩)
   exact absurd ⟨⟨hax, hxb⟩, hcy, hyd⟩ hint
 
 /-- For a map from two real parameters into a manifold of dimension two, the image of the points
