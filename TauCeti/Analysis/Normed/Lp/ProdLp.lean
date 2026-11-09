@@ -32,6 +32,8 @@ projections onto the factors and the inclusions of the factors are contractions.
 ## Main statements
 
 * `WithLp.prod_norm_le_norm_fst_add_norm_snd` — the bound `‖x‖ ≤ ‖x.fst‖ + ‖x.snd‖`.
+* `WithLp.prod_norm_nonneg` — the norm of a pair is nonnegative, in possibly noncommutative
+  seminormed groups.
 * `WithLp.prod_mul_norm_le_mul_norm` — componentwise bounds `c * ‖x.i‖ ≤ d * ‖y.i‖` give
   `c * ‖x‖ ≤ d * ‖y‖`.
 * `TauCeti.snd_lt_one` — a unit vector in `E × ℝ` other than `(0, 1)` has last coordinate
@@ -70,8 +72,9 @@ theorem _root_.WithLp.prod_norm_le_norm_fst_add_norm_snd [SeminormedAddCommGroup
         rw [WithLp.idemFst_apply, WithLp.idemSnd_apply, WithLp.norm_toLp_fst,
           WithLp.norm_toLp_snd]
 
-/-- The `ℓ^p` norm of a pair is nonnegative, in any seminormed additive groups. -/
-private theorem prod_norm_nonneg' [SeminormedAddGroup α] [SeminormedAddGroup β]
+/-- The `ℓ^p` norm of a pair is nonnegative, in any seminormed additive groups, which need not be
+commutative. -/
+theorem _root_.WithLp.prod_norm_nonneg [SeminormedAddGroup α] [SeminormedAddGroup β]
     (x : WithLp p (α × β)) : 0 ≤ ‖x‖ := by
   rcases p.dichotomy with rfl | hp
   · rw [WithLp.prod_norm_eq_sup]
@@ -111,8 +114,8 @@ theorem _root_.WithLp.prod_mul_norm_le_mul_norm {γ δ : Type*} [SeminormedAddGr
   rcases le_or_gt 0 d with hd | hd
   · rcases le_or_gt 0 c with hc | hc
     · exact prod_mul_norm_le_mul_norm_of_nonneg hc hd h₁ h₂
-    · exact (mul_nonpos_of_nonpos_of_nonneg hc.le (prod_norm_nonneg' x)).trans
-        (mul_nonneg hd (prod_norm_nonneg' y))
+    · exact (mul_nonpos_of_nonpos_of_nonneg hc.le (WithLp.prod_norm_nonneg x)).trans
+        (mul_nonneg hd (WithLp.prod_norm_nonneg y))
   · -- the bounds force `y = 0`, so both sides vanish when `0 ≤ c`
     rcases le_or_gt 0 c with hc | hc
     · have hy₁ : 1 * ‖y.fst‖ ≤ 0 * ‖x.fst‖ := by
