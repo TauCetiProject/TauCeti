@@ -17,7 +17,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Invariant
 Let `K` be a nonarchimedean local field. The local invariant
 `TauCeti.ClassFieldTheory.invMap K : Br K ≃+ ℚ/ℤ` of class field theory, read on Brauer classes
 of central simple algebras through `TauCeti.ClassFieldTheory.brauerGroupEquivBr K`, identifies the
-Brauer group `BrauerGroup K` of central simple algebras with `ℚ/ℤ`. So for every positive `n` the
+Brauer group `BrauerGroup K` of central simple algebras with `ℚ/ℤ`. So for every `n` the
 `n`-torsion of `BrauerGroup K` has exactly `n` elements, being the `n`-torsion `(1/n)ℤ/ℤ` of
 `ℚ/ℤ`. In particular `Br(K)[2]` is the two-element group `(½ℤ)/ℤ`, and its nontrivial class has
 invariant `1/2`.
@@ -54,16 +54,16 @@ private theorem mem_twoTorsion_iff_two_nsmul_invMap (x : BrauerGroup K) :
 
 /-- **The `n`-torsion of the Brauer group of a local field has `n` elements**, because the local
 invariant identifies it with the `n`-torsion `(1/n)ℤ/ℤ` of `ℚ/ℤ`. -/
-theorem natCard_torsionBy {n : ℕ} (hn : 0 < n) :
+theorem natCard_torsionBy {n : ℕ} :
     Nat.card (AddSubgroup.torsionBy (Additive (BrauerGroup K)) (n : ℤ)) = n :=
   (Nat.card_congr
     (AddEquiv.torsionByCongr ((brauerGroupEquivBr K).trans (invMap K)) n).toEquiv).trans
-      (AddCircle.natCard_torsionBy (1 : ℚ) hn)
+      (AddCircle.natCard_torsionBy (1 : ℚ))
 
 /-- **The `2`-torsion of the Brauer group of a local field has two elements**: this is
 `natCard_torsionBy` for `n = 2`. -/
 theorem natCard_twoTorsion : Nat.card (twoTorsion K) = 2 := by
-  rw [← natCard_torsionBy K two_pos]
+  rw [← natCard_torsionBy K (n := 2)]
   exact Nat.card_congr <| Additive.ofMul.subtypeEquiv fun x ↦ by
     rw [mem_twoTorsion, AddSubgroup.torsionBy.nsmul_iff, ← ofMul_pow, ofMul_eq_zero]
 
