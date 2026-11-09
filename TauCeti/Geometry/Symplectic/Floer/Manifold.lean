@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 
 /-!
@@ -71,6 +72,9 @@ form they recover the vector-space definitions.
 * `SmoothTwoForm.hamiltonianCurvature_congr_of_eventuallyEq`,
   `SmoothTwoForm.hamiltonianCurvature_continuation`: the curvature is local in the domain, and a
   continuation perturbation `K = β(s) H_t dt` has curvature `β'(s) H_t`.
+* `SmoothTwoForm.floerEnergyDensity_congr_of_eventuallyEq`,
+  `SmoothTwoForm.floerEnergyDensity_comp_add_right`: the energy density is local in the domain
+  and commutes with translations of the domain.
 * `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_eq`: the pointwise energy identity.
 * `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_zero_left_nonneg`,
   `SmoothTwoForm.continuous_hamiltonianCurvature_zero_left_comp` and
@@ -354,6 +358,38 @@ theorem hamiltonianCurvature_continuation (ω : SmoothTwoForm I M) {β : ℝ →
   exact fderiv_mul_apply_stdComplexLineReal (h := fun t ↦ H t x) hβ hH
 
 end Curvature
+
+/-! ### Locality and translations of the energy density -/
+
+section Density
+
+open Filter Topology
+
+/-- The Floer energy density at `z` only depends on the germ of the map at `z`. -/
+theorem floerEnergyDensity_congr_of_eventuallyEq (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    {u u' : ℝ × ℝ → M} {z : ℝ × ℝ} (h : u =ᶠ[𝓝 z] u') :
+    ω.floerEnergyDensity Ks Kt u z = ω.floerEnergyDensity Ks Kt u' z := by
+  have hz : u z = u' z := h.eq_of_nhds
+  simp only [floerEnergyDensity_def, perturbedMFDeriv_apply_stdComplexLineReal,
+    perturbedMFDeriv_apply_stdComplexLineImag, h.mfderiv_eq]
+  rw [hz]
+  -- `tangentSpaceCast` from the tangent space at `u' z` to itself is the identity.
+  rfl
+
+/-- The Floer energy density commutes with translations of the domain: translating the map and
+the perturbation data by `v` translates the energy density by `v`. -/
+theorem floerEnergyDensity_comp_add_right (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (u : ℝ × ℝ → M) (v z : ℝ × ℝ) :
+    ω.floerEnergyDensity (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z =
+      ω.floerEnergyDensity Ks Kt u (z + v) := by
+  rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedMFDeriv_apply_stdComplexLineReal,
+    perturbedMFDeriv_apply_stdComplexLineImag, perturbedMFDeriv_apply_stdComplexLineReal,
+    perturbedMFDeriv_apply_stdComplexLineImag, mfderiv_comp_add_right]
+  -- The coordinate vectors on the two sides are read in the tangent spaces of `ℝ × ℝ` at `z` and
+  -- at `z + v`, both of which are `ℝ × ℝ` itself.
+  rfl
+
+end Density
 
 /-! ### Changes of domain coordinates -/
 

@@ -38,6 +38,8 @@ with `F`, so one vanishes exactly when the other does.
 * `TauCeti.mvfderiv_fun_sum`: `mvfderiv` of a finite sum of differentiable functions is the sum of
   their `mvfderiv`s.
 * `Filter.EventuallyEq.mvfderiv_eq`: `mvfderiv` depends only on the germ of the function.
+* `TauCeti.mfderiv_comp_add_right`: the derivative of a translate `y ↦ u (y + a)` of a map on a
+  normed space at `x` is the derivative of `u` at `x + a`.
 * `TauCeti.mvfderiv_apply_of_eventuallyEq_extChartAt`: a map with the germ of the extended chart
   at `x` has the identity as derivative at `x`.
 * `TauCeti.mvfderiv_eq_zero_iff`: `mvfderiv I g x = 0 ↔ mfderiv I 𝓘(𝕜, F) g x = 0`.
@@ -96,6 +98,25 @@ theorem _root_.Filter.EventuallyEq.mvfderiv_eq {f₁ f : M → F} {x : M} (hf : 
   rw [mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply, hf.mfderiv_eq]
   -- `tangentSpaceCast` identifies two tangent spaces of `F`, both of which are `F` itself.
   rfl
+
+/-- The derivative of a translate `y ↦ u (y + a)` of a manifold-valued map on a normed space at
+`x` is the derivative of `u` at `x + a`. No differentiability is needed: if `u` is not
+differentiable at `x + a`, then neither is its translate at `x`, and both derivatives vanish. Both
+tangent spaces of the domain are `F` itself. -/
+theorem mfderiv_comp_add_right (u : F → M) (a x : F) :
+    mfderiv 𝓘(𝕜, F) I (fun y ↦ u (y + a)) x = mfderiv 𝓘(𝕜, F) I u (x + a) := by
+  have hτ (b y : F) : HasMFDerivAt 𝓘(𝕜, F) 𝓘(𝕜, F) (fun y' : F ↦ y' + b) y
+      (ContinuousLinearMap.id 𝕜 F) :=
+    ((hasFDerivAt_id y).add_const b).hasMFDerivAt
+  by_cases hu : MDifferentiableAt 𝓘(𝕜, F) I u (x + a)
+  · exact (hu.hasMFDerivAt.comp x (hτ a x)).mfderiv
+  · -- Translating back by `-a` shows that the translate is not differentiable at `x` either.
+    have hu' : ¬MDifferentiableAt 𝓘(𝕜, F) I (fun y ↦ u (y + a)) x := fun h ↦ hu <| by
+      simpa [Function.comp_def] using MDifferentiableAt.comp_of_eq (x + a) h
+        (hτ (-a) (x + a)).mdifferentiableAt (add_neg_cancel_right x a)
+    rw [mfderiv_zero_of_not_mdifferentiableAt hu, mfderiv_zero_of_not_mdifferentiableAt hu']
+    -- Both sides are the zero map out of `F`.
+    rfl
 
 /-- A map into the model space with the germ of the extended chart at `x` has the identity as
 derivative at `x`, a tangent vector at `x` being read as a vector of the model space. -/

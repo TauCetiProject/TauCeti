@@ -234,13 +234,13 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_iff (hω : ω.IsNon
     exact lintegral_zero
 
 omit [FiniteDimensional ℝ E] in
-/-- **Translation-invariant maps have zero energy.** Suppose that a differentiable map `u` has
-finite energy over the strip `ℝ × [0, 1]` for the cylindrical perturbation `K = H_t dt`, and is
-invariant there under the translation `(s, t) ↦ (s + c, t)` for some `c ≠ 0`. Then the energy of
-`u` vanishes. No Floer equation, regularity of `H` or nondegeneracy of `ω` is needed; for a Floer
+/-- **Translation-invariant maps have zero energy.** Suppose that a map `u` has finite energy
+over the strip `ℝ × [0, 1]` for the cylindrical perturbation `K = H_t dt`, and is invariant there
+under the translation `(s, t) ↦ (s + c, t)` for some `c ≠ 0`. Then the energy of `u` vanishes. No
+Floer equation, regularity of `u` or `H` or nondegeneracy of `ω` is needed; for a Floer
 cylinder, `TauCeti.SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_eq_zero_iff` then
 shows that `u` is stationary. -/
-theorem lintegral_floerEnergyDensity_eq_zero_of_periodic (hu : MDifferentiable 𝓘(ℝ, ℝ × ℝ) I u)
+theorem lintegral_floerEnergyDensity_eq_zero_of_periodic
     (hfin : ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
       ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) ≠ ⊤)
     {c : ℝ} (hc : c ≠ 0) (hper : ∀ s, ∀ t ∈ Icc (0 : ℝ) 1, u (s + c, t) = u (s, t)) :
@@ -253,30 +253,13 @@ theorem lintegral_floerEnergyDensity_eq_zero_of_periodic (hu : MDifferentiable �
   -- So is its energy density on the open strip, where the translate agrees with `u` nearby.
   have hf : ∀ s, ∀ t ∈ Ioo (0 : ℝ) 1, f (s + |c|, t) = f (s, t) := by
     intro s t ht
-    have hev : (fun w : ℝ × ℝ ↦ u (w.1 + |c|, w.2)) =ᶠ[𝓝 (s, t)] u :=
+    have hev : (fun w ↦ u (w + (|c|, 0))) =ᶠ[𝓝 (s, t)] u :=
       Filter.mem_of_superset ((isOpen_univ.prod isOpen_Ioo).mem_nhds ⟨mem_univ s, ht⟩)
-        fun w hw ↦ hper' w.1 w.2 (Ioo_subset_Icc_self hw.2)
-    -- By the chain rule for the translation, `u` has the same derivative at `(s, t)` and at
-    -- `(s + |c|, t)`, up to the identification of the tangent spaces at equal points.
-    have hτ : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) (fun w : ℝ × ℝ ↦ (w.1 + |c|, w.2)) (s, t)
-        (ContinuousLinearMap.id ℝ (ℝ × ℝ)) := by
-      have hfun : (fun w : ℝ × ℝ ↦ id w + ((|c|, (0 : ℝ)) : ℝ × ℝ)) =
-          fun w ↦ (w.1 + |c|, w.2) :=
-        funext fun w ↦ Prod.ext (by simp) (by simp)
-      have h := ((hasFDerivAt_id (𝕜 := ℝ) (s, t)).add_const ((|c|, 0) : ℝ × ℝ)).hasMFDerivAt
-      rwa [hfun] at h
-    have hd : mfderiv 𝓘(ℝ, ℝ × ℝ) I u (s + |c|, t) =
-        (tangentSpaceCast I (u (s, t)) (u (s + |c|, t)) :
-          TangentSpace I (u (s, t)) →L[ℝ] TangentSpace I (u (s + |c|, t))) ∘L
-          mfderiv 𝓘(ℝ, ℝ × ℝ) I u (s, t) := by
-      have h1 := ((hu (s + |c|, t)).hasMFDerivAt.comp (s, t) hτ).mfderiv
-      -- `h1` reads `mfderiv u (s + |c|, t) ∘L id`, with the point written as `τ (s, t)`; both
-      -- agree with the stated form by unfolding `ContinuousLinearMap.comp` and the projections.
-      exact h1.symm.trans (hev.mfderiv_eq (I := 𝓘(ℝ, ℝ × ℝ)) (I' := I))
-    simp only [f, floerEnergyDensity_def, perturbedMFDeriv_apply]
-    rw [hd, hper' s t (Ioo_subset_Icc_self ht)]
-    -- `tangentSpaceCast` between the tangent spaces at two equal points is the identity.
-    rfl
+        fun ⟨a, b⟩ hw ↦ by simpa using hper' a b (Ioo_subset_Icc_self hw.2)
+    have h := ω.floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun w ↦ H w.2) u (|c|, 0) (s, t)
+    simp only [Prod.snd_add, add_zero] at h
+    rw [ω.floerEnergyDensity_congr_of_eventuallyEq _ _ hev, Prod.mk_add_mk, add_zero] at h
+    simp only [f, ← h]
   have hμ : MeasurePreserving (fun z : ℝ × ℝ ↦ (z.1 + |c|, z.2)) volume volume :=
     (measurePreserving_add_right volume |c|).prod (MeasurePreserving.id volume)
   -- The energy over the open strip vanishes, and the open and closed strips differ by the null
@@ -307,8 +290,7 @@ theorem IsNondegenerate.eq_zero_of_lintegral_floerEnergyDensity_ne_top_of_period
   by_contra hc
   obtain ⟨s, t, ht, hne⟩ := hns
   exact hne ((hω.lintegral_floerEnergyDensity_eq_zero_iff hH hu hJ hfloer).1
-    (lintegral_floerEnergyDensity_eq_zero_of_periodic (hu.mdifferentiable one_ne_zero) hfin hc
-      hper) s t ht)
+    (lintegral_floerEnergyDensity_eq_zero_of_periodic hfin hc hper) s t ht)
 
 end Energy
 
