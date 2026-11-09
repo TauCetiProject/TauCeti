@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 public import Mathlib.Geometry.Manifold.IntegralCurve.UniformTime
 public import TauCeti.Analysis.ODE.UniformTime
 public import TauCeti.Geometry.Manifold.IntegralCurve.Basic
@@ -24,7 +23,7 @@ The proof needs a *uniform* time of existence: the same `ε > 0` must work for e
 in a neighbourhood of the accumulation point `y`, so that a time `t₁ < b` with `b - t₁ < ε` and
 `γ t₁` near `y` produces a solution defined past `b`. Uniqueness on the overlap then glues it to
 `γ`. The uniform time comes from
-`ODE.exists_forall_mem_ball_exists_eq_forall_mem_Ioo_hasDerivAt_and_mem`,
+`ContDiffAt.exists_forall_mem_ball_exists_eq_forall_mem_Ioo_hasDerivAt_and_mem`,
 read through the extended chart at `y`.
 
 ## Main results
@@ -78,23 +77,16 @@ theorem exists_mem_nhds_forall_exists_isMIntegralCurveOn_Ioo [CompleteSpace E] [
   have hnhds : interior (extChartAt I x₀).target ∈ 𝓝 (extChartAt I x₀ x₀) :=
     isOpen_interior.mem_nhds (I.isInteriorPoint_iff.mp BoundarylessManifold.isInteriorPoint)
   obtain ⟨r, hr, ε, hε, hsol⟩ :=
-    ODE.exists_forall_mem_ball_exists_eq_forall_mem_Ioo_hasDerivAt_and_mem hgc hnhds 0
+    hgc.exists_forall_mem_ball_exists_eq_forall_mem_Ioo_hasDerivAt_and_mem hnhds
   refine ⟨extChartAt I x₀ ⁻¹' Metric.ball (extChartAt I x₀ x₀) r ∩ (extChartAt I x₀).source,
     Filter.inter_mem ((continuousAt_extChartAt x₀).preimage_mem_nhds
       (Metric.ball_mem_nhds _ hr)) (extChartAt_source_mem_nhds x₀), ε, hε, fun t₀ x hx ↦ ?_⟩
-  obtain ⟨f, hf0, hf⟩ := hsol (extChartAt I x₀ x) hx.1
-  -- the coordinate solution starts at time `0`; translate it to start at time `t₀`
-  have hf' : IsMIntegralCurveOn ((extChartAt I x₀).symm ∘ f) v (Ioo (0 - ε) (0 + ε)) :=
-    IsMIntegralCurveAt.isMIntegralCurveOn fun t ht ↦ by
-      refine IsMIntegralCurveAt.of_extChartAt_symm ?_ ?_
-      · filter_upwards [Ioo_mem_nhds ht.1 ht.2] with s hs using (hf s hs).2
-      · filter_upwards [Ioo_mem_nhds ht.1 ht.2] with s hs using (hf s hs).1
-  refine ⟨((extChartAt I x₀).symm ∘ f) ∘ (· - t₀), ?_,
-    (isMIntegralCurveOn_comp_sub.2 hf').mono fun t ht ↦ ?_⟩
-  · simp only [comp_apply, sub_self]
-    rw [hf0, (extChartAt I x₀).left_inv hx.2]
-  · simp only [mem_ofPred_eq, mem_Ioo, zero_sub, zero_add] at ht ⊢
-    constructor <;> linarith [ht.1, ht.2]
+  obtain ⟨f, hf0, hf⟩ := hsol t₀ (extChartAt I x₀ x) hx.1
+  refine ⟨(extChartAt I x₀).symm ∘ f, by rw [comp_apply, hf0, (extChartAt I x₀).left_inv hx.2],
+    IsMIntegralCurveAt.isMIntegralCurveOn fun t ht ↦ ?_⟩
+  refine IsMIntegralCurveAt.of_extChartAt_symm ?_ ?_
+  · filter_upwards [Ioo_mem_nhds ht.1 ht.2] with s hs using (hf s hs).2
+  · filter_upwards [Ioo_mem_nhds ht.1 ht.2] with s hs using (hf s hs).1
 
 namespace IsMIntegralCurveOn
 

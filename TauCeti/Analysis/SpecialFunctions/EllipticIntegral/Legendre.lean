@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.LevelSet
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
@@ -154,7 +155,8 @@ theorem continuousOn_legendreF_integrand {φ k : ℝ} (hφ0 : 0 ≤ φ) (hφ : �
     ContinuousOn (fun θ ↦ (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ)) (uIcc 0 φ) := by
   rw [uIcc_of_le hφ0]
   exact (continuous_const.sub (continuous_const.mul (continuous_sin.pow 2))).continuousOn.rpow_const
-    fun θ ⟨h0, hθ⟩ ↦ Or.inl (sub_pos.mpr (mul_sin_sq_lt_one_of_le hk h0 hθ hφ)).ne'
+    fun θ ⟨h0, hθ⟩ ↦ Or.inl
+      (sub_pos.mpr (mul_sin_sq_lt_one_of_abs_le hk ((abs_of_nonneg h0).trans_le hθ) hφ)).ne'
 
 /-! #### The second kind -/
 
@@ -389,10 +391,7 @@ theorem continuous_legendreE (k : ℝ) : Continuous (legendreE · k) :=
 theorem strictMono_legendreE {k : ℝ} (hk : k ^ 2 ≤ 1) : StrictMono (legendreE · k) := by
   intro a b hab
   -- The integrand is positive wherever `cos θ ≠ 0`, which holds off a countable set.
-  have hZ : {θ : ℝ | cos θ = 0}.Countable := by
-    refine (countable_range fun n : ℤ ↦ (2 * n + 1) * π / 2).mono fun θ hθ ↦ ?_
-    obtain ⟨n, hn⟩ := cos_eq_zero_iff.1 hθ
-    exact ⟨n, hn.symm⟩
+  have hZ := countable_setOf_cos_eq 0
   have hne : volume (Ioo a b \ {θ : ℝ | cos θ = 0}) ≠ 0 := by
     rw [measure_sdiff_null (hZ.measure_zero volume)]
     exact ((Measure.measure_Ioo_pos _).2 hab).ne'
@@ -454,7 +453,8 @@ theorem legendreE_eq_legendreF_sub {φ k : ℝ} (hφ0 : 0 ≤ φ) (hφ : φ ≤ 
     ← intervalIntegral.integral_sub hX.intervalIntegrable (hX2.intervalIntegrable.const_mul _)]
   refine intervalIntegral.integral_congr fun θ hθ ↦ ?_
   rw [uIcc_of_le hφ0] at hθ
-  have hD : 0 < 1 - k ^ 2 * sin θ ^ 2 := sub_pos.mpr (mul_sin_sq_lt_one_of_le hk hθ.1 hθ.2 hφ)
+  have hD : 0 < 1 - k ^ 2 * sin θ ^ 2 :=
+    sub_pos.mpr (mul_sin_sq_lt_one_of_abs_le hk ((abs_of_nonneg hθ.1).trans_le hθ.2) hφ)
   -- The square root is the inverse square root times its argument.
   have hhalf : (1 - k ^ 2 * sin θ ^ 2) ^ (1 / 2 : ℝ) =
       (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) * (1 - k ^ 2 * sin θ ^ 2) := by
@@ -546,7 +546,7 @@ theorem legendrePi_eq_legendreF_add {φ k α2 : ℝ} (hφ0 : 0 ≤ φ) (hφ : φ
       (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) * (sin θ ^ 2 / (1 - α2 * sin θ ^ 2)) := by
   have hαθ {θ : ℝ} (hθ : θ ∈ uIcc 0 φ) : 0 < 1 - α2 * sin θ ^ 2 := by
     rw [uIcc_of_le hφ0] at hθ
-    exact sub_pos.mpr (mul_sin_sq_lt_one_of_le hα hθ.1 hθ.2 hφ)
+    exact sub_pos.mpr (mul_sin_sq_lt_one_of_abs_le hα ((abs_of_nonneg hθ.1).trans_le hθ.2) hφ)
   have hX := continuousOn_legendreF_integrand hφ0 hφ hk
   have hX2 : ContinuousOn (fun θ ↦ (1 - k ^ 2 * sin θ ^ 2) ^ (-1 / 2 : ℝ) *
       (sin θ ^ 2 / (1 - α2 * sin θ ^ 2))) (uIcc 0 φ) :=

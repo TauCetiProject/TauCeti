@@ -432,9 +432,8 @@ theorem recutHexagonRectangle_mem_unpairedHexagonComposites {x y z : GridState n
     P.recutHexagonRectangle_toRectangleDecomposition Q hcol hP hQ
   have hrecut : D.IsRecut F.toRectangleDecomposition :=
     hF.symm ▸ D.isRecut_recut hone hP hQ
-  have hsymm := hrecut.symm hone hP hQ
+  have hsymm := hrecut.symm hP hQ
   have honeF := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hsymm
-    (D.target_ne_source_of_hasOneCommonSide hone)
   rw [G.mem_unpairedHexagonComposites C,
     G.inl_mem_hexagonCompositeDecompositions C,
     GridHexagonCompositeDecomposition.toRectangleDecomposition_inl]
@@ -443,7 +442,7 @@ theorem recutHexagonRectangle_mem_unpairedHexagonComposites {x y z : GridState n
   intro E _ hE
   have heq : E.toRectangleDecomposition = D :=
     (F.toRectangleDecomposition.existsUnique_isRecut honeF
-      hrecut.isEmpty_first hrecut.isEmpty_second).unique hE (hrecut.symm hone hP hQ)
+      hrecut.isEmpty_first hrecut.isEmpty_second).unique hE (hrecut.symm hP hQ)
   exact G.initialPair_ne_composite C P Q (Grid.ne_right_of_mem_cIoo hcol).symm hP hQ E heq
 
 /-- The counted complementary initial-side recut has no counted composite recut partner. -/
@@ -467,9 +466,8 @@ theorem recutRectangleHexagon_mem_unpairedHexagonComposites {x y z : GridState n
     P.recutRectangleHexagon_toRectangleDecomposition Q hcol hP hQ
   have hrecut : D.IsRecut F.toRectangleDecomposition :=
     hF.symm ▸ D.isRecut_recut hone hP hQ
-  have hsymm := hrecut.symm hone hP hQ
+  have hsymm := hrecut.symm hP hQ
   have honeF := GridRectangleDecomposition.hasOneCommonSide_of_isRecut hsymm
-    (D.target_ne_source_of_hasOneCommonSide hone)
   rw [G.mem_unpairedHexagonComposites C,
     G.inr_mem_hexagonCompositeDecompositions C,
     GridHexagonCompositeDecomposition.toRectangleDecomposition_inr]
@@ -479,7 +477,7 @@ theorem recutRectangleHexagon_mem_unpairedHexagonComposites {x y z : GridState n
   intro E _ hE
   have heq : E.toRectangleDecomposition = D :=
     (F.toRectangleDecomposition.existsUnique_isRecut honeF
-      hrecut.isEmpty_first hrecut.isEmpty_second).unique hE (hrecut.symm hone hP hQ)
+      hrecut.isEmpty_first hrecut.isEmpty_second).unique hE (hrecut.symm hP hQ)
   exact G.initialPair_ne_composite C P Q (Grid.ne_right_of_mem_cIoo hcol) hP hQ E heq
 
 /-- Two counted initial-side pentagons for an actual commutation and its reverse admit

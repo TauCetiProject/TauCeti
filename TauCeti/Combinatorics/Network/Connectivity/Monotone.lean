@@ -17,8 +17,10 @@ arrow type: identifying parallel arrows can reduce the number of disjoint routes
 
 This file proves these monotonicity statements for both the threshold predicates and their
 numerical invariants. It also proves that deleting a finite set of arrows reduces local and global
-arc-connectivity thresholds by at most the number deleted. No finiteness of vertices or arrow
-types is required, and loops and parallel arrows retain their identities.
+arc-connectivity thresholds by at most the number deleted. The theorem
+`arcConnectivity_withoutHom_le` gives the opposite bound: deleting any set of arrows cannot
+increase arc connectivity. No finiteness of vertices or arrow types is required, and loops and
+parallel arrows retain their identities.
 
 The deletion bound is the directed analogue of the usual edge-connectivity bound; see
 J. Bang-Jensen and G. Gutin, *Digraphs: Theory, Algorithms and Applications*, 2nd ed.,
@@ -157,5 +159,34 @@ theorem arcConnectivity_le_withoutHom_add_card (F : Finset (Σ x y, Q x y)) :
     (k : ℕ∞) ≤ ((k - #F) + #F : ℕ) := Nat.cast_le.2 hnat
     _ = (k - #F : ℕ) + (#F : ℕ∞) := by simp
     _ ≤ _ := add_le_add hle le_rfl
+
+/-- Deleting any set of arrows cannot increase arc connectivity. -/
+theorem arcConnectivity_withoutHom_le (F : Set (Σ v w, Q v w)) :
+    arcConnectivity (WithoutHom F) ≤ arcConnectivity Q :=
+  arcConnectivity_mono fun _ _ ↦ ⟨Subtype.val, Subtype.val_injective⟩
+
+/-- With three arrows between every ordered pair, deleting any two arrows leaves a strongly
+connected family. The vertex type may be infinite, and every vertex has three loops. -/
+example (F : Finset (Σ _ _ : V, Fin 3)) (hF : #F = 2) :
+    IsArcStrong (WithoutHom (F : Set (Σ _ _ : V, Fin 3))) 1 := by
+  classical
+  have hthree : IsArcStrong (fun _ _ : V ↦ Fin 3) 3 := by
+    rw [isArcStrong_def]
+    intro s t
+    rw [isArcReachable_def]
+    intro H hH
+    have hinj : Function.Injective (fun e : Fin 3 ↦ (⟨s, t, e⟩ : Σ _ _ : V, Fin 3)) :=
+      sigma_mk_injective.comp sigma_mk_injective
+    obtain ⟨e, he⟩ : ∃ e : Fin 3, (⟨s, t, e⟩ : Σ _ _ : V, Fin 3) ∉ H := by
+      by_contra! hall
+      have hsub : (univ.map ⟨_, hinj⟩ : Finset (Σ _ _ : V, Fin 3)) ⊆ H := by
+        rintro a ha
+        obtain ⟨e, _, rfl⟩ := mem_map.1 ha
+        exact hall e
+      have := card_le_card hsub
+      simp only [card_map, card_univ, Fintype.card_fin] at this
+      omega
+    exact (ReachableWithout.refl _ s).tail e he
+  simpa [hF] using hthree.withoutHom F
 
 end TauCeti

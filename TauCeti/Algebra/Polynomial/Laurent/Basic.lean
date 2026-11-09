@@ -91,6 +91,13 @@ theorem T_sum {ι : Type*} (s : Finset ι) (f : ι → ℤ) :
   simpa only [single_eq_C_mul_T, Finset.prod_const_one, map_one, one_mul] using
     (AddMonoidAlgebra.prod_single s f (fun _ ↦ (1 : R))).symm
 
+/-- Distinct Laurent monomials have nonzero difference over a nontrivial ring. -/
+theorem T_sub_T_ne_zero {R : Type*} [Ring R] [Nontrivial R] {m n : ℤ} (h : m ≠ n) :
+    (T m - T n : R[T;T⁻¹]) ≠ 0 := by
+  intro hzero
+  have hc := congrArg (fun p : R[T;T⁻¹] => p.coeff m) hzero
+  simp [AddMonoidAlgebra.coeff_sub, h.symm] at hc
+
 /-- The substitution `T ↦ Tⁿ` sends the Laurent monomial `Tᵐ` to `T^{mn}`. -/
 theorem mapDomainAlgHom_mulRight_T (n m : ℤ) :
     AddMonoidAlgebra.mapDomainAlgHom R A (AddMonoidHom.mulRight n) (T m) = T (m * n) := by

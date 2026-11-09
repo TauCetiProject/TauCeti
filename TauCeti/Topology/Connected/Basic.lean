@@ -21,6 +21,9 @@ point of that subset (`Filter.Tendsto.exists_mem_tendsto_nhds`). For instance, n
 whose punctured neighbourhoods are connected, a continuous function approaching a finite set
 chooses one of its points.
 
+An open set is not preconnected exactly when it is the union of two disjoint nonempty open sets
+(`IsOpen.not_isPreconnected_iff`), as for clopen sets in Mathlib.
+
 A continuous injection on a compact set into a Hausdorff space is a closed embedding of that set,
 so preconnectedness of the image is equivalent to preconnectedness of the set
 (`IsCompact.isPreconnected_image_iff_of_injOn`).
@@ -73,6 +76,21 @@ theorem IsPreconnected.eqOn_const_of_eventually_eq {β : Type*} [TopologicalSpac
       ((hf x hxU).preimage_mem_nhds (isOpen_ne.mem_nhds hxz))
     exact hy hyO.self_of_nhds
   exact fun x hx ↦ (hsubset hx).self_of_nhds
+
+/-- An open set is not preconnected exactly when it is the union of two disjoint nonempty open
+sets. -/
+theorem IsOpen.not_isPreconnected_iff {s : Set α} (hs : IsOpen s) :
+    ¬ IsPreconnected s ↔
+      ∃ a b, IsOpen a ∧ IsOpen b ∧ a.Nonempty ∧ b.Nonempty ∧ Disjoint a b ∧ s = a ∪ b := by
+  refine ⟨fun h ↦ ?_, ?_⟩
+  · simp only [IsPreconnected, not_forall, not_nonempty_iff_eq_empty, exists_prop] at h
+    obtain ⟨u, v, hu, hv, huv, hsu, hsv, hsuv⟩ := h
+    exact ⟨s ∩ u, s ∩ v, hs.inter hu, hs.inter hv, hsu, hsv,
+      disjoint_iff_inter_eq_empty.2 (by rw [inter_inter_inter_comm, inter_self, hsuv]),
+      by rw [← inter_union_distrib_left, inter_eq_left.2 huv]⟩
+  · rintro ⟨a, b, ha, hb, ⟨x, hx⟩, ⟨y, hy⟩, hab, rfl⟩ h
+    obtain ⟨z, -, hza, hzb⟩ := h a b ha hb subset_rfl ⟨x, Or.inl hx, hx⟩ ⟨y, Or.inr hy, hy⟩
+    exact disjoint_left.1 hab hza hzb
 
 namespace TauCeti
 
