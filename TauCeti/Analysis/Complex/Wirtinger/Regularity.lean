@@ -280,6 +280,8 @@ private theorem exists_eLpNormWkp_compact_le_of_hasWeakConjWirtingerDerivOn (hp 
           gcongr
           exact le_add_self
   | succ k ih =>
+    -- The induction hypothesis bounds the directional derivatives `D·w` on `K` by data on `Ω₁`;
+    -- the first-order estimate on `closure Ω₁` bounds `D` there by data on `Ω₂`.
     obtain ⟨Ω₁, hKΩ₁, hΩ₁c, hΩ₁Ω, C₁, hC₁⟩ := ih hK hKΩ hint
     obtain ⟨Ω₂, hΩ₁Ω₂, hΩ₂c, hΩ₂Ω, C₀, hC₀⟩ :=
       exists_eLpNorm_le_of_hasWeakConjWirtingerDerivOn (F := F) hp hp_top hΩ₁c hΩ₁Ω
@@ -293,18 +295,20 @@ private theorem exists_eLpNormWkp_compact_le_of_hasWeakConjWirtingerDerivOn (hp 
     obtain ⟨Df, hDf, hDfk⟩ := hf.exists_weakFDeriv_of_isOpen
     obtain ⟨D, hD, hDp⟩ :=
       (h.memWkpLoc_one hp hp_top hu hf.memLpLoc).exists_weakFDeriv_of_isOpen
+    -- `X` and `Y` are the two terms of the right-hand side on `Ω₂`.
     set X := eLpNormWkp p Ω₂ (k + 1) f with hX
     set Y := eLpNorm u p (volume.restrict Ω₂)
     have hfX : eLpNorm f p (volume.restrict Ω₂) ≤ X := eLpNorm_le_eLpNormWkp
     have hDfX : eLpNormWkp p Ω₁ k Df ≤ X := by
       refine (eLpNormWkp_mono_set (subset_closure.trans hΩ₁Ω₂)).trans ?_
-      rw [hX, eLpNormWkp_succ, Opens.interior_coe]
-      exact le_add_left (le_iInf₂ fun D' hD' =>
-        (eLpNormWkp_congr_ae ((hDf.mono hΩ₂Ω').ae_eq hD')).le)
+      rw [hX, eLpNormWkp_succ_eq_of_hasWeakFDerivOn (hDf.mono hΩ₂Ω')]
+      exact le_add_self
     have hDY : eLpNorm D p (volume.restrict Ω₁) ≤ C₀ * (X + Y) := by
       refine (eLpNorm_mono_measure _ (Measure.restrict_mono subset_closure le_rfl)).trans ?_
       refine (hC₀ u f D hu hf.memLpLoc h hD).trans ?_
       gcongr
+    -- Each directional derivative `D·w` solves the differentiated equation, so the induction
+    -- hypothesis applies to it.
     have hdir (w : ℂ) : eLpNormWkp p K (k + 1) (fun z => D z w) ≤
         ‖a w‖ₑ * (C₁ * (1 + C₀) * (X + Y)) := by
       have hDw : eLpNorm (fun z => D z w) p (volume.restrict Ω₁) ≤
@@ -325,8 +329,14 @@ private theorem exists_eLpNormWkp_compact_le_of_hasWeakConjWirtingerDerivOn (hp 
             gcongr
             exact le_self_add
         _ = ‖a w‖ₑ * (C₁ * (1 + C₀) * (X + Y)) := by ring
+    -- `D` is reassembled from `D·1` and `D·I`, and the constants are collected into `B`.
     have hDeq : D = (fun z => L₁ (D z 1)) + fun z => L₂ (D z I) :=
       fun_eq_smulRightL_reCLM_add_smulRightL_imCLM D
+    have hB : ‖L₁‖ₑ * (‖a 1‖ₑ * (C₁ * (1 + C₀) * (X + Y))) +
+        ‖L₂‖ₑ * (‖a I‖ₑ * (C₁ * (1 + C₀) * (X + Y))) = ↑(B * (C₁ * (1 + C₀))) * (X + Y) := by
+      simp only [B, enorm_eq_nnnorm]
+      push_cast
+      ring
     calc eLpNormWkp p K (k + 1 + 1) u
         ≤ eLpNorm u p (volume.restrict K) + eLpNormWkp p K (k + 1) D :=
           eLpNormWkp_succ_le (hD.mono hint)
@@ -339,14 +349,8 @@ private theorem exists_eLpNormWkp_compact_le_of_hasWeakConjWirtingerDerivOn (hp 
             · exact (eLpNormWkp_clm_comp_le L₁).trans (by gcongr; exact hdir 1)
             · exact (eLpNormWkp_clm_comp_le L₂).trans (by gcongr; exact hdir I)
       _ ≤ ↑(1 + B * (C₁ * (1 + C₀))) * (X + Y) := by
-          simp only [B, enorm_eq_nnnorm]
-          push_cast
-          calc Y + (↑‖L₁‖₊ * (↑‖a 1‖₊ * (↑C₁ * (1 + ↑C₀) * (X + Y))) +
-                ↑‖L₂‖₊ * (↑‖a I‖₊ * (↑C₁ * (1 + ↑C₀) * (X + Y))))
-              ≤ (X + Y) + (↑‖L₁‖₊ * (↑‖a 1‖₊ * (↑C₁ * (1 + ↑C₀) * (X + Y))) +
-                ↑‖L₂‖₊ * (↑‖a I‖₊ * (↑C₁ * (1 + ↑C₀) * (X + Y)))) := by
-                gcongr; exact le_add_self
-            _ = _ := by ring
+          rw [hB]
+          exact (add_le_add (le_add_self : Y ≤ X + Y) le_rfl).trans_eq (by push_cast; ring)
 
 /-- **Interior `W^{k+1,p}` estimate for `\bar∂`.** For `1 < p < ∞`, every `k` and a compact
 `K ⊆ Ω`, there are opens `V ⊆ Ω'` with `K ⊆ V`, `Ω'` of compact closure in `Ω`, and a constant
