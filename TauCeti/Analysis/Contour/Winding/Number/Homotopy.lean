@@ -220,8 +220,8 @@ theorem windingNumber_eq_of_homotopy {x y w : ℂ} {p : Path x x} {q : Path y y}
       continuous_toFun :=
         (((F.continuous.comp (continuous_fst.prodMk continuous_const)).sub
           continuous_const).inv₀ fun st ↦ hF₀ st.1).mul (F.continuous.sub continuous_const)
-      map_zero_left := fun t ↦ by simp only [h₀, Path.source]; rfl
-      map_one_left := fun t ↦ by simp only [h₁, Path.source]; rfl
+      map_zero_left := fun t ↦ by simp only [h₀, Path.source, P, ContinuousMap.coe_mk]
+      map_one_left := fun t ↦ by simp only [h₁, Path.source, Q, ContinuousMap.coe_mk]
       prop' := by
         intro s t ht
         rcases ht with rfl | ht
@@ -229,8 +229,12 @@ theorem windingNumber_eq_of_homotopy {x y w : ℂ} {p : Path x x} {q : Path y y}
         · rw [Set.mem_singleton_iff] at ht
           subst t
           simp [← hF s, P, hF₀ s, hx] }
-  have hP : P.extend = fun t ↦ (x - w)⁻¹ * (p.extend t - w) := rfl
-  have hQ : Q.extend = fun t ↦ (y - w)⁻¹ * (q.extend t - w) := rfl
+  have hP : P.extend = fun t ↦ (x - w)⁻¹ * (p.extend t - w) := by
+    funext t
+    simp only [Path.extend, ContinuousMap.coe_mk, Set.IccExtend_apply, P, Path.coe_mk_mk]
+  have hQ : Q.extend = fun t ↦ (y - w)⁻¹ * (q.extend t - w) := by
+    funext t
+    simp only [Path.extend, ContinuousMap.coe_mk, Set.IccExtend_apply, Q, Path.coe_mk_mk]
   have hconst : IsPiecewiseC1On (fun _ ↦ w) 0 1 := .of_contDiffOn contDiffOn_const
   have hw := windingNumber_eq_of_pathHomotopy H
     (by simpa only [hP, smul_eq_mul] using (hp.sub hconst).const_smul (x - w)⁻¹)
