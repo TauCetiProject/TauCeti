@@ -111,7 +111,7 @@ theorem isUnit_and_norm_ringInverse_le_of_forall_norm_le {T : E →L[𝕜] E} {M
     exact hT'
   have hunit : IsUnit T := isUnit_iff_bijective.mpr
     ((bijective_iff_dense_range_and_antilipschitz T).mpr ⟨hdense, _, hanti⟩)
-  exact ⟨hunit, norm_ringInverse_le_of_forall_norm_le hunit hM hT⟩
+  exact ⟨hunit, norm_ringInverse_le_of_forall_norm_le hM hT⟩
 
 /-- The adjoint of an operator on a Hilbert space is invertible exactly when the operator is. -/
 @[simp]
@@ -131,7 +131,7 @@ theorem exists_adjoint_apply_eq_and_norm_le {T : E →L[𝕜] E} (hT : IsUnit T)
   refine ⟨adjoint (Ring.inverse T) y, ?_, le_of_opNorm_le _ ?_ y⟩
   · rw [← ringInverse_adjoint, apply_ringInverse_apply (isUnit_adjoint_iff.2 hT)]
   · rw [LinearIsometryEquiv.norm_map]
-    exact norm_ringInverse_le_of_forall_norm_le hT hM h
+    exact norm_ringInverse_le_of_forall_norm_le hM h
 
 end Inverse
 
