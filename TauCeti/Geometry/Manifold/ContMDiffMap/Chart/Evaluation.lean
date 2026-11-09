@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Topology
 public import Mathlib.Topology.Compactness.LocallyCompact
 public import Mathlib.Topology.Hom.ContinuousEval
 public import Mathlib.Topology.UniformSpace.UniformConvergence
-import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Joint evaluation in the manifold weak Whitney topology
@@ -136,8 +135,7 @@ omit [LocallyCompactSpace E] in
 /-- On a compact subset of a source chart target which `f₀` maps into a target chart, the
 coordinate derivatives of maps near `f₀` converge uniformly to those of `f₀`. Derivatives are taken
 within the chart target, so boundary and corner points are included. No local compactness of the
-source model is needed: the compact subset is covered by finitely many compact pieces on which
-the coordinate derivative of `f₀` oscillates little. -/
+source model is needed. -/
 theorem tendstoUniformlyOn_iteratedFDerivWithin_extChartAt {f₀ : C^n⟮I, M; J, N⟯} {x : M}
     {y : N} {C : Set E} (hC : IsCompact C) (hCx : C ⊆ (extChartAt I x).target)
     (hCy : ∀ w ∈ C, f₀ ((extChartAt I x).symm w) ∈ (extChartAt J y).source) {m : ℕ}
@@ -152,8 +150,9 @@ theorem tendstoUniformlyOn_iteratedFDerivWithin_extChartAt {f₀ : C^n⟮I, M; J
     iteratedFDerivWithin 𝕜 m (ψ ∘ f ∘ φ.symm) φ.target w
   rw [Metric.tendstoUniformlyOn_iff]
   intro ε hε
-  -- The coordinate derivative of `f₀` is continuous along `C`, so it oscillates little near each
-  -- point of `C`.
+  -- The compact subset is covered by finitely many compact pieces on which the coordinate
+  -- derivative of `f₀` oscillates little. It is continuous along `C`, so it oscillates little near
+  -- each point of `C`.
   have hcont (w : E) (hw : w ∈ C) : ContinuousWithinAt (D f₀) C w :=
     ((f₀.contDiffWithinAt_extChartAt (hCx hw) (hCy w hw)).continuousWithinAt_iteratedFDerivWithin
       (uniqueDiffOn_extChartAt_target x) hm (hCx hw)).mono hCx
