@@ -180,11 +180,6 @@ theorem equivalent_toBilin'_unary_two_anisotropic (k : ℕ) {a : ℤ_[2]} (ha : 
     (mem_nonZeroDivisors_of_ne_zero (pow_ne_zero k two_ne_zero))).mpr
       (mixed_sign_walking_anisotropic ha)
 
-/-- The hyperbolic plane `U` is unimodular. -/
-theorem isUnit_det_hyperbolic {R : Type*} [CommRing R] :
-    IsUnit (!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) R).det := by
-  simp [det_fin_two_of]
-
 /-- The anisotropic plane `V`, of determinant `3`, is unimodular over `ℤ_[2]`. -/
 theorem isUnit_det_anisotropic :
     IsUnit (!![2, 1; 1, 2] : Matrix (Fin 2) (Fin 2) ℤ_[2]).det := by

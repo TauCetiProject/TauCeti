@@ -43,6 +43,8 @@ orthogonal such families is determined up to squares by their Gram matrices.
 
 * `Matrix.isAlt_toBilin'_one_iff`: for `R` nontrivial, the standard form on `n → R` is alternating
   exactly when `n` is empty.
+* `TauCeti.isUnit_det_hyperbolic`: the hyperbolic plane `!![0, 1; 1, 0]` is unimodular over every
+  commutative ring.
 * `LinearMap.BilinForm.toMatrix_dualBasis`: the Gram matrix of a nondegenerate form in a `B`-dual
   basis is the inverse transpose of its Gram matrix in the original basis.
 * `LinearMap.BilinForm.det_toMatrix_dualBasis_mul_det_toMatrix`: the Gram determinants of a
@@ -86,6 +88,17 @@ theorem isAlt_toBilin'_one_iff {n R : Type*} [Fintype n] [DecidableEq n] [CommSe
   simp [Subsingleton.elim x 0]
 
 end Matrix
+
+namespace TauCeti
+
+open Matrix
+
+/-- The hyperbolic plane `U` is unimodular. -/
+theorem isUnit_det_hyperbolic {R : Type*} [CommRing R] :
+    IsUnit (!![0, 1; 1, 0] : Matrix (Fin 2) (Fin 2) R).det := by
+  simp [det_fin_two_of]
+
+end TauCeti
 
 namespace LinearMap.BilinForm
 
