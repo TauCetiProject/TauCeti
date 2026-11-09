@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.Data.Finset.Piecewise
-import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Ring
 
 /-!
 # Determinants along rank-one perturbations
@@ -32,52 +32,37 @@ No invertibility assumption on `A` or on the scalar is required. -/
 theorem det_add_smul_vecMulVec (A : Matrix ι ι R) (u v : ι → R) (c : R) :
     (A + c • vecMulVec u v).det =
       A.det + c * ((A + vecMulVec u v).det - A.det) := by
-  classical
-  -- Expand by the subsets of rows supplied by the rank-one perturbation.
+  -- Expand by the subsets `s` of rows supplied by the rank-one perturbation. Those rows are
+  -- multiples of `v`, so each term is a scalar multiple of `e s`.
   let D : (ι → R) [⋀^ι]→ₗ[R] R := detRowAlternating
-  have hD (B : Matrix ι ι R) : D (fun i => B i) = B.det := rfl
-  let d (c : R) (s : Finset ι) :=
-    D (s.piecewise (fun i => (c * u i) • v) (fun i => A i))
-  have hexpand (c : R) : (A + c • vecMulVec u v).det = ∑ s : Finset ι, d c s := by
+  let e (s : Finset ι) := D (s.piecewise (fun _ => v) (fun i => A i))
+  have he : e ∅ = A.det := by simp only [e, Finset.piecewise_empty]; rfl
+  have hexpand (c : R) :
+      (A + c • vecMulVec u v).det = ∑ s : Finset ι, (∏ i ∈ s, c * u i) * e s := by
     have hm : (fun i => (A + c • vecMulVec u v) i) =
         (fun i => (c * u i) • v) + (fun i => A i) := by
       ext i j
       simp [vecMulVec_apply, mul_assoc, add_comm]
-    exact (hD _).symm.trans ((congrArg D hm).trans
-      (D.map_add_univ (fun i => (c * u i) • v) (fun i => A i)))
-  -- Only singleton subsets contribute a nonconstant term.
-  have hterm (s : Finset ι) (hs : s ≠ ∅) : d c s = c * d 1 s := by
-    by_cases hcard : s.card = 1
-    · obtain ⟨i, rfl⟩ := Finset.card_eq_one.mp hcard
-      simp [d, Finset.piecewise_singleton, D.map_update_smul, mul_assoc]
-    · have hs_card : 1 < s.card := by
-        have : 0 < s.card := Finset.card_pos.mpr (Finset.nonempty_iff_ne_empty.mpr hs)
-        omega
-      obtain ⟨i, hi, j, hj, hij⟩ := Finset.one_lt_card.mp hs_card
-      have hz (a : R) : d a s = 0 := by
-        have hfactor : s.piecewise (fun i => (a * u i) • v) (fun i => A i) =
-            fun i => (if i ∈ s then a * u i else 1) •
-              s.piecewise (fun _ => v) (fun i => A i) i := by
-          ext i k
-          by_cases h : i ∈ s <;> simp [h]
-        dsimp only [d]
-        rw [hfactor]
-        rw [D.map_smul_univ]
-        have hzero : D (s.piecewise (fun _ => v) (fun i => A i)) = 0 :=
-          D.map_eq_zero_of_eq _ (by simp [hi, hj]) hij
-        simp [hzero]
-      simp [hz]
-  -- In the difference of the two expansions only the empty subset remains.
-  have hsum : (∑ s : Finset ι, (d c s - c * d 1 s)) = (1 - c) * A.det := by
-    rw [Finset.sum_eq_single ∅]
-    · simp [d, hD, sub_mul]
-    · intro s _ hs
-      rw [hterm s hs, sub_self]
+    refine (congrArg D hm).trans <| (D.map_add_univ _ _).trans <|
+      Finset.sum_congr rfl fun s _ => ?_
+    convert D.map_piecewise_smul (fun i => c * u i) (s.piecewise (fun _ => v) fun i => A i) s
+      using 2
+    exact congrArg D <| s.piecewise_congr (fun i hi => by simp [hi]) fun i hi => by simp [hi]
+  -- Only the empty set and singletons contribute: `e s = 0` once `s` has two rows.
+  have hterm (s : Finset ι) : (∏ i ∈ s, c * u i) * e s =
+      (if s = ∅ then (1 - c) * A.det else 0) + c * ((∏ i ∈ s, 1 * u i) * e s) := by
+    obtain rfl | hs := s.eq_empty_or_nonempty
+    · simp [he]
+      ring
+    obtain ⟨i, rfl⟩ | ⟨i, hi, j, hj, hij⟩ := hs.exists_eq_singleton_or_nontrivial
     · simp
-  rw [hexpand c]
-  have h := hsum
-  rw [Finset.sum_sub_distrib, ← Finset.mul_sum, ← hexpand 1] at h
-  simp only [one_smul] at h
-  linear_combination h
+      ring
+    have hzero : e s = 0 :=
+      D.map_eq_zero_of_eq _ (by simp [Finset.mem_coe.mp hi, Finset.mem_coe.mp hj]) hij
+    simp [hzero, hs.ne_empty]
+  rw [hexpand, ← one_smul R (vecMulVec u v), hexpand, Finset.sum_congr rfl fun s _ => hterm s,
+    Finset.sum_add_distrib, Finset.sum_ite_eq', ← Finset.mul_sum]
+  simp
+  ring
 
 end Matrix

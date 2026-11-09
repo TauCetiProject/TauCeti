@@ -15,6 +15,8 @@ import Mathlib.Topology.Order.Compact
 /-!
 # Planar area of coordinate lines and graphs
 
+The set `s ×ℂ t = {z | z.re ∈ s ∧ z.im ∈ t}` is measurable when `s` and `t` are
+(`MeasurableSet.reProdIm`).
 Coordinate lines and continuous graphs over compact intervals have zero planar Lebesgue measure.
 Interchanging the real and imaginary coordinates preserves planar area. On a rectangle
 `s ×ℂ t`, planar measure is the product of the restrictions to the sides, so a function of the
@@ -27,6 +29,12 @@ Mathlib's `Complex.volume_preserving_equiv_real_prod` coordinatewise and
 public section
 
 open MeasureTheory Set
+
+/-- The set `s ×ℂ t` is measurable when `s` and `t` are. -/
+theorem MeasurableSet.reProdIm {s t : Set ℝ} (hs : MeasurableSet s) (ht : MeasurableSet t) :
+    MeasurableSet (s ×ℂ t) := by
+  rw [Complex.reProdIm]
+  exact (Complex.continuous_re.measurable hs).inter (Complex.continuous_im.measurable ht)
 
 namespace Complex
 
@@ -90,6 +98,17 @@ theorem integrableOn_of_integrableOn_comp_im_reProdIm {E : Type*} [NormedAddComm
   refine ((measurePreserving_measurableEquivRealProd_reProdIm hs ht).integrable_comp_emb
     (MeasurableEquiv.measurableEmbedding _) (g := fun q : ℝ × ℝ => g q.2)).1 ?_
   simpa only [Function.comp_def, measurableEquivRealProd_apply, IntegrableOn] using h
+
+/-- A horizontal line has zero area, so the closed and open half-planes above it agree almost
+everywhere. -/
+theorem setOf_le_im_ae_eq (c : ℝ) : {z : ℂ | c ≤ z.im} =ᵐ[volume] {z : ℂ | c < z.im} := by
+  refine (ae_eq_set).2 ⟨measure_mono_null (fun z hz => ?_) (volume_setOf_im_eq c),
+    measure_mono_null (fun z hz => ?_) (volume_setOf_im_eq c)⟩
+  · have h1 : c ≤ z.im := hz.1
+    have h2 : ¬ c < z.im := hz.2
+    exact le_antisymm (not_lt.1 h2) h1
+  · have h1 : c < z.im := hz.1
+    exact absurd h1.le hz.2
 
 /-- Interchanging the coordinates preserves planar area. -/
 theorem measurePreserving_coordinateSwapCLE :

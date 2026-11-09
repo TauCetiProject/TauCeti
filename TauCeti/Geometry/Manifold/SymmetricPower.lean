@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.ChartedSpace
 public import TauCeti.Analysis.Polynomial.SymmetricPower
 public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 public import TauCeti.Topology.Sym.Family
+import TauCeti.Data.Fin.Sum
 
 /-!
 # A charted-space structure on a symmetric power
@@ -311,7 +312,7 @@ theorem exists_symOpenPartialHomeomorph (s : Sym α n) :
     Multiset.mem_toFinset.2 (_root_.Sym.mem_coe.2 ha)
   set m : ↥(s : Multiset α).toFinset → ℕ :=
     fun i => Multiset.count (i : α) (s : Multiset α)
-  let e : (Σ i, Fin (m i)) ≃ Fin n := (Sym.nonempty_sigmaFinEquiv hm).some
+  let e : (Σ i, Fin (m i)) ≃ Fin n := (nonempty_sigmaFinEquiv hm).some
   let hp : Nonempty (∀ i, Sym ↥(V i) (m i)) := ⟨hmem.choose⟩
   refine ⟨symOpenPartialHomeomorph
       (fun i : ↥(s : Multiset α).toFinset => chartAt K (i : α))
