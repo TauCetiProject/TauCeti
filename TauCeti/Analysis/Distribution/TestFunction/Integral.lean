@@ -149,16 +149,17 @@ theorem integrable_inner_subtype {m : Measure Ω} {v : Ω → G} (φ : 𝓓^{n}(
   (φ.integrable_bilin_subtype (innerSL ℝ) hv).congr
     (ae_of_all _ fun _ => innerSL_apply_apply ℝ _ _)
 
+omit [OpensMeasurableSpace E] in
 /-- The pairing of a test vector field supported in `U` and bounded by `1` with a field `v` is
 bounded by the mass of the measure `|v| m` on `U`. -/
-theorem enorm_integral_inner_le_withDensity {U : Opens E} {φ : 𝓓^{n}(Ω, G)}
-    (hφU : tsupport φ ⊆ U) (hφ : ∀ x, ‖φ x‖ ≤ 1) (m : Measure Ω) (v : Ω → G) :
+theorem enorm_integral_inner_le_withDensity {U : Set E} (hU : MeasurableSet U)
+    {φ : 𝓓^{n}(Ω, G)} (hφU : tsupport φ ⊆ U) (hφ : ∀ x, ‖φ x‖ ≤ 1) (m : Measure Ω) (v : Ω → G) :
     ‖∫ x : Ω, ⟪φ x, v x⟫ ∂m‖ₑ ≤
-      m.withDensity (fun x => ‖v x‖ₑ) ((↑) ⁻¹' (U : Set E)) := by
-  rw [withDensity_apply _ (U.isOpen.measurableSet.preimage measurable_subtype_coe),
-    ← lintegral_indicator (U.isOpen.measurableSet.preimage measurable_subtype_coe)]
+      m.withDensity (fun x => ‖v x‖ₑ) ((↑) ⁻¹' U) := by
+  rw [withDensity_apply _ (hU.preimage measurable_subtype_coe),
+    ← lintegral_indicator (hU.preimage measurable_subtype_coe)]
   refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
-  by_cases hx : x ∈ ((↑) ⁻¹' (U : Set E) : Set Ω)
+  by_cases hx : x ∈ ((↑) ⁻¹' U : Set Ω)
   · rw [Set.indicator_of_mem hx, ← ofReal_norm, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal ((norm_inner_le_norm _ _).trans
       (mul_le_of_le_one_left (norm_nonneg _) (hφ x)))
