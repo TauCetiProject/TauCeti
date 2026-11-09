@@ -256,9 +256,7 @@ theorem lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le (ω : Sympl
           ω.lintegral_enorm_hamiltonianCurvature_image hmeas (injOn_realChart p)
             (fun z _ ↦ (contDiff_realChart (n := 2) p.contDiff_cylindricalEndLift).contDiffAt)
             (fun z _ ↦ differentiableAt_perturbation_domain hH hHs _ _ 1)
-            (fun z _ ↦ differentiableAt_perturbation_domain hH hHs _ _ Complex.I)
-            (fun z _ ↦ differentiableAt_perturbation_target hH hHs _ _ 1)
-            (fun z _ ↦ differentiableAt_perturbation_target hH hHs _ _ Complex.I),
+            (fun z _ ↦ differentiableAt_perturbation_domain hH hHs _ _ Complex.I),
           perturbationPullback_realChart_cylindricalEndLift,
           perturbationPullback_realChart_cylindricalEndLift,
           equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag]
@@ -387,9 +385,7 @@ private theorem integral_floerEnergyDensity_image_realChart (ω : SymplecticForm
     ω.integral_hamiltonianCurvature_image hmeas hinj (fun w _ ↦ hφ.contDiffAt)
       (fun w _ ↦ hdet w)
       (fun w _ ↦ differentiableAt_perturbation_domain hH hHs _ _ 1)
-      (fun w _ ↦ differentiableAt_perturbation_domain hH hHs _ _ Complex.I)
-      (fun w _ ↦ differentiableAt_perturbation_target hH hHs _ _ 1)
-      (fun w _ ↦ differentiableAt_perturbation_target hH hHs _ _ Complex.I),
+      (fun w _ ↦ differentiableAt_perturbation_domain hH hHs _ _ Complex.I),
     perturbationPullback_realChart_cylindricalEndLift,
     perturbationPullback_realChart_cylindricalEndLift,
     equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag,
@@ -601,8 +597,6 @@ theorem hamiltonianCurvature_pssPlanePerturbation_eq_zero_of_two_lt (ω : Symple
     (w := w) (x := x) (contDiff_realChart (n := 2) p.contDiff_cylindricalEndLift).contDiffAt
     (differentiableAt_perturbation_domain hH hHs _ _ 1)
     (differentiableAt_perturbation_domain hH hHs _ _ Complex.I)
-    (differentiableAt_perturbation_target hH hHs _ _ 1)
-    (differentiableAt_perturbation_target hH hHs _ _ Complex.I)
   rw [perturbationPullback_realChart_cylindricalEndLift,
     perturbationPullback_realChart_cylindricalEndLift, equivRealProdCLM_symm_stdComplexLineReal,
     equivRealProdCLM_symm_stdComplexLineImag,
