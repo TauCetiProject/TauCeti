@@ -18,6 +18,7 @@ import Mathlib.Analysis.InnerProductSpace.Trace
 import Mathlib.Analysis.LocallyConvex.Separation
 import TauCeti.Analysis.Convex.Caratheodory
 import TauCeti.Analysis.InnerProductSpace.Contraction
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # Maximal-volume ellipsoids
@@ -435,9 +436,7 @@ theorem norm_le_sqrt_finrank_mul_norm_apply (hT : T.IsMaxVolumeEllipsoid) (x : E
     rw [(hu i).1, one_mul] at this
     exact pow_le_pow_left₀ (norm_nonneg _) this 2
   rw [← Finset.sum_mul, hcsum, ← hx] at hle
-  rw [← Real.sqrt_sq (norm_nonneg x), ← Real.sqrt_sq (norm_nonneg (T x)),
-    ← Real.sqrt_mul (Nat.cast_nonneg _)]
-  exact Real.sqrt_le_sqrt hle
+  exact Real.le_sqrt_mul_of_sq_le_mul (norm_nonneg _) hle
 
 /-- The inverse of a maximal-volume ellipsoid has norm at most `√n`, where `n` is the
 dimension. -/

@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Sobolev.Circle.Precomp
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.Deriv.AddCircle
 import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # Circle diffeomorphisms act on `H¹`: the chain rule
@@ -225,9 +226,7 @@ private theorem norm_precompOne_le (a : CircleSobolev 1 ℂ) :
       ((norm_precompEquivOfLift_le hF hper hφ hc hcF hMF _).trans (mul_le_mul_of_nonneg_left
         (norm_derivative_le T _ a) (by positivity))) hM)
   have hc' : ((√c)⁻¹) ^ 2 = c⁻¹ := by rw [inv_pow, Real.sq_sqrt hc.le]
-  rw [← Real.sqrt_sq (norm_nonneg _), ← Real.sqrt_sq (norm_nonneg a),
-    ← Real.sqrt_mul' _ (sq_nonneg _)]
-  refine Real.sqrt_le_sqrt (h.trans ?_)
+  refine Real.le_sqrt_mul_of_sq_le_mul (norm_nonneg a) (h.trans ?_)
   calc 2 * ‖precompEquivOfLift hF hper hφ hc hcF hMF (inclusion zero_le_one a)‖ ^ 2 +
         2 * (T / (2 * π)) ^ 2 * ‖mulDerivOfLift hF hper hF'c (precompEquivOfLift hF hper hφ hc
           hcF hMF (derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num) a))‖ ^ 2
