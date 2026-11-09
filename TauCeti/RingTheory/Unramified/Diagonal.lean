@@ -114,7 +114,8 @@ theorem eq_elem {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
     (h1 : Algebra.TensorProduct.lmul' R t = 1) :
     t = Algebra.FormallyUnramified.elem R S := by
   -- An element `u` annihilating the differences `1 ⊗ s - s ⊗ 1` absorbs every `x` as the
-  -- scalar `lmul' x ⊗ 1`.
+  -- scalar `lmul' x ⊗ 1`. This absorption step adapts the argument in the proof of Mathlib's
+  -- `Algebra.FormallyUnramified.isIdempotentElem_elem`.
   have key (u : S ⊗[R] S) (hu : ∀ s, ((1 : S) ⊗ₜ[R] s - s ⊗ₜ[R] (1 : S)) * u = 0)
       (x : S ⊗[R] S) : x * u = (Algebra.TensorProduct.lmul' R x ⊗ₜ[R] 1) * u := by
     induction x using TensorProduct.inductionOn with

@@ -145,6 +145,13 @@ noncomputable def distinctIdempotent : ⨂[R] _ : ι, S :=
 
 variable {R S ι}
 
+/-- The defining equation of `ε` as the product of the complements `1 - δᵢⱼ` over the ordered
+pairs of distinct slots. -/
+theorem distinctIdempotent_def :
+    distinctIdempotent R S ι =
+      ∏ p ∈ (Finset.univ : Finset ι).offDiag, (1 - tensorPowDiagonal R S p.1 p.2) := by
+  rw [distinctIdempotent]
+
 /-- `ε` is idempotent, as a product of idempotents. -/
 theorem isIdempotentElem_distinctIdempotent :
     IsIdempotentElem (distinctIdempotent R S ι) :=
