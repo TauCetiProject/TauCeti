@@ -67,7 +67,7 @@ theorem norm_le_of_forall_eqOn_ball [Nonempty X] {f : HolderSpace α X Y} {r M :
     intro x _ y _
     exact (dist_le_norm_add_norm _ _).trans (by linarith [hf x, hf y])
   have hH := (holderOnWith_univ.1 (HolderOnWith.of_dist_lt_of_dist_le
-    (show (0 : ℝ≥0) < ⟨r, hr.le⟩ from hr) hloc hosc)).nnholderNorm_le
+    (NNReal.coe_pos.1 hr : (0 : ℝ≥0) < ⟨r, hr.le⟩) hloc hosc)).nnholderNorm_le
   have hsup : ‖f.toBoundedContinuousFunction‖ ≤ M :=
     (BoundedContinuousFunction.norm_le hM).2 fun x ↦ by
       simpa only [toBoundedContinuousFunction_apply] using hf x
