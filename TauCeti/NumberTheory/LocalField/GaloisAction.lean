@@ -12,7 +12,6 @@ public import Mathlib.RingTheory.Valuation.RamificationGroup
 public import TauCeti.NumberTheory.LocalField.FiniteExtension.Basic
 public import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
-import TauCeti.RingTheory.DiscreteValuationRing.Uniformizer
 
 /-!
 # Automorphisms of finite extensions acting on integral and residue data
@@ -49,8 +48,6 @@ The homomorphism from field automorphisms to residue-field automorphisms is Math
   `AlgHom.residueFieldHom` is the induced automorphism `AlgEquiv.residueFieldEquiv`.
 * `AlgEquiv.valuation_apply_sub_pow_lt_one`: an automorphism acting on the residue field as the
   `m`-th power map satisfies `σ x ≡ x ^ m` modulo the maximal ideal on integral elements.
-* `TauCeti.valuation_smul`: a group acting on `L` and preserving a discrete valuation ring `𝒪[L]`
-  preserves the valuation of every element.
 * `AlgEquiv.normalizedValuation_unitsMap`: an extension automorphism preserves the normalized
   valuation of a unit.
 
@@ -308,62 +305,5 @@ instance integerRingFaithfulSMul : FaithfulSMul (L ≃ₐ[K] L) 𝒪[L] where
     rw [AlgEquiv.coe_smul_integerRing, AlgEquiv.coe_smul_integerRing, map_mul, map_mul,
       AlgEquiv.commutes, AlgEquiv.commutes] at hσ
     exact mul_left_cancel₀ ha' hσ
-
-end TauCeti
-
-namespace TauCeti
-
-section ValuationSMul
-
-variable {L : Type*} [Field L] [ValuativeRel L]
-variable {G : Type*} [Group G] [MulSemiringAction G L] [IsInvariantSubring G 𝒪[L]]
-
-/-- The image of an integer of `L` under the action, read in `L`. This is `map_smul` for the
-equivariant inclusion `IsInvariantSubring.subtypeHom`. -/
-theorem coe_smul_integer (σ : G) (y : 𝒪[L]) : ((σ • y : 𝒪[L]) : L) = σ • (y : L) :=
-  map_smul (IsInvariantSubring.subtypeHom G 𝒪[L]) σ y
-
-variable [IsDiscreteValuationRing 𝒪[L]] in
-/-- The action preserves the valuation of every integer of `L`. -/
-private theorem valuation_smul_integer (σ : G) (x : 𝒪[L]) :
-    valuation L (σ • (x : L)) = valuation L (x : L) := by
-  have hirr (π : 𝒪[L]) (hπ : Irreducible π) :
-      valuation L (σ • (π : L)) = valuation L (π : L) := by
-    have hσπ : Irreducible (σ • π) := hπ.map (MulSemiringAction.toRingAut G 𝒪[L] σ)
-    obtain ⟨u, hu⟩ : ∃ u : 𝒪[L]ˣ, σ • π * (u : 𝒪[L]) = π :=
-      ⟨uniformizerChangeUnit (σ • π) π hσπ hπ, mul_uniformizerChangeUnit (σ • π) π hσπ hπ⟩
-    have h := congrArg (fun y : 𝒪[L] ↦ valuation L (y : L)) hu
-    have hu1 : valuation L ((u : 𝒪[L]) : L) = 1 :=
-      (Valuation.integer.integers (valuation L)).valuation_unit u
-    simpa [hu1, coe_smul_integer] using h
-  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
-  rcases eq_or_ne x 0 with rfl | h0
-  · simp
-  obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible h0 hπ
-  have hu : valuation L ((σ • (u : 𝒪[L]) : 𝒪[L]) : L) = 1 :=
-    (Valuation.integer.integers (valuation L)).one_of_isUnit
-      (u.isUnit.map (MulSemiringAction.toRingAut G 𝒪[L] σ))
-  have hu' : valuation L ((u : 𝒪[L]) : L) = 1 :=
-    (Valuation.integer.integers (valuation L)).valuation_unit u
-  rw [← coe_smul_integer, smul_mul', smul_pow']
-  simp only [Subring.coe_mul, Subring.coe_pow, map_mul, map_pow, hu, hu', one_mul]
-  rw [coe_smul_integer, hirr π hπ]
-
-variable [IsDiscreteValuationRing 𝒪[L]] in
-/-- The action preserves the valuation of every element of `L`. -/
-@[simp]
-theorem valuation_smul (σ : G) (x : L) : valuation L (σ • x) = valuation L x := by
-  by_cases hx : valuation L x ≤ 1
-  · exact valuation_smul_integer σ ⟨x, hx⟩
-  · have hx0 : x ≠ 0 := by
-      rintro rfl
-      simp at hx
-    have hinv : valuation L x⁻¹ ≤ 1 := by
-      rw [map_inv₀]
-      exact inv_le_one_of_one_le₀ (not_le.1 hx).le
-    have h := valuation_smul_integer σ ⟨x⁻¹, hinv⟩
-    simpa [smul_inv'', map_inv₀] using h
-
-end ValuationSMul
 
 end TauCeti
