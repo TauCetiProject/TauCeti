@@ -138,7 +138,7 @@ theorem Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le [Nontrivial E] (hs : Conv
   calc ENNReal.ofReal (L * r ^ (n - 1)) * μ (ball 0 1)
       ≤ ENNReal.ofReal (2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n)) * μ (ball 0 1) := by
         gcongr ENNReal.ofReal ?_ * _
-        exact TauCeti.mul_pow_le_two_pow_mul_succ_mul_pow hr finrank_pos hm
+        exact TauCeti.mul_pow_le_two_pow_mul_succ_mul_pow hr finrank_pos hm.le
     _ = 2 ^ (n + 1) * ∑ j ∈ Finset.range (m + 1), μ (ball (c j) (r / 2)) := by
         simp only [addHaar_ball μ _ (by positivity : 0 ≤ r / 2), Finset.sum_const,
           Finset.card_range, nsmul_eq_mul]
