@@ -126,7 +126,7 @@ private theorem chart_ballCondition {e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] With
   nlinarith
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The normal translations and bumps used in a chart. -/
+/-- The translations along the chart normal used in a chart tend to zero. -/
 private theorem tendsto_chart_shift (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) {δ : ℝ} :
     Tendsto (fun j : ℕ => (δ / 2 * (1 / ((j : ℝ) + 1))) • chartNormal e) atTop (𝓝 0) := by
   have h := (tendsto_const_nhds (x := δ / 2)).mul tendsto_one_div_add_atTop_nhds_zero_nat
