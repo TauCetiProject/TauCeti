@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.Two
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Comp
-import TauCeti.Analysis.Calculus.ContDiff.Prod
+import Mathlib.Analysis.Calculus.Deriv.Shift
 
 /-!
 # Smooth compactly supported maps in parabolic Hölder spaces
@@ -66,6 +66,67 @@ namespace TauCeti.ParabolicC2HolderSpace
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {α : ℝ≥0}
 
+-- These shortcuts keep nested operator-space instance search shallow.
+private local instance : NormedAddCommGroup (E →L[ℝ] F) := inferInstance
+private local instance : NormedSpace ℝ (E →L[ℝ] F) := inferInstance
+private local instance : NormedAddCommGroup (E →L[ℝ] E →L[ℝ] F) := inferInstance
+private local instance : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] F) := inferInstance
+
+/-- The spatial derivative of a slice `y ↦ g (y, t)` of a differentiable map on space-time. -/
+private theorem hasFDerivAt_slice_fst {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {g : E × ℝ → G} (hg : Differentiable ℝ g) (p : E × ℝ) :
+    HasFDerivAt (fun y ↦ g (y, p.2)) ((fderiv ℝ g p).comp (ContinuousLinearMap.inl ℝ E ℝ)) p.1 := by
+  simpa [Function.comp_def] using
+    (hg p).hasFDerivAt.comp p.1 (hasFDerivAt_prodMk_left p.1 p.2)
+
+/-- The spatial derivative of the slice at a shifted point, in the shape used for translates. -/
+private theorem hasFDerivAt_comp_sub_coords {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {g : E × ℝ → G} {g' : E × ℝ → E →L[ℝ] G}
+    (h : ∀ p : E × ℝ, HasFDerivAt (fun y ↦ g (y, p.2)) (g' p) p.1) (z : E × ℝ) (t : ℝ) (x : E) :
+    HasFDerivAt (fun y ↦ g (y - z.1, t - z.2)) (g' (x - z.1, t - z.2)) x := by
+  simpa [Function.comp_def] using
+    (h (x - z.1, t - z.2)).comp x ((hasFDerivAt_id x).sub_const z.1)
+
+/-- The spatial first and second derivative fields and the time derivative field of a compactly
+supported `C³` function on ordinary space-time are compactly supported, of the expected
+smoothness, and compute its slice derivatives at every point. -/
+private theorem exists_derivative_fields_of_contDiff_three {f : E × ℝ → F}
+    (hf : ContDiff ℝ 3 f) (hs : HasCompactSupport f) :
+    ∃ (fx : E × ℝ → E →L[ℝ] F) (fxx : E × ℝ → E →L[ℝ] E →L[ℝ] F) (ft : E × ℝ → F),
+      ContDiff ℝ 2 fx ∧ HasCompactSupport fx ∧ ContDiff ℝ 1 fxx ∧ HasCompactSupport fxx ∧
+      ContDiff ℝ 2 ft ∧ HasCompactSupport ft ∧
+      (∀ p : E × ℝ, HasFDerivAt (fun y ↦ f (y, p.2)) (fx p) p.1) ∧
+      (∀ p : E × ℝ, HasFDerivAt (fun y ↦ fx (y, p.2)) (fxx p) p.1) ∧
+      (∀ p : E × ℝ, HasDerivAt (fun s : ℝ ↦ f (p.1, s)) (ft p) p.2) := by
+  -- Restrict the ordinary derivatives to spatial directions and to the unit time direction.
+  let ι : E →L[ℝ] E × ℝ := ContinuousLinearMap.inl ℝ E ℝ
+  let R : (E × ℝ →L[ℝ] F) →L[ℝ] E →L[ℝ] F := ι.precomp F
+  let S : (E × ℝ →L[ℝ] E →L[ℝ] F) →L[ℝ] E →L[ℝ] E →L[ℝ] F :=
+    ι.precomp (E →L[ℝ] F)
+  let fx : E × ℝ → E →L[ℝ] F := R ∘ fderiv ℝ f
+  have hfx : ContDiff ℝ 2 fx :=
+    (R.contDiff (n := 2)).comp (hf.fderiv_right (by norm_num))
+  have hsfx : HasCompactSupport fx := (hs.fderiv ℝ).comp_left (map_zero R)
+  let fxx : E × ℝ → E →L[ℝ] E →L[ℝ] F := S ∘ fderiv ℝ fx
+  have hfxx : ContDiff ℝ 1 fxx :=
+    (S.contDiff (n := 1)).comp (hfx.fderiv_right (by norm_num))
+  have hsfxx : HasCompactSupport fxx :=
+    (hsfx.fderiv ℝ).comp_left (map_zero S)
+  let ft : E × ℝ → F := (ContinuousLinearMap.apply ℝ F ((0, 1) : E × ℝ)) ∘ fderiv ℝ f
+  have hft : ContDiff ℝ 2 ft :=
+    ((ContinuousLinearMap.apply ℝ F ((0, 1) : E × ℝ)).contDiff (n := 2)).comp
+      (hf.fderiv_right (by norm_num))
+  have hsft : HasCompactSupport ft :=
+    (hs.fderiv ℝ).comp_left (map_zero (ContinuousLinearMap.apply ℝ F ((0, 1) : E × ℝ)))
+  refine ⟨fx, fxx, ft, hfx, hsfx, hfxx, hsfxx, hft, hsft, fun p ↦ ?_, fun p ↦ ?_, fun p ↦ ?_⟩
+  · simpa [fx, R, ι, Function.comp_def] using
+      hasFDerivAt_slice_fst (hf.differentiable (by norm_num)) p
+  · simpa [fxx, S, ι, Function.comp_def] using
+      hasFDerivAt_slice_fst (hfx.differentiable (by norm_num)) p
+  · simpa [ft, Function.comp_def] using
+      ((hf.differentiable (by simp) _).hasFDerivAt.comp p.2
+        ((hasFDerivAt_const p.1 p.2).prodMk (hasFDerivAt_id p.2))).hasDerivAt
+
 /-- Compactly supported `C³` functions on ordinary space-time have a common
 order-two parabolic Hölder norm bound on all translated closed slabs. -/
 theorem exists_norm_le_comp_coords (hα : α ≤ 1) {f : E × ℝ → F}
@@ -92,17 +153,19 @@ theorem exists_norm_le_comp_coords (hα : α ≤ 1) {f : E × ℝ → F}
   have hx (t : Icc a b) (x : E) :
       HasFDerivAt (fun y ↦ u (slabMk y t)) (ux (slabMk x t)) x := by
     simp only [hu, hux, space_slabMk, time_slabMk]
-    exact hdx z t x
+    exact hasFDerivAt_comp_sub_coords hdx z t x
   have hxx (t : Icc a b) (x : E) :
       HasFDerivAt (fun y ↦ ux (slabMk y t)) (uxx (slabMk x t)) x := by
     simp only [hux, huxx, space_slabMk, time_slabMk]
-    exact hdxx z t x
+    exact hasFDerivAt_comp_sub_coords hdxx z t x
   -- On the closed interval the clamped extension agrees with the ordinary time slice,
   -- so its derivative includes the two endpoints.
   have ht (x : E) (t : Icc a b) :
       HasDerivWithinAt (timeExtension hab.le u x) (ut (slabMk x t)) (Icc a b) t := by
     simp only [hut, space_slabMk, time_slabMk]
-    exact (hdt z x t).hasDerivWithinAt.congr_of_mem (f₁ := timeExtension hab.le u x) (fun s hs ↦ by
+    have hd : HasDerivAt (fun s : ℝ ↦ f (x - z.1, s - z.2)) (ft (x - z.1, (t : ℝ) - z.2)) t :=
+      HasDerivAt.comp_sub_const (t : ℝ) z.2 (hdt (x - z.1, (t : ℝ) - z.2))
+    exact hd.hasDerivWithinAt.congr_of_mem (f₁ := timeExtension hab.le u x) (fun s hs ↦ by
       simp [timeExtension_def, hu, projIcc_of_mem hab.le hs]) t.2
   let g := mk (hab := hab) u.toBoundedContinuousFunction ux.toBoundedContinuousFunction uxx ut
     (by simpa only [HolderSpace.toBoundedContinuousFunction_apply] using hx)
