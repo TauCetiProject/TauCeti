@@ -38,25 +38,29 @@ section SeminormedAddGroup
 
 variable [SeminormedAddGroup E]
 
+/-- A real function tending to `0` along `cofinite` that is nonnegative somewhere attains its
+supremum. -/
+theorem Filter.Tendsto.exists_forall_le_of_zero_le {α : Type*} {v : α → ℝ}
+    (hv : Tendsto v cofinite (𝓝 0)) {a : α} (ha : 0 ≤ v a) : ∃ t, ∀ s, v s ≤ v t := by
+  by_cases h : ∀ s, v s ≤ v a
+  · exact ⟨a, h⟩
+  obtain ⟨s₁, hs₁⟩ := not_forall.mp h
+  have hfin : {s | v s₁ ≤ v s}.Finite := by
+    simpa [eventually_cofinite] using hv.eventually (gt_mem_nhds (ha.trans_lt (not_le.mp hs₁)))
+  obtain ⟨t, ht, htmax⟩ := hfin.toFinset.exists_max_image v ⟨s₁, by simp⟩
+  refine ⟨t, fun s ↦ ?_⟩
+  by_cases hs : v s₁ ≤ v s
+  · exact htmax s (by simpa using hs)
+  · exact (not_le.mp hs).le.trans (by simpa using ht)
+
 /-- A family on a nonempty index type tending to zero along the cofinite filter has a term whose
 norm dominates the norms of all its terms. -/
 theorem Filter.Tendsto.exists_forall_norm_le [Nonempty ι] {f : ι → E}
     (hf : Tendsto f cofinite (𝓝 0)) : ∃ i, ∀ j, ‖f j‖ ≤ ‖f i‖ := by
-  by_cases hne : ∃ i, ‖f i‖ ≠ 0
-  · obtain ⟨i₀, hi₀⟩ := hne
-    have hi₀pos : 0 < ‖f i₀‖ := lt_of_le_of_ne (norm_nonneg _) hi₀.symm
-    have hnorm : Tendsto (fun i ↦ ‖f i‖) cofinite (𝓝 0) := by
-      simpa only [norm_zero] using hf.norm
-    have hfinite : {i | ‖f i₀‖ ≤ ‖f i‖}.Finite := by
-      simpa only [eventually_cofinite, not_lt] using hnorm.eventually_lt_const hi₀pos
-    obtain ⟨i, _, hmax⟩ := Set.exists_max_image _ (fun j ↦ ‖f j‖) hfinite ⟨i₀, by simp⟩
-    refine ⟨i, fun j ↦ ?_⟩
-    by_cases hj : ‖f i₀‖ ≤ ‖f j‖
-    · exact hmax j hj
-    · exact (le_of_not_ge hj).trans (hmax i₀ (by simp))
-  · push Not at hne
-    obtain ⟨i⟩ := ‹Nonempty ι›
-    exact ⟨i, fun j ↦ by simp [hne]⟩
+  obtain ⟨i⟩ := ‹Nonempty ι›
+  have hnorm : Tendsto (fun i ↦ ‖f i‖) cofinite (𝓝 0) := by
+    simpa only [norm_zero] using hf.norm
+  exact hnorm.exists_forall_le_of_zero_le (a := i) (norm_nonneg _)
 
 /-- A family on a nonempty index type tending to zero along the cofinite filter attains the
 supremum of the norms of its terms. -/

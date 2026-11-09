@@ -17,6 +17,7 @@ import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import Mathlib.RingTheory.MvPolynomial.Basic
 import Mathlib.SetTheory.Cardinal.Order
+import TauCeti.Analysis.Normed.Group.NullFamily
 import TauCeti.RingTheory.MvPowerSeries.Rename
 
 /-!
@@ -292,21 +293,6 @@ theorem norm_eq_norm_constantCoeff_of_norm_coeff_mul_prod_le
     · exact h t ht
   · exact norm_constantCoeff_le f
 
-/-- A real function tending to `0` along `cofinite` that is nonnegative somewhere attains its
-supremum. -/
-private theorem exists_forall_le_of_tendsto_cofinite {α : Type*} {v : α → ℝ}
-    (hv : Tendsto v cofinite (𝓝 0)) {a : α} (ha : 0 ≤ v a) : ∃ t, ∀ s, v s ≤ v t := by
-  by_cases h : ∀ s, v s ≤ v a
-  · exact ⟨a, h⟩
-  obtain ⟨s₁, hs₁⟩ := not_forall.mp h
-  have hfin : {s | v s₁ ≤ v s}.Finite := by
-    simpa [eventually_cofinite] using hv.eventually (gt_mem_nhds (ha.trans_lt (not_le.mp hs₁)))
-  obtain ⟨t, ht, htmax⟩ := hfin.toFinset.exists_max_image v ⟨s₁, by simp⟩
-  refine ⟨t, fun s ↦ ?_⟩
-  by_cases hs : v s₁ ≤ v s
-  · exact htmax s (by simpa using hs)
-  · exact (not_le.mp hs).le.trans (by simpa using ht)
-
 /-- **The norm gap of a restricted series.** The weighted coefficient norms of a nonzero
 restricted series that are smaller than its norm are bounded by a constant smaller than its
 norm: only finitely many of them exceed half the norm. -/
@@ -337,8 +323,10 @@ theorem exists_achievesGaussNorm (f : IsRestricted.subring (R := R) c) :
     ∃ t, AchievesGaussNorm norm c (f : MvPowerSeries σ R) t := by
   set v : (σ →₀ ℕ) → ℝ := fun t ↦ ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)
   have hv : Tendsto v cofinite (𝓝 0) := f.2
-  obtain ⟨t, ht⟩ := exists_forall_le_of_tendsto_cofinite hv (a := 0) (by simp [v])
-  exact ⟨t, le_antisymm (le_ciSup ⟨v t, by rintro _ ⟨s, rfl⟩; exact ht s⟩ t) (ciSup_le ht)⟩
+  obtain ⟨t, ht⟩ := hv.exists_forall_le_of_zero_le (a := 0) (by simp [v])
+  refine ⟨t, ?_⟩
+  rw [AchievesGaussNorm, gaussNorm]
+  exact le_antisymm (le_ciSup ⟨v t, by rintro _ ⟨s, rfl⟩; exact ht s⟩ t) (ciSup_le ht)
 
 /-- A strict bound on the norm is exactly a strict bound on every weighted coefficient norm,
 since the norm is attained. -/
@@ -497,7 +485,7 @@ theorem IsRestricted.exists_achievesGaussNorm_max (m : MonomialOrder σ) {f : Mv
     have h := hf.eventually (gt_mem_nhds hi_pos)
     simpa only [eventually_cofinite, not_lt] using h
   let S := hfinite.toFinset
-  obtain ⟨j, hbound⟩ := exists_forall_le_of_tendsto_cofinite (v := a) hf hi_pos.le
+  obtain ⟨j, hbound⟩ := Filter.Tendsto.exists_forall_le_of_zero_le (v := a) hf hi_pos.le
   have hj : j ∈ S := by simpa [S] using hbound i
   have heq : a j = gaussNorm norm c f := by
     rw [gaussNorm]
