@@ -163,7 +163,8 @@ theorem projective_ker_of_relationModule_surjective_of_h2_surjective {L K : Type
     ShortComplex.mk T₀.f (T₀.g ≫ eA.hom) (by rw [← Category.assoc, T₀.zero, zero_comp])
   have hT : T.ShortExact := ShortComplex.shortExact_of_iso
     (ShortComplex.isoMk (S₁ := T₀) (S₂ := T) (.refl _) (.refl _) eA (by simp [T]) (by simp [T])) hT₀
-  have : Module.Free ℤ_[p] (LinearMap.ker β) := free_of_submodule_relationModule (LinearMap.ker β)
+  have : Module.Free ℤ_[p] (LinearMap.ker β) :=
+    TauCeti.MonoidAlgebra.free_of_submodule_relationModule (LinearMap.ker β)
   let e₁ : T.X₁.ρ.asModule ≃ₗ[Λ] LinearMap.ker β :=
     (counitIso (ModuleCat.of Λ (LinearMap.ker β))).toLinearEquiv
   have : Module.Projective ℤ_[p] T.X₁.V :=

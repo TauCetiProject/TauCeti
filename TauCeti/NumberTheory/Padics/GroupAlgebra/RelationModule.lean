@@ -9,7 +9,6 @@ public import TauCeti.Algebra.MonoidAlgebra.RelationModule.Basic
 public import TauCeti.NumberTheory.Padics.GroupAlgebra.Cancellation
 import Mathlib.LinearAlgebra.TensorProduct.Prod
 import TauCeti.Algebra.MonoidAlgebra.RelationModule.FractionRing
-import TauCeti.LinearAlgebra.FreeModule.PID
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Swan
 import TauCeti.RingTheory.KrullSchmidt.Localization
 
@@ -50,9 +49,6 @@ known to be projective.
   module of `n + 2` generators onto a module with rationalization `ℚ_p[G]^n ⊕ ℚ_p` and projective
   kernel has kernel isomorphic to `ℤ_p[G]`.
 
-* `TauCeti.free_of_submodule_relationModule`: every `R[G]`-submodule of a relation module over a
-  principal ideal domain `R` is a free `R`-module.
-
 ## References
 
 * J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, second edition, (5.6.6),
@@ -66,16 +62,6 @@ open scoped TensorProduct
 namespace TauCeti
 
 open _root_.MonoidAlgebra TauCeti.MonoidAlgebra
-
-/-- Every `R[G]`-submodule of the relation module of a family in a monoid `G` is a free `R`-module
-over a principal ideal domain `R`, as a submodule of the free `R`-module `R[G]^ι`. -/
-theorem free_of_submodule_relationModule {R : Type*} [CommRing R] [IsDomain R]
-    [IsPrincipalIdealRing R] {G : Type*} [Monoid G] {ι : Type*} [Fintype ι] {g : ι → G}
-    (N : Submodule (_root_.MonoidAlgebra R G) (relationModule R G g)) : Module.Free R N :=
-  Module.Free.of_injective_of_projective_of_isPrincipalIdealRing (R := R)
-    (M := ι → _root_.MonoidAlgebra R G) (N := N)
-    (((relationModule R G g).subtype ∘ₗ N.subtype).restrictScalars R)
-    (Subtype.val_injective.comp Subtype.val_injective)
 
 variable {p : ℕ} [Fact p.Prime] {G : Type*} [Group G] [Finite G] {ι : Type*} [Fintype ι]
 
