@@ -95,6 +95,24 @@ theorem rpow_weight_pos (ξ : CoordinateSpace n) (t : ℝ) :
     0 < (1 + ‖ξ‖ ^ 2) ^ (t / 2) :=
   Real.rpow_pos_of_pos (by positivity) _
 
+/-- Above radius `t > 0`, raising the order of the weight `⟨ξ⟩^s` to `s' ≥ s` costs at most the
+factor `t^(s - s')`. -/
+theorem rpow_weight_le_rpow_mul_rpow_weight {t s s' : ℝ} {ξ : CoordinateSpace n}
+    (ht : 0 < t) (hξ : t ≤ ‖ξ‖) (hs : s ≤ s') :
+    (1 + ‖ξ‖ ^ 2) ^ (s / 2) ≤ t ^ (s - s') * (1 + ‖ξ‖ ^ 2) ^ (s' / 2) := by
+  have hw : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
+  have hsplit : (1 + ‖ξ‖ ^ 2) ^ (s / 2) =
+      (1 + ‖ξ‖ ^ 2) ^ ((s - s') / 2) * (1 + ‖ξ‖ ^ 2) ^ (s' / 2) := by
+    rw [← Real.rpow_add hw]
+    ring_nf
+  have ht2 : t ^ (s - s') = (t ^ 2) ^ ((s - s') / 2) := by
+    rw [← Real.rpow_natCast t 2, ← Real.rpow_mul ht.le]
+    ring_nf
+  rw [hsplit, ht2]
+  refine mul_le_mul_of_nonneg_right (Real.rpow_le_rpow_of_nonpos (by positivity) ?_
+    (by linarith)) (by positivity)
+  nlinarith [norm_nonneg ξ]
+
 variable (n) in
 /-- The class `S^m_{1,0}` of symbols of order `m` on `ℝⁿ × ℝⁿ` with values in `V →L[ℂ] W`: smooth
 maps `a` such that on every compact set `K` of positions and for all words `α`, `β` of coordinate
@@ -448,6 +466,24 @@ theorem exists_bound_fderiv_coefficient (a : Symbol n V W m) (K : Set (Coordinat
   refine (hC j x hx ξ).trans ?_
   gcongr
   exact Finset.single_le_sum (fun i _ ↦ hC0 i) (Finset.mem_univ j)
+
+/-- The symbol estimates of `a` bound the Fréchet derivatives in `ξ` of each position derivative
+`∂_x^α a(x, ξ)`: the `i`-th one is at most `G ⟨ξ⟩^(m - i)` for `x` in a compact set. -/
+theorem exists_norm_iteratedFDeriv_coordinateDeriv_le (a : Symbol n V W m)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α : List (Fin n)) (i : ℕ) :
+    ∃ G, 0 ≤ G ∧ ∀ x ∈ K, ∀ ξ,
+      ‖iteratedFDeriv ℝ i (fun η => coordinateDeriv α (fun y => a.coefficient (y, η)) x) ξ‖ ≤
+        G * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2) := by
+  choose A hA0 hA using fun β : List (Fin n) => a.exists_bound K hK α β
+  refine ⟨∑ w : Fin i → Fin n, A (List.ofFn w), Finset.sum_nonneg fun w _ => hA0 _,
+    fun x hx ξ => ?_⟩
+  have hg : ContDiff ℝ ∞ fun η => coordinateDeriv α (fun y => a.coefficient (y, η)) x :=
+    (a.contDiff_coefficient.coordinateDeriv_fst α).comp (contDiff_prodMk_right x)
+  refine (norm_iteratedFDeriv_le_sum_coordinateDeriv (contDiff_infty.1 hg _) ξ).trans ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun w _ => ?_
+  have h := hA (List.ofFn w) x hx ξ
+  rwa [List.length_ofFn, mixedDeriv_eq_coordinateDeriv_snd a.contDiff_coefficient] at h
 
 theorem IsUniform.frequencyDeriv {a : Symbol n V W m} (ha : a.IsUniform) (j : Fin n) :
     (frequencyDeriv j a).IsUniform := by

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
+public import TauCeti.MeasureTheory.Integral.PiSystem
 
 /-!
 # Inner products of square-integrable functions
@@ -22,6 +24,8 @@ L² function with a continuous function is an integral
 (`MeasureTheory.L2.inner_toLp_continuousMap`), extending Mathlib's `ContinuousMap.inner_toLp`.
 The integral of `⟪f x, c⟫` is `⟪∫ f, c⟫` (`integral_inner_left`), the counterpart of Mathlib's
 `integral_inner` with the integrand in the left slot.
+Indicators of any countably spanning generating π-system of finite-measure sets have
+dense real linear span in L².
 -/
 
 public section
@@ -100,6 +104,8 @@ theorem eq_zero_of_apply_indicatorConstLp_singleton
 
 end ContinuousLinearMap
 
+section IntegralInner
+
 variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E] [NormedSpace ℝ E]
 
@@ -109,3 +115,35 @@ theorem integral_inner_left {f : α → E} (hf : Integrable f μ) (c : E) :
     ∫ x, ⟪f x, c⟫_𝕜 ∂μ = ⟪∫ x, f x ∂μ, c⟫_𝕜 := by
   simpa only [innerSLFlip_apply_apply] using
     (innerSLFlip 𝕜 c).integral_comp_commSL RCLike.conj_smul hf
+
+end IntegralInner
+
+namespace TauCeti
+
+open MeasureTheory
+open scoped ENNReal
+
+/-- Indicators of a countably spanning generating π-system of finite-measure sets have
+dense real linear span in L². -/
+theorem topologicalClosure_span_indicatorConstLp_eq_top_of_isPiSystem
+    {X : Type*} {m : MeasurableSpace X} {μ : Measure X}
+    {S : Set (Set X)} (hgen : m = MeasurableSpace.generateFrom S)
+    (hpi : IsPiSystem S) (hcover : IsCountablySpanning S) (hfin : ∀ s ∈ S, μ s ≠ ∞) :
+    (Submodule.span ℝ {g : Lp ℝ 2 μ | ∃ (s : Set X) (hs : s ∈ S),
+      g = indicatorConstLp 2 (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs)
+        (hfin s hs) 1}).topologicalClosure = ⊤ := by
+  rw [← Submodule.orthogonal_eq_bot_iff, Submodule.orthogonal_closure]
+  apply bot_unique
+  intro f hf
+  apply Lp.ext
+  have hfi : ∀ s ∈ S, IntegrableOn f s μ := fun s hs =>
+    integrableOn_Lp_of_measure_ne_top f (by norm_num) (hfin s hs)
+  refine (ae_eq_zero_of_setIntegral_eq_zero_of_isPiSystem hgen hpi hcover hfi ?_).trans
+    (Lp.coeFn_zero ℝ 2 μ).symm
+  intro s hs
+  rw [← L2.inner_indicatorConstLp_one
+    (hgen ▸ MeasurableSpace.measurableSet_generateFrom hs) (hfin s hs) f]
+  exact (Submodule.mem_orthogonal _ f).mp hf _
+    (Submodule.subset_span ⟨s, hs, rfl⟩)
+
+end TauCeti

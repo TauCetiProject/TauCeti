@@ -8,6 +8,8 @@ module
 public import Mathlib.Basic.PEquiv
 public import Mathlib.Data.Fintype.Prod
 public import TauCeti.Data.Finset.Inversions
+import Mathlib.Basic.Finite.Prod
+import Mathlib.Data.Fintype.Option
 
 /-!
 # Strand diagrams
@@ -94,6 +96,10 @@ theorem ext {φ ψ : StrandDiagram α} (h : ∀ i, φ i = ψ i) : φ = ψ :=
 theorem toPEquiv_injective : Function.Injective (toPEquiv : StrandDiagram α → α ≃. α) :=
   fun _ _ h ↦ ext fun i ↦ congrArg (fun f : α ≃. α ↦ f i) h
 
+/-- A finite linear order has finitely many strand diagrams. -/
+instance [Finite α] : Finite (StrandDiagram α) :=
+  Finite.of_injective _ DFunLike.coe_injective
+
 /-- Every strand of a diagram goes upwards. -/
 theorem le_of_mem (φ : StrandDiagram α) {i j : α} (h : j ∈ φ i) : i ≤ j :=
   φ.le_of_mem' h
@@ -175,6 +181,9 @@ theorem mem_idOn {s : Finset α} {i j : α} : j ∈ idOn s i ↔ i = j ∧ i ∈
 section Finite
 
 variable [Fintype α]
+
+instance : DecidableEq (StrandDiagram α) :=
+  fun φ ψ ↦ decidable_of_iff (∀ i, φ i = ψ i) ⟨ext, fun h _ ↦ h ▸ rfl⟩
 
 /-- The starting points of the strands of `φ`, the set `S` of the partial bijection `φ : S → T`. -/
 def source (φ : StrandDiagram α) : Finset α :=
