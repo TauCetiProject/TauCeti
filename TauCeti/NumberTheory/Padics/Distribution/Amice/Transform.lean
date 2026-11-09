@@ -203,17 +203,6 @@ theorem hasSum_amiceEquiv_symm_mul_coeff_amiceTransform
     simp only [mul_assoc, mul_left_comm]
   · simp only [← amiceEquiv_apply, LinearIsometryEquiv.apply_symm_apply]
 
-/-- The weighted moments at every level are bounded by the stage operator norm. -/
-theorem norm_factorial_mul_coeff_amiceTransform_le (μ : LocallyAnalyticDistribution p K)
-    (h n : ℕ) :
-    ‖((n / p ^ h).factorial : K) * (amiceTransform μ).coeff n‖ ≤ ‖stage h μ‖ := by
-  have hterm := stage_amiceTerm μ h n 1
-  rw [mul_one] at hterm
-  rw [← hterm]
-  exact ((stage h μ).le_opNorm _).trans <| by
-    simpa using mul_le_mul_of_nonneg_left
-      (norm_amiceTerm_le n (1 : K)) (norm_nonneg (stage h μ))
-
 /-- The restriction of a distribution to the stage `LA_h(K)`, read in Amice's coordinates
 `C₀(ℕ, K)`, sends the coordinate vector `single n e` to `⌊n / pʰ⌋! e bₙ`. -/
 private theorem stage_comp_amiceEquiv_single (μ : LocallyAnalyticDistribution p K) (h n : ℕ)
