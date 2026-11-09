@@ -379,22 +379,22 @@ theorem map_riemannRochSpace_repartitionDualMulRight (hF : IsFunctionField k F)
 /-- **The duality theorem** (Stichtenoth, Theorem 1.5.14): for `W` the divisor of a nonzero Weil
 differential `ω`, multiplication by `ω` is a `k`-linear isomorphism `L(W - D) ≃ Ω_F(D)`. -/
 noncomputable def riemannRochSpaceEquivWeilDifferentialFiltration (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)} (hω : ω ≠ 0)
+    (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
     {W : Divisor k F}
     (hW : IsGreatest {D : Divisor k F | ω ∈ weilDifferentialFiltration D} W) (D : Divisor k F) :
     ↥(riemannRochSpace (W - D)) ≃ₗ[k] ↥(weilDifferentialFiltration D) :=
-  (Submodule.equivMapOfInjective _ (repartitionDualMulRight_injective hF hω)
-    (riemannRochSpace (W - D))).trans
+  (Submodule.equivMapOfInjective _ (repartitionDualMulRight_injective hF
+    (ne_zero_of_isGreatest_mem_weilDifferentialFiltration hF hW)) (riemannRochSpace (W - D))).trans
       (LinearEquiv.ofEq _ _ (map_riemannRochSpace_repartitionDualMulRight hF hex hW D))
 
 /-- The duality equivalence sends `x` to the Weil differential `x · ω`. -/
 @[simp]
 theorem riemannRochSpaceEquivWeilDifferentialFiltration_apply (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)} (hω : ω ≠ 0)
+    (hex : IsIntegrallyClosedIn k F) {ω : Module.Dual k ↥(repartitionSpace k F)}
     {W : Divisor k F}
     (hW : IsGreatest {D : Divisor k F | ω ∈ weilDifferentialFiltration D} W) (D : Divisor k F)
     (x : ↥(riemannRochSpace (W - D))) :
-    (riemannRochSpaceEquivWeilDifferentialFiltration hF hex hω hW D x :
+    (riemannRochSpaceEquivWeilDifferentialFiltration hF hex hW D x :
       Module.Dual k ↥(repartitionSpace k F)) = repartitionDualMul hF x ω := by
   rw [riemannRochSpaceEquivWeilDifferentialFiltration, LinearEquiv.trans_apply,
     LinearEquiv.coe_ofEq_apply, Submodule.coe_equivMapOfInjective_apply,
@@ -407,8 +407,7 @@ theorem dim_sub_eq_finrank_weilDifferentialFiltration (hF : IsFunctionField k F)
     (hW : IsGreatest {D : Divisor k F | ω ∈ weilDifferentialFiltration D} W) (D : Divisor k F) :
     Divisor.dim (W - D) = Module.finrank k ↥(weilDifferentialFiltration D) := by
   rw [Divisor.dim_def]
-  exact (riemannRochSpaceEquivWeilDifferentialFiltration hF hex
-    (ne_zero_of_isGreatest_mem_weilDifferentialFiltration hF hW) hW D).finrank_eq
+  exact (riemannRochSpaceEquivWeilDifferentialFiltration hF hex hW D).finrank_eq
 
 /-- **The Riemann–Roch theorem** (Stichtenoth, Theorem 1.5.15): the divisor of a nonzero Weil
 differential is a Riemann–Roch divisor for the genus. -/
