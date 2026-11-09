@@ -188,15 +188,13 @@ theorem exists_apply_eq_one_apply_eq_smul_apply_eq_neg_smul [Nontrivial V] {A : 
 
 section Plane
 
-/-- A pair `(q, p)` with `ω(q, p) = 1` is linearly independent. -/
-private theorem linearIndependent_pair {q p : V} (h : ω q p = 1) : LinearIndependent ℝ ![q, p] :=
-  LinearIndependent.pair_symm_iff.1 (ω.isAlt.linearIndependent_pair_of_apply_eq_one h)
-
 /-- In a symplectic plane, a pair `(q, p)` with `ω(q, p) = 1` is a basis: every vector is
 `x q + y p`. -/
 private theorem exists_eq_smul_add_smul (hV : finrank ℝ V = 2) {q p : V} (h : ω q p = 1) (v : V) :
     ∃ x y : ℝ, v = x • q + y • p := by
-  let b := basisOfLinearIndependentOfCardEqFinrank (linearIndependent_pair h) (by simp [hV])
+  let b := basisOfLinearIndependentOfCardEqFinrank
+    (LinearIndependent.pair_symm_iff.1 (ω.isAlt.linearIndependent_pair_of_apply_eq_one h))
+    (by simp [hV])
   refine ⟨b.repr v 0, b.repr v 1, ?_⟩
   have hv := b.sum_repr v
   rw [Fin.sum_univ_two] at hv
@@ -217,8 +215,12 @@ two pairs are bases and the map is explicit. -/
 private theorem exists_isSymplectomorphism_apply_eq (hV : finrank ℝ V = 2) (hW : finrank ℝ W = 2)
     {q p : V} {q' p' : W} (h : ω q p = 1) (h' : ω' q' p' = 1) :
     ∃ e : V ≃ₗ[ℝ] W, IsSymplectomorphism ω ω' e ∧ e q = q' ∧ e p = p' := by
-  let b := basisOfLinearIndependentOfCardEqFinrank (linearIndependent_pair h) (by simp [hV])
-  let b' := basisOfLinearIndependentOfCardEqFinrank (linearIndependent_pair h') (by simp [hW])
+  let b := basisOfLinearIndependentOfCardEqFinrank
+    (LinearIndependent.pair_symm_iff.1 (ω.isAlt.linearIndependent_pair_of_apply_eq_one h))
+    (by simp [hV])
+  let b' := basisOfLinearIndependentOfCardEqFinrank
+    (LinearIndependent.pair_symm_iff.1 (ω'.isAlt.linearIndependent_pair_of_apply_eq_one h'))
+    (by simp [hW])
   let e := b.equiv b' (Equiv.refl _)
   have he0 : e q = q' := by simpa [e, b, b'] using b.equiv_apply 0 b' (Equiv.refl _)
   have he1 : e p = p' := by simpa [e, b, b'] using b.equiv_apply 1 b' (Equiv.refl _)
