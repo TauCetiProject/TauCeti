@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Fourier.AddCircleMulti
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Calculus.PeriodicDeriv
@@ -17,7 +18,7 @@ import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
 
 /-!
-# Fourier coefficients of smooth functions on the torus
+# Fourier series of smooth functions on the torus
 
 A function `f` on the unit torus `UnitAddTorus d = (ℝ / ℤ)^d` is read through its lift
 `x ↦ f (fun i ↦ (x i : UnitAddCircle))`, a `ℤ^d`-periodic function on `d → ℝ`. This file proves
@@ -43,9 +44,19 @@ directions equal to a coordinate vector of maximal `|n i|`, the coefficient boun
 `(2π ‖n‖) ^ k * ‖mFourierCoeff f n‖ ≤ M` whenever `M` bounds `‖iteratedFDeriv ℝ k F‖`
 (`pow_mul_norm_mFourierCoeff_le`). Here `‖n‖` is the sup norm on `d → ℤ`.
 
-Smooth periodic expansions of this kind are used to expand test functions on a compact coordinate
-box, after periodic extension, in Fourier modes with rapidly decreasing coefficients, as in the
-Fourier-series proof of the Schwartz kernel theorem.
+The `k`-th derivative of the lift of a mode `mFourier n` is bounded by `(2π ∑ i, |n i|) ^ k`
+(`norm_iteratedFDeriv_mFourier_coe_le`, in `TauCeti.Analysis.Fourier.Monomial`). Against the
+decay estimate this makes the Fourier series of a `C^K` function differentiable termwise `k` times
+when `K > card d + k` (`iteratedFDeriv_eq_tsum_mFourier`), and its partial sums converge to the
+function in every `C^k` norm (`tendstoUniformly_iteratedFDeriv_sum_mFourier`).
+
+A smooth function `g` on `d → ℝ` supported in the open unit cube `‖x‖ < 1 / 2` (sup norm) agrees
+there with its periodic extension `x ↦ ∑ᶠ m, g (x + m)`, which is the lift of a function on the
+torus with smooth lift. Hence `g` is the limit, in every `C^k` norm on the cube, of trigonometric
+polynomials `∑ n ∈ s, c n exp (2πi ∑ i, n i x i)`
+(`exists_tendstoUniformlyOn_iteratedFDeriv_sum_cexp`). This expands test functions on a compact
+coordinate box in Fourier modes, as in the Fourier-series proof that tensor products of test
+functions are dense, the uniqueness part of the Schwartz kernel theorem.
 
 ## Main results
 
@@ -68,6 +79,15 @@ Fourier-series proof of the Schwartz kernel theorem.
 * `TauCeti.UnitAddTorus.hasSum_mFourier_series_of_contDiff`: the Fourier series of such a function
   converges to it uniformly.
 * `TauCeti.UnitAddTorus.hasSum_mFourier_series_of_iteratedFDeriv`: so do its termwise derivatives.
+* `TauCeti.UnitAddTorus.summable_pow_mul_norm_mFourierCoeff`: `∑ n, ‖n‖ ^ j ‖mFourierCoeff f n‖`
+  converges for a `C^k` function when `k` exceeds `card d + j`.
+* `TauCeti.UnitAddTorus.iteratedFDeriv_eq_tsum_mFourier`: termwise differentiation of the Fourier
+  series in the multilinear norm.
+* `TauCeti.UnitAddTorus.tendstoUniformly_iteratedFDeriv_sum_mFourier`: the partial sums of the
+  Fourier series converge in every `C^k` norm.
+* `TauCeti.UnitAddTorus.exists_tendstoUniformlyOn_iteratedFDeriv_sum_cexp`: a smooth function
+  supported in the open unit cube is a `C^k` limit of trigonometric polynomials on the cube, for
+  every `k`.
 
 ## References
 
@@ -80,7 +100,7 @@ public section
 noncomputable section
 
 open MeasureTheory Complex Topology Set
-open scoped Real
+open scoped Real ContDiff
 
 namespace TauCeti
 
@@ -348,20 +368,33 @@ theorem exists_pow_mul_norm_mFourierCoeff_le {f : UnitAddTorus d → E} {k : ℕ
   rw [le_div_iff₀ (by positivity), mul_right_comm, ← mul_pow, mul_comm _ (2 * π)]
   exact pow_mul_norm_mFourierCoeff_le hf hM n
 
+/-- If the lift of `f` to `d → ℝ` is `C^k` for some `k` exceeding `card d + j`, then
+`∑ n, ‖n‖ ^ j * ‖mFourierCoeff f n‖ < ∞`. -/
+theorem summable_pow_mul_norm_mFourierCoeff {f : UnitAddTorus d → E} {j k : ℕ}
+    (hk : Fintype.card d + j < k)
+    (hf : ContDiff ℝ k fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) :
+    Summable fun n ↦ ‖n‖ ^ j * ‖mFourierCoeff f n‖ := by
+  obtain ⟨C, hC⟩ := exists_pow_mul_norm_mFourierCoeff_le hf
+  refine Summable.of_norm_bounded_eventually ((summable_pi_int_norm_rpow ((j : ℝ) - k) (by
+    have := (Nat.cast_lt (α := ℝ)).2 hk
+    push_cast at this
+    linarith)).mul_left C) ?_
+  filter_upwards [(Set.finite_singleton (0 : d → ℤ)).compl_mem_cofinite] with n hn
+  have hpos : 0 < ‖n‖ := norm_pos_iff.2 hn
+  rw [norm_mul, norm_pow, norm_norm, norm_norm, Real.rpow_sub hpos, Real.rpow_natCast,
+    Real.rpow_natCast, mul_div_assoc', le_div_iff₀ (by positivity)]
+  calc ‖n‖ ^ j * ‖mFourierCoeff f n‖ * ‖n‖ ^ k = ‖n‖ ^ j * (‖n‖ ^ k * ‖mFourierCoeff f n‖) := by
+        ring
+    _ ≤ ‖n‖ ^ j * C := mul_le_mul_of_nonneg_left (hC n) (by positivity)
+    _ = C * ‖n‖ ^ j := mul_comm _ _
+
 /-- **Absolute convergence of the Fourier coefficients.** If the lift of `f` to `d → ℝ` is `C^k`
 for some `k` exceeding the dimension `d`, then `∑ n, ‖mFourierCoeff f n‖ < ∞`. -/
 theorem summable_norm_mFourierCoeff {f : UnitAddTorus d → E} {k : ℕ}
     (hk : Fintype.card d < k)
     (hf : ContDiff ℝ k fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) :
     Summable fun n ↦ ‖mFourierCoeff f n‖ := by
-  obtain ⟨C, hC⟩ := exists_pow_mul_norm_mFourierCoeff_le hf
-  refine Summable.of_norm_bounded_eventually ((summable_pi_int_norm_rpow (-k) (by
-    simpa using (Nat.cast_lt (α := ℝ)).2 hk)).mul_left C) ?_
-  filter_upwards [(Set.finite_singleton (0 : d → ℤ)).compl_mem_cofinite] with n hn
-  have hpos : 0 < ‖n‖ := norm_pos_iff.2 hn
-  rw [norm_norm, Real.rpow_neg hpos.le, Real.rpow_natCast, ← div_eq_mul_inv,
-    le_div_iff₀ (by positivity), mul_comm]
-  exact hC n
+  simpa using summable_pow_mul_norm_mFourierCoeff (j := 0) (by omega) hf
 
 /-- **Uniform convergence of the Fourier series.** If the lift of a continuous function `f` on the
 torus to `d → ℝ` is `C^k` for some `k` exceeding the dimension `d`, then its Fourier series
@@ -390,5 +423,192 @@ theorem hasSum_mFourier_series_of_iteratedFDeriv {f g : C(UnitAddTorus d, ℂ)} 
       (hf.iteratedFDeriv_right (by norm_cast; omega))
   simpa only [mFourierCoeff_eq_prod_smul_of_iteratedFDeriv (hf.of_le (by norm_cast; omega)) v hg,
     smul_eq_mul] using hasSum_mFourier_series_of_contDiff hk hgk
+
+
+/-! ### Convergence of the Fourier series in every `C^k` norm -/
+
+/-- A multiple `c • mFourier n` of a Fourier mode, read on `d → ℝ`, has `j`-th derivative bounded
+by `‖c‖ (2π card d) ^ j ‖n‖ ^ j`, where `‖n‖` is the sup norm. -/
+private theorem norm_iteratedFDeriv_smul_mFourier_coe_le (c : ℂ) (n : d → ℤ) (j : ℕ)
+    (x : d → ℝ) :
+    ‖iteratedFDeriv ℝ j (fun y : d → ℝ ↦ c • mFourier n fun i ↦ (y i : UnitAddCircle)) x‖ ≤
+      ‖c‖ * (2 * π * Fintype.card d) ^ j * ‖n‖ ^ j := by
+  have hsum_abs : ∑ i, |(n i : ℝ)| ≤ Fintype.card d * ‖n‖ := by
+    calc ∑ i, |(n i : ℝ)| ≤ ∑ _i : d, ‖n‖ := Finset.sum_le_sum fun i _ ↦ by
+          simpa [Int.norm_eq_abs] using norm_le_pi_norm n i
+      _ = Fintype.card d * ‖n‖ := by simp
+  rw [iteratedFDeriv_const_smul_apply' ((contDiff_mFourier_coe n).contDiffAt.of_le
+    (mod_cast le_top : (j : WithTop ℕ∞) ≤ (⊤ : ℕ∞))), norm_smul, mul_assoc, ← mul_pow,
+    mul_assoc (2 * π)]
+  refine mul_le_mul_of_nonneg_left ((norm_iteratedFDeriv_mFourier_coe_le n j x).trans ?_)
+    (norm_nonneg _)
+  exact pow_le_pow_left₀ (by positivity) (mul_le_mul_of_nonneg_left hsum_abs (by positivity)) j
+
+/-- **Termwise differentiation of the Fourier series.** If the lift of `f` to `d → ℝ` is `C^K` for
+some `K` exceeding `card d + k`, then its `k`-th derivative is the sum of the `k`-th derivatives
+of the terms `mFourierCoeff f n • mFourier n` of its Fourier series. -/
+theorem iteratedFDeriv_eq_tsum_mFourier {f : UnitAddTorus d → ℂ} {k K : ℕ}
+    (hK : Fintype.card d + k < K)
+    (hf : ContDiff ℝ K fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) (x : d → ℝ) :
+    iteratedFDeriv ℝ k (fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) x =
+      ∑' n, iteratedFDeriv ℝ k
+        (fun y : d → ℝ ↦ mFourierCoeff f n • mFourier n fun i ↦ (y i : UnitAddCircle)) x := by
+  have hfc : Continuous f := isOpenQuotientMap_coe.isQuotientMap.continuous_iff.2 hf.continuous
+  have hlift : (fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) =
+      fun x ↦ ∑' n, mFourierCoeff f n • mFourier n fun i ↦ (x i : UnitAddCircle) := by
+    funext x
+    have h := (hasSum_mFourier_series_of_contDiff (f := ⟨f, hfc⟩) (by omega) hf).map
+      (ContinuousMap.evalCLM ℂ fun i ↦ (x i : UnitAddCircle))
+      (ContinuousMap.evalCLM ℂ _).continuous
+    exact h.tsum_eq.symm
+  rw [hlift]
+  refine congrFun (iteratedFDeriv_tsum (N := k)
+    (fun n ↦ ((contDiff_mFourier_coe n).const_smul _).of_le (mod_cast le_top))
+    (fun j hj ↦ ?_) (fun j n x _ ↦ norm_iteratedFDeriv_smul_mFourier_coe_le _ n j x) le_rfl) x
+  refine ((summable_pow_mul_norm_mFourierCoeff (j := j) (by norm_cast at hj; omega) hf).mul_left
+    ((2 * π * Fintype.card d) ^ j)).congr fun n ↦ ?_
+  ring
+
+/-- **Convergence of the Fourier series in `C^k`.** If the lift of `f` to `d → ℝ` is `C^K` for
+some `K` exceeding `card d + k`, then the `k`-th derivatives of the partial sums
+`∑ n ∈ s, mFourierCoeff f n • mFourier n` of its Fourier series, read on `d → ℝ`, converge
+uniformly to the `k`-th derivative of the lift as the finite set `s` of frequencies grows. -/
+theorem tendstoUniformly_iteratedFDeriv_sum_mFourier {f : UnitAddTorus d → ℂ} {k K : ℕ}
+    (hK : Fintype.card d + k < K)
+    (hf : ContDiff ℝ K fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) :
+    TendstoUniformly
+      (fun (s : Finset (d → ℤ)) (x : d → ℝ) ↦ iteratedFDeriv ℝ k
+        (fun y : d → ℝ ↦ ∑ n ∈ s, mFourierCoeff f n • mFourier n fun i ↦ (y i : UnitAddCircle)) x)
+      (iteratedFDeriv ℝ k fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) Filter.atTop := by
+  classical
+  set e : (d → ℤ) → (d → ℝ) → ℂ :=
+    fun n y ↦ mFourierCoeff f n • mFourier n fun i ↦ (y i : UnitAddCircle)
+  -- A summable majorant of the `k`-th derivatives of the terms.
+  set v : (d → ℤ) → ℝ := fun n ↦ ‖mFourierCoeff f n‖ * (2 * π * Fintype.card d) ^ k * ‖n‖ ^ k
+  have hbound (n : d → ℤ) (x : d → ℝ) : ‖iteratedFDeriv ℝ k (e n) x‖ ≤ v n :=
+    norm_iteratedFDeriv_smul_mFourier_coe_le _ n k x
+  have hv : Summable v :=
+    ((summable_pow_mul_norm_mFourierCoeff (j := k) (by omega) hf).mul_left
+      ((2 * π * Fintype.card d) ^ k)).congr fun n ↦ by ring
+  have hpartial (s : Finset (d → ℤ)) (x : d → ℝ) :
+      iteratedFDeriv ℝ k (fun y ↦ ∑ n ∈ s, e n y) x = ∑ n ∈ s, iteratedFDeriv ℝ k (e n) x :=
+    (congrFun (iteratedFDeriv_sum fun n _ ↦ ((contDiff_mFourier_coe n).const_smul _).of_le
+      (mod_cast le_top : (k : WithTop ℕ∞) ≤ (⊤ : ℕ∞))) x).trans (Finset.sum_apply _ _ _)
+  rw [funext (iteratedFDeriv_eq_tsum_mFourier hK hf)]
+  convert tendstoUniformly_tsum hv hbound using 1
+  exact funext fun s ↦ funext (hpartial s)
+
+/-! ### Trigonometric approximation on the open unit cube -/
+
+/-- The periodic extension `x ↦ ∑ᶠ m, g (x + m)` of a function `g` on `d → ℝ`. -/
+private def periodize (g : (d → ℝ) → ℂ) (x : d → ℝ) : ℂ :=
+  ∑ᶠ m : d → ℤ, g (x + fun i ↦ (m i : ℝ))
+
+variable {g : (d → ℝ) → ℂ}
+
+/-- Near any point, only finitely many integer translates of a function supported in the open
+unit cube are nonzero. -/
+private theorem exists_finset_periodize_eq (hg : Function.support g ⊆ Metric.ball 0 (1 / 2))
+    (x₀ : d → ℝ) : ∃ T : Finset (d → ℤ), ∀ x ∈ Metric.ball x₀ (1 / 2),
+      periodize g x = ∑ m ∈ T, g (x + fun i ↦ (m i : ℝ)) := by
+  classical
+  set N : ℤ := ⌈‖x₀‖⌉ + 1 with hN
+  refine ⟨Fintype.piFinset fun _ ↦ Finset.Icc (-N) N, fun x hx ↦ ?_⟩
+  refine finsum_eq_sum_of_support_subset _ fun m hm ↦ ?_
+  have hball := hg hm
+  rw [mem_ball_zero_iff] at hball
+  rw [Metric.mem_ball, dist_eq_norm] at hx
+  simp only [Finset.mem_coe, Fintype.mem_piFinset, Finset.mem_Icc]
+  intro i
+  have h1 : |x i + m i| < 1 / 2 := by
+    simpa [Real.norm_eq_abs] using (norm_le_pi_norm (x + fun i ↦ (m i : ℝ)) i).trans_lt hball
+  have h2 : |x i| < ‖x₀‖ + 1 / 2 := by
+    have := norm_le_pi_norm x i
+    have := norm_sub_norm_le x x₀
+    rw [Real.norm_eq_abs] at *
+    linarith
+  have h3 : ‖x₀‖ ≤ (⌈‖x₀‖⌉ : ℝ) := Int.le_ceil _
+  have h4 : |(m i : ℝ)| < N := by
+    have : |(m i : ℝ)| ≤ |x i + m i| + |x i| := by
+      calc |(m i : ℝ)| = |(x i + m i) - x i| := by ring_nf
+        _ ≤ |x i + m i| + |x i| := abs_sub _ _
+    rw [hN]
+    push_cast
+    linarith
+  rw [abs_lt] at h4
+  exact ⟨by exact_mod_cast h4.1.le, by exact_mod_cast h4.2.le⟩
+
+/-- The periodic extension of a smooth function supported in the open unit cube is smooth. -/
+private theorem contDiff_periodize (hg : Function.support g ⊆ Metric.ball 0 (1 / 2))
+    (hg' : ContDiff ℝ ∞ g) : ContDiff ℝ ∞ (periodize g) := by
+  refine contDiff_iff_contDiffAt.2 fun x₀ ↦ ?_
+  obtain ⟨T, hT⟩ := exists_finset_periodize_eq hg x₀
+  have hsum : ContDiff ℝ ∞ fun x ↦ ∑ m ∈ T, g (x + fun i ↦ (m i : ℝ)) :=
+    ContDiff.sum fun m _ ↦ hg'.comp (contDiff_id.add contDiff_const)
+  exact hsum.contDiffAt.congr_of_eventuallyEq
+    (Filter.eventually_of_mem (Metric.ball_mem_nhds x₀ (by norm_num)) hT)
+
+omit [Fintype d] in
+/-- The periodic extension has every integer vector as a period. -/
+private theorem periodize_add (x : d → ℝ) (n : d → ℤ) :
+    periodize g (x + fun i ↦ (n i : ℝ)) = periodize g x := by
+  unfold periodize
+  calc ∑ᶠ m : d → ℤ, g (x + (fun i ↦ (n i : ℝ)) + fun i ↦ (m i : ℝ))
+      = ∑ᶠ m : d → ℤ, (fun m' : d → ℤ ↦ g (x + fun i ↦ (m' i : ℝ))) (Equiv.addLeft n m) :=
+        finsum_congr fun m ↦ congrArg g <| by
+          ext i
+          simp only [Pi.add_apply, Equiv.coe_addLeft, Int.cast_add]
+          ring
+    _ = ∑ᶠ m : d → ℤ, g (x + fun i ↦ (m i : ℝ)) :=
+        finsum_comp_equiv (Equiv.addLeft n) (f := fun m' : d → ℤ ↦ g (x + fun i ↦ (m' i : ℝ)))
+
+/-- On the open unit cube, the periodic extension of a function supported there is the function
+itself. -/
+private theorem periodize_eq_of_mem_ball (hg : Function.support g ⊆ Metric.ball 0 (1 / 2))
+    {x : d → ℝ} (hx : x ∈ Metric.ball (0 : d → ℝ) (1 / 2)) : periodize g x = g x := by
+  unfold periodize
+  rw [finsum_eq_single _ 0 fun m hm ↦ ?_]
+  · congr 1
+    ext i
+    simp
+  · refine Function.notMem_support.1 fun hmem ↦ ?_
+    have hball := hg hmem
+    rw [mem_ball_zero_iff] at hball hx
+    obtain ⟨i, hi⟩ : ∃ i, m i ≠ 0 := by simpa using Function.ne_iff.1 hm
+    have h1 : |x i + m i| < 1 / 2 := by
+      simpa [Real.norm_eq_abs] using (norm_le_pi_norm (x + fun i ↦ (m i : ℝ)) i).trans_lt hball
+    have h2 : |x i| < 1 / 2 := by
+      simpa [Real.norm_eq_abs] using (norm_le_pi_norm x i).trans_lt hx
+    have h3 : (1 : ℝ) ≤ |(m i : ℝ)| := by exact_mod_cast Int.one_le_abs hi
+    have : |(m i : ℝ)| ≤ |x i + m i| + |x i| := by
+      calc |(m i : ℝ)| = |(x i + m i) - x i| := by ring_nf
+        _ ≤ |x i + m i| + |x i| := abs_sub _ _
+    linarith
+
+/-- **Trigonometric approximation in `C^∞` on the open unit cube.** A smooth function `g` on
+`d → ℝ` supported in the open unit cube `‖x‖ < 1 / 2` (sup norm) is approximated in every `C^k`
+norm on that cube by trigonometric polynomials: there are coefficients `c n` (the Fourier
+coefficients of the periodic extension of `g`) such that for every `k`, the `k`-th derivatives of
+`∑ n ∈ s, c n exp (2πi ∑ i, n i x i)` converge to that of `g`, uniformly on the cube, as the
+finite set `s` of frequencies grows. -/
+theorem exists_tendstoUniformlyOn_iteratedFDeriv_sum_cexp
+    (hg : ContDiff ℝ ∞ g) (hsupp : Function.support g ⊆ Metric.ball 0 (1 / 2)) :
+    ∃ c : (d → ℤ) → ℂ, ∀ k : ℕ, TendstoUniformlyOn
+      (fun (s : Finset (d → ℤ)) (x : d → ℝ) ↦ iteratedFDeriv ℝ k
+        (fun y : d → ℝ ↦ ∑ n ∈ s, c n * cexp (2 * π * I * ∑ i, (n i : ℂ) * y i)) x)
+      (iteratedFDeriv ℝ k g) Filter.atTop (Metric.ball 0 (1 / 2)) := by
+  -- Descend the periodic extension to the torus and expand it in its Fourier series.
+  have hG := contDiff_periodize hsupp hg
+  obtain ⟨f, -, hf⟩ := exists_continuous_comp_coe_eq hG.continuous fun n x ↦ periodize_add x n
+  have hlift : (fun x : d → ℝ ↦ f fun i ↦ (x i : UnitAddCircle)) = periodize g := funext hf
+  refine ⟨mFourierCoeff f, fun k ↦ ?_⟩
+  have h := tendstoUniformly_iteratedFDeriv_sum_mFourier (k := k)
+    (K := Fintype.card d + k + 1) (by omega) (hlift ▸ hG.of_le
+      (mod_cast le_top : ((Fintype.card d + k + 1 : ℕ) : WithTop ℕ∞) ≤ (⊤ : ℕ∞)))
+  simp only [mFourier_coe_apply, smul_eq_mul, hlift] at h
+  refine h.tendstoUniformlyOn.congr_right fun x hx ↦ ?_
+  -- On the open cube the periodic extension agrees with `g` near every point.
+  refine (Filter.EventuallyEq.iteratedFDeriv ℝ (Filter.eventually_of_mem
+    (Metric.isOpen_ball.mem_nhds hx) fun y hy ↦ periodize_eq_of_mem_ball hsupp hy) k).eq_of_nhds
 
 end TauCeti.UnitAddTorus
