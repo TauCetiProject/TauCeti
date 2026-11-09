@@ -113,4 +113,9 @@ theorem weightRefinement_single_le_iff (m : MonomialOrder σ) (w : σ → ℕ) {
       w i < w j ∨ w i = w j ∧ single i 1 ≼[m] single j 1 := by
   simp [weightRefinement_le_iff, weight_single]
 
+/-- A proper multiple of an exponent is larger in every monomial order. -/
+theorem toSyn_lt_toSyn_add (m : MonomialOrder σ) (k : σ →₀ ℕ) {s : σ →₀ ℕ} (hs : s ≠ 0) :
+    m.toSyn k < m.toSyn (k + s) :=
+  m.toSyn_strictMono (lt_add_of_pos_right k (pos_iff_ne_zero.mpr hs))
+
 end MonomialOrder

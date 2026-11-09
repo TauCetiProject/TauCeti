@@ -38,10 +38,11 @@ section SeminormedAddGroup
 
 variable [SeminormedAddGroup E]
 
-/-- A real function tending to `0` along `cofinite` that is nonnegative somewhere attains its
-supremum. -/
-theorem Filter.Tendsto.exists_forall_le_of_zero_le {α : Type*} {v : α → ℝ}
-    (hv : Tendsto v cofinite (𝓝 0)) {a : α} (ha : 0 ≤ v a) : ∃ t, ∀ s, v s ≤ v t := by
+/-- A function to a linearly ordered topological space that tends to `b` along `cofinite` and
+is at least `b` somewhere attains its supremum. -/
+theorem Filter.Tendsto.exists_forall_le_of_le {α β : Type*} [LinearOrder β] [TopologicalSpace β]
+    [OrderTopology β] {v : α → β} {b : β} (hv : Tendsto v cofinite (𝓝 b)) {a : α}
+    (ha : b ≤ v a) : ∃ t, ∀ s, v s ≤ v t := by
   by_cases h : ∀ s, v s ≤ v a
   · exact ⟨a, h⟩
   obtain ⟨s₁, hs₁⟩ := not_forall.mp h
@@ -60,7 +61,7 @@ theorem Filter.Tendsto.exists_forall_norm_le [Nonempty ι] {f : ι → E}
   obtain ⟨i⟩ := ‹Nonempty ι›
   have hnorm : Tendsto (fun i ↦ ‖f i‖) cofinite (𝓝 0) := by
     simpa only [norm_zero] using hf.norm
-  exact hnorm.exists_forall_le_of_zero_le (a := i) (norm_nonneg _)
+  exact hnorm.exists_forall_le_of_le (a := i) (norm_nonneg _)
 
 /-- A family on a nonempty index type tending to zero along the cofinite filter attains the
 supremum of the norms of its terms. -/

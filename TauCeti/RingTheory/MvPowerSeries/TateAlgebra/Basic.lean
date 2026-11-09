@@ -18,6 +18,7 @@ import Mathlib.LinearAlgebra.FreeModule.StrongRankCondition
 import Mathlib.RingTheory.MvPolynomial.Basic
 import Mathlib.SetTheory.Cardinal.Order
 import TauCeti.Analysis.Normed.Group.NullFamily
+import TauCeti.Data.Finsupp.MonomialOrder.Refinement
 import TauCeti.RingTheory.MvPowerSeries.Rename
 
 /-!
@@ -191,7 +192,7 @@ theorem _root_.TauCeti.MvPowerSeries.exists_weighted_uniform_limit {ι E : Type*
 weighted coefficient norms has a restricted limit, with uniform weighted error estimates.
 This is the common limit construction for scalar and module-valued Gauss completeness. -/
 theorem _root_.TauCeti.MvPowerSeries.exists_weighted_coefficient_limit {σ E : Type*}
-    [SeminormedAddCommGroup E] [CompleteSpace E] {c : σ → ℝ} [∀ i, Fact (0 < c i)]
+    [SeminormedAddCommGroup E] [CompleteSpace E] {c : σ → ℝ} (hc : ∀ i, 0 ≤ c i)
     (A : ℕ → (σ →₀ ℕ) → E)
     (hres : ∀ k, Tendsto (fun t ↦ ‖A k t‖ * t.prod (c · ^ ·)) cofinite (𝓝 0))
     (hC : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ l ≥ N, ∀ t,
@@ -201,16 +202,17 @@ theorem _root_.TauCeti.MvPowerSeries.exists_weighted_coefficient_limit {σ E : T
       ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t, ‖A k t - a t‖ * t.prod (c · ^ ·) ≤ ε := by
   obtain ⟨a, hunif⟩ := TauCeti.MvPowerSeries.exists_weighted_uniform_limit _ A hC
   refine ⟨a, ?_, hunif⟩
+  have hw (t : σ →₀ ℕ) : 0 ≤ t.prod (c · ^ ·) := Finset.prod_nonneg fun i _ ↦ pow_nonneg (hc i) _
   -- A uniform weighted limit again vanishes at infinity.
   refine tendsto_order.mpr ⟨fun b hb ↦ .of_forall fun t ↦
-    hb.trans_le (mul_nonneg (norm_nonneg _) (prod_pow_pos t).le), fun ε hε ↦ ?_⟩
+    hb.trans_le (mul_nonneg (norm_nonneg _) (hw t)), fun ε hε ↦ ?_⟩
   obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
   filter_upwards [(hres N).eventually (gt_mem_nhds (half_pos hε))] with t ht
   calc
     ‖a t‖ * t.prod (c · ^ ·) ≤ ‖A N t‖ * t.prod (c · ^ ·) +
         ‖A N t - a t‖ * t.prod (c · ^ ·) := by
       rw [← add_mul]
-      exact mul_le_mul_of_nonneg_right (norm_le_norm_add_norm_sub _ _) (prod_pow_pos t).le
+      exact mul_le_mul_of_nonneg_right (norm_le_norm_add_norm_sub _ _) (hw t)
     _ < ε / 2 + ε / 2 := add_lt_add_of_lt_of_le ht (hN N le_rfl t)
     _ = ε := add_halves ε
 
@@ -323,7 +325,7 @@ theorem exists_achievesGaussNorm (f : IsRestricted.subring (R := R) c) :
     ∃ t, AchievesGaussNorm norm c (f : MvPowerSeries σ R) t := by
   set v : (σ →₀ ℕ) → ℝ := fun t ↦ ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)
   have hv : Tendsto v cofinite (𝓝 0) := f.2
-  obtain ⟨t, ht⟩ := hv.exists_forall_le_of_zero_le (a := 0) (by simp [v])
+  obtain ⟨t, ht⟩ := hv.exists_forall_le_of_le (a := 0) (by simp [v])
   refine ⟨t, ?_⟩
   rw [AchievesGaussNorm, gaussNorm]
   exact le_antisymm (le_ciSup ⟨v t, by rintro _ ⟨s, rfl⟩; exact ht s⟩ t) (ciSup_le ht)
@@ -448,7 +450,7 @@ instance [CompleteSpace R] : CompleteSpace
     (IsRestricted.subring (R := R) c) := by
   refine Metric.complete_of_cauchySeq_tendsto fun F hF ↦ ?_
   obtain ⟨a, hg, hunif⟩ := TauCeti.MvPowerSeries.exists_weighted_coefficient_limit
-    (fun k t ↦ coeff t (F k : MvPowerSeries σ R)) (fun k ↦ (F k).2)
+    (fun i ↦ (hc i).out.le) (fun k t ↦ coeff t (F k : MvPowerSeries σ R)) (fun k ↦ (F k).2)
     (by
       intro ε hε
       obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hF ε hε
@@ -463,11 +465,6 @@ instance [CompleteSpace R] : CompleteSpace
   intro t
   rw [AddSubgroupClass.coe_sub, map_sub, coeff_apply (a : MvPowerSeries σ R) t]
   exact hN k hk t
-
-/-- A proper multiple of an exponent is larger in every monomial order. -/
-private theorem toSyn_lt_toSyn_add (m : MonomialOrder σ) (k : σ →₀ ℕ) {s : σ →₀ ℕ} (hs : s ≠ 0) :
-    m.toSyn k < m.toSyn (k + s) :=
-  m.toSyn_strictMono (lt_add_of_pos_right k (pos_iff_ne_zero.mpr hs))
 
 omit [IsUltrametricDist R] in
 /-- A nonzero restricted series has a largest exponent, for a monomial order `m`, achieving its
@@ -485,7 +482,7 @@ theorem IsRestricted.exists_achievesGaussNorm_max (m : MonomialOrder σ) {f : Mv
     have h := hf.eventually (gt_mem_nhds hi_pos)
     simpa only [eventually_cofinite, not_lt] using h
   let S := hfinite.toFinset
-  obtain ⟨j, hbound⟩ := Filter.Tendsto.exists_forall_le_of_zero_le (v := a) hf hi_pos.le
+  obtain ⟨j, hbound⟩ := Filter.Tendsto.exists_forall_le_of_le (v := a) hf hi_pos.le
   have hj : j ∈ S := by simpa [S] using hbound i
   have heq : a j = gaussNorm norm c f := by
     rw [gaussNorm]
@@ -544,7 +541,7 @@ theorem IsRestricted.norm_coeff_mul_norm_coeff_lt [DecidableEq σ] (m : Monomial
       exact absurd hk (not_lt_of_ge (m.zero_le _)))
     exact (mul_nonneg (norm_nonneg _) (prod_pow_pos _).le).trans_lt
       (hmax (k + Finsupp.single s 1)
-        (toSyn_lt_toSyn_add m k (Finsupp.single_ne_zero.mpr one_ne_zero)))
+        (m.toSyn_lt_toSyn_add k (Finsupp.single_ne_zero.mpr one_ne_zero)))
   -- Every summand at this exponent has the same positive weight.
   have hweight : p.1.prod (c · ^ ·) * p.2.prod (c · ^ ·) =
       i.prod (c · ^ ·) * j.prod (c · ^ ·) := by
@@ -595,8 +592,8 @@ theorem IsRestricted.exists_norm_coeff_mul_norm_coeff_lt [DecidableEq σ] {f g :
   let m : MonomialOrder σ := MonomialOrder.lex
   obtain ⟨i, hi, himax⟩ := hf.exists_achievesGaussNorm_max m hf0
   obtain ⟨j, hj, hjmax⟩ := hg.exists_achievesGaussNorm_max m hg0
-  exact ⟨i, j, hi, hj, fun s hs ↦ himax _ (toSyn_lt_toSyn_add m i hs),
-    fun s hs ↦ hjmax _ (toSyn_lt_toSyn_add m j hs),
+  exact ⟨i, j, hi, hj, fun s hs ↦ himax _ (m.toSyn_lt_toSyn_add i hs),
+    fun s hs ↦ hjmax _ (m.toSyn_lt_toSyn_add j hs),
     fun p hp hne ↦ hf.norm_coeff_mul_norm_coeff_lt m hg hi himax hj hjmax hp hne⟩
 
 /-- The Gauss norm of a product of restricted series is the product of their Gauss norms when

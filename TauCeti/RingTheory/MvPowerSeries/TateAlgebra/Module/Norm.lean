@@ -273,7 +273,7 @@ theorem uniformContinuous_coeff (t : σ →₀ ℕ) :
 instance [CompleteSpace E] : CompleteSpace (Gauss c E) := by
   refine Metric.complete_of_cauchySeq_tendsto fun A hA ↦ ?_
   obtain ⟨a, hres, hunif⟩ := exists_weighted_coefficient_limit
-    (fun k ↦ (A k : (σ →₀ ℕ) → E))
+    (fun i ↦ (Fact.out : 0 < c i).le) (fun k ↦ (A k : (σ →₀ ℕ) → E))
     (fun k ↦ isRestrictedFamily_iff.mp (mem_addSubgroup.mp (A k).toAddSubgroup.2)) (by
       intro ε hε
       obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hA ε hε
