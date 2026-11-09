@@ -55,6 +55,30 @@ theorem weylCoxeterSystem_mulEquiv_symm_apply
     exact (weylCoxeterSystem_simple P b i).trans (weylCoxeterHom_apply_simple P b i).symm
   exact DFunLike.congr_fun h w
 
+/-- The stored isomorphism cancels the specified presentation homomorphism. -/
+@[simp]
+theorem weylCoxeterSystem_mulEquiv_weylCoxeterHom
+    (w : (coxeterMatrixOfBase P b).Group) :
+    (weylCoxeterSystem P b).mulEquiv (weylCoxeterHom P b w) = w := by
+  rw [← weylCoxeterSystem_mulEquiv_symm_apply, MulEquiv.apply_symm_apply]
+
+/-- The specified presentation homomorphism cancels the stored isomorphism. -/
+@[simp]
+theorem weylCoxeterHom_weylCoxeterSystem_mulEquiv (w : P.weylGroup) :
+    weylCoxeterHom P b ((weylCoxeterSystem P b).mulEquiv w) = w := by
+  rw [← weylCoxeterSystem_mulEquiv_symm_apply, MulEquiv.symm_apply_apply]
+
+/-- Transporting the presented Coxeter system through the inverse stored isomorphism gives
+exactly the Weyl Coxeter system, including its indexed simple reflections. -/
+theorem toCoxeterSystem_map_weylCoxeterSystem_mulEquiv_symm :
+    (coxeterMatrixOfBase P b).toCoxeterSystem.map
+      (weylCoxeterSystem P b).mulEquiv.symm = weylCoxeterSystem P b := by
+  apply CoxeterSystem.simple_determines_coxeterSystem
+  funext i
+  simp only [CoxeterSystem.map_simple, weylCoxeterSystem_mulEquiv_symm_apply,
+    CoxeterMatrix.toCoxeterSystem_simple, weylCoxeterHom_apply_simple,
+    weylCoxeterSystem_simple]
+
 /-- The inverse marking sends an actual simple root reflection to its own abstract generator. -/
 @[simp]
 theorem weylCoxeterSystem_mulEquiv_ofIdx (i : b.support) :
@@ -78,13 +102,9 @@ by its image under the specified presentation homomorphism. -/
 theorem presentation_length_eq_inversions (w : (coxeterMatrixOfBase P b).Group) :
     (coxeterMatrixOfBase P b).toCoxeterSystem.length w =
       (inversions P b (weylCoxeterHom P b w)).ncard := by
-  have hcs : (coxeterMatrixOfBase P b).toCoxeterSystem.map
-      (weylCoxeterSystem P b).mulEquiv.symm = weylCoxeterSystem P b := by
-    apply CoxeterSystem.simple_determines_coxeterSystem
-    rfl
   have h := length_map (coxeterMatrixOfBase P b).toCoxeterSystem
     (weylCoxeterSystem P b).mulEquiv.symm w
-  simpa only [hcs, length_weylCoxeterSystem_eq,
+  simpa only [toCoxeterSystem_map_weylCoxeterSystem_mulEquiv_symm, length_weylCoxeterSystem_eq,
     weylCoxeterSystem_mulEquiv_symm_apply] using h.symm
 
 /-- The marked presentation preserves and reflects reduced words. -/
@@ -124,23 +144,12 @@ theorem isRightDescent_presentation_iff_not_isPos
 /-- Any Coxeter system on the Weyl group with the same indexed simple reflections has
 length equal to the intrinsic inversion count. The matrix need not be definitionally
 `coxeterMatrixOfBase P b`. -/
-theorem length_eq_inversions_of_simple_eq {C : CoxeterMatrix b.support}
+theorem length_eq_ncard_inversions_of_simple_eq {C : CoxeterMatrix b.support}
     (cs : CoxeterSystem C P.weylGroup)
     (hcs : ∀ i, cs.simple i = weylGroup.ofIdx P (i : ι)) (w : P.weylGroup) :
     cs.length w = (inversions P b w).ncard := by
-  have hword (l : List b.support) : cs.wordProd l = wordProd P b l := by
-    induction l with
-    | nil => simp
-    | cons i l ih => simp only [CoxeterSystem.wordProd_cons, wordProd_cons, hcs, ih]
-  apply le_antisymm
-  · obtain ⟨l, hl, hlen⟩ := exists_wordProd_eq_and_length_eq_ncard_inversions P b w
-    calc
-      cs.length w = cs.length (cs.wordProd l) := congrArg cs.length ((hword l).trans hl).symm
-      _ ≤ l.length := cs.length_wordProd_le l
-      _ = _ := hlen
-  · obtain ⟨l, hl, rfl⟩ := cs.exists_isReduced w
-    have hlen := hl.eq
-    rw [hword] at hlen ⊢
-    exact (ncard_inversions_wordProd_le_length P b l).trans_eq hlen.symm
+  exact (cs.length_eq_of_simple_eq (weylCoxeterSystem P b)
+    (by simpa only [weylCoxeterSystem_simple] using hcs) w).trans
+    (length_weylCoxeterSystem_eq P b w)
 
 end RootPairing

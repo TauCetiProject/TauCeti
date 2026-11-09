@@ -21,7 +21,8 @@ maximal length in a finite Coxeter group has every simple reflection as a left d
 
 Finally, the length function is transported along the two canonical constructions on Coxeter
 systems, `CoxeterSystem.reindex` and `CoxeterSystem.map`: relabelling the simple reflections or
-pushing the system through a group isomorphism leaves lengths unchanged.
+pushing the system through a group isomorphism leaves lengths unchanged. More generally, length
+depends only on the indexed simple reflections, even across different Coxeter matrices.
 
 ## Main definitions
 
@@ -194,5 +195,25 @@ theorem length_map (e : W ≃* H) (w : W) : (cs.map e).length (e w) = cs.length 
       _ = (cs.map e).length (e w) := by rw [hw, hω.eq]
 
 end Transport
+
+/-- Coxeter systems on the same group with the same indexed simple reflections have the same
+length function, even if their Coxeter matrices differ. -/
+theorem _root_.CoxeterSystem.length_eq_of_simple_eq {M' : CoxeterMatrix B}
+    (cs' : CoxeterSystem M' W) (h : ∀ i, cs.simple i = cs'.simple i) (w : W) :
+    cs.length w = cs'.length w := by
+  have hs : cs.simple = cs'.simple := funext h
+  apply le_antisymm
+  · obtain ⟨l, hl, rfl⟩ := cs'.exists_isReduced w
+    calc
+      cs.length (cs'.wordProd l) = cs.length (cs.wordProd l) := by
+        simp only [CoxeterSystem.wordProd, hs]
+      _ ≤ l.length := cs.length_wordProd_le l
+      _ = cs'.length (cs'.wordProd l) := hl.eq.symm
+  · obtain ⟨l, hl, rfl⟩ := cs.exists_isReduced w
+    calc
+      cs'.length (cs.wordProd l) = cs'.length (cs'.wordProd l) := by
+        simp only [CoxeterSystem.wordProd, hs]
+      _ ≤ l.length := cs'.length_wordProd_le l
+      _ = cs.length (cs.wordProd l) := hl.eq.symm
 
 end TauCeti
