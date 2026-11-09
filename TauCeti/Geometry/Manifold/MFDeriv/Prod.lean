@@ -25,8 +25,8 @@ fields on a product manifold.
 
 * `TauCeti.mfderiv_comp_fst` and `TauCeti.mfderiv_comp_snd`: the derivative of a map that factors
   through a projection.
-* `TauCeti.mfderiv_snd_apply`: the derivative of the second projection takes the second component
-  of a tangent vector.
+* `TauCeti.mfderiv_fst_apply` and `TauCeti.mfderiv_snd_apply`: the derivative of a projection
+  takes the corresponding component of a tangent vector.
 * `TauCeti.mvfderiv_comp_fst_apply` and `TauCeti.mvfderiv_comp_snd_apply`: the same for
   vector-valued functions, applied to a tangent vector.
 * `TauCeti.mvfderiv_comp_fst_mul_comp_snd_apply`: the product rule for a function of the first
@@ -106,6 +106,16 @@ theorem mfderiv_comp_snd (g : N → M'') (p : M × N) :
     -- Both zeros live in the same space of linear maps, up to the index of the target tangent
     -- space.
     rfl
+
+/-- The derivative of the first projection sends a tangent vector on a product to its first
+component. -/
+theorem mfderiv_fst_apply (p : M × N) (v : TangentSpace (I.prod J) p) :
+    mfderiv (I.prod J) I Prod.fst p v = v.1 := by
+  rw [mfderiv_fst]
+  -- `ContinuousLinearMap.fst` is the first projection by definition. Its domain, the product of
+  -- the coordinate tangent spaces, is the tangent space of the product only by definition, so
+  -- `ContinuousLinearMap.coe_fst'` cannot be rewritten here.
+  rfl
 
 /-- The derivative of the second projection sends a tangent vector on a product to its second
 component. -/
