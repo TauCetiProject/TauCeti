@@ -24,6 +24,8 @@ allowed, so the result applies both to embeddings and to possibly singular proje
 
 * `TauCeti.Probability.gaussianReal_map_const_add_const_mul`: the affine pushforward formula for
   a real Gaussian measure.
+* `TauCeti.Probability.gaussianReal_map_linear_combination`: orthogonal combinations of two
+  independent standard Gaussians remain standard Gaussian.
 * `TauCeti.Probability.map_affine_multivariateGaussian`: the affine pushforward formula for a
   multivariate
   Gaussian measure.
@@ -49,6 +51,23 @@ open MeasureTheory ProbabilityTheory
 open scoped MatrixOrder RealInnerProductSpace NNReal
 
 namespace TauCeti.Probability
+
+/-- An orthogonal combination of two independent standard Gaussians is standard Gaussian. -/
+theorem gaussianReal_map_linear_combination (a b : ℝ) (hab : a ^ 2 + b ^ 2 = 1) :
+    ((gaussianReal 0 1).prod (gaussianReal 0 1)).map
+      (fun p : ℝ × ℝ ↦ a * p.1 + b * p.2) = gaussianReal 0 1 := by
+  have hmap : ((gaussianReal 0 1).prod (gaussianReal 0 1)).map
+      (fun p : ℝ × ℝ ↦ a * p.1 + b * p.2) =
+      ((gaussianReal 0 1).map (fun x ↦ a * x)) ∗
+        ((gaussianReal 0 1).map (fun y ↦ b * y)) := by
+    rw [Measure.conv, Measure.map_prod_map _ _ (by fun_prop) (by fun_prop),
+      Measure.map_map (by fun_prop) (by fun_prop)]
+    rfl
+  rw [hmap, gaussianReal_map_const_mul, gaussianReal_map_const_mul]
+  simp only [mul_zero, mul_one, gaussianReal_conv_gaussianReal, zero_add]
+  congr 1
+  apply NNReal.coe_injective
+  simpa using hab
 
 /-- The affine image of a real Gaussian has mean `a + b * m` and variance `b ^ 2 * v`.
 This includes zero slopes and zero variances. -/
