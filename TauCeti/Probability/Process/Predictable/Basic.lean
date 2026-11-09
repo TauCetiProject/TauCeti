@@ -17,7 +17,6 @@ left endpoint step approximations on countable regular partitions, including the
 on the predictable time-zero slice. Continuous paths give a corollary. This supplies predictability
 of continuous asset processes and hence of Borel functions of time and those assets.
 
-Predictable sets are measurable in the ambient time-product sigma-algebra.
 The time projection is measurable for the predictable sigma-algebra, so deterministic Borel
 time dependence can be combined with predictable processes. A predictably measurable function
 remains strongly predictable when extended by zero outside a measurable set of times.
@@ -140,15 +139,6 @@ theorem MeasureTheory.StronglyAdapted.isStronglyPredictable_of_continuous
     {ℱ : Filtration ℝ≥0 m} {u : ℝ≥0 → Ω → E} (hu : StronglyAdapted ℱ u)
     (hc : ∀ ω, Continuous (fun t => u t ω)) : IsStronglyPredictable ℱ u :=
   hu.isStronglyPredictable_of_isLeftContinuous fun ω => (hc ω).isLeftContinuous
-
-/-- Predictable sets are measurable in the ambient time-product sigma-algebra. -/
-theorem MeasureTheory.Filtration.predictable_le_prod {ι Ω : Type*} {m : MeasurableSpace Ω}
-    [LinearOrder ι] [OrderBot ι] [TopologicalSpace ι] [OrderClosedTopology ι]
-    [MeasurableSpace ι] [OpensMeasurableSpace ι] (ℱ : Filtration ι m) :
-    ℱ.predictable ≤ inferInstanceAs (MeasurableSpace (ι × Ω)) :=
-  measurableSpace_le_predictable_of_measurableSet
-    (fun _ hA => (measurableSet_singleton _).prod (ℱ.le _ _ hA))
-    (fun _ _ hA => measurableSet_Ioi.prod (ℱ.le _ _ hA))
 
 /-- Calendar time is measurable for the predictable sigma-algebra. -/
 theorem MeasureTheory.Filtration.measurable_fst_predictable {ι Ω : Type*} {m : MeasurableSpace Ω}
