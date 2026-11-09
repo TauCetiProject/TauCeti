@@ -123,8 +123,10 @@ theorem localWeight_eq_sum_finrank_inf_iInf_ker {L : ι → Dual K V}
   have hrank (j : Fin n) :=
     Dual.finrank_span_restrict_add_finrank_inf_iInf_ker L U
       {i | c i ≤ a j.castSucc}
-  have hsum := fun b ↦
-    sum_eq_mul_card_add_sum_gap_mul_card_filter ha b (fun i _ ↦ hc (mem_range_self i))
+  have hsum (b : Finset ι) : (∑ i ∈ b, c i) = a 0 * b.card +
+      ∑ j : Fin n, (a j.succ - a j.castSucc) * (b.filter fun i ↦ a j.castSucc < c i).card := by
+    simpa only [nsmul_eq_mul'] using
+      ha.sum_eq_card_nsmul_add_sum_card_filter_nsmul_gap b (fun i _ ↦ hc (mem_range_self i))
   apply le_antisymm
   -- A sublevel-adapted basis attains every lower bound simultaneously.
   · obtain ⟨b, hb, hspan⟩ := exists_localWeightBasis_spanning_sublevels hL c U

@@ -11,7 +11,6 @@ public import TauCeti.Logic.Equiv.Fin.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Finset.Max
-import Mathlib.Tactic.Ring
 
 /-!
 # Sums and products over `Fin n`
@@ -34,9 +33,11 @@ A product over the pairs `Fin 2 → α` is the double product over their two ent
 over pairs of paths `Fin (i + 1) → X` and `Fin (j + 1) → X` meeting at an endpoint is a sum over
 the paths of length `i + j` (`Fin.sum_sum_ite_apply_last_eq_apply_zero`).
 
-A strictly increasing list `a` on `Fin (n + 1)` in a linearly ordered commutative ring telescopes:
-`a k` is `a 0` plus the gaps below `a k`, and a finset sum of values in the list is `a 0` times the
-cardinality plus the gaps times the numbers of elements above each threshold.
+A strictly increasing list `a` on `Fin (n + 1)` in an additive group with a preorder (no
+compatibility between the two is needed) telescopes (`StrictMono.eq_add_sum_ite_sub`): `a k` is
+`a 0` plus the gaps below `a k`, and a finset sum of values in the list is the cardinality times
+`a 0` plus, for each gap, the number of elements above its lower threshold times the gap
+(`StrictMono.sum_eq_card_nsmul_add_sum_card_filter_nsmul_gap`).
 -/
 
 public section
@@ -188,9 +189,13 @@ theorem sum_finSuccAboveEquiv_last {M : Type*} [AddCommMonoid M] (n : ℕ)
   simpa only [finSuccAboveEquiv_last_apply] using
     Equiv.sum_comp (finSuccAboveEquiv (Fin.last n)) z
 
-/-- Telescoping a strictly increasing list `a` in a linearly ordered additive group expresses `a k`
-as `a 0` plus the successive gaps below `a k`. -/
-theorem eq_add_sum_ite_sub_of_strictMono {R : Type*} [AddCommGroup R] [LinearOrder R] {n : ℕ}
+end TauCeti
+
+namespace StrictMono
+
+/-- Telescoping a strictly increasing list `a` in an additive group with a preorder expresses
+`a k` as `a 0` plus the successive gaps below `a k`. -/
+theorem eq_add_sum_ite_sub {R : Type*} [AddCommGroup R] [Preorder R] [DecidableLT R] {n : ℕ}
     {a : Fin (n + 1) → R} (ha : StrictMono a)
     (k : Fin (n + 1)) : a k = a 0 +
       ∑ j : Fin n, if a j.castSucc < a k then a j.succ - a j.castSucc else 0 := by
@@ -204,21 +209,21 @@ theorem eq_add_sum_ite_sub_of_strictMono {R : Type*} [AddCommGroup R] [LinearOrd
     rw [heq, Fin.sum_Iic_sub]
     rw [add_sub_cancel]
 
-/-- When a finite strictly increasing list in a linearly ordered commutative ring contains the
-values of `c` on a finset `b`, the sum of `c` over `b` is `a 0` times its cardinality plus the
-successive gaps times the number of elements above each threshold. -/
-theorem sum_eq_mul_card_add_sum_gap_mul_card_filter {R : Type*} [CommRing R] [LinearOrder R]
+/-- When a finite strictly increasing list in an additive group with a preorder contains the
+values of `c` on a finset `b`, the sum of `c` over `b` is its cardinality times `a 0` plus, for
+each successive gap, the number of elements above its lower threshold times the gap. -/
+theorem sum_eq_card_nsmul_add_sum_card_filter_nsmul_gap {R : Type*} [AddCommGroup R] [Preorder R]
+    [DecidableLT R]
     {n : ℕ} {a : Fin (n + 1) → R}
     (ha : StrictMono a) {ι : Type*} {c : ι → R}
     (b : Finset ι) (hc : ∀ i ∈ b, c i ∈ Set.range a) :
-    (∑ i ∈ b, c i) = a 0 * b.card +
-      ∑ j : Fin n, (a j.succ - a j.castSucc) *
-        (b.filter fun i ↦ a j.castSucc < c i).card := by
+    (∑ i ∈ b, c i) = b.card • a 0 +
+      ∑ j : Fin n, (b.filter fun i ↦ a j.castSucc < c i).card • (a j.succ - a j.castSucc) := by
   classical
   have hci (i : ι) (hi : i ∈ b) : c i = a 0 +
       ∑ j : Fin n, if a j.castSucc < c i then a j.succ - a j.castSucc else 0 := by
     obtain ⟨k, hk⟩ := hc i hi
-    simpa only [hk] using eq_add_sum_ite_sub_of_strictMono ha k
+    simpa only [hk] using ha.eq_add_sum_ite_sub k
   calc
     (∑ i ∈ b, c i) = ∑ i ∈ b, (a 0 +
         ∑ j : Fin n, if a j.castSucc < c i then a j.succ - a j.castSucc else 0) :=
@@ -226,9 +231,8 @@ theorem sum_eq_mul_card_add_sum_gap_mul_card_filter {R : Type*} [CommRing R] [Li
     _ = _ := by
       rw [Finset.sum_add_distrib, Finset.sum_comm]
       congr 1
-      · simp [mul_comm]
+      · simp
       · refine Finset.sum_congr rfl fun j _ ↦ ?_
-        rw [← Finset.sum_filter]
-        simp [mul_comm, sub_mul]
+        rw [← Finset.sum_filter, Finset.sum_const]
 
-end TauCeti
+end StrictMono
