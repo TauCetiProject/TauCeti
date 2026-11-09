@@ -53,7 +53,8 @@ maps on the plumbed sphere is computed.
   angular form `dt` of the end `q` back to the angular form of the end at `∞`.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbingMap_image_union`: the image of the part
   `Re z > -L` of `S'` and the part `Re z < L` of `S` cover exactly the four-punctured sphere
-  `ℂ ∖ {0, 1, ψ_{q,L}(1)}`.
+  `ℂ ∖ {0, 1, ψ_{q,L}(1)}`; `TauCeti.ThricePuncturedSphere.Puncture.mapsTo_plumbingMap` is the
+  inclusion of the first piece.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbingMap_image_inter`: the two pieces overlap
   exactly in the image of the neck `-L < Re z < 0`.
 * `TauCeti.ThricePuncturedSphere.Puncture.contDiff_plumbingMap`,
@@ -311,6 +312,14 @@ theorem plumbingMap_image_union {q : Puncture} (hq : q ≠ inf) {L : ℝ} (hL : 
         fun h => hw1 (by rw [← hw', h])⟩, ?_⟩, hw'⟩
       rw [re_endCoord_inf_sub_endCenter_div q L hc]
       linarith
+
+/-- The plumbing map sends the part `Re z > -L` of the inserted thrice-punctured sphere, measured
+in the end coordinate at `∞`, into the four-punctured sphere `ℂ ∖ {0, 1, ψ_{q,L}(1)}`. -/
+theorem mapsTo_plumbingMap {q : Puncture} (hq : q ≠ inf) {L : ℝ} (hL : 0 < L) :
+    MapsTo (q.plumbingMap L) {w | (w ≠ 0 ∧ w ≠ 1) ∧ -L < (inf.endCoord w).re}
+      {w | (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1} := fun _ hw => by
+  rw [← plumbingMap_image_union hq hL]
+  exact Or.inl (mem_image_of_mem _ hw)
 
 /-- **The neck of the plumbing.** The two pieces of `plumbingMap_image_union` overlap exactly in
 the image of the neck `-L < Re z < 0` of the end at `∞` of the inserted sphere, which is the part
