@@ -140,9 +140,9 @@ theorem exists_eventuallyEq_riemannianExp_smul_of_dist_eq_abs {γ : ℝ → M} {
     exact (ENNReal.ofReal_lt_ofReal_iff hR).2 ((abs_le.mpr ht).trans_lt hδR)
   set v : ℝ → TangentSpace I (γ 0) := fun t ↦ riemannianLog I M (γ 0) (Metric.ball 0 R) (γ t)
   have hv : ∀ t ∈ Icc (-δ) δ, v t ∈ Metric.ball 0 R :=
-    fun t ht ↦ hU.riemannianLog_mem (himage t ht)
+    fun t ht ↦ riemannianLog_mem (himage t ht)
   have hexp : ∀ t ∈ Icc (-δ) δ, riemannianExp I M (γ 0) (v t) = γ t :=
-    fun t ht ↦ hU.riemannianExp_riemannianLog (himage t ht)
+    fun t ht ↦ riemannianExp_riemannianLog (himage t ht)
   have hnorm : ∀ t ∈ Icc (-δ) δ, ‖v t‖ = |t| := by
     intro t ht
     have h := hU.dist_riemannianExp_eq_of_mem_ball Subset.rfl (hv t ht)
