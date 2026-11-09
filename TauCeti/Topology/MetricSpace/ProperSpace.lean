@@ -38,6 +38,9 @@ theorem.  It holds in every pseudometric space; the Riemannian structure plays n
   of an increasing sequence of open sets with compact closures inside it.
 * `TopologicalSpace.Opens.exists_monotone_isCompact_closure_iUnion_eq`: the same exhaustion of an
   open set `Ω`, as a sequence of `Opens` whose traces on the subspace `Ω` cover it.
+* `TauCeti.exists_forall_closedBall_le_sub_of_lt_ball`: in a proper space, a function continuous on
+  `closedBall y R` and strictly below `M` on `ball y R` stays a uniform margin below `M` on every
+  smaller closed ball about `y`.
 
 ## References
 
@@ -151,5 +154,19 @@ theorem _root_.TopologicalSpace.Opens.exists_monotone_isCompact_closure_iUnion_e
   refine ⟨fun n ↦ ⟨V n, hVo n⟩, hVc, hVΩ, fun _ _ h ↦ hVmono h, hVU, ?_⟩
   simp only [← preimage_iUnion, TopologicalSpace.Opens.coe_mk, hVU]
   exact Subtype.coe_preimage_self _
+
+/-- In a proper space, a function continuous on `closedBall y R` and strictly below `M` on
+`ball y R` stays a uniform margin `δ > 0` below `M` on every smaller closed ball `closedBall y r`,
+`r < R`. -/
+theorem exists_forall_closedBall_le_sub_of_lt_ball [ProperSpace α] {u : α → ℝ} {y : α}
+    {r R M : ℝ} (hrR : r < R) (hucont : ContinuousOn u (closedBall y R))
+    (hlt : ∀ x ∈ ball y R, u x < M) :
+    ∃ δ > 0, ∀ x ∈ closedBall y r, u x ≤ M - δ := by
+  rcases (closedBall y r).eq_empty_or_nonempty with h | h
+  · exact ⟨1, one_pos, by simp [h]⟩
+  obtain ⟨z, hz, hzmax⟩ := (isCompact_closedBall y r).exists_isMaxOn h
+    (hucont.mono (closedBall_subset_closedBall hrR.le))
+  refine ⟨M - u z, sub_pos.2 (hlt z (closedBall_subset_ball hrR hz)), fun x hx ↦ ?_⟩
+  linarith [isMaxOn_iff.1 hzmax x hx]
 
 end TauCeti

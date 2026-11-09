@@ -14,11 +14,15 @@ import Mathlib.Tactic.GCongr
 
 A polynomial weight times a real Gaussian is bounded. This file records an explicit bound for
 `(1 + r) ^ m * exp (-a r²)` on `r ≥ 0`, the scalar estimate behind the decay of Gaussian Schwartz
-functions.
+functions. It also records a linear lower bound for the growth of the Gaussian `exp (-a r²)` as `r`
+decreases from `s` towards `0`, the estimate behind the Gaussian barrier of Hopf's boundary-point
+lemma.
 
 ## Main results
 
 * `TauCeti.one_add_pow_mul_exp_neg_mul_sq_le`: an explicit bound for `(1 + r) ^ m * exp (-a r²)`.
+* `TauCeti.mul_exp_le_exp_neg_mul_sub_sq_sub`: for `0 ≤ a` and `0 ≤ t ≤ s`,
+  `a s t exp (-a s²) ≤ exp (-a (s - t)²) - exp (-a s²)`.
 -/
 
 public section
@@ -54,5 +58,20 @@ theorem one_add_pow_mul_exp_neg_mul_sq_le {a : ℝ} (ha : 0 < a) (m : ℕ) {r : 
     _ = m ! / (a / 2) ^ m * Real.exp a := by
       rw [mul_assoc, mul_left_comm (Real.exp (a / 2 * u ^ 2)), ← Real.exp_add, add_neg_cancel,
         Real.exp_zero, mul_one]
+
+/-- The Gaussian grows at least linearly as its argument decreases: for `0 ≤ a` and `0 ≤ t ≤ s`,
+`a s t exp (-a s²) ≤ exp (-a (s - t)²) - exp (-a s²)`. -/
+theorem mul_exp_le_exp_neg_mul_sub_sq_sub {a s t : ℝ} (ha : 0 ≤ a) (ht : 0 ≤ t) (hts : t ≤ s) :
+    a * s * t * Real.exp (-a * s ^ 2) ≤ Real.exp (-a * (s - t) ^ 2) - Real.exp (-a * s ^ 2) := by
+  have hsplit : Real.exp (-a * (s - t) ^ 2) =
+      Real.exp (-a * s ^ 2) * Real.exp (a * (s ^ 2 - (s - t) ^ 2)) := by
+    rw [← Real.exp_add]
+    ring_nf
+  have hE := Real.exp_pos (-a * s ^ 2)
+  have h1 := Real.add_one_le_exp (a * (s ^ 2 - (s - t) ^ 2))
+  have h2 : a * s * t ≤ a * (s ^ 2 - (s - t) ^ 2) := by
+    nlinarith [mul_nonneg (mul_nonneg ha ht) (sub_nonneg.2 hts)]
+  rw [hsplit]
+  nlinarith [mul_le_mul_of_nonneg_left h1 hE.le, mul_le_mul_of_nonneg_left h2 hE.le]
 
 end TauCeti

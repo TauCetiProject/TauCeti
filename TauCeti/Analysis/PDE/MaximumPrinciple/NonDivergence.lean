@@ -76,6 +76,9 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
   `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_neg`: linearity of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_norm_sq`: the operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`
   applied to `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`.
+* `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq`: the operator
+  `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to the Gaussian `exp (-α ‖x - y‖²)`, the barrier of Hopf's
+  boundary-point lemma.
 * `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`: **the weak maximum
   principle** for `-L + c`, `c ≥ 0`.
 * `TauCeti.PDE.ge_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_ge_frontier`: the weak minimum
@@ -279,6 +282,70 @@ theorem sum_mul_fderiv_fderiv_add_fderiv_norm_sq {A : Matrix ι ι ℝ}
       fderiv ℝ (fun y : EuclideanSpace ℝ ι ↦ ‖y‖ ^ 2) x v = 2 * A.trace + 2 * ⟪x, v⟫ := by
   simp only [fderiv_fderiv_norm_sq_apply]
   simp [EuclideanSpace.inner_single_left, Matrix.trace, Finset.mul_sum, mul_comm]
+
+/-- **The Gaussian barrier.** The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to the Gaussian
+`x ↦ exp (-α ‖x - y‖²)` is
+`exp (-α ‖x - y‖²) (4 α² (x - y)ᵀ A (x - y) - 2 α tr A - 2 α ⟪x - y, v⟫)`. -/
+theorem sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq {A : Matrix ι ι ℝ} {α : ℝ}
+    {y x v : EuclideanSpace ℝ ι} :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun z ↦ Real.exp (-α * ‖z - y‖ ^ 2)) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
+      fderiv ℝ (fun z ↦ Real.exp (-α * ‖z - y‖ ^ 2)) x v =
+    Real.exp (-α * ‖x - y‖ ^ 2) *
+      (4 * α ^ 2 * A.toQuadraticForm' (x - y) - 2 * α * A.trace - 2 * α * ⟪x - y, v⟫) := by
+  -- The Gaussian is `φ ∘ q` with `φ s = exp (-α s)` and `q z = ‖z - y‖²`.
+  let q : EuclideanSpace ℝ ι → ℝ := fun z ↦ ‖z - y‖ ^ 2
+  let φ : ℝ → ℝ := fun s ↦ Real.exp (-α * s)
+  have hcomp : (fun z ↦ Real.exp (-α * ‖z - y‖ ^ 2)) = φ ∘ q := rfl
+  have hq : ContDiffAt ℝ 2 q x :=
+    ((contDiff_norm_sq ℝ).comp (contDiff_id.sub contDiff_const)).contDiffAt
+  have hφ : ContDiffAt ℝ 2 φ (q x) := by fun_prop
+  have hD1 (w : EuclideanSpace ℝ ι) : fderiv ℝ q x w = 2 * ⟪x - y, w⟫ := by
+    have h := fderiv_norm_sq_sub_comp (i := id) (a := y) (x := x) differentiableAt_id
+    simpa [q, inner_sub_left] using congrArg (· w) h
+  have hid : fderiv ℝ (fderiv ℝ (id : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)) x = 0 := by
+    have h : fderiv ℝ (id : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) =
+        fun _ ↦ ContinuousLinearMap.id ℝ _ := funext fun _ ↦ fderiv_id
+    rw [h]
+    exact fderiv_const_apply _
+  have hD2 (w w' : EuclideanSpace ℝ ι) : fderiv ℝ (fderiv ℝ q) x w w' = 2 * ⟪w, w'⟫ := by
+    have h := fderiv_fderiv_norm_sq_sub_comp_apply (i := id) (a := y) (x := x) contDiffAt_id w w'
+    simpa [q, hid] using h
+  have hφ1 : deriv φ = fun s ↦ -α * φ s := by
+    have h := iteratedDeriv_exp_const_mul 1 (-α)
+    rwa [iteratedDeriv_one, pow_one] at h
+  have hφ2 : iteratedDeriv 2 φ = fun s ↦ α ^ 2 * φ s := by
+    have h := iteratedDeriv_exp_const_mul 2 (-α)
+    rwa [neg_sq] at h
+  rw [hcomp, fderiv_comp x (hφ.differentiableAt two_ne_zero) (hq.differentiableAt two_ne_zero)]
+  simp only [fderiv_fderiv_scalar_comp_apply hφ hq, smul_eq_mul, hD1, hD2, hφ1, hφ2,
+    ContinuousLinearMap.comp_apply, fderiv_eq_smul_deriv, EuclideanSpace.inner_single_right]
+  -- Pair the Hessian with `A`: the rank-one part gives the quadratic form, the identity part the
+  -- trace.
+  have hQ : ∑ i, ∑ j, A i j * ((x - y) i * (x - y) j) = A.toQuadraticForm' (x - y) := by
+    simp only [toQuadraticForm'_apply, dotProduct, mulVec, Finset.mul_sum, WithLp.ofLp_sub,
+      Pi.sub_apply]
+    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
+  have htr : ∑ i, ∑ j, A i j * (Pi.single j (1 : ℝ) : ι → ℝ) i = A.trace := by
+    simp [Pi.single_apply, Matrix.trace]
+  calc
+    _ = ∑ i, ∑ j, (4 * α ^ 2 * φ (q x) * (A i j * ((x - y) i * (x - y) j)) -
+          2 * α * φ (q x) * (A i j * (Pi.single j (1 : ℝ) : ι → ℝ) i)) +
+          2 * ⟪x - y, v⟫ * (-α * φ (q x)) := by
+      congr 1
+      refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+      by_cases hij : i = j
+      · subst hij
+        simp only [PiLp.sub_apply, conj_trivial, one_mul, PiLp.single_eq_same, mul_one, neg_mul,
+          mul_neg, Pi.single_eq_same]
+        ring
+      · simp only [PiLp.sub_apply, conj_trivial, one_mul, ne_eq, hij, Ne.symm hij,
+          not_false_eq_true, PiLp.single_eq_of_ne, Pi.single_eq_of_ne, mul_zero, neg_mul, mul_neg,
+          zero_mul, neg_zero, add_zero, sub_zero]
+        ring
+    _ = _ := by
+      simp only [Finset.sum_sub_distrib, ← Finset.mul_sum, hQ, htr, φ, q]
+      ring
 
 variable [Nonempty ι]
 

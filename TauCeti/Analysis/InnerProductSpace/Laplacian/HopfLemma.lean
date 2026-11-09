@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.LowerOrderMaximumPrinciple
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Topology.MetricSpace.ProperSpace
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Slope
@@ -194,20 +196,10 @@ private theorem fderiv_pos_of_add_mul_hopfBarrier_le {u : E → ℝ} {y e : E} {
       rw [hx₀def, sub_smul]
       abel
     rw [hsub, norm_smul, Real.norm_eq_abs, he, mul_one, abs_of_nonneg (by linarith)]
-  set F : ℝ → ℝ := fun h ↦ u x₀ - u (x₀ - h • e) - ε * hopfBarrier y R p (x₀ - h • e)
-    with hFdef
-  have hF0 : F 0 = 0 := by
-    have hz : hopfBarrier y R p x₀ = 0 := by
-      have h := hnorm_sub (h := 0) hR
-      rw [zero_smul, sub_zero, sub_zero] at h
-      exact hopfBarrier_eq_zero_of_mem_sphere (mem_sphere_iff_norm.mpr h)
-    simp only [hFdef, zero_smul, sub_zero, hz, mul_zero, sub_self]
-  -- The derivative of `u` along the inward ray at `x₀`.
-  have hline : HasDerivAt (fun h : ℝ ↦ x₀ - h • e) (-e) 0 := by
-    simpa using ((hasDerivAt_id (0 : ℝ)).smul_const e).const_sub x₀
-  have h1 : HasDerivAt (fun h : ℝ ↦ u (x₀ - h • e)) (-(fderiv ℝ u x₀ e)) 0 := by
-    have h := hderiv.hasFDerivAt.comp_hasDerivAt_of_eq (x := 0) hline (by simp)
-    rwa [map_neg] at h
+  have hz : hopfBarrier y R p x₀ = 0 := by
+    have h := hnorm_sub (h := 0) hR
+    rw [zero_smul, sub_zero, sub_zero] at h
+    exact hopfBarrier_eq_zero_of_mem_sphere (mem_sphere_iff_norm.mpr h)
   -- The derivative of the barrier along the inward ray at `x₀`.
   have h2 : HasDerivAt (fun h : ℝ ↦ hopfBarrier y R p (x₀ - h • e)) (-p * R ^ (p - 1)) 0 := by
     have hs : HasDerivAt (fun h : ℝ ↦ R - h) (-1) 0 := by
@@ -221,35 +213,13 @@ private theorem fderiv_pos_of_add_mul_hopfBarrier_le {u : E → ℝ} {y e : E} {
       filter_upwards [eventually_lt_nhds hR] with h hh
       rw [hopfBarrier, hnorm_sub hh]
     simpa only [mul_neg, mul_one, neg_mul] using hbase.congr_of_eventuallyEq hev
-  have hFderiv : HasDerivAt F (fderiv ℝ u x₀ e - ε * (-p * R ^ (p - 1))) 0 := by
-    have h := ((hasDerivAt_const (0 : ℝ) (u x₀)).sub h1).sub (h2.const_mul ε)
-    rw [sub_neg_eq_add, zero_add] at h
-    exact h.congr_of_eventuallyEq (.of_forall fun _ ↦ rfl)
-  -- `F ≥ 0` to the right of `0`, so its right derivative at `0` is nonnegative.
-  have hslope : Tendsto (fun h : ℝ ↦ h⁻¹ * F h) (𝓝[>] (0 : ℝ))
-      (𝓝 (fderiv ℝ u x₀ e - ε * (-p * R ^ (p - 1)))) := by
-    simpa only [zero_add, hF0, sub_zero, smul_eq_mul] using hFderiv.tendsto_slope_zero_right
-  have hslope_nonneg : ∀ᶠ h in 𝓝[>] (0 : ℝ), 0 ≤ h⁻¹ * F h := by
+  -- Along the inward ray, the decrease of `u` dominates the barrier term.
+  have hkey : ε * (-p * R ^ (p - 1)) ≤ fderiv ℝ u x₀ e := by
+    refine le_fderiv_apply_of_le_sub_sub_smul hderiv (h2.const_mul ε) (by simp [hz]) ?_
     filter_upwards [Ioc_mem_nhdsGT hδ] with h hh
-    have := hray h hh
-    exact mul_nonneg (inv_nonneg.mpr hh.1.le) (by simp only [hFdef]; linarith)
-  have hkey : 0 ≤ fderiv ℝ u x₀ e - ε * (-p * R ^ (p - 1)) := ge_of_tendsto hslope hslope_nonneg
+    linarith [hray h hh]
   have hεpos' : 0 < ε * (-p * R ^ (p - 1)) :=
     mul_pos hε (mul_pos (by linarith) (Real.rpow_pos_of_pos hR _))
-  linarith
-
-/-- A function continuous on `closedBall y R` and below `M` on the open ball stays a uniform
-margin `δ` below `M` on the sphere of half the radius. -/
-private theorem exists_forall_sphere_le_sub_of_lt_ball {u : E → ℝ} {y : E} {R M : ℝ} (hR : 0 < R)
-    (hucont : ContinuousOn u (closedBall y R)) (hlt : ∀ x ∈ ball y R, u x < M) :
-    ∃ δ, 0 < δ ∧ ∀ w ∈ sphere y (R / 2), u w ≤ M - δ := by
-  have hhalfpos : (0 : ℝ) < R / 2 := by linarith
-  obtain ⟨z, hzball, hzmax⟩ := (isCompact_closedBall y (R / 2)).exists_isMaxOn
-    (nonempty_closedBall.mpr hhalfpos.le)
-    (hucont.mono (closedBall_subset_closedBall (by linarith)))
-  have hzlt : u z < M := hlt z (closedBall_subset_ball (by linarith) hzball)
-  refine ⟨M - u z, sub_pos.mpr hzlt, fun w hw ↦ ?_⟩
-  have hwz : u w ≤ u z := hzmax (sphere_subset_closedBall hw)
   linarith
 
 /-- The perturbation `u + ε • hopfBarrier y R p` of a subsolution `u` of `-Δ - b·∇ + c` is still a
@@ -379,7 +349,10 @@ theorem fderiv_pos_of_mul_le_laplacian_add_fderiv_of_lt_ball_of_le_sphere {u c :
     rw [hpdef]
     nlinarith [mul_nonneg hβ hR.le, mul_nonneg hγ (sq_nonneg R)]
   -- The inner sphere carries a uniform positive margin below the maximum `u x₀`.
-  obtain ⟨δ, hδpos, hsphere_le⟩ := exists_forall_sphere_le_sub_of_lt_ball hR hucont hlt
+  obtain ⟨δ, hδpos, hball_le⟩ :=
+    exists_forall_closedBall_le_sub_of_lt_ball (half_lt_self hR) hucont hlt
+  have hsphere_le : ∀ w ∈ sphere y (R / 2), u w ≤ u x₀ - δ := fun w hw ↦
+    hball_le w (sphere_subset_closedBall hw)
   -- The closed annulus on which the barrier is controlled.
   set K : Set E := closedBall y R \ ball y (R / 2) with hKdef
   have hKsub : K ⊆ closedBall y R := sdiff_subset
