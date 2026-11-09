@@ -126,6 +126,9 @@ theorem ker_bilinFormAt_mpullback_snd_fiberForm (h : σ.IsNondegenerate)
   ext ξ
   rw [mem_suspensionHorizontalSubspace_iff, Submodule.mem_comap, mfderiv_snd,
     Manifold.tangentSpaceProdEquiv_apply]
+  -- `TangentSpace (I.prod J) q` is by definition the product of the factor tangent spaces, so
+  -- `ContinuousLinearMap.snd` applied to `ξ` unfolds to `ξ.2`. Rewriting with
+  -- `ContinuousLinearMap.coe_snd'` fails, as its domain is only definitionally the type of `ξ`.
   rfl
 
 /-- The pulled back fiber form `ω_v` of a nondegenerate two-form `σ` preserved by `φ` is

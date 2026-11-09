@@ -353,15 +353,11 @@ complement of the kernel is nondegenerate. This extends
 theorem IsRefl.nondegenerate_restrict_of_isCompl_ker {B : LinearMap.BilinForm R M}
     (hB : B.IsRefl) {W : Submodule R M} (hW : IsCompl W (LinearMap.ker B)) :
     (B.restrict W).Nondegenerate := by
-  refine B.nondegenerate_restrict_of_disjoint_orthogonal hB
-    (Submodule.disjoint_def.2 fun v hv hv' ↦ ?_)
-  -- A vector of `W` orthogonal to `W` is also orthogonal to `ker B`, so to `W ⊔ ker B = ⊤`.
-  refine Submodule.disjoint_def.1 hW.disjoint v hv (LinearMap.mem_ker.2 (LinearMap.ext fun u ↦ ?_))
-  obtain ⟨w, hw, k, hk, rfl⟩ :=
-    Submodule.mem_sup.1 (hW.sup_eq_top.symm ▸ Submodule.mem_top : u ∈ W ⊔ LinearMap.ker B)
-  rw [map_add, hB.eq_zero ((mem_orthogonal_iff.1 hv') w hw),
-    hB.eq_zero (LinearMap.congr_fun (LinearMap.mem_ker.1 hk) v)]
-  simp
+  -- Since `W ⊔ ker B = ⊤`, the orthogonal complement of `W` is that of `⊤`, namely `ker B`.
+  have h : B.orthogonal W = LinearMap.ker B := by
+    rw [orthogonal, ← Submodule.orthogonalBilin_sup_ker B W, hW.sup_eq_top, ← orthogonal,
+      B.orthogonal_top_eq_ker hB]
+  exact B.nondegenerate_restrict_of_disjoint_orthogonal hB (h ▸ hW.disjoint)
 
 /-- A submodule with perfect flipped restricted pairing is complementary to its right orthogonal
 complement. -/
