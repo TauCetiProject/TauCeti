@@ -149,6 +149,20 @@ theorem eq_polarFactor_iff {V : E →L[𝕜] F} :
   rintro rfl
   exact ⟨T.polarFactor_comp_modulus, fun _ ↦ T.polarFactor_apply_of_mem_ker⟩
 
+/-- The polar factor is natural under conjugation by a linear isometric equivalence:
+the polar factor of `e T e⁻¹` is `e U e⁻¹`. -/
+theorem polarFactor_conj {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
+    [CompleteSpace G] (e : E ≃ₗᵢ[𝕜] G) (T : E →L[𝕜] E) :
+    ((e : E →L[𝕜] G) ∘L T ∘L (e.symm : G →L[𝕜] E)).polarFactor =
+      (e : E →L[𝕜] G) ∘L T.polarFactor ∘L (e.symm : G →L[𝕜] E) := by
+  refine (eq_polarFactor ?_ fun x hx ↦ ?_).symm
+  · rw [modulus_conj]
+    ext x
+    simp
+  · simp only [LinearMap.mem_ker, coe_coe, comp_apply] at hx ⊢
+    rw [T.polarFactor_apply_of_mem_ker (LinearMap.mem_ker.2 ((e : E →L[𝕜] G).map_eq_zero_iff
+      e.injective |>.1 hx)), map_zero]
+
 /-- The polar factor of the zero operator is zero. -/
 @[simp]
 theorem polarFactor_zero : (0 : E →L[𝕜] F).polarFactor = 0 :=

@@ -154,6 +154,19 @@ theorem modulus_zero : (0 : E →L[𝕜] F).modulus = 0 :=
 theorem modulus_neg (T : E →L[𝕜] F) : (-T).modulus = T.modulus :=
   (eq_modulus_iff.2 ⟨T.isPositive_modulus, by simp⟩).symm
 
+/-- The modulus is natural under conjugation by a linear isometric equivalence:
+`|e T e⁻¹| = e |T| e⁻¹`. -/
+theorem modulus_conj (e : E ≃ₗᵢ[𝕜] F) (T : E →L[𝕜] E) :
+    ((e : E →L[𝕜] F) ∘L T ∘L (e.symm : F →L[𝕜] E)).modulus =
+      (e : E →L[𝕜] F) ∘L T.modulus ∘L (e.symm : F →L[𝕜] E) := by
+  refine (eq_modulus_iff.2 ⟨?_, ?_⟩).symm
+  · simpa only [LinearIsometryEquiv.adjoint_eq_symm] using
+      T.isPositive_modulus.conj_adjoint (e : E →L[𝕜] F)
+  · rw [adjoint_comp, adjoint_comp, LinearIsometryEquiv.adjoint_eq_symm,
+      LinearIsometryEquiv.adjoint_eq_symm, LinearIsometryEquiv.symm_symm]
+    ext x
+    simp [modulus_modulus_apply]
+
 /-- The modulus is the square root `CFC.sqrt (T† T)` of the continuous functional calculus, for
 every real algebra structure on `E →L[𝕜] E` compatible with the `𝕜`-action. -/
 theorem modulus_eq_sqrt [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
