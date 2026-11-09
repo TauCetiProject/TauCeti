@@ -624,6 +624,7 @@ orthogonal to any given vector, isotropic or not. -/
 theorem exists_orthogonal_anisotropic_of_three_le_finrank [NeZero (2 : K)]
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hrank : 3 ≤ Module.finrank K V) (y : V) :
     ∃ z : V, Q.IsOrtho z y ∧ Q z ≠ 0 := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
   let B : LinearMap.BilinForm K V := Q.polarBilin
   have hB : B.Nondegenerate := (QuadraticMap.nondegenerate_polar_iff (Q := Q)).mpr hQ

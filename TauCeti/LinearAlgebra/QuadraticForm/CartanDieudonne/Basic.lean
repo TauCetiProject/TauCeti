@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
+import TauCeti.Algebra.Module.Submodule.Map
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Restrict
 import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
 import Mathlib.LinearAlgebra.Eigenspace.Zero
@@ -221,8 +222,7 @@ private theorem finrank_ne_two_of_exceptional
   obtain ⟨a, b, rfl⟩ := Submodule.mem_span_pair.mp hz
   simp [hyx, hyy]
 
-private theorem exceptional_displacement_isotropic
-    [FiniteDimensional K V] [Invertible (2 : K)]
+private theorem exceptional_displacement_isotropic [Invertible (2 : K)]
     (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
     (g : QuadraticMap.orthogonalGroup Q)
     (hexceptional : ∀ x : V, Q x ≠ 0 →
@@ -401,7 +401,8 @@ private theorem exists_reflectionWord_of_apply_eq_self
   have hpos : 0 < n := hn ▸ Module.finrank_pos_iff_exists_ne_zero.mpr ⟨a, hane⟩
   obtain ⟨l, hllen, hlprod⟩ := ih (n - 1) (by omega)
     (by rw [B.finrank_orthogonal hB, finrank_span_singleton hane, hn]) (Q.restrict U) hQU
-    (orthogonalGroup.restrictOrthogonal g ha)
+    (orthogonalGroup.restrict g (map_orthogonal_of_mem_orthogonalGroup g.2
+      (by rw [Submodule.map_span_singleton, LinearEquiv.coe_coe, ha])))
   refine ⟨l.map (anisotropicVectorOfRestrict Q U), by simp only [List.length_map]; omega,
     Subtype.ext (LinearEquiv.toLinearMap_injective ?_)⟩
   refine LinearMap.ext_on_codisjoint (B.isCompl_span_singleton_orthogonal haa).codisjoint
@@ -411,7 +412,7 @@ private theorem exists_reflectionWord_of_apply_eq_self
     rw [reflectionWord_restrict_apply_of_isOrtho Q U l a fun u hu ↦
       (QuadraticMap.associated_isOrtho.mp (hu a (Submodule.mem_span_singleton_self _))).symm]
   · have happ := reflectionWord_restrict_apply Q U l ⟨y, hy⟩
-    rw [hlprod, orthogonalGroup.coe_restrictOrthogonal_apply] at happ
+    rw [hlprod, orthogonalGroup.coe_restrict_apply] at happ
     exact happ
 
 /-- The good case of the induction step: an orthogonal map that fixes an anisotropic vector, or
