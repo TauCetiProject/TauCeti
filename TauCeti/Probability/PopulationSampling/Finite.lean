@@ -84,6 +84,15 @@ theorem sampleWithoutReplacement_def {ι κ : Type*} [Finite κ] [MeasurableSpac
       samplePopulation (uniformOn {k : ι → κ | Function.Injective k}) ρ :=
   (rfl)
 
+/-- Sampling a deterministic population without replacement is the pushforward of uniform
+injective selections. -/
+@[simp]
+theorem sampleWithoutReplacement_dirac {ι κ : Type*} [Finite κ] [MeasurableSpace κ]
+    [MeasurableSingletonClass κ] (x : κ → α) :
+    sampleWithoutReplacement (ι := ι) (Measure.dirac x) =
+      (uniformOn {k : ι → κ | Function.Injective k}).map (fun k i => x (k i)) := by
+  rw [sampleWithoutReplacement_def, samplePopulation_dirac]
+
 /-- Sampling without replacement preserves probability mass whenever an injective selection
 exists. -/
 theorem isProbabilityMeasure_sampleWithoutReplacement {ι κ : Type*} [Finite κ]
@@ -147,6 +156,14 @@ theorem sampleWithReplacement_eq_samplePopulation_uniformOn [Fintype ι] [Finite
     (ρ : Measure (κ → α)) :
     sampleWithReplacement (ι := ι) ρ = samplePopulation (uniformOn (Set.univ : Set (ι → κ))) ρ := by
   rw [sampleWithReplacement_def, ← uniformOn_pi, Set.pi_univ]
+
+/-- Sampling a deterministic population with replacement is the pushforward of uniform
+selections, without an injectivity constraint. -/
+@[simp]
+theorem sampleWithReplacement_dirac [Fintype ι] [Finite κ] (x : κ → α) :
+    sampleWithReplacement (ι := ι) (Measure.dirac x) =
+      (uniformOn (Set.univ : Set (ι → κ))).map (fun k i => x (k i)) := by
+  rw [sampleWithReplacement_eq_samplePopulation_uniformOn, samplePopulation_dirac]
 
 /-- Sampling with replacement from a finite population law gives a finite law. -/
 instance isFiniteMeasure_sampleWithReplacement [Fintype ι] [Finite κ] (ρ : Measure (κ → α))
