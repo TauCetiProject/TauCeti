@@ -10,7 +10,7 @@ public import Mathlib.Geometry.Manifold.ContMDiff.Defs
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
-import TauCeti.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!

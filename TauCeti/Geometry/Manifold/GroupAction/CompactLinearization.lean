@@ -11,6 +11,7 @@ import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.Geometry.Manifold.ContMDiff.PartialDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -29,8 +30,8 @@ The linear action is the isotropy representation `σ g = mfderiv I I (g • ·) 
 `T_x M = E`, which is `TauCeti.tangentRepresentation` since the stabilizer of `x` is all of `G`.
 
 Consequently the fixed locus `M^G` is, near each of its points, a linear subspace in a smooth
-chart: a point `z` of the domain of `e` is fixed by `G` exactly when `e z` lies in the subspace
-of vectors fixed by the tangent representation at `x`
+chart: in an equivariant chart `e` as above, a point `z` of the domain of `e` is fixed by `G`
+exactly when `e z` lies in the subspace of vectors fixed by the tangent representation at `x`
 (`TauCeti.exists_contMDiff_chart_fixedPoints`). This is the local model for a submanifold
 structure on `M^G` with tangent space the invariant vectors at `x`; that structure is not
 constructed here.
@@ -57,7 +58,7 @@ smooth. Compactness of `G` makes the largest `G`-invariant subset of the domain 
   a compact group action at a fixed point.
 * `TauCeti.exists_contMDiff_chart_fixedPoints`: near a fixed point, the fixed locus of a compact
   group action is the preimage of the invariant subspace of the tangent representation under a
-  smooth chart.
+  smooth chart in which the action is the tangent representation.
 
 ## References
 
@@ -144,8 +145,7 @@ private theorem contDiffOn_and_hasFDerivAt_chart_average [MeasurableSpace G] [Bo
   have hU : IsOpen U :=
     χ.isOpen_inter_preimage_symm (isOpen_setOf_forall_smul_mem (G := G) χ.open_source)
   have hUW {w : E} (hw : w ∈ U) (g : G) : (w, g) ∈ W := ⟨hw.1, hw.2 g⟩
-  have hxU : χ x ∈ U := ⟨χ.map_source hxχ, show ∀ g : G, g • χ.symm (χ x) ∈ χ.source from
-    fun g ↦ by rw [χ.left_inv hxχ, hx g]; exact hxχ⟩
+  have hxU : χ x ∈ U := ⟨χ.map_source hxχ, by simpa [χ.left_inv hxχ, hx] using hxχ⟩
   have hΨU (g : G) : ContDiffOn ℝ n (fun w ↦ Ψ (w, g)) U := by
     rw [← contMDiffOn_iff_contDiffOn]
     exact hΨ.comp (contMDiffOn_id.prodMk contMDiffOn_const) fun w hw ↦ hUW hw g
@@ -287,9 +287,10 @@ theorem exists_equivariant_contMDiff_chart_of_compactSpace [ContMDiffSMul IG I n
 variable (IG) in
 /-- **Fixed loci of compact group actions are locally linear.** Under the hypotheses of
 `TauCeti.exists_equivariant_contMDiff_chart_of_compactSpace`, there is a `C^n` chart `e` at the
-fixed point `x`, with `C^n` inverse, `e x = 0` and derivative the identity at `x`, which carries
-the fixed points of `G` in its domain exactly to the tangent vectors at `x` fixed by the tangent
-representation `TauCeti.tangentRepresentation` of the stabilizer `G` of `x`. -/
+fixed point `x`, with `C^n` inverse, `G`-invariant domain, `e x = 0` and derivative the identity
+at `x`, in which `g` acts by the tangent representation `TauCeti.tangentRepresentation` of the
+stabilizer `G` of `x`. The same chart carries the fixed points of `G` in its domain exactly to the
+tangent vectors at `x` fixed by this representation. -/
 theorem exists_contMDiff_chart_fixedPoints [ContMDiffSMul IG I n G M] (hn : 1 ≤ n) {x : M}
     (hx : ∀ g : G, g • x = x)
     (hd : ∀ g ∈ stabilizer G x, MDifferentiableAt I I (fun y : M ↦ g • y) x) :
@@ -297,13 +298,17 @@ theorem exists_contMDiff_chart_fixedPoints [ContMDiffSMul IG I n G M] (hn : 1 �
       x ∈ e.source ∧ e x = 0 ∧
       ContMDiffOn I 𝓘(ℝ, E) n e e.source ∧ ContMDiffOn 𝓘(ℝ, E) I n e.symm e.target ∧
       HasMFDerivAt I 𝓘(ℝ, E) e x (ContinuousLinearMap.id ℝ E) ∧
+      (∀ g : G, ∀ z ∈ e.source,
+        g • z ∈ e.source ∧ e (g • z) = tangentRepresentation hd ⟨g, hx g⟩ (e z)) ∧
       ∀ z ∈ e.source,
         (∀ g : G, g • z = z) ↔ e z ∈ (tangentRepresentation hd).toRepresentation.invariants := by
   obtain ⟨σ, e, -, hxe, hex, he, hes, hequiv, hσ, hderiv⟩ :=
     exists_equivariant_contMDiff_chart_of_compactSpace (I := I) IG hn hx
   have hσd (g : stabilizer G x) (v : E) : tangentRepresentation hd g v = σ g v :=
     DFunLike.congr_fun ((tangentRepresentation_apply hd g).trans (hσ g).symm) v
-  refine ⟨e, hxe, hex, he, hes, hderiv, fun z hz ↦ ?_⟩
+  refine ⟨e, hxe, hex, he, hes, hderiv,
+    fun g z hz ↦ ⟨(hequiv g z hz).1, (hequiv g z hz).2.trans (hσd ⟨g, hx g⟩ (e z)).symm⟩,
+    fun z hz ↦ ?_⟩
   have hinv : e z ∈ (tangentRepresentation hd).toRepresentation.invariants ↔
       ∀ g : G, σ g (e z) = e z := by
     refine (Representation.mem_invariants (tangentRepresentation hd).toRepresentation
