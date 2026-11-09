@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
+public import Mathlib.MeasureTheory.Measure.Decomposition.Lebesgue
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.MeasureTheory.Group.Measure
+import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import Mathlib.Tactic.Linarith
 import Mathlib.Topology.Separation.Regular
 import TauCeti.Topology.Algebra.Support
@@ -102,6 +104,10 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   a set `U`, times a function continuous on `U`, is integrable.
 * `Continuous.integrable_smul_of_continuousOn`: the same for a scalar multiple of a continuous
   compactly supported function by a function continuous on `U`, with `U` not required to be open.
+
+A function locally integrable for a measure `ν` becomes locally integrable for any measure `ρ`
+dominating `ν`, when `ν` has a Lebesgue decomposition with respect to `ρ`, after multiplication
+by the Radon–Nikodym derivative `dν/dρ` (`locallyIntegrable_toReal_rnDeriv_smul`).
 
 ## Attribution
 
@@ -512,3 +518,29 @@ theorem integrable_smul_right_of_hasCompactSupport (hf : LocallyIntegrableOn f s
   exact hf.integrableOn_compact_subset hgs h'g
 
 end MeasureTheory.LocallyIntegrableOn
+
+namespace MeasureTheory
+
+section RadonNikodym
+
+variable {X F : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- If `ν ≪ ρ` and `g` is locally integrable for `ν`, then `(dν/dρ) g` is locally integrable for
+`ρ`. -/
+theorem locallyIntegrable_toReal_rnDeriv_smul {ν ρ : Measure X} [SigmaFinite ν]
+    [Measure.HaveLebesgueDecomposition ν ρ] (hνρ : ν ≪ ρ) {g : X → F} (hg : LocallyIntegrable g ν) :
+    LocallyIntegrable (fun x => (ν.rnDeriv ρ x).toReal • g x) ρ := by
+  intro x
+  obtain ⟨s, hs, hgs⟩ := hg x
+  refine ⟨interior s, interior_mem_nhds.2 hs, ?_⟩
+  have hi := (integrable_rnDeriv_smul_iff hνρ).2
+    ((integrable_indicator_iff isOpen_interior.measurableSet).2 (hgs.mono_set interior_subset))
+  apply (integrable_indicator_iff isOpen_interior.measurableSet).1
+  convert hi using 1
+  ext y
+  by_cases hy : y ∈ interior s <;> simp [hy]
+
+end RadonNikodym
+
+end MeasureTheory
