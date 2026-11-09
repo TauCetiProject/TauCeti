@@ -238,11 +238,13 @@ theorem order_pullback {ω : OneForm Y} {f : X → Y} {x : X}
   simp only [comp_apply, (chartAt ℂ x).left_inv (mem_chart_source ℂ x),
     ← natCast_localMultiplicity hf hnc, ENat.map_natCast, WithTop.coe_natCast, order_def]
 
-/-- The pullback of a `1`-form meromorphic and of finite order at `f x` by a finite holomorphic
-map has finite order at `x`. -/
-theorem order_pullback_ne_top {ω : OneForm Y} (f : FiniteHolomorphicMap X Y) {x : X}
-    (hω : ω.MeromorphicAt (f x)) (hω₀ : ω.order (f x) ≠ ⊤) : (ω.pullback f).order x ≠ ⊤ := by
-  rw [order_pullback hω (Eventually.of_forall fun y ↦ f.holomorphic y) (f.not_eventuallyConst x)]
+/-- The pullback of a `1`-form meromorphic and of finite order at `f x` by a map holomorphic and
+nonconstant near `x` has finite order at `x`. -/
+theorem order_pullback_ne_top {ω : OneForm Y} {f : X → Y} {x : X}
+    (hω : ω.MeromorphicAt (f x)) (hω₀ : ω.order (f x) ≠ ⊤)
+    (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f y)
+    (hnc : ¬ EventuallyConst f (𝓝 x)) : (ω.pullback f).order x ≠ ⊤ := by
+  rw [order_pullback hω hf hnc]
   lift ω.order (f x) to ℤ using hω₀ with k
   exact WithTop.add_ne_top.2 ⟨WithTop.mul_ne_top (WithTop.coe_ne_top) (WithTop.natCast_ne_top _),
     WithTop.coe_ne_top⟩

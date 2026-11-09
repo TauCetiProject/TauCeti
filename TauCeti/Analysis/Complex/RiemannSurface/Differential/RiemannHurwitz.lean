@@ -41,7 +41,7 @@ that comparison is not made here.
 public noncomputable section
 
 open Filter Function OnePoint
-open scoped Manifold
+open scoped Manifold Topology
 
 namespace TauCeti.RiemannSurface
 
@@ -55,13 +55,13 @@ namespace OneForm
 variable [CompactSpace X]
 
 /-- The divisor of the pullback of a `1`-form meromorphic and of finite order everywhere by a
-finite holomorphic map is canonical. -/
-theorem isCanonicalDivisor_divisor_pullback (ω : OneForm Y) (f : FiniteHolomorphicMap X Y)
-    (hω : ∀ y, ω.MeromorphicAt y) (hω₀ : ∀ y, ω.order y ≠ ⊤) :
+holomorphic map which is nowhere locally constant is canonical. -/
+theorem isCanonicalDivisor_divisor_pullback (ω : OneForm Y) {f : X → Y}
+    (hω : ∀ y, ω.MeromorphicAt y) (hω₀ : ∀ y, ω.order y ≠ ⊤)
+    (hf : ∀ x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f x) (hnc : ∀ x, ¬ EventuallyConst f (𝓝 x)) :
     IsCanonicalDivisor (ω.pullback f).divisor :=
-  isCanonicalDivisor_divisor
-    (fun x ↦ (hω (f x)).pullback (Eventually.of_forall fun y ↦ f.holomorphic y))
-    fun x ↦ order_pullback_ne_top f (hω (f x)) (hω₀ (f x))
+  isCanonicalDivisor_divisor (fun x ↦ (hω (f x)).pullback (Eventually.of_forall hf))
+    fun x ↦ order_pullback_ne_top (hω (f x)) (hω₀ (f x)) (Eventually.of_forall hf) (hnc x)
 
 end OneForm
 
@@ -75,7 +75,7 @@ theorem IsCanonicalDivisor.divisorPullback_add_ramificationDivisor {K : WeilDivi
     IsCanonicalDivisor (divisorPullback f K + ramificationDivisor f) := by
   obtain ⟨ω, hω, hω₀, rfl⟩ := hK.exists_divisor_eq
   rw [← OneForm.divisor_pullback ω f hω hω₀]
-  exact OneForm.isCanonicalDivisor_divisor_pullback ω f hω hω₀
+  exact OneForm.isCanonicalDivisor_divisor_pullback ω hω hω₀ f.holomorphic f.not_eventuallyConst
 
 variable [T2Space X]
 
