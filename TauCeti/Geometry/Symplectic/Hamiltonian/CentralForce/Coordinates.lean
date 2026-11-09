@@ -81,7 +81,7 @@ open scoped Manifold ContDiff InnerProductSpace
 
 namespace TauCeti
 
-local instance : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
+local instance centralForceCoordinatesTwoPiPos : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
