@@ -33,6 +33,9 @@ which needs the spectral splitting of `A`, is not proved here.
 
 * `ContinuousLinearMap.HasLyapunovForm`: `A` has a Lyapunov form, unfolded by
   `ContinuousLinearMap.hasLyapunovForm_iff`.
+* `ContinuousLinearMap.isSymmetric_neg_and_forall_le_inner_neg_apply_neg_apply`: `-S` is a
+  Lyapunov form of `-A` whenever `S` is one of `A`, with the same constant;
+  `ContinuousLinearMap.HasLyapunovForm.neg` is the corresponding statement for `HasLyapunovForm`.
 * `ContinuousLinearMap.hasLyapunovForm_of_isSymmetric`: a symmetric operator bounded below has a
   Lyapunov form; `ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric` applies this to a
   limit of symmetric operators.
@@ -72,6 +75,21 @@ def HasLyapunovForm (A : E →L[ℝ] E) : Prop :=
 theorem hasLyapunovForm_iff : A.HasLyapunovForm ↔
     ∃ S : E →L[ℝ] E, (S : E →ₗ[ℝ] E).IsSymmetric ∧ ∃ c > 0, ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (A v), v⟫_ℝ :=
   Iff.rfl
+
+/-- **Negating a Lyapunov form.** If `S` is a Lyapunov form of `A` with constant `c`, then `-S`
+is one of `-A` with the same constant. Along the flow of `A` this reverses time. -/
+theorem isSymmetric_neg_and_forall_le_inner_neg_apply_neg_apply {S : E →L[ℝ] E} {c : ℝ}
+    (hS : (S : E →ₗ[ℝ] E).IsSymmetric) (hcS : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (A v), v⟫_ℝ) :
+    ((-S : E →L[ℝ] E) : E →ₗ[ℝ] E).IsSymmetric ∧ ∀ v, c * ‖v‖ ^ 2 ≤ ⟪(-S) ((-A) v), v⟫_ℝ := by
+  refine ⟨?_, fun v ↦ by simpa only [neg_apply, map_neg, neg_neg] using hcS v⟩
+  rw [toLinearMap_neg]
+  exact hS.neg
+
+/-- If `A` has a Lyapunov form, then so does `-A`. -/
+theorem HasLyapunovForm.neg (h : A.HasLyapunovForm) : (-A).HasLyapunovForm := by
+  obtain ⟨S, hS, c, hc, hcS⟩ := h
+  obtain ⟨hS', hcS'⟩ := isSymmetric_neg_and_forall_le_inner_neg_apply_neg_apply hS hcS
+  exact ⟨-S, hS', c, hc, hcS'⟩
 
 /-- **A symmetric operator bounded below has a Lyapunov form**, namely `S = A` with `c = α²`. -/
 theorem hasLyapunovForm_of_isSymmetric (hA : (A : E →ₗ[ℝ] E).IsSymmetric) {α : ℝ} (hα : 0 < α)

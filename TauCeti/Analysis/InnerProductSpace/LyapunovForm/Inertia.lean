@@ -95,21 +95,11 @@ variable [CompleteSpace E]
 
 /-! ### The Lyapunov function along the flow -/
 
-/-- For symmetric `S`, the derivative of `t ↦ ⟪S w(t), w(t)⟫` along `w(t) = exp (t • A) v` is
-`2 ⟪S (A w), w⟫`. -/
-private theorem hasDerivAt_inner_exp_smul_apply_of_isSymmetric
-    (hS : (S : E →ₗ[ℝ] E).IsSymmetric) (v : E) (t : ℝ) :
-    HasDerivAt (fun t : ℝ ↦ ⟪S (exp (t • A) v), exp (t • A) v⟫_ℝ)
-      (2 * ⟪S (A (exp (t • A) v)), exp (t • A) v⟫_ℝ) t := by
-  convert hasDerivAt_inner_exp_smul_apply A S v t using 1
-  rw [hS.apply_clm, real_inner_comm (A (exp (t • A) v)) (S (exp (t • A) v))]
-  ring
-
 /-- The Lyapunov function increases along the flow. -/
 private theorem monotone_inner_exp_smul_apply (hS : (S : E →ₗ[ℝ] E).IsSymmetric) (hc : 0 < c)
     (hcS : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (A v), v⟫_ℝ) (v : E) :
     Monotone fun t : ℝ ↦ ⟪S (exp (t • A) v), exp (t • A) v⟫_ℝ :=
-  monotone_of_hasDerivAt_nonneg (fun t ↦ hasDerivAt_inner_exp_smul_apply_of_isSymmetric hS v t)
+  monotone_of_hasDerivAt_nonneg (fun t ↦ hasDerivAt_inner_exp_smul_apply_of_isSymmetric A hS v t)
     fun t ↦ by
       have := hcS (exp (t • A) v)
       have : 0 ≤ c * ‖exp (t • A) v‖ ^ 2 := by positivity
@@ -137,7 +127,7 @@ private theorem exists_pos_forall_mul_norm_sq_le_inner_exp_sub
     calc ‖v‖ = ‖exp ((-s) • A) (exp (s • A) v)‖ := congrArg norm hv
       _ ≤ ‖exp ((-s) • A)‖ * ‖exp (s • A) v‖ := le_opNorm _ _
       _ ≤ K * ‖exp (s • A) v‖ := by gcongr
-  have hg := hasDerivAt_inner_exp_smul_apply_of_isSymmetric (A := A) hS v
+  have hg := hasDerivAt_inner_exp_smul_apply_of_isSymmetric A hS v
   have key := (convex_Icc (0 : ℝ) 1).mul_sub_le_image_sub_of_le_deriv
     (f := fun t : ℝ ↦ ⟪S (exp (t • A) v), exp (t • A) v⟫_ℝ)
     (fun t _ ↦ (hg t).continuousAt.continuousWithinAt)
@@ -187,23 +177,13 @@ theorem inner_apply_self_neg_of_mem_stableSubspace (hS : (S : E →ₗ[ℝ] E).I
   have : 0 < δ * ‖v‖ ^ 2 := by positivity
   linarith [h v hv]
 
-omit [CompleteSpace E] in
-/-- If `S` is a Lyapunov form of `A` with constant `c`, then `-S` is one of `-A` with the same
-constant: this exchanges the stable and unstable subspaces. -/
-private theorem lyapunov_neg (hS : (S : E →ₗ[ℝ] E).IsSymmetric)
-    (hcS : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (A v), v⟫_ℝ) :
-    ((-S : E →L[ℝ] E) : E →ₗ[ℝ] E).IsSymmetric ∧ ∀ v, c * ‖v‖ ^ 2 ≤ ⟪(-S) ((-A) v), v⟫_ℝ := by
-  refine ⟨?_, fun v ↦ by simpa only [neg_apply, map_neg, neg_neg] using hcS v⟩
-  rw [toLinearMap_neg]
-  exact hS.neg
-
 /-- **A Lyapunov form is positive definite on the unstable subspace.** -/
 theorem inner_apply_self_pos_of_mem_unstableSubspace (hS : (S : E →ₗ[ℝ] E).IsSymmetric)
     (hc : 0 < c) (hcS : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (A v), v⟫_ℝ) {v : E}
     (hv : v ∈ A.unstableSubspace) (hv0 : v ≠ 0) : 0 < ⟪S v, v⟫_ℝ := by
   rw [← stableSubspace_neg] at hv
-  have := inner_apply_self_neg_of_mem_stableSubspace (lyapunov_neg hS hcS).1 hc
-    (lyapunov_neg hS hcS).2 hv hv0
+  obtain ⟨hS', hcS'⟩ := isSymmetric_neg_and_forall_le_inner_neg_apply_neg_apply hS hcS
+  have := inner_apply_self_neg_of_mem_stableSubspace hS' hc hcS' hv hv0
   rwa [neg_apply, inner_neg_left, neg_lt_zero] at this
 
 /-! ### The stable subspace as a cone -/
@@ -251,8 +231,8 @@ Lyapunov form.** A vector `v` lies in the unstable subspace of `A` exactly when
 theorem mem_unstableSubspace_iff_forall_inner_nonneg (hS : (S : E →ₗ[ℝ] E).IsSymmetric)
     (hc : 0 < c) (hcS : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (A v), v⟫_ℝ) {v : E} :
     v ∈ A.unstableSubspace ↔ ∀ t : ℝ, t ≤ 0 → 0 ≤ ⟪S (exp (t • A) v), exp (t • A) v⟫_ℝ := by
-  rw [← stableSubspace_neg, mem_stableSubspace_iff_forall_inner_nonpos (lyapunov_neg hS hcS).1 hc
-    (lyapunov_neg hS hcS).2]
+  obtain ⟨hS', hcS'⟩ := isSymmetric_neg_and_forall_le_inner_neg_apply_neg_apply hS hcS
+  rw [← stableSubspace_neg, mem_stableSubspace_iff_forall_inner_nonpos hS' hc hcS']
   have key (t : ℝ) : ⟪(-S) (exp (t • -A) v), exp (t • -A) v⟫_ℝ =
       -⟪S (exp ((-t) • A) v), exp ((-t) • A) v⟫_ℝ := by
     rw [smul_neg, ← neg_smul, neg_apply, inner_neg_left]
@@ -351,8 +331,9 @@ theorem finrank_unstableSubspace_eq_finrank_pointSpectralSubspace_Ioi
     (hS : (S : E →ₗ[ℝ] E).IsSymmetric) (hc : 0 < c) (hcS : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪S (A v), v⟫_ℝ) :
     finrank ℝ A.unstableSubspace =
       finrank ℝ (Module.End.pointSpectralSubspace (S : E →ₗ[ℝ] E) (Ioi 0)) := by
-  rw [← stableSubspace_neg, finrank_stableSubspace_eq_finrank_pointSpectralSubspace_Iio
-    (lyapunov_neg hS hcS).1 hc (lyapunov_neg hS hcS).2, toLinearMap_neg,
+  obtain ⟨hS', hcS'⟩ := isSymmetric_neg_and_forall_le_inner_neg_apply_neg_apply hS hcS
+  rw [← stableSubspace_neg, finrank_stableSubspace_eq_finrank_pointSpectralSubspace_Iio hS' hc
+    hcS', toLinearMap_neg,
     Module.End.pointSpectralSubspace_neg, neg_Iio, neg_zero]
 
 /-- **An operator with a Lyapunov form splits the space into its stable and unstable

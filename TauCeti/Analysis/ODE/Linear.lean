@@ -34,7 +34,9 @@ negative-gradient convention used by Morse theory is recovered by applying these
   unstable sets of `0` for this flow, as linear subspaces; negating `A` exchanges them
   (`ContinuousLinearMap.stableSubspace_neg`), and both are invariant under the flow.
 * `ContinuousLinearMap.hasDerivAt_inner_exp_smul_apply`: the derivative of a quadratic form
-  `⟪S w, w⟫` along an orbit `w(t) = exp (t • A) v` of the flow.
+  `⟪S w, w⟫` along an orbit `w(t) = exp (t • A) v` of the flow;
+  `ContinuousLinearMap.hasDerivAt_inner_exp_smul_apply_of_isSymmetric` is the form
+  `2 ⟪S (A w), w⟫` it takes for symmetric `S`.
 * `LinearMap.IsSymmetric.eigenvectorBasis_repr_flow_neg_apply`: the coordinate formula for the
   flow of a negative symmetric operator in its ordered eigenbasis.
 * `LinearMap.IsSymmetric.stableSet_flow_eq_negativeSpectralSubspace`: the stable set of zero
@@ -173,6 +175,16 @@ theorem hasDerivAt_inner_exp_smul_apply (A S : E →L[ℝ] E) (v : E) (t : ℝ) 
   have hw : HasDerivAt (fun t : ℝ ↦ exp (t • A) v) (A (exp (t • A) v)) t := by
     simpa using (hasDerivAt_exp_smul_const' A t).clm_apply (hasDerivAt_const t v)
   exact (S.hasFDerivAt.comp_hasDerivAt t hw).inner ℝ hw
+
+/-- For symmetric `S`, the derivative of the quadratic form `t ↦ ⟪S w(t), w(t)⟫` along an orbit
+`w(t) = exp (t • A) v` of the linear flow is `2 ⟪S (A w), w⟫`. -/
+theorem hasDerivAt_inner_exp_smul_apply_of_isSymmetric (A : E →L[ℝ] E) {S : E →L[ℝ] E}
+    (hS : (S : E →ₗ[ℝ] E).IsSymmetric) (v : E) (t : ℝ) :
+    HasDerivAt (fun t : ℝ ↦ ⟪S (exp (t • A) v), exp (t • A) v⟫_ℝ)
+      (2 * ⟪S (A (exp (t • A) v)), exp (t • A) v⟫_ℝ) t := by
+  convert hasDerivAt_inner_exp_smul_apply A S v t using 1
+  rw [hS.apply_clm, real_inner_comm (A (exp (t • A) v)) (S (exp (t • A) v))]
+  ring
 
 end ContinuousLinearMap
 
