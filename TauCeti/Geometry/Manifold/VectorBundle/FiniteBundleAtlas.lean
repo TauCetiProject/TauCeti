@@ -214,6 +214,18 @@ theorem chart_image_closure_dom_subset (i : Fin A.n) :
   rw [mem_preimage, (A.chart i).left_inv hs]
   exact A.closure_dom_subset_baseSet i hx
 
+/-- The closure of the image of chart `i` lies in the image of the closure of the chart domain. -/
+theorem closure_image_subset_chart_image_closure_dom [T2Space E] (i : Fin A.n) :
+    closure (A.image i : Set E) ⊆ A.chart i '' closure (A.dom i) :=
+  closure_minimal (A.image_subset_chart_image_closure_dom i)
+    (A.isCompact_chart_image_closure_dom i).isClosed
+
+/-- The image of chart `i` has compact closure. -/
+theorem isCompact_closure_image [T2Space E] (i : Fin A.n) :
+    IsCompact (closure (A.image i : Set E)) :=
+  (A.isCompact_chart_image_closure_dom i).closure_of_subset
+    (A.image_subset_chart_image_closure_dom i)
+
 end FiniteBundleAtlas
 
 end Atlas
