@@ -129,7 +129,7 @@ private theorem tendsto_ftaylorSeriesWithin_restrict_extChartAt [IsManifold I n 
     (hτ : Tendsto (fun w ↦ extChartAt I (y : M) ((extChartAt I x).symm w))
       (𝓝[(extChartAt I x).target] z)
       (𝓝[(extChartAt I y).target] extChartAt I (y : M) ((extChartAt I x).symm z)))
-    (m : ℕ) (hm : m ≤ n) (k : ℕ) (hk : k ≤ m) :
+    {k : ℕ} (hk : k ≤ n) :
     Tendsto (fun q : P × E ↦ ftaylorSeriesWithin 𝕜
       ((g q.1).restrict U ∘ (extChartAt I y).symm) (extChartAt I y).target
         (extChartAt I (y : M) ((extChartAt I x).symm q.2)) k)
@@ -137,7 +137,7 @@ private theorem tendsto_ftaylorSeriesWithin_restrict_extChartAt [IsManifold I n 
       (𝓝 (ftaylorSeriesWithin 𝕜 ((g₀.restrict U) ∘ (extChartAt I y).symm)
         (extChartAt I y).target (extChartAt I (y : M) ((extChartAt I x).symm z)) k)) := by
   have h := (tendsto_iteratedFDerivWithin_extChartAt (f₀ := g₀.restrict U)
-    (y := (0 : F)) hv (by simp) ((Nat.cast_le.mpr hk).trans hm)).comp (hg.prodMap hτ)
+    (y := (0 : F)) hv (by simp) hk).comp (hg.prodMap hτ)
   simpa only [ftaylorSeriesWithin, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
     Function.id_comp, Function.comp_def, Prod.map_fst, Prod.map_snd, id_eq] using h
 
@@ -164,16 +164,15 @@ theorem tendsto_iteratedFDerivWithin_of_restrict [IsManifold I n M] [LocallyComp
       simpa only [τ, mem_preimage, (extChartAt I (y : M)).left_inv hys, SetLike.mem_coe] using hy⟩
   have hτ : Tendsto τ (𝓝[(extChartAt I x).target] z) (𝓝[(extChartAt I y).target] τ z) :=
     U.tendsto_extChartAt_restrict x y hz hy hys
-  have hgl := hg.prodMap hτ
-  have hjg := fun k hk ↦
-    tendsto_ftaylorSeriesWithin_restrict_extChartAt U hg x y hv hτ m hm k hk
+  have hjg := fun k (hk : k ≤ m) ↦
+    tendsto_ftaylorSeriesWithin_restrict_extChartAt U hg x y hv hτ ((Nat.cast_le.mpr hk).trans hm)
   have hjp (k : ℕ) (hk : k ≤ m) :
       Tendsto (fun q : P × E ↦ ftaylorSeriesWithin 𝕜
         (extChartAt I (y : M) ∘ (extChartAt I x).symm) (extChartAt I x).target q.2 k)
         (l ×ˢ 𝓝[(extChartAt I x).target] z)
         (𝓝 (ftaylorSeriesWithin 𝕜 (extChartAt I (y : M) ∘ (extChartAt I x).symm)
           (extChartAt I x).target z k)) :=
-    (continuousWithinAt_ftaylorSeriesWithin_extChartAt_comp_symm x y hz hys (k := k)
+    (TauCeti.continuousWithinAt_ftaylorSeriesWithin_extChartAt_comp_symm x y hz hys (k := k)
       ((Nat.cast_le.mpr hk).trans hm)).tendsto.comp tendsto_snd
   have hφ := continuousOn_extChartAt_symm (I := I) x z hz
   have hU : ∀ᶠ q : P × E in l ×ˢ 𝓝[(extChartAt I x).target] z,

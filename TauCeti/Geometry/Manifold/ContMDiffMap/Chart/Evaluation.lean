@@ -63,6 +63,19 @@ theorem contDiffWithinAt_extChartAt (f : C^n⟮I, M; J, N⟯) {x : M} {y : N} {w
     ((map_continuous f).continuousAt.eventually_mem_extChartAt_source hw hf)).mp
     ((contMDiff_iff.mp f.contMDiff).2 x y w ⟨hw, hf⟩)
 
+/-- The Taylor coefficients of order `k ≤ n` of the chart transition
+`extChartAt y ∘ (extChartAt x).symm` are continuous within the chart target `(extChartAt x).target`
+at any point `z` of it whose preimage lies in the source of the chart at `y`. -/
+theorem _root_.TauCeti.continuousWithinAt_ftaylorSeriesWithin_extChartAt_comp_symm (x y : M)
+    {z : E} (hz : z ∈ (extChartAt I x).target)
+    (hys : (extChartAt I x).symm z ∈ (extChartAt I y).source)
+    {k : ℕ} (hk : k ≤ n) :
+    ContinuousWithinAt (fun w : E ↦ ftaylorSeriesWithin 𝕜
+      (extChartAt I y ∘ (extChartAt I x).symm) (extChartAt I x).target w k)
+      (extChartAt I x).target z :=
+  ((ContMDiffMap.id : C^n⟮I, M; I, M⟯).contDiffWithinAt_extChartAt hz
+    hys).continuousWithinAt_iteratedFDerivWithin (uniqueDiffOn_extChartAt_target x) hk hz
+
 section LocallyCompact
 
 variable [LocallyCompactSpace E]
@@ -120,27 +133,6 @@ theorem tendsto_iteratedFDerivWithin_extChartAt {f₀ : C^n⟮I, M; J, N⟯} {x 
       (𝓝 (iteratedFDerivWithin 𝕜 m (extChartAt J y ∘ f₀ ∘ (extChartAt I x).symm)
         (extChartAt I x).target w₀)) := fun _ hV ↦
   (eventually_mem_source_and_iteratedFDerivWithin_mem hw₀ hf₀ hm hV).mono fun _ h ↦ h.2
-
-/-- The Taylor coefficients of the chart transition `extChartAt y ∘ (extChartAt x).symm` are
-continuous within the chart target `(extChartAt x).target` at any point `z` of it whose preimage
-lies in the source of the chart at `y`. -/
-theorem continuousWithinAt_ftaylorSeriesWithin_extChartAt_comp_symm (x y : M)
-    {z : E} (hz : z ∈ (extChartAt I x).target)
-    (hys : (extChartAt I x).symm z ∈ (extChartAt I y).source)
-    {k : ℕ} (hk : k ≤ n) :
-    ContinuousWithinAt (fun w : E ↦ ftaylorSeriesWithin 𝕜
-      (extChartAt I y ∘ (extChartAt I x).symm) (extChartAt I x).target w k)
-      (extChartAt I x).target z := by
-  have hidcoe : ((ContMDiffMap.id : C^n⟮I, M; I, M⟯) : M → M) = _root_.id := rfl
-  have hc : Tendsto (fun w : E ↦ ((ContMDiffMap.id : C^n⟮I, M; I, M⟯), w))
-      (𝓝[(extChartAt I x).target] z)
-      (𝓝 ContMDiffMap.id ×ˢ 𝓝[(extChartAt I x).target] z) :=
-    tendsto_const_nhds.prodMk tendsto_id
-  have h := (tendsto_iteratedFDerivWithin_extChartAt
-    (f₀ := (ContMDiffMap.id : C^n⟮I, M; I, M⟯)) hz hys
-    hk).comp hc
-  simpa only [ContinuousWithinAt, ftaylorSeriesWithin, hidcoe, Function.id_comp,
-    Function.comp_def, Prod.map_fst, Prod.map_snd, id_eq] using h
 
 /-- A map visible in a target chart at a point of a source chart stays visible there, jointly
 for nearby maps and nearby chart points, provided the source model is locally compact. -/
