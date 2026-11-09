@@ -108,7 +108,7 @@ theorem indecomposable_arTranslate_iff (M : ModuleCat.{max u v w} A) [Module.Fin
   · intro hp
     let P := arPresentation k M
     have : IsArtinianRing A := IsArtinianRing.of_finite k A
-    have hlength := IsArtinianRing.isFiniteLength_of_finite A M
+    have hlength := isFiniteLength_of_finite A M
     have htr := (P.isIndecomposableModule_auslanderReitenTranspose_iff
       (arPresentation_isMinimal k M) hlength
       ((indecomposable_iff_isIndecomposableModule M).mp hiM)).mpr
@@ -138,8 +138,8 @@ theorem nonempty_iso_arTranslate_iff {M N : ModuleCat.{max u v w} A} [Module.Fin
   have : Module.Finite k (AuslanderReitenTranspose P.p) := Module.Finite.trans Aᵐᵒᵖ _
   have : Module.Finite k (AuslanderReitenTranspose R.p) := Module.Finite.trans Aᵐᵒᵖ _
   have : IsArtinianRing A := IsArtinianRing.of_finite k A
-  have hlenM := IsArtinianRing.isFiniteLength_of_finite A M
-  have hlenN := IsArtinianRing.isFiniteLength_of_finite A N
+  have hlenM := isFiniteLength_of_finite A M
+  have hlenN := isFiniteLength_of_finite A N
   have hpM' : ¬ Module.Projective A M := fun h ↦
     hpM ((IsProjective.iff_projective (R := A) M).mp h)
   obtain ⟨f⟩ := P.nonempty_linearEquiv_of_auslanderReitenTranslate R hlenM hlenN

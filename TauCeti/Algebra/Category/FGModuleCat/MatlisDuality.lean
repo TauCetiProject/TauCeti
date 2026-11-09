@@ -101,13 +101,13 @@ def IsInjectiveEnvelope.fgModuleCatMatlisDuality (hf : IsInjectiveEnvelope f) :
   inverse := hf.fgModuleCatMatlisDualOp.rightOp
   unitIso := NatIso.ofComponents (fun M =>
       (ObjectProperty.isoMk _ (hf.moduleCatEvalIso M.unop.obj
-        (IsArtinianRing.isFiniteLength_of_finite_trans R A M.unop.obj))).symm.op)
+        (isFiniteLength_of_finite_trans R A M.unop.obj))).symm.op)
     (fun g => Quiver.Hom.unop_inj <| (Iso.inv_comp_eq _).mpr <|
       ((Iso.eq_comp_inv _).mpr <| ObjectProperty.hom_ext _ <|
         hf.moduleCatEvalIso_hom_naturality g.unop.hom _ _).trans (Category.assoc _ _ _))
   counitIso := NatIso.ofComponents (fun N =>
       (ObjectProperty.isoMk _ (hf.moduleCatEvalIsoOp (A := A) N.obj
-        (IsArtinianRing.isFiniteLength_of_finite_trans R Aᵐᵒᵖ N.obj))).symm)
+        (isFiniteLength_of_finite_trans R Aᵐᵒᵖ N.obj))).symm)
     (fun g => (Iso.comp_inv_eq _).mpr <| ((Iso.eq_inv_comp _).mpr <|
       (ObjectProperty.hom_ext _ <|
         hf.moduleCatEvalIsoOp_hom_naturality (A := A) g.hom _ _).symm).trans
@@ -115,9 +115,9 @@ def IsInjectiveEnvelope.fgModuleCatMatlisDuality (hf : IsInjectiveEnvelope f) :
   functor_unitIso_comp M := by
     refine ObjectProperty.hom_ext _ ?_
     exact (Iso.comp_inv_eq_id (hf.moduleCatEvalIsoOp (A := A) (hf.fgModuleCatMatlisDual.obj M).obj
-      (IsArtinianRing.isFiniteLength_of_finite_trans R Aᵐᵒᵖ _))).mpr
+      (isFiniteLength_of_finite_trans R Aᵐᵒᵖ _))).mpr
       (hf.moduleCatEvalIsoOp_matlisDualObj_hom M.unop.obj
-        (IsArtinianRing.isFiniteLength_of_finite_trans R A M.unop.obj) _).symm
+        (isFiniteLength_of_finite_trans R A M.unop.obj) _).symm
 
 @[simp]
 theorem IsInjectiveEnvelope.fgModuleCatMatlisDuality_functor (hf : IsInjectiveEnvelope f) :
@@ -130,19 +130,21 @@ theorem IsInjectiveEnvelope.fgModuleCatMatlisDuality_inverse (hf : IsInjectiveEn
   (rfl)
 
 /-- The unit of the Matlis duality is evaluation `M → D_R (D_R M)`. -/
+@[simp]
 theorem IsInjectiveEnvelope.fgModuleCatMatlisDuality_unitIso_inv_app (hf : IsInjectiveEnvelope f)
     (M : (FGModuleCat.{v} A)ᵒᵖ) :
     ((hf.fgModuleCatMatlisDuality (A := A)).unitIso.inv.app M).unop.hom =
       (hf.moduleCatEvalIso M.unop.obj
-        (IsArtinianRing.isFiniteLength_of_finite_trans R A M.unop.obj)).hom :=
+        (isFiniteLength_of_finite_trans R A M.unop.obj)).hom :=
   (rfl)
 
 /-- The inverse of the counit of the Matlis duality is evaluation `N → D_R (D_R N)`. -/
+@[simp]
 theorem IsInjectiveEnvelope.fgModuleCatMatlisDuality_counitIso_inv_app (hf : IsInjectiveEnvelope f)
     (N : FGModuleCat.{v} Aᵐᵒᵖ) :
     ((hf.fgModuleCatMatlisDuality (A := A)).counitIso.inv.app N).hom =
       (hf.moduleCatEvalIsoOp (A := A) N.obj
-        (IsArtinianRing.isFiniteLength_of_finite_trans R Aᵐᵒᵖ N.obj)).hom :=
+        (isFiniteLength_of_finite_trans R Aᵐᵒᵖ N.obj)).hom :=
   (rfl)
 
 end TauCeti

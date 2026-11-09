@@ -19,7 +19,7 @@ public section
 
 universe u v w
 
-namespace IsArtinianRing
+namespace TauCeti
 
 /-- A finitely generated module over an Artinian ring has finite length. -/
 theorem isFiniteLength_of_finite (R : Type u) [Ring R] [IsArtinianRing R] (M : Type v)
@@ -34,4 +34,4 @@ theorem isFiniteLength_of_finite_trans (R : Type u) [Ring R] [IsArtinianRing R] 
   have : Module.Finite R M := Module.Finite.trans B M
   isFiniteLength_of_finite R M
 
-end IsArtinianRing
+end TauCeti

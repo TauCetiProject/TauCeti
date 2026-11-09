@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Algebra.Module.Dual.ProjectiveInjective
+import TauCeti.Algebra.Module.Opposite
 public import TauCeti.LinearAlgebra.Dual.RightAction
 public import TauCeti.RingTheory.MatlisDuality.Semilocal
 
@@ -13,9 +15,10 @@ public import TauCeti.RingTheory.MatlisDuality.Semilocal
 
 Let `R` be a commutative ring, `E` an `R`-module and `A` an `R`-algebra. The Matlis dual
 `D_R N = Hom_R(N, E)` exchanges left and right `A`-modules. This file defines it with its
-contravariant action on morphisms, and proves that evaluation `N → D_R (D_R N)` is an isomorphism of
-`A`-modules for `N` of finite length over `R`, when `E` is an injective hull of `R ⧸ J(R)` and
-`R ⧸ J(R)` is semisimple.
+contravariant action on morphisms, shows that for injective `E` it sends projective modules to
+injective modules, and proves that evaluation `N → D_R (D_R N)` is an isomorphism of `A`-modules for
+`N` of finite length over `R`, when `E` is an injective hull of `R ⧸ J(R)` and `R ⧸ J(R)` is
+semisimple.
 
 Right `A`-modules are modules over `Aᵐᵒᵖ`.
 
@@ -246,6 +249,34 @@ end Right
 end MatlisDual
 
 open MatlisDual
+
+section Instances
+
+attribute [local instance] opOpModule isScalarTower_opOpModule RingHomInvPair.of_ringEquiv
+
+variable {R : Type u} [CommRing R] {E : Type v} [AddCommGroup E] [Module R E] [Small.{v} R]
+  [Module.Injective R E] {A : Type t} [Ring A] [Algebra R A]
+  {N : Type w} [AddCommGroup N] [Module R N]
+
+/-- The dual of a projective right module is an injective left module. -/
+instance [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐᵒᵖ N] [Module.Projective Aᵐᵒᵖ N] :
+    Module.Injective A (MatlisDual R E N) :=
+  (equivLinearMap R E N).moduleInjective_of_dual_projective smul_apply
+
+/-- The dual of a projective left module is an injective right module. -/
+instance [Module A N] [IsScalarTower R A N] [Module.Projective A N] :
+    Module.Injective Aᵐᵒᵖ (MatlisDual R E N) :=
+  have : Module.Projective Aᵐᵒᵖᵐᵒᵖ N := Module.Projective.of_equiv (opOpSemilinearEquiv (A := A))
+  (equivLinearMap R E N).moduleInjective_of_dual_projective (A := Aᵐᵒᵖ)
+    fun a φ x => smul_op_apply a φ x
+
+/-- `D_R A`, the dual of the right regular module with action `(a • φ) x = φ (x * a)`, is an
+injective left `A`-module. -/
+instance : Module.Injective A (MatlisDual R E A) :=
+  (equivLinearMap R E A).moduleInjective_of_dual_regular fun a φ x =>
+    (smul_apply a φ x).trans (by rw [op_smul_eq_mul])
+
+end Instances
 
 section Biduality
 

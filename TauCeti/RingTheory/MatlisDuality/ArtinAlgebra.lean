@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Dual.ProjectiveInjective
+import TauCeti.Algebra.Module.Dual.ProjectiveInjective
 import TauCeti.Algebra.Module.Opposite
 import TauCeti.RingTheory.Artinian.FiniteLength
 public import TauCeti.RingTheory.MatlisDuality.Basic
@@ -57,32 +57,6 @@ universe u v w t
 
 attribute [local instance] opOpModule isScalarTower_opOpModule RingHomInvPair.of_ringEquiv
 
-section Instances
-
-variable {R : Type u} [CommRing R] {E : Type v} [AddCommGroup E] [Module R E] [Small.{v} R]
-  [Module.Injective R E] {A : Type t} [Ring A] [Algebra R A]
-  {N : Type w} [AddCommGroup N] [Module R N]
-
-/-- The dual of a projective right module is an injective left module. -/
-instance [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐᵒᵖ N] [Module.Projective Aᵐᵒᵖ N] :
-    Module.Injective A (MatlisDual R E N) :=
-  (equivLinearMap R E N).moduleInjective_of_dual_projective smul_apply
-
-/-- The dual of a projective left module is an injective right module. -/
-instance [Module A N] [IsScalarTower R A N] [Module.Projective A N] :
-    Module.Injective Aᵐᵒᵖ (MatlisDual R E N) :=
-  have : Module.Projective Aᵐᵒᵖᵐᵒᵖ N := Module.Projective.of_equiv (opOpSemilinearEquiv (A := A))
-  (equivLinearMap R E N).moduleInjective_of_dual_projective (A := Aᵐᵒᵖ)
-    fun a φ x => smul_op_apply a φ x
-
-/-- `D_R A`, the dual of the right regular module with action `(a • φ) x = φ (x * a)`, is an
-injective left `A`-module. -/
-instance : Module.Injective A (MatlisDual R E A) :=
-  (equivLinearMap R E A).moduleInjective_of_dual_regular fun a φ x =>
-    (smul_apply a φ x).trans (by rw [op_smul_eq_mul])
-
-end Instances
-
 section Artin
 
 variable {R : Type u} [CommRing R] [IsArtinianRing R] {E : Type v} [AddCommGroup E] [Module R E]
@@ -93,7 +67,7 @@ variable {R : Type u} [CommRing R] [IsArtinianRing R] {E : Type v} [AddCommGroup
 generated. -/
 theorem IsInjectiveEnvelope.finite_matlisDual (hf : IsInjectiveEnvelope f) (N : Type w)
     [AddCommGroup N] [Module R N] [Module.Finite R N] : Module.Finite R (MatlisDual R E N) := by
-  have hN := IsArtinianRing.isFiniteLength_of_finite R N
+  have hN := isFiniteLength_of_finite R N
   have hD : IsFiniteLength R (MatlisDual R E N) := by
     rw [← Module.length_ne_top_iff, (equivLinearMap R E N).length_eq,
       hf.length_linearMap_quotient_jacobson, Module.length_ne_top_iff]
@@ -132,9 +106,9 @@ theorem IsInjectiveEnvelope.moduleProjective_matlisDual_of_injective_op [Module 
   have := hf.finite_matlisDual_of_finite_op (A := A) (N := N)
   have : Small.{w} Aᵐᵒᵖ := small_of_injective MulOpposite.unop_injective
   (equivLinearMap R E N).moduleProjective_of_dual_injective_of_bijective smul_apply
-    (hf.bijective_applyₗ_quotient_jacobson (IsArtinianRing.isFiniteLength_of_finite R A))
+    (hf.bijective_applyₗ_quotient_jacobson (isFiniteLength_of_finite R A))
     (hf.bijective_applyₗ_quotient_jacobson
-      (IsArtinianRing.isFiniteLength_of_finite_trans R Aᵐᵒᵖ N)).1
+      (isFiniteLength_of_finite_trans R Aᵐᵒᵖ N)).1
 
 /-- The dual of a finitely generated injective left `A`-module is a projective right module. -/
 theorem IsInjectiveEnvelope.moduleProjective_op_matlisDual_of_injective [Module A N]
@@ -146,8 +120,8 @@ theorem IsInjectiveEnvelope.moduleProjective_op_matlisDual_of_injective [Module 
     Module.Injective.of_ringEquiv (RingEquiv.opOp A) (opOpSemilinearEquiv (A := A))
   (equivLinearMap R E N).moduleProjective_of_dual_injective_of_bijective (A := Aᵐᵒᵖ)
     (fun a φ x => smul_op_apply a φ x)
-    (hf.bijective_applyₗ_quotient_jacobson (IsArtinianRing.isFiniteLength_of_finite R _))
-    (hf.bijective_applyₗ_quotient_jacobson (IsArtinianRing.isFiniteLength_of_finite_trans R A N)).1
+    (hf.bijective_applyₗ_quotient_jacobson (isFiniteLength_of_finite R _))
+    (hf.bijective_applyₗ_quotient_jacobson (isFiniteLength_of_finite_trans R A N)).1
 
 /-- A finitely generated left `A`-module is projective exactly when its Matlis dual is an injective
 right module. -/
@@ -162,9 +136,9 @@ theorem IsInjectiveEnvelope.moduleInjective_op_matlisDual_iff_projective [Module
   have : Module.Finite Aᵐᵒᵖᵐᵒᵖ N := Module.Finite.of_restrictScalars_finite R _ N
   exact ((equivLinearMap R E N).moduleInjective_iff_projective_of_dual_of_bijective (A := Aᵐᵒᵖ)
     (fun a φ x => smul_op_apply a φ x)
-    (hf.bijective_applyₗ_quotient_jacobson (IsArtinianRing.isFiniteLength_of_finite R _))
+    (hf.bijective_applyₗ_quotient_jacobson (isFiniteLength_of_finite R _))
     (hf.bijective_applyₗ_quotient_jacobson
-      (IsArtinianRing.isFiniteLength_of_finite_trans R A N))).trans
+      (isFiniteLength_of_finite_trans R A N))).trans
     ⟨fun _ => .of_equiv (opOpSemilinearEquiv (A := A)).symm,
       fun _ => .of_equiv (opOpSemilinearEquiv (A := A))⟩
 
@@ -176,8 +150,8 @@ theorem IsInjectiveEnvelope.moduleInjective_matlisDual_iff_projective_op [Module
   have := hf.moduleInjective
   have : Small.{max w v} A := small_lift A
   (equivLinearMap R E N).moduleInjective_iff_projective_of_dual_of_bijective smul_apply
-    (hf.bijective_applyₗ_quotient_jacobson (IsArtinianRing.isFiniteLength_of_finite R _))
-    (hf.bijective_applyₗ_quotient_jacobson (IsArtinianRing.isFiniteLength_of_finite_trans R Aᵐᵒᵖ N))
+    (hf.bijective_applyₗ_quotient_jacobson (isFiniteLength_of_finite R _))
+    (hf.bijective_applyₗ_quotient_jacobson (isFiniteLength_of_finite_trans R Aᵐᵒᵖ N))
 
 /-- A finitely generated left `A`-module is injective exactly when its Matlis dual is a projective
 right module. -/
@@ -189,7 +163,7 @@ theorem IsInjectiveEnvelope.moduleProjective_op_matlisDual_iff_injective [Module
   have : Small.{max w v} A := small_lift A
   have : Module.Injective A (MatlisDual R E (MatlisDual R E N)) := inferInstance
   exact ((Module.Baer.of_injective this).of_equiv
-    (hf.matlisDualEvalEquiv (IsArtinianRing.isFiniteLength_of_finite_trans R A N)).symm).injective
+    (hf.matlisDualEvalEquiv (isFiniteLength_of_finite_trans R A N)).symm).injective
 
 /-- A finitely generated right `A`-module is injective exactly when its Matlis dual is a projective
 left module. -/
@@ -204,7 +178,7 @@ theorem IsInjectiveEnvelope.moduleProjective_matlisDual_iff_injective_op [Module
   have : Module.Injective Aᵐᵒᵖ (MatlisDual R E (MatlisDual R E N)) := inferInstance
   refine ((Module.Baer.of_injective this).of_equiv ?_).injective
   exact (hf.matlisDualEvalEquivOp (A := A)
-    (IsArtinianRing.isFiniteLength_of_finite_trans R Aᵐᵒᵖ N)).symm
+    (isFiniteLength_of_finite_trans R Aᵐᵒᵖ N)).symm
 
 omit [Small.{w} A] in
 /-- **`D_R A` is a cogenerator.** Every finitely generated left module over an Artin algebra `A`
@@ -239,7 +213,7 @@ theorem IsInjectiveEnvelope.exists_injective_linearMap_pi_matlisDual [Module A N
     | add _ _ _ _ h₁ h₂ => simp [h₁, h₂]
     | smul c _ _ h => simpa [mul_smul] using h (c.unop * a)
   refine (injective_iff_map_eq_zero _).mp
-    (hf.bijective_evalₗ (IsArtinianRing.isFiniteLength_of_finite_trans R A N)).1 x
+    (hf.bijective_evalₗ (isFiniteLength_of_finite_trans R A N)).1 x
     (MatlisDual.ext fun φ => ?_)
   simpa using key φ (hb ▸ Submodule.mem_top) 1
 
