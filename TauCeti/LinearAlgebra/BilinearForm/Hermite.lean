@@ -107,16 +107,37 @@ with `t` nearest to `-B(v, y) / μ` gives a nonzero vector with `4 B(v, y + t v)
 completing the square along `v` (`LinearMap.BilinForm.mul_apply_add_smul_add_smul`) compares its
 norm, which is at least `μ`, with the condensed form. -/
 theorem three_mul_sq_le_four_mul_sub_of_forall_le {M : Type*} [AddCommGroup M]
-    {B : LinearMap.BilinForm ℤ M} (hB : B.IsSymm) {v y : M} (hμ : 0 < B v v)
+    {B : LinearMap.BilinForm ℤ M} (hB : B.IsSymm) {v y : M}
     (hmin : ∀ x, x ≠ 0 → B v v ≤ B x x) (hy : y ∉ ℤ ∙ v) :
     3 * B v v ^ 2 ≤ 4 * (B v v * B y y - B y v * B v y) := by
+  have hne : ∀ k : ℤ, y + k • v ≠ 0 := fun k h ↦ hy (Submodule.mem_span_singleton.mpr
+    ⟨-k, by rw [neg_smul]; exact (eq_neg_of_add_eq_zero_left h).symm⟩)
+  by_cases hμ : 0 < B v v
+  swap
+  · have hv0 : B v v = 0 := by
+      refine le_antisymm (not_lt.mp hμ) ?_
+      by_cases h2 : (2 : ℤ) • v = 0
+      · have h := congrArg (fun x ↦ B x v) h2
+        simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, map_zero,
+          LinearMap.zero_apply] at h
+        omega
+      · have := hmin _ h2
+        simp only [map_smul, LinearMap.smul_apply, smul_eq_mul] at this
+        nlinarith
+    have hyy : 0 ≤ B y y := hv0 ▸ hmin y (by simpa using hne 0)
+    have hyv : B y v = 0 := by
+      by_contra hne'
+      have h := hmin _ (hne (-(B y y + 1) * B y v))
+      simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
+        hv0, ← hB.eq y v] at h
+      have hpos : 1 ≤ B y v ^ 2 := by nlinarith [sq_pos_of_ne_zero hne']
+      nlinarith [mul_le_mul_of_nonneg_left hpos (by linarith : 0 ≤ B y y + 1)]
+    simp [hv0, hyv]
   obtain ⟨k, hk⟩ := Int.exists_two_mul_abs_sub_mul_le (B v y) hμ.ne'
   rw [abs_of_pos hμ] at hk
   have hk' : 0 ≤ B v v + 2 * |B v y - k * B v v| := by positivity
-  have hne : y + (-k) • v ≠ 0 := fun h ↦ hy (Submodule.mem_span_singleton.mpr
-    ⟨k, (sub_eq_zero.mp (by simpa [sub_eq_add_neg] using h)).symm⟩)
   have hv : B v (y + (-k) • v) = B v y - k * B v v := by simp [sub_eq_add_neg]
-  have h := mul_le_mul_of_nonneg_left (hmin _ hne) hμ.le
+  have h := mul_le_mul_of_nonneg_left (hmin _ (hne (-k))) hμ.le
   rw [B.mul_apply_add_smul_add_smul, hB.eq (y + _) v, hv] at h
   rw [hB.eq y v] at h ⊢
   nlinarith [mul_nonneg (sub_nonneg.mpr hk) hk', sq_abs (B v y - k * B v v)]
@@ -184,7 +205,7 @@ private theorem hermiteBound_succ (n : ℕ) (ih : HermiteBound.{u} n) :
     exact hy (Subtype.ext (by simp [← ha]))
   rw [show (n + 1).choose 2 = n.choose 2 + n by simp [Nat.choose_succ_succ', add_comm]]
   exact three_pow_mul_pow_succ_le hμ
-    (hS y y ▸ three_mul_sq_le_four_mul_sub_of_forall_le hB hμ hmin hyv) hyb hdet
+    (hS y y ▸ three_mul_sq_le_four_mul_sub_of_forall_le hB hmin hyv) hyb hdet
 
 /-- Hermite's inequality for a basis indexed by `Fin n`, by induction on `n`. -/
 private theorem hermiteBound (n : ℕ) : HermiteBound.{u} n := by

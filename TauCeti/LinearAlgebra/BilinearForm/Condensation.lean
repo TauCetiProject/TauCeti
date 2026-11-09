@@ -66,14 +66,19 @@ theorem mul_apply_add_smul_add_smul (B : LinearMap.BilinForm R M) (v x y : M) (s
   ring
 
 /-- **The condensed form of a positive definite form is positive on a complement of `v`.** Let `B`
-be positive definite on a torsion-free module over an ordered ring. If a linear functional `f` does
+be positive definite over an ordered ring. If a linear functional `f` does
 not vanish at `v`, then every nonzero `x` in its kernel satisfies
 `B(x, v) B(v, x) < B(v, v) B(x, x)`. This is the strict Cauchy–Schwarz inequality, since `v` and
 `x` are linearly independent. -/
 theorem apply_mul_apply_lt_of_mem_ker [LinearOrder R] [IsStrictOrderedRing R]
-    [Module.IsTorsionFree R M] {B : LinearMap.BilinForm R M} (hpos : ∀ x, x ≠ 0 → 0 < B x x)
+    {B : LinearMap.BilinForm R M} (hpos : ∀ x, x ≠ 0 → 0 < B x x)
     {f : M →ₗ[R] R} {v x : M} (hv : f v ≠ 0) (hx : x ∈ LinearMap.ker f) (hx0 : x ≠ 0) :
     B x v * B v x < B v v * B x x := by
+  have : Module.IsTorsionFree R M := .of_smul_eq_zero fun r m hrm ↦ by
+    by_contra! h
+    have h0 : B (r • m) (r • m) = 0 := by simp [hrm]
+    simp only [map_smul, LinearMap.smul_apply, smul_eq_mul] at h0
+    exact (mul_pos (mul_self_pos.mpr h.1) (hpos m h.2)).ne' (by rw [mul_assoc]; exact h0)
   rw [mul_comm (B v v)]
   refine (B.apply_mul_apply_lt_iff_linearIndependent hpos x v).mpr
     (LinearIndependent.pair_iff.mpr fun s t hst ↦ ?_)
