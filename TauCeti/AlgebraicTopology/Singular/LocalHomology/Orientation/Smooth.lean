@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Derivative
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Chart
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Homological
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 
 /-!
 # Smooth orientations are homological orientations
@@ -95,18 +94,12 @@ private theorem coe_complRadial_apply {K : Set E} {p : E} (hp : p ∈ K) (y : (K
 complement of `K`, between the radial projections about its end points. -/
 private def complRadialHomotopy {K : Set E} (hK : Convex ℝ K) {p q : E} (hp : p ∈ K)
     (hq : q ∈ K) : (complRadial hp).Homotopy (complRadial hq) where
-  toFun z := ⟨‖(z.2 : E) - AffineMap.lineMap p q (z.1 : ℝ)‖⁻¹ •
-      ((z.2 : E) - AffineMap.lineMap p q (z.1 : ℝ)), by
-    have : (z.2 : E) - AffineMap.lineMap p q (z.1 : ℝ) ≠ 0 := sub_ne_zero.2 fun h ↦
+  toContinuousMap := normalizeToSphere
+    (fun z : unitInterval × (Kᶜ : Set E) ↦ (z.2 : E) - AffineMap.lineMap p q (z.1 : ℝ))
+    (by fun_prop) fun z ↦ sub_ne_zero.2 fun h ↦
       z.2.2 (h ▸ hK.lineMap_mem hp hq ⟨z.1.2.1, z.1.2.2⟩)
-    simp [norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.2 this)]⟩
-  continuous_toFun := by
-    refine Continuous.subtype_mk (Continuous.smul (Continuous.inv₀ (by fun_prop) fun z ↦ ?_)
-      (by fun_prop)) _
-    exact norm_ne_zero_iff.2 (sub_ne_zero.2 fun h ↦
-      z.2.2 (h ▸ hK.lineMap_mem hp hq ⟨z.1.2.1, z.1.2.2⟩))
-  map_zero_left z := Subtype.ext (by simp [coe_complRadial_apply])
-  map_one_left z := Subtype.ext (by simp [coe_complRadial_apply])
+  map_zero_left z := Subtype.ext (by simp [coe_complRadial_apply, NormedSpace.normalize])
+  map_one_left z := Subtype.ext (by simp [coe_complRadial_apply, NormedSpace.normalize])
 
 /-- On the subspace of the pair `(E, E ∖ K)`, the inclusion into `E ∖ {p}` followed by radial
 projection about `p` is `TauCeti.complRadial`. -/
@@ -144,43 +137,10 @@ private theorem localHomologyRestriction_comp_reducedSingularHomologyδ_comp_eq 
     snd_ofSubsetMap_comp_complSingletonHomotopyEquivSphere hq]
   exact reducedSingularHomologyFunctor_map_eq_of_homotopy R (complRadialHomotopy hK hp hq) k
 
-/-- Translation `y ↦ c + (y - p)` followed by radial projection about `c` is radial projection
-about `p`. -/
-private theorem snd_ofSubsetMap_translate_comp_complSingletonHomotopyEquivSphere (p c : E) :
-    TopPair.Hom.snd (TopPair.ofSubsetMap (X := TopCat.of E) (Y := TopCat.of E)
-        (TopCat.ofHom ⟨fun y : E ↦ c + (y - p), by fun_prop⟩) (B := {p}ᶜ) (B' := {c}ᶜ)
-        (fun y hy h ↦ hy (sub_eq_zero.1 (add_eq_left.1 h)))) ≫
-      TopCat.ofHom (complSingletonHomotopyEquivSphere c).toFun =
-    TopCat.ofHom (complSingletonHomotopyEquivSphere p).toFun := by
-  ext z
-  -- The subspace of `TopPair.ofSubset` is the subtype only after unfolding the pair.
-  erw [ConcreteCategory.comp_apply]
-  refine ((coe_complSingletonHomotopyEquivSphere_apply c _).trans ?_).trans
-    (coe_complSingletonHomotopyEquivSphere_apply p z).symm
-  erw [TopPair.ofSubsetMap_snd_apply]
-  simp
-
 omit [NormedSpace ℝ E] in
 private theorem translate_preimage_subset (p c : E) :
     (⟨fun y ↦ c + (y - p), by fun_prop⟩ : C(E, E)) ⁻¹' {c} ⊆ {p} :=
   fun _ hy ↦ sub_eq_zero.1 (add_eq_left.1 hy)
-
-/-- Translation `y ↦ c + (y - p)` commutes with the connecting morphisms and radial projections
-used to read local homology at `p` and at `c`. -/
-@[reassoc]
-private theorem localHomologyMap_translate_comp_reducedSingularHomologyδ (p c : E) (k : ℕ) :
-    localHomologyMap R (⟨fun y ↦ c + (y - p), by fun_prop⟩ : C(E, E))
-        (translate_preimage_subset p c) (k + 1) ≫
-        (TopPair.ofSubset ({c}ᶜ : Set (TopCat.of E))).reducedSingularHomologyδ R k ≫
-          (reducedSingularHomologyFunctor R k).map
-            (TopCat.ofHom (complSingletonHomotopyEquivSphere c).toFun) =
-      (TopPair.ofSubset ({p}ᶜ : Set (TopCat.of E))).reducedSingularHomologyδ R k ≫
-        (reducedSingularHomologyFunctor R k).map
-          (TopCat.ofHom (complSingletonHomotopyEquivSphere p).toFun) := by
-  rw [localHomologyMap_def, ← TopPair.reducedSingularHomologyδ_naturality_assoc]
-  congr 1
-  -- The composite is only type-correct after unfolding the subspace of the pair.
-  erw [← Functor.map_comp, snd_ofSubsetMap_translate_comp_complSingletonHomotopyEquivSphere]
 
 end Model
 
@@ -257,23 +217,6 @@ section Generator
 variable {E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   (ω : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1)
 
-/-- The oriented local homology isomorphism of the identity chart is the connecting morphism,
-followed by radial projection and the sphere generator selected by the orientation. -/
-private theorem singularHomologyComplSingletonIsoOfOrientation_refl_hom
-    {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) (p : E) :
-    (singularHomologyComplSingletonIsoOfOrientation R (OpenPartialHomeomorph.refl E)
-        (mem_refl_source p) ω hE).hom =
-      (TopPair.ofSubset ({p}ᶜ : Set (TopCat.of E))).reducedSingularHomologyδ R n ≫
-        (reducedSingularHomologyFunctor R n).map
-          (TopCat.ofHom (complSingletonHomotopyEquivSphere p).toFun) ≫
-        (reducedSingularHomologySphereIsoOfOrientation R ω hE).hom := by
-  rw [singularHomologyComplSingletonIsoOfOrientation_hom, singularHomologyComplSingletonIso_hom,
-    singularHomologyComplSingletonIsoOfChart_refl R (mem_refl_source p), Iso.refl_hom]
-  -- The identity chart sends `p` to `p` by definition, so the composite is only type-correct
-  -- after unfolding it.
-  erw [Category.id_comp, Category.assoc]
-  rfl
-
 /-- **Oriented generators along a convex set.** If a class of `Hₙ₊₁(E, E ∖ K; ℤ)`, for a convex
 set `K`, restricts at one point `p` of `K` to the local orientation selected by `ω`, then it
 restricts to the local orientation selected by `ω` at every point `q` of `K`. -/
@@ -300,28 +243,6 @@ private theorem localHomologyRestriction_eq_localOrientationOfOrientedChart_refl
   rw [← ConcreteCategory.comp_apply, ← h, ConcreteCategory.comp_apply, hc]
   exact ((e p).inv_hom_id_apply 1).trans ((e q).inv_hom_id_apply 1).symm
 
-/-- **Translations preserve the model local orientations.** The translation `y ↦ c + (y - p)` of
-the model carries the local orientation at `p` selected by `ω` to the one at `c`. -/
-private theorem localHomologyMap_translate_localOrientationOfOrientedChart_refl (p c : E) :
-    localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) (⟨fun y ↦ c + (y - p), by fun_prop⟩ : C(E, E))
-        (translate_preimage_subset p c) (n + 1)
-        ((OpenPartialHomeomorph.refl E).localOrientationOfOrientedChart (mem_refl_source p) ω
-          hE).val =
-      ((OpenPartialHomeomorph.refl E).localOrientationOfOrientedChart (mem_refl_source c) ω
-        hE).val := by
-  let e (x : E) := singularHomologyComplSingletonIsoOfOrientation (ModuleCat.of ℤ (ULift.{w} ℤ))
-    (OpenPartialHomeomorph.refl E) (mem_refl_source x) ω hE
-  have h : localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ))
-      (⟨fun y ↦ c + (y - p), by fun_prop⟩ : C(E, E)) (translate_preimage_subset p c) (n + 1) ≫
-        (e c).hom = (e p).hom := by
-    simp only [e, singularHomologyComplSingletonIsoOfOrientation_refl_hom]
-    exact localHomologyMap_translate_comp_reducedSingularHomologyδ_assoc _ p c n _
-  rw [OpenPartialHomeomorph.coe_localOrientationOfOrientedChart,
-    OpenPartialHomeomorph.coe_localOrientationOfOrientedChart]
-  apply (ConcreteCategory.bijective_of_isIso (e c).hom).1
-  rw [← ConcreteCategory.comp_apply, h]
-  exact ((e p).inv_hom_id_apply 1).trans ((e c).inv_hom_id_apply 1).symm
-
 end Generator
 
 section Pullback
@@ -329,19 +250,6 @@ section Pullback
 variable {M : Type w} [TopologicalSpace M] [T1Space M]
   {E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   (ω : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1) (φ : OpenPartialHomeomorph M E)
-
-/-- The oriented local homology isomorphism of a chart is its chart isomorphism followed by the
-oriented local homology isomorphism of the identity chart of the model. -/
-private theorem singularHomologyComplSingletonIsoOfOrientation_hom_eq
-    {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C) {a : M}
-    (ha : a ∈ φ.source) :
-    (singularHomologyComplSingletonIsoOfOrientation R φ ha ω hE).hom =
-      (singularHomologyComplSingletonIsoOfChart R φ ha (n + 1)).hom ≫
-        (singularHomologyComplSingletonIsoOfOrientation R (OpenPartialHomeomorph.refl E)
-          (mem_refl_source (φ a)) ω hE).hom := by
-  rw [singularHomologyComplSingletonIsoOfOrientation_refl_hom,
-    singularHomologyComplSingletonIsoOfOrientation_hom, singularHomologyComplSingletonIso_hom,
-    Category.assoc, Category.assoc]
 
 /-- **Oriented-chart local orientations are pulled back from the model.** A class on the source
 of a chart `φ` which `φ` carries to the local orientation of the model `E` at `φ a` selected by
@@ -371,7 +279,8 @@ private theorem localHomologyMap_subtypeVal_eq_localOrientationOfOrientedChart {
       localHomologyMap_subtypeVal_comp_singularHomologyComplSingletonIsoOfChart_hom]
   rw [OpenPartialHomeomorph.coe_localOrientationOfOrientedChart] at hw ⊢
   apply (ConcreteCategory.bijective_of_isIso e.hom).1
-  rw [Iso.inv_hom_id_apply, singularHomologyComplSingletonIsoOfOrientation_hom_eq,
+  rw [Iso.inv_hom_id_apply,
+    singularHomologyComplSingletonIsoOfOrientation_hom_eq _ φ ha (mem_refl_source (φ a)),
     ConcreteCategory.comp_apply, key, hw]
   exact e₀.inv_hom_id_apply 1
 
@@ -501,15 +410,6 @@ variable {M : Type w} [TopologicalSpace M] [T1Space M]
   {E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] {n : ℕ}
   (ω : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1)
 
-omit [T1Space M] in
-/-- Maps of local homology induced by equal maps agree. -/
-private theorem localHomologyMap_congr {C : Type u} [Category.{v} C] [HasCoproducts.{w} C]
-    [Abelian C] (R : C) {X Y : Type w} [TopologicalSpace X] [TopologicalSpace Y]
-    {j j' : C(X, Y)} (h : j = j') {S : Set X} {T : Set Y} (hS : j ⁻¹' T ⊆ S) (k : ℕ) :
-    localHomologyMap R j hS k = localHomologyMap R j' (h ▸ hS) k := by
-  subst h
-  rfl
-
 /-- **Change of oriented chart.** For two charts `φ` and `χ` at `a` whose transition map
 `χ ∘ φ.symm` has an invertible derivative `f'` at `φ a`, the local orientations of `M` at `a`
 selected by an orientation `ω` of the model in the two charts differ by the sign of `det f'`. -/
@@ -597,7 +497,8 @@ theorem _root_.OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_eq_sign
         (s • F) x = s • F x :=
       congrArg (fun L ↦ L x) (ModuleCat.hom_zsmul s F)
     rw [map_zsmul, ← ConcreteCategory.comp_apply, e₁, hz, ConcreteCategory.comp_apply, hw,
-      localHomologyMap_translate_localOrientationOfOrientedChart_refl ω hE (φ a) b, smul_smul, hs,
+      localHomologyMap_translate_localOrientationOfOrientedChart_refl (mem_refl_source (φ a))
+        (mem_refl_source b) (translate_preimage_subset (φ a) b) ω hE, smul_smul, hs,
       one_smul]
   have hχ := localHomologyMap_subtypeVal_eq_localOrientationOfOrientedChart_of_eq ω hE χ haχ hb
     _ hSχ hχw
