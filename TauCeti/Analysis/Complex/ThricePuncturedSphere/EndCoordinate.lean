@@ -23,7 +23,7 @@ Each end lift `cylindricalEndLift q` of the thrice-punctured sphere is a scaled 
 coordinate `ζ_q(w) = -log ((w - c_q) / b_q) / (2π)` satisfies `cylindricalEndLift q (ζ_q w) = w`
 for `w ≠ c_q` (`Puncture.cylindricalEndLift_endCoord`), and recovers a cylinder point `z` up to
 an integer multiple of `i` (`Puncture.exists_endCoord_cylindricalEndLift`), so the end lift is
-injective on the strip `-1/2 ≤ Im z < 1/2` (`Puncture.injOn_cylindricalEndLift`). Its real part
+injective on every strip `t₀ ≤ Im z < t₀ + 1` (`Puncture.injOn_cylindricalEndLift`). Its real part
 is the longitudinal coordinate `s`, a smooth function away from `c_q`
 (`Puncture.contDiffAt_re_endCoord`). Its imaginary part is the angular coordinate `t`, with values
 in `[-1/2, 1/2)` (`Puncture.im_endCoord_mem_Ico`); it jumps by `1` across a ray, so only
@@ -297,20 +297,28 @@ theorem im_endCoord_mem_Ico (q : Puncture) (w : ℂ) :
   rw [im_endCoord, mem_Ico, le_div_iff₀ (by positivity), div_lt_iff₀ (by positivity)]
   constructor <;> linarith
 
-/-- An end lift is injective on every horizontal strip of height one whose angular coordinate
-ranges over `[-1/2, 1/2)`. -/
-theorem injOn_cylindricalEndLift (q : Puncture) :
-    InjOn q.cylindricalEndLift {z | z.im ∈ Ico (-1 / 2 : ℝ) (1 / 2)} := by
+/-- An end lift is injective on every horizontal strip `t₀ ≤ Im z < t₀ + 1` of height one: two
+points with the same image differ by an integer multiple of `i`. -/
+theorem injOn_cylindricalEndLift (q : Puncture) (t₀ : ℝ) :
+    InjOn q.cylindricalEndLift {z | z.im ∈ Ico t₀ (t₀ + 1)} := by
   intro a ha b hb hab
-  replace ha : -1 / 2 ≤ a.im ∧ a.im < 1 / 2 := ha
-  replace hb : -1 / 2 ≤ b.im ∧ b.im < 1 / 2 := hb
-  rw [cylindricalEndLift_eq, cylindricalEndLift_eq, add_right_inj,
-    mul_right_inj' q.endScale_ne_zero] at hab
-  have hπ := Real.pi_pos
-  have him (z : ℂ) : (-(2 * (π : ℂ)) * z).im = -(2 * π) * z.im := by simp
-  have h := Complex.exp_inj_of_neg_pi_lt_of_le_pi (by rw [him]; nlinarith)
-    (by rw [him]; nlinarith) (by rw [him]; nlinarith) (by rw [him]; nlinarith) hab
-  exact mul_left_cancel₀ (by simp [Real.pi_ne_zero]) h
+  replace ha : t₀ ≤ a.im ∧ a.im < t₀ + 1 := ha
+  replace hb : t₀ ≤ b.im ∧ b.im < t₀ + 1 := hb
+  obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift a
+  obtain ⟨l, hl⟩ := q.exists_endCoord_cylindricalEndLift b
+  rw [hab, hl] at hk
+  -- The real parts agree, and the imaginary parts differ by the integer `l - k`.
+  have hre := congrArg Complex.re hk
+  have him := congrArg Complex.im hk
+  simp only [Complex.add_re, Complex.add_im, Complex.mul_re, Complex.mul_im,
+    Complex.intCast_re, Complex.intCast_im, Complex.I_re, Complex.I_im] at hre him
+  have hlt : |((l - k : ℤ) : ℝ)| < 1 := by
+    rw [abs_lt]
+    push_cast
+    constructor <;> linarith
+  rw [← Int.cast_abs, ← Int.cast_one, Int.cast_lt, Int.abs_lt_one_iff, sub_eq_zero] at hlt
+  subst hlt
+  exact Complex.ext (by linarith) (by linarith)
 
 /-- The longitudinal coordinate is smooth away from the center of the end. -/
 theorem contDiffAt_re_endCoord (q : Puncture) {w : ℂ} (hw : w ≠ q.endCenter)

@@ -17,6 +17,7 @@ import Mathlib.MeasureTheory.Integral.MeanInequalities
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.MeasureTheory.Integral.NormRpow
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Morrey's inequality for `C¹` functions
@@ -204,7 +205,7 @@ theorem enorm_sub_le_of_mem_ball_of_finrank_lt [CompleteSpace F] {z : E} {r : �
   have hn : (1 : ℝ) ≤ n := by exact_mod_cast finrank_pos
   have hpn : (n : ℝ) < p := by exact_mod_cast hp
   have hK : 0 ≤ K := div_nonneg (mul_nonneg (by positivity) (by linarith)) (by linarith)
-  have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
+  have hω : 0 < ω := Metric.measureReal_ball_pos μ 0 one_pos
   -- The constant: the mean-value factor `(2 r) ^ n / (n μ(ball z r))` is `2 ^ n / (n ω)`.
   have hmeasure : μ (ball z r) = ENNReal.ofReal (r ^ n * ω) := by
     rw [Measure.addHaar_ball_of_pos μ z hr, ← ofReal_measureReal measure_ball_lt_top.ne,
