@@ -306,8 +306,8 @@ theorem mdifferentiableAt_angleMap (hs : MDifferentiableAt 𝓘(ℝ, ι → ℝ)
   have hu : DifferentiableAt ℝ
       (fun q : (ι → ℝ) × (ι → ℝ) ↦ ∑ i, ((2 * π)⁻¹ * q.1 i) • p i q.2) (θ, c) :=
     DifferentiableAt.fun_sum fun i _ ↦
-      (((differentiableAt_apply i _).comp (θ, c) differentiableAt_fst).const_mul _).smul
-        ((hp i).comp (θ, c) differentiableAt_snd)
+      (by fun_prop : DifferentiableAt ℝ (fun q : (ι → ℝ) × (ι → ℝ) ↦ (2 * π)⁻¹ * q.1 i)
+        (θ, c)).fun_smul ((hp i).comp (θ, c) differentiableAt_snd)
   rw [show hσ.angleMap hF hcomm hc s p = _ from funext (hσ.angleMap_apply hF hcomm hc)]
   exact ((hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).mdifferentiableAt (by simp)).comp
     (θ, c) (hu.mdifferentiableAt.prodMk (hs.comp (θ, c) differentiableAt_snd.mdifferentiableAt))
