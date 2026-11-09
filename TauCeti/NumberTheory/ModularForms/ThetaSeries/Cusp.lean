@@ -135,6 +135,7 @@ theorem valueAtInfty_thetaSeries : valueAtInfty (thetaSeries L) = 1 :=
   (tendsto_thetaSeries_atImInfty L).limUnder_eq
 
 /-- The theta series of a discrete subgroup does not vanish at `i∞`, since it tends to `1`. -/
+@[simp]
 theorem not_isZeroAtImInfty_thetaSeries : ¬ IsZeroAtImInfty (thetaSeries L) := fun h =>
   one_ne_zero <| tendsto_nhds_unique (tendsto_thetaSeries_atImInfty L) h
 
