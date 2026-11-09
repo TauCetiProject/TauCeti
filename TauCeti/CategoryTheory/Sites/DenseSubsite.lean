@@ -56,8 +56,9 @@ theorem isRightKanExtension (ℱ : Sheaf K A) :
     (sheafHom E.hom) (by simp [sheafHom_restrict_eq])) ?_⟩⟩
   intro E f
   apply CostructuredArrow.hom_ext
-  apply (restrictHomEquivHom (G := G) (ℱ' := ℱ)).symm.injective
-  simpa [restrictHomEquivHom, sheafHom_restrict_eq] using CostructuredArrow.w f
+  rw [← sheafHom_eq G f.left]
+  congr 1
+  simpa using CostructuredArrow.w f
 
 /-- A sheaf is the pointwise right Kan extension of its restriction along a locally full,
 cover-dense functor. For every object `X` of `D`, its restriction maps exhibit `ℱ.obj (op X)`

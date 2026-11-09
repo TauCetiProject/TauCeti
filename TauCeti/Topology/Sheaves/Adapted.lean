@@ -404,8 +404,7 @@ theorem isSheaf_of_isAdapted_of_forall_exists_le (hB : Opens.IsBasis B) (hF : F.
 
 /-- **A sheaf is adapted to every basis.** If `F` is a sheaf, then for every basis `B` and every
 open `V`, the restriction maps exhibit `F(V)` as the limit of the `F(U)` over the members
-`U ∈ B` below `V`: a basis is a dense subsite of the opens,
-and a sheaf is the pointwise right Kan extension of its restriction to a dense subsite. -/
+`U ∈ B` below `V`. -/
 theorem IsSheaf.isAdapted {B : Set (Opens X)} (hB : Opens.IsBasis B) {F : X.Presheaf C}
     (hF : F.IsSheaf) : F.IsAdapted B :=
   have := TauCeti.TopologicalSpace.Opens.coverDense_inducedFunctor_subtypeVal hB
