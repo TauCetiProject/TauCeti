@@ -263,7 +263,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_of_isLocalizedMo
     {ι : Type u} (U : ι → X.Opens) (hU : ∀ i, IsAffineOpen (U i)) (hcov : ⨆ i, U i = ⊤)
     (h : ∀ i (f : Γ(X, U i)), IsLocalizedModule.Away f (M.basicOpenRestrict f)) :
     M.IsQuasicoherent := by
-  refine AlgebraicGeometry.isQuasicoherent_of_isQuasicoherent_restrict M U hcov fun i ↦ ?_
+  refine (M.isQuasicoherent_iff_of_iSup_eq_top U hcov).2 fun i ↦ ?_
   have := M.isQuasicoherent_restrict_fromSpec (hU i) (h i)
   -- `U i` is isomorphic to the affine chart, through which `U.ι` factors
   have := Scheme.Modules.isQuasicoherent_restrictFunctor (hU i).isoSpec.hom

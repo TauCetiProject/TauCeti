@@ -205,13 +205,13 @@ theorem exists_contMDiffMap_extension (f : SmoothEmbedding I J n M N)
     dsimp only [a]
     rw [dite_eq_left hz]
     exact congrArg g (f.isEmbedding.injective (Classical.choose_spec hz).2)
-  have hloc : ∀ z ∈ f '' K, ∃ V : Set N, IsOpen V ∧ z ∈ V ∧
-      ∃ a' : N → F, ContMDiffOn J 𝓘(ℝ, F) n a' V ∧ EqOn a' a ((f '' K) ∩ V) := by
+  have hloc : ∀ z ∈ f '' K, ∃ V ∈ 𝓝 z, ∃ a' : N → F,
+      ContMDiffOn J 𝓘(ℝ, F) n a' V ∧ EqOn a' a ((f '' K) ∩ V) := by
     intro z hz
     obtain ⟨x, -, rfl⟩ := hz
     obtain ⟨V, hV, hxV, r, hr, hrf⟩ :=
       (f.isImmersion.isImmersionAt x).exists_contMDiffOn_retraction f.isEmbedding
-    refine ⟨V, hV, hxV, g ∘ r, g.contMDiff.comp_contMDiffOn hr, ?_⟩
+    refine ⟨V, hV.mem_nhds hxV, g ∘ r, g.contMDiff.comp_contMDiffOn hr, ?_⟩
     rintro _ ⟨⟨y, hy, rfl⟩, hfy⟩
     rw [Function.comp_apply, hrf y hfy, ha y hy]
   obtain ⟨G, hGa, hGU⟩ := hK.exists_contMDiffMap_eqOn (I := J) hU hKU hloc

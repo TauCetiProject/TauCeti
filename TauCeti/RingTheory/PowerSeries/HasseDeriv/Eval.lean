@@ -47,12 +47,13 @@ section Bound
 
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : ℝ} {q : R⟦X⟧} {a : R}
 
-/-- If `ε ≥ 0` bounds the weighted coefficient norms `‖qₖ‖ cᵏ` of `q` in every degree `k ≥ n`,
+/-- If `ε` bounds the weighted coefficient norms `‖qₖ‖ cᵏ` of `q` in every degree `k ≥ n`,
 then it bounds `‖(D⁽ⁿ⁾ q)(a)‖ cⁿ` at every point `a` with `‖a‖ ≤ c`. -/
 theorem norm_evalAt_hasseDeriv_mul_pow_le_of_forall (hc : 0 < c) (ha : ‖a‖ ≤ c)
-    {ε : ℝ} (hε : 0 ≤ ε) (n : ℕ) (h : ∀ m, ‖coeff (m + n) q‖ * c ^ (m + n) ≤ ε) :
+    {ε : ℝ} (n : ℕ) (h : ∀ m, ‖coeff (m + n) q‖ * c ^ (m + n) ≤ ε) :
     ‖(hasseDeriv n q).evalAt a‖ * c ^ n ≤ ε := by
   have hcn : 0 < c ^ n := pow_pos hc n
+  have hε : 0 ≤ ε := (by positivity : 0 ≤ ‖coeff (0 + n) q‖ * c ^ (0 + n)).trans (h 0)
   rw [← le_div_iff₀ hcn, evalAt_def]
   refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (by positivity) fun m ↦ ?_
   rw [smul_eq_mul, le_div_iff₀ hcn]

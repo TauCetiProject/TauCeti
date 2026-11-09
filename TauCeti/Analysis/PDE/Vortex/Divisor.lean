@@ -5,51 +5,53 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.PDE.Vortex.Reconstruction
 public import TauCeti.Analysis.PDE.Vortex.Symmetry
-public import TauCeti.Analysis.PDE.Vortex.Zeros
-public import TauCeti.Analysis.Complex.ContinuousLog.ArgumentPrinciple
+public import TauCeti.Analysis.PDE.Vortex.Uniqueness
+public import TauCeti.Analysis.Complex.ZeroMultiplicity
 public import Mathlib.Data.Sym.Basic
 
 /-!
 # The zero divisor of a framed plane vortex
 
 In the coordinates of `TauCeti.Vortex.equation`, a field `x = (b₁, b₂, p, q)` has section
-`α = 2 (p + i q)` (`TauCeti.Vortex.sectionValue`). The zero divisor of `x` is the zero divisor of
-`α` in the sense of `TauCeti.HasZeroDivisor`: a multiset `D` of points of the plane such that near
-every point `z` the section factors as `α(w) = (w - z) ^ D(z) v(w)`, with `v` continuous at `z` and
-nonzero there; here `D(z)` is the multiplicity of `z` in `D`. The vortex statements below are
-phrased directly with `TauCeti.HasZeroDivisor (sectionValue x) D`, so the general theory applies
-to them by dot notation: a field has at most one zero divisor (`TauCeti.HasZeroDivisor.unique`),
-its points are the zeros of `α` (`TauCeti.HasZeroDivisor.apply_eq_zero_iff`), and the multiplicity
-of `z` is the exponent of any continuous nonvanishing local factorization
-(`TauCeti.HasZeroDivisor.count_eq_of_eventually_eq_pow_mul`).
+`α = 2 (p + i q)` (`TauCeti.Vortex.sectionValue`). Its degree-`m` end framing is
+`α(z) (z / |z|)⁻ᵐ → 1` at infinity; every continuous field of the affine space `A_m^s`, `s > 1`,
+has it (`TauCeti.Vortex.tendsto_sectionValue_mul_inv_pow`).
 
-Under the holomorphicity rows `∂bar_a α = 0` with `Cᵏ` connection coefficients, `k ≥ 1`, a
-section that is not identically zero factors near every point as `(w - z) ^ n z * v w` with `v` of
-class `Cᵏ` at `z` and nonzero there (`TauCeti.Vortex.exists_contDiffAt_sectionValue_eq_pow_mul`).
-If `α` does not vanish near infinity, only finitely many exponents are nonzero, so the zero
-divisor exists (`TauCeti.Vortex.exists_hasZeroDivisor_sectionValue`, from the general
-`TauCeti.exists_hasZeroDivisor_of_eventually_eq_pow_mul`), and its factors can be taken of class
-`Cᵏ` (`TauCeti.Vortex.exists_contDiffAt_sectionValue_eq_pow_count_mul`).
+Under the holomorphicity rows `∂bar_a α = 0` with `Cᵏ` connection coefficients, `k ≥ 1`, the
+section factors near every point as `(w - z) ^ n z * v w` with `v` of class `Cᵏ` at `z` and
+nonzero there (`TauCeti.Vortex.exists_contDiffAt_section_eq_pow_mul`), so `n` is a zero
+multiplicity function of the section (`TauCeti.IsZeroMultiplicity`). The topological argument
+principle `TauCeti.finsum_eq_of_tendsto_mul_inv_pow` shows that the end framing forces the
+multiplicities to add up to `m`. Hence the zeros of a framed degree-`m` vortex section, counted
+with multiplicity, form an effective divisor of degree `m`, a point of `Sym ℂ m`
+(`TauCeti.Vortex.exists_sym_sectionValue_eq_pow_count_mul`). Only the holomorphicity rows are
+used; the curvature equation is not needed. The divisor is determined by the section, since zero
+multiplicities are unique (`TauCeti.IsZeroMultiplicity.unique`).
 
-The degree-`m` end framing is `α(z) (z / |z|)⁻ᵐ → 1` at infinity; every continuous field of the
-affine space `A_m^s`, `s > 1`, has it (`TauCeti.Vortex.tendsto_sectionValue_mul_inv_pow`). The
-topological argument principle `TauCeti.finsum_eq_of_tendsto_mul_inv_pow` shows that the end
-framing forces the zero divisor to have degree `m` (`TauCeti.HasZeroDivisor.card_eq`).
-Hence the zeros of a framed degree-`m` vortex section, counted with multiplicity, form a point of
-`Sym ℂ m` (`TauCeti.Vortex.exists_sym_hasZeroDivisor_sectionValue`). Only the holomorphicity rows
-are used; the curvature equation is not needed. The identification of the degree with the flux
-`(2π)⁻¹ ∫ i F_a` (Jaffe–Taubes, Chapter III) is
-`TauCeti.Vortex.integral_curvature_eq_of_tendsto_sectionValue_mul_inv_pow`. Existence of a vortex
-for a given divisor is not proved here.
+The second part of the file proves how the divisor transforms, which is the action of the
+symmetries of the vortex equations on `Sym^m ℂ`:
 
-The symmetries of the plane vortex equations act on zero divisors as expected. The translation
-`translateField a` moves the divisor by `-a`
-(`TauCeti.Vortex.hasZeroDivisor_sectionValue_translateField`), the rotation `rotateField u`
-rotates it by `u⁻¹` (`TauCeti.Vortex.hasZeroDivisor_sectionValue_rotateField`), and a continuous
-gauge transformation leaves it unchanged
-(`TauCeti.Vortex.hasZeroDivisor_sectionValue_gaugeTransform_iff`). In particular the constant
-line-frame gauge, and every framed gauge, preserves the divisor.
+* translating a field by `a`, that is pulling it back by `z ↦ z + a`, moves its divisor by `-a`
+  (`TauCeti.Vortex.isZeroMultiplicity_sectionValue_translateField`);
+* rotating a field by `u`, that is pulling it back by `z ↦ u z`, rotates its divisor by `u⁻¹`
+  (`TauCeti.Vortex.isZeroMultiplicity_sectionValue_rotateField`);
+* continuous gauge transformations, in particular the smooth framed gauges and the constant
+  line-frame gauges, do not change the divisor
+  (`TauCeti.Vortex.isZeroMultiplicity_sectionValue_gaugeTransform`).
+
+Conversely, by Taubes's uniqueness theorem
+(`TauCeti.Vortex.existsUnique_framedGaugeGroup_smul_eq`), two smooth framed vortices with a common
+end framing are related by a framed gauge exactly when their divisors are equal
+(`TauCeti.Vortex.exists_framedGaugeGroup_smul_eq_iff`): the divisor is a complete invariant of
+the framed gauge orbit. In the other direction, the field reconstructed from `∏_{a ∈ D} (w - a)`
+and a continuous amplitude has divisor `D`
+(`TauCeti.Vortex.isZeroMultiplicity_sectionValue_amplitudeField_prod_sub`). Existence of a
+vortex for a given divisor is not proved here.
+
+The identification of the framing degree with the flux `(2π)⁻¹ ∫ i F_a` (Jaffe–Taubes,
+Chapter III) is `TauCeti.Vortex.integral_curvature_eq_of_tendsto_sectionValue_mul_inv_pow`.
 
 ## References
 
@@ -65,52 +67,6 @@ open scoped ContDiff
 
 namespace TauCeti.Vortex
 
-/-- The vacuum section has the empty zero divisor. -/
-@[simp]
-theorem hasZeroDivisor_sectionValue_vacuumField :
-    HasZeroDivisor (sectionValue vacuumField) 0 :=
-  hasZeroDivisor_iff.2 fun _ ↦
-    ⟨fun _ ↦ 1, continuousAt_const, one_ne_zero, .of_forall fun _ ↦ by
-      simp [sectionValue_apply, vacuumField_apply]⟩
-
-section Symmetry
-
-variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {D : Multiset ℂ}
-
-/-- **Translation law.** The pullback by `z ↦ z + a` moves the zero divisor of the section by
-`-a`. -/
-theorem hasZeroDivisor_sectionValue_translateField (hD : HasZeroDivisor (sectionValue x) D)
-    (a : ℂ) : HasZeroDivisor (sectionValue (translateField a x)) (D.map (· - a)) := by
-  rw [funext (sectionValue_translateField a x)]
-  exact hD.comp_add_const a
-
-/-- **Rotation law.** The pullback by `z ↦ u z` rotates the zero divisor of the section by
-`u⁻¹`. -/
-theorem hasZeroDivisor_sectionValue_rotateField (hD : HasZeroDivisor (sectionValue x) D)
-    (u : Circle) :
-    HasZeroDivisor (sectionValue (rotateField u x)) (D.map ((u : ℂ)⁻¹ * ·)) := by
-  rw [funext (sectionValue_rotateField u x)]
-  exact hD.comp_const_mul (Circle.coe_ne_zero u)
-
-/-- **Gauge invariance of the zero divisor.** A continuous gauge transformation, in particular a
-framed gauge or a constant change of line frame, does not change the zero divisor of the
-section. -/
-@[simp]
-theorem hasZeroDivisor_sectionValue_gaugeTransform_iff {u : ℂ → Circle} (hu : Continuous u) :
-    HasZeroDivisor (sectionValue (gaugeTransform u x)) D ↔
-      HasZeroDivisor (sectionValue x) D := by
-  have hc : Continuous fun z ↦ (u z : ℂ) := continuous_subtype_val.comp hu
-  refine ⟨fun h ↦ h.of_eq_mul (u := fun z ↦ (u z : ℂ)⁻¹)
-    (hc.inv₀ fun z ↦ Circle.coe_ne_zero _)
-    (fun z ↦ inv_ne_zero (Circle.coe_ne_zero _)) fun z ↦ ?_,
-    fun h ↦ h.of_eq_mul hc (fun z ↦ Circle.coe_ne_zero _)
-      (sectionValue_gaugeTransform u x)⟩
-  rw [sectionValue_gaugeTransform, inv_mul_cancel_left₀ (Circle.coe_ne_zero _)]
-
-end Symmetry
-
-section Existence
-
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {k : ℕ∞} (hn : 1 ≤ k)
   (hb₁ : ContDiff ℝ k (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ k (fun w ↦ x w 1))
   (hp : Differentiable ℝ (fun w ↦ x w 2)) (hq : Differentiable ℝ (fun w ↦ x w 3))
@@ -118,38 +74,112 @@ variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {k : ℕ∞} (hn : 1 ≤ k)
 
 include hn hb₁ hb₂ hp hq hhol
 
-/-- **Existence of the zero divisor.** If the section of a field with `Cᵏ` connection
-coefficients, `k ≥ 1`, satisfying the holomorphicity rows does not vanish near infinity, then it
-has a zero divisor. -/
-theorem exists_hasZeroDivisor_sectionValue
-    (htail : ∀ᶠ w in cocompact ℂ, sectionValue x w ≠ 0) :
-    ∃ D, HasZeroDivisor (sectionValue x) D := by
-  choose n v hvc hv₀ hvf using
-    exists_contDiffAt_sectionValue_eq_pow_mul hn hb₁ hb₂ hp hq hhol htail.exists
-  exact exists_hasZeroDivisor_of_eventually_eq_pow_mul
-    (fun z ↦ ⟨v z, (hvc z).continuousAt, hv₀ z, hvf z⟩) htail
-
-/-- The factors of the zero divisor can be chosen of class `Cᵏ`, the regularity of the
-connection coefficients. -/
-theorem exists_contDiffAt_sectionValue_eq_pow_count_mul {D : Multiset ℂ}
-    (hD : HasZeroDivisor (sectionValue x) D) (z : ℂ) :
-    ∃ v : ℂ → ℂ, ContDiffAt ℝ k v z ∧ v z ≠ 0 ∧
-      ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ D.count z * v w :=
-  exists_contDiffAt_sectionValue_eq_pow_mul_of_order hn hb₁ hb₂ hp hq hhol
-    (hasZeroDivisor_iff.1 hD z)
-
 /-- **The zero divisor of a framed degree-`m` vortex lies in `Sym ℂ m`.** If the section of a
-field with `Cᵏ` connection coefficients, `k ≥ 1`, satisfying the holomorphicity rows has the end
-framing `α(z) (z / |z|)⁻ᵐ → 1`, then it has a zero divisor of degree `m`. -/
-theorem exists_sym_hasZeroDivisor_sectionValue {m : ℕ}
+field with `Cᵏ` connection coefficients, `k ≥ 1`, satisfying the holomorphicity rows has the
+end framing `α(z) (z / |z|)⁻ᵐ → 1`, then there is an effective divisor `D` of degree `m` whose
+multiplicity at each `z` is the exponent of a local factorization `α(w) = (w - z) ^ D(z) v(w)`,
+with `v` of class `Cᵏ` at `z` and nonzero there. -/
+theorem exists_sym_sectionValue_eq_pow_count_mul {m : ℕ}
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
-    ∃ D : Sym ℂ m, HasZeroDivisor (sectionValue x) D := by
+    ∃ D : Sym ℂ m, ∀ z, ∃ v : ℂ → ℂ, ContDiffAt ℝ k v z ∧ v z ≠ 0 ∧
+      ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ Multiset.count z (D : Multiset ℂ) * v w := by
   have htail : ∀ᶠ w in cocompact ℂ, sectionValue x w ≠ 0 := by
     filter_upwards [hframe.eventually_ne one_ne_zero] with w hw h0
     exact hw (by simp [h0])
-  obtain ⟨D, hD⟩ := exists_hasZeroDivisor_sectionValue hn hb₁ hb₂ hp hq hhol htail
-  exact ⟨⟨D, hD.card_eq hframe⟩, hD⟩
+  choose n v hvc hv₀ hvf using
+    exists_contDiffAt_sectionValue_eq_pow_mul hn hb₁ hb₂ hp hq hhol htail.exists
+  have hmult : IsZeroMultiplicity (sectionValue x) n :=
+    isZeroMultiplicity_iff.2 fun z ↦ ⟨v z, (hvc z).continuousAt, hv₀ z, hvf z⟩
+  obtain ⟨D, rfl⟩ := hmult.exists_eq_count htail
+  exact ⟨⟨D, hmult.card_eq_of_tendsto_mul_inv_pow hframe⟩, fun z ↦ ⟨v z, hvc z, hv₀ z, hvf z⟩⟩
 
-end Existence
+omit hn hb₁ hb₂ hp hq hhol
+
+/-! ### The divisor under translations, rotations and gauge transformations -/
+
+section Laws
+
+variable {y : ℂ → EuclideanSpace ℝ (Fin 4)} {D D' : Multiset ℂ}
+
+/-- **Translation law for the divisor.** Translating a field by `a`, that is pulling it back by
+`z ↦ z + a`, moves its zero divisor `D` to `D - a`. -/
+theorem isZeroMultiplicity_sectionValue_translateField
+    (h : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) (a : ℂ) :
+    IsZeroMultiplicity (sectionValue (translateField a x)) fun z ↦ (D.map (· - a)).count z := by
+  convert h.comp_mul_add one_ne_zero a using 1
+  · funext w
+    rw [sectionValue_translateField, one_mul]
+  · funext z
+    rw [one_mul, ← Multiset.count_map_eq_count' (· - a) D (sub_left_injective (b := a)) (z + a),
+      add_sub_cancel_right]
+
+/-- **Rotation law for the divisor.** Rotating a field by `u`, that is pulling it back by
+`z ↦ u z`, rotates its zero divisor `D` to `u⁻¹ D`. -/
+theorem isZeroMultiplicity_sectionValue_rotateField
+    (h : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) (u : Circle) :
+    IsZeroMultiplicity (sectionValue (rotateField u x))
+      fun z ↦ (D.map ((u : ℂ)⁻¹ * ·)).count z := by
+  have hu := Circle.coe_ne_zero u
+  convert h.comp_mul_add hu 0 using 1
+  · funext w
+    rw [sectionValue_rotateField, add_zero]
+  · funext z
+    rw [add_zero, ← Multiset.count_map_eq_count' ((u : ℂ)⁻¹ * ·) D
+      (mul_right_injective₀ (inv_ne_zero hu)) (u * z), inv_mul_cancel_left₀ hu]
+
+/-- **Gauge invariance of the divisor.** A continuous gauge transformation multiplies the
+section by a function without zeros, so it does not change the zero multiplicities. This applies
+to the smooth framed gauges and to the constant line-frame gauges. -/
+theorem isZeroMultiplicity_sectionValue_gaugeTransform {n : ℂ → ℕ} {u : ℂ → Circle}
+    (hu : Continuous fun z ↦ (u z : ℂ)) (h : IsZeroMultiplicity (sectionValue x) n) :
+    IsZeroMultiplicity (sectionValue (gaugeTransform u x)) n := by
+  rw [show sectionValue (gaugeTransform u x) = fun w ↦ (u w : ℂ) * sectionValue x w from
+    funext (sectionValue_gaugeTransform u x)]
+  exact h.mul_left_of_continuous hu fun z ↦ Circle.coe_ne_zero (u z)
+
+/-- Smooth framed gauges do not change the zero multiplicities. -/
+theorem isZeroMultiplicity_sectionValue_framedGaugeGroup_smul {n : ℂ → ℕ}
+    (h : IsZeroMultiplicity (sectionValue x) n) (u : framedGaugeGroup) :
+    IsZeroMultiplicity (sectionValue (u • x)) n :=
+  isZeroMultiplicity_sectionValue_gaugeTransform
+    ((mem_framedGaugeGroup _).1 u.property).1.continuous h
+
+/-- **The divisor is a complete invariant of the framed gauge orbit.** Two smooth vortices `x`
+and `y` with the same end framing `α (z) · phase (z) → 1`, where `|phase| → 1` at infinity, and
+with zero divisors `D` and `D'`, are related by a smooth framed gauge exactly when `D = D'`. -/
+theorem exists_framedGaugeGroup_smul_eq_iff (hx : ContDiff ℝ ∞ x) (hy : ContDiff ℝ ∞ y)
+    (hxsol : ∀ z, equation x z = 0) (hysol : ∀ z, equation y z = 0) {phase : ℂ → ℂ}
+    (hphase : Tendsto (fun z ↦ ‖phase z‖) (cocompact ℂ) (𝓝 1))
+    (hxfr : Tendsto (fun z ↦ sectionValue x z * phase z) (cocompact ℂ) (𝓝 1))
+    (hyfr : Tendsto (fun z ↦ sectionValue y z * phase z) (cocompact ℂ) (𝓝 1))
+    (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z)
+    (hD' : IsZeroMultiplicity (sectionValue y) fun z ↦ D'.count z) :
+    (∃ u : framedGaugeGroup, u • y = x) ↔ D = D' := by
+  refine ⟨fun ⟨u, hu⟩ ↦ Multiset.ext.2 fun z ↦ ?_, fun hDD' ↦ ?_⟩
+  · have h := isZeroMultiplicity_sectionValue_framedGaugeGroup_smul hD' u
+    rw [hu] at h
+    exact congrFun (hD.unique h) z
+  · subst hDD'
+    exact (existsUnique_framedGaugeGroup_smul_eq hx hy hxsol hysol hphase hxfr hyfr
+      (isZeroMultiplicity_iff.1 hD) (isZeroMultiplicity_iff.1 hD')).exists
+
+/-- A reconstructed field with a continuous amplitude `u` has the zero multiplicities of the
+function `f` it is built from, since its section is `exp(u) f`. -/
+theorem isZeroMultiplicity_sectionValue_amplitudeField {u : ℂ → ℝ} (hu : Continuous u)
+    {f : ℂ → ℂ} {n : ℂ → ℕ} (h : IsZeroMultiplicity f n) :
+    IsZeroMultiplicity (sectionValue (amplitudeField u f)) n := by
+  rw [show sectionValue (amplitudeField u f) = fun w ↦ (Real.exp (u w) : ℂ) * f w from
+    funext (sectionValue_amplitudeField u f)]
+  exact h.mul_left_of_continuous (by fun_prop) fun z ↦ by simp
+
+/-- **The divisor of a reconstructed field.** The field reconstructed from `∏_{a ∈ D} (w - a)`
+and a continuous amplitude has zero divisor `D`. -/
+theorem isZeroMultiplicity_sectionValue_amplitudeField_prod_sub {u : ℂ → ℝ} (hu : Continuous u)
+    (D : Multiset ℂ) :
+    IsZeroMultiplicity (sectionValue (amplitudeField u fun w ↦ (D.map fun a ↦ w - a).prod))
+      fun z ↦ D.count z :=
+  isZeroMultiplicity_sectionValue_amplitudeField hu (isZeroMultiplicity_prod_sub D)
+
+end Laws
 
 end TauCeti.Vortex

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.TestFunction
 public import TauCeti.Analysis.PDE.Vortex.Decay
-public import TauCeti.Analysis.PDE.Vortex.Divisor
+public import TauCeti.Analysis.Complex.ZeroMultiplicity
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.Zeros
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -17,6 +17,7 @@ import TauCeti.Analysis.Calculus.ContDiff.Removable
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Cutoff
 import TauCeti.Analysis.Normed.Module.LocalFactorization
+import TauCeti.Analysis.PDE.Vortex.Divisor
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
@@ -51,11 +52,11 @@ Testing this identity against dilated cutoffs `χ_R`, the left side tends to zer
 `(2π)⁻¹ ∫ iF_a` is the number of zeros of `α`, counted with multiplicity
 (`TauCeti.Vortex.integral_curvature_eq_neg_mul_finsum`).
 
-In terms of the zero divisor `D` of the section (`TauCeti.HasZeroDivisor (sectionValue x) D`),
-the total multiplicity is the degree of `D`, so `(2π)⁻¹ ∫ iF_a = deg D`
-(`TauCeti.Vortex.integral_curvature_eq_neg_mul_card`). If the section has the
-degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`, its zero divisor has degree `m`
-(`TauCeti.Vortex.exists_sym_hasZeroDivisor_sectionValue`). Hence
+In terms of the zero divisor `D` of the section, whose counts are the zero multiplicities
+(`TauCeti.IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z`), the total multiplicity is the
+degree of `D`, so `(2π)⁻¹ ∫ iF_a = deg D` (`TauCeti.Vortex.integral_curvature_eq_neg_mul_card`).
+If the section has the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`, its zero divisor has
+degree `m` (`TauCeti.Vortex.exists_sym_sectionValue_eq_pow_count_mul`). Hence
 `∫ (1 - |α|²) = 16π m` and the flux `(2π)⁻¹ ∫ iF_a` equals the framing degree `m`
 (`TauCeti.Vortex.integral_curvature_eq_of_tendsto_sectionValue_mul_inv_pow`). For `s > 1` every
 continuous field of the affine Sobolev space `A_m^s` has this end framing, so every `C²` vortex in
@@ -159,7 +160,7 @@ private theorem exists_contDiff_laplacian_eq_log_normSq_add
     mul_ne_zero four_ne_zero (mt (sectionValue_eq_zero_iff x _).mpr hw)
   -- Off the zeros every kernel term is harmonic.
   have hKh : ∀ w, sectionValue x w ≠ 0 → HarmonicAt (fun y ↦ 4 * π * K y) w := fun w hw ↦
-    (HarmonicAt.sum _ (f := fun z y ↦ (n z : ℝ) * planarNewtonianKernel (y - z))
+    (HarmonicAt.sum (f := fun z y ↦ (n z : ℝ) * planarNewtonianKernel (y - z))
       fun z hz ↦ (harmonicAt_planarNewtonianKernel_sub fun h ↦ hw <| by
         rw [h]; exact (Set.Finite.mem_toFinset hfin).mp hz).const_smul
           (c := (n z : ℝ))).const_smul (c := 4 * π)
@@ -363,10 +364,10 @@ theorem integral_one_sub_normSq_eq_mul_card
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {D : Multiset ℂ}
-    (hD : HasZeroDivisor (sectionValue x) D) :
+    (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) :
     ∫ z, (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) = 16 * π * Multiset.card D := by
   rw [integral_one_sub_normSq_eq_mul_finsum hb₁ hb₂ hp hq hsol hlim
-    (hasZeroDivisor_iff.1 hD), Multiset.finsum_count_eq_card]
+    (isZeroMultiplicity_iff.1 hD), Multiset.finsum_count_eq_card]
 
 /-- **The flux is the degree of the zero divisor.** For a `C²` vortex on the whole plane with
 `|α| → 1` at infinity and zero divisor `D`, the curvature coefficient `∂₁ b₂ - ∂₂ b₁` integrates
@@ -376,10 +377,10 @@ theorem integral_curvature_eq_neg_mul_card
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {D : Multiset ℂ}
-    (hD : HasZeroDivisor (sectionValue x) D) :
+    (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) :
     ∫ z, curvature x z = -(2 * π * Multiset.card D) := by
   rw [integral_curvature_eq_neg_mul_finsum hb₁ hb₂ hp hq hsol hlim
-    (hasZeroDivisor_iff.1 hD), Multiset.finsum_count_eq_card]
+    (isZeroMultiplicity_iff.1 hD), Multiset.finsum_count_eq_card]
 
 /-- **The flux identity for a framed plane vortex, modulus form.** Let `x` be a `C²` vortex on the
 whole plane whose section has the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`. Then
@@ -391,11 +392,13 @@ theorem integral_one_sub_normSq_eq_of_tendsto_sectionValue_mul_inv_pow
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
     ∫ z, (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) = 16 * π * m := by
   -- The zero divisor `D` of the section has degree `m`.
-  obtain ⟨D, hD⟩ := exists_sym_hasZeroDivisor_sectionValue (k := 2) (by norm_num) hb₁ hb₂
+  obtain ⟨D, hD⟩ := exists_sym_sectionValue_eq_pow_count_mul (k := 2) (by norm_num) hb₁ hb₂
     (hp.differentiable (by norm_num)) (hq.differentiable (by norm_num))
     (fun w ↦ ⟨by simp [hsol w], by simp [hsol w]⟩) hframe
   rw [integral_one_sub_normSq_eq_mul_card hb₁ hb₂ hp hq hsol
-    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe) hD, Sym.card_coe]
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe)
+    (isZeroMultiplicity_iff.2 fun z ↦ (hD z).imp fun _ hv ↦ ⟨hv.1.continuousAt, hv.2⟩),
+    Sym.card_coe]
 
 /-- **The flux of a framed plane vortex is its degree.** Let `x` be a `C²` vortex on the whole
 plane whose section has the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`. Then the curvature
