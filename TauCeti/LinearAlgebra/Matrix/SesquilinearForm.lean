@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Order.Star.Basic
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
+import TauCeti.Algebra.Group.Hom.Defs
 import TauCeti.Algebra.Ring.Hom
 
 /-!
@@ -170,7 +171,7 @@ theorem comp_add_smul_dotProduct_mulVec_add_smul (hσ : Function.Involutive σ) 
     (u : n → R) (c : R) :
     (σ ∘ (u + c • x)) ⬝ᵥ (Q *ᵥ (u + c • x)) = (σ ∘ u) ⬝ᵥ (Q *ᵥ u) +
       (c * ((σ ∘ u) ⬝ᵥ (Q *ᵥ x)) + ε * σ (c * ((σ ∘ u) ⬝ᵥ (Q *ᵥ x)))) := by
-  rw [comp_add_dotProduct_mulVec, RingHom.comp_smul, mulVec_add, mulVec_smul, dotProduct_add,
+  rw [comp_add_dotProduct_mulVec, TauCeti.map_comp_smul, mulVec_add, mulVec_smul, dotProduct_add,
     dotProduct_add, smul_dotProduct, smul_dotProduct, dotProduct_smul, dotProduct_smul, hx,
     comp_dotProduct_mulVec_swap hσ hQ hε u x, map_mul]
   simp only [smul_eq_mul, mul_zero]
