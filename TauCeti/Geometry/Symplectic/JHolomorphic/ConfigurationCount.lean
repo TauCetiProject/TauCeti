@@ -9,7 +9,6 @@ public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Basic
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
-public import TauCeti.Geometry.Symplectic.JHolomorphic.GoodCycle
 public import TauCeti.Geometry.Symplectic.JHolomorphic.TorusWeight
 
 /-!
@@ -398,13 +397,8 @@ theorem apply_self_sub_apply_canonical_eq_sum_of_mem_compatibleConfigurations
     (hl : l ∈ compatibleConfigurations r cls s A) (κ : H) :
     B A A - B κ A =
       ∑ c ∈ l.support, (l c : ℤ) * (l c * B (cls c) (cls c) - B κ (cls c)) := by
-  have hA : ∑ c : l.support, l c • cls c = A := by
-    rw [← hl.2.2, Finsupp.linearCombination_apply, Finsupp.sum,
-      Finset.sum_coe_sort l.support fun c ↦ l c • cls c]
-  rw [cycle_apply_self_sub_apply_canonical_eq_sum_add_sum (B := B) (κ := κ) hA,
-    Finset.sum_coe_sort l.support fun c ↦ (l c : ℤ) * (B (cls c) (cls c) - B κ (cls c)),
-    Finset.sum_coe_sort l.support fun c ↦ (l c : ℤ) * (B A (cls c) - B (cls c) (cls c)),
-    ← Finset.sum_add_distrib]
+  rw [apply_eq_sum_of_mem_compatibleConfigurations' hl A,
+    apply_eq_sum_of_mem_compatibleConfigurations' hl κ, ← Finset.sum_sub_distrib]
   refine Finset.sum_congr rfl fun c hc ↦ ?_
   rw [apply_eq_mul_apply_self_of_mem_compatibleConfigurations
     (fun b hb hbc ↦ hr b hb c (hl.1 hc) hbc) hl hc]
