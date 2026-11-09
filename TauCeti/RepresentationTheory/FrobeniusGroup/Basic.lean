@@ -121,7 +121,7 @@ The irreducible characters span the class functions, so if they all take at `g` 
 at the identity, then so does every class function; the indicator of the identity conjugacy class
 does not, unless `g = 1`. -/
 private theorem eq_one_of_forall_irreducibleCharacter_eq (k : Type u) {G : Type v} [Field k]
-    [Group G] [Finite G] [IsAlgClosed k] [Invertible (Nat.card G : k)] {g : G}
+    [Group G] [IsAlgClosed k] [Invertible (Nat.card G : k)] {g : G}
     (hg : ∀ f ∈ irreducibleCharacters k G, f g = f 1) : g = 1 := by
   classical
   by_contra hne
