@@ -60,7 +60,8 @@ everywhere (`AlmostComplexStructure.add_mul_mul_mem_tangentSpace`), without chan
 `u z₀`. On a manifold there are no constant endomorphism fields: `A` is obtained from a section
 with prescribed value at `u z₀` (`ContMDiffSection.exists_apply_eq_isCompact_tsupport_subset`).
 For the compatible version this section `C` is first replaced by its `σ`-skew part
-`(σ♭)⁻¹ ∘ (β + βᵀ) / 2`, where `β = σ(C ·, ·)` and `σ♭` is the flat map of `σ`: skew-adjointness
+`(σ♭)⁻¹ ∘ (β + βᵀ) / 2`, where `β = σ(C ·, ·)` and `σ♭` is the flat map of `σ`
+(`SmoothTwoForm.IsNondegenerate.skewPart`): skew-adjointness
 is a pointwise condition for the varying form `σ_x`, so a section with a skew-adjoint value at one
 point need not be skew-adjoint elsewhere. Averaging with `J` then preserves skew-adjointness
 (`SymplecticForm.Invariant.add_mul_mul_mem_compatibleTangentSpace_of_skew`).
@@ -247,67 +248,6 @@ variable {S : Type*} [TopologicalSpace S] [T2Space S] [LocallyCompactSpace S] [M
   {J : SmoothAlmostComplexStructure I M} {u : S → M} {w : (z : S) → TangentSpace I (u z)}
   {η : (z : S) → TangentSpace I (u z) →L[ℝ] ℝ} {z₀ : S}
 
-/-- Mathlib's derived `IsNormableSpace` instance on `TangentSpace I x` is stated with the model
-space's `Module` instance instead of the tangent space's own one, so instance search never finds
-it; restate it against the tangent space's structure. It is needed to transpose sections of
-`Hom(TM, Hom(TM, ℝ))`. -/
-local instance (x : M) : IsNormableSpace ℝ (TangentSpace I x) :=
-  instIsNormableSpaceTangentSpace I x
-
-/-- The bilinear forms `σ(C ·, ·)` of a section `C` of `End(TM)`. -/
-private noncomputable def flatComp (σ : SmoothTwoForm I M)
-    (C : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯) :
-    Cₛ^∞⟮I; E →L[ℝ] E →L[ℝ] ℝ,
-      fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ⟯ :=
-  (⟨σ.flat, σ.contMDiff_flat⟩ : Cₛ^∞⟮I; E →L[ℝ] E →L[ℝ] ℝ,
-      fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ⟯).clmComp C
-
-/-- The `σ`-skew part `(C - C^†) / 2` of a section `C` of `End(TM)`, where `C^†` is the adjoint
-for `σ`: it is `(σ♭)⁻¹ ∘ (β + βᵀ) / 2` for the bilinear forms `β = σ(C ·, ·)`. -/
-private noncomputable def skewPart (hσ : σ.IsNondegenerate)
-    (C : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯) :
-    Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯ :=
-  (2⁻¹ : ℝ) • ((⟨fun x ↦ (σ.flat x).inverse,
-      σ.contMDiff_flat.clm_bundle_inverse hσ.isInvertible_flat⟩ :
-      Cₛ^∞⟮I; (E →L[ℝ] ℝ) →L[ℝ] E,
-        fun x : M ↦ (TangentSpace I x →L[ℝ] ℝ) →L[ℝ] TangentSpace I x⟯).clmComp
-    (flatComp σ C + ⟨fun x ↦ (flatComp σ C x).flip, fun x ↦ contMDiffWithinAt_univ.1
-      ((flatComp σ C).contMDiff x).contMDiffWithinAt.clm_bundle_flip⟩))
-
-omit [T2Space M] in
-/-- The defining identity of the skew part: `σ(S v, w) = (σ(C v, w) + σ(C w, v)) / 2`. -/
-private theorem flat_skewPart_apply (hσ : σ.IsNondegenerate)
-    (C : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯) (x : M)
-    (v w : TangentSpace I x) :
-    σ.flat x (skewPart hσ C x v) w = 2⁻¹ * (σ.flat x (C x v) w + σ.flat x (C x w) v) := by
-  simp [skewPart, flatComp, (hσ.isInvertible_flat x).self_apply_inverse, mul_add]
-
-omit [T2Space M] in
-/-- The skew part of a section is skew-adjoint for `σ` at every point. -/
-private theorem skewPart_skew (hσ : σ.IsNondegenerate)
-    (C : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯) (x : M)
-    (v w : TangentSpace I x) :
-    hσ.symplecticFormAt x (skewPart hσ C x v) w + hσ.symplecticFormAt x v (skewPart hσ C x w) =
-      0 := by
-  have h := (hσ.symplecticFormAt x).isAlt.neg_eq (skewPart hσ C x w) v
-  simp only [IsNondegenerate.symplecticFormAt_apply, ← flat_apply] at h ⊢
-  rw [← h, flat_skewPart_apply, flat_skewPart_apply]
-  ring
-
-omit [T2Space M] in
-/-- The skew part does not change a value which is already skew-adjoint for `σ`. -/
-private theorem skewPart_apply_of_skew (hσ : σ.IsNondegenerate)
-    (C : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯) {x : M}
-    (hC : ∀ v w, hσ.symplecticFormAt x (C x v) w + hσ.symplecticFormAt x v (C x w) = 0) :
-    skewPart hσ C x = C x := by
-  ext v
-  refine (hσ.isInvertible_flat x).injective (ContinuousLinearMap.ext fun w ↦ ?_)
-  have h₁ := hC v w
-  have h₂ := (hσ.symplecticFormAt x).isAlt.neg_eq (C x w) v
-  simp only [IsNondegenerate.symplecticFormAt_apply, ← flat_apply] at h₁ h₂
-  rw [flat_skewPart_apply]
-  linarith
-
 /-- **Compatible variations of almost complex structures detect cokernel elements at injective
 points.** Let `σ` be a nondegenerate two-form on `M`, let `J` be a smooth almost complex
 structure preserving `σ`, tamed by `σ` at `u z₀`, and let `z₀` be an injective point of
@@ -335,17 +275,17 @@ theorem IsNondegenerate.exists_contMDiffSection_mem_compatibleTangentSpace_integ
   obtain ⟨C, hC, -, -⟩ := ContMDiffSection.exists_apply_eq_isCompact_tsupport_subset (n := ⊤)
     (I := I) (F := E →L[ℝ] E) (V := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (u z₀)
     (LinearMap.toContinuousLinearMap A₀) univ_mem
-  have hA : skewPart hσ C (u z₀) = LinearMap.toContinuousLinearMap A₀ := by
-    rw [skewPart_apply_of_skew hσ C (by
+  have hA : hσ.skewPart C (u z₀) = LinearMap.toContinuousLinearMap A₀ := by
+    rw [hσ.skewPart_apply_of_skew C (by
       simpa [hC] using (SymplecticForm.mem_compatibleTangentSpace.1 hA₀).2), hC]
   obtain ⟨ρ, hYc, hYW, hpos⟩ := exists_localizedVariation (μ := μ) (J := J) hw hη hinj
-    (A := skewPart hσ C)
+    (A := hσ.skewPart C)
     (by simpa [hA] using SymplecticForm.compatibleTangentSpace_le_tangentSpace hA₀)
     (by simp [hA, hA₀w, he]) hW
   refine ⟨_, hYc, hYW, fun x ↦ ?_, hpos⟩
   rw [ContMDiffSection.smul_apply, ContinuousLinearMap.toLinearMap_smul, coe_average_apply]
   exact Submodule.smul_mem _ _ (Submodule.smul_mem _ _
-    ((hJσ' x).add_mul_mul_mem_compatibleTangentSpace_of_skew (skewPart_skew hσ C x)))
+    ((hJσ' x).add_mul_mul_mem_compatibleTangentSpace_of_skew (hσ.skewPart_skew C x)))
 
 /-- **A covector field annihilating all compatible variations vanishes at injective points.**
 Let `σ` be a nondegenerate two-form on `M` and let `J` be a smooth almost complex structure

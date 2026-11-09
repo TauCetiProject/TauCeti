@@ -36,6 +36,12 @@ one-forms (`TauCeti.SmoothTwoForm.interiorₗ`). For a nondegenerate form on a f
 manifold it is a linear equivalence (`TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv`), whose
 inverse sends a one-form `α` to the vector field `(σ♭)⁻¹ α`.
 
+Inverting the flat map also projects a section `C` of `End(TM)` to its `σ`-skew part
+`(σ♭)⁻¹ ∘ (β + βᵀ) / 2`, where `β = σ(C ·, ·)`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.skewPart`). Skew-adjointness for a varying form is a
+pointwise condition, so this is how a section with a skew-adjoint value at one point is made
+skew-adjoint everywhere without changing that value.
+
 ## Main declarations
 
 * `TauCeti.SmoothTwoForm.flat`: the flat map `v ↦ σ(v, ·)` at a point.
@@ -50,6 +56,9 @@ inverse sends a one-form `α` to the vector field `(σ♭)⁻¹ α`.
   one-forms.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv`: for a nondegenerate form in finite
   dimensions, contraction identifies smooth vector fields with smooth one-forms.
+* `TauCeti.SmoothTwoForm.flatComp`: the bilinear forms `σ(C ·, ·)` of a section of `End(TM)`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.skewPart`: the `σ`-skew part of a section of `End(TM)`,
+  skew-adjoint at every point and equal to `C` wherever `C` is already skew-adjoint.
 
 ## References
 
@@ -212,6 +221,83 @@ theorem IsNondegenerate.interiorEquiv_symm_apply [FiniteDimensional ℝ E]
 theorem IsNondegenerate.interiorₗ_interiorEquiv_symm [FiniteDimensional ℝ E]
     (h : σ.IsNondegenerate) (α : SmoothForm I M ℝ 1) : σ.interiorₗ (h.interiorEquiv.symm α) = α :=
   h.interiorEquiv.apply_symm_apply α
+
+/-! ### The skew part of an endomorphism field -/
+
+section SkewPart
+
+/-- Mathlib's derived `IsNormableSpace` instance on `TangentSpace I x` is stated with the model
+space's `Module` instance instead of the tangent space's own one, so instance search never finds
+it; restate it against the tangent space's structure. It is needed to transpose sections of
+`Hom(TM, Hom(TM, ℝ))`. -/
+local instance (x : M) : IsNormableSpace ℝ (TangentSpace I x) :=
+  instIsNormableSpaceTangentSpace I x
+
+/-- The bilinear forms `σ(C ·, ·)` of a section `C` of `End(TM)`, as a smooth section of
+`Hom(TM, Hom(TM, ℝ))`. -/
+def flatComp (σ : SmoothTwoForm I M)
+    (C : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯) :
+    Cₛ^∞⟮I; E →L[ℝ] E →L[ℝ] ℝ,
+      fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ⟯ :=
+  (⟨σ.flat, σ.contMDiff_flat⟩ : Cₛ^∞⟮I; E →L[ℝ] E →L[ℝ] ℝ,
+      fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ⟯).clmComp C
+
+/-- The bilinear form `σ(C ·, ·)` at a point is the flat map composed with `C`. -/
+@[simp]
+theorem flatComp_apply (σ : SmoothTwoForm I M)
+    (C : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯) (x : M) :
+    σ.flatComp C x = (σ.flat x).comp (C x) :=
+  ContMDiffSection.clmComp_apply _ C x
+
+variable [FiniteDimensional ℝ E]
+
+/-- The `σ`-skew part `(C - C^†) / 2` of a section `C` of `End(TM)`, where `C^†` is the adjoint
+for a nondegenerate two-form `σ`: it is `(σ♭)⁻¹ ∘ (β + βᵀ) / 2` for the bilinear forms
+`β = σ(C ·, ·)`. It is skew-adjoint for `σ` at every point
+(`TauCeti.SmoothTwoForm.IsNondegenerate.skewPart_skew`) and keeps every value of `C` which is
+already skew-adjoint (`TauCeti.SmoothTwoForm.IsNondegenerate.skewPart_apply_of_skew`). -/
+def IsNondegenerate.skewPart (hσ : σ.IsNondegenerate)
+    (C : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯) :
+    Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯ :=
+  (2⁻¹ : ℝ) • ((⟨fun x ↦ (σ.flat x).inverse,
+      σ.contMDiff_flat.clm_bundle_inverse hσ.isInvertible_flat⟩ :
+      Cₛ^∞⟮I; (E →L[ℝ] ℝ) →L[ℝ] E,
+        fun x : M ↦ (TangentSpace I x →L[ℝ] ℝ) →L[ℝ] TangentSpace I x⟯).clmComp
+    (σ.flatComp C + ⟨fun x ↦ (σ.flatComp C x).flip, fun x ↦ contMDiffWithinAt_univ.1
+      ((σ.flatComp C).contMDiff x).contMDiffWithinAt.clm_bundle_flip⟩))
+
+/-- The defining identity of the skew part: `σ(S v, w) = (σ(C v, w) + σ(C w, v)) / 2`. -/
+theorem IsNondegenerate.flat_skewPart_apply (hσ : σ.IsNondegenerate)
+    (C : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯) (x : M)
+    (v w : TangentSpace I x) :
+    σ.flat x (hσ.skewPart C x v) w = 2⁻¹ * (σ.flat x (C x v) w + σ.flat x (C x w) v) := by
+  simp [skewPart, (hσ.isInvertible_flat x).self_apply_inverse, mul_add]
+
+/-- The skew part of a section is skew-adjoint for `σ` at every point. -/
+theorem IsNondegenerate.skewPart_skew (hσ : σ.IsNondegenerate)
+    (C : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯) (x : M)
+    (v w : TangentSpace I x) :
+    hσ.symplecticFormAt x (hσ.skewPart C x v) w + hσ.symplecticFormAt x v (hσ.skewPart C x w) =
+      0 := by
+  have h := (hσ.symplecticFormAt x).isAlt.neg_eq (hσ.skewPart C x w) v
+  simp only [IsNondegenerate.symplecticFormAt_apply, ← flat_apply] at h ⊢
+  rw [← h, hσ.flat_skewPart_apply, hσ.flat_skewPart_apply]
+  ring
+
+/-- The skew part does not change a value which is already skew-adjoint for `σ`. -/
+theorem IsNondegenerate.skewPart_apply_of_skew (hσ : σ.IsNondegenerate)
+    (C : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯) {x : M}
+    (hC : ∀ v w, hσ.symplecticFormAt x (C x v) w + hσ.symplecticFormAt x v (C x w) = 0) :
+    hσ.skewPart C x = C x := by
+  ext v
+  refine (hσ.isInvertible_flat x).injective (ContinuousLinearMap.ext fun w ↦ ?_)
+  have h₁ := hC v w
+  have h₂ := (hσ.symplecticFormAt x).isAlt.neg_eq (C x w) v
+  simp only [IsNondegenerate.symplecticFormAt_apply, ← flat_apply] at h₁ h₂
+  rw [hσ.flat_skewPart_apply]
+  linarith
+
+end SkewPart
 
 end SmoothTwoForm
 
