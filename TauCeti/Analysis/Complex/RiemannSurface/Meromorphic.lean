@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Meromorphic.Order
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalMultiplicity
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Geometry.Manifold.ChartedSpace
+import TauCeti.Geometry.Manifold.ContMDiff.Analytic
+import TauCeti.Geometry.Manifold.Complex.Analytic
 
 /-!
 # Meromorphic functions on a Riemann surface and their orders
@@ -47,6 +49,8 @@ and products add the two divisor bounds.
   `TauCeti.RiemannSurface.meromorphicOrderAt_eq_of_mem_maximalAtlas`: chart independence.
 * `TauCeti.RiemannSurface.tendsto_zero_iff_meromorphicOrderAt_pos`: the order is positive exactly
   where the function tends to zero.
+* `TauCeti.RiemannSurface.MeromorphicAt.eventually_contMDiffAt`: a meromorphic function is
+  holomorphic on a punctured neighbourhood of its centre.
 * `TauCeti.RiemannSurface.meromorphicAt_of_eventually_mdifferentiableAt` and
   `TauCeti.RiemannSurface.meromorphicOrderAt_nonneg_of_eventually_mdifferentiableAt`: a holomorphic
   function is meromorphic, of nonnegative order.
@@ -74,7 +78,7 @@ public noncomputable section
 
 open Filter Function IsManifold Set Topology
 
-open scoped Manifold
+open scoped ContDiff Manifold
 
 namespace TauCeti.RiemannSurface
 
@@ -169,6 +173,17 @@ theorem meromorphicOrderAt_eq_of_mem_maximalAtlas {e : OpenPartialHomeomorph X �
       (deriv_symm_trans_ne_zero he (chart_mem_maximalAtlas x) hx hcx)]
   simp [meromorphicOrderAt, e.left_inv hx]
 
+/-- A meromorphic function is holomorphic on a punctured neighbourhood of its centre. -/
+theorem MeromorphicAt.eventually_contMDiffAt [CompleteSpace E] (hf : MeromorphicAt f x) :
+    ∀ᶠ y in 𝓝[≠] x, ContMDiffAt 𝓘(ℂ) 𝓘(ℂ, E) ω f y := by
+  have : IsManifold 𝓘(ℂ) ω X := IsManifold.of_ne_zero ω one_ne_zero inferInstance
+  have hm := ((meromorphicAt_def _ _).1 hf).eventually_analyticAt
+  filter_upwards [(tendsto_chartAt_nhdsNE x).eventually hm,
+    nhdsWithin_le_nhds ((chartAt ℂ x).open_source.mem_nhds (mem_chart_source ℂ x))]
+    with y hy hys
+  exact (contMDiffAt_omega_iff_analyticAt_of_mem_maximalAtlas
+    (chart_mem_maximalAtlas x) hys).2 (by simpa using hy)
+
 /-- A function holomorphic near `x` is meromorphic at `x`. -/
 theorem meromorphicAt_of_eventually_mdifferentiableAt [CompleteSpace E]
     (hf : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, E) f y) : MeromorphicAt f x :=
@@ -206,19 +221,15 @@ theorem meromorphicOrderAt_comp (hF : MeromorphicAt F (φ x))
   have hF' : _root_.MeromorphicAt (F ∘ (chartAt ℂ (φ x)).symm)
       (chartAt ℂ (φ x) (φ ((chartAt ℂ x).symm (chartAt ℂ x x)))) := by
     rwa [(chartAt ℂ x).left_inv hcx]
-  have hmult := natCast_localMultiplicity hφ hnc
-  -- The representative of `φ` is not constant near `chartAt ℂ x x`, since its recentred order of
-  -- vanishing is the finite local multiplicity of `φ`.
-  have hnc' : ¬ EventuallyConst (fun z ↦ chartAt ℂ (φ x) (φ ((chartAt ℂ x).symm z)))
-      (𝓝 (chartAt ℂ x x)) := by
-    rw [eventuallyConst_iff_analyticOrderAt_sub_eq_top]
-    simp [(chartAt ℂ x).left_inv hcx, ← hmult]
+  have hnc' := not_eventuallyConst_chartAt_comp_comp_chartAt_symm hφ hnc
   rw [meromorphicOrderAt, _root_.meromorphicOrderAt_congr
       ((comp_comp_chartAt_symm_eventuallyEq (H := ℂ) (H' := ℂ) F
         hφ.self_of_nhds.continuousAt).filter_mono nhdsWithin_le_nhds),
     hF'.meromorphicOrderAt_comp (g := fun z ↦ chartAt ℂ (φ x) (φ ((chartAt ℂ x).symm z)))
       (analyticAt_chartAt_comp_comp_chartAt_symm hφ) hnc']
-  simp [meromorphicOrderAt, (chartAt ℂ x).left_inv hcx, ← hmult]
+  simp only [(chartAt ℂ x).left_inv hcx, ← natCast_localMultiplicity hφ hnc,
+    ENat.map_natCast, WithTop.coe_natCast]
+  simp only [meromorphicOrderAt]
 
 end IsManifold
 

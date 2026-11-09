@@ -60,6 +60,9 @@ block of the same sign to its inertia.
   `dim_ℝ 𝕜 * #{i | w i < w k}`.
 * `TauCeti.totalCriticalCount_projectiveMomentFunction` and
   `TauCeti.criticalCount_projectiveMomentFunction`: the critical counts.
+* `TauCeti.criticalCount_projectiveMomentFunction_mul` and
+  `TauCeti.criticalCount_projectiveMomentFunction_eq_zero`: for distinct weights there is exactly
+  one critical point of each index `dim_ℝ 𝕜 * j` with `j ≤ n`, and none of any other index.
 * `TauCeti.criticalCount_projectiveMomentFunction_real`: on `ℝℙⁿ` with distinct weights there is
   one critical point of each index `j ≤ n`.
 * `TauCeti.manifoldMorseIndex_projectiveMomentFunction_natCast_complex`: on `ℂℙⁿ` with the
@@ -565,6 +568,24 @@ theorem criticalCount_projectiveMomentFunction {w : Fin (n + 1) → ℝ} (hw : I
     exact ⟨k, by rwa [← manifoldMorseIndex_projectiveMomentFunction], rfl⟩
   · rintro ⟨k, hk, rfl⟩
     exact ⟨⟨k, rfl⟩, by rwa [manifoldMorseIndex_projectiveMomentFunction]⟩
+
+/-- **Critical counts by index.** For pairwise distinct weights the moment function has exactly
+one critical point of index `dim_ℝ 𝕜 * j` for each `j ≤ n`, and none for larger `j`. -/
+theorem criticalCount_projectiveMomentFunction_mul {w : Fin (n + 1) → ℝ} (hw : Injective w)
+    (j : ℕ) :
+    criticalCount 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) (Module.finrank ℝ 𝕜 * j) =
+      if j ≤ n then 1 else 0 := by
+  simp only [criticalCount_projectiveMomentFunction hw, mul_right_inj' Module.finrank_pos.ne',
+    encard_setOf_ncard_setOf_lt_eq hw, Nat.card_eq_fintype_card, Fintype.card_fin, Nat.lt_succ_iff]
+
+/-- For pairwise distinct weights the moment function has no critical point whose index is not of
+the form `dim_ℝ 𝕜 * j` with `j ≤ n`. -/
+theorem criticalCount_projectiveMomentFunction_eq_zero {w : Fin (n + 1) → ℝ} (hw : Injective w)
+    {m : ℕ} (hm : ∀ j ≤ n, Module.finrank ℝ 𝕜 * j ≠ m) :
+    criticalCount 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) m = 0 := by
+  rw [criticalCount_projectiveMomentFunction hw, encard_eq_zero, eq_empty_iff_forall_notMem]
+  refine fun k hk ↦ hm _ (Nat.lt_succ_iff.1 ?_) hk
+  simpa using ncard_lt_card (s := {i | w i < w k}) fun h ↦ lt_irrefl (w k) (h.symm ▸ mem_univ k :)
 
 /-- **One critical point of each index on `ℝℙⁿ`.** For pairwise distinct weights the moment
 function on real projective space has exactly one critical point of each index `j ≤ n`, and none

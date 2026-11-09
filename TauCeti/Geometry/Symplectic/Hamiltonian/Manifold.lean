@@ -256,13 +256,8 @@ function `φ` differentiable at `f x` rescales the Hamiltonian vector field at `
 theorem hamiltonianVectorField_comp {φ : ℝ → ℝ} {x : M} (hφ : DifferentiableAt ℝ φ (f x))
     (hf : MDifferentiableAt I 𝓘(ℝ) f x) :
     σ.hamiltonianVectorField (φ ∘ f) x = deriv φ (f x) • σ.hamiltonianVectorField f x := by
-  have hd : mvfderiv I (φ ∘ f) x = deriv φ (f x) • mvfderiv I f x := by
-    ext v
-    rw [mvfderiv_comp_apply_of_differentiableAt hφ hf, fderiv_eq_smul_deriv,
-      smul_apply]
-    -- Both sides are products of two reals, the first read in the tangent space of `ℝ`.
-    exact mul_comm _ _
-  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hd, map_smul]
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, mvfderiv_scalar_comp hf hφ,
+    map_smul]
 
 namespace IsNondegenerate
 
@@ -621,7 +616,7 @@ theorem hamiltonianVectorField_constSmooth (omegaForm : SymplecticForm V) (f : V
   -- The tangent spaces of the model space are `V` itself, through the identity map
   -- `NormedSpace.fromTangentSpace`.
   refine (fromTangentSpace_constSmooth_apply omegaForm x _ v).trans ?_
-  rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply]
+  rw [TauCeti.mvfderiv_eq_fderiv_apply]
   exact omegaForm.apply_hamiltonianVectorField f x _
 
 /-- For a constant symplectic form on a vector space, the Poisson bracket of the manifold theory

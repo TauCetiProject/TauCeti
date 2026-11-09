@@ -565,10 +565,8 @@ private theorem exists_normalFrame {f : Circle → ℝ³} (hf : ContMDiff (𝓡 
   refine ⟨n₁, fun z => toLp 2 (ofLp (u z) ⨯₃ ofLp (n₁ z)), hcn₁, ?_, fun z => ?_⟩
   · refine (PiLp.continuous_toLp 2 _).comp (continuous_pi fun i => ?_)
     fin_cases i <;> simp only [cross_apply] <;> fun_prop
-  · obtain ⟨hc, huc, hnc, hdecomp⟩ := cross_orthonormal (hu z) (hn₁ z) (hun₁ z)
-    refine ⟨hn₁ z, hc, hnc, fun v => ⟨fun hv => hdecomp v ((hnormal z v).mp hv), fun hv => ?_⟩⟩
-    rw [hnormal, hv, inner_add_right, real_inner_smul_right, real_inner_smul_right, hun₁, huc]
-    ring
+  · obtain ⟨hc, -, hnc, hdecomp⟩ := cross_orthonormal (hu z) (hn₁ z) (hun₁ z)
+    exact ⟨hn₁ z, hc, hnc, fun v => (hnormal z v).trans (hdecomp v)⟩
 
 /-- A `C²` immersed circle in `ℝ³` has a family of linear isometries `ψ z : ℂ →ₗᵢ[ℝ] ℝ³` onto
 its normal planes, continuous as a family of continuous linear maps:
@@ -643,6 +641,35 @@ private theorem exists_hasFDerivAt_tube {f : Circle → V} (hf : ContMDiff (𝓡
   rw [ht, zero_smul, zero_add, smul_eq_zero] at hx
   exact Prod.ext (hψinj ((hx.resolve_left hr).trans (map_zero _).symm)) ht
 
+/-- The open solid torus is mapped by `(w, z) ↦ f z + r • ψ z w` onto an open set: it is the image
+under a tubular open embedding of the normal vectors of length less than `r`. -/
+private theorem isOpen_image_normalDisc {f : Circle → ℝ³} {ε r : ℝ} (hr : 0 < r)
+    {ψ : Circle → ℂ →ₗᵢ[ℝ] ℝ³}
+    (hψ : ∀ z, ∀ v ∈ normalSubspace (𝓡 1) f z, ∃ w, ψ z w = v)
+    (hemb : IsOpenEmbedding ((normalTube (𝓡 1) f ε).domRestrict fun p : Circle × ℝ³ =>
+      f p.1 + p.2))
+    (hmem : ∀ q : SolidTorus, (q.2, r • ψ q.2 q.1) ∈ normalTube (𝓡 1) f ε) :
+    IsOpen ((fun q : SolidTorus => f q.2 + r • ψ q.2 q.1) '' {p | ‖(p.1 : ℂ)‖ < 1}) := by
+  have hnorm : ∀ q : SolidTorus, ‖r • ψ q.2 q.1‖ = r * ‖(q.1 : ℂ)‖ := fun q => by
+    rw [norm_smul, (ψ q.2).norm_map, Real.norm_of_nonneg hr.le]
+  convert hemb.isOpenMap {q | ‖(q : Circle × ℝ³).2‖ < r}
+    (isOpen_lt (continuous_norm.comp (continuous_snd.comp continuous_subtype_val))
+      continuous_const) using 1
+  ext x
+  constructor
+  · rintro ⟨q, hq, rfl⟩
+    refine ⟨⟨_, hmem q⟩, ?_, rfl⟩
+    rw [mem_ofPred_eq, hnorm]
+    exact mul_lt_of_lt_one_right hr hq
+  · rintro ⟨⟨⟨z, v⟩, hzv⟩, hvr, rfl⟩
+    rw [mem_ofPred_eq] at hvr
+    obtain ⟨w, hw⟩ := hψ z _ (Submodule.smul_mem _ r⁻¹ (mem_normalTube.mp hzv).1)
+    have hwn : ‖w‖ < 1 := by
+      rw [← (ψ z).norm_map, hw, norm_smul, norm_inv, Real.norm_of_nonneg hr.le]
+      exact (inv_mul_lt_one₀ hr).mpr hvr
+    refine ⟨(⟨w, mem_closedBall_zero_iff.mpr hwn.le⟩, z), hwn, ?_⟩
+    simp [hw, smul_smul, mul_inv_cancel₀ hr.ne']
+
 /-- **Solid torus neighbourhoods of knots in `ℝ³`, with their derivative at the core.** A `C²`
 embedded circle `f` in `ℝ³` has a solid torus neighbourhood `Φ` inside any neighbourhood of its
 image, whose reading `(u, t) ↦ Φ (u, exp (t i))` at the core point `(0, 1)`
@@ -679,24 +706,7 @@ theorem exists_isSolidTorusNeighborhood_hasFDerivAt_coreReading {f : Circle → 
     (hψc'.const_smul r)).isClosedEmbedding hinj |>.isEmbedding, fun z => ?_, ?_⟩, ?_, ?_⟩
   · dsimp only
     rw [Metric.unitClosedBall.coe_zero, map_zero, smul_zero, add_zero]
-  · -- The open solid torus is mapped onto the normal vectors of length less than `r`.
-    convert hemb.isOpenMap {q | ‖(q : Circle × ℝ³).2‖ < r}
-      (isOpen_lt (continuous_norm.comp (continuous_snd.comp continuous_subtype_val))
-        continuous_const) using 1
-    ext x
-    constructor
-    · rintro ⟨q, hq, rfl⟩
-      refine ⟨⟨_, hmem q⟩, ?_, rfl⟩
-      rw [mem_ofPred_eq, hnorm]
-      exact mul_lt_of_lt_one_right hr hq
-    · rintro ⟨⟨⟨z, v⟩, hzv⟩, hvr, rfl⟩
-      rw [mem_ofPred_eq] at hvr
-      obtain ⟨w, hw⟩ := (hψ z).2 _ (Submodule.smul_mem _ r⁻¹ (mem_normalTube.mp hzv).1)
-      have hwn : ‖w‖ < 1 := by
-        rw [← (ψ z).norm_map, hw, norm_smul, norm_inv, Real.norm_of_nonneg hr.le]
-        exact (inv_mul_lt_one₀ hr).mpr hvr
-      refine ⟨(⟨w, mem_closedBall_zero_iff.mpr hwn.le⟩, z), hwn, ?_⟩
-      simp [hw, smul_smul, mul_inv_cancel₀ hr.ne']
+  · exact isOpen_image_normalDisc hr (fun z => (hψ z).2) hemb hmem
   · rintro _ ⟨q, rfl⟩
     refine interior_subset (hδU (mem_thickening_iff.mpr ⟨f q.2, mem_range_self _, ?_⟩))
     rw [dist_eq_norm, add_sub_cancel_left]

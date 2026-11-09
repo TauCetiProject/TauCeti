@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Dirichlet.Density
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 
 /-!
 # Weak continuity of Dirichlet laws

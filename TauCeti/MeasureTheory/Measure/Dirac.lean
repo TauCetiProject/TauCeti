@@ -83,6 +83,22 @@ namespace MeasureTheory.Measure
 
 open Set
 
+/-- A measure dominates a unit point mass exactly when its mass at that point is at least one. -/
+@[simp]
+theorem dirac_le_iff_one_le_apply_singleton {X : Type*} [MeasurableSpace X]
+    (μ : Measure X) (x : X) :
+    dirac x ≤ μ ↔ 1 ≤ μ {x} := by
+  classical
+  constructor
+  · intro h
+    simpa only [dirac_apply_of_mem (mem_singleton x)] using h {x}
+  · intro hx
+    refine le_iff.2 fun A hA ↦ ?_
+    by_cases hxA : x ∈ A
+    · simpa [dirac_apply' _ hA, hxA] using
+        hx.trans (measure_mono (singleton_subset_iff.2 hxA))
+    · simp [dirac_apply' _ hA, hxA]
+
 /-- The topological support of a Dirac measure is the closure of its singleton atom. -/
 @[simp]
 theorem support_dirac {X : Type*} [TopologicalSpace X] [MeasurableSpace X]

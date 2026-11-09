@@ -210,6 +210,20 @@ theorem continuous_manifoldWeakWhitney_iff_compact_chartIteratedFDeriv
     · intro hp z hz
       exact hp (mem_univ (⟨z, hz⟩ : K'))
 
+/-- A family of vector-valued maps is weak Whitney continuous exactly when each of its
+compact-open-valued chart derivatives is continuous. -/
+theorem continuous_manifoldWeakWhitney_iff_chartIteratedFDeriv
+    {P : Type*} [TopologicalSpace P] {g : P → C^n⟮I, M; 𝓘(𝕜, F), F⟯} :
+    Continuous g ↔ ∀ (x : M) (m : ℕ) (hm : m ≤ n),
+      Continuous (fun p ↦ chartIteratedFDeriv (g p) x m hm) := by
+  constructor
+  · intro h x m hm
+    exact (continuous_chartIteratedFDeriv x m hm).comp h
+  · intro h
+    apply continuous_manifoldWeakWhitney_iff_compact_chartIteratedFDeriv.mpr
+    intro x m hm K
+    exact (ContinuousMap.continuous_restrict (K : Set _)).comp (h x m hm)
+
 /-- The linear map recording every chart derivative restricted to every compact coordinate set,
 with each component valued in its native supremum-norm continuous-map space. -/
 noncomputable def compactChartJet :

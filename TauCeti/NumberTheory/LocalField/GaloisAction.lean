@@ -232,9 +232,9 @@ statement that `normalizedValuation L (σ • x) = normalizedValuation L x`. -/
 @[simp]
 theorem normalizedValuation_unitsMap (σ : L ≃ₐ[K] L) (x : Lˣ) :
     normalizedValuation L (Units.map (σ : L →* L) x) = normalizedValuation L x := by
-  apply le_antisymm <;>
-    rw [← Multiplicative.toAdd_le, toAdd_normalizedValuation_le_iff_valuation_le] <;>
-    simp [σ.valuation_eq]
+  refine Multiplicative.toAdd.injective ?_
+  rw [toAdd_normalizedValuation_eq_iff_valuation_eq]
+  simp [σ.valuation_eq]
 
 end AlgEquiv
 

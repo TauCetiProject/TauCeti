@@ -189,4 +189,26 @@ lemma preimageSkeleton_eq_empty {C : Set X} [CWComplex C] (f : E → X) {q : ℤ
     preimageSkeleton C f q = ∅ := by
   rw [preimageSkeleton_of_neg f hq, Set.preimage_empty]
 
+/-- The stage `n ≥ 0` of the skeletal filtration is the preimage of the `n`-skeleton. -/
+@[simp]
+lemma preimageSkeleton_natCast (f : E → X) (n : ℕ) :
+    preimageSkeleton C f n = f ⁻¹' skeleton C n := by
+  simp [preimageSkeleton, skeleton]
+
+/-- The stage `0` of the skeletal filtration is the preimage of the `0`-skeleton. -/
+@[simp]
+lemma preimageSkeleton_zero (f : E → X) : preimageSkeleton C f 0 = f ⁻¹' skeleton C 0 := by
+  simpa using preimageSkeleton_natCast f 0
+
+/-- The stage `1` of the skeletal filtration is the preimage of the `1`-skeleton. -/
+@[simp]
+lemma preimageSkeleton_one (f : E → X) : preimageSkeleton C f 1 = f ⁻¹' skeleton C 1 := by
+  simpa using preimageSkeleton_natCast f 1
+
+/-- A numeral stage of the skeletal filtration is the preimage of the corresponding skeleton. -/
+@[simp]
+lemma preimageSkeleton_ofNat (f : E → X) (n : ℕ) [n.AtLeastTwo] :
+    preimageSkeleton C f ofNat(n) = f ⁻¹' skeleton C ofNat(n) :=
+  preimageSkeleton_natCast f n
+
 end TauCeti

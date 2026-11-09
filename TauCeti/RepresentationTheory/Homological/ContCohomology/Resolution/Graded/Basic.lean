@@ -326,6 +326,13 @@ theorem gradedResolutionMap_differential (f : TopRep.res (φ : H →* G) X ⟶ Y
       Y.gradedResolutionDifferential (gradedResolutionMap φ f x) :=
   CochainComplex.directSumMap_differential (resolutionModuleMap φ f) x
 
+/-- The map of a compatible pair carries cocycles to cocycles. -/
+theorem gradedResolutionMap_differential_eq_zero (f : TopRep.res (φ : H →* G) X ⟶ Y)
+    {x : X.gradedResolutionModule} (hx : X.gradedResolutionDifferential x = 0) :
+    Y.gradedResolutionDifferential (gradedResolutionMap φ f x) = 0 :=
+  (gradedResolutionMap_differential φ f x).symm.trans
+    ((congrArg (gradedResolutionMap φ f) hx).trans (map_zero _))
+
 /-- The map of a compatible pair carries the augmentation of `x` to the augmentation of
 `f x`. -/
 @[simp↓]
@@ -345,6 +352,12 @@ theorem isHomogeneous_gradedResolutionMap (f : TopRep.res (φ : H →* G) X ⟶ 
       Y.gradedResolutionPiece 0 :=
   CochainComplex.isHomogeneous_directSumMap (resolutionModuleMap φ f)
 
+/-- The map of a compatible pair preserves each homogeneous piece of the total resolution. -/
+theorem gradedResolutionMap_mem_piece (f : TopRep.res (φ : H →* G) X ⟶ Y)
+    {n : ℕ} {x : X.gradedResolutionModule} (hx : x ∈ X.gradedResolutionPiece n) :
+    gradedResolutionMap φ f x ∈ Y.gradedResolutionPiece n := by
+  simpa only [add_zero] using (isHomogeneous_gradedResolutionMap φ f).map_mem hx
+
 /-- The map of a compatible pair intertwines the action of `φ h` on the total resolution of `X`
 with the action of `h` on that of `Y`. -/
 theorem gradedResolutionMap_equivariant (f : TopRep.res (φ : H →* G) X ⟶ Y) (h : H)
@@ -363,6 +376,15 @@ theorem gradedResolutionMap_equivariant (f : TopRep.res (φ : H →* G) X ⟶ Y)
     exact congrArg (DirectSum.lof R ℕ (fun n ↦ (resolutionX Y (n + 1)).V) n)
       (TauCeti.ContinuousCohomology.resolutionMap_ρ_apply φ f (n + 1) h x)
   exact DFunLike.congr_fun hc x
+
+/-- The map of a compatible pair carries invariant elements to invariant elements. -/
+theorem gradedResolutionMap_invariant (f : TopRep.res (φ : H →* G) X ⟶ Y)
+    {x : X.gradedResolutionModule} (hx : ∀ g, X.gradedResolutionRepresentation g x = x)
+    (h : H) :
+    Y.gradedResolutionRepresentation h (gradedResolutionMap φ f x) =
+      gradedResolutionMap φ f x :=
+  (gradedResolutionMap_equivariant φ f h x).symm.trans
+    (congrArg (gradedResolutionMap φ f) (hx (φ h)))
 
 /-- Identity coefficients induce the identity on the total resolution. -/
 @[simp]

@@ -146,26 +146,13 @@ private theorem exists_le_one :
     rw [Measure.setLIntegral_rnDeriv hlam, ← enorm_neg, ← hrep]
     exact enorm_integral_divergenceCLM_mul_le_variationMeasure hu hfin hU φ hφU hφ
   -- Normalize `g` by `k`.
-  refine ⟨fun x => (k x).toReal⁻¹ • g x,
-    ((Measure.measurable_rnDeriv _ _).ennreal_toReal.inv).smul hgm, hlam.ae_le ?_, fun φ => ?_⟩
-  · filter_upwards [hbound, Measure.rnDeriv_lt_top lam ρ] with x hx hk
-    have hle : ‖g x‖ ≤ (k x).toReal := by
-      rwa [← ofReal_norm, ENNReal.ofReal_le_iff_le_toReal hk.ne] at hx
-    rw [norm_smul, norm_inv, Real.norm_of_nonneg ENNReal.toReal_nonneg, inv_mul_eq_div]
-    exact div_le_one_of_le₀ hle ENNReal.toReal_nonneg
-  · rw [hrep, ← integral_toReal_rnDeriv_mul hlam]
-    congr 1
-    refine integral_congr_ae ?_
-    filter_upwards [hbound, Measure.rnDeriv_lt_top lam ρ] with x hx hk
-    rw [inner_smul_right, ← mul_assoc]
-    rcases eq_or_ne (k x).toReal 0 with h0 | h0
-    · have : g x = 0 := by
-        rw [ENNReal.toReal_eq_zero_iff] at h0
-        rcases h0 with h0 | h0
-        · simpa [h0] using hx
-        · exact absurd h0 hk.ne
-      simp [this]
-    · rw [mul_inv_cancel₀ h0, one_mul]
+  obtain ⟨σ, hσm, hσ1, hσg⟩ := Measure.exists_norm_le_one_toReal_rnDeriv_smul_eq hlam hgm hbound
+  refine ⟨σ, hσm, hσ1, fun φ => ?_⟩
+  rw [hrep, ← integral_toReal_rnDeriv_mul hlam]
+  congr 1
+  refine integral_congr_ae ?_
+  filter_upwards [hσg] with x hx
+  rw [← hx, inner_smul_right, mul_comm]
 
 /-- A density of norm at most one representing `Du` against `|Du|` has norm one almost
 everywhere. -/
