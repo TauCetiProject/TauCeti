@@ -177,12 +177,12 @@ private theorem mdifferentiableAt_plumbedPerturbation_target (hq : q ≠ inf)
 
 variable [IsManifold I ⊤ M]
 
-/-- Off the collar `Re z ≥ L/2` of the end `q`, the curvature of the plumbed perturbation is the
-curvature of the perturbation of the receiving pair of pants. -/
+/-- Off the collar `Re z ≥ L - 2` of the end `q`, the curvature of the plumbed perturbation is
+the curvature of the perturbation of the receiving pair of pants. -/
 theorem hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le (ω : SmoothTwoForm I M)
-    (hq : q ≠ inf) (hab : Hb q = Ha inf) (hL : 4 < L) {z : ℝ × ℝ}
+    (hq : q ≠ inf) (hab : Hb q = Ha inf) {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter)
-    (hre : (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ L / 2) :
+    (hre : (q.endCoord (Complex.equivRealProdCLM.symm z)).re < L - 2) :
     ω.hamiltonianCurvature
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -192,7 +192,7 @@ theorem hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le (ω : SmoothT
         (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I)
         z := by
   have hP := (Complex.equivRealProdCLM.symm.continuous.tendsto z).eventually
-    (eventually_plumbedPerturbation_eq (L := L) hq hab hz (by linarith))
+    (eventually_plumbedPerturbation_eq (L := L) hq hab hz hre)
   exact ω.hamiltonianCurvature_congr_of_eventuallyEq
     (hP.mono fun z' hz' ↦ funext fun x ↦ by simp only [hz'])
     (hP.mono fun z' hz' ↦ funext fun x ↦ by simp only [hz'])
@@ -255,7 +255,8 @@ private theorem setLIntegral_enorm_hamiltonianCurvature_plumbedPerturbation_le_r
           (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z)‖ₑ :=
         setLIntegral_mono' hAm fun z hz ↦ by
-          rw [hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le ω hq hab hL hz.1 hz.2]
+          rw [hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le ω hq hab hz.1
+            (by linarith [hz.2])]
     _ ≤ _ := setLIntegral_le_lintegral _ _
     _ ≤ _ := lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le ω hHb hHbs hBb u
 

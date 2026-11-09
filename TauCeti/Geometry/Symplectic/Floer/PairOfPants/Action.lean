@@ -176,7 +176,7 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_ha
     refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
       ((isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
         (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)).measurableSet
-      (fun z hz ↦ ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩) fun z hz ↦ ?_
+      (fun z hz ↦ truncation_subset _ hz) fun z hz ↦ ?_
     obtain ⟨q, hq⟩ : ∃ q : Puncture,
         R < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re := by
       by_contra! h
@@ -259,7 +259,7 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq (ω : Symplectic
   set T : ℕ → Set (ℝ × ℝ) := fun n ↦ Complex.equivRealProdCLM.symm ⁻¹' truncation (n + 2)
   have hTS (n : ℕ) : T n ⊆ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
       Complex.equivRealProdCLM.symm z ≠ 1} :=
-    fun z hz ↦ ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
+    fun z hz ↦ truncation_subset _ hz
   have hmono : Monotone T := fun m n hmn z hz ↦ by
     obtain ⟨h₀, h₁, h⟩ := mem_truncation.1 hz
     exact mem_truncation.2 ⟨h₀, h₁, fun q ↦ (h q).trans (by gcongr)⟩
@@ -475,8 +475,8 @@ theorem le_add_add_sub_sum_of_tendsto_hamiltonianAction (ω : SymplecticForm V)
   simp only [endSign_zero, endSign_one, endSign_inf, one_mul, neg_one_mul] at h₀ h₁ hinf
   exact le_of_tendsto_of_tendsto hinf ((h₀.add h₁).sub_const _) <| eventually_atTop.2
     ⟨2, fun R hR ↦ hamiltonianAction_le_add_add_sub_sum ω hH hHs hh hhH hu hR
-      (fun z hz ↦ hJ z ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩)
-      fun z hz ↦ hfloer z ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩⟩
+      (fun z hz ↦ hJ z (truncation_subset _ hz))
+      fun z hz ↦ hfloer z (truncation_subset _ hz)⟩
 
 /-! ### Action bounds for bounded Hamiltonians
 
@@ -747,7 +747,7 @@ private theorem setIntegral_hamiltonianCurvature_eq_inter (ω : SymplecticForm V
   have hsub : Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
       {z | q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ c} ⊆
         {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1} :=
-    fun z hz ↦ ⟨(mem_truncation.1 hz.1).1, (mem_truncation.1 hz.1).2.1⟩
+    fun z hz ↦ truncation_subset _ hz.1
   refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
     isOpen_thricePuncturedSphereReal.measurableSet hsub fun z hz ↦ ?_
   obtain ⟨r, hr⟩ : ∃ r : Puncture,
@@ -821,7 +821,7 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_inter_eq_sum_hamilto
     integral_floerEnergyDensity_image_endChart_eq ω hH hHs hv q hc hcR] at hid
   -- On the inner part, and on its boundary loops, the cut-off map is `u`.
   have hSA {z : ℝ × ℝ} (hz : z ∈ A) : z ∈ thricePuncturedSphereReal :=
-    ⟨(mem_truncation.1 hz.1).1, (mem_truncation.1 hz.1).2.1⟩
+    truncation_subset _ hz.1
   have hAσ {z : ℝ × ℝ} (hz : z ∈ A) : σ z ≤ c := hz.2
   have hEA : ∫ z in A, ω.floerEnergyDensity
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)

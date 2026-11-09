@@ -43,7 +43,8 @@ longitudinal coordinate lie in the standard punctured neighborhood of the punctu
 coordinate on at most one end (`Puncture.endSign_mul_re_endCoord_nonpos`). Bounding all three signed
 longitudinal coordinates by `R` cuts out the truncation `S_R` of the thrice-punctured sphere
 (`TauCeti.ThricePuncturedSphere.truncation`), a compact set
-(`TauCeti.ThricePuncturedSphere.isCompact_truncation`) over which integrals of data on `S` are
+(`TauCeti.ThricePuncturedSphere.isCompact_truncation`) inside `S`
+(`TauCeti.ThricePuncturedSphere.truncation_subset`) over which integrals of data on `S` are
 taken. In the real coordinates `ℝ × ℝ ≃ ℂ` the longitudinal coordinates are measurable
 (`Puncture.measurable_re_endCoord`), and so are the truncation and its parts `±s ≤ c` on an end
 (`TauCeti.ThricePuncturedSphere.measurableSet_preimage_truncation`,
@@ -494,6 +495,10 @@ def truncation (R : ℝ) : Set ℂ :=
 theorem mem_truncation {R : ℝ} {w : ℂ} :
     w ∈ truncation R ↔ w ≠ 0 ∧ w ≠ 1 ∧ ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ R :=
   Iff.rfl
+
+/-- The truncation lies in the thrice-punctured sphere `ℂ ∖ {0, 1}`. -/
+theorem truncation_subset (R : ℝ) : truncation R ⊆ {w | w ≠ 0 ∧ w ≠ 1} :=
+  fun _ hw => ⟨hw.1, hw.2.1⟩
 
 /-- The truncation is cut out by norm inequalities: it is the closed annulus
 `exp (-2πR) / 2 ≤ ‖w‖ ≤ 2 exp (2πR)` with the open disc of radius `exp (-2πR) / 2` about `1`

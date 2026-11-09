@@ -701,7 +701,7 @@ theorem integrableOn_truncation_pairOfPantsPerturbation (ω : SymplecticForm V)
     Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
   have hTS : Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ thricePuncturedSphereReal :=
     fun z hz =>
-      mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
+      mem_thricePuncturedSphereReal_iff.2 (truncation_subset _ hz)
   have hKs := contDiffOn_pairOfPantsPerturbation hH hHs 1
   have hKt := contDiffOn_pairOfPantsPerturbation hH hHs Complex.I
   have hdu := hu.continuousOn_fderiv_of_isOpen isOpen_thricePuncturedSphereReal le_rfl
@@ -785,8 +785,7 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation (ω : Sym
         ω.constSmooth.hamiltonianCurvature_eq_zero_of_forall_endCoord_lt
           (K := pairOfPantsPerturbation H)
           (fun w hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y)
-          (mem_thricePuncturedSphereReal_iff.2
-            ⟨(mem_truncation.1 hz.1).1, (mem_truncation.1 hz.1).2.1⟩)
+          (mem_thricePuncturedSphereReal_iff.2 (truncation_subset _ hz.1))
           (hcore hz) (u z)
   rw [hsplit _ hE, hsplit _ harea, hsplit _ hcurv, hCE, hCR,
     Finset.sum_congr rfl fun q _ => integral_floerEnergyDensity_image_endPiece ω hH hHs hu hR q,
@@ -861,7 +860,7 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsPerturbation (ω : Symplect
     (contDiffOn_pairOfPantsPerturbation hH hHs Complex.I)
   have hT : Complex.equivRealProdCLM.symm ⁻¹' truncation 2 ⊆
       {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1} :=
-    fun z hz ↦ ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
+    fun z hz ↦ truncation_subset _ hz
   refine ((hc.mono hT).integrableOn_compact
     (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
       (isCompact_truncation 2))).of_forall_sdiff_eq_zero

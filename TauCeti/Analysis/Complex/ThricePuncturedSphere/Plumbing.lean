@@ -396,7 +396,7 @@ theorem isCompact_plumbedTruncation (q : Puncture) (L R : ℝ) :
   -- On a truncation the longitudinal coordinates are continuous, as it avoids the punctures.
   have hcont (r : Puncture) : ContinuousOn (fun w => (r.endCoord w).re) (truncation R) :=
     fun w hw => ((r.contDiffAt_re_endCoord
-      (ne_endCenter ⟨(mem_truncation.1 hw).1, (mem_truncation.1 hw).2.1⟩ r)
+      (ne_endCenter (truncation_subset _ hw) r)
       (n := 0)).continuousAt).continuousWithinAt
   have hT := isCompact_truncation R
   refine (hT.of_isClosed_subset ((hcont q).preimage_isClosed_of_isClosed hT.isClosed

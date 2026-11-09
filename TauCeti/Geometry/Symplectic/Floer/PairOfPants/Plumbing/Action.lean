@@ -101,7 +101,7 @@ private theorem volume_inter_image_realChart_plumbingMap (hq : q ≠ inf) {L : �
     rw [endSign_inf] at h₂
     rw [image_endChart_prod_Ico fun s hs ↦ by
       rw [mem_singleton_iff.1 hs, endSign_eq_one hq]; linarith]
-    refine ⟨⟨(mem_truncation.1 hzA.1).1, (mem_truncation.1 hzA.1).2.1⟩, ?_⟩
+    refine ⟨truncation_subset _ hzA.1, ?_⟩
     rw [mem_singleton_iff, equivRealProdCLM_symm_realChart, re_endCoord_plumbingMap q L hw0]
     linarith
   · rw [Measure.volume_eq_prod]
@@ -173,8 +173,9 @@ private theorem integral_floerEnergyDensity_plumbedPerturbation_receiving (ω : 
         z (u z) :=
     setIntegral_congr_fun hAm fun z hz ↦ by
       rw [← hamiltonianCurvature_constSmooth, ← hamiltonianCurvature_constSmooth,
-        ω.constSmooth.hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le hq hab hL
-          (ne_endCenter ⟨(mem_truncation.1 hz.1).1, (mem_truncation.1 hz.1).2.1⟩ q) (hAre hz)]
+        ω.constSmooth.hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le hq hab
+          (ne_endCenter (truncation_subset _ hz.1) q)
+          (by linarith [hAre hz])]
   rw [hAE, hAR, h]
 
 /-- **The energy on the inserted part of the truncated plumbed sphere.** Outside the circle
