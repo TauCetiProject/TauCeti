@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.NormLeOne
 public import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 public import TauCeti.Topology.Frontier
-public import TauCeti.Topology.MetricSpace.LipschitzParametrizable
+public import TauCeti.Topology.MetricSpace.Lipschitz.Parametrizable
 
 /-!
 # A Lipschitz parametrization of the frontier of the norm-≤-one region
