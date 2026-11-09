@@ -96,35 +96,10 @@ theorem rowFiniteSignedMap_differential (hA : IsDGAlgebra 𝒜 d) (f : P →₀ 
         (rowFiniteSignedMap (𝒜 := 𝒜) η.h f) +
       rowFiniteSignedMap (𝒜 := 𝒜) η.h
         (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mP.m f) =
-      Finsupp.linearCombination A ν₁.ν f - Finsupp.linearCombination A ν₀.ν f := by
-  classical
-  induction f using Finsupp.induction_linear with
-  | zero => simp
-  | add f g hf hg =>
-    simp only [map_add]
-    rw [add_add_add_comm, hf, hg]
-    abel
-  | single x a =>
-    induction a using DirectSum.Decomposition.inductionOn 𝒜 with
-    | zero => simp
-    | @homogeneous q a =>
-      -- The two terms involving d(a) cancel; the remaining terms are a times the row equation.
-      rw [rowFiniteSignedMap_single η.h x a.2,
-        LinearMap.map_smul_of_tower,
-        rowFiniteTwistedDifferential_smul mQ.m hA a.2,
-        rowFiniteTwistedDifferential_single mP.m x a.2, map_add,
-        rowFiniteSignedMap_single η.h x (hA.map_mem a.2),
-        LinearMap.map_smul_of_tower, rowFiniteSignedMap_smul η.h a.2]
-      simp only [smul_add, smul_smul, Int.units_mul_self, one_smul,
-        Int.negOnePow_succ, Units.neg_smul, Finsupp.linearCombination_single]
-      have hrow := congrArg (fun v ↦ (a : A) • v) (η.parametrized x)
-      simp only [smul_add, smul_sub] at hrow
-      abel_nf at hrow ⊢
-      exact hrow
-    | add a b ha hb =>
-      simp only [Finsupp.single_add, map_add]
-      rw [add_add_add_comm, ha, hb]
-      abel
+      Finsupp.linearCombination A ν₁.ν f - Finsupp.linearCombination A ν₀.ν f :=
+  rowFiniteSignedMap_differential_of_mem_support (mQ.isDGLeftModule_rowFiniteTwistedDifferential hA)
+    mP.m (Φ := Finsupp.linearCombination A ν₁.ν - Finsupp.linearCombination A ν₀.ν)
+    fun x _ ↦ by simpa using η.parametrized x
 
 /-- A homogeneous row's Koszul contribution with an odd shifted degree has the opposite sign
 from the corresponding index-difference sum. -/
