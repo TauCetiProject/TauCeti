@@ -374,10 +374,7 @@ theorem rayClassQuotient_ofAdicCompletion_of_isUniformizer {v : HeightOneSpectru
       (v.asIdeal : FractionalIdeal (𝓞 K)⁰ K)) :
     rayClassQuotient 𝔪 (IdeleClassGroup.ofAdicCompletion (𝓞 K) K v π) = rayClassMk 𝔪 I := by
   -- `I` has multiplicity one at `v`, so `v` is outside the support of `𝔪`.
-  have hv : v ∉ 𝔪.support := fun h ↦ by
-    have := NumberFieldArithmetic.mem_idealsAway_iff.1 I.2 v h
-    rw [hI, FractionalIdeal.count_self] at this
-    exact one_ne_zero this
+  have hv : v ∉ 𝔪.support := NumberFieldArithmetic.notMem_of_coe_eq_asIdeal I.2 hI
   -- The idele concentrated at `v` is trivial at the places of `𝔪`.
   have hmem : IdeleGroup.ofAdicCompletion (𝓞 K) K v π ∈ ideleCongrOneSubgroup 𝔪 := by
     refine mem_ideleCongrOneSubgroup_iff.mpr ⟨fun v' hv' ↦ ?_, fun w _ ↦ ?_⟩
