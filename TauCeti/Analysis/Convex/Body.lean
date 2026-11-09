@@ -6,7 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Body
+public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
+
+import Mathlib.Topology.Algebra.Group.Pointwise
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # The image of a convex body under a continuous linear map
@@ -15,7 +20,9 @@ A continuous linear map `f : V →L[ℝ] W` sends convex, compact, nonempty sets
 nonempty sets, so it pushes a convex body `K` of `V` forward to the convex body `K.map f` of `W`
 with carrier `f '' K`. This is how a convex body is carried along a change of coordinates, for
 instance to transport the successive minima of a lattice with respect to a body along a linear
-equivalence.
+equivalence. A convex body with `0` in its interior is a compact neighbourhood of `0`, so it forces
+the ambient normed space to be finite-dimensional
+(`ConvexBody.finiteDimensional_of_zero_mem_interior`).
 
 ## Main definitions
 
@@ -53,5 +60,13 @@ theorem map_id (K : ConvexBody V) : K.map (ContinuousLinearMap.id ℝ V) = K :=
 theorem map_comp (g : W →L[ℝ] X) (f : V →L[ℝ] W) (K : ConvexBody V) :
     K.map (g.comp f) = (K.map f).map g :=
   ConvexBody.ext (Set.image_comp g f _)
+
+/-- A convex body with `0` in its interior lives in a finite-dimensional space: it contains a
+compact neighbourhood of `0`, so `E` is locally compact (Riesz's theorem). -/
+theorem finiteDimensional_of_zero_mem_interior {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {K : ConvexBody E} (hK : 0 ∈ interior (K : Set E)) : FiniteDimensional ℝ E :=
+  haveI := K.isCompact.locallyCompactSpace_of_mem_nhds_of_addGroup
+    (mem_interior_iff_mem_nhds.1 hK)
+  .of_locallyCompactSpace ℝ
 
 end ConvexBody

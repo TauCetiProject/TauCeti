@@ -283,14 +283,6 @@ theorem _root_.MeasureTheory.coe_successiveMin (L : Submodule ℤ E) (K : Convex
   · rintro ⟨ht, v, hv, hvs⟩
     exact ⟨⟨t, ht⟩, ⟨v, hv, fun j ↦ (hvs j).symm⟩, rfl⟩
 
-/-- A convex body with `0` in its interior lives in a finite-dimensional space: it contains a
-compact neighbourhood of `0`, so `E` is locally compact (Riesz's theorem). -/
-theorem _root_.ConvexBody.finiteDimensional_of_zero_mem_interior {K : ConvexBody E}
-    (hK : 0 ∈ interior (K : Set E)) : FiniteDimensional ℝ E :=
-  haveI := K.isCompact.locallyCompactSpace_of_mem_nhds_of_addGroup
-    (mem_interior_iff_mem_nhds.1 hK)
-  .of_locallyCompactSpace ℝ
-
 variable [FiniteDimensional ℝ E]
 
 /-- The natural-index extension of the successive minima is the foundational successive minimum
