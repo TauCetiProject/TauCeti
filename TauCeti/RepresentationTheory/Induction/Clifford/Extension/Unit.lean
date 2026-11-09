@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Induction.Clifford.Extension.Reconstruction
-public import TauCeti.RepresentationTheory.FDRep.BalancedUnit
+public import TauCeti.RepresentationTheory.FDRep.Balanced.Unit
 
 /-!
 # Recovering multiplicities from Clifford reconstruction

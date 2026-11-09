@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.FDRep.BalancedEvaluation
+public import TauCeti.RepresentationTheory.FDRep.Balanced.Evaluation
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Basis
 public import TauCeti.RepresentationTheory.Irreducible
 public import TauCeti.RepresentationTheory.Simple.Basic
@@ -202,13 +202,14 @@ theorem balancedTensorUnitEquiv_apply (m : M) :
 
 /-- The inverse unit recovers a multiplicity vector from its tensoring map. -/
 @[simp]
-theorem balancedTensorUnitEquiv_symm_unit (m : M) :
+theorem balancedTensorUnitEquiv_symm_balancedTensorUnit (m : M) :
     (balancedTensorUnitEquiv A ρ hρ).symm (balancedTensorUnit A ρ hρ m) = m :=
   (balancedTensorUnitEquiv A ρ hρ).symm_apply_apply m
 
 /-- Tensoring with the recovered multiplicity vector gives the original intertwiner. -/
 @[simp]
-theorem balancedTensorUnit_equiv_symm (f : Representation.IntertwiningMap (V).ρ ρ) :
+theorem balancedTensorUnit_balancedTensorUnitEquiv_symm_apply
+    (f : Representation.IntertwiningMap (V).ρ ρ) :
     balancedTensorUnit A ρ hρ ((balancedTensorUnitEquiv A ρ hρ).symm f) = f :=
   (balancedTensorUnitEquiv A ρ hρ).apply_symm_apply f
 
