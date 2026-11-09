@@ -62,10 +62,11 @@ theorem graphAut_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
   rw [Equiv.apply_symm_apply, diagramPerm_toGraphTwistedIndex, hcast,
     Equiv.apply_symm_apply]
 
-/-- Frobenius pulls characters back by multiplication by the recorded field order. -/
+/-- The native root-datum Frobenius is the character pullback of the represented Frobenius. -/
 theorem isCharacterMap_frobenius :
-    IsCharacterMap d.weightTorus d.frobenius ((d.1.fieldOrder : ℕ) • 1) :=
-  IsCharacterMap.of_map_eq_pow d.frobenius_weightTorus
+    IsCharacterMap d.weightTorus d.frobenius d.1.datumFrobenius.weightMap := by
+  rw [ValidLieTypeIndex.datumFrobenius_weightMap, ← Module.End.one_eq_id]
+  exact IsCharacterMap.of_map_eq_pow d.frobenius_weightTorus
 
 /-- The graph factor has the inverse native datum graph action as character pullback. -/
 theorem isCharacterMap_graphAut :
@@ -80,7 +81,8 @@ theorem isCharacterMap_graphAut :
 theorem isCharacterMap_steinberg :
     IsCharacterMap d.weightTorus d.steinberg d.1.datumSteinberg.weightMap := by
   have h := d.isCharacterMap_graphAut.comp d.isCharacterMap_frobenius
-  rw [smul_mul_assoc, one_mul] at h
+  rw [ValidLieTypeIndex.datumFrobenius_weightMap, ← Module.End.one_eq_id,
+    smul_mul_assoc, one_mul] at h
   rw [steinberg_def, d.1.datumSteinberg_of_not_usesHalfFrobenius d.toGraphTwistedIndex.2,
     GraphTwistedIndex.datumSteinberg_weightMap, LinearMap.comp_smul, LinearMap.comp_id]
   exact h
