@@ -25,8 +25,8 @@ subgraph viewpoint used by Mathlib for simple-graph matchings.
 
 A matching of a subgraph is a matching of the whole graph, and a perfect matching of a spanning
 subgraph is a perfect matching of the whole graph. Deleting a perfect matching lowers the incidence
-count of every actual vertex by exactly one; this is the step that splits the edge set of a regular
-bipartite multigraph into perfect matchings.
+count of every actual vertex with finitely many incident edges by exactly one; this is the step that
+splits the edge set of a regular bipartite multigraph into perfect matchings.
 
 ## Main definitions
 
@@ -40,7 +40,7 @@ bipartite multigraph into perfect matchings.
 * `Graph.IsPerfectMatching.image_inclusion`: a perfect matching of a spanning subgraph is a perfect
   matching of the whole graph.
 * `Graph.IsPerfectMatching.incidenceCount_deleteEdges_add_one`: deleting a perfect matching lowers
-  every incidence count by one.
+  by one the incidence count of every actual vertex with finitely many incident edges.
 -/
 
 public section

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Graph.Delete
 public import TauCeti.Combinatorics.Graph.Matching.Hall
 public import TauCeti.Combinatorics.Graph.Regular
 
@@ -24,6 +25,8 @@ matching need exist, since an isolated vertex is an end of no edge. The empty gr
 
 ## Main results
 
+* `Graph.IsPerfectMatching.isRegularOfDegree_deleteEdges`: deleting a perfect matching from a
+  `(k + 1)`-regular multigraph leaves a `k`-regular multigraph on the same actual vertices.
 * `Graph.IsBipartition.card_left_eq_card_right`: a `k`-regular bipartite multigraph with `k ≠ 0`
   has sides of equal size.
 * `Graph.IsBipartition.card_le_card_neighborsIn`: Hall's condition holds in a `k`-regular
@@ -40,7 +43,7 @@ the `k * |N(S)|` edges at the neighbourhood `N(S)` of `S`. Thus `|S| ≤ |N(S)|`
 and `S = R` the two sides have equal size. Hall's theorem for multiset capacitated matchings
 (`Graph.IsBipartition.exists_isCapacitatedMatching_saturating_iff`) at unit capacities then gives
 a perfect matching. Deleting it leaves a `(k - 1)`-regular bipartite multigraph on the same actual
-vertices (`Graph.IsPerfectMatching.incidenceCount_deleteEdges_add_one`), which gives the
+vertices (`Graph.IsPerfectMatching.isRegularOfDegree_deleteEdges`), which gives the
 decomposition by induction on `k`. A perfect matching of the smaller multigraph is one of `G`
 (`Graph.IsPerfectMatching.image_inclusion`).
 
@@ -61,6 +64,21 @@ universe u v
 namespace Graph
 
 variable {α : Type u} {β : Type v} {G : Graph α β} {L R : Finset V(G)} {k : ℕ}
+
+/-- Deleting a perfect matching from a `(k + 1)`-regular multigraph leaves a `k`-regular
+multigraph on the same actual vertices. -/
+theorem IsPerfectMatching.isRegularOfDegree_deleteEdges {M : Set E(G)}
+    (hreg : G.IsRegularOfDegree (k + 1)) (hM : G.IsPerfectMatching M) :
+    (G.deleteEdges (Subtype.val '' M)).IsRegularOfDegree k := by
+  -- Regularity forces every actual vertex to have finitely many incident edges.
+  have hfin {x : α} (hx : x ∈ V(G)) : (G.incidenceSet x).Finite :=
+    Set.finite_of_encard_eq_coe (isRegularOfDegree_def.1 hreg x hx)
+  refine (isRegularOfDegree_iff_incidenceCount_eq fun x hx ↦ ?_).2 fun x hx ↦ ?_
+  · rw [incidenceSet_deleteEdges]
+    exact (hfin hx).sdiff
+  · have := hM.incidenceCount_deleteEdges_add_one ⟨x, hx⟩ (hfin hx)
+    rw [hreg.incidenceCount_eq hx] at this
+    exact Nat.add_right_cancel this
 
 namespace IsBipartition
 
@@ -139,14 +157,9 @@ theorem exists_perfectMatching_decomposition [Finite E(G)] (hLR : G.IsBipartitio
       edgeSet_deleteEdges ..
     have : Finite E(G.deleteEdges (Subtype.val '' M₀)) :=
       (Set.toFinite E(G)).subset (hE ▸ Set.sdiff_subset)
-    have hspan : G.deleteEdges (Subtype.val '' M₀) ≤s G :=
-      ⟨deleteEdges_le, vertexSet_deleteEdges ..⟩
-    obtain ⟨M, hM, hdisj, hunion⟩ := ih (hLR.deleteEdges (Subtype.val '' M₀)) <|
-      (isRegularOfDegree_iff_incidenceCount_eq fun x _ ↦ finite_incidenceSet _ x).2
-        fun x hx ↦ by
-          have := hM₀.incidenceCount_deleteEdges_add_one ⟨x, hx⟩ (G.finite_incidenceSet x)
-          rw [hreg.incidenceCount_eq hx] at this
-          exact Nat.add_right_cancel this
+    have hspan := G.deleteEdges_isSpanningSubgraph (Subtype.val '' M₀)
+    obtain ⟨M, hM, hdisj, hunion⟩ :=
+      ih (hLR.deleteEdges (Subtype.val '' M₀)) (hM₀.isRegularOfDegree_deleteEdges hreg)
     have hdisj₀ (i : Fin k) : Disjoint M₀ (Set.inclusion hspan.le.edgeSet_mono '' M i) := by
       refine Set.disjoint_left.2 fun e he₀ ⟨f, _, hfe⟩ ↦ ?_
       exact (hE ▸ f.2 : (f : β) ∈ E(G) \ Subtype.val '' M₀).2
