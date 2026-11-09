@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Submonoid.BigOperators
 public import Mathlib.Algebra.Group.Submonoid.Operations
 import Mathlib.Algebra.Group.Submonoid.Finsupp
+import TauCeti.Algebra.Group.Submonoid.PositiveDegree
 import TauCeti.Data.Finsupp.Weight
 
 /-!
@@ -55,16 +56,28 @@ weight `n`. -/
 theorem finite_closure_range_deg_eq {ι M : Type*} [AddCommMonoid M] [Finite ι] (a : ι → M)
     (deg : M →+ ℕ) (hdeg : ∀ i, deg (a i) ≠ 0) (n : ℕ) :
     Finite {s : AddSubmonoid.closure (range a) // deg s = n} := by
-  have hmem (u : ι →₀ ℕ) : Finsupp.linearCombination ℕ a u ∈ AddSubmonoid.closure (range a) :=
-    AddSubmonoid.mem_closure_range_iff.2 ⟨u, Finsupp.linearCombination_apply ℕ u⟩
+  let := Finsupp.nonTorsionWeight_of ℕ (w := deg ∘ a) hdeg
+  have hfg : (AddSubmonoid.closure (range a)).FG :=
+    (AddSubmonoid.fg_iff _).mpr ⟨range a, rfl, finite_range a⟩
+  have hpos : ∀ x ∈ AddSubmonoid.closure (range a), x ≠ 0 →
+      0 < ((Nat.castAddMonoidHom ℤ).comp deg) x := by
+    intro x hx hne
+    obtain ⟨u, hu⟩ := AddSubmonoid.mem_closure_range_iff.mp hx
+    have hu' : Finsupp.linearCombination ℕ a u = x := by
+      simpa [Finsupp.linearCombination_apply] using hu.symm
+    have hd : deg x ≠ 0 := by
+      intro hx0
+      have hw : Finsupp.weight (deg ∘ a) u = 0 := by
+        rw [Finsupp.weight_comp_eq_apply_linearCombination, hu', hx0]
+      have hu0 := (Finsupp.weight_eq_zero_iff_eq_zero (deg ∘ a)).mp hw
+      apply hne
+      rw [← hu', hu0, map_zero]
+    simpa using Nat.pos_of_ne_zero hd
+  have hcut := hfg.finite_degree_le ((Nat.castAddMonoidHom ℤ).comp deg) hpos n
   have hfin : {s : AddSubmonoid.closure (range a) | deg s = n}.Finite := by
-    refine ((Finsupp.finite_of_nat_weight_eq (deg ∘ a) hdeg n).image
-      fun u ↦ (⟨_, hmem u⟩ : AddSubmonoid.closure (range a))).subset ?_
-    rintro ⟨s, hs⟩ (rfl : deg s = n)
-    obtain ⟨u, rfl⟩ := AddSubmonoid.mem_closure_range_iff.1 hs
-    refine ⟨u, ?_, ?_⟩
-    · exact Finsupp.weight_comp_eq_apply_linearCombination deg a u
-    · simp [Finsupp.linearCombination_apply]
+    refine (hcut.preimage Subtype.val_injective.injOn).subset ?_
+    intro s (hs : deg s = n)
+    exact ⟨s.property, by simp [hs]⟩
   exact hfin.to_subtype
 
 variable {κ M : Type*} [Fintype κ] [SubtractionCommMonoid M] (v : κ → M)
