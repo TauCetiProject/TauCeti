@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Basic
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
 public import Mathlib.RingTheory.Ideal.Operations
-import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # Isolating a minimal prime among finitely many
@@ -23,8 +22,7 @@ about a localization `A[1/g]`.
 
 In a reduced ring every zero divisor lies in a minimal prime. By prime avoidance, a prime ideal of
 a reduced ring with finitely many minimal primes, such as a reduced Noetherian ring, consists of
-zero divisors exactly when it is minimal. Since the minimal primes of a reduced ring intersect in
-`0`, it embeds into the product of its quotients by its minimal primes.
+zero divisors exactly when it is minimal.
 
 ## Main results
 
@@ -33,8 +31,6 @@ zero divisors exactly when it is minimal. Since the minimal primes of a reduced 
   containing `g` contains `P`.
 * `Ideal.mem_minimalPrimes_iff_disjoint_nonZeroDivisors`: in a reduced ring with finitely many
   minimal primes, a prime ideal is minimal if and only if it consists of zero divisors.
-* `Ideal.injective_pi_quotient_mk_minimalPrimes`: a reduced ring embeds into the product of its
-  quotients by its minimal primes.
 -/
 
 public section
@@ -84,12 +80,5 @@ theorem mem_minimalPrimes_iff_disjoint_nonZeroDivisors {A : Type*} [CommRing A] 
   obtain ⟨q, hq, hpq⟩ := (Ideal.subset_union_prime_finite hfin (f := id) 0 0
     fun q hq _ _ ↦ hq.isPrime).mp hsub
   rwa [le_antisymm hpq (hq.2 ⟨‹_›, bot_le⟩ hpq)]
-
-/-- A reduced ring embeds into the product of its quotients by its minimal primes: the
-intersection of the minimal primes is the nilradical, which is `0`. -/
-theorem injective_pi_quotient_mk_minimalPrimes (A : Type*) [CommRing A] [IsReduced A] :
-    Function.Injective (RingHom.pi fun p : minimalPrimes A ↦ Ideal.Quotient.mk p.1) := by
-  rw [RingHom.injective_iff_ker_eq_bot, Ideal.ker_Pi_Quotient_mk, iInf_subtype, ← sInf_eq_iInf,
-    minimalPrimes, Ideal.sInf_minimalPrimes, Ideal.radical_bot_of_isReduced]
 
 end Ideal

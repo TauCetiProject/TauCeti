@@ -13,7 +13,7 @@ import Mathlib.RingTheory.RingHom.StandardSmooth
 import Mathlib.RingTheory.TensorProduct.Pi
 import Mathlib.RingTheory.TensorProduct.Quotient
 import Mathlib.RingTheory.Unramified.Field
-import TauCeti.RingTheory.Ideal.MinimalPrime.Finite
+import TauCeti.RingTheory.Ideal.MinimalPrime.Basic
 
 /-!
 # Reducedness of smooth algebras

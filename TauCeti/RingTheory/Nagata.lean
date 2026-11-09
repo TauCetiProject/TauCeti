@@ -12,7 +12,7 @@ import Mathlib.RingTheory.Finiteness.Quotient
 import Mathlib.RingTheory.Ideal.MinimalPrime.Noetherian
 import Mathlib.RingTheory.Localization.Finiteness
 import Mathlib.RingTheory.Localization.Submodule
-import TauCeti.RingTheory.Ideal.MinimalPrime.Finite
+import TauCeti.RingTheory.Ideal.MinimalPrime.Basic
 import TauCeti.RingTheory.IntegralClosure.Map
 import TauCeti.RingTheory.IntegralClosure.Pi
 import TauCeti.RingTheory.IntegralClosure.Transfer
