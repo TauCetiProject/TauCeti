@@ -148,6 +148,10 @@ theorem trivializationOfLocalSection_apply_mul {g : G} (hg : π g ∈ U) (h : K)
 
 end Projection
 
+section LocalSection
+
+variable [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G] (H : Subgroup G)
+
 /-- A continuous local section of a subgroup quotient defines the standard local product chart.
 
 On the source `mk ⁻¹' U`, the chart sends `g` to `([g], s([g])⁻¹ * g)`. Its inverse sends
@@ -157,43 +161,35 @@ On the source `mk ⁻¹' U`, the chart sends `g` to `([g], s([g])⁻¹ * g)`. It
   /-- A continuous local section of an additive-subgroup quotient defines the standard local
   product chart. On the source `mk ⁻¹' U`, the chart sends `g` to `([g], -s([g]) + g)`. Its
   inverse sends `(q, h)` to `s(q) + h`. -/]
-def localSectionTrivialization [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G]
-    (H : Subgroup G) (U : Set (G ⧸ H)) (hU : IsOpen U)
-    (s : G ⧸ H → G) (hs : ContinuousOn s U)
-    (hsec : ∀ q ∈ U, (s q : G ⧸ H) = q) :
+def localSectionTrivialization (U : Set (G ⧸ H)) (hU : IsOpen U) (s : G ⧸ H → G)
+    (hs : ContinuousOn s U) (hsec : ∀ q ∈ U, (s q : G ⧸ H) = q) :
     Bundle.Trivialization H (QuotientGroup.mk : G → G ⧸ H) :=
   H.trivializationOfLocalSection QuotientGroup.continuous_mk (fun _ _ ↦ QuotientGroup.eq) U hU s
     hs hsec
 
+variable {H} {U : Set (G ⧸ H)} {s : G ⧸ H → G} {hU : IsOpen U} {hs : ContinuousOn s U}
+  {hsec : ∀ q ∈ U, (s q : G ⧸ H) = q}
+
 /-- The base of the quotient trivialization is the domain of the local section. -/
-@[to_additive, simp]
-theorem localSectionTrivialization_baseSet [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G]
-    (H : Subgroup G) (U : Set (G ⧸ H))
-    (hU : IsOpen U) (s : G ⧸ H → G) (hs : ContinuousOn s U)
-    (hsec : ∀ q ∈ U, (s q : G ⧸ H) = q) :
+@[to_additive (attr := simp)]
+theorem localSectionTrivialization_baseSet :
     (localSectionTrivialization H U hU s hs hsec).baseSet = U := (rfl)
 
 /-- On the chart source, the fiber coordinate is `s([g])⁻¹ * g`. -/
-@[to_additive, simp]
-theorem localSectionTrivialization_fiberCoordinate [TopologicalSpace G] [ContinuousMul G]
-    [ContinuousInv G]
-    (H : Subgroup G) (U : Set (G ⧸ H))
-    (hU : IsOpen U) (s : G ⧸ H → G) (hs : ContinuousOn s U)
-    (hsec : ∀ q ∈ U, (s q : G ⧸ H) = q) (g : G)
-    (hg : (g : G ⧸ H) ∈ U) :
-    (((localSectionTrivialization H U hU s hs hsec g).2 : H) : G) =
-      (s (g : G ⧸ H))⁻¹ * g :=
+@[to_additive (attr := simp)
+  /-- On the chart source, the fiber coordinate is `-s([g]) + g`. -/]
+theorem localSectionTrivialization_fiberCoordinate {g : G} (hg : (g : G ⧸ H) ∈ U) :
+    ((localSectionTrivialization H U hU s hs hsec g).2 : G) = (s g)⁻¹ * g :=
   trivializationOfLocalSection_fiberCoordinate hg
 
 /-- The inverse chart reconstructs a group element by multiplying the section by the fiber. -/
-@[to_additive, simp]
-theorem localSectionTrivialization_symm_apply [TopologicalSpace G] [ContinuousMul G]
-    [ContinuousInv G]
-    (H : Subgroup G) (U : Set (G ⧸ H))
-    (hU : IsOpen U) (s : G ⧸ H → G) (hs : ContinuousOn s U)
-    (hsec : ∀ q ∈ U, (s q : G ⧸ H) = q) (q : G ⧸ H) (h : H) :
-    (localSectionTrivialization H U hU s hs hsec).toOpenPartialHomeomorph.symm (q, h) =
-      s q * h := (rfl)
+@[to_additive (attr := simp)
+  /-- The inverse chart reconstructs a group element by adding the fiber to the section. -/]
+theorem localSectionTrivialization_symm_apply (p : (G ⧸ H) × H) :
+    (localSectionTrivialization H U hU s hs hsec).toOpenPartialHomeomorph.symm p =
+      s p.1 * p.2 := (rfl)
+
+end LocalSection
 
 end
 
