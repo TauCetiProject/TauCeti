@@ -44,9 +44,9 @@ is invertible on both sides.
 
 ## References
 
-* The embedding generalizes `Matrix.UnitaryGroup.prodBlockSucc` of
-  [TauCeti#33580](https://github.com/TauCetiProject/TauCeti/pull/33580), stated over commutative
-  star rings, to noncommutative star semirings.
+* The construction adapts the block-diagonal embedding `U(1) × U(m) → U(m + 1)` over commutative
+  star rings of https://github.com/TauCetiProject/TauCeti/pull/33580 to noncommutative star
+  semirings.
 -/
 
 public section

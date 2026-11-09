@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.Topology.Algebra.Star.Unitary
 public import Mathlib.Topology.Instances.Matrix
+import TauCeti.Algebra.Quaternion.Basic
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Householder
 
@@ -208,8 +209,6 @@ private theorem exists_mem_unitary_mulVec_single_eq {y : ι → ℍ}
     linarith
   have hcs : 2 / s * (2 / s) * s = 2 * (2 / s) := by
     field_simp
-  -- Mathlib has no global `StarModule ℝ ℍ` instance.
-  let : StarModule ℝ ℍ := ⟨fun r q ↦ Quaternion.star_smul r q⟩
   refine ⟨_, Matrix.one_sub_smul_vecMulVec_mem_unitary
     (by rw [hvv, Quaternion.algebraMap_def]) hcs, ?_⟩
   rw [Matrix.sub_mulVec, Matrix.one_mulVec, Matrix.smul_mulVec, Matrix.vecMulVec_mulVec, hvi]
