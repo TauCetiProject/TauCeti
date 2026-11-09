@@ -67,6 +67,7 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   chain rule under reparametrization, with `MDifferentiableAt.curveVelocity_comp_mfderiv` for a
   curve through a normed space and `TauCeti.Manifold.curveVelocity_comp` for scalar
   reparametrizations.
+* `Filter.EventuallyEq.curveVelocity_eq`: the velocity of a curve depends only on its germ.
 * `Function.Periodic.curveVelocity_add`: the velocity of a periodic curve is periodic.
 * `TauCeti.Manifold.curveVelocity_eq_mfderiv_snd` and
   `TauCeti.Manifold.curveVelocity_eq_mfderiv_fst`: the two partial velocities of a two-parameter
@@ -356,6 +357,12 @@ unrestricted one. -/
 theorem curveVelocityWithin_of_mem_nhds (hs : s ∈ 𝓝 t) :
     curveVelocityWithin I γ s t = curveVelocity I γ t := by
   rw [curveVelocityWithin_apply, curveVelocity_apply, mfderivWithin_of_mem_nhds hs]
+
+/-- Curves which agree near `t` have the same velocity at `t`. -/
+theorem _root_.Filter.EventuallyEq.curveVelocity_eq {γ' : 𝕜 → M} (h : γ =ᶠ[𝓝 t] γ') :
+    curveVelocity I γ t = curveVelocity I γ' t := by
+  rw [curveVelocity_apply, curveVelocity_apply, h.mfderiv_eq]
+  rfl
 
 /-- A constant curve has zero velocity within any parameter set. -/
 @[simp]
