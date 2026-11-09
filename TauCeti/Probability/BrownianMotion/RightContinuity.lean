@@ -65,11 +65,8 @@ theorem indep_shift_rightCont_natural (hW : IsBrownianReal W P)
           (fun ω v => W (u n + v) ω - W (u n) ω) inferInstance) (ℱ (u n)) P := by
         rw [Filtration.natural_eq_comap]
         exact (IndepFun_iff_Indep ..).1 (hW.indepFun_shift (u n))
-      have hle : ℱ.rightCont s ≤ ℱ (u n) := by
-        rw [ℱ.rightCont_eq]
-        exact iInf₂_le (u n) (hu n)
       refine (indep_of_indep_of_le_right
-        (indep_of_indep_of_le_left hfull ?_) hle).symm
+        (indep_of_indep_of_le_left hfull ?_) (ℱ.rightCont_le_of_lt (hu n))).symm
       simp only [MeasurableSpace.comap_process_pi]
       exact iSup_le fun v => le_iSup (fun a : ℝ≥0 =>
         MeasurableSpace.comap (fun ω => W (u n + a) ω - W (u n) ω) inferInstance) v.val
@@ -99,10 +96,8 @@ theorem rightCont_natural_le_nullAugment (hW : IsBrownianReal W P)
   let : MeasurableSpace Ω := mΩ
   have hfuture : mFuture ≤ mΩ :=
     (measurable_pi_iff.2 fun v => (hmeas (s + v)).measurable.sub (hmeas s).measurable).comap_le
-  have hle : ℱ.rightCont s ≤ ℱ s ⊔ mFuture := by
-    have hsu : s < s + 1 := lt_add_one s
-    rw [ℱ.rightCont_eq]
-    exact (iInf₂_le (s + 1) hsu).trans
+  have hle : ℱ.rightCont s ≤ ℱ s ⊔ mFuture :=
+    (ℱ.rightCont_le_of_lt (lt_add_one s)).trans
       (Filtration.natural_le_sup_comap_shift W hmeas s (s + 1))
   intro A hA
   rw [Filtration.measurableSet_nullAugment_iff]

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.Process.Filtration
+public import TauCeti.Probability.Process.Filtration.RightCont
 public import Mathlib.MeasureTheory.Measure.AbsolutelyContinuous
 public import Mathlib.MeasureTheory.MeasurableSpace.EventuallyMeasurable
 import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
@@ -124,11 +124,8 @@ theorem rightCont_nullAugment_apply [LinearOrder ι] [DenselyOrdered ι] [NoMaxO
   apply le_antisymm
   · intro A hA
     obtain ⟨u, -, hu, hlim⟩ := exists_seq_strictAnti_tendsto i
-    have hAn (n : ℕ) : MeasurableSet[ℱ.nullAugment P (u n)] A := by
-      have hle : (ℱ.nullAugment P).rightCont i ≤ ℱ.nullAugment P (u n) := by
-        rw [(ℱ.nullAugment P).rightCont_eq]
-        exact iInf₂_le (u n) (hu n)
-      exact hle A hA
+    have hAn (n : ℕ) : MeasurableSet[ℱ.nullAugment P (u n)] A :=
+      (ℱ.nullAugment P).rightCont_le_of_lt (hu n) A hA
     choose B hB hAB using hAn
     refine ⟨Filter.limsup B Filter.atTop, ?_,
       (limsup_ae_eq_of_forall_ae_eq B (fun n => (hAB n).symm)).symm⟩
@@ -149,9 +146,6 @@ theorem rightCont_nullAugment_apply [LinearOrder ι] [DenselyOrdered ι] [NoMaxO
     rw [(ℱ.nullAugment P).rightCont_eq]
     simp only [MeasurableSpace.measurableSet_iInf]
     intro j hij
-    have hle : ℱ.rightCont i ≤ ℱ j := by
-      rw [ℱ.rightCont_eq]
-      exact iInf₂_le j hij
-    exact ⟨B, hle _ hB, hAB⟩
+    exact ⟨B, ℱ.rightCont_le_of_lt hij _ hB, hAB⟩
 
 end MeasureTheory.Filtration
