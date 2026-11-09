@@ -25,8 +25,8 @@ that a sum `∑ j ∈ range N, C (c j) * X ^ (N - j)` has no constant term, and 
 of geometric sums of mixed powers of equal-degree monic polynomials.
 
 It also records that the image of a finite product of polynomials under a ring homomorphism into a
-ring without zero divisors is nonzero, with degree the sum of the factors' degrees, when each
-factor's image is nonzero.
+ring without zero divisors has degree the sum of the factors' degrees when each factor's image is
+nonzero, and is itself nonzero when the target ring is moreover nontrivial.
 
 Finally, `TauCeti.sum_range_monomial_add_monomial_eq_of_eq_add` turns coefficient relations
 `cᵢ = bᵢ + qᵢ + qᵢ₋₁` into the polynomial identity
