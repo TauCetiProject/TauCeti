@@ -129,7 +129,7 @@ private theorem wordBounds_of_mixedDeriv (hf : ContDiff ℝ ∞ f) {T : Set (Coo
   intro w _
   obtain ⟨C, hC⟩ := hb (w.filterMap Sum.getLeft?) (freqLetters w)
   refine ⟨C, fun p hp => ?_⟩
-  rw [iteratedFDerivAlong_map_mixedDirection hf]
+  rw [iteratedFDerivAlong_map_mixedDirection w (hf.of_le (by exact_mod_cast le_top))]
   exact hC p.1 (hS p hp) p.2
 
 variable {A₁ A₂ : Type*} [NormedAddCommGroup A₁] [NormedSpace ℝ A₁] [NormedAddCommGroup A₂]

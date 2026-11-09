@@ -653,23 +653,27 @@ theorem mixedDeriv_eq_iteratedFDerivAlong (α β : List (Fin n))
   rw [mixedDeriv_eq_iteratedFDeriv α β ha, ← iteratedFDerivAlong_ofFn_eq_iteratedFDeriv
     (by simpa using ha), List.ofFn_get]
 
-/-- The iterated directional derivative of a smooth function along any word of position and
+/-- The iterated directional derivative of a `C^|w|` function along any word `w` of position and
 frequency directions is the mixed derivative along its position letters and its frequency
 letters, whatever their interleaving. -/
-theorem iteratedFDerivAlong_map_mixedDirection (ha : ContDiff ℝ ∞ a) (w : List (Fin n ⊕ Fin n))
-    (p : CoordinateSpace n × CoordinateSpace n) :
+theorem iteratedFDerivAlong_map_mixedDirection (w : List (Fin n ⊕ Fin n))
+    (ha : ContDiff ℝ w.length a) (p : CoordinateSpace n × CoordinateSpace n) :
     iteratedFDerivAlong ℝ (w.map mixedDirection) a p =
       mixedDeriv (w.filterMap Sum.getLeft?) (w.filterMap Sum.getRight?) a p.1 p.2 := by
   have hperm : w.Perm ((w.filterMap Sum.getLeft?).map Sum.inl ++
       (w.filterMap Sum.getRight?).map Sum.inr) := by
+    clear ha
     induction w with
     | nil => rfl
     | cons l w ih =>
       cases l with
       | inl j => simpa [List.filterMap_cons] using ih
       | inr j => simpa [List.filterMap_cons] using (ih.cons (Sum.inr j)).trans List.perm_middle.symm
-  rw [mixedDeriv_eq_iteratedFDerivAlong _ _ (ha.of_le (by exact_mod_cast le_top)), mixedDirections,
-    (hperm.map mixedDirection).iteratedFDerivAlong_eq ha (by exact_mod_cast le_top)]
+  have hlen : (w.filterMap Sum.getLeft?).length + (w.filterMap Sum.getRight?).length =
+      w.length := by
+    simpa using hperm.length_eq.symm
+  rw [mixedDeriv_eq_iteratedFDerivAlong _ _ (by exact_mod_cast hlen ▸ ha), mixedDirections,
+    (hperm.map mixedDirection).iteratedFDerivAlong_eq ha (by simp)]
 
 end IteratedFDerivAlong
 
