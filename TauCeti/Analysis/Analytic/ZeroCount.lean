@@ -11,6 +11,7 @@ public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Analysis.Meromorphic.Divisor
 import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.RCLike.Lemmas
+import TauCeti.Analysis.Analytic.IsolatedZeros
 
 /-!
 # The zero count of an analytic function on a disc
@@ -20,7 +21,7 @@ The zero count of `f` on an open disc is the finitely supported sum
 `TauCeti.Contour.argumentPrinciple_divisor` and the bridge
 `MeromorphicOn.divisor_eq_analyticOrderNatAt` — and what Rouché's theorem
 (`TauCeti.rouche_symm`) and Hurwitz's theorem (`TauCeti.hurwitz`) compare. This file collects the
-three facts about that sum which those consumers need, none of which mentions either theorem.
+four facts about that sum which those consumers need, none of which mentions either theorem.
 They are stated for a function `f : 𝕜 → E` into a normed space; the detection criterion needs the
 closed disc to be preconnected, so it is stated over `RCLike 𝕜`.
 
@@ -38,6 +39,9 @@ order there to every point.
   the open disc is at most the total count.
 * `TauCeti.finsum_mem_analyticOrderNatAt_eq_zero_of_forall_ne_zero` — a function without zeros on
   a set has count `0` there.
+* `TauCeti.exists_finset_finsum_ball_analyticOrderNatAt_eq_sum` — a function analytic on a closed
+  disc and nonzero somewhere on it has finitely many zeros in the open disc, which carry the whole
+  count.
 * `AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_zero_iff` — conversely, given a point of the
   closed disc where `f` does not vanish, a count of `0` means there is no zero in the open disc at
   all.
@@ -108,5 +112,23 @@ theorem AnalyticOnNhd.finsum_analyticOrderNatAt_ball_eq_zero_iff
   rw [hsum] at hle
   simp [analyticOrderNatAt, ENat.toNat_eq_zero, htop,
     (hf z₀ (ball_subset_closedBall hz₀)).analyticOrderAt_eq_zero, h0] at hle
+
+/-- If `g` is analytic on a closed disc and does not vanish at some point of it, then it has
+finitely many zeros in the open disc, and the sum over the open disc of the orders of vanishing of
+`g` is the sum of those orders over the finite set `S` of zeros. -/
+theorem TauCeti.exists_finset_finsum_ball_analyticOrderNatAt_eq_sum {g : 𝕜 → E} {c a : 𝕜} {r : ℝ}
+    (hg : AnalyticOnNhd 𝕜 g (closedBall c r)) (ha : a ∈ closedBall c r) (hga : g a ≠ 0) :
+    ∃ S : Finset 𝕜, (∀ z, z ∈ S ↔ z ∈ ball c r ∧ g z = 0) ∧
+      (∑ᶠ z ∈ ball c r, analyticOrderNatAt g z) = ∑ z ∈ S, analyticOrderNatAt g z := by
+  classical
+  have hfin : {z | z ∈ ball c r ∧ g z = 0}.Finite :=
+    (hg.finite_setOf_mem_and_eq_zero_of_isCompact (convex_closedBall _ _).isPreconnected
+      ha hga (isCompact_closedBall _ _) subset_rfl).subset
+      fun z hz => ⟨ball_subset_closedBall hz.1, hz.2⟩
+  refine ⟨hfin.toFinset, fun z => by simp only [Set.Finite.mem_toFinset, Set.mem_ofPred_eq],
+    finsum_mem_eq_sum_of_subset _ (fun z hz => ?_) fun z hz => ?_⟩
+  · exact (hfin.mem_toFinset (a := z)).2
+      ⟨hz.1, apply_eq_zero_of_analyticOrderNatAt_ne_zero (Function.mem_support.1 hz.2)⟩
+  · exact (Finset.mem_coe.1 hz |> hfin.mem_toFinset.1).1
 
 end RCLike
