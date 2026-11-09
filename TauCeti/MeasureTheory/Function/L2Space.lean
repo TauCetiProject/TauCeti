@@ -23,6 +23,8 @@ For counting measure, singleton-supported vectors separate L² functions and det
 continuous linear maps out of L². On a compact space with a finite measure, the L² pairing of an
 L² function with a continuous function is an integral
 (`MeasureTheory.L2.inner_toLp_continuousMap`), extending Mathlib's `ContinuousMap.inner_toLp`.
+More generally, the L² pairing of an L² function with the class of any square-integrable
+function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`).
 Indicators of any countably spanning generating π-system of finite-measure sets have
 dense real linear span in L².
 
@@ -171,6 +173,15 @@ theorem L2.inner_evalCLM_compLpL {ι : Type*} [DecidableEq ι] {G : ι → Type*
     (lp.singleContinuousLinearMap 𝕜 G 2 i).coeFn_compLpL u] with x h₁ h₂
   rw [h₁, h₂, lp.singleContinuousLinearMap_apply, lp.inner_single_right]
   rfl
+
+/-- The L² inner product of an L² function `f` with the class of a square-integrable function
+`g` is the integral of their pointwise inner product. -/
+theorem L2.inner_toLp (f : Lp E 2 μ) {g : α → E} (hg : MemLp g 2 μ) :
+    ⟪f, hg.toLp g⟫_𝕜 = ∫ x, ⟪f x, g x⟫_𝕜 ∂μ := by
+  rw [L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [hg.coeFn_toLp] with x hx
+  rw [hx]
 
 end MeasureTheory
 
