@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+public import TauCeti.Analysis.Sobolev.W1p.Density
 import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.MeasureTheory.Function.Lp.SqrtOneAddSq
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
@@ -42,6 +44,10 @@ gives `∫ w² ≤ k ∫ g(w)`. Finally `g(t) ≤ |t|` bounds the part of `∫ g
 * `TauCeti.integral_sq_le_mul_sq_integral_norm_fderiv`: the Gagliardo–Nirenberg–Sobolev
   inequality `∫ f² ≤ G (∫ ‖Df‖)²` in dimension two, for Bochner integrals.
 * `TauCeti.exists_integral_sq_le_of_finrank_eq_two`: the `L²` bound above.
+* `TauCeti.W1p.exists_integral_value_sq_le_of_finrank_eq_two`: the same bound for every
+  `u ∈ W^{1,2}(E)`, with `‖∇u‖₂` in place of `(∫ ‖Dw‖²) ^ (1/2)`. It follows by density of the
+  test functions, since the modular `∫_{sᶜ} (√(1 + u²) - 1)` is continuous on `L²`
+  (`MeasureTheory.continuous_setIntegral_sqrt_one_add_sq_sub_one`).
 
 ## References
 
@@ -318,5 +324,70 @@ theorem exists_integral_sq_le_of_finrank_eq_two (hE : finrank ℝ E = 2) :
   have hW := (integral_sq_le_mul_integral_modular μ hE hw hws).trans
     (mul_le_mul_of_nonneg_left hsplit hk)
   exact le_two_mul_add_sq_mul_of_le_mul_add hk hQ measureReal_nonneg hW hZ
+
+/-! ### Sobolev functions -/
+
+section W1p
+
+open TopologicalSpace
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+
+/-- **The planar `L²` bound for Sobolev functions.** In dimension two there is a constant `C`,
+depending only on the Haar measure `μ`, such that for every `u ∈ W^{1,2}(E)` and every measurable
+set `s` of finite measure,
+
+`∫ u² ≤ 2 k ∫_{sᶜ} (√(1 + u²) - 1) + k² μ(s)`,    `k = 2 + C ‖∇u‖₂`.
+
+This extends `TauCeti.exists_integral_sq_le_of_finrank_eq_two` from compactly supported `C¹`
+functions to `W^{1,2}(E)`. -/
+theorem W1p.exists_integral_value_sq_le_of_finrank_eq_two (hE : finrank ℝ E = 2) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ u : W1p μ ⊤ 2, ∀ s : Set E, MeasurableSet s → μ s ≠ ∞ →
+      ∫ x, W1p.value u x ^ 2 ∂μ ≤
+        2 * (2 + C * ‖W1p.gradient u‖) * ∫ x in sᶜ, (√(1 + W1p.value u x ^ 2) - 1) ∂μ +
+          (2 + C * ‖W1p.gradient u‖) ^ 2 * μ.real s := by
+  obtain ⟨C, hC, h⟩ := exists_integral_sq_le_of_finrank_eq_two μ hE
+  refine ⟨C, hC, fun u s hs hμs ↦ ?_⟩
+  have hμ : μ.restrict ((⊤ : Opens E) : Set E) = μ := by simp
+  have hae : ae (μ.restrict ((⊤ : Opens E) : Set E)) = ae μ := by rw [hμ]
+  have hint (f : E → ℝ) (t : Set E) :
+      ∫ x in t, f x ∂μ.restrict ((⊤ : Opens E) : Set E) = ∫ x in t, f x ∂μ := by rw [hμ]
+  have hsq (v : W1p μ ⊤ 2) : ∫ x, W1p.value v x ^ 2 ∂μ = ‖W1p.value v‖ ^ 2 := by
+    rw [← W1p.integral_value_sq_eq_norm_value_sq]
+    simp
+  simp only [hsq, ← hint _ sᶜ]
+  refine (W1p.denseRange_ofTestFunctionₗ_top (mu := μ) (p := 2) ENNReal.ofNat_ne_top).induction_on
+    u (isClosed_le ?_ ?_) fun φ ↦ ?_
+  · have hV : Continuous fun v : W1p μ ⊤ 2 ↦ ‖W1p.value v‖ := by
+      simpa only [W1p.valueL_apply] using
+        (W1p.valueL (mu := μ) (Omega := ⊤) (p := 2)).continuous.norm
+    exact hV.pow 2
+  · have hM : Continuous fun v : W1p μ ⊤ 2 ↦
+        ∫ x in sᶜ, (√(1 + W1p.value v x ^ 2) - 1) ∂μ.restrict ((⊤ : Opens E) : Set E) := by
+      simpa only [Function.comp_def, W1p.valueL_apply] using
+        (continuous_setIntegral_sqrt_one_add_sq_sub_one sᶜ).comp
+          (W1p.valueL (mu := μ) (Omega := ⊤) (p := 2)).continuous
+    have hG : Continuous fun v : W1p μ ⊤ 2 ↦ ‖W1p.gradient v‖ := by
+      simpa only [W1p.gradientL_apply] using
+        (W1p.gradientL (mu := μ) (Omega := ⊤) (p := 2)).continuous.norm
+    exact ((continuous_const.mul (continuous_const.add (continuous_const.mul hG))).mul hM).add
+      (((continuous_const.add (continuous_const.mul hG)).pow 2).mul continuous_const)
+  · have hval := W1p.value_ofTestFunctionₗ_ae (mu := μ) (Omega := ⊤) (p := 2) φ
+    have hgrad : ‖W1p.gradient (W1p.ofTestFunctionₗ μ ⊤ 2 φ)‖ =
+        √(∫ x, ‖fderiv ℝ (φ : E → ℝ) x‖ ^ 2 ∂μ) := by
+      rw [← Real.sqrt_sq (norm_nonneg _), W1p.norm_gradient_ofTestFunctionₗ_sq]
+    have h1 : ‖W1p.value (W1p.ofTestFunctionₗ μ ⊤ 2 φ)‖ ^ 2 = ∫ x, φ x ^ 2 ∂μ := by
+      rw [← hsq]
+      exact integral_congr_ae ((hval.fun_comp (· ^ 2)).filter_mono hae.ge)
+    have h2 : ∫ x in sᶜ, (√(1 + W1p.value (W1p.ofTestFunctionₗ μ ⊤ 2 φ) x ^ 2) - 1)
+          ∂μ.restrict ((⊤ : Opens E) : Set E) = ∫ x in sᶜ, (√(1 + φ x ^ 2) - 1) ∂μ := by
+      rw [hint]
+      exact integral_congr_ae (ae_restrict_of_ae
+        ((hval.fun_comp fun t ↦ √(1 + t ^ 2) - 1).filter_mono hae.ge))
+    rw [h1, h2, hgrad]
+    exact h φ (φ.contDiff.of_le (by simp)) φ.hasCompactSupport s hs hμs
+
+end W1p
 
 end TauCeti
