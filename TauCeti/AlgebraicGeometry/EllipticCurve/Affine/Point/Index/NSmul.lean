@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.KerReduction
 import TauCeti.Algebra.Module.Torsion.Int
 -- Proof-only: multiplication by `n` on the filtration of the formal group.
-import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Filtration
+import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Point.Depth
 -- Proof-only: `E₀(F_u)` has finite index, by Tate's algorithm.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Bound
 -- Proof-only: the reduced curve over a finite residue field has finitely many points.
@@ -164,8 +164,7 @@ private theorem exists_finiteIndex_injective_nsmul_of_isMinimal
     rw [AddSubgroup.index_map_of_injective V hι, range_formalPointHomAdicCompletion_eq_kerReduction,
       FormalGroupPoint.index_filtration (Nat.succ_ne_zero e), h1]
     exact mul_ne_zero (pow_ne_zero _ Nat.card_pos.ne') AddSubgroup.FiniteIndex.index_ne_zero
-  · exact (φ.injective_nsmul_iff n).mp
-      (FormalGroupPoint.nsmul_filtration_injective hne (Nat.lt_succ_self e))
+  · exact injective_nsmul_map_filtration u C hne (Nat.lt_succ_self e)
   · rw [← AddEquiv.index_range_nsmulAddMonoidHom φ,
       FormalGroupPoint.index_range_nsmul_filtration hne (Nat.lt_succ_self e), hne,
       TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow]

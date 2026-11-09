@@ -270,6 +270,23 @@ theorem mem_maximalIdeal_pow_iff {x : v.adicCompletionIntegers K} {n : ℕ} :
   rw [← hπn]
   exact Set.ext_iff.mp (hint.maximalIdeal_pow_eq_setOfPred_le_v_algebraMap_pow hπ n) x
 
+/-- An element of `𝒪_v` generating the `e`-th power of the maximal ideal has valuation
+`exp (-e)`. -/
+theorem valued_eq_exp_neg_of_span_eq_maximalIdeal_pow {x : v.adicCompletionIntegers K} {e : ℕ}
+    (hx : Ideal.span {x} = IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ e) :
+    Valued.v (x : v.adicCompletion K) = exp (-(e : ℤ)) := by
+  have hle : Valued.v (x : v.adicCompletion K) ≤ exp (-(e : ℤ)) :=
+    v.mem_maximalIdeal_pow_iff.mp (hx ▸ Ideal.mem_span_singleton_self x)
+  -- `x ∉ 𝔪 ^ (e + 1)`, as `𝔪 ^ (e + 1) < 𝔪 ^ e`
+  have hlt : ¬Valued.v (x : v.adicCompletion K) ≤ exp (-((e + 1 : ℕ) : ℤ)) := fun h ↦
+    (Ideal.pow_succ_lt_pow (IsDiscreteValuationRing.not_a_field _) e).not_ge <|
+      hx ▸ Ideal.span_le.mpr (Set.singleton_subset_iff.mpr (v.mem_maximalIdeal_pow_iff.mpr h))
+  have h0 : Valued.v (x : v.adicCompletion K) ≠ 0 := fun h0 ↦ hlt (h0 ▸ zero_le)
+  rw [← exp_log h0, exp_le_exp] at hle hlt
+  rw [← exp_log h0, exp_inj]
+  push_cast at hlt
+  omega
+
 /-- An element of `R` lies in `v ^ n` exactly when its image in `K_v` has valuation at most
 `exp (-n)`: the ideal filtration of `R` at `v` is the valuation filtration `K_v` induces on it. -/
 theorem mem_asIdeal_pow_iff_valued_algebraMap_le {r : R} {n : ℕ} :
