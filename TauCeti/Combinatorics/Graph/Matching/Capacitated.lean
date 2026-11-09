@@ -37,6 +37,9 @@ graph are all allowed.
 
 * `Graph.IsCapacitatedMatching.sum_le_sum_of_isVertexCover`: **weak duality**, the size of a
   multiset capacitated matching is at most the weight of any vertex cover.
+* `Graph.IsCapacitatedMatching.isMatching`: in a loopless multigraph, the edges used by a multiset
+  capacitated matching for unit capacities form a matching, and a perfect one when every actual
+  vertex is used exactly once (`Graph.isPerfectMatching_of_sum_incidentEdges_eq_one`).
 * `Graph.IsBipartition.exists_isCapacitatedMatching_isVertexCover_sum_eq`: **Kőnig's theorem** for
   multiset capacitated matchings in bipartite multigraphs, in witness form.
 
@@ -124,6 +127,20 @@ theorem sum_le_sum_of_isVertexCover (hx : G.IsCapacitatedMatching b x) {C : Fins
         (G.sum_sum_incidentEdges_eq_sum_sum_filter_inc C x).symm
     _ ≤ ∑ v ∈ C, b v := sum_le_sum fun v _ ↦ hx v
 
+/-- In a loopless multigraph, the edges used by a multiset capacitated matching for the unit
+capacities form a matching. -/
+theorem isMatching [G.Loopless] (hx : G.IsCapacitatedMatching 1 x) :
+    G.IsMatching {e | x e ≠ 0} := by
+  classical
+  refine isMatching_def.2 ⟨fun e _ v ↦ G.not_isLoopAt _ v, fun e he f hf hef v ⟨hev, hfv⟩ ↦ ?_⟩
+  -- Two distinct used edges at `v` would use `v` at least twice.
+  have := (sum_pair (f := x) hef).symm.trans_le <|
+    sum_le_sum_of_subset (f := x) (t := G.incidentEdges {⟨v, hev.vertex_mem⟩}) <| by
+      simp [insert_subset_iff, hev, hfv]
+  have := hx ⟨v, hev.vertex_mem⟩
+  simp only [Set.mem_ofPred_eq, Pi.one_apply] at he hf this
+  omega
+
 end IsCapacitatedMatching
 
 /-! ### Unit capacities and ordinary matchings -/
@@ -178,37 +195,28 @@ theorem sum_eq_card_support {x : E(G) → ℕ} (hx : G.IsCapacitatedMatching (fu
     _ = (Finset.univ.filter fun e ↦ x e ≠ 0).card := by
       exact sum_boole (R := ℕ) (fun e ↦ x e ≠ 0) univ
 
-/-- In a loopless graph, the positive support of a unit-capacitated matching is an ordinary
-matching. -/
-theorem support_isMatching {x : E(G) → ℕ} (hx : G.IsCapacitatedMatching (fun _ ↦ 1) x)
-    (hG : G.Loopless) : G.IsMatching ({e | x e ≠ 0} : Set E(G)) := by
-  classical
-  rw [isMatching_def]
-  refine ⟨fun e _ y ↦ hG.not_isLoopAt e y, fun e he f hf hef y hinc ↦ ?_⟩
-  have hey : e ∈ G.incidentEdges {⟨y, hinc.1.vertex_mem⟩} :=
-    (mem_incidentEdges G).2 ⟨⟨y, hinc.1.vertex_mem⟩, mem_singleton_self _, hinc.1⟩
-  have hfy : f ∈ G.incidentEdges {⟨y, hinc.1.vertex_mem⟩} :=
-    (mem_incidentEdges G).2 ⟨⟨y, hinc.1.vertex_mem⟩, mem_singleton_self _, hinc.2⟩
-  have hpair : ∑ a ∈ {e, f}, x a ≤ 1 :=
-    (sum_le_sum_of_subset (insert_subset_iff.2 ⟨hey, singleton_subset_iff.2 hfy⟩)).trans
-      (isCapacitatedMatching_def.1 hx ⟨y, hinc.1.vertex_mem⟩)
-  rw [sum_pair hef] at hpair
-  have he' : x e ≠ 0 := by simpa only [Set.mem_ofPred_eq] using he
-  have hf' : x f ≠ 0 := by simpa only [Set.mem_ofPred_eq] using hf
-  omega
-
 /-- The finite positive support of a unit-capacitated matching in a loopless graph is an
 ordinary matching. -/
 theorem supportFinset_isMatching {x : E(G) → ℕ}
     (hx : G.IsCapacitatedMatching (fun _ ↦ 1) x) (hG : G.Loopless) :
     G.IsMatching (↑(Finset.univ.filter fun e ↦ x e ≠ 0) : Set E(G)) := by
+  let _ := hG
   have hset : (↑(Finset.univ.filter fun e ↦ x e ≠ 0) : Set E(G)) = {e | x e ≠ 0} := by
     ext
     simp
   rw [hset]
-  exact hx.support_isMatching hG
+  exact hx.isMatching
 
 end IsCapacitatedMatching
+
+/-- In a loopless multigraph, if edge multiplicities `x` use every actual vertex exactly once, then
+the edges they use form a perfect matching. -/
+theorem isPerfectMatching_of_sum_incidentEdges_eq_one [G.Loopless]
+    (hx : ∀ v, ∑ e ∈ G.incidentEdges {v}, x e = 1) :
+    G.IsPerfectMatching {e | x e ≠ 0} := by
+  refine isPerfectMatching_def.2 ⟨IsCapacitatedMatching.isMatching fun v ↦ (hx v).le, fun v ↦ ?_⟩
+  obtain ⟨e, he, hxe⟩ := exists_ne_zero_of_sum_ne_zero ((hx v).trans_ne one_ne_zero)
+  exact ⟨e, hxe, by simpa using he⟩
 
 /-! ### Kőnig's theorem -/
 

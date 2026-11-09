@@ -14,6 +14,7 @@ import Mathlib.RepresentationTheory.Homological.FiniteCyclic
 import Mathlib.RepresentationTheory.Homological.GroupCohomology.Shapiro
 import TauCeti.RepresentationTheory.Homological.TateCohomology.Finite
 import TauCeti.RepresentationTheory.Homological.TateCohomology.Functoriality
+import TauCeti.RepresentationTheory.Homological.TateCohomology.HomologySequence
 import TauCeti.RepresentationTheory.Invariants
 
 /-!
@@ -82,14 +83,12 @@ integral calculation reads off the low-degree evaluations
 * `TauCeti.TateCohomology.natCard_tateCohomology_mul_of_shortExact`: the exact hexagon of a short
   exact sequence, in the form of an identity between two products of three orders. It assumes no
   finiteness.
-* `TauCeti.TateCohomology.natCard_tateCohomology_negOne_dvd_of_shortExact`: the order of the
-  middle degree-`-1` Tate group divides the product of the two outer ones.
 * `TauCeti.TateCohomology.herbrandQuotient_eq_mul_of_shortExact`: **multiplicativity of the
   Herbrand quotient** in a short exact sequence whose outer terms have finite degree-`-1` Tate
   cohomology.
 * `TauCeti.TateCohomology.herbrandQuotient_eq_div_of_shortExact`: the Herbrand quotient of the
   last term of a short exact sequence is the quotient of those of the other two, when the first
-  term has finite Tate cohomology and the middle term finite degree-`-1` Tate cohomology.
+  term has finite Tate cohomology.
 * `TauCeti.TateCohomology.herbrandQuotient_eq_of_shortExact_of_finite_X₁` and
   `TauCeti.TateCohomology.herbrandQuotient_eq_of_shortExact_of_finite_X₃`: a finite outer term of
   a short exact sequence may be discarded.
@@ -432,15 +431,6 @@ theorem natCard_tateCohomology_mul_of_shortExact {S : ShortComplex (Rep R G)}
   rw [h₁, h₂, h₃, h₄, h₅, h₆]
   ring
 
-/-- In the hexagon, the middle degree `-1` Tate group is squeezed between the two outer ones: its
-order divides their product. In particular it is finite as soon as they are. -/
-theorem natCard_tateCohomology_negOne_dvd_of_shortExact {S : ShortComplex (Rep R G)}
-    (hS : S.ShortExact) :
-    Nat.card (tateCohomology S.X₂ (-1)) ∣
-      Nat.card (tateCohomology S.X₁ (-1)) * Nat.card (tateCohomology S.X₃ (-1)) := by
-  obtain ⟨r₁, r₂, s₁, s₂, t₁, t₂, _, h₂, _, h₄, _, h₆⟩ := exists_hexagon_natCard_of_isCyclic hS
-  exact ⟨t₂ * t₁, by rw [h₂, h₄, h₆]; ring⟩
-
 /-- **The Herbrand quotient is multiplicative in a short exact sequence.** For a short exact
 sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of representations of a finite cyclic group whose outer terms
 have finite Tate cohomology in degree `-1`, the Herbrand quotient of the middle term is the
@@ -453,7 +443,7 @@ theorem herbrandQuotient_eq_mul_of_shortExact {S : ShortComplex (Rep R G)} (hS :
   have h3 : Nat.card (tateCohomology S.X₃ (-1)) ≠ 0 := Nat.card_ne_zero.mpr ⟨⟨0⟩, inferInstance⟩
   have h2 : Nat.card (tateCohomology S.X₂ (-1)) ≠ 0 := fun h ↦
     mul_ne_zero h1 h3 (Nat.eq_zero_of_zero_dvd
-      (h ▸ natCard_tateCohomology_negOne_dvd_of_shortExact hS))
+      (h ▸ natCard_tateCohomology_dvd_of_shortExact hS (-1)))
   have keyQ : (Nat.card (tateCohomology S.X₁ 0) : ℚ) * Nat.card (tateCohomology S.X₃ 0) *
       Nat.card (tateCohomology S.X₂ (-1)) =
       (Nat.card (tateCohomology S.X₁ (-1)) : ℚ) * Nat.card (tateCohomology S.X₃ (-1)) *
@@ -465,21 +455,6 @@ theorem herbrandQuotient_eq_mul_of_shortExact {S : ShortComplex (Rep R G)} (hS :
   rw [herbrandQuotient_def, herbrandQuotient_def, herbrandQuotient_def]
   field_simp
   linear_combination -keyQ
-
-/-- For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of representations of a finite cyclic
-group, if the degree-zero Tate cohomology of `X₁` and the degree `-1` Tate cohomology of `X₂` are
-finite, then so is the degree `-1` Tate cohomology of `X₃`. -/
-theorem finite_tateCohomology_negOne_X₃_of_shortExact {S : ShortComplex (Rep R G)}
-    (hS : S.ShortExact) [Finite (tateCohomology S.X₁ 0)] [Finite (tateCohomology S.X₂ (-1))] :
-    Finite (tateCohomology S.X₃ (-1)) := by
-  obtain ⟨r₁, r₂, s₁, s₂, t₁, t₂, h₁, -, -, h₄, -, h₆⟩ := exists_hexagon_natCard_of_isCyclic hS
-  have h1 : Nat.card (tateCohomology S.X₁ 0) ≠ 0 := Nat.card_ne_zero.mpr ⟨⟨0⟩, inferInstance⟩
-  have h2 : Nat.card (tateCohomology S.X₂ (-1)) ≠ 0 := Nat.card_ne_zero.mpr ⟨⟨0⟩, inferInstance⟩
-  rw [h₁] at h1
-  rw [h₆] at h2
-  refine Nat.finite_of_card_ne_zero ?_
-  rw [h₄]
-  exact mul_ne_zero (right_ne_zero_of_mul h1) (left_ne_zero_of_mul h2)
 
 /-- For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of representations of a finite cyclic
 group, if the degree `-1` Tate cohomology of `X₂` and the degree-zero Tate cohomology of `X₃` are
@@ -498,17 +473,27 @@ theorem finite_tateCohomology_negOne_X₁_of_shortExact {S : ShortComplex (Rep R
 
 /-- **The Herbrand quotient of a quotient.** For a short exact sequence
 `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of representations of a finite cyclic group in which `X₁` has finite
-Tate cohomology and `X₂` has finite Tate cohomology in degree `-1`, the Herbrand quotient of `X₃`
-is the quotient of those of `X₂` and `X₁`. -/
+Tate cohomology, the Herbrand quotient of `X₃` is the quotient of those of `X₂` and `X₁`. If the
+degree `-1` Tate group of `X₂` is infinite, both sides are zero. -/
 theorem herbrandQuotient_eq_div_of_shortExact {S : ShortComplex (Rep R G)} (hS : S.ShortExact)
-    [Finite (tateCohomology S.X₁ 0)] [Finite (tateCohomology S.X₁ (-1))]
-    [Finite (tateCohomology S.X₂ (-1))] :
+    [Finite (tateCohomology S.X₁ 0)] [Finite (tateCohomology S.X₁ (-1))] :
     herbrandQuotient S.X₃ = herbrandQuotient S.X₂ / herbrandQuotient S.X₁ := by
-  have := finite_tateCohomology_negOne_X₃_of_shortExact hS
-  have h₁ : herbrandQuotient S.X₁ ≠ 0 := by
-    rw [Ne, herbrandQuotient_eq_zero_iff, not_or, not_infinite_iff_finite, not_infinite_iff_finite]
-    exact ⟨inferInstance, inferInstance⟩
-  rw [herbrandQuotient_eq_mul_of_shortExact hS, mul_div_cancel_left₀ _ h₁]
+  by_cases h₂ : Finite (tateCohomology S.X₂ (-1))
+  · have : Finite (tateCohomology S.X₁ ((-1 : ℤ) + 1)) :=
+      inferInstanceAs (Finite (tateCohomology S.X₁ 0))
+    have := finite_tateCohomology_X₃_of_shortExact hS (-1)
+    have h₁ : herbrandQuotient S.X₁ ≠ 0 := by
+      rw [Ne, herbrandQuotient_eq_zero_iff, not_or, not_infinite_iff_finite,
+        not_infinite_iff_finite]
+      exact ⟨inferInstance, inferInstance⟩
+    rw [herbrandQuotient_eq_mul_of_shortExact hS, mul_div_cancel_left₀ _ h₁]
+  · rw [not_finite_iff_infinite] at h₂
+    have h1 : Nat.card (tateCohomology S.X₁ (-1)) ≠ 0 := Nat.card_ne_zero.mpr ⟨⟨0⟩, inferInstance⟩
+    have h3 : Nat.card (tateCohomology S.X₃ (-1)) = 0 := by
+      have := natCard_tateCohomology_dvd_of_shortExact hS (-1)
+      rw [Nat.card_eq_zero_of_infinite, zero_dvd_iff, mul_eq_zero] at this
+      exact this.resolve_left h1
+    simp [herbrandQuotient_def, h3]
 
 end Multiplicativity
 
