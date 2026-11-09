@@ -35,6 +35,9 @@ induced on a finite product is injective as soon as each factor induces an injec
 For any localization, extension also preserves injectivity of a linear map into a module over
 the localized semiring, without requiring its image to span the target.
 
+If a submodule `K'` of an `R'`-algebra `A'` is a base change to `R'` of a submodule `K` of an
+`R`-algebra `A`, compatibly with `A → A'`, then `K'` lies in the `R'`-span of the image of `K`.
+
 ## Main results
 
 * `IsBaseChange.tensorProduct`: a tensor product of base changes is a base change of the tensor
@@ -51,6 +54,8 @@ the localized semiring, without requiring its image to span the target.
 * `LinearMap.liftBaseChange_pi_injective`: injectivity of the induced map on finite products.
 * `LinearMap.liftBaseChange_injective`: extension to a localization preserves injectivity of a
   map into a module over the localized semiring, without a full-span hypothesis.
+* `Submodule.mem_span_image_of_isBaseChange`: the elements of a base change `K'` of `K` lie in the
+  `R'`-span of the image of `K`.
 -/
 
 public section
@@ -170,3 +175,21 @@ theorem LinearMap.liftBaseChange_injective (f : M →ₗ[R] V) (S : Submonoid R)
   exact congrArg (fun m ↦ 1 ⊗ₜ[R] m) (hf (by simpa using h))
 
 end
+
+namespace Submodule
+
+/-- If `h : K →ₗ[R] K'` is a base change to `R'` of a submodule `K` of an `R`-algebra `A` into an
+`R'`-submodule `K'` of `A'`, compatible with `A → A'`, then every element of `K'` lies in the
+`R'`-span of the image of `K`. -/
+theorem mem_span_image_of_isBaseChange {R A R' A' : Type*} [CommSemiring R] [CommSemiring A]
+    [CommSemiring R'] [CommSemiring A'] [Algebra R A] [Algebra R R'] [Algebra R' A']
+    [Algebra A A'] (K : Submodule R A) {K' : Submodule R' A'} [Module R K']
+    [IsScalarTower R R' K'] (h : K →ₗ[R] K') (hbc : IsBaseChange R' h)
+    (hh : ∀ x, (h x : A') = algebraMap A A' x) (n : K') :
+    (n : A') ∈ span R' (algebraMap A A' '' (K : Set A)) := by
+  induction n using hbc.inductionOn with
+  | tmul a => exact hh a ▸ subset_span ⟨a, a.2, rfl⟩
+  | smul r n hn => exact Submodule.smul_mem _ r hn
+  | add n₁ n₂ h₁ h₂ => exact Submodule.add_mem _ h₁ h₂
+
+end Submodule

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.IsBaseChange
 public import TauCeti.RingTheory.Adjoin.EqLocus
-public import TauCeti.RingTheory.Adjoin.IsBaseChange
+public import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
 # Equalizers of ring homomorphisms under flat base change
