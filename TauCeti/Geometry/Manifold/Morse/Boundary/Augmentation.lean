@@ -174,7 +174,7 @@ private theorem sum_ncard_morseTrajectorySlice_of_add_one_eq_finrank {q : M}
         Finset.sum_congr rfl fun p hp ↦ by
           have hpq : p ≠ q := ne_of_apply_ne (manifoldMorseIndex 𝓘(ℝ, E) f)
             (by have := ((hT p).1 hp).2; omega)
-          rw [hX.morseTrajectorySlice_eq_image_of_stableSet_subset hfd hq hpq hW'.subset hmem haq
+          rw [hX.morseTrajectorySlice_eq_image_of_stableSet_subset hfd hpq hW'.subset hmem haq
             hτ, ncard_image_of_injective _ hz, ← ncard_coe_finset, Finset.coe_filter]
           simp
     _ = (Finset.univ : Finset (Fin 2)).card :=

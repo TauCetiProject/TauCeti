@@ -143,6 +143,38 @@ theorem exists_isEmpty_sublevelPair_of_isCompact_sublevel (hf : Continuous f)
     hcompact.of_isClosed_subset (isClosed_Icc.preimage hf) fun x hx ↦ hx.2,
     isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨p, _, hp⟩ ↦ (ha p).ne' hp⟩
 
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
+/-- **A nonempty compact regular sublevel forces the model space to be finite dimensional.** If
+`f` is continuous, the sublevel `{f ≤ b}` is compact and nonempty, and `b` is a regular value, then
+the minimum of `f` on the sublevel is below `b`, so the open set `{f < b}` is a nonempty locally
+compact manifold. -/
+theorem finiteDimensional_of_isCompact_sublevel (hf : Continuous f)
+    (hcompact : IsCompact {x | f x ≤ b}) (hb : IsRegularValue I 𝓘(ℝ) f b)
+    [hK : Nonempty {x | f x ≤ b}] : FiniteDimensional ℝ E := by
+  obtain ⟨x₀, hx₀, hmin⟩ := hcompact.exists_isMinOn (Set.nonempty_coe_sort.1 hK) hf.continuousOn
+  rcases (show f x₀ ≤ b from hx₀).lt_or_eq with hlt | heq
+  · let U : TopologicalSpace.Opens M := ⟨{x | f x < b}, isOpen_lt hf continuous_const⟩
+    have : Nonempty U := ⟨⟨x₀, hlt⟩⟩
+    have : CompactSpace {x | f x ≤ b} := isCompact_iff_compactSpace.1 hcompact
+    have : LocallyCompactSpace U :=
+      (Topology.IsOpenEmbedding.inclusion (s := (U : Set M)) (t := {x | f x ≤ b})
+        (fun x hx ↦ (le_of_lt (show f x < b from hx) : f x ≤ b))
+        (U.isOpen.preimage continuous_subtype_val)).locallyCompactSpace
+    exact FiniteDimensional.of_locallyCompact_manifold U I
+  · -- Otherwise `x₀` is a global minimum of `f` on the level `b`, contradicting regularity.
+    exfalso
+    have hmin' : IsMinOn f univ x₀ := fun x _ ↦ by
+      by_cases hx : f x ≤ b
+      · exact hmin hx
+      · exact heq ▸ (not_le.1 hx).le
+    have hcrit : x₀ ∈ criticalPoints I f := (hmin'.isLocalMin Filter.univ_mem).mem_criticalPoints
+    obtain ⟨v, hv⟩ := isRegularPoint_iff.1 (hb.isRegularPoint heq)
+      (show TangentSpace 𝓘(ℝ) (f x₀) from (1 : ℝ))
+    rw [mem_criticalPoints_iff_mfderiv_eq_zero.1 hcrit] at hv
+    rw [zero_apply] at hv
+    exact zero_ne_one (α := ℝ) hv
+
+omit [FiniteDimensional ℝ E] in
 /-- **A compact regular sublevel whose critical points have index at most `d` has no homology
 above degree `d`.** Let `f` be a Morse function, let `b` be a regular value of `f` with compact
 sublevel `{f ≤ b}`, and suppose every critical point in this sublevel has Morse index at most `d`.
@@ -154,6 +186,12 @@ theorem IsMorse.isZero_singularHomology_sublevel_of_manifoldMorseIndex_le [HasCo
     (hd : ∀ p ∈ criticalPoints I f, f p ≤ b → manifoldMorseIndex I f p ≤ d) (R : C) {n : ℕ}
     (hn : d < n) :
     IsZero (((singularHomologyFunctor C n).obj R).obj (TopCat.of {x | f x ≤ b})) := by
+  rcases isEmpty_or_nonempty {x | f x ≤ b} with hK | hK
+  · -- An empty space is totally disconnected, so it has no homology in positive degrees.
+    exact isZero_singularHomologyFunctor_of_totallyDisconnectedSpace C n R
+      (TopCat.of {x | f x ≤ b}) (by omega)
+  -- A nonempty compact sublevel forces the model space to be finite dimensional.
+  have := finiteDimensional_of_isCompact_sublevel hf.contMDiff.continuous hcompact hb
   obtain ⟨a, hab, _, hband, ha⟩ :=
     exists_isEmpty_sublevelPair_of_isCompact_sublevel (I := I) hf.contMDiff.continuous hcompact
   have hzero := hf.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le hab hband ha hb
@@ -162,6 +200,7 @@ theorem IsMorse.isZero_singularHomology_sublevel_of_manifoldMorseIndex_le [HasCo
   have hπ : IsIso ((sublevelPair f hab).singularHomologyπ R n) := inferInstance
   exact hzero.of_iso (@asIso _ _ _ _ _ hπ)
 
+omit [FiniteDimensional ℝ E] in
 /-- **Homology of a compact manifold vanishes above the largest index.** If every critical point
 of a Morse function on a compact boundaryless manifold `M` has index at most `d`, then the singular
 homology `Hₙ(M; R)` vanishes for every `n > d` and every coefficient object `R` of an abelian
@@ -170,6 +209,13 @@ theorem IsMorse.isZero_singularHomology_of_compactSpace_of_manifoldMorseIndex_le
     [HasCoproducts.{u} C] [Abelian C] (hf : IsMorse I f) {d : ℕ}
     (hd : ∀ p ∈ criticalPoints I f, manifoldMorseIndex I f p ≤ d) (R : C) {n : ℕ} (hn : d < n) :
     IsZero (((singularHomologyFunctor C n).obj R).obj (TopCat.of M)) := by
+  rcases isEmpty_or_nonempty M with hM | hM
+  · -- An empty space is totally disconnected, so it has no homology in positive degrees.
+    exact isZero_singularHomologyFunctor_of_totallyDisconnectedSpace C n R (TopCat.of M)
+      (by omega)
+  -- A nonempty compact Hausdorff manifold is locally compact, so its model space is finite
+  -- dimensional.
+  have := FiniteDimensional.of_locallyCompact_manifold M I
   obtain ⟨a, b, hab, hcompact, ha, hb, hf'⟩ :=
     exists_isRegularValue_forall_mem_Ioc (I := I) hf.contMDiff.continuous
   exact (hf.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le hab hcompact ha hb
@@ -199,6 +245,7 @@ theorem IsMorse.exists_regular_sublevel_isColimit_singularHomology (hf : IsMorse
     obtain ⟨j, hj⟩ := K.exists_superset_of_isCompact hL
     exact ⟨j, fun x hx ↦ ⟨⟨x, by simpa [hKa j] using hj hx⟩, rfl⟩⟩
 
+omit [FiniteDimensional ℝ E] in
 /-- **A manifold with a proper Morse function whose indices are at most `d` has no homology above
 degree `d`.** Let `f` be a proper Morse function, bounded below, all of whose critical points have
 Morse index at most `d`. Then the singular homology `Hₙ(M; R)` vanishes for every `n > d` and every
