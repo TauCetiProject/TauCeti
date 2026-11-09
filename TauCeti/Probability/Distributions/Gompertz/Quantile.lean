@@ -60,7 +60,7 @@ theorem quantile_gompertzMeasure (hη : 0 < η) (hb : 0 < b) (hu : u ∈ Ioo 0 1
 theorem strictMonoOn_quantile_gompertzMeasure (hη : 0 < η) (hb : 0 < b) :
     StrictMonoOn (gompertzMeasure η b).quantile (Ioo 0 1) := by
   let _ := isProbabilityMeasure_gompertzMeasure hη hb
-  exact Measure.strictMonoOn_quantile _ (Measure.continuous_cdf_of_noAtoms _)
+  exact Measure.strictMonoOn_quantile_of_noAtoms _
 
 /-- Gompertz quantiles are continuous at interior probability levels. -/
 theorem continuousOn_quantile_gompertzMeasure (hη : 0 < η) (hb : 0 < b) :

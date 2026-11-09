@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Kernel.ClosedClass
+public import TauCeti.Probability.Kernel.ClosedClass.Basic
 
 /-!
 # The renewal countdown chain
@@ -172,6 +172,18 @@ theorem countdownKernel_communicatingClass_zero (μ : Measure ℕ) [NeZero μ] :
     exact (Kernel.isClosedSet_iff_forall_reaches_mem.1 μ.countdownKernel_isClosedSet)
       0 μ.zero_mem_countdownStates j ((Kernel.communicates_def _ _).1 hj).1
   · exact μ.countdownKernel_communicates μ.zero_mem_countdownStates
+
+/-- Subtracting one and then adding one preserves a natural-valued measure with no zero atom. -/
+theorem map_succ_map_pred {μ : Measure ℕ} (hμ : μ {0} = 0) :
+    (μ.map Nat.pred).map Nat.succ = μ := by
+  have hpos : ∀ᵐ j ∂μ, j ≠ 0 := by
+    apply ae_iff.mpr
+    simpa using hμ
+  rw [map_map (measurable_of_countable _) (measurable_of_countable _)]
+  conv_rhs => rw [← map_id (μ := μ)]
+  apply map_congr
+  filter_upwards [hpos] with j hj
+  exact Nat.succ_pred_eq_of_ne_zero hj
 
 /-- For a positive integer gap law `ν`, resetting with the law of the gap minus one gives
 exactly the states `j` with positive gap tail `ν (j, ∞)`. In particular zero gaps are excluded,

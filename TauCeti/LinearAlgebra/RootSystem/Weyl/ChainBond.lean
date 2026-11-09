@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.CoverBond
 
+import TauCeti.Data.Finset.Max
 import TauCeti.Data.Rat.NumDenDvd
 
 /-!
@@ -784,14 +785,13 @@ theorem exists_strictly_rising_of_isAChain (hlam : lam ∈ dominantChamber P b)
   -- The integral minimum `z` of `H`, and the last vertex `k₀` where it is attained.
   obtain ⟨z, hz⟩ := exists_isLeast_sum_coroot'_eq_intCast_of_isAChain hlam ht hchain hmono hs i
   obtain ⟨k, hk, hkz⟩ := hz.1
-  classical
-  set k₀ := Nat.findGreatest (fun k ↦ H k = z) s
-  have hk₀s : k₀ ≤ s := Nat.findGreatest_le s
-  have hk₀z : H k₀ = z := Nat.findGreatest_spec (P := fun k ↦ H k = z) (Set.mem_Iic.mp hk) hkz
-  have habove : ∀ k, k₀ < k → k ≤ s → H k₀ < H k := by
-    intro k hk₀k hks
-    rw [hk₀z]
-    exact lt_of_le_of_ne (hz.2 ⟨k, hks, rfl⟩) (Ne.symm (Nat.findGreatest_is_greatest hk₀k hks))
+  obtain ⟨k₀, hk₀s, hmin, hlast⟩ :=
+    (Finset.Iic s).exists_last_min_image H ⟨0, by simp⟩
+  simp only [Finset.mem_Iic] at hk₀s hmin hlast
+  have hk₀z : H k₀ = z := le_antisymm
+    ((hmin k hk).trans_eq hkz) (hz.2 ⟨k₀, hk₀s, rfl⟩)
+  have habove : ∀ k, k₀ < k → k ≤ s → H k₀ < H k :=
+    fun k hk₀k hks ↦ hlast k hks hk₀k
   -- The first vertex `k₁` after `k₀` at which the height is at least `H k₀ + 1`.
   have hHs : H k₀ + 1 ≤ H s := by
     obtain ⟨j, hj, hjs⟩ := hgap

@@ -123,15 +123,11 @@ theorem mgf_id_stableMeasure_eq_exp_integral
   rcases eq_zero_or_pos s with rfl | hs
   · rw [stableMeasure_zero_scale ⟨hα.1, hα.2.le⟩ hβ.le, mgf_dirac']
     simp [mul_comm]
-  have hmap : (stableMeasure α β 1 0).map (fun x ↦ m + s * x) =
-      stableMeasure α β s m := by
-    simpa [Real.sign_of_pos (NNReal.coe_pos.mpr hs)] using
-      stableMeasure_map_affine (α := α) (β := β) (s := 1) (m := 0) (a := m) (b := s)
-        (Or.inl (NNReal.coe_ne_zero.mpr hs.ne'))
   have hst : β * (s * t) ≤ 0 := by
     rw [mul_left_comm]
     exact mul_nonpos_of_nonneg_of_nonpos s.2 ht
-  rw [← hmap, mgf_id_map_affine, mgf_id_stableMeasure_one_zero_eq_exp_integral hα hβ hst,
+  rw [← stableMeasure_one_zero_map_affine hs, mgf_id_map_affine,
+    mgf_id_stableMeasure_one_zero_eq_exp_integral hα hβ hst,
     ← exp_add]
 
 /-- The cumulant-generating function on the allowed half-line is the real compensated Lévy

@@ -103,6 +103,7 @@ theorem exists_isUnitary_congr (π : ContRepresentation 𝕜 G V) (hπ : Continu
   exact ⟨A.symm, (isUnitary_iff_norm_map _).mpr fun g ↦
     (LinearMap.norm_map_iff_inner_map_map _).mpr (hunitary g)⟩
 
+omit [MeasurableSpace G] [BorelSpace G] in
 /-- **A matrix coefficient of a finite-dimensional continuous representation of a compact group is
 a matrix coefficient of a unitary one**, on the same carrier and at suitably moved vectors.
 
@@ -114,6 +115,8 @@ theorem exists_isUnitary_matrixCoeff_eq (π : ContRepresentation 𝕜 G V) (hπ 
     (v w : V) :
     ∃ (ρ : ContRepresentation 𝕜 G V) (hρ : Continuous ρ), IsUnitary ρ ∧
       ∃ v' w' : V, matrixCoeff π hπ v w = matrixCoeff ρ hρ v' w' :=
+  letI := borel G
+  haveI : BorelSpace G := ⟨rfl⟩
   let ⟨e, he⟩ := exists_isUnitary_congr π hπ
   ⟨ContinuousLinearEquiv.congr e π, ContinuousLinearEquiv.continuous_congr e hπ, he, e v,
       ContinuousLinearMap.adjoint (e.symm : V →L[𝕜] V) w,
@@ -129,7 +132,7 @@ namespace TauCeti
 section Representative
 
 variable {𝕜 G : Type*} [RCLike 𝕜] [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [CompactSpace G] [MeasurableSpace G] [BorelSpace G]
+  [CompactSpace G]
 
 /-- **The representative functions of a compact group are the matrix coefficients of its unitary
 finite-dimensional continuous representations.** Restricting the representations allowed in the
