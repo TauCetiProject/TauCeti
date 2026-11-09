@@ -106,6 +106,13 @@ theorem coe_simpleCorootPoints_eq_kostantTorusMatrix (i : Fin t.rank) (A : Type 
       kostantTorusMatrix D.lattice D.basis D.coordinateWeight (D.simpleCorootParameter i A s) := by
   rfl
 
+/-- The simple coroot is the actual torus evaluated at its coroot parameter. -/
+theorem simpleCorootPoints_eq_torusPoints (i : Fin t.rank) (A : Type v) [CommRing A]
+    (s : Aˣ) :
+    D.simpleCorootPoints i A s = D.torusPoints A (D.simpleCorootParameter i A s) := by
+  apply Subtype.ext
+  rw [coe_torusPoints, coe_simpleCorootPoints_eq_kostantTorusMatrix]
+
 /-- On a weight vector, the simple coroot acts by its weight's `i`-th coordinate. -/
 @[simp]
 theorem coe_simpleCorootPoints (i : Fin t.rank) (A : Type v) [CommRing A] (s : Aˣ) :
@@ -113,6 +120,16 @@ theorem coe_simpleCorootPoints (i : Fin t.rank) (A : Type v) [CommRing A] (s : A
       diagGL (fun j => s ^ D.weight j i) := by
   rw [coe_simpleCorootPoints_eq_kostantTorusMatrix, kostantTorusMatrix_apply]
   simp
+
+/-- The coordinate cocharacter on lattice automorphisms is the simple coroot in the weight
+basis. -/
+theorem basisMatrix_kostantCoordinateCocharacter (i : Fin t.rank) (A : Type v) [CommRing A]
+    (s : Aˣ) :
+    Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv
+      (kostantCoordinateCocharacter D.lattice D.basis D.weight A i s) =
+        (D.simpleCorootPoints i A s : Matrix.GeneralLinearGroup (Fin D.dim) A) := by
+  rw [kostantCoordinateCocharacter_apply, coe_simpleCorootPoints]
+  simp only [basisMatrix_kostantTorusPoints, kostantTorusMatrix_apply, torusCharacter_mulSingle]
 
 /-- Simple coroot values commute with every scalar extension of the value ring. -/
 theorem map_simpleCorootPoints {A : Type v} {B : Type*} [CommRing A] [CommRing B]

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 public import TauCeti.MeasureTheory.Function.Holder
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.Topology.ExtendFrom
+import TauCeti.MeasureTheory.Integral.Bochner.Oscillation
 
 /-!
 # Time-dependent functions in a Gelfand triple are continuous into the pivot space
@@ -120,27 +121,52 @@ private theorem norm_sub_sq_le {t₀ c₁ α β s s' : ℝ} {c₂ : StrongDual �
           setIntegral_const, Real.volume_real_Ioo_of_le hαβ, smul_eq_mul]
         ring
 
-/-- The integral of a function integrable on `(a, b)` over `(a, b) ∩ (x - δ, x + δ)` tends to zero
-with `δ`. -/
-private theorem exists_pos_setIntegral_Ioo_lt {g : ℝ → ℝ} (hg : IntegrableOn g (Ioo a b)) (x : ℝ)
-    {η : ℝ} (hη : 0 < η) : ∃ δ > 0, ∫ r in Ioo ((x - δ) ⊔ a) ((x + δ) ⊓ b), g r < η := by
-  have hT : Tendsto (fun δ ↦ ∫ r in Ioo (x - δ) (x + δ), g r ∂volume.restrict (Ioo a b)) (𝓝 0)
-      (𝓝 0) := by
-    refine Integrable.tendsto_setIntegral_nhds_zero hg ?_
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-      (h := fun δ ↦ ENNReal.ofReal (2 * δ)) ?_ (fun _ ↦ zero_le) fun δ ↦ ?_
-    · have hc : Continuous fun δ : ℝ ↦ ENNReal.ofReal (2 * δ) :=
-        ENNReal.continuous_ofReal.comp (continuous_const.mul continuous_id)
-      simpa using hc.tendsto 0
-    · refine (Measure.restrict_apply_le _ _).trans_eq ?_
-      dsimp only
-      rw [Real.volume_Ioo]
-      ring_nf
-  obtain ⟨δ, hδ, hδη⟩ := Metric.tendsto_nhds_nhds.1 hT η hη
-  refine ⟨δ / 2, by positivity, ?_⟩
-  have h := @hδη (δ / 2) (by rw [Real.dist_eq, sub_zero, abs_of_pos (by positivity)]; linarith)
-  rw [Real.dist_eq, sub_zero, Measure.restrict_restrict measurableSet_Ioo, Ioo_inter_Ioo] at h
-  exact (le_abs_self _).trans_lt h
+/-- **Choice of a good point on a subinterval.** Suppose `‖ι u‖²` and `ι.gelfandDual ∘ ι ∘ u` agree
+with primitives of `2 u'(u)` and `u'` based at `t₀ ∈ (a, b)` at every point of `(a, b)` outside a
+null set `N`. On a subinterval `(α, β) ⊆ (a, b)` some `s' ∈ (a, b) \ N` then satisfies
+`‖ι u s - ι u s'‖² ≤ ∫_{(α, β)} (‖u'‖² + 4 ‖u‖²)` for every `s ∈ (α, β) \ N`. -/
+private theorem exists_mem_inter_norm_sub_sq_le {t₀ c₁ : ℝ} {c₂ : StrongDual ℝ V} {N : Set ℝ}
+    (hp : IntegrableOn (fun r ↦ u' r (u r)) (Ioo a b)) (hu'i : IntegrableOn u' (Ioo a b))
+    (hu2 : IntegrableOn (fun r ↦ ‖u r‖ ^ 2) (Ioo a b))
+    (hu'2 : IntegrableOn (fun r ↦ ‖u' r‖ ^ 2) (Ioo a b)) (ht₀ : t₀ ∈ Ioo a b)
+    (hN : volume N = 0)
+    (hS : ∀ t ∈ Ioo a b \ N, ‖ι (u t)‖ ^ 2 = c₁ + ∫ r in t₀..t, 2 * u' r (u r) ∧
+      ι.gelfandDual (ι (u t)) = c₂ + ∫ r in t₀..t, u' r)
+    {α β : ℝ} (haα : a ≤ α) (hαβ : α < β) (hβb : β ≤ b) :
+    ∃ s' ∈ (Ioo a b \ N) ∩ Ioo α β, ∀ s ∈ (Ioo a b \ N) ∩ Ioo α β,
+      ‖ι (u s) - ι (u s')‖ ^ 2 ≤ ∫ r in Ioo α β, (‖u' r‖ ^ 2 + 4 * ‖u r‖ ^ 2) := by
+  have hJ : Ioo α β ⊆ Ioo a b := Ioo_subset_Ioo haα hβb
+  have hK : (Ioo a b \ N) ∩ Ioo α β = Ioo α β \ N := by
+    ext t
+    exact ⟨fun ⟨⟨_, htN⟩, ht⟩ ↦ ⟨ht, htN⟩, fun ⟨ht, htN⟩ ↦ ⟨⟨hJ ht, htN⟩, ht⟩⟩
+  have hμK : volume ((Ioo a b \ N) ∩ Ioo α β) = ENNReal.ofReal (β - α) := by
+    rw [hK, measure_sdiff_null hN, Real.volume_Ioo]
+  -- Choose `s'` with `‖u s'‖²` at most the average of `‖u‖²` over `(α, β)`.
+  obtain ⟨s', hs'K, hs'le⟩ := exists_le_setAverage (μ := volume) (f := fun r ↦ ‖u r‖ ^ 2)
+    (by rw [hμK]; simpa using hαβ) (by rw [hμK]; exact ENNReal.ofReal_ne_top)
+    (hu2.mono_set (inter_subset_right.trans hJ))
+  have hav : (β - α) * ‖u s'‖ ^ 2 ≤ ∫ r in Ioo α β, ‖u r‖ ^ 2 := by
+    rw [setAverage_eq, measureReal_def, hμK, ENNReal.toReal_ofReal (sub_nonneg.2 hαβ.le),
+      smul_eq_mul, setIntegral_congr_set (hK ▸ sdiff_null_ae_eq_self hN)] at hs'le
+    have hpos := sub_pos.2 hαβ
+    calc (β - α) * ‖u s'‖ ^ 2 ≤ (β - α) * ((β - α)⁻¹ * ∫ r in Ioo α β, ‖u r‖ ^ 2) := by
+          gcongr
+      _ = ∫ r in Ioo α β, ‖u r‖ ^ 2 := by field_simp
+  refine ⟨s', hs'K, fun s hsK ↦ ?_⟩
+  obtain ⟨hs₁, hs₂⟩ := hS s hsK.1
+  obtain ⟨hs'₁, hs'₂⟩ := hS s' hs'K.1
+  have hest := norm_sub_sq_le (ι := ι) hp hu'i (hu'2.add (hu2.const_mul 2)) hJ ht₀ hsK.2 hs'K.2
+    hs₁ hs₂ hs'₁ hs'₂
+  have hsplit : ∫ r in Ioo α β, (‖u' r‖ ^ 2 + 4 * ‖u r‖ ^ 2) =
+      (∫ r in Ioo α β, (‖u' r‖ ^ 2 + 2 * ‖u r‖ ^ 2)) + 2 * ∫ r in Ioo α β, ‖u r‖ ^ 2 := by
+    have h₁ : IntegrableOn (fun r ↦ ‖u' r‖ ^ 2 + 2 * ‖u r‖ ^ 2) (Ioo α β) :=
+      IntegrableOn.mono_set (hu'2.add (hu2.const_mul 2)) hJ
+    have h₂ : IntegrableOn (fun r ↦ 2 * ‖u r‖ ^ 2) (Ioo α β) :=
+      IntegrableOn.mono_set (hu2.const_mul 2) hJ
+    rw [← MeasureTheory.integral_const_mul, ← MeasureTheory.integral_add h₁ h₂]
+    congr 1 with r
+    ring
+  linarith
 
 variable [CompleteSpace V]
 
@@ -178,74 +204,11 @@ theorem HasWeakLineDerivOn.exists_continuousOn_ae_eq_of_gelfandDual [CompleteSpa
   have hS₀ (t : ℝ) (ht : t ∈ S₀) : P t := by
     by_contra hc
     exact ht.2 (subset_toMeasurable _ _ fun h' ↦ hc (h' ht.1))
-  -- On a subinterval `(α, β)`, some `s' ∈ S₀` is close to every point of `S₀ ∩ (α, β)`.
-  have hosc (α β : ℝ) (haα : a ≤ α) (hαβ : α < β) (hβb : β ≤ b) : ∃ s' ∈ S₀ ∩ Ioo α β,
-      ∀ s ∈ S₀ ∩ Ioo α β, ‖ι (u s) - ι (u s')‖ ^ 2 ≤
-        ∫ r in Ioo α β, (‖u' r‖ ^ 2 + 4 * ‖u r‖ ^ 2) := by
-    have hJ : Ioo α β ⊆ Ioo a b := Ioo_subset_Ioo haα hβb
-    have hK : S₀ ∩ Ioo α β = Ioo α β \ N := by
-      ext t
-      exact ⟨fun ⟨⟨_, htN⟩, ht⟩ ↦ ⟨ht, htN⟩, fun ⟨ht, htN⟩ ↦ ⟨⟨hJ ht, htN⟩, ht⟩⟩
-    have hμK : volume (S₀ ∩ Ioo α β) = ENNReal.ofReal (β - α) := by
-      rw [hK, measure_sdiff_null hN, Real.volume_Ioo]
-    -- Choose `s'` with `‖u s'‖²` at most the average of `‖u‖²` over `(α, β)`.
-    obtain ⟨s', hs'K, hs'le⟩ := exists_le_setAverage (μ := volume) (f := fun r ↦ ‖u r‖ ^ 2)
-      (by rw [hμK]; simpa using hαβ) (by rw [hμK]; exact ENNReal.ofReal_ne_top)
-      (hu2.mono_set (inter_subset_right.trans hJ))
-    have hav : (β - α) * ‖u s'‖ ^ 2 ≤ ∫ r in Ioo α β, ‖u r‖ ^ 2 := by
-      rw [setAverage_eq, measureReal_def, hμK, ENNReal.toReal_ofReal (sub_nonneg.2 hαβ.le),
-        smul_eq_mul, setIntegral_congr_set (hK ▸ sdiff_null_ae_eq_self hN)] at hs'le
-      have hpos := sub_pos.2 hαβ
-      calc (β - α) * ‖u s'‖ ^ 2 ≤ (β - α) * ((β - α)⁻¹ * ∫ r in Ioo α β, ‖u r‖ ^ 2) := by
-            gcongr
-        _ = ∫ r in Ioo α β, ‖u r‖ ^ 2 := by field_simp
-    refine ⟨s', hs'K, fun s hsK ↦ ?_⟩
-    obtain ⟨hs₁, hs₂⟩ := hS₀ s hsK.1
-    obtain ⟨hs'₁, hs'₂⟩ := hS₀ s' hs'K.1
-    have hest := norm_sub_sq_le (ι := ι) hp hu'i (hu'2.add (hu2.const_mul 2)) hJ ht₀ hsK.2 hs'K.2
-      hs₁ hs₂ hs'₁ hs'₂
-    have hsplit : ∫ r in Ioo α β, (‖u' r‖ ^ 2 + 4 * ‖u r‖ ^ 2) =
-        (∫ r in Ioo α β, (‖u' r‖ ^ 2 + 2 * ‖u r‖ ^ 2)) + 2 * ∫ r in Ioo α β, ‖u r‖ ^ 2 := by
-      have h₁ : IntegrableOn (fun r ↦ ‖u' r‖ ^ 2 + 2 * ‖u r‖ ^ 2) (Ioo α β) :=
-        IntegrableOn.mono_set (hu'2.add (hu2.const_mul 2)) hJ
-      have h₂ : IntegrableOn (fun r ↦ 2 * ‖u r‖ ^ 2) (Ioo α β) :=
-        IntegrableOn.mono_set (hu2.const_mul 2) hJ
-      rw [← MeasureTheory.integral_const_mul, ← MeasureTheory.integral_add h₁ h₂]
-      congr 1 with r
-      ring
-    linarith
-  -- The oscillation of `ι ∘ u` on `S₀` near any point of `[a, b]` is small.
-  have hL4 (x : ℝ) (hx : x ∈ Icc a b) (ε : ℝ) (hε : 0 < ε) : ∃ δ > 0, ∀ s ∈ S₀, ∀ r ∈ S₀,
-      dist s x < δ → dist r x < δ → dist (ι (u s)) (ι (u r)) < ε := by
-    obtain ⟨δ, hδ, hsm⟩ := exists_pos_setIntegral_Ioo_lt (hu'2.add (hu2.const_mul 4)) x
-      (η := (ε / 2) ^ 2) (by positivity)
-    have hαβ : (x - δ) ⊔ a < (x + δ) ⊓ b :=
-      sup_lt_iff.2 ⟨lt_inf_iff.2 ⟨by linarith, by linarith [hx.2]⟩,
-        lt_inf_iff.2 ⟨by linarith [hx.1], hab⟩⟩
-    obtain ⟨s', hs'K, hs'⟩ := hosc _ _ le_sup_right hαβ inf_le_right
-    have hclose (t : ℝ) (ht : t ∈ S₀) (hd : dist t x < δ) : dist (ι (u t)) (ι (u s')) < ε / 2 := by
-      rw [Real.dist_eq, abs_lt] at hd
-      have htK : t ∈ S₀ ∩ Ioo ((x - δ) ⊔ a) ((x + δ) ⊓ b) :=
-        ⟨ht, by rw [← Ioo_inter_Ioo]; exact ⟨⟨by linarith, by linarith⟩, ht.1⟩⟩
-      rw [dist_eq_norm]
-      exact lt_of_pow_lt_pow_left₀ 2 (by positivity) ((hs' t htK).trans_lt hsm)
-    refine ⟨δ, hδ, fun s hs r hr hsd hrd ↦ ?_⟩
-    calc dist (ι (u s)) (ι (u r)) ≤ dist (ι (u s)) (ι (u s')) + dist (ι (u r)) (ι (u s')) :=
-          dist_triangle_right _ _ _
-      _ < ε / 2 + ε / 2 := add_lt_add (hclose s hs hsd) (hclose r hr hrd)
-      _ = ε := add_halves ε
-  -- `S₀` is dense in `[a, b]`.
-  have hdense : Icc a b ⊆ closure S₀ := by
-    intro x hx
-    refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
-    have hαβ : (x - ε) ⊔ a < (x + ε) ⊓ b :=
-      sup_lt_iff.2 ⟨lt_inf_iff.2 ⟨by linarith, by linarith [hx.2]⟩,
-        lt_inf_iff.2 ⟨by linarith [hx.1], hab⟩⟩
-    obtain ⟨s', ⟨hs'S, hs'K⟩, -⟩ := hosc _ _ le_sup_right hαβ inf_le_right
-    rw [← Ioo_inter_Ioo] at hs'K
-    refine ⟨s', hs'S, ?_⟩
-    rw [Real.dist_eq, abs_lt]
-    constructor <;> linarith [hs'K.1.1, hs'K.1.2]
+  have hS₀sub : S₀ ⊆ Ioo a b := sdiff_subset
+  obtain ⟨hdense, hL4⟩ := dense_and_dist_lt_of_oscillation (f := fun t ↦ ι (u t)) hab hS₀sub
+    (hu'2.add (hu2.const_mul 4)) fun α β haα hαβ hβb ↦ by
+    simp only [dist_eq_norm]
+    exact exists_mem_inter_norm_sub_sq_le hp hu'i hu2 hu'2 ht₀ hN hS₀ haα hαβ hβb
   -- Hence `ι ∘ u` has a limit along `S₀` at every point of `[a, b]`; extend it from `S₀`.
   have hlim (x : ℝ) (hx : x ∈ Icc a b) : ∃ y, Tendsto (fun t ↦ ι (u t)) (𝓝[S₀] x) (𝓝 y) := by
     have := mem_closure_iff_nhdsWithin_neBot.1 (hdense hx)
