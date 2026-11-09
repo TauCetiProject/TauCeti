@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Quadratic
 import Mathlib.Algebra.Lie.AdjointAction.Basic
 import Mathlib.FieldTheory.Separable
 import TauCeti.Algebra.Lie.AdjointAction.Basic
+import TauCeti.Algebra.Lie.Subalgebra.Cartan
 import TauCeti.Algebra.Lie.Subalgebra.Engel
 import TauCeti.Algebra.Polynomial.RingDivision
 import TauCeti.Geometry.Symplectic.Plane
@@ -33,9 +34,10 @@ This file sets up this notion on a symplectic vector space, the local model of t
 
 * `TauCeti.SymplecticForm.IsNondegenerateQuadraticFamily ω Q`: the Hamiltonian endomorphisms of a
   family `Q` of quadratic forms generate a Cartan subalgebra of `sp(V, ω)`. This depends only on
-  the linear span of the family (`isNondegenerateQuadraticFamily_iff_of_span_eq`). By Mathlib's
-  `LieSubalgebra.normalizer_eq_self_of_engel_le`, a Poisson-commuting family is nondegenerate as
-  soon as it contains the Engel subalgebra of one Hamiltonian endomorphism
+  the linear span of the family (`isNondegenerateQuadraticFamily_iff_of_span_eq`), and is
+  invariant under linear symplectomorphisms (`isNondegenerateQuadraticFamily_comp_iff`). By
+  Mathlib's `LieSubalgebra.normalizer_eq_self_of_engel_le`, a Poisson-commuting family is
+  nondegenerate as soon as it contains the Engel subalgebra of one Hamiltonian endomorphism
   (`isNondegenerateQuadraticFamily_of_engel_le`).
 * `TauCeti.SymplecticForm.IsNondegenerateRankZeroPoint ω F x`: `x` is a `C²` critical point of
   `F : E → G` at which the Hessians of the functions `ℓ ∘ F`, `ℓ` a linear functional on `G`, form
@@ -143,6 +145,50 @@ theorem isNondegenerateQuadraticFamily_iff_of_span_eq {Q : ι → QuadraticForm 
     ω.IsNondegenerateQuadraticFamily Q ↔ ω.IsNondegenerateQuadraticFamily Q' := by
   rw [isNondegenerateQuadraticFamily_iff, isNondegenerateQuadraticFamily_iff,
     lieSpan_range_hamiltonianEndEquiv, lieSpan_range_hamiltonianEndEquiv, h]
+
+/-- **Invariance under linear symplectomorphisms.** If `e : V ≃ V'` carries `ω` to `ω'`, a family
+`Q` of quadratic forms on `V'` is nondegenerate for `ω'` exactly when its pullback `Q ∘ e` is
+nondegenerate for `ω`: conjugation by `e` is a Lie algebra isomorphism `sp(V, ω) ≃ sp(V', ω')`
+carrying `A_{Q ∘ e}` to `A_Q`. -/
+theorem isNondegenerateQuadraticFamily_comp_iff {V' : Type*} [AddCommGroup V'] [Module ℝ V']
+    [FiniteDimensional ℝ V'] {ω' : SymplecticForm V'} {e : V ≃ₗ[ℝ] V'}
+    (he : IsSymplectomorphism ω ω' e) (Q : ι → QuadraticForm ℝ V') :
+    ω.IsNondegenerateQuadraticFamily (fun i ↦ (Q i).comp (e : V →ₗ[ℝ] V')) ↔
+      ω'.IsNondegenerateQuadraticFamily Q := by
+  have hB : ω'.toBilinForm.compl₁₂ (e : V →ₗ[ℝ] V') (e : V →ₗ[ℝ] V') = ω.toBilinForm :=
+    LinearMap.ext₂ fun v w ↦ he.apply v w
+  -- Conjugation by `e` identifies `sp(V, ω)` with `sp(V', ω')`.
+  let φ : skewAdjointLieSubalgebra ω.toBilinForm ≃ₗ⁅ℝ⁆ skewAdjointLieSubalgebra ω'.toBilinForm :=
+    (LieEquiv.ofEq _ _ (by rw [hB])).trans (skewAdjointLieSubalgebraEquiv ω'.toBilinForm e)
+  have hφ : ∀ R : QuadraticForm ℝ V',
+      φ (ω.hamiltonianEndEquiv (R.comp (e : V →ₗ[ℝ] V'))) = ω'.hamiltonianEndEquiv R := by
+    intro R
+    refine Subtype.ext ?_
+    simp only [φ, LieEquiv.trans_apply, skewAdjointLieSubalgebraEquiv_apply,
+      LieEquiv.ofEq_apply, LinearEquiv.lieConj_apply, coe_hamiltonianEndEquiv_apply]
+    refine ω'.eq_hamiltonianEnd_iff.2 fun v w ↦ ?_
+    rw [LinearEquiv.conj_apply_apply, ← e.apply_symm_apply w, he.apply, apply_hamiltonianEnd]
+    simp [QuadraticMap.polar]
+  have hspan : (lieSpan ℝ (skewAdjointLieSubalgebra ω.toBilinForm) (Set.range fun i ↦
+      ω.hamiltonianEndEquiv ((Q i).comp (e : V →ₗ[ℝ] V')))).map (φ : _ →ₗ⁅ℝ⁆ _) =
+      lieSpan ℝ (skewAdjointLieSubalgebra ω'.toBilinForm)
+        (Set.range fun i ↦ ω'.hamiltonianEndEquiv (Q i)) := by
+    rw [LieSubalgebra.map_lieSpan, ← Set.range_comp]
+    congr 2
+    funext i
+    exact hφ (Q i)
+  rw [isNondegenerateQuadraticFamily_iff, isNondegenerateQuadraticFamily_iff, ← hspan,
+    LieSubalgebra.isCartanSubalgebra_map_lieEquiv_iff]
+
+/-- On the zero symplectic vector space every family of quadratic forms is nondegenerate: the
+symplectic Lie algebra is zero, and the zero subalgebra is a Cartan subalgebra. -/
+theorem isNondegenerateQuadraticFamily_of_subsingleton [Subsingleton V]
+    (Q : ι → QuadraticForm ℝ V) : ω.IsNondegenerateQuadraticFamily Q := by
+  have : Subsingleton (skewAdjointLieSubalgebra ω.toBilinForm) :=
+    ⟨fun a b ↦ Subtype.ext (Subsingleton.elim (a : Module.End ℝ V) b)⟩
+  refine ⟨inferInstance, ?_⟩
+  ext a
+  simp only [Subsingleton.elim a 0, zero_mem]
 
 /-- **Regular elements give Cartan subalgebras.** A family of pairwise Poisson-commuting quadratic
 forms is nondegenerate as soon as the Engel subalgebra of the Hamiltonian endomorphism of some
