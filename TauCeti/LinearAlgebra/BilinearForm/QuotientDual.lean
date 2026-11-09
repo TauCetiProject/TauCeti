@@ -24,21 +24,6 @@ public noncomputable section
 
 namespace LinearMap.BilinForm
 
-section Semiring
-
-variable {K V : Type*} [CommSemiring K] [AddCommMonoid V] [Module K V]
-
-/-- The kernel of the pairing with a subspace in the first argument is its right
-orthogonal complement. -/
-theorem ker_dualRestrict_comp_flip (B : LinearMap.BilinForm K V) (W : Submodule K V) :
-    LinearMap.ker (W.dualRestrict.comp B.flip) = B.orthogonal W := by
-  ext v
-  simp only [LinearMap.mem_ker, LinearMap.ext_iff, LinearMap.comp_apply,
-    Submodule.dualRestrict_apply, LinearMap.BilinForm.flip_apply, LinearMap.zero_apply,
-    mem_orthogonal_iff, Subtype.forall]
-
-end Semiring
-
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
 /-- Pairing with a subspace in the first argument is surjective onto its dual
@@ -51,7 +36,7 @@ theorem surjective_dualRestrict_comp_flip (B : LinearMap.BilinForm K V) (hB : B.
 its dual, via `[v] ↦ B(·, v)|W`. -/
 def quotientOrthogonalEquivDual (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate)
     (W : Submodule K V) : (V ⧸ B.orthogonal W) ≃ₗ[K] Module.Dual K W :=
-  (Submodule.quotEquivOfEq _ _ (B.ker_dualRestrict_comp_flip W).symm).trans
+  (Submodule.quotEquivOfEq _ _ (Submodule.comap_dualAnnihilator_eq_orthogonalBilin B W).symm).trans
     ((W.dualRestrict.comp B.flip).quotKerEquivOfSurjective
       (B.surjective_dualRestrict_comp_flip hB W))
 
