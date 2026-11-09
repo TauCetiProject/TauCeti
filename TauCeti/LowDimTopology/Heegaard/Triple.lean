@@ -93,8 +93,8 @@ implies the spin^c-wise conditions of Ozsváth and Szabó.
   juxtaposition of disk domains with triangle domains.
 * `TauCeti.HeegaardTripleRegionSystem.weaklyAdmissible_iff_exists_pos_forall_sum_mul_eq_zero`:
   weak admissibility is the existence of a strictly positive area form vanishing on doubly
-  periodic domains, and `TauCeti.HeegaardTripleRegionSystem.sum_mul_eq_of_sub_mem` says that
-  domains in one class have the same area.
+  periodic domains. By `TauCeti.sum_mul_intCast_eq_of_sub_mem`, domains in one class then have
+  the same area.
 * `TauCeti.HeegaardTripleRegionSystem.WeaklyAdmissible.finite_setOf_nonneg_sub_mem` and
   `TauCeti.HeegaardTripleRegionSystem.weaklyAdmissible_iff_forall_finite_setOf_nonneg_sub_mem`:
   weak admissibility is the finiteness of the nonnegative domains in each class.
@@ -883,15 +883,6 @@ theorem weaklyAdmissible_iff_exists_pos_forall_sum_mul_eq_zero [Fintype Region] 
       ∃ A : Region → ℝ, (∀ r, 0 < A r) ∧
         ∀ P ∈ T.doublyPeriodicDomains, ∑ r, A r * P r = 0 := by
   rw [weaklyAdmissible_iff, T.doublyPeriodicDomains.exists_pos_sum_mul_intCast_eq_zero_iff]
-
-/-- If an area form `A` vanishes on the sums of doubly periodic domains, then two domains whose
-difference is such a sum, for instance two triangle domains in the same class, have the same
-area. -/
-theorem sum_mul_eq_of_sub_mem [Fintype Region] {A : Region → ℝ}
-    (hA : ∀ P ∈ T.doublyPeriodicDomains, ∑ r, A r * P r = 0) {D D' : Region → ℤ}
-    (h : D' - D ∈ T.doublyPeriodicDomains) :
-    ∑ r, A r * D' r = ∑ r, A r * D r :=
-  sum_mul_intCast_eq_of_sub_mem hA h
 
 /-- In a weakly admissible triple with finitely many regions, each class `D₀ + P`, with `P` ranging
 over the sums of doubly periodic domains, contains only finitely many nonnegative domains. When
