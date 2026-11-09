@@ -10,8 +10,8 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse
-import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.LeftInverse
 
 /-!
 # Local defining covectors for hyperplane distributions
@@ -55,6 +55,41 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   {n : ℕ∞ω} [IsManifold I 1 M] [IsManifold I (n + 1) M]
   {k : ℕ} {D : Π x : M, Submodule 𝕜 (TangentSpace I x)}
 
+omit [CompleteSpace 𝕜] [IsManifold I (n + 1) M] in
+/-- At a point of a frame domain, a nonzero covector killing the frame operator pulls back along
+the trivialization to a nonzero covector whose kernel is the distribution. -/
+private theorem ker_comp_continuousLinearMapAt_eq
+    (hD : IsContMDiffDistribution I n k D) (hk : k + 1 = finrank 𝕜 E) {x y : M}
+    {V : Set M} {X : Fin k → Π y : M, TangentSpace I y} (hX : IsDistributionFrameOn I n D X V)
+    (hyV : y ∈ V) (hye : y ∈ (trivializationAt E (TangentSpace I) x).baseSet)
+    {c : E →L[𝕜] 𝕜} (hc : c ≠ 0) (hzero : c ∘L IsSubbundleFrameOn.trivOperator 𝕜 E X x y = 0) :
+    c ∘L (trivializationAt E (TangentSpace I) x).continuousLinearMapAt 𝕜 y ≠ 0 ∧
+      LinearMap.ker
+        (c ∘L (trivializationAt E (TangentSpace I) x).continuousLinearMapAt 𝕜 y).toLinearMap =
+          D y := by
+  set e := trivializationAt E (TangentSpace I) x
+  have hαy : c ∘L e.continuousLinearMapAt 𝕜 y ≠ 0 := by
+    intro hz
+    apply hc
+    ext v
+    have := congrArg (fun f : TangentSpace I y →L[𝕜] 𝕜 ↦ f (e.symmL 𝕜 y v)) hz
+    simpa [e.continuousLinearMapAt_symmL hye] using this
+  refine ⟨hαy, ?_⟩
+  -- Annihilation gives inclusion; codimension one upgrades it to equality.
+  have hle : D y ≤ LinearMap.ker (c ∘L e.continuousLinearMapAt 𝕜 y).toLinearMap := by
+    rw [← hX.span_eq hyV]
+    apply Submodule.span_le.mpr
+    rintro _ ⟨i, rfl⟩
+    have hAi := IsSubbundleFrameOn.trivOperator_apply (𝕜 := 𝕜) (X := X) hye
+      (Pi.single i (1 : 𝕜))
+    have heval : (c ∘L e.continuousLinearMapAt 𝕜 y) (X i y) = c (e ⟨y, X i y⟩).2 :=
+      congrArg c (e.continuousLinearMapAt_apply_of_mem 𝕜 hye (X i y))
+    rw [SetLike.mem_coe, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, heval]
+    simpa [hAi, e] using congrArg (fun f : (Fin k → 𝕜) →L[𝕜] 𝕜 ↦ f (Pi.single i 1)) hzero
+  exact Module.Dual.ker_eq_of_le_of_finrank_add_one _
+    (fun hz ↦ hαy (ContinuousLinearMap.coe_injective hz)) hle
+    (by rw [hD.finrank_eq y, finrank_tangentSpace, hk])
+
 /-- A `C^n` hyperplane distribution is locally the kernel of a nowhere-zero `C^n` covector
 field. The covector is a section of the usual hom bundle; its regularity and nonvanishing
 are asserted only on the open neighborhood, not outside it. -/
@@ -65,7 +100,6 @@ theorem IsContMDiffDistribution.exists_local_annihilator
       ContMDiffOn I (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) n
         (fun y ↦ TotalSpace.mk' (E →L[𝕜] 𝕜) y (α y)) U ∧
       ∀ y ∈ U, α y ≠ 0 ∧ LinearMap.ker (α y).toLinearMap = D y := by
-  classical
   let : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
     TangentBundle.contMDiffVectorBundle
   -- Read a local frame in one fixed tangent-bundle trivialization.
@@ -74,91 +108,19 @@ theorem IsContMDiffDistribution.exists_local_annihilator
   have hxe : x ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x
   let A := IsSubbundleFrameOn.trivOperator 𝕜 E X x
   have hA := hX.contMDiffOn_trivOperator x
-  have hAx := hX.isSubbundleFrameOn.injective_trivOperator hxV
-  obtain ⟨p, hp⟩ := (A x).toLinearMap.exists_leftInverse_of_injective
-    (LinearMap.ker_eq_bot.mpr hAx)
-  let P := p.toContinuousLinearMap
-  have hP : LeftInverse P (A x) := fun v ↦ LinearMap.congr_fun hp v
-  have hrank : finrank 𝕜 (LinearMap.range (A x).toLinearMap) = k := by
-    rw [LinearMap.finrank_range_of_inj hAx, Module.finrank_pi, Fintype.card_fin]
-  have hlt : LinearMap.range (A x).toLinearMap < ⊤ := by
-    apply lt_of_le_of_ne le_top
-    intro h
-    have := congrArg (fun S : Submodule 𝕜 E ↦ finrank 𝕜 S) h
-    rw [hrank, finrank_top, ← hk] at this
-    omega
-  obtain ⟨a, ha, haA⟩ := (LinearMap.range (A x).toLinearMap).exists_le_ker_of_lt_top hlt
-  let a' := a.toContinuousLinearMap
-  have ha'A : a' ∘L A x = 0 := by
-    ext c
-    exact haA (LinearMap.mem_range_self _ c)
-  -- The compressed frame is the identity at x, hence invertible on a neighborhood.
-  let Q : M → (Fin k → 𝕜) →L[𝕜] Fin k → 𝕜 := fun y ↦ P ∘L A y
-  have hQ : ContMDiffOn I 𝓘(𝕜, (Fin k → 𝕜) →L[𝕜] Fin k → 𝕜) n Q
-      (V ∩ e.baseSet) := contMDiffOn_const.clm_comp hA
-  have hQx : Q x = 1 := ContinuousLinearMap.ext hP
-  -- Project a nonzero annihilator at x to the annihilators of the nearby frame images.
-  let c : M → E →L[𝕜] 𝕜 := fun y ↦ a' - a' ∘L A y ∘L (Q y).inverse ∘L P
-  have hcx : c x = a' := by
-    dsimp only [c]
-    rw [← ContinuousLinearMap.comp_assoc, ← ContinuousLinearMap.comp_assoc, ha'A]
-    simp
-  have hcn : c x ≠ 0 := by
-    rw [hcx]
-    exact fun hz ↦ ha (congrArg ContinuousLinearMap.toLinearMap hz)
-  have hQunit : ∀ᶠ y in 𝓝 x, (Q y).IsInvertible := by
-    have hi : (Q x).IsInvertible := by
-      rw [hQx]
-      exact ⟨ContinuousLinearEquiv.refl 𝕜 _, rfl⟩
-    exact (hQ.continuousOn.continuousAt
-      ((hV.inter e.open_baseSet).mem_nhds ⟨hxV, hxe⟩)).tendsto.eventually hi.eventually_nhds
-  obtain ⟨W, hWQ, hW, hxW⟩ := eventually_nhds_iff.mp hQunit
-  have hc : ContMDiffOn I 𝓘(𝕜, E →L[𝕜] 𝕜) n c (V ∩ e.baseSet ∩ W) := by
-    apply contMDiffOn_const.sub
-    exact ((contMDiffOn_const.clm_comp (hA.mono inter_subset_left)).clm_comp
-      (fun y hy ↦ (hWQ y hy.2).contDiffAt_map_inverse.comp_contMDiffWithinAt
-        ((hQ y hy.1).mono inter_subset_left))).clm_comp contMDiffOn_const
-  have hcn' : ∀ᶠ y in 𝓝 x, c y ≠ 0 :=
-    (hc.continuousOn.continuousAt
-      (((hV.inter e.open_baseSet).inter hW).mem_nhds ⟨⟨hxV, hxe⟩, hxW⟩)).eventually_ne hcn
-  obtain ⟨Z, hZc, hZ, hxZ⟩ := eventually_nhds_iff.mp hcn'
-  let U := V ∩ e.baseSet ∩ W ∩ Z
-  let α : Π y : M, TangentSpace I y →L[𝕜] 𝕜 :=
-    fun y ↦ c y ∘L e.continuousLinearMapAt 𝕜 y
-  refine ⟨U, α, ((hV.inter e.open_baseSet).inter hW).inter hZ,
-    ⟨⟨⟨hxV, hxe⟩, hxW⟩, hxZ⟩, ?_, ?_⟩
+  obtain ⟨P, a, hP, ha, haA⟩ := ContinuousLinearMap.exists_leftInverse_ne_zero_comp_eq_zero _
+    (hX.isSubbundleFrameOn.injective_trivOperator hxV)
+    (by rw [Module.finrank_pi, Fintype.card_fin]; omega)
+  obtain ⟨W, hW, hxW, hWS, hc, hWc⟩ := hA.exists_isOpen_contMDiffOn_sub_comp_inverse_comp
+    (hV.inter e.open_baseSet) ⟨hxV, hxe⟩ hP ha haA
+  refine ⟨W,
+    fun y ↦ (a - a ∘L A y ∘L (P ∘L A y).inverse ∘L P) ∘L e.continuousLinearMapAt 𝕜 y, hW,
+    hxW, ?_, fun y hy ↦ ?_⟩
   -- The cotangent-bundle coordinates of α are exactly the smooth covectors c.
   · exact CotangentBundle.contMDiffOn_mk_comp_continuousLinearMapAt x
-      (U := U) (c := c) (fun _ hy ↦ hy.1.1.2)
-      (hc.mono inter_subset_left)
-  · intro y hy
-    have hcy : c y ≠ 0 := hZc y hy.2
-    have hαy : α y ≠ 0 := by
-      intro hz
-      apply hcy
-      ext v
-      have := congrArg (fun f : TangentSpace I y →L[𝕜] 𝕜 ↦ f (e.symmL 𝕜 y v)) hz
-      simpa [α, e.continuousLinearMapAt_symmL hy.1.1.2] using this
-    refine ⟨hαy, ?_⟩
-    -- Annihilation gives inclusion; codimension one upgrades it to equality.
-    have hle : D y ≤ LinearMap.ker (α y).toLinearMap := by
-      rw [← hX.span_eq hy.1.1.1]
-      apply Submodule.span_le.mpr
-      rintro _ ⟨i, rfl⟩
-      have hzero : c y ∘L A y = 0 :=
-        a'.sub_comp_inverse_comp_comp_eq_zero (A y) P (hWQ y hy.1.2)
-      have hAi := IsSubbundleFrameOn.trivOperator_apply (𝕜 := 𝕜) (X := X) hy.1.1.2
-        (Pi.single i (1 : 𝕜))
-      have heval : α y (X i y) = c y (e ⟨y, X i y⟩).2 :=
-        congrArg (c y) (e.continuousLinearMapAt_apply_of_mem 𝕜 hy.1.1.2 (X i y))
-      have hzeroi : α y (X i y) = 0 := by
-        rw [heval]
-        simpa [A, hAi, e] using
-          congrArg (fun f : (Fin k → 𝕜) →L[𝕜] 𝕜 ↦ f (Pi.single i 1)) hzero
-      exact hzeroi
-    exact Module.Dual.ker_eq_of_le_of_finrank_add_one (α y).toLinearMap
-      (fun hz ↦ hαy (ContinuousLinearMap.coe_injective hz)) hle
-      (by rw [hD.finrank_eq y, finrank_tangentSpace, hk])
+      (U := W) (fun _ hy ↦ (hWS hy).2) hc
+  · exact ker_comp_continuousLinearMapAt_eq hD hk hX (hWS hy).1 (hWS hy).2 (hWc y hy).2
+      (a.sub_comp_inverse_comp_comp_eq_zero (A y) P (hWc y hy).1)
 
 end Annihilator
 
