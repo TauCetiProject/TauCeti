@@ -160,14 +160,16 @@ private theorem d4Arrow_mul_eq_zero {v₀ v₁ v₂ v₃ v₄ v₅ : Fin 4} (h�
     obtain rfl := eq_one_of_adj h₂ h₁.ne'
     obtain rfl := eq_one_of_adj h₄ h₃.ne'
     simpa only [mul_assoc] using mul_mul_eq_zero_of_card_le_three' card_neighborSet_one_le_three
-      (fun l => d4Arrow k l 1) (fun l => d4Arrow k 1 l) hdu (sum_d4Arrow_mul_d4Arrow k)
+      (fun l => d4Arrow k l 1) (fun l => d4Arrow k 1 l)
+      (fun l => by rw [hdu, zero_mul]) (sum_d4Arrow_mul_d4Arrow k)
       ⟨v₁, h₁⟩ ⟨v₃, h₃⟩ ⟨v₅, h₅⟩
   · -- The path starts at a leaf, so it visits the trivalent vertex at every odd step.
     obtain rfl := eq_one_of_adj h₁ h₀
     obtain rfl := eq_one_of_adj h₃ h₂.ne'
     obtain rfl := eq_one_of_adj h₅ h₄.ne'
     simpa only [mul_assoc] using mul_mul_eq_zero_of_card_le_three card_neighborSet_one_le_three
-      (fun l => d4Arrow k l 1) (fun l => d4Arrow k 1 l) hdu (sum_d4Arrow_mul_d4Arrow k)
+      (fun l => d4Arrow k l 1) (fun l => d4Arrow k 1 l)
+      (fun l => by rw [mul_assoc, hdu, mul_zero]) (sum_d4Arrow_mul_d4Arrow k)
       ⟨v₄, h₄⟩ ⟨v₂, h₂⟩ ⟨v₀, h₁.symm⟩
 
 /-! ### Paths of length five -/
