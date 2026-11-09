@@ -49,16 +49,12 @@ open ZMod
 
 namespace TauCeti
 
-/-- If `b` is odd and `4 ∣ b + b'`, then `b'` is odd. -/
-private theorem odd_of_four_dvd_add {b b' : ℕ} (hb : Odd b) (h4 : 4 ∣ b + b') : Odd b' := by
-  rw [Nat.odd_iff] at hb ⊢
-  omega
-
 /-- The reflection law for a natural numerator: the sign `sign a` is `1` here. The proof is
 adapted from the proof of Mathlib's `jacobiSym.mod_right'`. -/
 private theorem jacobiSym_natCast_eq_of_dvd_add (a : ℕ) {b b' : ℕ} (hb : Odd b)
     (h : 4 * a ∣ b + b') : jacobiSym a b' = jacobiSym a b := by
-  have hb' : Odd b' := odd_of_four_dvd_add hb (dvd_trans (dvd_mul_right 4 _) h)
+  have h4 : 4 ∣ b + b' := (dvd_mul_right 4 _).trans h
+  have hb' : Odd b' := Nat.odd_iff.2 (by have := Nat.odd_iff.1 hb; omega)
   rcases eq_or_ne a 0 with rfl | ha₀
   · rw [mul_zero, zero_dvd_iff] at h
     exact absurd (Nat.eq_zero_of_add_eq_zero_right h) hb.pos.ne'
@@ -94,7 +90,8 @@ with `jacobiSym.mod_right`, this says that `J(a | ·)` is an odd or even functio
 residues modulo `4 |a|` according to the sign of `a`. -/
 theorem jacobiSym_eq_sign_mul_of_dvd_add (a : ℤ) {b b' : ℕ} (hb : Odd b)
     (h : 4 * a.natAbs ∣ b + b') : jacobiSym a b' = a.sign * jacobiSym a b := by
-  have hb' : Odd b' := odd_of_four_dvd_add hb (dvd_trans (dvd_mul_right 4 _) h)
+  have h4 : 4 ∣ b + b' := (dvd_mul_right 4 _).trans h
+  have hb' : Odd b' := Nat.odd_iff.2 (by have := Nat.odd_iff.1 hb; omega)
   rcases lt_trichotomy a 0 with ha | rfl | ha
   · obtain ⟨n, rfl⟩ : ∃ n : ℕ, a = -n := ⟨a.natAbs, by omega⟩
     rw [Int.natAbs_neg, Int.natAbs_natCast] at h
@@ -143,8 +140,11 @@ theorem jacobiSym_eq_sign_mul_of_emod_four_eq_zero {a : ℤ} (ha : a % 4 = 0) {b
     (hb : Odd b) (h : a.natAbs ∣ b + b') :
     jacobiSym a b' = a.sign * jacobiSym a b := by
   obtain ⟨c, rfl⟩ := Int.dvd_of_emod_eq_zero ha
-  have hb' : Odd b' := odd_of_four_dvd_add hb
-    (dvd_trans (by rw [Int.natAbs_mul]; exact dvd_mul_right 4 _) h)
+  have h4 : 4 ∣ b + b' := by
+    refine dvd_trans ?_ h
+    rw [Int.natAbs_mul]
+    exact dvd_mul_right 4 _
+  have hb' : Odd b' := Nat.odd_iff.2 (by have := Nat.odd_iff.1 hb; omega)
   rw [← jacobiSym.div_four_left ha (Nat.odd_iff.mp hb),
     ← jacobiSym.div_four_left ha (Nat.odd_iff.mp hb'), Int.mul_ediv_cancel_left _ four_ne_zero,
     Int.sign_mul, Int.sign_eq_one_of_pos four_pos, one_mul]
