@@ -76,8 +76,11 @@ theorem partiallySemialgebraicAt_polynomial_condition
   exact partiallySemialgebraicAt_polynomialFamily_condition
     (κ := Unit) (F := fun _ ↦ F) (d := fun _ ↦ d) (fun P t ↦ Φ (P ()) t)
     (by
-      simpa using hΦ.preimage_comp
-        (Sum.map (fun i ↦ (⟨(), i⟩ : Σ _ : Unit, Fin (d + 1))) id))
+      -- Reindexing the coefficient coordinates selects the unique family member.
+      convert hΦ.preimage_comp
+        (Sum.map (fun i ↦ (⟨(), i⟩ : Σ _ : Unit, Fin (d + 1))) id) using 1
+      ext v
+      rfl)
     (fun _ ↦ hF) (fun _ ↦ hdeg)
 
 end TauCeti
