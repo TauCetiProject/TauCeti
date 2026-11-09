@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Coalgebra.Convolution
 public import TauCeti.RingTheory.Idempotents.Connected.Components
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Coinvariants
 import Mathlib.Algebra.BigOperators.Pi
+import TauCeti.RingTheory.Idempotents.LinearIndependent
 import TauCeti.AlgebraicGeometry.AugmentationPoint.ConnectedComponent
 
 /-!
@@ -196,23 +197,11 @@ theorem componentFunctionAlgHom_injective (H : FiniteTypeCommHopfAlgCat.{u, u} k
   classical
   rw [injective_iff_map_eq_zero]
   intro f hf
+  have hli := (PrimeSpectrum.orthogonalIdempotents_connectedComponentsIdempotent (R := H)
+    ).linearIndependent (k := k) PrimeSpectrum.connectedComponentsIdempotent_ne_zero
   funext D
-  obtain ⟨x, hx⟩ := ConnectedComponents.surjective_coe D
-  have hD : PrimeSpectrum.connectedComponentsIdempotent D ≠ 0 := by
-    intro h0
-    have hmem := (PrimeSpectrum.mem_basicOpen_connectedComponentsIdempotent D x).mpr hx
-    simp [h0] at hmem
-  have hsum : algebraMap k H (f D) * PrimeSpectrum.connectedComponentsIdempotent D = 0 := by
-    have h := congrArg (fun a ↦ a * PrimeSpectrum.connectedComponentsIdempotent D) hf
-    simp only [componentFunctionAlgHom_apply, zero_mul, Finset.sum_mul] at h
-    rw [Finset.sum_eq_single D] at h
-    · simpa only [mul_assoc,
-        (PrimeSpectrum.isIdempotentElem_connectedComponentsIdempotent D).eq] using h
-    · intro C _ hCD
-      rw [mul_assoc, PrimeSpectrum.connectedComponentsIdempotent_mul_eq_zero hCD, mul_zero]
-    · simp
-  rw [← Algebra.smul_def, smul_eq_zero] at hsum
-  exact hsum.resolve_right hD
+  exact Fintype.linearIndependent_iff.mp hli f
+    (by simpa only [componentFunctionAlgHom_apply, Algebra.smul_def] using hf) D
 
 /-- The coordinate algebra map representing projection to the finite constant group of connected
 components. -/
