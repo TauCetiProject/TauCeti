@@ -90,6 +90,20 @@ private theorem continuous_bumpPerturbation {c : M} (β : SmoothBumpFunction I c
     (g.contMDiff.comp contMDiff_snd).sub (contMDiff_fst.clm_apply
       ((β.contMDiff_smul contMDiffOn_extChartAt).comp contMDiff_snd))
 
+omit [I.Boundaryless] in
+/-- The difference between the bump perturbation and the function itself is supported in the
+support of the bump function. -/
+private theorem tsupport_bumpPerturbation_sub_subset {c : M} (β : SmoothBumpFunction I c)
+    (g : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) (a : E →L[ℝ] ℝ) :
+    tsupport (fun y ↦ bumpPerturbation β g a y - g y) ⊆ tsupport β := by
+  have hdiff : (fun y ↦ bumpPerturbation β g a y - g y) =
+      (fun y ↦ β y * (-a (extChartAt I c y))) := by
+    ext y
+    simp only [bumpPerturbation_apply, map_smul, smul_eq_mul]
+    ring
+  rw [hdiff]
+  exact tsupport_mul_subset_left
+
 /-- One local perturbation, with its support confined to a prescribed neighbourhood. -/
 private theorem exists_isOpen_forall_exists_isMorseOn (c : M) {U : Set M} (hU : U ∈ 𝓝 c) :
     ∃ W : Set M, IsOpen W ∧ c ∈ W ∧ ∀ (g : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) (A : Set M), IsCompact A →
@@ -130,14 +144,7 @@ private theorem exists_isOpen_forall_exists_isMorseOn (c : M) {U : Set M} (hU : 
       ⟨(bumpPerturbation β g a).contMDiff.contMDiffOn, haA⟩⟩
   obtain ⟨a, ⟨ha𝒰, haA⟩, haU⟩ := (hnear.and_frequently (mem_closure_iff_frequently.1
     ((dense_setOfPred_hasNondegenerateCriticalPointsOn_sub hUo hgU) 0))).exists
-  have hsupp : tsupport (fun y ↦ bumpPerturbation β g a y - g y) ⊆ tsupport β := by
-    have hdiff : (fun y ↦ bumpPerturbation β g a y - g y) =
-        (fun y ↦ β y * (-a (extChartAt I c y))) := by
-      ext y
-      simp only [bumpPerturbation_apply, map_smul, smul_eq_mul]
-      ring
-    rw [hdiff]
-    exact tsupport_mul_subset_left
+  have hsupp := tsupport_bumpPerturbation_sub_subset β g a
   refine ⟨_, ha𝒰, haA, ?_,
     β.hasCompactSupport.of_isClosed_subset (isClosed_tsupport _) hsupp, hsupp.trans hβU⟩
   apply (isMorseOn_iff_of_mem_maximalAtlas he

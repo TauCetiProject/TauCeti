@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The real volume of the unit ball
@@ -34,9 +35,7 @@ theorem volume_real_unitBall :
     volume.real (ball (0 : V) 1) =
       π ^ ((finrank ℝ V : ℝ) / 2) / Gamma (finrank ℝ V / 2 + 1) := by
   rw [measureReal_def, InnerProductSpace.volume_ball, ENNReal.ofReal_one, one_pow, one_mul,
-    ENNReal.toReal_ofReal (by positivity), Real.sqrt_eq_rpow, ← Real.rpow_natCast,
-    ← Real.rpow_mul pi_pos.le]
-  ring_nf
+    ENNReal.toReal_ofReal (by positivity), Real.pow_sqrt_eq_rpow pi_pos.le]
 
 omit [Nontrivial V] in
 /-- There is a closed ball about the origin of volume one. -/

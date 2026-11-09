@@ -160,7 +160,7 @@ theorem hasPassport_cyclicPowTriple {k : ℕ} (hk : k.Coprime n) (hk' : (k + 1).
       k.Coprime n ∧ (k + 1).Coprime n := by
   refine ⟨fun h => ?_, fun h => hasPassport_cyclicPowTriple h.1 h.2⟩
   obtain ⟨-, h0, h1, hinf⟩ := (hasPassport_iff _ _).mp h
-  exact (cycleData_cyclicPowTriple_iff hn).mp (Prod.ext h0 (Prod.ext h1 hinf))
+  exact cycleData_cyclicPowTriple_iff.mp (Prod.ext h0 (Prod.ext h1 hinf))
 
 /-- A triple in the passport `cyclicTotallyRamified n` whose component over `0` is rotation is
 `(r, r ^ k)` for a unique-range exponent whose two relevant powers are full cycles. -/

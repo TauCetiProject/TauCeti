@@ -89,8 +89,8 @@ theorem realCartanMatrix_apply (t : AffineDynkinType) (i j : Fin t.nodes) :
 
 /-- The symmetrized form of an affine simply-laced diagram is symmetric, `A₁` included. -/
 theorem isHermitian_realCartanMatrix (t : AffineDynkinType) : t.realCartanMatrix.IsHermitian := by
-  rw [Matrix.IsHermitian, Matrix.conjTranspose_eq_transpose_of_trivial, realCartanMatrix,
-    ← Matrix.transpose_map, (isSymm_cartanMatrix t).eq]
+  rw [realCartanMatrix_eq_map]
+  exact Matrix.isHermitian_iff_isSymm.2 ((isSymm_cartanMatrix t).map _)
 
 /-- **Away from `A₁` the symmetrized form is the matrix `2I - A` of the underlying graph.** -/
 theorem realCartanMatrix_eq_graphCartanMatrix (hg : t.IsGraphical) :

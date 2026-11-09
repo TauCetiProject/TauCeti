@@ -60,17 +60,3 @@ theorem adjoin_simple_eq_bot_iff_natDegree_eq_one {p : K[X]} {x : L} (hp : Irred
     natDegree_mul_C (inv_ne_zero (leadingCoeff_ne_zero.mpr hp.ne_zero))]
 
 end TauCeti.IntermediateField
-
-namespace IntermediateField
-
-open scoped IntermediateField
-
-/-- **The generator of `K⟮α⟯` generates it**: inside the field `K⟮α⟯`, adjoining the generator gives
-everything. -/
-theorem adjoin_adjoinSimple_gen_eq_top {K L : Type*} [Field K] [Field L] [Algebra K L] (α : L) :
-    K⟮AdjoinSimple.gen K α⟯ = ⊤ := by
-  apply map_injective K⟮α⟯.val
-  rw [adjoin_map, Set.image_singleton, coe_val, AdjoinSimple.coe_gen, ← AlgHom.fieldRange_eq_map,
-    fieldRange_val]
-
-end IntermediateField

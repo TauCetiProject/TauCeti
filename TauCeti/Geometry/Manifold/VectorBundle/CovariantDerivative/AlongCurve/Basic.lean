@@ -48,6 +48,8 @@ ambient covariant derivative.
   scalar homogeneity; each has an unrestricted counterpart.
 * `CovariantDerivative.alongCurveWithin_zero`: the zero-field law, with
   `CovariantDerivative.alongCurve_zero` its unrestricted case.
+* `CovariantDerivative.alongCurveWithin_sum` and `CovariantDerivative.alongCurve_sum`: additivity
+  over finite sums of fields with differentiable coordinate readings.
 * `CovariantDerivative.alongCurveWithin_const`: along a constant curve the candidate is the
   ordinary derivative of the field, with `CovariantDerivative.alongCurve_const` its unrestricted
   case; `CovariantDerivative.alongCurveWithin_const_of_hasDerivWithinAt` and
@@ -137,6 +139,24 @@ theorem alongCurveWithin_apply (s : Set 𝕜) (t : 𝕜) :
       (trivializationAt E (TangentSpace I) (γ t)).symmL 𝕜 (γ t)
         (alongCurveInChartWithin cov γ V s (γ t) t) :=
   (rfl)
+
+variable {γ} in
+/-- In the trivialization `C` at `γ t`, the covariant derivative along `γ` of `Q` is the ordinary
+derivative of its coordinate reading plus the Christoffel term. -/
+theorem continuousLinearMapAt_alongCurveWithin
+    {s : Set 𝕜} {t : 𝕜} {C : TangentSpace I (γ t) →L[𝕜] E}
+    (hC : C = (trivializationAt E (TangentSpace I) (γ t)).continuousLinearMapAt 𝕜 (γ t))
+    (Q : ∀ r, TangentSpace I (γ r)) :
+    C (alongCurveWithin cov γ Q s t) =
+      derivWithin (sectionCoord (F := E) γ Q (γ t)) s t +
+        christoffelMap (Module.finBasis 𝕜 E)
+          (cov.isCovariantDerivativeOn
+            (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet)) (γ t)
+          (C (Q t)) (derivWithin (extChartAt I (γ t) ∘ γ) s t) := by
+  subst hC
+  rw [alongCurveWithin_apply, Trivialization.continuousLinearMapAt_symmL
+      _ (mem_baseSet_trivializationAt E (TangentSpace I) (γ t)),
+    alongCurveInChartWithin_apply, sectionCoord_apply]
 
 /-- At a zero of a field, its covariant derivative is its ordinary coordinate derivative
 in the canonical tangent trivialization at that point. -/
@@ -453,5 +473,32 @@ theorem alongCurve_comp (φ : 𝕜 → 𝕜) {t : 𝕜} (hφ : DifferentiableAt 
   rw [← alongCurveWithin_univ, ← alongCurveWithin_univ, ← derivWithin_univ]
   exact alongCurveWithin_comp cov γ V φ hφ.differentiableWithinAt (Set.mapsTo_univ φ Set.univ)
     hγ.differentiableWithinAt hV.differentiableWithinAt
+
+/-! ### Finite sums -/
+
+/-- Covariant differentiation within a parameter set commutes with finite sums of fields having
+differentiable coordinate readings. -/
+theorem alongCurveWithin_sum {ι : Type*} (A : Finset ι) (W : ι → ∀ r, TangentSpace I (γ r))
+    {s : Set 𝕜} {t : 𝕜}
+    (hW : ∀ i ∈ A, DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ (W i) (γ t)) s t) :
+    alongCurveWithin cov γ (fun r ↦ ∑ i ∈ A, W i r) s t =
+      ∑ i ∈ A, alongCurveWithin cov γ (W i) s t := by
+  classical
+  induction A using Finset.induction_on with
+  | empty => simp
+  | @insert i A hi ih =>
+    have hWA : ∀ j ∈ A, DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ (W j) (γ t)) s t :=
+      fun j hj ↦ hW j (Finset.mem_insert_of_mem hj)
+    simp only [Finset.sum_insert hi]
+    rw [alongCurveWithin_add cov γ (W i) _ s (hW i (Finset.mem_insert_self i A))
+      (differentiableWithinAt_sectionCoord_sum γ hWA), ih hWA]
+
+/-- Covariant differentiation along a curve commutes with finite sums of fields having
+differentiable coordinate readings. -/
+theorem alongCurve_sum {ι : Type*} (A : Finset ι) (W : ι → ∀ r, TangentSpace I (γ r)) {t : 𝕜}
+    (hW : ∀ i ∈ A, DifferentiableAt 𝕜 (sectionCoord (F := E) γ (W i) (γ t)) t) :
+    alongCurve cov γ (fun r ↦ ∑ i ∈ A, W i r) t = ∑ i ∈ A, alongCurve cov γ (W i) t := by
+  simpa only [alongCurveWithin_univ] using
+    alongCurveWithin_sum cov γ A W (s := Set.univ) fun i hi ↦ (hW i hi).differentiableWithinAt
 
 end CovariantDerivative

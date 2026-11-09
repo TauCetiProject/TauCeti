@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.EdgeIntersection
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
-import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Asymptotic
 import TauCeti.Analysis.Calculus.DSlope.Continuous
-import TauCeti.Analysis.Complex.UpperHalfPlane.Primitive
+import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Asymptotic
+import TauCeti.Analysis.Complex.HasPrimitives
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
@@ -137,7 +137,9 @@ private theorem exists_differentiableOn_eq_schwarzChristoffelPrimitive_sub_comp_
     rw [hD₃w w (fun h => by simpa [h] using hw.2)]
     exact hasDerivAt_schwarzChristoffelPrimitive_sub_comp_neg_inv a e z₀ q M C hw.2
       (hint w hw.2)
-  obtain ⟨H, hH, heq⟩ := exists_hasDerivAt_eqOn_ball_inter_upperHalfPlane hD₃.neg hderiv
+  obtain ⟨H, hH, heq⟩ :=
+    hD₃.neg.exists_hasDerivAt_eqOn_ball_inter (convex_halfSpace_im_gt 0)
+      fun z hz ↦ (hderiv z hz).hasDerivWithinAt
   refine ⟨H, r, hr, fun w hw => (hH w hw).differentiableAt.differentiableWithinAt, ?_⟩
   intro z hz hzr
   simpa using (heq ⟨by simpa [mem_ball_zero_iff] using hzr, im_neg_inv_pos.mpr hz⟩).symm
@@ -513,8 +515,9 @@ private theorem neg_le_im_quadratic_log_of_re_nonneg {M C η : ℝ} {z : ℂ} (h
     (hratio : -C * (Real.pi / 2 * (z.im / ‖z‖)) < η) :
     -η ≤ (z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z).im := by
   rw [im_quadratic_log]
-  have hJ := le_pi_div_two_mul_of_sin_eq (arg_nonneg_iff.mpr hz.le)
-    (arg_le_pi_div_two_iff.mpr (Or.inl hx)) (sin_arg z)
+  have hJ := le_pi_div_two_mul_sin (arg_nonneg_iff.mpr hz.le)
+    (arg_le_pi_div_two_iff.mpr (Or.inl hx))
+  rw [sin_arg] at hJ
   have hsx : 0 < z.re - M := by
     rw [abs_of_nonneg hx] at hnorm
     linarith [le_abs_self M]
@@ -534,8 +537,9 @@ private theorem im_quadratic_log_le_of_re_neg {M C η : ℝ} {z : ℂ} (hC : C <
     · linarith
     · linarith
     · simp [h] at hz
-  have hJ := le_pi_div_two_mul_of_sin_eq (by linarith [arg_le_pi z]) (by linarith)
-    (by rw [Real.sin_pi_sub, sin_arg] : Real.sin (Real.pi - arg z) = z.im / ‖z‖)
+  have hJ := le_pi_div_two_mul_sin (θ := Real.pi - arg z) (by linarith [arg_le_pi z])
+    (by linarith)
+  rw [Real.sin_pi_sub, sin_arg] at hJ
   have hsx : z.re - M < 0 := by
     rw [abs_of_neg hx] at hnorm
     linarith [neg_abs_le M]
