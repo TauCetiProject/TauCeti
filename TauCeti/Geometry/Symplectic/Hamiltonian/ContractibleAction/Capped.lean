@@ -107,8 +107,7 @@ theorem cappedLoopAction_def (ω : RoughForm I M ℝ 2) (H : ℝ → M → ℝ) 
 @[simp]
 theorem cappedLoopAction_const (ω : RoughForm I M ℝ 2) (H : ℝ → M → ℝ) (x : M) :
     cappedLoopAction ω H (fun _ ↦ x) (fun _ ↦ x) = ∫ t in 0..1, H t x := by
-  rw [cappedLoopAction_def, show rectangleIntegral ω (fun _ ↦ x) (0, 0) (1, 1) = 0 from
-    rectangleIntegral_comp_fst ω (fun _ ↦ x) _ _, zero_add]
+  rw [cappedLoopAction_def, rectangleIntegral_const, zero_add]
 
 section Continuous
 

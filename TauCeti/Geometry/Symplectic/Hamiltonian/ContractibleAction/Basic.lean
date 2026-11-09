@@ -271,8 +271,7 @@ cap of it. -/
 @[simp]
 theorem IsWeaklyExact.capArea_const (hφ : IsSmoothForm I 0 φ) (hw : IsWeaklyExact φ) (x : M) :
     capArea φ (fun _ ↦ x) = 0 := by
-  rw [hw.capArea_eq hφ (isLoopCylinder_const x).isCap]
-  exact rectangleIntegral_comp_fst φ (fun _ ↦ x) _ _
+  rw [hw.capArea_eq hφ (isLoopCylinder_const x).isCap, rectangleIntegral_const]
 
 end Continuous
 
