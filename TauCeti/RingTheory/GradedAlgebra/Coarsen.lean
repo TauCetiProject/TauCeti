@@ -71,13 +71,8 @@ variable {R : Type uR} {A : Type uA} {ι : Type uι} {κ : Type uκ}
 /-- The product of the coarsened pieces of degrees `k` and `l` of a graded multiplication lies
 in the coarsened piece of degree `k + l`. -/
 theorem coarsenGrading_mul_le [SetLike.GradedMul 𝒜] (f : ι →+ κ) (k l : κ) :
-    coarsenGrading 𝒜 f k * coarsenGrading 𝒜 f l ≤ coarsenGrading 𝒜 f (k + l) := by
-  rw [coarsenGrading_apply 𝒜 f k, coarsenGrading_apply 𝒜 f l]
-  simp only [Submodule.iSup_mul, Submodule.mul_iSup]
-  refine iSup₂_le fun i hi ↦ iSup₂_le fun j hj ↦ ?_
-  rw [← hi, ← hj, ← map_add]
-  exact (Submodule.mul_le.2 fun _ ha _ hb ↦ SetLike.mul_mem_graded ha hb).trans
-    (le_coarsenGrading 𝒜 f _)
+    coarsenGrading 𝒜 f k * coarsenGrading 𝒜 f l ≤ coarsenGrading 𝒜 f (k + l) :=
+  Submodule.mul_le.2 fun _ ha _ hb ↦ SetLike.mul_mem_graded ha hb
 
 instance [SetLike.GradedMonoid 𝒜] (f : ι →+ κ) : SetLike.GradedMonoid (coarsenGrading 𝒜 f) :=
   { (inferInstance : SetLike.GradedMul (coarsenGrading 𝒜 f)) with
