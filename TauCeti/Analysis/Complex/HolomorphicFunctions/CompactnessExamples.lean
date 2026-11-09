@@ -35,8 +35,8 @@ image bounds simultaneously.
   converges locally uniformly on `D_1`. They send `D_1` onto `D_m`, so they violate the image
   bound as well. The maps `u m z = z / m` satisfy `‖deriv (u m)‖ ≤ 1`, send `D_1` into the
   closed unit disc, and every iterated derivative tends to `0` locally uniformly on `ℂ`.
-* The image bound. The constant maps `u m = m` have derivative zero, so the gradient bound
-  holds with constant `0`, but no subsequence converges locally uniformly.
+* The image bound. The constant maps `u m = m` have derivative zero (`deriv_const'`), so the
+  gradient bound holds with constant `0`, but no subsequence converges locally uniformly.
 
 The non-convergence statements all come from one observation: a sequence whose values at one
 point have norms tending to infinity has no subsequence converging pointwise there
@@ -107,8 +107,7 @@ theorem tendstoUniformly_ofReal_inv_add_two :
     simpa [Function.comp_def] using (continuous_ofReal.tendsto 0).comp
       (tendsto_inv_atTop_zero.comp (tendsto_atTop_add_const_right _ 2
         tendsto_natCast_atTop_atTop))
-  exact Metric.tendstoUniformly_iff.2 fun ε hε ↦
-    (Metric.tendsto_nhds.1 h ε hε).mono fun m hm _ ↦ by rwa [dist_comm]
+  exact h.tendstoUniformly_const
 
 /-- The limit `0` of the constant maps `1 / (m + 2)` violates the boundary condition for
 `L = (0, 1)`: closedness of `L` cannot be dropped. -/
@@ -117,11 +116,6 @@ theorem zero_notMem_ofReal_image_Ioo : (0 : ℂ) ∉ ofReal '' Ioo 0 1 := by
   exact hx.1.ne' (ofReal_eq_zero.1 h)
 
 /-! ### The gradient bound -/
-
-/-- The derivative of `z ↦ m z` is the constant `m`. -/
-theorem deriv_natCast_mul (m : ℕ) : deriv (fun z : ℂ ↦ m * z) = fun _ ↦ (m : ℂ) := by
-  ext z
-  simp
 
 /-- The derivative of `z ↦ m z` has norm `m` everywhere, so it violates any pointwise gradient
 bound on `D_{1/2}` once `m` is large. -/
@@ -134,7 +128,7 @@ theorem eLpNorm_deriv_natCast_mul (m : ℕ) {p : ENNReal} (hp : p ≠ 0) :
       m * volume (ball (0 : ℂ) (1 / 2)) ^ (1 / p.toReal) := by
   have hμ : volume.restrict (ball (0 : ℂ) (1 / 2)) ≠ 0 := by
     simpa [Measure.restrict_eq_zero] using (measure_ball_pos volume (0 : ℂ) one_half_pos).ne'
-  rw [deriv_natCast_mul, eLpNorm_const _ hp hμ, Measure.restrict_apply_univ]
+  rw [deriv_const_mul_id' (m : ℂ), eLpNorm_const _ hp hμ, Measure.restrict_apply_univ]
   simp [enorm_eq_nnnorm]
 
 /-- The `L^p` norms on `D_{1/2}` of the derivatives of `z ↦ m z` admit no finite bound, so this
@@ -180,17 +174,12 @@ theorem mapsTo_div_natCast_ball (m : ℕ) :
 /-- For a continuous `g`, the maps `z ↦ g z / m` tend to `0` locally uniformly on `ℂ`. -/
 theorem tendstoLocallyUniformly_div_natCast {g : ℂ → ℂ} (hg : Continuous g) :
     TendstoLocallyUniformly (fun (m : ℕ) z ↦ g z / m) (fun _ ↦ 0) atTop := by
-  refine tendstoLocallyUniformly_iff_forall_isCompact.2 fun K hK ↦ ?_
-  obtain ⟨R, hR⟩ := (hK.image hg).isBounded.exists_norm_le
-  refine Metric.tendstoUniformlyOn_iff.2 fun ε hε ↦ ?_
-  obtain ⟨N, hN⟩ := exists_nat_gt (max R 0 / ε)
-  filter_upwards [eventually_gt_atTop N] with m hm z hz
-  have hm0 : (0 : ℝ) < m := by exact_mod_cast (Nat.zero_le N).trans_lt hm
-  rw [dist_zero_left, norm_div, Complex.norm_natCast, div_lt_iff₀ hm0]
-  have hNm : (N : ℝ) < m := by exact_mod_cast hm
-  calc ‖g z‖ ≤ max R 0 := (hR _ (mem_image_of_mem g hz)).trans (le_max_left _ _)
-    _ < ε * N := by rwa [div_lt_iff₀ hε, mul_comm] at hN
-    _ ≤ ε * m := by gcongr
+  have hinv : Tendsto (fun m : ℕ ↦ (m : ℂ)⁻¹) atTop (𝓝 0) := tendsto_inv_atTop_nhds_zero_nat
+  have hg' : TendstoLocallyUniformly (fun (_ : ℕ) z ↦ g z) g atTop :=
+    (tendstoUniformly_iff_tendsto.2
+      (tendsto_diag_uniformity (fun q : ℕ × ℂ ↦ g q.2) _)).tendstoLocallyUniformly
+  simpa [div_eq_mul_inv] using
+    hg'.fun_mul₀ hinv.tendstoUniformly_const.tendstoLocallyUniformly hg continuous_const
 
 /-- The maps `z ↦ z / m` converge to `0` in `C^∞` on compact sets: every iterated derivative
 tends to `0` locally uniformly on `ℂ`. -/
@@ -212,12 +201,6 @@ theorem tendstoLocallyUniformly_iteratedDeriv_div_natCast (k : ℕ) :
   split_ifs <;> fun_prop
 
 /-! ### The image bound -/
-
-/-- The constant maps `m` have derivative zero, so they satisfy the gradient bound with
-constant `0`. -/
-theorem deriv_const_natCast (m : ℕ) : deriv (fun _ : ℂ ↦ (m : ℂ)) = 0 := by
-  ext z
-  simp
 
 /-- No subsequence of the constant maps `m` converges locally uniformly on `D_1`: their images
 lie in no fixed compact set. -/
