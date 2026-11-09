@@ -54,6 +54,8 @@ the scalar unshift are carried out in
 
 public section
 
+open _root_.LinearPMap (yosidaApproximation)
+
 noncomputable section
 
 open scoped NNReal Topology

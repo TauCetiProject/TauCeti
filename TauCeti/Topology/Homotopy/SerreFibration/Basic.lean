@@ -48,6 +48,8 @@ of a fibration along a map `g : B' ⟶ B` is again a fibration
   maps and product projections are Serre fibrations.
 * `TauCeti.TopCat.mem_serreFibrations_pullbackFst`: the base change of a Serre fibration is a
   Serre fibration.
+* `TauCeti.TopCat.mem_serreFibrations_restrictPreimage`: the restriction of a Serre fibration over
+  a subset of the base is a Serre fibration.
 
 ## References
 
@@ -160,6 +162,13 @@ at `e`. -/
 theorem exists_path_lift_of_mem_serreFibrations {p : E ⟶ B} (hp : serreFibrations p) {e : E}
     {b : B} (γ : Path (p e) b) : ∃ Γ : C(I, E), Γ 0 = e ∧ p ∘ Γ = γ :=
   (mem_serreFibrations_iff_cube.1 hp 0).exists_path_lift γ
+
+/-- The restriction `p⁻¹(t) → t` of a Serre fibration `p` over any subset `t` of the base is a
+Serre fibration. -/
+theorem mem_serreFibrations_restrictPreimage {p : E ⟶ B} (hp : serreFibrations p) (t : Set B) :
+    serreFibrations (TopCat.ofHom (p.hom.restrictPreimage t) :
+      TopCat.of (p ⁻¹' t) ⟶ TopCat.of t) :=
+  mem_serreFibrations_iff.2 fun n ↦ (mem_serreFibrations_iff.1 hp n).restrictPreimage t
 
 /-- The projection `B ⊗ F ⟶ B` is a Serre fibration. -/
 theorem mem_serreFibrations_fst {B F : TopCat.{u}} : serreFibrations (fst B F) :=

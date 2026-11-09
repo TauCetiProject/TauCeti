@@ -179,6 +179,19 @@ theorem fourierCoeff_eq_fourierCoeffOn (a : ℝ) (f : AddCircle T → ℂ) (n : 
   funext x
   simp [AddCircle.liftIoc, AddCircle.coe_equivIoc]
 
+/-- A square-integrable function on `(a, b]` is the restriction of an `L²` class on the circle of
+length `b - a` with the same Fourier coefficients. -/
+theorem exists_Lp_fourierCoeff_eq_fourierCoeffOn [Fact (0 < b - a)] (hab : a < b) {g : ℝ → ℂ}
+    (hgL2 : MemLp g 2 (volume.restrict (Ioc a b))) :
+    ∃ G : Lp ℂ 2 (AddCircle.haarAddCircle (T := b - a)),
+      ∀ n : ℤ, fourierCoeff G n = fourierCoeffOn hab g n := by
+  have hG₀ : MemLp (AddCircle.liftIoc (b - a) a g) 2 AddCircle.haarAddCircle := by
+    have hgL2' : MemLp g 2 (volume.restrict (Ioc a (a + (b - a)))) := by
+      rwa [add_sub_cancel]
+    exact hgL2'.memLp_liftIoc.haarAddCircle
+  exact ⟨hG₀.toLp, fun n => by
+    simp [fourierCoeff_congr_ae hG₀.coeFn_toLp, fourierCoeff_liftIoc_eq]⟩
+
 /-- Each derivative of a `C^k` function of period `T` multiplies its Fourier coefficients on a
 period interval by `2πin / T`. At frequency `0` this says that the derivatives have mean zero. -/
 theorem fourierCoeffOn_iteratedDeriv {f : ℝ → ℂ} {k : ℕ} (hf : ContDiff ℝ k f)

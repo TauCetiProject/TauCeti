@@ -143,7 +143,7 @@ theorem isPoleNumber_iff_dim_lt (hF : IsFunctionField k F) (P : Place k F) {n : 
   have hnsub : ((n - 1 : ℕ) : ℤ) = (n : ℤ) - 1 := by omega
   have hED : E ≤ D :=
     zsmul_le_zsmul_left
-      (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P)) (by omega)
+      (WeilDivisor.ofPoint_nonneg P) (by omega)
   constructor
   · rintro ⟨x, hx0, hxP, hxQ⟩
     have hxD : x ∈ riemannRochSpace D :=
@@ -178,7 +178,7 @@ theorem isGap_iff_dim_eq (hF : IsFunctionField k F) (P : Place k F) {n : ℕ} (h
       Divisor.dim (((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P) ≤
         Divisor.dim ((n : ℤ) • WeilDivisor.ofPoint P) :=
     Divisor.dim_mono hF (zsmul_le_zsmul_left
-      (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P)) (by omega))
+      (WeilDivisor.ofPoint_nonneg P) (by omega))
   omega
 
 /-- At a rational place, adjoining one more allowed pole raises the Riemann--Roch dimension by
@@ -190,7 +190,7 @@ theorem dim_succ_zsmul_ofPoint_le (hF : IsFunctionField k F) {P : Place k F}
   have hle :
       (n : ℤ) • WeilDivisor.ofPoint P ≤ ((n + 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P :=
     zsmul_le_zsmul_left
-      (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P)) (by omega)
+      (WeilDivisor.ofPoint_nonneg P) (by omega)
   have h := Divisor.dim_le_dim_add_degree_sub hF hle
   simp only [Divisor.degree_zsmul, Divisor.degree_ofPoint, hP, Nat.cast_one, mul_one] at h
   omega
@@ -229,7 +229,7 @@ theorem card_gapNumbersUpTo_add_dim (hF : IsFunctionField k F)
           Divisor.dim ((n : ℤ) • WeilDivisor.ofPoint P) ≤
             Divisor.dim (((n + 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P) :=
         Divisor.dim_mono hF (zsmul_le_zsmul_left
-          (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P)) (by omega))
+          (WeilDivisor.ofPoint_nonneg P) (by omega))
       by_cases hgap : P.IsGap (n + 1)
       · have hdim_eq := (P.isGap_iff_dim_eq hF (by omega : 0 < n + 1)).mp hgap
         have hdim_eq' :
@@ -352,7 +352,7 @@ theorem isGap_iff_dim_sub_lt (hF : IsFunctionField k F) {W : Divisor k F} {g₀ 
       Divisor.dim (((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P) ≤
         Divisor.dim ((n : ℤ) • WeilDivisor.ofPoint P) :=
     Divisor.dim_mono hF (zsmul_le_zsmul_left
-      (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P)) (by omega))
+      (WeilDivisor.ofPoint_nonneg P) (by omega))
   rw [P.isGap_iff_dim_eq hF hn]
   omega
 
@@ -367,7 +367,7 @@ theorem isGap_iff_exists_mem_riemannRochSpace_ord_eq (hF : IsFunctionField k F)
     P.IsGap n ↔ ∃ f ∈ riemannRochSpace W, f ≠ 0 ∧ P.ord f = n - 1 - W.coeff P := by
   set E : Divisor k F := W - ((n - 1 : ℕ) : ℤ) • WeilDivisor.ofPoint P with hE
   have hP0 : (0 : Divisor k F) ≤ WeilDivisor.ofPoint P :=
-    WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P)
+    WeilDivisor.ofPoint_nonneg P
   have hsub : W - (n : ℤ) • WeilDivisor.ofPoint P = E - WeilDivisor.ofPoint P := by
     rw [hE, Nat.cast_sub hn, Nat.cast_one, sub_smul, one_smul]
     abel

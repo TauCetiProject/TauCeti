@@ -188,8 +188,8 @@ theorem isSquare_mul_of_adjoin_simple_eq [NeZero (2 : K)] {a c : K} {x y : L}
       (algebraMap K L p₀ + algebraMap K L q₀ * x) ^ 2 ∈ (⊥ : IntermediateField K L) := by
     rw [← hy_eq, hy]; exact IntermediateField.algebraMap_mem _ _
   have hpq : algebraMap K L p₀ * algebraMap K L q₀ = 0 :=
-    mul_eq_zero_of_add_mul_sq_mem hx2 hxb (IntermediateField.algebraMap_mem _ _)
-      (IntermediateField.algebraMap_mem _ _) hab_mem
+    (add_mul_sq_mem_iff_mul_eq_zero hx2 hxb (IntermediateField.algebraMap_mem _ _)
+      (IntermediateField.algebraMap_mem _ _)).mp hab_mem
   have hpq0 : p₀ * q₀ = 0 := by
     apply FaithfulSMul.algebraMap_injective K L
     rw [map_mul, map_zero]
@@ -283,9 +283,7 @@ theorem exists_sq_mem_range_adjoin_simple_eq_of_finrank_eq_two [NeZero (2 : K)]
     omega
   obtain ⟨y, hyE, hyb⟩ := IsConcreteLE.exists_of_lt hEbot
   obtain ⟨hEeq, hdeg⟩ := adjoin_simple_eq_of_finrank_eq_two hE hyE hyb
-  have hEfin : FiniteDimensional K E := .of_finrank_pos (by omega)
-  have hyint : IsIntegral K y := (IsIntegral.of_finite K (⟨y, hyE⟩ : E)).map E.val
-  obtain ⟨b, c, hrel⟩ := hyint.exists_quadratic_relation hdeg
+  obtain ⟨b, c, hrel⟩ := TauCeti.Algebra.exists_quadratic_relation_of_natDegree_minpoly_eq_two hdeg
   -- The discriminant identity gives `(2y + b)² = b² - 4c` in the base field.
   set x : L := 2 * y + algebraMap K L b with hx
   have hyx : y = (x - algebraMap K L b) / 2 := by

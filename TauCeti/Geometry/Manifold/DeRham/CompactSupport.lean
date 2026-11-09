@@ -264,6 +264,21 @@ theorem compactlySupportedClosedForms_le_closedForms (k : ℕ) :
     compactlySupportedClosedForms I M k ≤ closedForms I M k :=
   inf_le_right
 
+/-- In degree at least the model dimension, every compactly supported form is closed. -/
+def compactlySupportedForms.toClosedOfFinrankLe [FiniteDimensional ℝ E] {k : ℕ}
+    (h : Module.finrank ℝ E ≤ k) :
+    compactlySupportedForms I M k →ₗ[ℝ] compactlySupportedClosedForms I M k :=
+  LinearMap.codRestrict _ (compactlySupportedForms I M k).subtype fun φ ↦
+    (mem_compactlySupportedClosedForms I).mpr
+      ⟨φ.2, mem_closedForms_of_finrank_le I h φ.1⟩
+
+/-- Viewing a top-degree compactly supported form as closed does not change the smooth form. -/
+@[simp]
+theorem compactlySupportedForms.coe_toClosedOfFinrankLe [FiniteDimensional ℝ E] {k : ℕ}
+    (h : Module.finrank ℝ E ≤ k) (φ : compactlySupportedForms I M k) :
+    (toClosedOfFinrankLe I h φ : SmoothForm I M ℝ k) = φ :=
+  (rfl)
+
 variable (M) in
 /-- Compactly supported exact forms are exterior derivatives of compactly supported forms in
 positive degree, and zero in degree zero. -/
@@ -528,6 +543,13 @@ theorem coe_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (hp : IsProperM
     (mpullback f hf hp k φ : SmoothForm I M ℝ k) = SmoothForm.mpullback f hf φ :=
   (rfl)
 
+/-- The underlying rough form of the pullback of a compactly supported closed form is the rough
+pullback of its underlying rough form. -/
+theorem coe_coe_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (hp : IsProperMap f) (k : ℕ)
+    (φ : compactlySupportedClosedForms I' M' k) :
+    (mpullback f hf hp k φ).1.1 = TauCeti.mpullback I I' f φ.1.1 :=
+  (congrArg Subtype.val (coe_mpullback f hf hp k φ)).trans (SmoothForm.coe_mpullback f hf _)
+
 /-- Pullback of compactly supported closed forms by the identity is the identity linear map. -/
 @[simp]
 theorem mpullback_id (k : ℕ) :
@@ -652,6 +674,15 @@ theorem equivOfDiffeomorph_symm_apply (Φ : M ≃ₘ⟮I, I'⟯ M') (k : ℕ)
     (equivOfDiffeomorph Φ k).symm c =
       map Φ.symm Φ.symm.contMDiff Φ.symm.toHomeomorph.isProperMap k c :=
   (rfl)
+
+/-- The equivalence induced by a diffeomorphism sends the class of a compactly supported closed
+form to the class of its pullback. -/
+theorem equivOfDiffeomorph_mk (Φ : M ≃ₘ⟮I, I'⟯ M') (k : ℕ)
+    (φ : compactlySupportedClosedForms I' M' k) :
+    equivOfDiffeomorph Φ k (mk I' k φ) =
+      mk I k
+        (compactlySupportedClosedForms.mpullback Φ Φ.contMDiff Φ.toHomeomorph.isProperMap k φ) :=
+  map_mk _ _ _ k φ
 
 end compactlySupportedDeRhamCohomology
 

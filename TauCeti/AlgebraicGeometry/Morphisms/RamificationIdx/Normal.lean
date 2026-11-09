@@ -63,7 +63,7 @@ theorem ramificationIdxAt_comp_of_coheight_eq_one {Z : Scheme.{u}} (g : Y ⟶ Z)
     (hfx : coheight (f x) = 1) :
     ramificationIdxAt (f ≫ g) x = ramificationIdxAt f x * ramificationIdxAt g (f x) := by
   have : IsDiscreteValuationRing (Y.presheaf.stalk (f x)) :=
-    IsNormalScheme.isDiscreteValuationRing_stalk Y (f x) hfx
+    IsNormalScheme.isDiscreteValuationRing_stalk (f x) hfx
   exact f.ramificationIdxAt_comp_of_flat_stalkMap g x (f.flat_stalkMap_of_isDominant x)
 
 /-- **The ramification index at a codimension-one point.** At a point `x` of coheight one of a
@@ -94,7 +94,7 @@ theorem map_maximalIdeal_eq_pow_ramificationIdxAt [IsDominant f] [IsIntegral X] 
     rw [Ne, Ideal.map_eq_bot_iff_le_ker, (RingHom.injective_iff_ker_eq_bot _).mp hinj, le_bot_iff]
     exact hne
   have : IsDiscreteValuationRing (X.presheaf.stalk x) :=
-    IsNormalScheme.isDiscreteValuationRing_stalk X x hx
+    IsNormalScheme.isDiscreteValuationRing_stalk x hx
   exact f.map_maximalIdeal_eq_pow_ramificationIdxAt_of_map_ne_bot x hmap
 
 end AlgebraicGeometry.Scheme.Hom

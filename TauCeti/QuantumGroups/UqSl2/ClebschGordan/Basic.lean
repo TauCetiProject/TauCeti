@@ -273,7 +273,7 @@ theorem clebschGordanInclusion_vec_zero (hq : IsGenericQuantumParameter q)
 theorem clebschGordanInclusion_vec (hq : IsGenericQuantumParameter q) (j : Fin (min m n + 1))
     (k : ℕ) :
     clebschGordanInclusion (ε := ε) (δ := δ) hq j (vec q _ _ k) =
-      (∏ i ∈ Finset.range k, quantumInteger q (i + 1))⁻¹ •
+      (quantumFactorial q k)⁻¹ •
         f q ^ k • clebschGordanVector q m ε n δ j :=
   lift_vec ..
 

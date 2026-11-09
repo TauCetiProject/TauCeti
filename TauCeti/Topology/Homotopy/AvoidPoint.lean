@@ -22,11 +22,11 @@ of `φ⁻¹(B)`.
 This is the key lemma behind cellular approximation, where `D` is a cube or a disk, `Y` is a
 complex `Z ∪ eⁿ` with a cell attached, and `φ` is the inverse of the characteristic map on the
 open cell. Hatcher's proof approximates `f` by a map that is linear on the simplices of a fine
-subdivision. Here the approximation is smooth instead:
+subdivision. Here the approximation is differentiable instead:
 
 * by the Tietze extension theorem, `φ ∘ f` restricted to the closed set of points sent into
   `φ⁻¹(closedBall c (r / 2))` extends to a continuous map `E → F`, which Mathlib approximates
-  uniformly within `r / 8` by a smooth map `G : E → F`
+  uniformly within `r / 8` by a differentiable map `G : E → F`
   (`Continuous.exists_contDiff_approx`);
 * since `dim E < dim F`, the complement of the range of `G` is dense
   (`Differentiable.dense_compl_range_of_finrank_lt_finrank`), so some point `p` of
@@ -135,18 +135,14 @@ variable {E F Y : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   [TopologicalSpace Y] [T2Space Y]
 
-/-- **Homotoping a map off a point of a higher-dimensional chart** (Hatcher, Lemma 4.10). Let
-`D` be a closed subset of `E`, and let `φ` be a chart of the Hausdorff space `Y` into `F` whose
-target contains `ball c r`. If `dim E < dim F`, then every map `f : D → Y` is homotopic, relative
-to the points that `f` does not send into `φ.symm '' ball c r`, to a map `g` missing the point
-`φ.symm p` for some `p ∈ ball c r`. The map `g` sends the points that `f` sends into the chart
-into the chart. -/
-theorem exists_homotopyRel_notMem_range {D : Set E} (f : C(D, Y)) (hD : IsClosed D)
-    (hEF : finrank ℝ E < finrank ℝ F) (φ : OpenPartialHomeomorph Y F) {c : F} {r : ℝ}
-    (hr : 0 < r) (hφ : ball c r ⊆ φ.target) :
-    ∃ g : C(D, Y), Nonempty (f.HomotopyRel g (f ⁻¹' (φ.symm '' ball c r))ᶜ) ∧
-      (∀ x, f x ∈ φ.source → g x ∈ φ.source) ∧ ∃ p ∈ ball c r, φ.symm p ∉ range g := by
-  -- The closed set `K` of points sent into the half-radius ball, where `φ ∘ f` is smoothed.
+/-- A differentiable map `G : E → F` approximating `φ ∘ f` within `r / 8` on the points sent into
+the chart `closedBall c (r / 2)`, together with a point `p` of `ball c (r / 8)` that `G` misses. -/
+private lemma exists_differentiable_approx_notMem_range {D : Set E} (f : C(D, Y))
+    (hD : IsClosed D) (hEF : finrank ℝ E < finrank ℝ F) (φ : OpenPartialHomeomorph Y F) {c : F}
+    {r : ℝ} (hr : 0 < r) (hφ : ball c r ⊆ φ.target) :
+    ∃ G : E → F, Differentiable ℝ G ∧
+      (∀ x : D, f x ∈ φ.symm '' closedBall c (r / 2) → dist (G x) (φ (f x)) < r / 8) ∧
+      ∃ p ∈ ball c (r / 8), p ∉ range G := by
   have hsub : closedBall c (r / 2) ⊆ φ.target :=
     (closedBall_subset_ball (by linarith)).trans hφ
   set K : Set D := f ⁻¹' (φ.symm '' closedBall c (r / 2))
@@ -157,20 +153,46 @@ theorem exists_homotopyRel_notMem_range {D : Set E} (f : C(D, Y)) (hD : IsClosed
     rintro x ⟨y, hy, hxy⟩
     rw [mem_preimage, ← hxy]
     exact φ.map_target (hsub hy)
-  -- Extend `φ ∘ f` from `K` to `E`, approximate the extension by a smooth map `G`, and choose a
-  -- point `p` near `c` that `G` misses.
   obtain ⟨u, hu⟩ := ContinuousMap.exists_extension
     (hD.isClosedEmbedding_subtypeVal.comp hK.isClosedEmbedding_subtypeVal)
     ⟨fun x : K => φ (f x), φ.continuousOn.comp_continuous
       (f.continuous.comp continuous_subtype_val) fun x => hKsource x.2⟩
-  have hu' : ∀ x ∈ K, u x = φ (f x) := fun x hx => congr($hu ⟨x, hx⟩)
   obtain ⟨G, hG, hGu, -⟩ := u.continuous.exists_contDiff_approx (1 : ℕ∞) continuous_const
     (fun _ => show (0 : ℝ) < r / 8 by positivity)
   obtain ⟨p, hp, hpG⟩ :=
     ((hG.differentiable one_ne_zero).dense_compl_range_of_finrank_lt_finrank
       hEF).inter_open_nonempty (ball c (r / 8)) isOpen_ball (nonempty_ball.2 (by positivity))
-  -- Interpolate between `φ ∘ f` and `G` with a bump function equal to `1` on
-  -- `closedBall c (r / 4)` and supported in `ball c (r / 2)`.
+  refine ⟨G, hG.differentiable one_ne_zero, fun x hx => ?_, p, hp, hpG⟩
+  rw [← show u x = φ (f x) from congr($hu ⟨x, hx⟩)]
+  exact hGu x
+
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
+/-- Interpolating `φ ∘ f` towards a map `G` that is close to it on `closedBall c (r / 2)`, by a
+bump function, gives a new chart value `w x` for each point sent into the chart. Moving along the
+straight segments stays in the chart, points that are not sent into `φ.symm '' ball c r` do not
+move, the map equals `G` where `φ ∘ f` lies in `closedBall c (r / 4)`, and no point moves by
+`r / 8` or more. -/
+private lemma exists_chart_value_interpolation {D : Set E} (f : C(D, Y))
+    (φ : OpenPartialHomeomorph Y F) {c : F} {r : ℝ} (hr : 0 < r) (hφ : ball c r ⊆ φ.target)
+    {G : E → F} (hG : Continuous G)
+    (hGu : ∀ x : D, f x ∈ φ.symm '' closedBall c (r / 2) → dist (G x) (φ (f x)) < r / 8) :
+    ∃ w : D → F, ContinuousOn w (f ⁻¹' φ.source) ∧
+      closure {x | f x ∈ φ.source ∧ w x ≠ φ (f x)} ⊆ f ⁻¹' φ.source ∧
+      (∀ x, f x ∈ φ.source → segment ℝ (φ (f x)) (w x) ⊆ φ.target) ∧
+      (∀ x ∈ (f ⁻¹' (φ.symm '' ball c r))ᶜ, f x ∈ φ.source → w x = φ (f x)) ∧
+      (∀ x, f x ∈ φ.source → dist (φ (f x)) c ≤ r / 4 → w x = G x) ∧
+      ∀ x, f x ∈ φ.source → dist (φ (f x)) (w x) < r / 8 := by
+  have hsub : closedBall c (r / 2) ⊆ φ.target :=
+    (closedBall_subset_ball (by linarith)).trans hφ
+  set K : Set D := f ⁻¹' (φ.symm '' closedBall c (r / 2))
+  have hK : IsClosed K :=
+    ((isCompact_closedBall c _).image_of_continuousOn
+      (φ.continuousOn_symm.mono hsub)).isClosed.preimage f.continuous
+  have hKsource : K ⊆ f ⁻¹' φ.source := by
+    rintro x ⟨y, hy, hxy⟩
+    rw [mem_preimage, ← hxy]
+    exact φ.map_target (hsub hy)
+  -- A bump function equal to `1` on `closedBall c (r / 4)` and supported in `ball c (r / 2)`.
   let β : ContDiffBump c := ⟨r / 4, r / 2, by positivity, by linarith⟩
   have hβ_zero : ∀ y, β y ≠ 0 → dist y c < r / 2 := fun y hy => by
     by_contra! h
@@ -185,51 +207,59 @@ theorem exists_homotopyRel_notMem_range {D : Set E} (f : C(D, Y)) (hD : IsClosed
     · calc ‖d x‖ = β (φ (f x)) * ‖G x - φ (f x)‖ := by
             simp [d, norm_smul, abs_of_nonneg β.nonneg]
         _ ≤ ‖G x - φ (f x)‖ := mul_le_of_le_one_left (norm_nonneg _) β.le_one
-        _ < r / 8 := by
-            rw [← hu' x (hK_of x hx hβ), ← dist_eq_norm]
-            exact hGu x
-  -- The segments from `φ ∘ f` to the interpolated map stay in the chart.
-  have hseg : ∀ x, f x ∈ φ.source → segment ℝ (φ (f x)) (φ (f x) + d x) ⊆ φ.target := by
+        _ < r / 8 := by rw [← dist_eq_norm]; exact hGu x (hK_of x hx hβ)
+  have hφf : ContinuousOn (fun x => φ (f x)) (f ⁻¹' φ.source) :=
+    φ.continuousOn.comp f.continuous.continuousOn fun x hx => hx
+  refine ⟨fun x => φ (f x) + d x, hφf.add ((β.continuous.comp_continuousOn hφf).smul
+      ((hG.comp continuous_subtype_val).continuousOn.sub hφf)), ?_, ?_, ?_, ?_, ?_⟩
+  · refine (closure_minimal ?_ hK).trans hKsource
     intro x hx
+    exact hK_of x hx.1 fun hβ => hx.2 (by simp [d, hβ])
+  · intro x hx
     by_cases hβ : β (φ (f x)) = 0
     · simpa [d, hβ] using φ.map_source hx
     · refine ((convex_ball (φ (f x)) (r / 8)).segment_subset (mem_ball_self (by positivity))
         ?_).trans ((ball_subset_ball' ?_).trans hφ)
       · simpa [mem_ball, dist_eq_norm] using hd_lt x hx
       · linarith [hβ_zero _ hβ]
-  obtain ⟨g, hg, hg', ⟨Hf⟩⟩ := f.exists_homotopyRel_of_segment_subset_target φ
-    (w := fun x => φ (f x) + d x)
-    (S := (f ⁻¹' (φ.symm '' ball c r))ᶜ)
-    (by
-      have hφf : ContinuousOn (fun x => φ (f x)) (f ⁻¹' φ.source) :=
-        φ.continuousOn.comp f.continuous.continuousOn fun x hx => hx
-      exact hφf.add ((β.continuous.comp_continuousOn hφf).smul
-        ((hG.continuous.comp continuous_subtype_val).continuousOn.sub hφf)))
-    (by
-      refine (closure_minimal ?_ hK).trans hKsource
-      intro x hx
-      exact hK_of x hx.1 fun hβ => hx.2 (by simp [d, hβ]))
-    hseg
-    (by
-      intro x hx hs
-      by_contra hne
-      have hβ : β (φ (f x)) ≠ 0 := fun hβ => hne (by simp [d, hβ])
-      exact hx ⟨φ (f x), mem_ball.2 ((hβ_zero _ hβ).trans (by linarith)), φ.left_inv hs⟩)
+  · intro x hx hs
+    by_contra hne
+    have hβ : β (φ (f x)) ≠ 0 := fun hβ => hne (by simp [d, hβ])
+    exact hx ⟨φ (f x), mem_ball.2 ((hβ_zero _ hβ).trans (by linarith)), φ.left_inv hs⟩
+  · intro x _ hc
+    simp [d, β.one_of_mem_closedBall (mem_closedBall.2 hc)]
+  · intro x hx
+    simpa [dist_eq_norm, d] using hd_lt x hx
+
+/-- **Homotoping a map off a point of a higher-dimensional chart** (Hatcher, Lemma 4.10). Let
+`D` be a closed subset of `E`, and let `φ` be a chart of the Hausdorff space `Y` into `F` whose
+target contains `ball c r`. If `dim E < dim F`, then every map `f : D → Y` is homotopic, relative
+to the points that `f` does not send into `φ.symm '' ball c r`, to a map `g` missing the point
+`φ.symm p` for some `p ∈ ball c r`. The map `g` sends the points that `f` sends into the chart
+into the chart. -/
+theorem exists_homotopyRel_notMem_range {D : Set E} (f : C(D, Y)) (hD : IsClosed D)
+    (hEF : finrank ℝ E < finrank ℝ F) (φ : OpenPartialHomeomorph Y F) {c : F} {r : ℝ}
+    (hr : 0 < r) (hφ : ball c r ⊆ φ.target) :
+    ∃ g : C(D, Y), Nonempty (f.HomotopyRel g (f ⁻¹' (φ.symm '' ball c r))ᶜ) ∧
+      (∀ x, f x ∈ φ.source → g x ∈ φ.source) ∧ ∃ p ∈ ball c r, φ.symm p ∉ range g := by
+  obtain ⟨G, hG, hGu, p, hp, hpG⟩ := exists_differentiable_approx_notMem_range f hD hEF φ hr hφ
+  obtain ⟨w, hw, hcl, hseg, hS, hwG, hwd⟩ :=
+    exists_chart_value_interpolation f φ hr hφ hG.continuous hGu
+  obtain ⟨g, hg, hg', ⟨Hf⟩⟩ := f.exists_homotopyRel_of_segment_subset_target φ hw hcl hseg hS
   refine ⟨g, ⟨Hf⟩, fun x hx ↦ ?_, p, ball_subset_ball (by linarith) hp, ?_⟩
   · rw [hg x hx]
     exact φ.map_target (hseg x hx (right_mem_segment _ _ _))
   rintro ⟨x, hx⟩
   have hpt : p ∈ φ.target := hφ (ball_subset_ball (by linarith) hp)
   by_cases hs : f x ∈ φ.source
-  · -- Inside the chart, `g x = φ.symm (φ (f x) + d x)`, so `φ (f x) + d x = p`.
+  · -- Inside the chart, `g x = φ.symm (w x)`, so `w x = p`.
     have hv := φ.symm.injOn (by rw [φ.symm_source]; exact hseg x hs (right_mem_segment _ _ _))
       (by rw [φ.symm_source]; exact hpt) ((hg x hs).symm.trans hx)
     by_cases hc : dist (φ (f x)) c ≤ r / 4
-    · exact hpG ⟨x, by rw [← hv]; simp [d, β.one_of_mem_closedBall (mem_closedBall.2 hc)]⟩
-    · have := dist_triangle (φ (f x)) (φ (f x) + d x) c
-      rw [dist_self_add_right] at this
+    · exact hpG ⟨x, by rw [← hv, hwG x hs hc]⟩
+    · have := dist_triangle (φ (f x)) (w x) c
       rw [mem_ball, ← hv] at hp
-      linarith [hd_lt x hs]
+      linarith [hwd x hs]
   · rw [hg' x hs] at hx
     exact hs (hx ▸ φ.map_target hpt)
 

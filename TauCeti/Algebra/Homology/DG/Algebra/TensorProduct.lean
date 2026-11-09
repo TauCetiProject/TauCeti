@@ -37,6 +37,8 @@ has degree one the second summand carries the twist `a ↦ (-1) ^ |a| a` on the 
   algebras is a differential graded algebra for the total-degree grading.
 * `TauCeti.dgTensorDifferential_tmul_of_mem`: the sign rule on pure tensors with a homogeneous
   left factor.
+* `TauCeti.dgTensorDifferential_comm`: Mathlib's Koszul symmetry
+  `GradedTensorProduct.comm` commutes with the tensor differential.
 * `TauCeti.dgTensorAlgHom_ext`: morphisms of differential graded algebras out of the tensor product
   are determined by their restrictions to the two factors.
 
@@ -92,6 +94,34 @@ theorem dgTensorDifferential_tmul_of_mem {p : ℤ} {a : A} (ha : a ∈ 𝒜 p) (
   congr 1
   rw [gradedTensor_smul_tmul, negOnePow_smul_eq_negOnePowCast_smul (R := R),
     negOnePowCast_eq_intCast, one_mul]
+
+/-- The Koszul symmetry of the graded tensor product commutes with its differential whenever
+the two factor maps have degree one. -/
+theorem dgTensorDifferential_comm (hA : ∀ {i a}, a ∈ 𝒜 i → dA a ∈ 𝒜 (i + 1))
+    (hB : ∀ {j b}, b ∈ ℬ j → dB b ∈ ℬ (j + 1))
+    (x : 𝒜 ᵍ⊗[R] ℬ) :
+    dgTensorDifferential ℬ 𝒜 dB dA (GradedTensorProduct.comm 𝒜 ℬ x) =
+      GradedTensorProduct.comm 𝒜 ℬ (dgTensorDifferential 𝒜 ℬ dA dB x) := by
+  have key : dgTensorDifferential ℬ 𝒜 dB dA ∘ₗ
+        (GradedTensorProduct.comm 𝒜 ℬ).toLinearMap =
+      (GradedTensorProduct.comm 𝒜 ℬ).toLinearMap ∘ₗ dgTensorDifferential 𝒜 ℬ dA dB := by
+    refine gradedTensor_linearMap_ext 𝒜 ℬ fun i j a ha b hb ↦ ?_
+    have hda : dA a ∈ 𝒜 (i + 1) := hA ha
+    have hdb : dB b ∈ ℬ (j + 1) := hB hb
+    simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply]
+    rw [GradedTensorProduct.comm_coe_tmul_coe 𝒜 ℬ ⟨a, ha⟩ ⟨b, hb⟩,
+      map_zsmul_unit, dgTensorDifferential_tmul_of_mem hb,
+      dgTensorDifferential_tmul_of_mem ha, map_add, map_zsmul_unit,
+      GradedTensorProduct.comm_coe_tmul_coe 𝒜 ℬ ⟨dA a, hda⟩ ⟨b, hb⟩,
+      GradedTensorProduct.comm_coe_tmul_coe 𝒜 ℬ ⟨a, ha⟩ ⟨dB b, hdb⟩]
+    have hs : i.negOnePow * ((j + 1) * i).negOnePow = (j * i).negOnePow := by
+      rw [add_mul, one_mul, Int.negOnePow_add]
+      rw [mul_left_comm i.negOnePow (j * i).negOnePow i.negOnePow,
+        Int.units_mul_self, mul_one]
+    simp only [← Int.negOnePow_def, smul_add, smul_smul, hs,
+      mul_add, mul_one, Int.negOnePow_add]
+    exact add_comm _ _
+  exact LinearMap.congr_fun key x
 
 /-- The sign rule for the differential of a tensor product, with the sign written as a scalar of
 the ground ring. -/

@@ -45,6 +45,9 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
 * `HasStrictFDerivAt.contDiffAt_toOpenPartialHomeomorph_symm` and
   `HasStrictFDerivAt.contDiffOn_toOpenPartialHomeomorph_symm`: the local inverse is `C^n` at every
   point of the target, and hence on the target.
+* `OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv`: a `C^n` open partial
+  homeomorphism from a complete normed space whose derivative is invertible on its source has a
+  `C^n` inverse on its target.
 * `TauCeti.ContDiffOn.exists_openPartialHomeomorph`: a `C^n` map (`1 ≤ n`) on an open set with
   invertible derivative at a point restricts to an `OpenPartialHomeomorph` around that point whose
   inverse is `C^n` on the whole target.
@@ -140,6 +143,30 @@ theorem contDiffOn_toOpenPartialHomeomorph_symm {n : ℕ∞ω}
 end HasStrictFDerivAt
 
 end Approximation
+
+section ContDiffInverse
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A `C^n` open partial homeomorphism of a complete normed space whose derivative is invertible at
+every point of its source has a `C^n` inverse on its target. -/
+theorem OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv [CompleteSpace E] {n : ℕ∞ω}
+    (ψ : OpenPartialHomeomorph E F) (hψ : ContDiffOn 𝕜 n ψ ψ.source)
+    (hinv : ∀ x ∈ ψ.source, (fderiv 𝕜 ψ x).IsInvertible) :
+    ContDiffOn 𝕜 n ψ.symm ψ.target := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact contDiffOn_zero.2 ψ.continuousOn_symm
+  intro y hy
+  have hx := ψ.map_target hy
+  have hat : ContDiffAt 𝕜 n ψ (ψ.symm y) :=
+    (hψ _ hx).contDiffAt (ψ.open_source.mem_nhds hx)
+  obtain ⟨e, he⟩ := hinv _ hx
+  refine (ψ.contDiffAt_symm hy (f₀' := e) ?_ hat).contDiffWithinAt
+  rw [he]
+  exact (hat.differentiableAt hn).hasFDerivAt
+
+end ContDiffInverse
 
 namespace TauCeti
 

@@ -8,12 +8,13 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.Analysis.Convex.LogConcave
 -- Proof-only: weighted AM-GM, the minimum below a geometric mean, the layer-cake formula in
 -- `ℝ≥0∞` and one-dimensional Brunn–Minkowski.
-import Mathlib.Analysis.MeanInequalities
+import TauCeti.Analysis.MeanInequalities
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Real
@@ -58,13 +59,18 @@ largest. This is the form in which Vaaler's cube-slicing theorem uses the inequa
 * `MeasureTheory.Measure.HasPrekopaLeindler.prod`: tensorization over product measures.
 * `MeasureTheory.Measure.HasPrekopaLeindler.pi`: tensorization over finite products.
 * `MeasureTheory.Measure.HasPrekopaLeindler.map`: transport by a measure-preserving affine map.
+* `MeasureTheory.Measure.HasPrekopaLeindler.smul`: the property is stable under scaling the measure
+  at weights `0 ≤ θ ≤ 1`.
 * `MeasureTheory.Measure.HasPrekopaLeindler.withDensity`,
   `MeasureTheory.Measure.HasPrekopaLeindler.restrict`: log-concave densities and restriction to
   convex sets preserve the property.
 * `TauCeti.Real.mul_lintegral_add_mul_lintegral_le`: the inequality for the minimum on `ℝ`.
 * `TauCeti.Real.hasPrekopaLeindler_volume`: the **Prékopa–Leindler inequality** on `ℝ`.
-* `TauCeti.hasPrekopaLeindler_volume_pi`, `TauCeti.hasPrekopaLeindler_volume`: the inequality on
-  `ι → ℝ` and on finite-dimensional real inner product spaces.
+* `TauCeti.hasPrekopaLeindler_volume_pi`,
+  `MeasureTheory.Measure.hasPrekopaLeindler_of_isAddHaarMeasure`,
+  `TauCeti.hasPrekopaLeindler_volume`: the inequality on `ι → ℝ`, for every additive Haar measure
+  on a finite-dimensional real normed space, and for the volume of a finite-dimensional real inner
+  product space.
 * `TauCeti.LogConcave.lintegral_prod_right`, `TauCeti.LogConcave.setLIntegral_prod_right`:
   marginals of log-concave functions are log-concave.
 * `Convex.logConcave_measure_preimage_prodMk`: the slice measures of a convex set are
@@ -230,6 +236,14 @@ theorem HasPrekopaLeindler.withDensity {mu : Measure E} {theta : ℝ}
       = φ x ^ (1 - theta) * φ y ^ theta * (f x ^ (1 - theta) * g y ^ theta) := by ring
     _ ≤ _ := mul_le_mul' (hlc.rpow_mul_rpow_le h1θ hθ₀ (by ring)) (hfg x y)
 
+/-- Scaling a measure preserves the Prékopa–Leindler property at a weight `0 ≤ θ ≤ 1`: the
+inequality is homogeneous of degree one in the measure. -/
+theorem HasPrekopaLeindler.smul {mu : Measure E} {theta : ℝ}
+    (hmu : mu.HasPrekopaLeindler theta) (hθ₀ : 0 ≤ theta) (hθ₁ : theta ≤ 1) (c : ℝ≥0∞) :
+    (c • mu).HasPrekopaLeindler theta := by
+  rw [← withDensity_const c]
+  exact hmu.withDensity hθ₀ hθ₁ measurable_const (TauCeti.logConcave_const c)
+
 /-- The restriction of a measure with the Prékopa–Leindler property at a weight `0 ≤ θ ≤ 1` to a
 measurable convex set has the Prékopa–Leindler property as well. -/
 theorem HasPrekopaLeindler.restrict {mu : Measure E} {theta : ℝ}
@@ -301,11 +315,8 @@ private theorem rpow_mul_rpow_le_of_iSup_ne_top {θ : ℝ} (hθ₀ : 0 < θ) (h�
   have hKtop : K ≠ ∞ := ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg h1θ.le hF)
     (ENNReal.rpow_ne_top_of_nonneg hθ₀.le hG)
   have hscale (a b : ℝ≥0∞) :
-      (F⁻¹ * a) ^ (1 - θ) * (G⁻¹ * b) ^ θ = K⁻¹ * (a ^ (1 - θ) * b ^ θ) := by
-    rw [ENNReal.mul_rpow_of_nonneg _ _ h1θ.le, ENNReal.mul_rpow_of_nonneg _ _ hθ₀.le,
-      ENNReal.inv_rpow, ENNReal.inv_rpow, ENNReal.mul_inv (.inr (ENNReal.rpow_ne_top_of_nonneg
-      hθ₀.le hG)) (.inl (ENNReal.rpow_ne_top_of_nonneg h1θ.le hF))]
-    ring
+      (F⁻¹ * a) ^ (1 - θ) * (G⁻¹ * b) ^ θ = K⁻¹ * (a ^ (1 - θ) * b ^ θ) :=
+    ENNReal.inv_mul_rpow_mul_inv_mul_rpow h1θ.le hθ₀.le hF hG a b
   have hsup : ⨆ x, F⁻¹ * f x = ⨆ y, G⁻¹ * g y := by
     rw [← ENNReal.mul_iSup, ← ENNReal.mul_iSup, ENNReal.inv_mul_cancel hF0 hF,
       ENNReal.inv_mul_cancel hG0 hG]
@@ -316,12 +327,9 @@ private theorem rpow_mul_rpow_le_of_iSup_ne_top {θ : ℝ} (hθ₀ : 0 < θ) (h�
       gcongr
       exact hfgh x y
   rw [lintegral_const_mul _ hf, lintegral_const_mul _ hg, lintegral_const_mul _ hh] at key
-  have hamgm := ENNReal.geom_mean_le_arith_mean2_weighted (Real.toNNReal (1 - θ))
-    (Real.toNNReal θ) (F⁻¹ * ∫⁻ x, f x) (G⁻¹ * ∫⁻ y, g y) (by
-      rw [← Real.toNNReal_add h1θ.le hθ₀.le, sub_add_cancel, Real.toNNReal_one])
-  rw [Real.coe_toNNReal _ h1θ.le, Real.coe_toNNReal _ hθ₀.le, hscale] at hamgm
-  rw [← ENNReal.mul_le_mul_iff_right (ENNReal.inv_ne_zero.2 hKtop) (ENNReal.inv_ne_top.2 hK0)]
-  exact hamgm.trans key
+  rw [← ENNReal.mul_le_mul_iff_right (ENNReal.inv_ne_zero.2 hKtop) (ENNReal.inv_ne_top.2 hK0),
+    ← hscale]
+  exact (ENNReal.geom_mean_le_arith_mean2_weighted_ofReal hθ₀.le hθ₁.le _ _).trans key
 
 /-- The **Prékopa–Leindler inequality** on `ℝ`: Lebesgue measure has the Prékopa–Leindler
 property at every weight `0 ≤ θ ≤ 1`. -/
@@ -366,18 +374,37 @@ theorem hasPrekopaLeindler_volume_pi (ι : Type*) [Fintype ι] {θ : ℝ} (hθ�
   exact Measure.HasPrekopaLeindler.pi (fun _ ↦ Real.hasPrekopaLeindler_volume hθ₀ hθ₁)
     hf hg hh hfgh
 
+end TauCeti
+
+namespace MeasureTheory.Measure
+
+/-- The **Prékopa–Leindler inequality** for Haar measure: every additive Haar measure on a
+finite-dimensional real normed space has the Prékopa–Leindler property at every weight
+`0 ≤ θ ≤ 1`. -/
+theorem hasPrekopaLeindler_of_isAddHaarMeasure {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    (μ : Measure E) [μ.IsAddHaarMeasure] {θ : ℝ} (hθ₀ : 0 ≤ θ) (hθ₁ : θ ≤ 1) :
+    μ.HasPrekopaLeindler θ := by
+  let ι := Fin (Module.finrank ℝ E)
+  let e : E ≃L[ℝ] ι → ℝ := ContinuousLinearEquiv.ofFinrankEq (by simp [ι])
+  have hmap : ((volume : Measure (ι → ℝ)).map e.symm).HasPrekopaLeindler θ :=
+    HasPrekopaLeindler.map (TauCeti.hasPrekopaLeindler_volume_pi ι hθ₀ hθ₁) e.symm
+      (e.symm.continuous.measurable.measurePreserving _) fun x y ↦ by simp
+  rw [isAddLeftInvariant_eq_smul μ ((volume : Measure (ι → ℝ)).map e.symm),
+    ENNReal.smul_def]
+  exact fun {f g h} ↦ hmap.smul hθ₀ hθ₁ _
+
+end MeasureTheory.Measure
+
+namespace TauCeti
+
 /-- The **Prékopa–Leindler inequality** on a finite-dimensional real inner product space, such as
 `EuclideanSpace ℝ (Fin n)`: its volume has the Prékopa–Leindler property at every weight
 `0 ≤ θ ≤ 1`. -/
 theorem hasPrekopaLeindler_volume (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {θ : ℝ} (hθ₀ : 0 ≤ θ)
-    (hθ₁ : θ ≤ 1) : (volume : Measure E).HasPrekopaLeindler θ := by
-  intro f g h hf hg hh hfgh
-  let b := stdOrthonormalBasis ℝ E
-  exact Measure.HasPrekopaLeindler.map (hasPrekopaLeindler_volume_pi (Fin _) hθ₀ hθ₁)
-    (b.repr.symm ∘ WithLp.toLp 2)
-    (b.measurePreserving_repr_symm.comp (PiLp.volume_preserving_toLp _))
-    (fun x y ↦ by simp) hf hg hh hfgh
+    (hθ₁ : θ ≤ 1) : (volume : Measure E).HasPrekopaLeindler θ :=
+  Measure.hasPrekopaLeindler_of_isAddHaarMeasure _ hθ₀ hθ₁
 
 end TauCeti
 
@@ -414,13 +441,9 @@ theorem LogConcave.setLIntegral_prod_right
     (hν : ∀ ⦃θ : ℝ⦄, 0 ≤ θ → θ ≤ 1 → ν.HasPrekopaLeindler θ) {f : E × F → ℝ≥0∞}
     (hf : Measurable f) (hlc : LogConcave f) {s : Set F} (hs : MeasurableSet s)
     (hsc : Convex ℝ s) :
-    LogConcave fun x ↦ ∫⁻ y in s, f (x, y) ∂ν := by
-  have h := (hlc.mul ((hsc.linear_preimage (LinearMap.snd ℝ E F)).logConcave_indicator 1)
-    ).lintegral_prod_right hν (hf.mul (measurable_const.indicator (hs.preimage measurable_snd)))
-  convert h using 2 with x
-  rw [← lintegral_indicator hs]
-  congr 1 with y
-  by_cases hy : y ∈ s <;> simp [hy]
+    LogConcave fun x ↦ ∫⁻ y in s, f (x, y) ∂ν :=
+  hlc.lintegral_prod_right
+    (fun _ h0 h1 ↦ Measure.HasPrekopaLeindler.restrict (hν h0 h1) h0 h1 hs hsc) hf
 
 /-- **Brunn's principle, in log-concave form.** For a measurable convex set `s ⊆ E × F` and a
 measure `ν` with the Prékopa–Leindler property at every weight, the measure of the slices,
