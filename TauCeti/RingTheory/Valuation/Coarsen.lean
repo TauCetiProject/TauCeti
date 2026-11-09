@@ -26,6 +26,8 @@ facts the height-one generization of Wedhorn's Lemma 7.45 consumes.
 
 ## Main results
 
+* `TauCeti.coarsenMapOfValueGroup_le_iff` : two unit values compare after coarsening iff they
+  already compare or their quotient lies in `H`.
 * `Valuation.coarsenByUnits_supp` : coarsening preserves the support.
 * `Valuation.coarsenByUnits_lt_one_of_notMem` : the collapse detects non-membership — a value
   at most `1` whose unit avoids `H` drops strictly below `1`. (Bounds by `1` come from
@@ -86,6 +88,16 @@ theorem coarsenMapOfValueGroup_apply_coe (H : ConvexSubgroup Γ₀ˣ) (g : Γ₀
   have h : ((OrderMonoidIso.withZeroUnits (α := Γ₀)).symm.toMonoidWithZeroHom (g : Γ₀))
       = (g : WithZero Γ₀ˣ) := WithZero.withZeroUnitsEquiv_symm_apply_coe g
   rw [coarsenMapOfValueGroup, MonoidWithZeroHom.comp_apply, h, WithZero.map'_coe]
+
+open Classical in
+/-- **Comparison after coarsening.** The values of two units `g` and `d` compare after collapsing
+`H` exactly when `g ≤ d` already holds or the quotient `d⁻¹ * g` lies in `H`. -/
+theorem coarsenMapOfValueGroup_le_iff (H : ConvexSubgroup Γ₀ˣ) (g d : Γ₀ˣ) :
+    coarsenMapOfValueGroup H (g : Γ₀) ≤ coarsenMapOfValueGroup H (d : Γ₀) ↔
+      g ≤ d ∨ d⁻¹ * g ∈ H := by
+  rw [coarsenMapOfValueGroup_apply_coe, coarsenMapOfValueGroup_apply_coe, WithZero.coe_le_coe,
+    QuotientGroup.mk'_apply, QuotientGroup.mk'_apply, quotient_le_iff, inv_mul_le_one_iff,
+    mem_toSubgroup]
 
 end
 
