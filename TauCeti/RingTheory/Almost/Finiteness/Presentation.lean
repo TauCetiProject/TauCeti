@@ -33,8 +33,9 @@ From it we deduce:
 * for a surjection `M → N` with `N` almost finitely presented and `M` almost finitely generated,
   the kernel is almost finitely generated; if `M` is almost finitely presented, `N` is almost
   finitely presented if and only if the kernel is almost finitely generated;
-* in a short exact sequence, almost finitely generated (respectively presented) end terms make the
-  middle term almost finitely generated (respectively presented).
+* in a short exact sequence, almost finitely presented end terms make the middle term almost
+  finitely presented (the almost finitely generated case is
+  `TauCeti.Almost.BasicSetup.AlmostFG.extension`).
 
 These are the almost analogues of `Module.FinitePresentation.fg_ker`,
 `Module.FinitePresentation.fg_ker_iff` and `Module.finitePresentation_of_ker`.
@@ -49,8 +50,7 @@ These are the almost analogues of `Module.FinitePresentation.fg_ker`,
   `TauCeti.Almost.BasicSetup.AlmostFP.of_surjective`,
   `TauCeti.Almost.BasicSetup.AlmostFP.almostFG_ker_iff`: kernels and quotients
   (Gabber–Ramero Lemma 2.3.17(ii)).
-* `TauCeti.Almost.BasicSetup.AlmostFG.extension`, `TauCeti.Almost.BasicSetup.AlmostFP.extension`:
-  extensions (Gabber–Ramero Lemma 2.3.17(i)).
+* `TauCeti.Almost.BasicSetup.AlmostFP.extension`: extensions (Gabber–Ramero Lemma 2.3.17(i)).
 
 ## References
 
@@ -288,31 +288,6 @@ theorem AlmostFP.almostFG_ker_iff (hM : S.AlmostFP M) (l : M →ₗ[V] N)
 section Extension
 
 variable {f : M →ₗ[V] N} {g : N →ₗ[V] P}
-
-/-- If `M → N → P → 0` is exact with `M` and `P` almost finitely generated, then `N` is almost
-finitely generated (Gabber–Ramero Lemma 2.3.17(i)). -/
-theorem AlmostFG.extension (h₁ : S.AlmostFG M) (h₃ : S.AlmostFG P) (hfg : Function.Exact f g)
-    (hg : Function.Surjective g) : S.AlmostFG N := by
-  rw [almostFG_iff_exists_fg] at h₁ h₃ ⊢
-  intro m₀ hm hfg₀
-  obtain ⟨K, hKfg, hK, hm₀⟩ :=
-    Ideal.exists_fg_le_pow_of_isIdempotentElem S.isIdempotentElem hfg₀ hm 2
-  obtain ⟨Q₁, hQ₁fg, hKQ₁⟩ := h₁ K hK hKfg
-  obtain ⟨Q₃, hQ₃fg, hKQ₃⟩ := h₃ K hK hKfg
-  -- Lift the generators of `Q₃` along `g`.
-  obtain ⟨t, ρ, rfl⟩ := (fg_iff_exists_fin_linearMap _ _).mp hQ₃fg
-  obtain ⟨ρ', hρ'⟩ := exists_comp_eq_of_range_le (b := g) (a := ρ)
-    (by rw [range_eq_top.mpr hg]; exact le_top)
-  refine ⟨range ρ' ⊔ Q₁.map f, (fg_range ρ').sup (hQ₁fg.map f), (smul_mono_left hm₀).trans ?_⟩
-  have h : K • (⊤ : Submodule V N) ≤ range ρ' ⊔ range f := by
-    rw [← hfg.linearMap_ker_eq, ← comap_map_eq, ← map_le_iff_le_comap, map_smul'',
-      Submodule.map_top, range_eq_top.mpr hg, ← range_comp, hρ']
-    exact hKQ₃
-  rw [sq, Submodule.mul_smul]
-  calc K • K • (⊤ : Submodule V N) ≤ K • (range ρ' ⊔ range f) := smul_mono_right K h
-    _ = K • range ρ' ⊔ (K • (⊤ : Submodule V M)).map f := by
-      rw [smul_sup, range_eq_map f, map_smul'']
-    _ ≤ range ρ' ⊔ Q₁.map f := sup_le_sup smul_le_right (map_mono hKQ₁)
 
 /-- If `0 → M → N → P → 0` is exact with `M` and `P` almost finitely presented, then `N` is almost
 finitely presented (Gabber–Ramero Lemma 2.3.17(i)). This is the almost analogue of
