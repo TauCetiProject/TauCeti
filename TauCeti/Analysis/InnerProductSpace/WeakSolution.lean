@@ -18,14 +18,13 @@ test fields: a linear map `S : D → H`, playing the role of `L*`, together with
 `⟪y, S η⟫ = ⟪f, ι η⟫` for every test field `η`, and the *weak kernel* of `L` is the set of weak
 solutions of `L y = 0`, namely the orthogonal complement `(range S)ᗮ`.
 
-If the formal adjoint is bounded below, `c ‖ι η‖ ≤ ‖S η‖` with `c > 0`, then `L` has a bounded
-weak right inverse: there is a continuous linear map `Q : G → H` with `‖Q‖ ≤ c⁻¹` such that
-`Q f` is a weak solution of `L y = f` for every `f`, and `Q f` is orthogonal to the weak kernel
-(`LinearMap.exists_continuousLinearMap_inner_apply_eq_of_mul_norm_le`). A weak solution
-orthogonal to the weak kernel is unique (`LinearMap.eq_of_inner_apply_eq_of_mem_orthogonal`),
-so `Q f` is the weak solution of least norm. In this sense `L` has vanishing weak cokernel, and
-`Q` is the operator `L* (L L*)⁻¹` of the classical theory, defined without first realizing
-`L L*` as an operator.
+If the formal adjoint is bounded below, `‖ι η‖ ≤ C ‖S η‖`, then `L` has a bounded weak right
+inverse: the continuous linear map `Q = LinearMap.weakRightInverse S ι : G → H` has `‖Q‖ ≤ C`,
+`Q f` is a weak solution of `L y = f` for every `f`, and `Q f` is orthogonal to the weak kernel.
+A weak solution orthogonal to the weak kernel is unique
+(`LinearMap.eq_of_inner_apply_eq_of_mem_orthogonal`), so `Q f` is the weak solution of least
+norm. In this sense `L` has vanishing weak cokernel, and `Q` is the operator `L* (L L*)⁻¹` of the
+classical theory, defined without first realizing `L L*` as an operator.
 
 The lower bound makes `S η ↦ ι η` a bounded operator on the range of `S`. Its canonical factor
 `H → G` through the inclusion of that range (`ContinuousLinearMap.factorThru`) extends it to the
@@ -36,8 +35,10 @@ here is the canonical one and depends linearly and continuously on `f`.
 
 ## Main results
 
-* `LinearMap.exists_continuousLinearMap_inner_apply_eq_of_mul_norm_le`: the bounded weak right
-  inverse.
+* `LinearMap.weakRightInverse`: the weak right inverse.
+* `LinearMap.inner_weakRightInverse_apply`, `LinearMap.weakRightInverse_apply_mem_orthogonal`,
+  `LinearMap.norm_weakRightInverse_le`: it produces weak solutions, orthogonal to the weak kernel,
+  and is bounded by the constant of the lower bound.
 * `LinearMap.eq_of_inner_apply_eq_of_mem_orthogonal`: uniqueness of weak solutions orthogonal to
   the weak kernel.
 
@@ -60,40 +61,54 @@ variable {𝕜 D H G : Type*} [RCLike 𝕜] [AddCommGroup D] [Module 𝕜 D]
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
   [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [CompleteSpace G]
 
-/-- **Bounded weak right inverse.** Let `S : D → H` and `ι : D → G` be linear maps into Hilbert
-spaces with `c ‖ι η‖ ≤ ‖S η‖` for some `c > 0`; think of `S` as the formal adjoint of an operator
-`L` on test fields and of `ι` as the inclusion of the test fields. Then there is a continuous
-linear map `Q : G → H` with `‖Q‖ ≤ c⁻¹` such that `⟪Q f, S η⟫ = ⟪f, ι η⟫` for all `f` and `η`,
-that is, `Q f` is a weak solution of `L y = f`, and `Q f` lies in `(range S)ᗮᗮ`, the closure of
-the range of `S`, which is orthogonal to the weak kernel `(range S)ᗮ` of `L`. -/
-theorem exists_continuousLinearMap_inner_apply_eq_of_mul_norm_le (S : D →ₗ[𝕜] H)
-    (ι : D →ₗ[𝕜] G) {c : ℝ} (hc : 0 < c) (h : ∀ η, c * ‖ι η‖ ≤ ‖S η‖) :
-    ∃ Q : G →L[𝕜] H, ‖Q‖ ≤ c⁻¹ ∧ (∀ f, Q f ∈ (range S)ᗮᗮ) ∧
-      ∀ f η, ⟪Q f, S η⟫_𝕜 = ⟪f, ι η⟫_𝕜 := by
-  -- The rule `S η ↦ ι η` is a bounded operator on the range of `S`.
-  have hb (η : D) : ‖ι η‖ ≤ c⁻¹ * ‖S η‖ := by
-    rw [le_inv_mul_iff₀ hc]
-    exact h η
-  let T : range S →L[𝕜] G := ι.compLeftInverse S
-  have hT (η : D) : T ⟨S η, mem_range_self S η⟩ = ι η :=
-    compLeftInverse_apply_of_bdd ι S ⟨c⁻¹, hb⟩ η _ rfl
-  have hTb (y : range S) : ‖T y‖ ≤ c⁻¹ * ‖(range S).subtypeL y‖ := by
-    obtain ⟨_, η, rfl⟩ := y
-    rw [hT]
-    exact hb η
-  -- Its canonical factor `V : H → G` through the inclusion of the range sends `S η` to `ι η`
-  -- and vanishes on `(range S)ᗮ`; the weak right inverse is its Hilbert adjoint.
-  let V : H →L[𝕜] G := T.factorThru (range S).subtypeL
-  have hV (η : D) : V (S η) = ι η := by
-    rw [← hT]
-    exact ContinuousLinearMap.factorThru_apply_apply ⟨c⁻¹, hTb⟩ ⟨S η, mem_range_self S η⟩
-  refine ⟨ContinuousLinearMap.adjoint V, ?_, fun f ↦ ?_, fun f η ↦ ?_⟩
-  · rw [LinearIsometryEquiv.norm_map]
-    exact ContinuousLinearMap.norm_factorThru_le (inv_nonneg.2 hc.le) hTb
-  · refine orthogonal_le (fun y hy ↦ ?_) (V.adjoint_apply_mem_orthogonal_ker f)
-    refine ContinuousLinearMap.factorThru_apply_of_mem_orthogonal ?_
-    rwa [Submodule.toLinearMap_subtypeL, Submodule.range_subtype]
-  · rw [ContinuousLinearMap.adjoint_inner_left, hV]
+/-- The **weak right inverse** of the operator `L` whose formal adjoint on the test fields `D` is
+`S : D → H`, with `ι : D → G` the inclusion of the test fields. It is the Hilbert adjoint of the
+canonical factor `H → G` of the rule `S η ↦ ι η` through the inclusion of the range of `S`
+(`ContinuousLinearMap.factorThru` applied to `LinearMap.compLeftInverse`).
+
+When `‖ι η‖ ≤ C ‖S η‖` for some `C`, its values are weak solutions of `L y = f`
+(`LinearMap.inner_weakRightInverse_apply`), orthogonal to the weak kernel
+(`LinearMap.weakRightInverse_apply_mem_orthogonal`), and it has norm at most `C`
+(`LinearMap.norm_weakRightInverse_le`). Without such a bound it is zero. -/
+noncomputable def weakRightInverse (S : D →ₗ[𝕜] H) (ι : D →ₗ[𝕜] G) : G →L[𝕜] H :=
+  ContinuousLinearMap.adjoint ((ι.compLeftInverse S).factorThru (range S).subtypeL)
+
+variable {S : D →ₗ[𝕜] H} {ι : D →ₗ[𝕜] G}
+
+omit [CompleteSpace H] [CompleteSpace G] in
+/-- The bound `‖ι η‖ ≤ C ‖S η‖`, transported to the rule `S η ↦ ι η` on the range of `S`. -/
+private theorem norm_compLeftInverse_le {C : ℝ} (h : ∀ η, ‖ι η‖ ≤ C * ‖S η‖) (y : range S) :
+    ‖ι.compLeftInverse S y‖ ≤ C * ‖(range S).subtypeL y‖ := by
+  obtain ⟨_, η, rfl⟩ := y
+  rw [compLeftInverse_apply_of_bdd ι S ⟨C, h⟩ η _ rfl]
+  exact h η
+
+/-- **Weak solutions.** If `‖ι η‖ ≤ C ‖S η‖` for some `C`, then
+`⟪weakRightInverse S ι f, S η⟫ = ⟪f, ι η⟫` for all `f` and `η`: the weak right inverse sends `f`
+to a weak solution of `L y = f`. -/
+theorem inner_weakRightInverse_apply (h : ∃ C, ∀ η, ‖ι η‖ ≤ C * ‖S η‖) (f : G) (η : D) :
+    ⟪S.weakRightInverse ι f, S η⟫_𝕜 = ⟪f, ι η⟫_𝕜 := by
+  obtain ⟨C, hC⟩ := h
+  rw [weakRightInverse, ContinuousLinearMap.adjoint_inner_left,
+    ← compLeftInverse_apply_of_bdd ι S ⟨C, hC⟩ η _ rfl]
+  exact congrArg (⟪f, ·⟫_𝕜) (ContinuousLinearMap.factorThru_apply_apply
+    ⟨C, norm_compLeftInverse_le hC⟩ ⟨S η, mem_range_self S η⟩)
+
+/-- The weak right inverse takes values in `(range S)ᗮᗮ`, the closure of the range of `S`, which
+is orthogonal to the weak kernel `(range S)ᗮ` of `L`. -/
+theorem weakRightInverse_apply_mem_orthogonal (S : D →ₗ[𝕜] H) (ι : D →ₗ[𝕜] G) (f : G) :
+    S.weakRightInverse ι f ∈ (range S)ᗮᗮ := by
+  -- The factor vanishes on `(range S)ᗮ`, so its adjoint lands in the orthogonal of its kernel.
+  refine orthogonal_le (fun y hy ↦ ?_) (ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker _ f)
+  refine ContinuousLinearMap.factorThru_apply_of_mem_orthogonal ?_
+  rwa [Submodule.toLinearMap_subtypeL, Submodule.range_subtype]
+
+/-- **Norm bound.** If `‖ι η‖ ≤ C ‖S η‖` with `0 ≤ C`, the weak right inverse has norm at most
+`C`. -/
+theorem norm_weakRightInverse_le {C : ℝ} (hC : 0 ≤ C) (h : ∀ η, ‖ι η‖ ≤ C * ‖S η‖) :
+    ‖S.weakRightInverse ι‖ ≤ C := by
+  rw [weakRightInverse, LinearIsometryEquiv.norm_map]
+  exact ContinuousLinearMap.norm_factorThru_le hC (norm_compLeftInverse_le h)
 
 omit [CompleteSpace H] in
 /-- **Uniqueness of weak solutions orthogonal to the weak kernel.** If `y` and `y'` both lie in

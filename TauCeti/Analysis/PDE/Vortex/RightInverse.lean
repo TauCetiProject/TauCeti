@@ -29,11 +29,14 @@ This file shows that the weak cokernel of `L_x` vanishes at a plane vortex, with
 inverse. If `L_x*` is bounded below on test fields, `c ∫ |η|² ≤ ∫ |L_x* η|²` with `c > 0`, there
 is a bounded operator `Q` on `L²(ℂ; ℝ⁴)` of norm at most `c^(-1/2)` such that `Q f` is a weak
 solution of `L_x y = f` for every `f`, and `Q f` is orthogonal to the weak kernel
-(`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le`). Thus
-`Q f` is the weak solution of least norm, and `Q` is the right inverse `L_x* (L_x L_x*)⁻¹` on the
-`L²`-orthogonal complement of the weak kernel. At an actual vortex with `|α| → 1`, the spectral
-gap `exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint` supplies the lower
-bound (`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`).
+(`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le`). Weak
+solutions orthogonal to the weak kernel are unique
+(`TauCeti.Vortex.eq_of_integral_inner_gaugeFixedAdjoint_eq`), so `Q` is determined by these
+properties, `Q f` is the weak solution of least norm, and `Q` is the right inverse
+`L_x* (L_x L_x*)⁻¹` on the `L²`-orthogonal complement of the weak kernel. At an actual vortex with
+`|α| → 1`, the spectral gap `exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint`
+supplies the lower bound
+(`TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`).
 
 These are statements about weak solutions in `L²`. That `Q f` lies in `H¹`, and the Fredholm
 property and dimension of the kernel of the Sobolev realization of `L_x`, are not proved here.
@@ -44,6 +47,8 @@ property and dimension of the kernel of the Sobolev realization of `L_x`, are no
   lower bound on `L_x*` gives a bounded weak right inverse of `L_x` orthogonal to its weak kernel.
 * `TauCeti.Vortex.exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq`: the weak
   right inverse at a plane vortex with `|α| → 1`.
+* `TauCeti.Vortex.eq_of_integral_inner_gaugeFixedAdjoint_eq`: uniqueness of weak solutions
+  orthogonal to the weak kernel.
 
 ## References
 
@@ -105,6 +110,39 @@ private theorem gaugeFixedAdjointToLp_apply (hx : Continuous x) (η : TestField)
     gaugeFixedAdjointToLp μ hx η = (memLp_gaugeFixedAdjoint hx η).toLp (gaugeFixedAdjoint x η) :=
   rfl
 
+private theorem inner_gaugeFixedAdjointToLp (hx : Continuous x)
+    (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : TestField) :
+    ⟪u, gaugeFixedAdjointToLp μ hx η⟫ = ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ :=
+  L2.inner_toLp u (memLp_gaugeFixedAdjoint hx η)
+
+/-- The weak kernel of `L_x` is the orthogonal complement of the range of `L_x*` in `L²`. -/
+private theorem mem_orthogonal_range_gaugeFixedAdjointToLp_iff (hx : Continuous x)
+    {u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} :
+    u ∈ (LinearMap.range (gaugeFixedAdjointToLp μ hx))ᗮ ↔
+      ∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0 := by
+  rw [Submodule.mem_orthogonal]
+  constructor
+  · intro hu η hη hηc
+    have h := hu _ ⟨⟨η, hη, hηc, by simp⟩, rfl⟩
+    rw [real_inner_comm, inner_gaugeFixedAdjointToLp, TestFunction.coe_mk] at h
+    exact h
+  · rintro hu _ ⟨η, rfl⟩
+    rw [real_inner_comm, inner_gaugeFixedAdjointToLp]
+    exact hu η η.contDiff η.hasCompactSupport
+
+/-- The orthogonal complement of the weak kernel of `L_x`, in integral form. -/
+private theorem mem_orthogonal_orthogonal_range_gaugeFixedAdjointToLp_iff (hx : Continuous x)
+    {y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} :
+    y ∈ (LinearMap.range (gaugeFixedAdjointToLp μ hx))ᗮᗮ ↔
+      ∀ u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+        (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+          ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+        ∫ z, ⟪y z, u z⟫ ∂μ = 0 := by
+  rw [Submodule.mem_orthogonal]
+  refine forall_congr' fun u ↦ ?_
+  rw [mem_orthogonal_range_gaugeFixedAdjointToLp_iff, real_inner_comm, L2.inner_def]
+
 /-- **Weak right inverse from a lower bound on the formal adjoint.** Let `x` be a continuous
 field and suppose that `c ∫ |η|² ≤ ∫ |L_x* η|²` for every compactly supported `C²` field `η`,
 with `c > 0`. Then there is a bounded operator `Q` on `L²(ℂ; ℝ⁴)` with `‖Q‖ ≤ c^(-1/2)` such
@@ -128,32 +166,47 @@ theorem exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le
         ∫ z, ⟪Q f z, u z⟫ ∂μ = 0 := by
   set S := gaugeFixedAdjointToLp μ hx
   set ι := testFieldToLp μ
-  have hS (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : TestField) :
-      ⟪u, S η⟫ = ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ :=
-    L2.inner_toLp u (memLp_gaugeFixedAdjoint hx η)
-  have hι (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : TestField) :
-      ⟪u, ι η⟫ = ∫ z, ⟪u z, η z⟫ ∂μ :=
-    L2.inner_toLp u (η.continuous.memLp_of_hasCompactSupport η.hasCompactSupport)
-  -- The gap is the lower bound `√c ‖η‖ ≤ ‖L_x* η‖` in `L²`.
-  have hbound (η : TestField) : √c * ‖ι η‖ ≤ ‖S η‖ := by
+  -- The gap is the lower bound `‖η‖ ≤ (√c)⁻¹ ‖L_x* η‖` in `L²`.
+  have hbound (η : TestField) : ‖ι η‖ ≤ (√c)⁻¹ * ‖S η‖ := by
+    rw [le_inv_mul_iff₀ (Real.sqrt_pos.2 hc)]
     refine le_of_sq_le_sq ?_ (norm_nonneg _)
     rw [mul_pow, Real.sq_sqrt hc.le, testFieldToLp_apply, gaugeFixedAdjointToLp_apply,
       MemLp.norm_toLp_sq_eq_integral_norm_sq, MemLp.norm_toLp_sq_eq_integral_norm_sq]
     exact hgap η η.contDiff η.hasCompactSupport
-  obtain ⟨Q, hQn, hQK, hQ⟩ := LinearMap.exists_continuousLinearMap_inner_apply_eq_of_mul_norm_le
-    S ι (Real.sqrt_pos.2 hc) hbound
-  refine ⟨Q, hQn, fun f η hη hηc ↦ ?_, fun f u hu ↦ ?_⟩
-  · have h := hQ f ⟨η, hη, hηc, by simp⟩
-    rw [hS, hι, TestFunction.coe_mk] at h
+  refine ⟨S.weakRightInverse ι, S.norm_weakRightInverse_le (by positivity) hbound,
+    fun f η hη hηc ↦ ?_, fun f ↦ ?_⟩
+  · have h := S.inner_weakRightInverse_apply ⟨_, hbound⟩ f ⟨η, hη, hηc, by simp⟩
+    rw [inner_gaugeFixedAdjointToLp, testFieldToLp_apply, L2.inner_toLp,
+      TestFunction.coe_mk] at h
     exact h
-  · -- `u` lies in the weak kernel `(range S)ᗮ`, and `Q f` in its orthogonal complement.
-    have huK : u ∈ (LinearMap.range S)ᗮ := by
-      rw [Submodule.mem_orthogonal]
-      rintro _ ⟨η, rfl⟩
-      rw [real_inner_comm, hS]
-      exact hu η η.contDiff η.hasCompactSupport
-    rw [← L2.inner_def]
-    exact Submodule.inner_left_of_mem_orthogonal huK (hQK f)
+  · exact (mem_orthogonal_orthogonal_range_gaugeFixedAdjointToLp_iff hx).1
+      (S.weakRightInverse_apply_mem_orthogonal ι f)
+
+/-- **Uniqueness of weak solutions orthogonal to the weak kernel.** Let `x` be a continuous field.
+If `y, y' ∈ L²(ℂ; ℝ⁴)` are both weak solutions of `L_x y = f`, that is,
+`∫ ⟪y, L_x* η⟫ = ∫ ⟪f, η⟫ = ∫ ⟪y', L_x* η⟫` for every compactly supported `C²` field `η`, and both
+are orthogonal to the weak kernel of `L_x`, then `y = y'`. In particular the weak right inverse of
+`exists_continuousLinearMap_integral_inner_gaugeFixedAdjoint_eq_of_mul_le` is unique. -/
+theorem eq_of_integral_inner_gaugeFixedAdjoint_eq (hx : Continuous x)
+    {f : ℂ → EuclideanSpace ℝ (Fin 4)} {y y' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
+    (hy : ∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+      ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ)
+    (hy' : ∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+      ∫ z, ⟪y' z, gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ)
+    (hyK : ∀ u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+      (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+      ∫ z, ⟪y z, u z⟫ ∂μ = 0)
+    (hy'K : ∀ u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ,
+      (∀ η, ContDiff ℝ 2 η → HasCompactSupport η →
+        ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
+      ∫ z, ⟪y' z, u z⟫ ∂μ = 0) :
+    y = y' := by
+  refine LinearMap.eq_of_inner_apply_eq_of_mem_orthogonal (gaugeFixedAdjointToLp μ hx)
+    ((mem_orthogonal_orthogonal_range_gaugeFixedAdjointToLp_iff hx).2 hyK)
+    ((mem_orthogonal_orthogonal_range_gaugeFixedAdjointToLp_iff hx).2 hy'K) fun η ↦ ?_
+  rw [inner_gaugeFixedAdjointToLp, inner_gaugeFixedAdjointToLp,
+    hy η η.contDiff η.hasCompactSupport, hy' η η.contDiff η.hasCompactSupport]
 
 /-- **Weak right inverse at a plane vortex.** Let `x` be a `C¹` solution of the plane vortex
 equation with `|α| → 1` at infinity. Then there is a bounded operator `Q` on `L²(ℂ; ℝ⁴)` such
