@@ -28,9 +28,10 @@ so the Laplacian controls the whole Hessian of `u` in `L²`. This is the `p = 2`
 Calderón–Zygmund estimate `‖D²u‖_{Lᵖ} ≤ C ‖Δu‖_{Lᵖ}`, and the `L²` input to elliptic regularity
 for the Laplacian on `ℝⁿ`.
 
-Fourier multipliers are additive in their symbol and commute with the Laplacian. A multiplier with
-an even symbol, such as the Bessel potential `⟨ξ⟩ ^ s`, is moreover symmetric for every bilinear
-pairing `∫ M (f x) (h x)` of Schwartz functions.
+Fourier multipliers are additive in their symbol and commute with the Laplacian. For every
+bilinear pairing `∫ M (f x) (h x)` of Schwartz functions, the transpose of the multiplier with
+symbol `g` is the multiplier with the reflected symbol `g (-ξ)`; in particular a multiplier with an
+even symbol, such as the Bessel potential `⟨ξ⟩ ^ s`, is symmetric.
 
 For the inverse Fourier transform, iterating Mathlib's `SchwartzMap.fourierInv_lineDerivOp_eq`
 gives `𝓕⁻ (∂_m^N σ) x = (-2πi ⟪x, m⟫) ^ N 𝓕⁻ σ x`, and Mathlib's `norm_fourier_toL2_eq` gives
@@ -41,10 +42,9 @@ Plancherel's theorem `‖𝓕⁻ f‖_{L²} = ‖f‖_{L²}`.
 * `SchwartzMap.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
 * `SchwartzMap.fourierMultiplierCLM_laplacian`: Fourier multipliers commute with the Laplacian.
 * `SchwartzMap.fourierInv_apply_eq_fourier_neg`: `𝓕⁻ f x = 𝓕 f (-x)`.
-* `SchwartzMap.fourier_smulLeftCLM_fourierInv_eq`: for an even symbol `g`,
-  `𝓕 (g • 𝓕⁻ f) = 𝓕⁻ (g • 𝓕 f)`.
-* `SchwartzMap.integral_bilin_fourierMultiplierCLM_eq`: a Fourier multiplier with an even symbol
-  is symmetric for bilinear pairings, `∫ M (T_g f) h = ∫ M f (T_g h)`.
+* `SchwartzMap.fourier_smulLeftCLM_fourierInv_eq`: `𝓕 (g • 𝓕⁻ f) = 𝓕⁻ (g (-·) • 𝓕 f)`.
+* `SchwartzMap.integral_bilin_fourierMultiplierCLM_eq`: the transpose of a Fourier multiplier for
+  bilinear pairings has the reflected symbol, `∫ M (T_g f) h = ∫ M f (T_{g (-·)} h)`.
 
 * `SchwartzMap.fourier_lineDerivOp_apply`: the Fourier transform of a directional derivative.
 * `SchwartzMap.fourier_lineDerivOp_lineDerivOp_apply`: the Fourier transform of a second
@@ -93,19 +93,21 @@ point. This is the Schwartz-space form of Mathlib's `Real.fourierInv_eq_fourier_
 theorem fourierInv_apply_eq_fourier_neg (f : 𝓢(E, F)) (x : E) : 𝓕⁻ f x = 𝓕 f (-x) := by
   simp [fourierInv_apply_eq]
 
-/-- For an even symbol `g`, the Fourier multiplier `𝓕⁻ (g • 𝓕 f)` can also be written with the two
-Fourier transforms exchanged, `𝓕 (g • 𝓕⁻ f)`. This is the identity behind the transpose of a
-Fourier multiplier on tempered distributions, which Mathlib defines through the second form. -/
+/-- Exchanging the two Fourier transforms in `𝓕 (g • 𝓕⁻ f)` reflects the symbol: it is the
+Fourier multiplier `𝓕⁻ (g (-ξ) • 𝓕 f)`. This is the identity behind the transpose of a Fourier
+multiplier on tempered distributions, which Mathlib defines through the first form. -/
 theorem fourier_smulLeftCLM_fourierInv_eq {g : E → ℂ} (hg : g.HasTemperateGrowth)
-    (hg_even : ∀ ξ, g (-ξ) = g ξ) (f : 𝓢(E, F)) :
-    𝓕 (smulLeftCLM F g (𝓕⁻ f)) = fourierMultiplierCLM F g f := by
+    (f : 𝓢(E, F)) :
+    𝓕 (smulLeftCLM F g (𝓕⁻ f)) = fourierMultiplierCLM F (fun ξ ↦ g (-ξ)) f := by
   have hcomp : (smulLeftCLM F g (𝓕⁻ f) : E → F) =
-      (smulLeftCLM F g (𝓕 f) : E → F) ∘ LinearIsometryEquiv.neg ℝ := by
+      (smulLeftCLM F (fun ξ ↦ g (-ξ)) (𝓕 f) : E → F) ∘ LinearIsometryEquiv.neg ℝ := by
     ext y
-    simp [smulLeftCLM_apply_apply hg, fourierInv_apply_eq_fourier_neg, hg_even]
+    simp [smulLeftCLM_apply_apply hg, smulLeftCLM_apply_apply (g := fun ξ ↦ g (-ξ)) (by fun_prop),
+      fourierInv_apply_eq_fourier_neg]
   ext x
-  rw [fourierMultiplierCLM_apply, fourierInv_apply_eq_fourier_neg, fourier_coe, hcomp,
-    Real.fourier_comp_linearIsometry, LinearIsometryEquiv.coe_neg, fourier_coe]
+  simp only [fourierMultiplierCLM_apply, fourierInv_apply_eq_fourier_neg]
+  rw [fourier_coe, hcomp, Real.fourier_comp_linearIsometry]
+  simp [fourier_coe]
 
 variable [CompleteSpace F]
 
@@ -125,22 +127,23 @@ theorem fourierMultiplierCLM_laplacian {g : E → 𝕜} (hg : g.HasTemperateGrow
   simpa only [laplacian_eq_fourierMultiplierCLM, ContinuousLinearMap.map_smul_of_tower]
     using congrArg (fun q ↦ -((2 * π) ^ 2) • q) hcomm
 
-/-- A Fourier multiplier with an even symbol is symmetric for every bilinear pairing of Schwartz
-functions: `∫ M (T_g f) h = ∫ M f (T_g h)`, where `T_g = 𝓕⁻ (g • 𝓕 ·)`. Without evenness the
-symbol of the transpose is `g (-ξ)`. -/
+/-- The transpose of a Fourier multiplier for a bilinear pairing of Schwartz functions has the
+reflected symbol: `∫ M (T_g f) h = ∫ M f (T_{g (-·)} h)`, where `T_g = 𝓕⁻ (g • 𝓕 ·)`. In
+particular a multiplier with an even symbol is symmetric. -/
 theorem integral_bilin_fourierMultiplierCLM_eq {G K : Type*} [NormedAddCommGroup G]
     [NormedSpace ℂ G] [CompleteSpace G] [NormedAddCommGroup K] [NormedSpace ℂ K] {g : E → ℂ}
-    (hg : g.HasTemperateGrowth) (hg_even : ∀ ξ, g (-ξ) = g ξ) (f : 𝓢(E, F)) (h : 𝓢(E, G))
-    (M : F →L[ℂ] G →L[ℂ] K) :
+    (hg : g.HasTemperateGrowth) (f : 𝓢(E, F)) (h : 𝓢(E, G)) (M : F →L[ℂ] G →L[ℂ] K) :
     ∫ x, M (fourierMultiplierCLM F g f x) (h x) =
-      ∫ x, M (f x) (fourierMultiplierCLM G g h x) := by
+      ∫ x, M (f x) (fourierMultiplierCLM G (fun ξ ↦ g (-ξ)) h x) := by
   -- Move both inverse Fourier transforms to the other factor; the two sides then differ by the
-  -- reflection `ξ ↦ -ξ`, under which the even symbol is invariant.
+  -- reflection `ξ ↦ -ξ`.
   rw [fourierMultiplierCLM_apply, fourierMultiplierCLM_apply, integral_bilin_fourierInv_eq]
   conv_rhs => rw [← integral_bilin_fourierInv_eq]
-  simp only [smulLeftCLM_apply_apply hg, map_smul, fourierInv_apply_eq_fourier_neg]
+  simp only [smulLeftCLM_apply_apply hg,
+    smulLeftCLM_apply_apply (g := fun ξ ↦ g (-ξ)) (by fun_prop), map_smul,
+    fourierInv_apply_eq_fourier_neg]
   rw [← integral_neg_eq_self]
-  simp [hg_even]
+  simp
 
 end FourierMultiplier
 
