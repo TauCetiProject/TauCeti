@@ -57,6 +57,43 @@ private theorem isSmoothForm_bump_smul_chart_det (x : M) (χ : SmoothBumpFunctio
     (isOpen_extChartAt_source x) χ.tsupport_subset_extChartAt_source fun y hy ↦
       (contMDiffAt_mpullback_extChartAt hy contDiffWithinAt_const).contMDiffWithinAt
 
+omit [T2Space M] in
+/-- A smooth compactly supported top form that equals a bump function times the chart determinant
+has positive unsigned chart integral. -/
+private theorem integral_signedInChartAt_pos_of_bump [MeasurableSpace E] [BorelSpace E] (x : M)
+    (χ : SmoothBumpFunction I x) (b : Module.Basis (Fin n) ℝ E) {ψ : RoughForm I M ℝ n}
+    (hs : IsSmoothForm I ∞ ψ)
+    (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) ψ))
+    (hcoef : ∀ z ∈ (extChartAt I x).target,
+      RoughForm.inChartAt (I := I) ψ x z b = χ ((extChartAt I x).symm z)) :
+    0 < ∫ z, RoughForm.signedInChartAt (I := I) ψ b x (fun _ ↦ 1) z ∂b.addHaar := by
+  let g := RoughForm.signedInChartAt (I := I) ψ b x (fun _ ↦ 1)
+  have hg : ∀ z, 0 ≤ g z := by
+    intro z
+    dsimp only [g]
+    rw [RoughForm.signedInChartAt_apply]
+    split_ifs with hz
+    · simpa [hcoef z hz] using χ.nonneg (x := (extChartAt I x).symm z)
+    · exact le_rfl
+  have hgx : g (extChartAt I x x) = 1 := by
+    dsimp only [g]
+    rw [RoughForm.signedInChartAt_apply_of_mem_source _ _ _ _ (mem_extChartAt_source x),
+      hcoef _ (mem_extChartAt_target x), (extChartAt I x).left_inv (mem_extChartAt_source x)]
+    simp
+  have hcont : ContinuousOn g (extChartAt I x).target :=
+    RoughForm.continuousOn_signedInChartAt (I := I) ψ b x _ continuous_const
+      (hs.continuousOn_inChartAt x)
+  -- Needed: without it the reverse rewrite below leaves the integrand unfolded and fails to
+  -- match; stating the integral of `g` gives it a definite function.
+  change 0 < ∫ z, g z ∂b.addHaar
+  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero
+    (s := (extChartAt I x).target) (fun z hz ↦ by
+      dsimp only [g]
+      rw [RoughForm.signedInChartAt_apply, dite_eq_right hz])]
+  exact setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target (μ := b.addHaar) x hg
+    (hs.integrable_signedInChartAt_one hc b x).integrableOn hcont
+    (mem_extChartAt_target x) (by rw [hgx]; exact zero_lt_one)
+
 /-- A chart-supported bump multiple of the determinant has nonzero integral. -/
 private theorem exists_topForm_integral_ne_zero (o : Manifold.Orientation I M (Fin n))
     (x : M) {U : Set M} (hU : U ∈ 𝓝 x) :
@@ -91,30 +128,7 @@ private theorem exists_topForm_integral_ne_zero (o : Manifold.Orientation I M (F
     have hp : p.inChartAt x z = α z := RoughForm.inChartAt_mpullback_extChartAt α x hz
     rw [RoughForm.inChartAt_fun_smul, hp]
     simp [α, Module.Basis.continuousDet_apply, Module.Basis.det_self]
-  let g := RoughForm.signedInChartAt (I := I) ψ b x (fun _ ↦ 1)
-  have hg : ∀ z, 0 ≤ g z := by
-    intro z
-    dsimp only [g]
-    rw [RoughForm.signedInChartAt_apply]
-    split_ifs with hz
-    · simpa [hcoef z hz] using χ.nonneg (x := (extChartAt I x).symm z)
-    · exact le_rfl
-  have hgx : g (extChartAt I x x) = 1 := by
-    dsimp only [g]
-    rw [RoughForm.signedInChartAt_apply_of_mem_source _ _ _ _ (mem_extChartAt_source x),
-      hcoef _ (mem_extChartAt_target x), (extChartAt I x).left_inv (mem_extChartAt_source x)]
-    simp
-  have hcont : ContinuousOn g (extChartAt I x).target :=
-    RoughForm.continuousOn_signedInChartAt (I := I) ψ b x _ continuous_const
-      (hs.continuousOn_inChartAt x)
-  have hpos : 0 < ∫ z, g z ∂b.addHaar := by
-    rw [← setIntegral_eq_integral_of_forall_compl_eq_zero
-      (s := (extChartAt I x).target) (fun z hz ↦ by
-        dsimp only [g]
-        rw [RoughForm.signedInChartAt_apply, dite_eq_right hz])]
-    exact setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target (μ := b.addHaar) x hg
-      (hs.integrable_signedInChartAt_one hc b x).integrableOn hcont
-      (mem_extChartAt_target x) (by rw [hgx]; exact zero_lt_one)
+  have hpos := integral_signedInChartAt_pos_of_bump x χ b hs hc hcoef
   -- The unsigned chart integral is positive; the actual orientation adds only unit signs.
   have hi : integralTopForm (Manifold.Orientation.mk l) ψ ≠ 0 := by
     rw [integralTopForm_eq_chartIntegral l ψ (hs.integrableTopForm hc b) x hchart,

@@ -167,22 +167,6 @@ theorem algebraMap_injective : Function.Injective (algebraMap R (SignedSym G)) :
 instance [Nontrivial R] : Nontrivial (SignedSym G) :=
   (algebraMap_injective G).nontrivial
 
-/-- Odd homogeneous generators square to their own negatives, over any coefficient ring. -/
-theorem generator_sq_eq_neg {p : ℤ} {x : V} (hx : x ∈ G.piece p) (hp : Odd p) :
-    generator G x ^ 2 = -(generator G x ^ 2) := by
-  simpa only [pow_two, Int.negOnePow_mul_self, Int.negOnePow_odd _ hp,
-    Units.val_neg, Units.val_one, neg_smul, one_smul] using
-    generator_mul_generator G hx hx
-
-/-- Odd homogeneous generators have square zero when 2 is invertible (in particular over ℚ). -/
-theorem generator_sq_eq_zero [Invertible (2 : R)] {p : ℤ} {x : V}
-    (hx : x ∈ G.piece p) (hp : Odd p) : generator G x ^ 2 = 0 := by
-  have h : (2 : R) • (generator G x ^ 2) = 0 := by
-    rw [two_smul]
-    exact eq_neg_iff_add_eq_zero.mp (generator_sq_eq_neg G hx hp)
-  have := congrArg (fun a : SignedSym G => (⅟(2 : R)) • a) h
-  simpa only [invOf_smul_smul, smul_zero] using this
-
 section Map
 
 variable {W : Type*} [AddCommGroup W] [Module R W]

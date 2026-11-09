@@ -19,11 +19,11 @@ inverse. It is meaningful for arbitrary models with corners, without a smoothnes
 Over a complete scalar field, for a finite-dimensional target it is equivalent to surjectivity,
 hence to being a regular point.
 
-For maps between finite-dimensional real manifolds with boundaryless source, a split differential
-and smoothness on a neighbourhood give Mathlib's submersion normal form. The complement can be
-chosen uniformly as `Fin (dim E - dim F) → ℝ`, even when the source is empty. Consequently a smooth
-map is a submersion exactly when its differentials split. No separation or countability hypothesis
-on either manifold is needed. These comparisons allow geometric constructions using submersion
+For maps between finite-dimensional real or complex manifolds with boundaryless source, a split
+differential and smoothness on a neighbourhood give Mathlib's submersion normal form. The complement
+can be chosen uniformly as `Fin (dim E - dim F) → 𝕜`, even when the source is empty. Consequently
+a smooth map is a submersion exactly when its differentials split. No separation or countability
+hypothesis on either manifold is needed. These comparisons allow constructions using submersion
 charts to be applied to maps specified by their differentials.
 
 The normal-form construction uses `ContinuousLinearMap.implicitCoordEquiv` to identify the source
@@ -91,11 +91,11 @@ end Differential
 
 section NormalForm
 
-variable {E F G H M N : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+variable {𝕜 E F G H M N : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [I.Boundaryless]
+  [TopologicalSpace G] {J : ModelWithCorners 𝕜 F G}
   [TopologicalSpace M] [ChartedSpace H M]
   [TopologicalSpace N] [ChartedSpace G N]
   {n : ℕ∞ω} [IsManifold I n M] [IsManifold J n N]
@@ -107,14 +107,16 @@ boundaryless; neither manifold needs to be Hausdorff or second-countable. -/
 theorem _root_.ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv {U : Set M}
     (hfU : ContMDiffOn I J n f U) (hU : IsOpen U) (hxU : x ∈ U) (hn : 1 ≤ n)
     (hs : Surjective (mfderiv I J f x)) :
-    IsSubmersionAtOfComplement (Fin (Module.finrank ℝ E - Module.finrank ℝ F) → ℝ)
+    IsSubmersionAtOfComplement (Fin (Module.finrank 𝕜 E - Module.finrank 𝕜 F) → 𝕜)
       I J n f x := by
+  have := FiniteDimensional.complete 𝕜 E
+  have := FiniteDimensional.complete 𝕜 F
   have hf := hfU.contMDiffAt (hU.mem_nhds hxU)
   have hn0 : n ≠ 0 := ne_of_gt (zero_lt_one.trans_le hn)
   have : IsManifold I 1 M := .of_le hn
   have : IsManifold J 1 N := .of_le hn
   -- Split the derivative into target and kernel coordinates.
-  let D : E →L[ℝ] F := mfderiv I J f x
+  let D : E →L[𝕜] F := mfderiv I J f x
   have hD : D.range = ⊤ := LinearMap.range_eq_top.2 hs
   have hker : D.ker.ClosedComplemented :=
     D.ker_closedComplemented_of_finiteDimensional_range
@@ -123,13 +125,13 @@ theorem _root_.ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv {U :
   let c := extChartAt J (f x)
   let e := extChartAt I x
   let g : M → E := fun y ↦ L.symm (c (f y), P (e y))
-  have hc : ContMDiffAt J 𝓘(ℝ, F) n c (f x) := contMDiffAt_extChartAt
-  have he : ContMDiffAt I 𝓘(ℝ, E) n e x := contMDiffAt_extChartAt
+  have hc : ContMDiffAt J 𝓘(𝕜, F) n c (f x) := contMDiffAt_extChartAt
+  have he : ContMDiffAt I 𝓘(𝕜, E) n e x := contMDiffAt_extChartAt
   let q : M → F × D.ker := fun y ↦ (c (f y), P (e y))
   have hq := (hc.comp x hf).prodMk_space (P.contMDiff.contMDiffAt.comp x he)
   -- The product self-model and the product of self-models give the same differential.
   -- `erw` identifies the chart-centre tangent spaces with their model spaces.
-  have hpair : mfderiv I 𝓘(ℝ, F × D.ker) q x = D.prod P := by
+  have hpair : mfderiv I 𝓘(𝕜, F × D.ker) q x = D.prod P := by
     rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
     dsimp only [q]
     erw [mfderiv_prodMk ((hc.comp x hf).mdifferentiableAt hn0)
@@ -140,7 +142,7 @@ theorem _root_.ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv {U :
     rfl
   -- Undoing `L` makes the derivative the identity. The normed-space tangent identifications
   -- in `mfderiv_eq_fderiv` are identities on vectors, as used in the final extensionality step.
-  have hderiv : mfderiv I 𝓘(ℝ, E) g x = ContinuousLinearMap.id ℝ E := by
+  have hderiv : mfderiv I 𝓘(𝕜, E) g x = ContinuousLinearMap.id 𝕜 E := by
     dsimp only [g]
     erw [mfderiv_comp x L.symm.mdifferentiableAt (hq.mdifferentiableAt hn0)]
     erw [hpair, mfderiv_eq_fderiv, L.symm.fderiv, ← D.coe_implicitCoordEquiv hD hker]
@@ -150,23 +152,23 @@ theorem _root_.ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv {U :
   have hW : IsOpen W := (hfU.continuousOn.isOpen_inter_preimage hU
     (chartAt G (f x)).open_source).inter (chartAt H x).open_source
   have hxW : x ∈ W := ⟨⟨hxU, mem_chart_source _ _⟩, mem_chart_source _ _⟩
-  have hgW : ContMDiffOn I 𝓘(ℝ, E) n g W :=
+  have hgW : ContMDiffOn I 𝓘(𝕜, E) n g W :=
     L.symm.contDiff.contMDiff.comp_contMDiffOn <|
       ((contMDiffOn_extChartAt (I := J)).comp (hfU.mono (fun y (h : y ∈ W) ↦ h.1.1))
         (fun y (h : y ∈ W) ↦ h.1.2)).prodMk_space
       (P.contMDiff.comp_contMDiffOn (contMDiffOn_extChartAt.mono (fun y (h : y ∈ W) ↦ h.2)))
   -- The inverse function theorem supplies a smooth chart for `g`.
   -- The identity linear equivalence acts between the model copies of the tangent spaces.
-  have hlocal : IsLocalDiffeomorphAt I 𝓘(ℝ, E) n g x :=
+  have hlocal : IsLocalDiffeomorphAt I 𝓘(𝕜, E) n g x :=
     isLocalDiffeomorphAt_of_mfderiv_eq hgW hW hxW BoundarylessManifold.isInteriorPoint hn
-      (e := ContinuousLinearEquiv.refl ℝ E) (by rw [hderiv]; rfl)
+      (e := ContinuousLinearEquiv.refl 𝕜 E) (by rw [hderiv]; rfl)
   let Φ := hlocal.localInverse.symm
   have hxΦ : x ∈ Φ.source := hlocal.localInverse_mem_target
   obtain ⟨V, hVc, hV, hxV⟩ := mem_nhds_iff.1 <|
     hf.continuousAt.preimage_mem_nhds (chart_source_mem_nhds G (f x))
   let φ₀ := Φ.toOpenPartialHomeomorph.restrOpen V hV
   let φ := φ₀.transHomeomorph I.toHomeomorph.symm
-  have hIsymm : ContMDiff 𝓘(ℝ, E) I n I.symm := by
+  have hIsymm : ContMDiff 𝓘(𝕜, E) I n I.symm := by
     rw [← contMDiffOn_univ, ← I.range_eq_univ]
     exact I.contMDiffOn_symm
   have hφ : φ ∈ IsManifold.maximalAtlas I n M := by
@@ -175,11 +177,11 @@ theorem _root_.ContMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv {U :
     · exact (Φ.symm.contMDiffOn.mono inter_subset_left).comp I.contMDiff.contMDiffOn
         (fun y hy ↦ hy)
   -- A fixed standard complement lets the pointwise constructions assemble globally.
-  have hdim : Module.finrank ℝ D.ker = Module.finrank ℝ E - Module.finrank ℝ F := by
+  have hdim : Module.finrank 𝕜 D.ker = Module.finrank 𝕜 E - Module.finrank 𝕜 F := by
     have hd := D.toLinearMap.finrank_range_add_finrank_ker
     rw [hD, finrank_top] at hd
     omega
-  let K : D.ker ≃L[ℝ] (Fin (Module.finrank ℝ E - Module.finrank ℝ F) → ℝ) :=
+  let K : D.ker ≃L[𝕜] (Fin (Module.finrank 𝕜 E - Module.finrank 𝕜 F) → 𝕜) :=
     (LinearEquiv.ofFinrankEq _ _ (by simpa using hdim)).toContinuousLinearEquiv
   apply (IsSubmersionAtOfComplement.congr_F K).mp
   refine IsSubmersionAtOfComplement.mk_of_charts L φ (chartAt G (f x))
@@ -209,13 +211,13 @@ theorem isSubmersionAt_iff_split_mfderiv {U : Set M} (hf : ContMDiffOn I J n f U
 complement. This also holds for an empty source. -/
 theorem _root_.ContMDiff.isSubmersionOfComplement_of_surjective_mfderiv
     (hf : ContMDiff I J n f) (hn : 1 ≤ n) (hs : ∀ x, Surjective (mfderiv I J f x)) :
-    IsSubmersionOfComplement (Fin (Module.finrank ℝ E - Module.finrank ℝ F) → ℝ)
+    IsSubmersionOfComplement (Fin (Module.finrank 𝕜 E - Module.finrank 𝕜 F) → 𝕜)
       I J n f := by
   rw [Manifold.isSubmersionOfComplement_iff]
   exact fun x ↦ hf.contMDiffOn.isSubmersionAtOfComplement_of_surjective_mfderiv
     isOpen_univ (mem_univ x) hn (hs x)
 
-/-- A smooth map between finite-dimensional real manifolds with boundaryless source is a
+/-- A smooth map between finite-dimensional real or complex manifolds with boundaryless source is a
 submersion exactly when every differential has a continuous linear right inverse. -/
 theorem submersion_iff_split_mfderiv (hf : ContMDiff I J n f) (hn : 1 ≤ n) :
     IsSubmersion I J n f ↔ ∀ x, IsDiffSubmersionAt I J f x := by

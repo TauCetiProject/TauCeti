@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.GeneralLinear.Carrier
 public import TauCeti.Algebra.Lie.GeneralLinear.HighestWeight
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
-public import TauCeti.RepresentationTheory.ClassicalGroups.Differential
+public import TauCeti.RepresentationTheory.ClassicalGroups.Differential.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.DominantWeight
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Basic
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Differential

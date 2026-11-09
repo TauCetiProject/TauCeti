@@ -12,7 +12,7 @@ import TauCeti.Analysis.Calculus.RealCharts
 import TauCeti.Analysis.Real.Sqrt
 import Mathlib.Analysis.SpecialFunctions.NonIntegrable
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
@@ -41,6 +41,8 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 
 * `TauCeti.intervalIntegrable_rpow_mul_one_sub_rpow` — interval integrability of the beta
   integrand between any two points of `[0, 1]`;
+* `TauCeti.intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow` — interval integrability of a product
+  of two power singularities `|x - p| ^ α * |x - q| ^ β` with exponents greater than `-1`;
 * `TauCeti.integrableOn_rpow_mul_one_sub_rpow_iff` — the sharp integrability criterion at both
   endpoints of the unit interval;
 * `TauCeti.integral_rpow_mul_one_sub_rpow` — Euler's beta integral,
@@ -86,8 +88,12 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 * `ProbabilityTheory.beta_comm` — symmetry of `Β`;
 * `ProbabilityTheory.beta_one_half_left_eq_two_rpow_mul_beta_self` — Legendre's duplication
   formula as a relation between `Β(1/2, a)` and `Β(a, a)`;
-* `ProbabilityTheory.beta_one_right` — the value `Β(a, 1) = 1 / a`;
+* `ProbabilityTheory.beta_one_right`, `ProbabilityTheory.beta_one_left` — the values
+  `Β(a, 1) = Β(1, a) = 1 / a`;
 * `ProbabilityTheory.beta_add_one_left` — the unit step `Β(a + 1, b) = a / (a + b) * Β(a, b)`;
+* `ProbabilityTheory.beta_add_one_sub_one_div` and `ProbabilityTheory.beta_add_two_sub_two_div` —
+  the ratios `Β(a + 1, b - 1) / Β(a, b) = a / (b - 1)` and
+  `Β(a + 2, b - 2) / Β(a, b) = a (a + 1) / ((b - 1) (b - 2))`;
 * `ProbabilityTheory.beta_three_halves_three_halves` — the value `Β(3/2, 3/2) = π / 8`.
 * `ProbabilityTheory.tendsto_natCast_mul_beta_atTop` — `n Β(n, s) → 0` along the natural numbers
   for `s > 1`.
@@ -155,6 +161,48 @@ theorem intervalIntegrable_rpow_mul_one_sub_rpow (ha : 0 < a) (hb : 0 < b) {u v 
   refine key.mono_set (uIcc_subset_uIcc ?_ ?_) <;>
     rw [uIcc_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
   exacts [hu, hv]
+
+/-- The product of two power singularities `|x - p| ^ α * |x - q| ^ β` is interval integrable
+between `p < q` when both exponents are greater than `-1`. This reduces to Euler's beta integral. -/
+private theorem intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow_of_lt {p q α β : ℝ} (hpq : p < q)
+    (hα : -1 < α) (hβ : -1 < β) :
+    IntervalIntegrable (fun x : ℝ ↦ |x - p| ^ α * |x - q| ^ β) volume p q := by
+  let L := q - p
+  have hL : 0 < L := sub_pos.mpr hpq
+  have hbeta : IntervalIntegrable (fun t : ℝ ↦ t ^ α * (1 - t) ^ β) volume 0 1 := by
+    simpa only [add_sub_cancel_right] using
+      intervalIntegrable_rpow_mul_one_sub_rpow (a := α + 1) (b := β + 1)
+        (by linarith) (by linarith) (u := 0) (v := 1) (by simp) (by simp)
+  have hscaled : IntervalIntegrable
+      (fun x : ℝ ↦ (x / L) ^ α * (1 - x / L) ^ β) volume 0 L := by
+    have h := hbeta.comp_mul_right (c := L⁻¹)
+    simpa [div_eq_mul_inv, hL.ne'] using h
+  have hshifted : IntervalIntegrable
+      (fun x : ℝ ↦ ((x - p) / L) ^ α * (1 - (x - p) / L) ^ β) volume p q := by
+    have h := hscaled.comp_sub_right p
+    simpa [L] using h
+  refine (hshifted.const_mul (L ^ (α + β))).congr fun x hx ↦ ?_
+  rw [uIoc_of_le hpq.le] at hx
+  have hxp : 0 < x - p := sub_pos.mpr hx.1
+  have hqx : 0 ≤ q - x := sub_nonneg.mpr hx.2
+  have hone : 1 - (x - p) / L = (q - x) / L := by
+    field_simp [hL.ne']
+    ring
+  rw [abs_of_pos hxp, abs_of_nonpos (sub_nonpos.mpr hx.2), neg_sub, hone,
+    Real.div_rpow hxp.le hL.le, Real.div_rpow hqx hL.le, div_eq_mul_inv]
+  rw [Real.rpow_add hL]
+  field_simp [(Real.rpow_pos_of_pos hL _).ne']
+
+/-- The product of two power singularities `|x - p| ^ α * |x - q| ^ β` is interval integrable
+between any two endpoints `p` and `q` when both exponents are greater than `-1`. -/
+theorem intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow {p q α β : ℝ}
+    (hα : -1 < α) (hβ : -1 < β) :
+    IntervalIntegrable (fun x : ℝ ↦ |x - p| ^ α * |x - q| ^ β) volume p q := by
+  rcases lt_trichotomy p q with hpq | rfl | hqp
+  · exact intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow_of_lt hpq hα hβ
+  · exact IntervalIntegrable.refl
+  · have h := (intervalIntegrable_abs_sub_rpow_mul_abs_sub_rpow_of_lt hqp hβ hα).symm
+    simpa only [mul_comm] using h
 
 /-- If the beta integrand is interval integrable on the unit interval, then its exponent at the
 left endpoint is greater than `-1`. -/
@@ -410,7 +458,7 @@ theorem integrableOn_rpow_mul_one_add_rpow (ha : 0 < a) (hb : 0 < b) :
   rw [← hchart,
     integrableOn_image_iff_integrableOn_abs_deriv_smul measurableSet_Ioo
       (fun u hu => (hasDerivAt_div_one_sub (ne_of_lt hu.2)).hasDerivWithinAt)
-      (injOn_div_one_sub_Ioo (u0 := 0))]
+      (strictMonoOn_div_one_sub.injOn.mono Ioo_subset_Iio_self)]
   exact hIoo.congr_fun (fun u hu => (abs_deriv_smul_one_add_rpow a b hu).symm) measurableSet_Ioo
 
 private lemma eventually_const_mul_rpow_le_rpow_mul_one_add_rpow (hab : 0 < a + b) :
@@ -513,7 +561,7 @@ theorem integral_rpow_mul_one_add_rpow (ha : 0 < a) (hb : 0 < b) :
   rw [← hchart,
     integral_image_eq_integral_abs_deriv_smul measurableSet_Ioo
       (fun u hu => (hasDerivAt_div_one_sub (ne_of_lt hu.2)).hasDerivWithinAt)
-      (injOn_div_one_sub_Ioo (u0 := 0)),
+      (strictMonoOn_div_one_sub.injOn.mono Ioo_subset_Iio_self),
     setIntegral_congr_fun measurableSet_Ioo (fun u hu => abs_deriv_smul_one_add_rpow a b hu),
     ← integral_rpow_mul_one_sub_rpow ha hb,
     intervalIntegral.integral_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
@@ -531,10 +579,8 @@ private lemma image_sqrt_Ioi : Real.sqrt '' Ioi 0 = Ioi 0 := by
     exact ⟨x ^ 2, mem_Ioi.mpr (pow_pos (mem_Ioi.mp hx) 2), Real.sqrt_sq (mem_Ioi.mp hx).le⟩
 
 /-- The square root is injective on the positive half-line. -/
-private lemma injOn_sqrt_Ioi : InjOn Real.sqrt (Ioi 0) := by
-  intro u hu v hv huv
-  have := congrArg (· ^ 2) huv
-  simpa [Real.sq_sqrt (mem_Ioi.mp hu).le, Real.sq_sqrt (mem_Ioi.mp hv).le] using this
+private lemma injOn_sqrt_Ioi : InjOn Real.sqrt (Ioi 0) := fun _ hu _ hv h =>
+  (Real.sqrt_inj (mem_Ioi.1 hu).le (mem_Ioi.1 hv).le).1 h
 
 /-- Under the square root the kernel `(1 + x ^ 2) ^ (-s)` becomes the integrand of Euler's second
 beta integral with first parameter `1 / 2`. -/
@@ -993,6 +1039,11 @@ theorem beta_one_half_left_eq_two_rpow_mul_beta_self (ha : 0 < a) :
 theorem beta_one_right (ha : 0 < a) : beta a 1 = 1 / a := by
   rw [ProbabilityTheory.beta, Real.Gamma_one, mul_one, Real.Gamma_add_one ha.ne']
   field_simp
+
+/-- Euler's beta function at first parameter `1`. -/
+@[simp]
+theorem beta_one_left (ha : 0 < a) : beta 1 a = 1 / a := by
+  rw [beta_comm, beta_one_right ha]
 
 /-- The unit step of Euler's beta function in its first parameter. -/
 theorem beta_add_one_left (ha : a ≠ 0) (hab : a + b ≠ 0) :

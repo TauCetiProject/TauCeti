@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.ChainComplex
 public import TauCeti.Topology.Convenient.CompactlyGenerated
-public import Mathlib.Topology.Convenient.Category
 import Mathlib.Algebra.Category.ModuleCat.EpiMono
 
 /-!
@@ -50,12 +49,10 @@ variable (R : Type u) [Ring R] (X : Type*) [TopologicalSpace X]
 
 /-- The generated-topology counit is bijective on normalized cubical chains. -/
 theorem bijective_map_generatedByCounit (n : ℕ) [IsGeneratedBy G (Fin n → I)] :
-    Function.Bijective (map R
-      (⟨WithGeneratedByTopology.equiv, WithGeneratedByTopology.continuous_equiv⟩ :
-        C(WithGeneratedByTopology G X, X)) n) := by
-  let ε : C(WithGeneratedByTopology G X, X) :=
-    ⟨WithGeneratedByTopology.equiv, WithGeneratedByTopology.continuous_equiv⟩
-  refine ⟨map_injective R ε WithGeneratedByTopology.equiv.injective n, ?_⟩
+    Function.Bijective (map R (WithGeneratedByTopology.counit G X) n) := by
+  let ε := WithGeneratedByTopology.counit G X
+  refine ⟨map_injective R ε (fun a b h ↦
+    WithGeneratedByTopology.equiv.injective (by simpa [ε] using h)) n, ?_⟩
   rw [← LinearMap.range_eq_top, Submodule.eq_top_iff']
   intro c
   induction c using NormalizedCubicalChain.induction_on with
@@ -77,7 +74,9 @@ instance isIso_normalizedCubicalChainComplex_map_generatedByCounit (X : TopCat.{
   have (n : ℕ) : IsIso (((normalizedCubicalChainComplex R).map
       ((GeneratedByTopCat.adjCounit (X := G)).app X)).f n) := by
     apply (ConcreteCategory.isIso_iff_bijective _).2
-    exact NormalizedCubicalChain.bijective_map_generatedByCounit G R X n
+    simpa only [normalizedCubicalChainComplex_map_f, GeneratedByTopCat.adjCounit_app_hom,
+      ModuleCat.hom_ofHom] using!
+      NormalizedCubicalChain.bijective_map_generatedByCounit G R X n
   exact HomologicalComplex.Hom.isIso_of_components _
 
 /-- Normalized cubical chains are naturally unchanged by a generated refinement whose
@@ -116,10 +115,7 @@ theorem normalizedCubicalChainComplexGeneratedByIso_inv_app_f_ofCube (X : TopCat
     e, Iso.app_hom, Iso.app_inv] at hc
   rw [normalizedCubicalChainComplexGeneratedByIso_hom_app,
     normalizedCubicalChainComplexXEquiv_map_f_apply] at hc
-  have hε : ((GeneratedByTopCat.adjCounit (X := G)).app X).hom =
-      (⟨WithGeneratedByTopology.equiv, WithGeneratedByTopology.continuous_equiv⟩ :
-        C(WithGeneratedByTopology G X, X)) := (rfl)
-  rw [hε] at hc
+  rw [GeneratedByTopCat.adjCounit_app_hom] at hc
   -- Align the native functor's object with the explicit generated-topology carrier.
   simpa only [normalizedCubicalChainComplexXEquiv_apply,
     normalizedCubicalChainComplexXEquiv_symm_apply, NormalizedCubicalChain.map_ofCube,

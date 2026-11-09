@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.RingDivision
+public import Mathlib.Algebra.Polynomial.Taylor
 import Mathlib.Algebra.Polynomial.BigOperators
 import TauCeti.Algebra.Polynomial.Taylor
 
@@ -50,6 +51,9 @@ is nonzero.
 Finally, reflecting the difference `p(X) - p(X - a)` at a bound on the degree of `p`, its first
 coefficient past the degree drop is `natDegree p * a * leadingCoeff p`: the top terms cancel and
 the subleading term is read off from the Taylor expansion of `p` at `-a`.
+
+Over a semifield, translating by `τ` and reflecting at a degree bound `d` sends the root `a⁻¹ + τ`
+of `p` to the root `a` of `(taylor τ p).reflect d` (`Polynomial.isRoot_reflect_taylor_iff`).
 -/
 
 public section
@@ -221,6 +225,22 @@ theorem rootMultiplicity_reflect [CommRing R] (p : R[X]) {N : ℕ}
   rw [hfactor, rootMultiplicity_mul_X_sub_C_pow hres,
     rootMultiplicity_eq_zero (by simpa only [IsRoot.def] using heval), zero_add]
 
+/-- Over a field, reflection exchanges the multiplicity at a nonzero point with the multiplicity of
+the original polynomial at its inverse. -/
+@[simp]
+theorem rootMultiplicity_reflect_eq_inv [Field R] (p : R[X]) {N : ℕ} (hN : p.natDegree ≤ N)
+    {t : R} (ht : t ≠ 0) :
+    (p.reflect N).rootMultiplicity t = p.rootMultiplicity t⁻¹ := by
+  simpa only [Units.val_inv_eq_inv_val, Units.val_mk0, inv_inv] using
+    p.rootMultiplicity_reflect hN (Units.mk0 t⁻¹ (inv_ne_zero ht))
+
+/-- In a division semiring, a nonzero point is a root of a polynomial exactly when its inverse is
+a root of the reflection. -/
+theorem isRoot_reflect_inv_iff [DivisionSemiring R] (p : R[X]) {N : ℕ} (hN : p.natDegree ≤ N)
+    {t : R} (ht : t ≠ 0) :
+    (p.reflect N).IsRoot t⁻¹ ↔ p.IsRoot t := by
+  simpa only [IsRoot.def, eval₂_id] using p.eval₂_inv_reflect_eq_zero_iff (RingHom.id R) ht hN
+
 /-- The excess of a reflection bound over the degree of a nonzero polynomial is exactly
 the multiplicity of zero in its reflection. -/
 @[simp]
@@ -343,5 +363,14 @@ theorem coeff_reflect_sub_comp_X_sub_C [CommRing R] (p : R[X]) {N : ℕ} (hp : p
   rw [coeff_reflect, revAt_le (by omega), show N - (N - p.natDegree + 1) = p.natDegree - 1 by
     omega, coeff_sub, h]
   ring
+
+/-- Translating by `τ` and reflecting at a degree bound `d` sends the root `a⁻¹ + τ` of `p` to
+the root `a` of `(taylor τ p).reflect d`, for nonzero `a`, when `natDegree p ≤ d`. -/
+theorem isRoot_reflect_taylor_iff {K : Type*} [Semifield K] {p : K[X]} {d : ℕ}
+    (hp : p.natDegree ≤ d) (τ : K) {a : K} (ha : a ≠ 0) :
+    ((taylor τ p).reflect d).IsRoot a ↔ p.IsRoot (a⁻¹ + τ) := by
+  let : Invertible a⁻¹ := invertibleOfNonzero (inv_ne_zero ha)
+  have h := eval₂_reflect_eq_zero_iff (RingHom.id K) a⁻¹ d (taylor τ p) (by simpa using hp)
+  simpa [IsRoot.def, eval₂_id, taylor_apply, eval_comp] using h
 
 end Polynomial
