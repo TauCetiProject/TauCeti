@@ -16,7 +16,8 @@ import Mathlib.Tactic.Linarith
 
 For a profile `φ`, the function `τ ↦ φ ((A - τ) / D)` has derivative
 `φ' ((A - τ) / D) * (-1 / D)` (`HasDerivAt.comp_sub_div`). If `φ` vanishes on the
-negative half-line, then `φ ((A - τ) / D) = 0` for `τ > A` (`TauCeti.comp_sub_div_eq_zero_of_lt`).
+negative half-line, then `φ ((A - τ) / D) = 0` for `τ > A` when `D > 0`
+(`TauCeti.comp_sub_div_eq_zero_of_lt`).
 -/
 
 public section
