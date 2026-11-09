@@ -25,8 +25,9 @@ exp (t • x) = ∑ i, tⁱ • x⁽ⁱ⁾
 holds for any monoid acting additively by central scalars. When `t` is an integer it has *integer*
 coefficients. Consequently `exp (t • x)` lies in any additive subgroup containing the divided powers
 of `x`, and it preserves any additive subgroup of a
-module that the divided powers of `x` preserve. The map `t ↦ exp (t • x)` is a homomorphism from the
-additive group of a scalar ring to `Aˣ`; its integer values lie in such an additive subgroup.
+module that the divided powers of `x` preserve. The map `t ↦ exp (t • x)` is a homomorphism from
+the additive monoid of a commutative scalar semiring to `Aˣ`; for a ring of scalars this is the
+one-parameter group, and its integer values lie in such an additive subgroup.
 
 This is the shape of a **root subgroup map** `x_α : 𝔾ₐ → G` of a Chevalley--Demazure group scheme:
 the divided powers of Chevalley root vectors are among the generators of the Kostant `ℤ`-form, so
@@ -50,7 +51,8 @@ the exponentials above preserve an integral lattice. The application to the Kost
 * `TauCeti.exp_zsmul_smul_mem`: `exp (t • x)` preserves an additive subgroup that the divided
   powers of `x` preserve.
 * `TauCeti.nilpotentExpUnit`: the exponential of a nilpotent element as a unit.
-* `TauCeti.expSMulHom`: the scalar-parameter group of units `t ↦ exp (t • x)`.
+* `TauCeti.expSMulHom`: the homomorphism from the additive monoid of a commutative scalar semiring
+  to the units, `t ↦ exp (t • x)`; the one-parameter group when the scalars form a ring.
 * `TauCeti.expZSMulAddAut`: the induced action by additive automorphisms on an additive subgroup
   preserved by the divided powers of `x`.
 
@@ -218,7 +220,7 @@ theorem exp_zsmul_smul_mem {x : A} (hx : IsNilpotent x) {S : Type*} [SetLike S V
 
 end Modules
 
-/-! ## The one-parameter group of units -/
+/-! ## The homomorphism from scalars to units -/
 
 /-- The unit `exp x` attached to a nilpotent element `x`, with inverse `exp (-x)`.
 
@@ -243,9 +245,11 @@ theorem coe_inv_nilpotentExpUnit {x : A} (hx : IsNilpotent x) :
     (((nilpotentExpUnit hx)⁻¹ : Aˣ) : A) = exp (-x) :=
   (rfl)
 
-/-- The one-parameter group of units `t ↦ exp (t • x)` attached to a nilpotent element `x`.
+/-- The homomorphism `t ↦ exp (t • x)` from the additive monoid of a commutative scalar semiring
+to the units, attached to a nilpotent element `x`. For scalars forming a ring this is the
+one-parameter group of units.
 
-The scalar ring can in particular be `ℤ`, giving the integral points of a root subgroup map. -/
+The scalars can in particular be `ℤ`, giving the integral points of a root subgroup map. -/
 noncomputable def expSMulHom (R : Type*) [CommSemiring R] [Algebra R A]
     {x : A} (hx : IsNilpotent x) : Multiplicative R →* Aˣ where
   toFun t := nilpotentExpUnit (hx.smul (Multiplicative.toAdd t))
@@ -259,7 +263,7 @@ noncomputable def expSMulHom (R : Type*) [CommSemiring R] [Algebra R A]
         (((Commute.refl x).smul_left (Multiplicative.toAdd t)).smul_right
           (Multiplicative.toAdd u)) (hx.smul _) (hx.smul _)
 
-/-- Applying the one-parameter group gives the unit exponential of the scalar multiple. -/
+/-- Applying the scalar-to-unit homomorphism gives the unit exponential of the scalar multiple. -/
 -- See note [hom simp lemma priority].
 @[simp low]
 theorem expSMulHom_apply (R : Type*) [CommSemiring R] [Algebra R A]
@@ -267,7 +271,7 @@ theorem expSMulHom_apply (R : Type*) [CommSemiring R] [Algebra R A]
     expSMulHom R hx t = nilpotentExpUnit (hx.smul (Multiplicative.toAdd t)) :=
   (rfl)
 
-/-- The one-parameter group at parameter one is the original nilpotent exponential unit. -/
+/-- The scalar-to-unit homomorphism at parameter one is the original nilpotent exponential unit. -/
 @[simp]
 theorem expSMulHom_ofAdd_one (R : Type*) [CommSemiring R] [Algebra R A]
     {x : A} (hx : IsNilpotent x) :
@@ -275,7 +279,7 @@ theorem expSMulHom_ofAdd_one (R : Type*) [CommSemiring R] [Algebra R A]
   apply Units.ext
   simp [expSMulHom_apply]
 
-/-- The underlying value of the one-parameter group is the finite exponential. -/
+/-- The underlying value of the scalar-to-unit homomorphism is the finite exponential. -/
 theorem coe_expSMulHom (R : Type*) [CommSemiring R] [Algebra R A]
     {x : A} (hx : IsNilpotent x) (t : Multiplicative R) :
     (expSMulHom R hx t : A) = exp (Multiplicative.toAdd t • x) :=
