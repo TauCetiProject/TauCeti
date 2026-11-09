@@ -21,11 +21,11 @@ sentence along an `IndexCoding ι κ` preserves its meaning.
 
 Karp's theorem says that structures in a relational language are potentially isomorphic exactly
 when they satisfy the same infinitary sentences. The forward direction holds at every carrier, and
-the converse at any carrier `κ` into which both structures are coded. Full infinitary equivalence
-`InfEquivW` quantifies, outside the syntax, over all carriers in the universe of `M ⊕ N`, and the
-carrier `M ⊕ N` packages the converse. No countability is assumed, and the carrier and the
-universes of the two structures are independent. For countable structures, which are coded into
-`ℕ`, agreement on the `L_{ω₁ω}` sentences is therefore isomorphism.
+the converse at any carrier `κ` into which the second structure is coded. Full infinitary
+equivalence `InfEquivW` quantifies, outside the syntax, over all carriers in the universe of
+`M ⊕ N`, and the carrier `M ⊕ N` packages the converse. No countability is assumed, and the
+carrier and the universes of the two structures are independent. For countable structures, which
+are coded into `ℕ`, agreement on the `L_{ω₁ω}` sentences is therefore isomorphism.
 
 The theorem is Carol Karp's, *Finite-quantifier equivalence* (1965). Cameron Freer's
 `cameronfreer/infinitary-logic`, `InfinitaryLogic/Karp/CarrierTheorem.lean` at checkpoint
@@ -116,6 +116,19 @@ theorem InfEquivAt.elementarilyEquivalent {κ : Type uκ} (h : InfEquivAt (L := 
   refine elementarilyEquivalent_iff.mpr fun φ => ?_
   simpa only [Sentence.realize_toInf] using h (BoundedFormula.toInf φ)
 
+/-- Tuples, possibly in different structures, that disagree on some infinitary formula are
+separated by a formula that holds at the first and fails at the second. -/
+private theorem exists_realize_not_realize_of_not_forall_realize_iff {κ : Type uκ} {n : ℕ}
+    {u : Fin n → M} {v : Fin n → N}
+    (h : ¬ ∀ φ : L.BoundedFormulaInf κ Empty n, φ.Realize Empty.elim u ↔ φ.Realize Empty.elim v) :
+    ∃ χ : L.BoundedFormulaInf κ Empty n, χ.Realize Empty.elim u ∧ ¬ χ.Realize Empty.elim v := by
+  classical
+  obtain ⟨φ, hφ⟩ := not_forall.1 h
+  by_cases hu : φ.Realize Empty.elim u
+  · exact ⟨φ, hu, fun hv => hφ (iff_of_true hu hv)⟩
+  · refine ⟨φ.not, by simpa using hu, ?_⟩
+    simpa using fun hv => hφ (iff_of_false hu hv)
+
 /-- **Matching one more element.** If two tuples agree on every infinitary formula with carrier
 `κ` and the second structure is coded into `κ`, then every one-element extension of the first
 tuple is matched by a one-element extension of the second that again agrees on every such
@@ -127,21 +140,10 @@ theorem exists_forall_realize_snoc_iff_of_forall_realize_iff {κ : Type uκ} (cN
       φ.Realize Empty.elim (Fin.snoc a x) ↔ φ.Realize Empty.elim (Fin.snoc b y) := by
   classical
   by_contra hne
-  -- Each candidate match `y` is separated from `x` by a formula, oriented to hold at `x`.
-  choose φ hφ using fun y => not_forall.1 fun h => hne ⟨y, h⟩
-  let ψ (y : N) : L.BoundedFormulaInf κ Empty (n + 1) :=
-    if (φ y).Realize Empty.elim (Fin.snoc a x) then φ y else (φ y).not
-  have hψa (y : N) : (ψ y).Realize Empty.elim (Fin.snoc a x) := by
-    by_cases h : (φ y).Realize Empty.elim (Fin.snoc a x)
-    · simp only [ψ, h, ↓reduceIte]
-    · simpa only [ψ, h, ↓reduceIte, BoundedFormulaInf.realize_not] using h
-  have hψb (y : N) : ¬ (ψ y).Realize Empty.elim (Fin.snoc b y) := by
-    by_cases h : (φ y).Realize Empty.elim (Fin.snoc a x)
-    · simp only [ψ, h, ↓reduceIte]
-      exact fun hb => hφ y (iff_of_true h hb)
-    · simp only [ψ, h, ↓reduceIte, BoundedFormulaInf.realize_not, not_not]
-      by_contra hb
-      exact hφ y (iff_of_false h hb)
+  -- Each candidate match `y` is separated from `x` by a formula holding at `x`.
+  choose ψ hψa hψb using fun y : N =>
+    exists_realize_not_realize_of_not_forall_realize_iff
+      (u := Fin.snoc a x) (v := Fin.snoc b y) fun h => hne ⟨y, h⟩
   -- Some `x` satisfies every oriented formula, but no candidate match does.
   have := hab (BoundedFormulaInf.iInfAlong cN ψ).ex
   simp only [BoundedFormulaInf.realize_ex, BoundedFormulaInf.realize_iInfAlong] at this
@@ -151,8 +153,7 @@ theorem exists_forall_realize_snoc_iff_of_forall_realize_iff {κ : Type uκ} (cN
 /-- **Matching one more element, backwards.** If two tuples agree on every infinitary formula with
 carrier `κ` and the second structure is coded into `κ`, then every one-element extension of the
 second tuple is matched by a one-element extension of the first that again agrees on every such
-formula. Only the second structure needs a coding: the forth clause and a separating conjunction
-over the second structure give the matching element. -/
+formula. Only the second structure needs a coding. -/
 theorem exists_forall_realize_snoc_iff_of_forall_realize_iff_right {κ : Type uκ}
     (cN : IndexCoding N κ) {n : ℕ} {a : Fin n → M} {b : Fin n → N}
     (hab : ∀ φ : L.BoundedFormulaInf κ Empty n, φ.Realize Empty.elim a ↔ φ.Realize Empty.elim b)
@@ -160,6 +161,8 @@ theorem exists_forall_realize_snoc_iff_of_forall_realize_iff_right {κ : Type u�
       φ.Realize Empty.elim (Fin.snoc a x) ↔ φ.Realize Empty.elim (Fin.snoc b y) := by
   classical
   by_contra hne
+  -- The forth clause matches every element of `M` by an element of `N`; a conjunction over the
+  -- second structure then produces the element of `M` matching `y`.
   -- Every element of `M` is matched by an element of `N`.
   choose f hf using exists_forall_realize_snoc_iff_of_forall_realize_iff cN hab
   -- Each `y'` of a different type from `y` is separated from it by a formula holding at `y`.
@@ -170,11 +173,8 @@ theorem exists_forall_realize_snoc_iff_of_forall_realize_iff_right {κ : Type u�
     by_cases h : ∀ φ : L.BoundedFormulaInf κ Empty (n + 1),
         φ.Realize Empty.elim (Fin.snoc b y) ↔ φ.Realize Empty.elim (Fin.snoc b y')
     · exact ⟨⊤, by simp, .inl h⟩
-    obtain ⟨φ, hφ⟩ := not_forall.1 h
-    by_cases hy : φ.Realize Empty.elim (Fin.snoc b y)
-    · exact ⟨φ, hy, .inr fun hy' => hφ (iff_of_true hy hy')⟩
-    · refine ⟨φ.not, by simpa using hy, .inr fun hy' => hφ (iff_of_false hy ?_)⟩
-      simpa using hy'
+    · obtain ⟨χ, h₁, h₂⟩ := exists_realize_not_realize_of_not_forall_realize_iff h
+      exact ⟨χ, h₁, .inr h₂⟩
   choose χ hχy hχy' using hsep
   have := hab (BoundedFormulaInf.iInfAlong cN χ).ex
   simp only [BoundedFormulaInf.realize_ex, BoundedFormulaInf.realize_iInfAlong] at this
@@ -365,8 +365,7 @@ isomorphic exactly when they satisfy the same `L_{ω₁ω}` sentences, the infin
 conjunctions and disjunctions are indexed by `ℕ`. -/
 theorem countable_infEquivAt_nat_iff_iso [Countable M] [Countable N] :
     InfEquivAt (L := L) ℕ M N ↔ Nonempty (M ≃[L] N) := by
-  -- Both structures are coded into `ℕ`, so Karp's theorem applies at that carrier.
-  let _ := Encodable.ofCountable M
+  -- The second structure is coded into `ℕ`, so Karp's theorem applies at that carrier.
   let _ := Encodable.ofCountable N
   exact (karp_theorem_at (IndexCoding.ofEncodable N)).symm.trans
     countable_potentialIso_iff_iso

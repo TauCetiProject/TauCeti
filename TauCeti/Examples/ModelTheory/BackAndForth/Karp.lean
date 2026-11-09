@@ -17,11 +17,11 @@ carrier in a higher universe than both structures, and agreement at `ℕ` transp
 encodable carrier. Contrapositively, `(ℕ, ≤)` and `(ℤ, ≤)` are not potentially isomorphic: the
 sentence asserting a least element holds in the first and fails in the second.
 
-The converse holds at any common carrier, not only `M ⊕ N`: for countable structures the carrier
-`ℕ` gives Karp's theorem for `L_{ω₁ω}`, and for empty structures the empty carrier suffices. On
-countable structures, agreement at `ℕ` is isomorphism, so pure sets of different finite sizes are
-separated. Two empty structures that differ on a nullary relation are separated by that relation,
-at every carrier in every universe.
+The converse holds at any carrier into which the second structure is coded, not only `M ⊕ N`:
+for countable structures the carrier `ℕ` gives Karp's theorem for `L_{ω₁ω}`, and for empty
+structures the empty carrier suffices. On countable structures, agreement at `ℕ` is isomorphism,
+so pure sets of different finite sizes are separated. Two empty structures that differ on a
+nullary relation are separated by that relation, at every carrier in every universe.
 -/
 
 universe u
@@ -62,8 +62,8 @@ example {L : Language} [L.IsRelational] {M N : Type*} [L.Structure M] [L.Structu
     [Encodable M] [Encodable N] : PotentialIso (L := L) M N ↔ InfEquivAt (L := L) ℕ M N :=
   karp_theorem_at (IndexCoding.ofEncodable N)
 
--- Empty structures are coded into the empty carrier, at which every conjunction is empty, and
--- agreement there already gives a potential isomorphism.
+-- The second empty structure is coded into the empty carrier, at which every conjunction is
+-- empty, and agreement there already gives a potential isomorphism.
 example {L : Language} [L.IsRelational] {M N : Type*} [L.Structure M] [L.Structure N]
     [IsEmpty M] [IsEmpty N] (h : InfEquivAt (L := L) Empty M N) : PotentialIso (L := L) M N :=
   h.potentialIso (IndexCoding.ofEquiv (Equiv.equivEmpty N))
