@@ -114,14 +114,14 @@ theorem exists_isTateTerminal_reductionSymbol (W : WeierstrassCurve K) [W.IsElli
 variable {R}
 
 /-- **The reduction symbol is the output of Tate's algorithm on any minimal equation.** If `W'` is
-an equation over `R`, minimal over `K` and related to `W` by a change of variables over `K`, and
-Tate's algorithm, run with any uniformiser, stops on `W'` with output `s`, then `s` is the
-reduction symbol of `W`. -/
+an equation over `R` related to `W` by a change of variables over `K`, and Tate's algorithm, run
+with any uniformiser, stops on `W'` with output `s`, then `s` is the reduction symbol of `W`. (The
+algorithm only stops on equations that are minimal over `K`.) -/
 theorem reductionSymbol_eq_of_isTateTerminal {W : WeierstrassCurve K} [W.IsElliptic]
-    {W' : WeierstrassCurve R} [IsMinimal R (W'.baseChange K)] (D : VariableChange K)
+    {W' : WeierstrassCurve R} (D : VariableChange K)
     (hD : D • W = W'.baseChange K) {ϖ : R} (hϖ : Irreducible ϖ) {s : ReductionSymbol}
     (h : W'.IsTateTerminal ϖ s) : W.reductionSymbol R = s := by
-  obtain ⟨W₁, D₁, ϖ₁, hmin, hD₁, hϖ₁, h₁⟩ := W.exists_isTateTerminal_reductionSymbol R
+  obtain ⟨W₁, D₁, ϖ₁, -, hD₁, hϖ₁, h₁⟩ := W.exists_isTateTerminal_reductionSymbol R
   have : (W₁.baseChange K).IsElliptic := hD₁ ▸ inferInstance
   exact (IsTateTerminal.eq_of_isMinimal_smul hϖ₁ hϖ (D * D₁⁻¹)
     (by rw [mul_smul, ← hD₁, inv_smul_smul, hD]) h₁ h).symm
@@ -133,7 +133,7 @@ theorem reductionSymbol_eq_iff {W : WeierstrassCurve K} [W.IsElliptic] {s : Redu
       ∃ (W' : WeierstrassCurve R) (D : VariableChange K) (ϖ : R), IsMinimal R (W'.baseChange K) ∧
         D • W = W'.baseChange K ∧ Irreducible ϖ ∧ W'.IsTateTerminal ϖ s := by
   refine ⟨fun h ↦ h ▸ W.exists_isTateTerminal_reductionSymbol R, ?_⟩
-  rintro ⟨W', D, ϖ, hmin, hD, hϖ, h⟩
+  rintro ⟨W', D, ϖ, -, hD, hϖ, h⟩
   exact reductionSymbol_eq_of_isTateTerminal D hD hϖ h
 
 /-- **The reduction symbol is an invariant of the curve**: it does not change under a change of
@@ -141,7 +141,7 @@ variables. -/
 @[simp]
 theorem reductionSymbol_smul (D : VariableChange K) (W : WeierstrassCurve K) [W.IsElliptic] :
     (D • W).reductionSymbol R = W.reductionSymbol R := by
-  obtain ⟨W', D', ϖ, hmin, hD', hϖ, h⟩ := W.exists_isTateTerminal_reductionSymbol R
+  obtain ⟨W', D', ϖ, -, hD', hϖ, h⟩ := W.exists_isTateTerminal_reductionSymbol R
   exact reductionSymbol_eq_of_isTateTerminal (D' * D⁻¹) (by rw [mul_smul, inv_smul_smul, hD']) hϖ h
 
 /-- **The reduction symbol detects additive reduction**: it is none of the `Iₙ` exactly when the

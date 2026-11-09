@@ -1022,12 +1022,15 @@ private theorem exists_smul_eq_of_isMinimal_smul (D : VariableChange K)
   rw [integralModel_eq_of_baseChange_eq rfl, integralModel_eq_of_baseChange_eq rfl] at hC
   exact ⟨C, hC⟩
 
+omit [IsMinimal R (W₁.baseChange K)] [IsMinimal R (W₂.baseChange K)] in
 /-- **The output of Tate's algorithm is an invariant of the curve.** If the algorithm stops on two
-minimal equations of one elliptic curve over `K`, with any uniformisers, then it stops with the same
-symbol. -/
+equations of one elliptic curve over `K`, with any uniformisers, then it stops with the same
+symbol (the equations are minimal, as Tate's algorithm only stops on minimal equations). -/
 theorem IsTateTerminal.eq_of_isMinimal_smul (hϖ : Irreducible ϖ) (hϖ' : Irreducible ϖ')
     (D : VariableChange K) (hD : D • W₁.baseChange K = W₂.baseChange K) {s₁ s₂ : ReductionSymbol}
     (h₁ : W₁.IsTateTerminal ϖ s₁) (h₂ : W₂.IsTateTerminal ϖ' s₂) : s₂ = s₁ := by
+  have := h₁.isMinimal_baseChange (K := K) hϖ
+  have := h₂.isMinimal_baseChange (K := K) hϖ'
   obtain ⟨C, rfl⟩ := exists_smul_eq_of_isMinimal_smul D hD
   exact h₁.eq_of_smul hϖ
     ((isTateTerminal_iff_of_associated (associated_of_irreducible R hϖ hϖ')).2 h₂)
