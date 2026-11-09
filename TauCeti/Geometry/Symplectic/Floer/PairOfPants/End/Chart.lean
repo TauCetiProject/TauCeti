@@ -34,6 +34,11 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
 
 ## Main results
 
+* `TauCeti.Floer.preimage_truncation_subset_thricePuncturedSphereReal`,
+  `TauCeti.Floer.exists_lt_endSign_mul_re_endCoord_of_notMem_truncation`: in real coordinates the
+  truncation `S_R` lies in `S`, and every other point of `S` lies beyond `R` on some end.
+* `TauCeti.Floer.setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation`: the integral over
+  `S` of a function vanishing beyond `R` on every end is its integral over `S_R`.
 * `TauCeti.Floer.contDiffAt_uncurry_pairOfPantsPerturbation`: in real coordinates, the
   components of the perturbation are `Cⁿ` on `S × V` for `Cⁿ` Hamiltonians.
 * `TauCeti.Floer.endChart_mem_thricePuncturedSphereReal`, `TauCeti.Floer.re_endCoord_endChart`:
@@ -85,6 +90,40 @@ theorem mem_thricePuncturedSphereReal_iff {z : ℝ × ℝ} :
 theorem isOpen_thricePuncturedSphereReal : IsOpen thricePuncturedSphereReal :=
   (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
     (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
+
+/-- The truncation `S_R`, in real coordinates, is measurable. -/
+theorem measurableSet_preimage_truncation (R : ℝ) :
+    MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
+  ((isCompact_truncation R).isClosed.preimage
+    Complex.equivRealProdCLM.symm.continuous).measurableSet
+
+/-- The truncation `S_R`, in real coordinates, lies in `S`. -/
+theorem preimage_truncation_subset_thricePuncturedSphereReal (R : ℝ) :
+    Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ thricePuncturedSphereReal :=
+  fun _ hz ↦ mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1,
+    (mem_truncation.1 hz).2.1⟩
+
+/-- A point of `S` outside the truncation `S_R` lies beyond `R` on some end. -/
+theorem exists_lt_endSign_mul_re_endCoord_of_notMem_truncation {R : ℝ} {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) (hzR : Complex.equivRealProdCLM.symm z ∉ truncation R) :
+    ∃ q : Puncture, R < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re := by
+  by_contra! h
+  exact hzR (mem_truncation.2 ⟨(mem_thricePuncturedSphereReal_iff.1 hz).1,
+    (mem_thricePuncturedSphereReal_iff.1 hz).2, h⟩)
+
+/-- The integral over `S` of a function vanishing at every point of `S` beyond `R` on some end is
+its integral over the truncation `S_R`. -/
+theorem setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ × ℝ → E} {R : ℝ}
+    (hf : ∀ z ∈ thricePuncturedSphereReal, ∀ q : Puncture,
+      R < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re → f z = 0) :
+    ∫ z in thricePuncturedSphereReal, f z =
+      ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, f z := by
+  refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
+    isOpen_thricePuncturedSphereReal.measurableSet
+    (preimage_truncation_subset_thricePuncturedSphereReal R) fun z hz ↦ ?_
+  obtain ⟨q, hq⟩ := exists_lt_endSign_mul_re_endCoord_of_notMem_truncation hz.1 hz.2
+  exact hf z hz.1 q hq
 
 /-- In the real coordinates of `S`, the components of the pair-of-pants perturbation are `Cⁿ`
 jointly in the domain and target points, for `Cⁿ` Hamiltonians. -/
