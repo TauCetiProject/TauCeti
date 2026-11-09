@@ -30,7 +30,7 @@ by its values on the generators (`Algebra.Generators.algHom_ext`, in
 
 public section
 
-open MvPolynomial
+open MvPolynomial TensorProduct
 
 namespace Algebra
 
