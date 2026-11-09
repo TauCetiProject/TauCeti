@@ -22,7 +22,7 @@ of `Complex.log ∘ σ` itself is `AbsolutelyContinuousOnInterval.clog`.
 
 * `AbsolutelyContinuousOnInterval.ae_hasDerivAt_clog`: the almost-everywhere derivative of
   `Complex.log ∘ σ`.
-* `AbsolutelyContinuousOnInterval.ae_hasDerivAt_log_div`: the same for a quotient `f / g`.
+* `AbsolutelyContinuousOnInterval.ae_hasDerivAt_clog_div`: the same for a quotient `f / g`.
 -/
 
 public section
@@ -35,7 +35,7 @@ namespace AbsolutelyContinuousOnInterval
 slit plane has derivative `deriv σ t / σ t`. -/
 theorem ae_hasDerivAt_clog {σ : ℝ → ℂ} {a b : ℝ} (hσ : AbsolutelyContinuousOnInterval σ a b)
     (h : ∀ t ∈ uIcc a b, σ t ∈ slitPlane) :
-    ∀ᵐ t, t ∈ uIoc a b → HasDerivAt (Complex.log ∘ σ) (deriv σ t / σ t) t := by
+    ∀ᵐ t, t ∈ uIoc a b → HasDerivAt (fun t ↦ Complex.log (σ t)) (deriv σ t / σ t) t := by
   filter_upwards [hσ.boundedVariationOn.ae_differentiableAt_of_mem_uIcc] with t ht ht'
   have ht'' := uIoc_subset_uIcc ht'
   exact (ht ht'').hasDerivAt.clog_real (h t ht'')
@@ -43,11 +43,11 @@ theorem ae_hasDerivAt_clog {σ : ℝ → ℂ} {a b : ℝ} (hσ : AbsolutelyConti
 /-- Almost everywhere, the principal logarithm of the quotient of two absolutely continuous
 complex curves, which stays in the slit plane, has the difference of the two logarithmic
 derivatives as derivative. -/
-theorem ae_hasDerivAt_log_div {f g : ℝ → ℂ} {a b : ℝ}
+theorem ae_hasDerivAt_clog_div {f g : ℝ → ℂ} {a b : ℝ}
     (hf : AbsolutelyContinuousOnInterval f a b) (hg : AbsolutelyContinuousOnInterval g a b)
     (h : ∀ t ∈ uIcc a b, f t / g t ∈ slitPlane) :
     ∀ᵐ t, t ∈ uIoc a b →
-      HasDerivAt (Complex.log ∘ fun t ↦ f t / g t) (deriv f t / f t - deriv g t / g t) t := by
+      HasDerivAt (fun t ↦ Complex.log (f t / g t)) (deriv f t / f t - deriv g t / g t) t := by
   have hf0 : ∀ t ∈ uIcc a b, f t ≠ 0 := fun t ht h0 ↦ by
     simpa [h0] using h t ht
   have hg0 : ∀ t ∈ uIcc a b, g t ≠ 0 := fun t ht h0 ↦ by

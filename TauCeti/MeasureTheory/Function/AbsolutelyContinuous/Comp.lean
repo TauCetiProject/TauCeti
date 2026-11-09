@@ -71,19 +71,26 @@ protected theorem log {f : ℝ → ℝ} {a b : ℝ} (hf : AbsolutelyContinuousOn
 is absolutely continuous. -/
 protected theorem clog {σ : ℝ → ℂ} {a b : ℝ} (hσ : AbsolutelyContinuousOnInterval σ a b)
     (h : ∀ t ∈ uIcc a b, σ t ∈ Complex.slitPlane) :
-    AbsolutelyContinuousOnInterval (Complex.log ∘ σ) a b :=
+    AbsolutelyContinuousOnInterval (fun t ↦ Complex.log (σ t)) a b :=
   hσ.comp_of_contDiffAt fun _ ⟨t, ht, hσt⟩ ↦
     (Complex.contDiffAt_log (hσt ▸ h t ht)).restrict_scalars ℝ
 
+/-- The inverse of an absolutely continuous curve valued in a normed field is absolutely
+continuous when it does not vanish on the interval. -/
+@[to_fun]
+protected theorem inv {K : Type*} [NormedField K] [NormedAlgebra ℝ K] {g : ℝ → K} {a b : ℝ}
+    (hg : AbsolutelyContinuousOnInterval g a b) (h0 : ∀ t ∈ uIcc a b, g t ≠ 0) :
+    AbsolutelyContinuousOnInterval g⁻¹ a b :=
+  hg.comp_of_contDiffAt (φ := fun x : K ↦ x⁻¹) fun _ ⟨t, ht, hgt⟩ ↦
+    hgt ▸ contDiffAt_inv ℝ (h0 t ht)
+
 /-- The quotient of two absolutely continuous curves valued in a normed field is absolutely
 continuous when the denominator does not vanish on the interval. -/
-protected theorem fun_div {K : Type*} [NormedField K] [NormedAlgebra ℝ K] {f g : ℝ → K}
+@[to_fun]
+protected theorem div {K : Type*} [NormedField K] [NormedAlgebra ℝ K] {f g : ℝ → K}
     {a b : ℝ} (hf : AbsolutelyContinuousOnInterval f a b)
     (hg : AbsolutelyContinuousOnInterval g a b) (h0 : ∀ t ∈ uIcc a b, g t ≠ 0) :
-    AbsolutelyContinuousOnInterval (fun t ↦ f t / g t) a b := by
-  have hinv : AbsolutelyContinuousOnInterval (fun t ↦ (g t)⁻¹) a b :=
-    hg.comp_of_contDiffAt (φ := fun x : K ↦ x⁻¹) fun _ ⟨t, ht, hgt⟩ ↦
-      hgt ▸ contDiffAt_inv ℝ (h0 t ht)
-  simpa only [div_eq_mul_inv, smul_eq_mul] using hf.fun_smul hinv
+    AbsolutelyContinuousOnInterval (f / g) a b := by
+  simpa only [div_eq_mul_inv, smul_eq_mul] using hf.smul (hg.inv h0)
 
 end AbsolutelyContinuousOnInterval

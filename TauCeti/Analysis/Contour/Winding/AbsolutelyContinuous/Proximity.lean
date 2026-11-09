@@ -69,13 +69,13 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist_o
   have hα₁ := h₁.fun_sub hconst
   have hlog := (hα₁.fun_div hα₀ h₀ne).clog hσslit
   have hlogderiv : ∀ᵐ t, t ∈ uIoc a b →
-      HasDerivAt (Complex.log ∘ fun t ↦ (γ₁ t - z) / (γ₀ t - z))
+      HasDerivAt (fun t ↦ Complex.log ((γ₁ t - z) / (γ₀ t - z)))
         ((γ₁ t - z)⁻¹ * deriv γ₁ t - (γ₀ t - z)⁻¹ * deriv γ₀ t) t := by
-    filter_upwards [hα₁.ae_hasDerivAt_log_div hα₀ hσslit] with t ht ht'
+    filter_upwards [hα₁.ae_hasDerivAt_clog_div hα₀ hσslit] with t ht ht'
     simpa [div_eq_inv_mul] using ht ht'
   -- FTC evaluates the logarithmic derivative at the equal endpoint ratios.
   have hint := hlog.integral_eq_sub_of_ae_hasDerivAt hlogderiv
-  simp only [Function.comp_apply, hends, sub_self] at hint
+  simp only [hends, sub_self] at hint
   have hint₀ := h₀.intervalIntegrable_inv_sub_mul_deriv h₀off
   have hint₁ := h₁.intervalIntegrable_inv_sub_mul_deriv h₁off
   rw [intervalIntegral.integral_sub hint₁ hint₀] at hint
