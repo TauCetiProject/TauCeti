@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Action
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 
 /-!
@@ -50,6 +51,10 @@ symplectic vector space, which caps the loop by the cone over it.
   `TauCeti.contractibleLoopAction` of the standing convention, which caps a loop by a disc
   running from the loop to its centre and subtracts the Hamiltonian term
   (`TauCeti.IsWeaklyExact.cappedLoopAction_eq_neg_contractibleLoopAction`).
+* **Cylinder action.** The action `TauCeti.SmoothTwoForm.cylinderAction` of a loop `γ` measured
+  against a smooth cylinder `u` from `γ` uses the opposite orientation and sign: capping `γ` by `u`
+  run backwards gives minus it
+  (`TauCeti.cappedLoopAction_comp_prodMap_one_sub_eq_neg_cylinderAction`).
 
 ## Main definitions
 
@@ -167,6 +172,20 @@ theorem IsWeaklyExact.cappedLoopAction_eq_neg_contractibleLoopAction (hω : IsSm
   ring
 
 end Continuous
+
+open scoped ContDiff in
+/-- The action `TauCeti.SmoothTwoForm.cylinderAction` of a loop `γ` measured against a smooth
+cylinder `u` from `γ` (for instance a cap of `γ`) is minus the capped action of `γ` with `u` run
+backwards, `u ∘ Prod.map (fun s ↦ 1 - s) id`, which is a disc of `γ` when `u` is a cap. -/
+theorem cappedLoopAction_comp_prodMap_one_sub_eq_neg_cylinderAction [IsManifold I ∞ M]
+    (σ : SmoothTwoForm I M) (H : ℝ → M → ℝ) {γ γ₀ : ℝ → M} {u : ℝ × ℝ → M}
+    (hu : IsSmoothCylinder I γ γ₀ u) :
+    cappedLoopAction σ.1 H γ (u ∘ Prod.map (fun s ↦ 1 - s) id) = -σ.cylinderAction H u := by
+  rw [cappedLoopAction_def, SmoothTwoForm.cylinderAction_eq_of_isSmoothCylinder hu,
+    rectangleIntegral_comp_prodMap_one_sub (σ.isSmoothForm.of_le (by simp))
+      (hu.contMDiff.of_le (by simp))]
+  ring
+
 
 /-- For an exact form `dθ`, the capped action of a loop `γ` with any disc is
 `∫_γ θ + ∫₀¹ H(t, γ(t)) dt`, by Green's formula: the line integral along the centre of the disc

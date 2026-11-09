@@ -187,18 +187,6 @@ theorem isLoopCylinder_comp_prodMap {w : ℝ × ℝ → M} (hwc : ContMDiff 𝓘
   apply_zero t := by simp
   apply_one t := by simp
 
-/-- The integral of a continuous form `φ` over the cylinder
-`w ∘ Prod.map (fun σ ↦ s + σ * (s₀ - s)) id` swept by a `C¹` map `w` between `s` and `s₀`
-(`TauCeti.isLoopCylinder_comp_prodMap`) is the integral of `φ` over `w` on `[s, s₀] × [0, 1]`. -/
-theorem rectangleIntegral_comp_prodMap_affine [IsManifold I 1 M] {φ : RoughForm I M F 2}
-    (hφ : IsSmoothForm I 0 φ) {w : ℝ × ℝ → M} (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 w) (s s₀ : ℝ) :
-    rectangleIntegral φ (w ∘ Prod.map (fun σ ↦ s + σ * (s₀ - s)) id) (0, 0) (1, 1) =
-      rectangleIntegral φ w (s, 0) (s₀, 1) := by
-  rw [rectangleIntegral_comp_prodMap hφ hw (σ' := fun _ ↦ s₀ - s)
-    (fun x _ ↦ by simpa using ((hasDerivAt_id x).mul_const (s₀ - s)).const_add s)
-    continuousOn_const]
-  simp
-
 /-! ### Weakly exact forms and the cap area -/
 
 /-- A two-form is **weakly exact** when its integral over every sphere, a cylinder between two

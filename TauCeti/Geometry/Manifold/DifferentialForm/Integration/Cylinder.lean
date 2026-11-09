@@ -28,8 +28,10 @@ coordinate `s`, the coordinate along which a cylinder `u` joins its boundary loo
 * the integral is additive under subdivision of `[a.1, b.1]`
   (`TauCeti.rectangleIntegral_add_adjacent_fst`);
 * it is invariant under a `C¹` change `σ` of the first coordinate, between the image endpoints
-  (`TauCeti.rectangleIntegral_comp_prodMap`), and reversing the first coordinate changes its sign
-  (`TauCeti.rectangleIntegral_comp_prodMap_one_sub`).
+  (`TauCeti.rectangleIntegral_comp_prodMap`): reversing the first coordinate changes its sign
+  (`TauCeti.rectangleIntegral_comp_prodMap_one_sub`), and rescaling `[0, 1]` affinely onto
+  `[s, s₀]` turns it into the integral over `[s, s₀] × [0, 1]`
+  (`TauCeti.rectangleIntegral_comp_prodMap_affine`).
 
 Two maps `u₁ u₂ : ℝ × ℝ → M` with `u₁(1, ·) = u₂(0, ·)` are glued into their concatenation
 `TauCeti.rectangleTrans u₁ u₂`, the curve concatenation `TauCeti.curveConcat` in the first
@@ -112,6 +114,19 @@ theorem rectangleIntegral_comp_prodMap_one_sub {φ : RoughForm I M F 2} (hφ : I
   rw [rectangleIntegral_comp_prodMap hφ hu (σ' := fun _ ↦ -1)
     (fun s _ ↦ by simpa using (hasDerivAt_id s).const_sub 1) continuousOn_const]
   simpa using rectangleIntegral_symm_fst φ u 0 a₂ 1 b₂
+
+/-- Reparametrizing the first coordinate affinely from `[0, 1]` onto `[s, s₀]` does not change
+the integral: the integral of a continuous form `φ` over
+`w ∘ Prod.map (fun σ ↦ s + σ * (s₀ - s)) id` on the unit square is the integral of `φ` over `w`
+on `[s, s₀] × [0, 1]`. -/
+theorem rectangleIntegral_comp_prodMap_affine {φ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 0 φ) {w : ℝ × ℝ → M} (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 w) (s s₀ : ℝ) :
+    rectangleIntegral φ (w ∘ Prod.map (fun σ ↦ s + σ * (s₀ - s)) id) (0, 0) (1, 1) =
+      rectangleIntegral φ w (s, 0) (s₀, 1) := by
+  rw [rectangleIntegral_comp_prodMap hφ hw (σ' := fun _ ↦ s₀ - s)
+    (fun x _ ↦ by simpa using ((hasDerivAt_id x).mul_const (s₀ - s)).const_add s)
+    continuousOn_const]
+  simp
 
 end Continuous
 
