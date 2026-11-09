@@ -58,7 +58,10 @@ Since the `H^s` norm is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`, this is the est
 * Further facts about the Fourier transform `â(η, ξ)` of the position slices: linearity in `a`
   (`TauCeti.Symbol.HasCompactSpatialSupport.fourier_slice_add`,
   `TauCeti.Symbol.HasCompactSpatialSupport.fourier_slice_smul`), joint continuity
-  (`TauCeti.Symbol.HasCompactSpatialSupport.continuous_fourier_slice`), differentiability in `ξ`
+  (`TauCeti.Symbol.HasCompactSpatialSupport.continuous_fourier_slice`), integrability in `η`
+  and Fourier inversion
+  (`TauCeti.Symbol.HasCompactSpatialSupport.integral_fourierChar_smul_fourier_slice`),
+  differentiability in `ξ`
   with the Fourier transform of `∂_ξ a` as derivative
   (`TauCeti.Symbol.HasCompactSpatialSupport.hasFDerivAt_fourier_slice`,
   `TauCeti.Symbol.HasCompactSpatialSupport.coordinateDeriv_fourier_slice`), and
@@ -253,6 +256,22 @@ theorem HasCompactSpatialSupport.continuous_fourier_slice (ha : a.HasCompactSpat
   obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
   simpa only [Real.fourier_eq, Circle.smul_def] using
     continuous_integral_fourierChar_smul a.contDiff_coefficient.continuous hK hKa
+
+/-- The Fourier transform `η ↦ â(η, ξ)` of the position slice of a symbol with compact spatial
+support is integrable. -/
+theorem HasCompactSpatialSupport.integrable_fourier_slice (ha : a.HasCompactSpatialSupport)
+    (ξ : CoordinateSpace n) : Integrable fun η ↦ 𝓕 (fun y ↦ a.coefficient (y, ξ)) η :=
+  (SchwartzMap.integrable (𝓕 (ha.sliceSchwartz ξ) : 𝓢(CoordinateSpace n, V →L[ℂ] W))).congr
+    (.of_forall fun η ↦ ha.fourier_sliceSchwartz ξ η)
+
+/-- **Fourier inversion in the position.** A symbol with compact spatial support is recovered
+from the Fourier transform of its position slice: `a(x, ξ) = ∫ exp(2πi ⟪η, x⟫) â(η, ξ) dη`. -/
+theorem HasCompactSpatialSupport.integral_fourierChar_smul_fourier_slice [CompleteSpace W]
+    (ha : a.HasCompactSpatialSupport) (x ξ : CoordinateSpace n) :
+    ∫ η, (𝐞 ⟪η, x⟫ : ℂ) • 𝓕 (fun y ↦ a.coefficient (y, ξ)) η = a.coefficient (x, ξ) := by
+  have h := congrFun ((ha.sliceSchwartz ξ).continuous.fourierInv_fourier_eq
+    (ha.sliceSchwartz ξ).integrable (𝓕 (ha.sliceSchwartz ξ)).integrable) x
+  simpa only [ha.coe_sliceSchwartz, Real.fourierInv_eq, Circle.smul_def] using h
 
 /-- The Fourier transform in the position of the spatial derivative `∂_{x_j} a` is
 `2πi ηⱼ â(η, ξ)`. -/

@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
+import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # The symbol classes `S^m_{1,0}`
@@ -28,6 +30,8 @@ space, and develop the first operations of the symbol calculus:
 
 * `TauCeti.Symbol.inclusion`: a symbol of order `m` is a symbol of every order `m' ≥ m`;
 * `TauCeti.Symbol.frequencyDeriv`: a frequency derivative `∂_{ξ_j}` lowers the order by one;
+  correspondingly a frequency increment `v` changes a symbol of order `m` by at most
+  `C ‖v‖ ⟨ξ⟩^(m - 1) ⟨v⟩^|m - 1|` (`TauCeti.Symbol.exists_norm_coefficient_add_sub_le`);
 * `TauCeti.Symbol.spatialDeriv`: a spatial derivative `∂_{x_j}` preserves the order;
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
   of multiplication by `f`, has order `0`; in particular so does a constant
@@ -505,6 +509,40 @@ theorem exists_norm_iteratedFDeriv_coordinateDeriv_le (a : Symbol n V W m)
   refine Finset.sum_le_sum fun w _ => ?_
   have h := hA (List.ofFn w) x hx ξ
   rwa [List.length_ofFn, mixedDeriv_eq_coordinateDeriv_snd a.contDiff_coefficient] at h
+
+/-- **Increment estimate.** A frequency increment `v` changes a symbol `a` of order `m` by at
+most `C ‖v‖ ⟨ξ⟩ ^ (m - 1) ⟨v⟩ ^ |m - 1|`, uniformly for positions in a compact set. -/
+theorem exists_norm_coefficient_add_sub_le (a : Symbol n V W m) {K : Set (CoordinateSpace n)}
+    (hK : IsCompact K) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ v : CoordinateSpace n,
+      ‖a.coefficient (x, ξ + v) - a.coefficient (x, ξ)‖ ≤
+        C * ‖v‖ * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) * (1 + ‖v‖ ^ 2) ^ (|m - 1| / 2) := by
+  obtain ⟨G, hG0, hG⟩ := a.exists_norm_iteratedFDeriv_coordinateDeriv_le hK [] 1
+  refine ⟨G * 2 ^ (|m - 1| / 2), by positivity, fun x hx ξ v ↦ ?_⟩
+  have hd : ∀ ζ, DifferentiableAt ℝ (fun ζ ↦ a.coefficient (x, ζ)) ζ := fun ζ ↦
+    (a.contDiff_coefficient.comp (contDiff_prodMk_right x)).differentiable (by simp) ζ
+  have hbound : ∀ ζ ∈ Metric.closedBall ξ ‖v‖, ‖fderiv ℝ (fun ζ ↦ a.coefficient (x, ζ)) ζ‖ ≤
+      G * 2 ^ (|m - 1| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) *
+        (1 + ‖v‖ ^ 2) ^ (|m - 1| / 2) := by
+    intro ζ hζ
+    have h₁ := hG x hx ζ
+    simp only [coordinateDeriv_nil, norm_iteratedFDeriv_one, Nat.cast_one] at h₁
+    have hp := one_add_norm_add_sq_rpow_le_mul (m - 1) ξ (ζ - ξ)
+    rw [add_sub_cancel] at hp
+    have hζv : ‖ζ - ξ‖ ≤ ‖v‖ := by rwa [Metric.mem_closedBall, dist_eq_norm] at hζ
+    have hw : (1 + ‖ζ - ξ‖ ^ 2) ^ (|m - 1| / 2) ≤ (1 + ‖v‖ ^ 2) ^ (|m - 1| / 2) := by
+      gcongr
+    calc ‖fderiv ℝ (fun ζ ↦ a.coefficient (x, ζ)) ζ‖ ≤ G * (1 + ‖ζ‖ ^ 2) ^ ((m - 1) / 2) := h₁
+      _ ≤ G * (2 ^ (|m - 1| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) *
+            (1 + ‖ζ - ξ‖ ^ 2) ^ (|m - 1| / 2)) := by gcongr
+      _ ≤ G * (2 ^ (|m - 1| / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) *
+            (1 + ‖v‖ ^ 2) ^ (|m - 1| / 2)) := by gcongr
+      _ = _ := by ring
+  have h := (convex_closedBall ξ ‖v‖).norm_image_sub_le_of_norm_fderiv_le (fun ζ _ ↦ hd ζ)
+    hbound (Metric.mem_closedBall_self (norm_nonneg v))
+    (by rw [Metric.mem_closedBall, dist_eq_norm, add_sub_cancel_left])
+  rw [add_sub_cancel_left] at h
+  exact h.trans_eq (by ring)
 
 theorem IsUniform.frequencyDeriv {a : Symbol n V W m} (ha : a.IsUniform) (j : Fin n) :
     (frequencyDeriv j a).IsUniform := by
