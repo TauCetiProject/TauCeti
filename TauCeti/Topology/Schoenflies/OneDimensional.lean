@@ -46,8 +46,10 @@ The proofs read the circle through a homeomorphism with Mathlib's `Circle`, on w
 points cut out the two open arcs `Circle.path x y '' Set.Ioo 0 1`
 (`Circle.connectedComponentIn_compl_pair`), with closures the closed arcs
 (`Circle.exists_homeomorph_closure_connectedComponentIn_compl_pair`). For the collar arcs, the
-image of `σ` is the frontier of every component, so an open neighbourhood swept out by the collar
-line through `u` meets the component on each side of `σ u`.
+image of `σ` is the frontier of every component, so every component meets the open neighbourhood
+of `σ u` swept out by the collar line through `u`, on at least one of its two arcs. Each arc lies in
+a single component and the complement has at least two components, so the two arcs lie in
+different ones.
 
 ## Main results
 
