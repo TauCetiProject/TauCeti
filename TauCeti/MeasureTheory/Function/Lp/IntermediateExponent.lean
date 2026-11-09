@@ -17,6 +17,11 @@ according as `‖f‖ ≤ 1` or not, and `‖f‖ ^ p ≤ ‖f‖_∞ ^ {p - p�
 This inclusion `L^{p₀} ∩ L^{p₁} ⊆ Lᵖ` for `0 < p₀ ≤ p ≤ p₁` is what lets an operator bounded
 into two `Lᵖ` spaces be compared with its values in the intermediate space, as in the Riesz–Thorin
 theorem.
+
+When `p₁ = ∞` the same pointwise bound gives the quantitative form
+`‖f‖_q ≤ ‖f‖_∞ ^ (1 - p / q) ‖f‖_p ^ (p / q)` for `0 < p ≤ q`
+(`MeasureTheory.eLpNorm_le_eLpNorm_top_rpow_mul_eLpNorm_rpow`), the interpolation inequality
+used to pass from an `Lᵖ` and an `L^∞` bound to an `L^q` bound.
 -/
 
 public section
@@ -68,5 +73,37 @@ theorem MemLp.of_le_of_le {f : α → ε} {p₀ p p₁ : ℝ≥0∞} (hf₀ : Me
       _ < ∞ := by
         rw [lintegral_add_left' (hmeas.enorm.pow_const _)]
         exact ENNReal.add_lt_top.2 ⟨hI₀, hI₁⟩
+
+/-- **Interpolation of `Lᵖ` norms against `L^∞`.** For `0 < p ≤ q`,
+`‖f‖_q ≤ ‖f‖_∞ ^ (1 - p / q) ‖f‖_p ^ (p / q)`. The exponents are computed with `ENNReal.toReal`,
+so `p / q` reads as `0` when `q = ∞`, where the inequality is an equality. -/
+theorem eLpNorm_le_eLpNorm_top_rpow_mul_eLpNorm_rpow {f : α → ε} {p q : ℝ≥0∞}
+    (hf : AEStronglyMeasurable f μ) (hp0 : p ≠ 0) (hpq : p ≤ q) :
+    eLpNorm f q μ ≤
+      eLpNorm f ∞ μ ^ (1 - p.toReal / q.toReal) * eLpNorm f p μ ^ (p.toReal / q.toReal) := by
+  rcases eq_or_ne q ∞ with rfl | hq
+  · simp
+  have hp : p ≠ ∞ := ne_top_of_le_ne_top hq hpq
+  have hq0 : q ≠ 0 := (hp0.bot_lt.trans_le hpq).ne'
+  have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  have hs : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
+  have hrs : p.toReal ≤ q.toReal := ENNReal.toReal_mono hq hpq
+  set C := eLpNormEssSup f μ
+  set I := ∫⁻ a, ‖f a‖ₑ ^ p.toReal ∂μ
+  -- Pointwise `‖f‖ ^ q ≤ C ^ (q - p) ‖f‖ ^ p`, as in `MemLp.of_le_of_le`.
+  have hint : ∫⁻ a, ‖f a‖ₑ ^ q.toReal ∂μ ≤ C ^ (q.toReal - p.toReal) * I := by
+    rw [← lintegral_const_mul'' _ (hf.enorm.pow_const _)]
+    refine lintegral_mono_ae ?_
+    filter_upwards [ae_le_eLpNormEssSup (f := f) (μ := μ)] with a ha
+    calc ‖f a‖ₑ ^ q.toReal = ‖f a‖ₑ ^ (q.toReal - p.toReal) * ‖f a‖ₑ ^ p.toReal := by
+          rw [← ENNReal.rpow_add_of_nonneg _ _ (sub_nonneg.2 hrs) hr.le, sub_add_cancel]
+      _ ≤ C ^ (q.toReal - p.toReal) * ‖f a‖ₑ ^ p.toReal := by gcongr
+  rw [eLpNorm_exponent_top hf, eLpNorm_eq_lintegral_rpow_enorm_toReal hq0 hq hf,
+    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hf, ← ENNReal.rpow_mul]
+  calc (∫⁻ a, ‖f a‖ₑ ^ q.toReal ∂μ) ^ (1 / q.toReal)
+      ≤ (C ^ (q.toReal - p.toReal) * I) ^ (1 / q.toReal) := by gcongr
+    _ = C ^ (1 - p.toReal / q.toReal) * I ^ (1 / p.toReal * (p.toReal / q.toReal)) := by
+        rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul]
+        congr 2 <;> field_simp
 
 end MeasureTheory
