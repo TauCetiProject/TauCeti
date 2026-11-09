@@ -12,15 +12,15 @@ public import Mathlib.Topology.VectorBundle.Constructions
 # Fibres and linear charts of pullback bundles
 
 The fibres of `f *ᵖ E` inherit their additive group, topological module, normed and inner product
-structures from `E (f x)`. Mathlib supplies the additive monoid and module structures. The
-topological group structures let fibrewise linear equivalences between pullbacks, such as the
-pullback `x ↦ e (f x)` of a family of fibrewise linear equivalences `e`, induce maps of total
-spaces with continuous inverses. The normed instances allow the orthonormal frame bundle of a
-pullback to use exactly the original fibre metrics, with no transport or renorming. A
-pulled-back linear trivialization also induces the original fibre equivalence at the image point
+structures and their scalar towers from `E (f x)`. Mathlib supplies the additive monoid and module
+structures. The topological group structures let fibrewise linear equivalences between pullbacks,
+such as the pullback `x ↦ e (f x)` of a family of fibrewise linear equivalences `e`, induce maps of
+total spaces with continuous inverses. The normed instances allow the orthonormal frame bundle of a
+pullback to use exactly the original fibre metrics, with no transport or renorming. A pulled-back
+linear trivialization also induces the original fibre equivalence at the image point
 (`Bundle.Trivialization.linearEquivAt_pullback` and
-`Bundle.Trivialization.continuousLinearEquivAt_pullback`). Hom coordinates between pullbacks by
-two different base maps agree with the original source and target coordinates
+`Bundle.Trivialization.continuousLinearEquivAt_pullback`). Hom coordinates between pullbacks by two
+different base maps agree with the original source and target coordinates
 (`ContinuousLinearMap.inCoordinates_pullback_of_mem`).
 -/
 
@@ -47,6 +47,13 @@ instance instContinuousSMul {R : Type*} [Semiring R] [TopologicalSpace R]
     [∀ b, AddCommMonoid (E b)] [∀ b, Module R (E b)] [∀ b, TopologicalSpace (E b)]
     [∀ b, ContinuousSMul R (E b)] (x : B') : ContinuousSMul R ((f *ᵖ E) x) :=
   inferInstanceAs (ContinuousSMul R (E (f x)))
+
+/-- Scalar multiplications on a pullback fibre form a tower when they do on the original fibre,
+for instance the real and complex scalar multiplications of a complex vector bundle. -/
+instance instIsScalarTower {R S : Type*} [Semiring R] [Semiring S] [SMul R S]
+    [∀ b, AddCommMonoid (E b)] [∀ b, Module R (E b)] [∀ b, Module S (E b)]
+    [∀ b, IsScalarTower R S (E b)] (x : B') : IsScalarTower R S ((f *ᵖ E) x) :=
+  inferInstanceAs (IsScalarTower R S (E (f x)))
 
 /-- A pullback fibre carries the normed additive group structure of the original fibre. -/
 instance instNormedAddCommGroup [∀ b, NormedAddCommGroup (E b)] (x : B') :
