@@ -577,7 +577,7 @@ theorem existsUnique_isWeakSolutionDirichlet_of_subset_slab
   exact existsUnique_isWeakSolutionDirichlet_of_mul_norm_sq_le
     (memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
       (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound)
-    (energyFormH1_poincare_constant_pos h.pos (le_max_right beta 0)
+    (energyFormH1_poincare_constant_pos (le_max_right beta 0)
       (sub_nonneg.2 (le_max_left s t)) hsmall')
     (fun w => mul_norm_sq_le_energyFormH1_self_of_subset_slab h ha hb hc
       (fun x hx => (hb_bound x hx).trans (le_max_left beta 0)) hc_bound hc_nonneg
@@ -608,7 +608,7 @@ theorem existsUnique_isWeakSolutionDirichlet_of_subset_ball
   exact existsUnique_isWeakSolutionDirichlet_of_mul_norm_sq_le
     (memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
       (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound)
-    (energyFormH1_poincare_constant_pos h.pos (le_max_right beta 0) (by positivity) hsmall')
+    (energyFormH1_poincare_constant_pos (le_max_right beta 0) (by positivity) hsmall')
     (fun w => mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha hb hc
       (fun x hx => (hb_bound x hx).trans (le_max_left beta 0)) hc_bound hc_nonneg
       (hball.trans (Metric.ball_subset_ball (le_max_left R 0))) w.2) f
@@ -642,7 +642,7 @@ theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
     (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound
   exact existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq hcoeff
     (isCoercive_energyFormH1L0 hcoeff
-      (energyFormH1_poincare_constant_pos h.pos (le_max_right beta 0) (by positivity) hsmall')
+      (energyFormH1_poincare_constant_pos (le_max_right beta 0) (by positivity) hsmall')
       fun w => mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha hb hc
         (fun x hx => (hb_bound x hx).trans (le_max_left beta 0)) hc_bound hc_nonneg
         (hball.trans (Metric.ball_subset_ball (le_max_left R 0))) w.2) f g
