@@ -86,8 +86,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `Complex.continuousAt_neg_two_cpow_half_mul_inv`,
   `Complex.hasDerivAt_neg_two_cpow_half_mul_inv`,
   `Complex.tendsto_neg_two_cpow_half_mul_inv_atTop` -- continuity at `0`, derivative on `(0, ∞)` and
-  limit at `∞` of `t ↦ -2 (t + x) ^ (1/2) (t + y)⁻¹`, for `x ∈ slitPlane ∪ {0}` and `y ≠ 0`
-  (continuity), `y ∈ slitPlane ∪ {0}` (derivative) or arbitrary `y` (limit).
+  limit at `∞` of `t ↦ -2 (t + x) ^ (1/2) (t + y)⁻¹`. Continuity holds for arbitrary `x` and
+  `y ≠ 0`; the derivative needs `x, y ∈ slitPlane ∪ {0}`; the limit holds for arbitrary `x` and `y`.
 -/
 
 public section
