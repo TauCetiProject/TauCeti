@@ -299,10 +299,7 @@ theorem isSmoothing_toSymbol_inverse_comp_toSymbol_sub :
   -- The difference vanishes for `‖ξ‖ ≥ 2`, where the cutoff is `1`.
   Symbol.isSmoothing_of_coefficient_eq_zero 2 fun x ξ hξ ↦ by
     have hξ0 : ξ ≠ 0 := norm_pos_iff.1 (by linarith)
-    rw [Symbol.coefficient_sub, Pi.sub_apply, Symbol.coefficient_comp,
-      coefficient_toSymbol_of_two_le_norm _ _ _ hξ, coefficient_toSymbol_of_two_le_norm _ _ _ hξ,
-      coefficient_inverse_comp_coefficient a ha x hξ0, Symbol.coefficient_inclusion,
-      Symbol.coefficient_const, sub_self]
+    simp [coefficient_toSymbol_of_two_le_norm _ _ _ hξ, (ha x ξ hξ0).inverse_comp_self]
 
 /-- The cut-off inverse symbol is a right inverse of the cut-off symbol modulo smoothing symbols:
 `χ(ξ) a(x, ξ) ∘ χ(ξ) a(x, ξ)⁻¹ - 1` is smoothing. -/
@@ -312,10 +309,7 @@ theorem isSmoothing_toSymbol_comp_toSymbol_inverse_sub :
   -- The difference vanishes for `‖ξ‖ ≥ 2`, where the cutoff is `1`.
   Symbol.isSmoothing_of_coefficient_eq_zero 2 fun x ξ hξ ↦ by
     have hξ0 : ξ ≠ 0 := norm_pos_iff.1 (by linarith)
-    rw [Symbol.coefficient_sub, Pi.sub_apply, Symbol.coefficient_comp,
-      coefficient_toSymbol_of_two_le_norm _ _ _ hξ, coefficient_toSymbol_of_two_le_norm _ _ _ hξ,
-      coefficient_comp_coefficient_inverse a ha x hξ0, Symbol.coefficient_inclusion,
-      Symbol.coefficient_const, sub_self]
+    simp [coefficient_toSymbol_of_two_le_norm _ _ _ hξ, (ha x ξ hξ0).self_comp_inverse]
 
 end CutOff
 
