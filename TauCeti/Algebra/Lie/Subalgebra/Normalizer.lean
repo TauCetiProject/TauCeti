@@ -65,12 +65,4 @@ theorem le_normalizer_of_le_sup (hsup : T'.toSubmodule ≤ T.toSubmodule ⊔ H.t
     ((toSubmodule_le_toSubmodule _ _).mpr T.le_normalizer)
     ((toSubmodule_le_toSubmodule _ _).mpr hH)
 
-/-- If the underlying submodules of `T`, `H` and `T'` satisfy `T ⊔ H = T'`, then `T ≤ T'`. -/
-theorem le_left_of_sup_eq (hsup : T.toSubmodule ⊔ H.toSubmodule = T'.toSubmodule) : T ≤ T' :=
-  (toSubmodule_le_toSubmodule T T').mp (by rw [← hsup]; exact le_sup_left)
-
-/-- If the underlying submodules of `T`, `H` and `T'` satisfy `T ⊔ H = T'`, then `H ≤ T'`. -/
-theorem le_right_of_sup_eq (hsup : T.toSubmodule ⊔ H.toSubmodule = T'.toSubmodule) : H ≤ T' :=
-  (toSubmodule_le_toSubmodule H T').mp (by rw [← hsup]; exact le_sup_right)
-
 end LieSubalgebra

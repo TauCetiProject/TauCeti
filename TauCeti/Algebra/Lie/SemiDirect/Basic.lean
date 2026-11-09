@@ -265,8 +265,8 @@ theorem isCompl_idealOfLeNormalizer_comap_incl (hT' : T' ≤ T.normalizer)
     (hsup : T.toSubmodule ⊔ H.toSubmodule = T'.toSubmodule)
     (hdisj : Disjoint T.toSubmodule H.toSubmodule) :
     IsCompl (T.idealOfLeNormalizer hT').toSubmodule (H.comap T'.incl).toSubmodule := by
-  have hTT' : T ≤ T' := le_left_of_sup_eq hsup
-  have hHT' : H ≤ T' := le_right_of_sup_eq hsup
+  have hTT' : T ≤ T' := (toSubmodule_le_toSubmodule _ _).mp (hsup ▸ le_sup_left)
+  have hHT' : H ≤ T' := (toSubmodule_le_toSubmodule _ _).mp (hsup ▸ le_sup_right)
   refine ⟨Submodule.disjoint_def.mpr fun x hxI hxH ↦ Subtype.ext ?_,
     codisjoint_iff.mpr (Submodule.eq_top_iff'.mpr fun x ↦ ?_)⟩
   · exact (Submodule.disjoint_def.mp hdisj) _ ((mem_idealOfLeNormalizer hT').mp hxI) hxH
