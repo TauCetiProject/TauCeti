@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import Mathlib.Topology.MetricSpace.Lipschitz
 public import Mathlib.Topology.Semicontinuity.Basic
+public import TauCeti.Topology.MetricSpace.HausdorffDistance
+public import TauCeti.Topology.MetricSpace.Pseudo.Defs
 
 /-!
 # Cut times of `1`-Lipschitz rays
@@ -57,26 +58,6 @@ open Metric Set
 
 noncomputable section
 
-namespace TauCeti
-
-/-- On the real line, the extended distance from `b` to `a ≤ b` is `b - a`. -/
-private theorem edist_eq_ofReal_sub_of_le {a b : ℝ} (h : a ≤ b) :
-    edist b a = ENNReal.ofReal (b - a) := by
-  rw [edist_dist, Real.dist_eq, abs_of_nonneg (sub_nonneg.mpr h)]
-
-/-- For a nonempty set in a pseudometric space, the extended distance to it equals a nonnegative
-real number exactly when the real distance does. -/
-private theorem infEDist_eq_ofReal_iff {X : Type*} [PseudoMetricSpace X] {x : X} {S : Set X}
-    {t : ℝ} (hS : S.Nonempty) (ht : 0 ≤ t) :
-    infEDist x S = ENNReal.ofReal t ↔ infDist x S = t := by
-  constructor
-  · intro h
-    rw [infDist, h, ENNReal.toReal_ofReal ht]
-  · intro h
-    rw [← h, infDist, ENNReal.ofReal_toReal (infEDist_ne_top hS)]
-
-end TauCeti
-
 namespace LipschitzOnWith
 
 section Ray
@@ -88,7 +69,7 @@ at a time `t ∈ [0, R]` is at most `t`. -/
 theorem infEDist_ray_le (hγ : LipschitzOnWith 1 γ (Icc 0 R)) (h0 : γ 0 ∈ S)
     (ht : t ∈ Icc 0 R) : infEDist (γ t) S ≤ ENNReal.ofReal t := by
   have hd := hγ ht (left_mem_Icc.mpr (ht.1.trans ht.2))
-  simpa only [ENNReal.coe_one, one_mul, TauCeti.edist_eq_ofReal_sub_of_le ht.1, sub_zero] using
+  simpa only [ENNReal.coe_one, one_mul, Real.edist_eq_ofReal_sub_of_le ht.1, sub_zero] using
     (infEDist_le_edist_of_mem h0).trans hd
 
 /-- If a ray that starts on `S` and is `1`-Lipschitz on `[0, R]` realizes the extended distance to
@@ -98,7 +79,7 @@ theorem infEDist_ray_eq_of_le (hγ : LipschitzOnWith 1 γ (Icc 0 R)) (h0 : γ 0 
     (hu_eq : infEDist (γ u) S = ENNReal.ofReal u) : infEDist (γ t) S = ENNReal.ofReal t := by
   refine le_antisymm (hγ.infEDist_ray_le h0 ht) (not_lt.1 fun hlt ↦ ?_)
   have hd := hγ hu ht
-  simp only [ENNReal.coe_one, one_mul, TauCeti.edist_eq_ofReal_sub_of_le htu] at hd
+  simp only [ENNReal.coe_one, one_mul, Real.edist_eq_ofReal_sub_of_le htu] at hd
   have hi := infEDist_le_infEDist_add_edist (x := γ u) (y := γ t) (s := S)
   rw [hu_eq] at hi
   have hsum : ENNReal.ofReal t + ENNReal.ofReal (u - t) = ENNReal.ofReal u := by
@@ -119,7 +100,7 @@ theorem edist_ray_eq_of_infEDist_eq (hγ : LipschitzOnWith 1 γ (Icc 0 R)) (h0 :
   rw [abs_of_nonpos (sub_nonpos.mpr htu), neg_sub]
   have heq : edist t u = ENNReal.ofReal (u - t) := by
     rw [edist_comm]
-    exact TauCeti.edist_eq_ofReal_sub_of_le htu
+    exact Real.edist_eq_ofReal_sub_of_le htu
   apply le_antisymm
   · simpa only [ENNReal.coe_one, one_mul, heq] using hγ ht hu
   · apply ENNReal.le_of_add_le_add_left (a := ENNReal.ofReal t) ENNReal.ofReal_ne_top
@@ -146,8 +127,8 @@ time `u`, then it realizes it at every time `t ∈ [0, u]`. -/
 theorem infDist_ray_eq_of_le (hγ : LipschitzOnWith 1 γ (Icc 0 R)) (h0 : γ 0 ∈ S)
     (ht : t ∈ Icc 0 R) (hu : u ∈ Icc 0 R) (htu : t ≤ u) (hu_eq : infDist (γ u) S = u) :
     infDist (γ t) S = t :=
-  (TauCeti.infEDist_eq_ofReal_iff ⟨_, h0⟩ ht.1).1 (hγ.infEDist_ray_eq_of_le h0 ht hu htu
-    ((TauCeti.infEDist_eq_ofReal_iff ⟨_, h0⟩ hu.1).2 hu_eq))
+  (infEDist_eq_ofReal_iff ⟨_, h0⟩ ht.1).1 (hγ.infEDist_ray_eq_of_le h0 ht hu htu
+    ((infEDist_eq_ofReal_iff ⟨_, h0⟩ hu.1).2 hu_eq))
 
 /-- A ray that starts on `S`, is `1`-Lipschitz on `[0, R]` and realizes the distance to `S` at
 time `R` is an isometric segment on `[0, R]`. -/
@@ -155,7 +136,7 @@ theorem dist_ray_eq_of_infDist_eq (hγ : LipschitzOnWith 1 γ (Icc 0 R)) (h0 : �
     (hR : infDist (γ R) S = R) (ht : t ∈ Icc 0 R) (hu : u ∈ Icc 0 R) :
     dist (γ t) (γ u) = |t - u| := by
   have h := hγ.edist_ray_eq_of_infEDist_eq h0
-    ((TauCeti.infEDist_eq_ofReal_iff ⟨_, h0⟩ (ht.1.trans ht.2)).2 hR) ht hu
+    ((infEDist_eq_ofReal_iff ⟨_, h0⟩ (ht.1.trans ht.2)).2 hR) ht hu
   rwa [edist_dist, ENNReal.ofReal_eq_ofReal_iff dist_nonneg (abs_nonneg _)] at h
 
 end MetricRay
