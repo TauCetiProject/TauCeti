@@ -46,7 +46,7 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [SecondCountableTopology E']
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [MeasurableSpace N] [OpensMeasurableSpace N]
   {μ : Measure N} [IsFiniteMeasure μ]
@@ -93,7 +93,7 @@ private theorem contMDiffAt_setIntegral_of_subset_chart {m : ℕ} [IsManifold I 
     have hc : ContinuousOn (fun z ↦ f (φ.symm y) (ψ.symm z)) k :=
       hΦ.continuousOn.comp (continuousOn_const.prodMk continuousOn_id) fun z hz ↦ ⟨hy, hz⟩
     have hm : AEStronglyMeasurable (fun z ↦ f (φ.symm y) (ψ.symm z)) ν := by
-      simpa only [hνk] using hc.aestronglyMeasurable (μ := ν) hk.measurableSet
+      simpa only [hνk] using hc.aestronglyMeasurable_of_isCompact (μ := ν) hk hk.measurableSet
     rw [hνk, integral_map hψm hm]
     refine setIntegral_congr_fun hs fun a ha ↦ ?_
     simp only [ψ.left_inv (hKψ (hsK ha))]

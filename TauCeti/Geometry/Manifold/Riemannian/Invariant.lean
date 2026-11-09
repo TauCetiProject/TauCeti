@@ -58,8 +58,8 @@ invariant compatible almost complex structure is obtained by polar normalization
   `TauCeti.measureAverageRiemannianMetric_eq_self_iff`: averaging fixes exactly the invariant
   metrics.
 * `TauCeti.exists_contMDiffRiemannianMetric_inner_mfderiv`: a compact topological group that is a
-  manifold modelled on a second-countable space, acting jointly `C^(n+1)` on a boundaryless
-  finite-dimensional manifold with a `C^n` metric, preserves some `C^n` metric.
+  manifold, acting jointly `C^(n+1)` on a boundaryless finite-dimensional manifold with a `C^n`
+  metric, preserves some `C^n` metric.
 
 ## References
 
@@ -258,7 +258,7 @@ private theorem averageInner_apply
   -- `ContinuousLinearMap.precomp`.
   rfl
 
-variable [I.Boundaryless] [SecondCountableTopology E'] [IsManifold I n M] [IsManifold J n G]
+variable [I.Boundaryless] [IsManifold I n M] [IsManifold J n G]
 
 /-- The averaged forms are a `C^n` section of the bundle of bilinear forms. -/
 private theorem contMDiff_averageInner
@@ -287,8 +287,7 @@ variable [FiniteDimensional ℝ E]
 
 /-- **The average of a Riemannian metric over a compact group action.** For a group `G` acting
 jointly `C^(n+1)` on a boundaryless finite-dimensional manifold `M`, with `G` a compact manifold
-modelled on a second-countable space and carrying a probability measure `μ`, this is the `C^n`
-metric
+carrying a probability measure `μ`, this is the `C^n` metric
 
 `⟨v, w⟩_x = ∫ g_{a • x}(d(a •)_x v, d(a •)_x w) dμ(a)`.
 
@@ -377,10 +376,10 @@ theorem measureAverageRiemannianMetric_idempotent
 
 omit [MeasurableSpace G] [OpensMeasurableSpace G] [IsProbabilityMeasure μ] [MeasurableMul G]
   [μ.IsMulRightInvariant] in
-/-- **Invariant metrics for compact group actions.** If a compact topological group, which is a
-manifold modelled on a second-countable space, acts jointly `C^(n+1)` on a boundaryless
-finite-dimensional manifold that carries a `C^n` Riemannian metric, then that manifold carries a
-`C^n` Riemannian metric for which every element of the group acts by isometries. -/
+/-- **Invariant metrics for compact group actions.** If a compact topological group that is a
+manifold acts jointly `C^(n+1)` on a boundaryless finite-dimensional manifold that carries a
+`C^n` Riemannian metric, then that manifold carries a `C^n` Riemannian metric for which every
+element of the group acts by isometries. -/
 theorem exists_contMDiffRiemannianMetric_inner_mfderiv [IsTopologicalGroup G]
     (g : ContMDiffRiemannianMetric I n E (TangentSpace I : M → Type _)) :
     ∃ g' : ContMDiffRiemannianMetric I n E (TangentSpace I : M → Type _),
