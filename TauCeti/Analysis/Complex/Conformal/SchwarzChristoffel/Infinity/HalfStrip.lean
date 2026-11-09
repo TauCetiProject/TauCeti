@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Parallel
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.SimpleBoundary
 import TauCeti.Algebra.BigOperators.Finset.Fiber
-import TauCeti.Analysis.Complex.HorizontalStrip
 import TauCeti.Topology.Frontier
 
 /-!
@@ -132,6 +131,48 @@ private theorem exists_mem_image_in_strip_of_sum_eq_neg_one
     ((eventually_gt_atTop (0 : ℝ)).and ((hre.eventually (eventually_gt_atTop R)).and hstrip)).exists
   exact ⟨F ((y : ℂ) * I), ⟨(y : ℂ) * I, by simpa using hy, rfl⟩, hyr, hyim⟩
 
+/-- Far to the right, a preconnected set avoiding the two boundary heights `l` and `h` lies
+inside an open set `U`, or outside its closure, when the frontier of `U` there lies on those
+heights. -/
+private theorem subset_or_subset_compl_closure_of_frontier {U : Set ℂ} {l h R : ℝ}
+    (hUo : IsOpen U) (hfr : ∀ w ∈ frontier U, R < w.re → w.im = l ∨ w.im = h)
+    {s : Set ℂ} (hs : IsPreconnected s)
+    (havoid : ∀ w ∈ s, R < w.re ∧ w.im ≠ l ∧ w.im ≠ h) : s ⊆ U ∨ s ⊆ (closure U)ᶜ :=
+  (hs.subset_interior_or_subset_compl_closure (Set.disjoint_left.mpr fun w hw hwfr =>
+    let h := havoid w hw
+    (hfr w hwfr h.1).elim h.2.1 h.2.2)).imp_left fun h => h.trans hUo.interior_eq.le
+
+/-- If the open set `U` is confined to the strip `l - δ < im < h + δ` far to the right, and its
+frontier far to the right lies on the heights `l < h`, then the regions below `l` and above `h`
+are outside the closure of `U`. -/
+private theorem outer_regions_subset_compl_closure {U : Set ℂ} {l h δ R : ℝ} (hlh : l < h)
+    (hδ : 0 < δ) (hUo : IsOpen U) (hfr : ∀ w ∈ frontier U, R < w.re → w.im = l ∨ w.im = h)
+    (hbounds : ∀ w ∈ U, R < w.re → l - δ < w.im ∧ w.im < h + δ) :
+    {w : ℂ | R < w.re ∧ w.im < l} ⊆ (closure U)ᶜ ∧
+      {w : ℂ | R < w.re ∧ h < w.im} ⊆ (closure U)ᶜ := by
+  have hout (b : ℝ) (s : Set ℂ) (hs : IsPreconnected s)
+      (havoid : ∀ w ∈ s, R < w.re ∧ w.im ≠ l ∧ w.im ≠ h)
+      (hb : b < l - δ ∨ h + δ < b)
+      (hmem : (R + 1 : ℂ) + (b : ℂ) * I ∈ s) : s ⊆ (closure U)ᶜ := by
+    refine (subset_or_subset_compl_closure_of_frontier hUo hfr hs havoid).resolve_left
+      fun hsU => ?_
+    have h' := hbounds _ (hsU hmem) (by simp)
+    simp only [add_im, ofReal_im, mul_I_im, ofReal_re, zero_add, one_im] at h'
+    rcases hb with hb | hb <;> linarith
+  refine ⟨?_, ?_⟩
+  · apply hout (l - 2 * δ) _ ((convex_halfSpace_re_gt R).inter
+      (convex_halfSpace_im_lt l)).isPreconnected
+    · intro w hw
+      exact ⟨hw.1, ne_of_lt hw.2, ne_of_lt (hw.2.trans hlh)⟩
+    · left; linarith
+    · simpa using hδ
+  · apply hout (h + 2 * δ) _ ((convex_halfSpace_re_gt R).inter
+      (convex_halfSpace_im_gt h)).isPreconnected
+    · intro w hw
+      exact ⟨hw.1, ne_of_gt (hlh.trans hw.2), ne_of_gt hw.2⟩
+    · right; linarith
+    · simpa using hδ
+
 /-- **The half-strip end of a simple logarithmic Schwarz--Christoffel map.** For integrable
 finite prevertices, total exponent `-1`, and an injective real boundary parametrization,
 the image sufficiently far to the right is exactly the open strip of width `π` between
@@ -158,15 +199,9 @@ theorem exists_mem_image_schwarzChristoffelPrimitive_iff_of_sum_eq_neg_one
   have hmemBoundary (w : ℂ) (hw : R < w.re) :
       w ∈ frontier U ↔ w.im = c.im ∨ w.im = c.im + Real.pi :=
     hfrontier ▸ hboundary w ((le_max_left _ _).trans_lt hw)
-  -- Each of the three regions to the right of `R` avoids the frontier, so connectedness
-  -- makes membership in the open image constant on that region.
-  have dichotomy (s : Set ℂ) (hs : IsPreconnected s)
-      (havoid : ∀ w ∈ s, R < w.re ∧ w.im ≠ c.im ∧ w.im ≠ c.im + Real.pi) :
-      s ⊆ U ∨ s ⊆ (closure U)ᶜ :=
-    (hs.subset_interior_or_subset_compl_closure (Set.disjoint_left.mpr fun w hw hwfr =>
-      let h := havoid w hw
-      ((hmemBoundary w h.1).mp hwfr).elim h.2.1 h.2.2)).imp_left
-      fun h => h.trans hUo.interior_eq.le
+  -- Far to the right the frontier lies on the two boundary lines.
+  have hfr (w : ℂ) (hw : w ∈ frontier U) (hwR : R < w.re) :
+      w.im = c.im ∨ w.im = c.im + Real.pi := (hmemBoundary w hwR).mp hw
   -- The vertical path to infinity supplies the interior witness for the middle region.
   let S : Set ℂ := {w | R < w.re ∧ c.im < w.im ∧ w.im < c.im + Real.pi}
   have hS : S ⊆ U := by
@@ -175,12 +210,15 @@ theorem exists_mem_image_schwarzChristoffelPrimitive_iff_of_sum_eq_neg_one
         (convex_halfSpace_im_lt (c.im + Real.pi)))).isPreconnected
     obtain ⟨w, hwU, hwR, hwlo, hwhi⟩ :=
       exists_mem_image_in_strip_of_sum_eq_neg_one a e z₀ hsum R
-    exact (dichotomy S hs (fun w hw => ⟨hw.1, ne_of_gt hw.2.1, ne_of_lt hw.2.2⟩)).resolve_right
+    -- Each of the three regions to the right of `R` avoids the frontier, so connectedness
+    -- makes membership in the open image constant on that region.
+    exact (subset_or_subset_compl_closure_of_frontier hUo hfr hs
+      (fun w hw => ⟨hw.1, ne_of_gt hw.2.1, ne_of_lt hw.2.2⟩)).resolve_right
       (fun h => h ⟨hwR, hwlo, hwhi⟩ (subset_closure hwU))
   -- The wider asymptotic strip gives exterior witnesses above and below the two rays.
   obtain ⟨hlow, hhigh⟩ := outer_regions_subset_compl_closure
-    (lt_add_of_pos_right c.im Real.pi_pos) one_pos (le_max_right R₁ R₂) dichotomy
-    (by rintro _ ⟨z, hz, rfl⟩; exact hbounds z hz)
+    (lt_add_of_pos_right c.im Real.pi_pos) one_pos hUo hfr
+    (by rintro _ ⟨z, hz, rfl⟩ hwR; exact hbounds z hz ((le_max_right R₁ R₂).trans_lt hwR))
   -- The boundary lines themselves are excluded because the image is open.
   refine ⟨R, fun w hwR => ⟨fun hwU => ?_, fun hw => hS ⟨hwR, hw⟩⟩⟩
   have hwcl := subset_closure hwU
