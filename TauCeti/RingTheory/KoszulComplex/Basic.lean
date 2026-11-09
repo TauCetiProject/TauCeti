@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.Algebra.Homology.Linear
+public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
@@ -349,6 +350,18 @@ theorem smul_homology_eq_zero (m : M) (n : ℕ) (z : (koszulComplex φ).homology
   rw [HomologicalComplex.homologyMap_smul, HomologicalComplex.homologyMap_id,
     HomologicalComplex.homologyMap_zero] at h
   simpa using congr(($h).hom z)
+
+/-- The image ideal of the functional annihilates Koszul homology. -/
+theorem range_le_annihilator_homology (n : ℕ) :
+    LinearMap.range φ ≤ Module.annihilator R ((koszulComplex φ).homology n) := by
+  rintro _ ⟨m, rfl⟩
+  exact Module.mem_annihilator.mpr (smul_homology_eq_zero φ m n)
+
+/-- Koszul homology is power torsion for the image ideal of the functional. -/
+@[simp]
+theorem primaryComponent_homology_eq_top (n : ℕ) :
+    Ideal.primaryComponent ((koszulComplex φ).homology n) (LinearMap.range φ) = ⊤ :=
+  Ideal.primaryComponent_eq_top_of_le_annihilator _ (range_le_annihilator_homology φ n)
 
 end Homotopy
 

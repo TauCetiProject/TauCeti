@@ -271,7 +271,7 @@ private theorem kumaraswamyPDF_eq_jacobian_mul_betaPDF (ha : 0 < a) (hb : 0 < b)
   have hjac : 0 < a * x ^ (a - 1) := mul_pos ha (Real.rpow_pos_of_pos hx.1 _)
   rw [kumaraswamyPDF_of_mem_Ioo ha hb hx,
     betaPDF_of_pos_lt_one (Real.rpow_pos_of_pos hx.1 a) hxa, abs_of_pos hjac,
-    ← ENNReal.ofReal_mul hjac.le, beta_comm, beta_one_right hb, sub_self, Real.rpow_zero]
+    ← ENNReal.ofReal_mul hjac.le, beta_one_left hb, sub_self, Real.rpow_zero]
   congr 1
   field_simp
 

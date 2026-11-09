@@ -40,70 +40,73 @@ variable {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
 
 noncomputable section
 
+/-- A section of the Cartier divisor sheaf of `D` over `U` satisfies the Weil condition. -/
+private lemma sections_subset_toWeilDivisor (D : CartierDivisor X) (U : X.Opens) :
+    D.sections U ≤ SchemeWeilDivisor.sections D.toWeilDivisor U := by
+  intro s hs
+  apply SchemeWeilDivisor.mem_sections.mpr
+  intro y hy
+  have : Nonempty U := ⟨⟨y, hy⟩⟩
+  by_cases hq : rationalFunctionsEquiv U s = 0
+  · exact Or.inl hq
+  right
+  obtain ⟨f, hf⟩ := D.exists_isLocalEquationAt (y : X)
+  obtain ⟨V, hyV, hV⟩ := isLocalEquationAt_iff.mp hf
+  have : Nonempty V := ⟨⟨y, hyV⟩⟩
+  let W : X.Opens := U ⊓ V
+  have : Nonempty W := ⟨⟨y, hy, hyV⟩⟩
+  let t := (rationalFunctions X).presheaf.map
+    (homOfLE inf_le_left : W ⟶ U).op s
+  have ht : t ∈ D.sections W := sections_map (homOfLE inf_le_left) hs
+  obtain ⟨a, ha⟩ := (mem_sections_iff_of_rationalUnitClass_eq
+    (W := W) inf_le_right hV).mp ht
+  have hqW : rationalFunctionsEquiv W t = rationalFunctionsEquiv U s :=
+    rationalFunctionsEquiv_map (homOfLE inf_le_left) s
+  rw [hqW] at ha
+  have hreg : 0 ≤ X.ord ((f : X.functionField) * rationalFunctionsEquiv U s) y := by
+    rw [← ha]
+    exact ord_germToFunctionField_nonneg a ⟨hy, hyV⟩
+  have hcoeff := coeff_toWeilDivisor_eq_ord D y hyV f hV
+  rw [X.ord_mul (Units.ne_zero f) hq, ← hcoeff] at hreg
+  omega
+
+/-- On a curve, a section satisfying the Weil condition of `D` over `U` lies in the Cartier
+divisor sheaf of `D`. -/
+private lemma toWeilDivisor_sections_subset (hX : ∀ x : X, coheight x ≤ 1)
+    (D : CartierDivisor X) (U : X.Opens) :
+    SchemeWeilDivisor.sections D.toWeilDivisor U ≤ D.sections U := by
+  intro s hs
+  apply mem_sections_iff_exists.mpr
+  intro x hx
+  obtain ⟨f, hf⟩ := D.exists_isLocalEquationAt x
+  obtain ⟨V, hxV, hV⟩ := isLocalEquationAt_iff.mp hf
+  let W : X.Opens := U ⊓ V
+  have : Nonempty U := ⟨⟨x, hx⟩⟩
+  have : Nonempty W := ⟨⟨x, hx, hxV⟩⟩
+  have hord : ∀ y : CodimensionOnePoint X, (y : X) ∈ W →
+      0 ≤ X.ord ((f : X.functionField) * rationalFunctionsEquiv U s) y := by
+    intro y hyW
+    have hyU : (y : X) ∈ U := hyW.1
+    have hyV : (y : X) ∈ V := hyW.2
+    have : Nonempty V := ⟨⟨y, hyV⟩⟩
+    by_cases hq : rationalFunctionsEquiv U s = 0
+    · simp [hq]
+    have hbound := (SchemeWeilDivisor.mem_sections.mp hs y hyU).resolve_left hq
+    have hcoeff := coeff_toWeilDivisor_eq_ord D y hyV f hV
+    rw [hcoeff] at hbound
+    rw [X.ord_mul (Units.ne_zero f) hq]
+    omega
+  obtain ⟨a, ha⟩ := exists_germToFunctionField_eq_of_ord_nonneg
+    (U := W) (fun _ _ ↦ inferInstance) (fun y _ ↦ hX y) hord
+  have hxW : x ∈ W := ⟨hx, hxV⟩
+  refine ⟨f, hf, ⟨X.presheaf.germ W x hxW a, ?_⟩⟩
+  rw [X.algebraMap_germ_eq_germToFunctionField hxW, ha]
+
 /-- The Cartier and Weil conditions define the same rational-function sections on a curve. -/
 theorem sections_eq_toWeilDivisor (hX : ∀ x : X, coheight x ≤ 1)
     (D : CartierDivisor X) (U : X.Opens) :
-    D.sections U = SchemeWeilDivisor.sections D.toWeilDivisor U := by
-  ext s
-  constructor
-  · intro hs
-    apply SchemeWeilDivisor.mem_sections.mpr
-    intro y hy
-    have : Nonempty U := ⟨⟨y, hy⟩⟩
-    by_cases hq : rationalFunctionsEquiv U s = 0
-    · exact Or.inl hq
-    right
-    obtain ⟨f, hf⟩ := D.exists_isLocalEquationAt (y : X)
-    obtain ⟨V, hyV, hV⟩ := isLocalEquationAt_iff.mp hf
-    have : Nonempty V := ⟨⟨y, hyV⟩⟩
-    let W : X.Opens := U ⊓ V
-    have : Nonempty W := ⟨⟨y, hy, hyV⟩⟩
-    let t := (rationalFunctions X).presheaf.map
-      (homOfLE inf_le_left : W ⟶ U).op s
-    have ht : t ∈ D.sections W := sections_map (homOfLE inf_le_left) hs
-    obtain ⟨a, ha⟩ := (mem_sections_iff_of_rationalUnitClass_eq
-      (W := W) inf_le_right hV).mp ht
-    have hqW : rationalFunctionsEquiv W t = rationalFunctionsEquiv U s :=
-      rationalFunctionsEquiv_map (homOfLE inf_le_left) s
-    rw [hqW] at ha
-    have hreg : 0 ≤ X.ord ((f : X.functionField) * rationalFunctionsEquiv U s) y := by
-      rw [← ha]
-      exact ord_germToFunctionField_nonneg a ⟨hy, hyV⟩
-    have hcoeff : WeilDivisor.coeff D.toWeilDivisor y = X.ord (f : X.functionField) y := by
-      rw [coeff_toWeilDivisor,
-        orderAt_eq_of_restrict_eq_rationalUnitClass D y V hyV (Additive.ofMul f) hV.symm]
-      simp
-    rw [X.ord_mul (Units.ne_zero f) hq, ← hcoeff] at hreg
-    omega
-  · intro hs
-    apply mem_sections_iff_exists.mpr
-    intro x hx
-    obtain ⟨f, hf⟩ := D.exists_isLocalEquationAt x
-    obtain ⟨V, hxV, hV⟩ := isLocalEquationAt_iff.mp hf
-    let W : X.Opens := U ⊓ V
-    have : Nonempty U := ⟨⟨x, hx⟩⟩
-    have : Nonempty W := ⟨⟨x, hx, hxV⟩⟩
-    have hord : ∀ y : CodimensionOnePoint X, (y : X) ∈ W →
-        0 ≤ X.ord ((f : X.functionField) * rationalFunctionsEquiv U s) y := by
-      intro y hyW
-      have hyU : (y : X) ∈ U := hyW.1
-      have hyV : (y : X) ∈ V := hyW.2
-      have : Nonempty V := ⟨⟨y, hyV⟩⟩
-      by_cases hq : rationalFunctionsEquiv U s = 0
-      · simp [hq]
-      have hbound := (SchemeWeilDivisor.mem_sections.mp hs y hyU).resolve_left hq
-      have hcoeff : WeilDivisor.coeff D.toWeilDivisor y = X.ord (f : X.functionField) y := by
-        rw [coeff_toWeilDivisor,
-          orderAt_eq_of_restrict_eq_rationalUnitClass D y V hyV (Additive.ofMul f) hV.symm]
-        simp
-      rw [hcoeff] at hbound
-      rw [X.ord_mul (Units.ne_zero f) hq]
-      omega
-    obtain ⟨a, ha⟩ := exists_germToFunctionField_eq_of_ord_nonneg
-      (U := W) (fun _ _ ↦ inferInstance) (fun y _ ↦ hX y) hord
-    have hxW : x ∈ W := ⟨hx, hxV⟩
-    refine ⟨f, hf, ⟨X.presheaf.germ W x hxW a, ?_⟩⟩
-    rw [X.algebraMap_germ_eq_germToFunctionField hxW, ha]
+    D.sections U = SchemeWeilDivisor.sections D.toWeilDivisor U :=
+  le_antisymm (sections_subset_toWeilDivisor D U) (toWeilDivisor_sections_subset hX D U)
 
 /-- The line bundle of a Cartier divisor is canonically the line bundle of its Weil divisor.
 The isomorphism is induced by equality of their rational-function sections. -/

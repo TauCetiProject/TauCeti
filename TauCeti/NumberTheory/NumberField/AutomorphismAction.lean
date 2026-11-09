@@ -16,11 +16,12 @@ structure map `𝓞 K → K` is equivariant, carrying `σ • z` to `σ` applied
 It also records that restriction to a normal subfield commutes with the map between the two
 rings of integers.
 
-For a tower `F / K` of fields it also records that the `Gal(F/K)`-action on `𝓞 F` commutes with
-the `𝓞 K`-scalar action: a `K`-algebra automorphism fixes `K` pointwise, hence fixes the image of
-`𝓞 K`. Mathlib supplies the corresponding `SMulCommClass` only over the base `ℤ`
-(`integralClosure`'s own instance, with `ℤ` the ring `𝓞 F` is integral over), which is what a
-Frobenius over `ℚ` needs; a *relative* Frobenius over a general base `K` needs this one.
+For a tower `F / K` of fields it also records that any group acting on `F` by ring automorphisms
+that fix `K` pointwise, such as `Gal(F/K)`, acts on `𝓞 F` commuting with the `𝓞 K`-scalar action:
+such an automorphism fixes the image of `𝓞 K`. Mathlib supplies the corresponding
+`SMulCommClass` only over the base `ℤ` (`integralClosure`'s own instance, with `ℤ` the ring `𝓞 F`
+is integral over), which is what a Frobenius over `ℚ` needs; a *relative* Frobenius over a
+general base `K` needs this one.
 
 `𝓞 K` is the integral closure of `ℤ`, and any ring automorphism of `K` preserves `ℤ`-integrality,
 so the base ring `R` over which `σ` is linear is irrelevant to both statement and proof; it is a
@@ -37,8 +38,8 @@ recorded once here rather than reconstructed at each use site.
 * `NumberField.algebraMap_smul_eq_apply`: `algebraMap (𝓞 K) K (σ • z) = σ (algebraMap (𝓞 K) K z)`.
 * `NumberField.algebraMap_restrictNormal_smul`: mapping the action of a restricted automorphism
   into the top ring of integers gives the action of the original automorphism.
-* `NumberField.RingOfIntegers.smulCommClass`: `Gal(F/K)` acting on `𝓞 F` commutes with the
-  `𝓞 K`-action.
+* `NumberField.RingOfIntegers.smulCommClass`: a group acting on `F` and commuting with the
+  `K`-action, such as `Gal(F/K)`, acts on `𝓞 F` commuting with the `𝓞 K`-action.
 * `NumberField.RingOfIntegers.unitsMulDistribMulAction`: `Gal(F/K)` acts on the units
   `(𝓞 F)ˣ`.
 * `AlgEquiv.mapAlgEquiv_symm_autCongr_smul`: restriction to rings of integers intertwines
@@ -74,35 +75,30 @@ is normal inside `L`, then acting on `𝓞 M` by the restriction of `σ ∈ Gal(
 theorem algebraMap_restrictNormal_smul (σ : L ≃ₐ[K] L) (x : 𝓞 M) :
     algebraMap (𝓞 M) (𝓞 L) (σ.restrictNormal M • x) =
       σ • algebraMap (𝓞 M) (𝓞 L) x := by
-  apply RingOfIntegers.ext
-  -- `RingOfIntegers.ext` exposes coercions into `L`; state them as the canonical algebra maps so
-  -- the two scalar towers can be rewritten explicitly.
-  change algebraMap (𝓞 L) L (algebraMap (𝓞 M) (𝓞 L) (σ.restrictNormal M • x)) =
-    algebraMap (𝓞 L) L (σ • algebraMap (𝓞 M) (𝓞 L) x)
-  rw [← IsScalarTower.algebraMap_apply (𝓞 M) (𝓞 L) L,
-    IsScalarTower.algebraMap_apply (𝓞 M) M L,
-    algebraMap_smul_eq_apply, algebraMap_smul_eq_apply,
-    ← IsScalarTower.algebraMap_apply (𝓞 M) (𝓞 L) L,
+  ext
+  -- Route both sides through `M`, where `AlgEquiv.restrictNormal_commutes` applies.
+  simp [← IsScalarTower.algebraMap_apply (𝓞 M) (𝓞 L) L,
     IsScalarTower.algebraMap_apply (𝓞 M) M L]
-  exact AlgEquiv.restrictNormal_commutes σ M (algebraMap (𝓞 M) M x)
 
 variable {F : Type*} [Field F] [Algebra K F]
 
-/-- **The Galois action on `𝓞 F` commutes with the `𝓞 K`-action.** A `K`-algebra automorphism of
-`F` fixes `K` pointwise, so it fixes the image of `𝓞 K` in `F` and therefore commutes with
-multiplication by it.
+/-- **A `K`-linear action on `F` restricts to `𝓞 F` commuting with the `𝓞 K`-action.** A group
+acting on `F` by ring automorphisms that commute with the `K`-action, such as `Gal(F/K)`, fixes
+`K` pointwise, so it fixes the image of `𝓞 K` in `F` and therefore commutes with multiplication
+by it.
 
 This is the relative form of Mathlib's `SMulCommClass G R (integralClosure R K)`, which for
 `𝓞 F = integralClosure ℤ F` gives only the base ring `ℤ`. Neither field has to be a number
 field. -/
-instance RingOfIntegers.smulCommClass : SMulCommClass (F ≃ₐ[K] F) (𝓞 K) (𝓞 F) where
-  smul_comm σ r x := by
-    apply RingOfIntegers.ext
-    -- Expand both scalar actions into multiplication and push `σ` through the product.
-    simp only [Algebra.smul_def, map_mul, algebraMap_smul_eq_apply]
-    -- The remaining factor is the image of `𝓞 K`; route it through `K`, which `σ` fixes.
-    rw [← IsScalarTower.algebraMap_apply (𝓞 K) (𝓞 F) F,
-      IsScalarTower.algebraMap_apply (𝓞 K) K F, AlgEquiv.commutes]
+instance RingOfIntegers.smulCommClass {G : Type*} [Group G] [MulSemiringAction G F]
+    [SMulCommClass G K F] : SMulCommClass G (𝓞 K) (𝓞 F) where
+  smul_comm g r x := by
+    ext
+    -- Expand both scalar actions into multiplication and push `g` through the product; the
+    -- remaining factor is the image of `𝓞 K`, which is routed through `K`, fixed by `g`.
+    simp only [Algebra.smul_def, map_mul, algebraMap.smul', smul_mul',
+      ← IsScalarTower.algebraMap_apply (𝓞 K) (𝓞 F) F, IsScalarTower.algebraMap_apply (𝓞 K) K F,
+      smul_algebraMap]
 
 variable (K F) in
 /-- **The Galois action on the units of `𝓞 F`.** An automorphism of `F` over `K` acts on `𝓞 F`

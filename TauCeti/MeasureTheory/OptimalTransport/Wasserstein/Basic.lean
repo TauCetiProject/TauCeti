@@ -73,6 +73,9 @@ gluing lemma consumes.
   space, measures at `W_∞` distance below the separation scale agree;
 * `TauCeti.wassersteinEDist_self`, `TauCeti.wassersteinEDist_comm` and
   `TauCeti.wassersteinEDist_triangle` — the three axioms of an extended pseudodistance;
+* `TauCeti.wassersteinEDist_le_add_edist_add_of_wassersteinEDist_dirac_le` — measures
+  within `W_p`-distance `a`, `b` of Diracs at `x₀`, `x₁` are within `a + d(x₀, x₁) + b` of each
+  other;
 * `TauCeti.wassersteinEDist_mono_exponent` — monotonicity in `p` when the first marginal is a
   probability measure;
 * `TauCeti.wassersteinEDist_dirac_left`, `TauCeti.wassersteinEDist_dirac_right` and
@@ -618,6 +621,26 @@ theorem wassersteinEDist_triangle (hd : Measurable fun z : X × X ↦ edist z.1 
   exact (wassersteinEDist_le hcoup p).trans
     (MeasureTheory.eLpNorm_map_prodMap_id_snd_le hp hγπ hγσ hd hd hd fun x y z ↦
       edist_triangle x y z)
+
+/-- Two measures within `W_p`-distance `a` and `b` of Dirac masses at `x₀` and `x₁` are within
+`W_p`-distance `a + edist x₀ x₁ + b` of each other. -/
+theorem wassersteinEDist_le_add_edist_add_of_wassersteinEDist_dirac_le
+    (hd : Measurable fun z : X × X ↦ edist z.1 z.2) (hp : 1 ≤ p)
+    {x₀ x₁ : X} {μ₀ μ₁ : Measure X} {a b : ℝ≥0∞}
+    (h₀ : wassersteinEDist p (Measure.dirac x₀) μ₀ ≤ a)
+    (h₁ : wassersteinEDist p (Measure.dirac x₁) μ₁ ≤ b) :
+    wassersteinEDist p μ₀ μ₁ ≤ a + edist x₀ x₁ + b := by
+  calc wassersteinEDist p μ₀ μ₁
+      ≤ wassersteinEDist p μ₀ (Measure.dirac x₀) +
+        (wassersteinEDist p (Measure.dirac x₀) (Measure.dirac x₁) +
+          wassersteinEDist p (Measure.dirac x₁) μ₁) :=
+        (wassersteinEDist_triangle hd hp _ _ _).trans
+          (add_le_add le_rfl (wassersteinEDist_triangle hd hp _ _ _))
+    _ ≤ a + (edist x₀ x₁ + b) := by
+        rw [wassersteinEDist_comm hd p μ₀ (Measure.dirac x₀),
+          wassersteinEDist_dirac_dirac (zero_lt_one.trans_le hp).ne']
+        gcongr
+    _ = a + edist x₀ x₁ + b := (add_assoc _ _ _).symm
 
 end Triangle
 
