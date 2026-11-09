@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.QPochhammer
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Complex.RemovableSingularity
+import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
 import TauCeti.NumberTheory.ModularForms.DedekindEta
 
@@ -216,7 +217,7 @@ private theorem thetaInv_eq (hτ : 0 < τ.im) (z : ℂ) :
   have hperL (w : ℂ) (hw : w ∈ L.lattice) : Function.Periodic H w := by
     obtain ⟨m, n, rfl⟩ := PeriodPair.mem_lattice.mp hw
     rw [hω₁, hω₂]
-    exact (hperτ.int_mul m).add_period (hper₁.int_mul n)
+    exact hperτ.int_mul_add_int_mul hper₁ m n
   -- Near `0`, `H` is the quotient of the difference quotients of the two sides at `0`.
   have hH₀ : DifferentiableAt ℂ H 0 := by
     have hd (f : ℂ → ℂ) (hf : Differentiable ℂ f) : Differentiable ℂ (dslope f 0) := fun x ↦
