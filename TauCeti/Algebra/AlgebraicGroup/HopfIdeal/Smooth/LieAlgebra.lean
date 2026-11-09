@@ -9,8 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Cotangent
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Smooth.Containment
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.IdentityComponent
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Dimension
-import TauCeti.Algebra.AlgebraicGroup.Tangent.KrullDimension
-import TauCeti.Algebra.AlgebraicGroup.Tangent.Regularity
 import TauCeti.RingTheory.Derivation.Idempotent
 
 /-!
