@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Exchange
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.LinearAlgebra.Determinant.Prod
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ApproximatesLinearOn
 
 /-!
 # The energy of the input-exchange family
@@ -150,11 +151,6 @@ private theorem exchangeShift_nonneg (hc : 0 ≤ c) (y : ℝ × ℝ) : 0 ≤ exc
 private theorem exchangeShift_le (hc : 0 ≤ c) (y : ℝ × ℝ) : exchangeShift c y ≤ c :=
   mul_le_of_le_one_right hc (sub_le_self _ (exchangeCutoff_nonneg _))
 
-private theorem abs_exchangeShift_le (hc : |c| ≤ 1) (y : ℝ × ℝ) : |exchangeShift c y| ≤ 1 := by
-  rw [exchangeShift, abs_mul, abs_of_nonneg (sub_nonneg.2 (exchangeCutoff_le_one _))]
-  nlinarith [abs_nonneg c, exchangeCutoff_nonneg ‖Complex.equivRealProdCLM.symm y‖,
-    exchangeCutoff_le_one ‖Complex.equivRealProdCLM.symm y‖]
-
 private theorem equivRealProdCLM_symm_exchangeMap (c : ℝ) (y : ℝ × ℝ) :
     Complex.equivRealProdCLM.symm (exchangeMap c y) =
       Complex.equivRealProdCLM.symm y + exchangeShift c y := by
@@ -203,38 +199,29 @@ private theorem lipschitzWith_exchangeShift (hc : |c| ≤ 1) :
         mul_le_mul hc (hμ.trans (by gcongr)) dist_nonneg zero_le_one
     _ = 1 / 2 * dist y y' := by ring
 
-private theorem injective_exchangeMap (hc : |c| ≤ 1) : Injective (exchangeMap c) := by
-  intro y y' h
-  simp only [exchangeMap, Prod.mk.injEq] at h
-  have hlip := (lipschitzWith_exchangeShift hc).dist_le_mul y y'
-  have h₂ : y.2 = y'.2 := h.2
-  have hd : dist y y' = |y.1 - y'.1| := by
-    rw [Prod.dist_eq, Real.dist_eq, Real.dist_eq, h₂, sub_self, abs_zero, max_eq_left
-      (abs_nonneg _)]
-  rw [Real.dist_eq, hd, NNReal.coe_div, NNReal.coe_one, NNReal.coe_ofNat,
-    show exchangeShift c y - exchangeShift c y' = -(y.1 - y'.1) by linarith [h.1], abs_neg] at hlip
-  have h₁ : y.1 = y'.1 := by
-    have := abs_nonneg (y.1 - y'.1)
-    have h0 : |y.1 - y'.1| = 0 := by linarith
-    linarith [abs_eq_zero.1 h0]
-  exact Prod.ext h₁ h₂
+/-- For `|c| ≤ 1` the diffeomorphism `Φ_c` differs from the identity by a `1/2`-Lipschitz map. -/
+private theorem approximatesLinearOn_exchangeMap (hc : |c| ≤ 1) :
+    ApproximatesLinearOn (exchangeMap c)
+      ((ContinuousLinearEquiv.refl ℝ (ℝ × ℝ) : (ℝ × ℝ) ≃L[ℝ] (ℝ × ℝ)) : ℝ × ℝ →L[ℝ] ℝ × ℝ) univ
+      (1 / 2) := by
+  refine LipschitzOnWith.approximatesLinearOn (LipschitzWith.lipschitzOnWith ?_)
+  have h : exchangeMap c - ⇑(ContinuousLinearEquiv.refl ℝ (ℝ × ℝ) : ℝ × ℝ →L[ℝ] ℝ × ℝ) =
+      fun y ↦ (exchangeShift c y, 0) := by
+    ext y <;> simp [exchangeMap]
+  rw [h]
+  simpa using (lipschitzWith_exchangeShift hc).prodMk (LipschitzWith.const (0 : ℝ))
 
-private theorem surjective_exchangeMap (hc : |c| ≤ 1) : Surjective (exchangeMap c) := by
-  intro w
-  -- On the horizontal line through `w`, the first coordinate of `Φ_c` is a continuous function
-  -- within distance `1` of the identity.
-  set f : ℝ → ℝ := fun s ↦ s + exchangeShift c (s, w.2)
-  have hf : Continuous f :=
-    continuous_id.add ((contDiff_exchangeShift c).continuous.comp (by fun_prop))
-  have hbound (s : ℝ) : |f s - s| ≤ 1 := by simpa [f] using abs_exchangeShift_le hc (s, w.2)
-  have htop : Tendsto f atTop atTop :=
-    tendsto_atTop_mono (fun s ↦ by simp only [id]; linarith [(abs_le.1 (hbound s)).1])
-      (tendsto_atTop_add_const_right _ (-1) tendsto_id)
-  have hbot : Tendsto f atBot atBot :=
-    tendsto_atBot_mono (fun s ↦ by simp only [id]; linarith [(abs_le.1 (hbound s)).2])
-      (tendsto_atBot_add_const_right _ 1 tendsto_id)
-  obtain ⟨s, hs⟩ := hf.surjective htop hbot w.1
-  exact ⟨(s, w.2), Prod.ext hs rfl⟩
+private theorem one_half_lt_inv_nnnorm_refl :
+    (1 / 2 : ℝ≥0) < ‖((ContinuousLinearEquiv.refl ℝ (ℝ × ℝ)).symm : ℝ × ℝ →L[ℝ] ℝ × ℝ)‖₊⁻¹ := by
+  rw [ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.coe_refl,
+    ContinuousLinearMap.nnnorm_id, inv_one]
+  norm_num
+
+private theorem injective_exchangeMap (hc : |c| ≤ 1) : Injective (exchangeMap c) :=
+  injOn_univ.1 <| (approximatesLinearOn_exchangeMap hc).injOn (Or.inr one_half_lt_inv_nnnorm_refl)
+
+private theorem surjective_exchangeMap (hc : |c| ≤ 1) : Surjective (exchangeMap c) :=
+  (approximatesLinearOn_exchangeMap hc).surjective (Or.inr one_half_lt_inv_nnnorm_refl)
 
 /-- For `|c| ≤ 1` the diffeomorphism `Φ_c` preserves orientation: its Jacobian determinant is
 `1 + ∂_s` of the displacement, which is at least `1/2`. -/
