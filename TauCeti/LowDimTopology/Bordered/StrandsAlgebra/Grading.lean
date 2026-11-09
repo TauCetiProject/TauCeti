@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Order.Field.Rat
 public import Mathlib.GroupTheory.Subgroup.Center
 public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
 public import TauCeti.Algebra.GroupAction.Trivial
-public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Basic
+public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Differential
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -76,6 +76,9 @@ boundary of total sum zero, and every grading of a diagram lies in it
 * `TauCeti.StrandDiagram.grading_mem_gPrime`: every grading of a diagram lies in `G'(n)`.
 * `TauCeti.StrandDiagram.grading_eq_lambda_zpow_mul`: diagrams with the same ends differ in
   grading by a power of `λ`.
+* `TauCeti.StrandDiagram.grading_resolve`, `TauCeti.StrandsAlgebra.differential_mem_gradedPart`:
+  the differential has degree `λ⁻¹`, so the strands algebra is a differential algebra graded by
+  the grading group.
 * `TauCeti.StrandsAlgebra.mul_mem_gradedPart`, `TauCeti.StrandsAlgebra.one_mem_gradedPart`,
   `TauCeti.StrandsAlgebra.iSup_gradedPart`: the graded parts multiply according to the group law,
   contain the unit in degree `1`, and span the algebra; a strand diagram lies in the part of its
@@ -505,6 +508,15 @@ Thurston. -/
 theorem grading_mem_gPrime (φ : StrandDiagram α) : φ.grading ∈ gPrime :=
   ⟨φ.exists_grading_maslov_eq, φ.sum_boundary⟩
 
+/-- **The differential has degree `λ⁻¹`**: resolving a crossing of `φ` that lowers the number of
+crossings by one gives a diagram of grading `λ⁻¹ gr(φ)`. -/
+theorem grading_resolve {φ : StrandDiagram α} {p : α × α} (h : p ∈ φ.resolvableInversions) :
+    (φ.resolve p).grading = lambda⁻¹ * φ.grading := by
+  rw [grading_eq_lambda_zpow_mul (φ.source_resolve p) (φ.target_resolve p),
+    ← (mem_resolvableInversions.1 h).2]
+  push_cast
+  rw [sub_add_cancel_left, zpow_neg_one]
+
 end StrandDiagram
 
 namespace StrandsAlgebra
@@ -580,6 +592,17 @@ theorem mul_mem_gradedPart {g h : StrandGradingGroup α} {x y : StrandsAlgebra R
   | zero => rw [zero_mul]; exact zero_mem _
   | add x x' _ _ hx hx' => rw [add_mul]; exact add_mem hx hx'
   | smul r x _ hx => rw [smul_mul_assoc]; exact Submodule.smul_mem _ r hx
+
+/-- **The differential has degree `λ⁻¹`**: it maps the part of grading `g` to the part of grading
+`λ⁻¹ g`. -/
+theorem differential_mem_gradedPart {g : StrandGradingGroup α} {x : StrandsAlgebra R α}
+    (hx : x ∈ gradedPart R g) :
+    differential R α x ∈ gradedPart R (StrandGradingGroup.lambda⁻¹ * g) := by
+  rw [gradedPart_eq_span] at hx
+  refine (Submodule.span_le (p := (gradedPart R _).comap (differential R α))).2 ?_ hx
+  rintro _ ⟨φ, rfl, rfl⟩
+  rw [SetLike.mem_coe, Submodule.mem_comap, differential_of]
+  exact sum_mem fun p hp ↦ grading_resolve hp ▸ of_mem_gradedPart _
 
 /-- Every element of the strands algebra is a sum of homogeneous elements. -/
 theorem iSup_gradedPart : ⨆ g : StrandGradingGroup α, gradedPart R g = ⊤ := by

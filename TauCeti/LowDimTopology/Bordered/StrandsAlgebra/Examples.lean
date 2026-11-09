@@ -12,7 +12,7 @@ import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Grading
 # Products and gradings in small strands algebras
 
 Two products in the strands algebras `A(4, 2)` and `A(3, 1)` of Lipshitz, Ozsváth and Thurston
-over `𝔽₂`, and one grading, with points `1, …, n` written `0, …, n - 1`.
+over `𝔽₂`, and two gradings, with points `1, …, n` written `0, …, n - 1`.
 
 * In `A(4, 2)` the diagrams `φ = (1 ↦ 3, 2 ↦ 2)` and `ψ = (2 ↦ 4, 3 ↦ 3)` each have one
   crossing, and their composite `(1 ↦ 3, 2 ↦ 4)` has none. Since `0 ≠ 1 + 1` the concatenation
@@ -22,6 +22,10 @@ over `𝔽₂`, and one grading, with points `1, …, n` written `0, …, n - 1`
 * In `A(3, 1)` the strand `(1 ↦ 2)` has grading `(-1/2, e₂ - e₁)`: it has no crossing, and the
   multiplicity of its class at its starting point is `1/2`. This is the grading of the chord `ρ₁`
   of the torus algebra.
+* The gradings of `(1 ↦ 2)` and `(2 ↦ 3)` do not commute: `gr(1 ↦ 2) gr(2 ↦ 3)` is
+  `λ gr(2 ↦ 3) gr(1 ↦ 2)`. Both diagrams have Maslov component `-1/2`, and the correction terms
+  `L(e₂ - e₁, e₃ - e₂) = 1/2` and `L(e₃ - e₂, e₂ - e₁) = -1/2` differ by one, so the grading group
+  is not commutative.
 -/
 
 open TauCeti StrandsAlgebra StrandDiagram StrandGradingGroup
@@ -111,3 +115,51 @@ example :
   · rw [grading_maslov, hinv, hS, Finset.sum_singleton, pointMultiplicity_apply, hb, hlt]
     norm_num
   · rw [grading_boundary, hb, mk_boundary]
+
+example :
+    let ρ (i j : Fin 3) (h : i ≤ j) : StrandDiagram (Fin 3) :=
+      ⟨PEquiv.single i j, fun _ _ hk ↦ by
+        obtain ⟨rfl, rfl⟩ := (PEquiv.mem_single_iff _ _ _ _).1 hk
+        exact h⟩
+    (ρ 0 1 (by decide)).grading * (ρ 1 2 (by decide)).grading =
+      lambda * ((ρ 1 2 (by decide)).grading * (ρ 0 1 (by decide)).grading) := by
+  intro ρ
+  have hinv (φ : StrandDiagram (Fin 3))
+      (h : ∀ p : Fin 3 × Fin 3, ¬(p.1 < p.2 ∧ ∃ a ∈ φ p.1, ∃ b ∈ φ p.2, b < a)) :
+      φ.inversionCount = 0 := by
+    rw [inversionCount_def, Finset.card_eq_zero, Finset.eq_empty_iff_forall_notMem]
+    simpa only [mem_inversions] using h
+  have hS₁ : (ρ 0 1 (by decide)).source = {0} := by
+    ext j
+    simp only [mem_source, Finset.mem_singleton]
+    revert j
+    decide
+  have hS₂ : (ρ 1 2 (by decide)).source = {1} := by
+    ext j
+    simp only [mem_source, Finset.mem_singleton]
+    revert j
+    decide
+  have hb₁ : (ρ 0 1 (by decide)).boundary = ![-1, 1, 0] := by
+    funext x
+    simp only [boundary_apply, mem_target, mem_source]
+    revert x
+    decide
+  have hb₂ : (ρ 1 2 (by decide)).boundary = ![0, -1, 1] := by
+    funext x
+    simp only [boundary_apply, mem_target, mem_source]
+    revert x
+    decide
+  have h₀ : ({y | y < 0} : Finset (Fin 3)) = ∅ := by decide
+  have h₁ : ({y | y < 1} : Finset (Fin 3)) = {0} := by decide
+  have h₂ : ({y | y < 2} : Finset (Fin 3)) = {0, 1} := by decide
+  have hI₁ := hinv (ρ 0 1 (by decide)) (by decide)
+  have hI₂ := hinv (ρ 1 2 (by decide)) (by decide)
+  ext
+  · rw [mul_maslov, mul_maslov, mul_maslov, mul_boundary, lambda_maslov, lambda_boundary]
+    rw [grading_maslov, grading_maslov, grading_boundary, grading_boundary, hI₁, hI₂, hS₁, hS₂,
+      hb₁, hb₂, Finset.sum_singleton, Finset.sum_singleton, map_zero, AddMonoidHom.zero_apply,
+      linking_apply, linking_apply, Fin.sum_univ_three, Fin.sum_univ_three]
+    simp only [pointMultiplicity_apply, h₀, h₁, h₂]
+    norm_num
+  · simp only [mul_boundary, lambda_boundary, zero_add]
+    exact add_comm _ _
