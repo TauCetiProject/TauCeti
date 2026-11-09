@@ -71,6 +71,18 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 attribute [local instance] TauCeti.extChartAtMeasurableSpaceE TauCeti.extChartAtBorelSpaceE
 
+omit [FiniteDimensional ℝ E] in
+/-- Transporting a basis along the identity equivalence does not change it. -/
+private theorem map_basis_refl {ι : Type*} (b : Module.Basis ι ℝ E) :
+    b.map (ContinuousLinearEquiv.refl ℝ E).toLinearEquiv = b :=
+  Module.Basis.eq_of_apply_eq fun _ ↦ rfl
+
+omit [FiniteDimensional ℝ E] in
+/-- The image of a measure under the identity equivalence is the measure itself. -/
+private theorem map_measure_refl [MeasurableSpace E] (μ : Measure E) :
+    μ.map (ContinuousLinearEquiv.refl ℝ E) = μ := by
+  rw [ContinuousLinearEquiv.coe_refl', Measure.map_id]
+
 namespace TauCeti
 
 namespace RoughForm
@@ -114,9 +126,10 @@ private theorem chartMeasure_restrict_overlap (φ : RoughForm I M ℝ k) (α β 
     (isOpen_extChartAt_source α).measurableSet.inter (isOpen_extChartAt_source β).measurableSet
   ext s hs
   have hcov := φ.setLIntegral_ofReal_abs_inChartAt_mpullback (finBasisOfFinrankEq ℝ E hk.out)
-    (injOn_id _) (fun x _ ↦ mdifferentiableAt_id) (hs.inter hU).isChartMeasurable
-    (inter_subset_right : s ∩ U ⊆ U) (finBasisOfFinrankEq ℝ E hk.out).addHaar
-  rw [mpullback_id, image_id] at hcov
+    (ContinuousLinearEquiv.refl ℝ E) (injOn_id _) (fun x _ ↦ mdifferentiableAt_id)
+    (hs.inter hU).isChartMeasurable (inter_subset_right : s ∩ U ⊆ U)
+    (finBasisOfFinrankEq ℝ E hk.out).addHaar
+  rw [mpullback_id, image_id, map_basis_refl, map_measure_refl] at hcov
   rw [Measure.restrict_apply hs, Measure.restrict_apply hs, chartMeasure_apply φ α (hs.inter hU),
     chartMeasure_apply φ β (hs.inter hU),
     inter_eq_left.2 (inter_subset_right.trans inter_subset_left),
@@ -320,8 +333,9 @@ theorem measurePreserving_measure_mpullback (Φ : M ≃ₜ N) (hΦ : MDifferenti
     simpa only [mem_preimage, Homeomorph.symm_apply_apply] using hx.2.2
   rw [Measure.restrict_apply hs, Measure.restrict_apply hs, Measure.map_apply Φ.measurable hsU,
     RoughForm.measure_apply_of_subset _ hpre (hsub.trans inter_subset_left),
-    ψ.setLIntegral_ofReal_abs_inChartAt_mpullback _ Φ.injective.injOn (fun x _ ↦ hΦ x)
-      hpre.isChartMeasurable hsub,
+    ψ.setLIntegral_ofReal_abs_inChartAt_mpullback _ (ContinuousLinearEquiv.refl ℝ E)
+      Φ.injective.injOn (fun x _ ↦ hΦ x) hpre.isChartMeasurable hsub,
+    map_basis_refl, map_measure_refl,
     image_preimage_eq _ Φ.surjective,
     ψ.measure_apply_of_subset hsU (inter_subset_right.trans inter_subset_left)]
 

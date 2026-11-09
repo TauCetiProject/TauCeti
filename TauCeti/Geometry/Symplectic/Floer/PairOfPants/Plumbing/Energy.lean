@@ -80,7 +80,7 @@ public section
 open Set Real Function MeasureTheory Filter TauCeti.ThricePuncturedSphere
   TauCeti.ThricePuncturedSphere.Puncture
 open scoped Topology Manifold
-open TauCeti.Complex (realChart realChart_apply)
+open TauCeti.Complex (realChart realChart_apply realChart_injective)
 
 namespace TauCeti.SymplecticForm
 
@@ -463,7 +463,8 @@ private theorem setIntegral_floerEnergyDensity_inserted (ω : SymplecticForm V) 
   have hK {w : ℝ × ℝ} (hw : w ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)) (v : ℂ) :=
     differentiableAt_plumbedPerturbation_target hq hHa hHb hHas hHbs hab hL (hP hw)
       (u (realChart (q.plumbingMap L) w)) v
-  rw [ω.integral_floerEnergyDensity_image hTm (injective_realChart_plumbingMap q L).injOn
+  rw [ω.integral_floerEnergyDensity_image hTm
+    (realChart_injective (q.plumbingMap_injective L)).injOn
     (fun w _ ↦ (contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w)
     (fun w _ ↦ det_fderiv_realChart_plumbingMap_nonneg q L w)
     (fun w hw ↦ (hu.contDiffAt ((isOpen_plumbedSphere q L).mem_nhds (hP hw))).differentiableAt
@@ -562,7 +563,8 @@ private theorem setIntegral_hamiltonianCurvature_inserted (ω : SymplecticForm V
     exact plumbingMap_mem_plumbedSphere_of_mem_truncation hq hL hw
   rw [setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_eq_truncation ω hHa hHas _
       (by linarith : (2 : ℝ) ≤ L / 2),
-    ω.integral_hamiltonianCurvature_image hTm (injective_realChart_plumbingMap q L).injOn
+    ω.integral_hamiltonianCurvature_image hTm
+      (realChart_injective (q.plumbingMap_injective L)).injOn
       (fun w _ ↦ (contDiff_realChart_plumbingMap q L).contDiffAt)
       (fun w _ ↦ det_fderiv_realChart_plumbingMap_nonneg q L w)
       (fun w hw ↦ differentiableAt_plumbedPerturbation_domain hq hHa hHb hHas hHbs hab hL
