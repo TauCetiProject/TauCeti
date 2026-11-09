@@ -83,7 +83,8 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
 * `MeasureTheory.Measure.map_affine_addHaar_eq_smul`: an invertible affine map `x ↦ c + A x` pushes
   an additive Haar measure to its multiple by `|det A|⁻¹`.
 * `MeasureTheory.Measure.eLpNorm_ball_le_mul_rpow`: Hölder's inequality on a ball, with the volume
-  of the ball written through that of the unit ball.
+  of a ball of radius `R > 0` written through that of the unit ball (for `R ≤ 0` the ball is
+  empty).
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
 * `ContinuousLinearMap.norm_det_le_opNorm_pow`: `‖det f‖ ≤ ‖f‖ ^ n` in dimension `n` over an
   `RCLike` field.
@@ -106,8 +107,9 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_ball_of_pos
     ENNReal.toReal_ofReal (by positivity), ← measureReal_def]
 
 /-- Hölder's inequality on a ball: for `p₀ ≤ p`, the `L^{p₀}` norm on `B(x₀, R)` is at most the
-`L^p` norm times `|B(x₀, R)|^{1/p₀ - 1/p} = (Rⁿ |B(0, 1)|)^{1/p₀ - 1/p}`, where `n` is the
-dimension. -/
+`L^p` norm times `(Rⁿ |B(0, 1)|)^{1/p₀ - 1/p}`, where `n` is the dimension. For `R > 0` this
+factor is `|B(x₀, R)|^{1/p₀ - 1/p}`; for `R ≤ 0` the ball is empty, so the inequality holds
+trivially and the factor need not be the volume. -/
 theorem _root_.MeasureTheory.Measure.eLpNorm_ball_le_mul_rpow
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
