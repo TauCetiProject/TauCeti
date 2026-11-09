@@ -40,8 +40,8 @@ symplectic vector space, which caps the loop by the cone over it.
   for a homotopy (`TauCeti.rectangleIntegral_eq_of_homotopy`).
 * **Transport along a cylinder.** For a cylinder `w` from `γ₀` to `γ₁`, the disc `D ⋆ w` caps
   `γ₁`, and `A_H(γ₁, D ⋆ w) - A_H(γ₀, D)` is the area of `w` plus the change of the Hamiltonian
-  term (`TauCeti.cappedLoopAction_rectangleTrans_right`). This is how the energy of a Floer
-  cylinder becomes a difference of capped actions, in
+  term (`TauCeti.cappedLoopAction_rectangleTrans_sub_cappedLoopAction`). This is how the energy
+  of a Floer cylinder becomes a difference of capped actions, in
   `TauCeti.Geometry.Symplectic.Floer.CylinderAction`.
 * **Special cases.** The constant loop capped by the constant disc has action the time average
   of `H` (`TauCeti.cappedLoopAction_const`). For an exact form `ω = dθ` the action is
@@ -61,7 +61,8 @@ symplectic vector space, which caps the loop by the cone over it.
 * `TauCeti.cappedLoopAction_sub_cappedLoopAction`: two discs of a loop give actions differing by
   the area of the sphere they bound.
 * `TauCeti.cappedLoopAction_eq_of_homotopy`: homotopy invariance for closed forms.
-* `TauCeti.cappedLoopAction_rectangleTrans_right`: transport of the disc along a cylinder.
+* `TauCeti.cappedLoopAction_rectangleTrans_sub_cappedLoopAction`: transport of the disc along a
+  cylinder.
 
 ## References
 
@@ -141,9 +142,9 @@ theorem cappedLoopAction_sub_cappedLoopAction (hω : IsSmoothForm I 0 ω) (H : �
 /-- **Transport of a disc along a cylinder.** For a disc `D` of `γ₀` and a cylinder `w` from `γ₀`
 to `γ₁`, the glued map `D ⋆ w` is a disc of `γ₁` (`TauCeti.IsLoopCylinder.trans`), and its action
 exceeds that of `(γ₀, D)` by the area of `w` and the change of the Hamiltonian term. -/
-theorem cappedLoopAction_rectangleTrans_right (hω : IsSmoothForm I 0 ω) (H : ℝ → M → ℝ)
-    {D w : ℝ × ℝ → M} {γ₀ γ₁ : ℝ → M} {x : M} (hD : IsLoopCylinder I D (fun _ ↦ x) γ₀)
-    (hw : IsLoopCylinder I w γ₀ γ₁) :
+theorem cappedLoopAction_rectangleTrans_sub_cappedLoopAction (hω : IsSmoothForm I 0 ω)
+    (H : ℝ → M → ℝ) {D w : ℝ × ℝ → M} {γ₀ γ₁ : ℝ → M} {x : M}
+    (hD : IsLoopCylinder I D (fun _ ↦ x) γ₀) (hw : IsLoopCylinder I w γ₀ γ₁) :
     cappedLoopAction ω H γ₁ (rectangleTrans D w) - cappedLoopAction ω H γ₀ D =
       rectangleIntegral ω w (0, 0) (1, 1) + (∫ t in 0..1, H t (γ₁ t)) -
         ∫ t in 0..1, H t (γ₀ t) := by

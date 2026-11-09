@@ -100,18 +100,6 @@ variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologica
 
 variable {ω : SmoothTwoForm I M} {H : ℝ → M → ℝ} {u : ℝ × ℝ → M}
 
-/-- The integral of `ω` over the cylinder `u ∘ Prod.map (fun σ ↦ a + σ * (b - a)) id` swept by `u`
-between `s = a` and `s = b` (`TauCeti.isLoopCylinder_comp_prodMap`) is the integral of `ω` over `u`
-on `[a, b] × [0, 1]`. -/
-private theorem rectangleIntegral_comp_prodMap_affine (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
-    (a b : ℝ) :
-    rectangleIntegral ω.1 (u ∘ Prod.map (fun σ ↦ a + σ * (b - a)) id) (0, 0) (1, 1) =
-      rectangleIntegral ω.1 u (a, 0) (b, 1) := by
-  rw [rectangleIntegral_comp_prodMap (ω.isSmoothForm.of_le (by simp)) hu (σ' := fun _ ↦ b - a)
-    (fun s _ ↦ by simpa using ((hasDerivAt_id s).mul_const (b - a)).const_add a)
-    continuousOn_const]
-  simp
-
 /-! ### The energy identity for cylindrical perturbations -/
 
 section Energy
@@ -162,9 +150,9 @@ theorem IsNondegenerate.integral_floerEnergyDensity_eq_cappedLoopAction_sub
           (rectangleTrans D (u ∘ Prod.map (fun σ ↦ a + σ * (b - a)) id)) -
         cappedLoopAction ω.1 H (fun t ↦ u (a, t)) D := by
   rw [hω.integral_floerEnergyDensity_cylindrical hH (hu.of_le one_le_two) hab,
-    cappedLoopAction_rectangleTrans_right (ω.isSmoothForm.of_le (by simp)) H hD
+    cappedLoopAction_rectangleTrans_sub_cappedLoopAction (ω.isSmoothForm.of_le (by simp)) H hD
       (isLoopCylinder_comp_prodMap hu hper a b),
-    rectangleIntegral_comp_prodMap_affine (hu.of_le one_le_two)]
+    rectangleIntegral_comp_prodMap_affine (ω.isSmoothForm.of_le (by simp)) (hu.of_le one_le_two)]
 
 /-- **The energy of a Floer cylinder between reference discs.** Under the hypotheses of
 `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_cappedLoopAction_sub`, let
@@ -231,7 +219,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_eq_contractibleLoopAction_su
   have hω₀ : IsSmoothForm I 0 ω.1 := ω.isSmoothForm.of_le (by simp)
   rw [hω.integral_floerEnergyDensity_cylindrical hH (hu.of_le one_le_two) hab,
     hωe.contractibleLoopAction_sub hω₀ H (isLoopCylinder_comp_prodMap hu hper a b) hv,
-    rectangleIntegral_comp_prodMap_affine (hu.of_le one_le_two)]
+    rectangleIntegral_comp_prodMap_affine hω₀ (hu.of_le one_le_two)]
   ring
 
 /-- **The energy of a Floer cylinder for an exact form.** Let `ω = dα` be a nondegenerate exact
