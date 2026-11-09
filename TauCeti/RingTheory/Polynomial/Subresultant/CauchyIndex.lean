@@ -8,8 +8,8 @@ module
 public import TauCeti.Algebra.Polynomial.Sturm.CauchyIndex.Sequence
 public import TauCeti.Data.List.PermanencesMinusVariations
 public import TauCeti.RingTheory.Polynomial.Subresultant.Euclidean
-import TauCeti.Algebra.Order.Field.SignPow
 import TauCeti.Data.List.Range
+import TauCeti.Data.SignType.Basic
 
 /-! # Cauchy indices from signed subresultant coefficients
 
@@ -107,9 +107,8 @@ private theorem sign_mul_sign_signedPsc_scale {lc : K} {m n ρ : ℕ} (h : n < m
     (hk : Even (n - (ρ + 1))) :
     (SignType.sign ((-1 : K) ^ (m - n).choose 2 * lc ^ (m - n)) : ℤ) *
       SignType.sign ((-1 : K) ^ (m - n).choose 2 * lc ^ (m - ρ)) = SignType.sign lc := by
-  refine sign_mul_pow_mul_sign_mul_pow_of_sq_eq_one ?_ lc ?_
-  · rw [← pow_mul, mul_comm, pow_mul]
-    simp
+  refine sign_mul_pow_mul_sign_mul_pow_of_ne_zero ?_ lc ?_
+  · exact pow_ne_zero _ (neg_ne_zero.2 one_ne_zero)
   · obtain ⟨i, hi⟩ := hk
     exact ⟨m - n + i, by omega⟩
 
