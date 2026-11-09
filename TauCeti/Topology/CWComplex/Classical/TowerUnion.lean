@@ -365,12 +365,4 @@ def towerUnion
     CWComplex (⋃ k, C k) :=
   @RelCWComplex.toCWComplex _ _ _ (RelCWComplex.towerUnion C hcell hclosed)
 
-/-- The relative CW structure underlying the absolute union of a tower is the relative union. -/
-theorem towerUnion_instRelCWComplex
-    (hcell : ∀ k n (i : cell (C k) n), ∃ j : cell (C (k + 1)) n, ⇑(map n j) = ⇑(map n i))
-    (hclosed : ∀ A ⊆ ⋃ k, C k, (∀ k, IsClosed (A ∩ C k)) → IsClosed A) :
-    @instRelCWComplex _ _ _ (towerUnion C hcell hclosed) =
-      RelCWComplex.towerUnion C hcell hclosed :=
-  (rfl)
-
 end Topology.CWComplex
