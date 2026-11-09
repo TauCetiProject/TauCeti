@@ -56,6 +56,8 @@ an affine parametrization with a segment whose terminal endpoint is removed.
   endpoint removed.
 * `TauCeti.image_eq_segment_sdiff_of_forall_eq_add_smul` — a map equal to `c + d x • u` on a set
   where `d` takes exactly the values in `Ico 0 D` has the half-open segment as its image.
+* `TauCeti.ne_neg_of_zero_notMem_segment_smul` — if the segment from `x` to `c • y` with `c > 0`
+  misses the origin, then `x ≠ -y`.
 * `TauCeti.mem_segment_lineMap_of_one_le` — a point `x` lies on the segment from `a` to any point
   `lineMap a x T` with `1 ≤ T`, at or beyond `x` on the ray from `a` through `x`.
 * `TauCeti.exists_lineMap_endpoint` — the overlap of `[0, 1]` with its image under an affine map
@@ -337,5 +339,25 @@ theorem zero_mem_segment_iff_real_inner_eq_neg_norm_mul :
     eq_comm, ← inner_eq_norm_mul_iff_real, inner_neg_right, norm_neg, neg_eq_iff_eq_neg]
 
 end InnerProduct
+
+/-! ### The antipode of a direction -/
+
+section Antipode
+
+variable {𝕜 E : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup E]
+  [Module 𝕜 E] {x y : E} {c : 𝕜}
+
+/-- If the segment from `x` to a positive multiple `c • y` of `y` misses the origin, then `x` is
+not the antipode of `y`: the point of the segment with weights `c / (1 + c)` and `1 / (1 + c)`
+would be `0`. -/
+theorem ne_neg_of_zero_notMem_segment_smul (hc : 0 < c) (h : (0 : E) ∉ [x -[𝕜] c • y]) :
+    x ≠ -y := by
+  rintro rfl
+  refine h ⟨c / (1 + c), 1 / (1 + c), by positivity, by positivity, ?_, ?_⟩
+  · field_simp
+    ring
+  · rw [smul_neg, smul_smul, div_mul_eq_mul_div, one_mul, neg_add_cancel]
+
+end Antipode
 
 end TauCeti
