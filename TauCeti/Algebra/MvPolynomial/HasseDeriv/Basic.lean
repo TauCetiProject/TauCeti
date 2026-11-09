@@ -14,6 +14,7 @@ public import TauCeti.Data.Finsupp.Choose
 public import TauCeti.Data.Finsupp.Interval
 
 import Mathlib.Algebra.Order.Ring.IsNonarchimedean
+import TauCeti.Algebra.Order.AbsoluteValue.Basic
 
 /-!
 # Hasse derivatives of multivariate polynomials
@@ -132,15 +133,8 @@ of the coefficient it comes from: `v([X^m] ∂^d P) ≤ 2 ^ |m + d| v([X^(m + d)
 theorem abv_coeff_hasseDeriv_le {S : Type*} [Semiring S] [PartialOrder S] [IsOrderedRing S]
     (abv : AbsoluteValue R S) (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
     abv ((hasseDeriv d P).coeff m) ≤ 2 ^ (m + d).degree * abv (P.coeff (m + d)) := by
-  -- the triangle inequality gives `abv (n * x) ≤ n * abv x` without using `abv 1 = 1`
-  have key (n : ℕ) (x : R) : abv ((n : R) * x) ≤ n * abv x := by
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      rw [Nat.cast_succ, add_mul, one_mul, Nat.cast_succ, add_mul, one_mul]
-      exact (abv.add_le _ _).trans (add_le_add_left ih _)
   rw [hasseDeriv_coeff]
-  refine (key _ _).trans (mul_le_mul_of_nonneg_right ?_ (abv.nonneg _))
+  refine (abv.apply_natCast_mul_le _ _).trans (mul_le_mul_of_nonneg_right ?_ (abv.nonneg _))
   have h : (d.prod fun j k ↦ (m j + k).choose k) = d.prod fun j k ↦ ((m + d) j).choose k :=
     Finsupp.prod_congr fun j _ ↦ by rw [Finsupp.add_apply]
   rw [h, ← Nat.cast_ofNat, ← Nat.cast_pow]
