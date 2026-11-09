@@ -108,6 +108,17 @@ theorem besselPotential_two_eq_sub_laplacian (f : 𝓢'(E, F)) :
       inv_mul_cancel₀ (by positivity), neg_one_smul]
   rw [hsplit, hΔ, sub_neg_eq_add]
 
+/-- The Fourier multiplier of a symbol without temperate growth is the junk value `0`, because
+`SchwartzMap.smulLeftCLM` is `0` for such a symbol. -/
+@[simp]
+theorem fourierMultiplierCLM_of_not_hasTemperateGrowth {g : E → ℂ} (hg : ¬ g.HasTemperateGrowth) :
+    fourierMultiplierCLM F g = 0 := by
+  refine ContinuousLinearMap.ext fun f => ?_
+  have h0 (u : 𝓢'(E, F)) : smulLeftCLM F g u = 0 := by
+    ext f'
+    simp [SchwartzMap.smulLeftCLM, hg]
+  rw [fourierMultiplierCLM_apply, h0, FourierTransform.fourierInv_zero, zero_apply]
+
 variable [CompleteSpace F]
 
 /-- A finite sum of tempered distributions in `H^{s,p}` lies in `H^{s,p}`. -/
@@ -173,17 +184,6 @@ end normed
 section inner
 
 variable [InnerProductSpace ℂ F] [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-omit [CompleteSpace F] in
-/-- The Fourier multiplier of a symbol without temperate growth is the junk value `0`, because
-`SchwartzMap.smulLeftCLM` is `0` for such a symbol. -/
-theorem fourierMultiplierCLM_of_not_hasTemperateGrowth {g : E → ℂ} (hg : ¬ g.HasTemperateGrowth) :
-    fourierMultiplierCLM F g = 0 := by
-  refine ContinuousLinearMap.ext fun f => ?_
-  have h0 (u : 𝓢'(E, F)) : smulLeftCLM F g u = 0 := by
-    ext f'
-    simp [SchwartzMap.smulLeftCLM, hg]
-  rw [fourierMultiplierCLM_apply, h0, FourierTransform.fourierInv_zero, zero_apply]
 
 /-- **Mihlin multipliers act on `H^{s,p}`.** For `1 < p < ∞`, the Fourier multiplier with a symbol
 satisfying Mihlin's condition of order `N`, `2N > dim E`, away from the origin maps `H^{s,p}` to
