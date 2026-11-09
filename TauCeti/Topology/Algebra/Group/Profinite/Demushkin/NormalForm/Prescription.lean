@@ -449,13 +449,16 @@ theorem hasPrescriptionProperty_orientationNeTwo (hn₁ : 1 < n) (u : ℤ_[p]ˣ)
     (by rw [orientationNeTwo_presentedProPGen_one q n u hu hn₁]; exact hu')
     fun _ hi ↦ orientationNeTwo_presentedProPGen_of_ne q n u hu hi
 
-/-- **Uniqueness of the canonical character of the `q ≠ 2` normal form**: for `p ∣ q` and `n ≥ 2`
-even, a character with the prescription property is the orientation with marked value its value
-`χ(x₂)`. -/
-theorem eq_orientationNeTwo_of_hasPrescriptionProperty (hq : p ∣ q) (hn : Even n) (hn₁ : 1 < n)
+/-- **Uniqueness of the canonical character of the `q ≠ 2` normal form**: for `p ∣ q` and `n`
+even (for `n = 0` the group is trivial), a character with the prescription property is the
+orientation with marked value its value `χ(x₂)`. -/
+theorem eq_orientationNeTwo_of_hasPrescriptionProperty (hq : p ∣ q) (hn : Even n)
     (hχ : HasPrescriptionProperty χ) :
     χ = orientationNeTwo q n (χ (presentedProPGen p n _ 1))
       ((presentedProP.isProP p _ _).mem_unitsPrincipal_one χ _) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn₀
+  · exact presentedProP.hom_ext_of fun i ↦ i.elim0
+  have hn₁ : 1 < n := by obtain ⟨k, hk⟩ := hn; omega
   obtain ⟨-, h⟩ :=
     (hasPrescriptionProperty_presentedProP_demushkinWordNeTwo_iff q n χ hq hn hn₁).1 hχ
   refine presentedProP.hom_ext_of fun i ↦ ?_
@@ -465,10 +468,11 @@ theorem eq_orientationNeTwo_of_hasPrescriptionProperty (hq : p ∣ q) (hn : Even
   · exact h i hi
 
 /-- **The `q ≠ 2` normal form has exactly one character with the prescription property** (Labute,
-Theorem 4, for the normal form `x₁^q (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)` with `p ∣ q` and `n ≥ 2`
-even): the standard orientation, with `χ(x₂) = (1 - q)⁻¹` and `χ(x_i) = 1` otherwise. -/
+Theorem 4, for the normal form `x₁^q (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)` with `p ∣ q` and `n`
+even; for `n = 0` the group is trivial): the standard orientation, with `χ(x₂) = (1 - q)⁻¹` and
+`χ(x_i) = 1` otherwise. -/
 theorem existsUnique_hasPrescriptionProperty_presentedProP_demushkinWordNeTwo (hq : p ∣ q)
-    (hn : Even n) (hn₁ : 1 < n) :
+    (hn : Even n) :
     ∃! χ : presentedProP p (Fin n) {demushkinWordNeTwo q n (freeProPGen p n)} →ₜ* ℤ_[p]ˣ,
       HasPrescriptionProperty χ := by
   obtain ⟨m, rfl⟩ := hq
@@ -482,6 +486,14 @@ theorem existsUnique_hasPrescriptionProperty_presentedProP_demushkinWordNeTwo (h
     refine ⟨(hunit.unit⁻¹ : ℤ_[p]ˣ) * m, ?_⟩
     push_cast at hu' ⊢
     linear_combination hu'
+  rcases Nat.eq_zero_or_pos n with rfl | hn₀
+  · -- The group is trivial: the relator is `1`.
+    refine ⟨orientationNeTwo _ 0 _ hu, ?_, fun χ _ ↦ presentedProP.hom_ext_of fun i ↦ i.elim0⟩
+    refine presentedProP.hasPrescriptionProperty_of_forall_isCrossedHom_eq_zero
+      fun F _ hF r hr ↦ ?_
+    rw [Set.mem_singleton_iff.mp hr, demushkinWordNeTwo_def, freeProPGen_eq_one_of_le p le_rfl,
+      one_pow, one_mul, Nat.zero_div, List.range_zero, List.map_nil, List.prod_nil, hF.map_one]
+  have hn₁ : 1 < n := by obtain ⟨k, hk⟩ := hn; omega
   refine ⟨orientationNeTwo _ n _ hu, hasPrescriptionProperty_orientationNeTwo _ n hn₁ _ hu hu',
     fun χ hχ ↦ ?_⟩
   obtain ⟨h₁, h⟩ := (hasPrescriptionProperty_presentedProP_demushkinWordNeTwo_iff _ n χ
@@ -627,11 +639,24 @@ theorem hasPrescriptionProperty_orientationTwoOdd (hn₂ : 2 < n) (u : ℤ_[2]ˣ
     fun _ hi₀ hi₂ ↦ orientationTwoOdd_presentedProPGen_of_ne f n u hi₀ hi₂
 
 /-- **Uniqueness of the canonical character of the `q = 2`, `n` odd normal form**: for `f ≥ 1` and
-`n ≥ 3` odd, a character with the prescription property is the orientation with marked value its
-value `χ(x₃)`. -/
-theorem eq_orientationTwoOdd_of_hasPrescriptionProperty (hf : 0 < f) (hn : Odd n) (hn₂ : 2 < n)
+`n` odd (for `n = 1` the group is `ℤ/2`), a character with the prescription property is the
+orientation with marked value its value `χ(x₃)`. -/
+theorem eq_orientationTwoOdd_of_hasPrescriptionProperty (hf : 0 < f) (hn : Odd n)
     (hχ : HasPrescriptionProperty χ) :
     χ = orientationTwoOdd f n (χ (presentedProPGen 2 n _ 2)) := by
+  by_cases hn₂ : 2 < n
+  swap
+  · obtain rfl : n = 1 := by obtain ⟨k, hk⟩ := hn; omega
+    refine presentedProP.hom_ext_of fun i ↦ ?_
+    obtain rfl := Subsingleton.elim i 0
+    have hmem : demushkinWordTwoOdd f 1 (freeProPGen 2 1) ∈
+        proPFrattini 2 (freeProP 2 (Fin 1)) := by
+      rw [demushkinWordTwoOdd_one f _ (freeProPGen_eq_one_of_le 2 le_rfl)]
+      exact pow_mem_proPFrattini _
+    rw [← presentedProPGen_val, Fin.val_zero,
+      apply_presentedProPGen_zero_eq_neg_one_of_hasPrescriptionProperty_demushkinWordTwoOdd f 1 χ
+        hmem one_pos hχ,
+      orientationTwoOdd_presentedProPGen_zero f 1 _ one_pos]
   obtain ⟨h₀, -, h⟩ :=
     (hasPrescriptionProperty_presentedProP_demushkinWordTwoOdd_iff f n χ hf hn hn₂).1 hχ
   refine presentedProP.hom_ext_of fun i ↦ ?_
@@ -778,12 +803,18 @@ theorem hasPrescriptionProperty_presentedProP_demushkinWordTwoOddTop_iff (hn : O
   · rw [presentedProPGen_eq_one_of_le 2 n _ (not_lt.1 hin), map_one]
 
 /-- **The standard orientation of the `q = 2`, `n` odd normal form at level `f = ∞` has the
-prescription property**, for `0 < n`. -/
-theorem hasPrescriptionProperty_orientationTwoOddTop (hn : 0 < n) :
-    HasPrescriptionProperty (orientationTwoOddTop n) :=
-  hasPrescriptionProperty_presentedProP_demushkinWordTwoOddTop_of_apply_eq n _
-    (orientationTwoOddTop_presentedProPGen_zero n hn)
-    fun _ hi₀ ↦ orientationTwoOddTop_presentedProPGen_of_ne n hi₀
+prescription property**; for `n = 0` the group is trivial. -/
+theorem hasPrescriptionProperty_orientationTwoOddTop :
+    HasPrescriptionProperty (orientationTwoOddTop n) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · refine presentedProP.hasPrescriptionProperty_of_forall_isCrossedHom_eq_zero
+      fun F _ hF r hr ↦ ?_
+    rw [Set.mem_singleton_iff.mp hr, demushkinWordTwoOddTop_def,
+      freeProPGen_eq_one_of_le 2 le_rfl, one_pow, one_mul, Nat.zero_div, List.range_zero,
+      List.map_nil, List.prod_nil, hF.map_one]
+  · exact hasPrescriptionProperty_presentedProP_demushkinWordTwoOddTop_of_apply_eq n _
+      (orientationTwoOddTop_presentedProPGen_zero n hn)
+      fun _ hi₀ ↦ orientationTwoOddTop_presentedProPGen_of_ne n hi₀
 
 /-- **Uniqueness of the canonical character of the `q = 2`, `n` odd normal form at level
 `f = ∞`**: for `n` odd, a character with the prescription property is the standard orientation. -/
@@ -804,7 +835,7 @@ with `n` odd): the standard orientation, with `χ(x₁) = -1` and `χ(x_i) = 1` 
 theorem existsUnique_hasPrescriptionProperty_presentedProP_demushkinWordTwoOddTop (hn : Odd n) :
     ∃! χ : presentedProP 2 (Fin n) {demushkinWordTwoOddTop n (freeProPGen 2 n)} →ₜ* ℤ_[2]ˣ,
       HasPrescriptionProperty χ :=
-  ⟨orientationTwoOddTop n, hasPrescriptionProperty_orientationTwoOddTop n hn.pos,
+  ⟨orientationTwoOddTop n, hasPrescriptionProperty_orientationTwoOddTop n,
     fun χ hχ ↦ eq_orientationTwoOddTop_of_hasPrescriptionProperty n χ hn hχ⟩
 
 end TwoOddTop
