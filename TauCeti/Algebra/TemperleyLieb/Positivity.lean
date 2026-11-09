@@ -27,8 +27,8 @@ idempotent, so its norm `tr k (f_k⋆ * f_k) = tr k f_k = [k + 1]` is negative. 
 straight strands multiplies the trace by `δ ^ (n - k) > 0`, so the form on `n` strands is
 indefinite for every `n ≥ k`.
 
-The results are stated for an arbitrary Markov trace; by uniqueness they apply to the spin-model
-trace `TauCeti.TemperleyLieb.markovTrace` through `TauCeti.TemperleyLieb.isMarkovTrace_markovTrace`.
+The results are stated for an arbitrary Markov trace, so they apply to the spin-model trace
+`TauCeti.TemperleyLieb.markovTrace` through `TauCeti.TemperleyLieb.isMarkovTrace_markovTrace`.
 Over `ℂ` the analytic adjoint is the instance `TauCeti.TemperleyLieb.instStarRing`, whose
 hypothesis `Fact (IsSelfAdjoint (δ : ℂ))` holds for every real `δ` by `Complex.conj_ofReal`.
 
@@ -177,9 +177,8 @@ theorem exists_map_star_mul_self_neg (htr : IsMarkovTrace ℂ (δ : ℂ) tr) (h�
       (qInt_pos_of_notMem_jonesLoopParameters hδ hδJ hj hjk).ne').isUnit
   obtain ⟨x, hx⟩ := htr.exists_map_star_mul_self_eq hunit hn
   refine ⟨x, ?_⟩
-  rw [hx, hq, ← Complex.ofReal_pow, ← Complex.ofReal_mul, ← Complex.ofReal_zero,
-    Complex.real_lt_real]
-  exact mul_neg_of_pos_of_neg (pow_pos hδ _)
+  rw [hx, hq]
+  exact_mod_cast mul_neg_of_pos_of_neg (pow_pos hδ _)
     (qInt_floor_add_one_neg_of_notMem_jonesLoopParameters hδ hδJ)
 
 /-- **Jones's restriction on the loop parameter.** If `δ > 0` and the Hermitian forms

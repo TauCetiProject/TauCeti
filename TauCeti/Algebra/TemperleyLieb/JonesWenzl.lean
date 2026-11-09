@@ -172,11 +172,9 @@ theorem star_jonesWenzl : ∀ n, star (jonesWenzl δ n) = jonesWenzl δ n
   | 0 => by simp
   | 1 => by simp
   | m + 2 => by
-    have hq (k : ℕ) : star (qInt R δ k) = qInt R δ k := by
-      rw [← starRingEnd_apply, RingHom.map_qInt, starRingEnd_apply,
-        (Fact.out : IsSelfAdjoint δ).star_eq]
-    rw [jonesWenzl_add_two, star_sub, star_smul, star_mul', ← Ring.inverse_star, hq, hq,
-      star_mul, star_mul, star_e, ← strandIncl_star, star_jonesWenzl (m + 1), mul_assoc]
+    have hq (k : ℕ) := ((Fact.out : IsSelfAdjoint δ).qInt k).star_eq
+    simp [jonesWenzl_add_two, star_mul', ← Ring.inverse_star, hq, ← strandIncl_star,
+      star_jonesWenzl (m + 1), mul_assoc]
 
 /-- For a self-adjoint loop value, the Jones–Wenzl projection is self-adjoint. -/
 theorem isSelfAdjoint_jonesWenzl (n : ℕ) : IsSelfAdjoint (jonesWenzl δ n) :=
