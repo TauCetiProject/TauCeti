@@ -80,7 +80,8 @@ off-diagonal entries of the intersection matrix.
   line bundle by an effective Cartier divisor meeting a proper curve properly;
 * `LineBundleClass.intersectionNumber_mul_of_isIntegral` and
   `LineBundleClass.intersectionNumber_inv_of_isIntegral`: additivity on a proper integral curve,
-  possibly singular, with `LineBundleClass.intersectionNumber_pow_of_isIntegral` and
+  possibly singular, with `LineBundleClass.intersectionNumber_pow_of_isIntegral`,
+  `LineBundleClass.intersectionNumber_zpow_of_isIntegral` and
   `LineBundleClass.intersectionNumber_prod_of_isIntegral` for powers and finite products;
 * `LineBundleClass.intersectionNumber_mul` and `LineBundleClass.intersectionNumber_inv`:
   additivity on a regular proper integral curve, bundled as
@@ -101,6 +102,11 @@ off-diagonal entries of the intersection matrix.
   components of the special fibre of a regular model are the degrees `deg(𝒪_X(Cᵢ)|_{Cⱼ})`.
 * Q. Liu, *Algebraic Geometry and Arithmetic Curves*, Section 9.1, on intersection numbers of
   divisors with vertical curves on arithmetic surfaces.
+* The statements of `LineBundleClass.intersectionNumber_pow` and
+  `LineBundleClass.intersectionNumber_zpow` are adapted from split 11 of the Tau Ceti lookahead
+  branch `lookahead/StableReduction/relative-ampleness` of `roed-math/TauCeti-w2-fresh`, at
+  commit `efa6fc8`:
+  <https://github.com/roed-math/TauCeti-w2-fresh/tree/efa6fc8f3735429eb3c763c1304db4db05ff5394>.
 -/
 
 public section
@@ -265,6 +271,18 @@ theorem intersectionNumber_pow_of_isIntegral (a : LineBundleClass X) (n : ℕ) :
   | zero => simp
   | succ n ih => rw [pow_succ, intersectionNumber_mul_of_isIntegral, ih]; push_cast; ring
 
+/-- The intersection number of an integer power of a class with a proper integral curve over `k`
+with finite-dimensional `H⁰(C, 𝒪_C)` and `H¹(C, 𝒪_C)` is the corresponding multiple. -/
+@[simp]
+theorem intersectionNumber_zpow_of_isIntegral (a : LineBundleClass X) (n : ℤ) :
+    intersectionNumber k ι (a ^ n) = n * intersectionNumber k ι a := by
+  cases n with
+  | ofNat n => simp
+  | negSucc n =>
+    rw [zpow_negSucc, intersectionNumber_inv_of_isIntegral, intersectionNumber_pow_of_isIntegral,
+      Int.negSucc_eq]
+    push_cast; ring
+
 /-- The intersection number of a finite product of classes with a proper integral curve over `k`
 with finite-dimensional `H⁰(C, 𝒪_C)` and `H¹(C, 𝒪_C)` is the sum of their intersection
 numbers. -/
@@ -331,14 +349,20 @@ local rings are discrete valuation rings is `n` times that of `a`. -/
 @[simp]
 theorem intersectionNumber_pow (a : LineBundleClass X) (n : ℕ) :
     intersectionNumber k ι (a ^ n) = n * intersectionNumber k ι a := by
-  simpa using (intersectionNumberHom k ι).map_nsmul n (Additive.ofMul a)
+  have := InvertibleSheaf.finiteDimensional_cohomology_zero k
+    (coheight_le_of_relativeDimensionLE_of_field (d := 1) (C ↘ Spec (.of k)))
+    (InvertibleSheaf.trivial C)
+  exact intersectionNumber_pow_of_isIntegral k ι a n
 
 /-- The intersection number of an integer power `aⁿ` with a proper integral curve whose
 codimension-one local rings are discrete valuation rings is `n` times that of `a`. -/
 @[simp]
 theorem intersectionNumber_zpow (a : LineBundleClass X) (n : ℤ) :
     intersectionNumber k ι (a ^ n) = n * intersectionNumber k ι a := by
-  simpa using (intersectionNumberHom k ι).map_zsmul n (Additive.ofMul a)
+  have := InvertibleSheaf.finiteDimensional_cohomology_zero k
+    (coheight_le_of_relativeDimensionLE_of_field (d := 1) (C ↘ Spec (.of k)))
+    (InvertibleSheaf.trivial C)
+  exact intersectionNumber_zpow_of_isIntegral k ι a n
 
 end Regular
 
