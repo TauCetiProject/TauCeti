@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
 public import Mathlib.Analysis.Calculus.UniformLimitsDeriv
+public import TauCeti.Analysis.Hofer
 
 /-!
 # Rescaling Floer solutions at a bubbling point
@@ -44,8 +45,16 @@ lower limit of the Floer energies of the original maps over the disc of radius `
 after the change of variables `z = c + ε w`, and needs no equation; it is the energy accounting
 that bounds the energy of a bubble by the energy lost at its bubbling point.
 
-Choosing the centres and scales, for instance by Hofer's lemma (`hofer` in Mathlib), and the
-removal of the singularity at infinity of the limit plane are not carried out here.
+The centres and scales are chosen by Hofer's lemma
+(`TauCeti.exists_tendsto_norm_fderiv_rescale_le`). If the derivatives of `C¹` solutions blow up
+along points `z i → z₀`, there are centres `c i → z₀` and scales `ε i → 0` such that the rescaled
+maps solve the rescaled Floer equation on closed discs of radii `R i → ∞`, have derivative of norm
+one at the origin and derivatives of norm at most two on those discs, while the rescaled discs
+`c i + ε i • closedBall 0 (R i)` shrink to `z₀`
+(`SymplecticForm.exists_rescale_isComplexLinearMap_perturbedFDeriv`). The extraction of a
+convergent subsequence of these rescaled maps, which needs elliptic estimates for the rescaled
+equation, and the removal of the singularity at infinity of the limit plane are not carried out
+here.
 
 ## Main results
 
@@ -58,6 +67,9 @@ removal of the singularity at infinity of the limit plane are not carried out he
   under locally uniform convergence of the derivatives.
 * `SymplecticForm.lintegral_symplecticForm_le_liminf_of_tendsto_rescale`: the area of a limit of
   rescaled maps is at most the energy concentrating at the bubbling point.
+* `SymplecticForm.exists_rescale_isComplexLinearMap_perturbedFDeriv`: where the derivatives of
+  Floer solutions blow up, rescaling gives solutions of the rescaled equation on growing discs with
+  derivatives of norm one at the origin and at most two on the discs.
 
 ## References
 
@@ -119,10 +131,8 @@ theorem perturbedFDeriv_rescale (ω : SymplecticForm V) :
   -- Unlike `SymplecticForm.perturbedFDeriv_perturbationPullback`, this needs no differentiability:
   -- the chain rule for affine reparametrizations and the homogeneity `X_{ε H} = ε X_H` hold for
   -- arbitrary maps and Hamiltonians.
-  have hd : fderiv ℝ (fun w ↦ u (c + ε • w)) w = ε • fderiv ℝ u (c + ε • w) := by
-    rw [fderiv_comp_smul (f := fun y ↦ u (c + y)), fderiv_comp_add_left]
   refine ContinuousLinearMap.ext fun v ↦ ?_
-  simp [perturbedFDeriv_apply, hd, smul_sub, smul_comm ε]
+  simp [perturbedFDeriv_apply, fderiv_comp_add_smul, smul_sub, smul_comm ε]
 
 /-- **Rescaled solutions.** For a nonzero scale `ε`, the rescaled map `w ↦ u(c + ε w)` solves the
 Floer equation for the rescaled perturbation `ε K(c + ε w)` at `w`, with respect to a structure
@@ -161,8 +171,7 @@ theorem hamiltonianCurvature_rescale (ω : SymplecticForm V) {x : V} :
       ε • ε • fderiv ℝ (fun z ↦ K z x) (c + ε • w) := by
     -- The function `w ↦ ε * K (c + ε • w) x` is the scalar multiple `ε • (w ↦ K (c + ε • w) x)`.
     refine (congrFun (fderiv_const_smul_field (f := fun w ↦ K (c + ε • w) x) ε) w).trans ?_
-    rw [Pi.smul_apply, fderiv_comp_smul (f := fun y ↦ K (c + y) x),
-      fderiv_comp_add_left (f := fun z ↦ K z x)]
+    rw [Pi.smul_apply, fderiv_comp_add_smul (fun z ↦ K z x)]
   simp only [hamiltonianCurvature_def, hd, poissonBracket_const_mul_left,
     poissonBracket_const_mul_right, smul_apply, smul_eq_mul]
   ring
@@ -365,6 +374,57 @@ theorem lintegral_symplecticForm_le_liminf_of_tendsto_rescale (ω : SymplecticFo
     lintegral_mono_set (ball_subset_ball (min_le_left δ r)))
 
 end Limit
+
+section Bubbling
+
+variable {ι : Type*} {l : Filter ι} {u : ι → ℝ × ℝ → V} {z : ι → ℝ × ℝ} {z₀ : ℝ × ℝ}
+
+/-- **Bubbling sequences of Floer solutions.** Let `u i` be `C¹` on an open set `U` containing
+`z₀` and solve the Floer equation `(du - X_K)^{0,1} = 0` on `U` for a domain-dependent structure
+`J(z, x)`. If the derivatives blow up along points `z i → z₀`, there are centres `c i → z₀`, scales
+`ε i > 0` with `ε i → 0` and radii `R i → ∞` with `ε i * R i → 0`, such that eventually, for every
+`w` in the closed disc of radius `R i`, the point `c i + ε i • w` lies in `U` and the rescaled map
+`w ↦ u i (c i + ε i • w)` has derivative of norm at most two at `w` and solves at `w` the Floer
+equation for the rescaled perturbation `ε i K(c i + ε i • w)` and the structure
+`J(c i + ε i • w, ·)`; moreover its derivative at the origin has norm one. -/
+theorem exists_rescale_isComplexLinearMap_perturbedFDeriv (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hz₀ : z₀ ∈ U)
+    (hu : ∀ i, ContDiffOn ℝ 1 (u i) U)
+    (hsol : ∀ᶠ i in l, ∀ y ∈ U, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J y (u i y)) (ω.perturbedFDeriv Ks Kt (u i) y : ℝ × ℝ →ₗ[ℝ] V))
+    (hz : Tendsto z l (𝓝 z₀)) (hblow : Tendsto (fun i ↦ ‖fderiv ℝ (u i) (z i)‖) l atTop) :
+    ∃ (c : ι → ℝ × ℝ) (ε R : ι → ℝ), (∀ i, 0 < ε i) ∧ Tendsto c l (𝓝 z₀) ∧
+      Tendsto ε l (𝓝 0) ∧ Tendsto R l atTop ∧ Tendsto (fun i ↦ ε i * R i) l (𝓝 0) ∧
+      ∀ᶠ i in l, ‖fderiv ℝ (fun w ↦ u i (c i + ε i • w)) 0‖ = 1 ∧
+        ∀ w, ‖w‖ ≤ R i → c i + ε i • w ∈ U ∧
+          ‖fderiv ℝ (fun w ↦ u i (c i + ε i • w)) w‖ ≤ 2 ∧
+          IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+            (J (c i + ε i • w) (u i (c i + ε i • w)))
+            (ω.perturbedFDeriv (fun w x ↦ ε i * Ks (c i + ε i • w) x)
+              (fun w x ↦ ε i * Kt (c i + ε i • w) x) (fun w ↦ u i (c i + ε i • w)) w :
+              ℝ × ℝ →ₗ[ℝ] V) := by
+  obtain ⟨r, hr, hrU⟩ := nhds_basis_closedBall.mem_iff.1 (hU.mem_nhds hz₀)
+  obtain ⟨c, ε, R, hε, hc, hε0, hR, hεR, hev⟩ := exists_tendsto_norm_fderiv_rescale_le hr
+    (fun i ↦ ((hu i).continuousOn_fderiv_of_isOpen hU le_rfl).mono hrU) hz hblow
+  -- Eventually the rescaled discs `c i + ε i • closedBall 0 (R i)` lie in `closedBall z₀ r ⊆ U`.
+  have hin : ∀ᶠ i in l, ε i * R i + dist (c i) z₀ < r := by
+    have h := hεR.add (tendsto_iff_dist_tendsto_zero.1 hc)
+    rw [add_zero] at h
+    exact h.eventually (gt_mem_nhds hr)
+  refine ⟨c, ε, R, hε, hc, hε0, hR, hεR, ?_⟩
+  filter_upwards [hev, hin, hsol] with i hi hin hsol
+  refine ⟨hi.1, fun w hw ↦ ?_⟩
+  have hmem : c i + ε i • w ∈ U := hrU <| mem_closedBall.2 <| by
+    have hεw : ‖ε i • w‖ ≤ ε i * R i := by
+      rw [norm_smul, Real.norm_of_nonneg (hε i).le]
+      exact mul_le_mul_of_nonneg_left hw (hε i).le
+    have := dist_triangle (c i + ε i • w) (c i) z₀
+    rw [dist_self_add_left] at this
+    linarith
+  exact ⟨hmem, hi.2 w hw,
+    (ω.isComplexLinearMap_perturbedFDeriv_rescale_iff (hε i).ne').2 (hsol _ hmem)⟩
+
+end Bubbling
 
 end SymplecticForm
 
