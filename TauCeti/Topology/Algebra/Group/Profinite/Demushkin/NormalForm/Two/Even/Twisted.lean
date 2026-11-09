@@ -97,6 +97,165 @@ variable {n : ℕ}
 
 namespace freeProP
 
+/-- **Step 1 of Labute's normal form.** For a relator `r ∈ Φ(F)` presenting a Demushkin group of
+even rank whose canonical character has image `U^[f]` (`f ≥ 2`), a continuous automorphism `e₁`
+of `F` carries the class of `r` in `gr_1(F)` to the class of the normal-form word: the degree-one
+form of `r` is nondegenerate and not alternating, as `w ∉ 1 + 4ℤ_2` lies in the image. -/
+private theorem exists_continuousMulEquiv_gradedMk_eq_demushkinWordNeTwo_of_range_eq
+    {r : freeProP 2 (Fin n)} (hr : r ∈ proPFrattini 2 (freeProP 2 (Fin n)))
+    (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r})) (hn : Even n) {f : ℕ} (hf : 2 ≤ f)
+    (hq : 2 ∣ 2 + 2 ^ f) {w : ℤ_[2]ˣ} (hw2 : w ∉ unitsPrincipal 2 2)
+    (hA : (demushkinCharacter hG).toMonoidHom.range = (zpowers w).topologicalClosure) :
+    ∃ e₁ : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n),
+      ∃ h : e₁ r ∈ pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1,
+        gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨e₁ r, h⟩ = gradedMk 2 (freeProP 2 (Fin n)) 1
+          ⟨demushkinWordNeTwo (2 + 2 ^ f) n (freeProPGen 2 n),
+            demushkinWordNeTwo_mem_pLowerCentralSeries_one hq n _⟩ := by
+  have hn0 : 0 < n := by simpa using hG.card_pos_presentedProP
+  have hq4 : (2 + 2 ^ f) % 4 = 2 := by
+    obtain ⟨g, rfl⟩ : ∃ g, f = g + 2 := ⟨f - 2, by omega⟩
+    rw [pow_add, pow_two]
+    omega
+  have hr₁ : r ∈ pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1 :=
+    (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr
+  have hnd := hG.nondegenerate_degreeOneForm hr (ContinuousMulEquiv.refl _)
+  have hnalt : ¬ (degreeOneForm (gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨r, hr₁⟩)).IsAlt :=
+    HasPrescriptionProperty.not_isAlt_degreeOneForm_of_not_range_le_unitsPrincipal_two hr hnd
+      (hasPrescriptionProperty_demushkinCharacter hG) fun hle ↦
+        hw2 (hle (hA ▸ le_topologicalClosure _ (mem_zpowers w)))
+  obtain ⟨e₁, he₁⟩ := exists_continuousMulEquiv_gradedMap_eq_of_not_isAlt _ _ hnd hnalt
+    (nondegenerate_degreeOneForm_demushkinWordNeTwo hn hq)
+    (not_isAlt_degreeOneForm_demushkinWordNeTwo hn0 hq4)
+  refine ⟨e₁,
+    (e₁ : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)).toMonoidHom.map_pLowerCentralSeries_le
+      (e₁ : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)).continuous 1 ⟨r, hr₁, rfl⟩, ?_⟩
+  rw [← he₁, gradedMap_gradedMk]
+  rfl
+
+/-- **Step 2 of Labute's normal form.** Let `χ` be a continuous character of `F` with a value
+`w ∉ 1 + 4ℤ_2`, killing a relator class that is the class of the normal-form word under every
+continuous crossed homomorphism for `χ`. Then `χ(x_i) ∈ 1 + 4ℤ_2` for `i ≠ 2`, and
+`χ(x₂) ∉ 1 + 4ℤ_2`, since otherwise the image of `χ` would lie in `1 + 4ℤ_2`. -/
+private theorem apply_mem_and_notMem_unitsPrincipal_two_of_crossedHom_eq_zero
+    (hn : Even n) (hn1 : 1 < n) {q : ℕ} (hq : 2 ∣ q) {r₁ : freeProP 2 (Fin n)}
+    (hr₁ : r₁ ∈ pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1)
+    (hclass : gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨r₁, hr₁⟩ = gradedMk 2 (freeProP 2 (Fin n)) 1
+      ⟨demushkinWordNeTwo q n (freeProPGen 2 n),
+        demushkinWordNeTwo_mem_pLowerCentralSeries_one hq n _⟩)
+    (χ : freeProP 2 (Fin n) →ₜ* ℤ_[2]ˣ)
+    (hkill : ∀ D : freeProP 2 (Fin n) → ℤ_[2], Continuous D → IsCrossedHom χ D → D r₁ = 0)
+    {w : ℤ_[2]ˣ} (hw2 : w ∉ unitsPrincipal 2 2) (hwχ : w ∈ χ.toMonoidHom.range) :
+    (∀ j, j ≠ ⟨1, hn1⟩ → χ (of j) ∈ unitsPrincipal 2 2) ∧
+      χ (of ⟨1, hn1⟩) ∉ unitsPrincipal 2 2 := by
+  have hU2 : ∀ j, j ≠ ⟨1, hn1⟩ → χ (of j) ∈ unitsPrincipal 2 2 := fun j hj ↦
+    apply_mem_unitsPrincipal_two_of_crossedHom_single_eq_zero hn hn1 hq ⟨r₁, hr₁⟩ hclass
+      (fun k _ ↦ hkill _ (continuous_crossedHom χ _) (isCrossedHom_crossedHom χ _)) hj
+  refine ⟨hU2, fun hu2 ↦ ?_⟩
+  -- Every generator would then map into `1 + 4ℤ_2`, hence all of `F`, but `w` is a value.
+  have hle : χ.toMonoidHom.range ≤ unitsPrincipal 2 2 :=
+    (MonoidHom.range_le_iff_of_topologicalClosure_closure_eq_top
+      (topologicalClosure_closure_range_of_eq_top 2 (Fin n)) χ.continuous
+      (isClosed_unitsPrincipal (p := 2) 2)).2 (by
+        rintro _ ⟨j, rfl⟩
+        by_cases hj : j = ⟨1, hn1⟩
+        · rw [hj]
+          exact hu2
+        · exact hU2 j hj)
+  exact hw2 (hle hwχ)
+
+/-- **Step 3b of Labute's normal form: the basis modification.** Given a character `χ` of `F` and
+`2`-adic exponents `s j` with `χ(x_j) χ(x₂)^{2 s_j}` equal to `v` at `j = 2` and to `1` otherwise,
+the basis modification `x_j ↦ x_j x₂^{2 s_j}` is a continuous automorphism `e₂` of `F` with
+`χ(e₂ x_j)` equal to these values, and its inverse does not change the class in `gr_1(F)` of any
+element of `λ_1(F)`. -/
+private theorem exists_continuousMulEquiv_apply_of_mul_padicPow_sq_eq_ite (hn1 : 1 < n)
+    (χ : freeProP 2 (Fin n) →ₜ* ℤ_[2]ˣ) {v : ℤ_[2]ˣ} (s : Fin n → ℤ_[2])
+    (hs : ∀ j, χ (of j) * isProP_units_padicInt_two.padicPow (χ (of ⟨1, hn1⟩) ^ 2) (s j) =
+      if j = ⟨1, hn1⟩ then v else 1) :
+    ∃ e₂ : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n),
+      (∀ j, χ (e₂ (of j)) = if j = ⟨1, hn1⟩ then v else 1) ∧
+        ∀ x : pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1,
+          ∃ h : e₂.symm x ∈ pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1,
+            gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨e₂.symm x, h⟩ =
+              gradedMk 2 (freeProP 2 (Fin n)) 1 x := by
+  let ω : Fin n → pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1 := fun j ↦
+    ⟨(isProP_freeProP 2 (Fin n)).padicPow (of ⟨1, hn1⟩ ^ 2) (s j),
+      (isProP_freeProP 2 (Fin n)).padicPow_mem (isClosed_pLowerCentralSeries 1) (by
+        rw [pLowerCentralSeries_one_eq_proPFrattini Fact.out]
+        exact pow_mem_proPFrattini _) _⟩
+  have hχω : ∀ j, χ (ω j) = isProP_units_padicInt_two.padicPow (χ (of ⟨1, hn1⟩) ^ 2) (s j) :=
+    fun j ↦ by
+      have e : χ ((isProP_freeProP 2 (Fin n)).padicPow (of ⟨1, hn1⟩ ^ 2) (s j)) =
+          isProP_units_padicInt_two.padicPow (χ (of ⟨1, hn1⟩ ^ 2)) (s j) :=
+        (isProP_freeProP 2 (Fin n)).map_padicPow isProP_units_padicInt_two
+          (χ : freeProP 2 (Fin n) →* ℤ_[2]ˣ) χ.continuous _ _
+      dsimp only [ω]
+      rw [e, map_pow]
+  refine ⟨basisModificationEquiv le_rfl ω, fun j ↦ ?_, fun x ↦
+    ⟨basisModificationEquiv_symm_mem_pLowerCentralSeries le_rfl ω x.2,
+      gradedMk_basisModificationEquiv_symm le_rfl ω x⟩⟩
+  rw [basisModificationEquiv_apply, basisModification_of, map_mul, hχω, hs]
+
+/-- **The end of Labute's normal form.** Let `χ` be a character of `F` and `e₂` an automorphism
+with `χ(e₂ x_j) = v` at `j = 2` and `1` otherwise, where `v (1 + 2^f) = -1`, that does not change
+the class of elements of `λ_1(F)` modulo `λ_2(F)`. If a relator `r₁ ∈ λ_1(F)` of the class of the
+normal-form word lies in `ker χ` and is killed by every continuous crossed homomorphism for `χ`,
+then an automorphism of `F` carries `r₁` to the normal-form word. -/
+private theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_apply_eq_ite
+    (hn : Even n) (hn1 : 1 < n) {f : ℕ} (hf : 2 ≤ f) (hq : 2 ∣ 2 + 2 ^ f) {v : ℤ_[2]ˣ}
+    (hv : (v : ℤ_[2]) * (1 + (2 : ℤ_[2]) ^ f) = -1) (χ : freeProP 2 (Fin n) →ₜ* ℤ_[2]ˣ)
+    {r₁ : freeProP 2 (Fin n)} (hr₁ : r₁ ∈ pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1)
+    (hclass : gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨r₁, hr₁⟩ = gradedMk 2 (freeProP 2 (Fin n)) 1
+      ⟨demushkinWordNeTwo (2 + 2 ^ f) n (freeProPGen 2 n),
+        demushkinWordNeTwo_mem_pLowerCentralSeries_one hq n _⟩)
+    (hχr : χ r₁ = 1)
+    (hkill : ∀ D : freeProP 2 (Fin n) → ℤ_[2], Continuous D → IsCrossedHom χ D → D r₁ = 0)
+    (e₂ : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n))
+    (he₂ : ∀ j, χ (e₂ (of j)) = if j = ⟨1, hn1⟩ then v else 1)
+    (he₂c : ∀ x : pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1,
+      ∃ h : e₂.symm x ∈ pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1,
+        gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨e₂.symm x, h⟩ =
+          gradedMk 2 (freeProP 2 (Fin n)) 1 x) :
+    ∃ e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n),
+      e r₁ = demushkinWordNeTwo (2 + 2 ^ f) n (freeProPGen 2 n) := by
+  -- The character `χ₂ = χ ∘ e₂` has the tabulated values on the generators.
+  set χ₂ : freeProP 2 (Fin n) →ₜ* ℤ_[2]ˣ :=
+    χ.comp (e₂ : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)) with hχ₂
+  have hχ₂apply : ∀ g, χ₂ g = χ (e₂ g) := fun g ↦ by
+    rw [hχ₂, ContinuousMonoidHom.coe_comp, Function.comp_apply, ContinuousMonoidHom.coe_coe]
+  have hχ₂₁ : (χ₂ (of ⟨1, hn1⟩) : ℤ_[2]) * (1 - ((2 + 2 ^ f : ℕ) : ℤ_[2])) = 1 := by
+    rw [hχ₂apply, he₂, ite_eq_left rfl]
+    push_cast
+    linear_combination -hv
+  have hχ₂ne : ∀ j, j ≠ ⟨1, hn1⟩ → χ₂ (of j) = 1 := fun j hj ↦ by
+    rw [hχ₂apply, he₂, ite_eq_right hj]
+  -- The relator `r₂ = e₂⁻¹ r₁` is still in the class of the normal-form word.
+  obtain ⟨hr₂₁, hclass₂⟩ := he₂c ⟨r₁, hr₁⟩
+  rw [hclass] at hclass₂
+  -- It lies in `X = ker χ₂`, and every crossed homomorphism for `χ₂` kills it.
+  have hχ₂r₂ : χ₂ (e₂.symm r₁) = 1 := by rw [hχ₂apply, e₂.apply_symm_apply, hχr]
+  -- `4 ∣ 2^f` since `f ≥ 2`, so `v = -(1 + 2^f)⁻¹` has infinite order.
+  have h4 : (4 : ℤ_[2]) ∣ 2 ^ f := (by norm_num : (4 : ℤ_[2]) ∣ 2 ^ 2).trans (pow_dvd_pow 2 hf)
+  have hkerX : exponentSumKer 2 (Fin n) ⟨1, hn1⟩ = χ₂.toMonoidHom.ker :=
+    χ₂.exponentSumKer_eq_ker hχ₂ne (by
+      rw [hχ₂apply, he₂, ite_eq_left rfl]
+      exact not_isOfFinOrder_of_val_mul_one_add_eq_neg_one hv h4 (pow_ne_zero _ two_ne_zero))
+  have hkill₂ : ∀ D : freeProP 2 (Fin n) → ℤ_[2], Continuous D → IsCrossedHom χ₂ D →
+      D (e₂.symm r₁) = 0 := fun D hDc hD ↦
+    hkill _ (hDc.comp (e₂.symm : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)).continuous)
+      (hD.comp (e₂.symm : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)) fun x ↦ by
+        rw [hχ₂apply, ContinuousMonoidHom.coe_coe, e₂.apply_symm_apply])
+  -- The successive approximation inside `X`.
+  obtain ⟨e₃, -, he₃⟩ :=
+    exists_continuousMulEquiv_apply_demushkinWordNeTwo_eq_of_crossedHom_single_eq_zero hn hn1 hq
+      hχ₂₁ hχ₂ne ⟨e₂.symm r₁, hr₂₁⟩ hclass₂ (hkerX ▸ hχ₂r₂)
+      fun i _ ↦ hkill₂ _ (continuous_crossedHom χ₂ _) (isCrossedHom_crossedHom χ₂ _)
+  refine ⟨e₂.symm.trans e₃.symm, ?_⟩
+  have h := congrArg e₃.symm he₃
+  rw [e₃.symm_apply_apply] at h
+  rw [ContinuousMulEquiv.trans_apply]
+  exact h.symm
+
 /-- **Labute's normal form for the dyadic Demushkin groups of even rank with twisted image**
 (Labute, Theorem 5). Let `r ∈ Φ(F)` be a relator of the free pro-`2` group on an even number `n`
 of generators presenting a Demushkin group `G = ⟨x₁, …, x_n ∣ r⟩` whose canonical character has
@@ -110,44 +269,17 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq
     (hA : (demushkinCharacter hG).toMonoidHom.range = (zpowers w).topologicalClosure) :
     ∃ e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n),
       e r = demushkinWordNeTwo (2 + 2 ^ f) n (freeProPGen 2 n) := by
-  have hn0 : 0 < n := by simpa using hG.card_pos_presentedProP
   have hn1 : 1 < n := by
     obtain ⟨N, hN⟩ := hn
+    have hn0 : 0 < n := by simpa using hG.card_pos_presentedProP
     omega
   have hq : 2 ∣ 2 + 2 ^ f := dvd_add dvd_rfl (dvd_pow_self 2 (by omega))
-  have hq4 : (2 + 2 ^ f) % 4 = 2 := by
-    obtain ⟨g, rfl⟩ : ∃ g, f = g + 2 := ⟨f - 2, by omega⟩
-    rw [pow_add, pow_two]
-    omega
-  have hw₀₁ : demushkinWordNeTwo (2 + 2 ^ f) n (freeProPGen 2 n) ∈
-      pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1 :=
-    demushkinWordNeTwo_mem_pLowerCentralSeries_one hq n _
-  have hr₁ : r ∈ pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1 :=
-    (pLowerCentralSeries_one_eq_proPFrattini Fact.out).symm.le hr
   have hwf : -w ∈ unitsPrincipal 2 f := neg_mem_unitsPrincipal_two_of_val_eq hw
   have hwf' : -w ∉ unitsPrincipal 2 (f + 1) := neg_notMem_unitsPrincipal_two_succ_of_val_eq hw
   have hw2 : w ∉ unitsPrincipal 2 2 :=
     notMem_unitsPrincipal_two_of_neg_mem le_rfl (unitsPrincipal_antitone 2 hf hwf)
-  -- Step 1: the class of `r` has nondegenerate nonalternating degree-one form, so a change of
-  -- basis carries it to the class of the normal-form word.
-  have hnd := hG.nondegenerate_degreeOneForm hr (ContinuousMulEquiv.refl _)
-  have hnalt : ¬ (degreeOneForm (gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨r, hr₁⟩)).IsAlt :=
-    HasPrescriptionProperty.not_isAlt_degreeOneForm_of_not_range_le_unitsPrincipal_two hr hnd
-      (hasPrescriptionProperty_demushkinCharacter hG) fun hle ↦
-        hw2 (hle (hA ▸ le_topologicalClosure _ (mem_zpowers w)))
-  obtain ⟨e₁, he₁⟩ := exists_continuousMulEquiv_gradedMap_eq_of_not_isAlt _ _ hnd hnalt
-    (nondegenerate_degreeOneForm_demushkinWordNeTwo hn hq)
-    (not_isAlt_degreeOneForm_demushkinWordNeTwo hn0 hq4)
-  have hr₁₁ : e₁ r ∈ pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1 :=
-    (e₁ : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)).toMonoidHom.map_pLowerCentralSeries_le
-      (e₁ : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)).continuous 1 ⟨r, hr₁, rfl⟩
-  have hclass : gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨e₁ r, hr₁₁⟩ =
-      gradedMk 2 (freeProP 2 (Fin n)) 1
-        ⟨demushkinWordNeTwo (2 + 2 ^ f) n (freeProPGen 2 n), hw₀₁⟩ := by
-    rw [← he₁, gradedMap_gradedMk]
-    rfl
-  have hr₁Φ : e₁ r ∈ proPFrattini 2 (freeProP 2 (Fin n)) :=
-    (pLowerCentralSeries_one_eq_proPFrattini Fact.out).le hr₁₁
+  obtain ⟨e₁, hr₁₁, hclass⟩ :=
+    exists_continuousMulEquiv_gradedMk_eq_demushkinWordNeTwo_of_range_eq hr hG hn hf hq hw2 hA
   -- The presented group on `e₁ r` is Demushkin with the same image of the canonical character;
   -- `χ₁` is its canonical character read on `F`.
   have hG₁ : IsDemushkin 2 (presentedProP 2 (Fin n) {e₁ r}) :=
@@ -157,120 +289,28 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq
     rw [range_demushkinRelatorCharacter, range_demushkinCharacter_of_equiv hG hG₁
       (presentedProP.congrSingleton e₁ rfl), hA]
   have hχ₁A : ∀ g, χ₁ g ∈ (zpowers w).topologicalClosure := fun g ↦ hA₁ ▸ ⟨g, rfl⟩
+  have hχ₁r : χ₁ (e₁ r) = 1 := demushkinRelatorCharacter_mem_ker hG₁
   have hkill : ∀ D : freeProP 2 (Fin n) → ℤ_[2], Continuous D → IsCrossedHom χ₁ D →
-      D (e₁ r) = 0 := fun D hDc hD ↦ demushkinRelatorCharacter_isCrossedHom_eq_zero hG₁ hr₁Φ hDc hD
-  -- Step 2: the values of `χ₁` on the generators modulo `4`.
-  have hU2 : ∀ j, j ≠ ⟨1, hn1⟩ → χ₁ (of j) ∈ unitsPrincipal 2 2 := fun j hj ↦
-    apply_mem_unitsPrincipal_two_of_crossedHom_single_eq_zero hn hn1 hq ⟨e₁ r, hr₁₁⟩ hclass
-      (fun k _ ↦ hkill _ (continuous_crossedHom χ₁ _) (isCrossedHom_crossedHom χ₁ _)) hj
-  have hu2 : χ₁ (of ⟨1, hn1⟩) ∉ unitsPrincipal 2 2 := by
-    intro hu2
-    -- Every generator would then map into `1 + 4ℤ_2`, hence all of `F`, but `w` is a value.
-    have hle : χ₁.toMonoidHom.range ≤ unitsPrincipal 2 2 :=
-      (MonoidHom.range_le_iff_of_topologicalClosure_closure_eq_top
-        (topologicalClosure_closure_range_of_eq_top 2 (Fin n)) χ₁.continuous
-        (isClosed_unitsPrincipal (p := 2) 2)).2 (by
-          rintro _ ⟨j, rfl⟩
-          by_cases hj : j = ⟨1, hn1⟩
-          · rw [hj]
-            exact hu2
-          · exact hU2 j hj)
-    have hwA : w ∈ χ₁.toMonoidHom.range := hA₁ ▸ le_topologicalClosure _ (mem_zpowers w)
-    exact hw2 (hle hwA)
+      D (e₁ r) = 0 := fun D hDc hD ↦ demushkinRelatorCharacter_isCrossedHom_eq_zero hG₁
+        ((pLowerCentralSeries_one_eq_proPFrattini Fact.out).le hr₁₁) hDc hD
+  have hwχ : w ∈ χ₁.toMonoidHom.range := hA₁ ▸ le_topologicalClosure _ (mem_zpowers w)
+  obtain ⟨hU2, hu2⟩ := apply_mem_and_notMem_unitsPrincipal_two_of_crossedHom_eq_zero hn hn1 hq
+    hr₁₁ hclass χ₁ hkill hw2 hwχ
   -- The target value `v = -(1 + 2^f)⁻¹` of `χ` at `x₂`, a generator of `U^[f]`.
-  obtain ⟨v, hv⟩ := exists_val_mul_one_add_eq_neg_one (a := (2 : ℤ_[2]) ^ f)
-    (dvd_pow_self 2 (by omega))
-  have hvA : v ∈ (zpowers w).topologicalClosure := by
-    rw [← topologicalClosure_zpowers_eq_of_val_mul_one_add_two_pow_eq_neg_one hf hv hw]
-    exact le_topologicalClosure _ (mem_zpowers v)
-  have hv2 : v ∉ unitsPrincipal 2 2 := notMem_unitsPrincipal_two_of_neg_mem le_rfl
-    ((neg_mem_unitsPrincipal_iff_of_val_mul_one_add_eq_neg_one hv).2 (pow_dvd_pow 2 hf))
+  obtain ⟨v, hv, hvA, hv2⟩ := exists_val_mul_one_add_two_pow_eq_neg_one hf hw
   -- `χ₁(x₂)` topologically generates `U^[f]`: its negative has exact level `f`.
   obtain ⟨hnu, hnu'⟩ :=
     neg_mem_unitsPrincipal_and_notMem_succ_of_mem_topologicalClosure_zpowers_two hf hwf hwf'
       (hχ₁A _) hu2
   rw [(topologicalClosure_zpowers_two_eq_iff hf hf hwf hwf' hnu hnu').2 rfl] at hχ₁A hvA
-  -- Step 3: the `2`-adic exponents `s_j` with `χ₁(x_j) χ₁(x₂)^{2 s_j}` the tabulated values.
-  have hs : ∀ j : Fin n, ∃ s : ℤ_[2], χ₁ (of j) *
-      isProP_units_padicInt_two.padicPow (χ₁ (of ⟨1, hn1⟩) ^ 2) s =
-        if j = ⟨1, hn1⟩ then v else 1 := by
-    intro j
-    by_cases hj : j = ⟨1, hn1⟩
-    · obtain ⟨s, hs⟩ :=
-        exists_padicPow_sq_eq_of_mem_topologicalClosure_zpowers_two hf hnu hnu' hvA
-      rw [hj, ite_eq_left rfl]
-      exact ⟨s, by rw [hs, ite_eq_right hv2, mul_inv_cancel_left]⟩
-    · obtain ⟨s, hs⟩ := exists_padicPow_sq_eq_of_mem_topologicalClosure_zpowers_two hf hnu hnu'
-        (inv_mem (hχ₁A (of j)))
-      rw [ite_eq_right hj]
-      exact ⟨s, by rw [hs, ite_eq_left (inv_mem (hU2 j hj)), mul_inv_cancel]⟩
-  choose s hs using hs
-  -- The basis modification `x_j ↦ x_j x₂^{2 s_j}`, an automorphism `e₂` of `F` congruent to the
-  -- identity modulo `λ_1(F)`.
-  let ω : Fin n → pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1 := fun j ↦
-    ⟨(isProP_freeProP 2 (Fin n)).padicPow (of ⟨1, hn1⟩ ^ 2) (s j),
-      (isProP_freeProP 2 (Fin n)).padicPow_mem (isClosed_pLowerCentralSeries 1) (by
-        rw [pLowerCentralSeries_one_eq_proPFrattini Fact.out]
-        exact pow_mem_proPFrattini _) _⟩
-  have hω : ∀ j, (ω j : freeProP 2 (Fin n)) =
-      (isProP_freeProP 2 (Fin n)).padicPow (of ⟨1, hn1⟩ ^ 2) (s j) := fun j ↦ rfl
-  have hχω : ∀ j, χ₁ (ω j) = isProP_units_padicInt_two.padicPow (χ₁ (of ⟨1, hn1⟩) ^ 2) (s j) :=
-    fun j ↦ by
-      have e : χ₁ ((isProP_freeProP 2 (Fin n)).padicPow (of ⟨1, hn1⟩ ^ 2) (s j)) =
-          isProP_units_padicInt_two.padicPow (χ₁ (of ⟨1, hn1⟩ ^ 2)) (s j) :=
-        (isProP_freeProP 2 (Fin n)).map_padicPow isProP_units_padicInt_two
-          (χ₁ : freeProP 2 (Fin n) →* ℤ_[2]ˣ) χ₁.continuous _ _
-      rw [hω, e, map_pow]
-  set e₂ := basisModificationEquiv le_rfl ω with he₂
-  -- The character `χ₂ = χ₁ ∘ e₂` has the tabulated values on the generators.
-  set χ₂ : freeProP 2 (Fin n) →ₜ* ℤ_[2]ˣ :=
-    χ₁.comp (e₂ : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)) with hχ₂
-  have hχ₂apply : ∀ g, χ₂ g = χ₁ (e₂ g) := fun g ↦ by
-    rw [hχ₂, ContinuousMonoidHom.coe_comp, Function.comp_apply, ContinuousMonoidHom.coe_coe]
-  have hχ₂of : ∀ j, χ₂ (of j) = if j = ⟨1, hn1⟩ then v else 1 := fun j ↦ by
-    rw [hχ₂apply, he₂, basisModificationEquiv_apply, basisModification_of, map_mul, hχω, hs]
-  have hχ₂₁ : (χ₂ (of ⟨1, hn1⟩) : ℤ_[2]) * (1 - ((2 + 2 ^ f : ℕ) : ℤ_[2])) = 1 := by
-    rw [hχ₂of, ite_eq_left rfl]
-    push_cast
-    linear_combination -hv
-  have hχ₂ne : ∀ j, j ≠ ⟨1, hn1⟩ → χ₂ (of j) = 1 := fun j hj ↦ by
-    rw [hχ₂of, ite_eq_right hj]
-  -- The relator `r₂ = e₂⁻¹ (e₁ r)` is still in the class of the normal-form word.
-  have hr₂₁ : e₂.symm (e₁ r) ∈ pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1 :=
-    basisModificationEquiv_symm_mem_pLowerCentralSeries le_rfl ω hr₁₁
-  have hclass₂ : gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨e₂.symm (e₁ r), hr₂₁⟩ =
-      gradedMk 2 (freeProP 2 (Fin n)) 1
-        ⟨demushkinWordNeTwo (2 + 2 ^ f) n (freeProPGen 2 n), hw₀₁⟩ := by
-    rw [← hclass]
-    exact gradedMk_basisModificationEquiv_symm le_rfl ω ⟨e₁ r, hr₁₁⟩
-  -- It lies in `X = ker χ₂`, and every crossed homomorphism for `χ₂` kills it.
-  have hχ₂r₂ : χ₂ (e₂.symm (e₁ r)) = 1 := by
-    rw [hχ₂apply, e₂.apply_symm_apply]
-    exact demushkinRelatorCharacter_mem_ker hG₁
-  -- `4 ∣ 2^f` since `f ≥ 2`, so `v = -(1 + 2^f)⁻¹` has infinite order.
-  have h4 : (4 : ℤ_[2]) ∣ 2 ^ f := (by norm_num : (4 : ℤ_[2]) ∣ 2 ^ 2).trans (pow_dvd_pow 2 hf)
-  have hkerX : exponentSumKer 2 (Fin n) ⟨1, hn1⟩ = χ₂.toMonoidHom.ker :=
-    χ₂.exponentSumKer_eq_ker hχ₂ne (by
-      rw [hχ₂of, ite_eq_left rfl]
-      exact not_isOfFinOrder_of_val_mul_one_add_eq_neg_one hv h4 (pow_ne_zero _ two_ne_zero))
-  have hr₂X : e₂.symm (e₁ r) ∈ exponentSumKer 2 (Fin n) ⟨1, hn1⟩ := by
-    rw [hkerX]
-    exact hχ₂r₂
-  have hkill₂ : ∀ D : freeProP 2 (Fin n) → ℤ_[2], Continuous D → IsCrossedHom χ₂ D →
-      D (e₂.symm (e₁ r)) = 0 := fun D hDc hD ↦
-    hkill _ (hDc.comp (e₂.symm : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)).continuous)
-      (hD.comp (e₂.symm : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)) fun x ↦ by
-        rw [hχ₂apply, ContinuousMonoidHom.coe_coe, e₂.apply_symm_apply])
-  -- The successive approximation inside `X`.
-  obtain ⟨e₃, -, he₃⟩ :=
-    exists_continuousMulEquiv_apply_demushkinWordNeTwo_eq_of_crossedHom_single_eq_zero hn hn1 hq
-      hχ₂₁ hχ₂ne ⟨e₂.symm (e₁ r), hr₂₁⟩ hclass₂ hr₂X
-      fun i _ ↦ hkill₂ _ (continuous_crossedHom χ₂ _) (isCrossedHom_crossedHom χ₂ _)
-  refine ⟨(e₁.trans e₂.symm).trans e₃.symm, ?_⟩
-  have h := congrArg e₃.symm he₃
-  rw [e₃.symm_apply_apply] at h
-  rw [ContinuousMulEquiv.trans_apply, ContinuousMulEquiv.trans_apply]
-  exact h.symm
+  -- Step 3: the `2`-adic exponents `s_j`, and the basis modification `x_j ↦ x_j x₂^{2 s_j}`.
+  choose s hs using exists_mul_padicPow_sq_eq_ite hf (a := fun j ↦ χ₁ (of j)) (i₀ := ⟨1, hn1⟩)
+    hnu hnu' (fun j ↦ hχ₁A _) hU2 hvA hv2
+  obtain ⟨e₂, he₂, he₂c⟩ :=
+    exists_continuousMulEquiv_apply_of_mul_padicPow_sq_eq_ite hn1 χ₁ s hs
+  obtain ⟨e, he⟩ := exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_apply_eq_ite hn hn1
+    hf hq hv χ₁ hr₁₁ hclass hχ₁r hkill e₂ he₂ he₂c
+  exact ⟨e₁.trans e, by rw [ContinuousMulEquiv.trans_apply, he]⟩
 
 /-- **Labute's normal form for a one-relator dyadic Demushkin group of even rank with twisted
 image.** Let `r ∈ Φ(F)` be a relator of the free pro-`2` group on an even number `n` of
