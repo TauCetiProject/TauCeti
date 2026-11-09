@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
 public import TauCeti.Analysis.Fourier.PoissonSummation
+import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.SmoothSeries
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
@@ -58,6 +59,8 @@ the resulting double series converge.
   polynomially along modulated cutoffs.
 * `ContDiffMapSupportedIn.hasSum_fourier_smul_modulate`: the Fourier expansion of a smooth
   function supported in `K`, converging in `𝓓_{K}(E, ℂ)`.
+* `TauCeti.exists_tendstoUniformlyOn_iteratedFDeriv_sum_cexp`: on a small ball in `ℝⁿ`, every
+  smooth function supported in it is the limit in every `C^k` norm of trigonometric polynomials.
 
 ## References
 
@@ -348,3 +351,56 @@ theorem hasSum_fourier_smul_modulate (φ χ : 𝓓_{K}(E, ℂ))
     (mod_cast le_top), hφ]
 
 end ContDiffMapSupportedIn
+
+namespace TauCeti
+
+/-- **Trigonometric approximation on a small ball.** There is a ball `‖y‖ < r` in `ℝⁿ` on which
+every smooth function `g` supported in it is the limit in every `C^k` norm of trigonometric
+polynomials `∑ m ∈ s, c m exp (2πi ⟪w m, y⟫)`, as the finite set `s` of frequencies grows. These
+are the partial sums of the Fourier expansion of `g` in modulated cutoffs
+(`ContDiffMapSupportedIn.hasSum_fourier_smul_modulate`), read where the cutoff equals one. -/
+theorem exists_tendstoUniformlyOn_iteratedFDeriv_sum_cexp (N : ℕ) :
+    ∃ r > 0, ∀ g : EuclideanSpace ℝ (Fin N) → ℂ, ContDiff ℝ ∞ g →
+      support g ⊆ Metric.ball 0 r → ∃ (κ : Type) (w : κ → EuclideanSpace ℝ (Fin N)) (c : κ → ℂ),
+        ∀ k : ℕ, TendstoUniformlyOn (fun s : Finset κ ↦ iteratedFDeriv ℝ k
+          fun y ↦ ∑ m ∈ s, c m * cexp (2 * π * I * (innerSL ℝ (w m) y : ℂ)))
+          (iteratedFDeriv ℝ k g) Filter.atTop (Metric.ball 0 r) := by
+  let Y := EuclideanSpace ℝ (Fin N)
+  -- The lattice `Λ` of integer vectors, whose nonzero vectors have norm at least `ε`.
+  let Λ : Submodule ℤ Y := Submodule.span ℤ (range (EuclideanSpace.basisFun _ ℝ).toBasis)
+  obtain ⟨ε, hε, hΛ⟩ := Metric.isOpen_singleton_iff.1 (isOpen_discrete {(0 : Λ)})
+  -- The ball `K` of radius `ε / 3` meets none of its nonzero `Λ`-translates.
+  let K : Compacts Y := ⟨Metric.closedBall 0 (ε / 3), isCompact_closedBall _ _⟩
+  have hK : ∀ y ∈ K, ∀ ℓ : Λ, y + ℓ ∈ K → ℓ = 0 := fun y hy ℓ hyℓ ↦ hΛ ℓ <| by
+    have hy' : ‖y‖ ≤ ε / 3 := mem_closedBall_zero_iff.1 hy
+    have hyℓ' : ‖y + ℓ‖ ≤ ε / 3 := mem_closedBall_zero_iff.1 hyℓ
+    rw [dist_zero_right]
+    calc ‖(ℓ : Y)‖ = ‖(y + ℓ) - y‖ := by rw [add_sub_cancel_left]
+      _ ≤ ‖y + ℓ‖ + ‖y‖ := norm_sub_le _ _
+      _ < ε := by linarith
+  -- A cutoff `χ` supported in `K`, equal to one on the ball of radius `ε / 6`.
+  let b : ContDiffBump (0 : Y) := ⟨ε / 6, ε / 3, by positivity, by linarith⟩
+  have hof : ContDiff ℝ ∞ fun r : ℝ ↦ (r : ℂ) := ofRealCLM.contDiff
+  let χ : 𝓓_{K}(Y, ℂ) := .of_support_subset (hof.comp b.contDiff) fun y hy ↦
+    Metric.ball_subset_closedBall (b.support_eq ▸ support_comp_subset ofReal_zero _ hy)
+  have hχ1 (y : Y) (hy : y ∈ Metric.ball (0 : Y) (ε / 6)) : χ y = 1 := by
+    change ((b y : ℝ) : ℂ) = 1
+    rw [b.one_of_mem_closedBall (Metric.ball_subset_closedBall hy), ofReal_one]
+  refine ⟨ε / 6, by positivity, fun g hg hgsupp ↦ ?_⟩
+  -- The Fourier expansion of `g` in the modulated cutoffs converges in `𝓓_{K}(Y, ℂ)`.
+  let φ : 𝓓_{K}(Y, ℂ) := .of_support_subset hg fun y hy ↦
+    Metric.closedBall_subset_closedBall (by linarith) (Metric.ball_subset_closedBall (hgsupp hy))
+  obtain ⟨c, hc⟩ : ∃ c : ZLattice.dual Λ → ℂ, HasSum (fun m ↦ c m • χ.modulate m) φ :=
+    ⟨_, ContDiffMapSupportedIn.hasSum_fourier_smul_modulate Λ φ χ hK fun y hy ↦
+      hχ1 y (hgsupp hy)⟩
+  refine ⟨ZLattice.dual Λ, (↑), c, fun k ↦ ?_⟩
+  have h1 := ((ContDiffMapSupportedIn.structureMapCLM ℂ ⊤ k).continuous.tendsto φ).comp hc
+  rw [BoundedContinuousFunction.tendsto_iff_tendstoUniformly] at h1
+  -- Near the ball `χ = 1`, so there the partial sums are the trigonometric polynomials.
+  refine h1.tendstoUniformlyOn.congr (Filter.Eventually.of_forall fun s y hy ↦ ?_)
+  simp only [comp_apply, ContDiffMapSupportedIn.structureMapCLM_top_apply]
+  refine (Filter.EventuallyEq.iteratedFDeriv ℝ (Filter.eventually_of_mem
+    (Metric.isOpen_ball.mem_nhds hy) fun y' hy' ↦ ?_) k).eq_of_nhds
+  simp [hχ1 y' hy', real_inner_comm]
+
+end TauCeti
