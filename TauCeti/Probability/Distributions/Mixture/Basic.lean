@@ -46,7 +46,7 @@ noncomputable section
 
 open Convexity MeasureTheory ProbabilityTheory Set
 
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace MeasureTheory.Measure
 
@@ -140,12 +140,23 @@ theorem finiteMixtureMeasure_def (p : StdSimplex NNReal I) (K : I → Measure B)
   (rfl)
 
 /-- A finite mixture of probability measures is a probability measure. -/
-theorem isProbabilityMeasure_finiteMixtureMeasure
-    (hK : ∀ i, IsProbabilityMeasure (K i)) : IsProbabilityMeasure (finiteMixtureMeasure p K) := by
+instance isProbabilityMeasure_finiteMixtureMeasure
+    [hK : ∀ i, IsProbabilityMeasure (K i)] : IsProbabilityMeasure (finiteMixtureMeasure p K) := by
   constructor
   simp only [finiteMixtureMeasure_def, _root_.sum_apply, _root_.smul_apply, smul_eq_mul]
   simp_rw [@measure_univ _ _ _ (hK _), mul_one]
   exact_mod_cast p.total_of_fintype
+
+/-- Viewed as a finite measure, a probability mixture is the weighted sum of the finite
+measures associated to its components. -/
+@[simp]
+theorem toFiniteMeasure_finiteMixtureMeasure (p : StdSimplex ℝ≥0 I)
+    (K : I → ProbabilityMeasure B) :
+    (finiteMixtureMeasure p (fun i ↦ (K i : Measure B))).toProbabilityMeasure.toFiniteMeasure =
+      ∑ i, p.weights i • (K i).toFiniteMeasure := by
+  apply FiniteMeasure.toMeasure_injective
+  simp [finiteMixtureMeasure_def, ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
+    ← ENNReal.smul_def]
 
 /-- A finite mixture is the categorical mixture of its components. -/
 theorem finiteMixtureMeasure_eq_bind [MeasurableSpace I] [MeasurableSingletonClass I]

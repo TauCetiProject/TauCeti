@@ -10,7 +10,7 @@ public import TauCeti.Probability.Quantile
 import TauCeti.MeasureTheory.Measure.Measurability
 import TauCeti.Probability.Cdf.Density
 import TauCeti.Probability.Distributions.Gaussian.Cdf
-import TauCeti.Probability.Distributions.Mixture
+import TauCeti.Probability.Distributions.Mixture.Basic
 
 /-!
 # Cdfs and quantiles of noncentral t laws
