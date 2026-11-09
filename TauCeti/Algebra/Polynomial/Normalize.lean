@@ -18,24 +18,22 @@ instance for `ℤ[X]`.
 
 public section
 
-namespace TauCeti
-
-open Polynomial
+namespace Polynomial
 
 variable {R : Type*} [CommRing R] [IsDomain R] [NormalizationMonoid R]
 
 /-- Normalizing a polynomial over a domain preserves its degree. This generalizes Mathlib's
 `Polynomial.degree_normalize` from fields to any domain with a `NormalizationMonoid`. -/
 @[simp]
-theorem _root_.Polynomial.degree_normalize' (p : R[X]) : (normalize p).degree = p.degree :=
+theorem degree_normalize' (p : R[X]) : (normalize p).degree = p.degree :=
   degree_eq_degree_of_associated (normalize_associated p)
 
 /-- Normalizing a polynomial over a domain preserves its natural degree. This generalizes
 Mathlib's `Polynomial.natDegree_normalize` from fields to any domain with a
 `NormalizationMonoid`. -/
 @[simp]
-theorem _root_.Polynomial.natDegree_normalize' (p : R[X]) :
+theorem natDegree_normalize' (p : R[X]) :
     (normalize p).natDegree = p.natDegree :=
   natDegree_eq_of_degree_eq (degree_normalize' p)
 
-end TauCeti
+end Polynomial
