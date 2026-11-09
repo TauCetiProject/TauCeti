@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import Mathlib.Analysis.Calculus.FDeriv.Affine
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -47,6 +48,8 @@ singular chains that underlies the de Rham homomorphism to singular cohomology.
 * `TauCeti.SmoothSimplex.integral_eq_setIntegral_mpullbackWithin`: computation from any extension.
 * `TauCeti.SmoothSimplex.integral_eq_setIntegral_mpullback`: computation by the ordinary pullback
   along an extension differentiable at the points of `Δᵖ`.
+* `TauCeti.SmoothSimplex.integral_δ`: the integral over a face as a boundary term of Stokes' theorem
+  on the standard simplex.
 * `TauCeti.SmoothSimplex.integral_add`, `TauCeti.SmoothSimplex.integral_smul`: linearity.
 * `TauCeti.SmoothSimplex.integral_smoothSingularSubcomplexMap_app`: naturality.
 * `TauCeti.SmoothSimplex.integral_ofFunction`: integration over a `0`-simplex is evaluation.
@@ -113,6 +116,36 @@ theorem integral_eq_setIntegral_mpullback (σ : SmoothSimplex I M p)
   refine setIntegral_congr_fun (isClosed_fullSimplex p).measurableSet fun x hx ↦ ?_
   rw [mpullbackWithin_eq_mpullback
     (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.2 (uniqueDiffOn_fullSimplex p x hx)) (hgd x hx)]
+
+/-- The integral over the `i`-th face of a smooth simplex `σ` is the integral over `Δᵖ` of the
+pullback of the form along `σ`, within `Δᵖ⁺¹`, evaluated at the points and on the edge vectors of
+the `i`-th face of `Δᵖ⁺¹`. These are the boundary terms of Stokes' theorem on the standard
+simplex. -/
+theorem integral_δ (σ : SmoothSimplex I M (p + 1)) (i : Fin (p + 2)) (φ : RoughForm I M F p) :
+    integral ((smoothSingularSubcomplex I M : SSet).δ i σ) φ =
+      ∫ y in fullSimplex p, mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin (p + 1))) I σ.extension
+        (fullSimplex (p + 1)) φ (simplexMapAmbient i.succAbove y)
+          (fun k ↦ (simplexMapAmbient i.succAbove).contLinear (EuclideanSpace.single k 1)) := by
+  set A := simplexMapAmbient (m := p) i.succAbove
+  rw [integral_eq_setIntegral_mpullbackWithin _ φ (g := σ.extension ∘ A) fun x ↦ by
+    rw [Function.comp_apply, simplexMapAmbient_succAbove_coe, extension_coe, toContinuousMap_δ]]
+  refine setIntegral_congr_fun (isClosed_fullSimplex p).measurableSet fun y hy ↦ ?_
+  have hu : UniqueDiffWithinAt ℝ (fullSimplex p) y := uniqueDiffOn_fullSimplex p y hy
+  have hA : MDifferentiableWithinAt 𝓘(ℝ, EuclideanSpace ℝ (Fin p))
+      𝓘(ℝ, EuclideanSpace ℝ (Fin (p + 1))) A (fullSimplex p) y :=
+    A.differentiableAt.differentiableWithinAt.mdifferentiableWithinAt
+  have hσ : MDifferentiableWithinAt 𝓘(ℝ, EuclideanSpace ℝ (Fin (p + 1))) I σ.extension
+      (fullSimplex (p + 1)) (A y) :=
+    (σ.contMDiffOn_extension (A y) (mapsTo_simplexMapAmbient _ hy)).mdifferentiableWithinAt
+      (by simp)
+  rw [mpullbackWithin_comp_at hA hσ (mapsTo_simplexMapAmbient _)
+    (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.2 hu)]
+  refine (mpullbackWithin_apply (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin p)))
+    (I' := 𝓘(ℝ, EuclideanSpace ℝ (Fin (p + 1)))) A (fullSimplex p) _ y _).trans ?_
+  rw [mfderivWithin_eq_fderivWithin, A.fderivWithin hu]
+  -- Both sides evaluate the same form on the same vectors, typed once as tangent vectors of the
+  -- model space and once as its points; these types agree by definition.
+  rfl
 
 section Linearity
 

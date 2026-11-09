@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.SmoothSingular.Chains
 public import TauCeti.Analysis.Calculus.DifferentialForm.Simplex
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
-import Mathlib.Analysis.Calculus.FDeriv.Affine
 import Mathlib.Analysis.Convex.Topology
 
 /-!
@@ -38,8 +37,6 @@ No compactness, orientation or finite-dimensionality of `M` is needed.
 
 ## Main results
 
-* `TauCeti.SmoothSimplex.toContinuousMap_δ`: the faces of a smooth simplex are its composites with
-  the face inclusions.
 * `TauCeti.SmoothSimplex.integral_mextDeriv`: Stokes' theorem for a smooth simplex.
 * `TauCeti.SmoothSimplex.integral_mextDeriv_ofFunction`: its case `p = 0`, the fundamental theorem
   of calculus `∫_σ df = f(σ(1)) - f(σ(0))`, which fixes the signs of the faces.
@@ -70,46 +67,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 namespace SmoothSimplex
 
 variable {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-/-- The `i`-th face of a smooth simplex, read on `Δᵖ`, is the simplex composed with the `i`-th face
-inclusion `Δᵖ → Δᵖ⁺¹`. -/
-theorem toContinuousMap_δ (σ : SmoothSimplex I M (p + 1)) (i : Fin (p + 2)) (x : fullSimplex p) :
-    toContinuousMap ((smoothSingularSubcomplex I M : SSet).δ i σ) x =
-      σ.toContinuousMap (simplexFace p i x) := by
-  rw [toContinuousMap_apply, toContinuousMap_apply, fullSimplexEquivStdSimplex_simplexFace]
-  -- The face of a simplex of a subcomplex is the face of the underlying singular simplex, and
-  -- `TopCat.toSSetObjEquiv` reads faces through `StdSimplex.map`, both by definition.
-  rfl
-
-/-- The integral over the `i`-th face of a smooth simplex `σ` is the integral over `Δᵖ` of the
-pullback of the form along `σ`, within `Δᵖ⁺¹`, evaluated at the points and on the edge vectors of
-the `i`-th face of `Δᵖ⁺¹`. These are the boundary terms of Stokes' theorem on the standard
-simplex. -/
-theorem integral_δ (σ : SmoothSimplex I M (p + 1)) (i : Fin (p + 2)) (φ : RoughForm I M F p) :
-    integral ((smoothSingularSubcomplex I M : SSet).δ i σ) φ =
-      ∫ y in fullSimplex p, mpullbackWithin 𝓘(ℝ, EuclideanSpace ℝ (Fin (p + 1))) I σ.extension
-        (fullSimplex (p + 1)) φ (simplexMapAmbient i.succAbove y)
-          (fun k ↦ (simplexMapAmbient i.succAbove).contLinear (EuclideanSpace.single k 1)) := by
-  set A := simplexMapAmbient (m := p) i.succAbove
-  rw [integral_eq_setIntegral_mpullbackWithin _ φ (g := σ.extension ∘ A) fun x ↦ by
-    rw [Function.comp_apply, simplexMapAmbient_succAbove_coe, extension_coe, toContinuousMap_δ]]
-  refine setIntegral_congr_fun (isClosed_fullSimplex p).measurableSet fun y hy ↦ ?_
-  have hu : UniqueDiffWithinAt ℝ (fullSimplex p) y := uniqueDiffOn_fullSimplex p y hy
-  have hA : MDifferentiableWithinAt 𝓘(ℝ, EuclideanSpace ℝ (Fin p))
-      𝓘(ℝ, EuclideanSpace ℝ (Fin (p + 1))) A (fullSimplex p) y :=
-    A.differentiableAt.differentiableWithinAt.mdifferentiableWithinAt
-  have hσ : MDifferentiableWithinAt 𝓘(ℝ, EuclideanSpace ℝ (Fin (p + 1))) I σ.extension
-      (fullSimplex (p + 1)) (A y) :=
-    (σ.contMDiffOn_extension (A y) (mapsTo_simplexMapAmbient _ hy)).mdifferentiableWithinAt
-      (by simp)
-  rw [mpullbackWithin_comp_at hA hσ (mapsTo_simplexMapAmbient _)
-    (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.2 hu)]
-  refine (mpullbackWithin_apply (I := 𝓘(ℝ, EuclideanSpace ℝ (Fin p)))
-    (I' := 𝓘(ℝ, EuclideanSpace ℝ (Fin (p + 1)))) A (fullSimplex p) _ y _).trans ?_
-  rw [mfderivWithin_eq_fderivWithin, A.fderivWithin hu]
-  -- Both sides evaluate the same form on the same vectors, typed once as tangent vectors of the
-  -- model space and once as its points; these types agree by definition.
-  rfl
 
 variable [IsManifold I 2 M] [CompleteSpace F]
 
