@@ -42,6 +42,12 @@ trace. This is the whole-space comparison principle applied to the Hölder class
   from scalar Hölder coefficients `aⁱʲ`, `bⁱ`, `c` on `ℝⁿ`.
 * `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL`: the operator with Hölder
   coefficients `aⁱʲ`, `bⁱ`, `c` on `ℝⁿ`.
+* `TauCeti.ParabolicC2HolderSpace.norm_euclideanSecondOrderCoeff_le`,
+  `TauCeti.ParabolicC2HolderSpace.norm_euclideanFirstOrderCoeff_le` and
+  `TauCeti.ParabolicC2HolderSpace.norm_euclideanZerothOrderCoeff_le`: the assembled coefficient
+  fields are bounded by the norms of the scalar coefficients.
+* `TauCeti.ParabolicC2HolderSpace.euclideanParabolicOperatorL_const_apply_eq_add`: freezing the
+  coefficient matrix at a point.
 * `TauCeti.ParabolicC2HolderSpace.le_exp_mul_mul_add_mul_of_euclideanParabolicOperatorL_le`,
   `TauCeti.ParabolicC2HolderSpace.abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le`
   and `TauCeti.ParabolicC2HolderSpace.eq_of_euclideanParabolicOperatorL_eq`: the one-sided and
@@ -248,6 +254,63 @@ theorem euclideanZerothOrderCoeff_apply
     euclideanZerothOrderCoeff c p y = c p * y := by
   simp [euclideanZerothOrderCoeff]
 
+/-- The norm of the assembled second-order coefficient field is at most the sum of the norms of
+its scalar entries. -/
+theorem norm_euclideanSecondOrderCoeff_le
+    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    ‖euclideanSecondOrderCoeff a‖ ≤ ∑ i, ∑ j, ‖a i j‖ := by
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ (norm_sum_le _ _).trans
+    (Finset.sum_le_sum fun j _ ↦ ?_))
+  refine ((ContinuousLinearMap.lsmul ℝ ℝ).norm_compHolder₂_apply_le _ _).trans ?_
+  -- Evaluation of a Hessian at a pair of unit vectors has norm at most one.
+  have happ : ‖(ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single j (1 : ℝ))).comp
+      (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ ι →L[ℝ] ℝ)
+        (EuclideanSpace.single i (1 : ℝ)))‖ ≤ 1 := by
+    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun H ↦ ?_
+    simp only [ContinuousLinearMap.coe_comp, Function.comp_apply,
+      ContinuousLinearMap.apply_apply, one_mul]
+    calc ‖H (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)‖
+        ≤ ‖H (EuclideanSpace.single i 1)‖ * ‖EuclideanSpace.single j (1 : ℝ)‖ :=
+          (H _).le_opNorm _
+      _ ≤ ‖H‖ * ‖EuclideanSpace.single i (1 : ℝ)‖ * ‖EuclideanSpace.single j (1 : ℝ)‖ := by
+          gcongr
+          exact H.le_opNorm _
+      _ = ‖H‖ := by simp
+  calc _ ≤ 1 * ‖a i j‖ * 1 :=
+        mul_le_mul (mul_le_mul_of_nonneg_right ContinuousLinearMap.opNorm_lsmul_le (norm_nonneg _))
+          ((HolderSpace.norm_const_le _).trans happ) (norm_nonneg _) (by positivity)
+    _ = ‖a i j‖ := by ring
+
+/-- The norm of the assembled first-order coefficient field is at most the sum of the norms of
+its scalar entries. -/
+theorem norm_euclideanFirstOrderCoeff_le
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    ‖euclideanFirstOrderCoeff b‖ ≤ ∑ i, ‖b i‖ := by
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)
+  refine ((ContinuousLinearMap.lsmul ℝ ℝ).norm_compHolder₂_apply_le _ _).trans ?_
+  -- Evaluation of a covector at a unit vector has norm at most one.
+  have happ : ‖ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single i (1 : ℝ))‖ ≤ 1 := by
+    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ ?_
+    rw [ContinuousLinearMap.apply_apply, one_mul]
+    exact (v.le_opNorm _).trans (by simp)
+  calc _ ≤ 1 * ‖b i‖ * 1 :=
+        mul_le_mul (mul_le_mul_of_nonneg_right ContinuousLinearMap.opNorm_lsmul_le (norm_nonneg _))
+          ((HolderSpace.norm_const_le _).trans happ) (norm_nonneg _) (by positivity)
+    _ = ‖b i‖ := by ring
+
+omit [DecidableEq ι] in
+/-- The norm of the assembled zeroth-order coefficient field is at most the norm of the scalar
+coefficient. -/
+theorem norm_euclideanZerothOrderCoeff_le
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
+    ‖euclideanZerothOrderCoeff c‖ ≤ ‖c‖ := by
+  refine ((ContinuousLinearMap.lsmul ℝ ℝ).norm_compHolder₂_apply_le _ _).trans ?_
+  calc _ ≤ 1 * ‖c‖ * 1 :=
+        mul_le_mul (mul_le_mul_of_nonneg_right ContinuousLinearMap.opNorm_lsmul_le (norm_nonneg _))
+          ((HolderSpace.norm_const_le _).trans ContinuousLinearMap.norm_id_le) (norm_nonneg _)
+          (by positivity)
+    _ = ‖c‖ := by ring
+
 /-- The parabolic operator `P u = ∂ₜu - aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u` on `ℝⁿ = EuclideanSpace ℝ ι`
 with scalar coefficients `aⁱʲ`, `bⁱ`, `c` in `C_b^{α,α/2}`, as a continuous linear map from
 `C_b^{2+α,1+α/2}` to `C_b^{α,α/2}`. -/
@@ -292,6 +355,28 @@ theorem euclideanParabolicOperatorL_one_apply
     InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis _ (EuclideanSpace.basisFun ι ℝ)]
   simp only [u.iteratedFDeriv_two_apply, slabMk_space_slabTime]
   simp [Matrix.one_apply]
+
+/-- **Freezing the coefficients at a point.** The operator `∂ₜ - ∑ᵢⱼ aⁱʲ(z₀) ∂ᵢ∂ⱼ` with the
+coefficient matrix frozen at `z₀` and no lower-order terms is `P` plus the frozen principal error
+`(a - a(z₀))·D_x²` and the lower-order part `b·D_x + c`. -/
+theorem euclideanParabolicOperatorL_const_apply_eq_add {t₀ t₁ : ℝ} {ht : t₀ < t₁} (hα : α ≤ 1)
+    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
+    (z₀ : slab (E := EuclideanSpace ℝ ι) t₀ t₁)
+    (u : ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht) :
+    euclideanParabolicOperatorL hα (fun i j ↦ HolderSpace.const (a i j z₀)) 0 0 u =
+      euclideanParabolicOperatorL hα a b c u +
+        spatialOperatorL hα (euclideanSecondOrderCoeff a -
+          HolderSpace.const (euclideanSecondOrderCoeff a z₀)) 0 0 u +
+        spatialOperatorL hα 0 (euclideanFirstOrderCoeff b) (euclideanZerothOrderCoeff c) u := by
+  ext p
+  simp only [euclideanParabolicOperatorL_apply, HolderSpace.add_apply, spatialOperatorL_apply,
+    HolderSpace.sub_apply, _root_.sub_apply, euclideanSecondOrderCoeff_apply,
+    HolderSpace.const_apply, HolderSpace.zero_apply, _root_.zero_apply,
+    Pi.zero_apply, zero_mul, Finset.sum_const_zero, euclideanFirstOrderCoeff_apply,
+    euclideanZerothOrderCoeff_apply]
+  ring
 
 /-- At an interior time, the time slice through `x`, shifted to start at `0`, has the recorded
 time derivative as its ordinary derivative. -/

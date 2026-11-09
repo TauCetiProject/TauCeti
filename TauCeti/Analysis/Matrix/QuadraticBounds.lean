@@ -19,6 +19,10 @@ parameter space `X` and finite index type `ι`, there are constants `a, b > 0` s
 The same constants work across all parameters and vectors, including in dimension zero.
 These uniform ellipticity bounds are used for segment-averaged inverse matrices.
 
+For a single matrix, `Matrix.toQuadraticForm'_le_sum_abs_mul_sq` gives the explicit upper bound
+`A.toQuadraticForm' ξ ≤ (∑ᵢⱼ |Aᵢⱼ|) ‖ξ‖²`, so a bound on the entries of a coefficient field is an
+upper ellipticity bound.
+
 The statement is adapted from the
 [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/tree/e60bc39b18ef691263c66e2dba8d64726f18060d/formalization/FunctionalInequalities/Analysis/Matrix).
 -/
@@ -27,6 +31,21 @@ public section
 
 open Set Metric
 open scoped Matrix
+
+/-- The quadratic form of a real matrix is bounded above by the sum of the absolute values of its
+entries times `‖ξ‖²`. -/
+theorem Matrix.toQuadraticForm'_le_sum_abs_mul_sq {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (A : Matrix ι ι ℝ) (ξ : EuclideanSpace ℝ ι) :
+    A.toQuadraticForm' ξ ≤ (∑ i, ∑ j, |A i j|) * ‖ξ‖ ^ 2 := by
+  rw [Matrix.toQuadraticForm'_apply, Finset.sum_mul]
+  simp only [dotProduct, Matrix.mulVec, Finset.mul_sum, Finset.sum_mul]
+  refine Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ ?_
+  have hi : |ξ i| ≤ ‖ξ‖ := by simpa using PiLp.norm_apply_le ξ i
+  have hj : |ξ j| ≤ ‖ξ‖ := by simpa using PiLp.norm_apply_le ξ j
+  calc ξ i * (A i j * ξ j) ≤ |ξ i * (A i j * ξ j)| := le_abs_self _
+    _ = |A i j| * (|ξ i| * |ξ j|) := by rw [abs_mul, abs_mul]; ring
+    _ ≤ |A i j| * (‖ξ‖ * ‖ξ‖) := by gcongr
+    _ = |A i j| * ‖ξ‖ ^ 2 := by ring
 
 namespace TauCeti
 
