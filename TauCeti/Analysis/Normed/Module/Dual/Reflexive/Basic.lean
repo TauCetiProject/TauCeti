@@ -59,22 +59,16 @@ section FiniteDimensional
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
 
-/-- A finite-dimensional normed space is reflexive: a functional `χ` on the dual is evaluation at
-`∑ⱼ χ(bⱼ*) bⱼ` for a basis `b` with coordinate functionals `bⱼ*`. -/
+/-- A finite-dimensional normed space is reflexive: every functional on the continuous dual is a
+functional on the algebraic dual, which is evaluation at a point (`Module.bijective_dual_eval`). -/
 theorem surjective_inclusionInDoubleDual_of_finiteDimensional :
     Surjective (inclusionInDoubleDual 𝕜 E) := by
   intro χ
-  let b := Module.finBasis 𝕜 E
-  let e (j : Fin (Module.finrank 𝕜 E)) : StrongDual 𝕜 E :=
-    LinearMap.toContinuousLinearMap (b.coord j)
-  refine ⟨∑ j, χ (e j) • b j, ?_⟩
-  ext f
-  have hf : f = ∑ j, f (b j) • e j := by
-    ext z
-    calc f z = f (∑ j, b.repr z j • b j) := by rw [b.sum_repr]
-      _ = _ := by simp [e, mul_comm, -Module.Basis.sum_repr]
-  conv_rhs => rw [hf]
-  simp [mul_comm]
+  let e : Module.Dual 𝕜 E ≃ₗ[𝕜] StrongDual 𝕜 E := LinearMap.toContinuousLinearMap
+  obtain ⟨x, hx⟩ := (Module.bijective_dual_eval 𝕜 E).2 (χ.toLinearMap ∘ₗ e.toLinearMap)
+  refine ⟨x, ContinuousLinearMap.ext fun f ↦ ?_⟩
+  have := LinearMap.congr_fun hx (e.symm f)
+  rwa [LinearMap.comp_apply, LinearEquiv.coe_coe, e.apply_symm_apply] at this
 
 end FiniteDimensional
 

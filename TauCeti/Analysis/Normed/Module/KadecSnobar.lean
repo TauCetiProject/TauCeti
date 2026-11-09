@@ -9,9 +9,9 @@ public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 
+import Mathlib.Analysis.Normed.Module.DoubleDual
 import TauCeti.Analysis.InnerProductSpace.Frame
 import TauCeti.Analysis.InnerProductSpace.JohnEllipsoid
-import TauCeti.Analysis.Normed.Module.Dual.Reflexive.Basic
 
 /-!
 # The Kadec–Snobar and Garling–Gordon projection theorems
@@ -33,14 +33,15 @@ on `M`; extend them to functionals `ψᵢ` on `X` of norm at most one by Hahn–
 `P y = ∑ cᵢ ψᵢ(y) T uᵢ`. Then `P` is the identity on `M`, and since `T` is a contraction,
 `‖P y‖ ≤ ‖∑ cᵢ ψᵢ(y) uᵢ‖ ≤ (∑ cᵢ ‖ψᵢ(y)‖²)^(1/2) ≤ √n ‖y‖`.
 
-For Garling–Gordon, apply John's theorem to the dual `(X/M)*` instead, through a maximal-volume
-ellipsoid `S : ℓ²ₙ → (X/M)*`. The contact functionals on `(X/M)*` are evaluations at vectors
-`wᵢ ∈ X/M` of norm at most one, because `X/M` is finite-dimensional and hence reflexive; lift them
+For Garling–Gordon, apply John's theorem to the dual `(X/M)*` instead
+(`TauCeti.exists_sum_smul_eq_of_finiteDimensional`), through a maximal-volume ellipsoid
+`S : ℓ²ₙ → (X/M)*`. The contact functionals on `(X/M)*` are evaluations at vectors `wᵢ ∈ X/M` of
+norm at most one, because `X/M` is finite-dimensional and hence reflexive; lift them
 to vectors `xᵢ ∈ X` of norm less than `1 + δ`. Then `P y = ∑ cᵢ (S uᵢ)(π y) xᵢ`, where
 `π : X → X/M` is the quotient map, satisfies `π ∘ P = π`, so `P` is a projection with kernel `M`.
 Pairing with a functional `g` on `X` gives
-`g (P y) = ∑ cᵢ g(xᵢ) (S uᵢ)(π y) ≤ ‖∑ cᵢ g(xᵢ) uᵢ‖ ‖π y‖ ≤ √n (1 + δ) ‖g‖ ‖y‖`. The lift of the
-quotient norm is the only source of `ε`.
+`‖g (P y)‖ = ‖∑ cᵢ g(xᵢ) (S uᵢ)(π y)‖ ≤ ‖∑ cᵢ g(xᵢ) uᵢ‖ ‖π y‖ ≤ √n (1 + δ) ‖g‖ ‖y‖`. The lift of
+the quotient norm is the only source of `ε`.
 
 ## Main statements
 
@@ -59,62 +60,6 @@ quotient norm is the only source of `ε`.
 
 open Module
 open scoped InnerProductSpace
-
-namespace Submodule
-
-open TauCeti
-
-variable {𝕜 Q : Type*} [RCLike 𝕜] [NormedAddCommGroup Q] [NormedSpace 𝕜 Q]
-
-/-- John's theorem on the dual of a finite-dimensional space `Q`, read back in `Q`: there are
-functionals `φᵢ`, vectors `wᵢ` of norm at most one and weights `cᵢ` with `∑ cᵢ φᵢ(z) wᵢ = z`, such
-that `‖∑ cᵢ bᵢ φᵢ(z)‖ ≤ √n B ‖z‖` whenever all `‖bᵢ‖ ≤ B`, where `n` is the dimension. -/
-private theorem exists_sum_smul_eq_of_finiteDimensional [FiniteDimensional 𝕜 Q] :
-    ∃ (k : ℕ) (c : Fin k → ℝ) (φ : Fin k → StrongDual 𝕜 Q) (w : Fin k → Q),
-      (∀ i, ‖w i‖ ≤ 1) ∧ (∀ z, ∑ i, ((c i : 𝕜) * φ i z) • w i = z) ∧
-      ∀ (z : Q) (b : Fin k → 𝕜) {B : ℝ}, (∀ i, ‖b i‖ ≤ B) →
-        ‖∑ i, (c i : 𝕜) * b i * φ i z‖ ≤ √(finrank 𝕜 Q) * B * ‖z‖ := by
-  set m := finrank 𝕜 Q
-  have hD : finrank 𝕜 (StrongDual 𝕜 Q) = m := by
-    rw [← LinearMap.toContinuousLinearMap.finrank_eq, Subspace.dual_finrank_eq]
-  obtain ⟨S, hS⟩ := exists_isMaxVolumeEllipsoid (𝕜 := 𝕜) (E := EuclideanSpace 𝕜 (Fin m))
-    (F := StrongDual 𝕜 Q) (by simp [hD])
-  obtain ⟨k, u, c, hu, hc, hcsum, hid⟩ := hS.exists_sum_rankOne_eq_id
-  have hdec (x : EuclideanSpace 𝕜 (Fin m)) : ∑ i, (c i : 𝕜) • ⟪u i, x⟫_𝕜 • u i = x := by
-    simpa using congr($hid x)
-  -- The contact functionals on `Q*` are evaluations at vectors `wᵢ` of norm at most one.
-  choose w hw using fun i ↦ surjective_inclusionInDoubleDual_of_finiteDimensional
-    ((innerSL 𝕜 (u i)).comp (S.symm : StrongDual 𝕜 Q →L[𝕜] EuclideanSpace 𝕜 (Fin m)))
-  have hwf (i : Fin k) (f : StrongDual 𝕜 Q) : f (w i) = ⟪u i, S.symm f⟫_𝕜 := by
-    simpa using congr($(hw i) f)
-  refine ⟨k, c, fun i ↦ S (u i), w, fun i ↦ ?_, fun z ↦ ?_, fun z b B hb ↦ ?_⟩
-  · rw [← (NormedSpace.inclusionInDoubleDualLi 𝕜 (E := Q)).norm_map]
-    exact (congrArg norm (hw i)).trans_le (hS.norm_innerSL_comp_symm_le_one (hu i).1 (hu i).2)
-  · refine (SeparatingDual.eq_iff_forall_dual_eq (R := 𝕜)).2 fun f ↦ ?_
-    calc f (∑ i, ((c i : 𝕜) * S (u i) z) • w i)
-        = S (∑ i, (c i : 𝕜) • ⟪u i, S.symm f⟫_𝕜 • u i) z := by
-          simp only [map_sum, map_smul, _root_.sum_apply, _root_.smul_apply, smul_eq_mul, hwf]
-          exact Finset.sum_congr rfl fun i _ ↦ by ring
-      _ = f z := by rw [hdec, ContinuousLinearEquiv.apply_symm_apply]
-  · -- The sum is `h (∑ cᵢ bᵢ uᵢ)` for the functional `h x = S x z` of norm at most `‖z‖`.
-    let h : StrongDual 𝕜 (EuclideanSpace 𝕜 (Fin m)) :=
-      (ContinuousLinearMap.apply 𝕜 𝕜 z).comp (S : EuclideanSpace 𝕜 (Fin m) →L[𝕜] StrongDual 𝕜 Q)
-    have hh : ‖h‖ ≤ ‖z‖ := by
-      refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg z) fun x ↦ ?_
-      have hSx : ‖S x‖ ≤ ‖x‖ := by
-        simpa using (S : EuclideanSpace 𝕜 (Fin m) →L[𝕜] StrongDual 𝕜 Q).le_of_opNorm_le
-          hS.norm_le_one x
-      calc ‖S x z‖ ≤ ‖S x‖ * ‖z‖ := (S x).le_opNorm z
-        _ ≤ ‖z‖ * ‖x‖ := by rw [mul_comm]; gcongr
-    have hsum := norm_sum_mul_smul_le_sqrt_mul (fun i ↦ (hc i).le) hdec hb
-    rw [hcsum, finrank_euclideanSpace_fin] at hsum
-    calc ‖∑ i, (c i : 𝕜) * b i * S (u i) z‖ = ‖h (∑ i, ((c i : 𝕜) * b i) • u i)‖ := by
-          simp [h, map_sum]
-      _ ≤ ‖z‖ * (√m * B) := (h.le_opNorm _).trans (mul_le_mul hh hsum (norm_nonneg _)
-          (norm_nonneg _))
-      _ = √m * B * ‖z‖ := mul_comm _ _
-
-end Submodule
 
 public section
 
@@ -166,7 +111,7 @@ theorem exists_isIdempotentElem_ker_eq_norm_le_sqrt_finrank_add (M : Submodule �
   have : IsClosed (M : Set X) := hM
   set m := finrank 𝕜 (X ⧸ M)
   obtain ⟨k, c, φ, w, hwn, hdec, hbound⟩ := exists_sum_smul_eq_of_finiteDimensional (𝕜 := 𝕜)
-    (Q := X ⧸ M)
+    (F := X ⧸ M)
   -- Lift the `wᵢ` to vectors `xᵢ` of norm less than `1 + δ`, where `√m δ ≤ ε`.
   set δ := ε / (√m + 1) with hδ
   have hδ₀ : 0 < δ := div_pos hε (by positivity)
