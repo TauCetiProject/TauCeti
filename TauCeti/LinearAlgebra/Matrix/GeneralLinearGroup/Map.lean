@@ -56,6 +56,25 @@ end StrictOrdered
 
 end Matrix.GeneralLinearGroup
 
+namespace Matrix.SpecialLinearGroup
+
+variable {n R : Type*} [DecidableEq n] [Fintype n] [CommRing R] (S : Type*) [CommRing S]
+  [Algebra R S]
+
+/-- The image of an element of `SL(n, R)` in `GL n S` has determinant `1` as a matrix. -/
+theorem det_coe_mapGL (g : SpecialLinearGroup n R) :
+    ((mapGL S g : GL n S) : Matrix n n S).det = 1 := by
+  rw [← Matrix.GeneralLinearGroup.val_det_apply, det_mapGL, Units.val_one]
+
+/-- The image of an element of `SL(n, R)` in `GL n S` has positive determinant, when `S` is an
+ordered ring. -/
+theorem det_coe_mapGL_pos [PartialOrder S] [IsStrictOrderedRing S] (g : SpecialLinearGroup n R) :
+    0 < ((mapGL S g : GL n S) : Matrix n n S).det := by
+  rw [det_coe_mapGL]
+  exact one_pos
+
+end Matrix.SpecialLinearGroup
+
 namespace Subgroup
 
 open Matrix.SpecialLinearGroup in
