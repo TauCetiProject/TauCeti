@@ -79,7 +79,7 @@ theorem isZeroOneForm_zeroOnePart {x : M} (η : TangentSpace I x →L[ℝ] V x) 
     smul_comm Complex.I (2⁻¹ : ℝ), smul_smul Complex.I Complex.I, Complex.I_mul_I, neg_one_smul]
   abel
 
-/-- The `(0,1)`-part of `dg ⊗ ξ` is `(∂̄g) ⊗ ξ`. -/
+/-- The `(0,1)`-part of `dg ⊗ ξ` is `(∂bar g) ⊗ ξ`. -/
 theorem zeroOnePart_smulRight (g : M → ℝ) (σ : Π x : M, V x) (x : M) :
     j.zeroOnePart ((d% g x).smulRight (σ x)) = j.dbarSMulRight g σ x := by
   ext v

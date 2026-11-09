@@ -23,8 +23,8 @@ linear map `η : T_x M → V x` which is complex antilinear for `j`: `η (j v) =
 
 A *real Cauchy–Riemann operator* on `V` (McDuff–Salamon, Definition C.1.5) is an operator `D`
 from sections of `V` to `V`-valued `(0,1)`-forms which is additive and satisfies the Leibniz rule
-`D (g • ξ) = g • D ξ + (∂̄g) ⊗ ξ` for real valued functions `g`, where
-`((∂̄g) ⊗ ξ) v = ½ (dg v • ξ + dg (j v) • i • ξ)`.
+`D (g • ξ) = g • D ξ + (∂bar g) ⊗ ξ` for real valued functions `g`, where
+`((∂bar g) ⊗ ξ) v = ½ (dg v • ξ + dg (j v) • i • ξ)`.
 As for Mathlib's `IsCovariantDerivativeOn`, the operator is a map on all sections, and its
 additivity and Leibniz laws are imposed at points where the sections and functions involved are
 differentiable.
@@ -134,7 +134,7 @@ end ComplexPart
 
 variable [IsManifold I ∞ M] (j : SmoothAlmostComplexStructure I M)
 
-/-! ### `(0,1)`-forms and the term `(∂̄g) ⊗ ξ` -/
+/-! ### `(0,1)`-forms and the term `(∂bar g) ⊗ ξ` -/
 
 namespace SmoothAlmostComplexStructure
 
@@ -143,7 +143,7 @@ the almost complex structure `j`: `η (j v) = -(i • η v)`. -/
 def IsZeroOneForm {x : M} (η : TangentSpace I x →L[ℝ] V x) : Prop :=
   ∀ v, η (j x v) = -(Complex.I • η v)
 
-/-- The `(0,1)`-part `(∂̄g) ⊗ ξ` of `dg ⊗ ξ`, for a real valued function `g` and a section `ξ` of
+/-- The `(0,1)`-part `(∂bar g) ⊗ ξ` of `dg ⊗ ξ`, for a real valued function `g` and a section `ξ` of
 a complex vector bundle: `v ↦ ½ (dg v • ξ + dg (j v) • i • ξ)`. -/
 def dbarSMulRight (g : M → ℝ) (σ : Π x : M, V x) (x : M) : TangentSpace I x →L[ℝ] V x :=
   (2⁻¹ : ℝ) • ((d% g x).smulRight (σ x) +
@@ -156,7 +156,7 @@ theorem dbarSMulRight_apply (g : M → ℝ) (σ : Π x : M, V x) (x : M) (v : Ta
       (2⁻¹ : ℝ) • (d% g x v • σ x + d% g x (j x v) • Complex.I • σ x) :=
   rfl
 
-/-- The term `(∂̄g) ⊗ ξ` vanishes for constant `g`. -/
+/-- The term `(∂bar g) ⊗ ξ` vanishes for constant `g`. -/
 @[simp]
 theorem dbarSMulRight_const (c : ℝ) (σ : Π x : M, V x) (x : M) :
     j.dbarSMulRight (fun _ ↦ c) σ x = 0 := by
@@ -173,7 +173,7 @@ theorem isZeroOneForm_iff_isComplexAntilinear {x : M} (η : TangentSpace I x →
       (DistribSMul.toLinearMap ℝ (V x) Complex.I) η.toLinearMap :=
   ⟨fun h ↦ isComplexAntilinear_of_apply h, fun h v ↦ h.apply v⟩
 
-/-- The term `(∂̄g) ⊗ ξ` is a `(0,1)`-form. -/
+/-- The term `(∂bar g) ⊗ ξ` is a `(0,1)`-form. -/
 theorem isZeroOneForm_dbarSMulRight (g : M → ℝ) (σ : Π x : M, V x) (x : M) :
     j.IsZeroOneForm (j.dbarSMulRight g σ x) := by
   intro v
@@ -183,7 +183,8 @@ theorem isZeroOneForm_dbarSMulRight (g : M → ℝ) (σ : Π x : M, V x) (x : M)
 
 variable [∀ x, ContinuousSMul ℂ (V x)]
 
-/-- The key identity of McDuff–Salamon, Exercise C.1.7: `(∂̄g) ⊗ (i • ξ) = i • ((∂̄g) ⊗ ξ)`. -/
+/-- The key identity of McDuff–Salamon, Exercise C.1.7:
+`(∂bar g) ⊗ (i • ξ) = i • ((∂bar g) ⊗ ξ)`. -/
 theorem dbarSMulRight_complex_I_smul (g : M → ℝ) (σ : Π x : M, V x) (x : M) :
     j.dbarSMulRight g (Complex.I • σ) x = Complex.I • j.dbarSMulRight g σ x := by
   ext v
@@ -201,7 +202,7 @@ variable (F) in
 /-- An operator `D` from sections of a complex vector bundle `V` to `V`-valued one-forms is a *real
 Cauchy–Riemann operator* for the almost complex structure `j` if its values are `(0,1)`-forms, it
 is additive on sections differentiable at a point, and it satisfies the Leibniz rule
-`D (g • ξ) = g • D ξ + (∂̄g) ⊗ ξ` for real valued `g` differentiable at that point
+`D (g • ξ) = g • D ξ + (∂bar g) ⊗ ξ` for real valued `g` differentiable at that point
 (McDuff–Salamon, Definition C.1.5). -/
 structure IsRealCauchyRiemannOperator
     (D : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x) : Prop where
