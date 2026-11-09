@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.Graded.Quotient
 public import TauCeti.Algebra.Lie.Quotient
 public import TauCeti.Algebra.PositiveDegrees.Grading
-public import Mathlib.Algebra.Lie.Graded
 public import Mathlib.Algebra.Lie.Nilpotent
 
 /-!
@@ -177,8 +176,7 @@ noncomputable instance instGradedLieAlgebraTruncatedGrading (k : ℕ) :
           (d.degreeIdeal_isGraded ℒ k))).piece :=
     funext fun n => by
       simp only [InternalGrading.quotient_piece, InternalGrading.ofDecomposition_piece,
-        truncatedGrading_eq]
-      rfl
+        truncatedGrading_eq, LinearMap.restrictScalars_self]
   rw [hpieces]
   exact LieIdeal.instGradedLieAlgebraQuotient (d.degreeIdeal ℒ k) _ _
 
@@ -189,6 +187,7 @@ instance truncatedGrading_isPositiveGrading (k : ℕ) :
     rw [truncatedGrading_eq, IsPositiveGrading.eq_bot (d := d) (ℒ := ℒ) n hn, Submodule.map_bot]
 
 /-- Pieces above the cutoff vanish in the truncation. -/
+@[simp]
 theorem truncatedGrading_eq_bot {k : ℕ} {n : N} (hn : (k : ℤ) < d.degree n) :
     d.truncatedGrading ℒ k n = ⊥ := by
   rw [eq_bot_iff]
@@ -235,7 +234,7 @@ theorem ker_truncationMap_eq_iSup {k l : ℕ} (h : k ≤ l) :
       LieIdeal.coe_map_of_surjective (d.degreeIdeal ℒ l).surjective_mkQ,
       degreeIdeal_toSubmodule, degreeSubmodule_def, Submodule.map_iSup]
     simp only [truncatedGrading_eq]
-    rfl
+    exact iSup_congr fun n => by rw [LieIdeal.coe_mkQ]
   rw [hpieces]
   apply le_antisymm
   · refine iSup_le fun n => ?_
@@ -244,6 +243,15 @@ theorem ker_truncationMap_eq_iSup {k l : ℕ} (h : k ≤ l) :
     · rw [d.truncatedGrading_eq_bot ℒ (lt_of_not_ge hn)]
       exact bot_le
   · exact iSup_le fun n => le_iSup_of_le ⟨n, n.property.1⟩ le_rfl
+
+/-- A truncation transition maps each homogeneous piece onto the corresponding piece. -/
+theorem map_truncationMap_truncatedGrading {k l : ℕ} (h : k ≤ l) (n : N) :
+    (d.truncatedGrading ℒ l n).map (d.truncationMap ℒ h).toLinearMap =
+      d.truncatedGrading ℒ k n := by
+  rw [truncatedGrading_eq, truncatedGrading_eq, ← Submodule.map_comp]
+  congr 1
+  ext x
+  exact d.truncationMap_mk ℒ h x
 
 /-- The kernel of the transition from order `k + 1` to order `k` is exactly the sum of the pieces
 of the newly retained degree `k + 1`. -/

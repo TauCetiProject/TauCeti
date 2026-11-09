@@ -46,10 +46,16 @@ and supporting receiver notation on the ideal and the homomorphism.
 * `LieIdeal.factor_refl`, `LieIdeal.factor_comp`, `LieIdeal.factor_surjective` and
   `LieIdeal.ker_factor`: the transitions between nested quotients are the identity at equal ideals,
   compose, are surjective, and have the image of the larger ideal as kernel.
+* `LieIdeal.coe_mkQ`: the linear map underlying `LieIdeal.mkQ` is the quotient map of submodules.
 * `LieIdeal.mkQ_comp_incl_surjective`: a Lie subalgebra `P` with `I + P = L` maps onto `L ⧸ I`.
 * `LieIdeal.ker_mkQ_comp_incl`: the kernel of `P → L ⧸ I` is the ideal `I ∩ P` of `P`.
 * `LieIdeal.isCompl_map_incl`: a complement of `I ∩ P` inside a supplement `P` of `I` is a
   complement of `I` in `L`.
+
+The transitions `LieIdeal.factor` and their lemmas are adapted from
+`Mei/Algebra/Lie/Quotient/Map.lean` in
+[yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
+`3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0).
 -/
 
 public section
@@ -126,6 +132,9 @@ theorem ker_liftQ_mkQ {J : LieIdeal R L} (h : J ≤ I.mkQ.ker) :
   rw [← LieSubmodule.toSubmodule_inj, LieHom.ker_toSubmodule, coe_liftQ, Submodule.ker_liftQ,
     ← LieHom.ker_toSubmodule, mkQ_ker, coe_map_of_surjective J.surjective_mkQ]
   rfl
+
+/-- The linear map underlying the quotient homomorphism is the quotient map of submodules. -/
+theorem coe_mkQ : (I.mkQ : L →ₗ[R] L ⧸ I) = I.toSubmodule.mkQ := (rfl)
 
 /-- The transition from the quotient by a smaller ideal to the quotient by a larger ideal. This is
 the Lie algebra analogue of `Submodule.factor`. -/
