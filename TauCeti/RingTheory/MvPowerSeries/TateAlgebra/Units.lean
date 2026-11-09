@@ -81,6 +81,7 @@ section NormOne
 
 variable [NormOneClass R]
 
+omit [NormOneClass R] in
 /-- Constant series preserve multiplicative units, since taking constant series is a
 norm-preserving ring homomorphism. -/
 theorem isNormMulUnit_C {u : R} (hu : IsNormMulUnit u) :
@@ -90,7 +91,8 @@ theorem isNormMulUnit_C {u : R} (hu : IsNormMulUnit u) :
 
 variable [CompleteSpace R]
 
-/-- **Neumann series criterion.** Over a complete ultrametric norm-one ring, a restricted series
+omit [NormOneClass R] in
+/-- **Neumann series criterion.** Over a complete ultrametric ring, a restricted series
 whose distance from a constant multiplicative unit `a` is less than `‖a‖` is a multiplicative
 unit. -/
 theorem isNormMulUnit_of_norm_sub_C_lt {a : R} (ha : IsNormMulUnit a)
@@ -98,6 +100,7 @@ theorem isNormMulUnit_of_norm_sub_C_lt {a : R} (ha : IsNormMulUnit a)
     IsNormMulUnit f :=
   (isNormMulUnit_C ha).of_norm_sub_lt (by rwa [norm_C])
 
+omit [NormOneClass R] in
 /-- **The Neumann series of the inverse.** If `‖f - a‖ < ‖a‖` for a constant multiplicative unit
 `a`, then `x = a⁻¹ * (a - f)` has norm less than one and `f⁻¹ = ∑ₙ xⁿ * a⁻¹`. -/
 theorem hasSum_inverse_of_norm_sub_C_lt {a : Rˣ} (ha : IsNormMulUnit (a : R))
@@ -118,6 +121,7 @@ theorem hasSum_inverse_of_norm_sub_C_lt {a : Rˣ} (ha : IsNormMulUnit (a : R))
     (by rwa [hA, norm_C])
   rwa [hA, hA'] at h
 
+omit [NormOneClass R] in
 /-- If `‖f - a‖ < ‖a‖` for a constant multiplicative unit `a`, then the inverse of `f` has norm
 `‖a‖⁻¹`. -/
 theorem norm_inverse_of_norm_sub_C_lt {a : R} (ha : IsNormMulUnit a)
