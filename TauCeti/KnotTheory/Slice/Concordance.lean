@@ -1204,7 +1204,7 @@ theorem SmoothCircleEmbedding.concordant_greatCircle_of_isSmoothEmbedding
       ((isClosed_le continuous_const continuous_norm).inter
         (isClosed_le continuous_norm continuous_const)) fun z hz => mem_closedBall_zero_iff.2 hz.2
     obtain ⟨z₀, hz₀, hmin⟩ := hAc.exists_isMinOn
-      ⟨1, show δ' ≤ ‖(1 : ℂ)‖ ∧ ‖(1 : ℂ)‖ ≤ 1 by simp [hδ']⟩
+      ⟨1, by simp [A, hδ']⟩
       (continuous_norm.comp hc.isEmbedding.continuous).continuousOn
     refine ⟨‖c z₀‖, norm_pos_iff.2 (hc0 z₀ fun h => hδ'0.not_ge (by simpa [h] using hz₀.1)),
       fun z hz1 hz2 => isMinOn_iff.1 hmin z ⟨hz1, hz2⟩⟩
