@@ -247,9 +247,8 @@ theorem extDerivWithin_inChartAt_eq [IsManifold I 2 M]
     rw [extDerivWithin, extDerivWithin, fderivWithin_zero_of_not_differentiableWithinAt hφ,
       fderivWithin_zero_of_not_differentiableWithinAt hφ₀]
     have h0 : ContinuousAlternatingMap.alternatizeUncurryFin
-        (0 : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F) = 0 := by
-      ext v
-      simp [ContinuousAlternatingMap.alternatizeUncurryFin_apply]
+        (0 : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F) = 0 :=
+      (ContinuousAlternatingMap.alternatizeUncurryFinCLM ℝ E F).map_zero
     rw [h0]
     ext v
     simp
