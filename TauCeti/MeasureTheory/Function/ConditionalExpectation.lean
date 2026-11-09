@@ -71,8 +71,8 @@ namespace MeasureTheory
 Both conditional expectations are pinned down by their integrals over the sets `Z ⁻¹' E`, and each
 such integral is an integral of `fun p => f p.1` over the slab `univ ×ˢ E` against the joint law,
 which is where the hypothesis applies. Equal laws make `f ∘ Y` integrable exactly when `f ∘ Y'` is,
-so no integrability or measurability hypothesis is needed: when it fails both sides are `0`, as
-they are when `Z` is not measurable or `μ` trimmed to `σ(Z)` is not `σ`-finite. -/
+so no integrability hypothesis, and no measurability of `Z`, is needed: when it fails both sides
+are `0`, as they are when `Z` is not measurable or `μ` trimmed to `σ(Z)` is not `σ`-finite. -/
 theorem condExp_comp_ae_eq_of_pair_law_eq {Ω α β : Type*} [mΩ : MeasurableSpace Ω]
     [MeasurableSpace α] [mβ : MeasurableSpace β] {μ : Measure Ω}
     (Y Y' : Ω → α) (Z : Ω → β) (hY : Measurable Y) (hY' : Measurable Y')
