@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.AlmostSplit.Ext
 public import TauCeti.CategoryTheory.AlmostSplit.Uniqueness
-public import TauCeti.CategoryTheory.Exact.Abelian
 public import TauCeti.CategoryTheory.Exact.Opposite
 public import TauCeti.CategoryTheory.Exact.YonedaExt.Basic
 public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Basic
@@ -32,10 +30,17 @@ needed for Auslander–Reiten duality in an exact category:
   every morphism out of `X` that is not a split monomorphism. Dually, when `End X` is local, it is
   almost split exactly when `[e]` is nonzero and killed by base change along every morphism into
   `Z` that is not a split epimorphism. In a Krull-Schmidt category the locality hypotheses are
-  indecomposability of the end terms. In an abelian category, this recovers the criterion through
-  Mathlib's `CategoryTheory.ShortComplex.ShortExact.extClass`;
+  indecomposability of the end terms;
 * an almost-split conflation is determined up to isomorphism of conflations by either of its end
   terms.
+
+`TauCeti.ExactStructure.Extension.isAlmostSplit_iff_isLeftAlmostSplit_f` and
+`TauCeti.ExactStructure.Extension.isAlmostSplit_iff_isRightAlmostSplit_g` are the canonical locality
+criteria for a conflation. For a short exact sequence of an abelian category, use
+`CategoryTheory.ShortComplex.ShortExact.isAlmostSplit_iff_isLeftAlmostSplit` and
+`CategoryTheory.ShortComplex.ShortExact.isAlmostSplit_iff_isRightAlmostSplit`, which need no
+conflation, and `CategoryTheory.ShortComplex.ShortExact.isAlmostSplit_iff_extClass` for the
+corresponding criterion through Mathlib's `CategoryTheory.ShortComplex.ShortExact.extClass`.
 
 ## Main results
 
@@ -53,7 +58,6 @@ needed for Auslander–Reiten duality in an exact category:
   `TauCeti.ExactStructure.isIso_of_isAlmostSplit_of_isIso_τ₁`,
   `TauCeti.ExactStructure.exists_iso_τ₃_eq_of_isAlmostSplit`, and
   `TauCeti.ExactStructure.exists_iso_τ₁_eq_of_isAlmostSplit`: uniqueness at each end.
-* `CategoryTheory.ShortComplex.ShortExact.isAlmostSplit_iff_extClass`: the abelian criterion.
 
 ## References
 
@@ -266,25 +270,3 @@ theorem exists_iso_τ₁_eq_of_isAlmostSplit (E : ExactStructure C) (hS : E.Conf
 end ExactStructure
 
 end TauCeti
-
-namespace CategoryTheory.ShortComplex.ShortExact
-
-open CategoryTheory.Abelian TauCeti
-
-universe u v w
-
-variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C] {S : ShortComplex C}
-
-/-- **The extension-class criterion in an abelian category**: a short exact sequence with local
-right-hand endomorphism ring is almost split exactly when its class is nonzero and is killed by
-pushforward along every map out of the first term that is not a split monomorphism. -/
-theorem isAlmostSplit_iff_extClass (hS : S.ShortExact) [IsLocalRing (End S.X₃)] :
-    S.IsAlmostSplit ↔ hS.extClass ≠ 0 ∧
-      ∀ (N : C) (g : S.X₁ ⟶ N), ¬ IsSplitMono g →
-        hS.extClass.comp (Ext.mk₀ g) (add_zero 1) = 0 :=
-  (ExactStructure.Extension.isAlmostSplit_iff_isLeftAlmostSplit_f
-    (E := ExactStructure.abelian C)
-      ⟨S.X₂, S.f, S.g, S.zero, (ExactStructure.abelian_conflation _).mpr hS⟩).trans
-      hS.isLeftAlmostSplit_f_iff_extClass
-
-end CategoryTheory.ShortComplex.ShortExact

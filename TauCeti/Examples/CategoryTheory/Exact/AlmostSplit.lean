@@ -14,6 +14,7 @@ public import TauCeti.Algebra.DualNumber.Basic
 public import TauCeti.CategoryTheory.Exact.YonedaExt.AlmostSplit
 public import TauCeti.CategoryTheory.Functor.RingEquivEnd
 public import TauCeti.RingTheory.LocalRing.Module
+import TauCeti.CategoryTheory.Exact.Abelian
 
 /-!
 # Almost-split conflations of finitely generated modules over `ℤ/4ℤ` and `k[ε]`
