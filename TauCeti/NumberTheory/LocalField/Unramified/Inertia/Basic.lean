@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Quotient
 public import TauCeti.NumberTheory.LocalField.RamificationGroup
 public import TauCeti.NumberTheory.LocalField.Unramified.Maximal
 
+import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.NumberTheory.LocalField.InertiaDegree
 import TauCeti.NumberTheory.LocalField.Teichmuller

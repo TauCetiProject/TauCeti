@@ -8,6 +8,7 @@ module
 public import TauCeti.Data.Nat.Prime.Basic
 public import TauCeti.NumberTheory.LocalField.Tame.Quotient
 public import TauCeti.RingTheory.RootsOfUnity.PadicTateTwist
+import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.Topology.Algebra.ContinuousMulEquiv
 
