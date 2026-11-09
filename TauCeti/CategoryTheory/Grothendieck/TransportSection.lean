@@ -5,8 +5,10 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.CategoryTheory.Grothendieck.Basic
 public import TauCeti.CategoryTheory.Grothendieck.Section
 public import Mathlib.Algebra.Category.Grp.Limits
+public import Mathlib.CategoryTheory.Endomorphism
 
 /-!
 # Fiberwise transport data and compatible section automorphisms
@@ -174,7 +176,7 @@ theorem toSection_toFunctor (s : TransportSection L) :
 @[simp]
 theorem sectionHom_base {s t : TransportSection L} (α : s.toSection ⟶ t.toSection) (d : D) :
     ((CategoryTheory.Grothendieck.Section.hom α).app d).base = 𝟙 d := by
-  have h := CategoryTheory.Grothendieck.Section.hom_over α
+  have h := CategoryTheory.Grothendieck.Section.whiskerRight_hom_forget α
   erw [eqToHom_refl (C := D ⥤ D), Category.id_comp] at h
   exact NatTrans.congr_app h d
 
