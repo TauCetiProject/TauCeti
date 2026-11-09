@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Etale.Kaehler
 public import TauCeti.RingTheory.Trace.LeftMulMatrix
-public import TauCeti.RingTheory.Idempotents
+public import TauCeti.RingTheory.Idempotents.Product
 public import TauCeti.Algebra.Module.Submodule.LocalGlobal
 public import Mathlib.RingTheory.Localization.Away.Lemmas
 public import TauCeti.RingTheory.Kaehler.Trace.Basic

@@ -66,6 +66,8 @@ lemma ext {φ ψ : PrecompLinearMap R B M} (h : ∀ c, φ c = ψ c) : φ = ψ :=
 
 @[simp] lemma smul_apply {S : Type*} [CommSemiring S] [Algebra S B]
     (s : S) (φ : PrecompLinearMap R B M) (c : B) : (s • φ) c = φ (s • c) := by
+  -- Unfold the transferred AddEquiv.module action and Module.compHom to compute
+  -- the domain action through DomMulAct before applying Algebra.smul_def.
   change φ.linearMap (algebraMap S B s * c) = φ.linearMap (s • c)
   exact congrArg (fun b ↦ φ.linearMap b) (Algebra.smul_def s c).symm
 
