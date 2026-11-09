@@ -82,9 +82,9 @@ variable {ι 𝕜 : Type*} {E : ι → Type*} [NontriviallyNormedField 𝕜]
 /-- **Bounded convergence on coordinate vectors.** For `p ≠ ∞`, a uniformly bounded family of
 operators on `lp E p` that converges at every coordinate vector `single i x` converges at every
 vector. -/
-theorem tendsto_apply_of_tendsto_apply_single [DecidableEq ι] {Z : Type*} [NormedAddCommGroup Z]
-    [NormedSpace 𝕜 Z] (hp : p ≠ ∞) {α : Type*} {l : Filter α} {f : α → lp E p →L[𝕜] Z}
-    {g : lp E p →L[𝕜] Z} {C : ℝ} (hC : ∀ᶠ a in l, ‖f a‖ ≤ C)
+theorem tendsto_apply_of_tendsto_apply_single [DecidableEq ι] {Z : Type*}
+    [SeminormedAddCommGroup Z] [NormedSpace 𝕜 Z] (hp : p ≠ ∞) {α : Type*} {l : Filter α}
+    {f : α → lp E p →L[𝕜] Z} {g : lp E p →L[𝕜] Z} {C : ℝ} (hC : ∀ᶠ a in l, ‖f a‖ ≤ C)
     (h : ∀ i (x : E i), Tendsto (fun a ↦ f a (lp.single p i x)) l (𝓝 (g (lp.single p i x))))
     (x : lp E p) : Tendsto (fun a ↦ f a x) l (𝓝 (g x)) := by
   let D : Submodule 𝕜 (lp E p) :=
