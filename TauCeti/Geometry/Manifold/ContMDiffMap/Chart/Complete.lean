@@ -40,8 +40,6 @@ theorem needs. Analytic regularity is excluded.
   `C^r` map.
 * `ContMDiffMap.completeSpace_manifoldWeakWhitney`: the weak Whitney space of vector-valued `C^r`
   maps is complete.
-* `ContMDiffMap.tendsto_manifoldWeakWhitney_iff_chartIteratedFDeriv`: convergence in the weak
-  Whitney topology is compact convergence of every coordinate derivative.
 
 ## References
 
@@ -55,32 +53,6 @@ open Set Filter Topology IsManifold
 open scoped Manifold ContDiff TauCeti.ManifoldWeakWhitney
 
 namespace ContMDiffMap
-
-section Convergence
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ∞ω} [IsManifold I n M]
-
-/-- A family of vector-valued maps converges in the weak Whitney topology exactly when each of its
-coordinate derivatives, as a continuous map on the whole chart target, converges with compact
-convergence. -/
-theorem tendsto_manifoldWeakWhitney_iff_chartIteratedFDeriv {ι : Type*} {l : Filter ι}
-    {f : ι → C^n⟮I, M; 𝓘(𝕜, F), F⟯} {h : C^n⟮I, M; 𝓘(𝕜, F), F⟯} :
-    Tendsto f l (𝓝 h) ↔ ∀ (x : M) (m : ℕ) (hm : (m : ℕ∞ω) ≤ n),
-      Tendsto (fun i ↦ chartIteratedFDeriv (f i) x m hm) l (𝓝 (chartIteratedFDeriv h x m hm)) := by
-  refine ⟨fun hf x m hm ↦ ((continuous_chartIteratedFDeriv x m hm).tendsto h).comp hf,
-    fun hf ↦ isInducing_compactChartJet.tendsto_nhds_iff.mpr (tendsto_pi_nhds.mpr fun i ↦ ?_)⟩
-  obtain ⟨x, ⟨m, hm⟩, K⟩ := i
-  have ht := ((ContinuousMap.continuous_restrict (K : Set _)).tendsto _).comp (hf x m hm)
-  convert ht using 1
-  · funext i
-    exact compactChartJet_apply (f i) ⟨x, ⟨m, hm⟩, K⟩
-  · exact congrArg nhds (compactChartJet_apply h ⟨x, ⟨m, hm⟩, K⟩)
-
-end Convergence
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [LocallyCompactSpace E]
@@ -196,8 +168,9 @@ theorem completeSpace_manifoldWeakWhitney [CompleteSpace F] {n : ℕ∞ω} [IsMa
         exact hq x m hm z
   refine ⟨h, tendsto_id'.mp (tendsto_manifoldWeakWhitney_iff_chartIteratedFDeriv.mpr
     fun x m hm ↦ ?_)⟩
-  rw [show chartIteratedFDeriv h x m hm = g x m hm from
-    ContinuousMap.ext fun z ↦ (hh x m hm z).trans (hq x m hm z)]
+  have hlim : chartIteratedFDeriv h x m hm = g x m hm :=
+    ContinuousMap.ext fun z ↦ (hh x m hm z).trans (hq x m hm z)
+  rw [hlim]
   exact hg x m hm
 
 end ContMDiffMap

@@ -19,7 +19,7 @@ vector-valued `C^k` maps (`ContMDiffMap.finiteAtlasNormedAddCommGroup`,
 topology, and proves that this normed space is complete when `M` is boundaryless and modelled
 on a locally compact space over `ℝ` or `ℂ` and the target is complete
 (`ContMDiffMap.completeSpace_finiteAtlas`). Such atlases exist on every compact manifold modelled
-on a locally compact space (`ContMDiffMap.exists_finiteAtlas`), and any two of them give
+on a locally compact space (`TauCeti.exists_finite_compact_chart_cover`), and any two of them give
 equivalent norms (`ContMDiffMap.exists_finiteAtlasSeminorm_le`).
 
 This is the Banach space of `C^k` functions on a closed manifold to which Banach-space methods,
@@ -69,7 +69,8 @@ noncomputable abbrev finiteAtlasNormedAddCommGroup :
     { norm_nonneg f := apply_nonneg _ f
       norm_smul a f := map_smul_eq_mul _ a f
       norm_triangle f g := map_add_le_add _ f g
-      norm_eq_zero_iff f := finiteAtlasSeminorm_eq_zero_iff hK k le_rfl f }
+      norm_eq_zero_iff f := finiteAtlasSeminorm_eq_zero_iff
+        (fun y ↦ (hK y).imp fun _ ⟨hy, hyK⟩ ↦ ⟨hy, interior_subset hyK⟩) k le_rfl f }
   refine NormedAddCommGroup.ofCoreReplaceTopology core ?_
   rw [(withSeminorms_finiteAtlasSeminorm k hK).topologicalSpace_eq_iInf, ciInf_unique]
 

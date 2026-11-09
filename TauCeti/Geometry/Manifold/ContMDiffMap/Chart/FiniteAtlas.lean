@@ -20,8 +20,10 @@ derivative of order at most `k` on the pieces `K i`.
 
 This seminorm is a norm (`ContMDiffMap.finiteAtlasSeminorm_eq_zero_iff`). On `C^k` maps it
 generates the weak Whitney topology (`ContMDiffMap.withSeminorms_finiteAtlasSeminorm`), and
-two finite atlases give equivalent norms (`ContMDiffMap.exists_finiteAtlasSeminorm_le`). A compact
-manifold modelled on a locally compact space has such an atlas, so its space of vector-valued `C^k`
+two finite atlases whose relative interiors cover the manifold give equivalent norms
+(`ContMDiffMap.exists_finiteAtlasSeminorm_le`). A compact
+manifold modelled on a locally compact space has such an atlas
+(`TauCeti.exists_finite_compact_chart_cover`), so its space of vector-valued `C^k`
 maps is a normable space (`ContMDiffMap.isNormableSpace_of_compactSpace`). These are the finite-jet
 norms on which Banach-space methods such as the Sard–Smale theorem are applied to spaces of `C^k`
 functions on compact manifolds.
@@ -38,13 +40,11 @@ targets and interiors are relative to them. The coefficient space is an arbitrar
 
 * `ContMDiffMap.exists_chartCkSeminorm_le_finiteAtlasSeminorm`: every compact chart `C^k`
   seminorm is bounded by a multiple of the finite-atlas seminorm.
-* `ContMDiffMap.exists_finiteAtlasSeminorm_le`: the seminorms of two finite atlases are
-  equivalent.
+* `ContMDiffMap.exists_finiteAtlasSeminorm_le`: the seminorm of any finite atlas is bounded by
+  a multiple of that of a covering atlas; so any two covering atlases give equivalent norms.
 * `ContMDiffMap.finiteAtlasSeminorm_eq_zero_iff`: the finite-atlas seminorm is a norm.
 * `ContMDiffMap.withSeminorms_finiteAtlasSeminorm`: it generates the weak Whitney topology on
   `C^k` maps.
-* `ContMDiffMap.exists_finiteAtlas`: compact manifolds modelled on locally compact spaces have
-  finite atlases with compact coordinate pieces.
 * `ContMDiffMap.isNormableSpace_of_compactSpace`: on such manifolds the weak Whitney topology on
   vector-valued `C^k` maps is normable.
 
@@ -58,29 +58,6 @@ public section
 
 open Set Filter Topology
 open scoped Manifold TauCeti.ManifoldWeakWhitney
-
-namespace TauCeti
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-
-/-- The points of a chart source whose coordinates lie in a relatively open subset of the chart
-target form an open subset of the manifold. -/
-theorem isOpen_setOf_extChartAt_mem (x : M) {O : Set (extChartAt I x).target} (hO : IsOpen O) :
-    IsOpen {y : M | ∃ hy : y ∈ (extChartAt I x).source,
-      (⟨extChartAt I x y, (extChartAt I x).map_source hy⟩ : (extChartAt I x).target) ∈ O} := by
-  obtain ⟨V, hV, rfl⟩ := isOpen_induced_iff.mp hO
-  have hset : {y : M | ∃ hy : y ∈ (extChartAt I x).source,
-      (⟨extChartAt I x y, (extChartAt I x).map_source hy⟩ : (extChartAt I x).target) ∈
-        Subtype.val ⁻¹' V} = (extChartAt I x).source ∩ extChartAt I x ⁻¹' V := by
-    ext y
-    exact ⟨fun ⟨hy, hyV⟩ ↦ ⟨hy, hyV⟩, fun ⟨hy, hyV⟩ ↦ ⟨hy, hyV⟩⟩
-  rw [hset]
-  exact isOpen_extChartAt_preimage' x hV
-
-end TauCeti
 
 namespace ContMDiffMap
 
@@ -124,9 +101,7 @@ theorem finiteAtlasSeminorm_le_iff (k : ℕ) (hk : k ≤ n) (f : C^n⟮I, M; �
 theorem continuous_finiteAtlasSeminorm (k : ℕ) (hk : k ≤ n) :
     Continuous (finiteAtlasSeminorm (F := F) c K k hk) := by
   have := isTopologicalAddGroup_manifoldWeakWhitney (I := I) (M := M) (F := F) (n := n)
-  refine Seminorm.continuous_of_forall fun r hr ↦ ?_
-  rw [finiteAtlasSeminorm, Seminorm.ball_finset_sup_eq_iInter _ _ _ hr]
-  exact (biInter_finset_mem _).mpr fun i _ ↦ ball_chartCkSeminorm_mem_nhds _ _ _ _ _ hr
+  exact Seminorm.continuous_finsetSup fun i _ ↦ continuous_chartCkSeminorm (c i) (K i) k hk
 
 variable {c K}
 
@@ -166,20 +141,9 @@ theorem exists_chartCkSeminorm_le_finiteAtlasSeminorm (x : M)
   choose C hC hbound using hb
   have hsum : 0 ≤ ∑ i, C i := Finset.sum_nonneg fun i _ ↦ (hC i).le
   refine ⟨1 + ∑ i, C i, add_pos_of_pos_of_nonneg zero_lt_one hsum, fun f ↦ ?_⟩
-  have hq := apply_nonneg (finiteAtlasSeminorm (F := F) c K k hk) f
-  refine (chartCkSeminorm_le_iff x L k hk f
-    (mul_nonneg (add_pos_of_pos_of_nonneg zero_lt_one hsum).le hq)).mpr fun m hm z hz ↦ ?_
-  have hz' : z ∈ (L : Set (extChartAt I x).target) := hz
-  rw [hLP] at hz'
-  obtain ⟨i, -, hzi⟩ := mem_iUnion₂.mp hz'
-  have hderiv := (chartCkSeminorm_le_iff x ⟨P i, hP i⟩ k hk f
-    (apply_nonneg _ _)).mp le_rfl m hm z hzi
-  have hCi : C i ≤ 1 + ∑ j, C j :=
-    (Finset.single_le_sum (fun j _ ↦ (hC j).le) (Finset.mem_univ i)).trans
-      (le_add_of_nonneg_left zero_le_one)
-  exact hderiv.trans ((hbound i f).trans
-    ((mul_le_mul_of_nonneg_left (chartCkSeminorm_le_finiteAtlasSeminorm c K k hk i f)
-      (hC i).le).trans (mul_le_mul_of_nonneg_right hCi hq)))
+  refine chartCkSeminorm_le_of_subset_biUnion x L Finset.univ (fun i ↦ ⟨P i, hP i⟩) hLP.subset
+    k hk _ (fun i _ ↦ (hC i).le) f fun i _ ↦ (hbound i f).trans ?_
+  exact mul_le_mul_of_nonneg_left (chartCkSeminorm_le_finiteAtlasSeminorm c K k hk i f) (hC i).le
 
 include hK in
 /-- **Equivalence of finite-atlas norms.** The `C^k` seminorm of any finite atlas is bounded by
@@ -193,25 +157,31 @@ theorem exists_finiteAtlasSeminorm_le {ι' : Type*} [Fintype ι'] (c' : ι' → 
     exists_chartCkSeminorm_le_finiteAtlasSeminorm (F := F) hK (c' i) (K' i) k hk
   have hsum : 0 ≤ ∑ i, C i := Finset.sum_nonneg fun i _ ↦ (hC i).le
   refine ⟨1 + ∑ i, C i, add_pos_of_pos_of_nonneg zero_lt_one hsum, fun f ↦ ?_⟩
-  have hq := apply_nonneg (finiteAtlasSeminorm (F := F) c K k hk) f
-  refine Seminorm.finset_sup_apply_le
-    (mul_nonneg (add_pos_of_pos_of_nonneg zero_lt_one hsum).le hq) fun i _ ↦ ?_
-  have hCi : C i ≤ 1 + ∑ j, C j :=
-    (Finset.single_le_sum (fun j _ ↦ (hC j).le) (Finset.mem_univ i)).trans
-      (le_add_of_nonneg_left zero_le_one)
-  exact (hbound i f).trans (mul_le_mul_of_nonneg_right hCi hq)
+  calc finiteAtlasSeminorm c' K' k hk f
+      ≤ ∑ i, chartCkSeminorm (c' i) (K' i) k hk f := by
+        refine (Seminorm.finset_sup_le_sum (fun i ↦ chartCkSeminorm (F := F) (c' i) (K' i) k hk)
+          Finset.univ f).trans_eq ?_
+        simp only [sum_apply]
+    _ ≤ ∑ i, C i * finiteAtlasSeminorm c K k hk f := Finset.sum_le_sum fun i _ ↦ hbound i f
+    _ = (∑ i, C i) * finiteAtlasSeminorm c K k hk f := (Finset.sum_mul _ _ _).symm
+    _ ≤ (1 + ∑ i, C i) * finiteAtlasSeminorm c K k hk f :=
+        mul_le_mul_of_nonneg_right (le_add_of_nonneg_left zero_le_one) (apply_nonneg _ _)
 
-include hK in
-/-- **The finite-atlas seminorm is a norm**: it vanishes only on the zero map, since every point
-has coordinates in some compact piece, where the derivative of order zero is the value of the
-map. -/
-theorem finiteAtlasSeminorm_eq_zero_iff (k : ℕ) (hk : k ≤ n) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
+end Cover
+
+/-- **The finite-atlas seminorm is a norm**: it vanishes only on the zero map when the compact
+pieces cover the manifold, since every point then has coordinates in some compact piece, where
+the derivative of order zero is the value of the map. -/
+theorem finiteAtlasSeminorm_eq_zero_iff
+    (hK : ∀ y : M, ∃ i, ∃ hy : y ∈ (extChartAt I (c i)).source,
+      (⟨extChartAt I (c i) y, (extChartAt I (c i)).map_source hy⟩ :
+        (extChartAt I (c i)).target) ∈ K i)
+    (k : ℕ) (hk : k ≤ n) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
     finiteAtlasSeminorm c K k hk f = 0 ↔ f = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ h ▸ map_zero _⟩
   ext y
   obtain ⟨i, hy, hyK⟩ := hK y
-  have hle := (finiteAtlasSeminorm_le_iff c K k hk f le_rfl).mp h.le i 0 (Nat.zero_le k) _
-    (interior_subset hyK)
+  have hle := (finiteAtlasSeminorm_le_iff c K k hk f le_rfl).mp h.le i 0 (Nat.zero_le k) _ hyK
   have h0 : chartIteratedFDeriv f (c i) 0 ((Nat.cast_le.mpr (Nat.zero_le k)).trans hk)
       ⟨extChartAt I (c i) y, (extChartAt I (c i)).map_source hy⟩ = 0 :=
     norm_le_zero_iff.mp hle
@@ -220,8 +190,6 @@ theorem finiteAtlasSeminorm_eq_zero_iff (k : ℕ) (hk : k ≤ n) (f : C^n⟮I, M
   rw [(extChartAt I (c i)).left_inv hy] at hval
   rw [← hval]
   exact congrArg (fun A : E [×0]→L[𝕜] F ↦ A (fun j ↦ Fin.elim0 j)) h0
-
-end Cover
 
 section Topology
 
@@ -254,41 +222,12 @@ theorem withSeminorms_finiteAtlasSeminorm
     simpa only [LinearMap.id_apply, chartSeminormFamily_apply, Finset.sup_singleton] using
       hderiv.trans (hbound f)
 
-omit [IsManifold I k M] in
-/-- A compact manifold modelled on a locally compact space has a finite atlas with compact
-coordinate pieces whose relative interiors cover it. -/
-theorem exists_finiteAtlas [CompactSpace M] [LocallyCompactSpace H] :
-    ∃ (N : ℕ) (c : Fin N → M) (K : ∀ i, TopologicalSpace.Compacts (extChartAt I (c i)).target),
-      ∀ y : M, ∃ i, ∃ hy : y ∈ (extChartAt I (c i)).source,
-        (⟨extChartAt I (c i) y, (extChartAt I (c i)).map_source hy⟩ :
-          (extChartAt I (c i)).target) ∈ interior (K i : Set (extChartAt I (c i)).target) := by
-  obtain ⟨N, α, u, b, hu, hs⟩ := TauCeti.exists_finite_precompact_chart_cover (I := I)
-    (isCompact_univ : IsCompact (univ : Set M))
-  have hK (i : Fin N) :
-      IsCompact (Subtype.val ⁻¹' b i : Set (extChartAt I (α i)).target) := by
-    rw [Subtype.isCompact_iff, Subtype.image_preimage_coe, inter_eq_right.mpr (hu i).2.2.2.1]
-    exact (hu i).2.2.1
-  refine ⟨N, α, fun i ↦ ⟨_, hK i⟩, fun y ↦ ?_⟩
-  obtain ⟨i, hyi⟩ := mem_iUnion.mp (hs (mem_univ y))
-  have hy : y ∈ (extChartAt I (α i)).source := (hu i).2.1 hyi
-  refine ⟨i, hy, ?_⟩
-  -- The coordinate points whose inverse chart lies in `u i` form a relatively open set
-  -- inside the compact piece.
-  have hO : IsOpen {z : (extChartAt I (α i)).target | (extChartAt I (α i)).symm z ∈ u i} :=
-    (hu i).1.preimage (continuousOn_iff_continuous_domRestrict.mp
-      (continuousOn_extChartAt_symm (α i)))
-  refine interior_maximal (fun z hz ↦ ?_) hO ?_
-  · have hmem := (hu i).2.2.2.2 (mem_image_of_mem _ hz)
-    rwa [(extChartAt I (α i)).right_inv z.2] at hmem
-  · change (extChartAt I (α i)).symm (extChartAt I (α i) y) ∈ u i
-    rwa [(extChartAt I (α i)).left_inv hy]
-
 /-- **Normability of `C^k` maps on a compact manifold.** On a compact manifold modelled on a
 locally compact space, the weak Whitney topology on vector-valued `C^k` maps is generated by
 a single seminorm, the `C^k` seminorm of a finite atlas. -/
 theorem isNormableSpace_of_compactSpace [CompactSpace M] [LocallyCompactSpace H] :
     IsNormableSpace 𝕜 C^k⟮I, M; 𝓘(𝕜, F), F⟯ := by
-  obtain ⟨N, c, K, hK⟩ := exists_finiteAtlas (I := I) (M := M)
+  obtain ⟨N, c, K, hK⟩ := TauCeti.exists_finite_compact_chart_cover (I := I) (M := M)
   exact ⟨⟨_, withSeminorms_finiteAtlasSeminorm (F := F) k hK⟩⟩
 
 end Topology
