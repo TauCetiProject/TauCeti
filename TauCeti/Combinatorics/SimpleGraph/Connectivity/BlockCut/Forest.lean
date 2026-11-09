@@ -14,6 +14,8 @@ public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 This file proves that the block--cut incidence graph `G.blockCutGraph` of a simple graph is a
 forest, and that its connected components correspond to those of `G`.
 
+* `SimpleGraph.Walk.exists_walk_notMem_support_of_blockCutGraph_walk`: a block--cut walk avoiding
+  a specified cut vertex projects to a walk of the original graph avoiding that vertex.
 * `SimpleGraph.blockCutGraph_isAcyclic`: the block--cut graph is acyclic.  This needs no
   finiteness: an edge between a block `B` and a cut vertex `c` is a bridge, because a walk of the
   block--cut graph from `c` back to `B` avoiding that edge would give a walk of `G` from another
@@ -64,7 +66,7 @@ private theorem blockCutCarrier_inr (v : G.CutVertex) :
 
 /-- A walk of the block--cut graph whose cut vertices all differ from `c` projects to a walk of
 `G` avoiding `c`, between any carried vertices of its endpoints other than `c`. -/
-private theorem exists_walk_notMem_support_of_blockCutGraph_walk {x y : G.BlockCutVertex}
+private theorem exists_walk_notMem_support_of_blockCutGraph_walk_aux {x y : G.BlockCutVertex}
     (q : G.blockCutGraph.Walk x y) {c : V}
     (hq : ∀ w : G.CutVertex, (.inr w : G.BlockCutVertex) ∈ q.support → (w : V) ≠ c)
     {a b : V} (ha : a ∈ blockCutCarrier x) (hb : b ∈ blockCutCarrier y) (hac : a ≠ c)
@@ -102,6 +104,17 @@ private theorem exists_walk_notMem_support_of_blockCutGraph_walk {x y : G.BlockC
       exact ih hq' (blockCutCarrier_inl C ▸ (G.blockCutGraph_adj_cutVertex_block w C).1 h) hb hac
     · simp at h
 
+/-- A walk between two blocks in the block--cut graph whose cut vertices all differ from `c`
+projects to a walk in `G` avoiding `c`, between any vertices of the endpoint blocks other than
+`c`. -/
+theorem Walk.exists_walk_notMem_support_of_blockCutGraph_walk {B C : G.BlockVertex}
+    (q : G.blockCutGraph.Walk (.inl B) (.inl C)) {c : V}
+    (hq : ∀ w : G.CutVertex, (.inr w : G.BlockCutVertex) ∈ q.support → (w : V) ≠ c)
+    {x y : V} (hxB : x ∈ (B : Set V)) (hyC : y ∈ (C : Set V)) (hxc : x ≠ c)
+    (hyc : y ≠ c) : ∃ p : G.Walk x y, c ∉ p.support :=
+  exists_walk_notMem_support_of_blockCutGraph_walk_aux q hq
+    (blockCutCarrier_inl B ▸ hxB) (blockCutCarrier_inl C ▸ hyC) hxc hyc
+
 /-- **The block--cut graph is a forest.** No finiteness is needed. -/
 theorem blockCutGraph_isAcyclic : G.blockCutGraph.IsAcyclic := by
   classical
@@ -126,7 +139,7 @@ theorem blockCutGraph_isAcyclic : G.blockCutGraph.IsAcyclic := by
         obtain ⟨b, hbB, hcb⟩ := B.2.exists_adj_of_ne C.2 hCB.symm hcB hcC
         have hq : ∀ w : G.CutVertex, (.inr w : G.BlockCutVertex) ∈ q.support →
             (w : V) ≠ c := fun w hw hwc ↦ hP.2 (by rwa [← Subtype.ext hwc])
-        obtain ⟨r, hr⟩ := exists_walk_notMem_support_of_blockCutGraph_walk q hq
+        obtain ⟨r, hr⟩ := exists_walk_notMem_support_of_blockCutGraph_walk_aux q hq
           (a := a) (b := b) (blockCutCarrier_inl C ▸ haC) (blockCutCarrier_inl B ▸ hbB) hca.ne'
           hcb.ne'
         exact hr (C.2.mem_support_of_ne B.2 hCB hcC hcB haC hbB r)
