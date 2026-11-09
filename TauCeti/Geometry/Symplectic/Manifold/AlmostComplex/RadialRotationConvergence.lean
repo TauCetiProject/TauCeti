@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.RadialRotation
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
-import Mathlib.Topology.UniformSpace.CompactConvergence
 
 /-!
 # Convergence of rescaled radial rotations
