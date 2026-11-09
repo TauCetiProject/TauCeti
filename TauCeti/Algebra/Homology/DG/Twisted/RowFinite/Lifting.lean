@@ -78,7 +78,7 @@ open Finsupp
 
 namespace TauCeti
 
-universe uR uA uN uN' uP
+universe uR uA uN uN' uP uQ
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {hA : IsDGAlgebra 𝒜 d}
@@ -330,8 +330,11 @@ end RowFiniteTwistingCocycle
 
 section Homologous
 
-variable {P Q : Type uP} {indP : P → ℤ} {indQ : Q → ℤ}
-  {mP : RowFiniteTwistingCocycle 𝒜 d P indP} {mQ : RowFiniteTwistingCocycle 𝒜 d Q indQ}
+variable {P : Type uP} {indP : P → ℤ} {mP : RowFiniteTwistingCocycle 𝒜 d P indP}
+
+section Continuation
+
+variable {Q : Type uQ} {indQ : Q → ℤ} {mQ : RowFiniteTwistingCocycle 𝒜 d Q indQ}
 
 /-- **Lifting between semi-free resolutions.** Let `mP` be semi-free, with well-founded row
 relation, and let `ε : K_{mP} → N` and `ε' : K_{mQ} → N` be chain maps to a DG left module, where
@@ -417,6 +420,10 @@ private theorem nonempty_rowFiniteParametrizedCocycle_refl_comp
       simp only [Pi.neg_apply, Pi.add_apply, map_neg, map_add]
       abel)
   exact ⟨.ofTotalGrading h hh hhd⟩
+
+end Continuation
+
+variable {Q : Type uP} {indQ : Q → ℤ} {mQ : RowFiniteTwistingCocycle 𝒜 d Q indQ}
 
 /-- **Semi-free resolutions are unique up to homotopy.** Let `ε : K_{mP} → N` and
 `ε' : K_{mQ} → N` be chain maps from two semi-free row-finite twisted modules, with well-founded
