@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Topology.Homeomorph.Extend
+import TauCeti.Data.Set.Function
 
 /-!
 # Extending diffeomorphisms by the identity
@@ -236,12 +237,6 @@ theorem contMDiff_chartExtend [T2Space M] [IsManifold I n M] {Φ : P → E → E
 
 end ChartExtend
 
-/-- An injective map fixing every point outside `K` maps `K` into itself. -/
-private theorem mapsTo_of_eq_self {α : Type*} {f : α → α} (hf : Function.Injective f) {K : Set α}
-    (h : ∀ p ∉ K, f p = p) : MapsTo f K K := by
-  have hs : SurjOn f Kᶜ Kᶜ := fun p hp ↦ ⟨p, hp, h p hp⟩
-  simpa using hs.mapsTo_compl hf
-
 end TauCeti
 
 namespace Diffeomorph
@@ -270,18 +265,19 @@ noncomputable def chartExtend (φ : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, E)⟯
   have hsmooth (ψ : E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜, E)⟯ E) (hψ : ∀ p ∉ K, ψ p = p) :
       ContMDiff I I n (TauCeti.chartExtend I ψ x) :=
     (contMDiff_chartExtend (I' := 𝓘(𝕜, 𝕜)) (Φ := fun _ ↦ ψ) (ψ.contMDiff.comp contMDiff_snd) hK
-      hKt (fun _ ↦ mapsTo_of_eq_self ψ.injective hψ) fun _ ↦ hψ).comp
+      hKt (fun _ ↦ ψ.injective.mapsTo_of_eq_self hψ) fun _ ↦ hψ).comp
         ((contMDiff_const (c := (0 : 𝕜))).prodMk contMDiff_id)
   { toFun := TauCeti.chartExtend I φ x
     invFun := TauCeti.chartExtend I φ.symm x
     left_inv := fun z ↦ by
+      have hφφ : ⇑φ.symm ∘ ⇑φ = id := funext φ.symm_apply_apply
       rw [← Function.comp_apply (f := TauCeti.chartExtend I φ.symm x),
-        chartExtend_comp hKt' hφ (mapsTo_of_eq_self φ.injective hφ),
-        show ⇑φ.symm ∘ ⇑φ = id from funext φ.symm_apply_apply, chartExtend_id, id]
+        chartExtend_comp hKt' hφ (φ.injective.mapsTo_of_eq_self hφ), hφφ, chartExtend_id, id]
     right_inv := fun z ↦ by
+      have hφφ : ⇑φ ∘ ⇑φ.symm = id := funext φ.apply_symm_apply
       rw [← Function.comp_apply (f := TauCeti.chartExtend I φ x),
-        chartExtend_comp hKt' hφ' (mapsTo_of_eq_self φ.symm.injective hφ'),
-        show ⇑φ ∘ ⇑φ.symm = id from funext φ.apply_symm_apply, chartExtend_id, id]
+        chartExtend_comp hKt' hφ' (φ.symm.injective.mapsTo_of_eq_self hφ'), hφφ, chartExtend_id,
+        id]
     contMDiff_toFun := hsmooth φ hφ
     contMDiff_invFun := hsmooth φ.symm hφ' }
 
@@ -314,7 +310,7 @@ theorem contMDiff_chartExtend {τ : P → E ≃ₘ^n⟮𝓘(𝕜, E), 𝓘(𝕜,
     (hτ : ContMDiff (I'.prod 𝓘(𝕜, E)) 𝓘(𝕜, E) n fun q : P × E ↦ τ q.1 q.2)
     (hτK : ∀ q, ∀ p ∉ K, τ q p = p) :
     ContMDiff (I'.prod I) I n fun q : P × M ↦ (τ q.1).chartExtend x hK hKt (hτK q.1) q.2 :=
-  TauCeti.contMDiff_chartExtend hτ hK hKt (fun q ↦ mapsTo_of_eq_self (τ q).injective (hτK q))
+  TauCeti.contMDiff_chartExtend hτ hK hKt (fun q ↦ (τ q).injective.mapsTo_of_eq_self (hτK q))
     hτK
 
 end Diffeomorph

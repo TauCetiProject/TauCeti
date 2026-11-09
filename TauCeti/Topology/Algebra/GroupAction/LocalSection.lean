@@ -62,8 +62,9 @@ variable [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G] [TopologicalSp
 /-- **The local trivialization of an orbit map defined by a continuous local section.** Let
 `s : X → G` be continuous on an open set `U` with `s z • x₀ = z` for `z ∈ U`. Over `U`, the orbit
 map `g ↦ g • x₀` is trivialized with fibre the stabilizer of `x₀`: the chart sends `g` to
-`(g • x₀, s(g • x₀)⁻¹ * g)`, and its inverse sends `(z, h)` to `s(z) * h`. Off the source and the
-target the chart and its inverse take the junk values `1`. -/
+`(g • x₀, s(g • x₀)⁻¹ * g)`, and its inverse sends `(z, h)` to `s(z) * h`. Off the source the
+chart takes the junk value `(g • x₀, 1)`, and off the target its inverse takes the junk value
+`1`. -/
 noncomputable def orbitMapTrivialization (hx₀ : Continuous fun g : G ↦ g • x₀) (U : Set X)
     (hU : IsOpen U) (s : X → G) (hs : ContinuousOn s U) (hsec : ∀ z ∈ U, s z • x₀ = z) :
     Bundle.Trivialization (MulAction.stabilizer G x₀) (fun g : G ↦ g • x₀) := by
@@ -94,7 +95,8 @@ noncomputable def orbitMapTrivialization (hx₀ : Continuous fun g : G ↦ g •
   · rintro ⟨z, h⟩ ⟨hz, -⟩
     simp only [mem_preimage, hz, ↓reduceIte, mul_smul_eq_of_mem_stabilizer (hsec z hz) h]
   · intro g hg
-    simp [show g • x₀ ∈ U from hg]
+    simp only [mem_preimage] at hg
+    simp [hg]
   · rintro ⟨z, h⟩ ⟨hz, -⟩
     have hgz := mul_smul_eq_of_mem_stabilizer (hsec z hz) h
     simp only [hz, ↓reduceIte, hgz, ↓reduceDIte]
@@ -106,13 +108,14 @@ noncomputable def orbitMapTrivialization (hx₀ : Continuous fun g : G ↦ g •
           MulAction.stabilizer G x₀) : G)) ((fun g : G ↦ g • x₀) ⁻¹' U) := by
       refine (((hs.comp hx₀.continuousOn fun _ hg ↦ hg).inv).mul continuousOn_id).congr
         fun g hg ↦ ?_
-      simp [show g • x₀ ∈ U from hg]
+      simp only [mem_preimage] at hg
+      simp [hg]
     rw [continuousOn_iff_continuous_domRestrict] at hcarrier ⊢
     exact hcarrier.subtype_mk _
   · refine (((hs.comp continuousOn_fst fun zh (hz : zh ∈ U ×ˢ univ) ↦ hz.1).mul
       (continuous_subtype_val.comp_continuousOn continuousOn_snd))).congr
         fun zh (hzh : zh ∈ U ×ˢ univ) ↦ ?_
-    simp [show zh.1 ∈ U from hzh.1]
+    simp [(mem_prod.1 hzh).1]
 
 variable {hx₀ : Continuous fun g : G ↦ g • x₀} {U : Set X} {hU : IsOpen U} {s : X → G}
   {hs : ContinuousOn s U} {hsec : ∀ z ∈ U, s z • x₀ = z}

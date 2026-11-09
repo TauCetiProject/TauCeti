@@ -144,8 +144,8 @@ theorem exists_diffeomorph_family_apply_eq_add (c : E) {r : ℝ} (hr : 0 < r) {n
   · rw [hτ, ρ.zero_of_le_dist (by simpa [mem_ball] using hp), zero_smul, add_zero]
   · ext p
     simp [hτ, κ]
-  · rw [hτ, ρ.one_of_mem_closedBall (mem_closedBall_self (by positivity)), one_smul]
-    simp only [κ, χ.one_of_mem_closedBall (show d ∈ closedBall 0 (B / 2) by
-      rw [mem_closedBall_zero_iff]; exact hd.le), one_smul]
+  · have hdB : d ∈ closedBall 0 (B / 2) := mem_closedBall_zero_iff.2 hd.le
+    rw [hτ, ρ.one_of_mem_closedBall (mem_closedBall_self (by positivity)), one_smul]
+    simp only [κ, χ.one_of_mem_closedBall hdB, one_smul]
 
 end TauCeti
