@@ -75,7 +75,7 @@ public section
 namespace TauCeti
 
 open LieAlgebra LieModule Module
-open LinearMap (trace)
+open _root_.LinearMap (trace)
 
 universe u v w
 
