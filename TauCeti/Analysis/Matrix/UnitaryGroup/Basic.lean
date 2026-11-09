@@ -28,6 +28,9 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
   `Aᴴ A` is a scalar matrix and `‖det A‖ = 1` is unitary. This turns conditions that determine a
   matrix only up to a scalar factor, such as those coming from its action on a projective space,
   into unitarity.
+* `Matrix.star_mul_self_eq_scalar_of_forall_norm_sq_add`: if a `2 × 2` complex matrix
+  `M = !![α, β; γ, δ]` satisfies `‖α z + β‖ ^ 2 + ‖γ z + δ‖ ^ 2 = k (1 + ‖z‖ ^ 2)` for every `z`,
+  then `Mᴴ M = k`.
 
 
 ## Main definitions
@@ -75,6 +78,39 @@ theorem mem_unitaryGroup_of_star_mul_self_eq_scalar {𝕜 : Type*} [RCLike 𝕜]
     (Finset.sum_nonneg fun _ _ => sq_nonneg _)
     Fintype.card_ne_zero).mp hpow]
   simp
+
+/-- **Recognizing conformally unitary `2 × 2` matrices.** If `M = !![α, β; γ, δ]` scales the
+squared norm of every vector `(z, 1)` by `k`, that is,
+`‖α z + β‖ ^ 2 + ‖γ z + δ‖ ^ 2 = k (1 + ‖z‖ ^ 2)` for every `z`, then `Mᴴ M = k`: evaluating at
+`z = 0, 1, -1, i` determines the four entries of `Mᴴ M`. This is the condition for the Möbius
+transformation of `M` to preserve the Fubini–Study density. -/
+theorem star_mul_self_eq_scalar_of_forall_norm_sq_add (M : Matrix (Fin 2) (Fin 2) ℂ)
+    (k : ℝ)
+    (h : ∀ z : ℂ, ‖M 0 0 * z + M 0 1‖ ^ 2 + ‖M 1 0 * z + M 1 1‖ ^ 2 = k * (1 + ‖z‖ ^ 2)) :
+    star M * M = scalar (Fin 2) (k : ℂ) := by
+  have h0 := h 0
+  have h1 := h 1
+  have h2 := h (-1)
+  have h3 := h Complex.I
+  simp only [Complex.sq_norm, Complex.normSq_apply] at h0 h1 h2 h3
+  simp only [Fin.isValue, mul_zero, zero_add, Complex.zero_re, Complex.zero_im, add_zero, mul_one,
+    Complex.add_re, Complex.add_im, Complex.one_re, Complex.one_im, mul_neg, Complex.neg_re,
+    Complex.neg_im, neg_neg, neg_zero, Complex.mul_re, Complex.I_re, Complex.I_im, zero_sub,
+    Complex.mul_im] at h0 h1 h2 h3
+  ext i j
+  fin_cases i <;> fin_cases j <;> apply Complex.ext <;>
+    simp only [Fin.zero_eta, Fin.isValue, Fin.mk_one, Matrix.mul_apply, star_apply,
+      RCLike.star_def, Fin.sum_univ_two, Complex.add_re, Complex.add_im, Complex.mul_re,
+      Complex.mul_im, Complex.conj_re, Complex.conj_im, neg_mul, sub_neg_eq_add, scalar_apply,
+      ne_eq, zero_ne_one, one_ne_zero, not_false_eq_true, diagonal_apply_eq, diagonal_apply_ne,
+      Complex.ofReal_re, Complex.ofReal_im, Complex.zero_re, Complex.zero_im] <;>
+    first
+    | linear_combination h0
+    | linear_combination (h1 + h2) / 2 - h0
+    | linear_combination (h1 - h2) / 4
+    | linear_combination (h3 - (h1 + h2) / 2) / 2
+    | linear_combination -(h3 - (h1 + h2) / 2) / 2
+    | linear_combination
 
 /-- `U(n) = Circle · SU(n)`: every complex unitary matrix becomes special unitary after
 multiplication by a suitable scalar of modulus one. The scalar is a `card n`-th root of the inverse

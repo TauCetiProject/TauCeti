@@ -8,9 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.FubiniStudy
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Moebius
-public import TauCeti.Topology.Compactification.OnePoint.Antipode
+public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.SpecialUnitary
 import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
-import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 
 /-!
 # `PSU(2)` preserves the Fubini–Study form
@@ -51,9 +50,6 @@ here.
 
 ## Main results
 
-* `Matrix.GeneralLinearGroup.contMDiff_smul_real`,
-  `Matrix.ProjectiveSpecialLinearGroup.contMDiff_smul_real`: Möbius transformations are smooth for
-  the real structure of the Riemann sphere.
 * `Matrix.GeneralLinearGroup.mpullback_smul_fubiniStudyForm_eq_self_iff`: the Möbius
   transformation of `M ∈ GL(2, ℂ)` preserves `ω_FS` exactly when `Mᴴ M` is a real scalar matrix.
 * `Matrix.ProjectiveSpecialLinearGroup.mem_range_toPSL_iff_mpullback_smul_fubiniStudyForm_eq_self`:
@@ -123,29 +119,6 @@ private theorem chartGL_smul_ne_infty (y : OnePoint ℂ) : chartGL y • y ≠ (
   | coe z => simp [chartGL]
 
 end OnePoint
-
-namespace Matrix.GeneralLinearGroup
-
-/-- Möbius transformations are smooth for the real structure of the Riemann sphere: they are
-analytic for its complex structure (`OnePoint.instContMDiffConstSMul`). -/
-theorem contMDiff_smul_real (M : GL (Fin 2) ℂ) {n : ℕ∞ω} :
-    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) n fun x : OnePoint ℂ ↦ M • x := by
-  simpa using ((ContMDiffConstSMul.contMDiff_const_smul (I := 𝓘(ℂ)) (n := ω) M).restrictScalars
-    ℝ).of_le le_top
-
-end Matrix.GeneralLinearGroup
-
-namespace Matrix.ProjectiveSpecialLinearGroup
-
-/-- Möbius transformations of `PSL(2, ℂ)` are smooth for the real structure of the Riemann
-sphere. -/
-theorem contMDiff_smul_real (g : PSL(2, ℂ)) {n : ℕ∞ω} :
-    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) n fun x : OnePoint ℂ ↦ g • x := by
-  obtain ⟨A, rfl⟩ := QuotientGroup.mk_surjective g
-  -- The class of `A` acts as `A` does (`OnePoint.pslMk_smul`, which holds by definition).
-  exact GeneralLinearGroup.contMDiff_smul_real (SpecialLinearGroup.toGL A)
-
-end Matrix.ProjectiveSpecialLinearGroup
 
 open Matrix.GeneralLinearGroup
 
@@ -260,37 +233,6 @@ private theorem fubiniStudyDensity_div_mul_norm_sq_of_star_mul_self
   rw [fubiniStudyDensity_div_mul_norm_sq _ _ _ hq, hnorm, hdet', fubiniStudyDensity_def]
   field_simp
 
-/-- **A matrix whose Möbius transformation preserves the density is conformally unitary.** If
-`‖α z + β‖ ^ 2 + ‖γ z + δ‖ ^ 2 = k (1 + ‖z‖ ^ 2)` for every `z`, then `Mᴴ M = k`: evaluating at
-`z = 0, 1, -1, i` determines the four entries of `Mᴴ M`. -/
-private theorem star_mul_self_eq_scalar_of_forall_norm_sq_add (M : Matrix (Fin 2) (Fin 2) ℂ)
-    (k : ℝ)
-    (h : ∀ z : ℂ, ‖M 0 0 * z + M 0 1‖ ^ 2 + ‖M 1 0 * z + M 1 1‖ ^ 2 = k * (1 + ‖z‖ ^ 2)) :
-    star M * M = scalar (Fin 2) (k : ℂ) := by
-  have h0 := h 0
-  have h1 := h 1
-  have h2 := h (-1)
-  have h3 := h Complex.I
-  simp only [Complex.sq_norm, Complex.normSq_apply] at h0 h1 h2 h3
-  simp only [Fin.isValue, mul_zero, zero_add, Complex.zero_re, Complex.zero_im, add_zero, mul_one,
-    Complex.add_re, Complex.add_im, Complex.one_re, Complex.one_im, mul_neg, Complex.neg_re,
-    Complex.neg_im, neg_neg, neg_zero, Complex.mul_re, Complex.I_re, Complex.I_im, zero_sub,
-    Complex.mul_im] at h0 h1 h2 h3
-  ext i j
-  fin_cases i <;> fin_cases j <;> apply Complex.ext <;>
-    simp only [Fin.zero_eta, Fin.isValue, Fin.mk_one, Matrix.mul_apply, star_apply,
-      RCLike.star_def, Fin.sum_univ_two, Complex.add_re, Complex.add_im, Complex.mul_re,
-      Complex.mul_im, Complex.conj_re, Complex.conj_im, neg_mul, sub_neg_eq_add, scalar_apply,
-      ne_eq, zero_ne_one, one_ne_zero, not_false_eq_true, diagonal_apply_eq, diagonal_apply_ne,
-      Complex.ofReal_re, Complex.ofReal_im, Complex.zero_re, Complex.zero_im] <;>
-    first
-    | linear_combination h0
-    | linear_combination (h1 + h2) / 2 - h0
-    | linear_combination (h1 - h2) / 4
-    | linear_combination (h3 - (h1 + h2) / 2) / 2
-    | linear_combination -(h3 - (h1 + h2) / 2) / 2
-    | linear_combination
-
 /-! ### The pullback of the Fubini–Study form -/
 
 private theorem star_chartGL_mul_self (y : OnePoint ℂ) :
@@ -383,7 +325,7 @@ theorem mpullback_smul_fubiniStudyForm_eq_self_iff (M : GL (Fin 2) ℂ) :
   constructor
   · intro h
     refine ⟨‖(M : Matrix (Fin 2) (Fin 2) ℂ).det‖,
-      star_mul_self_eq_scalar_of_forall_norm_sq_add _ _ fun z ↦ ?_⟩
+      Matrix.star_mul_self_eq_scalar_of_forall_norm_sq_add _ _ fun z ↦ ?_⟩
     -- Compare the two forms at `z` on the vectors `1` and `i`, on which `dx ∧ dy` is `1`.
     have hz := (eval₂_fubiniStudyForm_mfderiv_smul M z 1 Complex.I).symm.trans
       ((h z (1 : ℂ) Complex.I).trans (eval₂_fubiniStudyForm_coe z 1 Complex.I))

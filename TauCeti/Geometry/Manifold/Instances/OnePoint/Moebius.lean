@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
+public import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
+import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 
 /-!
 # Möbius transformations of the projective line are analytic
@@ -32,6 +35,8 @@ transformation restricted to `𝕜`.
 Hence `GL (Fin 2) 𝕜` acts on `OnePoint 𝕜` by analytic maps (`OnePoint.instContMDiffConstSMul`).
 For `𝕜 = ℂ`, each Möbius transformation is therefore a biholomorphism of the Riemann sphere, with
 inverse the transformation of the inverse matrix: this is `Diffeomorph.constSmul 𝓘(ℂ) ω g`.
+Restricting scalars, Möbius transformations of `GL(2, ℂ)` and `PSL(2, ℂ)` are also smooth for the
+real structure of the Riemann sphere.
 
 ## Main results
 
@@ -42,6 +47,9 @@ inverse the transformation of the inverse matrix: this is `Diffeomorph.constSmul
   analytic.
 * `OnePoint.instContMDiffConstSMul`: `GL (Fin 2) 𝕜` acts on `OnePoint 𝕜` by analytic maps.
 * `OnePoint.instContinuousConstSMul`: in particular it acts by homeomorphisms.
+* `Matrix.GeneralLinearGroup.contMDiff_smul_real`,
+  `Matrix.ProjectiveSpecialLinearGroup.contMDiff_smul_real`: Möbius transformations are smooth for
+  the real structure of the Riemann sphere.
 
 ## References
 
@@ -192,3 +200,28 @@ instance instContinuousConstSMul : ContinuousConstSMul (GL (Fin 2) 𝕜) (OnePoi
   ContMDiffConstSMul.continuousConstSMul (I := 𝓘(𝕜)) ω
 
 end OnePoint
+
+open scoped MatrixGroups
+
+namespace Matrix.GeneralLinearGroup
+
+/-- Möbius transformations are smooth for the real structure of the Riemann sphere: they are
+analytic for its complex structure (`OnePoint.instContMDiffConstSMul`). -/
+theorem contMDiff_smul_real (M : GL (Fin 2) ℂ) {n : ℕ∞ω} :
+    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) n fun x : OnePoint ℂ ↦ M • x := by
+  simpa using ((ContMDiffConstSMul.contMDiff_const_smul (I := 𝓘(ℂ)) (n := ω) M).restrictScalars
+    ℝ).of_le le_top
+
+end Matrix.GeneralLinearGroup
+
+namespace Matrix.ProjectiveSpecialLinearGroup
+
+/-- Möbius transformations of `PSL(2, ℂ)` are smooth for the real structure of the Riemann
+sphere. -/
+theorem contMDiff_smul_real (g : PSL(2, ℂ)) {n : ℕ∞ω} :
+    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) n fun x : OnePoint ℂ ↦ g • x := by
+  obtain ⟨A, rfl⟩ := QuotientGroup.mk_surjective g
+  -- The class of `A` acts as `A` does (`OnePoint.pslMk_smul`, which holds by definition).
+  exact GeneralLinearGroup.contMDiff_smul_real (SpecialLinearGroup.toGL A)
+
+end Matrix.ProjectiveSpecialLinearGroup
