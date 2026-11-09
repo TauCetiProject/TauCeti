@@ -15,7 +15,8 @@ estimate turns a Cauchy--Riemann equation into a bound on the full differential:
 `L I = A (L 1)` with `‖A‖ ≤ M`, then `‖L a‖ ≤ (1 + M) * ‖L 1‖ * ‖a‖`
 (`ContinuousLinearMap.norm_apply_le_of_apply_I_eq`). Such a map is the sum of its values at `1`
 and `I` weighted by the real and imaginary parts
-(`ContinuousLinearMap.eq_reCLM_smulRight_add_imCLM_smulRight`).
+(`ContinuousLinearMap.eq_reCLM_smulRight_add_imCLM_smulRight`, and for families
+`ContinuousLinearMap.fun_eq_smulRightL_reCLM_add_smulRightL_imCLM`).
 -/
 
 public section
@@ -58,6 +59,17 @@ theorem eq_reCLM_smulRight_add_imCLM_smulRight {V : Type*} [SeminormedAddCommGro
   have hz : z = z.re • (1 : ℂ) + z.im • Complex.I := by
     simp [Complex.real_smul]
   conv_lhs => rw [hz, map_add, map_smul, map_smul]
+  simp
+
+/-- A family of real-linear maps out of `ℂ` splits through its values at `1` and `I`, written
+with the continuous linear maps `smulRightL` so that it can be postcomposed in families. -/
+theorem fun_eq_smulRightL_reCLM_add_smulRightL_imCLM {X V : Type*} [SeminormedAddCommGroup V]
+    [NormedSpace ℝ V] (D : X → ℂ →L[ℝ] V) :
+    D = (fun x => smulRightL ℝ ℂ V Complex.reCLM (D x 1)) +
+      fun x => smulRightL ℝ ℂ V Complex.imCLM (D x Complex.I) := by
+  funext x
+  conv_lhs => rw [(D x).eq_reCLM_smulRight_add_imCLM_smulRight]
+  ext z
   simp
 
 end ContinuousLinearMap

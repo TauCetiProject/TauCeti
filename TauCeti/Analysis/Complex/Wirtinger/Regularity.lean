@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Complex.Wirtinger.Weak
 public import TauCeti.Analysis.Sobolev.Local.Norm
 public import TauCeti.Analysis.Sobolev.TestFunctionLp.Representation
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Local
-import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.Analysis.Complex.OperatorNorm
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -182,13 +181,8 @@ theorem HasWeakConjWirtingerDerivOn.memWkpLoc_succ (hp : 1 < p) (hp_top : p ≠ 
     have hv (w : ℂ) : MemWkpLoc p Ω (k + 1) (fun z => D z w) :=
       ih ((memWkpLoc_zero_iff.1 hDp).clm_comp (apply ℝ F w)) (hDfk.clm_comp (apply ℝ F w))
         (h.weakLineDeriv (hD.hasWeakLineDerivOn w) (hDf.hasWeakLineDerivOn w))
-    have hDeq : D = fun z => smulRightL ℝ ℂ F reCLM (D z 1) + smulRightL ℝ ℂ F imCLM (D z I) :=
-      funext fun z => by
-        conv_lhs => rw [(D z).eq_reCLM_smulRight_add_imCLM_smulRight]
-        ext w
-        simp
     refine memWkpLoc_succ_iff_of_isOpen.2 ⟨hu, D, hD, ?_⟩
-    rw [hDeq]
+    rw [fun_eq_smulRightL_reCLM_add_smulRightL_imCLM D]
     exact ((hv 1).clm_comp _).add ((hv I).clm_comp _)
 
 /-- **Interior `W^{1,p}` estimate for `\bar∂`.** For `1 < p < ∞`, `p ≤ r ≤ ∞` and a compact
@@ -336,10 +330,7 @@ theorem exists_eLpNormWkp_le_of_hasWeakConjWirtingerDerivOn (hp : 1 < p) (hp_top
             exact le_self_add
         _ = ‖a w‖ₑ * (C₁ * (1 + C₀) * (X + Y)) := by ring
     have hDeq : D = (fun z => L₁ (D z 1)) + fun z => L₂ (D z I) :=
-      funext fun z => by
-        conv_lhs => rw [(D z).eq_reCLM_smulRight_add_imCLM_smulRight]
-        ext w
-        simp [L₁, L₂]
+      fun_eq_smulRightL_reCLM_add_smulRightL_imCLM D
     calc eLpNormWkp p K (k + 1 + 1) u
         ≤ eLpNorm u p (volume.restrict K) + eLpNormWkp p K (k + 1) D :=
           eLpNormWkp_succ_le (hD.mono hint)
