@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
 import Mathlib.Analysis.Calculus.Deriv.Slope
-import TauCeti.Analysis.Calculus.SecondDerivative
-import TauCeti.Analysis.InnerProductSpace.SquaredDistance
+import Mathlib.Analysis.InnerProductSpace.Convex
+import TauCeti.Analysis.Convex.StrictConvexSpace
 
 /-!
 # Hopf's boundary-point lemma for elliptic operators in non-divergence form
@@ -86,60 +86,6 @@ open Filter Matrix Metric RealInnerProductSpace Set Topology
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to the Gaussian `exp (-α ‖· - z‖²)`, shifted by a
-constant `C`, is `(4 α² (x - z)ᵀ A (x - z) - 2 α tr A - 2 α ⟪x - z, v⟫) exp (-α ‖x - z‖²)`. -/
-private theorem sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sq_sub
-    (A : Matrix ι ι ℝ) (z : EuclideanSpace ℝ ι) (α C : ℝ) (x v : EuclideanSpace ℝ ι) :
-    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun y ↦ Real.exp (-α * ‖y - z‖ ^ 2) - C) x
-        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
-      fderiv ℝ (fun y ↦ Real.exp (-α * ‖y - z‖ ^ 2) - C) x v =
-    (4 * α ^ 2 * A.toQuadraticForm' (x - z) - 2 * α * A.trace - 2 * α * ⟪x - z, v⟫) *
-      Real.exp (-α * ‖x - z‖ ^ 2) := by
-  -- Write the Gaussian as `φ ∘ f` with `φ s = exp (-α s)` and `f y = ‖y - z‖²`.
-  set φ : ℝ → ℝ := fun s ↦ Real.exp (-α * s) with hφdef
-  set f : EuclideanSpace ℝ ι → ℝ := fun y ↦ ‖y - z‖ ^ 2 with hfdef
-  have hφ (s : ℝ) : HasDerivAt φ (-α * Real.exp (-α * s)) s := by
-    convert ((hasDerivAt_id' s).const_mul (-α)).exp using 1
-    ring
-  have hφ' : deriv φ = fun s ↦ -α * Real.exp (-α * s) := funext fun s ↦ (hφ s).deriv
-  have hφ'' : iteratedDeriv 2 φ (f x) = α ^ 2 * Real.exp (-α * f x) := by
-    rw [iteratedDeriv_succ, iteratedDeriv_one, hφ', ((hφ (f x)).const_mul (-α)).deriv]
-    ring
-  have hf (w : EuclideanSpace ℝ ι) : HasFDerivAt f
-      (2 • (innerSL ℝ (w - z)).comp (ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι))) w :=
-    ((hasFDerivAt_id w).sub_const z).norm_sq
-  have hf1 (w : EuclideanSpace ℝ ι) : fderiv ℝ f x w = 2 * ⟪x - z, w⟫ := by
-    rw [(hf x).fderiv]
-    simp [inner_sub_left]
-  have hf2 (w w' : EuclideanSpace ℝ ι) : fderiv ℝ (fderiv ℝ f) x w w' = 2 * ⟪w, w'⟫ := by
-    have hid : fderiv ℝ (fderiv ℝ (id : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)) x = 0 := by
-      rw [show fderiv ℝ (id : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) =
-        fun _ ↦ ContinuousLinearMap.id ℝ _ from funext fun _ ↦ fderiv_id]
-      exact fderiv_const_apply _
-    simpa [hid] using fderiv_fderiv_norm_sq_sub_comp_apply (i := id) (a := z) (x := x)
-      contDiffAt_id w w'
-  have hφc : ContDiffAt ℝ 2 φ (f x) := by fun_prop
-  have hfc : ContDiffAt ℝ 2 f x :=
-    ((contDiff_norm_sq ℝ).comp (contDiff_id.sub contDiff_const)).contDiffAt
-  have hcomp : (fun y ↦ Real.exp (-α * ‖y - z‖ ^ 2) - C) = fun y ↦ (φ ∘ f) y - C := rfl
-  have hsub : fderiv ℝ (fun y ↦ (φ ∘ f) y - C) = fderiv ℝ (φ ∘ f) :=
-    funext fun _ ↦ fderiv_sub_const C
-  rw [hcomp, hsub, ((hφ (f x)).comp_hasFDerivAt x (hf x)).fderiv]
-  simp only [fderiv_fderiv_scalar_comp_apply hφc hfc, hφ'', hφ', hf1, hf2]
-  simp only [EuclideanSpace.inner_single_right, PiLp.sub_apply, conj_trivial, one_mul, neg_mul,
-    smul_eq_mul, PiLp.single_apply, MonoidWithZeroHom.map_ite_one_zero, mul_ite, mul_one, mul_zero,
-    mul_neg, ite_mul, zero_mul, map_sub, ContinuousLinearMap.comp_id, neg_smul, neg_apply,
-    smul_apply, sub_apply, coe_innerSL_apply, nsmul_eq_mul, Nat.cast_ofNat, toQuadraticForm'_apply,
-    dotProduct, Pi.sub_apply, mulVec, Finset.mul_sum, trace, diag_apply, f]
-  simp only [mul_add, mul_neg, mul_ite, mul_zero, Finset.sum_add_distrib, Finset.sum_neg_distrib,
-    Finset.sum_ite_eq', Finset.mem_univ, ite_true, sub_mul, Finset.sum_mul, inner_sub_left]
-  rw [sub_eq_add_neg, sub_eq_add_neg]
-  congr 1
-  · congr 1
-    · exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
-    · exact congrArg Neg.neg (Finset.sum_congr rfl fun _ _ ↦ by ring)
-  · ring
-
 /-- On the annulus `ρ ≤ ‖x - z‖ ≤ r`, the shifted Gaussian `exp (-α ‖· - z‖²) - C` with `C ≥ 0`
 is a subsolution of `-∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ - ∂_v + c` for `0 ≤ c ≤ γ`, once
 `γ + 2 α (Λ + r β) ≤ 4 α² λ ρ²`. -/
@@ -169,32 +115,6 @@ private theorem mul_le_sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sq_sub
   calc c * (g - C) ≤ c * g := mul_le_mul_of_nonneg_left (by linarith) hc
     _ ≤ γ * g := mul_le_mul_of_nonneg_right hcγ hg.le
     _ ≤ _ := mul_le_mul_of_nonneg_right hcoef hg.le
-
-omit [DecidableEq ι] in
-/-- Every point of the closed ball of radius `R / 2` about the midpoint of `y` and a point `x₀`
-of `sphere y R`, other than `x₀` itself, lies in `ball y R`. -/
-private theorem mem_ball_of_norm_sub_midpoint_le {y x₀ x : EuclideanSpace ℝ ι} {R : ℝ}
-    (hx₀ : x₀ ∈ sphere y R) (hx : ‖x - (y + (2⁻¹ : ℝ) • (x₀ - y))‖ ≤ R / 2) (hne : x ≠ x₀) :
-    x ∈ ball y R := by
-  set a := x - (y + (2⁻¹ : ℝ) • (x₀ - y))
-  set h : EuclideanSpace ℝ ι := (2⁻¹ : ℝ) • (x₀ - y)
-  have hh : ‖h‖ = R / 2 := by
-    rw [norm_smul, ← dist_eq_norm, mem_sphere.mp hx₀, Real.norm_eq_abs,
-      abs_of_pos (by norm_num : (0 : ℝ) < 2⁻¹)]
-    ring
-  have hxy : x - y = a + h := by simp only [a, h]; abel
-  have hxx₀ : x - x₀ = a - h := by
-    simp only [a, h]
-    rw [← sub_eq_zero]
-    module
-  have hpar := parallelogram_law_with_norm ℝ a h
-  rw [← hxy, ← hxx₀, hh] at hpar
-  have hpos : 0 < ‖x - x₀‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hne)
-  have hR : 0 ≤ R := by
-    have := norm_nonneg h
-    linarith
-  rw [mem_ball, dist_eq_norm]
-  nlinarith [pow_le_pow_left₀ (norm_nonneg a) hx 2, norm_nonneg (x - y)]
 
 /-- **Hopf's boundary-point lemma, core case.** The difference-quotient bound for a function `u`
 satisfying `c (u - u x₀) ≤ L u` in the ball with `0 ≤ c ≤ γ`; the three sign cases of the
@@ -233,8 +153,12 @@ private theorem exists_mul_le_sub_of_mul_sub_le_sum_mul_fderiv_fderiv_add_fderiv
   have hx₀z : x₀ - z = r • ν := by
     rw [hzdef, hνdef, smul_smul, hrdef, div_mul_eq_mul_div, mul_inv_cancel₀ hR.ne', one_div]
     module
-  have hmem : ∀ x, ‖x - z‖ ≤ r → x ≠ x₀ → x ∈ ball y R := fun x hx hne ↦
-    mem_ball_of_norm_sub_midpoint_le hx₀ hx hne
+  have hmem : ∀ x, ‖x - z‖ ≤ r → x ≠ x₀ → x ∈ ball y R := fun x hx hne ↦ by
+    have hzmid : z = midpoint ℝ y x₀ := by
+      rw [hzdef, midpoint_eq_smul_add, invOf_eq_inv]
+      module
+    refine mem_ball_of_mem_closedBall_midpoint hx₀ ?_ hne
+    rwa [← hzmid, mem_closedBall, dist_eq_norm]
   have hballz : ball z r ⊆ ball y R := fun x hx ↦ by
     rw [mem_ball, dist_eq_norm] at hx
     refine hmem x hx.le fun h ↦ ?_

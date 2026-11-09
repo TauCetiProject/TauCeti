@@ -9,9 +9,10 @@ public import Mathlib.Analysis.Convex.StrictConvexSpace
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Convex.Mul
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
+import Mathlib.Analysis.Normed.Affine.AddTorsor
 
 /-!
-# Convexity of powers of the norm
+# Convexity of powers of the norm, and internally tangent balls
 
 In every real seminormed space, the `q`-th power of the norm is a convex function for every exponent
 `1 ≤ q`, as the composition of the convex norm with the convex nondecreasing function `t ↦ t ^ q`
@@ -26,6 +27,11 @@ ray.
 This is the pointwise input for strict convexity of the spaces `Lᵖ(μ; E)` with `1 < p < ∞`
 (`MeasureTheory.Lp.strictConvexSpace`).
 
+Strict convexity of the space also makes the closed ball of radius `R / 2` about the midpoint of
+`x` and a point `z` of `sphere x R` internally tangent to `ball x R` at `z`: every other point of
+the small closed ball lies in the open ball. This is the interior sphere geometry used by Hopf's
+boundary-point lemma.
+
 ## Main statements
 
 * `TauCeti.convexOn_norm_rpow` — `x ↦ ‖x‖ ^ q` is convex on a real seminormed space, for `1 ≤ q`.
@@ -33,11 +39,13 @@ This is the pointwise input for strict convexity of the spaces `Lᵖ(μ; E)` wit
   `0 ≤ a`.
 * `TauCeti.strictConvexOn_norm_rpow` — `x ↦ ‖x‖ ^ q` is strictly convex on a strictly convex real
   normed space, for `1 < q`.
+* `TauCeti.mem_ball_of_mem_closedBall_midpoint` — the closed ball of radius `R / 2` about the
+  midpoint of `x` and `z ∈ sphere x R` meets the complement of `ball x R` only at `z`.
 -/
 
 public section
 
-open Set
+open Metric Set
 
 namespace TauCeti
 
@@ -92,5 +100,24 @@ theorem strictConvexOn_norm_rpow {q : ℝ} (hq : 1 < q) :
       norm_combo_lt_of_ne le_rfl hn.symm.le hxy ha hb hab
     calc ‖a • x + b • y‖ ^ q < ‖x‖ ^ q := Real.rpow_lt_rpow (norm_nonneg _) hlt hq0
       _ = a * ‖x‖ ^ q + b * ‖y‖ ^ q := by rw [← hn, ← add_mul, hab, one_mul]
+
+/-- **Internally tangent balls.** In a strictly convex real normed space, let `z` lie on
+`sphere x R`. Every point `y ≠ z` of the closed ball of radius `R / 2` about the midpoint of `x`
+and `z` lies in `ball x R`. -/
+theorem mem_ball_of_mem_closedBall_midpoint {x y z : E} {R : ℝ} (hz : z ∈ sphere x R)
+    (hy : y ∈ closedBall (midpoint ℝ x z) (R / 2)) (hne : y ≠ z) : y ∈ ball x R := by
+  -- Write `y - x = a + h` with `h = midpoint ℝ x z - x = z - midpoint ℝ x z`.
+  have hmid : z - midpoint ℝ x z = midpoint ℝ x z - x := by
+    rw [right_sub_midpoint, midpoint_sub_left]
+  have hh : ‖midpoint ℝ x z - x‖ = R / 2 := by
+    rw [← dist_eq_norm, dist_comm, dist_left_midpoint, mem_sphere'.mp hz]
+    norm_num [div_eq_inv_mul]
+  have ha : ‖y - midpoint ℝ x z‖ ≤ R / 2 := by rwa [← dist_eq_norm, ← mem_closedBall]
+  rw [mem_ball, dist_eq_norm, ← sub_add_sub_cancel y (midpoint ℝ x z) x]
+  -- If `‖a + h‖ ≥ R`, the triangle inequality is an equality, so `a` and `h` are equal.
+  by_contra hR
+  have hle := norm_add_le (y - midpoint ℝ x z) (midpoint ℝ x z - x)
+  have hah := (sameRay_iff_norm_add.mpr (by linarith)).eq_of_norm_eq (by linarith)
+  exact hne (sub_left_inj.mp (hah.trans hmid.symm))
 
 end TauCeti

@@ -76,6 +76,8 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
   `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_neg`: linearity of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_norm_sq`: the operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`
   applied to `‖x‖²` is `2 tr A + 2 ⟪x, v⟫`.
+* `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sq_sub`: the operator
+  `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to the Gaussian `exp (-α ‖x - z‖²)`.
 * `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`: **the weak maximum
   principle** for `-L + c`, `c ≥ 0`.
 * `TauCeti.PDE.ge_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_ge_frontier`: the weak minimum
@@ -279,6 +281,59 @@ theorem sum_mul_fderiv_fderiv_add_fderiv_norm_sq {A : Matrix ι ι ℝ}
       fderiv ℝ (fun y : EuclideanSpace ℝ ι ↦ ‖y‖ ^ 2) x v = 2 * A.trace + 2 * ⟪x, v⟫ := by
   simp only [fderiv_fderiv_norm_sq_apply]
   simp [EuclideanSpace.inner_single_left, Matrix.trace, Finset.mul_sum, mul_comm]
+
+/-- The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to the Gaussian `exp (-α ‖· - z‖²)`, shifted by a
+constant `C`, is `(4 α² (x - z)ᵀ A (x - z) - 2 α tr A - 2 α ⟪x - z, v⟫) exp (-α ‖x - z‖²)`. -/
+theorem sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sq_sub
+    (A : Matrix ι ι ℝ) (z : EuclideanSpace ℝ ι) (α C : ℝ) (x v : EuclideanSpace ℝ ι) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun y ↦ Real.exp (-α * ‖y - z‖ ^ 2) - C) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
+      fderiv ℝ (fun y ↦ Real.exp (-α * ‖y - z‖ ^ 2) - C) x v =
+    (4 * α ^ 2 * A.toQuadraticForm' (x - z) - 2 * α * A.trace - 2 * α * ⟪x - z, v⟫) *
+      Real.exp (-α * ‖x - z‖ ^ 2) := by
+  -- Write the Gaussian as `φ ∘ f` with `φ s = exp (-α s)` and `f y = ‖y - z‖²`.
+  set φ : ℝ → ℝ := fun s ↦ Real.exp (-α * s) with hφdef
+  set f : EuclideanSpace ℝ ι → ℝ := fun y ↦ ‖y - z‖ ^ 2 with hfdef
+  have hφ (s : ℝ) : HasDerivAt φ (-α * Real.exp (-α * s)) s := by
+    convert ((hasDerivAt_id' s).const_mul (-α)).exp using 1
+    ring
+  have hφ' : deriv φ = fun s ↦ -α * Real.exp (-α * s) := funext fun s ↦ (hφ s).deriv
+  have hφ'' : iteratedDeriv 2 φ (f x) = α ^ 2 * Real.exp (-α * f x) := by
+    rw [iteratedDeriv_succ, iteratedDeriv_one, hφ', ((hφ (f x)).const_mul (-α)).deriv]
+    ring
+  have hf (w : EuclideanSpace ℝ ι) : HasFDerivAt f
+      (2 • (innerSL ℝ (w - z)).comp (ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι))) w :=
+    ((hasFDerivAt_id w).sub_const z).norm_sq
+  have hf1 (w : EuclideanSpace ℝ ι) : fderiv ℝ f x w = 2 * ⟪x - z, w⟫ := by
+    rw [(hf x).fderiv]
+    simp [inner_sub_left]
+  have hf2 (w w' : EuclideanSpace ℝ ι) : fderiv ℝ (fderiv ℝ f) x w w' = 2 * ⟪w, w'⟫ := by
+    -- The derivative of `id` is constant near `x`, so its own derivative vanishes.
+    have hid : fderiv ℝ (fderiv ℝ (id : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)) x = 0 :=
+      ((hasFDerivAt_const _ x).congr_of_eventuallyEq (.of_forall fun _ ↦ fderiv_id)).fderiv
+    simpa [hid] using fderiv_fderiv_norm_sq_sub_comp_apply (i := id) (a := z) (x := x)
+      contDiffAt_id w w'
+  have hφc : ContDiffAt ℝ 2 φ (f x) := by fun_prop
+  have hfc : ContDiffAt ℝ 2 f x :=
+    ((contDiff_norm_sq ℝ).comp (contDiff_id.sub contDiff_const)).contDiffAt
+  have hcomp : (fun y ↦ Real.exp (-α * ‖y - z‖ ^ 2) - C) = fun y ↦ (φ ∘ f) y - C := rfl
+  have hsub : fderiv ℝ (fun y ↦ (φ ∘ f) y - C) = fderiv ℝ (φ ∘ f) :=
+    funext fun _ ↦ fderiv_sub_const C
+  rw [hcomp, hsub, ((hφ (f x)).comp_hasFDerivAt x (hf x)).fderiv]
+  simp only [fderiv_fderiv_scalar_comp_apply hφc hfc, hφ'', hφ', hf1, hf2]
+  simp only [EuclideanSpace.inner_single_right, PiLp.sub_apply, conj_trivial, one_mul, neg_mul,
+    smul_eq_mul, PiLp.single_apply, MonoidWithZeroHom.map_ite_one_zero, mul_ite, mul_one, mul_zero,
+    mul_neg, ite_mul, zero_mul, map_sub, ContinuousLinearMap.comp_id, neg_smul, neg_apply,
+    smul_apply, sub_apply, coe_innerSL_apply, nsmul_eq_mul, Nat.cast_ofNat, toQuadraticForm'_apply,
+    dotProduct, Pi.sub_apply, mulVec, Finset.mul_sum, trace, diag_apply, f]
+  simp only [mul_add, mul_neg, mul_ite, mul_zero, Finset.sum_add_distrib, Finset.sum_neg_distrib,
+    Finset.sum_ite_eq', Finset.mem_univ, ite_true, sub_mul, Finset.sum_mul, inner_sub_left]
+  rw [sub_eq_add_neg, sub_eq_add_neg]
+  congr 1
+  · congr 1
+    · exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
+    · exact congrArg Neg.neg (Finset.sum_congr rfl fun _ _ ↦ by ring)
+  · ring
 
 variable [Nonempty ι]
 
