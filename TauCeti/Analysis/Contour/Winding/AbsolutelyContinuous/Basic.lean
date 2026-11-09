@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Winding.Number.AbsolutelyContinuous
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Comp
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
@@ -81,13 +82,6 @@ theorem _root_.AbsolutelyContinuousOnInterval.exists_int_windingNumber
   refine ⟨n, mul_left_cancel₀ Complex.two_pi_I_ne_zero ?_⟩
   rw [hn, mul_comm]
 
-/-- **Two integers whose complex images are closer than `1` are equal.** -/
-theorem eq_of_dist_intCast_lt_one {m n : ℤ} (h : dist (m : ℂ) (n : ℂ) < 1) : m = n := by
-  by_contra hne
-  have : (1 : ℝ) ≤ dist (m : ℂ) (n : ℂ) := by
-    rw [Complex.isometry_intCast.dist_eq]; exact Int.pairwise_one_le_dist hne
-  linarith
-
 /-- A closed absolutely continuous curve whose winding numbers about two points off the curve differ
 by less than `1` from an integer `k` has winding numbers differing by exactly `k`. -/
 theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_add_intCast_of_dist_lt
@@ -98,7 +92,7 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_add_intCast_of_di
   obtain ⟨m, hm⟩ := hΓ.exists_int_windingNumber hclosed h₁
   obtain ⟨n, hn⟩ := hΓ.exists_int_windingNumber hclosed h₂
   have hmn : m = n + k :=
-    eq_of_dist_intCast_lt_one (n := n + k) (by
+    Complex.intCast_eq_of_dist_lt_one (n := n + k) (by
       rw [hm, hn] at hdist
       push_cast
       have : dist ((m : ℂ) - (n : ℂ)) (k : ℂ) = dist (m : ℂ) ((n : ℂ) + (k : ℂ)) := by

@@ -29,6 +29,8 @@ by itself; at `z = r`, Lean's totalized inverse gives value one.
 The file also records the coordinates, in the frame of a nonzero direction `v`, of the points
 `v (s ± h i) + z₀` on the two sides of the line through `v s + z₀` with direction `v`: their
 imaginary parts in that frame and their distance from `v s + z₀`.
+
+Two integers whose images in `ℂ` are at distance less than `1` are equal.
 -/
 
 public section
@@ -120,16 +122,12 @@ end LineThrough
 
 end TauCeti
 
-namespace Real
-
-open Complex
-
-variable {v : ℂ} {s : ℝ}
+namespace Complex
 
 /-- The point `h` units off the line `s ↦ v * s` in the direction `v * I` is at distance
 `‖v‖ * |h|` from the line point. -/
 @[simp]
-theorem dist_add_mul_I (h : ℝ) : dist (v * (s + h * I)) (v * s) = ‖v‖ * |h| := by
+theorem dist_mul_add_mul_I (v : ℂ) (s h : ℝ) : dist (v * (s + h * I)) (v * s) = ‖v‖ * |h| := by
   rw [dist_eq_norm]
   have : v * (s + h * I) - v * s = v * (h * I) := by ring
   rw [this, norm_mul, norm_mul, Complex.norm_I, mul_one, Complex.norm_real, Real.norm_eq_abs]
@@ -137,11 +135,18 @@ theorem dist_add_mul_I (h : ℝ) : dist (v * (s + h * I)) (v * s) = ‖v‖ * |h
 /-- The point `h` units off the line `s ↦ v * s` in the direction `-(v * I)` is at distance
 `‖v‖ * |h|` from the line point. -/
 @[simp]
-theorem dist_sub_mul_I (h : ℝ) : dist (v * (s - h * I)) (v * s) = ‖v‖ * |h| := by
-  have := dist_add_mul_I (v := v) (s := s) (-h)
+theorem dist_mul_sub_mul_I (v : ℂ) (s h : ℝ) : dist (v * (s - h * I)) (v * s) = ‖v‖ * |h| := by
+  have := dist_mul_add_mul_I v s (-h)
   rwa [ofReal_neg, neg_mul, ← sub_eq_add_neg, abs_neg] at this
 
-end Real
+/-- **Two integers whose complex images are closer than `1` are equal.** -/
+theorem intCast_eq_of_dist_lt_one {m n : ℤ} (h : dist (m : ℂ) (n : ℂ) < 1) : m = n := by
+  by_contra hne
+  have : (1 : ℝ) ≤ dist (m : ℂ) (n : ℂ) := by
+    rw [Complex.isometry_intCast.dist_eq]; exact Int.pairwise_one_le_dist hne
+  linarith
+
+end Complex
 
 namespace Complex
 
