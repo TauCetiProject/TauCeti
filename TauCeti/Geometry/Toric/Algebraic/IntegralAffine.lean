@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Geometry.Toric.Algebraic.RationalFunctional
+public import Mathlib.Analysis.Normed.Affine.AddTorsorBases
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
@@ -189,6 +190,22 @@ variable {N N' V V' : Type*} [AddCommGroup N] [AddCommGroup N']
 theorem continuous (e : IntegralAffineEquiv h h') : Continuous e := by
   let := h.finiteDimensional
   exact e.toAffineEquiv.continuous_of_finiteDimensional
+
+/-- Agreement on a nonempty open set determines the entire integral affine equivalence. -/
+theorem eq_of_eqOn_open {e f : IntegralAffineEquiv h h'} {s : Set V}
+    (hs : IsOpen s) (hne : s.Nonempty) (he : Set.EqOn e f s) : e = f := by
+  apply toAffineEquiv_injective
+  exact AffineEquiv.ext_on (hs.affineSpan_eq_top hne) e.toAffineEquiv f.toAffineEquiv he
+
+/-- The continuous affine equivalence underlying an integral affine equivalence. -/
+def toContinuousAffineEquiv (e : IntegralAffineEquiv h h') : V ≃ᴬ[ℝ] V' :=
+  { e.toAffineEquiv with
+    continuous_toFun := e.continuous
+    continuous_invFun := e.symm.continuous }
+
+@[simp]
+theorem toContinuousAffineEquiv_apply (e : IntegralAffineEquiv h h') (x : V) :
+    e.toContinuousAffineEquiv x = e x := (rfl)
 
 /-- The underlying continuous affine map used to transport affine inequalities. -/
 def toContinuousAffineMap (e : IntegralAffineEquiv h h') : V →ᴬ[ℝ] V' :=
