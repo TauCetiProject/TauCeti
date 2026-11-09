@@ -189,9 +189,8 @@ private theorem linearIndependent_stiefelNormalCons {v : Fin 2 → E} (hv : v �
     hx (LinearMap.mem_ker.1
       (Submodule.span_le.2 (range_subset_iff.2 fun i ↦ LinearMap.mem_ker.2 (hs i)) h))
   have hDt (i j : Fin 2) (l : Fin m) : D i j (t l) = 0 := by
-    change gramSym2Deriv E 2 v (t l) s(i, j) = 0
-    rw [hker]
-    rfl
+    simp only [D, LinearMap.comp_apply, ContinuousLinearMap.coe_coe, hker, LinearMap.proj_apply,
+      Pi.zero_apply]
   refine (((ht.finCons (x := ![v 1, v 0])
     (notMem (D 0 1) ?_ (hDt 0 1))).finCons
     (x := ![0, v 1]) (notMem (D 1 1) ?_ fun l ↦ ?_)).finCons

@@ -24,8 +24,9 @@ is the rotation family `TauCeti.sphereRotationFamily u` of the sphere at `u`.
 
 This is the map `[(u, v), θ] ↦ (u, u cos θ + v sin θ)` of the proof of Proposition 6.17 of
 Barraud–Damian–Humilière–Oancea. There, its degree, `±2` when the fibre sphere `Sⁿ` of the unit
-tangent bundle has even dimension, shows that the class of the fibred family of two-spheres of an
-even-dimensional sphere is nonzero in `H_*(Ω²Sⁿ⁺¹)`. The degree is a signed count of the
+tangent bundle has even dimension, shows that the class of the fibred family of two-spheres of the
+even-dimensional sphere `Sⁿ⁺²` is nonzero in `H_{2n+1}(Ω²Sⁿ⁺²)` (the paper's `H_{2m−3}(Ω²Sᵐ)` for
+`m = n + 2`, whose map has domain `T¹Sᵐ⁻¹ × S¹`). The degree is a signed count of the
 preimages described below, for the normal orientation `Orientation.stiefelTwoOrientation` of the
 Stiefel manifold; this file constructs the map and its fibres.
 
@@ -66,18 +67,31 @@ attribute [local instance] finrank_real_complex_fact'
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
+/-- The second vector of an orthonormal pair `(u, v)` with `u = p`, as a unit vector of `p^⊥`, that
+is a unit tangent vector of the sphere at `p`. -/
+private def stiefelTangent (p : sphere (0 : E) 1) (x : stiefel E 2)
+    (hx : (x : Fin 2 → E) 0 = p) : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 :=
+  ⟨⟨(x : Fin 2 → E) 1, Submodule.mem_orthogonal_singleton_iff_inner_right.2
+      (hx ▸ (mem_stiefel_two_iff.1 x.2).2.2)⟩,
+    mem_sphere_zero_iff_norm.2 (mem_stiefel_two_iff.1 x.2).2.1⟩
+
 /-- The **Stiefel rotation family**: an orthonormal pair `(u, v)` and a point `z` of the unit
 circle of `ℂ` are sent to `u` and to `Re z • u + Im z • v`, the point reached by rotating `u`
-towards the unit tangent vector `v` by the angle of `z`. -/
+towards the unit tangent vector `v` by the angle of `z`, that is to `u` and to the image of `(v, z)`
+under the rotation family `TauCeti.sphereRotationFamily u` of the sphere at `u`. -/
 def stiefelRotationFamily (x : stiefel E 2 × sphere (0 : ℂ) 1) :
     sphere (0 : E) 1 × sphere (0 : E) 1 :=
   (stiefelProj E 2 0 x.1,
-    ⟨(x.2 : ℂ).re • (x.1 : Fin 2 → E) 0 + (x.2 : ℂ).im • (x.1 : Fin 2 → E) 1, by
-      -- `u` and `v` are orthonormal, and `Re z ^ 2 + Im z ^ 2 = ‖z‖ ^ 2 = 1`.
-      obtain ⟨h₀, h₁, h₀₁⟩ := mem_stiefel_two_iff.1 x.1.2
-      rw [mem_sphere_zero_iff_norm, ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero]
-      simp [norm_add_sq_real, norm_smul, real_inner_smul_left, real_inner_smul_right, h₀, h₁, h₀₁]
-      linarith [Complex.re_sq_add_im_sq_of_mem_sphere x.2.2]⟩)
+    sphereRotationFamily (stiefelProj E 2 0 x.1)
+      (stiefelTangent _ x.1 (coe_stiefelProj 0 x.1).symm, x.2))
+
+/-- Over a point `p` of the sphere, the second component of the Stiefel rotation family is the
+rotation family of the sphere at `p`. -/
+private theorem snd_stiefelRotationFamily_eq {p : sphere (0 : E) 1}
+    (x : stiefel E 2 × sphere (0 : ℂ) 1) (hx : (x.1 : Fin 2 → E) 0 = p) :
+    (stiefelRotationFamily x).2 = sphereRotationFamily p (stiefelTangent p x.1 hx, x.2) := by
+  obtain rfl : stiefelProj E 2 0 x.1 = p := Subtype.ext ((coe_stiefelProj 0 x.1).trans hx)
+  rfl
 
 @[simp]
 theorem coe_fst_stiefelRotationFamily (x : stiefel E 2 × sphere (0 : ℂ) 1) :
@@ -87,8 +101,11 @@ theorem coe_fst_stiefelRotationFamily (x : stiefel E 2 × sphere (0 : ℂ) 1) :
 @[simp]
 theorem coe_snd_stiefelRotationFamily (x : stiefel E 2 × sphere (0 : ℂ) 1) :
     ((stiefelRotationFamily x).2 : E) =
-      (x.2 : ℂ).re • (x.1 : Fin 2 → E) 0 + (x.2 : ℂ).im • (x.1 : Fin 2 → E) 1 :=
-  (rfl)
+      (x.2 : ℂ).re • (x.1 : Fin 2 → E) 0 + (x.2 : ℂ).im • (x.1 : Fin 2 → E) 1 := by
+  rw [snd_stiefelRotationFamily_eq x (coe_stiefelProj 0 x.1).symm, coe_sphereRotationFamily]
+  simp only [coe_stiefelProj]
+  -- The vector of `p^⊥` underlying `stiefelTangent p x.1 hx` is `x.1 1` by definition.
+  rfl
 
 /-- The Stiefel rotation family is smooth. -/
 theorem contMDiff_stiefelRotationFamily [FiniteDimensional ℝ E] {n : ℕ}
@@ -102,11 +119,13 @@ theorem contMDiff_stiefelRotationFamily [FiniteDimensional ℝ E] {n : ℕ}
   have hz : ContMDiff (𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ).prod (𝓡 1))
       𝓘(ℝ, ℂ) ∞ fun x : stiefel E 2 × sphere (0 : ℂ) 1 ↦ (x.2 : ℂ) :=
     contMDiff_coe_sphere.comp contMDiff_snd
+  have h₂ : ContMDiff (𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ).prod (𝓡 1))
+      𝓘(ℝ, E) ∞ fun x : stiefel E 2 × sphere (0 : ℂ) 1 ↦ ((stiefelRotationFamily x).2 : E) := by
+    simp only [coe_snd_stiefelRotationFamily]
+    exact ((Complex.reCLM.contDiff.contMDiff.comp hz).smul (hv 0)).add
+      ((Complex.imCLM.contDiff.contMDiff.comp hz).smul (hv 1))
   exact ((contMDiff_stiefelProj E 2 0).comp contMDiff_fst).prodMk
-    (ContMDiff.codRestrict_sphere
-      (((Complex.reCLM.contDiff.contMDiff.comp hz).smul (hv 0)).add
-        ((Complex.imCLM.contDiff.contMDiff.comp hz).smul (hv 1)))
-      fun x ↦ (stiefelRotationFamily x).2.2)
+    (h₂.codRestrict_sphere fun x ↦ (stiefelRotationFamily x).2.2)
 
 /-! ### Fibres -/
 
@@ -118,54 +137,34 @@ theorem stiefelRotationFamily_eq_stiefelRotationFamily_iff
       y = x ∨ ((y.1 : Fin 2 → E) 0 = (x.1 : Fin 2 → E) 0 ∧
         (y.1 : Fin 2 → E) 1 = -(x.1 : Fin 2 → E) 1 ∧
         (y.2 : ℂ) = (starRingEnd ℂ) (x.2 : ℂ)) := by
-  obtain ⟨-, -, hx₀₁⟩ := mem_stiefel_two_iff.1 x.1.2
-  obtain ⟨hx₀, -⟩ := mem_stiefel_two_iff.1 x.1.2
+  -- Over the common first vector `p = u`, transport the fibres of `sphereRotationFamily p`.
+  have hx₀ : (x.1 : Fin 2 → E) 0 = (stiefelProj E 2 0 x.1 : E) := (coe_stiefelProj 0 x.1).symm
   constructor
   · intro h
     have hu : (y.1 : Fin 2 → E) 0 = (x.1 : Fin 2 → E) 0 := by
       simpa using congrArg Subtype.val (congrArg Prod.fst h)
-    have hE := congrArg Subtype.val (congrArg Prod.snd h)
-    simp only [coe_snd_stiefelRotationFamily, hu] at hE
-    -- Pairing with `u` recovers the real parts.
-    have hre : (y.2 : ℂ).re = (x.2 : ℂ).re := by
-      have hy₀₁ := (mem_stiefel_two_iff.1 y.1.2).2.2
-      rw [hu] at hy₀₁
-      have h' := congrArg (fun w ↦ ⟪(x.1 : Fin 2 → E) 0, w⟫) hE
-      simpa only [inner_add_right, real_inner_smul_right, real_inner_self_eq_norm_sq, hx₀,
-        hx₀₁, hy₀₁, mul_zero, add_zero, one_pow, mul_one] using h'
-    have him : (y.2 : ℂ).im • (y.1 : Fin 2 → E) 1 = (x.2 : ℂ).im • (x.1 : Fin 2 → E) 1 := by
-      rw [hre] at hE
-      exact add_left_cancel hE
-    have hsq : (y.2 : ℂ).im ^ 2 = (x.2 : ℂ).im ^ 2 := by
-      linarith [congrArg (· ^ 2) hre, Complex.re_sq_add_im_sq_of_mem_sphere y.2.2,
-        Complex.re_sq_add_im_sq_of_mem_sphere x.2.2]
-    rcases sq_eq_sq_iff_eq_or_eq_neg.1 hsq with him' | him'
-    · left
-      rw [him'] at him
-      have hv := smul_right_injective E hx him
-      refine Prod.ext (Subtype.ext (funext fun i ↦ ?_)) (Subtype.ext (Complex.ext hre him'))
+    have h₂ := congrArg Prod.snd h
+    rw [snd_stiefelRotationFamily_eq y (hu.trans hx₀), snd_stiefelRotationFamily_eq x hx₀,
+      sphereRotationFamily_eq_sphereRotationFamily_iff _ (x := (_, x.2)) hx] at h₂
+    rcases h₂ with h₂ | ⟨hv, hz⟩
+    · refine .inl (Prod.ext (Subtype.ext (funext fun i ↦ ?_)) (congrArg Prod.snd h₂ :))
       fin_cases i
-      exacts [hu, hv]
-    · right
-      rw [him', neg_smul, ← smul_neg] at him
-      exact ⟨hu, neg_eq_iff_eq_neg.1 (smul_right_injective E hx him),
-        Complex.ext (by simpa using hre) (by simpa using him')⟩
+      exacts [hu, congrArg (fun w ↦ ((w.1 : (ℝ ∙ (stiefelProj E 2 0 x.1 : E))ᗮ) : E)) h₂]
+    · exact .inr ⟨hu, hv, hz⟩
   · rintro (rfl | ⟨hu, hv, hz⟩)
     · rfl
-    · refine Prod.ext (Subtype.ext (by simpa using hu)) (Subtype.ext ?_)
-      simp only [coe_snd_stiefelRotationFamily, hu, hv, hz, Complex.conj_re, Complex.conj_im,
-        neg_smul, smul_neg, neg_neg]
+    · refine Prod.ext (Subtype.ext (by simpa using hu)) ?_
+      rw [snd_stiefelRotationFamily_eq y (hu.trans hx₀), snd_stiefelRotationFamily_eq x hx₀,
+        sphereRotationFamily_eq_sphereRotationFamily_iff _ (x := (_, x.2)) hx]
+      exact .inr ⟨hv, hz⟩
 
 /-- A point with `Im z = 0` is sent to `(u, u)` or to `(u, -u)`. -/
 theorem stiefelRotationFamily_snd_eq_or_eq_neg_of_im_eq_zero
     {x : stiefel E 2 × sphere (0 : ℂ) 1} (hx : (x.2 : ℂ).im = 0) :
     (stiefelRotationFamily x).2 = (stiefelRotationFamily x).1 ∨
-      (stiefelRotationFamily x).2 = -(stiefelRotationFamily x).1 := by
-  have hre : (x.2 : ℂ).re ^ 2 = 1 ^ 2 := by
-    linarith [sq_eq_zero_iff.2 hx, Complex.re_sq_add_im_sq_of_mem_sphere x.2.2]
-  rcases sq_eq_sq_iff_eq_or_eq_neg.1 hre with h | h
-  · exact .inl (Subtype.ext (by simp [h, hx]))
-  · exact .inr (Subtype.ext (by simp [h, hx]))
+      (stiefelRotationFamily x).2 = -(stiefelRotationFamily x).1 :=
+  sphereRotationFamily_eq_or_eq_neg_of_im_eq_zero (stiefelProj E 2 0 x.1)
+    (x := (stiefelTangent _ x.1 (coe_stiefelProj 0 x.1).symm, x.2)) hx
 
 /-- Every preimage of a point `(a, w)` with `w ≠ ±a` has `Im z ≠ 0`. -/
 theorem im_ne_zero_of_stiefelRotationFamily_eq {a w : sphere (0 : E) 1} (hwa : w ≠ a)
@@ -183,9 +182,8 @@ theorem exists_stiefelRotationFamily_eq {a w : sphere (0 : E) 1} (hwa : w ≠ a)
     Submodule.mem_orthogonal_singleton_iff_inner_right.1 (v : (ℝ ∙ (a : E))ᗮ).2
   have hframe : ![(a : E), ((v : (ℝ ∙ (a : E))ᗮ) : E)] ∈ stiefel E 2 :=
     mem_stiefel_two_iff.2 ⟨norm_eq_of_mem_sphere a, norm_eq_of_mem_sphere v, hv⟩
-  refine ⟨(⟨_, hframe⟩, z), hz, Prod.ext (Subtype.ext (coe_stiefelProj 0 _)) (Subtype.ext ?_)⟩
-  rw [← hvz, coe_snd_stiefelRotationFamily, coe_sphereRotationFamily]
   -- The two vectors of the frame `![a, v]` are `a` and `v` by definition.
-  rfl
+  exact ⟨(⟨_, hframe⟩, z), hz, Prod.ext (Subtype.ext (by simp))
+    ((snd_stiefelRotationFamily_eq (p := a) _ rfl).trans hvz)⟩
 
 end TauCeti
