@@ -7,6 +7,8 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Basic
 public import TauCeti.FieldTheory.FunctionField.ConstantField
+import Mathlib.FieldTheory.FinTrdeg
+import TauCeti.RingTheory.AlgebraicIndependent.TranscendenceBasis
 
 /-!
 # A rational place forces exact constants
@@ -60,19 +62,13 @@ theorem isFunctionField_of_place {k : Type u} {k' : Type u'} {F : Type v} {F' : 
   have hnot : ¬ Algebra.IsAlgebraic k' F' := fun h ↦ by
     obtain ⟨t, ht⟩ := P'.ord_surjective 1
     exact P'.transcendental_of_ord_ne_zero (by rw [ht]; norm_num) (h.isAlgebraic t)
-  have hadd := _root_.lift_trdeg_add_eq k k' F'
-  rw [hFk.trdeg_eq_one, Cardinal.lift_one] at hadd
-  have hb : 1 ≤ Cardinal.lift.{u', v'} (Algebra.trdeg k' F') := by
-    rw [Cardinal.one_le_iff_ne_zero, Ne, Cardinal.lift_eq_zero, trdeg_eq_zero_iff]
+  have : Algebra.EssFiniteType k F' := hFk.essFiniteType
+  have : Algebra.EssFiniteType k' F' := Algebra.EssFiniteType.of_comp k k' F'
+  have hb : 1 ≤ Algebra.trdeg k' F' := by
+    rw [Cardinal.one_le_iff_ne_zero, Ne, trdeg_eq_zero_iff]
     exact hnot
-  have ha : Algebra.trdeg k k' = 0 := by
-    by_contra ha
-    have ha' : 1 ≤ Cardinal.lift.{v', u'} (Algebra.trdeg k k') := by
-      rwa [Cardinal.one_le_iff_ne_zero, Ne, Cardinal.lift_eq_zero]
-    have := add_le_add ha' hb
-    rw [hadd] at this
-    norm_num at this
-  have : Algebra.IsAlgebraic k k' := trdeg_eq_zero_iff.1 ha
+  have : Algebra.IsAlgebraic k k' :=
+    isAlgebraic_of_trdeg_le (hFk.trdeg_eq_one.trans_le hb) (trdeg_lt_aleph0 k' F')
   exact hFk.of_isAlgebraic (k' := k')
 
 end TauCeti.Place
