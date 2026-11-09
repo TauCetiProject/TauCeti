@@ -122,11 +122,11 @@ end Localization
 
 section Add
 
-variable [AddZeroClass V] [FunLike 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕) {𝓖 : Type*}
-  [FunLike 𝓖 𝓓^{n}(Ω, F) V]
+variable [AddZeroClass V]
 
 /-- The support of a sum of maps on test functions lies in the union of their supports. -/
-theorem dsupport_add_subset (S : 𝓖) : dsupport (⇑T + ⇑S) ⊆ dsupport T ∪ dsupport S := by
+theorem dsupport_add_subset (f g : 𝓓^{n}(Ω, F) → V) :
+    dsupport (f + g) ⊆ dsupport f ∪ dsupport g := by
   refine compl_subset_compl.1 fun x hx ↦ ?_
   rw [mem_compl_iff, mem_union, not_or, notMem_dsupport_iff, notMem_dsupport_iff] at hx
   obtain ⟨⟨s, hs, hso, hxs⟩, ⟨t, ht, hto, hxt⟩⟩ := hx
@@ -279,7 +279,7 @@ theorem augmentation_add (S : 𝓖) (hT : IsCompact (dsupport T)) (hTΩ : dsuppo
     ext φ
     simp [A]
   have hχA : ∀ᶠ x in 𝓝ˢ (dsupport A), χ x = 1 :=
-    hχ.filter_mono (nhdsSet_mono (hA ▸ dsupport_add_subset T S))
+    hχ.filter_mono (nhdsSet_mono (hA ▸ dsupport_add_subset ⇑T ⇑S))
   rw [← hA, augmentation_eq A hχA, augmentation_eq T (hχ.filter_mono (nhdsSet_mono
     subset_union_left)), augmentation_eq S (hχ.filter_mono (nhdsSet_mono subset_union_right))]
   simp [A]
@@ -328,16 +328,16 @@ end AugmentationGroup
 
 section Module
 
-variable [AddCommMonoid V] [Module ℝ V] [FunLike 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕)
+variable [AddCommMonoid V] [Module ℝ V]
 
 /-- The augmentation is homogeneous. -/
-theorem augmentation_smul (a : ℝ) (c : F) :
-    augmentation (a • ⇑T) c = a • augmentation T c := by
+theorem augmentation_smul (f : 𝓓^{n}(Ω, F) → V) (a : ℝ) (c : F) :
+    augmentation (a • f) c = a • augmentation f c := by
   rcases eq_or_ne a 0 with rfl | ha
   · unfold augmentation
     split_ifs <;> simp
   -- For `a ≠ 0` the supports agree, so both sides use the same cutoff.
-  have hsup : dsupport (a • ⇑T) = dsupport T :=
+  have hsup : dsupport (a • f) = dsupport f :=
     (dsupport_subset_dsupport fun _ _ h φ hφ ↦ by simp [h φ hφ]).antisymm
       (dsupport_subset_dsupport fun _ _ h φ hφ ↦ by simpa [ha] using h φ hφ)
   unfold augmentation

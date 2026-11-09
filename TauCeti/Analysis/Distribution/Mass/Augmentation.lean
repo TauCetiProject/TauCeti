@@ -81,7 +81,7 @@ theorem enorm_augmentation_le_mass_add_comp_extDerivCLM_mul {k : ℕ} {𝓕 𝓖
     funext ω
     simp [A]
   have hsum : dsupport A ⊆ dsupport T ∪ dsupport B :=
-    hA ▸ dsupport_add_subset T B
+    hA ▸ dsupport_add_subset ⇑T ⇑B
   have hsumc : IsCompact (dsupport A) :=
     (hT.union hBc).of_isClosed_subset isClosed_dsupport hsum
   have hsumΩ : dsupport A ⊆ Ω := hsum.trans (union_subset hTΩ hBΩ)
