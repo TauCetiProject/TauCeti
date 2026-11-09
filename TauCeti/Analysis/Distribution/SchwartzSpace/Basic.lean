@@ -38,6 +38,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   integral of its squared norm does, for a measure charging every nonempty open set.
 * `TauCeti.eq_zero_of_forall_integral_apply_eq_zero`: a continuous operator-valued function that
   integrates to zero against every Schwartz function vanishes.
+* `HasCompactSupport.toSchwartzMap_toLp`: the `Lᵖ` class of a smooth compactly supported function
+  is the same whether built through `HasCompactSupport.toSchwartzMap` or from `MemLp`.
 -/
 
 public section
@@ -207,3 +209,20 @@ theorem eq_zero_of_forall_integral_apply_eq_zero {g : E → V →L[ℂ] W} (hg :
   exact congrFun ((hgv.ae_eq_iff_eq μ continuous_zero).1 hae) ζ
 
 end TauCeti
+
+section CompactSupport
+
+open scoped ENNReal ContDiff
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
+  [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [SecondCountableTopologyEither E F]
+  {μ : Measure E} [μ.HasTemperateGrowth]
+
+/-- The `Lᵖ` class of a smooth compactly supported function does not depend on whether it is
+built through `HasCompactSupport.toSchwartzMap` or from any proof of `Lᵖ` membership. -/
+theorem HasCompactSupport.toSchwartzMap_toLp {f : E → F} (hc : HasCompactSupport f)
+    (hf : ContDiff ℝ ∞ f) {p : ℝ≥0∞} (h : MemLp f p μ) :
+    (hc.toSchwartzMap hf).toLp p μ = h.toLp f :=
+  Lp.ext (((hc.toSchwartzMap hf).coeFn_toLp p μ).trans h.coeFn_toLp.symm)
+
+end CompactSupport
