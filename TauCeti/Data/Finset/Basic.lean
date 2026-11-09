@@ -89,7 +89,10 @@ import TauCeti.Data.Set.PowersetCard
   `Finset.card_mul_card_le_two_mul_card_filter_ne_product` says that these pairs make up at least
   half of the product when the second factor has two elements, and
   `Finset.card_filter_ne_product_mul_card_le` bounds the proportion of these pairs in a
-  subproduct of the product of two equal or disjoint finsets.
+  subproduct of the product of two equal or disjoint finsets. Likewise
+  `Finset.sq_mul_card_filter_ne_product_le` says that a rectangle with `ε`-fraction sides carries
+  an `ε²`-fraction of the distinct pairs of a disjoint block, and `Finset.card_offDiag_le_sq`
+  states `#s.offDiag ≤ #s ^ 2`.
 * `TauCeti.sum_piecewise_eq_sum_update_of_card_eq_succ` reindexes a sum of `Finset.piecewise` terms
   over the subsets of size one less than `card ι` as a sum of `Function.update` terms over `ι`. It
   is what turns a formula indexed by "all but one point" into one indexed by the omitted point, as
