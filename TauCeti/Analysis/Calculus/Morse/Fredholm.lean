@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Energy
 public import TauCeti.Analysis.Calculus.Morse.SpectralSplitting
 public import TauCeti.Analysis.ODE.EnergyEstimate.Index
-import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Analysis.Asymptotics.Lemmas
 
 /-!
 # The linearized operator along a gradient trajectory

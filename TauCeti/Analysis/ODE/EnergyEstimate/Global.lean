@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.LyapunovForm
 public import TauCeti.Analysis.ODE.EnergyEstimate.Basic
-import TauCeti.Algebra.Order.Field.Basic
+import TauCeti.Algebra.Order.Ring.LinearBound
+import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.InnerProductSpace.Coercive
 import TauCeti.Analysis.InnerProductSpace.Symmetric.Interpolation
-import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # Global estimates for a first-order operator on the line

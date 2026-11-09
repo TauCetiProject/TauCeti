@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Asymptotics.Lemmas
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecificLimits.Normed
+public import Mathlib.Topology.Order.Compact
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 
 /-!
@@ -57,6 +58,9 @@ In an ordered field, the ratio `(t + x) / (t + y)` of two translates tends to `1
 is the limit at infinity of antiderivatives built from such ratios, for example in elementary
 evaluations of elliptic integrals.
 
+A continuous function on an unbounded linear order with compact intervals, such as `ℝ`, with
+limits at both ends has bounded range.
+
 ## Main results
 
 * `Asymptotics.isLittleO_sub_mul_iff_tendsto_div`: `f - a g = o(g)` if and only if
@@ -78,6 +82,8 @@ evaluations of elliptic integrals.
 * `TauCeti.continuousAt_of_isBigO_sub`: `u y - u y' = O(y - y')` near `(x, x)` implies continuity
   of `u` at `x`.
 * `TauCeti.tendsto_add_div_add_atTop`: `(t + x) / (t + y) → 1` as `t → ∞`.
+* `Continuous.isBounded_range_of_tendsto_atTop_atBot`: a continuous function with limits at both
+  ends has bounded range.
 
 ## Related results
 
@@ -228,3 +234,12 @@ theorem tendsto_add_div_add_atTop {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
   ring
 
 end TauCeti
+
+/-- A continuous function on an unbounded linear order with compact intervals, into a seminormed
+group, has bounded range if it has limits at `atBot` and `atTop`. -/
+theorem Continuous.isBounded_range_of_tendsto_atTop_atBot {β E : Type*} [TopologicalSpace β]
+    [LinearOrder β] [OrderClosedTopology β] [CompactIccSpace β] [NoMaxOrder β] [NoMinOrder β]
+    [SeminormedAddCommGroup E] {f : β → E} {a b : E} (hf : Continuous f)
+    (hbot : Tendsto f atBot (𝓝 a)) (htop : Tendsto f atTop (𝓝 b)) :
+    Bornology.IsBounded (Set.range f) :=
+  hf.isBounded_range_iff_isBigO_atTop_atBot.mpr ⟨htop.isBigO_one ℝ, hbot.isBigO_one ℝ⟩

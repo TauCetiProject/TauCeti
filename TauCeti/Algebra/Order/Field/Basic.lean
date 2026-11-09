@@ -42,9 +42,6 @@ bound `a * b ≤ 1` from `a ≤ (1 + b)⁻¹` for `0 ≤ b`.
 Finally, it records a polynomial barrier bound: if `r ≤ M`, `0 < ε`, `1 ≤ c` and `n` is larger
 than `M / ε`, then the barrier `ε * (c * (1 + n ^ 2))` exceeds `r`.
 
-It also records how to bound a sum `U + Y` from `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`:
-solve the second estimate for `Y` and substitute it into the first.
-
 ## Main results
 
 * `BddAbove.le_of_forall_pos_exists_add_mul_le`: transfer a bound at maximizers of
@@ -62,8 +59,6 @@ solve the second estimate for `Y` and substitute it into the first.
 * `TauCeti.mul_le_one_of_le_inv_one_add`: `a * b ≤ 1` for `0 ≤ b` and `a ≤ (1 + b)⁻¹`.
 * `TauCeti.sub_mul_mul_one_add_sq_neg_of_lt`: the strict inequality
   `r - ε * (c * (1 + n ^ 2)) < 0` for `r ≤ M`, `0 < ε`, `1 ≤ c` and `M / ε < n`.
-* `TauCeti.add_le_mul_add_of_le_of_le`: `U + Y ≤ (p + (q + 1) r (a + b)) (Z + W)` from
-  `U ≤ p Z + q Y` and `Y ≤ r (a Z + b W)`.
 -/
 
 public section
@@ -189,18 +184,6 @@ theorem sub_mul_mul_one_add_sq_neg_of_lt {α : Type*} [Field α] [LinearOrder α
   have h4 : ε * (1 + n ^ 2) ≤ ε * (c * (1 + n ^ 2)) :=
     mul_le_mul_of_nonneg_left (le_mul_of_one_le_left (by positivity) hc) hε.le
   nlinarith [mul_le_mul_of_nonneg_left h3 hε.le]
-
-/-- If `U ≤ p Z + q Y` and `Y ≤ r (a Z + b W)`, where `p, q, r, a, b, Z, W` are nonnegative, then
-`U + Y ≤ (p + (q + 1) r (a + b)) (Z + W)`. -/
-theorem add_le_mul_add_of_le_of_le {α : Type*} [CommRing α] [LinearOrder α]
-    [IsStrictOrderedRing α] {U Y Z W p q r a b : α} (hp : 0 ≤ p) (hq : 0 ≤ q) (hr : 0 ≤ r)
-    (ha : 0 ≤ a) (hb : 0 ≤ b) (hZ : 0 ≤ Z) (hW : 0 ≤ W)
-    (hX : U ≤ p * Z + q * Y) (hY : Y ≤ r * (a * Z + b * W)) :
-    U + Y ≤ (p + (q + 1) * r * (a + b)) * (Z + W) := by
-  have hk : 0 ≤ (q + 1) * r := by positivity
-  nlinarith [mul_le_mul_of_nonneg_left hY (by positivity : (0 : α) ≤ q + 1),
-    mul_nonneg (mul_nonneg hk hb) hZ, mul_nonneg (mul_nonneg hk ha) hW,
-    mul_nonneg hp hW]
 
 end TauCeti
 

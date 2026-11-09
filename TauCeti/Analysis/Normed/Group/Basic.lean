@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Basic
-public import Mathlib.Topology.Order.Compact
-import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 import Mathlib.Topology.MetricSpace.Bounded
 
 /-!
@@ -22,9 +20,6 @@ An unbounded set stays unbounded after removing a closed ball, since a closed ba
 A bound on the norms of a set with two distinct points is positive, since one of the points is
 nonzero.
 
-A continuous function on an unbounded linear order with compact intervals, such as `ℝ`, with
-limits at both ends has bounded range.
-
 A map bounded by `M` on a set sends it into the closed ball of radius `2 * M` around any of its
 values there.
 
@@ -35,16 +30,13 @@ values there.
 * `TauCeti.not_isBounded_inter_lt_norm_sub` -- the part of an unbounded set outside a closed ball
   is unbounded.
 * `Set.Nontrivial.pos_of_forall_norm_le` -- a bound on the norms of a nontrivial set is positive.
-* `Continuous.isBounded_range_of_tendsto_atTop_atBot` -- a continuous function with limits at both
-  ends has bounded range.
 * `TauCeti.mapsTo_closedBall_of_forall_norm_le` -- a map bounded by `M` on `s` sends `s` into the
   closed ball of radius `2 * M` around any of its values on `s`.
 -/
 
 public section
 
-open Bornology Metric Filter
-open scoped Topology
+open Bornology Metric
 
 namespace TauCeti
 
@@ -80,11 +72,3 @@ theorem mapsTo_closedBall_of_forall_norm_le {α F : Type*} [SeminormedAddCommGro
   linarith [dist_le_norm_add_norm (f y) (f c), hM y hy, hM c hc]
 
 end TauCeti
-
-/-- A continuous function on an unbounded linear order with compact intervals, into a seminormed
-group, has bounded range if it has limits at `atBot` and `atTop`. -/
-theorem Continuous.isBounded_range_of_tendsto_atTop_atBot {β E : Type*} [TopologicalSpace β]
-    [LinearOrder β] [OrderClosedTopology β] [CompactIccSpace β] [NoMaxOrder β] [NoMinOrder β]
-    [SeminormedAddCommGroup E] {f : β → E} {a b : E} (hf : Continuous f)
-    (hbot : Tendsto f atBot (𝓝 a)) (htop : Tendsto f atTop (𝓝 b)) : IsBounded (Set.range f) :=
-  hf.isBounded_range_iff_isBigO_atTop_atBot.mpr ⟨htop.isBigO_one ℝ, hbot.isBigO_one ℝ⟩
