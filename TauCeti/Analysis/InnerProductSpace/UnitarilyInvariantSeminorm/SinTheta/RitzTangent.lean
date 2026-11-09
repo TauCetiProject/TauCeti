@@ -166,7 +166,8 @@ private theorem re_inner_tanThetaResidualWitness_ritzResidual
             (LinearMap.rightSingularBasis
               (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i)⟫_𝕜 := by
   rw [tanThetaResidualWitness_of_singularValues_ne_zero U X h]
-  simp only [inner_smul_left, inner_sub_left, LinearMap.inner_map_ritzResidual_eq_zero, mul_zero,
+  simp only [LinearMap.sub_apply, LinearMap.comp_apply, LinearIsometry.coe_toLinearMap,
+    inner_smul_left, inner_sub_left, LinearMap.inner_map_ritzResidual_eq_zero, mul_zero,
     sub_zero, map_inv₀, RCLike.conj_ofReal]
   rw [← RCLike.ofReal_inv, RCLike.re_ofReal_mul]
 
@@ -198,6 +199,8 @@ private theorem tanThetaResidualWitness_scalar
   have hσnonneg := (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues_nonneg i
   have hgal := LinearMap.inner_map_ritzResidual_eq_zero A X
     (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i)
+  simp only [← LinearIsometry.coe_toLinearMap, ← LinearMap.comp_apply,
+    ← LinearMap.sub_apply] at hgal
   rw [Submodule.singularValues_eq_div_sqrt_of_singularValues_eq_principalTangents U X tanTheta0
     htan i]
   by_cases hσzero : (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i = 0
