@@ -247,14 +247,6 @@ theorem cappedExchangePerturbation_eq_zero (hL : 2 < L) (hc₀ : 0 ≤ c) (hc₁
     plumbedPerturbation_single_inf_eq_zero (by decide) hL (by simpa using hw),
     negativePlanePerturbation_sub_eq_zero_of_norm_le hc₀ hc₁ hn, add_zero]
 
-/-- The Hamiltonians with the output Hamiltonian replaced by zero inherit any property shared by
-the Hamiltonians `H q` and `0`. -/
-private theorem forall_update_inf {P : (ℝ → M → ℝ) → Prop} (h₀ : P 0) (hH : ∀ q, P (H q))
-    (q : Puncture) : P (update H inf 0 q) := by
-  rcases eq_or_ne q inf with rfl | hq
-  · simpa using h₀
-  · simpa [update_of_ne hq] using hH q
-
 /-- The inserted Hamiltonian of the capped part is the value at `0` of its receiving Hamiltonians
 `update H inf 0`, the form used by the capping-family API. -/
 private theorem update_inf_zero : update H inf 0 zero = H zero :=
@@ -277,9 +269,9 @@ theorem contMDiffAt_cappedExchangePerturbation {n : ℕ∞} (hH : ∀ q, Periodi
     · exact Or.inl endCenter_zero.symm
     · exact Or.inr ⟨h₀, hw⟩
   have hcap := contMDiffAt_plumbedPerturbation_single_inf (Hb := update H inf 0) (by decide)
-    (forall_update_inf (P := fun f => Periodic f 1) (fun _ => rfl) hH)
-    (forall_update_inf (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
-      contMDiff_const hHs) hL hw' x
+    ((forall_update_iff H fun _ f => Periodic f 1).2 ⟨fun _ => rfl, fun q _ => hH q⟩)
+    ((forall_update_iff H fun _ f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)).2
+      ⟨contMDiff_const, fun q _ => hHs q⟩) hL hw' x
   rw [update_inf_zero] at hcap
   have hin : ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
       (fun p : ℝ × (ℂ × M) =>
@@ -366,8 +358,9 @@ theorem lintegral_enorm_hamiltonianCurvature_cappedExchangePerturbation_le (ω :
       ENNReal.ofReal (B zero) + ∑ q, ENNReal.ofReal (update B inf 0 q) := by
     have h := ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le
       (q := zero) (Hb := update H inf 0) (by decide)
-      (forall_update_inf (P := fun f => Periodic f 1) (fun _ => rfl) hH)
-      (forall_update_inf (P := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs) hL
+      ((forall_update_iff H fun _ f => Periodic f 1).2 ⟨fun _ => rfl, fun q _ => hH q⟩)
+      ((forall_update_iff H fun _ f => ContDiff ℝ 1 (uncurry f)).2
+        ⟨contDiff_const, fun q _ => hHs q⟩) hL
       (Bb := update B inf 0) (fun q t x => by
         rcases eq_or_ne q inf with rfl | hq
         · simp
