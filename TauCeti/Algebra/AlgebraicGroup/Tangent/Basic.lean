@@ -461,6 +461,28 @@ lemma Bialgebra.CounitAlgebra.toAlgHom_eq_one_ofConv :
 
 end BialgebraCommTargetPoint
 
+section InclusionComponents
+
+variable {R A C : Type*} [CommSemiring R] [Semiring A] [Bialgebra R A] [CommSemiring C]
+  [Algebra R C]
+
+/-- The first component of the inclusion of a point `g` into the dual-number points is `g`. -/
+lemma _root_.WithConv.fstHom_comp_mapValue_inlAlgHom (g : WithConv (A →ₐ[R] C)) :
+    (TrivSqZeroExt.fstHom R C C).toLinearMap ∘ₗ
+        (AlgHom.mapValue (H := A) (TrivSqZeroExt.inlAlgHom R C C) g).ofConv.toLinearMap =
+      g.ofConv.toLinearMap := by
+  ext x
+  simp [AlgHom.mapValue_apply]
+
+/-- The second component of the inclusion of a point into the dual-number points is `0`. -/
+lemma _root_.WithConv.sndHom_comp_mapValue_inlAlgHom (g : WithConv (A →ₐ[R] C)) :
+    (TrivSqZeroExt.sndHom C C).restrictScalars R ∘ₗ
+        (AlgHom.mapValue (H := A) (TrivSqZeroExt.inlAlgHom R C C) g).ofConv.toLinearMap = 0 := by
+  ext x
+  simp [AlgHom.mapValue_apply]
+
+end InclusionComponents
+
 section Hopf
 
 open TrivSqZeroExt WithConv _root_.Bialgebra Bialgebra.CounitAlgebra
@@ -606,6 +628,26 @@ lemma derivationMulEquivTangentKer_apply_snd
         ((derivationMulEquivTangentKer R A B d).val.ofConv a) = d.toAdd a := by
   simp [derivationMulEquivTangentKer,
     derivationToTrivSqZeroExtEquivLift_apply_snd]
+
+/-- The first component of the dual-number tangent point of a derivation is the counit. -/
+@[simp]
+lemma _root_.Multiplicative.fstHom_comp_derivationMulEquivTangentKer
+    (d : Multiplicative (Derivation R A (Bialgebra.CounitAlgebra R A B))) :
+    (fstHom R (CounitAlgebra R A B) (CounitAlgebra R A B)).toLinearMap ∘ₗ
+        (derivationMulEquivTangentKer R A B d).val.ofConv.toLinearMap =
+      (1 : WithConv (A →ₗ[R] CounitAlgebra R A B)).ofConv := by
+  ext x
+  exact fst_apply_of_mem_tangentKer (derivationMulEquivTangentKer R A B d).2 x
+
+/-- The second component of the dual-number tangent point of a derivation is the derivation. -/
+@[simp]
+lemma _root_.Multiplicative.sndHom_comp_derivationMulEquivTangentKer
+    (d : Multiplicative (Derivation R A (Bialgebra.CounitAlgebra R A B))) :
+    (sndHom (CounitAlgebra R A B) (CounitAlgebra R A B)).restrictScalars R ∘ₗ
+        (derivationMulEquivTangentKer R A B d).val.ofConv.toLinearMap =
+      (toConv (↑d.toAdd : A →ₗ[R] CounitAlgebra R A B)).ofConv := by
+  ext x
+  exact derivationMulEquivTangentKer_apply_snd d x
 
 @[simp]
 lemma derivationMulEquivTangentKer_symm_apply
