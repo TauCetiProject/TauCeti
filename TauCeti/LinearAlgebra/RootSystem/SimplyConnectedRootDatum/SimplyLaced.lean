@@ -28,7 +28,7 @@ preserved by simple reflections because the Cartan matrix is symmetric, so Mathl
 `RootPairing.Base.induction_reflect` propagates it to every root.
 
 The resulting symmetry allows the general root-string results in
-`TauCeti.LinearAlgebra.RootSystem.SymmetricPairing` to be applied to this datum.
+`TauCeti.LinearAlgebra.RootSystem.InvariantForm.RootString` to be applied to this datum.
 
 ## Main results
 

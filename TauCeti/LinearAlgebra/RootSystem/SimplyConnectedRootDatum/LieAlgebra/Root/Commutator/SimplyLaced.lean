@@ -8,8 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SimplyLaced
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Subsystem
-import TauCeti.LinearAlgebra.RootSystem.SymmetricPairing
+import TauCeti.LinearAlgebra.RootSystem.InvariantForm.RootString
 
 /-!
 # Commutators of the pinned all-root subgroups in simply-laced types
@@ -17,8 +16,8 @@ import TauCeti.LinearAlgebra.RootSystem.SymmetricPairing
 The root subgroups `DynkinType.chevalleyRootSubgroup` of a Kostant-stable lattice satisfy
 Steinberg's commutator formula in types A, D and E over every commutative value ring. If
 `γ = α + β` is a root, the commutator is `x_γ(N_{α,β}uv)`, with the integer and sign supplied by
-`DynkinType.structureConstant`. If the sum is neither a root nor zero, the root subgroups
-commute; this latter assertion holds in every type.
+`DynkinType.structureConstant`. The type-independent commuting case is recorded as
+`DynkinType.commute_chevalleyRootSubgroup_of_add_notMem` in the root-subgroup module.
 
 The root-string conditions are consequences of the pinned datum, not additional Lie-bracket
 hypotheses on the representation. In a simply-laced type, a root sum has Cartan pairing `-1`,
@@ -57,22 +56,6 @@ variable (hnil : ∀ i, IsNilpotent
 
 -- Match tensor products to the `ℤ`-algebra instance stored by `CommAlgCat` objects.
 attribute [local instance high] Algebra.toModule
-
-/-- Root subgroups commute when their roots sum to neither a root nor zero, in every type
-and over every commutative value ring. -/
-theorem commute_chevalleyRootSubgroup_of_add_notMem {α β : Fin t.numRoots}
-    (h : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ∉
-      Set.range (t.simplyConnectedRootDatum ht).root)
-    (h₀ : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ≠ 0)
-    (A : CommAlgCat ℤ) (u v : Multiplicative A) :
-    Commute (chevalleyRootSubgroup ρ M hM hnil α A u)
-      (chevalleyRootSubgroup ρ M hM hnil β A v) := by
-  simpa only [kostantRootSubgroupParam_chevalleySystem ρ M hM hnil] using
-    commute_kostantRootSubgroupParam _ _ ρ M
-      (kostantForm_chevalleySystem_smul_mem ρ M hM hnil)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
-      (lie_chevalleySystem_eq_zero h h₀) A u v
 
 /-- **The simply-laced Chevalley commutator formula.** At every root sum `γ = α + β`,
 `⁅x_α(u), x_β(v)⁆ = x_γ(N_{α,β}uv)`. The structure constant and both vanishing higher brackets

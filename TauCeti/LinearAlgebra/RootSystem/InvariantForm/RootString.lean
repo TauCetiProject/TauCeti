@@ -13,12 +13,18 @@ public import Mathlib.LinearAlgebra.RootSystem.Chain
 This file records how an invariant bilinear form changes between consecutive roots in a root
 string. It also shows that any integer-valued length function symmetrizing the Cartan integers is
 quadratic along integral root relations. The results are the root-system calculation behind the
-integrality of Chevalley structure constants.
+integrality of Chevalley structure constants. For symmetric integer Cartan pairings, a root sum
+`γ = α + β` has pairing `⟨α, β^∨⟩ = -1`, and `α + γ` is not a root; these consequences require
+no finiteness or spanning assumption.
 
 ## Main results
 
 * `RootPairing.length_of_root_eq_add_zsmul`: a symmetrizing integer-valued length function is
   quadratic along integral root relations `γ = β + n • α`.
+* `RootPairing.pairing_eq_neg_one_of_root_eq_add`: with symmetric integer pairings, roots whose
+  sum is a root pair to `-1`.
+* `RootPairing.pairing_eq_one_of_root_eq_add`: a summand pairs to `1` with the root sum.
+* `RootPairing.root_add_notMem_of_root_eq_add`: a root sum cannot be extended to another root.
 * `RootPairing.chainBotCoeff_comm_of_root_add_mem`: `chainBotCoeff` is symmetric when the sum of
   two roots is a root.
 * `RootPairing.chainBotCoeff_eq_one_and_chainTopCoeff_eq_one_of_pairingIn_eq_zero`:
@@ -96,6 +102,40 @@ theorem length_of_root_eq_add_zsmul (P : RootPairing I ℤ M N)
   exact mul_left_cancel₀ (by norm_num : (2 : ℤ) ≠ 0) htwo
 
 variable {P : RootPairing I ℤ M N}
+
+section SymmetricPairing
+
+variable (hcomm : ∀ i j, P.pairing i j = P.pairing j i) {α β γ : I}
+
+include hcomm
+
+/-- With symmetric integer pairings, roots whose sum is a root have Cartan pairing `-1`. -/
+theorem pairing_eq_neg_one_of_root_eq_add (hγ : P.root γ = P.root α + P.root β) :
+    P.pairing α β = -1 := by
+  have hlen := P.length_of_root_eq_add_zsmul (fun _ ↦ 1)
+    (by simpa only [one_mul] using fun i j ↦ hcomm j i) β α γ 1
+    (by simpa only [one_zsmul] using hγ)
+  norm_num at hlen
+  omega
+
+/-- With symmetric integer pairings, a summand pairs to `1` with the root sum `γ = α + β`. -/
+theorem pairing_eq_one_of_root_eq_add (hγ : P.root γ = P.root α + P.root β) :
+    P.pairing α γ = 1 := by
+  have h₁ := pairing_eq_neg_one_of_root_eq_add hcomm hγ
+  have h₂ := pairing_eq_add_of_root_eq_add (l := α) hγ
+  rw [hcomm γ α, hcomm β α] at h₂
+  simp only [pairing_same] at h₂
+  omega
+
+/-- With symmetric integer pairings, a root sum `γ = α + β` cannot be extended to `α + γ`. -/
+theorem root_add_notMem_of_root_eq_add (hγ : P.root γ = P.root α + P.root β) :
+    P.root α + P.root γ ∉ Set.range P.root := by
+  rintro ⟨δ, hδ⟩
+  have h₁ := pairing_eq_one_of_root_eq_add hcomm hγ
+  have h₂ := pairing_eq_neg_one_of_root_eq_add hcomm hδ
+  omega
+
+end SymmetricPairing
 
 /-- Distinct non-opposite roots of equal positive length have Cartan pairing `-1`, `0`, or `1`
 when that pairing has absolute value at most two. -/
