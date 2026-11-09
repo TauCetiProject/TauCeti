@@ -121,7 +121,8 @@ instance instRing : Ring (ContinuousLinearMapUltrastrong 𝕜 E E) :=
 @[simp] theorem toCLM_sub (A B : ContinuousLinearMapUltrastrong 𝕜 E F) :
     (A - B).toCLM = A.toCLM - B.toCLM := rfl
 
-@[simp] theorem toCLM_smul (c : 𝕜) (A : ContinuousLinearMapUltrastrong 𝕜 E F) :
+@[simp] theorem toCLM_smul {S : Type*} [DistribSMul S F] [SMulCommClass 𝕜 S F]
+    [ContinuousConstSMul S F] (c : S) (A : ContinuousLinearMapUltrastrong 𝕜 E F) :
     (c • A).toCLM = c • A.toCLM := rfl
 
 @[simp] theorem toCLM_one : (1 : ContinuousLinearMapUltrastrong 𝕜 E E).toCLM = 1 := rfl
@@ -238,11 +239,20 @@ noncomputable def seminorm (ξ : ℓ²(ℕ, E)) : Seminorm 𝕜 (ContinuousLinea
   neg' A := by simp
   smul' r A := by simp [norm_smul]
 
+@[simp]
+theorem seminorm_apply (ξ : ℓ²(ℕ, E)) (A : ContinuousLinearMapUltrastrong 𝕜 E F) :
+    seminorm ξ A = ‖lp.ampliation ℕ 2 A.toCLM ξ‖ :=
+  rfl
+
 variable (𝕜 E F) in
 /-- The family of seminorms inducing the ultrastrong topology. -/
 noncomputable def seminormFamily :
     SeminormFamily 𝕜 (ContinuousLinearMapUltrastrong 𝕜 E F) ℓ²(ℕ, E) :=
   seminorm
+
+@[simp]
+theorem seminormFamily_apply (ξ : ℓ²(ℕ, E)) : seminormFamily 𝕜 E F ξ = seminorm ξ :=
+  rfl
 
 theorem withSeminorms : WithSeminorms (seminormFamily 𝕜 E F) :=
   let e : ℓ²(ℕ, E) ≃ (Σ _ : ℓ²(ℕ, E), Unit) := .symm <| .sigmaUnique _ _

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.WeakOperatorTopology
 public import TauCeti.Analysis.InnerProductSpace.HilbertSum
-public import TauCeti.Analysis.Normed.Operator.UltrastrongTopology
+public import TauCeti.Analysis.LocallyConvex.UltrastrongTopology
 
 /-!
 # The ultraweak operator topology
@@ -119,7 +119,8 @@ instance instRing : Ring (ContinuousLinearMapUltraweak 𝕜 E E) :=
 @[simp] theorem toCLM_sub (A B : ContinuousLinearMapUltraweak 𝕜 E F) :
     (A - B).toCLM = A.toCLM - B.toCLM := rfl
 
-@[simp] theorem toCLM_smul (c : 𝕜) (A : ContinuousLinearMapUltraweak 𝕜 E F) :
+@[simp] theorem toCLM_smul {S : Type*} [DistribSMul S F] [SMulCommClass 𝕜 S F]
+    [ContinuousConstSMul S F] (c : S) (A : ContinuousLinearMapUltraweak 𝕜 E F) :
     (c • A).toCLM = c • A.toCLM := rfl
 
 @[simp] theorem toCLM_one : (1 : ContinuousLinearMapUltraweak 𝕜 E E).toCLM = 1 := rfl
@@ -197,8 +198,8 @@ theorem tendsto_iff_forall_inner_ampliation_apply_tendsto {α : Type*} {l : Filt
     Tendsto f l (𝓝 A) ↔ ∀ (ξ : ℓ²(ℕ, E)) (η : ℓ²(ℕ, F)),
       Tendsto (fun a ↦ ⟪η, lp.ampliation ℕ 2 (f a).toCLM ξ⟫_𝕜) l
         (𝓝 ⟪η, lp.ampliation ℕ 2 A.toCLM ξ⟫_𝕜) := by
-  simp only [isInducing_inducingFn.tendsto_nhds_iff, tendsto_pi_nhds, Prod.forall]
-  rfl
+  simp only [isInducing_inducingFn.tendsto_nhds_iff, tendsto_pi_nhds, Prod.forall,
+    Function.comp_apply, inducingFn_apply]
 
 /-- **The ultraweak criterion.** A net `Tᵢ` converges ultraweakly to `T` exactly when
 `∑ₙ ⟪ηₙ, Tᵢ ξₙ⟫ → ∑ₙ ⟪ηₙ, T ξₙ⟫` for all square-summable sequences `ξ` and `η`. -/
@@ -242,11 +243,21 @@ noncomputable def seminorm (ξ : ℓ²(ℕ, E)) (η : ℓ²(ℕ, F)) :
   neg' A := by simp
   smul' r A := by simp [inner_smul_right]
 
+@[simp]
+theorem seminorm_apply (ξ : ℓ²(ℕ, E)) (η : ℓ²(ℕ, F)) (A : ContinuousLinearMapUltraweak 𝕜 E F) :
+    seminorm ξ η A = ‖⟪η, lp.ampliation ℕ 2 A.toCLM ξ⟫_𝕜‖ :=
+  rfl
+
 variable (𝕜 E F) in
 /-- The family of seminorms inducing the ultraweak topology. -/
 noncomputable def seminormFamily :
     SeminormFamily 𝕜 (ContinuousLinearMapUltraweak 𝕜 E F) (ℓ²(ℕ, E) × ℓ²(ℕ, F)) :=
   fun p ↦ seminorm p.1 p.2
+
+@[simp]
+theorem seminormFamily_apply (p : ℓ²(ℕ, E) × ℓ²(ℕ, F)) :
+    seminormFamily 𝕜 E F p = seminorm p.1 p.2 :=
+  rfl
 
 theorem withSeminorms : WithSeminorms (seminormFamily 𝕜 E F) :=
   let e : ℓ²(ℕ, E) × ℓ²(ℕ, F) ≃ (Σ _ : ℓ²(ℕ, E) × ℓ²(ℕ, F), Unit) := .symm <| .sigmaUnique _ _
@@ -271,9 +282,8 @@ instance instContinuousStar : ContinuousStar (ContinuousLinearMapUltraweak 𝕜 
   continuous_star := continuous_of_continuous_inner_ampliation_apply fun ξ η ↦ by
     refine (continuous_star.comp (continuous_inner_ampliation_apply (𝕜 := 𝕜) η ξ)).congr
       fun A ↦ ?_
-    rw [Function.comp_apply, toCLM_star, ← lp.star_ampliation,
-      ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_right,
-      RCLike.star_def, inner_conj_symm]
+    simpa [ContinuousLinearMap.star_eq_adjoint] using
+      (ContinuousLinearMap.adjoint_inner_right (lp.ampliation ℕ 2 A.toCLM) η ξ).symm
 
 /-- Multiplication of operators is separately ultraweakly continuous. -/
 instance instIsSemitopologicalRing : IsSemitopologicalRing (ContinuousLinearMapUltraweak 𝕜 E E)

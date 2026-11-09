@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.lpHolder
 public import TauCeti.Analysis.Normed.Lp.Basic
-import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
 # Direct sums of uniformly bounded operator families on `lp`
@@ -31,10 +30,6 @@ of `T`. It has the same norm as `T` for nonempty `ι`, so it is injective, and i
 with composition. On `ℓ²(ℕ, H)` it is the device that defines the ultrastrong and ultraweak
 operator topologies from the strong and weak ones.
 
-For `p ≠ ∞` the coordinate vectors span a dense subspace, so a uniformly bounded family of
-operators on `lp E p` that converges on every `single i x` converges at every vector
-(`lp.tendsto_apply_of_tendsto_apply_single`).
-
 On Hilbert spaces and `p = 2` the direct sum is moreover compatible with adjoints, so these laws
 let representations of an algebra on the summands be assembled into one on the direct sum; the
 adjoint law is in `TauCeti.Analysis.InnerProductSpace.HilbertSum`.
@@ -46,7 +41,6 @@ adjoint law is in `TauCeti.Analysis.InnerProductSpace.HilbertSum`.
 * `lp.mapCLM_inj`: the direct sum determines the family.
 * `lp.mapCLM_add`, `lp.mapCLM_smul`, `lp.mapCLM_id`, `lp.mapCLM_comp`: the algebraic laws.
 * `lp.norm_mapCLM`: `‖⊕ T i‖ = ⨆ i, ‖T i‖`.
-* `lp.tendsto_apply_of_tendsto_apply_single`: bounded convergence on coordinate vectors.
 * `lp.ampliation`, `lp.norm_ampliation`, `lp.ampliation_comp`: the ampliation of one operator.
 
 ## References
@@ -56,8 +50,7 @@ adjoint law is in `TauCeti.Analysis.InnerProductSpace.HilbertSum`.
 
 public section
 
-open scoped ENNReal lp Topology
-open Filter
+open scoped ENNReal lp
 
 namespace lp
 
@@ -183,24 +176,6 @@ theorem norm_mapCLM (T : ∀ i, E i →L[𝕜] F i) {K : ℝ} (hK : 0 ≤ K) (hT
   rw [mapCLM_congr rfl hK hTK (Real.iSup_nonneg fun i ↦ norm_nonneg (T i))
     fun i ↦ le_ciSup hbdd i]
   exact norm_mapCLM_le _ _ _ _
-
-/-- **Bounded convergence on coordinate vectors.** For `p ≠ ∞`, a uniformly bounded family of
-operators on `lp E p` that converges at every coordinate vector `single i x` converges at every
-vector. -/
-theorem tendsto_apply_of_tendsto_apply_single [DecidableEq ι] {Z : Type*} [NormedAddCommGroup Z]
-    [NormedSpace 𝕜 Z] (hp : p ≠ ∞) {α : Type*} {l : Filter α} {f : α → lp E p →L[𝕜] Z}
-    {g : lp E p →L[𝕜] Z} {C : ℝ} (hC : ∀ᶠ a in l, ‖f a‖ ≤ C)
-    (h : ∀ i (x : E i), Tendsto (fun a ↦ f a (lp.single p i x)) l (𝓝 (g (lp.single p i x))))
-    (x : lp E p) : Tendsto (fun a ↦ f a x) l (𝓝 (g x)) := by
-  let D : Submodule 𝕜 (lp E p) :=
-    { carrier := {y | Tendsto (fun a ↦ f a y) l (𝓝 (g y))}
-      add_mem' := fun hy hz ↦ by simpa only [Set.mem_ofPred_eq, map_add] using hy.add hz
-      zero_mem' := by simpa only [Set.mem_ofPred_eq, map_zero] using tendsto_const_nhds
-      smul_mem' := fun c y hy ↦ by simpa only [Set.mem_ofPred_eq, map_smul] using hy.const_smul c }
-  have hD : Dense (D : Set (lp E p)) := fun y ↦
-    mem_closure_of_tendsto (lp.hasSum_single hp y)
-      (Eventually.of_forall fun s ↦ D.sum_mem fun i _ ↦ h i (y i))
-  exact ContinuousLinearMap.tendsto_apply_of_dense hD hC (fun y hy ↦ hy) x
 
 section Ampliation
 
