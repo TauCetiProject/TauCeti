@@ -10,15 +10,11 @@ public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 /-!
 # Orders of vanishing of products
 
-If the derivatives of order less than `a` of `f` and those of order less than `b` of `g` vanish at
-`x`, then the derivatives of order less than `a + b` of the product `f * g` vanish at `x`: orders
-of vanishing add under multiplication. This follows from the Leibniz bound
-`norm_iteratedFDeriv_mul_le`, since every term of the Leibniz expansion of a derivative of order
-`n < a + b` contains a derivative of `f` of order less than `a` or one of `g` of order less than
-`b`.
-
-This is the analytic half of the description of the powers of the vanishing ideal of a point by
-vanishing derivatives.
+A function vanishes to order `m` at `x` when its iterated derivatives of every order `i < m`
+vanish at `x`. By the Leibniz rule, orders of vanishing add under multiplication: if `g` vanishes
+to order `m` and `h` to order `n` at `x`, then `g * h` vanishes to order `m + n` at `x`. This is
+the analytic half of the identification of the powers of the ideal of functions vanishing at a
+point with the functions whose jets vanish there.
 -/
 
 public section
@@ -28,18 +24,30 @@ namespace TauCeti
 variable {𝕜 E A : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedRing A] [NormedAlgebra 𝕜 A]
 
-/-- **Orders of vanishing add.** If the derivatives of `f` of order less than `a` and those of
-`g` of order less than `b` vanish at `x`, then the derivative of order `n < a + b` of `f * g`
-vanishes at `x`. -/
-theorem iteratedFDeriv_mul_eq_zero_of_lt_add {f g : E → A} {n a b : ℕ} (hf : ContDiff 𝕜 n f)
-    (hg : ContDiff 𝕜 n g) {x : E} (hfa : ∀ i < a, iteratedFDeriv 𝕜 i f x = 0)
-    (hgb : ∀ i < b, iteratedFDeriv 𝕜 i g x = 0) (hn : n < a + b) :
-    iteratedFDeriv 𝕜 n (fun y ↦ f y * g y) x = 0 := by
-  refine norm_le_zero_iff.1 ((norm_iteratedFDeriv_mul_le hf hg x le_rfl).trans
-    (Finset.sum_nonpos fun i hi ↦ ?_))
+/-- **Orders of vanishing add under multiplication.** If the iterated derivatives of `g` of order
+`i < m` and those of `h` of order `i < n` vanish at `x`, then so do those of `g * h` of every
+order `k < m + n`. -/
+theorem iteratedFDeriv_mul_eq_zero_of_lt_add {g h : E → A} {N : WithTop ℕ∞} {x : E}
+    (hg : ContDiffAt 𝕜 N g x) (hh : ContDiffAt 𝕜 N h x) {m n k : ℕ}
+    (hgx : ∀ i < m, iteratedFDeriv 𝕜 i g x = 0) (hhx : ∀ i < n, iteratedFDeriv 𝕜 i h x = 0)
+    (hk : k < m + n) (hkN : k ≤ N) :
+    iteratedFDeriv 𝕜 k (fun y ↦ g y * h y) x = 0 := by
+  -- Work on an open neighbourhood of `x` on which both factors are `C^k`.
+  obtain ⟨u, hu, hxu, hgu⟩ := hg.contDiffOn' hkN (by simp)
+  obtain ⟨v, hv, hxv, hhv⟩ := hh.contDiffOn' hkN (by simp)
+  have hs : IsOpen (u ∩ v) := hu.inter hv
+  have hxs : x ∈ u ∩ v := ⟨hxu, hxv⟩
+  have hbound := norm_iteratedFDerivWithin_mul_le
+    (hgu.mono fun y (hy : y ∈ u ∩ v) ↦ ⟨Set.mem_insert_of_mem _ trivial, hy.1⟩)
+    (hhv.mono fun y (hy : y ∈ u ∩ v) ↦ ⟨Set.mem_insert_of_mem _ trivial, hy.2⟩)
+    hs.uniqueDiffOn hxs le_rfl
+  simp only [iteratedFDerivWithin_of_isOpen _ hs hxs] at hbound
+  refine norm_le_zero_iff.mp (hbound.trans ?_)
+  -- Each Leibniz term has a factor `D^i g x` with `i < m` or `D^(k-i) h x` with `k - i < n`.
+  refine (Finset.sum_eq_zero fun i hi ↦ ?_).le
   rw [Finset.mem_range] at hi
-  rcases lt_or_ge i a with hia | hia
-  · simp [hfa i hia]
-  · simp [hgb (n - i) (by omega)]
+  rcases lt_or_ge i m with him | him
+  · simp [hgx i him]
+  · simp [hhx (k - i) (by omega)]
 
 end TauCeti

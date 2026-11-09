@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic
 public import TauCeti.RingTheory.Derivation.DifferentialOperator
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Mul
 import TauCeti.Geometry.Manifold.ContMDiffMap.ExtChartAt
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Powers of the vanishing ideal of a point and jets of smooth functions
@@ -27,7 +28,9 @@ Grothendieck's sense of iterated commutators with multiplication operators, maps
 the value `(D f)(x)` depends only on the `m`-jet of `f` at `x`. No continuity of `D` is assumed.
 
 The inclusion of `I_x ^ (m + 1)` in the functions with vanishing `m`-jet holds because orders of
-vanishing add under multiplication. The converse is Hadamard's lemma of order `m`,
+vanishing add under multiplication. It only uses that chart expressions of smooth functions are
+smooth at the image of an interior point, so it needs neither finite dimensionality, the Hausdorff
+property nor a smooth manifold structure on `M`. The converse is Hadamard's lemma of order `m`,
 `TauCeti.mem_smoothVanishingIdeal_pow_succ_of_iteratedFDeriv_eq_zero`, proved in
 `TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic`. The case `m = 1` is
 `TauCeti.mem_smoothVanishingIdeal_sq_iff_of_isInteriorPoint`.
@@ -61,9 +64,9 @@ noncomputable section
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
 /-- A function in `I_x ^ (m + 1)` has a chart expression whose derivatives of order at most `m`
 vanish at the image of `x`. -/
@@ -71,6 +74,9 @@ theorem iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_
     (hx : I.IsInteriorPoint x) {m : ℕ} {f : C^∞⟮I, M; ℝ⟯}
     (hf : f ∈ smoothVanishingIdeal I x ^ (m + 1)) {k : ℕ} (hk : k ≤ m) :
     iteratedFDeriv ℝ k ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 := by
+  have hs (g : C^∞⟮I, M; ℝ⟯) :
+      ContDiffAt ℝ ∞ ((g : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) :=
+    g.contMDiff.contMDiffAt.contDiffAt_comp_extChartAt_symm_of_isInteriorPoint hx
   induction m generalizing f k with
   | zero =>
     obtain rfl : k = 0 := by omega
@@ -84,27 +90,18 @@ theorem iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_
         iteratedFDeriv ℝ k ((r : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) = 0)
       hf (fun u hu v hv k hk ↦ ?_) (fun u v hu hv k hk ↦ ?_) k hk
     · -- Orders of vanishing add: `u` vanishes to order `m + 1` and `v` to order `1`.
-      obtain ⟨gu, hgu, hu'⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hx u
-      obtain ⟨gv, hgv, hv'⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hx v
-      have huv : ((u * v : C^∞⟮I, M; ℝ⟯) : M → ℝ) ∘ (extChartAt I x).symm =ᶠ[𝓝 _]
-          fun y ↦ gu y * gv y := hu'.mul hv'
-      rw [(huv.iteratedFDeriv ℝ k).eq_of_nhds]
-      refine iteratedFDeriv_mul_eq_zero_of_lt_add (a := m + 1) (b := 1) (hgu.of_le (by simp))
-        (hgv.of_le (by simp)) (fun i hi ↦ ?_) (fun i hi ↦ ?_) (by omega)
-      · rw [← (hu'.iteratedFDeriv ℝ i).eq_of_nhds]
-        exact ih hu (by omega)
-      · obtain rfl : i = 0 := by omega
-        rw [← (hv'.iteratedFDeriv ℝ 0).eq_of_nhds, ← norm_eq_zero, norm_iteratedFDeriv_zero,
-          Function.comp_apply, extChartAt_to_inv, mem_smoothVanishingIdeal_iff.1 hv, norm_zero]
-    · obtain ⟨gu, hgu, hu'⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hx u
-      obtain ⟨gv, hgv, hv'⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hx v
-      have huv : ((u + v : C^∞⟮I, M; ℝ⟯) : M → ℝ) ∘ (extChartAt I x).symm =ᶠ[𝓝 _] gu + gv :=
-        hu'.add hv'
-      rw [(huv.iteratedFDeriv ℝ k).eq_of_nhds,
-        iteratedFDeriv_add_apply (hgu.contDiffAt.of_le (by simp))
-          (hgv.contDiffAt.of_le (by simp)),
-        ← (hu'.iteratedFDeriv ℝ k).eq_of_nhds, ← (hv'.iteratedFDeriv ℝ k).eq_of_nhds,
+      refine iteratedFDeriv_mul_eq_zero_of_lt_add (hs u) (hs v) (m := m + 1) (n := 1)
+        (fun i hi ↦ ih hu (by omega)) (fun i hi ↦ ?_) (by omega) (by exact_mod_cast le_top)
+      obtain rfl : i = 0 := by omega
+      rw [← norm_eq_zero, norm_iteratedFDeriv_zero, Function.comp_apply, extChartAt_to_inv,
+        mem_smoothVanishingIdeal_iff.1 hv, norm_zero]
+    · have huv : ((u + v : C^∞⟮I, M; ℝ⟯) : M → ℝ) ∘ (extChartAt I x).symm =
+          ((u : M → ℝ) ∘ (extChartAt I x).symm) + ((v : M → ℝ) ∘ (extChartAt I x).symm) :=
+        rfl
+      rw [huv, iteratedFDeriv_add_apply ((hs u).of_le (by simp)) ((hs v).of_le (by simp)),
         hu k hk, hv k hk, add_zero]
+
+variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
 
 /-- **The powers of the vanishing ideal.** At an interior point `x` of a finite-dimensional
 Hausdorff real manifold, a smooth function is a finite sum of products of `m + 1` smooth functions

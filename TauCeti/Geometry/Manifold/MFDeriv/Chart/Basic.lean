@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ExtChartAt
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
@@ -48,6 +49,8 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
   `MDifferentiableAt.differentiableAt_comp_extChartAt_symm`: on a boundaryless manifold, the
   coordinate expression of a `C^n` (resp. differentiable) map into a normed space is `C^n` (resp.
   differentiable) at the chart image of the point.
+* `ContMDiffAt.contDiffAt_comp_extChartAt_symm_of_isInteriorPoint`: the same for `C^n` maps at
+  an interior point of a manifold with boundary.
 * `ContMDiffAt.contDiffAt_writtenInExtChartAt` and
   `MDifferentiableAt.differentiableAt_writtenInExtChartAt`: the same for a map between manifolds,
   read in the extended charts at the point and at its image.
@@ -249,6 +252,18 @@ theorem eventually_mfderiv_eq_zero_iff_extChartAt_symm {P : Type*} [NormedAddCom
     (hg.comp (φ q.2) (contDiffAt_const.prodMk contDiffAt_id)).differentiableAt one_ne_zero
   rw [mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm_eq_zero hs hslice]
   exact hu.trans (φ.symm_apply_eq hs ht).symm
+
+omit [IsManifold I 1 M] in
+/-- At an interior point `x`, a map into a normed space which is `C^n` at `x` has a `C^n`
+coordinate expression in the preferred extended chart at `x`. This is the interior-point
+counterpart of `ContMDiffAt.contDiffAt_comp_extChartAt_symm`, which assumes a boundaryless
+manifold. -/
+theorem _root_.ContMDiffAt.contDiffAt_comp_extChartAt_symm_of_isInteriorPoint {n : WithTop ℕ∞}
+    (hf : ContMDiffAt I 𝓘(𝕜, F) n f x) (hx : I.IsInteriorPoint x) :
+    ContDiffAt 𝕜 n (f ∘ (extChartAt I x).symm) (extChartAt I x x) :=
+  -- At an interior point the range of `I` is a neighbourhood of the chart image of `x`.
+  contMDiffAt_iff_contDiffAt.mp
+    ((contMDiffAt_iff_source.mp hf).contMDiffAt (mem_interior_iff_mem_nhds.mp hx))
 
 end TauCeti
 
