@@ -1102,11 +1102,7 @@ private theorem sign_det_eq_of_slide
   have hswap (u : V) : b.det ![poly (finRotate n j) -ᵥ poly j, u, d] =
       -b.det ![u, poly (finRotate n j) -ᵥ poly j, d] := by
     have h := b.det.map_swap ![u, poly (finRotate n j) -ᵥ poly j, d] (i := 0) (j := 1) (by decide)
-    have he : ![u, poly (finRotate n j) -ᵥ poly j, d] ∘ (Equiv.swap (0 : Fin 3) 1) =
-        ![poly (finRotate n j) -ᵥ poly j, u, d] := by
-      funext k
-      fin_cases k <;> rfl
-    rwa [he] at h
+    simpa only [Matrix.cons_cons_comp_swap_zero_one] using h
   intro t ht t' ht' htt'
   by_cases htx : t = (i : ℕ) + r
   · subst htx
