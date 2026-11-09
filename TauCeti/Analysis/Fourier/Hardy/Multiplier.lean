@@ -39,7 +39,8 @@ namespace TauCeti
 
 /-- A bounded symbol preserves Hardy space under multiplication exactly when its negative
 Fourier coefficients vanish. -/
-theorem mapsTo_hardySubmodule_iff (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
+theorem mapsTo_multiplicationOperator_hardySubmodule_iff
+    (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
     Set.MapsTo (Lp.multiplicationOperator (E := ℂ) a)
       (hardySubmodule : Set _) (hardySubmodule : Set _) ↔
       ∀ n : ℤ, n < 0 → fourierCoeff a n = 0 := by
@@ -72,8 +73,7 @@ def hardyMultiplierAlgebra : Subalgebra ℂ (Lp ℂ ∞ (AddCircle.haarAddCircle
     exact ha (hb hf)
   algebraMap_mem' c := by
     intro f hf
-    simpa only [Lp.algebraMap_eq_const, Algebra.algebraMap_self_apply,
-      Lp.multiplicationOperator_const, smul_apply, ContinuousLinearMap.id_apply,
+    simpa only [Lp.multiplicationOperator_algebraMap, smul_apply, ContinuousLinearMap.id_apply,
       SetLike.mem_coe] using hardySubmodule.smul_mem c hf
 
 /-- Membership in boundary H∞ is characterized by vanishing negative Fourier coefficients. -/
@@ -81,7 +81,7 @@ def hardyMultiplierAlgebra : Subalgebra ℂ (Lp ℂ ∞ (AddCircle.haarAddCircle
 theorem mem_hardyMultiplierAlgebra_iff
     (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
     a ∈ hardyMultiplierAlgebra ↔ ∀ n : ℤ, n < 0 → fourierCoeff a n = 0 :=
-  mapsTo_hardySubmodule_iff a
+  mapsTo_multiplicationOperator_hardySubmodule_iff a
 
 /-- Boundary H∞ is a closed subalgebra of L∞. -/
 theorem isClosed_hardyMultiplierAlgebra :
@@ -111,7 +111,7 @@ theorem fourierLp_mem_hardyMultiplierAlgebra_iff (k : ℤ) :
     rw [fourierCoeff_fourierLp, ite_eq_right (by omega)]
 
 /-- For an analytic symbol, Toeplitz compression is actual multiplication. -/
-theorem coe_toeplitz_of_mem_hardyMultiplierAlgebra
+theorem coe_toeplitz_apply_of_mem_hardyMultiplierAlgebra
     {a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))}
     (ha : a ∈ hardyMultiplierAlgebra) (f : HardySpace) :
     (toeplitz a f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) =
@@ -149,7 +149,7 @@ theorem commute_toeplitz_fourierLp_one_iff
 
 /-- Every bounded operator commuting with the forward shift is multiplication by a unique
 boundary H∞ symbol. -/
-theorem existsUnique_hardyMultiplier_iff (T : HardySpace →L[ℂ] HardySpace) :
+theorem existsUnique_toeplitz_eq_iff_commute (T : HardySpace →L[ℂ] HardySpace) :
     (∃! a : hardyMultiplierAlgebra, toeplitz a = T) ↔
       Commute T (toeplitz (fourierLp (T := 1) ∞ 1)) := by
   constructor
@@ -160,11 +160,13 @@ theorem existsUnique_hardyMultiplier_iff (T : HardySpace →L[ℂ] HardySpace) :
         toeplitz (fourierLp (T := 1) ∞ 1) = 1 :=
       (ContinuousLinearMap.isometry_iff_adjoint_comp_self _).mp (by
         simpa only [Nat.cast_one] using isometry_toeplitz_fourierLp_natCast 1)
+    have hcomm : T ∘L toeplitz (fourierLp (T := 1) ∞ 1) =
+        toeplitz (fourierLp (T := 1) ∞ 1) ∘L T := by
+      simpa only [ContinuousLinearMap.mul_def] using hT.eq
     obtain ⟨a, ha, hunique⟩ :=
       (existsUnique_toeplitz_eq_iff_adjoint_comp_comp_eq T).mpr (by
-        rw [← ContinuousLinearMap.mul_def T _, hT.eq, ContinuousLinearMap.mul_def,
-          ← ContinuousLinearMap.comp_assoc, hS, ContinuousLinearMap.one_def,
-          ContinuousLinearMap.id_comp])
+        rw [hcomm, ← ContinuousLinearMap.comp_assoc, hS]
+        simp only [ContinuousLinearMap.one_def, ContinuousLinearMap.id_comp])
     have ha' : a ∈ hardyMultiplierAlgebra :=
       (commute_toeplitz_fourierLp_one_iff a).mp (ha.symm ▸ hT)
     exact ⟨⟨a, ha'⟩, ha, fun b hb ↦ Subtype.ext (hunique b hb)⟩
@@ -176,15 +178,13 @@ def hardyMultiplierHom : hardyMultiplierAlgebra →ₐ[ℂ] (HardySpace →L[ℂ
   map_zero' := map_zero toeplitz
   map_add' a b := map_add toeplitz a.val b.val
   map_one' := by
-    rw [Subalgebra.coe_one,
-      ← map_one (algebraMap ℂ (Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)))),
-      Lp.algebraMap_eq_const, Algebra.algebraMap_self_apply, toeplitz_const, one_smul,
-      ContinuousLinearMap.one_def]
+    simpa only [map_one, Subalgebra.coe_one, one_smul, ContinuousLinearMap.one_def] using
+      toeplitz_algebraMap 1
   map_mul' a b :=
     (toeplitz_comp_of_analytic a b ((mem_hardyMultiplierAlgebra_iff b).mp b.property)).symm
   commutes' c := by
-    rw [Subalgebra.coe_algebraMap, Lp.algebraMap_eq_const, Algebra.algebraMap_self_apply,
-      toeplitz_const, Algebra.algebraMap_eq_smul_one, ContinuousLinearMap.one_def]
+    rw [Subalgebra.coe_algebraMap, toeplitz_algebraMap]
+    simp only [Algebra.algebraMap_eq_smul_one, ContinuousLinearMap.one_def]
 
 /-- The multiplier homomorphism acts by the Toeplitz operator of its symbol. -/
 @[simp]
@@ -206,7 +206,7 @@ theorem range_hardyMultiplierHom :
   · rintro ⟨a, rfl⟩
     exact ((commute_toeplitz_fourierLp_one_iff a).mpr a.property).eq.symm
   · intro h
-    obtain ⟨a, ha, _⟩ := (existsUnique_hardyMultiplier_iff T).mpr h.symm
+    obtain ⟨a, ha, _⟩ := (existsUnique_toeplitz_eq_iff_commute T).mpr h.symm
     exact ⟨a, ha⟩
 
 end TauCeti
