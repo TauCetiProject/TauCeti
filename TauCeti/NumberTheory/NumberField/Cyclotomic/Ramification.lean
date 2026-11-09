@@ -46,8 +46,12 @@ has ramification index `p - 1`, so `ζ_p - 1` is a uniformizer at every prime ab
 `Ideal.span {(m : 𝓞 M)}`; `Ideal.span_singleton_le_iff_mem` gives the divisibility form where
 that is the one wanted.
 
-These results ask `M` to be a number field alongside `K`. That is no restriction, since a
-cyclotomic extension of a number field is one: `IsCyclotomicExtension.numberField {m} K M`.
+`natCast_mem_differentIdeal` and `prime_dvd_natAbs_discr_or_dvd_of_dvd_natAbs_discr` ask `M` to be
+a number field alongside `K`, because their statements mention `differentIdeal (𝓞 K) (𝓞 M)`
+(which needs `IsDedekindDomain (𝓞 M)`) and `NumberField.discr M`. That is no restriction, since a
+cyclotomic extension of a number field is one: `IsCyclotomicExtension.numberField {m} K M`, which
+`isUnramifiedAt_of_natCast_notMem`, whose statement needs neither, uses to supply the instance
+itself.
 
 -/
 
@@ -78,9 +82,10 @@ open NumberField in
 /-- In a cyclotomic extension of level `m`, every prime above an ideal not containing `m`
 is unramified. -/
 theorem isUnramifiedAt_of_natCast_notMem {K : Type*} [Field K] [NumberField K]
-    (F : Type*) [Field F] [NumberField F] [Algebra K F] (m : ℕ)
+    (F : Type*) [Field F] [Algebra K F] (m : ℕ)
     [IsCyclotomicExtension {m} K F] {p : Ideal (𝓞 K)} (hm : (m : 𝓞 K) ∉ p)
     (Q : Ideal (𝓞 F)) [Q.IsPrime] [Q.LiesOver p] : Algebra.IsUnramifiedAt (𝓞 K) Q := by
+  have : NumberField F := IsCyclotomicExtension.numberField {m} K F
   by_contra hQ
   refine hm ((Ideal.mem_of_liesOver Q p _).mpr ?_)
   simpa using Ideal.le_of_dvd (dvd_differentIdeal_iff.mpr hQ)

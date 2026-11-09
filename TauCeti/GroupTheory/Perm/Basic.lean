@@ -8,6 +8,7 @@ module
 public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.Data.Finset.Card
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
+import Mathlib.Data.ZMod.QuotientGroup
 import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.GroupTheory.Perm.ViaEmbedding
 import Mathlib.Tactic.Abel
@@ -35,8 +36,11 @@ is a single cycle on each of its own orbits, the transport of its cycles along a
 types, transport of cycle quotients along conjugating equivalences, and the factorization of an
 invariant function through a map on whose fibres the permutation is a single cycle, also stated
 for the difference `x ↦ c (σ⁻¹ x) - c x` (`Equiv.Perm.forall_comp_symm_sub_eq_zero_iff`), and a
-correction by a power of a cycle for a permutation commuting with it. Points over distinct classes
-of the cycle quotient are distinct (`Equiv.Perm.ne_of_sameCycle_out`), every such class is nonempty
+correction by a power of a cycle for a permutation commuting with it. The set of points on the
+cycle through `x` has `Function.minimalPeriod σ x` elements, counted by `Set.ncard`
+(`Equiv.Perm.ncard_setOf_sameCycle`, and `Equiv.Perm.minimalPeriod_eq_natCard_of_forall_sameCycle`
+for a single cycle through every point). Points over distinct classes of the cycle quotient are
+distinct (`Equiv.Perm.ne_of_sameCycle_out`), every such class is nonempty
 (`Equiv.Perm.card_sameCycle_out_pos`), and precomposing with `σ` does not change a sum over a
 `σ`-orbit (`Equiv.Perm.sum_filter_sameCycle_comp`). It also identifies functions invariant under a
 permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`). Finally, right
@@ -187,6 +191,32 @@ variable {α : Type*} (σ : Equiv.Perm α)
 /-- A permutation is a single cycle on each of its own orbits. -/
 theorem isCycleOn_setOf_sameCycle (x : α) : σ.IsCycleOn {y | σ.SameCycle x y} :=
   ⟨σ.bijOn fun _ => sameCycle_apply_right, fun _ hy _ hz => hy.symm.trans hz⟩
+
+/-- Two points lie on the same cycle of `σ` exactly when one is a `⟨σ⟩`-translate of the
+other. -/
+theorem sameCycle_iff_mem_orbit_zpowers {x y : α} :
+    σ.SameCycle x y ↔ y ∈ MulAction.orbit (Subgroup.zpowers σ) x := by
+  constructor
+  · rintro ⟨i, hi⟩
+    exact ⟨⟨σ ^ i, Subgroup.zpow_mem_zpowers σ i⟩, hi⟩
+  · rintro ⟨g, hg⟩
+    obtain ⟨i, hi⟩ := Subgroup.mem_zpowers_iff.mp g.2
+    exact ⟨i, by rw [hi]; exact hg⟩
+
+/-- The number `Set.ncard {y | σ.SameCycle x y}` of points on the cycle of `σ` through `x` is
+`Function.minimalPeriod σ x`; a fixed point is a cycle of length one. If the cycle is infinite, then
+both sides are `0`. -/
+theorem ncard_setOf_sameCycle (x : α) :
+    {y | σ.SameCycle x y}.ncard = Function.minimalPeriod σ x := by
+  simp_rw [sameCycle_iff_mem_orbit_zpowers, Set.ofPred_mem_eq, ← Nat.card_coe_set_eq]
+  exact (Nat.card_congr (MulAction.orbitZPowersEquiv σ x)).trans (Nat.card_zmod _)
+
+/-- If a single cycle of `σ` passes through every point, then every point has minimal period
+`Nat.card α`. If `α` is infinite, then both sides are `0`. -/
+theorem minimalPeriod_eq_natCard_of_forall_sameCycle {x : α}
+    (hx : ∀ y, σ.SameCycle x y) (y : α) : Function.minimalPeriod σ y = Nat.card α := by
+  rw [← ncard_setOf_sameCycle, Set.eq_univ_of_forall (s := {z | σ.SameCycle y z})
+    fun z => (hx y).symm.trans (hx z), Set.ncard_univ]
 
 /-- A permutation is a single cycle on each fibre of the quotient map onto its orbits. This is the
 form in which the cyclic order around a vertex of a ribbon graph is read off a permutation. -/
