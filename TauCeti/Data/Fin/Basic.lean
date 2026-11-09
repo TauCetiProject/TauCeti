@@ -66,6 +66,8 @@ range, so the value is a `dite` rather than a plain application.
 * `Fin.eq_castSucc_last_or_eq_last`: an index `≥ n` of `Fin (n + 2)` is the penultimate or the
   last one.
 * `Fin.exists_succ_succ_eq`: the indices `> 1` of `Fin (n + 2)` are the double successors.
+* `Fin.exists_orderHom_succAbove_eq`: each `l.succAbove` has a monotone retraction on the
+  indices different from `l`.
 * `Fin.last_ne_zero`, `Fin.castSucc_last_ne_zero`, `Fin.castSucc_last_ne_one`, `Fin.last_ne_one`:
   the last and penultimate indices differ from `0` and `1` in the nondegenerate cases.
 * `Fin.sum_univ_eq_zero_add_last_add_sum_erase`: a sum over `Fin (n + 1)` with its first and last
@@ -129,6 +131,10 @@ range, so the value is a `dite` rather than a plain application.
   consecutive entries.
 * `TauCeti.exists_mem_Icc_castSucc_succ`: consecutive closed intervals cover the interval
   between the first and last values of any `Fin` family with at least two entries.
+* `TauCeti.univ_eq_Iic_union_Ici_union_iUnion_Icc_castSucc_succ`: in a linear order, the two outer
+  rays of a `Fin` family and the consecutive closed intervals cover the whole order.
+* `TauCeti.apply_zero_le_of_forall_mem_range`, `TauCeti.le_apply_last_of_forall_mem_range`: points
+  that lie in the range of a monotone `Fin` family lie between its first and last values.
 -/
 
 public section
@@ -412,6 +418,15 @@ theorem finRotate_succ_succAbove_of_ne {n : ℕ} {i k : Fin n} (hk : k ≠ i) :
 theorem finRotate_castSucc {n : ℕ} (i : Fin n) : finRotate (n + 1) i.castSucc = i.succ :=
   finRotate_of_lt i.isLt
 
+/-- The inverse cyclic rotation sends `k.succ` to `k.castSucc`. -/
+theorem finRotate_symm_succ {m : ℕ} (k : Fin m) :
+    (finRotate (m + 1)).symm k.succ = k.castSucc :=
+  (finRotate _).symm_apply_eq.mpr (finRotate_castSucc k).symm
+
+/-- The inverse cyclic rotation sends `0` to `Fin.last m`. -/
+theorem finRotate_symm_zero {m : ℕ} : (finRotate (m + 1)).symm 0 = last m :=
+  (finRotate _).symm_apply_eq.mpr finRotate_last.symm
+
 /-- Rotating a tuple of even length alternating between two entries swaps the two entries. -/
 theorem ite_even_comp_finRotate_symm {α : Type*} {n : ℕ} (hn : Even n) (x y : α) :
     (fun k : Fin n ↦ if Even (k : ℕ) then x else y) ∘ (finRotate n).symm =
@@ -422,12 +437,11 @@ theorem ite_even_comp_finRotate_symm {α : Type*} {n : ℕ} (hn : Even n) (x y :
   | succ n =>
     cases k using Fin.cases with
     | zero =>
-      have h : (finRotate (n + 1)).symm 0 = last n := (Equiv.symm_apply_eq _).2 finRotate_last.symm
-      simp [h, Nat.even_add_one.1 hn]
+      rw [Function.comp_apply, finRotate_symm_zero]
+      simp [Nat.even_add_one.1 hn]
     | succ k =>
-      have h : (finRotate (n + 1)).symm k.succ = k.castSucc :=
-        (Equiv.symm_apply_eq _).2 (finRotate_castSucc k).symm
-      by_cases hk : Even (k : ℕ) <;> simp [h, hk, Nat.even_add_one]
+      rw [Function.comp_apply, finRotate_symm_succ]
+      by_cases hk : Even (k : ℕ) <;> simp [hk, Nat.even_add_one]
 
 /-- A position `p` of `Fin (n + 1)` cyclically adjacent to `p.succAbove i` is `i.castSucc` or
 `i.succ`, or wraps around: `p` is last and `p.succAbove i` is `0`, or `p` is `0` and
@@ -687,6 +701,20 @@ theorem eq_empty_of_subset_Ioo_of_le_two {n : ℕ} (hn : n ≤ 2) {a b : Fin n}
     {s : Finset (Fin n)} (hs : s ⊆ Finset.Ioo a b) : s = ∅ :=
   Finset.subset_empty.1 (hs.trans (Ioo_eq_empty_of_le_two hn a b).subset)
 
+/-- Each face map `l.succAbove : Fin (m + 1) → Fin (m + 2)` has a monotone retraction: there is an
+order homomorphism `ρ` with `l.succAbove (ρ v) = v` for every `v ≠ l`. -/
+theorem exists_orderHom_succAbove_eq {m : ℕ} (l : Fin (m + 2)) :
+    ∃ ρ : Fin (m + 2) →o Fin (m + 1), ∀ v, v ≠ l → l.succAbove (ρ v) = v := by
+  by_cases hl : l = Fin.last (m + 1)
+  · subst hl
+    refine ⟨(Fin.last m).predAboveOrderHom, fun v hv ↦ ?_⟩
+    rw [← Fin.succ_last] at hv ⊢
+    exact Fin.succ_succAbove_predAbove hv
+  · refine ⟨(l.castPred hl).predAboveOrderHom, fun v hv ↦ ?_⟩
+    have := Fin.succAbove_predAbove (p := l.castPred hl) (i := v)
+      (by rwa [Fin.castSucc_castPred])
+    rwa [Fin.castSucc_castPred] at this
+
 end Fin
 
 namespace TauCeti
@@ -785,6 +813,45 @@ theorem exists_mem_Icc_castSucc_succ {β : Type*} [LinearOrder β] {n : ℕ}
   | succ i =>
     exact (not_le.mp (Fin.find_min h (j := i.castSucc)
       (by rw [hi]; exact i.castSucc_lt_succ))).le
+
+/-- In a linear order, the two outer rays of a `Fin (n + 1)` family and the consecutive closed
+intervals between its values cover the whole order. The family need not be monotone. -/
+theorem univ_eq_Iic_union_Ici_union_iUnion_Icc_castSucc_succ {β : Type*} [LinearOrder β] {n : ℕ}
+    (b : Fin (n + 1) → β) :
+    (univ : Set β) =
+      (Iic (b 0) ∪ Ici (b (Fin.last n))) ∪ ⋃ j : Fin n, Icc (b j.castSucc) (b j.succ) := by
+  ext x
+  simp only [mem_univ, mem_union, mem_iUnion, mem_Iic, mem_Ici, true_iff]
+  by_cases hl : x ≤ b 0
+  · exact Or.inl (Or.inl hl)
+  by_cases hr : b (Fin.last n) ≤ x
+  · exact Or.inl (Or.inr hr)
+  have hn : n ≠ 0 := by
+    rintro rfl
+    simp only [Fin.last_zero] at hr
+    exact hr (le_of_not_ge hl)
+  exact Or.inr (exists_mem_Icc_castSucc_succ b hn
+    ⟨(le_of_not_ge hl), (le_of_not_ge hr)⟩)
+
+/-- Points of a family lying in the range of a monotone `Fin (n + 1)` family are at least its
+first value. -/
+theorem apply_zero_le_of_forall_mem_range {β : Type*} [Preorder β] {n : ℕ} {b : Fin (n + 1) → β}
+    (hb : Monotone b) {ι : Type*} {p : ι → Prop} {a : ι → β} (h : ∀ i, p i → a i ∈ range b) :
+    ∀ i, p i → b 0 ≤ a i := by
+  intro i hi
+  obtain ⟨j, hj⟩ := h i hi
+  rw [← hj]
+  exact hb j.zero_le
+
+/-- Points of a family lying in the range of a monotone `Fin (n + 1)` family are at most its last
+value. -/
+theorem le_apply_last_of_forall_mem_range {β : Type*} [Preorder β] {n : ℕ} {b : Fin (n + 1) → β}
+    (hb : Monotone b) {ι : Type*} {p : ι → Prop} {a : ι → β} (h : ∀ i, p i → a i ∈ range b) :
+    ∀ i, p i → a i ≤ b (Fin.last n) := by
+  intro i hi
+  obtain ⟨j, hj⟩ := h i hi
+  rw [← hj]
+  exact hb j.le_last
 
 /-- **Adding one in `Fin n` never returns to the same element** when `2 ≤ n`. -/
 theorem add_one_ne_self {n : ℕ} [NeZero n] (hn : 2 ≤ n) (i : Fin n) : i + 1 ≠ i := by
