@@ -59,6 +59,8 @@ calculation for first continuous cohomology with trivial integer coefficients.
 * `PadicInt.range_units_val`: the units of `ℤ_[p]` are the elements of norm `1`.
 * `PadicInt.norm_smul_of_isUnit`: a unit of `ℤ_[p]` acts isometrically on every module with
   contractive scalar action.
+* `PadicInt.norm_algebraMap_le_one`: a `p`-adic integer has norm at most `1` in every normed
+  field extension of `ℚ_p`.
 * `PadicInt.not_isUnit_iff_dvd`: the nonunits of `ℤ_[p]` are the multiples of `p`; in
   particular an integer is a unit of `ℤ_[p]` exactly when `p` does not divide it
   (`PadicInt.isUnit_intCast_iff`), and `2` is not a unit of `ℤ_[2]` (`PadicInt.not_isUnit_two`).
@@ -178,6 +180,12 @@ theorem norm_smul_of_isUnit {E : Type*} [SeminormedAddGroup E] [MulActionWithZer
   calc ‖e‖ = ‖((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) • (u : ℤ_[p]) • e‖ := by
         rw [smul_smul, Units.inv_mul, one_smul]
     _ ≤ ‖(u : ℤ_[p]) • e‖ := (norm_smul_le _ _).trans_eq (by rw [h1, one_mul])
+
+/-- A `p`-adic integer has norm at most `1` in every normed field extension of `ℚ_p`. -/
+theorem norm_algebraMap_le_one {K : Type*} [NormedField K] [NormedAlgebra ℚ_[p] K] (y : ℤ_[p]) :
+    ‖algebraMap ℚ_[p] K y‖ ≤ 1 := by
+  rw [norm_algebraMap', ← norm_def]
+  exact norm_le_one y
 
 /-- Mathlib's `PadicInt.inv` is the ring inverse: the inverse on units and `0` on nonunits. -/
 theorem inv_eq_inverse (z : ℤ_[p]) : z.inv = Ring.inverse z := by
