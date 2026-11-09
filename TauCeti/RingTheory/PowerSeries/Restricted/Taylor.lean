@@ -78,8 +78,7 @@ with a Gauss norm at a radius `c > 0` and a point `a` with `‖a‖ ≤ c`, the 
 `(Δⁿ f)(a)` of the expansion of `f` at `a` satisfies `‖(Δⁿ f)(a)‖ cⁿ ≤ ‖f‖_c`. -/
 theorem norm_evalAt_hasseDeriv_mul_pow_le_gaussNorm (hc : 0 < c) (hf : f.HasGaussNorm norm c)
     (ha : ‖a‖ ≤ c) (n : ℕ) : ‖(hasseDeriv n f).evalAt a‖ * c ^ n ≤ f.gaussNorm norm c :=
-  norm_evalAt_hasseDeriv_mul_pow_le_of_forall hc ha
-    (gaussNorm_nonneg _ _ f fun _ ↦ norm_nonneg _) n fun m ↦ le_gaussNorm _ _ f hf (m + n)
+  norm_evalAt_hasseDeriv_mul_pow_le_of_forall hc ha n fun m ↦ le_gaussNorm _ _ f hf (m + n)
 
 /-- **Translation does not increase the Gauss norm.** Over an ultrametric normed ring, for a
 series with a Gauss norm at a radius `c > 0` and a point `a` with `‖a‖ ≤ c`,
@@ -104,7 +103,7 @@ theorem IsRestricted.taylor (hf : f.IsRestricted c) (ha : ‖a‖ ≤ c) :
     (((isRestricted_iff' c f).mp hf).eventually (gt_mem_nhds (half_pos hε)))
   filter_upwards [eventually_ge_atTop N] with n hn
   rw [coeff_taylor]
-  exact (norm_evalAt_hasseDeriv_mul_pow_le_of_forall hc ha (half_pos hε).le n fun m ↦
+  exact (norm_evalAt_hasseDeriv_mul_pow_le_of_forall hc ha n fun m ↦
     (hN _ (by omega)).le).trans_lt (half_lt_self hε)
 
 variable [CompleteSpace R]
