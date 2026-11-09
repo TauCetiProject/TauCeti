@@ -20,9 +20,9 @@ for `1 < p < ∞`, and extension from the dense Schwartz functions gives the con
 complex-linear operator `TauCeti.beurlingLp` on all of Lp.
 
 The extension is characterized by its action on Schwartz functions. The coefficient space may
-be any complex Hilbert space. `TauCeti.Analysis.Complex.Wirtinger.BeurlingCauchy` identifies the
-operator with the Wirtinger derivative of the Cauchy transform. Identification with the
-principal-value kernel is subsequent work.
+be any complex Hilbert space. `TauCeti.Analysis.Complex.Wirtinger.Beurling.Cauchy` shows that on
+smooth compactly supported functions the operator agrees almost everywhere with the Wirtinger
+derivative of the Cauchy transform.
 
 ## References
 

@@ -734,4 +734,49 @@ theorem exists_cutoff_fderiv_bound :
 
 end ScaledCutoff
 
+section CutoffDecay
+
+open Metric
+
+variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup G]
+
+/-- **Cutoff derivative against decaying data.** Let `χ` equal `1` on the closed ball of radius
+`R` about the origin and `0` outside radius `2 R`, with `‖Dχ‖ ≤ A`. If `‖x‖ ‖u x‖ ≤ M` for
+`‖x‖ ≥ R`, then `‖Dχ‖ ‖u‖` is at most `A (M / R)` on the closed ball of radius `2 R` and vanishes
+outside it. -/
+theorem norm_fderiv_mul_norm_le_indicator {χ : E → ℝ} {u : E → G} {R A M : ℝ} (hR : 0 < R)
+    (hM : 0 ≤ M) (hχ1 : ∀ x ∈ closedBall (0 : E) R, χ x = 1)
+    (hχ0 : ∀ x, 2 * R < dist x 0 → χ x = 0) (hA : ∀ x, ‖fderiv ℝ χ x‖ ≤ A)
+    (hu : ∀ x : E, R ≤ ‖x‖ → ‖x‖ * ‖u x‖ ≤ M) (x : E) :
+    ‖fderiv ℝ χ x‖ * ‖u x‖ ≤ (closedBall (0 : E) (2 * R)).indicator (fun _ ↦ A * (M / R)) x := by
+  have hA0 : 0 ≤ A := (norm_nonneg _).trans (hA 0)
+  -- Off the annulus `R ≤ ‖x‖ ≤ 2 R` the cutoff is locally constant, so `Dχ x = 0`.
+  have hzero : fderiv ℝ χ x = 0 → ‖fderiv ℝ χ x‖ * ‖u x‖ ≤
+      (closedBall (0 : E) (2 * R)).indicator (fun _ ↦ A * (M / R)) x := fun h ↦ by
+    rw [h, norm_zero, zero_mul]
+    exact Set.indicator_nonneg (fun _ _ ↦ by positivity) x
+  rcases lt_or_ge ‖x‖ R with hx | hx
+  · refine hzero ?_
+    have hev : χ =ᶠ[𝓝 x] fun _ ↦ (1 : ℝ) := by
+      filter_upwards [isOpen_ball.mem_nhds (mem_ball_zero_iff.2 hx)] with y hy
+      exact hχ1 y (ball_subset_closedBall hy)
+    rw [hev.fderiv_eq, fderiv_const_apply]
+  rcases lt_or_ge (2 * R) ‖x‖ with hx' | hx'
+  · refine hzero ?_
+    have hev : χ =ᶠ[𝓝 x] fun _ ↦ (0 : ℝ) := by
+      have hopen : IsOpen {y : E | 2 * R < dist y 0} :=
+        isOpen_lt continuous_const (continuous_id.dist continuous_const)
+      filter_upwards [hopen.mem_nhds (by simpa using hx')] with y hy
+      exact hχ0 y hy
+    rw [hev.fderiv_eq, fderiv_const_apply]
+  rw [Set.indicator_of_mem (mem_closedBall_zero_iff.2 hx')]
+  have hux : ‖u x‖ ≤ M / R := by
+    rw [le_div_iff₀ hR]
+    calc ‖u x‖ * R ≤ ‖u x‖ * ‖x‖ := by gcongr
+      _ = ‖x‖ * ‖u x‖ := mul_comm _ _
+      _ ≤ M := hu x hx
+  exact mul_le_mul (hA x) hux (norm_nonneg _) hA0
+
+end CutoffDecay
+
 end TauCeti

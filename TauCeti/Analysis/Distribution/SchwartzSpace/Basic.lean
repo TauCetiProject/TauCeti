@@ -215,7 +215,7 @@ section CompactSupport
 open scoped ENNReal ContDiff
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
-  [BorelSpace E] [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [SecondCountableTopologyEither E F]
   {μ : Measure E} [μ.HasTemperateGrowth]
 
 /-- The `Lᵖ` class of a smooth compactly supported function does not depend on whether it is

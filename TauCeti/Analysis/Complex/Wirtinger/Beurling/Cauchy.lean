@@ -6,20 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Pompeiu.Basic
-public import TauCeti.Analysis.Complex.Wirtinger.Beurling
+public import TauCeti.Analysis.Complex.Wirtinger.Beurling.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Schwartz
-import Mathlib.MeasureTheory.Function.LpSpace.Complete
-import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Fourier.L2Multiplier
+import TauCeti.MeasureTheory.Function.Lp.Complete
+import TauCeti.MeasureTheory.Function.Lp.Indicator
 
 /-!
-# The Beurling operator is the Wirtinger derivative of the Cauchy transform
+# The Beurling operator is the Wirtinger derivative of the Cauchy transform on smooth data
 
 The Cauchy transform `T f w = π⁻¹ ∫ (w - z)⁻¹ • f z` inverts `bar∂ = (∂ₛ + i ∂ₜ) / 2`, and the
 Beurling operator `B`, the Fourier multiplier with symbol `conj ξ / ξ`, is `∂ = (∂ₛ - i ∂ₜ) / 2`
-composed with that inverse. This file proves the two identities behind this description.
+composed with that inverse. This file proves the two identities behind this description, the
+second for smooth compactly supported data.
 
 * On Schwartz functions `B (bar∂ u) = ∂ u`
   (`TauCeti.beurlingL2_toLp_conjWirtingerDerivCLM`,
@@ -63,6 +64,7 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteS
 
 /-- **`B bar∂ = ∂` on Schwartz functions**, for the spectral `L²` realization of the Beurling
 operator. On the Fourier side this is `(conj ξ / ξ) (πi ξ) = πi conj ξ`. -/
+@[simp]
 theorem beurlingL2_toLp_conjWirtingerDerivCLM (u : 𝓢(ℂ, F)) :
     beurlingL2 F ((SchwartzMap.conjWirtingerDerivCLM F u).toLp 2) =
       (SchwartzMap.wirtingerDerivCLM F u).toLp 2 := by
@@ -76,6 +78,7 @@ theorem beurlingL2_toLp_conjWirtingerDerivCLM (u : 𝓢(ℂ, F)) :
   linear_combination (-(π : ℂ) * I) * beurlingSymbol_mul ξ
 
 /-- **`B bar∂ = ∂` on Schwartz functions** in every `Lᵖ`, `1 < p < ∞`. -/
+@[simp]
 theorem beurlingLp_toLp_conjWirtingerDerivCLM {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : 1 < p)
     (hp_top : p ≠ (∞ : ℝ≥0∞)) (u : 𝓢(ℂ, F)) :
     beurlingLp p hp hp_top ((SchwartzMap.conjWirtingerDerivCLM F u).toLp p) =
@@ -88,57 +91,6 @@ theorem beurlingLp_toLp_conjWirtingerDerivCLM {p : ℝ≥0∞} [Fact (1 ≤ p)] 
 
 /-! ### The Wirtinger derivative of the Cauchy transform -/
 
-section Cutoff
-
-omit [InnerProductSpace ℂ F] [CompleteSpace F] in
-/-- A cutoff equal to `1` on the disc of radius `R` and to `0` outside radius `2 R` has
-derivative supported in the closed disc of radius `2 R`, where a decay `‖x‖ ‖u x‖ ≤ M` for
-`‖x‖ ≥ R` bounds `‖Dχ‖ ‖u‖` by `A (M / R)`. -/
-private theorem norm_fderiv_mul_norm_le_indicator {χ : ℂ → ℝ} {u : ℂ → F} {R A M : ℝ}
-    (hR : 0 < R) (hχ1 : ∀ x ∈ closedBall (0 : ℂ) R, χ x = 1)
-    (hχ0 : ∀ x, 2 * R < dist x 0 → χ x = 0) (hA : ∀ x, ‖fderiv ℝ χ x‖ ≤ A)
-    (hu : ∀ x : ℂ, R ≤ ‖x‖ → ‖x‖ * ‖u x‖ ≤ M) (x : ℂ) :
-    ‖fderiv ℝ χ x‖ * ‖u x‖ ≤ (closedBall (0 : ℂ) (2 * R)).indicator (fun _ ↦ A * (M / R)) x := by
-  have hA0 : 0 ≤ A := (norm_nonneg _).trans (hA 0)
-  have hM0 : 0 ≤ M := by
-    have h := hu R (by simp [abs_of_pos hR])
-    exact (mul_nonneg (norm_nonneg _) (norm_nonneg _)).trans h
-  have hzero : fderiv ℝ χ x = 0 → ‖fderiv ℝ χ x‖ * ‖u x‖ ≤
-      (closedBall (0 : ℂ) (2 * R)).indicator (fun _ ↦ A * (M / R)) x := fun h ↦ by
-    rw [h, norm_zero, zero_mul]
-    exact Set.indicator_nonneg (fun _ _ ↦ by positivity) x
-  rcases lt_or_ge ‖x‖ R with hx | hx
-  · refine hzero ?_
-    have hev : χ =ᶠ[𝓝 x] fun _ ↦ (1 : ℝ) := by
-      filter_upwards [isOpen_ball.mem_nhds (mem_ball_zero_iff.2 hx)] with y hy
-      exact hχ1 y (ball_subset_closedBall hy)
-    rw [hev.fderiv_eq, fderiv_const_apply]
-  rcases lt_or_ge (2 * R) ‖x‖ with hx' | hx'
-  · refine hzero ?_
-    have hev : χ =ᶠ[𝓝 x] fun _ ↦ (0 : ℝ) := by
-      have hopen : IsOpen {y : ℂ | 2 * R < dist y 0} :=
-        isOpen_lt continuous_const (continuous_id.dist continuous_const)
-      filter_upwards [hopen.mem_nhds (by simpa using hx')] with y hy
-      exact hχ0 y hy
-    rw [hev.fderiv_eq, fderiv_const_apply]
-  rw [Set.indicator_of_mem (mem_closedBall_zero_iff.2 hx')]
-  have hux : ‖u x‖ ≤ M / R := by
-    rw [le_div_iff₀ hR]
-    calc ‖u x‖ * R ≤ ‖u x‖ * ‖x‖ := by gcongr
-      _ = ‖x‖ * ‖u x‖ := mul_comm _ _
-      _ ≤ M := hu x hx
-  exact mul_le_mul (hA x) hux (norm_nonneg _) hA0
-
-/-- The `L²` norm of a constant on the closed disc of radius `R`. -/
-private theorem eLpNorm_indicator_closedBall_two (c R : ℝ) :
-    eLpNorm ((closedBall (0 : ℂ) R).indicator fun _ ↦ c) 2 volume =
-      ENNReal.ofReal (|c| * R) * (NNReal.pi : ℝ≥0∞) ^ (2⁻¹ : ℝ) := by
-  rw [eLpNorm_indicator_const measurableSet_closedBall.nullMeasurableSet two_ne_zero
-    ENNReal.ofNat_ne_top, Complex.volume_closedBall, ENNReal.toReal_ofNat,
-    ENNReal.mul_rpow_of_nonneg _ _ (by norm_num), one_div, ← mul_assoc,
-    show ((2 : ℝ))⁻¹ = ((2 : ℕ) : ℝ)⁻¹ by norm_num, ENNReal.pow_rpow_inv_natCast two_ne_zero,
-    Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_mul (abs_nonneg c)]
-
 /-- For cutoffs at radius `R = a + n` with derivative at most `A / R`, against data of decay
 `M / R`, the `L²` norm of the error bound on the disc of radius `2 R` is `O(1 / R)`. -/
 private theorem tendsto_eLpNorm_indicator_closedBall {a A M : ℝ} (ha : 0 < a) (hA : 0 ≤ A)
@@ -147,19 +99,16 @@ private theorem tendsto_eLpNorm_indicator_closedBall {a A M : ℝ} (ha : 0 < a) 
       fun _ ↦ A * (a + n)⁻¹ * (M / (a + n))) 2 volume) atTop (𝓝 0) := by
   have hbeq (n : ℕ) : eLpNorm ((closedBall (0 : ℂ) (2 * (a + n))).indicator
       fun _ ↦ A * (a + n)⁻¹ * (M / (a + n))) 2 volume =
-        ENNReal.ofReal (2 * A * M / (a + n)) * (NNReal.pi : ℝ≥0∞) ^ (2⁻¹ : ℝ) := by
+        ENNReal.ofReal (2 * A * M * √π / (a + n)) := by
     have hn : 0 < a + n := by positivity
-    rw [eLpNorm_indicator_closedBall_two, abs_of_nonneg (by positivity)]
-    congr 2
+    rw [eLpNorm_two_indicator_closedBall_const _ _ (by positivity),
+      Real.enorm_eq_ofReal (by positivity), ← ENNReal.ofReal_mul (by positivity)]
+    congr 1
     field_simp
   simp_rw [hbeq]
-  rw [← zero_mul ((NNReal.pi : ℝ≥0∞) ^ (2⁻¹ : ℝ))]
-  refine ENNReal.Tendsto.mul_const ?_ (.inr (by simp))
   rw [← ENNReal.ofReal_zero]
   exact ENNReal.tendsto_ofReal (tendsto_const_nhds.div_atTop
     (tendsto_atTop_add_const_left _ _ tendsto_natCast_atTop_atTop))
-
-end Cutoff
 
 /-- The Beurling identity `B bar∂ = ∂` with an error: for Schwartz `g` and `φ`,
 `‖B g - ∂φ‖_{L²}` is controlled by `‖g - bar∂φ‖_{L²}` through any `L²` bound for `B`. -/
@@ -184,19 +133,6 @@ private theorem eLpNorm_beurlingL2_sub_wirtingerDeriv_le {C : ℝ≥0}
     rw [h₁, Pi.sub_apply, h₂, SchwartzMap.wirtingerDerivCLM_apply]
   rw [← eLpNorm_congr_ae hBae, ← eLpNorm_congr_ae hvae]
   exact hC v
-
-omit [InnerProductSpace ℂ F] [CompleteSpace F] in
-/-- **Fatou's lemma for `L²` approximation.** If `g n → g₀` pointwise and the `L²` norms of
-`g n` are bounded by a sequence tending to `0`, then `g₀ = 0` almost everywhere. -/
-private theorem ae_eq_zero_of_tendsto_of_eLpNorm_le {α : Type*} [MeasurableSpace α]
-    {μ : Measure α} {g : ℕ → α → F} {g₀ : α → F} {c : ℕ → ℝ≥0∞}
-    (hg : ∀ n, AEStronglyMeasurable (g n) μ) (hg₀ : AEStronglyMeasurable g₀ μ)
-    (hlim : ∀ x, Tendsto (fun n ↦ g n x) atTop (𝓝 (g₀ x)))
-    (hgc : ∀ n, eLpNorm (g n) 2 μ ≤ c n) (hc : Tendsto c atTop (𝓝 0)) : g₀ =ᵐ[μ] 0 := by
-  have hfatou := Lp.eLpNorm_lim_le_liminf_eLpNorm (p := 2) hg g₀ hg₀ (.of_forall hlim)
-  refine (eLpNorm_eq_zero_iff two_ne_zero).1 (le_antisymm (hfatou.trans ?_) (by positivity))
-  rw [← hc.liminf_eq]
-  exact liminf_le_liminf (.of_forall hgc)
 
 /-- **One cutoff step.** For a smooth compactly supported cutoff `χ` with `χ • f = f`, the `L²`
 distance from `B f` to `χ • ∂ (T f)` is at most `(C + 1) ‖b‖_{L²}` for any pointwise bound `b`
@@ -299,14 +235,16 @@ theorem _root_.HasCompactSupport.wirtingerDeriv_cauchyTransform_ae_eq_beurlingL2
   set b : ℕ → ℂ → ℝ := fun n ↦ (closedBall (0 : ℂ) (2 * R n)).indicator
     fun _ ↦ C₀ * (R n)⁻¹ * (M / R n)
   have hb (n : ℕ) (x : ℂ) : ‖fderiv ℝ (χ n) x‖ * ‖u x‖ ≤ b n x :=
-    norm_fderiv_mul_norm_le_indicator (hR n) (hχ1 n) (hχ0 n) (hχfd n)
+    norm_fderiv_mul_norm_le_indicator (hR n) hM (hχ1 n) (hχ0 n) (hχfd n)
       (fun x hx ↦ norm_mul_norm_cauchyTransform_le hsupp
         (hf.continuous.integrable_of_hasCompactSupport hc) ((hrR n).trans hx)) x
   obtain ⟨Cb, hCb⟩ := exists_eLpNorm_beurlingL2_le (F := F) (p := 2) (by norm_num)
     ENNReal.ofNat_ne_top
   have htend : Tendsto (fun n ↦ (Cb : ℝ≥0∞) * eLpNorm (b n) 2 volume + eLpNorm (b n) 2 volume)
       atTop (𝓝 0) := by
-    have h := tendsto_eLpNorm_indicator_closedBall (a := 2 * r) (by positivity) hC₀ hM
+    have h : Tendsto (fun n ↦ eLpNorm (b n) 2 volume) atTop (𝓝 0) := by
+      simpa only [b, R] using
+        tendsto_eLpNorm_indicator_closedBall (a := 2 * r) (by positivity) hC₀ hM
     simpa using (ENNReal.Tendsto.const_mul h (.inr ENNReal.coe_ne_top)).add h
   -- `χ n • ∂ (T f) → ∂ (T f)` pointwise, so Fatou's lemma identifies the limit with `B f`.
   have hlim (x : ℂ) : Tendsto (fun n ↦ G x - χ n x • wirtingerDeriv u x 1) atTop
@@ -317,9 +255,9 @@ theorem _root_.HasCompactSupport.wirtingerDeriv_cauchyTransform_ae_eq_beurlingL2
     have := (Nat.le_ceil ‖x‖).trans (Nat.cast_le.2 hn)
     simp only [R]
     linarith
-  have hzero := ae_eq_zero_of_tendsto_of_eLpNorm_le
+  have hzero := ae_eq_zero_of_tendsto_of_eLpNorm_le two_ne_zero
     (fun n ↦ (Lp.aestronglyMeasurable G).sub ((hχs n 0).continuous.smul hwu).aestronglyMeasurable)
-    ((Lp.aestronglyMeasurable G).sub hwu.aestronglyMeasurable) hlim
+    ((Lp.aestronglyMeasurable G).sub hwu.aestronglyMeasurable) (.of_forall hlim)
     (fun n ↦ eLpNorm_beurlingL2_sub_smul_wirtingerDeriv_cauchyTransform_le hc hf hCb (hχs n ⊤)
       (hχc n) (hχf n) (hb n)) htend
   filter_upwards [hzero] with x hx
@@ -348,7 +286,8 @@ theorem _root_.HasCompactSupport.memLp_wirtingerDeriv_cauchyTransform {f : ℂ �
 
 /-- **The global derivative bound for the Cauchy transform.** For `1 < p < ∞` there is a
 constant `C` with `‖D (T f)‖_{Lᵖ(ℂ)} ≤ C ‖f‖_{Lᵖ(ℂ)}` for every smooth compactly supported `f`
-with values in a complex Hilbert space. The transform `T f` itself need not lie in `Lᵖ(ℂ)`. -/
+with values in a complex Hilbert space. For `1 < p ≤ 2` and data with nonzero integral the
+transform `T f` itself does not lie in `Lᵖ(ℂ)`, so only its derivative is bounded globally. -/
 theorem exists_eLpNorm_fderiv_cauchyTransform_le {p : ℝ≥0∞} (hp : 1 < p)
     (hp_top : p ≠ (∞ : ℝ≥0∞)) :
     ∃ C : ℝ≥0, ∀ f : ℂ → F, HasCompactSupport f → ContDiff ℝ ∞ f →
@@ -378,6 +317,7 @@ theorem exists_eLpNorm_fderiv_cauchyTransform_le {p : ℝ≥0∞} (hp : 1 < p)
             (hcu ▸ hf.continuous.aestronglyMeasurable), hcu]
     _ ≤ Cb * eLpNorm f p volume + eLpNorm f p volume := by gcongr
     _ = (Cb + 1 : ℝ≥0) * eLpNorm f p volume := by
-        rw [ENNReal.coe_add, ENNReal.coe_one, add_mul, one_mul]
+        push_cast
+        ring
 
 end TauCeti

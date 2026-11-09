@@ -137,7 +137,8 @@ theorem norm_mul_norm_cauchyTransform_le {f : ℂ → F} {r : ℝ}
       _ = 2 * ‖w‖⁻¹ := by field_simp
   have hint := norm_integral_le_of_norm_le (hfi.norm.const_mul (2 * ‖w‖⁻¹)) (.of_forall hpt)
   rw [integral_const_mul] at hint
-  rw [cauchyTransform_apply, norm_smul, norm_inv, Complex.norm_real, Real.norm_of_nonneg hπ.le]
+  simp only [cauchyTransform_apply, norm_smul, norm_inv, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_pos hπ]
   calc ‖w‖ * (π⁻¹ * ‖∫ z, (w - z)⁻¹ • f z‖)
       ≤ ‖w‖ * (π⁻¹ * (2 * ‖w‖⁻¹ * ∫ z, ‖f z‖)) := by gcongr
     _ = 2 * π⁻¹ * ∫ z, ‖f z‖ := by field_simp
