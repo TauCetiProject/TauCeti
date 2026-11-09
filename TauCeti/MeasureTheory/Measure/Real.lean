@@ -14,9 +14,9 @@ public import Mathlib.Probability.CDF
 This file records elementary identities about measures on the real line. The absolute-value map
 folds the negative half-line onto the positive half-line. Squaring loses the sign of a real number
 and nothing else, so it determines a measure on the line as soon as the measure cannot tell the two
-signs apart. For a reflection-invariant finite measure, the pushforward under squaring is a complete
-invariant: the square records the mass of intervals symmetric about zero, while reflection
-invariance makes the two complementary tails equal. For a measure carried by the nonnegative
+signs apart. For a reflection-invariant measure, the pushforward under squaring is a complete
+invariant: such a measure is determined by its mass on subsets of `(0, ∞)` and on `{0}`, and the
+squared pushforward records both. For a measure carried by the nonnegative
 half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the measure outright.
 
 ## Main results
@@ -150,37 +150,28 @@ theorem _root_.MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self (μ ν :
         simp only [mem_inter_iff, mem_singleton_iff, mem_Iio] at hx hx'
         exact hx'.2.ne hx.2) (hs.inter measurableSet_Iio), hneg]
     ring
-  -- The mass of a subset of the positive half-line is half the squared mass of its image.
+  -- Squaring followed by `Real.sqrt` is folding, so the squared pushforward determines the folded
+  -- law, which records the atom at zero and twice the mass of a subset of the positive half-line.
+  have hfold : ∀ ρ : Measure ℝ, (ρ.map (fun x : ℝ ↦ x ^ 2)).map Real.sqrt = ρ.map (|·|) :=
+    fun ρ ↦ by
+      rw [Measure.map_map (by fun_prop) hmeas]
+      exact congrArg ρ.map (funext Real.sqrt_sq_eq_abs)
   have hpos : ∀ ρ : Measure ℝ, ρ.map (fun x : ℝ ↦ -x) = ρ → ∀ t, MeasurableSet t → t ⊆ Ioi 0 →
-      ρ.map (fun x : ℝ ↦ x ^ 2) (Real.sqrt ⁻¹' t) = 2 * ρ t := by
+      ρ.map (|·|) t = 2 * ρ t := by
     intro ρ hρ t ht hts
-    have : ρ.IsNegInvariant := ⟨hρ⟩
-    have hpre : (fun x : ℝ ↦ x ^ 2) ⁻¹' (Real.sqrt ⁻¹' t) = t ∪ -t := by
-      ext x
-      simp only [mem_preimage, Real.sqrt_sq_eq_abs, mem_union, Set.mem_neg]
-      rcases le_or_gt 0 x with hx | hx
-      · rw [abs_of_nonneg hx]
-        exact ⟨Or.inl, fun h ↦ h.elim id fun h' ↦ absurd (hts h') (not_lt.2 (by linarith))⟩
-      · rw [abs_of_neg hx]
-        exact ⟨Or.inr, fun h ↦ h.elim (fun h' ↦ absurd (hts h') (not_lt.2 hx.le)) id⟩
-    rw [Measure.map_apply hmeas (ht.preimage (by fun_prop : Measurable Real.sqrt)), hpre,
-      measure_union (disjoint_left.2 fun x hx hx' ↦ absurd (hts hx) (not_lt.2 (by
-        have := hts hx'
-        rw [Set.mem_neg] at hx'
-        simp only [mem_Ioi] at this
-        linarith))) ht.neg, Measure.measure_neg, two_mul]
-  have hzero : ∀ ρ : Measure ℝ, ρ.map (fun x : ℝ ↦ x ^ 2) {0} = ρ {0} := fun ρ ↦ by
-    rw [Measure.map_apply hmeas (measurableSet_singleton _)]
-    congr 1
-    ext x
-    simp
+    have hneg : ρ.neg = ρ := hρ
+    rw [Measure.map_abs_eq_restrict_add_restrict, hneg, _root_.add_apply, Measure.restrict_apply ht,
+      Measure.restrict_apply ht, inter_eq_left.2 (hts.trans Ioi_subset_Ici_self),
+      inter_eq_left.2 hts, two_mul]
+  have habs : μ.map (|·|) = ν.map (|·|) := by rw [← hfold μ, ← hfold ν, hsq]
   ext s hs
   have hμν : ∀ t, MeasurableSet t → t ⊆ Ioi 0 → μ t = ν t := fun t ht hts ↦ by
     refine (ENNReal.mul_right_inj two_ne_zero (by finiteness)).1 ?_
-    rw [← hpos μ hμneg t ht hts, ← hpos ν hνneg t ht hts, hsq]
+    rw [← hpos μ hμneg t ht hts, ← hpos ν hνneg t ht hts, habs]
   have h0 : μ (s ∩ {0}) = ν (s ∩ {0}) := by
     by_cases h : (0 : ℝ) ∈ s
-    · rw [inter_singleton_of_mem h, ← hzero μ, ← hzero ν, hsq]
+    · rw [inter_singleton_of_mem h, ← Measure.map_abs_apply_zero μ, ← Measure.map_abs_apply_zero ν,
+        habs]
     · rw [inter_singleton_eq_empty.2 h]
       simp
   rw [hsplit μ hμneg s hs, hsplit ν hνneg s hs,
