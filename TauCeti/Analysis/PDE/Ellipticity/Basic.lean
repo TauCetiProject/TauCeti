@@ -649,6 +649,19 @@ lemma abs_apply_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω
   simpa [dotProduct, Matrix.mulVec, Pi.single_apply] using
     h.upper_bound hx (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
 
+/-- At every point of the domain, the trace of the coefficient matrix is at most `n Λ`. -/
+lemma trace_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) :
+    (a x).trace ≤ Fintype.card n * Lam := by
+  rw [Matrix.trace]
+  refine (Finset.sum_le_sum fun i _ => (le_abs_self _).trans (h.abs_apply_le hx i i)).trans_eq ?_
+  simp
+
+/-- A symmetric uniformly elliptic coefficient matrix is positive definite. -/
+lemma posDef (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) (hsymm : (a x).IsSymm) :
+    (a x).PosDef :=
+  Matrix.PosDef.of_toQuadraticForm' hsymm fun ξ hξ => by
+    simpa using h.quadraticForm_pos hx (ξ := WithLp.toLp 2 ξ) (by simpa using hξ)
+
 /-- On the domain, the bilinear forms attached to a uniformly elliptic coefficient field form a
 bounded set, of operator norm at most the upper ellipticity constant. -/
 lemma isBounded_image_matrixBilinearForm (h : UniformlyEllipticOn Ω a lam Lam) :
