@@ -36,6 +36,9 @@ For `n ≠ 0`, the `n`-th power of `x ^ (1 - 1/n)` is `x ^ (n - 1)` for nonnegat
 which the volume factor `V ^ (1 - 1/n)` of an isoperimetric inequality is raised to the `n`-th
 power.
 
+Rescaling a power law: if `X ≤ N` and `C = C₀ N / R ^ α / 2`, then `C₀ (r / R) ^ α X ≤ 2 (C r ^ α)`
+for `r ≥ 0`, `R > 0` and `C₀ ≥ 0`.
+
 A natural power `b ^ n` with `1 ≤ b` and `n ≤ δ r` is at most `(b ^ δ) ^ r`, which turns a degree
 bound with a real factor `δ` into a bound by an `r`-th power.
 
@@ -232,6 +235,14 @@ theorem tendsto_pow_div_mul_sub_pow_atTop {n : ℕ} {ω : ℝ} (hn0 : n ≠ 0) (
     exact (sub_pos.2 this).ne'
   rw [div_pow, one_sub_div (pow_pos hD0 n).ne', inv_div]
   field_simp
+
+/-- Rescaling a power law: if `X ≤ N` and `C = C₀ N / R ^ α / 2`, then
+`C₀ (r / R) ^ α X ≤ 2 (C r ^ α)` for `r ≥ 0`, `R > 0` and `C₀ ≥ 0`. -/
+lemma mul_rpow_div_mul_le_two_mul {α C₀ N R r X C : ℝ} (hC₀ : 0 ≤ C₀) (hr : 0 ≤ r)
+    (hR : 0 < R) (hX : X ≤ N) (hC : C = C₀ * N / R ^ α / 2) :
+    C₀ * (r / R) ^ α * X ≤ 2 * (C * r ^ α) :=
+  calc _ ≤ C₀ * (r / R) ^ α * N := by gcongr
+    _ = 2 * (C * r ^ α) := by rw [hC, Real.div_rpow hr hR.le]; field_simp
 
 end Real
 

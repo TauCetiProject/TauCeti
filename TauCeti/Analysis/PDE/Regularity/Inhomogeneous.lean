@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.PDE.DirichletProblem
 public import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness
 public import TauCeti.Analysis.PDE.Regularity.HolderContinuity
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecificLimits.DecayIteration
 import TauCeti.MeasureTheory.Function.EssSup
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -571,7 +573,7 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp [Nonempty ι] {lam La
   · -- Oscillation: `u` lies in an interval of length `L ≤ 2 C s^α` on `B(x, s)`.
     rw [hρ] at hsR
     obtain ⟨m', hm'⟩ := hosc h ha (hfx x hx) hu hs hsR (hball x hx)
-    have hL := mul_rpow_div_mul_le_two_mul (α := (α : ℝ)) hC₀.le hs.le hR (hN x hx) hC
+    have hL := Real.mul_rpow_div_mul_le_two_mul (α := (α : ℝ)) hC₀.le hs.le hR (hN x hx) hC
     refine ⟨m' + C * s ^ (α : ℝ), ?_⟩
     filter_upwards [hm'] with y hy
     rw [mem_closedBall, Real.dist_eq, abs_le]
@@ -583,7 +585,7 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp [Nonempty ι] {lam La
     exact hy.trans (mul_le_mul_of_nonneg_left (hN x hx) hD.le)
   · -- The constant: `2 C = C₀ N R^(-α)` and `2 M / ρ^α = 2^(1+α) D N R^(-α) ≤ 4 D N R^(-α)`.
     rw [← hNdef]
-    exact max_two_mul_le_toNNReal hα1 hR hC₀.le (by positivity) (by positivity) hC hM hρ
+    exact NNReal.max_two_mul_le_toNNReal hα1 hR hC₀.le (by positivity) (by positivity) hC hM hρ
 
 end PDE
 
