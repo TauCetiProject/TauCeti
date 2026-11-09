@@ -101,6 +101,10 @@ theorem IsPrimitive.exists_eq_nsmul_iff_dvd {p : M} (hp : IsPrimitive p) (d n : 
   · rintro ⟨m, hm⟩
     exact ⟨m • p, by rw [smul_smul, ← hm]⟩
 
+-- The following two theorems are adapted from `Mei/Algebra/Module/Primitive.lean` in
+-- [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
+-- `7f1e4c7714fb020473694755ad8748c8f15d0e7f` (Apache 2.0).
+
 /-- Integer multiples of a primitive vector have distinct multipliers, even when the ambient module
 has torsion. -/
 theorem IsPrimitive.zsmul_left_injective {v : M} (hv : IsPrimitive v) :
