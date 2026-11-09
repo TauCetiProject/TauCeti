@@ -582,6 +582,18 @@ lemma quadraticForm_nonneg (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : 
     0 ≤ (a x).toQuadraticForm' ξ := by
   exact (mul_nonneg h.pos.le (sq_nonneg ‖ξ‖)).trans (h.lower_bound hx ξ)
 
+/-- The diagonal entries of a uniformly elliptic coefficient matrix are at most the upper
+constant, so its trace is at most `card n * Λ`. -/
+lemma trace_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) :
+    (a x).trace ≤ Fintype.card n * Lam := by
+  have hdiag (i : n) : a x i i ≤ Lam := by
+    have h1 : |a x i i| ≤ Lam := by
+      simpa using h.upper_bound hx (EuclideanSpace.single i 1) (EuclideanSpace.single i 1)
+    exact (le_abs_self _).trans h1
+  calc (a x).trace = ∑ i, a x i i := rfl
+    _ ≤ ∑ _i : n, Lam := Finset.sum_le_sum fun i _ ↦ hdiag i
+    _ = Fintype.card n * Lam := by simp
+
 /-- Uniform ellipticity gives a positive quadratic form on every nonzero vector. -/
 lemma quadraticForm_pos (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω)
     {ξ : EuclideanSpace ℝ n} (hξ : ξ ≠ 0) :
@@ -655,13 +667,6 @@ lemma abs_apply_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω
     |a x i j| ≤ Lam := by
   simpa [dotProduct, Matrix.mulVec, Pi.single_apply] using
     h.upper_bound hx (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
-
-/-- At every point of the domain, the trace of the coefficient matrix is at most `n Λ`. -/
-lemma trace_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) :
-    (a x).trace ≤ Fintype.card n * Lam := by
-  rw [Matrix.trace]
-  refine (Finset.sum_le_sum fun i _ => (le_abs_self _).trans (h.abs_apply_le hx i i)).trans_eq ?_
-  simp
 
 /-- A symmetric uniformly elliptic coefficient matrix is positive definite. -/
 lemma posDef (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) (hsymm : (a x).IsSymm) :

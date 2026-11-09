@@ -50,6 +50,8 @@ the Laplacian.
 * `TauCeti.setIntegral_ball_zero_eq_integral_Ioo`,
   `TauCeti.integral_Ioo_pow_mul_toSphere_real_univ`: integration over a ball about the origin in
   polar coordinates, and the corresponding formula for the measure of the ball.
+* `TauCeti.integrableOn_fun_norm_sub_addHaar`: a function of the distance to a point `c` is
+  integrable on a ball about `c` if and only if its radial integrand is integrable.
 * `LinearIsometryEquiv.map_toSphere`: a linear isometric equivalence carries the surface
   measure of `μ` to the surface measure of the image of `μ`.
 -/
@@ -220,7 +222,24 @@ theorem integral_Ioo_pow_mul_toSphere_real_univ {R : ℝ} :
   simp only [integral_const, smul_eq_mul, mul_one, measureReal_restrict_apply_univ] at h
   rw [h, ← integral_mul_const]
 
-omit [MeasurableSpace E] [BorelSpace E] in
+/-- **Integrability of a radial function about a point.** A function `x ↦ f ‖x - c‖` of the
+distance to `c` is integrable on `ball c r` if and only if `y ↦ y ^ (d - 1) • f y` is integrable
+on `(0, r)`. This translates Mathlib's `MeasureTheory.integrableOn_fun_norm_addHaar` from the
+origin to an arbitrary center. -/
+theorem integrableOn_fun_norm_sub_addHaar {f : ℝ → F} {c : E} {r : ℝ} :
+    IntegrableOn (fun x ↦ f ‖x - c‖) (ball c r) μ ↔
+      IntegrableOn (fun y ↦ y ^ (Module.finrank ℝ E - 1) • f y) (Ioo 0 r) := by
+  rw [← integrableOn_fun_norm_addHaar μ, ← integrable_indicator_iff measurableSet_ball,
+    ← integrable_indicator_iff measurableSet_ball]
+  have h : (ball c r).indicator (fun x ↦ f ‖x - c‖) =
+      fun x ↦ (ball (0 : E) r).indicator (fun x ↦ f ‖x‖) (x - c) := funext fun x ↦ by
+    simp only [indicator, mem_ball, dist_eq_norm, sub_zero]
+  rw [h]
+  refine ⟨fun hf ↦ (hf.comp_add_right c).congr (ae_of_all _ fun x ↦ ?_),
+    fun hf ↦ hf.comp_sub_right c⟩
+  simp
+
+omit [MeasurableSpace E] [BorelSpace E] [Nontrivial E] in
 /-- Along the ray through a point `u` of the unit sphere, the radially weighted integrand of the
 radial fundamental theorem of calculus is the derivative of `r ↦ f (r • u)`, so its integral over
 `(0, ∞)` is `-f 0`. -/
@@ -230,12 +249,13 @@ theorem integral_Ioi_ray_fderiv_apply_smul_eq_neg
       (‖r • (u : E)‖ ^ (-(Module.finrank ℝ E : ℝ)) *
         fderiv ℝ f (r • (u : E)) (r • (u : E))) = -f 0 := by
   set d := Module.finrank ℝ E
-  have hd : 1 ≤ d := Module.finrank_pos
   have hu : ‖(u : E)‖ = 1 := norm_eq_of_mem_sphere u
+  have hu0 : (u : E) ≠ 0 := fun h ↦ by simp [h] at hu
+  have : Nontrivial E := ⟨⟨u, 0, hu0⟩⟩
+  have hd : 1 ≤ d := Module.finrank_pos
   rw [setIntegral_congr_fun measurableSet_Ioi (g := fun r ↦ fderiv ℝ f (r • (u : E)) u)
     fun r (hr : 0 < r) ↦ ?_]
-  · have hu0 : (u : E) ≠ 0 := fun h ↦ by simp [h] at hu
-    simpa only [zero_add] using hc.integral_Ioi_fderiv_apply_ray hf 0 hu0
+  · simpa only [zero_add] using hc.integral_Ioi_fderiv_apply_ray hf 0 hu0
   · have hpow : r ^ (d - 1) * r ^ (-(d : ℝ)) * r = 1 := by
       rw [mul_right_comm, ← pow_succ, Nat.sub_add_cancel hd, ← Real.rpow_natCast,
         ← Real.rpow_add hr, add_neg_cancel, Real.rpow_zero]
