@@ -169,7 +169,7 @@ theorem HasSectionalCurvatureAt.ricciTensor_eq
     (h.curvatureTensor_eq_smul_inner_sub ht)
 
 /-- At a point where every tangent two-plane has sectional curvature `κ`, the scalar curvature of
-a metric-compatible torsion-free connection is `n (n - 1) κ` in dimension `n`. -/
+a metric-compatible connection is `n (n - 1) κ` in dimension `n`. -/
 theorem HasSectionalCurvatureAt.scalarCurvature_eq
     {hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov}
     {x : M} {κ : ℝ} (h : cov.HasSectionalCurvatureAt hcov x κ) :
