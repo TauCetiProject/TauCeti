@@ -42,6 +42,7 @@ chain bimodules of paths that change the basepoint of a DG local system.
 * `TauCeti.cubicalChainPairing_smul_left`, `TauCeti.cubicalChainPairing_op_smul_right`: the
   pairing of an equivariant map is equivariant.
 * `TauCeti.cubicalChainTensorHom_tmul`: the induced morphism is the pairing on pure tensors.
+* `TauCeti.cubicalChainDifferential_cubicalChainCross`: the Leibniz rule for `cubicalChainCross`.
 * `TauCeti.cubicalChainPushforward_cubicalChainCross`: the push-forward along a multiplicative
   evaluation turns the pairing into the Pontryagin product.
 
@@ -265,6 +266,21 @@ theorem cubicalChainCross_mem (f : C(X × Y, Z)) {i j : ℤ} {a : normalizedCubi
     (mem_cubicalChainModuleGrading.2 (by rwa [LinearEquiv.apply_symm_apply]))
     (mem_cubicalChainModuleGrading.2 (by rwa [LinearEquiv.apply_symm_apply]))
   exact mem_cubicalChainModuleGrading.1 h
+
+/-- **The Leibniz rule for the pairing**: for `a` of cohomological degree `i`,
+`d (f_* (a × b)) = f_* (d a × b) + (-1) ^ i • f_* (a × d b)`. -/
+theorem cubicalChainDifferential_cubicalChainCross (f : C(X × Y, Z)) {i : ℤ}
+    {a : normalizedCubicalChainAlgebra X R} (ha : a ∈ cubicalChainGrading X R i)
+    (b : normalizedCubicalChainAlgebra Y R) :
+    cubicalChainDifferential Z R (cubicalChainCross R f a b) =
+      cubicalChainCross R f (cubicalChainDifferential X R a) b +
+        i.negOnePow • cubicalChainCross R f a (cubicalChainDifferential Y R b) := by
+  obtain ⟨m, rfl⟩ := (cubicalChainModuleEquiv X PUnit.{1} R).surjective a
+  obtain ⟨n, rfl⟩ := (cubicalChainModuleEquiv Y PUnit.{1} R).surjective b
+  simp only [cubicalChainCross, LinearMap.compr₂_apply, LinearMap.compl₁₂_apply,
+    LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply, ← cubicalChainModuleEquiv_differential,
+    cubicalChainModuleDifferential_cubicalChainPairing f (mem_cubicalChainModuleGrading.2 ha),
+    map_add, map_zsmul_unit]
 
 /-- **Push-forward along a multiplicative evaluation.** If evaluation maps `qX`, `qY` and `qZ`
 into a topological monoid satisfy `qZ (f (x, y)) = qX x * qY y`, then pushing the pairing induced
