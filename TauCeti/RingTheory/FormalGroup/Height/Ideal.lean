@@ -107,9 +107,11 @@ theorem heightIdeal_zero : F.heightIdeal p 0 = ⊥ := by
   exact F.constantCoeff_nsmulSeries p
 
 /-- The height ideals increase with `n`. -/
-theorem heightIdeal_mono (hp : p ≠ 0) : Monotone (F.heightIdeal p) := fun _ _ hmn ↦
-  heightIdeal_le_iff.mpr fun _ hk ↦ coeff_nsmulSeries_mem_heightIdeal
-    (hk.trans_le (Nat.pow_le_pow_right (Nat.pos_of_ne_zero hp) hmn))
+theorem heightIdeal_mono : Monotone (F.heightIdeal p) := fun _ _ hmn ↦
+  heightIdeal_le_iff.mpr fun _ hk ↦ by
+    rcases p.eq_zero_or_pos with rfl | hp
+    · simp
+    · exact coeff_nsmulSeries_mem_heightIdeal (hk.trans_le (Nat.pow_le_pow_right hp hmn))
 
 /-- The height ideals commute with base change. -/
 @[simp]
@@ -146,7 +148,7 @@ prime `p`, `I_(n+1)(F) = I_n(F) + (v_n)`, where `v_n` is the coefficient of `X^(
 theorem heightIdeal_succ (hp : p.Prime) (n : ℕ) :
     F.heightIdeal p (n + 1) =
       F.heightIdeal p n ⊔ Ideal.span {PowerSeries.coeff (p ^ n) (F.nsmulSeries p)} := by
-  refine le_antisymm ?_ (sup_le (heightIdeal_mono hp.ne_zero n.le_succ)
+  refine le_antisymm ?_ (sup_le (heightIdeal_mono n.le_succ)
     ((Ideal.span_singleton_le_iff_mem _).mpr
       (coeff_nsmulSeries_mem_heightIdeal (Nat.pow_lt_pow_right hp.one_lt n.lt_succ_self))))
   set J := F.heightIdeal p n ⊔ Ideal.span {PowerSeries.coeff (p ^ n) (F.nsmulSeries p)}

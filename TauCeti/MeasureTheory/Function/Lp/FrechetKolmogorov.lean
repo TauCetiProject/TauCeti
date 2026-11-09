@@ -187,6 +187,81 @@ variable {E F : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {mu : Measure E} [mu.IsAddHaarMeasure] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
+omit [Fact (1 ≤ p)] in
+/-- The tail radius in the Fréchet--Kolmogorov argument: if the family has uniformly small
+smoothing error `hsmooth` at scale `r`, uniformly bounded ball averages `hgB`, and a set `s` of
+finite measure carrying all but `ε₁` of each member, then outside a large enough closed ball
+every member has `Lᵖ` tail at most `ε₁ + ε₁ + ε₁`. -/
+private theorem exists_closedBall_tail_le (hp : 1 ≤ p) (hp' : p ≠ ∞)
+    {S : Set (Lp F p mu)} {r : ℝ} {ε₁ B : ℝ≥0∞} (hε₁ : 0 < ε₁) (hB : B ≠ ∞)
+    {s : Set E} (hmeasS : MeasurableSet s) (hmuS : mu s < ∞)
+    (htailS : ∀ i : S, eLpNorm (sᶜ.indicator ⇑(i : Lp F p mu)) p mu ≤ ε₁)
+    (hsmooth : ∀ g ∈ S, eLpNorm (ballAverage mu r ⇑g - ⇑g) p mu ≤ ε₁) (hr : 0 < r)
+    (hgB : ∀ i : S, ∀ x : E,
+      ballAverage mu r ⇑(i : Lp F p mu) x ∈ closedBall (0 : F) B.toReal) :
+    ∃ R : ℝ, ∀ f ∈ S, eLpNorm ((closedBall (0 : E) R)ᶜ.indicator ⇑f) p mu ≤ ε₁ + ε₁ + ε₁ := by
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
+  have hpReal : 0 < p.toReal := ENNReal.toReal_pos hp0 hp'
+  -- A finite-measure tightness set has arbitrarily small intersection with the complement of a
+  -- sufficiently large closed ball.
+  let _ : IsFiniteMeasure (mu.restrict s) :=
+    ⟨by simpa only [Measure.restrict_apply_univ] using hmuS⟩
+  have hmeasure :
+      Tendsto (fun R : ℝ => mu (s ∩ (closedBall (0 : E) R)ᶜ)) atTop (𝓝 0) := by
+    have h := tendsto_measure_compl_closedBall_of_isTightMeasureSet
+      (S := {mu.restrict s}) isTightMeasureSet_singleton (0 : E)
+    simpa only [iSup_singleton, Measure.restrict_apply measurableSet_closedBall.compl,
+      inter_comm] using h
+  have hsmall : Tendsto
+      (fun R : ℝ => B * mu (s ∩ (closedBall (0 : E) R)ᶜ) ^ (1 / p.toReal))
+      atTop (𝓝 0) :=
+    (ENNReal.tendsto_const_mul_rpow_nhds_zero_of_pos hB (by positivity)).comp hmeasure
+  obtain ⟨R, hR⟩ := ((tendsto_order.1 hsmall).2 ε₁ hε₁).exists
+  refine ⟨R, fun f hf => ?_⟩
+  exact eLpNorm_indicator_compl_le_of_approx_of_bound hp hp' measurableSet_closedBall hmeasS
+    (Lp.aestronglyMeasurable f)
+    ((continuous_ballAverage hp hp' (Lp.memLp f) hr).aestronglyMeasurable) hB
+    (htailS ⟨f, hf⟩) (hsmooth f hf) (hgB ⟨f, hf⟩) hR.le
+
+omit [Fact (1 ≤ p)] in
+/-- The final comparison in the Fréchet--Kolmogorov argument: two functions whose ball averages
+are `η`-close on `K`, with small smoothing errors and small tails off `K`, are `ε`-close in `Lᵖ`. -/
+private theorem dist_lt_of_ballAverage_close_on (hp : 1 ≤ p) (hp' : p ≠ ∞) {K : Set E}
+    (hK : MeasurableSet K) {r ε η : ℝ} (hr : 0 < r) (hε : 0 < ε) (hη : 0 ≤ η)
+    {f f' : Lp F p mu}
+    (hsf : eLpNorm (ballAverage mu r ⇑f - ⇑f) p mu ≤ ENNReal.ofReal (ε / 16))
+    (hsf' : eLpNorm (ballAverage mu r ⇑f' - ⇑f') p mu ≤ ENNReal.ofReal (ε / 16))
+    (htf : eLpNorm (Kᶜ.indicator ⇑f) p mu ≤
+      ENNReal.ofReal (ε / 16) + ENNReal.ofReal (ε / 16) + ENNReal.ofReal (ε / 16))
+    (htf' : eLpNorm (Kᶜ.indicator ⇑f') p mu ≤
+      ENNReal.ofReal (ε / 16) + ENNReal.ofReal (ε / 16) + ENNReal.ofReal (ε / 16))
+    (hWη : ENNReal.ofReal η * mu K ^ (1 / p.toReal) ≤ ENNReal.ofReal (ε / 4))
+    (hmid : ∀ x ∈ K, dist (ballAverage mu r ⇑f x) (ballAverage mu r ⇑f' x) ≤ η) :
+    dist f f' < ε := by
+  have hAm : AEStronglyMeasurable (ballAverage mu r ⇑f) mu :=
+    (continuous_ballAverage hp hp' (Lp.memLp f) hr).aestronglyMeasurable
+  have hA'm : AEStronglyMeasurable (ballAverage mu r ⇑f') mu :=
+    (continuous_ballAverage hp hp' (Lp.memLp f') hr).aestronglyMeasurable
+  have hmain : eLpNorm (⇑f - ⇑f') p mu ≤ ENNReal.ofReal (3 * ε / 4) := by
+    calc eLpNorm (⇑f - ⇑f') p mu
+        ≤ eLpNorm (ballAverage mu r ⇑f - ⇑f) p mu +
+            (ENNReal.ofReal η * mu K ^ (1 / p.toReal) +
+              eLpNorm (ballAverage mu r ⇑f' - ⇑f') p mu) +
+            (eLpNorm (Kᶜ.indicator ⇑f) p mu + eLpNorm (Kᶜ.indicator ⇑f') p mu) :=
+          eLpNorm_sub_le_of_approx_of_dist_bdd_on hp hp' hK hAm hA'm hη hmid
+      _ ≤ ENNReal.ofReal (ε / 16) + (ENNReal.ofReal (ε / 4) + ENNReal.ofReal (ε / 16)) +
+            ((ENNReal.ofReal (ε / 16) + ENNReal.ofReal (ε / 16) + ENNReal.ofReal (ε / 16)) +
+              (ENNReal.ofReal (ε / 16) + ENNReal.ofReal (ε / 16) + ENNReal.ofReal (ε / 16))) :=
+          add_le_add (add_le_add hsf (add_le_add hWη hsf')) (add_le_add htf htf')
+      _ = ENNReal.ofReal (3 * ε / 4) := by
+          simp (disch := positivity) only [← ENNReal.ofReal_add]
+          congr 1
+          ring
+  rw [Lp.dist_def]
+  have := ENNReal.toReal_mono ENNReal.ofReal_ne_top hmain
+  rw [ENNReal.toReal_ofReal (by linarith)] at this
+  linarith
+
 /-- **The Fréchet--Kolmogorov compactness criterion.** For `1 ≤ p < ∞`, a family `S` of `Lᵖ`
 functions is totally bounded as soon as it is bounded in `Lᵖ`, its translation increments are
 uniformly small in `Lᵖ`, and it is uniformly tight in the sense of `MeasureTheory.UnifTight`.
@@ -202,8 +277,6 @@ theorem totallyBounded_of_comp_add_sub_of_unifTight (hp' : p ≠ ∞)
     (htight : UnifTight (fun i : S => ⇑(i : Lp F p mu)) p mu) :
     TotallyBounded S := by
   have hp : (1 : ℝ≥0∞) ≤ p := Fact.out
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
-  have hpReal : 0 < p.toReal := ENNReal.toReal_pos hp0 hp'
   rw [Metric.totallyBounded_iff]
   intro ε hε
   have hε₁ : (0 : ℝ≥0∞) < ENNReal.ofReal (ε / 16) := ENNReal.ofReal_pos.2 (by linarith)
@@ -233,46 +306,16 @@ theorem totallyBounded_of_comp_add_sub_of_unifTight (hp' : p ≠ ∞)
     intro g hg
     exact eLpNorm_ballAverage_sub_le hp hp' (Lp.memLp g) hr
       (fun e he => hrS g hg e (by simpa [dist_eq_norm] using he))
-  -- A finite-measure tightness set has arbitrarily small intersection with the complement of a
-  -- sufficiently large closed ball.
-  let _ : IsFiniteMeasure (mu.restrict s) :=
-    ⟨by simpa only [Measure.restrict_apply_univ] using hmuS⟩
-  have hmeasure :
-      Tendsto (fun R : ℝ => mu (s ∩ (closedBall (0 : E) R)ᶜ)) atTop (𝓝 0) := by
-    have h := tendsto_measure_compl_closedBall_of_isTightMeasureSet
-      (S := {mu.restrict s}) isTightMeasureSet_singleton (0 : E)
-    simpa only [iSup_singleton, Measure.restrict_apply measurableSet_closedBall.compl,
-      inter_comm] using h
-  have hsmall : Tendsto
-      (fun R : ℝ => Bₑ * mu (s ∩ (closedBall (0 : E) R)ᶜ) ^ (1 / p.toReal))
-      atTop (𝓝 0) :=
-    (ENNReal.tendsto_const_mul_rpow_nhds_zero_of_pos hBₑt (by positivity)).comp hmeasure
-  obtain ⟨R, hR⟩ := ((tendsto_order.1 hsmall).2 ε₁ hε₁).exists
+  obtain ⟨R, hRS⟩ := exists_closedBall_tail_le hp hp' hε₁ hBₑt hmeasS hmuS htailS hsmooth hr hgB
   set K : Set E := closedBall (0 : E) R
-  have hmeasK : MeasurableSet K := measurableSet_closedBall
-  have hRS : ∀ f ∈ S,
-      eLpNorm (Kᶜ.indicator ⇑f) p mu ≤ ε₁ + ε₁ + ε₁ := by
-    intro f hf
-    exact eLpNorm_indicator_compl_le_of_approx_of_bound hp hp' hmeasK hmeasS
-      (Lp.aestronglyMeasurable f)
-      ((continuous_ballAverage hp hp' (Lp.memLp f) hr).aestronglyMeasurable) hBₑt
-      (htailS ⟨f, hf⟩) (hsmooth f hf) (hgB ⟨f, hf⟩) hR.le
   -- The scale of the uniform approximation on `K`, calibrated by the measure of `K`.
-  have hKt : mu K ≠ ∞ := measure_closedBall_lt_top.ne
-  set W : ℝ≥0∞ := mu K ^ (1 / p.toReal)
-  have hWt : W ≠ ∞ := (ENNReal.rpow_lt_top_of_nonneg (by positivity) hKt).ne
-  have hWnn : (0 : ℝ) ≤ W.toReal := ENNReal.toReal_nonneg
-  set η : ℝ := ε / (4 * (W.toReal + 1)) with hηdef
-  have hη : 0 < η := by
-    rw [hηdef]; positivity
-  have hWη : ENNReal.ofReal η * W ≤ ENNReal.ofReal (ε / 4) := by
-    have hkey : W.toReal * η ≤ ε / 4 := by
-      have hstep : (W.toReal + 1) * η = ε / 4 := by
-        rw [hηdef]; field_simp
-      nlinarith [hη.le]
-    calc ENNReal.ofReal η * W = ENNReal.ofReal (W.toReal * η) := by
-          rw [ENNReal.ofReal_mul hWnn, ENNReal.ofReal_toReal hWt, mul_comm]
-      _ ≤ ENNReal.ofReal (ε / 4) := ENNReal.ofReal_le_ofReal hkey
+  have hWt : mu K ^ (1 / p.toReal) ≠ ∞ :=
+    (ENNReal.rpow_lt_top_of_nonneg (by positivity) measure_closedBall_lt_top.ne).ne
+  obtain ⟨η, hη, hWη⟩ : ∃ η : ℝ, 0 < η ∧
+      ENNReal.ofReal η * mu K ^ (1 / p.toReal) ≤ ENNReal.ofReal (ε / 4) := by
+    obtain ⟨η, hη, hmul⟩ := ENNReal.exists_nnreal_pos_mul_lt hWt
+      (ENNReal.ofReal_pos.mpr (by positivity : (0 : ℝ) < ε / 4)).ne'
+    exact ⟨η, NNReal.coe_pos.mpr hη, by rw [ENNReal.ofReal_coe_nnreal]; exact hmul.le⟩
   -- Arzelà--Ascoli supplies a finite uniform net for the restricted ball averages.
   obtain ⟨t, htfin, ht⟩ :=
     (hequi.equicontinuous.equicontinuousOn K).exists_finite_approx_of_isCompact
@@ -283,37 +326,8 @@ theorem totallyBounded_of_comp_add_sub_of_unifTight (hp' : p ≠ ∞)
   refine ⟨Subtype.val '' t, htfin.image (fun i : S => (i : Lp F p mu)), fun f hf => ?_⟩
   obtain ⟨j, hjt, hmid⟩ := ht ⟨f, hf⟩
   refine mem_iUnion₂.2 ⟨(j : Lp F p mu), ⟨j, hjt, rfl⟩, ?_⟩
-  set f' : Lp F p mu := (j : Lp F p mu)
-  set A : E → F := ballAverage mu r ⇑f
-  set A' : E → F := ballAverage mu r ⇑f'
-  have _ : AEStronglyMeasurable (⇑f) mu := Lp.aestronglyMeasurable f
-  have _ : AEStronglyMeasurable (⇑f') mu := Lp.aestronglyMeasurable f'
-  have hAm : AEStronglyMeasurable A mu :=
-    (continuous_ballAverage hp hp' (Lp.memLp f) hr).aestronglyMeasurable
-  have hA'm : AEStronglyMeasurable A' mu :=
-    (continuous_ballAverage hp hp' (Lp.memLp f') hr).aestronglyMeasurable
-  -- The three estimates: smoothing, uniform approximation on `K`, and tightness off `K`.
-  have hmain : eLpNorm (⇑f - ⇑f') p mu ≤ ENNReal.ofReal (3 * ε / 4) := by
-    calc eLpNorm (⇑f - ⇑f') p mu
-        ≤ eLpNorm (A - ⇑f) p mu +
-            (ENNReal.ofReal η * W + eLpNorm (A' - ⇑f') p mu) +
-            (eLpNorm (Kᶜ.indicator ⇑f) p mu + eLpNorm (Kᶜ.indicator ⇑f') p mu) :=
-          eLpNorm_sub_le_of_approx_of_dist_bdd_on hp hp' hmeasK hAm hA'm hη.le
-            (fun x hx ↦ (hmid x hx).le)
-      _ ≤ ε₁ + (ENNReal.ofReal (ε / 4) + ε₁) +
-            ((ε₁ + ε₁ + ε₁) + (ε₁ + ε₁ + ε₁)) := by
-          exact add_le_add
-            (add_le_add (by simpa only [A] using hsmooth f hf)
-              (add_le_add hWη (by simpa only [A', f'] using hsmooth (j : Lp F p mu) j.2)))
-            (add_le_add (hRS f hf) (by simpa only [f'] using hRS (j : Lp F p mu) j.2))
-      _ = ENNReal.ofReal (3 * ε / 4) := by
-          simp (disch := positivity) only [ε₁, ← ENNReal.ofReal_add]
-          congr 1
-          ring
-  rw [mem_ball, Lp.dist_def]
-  have := ENNReal.toReal_mono ENNReal.ofReal_ne_top hmain
-  rw [ENNReal.toReal_ofReal (by linarith)] at this
-  linarith
+  exact dist_lt_of_ballAverage_close_on hp hp' measurableSet_closedBall hr hε hη.le
+    (hsmooth f hf) (hsmooth _ j.2) (hRS f hf) (hRS _ j.2) hWη fun x hx ↦ (hmid x hx).le
 
 /-- **Relative compactness in `Lᵖ` under the Fréchet--Kolmogorov hypotheses**: the closure of an
 `Lᵖ`-bounded, uniformly tight family whose translation increments are uniformly small in `Lᵖ` is

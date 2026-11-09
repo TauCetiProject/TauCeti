@@ -32,18 +32,13 @@ permutations transported along injections with disjoint ranges, a fiber-preservi
 carrying one finite family to another with the same equality pattern
 (`TauCeti.exists_perm_apply_eq_of_eq_iff`), the fact that a permutation
 is a single cycle on each of its own orbits, the transport of its cycles along an equivalence of
-types, the relabelling of a two-argument family invariant under a permutation of its first argument
-paired with a map on its second (`Equiv.Perm.apply_inv_eq_comp_of_apply_apply_eq`), transport of
-cycle quotients along conjugating equivalences, and the factorization of an invariant function
-through a map on whose fibres the permutation is a single cycle, and a correction by a power of
-a cycle for a permutation commuting with it. Points over distinct classes of the cycle quotient are
-distinct (`Equiv.Perm.ne_of_sameCycle_out`), every such class is nonempty
+types, transport of cycle quotients along conjugating equivalences, and the factorization of an
+invariant function through a map on whose fibres the permutation is a single cycle, and a correction
+by a power of a cycle for a permutation commuting with it. Points over distinct classes of the cycle
+quotient are distinct (`Equiv.Perm.ne_of_sameCycle_out`), every such class is nonempty
 (`Equiv.Perm.card_sameCycle_out_pos`), and precomposing with `σ` does not change a sum over a
 `σ`-orbit (`Equiv.Perm.sum_filter_sameCycle_comp`). It also identifies functions invariant under a
-permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`); a function
-invariant under a set of permutations is invariant under the subgroup they generate
-(`TauCeti.apply_eq_of_mem_closure`), hence constant when that subgroup acts transitively
-(`TauCeti.apply_eq_apply_of_isPretransitive_closure`). Finally, right
+permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`). Finally, right
 multiplication by `a` is a single cycle on the whole group exactly when `a` generates it
 (`Equiv.isCycleOn_mulRight_univ_iff`). Alternating a signed sum over permutations a second time,
 along a sign-preserving map of permutation groups, multiplies it by the number of permutations
@@ -98,6 +93,20 @@ theorem apply_eq_of_apply_eq (hσ : σ.SameCycle x y) (hf : ∀ z, f (σ z) = f 
     (fun z => congrArg PLift.up (hf z)) k x
   exact congrArg PLift.down (by simpa only [_root_.one_zpow, Equiv.Perm.one_apply] using hmap.symm)
 
+/-- Points in the same permutation cycle have the same minimal period. -/
+theorem minimalPeriod_eq (h : σ.SameCycle x y) :
+    Function.minimalPeriod σ x = Function.minimalPeriod σ y := by
+  apply Function.minimalPeriod_eq_minimalPeriod_iff.mpr
+  intro n
+  have hi : ∀ z, Function.IsPeriodicPt σ n (σ z) ↔ Function.IsPeriodicPt σ n z := by
+    intro z
+    constructor
+    · intro hz
+      simpa only [σ.symm_apply_apply] using
+        hz.map (g := σ.symm) (fun z ↦ by simp)
+    · exact fun hz ↦ hz.apply
+  exact Iff.of_eq (h.apply_eq_of_apply_eq fun z ↦ propext (hi z))
+
 /-- A map intertwining two permutations carries orbits of the first permutation into orbits of
 the second. -/
 theorem map (hσ : σ.SameCycle x y) (hg : ∀ z, g (σ z) = τ (g z)) :
@@ -150,6 +159,12 @@ theorem exists_comp_symm_sub_eq [DecidableEq α] {M : Type*} [AddCommGroup M]
     refine ⟨c + (-1 : ℤ) • Pi.single ((σ ^ (-k - 1 : ℤ)) x) a, ?_⟩
     rw [step, hc, ← Equiv.Perm.mul_apply, ← zpow_one_add, h_exp]
     abel
+
+/-- If `σ` moves only points `≤ m`, every point in the cycle of a point `x` other than `x`
+itself is `≤ m`. -/
+theorem le_of_ne_of_forall_apply_ne_le [LE α] {m : α} (hle : ∀ x, σ x ≠ x → x ≤ m)
+    (h : σ.SameCycle x y) (hxy : x ≠ y) : y ≤ m :=
+  hle y fun hy => hxy (h.eq_of_right hy)
 
 end Equiv.Perm.SameCycle
 
@@ -269,14 +284,6 @@ theorem IsCycleOn.permCongr {σ : Perm α} {β : Type*} (e : α ≃ β) {s : Set
   · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
     exact (sameCycle_permCongr σ e).2 (h.2 hx hy)
 
-/-- If a two-argument family `F` is invariant under applying `σ` to its first argument together
-with `f` to its second, then relabelling the first argument by `σ⁻¹` is the same as precomposing
-every member of the family with `f`. -/
-theorem apply_inv_eq_comp_of_apply_apply_eq {β γ : Sort*} (F : α → β → γ) (f : β → β)
-    (hF : ∀ a b, F (σ a) (f b) = F a b) : (fun a => F (σ⁻¹ a)) = fun a => F a ∘ f := by
-  funext a b
-  simpa using (hF (σ⁻¹ a) b).symm
-
 open _root_.Finset in
 /-- A permutation of a finite type sends as many points from outside `p` into `p` as from
 inside `p` out of it. -/
@@ -341,7 +348,7 @@ def sameCycleQuotientCongr {α β : Type*} (e : α ≃ β)
     sameCycleQuotientCongr e h (Quotient.mk _ x) = Quotient.mk _ (e x) := (rfl)
 
 /-- Identity conjugacy induces identity transport of cycle quotients. -/
-@[simp] theorem Perm.sameCycleQuotientCongr_refl {α : Type*} (σ : Equiv.Perm α) :
+@[simp] theorem sameCycleQuotientCongr_refl {α : Type*} (σ : Equiv.Perm α) :
     sameCycleQuotientCongr (Equiv.refl α) (σ := σ) (by ext x; simp) =
       Equiv.refl _ := by
   ext q
@@ -401,25 +408,6 @@ theorem invariantColouringEquiv_symm_apply (π : Perm α)
     (f : {f : α → σ // f ∘ π = f}) (a : α) :
     (invariantColouringEquiv π).symm f (Quotient.mk _ a) = f.1 a :=
   congrFun (congrArg Subtype.val ((invariantColouringEquiv π).apply_symm_apply f)) a
-
-/-- A function invariant under every permutation in a set `S` is invariant under the whole
-subgroup generated by `S`. -/
-theorem apply_eq_of_mem_closure {β : Type*} {S : Set (Perm α)} {f : α → β}
-    (hS : ∀ g ∈ S, ∀ a, f (g a) = f a) {g : Perm α} (hg : g ∈ Subgroup.closure S) (a : α) :
-    f (g a) = f a := by
-  induction hg using Subgroup.closure_induction generalizing a with
-  | mem g hg => exact hS g hg a
-  | one => rfl
-  | mul g g' _ _ ih ih' => rw [Equiv.Perm.mul_apply, ih, ih']
-  | inv g _ ih => rw [← ih (g⁻¹ a), Perm.inv_def, apply_symm_apply]
-
-/-- A function invariant under every permutation in a set `S` takes a single value when the
-subgroup generated by `S` acts transitively. -/
-theorem apply_eq_apply_of_isPretransitive_closure {β : Type*} {S : Set (Perm α)} {f : α → β}
-    (hS : ∀ g ∈ S, ∀ a, f (g a) = f a)
-    (hconn : MulAction.IsPretransitive (Subgroup.closure S) α) (a b : α) : f a = f b := by
-  obtain ⟨g, rfl⟩ := hconn.exists_smul_eq a b
-  exact (apply_eq_of_mem_closure hS g.2 a).symm
 
 /-- Precomposing a function with a permutation preserves the cardinality of each fiber. -/
 theorem card_filter_comp_perm {ι : Type*} [Fintype α] [DecidableEq ι]

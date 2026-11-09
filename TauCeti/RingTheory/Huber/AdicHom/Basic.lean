@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.Huber.Basic
 
 import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.RingTheory.Huber.RingOfDefinition
-import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
 # Adic homomorphisms of Huber rings
@@ -207,6 +207,7 @@ theorem of_isTateRing [IsHuberRing B] [IsTateRing A]
     (hf : Continuous f) : IsAdicHom f :=
   of_continuous_isOpen_map hf fun _ hI ↦ IsTateRing.isOpen_map_of_isOpen f hI
 
+omit [IsTopologicalRing A] in
 /-- A homomorphism from a discrete Huber ring is adic exactly when its target is discrete. -/
 theorem of_discrete_iff [DiscreteTopology A] :
     IsAdicHom f ↔ DiscreteTopology B := by

@@ -65,15 +65,15 @@ deployment = "cloudflare"
 mode = "hosted"
 url = "https://fleet.taucetiproject.org"
 namespace_build_cap = 20
-pr_order = ["github", "chris", "tauchonki", "yael", "brett", "namespace"]
-staging_order = ["tauchonki", "chris", "yael", "brett", "namespace", "github"]
+pr_order = ["github", "chris", "tauchonki2", "yael", "brett", "namespace"]
+staging_order = ["chris", "yael", "brett", "namespace", "github"]
 
 # Slot counts and CI classes come from the runners each host registers.
 [services.fleet.machines.chris]
 enrollment_name = "chris-server"
 
-[services.fleet.machines.tauchonki]
-machine_id = "11e2756fc11042d798f759410573a935"
+[services.fleet.machines.tauchonki2]
+machine_id = "74773fc7f54d4877add11d80113fe340"
 
 [services.fleet.machines.yael]
 enrollment_name = "yael-server"
@@ -109,10 +109,10 @@ zulip_topic = "Progress logs"
 
 [tools.tools]
 repo="TauCetiProject/TauCetiTools"
-ref="d0bc7f9619c0efbaca6bb88b28cb4e00ab626435"
+ref="4d2579da7cdb5679ab523d281f61c73ffb502f75"
 [tools.review]
 repo="TauCetiProject/TauCetiReview"
-ref="7fd3a39e02c5a16cf7be65508a7ffb2c336dcada"
+ref="6b07b400ba129a0f2771d2d315a410f72d462244"
 [tools.progress]
 repo="TauCetiProject/TauCetiProgress"
 ref="047029660478ea2af4ad8cdfe0c88db0d5d1ca29"

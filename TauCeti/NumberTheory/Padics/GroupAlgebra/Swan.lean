@@ -132,8 +132,8 @@ theorem nonempty_linearEquiv_of_projective_of_tensorRat
     let _ : Module.Projective A XN := hXNp
     let _ : Module.Finite ℤ_[p] XM := .trans A XM
     let _ : Module.Finite ℤ_[p] XN := .trans A XN
-    let _ : Module.Projective ℤ_[p] XM := Module.Projective.trans (S := A)
-    let _ : Module.Projective ℤ_[p] XN := Module.Projective.trans (S := A)
+    let _ : Module.Projective ℤ_[p] XM := .trans A XM
+    let _ : Module.Projective ℤ_[p] XN := .trans A XN
     let ξM := Representation.ofModule' (k := ℤ_[p]) (G := G) XM
     let ξN := Representation.ofModule' (k := ℤ_[p]) (G := G) XN
     rw [Representation.natCard_invariants_eq_pow_finrank_of_bijective p YM XM fM hfM,
@@ -191,10 +191,10 @@ theorem nonempty_linearEquiv_of_projective_of_tensorRat
     have : Module.Finite AC N := .trans A N
     have : Module.Finite AC XM := .trans A XM
     have : Module.Finite AC XN := .trans A XN
-    have : Module.Projective AC M := .trans (S := A)
-    have : Module.Projective AC N := .trans (S := A)
-    have : Module.Projective AC XM := .trans (S := A)
-    have : Module.Projective AC XN := .trans (S := A)
+    have : Module.Projective AC M := .trans A M
+    have : Module.Projective AC N := .trans A N
+    have : Module.Projective AC XM := .trans A XM
+    have : Module.Projective AC XN := .trans A XN
     -- Swan's theorem for `C` identifies `M` and `N` over `ℤ_p[C]`, hence `M₀` and `N₀`.
     obtain ⟨eMN⟩ := nonempty_linearEquiv_of_projective_of_tensorRat_of_not_dvd p
       (by simpa only [C, Nat.card_zpowers] using hg) M N
