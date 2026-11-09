@@ -25,7 +25,7 @@ open MeasureTheory Set
 namespace MeasureTheory
 
 variable {E ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [Finite ι]
+  [MeasurableSpace E] [BorelSpace E]
   {μ : Measure E} [μ.IsAddHaarMeasure] {T : E → E} {T' : E → E →L[ℝ] E} {s : Set E}
 
 /-- The actual coefficient integral is compatible with chart signs, allowing reversing
@@ -39,6 +39,7 @@ theorem integral_image_signed_apply_basis_eq_integral_pullback
     (ω : E → E [⋀^ι]→L[ℝ] ℝ) :
     (∫ y in T '' s, (σtarget y : ℝ) * ω y b ∂μ) =
       ∫ x in s, (σsource x : ℝ) * ((ω (T x)).compContinuousLinearMap (T' x)) b ∂μ := by
+  have := Module.Finite.finite_basis b
   rw [integral_image_eq_integral_abs_det_fderiv_smul μ hs hT hinj]
   apply setIntegral_congr_fun hs
   intro x hx
@@ -58,6 +59,7 @@ theorem integrableOn_image_signed_apply_basis_iff_pullback
     IntegrableOn (fun y ↦ (σtarget y : ℝ) * ω y b) (T '' s) μ ↔
       IntegrableOn (fun x ↦ (σsource x : ℝ) *
         ((ω (T x)).compContinuousLinearMap (T' x)) b) s μ := by
+  have := Module.Finite.finite_basis b
   rw [integrableOn_image_iff_integrableOn_abs_det_fderiv_smul μ hs hT hinj]
   apply integrableOn_congr_fun _ hs
   intro x hx

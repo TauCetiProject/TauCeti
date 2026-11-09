@@ -130,7 +130,7 @@ theorem four_dvd_neg_one_pow_mul_det_add_transpose_sub_det_sub_transpose {k : �
   rw [heval, heval, one_smul, neg_one_smul, add_comm, neg_add_eq_sub] at hq
   rw [hq]
   refine dvd_mul_of_dvd_right
-    (Finset.four_dvd_sum_range_two_mul_add_one k _ (fun i hi ↦ ?_) ?_ fun i ↦ ?_) _
+    (Finset.four_dvd_sum_range_two_mul_add_one k _ (fun i hi ↦ ?_) ?_ fun i _ ↦ ?_) _
   · rw [hc i hi, neg_one_pow_eq_pow_mod_two, neg_one_pow_eq_pow_mod_two (n := k + i)]
     congr 3
     omega

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Process.Predictable
+public import TauCeti.Probability.Process.Predictable.Basic
 public import TauCeti.MeasureTheory.Function.L2Space
 
 /-!

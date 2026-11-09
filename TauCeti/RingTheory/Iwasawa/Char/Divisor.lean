@@ -58,6 +58,8 @@ on the pseudo-null modules.
 * `TauCeti.Iwasawa.charDivisor_quotient_of_height_eq_one`: for a prime `𝔭` of height one,
   `div_A(A ⧸ 𝔭) = [𝔭]`.
 * `TauCeti.Iwasawa.charDivisor_prod`: `div_A` is additive on products.
+* `TauCeti.Iwasawa.charDivisor_torsion_prod`, `TauCeti.Iwasawa.charDivisor_torsion_pi`: the
+  divisor of the torsion submodule is additive on finite products of finitely generated modules.
 * `TauCeti.Iwasawa.charDivisor_quotient_span_singleton_pow`: for a prime element `π` of a
   noetherian domain, `div_A(A ⧸ (π ^ m)) = m [(π)]`.
 * `LinearEquiv.charDivisor_apply_comap`: along a ring isomorphism `σ : A → B`, a `σ`-semilinear
@@ -73,6 +75,8 @@ has characteristic divisor zero, while that of `Λ ⧸ (p)` is positive at the h
 -/
 
 public section
+
+universe u
 
 namespace TauCeti.Iwasawa
 
@@ -309,6 +313,43 @@ theorem charDivisor_prod [IsNoetherianRing A] [Module.Finite A M] [Module.Finite
     charDivisor A (M × N) = charDivisor A M + charDivisor A N :=
   charDivisor_eq_add_of_exact (hM.prod hN) .inl_snd LinearMap.inl_injective
     LinearMap.snd_surjective
+
+/-- The characteristic divisor of the torsion submodule is invariant under linear equivalence. -/
+theorem _root_.LinearEquiv.charDivisor_torsion_eq (e : M ≃ₗ[A] N) :
+    charDivisor A (Submodule.torsion A M) = charDivisor A (Submodule.torsion A N) := by
+  have h : (Submodule.torsion A M).map (e : M →ₗ[A] N) = Submodule.torsion A N :=
+    le_antisymm (Submodule.map_le_iff_le_comap.mpr e.toLinearMap.le_comap_torsion) fun x hx ↦
+      ⟨e.symm x, e.symm.toLinearMap.le_comap_torsion hx, e.apply_symm_apply x⟩
+  exact (e.ofSubmodules _ _ h).charDivisor_eq
+
+/-- The characteristic divisor of the torsion submodule of a product of two finitely generated
+modules over a noetherian ring is the sum of those of the torsion submodules of the factors. -/
+theorem charDivisor_torsion_prod [IsNoetherianRing A] [Module.Finite A M] [Module.Finite A N] :
+    charDivisor A (Submodule.torsion A (M × N)) =
+      charDivisor A (Submodule.torsion A M) + charDivisor A (Submodule.torsion A N) := by
+  rw [(Submodule.torsionProdEquiv A M N).charDivisor_eq,
+    charDivisor_prod Submodule.torsion_isTorsion Submodule.torsion_isTorsion]
+
+/-- The characteristic divisor of the torsion submodule of a finite product of finitely generated
+modules over a noetherian ring is the sum of those of the torsion submodules of the factors. -/
+theorem charDivisor_torsion_pi [IsNoetherianRing A] {ι : Type*} [Fintype ι] (M : ι → Type u)
+    [∀ i, AddCommGroup (M i)] [∀ i, Module A (M i)] [∀ i, Module.Finite A (M i)] :
+    charDivisor A (Submodule.torsion A (∀ i, M i)) =
+      ∑ i, charDivisor A (Submodule.torsion A (M i)) := by
+  -- Reduce to `ι = Fin k`, then split off one factor at a time.
+  suffices h : ∀ (k : ℕ) (M : Fin k → Type u) [∀ i, AddCommGroup (M i)] [∀ i, Module A (M i)]
+      [∀ i, Module.Finite A (M i)], charDivisor A (Submodule.torsion A (∀ i, M i)) =
+        ∑ i, charDivisor A (Submodule.torsion A (M i)) by
+    let e := (Fintype.equivFin ι).symm
+    rw [← (LinearEquiv.piCongrLeft A M e).charDivisor_torsion_eq, h]
+    exact e.sum_comp fun i ↦ charDivisor A (Submodule.torsion A (M i))
+  intro k
+  induction k with
+  | zero => intro M _ _ _; simp
+  | succ k ih =>
+    intro M _ _ _
+    rw [← (Fin.consLinearEquiv A M).charDivisor_torsion_eq, charDivisor_torsion_prod, ih,
+      Fin.sum_univ_succ]
 
 open scoped Pointwise in
 /-- For non-zero-divisors `a` and `b` of a noetherian ring, the characteristic divisor of

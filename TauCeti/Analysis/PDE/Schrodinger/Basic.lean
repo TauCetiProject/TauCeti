@@ -140,6 +140,15 @@ theorem fourier_schrodingerPropagator (t : ℝ) (f : Lp F 2 (volume : Measure E)
       ((memLp_schrodingerSymbol (E := E) t).toLp _ • 𝓕 f : Lp F 2 (volume : Measure E)) :=
   Lp.fourier_fourierMultiplierCLM _ f
 
+/-- On the Fourier side, `S(t)` is pointwise multiplication by `exp(-4π² i t ‖ξ‖²)`, almost
+everywhere. -/
+theorem coeFn_fourier_schrodingerPropagator (t : ℝ) (f : Lp F 2 (volume : Measure E)) :
+    𝓕 (schrodingerPropagator F t f) =ᵐ[volume] fun ξ ↦ schrodingerSymbol t ξ • 𝓕 f ξ := by
+  rw [fourier_schrodingerPropagator]
+  filter_upwards [Lp.coeFn_lpSMul (r := 2) ((memLp_schrodingerSymbol (E := E) t).toLp _) (𝓕 f),
+    (memLp_schrodingerSymbol (E := E) t).coeFn_toLp] with ξ h₁ h₂
+  rw [h₁, Pi.smul_apply', h₂]
+
 /-- `S(0)` is the identity. -/
 @[simp]
 theorem schrodingerPropagator_zero :
