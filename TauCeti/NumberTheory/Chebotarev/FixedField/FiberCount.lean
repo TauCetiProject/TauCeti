@@ -271,17 +271,6 @@ private theorem card_fixedField_frobenius_fiber_mul_orderOf (σ : L ≃ₐ[K] L)
     Ideal.frobenius_fiber_card_mul_orderOf_eq_card_centralizer P.asIdeal R0.1 hR0, hcent,
     Subgroup.card_top, AlgEquiv.card_algEquiv_fixedField_zpowers]
 
-omit [NumberField K] [NumberField L] [IsGalois K L] in
-/-- A prime of `L` over a prime `p` of `K` above which every prime of `L` is unramified is
-unramified over `K`. -/
-private theorem isUnramifiedAt_of_under_eq (p : HeightOneSpectrum (𝓞 K))
-    (hur : ∀ (R : Ideal (𝓞 L)) [R.IsPrime] [R.LiesOver p.asIdeal],
-      Algebra.IsUnramifiedAt (𝓞 K) R)
-    (Q : HeightOneSpectrum (𝓞 L)) (hQp : Q.under (𝓞 K) = p) :
-    Algebra.IsUnramifiedAt (𝓞 K) Q.asIdeal :=
-  haveI : Q.asIdeal.LiesOver p.asIdeal := ⟨(congrArg HeightOneSpectrum.asIdeal hQp).symm⟩
-  hur Q.asIdeal
-
 /-- Below a prime `Q` of `L` over `p` at which `τ`, read over `K`, is an arithmetic Frobenius lies a
 prime of `E = L ^ ⟨σ⟩` in the Frobenius set of the class of `τ`. -/
 private theorem under_mem_frobeniusPrimeSet_fixedField (σ : L ≃ₐ[K] L)
