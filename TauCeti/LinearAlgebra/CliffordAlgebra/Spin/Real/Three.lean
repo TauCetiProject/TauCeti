@@ -84,6 +84,51 @@ theorem coe_realCliffordThreeZeroEvenUnitaryEquivQuaternionUnitary_symm_apply
         CliffordAlgebra.even (realCliffordForm 3 0)) := by
   apply CliffordAlgebra.coe_evenUnitaryGroupEquivUnitaryOfAlgEquiv_symm_apply
 
+/-- A unit quaternion with vanishing `i` and `j` components is the image of a product of two
+unit vectors of `ℝ³`, the first of which is the first basis vector. -/
+private theorem exists_unit_vectors_mapping_to_quaternion_of_imI_eq_zero_of_imJ_eq_zero
+    (q : ℍ[ℝ]) (hq : Quaternion.normSq q = 1) (hi : q.imI = 0) (hj : q.imJ = 0) :
+    ∃ m n : Fin 3 → ℝ,
+      realCliffordForm 3 0 m = 1 ∧ realCliffordForm 3 0 n = 1 ∧
+        realCliffordThreeZeroEvenEquivQuaternion
+          ((CliffordAlgebra.even.ι (realCliffordForm 3 0)).bilin m n) = q := by
+  refine ⟨![1, 0, 0], ![q.re, -q.imK, 0], ?_, ?_, ?_⟩
+  · simp [realCliffordForm_three_zero_apply]
+  · simp [realCliffordForm_three_zero_apply, Quaternion.normSq_def'] at hq ⊢
+    nlinarith
+  · rw [realCliffordThreeZeroEvenEquivQuaternion_ι]
+    ext <;> simp [hi, hj]
+
+/-- A unit quaternion whose `i` and `j` components do not both vanish is the image of a
+product of two unit vectors of `ℝ³`, the first of which lies in the plane of the first two
+basis vectors. -/
+private theorem exists_unit_vectors_mapping_to_quaternion_of_imI_sq_add_imJ_sq_ne_zero
+    (q : ℍ[ℝ]) (hq : Quaternion.normSq q = 1) (h : q.imI ^ 2 + q.imJ ^ 2 ≠ 0) :
+    ∃ m n : Fin 3 → ℝ,
+      realCliffordForm 3 0 m = 1 ∧ realCliffordForm 3 0 n = 1 ∧
+        realCliffordThreeZeroEvenEquivQuaternion
+          ((CliffordAlgebra.even.ι (realCliffordForm 3 0)).bilin m n) = q := by
+  have ht : 0 < q.imI ^ 2 + q.imJ ^ 2 := by positivity
+  set s : ℝ := Real.sqrt (q.imI ^ 2 + q.imJ ^ 2)
+  have hs : 0 < s := Real.sqrt_pos.2 ht
+  have hs2 : s ^ 2 = q.imI ^ 2 + q.imJ ^ 2 := Real.sq_sqrt ht.le
+  refine ⟨![q.imI / s, q.imJ / s, 0],
+    ![(q.re * q.imI + q.imK * q.imJ) / s, (q.re * q.imJ - q.imK * q.imI) / s, s],
+    ?_, ?_, ?_⟩
+  · simp [realCliffordForm_three_zero_apply]
+    field_simp
+    nlinarith
+  · have _ :
+        (q.re * q.imI + q.imK * q.imJ) ^ 2 + (q.re * q.imJ - q.imK * q.imI) ^ 2 =
+          (q.re ^ 2 + q.imK ^ 2) * (q.imI ^ 2 + q.imJ ^ 2) := by
+      ring
+    simp [realCliffordForm_three_zero_apply, Quaternion.normSq_def'] at hq ⊢
+    field_simp
+    nlinarith
+  · rw [realCliffordThreeZeroEvenEquivQuaternion_ι]
+    ext <;> dsimp <;> field_simp <;> (try rw [hs2]) <;> ring
+
+/-- Every unit Hamilton quaternion is the image of a product of two unit vectors of `ℝ³`. -/
 private theorem exists_unit_vectors_mapping_to_quaternion
     (q : ℍ[ℝ]) (hq : Quaternion.normSq q = 1) :
     ∃ m n : Fin 3 → ℝ,
@@ -91,54 +136,10 @@ private theorem exists_unit_vectors_mapping_to_quaternion
         realCliffordThreeZeroEvenEquivQuaternion
           ((CliffordAlgebra.even.ι (realCliffordForm 3 0)).bilin m n) = q := by
   by_cases h : q.imI ^ 2 + q.imJ ^ 2 = 0
-  · have hi : q.imI = 0 := by nlinarith [sq_nonneg q.imI, sq_nonneg q.imJ]
-    have hj : q.imJ = 0 := by nlinarith [sq_nonneg q.imI, sq_nonneg q.imJ]
-    refine ⟨![1, 0, 0], ![q.re, -q.imK, 0], ?_, ?_, ?_⟩
-    · simp [realCliffordForm_three_zero_apply]
-    · simp [realCliffordForm_three_zero_apply, Quaternion.normSq_def'] at hq ⊢
-      nlinarith
-    · rw [realCliffordThreeZeroEvenEquivQuaternion_ι]
-      ext <;> simp [hi, hj]
-  · let t : ℝ := q.imI ^ 2 + q.imJ ^ 2
-    let s : ℝ := Real.sqrt t
-    have ht : 0 < t := by
-      dsimp [t]
-      positivity
-    have hs : 0 < s := Real.sqrt_pos.2 ht
-    have hs2 : s ^ 2 = t := Real.sq_sqrt ht.le
-    dsimp [t] at hs2
-    let m : Fin 3 → ℝ := ![q.imI / s, q.imJ / s, 0]
-    let n : Fin 3 → ℝ :=
-      ![(q.re * q.imI + q.imK * q.imJ) / s,
-        (q.re * q.imJ - q.imK * q.imI) / s, s]
-    refine ⟨m, n, ?_, ?_, ?_⟩
-    · simp [m, realCliffordForm_three_zero_apply]
-      field_simp
-      nlinarith
-    · have _ :
-          (q.re * q.imI + q.imK * q.imJ) ^ 2 +
-              (q.re * q.imJ - q.imK * q.imI) ^ 2 =
-            (q.re ^ 2 + q.imK ^ 2) * (q.imI ^ 2 + q.imJ ^ 2) := by
-        ring
-      simp [n, realCliffordForm_three_zero_apply, Quaternion.normSq_def'] at hq ⊢
-      field_simp
-      nlinarith
-    · rw [realCliffordThreeZeroEvenEquivQuaternion_ι]
-      apply QuaternionAlgebra.ext
-      · dsimp [m, n]
-        field_simp
-        rw [hs2]
-        ring
-      · dsimp [m, n]
-        field_simp
-        ring
-      · dsimp [m, n]
-        field_simp
-        ring
-      · dsimp [m, n]
-        field_simp
-        rw [hs2]
-        ring
+  · exact exists_unit_vectors_mapping_to_quaternion_of_imI_eq_zero_of_imJ_eq_zero q hq
+      (by nlinarith [sq_nonneg q.imI, sq_nonneg q.imJ])
+      (by nlinarith [sq_nonneg q.imI, sq_nonneg q.imJ])
+  · exact exists_unit_vectors_mapping_to_quaternion_of_imI_sq_add_imJ_sq_ne_zero q hq h
 
 private theorem real_spin_three_to_even_unitary_surjective :
     Function.Surjective
