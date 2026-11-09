@@ -38,6 +38,8 @@ in operator norm, and scalar homogeneity.
   `𝕜`-spaces in one universe.
 * `TauCeti.IsSNumberSequence`: Pietsch's axioms (S1)–(S5).
 * `TauCeti.IsStrictSNumberSequence`: the axioms together with the strict normalization (S5′).
+* `TauCeti.IsStrictSNumberSequence.of_id_of_lt_rank`: (S1)–(S4) and (S5′) give a strict s-number
+  sequence, with (S5) derived from (S5′).
 * `TauCeti.IsSNumberSequence.le_nnnorm`: `s T n ≤ ‖T‖`.
 * `TauCeti.IsSNumberSequence.abs_sub_le`: `|s S n - s T n| ≤ ‖S - T‖`.
 * `TauCeti.IsSNumberSequence.continuous`: `T ↦ s T n` is continuous in operator norm.
@@ -48,6 +50,10 @@ in operator norm, and scalar homogeneity.
 * A. Pietsch, *s-Numbers of operators in Banach spaces*, Studia Math. **51** (1974), 201–223, §1.
 * A. Pietsch, *Eigenvalues and s-Numbers*, Cambridge Studies in Advanced Mathematics 13,
   Cambridge University Press (1987), §2.2.
+* M. Ullrich, *Inequalities between s-numbers*, Adv. Oper. Theory **9** (2024), art. 82,
+  Remark 1, for the strict normalization (S5′).
+* M. Ullrich, *Lean-SNumbers*, https://github.com/mario-ullrich/Lean-SNumbers (Apache-2.0),
+  `SNumbers/Basic.lean`: an earlier Lean formalization of the axioms.
 -/
 
 public section
@@ -102,6 +108,37 @@ structure IsStrictSNumberSequence (s : SNumberFamily 𝕜) : Prop
   /-- (S5′) The identity of a space of rank greater than `n` has `n`-th term `1`. -/
   id_of_lt_rank : ∀ {X : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X] {n : ℕ},
     n < Module.rank 𝕜 X → s (ContinuousLinearMap.id 𝕜 X) n = 1
+
+/-- Build a strict s-number sequence from (S1)–(S4) and the strict normalization (S5′); the
+normalization (S5) follows from (S5′) since `ℓ₂^{n+1}` has rank `n + 1`. -/
+theorem IsStrictSNumberSequence.of_id_of_lt_rank {s : SNumberFamily 𝕜}
+    (apply_zero : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+      [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (T : X →L[𝕜] Y), s T 0 = ‖T‖₊)
+    (antitone : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+      [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (T : X →L[𝕜] Y), Antitone (s T))
+    (add_le : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+      [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (S T : X →L[𝕜] Y) (n : ℕ),
+      s (S + T) n ≤ s S n + ‖T‖₊)
+    (comp_comp_le : ∀ {W X Y Z : Type u} [NormedAddCommGroup W] [NormedSpace 𝕜 W]
+      [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+      [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+      (B : Y →L[𝕜] Z) (T : X →L[𝕜] Y) (A : W →L[𝕜] X) (n : ℕ),
+      s (B ∘L T ∘L A) n ≤ ‖B‖₊ * s T n * ‖A‖₊)
+    (eq_zero_of_rank_le : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+      [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (T : X →L[𝕜] Y) {n : ℕ},
+      T.rank ≤ n → s T n = 0)
+    (id_of_lt_rank : ∀ {X : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X] {n : ℕ},
+      n < Module.rank 𝕜 X → s (ContinuousLinearMap.id 𝕜 X) n = 1) :
+    IsStrictSNumberSequence s where
+  apply_zero := apply_zero
+  antitone := antitone
+  add_le := add_le
+  comp_comp_le := comp_comp_le
+  eq_zero_of_rank_le := eq_zero_of_rank_le
+  id_euclideanSpace n := id_of_lt_rank <| by
+    rw [(WithLp.linearEquiv 2 𝕜 (Fin (n + 1) → 𝕜)).rank_eq, rank_fin_fun]
+    exact_mod_cast n.lt_succ_self
+  id_of_lt_rank := id_of_lt_rank
 
 namespace IsSNumberSequence
 
