@@ -23,6 +23,9 @@ functor
 where `S` is an `R`-algebra through `f` and `s ⊗ l` acts by `s' ⊗ n ↦ (s * s') ⊗ ((1 ⊗ l) • n)`
 (`TauCeti.CoefficientBaseChange.module`). It is additive, and semilinear along `f` on morphisms:
 `(moduleCatBaseChange Λ f).map (r • φ) = f r • (moduleCatBaseChange Λ f).map φ`.
+The algebra maps `f ⊗ id : R ⊗[k] Λ → S ⊗[k] Λ` compose along composites of coefficient maps
+(`CommAlgCat.tensorProductMap_comp_apply`), and `R ⊗[k] Λ` acts on `S ⊗[R] N` through them:
+`(f ⊗ id) z • (s ⊗ n) = s ⊗ (z • n)` (`CommAlgCat.tensorProductMap_smul_moduleCatBaseChangeTmul`).
 
 The base change along `𝟙 R` is isomorphic to the identity by `r ⊗ n ↦ r • n`, and the base
 change along a composite is isomorphic to the composite of the base changes by
@@ -226,6 +229,39 @@ lemma moduleCatBaseChange_map_smul (f : R ⟶ S) {N N' : ModuleCat.{u} (R ⊗[k]
   -- through `algebraMap S (S ⊗[k] Λ)`; the two actions agree by `algebraMap_smul`.
   exact LinearMap.ext fun x ↦
     (algebraMap_smul (S ⊗[k] Λ) (f.hom r) (CoefficientBaseChange.map k Λ S φ.hom x)).symm
+
+/-- An element of `R ⊗[k] Λ` acts on a base change through its image in `S ⊗[k] Λ`:
+`(f ⊗ id) z • (s ⊗ n) = s ⊗ (z • n)`. -/
+lemma tensorProductMap_smul_moduleCatBaseChangeTmul (f : R ⟶ S) {N : ModuleCat.{u} (R ⊗[k] Λ)}
+    (z : R ⊗[k] Λ) (s : S) (n : N) :
+    Algebra.TensorProduct.map f.hom (AlgHom.id k Λ) z • moduleCatBaseChangeTmul Λ f s n =
+      moduleCatBaseChangeTmul Λ f s (z • n) := by
+  induction z using TensorProduct.inductionOn with
+  | tmul r l =>
+    -- `f r ⊗ l` acts by `s ⊗ ((1 ⊗ l) • n) ↦ s ⊗ (r • (1 ⊗ l) • n)`, and `r • (1 ⊗ l) = r ⊗ l`.
+    rw [Algebra.TensorProduct.map_tmul, AlgHom.id_apply, tmul_smul_moduleCatBaseChangeTmul,
+      moduleCatBaseChangeTmul_smul, ← smul_assoc, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+  | add z z' hz hz' => rw [map_add, add_smul, add_smul, hz, hz', moduleCatBaseChangeTmul_add_right]
+
+/-- The algebra map `R ⊗[k] Λ → T ⊗[k] Λ` induced by a composite `f ≫ g` is the composite of
+the algebra maps induced by `f` and `g`. -/
+lemma tensorProductMap_comp_apply {T : CommAlgCat.{u} k} {f : R ⟶ S} {g : S ⟶ T} {fg : R ⟶ T}
+    (hfg : f ≫ g = fg) (x : R ⊗[k] Λ) :
+    Algebra.TensorProduct.map fg.hom (AlgHom.id k Λ) x =
+      Algebra.TensorProduct.map g.hom (AlgHom.id k Λ)
+        (Algebra.TensorProduct.map f.hom (AlgHom.id k Λ) x) := by
+  subst hfg
+  rw [hom_comp]
+  exact DFunLike.congr_fun
+    (Algebra.TensorProduct.map_comp g.hom f.hom (AlgHom.id k Λ) (AlgHom.id k Λ)) x
+
+/-- The scalars of `S` act on a base change by multiplication in the first factor. -/
+lemma algebraMap_smul_moduleCatBaseChangeTmul (f : R ⟶ S) {N : ModuleCat.{u} (R ⊗[k] Λ)}
+    (s s' : S) (n : N) :
+    algebraMap S (S ⊗[k] Λ) s • moduleCatBaseChangeTmul Λ f s' n =
+      moduleCatBaseChangeTmul Λ f (s * s') n := by
+  rw [Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply,
+    tmul_smul_moduleCatBaseChangeTmul, ← Algebra.TensorProduct.one_def, one_smul]
 
 end Functor
 
