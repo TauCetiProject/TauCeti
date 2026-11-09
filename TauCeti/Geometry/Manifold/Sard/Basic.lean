@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Measure
 public import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Analysis.Calculus.Sard.LowDimension
 import TauCeti.Analysis.Calculus.Sard.OutermostStratum
-import TauCeti.Analysis.Calculus.Sard.Scalar
 
 /-!
 # Sard's theorem for maps between manifolds of arbitrary dimensions
@@ -23,19 +22,16 @@ depends on the dimensions.
 
 * If `m < n`, every point is critical and the whole image of a differentiable map is null; here
   `M` and `N` may have boundary or corners.
-* If `m ≤ n + 2`, a `C^k` map with `k > m - n` suffices. This is the sharp regularity of Sard's
-  theorem: Whitney's example shows that a `C¹` function on the plane can have critical values of
-  positive measure.
-* In general, a `C^k` map with `k ≥ m² + 1` suffices, in particular a smooth map.
-* For a real-valued map, `k ≥ m` and `k ≥ 1` suffice in every source dimension.
+* In general, a `C^k` map with `k > m - n` and `k ≥ 1` suffices, in particular a smooth map. This
+  is the sharp regularity of Sard's theorem: Whitney's example shows that a `C¹` function on the
+  plane can have critical values of positive measure.
 
 Each statement only asks for the regularity at the points of a given set `s` of critical points,
 so it applies to maps that are only defined, or only regular, on an open subset of `M`. Except in
 the first case, `M` is boundaryless, in the sense that its model fills `E`.
 
 The proofs read `f` in pairs of extended charts and apply the corresponding theorem for maps
-between normed spaces (`TauCeti.addHaar_image_criticalPoints_eq_zero_of_finrank_le_add_two`,
-`TauCeti.addHaar_image_criticalPoints_eq_zero` and
+between normed spaces (`TauCeti.addHaar_image_criticalPoints_eq_zero` and
 `DifferentiableOn.addHaar_image_eq_zero_of_finrank_lt_finrank`). A countable family of charts
 covers `M` (`TauCeti.isNullSet_image_of_forall_addHaar_image_extChartAt`), and since nullity is
 tested in every chart of `N`, no comparison of target charts is needed. The equal-dimensional
@@ -46,14 +42,10 @@ case, which needs only first derivatives and allows boundary in the source, is
 
 * `TauCeti.isNullSet_image_of_finrank_lt_finrank`: the image of a differentiable map from a
   manifold of smaller dimension is null.
-* `TauCeti.isNullSet_image_of_not_isRegularPoint_of_finrank_le_add_two`: Sard's theorem at the
-  sharp regularity in codimension at most two.
-* `TauCeti.isNullSet_image_of_not_isRegularPoint_of_contMDiffAt`: Sard's theorem at regularity
-  `m² + 1`, for arbitrary dimensions.
+* `TauCeti.isNullSet_image_of_not_isRegularPoint_of_contMDiffAt`: Sard's theorem at the sharp
+  regularity `k > m - n`, `k ≥ 1`, for arbitrary dimensions.
 * `ContMDiff.isNullSet_image_criticalPoints` and `ContMDiff.dense_isRegularValue`: the critical
-  values of a smooth map are null, and its regular values are dense.
-* `ContMDiff.isNullSet_image_criticalPoints_of_real` and
-  `ContMDiff.dense_isRegularValue_of_real`: the scalar forms at regularity `max 1 m`.
+  values of such a map are null, and its regular values are dense.
 
 ## References
 
@@ -150,101 +142,37 @@ private theorem isNullSet_image_of_forall_addHaar_image_criticalPoints (hn : n �
     fun z hz ↦ (key z hz).1)
   exact ⟨hz, (key z hz).2⟩
 
-/-- **Sard's theorem at the sharp regularity, in codimension at most two.** Let `M` be a
-boundaryless Lindelöf manifold modelled on a space of dimension `m` and `N` a manifold modelled on
-a space of dimension `n`, with `m ≤ n + 2`. If `f` is `C^k` at every point of `s` with `k > m - n`,
-and no point of `s` is regular, then `f '' s` is null in `N`. -/
-theorem isNullSet_image_of_not_isRegularPoint_of_finrank_le_add_two
-    (hcodim : finrank ℝ E ≤ finrank ℝ E' + 2)
-    (hk : ((finrank ℝ E - finrank ℝ E' + 1 : ℕ) : ℕ∞ω) ≤ n)
-    (hf : ∀ x ∈ s, ContMDiffAt I J n f x) (hs : ∀ x ∈ s, ¬ IsRegularPoint I J f x) :
-    IsNullSet J (f '' s) :=
-  isNullSet_image_of_forall_addHaar_image_criticalPoints
-    (fun h ↦ by simp [h] at hk)
-    (fun _ _ μ _ hg ↦ addHaar_image_criticalPoints_eq_zero_of_finrank_le_add_two μ hg hcodim hk)
-    hf hs
-
-/-- **Sard's theorem at the sharp regularity, in codimension at most two.** The critical values
-of a `C^k` map from a boundaryless Lindelöf manifold of dimension `m` to a manifold of dimension
-`n ≥ m - 2` form a null set when `k > m - n`. -/
-theorem _root_.ContMDiff.isNullSet_image_criticalPoints_of_finrank_le_add_two
-    (hf : ContMDiff I J n f) (hcodim : finrank ℝ E ≤ finrank ℝ E' + 2)
-    (hk : ((finrank ℝ E - finrank ℝ E' + 1 : ℕ) : ℕ∞ω) ≤ n) :
-    IsNullSet J (f '' {x | ¬ IsRegularPoint I J f x}) :=
-  isNullSet_image_of_not_isRegularPoint_of_finrank_le_add_two hcodim hk
-    (fun x _ ↦ hf x) fun _ hx ↦ hx
-
-omit [MeasurableSpace E'] [BorelSpace E'] in
-/-- The regular values of a `C^k` map from a boundaryless Lindelöf manifold of dimension `m` to a
-manifold of dimension `n ≥ m - 2` are dense when `k > m - n`. -/
-theorem _root_.ContMDiff.dense_isRegularValue_of_finrank_le_add_two
-    (hf : ContMDiff I J n f) (hcodim : finrank ℝ E ≤ finrank ℝ E' + 2)
-    (hk : ((finrank ℝ E - finrank ℝ E' + 1 : ℕ) : ℕ∞ω) ≤ n) :
-    Dense {y | IsRegularValue I J f y} := by
-  borelize E'
-  rw [setOf_isRegularValue_eq_compl_image]
-  exact (hf.isNullSet_image_criticalPoints_of_finrank_le_add_two hcodim hk).dense_compl
-
-/-- **Sard's theorem in arbitrary dimensions.** Let `M` be a boundaryless Lindelöf manifold
-modelled on a space of dimension `m`. If `f` is `C^k` at every point of `s` with `k ≥ m² + 1`, and
-no point of `s` is regular, then `f '' s` is null in `N`, whatever the dimension of `N`. -/
+/-- **Sard's theorem.** Let `M` be a boundaryless Lindelöf manifold modelled on a space of
+dimension `m` and `N` a manifold modelled on a space of dimension `n`. If `f` is `C^k` at every
+point of `s` with `k > m - n` and `k ≥ 1`, and no point of `s` is regular, then `f '' s` is null in
+`N`. This is the sharp regularity of Sard's theorem. -/
 theorem isNullSet_image_of_not_isRegularPoint_of_contMDiffAt
-    (hk : ((finrank ℝ E * finrank ℝ E + 1 : ℕ) : ℕ∞ω) ≤ n)
+    (hk : ((finrank ℝ E - finrank ℝ E' + 1 : ℕ) : ℕ∞ω) ≤ n)
     (hf : ∀ x ∈ s, ContMDiffAt I J n f x) (hs : ∀ x ∈ s, ¬ IsRegularPoint I J f x) :
     IsNullSet J (f '' s) :=
   isNullSet_image_of_forall_addHaar_image_criticalPoints
     (fun h ↦ by simp [h] at hk)
     (fun _ _ μ _ hg ↦ addHaar_image_criticalPoints_eq_zero μ hg hk) hf hs
 
-/-- **Sard's theorem for smooth maps.** The critical values of a smooth map from a boundaryless
-Lindelöf manifold with finite-dimensional model to a manifold with finite-dimensional model form
-a null set. The dimensions may differ. -/
-theorem _root_.ContMDiff.isNullSet_image_criticalPoints (hf : ContMDiff I J n f) (hn : ∞ ≤ n) :
+/-- **Sard's theorem.** The critical values of a `C^k` map from a boundaryless Lindelöf manifold
+of dimension `m` to a manifold of dimension `n` form a null set when `k > m - n` and `k ≥ 1`, in
+particular when the map is smooth. -/
+theorem _root_.ContMDiff.isNullSet_image_criticalPoints (hf : ContMDiff I J n f)
+    (hk : ((finrank ℝ E - finrank ℝ E' + 1 : ℕ) : ℕ∞ω) ≤ n) :
     IsNullSet J (f '' {x | ¬ IsRegularPoint I J f x}) :=
-  isNullSet_image_of_not_isRegularPoint_of_contMDiffAt
-    (le_trans (by exact_mod_cast le_top) hn) (fun x _ ↦ hf x) fun _ hx ↦ hx
+  isNullSet_image_of_not_isRegularPoint_of_contMDiffAt hk (fun x _ ↦ hf x) fun _ hx ↦ hx
 
 omit [MeasurableSpace E'] [BorelSpace E'] in
-/-- The regular values of a smooth map from a boundaryless Lindelöf manifold with
-finite-dimensional model to a manifold with finite-dimensional model are dense. -/
-theorem _root_.ContMDiff.dense_isRegularValue (hf : ContMDiff I J n f) (hn : ∞ ≤ n) :
+/-- The regular values of a `C^k` map from a boundaryless Lindelöf manifold of dimension `m` to a
+manifold of dimension `n` are dense when `k > m - n` and `k ≥ 1`, in particular when the map is
+smooth. -/
+theorem _root_.ContMDiff.dense_isRegularValue (hf : ContMDiff I J n f)
+    (hk : ((finrank ℝ E - finrank ℝ E' + 1 : ℕ) : ℕ∞ω) ≤ n) :
     Dense {y | IsRegularValue I J f y} := by
   borelize E'
   rw [setOf_isRegularValue_eq_compl_image]
-  exact (hf.isNullSet_image_criticalPoints hn).dense_compl
+  exact (hf.isNullSet_image_criticalPoints hk).dense_compl
 
 end Boundaryless
-
-section Scalar
-
-variable [I.Boundaryless] {n : ℕ∞ω} [IsManifold I n M] {g : M → ℝ}
-
-/-- **Scalar Morse--Sard on a manifold.** A real-valued map that is `C^n` at each point of a
-set of critical points has null image, if `n ≠ 0` and `finrank ℝ E ≤ n`. The source is a
-boundaryless Lindelöf manifold. No measurability or openness assumption on the set is needed. -/
-theorem isNullSet_image_of_not_isRegularPoint_of_real (hn : n ≠ 0)
-    (hk : (finrank ℝ E : ℕ∞ω) ≤ n)
-    (hg : ∀ x ∈ s, ContMDiffAt I 𝓘(ℝ, ℝ) n g x)
-    (hs : ∀ x ∈ s, ¬ IsRegularPoint I 𝓘(ℝ, ℝ) g x) :
-    IsNullSet 𝓘(ℝ, ℝ) (g '' s) :=
-  isNullSet_image_of_forall_addHaar_image_criticalPoints hn
-    (fun _ _ μ _ hf ↦ addHaar_image_criticalPoints_eq_zero_of_real μ hf hk) hg hs
-
-/-- The critical values of a real-valued `C^n` map on a boundaryless Lindelöf manifold are
-null when `n ≠ 0` and the source dimension is at most `n`. -/
-theorem _root_.ContMDiff.isNullSet_image_criticalPoints_of_real
-    (hg : ContMDiff I 𝓘(ℝ, ℝ) n g) (hn : n ≠ 0) (hk : (finrank ℝ E : ℕ∞ω) ≤ n) :
-    IsNullSet 𝓘(ℝ, ℝ) (g '' {x | ¬ IsRegularPoint I 𝓘(ℝ, ℝ) g x}) :=
-  isNullSet_image_of_not_isRegularPoint_of_real hn hk (fun x _ ↦ hg x) fun _ hx ↦ hx
-
-/-- The regular values of a real-valued `C^n` map on a boundaryless Lindelöf manifold are
-dense when `n ≠ 0` and the source dimension is at most `n`. -/
-theorem _root_.ContMDiff.dense_isRegularValue_of_real
-    (hg : ContMDiff I 𝓘(ℝ, ℝ) n g) (hn : n ≠ 0) (hk : (finrank ℝ E : ℕ∞ω) ≤ n) :
-    Dense {y | IsRegularValue I 𝓘(ℝ, ℝ) g y} := by
-  rw [setOf_isRegularValue_eq_compl_image]
-  exact (hg.isNullSet_image_criticalPoints_of_real hn hk).dense_compl
-
-end Scalar
 
 end TauCeti
