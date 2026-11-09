@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 
 /-!
@@ -270,36 +271,22 @@ section ModelSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- A `Cⁿ` field of continuous linear maps on a normed space, as a `Cⁿ` section of the tangent
-endomorphism bundle of the model manifold. -/
-def endomorphismOfModel (A : V → V →L[ℝ] V) (hA : ContDiff ℝ n A) :
-    ContMDiffSection (modelWithCornersSelf ℝ V) (V →L[ℝ] V) n
-      (fun x : V ↦ TangentSpace (modelWithCornersSelf ℝ V) x →L[ℝ]
-        TangentSpace (modelWithCornersSelf ℝ V) x) :=
-  ⟨A, by
-    intro x
-    rw [contMDiffAt_hom_bundle]
-    refine ⟨contMDiffAt_id, ?_⟩
-    simpa only [inCoordinates_tangent_bundle_core_model_space] using hA.contMDiff x⟩
-
-@[simp]
-theorem endomorphismOfModel_apply (A : V → V →L[ℝ] V) (hA : ContDiff ℝ n A) (x : V) :
-    endomorphismOfModel A hA x = A x := (rfl)
-
 /-- A `Cⁿ` field of continuous linear maps squaring to minus the identity defines a `Cⁿ`
 almost complex structure on the model manifold. The field may depend on the base point. -/
 def ofModel (A : V → V →L[ℝ] V) (hA : ContDiff ℝ n A)
     (hAA : ∀ x v, A x (A x v) = -v) :
     ContMDiffAlmostComplexStructure (modelWithCornersSelf ℝ V) n V where
-  toEndomorphism := endomorphismOfModel A hA
+  toEndomorphism := Manifold.tangentEndomorphismOfModel A hA
   square_neg x := by
     ext v
+    rw [Manifold.tangentEndomorphismOfModel_apply]
     exact hAA x v
 
 @[simp]
 theorem ofModel_toEndomorphism_apply (A : V → V →L[ℝ] V) (hA : ContDiff ℝ n A)
     (hAA : ∀ x v, A x (A x v) = -v) (x : V) :
-    (ofModel A hA hAA).toEndomorphism x = A x := (rfl)
+    (ofModel A hA hAA).toEndomorphism x = A x :=
+  Manifold.tangentEndomorphismOfModel_apply A hA x
 
 /-- On a model manifold, the endomorphism field of a `Cⁿ` structure is a `Cⁿ` map of
 normed spaces. This is the converse to `ofModel`. -/

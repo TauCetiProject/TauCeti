@@ -46,6 +46,8 @@ part of the equivalence; native tangent-frame transitions give coordinate conjug
   between derivatives of maps into and out of `M` involving `J` read in the chart.
 * `TauCeti.SmoothAlmostComplexStructure.inChart_inChart`: it squares to `-1` on the chart target.
 * `TauCeti.SmoothAlmostComplexStructure.inChart_extChartAt_self`: it is `J x` at the chart point.
+* `TauCeti.SmoothAlmostComplexStructure.inChart_modelWithCornersSelf`: on a model space it is the
+  structure's own endomorphism field.
 * `TauCeti.SmoothAlmostComplexStructure.fderivWithin_inChart_apply_apply`: its derivative at the
   chart point anticommutes with `J x`.
 -/
@@ -117,6 +119,7 @@ theorem inChart_neg : (-J).inChart x = -J.inChart x := by
 
 /-- On a normed space viewed as its own model, the chart expression of a structure is its own
 endomorphism field. -/
+@[simp]
 theorem inChart_modelWithCornersSelf {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (J : ContMDiffAlmostComplexStructure 𝓘(ℝ, V) n V) (x z : V) :
     J.inChart x z = J.toEndomorphism z := by
@@ -124,7 +127,6 @@ theorem inChart_modelWithCornersSelf {V : Type*} [NormedAddCommGroup V] [NormedS
   exact inCoordinates_tangent_bundle_core_model_space _ _ _ _ _
 
 /-- The chart expression of a constant structure on its model space is the constant map. -/
-@[simp]
 theorem inChart_const {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     (Jc : V →L[ℝ] V) (hJc : ∀ v, Jc (Jc v) = -v) (x z : V) :
     (const n Jc hJc).inChart x z = Jc := by
@@ -303,6 +305,14 @@ theorem inChart_def (z : E) :
 theorem toContMDiff_inChart (n : ℕ∞) : (J.toContMDiff n).inChart x = J.inChart x := by
   funext z
   rw [ContMDiffAlmostComplexStructure.inChart_def, toContMDiff_toEndomorphism_apply, inChart_def]
+
+/-- On a normed space viewed as its own model, the chart expression of a smooth structure is its
+own endomorphism field. -/
+@[simp]
+theorem inChart_modelWithCornersSelf {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    (J : SmoothAlmostComplexStructure 𝓘(ℝ, V) V) (x z : V) :
+    J.inChart x z = J.toEndomorphism z :=
+  inCoordinates_tangent_bundle_core_model_space _ _ _ _ _
 
 /-- The smooth coordinate field is smooth on its full chart target. -/
 theorem contDiffOn_inChart : ContDiffOn ℝ ∞ (J.inChart x) (extChartAt I x).target := by

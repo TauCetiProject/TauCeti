@@ -44,13 +44,10 @@ namespace SmoothAlmostComplexStructure
 /-- On a complex normed space `V`, for example `ℂⁿ`, the chart expression of multiplication
 by `i` is constantly multiplication by `i`. Via `toContMDiff`, this is a structure of every
 regularity with the same chart expression (`toContMDiff_inChart`). -/
-@[simp]
 theorem inChart_ofComplexManifold_self {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
     (x z : V) :
     (ofComplexManifold V V).inChart x z = Complex.I • ContinuousLinearMap.id ℝ V := by
-  rw [← toContMDiff_inChart _ _ ⊤,
-    ContMDiffAlmostComplexStructure.inChart_modelWithCornersSelf,
-    toContMDiff_toEndomorphism_apply, toEndomorphism_ofComplexManifold]
+  rw [inChart_modelWithCornersSelf, toEndomorphism_ofComplexManifold]
 
 end SmoothAlmostComplexStructure
 
@@ -112,11 +109,11 @@ theorem cutoffField_comp_ne_neg_id {z : ℂ} (hz : 2 ≤ ‖z‖) :
 def cutoffSection :
     ContMDiffSection 𝓘(ℝ, ℂ) (ℂ →L[ℝ] ℂ) ∞
       (fun z : ℂ ↦ TangentSpace 𝓘(ℝ, ℂ) z →L[ℝ] TangentSpace 𝓘(ℝ, ℂ) z) :=
-  endomorphismOfModel cutoffField contDiff_cutoffField
+  Manifold.tangentEndomorphismOfModel cutoffField contDiff_cutoffField
 
 @[simp]
 theorem cutoffSection_apply (z : ℂ) : cutoffSection z = cutoffField z :=
-  endomorphismOfModel_apply _ _ z
+  Manifold.tangentEndomorphismOfModel_apply _ _ z
 
 /-- The smooth cut-off section is not the field of an almost complex structure of any regularity:
 it squares to `-1` on the unit disc, but equals `id` outside radius `2`, and the square identity
