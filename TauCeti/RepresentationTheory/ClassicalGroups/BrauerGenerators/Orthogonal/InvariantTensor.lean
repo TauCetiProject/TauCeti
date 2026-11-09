@@ -22,9 +22,10 @@ The dot product identifies `Rⁿ` with its dual, so an endomorphism of `(Rⁿ)^{
 `2 * k` slots, indexed by the boundary points `Fin k ⊕ Fin k` of a Brauer diagram: the input slots
 `Sum.inl i` and the output slots `Sum.inr j`. This is the linear equivalence
 `TauCeti.boundaryTensorEquiv`, whose value on `f` has the entry `f_(v, u)` at the labelling
-`Sum.elim u v`. Conjugating `f` by the tensor power of a matrix `A` and its transpose is acting by
-`A` on all `2 * k` slots, so `f` commutes with the orthogonal group exactly when its tensor is
-invariant under the diagonal action.
+`Sum.elim u v`. Multiplying `f` by the tensor power of a matrix `A` on the left and of its transpose
+on the right is acting by `A` on all `2 * k` slots. For an orthogonal `A` this is conjugation, so
+`f` commutes with the orthogonal group exactly when its tensor is invariant under the diagonal
+action.
 
 A Brauer diagram `D` gives the **matching tensor** `t_D` of `TauCeti.BrauerDiagram.matchingTensor`:
 the tensor product, over the arcs of `D`, of the copairing `∑ c, e_c ⊗ e_c` placed in the two slots
@@ -47,8 +48,10 @@ the invariants of `O(n)` in the `2 * k`-th tensor power
 * `TauCeti.boundaryTensorEquiv_eq_sum`: the tensor of `f` is `∑ u, e_u ⊗ f e_u`.
 * `TauCeti.boundaryTensorEquiv_dualTensorHom`: the operator `x ↦ ⟨a, x⟩ w` has the tensor `a ⊗ w`,
   so the equivalence is the one induced by the dot product.
-* `TauCeti.boundaryTensorEquiv_piTensorProductMap_comp_comp` and
-  `TauCeti.boundaryTensorEquiv_tensorPower_mul_mul`: conjugation is the action on all the slots.
+* `TauCeti.boundaryTensorEquiv_piTensorProductMap_comp_comp`: multiplying by the tensor powers of
+  a matrix on the outputs and of its transpose on the inputs is the action on all the slots.
+* `TauCeti.boundaryTensorEquiv_tensorPower_mul_mul`: for an element of the orthogonal group,
+  conjugation is the action on all the slots.
 * `TauCeti.boundaryTensorEquiv_mem_invariants_iff`: `f` lies in the commutant of the orthogonal
   group exactly when its tensor is invariant.
 * `TauCeti.BrauerDiagram.reindex_matchingTensor`: permuting the slots permutes the matching tensors.
@@ -194,10 +197,11 @@ private theorem repr_piTensorProductMap (A : Matrix (Fin n) (Fin n) R)
   simpa only [boundaryTensorBasis, Matrix.mulVec, dotProduct, Matrix.kroneckerPower_apply] using
     (congrFun h ℓ).symm
 
-/-- **Conjugation is the action on all the slots.** Conjugating `f` by the tensor power of `A` on
-the outputs and of its transpose on the inputs applies `A` in all `2 * k` slots of the tensor of
-`f`. The inputs carry the transpose because the input slots of the tensor are identified with the
-dual through the dot product. -/
+/-- **Two-sided multiplication is the action on all the slots.** Composing `f` with the tensor power
+of `A` on the outputs and of its transpose on the inputs applies `A` in all `2 * k` slots of the
+tensor of `f`. The inputs carry the transpose because the input slots of the tensor are identified
+with the dual through the dot product. For an orthogonal `A` this is conjugation
+(`TauCeti.boundaryTensorEquiv_tensorPower_mul_mul`). -/
 theorem boundaryTensorEquiv_piTensorProductMap_comp_comp (A : Matrix (Fin n) (Fin n) R)
     (f : Module.End R (⨂[R] _ : Fin k, Fin n → R)) :
     boundaryTensorEquiv R n k
@@ -251,16 +255,6 @@ theorem matchingTensor_eq_sum_tprod (D : BrauerDiagram k) :
   rw [matchingTensor, Finset.sum_subtype (p := D.IsConstantOnArcs) _ (fun m => by simp),
     ← (D.isConstantOnArcsEquiv (ι := Fin n)).symm.sum_comp]
   exact Fintype.sum_congr _ _ fun g => boundaryTensorBasis_apply R n k _
-
-/-- A permutation of the slots carries a labelling constant on the arcs of a diagram to a labelling
-constant on the arcs of the permuted diagram. -/
-private theorem isConstantOnArcs_congr_comp_symm_iff (π : Equiv.Perm (Fin k ⊕ Fin k))
-    (D : BrauerDiagram k) (m : Fin k ⊕ Fin k → Fin n) :
-    IsConstantOnArcs (PerfectMatching.congr π D) (m ∘ π.symm) ↔ D.IsConstantOnArcs m := by
-  rw [isConstantOnArcs_def, isConstantOnArcs_def]
-  refine ⟨fun h x => ?_, fun h x => ?_⟩
-  · simpa [PerfectMatching.congr_val_apply_apply] using h (π x)
-  · simpa [PerfectMatching.congr_val_apply] using h (π.symm x)
 
 /-- **Permuting the slots permutes the matching tensors.** Reindexing the matching tensor of `D` by
 a permutation `π` of the slots gives the matching tensor of the diagram transported along `π`. -/
