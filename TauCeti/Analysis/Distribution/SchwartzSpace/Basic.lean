@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 
@@ -29,6 +30,10 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   for every real `r`.
 * `SchwartzMap.integrable_one_add_norm_smul_sq_rpow_mul_norm`: `⟨c x⟩ ^ m ‖f x‖` is integrable
   against any measure of temperate growth.
+* `SchwartzMap.integrable_norm_iteratedFDeriv`: `‖D^k f x‖` is integrable.
+* `SchwartzMap.integrable_iteratedFDeriv_comp_left`,
+  `SchwartzMap.integral_norm_iteratedFDeriv_comp_left_le`: for a continuous linear map `L`, the
+  derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
   integral of its squared norm does, for a measure charging every nonempty open set.
 * `TauCeti.eq_zero_of_forall_integral_apply_eq_zero`: a continuous operator-valued function that
@@ -149,6 +154,31 @@ theorem integrable_one_add_norm_smul_sq_rpow_mul_norm (c m : ℝ) (f : 𝓢(E, F
     (.of_forall fun x ↦ by
       rw [Real.norm_of_nonneg (by positivity)]
       exact f.one_add_norm_smul_sq_rpow_mul_norm_le (𝕜 := ℝ) c m μ.integrablePower x)
+
+/-- The norms of the derivatives of a Schwartz function are integrable. -/
+theorem integrable_norm_iteratedFDeriv (f : 𝓢(E, F)) (k : ℕ) :
+    Integrable (fun x ↦ ‖iteratedFDeriv ℝ k f x‖) μ := by
+  simpa only [pow_zero, one_mul] using f.integrable_pow_mul_iteratedFDeriv μ 0 k
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+
+/-- For a Schwartz function `f` and a continuous linear map `L`, the derivatives of `L ∘ f` are
+integrable. -/
+theorem integrable_iteratedFDeriv_comp_left (L : F →L[ℝ] G) (f : 𝓢(E, F)) (k : ℕ) :
+    Integrable (iteratedFDeriv ℝ k (⇑L ∘ ⇑f)) μ :=
+  ((f.integrable_norm_iteratedFDeriv k).const_mul ‖L‖).mono'
+    ((L.contDiff.comp (f.smooth ⊤)).continuous_iteratedFDeriv
+      (mod_cast le_top)).aestronglyMeasurable
+    (.of_forall fun _ ↦ L.norm_iteratedFDeriv_comp_left (f.smooth ⊤).contDiffAt (mod_cast le_top))
+
+/-- For a Schwartz function `f` and a continuous linear map `L`,
+`∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`. -/
+theorem integral_norm_iteratedFDeriv_comp_left_le (L : F →L[ℝ] G) (f : 𝓢(E, F)) (k : ℕ) :
+    ∫ x, ‖iteratedFDeriv ℝ k (⇑L ∘ ⇑f) x‖ ∂μ ≤ ‖L‖ * ∫ x, ‖iteratedFDeriv ℝ k f x‖ ∂μ := by
+  rw [← integral_const_mul]
+  exact integral_mono_of_nonneg (.of_forall fun _ ↦ norm_nonneg _)
+    ((f.integrable_norm_iteratedFDeriv k).const_mul ‖L‖)
+    (.of_forall fun _ ↦ L.norm_iteratedFDeriv_comp_left (f.smooth ⊤).contDiffAt (mod_cast le_top))
 
 end SchwartzMap
 

@@ -155,7 +155,7 @@ private theorem setIntegral_sq_mul_sub_inner_mul_posPartAbove_le (hlam : 0 < lam
   have hX : Integrable (fun x => ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) (mu.restrict Omega) :=
     (W1p.integrable_norm_gradient_sq w).bdd_mul hψ2 hψ2M
   have hZ : Integrable (fun x => ψ x ^ 2 * W1p.value w x ^ 2) (mu.restrict Omega) :=
-    (W1p.integrable_value_sq w).bdd_mul hψ2 hψ2M
+    (Lp.memLp (W1p.value w)).integrable_sq.bdd_mul hψ2 hψ2M
   have hFw : Integrable (fun x => ψ x ^ 2 * F x * W1p.value w x) (mu.restrict Omega) :=
     ((hF.integrable_mul (Lp.memLp (W1p.value w))).bdd_mul hψ2 hψ2M).congr
       (Eventually.of_forall fun x => by simp only [Pi.mul_apply]; ring)

@@ -17,7 +17,9 @@ measure zero, the pointwise hypotheses supply the almost-everywhere hypotheses o
 convergence theorem. It also records the convergence of integrals against cutoffs
 which equal one on a closed ball and are supported in shrinking larger balls, and against cutoffs
 which equal one on balls exhausting a normed space, as well as convergence after removing a
-shrinking neighbourhood of zero from an integrable function vanishing at zero.
+shrinking neighbourhood of zero from an integrable function vanishing at zero, and the convergence
+of interval integrals `∫ Φ(t, y_i(t)) dt` of a continuous function along maps `y_i` with values in
+a compact set which converge pointwise.
 
 ## Main declarations
 
@@ -30,6 +32,11 @@ shrinking neighbourhood of zero from an integrable function vanishing at zero.
   to one on `ball 0 (R i)` with `R i → ∞` tend to the integral over the whole space.
 * `TauCeti.tendsto_integral_abs_gt`: removing a shrinking neighbourhood of zero recovers the
   integral of an integrable function vanishing at zero.
+* `TauCeti.tendsto_intervalIntegral_comp_of_tendsto`: for continuous `Φ`, the integrals
+  `∫_{t₁}^{t₂} Φ(t, y_i(t)) dt` converge when the `y_i` stay in a compact set and converge
+  pointwise.
+* `TauCeti.tendsto_setIntegral_preimage_Ioo_zero`: integrals of an integrable function over the
+  shells `{0 < w < η k}` tend to `0` as `η k` tends to `0`.
 -/
 
 public section
@@ -144,5 +151,47 @@ theorem tendsto_integral_smul_of_eq_one_ball {E F : Type*} [NormedAddCommGroup E
   · refine tendsto_const_nhds.congr' ?_
     filter_upwards [hR.eventually_gt_atTop ‖x‖] with i hi
     rw [hχ1 i x hi, one_smul]
+
+/-- **Dominated convergence for continuous functions of converging maps.** Let `Φ : ℝ × V → E`
+be continuous, and let the maps `y i : ℝ → V` be continuous on `[t₁, t₂]` with values there in a
+compact set `K`. If the `y i` converge pointwise on `[t₁, t₂]` to `x`, then
+`∫_{t₁}^{t₂} Φ(t, y i t) dt` tends to `∫_{t₁}^{t₂} Φ(t, x t) dt`. -/
+theorem tendsto_intervalIntegral_comp_of_tendsto {ι V E : Type*} {l : Filter ι}
+    [l.IsCountablyGenerated] [TopologicalSpace V] [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {Φ : ℝ × V → E} (hΦ : Continuous Φ) {K : Set V} (hK : IsCompact K) {y : ι → ℝ → V}
+    {x : ℝ → V} {t₁ t₂ : ℝ} (hy : ∀ i, ContinuousOn (y i) (uIcc t₁ t₂))
+    (hyK : ∀ i, ∀ t ∈ uIcc t₁ t₂, y i t ∈ K)
+    (hyx : ∀ t ∈ uIcc t₁ t₂, Tendsto (fun i ↦ y i t) l (𝓝 (x t))) :
+    Tendsto (fun i ↦ ∫ t in t₁..t₂, Φ (t, y i t)) l (𝓝 (∫ t in t₁..t₂, Φ (t, x t))) := by
+  obtain ⟨C, hC⟩ := (isCompact_uIcc.prod hK).exists_bound_of_continuousOn hΦ.continuousOn
+  refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence (fun _ ↦ C)
+    (Eventually.of_forall fun i ↦ ?_)
+    (Eventually.of_forall fun i ↦ Eventually.of_forall fun t ht ↦
+      hC _ ⟨uIoc_subset_uIcc ht, hyK i t (uIoc_subset_uIcc ht)⟩)
+    intervalIntegrable_const
+    (Eventually.of_forall fun t ht ↦ (hΦ.tendsto (t, x t)).comp
+      (tendsto_const_nhds.prodMk_nhds (hyx t (uIoc_subset_uIcc ht))))
+  exact ((hΦ.comp_continuousOn (continuousOn_id.prodMk (hy i))).aestronglyMeasurable
+    measurableSet_uIcc).mono_measure (Measure.restrict_mono uIoc_subset_uIcc le_rfl)
+
+/-- **Integrals over shrinking shells vanish.** If `w` is measurable and `η k` tends to `0`,
+then the integral of an integrable `f` over the shells `{0 < w < η k}` tends to `0`, by dominated
+convergence: the indicator of the `k`th shell tends to `0` at every point. -/
+theorem tendsto_setIntegral_preimage_Ioo_zero {α F : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure α} {f : α → F} (hf : Integrable f μ)
+    {w : α → ℝ} (hw : Measurable w) {η : ℕ → ℝ} (hηlim : Tendsto η atTop (𝓝 0)) :
+    Tendsto (fun k ↦ ∫ x in w ⁻¹' Ioo 0 (η k), f x ∂μ) atTop (𝓝 0) := by
+  have hmeas (k : ℕ) : MeasurableSet (w ⁻¹' Ioo 0 (η k)) := hw measurableSet_Ioo
+  have h := tendsto_integral_of_dominated_convergence (μ := μ) (fun x ↦ ‖f x‖)
+    (F := fun k x ↦ (w ⁻¹' Ioo 0 (η k)).indicator f x) (f := fun _ ↦ (0 : F))
+    (fun k ↦ hf.aestronglyMeasurable.indicator (hmeas k)) hf.norm
+    (fun k ↦ .of_forall fun x ↦ norm_indicator_le_norm_self f x) (.of_forall fun x ↦ ?_)
+  · simpa only [integral_indicator (hmeas _), integral_zero] using h
+  · by_cases hx : 0 < w x
+    · refine tendsto_const_nhds.congr' ?_
+      filter_upwards [hηlim.eventually (gt_mem_nhds hx)] with k hk
+      exact (indicator_of_notMem (show x ∉ w ⁻¹' Ioo 0 (η k) from fun h' => h'.2.not_gt hk) f).symm
+    · refine tendsto_const_nhds.congr fun k => ?_
+      exact (indicator_of_notMem (show x ∉ w ⁻¹' Ioo 0 (η k) from fun h' => hx h'.1) f).symm
 
 end TauCeti

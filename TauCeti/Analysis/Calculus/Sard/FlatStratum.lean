@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Topology.MetricSpace.HausdorffDimension
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Flat
 import TauCeti.MeasureTheory.Measure.Haar.Hausdorff
 import TauCeti.MeasureTheory.Measure.LocallyNull
 import TauCeti.Topology.MetricSpace.Holder
@@ -27,7 +28,9 @@ differentiable), neither says anything when the source dimension exceeds the tar
 The argument is the classical one, but the covering estimate is replaced by Hausdorff dimension.
 Iterating the mean value inequality down the tower of derivatives turns the vanishing hypothesis
 into the Taylor-type bound `‖f y - f x‖ ≤ M * ‖y - x‖ ^ (k + 1)`, valid for `x` in the stratum and
-`y` in a convex set on which `‖D^{k+1} f‖ ≤ M`. On the stratum this bound *is* a Hölder condition
+`y` in a convex set on which `‖D^{k+1} f‖ ≤ M`
+(`TauCeti.norm_sub_le_pow_of_iteratedFDeriv_eq_zero`, in
+`TauCeti.Analysis.Calculus.IteratedFDeriv.Flat`). On the stratum this bound *is* a Hölder condition
 with exponent `k + 1`, so Mathlib's `dimH_image_le_of_locally_holder_on` divides the Hausdorff
 dimension of the source by `k + 1`, and `addHaar_eq_zero_of_dimH_lt_finrank` finishes.
 
@@ -49,8 +52,6 @@ the Morse--Sard theorem requires.
 
 ## Main results
 
-* `TauCeti.norm_sub_le_pow_of_iteratedFDeriv_eq_zero`: the Taylor-type estimate obtained from the
-  vanishing of the derivatives of order `1 ≤ i ≤ k` at a point.
 * `TauCeti.holderOnWith_of_iteratedFDeriv_eq_zero`: a map is Hölder of exponent `k + 1` on any set
   of such points inside a convex set with bounded `(k+1)`-st derivative.
 * `TauCeti.dimH_image_le_of_iteratedFDeriv_eq_zero`: such a set has its Hausdorff dimension divided
@@ -87,63 +88,6 @@ variable {E F : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {f : E → F} {k : ℕ} {s : Set E}
-
-/-- The descending induction behind `TauCeti.norm_sub_le_pow_of_iteratedFDeriv_eq_zero`: if the
-derivatives of order `1 ≤ i ≤ k` vanish at `x`, then the derivative of order `k - j` grows at most
-like `‖y - x‖ ^ (j + 1)`. Each step is one application of the mean value inequality along the
-segment from `x` to `y`. -/
-private theorem norm_iteratedFDeriv_sub_le_of_iteratedFDeriv_eq_zero {M : ℝ} {x : E}
-    (hf : ∀ y ∈ s, ContDiffAt ℝ (k + 1 : ℕ) f y) (hs : Convex ℝ s) (hx : x ∈ s)
-    (hM : ∀ y ∈ s, ‖iteratedFDeriv ℝ (k + 1) f y‖ ≤ M)
-    (hzero : ∀ i, 1 ≤ i → i ≤ k → iteratedFDeriv ℝ i f x = 0) :
-    ∀ j ≤ k, ∀ y ∈ s, ‖iteratedFDeriv ℝ (k - j) f y - iteratedFDeriv ℝ (k - j) f x‖
-      ≤ M * ‖y - x‖ ^ (j + 1) := by
-  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM x hx)
-  have hdiff : ∀ i ≤ k, ∀ y ∈ s, DifferentiableAt ℝ (iteratedFDeriv ℝ i f) y := fun i hi y hy ↦
-    (hf y hy).differentiableAt_iteratedFDeriv (mod_cast Nat.lt_succ_of_le hi)
-  intro j
-  induction j with
-  | zero =>
-    intro _ y hy
-    simpa using hs.norm_image_sub_le_of_norm_fderiv_le (fun z hz ↦ hdiff k le_rfl z hz)
-      (fun z hz ↦ by rw [norm_fderiv_iteratedFDeriv]; exact hM z hz) hx hy
-  | succ j ih =>
-    intro hjk y hy
-    have hj : j ≤ k := by omega
-    have hstep : k - (j + 1) + 1 = k - j := by omega
-    have hvanish : ∀ z ∈ s, ‖iteratedFDeriv ℝ (k - j) f z‖ ≤ M * ‖z - x‖ ^ (j + 1) := by
-      intro z hz
-      simpa [hzero (k - j) (by omega) (by omega)] using ih hj z hz
-    have hseg : segment ℝ x y ⊆ s := hs.segment_subset hx hy
-    have hbound : ∀ z ∈ segment ℝ x y,
-        ‖fderiv ℝ (iteratedFDeriv ℝ (k - (j + 1)) f) z‖ ≤ M * ‖y - x‖ ^ (j + 1) := by
-      intro z hz
-      rw [norm_fderiv_iteratedFDeriv, hstep]
-      refine (hvanish z (hseg hz)).trans ?_
-      gcongr
-      exact norm_sub_le_of_mem_segment hz
-    have := (convex_segment x y).norm_image_sub_le_of_norm_fderiv_le
-      (fun z hz ↦ hdiff _ (by omega) z (hseg hz)) hbound (left_mem_segment ℝ x y)
-      (right_mem_segment ℝ x y)
-    calc ‖iteratedFDeriv ℝ (k - (j + 1)) f y - iteratedFDeriv ℝ (k - (j + 1)) f x‖
-        ≤ M * ‖y - x‖ ^ (j + 1) * ‖y - x‖ := this
-      _ = M * ‖y - x‖ ^ (j + 1 + 1) := by rw [mul_assoc, ← pow_succ]
-
-/-- **The Taylor-type estimate on the flat stratum.** If `f` is `C^{k+1}` on a convex set `s` whose
-`(k+1)`-st derivative is bounded by `M`, and if all iterated derivatives of order `1 ≤ i ≤ k`
-vanish at `x ∈ s`, then `f` moves points of `s` by at most `M * ‖y - x‖ ^ (k + 1)`.
-
-No factorials appear because the bound is obtained by applying the mean value inequality `k + 1`
-times rather than by integrating a Taylor remainder. -/
-theorem norm_sub_le_pow_of_iteratedFDeriv_eq_zero {M : ℝ} {x y : E}
-    (hf : ∀ z ∈ s, ContDiffAt ℝ (k + 1 : ℕ) f z) (hs : Convex ℝ s) (hx : x ∈ s) (hy : y ∈ s)
-    (hM : ∀ z ∈ s, ‖iteratedFDeriv ℝ (k + 1) f z‖ ≤ M)
-    (hzero : ∀ i, 1 ≤ i → i ≤ k → iteratedFDeriv ℝ i f x = 0) :
-    ‖f y - f x‖ ≤ M * ‖y - x‖ ^ (k + 1) := by
-  have key := norm_iteratedFDeriv_sub_le_of_iteratedFDeriv_eq_zero hf hs hx hM hzero k le_rfl y hy
-  rw [Nat.sub_self] at key
-  rwa [iteratedFDeriv_zero_eq_comp, comp_apply, comp_apply, ← LinearIsometryEquiv.map_sub,
-    LinearIsometryEquiv.norm_map] at key
 
 /-- **The flat stratum is a Hölder set of exponent `k + 1`.** On a set `A` of points at which all
 iterated derivatives of order `1 ≤ i ≤ k` vanish, sitting inside a convex set `V` on which `f` is
@@ -253,6 +197,51 @@ section SharpMeasure
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace F] [BorelSpace F] {U : Set E}
 
+omit [FiniteDimensional ℝ E] in
+/-- The Hölder estimate on one piece of the partition behind
+`TauCeti.hausdorffMeasure_image_inter_ball_le`: if `T` lies in a ball of radius `δ / 2`, where `δ`
+is a modulus of uniform continuity of `D^{j+1} f` on the closed ball with tolerance `ε`, then the
+`d`-dimensional measure of the image of `s ∩ ball x₀ r ∩ T` is at most `ε ^ d` times the
+`finrank ℝ E`-dimensional measure of `ball x₀ r ∩ T`. -/
+private theorem hausdorffMeasure_image_inter_ball_inter_le [MeasurableSpace E] [BorelSpace E]
+    {j : ℕ} {x₀ c : E} {r d δ : ℝ} {ε : ℝ≥0} {T : Set E} (hU : IsOpen U)
+    (hf : ContDiffOn ℝ (j + 1 : ℕ) f U) (hKU : Metric.closedBall x₀ r ⊆ U)
+    (hzero : ∀ x ∈ s, ∀ i, 1 ≤ i → i ≤ j + 1 → iteratedFDeriv ℝ i f x = 0)
+    (hd : ((j + 1 : ℕ) : ℝ) * d = finrank ℝ E) (hd0 : 0 ≤ d)
+    (hδK : ∀ y ∈ Metric.closedBall x₀ r, ∀ x ∈ Metric.closedBall x₀ r, dist y x < δ →
+      dist (iteratedFDeriv ℝ (j + 1) f y) (iteratedFDeriv ℝ (j + 1) f x) < ε)
+    (hT : T ⊆ Metric.ball c (δ / 2)) :
+    μH[d] (f '' (s ∩ Metric.ball x₀ r ∩ T)) ≤
+      (ε : ℝ≥0∞) ^ d * μH[(finrank ℝ E : ℝ)] (Metric.ball x₀ r ∩ T) := by
+  rcases (s ∩ Metric.ball x₀ r ∩ T).eq_empty_or_nonempty with h | ⟨x₁, hx₁⟩
+  · simp [h]
+  have hhol : HolderOnWith ε ((j : ℝ≥0) + 1) f (s ∩ Metric.ball x₀ r ∩ T) := by
+    refine holderOnWith_of_iteratedFDeriv_eq_zero (V := Metric.ball x₀ r ∩ Metric.ball c (δ / 2))
+      (fun y hy ↦ hf.contDiffAt (hU.mem_nhds (hKU (Metric.ball_subset_closedBall hy.1))))
+      ((convex_ball _ _).inter (convex_ball _ _)) (fun y hy ↦ ?_)
+      (fun y hy ↦ ⟨hy.1.2, hT hy.2⟩)
+      fun x hx i hi1 hij ↦ hzero x hx.1.1 i hi1 (by omega)
+    have hdist : dist y x₁ < δ := by
+      have h1 := hy.2
+      have h2 := hT hx₁.2
+      rw [Metric.mem_ball] at h1 h2
+      calc dist y x₁ ≤ dist y c + dist x₁ c := dist_triangle_right _ _ _
+        _ < δ / 2 + δ / 2 := add_lt_add h1 h2
+        _ = δ := by ring
+    have := hδK y (Metric.ball_subset_closedBall hy.1) x₁
+      (Metric.ball_subset_closedBall hx₁.1.2) hdist
+    rw [hzero x₁ hx₁.1.1 (j + 1) (by omega) le_rfl, dist_zero_right] at this
+    exact this.le
+  have hexp : (((j : ℝ≥0) + 1 : ℝ≥0) : ℝ) * d = finrank ℝ E := by
+    rw [← hd]; push_cast; ring
+  calc μH[d] (f '' (s ∩ Metric.ball x₀ r ∩ T))
+      ≤ (ε : ℝ≥0∞) ^ d * μH[((j : ℝ≥0) + 1 : ℝ≥0) * d] (s ∩ Metric.ball x₀ r ∩ T) :=
+        hhol.hausdorffMeasure_image_le (by positivity) hd0
+    _ ≤ (ε : ℝ≥0∞) ^ d * μH[(finrank ℝ E : ℝ)] (Metric.ball x₀ r ∩ T) := by
+        rw [hexp]
+        gcongr
+        exact inter_subset_right
+
 /-- The covering estimate behind `TauCeti.hausdorffMeasure_image_eq_zero_of_iteratedFDeriv_eq_zero`.
 Let `f` be `C^{j+1}` on an open set containing the closed ball `K` of centre `x₀` and radius `r`,
 and let every derivative of order `1 ≤ i ≤ j + 1` vanish on `s`. For every `ε > 0`, the
@@ -287,43 +276,13 @@ private theorem hausdorffMeasure_image_inter_ball_le [MeasurableSpace E] [BorelS
     intro y
     obtain ⟨n, hn⟩ := Metric.denseRange_iff.1 hc y (δ / 2) (by linarith)
     exact mem_iUnion.2 ⟨n, hn⟩
-  -- On each piece, `f` is Hölder on `s` with constant `ε` and exponent `j + 1`.
-  have hpiece : ∀ n, μH[d] (f '' (s ∩ B ∩ T n)) ≤
-      (ε : ℝ≥0∞) ^ d * μH[(finrank ℝ E : ℝ)] (B ∩ T n) := by
-    intro n
-    rcases (s ∩ B ∩ T n).eq_empty_or_nonempty with h | ⟨x₁, hx₁⟩
-    · simp [h]
-    have hhol : HolderOnWith ε ((j : ℝ≥0) + 1) f (s ∩ B ∩ T n) := by
-      refine holderOnWith_of_iteratedFDeriv_eq_zero (V := B ∩ Metric.ball (c n) (δ / 2))
-        (fun y hy ↦ hf.contDiffAt (hU.mem_nhds (hKU (hBK hy.1))))
-        ((convex_ball _ _).inter (convex_ball _ _)) (fun y hy ↦ ?_)
-        (fun y hy ↦ ⟨hy.1.2, hTsub n hy.2⟩)
-        fun x hx i hi1 hij ↦ hzero x hx.1.1 i hi1 (by omega)
-      have hdist : dist y x₁ < δ := by
-        have h1 := hy.2
-        have h2 := hTsub n hx₁.2
-        rw [Metric.mem_ball] at h1 h2
-        calc dist y x₁ ≤ dist y (c n) + dist x₁ (c n) := dist_triangle_right _ _ _
-          _ < δ / 2 + δ / 2 := add_lt_add h1 h2
-          _ = δ := by ring
-      have := hδK y (hBK hy.1) x₁ (hBK hx₁.1.2) hdist
-      rw [hzero x₁ hx₁.1.1 (j + 1) (by omega) le_rfl, dist_zero_right] at this
-      exact this.le
-    have hexp : (((j : ℝ≥0) + 1 : ℝ≥0) : ℝ) * d = finrank ℝ E := by
-      rw [← hd]; push_cast; ring
-    calc μH[d] (f '' (s ∩ B ∩ T n))
-        ≤ (ε : ℝ≥0∞) ^ d * μH[((j : ℝ≥0) + 1 : ℝ≥0) * d] (s ∩ B ∩ T n) :=
-          hhol.hausdorffMeasure_image_le (by positivity) hd0
-      _ ≤ (ε : ℝ≥0∞) ^ d * μH[(finrank ℝ E : ℝ)] (B ∩ T n) := by
-          rw [hexp]
-          gcongr
-          exact inter_subset_right
   calc μH[d] (f '' (s ∩ B))
       ≤ μH[d] (⋃ n, f '' (s ∩ B ∩ T n)) := by
         refine measure_mono ?_
         rw [← image_iUnion, ← inter_iUnion, hTunion, inter_univ]
     _ ≤ ∑' n, μH[d] (f '' (s ∩ B ∩ T n)) := measure_iUnion_le _
-    _ ≤ ∑' n, (ε : ℝ≥0∞) ^ d * μH[(finrank ℝ E : ℝ)] (B ∩ T n) := tsum_le_tsum hpiece
+    _ ≤ ∑' n, (ε : ℝ≥0∞) ^ d * μH[(finrank ℝ E : ℝ)] (B ∩ T n) := tsum_le_tsum fun n ↦
+      hausdorffMeasure_image_inter_ball_inter_le hU hf hKU hzero hd hd0 hδK (hTsub n)
     _ = (ε : ℝ≥0∞) ^ d * μH[(finrank ℝ E : ℝ)] B := by
         rw [ENNReal.tsum_mul_left, ← measure_iUnion
           (fun m n hmn ↦ ((disjoint_disjointed _ hmn).mono inter_subset_right inter_subset_right))

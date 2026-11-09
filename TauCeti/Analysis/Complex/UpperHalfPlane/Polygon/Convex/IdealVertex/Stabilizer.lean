@@ -63,22 +63,11 @@ private theorem not_locallyFinite_of_coe_conj_smul_eq {j : Fin n} {ξ : OnePoint
     ¬ LocallyFinite fun δ : Γ ↦ (δ : PSL(2, ℝ)) • P.carrier := by
   intro hlf
   -- the powers of `g S g⁻¹` contract towards the fixed point `x₀ = c / (1 - μ)`
+  have hpow (k : ℕ) (z : ℍ) : (((g * S ^ k * g⁻¹) • z : ℍ) : ℂ) =
+      ((c / (1 - μ) : ℝ) : ℂ) + ((μ ^ k : ℝ) : ℂ) * (z - ((c / (1 - μ) : ℝ) : ℂ)) := by
+    rw [← conj_pow]
+    exact coe_pow_smul_eq_of_coe_smul_eq hμ₁.ne hSz k z
   set x₀ : ℝ := c / (1 - μ)
-  have hx₀ : (μ : ℂ) * x₀ + c = x₀ := by
-    have : μ * x₀ + c = x₀ := by
-      simp only [x₀]
-      field_simp [(sub_pos.2 hμ₁).ne']
-      ring
-    exact_mod_cast this
-  have hpow (k : ℕ) (z : ℍ) :
-      (((g * S ^ k * g⁻¹) • z : ℍ) : ℂ) = x₀ + ((μ ^ k : ℝ) : ℂ) * (z - x₀) := by
-    induction k generalizing z with
-    | zero => simp
-    | succ k ih =>
-      rw [show g * S ^ (k + 1) * g⁻¹ = g * S * g⁻¹ * (g * S ^ k * g⁻¹) by group, mul_smul, hSz,
-        ih]
-      push_cast
-      linear_combination hx₀
   -- above some height, `g • P` is the vertical strip of its vertex at `∞`
   have hQ : (g • P).vertex j = .inr ∞ := by rw [vertex_smul, hj, Sum.smul_inr, hg]
   obtain ⟨A, hA⟩ := (atImInfty_mem _).1
@@ -87,9 +76,6 @@ private theorem not_locallyFinite_of_coe_conj_smul_eq {j : Fin n} {ξ : OnePoint
   have huv := (g • P).re_toComplex_vertex_add_one_lt_of_vertex_eq_inr_infty hQ
   -- the point on the left edge of the strip at height `t k = μ⁻ᵏ` is moved to height `1`
   obtain ⟨t, ht⟩ : ∃ t : ℕ → ℝ, t = fun k ↦ μ⁻¹ ^ k := ⟨_, rfl⟩
-  have hμt (k : ℕ) : (μ : ℂ) ^ k * t k = 1 := by
-    have : μ ^ k * t k = 1 := by rw [ht, ← mul_pow, mul_inv_cancel₀ hμ₀.ne', one_pow]
-    exact_mod_cast this
   have ht₀ (k : ℕ) : 0 < t k := by
     rw [ht]
     positivity
@@ -100,16 +86,8 @@ private theorem not_locallyFinite_of_coe_conj_smul_eq {j : Fin n} {ξ : OnePoint
         ⟨by simp [w, u], by simpa [w, u] using huv.le⟩)
   set z₀ : ℍ := ⟨x₀ + Complex.I, by simp⟩
   have hlim : Tendsto (fun k ↦ (g * S ^ k * g⁻¹) • w k) atTop (𝓝 z₀) := by
-    rw [UpperHalfPlane.isEmbedding_coe.tendsto_nhds_iff]
-    have hμk : Tendsto (fun k : ℕ ↦ (x₀ : ℂ) + ((μ ^ k : ℝ) : ℂ) * (u - x₀) + Complex.I)
-        atTop (𝓝 ((x₀ : ℂ) + ((0 : ℝ) : ℂ) * (u - x₀) + Complex.I)) :=
-      (((Complex.continuous_ofReal.tendsto 0).comp
-        (tendsto_pow_atTop_nhds_zero_of_lt_one hμ₀.le hμ₁)).mul_const _ |>.const_add _).add_const _
-    convert hμk using 2 with k
-    · rw [Function.comp_apply, hpow]
-      push_cast
-      linear_combination Complex.I * hμt k
-    · simp [z₀]
+    simpa only [conj_pow] using tendsto_pow_smul_of_coe_smul_eq hμ₀ hμ₁ hSz u w
+      (fun k ↦ by simp [w, ht]) z₀ (by simp [z₀, x₀])
   -- the powers `S ^ k` are pairwise distinct, as `g S^k g⁻¹` moves `i` to height `μ ^ k`
   have him (k : ℕ) : ((g * S ^ k * g⁻¹) • UpperHalfPlane.I).im = μ ^ k := by
     rw [← UpperHalfPlane.coe_im, hpow]
