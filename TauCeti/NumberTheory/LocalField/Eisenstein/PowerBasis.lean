@@ -81,7 +81,9 @@ private theorem finrank_and_norm_of_eisenstein_adjoin_eq_top [Algebra K L]
       hpbdim, Polynomial.coeff_map, hc]
     simp [Algebra.algebraMap_ofSubsemiring_apply]
   refine ⟨(PowerBasis.finrank pb).trans hpbdim, ?_⟩
-  rwa [show Algebra.norm 𝒪[K] ξ = c from Subtype.ext ((coe_norm_integerRing ξ).trans hnorm)]
+  -- Transport the field norm `hnorm` to the norm of the integer ring.
+  have hnormInt : Algebra.norm 𝒪[K] ξ = c := Subtype.ext ((coe_norm_integerRing ξ).trans hnorm)
+  rwa [hnormInt]
 
 private theorem eisenstein_adjoin_eq_top_data [Algebra K L] [ValuativeExtension K L]
     (f : Polynomial 𝒪[K]) (hf : f.IsEisensteinAt 𝓂[K])
