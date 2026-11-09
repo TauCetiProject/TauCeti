@@ -10,12 +10,13 @@ public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Ring.Basic
 
 /-!
-# Polynomials with coefficients in the closed unit ball
+# Uniform coefficient bounds for multivariate polynomials
 
-Over an ultrametric seminormed commutative ring with `‖1‖ ≤ 1`, the multivariate polynomials whose
-coefficients all have norm at most `1` are closed under products and powers: each coefficient of a
-product is a finite sum of products of coefficients, so the ultrametric inequality bounds it by
-`1`.
+Over an ultrametric seminormed commutative ring, uniform bounds on the coefficients of
+multivariate polynomials are submultiplicative: each coefficient of a product is a finite sum of
+products of coefficients, so the ultrametric inequality bounds it by the product of the factors'
+bounds. In particular, if `‖1‖ ≤ 1`, the polynomials whose coefficients all have
+norm at most `1` are closed under products and powers.
 
 This is the estimate that makes substituting such polynomials into restricted power series
 preserve unit-radius restrictedness and not increase the Gauss norm.
@@ -24,8 +25,9 @@ preserve unit-radius restrictedness and not increase the Gauss norm.
 
 * `MvPolynomial.norm_coeff_mul_le` and `MvPolynomial.norm_coeff_pow_le`: uniform coefficient
   bounds multiply under multiplication and exponentiate under powers.
-* `TauCeti.MvPolynomial.norm_coeff_prod_pow_le_one`: a product of powers again has coefficients
-  of norm at most `1`, assuming the bounds only for factors in the exponent's support.
+* `MvPolynomial.norm_coeff_prod_pow_le`: the coefficient bound of a product of powers is the
+  product of the powers of the factors' bounds, assuming the bounds only for factors in the
+  exponent's support.
 
 ## References
 
@@ -59,30 +61,27 @@ theorem norm_coeff_pow_le (p : MvPolynomial σ R) (h1 : ‖(1 : R)‖ ≤ 1) {r 
   | zero =>
     rw [pow_zero, coeff_one]
     split_ifs <;> simp [h1]
-  | succ n ih =>
-    rw [pow_succ]
-    simpa only [pow_succ] using norm_coeff_mul_le _ _ ih hp t
+  | succ n ih => simpa only [pow_succ] using norm_coeff_mul_le _ _ ih hp t
+
+/-- A product of powers of polynomials has a uniform coefficient bound given by the product of
+the corresponding powers of uniform coefficient bounds for its factors, provided `‖1‖ ≤ 1`. Only
+the factors in the exponent's support need coefficient bounds. -/
+theorem norm_coeff_prod_pow_le {τ : Type*} (h1 : ‖(1 : R)‖ ≤ 1) {a : σ → MvPolynomial τ R}
+    {r : σ → ℝ} (d : σ →₀ ℕ) (ha : ∀ s ∈ d.support, ∀ t, ‖(a s).coeff t‖ ≤ r s)
+    (t : τ →₀ ℕ) :
+    ‖(d.prod fun s n ↦ a s ^ n).coeff t‖ ≤ d.prod fun s n ↦ r s ^ n := by
+  classical
+  unfold Finsupp.prod
+  revert ha t
+  induction d.support using Finset.induction_on with
+  | empty =>
+    intro _ t
+    rw [Finset.prod_empty, Finset.prod_empty, coeff_one]
+    split_ifs <;> simp [h1]
+  | insert s S hs ih =>
+    intro ha t
+    rw [Finset.prod_insert hs, Finset.prod_insert hs]
+    exact norm_coeff_mul_le _ _ (norm_coeff_pow_le _ h1 (ha s (Finset.mem_insert_self s S)) _)
+      (ih fun s hs ↦ ha s (Finset.mem_insert_of_mem hs)) t
 
 end MvPolynomial
-
-namespace TauCeti.MvPolynomial
-
-open _root_.MvPolynomial
-
-variable {σ τ R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
-
-/-- Products of powers of polynomials whose coefficients have norm at most `1` again have
-coefficients of norm at most `1`, provided `‖1‖ ≤ 1`. Only the factors in the exponent's support
-need coefficient bounds. -/
-theorem norm_coeff_prod_pow_le_one (h1 : ‖(1 : R)‖ ≤ 1) {a : σ → MvPolynomial τ R}
-    (d : σ →₀ ℕ) (ha : ∀ s ∈ d.support, ∀ t, ‖(a s).coeff t‖ ≤ 1) (t : τ →₀ ℕ) :
-    ‖(d.prod fun s n ↦ a s ^ n).coeff t‖ ≤ 1 := by
-  classical
-  have hone (t : τ →₀ ℕ) : ‖(1 : MvPolynomial τ R).coeff t‖ ≤ 1 := by
-    rw [coeff_one]
-    split_ifs <;> simp [h1]
-  exact Finset.prod_induction _ (fun q : MvPolynomial τ R ↦ ∀ t, ‖q.coeff t‖ ≤ 1)
-    (fun p q hp hq t ↦ by simpa only [one_mul] using norm_coeff_mul_le p q hp hq t) hone
-    (fun s hs t ↦ by simpa only [one_pow] using norm_coeff_pow_le (a s) h1 (ha s hs) _ t) t
-
-end TauCeti.MvPolynomial

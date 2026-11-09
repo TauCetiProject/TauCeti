@@ -56,7 +56,14 @@ arbitrary initial time is recovered by translating the parameter with
   maximal interval, with `maximalIntegralCurve_zero` giving its value at `0`.
 * `IsMIntegralCurveOn.eqOn_maximalIntegralCurve` and
   `IsMIntegralCurveOn.subset_maximalIntegralCurveInterval`: every integral curve through `x` on an
-  open interval around `0` is a restriction of the maximal one.
+  open interval around `0` is a restriction of the maximal one. Their `Ioi` forms apply on
+  open forward rays containing `0`.
+* `IsMIntegralCurveOn.eqOn_maximalIntegralCurve_Ici` and
+  `IsMIntegralCurveOn.Ioi_subset_maximalIntegralCurveInterval_of_Ici`: moving the time origin
+  to any interior time compares a prescribed closed-ray curve with the maximal curve, without
+  requiring a two-sided derivative at the endpoint.
+  `IsMIntegralCurveOn.mapsTo_maximalIntegralCurve_Ici` transfers forward trapping sets, and
+  `IsMIntegralCurveOn.tendsto_maximalIntegralCurve_iff` transfers limits at positive infinity.
 * `exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB` and its `IsGLB` counterpart: a finite
   endpoint of the maximal interval is reached by an open subinterval straddling `0`.
 * `not_mapClusterPt_nhdsLT_maximalIntegralCurve` and
@@ -117,6 +124,32 @@ theorem IsMIntegralCurveOn.subset_maximalIntegralCurveInterval
     (hγ : IsMIntegralCurveOn γ v (Ioo a b)) (h0 : (0 : ℝ) ∈ Ioo a b) (hx : γ 0 = x) :
     Ioo a b ⊆ maximalIntegralCurveInterval v x :=
   fun _ ht ↦ ⟨γ, a, b, hγ, hx, h0, ht⟩
+
+/-- A curve on an open forward ray containing zero supplies existence on that whole ray. -/
+theorem IsMIntegralCurveOn.Ioi_subset_maximalIntegralCurveInterval
+    (hγ : IsMIntegralCurveOn γ v (Ioi a)) (ha : a < 0) (hx : γ 0 = x) :
+    Ioi a ⊆ maximalIntegralCurveInterval v x := by
+  intro t ht
+  have hcurve : IsMIntegralCurveOn γ v (Ioo a (max t 0 + 1)) := hγ.mono fun _ h ↦ h.1
+  exact hcurve.subset_maximalIntegralCurveInterval
+    ⟨ha, by linarith [le_max_right t 0]⟩ hx ⟨ht, by linarith [le_max_left t 0]⟩
+
+/-- Translating a curve on a closed forward ray gives an integral curve on the translated
+open ray. -/
+theorem IsMIntegralCurveOn.comp_add_Ioi_sub_of_Ici
+    (hγ : IsMIntegralCurveOn γ v (Ici a)) (b : ℝ) :
+    IsMIntegralCurveOn (γ ∘ (· + b)) v (Ioi (a - b)) :=
+  (hγ.comp_add b).mono fun t ht ↦ by
+    simp only [mem_ofPred_eq, mem_Ici, mem_Ioi] at *
+    linarith
+
+/-- Moving the time origin to an interior time of a closed forward ray supplies existence on
+the corresponding open ray. -/
+theorem IsMIntegralCurveOn.Ioi_subset_maximalIntegralCurveInterval_of_Ici
+    (hγ : IsMIntegralCurveOn γ v (Ici a)) (hb : a < b) :
+    Ioi (a - b) ⊆ maximalIntegralCurveInterval v (γ b) :=
+  (hγ.comp_add_Ioi_sub_of_Ici b).Ioi_subset_maximalIntegralCurveInterval
+    (by linarith) (by simp)
 
 /-- The maximal interval of existence is open. -/
 theorem isOpen_maximalIntegralCurveInterval : IsOpen (maximalIntegralCurveInterval v x) := by
@@ -266,6 +299,57 @@ theorem IsMIntegralCurveOn.eqOn_maximalIntegralCurve
   rw [heq]
   exact isMIntegralCurveOn_Ioo_eqOn_of_contMDiff_boundaryless h0' hv (hδ.mono hsubδ)
     (hγ.mono hsubγ) (hδx.trans hx.symm) ht'
+
+/-- On an open forward ray containing zero, a prescribed integral curve agrees with the maximal
+curve with the same initial value. -/
+theorem IsMIntegralCurveOn.eqOn_maximalIntegralCurve_Ioi
+    (hγ : IsMIntegralCurveOn γ v (Ioi a))
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    (ha : a < 0) (hx : γ 0 = x) :
+    EqOn (maximalIntegralCurve v x) γ (Ioi a) := by
+  intro t ht
+  have hcurve : IsMIntegralCurveOn γ v (Ioo a (max t 0 + 1)) := hγ.mono fun _ h ↦ h.1
+  exact hcurve.eqOn_maximalIntegralCurve hv
+    ⟨ha, by linarith [le_max_right t 0]⟩ hx ⟨ht, by linarith [le_max_left t 0]⟩
+
+/-- A prescribed curve on a closed forward ray agrees in its interior with the maximal curve
+through any chosen interior time, after translating the time parameter. -/
+theorem IsMIntegralCurveOn.eqOn_maximalIntegralCurve_Ici
+    (hγ : IsMIntegralCurveOn γ v (Ici a))
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (hb : a < b) :
+    EqOn (maximalIntegralCurve v (γ b)) (γ ∘ (· + b)) (Ioi (a - b)) :=
+  (hγ.comp_add_Ioi_sub_of_Ici b).eqOn_maximalIntegralCurve_Ioi hv
+    (by linarith) (by simp)
+
+/-- A set containing a prescribed curve on a closed forward ray also contains the forward
+maximal curve through any of its interior points. -/
+theorem IsMIntegralCurveOn.mapsTo_maximalIntegralCurve_Ici
+    (hγ : IsMIntegralCurveOn γ v (Ici a))
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (hb : a < b)
+    {S : Set M} (hmem : MapsTo γ (Ici a) S) :
+    MapsTo (maximalIntegralCurve v (γ b)) (Ici 0) S := by
+  have heq := hγ.eqOn_maximalIntegralCurve_Ici hv hb
+  intro t ht
+  rw [heq (lt_of_lt_of_le (sub_neg.mpr hb) ht)]
+  exact hmem (by simp only [mem_Ici] at *; linarith)
+
+/-- A curve on a closed forward ray has the same limit at positive infinity as the maximal
+curve through any of its interior points. -/
+theorem IsMIntegralCurveOn.tendsto_maximalIntegralCurve_iff
+    (hγ : IsMIntegralCurveOn γ v (Ici a))
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (hb : a < b) {p : M} :
+    Tendsto (maximalIntegralCurve v (γ b)) atTop (𝓝 p) ↔ Tendsto γ atTop (𝓝 p) := by
+  have heq := hγ.eqOn_maximalIntegralCurve_Ici hv hb
+  constructor
+  · intro hlim
+    apply (hlim.comp (tendsto_atTop_add_const_right atTop (-b) tendsto_id)).congr'
+    filter_upwards [eventually_gt_atTop a] with t ht
+    simpa only [comp_apply, id_eq, neg_add_cancel_right] using
+      heq (x := t + -b) (by simp only [mem_Ioi]; linarith)
+  · intro hlim
+    apply (hlim.comp (tendsto_atTop_add_const_right atTop b tendsto_id)).congr'
+    filter_upwards [eventually_gt_atTop (a - b)] with t ht
+    exact (heq ht).symm
 
 /-- **The maximal integral curve is an integral curve** of `v` on the maximal interval of
 existence. -/
