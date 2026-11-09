@@ -8,9 +8,9 @@ module
 public import Mathlib.Data.Fintype.Perm
 
 public import Mathlib.Algebra.BigOperators.Fin
-public import Mathlib.Algebra.CharZero.Defs
 public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Group.End
+public import Mathlib.Algebra.NeZero
 public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.Data.Fin.VecNotation
@@ -23,6 +23,7 @@ import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Algebra.Field.Basic
 import Mathlib.Algebra.Group.Fin.Basic
 import Mathlib.Tactic.FinCases
+import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
 /-!
@@ -208,7 +209,7 @@ theorem sum_rev_castLE (N k : ℕ) (hk : k ≤ N) :
 
 /-- The Casimir-type sum of the shifted coordinates `b i + 1/2` is the sum for the unshifted
 coordinates `b i` plus a constant independent of `b`. -/
-theorem sum_shift_mul_eq {K : Type*} [Field K] [CharZero K] {N : ℕ} (b : Fin N → K) :
+theorem sum_shift_mul_eq {K : Type*} [Field K] [NeZero (2 : K)] {N : ℕ} (b : Fin N → K) :
     (∑ i : Fin N, (b i + (2 : K)⁻¹) *
       (b i + (2 : K)⁻¹ + (N : K) - 1 - 2 * (i : K))) =
       (∑ i : Fin N, b i * (b i + (N : K) - 2 * (i : K))) +
@@ -216,8 +217,12 @@ theorem sum_shift_mul_eq {K : Type*} [Field K] [CharZero K] {N : ℕ} (b : Fin N
   rw [← Finset.sum_add_distrib]
   apply Finset.sum_congr rfl
   intro i _
-  simp only [one_div]
-  ring
+  have h2 : (2 : K) * 2⁻¹ = 1 := mul_inv_cancel₀ (NeZero.ne 2)
+  have h4 : (4 : K)⁻¹ = 2⁻¹ * 2⁻¹ := by
+    rw [← mul_inv]
+    norm_num
+  rw [one_div, h4]
+  linear_combination (b i - (i : K) + 2⁻¹) * h2
 
 /-- The final partial product is the product of all the entries. -/
 @[to_additive /-- The final partial sum is the sum of all the entries. -/]
