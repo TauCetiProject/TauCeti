@@ -80,9 +80,9 @@ variable {F X : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensi
   [SeminormedAddCommGroup X] [NormedSpace ℝ X]
 
 /-- On a bounded Lipschitz domain, the field selected by `base` is compact as a map from the
-weak-derivative graph space into `Lᵖ(Ω; F)`, for finite-dimensional `F` and `1 ≤ p < ∞`. -/
+weak-derivative graph space into `Lᵖ(Ω; F)`, for finite-dimensional `F` and `1 ≤ p ≤ ∞`. -/
 theorem isCompactOperator_comp_prevL_of_isLipschitzDomainWith
-    (base : X →L[ℝ] Lp F p (volume.restrict (Ω : Set (WithLp 2 (ℝ × E))))) (hp : p ≠ ∞)
+    (base : X →L[ℝ] Lp F p (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))))
     (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
     (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) :
     IsCompactOperator (base.comp (prevL base)) := by
@@ -93,7 +93,7 @@ theorem isCompactOperator_comp_prevL_of_isLipschitzDomainWith
     p (volume.restrict (Ω : Set (WithLp 2 (ℝ × E))))).comp
       ((W1p.valueL (mu := volume) (Omega := Ω) (p := p)).comp (toW1pL base (ℓ i)))
   have hC (i) : IsCompactOperator (C i) :=
-    ((W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hp hΩ hb).comp_clm
+    ((W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hΩ hb).comp_clm
       (toW1pL base (ℓ i))).clm_comp
         ((ContinuousLinearMap.toSpanSingleton ℝ (b i)).compLpL p
           (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))))
