@@ -316,28 +316,32 @@ lemma isOpenImmersion_pushout_desc :
     · refine ⟨Y, pushout.inr f g, inferInstance, hx, ?_⟩
       simpa only [pushout.inr_desc] using (inferInstance : IsOpenImmersion β)
 
-/-- The range of descent from a cartesian open span is the union of its chart ranges. -/
-lemma opensRange_pushout_desc
-    [IsOpenImmersion (pushout.desc α β h.w : pushout f g ⟶ S)] :
-    (pushout.desc α β h.w : pushout f g ⟶ S).opensRange = α.opensRange ⊔ β.opensRange := by
-  apply TopologicalSpace.Opens.ext
-  change Set.range (pushout.desc α β h.w) = Set.range α ∪ Set.range β
+omit [IsOpenImmersion α] [IsOpenImmersion β] in
+/-- Descent from an open span has the union of the chart ranges. -/
+lemma range_pushout_desc (comm : f ≫ α = g ≫ β) :
+    Set.range (pushout.desc α β comm) = Set.range α ∪ Set.range β := by
   calc
-    _ = pushout.desc α β h.w ''
+    _ = pushout.desc α β comm ''
         (Set.range (pushout.inl f g) ∪ Set.range (pushout.inr f g)) := by
       rw [range_pushout_inl_union_range_pushout_inr, Set.image_univ]
-    _ = Set.range (pushout.inl f g ≫ pushout.desc α β h.w) ∪
-        Set.range (pushout.inr f g ≫ pushout.desc α β h.w) := by
+    _ = Set.range (pushout.inl f g ≫ pushout.desc α β comm) ∪
+        Set.range (pushout.inr f g ≫ pushout.desc α β comm) := by
       rw [Set.image_union, ← Set.range_comp, ← Set.range_comp]
-      rfl
+      simp only [Function.comp_def, ← Scheme.Hom.comp_apply]
     _ = _ := by rw [pushout.inl_desc, pushout.inr_desc]
 
 /-- Descent from a covering cartesian open span is an isomorphism. -/
 lemma isIso_pushout_desc (hcover : α.opensRange ⊔ β.opensRange = ⊤) :
     IsIso (pushout.desc α β h.w : pushout f g ⟶ S) := by
   have : IsOpenImmersion (pushout.desc α β h.w) := isOpenImmersion_pushout_desc f g α β h
-  exact isIso_of_isOpenImmersion_of_opensRange_eq_top _
-    ((opensRange_pushout_desc f g α β h).trans hcover)
+  have hcover' : Set.range α ∪ Set.range β = Set.univ := by
+    simpa only [TopologicalSpace.Opens.coe_sup, Scheme.Hom.coe_opensRange,
+      TopologicalSpace.Opens.coe_top] using
+      congrArg (fun U : S.Opens ↦ (U : Set S)) hcover
+  apply isIso_of_isOpenImmersion_of_opensRange_eq_top _
+  apply TopologicalSpace.Opens.ext
+  simpa only [Scheme.Hom.coe_opensRange, TopologicalSpace.Opens.coe_top] using
+    (range_pushout_desc f g α β h.w).trans hcover'
 
 end CartesianDesc
 
@@ -391,10 +395,10 @@ instance isOpenImmersion_pushoutOpensDesc : IsOpenImmersion (pushoutOpensDesc V 
 /-- The image of the pushout of two opens is their union. -/
 @[simp]
 lemma opensRange_pushoutOpensDesc : (pushoutOpensDesc V W).opensRange = V ⊔ W := by
-  have : IsOpenImmersion (pushout.desc V.ι W.ι (isPullback_opens_inf V W).w) :=
-    isOpenImmersion_pushout_desc iV iW V.ι W.ι (isPullback_opens_inf V W)
-  simpa only [pushoutOpensDesc, Scheme.Opens.opensRange_ι] using
-    opensRange_pushout_desc iV iW V.ι W.ι (isPullback_opens_inf V W)
+  apply TopologicalSpace.Opens.ext
+  simpa only [pushoutOpensDesc, Scheme.Hom.coe_opensRange, TopologicalSpace.Opens.coe_sup,
+    Scheme.Opens.range_ι] using
+    range_pushout_desc iV iW V.ι W.ι (isPullback_opens_inf V W).w
 
 /-- A scheme covered by two opens is their pushout along the intersection. -/
 lemma isIso_pushoutOpensDesc (hVW : V ⊔ W = ⊤) : IsIso (pushoutOpensDesc V W) :=
