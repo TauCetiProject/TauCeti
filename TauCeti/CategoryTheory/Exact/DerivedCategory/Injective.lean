@@ -129,7 +129,7 @@ theorem injectivePlus_le_rightOrthogonal : E.injectivePlus ≤ E.acyclicPlus.rig
   obtain ⟨K, hK, ⟨e₁⟩⟩ := (E.homotopyAcyclic_iff _).1 ((E.acyclicPlus_iff X).1 hX)
   obtain ⟨hK⟩ := (E.acyclic_iff K).1 hK
   obtain ⟨φ, hφ⟩ := (HomotopyCategory.quotient C (.up ℤ)).map_surjective (e₁.inv ≫ f.hom ≫ e₂.hom)
-  have h : e₁.inv ≫ f.hom ≫ e₂.hom = 0 := by rw [← hφ, hK.quotient_map_eq_zero hI φ n]
+  have h : e₁.inv ≫ f.hom ≫ e₂.hom = 0 := by rw [← hφ, hK.quotient_map_eq_zero φ hI n]
   ext
   simpa using h
 
