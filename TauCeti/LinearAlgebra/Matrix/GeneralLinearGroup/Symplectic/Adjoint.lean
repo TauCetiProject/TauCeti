@@ -42,10 +42,11 @@ Over `ℝ`, the orthogonal symplectic matrices form the realified unitary group 
 (`TauCeti.GLSymplectic.inf_unitarySubgroup`), a maximal compact subgroup of `Sp(2n, ℝ)`
 (`TauCeti.GLSymplectic.maximal_isCompact_unitarySubgroup`). So the elements of `Ad(Sp(2n, ℝ))`
 that are orthogonal for the Cartan metric are exactly those of `Ad(U(n))`
-(`TauCeti.GLSymplectic.adjointAction_mem_map_GLOrthogonal_subgroupOf_iff`). Since the kernel
-`{±1}` of `Ad` lies in `U(n)`, `Ad⁻¹(Ad(U(n))) = U(n)`
-(`TauCeti.GLSymplectic.comap_map_adjointAction_GLOrthogonal_subgroupOf`), over every commutative
-ring.
+(`TauCeti.GLSymplectic.adjointAction_mem_map_GLOrthogonal_subgroupOf_iff`). Over every
+commutative ring the kernel `{c • 1 | c ^ 2 = 1}` of `Ad` consists of orthogonal matrices, so
+`Ad⁻¹(Ad(Sp ∩ O)) = Sp ∩ O`
+(`TauCeti.GLSymplectic.comap_map_adjointAction_GLOrthogonal_subgroupOf`); over `ℝ` this is
+`Ad⁻¹(Ad(U(n))) = U(n)`.
 
 ## Main definitions
 
@@ -142,8 +143,9 @@ theorem adjointAction_cartanInvolution_apply (A : GLSymplectic l R) (X : sp l R)
       LieAlgebra.Symplectic.cartanInvolution l R (adjointAction l R A X) := by
   ext1
   simp only [coe_adjointAction_apply, LieAlgebra.Symplectic.coe_cartanInvolution,
-    coe_cartanInvolution_inv, coe_cartanInvolution_val, transpose_mul, Matrix.mul_neg,
-    Matrix.neg_mul, Matrix.mul_assoc]
+    coe_cartanInvolution_inv]
+  simp only [coe_cartanInvolution, Matrix.GeneralLinearGroup.coe_inverseTranspose, transpose_mul,
+    Matrix.mul_neg, Matrix.neg_mul, Matrix.mul_assoc]
 
 /-- **The kernel of the adjoint action** consists of the scalar matrices `c • 1` with
 `c ^ 2 = 1`. -/
@@ -232,7 +234,7 @@ theorem killingForm_adjointAction_cartanInvolution_adjointAction (A : GLSymplect
     coe_cartanInvolution_inv_mul]
   -- The inverse of `(θ A)⁻¹ A` is `A⁻¹ θ A = A⁻¹ A⁻ᵀ`.
   simp only [Subgroup.coe_mul, Subgroup.coe_inv, _root_.mul_inv_rev, inv_inv, Units.val_mul,
-    coe_cartanInvolution_val]
+    coe_cartanInvolution, Matrix.GeneralLinearGroup.coe_inverseTranspose]
   -- Both sides are `-(2 n + 2) trace (X A⁻¹ A⁻ᵀ Yᵀ Aᵀ A)`, after cycling `A` in the trace.
   simp only [transpose_mul, transpose_transpose, Matrix.mul_assoc]
   rw [trace_mul_comm ((A : GL (l ⊕ l) K) : Matrix (l ⊕ l) (l ⊕ l) K)]
