@@ -126,12 +126,13 @@ theorem invariantDifferentialDenom_sq :
 
 /-- **The denominator rescaled by `x⁻²`**: for `t ∈ L` with image `x⁻¹` in `F(W)`,
 `2 (y / x²) + a₁ t + a₃ t²` is `(2y + a₁x + a₃) / x²`. -/
-theorem two_mul_genericY_mul_add_algebraMap_eq (L : Type*) [Field L] [Algebra F L]
+theorem two_mul_genericY_mul_add_algebraMap_eq (L : Type*) [CommRing L] [Algebra F L]
     [Algebra L E.FunctionField] [IsScalarTower F L E.FunctionField] {t : L}
-    (ht : algebraMap L E.FunctionField t = (genericX E)⁻¹) (hx : genericX E ≠ 0) :
+    (ht : algebraMap L E.FunctionField t = (genericX E)⁻¹) :
     2 * (genericY E * (genericX E)⁻¹ ^ 2) + algebraMap L E.FunctionField
         (algebraMap F L E.a₁ * t + algebraMap F L E.a₃ * t ^ 2) =
       invariantDifferentialDenom E * (genericX E ^ 2)⁻¹ := by
+  have hx : genericX E ≠ 0 := (transcendental_genericX E).ne_zero
   have hC (c : F) : algebraMap L E.FunctionField (algebraMap F L c) =
       algebraMap F E.FunctionField c :=
     (IsScalarTower.algebraMap_apply F L E.FunctionField c).symm

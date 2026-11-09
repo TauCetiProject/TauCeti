@@ -179,7 +179,7 @@ private theorem differentExponent_le_of_ord_neg (P : Place F W.FunctionField)
         (pow_ne_zero 2 (inv_ne_zero RatFunc.X_ne_zero)), adjoin_genericY_eq_top]
     rwa [map_pow, map_inv₀, hX] at h
   have hu := two_mul_genericY_mul_add_algebraMap_eq W (RatFunc F) (t := RatFunc.X⁻¹)
-    (by rw [map_inv₀, hX]) hx0
+    (by rw [map_inv₀, hX])
   have hx2 : (x ^ 2)⁻¹ ≠ 0 := inv_ne_zero (pow_ne_zero _ hx0)
   have h := Place.differentExponent_le_ord_two_mul_add F (RatFunc F) (P' := P)
     (u := algebraMap F (RatFunc F) W.a₁ * RatFunc.X⁻¹ +
