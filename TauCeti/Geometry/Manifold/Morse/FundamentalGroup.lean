@@ -89,8 +89,8 @@ theorem IsMorse.subsingleton_fundamentalGroup_sublevel_of_subsingleton (hf : IsM
   · -- Across a band without critical points the sublevels are homotopy equivalent.
     obtain ⟨e, -⟩ := exists_sublevelHomotopyEquiv hf.contMDiff hst hcompact
       fun z hz₁ hz₂ hz ↦ hcrit z (mem_criticalPoints_iff_mfderiv_eq_zero.2 hz) ⟨hz₁, hz₂⟩
-    have := hs (e.symm.toFun y)
-    exact (e.symm.fundamentalGroupMulEquiv y).injective.subsingleton
+    have := hs (e.symm y)
+    exact e.symm.subsingleton_fundamentalGroup y
   · -- Across the level `f p`, the upper sublevel deformation retracts onto the lower sublevel
     -- with cells attached along it, one for each critical point of the level, of dimension its
     -- index. None of them has dimension one.
@@ -104,8 +104,8 @@ theorem IsMorse.subsingleton_fundamentalGroup_sublevel_of_subsingleton (hf : IsM
     have hCsub := subsingleton_fundamentalGroup_of_isEmpty_cell_one this hs
     -- The complex is a strong deformation retract of the upper sublevel.
     let e := ContinuousMap.HomotopyEquiv.ofRetraction hC r hr G.toHomotopy
-    have := hCsub (e.symm.toFun y)
-    exact (e.symm.fundamentalGroupMulEquiv y).injective.subsingleton
+    have := hCsub (e.symm y)
+    exact e.symm.subsingleton_fundamentalGroup y
 
 /-- **A compact regular sublevel without critical points of index one has no loops.** Let `f` be a
 Morse function and `b` a regular value of `f` with compact sublevel `{f ≤ b}`, and suppose no

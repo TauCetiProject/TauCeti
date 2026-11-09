@@ -89,7 +89,7 @@ theorem subsingleton_fundamentalGroup_of_isEmpty_cell_one (h₁ : IsEmpty (cell 
     let b : range (inclusion hDC) := ⟨inclusion hAC a, ⟨a, haD⟩, rfl⟩
     have := hD (e.symm b)
     have : Subsingleton (FundamentalGroup (range (inclusion hDC)) b) :=
-      (e.symm.toHomotopyEquiv.fundamentalGroupMulEquiv b).injective.subsingleton
+      e.symm.toHomotopyEquiv.subsingleton_fundamentalGroup b
     exact hγ'.symm.trans (Path.homotopic_refl_of_forall_mem_of_subsingleton (x := b) _
       fun t ↦ ⟨⟨_, hmem t⟩, Subtype.ext (hγ'X t).symm⟩)
   · -- The basepoint is a `0`-cell, an isolated point of the `1`-skeleton.

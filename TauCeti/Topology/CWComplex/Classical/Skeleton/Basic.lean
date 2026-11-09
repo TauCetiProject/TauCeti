@@ -183,7 +183,7 @@ lemma forall_mem_of_subset_skeletonLT_one {B : Set X} (hB : B ⊆ skeletonLT C 1
     ext s
     exact ⟨fun hs ↦ ⟨hγ s, hs⟩, fun hs ↦ hs.2⟩
   have huniv := (isClopen_iff.1 ⟨hclosed, hopen⟩).resolve_left
-    (nonempty_of_mem (show y₀ ∈ γ ⁻¹' B from h₀)).ne_empty
+    (nonempty_of_mem (mem_preimage.mpr h₀)).ne_empty
   exact fun y ↦ (huniv ▸ mem_univ y : y ∈ γ ⁻¹' B)
 
 variable {E : Type*}
