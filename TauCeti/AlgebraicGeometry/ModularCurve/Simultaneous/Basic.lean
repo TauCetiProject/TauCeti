@@ -186,17 +186,6 @@ variable {Q₁ Q₂ : ModuliProblem B} {V V₁ V₂ : EllObj B}
   {R : (P ⊗ (Q₁ ⊗ Q₂)).RepresentableBy V} {R₁ : (P ⊗ Q₁).RepresentableBy V₁}
   {R₂ : (P ⊗ Q₂).RepresentableBy V₂} {a₁ : V ⟶ V₁} {a₂ : V ⟶ V₂}
 
-/-- For a rigid `𝒫`, two arrows `σ τ : X ⟶ Y` of `Ell/B` with the same morphism of bases, with
-`τ` an isomorphism, which pull back some level structure `α ∈ 𝒫(Y)` to the same element, are
-equal: the automorphism `σ ≫ τ⁻¹` of `X` lies over the identity and fixes `τ^* α`. -/
-theorem IsRigid.eq_of_base_eq_of_map_eq (hP : P.IsRigid) {X Y : EllObj B} (σ τ : X ⟶ Y) [IsIso τ]
-    (hb : σ.base = τ.base) (α : P.obj (op Y)) (h : P.map σ.op α = P.map τ.op α) : σ = τ := by
-  rw [← comp_inv_eq_id τ]
-  refine P.isRigid_iff.1 hP _ (by simp [hb]) (P.map τ.op α) ?_
-  have hinv : P.map (inv τ).op (P.map τ.op α) = α := by
-    rw [← Functor.map_comp_apply, ← op_comp, IsIso.inv_hom_id, op_id, Functor.map_id_apply]
-  rw [op_comp, Functor.map_comp_apply, hinv, h]
-
 /-- The elementwise form of `IsRigid.mono_pullback_lift`: two morphisms `x y : T ⟶ V.base` with the
 same composites with the morphisms of bases of `a₁` and of `a₂` are equal. -/
 private theorem IsRigid.eq_of_comp_base_eq (hP : P.IsRigid)
