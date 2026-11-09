@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Group.Basic
 import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Algebra.Ring.Nat
-import Mathlib.Tactic.Ring
 import TauCeti.Data.Nat.Carry
 
 /-!
