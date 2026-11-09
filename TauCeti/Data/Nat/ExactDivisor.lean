@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Data.Finset.SymmDiff
 public import Mathlib.Data.Nat.Factorization.Basic
-import Mathlib.Data.Nat.GCD.BigOperators
 
 /-!
 # Exact divisors of a natural number
@@ -276,6 +275,7 @@ private theorem prodPrimePow_ne_zero : prodPrimePow N s ≠ 0 :=
 
 /-- **The exponents of `∏ p ∈ s, p ^ v_p(N)`:** the full exponent of `N` at the members of `s`,
 and `0` elsewhere. Members of `s` that are not prime factors of `N` contribute `1`. -/
+@[simp]
 theorem factorization_prodPrimePow (q : ℕ) :
     (prodPrimePow N s).factorization q = if q ∈ s then N.factorization q else 0 := by
   rw [prodPrimePow,
@@ -297,6 +297,7 @@ theorem isExactDivisor_prodPrimePow : IsExactDivisor (prodPrimePow N s) N := by
 
 /-- **The prime factors of `∏ p ∈ s, p ^ v_p(N)` are the primes of `N` in `s`**, so distinct
 subsets of `N.primeFactors` cut out distinct exact divisors. -/
+@[simp]
 theorem primeFactors_prodPrimePow : (prodPrimePow N s).primeFactors = s ∩ N.primeFactors := by
   ext q
   simp only [← Nat.support_factorization, Finsupp.mem_support_iff, factorization_prodPrimePow,
