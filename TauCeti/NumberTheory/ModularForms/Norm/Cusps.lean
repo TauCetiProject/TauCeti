@@ -151,12 +151,10 @@ lemma valueAtInfty_quotientFunc_TSL_zpow_smul (f : F) (q : 𝒮ℒ ⧸ 𝒢.subg
       (tendsto_smul_atImInfty (g := Matrix.GeneralLinearGroup.upperRightHom r)
         (by simp [Matrix.GeneralLinearGroup.upperRightHom_apply]))
   have hmap : map (fun τ : ℍ ↦ (-j : ℝ) +ᵥ τ) atImInfty = atImInfty := by
-    refine le_antisymm (hshift _) ?_
     have hid : (fun τ : ℍ ↦ (-j : ℝ) +ᵥ τ) ∘ (fun τ : ℍ ↦ (j : ℝ) +ᵥ τ) = id := by
       ext τ
       simp [vadd_vadd]
-    conv_lhs => rw [← map_id (f := atImInfty), ← hid, ← map_map]
-    exact map_mono (hshift _)
+    exact Filter.map_eq_of_inverse (fun τ : ℍ ↦ (j : ℝ) +ᵥ τ) hid (hshift _) (hshift _)
   have hfun : quotientFunc f (TSL ^ j • q) = quotientFunc f q ∘ fun τ ↦ (-j : ℝ) +ᵥ τ :=
     funext (quotientFunc_TSL_zpow_smul f q j)
   rw [valueAtInfty, valueAtInfty, hfun, limUnder, limUnder, ← map_map, hmap]
