@@ -796,7 +796,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
   have hT : IsCompact T :=
     Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
   have hTS : T ⊆ thricePuncturedSphereReal := fun z hz =>
-    mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
+    mem_thricePuncturedSphereReal_iff.2 (truncation_subset _ hz)
   have hE := hω.integrableOn_floerEnergyDensity_pairOfPantsPerturbation hH hHs hu hT hTS
   have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv
     isOpen_thricePuncturedSphereReal hu stdComplexLineReal stdComplexLineImag
