@@ -7,12 +7,13 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+public import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 public import Mathlib.Analysis.Calculus.SmoothSeries
 
 /-!
 # Smooth extension from a closed real interval
 
-Every smooth map on a nondegenerate closed real interval with values in a complete real
+Every smooth map on a closed real interval with values in a complete real
 normed space admits a globally smooth extension. The proof realizes arbitrary endpoint
 jets by shrinking polynomial cutoffs, then glues the successive derivatives.
 This supplies closed-interval endpoint representatives for reduced-length variations.
@@ -119,7 +120,9 @@ private theorem exists_small_endpointJet (k : ℕ) (A : E) {ε : ℝ} (hε : 0 <
     have hm : (m : ℕ∞ω) ≤ ∞ := WithTop.coe_le_coe.mpr le_top
     have hc : ContDiff ℝ ∞ (fun y : ℝ ↦ φ (r⁻¹ • y)) :=
       hφ.comp ((contDiff_id : ContDiff ℝ ∞ (id : ℝ → ℝ)).const_smul r⁻¹)
-    rw [show f = fun x ↦ r ^ k • φ (r⁻¹ • x) from rfl]
+    -- Real scalar action on ℝ is multiplication; expose the local scaled function.
+    have hfdef : f = (fun x ↦ r ^ k • φ (r⁻¹ • x)) := rfl
+    rw [hfdef]
     rw [iteratedFDeriv_const_smul_apply' (i := m) (a := r ^ k)
       (hc.of_le hm).contDiffAt]
     rw [iteratedFDeriv_comp_const_smul r⁻¹ (hφ.of_le hm)]
@@ -144,6 +147,7 @@ private theorem exists_small_endpointJet (k : ℕ) (A : E) {ε : ℝ} (hε : 0 <
       simpa only [ContinuousAt, mul_zero] using
         hc.continuousAt (x := (0 : ℝ))
     filter_upwards [hc.eventually (endpointJetBase_eventually_eq k A)] with x hx
+    -- The local f is the scaled endpointJetBase, and φ denotes that base.
     change r ^ k • endpointJetBase k A (r⁻¹ * x) = endpointJetPolynomial k A x
     rw [hx]
     unfold endpointJetPolynomial
@@ -198,21 +202,6 @@ end Jets
 section Pasting
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- A tower of functions with the stated successive ordinary derivatives gives a smooth zeroth
-function. -/
-theorem contDiff_of_derivative_tower (F : ℕ → ℝ → E)
-    (hF : ∀ k x, HasDerivAt (F k) (F (k + 1) x) x) : ContDiff ℝ ∞ (F 0) := by
-  have hiter (k : ℕ) : iteratedDeriv k (F 0) = F k := by
-    induction k with
-    | zero => exact iteratedDeriv_zero
-    | succ k ih =>
-      rw [iteratedDeriv_succ, ih]
-      exact funext (fun x ↦ (hF k x).deriv)
-  apply contDiff_of_differentiable_iteratedDeriv (n := ⊤)
-  intro k _
-  rw [hiter k]
-  exact fun x ↦ (hF k x).differentiableAt
 
 /-- Paste left, closed-interval and right derivative towers with the two specified break points. -/
 private def pasteEndpointDerivatives (a b : ℝ) (f l r : ℕ → ℝ → E)
@@ -309,6 +298,7 @@ theorem smooth_pasting_of_matching_endpoint_jets {a b : ℝ} (hab : a < b)
     (fun k ↦ iteratedDerivWithin k f (Icc a b)) (fun k ↦ iteratedDeriv k l)
       (fun k ↦ iteratedDeriv k r)
   have hk (k : ℕ) : (k : ℕ∞ω) < ∞ := by
+    -- ℕ∞ω is a second WithTop; compare the embedded finite order below smoothness.
     change (↑(k : ℕ∞) : ℕ∞ω) < ↑(⊤ : ℕ∞)
     exact WithTop.coe_lt_coe.mpr (WithTop.coe_lt_top k)
   have hF : ∀ k x, HasDerivAt (F k) (F (k + 1) x) x := by
@@ -333,22 +323,27 @@ section Euclidean
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
-/-- A smooth map from a nondegenerate closed real interval to a complete real normed space has a
+/-- A smooth map from a closed real interval to a complete real normed space has a
 globally smooth extension agreeing on the interval. -/
-theorem exists_smooth_extension_Icc {a b : ℝ} (hab : a < b)
+theorem exists_smooth_extension_Icc {a b : ℝ}
     (f : ℝ → E) (hf : ContDiffOn ℝ ∞ f (Icc a b)) :
     ∃ g : ℝ → E, ContDiff ℝ ∞ g ∧ EqOn g f (Icc a b) := by
-  obtain ⟨L, hL, hLa⟩ := exists_smooth_endpoint_jets
-    (fun k ↦ iteratedDerivWithin k f (Icc a b) a)
-  obtain ⟨R, hR, hRb⟩ := exists_smooth_endpoint_jets
-    (fun k ↦ iteratedDerivWithin k f (Icc a b) b)
-  apply smooth_pasting_of_matching_endpoint_jets hab f
-    (fun x ↦ L (x - a)) (fun x ↦ R (x - b)) hf
-    (hL.comp (contDiff_id.sub contDiff_const)) (hR.comp (contDiff_id.sub contDiff_const))
-  · intro k
-    simpa only [iteratedDeriv_comp_sub_const, sub_self] using hLa k
-  · intro k
-    simpa only [iteratedDeriv_comp_sub_const, sub_self] using hRb k
+  by_cases hab : a < b
+  · obtain ⟨L, hL, hLa⟩ := exists_smooth_endpoint_jets
+      (fun k ↦ iteratedDerivWithin k f (Icc a b) a)
+    obtain ⟨R, hR, hRb⟩ := exists_smooth_endpoint_jets
+      (fun k ↦ iteratedDerivWithin k f (Icc a b) b)
+    apply smooth_pasting_of_matching_endpoint_jets hab f
+      (fun x ↦ L (x - a)) (fun x ↦ R (x - b)) hf
+      (hL.comp (contDiff_id.sub contDiff_const)) (hR.comp (contDiff_id.sub contDiff_const))
+    · intro k
+      simpa only [iteratedDeriv_comp_sub_const, sub_self] using hLa k
+    · intro k
+      simpa only [iteratedDeriv_comp_sub_const, sub_self] using hRb k
+  · refine ⟨fun _ ↦ f a, contDiff_const, ?_⟩
+    intro x hx
+    have hxa : x = a := le_antisymm (hx.2.trans (le_of_not_gt hab)) hx.1
+    simp only [hxa]
 
 end Euclidean
 
