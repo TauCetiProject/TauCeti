@@ -7,11 +7,11 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant
-import TauCeti.RingTheory.Nilpotent.ChevalleyCommutator
-import TauCeti.RingTheory.Nilpotent.RootString.Basic
+import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
+import TauCeti.RingTheory.Nilpotent.BaseChangeAction
 
 /-!
-# The Chevalley commutator formula for root strings of length at most three
+# The Chevalley commutator formula when at most one root `iα + jβ` occurs
 
 Let `x_α(u) = ∑ₙ uⁿ ρ(e_α)⁽ⁿ⁾` be the root subgroups of the pinned Chevalley system on a
 Kostant-stable lattice, over a commutative ring of values. For two linearly independent roots
@@ -22,30 +22,25 @@ Kostant-stable lattice, over a commutative ring of values. For two linearly inde
 ```
 
 as a product over the roots `iα + jβ` with `i, j > 0`, in increasing `i + j`. This file proves
-the formula, with coefficients given by the native structure constants `N_{α,β}`, in the
-three cases in which at most two roots `iα + jβ` occur and both have `j = 1`:
+the formula, with coefficients given by the native structure constants `N_{α,β}`, in the two
+cases in which at most one root `iα + jβ` occurs:
 
 * `α + β` is neither a root nor zero: the root subgroups commute;
 * `α + β` is a root but `2α + β` and `α + 2β` are not:
-  `⁅x_α(u), x_β(v)⁆ = x_{α+β}(N_{α,β} u v)`;
-* `α + β` and `2α + β` are roots but `3α + β` and `α + 2β` are not:
-  `⁅x_α(u), x_β(v)⁆ = x_{α+β}(N_{α,β} u v) x_{2α+β}(M_{α,β,2} u² v)`, where
-  `M_{α,β,2} = N_{α,β} N_{α,α+β} / 2` is the integer with `(ad e_α)² e_β / 2 = M_{α,β,2} e_{2α+β}`.
+  `⁅x_α(u), x_β(v)⁆ = x_{α+β}(N_{α,β} u v)`.
 
-The division by two is exact in `ℤ`: by Chevalley's theorem `N_{α,β} = ±(r + 1)` and
-`N_{α,α+β} = ±(r + 2)` for `r` the largest integer with `β - rα` a root. So the formulas hold
-over every commutative ring, in every characteristic. Together with the case `-β = α`, which is
-not a commutator relation, these cover every pair of roots in the simply laced types and every
-pair in the types `B`, `C` and `F₄` up to exchanging `α` and `β`. In type `G₂` they do not cover
-every pair: the `G2` subdirectory of this one gives straightening relations for the short–long
-pairs whose `α`-string through `β` has four roots, and the short–short pairs whose sum is a root,
-for which `2α + β` and `α + 2β` are both roots, are not treated here.
+The formulas hold over every commutative ring, in every characteristic. The two-factor case, in
+which `α + β` and `2α + β` are roots but `3α + β` and `α + 2β` are not, is
+`TauCeti.DynkinType.commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq` in the sibling
+file `DoublyLaced`. Together with the case `-β = α`, which is not a commutator relation, these
+cover every pair of roots in the simply laced types and every pair in the types `B`, `C` and
+`F₄` up to exchanging `α` and `β`. In type `G₂` they do not cover every pair: the `G2`
+subdirectory of this one gives straightening relations for the short–long pairs whose
+`α`-string through `β` has four roots, and the short–short pairs whose sum is a root, for which
+`2α + β` and `α + 2β` are both roots, are not treated here.
 
-The proofs transport the integral exponential identities
-`TauCeti.baseChangeExp_mul_baseChangeExp_of_commutator_eq` and
-`TauCeti.baseChangeExp_mul_baseChangeExp_of_commutator_eq_two_nsmul`, which also give the
-corresponding relations for the numbered Kostant root subgroups in
-`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Commutator.Basic`; here the bracket
+The one-factor formula specializes
+`TauCeti.DynkinType.commutatorElement_chevalleyRootSubgroup_of_lie_eq`; here the bracket
 hypotheses are derived from the root datum rather than assumed.
 
 ## Main results
@@ -54,8 +49,6 @@ hypotheses are derived from the root datum rather than assumed.
   neither a root nor zero commute.
 * `TauCeti.DynkinType.commutatorElement_chevalleyRootSubgroup_of_root_eq_add`: the one-factor
   commutator formula.
-* `TauCeti.DynkinType.commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add`: the
-  two-factor commutator formula along the root string `β`, `α + β`, `2α + β`.
 
 ## References
 
@@ -72,33 +65,7 @@ open scoped commutatorElement
 
 noncomputable section
 
-variable {t : DynkinType} {ht : t.Valid} {α β γ δ : Fin t.numRoots}
-
-/-- The root sums met in the two-factor commutator formula: for `γ = α + β` and `δ = 2α + β`,
-none of `α + δ`, `β + γ` and `β + δ` is a root or zero, provided `3α + β` and `α + 2β` are not
-roots. -/
-private theorem root_add_notMem_range_and_ne_zero_of_root_eq_two_nsmul_add
-    (hγ : (t.simplyConnectedRootDatum ht).root γ =
-      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
-    (hδ : (t.simplyConnectedRootDatum ht).root δ =
-      2 • (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
-    (hα : 3 • (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ∉
-      Set.range (t.simplyConnectedRootDatum ht).root)
-    (hβ : (t.simplyConnectedRootDatum ht).root α + 2 • (t.simplyConnectedRootDatum ht).root β ∉
-      Set.range (t.simplyConnectedRootDatum ht).root) :
-    let P := t.simplyConnectedRootDatum ht
-    (P.root α + P.root δ ∉ Set.range P.root ∧ P.root α + P.root δ ≠ 0) ∧
-      (P.root β + P.root γ ∉ Set.range P.root ∧ P.root β + P.root γ ≠ 0) ∧
-      (P.root β + P.root δ ∉ Set.range P.root ∧ P.root β + P.root δ ≠ 0) := by
-  have := t.isReduced_simplyConnectedRootDatum ht
-  intro P
-  have hαδ : P.root α + P.root δ = 3 • P.root α + P.root β := by rw [hδ]; module
-  have hβγ : P.root β + P.root γ = P.root α + 2 • P.root β := by rw [hγ]; module
-  have hβδ : P.root β + P.root δ = 2 • P.root γ := by rw [hδ, hγ]; module
-  have hne := P.nsmul_root_add_nsmul_root_ne_zero_of_add_mem_range_root ⟨γ, hγ⟩
-  refine ⟨⟨hαδ ▸ hα, by simpa only [hαδ, one_nsmul] using hne 3 1 three_ne_zero⟩,
-    ⟨hβγ ▸ hβ, by simpa only [hβγ, one_nsmul] using hne 1 2 one_ne_zero⟩,
-    ⟨hβδ ▸ P.nsmul_notMem_range_root, by rw [hβδ, hγ, smul_add]; exact hne 2 2 two_ne_zero⟩⟩
+variable {t : DynkinType} {ht : t.Valid} {α β γ : Fin t.numRoots}
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
@@ -155,79 +122,6 @@ theorem commutatorElement_chevalleyRootSubgroup_of_root_eq_add
       (by simpa only [hαγ, one_nsmul] using hne 2 1 two_ne_zero))
     (lie_chevalleySystem_eq_zero (hβγ ▸ hβ)
       (by simpa only [hβγ, one_nsmul] using hne 1 2 one_ne_zero)) A u v
-
-/-- **The two-factor Chevalley commutator formula.** If `γ = α + β` and `δ = 2α + β` are roots
-while `3α + β` and `α + 2β` are not, then over every commutative ring of values
-
-```text
-⁅x_α(u), x_β(v)⁆ = x_γ(N_{α,β} u v) x_δ(M u² v),    M = N_{α,β} N_{α,γ} / 2,
-```
-
-where `M` is the integer with `(ad e_α)² e_β / 2 = M e_δ`; the division is exact. In the types
-`B`, `C` and `F₄` this covers every pair `α ≠ -β` with `2α + β` a root. -/
-theorem commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add
-    (hγ : (t.simplyConnectedRootDatum ht).root γ =
-      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
-    (hδ : (t.simplyConnectedRootDatum ht).root δ =
-      2 • (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
-    (hα : 3 • (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ∉
-      Set.range (t.simplyConnectedRootDatum ht).root)
-    (hβ : (t.simplyConnectedRootDatum ht).root α + 2 • (t.simplyConnectedRootDatum ht).root β ∉
-      Set.range (t.simplyConnectedRootDatum ht).root)
-    (A : CommAlgCat ℤ) (u v : A) :
-    ⁅chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u),
-      chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v)⁆ =
-      chevalleyRootSubgroup ρ M hM hnil γ A
-          (Multiplicative.ofAdd ((t.structureConstant ht α β : A) * (u * v))) *
-        chevalleyRootSubgroup ρ M hM hnil δ A
-          (Multiplicative.ofAdd
-            (((t.structureConstant ht α β * t.structureConstant ht α γ / 2 : ℤ) : A) *
-              (u ^ 2 * v))) := by
-  let P := t.simplyConnectedRootDatum ht
-  let c := t.structureConstant ht α β
-  let d := t.structureConstant ht α β * t.structureConstant ht α γ / 2
-  let E := fun i => ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht i))
-  have hδ' : P.root δ = P.root α + P.root γ := by rw [hδ, hγ]; module
-  obtain ⟨⟨hαδ, hαδ₀⟩, ⟨hβγ, hβγ₀⟩, ⟨hβδ, hβδ₀⟩⟩ :=
-    root_add_notMem_range_and_ne_zero_of_root_eq_two_nsmul_add hγ hδ hα hβ
-  -- The vanishing brackets.
-  have hzαδ : ⁅t.chevalleySystem ht α, t.chevalleySystem ht δ⁆ = 0 :=
-    lie_chevalleySystem_eq_zero hαδ hαδ₀
-  have hzβγ : ⁅t.chevalleySystem ht β, t.chevalleySystem ht γ⁆ = 0 :=
-    lie_chevalleySystem_eq_zero hβγ hβγ₀
-  -- The nonvanishing brackets, scaled so that the coefficient of `e_δ` is twice an integer.
-  have hαβ := lie_chevalleySystem_eq_structureConstant_zsmul hγ
-  have hcαγ : (1 * c) • ⁅t.chevalleySystem ht α, t.chevalleySystem ht γ⁆ =
-      (((2 : ℕ) : ℤ) * d) • t.chevalleySystem ht δ := by
-    rw [lie_chevalleySystem_eq_structureConstant_zsmul hδ', smul_smul, Nat.cast_ofNat, one_mul,
-      Int.mul_ediv_cancel' (two_dvd_structureConstant_mul_structureConstant hγ hδ')]
-  have hxy : E α * E β = E β * E α + c • E γ := mul_eq_mul_add_zsmul_of_lie_eq ρ hαβ
-  have hxz : E α * (c • E γ) = (c • E γ) * E α + 2 • (d • E δ) := by
-    simpa only [one_zsmul] using zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ hcαγ
-  -- Divided-power stability of the root vectors and of their integral multiples.
-  have hdp := dividedPower_chevalleySystem_smul_mem ρ M hM hnil
-  have hscaled := dividedPower_zsmul_chevalleySystem_smul_mem ρ M hM hnil
-  have hn := isNilpotent_apply_ι_chevalleySystem ρ hnil
-  have hprod :
-      chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) *
-        chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) =
-      chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) *
-        chevalleyRootSubgroup ρ M hM hnil γ A (Multiplicative.ofAdd ((c : A) * (u * v))) *
-        chevalleyRootSubgroup ρ M hM hnil δ A (Multiplicative.ofAdd ((d : A) * (u ^ 2 * v))) *
-        chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) := by
-    apply Units.ext
-    simp only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd]
-    rw [← baseChangeExp_zsmul c M (hdp γ) (hscaled c γ) (hn γ),
-      ← baseChangeExp_zsmul d M (hdp δ) (hscaled d δ) (hn δ)]
-    exact baseChangeExp_mul_baseChangeExp_of_commutator_eq_two_nsmul M hxy hxz
-      ((commute_of_lie_eq_zero ρ hzαδ).smul_right d) ((commute_of_lie_eq_zero ρ hzβγ).smul_right c)
-      (hn α) (hn β) ((hn γ).smul c) (hdp α) (hdp β) (hscaled c γ) (hscaled d δ) u v
-  -- Cancel `x_α(u)` and move `x_β(v)` past the two new factors.
-  have hcomm := (commute_chevalleyRootSubgroup ρ M hM hnil hβγ hβγ₀ A v
-    ((c : A) * (u * v))).mul_right
-      (commute_chevalleyRootSubgroup ρ M hM hnil hβδ hβδ₀ A v ((d : A) * (u ^ 2 * v)))
-  rw [commutatorElement_def, hprod, mul_inv_cancel_right, mul_assoc (chevalleyRootSubgroup ρ M hM
-    hnil β A (Multiplicative.ofAdd v)), hcomm.eq, mul_inv_cancel_right]
 
 end
 
