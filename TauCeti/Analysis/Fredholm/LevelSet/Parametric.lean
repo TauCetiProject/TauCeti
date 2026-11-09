@@ -153,28 +153,6 @@ theorem exists_apply_levelSetParameterMap_eq
   rw [levelSetParameterMap_apply]
   exact ((levelSetChart hf (LinearMap.range_eq_top.mpr hD) hker hxl).symm k).2
 
-/-- A neighbourhood `N` of the chart origin pulls back along the level-set chart to a
-neighbourhood `Q` of `(x, l)` in the ambient space: every solution of the equation in `Q` lies in
-the source of the chart, and its chart image lies in `N`. This confines a statement about the
-chart, near its origin, to a neighbourhood of the solution itself. -/
-theorem exists_mem_nhds_forall_mem_source_and_levelSetChart_mem
-    (hf : HasStrictFDerivAt f (D₁.coprod D₂) (x, l))
-    (hD : Surjective (D₁.coprod D₂))
-    (hker : (D₁.coprod D₂).ker.ClosedComplemented)
-    (hxl : f (x, l) = c) {N : Set (D₁.coprod D₂).ker} (hN : N ∈ 𝓝 (0 : (D₁.coprod D₂).ker)) :
-    ∃ Q ∈ 𝓝 ((x, l) : E × Λ), ∀ w : ↥{z | f z = c}, (w : E × Λ) ∈ Q →
-      w ∈ (levelSetChart hf (LinearMap.range_eq_top.mpr hD) hker hxl).source ∧
-        levelSetChart hf (LinearMap.range_eq_top.mpr hD) hker hxl w ∈ N := by
-  set Φ := levelSetChart hf (LinearMap.range_eq_top.mpr hD) hker hxl
-  have hz0 : (⟨(x, l), hxl⟩ : ↥{z | f z = c}) ∈ Φ.source :=
-    mem_levelSetChart_source hf (LinearMap.range_eq_top.mpr hD) hker hxl
-  have hΦ0 : Φ ⟨(x, l), hxl⟩ = 0 :=
-    levelSetChart_apply_self hf (LinearMap.range_eq_top.mpr hD) hker hxl
-  have hQ' : Φ.source ∩ Φ ⁻¹' N ∈ 𝓝 (⟨(x, l), hxl⟩ : ↥{z | f z = c}) :=
-    Filter.inter_mem (Φ.open_source.mem_nhds hz0) (Φ.continuousAt hz0 (hΦ0 ▸ hN))
-  obtain ⟨Q, hQnhds, hQsub⟩ := (mem_nhds_subtype _ _ _).1 hQ'
-  exact ⟨Q, hQnhds, fun w hw ↦ hQsub hw⟩
-
 /-- The local parameter map is as smooth at the chart origin as the parametrized equation. -/
 theorem contDiffAt_levelSetParameterMap {n : ℕ∞ω}
     (hf : HasStrictFDerivAt f (D₁.coprod D₂) (x, l))
@@ -547,7 +525,8 @@ theorem exists_mem_nhds_isNowhereDense_not_surjective_fderiv_comp_inl
   let g := levelSetParameterMap hstrict hsurj
     (hfixed.closedComplemented_ker_coprod hsurj) z.2
   obtain ⟨Q₀, hQ₀nhds, hQ₀⟩ := exists_mem_nhds_forall_mem_source_and_levelSetChart_mem
-    hstrict hsurj (hfixed.closedComplemented_ker_coprod hsurj) z.2 hNnhds
+    hstrict (LinearMap.range_eq_top.mpr hsurj) (hfixed.closedComplemented_ker_coprod hsurj) z.2
+    hNnhds
   let Q : Set {z : E × Λ | f z = c} := Subtype.val ⁻¹' Q₀
   let B : Set Λ := g ''
     (N ∩ {k | ¬ Surjective ((fderiv ℝ f ((Φ.symm k : {z : E × Λ | f z = c}) : E × Λ)).comp

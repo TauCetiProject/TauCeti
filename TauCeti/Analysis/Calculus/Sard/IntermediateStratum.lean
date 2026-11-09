@@ -114,23 +114,11 @@ theorem exists_parametrization_iteratedFDeriv_eq_zero
   have hcover : ∀ V ∈ 𝓝 (0 : ↥g'.ker),
       ∀ᶠ x in 𝓝 a, iteratedFDeriv 𝕜 i f x = 0 → x ∈ θ '' V := by
     intro V hV
-    -- Near `⟨a, ha⟩`, the chart is defined and takes values in `V`; it is inverted by the
-    -- inverse chart.
-    have hsrc : ∀ᶠ y in 𝓝 (⟨a, ha⟩ : ↥{x | g x = 0}),
-        y ∈ (levelSetChart hstrict hsurj hker ha).source :=
-      (levelSetChart hstrict hsurj hker ha).open_source.mem_nhds
-        (mem_levelSetChart_source hstrict hsurj hker ha)
-    have hchart : ∀ᶠ y in 𝓝 (⟨a, ha⟩ : ↥{x | g x = 0}),
-        y ∈ (levelSetChart hstrict hsurj hker ha).source ∧
-          levelSetChart hstrict hsurj hker ha y ∈ V := by
-      refine hsrc.and ?_
-      have hcont := (levelSetChart hstrict hsurj hker ha).continuousAt
-        (mem_levelSetChart_source hstrict hsurj hker ha)
-      exact hcont.eventually_mem (by rwa [levelSetChart_apply_self])
-    rw [Topology.IsInducing.subtypeVal.nhds_eq_comap, eventually_comap] at hchart
-    filter_upwards [hchart] with x hx hxi
-    obtain ⟨hxs, hxV⟩ := hx ⟨x, hzero x hxi⟩ rfl
-    exact ⟨_, hxV, congrArg Subtype.val ((levelSetChart hstrict hsurj hker ha).left_inv hxs)⟩
+    obtain ⟨Q, hQ, hQsub⟩ :=
+      exists_mem_nhds_forall_mem_source_and_levelSetChart_mem hstrict hsurj hker ha hV
+    filter_upwards [hQ] with x hx hxi
+    obtain ⟨hs, hxV⟩ := hQsub ⟨x, hzero x hxi⟩ hx
+    exact ⟨_, hxV, congrArg Subtype.val ((levelSetChart hstrict hsurj hker ha).left_inv hs)⟩
   refine ⟨g, g', θ, hg, hstrict, hsurj, hzero, hθa,
     contDiffAt_coe_levelSetChart_symm hstrict hg hsurj hker ha,
     Eventually.of_forall fun z ↦ ((levelSetChart hstrict hsurj hker ha).symm z).2, hcover,
