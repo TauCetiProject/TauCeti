@@ -16,12 +16,13 @@ import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 This file collects facts about inverting and differentiating continuous linear maps, and about ring
 inverses in a general normed algebra. The first is a perturbation criterion: a map differing from a
 continuous linear equivalence `L` by less than `‖L⁻¹‖⁻¹` in operator norm is again invertible, by a
-Neumann series. The second packages the derivative of a differentiable inverse family of continuous
-linear maps at an invertible base point, including its action on a varying vector; that is the
-analytic input for differentiating a vector-field pullback along a parametric family. The third part
-works in an arbitrary normed algebra: it shows that the ring inverse of a `C^n` family of units is
-`C^n`, and computes the velocity `Z * C - C * Z` of a family that intertwines a curve through `1`
-with the constant `C`; the latter involves no inversion.
+Neumann series; relatedly, two maps close to the same invertible map have comparison operator
+`A⁻¹ ∘ B` close to the identity. The second packages the derivative of a differentiable inverse
+family of continuous linear maps at an invertible base point, including its action on a varying
+vector; that is the analytic input for differentiating a vector-field pullback along a parametric
+family. The third part works in an arbitrary normed algebra: it shows that the ring inverse of a
+`C^n` family of units is `C^n`, and computes the velocity `Z * C - C * Z` of a family that
+intertwines a curve through `1` with the constant `C`; the latter involves no inversion.
 
 ## Main results
 
@@ -32,6 +33,8 @@ with the constant `C`; the latter involves no inversion.
 * `ContinuousLinearMap.isInvertible_of_mul_norm_sub_lt`: the perturbation criterion phrased through
   an a priori estimate `‖x‖ ≤ C * ‖L x‖`, `C * ‖M - L‖ < 1`, as used in the method of
   continuity.
+* `ContinuousLinearMap.IsInvertible.tendsto_inverse_comp`: the comparison operator `A⁻¹ ∘ B`
+  tends to the identity as `A` and `B` tend to the same invertible map.
 * `HasDerivAt.clm_inverse`: differentiates `(A t)⁻¹`.
 * `HasDerivAt.clm_inverse_apply`: differentiates `(A t)⁻¹ (w t)`.
 * `DifferentiableAt.clm_inverse_of_completeSpace`: the inverse of a differentiable family between
@@ -129,6 +132,18 @@ theorem ContinuousLinearMap.isInvertible_of_mul_norm_sub_lt [CompleteSpace E]
     _ ≤ ‖(e.symm : F →L[𝕜] E)‖⁻¹ := inv_anti₀ hsymm0 hsymm
 
 end Perturbation
+
+/-- The comparison operator `A⁻¹ ∘ B` of two continuous linear maps tends to the identity as both
+maps tend to the same invertible map `A₀`. -/
+theorem ContinuousLinearMap.IsInvertible.tendsto_inverse_comp [CompleteSpace E] {A₀ : E →L[𝕜] F}
+    (hA₀ : A₀.IsInvertible) :
+    Filter.Tendsto (fun p : (E →L[𝕜] F) × (E →L[𝕜] F) ↦ p.1.inverse ∘L p.2) (𝓝 (A₀, A₀))
+      (𝓝 1) := by
+  have h : ContDiffAt 𝕜 0 (fun p : (E →L[𝕜] F) × (E →L[𝕜] F) ↦ p.1.inverse ∘L p.2) (A₀, A₀) :=
+    (ContDiffAt.comp (g := ContinuousLinearMap.inverse) (A₀, A₀) hA₀.contDiffAt_map_inverse
+      contDiffAt_fst).clm_comp contDiffAt_snd
+  rw [← hA₀.inverse_comp_self.trans ContinuousLinearMap.one_def.symm]
+  exact h.continuousAt.tendsto
 
 variable {t₀ : 𝕜} {A : 𝕜 → E →L[𝕜] F} {A' : E →L[𝕜] F} {w : 𝕜 → F} {w' : F}
 

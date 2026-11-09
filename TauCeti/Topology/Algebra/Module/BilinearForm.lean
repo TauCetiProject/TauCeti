@@ -31,6 +31,11 @@ as a map into the dual space and as a bilinear form — and it has nothing to do
 that produces the Hessian, so it is recorded here, next to `ContinuousLinearMap.toBilinForm`
 itself, rather than with any of its users.
 
+A form that is invertible as a map into the dual defines the adjoint of an operator for its
+pairing, and pulling two such forms back by an invertible map conjugates their comparison
+operator `B₀⁻¹ ∘ B` by that map. These are the linear algebra behind the self-adjointness and
+naturality of the Palais congruence in the Morse lemma.
+
 The file also records that the continuous bilinear forms which are symmetric, positive definite
 and have a von Neumann bounded unit set form a convex set. These are the fibrewise conditions of a
 Riemannian metric, and convexity is what lets local metrics be glued by partitions of unity; the
@@ -52,6 +57,12 @@ use.
   map into the dual is the kernel of the map.
 * `ContinuousLinearMap.inf_eq_bot_of_le_ker`: a subspace on which the diagonal of the form has no
   nonzero zeros meets every subspace of the kernel trivially.
+* `ContinuousLinearMap.pairingAdjoint`: the adjoint of an operator for the pairing given by a
+  form, characterized by `ContinuousLinearMap.IsInvertible.apply_pairingAdjoint_apply` when the
+  form is invertible; `ContinuousLinearMap.IsInvertible.ext_of_apply_apply` says an invertible
+  form separates operators.
+* `ContinuousLinearMap.IsInvertible.inverse_bilinearComp_comp_bilinearComp`: pulling two forms
+  back by an invertible map conjugates their comparison operator `B₀⁻¹ ∘ B` by that map.
 * `ContinuousLinearMap.isInvertible_of_injective` and
   `ContinuousLinearMap.isInvertible_of_surjective`: in finite dimensions an injective, equivalently
   a surjective, map into the dual is already invertible, the dual having the same dimension as the
@@ -135,6 +146,54 @@ theorem _root_.ContinuousLinearMap.inf_eq_bot_of_le_ker {L : E →L[𝕜] E →L
   exact hN x hx.1 hx0 (by simp [h])
 
 end
+
+section PairingAdjoint
+
+variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- The adjoint of an operator `T` for the pairing given by a continuous bilinear form `B`. When
+`B` is invertible as a map into the dual, it is characterized by `B (adj T w) w' = B w (T w')`
+(`ContinuousLinearMap.IsInvertible.apply_pairingAdjoint_apply`). -/
+@[expose] noncomputable def _root_.ContinuousLinearMap.pairingAdjoint (B : E →L[𝕜] E →L[𝕜] 𝕜)
+    (T : E →L[𝕜] E) : E →L[𝕜] E :=
+  B.inverse ∘L ((ContinuousLinearMap.compL 𝕜 E E 𝕜).flip T ∘L B)
+
+/-- The defining property of the adjoint for the pairing given by an invertible form. -/
+theorem _root_.ContinuousLinearMap.IsInvertible.apply_pairingAdjoint_apply
+    {B : E →L[𝕜] E →L[𝕜] 𝕜} (hB : B.IsInvertible) (T : E →L[𝕜] E) (w w' : E) :
+    B (B.pairingAdjoint T w) w' = B w (T w') := by
+  simp [ContinuousLinearMap.pairingAdjoint, hB.self_apply_inverse]
+
+/-- A map into `E` is determined by the pairing of its values against an invertible form on `E`. -/
+theorem _root_.ContinuousLinearMap.IsInvertible.ext_of_apply_apply {B : E →L[𝕜] E →L[𝕜] 𝕜}
+    (hB : B.IsInvertible) {T₁ T₂ : G →L[𝕜] E} (h : ∀ w w', B (T₁ w) w' = B (T₂ w) w') :
+    T₁ = T₂ :=
+  ContinuousLinearMap.ext fun w ↦ hB.injective (ContinuousLinearMap.ext (h w))
+
+/-- The comparison operator `B₀⁻¹ ∘ B` of two forms pulled back by an invertible map `L` is the
+comparison operator of the forms, conjugated by `L`. -/
+theorem _root_.ContinuousLinearMap.IsInvertible.inverse_bilinearComp_comp_bilinearComp
+    {B₀ B : F →L[𝕜] F →L[𝕜] 𝕜} (hB₀ : B₀.IsInvertible) {L : E →L[𝕜] F} (hL : L.IsInvertible) :
+    (B₀.bilinearComp L L).inverse ∘L B.bilinearComp L L = L.inverse ∘L (B₀.inverse ∘L B) ∘L L := by
+  obtain ⟨e, rfl⟩ := hL
+  obtain ⟨D, rfl⟩ := hB₀
+  -- The pulled-back reference form is the continuous linear equivalence `D'`.
+  let D' : E ≃L[𝕜] (E →L[𝕜] 𝕜) :=
+    e.trans (D.trans (e.symm.arrowCongr (ContinuousLinearEquiv.refl 𝕜 𝕜)))
+  have hD' : ((D : F →L[𝕜] F →L[𝕜] 𝕜).bilinearComp (e : E →L[𝕜] F) (e : E →L[𝕜] F)) =
+      (D' : E →L[𝕜] E →L[𝕜] 𝕜) := by
+    ext w w'
+    simp [D']
+  rw [hD', ContinuousLinearMap.inverse_equiv, ContinuousLinearMap.inverse_equiv,
+    ContinuousLinearMap.inverse_equiv]
+  ext w : 1
+  apply D'.injective
+  ext w'
+  simp [D']
+
+end PairingAdjoint
 
 section FiniteDimensional
 
