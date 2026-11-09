@@ -399,6 +399,16 @@ theorem fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv {f : ℂ
   rw [← wirtingerDeriv_add_conjWirtingerDeriv f x v,
     wirtingerDeriv_apply_eq_smul_apply_one, conjWirtingerDeriv_apply_eq_conj_smul_apply_one]
 
+/-- In one variable the real derivative is controlled by its two Wirtinger parts:
+`‖Df(x)‖ ≤ ‖∂f(x)‖ + ‖bar∂f(x)‖`. -/
+theorem norm_fderiv_le_norm_wirtingerDeriv_add_norm_conjWirtingerDeriv (f : ℂ → W) (x : ℂ) :
+    ‖fderiv ℝ f x‖ ≤ ‖wirtingerDeriv f x 1‖ + ‖conjWirtingerDeriv f x 1‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
+  rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv]
+  refine (norm_add_le _ _).trans_eq ?_
+  rw [norm_smul, norm_smul, Complex.norm_conj]
+  ring
+
 /-- In one variable the conjugate Wirtinger derivative vanishes exactly when its value
 at `1` vanishes, since it is complex-antilinear. -/
 theorem conjWirtingerDeriv_eq_zero_iff_apply_one_eq_zero {f : ℂ → W} {x : ℂ} :
