@@ -12,7 +12,6 @@ import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Function.Lp.Holder
-import TauCeti.Data.ENNReal.Holder
 import TauCeti.Analysis.Calculus.LineDeriv.Bilinear
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Analysis.Calculus.BumpFunction.Normed
@@ -168,7 +167,7 @@ private theorem hasWeakLineDerivOn_bilin_of_memLp (B : F →L[ℝ] G →L[ℝ] H
 derivative. Only the three products in the identity must be locally integrable by Hölder; this
 covers a rough factor whose derivative is integrable against the other factor but not against its
 derivative. -/
-theorem HasWeakLineDerivOn.bilin_of_memLp_mixed (B : F →L[ℝ] G →L[ℝ] H)
+theorem HasWeakLineDerivOn.bilin_of_memLp (B : F →L[ℝ] G →L[ℝ] H)
     {p p' q q' : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ p')] [Fact (1 ≤ q)] [Fact (1 ≤ q')]
     (hp : p ≠ ⊤) (hp' : p' ≠ ⊤) (hq : q ≠ ⊤) (hq' : q' ≠ ⊤)
     (hpq : p⁻¹ + q⁻¹ ≤ 1) (hp'q : p'⁻¹ + q⁻¹ ≤ 1) (hpq' : p⁻¹ + q'⁻¹ ≤ 1)
@@ -196,25 +195,9 @@ theorem HasWeakLineDerivOn.bilin_of_memLp_mixed (B : F →L[ℝ] G →L[ℝ] H)
     ((hfp _ hWc hWΩ).mono_measure hμ) ((hf'p _ hWc hWΩ).mono_measure hμ)
     ((hgq _ hWc hWΩ).mono_measure hμ) ((hg'q _ hWc hWΩ).mono_measure hμ)
 
-/-- The local bilinear weak Leibniz rule at finite Hölder exponents. Values and derivatives
-need only belong to their input `Lp` spaces on compact subsets of the open domain. -/
-theorem HasWeakLineDerivOn.bilin_of_memLp (B : F →L[ℝ] G →L[ℝ] H)
-    {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)]
-    [ENNReal.HolderTriple p q r] (hp : p ≠ ⊤) (hq : q ≠ ⊤)
-    {f f' : E → F} {g g' : E → G}
-    (hf : HasWeakLineDerivOn μ Ω f f' v) (hg : HasWeakLineDerivOn μ Ω g g' v)
-    (hfp : ∀ K, IsCompact K → K ⊆ Ω → MemLp f p (μ.restrict K))
-    (hf'p : ∀ K, IsCompact K → K ⊆ Ω → MemLp f' p (μ.restrict K))
-    (hgq : ∀ K, IsCompact K → K ⊆ Ω → MemLp g q (μ.restrict K))
-    (hg'q : ∀ K, IsCompact K → K ⊆ Ω → MemLp g' q (μ.restrict K)) :
-    HasWeakLineDerivOn μ Ω (fun x => B (f x) (g x))
-      (fun x => B (f' x) (g x) + B (f x) (g' x)) v := by
-  have hpq := ENNReal.HolderTriple.inv_add_inv_le_one p q r Fact.out
-  exact hf.bilin_of_memLp_mixed B hp hp hq hq hpq hpq hpq hg hfp hf'p hgq hg'q
-
 /-- The Fréchet form of the bilinear weak Leibniz rule with separate finite exponents for each
-factor and its derivative, as in `TauCeti.HasWeakLineDerivOn.bilin_of_memLp_mixed`. -/
-theorem HasWeakFDerivOn.bilin_of_memLp_mixed (B : F →L[ℝ] G →L[ℝ] H)
+factor and its derivative, as in `TauCeti.HasWeakLineDerivOn.bilin_of_memLp`. -/
+theorem HasWeakFDerivOn.bilin_of_memLp (B : F →L[ℝ] G →L[ℝ] H)
     {p p' q q' : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ p')] [Fact (1 ≤ q)] [Fact (1 ≤ q')]
     (hp : p ≠ ⊤) (hp' : p' ≠ ⊤) (hq : q ≠ ⊤) (hq' : q' ≠ ⊤)
     (hpq : p⁻¹ + q⁻¹ ≤ 1) (hp'q : p'⁻¹ + q⁻¹ ≤ 1) (hpq' : p⁻¹ + q'⁻¹ ≤ 1)
@@ -231,27 +214,11 @@ theorem HasWeakFDerivOn.bilin_of_memLp_mixed (B : F →L[ℝ] G →L[ℝ] H)
   simpa only [add_apply, ContinuousLinearMap.precompL_apply,
     ContinuousLinearMap.precompR_apply, ContinuousLinearMap.compL_apply,
     ContinuousLinearMap.comp_apply] using
-    (hf.hasWeakLineDerivOn v).bilin_of_memLp_mixed B hp hp' hq hq' hpq hp'q hpq'
+    (hf.hasWeakLineDerivOn v).bilin_of_memLp B hp hp' hq hq' hpq hp'q hpq'
       (hg.hasWeakLineDerivOn v)
       hfp (fun K hK hKΩ => (hDfp K hK hKΩ).continuousLinearMap_comp
         (ContinuousLinearMap.apply ℝ F v))
       hgq (fun K hK hKΩ => (hDgq K hK hKΩ).continuousLinearMap_comp
         (ContinuousLinearMap.apply ℝ G v))
-
-/-- The Fréchet form of the bilinear weak Leibniz rule. The derivative field is expressed using
-native continuous bilinear precomposition maps, so its local `Lʳ` membership follows from Hölder. -/
-theorem HasWeakFDerivOn.bilin_of_memLp (B : F →L[ℝ] G →L[ℝ] H)
-    {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)]
-    [ENNReal.HolderTriple p q r] (hp : p ≠ ⊤) (hq : q ≠ ⊤)
-    {f : E → F} {Df : E → E →L[ℝ] F} {g : E → G} {Dg : E → E →L[ℝ] G}
-    (hf : HasWeakFDerivOn μ Ω f Df) (hg : HasWeakFDerivOn μ Ω g Dg)
-    (hfp : ∀ K, IsCompact K → K ⊆ Ω → MemLp f p (μ.restrict K))
-    (hDfp : ∀ K, IsCompact K → K ⊆ Ω → MemLp Df p (μ.restrict K))
-    (hgq : ∀ K, IsCompact K → K ⊆ Ω → MemLp g q (μ.restrict K))
-    (hDgq : ∀ K, IsCompact K → K ⊆ Ω → MemLp Dg q (μ.restrict K)) :
-    HasWeakFDerivOn μ Ω (fun x => B (f x) (g x))
-      (fun x => B.precompL E (Df x) (g x) + B.precompR E (f x) (Dg x)) := by
-  have hpq := ENNReal.HolderTriple.inv_add_inv_le_one p q r Fact.out
-  exact hf.bilin_of_memLp_mixed B hp hp hq hq hpq hpq hpq hg hfp hDfp hgq hDgq
 
 end TauCeti

@@ -60,28 +60,16 @@ variable {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedAddCommGroup H] [NormedSpace ℝ H]
   {Ω : Opens ℂ} {p q : ℝ≥0}
 
-/-- For `p > 2`, the real dimension of `ℂ` is below `p`. -/
-private theorem finrank_lt_of_two_lt (hp : 2 < p) : (finrank ℝ ℂ : ℝ≥0) < p := by
-  rw [Complex.finrank_real_complex]
-  exact_mod_cast hp
-
-omit [FiniteDimensional ℝ G] in
-/-- An open set between a compact subset of `Ω` and `Ω`, with compact closure in `Ω`. -/
-private theorem exists_opens_between {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
-    ∃ W : Opens ℂ, K ⊆ W ∧ closure (W : Set ℂ) ⊆ Ω ∧ IsCompact (closure (W : Set ℂ)) := by
-  obtain ⟨W, hWo, hKW, hWΩ, hWc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen hKΩ
-  exact ⟨⟨W, hWo⟩, hKW, hWΩ, hWc⟩
-
 /-- **Local gain of integrability.** For `p > 2` and `1 ≤ q ≤ p`, a map in `W^{1,q}_loc` with
 finite-dimensional values is in `Lʳ_loc` for `1/p + 1/r = 1/q`. At `q = p` this is `r = ∞`. -/
 theorem MemWkpLoc.memLpLoc_of_holderTriple (hp : 2 < p) (hqp : q ≤ p) [Fact (1 ≤ (q : ℝ≥0∞))]
     {r : ℝ≥0∞} [ENNReal.HolderTriple p r q] {g : ℂ → G} (hg : MemWkpLoc q Ω 1 g) :
     MemLpLoc r Ω g := by
   refine memLpLoc_iff.2 fun K hKΩ hK => ?_
-  obtain ⟨W, hKW, hWΩ, hWc⟩ := exists_opens_between hK hKΩ
+  obtain ⟨W, hWo, hKW, hWΩ, hWc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen hKΩ
   obtain ⟨Dg, hDg, hDq⟩ := hg.exists_weakFDeriv_of_isOpen
-  obtain ⟨C, hC⟩ := W1p.exists_eLpNorm_le_of_holderTriple (μ := volume) (G := G) (r := r)
-    (finrank_lt_of_two_lt hp) hqp hK hKW
+  obtain ⟨C, hC⟩ := W1p.exists_eLpNorm_le_of_holderTriple (μ := volume) (Ω := ⟨W, hWo⟩)
+    (G := G) (r := r) (by simpa using hp) hqp hK hKW
   have hgW := hg.memLpLoc.memLp_of_closure hWΩ hWc
   have hDW := (memWkpLoc_zero_iff.1 hDq).memLp_of_closure hWΩ hWc
   exact (hC g Dg (hDg.mono (subset_closure.trans hWΩ)) hgW hDW).trans_lt
@@ -94,10 +82,10 @@ theorem MemLpLoc.bilin_of_memWkpLoc (B : F →L[ℝ] G →L[ℝ] H) (hp : 2 < p)
     [Fact (1 ≤ (q : ℝ≥0∞))] {f : ℂ → F} {g : ℂ → G} (hf : MemLpLoc p Ω f)
     (hg : MemWkpLoc q Ω 1 g) : MemLpLoc q Ω (fun z => B (f z) (g z)) := by
   refine memLpLoc_iff.2 fun K hKΩ hK => ?_
-  obtain ⟨W, hKW, hWΩ, hWc⟩ := exists_opens_between hK hKΩ
+  obtain ⟨W, hWo, hKW, hWΩ, hWc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen hKΩ
   obtain ⟨Dg, hDg, hDq⟩ := hg.exists_weakFDeriv_of_isOpen
-  obtain ⟨C, hC⟩ := W1p.exists_eLpNorm_bilin_le (μ := volume) (F := F) (G := G) (H := H)
-    (finrank_lt_of_two_lt hp) hqp hK hKW
+  obtain ⟨C, hC⟩ := W1p.exists_eLpNorm_bilin_le (μ := volume) (Ω := ⟨W, hWo⟩)
+    (F := F) (G := G) (H := H) (by simpa using hp) hqp hK hKW
   have hgW := hg.memLpLoc.memLp_of_closure hWΩ hWc
   have hDW := (memWkpLoc_zero_iff.1 hDq).memLp_of_closure hWΩ hWc
   have hfK := memLpLoc_iff.1 hf K hKΩ hK
@@ -148,7 +136,7 @@ theorem HasWeakFDerivOn.bilin_of_memLpLoc [CompleteSpace H] (B : F →L[ℝ] G �
     · rw [inv_inv, ← ENNReal.HolderConjugate.one_sub_inv (p : ℝ≥0∞) p']
       exact tsub_le_tsub_right (ENNReal.inv_le_one.2 hq1.le) _
   have hgb : MemLpLoc b Ω g := hgr.mono_exponent hbr
-  exact hf.bilin_of_memLp_mixed B ha ENNReal.coe_ne_top hb ENNReal.coe_ne_top
+  exact hf.bilin_of_memLp B ha ENNReal.coe_ne_top hb ENNReal.coe_ne_top
     ((add_le_add le_rfl hbq).trans haq.le) ((add_le_add le_rfl hbp).trans hpp.le) haq.le hg
     (fun K hK hKΩ => memLpLoc_iff.1 hfi K hKΩ hK)
     (fun K hK hKΩ => memLpLoc_iff.1 hDf K hKΩ hK)

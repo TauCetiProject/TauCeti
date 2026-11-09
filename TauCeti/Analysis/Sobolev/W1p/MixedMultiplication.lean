@@ -241,10 +241,11 @@ theorem W1p.exists_eLpNorm_le_of_holderTriple (hp : (finrank ℝ E : ℝ≥0) < 
   let u : WeakDerivStep μ Ω q base := WeakDerivStep.mk base (hgq.toLp g) (hDq.toLp Dg)
     ((hg.congr_ae hgq.coeFn_toLp.symm).congr_ae_deriv hDq.coeFn_toLp.symm)
   have hprev : WeakDerivStep.prev base u = hgq.toLp g := WeakDerivStep.prev_mk _ _ _ _
+  have hderiv : WeakDerivStep.weakFDeriv base u = hDq.toLp Dg :=
+    WeakDerivStep.weakFDeriv_mk _ _ _ _
   have hu : ‖u‖ₑ ≤ X := by
     have h := WeakDerivStep.norm_le_norm_prev_add_norm_weakFDeriv base u
-    rw [hprev, show WeakDerivStep.weakFDeriv base u = hDq.toLp Dg from
-      WeakDerivStep.weakFDeriv_mk _ _ _ _] at h
+    rw [hprev, hderiv] at h
     have h' : ‖u‖₊ ≤ ‖hgq.toLp g‖₊ + ‖hDq.toLp Dg‖₊ := by
       rw [← NNReal.coe_le_coe]
       push_cast

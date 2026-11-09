@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Order.Module.PositiveLinearMap
 public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
 /-!
 # Restriction and set integration on finite-measure sets
@@ -243,17 +244,10 @@ theorem tendsto_setLIntegral_enorm_add_sub {E H ι : Type*} [MeasurableSpace E]
     (ha : ∀ n, AEStronglyMeasurable (fun x => a n x - a₀ x) (μ.restrict W))
     (h₁ : Tendsto (fun n => ∫⁻ x in W, ‖a n x - a₀ x‖ₑ ∂μ) l (𝓝 0))
     (h₂ : Tendsto (fun n => ∫⁻ x in W, ‖b n x - b₀ x‖ₑ ∂μ) l (𝓝 0)) :
-    Tendsto (fun n => ∫⁻ x in W, ‖a n x + b n x - (a₀ x + b₀ x)‖ₑ ∂μ) l (𝓝 0) := by
-  have h := h₁.add h₂
-  rw [add_zero] at h
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h (fun _ => zero_le)
-    fun n => ?_
-  calc
-    _ ≤ ∫⁻ x in W, (‖a n x - a₀ x‖ₑ + ‖b n x - b₀ x‖ₑ) ∂μ := by
-      refine lintegral_mono fun x => ?_
-      rw [add_sub_add_comm]
-      exact enorm_add_le _ _
-    _ = _ := lintegral_add_left' (ha n).enorm _
+    Tendsto (fun n => ∫⁻ x in W, ‖a n x + b n x - (a₀ x + b₀ x)‖ₑ ∂μ) l (𝓝 0) :=
+  tendsto_lintegral_zero_of_le_add (μ := μ.restrict W)
+    (fun n x => by rw [add_sub_add_comm]; exact enorm_add_le _ _)
+    (fun n => (ha n).enorm) h₁ h₂
 
 end TauCeti
 
