@@ -158,26 +158,16 @@ noncomputable def matchingEquivUnitCapacitated [G.Loopless] :
     exact Set.indicator_eq_one_iff_mem ℕ
   right_inv x := Subtype.ext x.2.indicator_setOf_eq_one
 
-private theorem matchingEquivUnitCapacitated_apply_private [G.Loopless]
-    (M : {M : Set E(G) // G.IsMatching M}) :
-    (G.matchingEquivUnitCapacitated M : E(G) → ℕ) = M.1.indicator 1 :=
-  rfl
-
-private theorem matchingEquivUnitCapacitated_symm_apply_private [G.Loopless]
-    (x : {x : E(G) → ℕ // G.IsCapacitatedMatching 1 x}) :
-    (G.matchingEquivUnitCapacitated.symm x : Set E(G)) = {e | x.1 e = 1} :=
-  rfl
-
 @[simp]
 theorem matchingEquivUnitCapacitated_apply [G.Loopless] (M : {M : Set E(G) // G.IsMatching M}) :
     (G.matchingEquivUnitCapacitated M : E(G) → ℕ) = M.1.indicator 1 :=
-  matchingEquivUnitCapacitated_apply_private M
+  (rfl)
 
 @[simp]
 theorem matchingEquivUnitCapacitated_symm_apply [G.Loopless]
     (x : {x : E(G) → ℕ // G.IsCapacitatedMatching 1 x}) :
     (G.matchingEquivUnitCapacitated.symm x : Set E(G)) = {e | x.1 e = 1} :=
-  matchingEquivUnitCapacitated_symm_apply_private x
+  (rfl)
 
 namespace IsCapacitatedMatching
 
