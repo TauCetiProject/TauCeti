@@ -296,16 +296,21 @@ theorem intCharacter_eq_iff {V W : FDRep ℚ G} {g h : G} :
     FDRep.intCharacter V g = FDRep.intCharacter W h ↔ V.character g = W.character h := by
   rw [← Int.cast_inj (α := ℚ), FDRep.intCharacter_cast, FDRep.intCharacter_cast]
 
+omit [Finite G] in
 /-- **The integer character is a class function.** -/
 @[simp]
 theorem intCharacter_conj (V : FDRep ℚ G) (g h : G) :
-    FDRep.intCharacter V (h * g * h⁻¹) = FDRep.intCharacter V g :=
-  FDRep.intCharacter_eq_iff.2 (FDRep.char_conj V g h)
+    FDRep.intCharacter V (h * g * h⁻¹) = FDRep.intCharacter V g := by
+  rw [intCharacter_def, intCharacter_def, FDRep.char_conj]
 
-/-- **The integer character of a rational representation, as a class function.** -/
+/-- **The integer character of a rational representation, as a class function.** Like
+`FDRep.intCharacter` it is defined for every group, since the class-function property needs no
+finiteness; its values are pinned down by `FDRep.intCharacter_cast` only for finite `G`, and for
+infinite `G` they are just the numerators of the character values. -/
 noncomputable def intClassFunction (V : FDRep ℚ G) : TauCeti.ClassFunction ℤ G :=
   ⟨FDRep.intCharacter V, TauCeti.ClassFunction.mem_iff.2 (FDRep.intCharacter_conj V)⟩
 
+omit [Finite G] in
 @[simp]
 theorem intClassFunction_apply (V : FDRep ℚ G) (g : G) :
     (FDRep.intClassFunction V).1 g = FDRep.intCharacter V g := (rfl)
@@ -313,9 +318,8 @@ theorem intClassFunction_apply (V : FDRep ℚ G) (g : G) :
 omit [Finite G] in
 /-- Conjugate elements have the same integer character. -/
 theorem intCharacter_eq_of_isConj (V : FDRep ℚ G) {g h : G} (hgh : IsConj g h) :
-    FDRep.intCharacter V g = FDRep.intCharacter V h := by
-  obtain ⟨x, rfl⟩ := isConj_iff.mp hgh
-  rw [intCharacter_def, intCharacter_def, FDRep.char_conj]
+    FDRep.intCharacter V g = FDRep.intCharacter V h :=
+  TauCeti.ClassFunction.eq_of_isConj (FDRep.intClassFunction V) hgh
 
 /-- **The integer character at the identity is the degree.** -/
 @[simp]
