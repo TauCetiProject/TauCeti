@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.Support
 public import TauCeti.Analysis.Distribution.TestFunction.Homotopy
+import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 
 /-!
 # Pushforward of compactly supported currents along smooth maps
@@ -47,6 +48,8 @@ lies in the image under `H` of `(tsupport χ ∩ spt T) × [0, 1]`, and
   pushforward along a proper map.
 * `ContinuousLinearMap.comp_cutoffPullbackCLM_comp_extDerivCLM`: `∂ (Φ_# T) = Φ_# (∂ T)`.
 * `ContinuousLinearMap.comp_cutoffPullbackCLM_comp_cutoffPullbackCLM`: functoriality.
+* `Distribution.exists_cutoff_abs_le_one`: a cutoff equal to one near the support of `T` can be
+  replaced by one with values in `[0, 1]` and the same germ along the support of `T`.
 * `Distribution.dsupport_comp_cutoffPullbackCLM_subset`: `spt (Φ_# T) ⊆ Φ (tsupport χ ∩ spt T)`.
 * `Distribution.mass_comp_cutoffPullbackCLM_le`: `M(Φ_# T) ≤ L ^ k M(T)`.
 * `ContinuousLinearMap.comp_cutoffHomotopyPullbackCLM_congr`,
@@ -216,6 +219,24 @@ variable {E E' F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {Ω : Opens E} {Ω' : Opens E'} {Φ : E → E'} {k : ℕ} {χ : 𝓓(Ω, ℝ)}
   {hΦ : ContDiffOn ℝ (⊤ : ℕ∞) Φ Ω} {𝓕 : Type*}
+
+/-- A cutoff equal to one near the support of `T` can be replaced by one with values in `[0, 1]`,
+equal to one near the support of `T` and supported in the support of the original cutoff. The two
+cutoffs have the same germ along the support of `T`, so they define the same pushforwards. -/
+theorem exists_cutoff_abs_le_one [FiniteDimensional ℝ E] {F' V' : Type*} [NormedAddCommGroup F']
+    [NormedSpace ℝ F'] [AddCommMonoid V'] {T : 𝓓(Ω, F') → V'}
+    (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) :
+    ∃ ψ : 𝓓(Ω, ℝ), (∀ᶠ x in 𝓝ˢ (dsupport T), ψ x = 1) ∧ (∀ x, |ψ x| ≤ 1) ∧
+      tsupport ψ ⊆ tsupport χ ∧ (χ : E → ℝ) =ᶠ[𝓝ˢ (dsupport T)] ψ := by
+  have hW : interior {x | χ x = 1} ⊆ tsupport χ := fun x hx ↦ by
+    have h : χ x = 1 := interior_subset hx
+    exact subset_tsupport _ (by simp [h])
+  have hTW : dsupport T ⊆ interior {x | χ x = 1} := subset_interior_iff_mem_nhdsSet.2 hχ
+  obtain ⟨ψ, hψ01, hψ1, hψW⟩ := exists_cutoff_tsupport_subset (n := ⊤)
+    (χ.hasCompactSupport.of_isClosed_subset isClosed_dsupport (hTW.trans hW)) isOpen_interior
+    hTW (hW.trans χ.tsupport_subset)
+  exact ⟨ψ, hψ1, fun x ↦ abs_le.2 ⟨by linarith [(hψ01 x).1], (hψ01 x).2⟩, hψW.trans hW,
+    (hχ.and hψ1).mono fun x hx ↦ hx.1.trans hx.2.symm⟩
 
 /-- **The support of a pushforward**: the support of `T ∘ (χ Φ^*)` lies in the image under `Φ` of
 the part of the support of `T` in the support of `χ`. In particular it is compact, and when `χ` is

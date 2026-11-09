@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.CutoffPushforward
 public import TauCeti.Analysis.Distribution.Flat.Basic
-import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 
 /-!
 # Flat distance between pushforwards along nearby maps
@@ -21,8 +21,9 @@ with compact support give the decomposition
 
 `g_# T - f_# T = H_# ([[0, 1]] × ∂ T) + ∂ H_# ([[0, 1]] × T)`
 
-into normal currents. If `‖g - f‖ ≤ A` and `‖Df‖, ‖Dg‖ ≤ L` on the support of `χ`, the mass
-estimate for homotopy currents bounds both pieces, so that for a `(k + 1)`-current
+into normal currents (`Distribution.IsNormal.comp_cutoffHomotopyPullbackCLM`). If `‖g - f‖ ≤ A`
+and `‖Df‖, ‖Dg‖ ≤ L` on the support of `χ`, the mass estimate for homotopy currents bounds both
+pieces, so that for a `(k + 1)`-current
 
 `F(g_# T - f_# T) ≤ A (L ^ (k + 1) M(T) + L ^ k M(∂ T))`,
 
@@ -37,8 +38,6 @@ Riemannian manifold the segments would have to be replaced by short geodesics.
 
 ## Main declarations
 
-* `Distribution.IsNormal.comp_cutoffHomotopyPullbackCLM`: the homotopy current
-  `H_# ([[0, 1]] × T)` of a normal current `T` with compact support is normal.
 * `ContinuousLinearMap.normalFlatMass_comp_cutoffPullbackCLM_sub_le`: the flat estimate
   `F(g_# T - f_# T) ≤ A (L ^ (k + 1) M(T) + L ^ k M(∂ T))`, and
   `ContinuousLinearMap.normalFlatMass_comp_cutoffPullbackCLM_sub_le_finZero` in degree zero.
@@ -60,96 +59,6 @@ noncomputable section
 
 open Set Filter TopologicalSpace TestFunction Distribution TauCeti
 open scoped Distributions Topology NNReal ENNReal
-
-namespace Distribution
-
-variable {E E' F V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [CompleteSpace F] [NormedAddCommGroup V] [NormedSpace ℝ V]
-  {Ω : Opens E} {Ω' : Opens E'} {H : E × ℝ → E'} {k : ℕ} {χ : 𝓓(Ω, ℝ)}
-  {hH : ∀ p ∈ (Ω : Set E) ×ˢ Icc (0 : ℝ) 1, ContDiffAt ℝ (⊤ : ℕ∞) H p}
-
-omit [FiniteDimensional ℝ E] [CompleteSpace F] in
-/-- The derivative of a homotopy smooth near `Ω × [0, 1]` is bounded on `K × [0, 1]` for a
-compact `K ⊆ Ω`. -/
-private theorem exists_norm_fderiv_le
-    (hH : ∀ p ∈ (Ω : Set E) ×ˢ Icc (0 : ℝ) 1, ContDiffAt ℝ (⊤ : ℕ∞) H p) {K : Set E}
-    (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
-    ∃ M : ℝ≥0, ∀ p ∈ K ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ H p‖ ≤ M := by
-  obtain ⟨M, hM⟩ := (hK.prod isCompact_Icc).exists_bound_of_continuousOn fun p hp ↦
-    ((hH p ⟨hKΩ hp.1, hp.2⟩).fderiv_right (m := 0) (by simp)).continuousAt.continuousWithinAt
-  exact ⟨M.toNNReal, fun p hp ↦ (hM p hp).trans (Real.le_coe_toNNReal M)⟩
-
-/-- A cutoff equal to one near the support of `T` can be replaced by one with values in `[0, 1]`,
-equal to one near the support of `T` and supported in the support of the original cutoff. -/
-private theorem exists_cutoff_abs_le_one {F' V' : Type*} [NormedAddCommGroup F']
-    [NormedSpace ℝ F'] [AddCommMonoid V'] {T : 𝓓(Ω, F') → V'}
-    (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) :
-    ∃ ψ : 𝓓(Ω, ℝ), (∀ᶠ x in 𝓝ˢ (dsupport T), ψ x = 1) ∧ (∀ x, |ψ x| ≤ 1) ∧
-      tsupport ψ ⊆ tsupport χ ∧ (χ : E → ℝ) =ᶠ[𝓝ˢ (dsupport T)] ψ := by
-  have hW : interior {x | χ x = 1} ⊆ tsupport χ := fun x hx ↦ by
-    have h : χ x = 1 := interior_subset hx
-    exact subset_tsupport _ (by simp [h])
-  have hTW : dsupport T ⊆ interior {x | χ x = 1} := subset_interior_iff_mem_nhdsSet.2 hχ
-  obtain ⟨ψ, hψ01, hψ1, hψW⟩ := exists_cutoff_tsupport_subset (n := ⊤)
-    (χ.hasCompactSupport.of_isClosed_subset isClosed_dsupport (hTW.trans hW)) isOpen_interior
-    hTW (hW.trans χ.tsupport_subset)
-  exact ⟨ψ, hψ1, fun x ↦ abs_le.2 ⟨by linarith [(hψ01 x).1], (hψ01 x).2⟩, hψW.trans hW,
-    (hχ.and hψ1).mono fun x hx ↦ hx.1.trans hx.2.symm⟩
-
-/-- **Homotopy currents of normal currents are normal**: if `T` is a normal current whose support
-lies in the interior of `{χ = 1}`, then the homotopy current `H_# ([[0, 1]] × T) = T ∘ K_χ` is
-normal, where `K_χ` is the homotopy operator with cutoff `χ`. -/
-theorem IsNormal.comp_cutoffHomotopyPullbackCLM {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
-    (hT : IsNormal T) (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) :
-    IsNormal (T ∘L (cutoffHomotopyPullbackCLM χ hH :
-      𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _)) := by
-  -- Replace `χ` by a cutoff with values in `[0, 1]`; this does not change the current.
-  obtain ⟨ψ, hψ1, hψ, -, hχψ⟩ := exists_cutoff_abs_le_one hχ
-  rw [ContinuousLinearMap.comp_cutoffHomotopyPullbackCLM_congr T hχψ]
-  obtain ⟨M, hM⟩ := exists_norm_fderiv_le hH ψ.hasCompactSupport ψ.tsupport_subset
-  -- The time derivative, the spatial derivative and the slices of `H` are bounded by `M`.
-  have hA : ∀ p ∈ tsupport ψ ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ H p (0, 1)‖ ≤ M := fun p hp ↦ by
-    refine ((fderiv ℝ H p).le_opNorm _).trans ?_
-    rw [Prod.norm_mk, norm_zero, norm_one, max_eq_right zero_le_one, mul_one]
-    exact hM p hp
-  have hL : ∀ p ∈ tsupport ψ ×ˢ Icc (0 : ℝ) 1, ‖(fderiv ℝ H p).comp (.inl ℝ E ℝ)‖ ≤ M :=
-    fun p hp ↦ ContinuousLinearMap.opNorm_le_bound _ M.coe_nonneg fun v ↦ by
-      refine ((fderiv ℝ H p).le_opNorm (v, 0)).trans ?_
-      rw [Prod.norm_mk, norm_zero, max_eq_left (norm_nonneg v)]
-      exact mul_le_mul_of_nonneg_right (hM p hp) (norm_nonneg v)
-  have hslice {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
-      ∀ x ∈ tsupport ψ, ‖fderiv ℝ (fun y ↦ H (y, t)) x‖ ≤ M := fun x hx ↦ by
-    have hD : fderiv ℝ (fun y ↦ H (y, t)) x = (fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ) :=
-      (((hH _ ⟨ψ.tsupport_subset hx, ht⟩).differentiableAt (by simp)).hasFDerivAt.comp x
-        (hasFDerivAt_prodMk_left x t)).fderiv
-    rw [hD]
-    exact hL _ ⟨hx, ht⟩
-  have hmass {j : ℕ} {S : 𝓓(Ω, E [⋀^Fin j]→L[ℝ] F) →L[ℝ] V} (hS : mass S ≠ ⊤) :
-      mass (S ∘ (cutoffHomotopyPullbackCLM ψ hH :
-        𝓓(Ω', E' [⋀^Fin (j + 1)]→L[ℝ] F) →L[ℝ] _)) ≠ ⊤ :=
-    ne_top_of_le_ne_top (by finiteness) (mass_comp_cutoffHomotopyPullbackCLM_le S hψ hA hL)
-  have hpush {j : ℕ} {S : 𝓓(Ω, E [⋀^Fin j]→L[ℝ] F) →L[ℝ] V} (hS : mass S ≠ ⊤) {t : ℝ}
-      (ht : t ∈ Icc (0 : ℝ) 1) {hΦ : ContDiffOn ℝ (⊤ : ℕ∞) (fun y ↦ H (y, t)) Ω} :
-      mass (S ∘ (cutoffPullbackCLM ψ (fun y ↦ H (y, t)) hΦ :
-        𝓓(Ω', E' [⋀^Fin j]→L[ℝ] F) →L[ℝ] _)) ≠ ⊤ :=
-    ne_top_of_le_ne_top (by finiteness) (mass_comp_cutoffPullbackCLM_le S hψ (hslice ht))
-  refine isNormal_succ_iff.2 ⟨hmass hT.mass_ne_top, ?_⟩
-  cases k with
-  | zero =>
-    rw [ContinuousLinearMap.comp_cutoffHomotopyPullbackCLM_comp_extDerivCLM_finZero T hψ1]
-    rw [FunLike.coe_sub]
-    exact ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨hpush hT.mass_ne_top ⟨zero_le_one, le_rfl⟩,
-      hpush hT.mass_ne_top ⟨le_rfl, zero_le_one⟩⟩) mass_sub_le
-  | succ k =>
-    rw [ContinuousLinearMap.comp_cutoffHomotopyPullbackCLM_comp_extDerivCLM T hψ1,
-      FunLike.coe_sub, FunLike.coe_sub]
-    refine ne_top_of_le_ne_top ?_ (mass_sub_le.trans (add_le_add_left mass_sub_le _))
-    exact ENNReal.add_ne_top.2 ⟨ENNReal.add_ne_top.2
-      ⟨hpush hT.mass_ne_top ⟨zero_le_one, le_rfl⟩, hpush hT.mass_ne_top ⟨le_rfl, zero_le_one⟩⟩,
-      hmass (isNormal_succ_iff.1 hT).2⟩
-
-end Distribution
 
 namespace ContinuousLinearMap
 
@@ -278,7 +187,9 @@ private theorem normalFlatMass_comp_cutoffPullbackCLM_sub_le_finZero_of_abs_le_o
   have hH := contDiffAt_lineHomotopy hf hg
   -- Only the time derivative enters the mass bound in degree zero; the spatial one is bounded on
   -- the compact support of `χ`.
-  obtain ⟨M, hM⟩ := Distribution.exists_norm_fderiv_le hH χ.hasCompactSupport χ.tsupport_subset
+  obtain ⟨M, hM⟩ := (χ.hasCompactSupport.isCompact.prod isCompact_Icc).exists_norm_fderiv_le
+    (by simp) fun p (hp : p ∈ tsupport χ ×ˢ Icc (0 : ℝ) 1) ↦
+      hH p ⟨χ.tsupport_subset hp.1, hp.2⟩
   have hD {x : E} (hx : x ∈ tsupport χ) : ‖fderiv ℝ f x‖ ≤ M ∧ ‖fderiv ℝ g x‖ ≤ M := by
     have hfx := (hf.contDiffAt (Ω.isOpen.mem_nhds (χ.tsupport_subset hx))).differentiableAt
       (by simp)
@@ -323,7 +234,7 @@ theorem normalFlatMass_comp_cutoffPullbackCLM_sub_le
     (T ∘L (cutoffPullbackCLM χ g hg : 𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] _) -
         T ∘L cutoffPullbackCLM χ f hf).normalFlatMass ≤
       A * (L ^ (k + 1) * mass T + L ^ k * mass (T ∘L extDerivCLM)) := by
-  obtain ⟨ψ, hψ1, hψ, hψχ, hχψ⟩ := Distribution.exists_cutoff_abs_le_one hχ
+  obtain ⟨ψ, hψ1, hψ, hψχ, hχψ⟩ := exists_cutoff_abs_le_one hχ
   rw [comp_cutoffPullbackCLM_congr T hχψ, comp_cutoffPullbackCLM_congr T hχψ]
   exact normalFlatMass_comp_cutoffPullbackCLM_sub_le_of_abs_le_one T hT hψ1 hψ
     (fun x hx ↦ hA x (hψχ hx)) (fun x hx ↦ hfL x (hψχ hx)) fun x hx ↦ hgL x (hψχ hx)
@@ -338,7 +249,7 @@ theorem normalFlatMass_comp_cutoffPullbackCLM_sub_le_finZero
     (hA : ∀ x ∈ tsupport χ, ‖g x - f x‖ ≤ A) :
     (T ∘L (cutoffPullbackCLM χ g hg : 𝓓(Ω', E' [⋀^Fin 0]→L[ℝ] ℝ) →L[ℝ] _) -
         T ∘L cutoffPullbackCLM χ f hf).normalFlatMass ≤ A * mass T := by
-  obtain ⟨ψ, hψ1, hψ, hψχ, hχψ⟩ := Distribution.exists_cutoff_abs_le_one hχ
+  obtain ⟨ψ, hψ1, hψ, hψχ, hχψ⟩ := exists_cutoff_abs_le_one hχ
   rw [comp_cutoffPullbackCLM_congr T hχψ, comp_cutoffPullbackCLM_congr T hχψ]
   exact normalFlatMass_comp_cutoffPullbackCLM_sub_le_finZero_of_abs_le_one T hT hψ1 hψ
     fun x hx ↦ hA x (hψχ hx)

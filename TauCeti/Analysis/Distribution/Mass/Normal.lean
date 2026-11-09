@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Distribution.CutoffPushforward
 public import TauCeti.Analysis.Distribution.Mass.SmulLeft
 public import TauCeti.Analysis.Distribution.Mass.Support
 public import TauCeti.Analysis.Distribution.TestFunction.Pullback
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 
 /-!
 # Normal and locally normal currents
@@ -43,6 +45,8 @@ of the map; the mass bounds of `TauCeti.Analysis.Distribution.Mass.SmulLeft` and
   with the corresponding statements for `Distribution.IsNormal`.
 * `Distribution.IsLocallyNormal.isNormal_comp_smulLeftCLM`: a test function times a locally normal
   current is normal.
+* `Distribution.IsNormal.comp_cutoffHomotopyPullbackCLM`: the homotopy current
+  `H_# ([[0, 1]] × T)` of a normal current `T` with compact support is normal.
 * `Distribution.isNormal_comp_evalCLM_comp_toBoundedContinuousFunctionCLM`: degree-zero point
   currents are normal.
 
@@ -56,8 +60,8 @@ public section
 
 noncomputable section
 
-open Set TopologicalSpace TestFunction ContinuousLinearMap
-open scoped ENNReal NNReal Distributions
+open Set Filter TopologicalSpace TestFunction ContinuousLinearMap
+open scoped ENNReal NNReal Distributions Topology
 
 namespace Distribution
 
@@ -356,6 +360,68 @@ theorem IsNormal.comp_pullbackCLM (hT : IsNormal T) {L : ℝ≥0}
     exact ⟨hM T hT.1, hM _ hT.2⟩
 
 end Pushforward
+
+section Homotopy
+
+variable [FiniteDimensional ℝ E] [CompleteSpace F] {E' : Type*} [NormedAddCommGroup E']
+  [NormedSpace ℝ E'] {Ω' : Opens E'} {H : E × ℝ → E'} {χ : 𝓓(Ω, ℝ)}
+  {hH : ∀ p ∈ (Ω : Set E) ×ˢ Icc (0 : ℝ) 1, ContDiffAt ℝ (⊤ : ℕ∞) H p}
+
+/-- **Homotopy currents of normal currents are normal**: if `T` is a normal current whose support
+lies in the interior of `{χ = 1}`, then the homotopy current `H_# ([[0, 1]] × T) = T ∘ K_χ` is
+normal, where `K_χ` is the homotopy operator with cutoff `χ`. -/
+theorem IsNormal.comp_cutoffHomotopyPullbackCLM {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V}
+    (hT : IsNormal T) (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1) :
+    IsNormal (T ∘L (cutoffHomotopyPullbackCLM χ hH :
+      𝓓(Ω', E' [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _)) := by
+  -- Replace `χ` by a cutoff with values in `[0, 1]`; this does not change the current.
+  obtain ⟨ψ, hψ1, hψ, -, hχψ⟩ := exists_cutoff_abs_le_one hχ
+  rw [ContinuousLinearMap.comp_cutoffHomotopyPullbackCLM_congr T hχψ]
+  obtain ⟨M, hM⟩ := (ψ.hasCompactSupport.isCompact.prod isCompact_Icc).exists_norm_fderiv_le
+    (by simp) fun p (hp : p ∈ tsupport ψ ×ˢ Icc (0 : ℝ) 1) ↦
+      hH p ⟨ψ.tsupport_subset hp.1, hp.2⟩
+  -- The time derivative, the spatial derivative and the slices of `H` are bounded by `M`.
+  have hA : ∀ p ∈ tsupport ψ ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ H p (0, 1)‖ ≤ M := fun p hp ↦ by
+    refine ((fderiv ℝ H p).le_opNorm _).trans ?_
+    rw [Prod.norm_mk, norm_zero, norm_one, max_eq_right zero_le_one, mul_one]
+    exact hM p hp
+  have hL : ∀ p ∈ tsupport ψ ×ˢ Icc (0 : ℝ) 1, ‖(fderiv ℝ H p).comp (.inl ℝ E ℝ)‖ ≤ M :=
+    fun p hp ↦ ContinuousLinearMap.opNorm_le_bound _ M.coe_nonneg fun v ↦ by
+      refine ((fderiv ℝ H p).le_opNorm (v, 0)).trans ?_
+      rw [Prod.norm_mk, norm_zero, max_eq_left (norm_nonneg v)]
+      exact mul_le_mul_of_nonneg_right (hM p hp) (norm_nonneg v)
+  have hslice {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
+      ∀ x ∈ tsupport ψ, ‖fderiv ℝ (fun y ↦ H (y, t)) x‖ ≤ M := fun x hx ↦ by
+    have hD : fderiv ℝ (fun y ↦ H (y, t)) x = (fderiv ℝ H (x, t)).comp (.inl ℝ E ℝ) :=
+      (((hH _ ⟨ψ.tsupport_subset hx, ht⟩).differentiableAt (by simp)).hasFDerivAt.comp x
+        (hasFDerivAt_prodMk_left x t)).fderiv
+    rw [hD]
+    exact hL _ ⟨hx, ht⟩
+  have hmass {j : ℕ} {S : 𝓓(Ω, E [⋀^Fin j]→L[ℝ] F) →L[ℝ] V} (hS : mass S ≠ ⊤) :
+      mass (S ∘ (cutoffHomotopyPullbackCLM ψ hH :
+        𝓓(Ω', E' [⋀^Fin (j + 1)]→L[ℝ] F) →L[ℝ] _)) ≠ ⊤ :=
+    ne_top_of_le_ne_top (by finiteness) (mass_comp_cutoffHomotopyPullbackCLM_le S hψ hA hL)
+  have hpush {j : ℕ} {S : 𝓓(Ω, E [⋀^Fin j]→L[ℝ] F) →L[ℝ] V} (hS : mass S ≠ ⊤) {t : ℝ}
+      (ht : t ∈ Icc (0 : ℝ) 1) {hΦ : ContDiffOn ℝ (⊤ : ℕ∞) (fun y ↦ H (y, t)) Ω} :
+      mass (S ∘ (cutoffPullbackCLM ψ (fun y ↦ H (y, t)) hΦ :
+        𝓓(Ω', E' [⋀^Fin j]→L[ℝ] F) →L[ℝ] _)) ≠ ⊤ :=
+    ne_top_of_le_ne_top (by finiteness) (mass_comp_cutoffPullbackCLM_le S hψ (hslice ht))
+  refine isNormal_succ_iff.2 ⟨hmass hT.mass_ne_top, ?_⟩
+  cases k with
+  | zero =>
+    rw [ContinuousLinearMap.comp_cutoffHomotopyPullbackCLM_comp_extDerivCLM_finZero T hψ1]
+    rw [FunLike.coe_sub]
+    exact ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨hpush hT.mass_ne_top ⟨zero_le_one, le_rfl⟩,
+      hpush hT.mass_ne_top ⟨le_rfl, zero_le_one⟩⟩) mass_sub_le
+  | succ k =>
+    rw [ContinuousLinearMap.comp_cutoffHomotopyPullbackCLM_comp_extDerivCLM T hψ1,
+      FunLike.coe_sub, FunLike.coe_sub]
+    refine ne_top_of_le_ne_top ?_ (mass_sub_le.trans (add_le_add_left mass_sub_le _))
+    exact ENNReal.add_ne_top.2 ⟨ENNReal.add_ne_top.2
+      ⟨hpush hT.mass_ne_top ⟨zero_le_one, le_rfl⟩, hpush hT.mass_ne_top ⟨le_rfl, zero_le_one⟩⟩,
+      hmass (isNormal_succ_iff.1 hT).2⟩
+
+end Homotopy
 
 section Point
 
