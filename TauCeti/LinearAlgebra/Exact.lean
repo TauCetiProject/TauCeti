@@ -27,8 +27,10 @@ short exact
 `Function.Exact.bijective_mapQ_range_of_prod_coprod`), the exact sequence
 `0 → ker f → ker (g ∘ f) → ker g → coker f → coker (g ∘ f) → coker g → 0` of a composition, with
 middle maps `LinearMap.kerCompToKer`, `LinearMap.kerToCoker` and `LinearMap.cokerToCokerComp`
-(`LinearMap.exact_kerCompToKer_kerToCoker` and its neighbours), the dimension of the homology of a
-complex of finite-dimensional vector spaces in terms of the two cokernels
+(`LinearMap.exact_kerCompToKer_kerToCoker` and its neighbours), the dimension
+`dim X + dim Y - dim T` of the transverse fibre product `{(ξ, η) | α ξ = β η}` of
+`α : X → T` and `β : Y → T` (`LinearMap.finrank_ker_coprod_neg_add`), the dimension of the
+homology of a complex of finite-dimensional vector spaces in terms of the two cokernels
 (`LinearMap.finrank_map_mkQ_ker_add_finrank`), and the vanishing of the alternating sum of
 dimensions along a long exact sequence of finite-dimensional vector spaces of the shape produced
 by a homology theory,
@@ -130,6 +132,18 @@ theorem _root_.Function.Exact.linearIndependent_append {R M N P : Type*} [Ring R
       exact LinearMap.map_le_range)).symm
   exact TauCeti.linearIndependent_fin_append.2 ⟨hu.map' f (LinearMap.ker_eq_bot.2 hf),
     hv.of_comp g, hdisj⟩
+
+/-- For transverse `α : X → T` and `β : Y → T`, that is, when `(ξ, η) ↦ α ξ - β η` is surjective,
+the fibre product `{(ξ, η) | α ξ = β η}` has dimension `dim X + dim Y - dim T`. -/
+theorem _root_.LinearMap.finrank_ker_coprod_neg_add {k X Y T : Type*} [DivisionRing k]
+    [AddCommGroup X] [Module k X] [AddCommGroup Y] [Module k Y] [AddCommGroup T] [Module k T]
+    [FiniteDimensional k X] [FiniteDimensional k Y] {α : X →ₗ[k] T} {β : Y →ₗ[k] T}
+    (h : Function.Surjective (α.coprod (-β))) :
+    Module.finrank k (LinearMap.ker (α.coprod (-β))) + Module.finrank k T =
+      Module.finrank k X + Module.finrank k Y := by
+  have h' := (LinearMap.exact_subtype_ker_map _).finrank_eq_add (Submodule.injective_subtype _) h
+  rw [Module.finrank_prod] at h'
+  exact h'.symm
 
 section FiniteDimensionalExact
 

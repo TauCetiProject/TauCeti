@@ -339,7 +339,7 @@ private theorem exists_ideleLocalization_eq_sumLocalInvSection_one_div_aux {E : 
   let := algebraicExtensionNormedFieldTopology (v.adicCompletion K) Ev
   have := finiteExtension_isNonarchimedeanLocalField (v.adicCompletion K) Ev
   have := algebraicExtension_valuativeExtension (v.adicCompletion K) Ev
-  have : IsUnramified (v.adicCompletion K) Ev := isUnramified_unramifiedExtension hn
+  have : IsUnramified (v.adicCompletion K) Ev := isUnramified_unramifiedExtension
   obtain ⟨χv, hχv, hfrob⟩ :=
     exists_comp_absoluteGaloisGroupMap_eq_comp_restrictNormalHom hn τ Ev le_rfl hζ ψ hψ
   -- The carry class of `χ` and the idele concentrated at `v` with component `π`.
