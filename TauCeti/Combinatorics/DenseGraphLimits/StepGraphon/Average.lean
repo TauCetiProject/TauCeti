@@ -156,10 +156,11 @@ theorem stepGraphonAvg_apply (P : Finpartition (Set.univ : Set Ω))
 This is not a simp lemma because the partition parts cannot be inferred from its left-hand side. -/
 theorem stepGraphonAvg_apply_of_measure_eq_zero_left
     (P : Finpartition (Set.univ : Set Ω)) (hP : ∀ p ∈ P.parts, MeasurableSet p)
-    (W : Graphon Ω μ) {p q : P.parts} {x y : Ω} (hp : μ (p : Set Ω) = 0)
-    (hx : x ∈ (p : Set Ω)) (hy : y ∈ (q : Set Ω)) :
+    (W : Graphon Ω μ) {p : P.parts} {x y : Ω} (hp : μ (p : Set Ω) = 0)
+    (hx : x ∈ (p : Set Ω)) :
     stepGraphonAvg (μ := μ) P hP W x y = 0 := by
-  rw [stepGraphonAvg_apply P hP W hx hy, setAverage_eq, measureReal_prod_prod]
+  rw [stepGraphonAvg_apply P hP W hx (P.indexedPartition.mem_index y), setAverage_eq,
+    measureReal_prod_prod]
   simp [hp]
 
 /-- On a partition rectangle whose right side is null, the block-average step graphon is zero.
