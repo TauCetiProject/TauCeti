@@ -297,6 +297,11 @@ theorem contDiff_sum_coefficient {ι : Type*} (s : Finset ι) {d : ι → ℝ}
   rw [Finset.sum_fn]
   exact ContDiff.sum fun i _ => (a i).contDiff_coefficient
 
+@[simp]
+theorem coefficient_sum {ι : Type*} (s : Finset ι) (a : ι → Symbol n V W m) :
+    (∑ i ∈ s, a i).coefficient = ∑ i ∈ s, (a i).coefficient :=
+  map_sum (⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩ : Symbol n V W m →+ _) a s
+
 theorem IsUniform.add {a b : Symbol n V W m} (ha : a.IsUniform) (hb : b.IsUniform) :
     (a + b).IsUniform := by
   intro α β
