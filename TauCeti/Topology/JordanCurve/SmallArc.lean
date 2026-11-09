@@ -150,7 +150,7 @@ theorem exists_isPreconnected_union_eq_compl_pair_circle_diam_le {z w : Circle} 
   -- The two pieces are Mathlib's open arcs, which cover the complement of `{z, w}`.
   have hunion := Circle.path_image_Ioo_union_path_image_Ioo hzw
   have hpre : ∀ x y : Circle, IsPreconnected (Circle.path x y '' Ioo 0 1) := fun x y =>
-    isPreconnected_Ioo.image _ (Circle.path x y).continuous.continuousOn
+    (Circle.isPathConnected_path_image_Ioo x y).isConnected.isPreconnected
   -- Putting the endpoints back — they are the values of the path at `0` and `1` — lands inside the
   -- closed arc `Circle.range_path`, whose diameter is at most its angle.
   have hdiam : ∀ x y : Circle,

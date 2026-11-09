@@ -59,9 +59,11 @@ open arc.
   where the argument is at most `a` in absolute value.
 * `TauCeti.exists_centeredArc_subset_of_mem_nhds` — every neighbourhood of `1` contains an arc
   about `1` of half-width at most `π`.
+* `Circle.isPathConnected_path_image_Ioo` — an open arc `Circle.path x y '' Set.Ioo 0 1` is path
+  connected.
 * `Circle.isOpen_path_image_Ioo`, `Circle.closure_path_image_Ioo` and
-  `Circle.frontier_path_image_Ioo` — an open arc `Circle.path x y '' Set.Ioo 0 1` between two
-  distinct points is open, with closure the closed arc and frontier its two endpoints.
+  `Circle.frontier_path_image_Ioo` — an open arc between two distinct points is open, with closure
+  the closed arc and frontier its two endpoints.
 * `Circle.connectedComponentIn_compl_pair` — the two open arcs between `x` and `y` are the
   connected components of `{x, y}ᶜ`.
 * `Circle.frontier_connectedComponentIn_compl_pair` and
@@ -202,6 +204,28 @@ theorem isOpen_path_image_Ioo (h : x ≠ y) : IsOpen (x.path y '' Ioo 0 1) := by
   rw [← compl_range_path h.symm]
   exact (isCompact_range (y.path x).continuous).isClosed.isOpen_compl
 
+/-- An open arc of the circle is path connected: it is the image of the real interval `Ioo 0 1`
+under `Path.extend`, which reparametrizes `Circle.path x y` by all of `ℝ` and so lets the
+path-connectedness be read off the convexity of `Ioo 0 1`. -/
+theorem isPathConnected_path_image_Ioo (x y : Circle) :
+    IsPathConnected (x.path y '' Ioo 0 1) := by
+  have hproj : Set.projIcc (0 : ℝ) 1 zero_le_one '' Ioo 0 1 = Ioo 0 1 := by
+    ext t
+    simp only [mem_image, mem_Ioo]
+    refine ⟨?_, fun ht => ⟨t, ⟨unitInterval.coe_pos.2 ht.1, unitInterval.coe_lt_one.2 ht.2⟩,
+      Set.projIcc_val _ t⟩⟩
+    rintro ⟨s, hs, rfl⟩
+    rw [Set.projIcc_of_mem _ (Ioo_subset_Icc_self hs)]
+    exact ⟨by simpa [← unitInterval.coe_pos] using hs.1,
+      by simpa [← unitInterval.coe_lt_one] using hs.2⟩
+  have himg : (x.path y).extend '' Ioo (0 : ℝ) 1 = x.path y '' Ioo 0 1 := by
+    rw [← hproj, ← image_comp]
+    refine image_congr fun t ht => ?_
+    rw [Function.comp_apply, ← (x.path y).extend_extends' (Set.projIcc 0 1 zero_le_one t),
+      Set.projIcc_of_mem _ (Ioo_subset_Icc_self ht)]
+  exact himg ▸ ((convex_Ioo (0 : ℝ) 1).isPathConnected (by simp)).image'
+    (Path.continuous_extend _).continuousOn
+
 /-- The two open arcs between two distinct points cover the rest of the circle. -/
 theorem path_image_Ioo_union_path_image_Ioo (h : x ≠ y) :
     x.path y '' Ioo 0 1 ∪ y.path x '' Ioo 0 1 = {x, y}ᶜ := by
@@ -233,8 +257,7 @@ theorem frontier_path_image_Ioo (h : x ≠ y) :
 /-- **An open arc is a connected component of the complement of its endpoints.** -/
 theorem connectedComponentIn_compl_pair (h : x ≠ y) (hz : z ∈ x.path y '' Ioo 0 1) :
     connectedComponentIn {x, y}ᶜ z = x.path y '' Ioo 0 1 := by
-  have hU : IsPreconnected (x.path y '' Ioo 0 1) :=
-    isPreconnected_Ioo.image _ (x.path y).continuous.continuousOn
+  have hU := (isPathConnected_path_image_Ioo x y).isConnected.isPreconnected
   have hsub := path_image_Ioo_union_path_image_Ioo h
   refine subset_antisymm ?_ (hU.subset_connectedComponentIn hz (hsub ▸ subset_union_left))
   rcases isPreconnected_connectedComponentIn.subset_or_subset (isOpen_path_image_Ioo h)

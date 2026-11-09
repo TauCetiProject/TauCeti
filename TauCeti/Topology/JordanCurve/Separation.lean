@@ -83,28 +83,6 @@ variable {X : Type*} [TopologicalSpace X] {C : Set X} {p q : X} {r : ℝ}
 
 /-! ## Cutting the circle -/
 
-/-- An open arc of the circle is path connected: it is the image of the real interval `Ioo 0 1`
-under `Path.extend`, which reparametrizes `Circle.path u v` by all of `ℝ` and so lets the
-path-connectedness be read off the convexity of `Ioo 0 1`. -/
-private lemma isPathConnected_path_image_Ioo (u v : Circle) :
-    IsPathConnected (Circle.path u v '' Ioo 0 1) := by
-  have hproj : Set.projIcc (0 : ℝ) 1 zero_le_one '' Ioo 0 1 = Ioo 0 1 := by
-    ext t
-    simp only [mem_image, mem_Ioo]
-    refine ⟨?_, fun ht => ⟨t, ⟨unitInterval.coe_pos.2 ht.1, unitInterval.coe_lt_one.2 ht.2⟩,
-      Set.projIcc_val _ t⟩⟩
-    rintro ⟨s, hs, rfl⟩
-    rw [Set.projIcc_of_mem _ (Ioo_subset_Icc_self hs)]
-    exact ⟨by simpa [← unitInterval.coe_pos] using hs.1,
-      by simpa [← unitInterval.coe_lt_one] using hs.2⟩
-  have himg : (Circle.path u v).extend '' Ioo (0 : ℝ) 1 = Circle.path u v '' Ioo 0 1 := by
-    rw [← hproj, ← image_comp]
-    refine image_congr fun t ht => ?_
-    rw [Function.comp_apply, ← (Circle.path u v).extend_extends' (Set.projIcc 0 1 zero_le_one t),
-      Set.projIcc_of_mem _ (Ioo_subset_Icc_self ht)]
-  exact himg ▸ ((convex_Ioo (0 : ℝ) 1).isPathConnected (by simp)).image'
-    (Path.continuous_extend _).continuousOn
-
 /-- **Two distinct points cut the circle into two arcs.** The complement of `{z, w}` is the union
 of two disjoint nonempty open path-connected sets, namely the two open arcs
 `Circle.path z w '' Ioo 0 1` and `Circle.path w z '' Ioo 0 1` that Mathlib cuts the circle into.
@@ -118,7 +96,7 @@ theorem exists_isOpen_isPathConnected_union_eq_compl_pair_circle {z w : Circle} 
     ∃ A B : Set Circle, IsOpen A ∧ IsOpen B ∧ IsPathConnected A ∧ IsPathConnected B ∧
       Disjoint A B ∧ A ∪ B = ({z, w} : Set Circle)ᶜ :=
   ⟨_, _, Circle.isOpen_path_image_Ioo hzw, Circle.isOpen_path_image_Ioo hzw.symm,
-    isPathConnected_path_image_Ioo z w, isPathConnected_path_image_Ioo w z,
+    Circle.isPathConnected_path_image_Ioo z w, Circle.isPathConnected_path_image_Ioo w z,
     Circle.disjoint_path_image_Ioo hzw, Circle.path_image_Ioo_union_path_image_Ioo hzw⟩
 
 /-! ## Cutting a Jordan curve
