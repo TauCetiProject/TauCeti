@@ -105,6 +105,7 @@ theorem finrank_eq_half (hL : IsMaximalTotallyReal J L)
   have h := hL.two_mul_finrank_eq hJ
   omega
 
+omit [FiniteDimensional R E] in
 /-- A map from a space of half the ambient dimension onto a maximal totally real subspace is
 injective. -/
 theorem injective_of_two_mul_finrank_eq {F : Type*} [AddCommGroup F] [Module R F]

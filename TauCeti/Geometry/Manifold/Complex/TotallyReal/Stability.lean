@@ -203,7 +203,7 @@ end Tangent
 namespace ContMDiffAlmostComplexStructureFamily
 
 variable {E H M F H' N EP HP P : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [TopologicalSpace H]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [TopologicalSpace H']
   {I' : ModelWithCorners ℝ F H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' 1 N]
@@ -247,7 +247,7 @@ theorem eventually_isMaximalTotallyRealMap [CompactSpace N]
 /-- A totally real embedding of a compact manifold for one member of a jointly continuous family
 of almost complex structures is totally real for all nearby members. The embedding and dimension
 conditions do not involve the structure. -/
-theorem eventually_isTotallyRealEmbedding [CompactSpace N]
+theorem eventually_isTotallyRealEmbedding [FiniteDimensional ℝ E] [CompactSpace N]
     (J : ContMDiffAlmostComplexStructureFamily I M IP P n) {p₀ : P} {m : ℕ∞ω} (hm : 1 ≤ m)
     (h : IsTotallyRealEmbedding I' I m (J.freeze p₀).almostComplexStructureAt ι) :
     ∀ᶠ p in 𝓝 p₀, IsTotallyRealEmbedding I' I m (J.freeze p).almostComplexStructureAt ι := by
