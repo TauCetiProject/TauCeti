@@ -65,6 +65,10 @@ compact-support left and right inverse identities are available in this module.
 * `HasCompactSupport.differentiableAt_integral_sub_inv_smul_of_eq_zero` and
   `TauCeti.differentiableOn_integral_sub_inv_smul_compl`: holomorphy where `f` vanishes, in
   particular off `tsupport f`.
+* `HasCompactSupport.contDiff_cauchyTransform`,
+  `HasCompactSupport.differentiableAt_cauchyTransform_of_notMem_tsupport` and
+  `HasCompactSupport.tendsto_cauchyTransform_cobounded`: the normalized transform of compactly
+  supported smooth data is smooth, holomorphic off `tsupport f`, and tends to `0` at infinity.
 
 ## References
 
@@ -380,5 +384,79 @@ theorem _root_.HasCompactSupport.cauchyTransform_conjWirtingerDeriv {u : ℂ →
     using 1
   congr 1
   field_simp
+
+section Regularity
+
+open Bornology
+open scoped ContDiff
+
+variable {c : ℂ → F}
+
+omit [CompleteSpace F] in
+/-- The Cauchy transform of a compactly supported smooth map is smooth: it is the convolution of
+the locally integrable kernel `z⁻¹` with the map. -/
+theorem _root_.HasCompactSupport.contDiff_cauchyTransform (hc : HasCompactSupport c)
+    (hs : ContDiff ℝ ∞ c) : ContDiff ℝ ∞ (cauchyTransform c) := by
+  rw [cauchyTransform_eq_convolution]
+  exact (hc.contDiff_convolution_right (ContinuousLinearMap.lsmul ℝ ℂ)
+    Complex.locallyIntegrable_inv hs).const_smul _
+
+/-- The Cauchy transform of a compactly supported `C¹` map is holomorphic off the support of the
+map. -/
+theorem _root_.HasCompactSupport.differentiableAt_cauchyTransform_of_notMem_tsupport
+    (hc : HasCompactSupport c) (hs : ContDiff ℝ 1 c) {w : ℂ} (hw : w ∉ tsupport c) :
+    DifferentiableAt ℂ (cauchyTransform c) w := by
+  have h := (differentiableOn_integral_sub_inv_smul_compl hc
+    (fun x hx ↦ image_eq_zero_of_notMem_tsupport hx) hs).differentiableAt
+    ((isClosed_tsupport c).isOpen_compl.mem_nhds hw)
+  rw [show cauchyTransform c = fun x ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (x - z)⁻¹ • c z from
+    funext (cauchyTransform_apply c)]
+  exact h.const_smul _
+
+omit [CompleteSpace F] in
+/-- The Cauchy transform of a compactly supported continuous map tends to `0` at infinity. -/
+theorem _root_.HasCompactSupport.tendsto_cauchyTransform_cobounded (hc : HasCompactSupport c)
+    (hs : Continuous c) :
+    Tendsto (cauchyTransform c) (cobounded ℂ) (𝓝 0) := by
+  obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall 0
+  set R' := max R 1
+  set C := ∫ z, ‖c z‖
+  have hint : Integrable fun z ↦ ‖c z‖ := hs.norm.integrable_of_hasCompactSupport hc.norm
+  have hbound : ∀ᶠ w in cobounded ℂ,
+      ‖cauchyTransform c w‖ ≤ (Real.pi⁻¹ * 2 * C) * ‖w‖⁻¹ := by
+    filter_upwards [tendsto_norm_cobounded_atTop.eventually (eventually_gt_atTop (2 * R'))]
+      with w hw
+    have hR'1 : 1 ≤ R' := le_max_right _ _
+    have hw0 : 0 < ‖w‖ := by linarith
+    have hpt : ∀ z, ‖(w - z)⁻¹ • c z‖ ≤ 2 * ‖w‖⁻¹ * ‖c z‖ := fun z ↦ by
+      by_cases hz : c z = 0
+      · simp [hz]
+      have hzR : ‖z‖ ≤ R' := by
+        have := hR (subset_tsupport c hz)
+        rw [mem_closedBall, dist_zero_right] at this
+        exact this.trans (le_max_left _ _)
+      have hwz : ‖w‖ / 2 ≤ ‖w - z‖ := by
+        have := norm_sub_norm_le w z
+        linarith
+      rw [norm_smul, norm_inv]
+      refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
+      rw [inv_le_comm₀ (by linarith) (by positivity)]
+      calc (2 * ‖w‖⁻¹)⁻¹ = ‖w‖ / 2 := by field_simp
+        _ ≤ ‖w - z‖ := hwz
+    calc ‖cauchyTransform c w‖ = Real.pi⁻¹ * ‖∫ z, (w - z)⁻¹ • c z‖ := by
+          rw [cauchyTransform_apply, norm_smul, norm_inv, Complex.norm_real,
+            Real.norm_of_nonneg Real.pi_pos.le]
+      _ ≤ Real.pi⁻¹ * ∫ z, 2 * ‖w‖⁻¹ * ‖c z‖ := by
+          gcongr
+          exact norm_integral_le_of_norm_le (hint.const_mul _) (ae_of_all _ hpt)
+      _ = (Real.pi⁻¹ * 2 * C) * ‖w‖⁻¹ := by
+          rw [integral_const_mul]
+          ring
+  have hlim : Tendsto (fun w : ℂ ↦ (Real.pi⁻¹ * 2 * C) * ‖w‖⁻¹) (cobounded ℂ) (𝓝 0) := by
+    simpa using (tendsto_inv_atTop_zero.comp tendsto_norm_cobounded_atTop).const_mul
+      (Real.pi⁻¹ * 2 * C)
+  exact squeeze_zero_norm' hbound hlim
+
+end Regularity
 
 end TauCeti

@@ -28,7 +28,12 @@ image of one of the two coordinates, where the differential of the coordinate is
 
 The two affine coordinates are `TauCeti.ProjectiveLine.affineParam`, related on their overlap by
 `TauCeti.ProjectiveLine.affineParam_inv`; pulled-back forms are related by
-`TauCeti.ProjectiveLine.coe_mpullback_affineParam_apply_of_ne_zero`.
+`TauCeti.ProjectiveLine.coe_mpullback_affineParam_apply_of_ne_zero`. Together the two coordinates
+detect smoothness of functions (`TauCeti.ProjectiveLine.contMDiff_of_contDiff_comp_affineParam`),
+their derivatives are bijective (`TauCeti.ProjectiveLine.injective_mfderiv_affineParam` and
+`TauCeti.ProjectiveLine.surjective_mfderiv_affineParam`), and a smooth form is determined by its
+pullback along either one of them (`TauCeti.ProjectiveLine.mpullback_affineParam_injective`), since
+each misses only one point (`TauCeti.ProjectiveLine.affineParam_zero_notMem_affineOpen`).
 
 ## References
 
@@ -148,6 +153,74 @@ theorem coe_mpullback_affineParam_apply_of_ne_zero {F : Type*} [NormedAddCommGro
   rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback, heq.mpullback_eq,
     mpullback_comp_at hinv.differentiableAt.mdifferentiableAt
       ((contMDiff_affineParam_real j _).mdifferentiableAt (by simp))]
+
+/-- For `i ≠ j`, the point `0` of the affine coordinate `j` lies outside the affine open `i`: it is
+the one point of the projective line that the affine coordinate `i` misses. -/
+theorem affineParam_zero_notMem_affineOpen {i j : Fin 2} (hij : i ≠ j) :
+    affineParam j 0 ∉ affineOpen (K := ℂ) i := by
+  rw [affineParam_eq, mk_mem_affineOpen_iff, not_not]
+  fin_cases i <;> fin_cases j <;> simp_all
+
+/-- A function on the projective line whose compositions with both affine coordinates are smooth
+is smooth. -/
+theorem contMDiff_of_contDiff_comp_affineParam {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {f : ℙ ℂ (Fin 2 → ℂ) → G} (hf : ∀ i, ContDiff ℝ ∞ (f ∘ affineParam i)) :
+    ContMDiff 𝓘(ℝ, Fin 1 → ℂ) 𝓘(ℝ, G) ∞ f := by
+  intro x
+  obtain ⟨i, hi⟩ := exists_mem_affineOpen x
+  have hchart : ContMDiffAt 𝓘(ℝ, Fin 1 → ℂ) 𝓘(ℝ, Fin 1 → ℂ) ∞
+      (affineChart (K := ℂ) (n := 1) i) x := by
+    simpa only [modelWithCornersSelf_restrictScalars] using
+      ((contMDiffOn_affineChart (𝕜 := ℂ) (n := 1) i ∞).contMDiffAt
+        ((isOpen_affineOpen i).mem_nhds hi)).restrictScalars ℝ
+  have hG : ContDiff ℝ ∞ fun z : Fin 1 → ℂ ↦ (f ∘ affineParam i) (z 0) :=
+    (hf i).comp (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin 1 ↦ ℂ) 0).contDiff
+  refine (hG.contMDiff.contMDiffAt.comp x hchart).congr_of_eventuallyEq ?_
+  filter_upwards [(isOpen_affineOpen i).mem_nhds hi] with y hy
+  simp [affineParam_affineChart hy]
+
+/-- Every derivative of an affine coordinate of the projective line is surjective. -/
+theorem surjective_mfderiv_affineParam (i : Fin 2) (t : ℂ) :
+    Surjective (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, Fin 1 → ℂ) (affineParam i) t) := by
+  have h : Module.finrank ℝ ℂ = Module.finrank ℝ (Fin 1 → ℂ) := by
+    simp [Module.finrank_pi_fintype]
+  exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank h
+    (f := (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, Fin 1 → ℂ) (affineParam i) t).toLinearMap)).1
+    (injective_mfderiv_affineParam i t)
+
+/-- A smooth form on the projective line is determined by its pullback along one affine
+coordinate: that coordinate covers all points but one, and the forms are continuous. -/
+theorem mpullback_affineParam_injective {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℂ F] {k : ℕ} (i : Fin 2) :
+    Injective (SmoothForm.mpullback (F := F) (k := k) (affineParam i)
+      (contMDiff_affineParam_real i)) := by
+  -- First, two forms agreeing after pullback along both coordinates are equal.
+  have hboth {α β : SmoothForm 𝓘(ℝ, Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ)) F k}
+      (h : ∀ i, SmoothForm.mpullback (affineParam i) (contMDiff_affineParam_real i) α =
+        SmoothForm.mpullback (affineParam i) (contMDiff_affineParam_real i) β) : α = β := by
+    refine Subtype.ext (funext fun x ↦ ?_)
+    obtain ⟨i, hi⟩ := exists_mem_affineOpen x
+    obtain ⟨t, rfl⟩ : ∃ t, affineParam i t = x := ⟨_, affineParam_affineChart hi⟩
+    ext v
+    choose w hw using fun m ↦ surjective_mfderiv_affineParam i t (v m)
+    have h' := congrArg (fun γ : SmoothForm 𝓘(ℝ, ℂ) ℂ F k ↦ γ.1 t w) (h i)
+    simp only [SmoothForm.mpullback_apply, hw] at h'
+    exact h'
+  -- Pullbacks along the other coordinate agree off `0`, hence everywhere by continuity.
+  intro α β h
+  obtain ⟨j, hij⟩ : ∃ j, i ≠ j := by fin_cases i <;> simp
+  refine hboth fun l ↦ ?_
+  obtain rfl | rfl : l = i ∨ l = j := by omega
+  · exact h
+  let Θ (γ : SmoothForm 𝓘(ℝ, Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ)) F k) : ℂ → ℂ [⋀^Fin k]→L[ℝ] F :=
+    fun s ↦ (SmoothForm.mpullback (affineParam l) (contMDiff_affineParam_real l) γ).1 s
+  have hcont (γ : SmoothForm 𝓘(ℝ, Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ)) F k) : Continuous (Θ γ) :=
+    (isSmoothForm_modelSpace_iff.1 (SmoothForm.mpullback _ _ γ).isSmoothForm).continuous
+  have hΘ : Θ α = Θ β := (hcont α).ext_on (dense_compl_singleton 0) (hcont β) fun s hs ↦ by
+    simp only [Θ]
+    rw [coe_mpullback_affineParam_apply_of_ne_zero α hij.symm hs,
+      coe_mpullback_affineParam_apply_of_ne_zero β hij.symm hs, h]
+  exact Subtype.ext (funext fun s ↦ congrFun hΘ s)
 
 end ProjectiveLine
 
