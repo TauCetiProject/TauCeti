@@ -20,8 +20,8 @@ A Frobenius functional on a finite-dimensional bialgebra pairs nontrivially with
 both integral spaces: each has a unique element on which the functional is one.
 For a right invariant functional, strong invariance gives a reconstruction formula
 from the coproduct of its normalized left integral. In particular the antipode is
-bijective. These statements assume a nonzero invariant functional; they do not
-assert its existence.
+bijective. These statements assume a nonzero invariant functional; its existence
+over a field is proved in `TauCeti.Algebra.HopfAlgebra.Cointegral.Existence`.
 
 ## References
 
