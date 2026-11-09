@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.PositiveDegrees.Map
-public import TauCeti.Geometry.ScatteringDiagram.WallSpace.Map
+public import TauCeti.Geometry.ScatteringDiagram.WallSpace.Basic
 
 /-!
 # Coordinate changes of directed wall spaces
@@ -15,7 +15,8 @@ An algebraic coordinate change identifies the degree groups and tangent monoids,
 positive monoids, the homogeneous Lie pieces and the wall submodules. Normals
 transform by the inverse tangent map. The positive degree functions need not
 agree: the finite-maximum cutoff modulus of `PositiveDegreeMap.ofInjectiveOn` gives the
-maps at finite order, and it is the identity modulus when the degree functions agree.
+maps at finite order, and its modulus is bounded by the identity modulus when the degree
+functions agree.
 
 Coordinate changes form a groupoid: identity, inverse and composition satisfy the
 expected laws, and each is determined by its three equivalences. A coordinate change
@@ -122,7 +123,7 @@ def trans (E : CoordinateChange d e H H') (F : CoordinateChange e p H' H'') :
     have hn : m.comp (E.tangentEquiv.trans F.tangentEquiv).symm =
         (m.comp (E.tangentEquiv.symm : Λ' →+ Λ)).comp (F.tangentEquiv.symm : Λ'' →+ Λ') := by
       ext v
-      rfl
+      simp
     rw [hn]
     exact (F.wall_mem_iff _ _ _).trans (E.wall_mem_iff n m x)
 
@@ -182,6 +183,18 @@ theorem trans_assoc {Γ''' Λ''' L''' : Type*} [AddCommMonoid Γ'''] [AddCommMon
     (G : CoordinateChange p q H'' H''') : (E.trans F).trans G = E.trans (F.trans G) := by
   apply ext <;> rfl
 
+/-- Inverting identity coordinates gives identity coordinates. -/
+@[simp]
+theorem refl_symm (d : PositiveDegrees Γ) (H : DirectedWallSpaces ρ ℒ) :
+    (refl d H).symm = refl d H := by
+  apply ext <;> rfl
+
+/-- Inversion reverses composition. -/
+@[simp]
+theorem symm_trans (E : CoordinateChange d e H H') (F : CoordinateChange e p H' H'') :
+    (E.trans F).symm = F.symm.trans E.symm := by
+  apply ext <;> rfl
+
 /-- Composing a coordinate change with its inverse gives identity coordinates. -/
 @[simp]
 theorem self_trans_symm (E : CoordinateChange d e H H') : E.trans E.symm = refl d H := by
@@ -226,46 +239,52 @@ theorem degreeMap_modulus_le_iff (E : CoordinateChange d e H H') (k l : ℕ) :
       ∀ n ∈ d.monoid, e.degree (E.degreeEquiv n) ≤ k → d.degree n ≤ l :=
   PositiveDegreeMap.ofInjectiveOn_modulus_le_iff _ _ _ k l
 
+/-- If the source degree is bounded by `c` times the target degree under the degree
+equivalence, the modulus at `k` is at most `c * k`. -/
+theorem degreeMap_modulus_le_of_degree_le (E : CoordinateChange d e H H') (c k : ℕ)
+    (h : ∀ n ∈ d.monoid, d.degree n ≤ c * e.degree (E.degreeEquiv n)) :
+    E.degreeMap.modulus k ≤ c * k := by
+  rw [E.degreeMap_modulus_le_iff]
+  intro n hn hk
+  push_cast
+  exact (h n hn).trans (mul_le_mul_of_nonneg_left hk (Int.natCast_nonneg c))
+
 /-- If the degree functions agree under the degree equivalence, a coordinate change gives
 maps at the same order: the modulus at `k` is at most `k`. -/
 theorem degreeMap_modulus_le_of_degree_comp (E : CoordinateChange d e H H')
     (h : e.degree.comp (E.degreeEquiv : Γ →+ Γ') = d.degree) (k : ℕ) :
     E.degreeMap.modulus k ≤ k := by
-  rw [E.degreeMap_modulus_le_iff]
-  intro n _ hn
-  simpa [← h] using hn
+  simpa using E.degreeMap_modulus_le_of_degree_le 1 k fun n _ => by simp [← h]
 
 end CoordinateChange
 
-/-- Relabel the tangent directions of a directed wall space along an additive equivalence,
+/-- Relabel the tangent directions of a directed wall space along an additive homomorphism,
 leaving the degrees and the Lie algebra untouched. The geometric direction becomes
 `T ∘ ρ` and the wall space with normal `m` is that of the original with normal `m ∘ T`. -/
-def mapTangent (H : DirectedWallSpaces ρ ℒ) (T : Λ ≃+ Λ') :
-    DirectedWallSpaces ((T : Λ →+ Λ').comp ρ) ℒ where
+def mapTangent (H : DirectedWallSpaces ρ ℒ) (T : Λ →+ Λ') :
+    DirectedWallSpaces (T.comp ρ) ℒ where
   wall n m := H.wall n (m.comp T)
   wall_le_piece n m := H.wall_le_piece n _
   zero_normal n := H.zero_normal n
   nontangent n m hm := H.nontangent n _ hm
   rescale n m c hc := by
-    have hc' : (c • m).comp (T : Λ →+ Λ') = c • m.comp (T : Λ →+ Λ') := by
-      ext v
-      simp
-    simpa only [hc'] using H.rescale n (m.comp (T : Λ →+ Λ')) c hc
+    simpa only [AddMonoidHom.smul_comp] using H.rescale n (m.comp T) c hc
   bracket_mem {n n' m m' x y} hx hy := by
     have hn : wallBracketNormal ρ n n' (m.comp T) (m'.comp T) =
-        (wallBracketNormal ((T : Λ →+ Λ').comp ρ) n n' m m').comp T := by
+        (wallBracketNormal (T.comp ρ) n n' m m').comp T := by
       ext v
       simp
     exact hn ▸ H.bracket_mem hx hy
 
 @[simp]
-theorem mapTangent_wall (H : DirectedWallSpaces ρ ℒ) (T : Λ ≃+ Λ') (n : Γ) (m : Λ' →+ ℤ) :
+theorem mapTangent_wall (H : DirectedWallSpaces ρ ℒ) (T : Λ →+ Λ') (n : Γ) (m : Λ' →+ ℤ) :
     (H.mapTangent T).wall n m = H.wall n (m.comp T) := (rfl)
 
 /-- Transporting a normal along `T` and pulling it back along `T⁻¹` returns the original
 wall space. -/
 theorem mapTangent_wall_comp_symm (H : DirectedWallSpaces ρ ℒ) (T : Λ ≃+ Λ') (n : Γ)
-    (m : Λ →+ ℤ) : (H.mapTangent T).wall n (m.comp (T.symm : Λ' →+ Λ)) = H.wall n m := by
+    (m : Λ →+ ℤ) :
+    (H.mapTangent (T : Λ →+ Λ')).wall n (m.comp (T.symm : Λ' →+ Λ)) = H.wall n m := by
   rw [mapTangent_wall]
   congr 1
   ext v
@@ -276,7 +295,7 @@ namespace CoordinateChange
 /-- Relabelling tangent directions along `T` is a coordinate change with identity degree
 and Lie coordinates, for any positive degree data. -/
 def ofTangentEquiv (d : PositiveDegrees Γ) (H : DirectedWallSpaces ρ ℒ) (T : Λ ≃+ Λ') :
-    CoordinateChange d d H (H.mapTangent T) where
+    CoordinateChange d d H (H.mapTangent (T : Λ →+ Λ')) where
   degreeEquiv := AddEquiv.refl Γ
   tangentEquiv := T
   lieEquiv := LieEquiv.refl
