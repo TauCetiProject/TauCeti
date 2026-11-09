@@ -125,9 +125,16 @@ variable {E F E' F' : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E
 
 The condition depends on `D` only through the dimension of its kernel and its index, so it
 transfers along `ContinuousLinearMap.SardSmaleThreshold.congr`. -/
-@[expose] def SardSmaleThreshold (D : E →L[ℝ] F) (n : ℕ∞ω) : Prop :=
+def SardSmaleThreshold (D : E →L[ℝ] F) (n : ℕ∞ω) : Prop :=
   ((finrank ℝ D.ker * finrank ℝ D.ker + 1 : ℕ) : ℕ∞ω) ≤ n ∨
     D.index ≤ 2 ∧ ((D.index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n
+
+/-- An order meets a Sard--Smale threshold exactly when it meets the quadratic threshold or, in
+index at most two, Smale's sharp threshold. -/
+theorem sardSmaleThreshold_iff : D.SardSmaleThreshold n ↔
+    ((finrank ℝ D.ker * finrank ℝ D.ker + 1 : ℕ) : ℕ∞ω) ≤ n ∨
+      D.index ≤ 2 ∧ ((D.index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n :=
+  Iff.rfl
 
 namespace SardSmaleThreshold
 
@@ -157,6 +164,10 @@ theorem one_le (h : D.SardSmaleThreshold n) : 1 ≤ n := by
 theorem ne_zero (h : D.SardSmaleThreshold n) : n ≠ 0 := by
   rintro rfl
   exact absurd h.one_le (by simp)
+
+/-- A higher order still meets the threshold. -/
+theorem mono {m : ℕ∞ω} (h : D.SardSmaleThreshold n) (hnm : n ≤ m) : D.SardSmaleThreshold m :=
+  h.imp (·.trans hnm) fun h ↦ ⟨h.1, h.2.trans hnm⟩
 
 /-- The threshold transfers between operators with kernels of equal dimension and equal index. -/
 theorem congr (h : D.SardSmaleThreshold n) (hker : finrank ℝ D.ker = finrank ℝ D'.ker)

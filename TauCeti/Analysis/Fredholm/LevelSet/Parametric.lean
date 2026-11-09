@@ -437,7 +437,7 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetPar
   have hn' : (fderiv ℝ g 0).SardSmaleThreshold n :=
     hn.congr (by rw [hg', ContinuousLinearMap.finrank_ker_parameterProj])
       (index_fderiv_levelSetParameterMap hf hD (hD₁.closedComplemented_ker_coprod hD) hxl).symm
-  rcases hn' with hn' | ⟨hindex, hn'⟩
+  rcases ContinuousLinearMap.sardSmaleThreshold_iff.mp hn' with hn' | ⟨hindex, hn'⟩
   · exact exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints hg hFred hn'
       (Filter.inter_mem hU htarget)
   · exact exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_index_le_two hg hFred
