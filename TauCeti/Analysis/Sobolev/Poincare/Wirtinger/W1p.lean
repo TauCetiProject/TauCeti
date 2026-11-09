@@ -87,17 +87,17 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 function. -/
 private theorem norm_value_sub_setAverage_restrictL_ofTestFunctionₗ_le (hp : p ≠ ∞)
     (hU : U ≤ Omega) (hUc : Convex ℝ (U : Set E)) (hUb : Bornology.IsBounded (U : Set E))
-    (hSU : S ⊆ (U : Set E)) (hS0 : mu S ≠ 0) (phi : 𝓓(Omega, ℝ)) (w : W1p mu U p)
-    (hw : w = W1p.restrictL hU (W1p.ofTestFunctionₗ mu Omega p phi))
+    (hSU : S ⊆ (U : Set E)) (hS0 : mu S ≠ 0) (phi : 𝓓(Omega, ℝ))
     [IsFiniteMeasure (mu.restrict (U : Set E))] :
-    ‖W1p.value w - Lp.const p (mu.restrict (U : Set E)) (⨍ y in S, W1p.value w y ∂mu)‖ ≤
+    ‖W1p.value (W1p.restrictL hU (W1p.ofTestFunctionₗ mu Omega p phi)) -
+        Lp.const p (mu.restrict (U : Set E))
+          (⨍ y in S, W1p.value (W1p.restrictL hU (W1p.ofTestFunctionₗ mu Omega p phi)) y ∂mu)‖ ≤
       (mu.real (ball 0 1) * diam (U : Set E) ^ (finrank ℝ E + 1) / mu.real S) *
-        ‖W1p.gradient w‖ := by
+        ‖W1p.gradient (W1p.restrictL hU (W1p.ofTestFunctionₗ mu Omega p phi))‖ := by
   set C : ℝ := mu.real (ball 0 1) * diam (U : Set E) ^ (finrank ℝ E + 1) / mu.real S
   have hC0 : 0 ≤ C :=
     div_nonneg (mul_nonneg measureReal_nonneg (pow_nonneg Metric.diam_nonneg _))
       measureReal_nonneg
-  subst hw
   set w := W1p.restrictL hU (W1p.ofTestFunctionₗ mu Omega p phi)
   have haeU : W1p.value w =ᵐ[mu.restrict (U : Set E)] fun x ↦ phi x := by
     refine (W1p.value_restrictL_ae hU _).trans ?_
@@ -178,7 +178,7 @@ private theorem eLpNorm_value_sub_setAverage_le_of_mem_closure (hp : p ≠ ∞) 
       ‖W1p.value w - Lp.const p (mu.restrict (U : Set E))
         (⨍ y in S, W1p.value w y ∂mu)‖ ≤ C * ‖W1p.gradient w‖} := by
     rintro _ ⟨phi, rfl⟩
-    exact norm_value_sub_setAverage_restrictL_ofTestFunctionₗ_le hp hU hUc hUb hSU hS0 phi _ rfl
+    exact norm_value_sub_setAverage_restrictL_ofTestFunctionₗ_le hp hU hUc hUb hSU hS0 phi
   have hv' := closure_minimal hrange hclosed hv
   rw [eLpNorm_sub_const_eq_enorm, ← ofReal_norm, ← ofReal_norm,
     ← ENNReal.ofReal_mul hC0]
@@ -248,9 +248,6 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
         ‖W1p.gradient u‖ₑ := by
   obtain ⟨V, hVmono, hVopen, hVconv, hVcompact, -, hVclosure, hVunion⟩ :=
     exists_seq_isOpen_convex_isCompact_closure_subset_iUnion_eq Omega.isOpen hconv
-  have hVsub : ∀ n, V n ⊆ (Omega : Set E) := fun n ↦ subset_closure.trans (hVclosure n)
-  have hWle : ∀ n, (⟨V n, hVopen n⟩ : Opens E) ≤ Omega := fun n ↦
-    SetLike.coe_subset_coe.mp (hVsub n)
   have hOfin : mu (Omega : Set E) ≠ ∞ :=
     ((measure_mono subset_closure).trans_lt hb.isCompact_closure.measure_lt_top).ne
   have hSfin : mu S ≠ ∞ := ne_top_of_le_ne_top hOfin (measure_mono hS)
