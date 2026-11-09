@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Neuromanifold.Composition
-public import TauCeti.Geometry.Neuromanifold.MLP.Basic
+public import TauCeti.Geometry.Neuromanifold.MLP.Congr
 public import Mathlib.Data.Fin.Tuple.Take
 public import Mathlib.Logic.Equiv.Fin.Basic
 
@@ -41,6 +41,14 @@ junction the widths and hidden activations of the concatenation are those of `A`
 junction on those of `B` (`append_width_castAdd`, `append_activation_natAdd`, …).
 Every specification of depth `(L + 1) + (M + 1)` is the concatenation of its two parts
 (`append_lowerLayers_upperLayers`).
+
+For matching boundary widths, `appendParameterEquiv` and `appendWeightEquiv` identify the
+parameters of a concatenation with the complete parameter products of its two original factors.
+The weight-only identification introduces no bias coordinates. The realization laws
+`realize_appendParameterEquiv_symm` and `realizeWeights_appendWeightEquiv_symm` evaluate joined
+parameters directly in those factors, applying the junction activation and preserving the affine
+or linear output head of the second factor. The finite index casts identify equal widths without
+changing coordinate values.
 
 A part of depth zero would realize the identity, and there is no hidden layer at which to join
 it, so both parts are required to have positive depth.
@@ -93,6 +101,14 @@ theorem junctionActivation_def (C : MLPSpec K (L + 1 + (M + 1))) :
 theorem lowerLayers_width (C : MLPSpec K (L + 1 + (M + 1))) (i : Fin (L + 2)) :
     C.lowerLayers.width i = C.width (Fin.castLE (by omega) i) := (rfl)
 
+/-- The input width of the lower part is the input width of the specification. -/
+theorem lowerLayers_width_zero (C : MLPSpec K (L + 1 + (M + 1))) :
+    C.lowerLayers.width 0 = C.width 0 := (rfl)
+
+/-- The output width of the lower part is the input width of the upper part. -/
+theorem lowerLayers_width_last (C : MLPSpec K (L + 1 + (M + 1))) :
+    C.lowerLayers.width (Fin.last (L + 1)) = C.upperLayers.width 0 := (rfl)
+
 /-- The hidden activations of the lower part are the first hidden activations of the
 specification. -/
 @[simp]
@@ -103,6 +119,10 @@ theorem lowerLayers_activation (C : MLPSpec K (L + 1 + (M + 1))) (j : Fin L) :
 @[simp]
 theorem upperLayers_width (C : MLPSpec K (L + 1 + (M + 1))) (i : Fin (M + 2)) :
     C.upperLayers.width i = C.width (Fin.natAdd (L + 1) i) := (rfl)
+
+/-- The output width of the upper part is the output width of the specification. -/
+theorem upperLayers_width_last (C : MLPSpec K (L + 1 + (M + 1))) :
+    C.upperLayers.width (Fin.last (M + 1)) = C.width (Fin.last (L + 1 + (M + 1))) := (rfl)
 
 /-- The hidden activations of the upper part are the last hidden activations of the
 specification. -/
@@ -441,6 +461,131 @@ theorem append_lowerLayers_upperLayers (C : MLPSpec K (L + 1 + (M + 1))) :
         rw [append_activation_castAdd_castSucc, lowerLayers_activation]
         exact congrArg C.activation (Fin.ext rfl)
     · rw [append_activation_natAdd, upperLayers_activation]
+
+/-- The affine parameters of a concatenation are exactly the parameters of its two factors,
+provided their boundary widths match. -/
+def appendParameterEquiv (h : A.width (Fin.last (L + 1)) = B.width 0) :
+    (A.append B σ).Parameters ≃ A.Parameters × B.Parameters :=
+  (A.append B σ).splitParameters.trans
+    (Equiv.prodCongr (Equiv.cast (congrArg Parameters (lowerLayers_append A B σ h)))
+      (Equiv.cast (congrArg Parameters (upperLayers_append A B σ))))
+
+/-- Splitting affine parameters transports the two extracted parts back to the original
+specifications. -/
+theorem appendParameterEquiv_apply
+    (h : A.width (Fin.last (L + 1)) = B.width 0) (θ : (A.append B σ).Parameters) :
+    A.appendParameterEquiv B σ h θ =
+      (cast (congrArg Parameters (lowerLayers_append A B σ h))
+        ((A.append B σ).splitParameters θ).1,
+       cast (congrArg Parameters (upperLayers_append A B σ))
+        ((A.append B σ).splitParameters θ).2) := (rfl)
+
+/-- Joining affine parameters first transports them to the extracted parts, then joins those
+parts using `splitParameters`. -/
+theorem appendParameterEquiv_symm_apply
+    (h : A.width (Fin.last (L + 1)) = B.width 0) (p : A.Parameters × B.Parameters) :
+    (A.appendParameterEquiv B σ h).symm p =
+      (A.append B σ).splitParameters.symm
+        (cast (congrArg Parameters (lowerLayers_append A B σ h).symm) p.1,
+         cast (congrArg Parameters (upperLayers_append A B σ).symm) p.2) := (rfl)
+
+/-- The weight-only parameters of a concatenation are exactly the weights of its two factors,
+provided their boundary widths match. -/
+def appendWeightEquiv (h : A.width (Fin.last (L + 1)) = B.width 0) :
+    (A.append B σ).Weights ≃ A.Weights × B.Weights :=
+  (A.append B σ).splitWeights.trans
+    (Equiv.prodCongr (Equiv.cast (congrArg Weights (lowerLayers_append A B σ h)))
+      (Equiv.cast (congrArg Weights (upperLayers_append A B σ))))
+
+/-- Splitting weight-only parameters transports the extracted parts to the original
+specifications. -/
+theorem appendWeightEquiv_apply
+    (h : A.width (Fin.last (L + 1)) = B.width 0) (w : (A.append B σ).Weights) :
+    A.appendWeightEquiv B σ h w =
+      (cast (congrArg Weights (lowerLayers_append A B σ h))
+        ((A.append B σ).splitWeights w).1,
+       cast (congrArg Weights (upperLayers_append A B σ))
+        ((A.append B σ).splitWeights w).2) := (rfl)
+
+/-- Joining weight-only parameters transports them to the extracted parts and joins those
+parts without adding biases. -/
+theorem appendWeightEquiv_symm_apply
+    (h : A.width (Fin.last (L + 1)) = B.width 0) (p : A.Weights × B.Weights) :
+    (A.appendWeightEquiv B σ h).symm p =
+      (A.append B σ).splitWeights.symm
+        (cast (congrArg Weights (lowerLayers_append A B σ h).symm) p.1,
+         cast (congrArg Weights (upperLayers_append A B σ).symm) p.2) := (rfl)
+
+/-- The parameter-product identification respects the zero-bias embeddings in both factors. -/
+@[simp] theorem appendParameterEquiv_zeroBias [Zero K]
+    (h : A.width (Fin.last (L + 1)) = B.width 0) (w : (A.append B σ).Weights) :
+    A.appendParameterEquiv B σ h ((A.append B σ).zeroBias w) =
+      (A.zeroBias (A.appendWeightEquiv B σ h w).1, B.zeroBias (A.appendWeightEquiv B σ h w).2) := by
+  simp only [appendParameterEquiv_apply, appendWeightEquiv_apply, splitParameters_zeroBias]
+  exact Prod.ext (zeroBias_cast (lowerLayers_append A B σ h) _).symm
+    (zeroBias_cast (upperLayers_append A B σ) _).symm
+
+/-- Joining weights and then assigning zero biases agrees with joining the zero-bias
+parameters of the factors. -/
+@[simp] theorem zeroBias_appendWeightEquiv_symm [Zero K]
+    (h : A.width (Fin.last (L + 1)) = B.width 0) (w : A.Weights) (v : B.Weights) :
+    (A.append B σ).zeroBias ((A.appendWeightEquiv B σ h).symm (w, v)) =
+      (A.appendParameterEquiv B σ h).symm (A.zeroBias w, B.zeroBias v) := by
+  apply (A.appendParameterEquiv B σ h).injective
+  rw [appendParameterEquiv_zeroBias, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+
+section Evaluation
+
+variable [NonUnitalNonAssocSemiring K]
+
+/-- Joined affine parameters realize `B` after the junction activation and `A`, with the
+canonical identifications of equal boundary, input, and output widths. -/
+@[simp] theorem realize_appendParameterEquiv_symm
+    (h : A.width (Fin.last (L + 1)) = B.width 0) (θ : A.Parameters) (η : B.Parameters)
+    (x : Fin ((A.append B σ).width 0) → K)
+    (j : Fin ((A.append B σ).width (Fin.last (L + 1 + (M + 1))))) :
+    (A.append B σ).realize ((A.appendParameterEquiv B σ h).symm (θ, η)) x j =
+      B.realize η
+        (fun i => σ (A.realize θ (x ∘ Fin.cast (append_width_zero A B σ).symm)
+          (Fin.cast h.symm i)))
+        (Fin.cast (append_width_last A B σ) j) := by
+  rw [appendParameterEquiv_symm_apply]
+  -- Make all three endpoint transports explicit in the split law, so that the following
+  -- rewrites do not rely on definitional equalities between widths of the extracted parts.
+  calc
+    _ = (A.append B σ).upperLayers.realize
+        (cast (congrArg Parameters (upperLayers_append A B σ).symm) η)
+        (fun k => (A.append B σ).junctionActivation
+          ((A.append B σ).lowerLayers.realize
+            (cast (congrArg Parameters (lowerLayers_append A B σ h).symm) θ)
+            (x ∘ Fin.cast (lowerLayers_width_zero (A.append B σ)))
+            (Fin.cast (lowerLayers_width_last (A.append B σ)).symm k)))
+        (Fin.cast (upperLayers_width_last (A.append B σ)).symm j) :=
+      congrFun (congrFun ((A.append B σ).realize_splitParameters_symm _ _) x) j
+    _ = _ := by
+      rw [realize_cast (upperLayers_append A B σ).symm η, junctionActivation_append]
+      refine congrArg₂ (B.realize η) ?_ (Fin.ext rfl)
+      funext i
+      dsimp only [Function.comp_def]
+      rw [realize_cast (lowerLayers_append A B σ h).symm θ]
+      exact congrArg σ (congrArg₂ (A.realize θ)
+        (funext fun k => congrArg x (Fin.ext rfl)) (Fin.ext rfl))
+
+/-- Joined bias-free parameters realize the same composition using only the original weight
+spaces; no artificial bias parameters occur. -/
+@[simp] theorem realizeWeights_appendWeightEquiv_symm
+    (h : A.width (Fin.last (L + 1)) = B.width 0) (w : A.Weights) (v : B.Weights)
+    (x : Fin ((A.append B σ).width 0) → K)
+    (j : Fin ((A.append B σ).width (Fin.last (L + 1 + (M + 1))))) :
+    (A.append B σ).realizeWeights ((A.appendWeightEquiv B σ h).symm (w, v)) x j =
+      B.realizeWeights v
+        (fun i => σ (A.realizeWeights w (x ∘ Fin.cast (append_width_zero A B σ).symm)
+          (Fin.cast h.symm i)))
+        (Fin.cast (append_width_last A B σ) j) := by
+  simp only [realizeWeights_def, Function.comp_apply]
+  rw [zeroBias_appendWeightEquiv_symm, realize_appendParameterEquiv_symm]
+
+end Evaluation
 
 end MLPSpec
 
