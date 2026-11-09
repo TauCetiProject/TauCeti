@@ -49,9 +49,7 @@ instance preservesEpimorphisms_sheafCompose_forget :
     (sheafCompose J (forget A)).PreservesEpimorphisms where
   preserves φ _ := by
     have : IsLocallySurjective φ := (isLocallySurjective_iff_epi' (φ := φ)).2 ‹_›
-    have : IsLocallySurjective ((sheafCompose J (forget A)).map φ) :=
-      (Presheaf.isLocallySurjective_iff_whisker_forget J φ.hom).1 this
-    exact epi_of_isLocallySurjective' _
+    infer_instance
 
 end CategoryTheory.Sheaf
 
