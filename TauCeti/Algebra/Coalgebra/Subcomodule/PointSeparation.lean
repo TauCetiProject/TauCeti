@@ -8,8 +8,7 @@ module
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Evaluation
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
-import Mathlib.LinearAlgebra.TensorProduct.Finiteness
-import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Submodule
 import TauCeti.RingTheory.FiniteType.PointSeparation
 
 /-!
@@ -76,66 +75,12 @@ theorem coact_mem_range_of_forall_endOfPoint_tmul_mem_baseChange
     {m : M} (hm : m ∈ N) :
     Comodule.coact (R := k) (C := C) (M := M) m ∈
       LinearMap.range (TensorProduct.map N.subtype (LinearMap.id : C →ₗ[k] C)) := by
-  let Q := M ⧸ N
-  let q : M →ₗ[k] Q := N.mkQ
-  let z : Q ⊗[k] C := LinearMap.rTensor C q (Comodule.coact (R := k) (C := C) m)
-  have hz : z = 0 := by
-    obtain ⟨Q', hQ', hzQ'⟩ := TensorProduct.exists_finite_submodule_left_of_setFinite
-      ({z} : Set (Q ⊗[k] C)) (Set.finite_singleton z)
-    obtain ⟨z', hz'⟩ := hzQ' (Set.mem_singleton z)
-    let _ : Module.Finite k Q' := hQ'
-    let b := Module.finBasis k Q'
-    have hz'zero : z' = 0 := by
-      apply (TensorProduct.equivFinsuppOfBasisLeft b).injective
-      ext i
-      rw [map_zero, Finsupp.zero_apply, TensorProduct.equivFinsuppOfBasisLeft_apply]
-      obtain ⟨φ, hφ⟩ := LinearMap.exists_extend (b.coord i)
-      apply TauCeti.eq_of_forall_algHom_apply_eq (k := k) (K := K)
-      intro g
-      obtain ⟨y, hy⟩ := hN g hm
-      have hyq : q.baseChange K (Comodule.endOfPoint M g (1 ⊗ₜ[k] m)) = 0 := by
-        rw [← hy]
-        rw [← LinearMap.comp_apply, ← LinearMap.baseChange_comp]
-        have hcomp : q.comp N.subtype = 0 := by
-          simpa [q] using (LinearMap.exact_subtype_mkQ N).linearMap_comp_eq_zero
-        rw [hcomp, LinearMap.baseChange_zero, LinearMap.zero_apply]
-      have heval := congrArg
-        (fun t ↦ TauCeti.Module.Dual.baseChangeEvaluation
-          (R := k) (M := Q) (A := K) (1 ⊗ₜ[k] φ) t) hyq
-      rw [map_zero] at heval
-      have hcoeff :
-          g (Comodule.matrixCoefficient (R := k) (C := C) (φ.comp q) m) = 0 := by
-        rw [Module.Dual.baseChangeEvaluation_one_tmul_baseChange] at heval
-        simpa only [Comodule.baseChangeEvaluation_endOfPoint_tmul, one_mul] using heval
-      rw [map_zero]
-      rw [← hcoeff]
-      congr 1
-      rw [Comodule.matrixCoefficient_def]
-      calc
-        TensorProduct.lid k C (LinearMap.rTensor C (b.coord i) z') =
-            TensorProduct.lid k C (LinearMap.rTensor C (φ.comp Q'.subtype) z') := by
-              rw [hφ]
-        _ = TensorProduct.lid k C
-            (LinearMap.rTensor C φ (LinearMap.rTensor C Q'.subtype z')) := by
-              rw [LinearMap.rTensor_comp_apply]
-        _ = TensorProduct.lid k C (LinearMap.rTensor C φ z) := by rw [hz']
-        _ = TensorProduct.lid k C
-            (LinearMap.rTensor C φ
-              (LinearMap.rTensor C q (Comodule.coact (R := k) (C := C) m))) := rfl
-        _ = TensorProduct.lid k C
-            (LinearMap.rTensor C (φ.comp q) (Comodule.coact (R := k) (C := C) m)) := by
-              rw [LinearMap.rTensor_comp_apply]
-        _ = TensorProduct.lid k C
-            (TensorProduct.map (φ.comp q) LinearMap.id
-              (Comodule.coact (R := k) (C := C) m)) := by
-              rw [LinearMap.rTensor_def]
-    rw [← hz', hz'zero, map_zero]
-  have hzker : Comodule.coact (R := k) (C := C) (M := M) m ∈
-      LinearMap.ker (LinearMap.rTensor C q) := by
-    rw [LinearMap.mem_ker]
-    exact hz
-  rw [rTensor_mkQ C N] at hzker
-  simpa [LinearMap.rTensor_def] using hzker
+  rw [N.coact_mem_range_iff_forall_matrixCoefficient_eq_zero]
+  intro ψ
+  apply TauCeti.eq_of_forall_algHom_apply_eq (k := k) (K := K)
+  intro g
+  rw [map_zero]
+  exact N.apply_matrixCoefficient_comp_mkQ_eq_zero_of_endOfPoint_mem_baseChange g (hN g hm) ψ
 
 end Submodule
 
