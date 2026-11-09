@@ -376,7 +376,7 @@ theorem hasDerivWithinAt_inner_alongCurveWithin (hs : UniqueDiffOn ℝ s)
   have hγ : MDifferentiableWithinAt 𝓘(ℝ, ℝ) I γ s t :=
     ((Bundle.contMDiff_proj (fun x : M ↦ TangentSpace I x) (IB := I) (n := 2)).comp_contMDiffOn
       hV t ht).mdifferentiableWithinAt (by norm_num)
-  have hd := hm.hasDerivWithinAt_inner_alongCurveWithin (hs t ht) hγ
+  have hd := hm.hasDerivWithinAt_inner_alongCurveWithin hγ
     (differentiableWithinAt_sectionCoord_alongCurveWithin_leviCivitaConnection hs hV ht)
     (differentiableWithinAt_sectionCoord γ W hW
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
