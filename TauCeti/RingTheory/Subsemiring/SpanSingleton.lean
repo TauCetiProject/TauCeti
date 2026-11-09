@@ -21,6 +21,8 @@ times an element of `s`. Read inside `A`, its `n`-th power is cut out of `s` by 
   `y ∈ s`.
 * `SubsemiringClass.coe_span_singleton_pow`: `(a s)ⁿ` is the preimage in `s` of
   `aⁿ • s ⊆ A`.
+* `SubsemiringClass.coe_mem_smul_iff_dvd`: for `c, y ∈ s`, `y ∈ c • s` exactly when `c ∣ y` in
+  `s`.
 -/
 
 public section
@@ -44,5 +46,14 @@ theorem coe_span_singleton_pow (ha : a ∈ s) (n : ℕ) :
       Subtype.val ⁻¹' ((a ^ n) • (s : Set A)) := by
   ext x
   simp [Ideal.span_singleton_pow, mem_span_singleton_iff s (pow_mem ha n), Set.mem_smul_set]
+
+/-- Membership of an element of a subsemiring `s` in the scaled copy `c • s`, for `c ∈ s`, is
+divisibility by `c` in `s`. -/
+theorem coe_mem_smul_iff_dvd {c y : s} : (y : A) ∈ (c : A) • (s : Set A) ↔ c ∣ y := by
+  constructor
+  · rintro ⟨r, hr, h⟩
+    exact ⟨⟨r, hr⟩, Subtype.ext (by simpa using h.symm)⟩
+  · rintro ⟨r, rfl⟩
+    exact ⟨r, r.2, by simp⟩
 
 end SubsemiringClass

@@ -270,7 +270,7 @@ theorem measurable_divMatrixGradient (ha : Continuous fun x => matrixBilinearFor
     {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) :
     Measurable (divMatrixGradient a ψ) :=
   Finset.measurable_sum _ fun _ _ => measurable_lineDeriv
-    ((ha.clm_apply continuous_const).clm_apply (ContDiff.continuous_gradient hψ))
+    ((ha.clm_apply continuous_const).clm_apply (ContDiff.continuous_gradient hψ (by simp)))
 
 /-- The test function `φ ⟨v, a ∇ψ⟩`, for a test function `φ` on `H` and a smooth cutoff `ψ` with
 `tsupport ψ ∩ H ⊆ Ω`, is Lipschitz with compact support in `Ω`. -/
@@ -394,7 +394,7 @@ theorem memLp_localizedForcing (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M
   obtain ⟨N, _, hψN, hgradN⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hψc
   obtain ⟨C, hC⟩ := exists_norm_divMatrixGradient_le hM hK hψ hψc
   have hM0 : 0 ≤ M := (norm_nonneg (matrixBilinearForm (a 0))).trans (hM 0)
-  have hgψ := ContDiff.continuous_gradient hψ
+  have hgψ := ContDiff.continuous_gradient hψ (by simp)
   have hB : ∀ x (η ξ : EuclideanSpace ℝ ι), ‖matrixBilinearForm (a x) η ξ‖ ≤ M * ‖η‖ * ‖ξ‖ :=
     fun x η ξ => ((matrixBilinearForm (a x)).le_opNorm₂ η ξ).trans (by gcongr; exact hM x)
   have h1 : MemLp (fun x => ψ x * f x) 2 (mu.restrict Omega) :=
@@ -513,8 +513,8 @@ private theorem integrable_matrixBilinearForm_gradient_terms
   -- Every weight vanishes off `tsupport ψ` and is continuous.
   have hψ' := hψ.continuous
   have hφ' := φ.continuous
-  have hgψ := ContDiff.continuous_gradient hψ
-  have hgφ := ContDiff.continuous_gradient φ.contDiff
+  have hgψ := ContDiff.continuous_gradient hψ (by simp)
+  have hgφ := ContDiff.continuous_gradient φ.contDiff (by simp)
   have hBn : Continuous fun x => ‖matrixBilinearForm (a x)‖ :=
     Continuous.norm (E := EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) hBc
   have hcs := hasCompactSupport_of_forall_eq_zero_cutoff (a := a) hψc
@@ -570,8 +570,8 @@ private theorem integrable_value_terms (hM : ∀ x, ‖matrixBilinearForm (a x)�
   have hBc := hK.continuous
   have hψ' := hψ.continuous
   have hφ' := φ.continuous
-  have hgψ := ContDiff.continuous_gradient hψ
-  have hgφ := ContDiff.continuous_gradient φ.contDiff
+  have hgψ := ContDiff.continuous_gradient hψ (by simp)
+  have hgφ := ContDiff.continuous_gradient φ.contDiff (by simp)
   have hBn : Continuous fun x => ‖matrixBilinearForm (a x)‖ :=
     Continuous.norm (E := EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) hBc
   obtain ⟨C, hC⟩ := exists_norm_divMatrixGradient_le hM hK hψ hψc
@@ -885,28 +885,13 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn
       W1p.restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hVΩ)) u := by
   -- Near `closure V`, the field agrees with a Lipschitz uniformly elliptic field `a'` on `ℝⁿ`.
   obtain ⟨a', K', U, hVU, hUΩ, ha', hK', haa'⟩ := ha.exists_lipschitzWith_eqOn hK hV hVΩ
-  have hUΩ' : (U : Set (EuclideanSpace ℝ ι)) ⊆ Omega := SetLike.coe_subset_coe.mpr hUΩ
-  have hle : mu.restrict U ≤ mu.restrict Omega := Measure.restrict_mono hUΩ' le_rfl
-  -- On `U`, the restriction of `u` solves the equation with the principal coefficient `a'`.
-  have hfU : MemLp f 2 (mu.restrict U) := (Lp.memLp f).mono_measure hle
-  have huU : ∀ v : W1p0 mu U 2, energyFormH1 a' b c (W1p.restrictL hUΩ u) (v : W1p mu U 2) =
-      ∫ x in U, hfU.toLp f x * W1p.value (v : W1p mu U 2) x ∂mu := by
-    intro v
-    have h := energyFormH1_restrictL_eq_setIntegral hUΩ hu v
-    rw [energyFormH1_def] at h ⊢
-    rw [setIntegral_congr_fun U.isOpen.measurableSet fun x hx => by rw [haa' hx], h]
-    refine integral_congr_ae ?_
-    filter_upwards [hfU.coeFn_toLp] with x hx
-    rw [hx]
-  -- The lower-order terms move to the right-hand side.
-  obtain ⟨g, hg⟩ := exists_forcing_energyFormH1_principal_eq
-    (memLp_energyIntegrand_of_continuous (fun x => ha'.opNorm_matrixBilinearForm_le (mem_univ x))
-      hK'.continuous U)
-    (hb.mono_measure hle) (hc.mono_measure hle) huU
+  -- On `U`, the restriction of `u` solves the equation with the principal coefficient `a'`, and
+  -- the lower-order terms move to the right-hand side.
+  obtain ⟨g, hg⟩ := exists_forcing_restrictL_of_eqOn hUΩ haa'
+    (memLp_energyIntegrand_of_continuous
+      (fun x => ha'.opNorm_matrixBilinearForm_le (mem_univ x)) hK'.continuous _) hb hc hu
   obtain ⟨w, f', hw, -, hgrad, -⟩ := exists_isWeakSolutionDirichlet_top_ae_eq_on_of_isCompact
     (fun x => ha'.opNorm_matrixBilinearForm_le (mem_univ x)) hK' hg hV hVU
-  have htop : mu.restrict ((⊤ : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)) = mu := by
-    rw [Opens.coe_top, Measure.restrict_univ]
   have hVU' : (V : Set (EuclideanSpace ℝ ι)) ⊆ U := subset_closure.trans hVU
   -- On `V`, the gradient of the localized solution is that of `u`.
   have hgradV : ∀ᵐ x ∂mu.restrict V, W1p.gradient (w : W1p mu ⊤ 2) x =
@@ -917,15 +902,11 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_locallyLipschitzOn
       (ae_restrict_iff' V.isOpen.measurableSet).2
         (hgrad.mono fun x hx hxV => hx (subset_closure hxV))] with x h1 h2 h3
     rw [h1, h3, h2]
-  refine W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn _ (EuclideanSpace.basisFun ι ℝ)
-    fun i j => ?_
-  obtain ⟨G, -, hG⟩ := ha'.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzWith hK' hw
-    (EuclideanSpace.basisFun ι ℝ j) (EuclideanSpace.basisFun ι ℝ i)
-  have hmem : MemLp G 2 (mu.restrict V) :=
-    (Lp.memLp G).mono_measure (by rw [htop]; exact Measure.restrict_le_self)
-  refine ⟨hmem.toLp G, ((hG.mono le_top).congr_ae ?_).congr_ae_deriv hmem.coeFn_toLp.symm⟩
-  filter_upwards [hgradV] with x hx
-  rw [hx]
+  exact W1p.exists_lowerOrder_eq_of_gradient_eq_of_hasWeakLineDerivOn (EuclideanSpace.basisFun ι ℝ)
+    le_top hgradV fun i j => by
+      obtain ⟨G, -, hG⟩ := ha'.exists_norm_le_hasWeakLineDerivOn_gradient_of_lipschitzWith hK' hw
+        (EuclideanSpace.basisFun ι ℝ j) (EuclideanSpace.basisFun ι ℝ i)
+      exact ⟨G, hG⟩
 
 /-- **Interior `H²` regularity for a constant principal coefficient.** Let `A` be a constant,
 uniformly elliptic matrix, let `b, c ∈ L∞(Ω)`, and let `u ∈ H¹(Ω)` be a weak solution of

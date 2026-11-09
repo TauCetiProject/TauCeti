@@ -52,8 +52,8 @@ The regularity threshold is the one of the Morse--Sard theorem in Tau Ceti, `(di
 `dim = dim E + dim Λ − dim F` the dimension of the source of the parameter map: the kernel of the
 *total* linearization, which has this dimension at every solution by rank--nullity since the
 total linearization is surjective there. This is coarser than Sard's sharp threshold, and it
-differs from the threshold `(dim ker D₁)² + 1` of the Sard--Smale route, which is in terms of the
-kernel of the *fixed-parameter* linearization.
+differs from the thresholds of the Sard--Smale route, `(dim ker D₁)² + 1` or, in index at most two,
+`max (index D₁, 0) + 1`, which are in terms of the *fixed-parameter* linearization `D₁`.
 
 ## Main results
 

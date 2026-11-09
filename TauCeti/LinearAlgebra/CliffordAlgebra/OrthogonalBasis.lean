@@ -120,7 +120,8 @@ variable {b : Module.Basis I R M}
 
 /-- The generators of a finite set of indices of an orthogonal basis, listed in increasing order,
 are pairwise orthogonal. -/
-private theorem pairwise_isOrtho_map_sort (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+theorem _root_.LinearMap.IsOrthoᵢ.pairwise_isOrtho_map_sort
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (s : Finset I) : (s.sort.map b).Pairwise Q.IsOrtho :=
   List.pairwise_map.mpr <| (s.sort_nodup _).imp fun hij ↦
     QuadraticMap.associated_isOrtho.mp (hb hij)
@@ -131,7 +132,7 @@ is needed beyond the orthogonality of `b`; in particular `Q` may be degenerate. 
 theorem basis_eq_prod_map_sort (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s : Finset I) :
     basis Q b s = ((s.sort.map b).map (ι Q)).prod := by
   rw [basis_apply, LinearEquiv.symm_apply_eq,
-    equivExterior_prod_map_ι_of_pairwise_isOrtho Q (pairwise_isOrtho_map_sort hb s),
+    equivExterior_prod_map_ι_of_pairwise_isOrtho Q (hb.pairwise_isOrtho_map_sort s),
     Module.Basis.exteriorAlgebra_eq_prod_map_sort]
 
 /-- For an orthogonal basis `b`, a two-element index set `s` is `{k, l}`, and the Clifford basis
@@ -170,7 +171,7 @@ theorem basis_univ_mem_center_of_odd_card [Fintype I]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hodd : Odd (Fintype.card I)) :
     basis Q b Finset.univ ∈ Subalgebra.center R (CliffordAlgebra Q) := by
   rw [basis_eq_prod_map_sort hb]
-  apply prod_map_ι_mem_center_of_odd_length (pairwise_isOrtho_map_sort hb Finset.univ)
+  apply prod_map_ι_mem_center_of_odd_length (hb.pairwise_isOrtho_map_sort Finset.univ)
   · simpa only [List.length_map, Finset.length_sort, Finset.card_univ] using hodd
   · apply le_antisymm le_top
     rw [← b.span_eq]
@@ -212,7 +213,7 @@ theorem basis_mul_ι_of_mem (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) {s :
     (hi : i ∈ s) :
     basis Q b s * ι Q (b i) = ((-1 : R) ^ (s.card - 1)) • (ι Q (b i) * basis Q b s) := by
   rw [basis_eq_prod_map_sort hb, ← s.length_sort (· ≤ ·), ← List.length_map b]
-  exact prod_map_ι_mul_ι_of_mem_span (pairwise_isOrtho_map_sort hb s)
+  exact prod_map_ι_mul_ι_of_mem_span (hb.pairwise_isOrtho_map_sort s)
     (Submodule.subset_span (List.mem_map.2 ⟨i, (Finset.mem_sort _).2 hi, rfl⟩))
 
 /-- **A basis generator crosses a basis vector not containing it at the cost of `(-1) ^ |s|`**,
