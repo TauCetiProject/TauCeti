@@ -354,12 +354,6 @@ private theorem integrable_inner_fderiv {w : ℂ → V} (hw : LocallyIntegrableO
   simp only [TestFunction.lineDerivCLM_apply, le_top, ite_true, lineDeriv_testFunction] at h
   exact h
 
-omit [CompleteSpace V] in
-/-- A test function paired with a locally integrable field is integrable. -/
-private theorem integrable_inner_testFunction {w : ℂ → V} (hw : LocallyIntegrableOn w Ω)
-    (φ : 𝓓(Ω, V)) : Integrable (fun z => ⟪(φ : ℂ → V) z, w z⟫_ℝ) :=
-  φ.integrable_inner hw
-
 /-- Under Sobolev coefficients and the Hölder condition `1/p + 1/q ≤ 1`, the pairing
 `⟪D* φ, ξ⟫` of the weak equation is integrable for every locally `L^q` field `ξ`. -/
 theorem IsSobolevCRCoefficients.integrable_inner_crFormalAdjoint
@@ -369,10 +363,8 @@ theorem IsSobolevCRCoefficients.integrable_inner_crFormalAdjoint
   have h₁ := integrable_inner_fderiv (hξ.locallyIntegrableOn
     (one_le_right_of_inv_add_inv_le_one hpq) Ω.isOpen.isLocallyClosed) φ 1
   have h₂ := integrable_inner_fderiv (locallyIntegrableOn_apply hpq hc.memLpLoc_coeff hξ) φ I
-  have h₃ := integrable_inner_testFunction
-    (locallyIntegrableOn_apply hpq hc.memLpLoc_derivI hξ) φ
-  have h₄ := integrable_inner_testFunction
-    (locallyIntegrableOn_apply hpq hc.memLpLoc_zeroth hξ) φ
+  have h₃ := φ.integrable_inner (locallyIntegrableOn_apply hpq hc.memLpLoc_derivI hξ)
+  have h₄ := φ.integrable_inner (locallyIntegrableOn_apply hpq hc.memLpLoc_zeroth hξ)
   simp only [inner_crFormalAdjoint]
   exact ((h₁.neg.sub h₂).sub h₃).add h₄
 
@@ -408,11 +400,10 @@ theorem IsSobolevCRCoefficients.integral_inner_crFormalAdjoint [FiniteDimensiona
       (fun K hK hKΩ => memLpLoc_iff.1 hc.memLpLoc_derivI K hKΩ hK)
       (fun K hK hKΩ => memLpLoc_iff.1 hξq K hKΩ hK)
       (fun K hK hKΩ => memLpLoc_iff.1 hDξI K hKΩ hK)
-  have hA := integrable_inner_testFunction
-    (locallyIntegrableOn_apply hpq hc.memLpLoc_derivI hξq) φ
-  have hB := integrable_inner_testFunction (locallyIntegrableOn_apply hpq hc.memLpLoc_coeff hDξI) φ
-  have hC := integrable_inner_testFunction (locallyIntegrableOn_apply hpq hc.memLpLoc_zeroth hξq) φ
-  have hD := integrable_inner_testFunction (hDξ1.locallyIntegrableOn hq1 hloc) φ
+  have hA := φ.integrable_inner (locallyIntegrableOn_apply hpq hc.memLpLoc_derivI hξq)
+  have hB := φ.integrable_inner (locallyIntegrableOn_apply hpq hc.memLpLoc_coeff hDξI)
+  have hC := φ.integrable_inner (locallyIntegrableOn_apply hpq hc.memLpLoc_zeroth hξq)
+  have hD := φ.integrable_inner (hDξ1.locallyIntegrableOn hq1 hloc)
   have h₁ := integrable_inner_fderiv (hξq.locallyIntegrableOn hq1 hloc) φ 1
   have h₂ := integrable_inner_fderiv (locallyIntegrableOn_apply hpq hc.memLpLoc_coeff hξq) φ I
   have hξ1 : ∫ z, ⟪fderiv ℝ (φ : ℂ → V) z 1, ξ z⟫_ℝ = -∫ z, ⟪(φ : ℂ → V) z, Dξ z 1⟫_ℝ := by
@@ -485,8 +476,8 @@ theorem add (h : IsWeakCRSolution q Ω J DJ S ξ η) (h' : IsWeakCRSolution q Ω
   · simp only [Pi.add_apply, inner_add_right]
     rw [integral_add (h.integrable_inner_crFormalAdjoint φ)
         (h'.integrable_inner_crFormalAdjoint φ),
-      integral_add (integrable_inner_testFunction h.locallyIntegrableOn φ)
-        (integrable_inner_testFunction h'.locallyIntegrableOn φ),
+      integral_add (φ.integrable_inner h.locallyIntegrableOn)
+        (φ.integrable_inner h'.locallyIntegrableOn),
       h.integral_inner_crFormalAdjoint φ, h'.integral_inner_crFormalAdjoint φ]
 
 /-- The weak equation is compatible with subtraction of `(ξ, η)`. -/
