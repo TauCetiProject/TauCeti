@@ -67,6 +67,17 @@ theorem volume_setOf_re_mem_Icc_im_eq {a b : ℝ} {f : ℝ → ℝ} (hf : Contin
   have ht := Complex.volume_preserving_equiv_real_prod.measure_preimage_equiv S
   simpa only [S, preimage_ofPred_eq, Complex.measurableEquivRealProd_apply] using ht.trans hzero
 
+/-- A horizontal line has zero area, so the closed and open half-planes above it agree almost
+everywhere. -/
+theorem setOf_le_im_ae_eq (c : ℝ) : {z : ℂ | c ≤ z.im} =ᵐ[volume] {z : ℂ | c < z.im} := by
+  refine (ae_eq_set).2 ⟨measure_mono_null (fun z hz => ?_) (volume_setOf_im_eq c),
+    measure_mono_null (fun z hz => ?_) (volume_setOf_im_eq c)⟩
+  · have h1 : c ≤ z.im := hz.1
+    have h2 : ¬ c < z.im := hz.2
+    exact le_antisymm (not_lt.1 h2) h1
+  · have h1 : c < z.im := hz.1
+    exact absurd h1.le hz.2
+
 /-- Interchanging the coordinates preserves planar area. -/
 theorem measurePreserving_coordinateSwapCLE :
     MeasurePreserving coordinateSwapCLE (volume : Measure ℂ) volume := by
