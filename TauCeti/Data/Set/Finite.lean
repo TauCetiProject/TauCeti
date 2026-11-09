@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Data.Set.Card
 public import Mathlib.Basic.Finite.Sigma
-import Mathlib.Data.Set.Finite.Lattice
 import Mathlib.Data.Set.Finite.Lemmas
 import Mathlib.Data.Set.Finite.Range
 
