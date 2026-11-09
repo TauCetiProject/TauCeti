@@ -127,8 +127,9 @@ theorem additiveIntUnitsCoordinateSum_apply (ι : Type*) [Fintype ι]
   classical
   simp [additiveIntUnitsCoordinateSum]
 
-/-- The hyperplane of sign vectors of coordinate sum zero has dimension one less than the number
-of coordinates. -/
+/-- The space of sign vectors of coordinate sum zero has dimension `#ι - 1`, with natural-number
+subtraction. For nonempty `ι` this is a hyperplane, of dimension one less than the number of
+coordinates; for empty `ι` the whole space is trivial and the dimension is `0`. -/
 theorem finrank_ker_additiveIntUnitsCoordinateSum (ι : Type*) [Fintype ι] :
     Module.finrank (ZMod 2) (LinearMap.ker (additiveIntUnitsCoordinateSum ι)) =
       Fintype.card ι - 1 := by
