@@ -43,6 +43,23 @@ namespace TauCeti.Huber.Pair
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
   (S : Pair A) {k : ℕ} {T V : Fin k → Set A}
 
+/-- If every product of a coefficient from `V i` with the `i`-th weighted variable lies in the plus
+ring of the completed weighted pair, then the weighted variables are power bounded with respect to
+the weights `V`. -/
+private theorem isWeightedVarPowerBounded_weightedX_of_mem_plus
+    (hT : IsWeightFamily T) (hVfin : ∀ i, (V i).Finite)
+    (hVX : ∀ i, ∀ a ∈ V i,
+      ((weightedC T hT a * weightedX T hT i : weightedRestrictedSubring T hT) :
+        Completion (weightedRestrictedSubring T hT)) ∈ (S.weighted hT).completion.plus) :
+    IsWeightedVarPowerBounded
+      (algebraMap A (Completion (weightedRestrictedSubring T hT))) V
+      (fun i ↦ ((weightedX T hT i : weightedRestrictedSubring T hT) :
+        Completion (weightedRestrictedSubring T hT))) := by
+  apply (isWeightedVarPowerBounded_iff_of_finite hVfin).mpr
+  intro i a ha
+  simpa only [algebraMap_completion_weightedRestrictedSubring_apply, ← Completion.coe_mul]
+    using (S.weighted hT).completion.isRingOfIntegralElements.isPowerBounded_of_mem (hVX i a ha)
+
 /-- A completed weighted Huber pair is a quotient of a partly unweighted pair, with any finite
 new weights whose weighted variables lie in the original plus ring. The additional unweighted
 variables lift all the old weighted variables, so the target plus ring is the integral closure
@@ -58,16 +75,9 @@ theorem exists_isQuotientMapping_weightedCompletionHom_append
       (S.weighted hT).completion), θ.IsQuotientMapping ∧
         θ.comp (S.weightedCompletionHom (hV.append isWeightFamily_one_weight)) =
           S.weightedCompletionHom hT := by
-  have hb : IsWeightedVarPowerBounded
-      (algebraMap A (Completion (weightedRestrictedSubring T hT))) V
-      (fun i ↦ ((weightedX T hT i : weightedRestrictedSubring T hT) :
-        Completion (weightedRestrictedSubring T hT))) := by
-    apply (isWeightedVarPowerBounded_iff_of_finite hVfin).mpr
-    intro i a ha
-    simpa only [algebraMap_completion_weightedRestrictedSubring_apply, ← Completion.coe_mul]
-      using (S.weighted hT).completion.isRingOfIntegralElements.isPowerBounded_of_mem (hVX i a ha)
   obtain ⟨m, idx, t, htT, ht, θ, hθ, hθA, hθX, hθY⟩ :=
-    exists_isOpenQuotientMap_completion_weightedRestrictedSubring_append hT hTfin hV hb
+    exists_isOpenQuotientMap_completion_weightedRestrictedSubring_append hT hTfin hV
+      (S.isWeightedVarPowerBounded_weightedX_of_mem_plus hT hVfin hVX)
   have hθC (a : A) : θ ((weightedC (Fin.append V fun _ : Fin m ↦ ({1} : Set A))
       (hV.append isWeightFamily_one_weight) a : weightedRestrictedSubring _ _) :
         Completion (weightedRestrictedSubring _ _)) =

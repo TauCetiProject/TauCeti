@@ -147,6 +147,48 @@ class BulkUnpackTests(unittest.TestCase):
         self.record.symlink_to(self.archive)
         self.assert_stock_fallback()
 
+    def extracted_fixture(self, records, staging):
+        """Supply one private extraction to exercise publication failure recovery."""
+        (self.root / "TauCeti").mkdir(exist_ok=True)
+        (self.root / "TauCeti/Fixture.lean").write_text("module\n")
+        staging.mkdir(parents=True)
+        output = staging / "Fixture.olean"
+        output.write_bytes(b"native output fixture")
+        return [(records[0], "TauCeti.Fixture", [(output, "lib/lean/TauCeti/Fixture.olean")])]
+
+    def test_interrupted_combined_publication_preserves_every_original_mapping(self):
+        original = self.record.read_bytes()
+        with patch.object(bulk, "extract_records", side_effect=self.extracted_fixture), \
+                patch.object(bulk, "publish", side_effect=OSError("interrupted")):
+            self.assertEqual(bulk.unpack(self.root), 0)
+        self.assertEqual(self.record.read_bytes(), original)
+        self.assertFalse((self.root / ".lake/build").exists())
+        self.assertTrue(self.archive.exists())
+
+    def test_changed_mapping_is_rejected_before_build_publication(self):
+        records = bulk.selected_records(self.root)
+        with tempfile.TemporaryDirectory(dir=self.root / ".lake") as temporary:
+            with patch.object(bulk, "extract_records", side_effect=self.extracted_fixture):
+                combined, satisfied, _ = bulk.assemble(self.root, records, Path(temporary))
+            self.record.write_text("changed")
+            with self.assertRaisesRegex(ValueError, "changed during"):
+                bulk.publish(self.root, combined, satisfied)
+        self.assertEqual(self.record.read_text(), "changed")
+        self.assertFalse((self.root / ".lake/build").exists())
+
+    def test_interrupt_after_tree_rename_keeps_records_for_native_restoration(self):
+        unlink = Path.unlink
+        def interrupted(path, *args, **kwargs):
+            if path == self.record:
+                raise OSError("interrupted after tree publication")
+            return unlink(path, *args, **kwargs)
+        with patch.object(bulk, "extract_records", side_effect=self.extracted_fixture), \
+                patch.object(Path, "unlink", interrupted):
+            self.assertEqual(bulk.unpack(self.root), 0)
+        self.assertTrue(self.record.exists())
+        self.assertTrue((self.root / ".lake/build/lib/lean/TauCeti/Fixture.olean").is_file())
+
+
 
 class WorkflowTests(unittest.TestCase):
     def test_pr_preparation_runs_offline_with_trusted_tooling_before_build(self):
@@ -174,6 +216,9 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(steps[prepare]["env"]["LAKE_NO_CACHE"], "true")
         self.assertFalse(any("test_bulk_unpack_cache.py --integration" in text for text in commands))
         infrastructure = yaml.safe_load((ROOT / ".github/workflows/infrastructure-tests.yml").read_text())
+        triggers = infrastructure.get("on", infrastructure.get(True))
+        for event in ("push", "pull_request"):
+            self.assertIn("lean-toolchain", triggers[event]["paths"])
         fixtures = infrastructure["jobs"]["lean-fixtures"]["steps"]
         self.assertTrue(any("test_bulk_unpack_cache.py --integration" in step.get("run", "")
                             for step in fixtures))
@@ -225,7 +270,7 @@ class StockLakeTests(unittest.TestCase):
                     restored = bulk.unpack(path) if mode == "bulk" else 0
                     if mode == "bulk":
                         # Future toolchain layouts may safely use stock restoration.
-                        self.assertIn(restored, (0, 4))
+                        self.assertIn(restored, (0, 3 if change else 4))
                         if change:
                             self.assertFalse((path / ".lake/build/lib/lean/TauCeti/C.olean").exists())
                     if change:
@@ -251,7 +296,7 @@ class StockLakeTests(unittest.TestCase):
                 (path / "TauCeti/B.lean").write_text(
                     "module\npublic import TauCeti.C\npublic def b := c + 1\n")
                 if mode == "bulk":
-                    self.assertIn(bulk.unpack(path), (0, 4))
+                    self.assertIn(bulk.unpack(path), (0, 3))
                 run(path, "build", "--iofail", expected=1)
 
 

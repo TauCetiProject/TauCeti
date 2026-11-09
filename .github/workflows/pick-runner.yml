@@ -22,10 +22,19 @@ on:
         description: Immutable 40-character PR head; empty disables dedicated PR placement and recovery
         type: string
         default: ""
+      pr-number:
+        description: Ordinary PR whose manual local-test route should be checked before selection
+        type: number
+        default: 0
     secrets:
+      SELF_TESTED_APP_ID: { required: false }
+      SELF_TESTED_APP_KEY: { required: false }
       FLEET_READ_TOKEN: { required: false }
       TAUCETI_GITHUB_STATE_TOKEN: { required: false }
     outputs:
+      skip-pr-build:
+        description: Eligible manual self-tested assertion for this exact PR head
+        value: ${{ jobs.pick.outputs.skip-pr-build }}
       runner:
         description: JSON runs-on target; callers must match attempt to their current github.run_attempt before using runner or pool
         value: ${{ jobs.pick.outputs.runner }}
@@ -57,6 +66,7 @@ jobs:
     timeout-minutes: 5
     continue-on-error: true
     outputs:
+      skip-pr-build: ${{ steps.local-route.outputs.skip }}
       runner: ${{ steps.pick.outputs.runner }}
       pool: ${{ steps.pick.outputs.pool }}
       attempt: ${{ steps.pick.outputs.attempt }}
@@ -75,12 +85,33 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@9e1b2a7406f4c3db79888a670cf12fa44d34b8d0
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 9e1b2a7406f4c3db79888a670cf12fa44d34b8d0
+          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
           project-directory: .
+      - name: Read the allowlist using the existing organization App
+        id: team-token
+        if: inputs.pr-number > 0 && (contains(github.event.pull_request.labels.*.name, 'self-tested') || github.event.label.name == 'self-tested' || github.event_name == 'workflow_dispatch')
+        continue-on-error: true
+        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf
+        with:
+          app-id: ${{ secrets.SELF_TESTED_APP_ID }}
+          private-key: ${{ secrets.SELF_TESTED_APP_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ github.event.repository.name }}
+          permission-members: read
+      - name: Decide the manual PR route before runner selection
+        id: local-route
+        if: inputs.pr-number > 0 && (contains(github.event.pull_request.labels.*.name, 'self-tested') || github.event.label.name == 'self-tested' || github.event_name == 'workflow_dispatch')
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SELF_TESTED_MERGE_BACKEND: ${{ vars.MERGE_BACKEND }}
+          TAUCETI_TEAM_TOKEN: ${{ steps.team-token.outputs.token }}
+        run: python3 -m tauceti_tools script self_tested.py --pr '${{ inputs.pr-number }}'
       - name: Select destination in configured preference order
+        if: steps.local-route.outputs.skip != 'true'
         id: pick
         env:
           GH_TOKEN: ${{ github.token }}

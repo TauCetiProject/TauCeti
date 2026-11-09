@@ -534,10 +534,10 @@ theorem eq_bot_or_eq_top_of_mulArchimedean [MulArchimedean Γ] (H : ConvexSubgro
   by_contra hH
   push Not at hH
   obtain ⟨hbot, htop⟩ := hH
-  obtain ⟨y, hy, -, hy1⟩ := Subgroup.exists_one_lt_of_lt
-    (by simpa using toSubgroup_lt.mpr (bot_lt_iff_ne_bot.mpr hbot))
-  obtain ⟨x, -, hx, hx1⟩ := Subgroup.exists_one_lt_of_lt
-    (by simpa using toSubgroup_lt.mpr (lt_top_iff_ne_top.mpr htop))
+  obtain ⟨y, hy, -, hy1⟩ := Subgroup.not_le_iff_exists_one_lt.mp
+    (toSubgroup_le.not.mpr (le_bot_iff.not.mpr hbot))
+  obtain ⟨x, -, hx, hx1⟩ := Subgroup.not_le_iff_exists_one_lt.mp
+    (toSubgroup_le.not.mpr (top_le_iff.not.mpr htop))
   rw [mem_toSubgroup] at hy hx
   obtain ⟨n, hn⟩ := MulArchimedean.arch x hy1
   exact hx (H.convex (one_mem H) (pow_mem hy n) hx1.le hn)

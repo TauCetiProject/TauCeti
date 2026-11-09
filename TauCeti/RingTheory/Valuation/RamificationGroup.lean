@@ -38,7 +38,7 @@ maximal ideal.
 * `Valuation.mem_decompositionSubgroup_valuationSubring` and
   `Valuation.mem_inertiaSubgroup_valuationSubring_iff`: the same criteria for the valuation subring
   of a valuation `v`, stated through `v`: an automorphism preserving `v` lies in the decomposition
-  group, and it lies in the inertia group when `v (g x - x) < 1` whenever `v x ≤ 1`.
+  group, and it lies in the inertia group exactly when `v (g x - x) < 1` whenever `v x ≤ 1`.
 -/
 
 public section
@@ -47,17 +47,14 @@ open scoped Pointwise
 
 namespace ValuationSubring
 
-universe w w'
-
-variable {K : Type w} {L : Type w'} [Field K] [Field L] [Algebra K L]
+variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
 /-- The action of a decomposition group on its valuation subring is the restriction of its
 action on the fraction field. -/
 @[simp]
 theorem coe_decompositionSubgroup_smul (A : ValuationSubring L)
     (g : A.decompositionSubgroup K) (x : A) :
-    ((g • x : A) : L) = (g : L ≃ₐ[K] L) (x : L) := by
-  rw [← AlgEquiv.smul_def, ← Submonoid.smul_def]
+    ((g • x : A) : L) = (g : L ≃ₐ[K] L) (x : L) :=
   rfl
 
 /-- An element of the decomposition group of a valuation subring `A` maps an element of the
@@ -65,11 +62,8 @@ ambient field into `A` exactly when that element lies in `A`. -/
 @[simp]
 theorem decompositionSubgroup_apply_mem_iff (A : ValuationSubring L)
     (g : A.decompositionSubgroup K) {x : L} : (g : L ≃ₐ[K] L) x ∈ A ↔ x ∈ A := by
-  obtain ⟨σ, hσ⟩ := g
-  have h : σ • A = A := hσ
-  rw [Subgroup.coe_mk, ← AlgEquiv.smul_def]
-  calc σ • x ∈ A ↔ σ • x ∈ σ • A := by rw [h]
-    _ ↔ x ∈ A := smul_mem_pointwise_smul_iff
+  rw [← AlgEquiv.smul_def, ← smul_mem_pointwise_smul_iff (g := (g : L ≃ₐ[K] L)) (x := x),
+    MulAction.mem_stabilizer_iff.mp g.2]
 
 /-- **The decomposition group, elementwise**: an automorphism of `L` lies in the decomposition
 group of a valuation subring `A` exactly when it maps an element of `L` into `A` precisely when
@@ -104,10 +98,7 @@ the residue of every element of `A`. -/
 theorem mem_inertiaSubgroup_iff (A : ValuationSubring L) (g : A.decompositionSubgroup K) :
     g ∈ A.inertiaSubgroup K ↔
       ∀ x : A, IsLocalRing.residue A (g • x) = IsLocalRing.residue A x := by
-  rw [inertiaSubgroup, MonoidHom.mem_ker, RingEquiv.ext_iff]
-  refine ⟨fun h x ↦ by simpa using h (IsLocalRing.residue A x), fun h z ↦ ?_⟩
-  obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective (R := A) z
-  simpa using h x
+  simp [inertiaSubgroup, RingEquiv.ext_iff, IsLocalRing.residue_surjective.forall]
 
 /-- An element of the decomposition group of `A` lies in the inertia group exactly when it moves
 every element of `A` by an element of the maximal ideal of `A`. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Fin.Tuple.Basic
 import Mathlib.Algebra.NeZero
+import Mathlib.Data.Set.Image
 import Mathlib.Data.Set.Insert
 
 /-!
@@ -39,6 +40,8 @@ A tuple of length three is determined by its three entries.
   positions.
 * `Fin.update_append_castAdd`, `Fin.update_append_natAdd`: updating an entry of `Fin.append u v`
   updates the corresponding entry of `u` or of `v`.
+* `Fin.append_comp_swap_castAdd`, `Fin.append_comp_swap_natAdd`: exchanging two entries of
+  `Fin.append u v` exchanges the corresponding entries of `u` or of `v`.
 * `Fin.contractNth_zero_cons`, `Fin.contractNth_succ_cons`: contracting entries of a tuple
   `Fin.cons x a`.
 * `Fin.contractNth_castSucc_castSucc_snoc`, `Fin.contractNth_castSucc_last_snoc`: contracting
@@ -56,6 +59,9 @@ A tuple of length three is determined by its three entries.
   the corresponding entry of `a`.
 * `Fin.insertNth_one_ne_zero`: inserting the entry `1` gives a nonzero tuple.
 * `Fin.injective_apply_zero_one_two`: a tuple of length three is determined by its entries.
+* `Fin.injective_comp_succAbove_of_eq` and `Fin.range_comp_succAbove_of_eq`: if `b p = b q`,
+  deleting the entry at `p` or at `q` gives an injective tuple in the same cases, and does not
+  change the set of entries.
 -/
 
 public section
@@ -149,6 +155,28 @@ theorem update_append_natAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α) (i 
       rw [Function.update_of_ne fun h ↦ by simp [Fin.ext_iff] at h; omega]
       simp)
     (fun j ↦ by simp [Function.update_apply]) j
+
+/-- Exchanging two entries of `Fin.append u v` at positions of `u` is appending `v` to `u` with
+those entries exchanged. -/
+theorem append_comp_swap_castAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α) (j k : Fin m) :
+    append u v ∘ Equiv.swap (castAdd n j) (castAdd n k) = append (u ∘ Equiv.swap j k) v :=
+  funext fun i ↦ addCases
+    (fun i ↦ by rw [Function.comp_apply, ← (castAdd_injective m n).map_swap j k i]; simp)
+    (fun i ↦ by
+      rw [Function.comp_apply, Equiv.swap_apply_of_ne_of_ne
+        (fun h ↦ by simp [Fin.ext_iff] at h; omega) (fun h ↦ by simp [Fin.ext_iff] at h; omega)]
+      simp) i
+
+/-- Exchanging two entries of `Fin.append u v` at positions of `v` is prepending `u` to `v` with
+those entries exchanged. -/
+theorem append_comp_swap_natAdd {n : ℕ} (u : Fin m → α) (v : Fin n → α) (j k : Fin n) :
+    append u v ∘ Equiv.swap (natAdd m j) (natAdd m k) = append u (v ∘ Equiv.swap j k) :=
+  funext fun i ↦ addCases
+    (fun i ↦ by
+      rw [Function.comp_apply, Equiv.swap_apply_of_ne_of_ne
+        (fun h ↦ by simp [Fin.ext_iff] at h; omega) (fun h ↦ by simp [Fin.ext_iff] at h; omega)]
+      simp)
+    (fun i ↦ by rw [Function.comp_apply, ← (natAdd_injective n m).map_swap j k i]; simp) i
 
 section ContractNth
 
@@ -281,5 +309,50 @@ theorem injective_apply_zero_one_two {α : Type*} :
   | 0 => exact h.1
   | 1 => exact h.2.1
   | 2 => exact h.2.2
+
+
+/-- If deleting the entry at `q` leaves an injective tuple, two positions other than `q` holding
+the same entry are equal. -/
+theorem eq_of_injective_comp_succAbove {n : ℕ} {b : Fin (n + 1) → α} {q : Fin (n + 1)}
+    (hq : Function.Injective (b ∘ q.succAbove)) {i j : Fin (n + 1)} (hi : i ≠ q) (hj : j ≠ q)
+    (h : b i = b j) : i = j := by
+  obtain ⟨i, rfl⟩ := exists_succAbove_eq hi
+  obtain ⟨j, rfl⟩ := exists_succAbove_eq hj
+  exact congrArg _ (hq h)
+
+/-- If `b p = b q`, deleting the entry at `p` leaves an injective tuple exactly when
+deleting the entry at `q` does. -/
+theorem injective_comp_succAbove_of_eq {n : ℕ} {b : Fin (n + 1) → α} {p q : Fin (n + 1)}
+    (h : b p = b q) (hp : Function.Injective (b ∘ p.succAbove)) :
+    Function.Injective (b ∘ q.succAbove) := by
+  obtain rfl | hpq := eq_or_ne p q
+  · exact hp
+  intro x y hxy
+  have key (z : Fin (n + 1)) (hz : z ≠ q) :
+      (if z = p then q else z) ≠ p ∧ b (if z = p then q else z) = b z := by
+    split_ifs with hzp
+    · exact ⟨hpq.symm, hzp ▸ h.symm⟩
+    · exact ⟨hzp, rfl⟩
+  have hx := key _ (succAbove_ne q x)
+  have hy := key _ (succAbove_ne q y)
+  have := eq_of_injective_comp_succAbove hp hx.1 hy.1 (hx.2.trans (hxy.trans hy.2.symm))
+  refine succAbove_right_injective (p := q) ?_
+  split_ifs at this with h₁ h₂ h₂
+  · exact h₁.trans h₂.symm
+  · exact absurd this.symm (succAbove_ne q y)
+  · exact absurd this (succAbove_ne q x)
+  · exact this
+
+/-- If `b p = b q` for `p ≠ q`, deleting the entry at `p` does not change the set of entries. -/
+theorem range_comp_succAbove_of_eq {α : Type*} {n : ℕ} {b : Fin (n + 1) → α}
+    {p q : Fin (n + 1)} (hpq : p ≠ q) (h : b p = b q) :
+    Set.range (b ∘ p.succAbove) = Set.range b := by
+  refine (Set.range_comp_subset_range _ _).antisymm ?_
+  rintro _ ⟨i, rfl⟩
+  by_cases hi : i = p
+  · obtain ⟨z, hz⟩ := exists_succAbove_eq hpq.symm
+    exact ⟨z, by simp [hz, hi, h]⟩
+  · obtain ⟨z, hz⟩ := exists_succAbove_eq hi
+    exact ⟨z, by simp [hz]⟩
 
 end Fin

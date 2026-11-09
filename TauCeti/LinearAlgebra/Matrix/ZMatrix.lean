@@ -128,8 +128,7 @@ theorem exists_nonneg_mulVec_nonpos_of_dotProduct_mulVec_nonpos {M : Matrix n n 
   rcases hyi.lt_or_eq with hi | hi
   · calc (M *ᵥ y) i = ∑ j, y j * (M *ᵥ y) i := by rw [← sum_mul, hy.2, one_mul]
       _ ≤ ∑ j, y j * (M *ᵥ y) j := sum_le_sum fun j _ ↦
-          mul_le_mul_of_nonneg_left
-            (TauCeti.Matrix.mulVec_apply_le_of_isMinOn hM hy hmin hi j) (hy.1 j)
+          mul_le_mul_of_nonneg_left (hM.mulVec_apply_le_of_isMinOn hy hmin hi j) (hy.1 j)
       _ = y ⬝ᵥ M *ᵥ y := rfl
       _ ≤ y₀ ⬝ᵥ M *ᵥ y₀ := isMinOn_iff.mp hmin _ hy₀
       _ ≤ 0 := hqy₀
