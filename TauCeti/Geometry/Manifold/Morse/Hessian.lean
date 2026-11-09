@@ -263,14 +263,10 @@ theorem _root_.Module.Basis.criticalHessian_isInvertible_iff_det_ne_zero
     (b : Module.Basis ι ℝ (TangentSpace I x)) :
     (criticalHessian I f x).IsInvertible ↔ (b.criticalHessianMatrix f).det ≠ 0 := by
   have : FiniteDimensional ℝ (TangentSpace I x) := b.finiteDimensional_of_finite
-  rw [Module.Basis.criticalHessianMatrix, ← LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b]
-  refine ⟨fun h ↦ LinearMap.BilinForm.Nondegenerate.ofSeparatingLeft
-    ((criticalHessian I f x).separatingLeft_toBilinForm_iff_injective.mpr h.injective),
-    fun h ↦ ?_⟩
   -- `b` is also a basis of the model space `E`, which is `TangentSpace I x` by definition.
   have : FiniteDimensional ℝ E := b.finiteDimensional_of_finite
-  exact criticalHessian_isInvertible_of_injective
-    ((criticalHessian I f x).separatingLeft_toBilinForm_iff_injective.mp h.1)
+  rw [Module.Basis.criticalHessianMatrix, ← LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b]
+  exact ContinuousLinearMap.isInvertible_iff_nondegenerate_toBilinForm (E := E)
 
 end Matrix
 
