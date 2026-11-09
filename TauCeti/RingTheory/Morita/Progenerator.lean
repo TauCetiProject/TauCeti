@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.FGModuleCat.Projective
+public import TauCeti.Algebra.Category.FGModuleCat.Equivalence
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Morita
 public import TauCeti.Algebra.Module.Generator
 public import TauCeti.RingTheory.Idempotents.Corner.Retract
@@ -34,7 +34,8 @@ through `P`. Fullness makes `S` Morita equivalent to both corners
 (`IsIdempotentElem.isMoritaEquivalent_corner`).
 
 For the second statement, an equivalence `F` from `mod A` to `mod B` carries the regular module `A`
-to a progenerator `P = F(A)` of `B` whose endomorphism ring is that of `A`, namely `Aᵐᵒᵖ`.
+to a progenerator `P = F(A)` of `B` whose endomorphism ring is that of `A`, namely `Aᵐᵒᵖ`; these
+facts about `F` are in `TauCeti/Algebra/Category/FGModuleCat/Equivalence.lean`.
 
 ## Main results
 
@@ -42,8 +43,8 @@ to a progenerator `P = F(A)` of `B` whose endomorphism ring is that of `A`, name
   retract of a finite power of the other, their opposite endomorphism rings are Morita equivalent.
 * `TauCeti.isMoritaEquivalent_moduleEnd_mulOpposite`: **a ring is Morita equivalent to the opposite
   endomorphism ring of any progenerator.**
-* `CategoryTheory.Equivalence.isMoritaEquivalent`: an `R`-linear equivalence of categories of
-  finitely generated modules is induced by a Morita equivalence of the algebras.
+* `CategoryTheory.Equivalence.isMoritaEquivalent`: the algebras of two `R`-linearly equivalent
+  categories of finitely generated modules are Morita equivalent.
 * `TauCeti.exists_finiteModules_equivalence_iff_isMoritaEquivalent`: **`mod A` and `mod B` are
   `R`-linearly equivalent exactly when `A` and `B` are Morita equivalent.**
 * `TauCeti.isMoritaEquivalent_iff_exists_progenerator`: `B` is Morita equivalent to `A` exactly when
@@ -136,96 +137,11 @@ open TauCeti
 
 variable {A B : Type u} [Ring A] [Ring B] (e : FGModuleCat.{u} A ≌ FGModuleCat.{u} B)
 
-/-- An equivalence between the categories of finitely generated modules carries the regular module
-to a projective module. -/
-theorem moduleProjective_functor_obj_regular :
-    Module.Projective B (e.functor.obj (FGModuleCat.of A A)) := by
-  have : Projective (FGModuleCat.of A A) := FGModuleCat.projective_of_free A _
-  have : Projective (e.functor.obj (FGModuleCat.of A A)) := (e.map_projective_iff _).mpr this
-  exact FGModuleCat.moduleProjective_of_projective _
-
-/-- A morphism of finitely generated modules vanishes when its composite with every morphism out of
-the regular module does. -/
-private theorem eq_zero_of_forall_regular_comp_eq_zero {M N : FGModuleCat.{u} A} (f : M ⟶ N)
-    (h : ∀ φ : FGModuleCat.of A A ⟶ M, φ ≫ f = 0) : f = 0 := by
-  ext x
-  have hx : f.hom.hom ((1 : A) • x) = 0 := congrArg (fun g : FGModuleCat.of A A ⟶ N ↦ g.hom.hom 1)
-    (h (FGModuleCat.ofHom (LinearMap.toSpanSingleton A M x)))
-  simpa using hx
-
-/-- An equivalence between the categories of finitely generated modules carries the regular module
-to a generator. -/
-theorem isGenerator_functor_obj_regular :
-    Module.IsGenerator B (e.functor.obj (FGModuleCat.of A A)) := by
-  -- A proper trace ideal `T` would make `B ⟶ B ⧸ T` a nonzero morphism killed by every map out of
-  -- the image of the regular module, and such a morphism is zero after applying `e.inverse`.
-  rw [Module.isGenerator_iff_iSup_range_eq_top]
-  set P := e.functor.obj (FGModuleCat.of A A)
-  set T : Submodule B B := ⨆ φ : P →ₗ[B] B, LinearMap.range φ
-  let π : FGModuleCat.of B B ⟶ FGModuleCat.of B (B ⧸ T) := FGModuleCat.ofHom T.mkQ
-  have hπ : ∀ ψ : P ⟶ FGModuleCat.of B B, ψ ≫ π = 0 := fun ψ ↦ by
-    ext x
-    refine (Submodule.Quotient.mk_eq_zero T).mpr ?_
-    exact Submodule.mem_iSup_of_mem ψ.hom.hom ⟨x, rfl⟩
-  have h : e.inverse.map π = 0 := eq_zero_of_forall_regular_comp_eq_zero _ fun φ ↦ by
-    have hc : e.functor.map (e.inverse.map π) ≫ e.counit.app _ = e.counit.app _ ≫ π :=
-      e.counit.naturality π
-    apply e.functor.map_injective
-    rw [← cancel_mono (e.counit.app _), e.functor.map_comp, Category.assoc, hc, ← Category.assoc]
-    exact (hπ _).trans (by simp)
-  have hπ₀ : π = 0 := e.inverse.map_injective (by simpa using h)
-  have hmk : T.mkQ = 0 := congrArg (fun g ↦ g.hom.hom) hπ₀
-  rw [← Submodule.ker_mkQ T, hmk, LinearMap.ker_zero]
-
 variable (R : Type*) [CommSemiring R] [Algebra R A] [Algebra R B] [e.functor.Linear R]
 
-/-- An `R`-linear equivalence between the categories of finitely generated modules identifies the
-endomorphism algebra of the regular module with that of its image. -/
-noncomputable def moduleEndRegularAlgEquiv :
-    Module.End A A ≃ₐ[R] Module.End B (e.functor.obj (FGModuleCat.of A A)) where
-  -- The laws hold by definition after `FGModuleCat.ofHom`, which turns composition of linear maps
-  -- into composition of morphisms and is inverse to `.hom.hom`.
-  toFun f := (e.functor.map (FGModuleCat.ofHom f)).hom.hom
-  invFun g := (e.functor.preimage (FGModuleCat.ofHom g)).hom.hom
-  left_inv f := congrArg (fun φ : FGModuleCat.of A A ⟶ FGModuleCat.of A A ↦ φ.hom.hom)
-    (e.functor.preimage_map (FGModuleCat.ofHom f))
-  right_inv g := congrArg (fun φ : e.functor.obj (FGModuleCat.of A A) ⟶ _ ↦ φ.hom.hom)
-    (e.functor.map_preimage (FGModuleCat.ofHom g))
-  map_mul' f g := congrArg (fun φ : e.functor.obj (FGModuleCat.of A A) ⟶ _ ↦ φ.hom.hom)
-    (e.functor.map_comp (FGModuleCat.ofHom g) (FGModuleCat.ofHom f))
-  map_add' f g := congrArg (fun φ : e.functor.obj (FGModuleCat.of A A) ⟶ _ ↦ φ.hom.hom)
-    (e.functor.map_add (f := FGModuleCat.ofHom f) (g := FGModuleCat.ofHom g))
-  commutes' r := by
-    have h : FGModuleCat.ofHom (algebraMap R (Module.End A A) r) =
-        r • 𝟙 (FGModuleCat.of A A) := by
-      ext
-      exact (Module.algebraMap_end_apply R A A r 1).trans (algebraMap_smul A r (1 : A)).symm
-    refine (congrArg (fun φ : FGModuleCat.of A A ⟶ _ ↦ (e.functor.map φ).hom.hom) h).trans ?_
-    simp only [Functor.map_smul, e.functor.map_id]
-    ext x
-    exact (Module.algebraMap_end_apply R B _ r x).symm
-
-@[simp]
-theorem moduleEndRegularAlgEquiv_apply (f : Module.End A A) :
-    e.moduleEndRegularAlgEquiv R f = (e.functor.map (FGModuleCat.ofHom f)).hom.hom :=
-  (rfl)
-
-/-- An `R`-linear equivalence between the categories of finitely generated modules exhibits `A` as
-the opposite endomorphism algebra of the image of its regular module. -/
-noncomputable def algEquivMulOppositeModuleEndRegular :
-    A ≃ₐ[R] (Module.End B (e.functor.obj (FGModuleCat.of A A)))ᵐᵒᵖ :=
-  (AlgEquiv.opOp R A).trans (AlgEquiv.op ((AlgEquiv.moduleEndSelf R).trans
-    (e.moduleEndRegularAlgEquiv R)))
-
-@[simp]
-theorem unop_algEquivMulOppositeModuleEndRegular_apply (a : A) :
-    MulOpposite.unop (e.algEquivMulOppositeModuleEndRegular R a) =
-      e.moduleEndRegularAlgEquiv R (AlgEquiv.moduleEndSelf R (MulOpposite.op a)) :=
-  (rfl)
-
 include e in
-/-- **An `R`-linear equivalence of categories of finitely generated modules comes from a Morita
-equivalence.** The image `P` of the regular `A`-module is a progenerator of `B` with
+/-- **If the categories of finitely generated modules are `R`-linearly equivalent, then `A` and `B`
+are Morita equivalent.** The image `P` of the regular `A`-module is a progenerator of `B` with
 `(End_B P)ᵐᵒᵖ ≃ₐ[R] A`. -/
 theorem isMoritaEquivalent : IsMoritaEquivalent R A B :=
   have := e.moduleProjective_functor_obj_regular

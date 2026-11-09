@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Module.Shrink
+public import Mathlib.CategoryTheory.Generator.Preadditive
 public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
 
 /-!
@@ -17,10 +18,12 @@ public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
 
 A finitely generated projective module is a projective object of `FGModuleCat R`, and conversely;
 every finitely generated module is a quotient of a finite free module, so `FGModuleCat R` has
-enough projectives. Over a left noetherian ring, the projective dimension of a finitely generated
-module in `FGModuleCat R` is at most its projective dimension among all modules. Over a division
-ring, every finite-dimensional module is free and hence projective; consequently, every short exact
-sequence of finite-dimensional modules splits.
+enough projectives. The regular module is a projective separator, and an equivalence between
+categories of finitely generated modules carries it to a projective module. Over a left noetherian
+ring, the projective dimension of a finitely generated module in `FGModuleCat R` is at most its
+projective dimension among all modules. Over a division ring, every finite-dimensional module is
+free and hence projective; consequently, every short exact sequence of finite-dimensional modules
+splits.
 
 ## Main results
 
@@ -30,10 +33,13 @@ sequence of finite-dimensional modules splits.
 * `FGModuleCat.projective_biprod`: finite projective modules are closed under biproducts.
 * `FGModuleCat.projective_tensorObj`: finite projective modules are closed under tensor products.
 * `FGModuleCat.projective_of_free`: every finite free module is projective.
+* `FGModuleCat.isSeparator`: the regular module is a separator of `FGModuleCat R`.
 * `FGModuleCat.enoughProjectives`: every finitely generated module is a quotient of a finite free
   module.
 * `FGModuleCat.moduleProjective_of_projective`: a projective object of `FGModuleCat R` is a
   projective `R`-module, provided `R` is small relative to the universe of the modules.
+* `CategoryTheory.Equivalence.moduleProjective_functor_obj_regular`: an equivalence between the
+  categories of finitely generated modules carries the regular module to a projective module.
 * `FGModuleCat.hasProjectiveDimensionLE_of_forget₂`: over a left noetherian ring, a finitely
   generated module of projective dimension at most `n` among all modules has projective dimension
   at most `n` in `FGModuleCat R`.
@@ -81,6 +87,18 @@ theorem _root_.FGModuleCat.projective_of_free (X : FGModuleCat.{v} R) [Module.Fr
   let _ : Module.Projective R X := Module.Projective.of_basis (Module.Free.chooseBasis R X)
   exact FGModuleCat.projective_of_moduleProjective R X
 
+/-- The regular module is a separator of the finitely generated modules, the analogue of Mathlib's
+`ModuleCat.isSeparator`: a morphism vanishes when its composite with every morphism out of the
+regular module does. -/
+theorem _root_.FGModuleCat.isSeparator : IsSeparator (FGModuleCat.of R R) :=
+  (Preadditive.isSeparator_iff _).mpr fun M N f h ↦ by
+    ext x
+    -- `ofHom` and composition unfold by definition, so the composite at `1` is `f (1 • x)`.
+    have hx : f.hom.hom ((1 : R) • x) = 0 :=
+      congrArg (fun g : FGModuleCat.of R R ⟶ N ↦ g.hom.hom 1)
+        (h (FGModuleCat.ofHom (LinearMap.toSpanSingleton R M x)))
+    simpa using hx
+
 variable {R} in
 /-- A projective object among the finitely generated modules is projective as an `R`-module. The
 smallness hypothesis holds automatically when the modules live in a universe containing `R`. -/
@@ -95,6 +113,15 @@ theorem _root_.FGModuleCat.moduleProjective_of_projective [Small.{v} R]
   apply LinearMap.ext
   intro x
   exact congrArg (fun g : X ⟶ X ↦ g.hom.hom x) (Projective.factorThru_comp (𝟙 X) p)
+
+/-- An equivalence between the categories of finitely generated modules carries the regular module
+to a projective module. -/
+theorem _root_.CategoryTheory.Equivalence.moduleProjective_functor_obj_regular
+    {A B : Type u} [Ring A] [Ring B] (e : FGModuleCat.{u} A ≌ FGModuleCat.{u} B) :
+    Module.Projective B (e.functor.obj (FGModuleCat.of A A)) := by
+  have : Projective (FGModuleCat.of A A) := FGModuleCat.projective_of_free A _
+  have : Projective (e.functor.obj (FGModuleCat.of A A)) := (e.map_projective_iff _).mpr this
+  exact FGModuleCat.moduleProjective_of_projective _
 
 variable {R} in
 /-- `FGModuleCat R` has enough projectives: every finitely generated module is a quotient of a

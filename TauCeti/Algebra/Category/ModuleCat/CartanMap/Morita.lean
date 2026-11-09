@@ -118,6 +118,7 @@ open scoped ModuleCat.Algebra in
 /-- The restriction to finitely generated modules of an `R`-linear equivalence is `R`-linear. -/
 instance {R : Type*} [CommSemiring R] [Algebra R A] [Algebra R B] [e.functor.Linear R] :
     e.finiteModulesEquivalence.functor.Linear R where
+  -- `congrFullSubcategory` acts on underlying morphisms as `e.functor`, by definition.
   map_smul f r := ObjectProperty.hom_ext _ (e.functor.map_smul r f.hom)
 
 @[simp]
