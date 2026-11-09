@@ -37,12 +37,6 @@ open _root_.ValuativeRel
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
-/-- The tame Kummer character respects integer powers of its argument. -/
-@[simp]
-theorem tameKummerCharacter_zpow (a : Kˣ) (n : ℤ) :
-    tameKummerCharacter K (a ^ n) = tameKummerCharacter K a ^ n := by
-  cases n <;> simp [zpow_natCast, zpow_negSucc]
-
 /-- The tame Kummer character of `a` is the normalized valuation of `a` times the tame
 character, written multiplicatively. -/
 theorem tameKummerCharacter_eq_inertiaTameCharacter_zpow (a : Kˣ) :
@@ -86,14 +80,19 @@ def inertiaPadicKummerCharacter {ℓ : ℕ} (hℓ : ℓ.Coprime (ringChar 𝓀[K
 
 variable {ℓ : ℕ} (hℓ : ℓ.Coprime (ringChar 𝓀[K]))
 
+/-- The `ℓ`-adic Kummer character is the `ℓ`-adic component of the tame Kummer character. -/
+theorem inertiaPadicKummerCharacter_apply [NeZero ℓ] (a : Kˣ) (σ : inertiaSubgroup K) :
+    inertiaPadicKummerCharacter K hℓ a σ =
+      PrimeToPTateModule.toPadicTateTwist ℓ hℓ (tameKummerCharacter K a σ) :=
+  (rfl)
+
 /-- Projection of the `ℓ`-adic Kummer character recovers the finite Kummer character. -/
 @[simp]
-theorem proj_inertiaPadicKummerCharacter (a : Kˣ) (σ : inertiaSubgroup K) (n : ℕ) :
+theorem proj_inertiaPadicKummerCharacter_apply (a : Kˣ) (σ : inertiaSubgroup K) (n : ℕ) :
     PadicTateTwist.proj n (inertiaPadicKummerCharacter K hℓ a σ).toAdd =
       Additive.ofMul (inertiaKummerCharacter K (ℓ ^ n) (hℓ.pow_left n) a σ) := by
   have : NeZero ℓ := ⟨ne_zero_of_coprime_ringChar hℓ⟩
-  simp only [inertiaPadicKummerCharacter, ContinuousMonoidHom.coe_comp, Function.comp_apply,
-    PrimeToPTateModule.proj_toPadicTateTwist]
+  rw [inertiaPadicKummerCharacter_apply, PrimeToPTateModule.proj_toPadicTateTwist]
   exact congrArg Additive.ofMul
     (proj_tameKummerCharacter_apply a ⟨ℓ ^ n, pow_ne_zero n (NeZero.ne ℓ), hℓ.pow_left n⟩ σ)
 
@@ -104,12 +103,12 @@ theorem inertiaPadicKummerCharacter_eq_zpow (a : Kˣ) :
   have : NeZero ℓ := ⟨ne_zero_of_coprime_ringChar hℓ⟩
   apply ContinuousMonoidHom.ext
   intro σ
-  simp only [inertiaPadicKummerCharacter, ContinuousMonoidHom.coe_comp, Function.comp_apply,
+  simp only [inertiaPadicKummerCharacter_apply,
     tameKummerCharacter_eq_inertiaTameCharacter_zpow, ContinuousMonoidHom.zpow_apply, map_zpow,
     inertiaPadicTameCharacter_apply]
 
 /-- In additive notation the Kummer character on inertia is `v(a) • t_ℓ`. -/
-theorem inertiaPadicKummerCharacter_toAdd (a : Kˣ) (σ : inertiaSubgroup K) :
+theorem toAdd_inertiaPadicKummerCharacter_apply (a : Kˣ) (σ : inertiaSubgroup K) :
     (inertiaPadicKummerCharacter K hℓ a σ).toAdd =
       (normalizedValuation K a).toAdd • (inertiaPadicTameCharacter K hℓ σ).toAdd := by
   rw [inertiaPadicKummerCharacter_eq_zpow, ContinuousMonoidHom.zpow_apply,
@@ -121,7 +120,7 @@ theorem coe_proj_inertiaPadicKummerCharacter_apply {σ : Gal(AlgebraicClosure K/
     (hα : α ^ ℓ ^ n = algebraMap K (AlgebraicClosure K) a) :
     (((PadicTateTwist.proj n (inertiaPadicKummerCharacter K hℓ a ⟨σ, hσ⟩).toAdd).toMul :
       (AlgebraicClosure K)ˣ) : AlgebraicClosure K) = σ α / α := by
-  rw [proj_inertiaPadicKummerCharacter]
+  rw [proj_inertiaPadicKummerCharacter_apply]
   exact coe_inertiaKummerCharacter_apply hσ hα
 
 /-- The image of the `ℓ`-adic Kummer character is exactly `v(a) ℤ_ℓ(1)`, written
@@ -158,24 +157,56 @@ theorem inertiaPadicKummerCharacter_mul (a b : Kˣ) :
       inertiaPadicKummerCharacter K hℓ a * inertiaPadicKummerCharacter K hℓ b := by
   simp only [inertiaPadicKummerCharacter_eq_zpow, map_mul, toAdd_mul, zpow_add]
 
+/-- The Kummer character of an inverse is the inverse Kummer character. -/
+@[simp]
+theorem inertiaPadicKummerCharacter_inv (a : Kˣ) :
+    inertiaPadicKummerCharacter K hℓ a⁻¹ = (inertiaPadicKummerCharacter K hℓ a)⁻¹ := by
+  apply eq_inv_of_mul_eq_one_left
+  rw [← inertiaPadicKummerCharacter_mul, inv_mul_cancel, inertiaPadicKummerCharacter_one]
+
+/-- The Kummer character respects natural powers of its argument. -/
+@[simp]
+theorem inertiaPadicKummerCharacter_pow (a : Kˣ) (n : ℕ) :
+    inertiaPadicKummerCharacter K hℓ (a ^ n) = inertiaPadicKummerCharacter K hℓ a ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih => simp [pow_succ, ih]
+
+/-- The Kummer character respects integer powers of its argument. -/
+@[simp]
+theorem inertiaPadicKummerCharacter_zpow (a : Kˣ) (n : ℤ) :
+    inertiaPadicKummerCharacter K hℓ (a ^ n) = inertiaPadicKummerCharacter K hℓ a ^ n := by
+  cases n <;> simp [zpow_natCast, zpow_negSucc]
+
+/-- At a uniformizer the `ℓ`-adic Kummer character is the `ℓ`-adic tame character. -/
+theorem inertiaPadicKummerCharacter_of_isUniformizer {π : Kˣ} (hπ : IsUniformizer K π) :
+    inertiaPadicKummerCharacter K hℓ π = inertiaPadicTameCharacter K hℓ := by
+  have : NeZero ℓ := ⟨ne_zero_of_coprime_ringChar hℓ⟩
+  ext σ : 1
+  rw [inertiaPadicKummerCharacter_apply, ← inertiaTameCharacter_eq_tameKummerCharacter hπ,
+    ← inertiaPadicTameCharacter_apply]
+
+/-- The `ℓ`-adic Kummer character of a unit is trivial. -/
+theorem inertiaPadicKummerCharacter_eq_one_of_mem_unitFiltration_zero {u : Kˣ}
+    (hu : u ∈ unitFiltration K 0) : inertiaPadicKummerCharacter K hℓ u = 1 := by
+  have : NeZero ℓ := ⟨ne_zero_of_coprime_ringChar hℓ⟩
+  ext σ : 1
+  simp [inertiaPadicKummerCharacter_apply,
+    tameKummerCharacter_eq_one_of_mem_unitFiltration_zero hu]
+
 /-- A prime-to-residue-characteristic `ℓ`-adic Kummer tower is unramified exactly when its
 parameter has valuation zero. Divisibility of the valuation by `ℓ` does not suffice. -/
 @[simp]
 theorem inertiaPadicKummerCharacter_eq_one_iff [Fact ℓ.Prime] (a : Kˣ) :
     inertiaPadicKummerCharacter K hℓ a = 1 ↔ (normalizedValuation K a).toAdd = 0 := by
-  have hp := CharP.prime_ringChar 𝓀[K]
-  have hroots (n : ℕ) : HasEnoughRootsOfUnity (AlgebraicClosure K) (ℓ ^ n) := by
-    have : NeZero (((ℓ ^ n : ℕ) : K)) := ⟨natCast_ne_zero_of_isUnit
-      (IsLocalRing.isUnit_natCast_iff_not_dvd.2
-        (hp.coprime_iff_not_dvd.1 (hℓ.pow_left n).symm))⟩
-    infer_instance
-  let := hroots
+  let (n : ℕ) : HasEnoughRootsOfUnity (AlgebraicClosure K) (ℓ ^ n) :=
+    hasEnoughRootsOfUnity_algebraicClosure_of_coprime_ringChar K (hℓ.pow_left n)
   obtain ⟨e⟩ := PadicTateTwist.nonempty_linearEquiv ℓ (AlgebraicClosure K)
   constructor
   · intro h
     obtain ⟨σ, hσ⟩ := inertiaPadicTameCharacter_surjective K hℓ
       (Multiplicative.ofAdd (e.symm 1))
-    have hz := inertiaPadicKummerCharacter_toAdd hℓ a σ
+    have hz := toAdd_inertiaPadicKummerCharacter_apply hℓ a σ
     have hzero : (inertiaPadicKummerCharacter K hℓ a σ).toAdd = 0 :=
       congrArg (fun f : inertiaSubgroup K →ₜ* Multiplicative
         (PadicTateTwist ℓ (AlgebraicClosure K)) ↦ (f σ).toAdd) h

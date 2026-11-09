@@ -264,6 +264,12 @@ theorem inertiaKummerCharacter_pow (a : Kˣ) (n : ℕ) :
   | zero => simp
   | succ n ih => simp [pow_succ, ih]
 
+/-- The Kummer character respects integer powers of its argument. -/
+@[simp]
+theorem inertiaKummerCharacter_zpow (a : Kˣ) (n : ℤ) :
+    inertiaKummerCharacter K m hm (a ^ n) = inertiaKummerCharacter K m hm a ^ n := by
+  cases n <;> simp [zpow_natCast, zpow_negSucc]
+
 /-- **Compatibility along the power maps.** For `n ∣ m`, the level-`m` Kummer character raised to
 the power `m / n` is the level-`n` Kummer character, since `α ^ (m / n)` is an `n`-th root of `a`
 whenever `α` is an `m`-th root. -/
@@ -378,6 +384,12 @@ theorem tameKummerCharacter_pow (a : Kˣ) (n : ℕ) :
     tameKummerCharacter K (a ^ n) = (tameKummerCharacter K a) ^ n := by
   ext σ m : 2
   simp
+
+/-- The tame Kummer character respects integer powers of its argument. -/
+@[simp]
+theorem tameKummerCharacter_zpow (a : Kˣ) (n : ℤ) :
+    tameKummerCharacter K (a ^ n) = tameKummerCharacter K a ^ n := by
+  cases n <;> simp [zpow_natCast, zpow_negSucc]
 
 /-- The tame Kummer character of a unit is trivial. -/
 theorem tameKummerCharacter_eq_one_of_mem_unitFiltration_zero {u : Kˣ}
