@@ -46,19 +46,6 @@ open scoped Pointwise
 variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V]
   {i : N →+ V} {C : PointedCone ℝ V}
 
-/-- A finite generating set contained in the image of the lattice generates a lattice-rational
-cone. -/
-theorem isLatticeRational_hull_of_forall_mem_range (s : Finset V)
-    (hs : ∀ x ∈ s, ∃ n : N, i n = x) :
-    IsLatticeRational i (PointedCone.hull ℝ (s : Set V)) := by
-  classical
-  have hs' : (s : Set V) ⊆ i '' (Set.univ : Set N) := by
-    intro x hx
-    obtain ⟨n, hn⟩ := hs x hx
-    exact ⟨n, Set.mem_univ _, hn⟩
-  obtain ⟨t, -, ht⟩ := Finset.subset_set_image_iff.mp hs'
-  exact isLatticeRational_iff.mpr ⟨t, by rw [← Finset.coe_image, ht]⟩
-
 /-- Cutting a lattice-rational cone by an integral-character halfspace keeps an actual finite
 family of lattice generators, with lineality allowed. -/
 theorem IsLatticeRational.inf_dual_singleton_realCharacter (hC : IsLatticeRational i C)
@@ -105,6 +92,45 @@ theorem IsIntegralLattice.isLatticeRational_top (h : IsIntegralLattice i) :
       PointedCone.span_eq_hull_neg_sup_hull ℝ _
     _ = PointedCone.hull ℝ (-Set.range B ∪ Set.range B) := (Submodule.span_union _ _).symm
 
+/-- A rational halfspace through the origin is lattice rational, with no salience assumption. -/
+theorem IsRationalFunctional.isLatticeRational_dual_singleton {h : IsIntegralLattice i}
+    {f : Module.Dual ℝ V} (hf : IsRationalFunctional h f) :
+    IsLatticeRational i (PointedCone.dual
+      (LinearMap.id : Module.Dual ℝ V →ₗ[ℝ] Module.Dual ℝ V) {f}) := by
+  obtain ⟨q, m, rfl⟩ := IsRationalFunctional.iff_exists_character.mp hf
+  have key {c : ℝ} (hc : 0 < c) (g : Module.Dual ℝ V) :
+      PointedCone.dual (LinearMap.id : Module.Dual ℝ V →ₗ[ℝ] Module.Dual ℝ V) {c • g} =
+        PointedCone.dual (LinearMap.id : Module.Dual ℝ V →ₗ[ℝ] Module.Dual ℝ V) {g} := by
+    ext x
+    simp [mul_nonneg_iff_of_pos_left hc]
+  have hχ (m' : N →+ ℤ) : IsLatticeRational i (PointedCone.dual
+      (LinearMap.id : Module.Dual ℝ V →ₗ[ℝ] Module.Dual ℝ V) {h.realCharacter m'}) := by
+    simpa using h.isLatticeRational_top.inf_dual_singleton_realCharacter h m'
+  rcases lt_trichotomy q 0 with hq | rfl | hq
+  · have hneg : (0 : ℝ) < -(q : ℝ) := by simpa using (by exact_mod_cast hq : (q : ℝ) < 0)
+    have hscale : (q : ℝ) • h.realCharacter m.toAddMonoidHom =
+        (-(q : ℝ)) • h.realCharacter (-m.toAddMonoidHom) := by
+      simp [map_neg]
+    rw [hscale, key hneg]
+    exact hχ _
+  · simpa using h.isLatticeRational_top
+  · rw [key (by exact_mod_cast hq)]
+    exact hχ _
+
+/-- A finite family of rational functionals cuts out a lattice-rational cone. -/
+theorem IsIntegralLattice.isLatticeRational_dual_of_isRationalFunctional (h : IsIntegralLattice i)
+    (s : Finset (Module.Dual ℝ V)) (hs : ∀ f ∈ s, IsRationalFunctional h f) :
+    IsLatticeRational i (PointedCone.dual
+      (LinearMap.id : Module.Dual ℝ V →ₗ[ℝ] Module.Dual ℝ V) (s : Set (Module.Dual ℝ V))) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simpa using h.isLatticeRational_top
+  | @insert f s hf ih =>
+    rw [Finset.coe_insert, PointedCone.dual_insert]
+    exact IsLatticeRational.inf h.isBaseChange.equiv.injective
+      (hs f (Finset.mem_insert_self f s)).isLatticeRational_dual_singleton
+      (ih fun g hg => hs g (Finset.mem_insert_of_mem hg))
+
 /-- A finite family of integral-character inequalities defines a lattice-rational cone. -/
 theorem IsIntegralLattice.isLatticeRational_dual_image (h : IsIntegralLattice i)
     (s : Finset (N →+ ℤ)) :
@@ -112,11 +138,10 @@ theorem IsIntegralLattice.isLatticeRational_dual_image (h : IsIntegralLattice i)
       (LinearMap.id : Module.Dual ℝ V →ₗ[ℝ] Module.Dual ℝ V)
       (h.realCharacter '' (s : Set (N →+ ℤ)))) := by
   classical
-  induction s using Finset.induction_on with
-  | empty => simpa using h.isLatticeRational_top
-  | @insert m s hm ih =>
-    rw [Finset.coe_insert, Set.image_insert_eq, PointedCone.dual_insert, inf_comm]
-    exact ih.inf_dual_singleton_realCharacter h m
+  rw [← Finset.coe_image]
+  exact h.isLatticeRational_dual_of_isRationalFunctional _ fun f hf => by
+    obtain ⟨m, -, rfl⟩ := Finset.mem_image.mp hf
+    exact IsRationalFunctional.realCharacter h m.toIntLinearMap
 
 /-- The algebraic dual of a lattice-rational cone is lattice rational for the dual lattice. Its
 defining cuts are evaluations at lattice generators. -/
@@ -148,59 +173,11 @@ theorem IsIntegralLattice.isLatticeRational_iff_exists_dual_image (h : IsIntegra
     have heval : (LinearMap.id : Module.Dual ℝ V →ₗ[ℝ] Module.Dual ℝ V).flip =
         Module.Dual.eval ℝ V := by
       ext x f
-      rfl
+      simp [Module.Dual.eval_apply]
     have hbip := hC.fg.cone_dual_dual_flip_id
     rw [heval, hs, PointedCone.dual_hull] at hbip
     exact ⟨s, hbip.symm⟩
   · rintro ⟨s, rfl⟩
     exact h.isLatticeRational_dual_image s
-
-/-- A rational halfspace through the origin is lattice rational, with no salience assumption. -/
-theorem IsRationalFunctional.isLatticeRational_dual_singleton {h : IsIntegralLattice i}
-    {f : Module.Dual ℝ V} (hf : IsRationalFunctional h f) :
-    IsLatticeRational i (PointedCone.dual
-      (LinearMap.id : Module.Dual ℝ V →ₗ[ℝ] Module.Dual ℝ V) {f}) := by
-  obtain ⟨q, m, rfl⟩ := IsRationalFunctional.iff_exists_character.mp hf
-  rcases lt_trichotomy q 0 with hq | rfl | hq
-  · have hneg : (q : ℝ) < 0 := by exact_mod_cast hq
-    have heq : PointedCone.dual
-        (LinearMap.id : Module.Dual ℝ V →ₗ[ℝ] Module.Dual ℝ V)
-        {(q : ℝ) • h.realCharacter m.toAddMonoidHom} =
-        PointedCone.dual
-          (LinearMap.id : Module.Dual ℝ V →ₗ[ℝ] Module.Dual ℝ V)
-          {h.realCharacter (-m.toAddMonoidHom)} := by
-      ext x
-      simp only [PointedCone.mem_dual, Set.mem_singleton_iff, forall_eq,
-        LinearMap.id_apply, LinearMap.smul_apply, smul_eq_mul, map_neg,
-        LinearMap.neg_apply]
-      constructor <;> intro hx <;> nlinarith
-    rw [heq]
-    simpa using h.isLatticeRational_dual_image {-m.toAddMonoidHom}
-  · simpa using h.isLatticeRational_top
-  · have hpos : (0 : ℝ) < q := by exact_mod_cast hq
-    have heq : PointedCone.dual
-        (LinearMap.id : Module.Dual ℝ V →ₗ[ℝ] Module.Dual ℝ V)
-        {(q : ℝ) • h.realCharacter m.toAddMonoidHom} =
-        PointedCone.dual
-          (LinearMap.id : Module.Dual ℝ V →ₗ[ℝ] Module.Dual ℝ V)
-          {h.realCharacter m.toAddMonoidHom} := by
-      ext x
-      simp [mul_nonneg_iff_of_pos_left hpos]
-    rw [heq]
-    simpa using h.isLatticeRational_dual_image {m.toAddMonoidHom}
-
-/-- A finite family of rational functionals cuts out a lattice-rational cone. -/
-theorem IsIntegralLattice.isLatticeRational_dual_of_isRationalFunctional (h : IsIntegralLattice i)
-    (s : Finset (Module.Dual ℝ V)) (hs : ∀ f ∈ s, IsRationalFunctional h f) :
-    IsLatticeRational i (PointedCone.dual
-      (LinearMap.id : Module.Dual ℝ V →ₗ[ℝ] Module.Dual ℝ V) (s : Set (Module.Dual ℝ V))) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simpa using h.isLatticeRational_top
-  | @insert f s hf ih =>
-    rw [Finset.coe_insert, PointedCone.dual_insert]
-    exact IsLatticeRational.inf h.isBaseChange.equiv.injective
-      (hs f (Finset.mem_insert_self f s)).isLatticeRational_dual_singleton
-      (ih fun g hg => hs g (Finset.mem_insert_of_mem hg))
 
 end TauCeti.Toric

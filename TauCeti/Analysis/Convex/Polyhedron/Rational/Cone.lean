@@ -14,11 +14,15 @@ public import TauCeti.Geometry.Toric.Algebraic.Cone.RationalDuality
 A pointed cone has a rational-normal affine inequality presentation exactly when it is generated
 by finitely many lattice vectors (rational Minkowski–Weyl,
 `TauCeti.Toric.IsIntegralLattice.isLatticeRational_iff_exists_dual_image`). The offsets of a
-presentation need not be rational: a cone is stable under nonnegative scaling, which forces every
-inequality of a presentation to be homogeneous, so the linear parts alone cut out the cone
+presentation need not be rational. A cone is stable under nonnegative scaling and contains `0`,
+which forces the offset of each inequality of a presentation to be nonpositive; the linear parts
+alone then cut out the cone, even though individual offsets may be nonzero
 (`TauCeti.IsRationalNormalPolyhedron.isLatticeRational`). Conversely a lattice-rational cone is
-cut out by integral characters, a presentation with rational (indeed zero) offsets. Hence for
-cones rational-normal and rational polyhedrality coincide with lattice rationality.
+cut out by integral characters, a presentation with zero offsets
+(`TauCeti.Toric.IsLatticeRational.exists_rationalAffinePolyhedron_offset_zero`), and every
+presentation with zero offsets cuts out a lattice-rational cone
+(`TauCeti.RationalAffinePolyhedron.exists_isLatticeRational_of_offset_zero`). Hence for cones
+rational-normal and rational polyhedrality coincide with lattice rationality.
 
 The comparison allows lineality and bridges affine polyhedral cells and toric cones.
 
@@ -36,13 +40,86 @@ namespace TauCeti
 
 open Toric
 
-variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V]
+variable {N V : Type*} [AddCommGroup N] [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
   {i : N →+ V} {h : IsIntegralLattice i} {C : PointedCone ℝ V}
 
-/-- A lattice-rational cone is a rational polyhedron: it is cut out by finitely many integral
-characters, whose offsets all vanish. -/
-theorem Toric.IsLatticeRational.isRationalPolyhedron (hC : IsLatticeRational i C)
-    (h : IsIntegralLattice i) : IsRationalPolyhedron h (C : Set V) := by
+omit [TopologicalSpace V] in
+/-- A pointed cone cut out by affine inequalities is already cut out by their linear parts. -/
+theorem mem_pointedCone_iff_forall_linear_nonpos {ι : Type*} (g : ι → (V →ᵃ[ℝ] ℝ))
+    (hC : (C : Set V) = {x | ∀ j, g j x ≤ 0}) (x : V) : x ∈ C ↔ ∀ j, (g j).linear x ≤ 0 := by
+  have hdec (j) (x : V) : g j x = (g j).linear x + g j 0 := by
+    simpa using congrFun (g j).decomp x
+  have hc (j) : g j 0 ≤ 0 := by
+    have : (0 : V) ∈ (C : Set V) := C.zero_mem
+    rw [hC] at this
+    exact this j
+  refine ⟨fun hx j => ?_, fun hx => ?_⟩
+  · -- Otherwise the inequality fails on a large multiple of `x`.
+    by_contra hle
+    have hpos := not_le.mp hle
+    have hmem : ((1 - g j 0) / (g j).linear x) • x ∈ (C : Set V) :=
+      C.smul_mem (div_nonneg (by linarith [hc j]) hpos.le) hx
+    rw [hC] at hmem
+    have := hmem j
+    rw [hdec, map_smul, smul_eq_mul, div_mul_cancel₀ _ hpos.ne'] at this
+    linarith
+  · rw [← SetLike.mem_coe, hC]
+    intro j
+    linarith [hdec j x, hx j, hc j]
+
+/-- The cone cut out by the linear parts of a rational-normal presentation is lattice rational. -/
+theorem RationalAffinePolyhedron.exists_isLatticeRational_mem_iff_linear
+    (P : RationalAffinePolyhedron h) :
+    ∃ C : PointedCone ℝ V, IsLatticeRational i C ∧
+      ∀ x, x ∈ C ↔ ∀ j, (P.inequality j).toAffineMap.linear x ≤ 0 := by
+  classical
+  let ℓ (j) : Module.Dual ℝ V := (P.inequality j).toAffineMap.linear
+  refine ⟨PointedCone.dual
+      (LinearMap.id : Module.Dual ℝ V →ₗ[ℝ] Module.Dual ℝ V)
+      ((Finset.univ.image fun j => -ℓ j : Finset (Module.Dual ℝ V)) : Set (Module.Dual ℝ V)),
+    ?_, fun x => by simp [PointedCone.mem_dual, ℓ]⟩
+  refine h.isLatticeRational_dual_of_isRationalFunctional _ fun f hf => ?_
+  obtain ⟨j, -, rfl⟩ := Finset.mem_image.mp hf
+  exact (P.rational_linear j).neg
+
+/-- A rational-normal presentation with zero offsets cuts out a lattice-rational cone. -/
+theorem RationalAffinePolyhedron.exists_isLatticeRational_of_offset_zero
+    (P : RationalAffinePolyhedron h) (h0 : ∀ j, P.inequality j 0 = 0) :
+    ∃ C : PointedCone ℝ V, (C : Set V) = P.carrier ∧ IsLatticeRational i C := by
+  obtain ⟨C, hC, hmem⟩ := P.exists_isLatticeRational_mem_iff_linear
+  refine ⟨C, ?_, hC⟩
+  ext x
+  rw [SetLike.mem_coe, hmem, RationalAffinePolyhedron.mem_carrier]
+  refine forall_congr' fun j => ?_
+  have hdec : P.inequality j x = (P.inequality j).toAffineMap.linear x + P.inequality j 0 := by
+    simpa using congrFun (P.inequality j).toAffineMap.decomp x
+  rw [hdec, h0 j, add_zero]
+
+/-- A rational-normal polyhedral cone is lattice rational. The affine offsets of the given
+presentation may be arbitrary real numbers: since the cone is stable under nonnegative scaling
+and contains `0`, it is cut out by the linear parts of its inequalities alone. -/
+theorem IsRationalNormalPolyhedron.isLatticeRational
+    (hC : IsRationalNormalPolyhedron h (C : Set V)) : IsLatticeRational i C := by
+  obtain ⟨P, hP⟩ := isRationalNormalPolyhedron_iff.mp hC
+  obtain ⟨C', hC', hmem⟩ := P.exists_isLatticeRational_mem_iff_linear
+  have hlin := mem_pointedCone_iff_forall_linear_nonpos
+    (fun j => (P.inequality j).toAffineMap) (C := C) (by
+      rw [← hP]
+      ext x
+      exact RationalAffinePolyhedron.mem_carrier)
+  convert hC' using 1
+  ext x
+  rw [hlin, hmem]
+
+section Continuous
+
+variable [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V]
+
+/-- A lattice-rational cone is presented by finitely many integral characters, with all offsets
+zero. -/
+theorem Toric.IsLatticeRational.exists_rationalAffinePolyhedron_offset_zero
+    (hC : IsLatticeRational i C) (h : IsIntegralLattice i) :
+    ∃ P : RationalAffinePolyhedron h, P.carrier = C ∧ ∀ j, P.inequality j 0 = 0 := by
   classical
   let _ := h.finiteDimensional
   obtain ⟨s, rfl⟩ := h.isLatticeRational_iff_exists_dual_image.mp hC
@@ -51,48 +128,26 @@ theorem Toric.IsLatticeRational.isRationalPolyhedron (hC : IsLatticeRational i C
       ⟨h.realCharacter m.val, (h.realCharacter m.val).continuous_of_finiteDimensional⟩)
   have hg (m : s) : IsRationalFunctional h (g m).toAffineMap.linear :=
     (IsRationalFunctional.realCharacter h m.val.toIntLinearMap).neg
-  refine isRationalPolyhedron_iff.mpr ⟨RationalAffinePolyhedron.ofFinite g hg, ?_,
-    (RationalAffinePolyhedron.hasRationalOffsets_ofFinite_iff hg).mpr fun m => ⟨0, by simp [g]⟩⟩
-  ext x
-  rw [RationalAffinePolyhedron.mem_carrier_ofFinite]
-  simp [PointedCone.mem_dual, g]
+  refine ⟨RationalAffinePolyhedron.ofFinite g hg, ?_, fun j => ?_⟩
+  · ext x
+    rw [RationalAffinePolyhedron.mem_carrier_ofFinite]
+    simp [PointedCone.mem_dual, g]
+  · obtain ⟨m, hm⟩ := RationalAffinePolyhedron.exists_inequality_ofFinite hg j
+    simp [hm, g]
 
-/-- A rational-normal polyhedral cone is lattice rational. The affine offsets of the given
-presentation may be arbitrary real numbers: since the cone is stable under nonnegative scaling,
-its inequalities are cut out by their linear parts alone. -/
-theorem IsRationalNormalPolyhedron.isLatticeRational
-    (hC : IsRationalNormalPolyhedron h (C : Set V)) : IsLatticeRational i C := by
-  classical
-  obtain ⟨P, hP⟩ := isRationalNormalPolyhedron_iff.mp hC
-  -- The inequalities are `ℓ j x + c j ≤ 0` with `c j ≤ 0` because `0 ∈ C`.
-  let ℓ (j) : Module.Dual ℝ V := (P.inequality j).toAffineMap.linear
-  have hdec (j) (x : V) : P.inequality j x = ℓ j x + P.inequality j 0 := by
-    simpa [ℓ] using congrFun (P.inequality j).toAffineMap.decomp x
-  have hc (j) : P.inequality j 0 ≤ 0 := by
-    have : (0 : V) ∈ P.carrier := hP ▸ C.zero_mem
-    exact RationalAffinePolyhedron.mem_carrier.mp this j
-  have hlin (x : V) : x ∈ C ↔ ∀ j, ℓ j x ≤ 0 := by
-    refine ⟨fun hx j => ?_, fun hx => ?_⟩
-    · -- Otherwise the inequality fails on a large multiple of `x`.
-      by_contra hle
-      have hpos := not_le.mp hle
-      have hmem : ((1 - P.inequality j 0) / ℓ j x) • x ∈ P.carrier :=
-        hP ▸ C.smul_mem (div_nonneg (by linarith [hc j]) hpos.le) hx
-      have := RationalAffinePolyhedron.mem_carrier.mp hmem j
-      rw [hdec, map_smul, smul_eq_mul, div_mul_cancel₀ _ hpos.ne'] at this
-      linarith
-    · rw [← SetLike.mem_coe, ← hP, RationalAffinePolyhedron.mem_carrier]
-      intro j
-      linarith [hdec j x, hx j, hc j]
-  have heq : C = PointedCone.dual
-      (LinearMap.id : Module.Dual ℝ V →ₗ[ℝ] Module.Dual ℝ V)
-      ((Finset.univ.image fun j => -ℓ j : Finset (Module.Dual ℝ V)) : Set (Module.Dual ℝ V)) := by
-    ext x
-    simp [PointedCone.mem_dual, hlin]
-  rw [heq]
-  refine h.isLatticeRational_dual_of_isRationalFunctional _ fun f hf => ?_
-  obtain ⟨j, -, rfl⟩ := Finset.mem_image.mp hf
-  exact (P.rational_linear j).neg
+/-- A lattice-rational cone is a rational polyhedron: it is cut out by finitely many integral
+characters, whose offsets all vanish. -/
+theorem Toric.IsLatticeRational.isRationalPolyhedron (hC : IsLatticeRational i C)
+    (h : IsIntegralLattice i) : IsRationalPolyhedron h (C : Set V) := by
+  obtain ⟨P, hP, h0⟩ := hC.exists_rationalAffinePolyhedron_offset_zero h
+  refine isRationalPolyhedron_iff.mpr ⟨P, hP, ?_⟩
+  exact RationalAffinePolyhedron.hasRationalOffsets_iff.mpr fun j => ⟨0, by simp [h0]⟩
+
+end Continuous
+
+section Continuous
+
+variable [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V]
 
 /-- On pointed cones, rational-normal polyhedrality and lattice rationality agree. -/
 theorem isRationalNormalPolyhedron_coe_iff :
@@ -106,5 +161,7 @@ theorem isRationalPolyhedron_coe_iff :
     IsRationalPolyhedron h (C : Set V) ↔ IsLatticeRational i C :=
   ⟨fun hC => hC.isRationalNormalPolyhedron.isLatticeRational,
     fun hC => hC.isRationalPolyhedron h⟩
+
+end Continuous
 
 end TauCeti
