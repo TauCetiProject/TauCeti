@@ -40,6 +40,8 @@ ring without zero divisors is positive definite exactly when its single entry is
   more generally over any linearly ordered field with the star order.
 * `TauCeti.Matrix.posDef_conjTranspose_mul_self_of_isUnit`: an invertible rational matrix of the
   form `Bᴴ * B` is positive definite.
+* `Matrix.PosDef.trivialStar`: over a linearly ordered field, a positive definite matrix on a
+  nonempty index type forces the star to be trivial.
 * `Matrix.PosDef.exists_sq_le_of_dotProduct_mulVec_le`: for a positive definite matrix `S`, the
   vectors `c` with `c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w` have uniformly bounded coordinates.
 -/
@@ -210,16 +212,14 @@ namespace Matrix.PosDef
 variable {B K : Type*} [Fintype B] [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   [StarRing K]
 
-/-- **A positive definite quadratic inequality bounds every coordinate.** For a positive definite
-matrix `S` and a linear functional `w`, the vectors `c` with `c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w` have squared
-coordinates bounded independently of `c`. -/
-theorem exists_sq_le_of_dotProduct_mulVec_le {S : Matrix B B K} (hS : S.PosDef) (w : B → K) :
-    ∃ M : K, ∀ c : B → K, c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w → ∀ k, c k ^ 2 ≤ M := by
+omit [Fintype B] in
+/-- **A positive definite matrix on a nonempty index type forces the star of `K` to be trivial**:
+for `s ≠ star s`, the vector supported at one index with entry `s - star s` has a nonpositive
+quadratic form. -/
+theorem trivialStar [Nonempty B] {S : Matrix B B K} (hS : S.PosDef) : TrivialStar K := by
   classical
-  rcases isEmpty_or_nonempty B with hB | ⟨⟨k₀⟩⟩
-  · exact ⟨0, fun _ _ k ↦ isEmptyElim k⟩
-  -- A positive definite matrix on a nonempty index type forces the star of `K` to be trivial.
-  have : TrivialStar K := ⟨fun s ↦ by
+  obtain ⟨k₀⟩ := ‹Nonempty B›
+  exact ⟨fun s ↦ by
     by_contra hne
     have ht : s - star s ≠ 0 := sub_ne_zero.mpr (Ne.symm hne)
     have h := hS.2 (x := Finsupp.single k₀ (s - star s)) (Finsupp.single_ne_zero.mpr ht)
@@ -228,6 +228,16 @@ theorem exists_sq_le_of_dotProduct_mulVec_le {S : Matrix B B K} (hS : S.PosDef) 
     rw [Finsupp.sum_single_index (by simp), Finsupp.sum_single_index (by simp)] at h
     simp only [star_sub, star_star] at h
     nlinarith [mul_pos htt hpos]⟩
+
+/-- **A positive definite quadratic inequality bounds every coordinate.** For a positive definite
+matrix `S` and a linear functional `w`, the vectors `c` with `c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w` have squared
+coordinates bounded independently of `c`. -/
+theorem exists_sq_le_of_dotProduct_mulVec_le {S : Matrix B B K} (hS : S.PosDef) (w : B → K) :
+    ∃ M : K, ∀ c : B → K, c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w → ∀ k, c k ^ 2 ≤ M := by
+  classical
+  rcases isEmpty_or_nonempty B with hB | hB
+  · exact ⟨0, fun _ _ k ↦ isEmptyElim k⟩
+  have := hS.trivialStar
   set F : LinearMap.BilinForm K (B → K) := Matrix.toBilin' S with hFdef
   have hFapply : ∀ u v : B → K, F u v = u ⬝ᵥ S *ᵥ v := fun u v ↦ Matrix.toBilin'_apply' S u v
   have hnonneg : ∀ u : B → K, 0 ≤ F u u := fun u ↦ by
