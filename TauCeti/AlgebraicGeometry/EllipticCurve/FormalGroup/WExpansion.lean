@@ -296,8 +296,8 @@ arguments move up the tower. -/
 theorem algebraMap_wEquationRHS {A B : Type*} [CommSemiring A] [CommSemiring B] [Algebra R A]
     [Algebra R B] [Algebra A B] [IsScalarTower R A B] (q v : A) :
     algebraMap A B (wEquationRHS W q v) =
-      wEquationRHS W (algebraMap A B q) (algebraMap A B v) := by
-  simp only [wEquationRHS_def, map_add, map_mul, map_pow, ← IsScalarTower.algebraMap_apply]
+      wEquationRHS W (algebraMap A B q) (algebraMap A B v) :=
+  AlgHom.map_wEquationRHS (IsScalarTower.toAlgHom R A B) W q v
 
 section Equation
 
