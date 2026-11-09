@@ -90,6 +90,19 @@ section Base
 
 variable (base : (IsKilling.rootSystem H).Base)
 
+attribute [local instance] complementedLattice_lieSubmodule_of_isKilling
+
+/-- `L(ρ)` is finite-dimensional of dimension `2 ^ ((dim L - dim H) / 2)` at the ambient
+`Invertible (2 : K)`; `TauCeti.isDominantIntegral_weylVector` and
+`TauCeti.finrank_irreducibleQuotient_weylVector` fix the instance `invertibleTwo`. -/
+private theorem finiteDimensional_and_finrank_irreducibleQuotient_weylVector :
+    FiniteDimensional K (irreducibleQuotient base (weylVector (IsKilling.rootSystem H) base)) ∧
+      finrank K (irreducibleQuotient base (weylVector (IsKilling.rootSystem H) base)) =
+        2 ^ ((finrank K L - finrank K H) / 2) := by
+  obtain rfl : ‹Invertible (2 : K)› = invertibleTwo := Subsingleton.elim _ _
+  exact ⟨finiteDimensional_irreducibleQuotient_of_isDominantIntegral
+    (isDominantIntegral_weylVector (b := base)), finrank_irreducibleQuotient_weylVector base⟩
+
 /-- **Kostant's module is isotypic of type `L(ρ)`.** Every irreducible Lie submodule of the Clifford
 algebra of the Killing form is a copy of `L(ρ)`. -/
 theorem isIsotypicOfType_irreducibleQuotient_weylVector_kostant :
@@ -106,15 +119,10 @@ theorem isotypicMultiplicity_irreducibleQuotient_weylVector_kostant :
     isotypicMultiplicity K L (CliffordAlgebra (killingQuadraticForm K L))
       (irreducibleQuotient base (weylVector (IsKilling.rootSystem H) base)) =
       2 ^ ((finrank K L + LieAlgebra.rank K L) / 2) := by
-  -- `TauCeti.isDominantIntegral_weylVector` fixes the instance `invertibleTwo`.
-  obtain rfl : ‹Invertible (2 : K)› = invertibleTwo := Subsingleton.elim _ _
-  have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral
-    (isDominantIntegral_weylVector (b := base))
-  have _ := complementedLattice_lieSubmodule_of_isKilling K L
-    (CliffordAlgebra (killingQuadraticForm K L))
+  obtain ⟨_, hρ⟩ := finiteDimensional_and_finrank_irreducibleQuotient_weylVector base
   have hdim := finrank_of_isIsotypicOfType (M := CliffordAlgebra (killingQuadraticForm K L)) _
     (isIsotypicOfType_irreducibleQuotient_weylVector_kostant base)
-  rw [finrank_eq_two_pow, finrank_irreducibleQuotient_weylVector] at hdim
+  rw [finrank_eq_two_pow, hρ] at hdim
   have hd := finrank_eq_finrank_cartan_add_two_mul_ncard_posRoots H base
   rw [H.rank_eq_finrank_cartan]
   refine (Nat.eq_of_mul_eq_mul_right (pow_pos two_pos ((finrank K L - finrank K H) / 2))
@@ -130,25 +138,29 @@ theorem nonempty_lieModuleEquiv_directSum_irreducibleQuotient_weylVector_kostant
     Nonempty (CliffordAlgebra (killingQuadraticForm K L) ≃ₗ⁅K,L⁆
       ⨁ _ : Fin (2 ^ ((finrank K L + LieAlgebra.rank K L) / 2)),
         irreducibleQuotient base (weylVector (IsKilling.rootSystem H) base)) := by
-  -- `TauCeti.isDominantIntegral_weylVector` fixes the instance `invertibleTwo`.
-  obtain rfl : ‹Invertible (2 : K)› = invertibleTwo := Subsingleton.elim _ _
-  have _ := finiteDimensional_irreducibleQuotient_of_isDominantIntegral
-    (isDominantIntegral_weylVector (b := base))
-  have _ := complementedLattice_lieSubmodule_of_isKilling K L
-    (CliffordAlgebra (killingQuadraticForm K L))
+  have _ := (finiteDimensional_and_finrank_irreducibleQuotient_weylVector base).1
   rw [← isotypicMultiplicity_irreducibleQuotient_weylVector_kostant base]
   exact nonempty_lieModuleEquiv_of_isIsotypicOfType _
     (isIsotypicOfType_irreducibleQuotient_weylVector_kostant base)
 
 end Base
 
+omit [Invertible (2 : K)] in
+variable (K L) in
+/-- A Cartan subalgebra with a base of its root system, the choice behind the statements that
+mention neither. -/
+private theorem exists_isCartanSubalgebra_base :
+    ∃ (H : LieSubalgebra K L) (_ : H.IsCartanSubalgebra),
+      Nonempty (IsKilling.rootSystem H).Base := by
+  obtain ⟨x₀, hx₀⟩ := LieAlgebra.exists_isCartanSubalgebra_engel K L
+  have _i : (LieSubalgebra.engel K x₀).IsCartanSubalgebra := hx₀
+  exact ⟨_, _i, (IsKilling.rootSystem _).nonempty_base⟩
+
 /-- **Kostant's isotypy theorem.** Any two irreducible Lie submodules of the Clifford algebra of the
 Killing form, under left multiplication by the quadratic lift of the adjoint representation, are
 isomorphic. -/
 theorem kostant_isotypic : IsIsotypic K L (CliffordAlgebra (killingQuadraticForm K L)) := by
-  obtain ⟨x₀, hx₀⟩ := LieAlgebra.exists_isCartanSubalgebra_engel K L
-  have _i : (LieSubalgebra.engel K x₀).IsCartanSubalgebra := hx₀
-  obtain ⟨b⟩ := (IsKilling.rootSystem (LieSubalgebra.engel K x₀)).nonempty_base
+  obtain ⟨_, _, ⟨b⟩⟩ := exists_isCartanSubalgebra_base K L
   exact (isIsotypicOfType_irreducibleQuotient_weylVector_kostant b).isIsotypic
 
 /-- **Kostant's multiplicity theorem.** The Clifford algebra of the Killing form, under left
@@ -161,27 +173,13 @@ theorem kostant_multiplicity :
       finrank K S = 2 ^ ((finrank K L - LieAlgebra.rank K L) / 2) ∧
       Nonempty (CliffordAlgebra (killingQuadraticForm K L) ≃ₗ⁅K,L⁆
         ⨁ _ : Fin (2 ^ ((finrank K L + LieAlgebra.rank K L) / 2)), S) := by
-  obtain ⟨x₀, hx₀⟩ := LieAlgebra.exists_isCartanSubalgebra_engel K L
-  have _i : (LieSubalgebra.engel K x₀).IsCartanSubalgebra := hx₀
-  obtain ⟨b⟩ := (IsKilling.rootSystem (LieSubalgebra.engel K x₀)).nonempty_base
+  obtain ⟨H, _, ⟨b⟩⟩ := exists_isCartanSubalgebra_base K L
   obtain ⟨c, hc⟩ := exists_isHighestWeightVector_weylVector_kostant b
-  -- `TauCeti.finrank_irreducibleQuotient_weylVector` fixes the instance `invertibleTwo`.
-  obtain rfl : ‹Invertible (2 : K)› = invertibleTwo := Subsingleton.elim _ _
   obtain ⟨e⟩ := lieSpan_equiv_irreducibleQuotient_of_isHighestWeightVector hc
-  have hS := isIrreducible_lieSpan_of_isHighestWeightVector hc
-  have _ := complementedLattice_lieSubmodule_of_isKilling K L
-    (CliffordAlgebra (killingQuadraticForm K L))
-  refine ⟨LieSubmodule.lieSpan K L {c}, hS, ?_, ?_⟩
-  · rw [e.toLinearEquiv.finrank_eq, finrank_irreducibleQuotient_weylVector,
-      (LieSubalgebra.engel K x₀).rank_eq_finrank_cartan]
-  · have h := isIsotypicOfType_irreducibleQuotient_weylVector_kostant b
-    rw [isIsotypicOfType_iff] at h
-    have hiso : IsIsotypicOfType K L (CliffordAlgebra (killingQuadraticForm K L))
-        (LieSubmodule.lieSpan K L {c} : LieSubmodule K L _) := by
-      rw [isIsotypicOfType_iff]
-      exact fun P _ ↦ (h P).map (·.trans e.symm)
-    rw [← isotypicMultiplicity_irreducibleQuotient_weylVector_kostant b,
-      ← isotypicMultiplicity_eq_of_lieModuleEquiv_type e]
-    exact nonempty_lieModuleEquiv_of_isIsotypicOfType _ hiso
+  obtain ⟨E⟩ := nonempty_lieModuleEquiv_directSum_irreducibleQuotient_weylVector_kostant b
+  refine ⟨LieSubmodule.lieSpan K L {c}, isIrreducible_lieSpan_of_isHighestWeightVector hc, ?_,
+    ⟨E.trans (DirectSum.lieModuleEquivCongrRight fun _ ↦ e.symm)⟩⟩
+  rw [e.toLinearEquiv.finrank_eq,
+    (finiteDimensional_and_finrank_irreducibleQuotient_weylVector b).2, H.rank_eq_finrank_cartan]
 
 end CliffordAlgebra
