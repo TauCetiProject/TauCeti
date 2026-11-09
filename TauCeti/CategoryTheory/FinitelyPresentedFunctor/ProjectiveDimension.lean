@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Abelian.Subcategory
 public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.WeakKernels
 public import TauCeti.CategoryTheory.ObjectProperty.Retract
@@ -30,7 +29,7 @@ finitely presented functor on an abelian category has projective dimension at mo
 
 ## Main declarations
 
-* `TauCeti.modYoneda`: the Yoneda embedding of `C` into `mod C`.
+* `TauCeti.projective_modYoneda_obj`: representable functors are projective in `mod C`.
 * `TauCeti.projective_iff_mem_essImage_modYoneda`: for idempotent complete `C`, the projective
   objects of `mod C` are the representable functors.
 * `TauCeti.hasProjectiveDimensionLE_two_of_hasKernels`: if `C` has kernels, then every object of
@@ -52,25 +51,6 @@ open CategoryTheory Limits Opposite
 namespace TauCeti
 
 variable {C : Type u} [Category.{v} C] [Preadditive C]
-
-/-- The Yoneda embedding of `C` into `mod C`, sending `X` to the representable functor `(-, X)`. -/
-abbrev modYoneda : C ⥤ (isFinitelyPresentedFunctor C).FullSubcategory :=
-  (isFinitelyPresentedFunctor C).lift preadditiveYoneda
-    isFinitelyPresentedFunctor_preadditiveYoneda_obj
-
-/-- The Yoneda embedding of `C` into `mod C` preserves small limits, since `preadditiveYoneda`
-does and the inclusion of `mod C` into the functor category reflects them. -/
-instance (J : Type*) [Category* J] [Small.{v} J] :
-    PreservesLimitsOfShape J (modYoneda : C ⥤ (isFinitelyPresentedFunctor C).FullSubcategory) :=
-  have : PreservesLimitsOfShape J ((modYoneda : C ⥤ _) ⋙ (isFinitelyPresentedFunctor C).ι) :=
-    inferInstanceAs (PreservesLimitsOfShape J (preadditiveYoneda : C ⥤ Cᵒᵖ ⥤ AddCommGrpCat.{v}))
-  preservesLimitsOfShape_of_reflects_of_preserves _ (isFinitelyPresentedFunctor C).ι
-
-/-- Every object of `mod C` is a quotient of a representable functor. -/
-theorem exists_epi_modYoneda_obj (F : (isFinitelyPresentedFunctor C).FullSubcategory) :
-    ∃ (Y : C) (p : modYoneda.obj Y ⟶ F), Epi p := by
-  obtain ⟨Y, p, hp⟩ := isFinitelyGeneratedFunctor_def.1 F.property.isFinitelyGeneratedFunctor
-  exact ⟨Y, ObjectProperty.homMk p, (isFinitelyPresentedFunctor C).ι.epi_of_epi_map hp⟩
 
 variable [HasBinaryBiproducts C] [Nonempty C]
 
