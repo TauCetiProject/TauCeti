@@ -276,6 +276,16 @@ theorem appendToRow_zero_cons (a : α) (row : List α) (rows : List (List α)) :
 theorem appendToRow_succ_cons (a : α) (k : ℕ) (row : List α) (rows : List (List α)) :
     appendToRow a (k + 1) (row :: rows) = row :: appendToRow a k rows := (rfl)
 
+/-- Appending to a row at or past the end of the list of rows starts a new last row. -/
+theorem appendToRow_of_length_le (a : α) {s : ℕ} {rows : List (List α)} (hs : rows.length ≤ s) :
+    appendToRow a s rows = rows ++ [[a]] := by
+  induction rows generalizing s with
+  | nil => simp
+  | cons row rows ih =>
+    cases s with
+    | zero => simp at hs
+    | succ s => simp [appendToRow_succ_cons, ih (by simpa using hs)]
+
 /-- **The rows of `TauCeti.appendToRow a k`**: row `k` gains the letter `a` at its end, and every
 other row is unchanged. Rows beyond the last one are read as empty. -/
 theorem getD_appendToRow (a : α) {k : ℕ} {rows : List (List α)} (hk : k ≤ rows.length) (i : ℕ) :
@@ -703,12 +713,29 @@ private theorem rowInsert_appendToRow_and_rowInsertIndex_appendToRow {x k : α} 
 /-- **Insertion past a larger letter.** Let `k` be strictly larger than `x` and than every entry
 of `rows`, and append `k` to row `s`. Inserting `x` then gives the insertion of `x` into `rows`
 with `k` appended to row `s`, unless the insertion of `x` into `rows` ends in row `s`: in that
-case `x`'s bumping path displaces `k`, which moves to the end of row `s + 1`. -/
+case `x`'s bumping path displaces `k`, which moves to the end of row `s + 1`. A row `s` past the
+last row is read as the row just below it. -/
 theorem rowInsert_appendToRow {x k : α} {s : ℕ} {rows : List (List α)} (hx : x < k)
-    (h : ∀ z ∈ rows.flatten, z < k) (hs : s ≤ rows.length) :
+    (h : ∀ z ∈ rows.flatten, z < k) :
     rowInsert x (appendToRow k s rows) =
-      appendToRow k (if rowInsertIndex x rows = s then s + 1 else s) (rowInsert x rows) :=
-  (rowInsert_appendToRow_and_rowInsertIndex_appendToRow hx h hs).1
+      appendToRow k (if rowInsertIndex x rows = s then s + 1 else s) (rowInsert x rows) := by
+  by_cases hs : s ≤ rows.length
+  · exact (rowInsert_appendToRow_and_rowInsertIndex_appendToRow hx h hs).1
+  -- Past the last row, appending to row `s` starts a new row, exactly as for `s = rows.length`.
+  have hle := rowInsertIndex_le_length x rows
+  have hlen := length_rowInsert x rows
+  have h1 := (rowInsert_appendToRow_and_rowInsertIndex_appendToRow hx h (le_refl rows.length)).1
+  have hL : appendToRow k s rows = appendToRow k rows.length rows := by
+    rw [appendToRow_of_length_le k (by omega : rows.length ≤ s), appendToRow_of_length_le k le_rfl]
+  have hne : rowInsertIndex x rows ≠ s := by omega
+  have e₁ : appendToRow k s (rowInsert x rows) = rowInsert x rows ++ [[k]] :=
+    appendToRow_of_length_le k (by omega)
+  have e₂ : appendToRow k (if rowInsertIndex x rows = rows.length then rows.length + 1
+      else rows.length) (rowInsert x rows) = rowInsert x rows ++ [[k]] :=
+    appendToRow_of_length_le k (by split_ifs <;> omega)
+  rw [hL, h1, e₂]
+  simp only [hne, ↓reduceIte]
+  exact e₁.symm
 
 /-- **The new cell of an insertion past a larger letter.** In the situation of
 `TauCeti.rowInsert_appendToRow`, the new cell is in the same row as for the insertion of `x` into
