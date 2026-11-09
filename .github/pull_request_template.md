@@ -42,7 +42,10 @@ Q1. Search Mathlib for each new declaration, or a more general one, by name and 
 one-line wrapper is a duplicate; an `instance` built from a Mathlib theorem is not.
 
 Q2. Search `TauCeti/` for the same object or lemma by its defining formula, not only its name, and
-for blocks copied from sibling files. Reuse what exists; if it first needs generalising, do that
+for blocks copied from sibling files. Do the same for every `private` declaration the PR adds: run
+`exact?` on its statement with the file's imports, and grep `TauCeti/` for its conclusion's
+constants; a private helper that restates an existing lemma is a duplicate, so delete it and call
+the lemma. Reuse what exists; if it first needs generalising, do that
 in its own PR and build on it once merged. Then search the open PRs
 (`gh pr list --repo TauCetiProject/TauCeti --search "<term> in:title,body"`, then `gh pr diff` on
 candidates). If one adds the same thing, do not add a second copy: build on it once it merges, or
