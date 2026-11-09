@@ -132,7 +132,7 @@ hypothesis is carried explicitly, and the interior estimates do not see the boun
   `TauCeti.PDE.UniformlyEllipticOn.div_mul_norm_sq_le_energyFormH1_self_of_zero_drift`: the
   corresponding `H¹`-norm lower bound for any function satisfying a Poincaré inequality.
 * `TauCeti.PDE.norm_energyFormH1L_le_of_bounds`: the bundled form's operator-norm bound, stated
-  from upper coefficient bounds without requiring lower ellipticity.
+  from almost-everywhere upper coefficient bounds without requiring lower ellipticity.
 * `TauCeti.PDE.UniformlyEllipticOn.mul_norm_sq_le_energyFormH1_self_of_subset_slab` and
   `TauCeti.PDE.UniformlyEllipticOn.mul_norm_sq_le_energyFormH1_self_of_subset_ball`: lower bounds on
   `H¹₀(Ω)` for a domain trapped in a slab, or in a ball.
@@ -740,24 +740,22 @@ theorem norm_energyFormH1_le_of_bounds
   rw [integral_const_mul]
   exact mul_le_mul_of_nonneg_left (integral_norm_jetField_mul_le u v) hconst
 
-/-- The operator norm of the bundled Sobolev energy form is controlled by the coefficient
-upper bounds. -/
+/-- The operator norm of the bundled Sobolev energy form is controlled by almost-everywhere
+coefficient upper bounds on `Ω`. -/
 theorem norm_energyFormH1L_le_of_bounds
     (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hLam : 0 ≤ Lam)
-    (ha_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)),
+    (ha_bound : ∀ᵐ x ∂mu.restrict Omega,
       ∀ eta xi : EuclideanSpace ℝ ι,
         |dotProduct eta (Matrix.mulVec (a x) xi)| ≤ Lam * ‖eta‖ * ‖xi‖)
     (hbeta : 0 ≤ beta) (hgamma : 0 ≤ gamma)
-    (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
-    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma) :
+    (hb_bound : ∀ᵐ x ∂mu.restrict Omega, ‖b x‖ ≤ beta)
+    (hc_bound : ∀ᵐ x ∂mu.restrict Omega, ‖c x‖ ≤ gamma) :
     ‖energyFormH1L hcoeff‖ ≤ Lam + beta + gamma := by
   refine (energyFormH1L hcoeff).opNorm_le_bound₂ (by linarith) ?_
   intro u v
   rw [energyFormH1L_apply, mul_assoc]
-  have hmem := ae_mem_restrict (mu := mu) (Omega := Omega)
-  exact norm_energyFormH1_le_of_bounds hLam (hmem.mono ha_bound) hbeta hgamma
-    (hmem.mono hb_bound) (hmem.mono hc_bound) u v
+  exact norm_energyFormH1_le_of_bounds hLam ha_bound hbeta hgamma hb_bound hc_bound u v
 
 /-- The energy form on `H¹₀(Ω)` as a continuous bilinear form, obtained by restricting
 `energyFormH1L` along the closed-subspace inclusion. -/
