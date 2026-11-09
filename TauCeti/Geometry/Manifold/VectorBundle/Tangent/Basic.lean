@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
@@ -33,7 +34,9 @@ vector field on `TM`, such as a geodesic spray, when it is carried between tange
 
 It then identifies the tangent spaces of an open submanifold with those of its ambient manifold
 and shows that, near each point, the inverse tangent-bundle trivializations agree under that
-identification.
+identification. On an open subset of a normed space all charts are restrictions of the identity,
+so the tangent-bundle trivializations are the identity; the homothety `v ↦ t • v` of an open set
+star-shaped about `0` has differential `t • id`.
 
 It then identifies the tangent space of a product manifold with the product of the tangent
 spaces of the factors, and shows that under this identification tangent coordinate changes and
@@ -95,6 +98,12 @@ are those of its summands, so its tangent coordinate changes are those of the su
   the tangent spaces to an open submanifold, and
   `TauCeti.Manifold.contMDiffAt_restrictOpenTangentSpaceBilinear`: restriction preserves `C^n`
   regularity.
+* `TauCeti.Manifold.trivializationAt_opens_model_space_symmL`: the tangent-bundle
+  trivializations of an open subset of a normed space are the identity, and
+  `TauCeti.Manifold.contMDiffAt_section_opens_model_space_iff`: so a field of bilinear maps there
+  is a `C^n` section exactly when it is `C^n` as a map into the bilinear maps on the normed space.
+* `StarConvex.opensHomothety`: the homothety `v ↦ t • v`, `t ∈ [0, 1]`, of an open set that is
+  star-shaped about `0`, with differential `t • id` (`StarConvex.mfderiv_opensHomothety`).
 * `TauCeti.Manifold.tangentSpaceProdEquiv`: the canonical continuous linear equivalence between
   the tangent space of a product and the product of the tangent spaces.
 * `TauCeti.Manifold.mfderiv_prodMap_apply`: differentials of product maps act componentwise
@@ -917,6 +926,51 @@ theorem contMDiffAt_restrictOpenTangentSpaceBilinear [IsManifold I 1 M] {n : ℕ
 
 end RestrictOpenBilin
 
+section OpensModelSpace
+
+variable {U : Opens E}
+
+/-- Every tangent-bundle trivialization of an open subset of a normed space is defined over the
+whole subset. -/
+theorem mem_trivializationAt_opens_model_space_baseSet (x y : U) :
+    y ∈ (trivializationAt E (TangentSpace 𝓘(𝕜, E) : U → Type _) x).baseSet := by
+  simp only [TangentBundle.trivializationAt_baseSet, Opens.chartAt_opens_model_space_eq x y]
+  exact mem_chart_source E y
+
+/-- The tangent-bundle trivializations of an open subset of a normed space are the identity. -/
+theorem trivializationAt_opens_model_space_symmL (x y : U) (u : E) :
+    (trivializationAt E (TangentSpace 𝓘(𝕜, E) : U → Type _) x).symmL 𝕜 y u = u := by
+  rw [TangentBundle.symmL_trivializationAt_eq_core (by
+    simpa using mem_trivializationAt_opens_model_space_baseSet (𝕜 := 𝕜) x y)]
+  rw [show achart E x = achart E y from Subtype.ext (Opens.chartAt_opens_model_space_eq x y)]
+  exact (tangentBundleCore 𝓘(𝕜, E) U).coordChange_self _ _ (mem_achart_source E y) u
+
+/-- On an open subset of a normed space, a field of bilinear maps on the tangent spaces is a
+`C^n` section exactly when it is `C^n` as a map into the bilinear maps on the normed space. -/
+theorem contMDiffAt_section_opens_model_space_iff {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {n : ℕ∞ω}
+    {b : ∀ x : U, TangentSpace 𝓘(𝕜, E) x →L[𝕜] TangentSpace 𝓘(𝕜, E) x →L[𝕜] F} {x₀ : U} :
+    ContMDiffAt 𝓘(𝕜, E) (𝓘(𝕜, E).prod 𝓘(𝕜, E →L[𝕜] E →L[𝕜] F)) n
+      (fun x ↦ TotalSpace.mk' (E →L[𝕜] E →L[𝕜] F)
+        (E := fun x : U ↦ TangentSpace 𝓘(𝕜, E) x →L[𝕜] TangentSpace 𝓘(𝕜, E) x →L[𝕜] F) x
+        (b x)) x₀ ↔
+      ContMDiffAt 𝓘(𝕜, E) 𝓘(𝕜, E →L[𝕜] E →L[𝕜] F) n
+        (fun x : U ↦ show E →L[𝕜] E →L[𝕜] F from b x) x₀ := by
+  rw [contMDiffAt_section]
+  refine Filter.EventuallyEq.contMDiffAt_iff (Filter.Eventually.of_forall fun y ↦ ?_)
+  have hy := mem_trivializationAt_opens_model_space_baseSet (𝕜 := 𝕜) x₀ y
+  refine ContinuousLinearMap.ext fun v ↦ ContinuousLinearMap.ext fun w ↦ ?_
+  simp only [hom_trivializationAt_apply]
+  rw [inCoordinates_apply_eq₂ hy hy (by simp)]
+  simp only [Trivial.fiberBundle_trivializationAt', Trivial.linearMapAt_trivialization,
+    LinearMap.id_apply]
+  rw [← Trivialization.symmL_apply (R := 𝕜) _ hy, trivializationAt_opens_model_space_symmL,
+    ← Trivialization.symmL_apply (R := 𝕜) _ hy, trivializationAt_opens_model_space_symmL]
+  -- Both sides are `b y v w`, read in `E` and in the tangent space `TangentSpace 𝓘(𝕜, E) y = E`.
+  rfl
+
+end OpensModelSpace
+
 section Prod
 
 variable
@@ -1202,3 +1256,53 @@ theorem isInvertible_mfderiv_prodMap_id_subtypeVal_Icc (p : M × Icc a b) :
     (TauCeti.isInvertible_mfderiv_subtypeVal_Icc p.2)
 
 end TauCeti.Manifold
+
+/-! ### Homotheties of star-shaped open sets -/
+
+namespace StarConvex
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {U : Opens V}
+  (hU : StarConvex ℝ 0 (U : Set V))
+
+/-- The homothety `v ↦ t • v` with centre `0` and ratio `t ∈ [0, 1]`, as a self-map of an open set
+that is star-shaped about `0`. -/
+def opensHomothety (t : Icc (0 : ℝ) 1) (v : U) : U :=
+  ⟨(t : ℝ) • (v : V), starConvex_zero_iff.1 hU v.2 t.2.1 t.2.2⟩
+
+@[simp]
+theorem coe_opensHomothety (t : Icc (0 : ℝ) 1) (v : U) :
+    (hU.opensHomothety t v : V) = (t : ℝ) • (v : V) :=
+  (rfl)
+
+theorem contMDiff_opensHomothety {n : ℕ∞ω} (t : Icc (0 : ℝ) 1) :
+    ContMDiff 𝓘(ℝ, V) 𝓘(ℝ, V) n (hU.opensHomothety t) := by
+  refine (TauCeti.ContMDiff.subtypeVal_comp_iff U (hU.opensHomothety t)).1 ?_
+  have h : (Subtype.val ∘ hU.opensHomothety t) = fun v : U ↦ (t : ℝ) • (v : V) :=
+    funext (hU.coe_opensHomothety t)
+  rw [h]
+  exact (contDiff_const_smul (t : ℝ)).contMDiff.comp contMDiff_subtype_val
+
+/-- The differential of the homothety of ratio `t` is multiplication by `t`. -/
+theorem mfderiv_opensHomothety (t : Icc (0 : ℝ) 1) (v : U) :
+    mfderiv 𝓘(ℝ, V) 𝓘(ℝ, V) (hU.opensHomothety t) v = (t : ℝ) • ContinuousLinearMap.id ℝ V := by
+  ext u
+  have h := TauCeti.Manifold.tangentSpaceOpenEquiv_mfderiv_apply
+    (A := ⇑((t : ℝ) • ContinuousLinearMap.id ℝ V))
+    ((hU.contMDiff_opensHomothety t (n := 1) v).mdifferentiableAt one_ne_zero)
+    (funext fun w ↦ hU.coe_opensHomothety t w) u
+  simp only [TauCeti.Manifold.tangentSpaceOpenEquiv_apply] at h
+  rw [h, ContinuousLinearMap.mfderiv_eq]
+  -- Both sides apply `t • id` to `u`, read in `V` and in the tangent space `TangentSpace _ v = V`.
+  rfl
+
+/-- A homothety of nonzero ratio has invertible differential. -/
+theorem isInvertible_mfderiv_opensHomothety (t : Icc (0 : ℝ) 1) (ht : (t : ℝ) ≠ 0) (v : U) :
+    (mfderiv 𝓘(ℝ, V) 𝓘(ℝ, V) (hU.opensHomothety t) v).IsInvertible := by
+  have h : ((t : ℝ) • ContinuousLinearMap.id ℝ V).IsInvertible :=
+    .of_inverse (g := (t : ℝ)⁻¹ • ContinuousLinearMap.id ℝ V)
+      (ContinuousLinearMap.ext fun u ↦ by simp [smul_smul, ht])
+      (ContinuousLinearMap.ext fun u ↦ by simp [smul_smul, ht])
+  rw [hU.mfderiv_opensHomothety t v]
+  exact h
+
+end StarConvex

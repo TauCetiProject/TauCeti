@@ -11,7 +11,8 @@ public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
-import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Smooth nondegenerate metrics on a manifold
@@ -45,6 +46,8 @@ Levi-Civita connection for an indefinite metric.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetric.ofRiemannianBundle`: the metric of a smooth
   Riemannian bundle instance on the tangent bundle, as a smooth nondegenerate metric.
 * `Bundle.ContMDiffRiemannianMetric.toNondegenerateMetric`: the positive-definite specialization.
+* `Bundle.ContMDiffRiemannianMetric.chartMetric_opens_model_space`: on an open subset of a normed
+  space, the chart metric of a Riemannian metric is the metric itself.
 
 ## References
 
@@ -447,6 +450,27 @@ theorem toNondegenerateMetric_apply
     (x : M) (v w : TangentSpace I x) :
     g.toNondegenerateMetric x v w = g.inner x v w :=
   (rfl)
+
+open TopologicalSpace in
+/-- On an open subset of a normed space, the chart metric of a metric at a point of the subset is
+the value of the metric there. -/
+theorem chartMetric_opens_model_space {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+    {U : Opens V} (g : ContMDiffRiemannianMetric 𝓘(ℝ, V) ∞ V (fun x : U ↦ TangentSpace 𝓘(ℝ, V) x))
+    (x₀ : U) {z : V} (hz : z ∈ U) :
+    g.toNondegenerateMetric.chartMetric x₀ z = g.inner ⟨z, hz⟩ := by
+  have hsymm : (extChartAt 𝓘(ℝ, V) x₀).symm z = ⟨z, hz⟩ := by
+    simp only [extChartAt, Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr]
+    exact Subtype.ext ((U.openPartialHomeomorphSubtypeCoe _).right_inv (by simpa using hz))
+  ext u w
+  rw [Manifold.ContMDiffNondegenerateMetric.chartMetric_apply _
+      (by rwa [Opens.extChartAt_opens_target]), hsymm,
+    ← Trivialization.symmL_apply (R := ℝ) _
+      (Manifold.mem_trivializationAt_opens_model_space_baseSet _ _),
+    ← Trivialization.symmL_apply (R := ℝ) _
+      (Manifold.mem_trivializationAt_opens_model_space_baseSet _ _),
+    Manifold.trivializationAt_opens_model_space_symmL,
+    Manifold.trivializationAt_opens_model_space_symmL]
+  exact toNondegenerateMetric_apply g ⟨z, hz⟩ u w
 
 end Bundle.ContMDiffRiemannianMetric
 

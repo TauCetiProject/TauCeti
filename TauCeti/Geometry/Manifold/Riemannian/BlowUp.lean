@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
-public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
 public import TauCeti.Geometry.Manifold.Riemannian.Scaling
@@ -34,16 +33,15 @@ rescaled `C²` comparison, at a point, behind the Gromov–Lawson surgery constr
 near the centre of a small ball, magnified to unit size, is `C²`-close to the flat metric of the
 tangent space.
 
-The open subset is a manifold modelled on `V` whose charts are all restrictions of the identity,
-so its tangent-bundle trivializations are the identity
-(`TauCeti.Manifold.trivializationAt_opens_model_space_symmL`). A field of bilinear forms on `U` is
-then a smooth section exactly when it is smooth as a map into `V →L[ℝ] V →L[ℝ] ℝ`
-(`TauCeti.Manifold.contMDiffAt_section_opens_model_space_iff`), and the chart metric of a metric
-on `U` is the metric itself (`Bundle.ContMDiffRiemannianMetric.chartMetric_opens_model_space`).
+The open subset is a manifold modelled on `V` whose tangent-bundle trivializations are the
+identity, so a field of bilinear forms on `U` is a smooth section exactly when it is smooth as a
+map into `V →L[ℝ] V →L[ℝ] ℝ` (`TauCeti.Manifold.contMDiffAt_section_opens_model_space_iff`), and
+the chart metric of a metric on `U` is the metric itself
+(`Bundle.ContMDiffRiemannianMetric.chartMetric_opens_model_space`). The blow-up is built from the
+homothety `StarConvex.opensHomothety` of `U`.
 
 ## Main definitions
 
-* `StarConvex.opensHomothety`: the homothety `v ↦ t • v` of a star-shaped open set, `t ∈ [0, 1]`.
 * `Bundle.ContMDiffRiemannianMetric.blowUp`: the metric `v ↦ h(t • v)` on a star-shaped open set.
 
 ## Main results
@@ -68,102 +66,6 @@ open scoped ContDiff Manifold Topology
 
 noncomputable section
 
-/-! ### Open subsets of a vector space -/
-
-namespace TauCeti.Manifold
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {U : Opens V}
-
-omit [NormedSpace ℝ V] in
-/-- All charts of an open subset of a vector space are the same restriction of the identity. -/
-theorem chartAt_opens_model_space_eq (x y : U) : chartAt V x = chartAt V y := by
-  simp only [Opens.chartAt_eq]
-  rfl
-
-/-- Every tangent-bundle trivialization of an open subset of a vector space is defined over the
-whole subset. -/
-theorem mem_trivializationAt_opens_model_space_baseSet (x y : U) :
-    y ∈ (trivializationAt V (TangentSpace 𝓘(ℝ, V) : U → Type _) x).baseSet := by
-  simp only [TangentBundle.trivializationAt_baseSet, chartAt_opens_model_space_eq x y]
-  exact mem_chart_source V y
-
-/-- The tangent-bundle trivializations of an open subset of a vector space are the identity. -/
-theorem trivializationAt_opens_model_space_symmL (x y : U) (u : V) :
-    (trivializationAt V (TangentSpace 𝓘(ℝ, V) : U → Type _) x).symmL ℝ y u = u := by
-  rw [TangentBundle.symmL_trivializationAt_eq_core (by
-    simpa using mem_trivializationAt_opens_model_space_baseSet x y)]
-  rw [show achart V x = achart V y from Subtype.ext (chartAt_opens_model_space_eq x y)]
-  exact (tangentBundleCore 𝓘(ℝ, V) U).coordChange_self _ _ (mem_achart_source V y) u
-
-/-- On an open subset of a vector space, a field of bilinear forms on the tangent spaces is a
-`C^n` section exactly when it is `C^n` as a map into the bilinear forms on the vector space. -/
-theorem contMDiffAt_section_opens_model_space_iff {n : ℕ∞ω}
-    {b : ∀ x : U, TangentSpace 𝓘(ℝ, V) x →L[ℝ] TangentSpace 𝓘(ℝ, V) x →L[ℝ] ℝ} {x₀ : U} :
-    ContMDiffAt 𝓘(ℝ, V) (𝓘(ℝ, V).prod 𝓘(ℝ, V →L[ℝ] V →L[ℝ] ℝ)) n
-      (fun x ↦ TotalSpace.mk' (V →L[ℝ] V →L[ℝ] ℝ)
-        (E := fun x : U ↦ TangentSpace 𝓘(ℝ, V) x →L[ℝ] TangentSpace 𝓘(ℝ, V) x →L[ℝ] ℝ) x
-        (b x)) x₀ ↔
-      ContMDiffAt 𝓘(ℝ, V) 𝓘(ℝ, V →L[ℝ] V →L[ℝ] ℝ) n
-        (fun x : U ↦ show V →L[ℝ] V →L[ℝ] ℝ from b x) x₀ := by
-  rw [contMDiffAt_section]
-  refine Filter.EventuallyEq.contMDiffAt_iff (Filter.Eventually.of_forall fun y ↦ ?_)
-  have hy := mem_trivializationAt_opens_model_space_baseSet x₀ y
-  refine ContinuousLinearMap.ext fun v ↦ ContinuousLinearMap.ext fun w ↦ ?_
-  simp only [hom_trivializationAt_apply]
-  rw [inCoordinates_apply_eq₂ hy hy (by simp)]
-  simp only [Trivial.fiberBundle_trivializationAt', Trivial.linearMapAt_trivialization,
-    LinearMap.id_apply]
-  rw [← Trivialization.symmL_apply (R := ℝ) _ hy, trivializationAt_opens_model_space_symmL,
-    ← Trivialization.symmL_apply (R := ℝ) _ hy, trivializationAt_opens_model_space_symmL]
-  -- Both sides are `b y v w`, read in `V` and in the tangent space `TangentSpace 𝓘(ℝ, V) y = V`.
-  rfl
-
-end TauCeti.Manifold
-
-/-! ### Homotheties of star-shaped open sets -/
-
-namespace StarConvex
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {U : Opens V}
-  (hU : StarConvex ℝ 0 (U : Set V))
-
-/-- The homothety `v ↦ t • v` with centre `0` and ratio `t ∈ [0, 1]`, as a self-map of an open set
-that is star-shaped about `0`. -/
-@[expose]
-def opensHomothety (t : Icc (0 : ℝ) 1) (v : U) : U :=
-  ⟨(t : ℝ) • (v : V), starConvex_zero_iff.1 hU v.2 t.2.1 t.2.2⟩
-
-@[simp]
-theorem coe_opensHomothety (t : Icc (0 : ℝ) 1) (v : U) :
-    (hU.opensHomothety t v : V) = (t : ℝ) • (v : V) :=
-  rfl
-
-theorem contMDiff_opensHomothety {n : ℕ∞ω} (t : Icc (0 : ℝ) 1) :
-    ContMDiff 𝓘(ℝ, V) 𝓘(ℝ, V) n (hU.opensHomothety t) :=
-  (TauCeti.ContMDiff.subtypeVal_comp_iff U (hU.opensHomothety t)).1
-    ((contDiff_const_smul (t : ℝ)).contMDiff.comp contMDiff_subtype_val)
-
-/-- The differential of the homothety of ratio `t` is multiplication by `t`. -/
-theorem mfderiv_opensHomothety (t : Icc (0 : ℝ) 1) (v : U) :
-    mfderiv 𝓘(ℝ, V) 𝓘(ℝ, V) (hU.opensHomothety t) v = (t : ℝ) • ContinuousLinearMap.id ℝ V := by
-  ext u
-  have h := TauCeti.Manifold.tangentSpaceOpenEquiv_mfderiv_apply
-    (A := ⇑((t : ℝ) • ContinuousLinearMap.id ℝ V))
-    ((hU.contMDiff_opensHomothety t (n := 1) v).mdifferentiableAt one_ne_zero) rfl u
-  simp only [TauCeti.Manifold.tangentSpaceOpenEquiv_apply] at h
-  rw [h, ContinuousLinearMap.mfderiv_eq]
-  rfl
-
-/-- A homothety of nonzero ratio has invertible differential. -/
-theorem isInvertible_mfderiv_opensHomothety [FiniteDimensional ℝ V] (t : Icc (0 : ℝ) 1)
-    (ht : (t : ℝ) ≠ 0) (v : U) :
-    (mfderiv 𝓘(ℝ, V) 𝓘(ℝ, V) (hU.opensHomothety t) v).IsInvertible := by
-  refine ⟨(LinearEquiv.smulOfNeZero ℝ V (t : ℝ) ht).toContinuousLinearEquiv, ?_⟩
-  rw [hU.mfderiv_opensHomothety t v]
-  rfl
-
-end StarConvex
-
 /-! ### The blow-up of a metric -/
 
 namespace Bundle.ContMDiffRiemannianMetric
@@ -182,23 +84,6 @@ private local instance : NormedAddCommGroup (V →L[ℝ] V →L[ℝ] ℝ) :=
 private local instance : NormedSpace ℝ (V →L[ℝ] V →L[ℝ] ℝ) :=
   ContinuousLinearMap.toNormedSpace
 
-/-- On an open subset of a vector space, the chart metric of a metric at a point of the subset is
-the value of the metric there. -/
-theorem chartMetric_opens_model_space
-    (g : ContMDiffRiemannianMetric 𝓘(ℝ, V) ∞ V (fun x : U ↦ TangentSpace 𝓘(ℝ, V) x))
-    (x₀ : U) {z : V} (hz : z ∈ U) :
-    g.toNondegenerateMetric.chartMetric x₀ z = g.inner ⟨z, hz⟩ := by
-  have hsymm : (extChartAt 𝓘(ℝ, V) x₀).symm z = ⟨z, hz⟩ := by
-    simp only [extChartAt, Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr]
-    exact Subtype.ext ((U.openPartialHomeomorphSubtypeCoe _).right_inv (by simpa using hz))
-  ext u w
-  rw [TauCeti.Manifold.ContMDiffNondegenerateMetric.chartMetric_apply _
-      (by rwa [Opens.extChartAt_opens_target]), hsymm,
-    ← Trivialization.symmL_apply (R := ℝ) _ (mem_trivializationAt_opens_model_space_baseSet _ _),
-    ← Trivialization.symmL_apply (R := ℝ) _ (mem_trivializationAt_opens_model_space_baseSet _ _),
-    trivializationAt_opens_model_space_symmL, trivializationAt_opens_model_space_symmL]
-  exact toNondegenerateMetric_apply g ⟨z, hz⟩ u w
-
 variable (h : ContMDiffRiemannianMetric 𝓘(ℝ, V) ∞ V (fun x : U ↦ TangentSpace 𝓘(ℝ, V) x))
   (hU : StarConvex ℝ 0 (U : Set V))
 
@@ -207,7 +92,6 @@ variable (h : ContMDiffRiemannianMetric 𝓘(ℝ, V) ∞ V (fun x : U ↦ Tangen
 vectors. For `t > 0` this is `t⁻² μ_t^* h` for the homothety `μ_t` of ratio `t`
 (`Bundle.ContMDiffRiemannianMetric.blowUp_eq_rescale_pullback`); for `t = 0` it is the constant
 metric with the value of `h` at `0`. -/
-@[expose]
 def blowUp (t : Icc (0 : ℝ) 1) :
     ContMDiffRiemannianMetric 𝓘(ℝ, V) ∞ V (fun x : U ↦ TangentSpace 𝓘(ℝ, V) x) where
   inner v := h.inner (hU.opensHomothety t v)
@@ -221,7 +105,7 @@ def blowUp (t : Icc (0 : ℝ) 1) :
 @[simp]
 theorem blowUp_inner (t : Icc (0 : ℝ) 1) (v : U) :
     (h.blowUp hU t).inner v = h.inner (hU.opensHomothety t v) :=
-  rfl
+  (rfl)
 
 /-- At scale `0` the blow-up is the constant metric with the value of `h` at the origin. -/
 theorem blowUp_zero_inner (v : U) :
@@ -229,22 +113,23 @@ theorem blowUp_zero_inner (v : U) :
       h.inner ⟨0, by simpa using starConvex_zero_iff.1 hU v.2 le_rfl zero_le_one⟩ := by
   rw [blowUp_inner]
   congr 1
-  exact Subtype.ext (zero_smul ℝ (v : V))
+  exact Subtype.ext ((hU.coe_opensHomothety 0 v).trans (zero_smul ℝ (v : V)))
 
 /-- At scale `1` the blow-up is the metric itself. -/
 @[simp]
 theorem blowUp_one : h.blowUp hU 1 = h := by
   ext ⟨v, hv⟩ u w
   exact congrArg (fun p : U ↦ (show V →L[ℝ] V →L[ℝ] ℝ from h.inner p) u w)
-    (Subtype.ext (one_smul ℝ v))
+    (Subtype.ext ((hU.coe_opensHomothety 1 ⟨v, hv⟩).trans (one_smul ℝ v)))
 
 /-- In coordinates, the blow-up at scale `t` reads the chart metric of `h` at `t • z`. -/
 theorem chartMetric_blowUp (t : Icc (0 : ℝ) 1) (x₀ : U) {z : V} (hz : z ∈ U) :
     (h.blowUp hU t).toNondegenerateMetric.chartMetric x₀ z =
       h.toNondegenerateMetric.chartMetric x₀ ((t : ℝ) • z) := by
   rw [chartMetric_opens_model_space _ _ hz,
-    chartMetric_opens_model_space _ _ (starConvex_zero_iff.1 hU hz t.2.1 t.2.2)]
-  rfl
+    chartMetric_opens_model_space _ _ (starConvex_zero_iff.1 hU hz t.2.1 t.2.2), blowUp_inner]
+  congr 1
+  exact Subtype.ext (hU.coe_opensHomothety t _)
 
 /-- **The rescaled comparison at a point.** The blow-up `t ↦ h.blowUp hU t` is continuous on
 `[0, 1]` for every chart `Cᵏ` topology on metrics, `k ≤ ∞`. Its value at `0` is the constant metric

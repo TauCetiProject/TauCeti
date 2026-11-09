@@ -32,8 +32,9 @@ without differentiability assumptions; for a boundaryless model, their domains a
 coordinate set of a chart is covered by finitely many compact pieces, each in the overlap with
 one of a given family of charts at points of the manifold. On an
 open subset, extended chart targets lie in the ambient chart targets, and inverse charts agree
-through inclusion on the smaller target. Near a chart point the inverse charts of nested open
-subsets likewise differ only by the inclusion. Over `ℝ`, every chart point has
+through inclusion on the smaller target; on an open subset of a normed space all charts
+coincide. Near a chart point the inverse charts of nested open subsets likewise differ only by
+the inclusion. Over `ℝ`, every chart point has
 a convex neighbourhood within the model range, inside the chart target, on which flat calculus
 applies even when the manifold has boundary.
 
@@ -576,6 +577,12 @@ its extended target. -/
 theorem extChartAt_opens_target (U : Opens E) (x : U) :
     (extChartAt 𝓘(𝕜, E) x).target = (U : Set E) := by
   simp [extChartAt, Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_def]
+
+/-- All charts of an open subset of a normed space are the same restriction of the identity. -/
+theorem chartAt_opens_model_space_eq {U : Opens E} (x y : U) : chartAt E x = chartAt E y := by
+  simp only [Opens.chartAt_eq]
+  -- Both sides restrict the identity chart of `E`, whose `chartAt` is definitionally `refl`.
+  rfl
 
 /-- The target of an inherited chart is canonically homeomorphic to the open source. -/
 noncomputable def openChartTargetHomeomorph (U : Opens E) (x : U) :
