@@ -42,7 +42,7 @@ on:
         description: JSON runs-on target; callers must match attempt to their current github.run_attempt before using runner or pool
         value: ${{ jobs.pick.outputs.runner }}
       pool:
-        description: "Destination key: github, namespace, or a machine name from services.fleet; valid only for the matching attempt"
+        description: "Destination key: github, fleet, namespace, or a named machine preference; valid only for the matching attempt"
         value: ${{ jobs.pick.outputs.pool }}
       attempt:
         description: Picker's github.run_attempt; callers must compare it with their current attempt before using runner or pool
@@ -99,10 +99,10 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@4d2579da7cdb5679ab523d281f61c73ffb502f75
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ffc3b00f51a0c0ca0ab90730cd298d38413632ca
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
+          tools-ref: ffc3b00f51a0c0ca0ab90730cd298d38413632ca
           project-directory: .
       - name: Read the allowlist using the existing organization App
         id: team-token
