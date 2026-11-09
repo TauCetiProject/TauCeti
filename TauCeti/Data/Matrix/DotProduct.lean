@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Data.Matrix.Mul
 import Mathlib.Algebra.Order.BigOperators.Ring.Finset
+import Mathlib.Algebra.Polynomial.OfFn
+import Mathlib.Algebra.Polynomial.Roots
 
 /-!
 # Dot product lemmas
@@ -18,6 +20,11 @@ in the ambient coordinate space.
 
 A nonnegative vector paired with strictly positive weights has dot product zero precisely when
 the vector is zero.
+
+Over an infinite integral domain, finitely many nonzero vectors are simultaneously paired
+nontrivially with a single vector: no finite union of the hyperplanes `v ⬝ᵥ w = 0` covers the whole
+space. The vector can be taken of the form `w i = M ^ e i` for a numbering `e` of the coordinates,
+because `w ⬝ᵥ v` is then the value at `M` of a nonzero polynomial with coefficients `v`.
 
 A ring homomorphism carries the bilinear form `v ⬝ᵥ A *ᵥ w` of a (possibly rectangular) matrix
 to the form of the image matrix at the image vectors.
@@ -32,6 +39,8 @@ to the form of the image matrix at the image vectors.
   integer vectors, is the cast of the integer value of the form.
 * `TauCeti.dotProduct_eq_zero_iff_of_pos`: a nonnegative vector is zero if and only if its pairing
   with strictly positive weights vanishes.
+* `TauCeti.exists_forall_dotProduct_ne_zero`: over an infinite domain, some vector has nonzero dot
+  product with each of finitely many nonzero vectors.
 -/
 
 public section
@@ -92,5 +101,30 @@ theorem dotProduct_eq_zero_iff_of_pos {ι R : Type*} [Fintype ι] [NonUnitalNonA
     c ⬝ᵥ x = 0 ↔ x = 0 := by
   simp [dotProduct, Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦ mul_nonneg (hc j).le (hx j),
     (hc _).ne', funext_iff]
+
+open Polynomial in
+/-- Over an infinite integral domain, for finitely many nonzero vectors `v` there is a vector `w`
+with `w ⬝ᵥ v ≠ 0` for each of them. -/
+theorem exists_forall_dotProduct_ne_zero {ι R : Type*} [Fintype ι] [CommRing R] [IsDomain R]
+    [Infinite R] (V : Finset (ι → R)) (hV : ∀ v ∈ V, v ≠ 0) :
+    ∃ w : ι → R, ∀ v ∈ V, w ⬝ᵥ v ≠ 0 := by
+  classical
+  -- Number the coordinates by `e`; then `(M ^ e ·) ⬝ᵥ v` is the value at `M` of the nonzero
+  -- polynomial `P v` whose coefficients are the coordinates of `v`.
+  let e := Fintype.equivFin ι
+  let P : (ι → R) → R[X] := fun v => ofFn _ (v ∘ e.symm)
+  have hP (v : ι → R) (M : R) : (P v).eval M = (fun i => M ^ (e i : ℕ)) ⬝ᵥ v := by
+    rw [show P v = _ from ofFn_eq_sum_monomial _, eval_finsetSum, dotProduct, ← e.symm.sum_comp]
+    simp [mul_comm]
+  have hP0 (v : ι → R) (hv : v ≠ 0) : P v ≠ 0 := by
+    intro h
+    refine hv (funext fun i => ?_)
+    simpa [P] using congrFun ((injective_ofFn _).eq_iff.1 (h.trans (map_zero _).symm)) (e i)
+  obtain ⟨M, hM⟩ : ∃ M : R, (∏ v ∈ V, P v).eval M ≠ 0 := by
+    by_contra! h
+    exact Finset.prod_ne_zero_iff.2 (fun v hv => hP0 v (hV v hv))
+      (Polynomial.funext fun M => by simpa using h M)
+  rw [eval_prod, Finset.prod_ne_zero_iff] at hM
+  exact ⟨fun i => M ^ (e i : ℕ), fun v hv => by rw [← hP]; exact hM v hv⟩
 
 end TauCeti

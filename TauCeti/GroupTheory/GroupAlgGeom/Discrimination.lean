@@ -21,6 +21,10 @@ of quotients of free `G`-groups, even before the quotient is known to be a `G`-g
 ## Main results
 
 * `TauCeti.GroupAlgGeom.IsDiscriminatedBy.isSeparatedBy`: discrimination implies separation.
+* `TauCeti.GroupAlgGeom.IsDiscriminatedBy.trans`, `TauCeti.GroupAlgGeom.IsSeparatedBy.trans`:
+  discrimination and separation are transitive.
+* `TauCeti.GroupAlgGeom.IsDiscriminatedBy.comp`, `TauCeti.GroupAlgGeom.IsSeparatedBy.comp`:
+  discrimination and separation survive restriction of the coefficients.
 * `TauCeti.GroupAlgGeom.IsSeparatedBy.nonempty_gHom`: a nontrivial group separated by `H` admits a
   coefficient-preserving homomorphism to `H`.
 * `TauCeti.GroupAlgGeom.isSeparatedBy_iff_iInf_ker`: separation by `H` means the kernels of all
@@ -91,6 +95,27 @@ theorem self (ιK : G →* K) : IsDiscriminatedBy ιK ιK := by
   intro s hs
   exact ⟨GHom.id ιK, by simpa using hs⟩
 
+/-- Discrimination is transitive: if `K` is discriminated by `L` and `L` by `H`, all over `G`,
+then `K` is discriminated by `H`. -/
+theorem trans {ιK : G →* K} {ιL : G →* L} {ιH : G →* H}
+    (hKL : IsDiscriminatedBy ιK ιL) (hLH : IsDiscriminatedBy ιL ιH) :
+    IsDiscriminatedBy ιK ιH := by
+  classical
+  intro s hs
+  obtain ⟨φ, hφ⟩ := hKL s hs
+  obtain ⟨ψ, hψ⟩ := hLH (s.image φ) (by simpa using hφ)
+  exact ⟨ψ.comp φ, fun k hk => by
+    simpa [GHom.coe_comp] using hψ (φ k) (Finset.mem_image_of_mem φ hk)⟩
+
+/-- Discrimination survives restriction of the coefficients along any homomorphism
+`f : G' →* G`. -/
+theorem comp {G' : Type*} [Group G'] {ιK : G →* K} {ιH : G →* H}
+    (h : IsDiscriminatedBy ιK ιH) (f : G' →* G) :
+    IsDiscriminatedBy (ιK.comp f) (ιH.comp f) := by
+  intro s hs
+  obtain ⟨φ, hφ⟩ := h s hs
+  exact ⟨⟨φ, fun g => φ.map_coeff (f g)⟩, hφ⟩
+
 end IsDiscriminatedBy
 
 namespace IsSeparatedBy
@@ -103,6 +128,22 @@ theorem of_injective {ιK : G →* K} {ιL : G →* L} {ιH : G →* H}
   intro k hk
   obtain ⟨φ, hφ⟩ := h (f k) ((map_ne_one_iff f hf).2 hk)
   exact ⟨φ.comp f, by simpa [GHom.coe_comp] using hφ⟩
+
+/-- Separation is transitive: if `K` is separated by `L` and `L` by `H`, all over `G`, then `K`
+is separated by `H`. -/
+theorem trans {ιK : G →* K} {ιL : G →* L} {ιH : G →* H}
+    (hKL : IsSeparatedBy ιK ιL) (hLH : IsSeparatedBy ιL ιH) : IsSeparatedBy ιK ιH := by
+  intro k hk
+  obtain ⟨φ, hφ⟩ := hKL k hk
+  obtain ⟨ψ, hψ⟩ := hLH (φ k) hφ
+  exact ⟨ψ.comp φ, by simpa [GHom.coe_comp] using hψ⟩
+
+/-- Separation survives restriction of the coefficients along any homomorphism `f : G' →* G`. -/
+theorem comp {G' : Type*} [Group G'] {ιK : G →* K} {ιH : G →* H}
+    (h : IsSeparatedBy ιK ιH) (f : G' →* G) : IsSeparatedBy (ιK.comp f) (ιH.comp f) := by
+  intro k hk
+  obtain ⟨φ, hφ⟩ := h k hk
+  exact ⟨⟨φ, fun g => φ.map_coeff (f g)⟩, hφ⟩
 
 /-- A nontrivial group separated by `H` admits a coefficient-preserving homomorphism to `H`. -/
 theorem nonempty_gHom [Nontrivial K] {ιK : G →* K} {ιH : G →* H}

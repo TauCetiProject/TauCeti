@@ -25,10 +25,9 @@ of `ℤⁿ`, which commute with each other and with every element of `C_G(u)`; a
 extension `⟨G, t | [c, t] = 1, c ∈ C_G(u)⟩`.
 
 Iterated extensions of centralizers are the basic examples of fully residually free groups: over a
-CSA group `G` with the big powers property and `u ≠ 1`, the retractions `t ↦ u ^ k` of `G(u, ℤ)`
-onto `G` discriminate it by `G` (see Kharlampovich–Myasnikov, *Implicit function theorem over free
-groups*, §2.5); this is proved as `CentralizerExt.eventually_retraction_ne_one` and
-`CentralizerExt.isDiscriminatedBy` in
+CSA group `G` with the big powers property and `u ≠ 1`, the retractions `tᵢ ↦ u ^ kᵢ` of
+`G(u, ℤⁿ)` onto `G` discriminate it by `G` (see Kharlampovich–Myasnikov, *Implicit function theorem
+over free groups*, §2.5); this is proved as `CentralizerExt.isDiscriminatedBy` in
 `TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Discrimination`. This file sets up the
 construction for arbitrary `u` and `n`, its universal property and these retractions, and compares
 it with `G` for `n = 0`, with `G × ℤⁿ` for central `u`, and with Mathlib's HNN extension for
