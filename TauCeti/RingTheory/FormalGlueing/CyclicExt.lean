@@ -46,7 +46,7 @@ variable {R S M : Type u} [CommRing R] [CommRing S] [Algebra R S] [Module.Flat R
 comparison implies first Ext comparison for the cyclic quotient. Both comparisons use the
 actual coefficient map `n ↦ 1 ⊗ n`; no torsion-freeness of the coefficients is required. -/
 theorem postcomp_ext_mk_one_bijective_of_cohomologyMap_bijective
-    (φ : Module.Dual R M) (hfg : (LinearMap.range φ).FG)
+    (φ : Module.Dual R M)
     (hI : Function.Bijective (Ideal.quotientMap
       (Ideal.map (algebraMap R S) (LinearMap.range φ)) (algebraMap R S) Ideal.le_comap_map))
     (N : ModuleCat.{u} R)
@@ -58,7 +58,7 @@ theorem postcomp_ext_mk_one_bijective_of_cohomologyMap_bijective
   apply postcomp_ext_bijective_of_cohomologyMap_bijective φ N _ hH
   intro a b hab
   apply ModuleCat.hom_ext
-  apply tensorProduct_mk_comp_injective_of_primaryComponent_eq_top hI hfg
+  apply tensorProduct_mk_comp_injective_of_primaryComponent_eq_top hI
     (primaryComponent_homology_eq_top φ 1)
   exact congrArg ModuleCat.Hom.hom hab
 
