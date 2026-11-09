@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.Matrix.Cholesky.Equiv
 public import TauCeti.Analysis.Matrix.Frobenius
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
-import Mathlib.Topology.Instances.Matrix
 import TauCeti.Topology.Instances.Matrix
 
 /-!
