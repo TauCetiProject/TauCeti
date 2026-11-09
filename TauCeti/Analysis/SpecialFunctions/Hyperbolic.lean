@@ -67,7 +67,7 @@ projection parameter at which the two stabilization constants of the Ocneanu tra
 
 public section
 
-namespace TauCeti
+namespace Real
 
 /-- **Addition formula for the hyperbolic tangent.** `Real.tanh (a + b)` is the Möbius sum
 `(tanh a + tanh b) / (1 + tanh a * tanh b)`.
@@ -77,7 +77,7 @@ The pinned Mathlib has `Real.sinh_add` and `Real.cosh_add` but no addition formu
 formulae `tanh a + tanh b = sinh (a + b) / (cosh a * cosh b)` and
 `1 + tanh a * tanh b = cosh (a + b) / (cosh a * cosh b)`, and the right-hand denominator is
 positive, so dividing cancels `cosh a * cosh b` and leaves `tanh (a + b)`. -/
-theorem _root_.Real.tanh_add (a b : ℝ) :
+theorem tanh_add (a b : ℝ) :
     Real.tanh (a + b) = (Real.tanh a + Real.tanh b) / (1 + Real.tanh a * Real.tanh b) := by
   have ha : Real.cosh a ≠ 0 := (Real.cosh_pos a).ne'
   have hb : Real.cosh b ≠ 0 := (Real.cosh_pos b).ne'
@@ -98,7 +98,7 @@ theorem _root_.Real.tanh_add (a b : ℝ) :
 
 /-- The positive square root of `1 - tanh x ^ 2` is the hyperbolic secant. -/
 @[simp]
-theorem _root_.Real.sqrt_one_sub_tanh_sq (x : ℝ) :
+theorem sqrt_one_sub_tanh_sq (x : ℝ) :
     √(1 - Real.tanh x ^ 2) = (Real.cosh x)⁻¹ := by
   simpa only [Real.artanh_tanh, one_div, inv_inv] using
     (congrArg (fun y : ℝ ↦ y⁻¹)
@@ -106,7 +106,7 @@ theorem _root_.Real.sqrt_one_sub_tanh_sq (x : ℝ) :
 
 /-- **The hyperbolic tangent is strictly monotone.** It is inverted on its range `(-1, 1)` by
 the strictly monotone `Real.artanh`, so it cannot reverse a strict inequality. -/
-theorem _root_.Real.tanh_strictMono : StrictMono Real.tanh := by
+theorem tanh_strictMono : StrictMono Real.tanh := by
   intro a b hab
   have ha : Real.tanh a ∈ Set.Ioo (-1 : ℝ) 1 := ⟨Real.neg_one_lt_tanh a, Real.tanh_lt_one a⟩
   have hb : Real.tanh b ∈ Set.Ioo (-1 : ℝ) 1 := ⟨Real.neg_one_lt_tanh b, Real.tanh_lt_one b⟩
@@ -118,22 +118,22 @@ theorem _root_.Real.tanh_strictMono : StrictMono Real.tanh := by
 
 /-- The hyperbolic tangent compares two real numbers exactly as they compare. -/
 @[simp]
-theorem _root_.Real.tanh_lt_tanh_iff {a b : ℝ} : Real.tanh a < Real.tanh b ↔ a < b :=
+theorem tanh_lt_tanh_iff {a b : ℝ} : Real.tanh a < Real.tanh b ↔ a < b :=
   Real.tanh_strictMono.lt_iff_lt
 
 /-- The hyperbolic tangent is nonnegative on the nonnegative reals. -/
-theorem _root_.Real.tanh_nonneg {x : ℝ} (hx : 0 ≤ x) : 0 ≤ Real.tanh x := by
+theorem tanh_nonneg {x : ℝ} (hx : 0 ≤ x) : 0 ≤ Real.tanh x := by
   simpa only [Real.tanh_zero] using Real.tanh_strictMono.monotone hx
 
 /-- The hyperbolic tangent is negative exactly on the negative reals. -/
 @[simp]
-theorem _root_.Real.tanh_neg_iff {x : ℝ} : Real.tanh x < 0 ↔ x < 0 := by
+theorem tanh_neg_iff {x : ℝ} : Real.tanh x < 0 ↔ x < 0 := by
   simpa only [Real.tanh_zero] using @Real.tanh_lt_tanh_iff x 0
 
 /-- The hyperbolic tangent is continuous: it is the quotient of `exp x - exp (-x)` by the
 positive function `exp x + exp (-x)`. -/
 @[continuity, fun_prop]
-theorem _root_.Real.continuous_tanh : Continuous Real.tanh := by
+theorem continuous_tanh : Continuous Real.tanh := by
   simp_rw [funext Real.tanh_eq]
   exact (by fun_prop : Continuous fun x ↦ Real.exp x - Real.exp (-x)).div (by fun_prop)
     fun x ↦ (add_pos (Real.exp_pos x) (Real.exp_pos (-x))).ne'
@@ -141,13 +141,13 @@ theorem _root_.Real.continuous_tanh : Continuous Real.tanh := by
 /-- The hyperbolic tangent is smooth: it is the quotient of `sinh` by the positive function
 `cosh`. -/
 @[fun_prop]
-theorem _root_.Real.contDiff_tanh {n : WithTop ℕ∞} : ContDiff ℝ n Real.tanh := by
+theorem contDiff_tanh {n : WithTop ℕ∞} : ContDiff ℝ n Real.tanh := by
   simp_rw [funext Real.tanh_eq_sinh_div_cosh]
   exact Real.contDiff_sinh.div Real.contDiff_cosh fun x ↦ (Real.cosh_pos x).ne'
 
 /-- `1 - tanh x ^ 2 = 1 / cosh x ^ 2`: the derivative of `Real.tanh` written through `Real.tanh`.
 -/
-theorem _root_.Real.one_sub_tanh_sq (x : ℝ) : 1 - Real.tanh x ^ 2 = 1 / Real.cosh x ^ 2 := by
+theorem one_sub_tanh_sq (x : ℝ) : 1 - Real.tanh x ^ 2 = 1 / Real.cosh x ^ 2 := by
   have h := Real.cosh_sq_sub_sinh_sq x
   have hc := (Real.cosh_pos x).ne'
   rw [Real.tanh_eq_sinh_div_cosh]
@@ -155,7 +155,7 @@ theorem _root_.Real.one_sub_tanh_sq (x : ℝ) : 1 - Real.tanh x ^ 2 = 1 / Real.c
   linarith
 
 /-- The derivative of the hyperbolic tangent is `1 / cosh x ^ 2`. -/
-theorem _root_.Real.hasDerivAt_tanh (x : ℝ) : HasDerivAt Real.tanh (1 / Real.cosh x ^ 2) x := by
+theorem hasDerivAt_tanh (x : ℝ) : HasDerivAt Real.tanh (1 / Real.cosh x ^ 2) x := by
   have h : HasDerivAt (fun y ↦ Real.sinh y / Real.cosh y) _ x :=
     (Real.hasDerivAt_sinh x).div (Real.hasDerivAt_cosh x) (Real.cosh_pos x).ne'
   rw [← funext Real.tanh_eq_sinh_div_cosh] at h
@@ -164,12 +164,12 @@ theorem _root_.Real.hasDerivAt_tanh (x : ℝ) : HasDerivAt Real.tanh (1 / Real.c
 
 /-- The derivative of the hyperbolic tangent is `1 / cosh x ^ 2`. -/
 @[simp]
-theorem _root_.Real.deriv_tanh (x : ℝ) : deriv Real.tanh x = 1 / Real.cosh x ^ 2 :=
+theorem deriv_tanh (x : ℝ) : deriv Real.tanh x = 1 / Real.cosh x ^ 2 :=
   (Real.hasDerivAt_tanh x).deriv
 
 /-- The derivative of `(cosh x)⁻¹` is `-tanh x * (cosh x)⁻¹`, so `(cosh x)⁻¹` solves
 `v' = -tanh(x) v`. -/
-theorem _root_.Real.hasDerivAt_inv_cosh (x : ℝ) :
+theorem hasDerivAt_inv_cosh (x : ℝ) :
     HasDerivAt (fun y ↦ (Real.cosh y)⁻¹) (-Real.tanh x * (Real.cosh x)⁻¹) x := by
   have hc := (Real.cosh_pos x).ne'
   convert (Real.hasDerivAt_cosh x).inv hc using 1
@@ -177,7 +177,7 @@ theorem _root_.Real.hasDerivAt_inv_cosh (x : ℝ) :
   field_simp
 
 /-- The hyperbolic tangent tends to `1` at `+∞`. -/
-theorem _root_.Real.tendsto_tanh_atTop : Filter.Tendsto Real.tanh Filter.atTop (nhds 1) := by
+theorem tendsto_tanh_atTop : Filter.Tendsto Real.tanh Filter.atTop (nhds 1) := by
   -- Divide numerator and denominator of `tanh x = (exp x - exp (-x)) / (exp x + exp (-x))` by
   -- `exp x`; then `exp (-x) ^ 2` tends to zero.
   have h (x : ℝ) : Real.tanh x = (1 - Real.exp (-x) ^ 2) / (1 + Real.exp (-x) ^ 2) := by
@@ -192,54 +192,62 @@ theorem _root_.Real.tendsto_tanh_atTop : Filter.Tendsto Real.tanh Filter.atTop (
   norm_num
 
 /-- The hyperbolic tangent tends to `-1` at `-∞`. -/
-theorem _root_.Real.tendsto_tanh_atBot : Filter.Tendsto Real.tanh Filter.atBot (nhds (-1)) := by
+theorem tendsto_tanh_atBot : Filter.Tendsto Real.tanh Filter.atBot (nhds (-1)) := by
   simpa [Function.comp_def, Real.tanh_neg] using
     (Real.tendsto_tanh_atTop.comp Filter.tendsto_neg_atBot_atTop).neg
 
 /-- `1 + tanh x = exp x / cosh x`, since `cosh x + sinh x = exp x`. -/
-theorem _root_.Real.one_add_tanh (x : ℝ) : 1 + Real.tanh x = Real.exp x / Real.cosh x := by
+theorem one_add_tanh (x : ℝ) : 1 + Real.tanh x = Real.exp x / Real.cosh x := by
   have := (Real.cosh_pos x).ne'
   rw [Real.tanh_eq_sinh_div_cosh, ← Real.cosh_add_sinh]
   field_simp
 
 /-- `1 - tanh x = exp (-x) / cosh x`, since `cosh x - sinh x = exp (-x)`. -/
-theorem _root_.Real.one_sub_tanh (x : ℝ) : 1 - Real.tanh x = Real.exp (-x) / Real.cosh x := by
+theorem one_sub_tanh (x : ℝ) : 1 - Real.tanh x = Real.exp (-x) / Real.cosh x := by
   have := (Real.cosh_pos x).ne'
   rw [Real.tanh_eq_sinh_div_cosh, ← Real.cosh_sub_sinh]
   field_simp
 
 /-- The hyperbolic tangent approaches `-1` exponentially fast:
 `1 + tanh x ≤ 2 * exp (2 * x)`. -/
-theorem _root_.Real.one_add_tanh_le (x : ℝ) : 1 + Real.tanh x ≤ 2 * Real.exp (2 * x) := by
+theorem one_add_tanh_le (x : ℝ) : 1 + Real.tanh x ≤ 2 * Real.exp (2 * x) := by
   rw [Real.one_add_tanh, div_le_iff₀ (Real.cosh_pos x), Real.cosh_eq]
   have h : Real.exp (2 * x) * Real.exp (-x) = Real.exp x := by rw [← Real.exp_add]; ring_nf
   nlinarith [mul_pos (Real.exp_pos (2 * x)) (Real.exp_pos x)]
 
 /-- The hyperbolic tangent approaches `1` exponentially fast:
 `1 - tanh x ≤ 2 * exp (-(2 * x))`. -/
-theorem _root_.Real.one_sub_tanh_le (x : ℝ) : 1 - Real.tanh x ≤ 2 * Real.exp (-(2 * x)) := by
+theorem one_sub_tanh_le (x : ℝ) : 1 - Real.tanh x ≤ 2 * Real.exp (-(2 * x)) := by
   simpa [Real.tanh_neg, sub_eq_add_neg] using Real.one_add_tanh_le (-x)
+
+end Real
+
+namespace Complex
 
 /-- `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2` for complex `α`, `θ`
 with `cosh α ≠ 0` and `cosh θ ≠ 0`: both sides are
 `(cosh α * cosh θ - sinh α * sinh θ) / (2 * cosh α * cosh θ)` by `Complex.cosh_sub`. -/
-theorem _root_.Complex.cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two {α θ : ℂ}
+theorem cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two {α θ : ℂ}
     (hα : Complex.cosh α ≠ 0) (hθ : Complex.cosh θ ≠ 0) :
     Complex.cosh (α - θ) / (2 * Complex.cosh α * Complex.cosh θ) =
       (1 - Complex.tanh α * Complex.tanh θ) / 2 := by
   rw [Complex.cosh_sub, Complex.tanh_eq_sinh_div_cosh, Complex.tanh_eq_sinh_div_cosh]
   field_simp
 
+end Complex
+
+namespace Real
+
 /-- The square of `sinh (r / 2)` in terms of `exp (± r / 2)`:
 `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`. -/
-theorem _root_.Real.four_mul_sinh_half_sq (r : ℝ) :
+theorem four_mul_sinh_half_sq (r : ℝ) :
     4 * Real.sinh (r / 2) ^ 2 = (Real.exp (r / 2) - Real.exp (-(r / 2))) ^ 2 := by
   rw [Real.sinh_eq]
   ring
 
 /-- `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`, the odd companion of `Real.cosh_le_exp_half_sq`.
 The constant `6` is sharp: the cubic terms of the two power series agree. -/
-theorem _root_.Real.sinh_le_mul_exp_sq_div_six {x : ℝ} (hx : 0 ≤ x) :
+theorem sinh_le_mul_exp_sq_div_six {x : ℝ} (hx : 0 ≤ x) :
     Real.sinh x ≤ x * Real.exp (x ^ 2 / 6) := by
   -- Compare the power series `∑ x ^ (2 k + 1) / (2 k + 1)!` and
   -- `∑ x ^ (2 k + 1) / (6 ^ k * k !)` termwise, using
@@ -258,7 +266,7 @@ theorem _root_.Real.sinh_le_mul_exp_sq_div_six {x : ℝ} (hx : 0 ≤ x) :
 
 /-- `(1 - exp (-l)) / l ≤ exp (-(l / 2) + l ^ 2 / 24)` for every real `l`. For `l ≠ 0` the
 left side is the exponential moment `∫₀¹ exp (-l x) dx`; at `l = 0` it is `0`. -/
-theorem _root_.Real.one_sub_exp_neg_div_le_exp (l : ℝ) :
+theorem one_sub_exp_neg_div_le_exp (l : ℝ) :
     (1 - Real.exp (-l)) / l ≤ Real.exp (-(l / 2) + l ^ 2 / 24) := by
   -- Write the left side as `exp (-(l / 2)) * (2 * sinh (l / 2) / l)`. The factor
   -- `2 * sinh (l / 2) / l` is even in `l`, so `Real.sinh_le_mul_exp_sq_div_six` at `|l| / 2`
@@ -283,17 +291,17 @@ theorem _root_.Real.one_sub_exp_neg_div_le_exp (l : ℝ) :
     linarith
 
 /-- The hyperbolic cosine tends to infinity at `+∞`: it is at least `exp x / 2`. -/
-theorem _root_.Real.tendsto_cosh_atTop : Filter.Tendsto Real.cosh Filter.atTop Filter.atTop := by
+theorem tendsto_cosh_atTop : Filter.Tendsto Real.cosh Filter.atTop Filter.atTop := by
   refine Filter.tendsto_atTop_mono (fun x ↦ ?_) (Real.tendsto_exp_atTop.atTop_div_const two_pos)
   rw [Real.cosh_eq]
   linarith [Real.exp_pos (-x)]
 
 /-- The hyperbolic cosine tends to infinity at `-∞`, since it is even. -/
-theorem _root_.Real.tendsto_cosh_atBot : Filter.Tendsto Real.cosh Filter.atBot Filter.atTop := by
+theorem tendsto_cosh_atBot : Filter.Tendsto Real.cosh Filter.atBot Filter.atTop := by
   simpa [Function.comp_def] using Real.tendsto_cosh_atTop.comp Filter.tendsto_neg_atBot_atTop
 
 /-- The ratio `cosh (x - a) / cosh (x + a)` tends to `exp (-(2 * a))` as `x → ∞`. -/
-theorem _root_.Real.tendsto_cosh_sub_div_cosh_add_atTop (a : ℝ) :
+theorem tendsto_cosh_sub_div_cosh_add_atTop (a : ℝ) :
     Filter.Tendsto (fun x ↦ Real.cosh (x - a) / Real.cosh (x + a)) Filter.atTop
       (nhds (Real.exp (-(2 * a)))) := by
   -- In terms of `t = exp (-x)`, the ratio is `(exp (-a) + exp a t²) / (exp a + exp (-a) t²)`.
@@ -316,4 +324,4 @@ theorem _root_.Real.tendsto_cosh_sub_div_cosh_add_atTop (a : ℝ) :
   rw [heq, ← hg0]
   exact hg.tendsto.comp Real.tendsto_exp_neg_atTop_nhds_zero
 
-end TauCeti
+end Real
