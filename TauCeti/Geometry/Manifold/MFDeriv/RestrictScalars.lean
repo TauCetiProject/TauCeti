@@ -43,7 +43,7 @@ its complex tangent coordinate changes regarded as `ℝ`-linear maps.
 * `MDifferentiableWithinAt.restrictScalars_mfderivWithin`,
   `MDifferentiableAt.mfderiv_restrictScalars`: the derivative over `𝕜` is the derivative over `𝕜'`
   with scalars restricted to `𝕜`.
-* `injective_mfderiv_restrictScalars`: an immersion for the models over `𝕜'` is
+* `TauCeti.injective_mfderiv_restrictScalars`: an immersion for the models over `𝕜'` is
   an immersion for the models over `𝕜`.
 * `TauCeti.tangentCoordChange_restrictScalars`: the tangent coordinate changes over `𝕜` are those
   over `𝕜'` with scalars restricted to `𝕜`; in particular they are `𝕜'`-linear
@@ -187,10 +187,12 @@ theorem MDifferentiableAt.mfderiv_restrictScalars
   simpa only [mfderivWithin_univ] using
     (h.mdifferentiableWithinAt.restrictScalars_mfderivWithin 𝕜 (uniqueMDiffWithinAt_univ _)).symm
 
+namespace TauCeti
+
 /-- If the derivative of `f` at `x` over `𝕜'` is injective, then so is its derivative over the
 smaller field `𝕜`. For instance, a holomorphic immersion between complex manifolds is a real
-immersion. Where `f` is not differentiable the derivatives are `0`, and injectivity of the one over
-`𝕜'` forces the tangent space to be trivial. -/
+immersion. Where `f` is not differentiable over `𝕜'` its derivative over `𝕜'` is `0`, and
+injectivity of that derivative forces the tangent space to be trivial. -/
 theorem injective_mfderiv_restrictScalars
     (hinj : Function.Injective (mfderiv 𝓘(𝕜', E) 𝓘(𝕜', E') f x)) :
     Function.Injective (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E') f x) := by
@@ -204,8 +206,6 @@ theorem injective_mfderiv_restrictScalars
   · rw [mfderiv_zero_of_not_mdifferentiableAt h] at hinj
     intro v w _
     exact hinj (a₁ := v) (a₂ := w) rfl
-
-namespace TauCeti
 
 /-- On the overlap of the charts at `x` and `y`, the tangent coordinate change for the model over
 `𝕜` is the tangent coordinate change for the model over `𝕜'`, with scalars restricted to `𝕜`: both
