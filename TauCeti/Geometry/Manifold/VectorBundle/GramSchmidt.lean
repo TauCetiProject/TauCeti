@@ -102,9 +102,7 @@ theorem ContMDiffAt.gramSchmidtNormed_bundle
 
 variable [ContMDiffVectorBundle n F V I] [FiniteDimensional ℝ F] in
 /-- Every point of a `C^n` Riemannian vector bundle with finite-dimensional model fibre `F` has an
-open neighbourhood carrying a `C^n` local frame which is orthonormal at each of its points. It is
-the normalized Gram–Schmidt orthogonalization of the local frame of the trivialization at the
-point. -/
+open neighbourhood carrying a `C^n` local frame which is orthonormal at each of its points. -/
 theorem TauCeti.exists_isLocalFrameOn_orthonormal (x₀ : M) :
     ∃ U : Set M, IsOpen U ∧ x₀ ∈ U ∧ ∃ u : Fin (Module.finrank ℝ F) → Π x : M, V x,
       IsLocalFrameOn I F n u U ∧ ∀ x ∈ U, Orthonormal ℝ (u · x) := by

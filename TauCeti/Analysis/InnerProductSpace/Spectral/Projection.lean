@@ -25,14 +25,6 @@ into its positive and negative subbundles. They concern the existing
 or projections. The invertibility hypothesis excludes eigenvalues crossing zero; dimension zero
 is allowed.
 
-Continuity of the spectral projections of a family of operators at a point `x₀` lets a basis of
-a spectral subspace at `x₀` be transported to nearby points: its projections stay linearly
-independent (`TauCeti.eventually_linearIndependent_starProjection_apply`). For injective symmetric
-operators, counting the dimensions of the complementary negative and positive spectral subspaces
-shows that the projected basis of the negative spectral subspace is again a basis
-(`TauCeti.eventually_linearIndependent_and_span_starProjection_Iio`). These give local frames of
-the spectral subbundles of a symmetric bundle endomorphism.
-
 ## References
 
 * R. Bhatia, *Matrix Analysis*, Springer, 1997, Chapter V (matrix functions).
@@ -132,90 +124,3 @@ theorem _root_.ContDiffOn.starProjection_pointSpectralSubspace_Ioi_zero (hA : Co
       (fun x hx ↦ (hself x hx).neg) (fun x hx ↦ (hunit x hx).neg)
 
 end ContinuousLinearMap
-
-namespace TauCeti
-
-open Filter Module
-open scoped Topology
-
-section ProjectedBasis
-
-variable {X : Type*} [TopologicalSpace X]
-  {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  {S : X → E →L[ℝ] E} {x₀ : X}
-
-/-- Projecting linearly independent vectors of a point-spectral subspace of `S x₀` onto the same
-point-spectral subspace of `S x` keeps them linearly independent for `x` near `x₀`, when the
-spectral projections are continuous at `x₀`. -/
-theorem eventually_linearIndependent_starProjection_apply {Ω : Set ℝ}
-    (hP : ContinuousAt
-      (fun x ↦ (Module.End.pointSpectralSubspace (S x).toLinearMap Ω).starProjection) x₀)
-    {ι : Type*} [Finite ι] {b : ι → E} (hb : LinearIndependent ℝ b)
-    (hbΩ : ∀ i, b i ∈ Module.End.pointSpectralSubspace (S x₀).toLinearMap Ω) :
-    ∀ᶠ x in 𝓝 x₀, LinearIndependent ℝ fun i ↦
-      (Module.End.pointSpectralSubspace (S x).toLinearMap Ω).starProjection (b i) := by
-  have h₀ : (fun i ↦
-      (Module.End.pointSpectralSubspace (S x₀).toLinearMap Ω).starProjection (b i)) = b :=
-    funext fun i ↦ Submodule.starProjection_eq_self_iff.mpr (hbΩ i)
-  have hb' := hb.eventually
-  rw [← h₀] at hb'
-  exact (continuousAt_pi.2 fun i ↦ hP.clm_apply continuousAt_const).eventually hb'
-
-/-- For injective symmetric operators `S x` whose negative and positive spectral projections are
-continuous at `x₀`, projecting a basis of the negative spectral subspace of `S x₀` gives, for every
-`x` near `x₀`, a basis of the negative spectral subspace of `S x`. -/
-theorem eventually_linearIndependent_and_span_starProjection_Iio
-    (hS : ∀ᶠ x in 𝓝 x₀,
-      (S x).toLinearMap.IsSymmetric ∧ LinearMap.ker (S x).toLinearMap = ⊥)
-    (hN : ContinuousAt
-      (fun x ↦ (Module.End.pointSpectralSubspace (S x).toLinearMap (Iio 0)).starProjection) x₀)
-    (hP : ContinuousAt
-      (fun x ↦ (Module.End.pointSpectralSubspace (S x).toLinearMap (Ioi 0)).starProjection) x₀)
-    {k : ℕ} (b : Basis (Fin k) ℝ (Module.End.pointSpectralSubspace (S x₀).toLinearMap (Iio 0))) :
-    ∀ᶠ x in 𝓝 x₀, LinearIndependent ℝ (fun i ↦
-        (Module.End.pointSpectralSubspace (S x).toLinearMap (Iio 0)).starProjection (b i)) ∧
-      Submodule.span ℝ (range fun i ↦
-        (Module.End.pointSpectralSubspace (S x).toLinearMap (Iio 0)).starProjection (b i)) =
-        Module.End.pointSpectralSubspace (S x).toLinearMap (Iio 0) := by
-  -- The negative and positive spectral subspaces are complementary.
-  have hcompl : ∀ᶠ x in 𝓝 x₀,
-      finrank ℝ (Module.End.pointSpectralSubspace (S x).toLinearMap (Iio 0)) +
-        finrank ℝ (Module.End.pointSpectralSubspace (S x).toLinearMap (Ioi 0)) = finrank ℝ E :=
-    hS.mono fun x hx ↦
-      Submodule.finrank_add_eq_of_isCompl (hx.1.isCompl_pointSpectralSubspace_Iio_Ioi hx.2)
-  have hk := Module.finrank_eq_card_basis b
-  obtain ⟨bP⟩ : Nonempty (Basis (Fin (finrank ℝ
-      (Module.End.pointSpectralSubspace (S x₀).toLinearMap (Ioi 0)))) ℝ
-      (Module.End.pointSpectralSubspace (S x₀).toLinearMap (Ioi 0))) :=
-    ⟨Module.finBasis ℝ _⟩
-  have hN' := eventually_linearIndependent_starProjection_apply (b := fun i ↦ (b i : E)) hN
-    (b.linearIndependent.map'
-      (Module.End.pointSpectralSubspace (S x₀).toLinearMap (Iio 0)).subtype
-      (Submodule.ker_subtype _)) fun i ↦ (b i).2
-  have hbP : LinearIndependent ℝ (fun i ↦ (bP i : E)) :=
-    LinearIndependent.map' bP.linearIndependent
-      (Module.End.pointSpectralSubspace (S x₀).toLinearMap (Ioi 0)).subtype
-      (Submodule.ker_subtype _)
-  have hP' := eventually_linearIndependent_starProjection_apply (b := fun i ↦ (bP i : E)) hP hbP
-    fun i ↦ (bP i).2
-  filter_upwards [hN', hP', hcompl] with x hliN hliP hx
-  have hle (Ω : Set ℝ) {ι : Type} (c : ι → E) :
-      Submodule.span ℝ (range fun i ↦
-        (Module.End.pointSpectralSubspace (S x).toLinearMap Ω).starProjection (c i)) ≤
-        Module.End.pointSpectralSubspace (S x).toLinearMap Ω :=
-    Submodule.span_le.mpr <| range_subset_iff.mpr fun i ↦ Submodule.starProjection_apply_mem _ _
-  -- Both projected families are linearly independent, so they fill the complementary spectral
-  -- subspaces, whose dimensions add up to `finrank ℝ E`.
-  have hleN := hle (Iio 0) fun i ↦ (b i : E)
-  have h₁ := (finrank_span_eq_card hliN).symm.trans_le (Submodule.finrank_mono hleN)
-  have h₂ := (finrank_span_eq_card hliP).symm.trans_le
-    (Submodule.finrank_mono (hle (Ioi 0) fun i ↦ (bP i : E)))
-  have h₀ := hcompl.self_of_nhds
-  rw [Fintype.card_fin] at h₁ h₂ hk
-  refine ⟨hliN, Submodule.eq_of_le_of_finrank_eq hleN ?_⟩
-  rw [finrank_span_eq_card hliN, Fintype.card_fin]
-  omega
-
-end ProjectedBasis
-
-end TauCeti

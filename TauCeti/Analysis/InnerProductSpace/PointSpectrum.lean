@@ -350,7 +350,8 @@ theorem pointSpectralSubspace_sup_compl_eq_top (hA : A.IsSymmetric) (Ω : Set �
 
 /-- For an injective symmetric operator on a finite-dimensional space, the point-spectral subspaces
 of the negative and of the positive eigenvalues are complementary. -/
-theorem isCompl_pointSpectralSubspace_Iio_Ioi (hA : A.IsSymmetric) (hker : LinearMap.ker A = ⊥) :
+theorem isCompl_pointSpectralSubspace_Iio_zero_Ioi_zero (hA : A.IsSymmetric)
+    (hker : LinearMap.ker A = ⊥) :
     IsCompl (A.pointSpectralSubspace (Set.Iio 0)) (A.pointSpectralSubspace (Set.Ioi 0)) := by
   refine ⟨Module.End.disjoint_pointSpectralSubspace Set.Iio_disjoint_Ioi_same, ?_⟩
   rw [codisjoint_iff, ← Module.End.pointSpectralSubspace_insert_zero (Ω := Set.Ioi 0) hker,
