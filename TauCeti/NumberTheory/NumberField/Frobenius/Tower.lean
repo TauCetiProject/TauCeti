@@ -217,7 +217,7 @@ image in `Gal(L/K)` of an arithmetic Frobenius at `Q` in `Gal(L/M)`.
 
 The unramifiedness hypothesis is phrased for all primes above `𝔭`, matching the argument that
 `NumberField.artinSymbol` takes; only its value at `Q` is used. -/
-theorem exists_isArithFrobAt_pow_inertiaDeg (M : Type*) [Field M] [NumberField M]
+theorem exists_isArithFrobAt_pow_inertiaDeg (M : Type*) [Field M]
     [Algebra K M] [Algebra M L] [IsScalarTower K M L]
     (Q : Ideal (𝓞 L)) [Q.IsPrime]
     (𝔓 : Ideal (𝓞 M)) (𝔭 : Ideal (𝓞 K))
