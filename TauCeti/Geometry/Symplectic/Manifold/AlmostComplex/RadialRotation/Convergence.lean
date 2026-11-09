@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.RadialRotation.Basic
 public import TauCeti.Topology.UniformSpace.HeineCantor
 
@@ -60,35 +61,6 @@ theorem scaledRadialRotationField_zero (ℓ : ℕ) (z : V) :
     scaledRadialRotationField ℓ (0, z) = I • ContinuousLinearMap.id ℝ V := by
   simp [scaledRadialRotationField]
 
-/-- The derivatives in the point of a fixed-scale slice are the joint derivatives restricted to
-the point directions. -/
-theorem iteratedFDeriv_scaledRadialRotationField_slice (ℓ : ℕ) {k : ℕ} (hk : k ≤ ℓ) (s : ℝ)
-    (z : V) :
-    iteratedFDeriv ℝ k (fun w ↦ scaledRadialRotationField ℓ (s, w)) z =
-      (iteratedFDeriv ℝ k (scaledRadialRotationField ℓ) (s, z)).compContinuousLinearMap
-        fun _ ↦ ContinuousLinearMap.inr ℝ ℝ V := by
-  have hslice : (fun w ↦ scaledRadialRotationField ℓ (s, w)) =
-      (fun q ↦ scaledRadialRotationField ℓ (q + (s, 0))) ∘ ContinuousLinearMap.inr ℝ ℝ V := by
-    funext w
-    simp
-  have hshift : ContDiff ℝ ℓ fun q ↦ scaledRadialRotationField ℓ (q + (s, 0)) :=
-    (contDiff_scaledRadialRotationField ℓ).comp (contDiff_id.add contDiff_const)
-  rw [hslice, (ContinuousLinearMap.inr ℝ ℝ V).iteratedFDeriv_comp_right hshift z
-    (by exact_mod_cast hk), iteratedFDeriv_comp_add_right]
-  simp
-
-/-- The derivatives of order at most `ℓ` of the slices depend continuously on the scale and the
-point together. -/
-theorem continuous_iteratedFDeriv_scaledRadialRotationField_slice (ℓ : ℕ) {k : ℕ}
-    (hk : k ≤ ℓ) :
-    Continuous fun q : ℝ × V ↦
-      iteratedFDeriv ℝ k (fun w ↦ scaledRadialRotationField ℓ (q.1, w)) q.2 := by
-  simp only [iteratedFDeriv_scaledRadialRotationField_slice ℓ hk]
-  exact (ContinuousMultilinearMap.compContinuousLinearMapL
-    fun _ ↦ ContinuousLinearMap.inr ℝ ℝ V).continuous.comp
-      ((contDiff_scaledRadialRotationField ℓ).continuous_iteratedFDeriv
-        (by exact_mod_cast hk))
-
 /-- The derivatives of order at most `ℓ` of the slices converge locally uniformly to those of
 the constant field `i` as the scale tends to zero. -/
 theorem tendstoLocallyUniformly_iteratedFDeriv_scaledRadialRotationField_slice (ℓ : ℕ)
@@ -101,7 +73,8 @@ theorem tendstoLocallyUniformly_iteratedFDeriv_scaledRadialRotationField_slice (
   intro K hK
   simpa using Continuous.tendstoUniformlyOn_of_tendsto
     (Φ := fun s z ↦ iteratedFDeriv ℝ k (fun w ↦ scaledRadialRotationField ℓ (s, w)) z)
-    (continuous_iteratedFDeriv_scaledRadialRotationField_slice ℓ hk) hK hs
+    (_root_.ContDiff.continuous_iteratedFDeriv_prod_right (contDiff_scaledRadialRotationField ℓ) k
+      (by exact_mod_cast hk)) hK hs
 
 /-- The structure `J_m = A_m i A_m⁻¹` of order `ℓ`, where `A_m(z)` rotates the real coordinate
 plane through the angle `‖z‖^(ℓ+1/2) / m`. -/
