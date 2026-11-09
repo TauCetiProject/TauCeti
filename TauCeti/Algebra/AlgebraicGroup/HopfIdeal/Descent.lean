@@ -34,8 +34,6 @@ field, whose algebraic closure is Galois.
 
 * `TauCeti.CommHopfAlgCat.baseChangeHopfIdeal_surjective`: every Hopf ideal descends along a
   surjective map of ground fields.
-* `TauCeti.CommHopfAlgCat.map_mem_baseChangeHopfIdeal`: a base-changed Hopf ideal is stable under
-  every algebra endomorphism of the scalar factor.
 * `Module.Basis.baseChangeHopfIdeal_coefficientHopfIdeal_of_forall_map_mem`: a Galois-stable Hopf
   ideal is the base change of its coefficient Hopf ideal.
 * `Module.Basis.mem_coefficientHopfIdeal_iff_of_forall_map_mem`: that coefficient Hopf ideal
@@ -88,27 +86,6 @@ theorem baseChangeHopfIdeal_surjective (h : Function.Surjective (algebraMap k K)
 
 end Surjective
 
-section Stable
-
-variable {k : Type u} {K : Type w} [CommRing k] [CommRing K] [Algebra k K]
-variable {H : _root_.CommHopfAlgCat.{v} k}
-
-/-- The base change of a Hopf ideal is stable under every algebra endomorphism of the scalar
-factor, in particular under the Galois action when `K / k` is a field extension. -/
-theorem map_mem_baseChangeHopfIdeal (J : HopfIdeal k H) (φ : K →ₐ[k] K) {x : K ⊗[k] H}
-    (hx : x ∈ baseChangeHopfIdeal (K := K) J) :
-    TensorProduct.map φ.toLinearMap LinearMap.id x ∈ baseChangeHopfIdeal (K := K) J := by
-  let g : K ⊗[k] H →ₐ[k] K ⊗[k] H := Algebra.TensorProduct.map φ (AlgHom.id k H)
-  rw [← HopfIdeal.mem_toIdeal, baseChangeHopfIdeal_toIdeal] at hx ⊢
-  have hle : J.toIdeal.map (Algebra.TensorProduct.includeRight : H →ₐ[k] K ⊗[k] H) ≤
-      (J.toIdeal.map (Algebra.TensorProduct.includeRight : H →ₐ[k] K ⊗[k] H)).comap g := by
-    rw [Ideal.map_le_iff_le_comap]
-    intro h hh
-    simpa [g] using Ideal.mem_map_of_mem Algebra.TensorProduct.includeRight hh
-  exact hle hx
-
-end Stable
-
 section Galois
 
 variable {k : Type u} {L : Type w} [Field k] [Field L] [Algebra k L] [IsGalois k L]
@@ -153,18 +130,8 @@ theorem _root_.Module.Basis.mem_coefficientHopfIdeal_iff_of_forall_map_mem
     (hI : ∀ σ : L ≃ₐ[k] L, ∀ x ∈ I, TensorProduct.map σ.toLinearMap LinearMap.id x ∈ I)
     (h : H) : h ∈ b.coefficientHopfIdeal I ↔ 1 ⊗ₜ[k] h ∈ I := by
   conv_rhs => rw [← b.baseChangeHopfIdeal_coefficientHopfIdeal_of_forall_map_mem I hI,
-    b.mem_baseChangeHopfIdeal_iff]
-  refine ⟨fun hh j ↦ ?_, fun hh ↦ ?_⟩
-  · rw [TensorProduct.equivFinsuppOfBasisLeft_apply_tmul_apply]
-    exact ((b.coefficientHopfIdeal I).toIdeal.restrictScalars k).smul_mem _ hh
-  · -- Some coordinate `c` of `1` in the basis is nonzero, and `c • h` is a coefficient of `1 ⊗ h`.
-    obtain ⟨j, hj⟩ : ∃ j, b.repr 1 j ≠ 0 := by
-      by_contra! h0
-      exact one_ne_zero (b.repr.injective (Finsupp.ext fun j ↦ by simp [h0 j]))
-    have hcoeff := hh j
-    rw [TensorProduct.equivFinsuppOfBasisLeft_apply_tmul_apply] at hcoeff
-    simpa [smul_smul, inv_mul_cancel₀ hj] using
-      ((b.coefficientHopfIdeal I).toIdeal.restrictScalars k).smul_mem (b.repr 1 j)⁻¹ hcoeff
+    mem_baseChangeHopfIdeal_iff, baseChangeMap_apply_tmul,
+    Module.FaithfullyFlat.one_tmul_eq_zero_iff, _root_.CommHopfAlgCat.mkQuotient_eq_zero_iff]
 
 /-- Along a Galois extension `L / k`, a Hopf ideal of `L ⊗[k] H` is the base change of a Hopf ideal
 of `H` exactly when it is stable under the scalar-factor Galois action, and that Hopf ideal of `H`
