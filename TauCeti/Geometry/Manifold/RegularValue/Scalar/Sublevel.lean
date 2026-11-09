@@ -401,7 +401,7 @@ private theorem isExtendTransChart_restrFaceChart {m : ℕ∞ω} [IsManifold I m
     (hV : IsOpen V) (Ψ : E ≃L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) :
     (restrFaceChart I (hfm.of_le hm).contMDiffAt hx V Ψ).IsExtendTransChart I m :=
   isExtendTransChart_extendTrans (restr_mem_maximalAtlas _
-    (scalarSubmersionChartAt_mem_maximalAtlas _ _ hm fun _ _ ↦ hfm.contMDiffAt) hV)
+    (scalarSubmersionChartAt_mem_maximalAtlas _ _ fun _ _ ↦ hfm.contMDiffAt) hV)
     Ψ.contDiff Ψ.symm.contDiff
 
 end Atlas
