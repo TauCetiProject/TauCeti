@@ -23,10 +23,11 @@ one, which is supported on `[-2, 2]`. It has density `π⁻¹ √(4 - s²)` on `
 
 It is the limiting law of the singular values of `Xₙ / √n` for a square matrix `Xₙ` with i.i.d.
 entries of variance one; correspondingly, the square of a quarter-circle variable has the
-Marchenko–Pastur law of ratio one, the limiting eigenvalue law of `Xₙ Xₙ* / n`. Both laws are
-carried by compact intervals and have the Catalan numbers as moments, which identifies them. The
-symmetric beta realization of the semicircle law gives the real moments of the quarter-circle law
-and shows that `marchenkoPastur 1` is the image of `Beta(1 / 2, 3 / 2)` under `t ↦ 4 t`.
+Marchenko–Pastur law of ratio one, the limiting eigenvalue law of `Xₙ Xₙ* / n`. The squared
+quarter-circle law and `marchenkoPastur 1` are both carried by `[0, 4]` and have the same moments,
+the Catalan numbers, which identifies them. The symmetric beta realization of the semicircle law
+gives the real moments of the quarter-circle law and shows that `marchenkoPastur 1` is the image of
+`Beta(1 / 2, 3 / 2)` under `t ↦ 4 t`.
 
 ## Main definitions
 
@@ -174,11 +175,8 @@ theorem map_sq_quarterCircle : quarterCircle.map (· ^ 2) = marchenkoPastur 1 :=
 /-- The square root of a `marchenkoPastur 1` variable has the quarter-circle law. -/
 @[simp]
 theorem map_sqrt_marchenkoPastur_one : (marchenkoPastur 1).map sqrt = quarterCircle := by
-  rw [← map_sq_quarterCircle, Measure.map_map continuous_sqrt.measurable (by fun_prop)]
-  have h : (sqrt ∘ fun s : ℝ ↦ s ^ 2) =ᵐ[quarterCircle] id := by
-    filter_upwards [ae_mem_Icc_quarterCircle] with s hs
-    simp [sqrt_sq hs.1]
-  rw [Measure.map_congr h, Measure.map_id]
+  rw [← map_sq_quarterCircle]
+  exact Measure.map_sqrt_map_sq _ (ae_mem_Icc_quarterCircle.mono fun _ hs ↦ hs.1)
 
 /-- The Marchenko–Pastur law of ratio one is the image of `Beta(1 / 2, 3 / 2)` under `t ↦ 4 t`. -/
 theorem marchenkoPastur_one_eq_map_betaMeasure :
