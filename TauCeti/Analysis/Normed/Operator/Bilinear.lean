@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
 # Pulling back continuous bilinear maps
@@ -26,6 +27,14 @@ conjugates the comparison operator `B₀⁻¹ ∘ B` of two such maps by the equ
 slot (`ContinuousLinearMap.inverse_bilinearComp_comp_bilinearComp`). This is how operators built
 from a pair of bilinear forms, such as the Morse congruence of a form with a reference form,
 transform under a linear change of coordinates.
+
+An invertible bilinear map `B₀ : V →L V →L G` determines adjoints of operators on `V`: the
+adjoint `ContinuousLinearMap.pairingAdjoint B₀ X` is characterized by
+`B₀ (adj X w) w' = B₀ w (X w')` (`ContinuousLinearMap.IsInvertible.pairingAdjoint_apply`). It
+reverses products, fixes the identity, and tends to the identity as `B₀` stays near an
+invertible map and `X` tends to the identity. On Banach spaces the comparison operator
+`B₀⁻¹ ∘ B` also tends to the identity as both maps tend to the same invertible map
+(`ContinuousLinearMap.IsInvertible.tendsto_inverse_comp`).
 -/
 
 public section
@@ -93,6 +102,76 @@ theorem inverse_bilinearComp_comp_bilinearComp {B₀ : V →L[𝕜] V' →L[𝕜
   simp [hB₀.self_apply_inverse]
 
 end Invertible
+
+section PairingAdjoint
+
+open Filter Topology
+
+/-- The adjoint of an operator `X` on `V` for the pairing `B₀`, `B₀⁻¹ ∘ (· ∘ X) ∘ B₀`. When
+`B₀` is invertible it is characterized by `B₀ (adj X w) w' = B₀ w (X w')`
+(`ContinuousLinearMap.IsInvertible.pairingAdjoint_apply`). -/
+def pairingAdjoint (B₀ : V →L[𝕜] V →L[𝕜] G) (X : V →L[𝕜] V) : V →L[𝕜] V :=
+  B₀.inverse ∘L ((compL 𝕜 V V G).flip X ∘L B₀)
+
+variable {B₀ : V →L[𝕜] V →L[𝕜] G}
+
+/-- The defining property of the adjoint for an invertible pairing. -/
+theorem IsInvertible.pairingAdjoint_apply (hB₀ : B₀.IsInvertible) (X : V →L[𝕜] V) (w w' : V) :
+    B₀ (pairingAdjoint B₀ X w) w' = B₀ w (X w') := by
+  simp [pairingAdjoint, hB₀.self_apply_inverse]
+
+/-- Operators are determined by their pairings against an invertible bilinear map. -/
+theorem IsInvertible.ext_of_pairing (hB₀ : B₀.IsInvertible) {X Y : V →L[𝕜] V}
+    (h : ∀ w w', B₀ (X w) w' = B₀ (Y w) w') : X = Y :=
+  ext fun w ↦ hB₀.bijective.injective (ext (h w))
+
+/-- The adjoint for an invertible pairing reverses products. -/
+theorem IsInvertible.pairingAdjoint_mul (hB₀ : B₀.IsInvertible) (X Y : V →L[𝕜] V) :
+    pairingAdjoint B₀ (X * Y) = pairingAdjoint B₀ Y * pairingAdjoint B₀ X :=
+  hB₀.ext_of_pairing fun w w' ↦ by
+    simp only [hB₀.pairingAdjoint_apply, mul_apply_eq_comp]
+
+/-- The adjoint of the identity for an invertible pairing is the identity. -/
+theorem IsInvertible.pairingAdjoint_one (hB₀ : B₀.IsInvertible) :
+    pairingAdjoint B₀ (1 : V →L[𝕜] V) = 1 :=
+  hB₀.ext_of_pairing fun w w' ↦ by simp [hB₀.pairingAdjoint_apply]
+
+end PairingAdjoint
+
+section Tendsto
+
+open Filter Topology
+
+variable {E F H : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+
+/-- The comparison operator `e₀⁻¹ ∘ e` tends to the identity as both maps tend to the same
+invertible map. -/
+theorem IsInvertible.tendsto_inverse_comp {e : E →L[𝕜] F} (he : e.IsInvertible) :
+    Tendsto (fun p : (E →L[𝕜] F) × (E →L[𝕜] F) ↦ p.1.inverse ∘L p.2) (𝓝 (e, e)) (𝓝 1) := by
+  have h₁ : ContinuousAt (fun p : (E →L[𝕜] F) × (E →L[𝕜] F) ↦ p.1.inverse) (e, e) :=
+    ContinuousAt.comp (f := Prod.fst) (x := (e, e))
+      (he.contDiffAt_map_inverse (n := 0)).continuousAt continuousAt_fst
+  have h := h₁.clm_comp continuousAt_snd
+  simpa only [he.inverse_comp_self, ← one_def] using h.tendsto
+
+/-- The adjoint of `X` for the pairing `B₀` tends to the identity as `B₀` tends to an
+invertible pairing and `X` tends to the identity. -/
+theorem IsInvertible.tendsto_pairingAdjoint {B₀ : E →L[𝕜] E →L[𝕜] H} (hB₀ : B₀.IsInvertible) :
+    Tendsto (fun q : (E →L[𝕜] E →L[𝕜] H) × (E →L[𝕜] E) ↦ pairingAdjoint q.1 q.2)
+      (𝓝 (B₀, 1)) (𝓝 1) := by
+  have h₁ : ContinuousAt (fun q : (E →L[𝕜] E →L[𝕜] H) × (E →L[𝕜] E) ↦ q.1.inverse) (B₀, 1) :=
+    ContinuousAt.comp (f := Prod.fst) (x := (B₀, 1))
+      (hB₀.contDiffAt_map_inverse (n := 0)).continuousAt continuousAt_fst
+  have h₂ : ContinuousAt (fun q : (E →L[𝕜] E →L[𝕜] H) × (E →L[𝕜] E) ↦
+      (compL 𝕜 E E H).flip q.2) (B₀, 1) :=
+    ((compL 𝕜 E E H).flip).continuous.continuousAt.comp continuousAt_snd
+  have h : ContinuousAt (fun q : (E →L[𝕜] E →L[𝕜] H) × (E →L[𝕜] E) ↦
+      pairingAdjoint q.1 q.2) (B₀, 1) :=
+    h₁.clm_comp (h₂.clm_comp continuousAt_fst)
+  simpa only [hB₀.pairingAdjoint_one] using h.tendsto
+
+end Tendsto
 
 end ContinuousLinearMap
 

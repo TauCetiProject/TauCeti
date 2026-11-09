@@ -71,10 +71,12 @@ variable {P E : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
 /-- The **canonical parametric Morse coordinate** of a family `f (b, v)`: the fibre vector
 `R (b, v) v`, where `R (b, v)` is the canonical congruence `TauCeti.morseCongruence` comparing
 the averaged vertical Hessian along the segment from `(b, 0)` to `(b, v)` with the vertical
-Hessian at `(b, 0)`. Near a point of the zero section with invertible vertical Hessian, `f` is
-its vertical Hessian quadratic form in this coordinate
-(`TauCeti.eventually_eq_add_parametricMorseCoord`), and the coordinate is unchanged by fibrewise
-linear changes of coordinates (`TauCeti.eventually_parametricMorseCoord_comp`). -/
+Hessian at `(b, 0)`. For a `C^2` family whose zero section is critical near `a` and whose
+vertical Hessian `H b` at `(b, 0)` is invertible at `b = a`, near `(a, 0)` it satisfies
+`f (b, v) = f (b, 0) + 2⁻¹ * H b (parametricMorseCoord f (b, v)) (parametricMorseCoord f (b, v))`
+(`TauCeti.eventually_eq_add_parametricMorseCoord`). Under the same regularity and invertibility
+hypotheses, the coordinate is unchanged by fibrewise linear changes of coordinates
+(`TauCeti.eventually_parametricMorseCoord_comp`). -/
 def parametricMorseCoord (f : P × E → ℝ) (z : P × E) : E :=
   morseCongruence (fderiv ℝ (fderiv ℝ fun v ↦ f (z.1, v)) 0)
     (hessianAverage (fun v ↦ f (z.1, v)) 0 z.2) z.2
@@ -129,26 +131,28 @@ theorem eventually_contDiffAt_parametricMorseCoord (hf : ContDiff ℝ (n + 2) f)
     contDiffAt_snd
 
 /-- At a point of the zero section with invertible vertical Hessian, the derivative of the
-canonical parametric Morse coordinate is the projection to the fibre. -/
-theorem hasFDerivAt_parametricMorseCoord (hf : ContDiff ℝ (n + 2) f)
-    (hH : (fderiv ℝ (fderiv ℝ fun v ↦ f (a, v)) 0).IsInvertible) (hn : n ≠ 0) :
+canonical parametric Morse coordinate of a `C^2` family is the projection to the fibre. -/
+theorem hasFDerivAt_parametricMorseCoord (hf : ContDiff ℝ 2 f)
+    (hH : (fderiv ℝ (fderiv ℝ fun v ↦ f (a, v)) 0).IsInvertible) :
     HasFDerivAt (parametricMorseCoord f) (ContinuousLinearMap.snd ℝ P E) (a, 0) := by
   let R : P × E → E →L[ℝ] E := fun z ↦ morseCongruence
     (fderiv ℝ (fderiv ℝ fun v ↦ f (z.1, v)) 0) (hessianAverage (fun v ↦ f (z.1, v)) 0 z.2)
-  have hRa : ContDiffAt ℝ n R (a, 0) := by
-    have h := (eventually_contDiffAt_morseCongruence hH (n := n)).self_of_nhds
-    exact ContDiffAt.comp (g := fun p : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E →L[ℝ] ℝ) ↦
-      morseCongruence p.1 p.2) (a, 0) (by simpa only [hessianAverage_zero] using h)
-      (contDiff_verticalHessianPair hf).contDiffAt
-  have hR0 : R (a, 0) = 1 := by simpa only [R, hessianAverage_zero] using morseCongruence_self hH
-  have hd := (hRa.differentiableAt (by simpa using hn)).hasFDerivAt.clm_apply
-    (hasFDerivAt_snd (p := ((a, 0) : P × E)))
-  have heq : R (a, 0) ∘L ContinuousLinearMap.snd ℝ P E + (fderiv ℝ R (a, 0)).flip (a, 0).2 =
-      ContinuousLinearMap.snd ℝ P E := by
-    rw [hR0]
-    ext z <;> simp
-  have hΦ : parametricMorseCoord f = fun z ↦ R z z.2 := funext (parametricMorseCoord_def f)
-  rwa [hΦ, ← heq]
+  -- Only continuity of `R` is needed: the coordinate differs from the fibre projection by
+  -- `(R z - 1) z.2`, a vanishing operator applied to a vector of size `O (z - (a, 0))`.
+  have hR₁ : Tendsto R (𝓝 (a, 0)) (𝓝 1) :=
+    (tendsto_morseCongruence hH).comp (tendsto_verticalHessianPair hf)
+  have hR : Tendsto (fun z ↦ R z - 1) (𝓝 (a, 0)) (𝓝 0) := by
+    simpa only [sub_self] using hR₁.sub_const 1
+  have hsnd : (fun z : P × E ↦ (z - (a, 0)).2) =O[𝓝 (a, 0)] fun z ↦ z - (a, 0) :=
+    Asymptotics.isBigO_of_le _ fun z ↦ norm_snd_le (z - (a, 0))
+  have ho := ((Asymptotics.isLittleO_one_iff ℝ).2 hR).norm_left.mul_isBigO
+    hsnd.norm_left.norm_right
+  simp only [one_mul] at ho
+  refine HasFDerivAt.of_isLittleO <| (Asymptotics.isBigO_of_le _ fun z ↦ ?_).trans_isLittleO
+    ho.of_norm_right
+  rw [parametricMorseCoord_def, parametricMorseCoord_mk_zero]
+  refine (le_of_eq ?_).trans (((R z - 1).le_opNorm _).trans (Real.le_norm_self _))
+  simp [R]
 
 /-- **The parametric Morse normal form in the canonical coordinate.** Near a point `(a, 0)` of a
 critical zero section with invertible vertical Hessian, a `C^2` family `f` is its vertical
@@ -259,7 +263,7 @@ The base space need not be complete for this forward coordinate construction. Th
 change is `(b, v) ↦ (b, parametricMorseCoord f (b, v))`. -/
 theorem exists_parametric_morse_normal_form (hf : ContDiff ℝ (n + 2) f)
     (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ (fun v ↦ f (b, v)) 0 = 0)
-    (hH : (fderiv ℝ (fderiv ℝ (fun v ↦ f (a, v))) 0).IsInvertible) (hn : n ≠ 0) :
+    (hH : (fderiv ℝ (fderiv ℝ (fun v ↦ f (a, v))) 0).IsInvertible) :
     ∃ (Φ : P × E → P × E) (U : Set P) (V : Set E),
       IsOpen U ∧ IsOpen V ∧ a ∈ U ∧ (0 : E) ∈ V ∧
       (∀ z, (Φ z).1 = z.1) ∧ (∀ b, Φ (b, 0) = (b, 0)) ∧
@@ -275,7 +279,7 @@ theorem exists_parametric_morse_normal_form (hf : ContDiff ℝ (n + 2) f)
     fun b ↦ by simp, fun z hz ↦ (contDiffAt_fst.prodMk (hUV hz).1).contDiffWithinAt, ?_,
     fun z hz ↦ (hUV hz).2⟩
   simpa only [ContinuousLinearMap.fst_prod_snd] using
-    hasFDerivAt_fst.prodMk (hasFDerivAt_parametricMorseCoord hf hH hn)
+    hasFDerivAt_fst.prodMk (hasFDerivAt_parametricMorseCoord (hf.of_le le_add_self) hH)
 
 /-- **The parametric Morse lemma, as a local chart.** The chart has a product source containing
 `(a, 0)`, preserves the base parameter in both directions, and fixes the zero section. Its
@@ -293,7 +297,7 @@ theorem exists_parametric_morse_chart [CompleteSpace P] (hf : ContDiff ℝ (n + 
         f z = f (z.1, 0) + (2 : ℝ)⁻¹ *
           fderiv ℝ (fderiv ℝ (fun v ↦ f (z.1, v))) 0 (ψ z).2 (ψ z).2 := by
   obtain ⟨Φ, U, V, hU, hV, haU, h0V, hΦfst, hΦ0, hΦ, hΦd, hΦeq⟩ :=
-    exists_parametric_morse_normal_form hf hcrit hH hn
+    exists_parametric_morse_normal_form hf hcrit hH
   have haUV : (a, (0 : E)) ∈ U ×ˢ V := ⟨haU, h0V⟩
   have hUV : IsOpen (U ×ˢ V) := hU.prod hV
   have hn' : 1 ≤ (n : ℕ∞ω) :=
