@@ -9,8 +9,11 @@ public import Mathlib.LinearAlgebra.SymplecticGroup
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.LinearAlgebra.Matrix.IdealEntries
 
--- Non-public: `noncomm_ring` normalises the conjugation identities below, and the Schur complement
--- evaluates `det J`, but no statement mentions either.
+-- Non-public: `noncomm_ring` normalises the conjugation identities below, the Schur complement
+-- evaluates `det J`, `Fintype.equivFin` supplies an auxiliary linear order, and
+-- `Matrix.subTransposeEqEquiv` builds the correction in the proof of
+-- `exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero`, but no statement mentions any of
+-- them.
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import Mathlib.Data.Fintype.EquivFin
 import TauCeti.LinearAlgebra.Matrix.Symmetric
@@ -59,7 +62,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   equation `E + X * J + J * Xᵀ = 0` is solvable with entries of `X` in an ideal `I` for every
   alternating `E` with entries in `I`, without dividing by two.
 * `Matrix.one_add_mul_mem_symplecticGroup`: over a square-zero ideal `I`, correcting `M` by
-  `1 + X` with `E + X * J + J * Xᵀ = 0` gives a symplectic matrix when `M * J * Mᵀ - J = E`.
+  `1 + X`, where `X` has entries in `I` and `E + X * J + J * Xᵀ = 0`, gives a symplectic matrix
+  when `M * J * Mᵀ - J = E`.
 * `SymplecticGroup.transpose_eq_J_conj_inv`: the transpose of a symplectic matrix is the
   `J`-conjugate of its inverse; `SymplecticGroup.mem_of_J_conj_eq_transpose` is its converse, a
   matrix whose `J`-conjugate is its inverse transpose is symplectic.
