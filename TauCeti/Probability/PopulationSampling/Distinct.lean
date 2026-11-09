@@ -23,10 +23,10 @@ The value space is arbitrary; the all-distinct event is explicitly assumed measu
 
 ## Main declarations
 
-* `sampleWithoutReplacement_injective_apply_eq`: the all-distinct event has mass one.
-* `sampleWithReplacement_injective_apply_eq`: its mass is the exact injective-selection ratio.
-* `iSup_sampleWithoutReplacement_sub_sampleWithReplacement_eq`: the exact excess.
-* `etvDist_sampleWithoutReplacement_sampleWithReplacement_eq`: twice that excess.
+* `sampleWithoutReplacement_dirac_injective_apply_eq_one`: the all-distinct event has mass one.
+* `sampleWithReplacement_dirac_injective_apply_eq`: its mass is the exact injective-selection ratio.
+* `iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq`: the exact excess.
+* `etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq`: twice that excess.
 
 ## References
 
@@ -57,7 +57,7 @@ theorem map_readPopulation_injective_apply_eq [Countable κ] {x : κ → α}
 
 /-- For distinct population values, sampling without replacement gives an all-distinct word
 with probability one, provided an injective selection exists. -/
-theorem sampleWithoutReplacement_injective_apply_eq [Finite κ] {x : κ → α}
+theorem sampleWithoutReplacement_dirac_injective_apply_eq_one [Finite κ] {x : κ → α}
     (hx : Function.Injective x) (e : ι ↪ κ)
     (hI : MeasurableSet {f : ι → α | Function.Injective f}) :
     sampleWithoutReplacement (ι := ι) (Measure.dirac x)
@@ -71,7 +71,7 @@ variable [Fintype ι] [Fintype κ]
 /-- For distinct population values, the with-replacement probability of an all-distinct word
 is the number of injective selections divided by the number of all selections. This also
 holds when no selection exists, in which case both sides are zero. -/
-theorem sampleWithReplacement_injective_apply_eq {x : κ → α}
+theorem sampleWithReplacement_dirac_injective_apply_eq {x : κ → α}
     (hx : Function.Injective x)
     (hI : MeasurableSet {f : ι → α | Function.Injective f}) :
     sampleWithReplacement (ι := ι) (Measure.dirac x) {f | Function.Injective f} =
@@ -82,7 +82,7 @@ theorem sampleWithReplacement_injective_apply_eq {x : κ → α}
 
 /-- The exact largest excess between sampling a distinct-valued population without and with
 replacement. The all-distinct event attains the supremum. -/
-theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_eq {x : κ → α}
+theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq {x : κ → α}
     (hx : Function.Injective x) (e : ι ↪ κ)
     (hI : MeasurableSet {f : ι → α | Function.Injective f}) :
     (⨆ (A : Set (ι → α)) (_ : MeasurableSet A),
@@ -96,8 +96,8 @@ theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_eq {x : κ → �
     simpa only [uniformOn_not_injective_apply_eq] using tsub_le_iff_left.mpr
       (sampleWithoutReplacement_le_sampleWithReplacement_add_collision
         (ρ := Measure.dirac x) hA)
-  · simpa only [sampleWithoutReplacement_injective_apply_eq hx e hI,
-      sampleWithReplacement_injective_apply_eq hx hI] using
+  · simpa only [sampleWithoutReplacement_dirac_injective_apply_eq_one hx e hI,
+      sampleWithReplacement_dirac_injective_apply_eq hx hI] using
       (le_iSup₂ (f := fun (A : Set (ι → α)) (_ : MeasurableSet A) =>
         sampleWithoutReplacement (Measure.dirac x) A -
           sampleWithReplacement (Measure.dirac x) A)
@@ -106,7 +106,7 @@ theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_eq {x : κ → �
 /-- For a distinct-valued population, Mathlib's total variation distance between the sampling
 laws is twice the exact collision probability. The embedding assumption also covers empty
 sample and population indices: both laws then have mass one and the distance is zero. -/
-theorem etvDist_sampleWithoutReplacement_sampleWithReplacement_eq {x : κ → α}
+theorem etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq {x : κ → α}
     (hx : Function.Injective x) (e : ι ↪ κ)
     (hI : MeasurableSet {f : ι → α | Function.Injective f}) :
     etvDist (sampleWithoutReplacement (ι := ι) (Measure.dirac x))
@@ -117,6 +117,6 @@ theorem etvDist_sampleWithoutReplacement_sampleWithReplacement_eq {x : κ → α
   let := isProbabilityMeasure_sampleWithoutReplacement (Measure.dirac x) e
   let := isProbabilityMeasure_sampleWithReplacement (ι := ι) (Measure.dirac x)
   rw [etvDist_eq_two_mul_iSup_sub (by rw [measure_univ, measure_univ]),
-    iSup_sampleWithoutReplacement_sub_sampleWithReplacement_eq hx e hI]
+    iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq hx e hI]
 
 end TauCeti.Probability
