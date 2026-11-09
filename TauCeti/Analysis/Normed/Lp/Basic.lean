@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.LinearAlgebra.StdBasis
+import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
 # Coordinates on `lp`
@@ -23,11 +24,16 @@ its coordinates (`lp.norm_sum_single_sq`, and `lp.enorm_sum_single` for the exte
 follows that the operators `v ↦ (aᵢ v)ᵢ` from `F` to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to
 `F`, for finitely many scalars `aᵢ`, have norm at most `‖(aᵢ)‖_{ℓ²}`
 (`lp.norm_sum_single_comp_lsmul_le`, `lp.norm_sum_lsmul_comp_evalCLM_le`).
+
+For `p ≠ ∞` the coordinate vectors span a dense subspace, so a uniformly bounded family of
+operators on `lp E p` that converges on every `single i x` converges at every vector
+(`lp.tendsto_apply_of_tendsto_apply_single`).
 -/
 
 public section
 
-open scoped ENNReal
+open scoped ENNReal Topology
+open Filter
 
 namespace lp
 
@@ -159,5 +165,30 @@ theorem norm_sum_lsmul_comp_evalCLM_le (s : Finset ι) (a : ι → R) :
     _ ≤ ‖∑ i ∈ s, lp.single 2 i (a i)‖ * ‖w‖ := by rw [ha]; gcongr
 
 end Operator
+
+section Density
+
+variable {ι 𝕜 : Type*} {E : ι → Type*} [NontriviallyNormedField 𝕜]
+  [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- **Bounded convergence on coordinate vectors.** For `p ≠ ∞`, a uniformly bounded family of
+operators on `lp E p` that converges at every coordinate vector `single i x` converges at every
+vector. -/
+theorem tendsto_apply_of_tendsto_apply_single [DecidableEq ι] {Z : Type*}
+    [SeminormedAddCommGroup Z] [NormedSpace 𝕜 Z] (hp : p ≠ ∞) {α : Type*} {l : Filter α}
+    {f : α → lp E p →L[𝕜] Z} {g : lp E p →L[𝕜] Z} {C : ℝ} (hC : ∀ᶠ a in l, ‖f a‖ ≤ C)
+    (h : ∀ i (x : E i), Tendsto (fun a ↦ f a (lp.single p i x)) l (𝓝 (g (lp.single p i x))))
+    (x : lp E p) : Tendsto (fun a ↦ f a x) l (𝓝 (g x)) := by
+  let D : Submodule 𝕜 (lp E p) :=
+    { carrier := {y | Tendsto (fun a ↦ f a y) l (𝓝 (g y))}
+      add_mem' := fun hy hz ↦ by simpa only [Set.mem_ofPred_eq, map_add] using hy.add hz
+      zero_mem' := by simpa only [Set.mem_ofPred_eq, map_zero] using tendsto_const_nhds
+      smul_mem' := fun c y hy ↦ by simpa only [Set.mem_ofPred_eq, map_smul] using hy.const_smul c }
+  have hD : Dense (D : Set (lp E p)) := fun y ↦
+    mem_closure_of_tendsto (lp.hasSum_single hp y)
+      (Eventually.of_forall fun s ↦ D.sum_mem fun i _ ↦ h i (y i))
+  exact ContinuousLinearMap.tendsto_apply_of_dense hD hC (fun y hy ↦ hy) x
+
+end Density
 
 end lp
