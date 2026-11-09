@@ -264,12 +264,14 @@ theorem rotationZPow_apply {L₀ : Submodule ℝ E}
   (rfl)
 
 /-- The single half-turn is the half-turn `TauCeti.TotallyRealLoop.rotation`. -/
+@[simp]
 theorem rotationZPow_one {L₀ : Submodule ℝ E}
     (hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀) :
     rotationZPow hL₀ 1 = rotation hL₀ :=
   ext fun t => by simp
 
 /-- Zero half-turns give the constant loop. -/
+@[simp]
 theorem rotationZPow_zero {L₀ : Submodule ℝ E}
     (hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀) :
     rotationZPow hL₀ 0 = const hL₀ :=

@@ -12,8 +12,9 @@ public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Prod
 # The boundary Maslov index on the disc
 
 Let `E` be a finite-dimensional complex normed space. A bundle pair `(E, F)` over the closed unit
-disc `D` is a complex vector bundle over `D` together with a totally real subbundle `F` of its
-restriction to the boundary circle. Every complex bundle over `D` is trivial, and in a
+disc `D` is a complex vector bundle over `D` together with a maximal totally real subbundle `F`
+of its restriction to the boundary circle, that is, a totally real subbundle whose real rank is
+the complex rank of the bundle. Every complex bundle over `D` is trivial, and in a
 trivialization `D × E` the subbundle `F` is a loop `Λ` of maximal totally real subspaces of `E`
 (`TauCeti.TotallyRealLoop`), parametrized by `t ↦ e^{2πit}`. The boundary Maslov index `μ(E, F)`
 is the Maslov index `μ(Λ)` of that loop (McDuff--Salamon, Theorem C.3.6). This file proves the
@@ -44,12 +45,9 @@ not treated here.
 
 ## Main declarations
 
-* `TauCeti.TotallyRealLoop.maslovIndex_map_eq_of_homotopy`: moving a loop by homotopic loops of
-  automorphisms gives loops with the same Maslov index.
 * `TauCeti.TotallyRealLoop.maslovIndex_map_of_continuousOn_closedBall`: moving a loop by the
   boundary values of a continuous map from the closed disc to the automorphisms preserves the
   Maslov index.
-* `TauCeti.isMaximalTotallyReal_span_one`: the real line `ℝ ⊆ ℂ` is maximal totally real.
 
 ## References
 
@@ -65,76 +63,10 @@ open scoped unitInterval
 
 namespace TauCeti
 
-/-- The real line `ℝ ⊆ ℂ`, the real span of `1`, is a maximal totally real subspace of `ℂ`: every
-complex number is uniquely `a + i b` with `a, b` real. -/
-theorem isMaximalTotallyReal_span_one :
-    IsMaximalTotallyReal ((LinearMap.lsmul ℂ ℂ Complex.I).restrictScalars ℝ)
-      (Submodule.span ℝ {(1 : ℂ)}) := by
-  have hmap : (Submodule.span ℝ {(1 : ℂ)}).map
-      ((LinearMap.lsmul ℂ ℂ Complex.I).restrictScalars ℝ) = Submodule.span ℝ {Complex.I} := by
-    rw [Submodule.map_span, Set.image_singleton]
-    simp
-  rw [isMaximalTotallyReal_iff, hmap]
-  constructor
-  · rw [Submodule.disjoint_def]
-    intro z hz hz'
-    obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.1 hz
-    obtain ⟨b, hb⟩ := Submodule.mem_span_singleton.1 hz'
-    have := congrArg Complex.re hb
-    simp only [Complex.real_smul, Complex.mul_re, Complex.ofReal_re, Complex.I_re, mul_zero,
-      Complex.ofReal_im, Complex.I_im, mul_one, sub_self] at this
-    simp [← this]
-  · rw [codisjoint_iff, eq_top_iff]
-    intro z _
-    refine Submodule.mem_sup.2 ⟨z.re • 1,
-      Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _),
-      z.im • Complex.I, Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _), ?_⟩
-    apply Complex.ext <;> simp
-
 namespace TotallyRealLoop
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
   (Λ : TotallyRealLoop E)
-
-/-- The normalized determinant `det A / ‖det A‖` of a complex-linear automorphism, a point of the
-circle. -/
-private noncomputable def normalizedDet (A : E ≃L[ℂ] E) : Circle :=
-  ⟨LinearMap.det (A.toLinearEquiv : E →ₗ[ℂ] E) / ‖LinearMap.det (A.toLinearEquiv : E →ₗ[ℂ] E)‖,
-    mem_sphere_zero_iff_norm.2 (by simp [A.toLinearEquiv.isUnit_det'.ne_zero])⟩
-
-omit [FiniteDimensional ℂ E] in
-private theorem det_eq_norm_mul_normalizedDet (A : E ≃L[ℂ] E) :
-    LinearMap.det (A.toLinearEquiv : E →ₗ[ℂ] E) =
-      ‖LinearMap.det (A.toLinearEquiv : E →ₗ[ℂ] E)‖ * (normalizedDet A : ℂ) := by
-  have hd : LinearMap.det (A.toLinearEquiv : E →ₗ[ℂ] E) ≠ 0 := A.toLinearEquiv.isUnit_det'.ne_zero
-  rw [normalizedDet, mul_div_cancel₀ _ (by simpa using hd)]
-
-omit [FiniteDimensional ℂ E] in
-private theorem continuous_normalizedDet {X : Type*} [TopologicalSpace X] {A : X → E ≃L[ℂ] E}
-    (hA : Continuous fun x => (A x : E →L[ℂ] E)) : Continuous fun x => normalizedDet (A x) := by
-  have hd : Continuous fun x => LinearMap.det ((A x).toLinearEquiv : E →ₗ[ℂ] E) :=
-    ContinuousLinearMap.continuous_det.comp hA
-  refine Continuous.subtype_mk (hd.div (Complex.continuous_ofReal.comp hd.norm) fun x => ?_) _
-  simpa using (A x).toLinearEquiv.isUnit_det'.ne_zero
-
-/-- **Homotopy invariance in the frame.** If `B` is a free homotopy of loops of complex-linear
-automorphisms, `B (s, 0) = B (s, 1)` for every `s`, then moving a loop of maximal totally real
-subspaces by `B (0, ·)` or by `B (1, ·)` gives loops with the same Maslov index. -/
-theorem maslovIndex_map_eq_of_homotopy (B : I × I → E ≃L[ℂ] E)
-    (hB : Continuous fun p => (B p : E →L[ℂ] E)) (hB01 : ∀ s, B (s, 0) = B (s, 1)) :
-    (Λ.map (fun t => B (0, t)) (hB.comp (Continuous.prodMk_right 0)) (hB01 0)).maslovIndex =
-      (Λ.map (fun t => B (1, t)) (hB.comp (Continuous.prodMk_right 1)) (hB01 1)).maslovIndex := by
-  -- The free homotopy of loops of normalized determinants.
-  let F : C(I × I, Circle) := ⟨fun p => normalizedDet (B p), continuous_normalizedDet hB⟩
-  let γ (s : I) : Path (F (s, 0)) (F (s, 0)) :=
-    { toFun := fun t => F (s, t)
-      continuous_toFun := by fun_prop
-      source' := rfl
-      target' := by simp only [F, ContinuousMap.coe_mk, hB01 s] }
-  rw [Λ.maslovIndex_map _ _ _ (γ 0) fun t => det_eq_norm_mul_normalizedDet _,
-    Λ.maslovIndex_map _ _ _ (γ 1) fun t => det_eq_norm_mul_normalizedDet _,
-    Circle.degree_eq_of_homotopy (γ 0) (γ 1) F (fun _ => rfl) (fun _ => rfl)
-      fun s => (γ s).target'.symm]
 
 /-- **Independence of the trivialization on the disc.** Let `B` be a continuous map from the closed
 unit disc to the complex-linear automorphisms of `E`, and `b t = B (e^{2πit})` its loop of
