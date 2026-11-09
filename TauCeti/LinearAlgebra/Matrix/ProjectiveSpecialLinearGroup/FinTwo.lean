@@ -303,7 +303,7 @@ theorem isParabolic_upperRightHom_iff {x : R} : IsParabolic (upperRightHom x) �
   · simp only [GeneralLinearGroup.IsParabolic, SpecialLinearGroup.coe_GL_coe_matrix,
       Matrix.IsParabolic, Matrix.discr_fin_two, Matrix.trace_fin_two, Matrix.det_fin_two,
       SpecialLinearGroup.transvection_coe]
-    refine ⟨?_, by simp; ring⟩
+    refine ⟨?_, by norm_num [Matrix.single_apply]⟩
     exact fun hs ↦ hx (by simpa using (TauCeti.mem_range_scalar_fin_two_iff.1 hs).1)
 
 /-- If `T` represents `upperRightHom x`, that is `T = ±!![1, x; 0, 1]`, then
