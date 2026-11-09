@@ -27,7 +27,7 @@ into a real Euclidean space, centred at a point, pull back to curves through tha
 ## Main results
 
 * `PartialDiffeomorph.exists_curve_single_axis`: pulling a coordinate axis back through a
-  partial diffeomorphism into `EuclideanSpace ℝ ι` gives a curve through the centre point, smooth
+  partial diffeomorphism into `EuclideanSpace ℝ ι` gives a curve through the centre point, `C^n`
   near `0`.
 -/
 
@@ -70,16 +70,16 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- Pulling a coordinate axis of a `C^∞` partial diffeomorphism `ψ` into `EuclideanSpace ℝ ι`
-with `ψ x = 0` back through the inverse chart gives a curve through `x`, smooth near the parameter
+/-- Pulling a coordinate axis of a `C^n` partial diffeomorphism `ψ` into `EuclideanSpace ℝ ι`
+with `ψ x = 0` back through the inverse chart gives a curve through `x`, `C^n` near the parameter
 `0`, which at every parameter near `0` lies in the chart source and maps to the point of the axis
 with that coordinate. -/
 theorem exists_curve_single_axis {x : M}
-    (ψ : PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ ι) M (EuclideanSpace ℝ ι) ∞)
+    (ψ : PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ ι) M (EuclideanSpace ℝ ι) n)
     (hxψ : x ∈ ψ.source) (hψx : ψ x = 0) (i : ι) :
-    ∃ γ : ℝ → M, (∀ᶠ t in 𝓝 0, ContMDiffAt 𝓘(ℝ) I ∞ γ t) ∧ γ 0 = x ∧
+    ∃ γ : ℝ → M, (∀ᶠ t in 𝓝 0, ContMDiffAt 𝓘(ℝ) I n γ t) ∧ γ 0 = x ∧
       ∀ᶠ t in 𝓝 0, γ t ∈ ψ.source ∧ ψ (γ t) = EuclideanSpace.single i t := by
-  have haxis : ContDiff ℝ ∞ fun t : ℝ ↦ EuclideanSpace.single i t := by
+  have haxis : ContDiff ℝ n fun t : ℝ ↦ EuclideanSpace.single i t := by
     rw [contDiff_piLp]
     intro j
     simp only [PiLp.single_apply]
@@ -93,7 +93,7 @@ theorem exists_curve_single_axis {x : M}
     simpa only [haxis0] using ψ.open_target.mem_nhds hzero
   refine ⟨fun t ↦ ψ.toOpenPartialHomeomorph.symm (EuclideanSpace.single i t),
     hTarget.mono fun t ht ↦ ?_, ?_, hTarget.mono fun t ht ↦ ⟨ψ.map_target ht, ψ.right_inv ht⟩⟩
-  · -- The inverse chart is smooth on its open target.
+  · -- The inverse chart is `C^n` on its open target.
     exact (ψ.contMDiffOn_invFun.contMDiffAt (ψ.open_target.mem_nhds ht)).comp t
       haxis.contMDiff.contMDiffAt
   · simp only [haxis0]
