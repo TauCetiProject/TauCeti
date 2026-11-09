@@ -115,7 +115,7 @@ theorem Divisor.nsmul_different_eq_zsmul_conorm_of_pow_sub_self_eq :
   let _ := ArtinSchreier.isGalois hy hgen
   let _ : Algebra.IsIntegral F F' := Algebra.IsIntegral.of_finite F F'
   refine WeilDivisor.ext fun P' ↦ ?_
-  have hF' := Place.isFunctionField_of_place hF P'
+  have hF' := Place.isFunctionField_of_place hF.finite_extension P'
   rw [WeilDivisor.coeff_nsmul, Divisor.coeff_different, WeilDivisor.coeff_zsmul,
     Divisor.coeff_conorm, WeilDivisor.coeff_ofFinsetWithMultiplicity]
   by_cases hP : P'.restrict k F ∈ S

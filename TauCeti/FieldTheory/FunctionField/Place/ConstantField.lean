@@ -48,16 +48,14 @@ theorem isIntegrallyClosedIn_of_degree_eq_one (P : Place k F) (hP : P.degree = 1
   rw [P.valuation_eq_one_of_isAlgebraic halg hne] at hc
   exact lt_irrefl _ hc
 
-universe u u' v v'
+universe u u' v'
 
-/-- If a finite extension `F'` of a function field `F / k` has a place over `k'`, then it is a
-function field over `k'`: the existence of a place forces `k'` to be algebraic over `k`. -/
-theorem isFunctionField_of_place {k : Type u} {k' : Type u'} {F : Type v} {F' : Type v'}
-    [Field k] [Field k'] [Field F] [Field F'] [Algebra k k'] [Algebra k F] [Algebra k' F']
-    [Algebra F F'] [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F']
-    [FiniteDimensional F F'] (hF : IsFunctionField k F) (P' : Place k' F') :
+/-- If `F' / k` is a function field and `F'` has a place over `k'`, then it is a function field
+over `k'`: the existence of a place forces `k'` to be algebraic over `k`. -/
+theorem isFunctionField_of_place {k : Type u} {k' : Type u'} {F' : Type v'}
+    [Field k] [Field k'] [Field F'] [Algebra k k'] [Algebra k F'] [Algebra k' F']
+    [IsScalarTower k k' F'] (hFk : IsFunctionField k F') (P' : Place k' F') :
     IsFunctionField k' F' := by
-  have hFk : IsFunctionField k F' := hF.finite_extension
   have hnot : ¬ Algebra.IsAlgebraic k' F' := fun h ↦ by
     obtain ⟨t, ht⟩ := P'.ord_surjective 1
     exact P'.transcendental_of_ord_ne_zero (by rw [ht]; norm_num) (h.isAlgebraic t)
