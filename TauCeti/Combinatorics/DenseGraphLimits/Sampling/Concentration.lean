@@ -129,7 +129,7 @@ If `2q² ≤ εn`, then under the graphon sampling law `G(n, W)`,
 The side condition is eventual in `n` for fixed `F` and positive `ε`; it absorbs the collision
 bias between the mean ordinary homomorphism density and the graphon density. -/
 theorem sampleGraph_homDensityFin_concentration {V : Type*} [Fintype V]
-    (F : SimpleGraph V) [DecidableRel F.Adj] (W : Graphon Ω μ) {n : ℕ} {ε : ℝ} (_hε : 0 < ε)
+    (F : SimpleGraph V) [DecidableRel F.Adj] (W : Graphon Ω μ) {n : ℕ} {ε : ℝ}
     (hn : 2 * (Fintype.card V : ℝ) ^ 2 ≤ ε * n) :
     ((sampleGraph W n) {G | ε ≤ |homDensityFin F G - homDensity F W|}).toReal ≤
       2 * Real.exp (-(ε ^ 2 * n) / (2 * (Fintype.card V : ℝ) ^ 2)) := by
