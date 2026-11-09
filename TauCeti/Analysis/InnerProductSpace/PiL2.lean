@@ -453,7 +453,7 @@ theorem sumComplEquivProd_symm_finCastLEEquiv (hm : m ≤ n) (w : EuclideanSpace
   split_ifs with hj
   · simpa using (piLpExtendByZero_castLEEmb_apply_castLE hm w ⟨j, hj⟩).symm
   · rw [piLpExtendByZero_castLEEmb_apply_of_le hm w (not_lt.1 hj)]
-    rfl
+    simp
 
 /-- Read through `Fin.castLEOrderIso`, the first factor of the splitting along `j < m` is the
 first `m` coordinates. -/
