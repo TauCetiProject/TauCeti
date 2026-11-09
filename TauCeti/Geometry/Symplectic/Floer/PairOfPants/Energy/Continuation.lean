@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Continuation
-import TauCeti.Geometry.Symplectic.Floer.Manifold
 
 /-!
 # The energy of pairs of pants with continuation necks
