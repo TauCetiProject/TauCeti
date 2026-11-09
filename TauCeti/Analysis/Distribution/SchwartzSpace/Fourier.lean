@@ -178,13 +178,9 @@ theorem exists_seminorm_fourier_le_sum_seminorm (k : ℕ) :
       SchwartzMap.seminorm ℂ k 0 (𝓕 g) ≤ c * ∑ i ∈ s, SchwartzMap.seminorm ℂ i.1 i.2 g := by
   have hq : Continuous ((SchwartzMap.seminorm ℂ k 0).comp (fourierCLM ℂ 𝓢(E, F)).toLinearMap) :=
     ((schwartz_withSeminorms ℂ _ _).continuous_seminorm (k, 0)).comp (fourierCLM ℂ _).continuous
-  obtain ⟨s, c, -, hc⟩ := Seminorm.bound_of_continuous (schwartz_withSeminorms ℂ _ _) _ hq
-  refine ⟨s, c, c.2, fun g ↦ (hc g).trans ?_⟩
-  simp only [_root_.smul_apply, NNReal.smul_def, smul_eq_mul]
-  gcongr
-  exact Seminorm.finset_sup_apply_le (Finset.sum_nonneg fun i _ ↦ apply_nonneg _ _)
-    fun i hi ↦ Finset.single_le_sum (f := fun i : ℕ × ℕ ↦ SchwartzMap.seminorm ℂ i.1 i.2 g)
-      (fun j _ ↦ apply_nonneg _ _) hi
+  obtain ⟨s, c, -, hc⟩ := Seminorm.bound_sum_of_continuous (schwartz_withSeminorms ℂ _ _) _ hq
+  refine ⟨s, c, c.2, fun g ↦ (hc g).trans_eq ?_⟩
+  simp [schwartzSeminormFamily, NNReal.smul_def]
 
 end normed
 
