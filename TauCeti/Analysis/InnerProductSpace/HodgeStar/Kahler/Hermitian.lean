@@ -60,8 +60,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `twoVectorContraction_apply_apply_of_lieMap_eq_zero`, `hermitianForm_apply_of_lieMap_eq_zero`:
   for an orthogonal `J` and a `J`-invariant `η`, the contraction by `η` commutes with `J` and
   `B(v, w) = η(v, J w)`.
-* `hermitianForm_lieMap`: the anti-`J`-invariant part `D_J ξ` of a two-form has zero Hermitian
-  part.
+* `hermitianForm_lieMap`: every anti-`J`-invariant form `D_J ξ` has zero Hermitian part.
 * `abs_hermitianForm_apply_self_le_of_inner_kahlerForm_eq_zero`: `|B(v, v)| ≤ (‖η‖ / √2) ‖v‖²`
   for `η` orthogonal to `ω`.
 * `inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg`: `ω` is orthogonal to every anti-self-dual form.
@@ -168,7 +167,7 @@ private theorem lieMap_ιMulti_add_lieMap_ιMulti (J : AlmostComplexStructure V)
     apply_apply, inner_neg_left]
   ring
 
-/-- **The anti-`J`-invariant part of a two-form has zero Hermitian part**: `B(D_J ξ) = 0` for an
+/-- **Every anti-`J`-invariant form `D_J ξ` has zero Hermitian part**: `B(D_J ξ) = 0` for an
 orthogonal `J`, because `D_J` is skew-adjoint. -/
 theorem hermitianForm_lieMap {J : AlmostComplexStructure V} (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
     (ξ : ⋀[ℝ]^2 V) : J.hermitianForm (lieMap 2 J.toLinearMap ξ) = 0 := by
@@ -268,11 +267,6 @@ anti-`J`-invariant self-dual part of `F` does not contribute. -/
 theorem hermitianForm_apply_eq (F : ⋀[ℝ]^2 V) (v w : V) :
     J.hermitianForm F v w = ⟪J.kahlerForm, F⟫ / 2 * ⟪v, w⟫ +
       ⟪(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F), ιMulti ℝ 2 ![v, J w]⟫ := by
-  -- `⟪ω, ⋆F⟫ = ⟪⋆ω, F⟫ = ⟪ω, F⟫`, so the self-dual part of `F` has the same `ω`-component.
-  have hω : ⟪J.kahlerForm, o.hodgeStar hkl F⟫ = ⟪J.kahlerForm, F⟫ := by
-    have h := o.isSymmetric_hodgeStar_of_even even_two hkl J.kahlerForm F
-    simp only [LinearEquiv.coe_coe] at h
-    rw [← h, hodgeStar_kahlerForm h₀ h₂ hkl he]
   have hF : F = (2⁻¹ : ℝ) • (F + o.hodgeStar hkl F) + (2⁻¹ : ℝ) • (F - o.hodgeStar hkl F) := by
     module
   conv_lhs => rw [hF]
@@ -281,7 +275,7 @@ theorem hermitianForm_apply_eq (F : ⋀[ℝ]^2 V) (v w : V) :
       (o.hodgeStar_smul_add_hodgeStar even_two hkl F),
     hermitianForm_apply_of_hodgeStar_eq_neg h₀ h₂ hkl he
       (o.hodgeStar_smul_sub_hodgeStar even_two hkl F),
-    real_inner_smul_right, inner_add_right, hω]
+    real_inner_smul_right, inner_add_right, inner_kahlerForm_hodgeStar h₀ h₂ hkl he]
   ring
 
 /-- For anti-self-dual `η`, `|η(v, J v)| ≤ (‖η‖ / √2) ‖v‖²`, since `η` is orthogonal to `ω`. -/

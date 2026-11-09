@@ -66,6 +66,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `inner_apply_apply_of_orthonormalBasis`: a `J` with a unitary frame is orthogonal.
 * `kahlerForm_eq_ιMulti_add_ιMulti`: `ω = e₀ ∧ e₁ + e₂ ∧ e₃` in a unitary frame.
 * `hodgeStar_kahlerForm`: `⋆ω = ω` for the complex orientation.
+* `inner_kahlerForm_hodgeStar`: `⟪ω, ⋆F⟫ = ⟪ω, F⟫`.
 * `inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg`: `ω` is orthogonal to anti-self-dual forms.
 * `lieMap_lieMap_of_hodgeStar_eq_self`:
   `D_J² η = 2 ⟪ω, η⟫ ω - 4 η` for self-dual `η`.
@@ -198,7 +199,7 @@ theorem lieMap_kahlerForm :
   rw [inner_lieMap_left (inner_apply_left hJ), lieMap_two_apply_ιMulti]
   simp [inner_add_right, inner_kahlerForm_ιMulti hJ, hJ]
 
-/-- The anti-`J`-invariant part of a two-form, read on pairs of vectors:
+/-- `D_J² η` (minus four times the anti-`J`-invariant part of `η`), read on pairs of vectors:
 `⟪D_J² η, u ∧ w⟫ = 2 (η(J u, J w) - η(u, w))` for an orthogonal `J`. -/
 theorem inner_lieMap_lieMap_ιMulti (η : ⋀[ℝ]^2 V) (u w : V) :
     ⟪lieMap 2 J.toLinearMap (lieMap 2 J.toLinearMap η), ιMulti ℝ 2 ![u, w]⟫ =
@@ -303,6 +304,13 @@ theorem hodgeStar_kahlerForm : o.hodgeStar hkl J.kahlerForm = J.kahlerForm := by
   simp [o.volumeForm_robust e he, Basis.det_apply, Matrix.det_fin_four, Basis.toMatrix_apply,
     ← e.repr_apply_apply, OrthonormalBasis.repr_self]
   ring
+
+include he h₀ h₂ in
+/-- **The Hodge star preserves the `ω`-component** of a two-form, `⟪ω, ⋆F⟫ = ⟪ω, F⟫`, since `ω`
+is self-dual for the complex orientation. -/
+theorem inner_kahlerForm_hodgeStar (F : ⋀[ℝ]^2 V) :
+    ⟪J.kahlerForm, o.hodgeStar hkl F⟫ = ⟪J.kahlerForm, F⟫ :=
+  o.inner_hodgeStar_right_of_hodgeStar_eq_self even_two hkl (hodgeStar_kahlerForm h₀ h₂ hkl he) F
 
 include he h₀ h₂ in
 /-- **The Kähler form is orthogonal to the anti-self-dual forms**: `⟪ω, μ⟫ = 0` when `⋆μ = -μ`,

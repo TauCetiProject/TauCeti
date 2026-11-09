@@ -323,21 +323,15 @@ variable {e : OrthonormalBasis (Fin 4) ℝ V} {J : AlmostComplexStructure V}
   (he : e.toBasis.orientation = o)
 include h₀ h₂ he
 
-/-- A two-form `F` is nonnegative on complex lines exactly when `‖(F - ⋆F) / 2‖ ≤ √2 ⟪ω, F⟫ / 2`:
-the case `C = 0` of `forall_le_hermitianForm_apply_self_iff`. -/
-private theorem forall_inner_ιMulti_nonneg_iff (F : ⋀[ℝ]^2 V) :
-    (∀ v, 0 ≤ ⟪F, ιMulti ℝ 2 ![v, J v]⟫) ↔
-      ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ ≤ √2 * (⟪J.kahlerForm, F⟫ / 2) := by
-  rw [← add_zero (⟪J.kahlerForm, F⟫ / 2), ← forall_le_hermitianForm_apply_self_iff h₀ h₂ hkl he]
-  simp only [hermitianForm_apply_self, neg_zero, zero_mul]
-
 /-- **The positive cone in dimension four is a round cone**: a two-form `η` is a positive
 `(1,1)`-form exactly when it is `J`-invariant and its anti-self-dual part is bounded by its
 `ω`-component, `‖(η - ⋆η) / 2‖ ≤ √2 ⟪ω, η⟫ / 2`. -/
 theorem mem_positiveCone_iff_norm_smul_sub_hodgeStar_le {η : ⋀[ℝ]^2 V} :
     η ∈ J.positiveCone ↔ lieMap 2 J.toLinearMap η = 0 ∧
       ‖(2⁻¹ : ℝ) • (η - o.hodgeStar hkl η)‖ ≤ √2 * (⟪J.kahlerForm, η⟫ / 2) := by
-  rw [mem_positiveCone, forall_inner_ιMulti_nonneg_iff h₀ h₂ hkl he]
+  rw [mem_positiveCone, ← add_zero (⟪J.kahlerForm, η⟫ / 2),
+    ← forall_le_hermitianForm_apply_self_iff h₀ h₂ hkl he]
+  simp only [hermitianForm_apply_self, neg_zero, zero_mul]
 
 /-- **The Hodge star preserves the cone of positive `(1,1)`-forms.** A positive `(1,1)`-form is
 `c ω + κ⁻` with `κ⁻` anti-self-dual and `‖κ⁻‖ ≤ √2 c`, and the star only changes the sign of
@@ -345,8 +339,6 @@ theorem mem_positiveCone_iff_norm_smul_sub_hodgeStar_le {η : ⋀[ℝ]^2 V} :
 theorem hodgeStar_mem_positiveCone_iff {η : ⋀[ℝ]^2 V} :
     o.hodgeStar hkl η ∈ J.positiveCone ↔ η ∈ J.positiveCone := by
   have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
-  have hω (F : ⋀[ℝ]^2 V) : ⟪J.kahlerForm, o.hodgeStar hkl F⟫ = ⟪J.kahlerForm, F⟫ :=
-    o.inner_hodgeStar_right_of_hodgeStar_eq_self even_two hkl (hodgeStar_kahlerForm h₀ h₂ hkl he) F
   have hasd (F : ⋀[ℝ]^2 V) :
       (2⁻¹ : ℝ) • (o.hodgeStar hkl F - o.hodgeStar hkl (o.hodgeStar hkl F)) =
         -((2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)) := by
@@ -358,7 +350,7 @@ theorem hodgeStar_mem_positiveCone_iff {η : ⋀[ℝ]^2 V} :
   have hdir (F : ⋀[ℝ]^2 V) (hF : F ∈ J.positiveCone) : o.hodgeStar hkl F ∈ J.positiveCone := by
     rw [mem_positiveCone_iff_norm_smul_sub_hodgeStar_le h₀ h₂ hkl he] at hF ⊢
     refine ⟨hD F hF.1, ?_⟩
-    rw [hasd, norm_neg, hω]
+    rw [hasd, norm_neg, inner_kahlerForm_hodgeStar h₀ h₂ hkl he]
     exact hF.2
   refine ⟨fun h ↦ ?_, hdir η⟩
   simpa only [o.hodgeStar_hodgeStar_of_even even_two] using hdir _ h
@@ -367,8 +359,6 @@ theorem hodgeStar_mem_positiveCone_iff {η : ⋀[ℝ]^2 V} :
 theorem infDist_hodgeStar_positiveCone (η : ⋀[ℝ]^2 V) :
     infDist (o.hodgeStar hkl η) (J.positiveCone : Set (⋀[ℝ]^2 V)) =
       infDist η (J.positiveCone : Set (⋀[ℝ]^2 V)) := by
-  have hiso : Isometry (o.hodgeStar hkl) :=
-    AddMonoidHomClass.isometry_of_norm _ (o.norm_hodgeStar hkl)
   have himage : o.hodgeStar hkl '' (J.positiveCone : Set (⋀[ℝ]^2 V)) = J.positiveCone := by
     ext F
     refine ⟨?_, fun hF ↦ ⟨o.hodgeStar hkl F, ?_, o.hodgeStar_hodgeStar_of_even even_two hkl F⟩⟩
@@ -376,8 +366,9 @@ theorem infDist_hodgeStar_positiveCone (η : ⋀[ℝ]^2 V) :
       exact (hodgeStar_mem_positiveCone_iff h₀ h₂ hkl he).2 hG
     · rw [SetLike.mem_coe, hodgeStar_mem_positiveCone_iff h₀ h₂ hkl he]
       exact hF
-  conv_lhs => rw [← himage]
-  exact infDist_image hiso
+  have hiso : ⇑(o.hodgeStarIsometry hkl) = o.hodgeStar hkl := funext (o.hodgeStarIsometry_apply hkl)
+  conv_lhs => rw [← himage, ← hiso]
+  exact infDist_image (o.hodgeStarIsometry hkl).isometry
 
 end Frame
 
