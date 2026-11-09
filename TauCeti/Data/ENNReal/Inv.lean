@@ -27,6 +27,8 @@ plus half of itself is at most `2 b`.
 * `ENNReal.toNNReal_one_sub_div_pos`: `0 < (1 - a / b).toNNReal` for `a < b`.
 * `ENNReal.exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one`: for `r > 1` and `n > 0` with
   `n (2 - r) < 2 r`, a finite exponent `t ≥ 2` with `1/2 - 1/t < 1/n` and `1/r + 1/t ≤ 1`.
+* `ENNReal.nonneg_and_le_one_of_inv_sub_inv_eq`: the gap `1/p - 1/q` between exponents
+  `1 ≤ p ≤ q < ∞` lies in `[0, 1]`.
 * `ENNReal.le_mul_two_of_le_add_div_two`: the absorption step `a ≤ b + a / 2 → a ≤ 2 b` for
   finite `a`, as used in elliptic estimates.
 -/
@@ -47,6 +49,16 @@ theorem toReal_one_sub_div {a b : ℝ≥0∞} (hab : a ≤ b) :
 theorem toNNReal_one_sub_div_pos {a b : ℝ≥0∞} (hab : a < b) : 0 < (1 - a / b).toNNReal :=
   toNNReal_pos (tsub_pos_of_lt (div_lt_of_lt_mul (by simpa using hab))).ne'
     (sub_ne_top one_ne_top)
+
+/-- The gap `δ = 1/p - 1/q` between exponents `1 ≤ p ≤ q < ∞` lies in `[0, 1]`. -/
+theorem nonneg_and_le_one_of_inv_sub_inv_eq {p : ℝ≥0∞} (hp1 : 1 ≤ p) {q : ℝ≥0} (hpq : p ≤ q)
+    {δ : ℝ} (hδ : p.toReal⁻¹ - (q : ℝ)⁻¹ = δ) : 0 ≤ δ ∧ δ ≤ 1 := by
+  have hp1' : 1 ≤ p.toReal := by simpa using toReal_mono (ne_top_of_le_ne_top coe_ne_top hpq) hp1
+  have hpq' : p.toReal ≤ q := by simpa using toReal_mono coe_ne_top hpq
+  have hq : (0 : ℝ) ≤ (q : ℝ)⁻¹ := by positivity
+  have hp1'' : p.toReal⁻¹ ≤ 1 := inv_le_one_of_one_le₀ hp1'
+  subst hδ
+  exact ⟨sub_nonneg.2 (inv_anti₀ (by linarith) hpq'), by linarith⟩
 
 /-- **Absorption**: a finite quantity bounded by `b` plus half of itself is at most `2 b`. -/
 theorem le_mul_two_of_le_add_div_two {a b : ℝ≥0∞} (ha : a ≠ ∞) (h : a ≤ b + a / 2) :

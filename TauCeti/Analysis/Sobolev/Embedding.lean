@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
-import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+import TauCeti.Analysis.Sobolev.W1p.Restriction
 
 /-!
 # The Sobolev embedding `W^{1,p}_0(Ω) ↪ L^{p⋆}(Ω)`
@@ -170,33 +170,15 @@ omit [FiniteDimensional ℝ E] in
 /-- The jets whose value has `L^q` norm at most `C` times the `Lᵖ` norm of their gradient form a
 **closed** set, for any exponent `q` and constant `C`.
 
-Unlike the equal-exponent case, `u ↦ ‖u‖_q` is not continuous on `W^{1,p}(Ω)` when `q ≠ p`, so
-this is not a matter of composing continuous maps. It is instead the lower semicontinuity of
-`‖·‖_q`: convergence in `W^{1,p}(Ω)` forces convergence in measure of the values, an
-almost-everywhere convergent subsequence, and then Fatou's lemma. -/
+Unlike the equal-exponent case, `u ↦ ‖u‖_q` need not be continuous on `W^{1,p}(Ω)` when `q ≠ p`,
+so this is not a matter of composing continuous maps. It is instead the lower semicontinuity of
+`‖·‖_q`, the case of the centering `0` in `TauCeti.W1p.isClosed_setOf_eLpNorm_value_sub_le`. -/
 theorem W1p.isClosed_setOf_eLpNorm_value_le (q : ENNReal) (C : ℝ≥0) :
     IsClosed {u : W1p mu Omega p |
       eLpNorm (W1p.value u : E → ℝ) q (mu.restrict Omega) ≤ C * ‖W1p.gradient u‖ₑ} := by
-  refine IsSeqClosed.isClosed fun v u hv hvu => ?_
-  have hvalue : Tendsto (fun k => W1p.value (v k)) atTop (𝓝 (W1p.value u)) := by
-    simpa only [W1p.valueL_apply, Function.comp_def] using
-      ((map_continuous (W1p.valueL (mu := mu) (Omega := Omega) (p := p))).tendsto u).comp hvu
-  have hgradient : Tendsto (fun k => W1p.gradient (v k)) atTop (𝓝 (W1p.gradient u)) := by
-    simpa only [W1p.gradientL_apply, Function.comp_def] using
-      ((map_continuous (W1p.gradientL (mu := mu) (Omega := Omega) (p := p))).tendsto u).comp hvu
-  have hbound : Tendsto (fun k => (C : ℝ≥0∞) * ‖W1p.gradient (v k)‖ₑ) atTop
-      (𝓝 ((C : ℝ≥0∞) * ‖W1p.gradient u‖ₑ)) :=
-    ENNReal.Tendsto.const_mul ((continuous_enorm.tendsto _).comp hgradient)
-      (Or.inr ENNReal.coe_ne_top)
-  obtain ⟨ns, hns, hae⟩ :=
-    (tendstoInMeasure_of_tendsto_Lp hvalue).exists_seq_tendsto_ae
-  calc eLpNorm (W1p.value u : E → ℝ) q (mu.restrict Omega)
-      ≤ atTop.liminf fun i => eLpNorm (W1p.value (v (ns i)) : E → ℝ) q (mu.restrict Omega) :=
-        Lp.eLpNorm_lim_le_liminf_eLpNorm (fun _ => Lp.aestronglyMeasurable _) _
-          (Lp.aestronglyMeasurable _) hae
-    _ ≤ atTop.liminf fun i => (C : ℝ≥0∞) * ‖W1p.gradient (v (ns i))‖ₑ :=
-        liminf_le_liminf (.of_forall fun i => hv (ns i))
-    _ = (C : ℝ≥0∞) * ‖W1p.gradient u‖ₑ := (hbound.comp hns.tendsto_atTop).liminf_eq
+  simpa only [sub_zero] using
+    W1p.isClosed_setOf_eLpNorm_value_sub_le (mu := mu) (U := Omega) (p := p)
+      (continuous_const (y := (0 : ℝ))) q C
 
 /-- **Transfer of a Sobolev estimate to `W^{1,p}_0(Ω)`.** If every test function on `Ω` satisfies
 `‖φ‖_q ≤ C ‖Dφ‖_p`, then so does every `u ∈ W^{1,p}_0(Ω)`.

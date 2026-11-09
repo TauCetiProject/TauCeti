@@ -6,12 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Basic
-import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
-import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import TauCeti.Analysis.Convex.Exhaustion
 import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Integral.RieszPotential
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
@@ -50,8 +49,9 @@ to `L^q(Ω)` with the factor `μ(Ω) ^ (1/n - δ)`
 (`TauCeti.eLpNorm_setLIntegral_enorm_sub_rpow_mul_le`; Gilbarg–Trudinger, Lemmas 7.12 and 7.16).
 
 A Sobolev function is approximated by test functions only on a convex subdomain `U` whose closure
-is a compact subset of `Ω`. Because the two sides of the inequality live at different exponents,
-the inequality does not cut out a closed set by continuity; it does so by lower semicontinuity
+is a compact subset of `Ω`. Convergence in `W^{1,p}(U)` controls the values only in `Lᵖ`, which
+says nothing about their `L^q` norms when `q > p`, so the inequality is not shown to cut out a
+closed set by continuity; it does so by lower semicontinuity
 (`TauCeti.W1p.isClosed_setOf_eLpNorm_value_sub_setAverage_le`): convergence in `W^{1,p}(U)` gives
 an almost everywhere convergent subsequence of the values, the means converge, and Fatou's lemma
 `MeasureTheory.Lp.eLpNorm_lim_le_liminf_eLpNorm` passes the bound to the limit. The subdomains are
@@ -63,8 +63,6 @@ Poincaré–Wirtinger inequality.
 
 * `TauCeti.eLpNorm_sub_setAverage_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_convex`: the
   inequality for `C¹` functions on a bounded convex open set.
-* `TauCeti.W1p.isClosed_setOf_eLpNorm_value_sub_setAverage_le`: inequalities of this shape cut
-  out closed subsets of `W^{1,p}(U)` when `S` has finite measure.
 * `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_mul_measure_rpow_mul_enorm_gradient_of_convex`:
   the inequality on `W^{1,p}(Ω)`.
 * `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_mul_rpow_mul_enorm_gradient_of_eq_ball`: the
@@ -161,59 +159,6 @@ section W1p
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega U : Opens E} {p : ℝ≥0∞} [Fact (1 ≤ p)] {S : Set E}
-
-omit [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [BorelSpace E] in
-/-- The gap `δ = 1/p - 1/q` between exponents `1 ≤ p ≤ q < ∞` lies in `[0, 1]`. -/
-private theorem nonneg_and_le_one_of_inv_sub_inv_eq (hp : p ≠ ∞) {q : ℝ≥0} (hpq : p ≤ q)
-    {δ : ℝ} (hδ : p.toReal⁻¹ - (q : ℝ)⁻¹ = δ) : 0 ≤ δ ∧ δ ≤ 1 := by
-  have hp1 : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hp (Fact.out : (1 : ℝ≥0∞) ≤ p)
-  have hpq' : p.toReal ≤ q := by simpa using ENNReal.toReal_mono ENNReal.coe_ne_top hpq
-  have hq : (0 : ℝ) ≤ (q : ℝ)⁻¹ := by positivity
-  have hp1' : p.toReal⁻¹ ≤ 1 := inv_le_one_of_one_le₀ hp1
-  subst hδ
-  exact ⟨sub_nonneg.2 (inv_anti₀ (by linarith) hpq'), by linarith⟩
-
-omit [FiniteDimensional ℝ E] in
-/-- **Lower semicontinuity of the deviation from a mean.** If `S ⊆ U` has finite measure, then
-for every exponent `q` and constant `C` the Sobolev functions `w ∈ W^{1,p}(U)` with
-`‖w - ⨍_S w‖_{L^q(U)} ≤ C ‖∇w‖_{Lᵖ(U)}` form a closed set. The deviation is not a continuous
-function of `w` when `q ≠ p`, but convergence in `W^{1,p}(U)` gives an almost everywhere
-convergent subsequence of the values, and Fatou's lemma applies. -/
-theorem W1p.isClosed_setOf_eLpNorm_value_sub_setAverage_le (hSU : S ⊆ (U : Set E))
-    (hSfin : mu S ≠ ∞) (q : ℝ≥0∞) (C : ℝ≥0) :
-    IsClosed {w : W1p mu U p |
-      eLpNorm (fun x ↦ W1p.value w x - ⨍ y in S, W1p.value w y ∂mu) q (mu.restrict U) ≤
-        C * ‖W1p.gradient w‖ₑ} := by
-  refine IsSeqClosed.isClosed fun v u hv hvu => ?_
-  have hvalue : Tendsto (fun k => W1p.value (v k)) atTop (𝓝 (W1p.value u)) := by
-    simpa only [W1p.valueL_apply, Function.comp_def] using
-      ((map_continuous (W1p.valueL (mu := mu) (Omega := U) (p := p))).tendsto u).comp hvu
-  have hgradient : Tendsto (fun k => W1p.gradient (v k)) atTop (𝓝 (W1p.gradient u)) := by
-    simpa only [W1p.gradientL_apply, Function.comp_def] using
-      ((map_continuous (W1p.gradientL (mu := mu) (Omega := U) (p := p))).tendsto u).comp hvu
-  have havg : Tendsto (fun k => ⨍ y in S, W1p.value (v k) y ∂mu) atTop
-      (𝓝 (⨍ y in S, W1p.value u y ∂mu)) :=
-    ((W1p.continuous_setAverage_value hSU hSfin).tendsto u).comp hvu
-  have hbound : Tendsto (fun k => (C : ℝ≥0∞) * ‖W1p.gradient (v k)‖ₑ) atTop
-      (𝓝 ((C : ℝ≥0∞) * ‖W1p.gradient u‖ₑ)) :=
-    ENNReal.Tendsto.const_mul ((continuous_enorm.tendsto _).comp hgradient)
-      (Or.inr ENNReal.coe_ne_top)
-  obtain ⟨ns, hns, hae⟩ := (tendstoInMeasure_of_tendsto_Lp hvalue).exists_seq_tendsto_ae
-  have hae' : ∀ᵐ x ∂mu.restrict U, Tendsto
-      (fun i => W1p.value (v (ns i)) x - ⨍ y in S, W1p.value (v (ns i)) y ∂mu) atTop
-      (𝓝 (W1p.value u x - ⨍ y in S, W1p.value u y ∂mu)) :=
-    hae.mono fun x hx => hx.sub (havg.comp hns.tendsto_atTop)
-  calc eLpNorm (fun x ↦ W1p.value u x - ⨍ y in S, W1p.value u y ∂mu) q (mu.restrict U)
-      ≤ atTop.liminf fun i => eLpNorm
-          (fun x ↦ W1p.value (v (ns i)) x - ⨍ y in S, W1p.value (v (ns i)) y ∂mu) q
-          (mu.restrict U) :=
-        Lp.eLpNorm_lim_le_liminf_eLpNorm
-          (fun _ => (Lp.aestronglyMeasurable _).sub aestronglyMeasurable_const) _
-          ((Lp.aestronglyMeasurable _).sub aestronglyMeasurable_const) hae'
-    _ ≤ atTop.liminf fun i => (C : ℝ≥0∞) * ‖W1p.gradient (v (ns i))‖ₑ :=
-        liminf_le_liminf (.of_forall fun i => hv (ns i))
-    _ = (C : ℝ≥0∞) * ‖W1p.gradient u‖ₑ := (hbound.comp hns.tendsto_atTop).liminf_eq
 
 /-- **The Sobolev–Poincaré inequality for a limit of test functions.** It holds on a bounded
 convex `U` for every Sobolev function on `U` that is a `W^{1,p}`-limit of restrictions of test
@@ -322,7 +267,8 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_mul_measure_rpow_mul_enorm_gradient_
   set A : ℝ := (finrank ℝ E : ℝ)⁻¹ * mu.real (ball 0 1) ^ (1 - (finrank ℝ E : ℝ)⁻¹) *
     ((1 - δ) / ((finrank ℝ E : ℝ)⁻¹ - δ)) ^ (1 - δ) with hAdef
   have hA : 0 ≤ A := by
-    have h1δ : 0 ≤ 1 - δ := by linarith [(nonneg_and_le_one_of_inv_sub_inv_eq hp hpq hδ).2]
+    have h1δ : 0 ≤ 1 - δ := by
+      linarith [(ENNReal.nonneg_and_le_one_of_inv_sub_inv_eq Fact.out hpq hδ).2]
     rw [hAdef]
     exact mul_nonneg (by positivity) (Real.rpow_nonneg (div_nonneg h1δ he) _)
   set K : ℝ≥0∞ := mu Omega ^ ((finrank ℝ E : ℝ)⁻¹ - δ)
@@ -408,7 +354,7 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_mul_rpow_mul_enorm_gradient_of_eq_ba
   set ω := mu.real (ball (0 : E) 1)
   have hω : 0 < ω := Metric.measureReal_ball_pos mu 0 one_pos
   have he : 0 ≤ (n : ℝ)⁻¹ - δ := sub_nonneg.2 hδn.le
-  obtain ⟨hδ0, hδ1⟩ := nonneg_and_le_one_of_inv_sub_inv_eq hp hpq hδ
+  obtain ⟨hδ0, hδ1⟩ := ENNReal.nonneg_and_le_one_of_inv_sub_inv_eq Fact.out hpq hδ
   have h1δ : 0 ≤ 1 - δ := by linarith
   have hn : (n : ℝ) ≠ 0 := fun h ↦ by
     rw [h, inv_zero] at hδn
@@ -458,8 +404,8 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_mul_rpow_mul_enorm_gradient_of_eq_ba
 `‖u - ⨍_{B(c, R)} u‖_{L^q(B(c, R))} ≤
   2 ^ n n⁻¹ ω ^ (-δ) ((1 - δ) / (1/n - δ)) ^ (1 - δ) R ^ (1 - n δ) ‖∇u‖_{Lᵖ(B(c, R))}`.
 
-This is `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_mul_rpow_mul_of_eq_ball` for the restriction
-of `u` to the ball. -/
+This is `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_mul_rpow_mul_enorm_gradient_of_eq_ball` for
+the restriction of `u` to the ball. -/
 theorem W1p.eLpNorm_value_sub_setAverage_le_mul_rpow_mul_eLpNorm_gradient_of_ball_subset
     (hp : p ≠ ∞) {c : E} {R : ℝ} (hR : 0 < R) (hball : ball c R ⊆ (Omega : Set E)) {q : ℝ≥0}
     (hpq : p ≤ q) {δ : ℝ} (hδ : p.toReal⁻¹ - (q : ℝ)⁻¹ = δ) (hδn : δ < (finrank ℝ E : ℝ)⁻¹)

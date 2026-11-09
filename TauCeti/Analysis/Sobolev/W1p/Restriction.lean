@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import Mathlib.MeasureTheory.Integral.Average
+import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 
@@ -35,6 +37,9 @@ interior regularity arguments pass from a weak solution on `Ω` to smaller open 
   the weak gradients of a function and of a function defined only there.
 * `TauCeti.W1p.continuous_setAverage_value`: the mean of the value component over a fixed
   finite-measure subset depends continuously on the Sobolev function.
+* `TauCeti.W1p.isClosed_setOf_eLpNorm_value_sub_le`: for a continuous centering `m`, the bound
+  `‖w - m w‖_{L^q(U)} ≤ C ‖∇w‖_{Lᵖ(U)}` cuts out a closed subset of `W^{1,p}(U)`, for every `q`;
+  `TauCeti.W1p.isClosed_setOf_eLpNorm_value_sub_setAverage_le` takes `m w = ⨍_S w`.
 
 ## References
 
@@ -47,8 +52,8 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Set TopologicalSpace
-open scoped Distributions ENNReal Gradient
+open Filter MeasureTheory Set TopologicalSpace
+open scoped Distributions ENNReal Gradient NNReal Topology
 
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
@@ -286,5 +291,56 @@ theorem W1p.continuous_setAverage_value (hSU : S ⊆ (U : Set E))
   simp only [hEq]
   exact continuous_const.mul
     (hF.comp' (W1p.valueL (mu := mu) (Omega := U) (p := p)).continuous)
+
+/-! ### Lower semicontinuity of centered norms -/
+
+omit [FiniteDimensional ℝ E] in
+/-- **Lower semicontinuity of a centered `L^q` norm.** If `m : W^{1,p}(U) → ℝ` is continuous, then
+for every exponent `q` and constant `C` the Sobolev functions `w ∈ W^{1,p}(U)` with
+`‖w - m w‖_{L^q(U)} ≤ C ‖∇w‖_{Lᵖ(U)}` form a closed set.
+
+The left-hand side need not be continuous in `w`: `W^{1,p}` convergence controls the values only in
+`Lᵖ`, which says nothing about `L^q` norms for `q > p`. It is lower semicontinuous instead:
+convergence in `W^{1,p}(U)` gives an almost everywhere convergent subsequence of the values, and
+Fatou's lemma applies. -/
+theorem W1p.isClosed_setOf_eLpNorm_value_sub_le {m : W1p mu U p → ℝ} (hm : Continuous m)
+    (q : ℝ≥0∞) (C : ℝ≥0) :
+    IsClosed {w : W1p mu U p |
+      eLpNorm (fun x ↦ W1p.value w x - m w) q (mu.restrict U) ≤ C * ‖W1p.gradient w‖ₑ} := by
+  refine IsSeqClosed.isClosed fun v u hv hvu => ?_
+  have hvalue : Tendsto (fun k => W1p.value (v k)) atTop (𝓝 (W1p.value u)) := by
+    simpa only [W1p.valueL_apply, Function.comp_def] using
+      ((map_continuous (W1p.valueL (mu := mu) (Omega := U) (p := p))).tendsto u).comp hvu
+  have hgradient : Tendsto (fun k => W1p.gradient (v k)) atTop (𝓝 (W1p.gradient u)) := by
+    simpa only [W1p.gradientL_apply, Function.comp_def] using
+      ((map_continuous (W1p.gradientL (mu := mu) (Omega := U) (p := p))).tendsto u).comp hvu
+  have hbound : Tendsto (fun k => (C : ℝ≥0∞) * ‖W1p.gradient (v k)‖ₑ) atTop
+      (𝓝 ((C : ℝ≥0∞) * ‖W1p.gradient u‖ₑ)) :=
+    ENNReal.Tendsto.const_mul ((continuous_enorm.tendsto _).comp hgradient)
+      (Or.inr ENNReal.coe_ne_top)
+  obtain ⟨ns, hns, hae⟩ := (tendstoInMeasure_of_tendsto_Lp hvalue).exists_seq_tendsto_ae
+  have hae' : ∀ᵐ x ∂mu.restrict U, Tendsto (fun i => W1p.value (v (ns i)) x - m (v (ns i)))
+      atTop (𝓝 (W1p.value u x - m u)) :=
+    hae.mono fun x hx => hx.sub (((hm.tendsto u).comp hvu).comp hns.tendsto_atTop)
+  calc eLpNorm (fun x ↦ W1p.value u x - m u) q (mu.restrict U)
+      ≤ atTop.liminf fun i => eLpNorm (fun x ↦ W1p.value (v (ns i)) x - m (v (ns i))) q
+          (mu.restrict U) :=
+        Lp.eLpNorm_lim_le_liminf_eLpNorm
+          (fun _ => (Lp.aestronglyMeasurable _).sub aestronglyMeasurable_const) _
+          ((Lp.aestronglyMeasurable _).sub aestronglyMeasurable_const) hae'
+    _ ≤ atTop.liminf fun i => (C : ℝ≥0∞) * ‖W1p.gradient (v (ns i))‖ₑ :=
+        liminf_le_liminf (.of_forall fun i => hv (ns i))
+    _ = (C : ℝ≥0∞) * ‖W1p.gradient u‖ₑ := (hbound.comp hns.tendsto_atTop).liminf_eq
+
+omit [FiniteDimensional ℝ E] in
+/-- **Lower semicontinuity of the deviation from a mean.** If `S ⊆ U` has finite measure, then
+for every exponent `q` and constant `C` the Sobolev functions `w ∈ W^{1,p}(U)` with
+`‖w - ⨍_S w‖_{L^q(U)} ≤ C ‖∇w‖_{Lᵖ(U)}` form a closed set. -/
+theorem W1p.isClosed_setOf_eLpNorm_value_sub_setAverage_le (hSU : S ⊆ (U : Set E))
+    (hSfin : mu S ≠ ∞) (q : ℝ≥0∞) (C : ℝ≥0) :
+    IsClosed {w : W1p mu U p |
+      eLpNorm (fun x ↦ W1p.value w x - ⨍ y in S, W1p.value w y ∂mu) q (mu.restrict U) ≤
+        C * ‖W1p.gradient w‖ₑ} :=
+  W1p.isClosed_setOf_eLpNorm_value_sub_le (W1p.continuous_setAverage_value hSU hSfin) q C
 
 end TauCeti
