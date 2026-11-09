@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import Mathlib.RingTheory.RootsOfUnity.Basic
+public import TauCeti.FieldTheory.IsSepClosed
 import Mathlib.FieldTheory.Separable
 import Mathlib.RingTheory.Ideal.GoingUp
 import Mathlib.RingTheory.Flat.TorsionFree
@@ -49,7 +50,9 @@ maximal ideal lies over the maximal ideal of `A` and contains the root. So when 
 Noetherian, `f` is a nonzerodivisor and `A/(f)` is regular, the cover is a regular local ring,
 hence a normal domain, again for every `e ≥ 1`. This is the regularity of the root algebra
 `A[x]/(x^e - f)` used in the proof of Stacks, Lemma 58.31.5 (0EYG), where `A` is a strictly
-henselian regular local ring and `f` a local equation of the divisor.
+henselian regular local ring and `f` a local equation of the divisor. The cover has the same
+residue field as `A`; to use the residue-field API, first install
+`standardTameCover_isLocalRing` as a local instance.
 
 ## Main definitions
 
@@ -112,7 +115,7 @@ public section
 
 universe u v w
 
-open Polynomial TensorProduct
+open Polynomial TensorProduct IsLocalRing
 
 namespace TauCeti
 
@@ -472,6 +475,66 @@ theorem standardTameCover_isLocalRing (hf : f ∈ IsLocalRing.maximalIdeal A) (h
       ← (standardTameCoverQuotientSpanRootAlgEquiv f he).map_eq_zero_iff]
     simpa [φ] using this
   simpa using M.add_mem ((Ideal.span_singleton_le_iff_mem M).mpr hroot hxa) haM
+
+section ResidueField
+
+variable [IsLocalRing (standardTameCover A f e)]
+
+/-- The root of a positive-degree cover along an element of the maximal ideal vanishes in
+its residue field. -/
+@[simp]
+theorem standardTameCover_residue_root (hf : f ∈ maximalIdeal A) (he : e ≠ 0) :
+    residue (standardTameCover A f e) (AdjoinRoot.root (X ^ e - C f)) = 0 := by
+  have := (monic_X_pow_sub_C f he).finite_adjoinRoot
+  have hcomap : (maximalIdeal (standardTameCover A f e)).under A = maximalIdeal A :=
+    IsLocalRing.eq_maximalIdeal inferInstance
+  rw [residue_eq_zero_iff]
+  apply Ideal.IsPrime.mem_of_pow_mem inferInstance e
+  rw [AdjoinRoot.root_X_pow_sub_C_pow, ← AdjoinRoot.algebraMap_eq]
+  rwa [← Ideal.mem_comap, ← Ideal.under_def, hcomap]
+
+/-- The residue field of a positive-degree root cover along the maximal ideal is canonically
+isomorphic to that of the base. The root reduces to zero, and constants reduce as in `A`. -/
+noncomputable def standardTameCoverResidueFieldEquiv (hf : f ∈ maximalIdeal A) (he : e ≠ 0) :
+    ResidueField (standardTameCover A f e) ≃+* ResidueField A := by
+  let φ : standardTameCover A f e →+* ResidueField A :=
+    AdjoinRoot.lift (residue A) 0 (by simp [he, (residue_eq_zero_iff f).mpr hf])
+  have hφ : Function.Surjective φ := by
+    intro z
+    obtain ⟨a, rfl⟩ := residue_surjective z
+    exact ⟨AdjoinRoot.of _ a, by simp [φ]⟩
+  have hker : RingHom.ker φ = maximalIdeal (standardTameCover A f e) :=
+    IsLocalRing.eq_maximalIdeal (RingHom.ker_isMaximal_of_surjective φ hφ)
+  exact (Ideal.quotEquivOfEq hker.symm).trans (RingHom.quotientKerEquivOfSurjective hφ)
+
+/-- The residue-field identification of a root cover preserves the residues of constants. -/
+@[simp]
+theorem standardTameCoverResidueFieldEquiv_residue_of (hf : f ∈ maximalIdeal A) (he : e ≠ 0)
+    (a : A) :
+    standardTameCoverResidueFieldEquiv hf he
+      (residue (standardTameCover A f e) (AdjoinRoot.of _ a)) = residue A a := by
+  unfold standardTameCoverResidueFieldEquiv
+  -- `erw` identifies the residue-field wrapper with the quotient used by the two comparisons.
+  erw [RingEquiv.trans_apply, Ideal.quotEquivOfEq_mk,
+    RingHom.quotientKerEquivOfSurjective_apply_mk, AdjoinRoot.lift_of]
+
+/-- In the inverse residue-field identification, a constant is sent to the same constant. -/
+@[simp]
+theorem standardTameCoverResidueFieldEquiv_symm_residue (hf : f ∈ maximalIdeal A) (he : e ≠ 0)
+    (a : A) :
+    (standardTameCoverResidueFieldEquiv hf he).symm (residue A a) =
+      residue (standardTameCover A f e) (AdjoinRoot.of _ a) := by
+  apply (standardTameCoverResidueFieldEquiv hf he).injective
+  simp
+
+/-- A root cover along the maximal ideal has separably closed residue field whenever the
+base does. This does not require the exponent to be invertible. -/
+theorem standardTameCover_isSepClosed_residueField [IsSepClosed (ResidueField A)]
+    (hf : f ∈ maximalIdeal A) (he : e ≠ 0) :
+    IsSepClosed (ResidueField (standardTameCover A f e)) :=
+  IsSepClosed.of_ringEquiv (standardTameCoverResidueFieldEquiv hf he).symm
+
+end ResidueField
 
 /-- If `A` is a Noetherian local ring, `f ∈ 𝔪_A` is a nonzerodivisor and `A ⧸ (f)` is regular,
 then `A[x]/(x^e - f)` is a regular local ring for every `e > 0`, whether or not `e` is invertible

@@ -131,7 +131,7 @@ theorem upperQuantile_map_of_monotoneOn [IsProbabilityMeasure μ] (hs : s.OrdCon
     · exact (hr ⟨hpx, hxr⟩ hx).le
     · exact (hg hx hp hxp.le).trans hy.le
   · -- A point of `s` sent strictly below the image of the upper quantile lies strictly below it.
-    refine le_trans ?_ (measureReal_Iio_upperQuantile_le μ h0 h1)
+    refine le_trans ?_ (measureReal_Iio_upperQuantile_le μ h0)
     rw [map_measureReal_apply_of_aemeasurable hgm measurableSet_Iio]
     exact ENNReal.toReal_mono (measure_ne_top _ _)
       (measure_mono_ae (hμs.mono fun x hx hxp ↦ lt_of_not_ge fun hpx ↦
