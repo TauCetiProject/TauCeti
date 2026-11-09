@@ -433,12 +433,14 @@ def inclusion (k : ℕ) (hk : m' = m - k) :
             refine Finset.sum_congr rfl fun i _ => ?_
             simp only [Nat.le_add_right, ↓reduceDIte, coefficient_castDegree]
             rw [coefficient_congr_index b.term (Nat.add_sub_cancel_left k i)]
-          · simp [show ¬k ≤ j by simpa using hj]
+          · have hjk : ¬k ≤ j := by simpa using hj
+            simp [hjk]
         · -- Before the `k`-th term all terms vanish, and `b` has order `m - k ≤ m - N`.
           refine ⟨Symbol.inclusion (by rw [hk]; gcongr) b.toSymbol, fun p => ?_⟩
           rw [Symbol.coefficient_inclusion, Symbol.coefficient_inclusion,
             Finset.sum_eq_zero fun j hj => ?_, sub_zero]
-          simp [show ¬k ≤ j by simp at hj; omega]⟩ }
+          have hjk : ¬k ≤ j := by simp at hj; omega
+          simp [hjk]⟩ }
   map_add' a b := ext (map_add (Symbol.inclusion _) a.toSymbol b.toSymbol)
   map_smul' c a := ext (map_smul (Symbol.inclusion _) c a.toSymbol)
 
@@ -457,7 +459,7 @@ theorem term_inclusion (j : ℕ) :
 
 @[simp]
 theorem term_inclusion_of_lt {j : ℕ} (hj : j < k) : (inclusion k hk b).term j = 0 := by
-  simp [term_inclusion, show ¬k ≤ j by omega]
+  simp [term_inclusion, Nat.not_le.mpr hj]
 
 @[simp]
 theorem term_inclusion_add (j : ℕ) :
@@ -564,8 +566,9 @@ def principalEquiv :
 
 @[simp]
 theorem principalEquiv_mk (a : ClassicalSymbol n V W m) :
-    principalEquiv n V W m (Submodule.Quotient.mk a) = a.principal :=
-  (rfl)
+    principalEquiv n V W m (Submodule.Quotient.mk a) = a.principal := by
+  rw [principalEquiv, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk]
+  exact (LinearMap.quotKerEquivOfSurjective_apply_mk _ _ a).trans (principalLinearMap_apply a)
 
 end PrincipalSequence
 
