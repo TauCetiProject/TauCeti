@@ -40,12 +40,12 @@ open Bornology Metric MeasureTheory Module Set TopologicalSpace
 open scoped ENNReal NNReal
 
 /-- The open unit disc of the Euclidean plane `WithLp 2 (ℝ × ℝ)`, as an open set. -/
-@[expose] def unitDisc : Opens (WithLp 2 (ℝ × ℝ)) :=
+def unitDisc : Opens (WithLp 2 (ℝ × ℝ)) :=
   ⟨ball 0 1, isOpen_ball⟩
 
 @[simp]
 theorem coe_unitDisc : (unitDisc : Set (WithLp 2 (ℝ × ℝ))) = ball 0 1 :=
-  rfl
+  (rfl)
 
 /-- The frontier of the unit disc is the unit circle. -/
 theorem frontier_unitDisc : frontier (unitDisc : Set (WithLp 2 (ℝ × ℝ))) = sphere 0 1 :=
@@ -99,6 +99,6 @@ theorem W1p.exists_trace_unitDisc (hp : p ≠ ∞) :
 identity of the infinite-dimensional space `W^{1,p}(D)` is not a compact operator. -/
 theorem W1p.not_isCompactOperator_id_unitDisc :
     ¬IsCompactOperator (id : W1p volume unitDisc p → W1p volume unitDisc p) :=
-  W1p.not_isCompactOperator_id isBounded_unitDisc ⟨0, by simp⟩
+  W1p.not_isCompactOperator_id ⟨0, by simp⟩
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.ContDiff
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
@@ -65,13 +66,6 @@ private theorem norm_sub_smul_lt_iff {r : ℝ} {z : WithLp 2 (ℝ × E)}
     Real.lt_sqrt (sub_pos.2 hzr).le]
   constructor <;> intro h <;> linarith
 
-/-- The lower hemisphere `y ↦ r - √(r² - ‖y‖²)` has derivative zero at the origin. -/
-private theorem hasFDerivAt_hemisphere {r : ℝ} (hr : 0 < r) :
-    HasFDerivAt (fun y : E ↦ r - √(r ^ 2 - ‖y‖ ^ 2)) (0 : E →L[ℝ] ℝ) 0 := by
-  have h := ((hasStrictFDerivAt_id (𝕜 := ℝ) (0 : E)).hasFDerivAt.norm_sq.const_sub
-    (r ^ 2)).sqrt (by simp [hr.ne'])
-  simpa using h.const_sub r
-
 /-- **Balls are Lipschitz domains.** An open ball of positive radius in `WithLp 2 (ℝ × E)` is a
 Lipschitz domain with every positive Lipschitz constant: its boundary is a `C¹` sphere. -/
 theorem isLipschitzDomainWith_ball (c : WithLp 2 (ℝ × E)) {r : ℝ} (hr : 0 < r) {L : ℝ≥0}
@@ -100,7 +94,9 @@ theorem isLipschitzDomainWith_ball (c : WithLp 2 (ℝ × E)) {r : ℝ} (hr : 0 <
     abel
   refine ⟨e, fun y ↦ r - √(r ^ 2 - ‖y‖ ^ 2), r, r, by simp [e], hr, hr, by simp [hr.le],
     contDiffAt_const.sub ((contDiffAt_const.sub (contDiff_norm_sq ℝ).contDiffAt).sqrt
-      (by simp [hr.ne'])), (hasFDerivAt_hemisphere hr).fderiv, fun z hz ↦ ?_⟩
+      (by simp [hr.ne'])), ?_, fun z hz ↦ ?_⟩
+  · simpa using ((hasFDerivAt_sqrt_sub_norm_sq (x := (0 : E)) (a := r ^ 2)
+      (by simp [hr.ne'])).const_sub r).fderiv
   rw [mem_ball, dist_eq_norm, he, LinearIsometryEquiv.norm_map]
   exact norm_sub_smul_lt_iff hz
 
