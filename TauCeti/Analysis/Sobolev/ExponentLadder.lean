@@ -53,11 +53,20 @@ private theorem ladder_product_exponent {p b : ℝ} (hp : 0 < p) (hb : 0 < b) :
   field_simp [hp.ne', hb.ne']
   ring
 
+/-- The product exponent of `p` and `1 / b` is below two when `b > a = 1 / 2 - 1 / p`. -/
+private theorem product_exponent_lt_two {p a b : ℝ} (hp : 0 < p) (hae : a = 1 / 2 - 1 / p)
+    (hb : 0 < b) (hab : a < b) : p * (1 / b) / (p + 1 / b) < 2 := by
+  rw [ladder_product_exponent hp hb]
+  apply (div_lt_iff₀ (add_pos (one_div_pos.mpr hp) hb)).2
+  rw [hae] at hab
+  linarith
+
 /-- One step of the ladder: if `b' = b - a` with `a = 1 / 2 - 1 / p`, the exponent `1 / b'` is
 the two-dimensional Sobolev exponent of the product exponent of `p` and `1 / b`. -/
 private theorem ladder_step_eq {p a b b' : ℝ} (hp : 0 < p) (hae : a = 1 / 2 - 1 / p)
-    (hb : 0 < b) (hb' : 0 < b') (hbb : b' = b - a) (hr : p * (1 / b) / (p + 1 / b) < 2) :
+    (hb : 0 < b) (hb' : 0 < b') (hbb : b' = b - a) :
     1 / b' = 2 * (p * (1 / b) / (p + 1 / b)) / (2 - p * (1 / b) / (p + 1 / b)) := by
+  have hr := product_exponent_lt_two hp hae hb (by linarith)
   apply (eq_div_iff (sub_pos.mpr hr).ne').2
   rw [ladder_product_exponent hp hb]
   have hd : 1 / p + b ≠ 0 := (add_pos (one_div_pos.mpr hp) hb).ne'
@@ -107,14 +116,6 @@ private theorem one_lt_product_exponent {p q : ℝ} (hp : 2 < p) (hq0 : 0 < q)
   have h := (div_lt_iff₀ hp1).mp hq
   apply (lt_div_iff₀ (by linarith)).2
   nlinarith
-
-/-- The product exponent of `p` and `1 / b` is below two when `b > a = 1 / 2 - 1 / p`. -/
-private theorem product_exponent_lt_two {p a b : ℝ} (hp : 0 < p) (hae : a = 1 / 2 - 1 / p)
-    (hb : 0 < b) (hab : a < b) : p * (1 / b) / (p + 1 / b) < 2 := by
-  rw [ladder_product_exponent hp hb]
-  apply (div_lt_iff₀ (add_pos (one_div_pos.mpr hp) hb)).2
-  rw [hae] at hab
-  linarith
 
 /-- For every finite real `p > 2`, there is a finite strict ladder for the two-dimensional
 Sobolev iteration. The final product exponent is greater than two, so the iteration reaches
@@ -173,7 +174,7 @@ theorem exists_finite_sobolev_exponent_ladder {p : ℝ} (hp : 2 < p) :
   obtain ⟨hf1, hf2, hf3⟩ := ladder_final_exponents hp (rfl : a = (p - 2) / (2 * p))
   refine ⟨N, hN, q, hq0, hq0p, hmono, fun j hj => ⟨hqpos j hj, hrone j hj⟩,
     fun j hj => ⟨hrtwo j hj, ?_, ?_⟩, ?_, ?_, ?_⟩
-  · exact ladder_step_eq hp0 hae (hb j hj.le) (hb (j + 1) hj) (hbstep j) (hrtwo j hj)
+  · exact ladder_step_eq hp0 hae (hb j hj.le) (hb (j + 1) hj) (hbstep j)
   · dsimp only [q]
     rw [one_div_one_div, one_div_one_div, hbstep j, hae]
     ring
