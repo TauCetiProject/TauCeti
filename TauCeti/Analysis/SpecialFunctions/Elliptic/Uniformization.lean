@@ -76,6 +76,8 @@ while it vanishes on `Λ` and nowhere else. A point `(x, y)` of the curve with `
   `g₂³ - 27 g₃²`, and it is nonzero.
 * `PeriodPair.weierstrassCurve_j`, `UpperHalfPlane.weierstrassCurve_j_periodPair`: the
   `j`-invariant, and its identification with the modular invariant `TauCeti.ModularForm.j`.
+* `PeriodPair.weierstrassCurve_j_eq_1728_iff`, `PeriodPair.weierstrassCurve_j_eq_zero_iff`: the
+  `j`-invariant is `1728` exactly when `g₃ = 0`, and `0` exactly when `g₂ = 0`.
 * `PeriodPair.weierstrassPoint_add_coe`, `PeriodPair.weierstrassPoint_neg`,
   `PeriodPair.weierstrassPoint_eq_zero_iff`: the point map is `Λ`-periodic, odd, and vanishes
   exactly on `Λ`.
@@ -229,6 +231,27 @@ lemma weierstrassCurve_j :
   simp only [c₄, b₂, b₄, weierstrassCurve_a₁, weierstrassCurve_a₂, weierstrassCurve_a₃,
     weierstrassCurve_a₄]
   ring
+
+variable {L} in
+/-- The `j`-invariant of `E_Λ` is `1728` exactly when `g₃(Λ) = 0`. -/
+lemma weierstrassCurve_j_eq_1728_iff : L.weierstrassCurve.j = 1728 ↔ L.g₃ = 0 := by
+  have hΔ := L.weierstrassCurve_Δ_ne_zero
+  rw [weierstrassCurve_Δ] at hΔ
+  rw [weierstrassCurve_j, div_eq_iff hΔ]
+  constructor
+  · intro h
+    exact pow_eq_zero_iff two_ne_zero |>.mp (by linear_combination h / 46656)
+  · intro h
+    rw [h]
+    ring
+
+variable {L} in
+/-- The `j`-invariant of `E_Λ` is `0` exactly when `g₂(Λ) = 0`. -/
+lemma weierstrassCurve_j_eq_zero_iff : L.weierstrassCurve.j = 0 ↔ L.g₂ = 0 := by
+  have hΔ := L.weierstrassCurve_Δ_ne_zero
+  rw [weierstrassCurve_Δ] at hΔ
+  rw [weierstrassCurve_j, div_eq_zero_iff, or_iff_left hΔ, mul_eq_zero, or_iff_right (by norm_num),
+    pow_eq_zero_iff three_ne_zero]
 
 end PeriodPair
 
