@@ -321,7 +321,7 @@ theorem exchangePerturbation_add_cylindricalEndLift_inf_of_neg (hH : Periodic (H
     linarith
   rw [exchangePerturbation_def,
     pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub hc₀ hc₁ hw, zero_add,
-    add_sub_cancel_left, negativePlanePerturbation_cylindricalEndLift_of_neg hH hz]
+    add_sub_cancel_left, negativePlanePerturbation_cylindricalEndLift_apply hH]
 
 /-- **The family is `H_∞(t) dt` far out on the output end.** For `0 ≤ c ≤ 1`, on the part
 `s ≤ -2` of the output end recentred at `c`, the pullback of the member `c` of the family along the
