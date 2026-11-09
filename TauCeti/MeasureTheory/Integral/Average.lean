@@ -100,6 +100,9 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   Euclidean product `ℝ × E`, the best constant of the form `(c, 0)`.
 * `TauCeti.sq_setAverage_norm_le_setAverage_norm_sq`: Jensen's inequality
   `(⨍_s ‖g‖)² ≤ ⨍_s ‖g‖²`, bounding the mean oscillation by the square mean oscillation.
+* `TauCeti.laverage_const_mul`: a finite constant factor comes out of the lower average.
+* `TauCeti.laverage_rpow_enorm_rpow_inv_eq`: `(⨍ ‖f‖ ^ p) ^ (1/p)` is the `Lᵖ` seminorm divided by
+  the `p`-th root of the total mass.
 * `TauCeti.rpow_laverage_le_laverage_rpow`: Jensen's inequality `(⨍ u) ^ r ≤ ⨍ u ^ r` for a
   nonnegative function and `r ≥ 1`.
 * `TauCeti.laverage_smul_measure`, `TauCeti.average_smul_measure`,
@@ -391,6 +394,26 @@ theorem sq_setAverage_norm_le_setAverage_norm_sq (hs0 : μ s ≠ 0) (hs : μ s �
     hs0 hs (ae_of_all _ fun _ ↦ Set.mem_univ _) hg.norm hg2
 
 end SquareIntegrable
+
+section LAverage
+
+variable {X : Type*} [MeasurableSpace X] {μ : Measure X}
+
+/-- A finite constant factor comes out of the lower average, as it does out of the average
+(`MeasureTheory.average_const_mul`). -/
+theorem laverage_const_mul {c : ℝ≥0∞} (hc : c ≠ ∞) (f : X → ℝ≥0∞) :
+    ⨍⁻ x, c * f x ∂μ = c * ⨍⁻ x, f x ∂μ := by
+  rw [laverage_eq, laverage_eq, lintegral_const_mul' _ _ hc, mul_div_assoc]
+
+/-- For `0 < p < ∞`, the `p`-th root of the lower average of `‖f‖ₑ ^ p` is the `Lᵖ` seminorm of
+`f` divided by the `p`-th root of the total mass. -/
+theorem laverage_rpow_enorm_rpow_inv_eq {F : Type*} [NormedAddCommGroup F] {f : X → F}
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) (hf : AEStronglyMeasurable f μ) :
+    (⨍⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^ p.toReal⁻¹ = eLpNorm f p μ / μ Set.univ ^ p.toReal⁻¹ := by
+  rw [laverage_eq, ENNReal.div_rpow_of_nonneg _ _ (inv_nonneg.2 ENNReal.toReal_nonneg),
+    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hf, one_div]
+
+end LAverage
 
 section Jensen
 
