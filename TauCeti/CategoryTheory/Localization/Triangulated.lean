@@ -13,8 +13,9 @@ public import Mathlib.CategoryTheory.Localization.Triangulated
 An equivalence of categories `F : C ⥤ D` is a localization functor for the class of
 isomorphisms of `C`. This class admits a left calculus of fractions, and, when `C` is
 pretriangulated, it is compatible with the triangulation. Consequently Mathlib's construction
-`CategoryTheory.Triangulated.Localization.pretriangulated` applies to `F`: if `D` carries a
-shift by `ℤ` for which `F` commutes with the shifts, then `D` is pretriangulated, with
+`CategoryTheory.Triangulated.Localization.pretriangulated` applies to `F`: if `D` is
+preadditive with a zero object and carries a shift by `ℤ` by additive functors, and `F` is
+additive and commutes with the shifts, then `D` is pretriangulated, with
 distinguished triangles the triangles isomorphic to images of distinguished triangles of `C`,
 `F` is a triangle functor, and `D` is triangulated as soon as `C` is
 (`CategoryTheory.Triangulated.Localization.isTriangulated`).
@@ -75,8 +76,7 @@ instance instIsCompatibleWithShiftIsomorphisms (A : Type*) [AddGroup A] [HasShif
     (MorphismProperty.isomorphisms C).IsCompatibleWithShift A where
   condition a := by
     ext X Y f
-    simp only [MorphismProperty.inverseImage_iff, MorphismProperty.isomorphisms.iff]
-    exact ⟨fun _ ↦ isIso_of_reflects_iso f (shiftFunctor C a), fun _ ↦ inferInstance⟩
+    exact isIso_iff_of_reflects_iso f (shiftFunctor C a)
 
 variable [HasShift C ℤ] [Preadditive C] [HasZeroObject C] [∀ n : ℤ, (shiftFunctor C n).Additive]
   [Pretriangulated C]

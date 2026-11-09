@@ -9,6 +9,7 @@ public import Mathlib.Order.Setoid.Partition
 public import Mathlib.Order.Partition.Finpartition
 public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Order.GroupWithZero.Basic
+public import Mathlib.Data.Fintype.Prod
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 import Mathlib.Algebra.BigOperators.Ring.Finset
@@ -38,7 +39,8 @@ a point in a product over the parts, the parts of a restriction, the
 monotonicity of `Finpartition.part` under refinement and the characterization of refinement by
 the parts through each point, the constancy of the coarse part and of membership in a union of
 parts on each part of a partition, the fact that a refinement with no more parts than the coarser
-partition is equal to it, the parts through a point of the finest and the coarsest partitions,
+partition is equal to it, the parts through a point of the finest and the coarsest partitions
+and of a common refinement,
 the characterization of the finest partition as the one whose parts all have one element,
 the count of the parts by points singled out in each part (in a linear order, the first or the last
 point of each part), the part of a point in a linear order as its part before the last point of that
@@ -55,7 +57,8 @@ of a finite partition of the image `f '' s` to a finite partition of `s`, which 
 embedding whose image consists of the partitions coarser than the partition of `s` into the fibres
 of `f`, each of which is the pullback of its pushforward `Finpartition.pushforward`, a left inverse
 of the pullback; pulling a partition of `univ` back along an equivalence moves its parts along the
-inverse equivalence.
+inverse equivalence; and the partition of `α × β` into the fibres of the first coordinate
+(`Finpartition.ofSetoid_ker_fst_parts`).
 -/
 
 public section
@@ -446,6 +449,17 @@ theorem le_iff_forall_part_subset : P ≤ Q ↔ ∀ a, P.part a ⊆ Q.part a := 
   refine ⟨part_mono, fun h B hB => ?_⟩
   obtain ⟨a, ha⟩ := P.nonempty_of_mem_parts hB
   exact ⟨Q.part a, Q.part_mem.2 (P.le hB ha), P.part_eq_of_mem hB ha ▸ h a⟩
+
+/-- In the common refinement of two finite partitions, the part through a point is the
+intersection of the parts through it. -/
+@[simp]
+theorem part_inf (P Q : Finpartition s) (a : α) : (P ⊓ Q).part a = P.part a ∩ Q.part a := by
+  by_cases ha : a ∈ s
+  · refine part_eq_of_mem _ ?_ (mem_inter.2 ⟨P.mem_part ha, Q.mem_part ha⟩)
+    rw [parts_inf, mem_erase]
+    exact ⟨ne_empty_of_mem (mem_inter.2 ⟨P.mem_part ha, Q.mem_part ha⟩),
+      mem_image.2 ⟨(P.part a, Q.part a), mem_product.2 ⟨P.part_mem.2 ha, Q.part_mem.2 ha⟩, rfl⟩⟩
+  · simp [(P ⊓ Q).part_eq_empty.2 ha, P.part_eq_empty.2 ha]
 
 /-- In the partition into singletons, the part through a point is that point alone. -/
 @[simp]
@@ -978,5 +992,47 @@ theorem exists_comap_eq_iff {Q : Finpartition s} :
   ⟨fun ⟨_, hP⟩ => hP ▸ comap_mono bot_le, fun h => ⟨_, comap_pushforward h⟩⟩
 
 end Comap
+
+end Finpartition
+
+namespace Finpartition
+
+open Finset
+
+variable {α β : Type*} [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq β] [Nonempty β]
+  [DecidableRel (Setoid.ker (Prod.fst : α × β → α))]
+
+/-- The partition of `α × β` into the fibers of the first coordinate has the cells
+`{A} ×ˢ univ`, one for each `A : α`. -/
+theorem ofSetoid_ker_fst_parts :
+    (ofSetoid (Setoid.ker (Prod.fst : α × β → α))).parts =
+      univ.image (fun A : α ↦ {A} ×ˢ (univ : Finset β)) := by
+  have hfilter (x : α × β) :
+      {y ∈ (univ : Finset (α × β)) | x.1 = y.1} = {x.1} ×ˢ univ := by
+    ext y
+    simp only [mem_filter, mem_univ, true_and, mem_product, mem_singleton, and_true, eq_comm]
+  simp only [ofSetoid, ofSetSetoid_parts, Setoid.ker_def, hfilter]
+  ext B
+  simp only [mem_image, mem_univ, true_and]
+  exact ⟨fun ⟨x, hx⟩ ↦ ⟨x.1, hx⟩, fun ⟨A, hA⟩ ↦ ⟨(A, Classical.arbitrary β), hA⟩⟩
+
+/-- Every cell of the partition of `α × β` into the fibers of the first coordinate has
+`Fintype.card β` elements. -/
+theorem card_of_mem_ofSetoid_ker_fst_parts {B : Finset (α × β)}
+    (hB : B ∈ (ofSetoid (Setoid.ker (Prod.fst : α × β → α))).parts) :
+    #B = Fintype.card β := by
+  obtain ⟨A, -, rfl⟩ := mem_image.1 (ofSetoid_ker_fst_parts (α := α) (β := β) ▸ hB)
+  simp
+
+/-- The partition of `α × β` into the fibers of the first coordinate has `Fintype.card α` cells. -/
+@[simp]
+theorem card_ofSetoid_ker_fst_parts :
+    #(ofSetoid (Setoid.ker (Prod.fst : α × β → α))).parts = Fintype.card α := by
+  rw [ofSetoid_ker_fst_parts, card_image_of_injective, card_univ]
+  intro A B h
+  have hmem : (A, Classical.arbitrary β) ∈ {A} ×ˢ (univ : Finset β) := by simp
+  simp only at h
+  rw [h] at hmem
+  simpa only [mem_product, mem_singleton, mem_univ, and_true] using hmem
 
 end Finpartition

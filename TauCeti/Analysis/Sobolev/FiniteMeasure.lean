@@ -10,6 +10,7 @@ import TauCeti.Analysis.Sobolev.Poincare.Potential
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.Bochner.Holder
 import TauCeti.MeasureTheory.Integral.RieszPotential
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Sobolev inequalities on sets of finite measure
@@ -87,8 +88,7 @@ theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt (hu : ContDiff ℝ 
   set ω := μ.real (ball (0 : E) 1)
   have hn : (1 : ℝ) ≤ n := by exact_mod_cast finrank_pos
   have hn0 : (n : ℝ) ≠ 0 := by positivity
-  have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne'
-    measure_ball_lt_top.ne
+  have hω : 0 < ω := Metric.measureReal_ball_pos μ 0 one_pos
   have hcont := hu.continuous_fderiv one_ne_zero
   -- The Riesz potential of order one of `‖Du‖`, over `Ω`.
   set V : E → ℝ≥0∞ := fun x =>
@@ -187,8 +187,7 @@ theorem W1p.eLpNorm_value_le_mul_rpow_mul_enorm_gradient_of_eq_ball [Nontrivial 
   set n := finrank ℝ E
   set ω := mu.real (ball (0 : E) 1)
   have hn : (0 : ℝ) < n := by exact_mod_cast finrank_pos
-  have hω : 0 < ω := ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne'
-    measure_ball_lt_top.ne
+  have hω : 0 < ω := Metric.measureReal_ball_pos mu 0 one_pos
   have he : 0 ≤ (n : ℝ)⁻¹ - δ := sub_nonneg.2 hδn.le
   have h1δ : 0 ≤ 1 - δ := by
     have : (n : ℝ)⁻¹ ≤ 1 := inv_le_one_of_one_le₀ (by exact_mod_cast finrank_pos)
@@ -319,15 +318,13 @@ theorem W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp [Nontrivial E]
   refine ⟨(W1p0.setIntegralMulₗ f hint).mkContinuous
     ((eLpNorm f r ν).toReal * S.toReal * ν.real univ ^ (1 - (r : ℝ)⁻¹ - (t : ℝ)⁻¹))
     fun v => ?_, fun v => rfl⟩
-  have hhol := TauCeti.MeasureTheory.abs_integral_mul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow
+  have hhol := TauCeti.MeasureTheory.norm_integral_smul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow
     (by exact_mod_cast zero_lt_one.trans hr) (by exact_mod_cast ht0) hrt hf (hmemt v)
-    MeasurableSet.univ (measure_ne_top ν univ)
-    (Filter.Eventually.of_forall fun x hx => absurd (mem_univ x) hx)
+    (measure_ne_top ν univ) (Filter.Eventually.of_forall fun x hx => absurd (mem_univ x) hx)
   have hsob : (eLpNorm (W1p.value (v : W1p mu Omega 2)) t ν).toReal ≤ S.toReal * ‖v‖ := by
     have := ENNReal.toReal_mono (ENNReal.mul_ne_top hSfin enorm_ne_top) (hS v)
     rw [ENNReal.toReal_mul, toReal_enorm] at this
     exact this.trans (mul_le_mul_of_nonneg_left (W1p.norm_gradient_le _) ENNReal.toReal_nonneg)
-  rw [Real.norm_eq_abs]
   refine hhol.trans ?_
   calc (eLpNorm f r ν).toReal * (eLpNorm (W1p.value (v : W1p mu Omega 2)) t ν).toReal *
         ν.real univ ^ (1 - (r : ℝ)⁻¹ - (t : ℝ)⁻¹)

@@ -40,6 +40,8 @@ agrees with such a homogeneous map outside a ball has bounded derivatives of eve
 ## Main results
 
 * `TauCeti.iteratedFDeriv_smul_snd_of_smul_snd_eq`: homogeneity of the derivatives.
+* `TauCeti.norm_iteratedFDeriv_smul_of_homogeneous`: operator-norm scaling for a homogeneous
+  map on an arbitrary normed source, without a parameter or properness assumption.
 * `TauCeti.exists_norm_iteratedFDeriv_le_of_smul_snd_eq`: for `x` in a compact set and `ξ ≠ 0`,
   the derivative of order `k` in directions `v` is bounded by
   `C ‖ξ‖ ^ m ∏ ‖((v i).1, ‖ξ‖⁻¹ • (v i).2)‖`, that is by `C ‖ξ‖ ^ m` once the `ξ`-components of
@@ -69,6 +71,37 @@ namespace TauCeti
 variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G] {f : E × F → G} {m : ℝ}
   {n : WithTop ℕ∞}
+
+/-- The norm of the `j`-th derivative of a positively homogeneous map of degree `p` scales
+by `t^(p-j)`. The map need only be `Cʲ` away from zero; the normed source and target need
+neither finite dimensionality nor completeness. -/
+theorem norm_iteratedFDeriv_smul_of_homogeneous {f : E → G} {p : ℝ} {j : ℕ}
+    (hf : ContDiffOn ℝ j f {0}ᶜ)
+    (hhom : ∀ t : ℝ, 0 < t → ∀ x, f (t • x) = t ^ p • f x)
+    {t : ℝ} (ht : 0 < t) {x : E} (hx : x ≠ 0) :
+    ‖iteratedFDeriv ℝ j f (t • x)‖ = t ^ (p - j) * ‖iteratedFDeriv ℝ j f x‖ := by
+  let S : E →L[ℝ] E := t • ContinuousLinearMap.id ℝ E
+  have hS : S ⁻¹' ({0}ᶜ : Set E) = {0}ᶜ := by
+    ext y
+    simp [S, ht.ne']
+  have htx : S x ∈ ({0}ᶜ : Set E) := smul_ne_zero ht.ne' hx
+  have hcomp : f ∘ S = t ^ p • f := funext (hhom t ht)
+  have hkey := S.iteratedFDerivWithin_comp_right hf isOpen_compl_singleton.uniqueDiffOn
+    (by rw [hS]; exact isOpen_compl_singleton.uniqueDiffOn) htx le_rfl
+  rw [hS, iteratedFDerivWithin_of_isOpen j isOpen_compl_singleton hx,
+    iteratedFDerivWithin_of_isOpen j isOpen_compl_singleton htx, hcomp,
+    iteratedFDeriv_const_smul_apply (hf.contDiffAt (isOpen_compl_singleton.mem_nhds hx))] at hkey
+  have heq : (t ^ j) • iteratedFDeriv ℝ j f (t • x) = t ^ p • iteratedFDeriv ℝ j f x := by
+    ext v
+    have h := congrArg (fun A ↦ A v) hkey
+    simpa [ContinuousMultilinearMap.compContinuousLinearMap_apply, S,
+      ContinuousMultilinearMap.map_smul_univ] using h.symm
+  have hn := congrArg norm heq
+  simp only [norm_smul, Real.norm_of_nonneg (pow_nonneg ht.le _),
+    Real.norm_of_nonneg (Real.rpow_nonneg ht.le _)] at hn
+  rw [Real.rpow_sub ht, Real.rpow_natCast]
+  field_simp
+  nlinarith [hn]
 
 /-- The derivatives of a map `f (x, ξ)` that is positively homogeneous of degree `m` in `ξ` are
 homogeneous: rescaling `ξ` by `t > 0`, together with the `ξ`-components of the directions,
