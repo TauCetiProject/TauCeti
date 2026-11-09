@@ -51,6 +51,8 @@ the isogeny itself appears downstream, in
 * `Matrix.g2CrossMap_mul_mul_transpose`: a matrix preserving the cross product intertwines the
   congruence action on alternating matrices with its tautological action on vectors.
 * `Matrix.g2CrossMap_rankTwo`: contraction of `u vᵀ - v uᵀ` is twice `u × v`.
+* `Matrix.coordinates_of_g2CrossMap_eq_zero`: the seven coordinate equations of a matrix killed by
+  the contraction.
 * `TauCeti.G2ShortRoot.mul_crossBivector_mul_transpose`: stability of the short-root span under
   congruence.
 * `Matrix.g2CrossMap_crossBivector`: in characteristic three the short-root matrices lie in the
@@ -486,6 +488,34 @@ theorem _root_.Matrix.g2CrossMap_rankTwo (u v : Fin 7 → R) (m : Fin 7) :
   classical
   rw [g2CrossMap_apply]
   fin_cases m <;> simp [Fin.sum_univ_seven, crossOperator] <;> ring
+
+/-- The seven coordinates of a matrix killed by the cross-product contraction: each of the seven
+equations `g2CrossMap W m = 0` written out through the table `crossOperator_def`. -/
+theorem _root_.Matrix.coordinates_of_g2CrossMap_eq_zero {W : Matrix (Fin 7) (Fin 7) R}
+    (hc : ∀ m, g2CrossMap W m = 0) :
+    2 * (W 1 2 - W 2 1 + W 3 0 - W 0 3) = 0 ∧
+      2 * (W 1 3 - W 3 1 + W 4 0 - W 0 4) = 0 ∧
+      2 * (W 2 3 - W 3 2 + W 5 0 - W 0 5) = 0 ∧
+      W 2 4 - W 4 2 + W 5 1 - W 1 5 + W 6 0 - W 0 6 = 0 ∧
+      2 * (W 3 4 - W 4 3 + W 6 1 - W 1 6) = 0 ∧
+      2 * (W 3 5 - W 5 3 + W 6 2 - W 2 6) = 0 ∧
+      2 * (W 4 5 - W 5 4 + W 6 3 - W 3 6) = 0 := by
+  have e m := (g2CrossMap_apply W m).symm.trans (hc m)
+  have e0 := e 0
+  have e1 := e 1
+  have e2 := e 2
+  have e3 := e 3
+  have e4 := e 4
+  have e5 := e 5
+  have e6 := e 6
+  simp only [crossOperator_def, Nat.succ_eq_add_one, Nat.reduceAdd, Int.reduceNeg, Fin.isValue,
+    Fin.sum_univ_seven, Matrix.cons_val_zero, Matrix.of_apply, Matrix.cons_val',
+    Matrix.cons_val_fin_one, Int.cast_zero, zero_mul, Matrix.cons_val_one, add_zero,
+    Matrix.cons_val, Int.cast_neg, Int.cast_ofNat, neg_mul, zero_add, Int.cast_one, one_mul]
+    at e0 e1 e2 e3 e4 e5 e6
+  exact ⟨by linear_combination e0, by linear_combination e1, by linear_combination e2,
+    by linear_combination e3, by linear_combination e4, by linear_combination e5,
+    by linear_combination e6⟩
 
 /-- **The matrices `crossBivector` are alternating** over any commutative ring. -/
 @[simp]
