@@ -13,9 +13,6 @@ public import Mathlib.RingTheory.Idempotents
 
 The basis adapted to `B ≅ B/(1-e) × B/(e)` makes multiplication block diagonal.
 This is the linear algebra used to compute traces on the two factors.
-
-Adapted from `Jacobian/RingTheory/Kaehler/TraceIdempotent.lean`, accepted release
-`baef7723da528551b7d2f93bd9a9a53303b04dbc`.
 -/
 
 public section

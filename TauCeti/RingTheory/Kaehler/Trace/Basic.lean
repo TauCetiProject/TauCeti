@@ -26,28 +26,24 @@ precomposition with multiplication. By the universal property of Kähler differe
 
 ## Main definitions
 
-- `Matrix.traceDerivForm D X Y = ∑ᵢⱼ Xᵢⱼ • D Yⱼᵢ`.
-- `Algebra.traceDerivOfBasis D b a c`: `traceDerivForm D (leftMulMatrix b c) (leftMulMatrix b a)`.
-- `Algebra.traceDeriv D a c`: the same for the chosen basis of `B`.
-- `Algebra.traceDerivation D`: the derivation `B → Hom_R(B, M)`.
-- `KaehlerDifferential.traceLin D`: the trace of differentials `Ω_{B/k} →ₗ[R] M`.
+- `Derivation.traceDerivForm D X Y = ∑ᵢⱼ Xᵢⱼ • D Yⱼᵢ`.
+- `Derivation.traceDerivOfBasis D b a c`: the trace form on the multiplication matrices.
+- `Derivation.traceDeriv D a c`: the same for the chosen basis of `B`.
+- `Derivation.traceDerivation D`: the derivation `B → Hom_R(B, M)`.
+- `Derivation.traceLin D`: the trace of differentials `Ω_{B/k} →ₗ[R] M`.
 
 ## Main statements
 
-- `Algebra.traceDerivOfBasis_eq`: independence of the basis.
-- `KaehlerDifferential.traceLin_smul_D`: `traceLin D (c • D a) = traceDeriv D a c`.
+- `Derivation.traceDerivOfBasis_eq`: independence of the basis.
+- `Derivation.traceLin_smul_D`: `traceLin D (c • D a) = traceDeriv D a c`.
 
-## Source
-
-Adapted from `Jacobian/RingTheory/Kaehler/Trace.lean` in the Jacobian library,
-accepted release `baef7723da528551b7d2f93bd9a9a53303b04dbc`.
 -/
 
 public section
 
-open Matrix
+open Matrix Algebra TauCeti.Algebra
 
-namespace Matrix
+namespace Derivation
 
 variable {k R M : Type*} [CommRing k] [CommRing R] [Algebra k R] [AddCommGroup M] [Module R M]
   [Module k M] (D : Derivation k R M)
@@ -61,7 +57,6 @@ def traceDerivForm {m n : Type*} [Fintype m] [Fintype n] (X : Matrix m n R) (Y :
 lemma traceDerivForm_def {m n : Type*} [Fintype m] [Fintype n]
     (X : Matrix m n R) (Y : Matrix n m R) :
     traceDerivForm D X Y = ∑ i, ∑ j, X i j • D (Y j i) := (rfl)
-
 
 variable {m n p : Type*} [Fintype m] [Fintype n] [Fintype p]
 
@@ -142,9 +137,20 @@ lemma traceDerivForm_conj [DecidableEq m] (P : Matrix m n R) (Q : Matrix n m R)
   rw [h₃']
   abel
 
-end Matrix
+variable {k R M : Type*} [CommRing k] [CommRing R] [Algebra k R] [AddCommGroup M] [Module R M]
+  [Module k M] (D : Derivation k R M)
 
-namespace Algebra
+/-- `Tr(X D(Y))` for block diagonal matrices is the sum over the blocks. -/
+lemma traceDerivForm_fromBlocks {l m n p : Type*} [Fintype l] [Fintype m] [Fintype n]
+    [Fintype p] (X₁ : Matrix l m R) (X₂ : Matrix n p R) (Y₁ : Matrix m l R)
+    (Y₂ : Matrix p n R) :
+    traceDerivForm D (fromBlocks X₁ 0 0 X₂) (fromBlocks Y₁ 0 0 Y₂) =
+      traceDerivForm D X₁ Y₁ + traceDerivForm D X₂ Y₂ := by
+  simp [traceDerivForm_def, Fintype.sum_sum_type]
+
+end Derivation
+
+namespace Derivation
 
 variable {k R B M : Type*} [CommRing k] [CommRing R] [CommRing B] [Algebra k R] [Algebra R B]
   [AddCommGroup M] [Module R M] [Module k M] (D : Derivation k R M)
@@ -195,7 +201,7 @@ lemma traceDeriv_add_right (a c c' : B) :
 
 lemma traceDeriv_smul_right (a : B) (r : R) (c : B) :
     traceDeriv D a (r • c) = r • traceDeriv D a c := by
-  simp only [traceDeriv, traceDerivOfBasis, map_smul, traceDerivForm_smul_left]
+  simp only [traceDeriv, traceDerivOfBasis, _root_.map_smul, traceDerivForm_smul_left]
 
 /-- **Leibniz rule**: `δ(ab)(c) = δ(b)(ca) + δ(a)(bc)`. -/
 lemma traceDeriv_mul (a b c : B) :
@@ -209,9 +215,9 @@ lemma traceDeriv_algebraMap (r : R) (c : B) :
   rw [traceDeriv_def, traceDerivOfBasis_def, leftMulMatrix_algebraMap,
     traceDerivForm_scalar_right, trace_eq_matrix_trace (Module.Free.chooseBasis R B)]
 
-end Algebra
+end Derivation
 
-namespace Algebra
+namespace Derivation
 
 variable {k R B M : Type*} [CommRing k] [CommRing R] [CommRing B] [Algebra k R] [Algebra R B]
   [AddCommGroup M] [Module R M] [Module k M] [Algebra k B] [IsScalarTower k R B]
@@ -221,7 +227,7 @@ variable {k R B M : Type*} [CommRing k] [CommRing R] [CommRing B] [Algebra k R] 
 lemma traceDeriv_smul_left (x : k) (a c : B) :
     traceDeriv D (x • a) c = x • traceDeriv D a c := by
   rw [traceDeriv, traceDeriv, traceDerivOfBasis, traceDerivOfBasis,
-    ← algebraMap_smul R x a, map_smul]
+    ← algebraMap_smul R x a, _root_.map_smul]
   simp only [traceDerivForm, Matrix.smul_apply, algebraMap_smul, Finset.smul_sum]
   exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by
     rw [D.map_smul, smul_comm]
@@ -250,11 +256,11 @@ noncomputable def traceDerivation : Derivation k B (PrecompLinearMap R B M) :=
 lemma traceDerivation_apply (a c : B) : traceDerivation (B := B) D a c = traceDeriv D a c := by
   simp [traceDerivation, Derivation.mk', PrecompLinearMap.ofLinearMap_apply]
 
-end Algebra
+end Derivation
 
-namespace KaehlerDifferential
+namespace Derivation
 
-open Algebra
+open Algebra TauCeti.Algebra
 
 variable {k R B M : Type*} [CommRing k] [CommRing R] [CommRing B] [Algebra k R] [Algebra R B]
   [AddCommGroup M] [Module R M] [Module k M] [Algebra k B] [IsScalarTower k R B]
@@ -286,4 +292,4 @@ lemma traceLin_smul_D (a c : B) :
 lemma traceLin_D (a : B) : traceLin D (KaehlerDifferential.D k B a) = traceDeriv D a 1 := by
   rw [← traceLin_smul_D, one_smul]
 
-end KaehlerDifferential
+end Derivation

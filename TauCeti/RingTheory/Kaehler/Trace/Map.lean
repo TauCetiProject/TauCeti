@@ -12,22 +12,17 @@ public import TauCeti.LinearAlgebra.Matrix.ToLin
 # Functoriality of the trace of differentials
 
 The trace derivation commutes with compatible maps of finite free algebras that take a basis
-to a basis (`Algebra.traceDeriv_map`), and with postcomposition of the original derivation by
-a linear map (`Algebra.traceDeriv_compDer`). This includes the algebraic compatibility needed
+to a basis (`Derivation.traceDeriv_map`), and with postcomposition of the original derivation by
+a linear map (`Derivation.traceDeriv_compDer`). This includes the algebraic compatibility needed
 for localization and base-change arguments.
 
-## Source
-
-Adapted from `Jacobian/RingTheory/Kaehler/TraceMap.lean` in the Jacobian library,
-accepted release `baef7723da528551b7d2f93bd9a9a53303b04dbc`.
-Only the functoriality lemmas and their matrix prerequisite are included here.
 -/
 
 public section
 
-open Algebra
+open Algebra TauCeti.Algebra
 
-namespace Algebra
+namespace Derivation
 
 variable {k R B M R' B' M' : Type*} [CommRing k] [CommRing R] [CommRing B] [Algebra k R]
   [Algebra R B] [AddCommGroup M] [Module R M] [Module k M] (D : Derivation k R M)
@@ -49,11 +44,11 @@ lemma traceDeriv_map {ι : Type*} [Finite ι] (b : Module.Basis ι R B)
   have := Fintype.ofFinite ι
   rw [traceDeriv_eq D' b', traceDeriv_eq D b, traceDerivOfBasis_def, traceDerivOfBasis_def,
     leftMulMatrix_map b b' σ ψ hψ hb, leftMulMatrix_map b b' σ ψ hψ hb]
-  simp only [Matrix.traceDerivForm_def, Matrix.map_apply, map_sum, hμ, hD]
+  simp only [Derivation.traceDerivForm_def, Matrix.map_apply, map_sum, hμ, hD]
 
-end Algebra
+end Derivation
 
-namespace Algebra
+namespace Derivation
 
 variable {k R B M M' : Type*} [CommRing k] [CommRing R] [CommRing B] [Algebra k R]
   [Algebra R B] [AddCommGroup M] [Module R M] [Module k M] (D : Derivation k R M)
@@ -66,4 +61,4 @@ lemma traceDeriv_compDer [IsScalarTower k R M] [IsScalarTower k R M'] (μ : M �
     (RingHom.id R) (RingHom.id B) (fun _ ↦ rfl) (fun _ ↦ rfl) μ.toAddMonoidHom
     (fun r m ↦ μ.map_smul r m) (fun _ ↦ rfl) a c
 
-end Algebra
+end Derivation

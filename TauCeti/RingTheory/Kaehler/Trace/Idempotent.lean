@@ -18,38 +18,19 @@ public import TauCeti.RingTheory.Kaehler.Trace.Basic
 Let `B` be a finite free `R`-algebra and `e ∈ B` an idempotent, so that
 `B ≅ B ⧸ (1 - e) × B ⧸ (e)`. If both factors are free over `R`, the trace derivation of `B`
 restricted to `e B` is the trace derivation of `B ⧸ (1 - e)`
-(`Algebra.traceDeriv_mul_idempotent`). Consequently, duality for the trace of differentials can be
+(`Derivation.traceDeriv_mul_idempotent`). Duality for the trace of differentials can be
 checked on the factors of `B`: if every maximal ideal of `B` avoids an idempotent `e` for which
 the trace derivation of `B ⧸ (1 - e)` induces an isomorphism `Ω ≅ Hom_R(-, M)`, then so does the
-trace derivation of `B`
-(`KaehlerDifferential.bijective_liftKaehlerDifferential_traceDerivation_of_isIdempotentElem`).
+trace derivation of `B`; see
+`Derivation.bijective_liftKaehlerDifferential_traceDerivation_of_isIdempotentElem`.
 
-## Source
-
-Adapted from `Jacobian/RingTheory/Kaehler/TraceIdempotent.lean` in the Jacobian library,
-accepted release `baef7723da528551b7d2f93bd9a9a53303b04dbc`.
 -/
 
 public section
 
-open Matrix
+open Matrix Algebra TauCeti.Algebra
 
-namespace Matrix
-
-variable {k R M : Type*} [CommRing k] [CommRing R] [Algebra k R] [AddCommGroup M] [Module R M]
-  [Module k M] (D : Derivation k R M)
-
-/-- `Tr(X D(Y))` for block diagonal matrices is the sum over the blocks. -/
-lemma traceDerivForm_fromBlocks {l m n p : Type*} [Fintype l] [Fintype m] [Fintype n]
-    [Fintype p] (X₁ : Matrix l m R) (X₂ : Matrix n p R) (Y₁ : Matrix m l R)
-    (Y₂ : Matrix p n R) :
-    traceDerivForm D (fromBlocks X₁ 0 0 X₂) (fromBlocks Y₁ 0 0 Y₂) =
-      traceDerivForm D X₁ Y₁ + traceDerivForm D X₂ Y₂ := by
-  simp [traceDerivForm_def, Fintype.sum_sum_type]
-
-end Matrix
-
-namespace Algebra
+namespace Derivation
 
 variable {R B : Type*} [CommRing R] [CommRing B] [Algebra R B] {e : B}
 
@@ -77,11 +58,11 @@ lemma traceDeriv_mul_idempotent [Module.Free R B] [Module.Finite R B]
     exact Ideal.mem_span_singleton'.mpr ⟨c, by ring⟩
   rw [h1, h2, map_zero, traceDerivForm_zero_left, add_zero]
 
-end Algebra
+end Derivation
 
-namespace KaehlerDifferential
+namespace Derivation
 
-open Algebra
+open Algebra TauCeti.Algebra
 
 variable {k R B : Type*} [CommRing k] [CommRing R] [CommRing B] [Algebra k R] [Algebra R B]
   [Algebra k B] [IsScalarTower k R B] [Module.Free R B] [Module.Finite R B]
@@ -139,11 +120,14 @@ theorem bijective_liftKaehlerDifferential_traceDerivation_of_isIdempotentElem
       refine PrecompLinearMap.ext fun c ↦ ?_
       obtain ⟨c, rfl⟩ := Ideal.Quotient.mk_surjective c
       rw [← liftKaehlerDifferential_traceDerivation_mul_idempotent D he]
-      exact congrArg (fun φ : PrecompLinearMap R B M ↦ φ (e * c)) hω
+      simpa only [PrecompLinearMap.zero_apply] using
+        congrArg (fun φ : PrecompLinearMap R B M ↦ φ (e * c)) hω
     obtain ⟨⟨_, n, rfl⟩, hn⟩ := (IsLocalizedModule.eq_zero_iff (Submonoid.powers e)
       (KaehlerDifferential.map k k B (B ⧸ Ideal.span {1 - e}))).1 h0
     rw [Submodule.mem_bot, ← he.pow_succ_eq n, pow_succ', mul_smul]
-    rw [show e ^ n • ω = 0 from hn, smul_zero]
+    -- The scalar in `hn` belongs to the powers submonoid; its action is the ambient action.
+    have hn' : e ^ n • ω = 0 := by simpa only [Submonoid.smul_def] using hn
+    rw [hn', smul_zero]
   · suffices φ ∈ LinearMap.range Ψ by exact this
     apply Submodule.mem_of_forall_maximal_exists_smul_mem
     intro q hq
@@ -176,5 +160,4 @@ theorem bijective_liftKaehlerDifferential_traceDerivation_of_isIdempotentElem
       _ = (e • φ : PrecompLinearMap R B M) c := by
         rw [PrecompLinearMap.smul_apply, smul_eq_mul]
 
-
-end KaehlerDifferential
+end Derivation

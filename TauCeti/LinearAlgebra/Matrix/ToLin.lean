@@ -224,8 +224,8 @@ theorem leftMulMatrix_algebraMap {R S : Type*} [CommSemiring R] [Semiring S] [Al
 
 /-- The matrix of multiplication by `ψ x` in the image of a basis is the image of the matrix of
 multiplication by `x`. -/
-lemma leftMulMatrix_map {R B R' B' : Type*} [CommRing R] [CommRing B]
-    [Algebra R B] [CommRing R'] [CommRing B'] [Algebra R' B']
+lemma leftMulMatrix_map {R B R' B' : Type*} [CommSemiring R] [Semiring B]
+    [Algebra R B] [CommSemiring R'] [Semiring B'] [Algebra R' B']
     {ι : Type*} [Fintype ι] [DecidableEq ι]
     (b : Module.Basis ι R B)
     (b' : Module.Basis ι R' B') (σ : R →+* R') (ψ : B →+* B')
