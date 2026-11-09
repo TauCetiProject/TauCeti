@@ -112,6 +112,7 @@ theorem demushkinWordNeTwo_def (q n : ℕ) (x : ℕ → H) :
   (rfl)
 
 /-- At rank zero the `q ≠ 2` word is `1` as soon as the generator `x₁` is trivial. -/
+@[simp]
 theorem demushkinWordNeTwo_zero (q : ℕ) {x : ℕ → H} (hx : x 0 = 1) :
     demushkinWordNeTwo q 0 x = 1 := by
   simp [demushkinWordNeTwo_def, hx]
@@ -190,6 +191,7 @@ theorem demushkinWordTwoOddTop_one (x : ℕ → H) : demushkinWordTwoOddTop 1 x 
   simp [demushkinWordTwoOddTop_def]
 
 /-- At rank zero the odd word at level `f = ∞` is `1` as soon as the generator `x₁` is trivial. -/
+@[simp]
 theorem demushkinWordTwoOddTop_zero {x : ℕ → H} (hx : x 0 = 1) :
     demushkinWordTwoOddTop 0 x = 1 := by
   simp [demushkinWordTwoOddTop_def, hx]
