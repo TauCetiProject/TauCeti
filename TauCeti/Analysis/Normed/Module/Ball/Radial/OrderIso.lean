@@ -24,7 +24,10 @@ The main use is a homeomorphism of `E` which squeezes a closed ball `closedBall 
 arbitrarily small closed ball `closedBall 0 δ` while fixing every point of norm at least `2 * r`
 (`TauCeti.exists_homeomorph_mapsTo_closedBall`). Read through an open embedding of `E` and extended
 by the identity, it shrinks a compact subset of a Euclidean open piece of a space by a homeomorphism
-supported in that piece; this is the basic move in the theory of cellular sets.
+supported in that piece; this is the basic move in the theory of cellular sets. Dually, a
+homeomorphism fixing a small closed ball `closedBall c (δ / 2)` squeezes any closed ball about `c`
+into `ball c δ` (`TauCeti.exists_homeomorph_eqOn_closedBall_mapsTo_ball`); this pulls a compact set
+towards a point while fixing a neighbourhood of it.
 
 ## Main definitions
 
@@ -35,6 +38,8 @@ supported in that piece; this is the basic move in the theory of cellular sets.
 * `OrderIso.norm_radialHomeomorph`: it rescales norms by `φ`.
 * `TauCeti.exists_homeomorph_mapsTo_closedBall`: a homeomorphism of `E` fixing the points of norm
   at least `2 * r` and mapping `closedBall 0 r` into `closedBall 0 δ`, for any `δ > 0`.
+* `TauCeti.exists_homeomorph_eqOn_closedBall_mapsTo_ball`: a homeomorphism of `E` fixing
+  `closedBall c (δ / 2)` and mapping `closedBall c r` into `ball c δ`, for any `δ > 0`.
 -/
 
 public section
@@ -148,5 +153,52 @@ theorem exists_homeomorph_mapsTo_closedBall {r δ : ℝ} (hδ : 0 < δ) :
   calc φ ‖x‖ ≤ φ r := hmono.monotone (mem_closedBall_zero_iff.1 hx)
     _ ≤ max (δ / r * r) (2 * r - 2 * r) := min_le_right _ _
     _ = δ := by rw [div_mul_cancel₀ _ hr.ne', sub_self, max_eq_left hδ.le]
+
+/-- **Squeezing towards a fixed core.** For every centre `c`, every `δ > 0` and every `r` there is
+a homeomorphism of `E` which fixes every point of `closedBall c (δ / 2)` and maps the closed ball
+`closedBall c r` into the open ball `ball c δ`. -/
+theorem exists_homeomorph_eqOn_closedBall_mapsTo_ball (c : E) (r : ℝ) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ ρ : E ≃ₜ E, EqOn ρ id (closedBall c (δ / 2)) ∧ MapsTo ρ (closedBall c r) (ball c δ) := by
+  set a := δ / 2
+  have ha : 0 < a := half_pos hδ
+  have hδa : a + a = δ := add_halves δ
+  set R := max r 0
+  -- A radial homeomorphism rescaling the norm by the identity up to `a`, and with slope `k` after.
+  set k := a / (a + R)
+  have hk : 0 < k := div_pos ha (by positivity)
+  have hk1 : k ≤ 1 := (div_le_one (by positivity)).2 (le_add_of_nonneg_right (le_max_right r 0))
+  set φ : ℝ → ℝ := fun t ↦ min t (a + k * (t - a)) with hφ_def
+  have hmono : StrictMono φ := fun s t hst ↦
+    min_lt_min hst (by have := mul_lt_mul_of_pos_left (sub_lt_sub_right hst a) hk; linarith)
+  have hcont : Continuous φ := by fun_prop
+  have hφ_small {t : ℝ} (ht : t ≤ a) : φ t = t :=
+    min_eq_left (by nlinarith)
+  have hφ_big {t : ℝ} (ht : a ≤ t) : φ t = a + k * (t - a) :=
+    min_eq_right (by nlinarith)
+  have hsurj : Function.Surjective φ := by
+    refine hcont.surjective ?_ ?_
+    · refine (tendsto_atTop_add_const_left _ a
+        ((tendsto_atTop_add_const_right _ (-a) tendsto_id).const_mul_atTop hk)).congr' ?_
+      filter_upwards [eventually_ge_atTop a] with t ht
+      rw [hφ_big ht, sub_eq_add_neg, id]
+    · exact tendsto_id.congr' (eventually_le_atBot a |>.mono fun t ht ↦ (hφ_small ht).symm)
+  set e : ℝ ≃o ℝ := hmono.orderIsoOfSurjective φ hsurj
+  have he (t : ℝ) : e t = φ t := rfl
+  have he0 : e 0 = 0 := by rw [he, hφ_small ha.le]
+  -- The radial homeomorphism of `e`, centred at `c`.
+  refine ⟨(Homeomorph.subRight c).trans ((e.radialHomeomorph he0).trans (Homeomorph.addRight c)),
+    fun x hx ↦ ?_, fun x hx ↦ ?_⟩
+  · rw [mem_closedBall, dist_eq_norm] at hx
+    simp [e.radialHomeomorph_eq_self he0 ((he _).trans (hφ_small hx))]
+  rw [mem_closedBall, dist_eq_norm] at hx
+  simp only [Homeomorph.trans_apply, Homeomorph.coe_subRight, Homeomorph.coe_addRight, mem_ball,
+    dist_eq_norm, add_sub_cancel_right, e.norm_radialHomeomorph, he]
+  have hxR : ‖x - c‖ ≤ R := hx.trans (le_max_left r 0)
+  have hkR : k * R < a := by
+    rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
+    nlinarith
+  calc φ ‖x - c‖ ≤ a + k * (‖x - c‖ - a) := min_le_right _ _
+    _ ≤ a + k * R := by nlinarith [norm_nonneg (x - c)]
+    _ < δ := by linarith
 
 end TauCeti

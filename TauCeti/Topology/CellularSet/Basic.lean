@@ -50,6 +50,8 @@ of compact sets with diameters tending to `0`. The collapse is their pointwise l
 ## Main results
 
 * `TauCeti.isCellularSet_iff`: the witnesses of cellularity.
+* `TauCeti.isCellularSet_of_forall_isOpen`: a closed set with arbitrarily small cell
+  neighbourhoods is cellular.
 * `TauCeti.IsCellularSet.isCompact`, `TauCeti.IsCellularSet.nonempty`: in a Hausdorff space, a
   cellular set is a nonempty compact set.
 * `TauCeti.exists_collapse_iInter`: the intersection of a nested sequence of compact sets with
@@ -265,6 +267,45 @@ theorem IsCellularSet.nonempty {E : Type*} [NormedAddCommGroup E] [ProperSpace E
     (fun i ↦ (hsub i).trans (image_mono ball_subset_closedBall))
     (fun i ↦ ⟨e i 0, mem_image_of_mem _ (mem_closedBall_self zero_le_one)⟩) (hQc 0)
     fun i ↦ (hQc i).isClosed
+
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
+/-- **Cellularity from small cell neighbourhoods.** A closed subset `X` of a metric space `M` is
+cellular if every open set `U ⊇ X` contains a closed cell, the image of the closed unit ball of `E`
+under a map continuous and injective on it, whose open cell contains `X` in its interior. -/
+theorem isCellularSet_of_forall_isOpen {X : Set M} (hX : IsClosed X)
+    (h : ∀ U : Set M, IsOpen U → X ⊆ U → ∃ e : E → M, ContinuousOn e (closedBall 0 1) ∧
+      InjOn e (closedBall 0 1) ∧ X ⊆ interior (e '' ball 0 1) ∧ e '' closedBall 0 1 ⊆ U) :
+    IsCellularSet E X := by
+  classical
+  have : Nonempty M := ⟨(h univ isOpen_univ (subset_univ X)).choose 0⟩
+  choose! e hec hei hXe heU using h
+  /- The open sets `U i` in which the cells are chosen: each lies in the interior of the previous
+  open cell and in the `1 / i`-thickening of `X`. -/
+  let U : ℕ → Set M := fun n ↦ Nat.rec univ
+    (fun i Ui ↦ interior (e Ui '' ball 0 1) ∩ thickening (1 / ((i : ℝ) + 1)) X) n
+  have hU (i : ℕ) : IsOpen (U i) ∧ X ⊆ U i := by
+    induction i with
+    | zero => exact ⟨isOpen_univ, subset_univ X⟩
+    | succ i ih =>
+      exact ⟨isOpen_interior.inter isOpen_thickening,
+        subset_inter (hXe _ ih.1 ih.2) (self_subset_thickening Nat.one_div_pos_of_nat X)⟩
+  have hUsucc (i : ℕ) :
+      U (i + 1) = interior (e (U i) '' ball 0 1) ∩ thickening (1 / ((i : ℝ) + 1)) X :=
+    rfl
+  refine (isCellularSet_iff E).2 ⟨fun i ↦ e (U i), fun i ↦ hec _ (hU i).1 (hU i).2,
+    fun i ↦ hei _ (hU i).1 (hU i).2, fun i ↦ ?_, ?_⟩
+  · refine (heU _ (hU (i + 1)).1 (hU (i + 1)).2).trans ?_
+    rw [hUsucc]
+    exact inter_subset_left.trans interior_subset
+  refine subset_antisymm (fun z hz ↦ ?_) (subset_iInter fun i ↦
+    ((hXe _ (hU i).1 (hU i).2).trans interior_subset).trans (image_mono ball_subset_closedBall))
+  rw [← hX.closure_eq, Metric.mem_closure_iff]
+  intro ε hε
+  obtain ⟨i, hi⟩ := exists_nat_one_div_lt hε
+  have hzU := heU _ (hU (i + 1)).1 (hU (i + 1)).2 (mem_iInter.1 hz (i + 1))
+  rw [hUsucc] at hzU
+  obtain ⟨b, hb, hzb⟩ := mem_thickening_iff.1 hzU.2
+  exact ⟨b, hb, hzb.trans hi⟩
 
 /-- **Collapsing a cellular set.** Let `M` be a metric space which is a topological manifold
 modelled on a finite-dimensional real normed space `E`, and `X ⊆ M` a cellular set. For every open
