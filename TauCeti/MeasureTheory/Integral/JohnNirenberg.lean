@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
 public import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # The John–Nirenberg inequality
@@ -78,6 +79,9 @@ averages under positive finite scaling.
   on every ball for a locally integrable function with bounded BMO seminorm.
 * `TauCeti.exists_setLIntegral_exp_mul_mul_setLIntegral_exp_neg_mul_ball_le`: Moser's crossover
   estimate for real functions of bounded mean oscillation on Euclidean balls.
+* `TauCeti.setLAverage_enorm_sub_setAverage_rpow_le_of_bmoSeminorm_le`: every power of the
+  oscillation of a function of bounded mean oscillation on a cube has average bounded by the
+  corresponding power of its BMO seminorm.
 
 ## References
 
@@ -1153,5 +1157,107 @@ theorem exists_setLIntegral_exp_mul_mul_setLIntegral_exp_neg_mul_ball_le :
         rw [ENNReal.coe_pow, mul_pow]
 
 end EuclideanBall
+
+section HigherOscillation
+
+/-! ### Higher mean oscillations
+
+On `ℝⁿ = ι → ℝ` with the sup distance, balls are cubes, and a function with `‖f‖_{BMO} ≤ M`
+satisfies the hypothesis of the John–Nirenberg inequality on every cube. The resulting exponential
+integrability bounds every power of the oscillation: `⨍_B ‖f - f_B‖^q ≤ C(n, q) M^q`. -/
+
+open Filter Metric Topology
+
+variable [Nonempty ι] [CompleteSpace E] {μ : Measure (ι → ℝ)} [μ.IsAddHaarMeasure]
+
+/-- For `0 < q`, `0 < σ` and `0 ≤ t`, `t ^ q ≤ (q / σ) ^ q exp (σ t)`. -/
+private theorem rpow_le_div_rpow_mul_exp {q σ t : ℝ} (hq : 0 < q) (hσ : 0 < σ) (ht : 0 ≤ t) :
+    t ^ q ≤ (q / σ) ^ q * Real.exp (σ * t) := by
+  have h1 : σ * t / q ≤ Real.exp (σ * t / q) := by linarith [Real.add_one_le_exp (σ * t / q)]
+  calc t ^ q = (q / σ * (σ * t / q)) ^ q := by congr 1; field_simp
+    _ = (q / σ) ^ q * (σ * t / q) ^ q := Real.mul_rpow (by positivity) (by positivity)
+    _ ≤ (q / σ) ^ q * Real.exp (σ * t / q) ^ q := by gcongr
+    _ = (q / σ) ^ q * Real.exp (σ * t) := by rw [← Real.exp_mul]; congr 2; field_simp
+
+/-- The bound on higher mean oscillations for a positive bound `M` on the BMO seminorm and a
+ball of positive radius. -/
+private theorem setLAverage_enorm_sub_setAverage_rpow_le_of_pos {f : (ι → ℝ) → E}
+    (hf : LocallyIntegrable f μ) {M : ℝ≥0} (hM0 : 0 < M) (hM : bmoSeminorm f μ ≤ M) {q : ℝ}
+    (hq : 0 < q) (c : ι → ℝ) {r : ℝ} (hr : 0 < r) :
+    ⨍⁻ x in ball c r, ‖f x - ⨍ y in ball c r, f y ∂μ‖ₑ ^ q ∂μ ≤
+      ENNReal.ofReal (7 * (2 ^ (Fintype.card ι + 1) * q / Real.log (3 / 2)) ^ q) * M ^ q := by
+  set n := Fintype.card ι
+  set K : ℝ := 2 ^ (n + 1) * q / Real.log (3 / 2)
+  have hlog : 0 < Real.log (3 / 2) := Real.log_pos (by norm_num)
+  have hK : 0 < K := by positivity
+  -- Closed and open balls agree up to a null set, so the BMO bound applies to closed balls.
+  have hMc : ∀ y ρ, closedBall y ρ ⊆ closedBall c r →
+      ⨍⁻ x in closedBall y ρ, ‖f x - ⨍ z in closedBall y ρ, f z ∂μ‖ₑ ∂μ ≤ M := fun y ρ _ => by
+    rw [Measure.restrict_congr_set (μ.addHaar_closedBall_ae_eq_ball y ρ)]
+    exact (setLAverage_enorm_sub_setAverage_le_bmoSeminorm f μ y ρ).trans hM
+  -- John–Nirenberg at the rate `σ` with `exp (2ⁿ⁺¹ σ M) = 3 / 2`.
+  set σ : ℝ := Real.log (3 / 2) / (2 ^ (n + 1) * M)
+  have hσ : 0 < σ := by positivity
+  have hσM : Real.exp (σ * (2 ^ (n + 1) * M)) = 3 / 2 := by
+    rw [div_mul_cancel₀ _ (by positivity), Real.exp_log (by norm_num)]
+  have hJN := setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le (μ := μ)
+    (hf.integrableOn_isCompact (isCompact_closedBall c r)) hMc (σ := σ) (by rw [hσM]; norm_num)
+  rw [hσM, Measure.restrict_congr_set (μ.addHaar_closedBall_ae_eq_ball c r),
+    measure_congr (μ.addHaar_closedBall_ae_eq_ball c r)] at hJN
+  have h0 : μ (ball c r) ≠ 0 := (measure_ball_pos μ c hr).ne'
+  have htop : μ (ball c r) ≠ ∞ := measure_ball_lt_top.ne
+  have hqσ : q / σ = K * M := by
+    simp only [σ, K]
+    field_simp
+  rw [setLAverage_eq, ENNReal.div_le_iff h0 htop]
+  calc ∫⁻ x in ball c r, ‖f x - ⨍ y in ball c r, f y ∂μ‖ₑ ^ q ∂μ
+      ≤ ∫⁻ x in ball c r, ENNReal.ofReal ((q / σ) ^ q) *
+          ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in ball c r, f y ∂μ‖)) ∂μ := by
+        refine lintegral_mono fun x => ?_
+        rw [← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hq.le,
+          ← ENNReal.ofReal_mul (by positivity)]
+        exact ENNReal.ofReal_le_ofReal (rpow_le_div_rpow_mul_exp hq hσ (norm_nonneg _))
+    _ = ENNReal.ofReal ((q / σ) ^ q) * ∫⁻ x in ball c r,
+          ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in ball c r, f y ∂μ‖)) ∂μ :=
+        lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+    _ ≤ ENNReal.ofReal ((q / σ) ^ q) *
+          (ENNReal.ofReal (1 + 2 * (3 / 2) / (2 - 3 / 2)) * μ (ball c r)) := by gcongr
+    _ = ENNReal.ofReal (7 * K ^ q) * M ^ q * μ (ball c r) := by
+        rw [hqσ, Real.mul_rpow hK.le M.coe_nonneg,
+          show (1 : ℝ) + 2 * (3 / 2) / (2 - 3 / 2) = 7 by norm_num,
+          ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul (by positivity),
+          ← ENNReal.ofReal_rpow_of_nonneg M.coe_nonneg hq.le, ENNReal.ofReal_coe_nnreal]
+        ring
+
+/-- **Higher mean oscillations of a function of bounded mean oscillation.** On `ℝⁿ = ι → ℝ`,
+`n ≥ 1`, with the sup distance and an additive Haar measure `μ`, let `f` be locally integrable
+with `‖f‖_{BMO} ≤ M`. Then for every `0 < q` and every ball `B`,
+
+`⨍_B ‖f - f_B‖^q ≤ 7 (2ⁿ⁺¹ q / log (3 / 2))^q M^q`.
+
+So every `Lᵠ` mean oscillation of `f`, not only the `L¹` one, is controlled by its BMO seminorm;
+this is a consequence of the exponential integrability given by the John–Nirenberg inequality. -/
+theorem setLAverage_enorm_sub_setAverage_rpow_le_of_bmoSeminorm_le {f : (ι → ℝ) → E}
+    (hf : LocallyIntegrable f μ) {M : ℝ≥0} (hM : bmoSeminorm f μ ≤ M) {q : ℝ} (hq : 0 < q)
+    (c : ι → ℝ) (r : ℝ) :
+    ⨍⁻ x in ball c r, ‖f x - ⨍ y in ball c r, f y ∂μ‖ₑ ^ q ∂μ ≤
+      ENNReal.ofReal (7 * (2 ^ (Fintype.card ι + 1) * q / Real.log (3 / 2)) ^ q) * M ^ q := by
+  rcases le_or_gt r 0 with hr | hr
+  · simp [ball_eq_empty.2 hr]
+  set C := ENNReal.ofReal (7 * (2 ^ (Fintype.card ι + 1) * q / Real.log (3 / 2)) ^ q)
+  -- Apply the bound with `M + ε` in place of `M` and let `ε → 0`.
+  have hlim : Tendsto (fun ε : ℝ≥0 => C * ((M + ε : ℝ≥0) : ℝ≥0∞) ^ q) (𝓝[>] 0)
+      (𝓝 (C * (M : ℝ≥0∞) ^ q)) := by
+    have hcont : Continuous fun ε : ℝ≥0 => C * ((M + ε : ℝ≥0) : ℝ≥0∞) ^ q :=
+      (ENNReal.continuous_const_mul ENNReal.ofReal_ne_top).comp
+        ((ENNReal.continuous_rpow_const).comp
+          (ENNReal.continuous_coe.comp (continuous_const.add continuous_id)))
+    simpa using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
+  refine ge_of_tendsto hlim (eventually_nhdsWithin_of_forall fun ε (hε : 0 < ε) => ?_)
+  refine setLAverage_enorm_sub_setAverage_rpow_le_of_pos hf (add_pos_of_nonneg_of_pos M.2 hε)
+    (hM.trans ?_) hq c hr
+  exact ENNReal.coe_le_coe.2 le_self_add
+
+end HigherOscillation
 
 end TauCeti
