@@ -178,9 +178,18 @@ of temperate growth satisfying Mihlin's condition of order `N`, `2N > dim E`, ma
 `H^{s,p}`. For `p = 2` every bounded symbol does (`MemSobolev.fourierMultiplierCLM_of_bounded`). -/
 theorem MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le (hp : 1 < p)
     (hp_top : p ≠ ∞) {s : ℝ} {f : 𝓢'(E, F)} (hf : MemSobolev s p f) {g : E → ℂ}
-    (hg : g.HasTemperateGrowth) {N : ℕ} (hN : finrank ℝ E < 2 * N) {A : ℝ≥0}
+    {N : ℕ} (hN : finrank ℝ E < 2 * N) {A : ℝ≥0}
     (hgA : ∀ k ≤ N, ∀ ξ ≠ 0, ‖iteratedFDeriv ℝ k g ξ‖ ≤ A / ‖ξ‖ ^ k) :
     MemSobolev s p (fourierMultiplierCLM F g f) := by
+  -- without temperate growth the symbol acts as `0`
+  by_cases hg : g.HasTemperateGrowth
+  swap
+  · have h0 (u : 𝓢'(E, F)) : smulLeftCLM F g u = 0 := by
+      ext f'
+      simp [SchwartzMap.smulLeftCLM, hg]
+    rw [fourierMultiplierCLM_apply, h0]
+    simp only [FourierTransformInv.fourierInv, map_zero]
+    exact (sobolevSubmodule E F s p).zero_mem
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- On the zero space every symbol is constant.
     have hconst : g = fun _ ↦ g 0 := funext fun x ↦ congrArg g (Subsingleton.elim x 0)
@@ -209,7 +218,7 @@ theorem MemSobolev.fourierMultiplierCLM_ofReal_of_norm_iteratedFDeriv_le_one_add
     MemSobolev s p (fourierMultiplierCLM F (fun x ↦ (g x : ℂ)) f) := by
   choose C hC using hgk
   set N := finrank ℝ E + 1
-  refine hf.fourierMultiplierCLM_of_norm_iteratedFDeriv_le hp hp_top (by fun_prop) (N := N)
+  refine hf.fourierMultiplierCLM_of_norm_iteratedFDeriv_le hp hp_top (N := N)
     (by omega) (A := ∑ k ∈ Finset.range (N + 1), ‖C k‖₊) fun k hk ξ hξ ↦ ?_
   have hreal : ‖iteratedFDeriv ℝ k (fun x ↦ (g x : ℂ)) ξ‖ = ‖iteratedFDeriv ℝ k g ξ‖ :=
     Complex.ofRealLI.norm_iteratedFDeriv_comp_left hg.1.contDiffAt (mod_cast le_top)
