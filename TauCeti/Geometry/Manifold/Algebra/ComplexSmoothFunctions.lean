@@ -17,7 +17,9 @@ This file equips their native `ContMDiffMap` carrier with the complex algebra st
 induced by constant functions. The native real scalar action agrees with restriction of
 scalars. Real and imaginary parts identify this real vector space with a pair of real
 function spaces, and conjugation is a real algebra involution. Differentiation commutes with
-real and imaginary parts at every nonzero differentiability order.
+real and imaginary parts at every nonzero differentiability order. Precomposition with a
+smooth map is a complex algebra homomorphism (`ContMDiffMap.compRightComplexAlgHom`), used
+to pull back complex-valued differential data.
 
 The constructions use Mathlib's pointwise smooth-function ring, `compLeftRingHom`, and
 its continuous real-linear maps `Complex.reCLM`, `Complex.imCLM`, `Complex.ofRealCLM`
@@ -78,6 +80,44 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 theorem complex_smul_apply (z : ℂ) (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) :
     (z • f) x = z * f x := by
   rfl
+
+section Pullback
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- Pullback of real-smooth complex-valued functions as a complex algebra homomorphism. -/
+def compRightComplexAlgHom (φ : C^n⟮J, N; I, M⟯) :
+    C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₐ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯ where
+  toFun f := f.comp φ
+  map_one' := rfl
+  map_mul' _ _ := rfl
+  map_zero' := rfl
+  map_add' _ _ := rfl
+  commutes' _ := rfl
+
+@[simp]
+theorem compRightComplexAlgHom_apply (φ : C^n⟮J, N; I, M⟯)
+    (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : compRightComplexAlgHom φ f = f.comp φ :=
+  (rfl)
+
+/-- Pullback along the identity is the identity algebra homomorphism. -/
+@[simp]
+theorem compRightComplexAlgHom_id :
+    compRightComplexAlgHom (ContMDiffMap.id : C^n⟮I, M; I, M⟯) = AlgHom.id ℂ _ :=
+  (rfl)
+
+/-- Pullback along a composite reverses the order of the algebra homomorphisms. -/
+theorem compRightComplexAlgHom_comp {E'' H'' P : Type*}
+    [NormedAddCommGroup E''] [NormedSpace ℝ E''] [TopologicalSpace H'']
+    {K : ModelWithCorners ℝ E'' H''} [TopologicalSpace P] [ChartedSpace H'' P]
+    (φ : C^n⟮J, N; I, M⟯) (ψ : C^n⟮K, P; J, N⟯) :
+    compRightComplexAlgHom (φ.comp ψ) =
+      (compRightComplexAlgHom ψ).comp (compRightComplexAlgHom φ) :=
+  (rfl)
+
+end Pullback
 
 /-- Restricting complex scalars recovers the native real scalar action. -/
 instance complexSmoothFunctions_isScalarTower :

@@ -21,7 +21,10 @@ These are real-smooth functions, not holomorphic functions.
 The square-ideal calculation reduces to real and imaginary parts and the real Hadamard
 factorization in `TauCeti.mem_smoothVanishingIdeal_sq_iff_of_isInteriorPoint`.
 The quotient and its descent use Mathlib's
-`Ideal.Cotangent` and `Ideal.Cotangent.lift`.
+`Ideal.Cotangent` and `Ideal.Cotangent.lift`. Pullback of functions induces complex-linear
+maps on these quotients, corresponding to precomposition of covectors with the differential.
+In particular, open restriction is an isomorphism. These constructions parallel the real
+cotangent pullback in `TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic`.
 
 ## References
 
@@ -89,6 +92,72 @@ theorem mem_complexSmoothVanishingIdeal_sq_iff_re_im {x : M}
     rw [← f.ofReal_re_add_I_smul_im]
     exact add_mem (ofReal_mem_complexSmoothVanishingIdeal_sq hr)
       (Submodule.smul_of_tower_mem _ Complex.I (ofReal_mem_complexSmoothVanishingIdeal_sq hi))
+
+section Pullback
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace N] [ChartedSpace H' N]
+  {E'' H'' P : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+  [TopologicalSpace H''] {K : ModelWithCorners ℝ E'' H''}
+  [TopologicalSpace P] [ChartedSpace H'' P]
+
+/-- Evaluation ideals pull back to evaluation ideals under composition of functions. -/
+@[simp]
+theorem comap_complexSmoothVanishingIdeal (φ : C^∞⟮J, N; I, M⟯) (y : N) :
+    (complexSmoothVanishingIdeal J y).comap (ContMDiffMap.compRightComplexAlgHom φ) =
+      complexSmoothVanishingIdeal I (φ y) :=
+  Ideal.ext fun f ↦ by simp
+
+/-- Pullback preserves vanishing at the specified points. -/
+theorem comp_mem_complexSmoothVanishingIdeal (φ : C^∞⟮J, N; I, M⟯) {x : M} {y : N}
+    (h : φ y = x) {f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hf : f ∈ complexSmoothVanishingIdeal I x) :
+    f.comp φ ∈ complexSmoothVanishingIdeal J y := by
+  simp [h, mem_complexSmoothVanishingIdeal_iff.mp hf]
+
+/-- Pullback of algebraic complex cotangent classes along a smooth map. No dimension,
+Hausdorffness or interior-point assumptions are needed to define this map. -/
+def complexSmoothCotangentMap (φ : C^∞⟮J, N; I, M⟯) {x : M} {y : N} (h : φ y = x) :
+    (complexSmoothVanishingIdeal I x).Cotangent →ₗ[ℂ]
+      (complexSmoothVanishingIdeal J y).Cotangent :=
+  Ideal.mapCotangent _ _ (ContMDiffMap.compRightComplexAlgHom φ)
+    (by rw [comap_complexSmoothVanishingIdeal, h])
+
+/-- Pullback sends the class of a vanishing function to the class of its composition. -/
+@[simp]
+theorem complexSmoothCotangentMap_toCotangent (φ : C^∞⟮J, N; I, M⟯) {x : M} {y : N}
+    (h : φ y = x) (f : complexSmoothVanishingIdeal I x) :
+    complexSmoothCotangentMap φ h ((complexSmoothVanishingIdeal I x).toCotangent f) =
+      (complexSmoothVanishingIdeal J y).toCotangent
+        ⟨(f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯).comp φ,
+          comp_mem_complexSmoothVanishingIdeal φ h f.2⟩ :=
+  (Ideal.mapCotangent_toCotangent _ _ _ _ f).trans
+    (congrArg _ (Subtype.ext (ContMDiffMap.compRightComplexAlgHom_apply φ _)))
+
+/-- Pullback along the identity acts identically on cotangent classes. -/
+@[simp]
+theorem complexSmoothCotangentMap_id (x : M)
+    (h : (ContMDiffMap.id : C^∞⟮I, M; I, M⟯) x = x) :
+    complexSmoothCotangentMap ContMDiffMap.id h = LinearMap.id := by
+  refine LinearMap.ext fun u ↦ ?_
+  obtain ⟨f, rfl⟩ := Ideal.toCotangent_surjective _ u
+  rw [complexSmoothCotangentMap_toCotangent, LinearMap.id_apply]
+  exact congrArg _ (Subtype.ext (ContMDiffMap.ext fun _ ↦ rfl))
+
+/-- Cotangent pullback is contravariantly functorial. -/
+theorem complexSmoothCotangentMap_comp (φ : C^∞⟮J, N; I, M⟯)
+    (ψ : C^∞⟮K, P; J, N⟯) {x : M} {y : N} {z : P}
+    (h : φ.comp ψ z = x) (hφ : φ y = x) (hψ : ψ z = y) :
+    complexSmoothCotangentMap (φ.comp ψ) h =
+      complexSmoothCotangentMap ψ hψ ∘ₗ complexSmoothCotangentMap φ hφ := by
+  refine LinearMap.ext fun u ↦ ?_
+  obtain ⟨f, rfl⟩ := Ideal.toCotangent_surjective _ u
+  rw [LinearMap.comp_apply, complexSmoothCotangentMap_toCotangent,
+    complexSmoothCotangentMap_toCotangent, complexSmoothCotangentMap_toCotangent]
+  exact congrArg _ (Subtype.ext (ContMDiffMap.ext fun _ ↦ rfl))
+
+end Pullback
 
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M]
 
@@ -169,5 +238,92 @@ theorem complexSmoothCotangentEquiv_toCotangent {x : M} (hx : I.IsInteriorPoint 
     complexSmoothCotangentEquiv hx ((complexSmoothVanishingIdeal I x).toCotangent f) =
       mvfderiv I (f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) x :=
   Ideal.Cotangent.lift_toCotangent _ (complexVanishingIdealDifferential_mul hx) f
+
+section Pullback
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [FiniteDimensional ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N] [T2Space N]
+
+/-- The complex cotangent identification intertwines algebraic pullback and the transpose
+of the real differential, with complex-valued covectors. -/
+theorem complexSmoothCotangentEquiv_complexSmoothCotangentMap
+    (φ : C^∞⟮J, N; I, M⟯) {x : M} {y : N} (h : φ y = x)
+    (hx : I.IsInteriorPoint x) (hy : J.IsInteriorPoint y)
+    (u : (complexSmoothVanishingIdeal I x).Cotangent) :
+    complexSmoothCotangentEquiv hy (complexSmoothCotangentMap φ h u) =
+      (complexSmoothCotangentEquiv hx u).comp (mfderiv J I φ y) := by
+  subst h
+  obtain ⟨f, rfl⟩ := Ideal.toCotangent_surjective _ u
+  rw [complexSmoothCotangentMap_toCotangent, complexSmoothCotangentEquiv_toCotangent,
+    complexSmoothCotangentEquiv_toCotangent]
+  exact mvfderiv_comp y
+    ((f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯).contMDiff.mdifferentiable (by simp) _)
+    (φ.contMDiff.mdifferentiable (by simp) y)
+
+/-- An invertible differential induces a bijection on complex cotangent quotients. -/
+theorem complexSmoothCotangentMap_bijective (φ : C^∞⟮J, N; I, M⟯) {x : M} {y : N}
+    (h : φ y = x) (hx : I.IsInteriorPoint x) (hy : J.IsInteriorPoint y)
+    (hφ : (mfderiv J I φ y).IsInvertible) :
+    Function.Bijective (complexSmoothCotangentMap φ h) := by
+  subst h
+  obtain ⟨e, he⟩ := hφ
+  have hmap : ⇑(complexSmoothCotangentMap φ rfl) = (complexSmoothCotangentEquiv hy).symm ∘
+      e.symm.arrowCongr (ContinuousLinearEquiv.refl ℝ ℂ) ∘ complexSmoothCotangentEquiv hx := by
+    funext u
+    rw [Function.comp_apply, Function.comp_apply, LinearEquiv.eq_symm_apply,
+      complexSmoothCotangentEquiv_complexSmoothCotangentMap φ rfl hx hy, ← he]
+    ext v
+    simp
+  rw [hmap]
+  exact (complexSmoothCotangentEquiv hy).symm.bijective.comp
+    ((e.symm.arrowCongr _).bijective.comp (complexSmoothCotangentEquiv hx).bijective)
+
+end Pullback
+
+/-- Restricting complex-valued smooth functions to an open neighbourhood induces a
+complex-linear isomorphism on their algebraic cotangent spaces. -/
+def complexSmoothCotangentRestrictEquiv (U : TopologicalSpace.Opens M) {x : U}
+    (hx : I.IsInteriorPoint (x : M)) :
+    (complexSmoothVanishingIdeal I (x : M)).Cotangent ≃ₗ[ℂ]
+      (complexSmoothVanishingIdeal I x).Cotangent :=
+  LinearEquiv.ofBijective
+    (complexSmoothCotangentMap (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯)
+      (y := x) (by simp))
+    (complexSmoothCotangentMap_bijective _ _ hx (I.isInteriorPoint_iff_isInteriorPoint_val.mpr hx)
+      ⟨Manifold.tangentSpaceOpenEquiv x, (Manifold.mfderiv_subtype_val x).symm⟩)
+
+/-- Open restriction is cotangent pullback along the inclusion. -/
+theorem coe_complexSmoothCotangentRestrictEquiv (U : TopologicalSpace.Opens M) {x : U}
+    (hx : I.IsInteriorPoint (x : M)) :
+    ⇑(complexSmoothCotangentRestrictEquiv U hx) =
+      complexSmoothCotangentMap (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯)
+        (y := x) (by simp) :=
+  funext (LinearEquiv.ofBijective_apply _)
+
+/-- Restriction sends the class of a vanishing function to that of its restriction. -/
+@[simp]
+theorem complexSmoothCotangentRestrictEquiv_toCotangent (U : TopologicalSpace.Opens M)
+    {x : U} (hx : I.IsInteriorPoint (x : M)) (f : complexSmoothVanishingIdeal I (x : M)) :
+    complexSmoothCotangentRestrictEquiv U hx
+        ((complexSmoothVanishingIdeal I (x : M)).toCotangent f) =
+      (complexSmoothVanishingIdeal I x).toCotangent
+        ⟨(f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯).comp
+          (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯),
+          comp_mem_complexSmoothVanishingIdeal _ (by simp) f.2⟩ := by
+  rw [coe_complexSmoothCotangentRestrictEquiv]
+  exact complexSmoothCotangentMap_toCotangent _ (by simp) f
+
+/-- Open restriction agrees with the canonical identification of the tangent spaces of
+an open subset and its ambient manifold. -/
+theorem complexSmoothCotangentEquiv_complexSmoothCotangentRestrictEquiv
+    (U : TopologicalSpace.Opens M) {x : U} (hx : I.IsInteriorPoint (x : M))
+    (u : (complexSmoothVanishingIdeal I (x : M)).Cotangent) :
+    complexSmoothCotangentEquiv (I.isInteriorPoint_iff_isInteriorPoint_val.mpr hx)
+        (complexSmoothCotangentRestrictEquiv U hx u) =
+      (complexSmoothCotangentEquiv hx u).comp
+        (Manifold.tangentSpaceOpenEquiv x).toContinuousLinearMap := by
+  rw [← Manifold.mfderiv_subtype_val x]
+  exact complexSmoothCotangentEquiv_complexSmoothCotangentMap _ (by simp) hx _ u
 
 end TauCeti
