@@ -199,8 +199,8 @@ theorem hasSum_amiceEquiv_symm_mul_coeff_amiceTransform
       (((n / p ^ h).factorial : K) * (amiceTransform μ).coeff n)) (stage h μ c) := by
   convert ((hasSum_amiceMap K ((amiceEquiv p h K).symm c)).mapL (stage h μ)) using 1
   · ext n
-    rw [← smul_eq_mul, ← map_smul, ← amiceTerm_smul, stage_amiceTerm]
-    simp
+    rw [stage_amiceTerm]
+    simp only [mul_assoc, mul_left_comm]
   · simp only [← amiceEquiv_apply, LinearIsometryEquiv.apply_symm_apply]
 
 /-- The weighted moments at every level are bounded by the stage operator norm. -/
