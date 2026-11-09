@@ -45,27 +45,20 @@ abbrev DeletedComponent :=
   {C : (G.induce ({(c : V)}ᶜ : Set V)).ConnectedComponent //
     C.map (Embedding.induce ({(c : V)}ᶜ : Set V)).toHom = G.connectedComponentMk c}
 
-private theorem not_isIsolated : ¬G.IsIsolated c := by
-  classical
-  intro hiso
-  obtain ⟨u, w, huv, -, ⟨p⟩, hp⟩ := isCutVertex_iff_exists_forall_walk_mem_support.1 c.2
-  exact not_reachable_of_neighborSet_right_eq_empty huv hiso.neighborSet_eq_empty
-    (p.takeUntil c (hp p)).reachable
-
 /-- A chosen neighbour of `c` in an incident block. -/
 private noncomputable def neighborInBlock
     (B : {B : G.BlockVertex // (c : V) ∈ (B : Set V)}) : V :=
-  (B.1.2.exists_adj_of_not_isIsolated_mem c.not_isIsolated B.2).choose
+  (B.1.2.exists_adj_of_not_isIsolated_mem c.2.not_isIsolated B.2).choose
 
 private theorem neighborInBlock_mem
     (B : {B : G.BlockVertex // (c : V) ∈ (B : Set V)}) :
     c.neighborInBlock B ∈ (B.1 : Set V) :=
-  (B.1.2.exists_adj_of_not_isIsolated_mem c.not_isIsolated B.2).choose_spec.1
+  (B.1.2.exists_adj_of_not_isIsolated_mem c.2.not_isIsolated B.2).choose_spec.1
 
 private theorem adj_neighborInBlock
     (B : {B : G.BlockVertex // (c : V) ∈ (B : Set V)}) :
     G.Adj c (c.neighborInBlock B) :=
-  (B.1.2.exists_adj_of_not_isIsolated_mem c.not_isIsolated B.2).choose_spec.2
+  (B.1.2.exists_adj_of_not_isIsolated_mem c.2.not_isIsolated B.2).choose_spec.2
 
 private theorem neighborInBlock_ne
     (B : {B : G.BlockVertex // (c : V) ∈ (B : Set V)}) :
