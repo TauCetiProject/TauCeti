@@ -181,8 +181,7 @@ theorem span_range_eq_top {R R' M M' : Type*} [CommSemiring R] [CommSemiring R']
     [AddCommMonoid M] [Module R M] [AddCommMonoid M'] [Module R M'] [Module R' M']
     [IsScalarTower R R' M'] {f : M →ₗ[R] M'} (hf : IsBaseChange R' f) :
     Submodule.span R' (Set.range f) = ⊤ := by
-  refine eq_top_iff.2 fun n _ ↦ ?_
-  clear ‹n ∈ ⊤›
+  refine Submodule.eq_top_iff'.2 fun n ↦ ?_
   induction n using hf.inductionOn with
   | tmul a => exact Submodule.subset_span ⟨a, rfl⟩
   | smul r n hn => exact Submodule.smul_mem _ r hn
