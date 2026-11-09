@@ -139,13 +139,10 @@ private theorem realificationTangent_mvfderiv {F : Type*}
     (v : RestrictScalars ℝ ℂ (TangentSpace 𝓘(ℂ, E) x)) :
     mvfderiv 𝓘(ℝ, E) f x (realificationTangent x v) =
       mvfderiv 𝓘(ℂ, E) f x (RestrictScalars.addEquiv ℝ ℂ _ v) := by
-  have h := congrArg (tangentSpaceCastModel 𝓘(ℝ, F) (f x))
-    (realificationTangent_mfderiv hf v)
-  simp only [realificationTangent_apply, AddEquiv.apply_symm_apply,
-    ContinuousLinearEquiv.apply_symm_apply] at h
-  simp only [mvfderiv, NormedSpace.fromTangentSpace, realificationTangent_apply]
-  rw [ContinuousLinearMap.comp_apply]
-  exact h.symm
+  have h := hf.mvfderiv_restrictScalars_apply ℝ v
+  rw [TangentSpace.restrictScalarsLinearEquiv_apply] at h
+  rw [modelWithCornersSelf_restrictScalars] at h
+  simpa only [realificationTangent_apply] using h
 
 section Tangent
 
