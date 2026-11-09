@@ -40,6 +40,8 @@ directions before taking products.
 * `TauCeti.Grid.cIoo_union_swap`: the two opposite arcs cover the endpoint complement.
 * `TauCeti.Grid.mem_cIoo_cyclic_left`, `TauCeti.Grid.mem_cIoo_cyclic_right`: the two rotations
   of a cyclic order of three points.
+* `TauCeti.Grid.notMem_cIoo_of_mem_cIoo`: if `a` lies on the arc from `d` to `b`, then `d` is not
+  on the arc from `a` to `b`.
 * `TauCeti.Grid.mem_cIoo_swap_of_notMem`: a point off both endpoints that misses one arc lies on
   the opposite arc.
 * `TauCeti.Grid.mem_cIoo_of_mem_cIoo_of_mem_cIoo_swap`: if `a` and `b` lie on opposite arcs from
@@ -638,6 +640,11 @@ theorem mem_cIoo_cyclic_left {a b c : Fin n} (h : b ∈ cIoo a c) : c ∈ cIoo b
 theorem mem_cIoo_cyclic_right {a b c : Fin n} (h : b ∈ cIoo a c) : a ∈ cIoo c b := by
   simp only [cIoo, Set.Finite.mem_toFinset, Set.mem_cIoo] at h ⊢
   exact sbtw_cyclic_right h
+
+/-- If `a` lies on the clockwise arc from `d` to `b`, then `d` does not lie on the clockwise arc
+from `a` to `b`. -/
+theorem notMem_cIoo_of_mem_cIoo {a b d : Fin n} (h : a ∈ cIoo d b) : d ∉ cIoo a b := fun h' =>
+  (Finset.disjoint_left.mp (disjoint_cIoo_swap a b)) h' (mem_cIoo_cyclic_right h)
 
 /-- A point off both endpoints and outside one cyclic arc lies on the opposite arc. -/
 theorem mem_cIoo_swap_of_notMem {a b u : Fin n} (hab : a ≠ b)
