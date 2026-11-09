@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.PointProcess.Poisson.Basic
 public import TauCeti.Probability.PointProcess.Poisson.Finite
 import TauCeti.Probability.Distributions.Multinomial.Sampling
+import TauCeti.MeasureTheory.Measure.Measurability
 
 /-!
 # Independent counts in finite Poisson sampling
@@ -47,8 +48,6 @@ private theorem map_singleton_finitePoissonLaw_categorical {ι : Type*} [Fintype
     measurable_from_prod_countable_right fun n =>
       Finset.measurable_sum (Finset.range n) fun j _ =>
         Measure.measurable_dirac.comp (measurable_pi_apply j)
-  have hc : Measurable fun ξ : Measure ι => fun i => ξ {i} :=
-    measurable_pi_iff.2 fun i => Measure.measurable_coe (measurableSet_singleton i)
   have hk : Measurable fun z : ℕ × (ℕ → ι) => fun i =>
       ((Finset.range z.1).filter fun j => z.2 j = i).card := by
     apply measurable_from_prod_countable_right
@@ -58,7 +57,8 @@ private theorem map_singleton_finitePoissonLaw_categorical {ι : Type*} [Fintype
     simp_rw [Finset.card_filter]
     exact Finset.measurable_sum _ fun j _ => measurable_const.ite
       (measurableSet_eq_fun (measurable_pi_apply j) measurable_const) measurable_const
-  rw [finitePoissonLaw_eq_map_prod_infinitePi, Measure.map_map hc hm,
+  rw [finitePoissonLaw_eq_map_prod_infinitePi,
+    Measure.map_map TauCeti.MeasureTheory.measurable_singleton_evals hm,
     ← map_card_filter_prod_poissonMeasure, Measure.map_map (by fun_prop) hk]
   congr 1
   funext z i
@@ -77,12 +77,13 @@ private theorem map_eval_preimage_finitePoissonLaw {X ι : Type*} [MeasurableSpa
   have hmap := congrArg (fun ν : Measure (Option ι → ℝ≥0∞) =>
     ν.map (fun k i => k (some i))) (map_singleton_finitePoissonLaw_categorical r p)
   rw [hp, ← map_finitePoissonLaw r Q hcm] at hmap
-  have hev : Measurable fun ξ : Measure (Option ι) => fun i => ξ {i} :=
-    measurable_pi_iff.2 fun i => Measure.measurable_coe (measurableSet_singleton i)
   have hselect : Measurable fun k : Option ι → ℝ≥0∞ => fun i : ι => k (some i) := by
     fun_prop
-  rw [Measure.map_map hev (Measure.measurable_map c hcm),
-    Measure.map_map hselect (hev.comp (Measure.measurable_map c hcm))] at hmap
+  rw [Measure.map_map TauCeti.MeasureTheory.measurable_singleton_evals
+      (Measure.measurable_map c hcm),
+    Measure.map_map hselect
+      (TauCeti.MeasureTheory.measurable_singleton_evals.comp
+        (Measure.measurable_map c hcm))] at hmap
   simp only [Function.comp_def, Measure.map_apply hcm (measurableSet_singleton _)] at hmap
   rw [hmap]
   have hproj : (Measure.pi fun i => poissonMeasure (r * p.weights i)).map
@@ -127,47 +128,29 @@ theorem map_eval_finitePoissonLaw {X ι : Type*} [MeasurableSpace X] [Fintype ι
         exact Set.disjoint_left.1 (hd hne) hmem hi
     · simp only [false_iff]
       exact fun hi => hx ⟨i, hi⟩
+  have hpre (i : ι) : c ⁻¹' {some i} = A i := Set.ext fun x => hc x i
   have hcm : Measurable c := by
     apply measurable_to_countable'
     intro i
     cases i with
     | some i =>
-      convert hA i using 1
-      ext x
-      exact hc x i
+      rw [hpre]
+      exact hA i
     | none =>
       have he : c ⁻¹' {none} = (⋃ i, A i)ᶜ := by
         ext x
         simp [c]
       rw [he]
       exact (MeasurableSet.iUnion hA).compl
-  -- The finite categorical pushforward is represented by its singleton weights.
-  let μ := Q.map c
-  have : IsProbabilityMeasure μ := inferInstance
-  let p : StdSimplex ℝ≥0 (Option ι) :=
-    { weights := Finsupp.equivFunOnFinite.symm fun i => (μ {i}).toNNReal
-      nonneg := fun _ => bot_le
-      total := by
-        rw [Finsupp.sum_fintype _ _ (by simp)]
-        simp only [Finsupp.coe_equivFunOnFinite_symm]
-        apply ENNReal.coe_injective
-        push_cast
-        simp only [ENNReal.coe_toNNReal (measure_ne_top μ _)]
-        rw [sum_measure_singleton, Finset.coe_univ, measure_univ] }
-  have hp : categoricalMeasure p = μ := by
-    apply Measure.ext_of_singleton
-    intro i
-    simp [categoricalMeasure_singleton, p, ENNReal.coe_toNNReal]
+  obtain ⟨p, hp⟩ := (Q.map c).exists_categoricalMeasure_eq
   have hweights (i : ι) : p.weights (some i) = (Q (A i)).toNNReal := by
-    simp only [p, Finsupp.coe_equivFunOnFinite_symm, μ,
-      Measure.map_apply hcm (measurableSet_singleton _)]
-    congr 2
-    exact Set.ext fun x => hc x i
-  have hpre (i : ι) : c ⁻¹' {some i} = A i := Set.ext fun x => hc x i
+    have hi := congrArg (fun μ : Measure (Option ι) => (μ {some i}).toNNReal) hp
+    simpa only [categoricalMeasure_singleton, ENNReal.toNNReal_coe,
+      Measure.map_apply hcm (measurableSet_singleton _), hpre] using hi
   simpa only [hpre, hweights] using map_eval_preimage_finitePoissonLaw r Q c hcm p hp
 
-/-- Sampling a Poisson number of independent locations gives a Poisson random measure.
-Atomic location laws retain multiplicities; zero rate gives the empty measure. -/
+/-- Sampling a Poisson number of independent locations gives a Poisson random measure
+with intensity equal to the sampling rate times the location law. -/
 theorem isPoissonRandomMeasure_finitePoissonLaw {X : Type*} [MeasurableSpace X]
     (r : ℝ≥0) (Q : Measure X) [IsProbabilityMeasure Q] :
     IsPoissonRandomMeasure (finitePoissonLaw r Q) id ((r : ℝ≥0∞) • Q) := by
