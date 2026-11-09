@@ -56,6 +56,8 @@ Marcinkiewicz interpolation at the height `t / 2` produces the constant
 For a base in `ℝ≥0` greater than one, power comparisons also express rational bounds and
 closed intervals for a reciprocal radius parameter `α / r`.
 
+On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every positive exponent `a`.
+
 ## Main declarations
 
 * `ENNReal.le_of_rpow_le_mul_rpow_sub_one`: `X ^ r ≤ C * X ^ (r - 1)` gives `X ≤ C` for a finite
@@ -84,6 +86,7 @@ closed intervals for a reciprocal radius parameter `α / r`.
   `ofReal (p * 2⁻¹ ^ (1 - p) / (p - 1)) * (2 * A) = ofReal (2 * p * 2 ^ (p - 1) / (p - 1)) * A`.
 * `NNReal.rpow_neg_mem_Icc_iff`: an interval of negative powers is equivalent to an interval
   for the reciprocal parameter `α / r`.
+* `TauCeti.tendsto_const_mul_nnnorm_rpow_nhds_zero`: `c * ‖x‖₊ ^ a → 0` as `x → 0` for `0 < a`.
 -/
 
 public section
@@ -341,3 +344,15 @@ theorem rpow_den_num_le_iff {b : ℝ≥0} (hb : 1 < b) (r : ℝ) (hr : 0 < r)
   constructor <;> intro h <;> nlinarith
 
 end NNReal
+
+namespace TauCeti
+
+/-- For a positive exponent `a`, the map `x ↦ c * ‖x‖₊ ^ a` on a seminormed group tends to `0`
+at `0`. -/
+theorem tendsto_const_mul_nnnorm_rpow_nhds_zero {E : Type*} [SeminormedAddGroup E] (c : ℝ≥0)
+    {a : ℝ} (ha : 0 < a) : Filter.Tendsto (fun x : E ↦ c * ‖x‖₊ ^ a) (𝓝 0) (𝓝 0) := by
+  have h : Continuous fun x : E ↦ c * ‖x‖₊ ^ a :=
+    continuous_const.mul ((NNReal.continuous_rpow_const ha.le).comp continuous_nnnorm)
+  simpa [NNReal.zero_rpow ha.ne'] using h.tendsto 0
+
+end TauCeti

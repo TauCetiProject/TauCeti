@@ -43,7 +43,8 @@ For `t ≥ 0`, the outer parallel set `K + t • closedBall 0 1` of a compact se
 `t`-thickening (`IsCompact.add_smul_closedBall_eq_cthickening`).
 
 A scalar of norm one maps the product of a set with a ball about zero to itself when it acts on the
-ball factor (`TauCeti.mapsTo_prodMk_smul_ball`).
+ball factor (`TauCeti.mapsTo_prodMk_smul_ball`). A scalar `c` maps the ball of radius `R` about
+zero into the ball of radius `ρ` once `‖c‖ * R < ρ` (`TauCeti.smul_mem_ball_zero_of_norm_mul_lt`).
 
 A closed ball of positive radius is homeomorphic to the closed unit ball by a rescaling that
 matches the boundary spheres (`TauCeti.exists_homeomorph_closedBall_one_norm_eq`).
@@ -106,6 +107,23 @@ theorem mapsTo_prodMk_smul_ball {U : Set α} {R : ℝ} {ζ : 𝕜} (hζ : ‖ζ�
   simpa only [mem_ball_zero_iff, norm_smul, hζ, one_mul] using hb.2
 
 end ProdBall
+
+section SMulBall
+
+open Metric
+
+variable {𝕜 E : Type*} [SeminormedAddGroup 𝕜] [SeminormedAddGroup E] [SMul 𝕜 E]
+  [NormSMulClass 𝕜 E]
+
+/-- Scaling by `c` maps the ball of radius `R` about zero into the ball of radius `ρ` once
+`‖c‖ * R < ρ`. -/
+theorem smul_mem_ball_zero_of_norm_mul_lt {c : 𝕜} {R ρ : ℝ} (hc : ‖c‖ * R < ρ) {z : E}
+    (hz : z ∈ ball (0 : E) R) : c • z ∈ ball (0 : E) ρ := by
+  rw [mem_ball_zero_iff] at hz ⊢
+  rw [norm_smul]
+  exact (mul_le_mul_of_nonneg_left hz.le (norm_nonneg c)).trans_lt hc
+
+end SMulBall
 
 section Sphere
 

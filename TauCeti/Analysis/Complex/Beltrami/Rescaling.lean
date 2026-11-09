@@ -8,6 +8,9 @@ module
 public import TauCeti.Analysis.Holder.Localization
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
+import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -59,54 +62,27 @@ namespace TauCeti
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- Rescaling by `ε` maps the ball of radius `R` into the ball of radius `ρ` once
-`|ε| R < ρ`. -/
-private theorem smul_mem_ball_of_abs_mul_lt {ε R ρ : ℝ} (hε : |ε| * R < ρ) {z : E}
-    (hz : z ∈ ball (0 : E) R) : ε • z ∈ ball (0 : E) ρ := by
-  rw [mem_ball_zero_iff] at hz ⊢
-  rw [norm_smul, Real.norm_eq_abs]
-  exact (mul_le_mul_of_nonneg_left hz.le (abs_nonneg ε)).trans_lt hε
-
-/-- Eventually as `ε → 0`, rescaling by `ε` maps the ball of radius `R` into the ball of radius
-`ρ > 0`. -/
-private theorem eventually_abs_mul_lt (R : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
-    ∀ᶠ ε in 𝓝 (0 : ℝ), |ε| * R < ρ := by
-  have h : ContinuousAt (fun ε : ℝ ↦ |ε| * R) 0 :=
-    (continuous_abs.mul continuous_const).continuousAt
-  exact h.eventually (gt_mem_nhds (by simpa using hρ))
-
-/-- A function `ε ↦ c * ‖ε‖₊ ^ α` with `0 < α` tends to `0` at `0`. -/
-private theorem tendsto_const_mul_nnnorm_rpow (c : ℝ≥0) {α : ℝ≥0} (hα0 : 0 < α) :
-    Tendsto (fun ε : ℝ ↦ ((c * ‖ε‖₊ ^ (α : ℝ) : ℝ≥0) : ℝ)) (𝓝 0) (𝓝 0) := by
-  have hc : Continuous fun ε : ℝ ↦ c * ‖ε‖₊ ^ (α : ℝ) :=
-    continuous_const.mul ((NNReal.continuous_rpow_const α.coe_nonneg).comp continuous_nnnorm)
-  have h0 : c * ‖(0 : ℝ)‖₊ ^ (α : ℝ) = 0 := by
-    rw [nnnorm_zero, NNReal.zero_rpow (by exact_mod_cast hα0.ne'), mul_zero]
-  have h := hc.tendsto 0
-  rw [h0] at h
-  exact NNReal.tendsto_coe.mpr h
-
 section HolderSpace
 
 /-- **Quantitative rescaling in `C^{0,α}`.** If `μ` is `α`-Hölder with constant `C` on the ball
 of radius `ρ` about `0` and vanishes at `0`, and `χ` is a `C¹` cutoff supported in the ball of
-radius `R` with derivatives through order one bounded by `N`, then for `|ε| R < ρ` the rescaled
-coefficient `z ↦ χ z • μ (ε • z)` is bounded by `N C (|ε| R)^α` and globally `α`-Hölder with
-constant `N C |ε|^α (1 + 6 R^α)`. -/
+radius `R` with derivatives through order one bounded by `N`, then for `‖ε‖ R < ρ` the rescaled
+coefficient `z ↦ χ z • μ (ε • z)` is bounded by `N C (‖ε‖ R)^α` and globally `α`-Hölder with
+constant `N C ‖ε‖^α (1 + 6 R^α)`. -/
 private theorem holderWith_cutoff_rescale {μ : E → F} {χ : E → ℝ} {α C N R : ℝ≥0} {ρ ε : ℝ}
     (hα0 : 0 < α) (hα : α ≤ 1) (hμ : HolderOnWith C α μ (ball 0 ρ)) (hμ0 : μ 0 = 0)
     (hχ : ContDiff ℝ 1 χ) (hχR : tsupport χ ⊆ ball 0 R)
-    (hχb : ∀ i ≤ 1, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ N) (hε : |ε| * R < ρ) :
+    (hχb : ∀ i ≤ 1, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ N) (hε : ‖ε‖ * R < ρ) :
     HolderWith (N * (C * ‖ε‖₊ ^ (α : ℝ) + 6 * (C * (‖ε‖₊ * R) ^ (α : ℝ)))) α
         (fun z ↦ χ z • μ (ε • z)) ∧
       ∀ z, ‖χ z • μ (ε • z)‖ ≤ N * (C * (‖ε‖₊ * R) ^ (α : ℝ)) := by
   set f : E → F := fun z ↦ μ (ε • z)
   have hmaps : ∀ z ∈ ball (0 : E) R, ε • z ∈ ball (0 : E) ρ :=
-    fun z hz ↦ smul_mem_ball_of_abs_mul_lt hε hz
+    fun z hz ↦ smul_mem_ball_zero_of_norm_mul_lt hε hz
   have hfH : HolderOnWith (C * ‖ε‖₊ ^ (α : ℝ)) α f (ball 0 R) := hμ.comp_const_smul ε hmaps
   have hfb : ∀ x ∈ ball (0 : E) R, ‖f x‖ ≤ ((C * (‖ε‖₊ * R) ^ (α : ℝ) : ℝ≥0) : ℝ) := by
     intro x hx
-    have hρ : 0 < ρ := (by positivity : (0 : ℝ) ≤ |ε| * R).trans_lt hε
+    have hρ : 0 < ρ := (by positivity : (0 : ℝ) ≤ ‖ε‖ * R).trans_lt hε
     have h := hμ.dist_le (hmaps x hx) (mem_ball_self hρ)
     rw [hμ0, dist_zero_right, dist_zero_right] at h
     refine h.trans ?_
@@ -146,8 +122,10 @@ theorem eventually_exists_holderSpace_cutoff_rescale {μ : E → F} {χ : E → 
   lift N to ℝ≥0 using hN0
   obtain ⟨R, hR0, hR⟩ := hχc.isCompact.isBounded.subset_ball_lt 0 0
   lift R to ℝ≥0 using hR0.le
-  have hlim := tendsto_const_mul_nnnorm_rpow (N * C * (1 + 7 * R ^ (α : ℝ))) hα0
-  filter_upwards [eventually_abs_mul_lt R hρ, hlim.eventually (gt_mem_nhds hδ)] with ε hε hεδ
+  have hlim : Tendsto (fun ε : ℝ ↦ ((N * C * (1 + 7 * R ^ (α : ℝ)) * ‖ε‖₊ ^ (α : ℝ) : ℝ≥0) : ℝ))
+      (𝓝 0) (𝓝 0) :=
+    NNReal.tendsto_coe.mpr (tendsto_const_mul_nnnorm_rpow_nhds_zero _ (by exact_mod_cast hα0))
+  filter_upwards [eventually_norm_mul_lt R hρ, hlim.eventually (gt_mem_nhds hδ)] with ε hε hεδ
   obtain ⟨hH, hb⟩ := holderWith_cutoff_rescale hα0 hα hμ hμ0 hχ hR hN hε
   set g : E →ᵇ F := BoundedContinuousFunction.ofNormedAddCommGroup _ (hH.continuous hα0) _ hb
   have hg : ⇑g = fun z ↦ χ z • μ (ε • z) :=
@@ -233,13 +211,14 @@ theorem eventually_exists_ckHolderSpace_cutoff_rescale {μ : E → F} {χ : E �
     exact ⟨r, hr0, fun w hw ↦ mem_ball_zero_iff.mp (hr w hw)⟩
   have hAlim : Tendsto (fun ε : ℝ ↦ ‖ε‖ * A) (𝓝 0) (𝓝 0) := by
     simpa only [zero_mul] using tendsto_norm_zero.mul_const A
-  have hlim := tendsto_const_mul_nnnorm_rpow (2 ^ ℓ * N * H) hα0
-  filter_upwards [eventually_abs_mul_lt R hρ'0, eventually_abs_mul_lt R hr0,
+  have hlim : Tendsto (fun ε : ℝ ↦ ((2 ^ ℓ * N * H * ‖ε‖₊ ^ (α : ℝ) : ℝ≥0) : ℝ)) (𝓝 0) (𝓝 0) :=
+    NNReal.tendsto_coe.mpr (tendsto_const_mul_nnnorm_rpow_nhds_zero _ (by exact_mod_cast hα0))
+  filter_upwards [eventually_norm_mul_lt R hρ'0, eventually_norm_mul_lt R hr0,
     hAlim.eventually (ge_mem_nhds hη), hlim.eventually (gt_mem_nhds (half_pos hδ)),
-    eventually_abs_mul_lt 1 one_pos] with ε hε hεr hεA hεH hε1
-  rw [mul_one, ← Real.norm_eq_abs] at hε1
+    eventually_norm_mul_lt 1 one_pos] with ε hε hεr hεA hεH hε1
+  rw [mul_one] at hε1
   have hmaps : MapsTo (ε • ·) (ball (0 : E) R) (ball 0 (min r' ρ)) :=
-    fun z hz ↦ smul_mem_ball_of_abs_mul_lt hε hz
+    fun z hz ↦ smul_mem_ball_zero_of_norm_mul_lt hε hz
   have hf : ContDiffOn ℝ ℓ (fun z ↦ μ (ε • z)) (ball 0 R) :=
     hμ'.comp (contDiff_const_smul ε).contDiffOn hmaps
   -- Uniform bounds on the derivatives of the rescaled map.
@@ -249,7 +228,7 @@ theorem eventually_exists_ckHolderSpace_cutoff_rescale {μ : E → F} {χ : E �
     rw [Real.coe_toNNReal _ hη.le]
     rcases eq_or_ne i 0 with rfl | hi0
     · rw [norm_iteratedFDeriv_zero]
-      exact (hr _ (smul_mem_ball_of_abs_mul_lt hεr hx)).le
+      exact (hr _ (smul_mem_ball_zero_of_norm_mul_lt hεr hx)).le
     · rw [norm_iteratedFDeriv_comp_const_smul]
       refine (mul_le_mul (pow_le_of_le_one (norm_nonneg ε) hε1.le hi0)
         (hA i hi _ (ball_subset_ball (min_le_left r' ρ) (hmaps hx))) (norm_nonneg _)
