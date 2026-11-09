@@ -197,6 +197,37 @@ theorem trace_cliffordProjection (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
       finrank ℂ (positiveHalfSpinors o ρ) / 2 := by
   simp [cliffordProjection_eq_smul, map_add, trace_cliffordRestriction o ρ hQ, div_eq_inv_mul]
 
+variable {ω} in
+/-- **A nonzero spinor fixed by `P_α` forces the normalization `‖ω‖² = 2`**: on such a spinor
+`C(iω)` acts as `2`, while `C(iω)² = 2 ‖ω‖²` for self-dual `ω`. -/
+theorem norm_sq_eq_two_of_cliffordProjection_apply_eq_self (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+    (hkl : 2 + 2 = finrank ℝ V) (hω : o.hodgeStar hkl ω = ω) {ψ : positiveHalfSpinors o ρ}
+    (hψ₀ : ψ ≠ 0) (hψ : cliffordProjection o ρ ω ψ = ψ) : ‖ω‖ ^ 2 = 2 := by
+  have h1 : cliffordRestriction o ρ ω ψ = (2 : ℂ) • ψ := by
+    rw [cliffordRestriction_eq_cliffordProjection]
+    simp only [sub_apply, smul_apply, hψ,
+      one_apply_eq_self]
+    module
+  have h2 := congrArg (fun T ↦ T ψ)
+    (cliffordRestriction_mul_self_of_hodgeStar_eq_self o ρ hQ hkl hω)
+  simp only [mul_apply_eq_comp, h1, map_smul, smul_apply,
+    one_apply_eq_self, smul_smul] at h2
+  have h3 : ((2 * (2 : ℂ) - ((2 * ‖ω‖ ^ 2 : ℝ) : ℂ)) • ψ) = 0 := by
+    rw [sub_smul, h2, sub_self]
+  have h4 := (smul_eq_zero.1 h3).resolve_right hψ₀
+  have h5 : (2 * 2 : ℝ) = 2 * ‖ω‖ ^ 2 := by exact_mod_cast sub_eq_zero.1 h4
+  linarith
+
+variable {ω} in
+/-- **A nonzero spinor killed by `P_α` forces the normalization `‖ω‖² = 2`**: it is fixed by the
+complementary projection `P_β = P(-ω)`. -/
+theorem norm_sq_eq_two_of_cliffordProjection_apply_eq_zero (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+    (hkl : 2 + 2 = finrank ℝ V) (hω : o.hodgeStar hkl ω = ω) {β : positiveHalfSpinors o ρ}
+    (hβ₀ : β ≠ 0) (hβ : cliffordProjection o ρ ω β = 0) : ‖ω‖ ^ 2 = 2 := by
+  have h := norm_sq_eq_two_of_cliffordProjection_apply_eq_self o ρ (ω := -ω) hQ hkl
+    (by rw [map_neg, hω]) hβ₀ (by rw [cliffordProjection_neg_apply, hβ, sub_zero])
+  rwa [norm_neg] at h
+
 section Normalized
 
 variable {ω} (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ V)
@@ -310,11 +341,15 @@ theorem coe_quadraticTwoForm_of_cliffordProjection_apply_eq_self {ψ : positiveH
     cliffordRestriction_eq_cliffordProjection, ← ContinuousLinearMap.one_def]
   module
 
+omit hω₂ in
 /-- **`q` on the kernel of `P_α`**: `q(β) = -(‖β‖² / 4) ω` when `P_α β = 0`, that is when `β` lies
 in the line `P_β W⁺`. -/
 theorem coe_quadraticTwoForm_of_cliffordProjection_apply_eq_zero {β : positiveHalfSpinors o ρ}
     (hβ : cliffordProjection o ρ ω β = 0) :
     (quadraticTwoForm o ρ hkl β : ⋀[ℝ]^2 V) = -((‖β‖ ^ 2 / 4) • ω) := by
+  rcases eq_or_ne β 0 with rfl | hβ₀
+  · simp
+  have hω₂ := norm_sq_eq_two_of_cliffordProjection_apply_eq_zero o ρ hQ hkl hω hβ₀ hβ
   have hneg : o.hodgeStar hkl (-ω) = -ω := by rw [map_neg, hω]
   have hβ' : cliffordProjection o ρ (-ω) β = β := by
     rw [cliffordProjection_neg, sub_apply, hβ, sub_zero,
@@ -377,6 +412,7 @@ theorem inner_quadraticTwoFormPolar_of_cliffordProjection {φ β : positiveHalfS
     ← Submodule.coe_inner, horth]
   simp
 
+omit hω₂ in
 /-- **`q` on the decomposition `ψ = φ + β`** with `P_α φ = φ` and `P_α β = 0`:
 `q(φ + β) = ((‖φ‖² - ‖β‖²) / 4) ω + q'(φ, β)`, where the cross term `q'(φ, β)` is orthogonal to
 `ω` (`inner_quadraticTwoFormPolar_of_cliffordProjection`). -/
@@ -385,9 +421,16 @@ theorem coe_quadraticTwoForm_add_of_cliffordProjection
     (hφ : cliffordProjection o ρ ω φ = φ) (hβ : cliffordProjection o ρ ω β = 0) :
     (quadraticTwoForm o ρ hkl (φ + β) : ⋀[ℝ]^2 V) =
       ((‖φ‖ ^ 2 - ‖β‖ ^ 2) / 4) • ω + quadraticTwoFormPolar o ρ hkl φ β := by
+  by_cases h0 : φ = 0 ∧ β = 0
+  · obtain ⟨rfl, rfl⟩ := h0
+    simp
+  have hω₂ : ‖ω‖ ^ 2 = 2 := by
+    rcases not_and_or.1 h0 with h | h
+    · exact norm_sq_eq_two_of_cliffordProjection_apply_eq_self o ρ hQ hkl hω h hφ
+    · exact norm_sq_eq_two_of_cliffordProjection_apply_eq_zero o ρ hQ hkl hω h hβ
   rw [quadraticTwoForm_add, Submodule.coe_add, Submodule.coe_add,
     coe_quadraticTwoForm_of_cliffordProjection_apply_eq_self o hQ hkl hω hω₂ h₂ hρ hφ,
-    coe_quadraticTwoForm_of_cliffordProjection_apply_eq_zero o hQ hkl hω hω₂ h₂ hρ hβ]
+    coe_quadraticTwoForm_of_cliffordProjection_apply_eq_zero o hQ hkl hω h₂ hρ hβ]
   module
 
 /-! ### The curvature equation along `ω` -/
@@ -402,6 +445,7 @@ theorem cliffordProjection_apply_eq_inner_smul (h₂ : finrank ℂ (positiveHalf
     (rankOne_eq_smul_cliffordProjection o hQ hkl hω hω₂ h₂ hρ hu₀)
   simpa [hu₀₁] using h.symm
 
+omit hω₂ in
 /-- **The quadratic term of the perturbed curvature equation.** In Taubes's normalization
 `Ψ = √r (φ + β)` with `P_α φ = φ` and `P_α β = 0`,
 `q(Ψ) - (r / 4) ω = (r / 4) (‖φ‖² - ‖β‖² - 1) ω + r q'(φ, β)`, where the cross term `q'(φ, β)` is
@@ -416,7 +460,7 @@ theorem coe_quadraticTwoForm_sqrt_smul_add_sub_smul
       (r / 4 * (‖φ‖ ^ 2 - ‖β‖ ^ 2 - 1)) • ω +
         r • (quadraticTwoFormPolar o ρ hkl φ β : ⋀[ℝ]^2 V) := by
   rw [quadraticTwoForm_sqrt_smul o ρ hkl hr, Submodule.coe_smul,
-    coe_quadraticTwoForm_add_of_cliffordProjection o hQ hkl hω hω₂ hρ h₂ hφ hβ]
+    coe_quadraticTwoForm_add_of_cliffordProjection o hQ hkl hω hρ h₂ hφ hβ]
   module
 
 omit hω hρ in
