@@ -179,29 +179,6 @@ section Restriction
 
 variable {U V : X.Opens} (f : V ⟶ U)
 
-namespace CategoryTheory.CommMon
-
-/-- Restriction of sections along `V ≤ U` preserves the homogeneous multiplication. -/
-lemma map_gMul_sections {i j : ℕ} (x : Γ(A.X i, U))
-    (y : Γ(A.X j, U)) :
-    (A.X (i + j)).presheaf.map f.op
-        (GradedMonoid.GMul.mul (A := fun n ↦ Γ(A.X n, U)) x y) =
-      GradedMonoid.GMul.mul (A := fun n ↦ Γ(A.X n, V))
-        ((A.X i).presheaf.map f.op x) ((A.X j).presheaf.map f.op y) := by
-  let F : X.Modules ⥤ PresheafOfModulesOfCommRing.{u} X.presheaf :=
-    _root_.SheafOfModules.forget _
-  let _ : F.LaxMonoidal := SheafOfModules.forgetLaxMonoidal X.sheaf
-  -- The product is the multiplication of `A` applied to the tensor map of `F`; both commute
-  -- with restriction, and restriction of the sectionwise tensor product sends `x ⊗ₜ y` to the
-  -- pure tensor of the restrictions.
-  have h₁ := PresheafOfModules.naturality_apply (A.toMon.mul i j).val f.op
-    ((Functor.LaxMonoidal.μ F (A.X i) (A.X j)).app' (op U) (x ⊗ₜ y))
-  have h₂ := PresheafOfModules.naturality_apply (Functor.LaxMonoidal.μ F (A.X i) (A.X j))
-    f.op (x ⊗ₜ y)
-  exact h₁.symm.trans (congrArg _ h₂.symm)
-
-end CategoryTheory.CommMon
-
 namespace TauCeti
 
 /-- Restriction of sections along `V ≤ U` commutes with the structure maps
@@ -229,6 +206,25 @@ private lemma map_gOne_sections :
 end TauCeti
 
 namespace CategoryTheory.CommMon
+
+/-- Restriction of sections along `V ≤ U` preserves the homogeneous multiplication. -/
+lemma map_gMul_sections {i j : ℕ} (x : Γ(A.X i, U))
+    (y : Γ(A.X j, U)) :
+    (A.X (i + j)).presheaf.map f.op
+        (GradedMonoid.GMul.mul (A := fun n ↦ Γ(A.X n, U)) x y) =
+      GradedMonoid.GMul.mul (A := fun n ↦ Γ(A.X n, V))
+        ((A.X i).presheaf.map f.op x) ((A.X j).presheaf.map f.op y) := by
+  let F : X.Modules ⥤ PresheafOfModulesOfCommRing.{u} X.presheaf :=
+    _root_.SheafOfModules.forget _
+  let _ : F.LaxMonoidal := SheafOfModules.forgetLaxMonoidal X.sheaf
+  -- The product is the multiplication of `A` applied to the tensor map of `F`; both commute
+  -- with restriction, and restriction of the sectionwise tensor product sends `x ⊗ₜ y` to the
+  -- pure tensor of the restrictions.
+  have h₁ := PresheafOfModules.naturality_apply (A.toMon.mul i j).val f.op
+    ((Functor.LaxMonoidal.μ F (A.X i) (A.X j)).app' (op U) (x ⊗ₜ y))
+  have h₂ := PresheafOfModules.naturality_apply (Functor.LaxMonoidal.μ F (A.X i) (A.X j))
+    f.op (x ⊗ₜ y)
+  exact h₁.symm.trans (congrArg _ h₂.symm)
 
 /-- Restriction of sections along an inclusion of opens `V ≤ U`, as a ring homomorphism between
 the graded rings of sections. It sends each homogeneous section to its restriction, in the same
