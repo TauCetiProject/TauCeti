@@ -182,16 +182,14 @@ theorem contMDiffAt_plumbedAlmostComplex {n : ℕ∞} (hq : q ≠ inf)
     rfl
   · have h2 : 2 < (q.endCoord w).re := by linarith
     set w' := (w - q.endCenter) / q.plumbingFactor L
-    have hw'0 : w' ≠ 0 := q.sub_endCenter_div_plumbingFactor_ne_zero L hc
-    have hw'1 : w' ≠ 1 := fun h => hw.2
-      ((q.plumbingMap_sub_endCenter_div L w).symm.trans (congrArg (q.plumbingMap L) h))
+    have hw' := q.sub_endCenter_div_plumbingFactor_ne_zero_and_ne_one L hw
     -- The inserted piece also moves with the length through the inverse plumbing map.
     have hf := (q.contDiff_inverse_plumbingMap (n := n)).contDiffAt (x := (L, w))
     have hcoord : ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
         (fun p : ℝ × (ℂ × M) => (p.2.1 - q.endCenter) / q.plumbingFactor p.1) (L, (w, x)) :=
       hf.contMDiffAt.comp (f := fun p : ℝ × (ℂ × M) => (p.1, p.2.1)) (L, (w, x))
         (contMDiffAt_fst.prodMk_space (contMDiffAt_fst.comp _ contMDiffAt_snd))
-    refine ((contMDiffAt_pairOfPantsAlmostComplex (hJ := hJa) hₐ hJap hJas ⟨w', hw'0, hw'1⟩ x).comp
+    refine ((contMDiffAt_pairOfPantsAlmostComplex (hJ := hJa) hₐ hJap hJas ⟨w', hw'⟩ x).comp
       (L, (w, x)) (hcoord.prodMk (contMDiffAt_snd.comp _ contMDiffAt_snd))).congr_of_eventuallyEq ?_
     filter_upwards [hcont.eventually (lt_mem_nhds h2)] with p hp
     rw [plumbedAlmostComplex_eq_inserted hₐ hᵦ hq hab hp]
