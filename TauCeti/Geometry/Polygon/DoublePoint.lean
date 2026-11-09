@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Polygon.RegularProjection
 public import TauCeti.Geometry.Polygon.Simple
 import TauCeti.Analysis.Convex.Segment
+public import TauCeti.Combinatorics.Enumerative.PerfectMatching
 
 /-!
 # Double points of regular projections of polygons
@@ -22,7 +23,9 @@ First, the double points come in pairs. Every double point `x` has a *partner*
 `Polygon.doublePointPartner R poly π x`, another point of the polygon with the same image. For a
 regular projection the partner is unique (`Polygon.IsRegularProjection.eq_doublePointPartner`),
 so the partner map is an involution (`Polygon.IsRegularProjection.involutive_doublePointPartner`)
-whose non-fixed points on the polygon are exactly the double points; no vertex is a double point.
+whose non-fixed points on the polygon are exactly the double points; no vertex is a double
+point. The natural cardinality of the double points is even: it is zero when the set is infinite,
+and the perfect matching gives an even cardinality when it is finite.
 
 Second, for a simple polygon over a linearly ordered field and an affine regular projection, there
 are only finitely many double points (`Polygon.IsRegularProjection.finite_doublePoints`). The key
@@ -55,6 +58,9 @@ projection of `poly` along `d` (`Polygon.doublePoints_map_projAlong`).
   another point of the polygon.
 * `Polygon.doublePointPartner R poly π`: the map sending a double point to another point of the
   polygon with the same image, and fixing every other point.
+* `Polygon.doublePointPartnerOnDoublePoints R poly π`: the partner map on the subtype of double
+  points.
+* `Polygon.IsRegularProjection.perfectMatchingDoublePoints`: the partner map as a perfect matching.
 
 ## Main results
 
@@ -72,6 +78,11 @@ projection of `poly` along `d` (`Polygon.doublePoints_map_projAlong`).
   projection.
 * `Polygon.IsRegularProjection.finite_doublePoints`: an affine regular projection of a simple
   polygon has finitely many double points.
+* `Polygon.IsRegularProjection.perfectMatchingDoublePoints_val_apply`: the matching sends each
+  double point to its partner.
+* `Polygon.doublePointPartnerOnDoublePoints_val`: the restricted partner agrees with the ambient
+  partner after coercion.
+* `Polygon.IsRegularProjection.even_ncard_doublePoints`: the `ncard` of the double points is even.
 * `Polygon.IsRegularProjection.linearIndependent_of_projAlong_eq`: the crossings of a regular
   projection along a direction are transverse.
 
@@ -231,6 +242,20 @@ theorem doublePointPartner_mem_doublePoints (hx : x ∈ poly.doublePoints R π) 
   exact ⟨doublePointPartner_mem_boundary hx.1, x, hx.1, (doublePointPartner_ne hx).symm,
     (apply_doublePointPartner x).symm⟩
 
+theorem mapsTo_doublePointPartner : MapsTo (poly.doublePointPartner R π) (poly.doublePoints R π)
+    (poly.doublePoints R π) := fun _ ↦ doublePointPartner_mem_doublePoints
+
+variable (R) in
+/-- The partner map, restricted to the subtype of double points. -/
+noncomputable def doublePointPartnerOnDoublePoints (poly : Polygon P n) (π : P → Q) :
+    poly.doublePoints R π → poly.doublePoints R π :=
+  Set.MapsTo.restrict _ _ _ mapsTo_doublePointPartner
+
+/-- Coercing the restricted partner gives the ambient partner. -/
+@[simp]
+theorem doublePointPartnerOnDoublePoints_val (x : poly.doublePoints R π) :
+    (poly.doublePointPartnerOnDoublePoints R π x : P) = poly.doublePointPartner R π x := (rfl)
+
 /-- For a regular projection, the partner of `x` is the only point of the polygon other than `x`
 with the same image as `x`. -/
 theorem IsRegularProjection.eq_doublePointPartner (hπ : poly.IsRegularProjection R π)
@@ -248,6 +273,42 @@ theorem IsRegularProjection.involutive_doublePointPartner (hπ : poly.IsRegularP
   · exact (hπ.eq_doublePointPartner (doublePointPartner_mem_boundary hx.1) hx.1
       (doublePointPartner_ne hx).symm (apply_doublePointPartner x).symm).symm
   · rw [doublePointPartner_of_notMem hx, doublePointPartner_of_notMem hx]
+
+/-- For a regular projection, the partner map restricted to the double points is an involution. -/
+private theorem IsRegularProjection.involutive_doublePointPartnerOnDoublePoints
+    (hπ : poly.IsRegularProjection R π) :
+    Function.Involutive (poly.doublePointPartnerOnDoublePoints R π) := by
+  intro x
+  apply Subtype.ext
+  simpa using hπ.involutive_doublePointPartner x.val
+
+/-- For a regular projection, the partner map gives a perfect matching of the double points. -/
+noncomputable def IsRegularProjection.perfectMatchingDoublePoints
+    (hπ : poly.IsRegularProjection R π) :
+    TauCeti.PerfectMatching (poly.doublePoints R π) :=
+  .ofInvolutive
+    hπ.involutive_doublePointPartnerOnDoublePoints
+    (fun x hx ↦ doublePointPartner_ne x.2 (by
+      simpa only [doublePointPartnerOnDoublePoints_val] using congr(($hx).val)))
+
+/-- Applying the perfect matching to a double point gives its partner. -/
+@[simp]
+theorem IsRegularProjection.perfectMatchingDoublePoints_val_apply
+    (hπ : poly.IsRegularProjection R π) (x : poly.doublePoints R π) :
+    (hπ.perfectMatchingDoublePoints).val x = poly.doublePointPartnerOnDoublePoints R π x := by
+  simp [perfectMatchingDoublePoints]
+
+/-- The `ncard` of the double points under a regular projection is even. -/
+theorem IsRegularProjection.even_ncard_doublePoints (hπ : poly.IsRegularProjection R π) :
+    Even (poly.doublePoints R π).ncard := by
+  classical
+  by_cases hfin : (poly.doublePoints R π).Finite
+  · let f := hfin.fintype
+    have heven := TauCeti.even_card_of_nonempty_perfectMatching
+      (poly.doublePoints R π) ⟨hπ.perfectMatchingDoublePoints⟩
+    rwa [← Nat.card_eq_fintype_card, Nat.card_coe_set_eq] at heven
+  · rw [Infinite.ncard hfin]
+    exact Even.zero
 
 /-- For a regular projection, no vertex of the polygon is a double point. -/
 theorem IsRegularProjection.apply_notMem_doublePoints (hπ : poly.IsRegularProjection R π)
