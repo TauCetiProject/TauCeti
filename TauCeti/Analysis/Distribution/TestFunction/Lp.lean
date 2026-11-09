@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import TauCeti.Analysis.Distribution.Mass.Basic
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
@@ -20,7 +21,8 @@ compact sets; it need not be finite near the frontier of `Ω`. The restriction t
 function on `Ω` is a continuous compactly supported function on `Ω`, hence lies in `Lᵖ(μ)`. This
 file packages the resulting map `𝓓^{n}(Ω, F) → Lᵖ(μ; F)` as a continuous linear map for the
 test-function topology, and shows that its range is dense when `1 ≤ p < ∞`, `E` is
-finite-dimensional, `F` is complete and `μ` is regular.
+finite-dimensional, `F` is complete and `μ` is regular. For a measure on the ambient space `E`
+itself, `TestFunction.ambientToLp` is the corresponding map `𝓓^{n}(Ω, F) → Lᵖ(ν; F)`.
 
 Density is what allows a functional on test functions dominated by an `Lᵖ(μ)` norm to be extended
 to all of `Lᵖ(μ)`; for the mass measure of a current of locally finite mass this gives its
@@ -29,6 +31,8 @@ evaluation on integrable forms (`Distribution.extendL1`).
 ## Main declarations
 
 * `TestFunction.toLp`: the class in `Lᵖ(μ)` of the restriction of a test function to `Ω`.
+* `TestFunction.ambientToLp`: the class in `Lᵖ(ν)` of a test function, for a measure `ν` on the
+  ambient space.
 * `TestFunction.indicatorToLp`: the class in `Lᵖ(μ)` of `1_A φ`, for a measurable set `A ⊆ Ω`.
   It is zero for `A = ∅`, is `toLp` for `A = Ω` and is additive on disjoint sets
   (`TestFunction.indicatorToLp_empty`, `_univ`, `_union`).
@@ -47,7 +51,7 @@ public section
 noncomputable section
 
 open MeasureTheory TopologicalSpace Filter Set Metric
-open scoped BoundedContinuousFunction ENNReal Distributions
+open scoped BoundedContinuousFunction ENNReal Distributions InnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   {Ω : Opens E} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ∞}
@@ -227,6 +231,64 @@ theorem norm_indicatorToLp_le (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)) :
     (eLpNorm_indicator_le _ hA.nullMeasurableSet)
 
 end FiniteOnCompacts
+
+section Ambient
+
+variable {ν : Measure E} [IsFiniteMeasureOnCompacts ν]
+
+/-- The order-zero bound for the class of a test function in `Lᵖ(ν)`, for a measure `ν` on `E`. -/
+private theorem hasLocallyFiniteMass_memLp_ambientToLp :
+    Distribution.HasLocallyFiniteMass fun φ : 𝓓^{n}(Ω, F) =>
+      (φ.continuous.memLp_of_hasCompactSupport (p := p) (μ := ν) φ.hasCompactSupport).toLp φ := by
+  refine Distribution.hasLocallyFiniteMass_def.2 fun K hK _ =>
+    ⟨(ν K ^ p.toReal⁻¹).toReal, ENNReal.toReal_nonneg, fun φ hφK => ?_⟩
+  rw [Lp.norm_toLp, ← ENNReal.toReal_ofReal (norm_nonneg (φ : E →ᵇ F)), ← ENNReal.toReal_mul]
+  exact ENNReal.toReal_mono
+    (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity) hK.measure_ne_top)
+      ENNReal.ofReal_ne_top)
+    (eLpNorm_le_of_ae_bound_of_support_subset
+      (φ.continuous.memLp_of_hasCompactSupport (p := 1) (μ := ν)
+        φ.hasCompactSupport).aestronglyMeasurable
+      (fun x hx => hφK (subset_tsupport _ hx))
+      (ae_of_all _ fun x => BoundedContinuousFunction.norm_coe_le_norm (φ : E →ᵇ F) x))
+
+variable (p ν) in
+/-- The class in `Lᵖ(ν)` of a test function on `Ω`, for a measure `ν` on the ambient space `E`
+that is finite on compact sets, as a continuous linear map for the test-function topology. Unlike
+`TestFunction.toLp`, the measure lives on `E`: a test function vanishes off `Ω`, so it needs no
+restriction. -/
+def ambientToLp : 𝓓^{n}(Ω, F) →L[ℝ] Lp F p ν :=
+  let L : 𝓓^{n}(Ω, F) →ₗ[ℝ] Lp F p ν :=
+    { toFun φ := (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).toLp φ
+      map_add' φ ψ := by
+        rw [← MemLp.toLp_add]
+        exact MemLp.toLp_congr _ _ (.of_eq (by ext; simp))
+      map_smul' c φ := by
+        rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
+        exact MemLp.toLp_congr _ _ (.of_eq (by ext; simp)) }
+  ⟨L, Distribution.HasLocallyFiniteMass.continuous hasLocallyFiniteMass_memLp_ambientToLp⟩
+
+/-- `ambientToLp p ν φ` is the `Lᵖ(ν)` class of `φ`. -/
+theorem ambientToLp_apply (φ : 𝓓^{n}(Ω, F)) :
+    ambientToLp p ν φ = (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).toLp φ :=
+  (rfl)
+
+/-- A representative of `ambientToLp p ν φ` agrees almost everywhere with `φ`. -/
+theorem coeFn_ambientToLp (φ : 𝓓^{n}(Ω, F)) : ambientToLp p ν φ =ᵐ[ν] φ := by
+  rw [ambientToLp_apply]
+  exact MemLp.coeFn_toLp _
+
+end Ambient
+
+/-- The `L²(ν)` inner product with the class of a test function is the integral of the pointwise
+inner product. -/
+theorem inner_ambientToLp {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G]
+    {ν : Measure E} [IsFiniteMeasureOnCompacts ν] (u : Lp G 2 ν) (φ : 𝓓^{n}(Ω, G)) :
+    ⟪u, ambientToLp 2 ν φ⟫_ℝ = ∫ x, ⟪u x, φ x⟫_ℝ ∂ν := by
+  rw [L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_ambientToLp (p := 2) φ] with x hx
+  rw [hx]
 
 /-- **Density of test functions in `Lᵖ`.** For `1 ≤ p < ∞` and a regular measure `μ` on an open
 set `Ω` of a finite-dimensional space, the classes of test functions are dense in `Lᵖ(μ; F)`. -/

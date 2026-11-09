@@ -5,7 +5,7 @@ Authors: Jon Crall, Claude Fable 5, OpenAI GPT-5.6 Thinking, Claude Opus 5, Open
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.Adjoint.Basic
 public import TauCeti.Analysis.InnerProductSpace.QuadraticForm.Bounds
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap

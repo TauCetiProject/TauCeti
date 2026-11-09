@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5
 module
 
 public import TauCeti.Algebra.Star.PartialIsometry
-public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.Adjoint.Basic
 public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!

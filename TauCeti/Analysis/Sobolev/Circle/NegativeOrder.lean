@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Sobolev.Circle.Duality
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Calculus.Deriv.AddCircle
-import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.Analysis.InnerProductSpace.Adjoint.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!

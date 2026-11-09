@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
-import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.Analysis.InnerProductSpace.Adjoint.Basic
 import TauCeti.Analysis.InnerProductSpace.NormDet
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices

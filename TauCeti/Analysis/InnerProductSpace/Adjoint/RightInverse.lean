@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Gram.Factor
+public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Right inverses of formal adjoints from a lower bound
@@ -30,8 +31,9 @@ that the maximal `L²` realization of `P` is onto, with a bounded right inverse.
 
 Two weak solutions differ by a vector orthogonal to the range of `T`, while `S† f` lies in its
 closure (`LinearMap.adjointRightInverse_apply_mem_topologicalClosure`). So `S† f` is the unique
-weak solution in that closure, and the weak solution of least norm: every weak solution `u`
-satisfies `‖u‖² = ‖S† f‖² + ‖u - S† f‖²`
+weak solution in that closure: the orthogonal projection onto it of any weak solution
+(`LinearMap.adjointRightInverse_apply_eq_starProjection`). Hence it is the weak solution of least
+norm: every weak solution `u` satisfies `‖u‖² = ‖S† f‖² + ‖u - S† f‖²`
 (`LinearMap.norm_sq_eq_norm_adjointRightInverse_apply_sq_add`).
 When `T` is the formal adjoint `P*`, this is, formally, the minimal-norm right inverse
 `P* (P P*)⁻¹`.
@@ -45,6 +47,8 @@ The point here is the bounded linear operator and its characterization by least 
 * `LinearMap.adjointRightInverse T ι`: the minimal-norm right inverse of the weak adjoint.
 * `LinearMap.inner_adjointRightInverse_apply`: it solves the weak equation.
 * `LinearMap.norm_adjointRightInverse_le`: the norm bound `C`.
+* `LinearMap.adjointRightInverse_apply_eq_starProjection`: it is the orthogonal projection of any
+  weak solution onto the closure of the range of `T`.
 * `LinearMap.adjointRightInverse_apply_eq_iff`: it is the unique weak solution of least norm.
 
 ## References
@@ -126,26 +130,31 @@ theorem sub_adjointRightInverse_apply_mem_orthogonal (h : ∃ C, ∀ φ, ‖ι �
   rintro _ ⟨φ, rfl⟩
   rw [inner_sub_left, hu, inner_adjointRightInverse_apply h, sub_self]
 
+/-- **Orthogonal projection.** If `‖ι φ‖ ≤ C ‖T φ‖` for every `φ`, the right inverse sends `f` to
+the orthogonal projection of any weak solution `u` of `T* u = ι* f` onto the closure of the range
+of `T`. -/
+theorem adjointRightInverse_apply_eq_starProjection (h : ∃ C, ∀ φ, ‖ι φ‖ ≤ C * ‖T φ‖) {f : F}
+    {u : H} (hu : ∀ φ, ⟪u, T φ⟫_𝕜 = ⟪f, ι φ⟫_𝕜) :
+    adjointRightInverse T ι f = (range T).topologicalClosure.starProjection u := by
+  refine (Submodule.eq_starProjection_of_mem_orthogonal
+    (adjointRightInverse_apply_mem_topologicalClosure T ι f) ?_).symm
+  rw [Submodule.orthogonal_closure]
+  exact sub_adjointRightInverse_apply_mem_orthogonal h hu
+
 /-- **Pythagoras for weak solutions.** Every weak solution `u` of `T* u = ι* f` satisfies
 `‖u‖² = ‖adjointRightInverse T ι f‖² + ‖u - adjointRightInverse T ι f‖²`. -/
 theorem norm_sq_eq_norm_adjointRightInverse_apply_sq_add
     (h : ∃ C, ∀ φ, ‖ι φ‖ ≤ C * ‖T φ‖) {f : F} {u : H} (hu : ∀ φ, ⟪u, T φ⟫_𝕜 = ⟪f, ι φ⟫_𝕜) :
     ‖u‖ ^ 2 = ‖adjointRightInverse T ι f‖ ^ 2 + ‖u - adjointRightInverse T ι f‖ ^ 2 := by
-  have hR := adjointRightInverse_apply_mem_topologicalClosure T ι f
-  rw [← Submodule.orthogonal_orthogonal_eq_closure] at hR
-  have h0 := Submodule.inner_right_of_mem_orthogonal
-    (sub_adjointRightInverse_apply_mem_orthogonal h hu) hR
-  have := norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero _ _ h0
-  rw [sub_add_cancel] at this
-  rw [sq, sq, sq, this, add_comm]
+  rw [adjointRightInverse_apply_eq_starProjection h hu, ← Submodule.starProjection_orthogonal_val]
+  exact Submodule.norm_sq_eq_add_norm_sq_starProjection u _
 
 /-- **Least norm.** The right inverse has norm at most that of any weak solution. -/
 theorem norm_adjointRightInverse_apply_le (h : ∃ C, ∀ φ, ‖ι φ‖ ≤ C * ‖T φ‖) {f : F} {u : H}
     (hu : ∀ φ, ⟪u, T φ⟫_𝕜 = ⟪f, ι φ⟫_𝕜) :
     ‖adjointRightInverse T ι f‖ ≤ ‖u‖ := by
-  have := norm_sq_eq_norm_adjointRightInverse_apply_sq_add h hu
-  exact pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero |>.mp
-    (by nlinarith [sq_nonneg ‖u - adjointRightInverse T ι f‖])
+  rw [adjointRightInverse_apply_eq_starProjection h hu]
+  exact Submodule.norm_starProjection_apply_le _ u
 
 /-- **Characterization.** If `‖ι φ‖ ≤ C ‖T φ‖` for every `φ`, then `adjointRightInverse T ι f` is
 the unique weak solution of `T* u = ι* f` of least norm. -/
@@ -156,10 +165,8 @@ theorem adjointRightInverse_apply_eq_iff (h : ∃ C, ∀ φ, ‖ι φ‖ ≤ C *
   · rintro rfl
     exact ⟨inner_adjointRightInverse_apply h f, fun v hv ↦ norm_adjointRightInverse_apply_le h hv⟩
   · rintro ⟨hu, hmin⟩
-    have hsq := norm_sq_eq_norm_adjointRightInverse_apply_sq_add h hu
     have hle := hmin _ (inner_adjointRightInverse_apply h f)
-    have hzero : ‖u - adjointRightInverse T ι f‖ ^ 2 = 0 := by
-      nlinarith [norm_nonneg u, norm_nonneg (adjointRightInverse T ι f)]
-    exact (sub_eq_zero.mp (norm_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp hzero))).symm
+    rw [adjointRightInverse_apply_eq_starProjection h hu] at hle ⊢
+    exact (Submodule.eq_starProjection_of_norm_le _ hle).symm
 
 end LinearMap

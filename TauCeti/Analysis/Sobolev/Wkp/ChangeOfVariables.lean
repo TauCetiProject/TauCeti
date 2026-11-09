@@ -16,7 +16,7 @@ public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.Topology.Algebra.Module.Trace
 
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
-import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.Analysis.InnerProductSpace.Adjoint.Basic
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 
 /-!

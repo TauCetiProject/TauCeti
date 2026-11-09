@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.SingularValues
 public import Mathlib.LinearAlgebra.Eigenspace.Matrix
-public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.Adjoint.Basic
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 public import TauCeti.Analysis.InnerProductSpace.RangeProjection
