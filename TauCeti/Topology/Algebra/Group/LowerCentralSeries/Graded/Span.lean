@@ -12,14 +12,19 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 /-!
 # Spanning the degree-one graded piece of the lower `p`-series
 
-Let `G` be a topological group whose second lower `p`-series term `λ_2` is open, and let `s` be a
-subset that topologically generates `G`. For `p ≠ 0`, the degree-zero classes of the elements of `s`
-span `gr_0(G) = G ⧸ λ_1` over `ZMod p`, and the degree-one piece `gr_1(G) = λ_1 ⧸ λ_2` is spanned by
-the `p`-power classes `π g'` and the brackets `[g', h']` for `g, h ∈ s`. The generating set `s`
-is arbitrary: it need not be finite, and only the closure of the subgroup it generates matters.
-The degree-zero statement holds for every `p` and needs only that `λ_1` is open. Both statements
-bound `gr_0(G)` and `gr_1(G)` in terms of the generators, which is the first step in computing
-the graded pieces of a group given by generators.
+Unless stated otherwise, let `G` be a topological group whose second lower `p`-series term `λ_2`
+is open, and let `s` be a subset that topologically generates `G`. For `p ≠ 0`, the degree-zero
+classes of the elements of `s` span `gr_0(G) = G ⧸ λ_1` over `ZMod p`, and the degree-one piece
+`gr_1(G) = λ_1 ⧸ λ_2` is spanned by the `p`-power classes `π g'` and the brackets `[g', h']` for
+`g, h ∈ s`. The generating set `s` is arbitrary: it need not be finite, and only the closure of the
+subgroup it generates matters. The degree-zero statement holds for every `p` and needs only that
+`λ_1` is open. Both statements bound `gr_0(G)` and `gr_1(G)` in terms of the generators, which is
+the first step in computing the graded pieces of a group given by generators.
+
+Without openness of `λ_2`, continuous maps out of `gr_1(G)` into a Hausdorff group are still
+determined by their values on the `p`-power classes and brackets of all elements of `G`
+(`TauCeti.linearMap_ext_gradedPiece_one_of_continuous`); this applies to free pro-`p` groups of
+infinite rank.
 
 In every degree, when `λ_{k+2}` is open, `gr_{k+1}(G) = λ_{k+1} ⧸ λ_{k+2}` is spanned by the
 `p`-powers `π x` of the classes `x ∈ gr_k(G)` and the brackets `[x, y]` of such a class with a
@@ -47,6 +52,9 @@ The openness hypothesis holds in a topologically finitely generated profinite gr
   brackets of a topological generating set span `gr_1(G)`, when `λ_2` is open.
 * `TauCeti.linearMap_ext_gradedPiece_one`: linear maps out of `gr_1(G)` are determined by their
   values on those `p`-power classes and brackets.
+* `TauCeti.linearMap_ext_gradedPiece_one_of_continuous`: without openness of `λ_2`, two maps out
+  of `gr_1(G)` into a Hausdorff group that are continuous on `λ_1` and agree on the `p`-power
+  classes and brackets of all elements of `G` are equal.
 * `TauCeti.span_range_degreeOneFamily_eq_top`: the ordered form of the previous statement.
 * `TauCeti.span_range_gradedPow_union_range_gradedBracket_eq_top`,
   `TauCeti.eq_top_of_forall_gradedPow_mem_of_forall_gradedBracket_mem`: in every degree, the
@@ -211,9 +219,9 @@ theorem linearMap_ext_gradedPiece_one {M : Type*} [AddCommMonoid M]
   · exact hbr x hx y hy
 
 /-- **Continuous linear maps out of `gr_1(G)` are determined by their values on `p`-powers and
-brackets**, with no openness assumption on `λ_2`: the locus where two maps into a Hausdorff group
-agree on `λ_1` is a closed subgroup, and a closed subgroup containing the `p`-th powers and
-commutators of `G` contains `λ_1`. -/
+brackets**, with no openness assumption on `λ_2`: two `ZMod p`-linear maps `f₁ f₂` into a Hausdorff
+group, both continuous on `λ_1` through `gradedMk`, are equal as soon as they agree on the
+`p`-power classes `π ⟦x⟧` and the brackets `[⟦x⟧, ⟦y⟧]` for all `x, y : G`. -/
 theorem linearMap_ext_gradedPiece_one_of_continuous {M : Type*} [AddCommGroup M]
     [Module (ZMod p) M] [TopologicalSpace M] [T2Space M] {f₁ f₂ : gradedPiece p G 1 →ₗ[ZMod p] M}
     (h₁ : Continuous fun y : pLowerCentralSeries p G 1 ↦ f₁ (gradedMk p G 1 y))
@@ -222,41 +230,29 @@ theorem linearMap_ext_gradedPiece_one_of_continuous {M : Type*} [AddCommGroup M]
       f₂ (gradedPow p G 0 (gradedMkZero p G x)))
     (hbr : ∀ x y : G, f₁ (gradedBracket p G 0 0 (gradedMkZero p G x) (gradedMkZero p G y)) =
       f₂ (gradedBracket p G 0 0 (gradedMkZero p G x) (gradedMkZero p G y))) : f₁ = f₂ := by
-  -- The agreement locus in `G`, as a subgroup.
-  let U : Subgroup G :=
-    { carrier := {g | ∃ h : g ∈ pLowerCentralSeries p G 1,
-        f₁ (gradedMk p G 1 ⟨g, h⟩) = f₂ (gradedMk p G 1 ⟨g, h⟩)}
-      one_mem' := ⟨one_mem _, by
-        have : (⟨1, one_mem _⟩ : pLowerCentralSeries p G 1) = 1 := rfl
-        rw [this, gradedMk_one, map_zero, map_zero]⟩
-      mul_mem' := by
-        rintro a b ⟨ha, hab⟩ ⟨hb, hbb⟩
-        refine ⟨mul_mem ha hb, ?_⟩
-        have : (⟨a * b, mul_mem ha hb⟩ : pLowerCentralSeries p G 1) = ⟨a, ha⟩ * ⟨b, hb⟩ := rfl
-        rw [this, gradedMk_mul, map_add, map_add, hab, hbb]
-      inv_mem' := by
-        rintro a ⟨ha, hab⟩
-        refine ⟨inv_mem ha, ?_⟩
-        have : (⟨a⁻¹, inv_mem ha⟩ : pLowerCentralSeries p G 1) = ⟨a, ha⟩⁻¹ := rfl
-        rw [this, gradedMk_inv, map_neg, map_neg, hab] }
+  -- The locus where the two maps agree on `λ_1` is a subgroup, closed in `G` because `λ_1` is.
+  let φ (f : gradedPiece p G 1 →ₗ[ZMod p] M) : pLowerCentralSeries p G 1 →* Multiplicative M :=
+    MonoidHom.mk' (fun y ↦ Multiplicative.ofAdd (f (gradedMk p G 1 y)))
+      (by simp [gradedMk_mul, ofAdd_add])
+  let U : Subgroup G := ((φ f₁).eqLocus (φ f₂)).map (pLowerCentralSeries p G 1).subtype
+  have hUmem {g : G} (hg : g ∈ pLowerCentralSeries p G 1)
+      (h : f₁ (gradedMk p G 1 ⟨g, hg⟩) = f₂ (gradedMk p G 1 ⟨g, hg⟩)) : g ∈ U :=
+    Subgroup.mem_map.mpr ⟨⟨g, hg⟩, congrArg Multiplicative.ofAdd h, rfl⟩
   have hUclosed : IsClosed (U : Set G) := by
-    have hE : IsClosed {y : pLowerCentralSeries p G 1 |
-        f₁ (gradedMk p G 1 y) = f₂ (gradedMk p G 1 y)} := isClosed_eq h₁ h₂
-    have himg := (isClosed_pLowerCentralSeries (p := p) (G := G) 1).isClosedEmbedding_subtypeVal
-      |>.isClosedMap _ hE
-    convert himg using 1
-    ext g
-    exact ⟨fun ⟨h, e⟩ ↦ ⟨⟨g, h⟩, e, rfl⟩, fun ⟨y, e, hy⟩ ↦ ⟨hy ▸ y.2, by subst hy; exact e⟩⟩
+    rw [Subgroup.coe_map]
+    exact (isClosed_pLowerCentralSeries (p := p) (G := G) 1).isClosedEmbedding_subtypeVal
+      |>.isClosedMap _ (isClosed_eq h₁ h₂)
   have hlam : pLowerCentralSeries p G 1 ≤ U := by
     rw [pLowerCentralSeries_succ, pLowerCentralSeries_zero]
     refine (pLowerCentralStep_le_iff hUclosed).mpr ⟨fun g _ ↦ ?_, commutator_le.mpr
       fun g _ h _ ↦ ?_⟩
-    · exact ⟨_, by simpa using hpow g⟩
-    · exact ⟨_, by simpa using hbr g h⟩
+    · exact hUmem _ (by simpa using hpow g)
+    · exact hUmem _ (by simpa using hbr g h)
   refine LinearMap.ext fun ρ ↦ ?_
   obtain ⟨y, rfl⟩ := gradedMk_surjective 1 ρ
-  obtain ⟨h, e⟩ := hlam y.2
-  exact e
+  obtain ⟨z, hz, hzy⟩ := Subgroup.mem_map.mp (hlam y.2)
+  obtain rfl : z = y := Subtype.ext hzy
+  exact Multiplicative.ofAdd.injective hz
 
 /-! ### Higher degrees -/
 
