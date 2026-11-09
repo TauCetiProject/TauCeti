@@ -239,8 +239,7 @@ lemma tensorProductMap_smul_moduleCatBaseChangeTmul (f : R ⟶ S) {N : ModuleCat
   induction z using TensorProduct.inductionOn with
   | tmul r l =>
     -- `f r ⊗ l` acts by `s ⊗ ((1 ⊗ l) • n) ↦ s ⊗ (r • (1 ⊗ l) • n)`, and `r • (1 ⊗ l) = r ⊗ l`.
-    rw [Algebra.TensorProduct.map_tmul, AlgHom.id_apply, tmul_smul_moduleCatBaseChangeTmul,
-      moduleCatBaseChangeTmul_smul, ← smul_assoc, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+    simp [moduleCatBaseChangeTmul_smul, ← smul_assoc, TensorProduct.smul_tmul']
   | add z z' hz hz' => rw [map_add, add_smul, add_smul, hz, hz', moduleCatBaseChangeTmul_add_right]
 
 /-- The algebra map `R ⊗[k] Λ → T ⊗[k] Λ` induced by a composite `f ≫ g` is the composite of
@@ -260,8 +259,7 @@ lemma algebraMap_smul_moduleCatBaseChangeTmul (f : R ⟶ S) {N : ModuleCat.{u} (
     (s s' : S) (n : N) :
     algebraMap S (S ⊗[k] Λ) s • moduleCatBaseChangeTmul Λ f s' n =
       moduleCatBaseChangeTmul Λ f (s * s') n := by
-  rw [Algebra.TensorProduct.algebraMap_apply, Algebra.algebraMap_self, RingHom.id_apply,
-    tmul_smul_moduleCatBaseChangeTmul, ← Algebra.TensorProduct.one_def, one_smul]
+  simp [Algebra.TensorProduct.algebraMap_apply, ← Algebra.TensorProduct.one_def]
 
 end Functor
 
