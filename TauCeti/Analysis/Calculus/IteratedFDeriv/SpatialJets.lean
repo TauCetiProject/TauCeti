@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 # Joint regularity of all spatial derivatives
 
 Products, smooth composition, differentiation and inversion of invertible continuous
-linear maps preserve fixed finite joint regularity of every spatial derivative of a
+linear maps preserve fixed joint regularity of every spatial derivative of a
 parameter-dependent family. The parameter set is arbitrary and the spatial set is open.
 These operations support the coordinate jet bootstrap for smooth Ricci-flow restart
 (Morgan–Tian, Proposition 3.12).
@@ -30,14 +30,14 @@ universe u v
 variable {T : Type v} [NormedAddCommGroup T] [NormedSpace ℝ T]
 namespace TauCeti
 
-section FiniteSpatialJets
+section SpatialJets
 
-/-- Fixed finite joint regularity of all spatial derivatives is preserved when the spatial
+/-- Fixed joint regularity of all spatial derivatives is preserved when the spatial
 derivative is taken once more. -/
 theorem contDiffOn_spatial_jets_fderiv
     {E F : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {J : Set T} {U : Set E} (k : ℕ) (f : T → E → F)
+    {J : Set T} {U : Set E} (k : ℕ∞) (f : T → E → F)
     (hjets : ∀ q : ℕ, ContDiffOn ℝ k
       (fun p : T × E ↦ iteratedFDeriv ℝ q (f p.1) p.2) (J ×ˢ U)) :
     ∀ q : ℕ, ContDiffOn ℝ k
@@ -53,17 +53,18 @@ theorem contDiffOn_spatial_jets_fderiv
   have h := hL.comp_contDiffOn (hjets (q + 1))
   apply h.congr
   intro p _
+  -- The right-curry equivalence identifies a multilinear derivative with a linear-map-valued one.
   change _ = L (iteratedFDeriv ℝ (q + 1) (f p.1) p.2)
   rw [iteratedFDeriv_succ_eq_comp_right]
   exact ((continuousMultilinearCurryRightEquiv' ℝ q E F).apply_symm_apply _).symm
 
-/-- Two families with smooth spatial slices and fixed finite joint regularity of every spatial
+/-- Two families with smooth spatial slices and fixed joint regularity of every spatial
 jet have the same regularity after pairing. -/
 theorem contDiffOn_spatial_jets_prodMk
     {E F G : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [NormedAddCommGroup F] [NormedSpace ℝ F]
     [NormedAddCommGroup G] [NormedSpace ℝ G]
-    {J : Set T} {U : Set E} (hU : IsOpen U) (k : ℕ)
+    {J : Set T} {U : Set E} (hU : IsOpen U) (k : ℕ∞)
     (f : T → E → F) (g : T → E → G)
     (hf : ∀ t ∈ J, ContDiffOn ℝ ∞ (f t) U)
     (hg : ∀ t ∈ J, ContDiffOn ℝ ∞ (g t) U)
@@ -82,19 +83,20 @@ theorem contDiffOn_spatial_jets_prodMk
   have h := L.contDiff.comp_contDiffOn ((hfj q).prodMk (hgj q))
   apply h.congr
   intro p hp
+  have hq : (q : ℕ∞ω) ≤ ∞ := WithTop.coe_le_coe.mpr le_top
   exact iteratedFDeriv_prodMk
     ((hf p.1 hp.1).contDiffAt (hU.mem_nhds hp.2))
     ((hg p.1 hp.1).contDiffAt (hU.mem_nhds hp.2))
-    (show (q : ℕ∞ω) ≤ ∞ from WithTop.coe_le_coe.mpr le_top)
+    hq
 
-/-- Smooth composition preserves fixed finite joint regularity of every spatial jet on the
+/-- Smooth composition preserves fixed joint regularity of every spatial jet on the
 stated mapped domain. -/
 theorem contDiffOn_spatial_jets_comp
     {E F G : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [NormedAddCommGroup F] [NormedSpace ℝ F]
     [NormedAddCommGroup G] [NormedSpace ℝ G]
     {J : Set T} {U : Set E} {W : Set F}
-    (hU : IsOpen U) (hW : IsOpen W) (k : ℕ)
+    (hU : IsOpen U) (hW : IsOpen W) (k : ℕ∞)
     (f : T → E → F) (Phi : F → G)
     (hf : ∀ t ∈ J, ContDiffOn ℝ ∞ (f t) U)
     (hPhi : ContDiffOn ℝ ∞ Phi W)
@@ -111,8 +113,9 @@ theorem contDiffOn_spatial_jets_comp
       (continuousMultilinearCurryFin0 ℝ E F).toContinuousLinearEquiv.toContinuousLinearMap
     have h0 : ContDiffOn ℝ k (fun p : T × E ↦ f p.1 p.2) (J ×ˢ U) :=
       L.contDiff.comp_contDiffOn (hjets 0)
+    have hk : (k : ℕ∞ω) ≤ ∞ := WithTop.coe_le_coe.mpr le_top
     have hc : ContDiffOn ℝ k (fun p : T × E ↦ Phi (f p.1 p.2)) (J ×ˢ U) :=
-      (hPhi.of_le (show (k : ℕ∞ω) ≤ ∞ from WithTop.coe_le_coe.mpr le_top)).comp h0
+      (hPhi.of_le hk).comp h0
         (fun p hp ↦ hmap p.1 hp.1 hp.2)
     let L' : G →L[ℝ] (E [×0]→L[ℝ] G) :=
       (continuousMultilinearCurryFin0 ℝ E G).symm.toContinuousLinearEquiv.toContinuousLinearMap
@@ -142,6 +145,7 @@ theorem contDiffOn_spatial_jets_comp
     apply h.congr
     intro p hp
     rw [iteratedFDeriv_succ_eq_comp_right]
+    -- Apply the inverse currying map to both representations of the next derivative.
     change L (iteratedFDeriv ℝ q (fderiv ℝ (fun x ↦ Phi (f p.1 x))) p.2) =
       L (iteratedFDeriv ℝ q (fun x ↦ Psi (H p.1 x)) p.2)
     apply congrArg L
@@ -153,13 +157,13 @@ theorem contDiffOn_spatial_jets_comp
             (by simp)).hasFDerivAt).fderiv
     exact (heq.iteratedFDeriv ℝ q).eq_of_nhds
 
-/-- Actual invertibility at every point lets the inverse operator family retain fixed finite
+/-- Actual invertibility at every point lets the inverse operator family retain fixed
 joint regularity of every spatial jet. -/
 theorem contDiffOn_spatial_jets_inverse
     {E P Q : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [NormedAddCommGroup P] [NormedSpace ℝ P] [CompleteSpace P]
     [NormedAddCommGroup Q] [NormedSpace ℝ Q]
-    {J : Set T} {U : Set E} (hU : IsOpen U) (k : ℕ)
+    {J : Set T} {U : Set E} (hU : IsOpen U) (k : ℕ∞)
     (A : T → E → P →L[ℝ] Q)
     (hA : ∀ t ∈ J, ContDiffOn ℝ ∞ (A t) U)
     (hInv : ∀ t ∈ J, ∀ x ∈ U, (A t x).IsInvertible)
@@ -173,10 +177,12 @@ theorem contDiffOn_spatial_jets_inverse
   have hinv : ContDiffOn ℝ ∞ (ContinuousLinearMap.inverse :
       (P →L[ℝ] Q) → (Q →L[ℝ] P)) W := by
     intro B hB
-    exact (show B.IsInvertible from hB).contDiffAt_map_inverse.contDiffWithinAt
+    -- IsInvertible is membership in the range of continuous linear equivalences.
+    have hBinv : B.IsInvertible := hB
+    exact hBinv.contDiffAt_map_inverse.contDiffWithinAt
   exact contDiffOn_spatial_jets_comp hU hW k A ContinuousLinearMap.inverse hA hinv
     (fun t ht x hx ↦ hInv t ht x hx) hjets
 
-end FiniteSpatialJets
+end SpatialJets
 
 end TauCeti
