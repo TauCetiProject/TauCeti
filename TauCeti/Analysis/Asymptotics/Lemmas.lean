@@ -14,8 +14,8 @@ import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 /-!
 # Elementary asymptotic criteria
 
-Seven general criteria that supplement Mathlib's asymptotics API, an elementary estimate, and an
-elementary limit of ratios.
+Seven general criteria that supplement Mathlib's asymptotics API, an elementary estimate, an
+elementary limit of ratios, and a bounded-range criterion.
 
 For functions into a normed division ring, `f` satisfies `f = a g + o(g)` exactly when `f / g`
 tends to `a`, provided `g` is eventually nonzero. This criterion converts little-o error estimates
