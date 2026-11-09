@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Geometry.Manifold.Diffeomorph
-import Mathlib.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Calculus.DifferentialForm.Pullback
 import TauCeti.Analysis.Calculus.DifferentialForm.Relative
 import TauCeti.Geometry.Symplectic.ContinuousAlternatingMap
