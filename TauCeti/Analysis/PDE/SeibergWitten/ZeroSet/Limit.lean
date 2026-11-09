@@ -36,9 +36,9 @@ on compact sets away from `Z`, and the regions where `|α|` is small concentrate
 * **Support convergence.** For `0 ≤ σ < 1`, the closures of the sublevel sets `{|αᵢ|² ≤ σ}`,
   which contain the zero sets, converge to the same limit `Z` in the Hausdorff distance
   (`TauCeti.SeibergWitten.tendsto_closure_setOf_le_of_tendsto`): every point where
-  `|αᵢ|² ≤ σ` lies within a fixed multiple of `hᵢ` of `Zᵢ`. For `σ = 1 / 2` these sets contain
-  the supports of the cutoff currents `Θᵢ = i F_{aᵢ} + d(χ(|αᵢ|²) τᵢ)`, which therefore eventually
-  miss every compact set disjoint from `Z`
+  `|αᵢ|² ≤ σ` lies within a fixed multiple of `hᵢ` of `Zᵢ`. When the cutoff `χ` equals one above
+  `σ`, these sets contain the supports of the cutoff currents `Θᵢ = i F_{aᵢ} + d(χ(|αᵢ|²) τᵢ)`,
+  which therefore eventually miss every compact set disjoint from `Z`
   (`TauCeti.SeibergWitten.eventually_disjoint_tsupport_cutoffCurrent`). This is what places the
   support of a weak limit of the currents `Θᵢ / 2π` inside `Z`.
 
@@ -144,15 +144,15 @@ theorem tendsto_closure_setOf_le_of_tendsto (C c c₀ : ℝ) (hc : 0 < c) {σ : 
 
 /-- **The supports of the cutoff currents concentrate at the limit of the zero sets.** Let
 `Θ i = i F_{a i} + d(χ(|α i|²) τ i)` be cutoff currents in a chart `E`, built with a cutoff `χ`
-equal to one above `1 / 2`, let closed sets `Z i` converge in the Hausdorff distance to `Z₀`
-along `l`, while `r i → ∞` and `h i → 0⁺`, and let `K` be compact and disjoint from `Z₀`. If
-eventually the off-zero bound for `s = |α i|²` holds at every point of `K`, then eventually the
-support of `Θ i` is disjoint from `K`. -/
+equal to one above a threshold `0 ≤ σ < 1`, let closed sets `Z i` converge in the Hausdorff
+distance to `Z₀` along `l`, while `r i → ∞` and `h i → 0⁺`, and let `K` be compact and
+disjoint from `Z₀`. If eventually the off-zero bound for `s = |α i|²` holds at every point of `K`,
+then eventually the support of `Θ i` is disjoint from `K`. -/
 theorem eventually_disjoint_tsupport_cutoffCurrent {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {χ : ℝ → ℝ} {b : ι → E → E [⋀^Fin 1]→L[ℝ] ℝ} {α : ι → E → ℂ}
     {Z : ι → Closeds E} {Z₀ : Closeds E} (C c c₀ : ℝ) (hc : 0 < c)
     (hα : ∀ i, ContDiff ℝ 2 (α i)) (hb : ∀ i, Differentiable ℝ (b i))
-    (hχ : EqOn χ 1 (Ioi (1 / 2)))
+    {σ : ℝ} (hσ₀ : 0 ≤ σ) (hσ₁ : σ < 1) (hχ : EqOn χ 1 (Ioi σ))
     (hr : Tendsto r l atTop) (hh : Tendsto h l (𝓝 0)) (hZ : Tendsto Z l (𝓝 Z₀))
     {K : Set E} (hK : IsCompact K) (hKZ : Disjoint K Z₀) (hh₀ : ∀ᶠ i in l, 0 < h i)
     (hbound : ∀ᶠ i in l, ∀ x ∈ K, ∀ R, c₀ * h i ≤ R → (∀ z ∈ Z i, R ≤ dist x z) →
@@ -160,9 +160,9 @@ theorem eventually_disjoint_tsupport_cutoffCurrent {E : Type*} [NormedAddCommGro
         C / r i * max (1 - Complex.normSq (α i x)) 0 + C / r i + C * exp (-(c * R / h i))) :
     ∀ᶠ i in l, Disjoint K (tsupport (cutoffCurrent χ (b i) (α i))) := by
   filter_upwards [eventually_forall_lt_of_tendsto (s := fun i x ↦ Complex.normSq (α i x)) C c c₀
-    hc (σ := 1 / 2) (by norm_num) hr hh hZ hK hKZ hh₀ hbound] with i hi
+    hc hσ₁ hr hh hZ hK hKZ hh₀ hbound] with i hi
   refine Set.disjoint_left.2 fun x hx hxΘ ↦ ?_
-  have := tsupport_cutoffCurrent_subset (by norm_num) (hα i) (hb i) hχ hxΘ
+  have := tsupport_cutoffCurrent_subset hσ₀ (hα i) (hb i) hχ hxΘ
   exact (hi x hx).not_ge this
 
 end TauCeti.SeibergWitten
