@@ -15,21 +15,22 @@ import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 # The Hofer–Zehnder monotonicity argument
 
 Let `σ` be a nondegenerate two-form on a finite-dimensional manifold `M`, let `F : M → ℝ` be smooth
-with compact sublevel sets `{F ≤ s}`, and let `Z ⊆ {F ≤ a}`. The relative `π₁`-sensitive
-Hofer–Zehnder capacities `c(s) = c°_HZ({F < s}, Z)` of the open sublevel sets increase with `s`
+with compact sublevel sets `{F ≤ s}`, let `Z ⊆ {F ≤ a}`, and let `W ⊆ M` be the set in which
+contractibility is tested. The relative `π₁`-sensitive Hofer–Zehnder capacities
+`c(s) = c°_HZ({F < s}, Z)` in `W` of the open sublevel sets increase with `s`
 (`TauCeti.SmoothTwoForm.relContractibleHZCapacity_mono`). This file proves the two steps of the
 argument of Hofer, Zehnder and Struwe which turn finiteness of `c(b)` into closed characteristics on
 the levels of `F` in `(a, b)`.
 
-**The monotonicity step.** Let `G` be `({F < s₁}, Z)`-admissible, and let `f : ℝ → ℝ` be a smooth
-function with `0 ≤ f ≤ A`, equal to `A` on `(-∞, s₁]` and to `0` on `[s₂, ∞)`. Then
+**The monotonicity step.** Let `G` be `({F < s₁}, Z)`-admissible in `W`, and let `f : ℝ → ℝ` be a
+smooth function with `0 ≤ f ≤ A`, equal to `A` on `(-∞, s₁]` and to `0` on `[s₂, ∞)`. Then
 `H = G + f ∘ F` is a candidate for `c(s₃)`, `s₃ > s₂`, with maximum `max G + A`. The integral
 curves of `X_H` either stay in `{F < s₁}`, where `X_H = X_G`, or lie in a level `F⁻¹(c)`, `c ≥ s₁`,
 where `X_H = f'(c) X_F`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_or_exists_of_isMIntegralCurve_add_comp`).
 The first kind are constant when they are fast and contractible, because `G` is admissible. So if
 `max G + A > c(s₃)`, then `H` is not admissible, and some level `F⁻¹(c)` with `s₁ ≤ c ≤ s₂` carries
-a closed characteristic, contractible in `M`, of period at most `sup |f'|`
+a closed characteristic, contractible in `W`, of period at most `sup |f'|`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_hasContractibleClosedCharacteristicOfPeriodLE`).
 
 **Almost every level.** A monotone function is differentiable almost everywhere. At a point `s`
@@ -37,7 +38,7 @@ where `c` is differentiable with derivative `L`, `c(s + η) < c(s) + (|L| + 1) �
 so the monotonicity step applies with `A = (|L| + 2) η` and a cutoff `f` across `[s, s + η / 2]`
 of slope at most `4 (|L| + 2)`. Hence for almost every `s ∈ (a, b)` there is a bound `K` such
 that every interval `[s, s + δ]`, `δ > 0`, contains a level carrying a closed characteristic
-contractible in `M` of period at most `K`
+contractible in `W` of period at most `K`
 (`IsNondegenerate.ae_forall_exists_hasContractibleClosedCharacteristicOfPeriodLE`).
 The bound `K` does not depend on `δ`, which is what allows passing to the limit `δ → 0` to obtain a
 closed characteristic on the level `F⁻¹(s)` itself; that limit is taken in
@@ -73,22 +74,22 @@ namespace SmoothTwoForm
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [FiniteDimensional ℝ E] {σ : SmoothTwoForm I M} {Z : Set M} {F G : M → ℝ} {f : ℝ → ℝ}
+  [FiniteDimensional ℝ E] {σ : SmoothTwoForm I M} {W Z : Set M} {F G : M → ℝ} {f : ℝ → ℝ}
 
 namespace IsNondegenerate
 
-/-- If no level `F⁻¹(c)`, `s₁ ≤ c ≤ s₂`, carries a closed characteristic contractible in `M` of
-period at most `K`, then `G + f ∘ F` is `({F < s₃}, Z)`-admissible, under the hypotheses of the
-monotonicity step. -/
+/-- If no level `F⁻¹(c)`, `s₁ ≤ c ≤ s₂`, carries a closed characteristic contractible in `W` of
+period at most `K`, then `G + f ∘ F` is `({F < s₃}, Z)`-admissible in `W`, under the hypotheses of
+the monotonicity step. -/
 private theorem isRelContractibleHZAdmissible_add_comp (hσ : σ.IsNondegenerate)
     (hF : ContMDiff I 𝓘(ℝ) ∞ F) {s₁ s₂ s₃ A K : ℝ} (hs₁₂ : s₁ ≤ s₂) (hs₂₃ : s₂ < s₃)
     (hcpt : IsCompact {x | F x ≤ s₂}) (hint : {x | F x ≤ s₂} ⊆ I.interior M)
     (hne : ∃ x, s₂ < F x ∧ F x < s₃) (hZ : Z ⊆ {x | F x ≤ s₁})
-    (hG : σ.IsRelContractibleHZAdmissible {x | F x < s₁} Z G) (hf : ContDiff ℝ ∞ f)
+    (hG : σ.IsRelContractibleHZAdmissible W {x | F x < s₁} Z G) (hf : ContDiff ℝ ∞ f)
     (hf_nonneg : ∀ r, 0 ≤ f r) (hf_le : ∀ r, f r ≤ A) (hfA : ∀ r ≤ s₁, f r = A)
     (hf0 : ∀ r, s₂ ≤ r → f r = 0) (hK : ∀ r, |deriv f r| ≤ K)
-    (hno : ∀ c ∈ Icc s₁ s₂, ¬σ.HasContractibleClosedCharacteristicOfPeriodLE univ F c K) :
-    σ.IsRelContractibleHZAdmissible {x | F x < s₃} Z (G + f ∘ F) := by
+    (hno : ∀ c ∈ Icc s₁ s₂, ¬σ.HasContractibleClosedCharacteristicOfPeriodLE W F c K) :
+    σ.IsRelContractibleHZAdmissible W {x | F x < s₃} Z (G + f ∘ F) := by
   have hGs : tsupport G ⊆ {x | F x < s₁} :=
     hG.tsupport_subset_interior.trans interior_subset
   have hFc : Continuous F := hF.continuous
@@ -133,12 +134,9 @@ private theorem isRelContractibleHZAdmissible_add_comp (hσ : σ.IsNondegenerate
         refine hd ((Filter.EventuallyEq.deriv_eq (f₁ := f) (f := fun _ ↦ (0 : ℝ)) ?_).trans
           (deriv_const c 0))
         filter_upwards [Ioi_mem_nhds (not_le.1 h)] with r hr using hf0 r (le_of_lt hr)
-      obtain ⟨g, hg, hgγ⟩ := hcontr
       refine hno c ⟨hc₁, hc₂⟩
         ((hasContractibleClosedCharacteristicOfPeriodLE_of_isMIntegralCurve_smul hT
-          (inv_ne_zero hd) (by rwa [inv_inv]) ⟨t, hne_t⟩ hlev
-          ⟨(⟨fun p ↦ ⟨p, trivial⟩, by fun_prop⟩ : C(M, (univ : Set M))).comp g, hg.comp_right _,
-            fun u ↦ hgγ u⟩).mono subset_rfl ?_)
+          (inv_ne_zero hd) (by rwa [inv_inv]) ⟨t, hne_t⟩ hlev hcontr).mono subset_rfl ?_)
       rw [abs_inv, div_inv_eq_mul]
       calc T * |deriv f c| ≤ 1 * K := mul_le_mul hT1 (hK c) (abs_nonneg _) zero_le_one
         _ = K := one_mul K }
@@ -147,7 +145,7 @@ omit [FiniteDimensional ℝ E] in
 /-- The maximum of `G + f ∘ F` is `max G + A`, when `G` is `({F < s₁}, Z)`-admissible and `f ≤ A`
 with equality on `(-∞, s₁]`: the maximum of `G` is attained in `{F < s₁}`. -/
 private theorem iSup_add_comp {s₁ A : ℝ}
-    (hG : σ.IsRelContractibleHZAdmissible {x | F x < s₁} Z G)
+    (hG : σ.IsRelContractibleHZAdmissible W {x | F x < s₁} Z G)
     (hf_le : ∀ r, f r ≤ A) (hfA : ∀ r ≤ s₁, f r = A) :
     (⨆ x, (G + f ∘ F) x) = (⨆ x, G x) + A := by
   have hGc : Continuous G := hG.contMDiff.continuous
@@ -172,21 +170,21 @@ private theorem iSup_add_comp {s₁ A : ℝ}
   exact hHsup
 
 
-/-- **The Hofer–Zehnder monotonicity step.** Let `G` be `({F < s₁}, Z)`-admissible, with
+/-- **The Hofer–Zehnder monotonicity step.** Let `G` be `({F < s₁}, Z)`-admissible in `W`, with
 `Z ⊆ {F ≤ s₁}`, and let `f` be a smooth function with `0 ≤ f ≤ A`, equal to `A` on `(-∞, s₁]` and
 to `0` on `[s₂, ∞)`, with `|f'| ≤ K`. Suppose that `{F ≤ s₂}` is compact and lies in the interior
-of `M`, that some value of `F` lies in `(s₂, s₃)`, and that `c°_HZ({F < s₃}, Z) < max G + A`.
-Then some level `F⁻¹(c)` with `s₁ ≤ c ≤ s₂` carries a closed characteristic, contractible in `M`,
-of period at most `K`. -/
+of `M`, that some value of `F` lies in `(s₂, s₃)`, and that `c°_HZ({F < s₃}, Z) < max G + A`, the
+capacity being taken in `W`. Then some level `F⁻¹(c)` with `s₁ ≤ c ≤ s₂` carries a closed
+characteristic, contractible in `W`, of period at most `K`. -/
 theorem exists_hasContractibleClosedCharacteristicOfPeriodLE (hσ : σ.IsNondegenerate)
     (hF : ContMDiff I 𝓘(ℝ) ∞ F) {s₁ s₂ s₃ A K : ℝ} (hs₁₂ : s₁ ≤ s₂) (hs₂₃ : s₂ < s₃)
     (hcpt : IsCompact {x | F x ≤ s₂}) (hint : {x | F x ≤ s₂} ⊆ I.interior M)
     (hne : ∃ x, s₂ < F x ∧ F x < s₃) (hZ : Z ⊆ {x | F x ≤ s₁})
-    (hG : σ.IsRelContractibleHZAdmissible {x | F x < s₁} Z G) (hf : ContDiff ℝ ∞ f)
+    (hG : σ.IsRelContractibleHZAdmissible W {x | F x < s₁} Z G) (hf : ContDiff ℝ ∞ f)
     (hf_nonneg : ∀ r, 0 ≤ f r) (hf_le : ∀ r, f r ≤ A) (hfA : ∀ r ≤ s₁, f r = A)
     (hf0 : ∀ r, s₂ ≤ r → f r = 0) (hK : ∀ r, |deriv f r| ≤ K)
-    (hcap : σ.relContractibleHZCapacity {x | F x < s₃} Z < ENNReal.ofReal ((⨆ x, G x) + A)) :
-    ∃ c ∈ Icc s₁ s₂, σ.HasContractibleClosedCharacteristicOfPeriodLE univ F c K := by
+    (hcap : σ.relContractibleHZCapacity W {x | F x < s₃} Z < ENNReal.ofReal ((⨆ x, G x) + A)) :
+    ∃ c ∈ Icc s₁ s₂, σ.HasContractibleClosedCharacteristicOfPeriodLE W F c K := by
   by_contra hno
   push Not at hno
   exact ((iSup_add_comp hG hf_le hfA ▸ (isRelContractibleHZAdmissible_add_comp hσ hF hs₁₂ hs₂₃
@@ -194,18 +192,18 @@ theorem exists_hasContractibleClosedCharacteristicOfPeriodLE (hσ : σ.IsNondege
     ).not_gt hcap
 
 omit [FiniteDimensional ℝ E] in
-/-- The relative capacities of the sublevel sets `{F < u}`, `u ≤ b`, are given by a monotone
+/-- The relative capacities in `W` of the sublevel sets `{F < u}`, `u ≤ b`, are given by a monotone
 nonnegative real function `φ u` of the level, when the capacity of `{F < b}` is finite. -/
 private theorem exists_monotone_ofReal_eq_relContractibleHZCapacity {b : ℝ}
-    (hcap : σ.relContractibleHZCapacity {x | F x < b} Z ≠ (∞ : ℝ≥0∞)) :
+    (hcap : σ.relContractibleHZCapacity W {x | F x < b} Z ≠ (∞ : ℝ≥0∞)) :
     ∃ φ : ℝ → ℝ, Monotone φ ∧ (∀ u, 0 ≤ φ u) ∧
-      ∀ u ≤ b, σ.relContractibleHZCapacity {x | F x < u} Z = ENNReal.ofReal (φ u) := by
-  have hfin (u : ℝ) : σ.relContractibleHZCapacity {x | F x < min u b} Z ≠ (∞ : ℝ≥0∞) :=
-    ne_top_of_le_ne_top hcap (relContractibleHZCapacity_mono
+      ∀ u ≤ b, σ.relContractibleHZCapacity W {x | F x < u} Z = ENNReal.ofReal (φ u) := by
+  have hfin (u : ℝ) : σ.relContractibleHZCapacity W {x | F x < min u b} Z ≠ (∞ : ℝ≥0∞) :=
+    ne_top_of_le_ne_top hcap (relContractibleHZCapacity_mono subset_rfl
       (ofPred_subset_ofPred.2 fun x hx ↦ lt_of_lt_of_le hx (min_le_right u b)) subset_rfl)
-  refine ⟨fun u ↦ (σ.relContractibleHZCapacity {x | F x < min u b} Z).toReal,
+  refine ⟨fun u ↦ (σ.relContractibleHZCapacity W {x | F x < min u b} Z).toReal,
     fun u v huv ↦ ENNReal.toReal_mono (hfin v)
-      (relContractibleHZCapacity_mono
+      (relContractibleHZCapacity_mono subset_rfl
         (ofPred_subset_ofPred.2 fun x hx ↦ lt_of_lt_of_le hx (min_le_min_right b huv))
         subset_rfl),
     fun u ↦ ENNReal.toReal_nonneg, fun u hu ↦ ?_⟩
@@ -217,19 +215,20 @@ private theorem exists_monotone_ofReal_eq_relContractibleHZCapacity {b : ℝ}
 /-- **Closed characteristics near almost every level.** Let `F` be smooth, with `{F < b}` in the
 interior of `M` and compact sublevel sets `{F ≤ s}` for `s < b`, let every value in `(a, b)` be
 attained by `F`, and let `Z ⊆ {F ≤ a}`. If the relative capacity
-`c°_HZ({F < b}, Z)` is finite, then for almost every `s ∈ (a, b)` there is a bound `K` such that
-every interval `[s, s + δ]`, `δ > 0`, contains a level of `F` carrying a closed characteristic,
-contractible in `M`, of period at most `K`. -/
+`c°_HZ({F < b}, Z)` in `W` is finite, then for almost every `s ∈ (a, b)` there is a bound `K` such
+that every interval `[s, s + δ]`, `δ > 0`, contains a level of `F` carrying a closed
+characteristic, contractible in `W`, of period at most `K`. -/
 theorem ae_forall_exists_hasContractibleClosedCharacteristicOfPeriodLE (hσ : σ.IsNondegenerate)
     (hF : ContMDiff I 𝓘(ℝ) ∞ F) {a b : ℝ} (hcpt : ∀ s < b, IsCompact {x | F x ≤ s})
     (hint : {x | F x < b} ⊆ I.interior M) (hrange : Ioo a b ⊆ range F)
-    (hZ : Z ⊆ {x | F x ≤ a}) (hcap : σ.relContractibleHZCapacity {x | F x < b} Z ≠ (∞ : ℝ≥0∞)) :
+    (hZ : Z ⊆ {x | F x ≤ a})
+    (hcap : σ.relContractibleHZCapacity W {x | F x < b} Z ≠ (∞ : ℝ≥0∞)) :
     ∀ᵐ s, s ∈ Ioo a b → ∃ K, ∀ δ > 0, ∃ c ∈ Icc s (s + δ),
-      σ.HasContractibleClosedCharacteristicOfPeriodLE univ F c K := by
+      σ.HasContractibleClosedCharacteristicOfPeriodLE W F c K := by
   have hFc : Continuous F := hF.continuous
   -- The capacities of the sublevel sets, a monotone function of the level.
   obtain ⟨φ, hmono, hφ0, hφeq⟩ :=
-    exists_monotone_ofReal_eq_relContractibleHZCapacity (Z := Z) hcap
+    exists_monotone_ofReal_eq_relContractibleHZCapacity (W := W) (Z := Z) hcap
   filter_upwards [hmono.ae_differentiableAt] with s hs hsI
   -- The right difference quotients of `φ` at `s` are eventually below `|φ'(s)| + 1`.
   set L := deriv φ s
@@ -251,7 +250,7 @@ theorem ae_forall_exists_hasContractibleClosedCharacteristicOfPeriodLE (hσ : σ
   have hval {r : ℝ} (hr : r ∈ Ioo a b) : ∃ x, F x = r := hrange hr
   -- An admissible `G` for `{F < s}` with `max G > c(s) - η`.
   obtain ⟨x₁, hx₁⟩ := hval (r := (a + s) / 2) ⟨by linarith [hsI.1], by linarith [hsI.1, hsI.2]⟩
-  obtain ⟨G, hG, hGsup⟩ := exists_isRelContractibleHZAdmissible_lt_iSup (σ := σ)
+  obtain ⟨G, hG, hGsup⟩ := exists_isRelContractibleHZAdmissible_lt_iSup (σ := σ) (W := W)
     (V := {x | F x < s}) (Z := Z)
     ⟨{x | F x < s}, isOpen_lt hFc continuous_const,
       ⟨x₁, by rw [mem_ofPred_eq, hx₁]; linarith [hsI.1]⟩, subset_rfl⟩
