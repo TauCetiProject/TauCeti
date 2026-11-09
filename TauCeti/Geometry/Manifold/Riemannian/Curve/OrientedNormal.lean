@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
+public import Mathlib.Analysis.Normed.Module.Normalize
 
 /-!
 # The oriented unit normal of a curve on a surface
@@ -48,47 +49,43 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   [RiemannianBundle (TangentSpace I : M → Type _)]
 
-/-- The **oriented unit normal** `J γ' / ‖γ'‖` of a curve `γ` on an oriented surface: its velocity
-rotated by `+π/2` in the oriented tangent plane, divided by its speed. It is the zero vector
-where the velocity vanishes. -/
+/-- The **oriented unit normal** `J γ' / ‖γ'‖` of a curve `γ` on an oriented surface: its
+normalized velocity rotated by `+π/2` in the oriented tangent plane. It is the zero vector where
+the velocity vanishes. -/
 def orientedUnitNormal (o : Orientation I M (Fin 2)) (γ : ℝ → M) (t : ℝ) :
     TangentSpace I (γ t) :=
   letI := o.fact_finrank_tangentSpace (γ t)
-  ‖curveVelocity I γ t‖⁻¹ • (o.orientationAt (γ t)).rightAngleRotation (curveVelocity I γ t)
+  (o.orientationAt (γ t)).rightAngleRotation (NormedSpace.normalize (curveVelocity I γ t))
 
 /-- The defining formula for `orientedUnitNormal`. -/
 theorem orientedUnitNormal_apply (o : Orientation I M (Fin 2)) (γ : ℝ → M) (t : ℝ) :
     orientedUnitNormal o γ t =
       (letI := o.fact_finrank_tangentSpace (γ t);
-        ‖curveVelocity I γ t‖⁻¹ • (o.orientationAt (γ t)).rightAngleRotation
-          (curveVelocity I γ t)) := (rfl)
+        (o.orientationAt (γ t)).rightAngleRotation
+          (NormedSpace.normalize (curveVelocity I γ t))) := (rfl)
 
 /-- At a regular point, the oriented unit normal has norm one. -/
+@[simp]
 theorem norm_orientedUnitNormal (o : Orientation I M (Fin 2)) (γ : ℝ → M) {t : ℝ}
     (hv : curveVelocity I γ t ≠ 0) : ‖orientedUnitNormal o γ t‖ = 1 := by
   let := o.fact_finrank_tangentSpace (γ t)
-  rw [orientedUnitNormal_apply, norm_smul, LinearIsometryEquiv.norm_map,
-    Real.norm_eq_abs, abs_inv, abs_norm, inv_mul_cancel₀ (norm_ne_zero_iff.mpr hv)]
+  rw [orientedUnitNormal_apply, LinearIsometryEquiv.norm_map, NormedSpace.norm_normalize hv]
 
 /-- The oriented unit normal is orthogonal to the velocity. -/
+@[simp]
 theorem inner_orientedUnitNormal_curveVelocity (o : Orientation I M (Fin 2))
     (γ : ℝ → M) (t : ℝ) : inner ℝ (orientedUnitNormal o γ t) (curveVelocity I γ t) = 0 := by
   let := o.fact_finrank_tangentSpace (γ t)
-  rw [orientedUnitNormal_apply, real_inner_smul_left,
+  rw [orientedUnitNormal_apply, NormedSpace.normalize, map_smul, real_inner_smul_left,
     (o.orientationAt (γ t)).inner_rightAngleRotation_self, mul_zero]
 
 /-- The oriented unit normal vanishes exactly where the velocity does. -/
+@[simp]
 theorem orientedUnitNormal_eq_zero_iff (o : Orientation I M (Fin 2))
     (γ : ℝ → M) (t : ℝ) : orientedUnitNormal o γ t = 0 ↔ curveVelocity I γ t = 0 := by
-  constructor
-  · intro h
-    by_contra hn
-    have heq := norm_orientedUnitNormal o γ hn
-    rw [h, norm_zero] at heq
-    exact zero_ne_one heq
-  · intro h
-    rw [orientedUnitNormal_apply, h]
-    simp
+  let := o.fact_finrank_tangentSpace (γ t)
+  rw [orientedUnitNormal_apply, LinearIsometryEquiv.map_eq_zero_iff,
+    NormedSpace.normalize_eq_zero_iff]
 
 /-- The oriented area of the velocity followed by the oriented unit normal is the speed. Thus at
 a regular point the pair `(γ', ν)` is a positively oriented basis of the tangent plane. -/
@@ -98,9 +95,8 @@ theorem riemannianVolumeForm_curveVelocity_orientedUnitNormal
       ‖curveVelocity I γ t‖ := by
   let := o.fact_finrank_tangentSpace (γ t)
   rw [riemannianVolumeForm_apply, ← (o.orientationAt (γ t)).areaForm_to_volumeForm,
-    orientedUnitNormal_apply, map_smul,
-    (o.orientationAt (γ t)).areaForm_rightAngleRotation_right, real_inner_self_eq_norm_sq]
-  change ‖curveVelocity I γ t‖⁻¹ * ‖curveVelocity I γ t‖ ^ 2 = ‖curveVelocity I γ t‖
+    orientedUnitNormal_apply, (o.orientationAt (γ t)).areaForm_rightAngleRotation_right,
+    NormedSpace.normalize, real_inner_smul_right, real_inner_self_eq_norm_sq]
   by_cases h : ‖curveVelocity I γ t‖ = 0
   · simp [h]
   · field_simp
@@ -120,6 +116,6 @@ theorem orientedUnitNormal_comp_const_sub (o : Orientation I M (Fin 2)) (γ : �
       rw [curveVelocity_apply, curveVelocity_apply, mfderiv_zero_of_not_mdifferentiableAt hγ,
         mfderiv_zero_of_not_mdifferentiableAt hγ']
       exact neg_zero.symm
-  rw [orientedUnitNormal_apply, orientedUnitNormal_apply, hv, norm_neg, map_neg, smul_neg]
+  rw [orientedUnitNormal_apply, orientedUnitNormal_apply, hv, NormedSpace.normalize_neg, map_neg]
 
 end TauCeti.Manifold
