@@ -67,10 +67,12 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   chain rule under reparametrization, with `MDifferentiableAt.curveVelocity_comp_mfderiv` for a
   curve through a normed space and `TauCeti.Manifold.curveVelocity_comp` for scalar
   reparametrizations.
+* `Function.Periodic.curveVelocity_add`: the velocity of a periodic curve is periodic.
 * `TauCeti.Manifold.curveVelocity_eq_mfderiv_snd` and
   `TauCeti.Manifold.curveVelocity_eq_mfderiv_fst`: the two partial velocities of a two-parameter
   family `f : 𝕜 → 𝕜 → M` are the differential of the uncurried family in the coordinate
-  directions.
+  directions, and `TauCeti.Manifold.hasMFDerivAt_apply_fst` gives the corresponding derivative
+  of the curve `q ↦ w (q, t)` of a map `w : 𝕜 × 𝕜 → M`.
 * `HasMFDerivAt.fst_curve` and `HasMFDerivAt.snd_curve`:
   the components of a curve in a product move with the components of its velocity.
 * `HasMFDerivAt.hasDerivAt_extChartAt_comp`: a curve read in any fixed extended chart containing
@@ -297,6 +299,17 @@ theorem curveVelocity_eq_mfderiv_fst
   hf.curveVelocity_comp_mfderiv (g := fun q : 𝕜 ↦ (q, t))
     ((hasDerivAt_id u).prodMk (hasDerivAt_const u t))
 
+/-- The curve `q ↦ w (q, t)` of a map `w` of the plane has velocity `∂_s w (u, t)`, the
+differential of `w` in the direction of the first coordinate. -/
+theorem hasMFDerivAt_apply_fst {w : 𝕜 × 𝕜 → M}
+    (hw : MDifferentiableAt 𝓘(𝕜, 𝕜 × 𝕜) I w (u, t)) :
+    HasMFDerivAt 𝓘(𝕜, 𝕜) I (fun q ↦ w (q, t)) u
+      ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I w (u, t) (1, 0))) := by
+  have hc : MDifferentiableAt 𝓘(𝕜, 𝕜) I (fun q ↦ w (q, t)) u :=
+    hw.comp u (differentiableAt_id.prodMk (differentiableAt_const t)).mdifferentiableAt
+  have h := hasMFDerivAt_curveVelocity hc
+  rwa [curveVelocity_eq_mfderiv_fst (f := fun a b ↦ w (a, b)) hw] at h
+
 end Surface
 
 /-- The velocity of a reparametrized curve is the velocity of the original curve multiplied by
@@ -327,6 +340,15 @@ theorem curveVelocity_comp {φ : 𝕜 → 𝕜} {c : 𝕜} (hφ : HasDerivAt φ 
     curveVelocityWithin_comp (s := Set.univ) (u := Set.univ) hφ.hasDerivWithinAt
       (Set.mapsTo_univ φ Set.univ) hγ.mdifferentiableWithinAt
       (uniqueDiffOn_univ t (Set.mem_univ t))
+
+/-- The velocity of a `c`-periodic curve is `c`-periodic: at a point where the curve is
+differentiable, its velocity at `t + c` is its velocity at `t`. -/
+theorem _root_.Function.Periodic.curveVelocity_add {c : 𝕜} (h : Function.Periodic γ c)
+    (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (t + c)) :
+    curveVelocity I γ (t + c) = curveVelocity I γ t := by
+  have h' := curveVelocity_comp (c := 1) ((hasDerivAt_id' t).add_const c) hγ
+  rw [one_smul, show (γ ∘ fun t ↦ t + c) = γ from funext h] at h'
+  exact h'.symm
 
 /-- On a parameter set which is a neighbourhood of `t`, the restricted velocity is the
 unrestricted one. -/

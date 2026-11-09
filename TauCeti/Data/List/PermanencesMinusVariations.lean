@@ -43,24 +43,17 @@ private theorem pmvAux_zero (k : ℕ) (l : List SignType) :
     pmvAux 0 k l = pmvAux 0 0 l := by
   induction l generalizing k with
   | nil => rfl
-  | cons b l ih =>
-    by_cases hb : b = 0
-    · simp [pmvAux, hb, ih]
-    · simp [pmvAux, hb]
-
-private theorem pmvAux_replicate (a : SignType) (k n : ℕ) :
-    pmvAux a k (List.replicate n 0) = 0 := by
-  induction n generalizing k with
-  | zero => rfl
-  | succ n ih => simp [List.replicate_succ, pmvAux, ih]
+  | cons b l ih => by_cases hb : b = 0 <;> simp [pmvAux, hb, ih]
 
 private theorem pmvAux_replicate_append (a : SignType) (k n : ℕ) (l : List SignType) :
     pmvAux a k (List.replicate n 0 ++ l) = pmvAux a (k + n) l := by
   induction n generalizing k with
   | zero => simp
-  | succ n ih =>
-    simp only [List.replicate_succ, List.cons_append, pmvAux, ite_true, ih]
-    exact congrArg (fun t => pmvAux a t l) (by omega)
+  | succ n ih => simp [List.replicate_succ, pmvAux, ih, Nat.add_right_comm k 1 n, ← add_assoc]
+
+private theorem pmvAux_replicate (a : SignType) (k n : ℕ) :
+    pmvAux a k (List.replicate n 0) = 0 := by
+  simpa [pmvAux] using pmvAux_replicate_append a k n []
 
 /-- Sum over consecutive nonzero entries, retaining the parity and length of
 each intervening zero gap. Leading and trailing zeros contribute nothing. -/
@@ -160,19 +153,15 @@ theorem _root_.List.permanencesMinusVariations_congr {l : List R} {m : List S}
     l.permanencesMinusVariations = m.permanencesMinusVariations := by
   simp only [List.permanencesMinusVariations, h]
 
-/-- Sign-preserving maps preserve permanences minus variations. -/
-theorem _root_.List.permanencesMinusVariations_map {f : R → S}
-    (hf : ∀ x, SignType.sign (f x) = SignType.sign x) (l : List R) :
-    (l.map f).permanencesMinusVariations = l.permanencesMinusVariations := by
-  apply List.permanencesMinusVariations_congr
-  simp only [List.map_map]
-  exact List.map_congr_left fun x _ => hf x
+/-- Maps preserving the sign of every entry preserve permanences minus variations. -/
+theorem _root_.List.permanencesMinusVariations_map {f : R → S} {l : List R}
+    (hf : ∀ x ∈ l, SignType.sign (f x) = SignType.sign x) :
+    (l.map f).permanencesMinusVariations = l.permanencesMinusVariations :=
+  List.permanencesMinusVariations_congr (by rw [List.map_map]; exact List.map_congr_left hf)
 
 @[simp] theorem _root_.List.permanencesMinusVariations_map_sign (l : List R) :
-    (l.map SignType.sign).permanencesMinusVariations = l.permanencesMinusVariations := by
-  apply List.permanencesMinusVariations_map
-  intro x
-  cases SignType.sign x <;> decide
+    (l.map SignType.sign).permanencesMinusVariations = l.permanencesMinusVariations :=
+  List.permanencesMinusVariations_map fun x _ => by cases SignType.sign x <;> rfl
 
 private theorem pmvAux_neg (a : SignType) (k : ℕ) (l : List SignType) :
     pmvAux (-a) k (l.map (- ·)) = pmvAux a k l := by
@@ -180,13 +169,14 @@ private theorem pmvAux_neg (a : SignType) (k : ℕ) (l : List SignType) :
   | nil => rfl
   | cons b l ih => simp [pmvAux, ih]
 
-/-- Reversing every sign preserves the products of consecutive nonzero signs. -/
-theorem _root_.List.permanencesMinusVariations_map_of_sign_eq_neg {f : R → S}
-    (hf : ∀ x, SignType.sign (f x) = -SignType.sign x) (l : List R) :
+/-- Reversing the sign of every entry preserves the products of consecutive
+nonzero signs. -/
+theorem _root_.List.permanencesMinusVariations_map_of_sign_eq_neg {f : R → S} {l : List R}
+    (hf : ∀ x ∈ l, SignType.sign (f x) = -SignType.sign x) :
     (l.map f).permanencesMinusVariations = l.permanencesMinusVariations := by
   have h : (l.map f).map SignType.sign = (l.map SignType.sign).map (- ·) := by
-    simp only [List.map_map]
-    exact List.map_congr_left fun x _ => hf x
+    rw [List.map_map, List.map_map]
+    exact List.map_congr_left hf
   simp only [List.permanencesMinusVariations, h]
   simpa using pmvAux_neg 0 0 (l.map SignType.sign)
 
@@ -197,8 +187,8 @@ variations. -/
     (l.map (c * ·)).permanencesMinusVariations = l.permanencesMinusVariations := by
   rcases hc.lt_or_gt with hc | hc
   · exact List.permanencesMinusVariations_map_of_sign_eq_neg
-      (fun x => by simp [sign_mul, sign_neg hc]) l
-  · exact List.permanencesMinusVariations_map (fun x => by simp [sign_mul, sign_pos hc]) l
+      fun x _ => by simp [sign_mul, sign_neg hc]
+  · exact List.permanencesMinusVariations_map fun x _ => by simp [sign_mul, sign_pos hc]
 
 /-- On a list with no zeros, permanences minus variations is the number of
 adjacent pairs minus twice the number of sign changes. -/
@@ -211,19 +201,11 @@ theorem _root_.List.permanencesMinusVariations_eq_length_sub_two_mul_signVariati
     cases l with
     | nil => simp
     | cons b l =>
-      have ha := h a (by simp)
-      have hb := h b (by simp)
-      have ht : ∀ x ∈ b :: l, x ≠ 0 := fun x hx => h x (by simp [hx])
+      obtain ⟨ha, ht⟩ := List.forall_mem_cons.mp h
+      have hb := ht b List.mem_cons_self
       rw [List.permanencesMinusVariations_cons_cons hb,
         List.signVariations_cons_cons_of_ne_zero _ ha hb, ih ht]
-      have hs : (SignType.sign a : ℤ) * (SignType.sign b : ℤ) =
-          1 - 2 * (if SignType.sign a = SignType.sign b then (0 : ℤ) else 1) := by
-        have ha' := sign_ne_zero.mpr ha
-        have hb' := sign_ne_zero.mpr hb
-        revert ha' hb'
-        cases SignType.sign a <;> cases SignType.sign b <;> decide
-      simp only [hs, List.length_cons, Nat.add_sub_cancel, Nat.cast_add,
-        Nat.cast_one, Nat.cast_ite, Nat.cast_zero]
-      omega
+      rcases ha.lt_or_gt with ha | ha <;> rcases hb.lt_or_gt with hb | hb <;>
+        simp [sign_neg, sign_pos, ha, hb] <;> omega
 
 end TauCeti

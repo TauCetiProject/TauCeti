@@ -176,10 +176,14 @@ noncomputable def datumSteinberg (e : SuzukiReeIndex) :
       (e.1.dynkinType.simplyConnectedRootDatum e.1.dynkinType_valid) :=
   e.datumSpecialIsogeny ^ e.1.fieldExponent
 
+/-- The root-datum Steinberg map is the index's field-exponent power of its special isogeny. -/
+theorem datumSteinberg_def (e : SuzukiReeIndex) :
+    e.datumSteinberg = e.datumSpecialIsogeny ^ e.1.fieldExponent := (rfl)
+
 /-- The Steinberg character map is the recorded power of the special-isogeny character map. -/
 theorem datumSteinberg_weightMap_eq_pow (e : SuzukiReeIndex) :
     e.datumSteinberg.weightMap = e.datumSpecialIsogeny.weightMap ^ e.1.fieldExponent := by
-  rw [datumSteinberg, RootPairingIsogeny.weightMap_pow]
+  rw [datumSteinberg_def, RootPairingIsogeny.weightMap_pow]
 
 /-- **The Steinberg map is a scaling times the special isogeny**, by `p ^ m`. Every computation
 below is read off this decomposition. -/
@@ -230,9 +234,10 @@ scaling separating the two fixes every index. -/
 that node, so this is `p ^ m` at a short simple root and `p ^ (m + 1)` at a long one.
 
 The `exponent` field is indexed by the source of the character map, which is the image node of the
-group-scheme isogeny, so this indexing is the one exchanged against the simple-root relation below:
-the factor there is `TauCeti.SuzukiReeIndex.exponent i`, the squared length of the node paired with
-`i`, and is therefore `p ^ m` at a long node and `p ^ (m + 1)` at a short one. -/
+group-scheme isogeny, so the sentence above is about that image node. The simple-root relation
+below instead uses `TauCeti.SuzukiReeIndex.exponent i` at the node `i` it starts from, which is `1`
+at a long node and the characteristic at a short one. Hence the factor there is `p ^ m` at a long
+`i` and `p ^ (m + 1)` at a short `i`: the two nodes are exchanged by the length permutation. -/
 @[simp] theorem datumSteinberg_exponent (e : SuzukiReeIndex)
     (i : Fin e.1.dynkinType.numRoots) :
     e.datumSteinberg.exponent i =
