@@ -12,56 +12,38 @@ public import Mathlib.MeasureTheory.Measure.AEMeasurable
 # Selecting the point of an almost surely Dirac kernel
 
 A kernel into a nonempty, countably generated measurable space that is Dirac almost
-everywhere for a given source measure agrees almost everywhere with a Dirac kernel
-induced by a measurable map. This is the measure-relative version of Mathlib's
+everywhere for a given source measure agrees almost everywhere with the deterministic kernel
+of a measurable map. This is the measure-relative version of Mathlib's
 `ProbabilityTheory.Kernel.IsDeterministic.exists_eq_deterministic`, which assumes a
 deterministic kernel at every source point.
 -/
 
 public section
 
-noncomputable section
+open MeasureTheory
 
-open MeasureTheory ProbabilityTheory
+namespace ProbabilityTheory.Kernel
 
-namespace TauCeti
-
-namespace Probability
-
-universe u v
-
-variable {X : Type u} {Y : Type v} [MeasurableSpace X] [MeasurableSpace Y]
+variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y]
   [MeasurableSpace.CountablyGenerated Y] [Nonempty Y]
 
-/-- If a kernel is almost everywhere a Dirac measure, its atoms have a
-measurable representative. The selected map represents the kernel almost everywhere. -/
-theorem exists_measurable_of_ae_exists_kernel_eq_dirac
-    (κ : Kernel X Y) (μ : Measure X)
-    (hκ : ∀ᵐ x ∂μ, ∃ y : Y, κ x = Measure.dirac y) :
-    ∃ T : X → Y, Measurable T ∧ ∀ᵐ x ∂μ, κ x = Measure.dirac (T x) := by
+/-- If a kernel is almost everywhere a Dirac measure, then it agrees almost everywhere with
+the deterministic kernel of a measurable map. -/
+theorem exists_ae_eq_deterministic_of_ae_exists_eq_dirac (κ : Kernel X Y) {μ : Measure X}
+    (hκ : ∀ᵐ x ∂μ, ∃ y, κ x = Measure.dirac y) :
+    ∃ (f : X → Y) (hf : Measurable f), κ =ᵐ[μ] deterministic f hf := by
   classical
-  let T : X → Y := fun x ↦
-    if h : ∃ y : Y, κ x = Measure.dirac y then h.choose else Classical.choice inferInstance
-  have hT : ∀ᵐ x ∂μ, κ x = Measure.dirac (T x) := by
+  let f : X → Y := fun x ↦
+    if h : ∃ y, κ x = Measure.dirac y then h.choose else Classical.arbitrary Y
+  have hκf : ∀ᵐ x ∂μ, κ x = Measure.dirac (f x) := by
     filter_upwards [hκ] with x hx
-    simpa only [T, dite_eq_left hx] using hx.choose_spec
-  have hnull : NullMeasurable T μ := by
-    intro s hs
-    have hm : MeasurableSet {x : X | κ x s = 1} :=
-      (κ.measurable_coe hs) (measurableSet_singleton 1)
-    have heq : {x : X | κ x s = 1} =ᵐ[μ] T ⁻¹' s := by
-      filter_upwards [hT] with x hx
-      by_cases hxs : T x ∈ s
-      · simp [hx, Measure.dirac_apply' _ hs, hxs]
-      · simp [hx, Measure.dirac_apply' _ hs, hxs]
-    exact hm.nullMeasurableSet.congr heq
-  let T' := hnull.aemeasurable.mk T
-  have hT' : T =ᵐ[μ] T' := hnull.aemeasurable.ae_eq_mk
-  refine ⟨T', hnull.aemeasurable.measurable_mk, ?_⟩
-  filter_upwards [hT, hT'] with x hx hxx
-  rw [← hxx]
-  exact hx
+    simpa only [f, dite_eq_left hx] using hx.choose_spec
+  have hf : AEMeasurable f μ := NullMeasurable.aemeasurable fun s hs ↦
+    (κ.measurable_coe hs (measurableSet_singleton 1)).nullMeasurableSet.congr <| by
+      filter_upwards [hκf] with x hx
+      simp [hx, Measure.dirac_apply' _ hs, Set.indicator_eq_one_iff_mem]
+  refine ⟨hf.mk f, hf.measurable_mk, ?_⟩
+  filter_upwards [hκf, hf.ae_eq_mk] with x hx hfx
+  rw [deterministic_apply, hx, hfx]
 
-end Probability
-
-end TauCeti
+end ProbabilityTheory.Kernel

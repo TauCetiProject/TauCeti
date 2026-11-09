@@ -8,7 +8,7 @@ module
 public import TauCeti.FieldTheory.FunctionField.Different.Derivative
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Radical
 import TauCeti.FieldTheory.FunctionField.Different.Tower
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 
 /-!
 # The different of a radical extension `y ^ n = u`
@@ -166,7 +166,7 @@ theorem differentExponent_add_one_eq_of_pow_eq_of_gcd_ord_eq_one {y : F'} {n : �
     rintro rfl
     exact hn Nat.cast_zero
   obtain ⟨z, c, hgenz, hz, hc, hz0⟩ :=
-    exists_adjoin_eq_top_pow_eq_ord_eq_one k F (P'.restrict k F) hgen hy hu hn0 h
+    exists_adjoin_eq_top_pow_eq_ord_eq_one k F (P'.restrict k F) hgen hy hu h
   -- `d ≤ (n - 1) · ord_{P'} z`, while `n · ord_{P'} z = e(P' ∣ P) ≤ d + 1`; so `ord_{P'} z = 1`.
   have hd := differentExponent_le_mul_ord_of_pow_eq k F hgenz hz hn
     ((P'.restrict k F).mem_integers_iff_ord_nonneg.mpr (hc ▸ zero_le_one)) hz0
@@ -180,6 +180,19 @@ theorem differentExponent_add_one_eq_of_pow_eq_of_gcd_ord_eq_one {y : F'} {n : �
   rw [ho, mul_one] at hkey hd
   have : (differentExponent k F P' : ℤ) + 1 = n := by linarith
   exact_mod_cast this
+
+/-- For a radical extension `F' = F(y)`, `y ^ n = u`, with `n` coprime to the order of `u` at the
+place below `P'`, the place `P'` is totally ramified: `e(P' ∣ P) = n` and `d(P' ∣ P) + 1 = n`. -/
+theorem ramificationIdx_eq_and_differentExponent_add_one_eq_of_gcd_ord_eq_one {y : F'} {n : ℕ}
+    {u : F} (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0)
+    (h : Int.gcd n ((P'.restrict k F).ord u) = 1) :
+    ramificationIdx F P' = n ∧ differentExponent k F P' + 1 = n := by
+  have hd := differentExponent_add_one_eq_of_pow_eq_of_gcd_ord_eq_one k F hgen hy hn hu h
+  have hdiv := div_gcd_ord_dvd_ramificationIdx_of_pow_eq k F (P' := P')
+    (Nat.pos_of_ne_zero fun h ↦ hn (by rw [h, Nat.cast_zero])).ne' hy
+  rw [h, Nat.div_one] at hdiv
+  exact ⟨(hd ▸ ramificationIdx_le_differentExponent_add_one k F P').antisymm
+    (Nat.le_of_dvd (ramificationIdx_pos F P') hdiv), hd⟩
 
 /-- For a radical extension `F' = F(y)`, `y ^ n = u`, both `e(P' ∣ P)` and `d(P' ∣ P) + 1` equal
 `n / gcd(n, ord_P u)`. -/
@@ -238,13 +251,8 @@ private theorem ramificationIdx_eq_and_differentExponent_add_one_eq_of_pow_eq {y
     rw [hordw, show (s : ℤ) = n / r by exact_mod_cast Int.natCast_div n r]
     exact Int.gcd_div_gcd_div_gcd (Int.gcd_pos_of_ne_zero_left m (by exact_mod_cast hn0))
   -- The places of `E` below `P'` are totally ramified in `F'`.
-  have hdE := differentExponent_add_one_eq_of_pow_eq_of_gcd_ord_eq_one k E hgenE hyE hs hw0 hgcd
-  have heE : ramificationIdx E P' = s := by
-    have hdiv := div_gcd_ord_dvd_ramificationIdx_of_pow_eq k E (P' := P')
-      (Nat.pos_of_ne_zero fun h ↦ hs (by rw [h, Nat.cast_zero])).ne' hyE
-    rw [hgcd, Nat.div_one] at hdiv
-    exact (hdE ▸ ramificationIdx_le_differentExponent_add_one k E P').antisymm
-      (Nat.le_of_dvd (ramificationIdx_pos E P') hdiv)
+  obtain ⟨heE, hdE⟩ := ramificationIdx_eq_and_differentExponent_add_one_eq_of_gcd_ord_eq_one
+    k E hgenE hyE hs hw0 hgcd
   -- Compose in the tower `F ⊆ E ⊆ F'`.
   have he := ramificationIdx_restrict_mul (k₁ := k) (F₀ := F) (F₁ := E) P'
   have hd := differentExponent_restrict_add (k₀ := k) (k₁ := k) (F₀ := F) (F₁ := E) P'

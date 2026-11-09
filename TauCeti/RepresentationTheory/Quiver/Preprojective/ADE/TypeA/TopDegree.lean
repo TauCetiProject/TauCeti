@@ -54,7 +54,7 @@ open _root_.Quiver PathAlgebra DoubledQuiver MulOpposite
 
 variable (k : Type*) {n : ℕ}
 
-attribute [local instance] finiteNeighborSetFintype signlessPreprojectiveGradedAlgebra
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite signlessPreprojectiveGradedAlgebra
 
 local notation "AG" => diagramGraph (DynkinType.cartanMatrix (DynkinType.A n))
 local notation "Q" => DoubledQuiver AG

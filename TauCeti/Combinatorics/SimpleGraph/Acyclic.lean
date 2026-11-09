@@ -10,12 +10,14 @@ public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 /-!
 # Paths and degrees in acyclic simple graphs
 
-This file records consequences of acyclicity for paths and for degrees: a nonempty finite
+This file records consequences of acyclicity for paths and for degrees (a nonempty finite
 forest has a vertex of degree at most one, so a nonempty finite regular forest has degree at
-most one.
+most one), and gives a height criterion for acyclicity.
 
 ## Main results
 
+* `SimpleGraph.isAcyclic_of_forall_adj_le_eq`: a graph with a height function for which every
+  vertex has at most one neighbour of height at most its own is acyclic.
 * `SimpleGraph.IsAcyclic.exists_degree_le_one`: a nonempty finite forest has a vertex of degree
   at most one.
 * `SimpleGraph.IsAcyclic.degree_le_one_of_isRegularOfDegree`: a nonempty finite regular
@@ -31,6 +33,27 @@ most one.
 public section
 
 namespace TauCeti
+
+/-- **A height criterion for acyclicity.** If `f` is a height function on the vertices such that
+every vertex has at most one neighbour whose height is at most its own, then the graph is
+acyclic: on a cycle, a vertex of greatest height would have two distinct such neighbours. -/
+theorem _root_.SimpleGraph.isAcyclic_of_forall_adj_le_eq {V α : Type*} [LinearOrder α]
+    {G : SimpleGraph V} (f : V → α)
+    (h : ∀ ⦃v u w : V⦄, G.Adj v u → G.Adj v w → f u ≤ f v → f w ≤ f v → u = w) :
+    G.IsAcyclic := by
+  classical
+  rw [SimpleGraph.isAcyclic_iff_forall_not_isCycle]
+  intro v c hc
+  -- Rotate the cycle so that it starts at a vertex `w` of greatest height.
+  obtain ⟨w, hw, hmax⟩ := c.support.toFinset.exists_max_image f ⟨v, by simp⟩
+  rw [List.mem_toFinset] at hw
+  have hc' := hc.rotate hw
+  have hle : ∀ i, f ((c.rotate w hw).getVert i) ≤ f w := fun i =>
+    hmax _ (List.mem_toFinset.mpr ((c.mem_support_rotate_iff w hw).mp
+      ((c.rotate w hw).getVert_mem_support i)))
+  -- Its second and penultimate vertices are distinct neighbours of `w` of height at most `f w`.
+  exact hc'.snd_ne_penultimate <| h ((c.rotate w hw).adj_snd hc'.not_nil)
+    ((c.rotate w hw).adj_penultimate hc'.not_nil).symm (hle _) (hle _)
 
 /-- A path in an acyclic graph has no chord: vertices separated by at least one intermediate
 vertex cannot be adjacent. -/
