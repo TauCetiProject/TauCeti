@@ -51,7 +51,8 @@ coefficient vanishing at all large frequencies is smoothing
 constant is not (`TauCeti.Symbol.isSmoothing_const_iff`).
 
 The image of a symbol under a continuous linear map of the coefficient spaces, such as conjugation
-by isomorphisms of `V` and `W`, has the same order (`TauCeti.Symbol.map`).
+by isomorphisms of `V` and `W`, has the same order (`TauCeti.Symbol.map`); it commutes with
+spatial and frequency derivatives and keeps uniform estimates.
 
 The estimates are only required locally uniformly in `x`. The predicate
 `TauCeti.Symbol.IsUniform` asks for constants independent of `x`, and
@@ -1083,6 +1084,35 @@ theorem HasCompactSpatialSupport.map {a : Symbol n V W m} (ha : a.HasCompactSpat
     (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).HasCompactSpatialSupport := by
   obtain ⟨K, hK, hKa⟩ := ha
   exact ⟨K, hK, fun x hx ξ ↦ by rw [coefficient_map, hKa x hx ξ, map_zero]⟩
+
+/-- The image of a symbol under a continuous linear map of the coefficient spaces keeps estimates
+that are uniform in the position. -/
+theorem IsUniform.map {a : Symbol n V W m} (ha : a.IsUniform)
+    (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).IsUniform := fun α β ↦ by
+  obtain ⟨C, hC0, hC⟩ := ha α β
+  refine ⟨‖Φ‖ * C, by positivity, fun x ξ ↦ ?_⟩
+  have h : (a.map Φ).coefficient = Φ ∘ a.coefficient := funext (coefficient_map Φ a)
+  rw [h, Φ.mixedDeriv_comp_left a.contDiff_coefficient, mul_assoc]
+  exact Φ.le_opNorm_of_le (hC x ξ)
+
+/-- Spatial derivatives commute with the image under a continuous linear map of the coefficient
+spaces. -/
+theorem spatialDeriv_map (j : Fin n) (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W'))
+    (a : Symbol n V W m) : spatialDeriv j (a.map Φ) = (spatialDeriv j a).map Φ := by
+  ext1
+  funext ⟨x, ξ⟩
+  rw [coefficient_spatialDeriv, coefficient_map, coefficient_spatialDeriv]
+  exact Φ.coordinateDeriv_comp_left [j] (contDiff_infty.1 (a.contDiff_coefficient_slice ξ) _) x
+
+/-- Frequency derivatives commute with the image under a continuous linear map of the coefficient
+spaces. -/
+theorem frequencyDeriv_map (j : Fin n) (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W'))
+    (a : Symbol n V W m) : frequencyDeriv j (a.map Φ) = (frequencyDeriv j a).map Φ := by
+  ext1
+  funext ⟨x, ξ⟩
+  rw [coefficient_frequencyDeriv, coefficient_map, coefficient_frequencyDeriv]
+  exact Φ.coordinateDeriv_comp_left [j]
+    (contDiff_infty.1 (a.contDiff_coefficient.comp (contDiff_prodMk_right x)) _) ξ
 
 end Map
 
