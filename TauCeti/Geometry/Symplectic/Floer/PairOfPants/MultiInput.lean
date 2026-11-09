@@ -192,8 +192,8 @@ theorem multiInputPerturbation_def (H : ι → ℝ → M → ℝ) (H₀ : ℝ �
   (rfl)
 
 /-- **The pair of pants has two input ends.** The pair-of-pants datum of `H` is the datum of the
-sphere with the input ends `(0, 1)` and `(1, -1)`, carrying `H₀` and `H₁`, and the output
-Hamiltonian `H_∞`. -/
+sphere with the input ends `(0, 1)` and `(1, -1)`, carrying `H zero` and `H one`, and the output
+Hamiltonian `H inf`. -/
 theorem pairOfPantsPerturbation_eq_multiInputPerturbation (H : Puncture → ℝ → M → ℝ) :
     pairOfPantsPerturbation H =
       multiInputPerturbation ![H zero, H one] (H inf) ![0, 1] ![1, -1] := by
