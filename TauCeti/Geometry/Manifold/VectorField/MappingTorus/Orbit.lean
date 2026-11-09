@@ -34,9 +34,12 @@ plane `span(∂_s, T)`, this shows that a connected horizontal curve lies in a s
 When `C` is compact and boundaryless, the orbit is closed as soon as the differential of `v`
 vanishes nowhere. On an orbit `{[τ, x]}` through a point `x` that is not periodic for `φ`, the
 time `τ` is unique, and it depends continuously on the source point, since nearby points of `v`
-differ by small flow times. A continuous function on a compact space attains its maximum, where,
-read in an interval chart, it has zero differential by Fermat's theorem; there, `v` has zero
-differential as well (`TauCeti.SmoothMappingTorus.exists_mfderiv_eq_zero_of_minimalPeriod_eq_zero`).
+differ by small flow times. Near each point it is the real coordinate of `v` in an interval chart,
+so it is as regular as `v`
+(`TauCeti.SmoothMappingTorus.exists_contMDiff_eq_mk_of_minimalPeriod_eq_zero`). A continuous
+function on a compact space attains its maximum, where, read in an interval chart, it has zero
+differential by Fermat's theorem; there, `v` has zero differential as well
+(`TauCeti.SmoothMappingTorus.exists_mfderiv_eq_zero_of_minimalPeriod_eq_zero`).
 
 ## Main results
 
@@ -46,6 +49,8 @@ differential as well (`TauCeti.SmoothMappingTorus.exists_mfderiv_eq_zero_of_mini
   a map tangent to `T` stays in the orbit of its value at that point.
 * `TauCeti.SmoothMappingTorus.range_subset_orbit_flow_of_mfderiv_mem_span`: a map from a
   preconnected manifold tangent to `T` lies in a single orbit of the suspension flow.
+* `TauCeti.SmoothMappingTorus.exists_contMDiff_eq_mk_of_minimalPeriod_eq_zero`: along an orbit
+  `{[τ, x]}` that is not closed, a `C^n` map tangent to `T` has a `C^n` time coordinate `τ`.
 * `TauCeti.SmoothMappingTorus.minimalPeriod_pos_of_mfderiv_ne_zero`: a map from a compact
   connected boundaryless manifold tangent to `T`, with nowhere vanishing differential, lies in a
   closed orbit: the fibre coordinates of its values are periodic points of `φ`.
@@ -185,19 +190,17 @@ theorem range_subset_orbit_flow_of_mfderiv_mem_span [PreconnectedSpace C]
   rw [hloc.apply_eq_of_preconnectedSpace c c']
   exact (flow φ).mem_orbit_self (v c')
 
-/-- **A compact curve tangent to `T` along an orbit that is not closed has a critical point.** Let
-`v` be a differentiable map from a nonempty compact connected boundaryless manifold into the mapping
-torus whose differential takes values in the line spanned by `T = ∂_t`, and let `[t, x]` be one of
-its values. If `x` is not a periodic point of `φ`, then the differential of `v` vanishes
-somewhere. -/
-theorem exists_mfderiv_eq_zero_of_minimalPeriod_eq_zero [I'.Boundaryless] [CompactSpace C]
-    [PreconnectedSpace C] (hv : MDifferentiable I' (𝓘(ℝ).prod I) v)
+/-- On an orbit `{[τ, x]}` through a point `x` that is not periodic for `φ`, a map tangent to `T`
+has a unique time coordinate: `v c = [τ c, x]`. It is continuous, since nearby points of `v` differ
+by small flow times, and near each point `c₁` it is the real coordinate of `v` in the interval
+chart over `(τ c₁ - 1 / 2, τ c₁ + 1 / 2)`. -/
+private theorem exists_eq_mk_of_minimalPeriod_eq_zero [Nonempty M] [PreconnectedSpace C]
+    (hv : MDifferentiable I' (𝓘(ℝ).prod I) v)
     (hT : ∀ c (w : TangentSpace I' c),
       mfderiv I' (𝓘(ℝ).prod I) v c w ∈ ℝ ∙ timeVectorField φ (v c))
     {c : C} {t : ℝ} {x : M} (hc : v c = mk φ t x) (hx : minimalPeriod φ x = 0) :
-    ∃ c', mfderiv I' (𝓘(ℝ).prod I) v c' = 0 := by
-  have : Nonempty M := ⟨x⟩
-  have : Nonempty C := ⟨c⟩
+    ∃ τ : C → ℝ, Continuous τ ∧ (∀ c', v c' = mk φ (τ c') x) ∧ ∀ c₁, τ =ᶠ[𝓝 c₁]
+      fun c' ↦ (intervalChart φ (τ c₁ - 1 / 2) (τ c₁ + 1 / 2) (by linarith) (v c')).1 := by
   -- Since `x` is not periodic, the time `τ` with `[τ, x] = v c'` is unique.
   have huniq : ∀ a b : ℝ, mk φ a x = mk φ b x → a = b := fun a b h ↦ by
     rwa [mk_eq_mk_iff_sub_mem_zmultiples, hx, Nat.cast_zero, AddSubgroup.zmultiples_zero_eq_bot,
@@ -214,22 +217,60 @@ theorem exists_mfderiv_eq_zero_of_minimalPeriod_eq_zero [I'.Boundaryless] [Compa
       ⟨s, hs, hflow⟩
     rw [hτ c₀, hτ c', flow_mk] at hflow
     rwa [Real.dist_eq, ← huniq _ _ hflow, add_sub_cancel_left]
-  -- The time `τ` attains its maximum at some `c₁`.
-  obtain ⟨c₁, -, hmax⟩ := isCompact_univ.exists_isMaxOn univ_nonempty hτc.continuousOn
-  -- Near `c₁`, `τ` is the real coordinate of `v` in an interval chart, so it is differentiable.
-  have hab : τ c₁ + 1 / 2 ≤ τ c₁ - 1 / 2 + 1 := by linarith
-  set e := intervalChart φ (τ c₁ - 1 / 2) (τ c₁ + 1 / 2) hab
-  have hnear : ∀ᶠ c' in 𝓝 c₁, τ c' ∈ Ioo (τ c₁ - 1 / 2) (τ c₁ + 1 / 2) :=
-    hτc.continuousAt (isOpen_Ioo.mem_nhds ⟨by linarith, by linarith⟩)
+  refine ⟨τ, hτc, hτ, fun c₁ ↦ ?_⟩
+  -- Near `c₁`, `τ` stays in the interval of the chart, where the chart reads off `τ`.
+  filter_upwards [hτc.continuousAt (isOpen_Ioo.mem_nhds
+    (show τ c₁ ∈ Ioo (τ c₁ - 1 / 2) (τ c₁ + 1 / 2) from ⟨by linarith, by linarith⟩))] with c' hc'
+  rw [hτ c', intervalChart_mk φ _ hc']
+
+/-- **The time coordinate along an orbit that is not closed.** Let `v` be a `C^n` map,
+`1 ≤ n ≤ ∞`,
+from a preconnected manifold into the mapping torus, whose differential takes values in the line
+spanned by `T = ∂_t`, and let `[t, x]` be one of its values, where `x` is not a periodic point of
+`φ`. Then `v c = [τ c, x]` for a `C^n` real function `τ`. -/
+theorem exists_contMDiff_eq_mk_of_minimalPeriod_eq_zero [PreconnectedSpace C] {n : ℕ∞ω}
+    [ENat.LEInfty n] (hv : ContMDiff I' (𝓘(ℝ).prod I) n v) (hn : n ≠ 0)
+    (hT : ∀ c (w : TangentSpace I' c),
+      mfderiv I' (𝓘(ℝ).prod I) v c w ∈ ℝ ∙ timeVectorField φ (v c))
+    {c : C} {t : ℝ} {x : M} (hc : v c = mk φ t x) (hx : minimalPeriod φ x = 0) :
+    ∃ τ : C → ℝ, ContMDiff I' 𝓘(ℝ) n τ ∧ ∀ c', v c' = mk φ (τ c') x := by
+  have : Nonempty M := ⟨x⟩
+  obtain ⟨τ, -, hτ, hchart⟩ :=
+    exists_eq_mk_of_minimalPeriod_eq_zero (hv.mdifferentiable hn) hT hc hx
+  refine ⟨τ, fun c₁ ↦ ?_, hτ⟩
+  -- Near `c₁`, `τ` is the real coordinate of `v` in a smooth interval chart.
+  set e := intervalChart φ (τ c₁ - 1 / 2) (τ c₁ + 1 / 2) (by linarith)
   have hsrc : v c₁ ∈ e.source := by
     rw [intervalChart_source, hτ c₁]
     exact ⟨τ c₁, ⟨by linarith, by linarith⟩, (proj_mk φ _ x).symm⟩
-  have heq : τ =ᶠ[𝓝 c₁] Prod.fst ∘ e ∘ v := by
-    filter_upwards [hnear] with c' hc'
-    rw [Function.comp_apply, Function.comp_apply, hτ c', intervalChart_mk φ hab hc']
+  exact (contMDiffAt_fst.comp c₁ (((e.contMDiffOn.contMDiffAt
+    (e.open_source.mem_nhds hsrc)).of_le ENat.LEInfty.out).comp c₁ (hv c₁))).congr_of_eventuallyEq
+    (hchart c₁)
+
+/-- **A compact curve tangent to `T` along an orbit that is not closed has a critical point.** Let
+`v` be a differentiable map from a nonempty compact connected boundaryless manifold into the mapping
+torus whose differential takes values in the line spanned by `T = ∂_t`, and let `[t, x]` be one of
+its values. If `x` is not a periodic point of `φ`, then the differential of `v` vanishes
+somewhere. -/
+theorem exists_mfderiv_eq_zero_of_minimalPeriod_eq_zero [I'.Boundaryless] [CompactSpace C]
+    [PreconnectedSpace C] (hv : MDifferentiable I' (𝓘(ℝ).prod I) v)
+    (hT : ∀ c (w : TangentSpace I' c),
+      mfderiv I' (𝓘(ℝ).prod I) v c w ∈ ℝ ∙ timeVectorField φ (v c))
+    {c : C} {t : ℝ} {x : M} (hc : v c = mk φ t x) (hx : minimalPeriod φ x = 0) :
+    ∃ c', mfderiv I' (𝓘(ℝ).prod I) v c' = 0 := by
+  have : Nonempty M := ⟨x⟩
+  have : Nonempty C := ⟨c⟩
+  obtain ⟨τ, hτc, hτ, hchart⟩ := exists_eq_mk_of_minimalPeriod_eq_zero hv hT hc hx
+  -- The time `τ` attains its maximum at some `c₁`.
+  obtain ⟨c₁, -, hmax⟩ := isCompact_univ.exists_isMaxOn univ_nonempty hτc.continuousOn
+  -- Near `c₁`, `τ` is the real coordinate of `v` in an interval chart, so it is differentiable.
+  set e := intervalChart φ (τ c₁ - 1 / 2) (τ c₁ + 1 / 2) (by linarith)
+  have hsrc : v c₁ ∈ e.source := by
+    rw [intervalChart_source, hτ c₁]
+    exact ⟨τ c₁, ⟨by linarith, by linarith⟩, (proj_mk φ _ x).symm⟩
   have hτd : MDifferentiableAt I' 𝓘(ℝ) τ c₁ :=
     (mdifferentiableAt_fst.comp c₁ ((e.mdifferentiableAt (by simp) hsrc).comp c₁
-      (hv c₁))).congr_of_eventuallyEq heq
+      (hv c₁))).congr_of_eventuallyEq (hchart c₁)
   -- By Fermat's theorem, `τ` has zero differential at its maximum.
   have hτ0 : mfderiv I' 𝓘(ℝ) τ c₁ = 0 :=
     mem_criticalPoints_iff_mfderiv_eq_zero.1
