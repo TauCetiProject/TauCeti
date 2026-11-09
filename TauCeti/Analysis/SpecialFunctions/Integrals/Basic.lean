@@ -9,6 +9,8 @@ public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
+import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
@@ -149,14 +151,9 @@ open MeasureTheory Set in
 it is the derivative of the monotone function `arcsin` on `(-1, 1)`. -/
 theorem integrable_one_div_sqrt_one_sub_sq :
     Integrable (fun x : ℝ => 1 / Real.sqrt (1 - x ^ 2)) := by
-  have hderiv : ∀ x ∈ Ioo (-1 : ℝ) 1, HasDerivAt Real.arcsin (1 / Real.sqrt (1 - x ^ 2)) x := by
-    intro x hx
-    simpa [one_div] using Real.hasDerivAt_arcsin hx.1.ne' hx.2.ne
-  have hint : IntegrableOn (fun x : ℝ => 1 / Real.sqrt (1 - x ^ 2)) (Ioc (-1) 1) :=
-    intervalIntegral.integrableOn_deriv_of_nonneg Real.continuous_arcsin.continuousOn hderiv
-      fun x hx => by
-        have := Real.sqrt_nonneg (1 - x ^ 2)
-        positivity
+  have hint : IntegrableOn (fun x : ℝ => 1 / Real.sqrt (1 - x ^ 2)) (Ioc (-1) 1) := by
+    simpa [one_div] using (intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num)).1
+      Polynomial.Chebyshev.intervalIntegrable_sqrt_one_sub_sq_inv
   refine hint.integrable_of_forall_notMem_eq_zero fun x hx => ?_
   have hx' : 1 - x ^ 2 ≤ 0 := by
     by_contra h
@@ -170,34 +167,12 @@ open MeasureTheory Set intervalIntegral in
 integrand is `0` and `arcsin` is constant). -/
 theorem integral_one_div_sqrt_one_sub_sq {a b : ℝ} :
     ∫ x in a..b, 1 / Real.sqrt (1 - x ^ 2) = Real.arcsin b - Real.arcsin a := by
-  have hI := integrable_one_div_sqrt_one_sub_sq
-  have hone : ∀ x : ℝ, 1 ≤ x → 1 / Real.sqrt (1 - x ^ 2) = 0 := fun x hx => by
-    rw [Real.sqrt_eq_zero_of_nonpos (by nlinarith)]
-    simp
-  have hpos : ∀ b : ℝ, 0 ≤ b → ∫ t in (0 : ℝ)..b, 1 / Real.sqrt (1 - t ^ 2) = Real.arcsin b := by
-    intro b hb
-    have := integral_eq_sub_of_hasDeriv_right_of_le hb Real.continuous_arcsin.continuousOn
-      (f' := fun x : ℝ => 1 / Real.sqrt (1 - x ^ 2)) (fun x hx => ?_)
-      (hI.intervalIntegrable (a := 0) (b := b))
-    · simpa using this
-    · rcases lt_or_ge x 1 with h1 | h1
-      · simpa [one_div] using
-          (Real.hasDerivAt_arcsin (by linarith [hx.1]) h1.ne).hasDerivWithinAt
-      · rw [hone x h1]
-        refine (hasDerivWithinAt_const x (Ioi x) (Real.pi / 2)).congr (fun y hy => ?_) ?_
-        · exact Real.arcsin_of_one_le (h1.trans hy.le)
-        · exact Real.arcsin_of_one_le h1
-  have key : ∀ x : ℝ, ∫ t in (0 : ℝ)..x, 1 / Real.sqrt (1 - t ^ 2) = Real.arcsin x := by
-    intro x
-    rcases le_total 0 x with hx | hx
-    · exact hpos x hx
-    · have h := intervalIntegral.integral_comp_neg (a := 0) (b := -x)
-        (fun t : ℝ => 1 / Real.sqrt (1 - t ^ 2))
-      simp only [neg_neg, neg_zero, even_two.neg_pow] at h
-      rw [hpos (-x) (by linarith), Real.arcsin_neg, intervalIntegral.integral_symm] at h
-      linarith
-  rw [← integral_interval_sub_left (hI.intervalIntegrable (a := 0) (b := b))
-    (hI.intervalIntegrable (a := 0) (b := a)), key, key]
+  refine integral_eq_of_hasDerivAt_off_countable _ _ (s := {-1, 1}) (by simp)
+    Real.continuous_arcsin.continuousOn (fun x hx => ?_)
+    integrable_one_div_sqrt_one_sub_sq.intervalIntegrable
+  have h1 : x ≠ -1 := fun h => hx.2 (by simp [h])
+  have h2 : x ≠ 1 := fun h => hx.2 (by simp [h])
+  simpa [one_div] using Real.hasDerivAt_arcsin h1 h2
 
 open MeasureTheory Real Set intervalIntegral in
 /-- Integration by parts against `(1 - x ^ 2) ^ (3 / 2)`: the moments
