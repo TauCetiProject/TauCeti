@@ -41,6 +41,9 @@ on the quotient by `I` (`MonoidHom.quotientRingAut`), assembled from Mathlib's
 
 If every class modulo a maximal ideal `m` comes from `f`, then `m.comap f` is maximal
 (`Ideal.isMaximal_comap_of_surjective_quotient_mk_comp`).
+
+For an element `p` of a commutative `R`-algebra `B`, the sequence `B → B → B ⧸ (p)`, whose first
+map is multiplication by `p`, is exact (`Ideal.exact_mulLeft_mkₐ_span_singleton`).
 -/
 
 public section
@@ -134,6 +137,15 @@ theorem Quotient.linearCombination_mk_map_apply {S ι : Type*} [CommRing S] [Alg
         (fun j ↦ Ideal.Quotient.mk I (c j)) =
       Ideal.Quotient.mk (I.map (algebraMap R S)) (∑ j, algebraMap R S (c j) * b j) := by
   simp [Fintype.linearCombination_apply, map_sum, Algebra.smul_def]
+
+/-- For an element `p` of a commutative `R`-algebra `B`, the sequence `B → B → B ⧸ (p)`, whose
+first map is multiplication by `p`, is exact. -/
+theorem exact_mulLeft_mkₐ_span_singleton {B : Type*} [CommRing B] [Algebra R B] (p : B) :
+    Function.Exact (LinearMap.mulLeft R p) (Ideal.Quotient.mkₐ R (span {p})).toLinearMap :=
+  fun x ↦ by
+    simp only [AlgHom.toLinearMap_apply, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem,
+      mem_span_singleton', Set.mem_range, LinearMap.mulLeft_apply]
+    exact exists_congr fun _ ↦ by rw [mul_comm]
 
 end Ideal
 

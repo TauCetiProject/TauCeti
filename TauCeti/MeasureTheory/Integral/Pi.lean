@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Pi
 public import Mathlib.MeasureTheory.Integral.Prod
 public import TauCeti.MeasureTheory.Constructions.Pi
 import Mathlib.MeasureTheory.Integral.Marginal
+import Mathlib.Probability.HasLaw
 import TauCeti.MeasureTheory.Function.Lp.Iterated
 
 /-!
@@ -45,6 +46,7 @@ Mathlib's: reduce a `Fin (n + 1)`-indexed product to a binary product measure al
 * `MeasureTheory.Measure.integrable_comp_finCons_of_abs_le`: a bounded measurable function
   composed with `Fin.cons` is integrable on the head-tail product.
 * `TauCeti.integrable_pi_succ`: the integrability counterpart of `TauCeti.integral_pi_succ`.
+* `TauCeti.integral_integral_update_pi`: the one-coordinate Fubini identity.
 * `TauCeti.integral_pi_sum_mul`: Fubini over a sum of index types, for a product of a function of
   each block of coordinates.
 * `TauCeti.setIntegral_prod_le_exp_mul_pow`: the exponential-moment (Chernoff) bound for the
@@ -121,6 +123,17 @@ theorem integral_pi_eq_integral_integral_update {E : Type*} [NormedAddCommGroup 
         integral_map hmp.measurable.aemeasurable hae
     _ = ∫ z, (∫ p : α a × α b, f (update (update z a p.1) b p.2) ∂(μ a).prod (μ b))
           ∂(Measure.pi μ) := integral_prod _ hcomp
+
+/-- Averaging an integrable function over a freshly resampled probability coordinate preserves its
+expectation under `Measure.pi`. -/
+theorem integral_integral_update_pi {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)] (i : ι) [IsProbabilityMeasure (μ i)]
+    {h : (∀ j, α j) → E} (hh : Integrable h (Measure.pi μ)) :
+    ∫ x, ∫ y, h (Function.update x i y) ∂μ i ∂Measure.pi μ = ∫ x, h x ∂Measure.pi μ := by
+  have hmp := measurePreserving_update_prod_pi μ i
+  have hint := hmp.integrable_comp_of_integrable hh
+  refine (integral_prod _ hint).symm.trans ?_
+  exact hmp.hasLaw.integral_comp hh.aestronglyMeasurable
 
 /-- The product formula for a `Fin n`-indexed product measure, by induction on `n`. -/
 private theorem lintegral_fin_nat_prod_eq_prod {n : ℕ} {α : Fin n → Type*}

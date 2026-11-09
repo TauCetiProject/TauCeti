@@ -9,7 +9,10 @@ public import Mathlib.RingTheory.Polynomial.Dickson
 public import Mathlib.RingTheory.PowerSeries.Basic
 
 /-!
-# Evaluating the Dickson polynomials of the second kind
+# Evaluating Dickson polynomials
+
+Dickson polynomials of the first kind express the power sums of two elements with prescribed
+product: if `x * y = a`, then `(dickson 1 a n).eval (x + y) = x ^ n + y ^ n`.
 
 The Eichler–Selberg weights `P_k(t, a)`, defined by
 `∑_{k ≥ 2} P_k(t, a) x ^ (k - 2) = (1 - t x + a x²)⁻¹`, are the Dickson values
@@ -21,6 +24,8 @@ on homogeneous polynomials of degree `n`.
 
 ## Main results
 
+* `Polynomial.dickson_one_eval_add`: if `x * y = a`, then
+  `(dickson 1 a n).eval (x + y) = x ^ n + y ^ n`.
 * `Polynomial.dickson_two_eval_add`: if `x * y = a`, then
   `(dickson 2 a n).eval (x + y) = ∑ i ∈ range (n + 1), x ^ i * y ^ (n - i)`.
 * `Polynomial.dickson_two_eval_add_mul_sub`: if `x * y = a`, then
@@ -57,6 +62,19 @@ namespace Polynomial
 
 variable {R : Type*} [CommRing R]
 
+/-- **The Dickson polynomial of the first kind at `x + y` is the power sum `x ^ n + y ^ n`**, when
+its parameter is `x * y`. This generalizes Mathlib's `dickson_one_one_eval_add_inv` from the
+parameter one, using the same recurrence. -/
+theorem dickson_one_eval_add {x y a : R} (h : x * y = a) (n : ℕ) :
+    (dickson 1 a n).eval (x + y) = x ^ n + y ^ n := by
+  subst h
+  induction n using Nat.twoStepInduction with
+  | zero => norm_num
+  | one => simp
+  | more n ih₀ ih₁ =>
+    simp only [dickson_add_two, eval_sub, eval_mul, eval_X, eval_C, ih₀, ih₁]
+    ring
+
 /-- **The Dickson polynomial of the second kind at `x + y` is the complete homogeneous symmetric
 polynomial in `x` and `y`**, when its parameter is `x * y`.
 
@@ -64,9 +82,8 @@ When `x` and `y` are the eigenvalues of a `2 × 2` matrix, `x + y` and `x * y` a
 determinant, and the right side is the trace of the matrix on homogeneous polynomials of degree
 `n`; this is how the Eichler–Selberg weights enter as traces. The right side is the value of the
 complete homogeneous symmetric polynomial `MvPolynomial.hsymm` at `![x, y]`, as computed by
-`TauCeti.eval_hsymm_fin_two`. Compare Mathlib's
-`dickson_one_one_eval_add_inv`, the first-kind analogue for `x * y = 1`, where the value is the
-power sum `x ^ n + y ^ n`. -/
+`TauCeti.eval_hsymm_fin_two`. Compare `dickson_one_eval_add`, the first-kind analogue, where the
+value is the power sum `x ^ n + y ^ n`. -/
 theorem dickson_two_eval_add {x y a : R} (h : x * y = a) (n : ℕ) :
     (dickson 2 a n).eval (x + y) = ∑ i ∈ range (n + 1), x ^ i * y ^ (n - i) := by
   subst h
