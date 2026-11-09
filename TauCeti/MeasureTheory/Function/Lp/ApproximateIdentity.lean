@@ -280,18 +280,19 @@ theorem tendsto_setLIntegral_enorm_bilin_normedBump_sub (B : F →L[ℝ] G →L[
     {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)]
     [ENNReal.HolderTriple p q r] (hp : p ≠ ⊤) (hq : q ≠ ⊤) [CompleteSpace F] [CompleteSpace G]
     {U : E → F} {V : E → G} (hU : MemLp U p mu) (hV : MemLp V q mu)
-    {φ : ℕ → ContDiffBump (0 : E)} (hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0))
+    {I : Type*} {l : Filter I} {φ : I → ContDiffBump (0 : E)}
+    (hφ : Tendsto (fun i => (φ i).rOut) l (𝓝 0))
     {W : Set E} (hWmu : mu W < ⊤) {f : E → F} {g : E → G}
     (hUae : hU.toLp U =ᵐ[mu.restrict W] f) (hVae : hV.toLp V =ᵐ[mu.restrict W] g) :
-    Tendsto (fun n => ∫⁻ x in W,
-      ‖B (((φ n).normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] U) x)
-        ((((φ n).normed mu) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] V) x) - B (f x) (g x)‖ₑ ∂mu)
-      atTop (𝓝 0) :=
+    Tendsto (fun i => ∫⁻ x in W,
+      ‖B (((φ i).normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] U) x)
+        ((((φ i).normed mu) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] V) x) - B (f x) (g x)‖ₑ ∂mu)
+      l (𝓝 0) :=
   tendsto_setLIntegral_enorm_bilin_sub (r := r) B hWmu
     (tendsto_normedBumpLp (mu := mu) hp hφ (hU.toLp U))
     (tendsto_normedBumpLp (mu := mu) hq hφ (hV.toLp V))
-    (fun n => normedBumpLp_ae_eq_convolution hp (φ n) hU)
-    hUae (fun n => normedBumpLp_ae_eq_convolution hq (φ n) hV) hVae
+    (fun i => normedBumpLp_ae_eq_convolution hp (φ i) hU)
+    hUae (fun i => normedBumpLp_ae_eq_convolution hq (φ i) hV) hVae
 
 end Bilinear
 
