@@ -63,18 +63,6 @@ theorem chainBotCoeff_eq_one_and_chainTopCoeff_eq_one_of_pairingIn_eq_zero
   rw [horth] at hdiff
   omega
 
-omit [Finite I] in
-/-- If the sum of two roots is a root, the roots are linearly independent, so a combination
-`a α + b β` with natural coefficients and `a ≠ 0` does not vanish. -/
-theorem nsmul_root_add_nsmul_root_ne_zero_of_add_mem_range_root
-    (P : RootPairing I R M N) [P.IsReduced] {α β : I}
-    (h : P.root α + P.root β ∈ Set.range P.root) (a b : ℕ) (ha : a ≠ 0) :
-    a • P.root α + b • P.root β ≠ 0 := by
-  intro hw
-  rw [← Nat.cast_smul_eq_nsmul R a, ← Nat.cast_smul_eq_nsmul R b] at hw
-  exact ha (Nat.cast_eq_zero.1
-    (LinearIndependent.pair_iff.1 (P.linearIndependent_of_add_mem_range_root' h) _ _ hw).1)
-
 /-- If the sum of two orthogonal roots `α` and `β` is a root, then `2α + β` is not a root. -/
 theorem two_nsmul_root_add_root_notMem_range_of_pairingIn_eq_zero
     (P : RootPairing I R M N) [P.IsCrystallographic] [P.IsReduced] {α β : I}

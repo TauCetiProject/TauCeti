@@ -113,15 +113,10 @@ theorem commutatorElement_chevalleyRootSubgroup_of_root_eq_add
   have hβγ : (t.simplyConnectedRootDatum ht).root β + (t.simplyConnectedRootDatum ht).root γ =
       (t.simplyConnectedRootDatum ht).root α + 2 • (t.simplyConnectedRootDatum ht).root β := by
     rw [hγ]; module
-  have := t.isReduced_simplyConnectedRootDatum ht
-  have hne :=
-    (t.simplyConnectedRootDatum ht).nsmul_root_add_nsmul_root_ne_zero_of_add_mem_range_root ⟨γ, hγ⟩
-  refine commutatorElement_chevalleyRootSubgroup_of_lie_eq ρ M hM hnil
+  exact commutatorElement_chevalleyRootSubgroup_of_lie_eq ρ M hM hnil
     (lie_chevalleySystem_eq_structureConstant_zsmul hγ)
-    (lie_chevalleySystem_eq_zero (hαγ ▸ hα)
-      (by simpa only [hαγ, one_nsmul] using hne 2 1 two_ne_zero))
-    (lie_chevalleySystem_eq_zero (hβγ ▸ hβ)
-      (by simpa only [hβγ, one_nsmul] using hne 1 2 one_ne_zero)) A u v
+    (lie_chevalleySystem_eq_zero_of_add_eq hγ (hαγ ▸ hα))
+    (lie_chevalleySystem_eq_zero_of_add_eq (hγ.trans (add_comm _ _)) (hβγ ▸ hβ)) A u v
 
 end
 
