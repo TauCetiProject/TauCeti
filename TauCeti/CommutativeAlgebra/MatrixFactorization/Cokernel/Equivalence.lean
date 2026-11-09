@@ -27,9 +27,10 @@ length one by finitely generated projective `S`-modules
 (`TauCeti.MatrixFactorization.quotientGorensteinProjectiveCokernel_essImage_iff`). For a
 Noetherian `S` a finitely generated `R`-module has such a resolution exactly when its projective
 dimension over `S` is at most one
-(`quotientGorensteinProjectiveCokernel_essImage_iff_hasProjectiveDimensionLE`). When `S` has
-finite global dimension, every finitely generated Gorenstein-projective `R`-module has projective
-dimension at most one over `S`
+(`quotientGorensteinProjectiveCokernel_essImage_iff_hasProjectiveDimensionLE_of_isNoetherianRing`,
+a case of `quotientGorensteinProjectiveCokernel_essImage_iff_hasProjectiveDimensionLE` for
+modules finitely presented over `S`). When `S` has finite global dimension, every finitely
+generated Gorenstein-projective `R`-module has projective dimension at most one over `S`
 (`TauCeti.IsGorensteinProjective.hasProjectiveDimensionLE_restrictScalars_quotient`), so the
 cokernel functor is essentially surjective, already before passing to stable categories.
 Together with full faithfulness this makes the stable cokernel functor an equivalence, and an
@@ -43,9 +44,11 @@ Cohen–Macaulay ones is a separate statement, not made here.
 
 In the namespace `TauCeti.MatrixFactorization`:
 
-* `quotientGorensteinProjectiveCokernel_essImage_iff_hasProjectiveDimensionLE`: over a
-  Noetherian ring, a Gorenstein-projective `S/(w)`-module is the cokernel of the reduction of a
-  matrix factorization exactly when its projective dimension over `S` is at most one.
+* `quotientGorensteinProjectiveCokernel_essImage_iff_hasProjectiveDimensionLE`: a
+  Gorenstein-projective `S/(w)`-module finitely presented over `S` is the cokernel of the
+  reduction of a matrix factorization exactly when its projective dimension over `S` is at most
+  one; the case of a Noetherian ring is
+  `quotientGorensteinProjectiveCokernel_essImage_iff_hasProjectiveDimensionLE_of_isNoetherianRing`.
 * `quotientGorensteinProjectiveCokernel_essSurj`: in finite global dimension, every finitely
   generated Gorenstein-projective `S/(w)`-module is such a cokernel.
 
@@ -84,11 +87,26 @@ variable {S : Type u} [CommRing S] {w : S}
 
 /-! ### Essential surjectivity of the cokernel functor -/
 
+/-- **The essential image of the cokernel functor by projective dimension.** For a
+non-zero-divisor `w`, a Gorenstein-projective `S/(w)`-module that is finitely presented over `S`
+is isomorphic to the cokernel of the reduction of a finite-projective matrix factorization of `w`
+exactly when its projective dimension over `S` is at most one. -/
+theorem quotientGorensteinProjectiveCokernel_essImage_iff_hasProjectiveDimensionLE
+    (hw : w ∈ nonZeroDivisors S) (M : GorensteinProjectiveModuleCat.{u} (S ⧸ Ideal.span {w}))
+    [Module.FinitePresentation S
+      ((ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M.obj)] :
+    (quotientGorensteinProjectiveCokernel hw).essImage M ↔
+      HasProjectiveDimensionLE
+        ((ModuleCat.restrictScalars (Ideal.Quotient.mk (Ideal.span {w}))).obj M.obj) 1 := by
+  rw [quotientGorensteinProjectiveCokernel_essImage_iff hw, ← exists_quotientCokernel_iso_iff hw,
+    exists_quotientCokernel_iso_iff_hasProjectiveDimensionLE hw]
+
 /-- **The essential image of the cokernel functor over a Noetherian ring.** For a
 non-zero-divisor `w` of a Noetherian ring `S`, a Gorenstein-projective `S/(w)`-module is
 isomorphic to the cokernel of the reduction of a finite-projective matrix factorization of `w`
 exactly when its projective dimension over `S` is at most one. -/
-theorem quotientGorensteinProjectiveCokernel_essImage_iff_hasProjectiveDimensionLE
+theorem
+    quotientGorensteinProjectiveCokernel_essImage_iff_hasProjectiveDimensionLE_of_isNoetherianRing
     [IsNoetherianRing S] (hw : w ∈ nonZeroDivisors S)
     (M : GorensteinProjectiveModuleCat.{u} (S ⧸ Ideal.span {w})) :
     (quotientGorensteinProjectiveCokernel hw).essImage M ↔
@@ -108,7 +126,8 @@ theorem quotientGorensteinProjectiveCokernel_essSurj [IsNoetherianRing S]
     (hd : ∀ N : ModuleCat.{u} S, HasProjectiveDimensionLE N d) :
     (quotientGorensteinProjectiveCokernel hw).EssSurj where
   mem_essImage M :=
-    (quotientGorensteinProjectiveCokernel_essImage_iff_hasProjectiveDimensionLE hw M).2
+    (quotientGorensteinProjectiveCokernel_essImage_iff_hasProjectiveDimensionLE_of_isNoetherianRing
+      hw M).2
       (M.property.hasProjectiveDimensionLE_restrictScalars_quotient hw d hd)
 
 namespace HomotopyCategory
@@ -154,9 +173,8 @@ theorem quotientGorensteinProjectiveStableCokernel_isEquivalence_of_isRegularLoc
 
 /-- The equivalence `HMF(S,w) ≌ stable(Gproj-S/(w))` given by the cokernel of the reduction
 modulo `w`, for a non-zero-divisor `w` of a Noetherian ring `S` of finite global dimension.
-Its body is exposed so that its functor is definitionally the cokernel functor, whose shift
-compatibility `quotientGorensteinProjectiveStableCokernelCommShift` then applies to it. -/
-@[expose]
+Its functor is the cokernel functor
+(`quotientGorensteinProjectiveStableCokernelEquivalence_functor`). -/
 def quotientGorensteinProjectiveStableCokernelEquivalence [IsNoetherianRing S]
     (hw : w ∈ nonZeroDivisors S) (d : ℕ)
     (hd : ∀ N : ModuleCat.{u} S, HasProjectiveDimensionLE N d) :
@@ -189,8 +207,10 @@ theorem quotientGorensteinProjectiveStableCokernelEquivalence_isTriangulated [Is
       (A := S ⧸ Ideal.span {w})).stableShiftFunctor_additive
     letI := (GorensteinProjectiveModuleCat.exactStructure_isFrobenius.{u, u}
       (A := S ⧸ Ideal.span {w})).stablePretriangulated
+    letI := quotientGorensteinProjectiveStableCokernelCommShift hw
     letI : (quotientGorensteinProjectiveStableCokernelEquivalence hw d hd).functor.CommShift ℤ :=
-      quotientGorensteinProjectiveStableCokernelCommShift hw
+      Functor.CommShift.ofIso
+        (eqToIso (quotientGorensteinProjectiveStableCokernelEquivalence_functor hw d hd).symm) ℤ
     letI := (quotientGorensteinProjectiveStableCokernelEquivalence hw d hd).commShiftInverse ℤ
     letI := (quotientGorensteinProjectiveStableCokernelEquivalence hw d hd).commShift_of_functor ℤ
     (quotientGorensteinProjectiveStableCokernelEquivalence hw d hd).IsTriangulated := by
@@ -199,12 +219,15 @@ theorem quotientGorensteinProjectiveStableCokernelEquivalence_isTriangulated [Is
   let := hE'.stableHasShift
   let := hE'.stableShiftFunctor_additive
   let := hE'.stablePretriangulated
+  let := quotientGorensteinProjectiveStableCokernelCommShift hw
+  let e := eqToIso (quotientGorensteinProjectiveStableCokernelEquivalence_functor hw d hd).symm
   let : (quotientGorensteinProjectiveStableCokernelEquivalence hw d hd).functor.CommShift ℤ :=
-    quotientGorensteinProjectiveStableCokernelCommShift hw
+    Functor.CommShift.ofIso e ℤ
   let := (quotientGorensteinProjectiveStableCokernelEquivalence hw d hd).commShiftInverse ℤ
   let := (quotientGorensteinProjectiveStableCokernelEquivalence hw d hd).commShift_of_functor ℤ
-  exact Equivalence.IsTriangulated.mk' _
-    (quotientGorensteinProjectiveStableCokernel_isTriangulated hw)
+  have := Functor.CommShift.ofIso_compatibility e ℤ
+  have := quotientGorensteinProjectiveStableCokernel_isTriangulated hw
+  exact Equivalence.IsTriangulated.mk' _ (Functor.isTriangulated_of_iso e)
 
 end HomotopyCategory
 
