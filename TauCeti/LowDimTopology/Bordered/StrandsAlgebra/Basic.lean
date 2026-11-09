@@ -49,6 +49,8 @@ comes from the subadditivity of inversion counts
   `s` is the source of `φ` and zero otherwise, and `φ I(t)` is `φ` when `t` is its target.
 * `TauCeti.StrandsAlgebra.map_mul_of_basis`: a linear map out of the strands algebra is
   multiplicative once it is multiplicative on basis elements.
+* `TauCeti.StrandsAlgebra.repr_mul_apply`: the coefficients of a product, summed over the
+  factorizations of a diagram.
 
 ## References
 
@@ -99,6 +101,11 @@ def basis : Module.Basis (StrandDiagram α) R (StrandsAlgebra R α) :=
 theorem basis_apply (φ : StrandDiagram α) : basis R α φ = of φ :=
   congrFun Finsupp.coe_basisSingleOne φ
 
+/-- The coordinates of a basis element. -/
+@[simp]
+theorem basis_repr_of (φ : StrandDiagram α) : (basis R α).repr (of φ) = Finsupp.single φ 1 := by
+  rw [← basis_apply, Module.Basis.repr_self]
+
 private theorem single_eq_smul_of (φ : StrandDiagram α) (r : R) :
     (Finsupp.single φ r : StrandsAlgebra R α) = r • of φ :=
   (Finsupp.smul_single_one φ r).symm
@@ -118,7 +125,30 @@ def idem (s : Finset α) : StrandsAlgebra R α :=
 theorem idem_def (s : Finset α) : (idem s : StrandsAlgebra R α) = of (StrandDiagram.idOn s) :=
   (rfl)
 
+open scoped Classical in
+/-- The coefficients of a sum of basis elements: `1` on the summed diagrams and `0` elsewhere. -/
+theorem repr_sum_of_apply (s : Finset (StrandDiagram α)) (ψ : StrandDiagram α) :
+    (basis R α).repr (∑ φ ∈ s, of φ) ψ = if ψ ∈ s then 1 else 0 := by
+  simp [Finset.sum_apply', Finsupp.single_apply]
+
 variable [Fintype α]
+
+open scoped Classical in
+/-- The coefficients of a sum of idempotents `I(s)`: `1` on the identity diagrams of the summed
+sets and `0` elsewhere. -/
+theorem repr_sum_idem_apply (F : Finset (Finset α)) (ψ : StrandDiagram α) :
+    (basis R α).repr (∑ s ∈ F, idem s) ψ =
+      if ψ = StrandDiagram.idOn ψ.source ∧ ψ.source ∈ F then 1 else 0 := by
+  simp only [map_sum, idem_def, basis_repr_of, Finset.sum_apply', Finsupp.single_apply]
+  split_ifs with h
+  · rw [Finset.sum_eq_single_of_mem _ h.2 fun s _ hs ↦ ?_]
+    · simp [← h.1]
+    · rw [ite_eq_right]
+      rintro rfl
+      exact hs (StrandDiagram.source_idOn s).symm
+  · refine Finset.sum_eq_zero fun s hs ↦ ite_eq_right ?_
+    rintro rfl
+    exact h ⟨by rw [StrandDiagram.source_idOn], by rwa [StrandDiagram.source_idOn]⟩
 
 /-- The strands product: on basis elements, the composite of two diagrams if they are composable,
 and zero otherwise, extended bilinearly. -/
@@ -267,6 +297,34 @@ theorem map_mul_of_basis {A : Type*} [NonUnitalNonAssocSemiring A] [Module R A]
     | zero => simp only [mul_zero, map_zero]
     | add y y' hy hy' => simp only [mul_add, map_add, hy, hy']
     | smul_of s ψ => simp only [smul_mul_assoc, mul_smul_comm, map_smul, h]
+
+open scoped Classical in
+/-- The coefficients of a product in the basis of strand diagrams: the coefficient of `χ` in
+`x * y` sums the products of coefficients over the factorizations of `χ` into composable
+diagrams. -/
+theorem repr_mul_apply [Fintype (StrandDiagram α)] (x y : StrandsAlgebra R α)
+    (χ : StrandDiagram α) :
+    (basis R α).repr (x * y) χ = ∑ π ∈ {π : StrandDiagram α × StrandDiagram α |
+      π.1.Composable π.2 ∧ π.1.trans π.2 = χ},
+        (basis R α).repr x π.1 * (basis R α).repr y π.2 := by
+  induction x using induction_on with
+  | zero => simp
+  | add x x' hx hx' => simp [add_mul, hx, hx', Finset.sum_add_distrib]
+  | smul_of r φ =>
+    induction y using induction_on with
+    | zero => simp
+    | add y y' hy hy' =>
+      rw [mul_add, map_add, Finsupp.add_apply, hy, hy', ← Finset.sum_add_distrib]
+      simp [mul_add]
+    | smul_of s ψ =>
+      rw [smul_mul_smul_comm, of_mul_of, Finset.sum_filter, Finset.sum_eq_single (φ, ψ)]
+      · by_cases h : φ.Composable ψ
+        · by_cases h' : φ.trans ψ = χ <;> simp [h, h']
+        · simp [h]
+      · rintro ⟨φ', ψ'⟩ - hne
+        simp only [map_smul, basis_repr_of, Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul]
+        by_cases h₁ : φ = φ' <;> by_cases h₂ : ψ = ψ' <;> simp_all
+      · simp
 
 end StrandsAlgebra
 

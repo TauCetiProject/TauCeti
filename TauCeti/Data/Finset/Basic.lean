@@ -94,6 +94,9 @@ import TauCeti.Data.Set.PowersetCard
   over the subsets of size one less than `card ι` as a sum of `Function.update` terms over `ι`. It
   is what turns a formula indexed by "all but one point" into one indexed by the omitted point, as
   in the change-origin and derivative computations for multilinear series.
+* `Finset.injOn_insert_erase` keeps a map injective on a finset when one point is replaced by
+  another point with the same image, and `Finset.injOn_insert_erase_iff` shows that such a
+  replacement by a point outside the finset does not change injectivity.
 -/
 
 public section
@@ -790,6 +793,27 @@ theorem filter_lt_eq_insert_of_forall_lt {α : Type*} [LinearOrder α] {S : Fins
   · rintro (rfl | ⟨htS, ht⟩)
     · exact ⟨hc, hsc⟩
     · exact ⟨htS, hsc.trans (hct.trans ht)⟩
+
+/-- Replacing a point `a` of a finset on which `f` is injective by a point `b` with the same
+image keeps `f` injective. -/
+theorem injOn_insert_erase {α β : Type*} [DecidableEq α] {f : α → β} {s : Finset α} {a b : α}
+    (hs : Set.InjOn f s) (ha : a ∈ s) (hab : f a = f b) :
+    Set.InjOn f ↑(insert b (s.erase a)) := by
+  have hb : b ∉ (s.erase a : Set α) := fun h ↦
+    (mem_erase.1 h).1 (hs (mem_erase.1 h).2 ha hab.symm)
+  rw [coe_insert, Set.injOn_insert hb]
+  refine ⟨hs.mono (coe_subset.2 (erase_subset a s)), ?_⟩
+  rintro ⟨c, hc, hcb⟩
+  exact (mem_erase.1 hc).1 (hs (mem_erase.1 hc).2 ha (hcb.trans hab.symm))
+
+/-- Replacing a point `a` of a finset by a point `b` outside it with the same image under `f`
+does not change whether `f` is injective on it. -/
+theorem injOn_insert_erase_iff {α β : Type*} [DecidableEq α] {f : α → β} {s : Finset α}
+    {a b : α} (ha : a ∈ s) (hb : b ∉ s) (hab : f a = f b) :
+    Set.InjOn f ↑(insert b (s.erase a)) ↔ Set.InjOn f s := by
+  refine ⟨fun h ↦ ?_, fun h ↦ injOn_insert_erase h ha hab⟩
+  have h' := injOn_insert_erase h (mem_insert_self b _) hab.symm
+  rwa [erase_insert fun h ↦ hb (mem_of_mem_erase h), insert_erase ha] at h'
 
 end Finset
 
