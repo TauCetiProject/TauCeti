@@ -62,6 +62,30 @@ theorem partialCorrelationCholeskyEntryFactor_of_other (i k : Fin p)
     partialCorrelationCholeskyEntryFactor i k ij x = 1 := by
   rw [partialCorrelationCholeskyEntryFactor_def, ite_eq_right hc, ite_eq_right hr, mul_one]
 
+/-- A coordinate factor of a Cholesky entry has absolute value at most one on the closed
+partial-correlation interval. -/
+theorem abs_partialCorrelationCholeskyEntryFactor_le_one (i k : Fin p)
+    (ij : strictLowerTriangle p) {x : ℝ} (hx : |x| ≤ 1) :
+    |partialCorrelationCholeskyEntryFactor i k ij x| ≤ 1 := by
+  have hs : 0 ≤ 1 - x ^ 2 := sub_nonneg.mpr ((sq_le_one_iff_abs_le_one _).mpr hx)
+  have hs' : Real.sqrt (1 - x ^ 2) ≤ 1 := by
+    rw [Real.sqrt_le_one]
+    nlinarith [sq_nonneg x]
+  by_cases hc : ij.1.1 = i ∧ ij.1.2 = k
+  · rw [partialCorrelationCholeskyEntryFactor_of_coordinate i k ij x hc]
+    exact hx
+  by_cases hr : ij.1.1 = i ∧ ij.1.2 < k
+  · rw [partialCorrelationCholeskyEntryFactor_of_residual i k ij x hr,
+      abs_of_nonneg (Real.sqrt_nonneg _)]
+    exact hs'
+  · rw [partialCorrelationCholeskyEntryFactor_of_other i k ij x hc hr, abs_one]
+
+/-- A partial correlation from another row contributes the identity coordinate factor. -/
+theorem partialCorrelationCholeskyEntryFactor_of_other_row (i k : Fin p)
+    (ij : strictLowerTriangle p) (hi : ij.1.1 ≠ i) (x : ℝ) :
+    partialCorrelationCholeskyEntryFactor i k ij x = 1 := by
+  simp [hi]
+
 /-- A lower-triangular entry is the product of its coordinatewise factors. -/
 theorem prod_partialCorrelationCholeskyEntryFactor (z : strictLowerTriangle p → ℝ)
     (i k : Fin p) (hki : k ≤ i) :
@@ -143,6 +167,13 @@ theorem partialCorrelationCholeskyEntryResidualPower_of_not (i k : Fin p) (n : �
     partialCorrelationCholeskyEntryResidualPower i k n ij = 0 := by
   simp [partialCorrelationCholeskyEntryResidualPower_def, h]
 
+/-- A zeroth power contributes no residual exponent. -/
+@[simp]
+theorem partialCorrelationCholeskyEntryResidualPower_zero (i k : Fin p)
+    (ij : strictLowerTriangle p) :
+    partialCorrelationCholeskyEntryResidualPower i k 0 ij = 0 := by
+  simp [partialCorrelationCholeskyEntryResidualPower_def]
+
 /-- Residual powers contributed by Cholesky entries are nonnegative. -/
 theorem partialCorrelationCholeskyEntryResidualPower_nonneg (i k : Fin p) (n : ℕ)
     (ij : strictLowerTriangle p) :
@@ -164,6 +195,16 @@ theorem partialCorrelationCholeskyMonomialCoordinatePower_def
       ∑ q, partialCorrelationCholeskyEntryCoordinatePower q.1 q.2 (m q) ij := by
   rw [partialCorrelationCholeskyMonomialCoordinatePower]
 
+/-- The coordinate exponents of a singleton monomial are the exponents of its one entry. -/
+@[simp]
+theorem partialCorrelationCholeskyMonomialCoordinatePower_single
+    (i k : Fin p) (n : ℕ) (ij : strictLowerTriangle p) :
+    partialCorrelationCholeskyMonomialCoordinatePower (Pi.single (i, k) n) ij =
+      partialCorrelationCholeskyEntryCoordinatePower i k n ij := by
+  classical
+  rw [partialCorrelationCholeskyMonomialCoordinatePower_def]
+  simp [Pi.single_apply, partialCorrelationCholeskyEntryCoordinatePower_def]
+
 /-- The total residual power in a monomial of Cholesky entries. -/
 def partialCorrelationCholeskyMonomialResidualPower
     (m : Fin p × Fin p → ℕ) (ij : strictLowerTriangle p) : ℝ :=
@@ -175,6 +216,21 @@ theorem partialCorrelationCholeskyMonomialResidualPower_def
     partialCorrelationCholeskyMonomialResidualPower m ij =
       ∑ q, partialCorrelationCholeskyEntryResidualPower q.1 q.2 (m q) ij := by
   rw [partialCorrelationCholeskyMonomialResidualPower]
+
+/-- The residual exponents of a singleton monomial are the exponents of its one entry. -/
+@[simp]
+theorem partialCorrelationCholeskyMonomialResidualPower_single
+    (i k : Fin p) (n : ℕ) (ij : strictLowerTriangle p) :
+    partialCorrelationCholeskyMonomialResidualPower (Pi.single (i, k) n) ij =
+      partialCorrelationCholeskyEntryResidualPower i k n ij := by
+  classical
+  rw [partialCorrelationCholeskyMonomialResidualPower_def]
+  conv_rhs =>
+    rw [← Pi.single_eq_same (M := fun _ : Fin p × Fin p ↦ ℕ) (i, k) n]
+  apply Fintype.sum_eq_single (i, k)
+  intro q hq
+  rw [Pi.single_eq_of_ne hq]
+  exact partialCorrelationCholeskyEntryResidualPower_zero q.1 q.2 ij
 
 /-- Residual powers in Cholesky monomials are nonnegative. -/
 theorem partialCorrelationCholeskyMonomialResidualPower_nonneg

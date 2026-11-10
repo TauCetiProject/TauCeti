@@ -96,15 +96,16 @@ theorem integral_prod_pow_partialCorrelationCholesky_pi_betaMeasure
   exact add_pos_of_pos_of_nonneg (ha ij)
     (partialCorrelationCholeskyMonomialResidualPower_nonneg m ij)
 
-private theorem ae_pow_partialCorrelationCholesky_eq_prod
-    {a : strictLowerTriangle p → ℝ} (ha : ∀ ij, 0 < a ij) (i k : Fin p) (n : ℕ)
-    (hki : k ≤ i) :
-    (fun z ↦ partialCorrelationCholesky z i k ^ n) =ᵐ[
-      Measure.pi fun ij ↦ (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)]
-      fun z ↦ ∏ ij, z ij ^ partialCorrelationCholeskyEntryCoordinatePower i k n ij *
-        (1 - z ij ^ 2) ^ partialCorrelationCholeskyEntryResidualPower i k n ij := by
-  filter_upwards [ae_abs_lt_one_pi_centered_betaMeasure ha] with z hz
-  exact pow_partialCorrelationCholesky_eq_prod (fun ij ↦ (hz ij).le) i k n hki
+private theorem prod_pow_partialCorrelationCholesky_single
+    (z : strictLowerTriangle p → ℝ) (i k : Fin p) (n : ℕ) :
+    (∏ q, partialCorrelationCholesky z q.1 q.2 ^ Pi.single (i, k) n q) =
+      partialCorrelationCholesky z i k ^ n := by
+  classical
+  conv_rhs =>
+    rw [← Pi.single_eq_same (M := fun _ : Fin p × Fin p ↦ ℕ) (i, k) n]
+  apply Fintype.prod_eq_single (i, k)
+  · intro q hq
+    simp [Pi.single_eq_of_ne hq]
 
 /-- Every natural power of an entry of the independent centered-symmetric-Beta Cholesky
 construction is integrable. -/
@@ -112,18 +113,8 @@ theorem integrable_pow_partialCorrelationCholesky_pi_betaMeasure
     {a : strictLowerTriangle p → ℝ} (ha : ∀ ij, 0 < a ij) (i k : Fin p) (n : ℕ) :
     Integrable (fun z ↦ partialCorrelationCholesky z i k ^ n)
       (Measure.pi fun ij ↦ (betaMeasure (a ij) (a ij)).map (fun x ↦ -1 + 2 * x)) := by
-  let _ (ij : strictLowerTriangle p) : IsProbabilityMeasure (betaMeasure (a ij) (a ij)) :=
-    isProbabilityMeasureBeta (ha ij) (ha ij)
-  by_cases hki : k ≤ i
-  · rw [integrable_congr (ae_pow_partialCorrelationCholesky_eq_prod ha i k n hki)]
-    apply integrable_prod_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure
-      a (partialCorrelationCholeskyEntryResidualPower i k n)
-        (partialCorrelationCholeskyEntryCoordinatePower i k n) ha
-    intro ij
-    exact add_pos_of_pos_of_nonneg (ha ij)
-      (partialCorrelationCholeskyEntryResidualPower_nonneg i k n ij)
-  · have hik : i < k := lt_of_not_ge hki
-    simp [partialCorrelationCholesky_apply_of_lt _ hik]
+  simpa only [prod_pow_partialCorrelationCholesky_single] using
+    integrable_prod_pow_partialCorrelationCholesky_pi_betaMeasure ha (Pi.single (i, k) n)
 
 /-- Natural moments of an entry in the independent centered-symmetric-Beta Cholesky construction.
 At or below the diagonal the value is the product of the corresponding weighted Beta moments;
@@ -142,13 +133,18 @@ theorem integral_pow_partialCorrelationCholesky_pi_betaMeasure
   let _ (ij : strictLowerTriangle p) : IsProbabilityMeasure (betaMeasure (a ij) (a ij)) :=
     isProbabilityMeasureBeta (ha ij) (ha ij)
   split_ifs with hki hn
-  · rw [integral_congr_ae (ae_pow_partialCorrelationCholesky_eq_prod ha i k n hki)]
-    apply integral_prod_pow_mul_one_sub_sq_rpow_map_centered_betaMeasure
-      a (partialCorrelationCholeskyEntryResidualPower i k n)
-        (partialCorrelationCholeskyEntryCoordinatePower i k n) ha
-    intro ij
-    exact add_pos_of_pos_of_nonneg (ha ij)
-      (partialCorrelationCholeskyEntryResidualPower_nonneg i k n ij)
+  · have hm : ∀ q : Fin p × Fin p,
+        Pi.single (M := fun _ : Fin p × Fin p ↦ ℕ) (i, k) n q ≠ 0 → q.2 ≤ q.1 := by
+      intro q hq
+      have hqik : q = (i, k) := by
+        by_contra hne
+        apply hq
+        simp [hne]
+      simpa [hqik] using hki
+    simpa only [prod_pow_partialCorrelationCholesky_single,
+      partialCorrelationCholeskyMonomialCoordinatePower_single,
+      partialCorrelationCholeskyMonomialResidualPower_single] using
+      integral_prod_pow_partialCorrelationCholesky_pi_betaMeasure ha (Pi.single (i, k) n) hm
   · subst n
     simp
   · have hik : i < k := lt_of_not_ge hki
