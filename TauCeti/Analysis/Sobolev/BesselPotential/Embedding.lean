@@ -223,17 +223,16 @@ theorem tendsto_cocompact_of_mem_realSobolevFunctions {s : ℝ} (hs : finrank �
 /-- **Sobolev embedding into `C^k`.** An `L²` function on `E` lying in the Bessel-potential space
 `H^s` with `s > dim E / 2 + k` agrees almost everywhere with a `C^k` function. -/
 theorem MemSobolev.exists_contDiff_ae_eq {s : ℝ} {k : ℕ} (hs : finrank ℝ E + 2 * k < 2 * s)
-    {u : Lp ℂ 2 (volume : Measure E)} (hu : MemSobolev s 2 (u : 𝓢'(E, ℂ))) :
-    ∃ g : E → ℂ, ContDiff ℝ k g ∧ u =ᵐ[volume] g := by
+    {u : Lp F 2 (volume : Measure E)} (hu : MemSobolev s 2 (u : 𝓢'(E, F))) :
+    ∃ g : E → F, ContDiff ℝ k g ∧ u =ᵐ[volume] g := by
   obtain ⟨v, hv⟩ := hu.fourier_memL1 (by linarith [k.cast_nonneg (α := ℝ)])
-  have hL2 : MemLp (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * v ξ) 2 := by
-    simpa only [Complex.real_smul] using hu.memLp_one_add_norm_sq_rpow_smul hv
+  have hL2 := hu.memLp_one_add_norm_sq_rpow_smul hv
   -- The weight `(1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2)` is square integrable since `2 (s - k) > dim E`.
-  have hw : MemLp (fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2) : ℝ) : ℂ)) 2 :=
-    (TauCeti.memLp_rpow_neg_one_add_norm_sq volume (s := s - k) (by linarith)).ofReal
-  have hprod := hw.integrable_mul hL2
+  have hw : MemLp (fun ξ : E ↦ (1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2)) 2 :=
+    TauCeti.memLp_rpow_neg_one_add_norm_sq volume (s := s - k) (by linarith)
+  have hprod := memLp_one_iff_integrable.1 (hw.smul hL2)
   -- Cauchy–Schwarz: `‖ξ‖ ^ n |v ξ| ≤ (1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2) (1 + ‖ξ‖ ^ 2) ^ (s / 2) |v ξ|`.
-  have hmom (n : ℕ) (hn : n ≤ k) : Integrable (fun ξ ↦ ‖ξ‖ ^ n * ‖(v : E → ℂ) ξ‖) := by
+  have hmom (n : ℕ) (hn : n ≤ k) : Integrable (fun ξ ↦ ‖ξ‖ ^ n * ‖(v : E → F) ξ‖) := by
     refine hprod.norm.mono' ((continuous_norm.pow n).aestronglyMeasurable.mul
       (L1.integrable_coeFn v).1.norm) (Eventually.of_forall fun ξ ↦ ?_)
     have h1 : 1 ≤ √(1 + ‖ξ‖ ^ 2) := Real.one_le_sqrt.2 (by nlinarith [norm_nonneg ξ])
@@ -242,11 +241,11 @@ theorem MemSobolev.exists_contDiff_ae_eq {s : ℝ} {k : ℕ} (hs : finrank ℝ E
       rw [← Real.rpow_add (by positivity), show -(s - k) / 2 + s / 2 = 1 / 2 * (k : ℝ) by ring,
         Real.rpow_mul (by positivity), Real.rpow_natCast, ← Real.sqrt_eq_rpow]
       exact (pow_le_pow_left₀ (norm_nonneg ξ) hξ n).trans (pow_le_pow_right₀ h1 hn)
-    simp only [Pi.mul_apply, norm_mul, norm_pow, Complex.norm_real, Real.norm_eq_abs,
-      abs_norm, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2)),
-      abs_of_nonneg (by positivity : (0 : ℝ) ≤ (1 + ‖ξ‖ ^ 2) ^ (s / 2)), ← mul_assoc]
+    rw [norm_mul, norm_pow, norm_norm, norm_norm, Pi.smul_apply', norm_smul, norm_smul,
+      Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ (1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2)),
+      Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ (1 + ‖ξ‖ ^ 2) ^ (s / 2)), ← mul_assoc]
     gcongr
-  refine ⟨𝓕⁻ (v : E → ℂ), ?_, Lp.ae_eq_fourierInv_of_fourier_eq hv⟩
+  refine ⟨𝓕⁻ (v : E → F), ?_, Lp.ae_eq_fourierInv_of_fourier_eq hv⟩
   rw [Real.fourierInv_eq_fourier_comp_neg]
   refine Real.contDiff_fourier (N := k) fun n hn ↦ ?_
   simpa only [norm_neg] using (hmom n (by exact_mod_cast hn)).comp_neg
