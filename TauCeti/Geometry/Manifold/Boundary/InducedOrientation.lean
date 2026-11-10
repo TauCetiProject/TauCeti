@@ -231,7 +231,7 @@ theorem boundaryOrientation_spec_of_isOrientationPreservingAt
         (b i))) :
     b.orientation = Manifold.Orientation.orientationAt (boundaryOrientation o) x ↔
       b'.orientation = Manifold.Orientation.orientationAt o' (φ x) := by
-  obtain ⟨D, hD, hmap⟩ :=
+  obtain ⟨D, hD, -⟩ :=
     (Manifold.Orientation.isOrientationPreservingAt_iff o o' φ x).mp hφ
   -- Pull the basis `b'` back to the tangent space of `M` by the derivative of `φ`.
   have hval : MDifferentiableAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
@@ -254,10 +254,12 @@ theorem boundaryOrientation_spec_of_isOrientationPreservingAt
       exact D.symm_apply_apply v
     · simp only [Fin.cons_succ, hcomp, ContinuousLinearMap.comp_apply, ← hD]
       exact D.symm_apply_apply _
-  rw [boundaryOrientation_spec o x hv b _ hb'', Module.Basis.orientation_map,
-    ← (_root_.Orientation.map (Fin (n + 1)) D.toLinearEquiv).injective.eq_iff,
-    ContinuousLinearEquiv.toLinearEquiv_symm, ← _root_.Orientation.map_symm,
-    Equiv.apply_symm_apply, hmap]
+  have hB : ∀ i, mfderiv (𝓡∂ (n + 1)) I φ x (b'.map D.symm.toLinearEquiv i) = b' i := by
+    intro i
+    rw [Module.Basis.map_apply, ← hD]
+    exact D.apply_symm_apply (b' i)
+  exact (boundaryOrientation_spec o x hv b _ hb'').trans
+    ((Manifold.Orientation.isOrientationPreservingAt_iff_of_basis _ b' hB).mp hφ)
 
 end Preserving
 
