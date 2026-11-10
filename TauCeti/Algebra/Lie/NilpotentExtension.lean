@@ -94,11 +94,12 @@ theorem mem_lieSpan_insert_iff (H : LieSubalgebra R L) {y : L} (hy : y ∈ H.nor
   · rintro ⟨t, h, hh, rfl⟩
     exact ⟨t • y, Submodule.smul_mem _ t (Submodule.mem_span_singleton_self y), h, hh, rfl⟩
 
-/-- When `y` normalizes a Lie subalgebra `H`, every `t • y + h` with `h ∈ H` lies in the Lie
-subalgebra spanned by `H` together with `y`. -/
-theorem smul_add_mem_lieSpan_insert (H : LieSubalgebra R L) {y : L} (hy : y ∈ H.normalizer)
+/-- Every `t • y + h` with `h ∈ H` lies in the Lie subalgebra spanned by `H` together with `y`.
+No normalizing hypothesis is needed. -/
+theorem smul_add_mem_lieSpan_insert (H : LieSubalgebra R L) {y : L}
     (t : R) {h : L} (hh : h ∈ H) : t • y + h ∈ lieSpan R L (insert y (H : Set L)) :=
-  (H.mem_lieSpan_insert_iff hy).mpr ⟨t, h, hh, rfl⟩
+  add_mem (SMulMemClass.smul_mem t (subset_lieSpan (Set.mem_insert _ _)))
+    (subset_lieSpan (Set.mem_insert_of_mem _ hh))
 
 /-- A Lie subalgebra `H` lies strictly below the Lie span of `H` together with an element `y ∉ H`.
 No normalizing hypothesis is needed. -/
@@ -164,7 +165,7 @@ theorem isNilpotent_toEnd_smul_add_of_mem (H : LieSubalgebra R L) {y : L}
     (hy : y ∈ H.normalizer) [LieModule.IsNilpotent H M]
     (hyM : IsNilpotent (LieModule.toEnd R L M y)) (t : R) {h : L} (hh : h ∈ H) :
     IsNilpotent (LieModule.toEnd R L M (t • y + h)) :=
-  H.isNilpotent_toEnd_of_mem_lieSpan_insert hy hyM (H.smul_add_mem_lieSpan_insert hy t hh)
+  H.isNilpotent_toEnd_of_mem_lieSpan_insert hy hyM (H.smul_add_mem_lieSpan_insert t hh)
 
 /-- The pointwise form of the nilpotent-extension lemma: if every element of `H` acts nilpotently on
 a Noetherian module `M`, and so does a normalizing element `y`, then so does every element of the
@@ -226,14 +227,32 @@ namespace TauCeti.LieAlgebra
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
 /-- The adjoint specialization of the nilpotent-extension lemma: if `y` is `ad`-nilpotent, then so
-is every element of `R ∙ y ⊔ nilradical R L`.  Every element of the nilradical is `ad`-nilpotent, so
-no nilpotency hypothesis on the ideal is needed. -/
-theorem isNilpotent_ad_of_mem_span_singleton_sup_nilradical [IsNoetherian R L] {y : L}
+is every element of `R ∙ y ⊔ nilradical R L`.  Nilpotent ideals are directed, so each element of
+the nilradical lies in one of them, and no Noetherian hypothesis is needed. -/
+theorem isNilpotent_ad_of_mem_span_singleton_sup_nilradical {y : L}
     (hy : IsNilpotent (_root_.LieAlgebra.ad R L y)) {z : L}
     (hz : z ∈ (R ∙ y) ⊔ LieSubmodule.toSubmodule (nilradical R L)) :
-    IsNilpotent (_root_.LieAlgebra.ad R L z) :=
-  LieIdeal.isNilpotent_toEnd_of_mem_span_singleton_sup (nilradical R L)
-    (fun _ hx => isNilpotent_ad_of_mem_nilradical hx) hy hz
+    IsNilpotent (_root_.LieAlgebra.ad R L z) := by
+  obtain ⟨u, hu, n, hn, rfl⟩ := Submodule.mem_sup.mp hz
+  -- the nilpotent ideals are directed, so `n` already lies in a single nilpotent ideal `J`
+  let S : Set (Submodule R L) :=
+    {s | ∃ I : LieIdeal R L, LieRing.IsNilpotent I ∧ LieSubmodule.toSubmodule I = s}
+  have hn' : n ∈ sSup S := by
+    rw [nilradical_def] at hn
+    exact hn
+  have hdir : DirectedOn (· ≤ ·) S := by
+    rintro _ ⟨I, hI, rfl⟩ _ ⟨J, hJ, rfl⟩
+    exact ⟨LieSubmodule.toSubmodule (I ⊔ J), ⟨I ⊔ J, LieIdeal.isNilpotentSup I J, rfl⟩,
+      sup_le_iff.mp le_rfl⟩
+  have hne : S.Nonempty := ⟨_, ⊥, LieIdeal.isNilpotentBot, rfl⟩
+  obtain ⟨_, ⟨J, hJ, rfl⟩, hnJ⟩ := (Submodule.mem_sSup_of_directed hne hdir).mp hn'
+  have hyN : y ∈ (J : LieSubalgebra R L).normalizer := by
+    rw [J.normalizer_eq_top]
+    exact LieSubalgebra.mem_top y
+  have : LieModule.IsNilpotent (J : LieSubalgebra R L) L :=
+    (LieIdeal.isNilpotent_iff_isNilpotent_ambient J).mp hJ
+  obtain ⟨t, rfl⟩ := Submodule.mem_span_singleton.mp hu
+  exact (J : LieSubalgebra R L).isNilpotent_toEnd_smul_add_of_mem hyN hy t hnJ
 
 /-- The `t • y + n` reading of `isNilpotent_ad_of_mem_span_singleton_sup_nilradical`: if `y` is
 `ad`-nilpotent, then so is `t • y + n` for every `n` in the nilradical. -/

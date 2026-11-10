@@ -138,15 +138,14 @@ theorem finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv (h : IsEmpty (M �
   have := Module.nontrivial R M
   exact Module.finrank_zero_of_subsingleton
 
-variable [_root_.LieModule R L M]
-
 /-- The morphism space from an irreducible Lie module that is Noetherian over the base ring to
 any irreducible Lie module is finitely generated. In particular, this applies to a finitely
 generated source over a Noetherian commutative ring. -/
 theorem finite_lieModuleHom_of_isIrreducible [IsNoetherian R M] :
     Module.Finite R (M →ₗ⁅R,L⁆ N) := by
   by_cases h : Nonempty (M ≃ₗ⁅R,L⁆ N)
-  · exact Module.Finite.equiv (h.some.congrRight (M := M))
+  · have : IsNoetherian R N := isNoetherian_of_linearEquiv h.some.toLinearEquiv
+    exact Module.Finite.equiv (h.some.congrLeft (P := N)).symm
   · have : Subsingleton (M →ₗ⁅R,L⁆ N) :=
       subsingleton_lieModuleHom_of_isEmpty_lieModuleEquiv (not_nonempty_iff.mp h)
     exact Module.Finite.of_surjective (0 : R →ₗ[R] (M →ₗ⁅R,L⁆ N))
@@ -198,6 +197,7 @@ theorem finrank_lieModuleHom_eq_one_iff :
   rw [finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv hempty] at h
   exact zero_ne_one h
 
+omit [_root_.LieModule K L M] in
 /-- **The morphism space from a finite-dimensional irreducible Lie module to any irreducible Lie
 module vanishes exactly when they are inequivalent.** -/
 theorem finrank_lieModuleHom_eq_zero_iff :
@@ -205,7 +205,13 @@ theorem finrank_lieModuleHom_eq_zero_iff :
   refine ⟨fun h ↦ ?_, finrank_lieModuleHom_eq_zero_of_isEmpty_lieModuleEquiv⟩
   rw [← not_nonempty_iff]
   intro hne
-  rw [finrank_lieModuleHom_eq_one_of_nonempty_lieModuleEquiv K L hne] at h
+  obtain ⟨e⟩ := hne
+  -- an equivalence of modules transports the compatibility axioms from `N` to `M`
+  have hl (x : L) (m : M) : e ⁅x, m⁆ = ⁅x, e m⁆ := e.toLieModuleHom.map_lie x m
+  have : _root_.LieModule K L M :=
+    ⟨fun t x m ↦ e.injective (by rw [hl, map_smul, hl, _root_.LieModule.smul_lie]),
+      fun t x m ↦ e.injective (by rw [hl, map_smul, map_smul, hl, _root_.LieModule.lie_smul])⟩
+  rw [finrank_lieModuleHom_eq_one_of_nonempty_lieModuleEquiv K L ⟨e⟩] at h
   exact one_ne_zero h
 
 /-- **The morphism space from a finite-dimensional irreducible Lie module to any irreducible Lie
