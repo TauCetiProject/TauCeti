@@ -140,8 +140,9 @@ theorem not_intervalIntegrable_rpow_mul_exp_neg {p : ℝ} (hp : p ≤ -1) (hx : 
   rw [intervalIntegral.integrableOn_Ioo_rpow_iff hx] at hint
   linarith
 
-/-- For `0 ≤ x`, `γ(s, x)` is the truncated Euler integral. For `s ≤ 0` both sides are `0`, the
-integral being the junk value of a non-integrable function. -/
+/-- For `0 ≤ x`, `γ(s, x)` is the truncated Euler integral. For `s ≤ 0` both sides are `0`: for
+`0 < x` the integral is the junk value of a non-integrable function, and for `x = 0` it is an
+integral over a null interval. -/
 theorem lowerIncompleteGamma_eq_integral (hx : 0 ≤ x) :
     lowerIncompleteGamma s x = ∫ t in (0 : ℝ)..x, t ^ (s - 1) * Real.exp (-t) := by
   by_cases hs : 0 < s
@@ -303,7 +304,9 @@ theorem deriv_regularizedGamma (hs : 0 < s) (hx : 0 < x) :
 /-! ### The recurrence in the shape parameter -/
 
 /-- For real `s` and `0 ≤ x`, `γ(s, x)` is Mathlib's `Complex.partialGamma` at `(s : ℂ)`. For
-`s ≤ 0` both sides are the junk value `0`, as in `TauCeti.lowerIncompleteGamma_eq_integral`.
+`s ≤ 0` both sides are `0`, as in `TauCeti.lowerIncompleteGamma_eq_integral`: the integral is
+the junk value of a non-integrable function for `0 < x`, and an integral over a null interval
+for `x = 0`.
 
 The complex partial gamma function carries the integration by parts behind
 `TauCeti.lowerIncompleteGamma_add_one`, so this identification is what lets that recurrence be
