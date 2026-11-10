@@ -125,7 +125,6 @@ def sections (D : SchemeWeilDivisor X) (U : X.Opens) :
       · exact Or.inl (by rw [h₁, smul_zero])
       · exact Or.inr <| h₁.trans (Scheme.ord_le_smul hx hr _)
 
-set_option linter.unusedSectionVars false in
 /-- Membership in `SchemeWeilDivisor.sections`, unfolded: the condition is imposed one
 codimension-one point at a time, so it makes sense over an open subset not known to be
 nonempty. -/
