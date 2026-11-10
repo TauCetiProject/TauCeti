@@ -37,8 +37,10 @@ lifts to a root in `R`: the tangent directions of a split node lift with it.
 
 For a finite residue field and a nonsplit tangent quadratic, a discriminant that is a unit times
 a square gives a solution with both coordinates in the maximal ideal. The centred case reduces
-to a residue conic, whose points are obtained from surjectivity of the finite-field norm; the
-general case follows by the translation above.
+to a residue conic, whose points are obtained from surjectivity of the finite-field norm. In the
+general case, when `a₃` or `a₄` is a unit the reduction is nonsingular at the origin, so Hensel's
+lemma (`WeierstrassCurve.Affine.exists_nonsingular_residue_eq` at `(0, 0)`) lifts it to a solution
+in `𝔪`; otherwise the general case follows by the translation above.
 
 ## Main results
 
@@ -219,11 +221,11 @@ theorem associated_a₆_Δ_of_a₃_eq_zero_of_a₄_eq_zero {R : Type*} [CommRing
   rw [Δ_eq_of_a₃_eq_zero_of_a₄_eq_zero h₃ h₄, Units.val_neg, IsUnit.unit_spec]
   ring
 
-/-- Over a local ring with a finite residue field, if the tangent quadratic `T² + a₁ T − a₂` has no
-root in the residue field, then `b₂` is a unit: otherwise the tangent quadratic has a double root in
-the perfect residue field. -/
+/-- Over a local ring with a perfect residue field, if the tangent quadratic `T² + a₁ T − a₂` has
+no root in the residue field, then `b₂` is a unit: otherwise the tangent quadratic has a double
+root in the perfect residue field. -/
 theorem isUnit_b₂_of_tangentQuadratic_no_roots {R : Type*} [CommRing R] [IsLocalRing R]
-    [Finite (ResidueField R)] (W : WeierstrassCurve R)
+    [PerfectField (ResidueField R)] (W : WeierstrassCurve R)
     (hroot : ∀ t : ResidueField R, t ^ 2 + residue R W.a₁ * t - residue R W.a₂ ≠ 0) :
     IsUnit W.b₂ := by
   by_contra hb
@@ -277,9 +279,9 @@ theorem exists_equation_mem_maximalIdeal_of_a₃_eq_zero_of_a₄_eq_zero {R : Ty
   rw [Affine.equation_iff]
   linear_combination z ^ 2 * hXY + z * Y * h₃ - z * X * h₄ - hA
 
-/-- **A nonsplit node of even order has a solution reducing to it.** Over a Henselian local ring
-with finite residue field, let `a₆ ∈ 𝔪` and let the tangent quadratic `T² + a₁ T − a₂` have no root
-in the residue field. When `a₃, a₄ ∈ 𝔪` the reduction of `W` is singular at the origin, a node
+/-- **A solution in the maximal ideal under a nonsplit tangent quadratic.** Over a Henselian local
+ring with finite residue field, let `a₆ ∈ 𝔪` and let the tangent quadratic `T² + a₁ T − a₂` have no
+root in the residue field. When `a₃, a₄ ∈ 𝔪` the reduction of `W` is singular at the origin, a node
 without rational tangent directions. If `Δ` is a unit times a square, then some solution `(x, y)`
 of `W` has `x, y ∈ 𝔪`. This is a converse, for the normal form at the origin, of
 `WeierstrassCurve.exists_associated_sq_Δ_of_isSingular`. -/
@@ -290,24 +292,17 @@ theorem exists_equation_mem_maximalIdeal_of_tangentQuadratic_no_roots {R : Type*
     (hΔ : Associated (z ^ 2) W.Δ) :
     ∃ x y : R, x ∈ maximalIdeal R ∧ y ∈ maximalIdeal R ∧ W.toAffine.Equation x y := by
   have h0 {a : R} (ha : a ∈ maximalIdeal R) : residue R a = 0 := (residue_eq_zero_iff _).2 ha
-  -- if `a₃` is a unit, Hensel's lemma gives `y` with `y² + a₃ y = a₆` and `x = 0`
-  by_cases h₃ : W.a₃ ∈ maximalIdeal R
+  -- if `a₃` or `a₄` is a unit, the reduction is nonsingular at the origin, and the point lifts
+  by_cases hmem : W.a₃ ∈ maximalIdeal R ∧ W.a₄ ∈ maximalIdeal R
   swap
-  · obtain ⟨y, hy, hy𝔪⟩ := HenselianLocalRing.is_henselian (X ^ 2 + C W.a₃ * X - C W.a₆)
-      (by monicity!) 0 (by simpa using h₆)
-      (by simpa [one_add_one_eq_two] using ((mem_maximalIdeal _).not.1 h₃))
-    refine ⟨0, y, zero_mem _, by simpa using hy𝔪, ?_⟩
-    rw [Affine.equation_iff]
-    simpa [sub_eq_zero, add_comm] using hy.eq_zero
-  -- if `a₄` is a unit, Hensel's lemma gives `x` with `x³ + a₂ x² + a₄ x + a₆ = 0` and `y = 0`
-  by_cases h₄ : W.a₄ ∈ maximalIdeal R
-  swap
-  · obtain ⟨x, hx, hx𝔪⟩ := HenselianLocalRing.is_henselian
-      (X ^ 3 + C W.a₂ * X ^ 2 + C W.a₄ * X + C W.a₆) (by monicity!) 0 (by simpa using h₆)
-      (by simpa [one_add_one_eq_two] using ((mem_maximalIdeal _).not.1 h₄))
-    refine ⟨x, 0, by simpa using hx𝔪, zero_mem _, ?_⟩
-    rw [Affine.equation_iff]
-    simpa using hx.eq_zero.symm
+  · obtain ⟨x, y, hxy, hx, hy⟩ := Affine.exists_nonsingular_residue_eq (W := W) (x₀ := 0) (y₀ := 0)
+      (by
+        rw [map_zero, Affine.nonsingular_zero]
+        refine ⟨by simpa using h0 h₆, ?_⟩
+        simpa [residue_eq_zero_iff, not_and_or] using hmem)
+    exact ⟨x, y, (residue_eq_zero_iff _).1 (by rwa [map_zero] at hx),
+      (residue_eq_zero_iff _).1 (by rwa [map_zero] at hy), hxy.1⟩
+  obtain ⟨h₃, h₄⟩ := hmem
   have hb₂ := W.isUnit_b₂_of_tangentQuadratic_no_roots hroot
   -- translate the critical point `(r, t)` to the origin, which keeps the residues of `a₁`, `a₂`,
   -- `a₆` and `b₂`, and solve the centred equation
