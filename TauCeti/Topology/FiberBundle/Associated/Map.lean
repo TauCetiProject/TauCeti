@@ -83,23 +83,20 @@ theorem trivializationAt_totalSpaceMap (f : F →[G] F') {b b' : B}
     (hb : b ∈ (trivializationAt G P b').baseSet) (v : AssociatedBundle G P F b) :
     trivializationAt F' (AssociatedBundle G P F') b' (totalSpaceMap f ⟨b, v⟩) =
       (b, f (trivializationAt F (AssociatedBundle G P F) b' ⟨b, v⟩).2) := by
-  let p := (FiberBundle.homeomorphAt G P b).symm 1
-  obtain ⟨w, rfl⟩ := (mk_bijective (F := F) p).2 v
+  obtain ⟨p, w, rfl⟩ := exists_mk v
   simp only [totalSpaceMap_mk, trivializationAt_mk hb, f.map_smul]
 
 @[simp]
 theorem map_id {b : B} (v : AssociatedBundle G P F b) :
     map (MulActionHom.id G : F →[G] F) v = v := by
-  let p := (FiberBundle.homeomorphAt G P b).symm 1
-  obtain ⟨w, rfl⟩ := (mk_bijective (F := F) p).2 v
+  obtain ⟨p, w, rfl⟩ := exists_mk v
   simp
 
 @[simp]
 theorem map_comp (f : F →[G] F') (g : F' →[G] F'') {b : B}
     (v : AssociatedBundle G P F b) :
     map (g.comp f) v = map g (map f v) := by
-  let p := (FiberBundle.homeomorphAt G P b).symm 1
-  obtain ⟨w, rfl⟩ := (mk_bijective (F := F) p).2 v
+  obtain ⟨p, w, rfl⟩ := exists_mk v
   simp
 
 @[simp]
@@ -127,18 +124,22 @@ def homeomorph (f : F ≃ₜ F') (hf : ∀ (g : G) v, f (g • v) = g • f v) :
     TotalSpace F (AssociatedBundle G P F) ≃ₜ TotalSpace F' (AssociatedBundle G P F') :=
   let φ : F →[G] F' := ⟨f, hf⟩
   let ψ := φ.inverse f.symm f.left_inv f.right_inv
+  have hφ : ⇑φ = f := rfl
+  have hψ : ⇑ψ = f.symm := rfl
+  have hψφ : ψ.comp φ = MulActionHom.id G := by
+    ext w
+    simpa only [MulActionHom.comp_apply, MulActionHom.id_apply, hφ, hψ] using
+      f.symm_apply_apply w
+  have hφψ : φ.comp ψ = MulActionHom.id G := by
+    ext w
+    simpa only [MulActionHom.comp_apply, MulActionHom.id_apply, hφ, hψ] using
+      f.apply_symm_apply w
   { toFun := totalSpaceMap φ
     invFun := totalSpaceMap ψ
-    left_inv := fun v ↦ by
-      obtain ⟨⟨p, w⟩, rfl⟩ := (isOpenQuotientMap_totalSpaceMk_mk G P F).surjective v
-      simp only [totalSpaceMap_mk]
-      exact congrArg (fun w ↦ TotalSpace.mk p.proj (mk G p.2 w)) (f.left_inv w)
-    right_inv := fun v ↦ by
-      obtain ⟨⟨p, w⟩, rfl⟩ := (isOpenQuotientMap_totalSpaceMk_mk G P F').surjective v
-      simp only [totalSpaceMap_mk]
-      exact congrArg (fun w ↦ TotalSpace.mk p.proj (mk G p.2 w)) (f.right_inv w)
-    continuous_toFun := continuous_totalSpaceMap φ f.continuous
-    continuous_invFun := continuous_totalSpaceMap ψ f.symm.continuous }
+    left_inv := fun v ↦ by rw [← totalSpaceMap_comp, hψφ, totalSpaceMap_id]
+    right_inv := fun v ↦ by rw [← totalSpaceMap_comp, hφψ, totalSpaceMap_id]
+    continuous_toFun := continuous_totalSpaceMap φ (by simpa only [hφ] using f.continuous)
+    continuous_invFun := continuous_totalSpaceMap ψ (by simpa only [hψ] using f.symm.continuous) }
 
 /-- The induced homeomorphism is the total-space map of the equivariant fibre map. -/
 theorem homeomorph_apply (f : F ≃ₜ F') (hf : ∀ (g : G) v, f (g • v) = g • f v)
@@ -164,7 +165,15 @@ theorem homeomorph_proj (f : F ≃ₜ F') (hf : ∀ (g : G) v, f (g • v) = g �
 theorem homeomorph_mk (f : F ≃ₜ F') (hf : ∀ (g : G) v, f (g • v) = g • f v)
     {b : B} (p : P b) (v : F) :
     homeomorph (P := P) f hf ⟨b, mk G p v⟩ = ⟨b, mk G p (f v)⟩ := by
-  rw [homeomorph_apply, totalSpaceMap_mk]
-  rfl
+  have hφ : ⇑(⟨f, hf⟩ : F →[G] F') = f := rfl
+  rw [homeomorph_apply, totalSpaceMap_mk, hφ]
+
+/-- The inverse induced homeomorphism applies the inverse fibre map to each class. -/
+@[simp]
+theorem homeomorph_symm_mk (f : F ≃ₜ F') (hf : ∀ (g : G) v, f (g • v) = g • f v)
+    {b : B} (p : P b) (v : F') :
+    (homeomorph (P := P) f hf).symm ⟨b, mk G p v⟩ = ⟨b, mk G p (f.symm v)⟩ := by
+  apply (homeomorph (P := P) f hf).injective
+  simp
 
 end TauCeti.AssociatedBundle
