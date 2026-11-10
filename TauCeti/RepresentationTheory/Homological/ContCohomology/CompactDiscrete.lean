@@ -183,6 +183,21 @@ theorem ResolutionVanishesOn.exists_isOpen {T : Set G} (hT : IsCompact T) (n : �
       fun g hg ↦ ?_⟩
     exact (hW ⟨F' g, hg.1⟩).mono (Set.inter_subset_right.trans (Set.iInter_subset _ _)) n
 
+/-- **Vanishing on a set spreads to its closure.** An element of the coinduced resolution of a
+discrete representation of a compact group that vanishes on a set `T` vanishes on the closure of
+`T`: the iterated maps are continuous into discrete spaces. -/
+theorem ResolutionVanishesOn.closure {T : Set G} (n : ℕ) :
+    ∀ {F : (TopRep.resolutionX X n).V}, ResolutionVanishesOn X T n F →
+      ResolutionVanishesOn X (_root_.closure T) n F := by
+  induction n with
+  | zero => exact fun hF ↦ hF
+  | succ n ih =>
+    intro F hF
+    set F' : C(G, (TopRep.resolutionX X n).V) := F
+    have hsub : T ⊆ F' ⁻¹' {v | ResolutionVanishesOn X (_root_.closure T) n v} :=
+      fun g hg ↦ ih (hF g hg)
+    exact fun g hg ↦ closure_minimal hsub ((isClosed_discrete _).preimage F'.continuous) hg
+
 end ContinuousCohomology
 
 end Vanishing
