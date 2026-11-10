@@ -76,7 +76,7 @@ private def firstToLast : Fin (1 + (n + 1)) ≃ Fin (n + 2) :=
 
 private theorem firstToLast_zero : firstToLast n 0 = Fin.last (n + 1) := by
   rw [firstToLast, Equiv.trans_apply, Equiv.symm_apply_eq, finRotate_last]
-  rfl
+  simp
 
 /-- The linear isometry `ℝ^(1 + (n + 1)) ≃ ℝ^(n + 2)` permuting the coordinates by
 `firstToLast`, which sends the first coordinate vector to the last. -/
@@ -128,6 +128,25 @@ private theorem lastToFirstSphere_sphereNorthPole :
   ext : 1
   simp [firstToLastSphere, lastToFirstSphere]
 
+/-- The linear isometry of a rotation of `ℝ^(1 + (n + 1))`, conjugated by `firstToLastIsometry`
+to a linear isometry of `ℝ^(n + 2)`, depends continuously on the rotation. -/
+private theorem continuous_firstToLastIsometry_conj :
+    Continuous fun A : specialOrthogonalGroup (Fin (1 + (n + 1))) ℝ ↦
+      (((firstToLastIsometry n).symm.trans ((UnitaryGroup.toLinearIsometryEquiv
+        ⟨A.1, A.2.1⟩).trans (firstToLastIsometry n))).toContinuousLinearEquiv :
+          EuclideanSpace ℝ (Fin (n + 2)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 2))) := by
+  let f := ((firstToLastIsometry n).toContinuousLinearEquiv :
+    EuclideanSpace ℝ (Fin (1 + (n + 1))) →L[ℝ] EuclideanSpace ℝ (Fin (n + 2)))
+  let g := ((firstToLastIsometry n).symm.toContinuousLinearEquiv :
+    EuclideanSpace ℝ (Fin (n + 2)) →L[ℝ] EuclideanSpace ℝ (Fin (1 + (n + 1))))
+  have h := UnitaryGroup.continuous_toLinearIsometryEquiv.comp
+    (continuous_subtype_val.subtype_mk
+      fun A : specialOrthogonalGroup (Fin (1 + (n + 1))) ℝ ↦ A.2.1)
+  refine ((continuous_const (y := f)).clm_comp (h.clm_comp (continuous_const (y := g)))).congr
+    fun A ↦ ?_
+  ext x : 1
+  simp [f, g]
+
 /-- The rotations `SO(n + 2)` act on the sphere `Sⁿ⁺¹ ⊆ ℝⁿ⁺²` by diffeomorphisms, after conjugating
 by `firstToLastIsometry`; this is a continuous map into `Diff(Sⁿ⁺¹)`. -/
 private def rotationToDiffSphere (m : ℕ∞ω) :
@@ -137,19 +156,8 @@ private def rotationToDiffSphere (m : ℕ∞ω) :
     ((UnitaryGroup.toLinearIsometryEquiv ⟨A.1, A.2.1⟩).trans (firstToLastIsometry n)))
   continuous_toFun := by
     refine Diffeomorph.continuous_weakWhitney_iff.mpr ?_
-    simp only [LinearIsometryEquiv.unitSphereDiffHom_apply]
-    refine Continuous.toContMDiffMap_unitSphereDiffeomorph ?_
-    have h := UnitaryGroup.continuous_toLinearIsometryEquiv.comp
-      ((continuous_subtype_val (p := fun A : Matrix (Fin (1 + (n + 1))) (Fin (1 + (n + 1))) ℝ ↦
-        A ∈ specialOrthogonalGroup (Fin (1 + (n + 1))) ℝ)).subtype_mk
-          (p := fun A ↦ A ∈ orthogonalGroup (Fin (1 + (n + 1))) ℝ) fun A ↦ A.2.1)
-    exact ((continuous_const (y := ((firstToLastIsometry n).toContinuousLinearEquiv :
-      EuclideanSpace ℝ (Fin (1 + (n + 1))) →L[ℝ] EuclideanSpace ℝ (Fin (n + 2))))).clm_comp
-        (h.clm_comp (continuous_const (y := ((firstToLastIsometry n).symm.toContinuousLinearEquiv :
-          EuclideanSpace ℝ (Fin (n + 2)) →L[ℝ] EuclideanSpace ℝ (Fin (1 + (n + 1)))))))).congr
-            fun A ↦ by
-              ext x : 1
-              simp
+    simpa only [LinearIsometryEquiv.unitSphereDiffHom_apply] using
+      (continuous_firstToLastIsometry_conj n).toContMDiffMap_unitSphereDiffeomorph
 
 /-- The orbit map of the north pole under the rotation action: `A ↦ A e₀`, followed by the
 reindexing of the sphere that sends `e₀` to the north pole. -/
@@ -208,6 +216,20 @@ private theorem exists_map_rotationOrbitMap_eq_pow [NeZero n]
           HomotopyGroup.map_map_of_comp_eq_id _ _ _ _
             (firstToLastSphere_comp_lastToFirstSphere n)]
 
+/-- By naturality of the Hurewicz map, if the orbit map sends a class `b` of `πₙ₊₁(SO(n + 2))` to
+the `k`-th power of the generator of `πₙ₊₁(Sⁿ⁺¹)`, then the Hurewicz class of the image of `b` is
+`k` times that of the generator. -/
+private theorem hurewicz_map_rotationOrbitMap_eq_nsmul {k : ℕ}
+    {b : HomotopyGroup (Fin (n + 1)) (specialOrthogonalGroup (Fin (1 + (n + 1))) ℝ) 1}
+    (hb : HomotopyGroup.map (rotationOrbitMap n) (rotationOrbitMap_one n) b =
+      sphereGenClass n ^ k) :
+    (HomotopyGroup.hurewicz (ModuleCat.of ℤ (ULift.{0} ℤ)) n
+        (HomotopyGroup.map (rotationOrbitMap n) (rotationOrbitMap_one n) b)).hom (ULift.up 1) =
+      k • (GenLoop.hurewicz (ModuleCat.of ℤ (ULift.{0} ℤ)) (sphereGenLoop (n + 1))).hom
+        (ULift.up 1) := by
+  rw [hb, HomotopyGroup.hurewicz_pow, sphereGenClass, HomotopyGroup.hurewicz_mk,
+    ModuleCat.hom_nsmul, LinearMap.smul_apply]
+
 /-- The Hurewicz class of the generator of `πₙ₊₁(Sⁿ⁺¹)` is nonzero. -/
 private theorem hurewicz_sphereGenLoop_ne_zero :
     (GenLoop.hurewicz (ModuleCat.of ℤ (ULift.{0} ℤ)) (sphereGenLoop (n + 1))).hom (ULift.up 1) ≠
@@ -244,10 +266,8 @@ private theorem exists_ne_zero_isCoveredByDiffeomorphisms_sphereNorthPole [NeZer
   · -- By naturality of the Hurewicz map, the image of the class of `b` is that of the `k`-th power
     -- of the generator.
     rw [evalAt_comp_rotationToDiffSphere, ← LinearMap.comp_apply, ← ModuleCat.hom_comp,
-      ← HomotopyGroup.hurewicz_map R n _ (rotationOrbitMap_one n), hb,
-      HomotopyGroup.hurewicz_pow, sphereGenClass, HomotopyGroup.hurewicz_mk,
-      o.mapFundamentalClass_id,
-      ModuleCat.hom_nsmul, LinearMap.smul_apply, hc]
+      ← HomotopyGroup.hurewicz_map R n _ (rotationOrbitMap_one n),
+      hurewicz_map_rotationOrbitMap_eq_nsmul hb, o.mapFundamentalClass_id, hc]
     exact (natCast_zsmul _ k).symm.trans (mul_smul (k : ℤ) c _).symm
 
 namespace HomologicalOrientation
@@ -255,8 +275,7 @@ namespace HomologicalOrientation
 /-- **Spheres covered by rotations** (the first proof of Proposition 6.34 of
 Barraud–Damian–Humilière–Oancea). If `πₙ(SO(n + 1))` is a torsion group, then the sphere `Sⁿ⁺¹` is
 `ℓ`-covered by diffeomorphisms for some `ℓ > 0`, at every base point, for every orientation and
-every smoothness exponent. The class of `Hₙ₊₁(Diff(Sⁿ⁺¹); ℤ)` evaluating to `ℓ • [Sⁿ⁺¹]` is the
-image of a class of `Hₙ₊₁(SO(n + 2); ℤ)` under the action of `SO(n + 2)` on the sphere.
+every smoothness exponent.
 
 By Lemma 6.35 of the same paper the torsion hypothesis holds whenever `n + 1` is odd. For
 `n + 1 = 3` it is `π₂(SO(3)) = 0`, giving
@@ -277,7 +296,7 @@ theorem exists_isCoveredByDiffeomorphisms_sphere_of_isMulTorsion [NeZero n]
   exact ((isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace _ x₀).1 hc).mul_left _
 
 /-- **The `3`-sphere is covered by rotations**: since `π₂(SO(3)) = 0`, the sphere `S³` is
-`ℓ`-covered by diffeomorphisms for some `ℓ > 0`, through the action of `SO(4)`. -/
+`ℓ`-covered by diffeomorphisms for some `ℓ > 0`. -/
 theorem exists_isCoveredByDiffeomorphisms_sphere_three
     (o : HomologicalOrientation (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1)
       (EuclideanSpace ℝ (Fin 3)) 3)
