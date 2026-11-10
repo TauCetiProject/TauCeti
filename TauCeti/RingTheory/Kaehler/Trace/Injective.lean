@@ -45,9 +45,10 @@ theorem injective_liftKaehlerDifferential_traceDerivation [IsDomain R] [IsDomain
   apply LinearMap.injective_of_ne_zero_of_forall_isMaximal_exists_smul_eq_smul _ ?_ hcyc
   have ht : ∃ t, D t ≠ 0 := by
     by_contra h
+    push Not at h
     apply hD
     ext t
-    simpa only [not_exists, not_not, Derivation.zero_apply] using h t
+    exact h t
   obtain ⟨t, ht⟩ := ht
   intro h
   have hval := LinearMap.congr_fun h (KaehlerDifferential.D k B (algebraMap R B t))
