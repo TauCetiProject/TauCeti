@@ -12,7 +12,9 @@ public import TauCeti.Probability.PopulationSampling.Finite
 
 A measurable observation of population values commutes with sampling: observing every entry
 before choosing indices has the same law as observing the sampled word afterwards. This holds
-for an arbitrary selection law, and in particular for sampling with or without replacement.
+for an arbitrary selection law (`samplePopulation_map` in
+`TauCeti.Probability.PopulationSampling.Basic`); this file specializes it to sampling with or
+without replacement.
 
 For deterministic populations, these identities allow a population that factors through another
 one to be sampled by pushing forward the latter's sampling law. In particular, identifying two
@@ -28,21 +30,6 @@ namespace TauCeti.Probability
 
 variable {ι κ α β : Type*} [MeasurableSpace κ] [MeasurableSingletonClass κ]
   [MeasurableSpace α] [MeasurableSpace β]
-
-/-- A measurable observation commutes with sampling along any selection law. The population law
-need only be s-finite; no finiteness or normalization is required of the selection law. -/
-theorem samplePopulation_map [Countable κ] (σ : Measure (ι → κ))
-    (ρ : Measure (κ → α)) [SFinite ρ] {g : α → β} (hg : Measurable g) :
-    samplePopulation σ (ρ.map (fun x i => g (x i))) =
-      (samplePopulation σ ρ).map (fun y i => g (y i)) := by
-  have hκ : Measurable (fun x : κ → α => fun i => g (x i)) := by fun_prop
-  have hι : Measurable (fun y : ι → α => fun i => g (y i)) := by fun_prop
-  have hprod := Measure.map_prod_map σ ρ measurable_id hκ
-  rw [Measure.map_id] at hprod
-  rw [samplePopulation_def, hprod,
-    Measure.map_map measurable_reindexPopulation (measurable_id.prodMap hκ),
-    samplePopulation_def, Measure.map_map hι measurable_reindexPopulation]
-  rfl
 
 /-- Observing population values commutes with sampling without replacement. -/
 theorem sampleWithoutReplacement_map [Countable κ] (ρ : Measure (κ → α)) [SFinite ρ]
