@@ -515,6 +515,61 @@ theorem _root_.OpenPartialHomeomorph.coe_localOrientationOfOrientedChart_eq_sign
 
 end ChartChange
 
+section ChartNaturality
+
+variable {M N : Type w} [TopologicalSpace M] [T1Space M] [TopologicalSpace N] [T1Space N]
+  {E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+  (ω : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1)
+
+/-- **Naturality of oriented-chart local orientations.** Let `j : M → N` be continuous, and let
+`φ` and `ψ` be charts of `M` and `N` with `j` mapping the source of `φ` into that of `ψ` and
+`ψ ∘ j = φ` there. Then the map of local homology induced by `j` carries the local orientation at
+`a` selected by an orientation `ω` of the model in `φ` to the one at `j a` selected by `ω` in
+`ψ`. -/
+theorem _root_.OpenPartialHomeomorph.localHomologyMap_localOrientationOfOrientedChart
+    (j : C(M, N)) (φ : OpenPartialHomeomorph M E) (ψ : OpenPartialHomeomorph N E) {a : M}
+    (ha : a ∈ φ.source) (hmaps : MapsTo j φ.source ψ.source) (hφψ : EqOn (ψ ∘ j) φ φ.source)
+    (h : j ⁻¹' {j a} ⊆ {a}) :
+    localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) j h (n + 1)
+        (φ.localOrientationOfOrientedChart ha ω hE).val =
+      (ψ.localOrientationOfOrientedChart (hmaps ha) ω hE).val := by
+  set Z := ModuleCat.of ℤ (ULift.{w} ℤ)
+  -- A class on the source of `φ` carried by `φ` to the model generator at `φ a`.
+  have hS : sourceRestrict φ ⁻¹' {φ a} = ContinuousMap.subtypeVal φ.source ⁻¹' {a} := by
+    ext z
+    simp only [mem_preimage, mem_singleton_iff, sourceRestrict_apply]
+    exact ⟨fun hz ↦ φ.injOn z.2 ha hz, fun hz ↦ by rw [← hz]; rfl⟩
+  have : IsIso (localHomologyMap Z (sourceRestrict φ) hS.subset (n + 1)) :=
+    isIso_localHomologyMap Z _ φ.isOpenEmbedding_restrict hS isClosed_singleton
+      (singleton_subset_iff.2 ⟨⟨a, ha⟩, rfl⟩) (n + 1)
+  obtain ⟨w, hw⟩ := (ConcreteCategory.bijective_of_isIso
+    (localHomologyMap Z (sourceRestrict φ) hS.subset (n + 1))).2
+    ((OpenPartialHomeomorph.refl E).localOrientationOfOrientedChart (mem_refl_source (φ a)) ω
+      hE).val
+  have hφ := localHomologyMap_subtypeVal_eq_localOrientationOfOrientedChart ω hE φ ha w hw
+  -- The restriction of `j` to the sources carries `w` to a class on the source of `ψ` which `ψ`
+  -- carries to the same model generator.
+  let jr : C(φ.source, ψ.source) :=
+    ⟨fun z ↦ ⟨j z, hmaps z.2⟩, (j.continuous.comp continuous_subtype_val).subtype_mk _⟩
+  have hjr : jr ⁻¹' (ContinuousMap.subtypeVal ψ.source ⁻¹' {j a}) ⊆
+      ContinuousMap.subtypeVal φ.source ⁻¹' {a} := fun z hz ↦
+    φ.injOn z.2 ha ((hφψ z.2).symm.trans ((congrArg ψ hz).trans (hφψ ha)))
+  have hψr : (sourceRestrict ψ).comp jr = sourceRestrict φ := by
+    ext z
+    exact hφψ z.2
+  have hSψ : sourceRestrict ψ ⁻¹' {φ a} ⊆ ContinuousMap.subtypeVal ψ.source ⁻¹' {j a} := by
+    rw [← hφψ ha]
+    exact sourceRestrict_preimage ψ (hmaps ha)
+  have hψ := localHomologyMap_subtypeVal_eq_localOrientationOfOrientedChart_of_eq ω hE ψ
+    (hmaps ha) (hφψ ha) (localHomologyMap Z jr hjr (n + 1) w) hSψ (by
+      rw [← ConcreteCategory.comp_apply, localHomologyMap_comp, localHomologyMap_congr Z hψr]
+      exact hw)
+  rw [← hφ, ← hψ, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
+    localHomologyMap_comp, localHomologyMap_comp]
+  rfl
+
+end ChartNaturality
+
 section Manifold
 
 variable {M E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
