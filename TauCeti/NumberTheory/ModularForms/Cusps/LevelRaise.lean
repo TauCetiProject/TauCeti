@@ -41,7 +41,11 @@ open TauCeti
 
 namespace Matrix.SpecialLinearGroup
 
-/-- A representative of the scaled cusp with primitive first column. -/
+/-- **Factorization of the scaled first column.** Let `(a, c)` be the first column of `γ`. The
+scaled column `(t a, c)` is `gcd(c, t)` times the first column of some `δ ∈ SL(2, ℤ)`. When
+`(t a, c)` is nonzero, `δ` represents the scaled cusp `t a / c` with a primitive first column.
+When `t = 0` and `c = 0` the scaled column is zero, no cusp is defined, and the equations impose
+no constraint on `δ`. -/
 lemma exists_scaled_cusp_reduction (γ : SL(2, ℤ)) {t : ℕ} :
     ∃ δ : SL(2, ℤ), (t : ℤ) * γ 0 0 = δ 0 0 * Int.gcd (γ 1 0) t ∧
       γ 1 0 = δ 1 0 * Int.gcd (γ 1 0) t := by
