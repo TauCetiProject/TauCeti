@@ -100,16 +100,42 @@ theorem fixedFamilyEquiv_symm_apply [Fintype J] (b : Module.Basis ι A V)
       ∑ j, ∑ i, (w j).val i • b (e ⟨j, i⟩) := by
   simp [fixedFamilyEquiv, Module.Basis.equivFun_symm_apply, Fintype.sum_sigma, Sigma.uncurry]
 
+/-- The coefficients of a fixed vector along one cycle form a fixed tuple of that cycle's
+weighted shift. -/
+theorem repr_mem_fixedSubmodule (b : Module.Basis ι A V)
+    (e : (Σ j, Fin (n j + 1)) ≃ ι) (a : ∀ j, Fin (n j + 1) → A) (f : V →ₗ[A] V)
+    (h : ∀ j i, f (b (e ⟨j, i⟩)) = a j i • b (e ⟨j, finRotate (n j + 1) i⟩))
+    (v : f.fixedSubmodule) (j : J) :
+    (fun i ↦ b.repr v.val (e ⟨j, i⟩)) ∈
+      (TauCeti.WeightedCycle.linearMap (a j) (M := A)).fixedSubmodule := by
+  classical
+  rw [mem_fixedSubmodule_iff]
+  intro i
+  have hv : f v.val = v.val := v.property
+  have key : (b.coord (e ⟨j, finRotate (n j + 1) i⟩)) ∘ₗ f = a j i • b.coord (e ⟨j, i⟩) := by
+    apply b.ext
+    rintro k
+    obtain ⟨⟨j', i'⟩, rfl⟩ := e.surjective k
+    simp only [LinearMap.comp_apply, h, map_smul, Module.Basis.coord_apply,
+      Module.Basis.repr_self, Finsupp.single_apply, e.injective.eq_iff, LinearMap.smul_apply,
+      smul_eq_mul, Sigma.mk.injEq]
+    by_cases hj : j = j'
+    · subst hj
+      by_cases hi : i = i'
+      · simp [hi]
+      · simp [Ne.symm hi]
+    · simp [Ne.symm hj]
+  simpa [hv] using LinearMap.congr_fun key v.val
+
 /-- All coefficients in a fixed vector are prefix products times their cycle's initial
 coefficient. -/
-theorem repr_eq_family_partialProd_mul [Finite J] (b : Module.Basis ι A V)
+theorem repr_eq_family_partialProd_mul (b : Module.Basis ι A V)
     (e : (Σ j, Fin (n j + 1)) ≃ ι) (a : ∀ j, Fin (n j + 1) → A) (f : V →ₗ[A] V)
     (h : ∀ j i, f (b (e ⟨j, i⟩)) = a j i • b (e ⟨j, finRotate (n j + 1) i⟩))
     (v : f.fixedSubmodule) (j : J) (i : Fin (n j + 1)) :
     b.repr v.val (e ⟨j, i⟩) =
-      Fin.partialProd (Fin.init (a j)) i * b.repr v.val (e ⟨j, 0⟩) := by
-  simpa only [fixedFamilyEquiv_apply, smul_eq_mul] using
-    coeff_eq_partialProd_smul (a j) (fixedFamilyEquiv b e a f h v j) i
+      Fin.partialProd (Fin.init (a j)) i * b.repr v.val (e ⟨j, 0⟩) :=
+  coeff_eq_partialProd_smul (a j) ⟨_, repr_mem_fixedSubmodule b e a f h v j⟩ i
 
 end CommSemiring
 
