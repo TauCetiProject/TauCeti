@@ -28,7 +28,7 @@ the carrier of a finite-sided convex polygon whose ideal vertices are cusp point
 `p` has trivial stabilizer, this polygon carries a side pairing by elements of `Γ`. Conversely,
 the area of a convex polygon with finitely many vertices is finite by the Gauss–Bonnet formula,
 so a discrete group is cofinite exactly when one (equivalently, every) Dirichlet domain centred at
-a point with trivial stabilizer is such a polygon. Its translates are locally finite with disjoint
+a point is such a polygon. Its translates are locally finite with disjoint
 interiors, so its side pairing satisfies the hypotheses of Poincaré's polygon theorem, generates
 `Γ`, and presents it.
 
@@ -71,8 +71,7 @@ the side pairing and the characterization of cofiniteness are concerned.
 * `Subgroup.IsCofinite.exists_sidePairing_of_mem_freeLocus`: for a centre with trivial
   stabilizer this polygon has a side pairing by elements of `Γ`.
 * `Subgroup.isCofinite_iff_exists_convexPolygon_carrier_eq_dirichletDomain`: a discrete group is
-  cofinite exactly when its Dirichlet domain at a point with trivial stabilizer is a finite-sided
-  convex polygon.
+  cofinite exactly when its Dirichlet domain at any point is a finite-sided convex polygon.
 * `Subgroup.IsCofinite.exists_sidePairing_closure_range_map_eq`: the converse of Poincaré's
   polygon theorem; the side pairing of this polygon generates `Γ` and satisfies the angle
   condition at finite vertex cycles and the parabolic condition at ideal vertex cycles.
@@ -234,18 +233,24 @@ theorem IsCofinite.exists_sidePairing_relatorQuotientTo_bijective (hΓ : Γ.IsCo
     (ConvexPolygon.disjoint_smul_interior_carrier_of_carrier_eq_dirichletDomain hP hp)⟩
 
 /-- **Cofiniteness from Dirichlet polygons.** A discrete subgroup `Γ ≤ PSL(2, ℝ)` is cofinite
-exactly when its Dirichlet domain centred at a point `p` with trivial stabilizer is the carrier
-of a convex polygon with finitely many vertices, possibly ideal. The converse direction is the
-Gauss–Bonnet formula: such a polygon has finite area. -/
+exactly when its Dirichlet domain centred at a point `p` is the carrier of a convex polygon with
+finitely many vertices, possibly ideal. The converse direction is the Gauss–Bonnet formula: such
+a polygon has finite area, and the translates of the Dirichlet domain cover `ℍ`. -/
 theorem isCofinite_iff_exists_convexPolygon_carrier_eq_dirichletDomain [DiscreteTopology Γ]
-    {p : ℍ} (hp : p ∈ freeLocus Γ ℍ) :
+    (p : ℍ) :
     Γ.IsCofinite ↔
       ∃ (n : ℕ) (_ : NeZero n) (P : ConvexPolygon n), P.carrier = dirichletDomain Γ p := by
   refine ⟨fun hΓ ↦ ?_, fun ⟨n, _, P, hP⟩ ↦ ?_⟩
   · obtain ⟨n, hn, P, hP, -⟩ := hΓ.exists_convexPolygon_carrier_eq_dirichletDomain p
     exact ⟨n, hn, P, hP⟩
-  · refine (Γ.isFundamentalDomain_dirichletDomain hp).isCofinite_of_volume_ne_top ?_
-    rw [← hP, ConvexPolygon.volume_carrier]
-    exact ENNReal.ofReal_ne_top
+  · obtain ⟨s, -, -, hs⟩ := Γ.exists_isFundamentalDomain
+    refine hs.isCofinite_of_volume_ne_top
+      (ne_top_of_le_ne_top (b := volume (dirichletDomain Γ p)) ?_ ?_)
+    · rw [← hP, ConvexPolygon.volume_carrier]
+      exact ENNReal.ofReal_ne_top
+    · calc volume s = volume (⋃ g : Γ, g • dirichletDomain Γ p ∩ s) := by
+            rw [← iUnion_inter, iUnion_smul_dirichletDomain, univ_inter]
+        _ ≤ ∑' g : Γ, volume (g • dirichletDomain Γ p ∩ s) := measure_iUnion_le _
+        _ = volume (dirichletDomain Γ p) := (hs.measure_eq_tsum _).symm
 
 end Subgroup
