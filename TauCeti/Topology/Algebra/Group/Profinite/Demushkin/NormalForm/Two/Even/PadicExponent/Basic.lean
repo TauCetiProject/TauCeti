@@ -42,7 +42,7 @@ pro-`2` groups which are trivial on `x₁` and whose value on `x₃` has trivial
 * `TauCeti.map_demushkinWordTwoEvenPadic`: a continuous homomorphism of pro-`2` groups reads the
   word on the image tuple.
 * `TauCeti.map_demushkinWordTwoEvenPadic_eq_one`: a continuous character into a commutative
-  group which is trivial on `x₁` and whose value on `x₃` has trivial `q`-th power kills the
+  `T1` group which is trivial on `x₁` and whose value on `x₃` has trivial `q`-th power kills the
   word.
 * `TauCeti.demushkinWordTwoEvenPadic_mem_proPFrattini`: for `α` and `q` even the word lies in the
   pro-`2` Frattini subgroup.
@@ -157,10 +157,10 @@ theorem demushkinWordTwoEvenPadic_eq_of_commGroup (hA : IsProP 2 A) (y : ℕ →
     demushkinWordTwoEvenPadic hA α q n y = hA.padicPow (y 0) (2 + α) * y 2 ^ q := by
   simp [demushkinWordTwoEvenPadic_def]
 
-omit [IsTopologicalGroup A] [CompactSpace A] in
-/-- A continuous character into a commutative group which is trivial on `x₁` and whose
+omit [IsTopologicalGroup A] [CompactSpace A] [TotallyDisconnectedSpace A] in
+/-- A continuous character into a commutative `T1` group which is trivial on `x₁` and whose
 value on `x₃` has trivial `q`-th power kills the word. -/
-theorem map_demushkinWordTwoEvenPadic_eq_one (φ : H →ₜ* A) (h₀ : φ (x 0) = 1)
+theorem map_demushkinWordTwoEvenPadic_eq_one [T1Space A] (φ : H →ₜ* A) (h₀ : φ (x 0) = 1)
     (h₂ : φ (x 2) ^ q = 1) : φ (demushkinWordTwoEvenPadic hH α q n x) = 1 := by
   simp [demushkinWordTwoEvenPadic_def, hH.map_padicPow_eq_one_of_eq_one φ h₀, h₀, h₂,
     map_list_prod, Function.comp_def]
