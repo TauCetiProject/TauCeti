@@ -191,8 +191,7 @@ vanishes. -/
 theorem _root_.ContRepresentation.integratedOperatorL1_of_not_completeSpace
     (hE : ¬CompleteSpace E) (f : G →₁[μ] 𝕜) : π.integratedOperatorL1 hcont hbdd μ f = 0 := by
   ext v
-  rw [ContRepresentation.integratedOperatorL1_apply, integral_of_not_completeSpace hE]
-  rfl
+  simp [ContRepresentation.integratedOperatorL1_apply, integral_of_not_completeSpace hE]
 
 /-- The integrated form is bounded by the uniform bound of the representation times the `L¹`
 norm of the weight. -/
