@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Order.Quantale
-public import Mathlib.Data.EReal.Operations
+public import TauCeti.Data.EReal.Operations
 import Mathlib.Order.GaloisConnection.Basic
 
 /-!
@@ -25,23 +25,13 @@ The construction uses Mathlib's additive quantale and Galois connection APIs.
 
 public section
 
-noncomputable section
-
 namespace EReal
-
-/-- The adjunction behind additive residuation: `a + b ≤ c` bounds `b` by `c - a`, except that
-there is no bound when `c = ⊤` or `a = ⊥`. -/
-private theorem add_le_iff_le_ite (a b c : EReal) :
-    a + b ≤ c ↔ b ≤ if c = ⊤ ∨ a = ⊥ then ⊤ else c - a := by
-  by_cases h : c = ⊤ ∨ a = ⊥
-  · rcases h with rfl | rfl <;> simp
-  · rw [ite_eq_right h, le_sub_iff_add_le (.inl (not_or.mp h).2) (.inr (not_or.mp h).1), add_comm]
 
 /-- Extended real addition distributes over all suprema; its residual therefore gives a
 right adjoint to addition without finiteness hypotheses. -/
 instance instIsAddQuantale : IsAddQuantale EReal :=
   have hadd (a : EReal) (s : Set EReal) : a + sSup s = ⨆ b ∈ s, a + b :=
-    GaloisConnection.l_sSup fun b c ↦ add_le_iff_le_ite a b c
+    GaloisConnection.l_sSup fun _ _ ↦ add_le_iff_le_ite (a := a)
   ⟨hadd, fun s a ↦ by simpa only [add_comm] using hadd a s⟩
 
 /-- Additive residuation is ordinary subtraction except at the two unrestricted cases:
