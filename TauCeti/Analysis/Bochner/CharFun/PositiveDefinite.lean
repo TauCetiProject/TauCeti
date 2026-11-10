@@ -60,27 +60,26 @@ theorem charFun_isPositiveDefinite_of_star_eq_neg [StarAddMonoid E] (hstar : ∀
 theorem isPositiveDefiniteSub_charFun : IsPositiveDefiniteSub (MeasureTheory.charFun μ) :=
   isPositiveDefiniteSub_iff_posSemidef.mpr posSemidef_charFun
 
-end Seminormed
-
-section Normed
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
-  {μ : Measure E}
-
-/-- The characteristic function of a measure on a second-countable real inner product space
-is continuous and positive definite, provided the chosen involution is negation. This is the
-forward bridge toward Bochner's theorem in the language of `TauCeti.IsPositiveDefinite`. For a
-measure that is not finite, `charFun μ` vanishes. -/
+/-- The characteristic function of a measure on a real inner product space is continuous and
+positive definite, provided the chosen involution is negation. This is the forward bridge toward
+Bochner's theorem in the language of `TauCeti.IsPositiveDefinite`. For a measure that is not
+finite, `charFun μ` vanishes. -/
 theorem continuous_charFun_and_isPositiveDefinite_of_star_eq_neg [StarAddMonoid E]
     (hstar : ∀ x : E, star x = -x) :
     Continuous (MeasureTheory.charFun μ) ∧ IsPositiveDefinite (MeasureTheory.charFun μ) := by
   refine ⟨?_, charFun_isPositiveDefinite_of_star_eq_neg hstar⟩
   by_cases hμ : IsFiniteMeasure μ
-  · exact MeasureTheory.continuous_charFun
+  · -- dominated convergence, with the constant bound `1` for the kernel
+    simp_rw [funext charFun_apply]
+    refine continuous_of_dominated (bound := fun _ ↦ 1)
+      (fun t ↦ ?_) (fun t ↦ ?_) (integrable_const 1) (ae_of_all _ fun x ↦ ?_)
+    · exact (by fun_prop : Continuous fun x : E ↦
+        Complex.exp (inner ℝ x t * Complex.I)).aestronglyMeasurable
+    · exact ae_of_all _ fun x ↦ (Complex.norm_exp_ofReal_mul_I _).le
+    · fun_prop
   · rw [charFun_of_not_isFiniteMeasure hμ]
     exact continuous_zero
 
-end Normed
+end Seminormed
 
 end TauCeti

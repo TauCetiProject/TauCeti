@@ -140,6 +140,7 @@ theorem charFunDensity_of_not_integrable (h : ¬ Integrable (charFun μ))
 
 /-- The inversion density of a measure that is not finite vanishes, since its characteristic
 function does. -/
+@[simp]
 theorem charFunDensity_of_not_isFiniteMeasure (hμ : ¬ IsFiniteMeasure μ) : charFunDensity μ = 0 :=
   funext fun x ↦ by simp [charFunDensity_def, TauCeti.charFun_of_not_isFiniteMeasure hμ]
 
