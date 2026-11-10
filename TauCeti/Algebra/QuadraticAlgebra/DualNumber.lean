@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.DualNumber
 public import Mathlib.Algebra.QuadraticAlgebra.Basic
 public import Mathlib.RingTheory.Nilpotent.Defs
+public import TauCeti.Algebra.DualNumber.Basic
 import Mathlib.RingTheory.DualNumber
 
 /-!
@@ -30,24 +31,6 @@ reduced over a nontrivial ring, since the dual numbers are not. Whenever `b = 0`
 public section
 
 open DualNumber TrivSqZeroExt
-
-namespace DualNumber
-
-variable {R : Type*} [Semiring R] [Nontrivial R]
-
-/-- Over a nontrivial semiring, `ε` is nonzero. -/
-theorem eps_ne_zero : (ε : R[ε]) ≠ 0 := fun h ↦
-  one_ne_zero (α := R) (by simpa using congr(TrivSqZeroExt.snd $h))
-
-/-- Over a nontrivial semiring, the dual numbers are not reduced: `ε` is a nonzero nilpotent. -/
-theorem not_isReduced : ¬IsReduced R[ε] := fun _ ↦ eps_ne_zero (R := R) isNilpotent_eps.eq_zero
-
-/-- Over a nontrivial semiring, the dual numbers do not form a field. -/
-theorem not_isField : ¬IsField R[ε] := fun h ↦ by
-  have := h.isDomain
-  exact not_isReduced (R := R) inferInstance
-
-end DualNumber
 
 namespace QuadraticAlgebra
 

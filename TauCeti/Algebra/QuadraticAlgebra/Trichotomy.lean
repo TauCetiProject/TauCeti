@@ -21,9 +21,10 @@ one of three shapes, according as `X² - r` has two distinct roots, none, or a d
   `Fact (¬ IsSquare r)`);
 * if `r = 0`, then `A ≃ₐ[K] K[ε]` (`algEquivDualNumber`), which is not reduced.
 
-When `2 ≠ 0` these shapes are mutually exclusive and exhaustive (`trichotomy`), and this file
-characterizes each of them by a condition on `r`. The invariants separating them are being a
-field and being reduced.
+When `2 ≠ 0` these shapes are exhaustive (`trichotomy`), and this file characterizes each of
+them by a condition on `r` (`nonempty_algEquiv_prod_iff`, `isField_iff_not_isSquare` and
+`nonempty_algEquiv_dualNumber_iff`). Since these conditions are mutually exclusive, so are the
+shapes. The invariants separating them are being a field and being reduced.
 
 In characteristic two, if `r = u²` is a square then the change of generator `ω ↦ ω - u`
 exhibits `A` as the dual numbers, and `A` is never a product of two copies of `K`. Over a
