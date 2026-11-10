@@ -29,6 +29,8 @@ embedded primes.
 
 ## Main results
 
+* `Module.supportDim_eq_of_surjective`: restriction along a surjective scalar map preserves the
+  support dimension of a finite module.
 * `Module.exists_supportDim_eq_natCast`: a nonzero module over a ring of finite Krull dimension,
   such as a Noetherian local ring, has support of finite dimension.
 * `Module.supportDim_localizedModule_nonpos_iff`: `M_p` has zero-dimensional support exactly when
@@ -42,6 +44,23 @@ open IsLocalRing
 namespace Module
 
 variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M]
+
+/-- Restriction of scalars along a surjective ring homomorphism preserves the support dimension
+of a finite module: the quotients of the two scalar rings by the annihilator are isomorphic. -/
+theorem supportDim_eq_of_surjective {S : Type*} [CommRing S] [Algebra R S]
+    [Module S M] [IsScalarTower R S M] [Module.Finite S M]
+    (hsurj : Function.Surjective (algebraMap R S)) : supportDim R M = supportDim S M := by
+  have : Module.Finite R S := .of_surjective (Algebra.linearMap R S) hsurj
+  have : Module.Finite R M := .trans S M
+  let f : R →+* S ⧸ annihilator S M := (Ideal.Quotient.mk _).comp (algebraMap R S)
+  have hf : Function.Surjective f := Ideal.Quotient.mk_surjective.comp hsurj
+  have hker : RingHom.ker f = annihilator R M := by
+    ext r
+    simp only [RingHom.mem_ker, RingHom.comp_apply, Ideal.Quotient.eq_zero_iff_mem,
+      mem_annihilator, algebraMap_smul, f]
+  rw [supportDim_eq_ringKrullDim_quotient_annihilator R M,
+    supportDim_eq_ringKrullDim_quotient_annihilator S M, ← hker]
+  exact ringKrullDim_eq_of_ringEquiv (RingHom.quotientKerEquivOfSurjective hf)
 
 /-- The support of a nonzero module over a ring of finite Krull dimension, such as a Noetherian
 local ring, has finite dimension: it is neither `⊥` nor `⊤`. -/

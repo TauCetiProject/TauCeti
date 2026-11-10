@@ -140,21 +140,9 @@ theorem isCohenMacaulay_iff_isCohenMacaulay_of_surjective {M : Type w} [AddCommG
     [Module R M] [Module T M] [IsScalarTower R T M] [Module.Finite T M] [Small.{w} R]
     [Small.{w} T] (hsurj : Function.Surjective (algebraMap R T)) :
     IsCohenMacaulay R M ↔ IsCohenMacaulay T M := by
-  have : Module.Finite R T := .of_surjective (Algebra.linearMap R T) hsurj
-  have : Module.Finite R M := .trans T M
   have : IsNoetherianRing T := isNoetherianRing_of_surjective R T (algebraMap R T) hsurj
-  -- `R ⧸ Ann_R M ≅ T ⧸ Ann_T M`, since `Ann_R M` is the preimage of `Ann_T M`.
-  let f : R →+* T ⧸ annihilator T M := (Ideal.Quotient.mk _).comp (algebraMap R T)
-  have hf : Function.Surjective f := Ideal.Quotient.mk_surjective.comp hsurj
-  have hker : RingHom.ker f = annihilator R M := by
-    ext r
-    rw [RingHom.mem_ker, RingHom.comp_apply, Ideal.Quotient.eq_zero_iff_mem, mem_annihilator,
-      mem_annihilator]
-    simp only [algebraMap_smul]
   rw [isCohenMacaulay_iff, isCohenMacaulay_iff, depth_eq_depth_of_surjective hsurj,
-    supportDim_eq_ringKrullDim_quotient_annihilator R M,
-    supportDim_eq_ringKrullDim_quotient_annihilator T M, ← hker,
-    ringKrullDim_eq_of_ringEquiv (RingHom.quotientKerEquivOfSurjective hf)]
+    supportDim_eq_of_surjective hsurj]
 
 end Module
 
