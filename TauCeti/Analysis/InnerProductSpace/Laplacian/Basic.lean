@@ -267,10 +267,8 @@ theorem gradient_comp_linearIsometryEquiv_right (l : E ≃ₗᵢ[ℝ] E') (f : E
     ∇ (f ∘ l) x = l.symm (∇ f (l x)) := by
   refine ext_inner_right ℝ fun a => ?_
   rw [gradient, gradient, ← LinearIsometryEquiv.coe_toContinuousLinearEquiv l,
-    ContinuousLinearEquiv.comp_right_fderiv, toDual_symm_apply,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv, ← l.inner_map_map, l.apply_symm_apply,
-    toDual_symm_apply, ContinuousLinearMap.comp_apply]
-  rfl
+    ContinuousLinearEquiv.comp_right_fderiv]
+  simp [LinearIsometryEquiv.inner_map_eq_flip]
 
 /-- **Translation invariance of the Laplacian.** Shifting the argument by a constant `a`
 commutes with the Laplacian: `Δ (fun y ↦ f (y + a)) = fun y ↦ (Δ f) (y + a)`. No
