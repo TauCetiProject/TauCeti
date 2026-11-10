@@ -20,7 +20,7 @@ This is the starting point for constructing adjointable module operators.
 We reuse `LinearMap.IsAdjointPair` on the flipped forms `CStarModule.innerₛₗ.flip`:
 Mathlib's predicate expects forms linear in the first slot, whereas the module inner
 product is conjugate-linear there. Thus its defining equality is the star of the
-usual adjoint identity. `LinearMap.IsAdjointPair.inner_eq` recovers the usual identity.
+usual adjoint identity. `LinearMap.IsAdjointPair.inner_eq_cstarModule` recovers that identity.
 For right Hilbert A-modules, instantiate the coefficient type below with `Aᵐᵒᵖ`.
 No unit, fullness, countable generation, or nonzero-module hypothesis is needed.
 
@@ -44,7 +44,6 @@ variable {A E F : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModu
 
 /-- Adjoint pairs for the flipped forms are exactly adjoint pairs in the usual
 conjugate-linear-first inner-product convention. -/
-@[simp]
 theorem isAdjointPair_inner_iff :
     LinearMap.IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S ↔
@@ -68,79 +67,81 @@ variable {A E F : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModu
   {T : E → F} {S : F → E}
 
 /-- The usual adjoint identity, in the conjugate-linear-first convention. -/
-theorem inner_eq
+theorem inner_eq_cstarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) (x : E) (y : F) :
     inner A (T x) y = inner A x (S y) :=
   isAdjointPair_inner_iff.mp h x y
 
 /-- Interchanging a C⋆-module adjoint pair again gives an adjoint pair. -/
-theorem symm
+theorem symm_cstarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) :
     IsAdjointPair (innerₛₗ (A := A) (E := F)).flip
       (innerₛₗ (A := A) (E := E)).flip S T :=
-  fun y x => (h.inner_eq x y).symm
+  fun y x => (h.inner_eq_cstarModule x y).symm
 
 /-- The first member of a C⋆-module adjoint pair is uniquely determined by the second. -/
-theorem unique_left
+theorem unique_left_cstarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S)
     {T' : E → F}
     (h' : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T' S) : T = T' := by
   funext x
-  exact CStarModule.ext_inner_right fun y => (h.inner_eq x y).trans (h'.inner_eq x y).symm
+  exact CStarModule.ext_inner_right fun y =>
+    (h.inner_eq_cstarModule x y).trans (h'.inner_eq_cstarModule x y).symm
 
 /-- An everywhere-defined C⋆-module adjoint is unique, even as a plain function. -/
-theorem unique_right
+theorem unique_right_cstarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S)
     {S' : F → E}
     (h' : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S') : S = S' :=
-  h.symm.unique_left h'.symm
+  h.symm_cstarModule.unique_left_cstarModule h'.symm_cstarModule
 
 /-- An adjoint identity forces additivity; no additivity is assumed of either function. -/
-theorem map_add
+theorem map_add_of_cstarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) (x y : E) :
     T (x + y) = T x + T y := by
   apply CStarModule.ext_inner_right (A := A)
   intro z
-  simp [h.inner_eq]
+  simp [h.inner_eq_cstarModule]
 
 /-- An adjoint identity forces complex linearity. -/
-theorem map_smul
+theorem map_smul_of_cstarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) (c : ℂ) (x : E) :
     T (c • x) = c • T x := by
   apply CStarModule.ext_inner_right (A := A)
   intro y
-  simp [h.inner_eq]
+  simp [h.inner_eq_cstarModule]
 
 /-- An adjoint identity forces compatibility with the coefficient action. For a right
 module over B, use A = Bᵐᵒᵖ. -/
-theorem map_op_smul
+theorem map_smul_coeff_of_cstarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) (a : A) (x : E) :
     T (a • x) = a • T x := by
   apply CStarModule.ext_inner_right (A := A)
   intro y
-  simp [h.inner_eq]
+  simp [h.inner_eq_cstarModule]
 
 /-- Bundle the complex linearity forced by a C⋆-module adjoint identity. -/
-def toLinearMap
+def toLinearMapOfCStarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) : E →ₗ[ℂ] F where
   toFun := T
-  map_add' := h.map_add
-  map_smul' := h.map_smul
+  map_add' := h.map_add_of_cstarModule
+  map_smul' := h.map_smul_of_cstarModule
 
 @[simp]
-theorem toLinearMap_apply
+theorem toLinearMapOfCStarModule_apply
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
-      (innerₛₗ (A := A) (E := F)).flip T S) (x : E) : h.toLinearMap x = T x := (rfl)
+      (innerₛₗ (A := A) (E := F)).flip T S) (x : E) :
+    h.toLinearMapOfCStarModule x = T x := (rfl)
 
 end Algebraic
 
@@ -153,20 +154,21 @@ variable {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrdered
 
 /-- The graph of a function admitting an everywhere-defined C⋆-module adjoint is closed.
 Completeness is not needed for this assertion. -/
-theorem isClosed_graph
+theorem isClosed_graph_of_cstarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) :
-    IsClosed (h.toLinearMap.graph : Set (E × F)) := by
-  have heq : (h.toLinearMap.graph : Set (E × F)) =
+    IsClosed (h.toLinearMapOfCStarModule.graph : Set (E × F)) := by
+  have heq : (h.toLinearMapOfCStarModule.graph : Set (E × F)) =
       ⋂ y : F, {p | inner A p.2 y = inner A p.1 (S y)} := by
     ext p
-    simp only [SetLike.mem_coe, LinearMap.mem_graph_iff, toLinearMap_apply,
+    simp only [SetLike.mem_coe, LinearMap.mem_graph_iff, toLinearMapOfCStarModule_apply,
       Set.mem_iInter, Set.mem_ofPred_eq]
     constructor
     · intro hp y
-      rw [hp, h.inner_eq]
+      rw [hp, h.inner_eq_cstarModule]
     · intro hp
-      exact CStarModule.ext_inner_right fun y => (hp y).trans (h.inner_eq p.1 y).symm
+      exact CStarModule.ext_inner_right fun y =>
+        (hp y).trans (h.inner_eq_cstarModule p.1 y).symm
   rw [heq]
   exact isClosed_iInter fun y => isClosed_eq
     (CStarModule.continuous_inner.comp (continuous_snd.prodMk continuous_const))
@@ -174,38 +176,40 @@ theorem isClosed_graph
 
 variable [CompleteSpace E] [CompleteSpace F]
 
-/-- The closed graph theorem makes an everywhere-defined C⋆-module adjoint pair continuous. -/
-theorem continuous
+/-- The first function of an adjoint pair between complete C⋆-modules is continuous;
+apply to `h.symm_cstarModule` for the second. -/
+theorem continuous_of_cstarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) : Continuous T :=
-  h.toLinearMap.continuous_of_isClosed_graph h.isClosed_graph
+  h.toLinearMapOfCStarModule.continuous_of_isClosed_graph h.isClosed_graph_of_cstarModule
 
 /-- Bundle the bounded complex-linear map forced by the adjoint identity on complete modules. -/
-def toContinuousLinearMap
+def toContinuousLinearMapOfCStarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) : E →L[ℂ] F where
-  toLinearMap := h.toLinearMap
-  cont := h.continuous
+  toLinearMap := h.toLinearMapOfCStarModule
+  cont := h.continuous_of_cstarModule
 
 @[simp]
-theorem toContinuousLinearMap_apply
+theorem toContinuousLinearMapOfCStarModule_apply
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) (x : E) :
-    h.toContinuousLinearMap x = T x := (rfl)
+    h.toContinuousLinearMapOfCStarModule x = T x := (rfl)
 
 /-- Both functions in an adjoint pair on complete C⋆-modules are bounded complex-linear
 maps commuting with the coefficient action. In particular this applies to nonunital right
 Hilbert modules by taking the coefficient algebra to be an opposite algebra. -/
-theorem exists_continuousLinearMaps
+theorem exists_continuousLinearMaps_of_cstarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) :
     ∃ (T' : E →L[ℂ] F) (S' : F →L[ℂ] E),
       (∀ x, T' x = T x) ∧ (∀ y, S' y = S y) ∧
       (∀ (a : A) (x : E), T (a • x) = a • T x) ∧
       (∀ (a : A) (y : F), S (a • y) = a • S y) :=
-  ⟨h.toContinuousLinearMap, h.symm.toContinuousLinearMap,
-    h.toContinuousLinearMap_apply, h.symm.toContinuousLinearMap_apply,
-    h.map_op_smul, h.symm.map_op_smul⟩
+  ⟨h.toContinuousLinearMapOfCStarModule, h.symm_cstarModule.toContinuousLinearMapOfCStarModule,
+    h.toContinuousLinearMapOfCStarModule_apply,
+    h.symm_cstarModule.toContinuousLinearMapOfCStarModule_apply,
+    h.map_smul_coeff_of_cstarModule, h.symm_cstarModule.map_smul_coeff_of_cstarModule⟩
 
 end Analytic
 
