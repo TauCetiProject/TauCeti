@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 public import Mathlib.AlgebraicGeometry.EllipticCurve.VariableChange
+public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RingTheory.Henselian
 import Mathlib.Tactic.ComputeDegree
 -- Proof-only: finite-field norms supply points on the residue conic.
@@ -299,7 +300,9 @@ theorem exists_equation_mem_maximalIdeal_of_tangentQuadratic_no_roots {R : Type*
       (by
         rw [map_zero, Affine.nonsingular_zero]
         refine ⟨by simpa using h0 h₆, ?_⟩
-        simpa [residue_eq_zero_iff, not_and_or] using hmem)
+        rcases not_and_or.1 hmem with h | h
+        · exact Or.inl fun h' ↦ h ((residue_eq_zero_iff _).1 (by simpa using h'))
+        · exact Or.inr fun h' ↦ h ((residue_eq_zero_iff _).1 (by simpa using h')))
     exact ⟨x, y, (residue_eq_zero_iff _).1 (by rwa [map_zero] at hx),
       (residue_eq_zero_iff _).1 (by rwa [map_zero] at hy), hxy.1⟩
   obtain ⟨h₃, h₄⟩ := hmem
