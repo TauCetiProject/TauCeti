@@ -13,6 +13,7 @@ import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
+import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
 # Regularity of differential forms in charts
@@ -413,6 +414,23 @@ theorem contMDiffAt_mpullback_extChartAt {n : WithTop ℕ∞} [IsManifold I 1 M]
   exact contMDiffAt_form_of_contDiffWithinAt_inChartAt hx (hη.congr_of_eventuallyEq heq
     (heq.self_of_nhdsWithin (extChartAt_target_subset_range α ((extChartAt I α).map_source hx))))
 
+/-- A `C^r` form `α` on an open set `s` intersected with the model range, pulled back along the
+chart at `x` and cut off by a `C^r` function supported where the chart lands in `s`, is a `C^r`
+form on all of `M`. -/
+theorem isSmoothForm_smul_mpullback_extChartAt {r : WithTop ℕ∞} [IsManifold I 1 M]
+    [IsManifold I (r + 1) M] {x : M} {s : Set E} (hs : IsOpen s)
+    {α : E → E [⋀^Fin k]→L[ℝ] F} (hα : ContDiffOn ℝ r α (s ∩ range I)) {χ : M → ℝ}
+    (hχ : ContMDiff I 𝓘(ℝ) r χ)
+    (hχs : tsupport χ ⊆ (chartAt H x).source ∩ extChartAt I x ⁻¹' s) :
+    IsSmoothForm I r
+      (fun y ↦ χ y • mpullback I 𝓘(ℝ, E) (extChartAt I x) (α : RoughForm 𝓘(ℝ, E) E F k) y) := by
+  rw [isSmoothForm_def]
+  refine hχ.contMDiffOn.smul_section_of_tsupport (isOpen_extChartAt_preimage x hs) hχs
+    fun y hy ↦ ContMDiffAt.contMDiffWithinAt ?_
+  obtain ⟨hys, hyr⟩ := mem_extChartAt_source_and_mem_of_mem_preimage hy
+  exact contMDiffAt_mpullback_extChartAt hys ((hα _ hyr).mono_of_mem_nhdsWithin
+    (inter_mem (mem_nhdsWithin_of_mem_nhds (hs.mem_nhds hyr.1)) self_mem_nhdsWithin))
+
 /-- Regularity of the coordinate expression in each point's own preferred chart implies
 regularity of the differential-form section. -/
 theorem IsSmoothForm.of_contDiffWithinAt_inChartAt_self [IsManifold I 1 M]
@@ -574,6 +592,12 @@ function. -/
 theorem ofFunction_apply_zero [IsManifold I 1 M] (f : C^∞⟮I, M; 𝓘(ℝ, F), F⟯) :
     (fun y ↦ (ofFunction f).1 y 0) = f :=
   funext fun y ↦ by rw [coe_ofFunction, RoughForm.ofFunction_apply]
+
+/-- The exterior derivative of a smooth form is a smooth section. -/
+theorem contMDiff_mextDeriv [IsManifold I 2 M] (φ : SmoothForm I M F k) :
+    ContMDiff I (I.prod 𝓘(ℝ, E [⋀^Fin (k + 1)]→L[ℝ] F)) ∞
+      (fun x ↦ TotalSpace.mk' (E [⋀^Fin (k + 1)]→L[ℝ] F) x (mextDeriv φ.1 x)) :=
+  (mextDerivₗ I k φ).contMDiff
 
 /-- The exterior derivative commutes with transport across an equality of degrees. -/
 theorem mextDerivₗ_cast [IsManifold I 2 M]
