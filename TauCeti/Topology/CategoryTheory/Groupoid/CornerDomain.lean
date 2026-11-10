@@ -23,7 +23,8 @@ with a single label. The faces of two label sets intersect in the face of their 
 (`TauCeti.cornerFace_union`), the face of no labels is the whole domain, and the points of the
 domain off the boundary are those where every `ρ i` is positive.
 
-When every `ρ i` is arrow-invariant, these properties are closed under isomorphisms
+When every `ρ i` is invariant under isomorphisms (in a groupoid, under every arrow), these
+properties are closed under isomorphisms
 (`TauCeti.isClosedUnderIsomorphisms_cornerDomain` and its face and boundary versions). When
 every `ρ i` is continuous, they cut out closed sets of objects; for the boundary this needs
 finitely many labels. The full restriction of a topological groupoid to such a closed saturated
@@ -111,8 +112,8 @@ theorem cornerFace_empty : cornerFace ρ ∅ = cornerDomain ρ := by
   ext x
   simp
 
-/-- **Neat face intersections.** The face of a union of label sets is the intersection of
-their faces. -/
+/-- **Intersection of labelled faces.** The face of a union of label sets is the intersection
+of their faces. -/
 theorem cornerFace_union (s t : Set ι) :
     cornerFace ρ (s ∪ t) = cornerFace ρ s ⊓ cornerFace ρ t := by
   ext x
@@ -166,23 +167,25 @@ section Saturation
 
 variable {C : Type*} [Category C] {ι : Type*} {ρ : ι → C → ℝ}
 
-/-- For arrow-invariant defining functions, the corner domain is closed under isomorphisms. -/
+/-- For isomorphism-invariant defining functions, the corner domain is closed under
+isomorphisms. -/
 theorem isClosedUnderIsomorphisms_cornerDomain
-    (hρ : ∀ i ⦃x y : C⦄, (x ⟶ y) → ρ i x = ρ i y) :
+    (hρ : ∀ i ⦃x y : C⦄, (x ≅ y) → ρ i x = ρ i y) :
     (cornerDomain ρ).IsClosedUnderIsomorphisms where
-  of_iso e hx i := hρ i e.hom ▸ hx i
+  of_iso e hx i := hρ i e ▸ hx i
 
-/-- For arrow-invariant defining functions, every labelled face is closed under isomorphisms. -/
+/-- For isomorphism-invariant defining functions, every labelled face is closed under
+isomorphisms. -/
 theorem isClosedUnderIsomorphisms_cornerFace
-    (hρ : ∀ i ⦃x y : C⦄, (x ⟶ y) → ρ i x = ρ i y) (s : Set ι) :
+    (hρ : ∀ i ⦃x y : C⦄, (x ≅ y) → ρ i x = ρ i y) (s : Set ι) :
     (cornerFace ρ s).IsClosedUnderIsomorphisms where
-  of_iso e hx := ⟨fun i ↦ hρ i e.hom ▸ hx.1 i, fun i hi ↦ hρ i e.hom ▸ hx.2 i hi⟩
+  of_iso e hx := ⟨fun i ↦ hρ i e ▸ hx.1 i, fun i hi ↦ hρ i e ▸ hx.2 i hi⟩
 
-/-- For arrow-invariant defining functions, the boundary is closed under isomorphisms. -/
+/-- For isomorphism-invariant defining functions, the boundary is closed under isomorphisms. -/
 theorem isClosedUnderIsomorphisms_cornerBoundary
-    (hρ : ∀ i ⦃x y : C⦄, (x ⟶ y) → ρ i x = ρ i y) :
+    (hρ : ∀ i ⦃x y : C⦄, (x ≅ y) → ρ i x = ρ i y) :
     (cornerBoundary ρ).IsClosedUnderIsomorphisms where
-  of_iso e hx := ⟨fun i ↦ hρ i e.hom ▸ hx.1 i, hx.2.imp fun i hi ↦ hρ i e.hom ▸ hi⟩
+  of_iso e hx := ⟨fun i ↦ hρ i e ▸ hx.1 i, hx.2.imp fun i hi ↦ hρ i e ▸ hi⟩
 
 end Saturation
 

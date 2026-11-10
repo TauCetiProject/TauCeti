@@ -28,9 +28,9 @@ The closed statement identifies the fat classifying space of a closed saturated 
 as a closed union of faces, as a closed subspace. It supplies no neighbourhood-deformation data
 for that pair.
 
-The realization argument uses the augmented open-subspace theorem in
+The realization arguments use the augmented open-subspace and closed-subspace theorems in
 `TauCeti.AlgebraicTopology.FatRealization`, as in the action-groupoid specialization
-`TauCeti.Topology.CategoryTheory.ActionGroupoid.Restrict`.
+`TauCeti.Topology.CategoryTheory.ActionGroupoid.Restrict` of the open case.
 
 ## References
 
@@ -110,7 +110,8 @@ theorem isClosedEmbedding_fatClassifyingSpaceMap_ι (hP : IsClosed {x | P x}) :
   · exact P.range_topologicalNerveMap_ι hs
 
 /-- The preimage of a saturated coarse subset is the image of the fat classifying space
-of its full restriction. Openness is needed for the subspace comparison, not this equality. -/
+of its full restriction. This equality needs neither openness nor closedness; either one
+supplies the corresponding subspace comparison. -/
 theorem preimage_coarseMap_eq_range_fatClassifyingSpaceMap_ι :
     TauCeti.fatClassifyingSpace.coarseMap hs ⁻¹'
         (Quotient.mk (isIsomorphicSetoid C) '' {x | P x}) =
