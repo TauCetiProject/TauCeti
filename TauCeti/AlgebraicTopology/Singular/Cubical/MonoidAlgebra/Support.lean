@@ -14,7 +14,7 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.Relative
 
 For a subset `S` of a space `Y`, the chains of `Y` **supported in `S`** are the image of the
 push-forward `C^□_*(S; R) → C^□_*(Y; R)` along the inclusion
-(`TauCeti.cubicalChainModuleSupport`). Since normalized cubical chains of a subspace inject into
+(`TauCeti.cubicalChainModuleSupportedIn`). Since normalized cubical chains of a subspace inject into
 those of the ambient space, these are the chains `C^□_*(S; R)` seen inside `C^□_*(Y; R)`, the first
 term of the short exact sequence of the pair `(Y, S)`. In each dimension `n` they are the chains
 `TauCeti.NormalizedCubicalChain.supportedIn R S n`.
@@ -31,8 +31,8 @@ This file records how this submodule of the module `TauCeti.cubicalChainModule Y
 
 When a topological monoid `G` acts on `Y` from the left and `S` is invariant, the chains
 supported in `S` are also stable under the left action of the chains of `G`
-(`TauCeti.cubicalChainModuleLeftSupport`): the action of a cube of `G` on a cube in `S` is a cube
-in `S`. So they form a differential graded left submodule over the Pontryagin algebra of `G`.
+(`TauCeti.cubicalChainModuleLeftSupportedIn`): the action of a cube of `G` on a cube in `S` is a
+cube in `S`. So they form a differential graded left submodule over the Pontryagin algebra of `G`.
 
 The basic example is the based path space `P_b B` of a CW complex `B`, filtered by the preimages
 of the skeleta under the endpoint map: these preimages are invariant under the loops at `b`
@@ -42,28 +42,28 @@ built one cell at a time.
 
 ## Main definitions
 
-* `TauCeti.cubicalChainModuleSupport H R S`: the chains of `Y` supported in `S`, as a submodule
+* `TauCeti.cubicalChainModuleSupportedIn H R S`: the chains of `Y` supported in `S`, as a submodule
   over the ground ring.
-* `TauCeti.cubicalChainModuleLeftSupport H R hS`: the same chains, as a submodule over the chains
-  of a monoid `G` for which `S` is invariant.
+* `TauCeti.cubicalChainModuleLeftSupportedIn H R hS`: the same chains, as a submodule over the
+  chains of a monoid `G` for which `S` is invariant.
 
 ## Main results
 
-* `TauCeti.cubicalChainModuleLof_mem_cubicalChainModuleSupport_iff`: a chain of dimension `n` is
+* `TauCeti.cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff`: a chain of dimension `n` is
   supported in `S` exactly when it lies in `TauCeti.NormalizedCubicalChain.supportedIn R S n`.
-* `TauCeti.cubicalChainModuleLof_ofCube_mem_cubicalChainModuleSupport`: a cube with image in `S` is
-  supported in `S`.
-* `TauCeti.cubicalChainModuleSupport_eq_span`: the supported chains are spanned by these cubes.
-* `TauCeti.cubicalChainModuleDifferential_mem_cubicalChainModuleSupport`: the differential
+* `TauCeti.cubicalChainModuleLof_ofCube_mem_cubicalChainModuleSupportedIn`: a cube with image in
+  `S` is supported in `S`.
+* `TauCeti.cubicalChainModuleSupportedIn_eq_span`: the supported chains are spanned by these cubes.
+* `TauCeti.cubicalChainModuleDifferential_mem_cubicalChainModuleSupportedIn`: the differential
   preserves support.
-* `TauCeti.isHomogeneous_cubicalChainModuleSupport`: the supported chains form a homogeneous
+* `TauCeti.isHomogeneous_cubicalChainModuleSupportedIn`: the supported chains form a homogeneous
   submodule.
-* `TauCeti.cubicalChainModuleLinearMap_mem_cubicalChainModuleSupport`: push-forward along a map
+* `TauCeti.cubicalChainModuleLinearMap_mem_cubicalChainModuleSupportedIn`: push-forward along a map
   sending `S` into `S'` preserves support.
-* `TauCeti.iSup_cubicalChainModuleSupport_eq_top`: subsets absorbing every compact set support all
-  chains.
+* `TauCeti.iSup_cubicalChainModuleSupportedIn_eq_top`: subsets absorbing every compact set support
+  all chains.
 * `TauCeti.NormalizedCubicalChain.leftAct_mem_supportedIn`,
-  `TauCeti.smul_mem_cubicalChainModuleSupport`: the chains supported in an invariant subset are
+  `TauCeti.smul_mem_cubicalChainModuleSupportedIn`: the chains supported in an invariant subset are
   stable under the left action of the chains of `G`.
 
 ## References
@@ -92,65 +92,53 @@ variable {Y Y' : Type u} [TopologicalSpace Y] [TopologicalSpace Y'] {H : Type*} 
 variable (H) in
 /-- The chains of `Y` **supported in a subset `S`**: the image of the push-forward of the chains of
 the subspace `S` along its inclusion. -/
-def cubicalChainModuleSupport (S : Set Y) : Submodule R (cubicalChainModule Y H R) :=
+def cubicalChainModuleSupportedIn (S : Set Y) : Submodule R (cubicalChainModule Y H R) :=
   LinearMap.range
     (cubicalChainModuleLinearMap (G := H) R (ContinuousMap.subtypeVal S))
 
 variable {R}
 
 /-- Membership in the supported chains: being the push-forward of a chain of the subspace. -/
-theorem mem_cubicalChainModuleSupport_iff {S : Set Y} {x : cubicalChainModule Y H R} :
-    x ∈ cubicalChainModuleSupport H R S ↔
+theorem mem_cubicalChainModuleSupportedIn_iff {S : Set Y} {x : cubicalChainModule Y H R} :
+    x ∈ cubicalChainModuleSupportedIn H R S ↔
       ∃ y : cubicalChainModule S H R,
         cubicalChainModuleLinearMap R (ContinuousMap.subtypeVal S) y = x :=
   Iff.rfl
 
 /-- A homogeneous chain supported in `S` in its own dimension is supported in `S`. -/
-theorem cubicalChainModuleLof_mem_cubicalChainModuleSupport {S : Set Y} {n : ℕ}
+theorem cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn {S : Set Y} {n : ℕ}
     {c : NormalizedCubicalChain Y R n} (hc : c ∈ supportedIn R S n) :
-    cubicalChainModuleLof Y H R n c ∈ cubicalChainModuleSupport H R S := by
+    cubicalChainModuleLof Y H R n c ∈ cubicalChainModuleSupportedIn H R S := by
   rw [supportedIn_def] at hc
   obtain ⟨c, rfl⟩ := hc
   exact ⟨cubicalChainModuleLof S H R n c, cubicalChainModuleLinearMap_lof _ c⟩
 
 /-- A chain of dimension `n` is supported in `S` exactly when it is supported in `S` as a chain of
 dimension `n`. -/
-theorem cubicalChainModuleLof_mem_cubicalChainModuleSupport_iff {S : Set Y} {n : ℕ}
+theorem cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff {S : Set Y} {n : ℕ}
     {c : NormalizedCubicalChain Y R n} :
-    cubicalChainModuleLof Y H R n c ∈ cubicalChainModuleSupport H R S ↔ c ∈ supportedIn R S n := by
-  refine ⟨fun ⟨y, hy⟩ ↦ ?_, cubicalChainModuleLof_mem_cubicalChainModuleSupport⟩
-  -- The dimension `n` component of a push-forward is the push-forward of the component.
-  have key : ∀ y : cubicalChainModule S H R, cubicalChainModuleEquiv Y H R
-      (cubicalChainModuleLinearMap R (ContinuousMap.subtypeVal S) y) n =
-        map R (ContinuousMap.subtypeVal S) n (cubicalChainModuleEquiv S H R y n) := by
-    intro y
-    induction y using cubicalChainModule.induction_on with
-    | zero => simp
-    | add y y' hy hy' => simp only [map_add, DirectSum.add_apply, hy, hy']
-    | lof m d =>
-      rw [cubicalChainModuleLinearMap_lof, cubicalChainModuleEquiv_lof, cubicalChainModuleEquiv_lof]
-      by_cases hm : m = n
-      · subst hm
-        simp [cubicalChainLof, DirectSum.lof_eq_of]
-      · simp [cubicalChainLof, DirectSum.lof_eq_of, DirectSum.of_eq_of_ne _ _ _ (Ne.symm hm)]
+    cubicalChainModuleLof Y H R n c ∈ cubicalChainModuleSupportedIn H R S ↔
+      c ∈ supportedIn R S n := by
+  refine ⟨fun ⟨y, hy⟩ ↦ ?_, cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn⟩
   rw [supportedIn_def]
   refine ⟨cubicalChainModuleEquiv S H R y n, ?_⟩
-  rw [← key, hy, cubicalChainModuleEquiv_lof]
+  rw [← cubicalChainSumMap_apply, ← cubicalChainModuleEquiv_linearMap, hy,
+    cubicalChainModuleEquiv_lof]
   simp [cubicalChainLof, DirectSum.lof_eq_of]
 
 /-- The chain of a cube whose image lies in `S` is supported in `S`. -/
-theorem cubicalChainModuleLof_ofCube_mem_cubicalChainModuleSupport {S : Set Y} {n : ℕ}
+theorem cubicalChainModuleLof_ofCube_mem_cubicalChainModuleSupportedIn {S : Set Y} {n : ℕ}
     {c : SingularCube Y n} (hc : Set.range c ⊆ S) :
-    cubicalChainModuleLof Y H R n (ofCube Y R c) ∈ cubicalChainModuleSupport H R S :=
-  cubicalChainModuleLof_mem_cubicalChainModuleSupport <| (supportedIn_def R S n).symm ▸
+    cubicalChainModuleLof Y H R n (ofCube Y R c) ∈ cubicalChainModuleSupportedIn H R S :=
+  cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn <| (supportedIn_def R S n).symm ▸
     ofCube_mem_range_map R (f := ContinuousMap.subtypeVal S) Topology.IsInducing.subtypeVal
       fun _ hy ↦ ⟨⟨_, hc hy⟩, rfl⟩
 
 variable (H R) in
 /-- **The supported chains are spanned by cubes**: the chains supported in `S` are the span of the
 chains of the cubes with image in `S`. -/
-theorem cubicalChainModuleSupport_eq_span (S : Set Y) :
-    cubicalChainModuleSupport H R S = Submodule.span R
+theorem cubicalChainModuleSupportedIn_eq_span (S : Set Y) :
+    cubicalChainModuleSupportedIn H R S = Submodule.span R
       {x | ∃ (n : ℕ) (c : SingularCube Y n), Set.range c ⊆ S ∧
         cubicalChainModuleLof Y H R n (ofCube Y R c) = x} := by
   refine le_antisymm ?_ (Submodule.span_le.2 ?_)
@@ -168,34 +156,34 @@ theorem cubicalChainModuleSupport_eq_span (S : Set Y) :
         rw [map_ofCube]
         exact Submodule.subset_span ⟨n, _, by simp [Set.range_comp], rfl⟩
   · rintro _ ⟨n, c, hc, rfl⟩
-    exact cubicalChainModuleLof_ofCube_mem_cubicalChainModuleSupport hc
+    exact cubicalChainModuleLof_ofCube_mem_cubicalChainModuleSupportedIn hc
 
 /-- The supported chains increase with the subset. -/
-theorem cubicalChainModuleSupport_mono {S S' : Set Y} (h : S ⊆ S') :
-    cubicalChainModuleSupport H R S ≤ cubicalChainModuleSupport H R S' := by
-  rw [cubicalChainModuleSupport_eq_span, cubicalChainModuleSupport_eq_span]
+theorem cubicalChainModuleSupportedIn_mono {S S' : Set Y} (h : S ⊆ S') :
+    cubicalChainModuleSupportedIn H R S ≤ cubicalChainModuleSupportedIn H R S' := by
+  rw [cubicalChainModuleSupportedIn_eq_span, cubicalChainModuleSupportedIn_eq_span]
   exact Submodule.span_mono fun _ ⟨n, c, hc, hx⟩ ↦ ⟨n, c, hc.trans h, hx⟩
 
 /-- No nonzero chain is supported in the empty set. -/
 @[simp]
-theorem cubicalChainModuleSupport_empty :
-    cubicalChainModuleSupport H R (∅ : Set Y) = ⊥ := by
-  rw [cubicalChainModuleSupport_eq_span, Submodule.span_eq_bot]
+theorem cubicalChainModuleSupportedIn_empty :
+    cubicalChainModuleSupportedIn H R (∅ : Set Y) = ⊥ := by
+  rw [cubicalChainModuleSupportedIn_eq_span, Submodule.span_eq_bot]
   rintro _ ⟨n, c, hc, rfl⟩
   exact absurd (hc ⟨0, rfl⟩) (Set.notMem_empty _)
 
 /-- **The differential preserves support.** -/
-theorem cubicalChainModuleDifferential_mem_cubicalChainModuleSupport {S : Set Y}
-    {x : cubicalChainModule Y H R} (hx : x ∈ cubicalChainModuleSupport H R S) :
-    cubicalChainModuleDifferential Y H R x ∈ cubicalChainModuleSupport H R S := by
+theorem cubicalChainModuleDifferential_mem_cubicalChainModuleSupportedIn {S : Set Y}
+    {x : cubicalChainModule Y H R} (hx : x ∈ cubicalChainModuleSupportedIn H R S) :
+    cubicalChainModuleDifferential Y H R x ∈ cubicalChainModuleSupportedIn H R S := by
   obtain ⟨y, rfl⟩ := hx
   exact ⟨cubicalChainModuleDifferential S H R y,
     (cubicalChainModuleDifferential_linearMap _ y).symm⟩
 
 /-- **The supported chains form a homogeneous submodule**: every homogeneous component of a chain
 supported in `S` is supported in `S`. -/
-theorem isHomogeneous_cubicalChainModuleSupport (S : Set Y) :
-    (cubicalChainModuleSupport H R S).IsHomogeneous (cubicalChainModuleGrading Y H R) := by
+theorem isHomogeneous_cubicalChainModuleSupportedIn (S : Set Y) :
+    (cubicalChainModuleSupportedIn H R S).IsHomogeneous (cubicalChainModuleGrading Y H R) := by
   intro i x hx
   obtain ⟨y, rfl⟩ := hx
   induction y using cubicalChainModule.induction_on with
@@ -208,17 +196,17 @@ theorem isHomogeneous_cubicalChainModuleSupport (S : Set Y) :
     by_cases hi : i = -(n : ℤ)
     · subst hi
       rw [DirectSum.decompose_of_mem_same _ (cubicalChainModuleLof_mem _)]
-      exact cubicalChainModuleLof_mem_cubicalChainModuleSupport <|
+      exact cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn <|
         (supportedIn_def R S n).symm ▸ LinearMap.mem_range_self _ c
     · rw [DirectSum.decompose_of_mem_ne _ (cubicalChainModuleLof_mem _) (Ne.symm hi)]
       exact zero_mem _
 
 /-- **Push-forward preserves support**: a map sending `S` into `S'` sends the chains supported in
 `S` to chains supported in `S'`. -/
-theorem cubicalChainModuleLinearMap_mem_cubicalChainModuleSupport {f : C(Y, Y')} {S : Set Y}
+theorem cubicalChainModuleLinearMap_mem_cubicalChainModuleSupportedIn {f : C(Y, Y')} {S : Set Y}
     {S' : Set Y'} (hf : Set.MapsTo f S S') {x : cubicalChainModule Y H R}
-    (hx : x ∈ cubicalChainModuleSupport H R S) :
-    cubicalChainModuleLinearMap R f x ∈ cubicalChainModuleSupport H R S' := by
+    (hx : x ∈ cubicalChainModuleSupportedIn H R S) :
+    cubicalChainModuleLinearMap R f x ∈ cubicalChainModuleSupportedIn H R S' := by
   obtain ⟨y, rfl⟩ := hx
   refine ⟨cubicalChainModuleLinearMap R ⟨hf.restrict, (map_continuous f).restrict hf⟩ y, ?_⟩
   rw [← LinearMap.comp_apply, ← cubicalChainModuleLinearMap_comp, ← LinearMap.comp_apply,
@@ -231,9 +219,9 @@ theorem cubicalChainModuleLinearMap_mem_cubicalChainModuleSupport {f : C(Y, Y')}
 /-- **Subsets absorbing compact sets support every chain**: if every compact subset of `Y` lies in
 some `S i`, then every chain of `Y` is a sum of chains supported in the `S i`. This holds since
 the image of a cube is compact. -/
-theorem iSup_cubicalChainModuleSupport_eq_top {ι : Sort*} {S : ι → Set Y}
+theorem iSup_cubicalChainModuleSupportedIn_eq_top {ι : Sort*} {S : ι → Set Y}
     (hS : ∀ K : Set Y, IsCompact K → ∃ i, K ⊆ S i) :
-    ⨆ i, cubicalChainModuleSupport H R (S i) = ⊤ := by
+    ⨆ i, cubicalChainModuleSupportedIn H R (S i) = ⊤ := by
   refine Submodule.eq_top_iff'.2 fun x ↦ ?_
   induction x using cubicalChainModule.induction_on with
   | zero => exact zero_mem _
@@ -246,13 +234,13 @@ theorem iSup_cubicalChainModuleSupport_eq_top {ι : Sort*} {S : ι → Set Y}
     | ofCube c =>
       obtain ⟨i, hi⟩ := hS _ (isCompact_range c.continuous)
       exact Submodule.mem_iSup_of_mem i
-        (cubicalChainModuleLof_ofCube_mem_cubicalChainModuleSupport hi)
+        (cubicalChainModuleLof_ofCube_mem_cubicalChainModuleSupportedIn hi)
 
 /-- Every chain is supported in the whole space. -/
 @[simp]
-theorem cubicalChainModuleSupport_univ :
-    cubicalChainModuleSupport H R (Set.univ : Set Y) = ⊤ := by
-  simpa using iSup_cubicalChainModuleSupport_eq_top (H := H) (R := R)
+theorem cubicalChainModuleSupportedIn_univ :
+    cubicalChainModuleSupportedIn H R (Set.univ : Set Y) = ⊤ := by
+  simpa using iSup_cubicalChainModuleSupportedIn_eq_top (H := H) (R := R)
     (S := fun _ : Unit ↦ (Set.univ : Set Y)) fun _ _ ↦ ⟨(), Set.subset_univ _⟩
 
 end Support
@@ -291,10 +279,10 @@ theorem NormalizedCubicalChain.leftAct_mem_supportedIn {S : Set Y}
 /-- **Chains supported in an invariant subset are stable under the left action**: if `S` is
 invariant under `G`, the action of a chain of `G` on a chain supported in `S` is supported in
 `S`. -/
-theorem smul_mem_cubicalChainModuleSupport {S : Set Y} (hS : ∀ (g : G), ∀ y ∈ S, g • y ∈ S)
+theorem smul_mem_cubicalChainModuleSupportedIn {S : Set Y} (hS : ∀ (g : G), ∀ y ∈ S, g • y ∈ S)
     (a : normalizedCubicalChainAlgebra G R) {x : cubicalChainModule Y H R}
-    (hx : x ∈ cubicalChainModuleSupport H R S) :
-    a • x ∈ cubicalChainModuleSupport H R S := by
+    (hx : x ∈ cubicalChainModuleSupportedIn H R S) :
+    a • x ∈ cubicalChainModuleSupportedIn H R S := by
   obtain ⟨y, rfl⟩ := hx
   induction y using cubicalChainModule.induction_on with
   | zero => simp
@@ -306,30 +294,31 @@ theorem smul_mem_cubicalChainModuleSupport {S : Set Y} (hS : ∀ (g : G), ∀ y 
     | add a a' ha ha' => rw [add_smul]; exact add_mem ha ha'
     | of p a =>
       rw [← DirectSum.lof_eq_of R, ← cubicalChainLof, lof_smul_cubicalChainModuleLof]
-      exact cubicalChainModuleLof_mem_cubicalChainModuleSupport
+      exact cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn
         (leftAct_mem_supportedIn hS a ((supportedIn_def R S q).symm ▸ LinearMap.mem_range_self _ c))
 
 variable (H R) in
 /-- The chains of `Y` supported in a `G`-invariant subset `S`, as a submodule over the chains of
-`G`. As a submodule over the ground ring it is `TauCeti.cubicalChainModuleSupport H R S`. -/
-def cubicalChainModuleLeftSupport {S : Set Y} (hS : ∀ (g : G), ∀ y ∈ S, g • y ∈ S) :
+`G`. As a submodule over the ground ring it is `TauCeti.cubicalChainModuleSupportedIn H R S`. -/
+def cubicalChainModuleLeftSupportedIn {S : Set Y} (hS : ∀ (g : G), ∀ y ∈ S, g • y ∈ S) :
     Submodule (normalizedCubicalChainAlgebra G R) (cubicalChainModule Y H R) where
-  __ := (cubicalChainModuleSupport H R S).toAddSubmonoid
-  smul_mem' a _ hx := smul_mem_cubicalChainModuleSupport hS a hx
+  __ := (cubicalChainModuleSupportedIn H R S).toAddSubmonoid
+  smul_mem' a _ hx := smul_mem_cubicalChainModuleSupportedIn hS a hx
 
 /-- Membership in the chains supported in an invariant subset, over the chains of `G`, is
 membership in the chains supported in that subset. -/
 @[simp]
-theorem mem_cubicalChainModuleLeftSupport {S : Set Y} (hS : ∀ (g : G), ∀ y ∈ S, g • y ∈ S)
+theorem mem_cubicalChainModuleLeftSupportedIn {S : Set Y} (hS : ∀ (g : G), ∀ y ∈ S, g • y ∈ S)
     {x : cubicalChainModule Y H R} :
-    x ∈ cubicalChainModuleLeftSupport H R hS ↔ x ∈ cubicalChainModuleSupport H R S :=
+    x ∈ cubicalChainModuleLeftSupportedIn H R hS ↔ x ∈ cubicalChainModuleSupportedIn H R S :=
   Iff.rfl
 
 /-- Over the ground ring, the chains supported in an invariant subset are the supported chains. -/
 @[simp]
-theorem restrictScalars_cubicalChainModuleLeftSupport {S : Set Y}
+theorem restrictScalars_cubicalChainModuleLeftSupportedIn {S : Set Y}
     (hS : ∀ (g : G), ∀ y ∈ S, g • y ∈ S) :
-    (cubicalChainModuleLeftSupport H R hS).restrictScalars R = cubicalChainModuleSupport H R S :=
+    (cubicalChainModuleLeftSupportedIn H R hS).restrictScalars R =
+      cubicalChainModuleSupportedIn H R S :=
   SetLike.coe_injective rfl
 
 end LeftAction

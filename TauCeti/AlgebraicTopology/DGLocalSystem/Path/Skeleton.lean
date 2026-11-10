@@ -92,7 +92,7 @@ in the preimage of the `q`-skeleton of `B` under the end point map, as a submodu
 algebra `C_*(Ω_b B; R)`. -/
 def pathFromChainSkeleton (q : ℤ) :
     Submodule (loopChainAlgebra B b R) (cubicalChainModule (MoorePathFrom B b) H R) :=
-  cubicalChainModuleLeftSupport H R (S := preimageSkeleton C (MoorePathFrom.endpoint B b) q)
+  cubicalChainModuleLeftSupportedIn H R (S := preimageSkeleton C (MoorePathFrom.endpoint B b) q)
     fun ω _ ↦ smul_mem_preimageSkeleton_endpoint ω
 
 /-- Membership in a stage of the skeletal filtration is support over the preimage of the
@@ -100,8 +100,8 @@ skeleton. -/
 @[simp]
 theorem mem_pathFromChainSkeleton {q : ℤ} {x : cubicalChainModule (MoorePathFrom B b) H R} :
     x ∈ pathFromChainSkeleton b C H R q ↔
-      x ∈ cubicalChainModuleSupport H R (preimageSkeleton C (MoorePathFrom.endpoint B b) q) :=
-  mem_cubicalChainModuleLeftSupport _
+      x ∈ cubicalChainModuleSupportedIn H R (preimageSkeleton C (MoorePathFrom.endpoint B b) q) :=
+  mem_cubicalChainModuleLeftSupportedIn _
 
 variable (b C H R) in
 /-- Over the ground ring, a stage of the skeletal filtration is the chains supported over the
@@ -109,8 +109,8 @@ preimage of the skeleton. -/
 @[simp]
 theorem restrictScalars_pathFromChainSkeleton (q : ℤ) :
     (pathFromChainSkeleton b C H R q).restrictScalars R =
-      cubicalChainModuleSupport H R (preimageSkeleton C (MoorePathFrom.endpoint B b) q) :=
-  restrictScalars_cubicalChainModuleLeftSupport _
+      cubicalChainModuleSupportedIn H R (preimageSkeleton C (MoorePathFrom.endpoint B b) q) :=
+  restrictScalars_cubicalChainModuleLeftSupportedIn _
 
 /-- The chain of a cube of paths whose end points lie in the `q`-skeleton lies in the `q`-th
 stage. -/
@@ -119,7 +119,8 @@ theorem cubicalChainModuleLof_ofCube_mem_pathFromChainSkeleton {q : ℤ} {n : �
     (hc : ∀ t, MoorePathFrom.endpoint B b (c t) ∈ skeletonLT C ((q + 1).toNat : ℕ∞)) :
     cubicalChainModuleLof (MoorePathFrom B b) H R n (NormalizedCubicalChain.ofCube _ R c) ∈
       pathFromChainSkeleton b C H R q :=
-  mem_pathFromChainSkeleton.2 <| cubicalChainModuleLof_ofCube_mem_cubicalChainModuleSupport <| by
+  mem_pathFromChainSkeleton.2 <|
+    cubicalChainModuleLof_ofCube_mem_cubicalChainModuleSupportedIn <| by
     rintro _ ⟨t, rfl⟩
     simpa using hc t
 
@@ -127,7 +128,7 @@ variable (b C H R) in
 /-- The stages of the skeletal filtration increase. -/
 theorem monotone_pathFromChainSkeleton : Monotone (pathFromChainSkeleton b C H R) :=
   fun _ _ h _ hx ↦ mem_pathFromChainSkeleton.2 <|
-    cubicalChainModuleSupport_mono (fun _ hy ↦ monotone_preimageSkeleton (C := C) _ h hy)
+    cubicalChainModuleSupportedIn_mono (fun _ hy ↦ monotone_preimageSkeleton (C := C) _ h hy)
       (mem_pathFromChainSkeleton.1 hx)
 
 variable (b C H R) in
@@ -136,20 +137,21 @@ theorem isHomogeneous_pathFromChainSkeleton (q : ℤ) :
     (pathFromChainSkeleton b C H R q).IsHomogeneous
       (cubicalChainModuleGrading (MoorePathFrom B b) H R) := fun i _ hx ↦
   mem_pathFromChainSkeleton.2 <|
-    isHomogeneous_cubicalChainModuleSupport _ i (mem_pathFromChainSkeleton.1 hx)
+    isHomogeneous_cubicalChainModuleSupportedIn _ i (mem_pathFromChainSkeleton.1 hx)
 
 /-- Each stage of the skeletal filtration is closed under the boundary. -/
 theorem cubicalChainModuleDifferential_mem_pathFromChainSkeleton {q : ℤ}
     {x : cubicalChainModule (MoorePathFrom B b) H R} (hx : x ∈ pathFromChainSkeleton b C H R q) :
     cubicalChainModuleDifferential (MoorePathFrom B b) H R x ∈ pathFromChainSkeleton b C H R q :=
   mem_pathFromChainSkeleton.2 <|
-    cubicalChainModuleDifferential_mem_cubicalChainModuleSupport (mem_pathFromChainSkeleton.1 hx)
+    cubicalChainModuleDifferential_mem_cubicalChainModuleSupportedIn
+      (mem_pathFromChainSkeleton.1 hx)
 
 /-- Below degree `0`, a stage of the skeletal filtration consists of the chains over the base. -/
 theorem mem_pathFromChainSkeleton_of_neg {q : ℤ} (hq : q < 0)
     {x : cubicalChainModule (MoorePathFrom B b) H R} :
     x ∈ pathFromChainSkeleton b C H R q ↔
-      x ∈ cubicalChainModuleSupport H R (MoorePathFrom.endpoint B b ⁻¹' D) := by
+      x ∈ cubicalChainModuleSupportedIn H R (MoorePathFrom.endpoint B b ⁻¹' D) := by
   rw [mem_pathFromChainSkeleton, preimageSkeleton_of_neg _ hq]
 
 /-- For an absolute CW complex, the skeletal filtration is zero below degree `0`. -/
@@ -158,7 +160,7 @@ theorem pathFromChainSkeleton_eq_bot_of_neg {C : Set B} [CWComplex C] {q : ℤ} 
     pathFromChainSkeleton b C H R q = ⊥ := by
   refine (Submodule.eq_bot_iff _).2 fun x hx ↦ ?_
   rwa [mem_pathFromChainSkeleton, preimageSkeleton_eq_empty _ hq,
-    cubicalChainModuleSupport_empty, Submodule.mem_bot] at hx
+    cubicalChainModuleSupportedIn_empty, Submodule.mem_bot] at hx
 
 variable (b H R) in
 /-- **The skeletal filtration is exhaustive**: if `B` is the whole complex, every chain on the
@@ -166,13 +168,13 @@ based path space lies in some stage. The end points of a compact set of paths fo
 subset of `B`, which lies in a finite skeleton. -/
 theorem iSup_pathFromChainSkeleton_eq_top (hC : ∀ x, x ∈ C) :
     ⨆ q, pathFromChainSkeleton b C H R q = ⊤ := by
-  have h : ⨆ q, cubicalChainModuleSupport H R
+  have h : ⨆ q, cubicalChainModuleSupportedIn H R
       (preimageSkeleton C (MoorePathFrom.endpoint B b) q) = ⊤ :=
-    iSup_cubicalChainModuleSupport_eq_top fun _ hK ↦
+    iSup_cubicalChainModuleSupportedIn_eq_top fun _ hK ↦
       exists_subset_preimageSkeleton_of_isCompact (MoorePathFrom.endpoint B b).continuous
         (range_subset_iff.2 fun _ ↦ hC _) hK
   refine eq_top_iff.2 fun x _ ↦ ?_
-  have hx : x ∈ ⨆ q, cubicalChainModuleSupport H R
+  have hx : x ∈ ⨆ q, cubicalChainModuleSupportedIn H R
       (preimageSkeleton C (MoorePathFrom.endpoint B b) q) := h ▸ Submodule.mem_top
   refine (iSup_le fun q ↦ ?_ : _ ≤ (⨆ q, pathFromChainSkeleton b C H R q).restrictScalars R) hx
   rw [← restrictScalars_pathFromChainSkeleton]
@@ -186,10 +188,10 @@ theorem cubicalChainModuleLinearMap_toMoorePathFrom_mem_pathFromChainSkeleton {E
     [TopologicalSpace E] {f : C(E, B)} {S : Set E} {q : ℤ}
     (hS : ∀ d ∈ S, f d ∈ skeletonLT C ((q + 1).toNat : ℕ∞))
     {x : cubicalChainModule (MoorePathPullback f b) H R}
-    (hx : x ∈ cubicalChainModuleSupport H R (MoorePathPullback.proj f b ⁻¹' S)) :
+    (hx : x ∈ cubicalChainModuleSupportedIn H R (MoorePathPullback.proj f b ⁻¹' S)) :
     cubicalChainModuleLinearMap R MoorePathPullback.toMoorePathFrom x ∈
       pathFromChainSkeleton b C H R q :=
-  mem_pathFromChainSkeleton.2 <| cubicalChainModuleLinearMap_mem_cubicalChainModuleSupport
+  mem_pathFromChainSkeleton.2 <| cubicalChainModuleLinearMap_mem_cubicalChainModuleSupportedIn
     (fun y hy ↦ by
       simpa only [mem_preimageSkeleton_iff, MoorePathPullback.endpoint_toMoorePathFrom,
         MoorePathPullback.proj_apply] using
