@@ -5,14 +5,14 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.Group.Submonoid.Degree
+public import TauCeti.Algebra.Group.Submonoid.PositiveDegree
 public import TauCeti.Algebra.PositiveDegrees.Map
 
 /-!
 # Positive degrees from finite generation
 
 A strictly positive integral functional on a finitely generated additive submonoid gives positive
-degree data: the finite cutoffs are supplied by `AddSubmonoid.FG.finite_setOf_degree_le`. Likewise,
+degree data: the finite cutoffs are supplied by `AddSubmonoid.FG.finite_degree_le`. Likewise,
 an additive map between finitely generated positive degree data which is nonzero on nonzero allowed
 degrees is a positive degree map with a linear cutoff modulus, by
 `AddSubmonoid.FG.exists_degree_le_mul`.
@@ -44,7 +44,7 @@ def ofFG {P : AddSubmonoid N} (hP : P.FG) (δ : N →+ ℤ)
   monoid := P
   degree := δ
   degree_pos := hδ
-  finite_le := hP.finite_setOf_degree_le δ (fun _ hn hn0 => hδ hn hn0)
+  finite_le := hP.finite_degree_le δ (fun _ hn hn0 => hδ hn hn0)
 
 /-- The finite-generation construction retains the given submonoid. -/
 @[simp]
