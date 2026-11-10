@@ -180,6 +180,17 @@ theorem isIsotropic_orbitTangent [IsLieAbelian 𝔤] (hc : σ.momentCocycle a μ
     (hσ.symplecticFormAt x).IsIsotropic (a.orbitTangent x) :=
   (h.isIsotropic_orbitTangent_iff hσ hc).2 (lieAnnihilator_eq_top ℝ 𝔤 _)
 
+/-- **The dimension bound for isotropic orbits.** At a point where the form is nondegenerate, the
+cocycle of a moment map vanishes and `μ(x)` is coadjoint-fixed, the orbit tangent space has at
+most half the dimension of `M`. -/
+theorem two_mul_finrank_orbitTangent_le [FiniteDimensional ℝ E]
+    (hσx : (σ.bilinFormAt x).Nondegenerate) (hc : σ.momentCocycle a μ x = 0)
+    (hμ : lieAnnihilator ℝ 𝔤 (μ x) = ⊤) : 2 * finrank ℝ (a.orbitTangent x) ≤ finrank ℝ E := by
+  have hle := Submodule.finrank_mono ((h.orbitTangent_le_ker_differential_iff hc).2 hμ)
+  have hsum := h.finrank_ker_differential_add_finrank_orbitTangent hσx
+  rw [finrank_tangentSpace] at hsum
+  omega
+
 /-- **The dimension bound for abelian actions.** If an abelian Lie algebra acts locally freely at
 `x` with a moment map whose cocycle vanishes there, and the form is nondegenerate at `x`, then
 `2 dim 𝔤 ≤ dim M`. -/
@@ -187,12 +198,8 @@ theorem two_mul_finrank_le [FiniteDimensional ℝ E] [IsLieAbelian 𝔤]
     (hσx : (σ.bilinFormAt x).Nondegenerate) (hc : σ.momentCocycle a μ x = 0)
     (hfree : a.isotropy x = ⊥) :
     2 * finrank ℝ 𝔤 ≤ finrank ℝ E := by
-  have hle := Submodule.finrank_mono
-    ((h.orbitTangent_le_ker_differential_iff hc).2 (lieAnnihilator_eq_top ℝ 𝔤 _))
-  have hsum := h.finrank_ker_differential_add_finrank_orbitTangent hσx
-  rw [a.finrank_orbitTangent_of_isotropy_eq_bot x hfree] at hle
-  rw [a.finrank_orbitTangent_of_isotropy_eq_bot x hfree, finrank_tangentSpace] at hsum
-  omega
+  rw [← a.finrank_orbitTangent_of_isotropy_eq_bot x hfree]
+  exact h.two_mul_finrank_orbitTangent_le hσx hc (lieAnnihilator_eq_top ℝ 𝔤 _)
 
 /-! ### Dimensions at a locally free point -/
 
@@ -232,17 +239,6 @@ theorem finrank_ker_differential_sub_finrank_inf_orthogonal [FiniteDimensional �
   omega
 
 /-! ### Isotropic orbits and Lagrangian levels -/
-
-/-- **The dimension bound for isotropic orbits.** At a point where the form is nondegenerate, the
-cocycle of a moment map vanishes and `μ(x)` is coadjoint-fixed, the orbit tangent space has at
-most half the dimension of `M`. -/
-theorem two_mul_finrank_orbitTangent_le [FiniteDimensional ℝ E]
-    (hσx : (σ.bilinFormAt x).Nondegenerate) (hc : σ.momentCocycle a μ x = 0)
-    (hμ : lieAnnihilator ℝ 𝔤 (μ x) = ⊤) : 2 * finrank ℝ (a.orbitTangent x) ≤ finrank ℝ E := by
-  have hle := Submodule.finrank_mono ((h.orbitTangent_le_ker_differential_iff hc).2 hμ)
-  have hsum := h.finrank_ker_differential_add_finrank_orbitTangent hσx
-  rw [finrank_tangentSpace] at hsum
-  omega
 
 /-- **The Lagrangian criterion for `ker dμ_x`.** For a nondegenerate form, if the action is locally
 free at a point where the cocycle of a moment map vanishes and `μ(x)` is coadjoint-fixed, then
