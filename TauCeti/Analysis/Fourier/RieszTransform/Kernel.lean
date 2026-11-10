@@ -77,6 +77,10 @@ def rieszConst : ℝ :=
   Real.Gamma ((finrank ℝ E + 1) / 2) / π ^ (((finrank ℝ E : ℝ) + 1) / 2)
 
 variable (E) in
+theorem rieszConst_def : rieszConst E =
+    Real.Gamma ((finrank ℝ E + 1) / 2) / π ^ (((finrank ℝ E : ℝ) + 1) / 2) := (rfl)
+
+variable (E) in
 theorem rieszConst_pos : 0 < rieszConst E :=
   div_pos (Real.Gamma_pos_of_pos (by positivity)) (by positivity)
 
@@ -317,7 +321,7 @@ private theorem integral_kernelProfile {z : E} (hz : z ≠ 0) :
     congr 1
     push_cast
     ring
-  rw [hz', rieszConst]
+  rw [hz', rieszConst_def]
   field_simp
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
