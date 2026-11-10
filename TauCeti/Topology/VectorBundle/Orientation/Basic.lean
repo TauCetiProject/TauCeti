@@ -474,11 +474,17 @@ omit [Fintype ι] [FiniteDimensional ℝ F] in
 by its value at any point. -/
 theorem eq_trivial [PreconnectedSpace B]
     (o : VectorBundleOrientation F (Bundle.Trivial B F) ι) (b : B) : o = trivial B (o b) := by
+  -- The fibre `Bundle.Trivial B F x` is `F` only by unfolding, so the type ascription retypes
+  -- the values `o x` as orientations of `F` in order to speak of local constancy.
   have hlc : IsLocallyConstant fun x ↦ show Orientation ℝ F ι from o x :=
     (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦
-      Filter.mem_of_superset ((isOpen_setOf_eq o (trivial B (o x))).mem_nhds rfl) fun y hy ↦ hy
+      Filter.mem_of_superset
+        ((isOpen_setOf_eq o (trivial B (o x))).mem_nhds (trivial_apply _ x).symm) fun y hy ↦ by
+          rw [mem_ofPred_eq, trivial_apply] at hy
+          exact hy
   ext x
-  exact hlc.apply_eq_of_isPreconnected isPreconnected_univ (mem_univ x) (mem_univ b)
+  exact (hlc.apply_eq_of_isPreconnected isPreconnected_univ (mem_univ x) (mem_univ b)).trans
+    (trivial_apply _ x).symm
 
 end VectorBundleOrientation
 
