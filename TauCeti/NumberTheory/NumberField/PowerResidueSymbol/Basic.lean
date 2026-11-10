@@ -37,6 +37,8 @@ object of the higher (cubic, quartic and Eisenstein) reciprocity laws.
   root of unity `ζ` of `𝓞 K`.
 * `Ideal.powerResidueSymbol_pow_div`: `((x / P)_n) ^ (n / d) = (x / P)_d` for `d ∣ n`.
 * `Ideal.orderOf_powerResidueSymbol`: the symbol has order `n`.
+* `Ideal.powerResidueSymbol_pow_eq_self`: the `q`-th power of the symbol is itself when
+  `n ∣ q - 1`.
 * `Ideal.powerResidueSymbol_intCast_eq_one`: `(m / P)_n = 1` for an integer `m` prime to the
   rational prime `q ∈ P` when `n (q - 1) ∣ N P - 1`.
 * `Ideal.map_powerResidueSymbol`: Galois equivariance, `σ ((α / P)_n) = (σ α / σ P)_n` for a ring
@@ -172,6 +174,17 @@ theorem orderOf_powerResidueSymbol (hP : (absNorm P).Coprime n) :
 @[simp]
 theorem powerResidueSymbol_one : powerResidueSymbol P 1 = 1 :=
   orderOf_eq_one_iff.mp (orderOf_powerResidueSymbol (Nat.coprime_one_right _))
+
+/-- The `q`-th power of the power residue symbol of `P` is itself when `q` is positive and `n`
+divides `q - 1`. No condition on `N P` is needed, as the symbol is trivial when `N P` is not prime
+to `n`. -/
+theorem powerResidueSymbol_pow_eq_self {q : ℕ} (hnq : n ∣ q - 1) (hq : 0 < q) :
+    powerResidueSymbol P n ^ q = powerResidueSymbol P n := by
+  by_cases hP : (absNorm P).Coprime n
+  · have h0 : powerResidueSymbol P n ^ n = 1 := by
+      simpa [orderOf_powerResidueSymbol hP] using pow_orderOf_eq_one (powerResidueSymbol P n)
+    simpa only [pow_one] using (pow_eq_pow_of_modEq ((Nat.modEq_iff_dvd' hq).2 hnq) h0).symm
+  · rw [powerResidueSymbol_of_not_coprime hP, one_pow]
 
 /-- **Rational integers at a prime of large residue degree.** Let `q` be a rational prime in `P`
 with `n (q - 1) ∣ N P - 1`. Then `(m / P)_n = 1` for every integer `m` prime to `q`, since

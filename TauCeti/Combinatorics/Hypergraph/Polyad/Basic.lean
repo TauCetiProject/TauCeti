@@ -417,6 +417,18 @@ theorem sum_card_inter_support [Fintype κ] (s : Finset {x : Fin 3 → V // Func
   ext x
   rw [mem_inter, mem_filter, mem_support_iff_eq_ofTriple, eq_comm]
 
+/-- Summing a function of the polyad of each injective triple over all injective triples gives
+the support-weighted sum of that function over the polyads. -/
+theorem sum_comp_ofTriple [Fintype κ] {M : Type*} [AddCommMonoid M] (φ : Polyad3 S → M) :
+    ∑ x, φ (ofTriple S x) = ∑ P : Polyad3 S, #P.support • φ P := by
+  classical
+  rw [← sum_fiberwise univ (ofTriple S)]
+  refine sum_congr rfl fun P _ ↦ ?_
+  rw [sum_congr rfl fun x hx ↦ by rw [(mem_filter.1 hx).2], sum_const]
+  congr 2
+  ext x
+  rw [mem_filter, mem_support_iff_eq_ofTriple, eq_comm, and_iff_right (mem_univ x)]
+
 end Polyad3
 
 end TauCeti

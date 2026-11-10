@@ -305,8 +305,7 @@ pulled-back datum `φ^*K` is the Jacobian determinant of `φ` times the curvatur
 The terms involving second derivatives of `φ` cancel by the symmetry of `d²φ`. -/
 theorem hamiltonianCurvature_perturbationPullback (ω : SymplecticForm V)
     (hφ : ContDiffAt ℝ 2 φ w) (hKs : DifferentiableAt ℝ (fun z ↦ Ks z x) (φ w))
-    (hKt : DifferentiableAt ℝ (fun z ↦ Kt z x) (φ w))
-    (hKs' : DifferentiableAt ℝ (Ks (φ w)) x) (hKt' : DifferentiableAt ℝ (Kt (φ w)) x) :
+    (hKt : DifferentiableAt ℝ (fun z ↦ Kt z x) (φ w)) :
     ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
         (perturbationPullback φ Ks Kt stdComplexLineImag) w x =
       (fderiv ℝ φ w).det * ω.hamiltonianCurvature Ks Kt (φ w) x := by
@@ -314,8 +313,12 @@ theorem hamiltonianCurvature_perturbationPullback (ω : SymplecticForm V)
   have hbracket : ω.poissonBracket (perturbationPullback φ Ks Kt stdComplexLineReal w)
       (perturbationPullback φ Ks Kt stdComplexLineImag w) x =
         (fderiv ℝ φ w).det * ω.poissonBracket (Ks (φ w)) (Kt (φ w)) x := by
-    simp only [poissonBracket_def, ω.hamiltonianVectorField_perturbationPullback hKs' hKt']
-    exact ω.apply_smul_add_smul_det (fderiv ℝ φ w : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) _ _
+    have h (v : ℝ × ℝ) : perturbationPullback φ Ks Kt v w = fun y ↦
+        (fderiv ℝ φ w v).1 * Ks (φ w) y + (fderiv ℝ φ w v).2 * Kt (φ w) y :=
+      funext (perturbationPullback_apply φ Ks Kt v w)
+    rw [h, h, ω.poissonBracket_comb]
+    simp [ContinuousLinearMap.det, LinearMap.det_finTwoProd, stdComplexLineReal_eq,
+      stdComplexLineImag_eq]
   have hderiv := fderiv_perturbationPullback_sub_fderiv_perturbationPullback hφ hKs hKt
   rw [hamiltonianCurvature_def, hamiltonianCurvature_def]
   linear_combination hderiv - hbracket
@@ -365,16 +368,14 @@ theorem integral_hamiltonianCurvature_image (ω : SymplecticForm V) (hs : Measur
     (hinj : InjOn φ s) (hφ : ∀ w ∈ s, ContDiffAt ℝ 2 φ w)
     (hdet : ∀ w ∈ s, 0 ≤ (fderiv ℝ φ w).det)
     (hKs : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Ks z (u (φ w))) (φ w))
-    (hKt : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Kt z (u (φ w))) (φ w))
-    (hKs' : ∀ w ∈ s, DifferentiableAt ℝ (Ks (φ w)) (u (φ w)))
-    (hKt' : ∀ w ∈ s, DifferentiableAt ℝ (Kt (φ w)) (u (φ w))) :
+    (hKt : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Kt z (u (φ w))) (φ w)) :
     ∫ z in φ '' s, ω.hamiltonianCurvature Ks Kt z (u z) =
       ∫ w in s, ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
         (perturbationPullback φ Ks Kt stdComplexLineImag) w (u (φ w)) :=
   integral_image_eq_integral_of_eq_abs_det_smul hs hinj
     (fun w hw ↦ (hφ w hw).differentiableAt (by norm_num)) fun w hw ↦ by
       rw [abs_of_nonneg (hdet w hw), smul_eq_mul, ω.hamiltonianCurvature_perturbationPullback
-        (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw) (hKt' w hw)]
+        (hφ w hw) (hKs w hw) (hKt w hw)]
 
 /-- **Invariance of the curvature allowance under changes of coordinates.** For a `C²` change of
 coordinates `φ` that is injective on a measurable set `s`, the integral of `|R_K(u)|` over
@@ -384,16 +385,14 @@ computed in any chart. -/
 theorem integral_abs_hamiltonianCurvature_image (ω : SymplecticForm V) (hs : MeasurableSet s)
     (hinj : InjOn φ s) (hφ : ∀ w ∈ s, ContDiffAt ℝ 2 φ w)
     (hKs : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Ks z (u (φ w))) (φ w))
-    (hKt : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Kt z (u (φ w))) (φ w))
-    (hKs' : ∀ w ∈ s, DifferentiableAt ℝ (Ks (φ w)) (u (φ w)))
-    (hKt' : ∀ w ∈ s, DifferentiableAt ℝ (Kt (φ w)) (u (φ w))) :
+    (hKt : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Kt z (u (φ w))) (φ w)) :
     ∫ z in φ '' s, |ω.hamiltonianCurvature Ks Kt z (u z)| =
       ∫ w in s, |ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
         (perturbationPullback φ Ks Kt stdComplexLineImag) w (u (φ w))| :=
   integral_image_eq_integral_of_eq_abs_det_smul hs hinj
     (fun w hw ↦ (hφ w hw).differentiableAt (by norm_num)) fun w hw ↦ by
-      rw [ω.hamiltonianCurvature_perturbationPullback (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw)
-        (hKt' w hw), abs_mul, smul_eq_mul]
+      rw [ω.hamiltonianCurvature_perturbationPullback (hφ w hw) (hKs w hw) (hKt w hw), abs_mul,
+        smul_eq_mul]
 
 /-- **Invariance of the curvature allowance as a lower integral.** For a `C²` change of
 coordinates `φ` that is injective on a measurable set `s`, the lower Lebesgue integral of
@@ -404,16 +403,13 @@ be computed in any chart. -/
 theorem lintegral_enorm_hamiltonianCurvature_image (ω : SymplecticForm V) (hs : MeasurableSet s)
     (hinj : InjOn φ s) (hφ : ∀ w ∈ s, ContDiffAt ℝ 2 φ w)
     (hKs : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Ks z (u (φ w))) (φ w))
-    (hKt : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Kt z (u (φ w))) (φ w))
-    (hKs' : ∀ w ∈ s, DifferentiableAt ℝ (Ks (φ w)) (u (φ w)))
-    (hKt' : ∀ w ∈ s, DifferentiableAt ℝ (Kt (φ w)) (u (φ w))) :
+    (hKt : ∀ w ∈ s, DifferentiableAt ℝ (fun z ↦ Kt z (u (φ w))) (φ w)) :
     ∫⁻ z in φ '' s, ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ =
       ∫⁻ w in s, ‖ω.hamiltonianCurvature (perturbationPullback φ Ks Kt stdComplexLineReal)
         (perturbationPullback φ Ks Kt stdComplexLineImag) w (u (φ w))‖ₑ :=
   lintegral_enorm_image_eq_lintegral_enorm_of_eq_det_smul hs hinj
     (fun w hw ↦ (hφ w hw).differentiableAt (by norm_num)) fun w hw ↦
-      ω.hamiltonianCurvature_perturbationPullback (hφ w hw) (hKs w hw) (hKt w hw) (hKs' w hw)
-        (hKt' w hw)
+      ω.hamiltonianCurvature_perturbationPullback (hφ w hw) (hKs w hw) (hKt w hw)
 
 end Integral
 
@@ -538,7 +534,7 @@ theorem integral_floerEnergyDensity_image_realChart_Icc_prod_Ico (ω : Symplecti
   have hmeas : MeasurableSet s := measurableSet_Icc.prod measurableSet_Ico
   have hφd (w : ℝ × ℝ) : DifferentiableAt ℝ φ w := hφ.differentiable (by norm_num) w
   have hdet (w : ℝ × ℝ) : 0 ≤ (fderiv ℝ φ w).det :=
-    TauCeti.Complex.det_fderiv_realChart_nonneg (hf.differentiable (by norm_num) _)
+    TauCeti.Complex.det_fderiv_realChart_nonneg (hf.differentiable (by norm_num) _).hasDerivAt
   have hud {w : ℝ × ℝ} (hw : w ∈ s) : DifferentiableAt ℝ u (φ w) :=
     (hu.differentiableOn one_ne_zero _ (hfΩ w hw.1)).differentiableAt (hΩ.mem_nhds (hfΩ w hw.1))
   have hPd {w : ℝ × ℝ} (hw : w ∈ s) (x : V) :

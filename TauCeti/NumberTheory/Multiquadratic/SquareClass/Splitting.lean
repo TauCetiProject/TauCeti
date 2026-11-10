@@ -106,7 +106,7 @@ theorem isArithFrobAt_multiquadratic_eq_one_iff_of_eq_mul_sq {d : ι → ℚ} {a
 generated over `ℚ` by square roots `r i` of rational numbers `d i = a i * c i ^ 2`, with
 `a i ∈ ℤ` and `c i ≠ 0`, and let `p` be an odd prime dividing none of the `a i`. Then `p` splits
 completely in `K` iff every `a i` is a quadratic residue mod `p`. -/
-theorem ncard_primesOver_multiquadratic_iff_of_eq_mul_sq [Finite ι] {d : ι → ℚ} {a : ι → ℤ}
+theorem ncard_primesOver_multiquadratic_iff_of_eq_mul_sq {d : ι → ℚ} {a : ι → ℤ}
     {c : ι → ℚ} (hc : ∀ i, c i ≠ 0) (hdec : ∀ i, d i = a i * c i ^ 2) (r : ι → K)
     (hr : ∀ i, r i ^ 2 = algebraMap ℚ K (d i))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (hodd : p ≠ 2)
@@ -123,7 +123,7 @@ theorem ncard_primesOver_multiquadratic_iff_of_eq_mul_sq [Finite ι] {d : ι →
 let `p` be an odd prime dividing neither the numerator nor the denominator of any `d i`. Then `p`
 splits completely in `K` iff every `num (d i) · den (d i)`, the integer in the square class of
 `d i`, is a quadratic residue mod `p`. -/
-theorem ncard_primesOver_multiquadratic_iff_num_mul_den [Finite ι] {d : ι → ℚ} (r : ι → K)
+theorem ncard_primesOver_multiquadratic_iff_num_mul_den {d : ι → ℚ} (r : ι → K)
     (hr : ∀ i, r i ^ 2 = algebraMap ℚ K (d i))
     (htop : IntermediateField.adjoin ℚ (Set.range r) = ⊤) (hodd : p ≠ 2)
     (hnum : ∀ i, ¬ (p : ℤ) ∣ (d i).num) (hden : ∀ i, ¬ p ∣ (d i).den) :

@@ -71,8 +71,11 @@ because both composites agree on the generator. -/
 theorem _root_.GroupExtension.exists_splitting_continuous_zHat_apply_gen_eq
     (hrh : Continuous S.rightHom) (e : E) (he : S.rightHom e = zHat.gen) :
     ∃ s : S.Splitting, Continuous ⇑s ∧ s zHat.gen = e := by
-  obtain ⟨s, hs, hsσ⟩ := S.exists_splitting_continuous_of_comp_eq_id hrh (zHat.lift e)
-    (zHat.hom_ext ((congrArg S.rightHom (zHat.lift_gen e)).trans he))
+  have hσ : (⟨S.rightHom, hrh⟩ : E →ₜ* zHat).comp (zHat.lift e) =
+      ContinuousMonoidHom.id _ :=
+    zHat.hom_ext ((congrArg S.rightHom (zHat.lift_gen e)).trans he)
+  obtain ⟨s, hs, hsσ⟩ := S.exists_splitting_continuous_of_comp_eq_id (zHat.lift e)
+    (congrArg ContinuousMonoidHom.toMonoidHom hσ)
   exact ⟨s, hs, (hsσ _).trans (zHat.lift_gen e)⟩
 
 end Splitting

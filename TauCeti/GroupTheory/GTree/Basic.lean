@@ -108,7 +108,7 @@ theorem smul_ne_rev (g : G) (e : T.E) : g • e ≠ T.rev e :=
 
 /-- Any two vertices of a `G`-tree are joined by a path. -/
 theorem nonempty_path (a b : T.V) : Nonempty (T.Path a b) :=
-  (preconnected_iff _).mp ((connected_iff _).mp (IsTree.connected _ T.isTree)).2 a b
+  T.isTree.nonempty_path a b
 
 instance : Nonempty T.V := ((connected_iff _).mp (IsTree.connected _ T.isTree)).1
 
