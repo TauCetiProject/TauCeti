@@ -58,8 +58,9 @@ averaging this height itself; the associated pairing and regulator use the same 
   defining sequence termwise.
 * `WeierstrassCurve.Affine.Point.canonicalHeight_eq_zero_iff_isOfFinAddOrder`: it vanishes exactly
   on the torsion points. The two directions are also available separately, because they need
-  different hypotheses: `canonicalHeight_eq_zero_of_isOfFinAddOrder` is quadraticity at a
-  vanishing multiple and needs no finiteness, while `isOfFinAddOrder_of_canonicalHeight_eq_zero`
+  different hypotheses: `canonicalHeight_eq_zero_of_isOfFinAddOrder` holds because the
+  multiples `2 ^ n • P` of a torsion point have bounded height, and needs neither ellipticity nor
+  Northcott finiteness, while `isOfFinAddOrder_of_canonicalHeight_eq_zero`
   assumes Northcott finiteness for the canonical height itself.
 * `WeierstrassCurve.Affine.Point.abs_canonicalHeight_sub_naiveHeight_le`: the canonical height stays
   within a bounded distance of the naïve one, by a
@@ -289,12 +290,26 @@ theorem Point.canonicalHeight_nsmul [W.toAffine.IsElliptic] (n : ℕ) (P : W.Poi
   ring
 
 /-- **A torsion point has canonical height zero.** Unlike the converse this needs no Northcott
-hypothesis, so it holds over every field carrying admissible absolute values. -/
-theorem Point.canonicalHeight_eq_zero_of_isOfFinAddOrder [W.toAffine.IsElliptic] {P : W.Point}
+hypothesis, and unlike the quadraticity of the height no ellipticity, so it holds over every field
+carrying admissible absolute values. -/
+theorem Point.canonicalHeight_eq_zero_of_isOfFinAddOrder {P : W.Point}
     (h : IsOfFinAddOrder P) : P.canonicalHeight = 0 := by
-  -- Quadraticity at `n = addOrderOf P`, where `n • P = 0` and `n ≠ 0`: `n² * canonicalHeight P`
-  -- vanishes, and `n² ≠ 0`.
-  simpa [h.addOrderOf_pos.ne'] using (Point.canonicalHeight_nsmul (addOrderOf P) P).symm
+  -- The multiples `2 ^ n • P` run through the finitely many multiples `k • P` with `k` below the
+  -- order of `P`, so their naïve heights are bounded and the defining sequence tends to `0`.
+  have hfin : (Set.range fun n : ℕ ↦ ((2 ^ n) • P).naiveHeight).Finite := by
+    refine (((Finset.range (addOrderOf P)).image fun k ↦ (k • P).naiveHeight).finite_toSet).subset
+      ?_
+    rintro _ ⟨n, rfl⟩
+    refine Finset.mem_coe.mpr (Finset.mem_image.mpr ⟨2 ^ n % addOrderOf P, ?_, ?_⟩)
+    · exact Finset.mem_range.mpr (Nat.mod_lt _ h.addOrderOf_pos)
+    · rw [mod_addOrderOf_nsmul]
+  obtain ⟨M, hM⟩ := hfin.bddAbove
+  have hlim : Tendsto (fun n : ℕ ↦ ((2 ^ n) • P).naiveHeight / 4 ^ n) atTop (𝓝 0) :=
+    tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+      (tendsto_const_nhds.div_atTop (tendsto_pow_atTop_atTop_of_one_lt (by norm_num : (1 : ℝ) < 4)))
+      (fun n ↦ div_nonneg (Point.naiveHeight_nonneg _) (by positivity))
+      fun n ↦ by gcongr; exact hM ⟨n, rfl⟩
+  exact hlim.limUnder_eq
 
 /-- **Northcott finiteness transfers from the naïve height to the canonical one.** This is what
 lets the results below assume Northcott for the canonical height itself while callers supply only
