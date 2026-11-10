@@ -34,6 +34,8 @@ charted space in its preferred charts and to check that it is well behaved.
 * `ChartedSpace.perfectSpace`: a charted space over a space without isolated points has no
   isolated points.
 * `ChartedSpace.nontrivial`: a nonempty such charted space has two distinct points.
+* `ChartedSpace.secondCountable_of_lindelof`: a Lindelöf charted space modelled on a second
+  countable space is second countable.
 -/
 
 public section
@@ -125,3 +127,12 @@ theorem ChartedSpace.nontrivial {H X : Type*} [TopologicalSpace H] [PerfectSpace
   obtain ⟨x⟩ := ‹Nonempty X›
   obtain ⟨y, hy⟩ := Filter.nonempty_of_mem (self_mem_nhdsWithin : {x}ᶜ ∈ 𝓝[≠] x)
   exact ⟨⟨y, x, hy⟩⟩
+
+/-- A Lindelöf charted space modelled on a second countable space is second countable:
+countably many chart sources cover it. This generalizes
+`ChartedSpace.secondCountable_of_sigmaCompact`. -/
+theorem ChartedSpace.secondCountable_of_lindelof (H X : Type*) [TopologicalSpace H]
+    [SecondCountableTopology H] [TopologicalSpace X] [ChartedSpace H X] [LindelofSpace X] :
+    SecondCountableTopology X := by
+  obtain ⟨s, hsc, hsU⟩ := countable_cover_nhds fun x : X ↦ chart_source_mem_nhds H x
+  exact ChartedSpace.secondCountable_of_countable_cover H hsU hsc
