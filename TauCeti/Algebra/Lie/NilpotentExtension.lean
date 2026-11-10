@@ -226,15 +226,11 @@ namespace TauCeti.LieAlgebra
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
-/-- The adjoint specialization of the nilpotent-extension lemma: if `y` is `ad`-nilpotent, then so
-is every element of `R ∙ y ⊔ nilradical R L`.  Nilpotent ideals are directed, so each element of
-the nilradical lies in one of them, and no Noetherian hypothesis is needed. -/
-theorem isNilpotent_ad_of_mem_span_singleton_sup_nilradical {y : L}
-    (hy : IsNilpotent (_root_.LieAlgebra.ad R L y)) {z : L}
-    (hz : z ∈ (R ∙ y) ⊔ LieSubmodule.toSubmodule (nilradical R L)) :
-    IsNilpotent (_root_.LieAlgebra.ad R L z) := by
-  obtain ⟨u, hu, n, hn, rfl⟩ := Submodule.mem_sup.mp hz
-  -- the nilpotent ideals are directed, so `n` already lies in a single nilpotent ideal `J`
+/-- **Every element of the nilradical lies in a nilpotent ideal.** Nilpotent ideals are directed,
+so the supremum defining the nilradical is attained on each element, with no Noetherian hypothesis
+on `L`. -/
+theorem exists_isNilpotent_ideal_of_mem_nilradical {n : L} (hn : n ∈ nilradical R L) :
+    ∃ J : LieIdeal R L, LieRing.IsNilpotent J ∧ n ∈ J := by
   let S : Set (Submodule R L) :=
     {s | ∃ I : LieIdeal R L, LieRing.IsNilpotent I ∧ LieSubmodule.toSubmodule I = s}
   have hn' : n ∈ sSup S := by
@@ -246,6 +242,18 @@ theorem isNilpotent_ad_of_mem_span_singleton_sup_nilradical {y : L}
       sup_le_iff.mp le_rfl⟩
   have hne : S.Nonempty := ⟨_, ⊥, LieIdeal.isNilpotentBot, rfl⟩
   obtain ⟨_, ⟨J, hJ, rfl⟩, hnJ⟩ := (Submodule.mem_sSup_of_directed hne hdir).mp hn'
+  exact ⟨J, hJ, hnJ⟩
+
+/-- The adjoint specialization of the nilpotent-extension lemma: if `y` is `ad`-nilpotent, then so
+is every element of `R ∙ y ⊔ nilradical R L`.  Each element of the nilradical lies in a nilpotent
+ideal (`TauCeti.LieAlgebra.exists_isNilpotent_ideal_of_mem_nilradical`), so no Noetherian
+hypothesis is needed. -/
+theorem isNilpotent_ad_of_mem_span_singleton_sup_nilradical {y : L}
+    (hy : IsNilpotent (_root_.LieAlgebra.ad R L y)) {z : L}
+    (hz : z ∈ (R ∙ y) ⊔ LieSubmodule.toSubmodule (nilradical R L)) :
+    IsNilpotent (_root_.LieAlgebra.ad R L z) := by
+  obtain ⟨u, hu, n, hn, rfl⟩ := Submodule.mem_sup.mp hz
+  obtain ⟨J, hJ, hnJ⟩ := exists_isNilpotent_ideal_of_mem_nilradical hn
   have hyN : y ∈ (J : LieSubalgebra R L).normalizer := by
     rw [J.normalizer_eq_top]
     exact LieSubalgebra.mem_top y
@@ -256,10 +264,10 @@ theorem isNilpotent_ad_of_mem_span_singleton_sup_nilradical {y : L}
 
 /-- The `t • y + n` reading of `isNilpotent_ad_of_mem_span_singleton_sup_nilradical`: if `y` is
 `ad`-nilpotent, then so is `t • y + n` for every `n` in the nilradical. -/
-theorem isNilpotent_ad_smul_add_of_mem_nilradical [IsNoetherian R L] {y : L}
+theorem isNilpotent_ad_smul_add_of_mem_nilradical {y : L}
     (hy : IsNilpotent (_root_.LieAlgebra.ad R L y)) (t : R) {n : L} (hn : n ∈ nilradical R L) :
     IsNilpotent (_root_.LieAlgebra.ad R L (t • y + n)) :=
-  LieIdeal.isNilpotent_toEnd_smul_add_of_mem (nilradical R L)
-    (fun _ hx => isNilpotent_ad_of_mem_nilradical hx) hy t hn
+  isNilpotent_ad_of_mem_span_singleton_sup_nilradical hy <|
+    Submodule.add_mem_sup (Submodule.smul_mem _ t (Submodule.mem_span_singleton_self y)) hn
 
 end TauCeti.LieAlgebra
