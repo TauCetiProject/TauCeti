@@ -281,12 +281,12 @@ theorem coe_fiberProductInclusionRight_apply (p : Submodule R Y)
   (rfl)
 
 /-- The inclusion `p ×_T Y → X ×_T Y` is injective. -/
-theorem injective_fiberProductInclusionLeft (p : Submodule R X) :
+theorem fiberProductInclusionLeft_injective (p : Submodule R X) :
     Function.Injective (fiberProductInclusionLeft α β p) := fun _ _ h ↦
   Subtype.ext (Prod.ext (Subtype.ext congr(($h : X × Y).1)) congr(($h : X × Y).2))
 
 /-- The inclusion `X ×_T p → X ×_T Y` is injective. -/
-theorem injective_fiberProductInclusionRight (p : Submodule R Y) :
+theorem fiberProductInclusionRight_injective (p : Submodule R Y) :
     Function.Injective (fiberProductInclusionRight α β p) := fun _ _ h ↦
   Subtype.ext (Prod.ext congr(($h : X × Y).1) (Subtype.ext congr(($h : X × Y).2)))
 

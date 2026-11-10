@@ -175,11 +175,9 @@ theorem transverse_congr {v' : V} (hv' : v' ∉ W) (hvv' : v' - v ∈ W) :
     refine e.det.map_linearDependent _ fun hli ↦ ?_
     refine (linearIndependent_finCons.1 hli).2 ?_
     rwa [Set.range_comp, Submodule.span_image, b.span_eq, Submodule.map_subtype_top]
-  have hcons (x : V) : e.det (Fin.cons x (W.subtype ∘ b)) = e.det.curryLeft x (W.subtype ∘ b) :=
-    rfl
   have hdet : e.det (Fin.cons v' (W.subtype ∘ b)) = e.det (Fin.cons v (W.subtype ∘ b)) := by
-    rw [hcons, hcons, show v' = v + (v' - v) by abel, map_add, add_apply, ← hcons (v' - v),
-      hzero, add_zero]
+    simpa only [AlternatingMap.coe_multilinearMap, add_sub_cancel, hzero, add_zero] using
+      e.det.toMultilinearMap.cons_add (W.subtype ∘ b) v (v' - v)
   have key : o.transverse hV hW hv' = b.orientation ↔ o.transverse hV hW hv = b.orientation := by
     rw [transverse_eq_orientation_iff_det o hV hW hv' b e, hdet,
       ← transverse_eq_orientation_iff_det o hV hW hv b e]
@@ -190,12 +188,6 @@ theorem transverse_congr {v' : V} (hv' : v' ∉ W) (hvv' : v' - v ∈ W) :
 end Orientation
 
 namespace Orientation
-
-/-- Double negation of an orientation, stated with the instance `Neg (Module.Ray R M)` that
-negation of orientations elaborates to, so that it can be used by `rw` and `simp`. -/
-private theorem neg_neg_orientation {R M ι : Type*} [CommRing R] [PartialOrder R]
-    [IsStrictOrderedRing R] [AddCommGroup M] [Module R M] (o : Orientation R M ι) : - -o = o :=
-  neg_neg o
 
 /-! ### Short exact sequences -/
 
@@ -245,10 +237,10 @@ theorem transverse_shortExact (hf : Function.Injective f) (hfg : Function.Exact 
     · rw [shortExact_neg_right, Orientation.reindex_neg, transverse_neg, key oU hoU,
         shortExact_neg_right, Orientation.map_neg]
     all_goals
-      have hneg := key (-oU) (by rw [transverse_neg, hoU, Orientation.map_neg, neg_neg_orientation])
+      have hneg := key (-oU) (by rw [transverse_neg, hoU, Orientation.map_neg, Module.Ray.neg_neg])
       rw [shortExact_neg_left, Orientation.reindex_neg, transverse_neg] at hneg
       simp only [shortExact_neg_left, shortExact_neg_right, Orientation.reindex_neg, transverse_neg,
-        Orientation.map_neg, ← hneg, neg_neg_orientation]
+        Orientation.map_neg, ← hneg, Module.Ray.neg_neg]
   intro oU hoU
   set eι := LinearEquiv.ofInjective ι hι
   set eJ := LinearEquiv.ofInjective J hJ
@@ -336,36 +328,16 @@ theorem transverse_prod_left {p : Submodule K E} {v : E × F} (hv₁ : v.1 ∉ p
     rcases cE.orientation_eq_or_eq_neg o with rfl | rfl <;>
       rcases eF.orientation_eq_or_eq_neg o' with rfl | rfl <;>
       simp only [prod_neg_left, prod_neg_right, Orientation.reindex_neg, transverse_neg,
-        Orientation.map_neg, neg_neg_orientation, key]
+        Orientation.map_neg, Module.Ray.neg_neg, key]
   -- The product basis, reindexed, is `(v.1, 0)` followed by `J` of the product basis of `p × F`.
   set P' := (eP.prod eF).reindex finSumFinEquiv
   set P := ((cE.prod eF).reindex finSumFinEquiv).reindex (finCongr (Nat.add_right_comm m 1 n))
-  have hv₀ : (v.1, (0 : F)) ∉ LinearMap.range J := by
-    rintro ⟨⟨⟨x, hx⟩, y⟩, hz⟩
-    have : x = v.1 := by simpa [J] using congrArg Prod.fst hz
-    exact hv₁ (this ▸ hx)
+  have hv₀ : (v.1, (0 : F)) ∉ LinearMap.range J := by simpa [J] using hv₁
   have hP : ⇑P = Fin.cons (v.1, 0) ((LinearMap.range J).subtype ∘ P'.map eJ) := by
+    rw [Basis.coe_prod_reindex_finSumFinEquiv_finCongr, hcE]
+    congr 1
     funext i
-    induction i using Fin.cases with
-    | zero =>
-      have : (finCongr (Nat.add_right_comm m 1 n)).symm 0 = Fin.castAdd n 0 := Fin.ext (by simp)
-      simp only [P, Basis.reindex_apply]
-      rw [this, finSumFinEquiv_symm_apply_castAdd]
-      simp [hcE, Basis.prod_apply]
-    | succ i =>
-      induction i using Fin.addCases with
-      | left j =>
-        have : (finCongr (Nat.add_right_comm m 1 n)).symm (Fin.castAdd n j).succ =
-            Fin.castAdd n j.succ := Fin.ext (by simp)
-        simp only [P, Basis.reindex_apply]
-        rw [this, finSumFinEquiv_symm_apply_castAdd]
-        simp [P', hcE, Basis.prod_apply, eJ, J]
-      | right j =>
-        have : (finCongr (Nat.add_right_comm m 1 n)).symm (Fin.natAdd m j).succ =
-            Fin.natAdd (m + 1) j := Fin.ext (by simp; omega)
-        simp only [P, Basis.reindex_apply]
-        rw [this, finSumFinEquiv_symm_apply_natAdd]
-        simp [P', Basis.prod_apply, eJ, J]
+    induction i using Fin.addCases <;> simp [P', eJ, J]
   have hvv₀ : v - (v.1, 0) ∈ LinearMap.range J := ⟨(0, v.2), by ext <;> simp [J]⟩
   rw [(transverse_eq_orientation_iff cE.orientation hE hp hv₁ eP cE hcE).2 rfl,
     prod_basis_orientation, prod_basis_orientation, finCongr_refl, Orientation.reindex_refl,
@@ -405,47 +377,17 @@ theorem transverse_prod_right {p : Submodule K F} {v : E × F} (hv₂ : v.2 ∉ 
     rcases eE.orientation_eq_or_eq_neg o with rfl | rfl <;>
       rcases cF.orientation_eq_or_eq_neg o' with rfl | rfl <;>
       simp only [prod_neg_left, prod_neg_right, transverse_neg, Orientation.map_neg,
-        Module.Ray.units_smul_neg, neg_neg_orientation, key]
+        Module.Ray.units_smul_neg, Module.Ray.neg_neg, key]
   -- Moving `(0, v.2)` to the front of the product basis passes the `m` basis vectors of `E`.
   set P' := (eE.prod eP).reindex finSumFinEquiv
   set i₀ : Fin (m + n + 1) := ⟨m, by omega⟩
   set P := ((eE.prod cF).reindex finSumFinEquiv).reindex i₀.cycleRange
-  have hv₀ : ((0 : E), v.2) ∉ LinearMap.range J := by
-    rintro ⟨⟨x, ⟨y, hy⟩⟩, hz⟩
-    have : y = v.2 := by simpa [J] using congrArg Prod.snd hz
-    exact hv₂ (this ▸ hy)
+  have hv₀ : ((0 : E), v.2) ∉ LinearMap.range J := by simpa [J] using hv₂
   have hP : ⇑P = Fin.cons (0, v.2) ((LinearMap.range J).subtype ∘ P'.map eJ) := by
+    rw [Basis.coe_prod_reindex_finSumFinEquiv_cycleRange, hcF]
+    congr 1
     funext i
-    induction i using Fin.cases with
-    | zero =>
-      have : (finSumFinEquiv.symm i₀ : Fin m ⊕ Fin (n + 1)) = Sum.inr 0 := by
-        rw [← finSumFinEquiv_symm_apply_natAdd]
-        exact congrArg _ (Fin.ext (by simp [i₀]))
-      simp only [P, Basis.reindex_apply, Fin.cycleRange_symm_zero]
-      rw [this]
-      simp [hcF, Basis.prod_apply]
-    | succ i =>
-      induction i using Fin.addCases with
-      | left j =>
-        have hlt : (Fin.castAdd n j).castSucc < i₀ := by simp [Fin.lt_def, i₀]
-        have : (finSumFinEquiv.symm (Fin.castAdd n j).castSucc : Fin m ⊕ Fin (n + 1)) =
-            Sum.inl j := by
-          rw [← finSumFinEquiv_symm_apply_castAdd]
-          exact congrArg _ (Fin.ext (by simp))
-        simp only [P, Basis.reindex_apply, Fin.cycleRange_symm_succ,
-          Fin.succAbove_of_castSucc_lt _ _ hlt]
-        rw [this]
-        simp [P', Basis.prod_apply, eJ, J]
-      | right j =>
-        have hle : i₀ ≤ (Fin.natAdd m j).castSucc := by simp [Fin.le_def, i₀]
-        have : (finSumFinEquiv.symm (Fin.natAdd m j).succ : Fin m ⊕ Fin (n + 1)) =
-            Sum.inr j.succ := by
-          rw [← finSumFinEquiv_symm_apply_natAdd]
-          exact congrArg _ (Fin.ext (by simp; omega))
-        simp only [P, Basis.reindex_apply, Fin.cycleRange_symm_succ,
-          Fin.succAbove_of_le_castSucc _ _ hle]
-        rw [this]
-        simp [P', hcF, Basis.prod_apply, eJ, J]
+    induction i using Fin.addCases <;> simp [P', eJ, J]
   have hvv₀ : v - (0, v.2) ∈ LinearMap.range J := ⟨(v.1, 0), by ext <;> simp [J]⟩
   -- `P` is `(-1) ^ m` times the product basis.
   have hsign : P.orientation =

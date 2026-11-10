@@ -245,12 +245,12 @@ theorem transverse_fiberProduct_left {p : Submodule K X}
     (hW : finrank K (range (fiberProductInclusionLeft α β p)) = q) :
     (fiberProduct (surjective_coprod_neg_of_comp_subtype_left h) ox oy ot hX hy ht
         (by omega)).transverse hQ hW (mt mem_range_fiberProductInclusionLeft.1 hv₁) =
-      map (Fin q) (LinearEquiv.ofInjective _ (injective_fiberProductInclusionLeft p))
+      map (Fin q) (LinearEquiv.ofInjective _ (fiberProductInclusionLeft_injective p))
         (fiberProduct h (ox.transverse hX hp hv₁) oy ot hp hy ht hq) := by
   have hv : v ∉ range (fiberProductInclusionLeft α β p) :=
     mt mem_range_fiberProductInclusionLeft.1 hv₁
   set ι := fiberProductInclusionLeft α β p
-  set eι := LinearEquiv.ofInjective ι (injective_fiberProductInclusionLeft p)
+  set eι := LinearEquiv.ofInjective ι (fiberProductInclusionLeft_injective p)
   set J := p.subtype.prodMap (LinearMap.id : Y →ₗ[K] Y)
   have hJ : Function.Injective J := p.injective_subtype.prodMap Function.injective_id
   have h' := surjective_coprod_neg_of_comp_subtype_left h
@@ -267,15 +267,12 @@ theorem transverse_fiberProduct_left {p : Submodule K X}
   have hV : finrank K (X × Y) = q + t + 1 := by rw [Module.finrank_prod]; omega
   have hVJ : finrank K (range J) = q + t := by
     rw [finrank_range_of_inj hJ, Module.finrank_prod, hp, hy]; omega
-  have hfu : (ker (α.coprod (-β))).subtype v ∉ range J := by
-    rintro ⟨⟨⟨a, ha⟩, b⟩, hz⟩
-    have : a = (v : X × Y).1 := by simpa [J] using congrArg Prod.fst hz
-    exact hv₁ (this ▸ ha)
+  have hfu : (ker (α.coprod (-β))).subtype v ∉ range J := by simpa [J] using hv₁
   -- Restrict the defining sequence `0 → Q → X × Y → T → 0` to `0 → p ×_T Y → p × Y → T → 0`,
   -- then compute the boundary orientation of `[X][Y]` along `p × Y`.
   have hG := transverse_shortExact (Submodule.injective_subtype _)
     (exact_subtype_ker_map _) h' (Submodule.injective_subtype _) (exact_subtype_ker_map _) h
-    (injective_fiberProductInclusionLeft p) hJ (by ext <;> simp [J]) (by ext <;> simp [J]) hv hfu
+    (fiberProductInclusionLeft_injective p) hJ (by ext <;> simp [J]) (by ext <;> simp [J]) hv hfu
     fp o ot hQ hQ' ht hW hV hVJ ho
   rw [shortExact_fiberProduct, ← reindex_trans, reindex_units_smul, transverse_units_smul,
     show (finCongr (by omega : x + 1 + y = q + 1 + t)).trans (finCongr (Nat.add_right_comm q 1 t)) =
@@ -304,12 +301,12 @@ theorem transverse_fiberProduct_right {p : Submodule K Y}
     (fiberProduct (surjective_coprod_neg_of_comp_subtype_right h) ox oy ot hx hY ht
         (by omega)).transverse hQ hW (mt mem_range_fiberProductInclusionRight.1 hv₂) =
       (-1 : Kˣ) ^ (x + t) • map (Fin q) (LinearEquiv.ofInjective _
-        (injective_fiberProductInclusionRight p))
+        (fiberProductInclusionRight_injective p))
           (fiberProduct h ox (oy.transverse hY hp hv₂) ot hx hp ht hq) := by
   have hv : v ∉ range (fiberProductInclusionRight α β p) :=
     mt mem_range_fiberProductInclusionRight.1 hv₂
   set ι := fiberProductInclusionRight α β p
-  set eι := LinearEquiv.ofInjective ι (injective_fiberProductInclusionRight p)
+  set eι := LinearEquiv.ofInjective ι (fiberProductInclusionRight_injective p)
   set J := (LinearMap.id : X →ₗ[K] X).prodMap p.subtype
   have hJ : Function.Injective J := Function.injective_id.prodMap p.injective_subtype
   have h' := surjective_coprod_neg_of_comp_subtype_right h
@@ -326,15 +323,12 @@ theorem transverse_fiberProduct_right {p : Submodule K Y}
   have hV : finrank K (X × Y) = q + t + 1 := by rw [Module.finrank_prod]; omega
   have hVJ : finrank K (range J) = q + t := by
     rw [finrank_range_of_inj hJ, Module.finrank_prod, hx, hp]; omega
-  have hfu : (ker (α.coprod (-β))).subtype v ∉ range J := by
-    rintro ⟨⟨a, ⟨b, hb⟩⟩, hz⟩
-    have : b = (v : X × Y).2 := by simpa [J] using congrArg Prod.snd hz
-    exact hv₂ (this ▸ hb)
+  have hfu : (ker (α.coprod (-β))).subtype v ∉ range J := by simpa [J] using hv₂
   -- Restrict the defining sequence `0 → Q → X × Y → T → 0` to `0 → X ×_T p → X × p → T → 0`,
   -- then compute the boundary orientation of `[X][Y]` along `X × p`.
   have hG := transverse_shortExact (Submodule.injective_subtype _)
     (exact_subtype_ker_map _) h' (Submodule.injective_subtype _) (exact_subtype_ker_map _) h
-    (injective_fiberProductInclusionRight p) hJ (by ext <;> simp [J]) (by ext <;> simp [J]) hv hfu
+    (fiberProductInclusionRight_injective p) hJ (by ext <;> simp [J]) (by ext <;> simp [J]) hv hfu
     fp o ot hQ hQ' ht hW hV hVJ ho
   rw [shortExact_fiberProduct, ← reindex_trans, reindex_units_smul, transverse_units_smul,
     show (finCongr (by omega : x + (y + 1) = q + 1 + t)).trans
