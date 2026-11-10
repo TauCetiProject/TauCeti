@@ -85,12 +85,6 @@ private def fiberHomeomorph : (hopfHom n).fiber (mk n v) ≃ₜ sphere (0 : ℂ)
 private theorem fiberHomeomorph_fiberPoint : fiberHomeomorph v (fiberPoint v) = 1 :=
   (hopfFiberHomeomorph v).symm_apply_eq.2 (hopfFiberHomeomorph_one v).symm
 
-/-- The higher homotopy groups of the unit circle vanish. -/
-private instance subsingleton_homotopyGroup_circle [Nontrivial N] (x : sphere (0 : ℂ) 1) :
-    Subsingleton (HomotopyGroup N (sphere (0 : ℂ) 1) x) :=
-  (HomotopyGroup.homeomorphEquiv (N := N) Circle.homeomorphSphere.symm x).subsingleton_congr.2
-    inferInstance
-
 /-- The higher homotopy groups of the fibre of the Hopf fibration vanish. -/
 private instance subsingleton_homotopyGroup_fiber [Nontrivial N]
     (x : (hopfHom n).fiber (mk n v)) :
