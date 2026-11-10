@@ -163,14 +163,28 @@ theorem IsFiniteProductOfStandardTameCovers.of_algEquiv {C : Type v} {C' : Type 
   exact (isFiniteProductOfStandardTameCovers_iff f).mpr
     ⟨ι, inferInstance, e, he, heu, ⟨φ.symm.trans ψ⟩⟩
 
-/-- A single standard cover whose exponent `e ≥ 1` is invertible in `A` is a finite product of
-standard covers, indexed by a point. -/
-theorem isFiniteProductOfStandardTameCovers_standardTameCover (f : A) {e : ℕ} (he : 1 ≤ e)
+/-- A single standard cover whose exponent is invertible in `A` is a finite product of standard
+covers, indexed by a point.  Over a nontrivial ring the exponent is then positive; over the zero
+ring every cover is the zero ring, so the cover of exponent `1` serves. -/
+theorem isFiniteProductOfStandardTameCovers_standardTameCover (f : A) {e : ℕ}
     (heu : IsUnit (e : A)) :
-    IsFiniteProductOfStandardTameCovers A (standardTameCover A f e) f :=
-  (isFiniteProductOfStandardTameCovers_iff f).mpr
-    ⟨Unit, inferInstance, fun _ ↦ e, fun _ ↦ he, fun _ ↦ heu,
-      ⟨(AlgEquiv.funUnique A Unit (standardTameCover A f e)).symm⟩⟩
+    IsFiniteProductOfStandardTameCovers A (standardTameCover A f e) f := by
+  rcases subsingleton_or_nontrivial A with hA | hA
+  · have h₁ : Subsingleton (standardTameCover A f e) := Module.subsingleton A _
+    have h₂ : Subsingleton (standardTameCover A f 1) := Module.subsingleton A _
+    exact (isFiniteProductOfStandardTameCovers_iff f).mpr
+      ⟨Unit, inferInstance, fun _ ↦ 1, fun _ ↦ le_rfl, fun _ ↦ by simp,
+        ⟨{ toFun := fun _ ↦ 0
+           invFun := fun _ ↦ 0
+           left_inv := fun _ ↦ Subsingleton.elim _ _
+           right_inv := fun _ ↦ Subsingleton.elim _ _
+           map_mul' := fun _ _ ↦ Subsingleton.elim _ _
+           map_add' := fun _ _ ↦ Subsingleton.elim _ _
+           commutes' := fun _ ↦ Subsingleton.elim _ _ }⟩⟩
+  · have he : 1 ≤ e := Nat.one_le_iff_ne_zero.mpr fun h ↦ by simp [h] at heu
+    exact (isFiniteProductOfStandardTameCovers_iff f).mpr
+      ⟨Unit, inferInstance, fun _ ↦ e, fun _ ↦ he, fun _ ↦ heu,
+        ⟨(AlgEquiv.funUnique A Unit (standardTameCover A f e)).symm⟩⟩
 
 /-- For `e ≥ 1` the root `x` of the standard cover is a nonzerodivisor if and only if `f` is a
 nonzerodivisor of `A`. -/
@@ -480,11 +494,21 @@ section ResidueField
 
 variable [IsLocalRing (standardTameCover A f e)]
 
-/-- The root of a positive-degree cover along an element of the maximal ideal vanishes in
-its residue field. -/
+/-- If the cover along an element of the maximal ideal is local, its exponent is positive: the
+cover of exponent `0` is `A / (1 - f)`, which is the zero ring because `1 - f` is a unit. -/
+private theorem ne_zero_of_isLocalRing_standardTameCover (hf : f ∈ maximalIdeal A) : e ≠ 0 := by
+  rintro rfl
+  have hu : IsUnit (1 - f) := isUnit_one_sub_self_of_mem_nonunits f hf
+  have h0 : algebraMap A (standardTameCover A f 0) (1 - f) = 0 := by
+    have := AdjoinRoot.eval₂_root (X ^ 0 - C f : A[X])
+    simpa [AdjoinRoot.algebraMap_eq] using this
+  exact not_isUnit_zero (h0 ▸ hu.map (algebraMap A (standardTameCover A f 0)))
+
+/-- The root of a cover along an element of the maximal ideal vanishes in its residue field. -/
 @[simp]
-theorem standardTameCover_residue_root (hf : f ∈ maximalIdeal A) (he : e ≠ 0) :
+theorem standardTameCover_residue_root (hf : f ∈ maximalIdeal A) :
     residue (standardTameCover A f e) (AdjoinRoot.root (X ^ e - C f)) = 0 := by
+  have he := ne_zero_of_isLocalRing_standardTameCover (A := A) (f := f) (e := e) hf
   have := (monic_X_pow_sub_C f he).finite_adjoinRoot
   have hcomap : (maximalIdeal (standardTameCover A f e)).under A = maximalIdeal A :=
     IsLocalRing.eq_maximalIdeal inferInstance
@@ -530,9 +554,10 @@ theorem standardTameCoverResidueFieldEquiv_symm_residue (hf : f ∈ maximalIdeal
 /-- A root cover along the maximal ideal has separably closed residue field whenever the
 base does. This does not require the exponent to be invertible. -/
 theorem standardTameCover_isSepClosed_residueField [IsSepClosed (ResidueField A)]
-    (hf : f ∈ maximalIdeal A) (he : e ≠ 0) :
+    (hf : f ∈ maximalIdeal A) :
     IsSepClosed (ResidueField (standardTameCover A f e)) :=
-  IsSepClosed.of_ringEquiv (standardTameCoverResidueFieldEquiv hf he).symm
+  IsSepClosed.of_ringEquiv
+    (standardTameCoverResidueFieldEquiv hf (ne_zero_of_isLocalRing_standardTameCover hf)).symm
 
 end ResidueField
 
