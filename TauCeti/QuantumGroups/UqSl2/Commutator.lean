@@ -44,10 +44,17 @@ theorem kInv_mul_f_pow (r : ℕ) :
 
 /-- The commutator formula for `E` and a natural power of `F`:
 `E F^r = F^r E + [r]_q F^(r-1) (q^(1-r) K - q^(r-1) K⁻¹) / (q-q⁻¹)`. -/
-theorem e_mul_f_pow (hq : q - q⁻¹ ≠ 0) (r : ℕ) :
+theorem e_mul_f_pow (r : ℕ) :
     e q * f q ^ r = f q ^ r * e q +
       (quantumInteger q r * (q - q⁻¹)⁻¹) • (f q ^ (r - 1) *
         (q⁻¹ ^ (r - 1) • k q - q ^ (r - 1) • kInv q)) := by
+  rcases eq_or_ne (q - q⁻¹) 0 with hq | hq
+  · -- At `q = ±1` the defining relation makes `E` and `F` commute, and `(q - q⁻¹)⁻¹ = 0`.
+    have hef : Commute (e q) (f q) := by
+      have := e_mul_f_sub_f_mul_e (q := q)
+      rw [hq, inv_zero, zero_smul, sub_eq_zero] at this
+      exact this
+    simp [hq, (hef.pow_right r).eq]
   induction r with
   | zero => simp
   | succ r ih =>
@@ -84,22 +91,15 @@ theorem e_mul_f_pow (hq : q - q⁻¹ ≠ 0) (r : ℕ) :
     linear_combination (norm := module)
       hk • (f q ^ (r + 1) * k q) - hkInv • (f q ^ (r + 1) * kInv q)
 
-/-- Commuting `E` past a positive power of `F` leaves a correction `F ^ n (α K + β K⁻¹)`.
-Unlike `e_mul_f_pow`, this holds for every `q`, including `q = ±1`. -/
+/-- Commuting `E` past a positive power of `F` leaves a correction `F ^ n (α K + β K⁻¹)`, with
+coefficients that are explicit and do not involve the junk value `(q - q⁻¹)⁻¹` in the formula. -/
 theorem exists_e_mul_f_pow_succ (n : ℕ) : ∃ α β : ℂ,
     e q * f q ^ (n + 1) = f q ^ (n + 1) * e q + f q ^ n * (α • k q + β • kInv q) := by
-  rcases eq_or_ne (q - q⁻¹) 0 with hq | hq
-  · -- At `q = ±1` the defining relation makes `E` and `F` commute.
-    have hef : Commute (e q) (f q) := by
-      have := e_mul_f_sub_f_mul_e (q := q)
-      rw [hq, inv_zero, zero_smul, sub_eq_zero] at this
-      exact this
-    exact ⟨0, 0, by simp [(hef.pow_right (n + 1)).eq]⟩
-  · refine ⟨quantumInteger q (n + 1) * (q - q⁻¹)⁻¹ * q⁻¹ ^ n,
-      -(quantumInteger q (n + 1) * (q - q⁻¹)⁻¹ * q ^ n), ?_⟩
-    rw [e_mul_f_pow hq, Nat.add_sub_cancel]
-    simp only [mul_add, mul_sub, mul_smul_comm, smul_sub, smul_smul, neg_smul, mul_neg,
-      Nat.cast_add, Nat.cast_one]
-    abel
+  refine ⟨quantumInteger q (n + 1) * (q - q⁻¹)⁻¹ * q⁻¹ ^ n,
+    -(quantumInteger q (n + 1) * (q - q⁻¹)⁻¹ * q ^ n), ?_⟩
+  rw [e_mul_f_pow, Nat.add_sub_cancel]
+  simp only [mul_add, mul_sub, mul_smul_comm, smul_sub, smul_smul, neg_smul, mul_neg,
+    Nat.cast_add, Nat.cast_one]
+  abel
 
 end TauCeti.UqSl2
