@@ -9,10 +9,11 @@ public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.RingTheory.Ideal.Maximal
 
 /-!
-# Nonzero linear maps from locally cyclic modules
+# Nonzero linear maps from modules cyclic at every maximal ideal
 
-Over a domain, a nonzero linear map from a locally cyclic module to a torsion-free module
-is injective. The local cyclicity hypothesis permits a denominator outside each maximal ideal
+Over a domain, a nonzero linear map from a module cyclic at every maximal ideal
+to a torsion-free module
+is injective. This cyclicity hypothesis permits a denominator outside each maximal ideal
 for each element; no global generator, finite generation or freeness is required.
 -/
 
@@ -20,10 +21,12 @@ public section
 
 namespace LinearMap
 
-/-- A nonzero map from a locally cyclic module to a torsion-free module over a domain
+/-- A nonzero map from a module cyclic at every maximal ideal to a torsion-free module
+over a domain
 is injective. The generator may depend on the maximal ideal, and the denominator may also
 depend on the element. -/
-theorem injective_of_locally_cyclic_of_ne_zero {R M N : Type*} [CommRing R] [IsDomain R]
+theorem injective_of_ne_zero_of_forall_isMaximal_exists_smul_eq_smul {R M N : Type*}
+    [CommRing R] [IsDomain R]
     [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [Module.IsTorsionFree R N]
     (f : M →ₗ[R] N) (hf : f ≠ 0)
     (hcyc : ∀ q : Ideal R, q.IsMaximal →

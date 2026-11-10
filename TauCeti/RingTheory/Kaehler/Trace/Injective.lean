@@ -7,19 +7,18 @@ module
 
 public import TauCeti.RingTheory.Kaehler.Trace.Basic
 public import TauCeti.Algebra.Module.LinearMap.Precomp.TorsionFree
-public import TauCeti.LinearAlgebra.LinearMap.LocallyCyclic
+public import TauCeti.LinearAlgebra.LinearMap.CyclicAtMaximal
 
 /-!
 # Injectivity of the differential trace pairing
 
-Local cyclicity of the differential module, a nonzero algebraic trace, and a base-ring element
-whose derivative is one make the differential trace pairing injective. The proof uses the
-general injectivity criterion for maps from locally cyclic modules into torsion-free modules.
+Cyclicity of the differential module at every maximal ideal, a nonzero algebraic trace, and a
+nonzero derivation into a torsion-free module make the differential trace pairing injective.
+The proof uses the general injectivity criterion for modules cyclic at every maximal ideal.
 Surjectivity and the residue-field hypotheses needed for full duality are separate.
 
 ## Main results
 
-* `Derivation.traceDerivation_algebraMap`: the base-ring computation in the precomposition module.
 * `Derivation.injective_liftKaehlerDifferential_traceDerivation`: injectivity of the trace pairing.
 -/
 
@@ -33,31 +32,31 @@ variable {k R B : Type*} [CommRing k] [CommRing R] [CommRing B]
   [Algebra k R] [Algebra R B] [Algebra k B] [IsScalarTower k R B]
   [Module.Free R B] [Module.Finite R B]
 
-/-- On base-ring elements, the trace derivation is the algebraic trace multiplied by the
-original derivative, for the precomposition action. -/
-lemma traceDerivation_algebraMap (D : Derivation k R R) (r : R) :
-    traceDerivation (B := B) D (algebraMap R B r) =
-      algebraMap R B (D r) • PrecompLinearMap.ofLinearMap (Algebra.trace R B) := by
-  apply PrecompLinearMap.ext
-  intro c
-  simp only [traceDerivation_apply, traceDeriv_algebraMap, PrecompLinearMap.smul_apply,
-    PrecompLinearMap.ofLinearMap_apply, smul_eq_mul]
-  rw [← Algebra.smul_def, LinearMap.map_smul]
-  exact mul_comm _ _
-
-/-- Local cyclicity of differentials makes a nonzero differential trace pairing injective.
-No Dedekind, normality, or residue-field separability hypothesis is required. -/
+/-- If the differential module is cyclic at every maximal ideal, the algebraic trace is nonzero,
+and `D` is a nonzero derivation into a torsion-free module, the differential trace pairing
+is injective. -/
 theorem injective_liftKaehlerDifferential_traceDerivation [IsDomain R] [IsDomain B]
-    (D : Derivation k R R) (t : R) (ht : D t = 1) (htrace : Algebra.trace R B ≠ 0)
+    {M : Type*} [AddCommGroup M] [Module R M] [Module k M] [IsScalarTower k R M]
+    [Module.IsTorsionFree R M] (D : Derivation k R M) (hD : D ≠ 0)
+    (htrace : Algebra.trace R B ≠ 0)
     (hcyc : ∀ q : Ideal B, q.IsMaximal →
       ∃ ω : Ω[B⁄k], ∀ η : Ω[B⁄k], ∃ s ∉ q, ∃ a : B, s • η = a • ω) :
     Function.Injective (traceDerivation (B := B) D).liftKaehlerDifferential := by
-  apply LinearMap.injective_of_locally_cyclic_of_ne_zero _ ?_ hcyc
+  apply LinearMap.injective_of_ne_zero_of_forall_isMaximal_exists_smul_eq_smul _ ?_ hcyc
+  have ht : ∃ t, D t ≠ 0 := by
+    by_contra h
+    apply hD
+    ext t
+    simpa only [not_exists, not_not, Derivation.zero_apply] using h t
+  obtain ⟨t, ht⟩ := ht
   intro h
   have hval := LinearMap.congr_fun h (KaehlerDifferential.D k B (algebraMap R B t))
-  rw [liftKaehlerDifferential_comp_D, traceDerivation_algebraMap, ht, map_one, one_smul] at hval
+  rw [liftKaehlerDifferential_comp_D, traceDerivation_algebraMap] at hval
   apply htrace
-  simpa only [PrecompLinearMap.toLinearMap_ofLinearMap, LinearMap.zero_apply, map_zero]
-    using congrArg PrecompLinearMap.toLinearMap hval
+  ext c
+  have hc := congrArg (fun ψ : PrecompLinearMap R B M ↦ ψ c) hval
+  simp only [PrecompLinearMap.ofLinearMap_apply, LinearMap.smulRight_apply,
+    PrecompLinearMap.zero_apply, LinearMap.zero_apply] at hc ⊢
+  exact (smul_eq_zero.mp hc).resolve_right ht
 
 end Derivation
