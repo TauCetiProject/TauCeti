@@ -43,9 +43,9 @@ theorem MemLp.integral_sq_le_sq_add_integral_indicator [IsProbabilityMeasure P]
       ≤ ∫ ω, (ε ^ 2 + ({ω | ε ≤ |X ω|}.indicator fun ω ↦ X ω ^ 2) ω) ∂P := by
         refine integral_mono hX.integrable_sq ((integrable_const _).add h) fun ω ↦ ?_
         by_cases hω : ε ≤ |X ω|
-        · rw [indicator_of_mem (show ω ∈ {ω | ε ≤ |X ω|} from hω)]
+        · rw [indicator_of_mem (s := {ω | ε ≤ |X ω|}) hω]
           linarith [sq_nonneg ε]
-        · rw [indicator_of_notMem (show ω ∉ {ω | ε ≤ |X ω|} from hω), add_zero,
+        · rw [indicator_of_notMem (s := {ω | ε ≤ |X ω|}) hω, add_zero,
             ← sq_abs (X ω)]
           have := abs_nonneg (X ω)
           nlinarith [not_le.mp hω]

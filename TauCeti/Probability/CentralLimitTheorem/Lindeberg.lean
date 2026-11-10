@@ -42,14 +42,14 @@ variables with diverging variance are the basic example.
 
 ## Main results
 
-* `TauCeti.Probability.norm_charFun_sub_one_sub_le`: the truncation estimate
+* `MeasureTheory.MemLp.norm_charFun_sub_one_sub_le`: the truncation estimate
   `‖φ_X t - (1 - t² E[X²] / 2)‖ ≤ |t|³ ε E[X²] / 6 + t² E[X²; ε ≤ |X|]` for a centred `X ∈ L²`.
 * `TauCeti.Probability.norm_prod_charFun_sub_exp_le`: the product of the characteristic
   functions of one row is close to `exp (-t² / 2)`, with an explicit error.
-* `TauCeti.Probability.tendstoInDistribution_sum_of_lindeberg`: the Lindeberg–Feller theorem
+* `ProbabilityTheory.HasLaw.tendstoInDistribution_sum_of_lindeberg`: the Lindeberg–Feller theorem
   (sufficiency direction).
-* `TauCeti.Probability.tendstoInDistribution_sum_sub_div_sqrt_of_abs_sub_le`: the central limit
-  theorem for uniformly bounded independent summands with diverging variance.
+* `ProbabilityTheory.HasLaw.tendstoInDistribution_sum_sub_div_sqrt_of_abs_sub_le`: the central
+  limit theorem for uniformly bounded independent summands with diverging variance.
 
 ## Implementation notes
 
@@ -81,9 +81,7 @@ noncomputable section
 open MeasureTheory ProbabilityTheory Filter
 open scoped Real Topology
 
-namespace TauCeti.Probability
-
-section Row
+namespace MeasureTheory
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsProbabilityMeasure P]
   {X : Ω → ℝ}
@@ -91,7 +89,7 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsProbability
 /-- The characteristic function of a centred random variable `X` with finite variance agrees
 with `1 - t² E[X²] / 2` up to an error controlled by `ε` and the truncated second moment
 `E[X²; ε ≤ |X|]`. -/
-theorem norm_charFun_sub_one_sub_le (hX : MemLp X 2 P) (h0 : P[X] = 0) (t : ℝ) {ε : ℝ}
+theorem MemLp.norm_charFun_sub_one_sub_le (hX : MemLp X 2 P) (h0 : P[X] = 0) (t : ℝ) {ε : ℝ}
     (hε : 0 ≤ ε) :
     ‖charFun (P.map X) t - (1 - t ^ 2 * (∫ ω, X ω ^ 2 ∂P) / 2)‖ ≤
       |t| ^ 3 * ε / 6 * ∫ ω, X ω ^ 2 ∂P +
@@ -142,12 +140,12 @@ theorem norm_charFun_sub_one_sub_le (hX : MemLp X 2 P) (h0 : P[X] = 0) (t : ℝ)
   rw [hrw]
   have h3 : 0 ≤ |t| ^ 3 * ε / 6 * X ω ^ 2 := by positivity
   by_cases hω : ε ≤ |X ω|
-  · rw [Set.indicator_of_mem (show ω ∈ {ω | ε ≤ |X ω|} from hω)]
-    have := norm_exp_ofReal_mul_I_sub_le_sq (t * X ω)
+  · rw [Set.indicator_of_mem (s := {ω | ε ≤ |X ω|}) hω]
+    have := TauCeti.norm_exp_ofReal_mul_I_sub_le_sq (t * X ω)
     rw [mul_pow] at this
     linarith
-  · rw [Set.indicator_of_notMem (show ω ∉ {ω | ε ≤ |X ω|} from hω), mul_zero, add_zero]
-    refine (norm_exp_ofReal_mul_I_sub_le_cube (t * X ω)).trans ?_
+  · rw [Set.indicator_of_notMem (s := {ω | ε ≤ |X ω|}) hω, mul_zero, add_zero]
+    refine (TauCeti.norm_exp_ofReal_mul_I_sub_le_cube (t * X ω)).trans ?_
     have hX3 : |X ω| ^ 3 ≤ ε * X ω ^ 2 := by
       rw [← sq_abs (X ω), pow_succ, mul_comm]
       gcongr
@@ -155,6 +153,12 @@ theorem norm_charFun_sub_one_sub_le (hX : MemLp X 2 P) (h0 : P[X] = 0) (t : ℝ)
     rw [abs_mul, mul_pow]
     have ht3 : 0 ≤ |t| ^ 3 := by positivity
     nlinarith [mul_le_mul_of_nonneg_left hX3 ht3]
+
+end MeasureTheory
+
+namespace TauCeti.Probability
+
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsProbabilityMeasure P]
 
 /-- Row estimate for the Lindeberg–Feller theorem: for a finite family of centred
 square-integrable random variables whose second moments sum to `1`, the product of their
@@ -194,7 +198,7 @@ theorem norm_prod_charFun_sub_exp_le {ι : Type*} [Fintype ι] {Y : ι → Ω �
   have hterm : ∀ i, ‖charFun (P.map (Y i)) t - ((Real.exp (-(t ^ 2 * σ i / 2)) : ℝ) : ℂ)‖ ≤
       |t| ^ 3 * ε / 6 * σ i + t ^ 2 * Li i + t ^ 4 / 8 * (ε ^ 2 + L) * σ i := by
     intro i
-    have h1 := norm_charFun_sub_one_sub_le (hL2 i) (h0 i) t hε
+    have h1 := (hL2 i).norm_charFun_sub_one_sub_le (h0 i) t hε
     have hu : 0 ≤ t ^ 2 * σ i / 2 := by have := hσ0 i; positivity
     have h2 : |Real.exp (-(t ^ 2 * σ i / 2)) - (1 - t ^ 2 * σ i / 2)| ≤
         (t ^ 2 * σ i / 2) ^ 2 / 2 := by
@@ -228,9 +232,11 @@ theorem norm_prod_charFun_sub_exp_le {ι : Type*} [Fintype ι] {Y : ι → Ω �
   rw [hvar]
   ring
 
-end Row
+end TauCeti.Probability
 
-section TriangularArray
+namespace ProbabilityTheory
+
+open TauCeti.Probability
 
 variable {Ω : ℕ → Type*} {mΩ : ∀ n, MeasurableSpace (Ω n)} {P : (n : ℕ) → Measure (Ω n)}
   [∀ n, IsProbabilityMeasure (P n)]
@@ -243,7 +249,7 @@ be a triangular array of real random variables, the `n`th row on its own probabi
 summing to `1` for all large `n`. If the Lindeberg condition
 `∑ i, E[X n i ^ 2; ε ≤ |X n i|] → 0` holds for every `ε > 0`, then the row sums converge in
 distribution to a standard Gaussian random variable `Y`. -/
-theorem tendstoInDistribution_sum_of_lindeberg {ι : ℕ → Type*} [∀ n, Fintype (ι n)]
+theorem HasLaw.tendstoInDistribution_sum_of_lindeberg {ι : ℕ → Type*} [∀ n, Fintype (ι n)]
     {X : (n : ℕ) → ι n → Ω n → ℝ}
     (hY : HasLaw Y (gaussianReal 0 1) P')
     (hindep : ∀ n, iIndepFun (X n) (P n))
@@ -312,7 +318,7 @@ random variable `Y`.
 
 For sums of independent indicators of events `A n i` with probabilities `p n i`, the centred
 summands are bounded by `1`, so the conclusion holds as soon as `∑ i, p n i (1 - p n i) → ∞`. -/
-theorem tendstoInDistribution_sum_sub_div_sqrt_of_abs_sub_le {ι : ℕ → Type*}
+theorem HasLaw.tendstoInDistribution_sum_sub_div_sqrt_of_abs_sub_le {ι : ℕ → Type*}
     [∀ n, Fintype (ι n)] {X : (n : ℕ) → ι n → Ω n → ℝ}
     (hY : HasLaw Y (gaussianReal 0 1) P')
     (hindep : ∀ n, iIndepFun (X n) (P n))
@@ -334,12 +340,11 @@ theorem tendstoInDistribution_sum_sub_div_sqrt_of_abs_sub_le {ι : ℕ → Type*
     simp
   -- the normalised array
   set Z : (n : ℕ) → ι n → Ω n → ℝ := fun n i ω ↦ (X n i ω - (P n)[X n i]) / s n with hZ
-  have hsum : (fun n ω ↦ (∑ i, (X n i ω - (P n)[X n i])) / s n) =
+  have hsum : (fun n ω ↦ (∑ i, (X n i ω - (P n)[X n i])) / √(∑ i, Var[X n i; P n])) =
       fun n ω ↦ ∑ i, Z n i ω := by
     ext n ω
-    rw [Finset.sum_div]
-  rw [show (fun n ω ↦ (∑ i, (X n i ω - (P n)[X n i])) / √(∑ i, Var[X n i; P n])) =
-    fun n ω ↦ (∑ i, (X n i ω - (P n)[X n i])) / s n from rfl, hsum]
+    simp only [hZ, hs, Finset.sum_div]
+  rw [hsum]
   have hZL2 n i : MemLp (Z n i) 2 (P n) := by
     simpa only [hZ, div_eq_mul_inv] using (hcL2 n i).mul_const (s n)⁻¹
   have hZ0 n i : (P n)[Z n i] = 0 := by
@@ -351,7 +356,7 @@ theorem tendstoInDistribution_sum_sub_div_sqrt_of_abs_sub_le {ι : ℕ → Type*
     have h := (hindep n).comp (fun (i : ι n) (x : ℝ) ↦ (x - ∫ ω, X n i ω ∂(P n)) / s n)
       fun i ↦ (measurable_id.sub_const _).div_const _
     simpa only [hZ, Function.comp_def] using h
-  refine tendstoInDistribution_sum_of_lindeberg hY hZindep hZL2 hZ0 ?_ fun ε hε ↦ ?_
+  refine hY.tendstoInDistribution_sum_of_lindeberg hZindep hZL2 hZ0 ?_ fun ε hε ↦ ?_
   · -- the normalised row variances are eventually `1`
     filter_upwards [hvar.eventually_gt_atTop 0] with n hn
     have hVZ i : Var[Z n i; P n] = Var[X n i; P n] / s n ^ 2 := by
@@ -372,9 +377,7 @@ theorem tendstoInDistribution_sum_sub_div_sqrt_of_abs_sub_le {ι : ℕ → Type*
             simp only [hZ, abs_div, abs_of_nonneg (hs0 n)]
         _ ≤ C / s n := div_le_div_of_nonneg_right hω (hs0 n)
         _ < ε := hn
-    rw [Pi.zero_apply, Set.indicator_of_notMem (show ω ∉ {ω | ε ≤ |Z n i ω|} from
-      not_le.mpr hZle)]
+    rw [Pi.zero_apply, Set.indicator_of_notMem (s := {ω | ε ≤ |Z n i ω|})
+      (not_le.mpr hZle)]
 
-end TriangularArray
-
-end TauCeti.Probability
+end ProbabilityTheory

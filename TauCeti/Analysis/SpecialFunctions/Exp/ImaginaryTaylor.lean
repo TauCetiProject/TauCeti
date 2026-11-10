@@ -19,8 +19,8 @@ complex argument, which need `‖x‖ ≤ 1`, this holds for every real `x`, bec
 on the unit circle. The two cases used to estimate a characteristic function near the origin are
 spelled out for the second-order remainder: it is at most `|x| ^ 3 / 6`
 (`TauCeti.norm_exp_ofReal_mul_I_sub_le_cube`) and at most `x ^ 2`
-(`TauCeti.norm_exp_ofReal_mul_I_sub_le_sq`). The first is sharp for small `|x|`, the second for
-large `|x|`.
+(`TauCeti.norm_exp_ofReal_mul_I_sub_le_sq`). The first is sharp as `x → 0`. The second has the
+right order of growth for large `|x|`, where the remainder is asymptotic to `x ^ 2 / 2`.
 
 ## References
 
