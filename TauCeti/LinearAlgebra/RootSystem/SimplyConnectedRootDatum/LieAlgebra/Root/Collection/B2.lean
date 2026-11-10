@@ -56,17 +56,15 @@ private lemma b2_root_eq_nsmul_add (a b c : Fin 8) (n : ℕ)
     ((B 2).simplyConnectedRootDatum ht).root (b2Index c) =
       n • ((B 2).simplyConnectedRootDatum ht).root (b2Index a) +
         ((B 2).simplyConnectedRootDatum ht).root (b2Index b) := by
-  simp only [root_simplyConnectedRootDatum_b2Index (ht := ht)]
-  simpa +instances only [rank] using h
+  simpa +instances only [simplyConnectedRootDatum_B, rank, numRoots, root_b2Index] using h
 
 private lemma b2_nsmul_add_nsmul_not_mem_range (a b : Fin 8) (m n : ℕ)
     (h : m • b2Root a + n • b2Root b ∉ Set.range b2Root) :
     m • ((B 2).simplyConnectedRootDatum ht).root (b2Index a) +
         n • ((B 2).simplyConnectedRootDatum ht).root (b2Index b) ∉
       Set.range ((B 2).simplyConnectedRootDatum ht).root := by
-  simp only [root_simplyConnectedRootDatum_b2Index (ht := ht),
-    range_root_simplyConnectedRootDatum_B_two (ht := ht)]
-  simpa +instances only [rank] using h
+  simpa +instances only [simplyConnectedRootDatum_B, rank, numRoots, root_b2Index,
+    range_root_typeBSimplyConnectedRootDatum_two] using h
 
 private theorem b2_positive_commutator_mem (A : CommAlgCat ℤ) (P : Subgroup
     (LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M)))
@@ -111,7 +109,7 @@ private theorem b2_positive_commutator_mem (A : CommAlgCat ℤ) (P : Subgroup
         (b2_nsmul_add_nsmul_not_mem_range (ht := ht) (Fin.castAdd 4 j) (Fin.castAdd 4 i)
           1 1 (by simpa only [one_smul] using hz.1)))
       (by
-        simp only [root_simplyConnectedRootDatum_b2Index (ht := ht)]
+        simp +instances only [simplyConnectedRootDatum_B, rank, numRoots, root_b2Index]
         intro hzero
         apply hz.2
         funext k
