@@ -121,7 +121,9 @@ operator. -/
 private theorem isSymmetric_continuousLinearMapOfBilin_bilinearComp (hq : ∀ u v, q u v = q v u) :
     ((q.bilinearComp h.metricChangeTransport h.metricChangeTransport)♯ :
       E →ₗ[ℝ] E).IsSymmetric :=
-  (isSelfAdjoint_continuousLinearMapOfBilin fun _ _ ↦ hq _ _).isSymmetric
+  (isSelfAdjoint_continuousLinearMapOfBilin
+    (B := q.bilinearComp h.metricChangeTransport h.metricChangeTransport)
+    fun _ _ ↦ hq _ _).isSymmetric
 
 /-- The pullback of a nondegenerate form along the transport of a positive definite `h` has an
 injective Riesz operator. -/
