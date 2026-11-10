@@ -602,7 +602,7 @@ The band of `-f` between `-b` and `-a` is the band of `f` relative to its upper 
 upper band pair `(f⁻¹[a, b], f⁻¹(b))`, with the critical points counted by their complementary
 index. -/
 
-omit [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
 /-- The critical points of index `i` of `-f` with values in `(-b, -a]` are the critical points of
 `f` with values in `[a, b)` and complementary index `dim M - i`. -/
 private theorem IsMorse.setOf_neg_band_eq (hf : IsMorse I f) (a b : ℝ) (i : ℕ) :
