@@ -383,7 +383,7 @@ private theorem meas_lt_enorm_le_add_setLIntegral (T : Lp E p₁ μ →L[𝕜] L
     simp only [mem_union, mem_ofPred_eq, not_or, not_lt, not_le] at hnot hlt
     refine (hlt.trans_le ?_).false
     rw [hTf, hy, Pi.add_apply, ← ENNReal.add_halves s]
-    exact (enorm_add_le _ _).trans (add_le_add hnot.1 hnot.2.le)
+    exact (eNorm_add_le _ _).trans (add_le_add hnot.1 hnot.2.le)
   calc ν {y | s < ‖T f y‖ₑ}
       ≤ ν {y | s / 2 < ‖T f₁ y‖ₑ} + ν {y | s / 2 ≤ ‖T f₂ y‖ₑ} :=
         (measure_mono_ae hsub).trans (measure_union_le _ _)

@@ -290,7 +290,7 @@ theorem setIntegral_norm_sq_le_of_convex (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω
           integral_const_mul, integral_const_mul]
       _ ≤ _ := by
         gcongr 2 * ?_ + _
-        exact setIntegral_mono_set hdev (ae_of_all _ fun _ ↦ by positivity) hS.eventuallyLE
+        exact setIntegral_mono_set hdev (ae_of_all _ fun _ ↦ by positivity) hS.eventuallySubset
   -- On `Ω`, `‖u‖²` is controlled by the deviation and the mean.
   have hU : ∫ x in Ω, ‖u x‖ ^ 2 ∂μ ≤
       2 * ∫ x in Ω, ‖u x - m‖ ^ 2 ∂μ + 2 * μ.real Ω * ‖m‖ ^ 2 := by

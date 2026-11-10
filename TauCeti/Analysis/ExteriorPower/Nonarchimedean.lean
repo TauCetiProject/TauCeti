@@ -72,7 +72,7 @@ theorem iSup_plucker_mul_le (v : AbsoluteValue K ℝ) (hv : IsNonarchimedean v)
     congr 1
   rw [hmul]
   have hcb := det_mul_transpose_eq_sum_plucker_mul x.row (A.submatrix id e).transpose.row
-  simp only [Matrix.row, Matrix.transpose_transpose] at hcb
+  simp only [Matrix.row] at hcb
   erw [hcb]
   by_cases hp : Nonempty (powersetCard ι p)
   · let _ := hp

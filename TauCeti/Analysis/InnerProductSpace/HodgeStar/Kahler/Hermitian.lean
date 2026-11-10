@@ -109,7 +109,7 @@ theorem hermitianForm_apply (J : AlmostComplexStructure V) (F : ⋀[ℝ]^2 V) (v
     QuadraticMap.associated_apply, Module.End.smul_def,
     QuadraticMap.half_moduleEnd_apply_eq_half_smul]
   simp [invOf_eq_inv, LinearMap.BilinMap.toQuadraticMap_apply, inner_twoVectorContraction_apply,
-    map_add, inner_add_left, inner_add_right]
+    map_add]
   ring
 
 /-- The quadratic form of the Hermitian part is `B(v, v) = F(v, J v)`. -/
