@@ -47,11 +47,7 @@ the error function (`erf z = z γ*(1/2, z²)`) are built.
 ## Implementation
 
 Mathlib's convention `Γ(−n) = 0` makes `1 / Γ` entire, so the series 8.7.1 in its first form holds
-for every `a` with no case split. Entirety in `a` is proved first on the half-plane `0 < Re a`, by
-the Weierstrass M-test with the bound `Complex.norm_inv_Gamma_add_natCast_le`, and then
-carried to the whole plane by the recurrence in `a`, as Mathlib does for
-`Complex.differentiable_one_div_Gamma`. The second form of 8.7.1 is the Cauchy product of the first
-with the exponential series, and the integral 8.2.7 follows from it by termwise integration.
+for every `a` with no case split.
 
 ## References
 
@@ -196,6 +192,10 @@ theorem tricomiIncompleteGamma_ode (a z : ℂ) :
 
 /-! ### Entirety in the parameter -/
 
+/- Entirety in `a` is proved first on the half-plane `0 < Re a`, by the Weierstrass M-test with
+the bound `Complex.norm_inv_Gamma_add_natCast_le`, and then carried to the whole plane by the
+recurrence in `a`, as Mathlib does for `Complex.differentiable_one_div_Gamma`. -/
+
 /-- Tricomi's function is holomorphic in its parameter on the half-plane `0 < Re a`. -/
 private theorem differentiableAt_tricomiIncompleteGamma_left_of_re_pos (z : ℂ) {a₀ : ℂ}
     (ha₀ : 0 < a₀.re) : DifferentiableAt ℂ (fun a => tricomiIncompleteGamma a z) a₀ := by
@@ -248,6 +248,9 @@ theorem differentiable_tricomiIncompleteGamma_left (z : ℂ) :
       ((differentiable_one_div_Gamma.comp (differentiable_id.add_const 1) a).const_mul _)
 
 /-! ### The series in powers of `−z` and the integral -/
+
+/- The second form of 8.7.1 is the Cauchy product of the first with the exponential series, and
+the integral 8.2.7 follows from it by termwise integration. -/
 
 /-- The power series of Tricomi's function in `−z` (DLMF 8.7.1): for `a ∉ −ℕ`,
 `γ*(a, z) = Γ(a)⁻¹ ∑ (−z)ᵏ / (k! (a + k))`. -/
