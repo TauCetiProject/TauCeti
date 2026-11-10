@@ -17,6 +17,9 @@ estimate turns a Cauchy--Riemann equation into a bound on the full differential:
 `L I = A (L 1)` with `‖A‖ ≤ M`, then `‖L a‖ ≤ (1 + M) * ‖L 1‖ * ‖a‖`
 (`ContinuousLinearMap.norm_apply_le_of_apply_I_eq`); with `‖L 1‖ ≤ B` this bounds the operator norm
 by `(1 + M) * B` (`ContinuousLinearMap.norm_le_of_apply_I_eq`).
+A real-linear map is the sum of its values at `1` and `I` weighted by the real and imaginary
+parts (`ContinuousLinearMap.eq_reCLM_smulRight_add_imCLM_smulRight`, and for families
+`ContinuousLinearMap.fun_eq_smulRightL_reCLM_add_smulRightL_imCLM`).
 -/
 
 public section
@@ -71,6 +74,25 @@ theorem norm_le_of_apply_I_eq {V : Type*} [SeminormedAddCommGroup V] [NormedSpac
     ‖f w‖ ≤ (‖f 1‖ + ‖f Complex.I‖) * ‖w‖ := f.norm_apply_le_norm_one_add_norm_I w
     _ ≤ (B + M * B) * ‖w‖ := by gcongr
     _ = (1 + M) * B * ‖w‖ := by ring
+
+/-- A real-linear map out of `ℂ` is determined by its values at `1` and `I`:
+`L = re ⬝ L 1 + im ⬝ L I`. -/
+theorem eq_reCLM_smulRight_add_imCLM_smulRight {V : Type*} [SeminormedAddCommGroup V]
+    [NormedSpace ℝ V] (L : ℂ →L[ℝ] V) :
+    L = Complex.reCLM.smulRight (L 1) + Complex.imCLM.smulRight (L Complex.I) := by
+  ext z
+  simp [L.apply_eq_re_smul_one_add_im_smul_I z]
+
+/-- A family of real-linear maps out of `ℂ` splits through its values at `1` and `I`, written
+with the continuous linear maps `smulRightL` so that it can be postcomposed in families. -/
+theorem fun_eq_smulRightL_reCLM_add_smulRightL_imCLM {X V : Type*} [SeminormedAddCommGroup V]
+    [NormedSpace ℝ V] (D : X → ℂ →L[ℝ] V) :
+    D = (fun x => smulRightL ℝ ℂ V Complex.reCLM (D x 1)) +
+      fun x => smulRightL ℝ ℂ V Complex.imCLM (D x Complex.I) := by
+  funext x
+  conv_lhs => rw [(D x).eq_reCLM_smulRight_add_imCLM_smulRight]
+  ext z
+  simp
 
 end ContinuousLinearMap
 

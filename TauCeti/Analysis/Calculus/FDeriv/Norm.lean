@@ -38,4 +38,9 @@ theorem inner_fderiv_eq_zero_of_eventually_norm_eq {ψ : E → F} {w : E}
     simpa using congrArg (fun L : E →L[ℝ] ℝ => L u) (h₁.unique h₂)
   · simp [fderiv_zero_of_not_differentiableAt hd]
 
+/-- The Fréchet derivative of `y ↦ ‖y - x₀‖ ^ 2` at `x` is `2 • innerSL ℝ (x - x₀)`. -/
+theorem hasFDerivAt_norm_sq_sub {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G]
+    (x₀ x : G) : HasFDerivAt (fun y => ‖y - x₀‖ ^ 2) (2 • innerSL ℝ (x - x₀)) x := by
+  simpa using ((hasFDerivAt_id x).sub_const x₀).norm_sq
+
 end TauCeti

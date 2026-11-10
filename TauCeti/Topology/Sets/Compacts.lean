@@ -17,7 +17,8 @@ The preimage of a compact set under a proper map is compact
 monotone and functorial in `f`. It is the operation through which the cohomology with compact
 supports of a space, a colimit over its compact subsets, is contravariant in proper maps. It also
 records that Mathlib's image `TopologicalSpace.Compacts.map` is monotone, which makes cohomology
-with compact supports covariant in open embeddings.
+with compact supports covariant in open embeddings. Finally, a compact set lies in one member of a
+directed open cover (`TopologicalSpace.Compacts.exists_subset_of_iSup_eq_top`).
 -/
 
 public section
@@ -57,5 +58,12 @@ lemma comap_comp (f : α → β) (g : β → γ) (hf : IsProperMap f) (hg : IsPr
 /-- The image of compact sets under a continuous map is monotone. -/
 lemma map_mono (f : α → β) (hf : Continuous f) : Monotone (Compacts.map f hf) :=
   fun _ _ h ↦ image_mono h
+
+/-- A compact set lies in one member of a directed family of open sets covering the space. -/
+lemma exists_subset_of_iSup_eq_top {ι : Type*} [Nonempty ι] {U : ι → Opens α}
+    (hU : Directed (· ≤ ·) U) (hcover : ⨆ i, U i = ⊤) (K : Compacts α) :
+    ∃ i, (K : Set α) ⊆ U i :=
+  K.isCompact.elim_directed_cover (fun i ↦ (U i : Set α)) (fun i ↦ (U i).isOpen)
+    (fun x _ ↦ by simp [← Opens.coe_iSup, hcover]) (hU.mono_comp _ fun _ _ h ↦ h)
 
 end TopologicalSpace.Compacts
