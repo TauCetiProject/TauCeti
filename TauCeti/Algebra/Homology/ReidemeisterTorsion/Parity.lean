@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Defs
 public import TauCeti.Algebra.Homology.ModuleCat.Finrank
+public import TauCeti.Algebra.Homology.ModuleCat.Parity
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
 import TauCeti.LinearAlgebra.Determinant.Basic
 
@@ -52,12 +53,11 @@ a complex with nonzero homology, such as `F` placed in even degree, has torsion 
   the torsion by `[c'₀ / c₀] · [c'₁ / c₁]⁻¹`.
 * `HomologicalComplex.parityTorsion_reindex`, `HomologicalComplex.parityTorsion_unitsSMul`: the
   effect of reordering and of rescaling the bases.
-* `HomologicalComplex.acyclic_iff_bijective_d_one_zero`,
-  `HomologicalComplex.acyclic_iff_bijective_d_zero_one`: when one differential vanishes, the
-  complex is acyclic exactly when the other one is bijective.
-* `HomologicalComplex.parityTorsion_eq_inv_det`, `HomologicalComplex.parityTorsion_eq_det`: the
-  torsion of such an elementary complex is the determinant of its bijective differential, inverted
-  when that differential goes from odd to even degree.
+* `HomologicalComplex.parityTorsion_eq_inv_det`, `HomologicalComplex.parityTorsion_eq_det`: when
+  one differential vanishes and the other one is bijective, the torsion is the determinant of the
+  bijective differential, inverted when it goes from odd to even degree. Such a complex is acyclic
+  by `HomologicalComplex.acyclic_iff_bijective_d_one_zero` and
+  `HomologicalComplex.acyclic_iff_bijective_d_zero_one`.
 * `HomologicalComplex.parityTorsion_eq_one`: the torsion of the zero complex is `1`.
 
 ## References
@@ -217,38 +217,6 @@ private theorem det_d_congr {i j j' : ZMod 2} (hj : j = j') (h₁ : n i = n j) (
     ((c i).det fun k ↦ (C.d j i).hom (c j (Fin.cast h₁ k))) =
       (c i).det fun k ↦ (C.d j' i).hom (c j' (Fin.cast h₂ k)) := by
   subst hj; rfl
-
-/-- A parity complex is acyclic exactly when the image of each differential is the kernel of the
-other one. -/
-private theorem acyclic_iff_range_eq_ker : C.Acyclic ↔
-    LinearMap.range (C.d 1 0).hom = LinearMap.ker (C.d 0 1).hom ∧
-      LinearMap.range (C.d 0 1).hom = LinearMap.ker (C.d 1 0).hom := by
-  have e₀ := C.exactAt_iff' 1 0 1 ((ChainComplex.prev _ 0).trans (zero_add 1))
-    ((ChainComplex.next _ 0).trans (by decide))
-  have e₁ := C.exactAt_iff' 0 1 0 ((ChainComplex.prev _ 1).trans (CharTwo.add_self_eq_zero 1))
-    ((ChainComplex.next _ 1).trans (sub_self 1))
-  simp only [ShortComplex.moduleCat_exact_iff_range_eq_ker, shortComplexFunctor'_obj_f,
-    shortComplexFunctor'_obj_g] at e₀ e₁
-  rw [← e₀, ← e₁]
-  constructor
-  · exact fun h ↦ ⟨h 0, h 1⟩
-  · rintro ⟨h₀, h₁⟩ i
-    fin_cases i
-    exacts [h₀, h₁]
-
-/-- A parity complex whose even-to-odd differential vanishes is acyclic exactly when its
-odd-to-even differential is bijective. -/
-theorem acyclic_iff_bijective_d_one_zero (hd : C.d 0 1 = 0) :
-    C.Acyclic ↔ Function.Bijective (C.d 1 0).hom := by
-  simp [acyclic_iff_range_eq_ker, hd, Function.Bijective, ← LinearMap.ker_eq_bot,
-    ← LinearMap.range_eq_top, eq_comm (a := ⊥), and_comm]
-
-/-- A parity complex whose odd-to-even differential vanishes is acyclic exactly when its
-even-to-odd differential is bijective. -/
-theorem acyclic_iff_bijective_d_zero_one (hd : C.d 1 0 = 0) :
-    C.Acyclic ↔ Function.Bijective (C.d 0 1).hom := by
-  simp [acyclic_iff_range_eq_ker, hd, Function.Bijective, ← LinearMap.ker_eq_bot,
-    ← LinearMap.range_eq_top, eq_comm (a := ⊥)]
 
 /-- In an acyclic parity complex where `C.d (j + 1 + 1) (j + 1)` vanishes and `C.d (j + 1) j` is
 bijective, the bracket in degree `j + 1 + 1 = j` is the bracket in degree `j + 1` times the
