@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.NormalForm
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+import TauCeti.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
 # The parametric Morse lemma in a trivial bundle
@@ -126,17 +127,6 @@ private theorem tendsto_verticalHessianPair (hf : ContDiff ℝ 2 f) :
     (a, (0 : E))
   simpa only [hessianAverage_zero] using h
 
-omit [NormedSpace ℝ P] in
-/-- A fibrewise linear change of coordinates `(b, v) ↦ (b, e b v)`, with `e` continuous at `a`,
-tends to `(a, 0)` at `(a, 0)`. -/
-private theorem tendsto_prodMk_clm_apply {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    [NormedAddCommGroup G] [NormedSpace ℝ G] {e : P → F →L[ℝ] G} (he : ContinuousAt e a) :
-    Tendsto (fun z : P × F ↦ (z.1, e z.1 z.2)) (𝓝 (a, 0)) (𝓝 (a, 0)) := by
-  have h : ContinuousAt (fun z : P × F ↦ e z.1 z.2) (a, 0) :=
-    ContinuousAt.clm_apply (ContinuousAt.comp (f := Prod.fst) (x := (a, (0 : F))) he
-      continuousAt_fst) continuousAt_snd
-  simpa using continuousAt_fst.tendsto.prodMk_nhds h.tendsto
-
 /-- Near a point of the zero section with invertible vertical Hessian, the canonical parametric
 Morse coordinate of a `C^{n+2}` family is `C^n`. -/
 theorem eventually_contDiffAt_parametricMorseCoord (hf : ContDiff ℝ (n + 2) f)
@@ -231,7 +221,7 @@ theorem eventually_parametricMorseCoord_comp (hf : ContDiff ℝ 2 f)
       hessianAverage_comp_continuousLinearEquiv_apply (hslice z.1) (e z.1) 0 z.2 w w'
   -- The change of coordinates `ψ (b, v) = (b, e b v)` fixes `(a, 0)`.
   set ψ : P × E' → P × E := fun z ↦ (z.1, e z.1 z.2)
-  have hψ : Tendsto ψ (𝓝 (a, 0)) (𝓝 (a, 0)) := tendsto_prodMk_clm_apply he
+  have hψ : Tendsto ψ (𝓝 (a, 0)) (𝓝 (a, 0)) := he.tendsto_prodMk_clm_apply
   have hpair := (tendsto_verticalHessianPair hf).comp hψ
   -- Pulling back along `e b` conjugates the canonical congruence of `f` by `e b`.
   filter_upwards [eventually_morseCongruence_bilinearComp
@@ -285,13 +275,7 @@ coordinates near the zero section: `f' (σ b, T b v) = f (b, v)` for `(b, v)` ne
 `σ` is any change of parameter and `T b : E ≃L[ℝ] E'` are linear isomorphisms of the fibres
 depending continuously on `b` at `a`. No regularity of `f'` or `σ` is assumed. Then near `(a, 0)`
 the canonical coordinates correspond:
-`parametricMorseCoord f' (σ b, T b v) = T b (parametricMorseCoord f (b, v))`.
-
-This combines the naturality for fibrewise linear changes
-(`TauCeti.eventually_parametricMorseCoord_comp`) with the locality of the coordinate
-(`Filter.EventuallyEq.parametricMorseCoord`) and the fact that it only reads the family along
-fibres (`TauCeti.parametricMorseCoord_comp_prodMap`), so that the parameter may be changed
-arbitrarily. -/
+`parametricMorseCoord f' (σ b, T b v) = T b (parametricMorseCoord f (b, v))`. -/
 theorem eventually_parametricMorseCoord_transition (hf : ContDiff ℝ 2 f)
     (hH : (fderiv ℝ (fderiv ℝ fun v ↦ f (a, v)) 0).IsInvertible)
     (hT : ContinuousAt (fun b ↦ (T b : E →L[ℝ] E')) a)
@@ -305,9 +289,9 @@ theorem eventually_parametricMorseCoord_transition (hf : ContDiff ℝ 2 f)
         (x := a) (contDiffAt_map_inverse (n := 0) (T a)).continuousAt hT
   -- The fibrewise changes of coordinates `(b, v) ↦ (b, T b v)` and its inverse fix `(a, 0)`.
   have hψ : Tendsto (fun z : P × E ↦ (z.1, T z.1 z.2)) (𝓝 (a, 0)) (𝓝 (a, 0)) :=
-    tendsto_prodMk_clm_apply hT
+    hT.tendsto_prodMk_clm_apply
   have hψsymm : Tendsto (fun z : P × E' ↦ (z.1, (T z.1).symm z.2)) (𝓝 (a, 0)) (𝓝 (a, 0)) :=
-    tendsto_prodMk_clm_apply hTsymm
+    hTsymm.tendsto_prodMk_clm_apply
   -- Read in the parameter of `f`, the family `f'` is near `(a, 0)` the pullback of `f` along
   -- `(T b)⁻¹`, whose canonical coordinate is natural.
   have hloc : (fun z : P × E' ↦ f' (σ z.1, z.2)) =ᶠ[𝓝 (a, 0)]
