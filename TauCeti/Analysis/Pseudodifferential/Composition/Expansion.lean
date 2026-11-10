@@ -32,7 +32,7 @@ term is the pointwise composition `a ∘ b`, so `a # b - a ∘ b` has order `m' 
 * `TauCeti.Symbol.sharpTerm`: the `k`-th term of the expansion, a symbol of order `m' + m - k`
   built from the iterated derivatives `TauCeti.Symbol.iteratedFrequencyDeriv` and
   `TauCeti.Symbol.iteratedSpatialDeriv`, with the Leibniz rules
-  `TauCeti.Symbol.spatialDeriv_sharpTerm` and `TauCeti.Symbol.coefficient_frequencyDeriv_sharpTerm`,
+  `TauCeti.Symbol.spatialDeriv_sharpTerm` and `TauCeti.Symbol.frequencyDeriv_sharpTerm`,
   and leading term `a ∘ b` (`TauCeti.Symbol.sharpTerm_zero`).
 * `TauCeti.Symbol.exists_sharp_sub_sum_sharpTerm`: **the composition expansion**. For every `N`,
   `a # b - ∑_{k < N} sharpTerm k a b` is a symbol of order `m' + m - N`.
@@ -116,20 +116,22 @@ theorem spatialDeriv_sharpTerm (k : ℕ) (a : Symbol n W U m') (b : Symbol n V W
     spatialDeriv_iteratedSpatialDeriv, Finset.sum_add_distrib, smul_add, coefficient_add,
     coefficient_smul, coefficient_sum, coefficient_inclusion, Pi.add_apply]
 
-/-- **Leibniz rule in the frequency** for the terms of the expansion. -/
-theorem coefficient_frequencyDeriv_sharpTerm (k : ℕ) (a : Symbol n W U m') (b : Symbol n V W m)
-    (j : Fin n) (x ξ : CoordinateSpace n) :
-    (frequencyDeriv j (sharpTerm k a b)).coefficient (x, ξ) =
-      (sharpTerm k (frequencyDeriv j a) b).coefficient (x, ξ) +
-        (sharpTerm k a (frequencyDeriv j b)).coefficient (x, ξ) := by
+/-- **Leibniz rule in the frequency** for the terms of the expansion. The orders
+`m' - 1 + m - k` and `m' + (m - 1) - k` of the two terms are identified with the order
+`m' + m - k - 1` of the left side through `Symbol.inclusion`. -/
+theorem frequencyDeriv_sharpTerm (k : ℕ) (a : Symbol n W U m') (b : Symbol n V W m) (j : Fin n) :
+    frequencyDeriv j (sharpTerm k a b) =
+      inclusion (by linarith) (sharpTerm k (frequencyDeriv j a) b) +
+        inclusion (by linarith) (sharpTerm k a (frequencyDeriv j b)) := by
+  ext1
+  funext ⟨x, ξ⟩
   rw [coefficient_frequencyDeriv]
   simp only [sharpTerm, coefficient_inclusion]
   rw [← coefficient_frequencyDeriv]
   simp only [map_smul, map_sum, frequencyDeriv_comp, Finset.sum_add_distrib, smul_add,
     coefficient_add, coefficient_smul, coefficient_sum, coefficient_inclusion, Pi.add_apply,
-    Pi.smul_apply, Finset.sum_apply, coefficient_comp,
-    coefficient_frequencyDeriv_iteratedFrequencyDeriv,
-    coefficient_frequencyDeriv_iteratedSpatialDeriv]
+    Pi.smul_apply, Finset.sum_apply, coefficient_comp, frequencyDeriv_iteratedFrequencyDeriv,
+    frequencyDeriv_iteratedSpatialDeriv]
 
 /-! ### The terms of the expansion as integrals -/
 
@@ -376,7 +378,8 @@ private theorem coordinateDeriv_snd_coefficient_expansionRemainder (N : ℕ) (a 
   rw [← coefficient_frequencyDeriv]
   simp only [expansionRemainder, map_sub, map_sum, frequencyDeriv_inclusion, coefficient_sub,
     coefficient_sum, coefficient_inclusion, Pi.sub_apply, Finset.sum_apply,
-    coefficient_frequencyDeriv_sharp, coefficient_frequencyDeriv_sharpTerm, Finset.sum_add_distrib]
+    coefficient_frequencyDeriv_sharp, frequencyDeriv_sharpTerm, coefficient_add, Pi.add_apply,
+    Finset.sum_add_distrib]
   abel
 
 variable [CompleteSpace W] [CompleteSpace U]

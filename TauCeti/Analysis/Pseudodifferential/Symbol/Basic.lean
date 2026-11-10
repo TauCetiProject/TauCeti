@@ -679,14 +679,17 @@ theorem iteratedSpatialDeriv_zero (r : Fin 0 → Fin n) (a : Symbol n V W m) :
   simp [mixedDeriv_def]
 
 /-- An iterated frequency derivative along a word with one more letter `j` at the end is the
-iterated frequency derivative of `∂_{ξ_j} a`. The two symbols have the orders `m - (k + 1)` and
-`m - 1 - k`, so the statement is on coefficients. -/
-theorem coefficient_iteratedFrequencyDeriv_snoc {k : ℕ} (r : Fin k → Fin n) (j : Fin n)
-    (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
-    (iteratedFrequencyDeriv (Fin.snoc r j) a).coefficient (x, ξ) =
-      (iteratedFrequencyDeriv r (frequencyDeriv j a)).coefficient (x, ξ) := by
-  simp only [coefficient_iteratedFrequencyDeriv, mixedDeriv_frequencyDeriv, List.ofFn_succ',
-    Fin.snoc_castSucc, Fin.snoc_last, List.concat_eq_append]
+iterated frequency derivative of `∂_{ξ_j} a`. The order `m - 1 - k` of the right side is
+identified with the order `m - (k + 1)` of the left side through `Symbol.inclusion`. -/
+theorem iteratedFrequencyDeriv_snoc {k : ℕ} (r : Fin k → Fin n) (j : Fin n)
+    (a : Symbol n V W m) :
+    iteratedFrequencyDeriv (Fin.snoc r j) a =
+      inclusion (by push_cast; linarith) (iteratedFrequencyDeriv r (frequencyDeriv j a)) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp only [coefficient_iteratedFrequencyDeriv, coefficient_inclusion,
+    mixedDeriv_frequencyDeriv, List.ofFn_succ', Fin.snoc_castSucc, Fin.snoc_last,
+    List.concat_eq_append]
 
 /-- An iterated spatial derivative along a word with one more letter `j` at the end is the
 iterated spatial derivative of `∂_{x_j} a`. -/
@@ -741,12 +744,17 @@ theorem spatialDeriv_iteratedSpatialDeriv (j : Fin n) {k : ℕ} (r : Fin k → F
     ((a.contDiff_coefficient_slice ξ).of_le (mod_cast le_top)), coordinateDeriv_cons,
     coordinateDeriv_cons, coordinateDeriv_nil]
 
-/-- Frequency derivatives commute with iterated frequency derivatives. -/
-theorem coefficient_frequencyDeriv_iteratedFrequencyDeriv (j : Fin n) {k : ℕ}
-    (r : Fin k → Fin n) (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
-    (frequencyDeriv j (iteratedFrequencyDeriv r a)).coefficient (x, ξ) =
-      (iteratedFrequencyDeriv r (frequencyDeriv j a)).coefficient (x, ξ) := by
-  rw [coefficient_frequencyDeriv, coefficient_iteratedFrequencyDeriv, mixedDeriv_frequencyDeriv]
+/-- Frequency derivatives commute with iterated frequency derivatives. The order `m - 1 - k` of
+the right side is identified with the order `m - k - 1` of the left side through
+`Symbol.inclusion`. -/
+theorem frequencyDeriv_iteratedFrequencyDeriv (j : Fin n) {k : ℕ} (r : Fin k → Fin n)
+    (a : Symbol n V W m) :
+    frequencyDeriv j (iteratedFrequencyDeriv r a) =
+      inclusion (by linarith) (iteratedFrequencyDeriv r (frequencyDeriv j a)) := by
+  ext1
+  funext ⟨x, ξ⟩
+  rw [coefficient_frequencyDeriv, coefficient_inclusion, coefficient_iteratedFrequencyDeriv,
+    mixedDeriv_frequencyDeriv]
   simp only [coefficient_iteratedFrequencyDeriv, mixedDeriv_def, coordinateDeriv_nil]
   rw [coordinateDeriv_perm (List.perm_append_singleton j (List.ofFn r))
     (f := fun η ↦ a.coefficient (x, η))
@@ -754,10 +762,11 @@ theorem coefficient_frequencyDeriv_iteratedFrequencyDeriv (j : Fin n) {k : ℕ}
     coordinateDeriv_cons, coordinateDeriv_cons, coordinateDeriv_nil]
 
 /-- Frequency derivatives commute with iterated position derivatives. -/
-theorem coefficient_frequencyDeriv_iteratedSpatialDeriv (j : Fin n) {k : ℕ}
-    (r : Fin k → Fin n) (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
-    (frequencyDeriv j (iteratedSpatialDeriv r a)).coefficient (x, ξ) =
-      (iteratedSpatialDeriv r (frequencyDeriv j a)).coefficient (x, ξ) := by
+theorem frequencyDeriv_iteratedSpatialDeriv (j : Fin n) {k : ℕ} (r : Fin k → Fin n)
+    (a : Symbol n V W m) :
+    frequencyDeriv j (iteratedSpatialDeriv r a) = iteratedSpatialDeriv r (frequencyDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
   rw [coefficient_frequencyDeriv, coefficient_iteratedSpatialDeriv, mixedDeriv_frequencyDeriv,
     mixedDeriv_eq_coordinateDeriv_snd a.contDiff_coefficient]
   simp only [coefficient_iteratedSpatialDeriv, mixedDeriv_def, coordinateDeriv_nil, List.nil_append]
