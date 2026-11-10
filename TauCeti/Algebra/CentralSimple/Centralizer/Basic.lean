@@ -295,6 +295,15 @@ theorem tensorCentralizerAlgHom_tmul (b : B) (c : Subalgebra.centralizer K (B : 
 
 end Identification
 
+/-- A ring `A` is nontrivial as soon as `M ⊗[K] Aᵐᵒᵖ` is simple for some `K`-algebra `M`: were `A`
+trivial, the tensor product would be trivial too (`TensorProduct.uniqueRight`), and a simple ring
+is nontrivial. -/
+theorem nontrivial_of_isSimpleRing_tensorProduct_mulOpposite {K A : Type*} [CommRing K] [Ring A]
+    [Algebra K A] (M : Type*) [Ring M] [Algebra K M] [IsSimpleRing (M ⊗[K] Aᵐᵒᵖ)] :
+    Nontrivial A :=
+  not_subsingleton_iff_nontrivial.1 fun _ =>
+    not_subsingleton (M ⊗[K] Aᵐᵒᵖ) TensorProduct.uniqueRight.instSubsingleton
+
 section DimensionCount
 
 variable {K A : Type*} [Field K] [Ring A] [Algebra K A] [FiniteDimensional K A]
@@ -321,8 +330,7 @@ theorem finrank_mul_finrank_centralizer_of_isSimpleRing_tensorProduct_mulOpposit
     (MulOpposite.opLinearEquiv K (M := A)).finrank_eq.symm,
     ← (centralizerAlgEquivEnd B).toLinearEquiv.finrank_eq] at key
   -- `key : c * (b * a) = a ^ 2`; cancel one factor of `a = finrank K A`.
-  have : Nontrivial A := not_subsingleton_iff_nontrivial.1 fun _ =>
-    not_subsingleton (↥B ⊗[K] Aᵐᵒᵖ) inferInstance
+  have := nontrivial_of_isSimpleRing_tensorProduct_mulOpposite (K := K) (A := A) ↥B
   have ha : 0 < finrank K A := Module.finrank_pos
   refine Nat.eq_of_mul_eq_mul_right ha ?_
   rw [sq] at key
@@ -333,8 +341,7 @@ theorem finrank_mul_finrank_centralizer_of_isSimpleRing_tensorProduct_mulOpposit
 ambient algebra is simple. No centrality hypothesis on the subalgebra is needed. -/
 theorem _root_.Subalgebra.isSimpleRing_centralizer_of_isSimpleRing_tensorProduct :
     IsSimpleRing (Subalgebra.centralizer K (B : Set A)) := by
-  have : Nontrivial A := not_subsingleton_iff_nontrivial.1 fun _ =>
-    not_subsingleton (↥B ⊗[K] Aᵐᵒᵖ) inferInstance
+  have := nontrivial_of_isSimpleRing_tensorProduct_mulOpposite (K := K) (A := A) ↥B
   have : FiniteDimensional K ↥B :=
     FiniteDimensional.of_injective B.val.toLinearMap Subtype.val_injective
   have : IsArtinianRing (↥B ⊗[K] Aᵐᵒᵖ) := IsArtinianRing.of_finite K _
