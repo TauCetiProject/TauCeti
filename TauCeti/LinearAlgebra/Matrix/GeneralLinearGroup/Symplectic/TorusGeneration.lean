@@ -21,9 +21,10 @@ diag(a, a⁻¹) = x₊(a) x₋(-a⁻¹) x₊(a) x₊(-1) x₋(1) x₊(-1)
 ```
 
 expresses the corresponding diagonal Levi element as a product of long-root elements. Every
-point of the diagonal torus is a product of these coordinate elements. Combining this with the
-existing Gaussian generation theorem removes its diagonal-torus hypothesis and proves generation
-by the type-`C` simple roots alone.
+point of the diagonal torus is a product of these coordinate elements. With the difference roots
+this gives the whole general-linear Levi subgroup, and the block Gaussian elimination of
+`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.GaussianGeneration` then proves
+generation by the root subgroups, and by the type-`C` simple roots alone.
 
 ## Main results
 
@@ -139,23 +140,64 @@ section Field
 variable {K : Type u} [Field K]
 
 /-- **The standard symplectic root subgroups generate the full symplectic group over a field.**
-The long roots generate the diagonal Levi subgroup, so the diagonal hypothesis in Gaussian
-generation is automatic. -/
+The long roots generate the diagonal Levi subgroup, and with the difference roots the whole
+general-linear Levi subgroup. Multiplying by an upper unipotent makes the upper-left block of any
+element invertible, and block Gaussian elimination (`mem_of_isUnit_toBlocks₁₁`) concludes. -/
 theorem eq_top_of_root_subgroups
     (H : Subgroup (GLSymplecticFin m K))
     (hroot : ∀ (root : RootSubgroupIndex m) (c : Multiplicative K), root.hom c ∈ H) :
     H = ⊤ := by
-  apply eq_top_of_root_subgroups_of_diagonal H hroot
-  intro s
-  apply leviHom_diagGL_mem_of_long H
-  · intro i c
-    simpa only [RootSubgroupIndex.hom_positiveLong,
-      positiveLongRootTransvectionHom_apply, toAdd_ofAdd] using
-        hroot (.positiveLong i) (Multiplicative.ofAdd c)
-  · intro i c
-    simpa only [RootSubgroupIndex.hom_negativeLong,
-      negativeLongRootTransvectionHom_apply, toAdd_ofAdd] using
-        hroot (.negativeLong i) (Multiplicative.ofAdd c)
+  have hdiagonal (s : Fin m → Kˣ) : leviHom (diagGL s) ∈ H := by
+    apply leviHom_diagGL_mem_of_long H
+    · intro i c
+      simpa only [RootSubgroupIndex.hom_positiveLong,
+        positiveLongRootTransvectionHom_apply, toAdd_ofAdd] using
+          hroot (.positiveLong i) (Multiplicative.ofAdd c)
+    · intro i c
+      simpa only [RootSubgroupIndex.hom_negativeLong,
+        negativeLongRootTransvectionHom_apply, toAdd_ofAdd] using
+          hroot (.negativeLong i) (Multiplicative.ofAdd c)
+  apply eq_top_iff.mpr
+  intro g _
+  have hdifference : ∀ {i j : Fin m} (hij : i ≠ j) (c : K),
+      differenceShortRootUnit hij c ∈ H := by
+    intro i j hij c
+    simpa only [RootSubgroupIndex.hom_difference, differenceShortRootHom_apply,
+      toAdd_ofAdd] using
+      hroot (.difference i j hij) (Multiplicative.ofAdd c)
+  have hupper := Submonoid.upperUnipotent_mem_of_root_subgroups_hom H.toSubmonoid hroot
+  have hlower := Submonoid.lowerUnipotent_mem_of_root_subgroups_hom H.toSubmonoid hroot
+  have hlevi : ∀ A : GL (Fin m) K, leviHom A ∈ H :=
+    leviHom_mem_of_difference_of_diagonal H hdifference hdiagonal
+  let M : Matrix (Fin m ⊕ Fin m) (Fin m ⊕ Fin m) K :=
+    ((mulEquivGLSymplectic m K g : GLSymplectic (Fin m) K) : GL (Fin m ⊕ Fin m) K)
+  let A := M.toBlocks₁₁
+  let C := M.toBlocks₂₁
+  have hM : M ∈ Matrix.symplecticGroup (Fin m) K := by
+    simpa only [M] using GLSymplectic.mem_iff_mem_symplecticGroup.mp
+      (mulEquivGLSymplectic m K g).property
+  have hker (x : Fin m → K) (hAx : A *ᵥ x = 0) (hCx : C *ᵥ x = 0) : x = 0 := by
+    have hv : M *ᵥ Sum.elim x 0 = M *ᵥ Sum.elim 0 0 := by
+      rw [← M.fromBlocks_toBlocks]
+      simp [Matrix.fromBlocks_mulVec, A, C, hAx, hCx]
+    exact (Sum.elim_eq_iff.mp
+      (Matrix.mulVec_injective_iff_isUnit.mpr
+        (((mulEquivGLSymplectic m K g : GLSymplectic (Fin m) K) :
+          GL (Fin m ⊕ Fin m) K).isUnit) hv)).1
+  have hcomm : Aᵀ * C = Cᵀ * A := by
+    have hblocks := (SymplecticGroup.fromBlocks_mem_iff).mp
+      (M.fromBlocks_toBlocks ▸ hM)
+    exact hblocks.1
+  obtain ⟨X, hX, hunit⟩ :=
+    exists_isSymm_isUnit_add_mul_of_ker_inter_eq_bot_of_transpose_mul_comm hker hcomm
+  -- Left multiplication by `[1 X; 0 1]` changes the leading block to `A + XC`.
+  have hu : upperUnipotent X hX ∈ H := hupper X hX
+  have hprod : upperUnipotent X hX * g ∈ H := by
+    apply mem_of_isUnit_toBlocks₁₁ H hupper hlower hlevi
+    rw [toBlocks₁₁_upperUnipotent_mul]
+    exact hunit
+  have := H.mul_mem (H.inv_mem hu) hprod
+  simpa only [inv_mul_cancel_left] using this
 
 /-- **The positive and negative simple-root families generate the standard symplectic group over
 a field.** It is enough to contain both orientations of the adjacent difference roots and one
