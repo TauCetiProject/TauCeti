@@ -43,6 +43,9 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
   `TauCeti.Symbol.sharp_inclusion`).
 * `TauCeti.Symbol.IsSmoothing.sharp_right`, `TauCeti.Symbol.IsSmoothing.sharp_left`: the
   smoothing symbols form an ideal for `#`.
+* `TauCeti.Symbol.exists_bound_mixedDeriv_of_leibniz`: the symbol estimates for any coefficient
+  built from pairs of symbols that satisfies the Leibniz rules of `#`, shared by `a # b` and the
+  remainders of its asymptotic expansion.
 
 The facts used about `b̂` (rapid decay, joint continuity, differentiation in `ξ` and the formula
 `(∂_{x_j} b)^(η, ξ) = 2πi ηⱼ b̂(η, ξ)`) are in `TauCeti.Analysis.Pseudodifferential.Sobolev`.
@@ -484,55 +487,75 @@ private theorem contDiff_compCoeff (hb : b.HasCompactSpatialSupport) :
       (ContDiff.sum fun j _ ↦ ((ih (a := Symbol.frequencyDeriv j a) hb).add
         (ih (a := a) (hb.frequencyDeriv j))).const_smul _)
 
-/-- The symbol estimates of order `m' + m` for the composition coefficient, by induction on the
-number of derivatives: each derivative falls on one of the two symbols by the Leibniz rules, and a
-frequency derivative lowers the order of that symbol by one. -/
-private theorem exists_bound_compCoeff (N : ℕ) :
-    ∀ {m m' : ℝ} (a : Symbol n W U m') (b : Symbol n V W m), b.HasCompactSpatialSupport →
-      ∀ α β : List (Fin n), α.length + β.length = N → ∀ K : Set (CoordinateSpace n),
-        IsCompact K → ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
-          ‖mixedDeriv α β (compCoeff a b) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
-  induction N with
+/-- The symbol estimates for a coefficient built from pairs of symbols that satisfies the Leibniz
+rules of a composition. Let `F a b hb` be a smooth coefficient for every symbol `a` of order `m'`
+and symbol `b` of order `m` with compact spatial support, bounded by `C ⟨ξ⟩ ^ (m' + m - c)` for
+positions in a compact set. If every position or frequency derivative of `F a b hb` is the sum of
+`F` at the two pairs with one symbol differentiated, then the mixed derivative along `α` and `β`
+is bounded by `C ⟨ξ⟩ ^ (m' + m - c - |β|)`. The proof is by induction on the number of
+derivatives: each derivative falls on one of the two symbols, and a frequency derivative lowers
+the order of that symbol by one. -/
+theorem exists_bound_mixedDeriv_of_leibniz (c : ℝ)
+    (F : ∀ {m m' : ℝ}, Symbol n W U m' → ∀ b : Symbol n V W m, b.HasCompactSpatialSupport →
+      CoordinateSpace n × CoordinateSpace n → V →L[ℂ] U)
+    (hF : ∀ {m m' : ℝ} (a : Symbol n W U m') (b : Symbol n V W m)
+      (hb : b.HasCompactSpatialSupport), ContDiff ℝ ∞ (F a b hb))
+    (hfst : ∀ {m m' : ℝ} (a : Symbol n W U m') (b : Symbol n V W m)
+      (hb : b.HasCompactSpatialSupport) (j : Fin n) (x ξ : CoordinateSpace n),
+      coordinateDeriv [j] (fun y ↦ F a b hb (y, ξ)) x =
+        F (Symbol.spatialDeriv j a) b hb (x, ξ) +
+          F a (Symbol.spatialDeriv j b) (hb.spatialDeriv j) (x, ξ))
+    (hsnd : ∀ {m m' : ℝ} (a : Symbol n W U m') (b : Symbol n V W m)
+      (hb : b.HasCompactSpatialSupport) (j : Fin n) (x ξ : CoordinateSpace n),
+      coordinateDeriv [j] (fun ζ ↦ F a b hb (x, ζ)) ξ =
+        F (Symbol.frequencyDeriv j a) b hb (x, ξ) +
+          F a (Symbol.frequencyDeriv j b) (hb.frequencyDeriv j) (x, ξ))
+    (hbound : ∀ {m m' : ℝ} (a : Symbol n W U m') (b : Symbol n V W m)
+      (hb : b.HasCompactSpatialSupport) (K : Set (CoordinateSpace n)), IsCompact K →
+      ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖F a b hb (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - c) / 2))
+    {m m' : ℝ} (a : Symbol n W U m') (b : Symbol n V W m) (hb : b.HasCompactSpatialSupport)
+    (α β : List (Fin n)) {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (F a b hb) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - c - β.length) / 2) := by
+  generalize hN : α.length + β.length = N
+  induction N generalizing m m' α β with
   | zero =>
-    intro m m' a b hb α β hN K hK
     obtain ⟨rfl, rfl⟩ : α = [] ∧ β = [] := by
       simpa [List.length_eq_zero_iff] using hN
-    obtain ⟨C, hC0, hC⟩ := exists_norm_compCoeff_le (a := a) hb hK
+    obtain ⟨C, hC0, hC⟩ := hbound a b hb K hK
     exact ⟨C, hC0, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
   | succ N ih =>
-    intro m m' a b hb α β hN K hK
     rcases List.eq_nil_or_concat' β with rfl | ⟨β', j, rfl⟩
     · rcases List.eq_nil_or_concat' α with rfl | ⟨α', j, rfl⟩
       · simp at hN
       · have hlen : α'.length + ([] : List (Fin n)).length = N := by
           simp only [List.length_append, List.length_singleton, List.length_nil] at hN ⊢
           omega
-        obtain ⟨C₁, hC₁0, hC₁⟩ := ih (Symbol.spatialDeriv j a) b hb α' [] hlen K hK
-        obtain ⟨C₂, hC₂0, hC₂⟩ :=
-          ih a (Symbol.spatialDeriv j b) (hb.spatialDeriv j) α' [] hlen K hK
+        obtain ⟨C₁, hC₁0, hC₁⟩ := ih (Symbol.spatialDeriv j a) b hb α' [] hlen
+        obtain ⟨C₂, hC₂0, hC₂⟩ := ih a (Symbol.spatialDeriv j b) (hb.spatialDeriv j) α' [] hlen
         refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun x hx ξ ↦ ?_⟩
         have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
-            coordinateDeriv [j] (fun y ↦ compCoeff a b (y, q.2)) q.1) =
-              compCoeff (Symbol.spatialDeriv j a) b + compCoeff a (Symbol.spatialDeriv j b) :=
-          funext fun q ↦ coordinateDeriv_fst_compCoeff hb j q.1 q.2
-        rw [← mixedDeriv_coordinateDeriv_fst (contDiff_compCoeff hb), hfun]
-        exact norm_mixedDeriv_add_le (contDiff_compCoeff hb)
-          (contDiff_compCoeff (hb.spatialDeriv j)) (hC₁ x hx ξ) (hC₂ x hx ξ)
+            coordinateDeriv [j] (fun y ↦ F a b hb (y, q.2)) q.1) =
+              F (Symbol.spatialDeriv j a) b hb +
+                F a (Symbol.spatialDeriv j b) (hb.spatialDeriv j) :=
+          funext fun q ↦ hfst a b hb j q.1 q.2
+        rw [← mixedDeriv_coordinateDeriv_fst (hF a b hb), hfun]
+        exact norm_mixedDeriv_add_le (hF _ b hb) (hF a _ _) (hC₁ x hx ξ) (hC₂ x hx ξ)
     · have hlen : α.length + β'.length = N := by
         simp only [List.length_append, List.length_singleton] at hN
         omega
-      obtain ⟨C₁, hC₁0, hC₁⟩ := ih (Symbol.frequencyDeriv j a) b hb α β' hlen K hK
-      obtain ⟨C₂, hC₂0, hC₂⟩ :=
-        ih a (Symbol.frequencyDeriv j b) (hb.frequencyDeriv j) α β' hlen K hK
+      obtain ⟨C₁, hC₁0, hC₁⟩ := ih (Symbol.frequencyDeriv j a) b hb α β' hlen
+      obtain ⟨C₂, hC₂0, hC₂⟩ := ih a (Symbol.frequencyDeriv j b) (hb.frequencyDeriv j) α β' hlen
       refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun x hx ξ ↦ ?_⟩
       have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
-          coordinateDeriv [j] (fun η ↦ compCoeff a b (q.1, η)) q.2) =
-            compCoeff (Symbol.frequencyDeriv j a) b + compCoeff a (Symbol.frequencyDeriv j b) :=
-        funext fun q ↦ coordinateDeriv_snd_compCoeff hb j q.1 q.2
-      have e₁ : (m' - 1 + m - β'.length) / 2 = (m' + m - (β' ++ [j]).length) / 2 := by
+          coordinateDeriv [j] (fun ζ ↦ F a b hb (q.1, ζ)) q.2) =
+            F (Symbol.frequencyDeriv j a) b hb +
+              F a (Symbol.frequencyDeriv j b) (hb.frequencyDeriv j) :=
+        funext fun q ↦ hsnd a b hb j q.1 q.2
+      have e₁ : (m' - 1 + m - c - β'.length) / 2 = (m' + m - c - (β' ++ [j]).length) / 2 := by
         simp only [List.length_append, List.length_singleton, Nat.cast_add, Nat.cast_one]
         ring
-      have e₂ : (m' + (m - 1) - β'.length) / 2 = (m' + m - (β' ++ [j]).length) / 2 := by
+      have e₂ : (m' + (m - 1) - c - β'.length) / 2 = (m' + m - c - (β' ++ [j]).length) / 2 := by
         simp only [List.length_append, List.length_singleton, Nat.cast_add, Nat.cast_one]
         ring
       have h₁ := hC₁ x hx ξ
@@ -540,8 +563,16 @@ private theorem exists_bound_compCoeff (N : ℕ) :
       rw [e₁] at h₁
       rw [e₂] at h₂
       rw [← mixedDeriv_coordinateDeriv_snd, hfun]
-      exact norm_mixedDeriv_add_le (contDiff_compCoeff hb)
-        (contDiff_compCoeff (hb.frequencyDeriv j)) h₁ h₂
+      exact norm_mixedDeriv_add_le (hF _ b hb) (hF a _ _) h₁ h₂
+
+/-- The symbol estimates of order `m' + m` for the composition coefficient. -/
+private theorem exists_bound_compCoeff (hb : b.HasCompactSpatialSupport) (α β : List (Fin n))
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (compCoeff a b) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
+  simpa using exists_bound_mixedDeriv_of_leibniz 0 (fun a b _ ↦ compCoeff a b)
+    (fun _ _ hb ↦ contDiff_compCoeff hb) (fun _ _ hb ↦ coordinateDeriv_fst_compCoeff hb)
+    (fun _ _ hb ↦ coordinateDeriv_snd_compCoeff hb)
+    (fun a _ hb _ hK ↦ by simpa using exists_norm_compCoeff_le (a := a) hb hK) a b hb α β hK
 
 end Integrand
 
@@ -564,7 +595,7 @@ is only its leading term. -/
 def sharp (hb : b.HasCompactSpatialSupport) : Symbol n V U (m' + m) where
   coefficient := compCoeff a b
   contDiff_coefficient := contDiff_compCoeff hb
-  exists_bound K hK α β := exists_bound_compCoeff _ a b hb α β rfl K hK
+  exists_bound _ hK α β := exists_bound_compCoeff hb α β hK
 
 @[simp]
 theorem coefficient_sharp (hb : b.HasCompactSpatialSupport) (x ξ : CoordinateSpace n) :

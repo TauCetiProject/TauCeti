@@ -53,8 +53,8 @@ and the rapid decay of `b̂` bound the remainder by `C ⟨ξ⟩ ^ (m' + m - N)` 
 compact set. For the derivatives of the remainder, the Leibniz rules for `#` and for the terms
 show that a position or frequency derivative of the remainder for `(a, b)` is the sum of the
 remainders for the pairs with one of the two symbols differentiated, so the full symbol estimates
-follow by induction on the number of derivatives, a frequency derivative lowering the order of
-one of the symbols by one.
+follow by the same induction on the number of derivatives as for `a # b`
+(`TauCeti.Symbol.exists_bound_mixedDeriv_of_leibniz`).
 
 ## References
 
@@ -436,66 +436,6 @@ private theorem exists_norm_coefficient_expansionRemainder_le (N : ℕ) (a : Sym
     rw [integral_const_mul]
     ring
 
-/-- The symbol estimates of order `m' + m - N` for the remainder, by induction on the number of
-derivatives: by the Leibniz rules each derivative falls on one of the two symbols, and a frequency
-derivative lowers the order of that symbol by one. -/
-private theorem exists_bound_expansionRemainder (D : ℕ) :
-    ∀ {m m' : ℝ} (a : Symbol n W U m') {b : Symbol n V W m} (hb : b.HasCompactSpatialSupport)
-      (N : ℕ) (α β : List (Fin n)), α.length + β.length = D → ∀ K : Set (CoordinateSpace n),
-        IsCompact K → ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
-          ‖mixedDeriv α β (expansionRemainder N a hb).coefficient x ξ‖ ≤
-            C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - N - β.length) / 2) := by
-  induction D with
-  | zero =>
-    intro m m' a b hb N α β hD K hK
-    obtain ⟨rfl, rfl⟩ : α = [] ∧ β = [] := by
-      simpa [List.length_eq_zero_iff] using hD
-    obtain ⟨C, hC0, hC⟩ := exists_norm_coefficient_expansionRemainder_le N a hb hK
-    exact ⟨C, hC0, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
-  | succ D ih =>
-    intro m m' a b hb N α β hD K hK
-    rcases List.eq_nil_or_concat' β with rfl | ⟨β', j, rfl⟩
-    · rcases List.eq_nil_or_concat' α with rfl | ⟨α', j, rfl⟩
-      · simp at hD
-      · have hlen : α'.length + ([] : List (Fin n)).length = D := by
-          simp only [List.length_append, List.length_singleton, List.length_nil] at hD ⊢
-          omega
-        obtain ⟨C₁, hC₁0, hC₁⟩ := ih (spatialDeriv j a) hb N α' [] hlen K hK
-        obtain ⟨C₂, hC₂0, hC₂⟩ := ih a (hb.spatialDeriv j) N α' [] hlen K hK
-        refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun x hx ξ ↦ ?_⟩
-        have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
-            coordinateDeriv [j] (fun y ↦ (expansionRemainder N a hb).coefficient (y, q.2)) q.1) =
-              (expansionRemainder N (spatialDeriv j a) hb).coefficient +
-                (expansionRemainder N a (hb.spatialDeriv j)).coefficient :=
-          funext fun q ↦ coordinateDeriv_fst_coefficient_expansionRemainder N a hb j q.1 q.2
-        rw [← mixedDeriv_coordinateDeriv_fst (expansionRemainder N a hb).contDiff_coefficient, hfun]
-        exact norm_mixedDeriv_add_le (expansionRemainder N _ hb).contDiff_coefficient
-          (expansionRemainder N a _).contDiff_coefficient (hC₁ x hx ξ) (hC₂ x hx ξ)
-    · have hlen : α.length + β'.length = D := by
-        simp only [List.length_append, List.length_singleton] at hD
-        omega
-      obtain ⟨C₁, hC₁0, hC₁⟩ := ih (frequencyDeriv j a) hb N α β' hlen K hK
-      obtain ⟨C₂, hC₂0, hC₂⟩ := ih a (hb.frequencyDeriv j) N α β' hlen K hK
-      refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun x hx ξ ↦ ?_⟩
-      have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
-          coordinateDeriv [j] (fun ζ ↦ (expansionRemainder N a hb).coefficient (q.1, ζ)) q.2) =
-            (expansionRemainder N (frequencyDeriv j a) hb).coefficient +
-              (expansionRemainder N a (hb.frequencyDeriv j)).coefficient :=
-        funext fun q ↦ coordinateDeriv_snd_coefficient_expansionRemainder N a hb j q.1 q.2
-      have e₁ : (m' - 1 + m - N - β'.length) / 2 = (m' + m - N - (β' ++ [j]).length) / 2 := by
-        simp only [List.length_append, List.length_singleton, Nat.cast_add, Nat.cast_one]
-        ring
-      have e₂ : (m' + (m - 1) - N - β'.length) / 2 = (m' + m - N - (β' ++ [j]).length) / 2 := by
-        simp only [List.length_append, List.length_singleton, Nat.cast_add, Nat.cast_one]
-        ring
-      have h₁ := hC₁ x hx ξ
-      have h₂ := hC₂ x hx ξ
-      rw [e₁] at h₁
-      rw [e₂] at h₂
-      rw [← mixedDeriv_coordinateDeriv_snd, hfun]
-      exact norm_mixedDeriv_add_le (expansionRemainder N _ hb).contDiff_coefficient
-        (expansionRemainder N a _).contDiff_coefficient h₁ h₂
-
 /-- **The composition expansion.** For a symbol `a` of order `m'` and a symbol `b` of order `m`
 with compact spatial support, the composition symbol has the asymptotic expansion
 
@@ -508,7 +448,12 @@ theorem exists_sharp_sub_sum_sharpTerm (a : Symbol n W U m') {b : Symbol n V W m
       (a.sharp b hb).coefficient - ∑ k ∈ Finset.range N, (sharpTerm k a b).coefficient =
         r.coefficient :=
   ⟨⟨(expansionRemainder N a hb).coefficient, (expansionRemainder N a hb).contDiff_coefficient,
-    fun K hK α β ↦ exists_bound_expansionRemainder _ a hb N α β rfl K hK⟩,
+    fun _ hK α β ↦ exists_bound_mixedDeriv_of_leibniz N
+      (fun a _ hb ↦ (expansionRemainder N a hb).coefficient)
+      (fun a _ hb ↦ (expansionRemainder N a hb).contDiff_coefficient)
+      (fun a _ hb ↦ coordinateDeriv_fst_coefficient_expansionRemainder N a hb)
+      (fun a _ hb ↦ coordinateDeriv_snd_coefficient_expansionRemainder N a hb)
+      (fun a _ hb _ hK ↦ exists_norm_coefficient_expansionRemainder_le N a hb hK) a b hb α β hK⟩,
     (coefficient_expansionRemainder N a hb).symm⟩
 
 /-- **The leading symbol of a composition.** For a symbol `a` of order `m'` and a symbol `b` of
