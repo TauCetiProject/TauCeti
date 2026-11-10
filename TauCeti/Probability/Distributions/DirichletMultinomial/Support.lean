@@ -47,8 +47,9 @@ theorem support_dirichletMultinomialMeasure (n : ℕ) (a : ι → ℝ) :
     exact dirichletMultinomialMeasure_singleton_ne_zero_iff ha n k
   · simp [ha]
 
-/-- The Euclidean topological support is the finite image of all natural count vectors
-with the prescribed total. No additional limit points occur. -/
+/-- For positive concentrations, the Euclidean topological support is the finite image of all
+natural count vectors with the prescribed total. No additional limit points occur.
+For invalid concentrations, the support is empty. -/
 @[simp]
 theorem support_map_multinomialToEuclidean_dirichletMultinomialMeasure
     (n : ℕ) (a : ι → ℝ) :
