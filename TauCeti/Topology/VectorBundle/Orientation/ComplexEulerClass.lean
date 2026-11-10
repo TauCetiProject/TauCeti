@@ -63,7 +63,8 @@ variable {B : Type w} [TopologicalSpace B]
   [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℂ F E]
   {r : ℕ} (hF : finrank ℂ F = r + 1)
 
-local instance : VectorBundle ℝ F E := VectorBundle.restrictScalars ℝ ℂ F E
+local instance instVectorBundleRealComplexEulerClass : VectorBundle ℝ F E :=
+  VectorBundle.restrictScalars ℝ ℂ F E
 
 /-- **The Euler class of a complex vector bundle** `E → B` of complex rank `r + 1`: the Euler class
 `e(E_ℝ) ∈ H²ʳ⁺²(B; ℤ)` of the underlying real bundle with its canonical orientation
