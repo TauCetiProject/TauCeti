@@ -321,6 +321,7 @@ end IsAnalyticContinuationAlong
 
 /-! ### The monodromy theorem -/
 
+omit [CompleteSpace E] in
 /-- Germ agreement at a point spreads to the points a moving base point reaches nearby: if `F` and
 `G` are analytic at `c t₀` and have the same germ there, then they have the same germ at `c t` for
 every `t` near `t₀`.

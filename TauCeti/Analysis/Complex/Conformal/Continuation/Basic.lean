@@ -161,18 +161,24 @@ theorem eventuallyEq_nhds_of_analyticOnNhd_ball {F G : ℂ → E} {c : ℂ} {r :
 
 /-- **Germ agreement is locally constant.** If `F` and `G` are both analytic at `z`, then for all
 `w` near `z` the germs of `F` and `G` agree at `w` exactly when they agree at `z`. -/
-theorem eventually_eventuallyEq_iff_of_analyticAt [CompleteSpace E] {F G : ℂ → E} {z : ℂ}
+theorem eventually_eventuallyEq_iff_of_analyticAt {F G : ℂ → E} {z : ℂ}
     (hF : AnalyticAt ℂ F z) (hG : AnalyticAt ℂ G z) :
     ∀ᶠ w in 𝓝 z, ((F =ᶠ[𝓝 w] G) ↔ (F =ᶠ[𝓝 z] G)) := by
-  obtain ⟨r₁, hr₁, hF'⟩ := hF.exists_ball_analyticOnNhd
-  obtain ⟨r₂, hr₂, hG'⟩ := hG.exists_ball_analyticOnNhd
+  -- pass to the completion, which is complete, and use that the embedding is injective
+  let e : E →L[ℂ] UniformSpace.Completion E := UniformSpace.Completion.toComplL
+  have hiff : ∀ w, (F =ᶠ[𝓝 w] G) ↔ (e ∘ F =ᶠ[𝓝 w] e ∘ G) := fun w =>
+    ⟨fun h => h.mono fun _ hx => congrArg e hx,
+      fun h => h.mono fun _ hx => UniformSpace.Completion.coe_injective E hx⟩
+  obtain ⟨r₁, hr₁, hF'⟩ := (e.analyticAt (F z) |>.comp hF).exists_ball_analyticOnNhd
+  obtain ⟨r₂, hr₂, hG'⟩ := (e.analyticAt (G z) |>.comp hG).exists_ball_analyticOnNhd
   have hr : 0 < min r₁ r₂ := lt_min hr₁ hr₂
-  have hFr : AnalyticOnNhd ℂ F (ball z (min r₁ r₂)) :=
+  have hFr : AnalyticOnNhd ℂ (e ∘ F) (ball z (min r₁ r₂)) :=
     hF'.mono (ball_subset_ball (min_le_left _ _))
-  have hGr : AnalyticOnNhd ℂ G (ball z (min r₁ r₂)) :=
+  have hGr : AnalyticOnNhd ℂ (e ∘ G) (ball z (min r₁ r₂)) :=
     hG'.mono (ball_subset_ball (min_le_right _ _))
   have hz : z ∈ ball z (min r₁ r₂) := mem_ball_self hr
   filter_upwards [ball_mem_nhds z hr] with w hw
+  rw [hiff, hiff]
   exact ⟨fun h => eventuallyEq_nhds_of_analyticOnNhd_ball hFr hGr hw hz h,
     fun h => eventuallyEq_nhds_of_analyticOnNhd_ball hFr hGr hz hw h⟩
 
@@ -267,7 +273,7 @@ theorem of_differentiableOn [CompleteSpace E] {U : Set ℂ} {F : ℂ → E} (hU 
 
 /-- **A continuation depends only on the germs it carries.** Replacing each `f t` by a function
 with the same germ at `γ t` again gives a continuation along `γ`. -/
-protected theorem congr [CompleteSpace E] (hf : IsAnalyticContinuationAlong f γ s) {f' : X → ℂ → E}
+protected theorem congr (hf : IsAnalyticContinuationAlong f γ s) {f' : X → ℂ → E}
     (h : ∀ t ∈ s, f' t =ᶠ[𝓝 (γ t)] f t) : IsAnalyticContinuationAlong f' γ s where
   continuousOn := hf.continuousOn
   analyticAt t ht := (hf.analyticAt t ht).congr (h t ht).symm
@@ -348,7 +354,7 @@ end Algebra
 
 /-- Agreement of two continuations along the same path is a locally constant property of the
 parameter. This is the local step of the uniqueness theorem. -/
-theorem eventually_eventuallyEq_iff [CompleteSpace E] (hf : IsAnalyticContinuationAlong f γ s)
+theorem eventually_eventuallyEq_iff (hf : IsAnalyticContinuationAlong f γ s)
     (hg : IsAnalyticContinuationAlong g γ s) {t : X} (ht : t ∈ s) :
     ∀ᶠ u in 𝓝[s] t, ((f u =ᶠ[𝓝 (γ u)] g u) ↔ (f t =ᶠ[𝓝 (γ t)] g t)) := by
   have hball := eventually_eventuallyEq_iff_of_analyticAt (hf.analyticAt t ht) (hg.analyticAt t ht)
@@ -363,7 +369,7 @@ same germ at every parameter time.
 
 Preconnectedness of the parameter set cannot be dropped: over a two-point parameter set the
 hypotheses put no relation at all between the germs carried at its two points. -/
-theorem eventuallyEq [CompleteSpace E] (hf : IsAnalyticContinuationAlong f γ s)
+theorem eventuallyEq (hf : IsAnalyticContinuationAlong f γ s)
     (hg : IsAnalyticContinuationAlong g γ s) (hs : IsPreconnected s) {a b : X} (ha : a ∈ s)
     (hb : b ∈ s) (hab : f a =ᶠ[𝓝 (γ a)] g a) :
     f b =ᶠ[𝓝 (γ b)] g b :=
@@ -373,7 +379,7 @@ theorem eventuallyEq [CompleteSpace E] (hf : IsAnalyticContinuationAlong f γ s)
 
 /-- Two continuations along the same path that carry the same germ at one parameter time take the
 same value at every parameter time. -/
-theorem eq_of_eventuallyEq [CompleteSpace E] (hf : IsAnalyticContinuationAlong f γ s)
+theorem eq_of_eventuallyEq (hf : IsAnalyticContinuationAlong f γ s)
     (hg : IsAnalyticContinuationAlong g γ s) (hs : IsPreconnected s) {a b : X} (ha : a ∈ s)
     (hb : b ∈ s) (hab : f a =ᶠ[𝓝 (γ a)] g a) :
     f b (γ b) = g b (γ b) :=
