@@ -179,9 +179,9 @@ private theorem mem_chains_swap {p q : α × α}
       (φ.resolve q).resolve p = (φ.resolve p).resolve q := by
   obtain ⟨h₁, h₂, h₃, h₄⟩ := h
   obtain ⟨hp, hq, hc⟩ := mem_chains_iff.1 hx
-  have hq' : q ∈ φ.inversions := (mem_inversions_resolve_iff_of_ne hp h₁ h₂ h₃ h₄).1 hq
+  have hq' : q ∈ φ.inversions := (mem_inversions_resolve_iff_of_ne h₁ h₂ h₃ h₄).1 hq
   have hp' : p ∈ (φ.resolve q).inversions :=
-    (mem_inversions_resolve_iff_of_ne hq' h₁.symm h₃.symm h₂.symm h₄.symm).2 hp
+    (mem_inversions_resolve_iff_of_ne h₁.symm h₃.symm h₂.symm h₄.symm).2 hp
   have he := resolve_resolve_comm hp hq' h₁ h₂ h₃ h₄
   exact ⟨mem_chains_iff.2 ⟨hq', hp', he ▸ hc⟩, he.symm⟩
 
@@ -308,7 +308,7 @@ private theorem chainPartner_spec {x : (_ : α × α) × (α × α)} (hx : x ∈
   obtain ⟨hp, hq, -⟩ := mem_chains_iff.1 hx
   have hpq : p ≠ q := by
     rintro rfl
-    exact notMem_inversions_resolve_self hp hq
+    exact notMem_inversions_resolve_self hq
   obtain ⟨s, u, w, hsu, hsw, huw, rfl, rfl⟩ :=
     exists_min_max_of_share_coord (mem_inversions.1 hp).1 (mem_inversions.1 hq).1 hpq hd
   obtain ⟨hxor, hqr, hrp⟩ := chains_three_cycle hsu hsw huw hx

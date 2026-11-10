@@ -155,23 +155,27 @@ theorem inversionCount_resolve_lt (h : p ∈ φ.inversions) :
   exact Finset.card_inversions_comp_swap_lt (by rwa [inversions_def] at h)
 
 /-- A resolved crossing is no longer a crossing. -/
-theorem notMem_inversions_resolve_self (h : p ∈ φ.inversions) : p ∉ (φ.resolve p).inversions := by
-  obtain ⟨hlt, a, ha, b, hb, -⟩ := mem_inversions.1 h
-  rw [mem_inversions, resolve_apply h, resolve_apply h, Equiv.swap_apply_left,
-    Equiv.swap_apply_right]
-  rintro ⟨-, a', ha', b', hb', hba'⟩
-  rw [Option.mem_unique ha' hb, Option.mem_unique hb' ha] at hba'
-  obtain ⟨-, a'', ha'', b'', hb'', hab⟩ := mem_inversions.1 h
-  rw [Option.mem_unique ha'' ha, Option.mem_unique hb'' hb] at hab
-  exact hab.not_gt hba'
+theorem notMem_inversions_resolve_self : p ∉ (φ.resolve p).inversions := by
+  by_cases h : p ∈ φ.inversions
+  · obtain ⟨hlt, a, ha, b, hb, -⟩ := mem_inversions.1 h
+    rw [mem_inversions, resolve_apply h, resolve_apply h, Equiv.swap_apply_left,
+      Equiv.swap_apply_right]
+    rintro ⟨-, a', ha', b', hb', hba'⟩
+    rw [Option.mem_unique ha' hb, Option.mem_unique hb' ha] at hba'
+    obtain ⟨-, a'', ha'', b'', hb'', hab⟩ := mem_inversions.1 h
+    rw [Option.mem_unique ha'' ha, Option.mem_unique hb'' hb] at hab
+    exact hab.not_gt hba'
+  · rwa [resolve_of_notMem h]
 
 /-- A pair of strands disjoint from a resolved crossing crosses after the resolution exactly when
 it crossed before. -/
-theorem mem_inversions_resolve_iff_of_ne (h : p ∈ φ.inversions) (h₁ : q.1 ≠ p.1)
+theorem mem_inversions_resolve_iff_of_ne (h₁ : q.1 ≠ p.1)
     (h₂ : q.1 ≠ p.2) (h₃ : q.2 ≠ p.1) (h₄ : q.2 ≠ p.2) :
     q ∈ (φ.resolve p).inversions ↔ q ∈ φ.inversions := by
-  rw [mem_inversions, mem_inversions, resolve_apply h, resolve_apply h,
-    Equiv.swap_apply_of_ne_of_ne h₁ h₂, Equiv.swap_apply_of_ne_of_ne h₃ h₄]
+  by_cases h : p ∈ φ.inversions
+  · rw [mem_inversions, mem_inversions, resolve_apply h, resolve_apply h,
+      Equiv.swap_apply_of_ne_of_ne h₁ h₂, Equiv.swap_apply_of_ne_of_ne h₃ h₄]
+  · rw [resolve_of_notMem h]
 
 omit [Fintype α] in
 /-- Precomposing with the transposition of two strands is postcomposing with the transposition of
@@ -231,8 +235,8 @@ theorem resolve_resolve_comm (hp : p ∈ φ.inversions) (hq : q ∈ φ.inversion
     (h₁ : q.1 ≠ p.1) (h₂ : q.1 ≠ p.2) (h₃ : q.2 ≠ p.1) (h₄ : q.2 ≠ p.2) :
     (φ.resolve p).resolve q = (φ.resolve q).resolve p := by
   have hp' : p ∈ (φ.resolve q).inversions :=
-    (mem_inversions_resolve_iff_of_ne hq h₁.symm h₃.symm h₂.symm h₄.symm).2 hp
-  have hq' : q ∈ (φ.resolve p).inversions := (mem_inversions_resolve_iff_of_ne hp h₁ h₂ h₃ h₄).2 hq
+    (mem_inversions_resolve_iff_of_ne h₁.symm h₃.symm h₂.symm h₄.symm).2 hp
+  have hq' : q ∈ (φ.resolve p).inversions := (mem_inversions_resolve_iff_of_ne h₁ h₂ h₃ h₄).2 hq
   refine toPEquiv_injective ?_
   rw [toPEquiv_resolve hq', toPEquiv_resolve hp', toPEquiv_resolve hp, toPEquiv_resolve hq,
     ← PEquiv.trans_assoc, ← PEquiv.trans_assoc, ← Equiv.toPEquiv_trans, ← Equiv.toPEquiv_trans]
