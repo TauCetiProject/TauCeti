@@ -46,8 +46,6 @@ the stable category of `E`.
   degree zero lies in `Kᵇ(proj E)`.
 * `TauCeti.ExactStructure.boundedProjective_trW_Q_map_ιTop`: splitting off the top term of a
   bounded complex whose lower terms are projective is inverted in the singularity category.
-* `TauCeti.ExactStructure.SingularityCategory.isZero_Q_obj_of_boundedProjective`: bounded
-  complexes of projectives vanish in the singularity category.
 
 ## References
 
@@ -291,17 +289,6 @@ instance : (Q E).IsTriangulated :=
 
 instance : IsTriangulated E.SingularityCategory :=
   Triangulated.Localization.isTriangulated (Q E) E.boundedProjective.trW
-
-variable {E}
-
-/-- **Bounded complexes of projectives vanish in the singularity category.** -/
-lemma isZero_Q_obj_of_boundedProjective {X : E.BoundedDerivedCategory}
-    (hX : E.boundedProjective X) : IsZero ((Q E).obj X) := by
-  -- The map from zero to `X` has cone `X`, so it becomes invertible.
-  have h : E.boundedProjective.trW (0 : 0 ⟶ X) :=
-    ObjectProperty.trW.mk _ (contractible_distinguished₁ X) hX
-  have := Localization.inverts (Q E) _ _ h
-  exact ((Q E).map_isZero (isZero_zero _)).of_iso (asIso ((Q E).map (0 : 0 ⟶ X))).symm
 
 end SingularityCategory
 

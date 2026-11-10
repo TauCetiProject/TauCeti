@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Exact.DerivedCategory.Singularity
+public import TauCeti.CategoryTheory.Exact.DerivedCategory.Singularity.Basic
 public import TauCeti.CategoryTheory.Exact.Stable.Basic
 
 /-!
@@ -58,7 +58,7 @@ instance : E.singleToSingularity.Additive := by
 /-- A projective object vanishes in the singularity category. -/
 theorem isZero_singleToSingularity_obj {P : C} (hP : E.isProjective P) :
     IsZero (E.singleToSingularity.obj P) :=
-  SingularityCategory.isZero_Q_obj_of_boundedProjective
+  ObjectProperty.TrWLocalization.isZero_obj E.boundedProjective (SingularityCategory.Q E)
     (E.boundedProjective_Q_obj_singleFunctor_obj hP)
 
 /-- A morphism factoring through a projective object vanishes in the singularity category. -/
@@ -88,13 +88,8 @@ theorem stableToSingularity_map_projectiveStableFunctor_map {X Y : C} (f : X ⟶
       E.singleToSingularity.map f :=
   CategoryTheory.Quotient.lift_map_functor_map _ _ _ f
 
-instance : E.stableToSingularity.Additive where
-  map_add {X Y f g} := by
-    obtain ⟨f, rfl⟩ := E.projectiveStableFunctor.map_surjective f
-    obtain ⟨g, rfl⟩ := E.projectiveStableFunctor.map_surjective g
-    rw [← E.projectiveStableFunctor.map_add, stableToSingularity_map_projectiveStableFunctor_map,
-      stableToSingularity_map_projectiveStableFunctor_map,
-      stableToSingularity_map_projectiveStableFunctor_map]
-    exact E.singleToSingularity.map_add
+instance : E.stableToSingularity.Additive :=
+  have := Functor.additive_of_iso E.projectiveStableFunctorCompStableToSingularityIso.symm
+  Functor.additive_of_full_essSurj_comp E.projectiveStableFunctor _
 
 end TauCeti.ExactStructure
