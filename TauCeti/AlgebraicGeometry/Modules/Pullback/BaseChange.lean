@@ -30,6 +30,10 @@ inverse image as the base change from `R` to `S`. This is the affine-cover input
 and base change. The module structures remain caller parameters, including at the top open.
 Use `pullbackSectionsEquiv` for extension of scalars along the coordinate-ring map, and
 `isBaseChange_pullbackSections` for extension along the original base-ring map `R ⟶ S`.
+More generally, for affine opens `U` and `V ≤ g⁻¹ U`, pulling back sections and restricting them
+to `V` is a base change along `Γ(X, U) → Γ(Y, V)`, even when `g⁻¹ U` is not affine
+(`isBaseChange_pullbackSectionsLE`); this is the case of the cartesian-square statement below with
+identity vertical maps.
 
 When `R → S` is flat, the same holds over every quasi-compact quasi-separated open `U`, which is
 flat base change for the sections of a quasicoherent sheaf
@@ -58,6 +62,8 @@ statements.
   pullback of a generator of the sections generates the sections of the pullback.
 * `AlgebraicGeometry.Scheme.Hom.isBaseChange_pullbackSections`: base change of sections over an
   affine open, along any base-ring map.
+* `AlgebraicGeometry.Scheme.Hom.isBaseChange_pullbackSectionsLE`: for affine opens `U` and
+  `V ≤ g⁻¹ U`, sections over `V` of the pullback are the base change along `Γ(X, U) → Γ(Y, V)`.
 * `AlgebraicGeometry.Scheme.Hom.flat_sectionsBase_pullback`: flatness of the sections over an
   affine open survives every base change.
 * `AlgebraicGeometry.Scheme.Hom.liftBaseChange_pullbackSectionsBaseLinear_injective`: for flat
@@ -868,5 +874,44 @@ theorem isBaseChange_pullbackSectionsLEBaseLinear (g' : X' ⟶ X) (M : X.Modules
       IsBaseChange Γ(S', W') (pullbackSectionsLEBaseLinear g' M H.toCommSq h eX
         (hUY.le.trans inf_le_left) (hUY.le.trans inf_le_right)) :=
   isBaseChange_pullbackSectionsLEBaseLinear_aux g' M H hW hW' h eX (.inl hUX) hUY
+
+end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+variable {X Y : Scheme.{u}} (g : Y ⟶ X) (M : X.Modules) [M.IsQuasicoherent]
+
+/-- **Base change of sections over affine opens inside the inverse image.** For affine opens `U`
+of `X` and `V ≤ g⁻¹ U` of `Y`, and `M` quasi-coherent, pulling back sections along `g` and
+restricting them to `V` exhibits `Γ(V, g^* M)` as the base change
+`Γ(Y, V) ⊗[Γ(X, U)] Γ(U, M)` along `g.appLE U V hVU`. Unlike `pullbackSectionsEquiv`, the inverse
+image `g⁻¹ U` need not be affine. The `Γ(X, U)`-module structure on `Γ(V, g^* M)` and the linear
+map are caller parameters. -/
+theorem isBaseChange_pullbackSectionsLE {U : X.Opens} (hU : IsAffineOpen U) {V : Y.Opens}
+    (hV : IsAffineOpen V) (hVU : V ≤ g ⁻¹ᵁ U) :
+    letI := (g.appLE U V hVU).hom.toAlgebra
+    ∀ [Module Γ(X, U) Γ((pullback g).obj M, V)]
+      [IsScalarTower Γ(X, U) Γ(Y, V) Γ((pullback g).obj M, V)]
+      (φ : Γ(M, U) →ₗ[Γ(X, U)] Γ((pullback g).obj M, V)),
+      (∀ s, φ s = g.pullbackSectionsLE M U V hVU s) → IsBaseChange Γ(Y, V) φ := by
+  let := (g.appLE U V hVU).hom.toAlgebra
+  intro _ _ φ hφ
+  -- Apply the base change theorem for cartesian squares to the square with identity verticals.
+  -- Its statement lets the identities act on functions through `(𝟙 _).appLE`, so the two
+  -- corresponding scalar towers are supplied explicitly.
+  have hid {Z : Scheme.{u}} {W : Z.Opens} (r : Γ(Z, W)) :
+      Scheme.Hom.appLE (𝟙 Z) W W le_rfl r = r := by
+    simp only [Scheme.Hom.appLE, Scheme.Hom.id_app]
+    exact congr($(Z.presheaf.map_id (op W)) r)
+  have h := @isBaseChange_pullbackSectionsLEBaseLinear _ _ _ _ _ _ _ g M _
+    (IsPullback.id_vert g) U hU V hV hVU U le_rfl hU V (by simpa using hVU) _ _ _
+    (@IsScalarTower.of_algebraMap_smul _ _ _ _ _
+      (Scheme.Hom.appLE (𝟙 X) U U le_rfl).hom.toAlgebra _ _
+      fun r s ↦ by rw [RingHom.algebraMap_toAlgebra, hid])
+    (@IsScalarTower.of_algebraMap_smul _ _ _ _ _
+      (Scheme.Hom.appLE (𝟙 Y) V V le_rfl).hom.toAlgebra _ _
+      fun r s ↦ by rw [RingHom.algebraMap_toAlgebra, hid]) _
+  convert h using 1
+  exact LinearMap.ext hφ
 
 end AlgebraicGeometry.Scheme.Hom
