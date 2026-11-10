@@ -83,11 +83,7 @@ theorem nrComplexPlaces_eq_one (hmin : minpoly ℤ θ = X ^ 2 + 1)
 omit [NumberField K] in
 /-- A field containing a square root of `−1` is totally complex. -/
 theorem isTotallyComplex (hmin : minpoly ℤ θ = X ^ 2 + 1) : IsTotallyComplex K := by
-  have hsq : (θ : K) ^ 2 = -1 := by
-    have h : θ ^ 2 + 1 = 0 := by simp [hmin]
-    have := congrArg (fun x : 𝓞 K ↦ (x : K)) h
-    push_cast at this
-    linear_combination this
+  have hsq : (θ : K) ^ 2 = -1 := by exact_mod_cast sq_eq_neg_one hmin
   -- every place gives an embedding, so `K` has characteristic zero
   refine ⟨fun w ↦ ?_⟩
   have : CharZero K := RingHom.charZero w.embedding
