@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Contact.Contactomorphism
 public import TauCeti.Geometry.Contact.Family
 import TauCeti.Geometry.Manifold.DifferentialForm.Flow.Family
-import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
 # Gray stability for families of contact forms
@@ -89,12 +88,8 @@ private theorem mpullback_timeDerivative_add_mlieDerivForm_contactMoserVectorFie
   ext v
   have h := hα.mlieDerivForm_contactMoserVectorField_add
     (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) (timeDerivative α)) y (v 0)
-  rw [show ![v 0] = v from funext fun i ↦
-    (Matrix.cons_val_fin_one _ _ i).trans (congrArg v (Subsingleton.elim 0 i))] at h
-  rw [coe_mpullback, coe_mpullback, coe_timeDerivative] at h
-  rw [Pi.add_apply, ContinuousAlternatingMap.add_apply, add_comm,
-    ContinuousAlternatingMap.smul_apply, smul_eq_mul, coe_mpullback, coe_timeDerivative]
-  exact h
+  rw [show ![v 0] = v by simp [Matrix.vec_single_eq_const, funext_iff, Fin.forall_fin_one]] at h
+  simpa [add_comm] using h
 
 variable [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] [CompactSpace M]
 

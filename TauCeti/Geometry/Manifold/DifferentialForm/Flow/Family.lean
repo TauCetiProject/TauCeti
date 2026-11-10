@@ -95,28 +95,10 @@ unit vector field `∂_t = (1, 0)` of the time coordinate, as a smooth form. Its
 velocities of the slices of `α` (`TauCeti.hasDerivAt_mpullback_prodMk`). -/
 def SmoothForm.timeDerivative (α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F k) :
     SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F k :=
-  ⟨mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1, by
-    have hT : ContMDiff (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod I).tangent ∞
-        (fun p : ℝ × M ↦ (⟨p, ((1 : ℝ), (0 : E))⟩ : TangentBundle (𝓘(ℝ, ℝ).prod I) (ℝ × M))) :=
-      contMDiff_const_prod_field (X := 0) 1
-        ((contMDiff_zeroSection ℝ (TangentSpace I)).comp contMDiff_snd)
-    have hι {j : ℕ} {φ : RoughForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F (j + 1)}
-        (hφ : IsSmoothForm (𝓘(ℝ, ℝ).prod I) ∞ φ) :
-        IsSmoothForm (𝓘(ℝ, ℝ).prod I) ∞ (φ.interior fun _ ↦ ((1 : ℝ), (0 : E))) :=
-      (isSmoothForm_def _ _).2 fun p ↦
-        RoughForm.contMDiffAt_interior (hT p) (hφ.contMDiff p)
-    refine IsSmoothForm.mem_smoothBundleForms ?_
-    -- By Cartan's formula, `L_{∂_t} α` is built from interior products with `∂_t` and exterior
-    -- derivatives of smooth forms.
-    cases k with
-    | zero =>
-      exact (congrArg (IsSmoothForm (𝓘(ℝ, ℝ).prod I) ∞)
-        (mlieDerivForm_eq_interior_mextDeriv _ α.1)).mpr
-          (hι (isSmoothForm_mextDeriv α.isSmoothForm (by simp)))
-    | succ k =>
-      rw [SmoothForm.mlieDerivForm_eq_interior_mextDeriv_add (hT.mdifferentiable (by simp))]
-      exact (hι (isSmoothForm_mextDeriv α.isSmoothForm (by simp))).add
-        (isSmoothForm_mextDeriv (hι α.isSmoothForm) (by simp))⟩
+  ⟨mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1,
+    (α.isSmoothForm.mlieDerivForm (contMDiff_const_prod_field (X := 0) 1
+      ((contMDiff_zeroSection ℝ (TangentSpace I)).comp contMDiff_snd))
+        (by simp)).mem_smoothBundleForms⟩
 
 /-- The smooth form `TauCeti.SmoothForm.timeDerivative α` is the Lie derivative `L_{∂_t} α`. -/
 @[simp]

@@ -27,7 +27,7 @@ normed coefficients on the model space it agrees with `ContinuousAlternatingMap.
 in the chart at a point it is `curryLeft` of the coordinate expressions of the form and the field.
 Consequently the interior product of a differentiable field and a differentiable form is a
 differentiable form, and likewise for `C^m` fields and forms on a manifold modelled on a complete
-space.
+space (`TauCeti.IsSmoothForm.interior`).
 
 ## References
 
@@ -419,6 +419,15 @@ theorem RoughForm.contMDiffAt_interior [CompleteSpace E] {F : Type*} [NormedAddC
     (RoughForm.inChartAt_interior X ω (mem_extChartAt_target x))
   filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) x] with z hz
   exact RoughForm.inChartAt_interior X ω hz
+
+/-- The interior product of a `C^m` vector field and a `C^m` fixed-coefficient form on a manifold
+modelled on a complete space is a `C^m` form. -/
+theorem IsSmoothForm.interior [CompleteSpace E] {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [IsManifold I 1 M] {m : WithTop ℕ∞}
+    {X : (x : M) → TangentSpace I x} {ω : RoughForm I M F (k + 1)}
+    (hX : ContMDiff I I.tangent m (fun y ↦ (X y : TangentBundle I M)))
+    (hω : IsSmoothForm I m ω) : IsSmoothForm I m (ω.interior X) :=
+  (isSmoothForm_def m _).2 fun x ↦ RoughForm.contMDiffAt_interior (hX x) (hω.contMDiff x)
 
 end FixedCoefficients
 
