@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Consequences.HighDegree
--- Proof-only: the degree of a place is divisible by the degree of the constant field.
-import TauCeti.FieldTheory.FunctionField.Place.ConstantField
+-- Proof-only: a divisor of degree one forces the constant field to be exact.
+import TauCeti.FieldTheory.FunctionField.Divisor.ConstantField
 -- Proof-only: inseparable parameters of prime degree are `p`-th powers.
 import TauCeti.FieldTheory.FunctionField.Frobenius
 -- Proof-only: the generator of `k(x)` generates it.
@@ -44,13 +44,12 @@ Over a perfect constant field this converse rules out inseparable subextensions 
 in a function field of positive genus: if `F / k(x)` has prime degree and is inseparable, then
 `x = y ^ p` with `F = k(y)` (Stichtenoth, Proposition 3.10.2), so `F` has genus zero.
 
-Without a degree-one divisor, a genus-zero function field still has an effective divisor of degree
-two in the anticanonical class, whose Riemann–Roch space has dimension three.
+Without a degree-one divisor, a genus-zero function field with exact constant field still has an
+effective divisor of degree two in the anticanonical class, whose Riemann–Roch space has dimension
+three.
 
 ## Main results
 
-* `TauCeti.isIntegrallyClosedIn_of_exists_divisor_degree_eq_one`: a divisor of degree one forces
-  the field of constants to be exact.
 * `TauCeti.exists_place_degree_eq_one_of_genus_eq_zero_of_divisor_degree_eq_one`: genus zero and
   a degree-one divisor produce a rational place.
 * `TauCeti.nonempty_algEquiv_ratFunc_of_genus_eq_zero_of_divisor_degree_eq_one`: genus zero and a
@@ -83,20 +82,6 @@ namespace TauCeti
 open AlgebraicGeometry
 
 variable {k F : Type*} [Field k] [Field F] [Algebra k F]
-
-/-- **A divisor of degree one forces exact constants**: the degree of every divisor is a multiple
-of the degree of the field of constants `algebraicClosure k F`, because that field sits inside
-the residue field of every place.  No function-field hypothesis is needed. -/
-theorem isIntegrallyClosedIn_of_exists_divisor_degree_eq_one
-    (hdegree : ∃ D : Divisor k F, Divisor.degree D = 1) : IsIntegrallyClosedIn k F := by
-  obtain ⟨D, hD⟩ := hdegree
-  rw [isIntegrallyClosedIn_iff_finrank_algebraicClosure_eq_one]
-  have hdvd : (Module.finrank k (algebraicClosure k F) : ℤ) ∣ Divisor.degree D := by
-    rw [Divisor.degree_eq_sum_support]
-    exact Finset.dvd_sum fun P _ ↦
-      Dvd.dvd.mul_left (Int.natCast_dvd_natCast.mpr P.finrank_algebraicClosure_dvd_degree) _
-  rw [hD] at hdvd
-  exact_mod_cast Int.eq_one_of_dvd_one (Int.natCast_nonneg _) hdvd
 
 /-- A genus-zero function field with a divisor of degree one has a rational place.
 
