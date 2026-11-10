@@ -20,15 +20,19 @@ are compact and contained in the domain. No boundary regularity or boundedness o
 is needed. Thus completeness, local integrability, and the test-function identities defining
 the weak derivative can be verified on relatively compact subdomains.
 
-In finite-dimensional domains, a fixed candidate is a weak derivative if it is one near every
-point. In particular weak derivatives can be checked on any open cover, including overlapping
-covers of unbounded domains. The open-cover equivalences assume a complete codomain, since an
-empty cover cannot supply the completeness required by the weak-derivative predicate.
+For arbitrary normed domains, a fixed candidate is a weak derivative if it is one near every
+point, and the existence of a weak Fréchet derivative is local. In particular weak derivatives can
+be checked on any open cover, including overlapping covers of unbounded domains. When the domain is
+not finite dimensional, every test function vanishes, so the test-function identities hold
+trivially and only completeness and local integrability remain to be glued. The open-cover
+equivalences assume a complete codomain, since an empty cover cannot supply the completeness
+required by the weak-derivative predicate.
 
-When the measurable space is the Borel one, local weak Fréchet derivative fields need not be
-given by a fixed global candidate: uniqueness makes them agree almost everywhere on overlaps,
-and they assemble into a global weak derivative. A countable subcover suffices even when the
-original cover is uncountable.
+In a finite-dimensional domain with its Borel measurable space, local weak Fréchet derivative
+fields need not be given by a fixed global candidate: uniqueness makes them agree almost
+everywhere on overlaps, and they assemble into a global weak derivative. A countable subcover
+suffices even when the original cover is uncountable. This uniqueness-based gluing is the only part
+that needs finite dimension.
 
 ## Main results
 
