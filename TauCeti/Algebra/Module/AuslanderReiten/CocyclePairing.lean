@@ -199,9 +199,7 @@ theorem auslanderReitenCocyclePairing_eq_zero_iff_exists_extension
     auslanderReitenCocyclePairing f g = 0 ↔
       ∃ h : I →ₗ[A] AuslanderReitenTranslate k f, h.comp j = g := by
   let : Module k I := Module.compHom I (algebraMap k A)
-  have : IsScalarTower k A I := ⟨fun c a x ↦ by
-    rw [Algebra.smul_def, mul_smul]
-    rfl⟩
+  have : IsScalarTower k A I := IsScalarTower.of_compHom k A I
   rw [auslanderReitenCocyclePairing_eq_zero_iff,
     auslanderReitenTranslate_exists_extension_iff f j hj]
 
