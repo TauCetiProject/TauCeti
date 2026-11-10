@@ -80,8 +80,7 @@ theorem unop_exp_op {x : A} : MulOpposite.unop (exp (MulOpposite.op x)) = exp x 
       rw [← MulOpposite.op_pow, hk, MulOpposite.op_zero]
     rw [exp_eq_sum hk, exp_eq_sum hk_op]
     simp
-  · have hx_op : ¬ IsNilpotent (MulOpposite.op x) := fun ⟨k, hk⟩ ↦
-      hx ⟨k, MulOpposite.op_injective (by rw [MulOpposite.op_pow, hk, MulOpposite.op_zero])⟩
+  · have hx_op : ¬ IsNilpotent (MulOpposite.op x) := by simpa only [isNilpotent_op] using hx
     simp [exp, Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hx),
       Nat.eq_zero_of_not_pos (mt isNilpotent_of_pos_nilpotencyClass hx_op)]
 
