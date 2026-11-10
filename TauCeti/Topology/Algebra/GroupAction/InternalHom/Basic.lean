@@ -120,10 +120,11 @@ which nothing here needs to be exposed. The parenthesized form elaborates the sa
 ordinary term, without that check.
 
 Continuity in the group variable (`continuous_homAction_apply`) needs only that `φ` itself be
-continuous, the two actions occurring in `g • φ (g⁻¹ • m)` being continuous by hypothesis, and
-`isOpen_setOfPred_homAction_eq_self` inherits that hypothesis; the discrete source of the intended
-setting enters only where it is discharged, in the `ContinuousSMul` instance, by
-`continuous_of_discreteTopology`.
+continuous, the two actions occurring in `g • φ (g⁻¹ • m)` being continuous by hypothesis, together
+with continuity of inversion. `isOpen_setOfPred_homAction_eq_self` does not need continuity of
+inversion, because `g` fixes `φ` exactly when `φ (g • m) = g • φ m` for every `m`; the discrete
+source of the intended setting enters only where `Continuous φ` is discharged, in the
+`ContinuousSMul` instance, by `continuous_of_discreteTopology`.
 
 `Representation.linHom` is the same conjugation construction for `k`-linear maps `V →ₗ[k] W` of
 bundled representations. It is not used as the definition here for two reasons. Its carrier is
@@ -281,19 +282,22 @@ theorem continuous_homAction_coe {φ : M →+ N} (hφ : Continuous φ) :
     Continuous fun g : G => ((homAction g φ : M →+ N) : M → N) :=
   continuous_pi fun m => continuous_homAction_apply hφ m
 
+omit [ContinuousInv G] in
 /-- For a finite `M` and a discrete `N` the set of group elements fixing a continuous `φ` is open.
-Discreteness enters through the ambient function space `M → N`; as for the two continuity lemmas
-above, the source only has to be discrete where `Continuous φ` is discharged. This is what the
-`ContinuousSMul G (InternalHom G M N)` instance below rests on, through
-`continuousSMul_iff_stabilizer_isOpen`. -/
+By `homAction_eq_self_iff` it is the finite intersection of the sets where the continuous maps
+`g ↦ φ (g • m)` and `g ↦ g • φ m` into the discrete `N` agree, so no continuity of inversion is
+needed. As for the two continuity lemmas above, the source only has to be discrete where
+`Continuous φ` is discharged. This is what the `ContinuousSMul G (InternalHom G M N)` instance
+below rests on, through `continuousSMul_iff_stabilizer_isOpen`. -/
 theorem isOpen_setOfPred_homAction_eq_self [Finite M] [DiscreteTopology N] {φ : M →+ N}
     (hφ : Continuous φ) : IsOpen {g : G | homAction g φ = φ} := by
-  have hset : {g : G | homAction g φ = φ}
-      = (fun g : G => ((homAction g φ : M →+ N) : M → N)) ⁻¹' {(φ : M → N)} := by
+  have hset : {g : G | homAction g φ = φ} = ⋂ m : M, {g : G | φ (g • m) = g • φ m} := by
     ext g
-    simp [DFunLike.coe_fn_eq]
+    simp [homAction_eq_self_iff]
   rw [hset]
-  exact (continuous_homAction_coe hφ).isOpen_preimage _ (isOpen_discrete _)
+  refine isOpen_iInter_of_finite fun m ↦ ?_
+  exact (isOpen_discrete {p : N × N | p.1 = p.2}).preimage
+    ((hφ.comp (continuous_id.smul continuous_const)).prodMk (continuous_id.smul continuous_const))
 
 end Topology
 
