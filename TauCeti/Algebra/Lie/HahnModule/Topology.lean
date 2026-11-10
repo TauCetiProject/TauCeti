@@ -35,7 +35,9 @@ open _root_.HahnModule
 
 namespace TauCeti.HahnModule
 
-variable (R L : Type*) [Ring R] [LieRing L] [Module R L]
+section Estimates
+
+variable (R L : Type*) [Semiring R] [LieRing L] [Module R L]
 
 /-- The convolution bracket adds lower bounds on the orders of its inputs. -/
 theorem lie_mem_lattice {r s : ℤ} {x y : HahnModule ℤ R L}
@@ -62,6 +64,10 @@ theorem lie_add_sub_lie_mem_lattice {r s M N : ℤ} {x y u v : HahnModule ℤ R 
       (lie_mem_lattice R L hx hv)))
     (lattice_antitone R L ((min_le_right _ _).trans (min_le_right _ _))
       (lie_mem_lattice R L hu hv))
+
+end Estimates
+
+variable (R L : Type*) [Ring R] [LieRing L] [Module R L]
 
 /-- The convolution bracket of Lie-valued Laurent series is jointly continuous in the lattice
 topology, including for infinite-dimensional coefficient Lie algebras. No compatibility between
