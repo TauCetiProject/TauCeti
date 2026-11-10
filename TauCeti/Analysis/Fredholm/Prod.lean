@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Fredholm.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
+public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 
 /-!
 # Products of Fredholm operators
@@ -21,6 +22,8 @@ and cokernels and is provided by `TauCeti.Topology.Algebra.Module.ContinuousLine
 
 * `ContinuousLinearMap.IsFredholm.prodMap`: a product of Fredholm operators is Fredholm.
 * `ContinuousLinearMap.index_prodMap`: the Fredholm index is additive under products.
+* `ContinuousLinearMap.isFredholm_prodMap_iff`: conversely, over a complete field and between
+  Hausdorff topological vector spaces, a product is Fredholm only if both factors are.
 -/
 
 public section
@@ -65,5 +68,52 @@ lemma IsFredholm.prodMap
       apply Subtype.ext
       simp only [P, coe_codRestrict_apply, comp_apply, coe_prodMap', Prod.map_apply,
         Submodule.subtypeL_apply, hPT ⟨x, hx⟩, hPS ⟨y, hy⟩]
+
+section Factors
+
+open scoped LinearMap.FiniteRangeSetoid
+
+variable [CompleteSpace K] [ContinuousSMul K E₁] [ContinuousSMul K E₂]
+variable [IsTopologicalAddGroup F₁] [ContinuousSMul K F₁]
+variable [IsTopologicalAddGroup F₂] [ContinuousSMul K F₂]
+variable [T2Space E₁] [T2Space E₂] [T2Space F₁] [T2Space F₂]
+
+/-- If a Cartesian product of operators is Fredholm, so is its first factor: compressing a
+quasi-inverse of the product to the first factors gives a quasi-inverse of `T`. -/
+lemma IsFredholm.of_prodMap_left (h : IsFredholm (T.prodMap S)) : IsFredholm T := by
+  obtain ⟨Q, hQ⟩ := h.exists_isQuasiInverse
+  let P : E₁ × E₂ →ₗ[K] F₁ × F₂ := (T.prodMap S : E₁ × E₂ →L[K] F₁ × F₂)
+  refine .of_isQuasiInverse (v := (fst K E₁ E₂).comp (Q.comp (inl K F₁ F₂))) ⟨?_, ?_⟩
+  · change _ ≈ _
+    calc ((fst K E₁ E₂).comp (Q.comp (inl K F₁ F₂)) : F₁ →ₗ[K] E₁) ∘ₗ (T : E₁ →ₗ[K] F₁)
+        _ = LinearMap.fst K E₁ E₂ ∘ₗ ((Q : F₁ × F₂ →ₗ[K] E₁ × E₂) ∘ₗ P) ∘ₗ
+            LinearMap.inl K E₁ E₂ := by
+          ext x; simp [P]
+        _ ≈ LinearMap.fst K E₁ E₂ ∘ₗ LinearMap.id ∘ₗ LinearMap.inl K E₁ E₂ := by
+          grw [hQ.1.equiv]
+        _ = LinearMap.id := by ext x; simp
+  · change _ ≈ _
+    calc (T : E₁ →ₗ[K] F₁) ∘ₗ ((fst K E₁ E₂).comp (Q.comp (inl K F₁ F₂)) : F₁ →ₗ[K] E₁)
+        _ = LinearMap.fst K F₁ F₂ ∘ₗ (P ∘ₗ (Q : F₁ × F₂ →ₗ[K] E₁ × E₂)) ∘ₗ
+            LinearMap.inl K F₁ F₂ := by
+          ext x; simp [P]
+        _ ≈ LinearMap.fst K F₁ F₂ ∘ₗ LinearMap.id ∘ₗ LinearMap.inl K F₁ F₂ := by
+          grw [hQ.2.equiv]
+        _ = LinearMap.id := by ext x; simp
+
+/-- If a Cartesian product of operators is Fredholm, so is its second factor. -/
+lemma IsFredholm.of_prodMap_right (h : IsFredholm (T.prodMap S)) : IsFredholm S := by
+  refine IsFredholm.of_prodMap_left (S := T) ?_
+  have hswap : S.prodMap T = ((ContinuousLinearEquiv.prodComm K F₁ F₂ : F₁ × F₂ →L[K] F₂ × F₁).comp
+      (T.prodMap S)).comp (ContinuousLinearEquiv.prodComm K E₂ E₁ : E₂ × E₁ →L[K] E₁ × E₂) := by
+    ext x <;> simp
+  rw [hswap]
+  exact (h.equiv_comp _).comp_equiv _
+
+/-- A Cartesian product of operators is Fredholm if and only if both factors are. -/
+lemma isFredholm_prodMap_iff : IsFredholm (T.prodMap S) ↔ IsFredholm T ∧ IsFredholm S :=
+  ⟨fun h ↦ ⟨h.of_prodMap_left, h.of_prodMap_right⟩, fun h ↦ h.1.prodMap h.2⟩
+
+end Factors
 
 end ContinuousLinearMap
