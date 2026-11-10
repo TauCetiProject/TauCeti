@@ -358,4 +358,20 @@ theorem perimeter_eq_two_iff {s : Set ℝ} (hs : NullMeasurableSet s) (hfin : vo
     exact hne a b hab (hsI.trans hIab)
   · rw [perimeter_congr_ae (ae_restrict_of_ae hsab), perimeter_Ioo hab]
 
+/-- A null-measurable set of finite length has perimeter at most two exactly when it agrees
+almost everywhere with an interval, possibly empty. -/
+theorem perimeter_le_two_iff {s : Set ℝ} (hs : NullMeasurableSet s) (hfin : volume s ≠ ∞) :
+    perimeter volume ⊤ s ≤ 2 ↔ ∃ I : Set ℝ, I.OrdConnected ∧ s =ᵐ[volume] I := by
+  refine ⟨fun hP ↦ ?_, fun ⟨I, hI, hsI⟩ ↦ ?_⟩
+  · by_contra! hbad
+    have hfour := four_le_perimeter hs hfin hbad
+    have : (4 : ℝ≥0∞) ≤ 2 := hfour.trans hP
+    norm_num at this
+  · by_cases hzero : volume s = 0
+    · rw [perimeter_congr_ae (ae_restrict_of_ae (ae_eq_empty.mpr hzero)), perimeter_empty]
+      exact zero_le
+    · obtain ⟨a, b, hab, hIab⟩ := hI.exists_ae_eq_Ioo
+        ((measure_congr hsI).symm ▸ hzero) ((measure_congr hsI).symm ▸ hfin)
+      exact (perimeter_eq_two_iff hs hfin).mpr ⟨a, b, hab, hsI.trans hIab⟩ |>.le
+
 end TauCeti.Real
