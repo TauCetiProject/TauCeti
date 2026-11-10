@@ -116,14 +116,14 @@ class of the ambient differential of the representative. -/
 @[simp↓] theorem normalBundleMap_normalQuotientMap
     (f : SmoothEmbedding I J n M N) (g : SmoothEmbedding I' J' m M' N')
     (hn : n ≠ 0) (hm : m ≠ 0) {u : M → M'} {v : N → N'}
-    (hu : MDifferentiable I I' u) (hv : MDifferentiable J J' v)
-    (h : v ∘ f = g ∘ u) (p : TotalSpace F ((f : M → N) *ᵖ (TangentSpace J))) :
-    f.normalBundleMap (K := K) (K' := K') g hn hm hu hv h (f.normalQuotientMap hn p) =
+    (hu : MDifferentiable I I' u) (h : v ∘ f = g ∘ u)
+    (p : TotalSpace F ((f : M → N) *ᵖ (TangentSpace J))) :
+    f.normalBundleMap (K := K) (K' := K') g hn hm hu h (f.normalQuotientMap hn p) =
       g.normalQuotientMap hm (⟨u p.proj, tangentSpaceCast J' (v (f p.proj)) (g (u p.proj))
         (mfderiv J J' v (f p.proj) p.2)⟩ : TotalSpace F' ((g : M' → N') *ᵖ (TangentSpace J'))) := by
   rw [normalBundleMap_apply]
   exact congrArg (TotalSpace.mk (u p.proj))
-    (f.normalMap_normalClass g hn hm (hu p.proj) (hv (f p.proj)) (Filter.EventuallyEq.of_eq h) p.2)
+    (f.normalMap_normalClass g hn hm (hu p.proj) (Filter.EventuallyEq.of_eq h) p.2)
 
 /-- A commuting square with differentiable base map and C¹ ambient map induces a continuous
 map of intrinsic normal bundles. -/
@@ -133,8 +133,7 @@ theorem continuous_normalBundleMap
     (hn : n ≠ 0) (hm : m ≠ 0) {u : M → M'} {v : N → N'}
     (hu : MDifferentiable I I' u) (hv : ContMDiff J J' 1 v)
     (h : v ∘ f = g ∘ u) :
-    Continuous (f.normalBundleMap (K := K) (K' := K') g hn hm hu
-      (hv.mdifferentiable (by simp)) h) := by
+    Continuous (f.normalBundleMap (K := K) (K' := K') g hn hm hu h) := by
   let T : TotalSpace F ((f : M → N) *ᵖ (TangentSpace J)) →
       TotalSpace F' ((g : M' → N') *ᵖ (TangentSpace J')) := fun p =>
     ⟨u p.proj, tangentSpaceCast J' (v (f p.proj)) (g (u p.proj))
@@ -158,7 +157,7 @@ theorem continuous_normalBundleMap
   rw [f.continuous_normalBundle_iff hn]
   convert (g.isQuotientMap_normalQuotientMap (K := K') hm).continuous.comp hT using 1
   funext p
-  exact f.normalBundleMap_normalQuotientMap g hn hm hu _ h p
+  exact f.normalBundleMap_normalQuotientMap g hn hm hu h p
 
 end Map
 

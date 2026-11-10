@@ -120,8 +120,7 @@ theorem contMDiff_normalBundleMap
     letI := f.normalSpaceFiberBundle hn hdim
     letI := g.normalSpaceFiberBundle hn' hdim'
     ContMDiff (I.prod 𝓘(𝕜, P)) (I'.prod 𝓘(𝕜, P')) r
-      (f.normalBundleMap (K := P) (K' := P') g hn hn'
-        hdu (hv.mdifferentiable (by simp)) h) := by
+      (f.normalBundleMap (K := P) (K' := P') g hn hn' hdu h) := by
   have : IsManifold I 1 M := .of_le (n := r + 1) le_add_self
   have : IsManifold J 1 N := .of_le (n := r + 1) le_add_self
   have : IsManifold I' 1 M' := .of_le (n := r + 1) le_add_self
@@ -134,7 +133,6 @@ theorem contMDiff_normalBundleMap
   have hq := (g.contMDiff_normalQuotientMap hn' hgn hdim').comp hT
   convert hq using 1
   funext p
-  exact f.normalBundleMap_normalQuotientMap g hn hn'
-    hdu (hv.mdifferentiable (by simp)) h p
+  exact f.normalBundleMap_normalQuotientMap g hn hn' hdu h p
 
 end TauCeti.SmoothEmbedding
