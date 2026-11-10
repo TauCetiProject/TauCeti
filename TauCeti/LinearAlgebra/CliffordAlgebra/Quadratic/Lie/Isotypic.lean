@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.CartanCriterion
 public import Mathlib.Algebra.Lie.Rank
+public import TauCeti.Algebra.Lie.GeneralLinear.Radical
 public import TauCeti.Algebra.Lie.HighestWeight.Isotypic
 public import TauCeti.Algebra.Lie.Multiplicity
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.LeftRegular
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Vector
 
 import TauCeti.Algebra.Lie.CartanExists
+import TauCeti.Algebra.Lie.GeneralLinear.Finrank
 import TauCeti.Algebra.Lie.HighestWeight.Weyl.Dimension
 import TauCeti.Algebra.Lie.UniversalEnveloping.Multiplicity
 import TauCeti.Algebra.Lie.Weights.Dimension
@@ -51,6 +54,7 @@ the Weyl dimension formula. The two divisions by two are exact, since `d = l + 2
   with no choice of Cartan subalgebra or base in the statement.
 * `CliffordAlgebra.kostant_multiplicity_of_finrank_eq_three`: in dimension three, Kostant's
   module is four copies of a two-dimensional irreducible module.
+* `CliffordAlgebra.kostant_multiplicity_sl_fin_two`: the same for `𝔰𝔩₂`.
 
 ## References
 
@@ -173,6 +177,17 @@ theorem kostant_multiplicity_of_finrank_eq_three (h : finrank K L = 3) :
       IsIrreducible K L S ∧ finrank K S = 2 ∧
         Nonempty (CliffordAlgebra (killingQuadraticForm K L) ≃ₗ⁅K,L⁆ ⨁ _ : Fin 4, S) := by
   have hk := kostant_multiplicity (K := K) (L := L)
-  rwa [h, rank_eq_one_of_finrank_eq_three h] at hk
+  rw [h, rank_eq_one_of_finrank_eq_three h] at hk
+  norm_num at hk
+  exact hk
+
+open _root_.LieAlgebra.SpecialLinear in
+/-- **Kostant's module for `𝔰𝔩₂`** is four copies of a two-dimensional irreducible module. -/
+theorem kostant_multiplicity_sl_fin_two :
+    ∃ S : LieSubmodule K (sl (Fin 2) K) (CliffordAlgebra (killingQuadraticForm K (sl (Fin 2) K))),
+      IsIrreducible K (sl (Fin 2) K) S ∧ finrank K S = 2 ∧
+        Nonempty (CliffordAlgebra (killingQuadraticForm K (sl (Fin 2) K)) ≃ₗ⁅K,sl (Fin 2) K⁆
+          ⨁ _ : Fin 4, S) :=
+  kostant_multiplicity_of_finrank_eq_three (by simp [finrank_sl])
 
 end CliffordAlgebra

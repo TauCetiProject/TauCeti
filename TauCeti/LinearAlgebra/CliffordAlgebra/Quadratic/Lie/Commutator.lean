@@ -7,12 +7,14 @@ module
 
 public import Mathlib.Algebra.Lie.Abelian
 public import Mathlib.Algebra.Lie.CartanCriterion
+public import Mathlib.LinearAlgebra.CliffordAlgebra.Grading
 public import TauCeti.Algebra.Lie.GeneralLinear.Radical
 public import TauCeti.Algebra.Lie.Isotypic
 public import TauCeti.Algebra.Lie.Prod
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Isotypic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Representation
 import TauCeti.Algebra.Lie.Basic
 import TauCeti.Algebra.Lie.GeneralLinear.Finrank
+import TauCeti.Algebra.Lie.Submodule.Atom
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Casimir
@@ -66,8 +68,8 @@ of one two-dimensional irreducible module.
   isotypic.
 * `CliffordAlgebra.exists_lieModuleEquiv_commutator_of_finrank_eq_three`: in dimension three,
   the commutator module is `1 ⊕ L ⊕ L ⊕ 1`.
-* `CliffordAlgebra.nonempty_lieModuleEquiv_commutator_sl_fin_two` and
-  `CliffordAlgebra.kostant_multiplicity_sl_fin_two`: the two decompositions for `𝔰𝔩₂`.
+* `CliffordAlgebra.nonempty_lieModuleEquiv_commutator_sl_fin_two`: the commutator module of `𝔰𝔩₂`
+  is `1 ⊕ V(2) ⊕ V(2) ⊕ 1`; contrast `CliffordAlgebra.kostant_multiplicity_sl_fin_two`.
 
 ## References
 
@@ -342,23 +344,5 @@ theorem nonempty_lieModuleEquiv_commutator_sl_fin_two [CharZero K] :
   ⟨e.symm⟩
 
 end Commutator
-
-section Kostant
-
-open scoped CliffordAlgebra DirectSum
-
-variable {K L} [CharZero K] [IsAlgClosed K]
-
-open _root_.LieAlgebra.SpecialLinear in
-/-- **Kostant's module for `𝔰𝔩₂`** is four copies of a two-dimensional irreducible module. -/
-theorem kostant_multiplicity_sl_fin_two :
-    ∃ S : LieSubmodule K (sl (Fin 2) K) (CliffordAlgebra (killingQuadraticForm K (sl (Fin 2) K))),
-      IsIrreducible K (sl (Fin 2) K) S ∧ finrank K S = 2 ∧
-        Nonempty (CliffordAlgebra (killingQuadraticForm K (sl (Fin 2) K)) ≃ₗ⁅K,sl (Fin 2) K⁆
-          ⨁ _ : Fin 4, S) :=
-  kostant_multiplicity_of_finrank_eq_three (by simp [finrank_sl])
-
-end Kostant
-
 
 end CliffordAlgebra
