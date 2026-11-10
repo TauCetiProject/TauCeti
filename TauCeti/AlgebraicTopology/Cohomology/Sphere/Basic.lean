@@ -282,9 +282,11 @@ private lemma sphereProdSlant_sphereProdCohomologyMap (m q n : ℕ) (h : m + 1 +
         ((TauCeti.singularCohomologyTopCatSphereEquiv k (𝟙_ (ModuleCat.{w} k)) m).symm (1 : k))
         ((TauCeti.reducedSingularHomologyι (𝟙_ (ModuleCat.{w} k)) (m + 1)).app _
           ((TauCeti.reducedSingularHomologyTopCatSphereIso (𝟙_ (ModuleCat.{w} k)) (m + 1)).inv
-            (1 : k))) = (1 : k) :=
-      TauCeti.singularKronecker_singularCohomologyTopCatSphereEquiv_symm k
+            (1 : k))) = (1 : k) := by
+      have := TauCeti.singularKronecker_singularCohomologyTopCatSphereEquiv_symm k
         (𝟙_ (ModuleCat.{w} k)) m (1 : k)
+      rw [TauCeti.singularHomologyTopCatSphereGenerator_def] at this
+      exact this
     rw [singularSlant_singularCohomologyMap_snd_eq_zero (hp := by omega),
       singularSlant_singularCross_leftUnitor, hθ, one_smul, zero_add]
 

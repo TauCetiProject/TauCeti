@@ -108,9 +108,9 @@ theorem mem_range_singularCohomologyMap_snd_sphere_iff (Y : TopCat.{w}) {d n : �
   obtain rfl | hpd := eq_or_ne p d
   · obtain rfl : q = n := by omega
     -- `x` is a multiple of the standard generator
-    obtain ⟨r, rfl⟩ : ∃ r : k, x = r • TauCeti.singularHomologyTopCatSphereGenerator k p :=
-      ⟨_, TauCeti.singularHomology_topCatSphere_eq_smul_generator p x⟩
-    rw [map_smul, LinearMap.smul_apply, hφ, smul_zero]
+    have hx := TauCeti.singularHomology_topCatSphere_eq_smul_generator p x
+    rw [← TauCeti.singularHomologyTopCatSphereGenerator_def] at hx
+    rw [hx, map_smul, LinearMap.smul_apply, hφ, smul_zero]
   · -- the homology of the sphere vanishes in the other positive degrees
     have := ModuleCat.subsingleton_of_isZero
       (TauCeti.isZero_singularHomologyFunctor_topCatSphere_of_ne
