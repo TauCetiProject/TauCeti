@@ -239,7 +239,7 @@ theorem eventually_exists_ckHolderSpace_cutoff_rescale {μ : E → F} {χ : E �
         (norm_nonneg ε)).trans hεA
   have hfH : HolderOnWith (H * ‖ε‖₊ ^ (α : ℝ)) α (iteratedFDeriv ℝ ℓ fun z ↦ μ (ε • z))
       (ball 0 R) :=
-    (holderOnWith_iteratedFDeriv_comp_const_smul hμH' ε hmaps).mono_const
+    (hμH'.iteratedFDeriv_comp_const_smul ε hmaps).mono_const
       (mul_le_of_le_one_left zero_le (pow_le_one₀ zero_le (by exact_mod_cast hε1.le)))
   let u := CkHolderSpace.cutoff hf hχ isOpen_ball (convex_ball 0 R) hR hα hfb hN hfH
   refine ⟨u, mem_supportedCkHolderSubmodule_iff.mpr fun z hz ↦ ?_, fun z ↦ ?_, ?_⟩

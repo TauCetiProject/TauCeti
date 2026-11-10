@@ -27,7 +27,7 @@ In particular, for a rescaling `z ↦ f (a • z)` the `i`-th derivative at `x` 
 of `f` at `a • x`, again without any differentiability of `f`
 (`TauCeti.iteratedFDeriv_comp_const_smul_apply`). A Hölder bound on a set `t` for the `i`-th
 derivative of `f` transfers to the rescaled map on any set that rescaling maps into `t`
-(`TauCeti.holderOnWith_iteratedFDeriv_comp_const_smul`).
+(`HolderOnWith.iteratedFDeriv_comp_const_smul`).
 -/
 
 public section
@@ -158,22 +158,27 @@ theorem norm_iteratedFDeriv_comp_const_smul (f : E → F) (a : 𝕜) (x : E) (i 
     ‖iteratedFDeriv 𝕜 i (fun z ↦ f (a • z)) x‖ = ‖a‖ ^ i * ‖iteratedFDeriv 𝕜 i f (a • x)‖ := by
   rw [iteratedFDeriv_comp_const_smul_apply, norm_smul, norm_pow]
 
+end TauCeti
+
+namespace HolderOnWith
+
 /-- If the `i`-th derivative of `f` is `r`-Hölder with constant `C` on `t` and rescaling by `a`
 maps `s` into `t`, then the `i`-th derivative of `z ↦ f (a • z)` is `r`-Hölder on `s` with
 constant `‖a‖ ^ i C ‖a‖ ^ r`. No differentiability of `f` is needed. -/
-theorem holderOnWith_iteratedFDeriv_comp_const_smul {f : E → F} {i : ℕ} {C r : ℝ≥0}
+theorem iteratedFDeriv_comp_const_smul {f : E → F} {i : ℕ} {C r : ℝ≥0}
     {s t : Set E} (hf : HolderOnWith C r (iteratedFDeriv 𝕜 i f) t) (a : 𝕜)
     (hst : Set.MapsTo (a • ·) s t) :
     HolderOnWith (‖a‖₊ ^ i * (C * ‖a‖₊ ^ (r : ℝ))) r
       (iteratedFDeriv 𝕜 i fun z ↦ f (a • z)) s := by
   have h := hf.comp_const_smul a hst
   refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
-  simp only [iteratedFDeriv_comp_const_smul_apply, dist_eq_norm, ← smul_sub, norm_smul, norm_pow]
+  simp only [TauCeti.iteratedFDeriv_comp_const_smul_apply, dist_eq_norm, ← smul_sub, norm_smul,
+    norm_pow]
   push_cast [mul_assoc]
   gcongr
   simpa [dist_eq_norm, mul_assoc] using h.dist_le hx hy
 
-end TauCeti
+end HolderOnWith
 
 end Rescaling
 
