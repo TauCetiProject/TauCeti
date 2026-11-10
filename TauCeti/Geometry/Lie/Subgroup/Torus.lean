@@ -221,9 +221,11 @@ private noncomputable local instance : FiniteDimensional ℝ (LeftInvariantDeriv
   finiteDimensional_leftInvariantDerivation
     (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
 
+omit [T2Space G] in
 /-- **Every torus is contained in a maximal torus.** No compactness of `G` is needed. -/
 theorem IsTorus.exists_isMaximalTorus_le {T : Subgroup G} (hT : IsTorus T) :
     ∃ T', IsMaximalTorus T' ∧ T ≤ T' := by
+  have := I.t2Space_of_lieGroup (G := G) ∞
   -- The lattice of Lie subalgebras of `𝔤` is well-founded, so some torus containing `T` has a
   -- maximal Lie algebra; a torus containing it has the same Lie algebra, hence is equal to it.
   obtain ⟨T', ⟨hT', hle⟩, hmax⟩ := exists_maximalFor_of_wellFoundedGT
@@ -232,6 +234,7 @@ theorem IsTorus.exists_isMaximalTorus_le {T : Subgroup G} (hT : IsTorus T) :
   rw [hT'.eq_of_lieSubalgebraOfSubgroup_eq hT'' (le_antisymm (lieSubalgebraOfSubgroup_mono hle')
     (hmax ⟨hT'', hle.trans hle'⟩ (lieSubalgebraOfSubgroup_mono hle')))]
 
+omit [T2Space G] in
 /-- **Maximal tori exist.** -/
 theorem exists_isMaximalTorus : ∃ T : Subgroup G, IsMaximalTorus T :=
   ((isTorus_bot (G := G)).exists_isMaximalTorus_le I).imp fun _ h => h.1
