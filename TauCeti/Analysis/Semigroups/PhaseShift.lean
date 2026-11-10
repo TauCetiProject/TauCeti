@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Semigroups.Generator.ComplexLinear
 public import TauCeti.Analysis.Semigroups.GrowthBound
-public import TauCeti.Analysis.SpecialFunctions.Complex.ExpSlope
+public import TauCeti.Analysis.SpecialFunctions.Complex.Exp.Slope
 public import TauCeti.LinearAlgebra.LinearPMap.Shift
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 

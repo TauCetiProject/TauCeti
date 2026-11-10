@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
+import TauCeti.MeasureTheory.Measure.DisjointUnion
 
 /-!
 # The Krylov–Safonov covering lemma
@@ -77,56 +78,42 @@ theorem volume_le_mul_volume_of_forall_dyadicCube [Nonempty ι] (hA : NullMeasur
       δ * volume (dyadicCube k m) < volume (A ∩ dyadicCube k m) → dyadicCube (k + 1) m' ⊆ B) :
     volume A ≤ δ * volume B := by
   set g : (ι → ℝ) → ℝ≥0∞ := A.indicator 1
-  have hint : ∀ s, MeasurableSet s → ∫⁻ x in s, g x = volume (A ∩ s) := fun s hs => by
-    rw [lintegral_indicator_one₀ (hA.mono Measure.restrict_le_self), Measure.restrict_apply' hs]
-  have hg : AEMeasurable g := aemeasurable_const.indicator₀ hA
-  have hg' : ∫⁻ x, g x ≠ ∞ := by rwa [lintegral_indicator_one₀ hA]
   set S := calderonZygmundCubes g δ
-  -- Each Calderón–Zygmund cube meets `A` in more than a `δ` fraction of its volume.
   have hS : ∀ q ∈ S, δ * volume (dyadicCube q.1 q.2) < volume (A ∩ dyadicCube q.1 q.2) :=
-    fun q hq => hint _ (measurableSet_dyadicCube _ _) ▸
-      mul_volume_lt_setLIntegral_of_mem_calderonZygmundCubes hq
+    fun q hq => mul_volume_lt_volume_inter_of_mem_calderonZygmundCubes_indicator hA hq
   -- `T` records the parents of the Calderón–Zygmund cubes.
   set T : Set (ℤ × (ι → ℤ)) :=
     {p | ∃ q ∈ S, p.1 = q.1 + 1 ∧ dyadicCube q.1 q.2 ⊆ dyadicCube p.1 p.2}
-  have hTB : ∀ p ∈ T, dyadicCube p.1 p.2 ⊆ B := by
-    rintro ⟨j, m'⟩ ⟨q, hq, rfl, hsub⟩
-    exact hB q.1 q.2 m' hsub (hS q hq)
-  -- By maximality of the Calderón–Zygmund cubes, the parents meet `A` in at most a `δ` fraction.
-  have hTA : ∀ p ∈ T, volume (A ∩ dyadicCube p.1 p.2) ≤ δ * volume (dyadicCube p.1 p.2) := by
-    rintro ⟨j, m'⟩ ⟨q, hq, rfl, hsub⟩
-    have h := (mem_calderonZygmundCubes.1 hq).2 (q.1 + 1) m' (lt_add_one _) hsub
-    rwa [setLAverage_eq, hint _ (measurableSet_dyadicCube _ _),
-      ENNReal.div_le_iff (volume_dyadicCube_pos _ _).ne' (volume_dyadicCube_ne_top _ _)] at h
   obtain ⟨N, hN⟩ := exists_forall_lt_of_mul_volume_dyadicCube_lt (ι := ι) hδ0 hA'
   have hTN : ∀ p ∈ T, p.1 ≤ N := by
     rintro ⟨j, m'⟩ ⟨q, hq, rfl, -⟩
     exact Int.add_one_le_iff.2 (hN q.1 q.2 ((hS q hq).trans_le (measure_mono inter_subset_left)))
   -- The parents maximal for inclusion are pairwise disjoint and contain all the parents.
   obtain ⟨T', hT'T, hdisj, hmax⟩ := exists_subset_pairwiseDisjoint_forall_dyadicCube_subset hTN
-  set U := ⋃ p ∈ T', dyadicCube p.1 p.2
-  -- Almost all of `A` lies in the Calderón–Zygmund cubes, since `g = 1 > δ` on `A`.
-  have hAU : volume (A \ U) = 0 := by
+  -- Almost all of `A` lies in the Calderón–Zygmund cubes, since the indicator is `1 > δ` on `A`.
+  have hAU : volume (A \ ⋃ p ∈ T', dyadicCube p.1 p.2) = 0 := by
     refine measure_eq_zero_iff_ae_notMem.2 ?_
-    filter_upwards [ae_le_of_forall_notMem_calderonZygmundCubes hg hg' hδ0] with x hx
+    have hg' : ∫⁻ x, g x ≠ ∞ := by rwa [lintegral_indicator_one₀ hA]
+    filter_upwards [ae_le_of_forall_notMem_calderonZygmundCubes
+      (aemeasurable_const.indicator₀ hA) hg' hδ0] with x hx
     rintro ⟨hxA, hxU⟩
     refine (hx fun q hq hxq => hxU ?_).not_gt (by simpa [g, hxA] using hδ1)
     -- The parent of the Calderón–Zygmund cube containing `x` lies in a maximal parent.
     have hpar := dyadicCube_subset_dyadicCube (lt_add_one q.1).le hxq
     obtain ⟨p, hp, hsub⟩ := hmax (q.1 + 1, dyadicIndex (q.1 + 1) x) ⟨q, hq, rfl, hpar⟩
     exact mem_biUnion hp (hsub (hpar hxq))
-  calc volume A ≤ volume (A ∩ U) + volume (A \ U) := measure_le_inter_add_sdiff _ _ _
-    _ = volume (⋃ p ∈ T', A ∩ dyadicCube p.1 p.2) := by rw [hAU, add_zero, inter_iUnion₂]
-    _ ≤ ∑' p : T', volume (A ∩ dyadicCube p.1.1 p.1.2) :=
-        measure_biUnion_le _ (to_countable T') _
-    _ ≤ ∑' p : T', δ * volume (dyadicCube p.1.1 p.1.2) :=
-        tsum_le_tsum fun p => hTA p.1 (hT'T p.2)
-    _ = δ * volume U := by
-        rw [ENNReal.tsum_mul_left, measure_biUnion (to_countable T') hdisj
-          fun p _ => measurableSet_dyadicCube _ _]
-    _ ≤ δ * volume B := by
-        gcongr
-        exact iUnion₂_subset fun p hp => hTB p (hT'T hp)
+  -- By maximality of the Calderón–Zygmund cubes, the parents meet `A` in at most a `δ` fraction,
+  -- and by hypothesis they lie in `B`.
+  refine (measure_le_mul_measure_biUnion (δ := δ) (to_countable T')
+    (fun p _ => (measurableSet_dyadicCube p.1 p.2).nullMeasurableSet)
+    (hdisj.mono' fun _ _ h => h.aedisjoint) hAU fun p hp => ?_).trans ?_
+  · obtain ⟨q, hq, hpq, hsub⟩ := hT'T hp
+    exact volume_inter_le_mul_volume_of_mem_calderonZygmundCubes_indicator hA hq
+      (hpq ▸ lt_add_one _) hsub
+  · gcongr
+    refine iUnion₂_subset fun ⟨j, m'⟩ hp => ?_
+    obtain ⟨q, hq, rfl, hsub⟩ := hT'T hp
+    exact hB q.1 q.2 m' hsub (hS q hq)
 
 /-- **The Krylov–Safonov covering lemma in a dyadic cube.** Let `δ < 1`, let `Q₀` be a dyadic cube
 and let `A ⊆ Q₀` be null-measurable with `|A| ≤ δ |Q₀|`. If the parent of every dyadic subcube

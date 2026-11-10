@@ -47,8 +47,7 @@ private theorem not_memLp_two_id_stableMeasure_one_zero
   intro h
   obtain ⟨ρ, hρ, -⟩ := existsUnique_conv_stableCompensatedPoissonMeasure_eq hα hβ
     (by norm_num : (0 : ℝ) < 1)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure hα hβ
-    (by norm_num : (0 : ℝ) < 1)
+  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β 1
   have hsq := h.integrable_sq
   rw [← hρ] at hsq
   obtain ⟨a, ha⟩ := ((integrable_conv_iff (by fun_prop)).1 hsq).1.exists
@@ -76,7 +75,7 @@ theorem memLp_two_id_stableMeasure_iff (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1)
     simp only [stableMeasure_two hβ, or_true, iff_true]
     exact memLp_id_gaussianReal' 2 (by norm_num)
   have hspos : 0 < (s : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hs)
-  rw [← stableMeasure_one_zero_map_affine (NNReal.coe_pos.mp hspos),
+  rw [← stableMeasure_one_zero_map_affine,
     memLp_id_map_affine_iff hspos.ne']
   simp only [hs, htwo, or_self, iff_false]
   exact not_memLp_two_id_stableMeasure_one_zero ⟨hα.1, lt_of_le_of_ne hα.2 htwo⟩ hβ
