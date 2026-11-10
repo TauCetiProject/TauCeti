@@ -114,13 +114,13 @@ theorem char_prime_eq_coeff [NeZero N] (f : HeckeRing.GL2.Newform N k)
   apply (eq_div_iff hpow).mpr
   linear_combination hrec'
 
-/-- The nebentypus value at any index coprime to the level belongs to the coefficient field: the
-proof helper of `char_mem_CoefficientField`, by induction on the prime factorisation. -/
+/-- The nebentypus value at any index coprime to the level belongs to the coefficient field. -/
 private theorem char_unitOfCoprime_mem_CoefficientField [NeZero N] (f : HeckeRing.GL2.Newform N k)
     {n : ℕ} (hn : Nat.Coprime n N) :
     (f.χ (ZMod.unitOfCoprime n hn) : ℂ) ∈ CoefficientField f := by
   let K := CoefficientField f
   revert hn
+  -- induction on the prime factorisation of `n`
   induction n using induction_on_primes with
   | zero =>
       intro hn
