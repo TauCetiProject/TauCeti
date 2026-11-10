@@ -179,7 +179,7 @@ private theorem mem_of_not_isEvenPrimeDiscriminant_of_prod_eq {s t : Finset ℤ}
   have hp : p.Prime := prime_primeDiscriminantPrime (hs P hPs)
   have hp_prod : (p : ℤ) ∣ ∏ Q ∈ t, Q := by
     rw [← hprod]
-    exact (primeDiscriminantPrime_dvd (hs P hPs)).trans (Finset.dvd_prod_of_mem id hPs)
+    exact (primeDiscriminantPrime_dvd P).trans (Finset.dvd_prod_of_mem id hPs)
   obtain ⟨Q, hQt, hpQ⟩ : ∃ Q ∈ t, (p : ℤ) ∣ Q :=
     ((Nat.prime_iff_prime_int.mp hp).dvd_finsetProd_iff id).mp hp_prod
   have hp_eq : primeDiscriminantPrime P = primeDiscriminantPrime Q :=

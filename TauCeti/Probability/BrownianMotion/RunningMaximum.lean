@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Geometric
-public import TauCeti.Probability.Martingale.MaximalInequality
+public import TauCeti.Probability.Martingale.MaximalInequality.Basic
 import TauCeti.MeasureTheory.Integral.Lebesgue.Supremum
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 

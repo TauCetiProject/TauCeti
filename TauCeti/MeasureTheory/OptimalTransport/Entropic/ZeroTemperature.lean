@@ -13,6 +13,7 @@ public import TauCeti.MeasureTheory.MeasurableSpace.Metric
 public import TauCeti.MeasureTheory.OptimalTransport.Compactness
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Basic
+public import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # The zero-temperature limit of entropic optimal transport
@@ -344,27 +345,9 @@ private theorem IsCoupling.exists_isCoupling_klDiv_ne_top_lintegral_min_le {π :
   -- product cell, so the block approximation applies to it.
   obtain ⟨c', hc'⟩ : ∃ c' : X × Y → ℝ≥0∞,
       ∀ z, c' z = if z ∈ K ×ˢ L then min (c z : ℝ≥0∞) M else M := ⟨_, fun _ ↦ rfl⟩
-  have hvar : ∀ x x' y y', p x = p x' → q y = q y' → c' (x, y) ≤ c' (x', y') + η := by
-    intro x x' y y' hpx hqy
-    have hxK : x ∈ K ↔ x' ∈ K := by rw [← not_iff_not, ← hpK, ← hpK, hpx]
-    have hyL : y ∈ L ↔ y' ∈ L := by rw [← not_iff_not, ← hqL, ← hqL, hqy]
-    by_cases hxy : x ∈ K ∧ y ∈ L
-    · have hx' := hxK.1 hxy.1
-      have hy' := hyL.1 hxy.2
-      have hd : dist (x, y) (x', y') < ρ := by
-        rw [Prod.dist_eq]
-        exact max_lt (hpρ x hxy.1 x' hx' hpx) (hqρ y hxy.2 y' hy' hqy)
-      have hcd := hcρ (x, y) ⟨hxy.1, hxy.2⟩ (x', y') ⟨hx', hy'⟩ hd
-      rw [NNReal.dist_eq] at hcd
-      have h1 : (c (x, y) : ℝ≥0∞) ≤ c (x', y') + η := by
-        rw [← ENNReal.coe_add, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, NNReal.coe_add]
-        linarith [(abs_lt.1 hcd).2]
-      rw [hc', hc', ite_eq_left (mk_mem_prod hxy.1 hxy.2), ite_eq_left (mk_mem_prod hx' hy'),
-        ← min_add_add_right]
-      exact min_le_min h1 le_self_add
-    · have hxy' : ¬(x' ∈ K ∧ y' ∈ L) := by rwa [← hxK, ← hyL]
-      rw [hc', hc', ite_eq_right (by simpa using hxy), ite_eq_right (by simpa using hxy')]
-      exact le_self_add
+  have hvar := truncated_cost_le_add_of_label_eq hc'
+    (fun x x' h ↦ by rw [← not_iff_not, ← hpK, ← hpK, h])
+    (fun y y' h ↦ by rw [← not_iff_not, ← hqL, ← hqL, h]) hpρ hqρ hcρ
   obtain ⟨σ, hσ, hkl, hσc'⟩ := hπ.exists_isCoupling_klDiv_ne_top_lintegral_le hp hq hvar
   refine ⟨σ, hσ, hkl, ?_⟩
   have hKL : MeasurableSet (K ×ˢ L)ᶜ := (hKm.prod hLm).compl

@@ -72,6 +72,7 @@ variable (p : ℝ) [Fact (0 < p)]
 
 /-! ### The oriented atlas -/
 
+omit [Fact (0 < p)] in
 variable {p} in
 /-- The coordinate change between two local real lifts of `AddCircle p` preserves orientation:
 near each point of its domain it is a translation of `ℝ`. -/

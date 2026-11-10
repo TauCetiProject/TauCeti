@@ -187,8 +187,9 @@ private theorem mongeAmpereMeasure_le_liminf_of_isBounded (hμ : μ ≪ ν) (hΩ
       mongeAmpereMeasure μ (fun x => if x ∈ Ω then (F k x : EReal) else ⊤) U) l := fun n => by
     refine le_liminf_of_le (by isBoundedDefault) ?_
     have hη : 0 < 1 / ((n : ℝ) + 1) := Nat.one_div_pos_of_nat
-    filter_upwards [hF, hFu.eventually_forall_abs_sub_lt hUb.isCompact_closure hUΩ
+    filter_upwards [hF, hFu.eventually_forall_dist_lt hUb.isCompact_closure hUΩ
       (half_pos hη)] with k hk hk'
+    simp only [Real.dist_eq] at hk'
     rw [mongeAmpereMeasure_ite_apply μ hΩ hk hμ hU.measurableSet]
     exact measure_mono fun y ⟨x₀, r, hr, hball, hyη⟩ =>
       mem_biUnion_of_forall_sphere hΩ hk hUΩ' hr hball hyη fun z hz =>

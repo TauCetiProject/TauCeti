@@ -10,9 +10,9 @@ public import Mathlib.Data.Matrix.Mul
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.Data.Matrix.BirkhoffContraction
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
-import Mathlib.Data.Matrix.Basis
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
+import TauCeti.Data.Matrix.Basis
 
 /-!
 # The entropy minimiser with prescribed marginals and the Sinkhorn–Knopp theorem
@@ -500,6 +500,57 @@ theorem convex_setOf_nonneg_hasMarginals (a : ι → ℝ) (b : κ → ℝ) :
     exact add_nonneg (mul_nonneg hs (hM0 i j)) (mul_nonneg ht (hN0 i j))
   · simpa only [Convex.combo_self hst] using (hMa.smul s).add (hNa.smul t)
 
+/-- Moving from `P` towards `Q` by `t ∈ (0, 1]` changes `x * log x` at an entry where `P` vanishes
+and `Q` is positive by `t * Q i j * log (t * Q i j)`, and at every other entry by at most `t` times
+the change from `P` to `Q`, by convexity. This bounds the change of the relative entropy against
+`K` along the segment. -/
+private theorem relEntropy_convex_comb_sub_le {K P Q : Matrix ι κ ℝ} (hP0 : ∀ i j, 0 ≤ P i j)
+    (hQ0 : ∀ i j, 0 ≤ Q i j) {i : ι} {j : κ} (hPij : P i j = 0) (hQ : 0 < Q i j) {t : ℝ}
+    (ht0 : 0 < t) (ht1 : t ≤ 1) :
+    relEntropy ((1 - t) • P + t • Q) K - relEntropy P K ≤
+      t * ((∑ x, ∑ y, (Q x y * Real.log (Q x y) - P x y * Real.log (P x y))
+        - ∑ x, ∑ y, (Q x y - P x y) * Real.log (K x y)) + Q i j * Real.log t) := by
+  classical
+  set q : ℝ := Q i j with hq
+  set A : ℝ := ∑ x, ∑ y, (Q x y * Real.log (Q x y) - P x y * Real.log (P x y))
+    - ∑ x, ∑ y, (Q x y - P x y) * Real.log (K x y) with hA
+  set R : Matrix ι κ ℝ := (1 - t) • P + t • Q with hR
+  have hRapply : ∀ x y, R x y = (1 - t) * P x y + t * Q x y := fun x y => by
+    simp [hR]
+  have hcell : ∀ x y, R x y * Real.log (R x y) - P x y * Real.log (P x y) ≤
+      t * (Q x y * Real.log (Q x y) - P x y * Real.log (P x y))
+        + if x = i ∧ y = j then t * (q * Real.log t) else 0 := by
+    intro x y
+    split_ifs with hxy
+    · obtain ⟨rfl, rfl⟩ := hxy
+      rw [hRapply, hPij, ← hq, mul_zero, zero_add, Real.log_mul ht0.ne' hQ.ne']
+      simp only [zero_mul, sub_zero]
+      exact le_of_eq (by ring)
+    · have hconv := Real.convexOn_mul_log.2 (Set.mem_Ici.2 (hP0 x y))
+        (Set.mem_Ici.2 (hQ0 x y)) (by linarith : 0 ≤ 1 - t) ht0.le (by ring)
+      simp only [smul_eq_mul] at hconv
+      rw [hRapply]
+      linarith
+  have hsplit : relEntropy R K - relEntropy P K
+      = ∑ x, ∑ y, (R x y * Real.log (R x y) - P x y * Real.log (P x y))
+        - t * ∑ x, ∑ y, (Q x y - P x y) * Real.log (K x y) := by
+    simp only [relEntropy_def, Finset.mul_sum, ← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => ?_
+    rw [hRapply]
+    ring
+  have hsum := Finset.sum_le_sum fun x (_ : x ∈ Finset.univ) =>
+    Finset.sum_le_sum fun y (_ : y ∈ Finset.univ) => hcell x y
+  have hδ : ∀ c : ℝ, ∑ x, ∑ y, (if x = i ∧ y = j then c else 0) = c := fun c => by
+    rw [Finset.sum_eq_single i (fun x _ hx => by simp [hx]) (by simp)]
+    simp
+  have hite : ∑ x, ∑ y, (t * (Q x y * Real.log (Q x y) - P x y * Real.log (P x y))
+      + if x = i ∧ y = j then t * (q * Real.log t) else 0)
+      = t * ∑ x, ∑ y, (Q x y * Real.log (Q x y) - P x y * Real.log (P x y))
+        + t * (q * Real.log t) := by
+    simp only [Finset.sum_add_distrib, Finset.mul_sum, hδ]
+  rw [hsplit, hA]
+  linarith
+
 /-- A minimiser `P` of the relative entropy against `K` over a convex set `C` of matrices has the
 largest support among the nonnegative members of `C`: if `P` and some `Q ∈ C` are nonnegative,
 then every entry at which `Q` is positive is a positive entry of `P`. There is no hypothesis on
@@ -524,47 +575,12 @@ theorem pos_of_isMinOn_relEntropy {K : Matrix ι κ ℝ} {C : Set (Matrix ι κ 
   have hlogt : q * Real.log t = -(|A| + 1) := by
     rw [ht, Real.log_exp]
     field_simp
-  set R : Matrix ι κ ℝ := (1 - t) • P + t • Q with hR
-  have hRapply : ∀ x y, R x y = (1 - t) * P x y + t * Q x y := fun x y => by
-    simp [hR]
-  have hRC : R ∈ C := hC hPC hQC (by linarith) ht0.le (by ring)
-  have hcell : ∀ x y, R x y * Real.log (R x y) - P x y * Real.log (P x y) ≤
-      t * (Q x y * Real.log (Q x y) - P x y * Real.log (P x y))
-        + if x = i ∧ y = j then t * (q * Real.log t) else 0 := by
-    intro x y
-    split_ifs with hxy
-    · obtain ⟨rfl, rfl⟩ := hxy
-      rw [hRapply, ← hPij, ← hq, mul_zero, zero_add, Real.log_mul ht0.ne' hQ.ne']
-      simp only [zero_mul, sub_zero]
-      exact le_of_eq (by ring)
-    · have hconv := Real.convexOn_mul_log.2 (Set.mem_Ici.2 (hP0 x y))
-        (Set.mem_Ici.2 (hQ0 x y)) (by linarith : 0 ≤ 1 - t) ht0.le (by ring)
-      simp only [smul_eq_mul] at hconv
-      rw [hRapply]
-      linarith
-  have hdiff : relEntropy R K - relEntropy P K ≤ t * (A + q * Real.log t) := by
-    have hsplit : relEntropy R K - relEntropy P K
-        = ∑ x, ∑ y, (R x y * Real.log (R x y) - P x y * Real.log (P x y))
-          - t * ∑ x, ∑ y, (Q x y - P x y) * Real.log (K x y) := by
-      simp only [relEntropy_def, Finset.mul_sum, ← Finset.sum_sub_distrib]
-      refine Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => ?_
-      rw [hRapply]
-      ring
-    have hsum := Finset.sum_le_sum fun x (_ : x ∈ Finset.univ) =>
-      Finset.sum_le_sum fun y (_ : y ∈ Finset.univ) => hcell x y
-    have hδ : ∀ c : ℝ, ∑ x, ∑ y, (if x = i ∧ y = j then c else 0) = c := fun c => by
-      rw [Finset.sum_eq_single i (fun x _ hx => by simp [hx]) (by simp)]
-      simp
-    have hite : ∑ x, ∑ y, (t * (Q x y * Real.log (Q x y) - P x y * Real.log (P x y))
-        + if x = i ∧ y = j then t * (q * Real.log t) else 0)
-        = t * ∑ x, ∑ y, (Q x y * Real.log (Q x y) - P x y * Real.log (P x y))
-          + t * (q * Real.log t) := by
-      simp only [Finset.sum_add_distrib, Finset.mul_sum, hδ]
-    rw [hsplit, hA]
-    linarith
+  have hRC : (1 - t) • P + t • Q ∈ C := hC hPC hQC (by linarith) ht0.le (by ring)
+  have hdiff := relEntropy_convex_comb_sub_le (K := K) hP0 hQ0 hPij.symm hQ ht0 ht1
+  rw [← hA, ← hq] at hdiff
   have hneg : t * (A + q * Real.log t) < 0 :=
     mul_neg_of_pos_of_neg ht0 (by rw [hlogt]; linarith [le_abs_self A])
-  have hle : relEntropy P K ≤ relEntropy R K := isMinOn_iff.mp hmin R hRC
+  have hle : relEntropy P K ≤ relEntropy ((1 - t) • P + t • Q) K := isMinOn_iff.mp hmin _ hRC
   linarith
 
 /-- A minimiser of the relative entropy against `K` among the nonnegative matrices with strictly
@@ -761,6 +777,62 @@ theorem sum_sum_mul_log_sub_log_eq_zero_of_relEntropy_minOn (K : Matrix ι κ �
 /-! ### Matrices orthogonal to the zero-marginal directions on a support -/
 
 /-- On a set `s` of cells, a matrix `H` is the sum `f i + g j` of a function of the row and a
+function of the column when `∑ i, ∑ j, D i j * H i j = 0` for every matrix `D` that vanishes off
+`s` and has zero row and column sums. -/
+private theorem exists_forall_mem_eq_add_of_forall_sum_eq_zero (H : Matrix ι κ ℝ)
+    (s : Set (ι × κ))
+    (hH : ∀ D : Matrix ι κ ℝ, (∀ i j, (i, j) ∉ s → D i j = 0) → HasMarginals D 0 0 →
+      ∑ i, ∑ j, D i j * H i j = 0) :
+    ∃ (f : ι → ℝ) (g : κ → ℝ), ∀ i j, (i, j) ∈ s → H i j = f i + g j := by
+  classical
+  -- The matrices equal to `f i + g j` on `s` and to `0` off `s` form the range of `T`, and `H`
+  -- restricted to `s` lies in it because every functional killing that range kills `H`.
+  let T : ((ι → ℝ) × (κ → ℝ)) →ₗ[ℝ] Matrix ι κ ℝ :=
+    { toFun := fun fg => of fun i j => if (i, j) ∈ s then fg.1 i + fg.2 j else 0
+      map_add' := fun x y => by
+        ext i j
+        simp only [of_apply, Prod.fst_add, Prod.snd_add, Pi.add_apply, Matrix.add_apply]
+        split_ifs <;> ring
+      map_smul' := fun c x => by
+        ext i j
+        simp only [of_apply, Prod.smul_fst, Prod.smul_snd, Pi.smul_apply, smul_eq_mul,
+          RingHom.id_apply, Matrix.smul_apply]
+        split_ifs <;> ring }
+  have hT : ∀ fg i j, T fg i j = if (i, j) ∈ s then fg.1 i + fg.2 j else 0 :=
+    fun _ _ _ => of_apply _ _ _
+  have hmem : of (fun i j => if (i, j) ∈ s then H i j else 0) ∈ LinearMap.range T := by
+    refine (Subspace.forall_mem_dualAnnihilator_apply_eq_zero_iff (LinearMap.range T) _).mp
+      fun φ hφT => ?_
+    rw [Submodule.mem_dualAnnihilator] at hφT
+    set D : Matrix ι κ ℝ := of fun i j => if (i, j) ∈ s then φ (Matrix.single i j 1) else 0
+      with hD_def
+    have hTD : ∀ fg : (ι → ℝ) × (κ → ℝ), ∑ i, ∑ j, D i j * (fg.1 i + fg.2 j) = 0 := by
+      intro fg
+      rw [← hφT (T fg) (LinearMap.mem_range_self T fg), LinearMap.apply_eq_sum_sum_smul_single]
+      simp only [smul_eq_mul]
+      refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+      rw [hT, hD_def, of_apply]
+      split_ifs <;> ring
+    have hD : HasMarginals D 0 0 := by
+      refine (hasMarginals_def _ _ _).2 ⟨fun i => ?_, fun j => ?_⟩
+      · simpa [Pi.single_apply] using hTD (Pi.single i 1, 0)
+      · simpa [Pi.single_apply] using hTD (0, Pi.single j 1)
+    have hDs : ∀ i j, (i, j) ∉ s → D i j = 0 := fun i j h => by
+      rw [hD_def, of_apply, ite_eq_right_iff.2 fun h' => absurd h' h]
+    rw [LinearMap.apply_eq_sum_sum_smul_single]
+    simp only [smul_eq_mul]
+    refine Eq.trans ?_ (hH D hDs hD)
+    refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+    rw [hD_def, of_apply, of_apply]
+    split_ifs <;> ring
+  obtain ⟨fg, hfg⟩ := hmem
+  refine ⟨fg.1, fg.2, fun i j hij => ?_⟩
+  have h := congrFun (congrFun hfg i) j
+  rw [hT, of_apply, ite_eq_left_iff.2 fun h' => absurd hij h',
+    ite_eq_left_iff.2 fun h' => absurd hij h'] at h
+  exact h.symm
+
+/-- On a set `s` of cells, a matrix `H` is the sum `f i + g j` of a function of the row and a
 function of the column exactly when `∑ i, ∑ j, D i j * H i j = 0` for every matrix `D` that
 vanishes off `s` and has zero row and column sums. -/
 theorem exists_forall_mem_eq_add_iff (H : Matrix ι κ ℝ) (s : Set (ι × κ)) :
@@ -776,59 +848,7 @@ theorem exists_forall_mem_eq_add_iff (H : Matrix ι κ ℝ) (s : Set (ι × κ))
           · rw [hfg i j h]
           · rw [hDs i j h, zero_mul, zero_mul]
       _ = 0 := by simp [hD.sum_sum_mul_add f g]
-  · intro hH
-    -- The matrices equal to `f i + g j` on `s` and to `0` off `s` form the range of `T`, and `H`
-    -- restricted to `s` lies in it because every functional killing that range kills `H`.
-    let T : ((ι → ℝ) × (κ → ℝ)) →ₗ[ℝ] Matrix ι κ ℝ :=
-      { toFun := fun fg => of fun i j => if (i, j) ∈ s then fg.1 i + fg.2 j else 0
-        map_add' := fun x y => by
-          ext i j
-          simp only [of_apply, Prod.fst_add, Prod.snd_add, Pi.add_apply, Matrix.add_apply]
-          split_ifs <;> ring
-        map_smul' := fun c x => by
-          ext i j
-          simp only [of_apply, Prod.smul_fst, Prod.smul_snd, Pi.smul_apply, smul_eq_mul,
-            RingHom.id_apply, Matrix.smul_apply]
-          split_ifs <;> ring }
-    have hT : ∀ fg i j, T fg i j = if (i, j) ∈ s then fg.1 i + fg.2 j else 0 :=
-      fun _ _ _ => of_apply _ _ _
-    -- A linear functional on matrices is the pairing with its values on the matrix units.
-    have hφ : ∀ (φ : Module.Dual ℝ (Matrix ι κ ℝ)) (M : Matrix ι κ ℝ),
-        φ M = ∑ i, ∑ j, M i j * φ (Matrix.single i j 1) := by
-      intro φ M
-      conv_lhs => rw [matrix_eq_sum_single M]
-      simp only [map_sum]
-      refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-      rw [← smul_eq_mul, ← map_smul, smul_single, smul_eq_mul, mul_one]
-    have hmem : of (fun i j => if (i, j) ∈ s then H i j else 0) ∈ LinearMap.range T := by
-      refine (Subspace.forall_mem_dualAnnihilator_apply_eq_zero_iff (LinearMap.range T) _).mp
-        fun φ hφT => ?_
-      rw [Submodule.mem_dualAnnihilator] at hφT
-      set D : Matrix ι κ ℝ := of fun i j => if (i, j) ∈ s then φ (Matrix.single i j 1) else 0
-        with hD_def
-      have hTD : ∀ fg : (ι → ℝ) × (κ → ℝ), ∑ i, ∑ j, D i j * (fg.1 i + fg.2 j) = 0 := by
-        intro fg
-        rw [← hφT (T fg) (LinearMap.mem_range_self T fg), hφ]
-        refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-        rw [hT, hD_def, of_apply]
-        split_ifs <;> ring
-      have hD : HasMarginals D 0 0 := by
-        refine (hasMarginals_def _ _ _).2 ⟨fun i => ?_, fun j => ?_⟩
-        · simpa [Pi.single_apply] using hTD (Pi.single i 1, 0)
-        · simpa [Pi.single_apply] using hTD (0, Pi.single j 1)
-      have hDs : ∀ i j, (i, j) ∉ s → D i j = 0 := fun i j h => by
-        rw [hD_def, of_apply, ite_eq_right_iff.2 fun h' => absurd h' h]
-      rw [hφ]
-      refine Eq.trans ?_ (hH D hDs hD)
-      refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-      rw [hD_def, of_apply, of_apply]
-      split_ifs <;> ring
-    obtain ⟨fg, hfg⟩ := hmem
-    refine ⟨fg.1, fg.2, fun i j hij => ?_⟩
-    have h := congrFun (congrFun hfg i) j
-    rw [hT, of_apply, ite_eq_left_iff.2 fun h' => absurd hij h',
-      ite_eq_left_iff.2 fun h' => absurd hij h'] at h
-    exact h.symm
+  · exact exists_forall_mem_eq_add_of_forall_sum_eq_zero H s
 
 /-! ### The minimiser is a diagonal scaling -/
 
@@ -1010,16 +1030,29 @@ theorem relEntropyDual_le_relEntropy {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K
   linarith
 
 /-- **Strong duality** for the entropy minimisation: if `P` is the diagonal scaling of a kernel `K`
-with no zero entries by strictly positive factors `u` and `v`, with row sums `a` and column sums
-`b`, the dual objective at the potentials `log u` and `log v` is `relEntropy P K`. With
-`Matrix.relEntropyDual_le_relEntropy`, for a strictly positive `K` these potentials maximise the
-dual objective, and its maximum is the minimum of the relative entropy. -/
+by strictly positive factors `u` and `v`, with row sums `a` and column sums `b`, the dual objective
+at the potentials `log u` and `log v` is `relEntropy P K`. No entry of `K` need be nonzero: `P`
+vanishes where `K` does. With `Matrix.relEntropyDual_le_relEntropy`, for a strictly positive `K`
+these potentials maximise the dual objective, and its maximum is the minimum of the relative
+entropy. -/
 theorem IsDiagonalScaling.relEntropyDual_eq_relEntropy {P K : Matrix ι κ ℝ} {u : ι → ℝ}
-    {v : κ → ℝ} (hP : IsDiagonalScaling P K u v) (hK : ∀ i j, K i j ≠ 0) (hu : ∀ i, 0 < u i)
+    {v : κ → ℝ} (hP : IsDiagonalScaling P K u v) (hu : ∀ i, 0 < u i)
     (hv : ∀ j, 0 < v j) {a : ι → ℝ} {b : κ → ℝ} (hPm : HasMarginals P a b) :
     K.relEntropyDual a b (fun i => Real.log (u i)) (fun j => Real.log (v j)) = relEntropy P K := by
-  have hgap := hP.relEntropy_sub_relEntropyDual hK hu hv hPm
-  linarith [hPm.sum_sum_eq, relEntropy_self P]
+  have hPsum : ∑ i, ∑ j, Real.exp (Real.log (u i)) * K i j * Real.exp (Real.log (v j)) =
+      ∑ i, ∑ j, P i j := by
+    simp only [Real.exp_log (hu _), Real.exp_log (hv _), (isDiagonalScaling_def _ _ _ _).1 hP]
+  -- cell by cell: `P` vanishes where `K` does, and elsewhere `log P = log K + log u + log v`
+  have hrel : relEntropy P K = ∑ i, ∑ j, P i j * (Real.log (u i) + Real.log (v j)) := by
+    rw [relEntropy_def]
+    refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+    by_cases hK : K i j = 0
+    · simp [hP i j, hK]
+    · rw [hP i j, Real.log_mul (mul_ne_zero (hu i).ne' hK) (hv j).ne',
+        Real.log_mul (hu i).ne' hK]
+      ring
+  rw [relEntropyDual_def, hPsum, hrel, hPm.sum_sum_mul_add]
+  linarith [hPm.sum_sum_eq]
 
 /-- For a strictly positive kernel `K` and strictly positive marginals `a` and `b`, a nonnegative
 matrix with row sums `a` and column sums `b` minimises the relative entropy against `K` among all

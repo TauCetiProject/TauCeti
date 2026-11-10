@@ -91,7 +91,7 @@ along such an identification, once one is proved.
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS **80** (1968), §11.
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate IV, for the numbering of the
   `D₄` diagram.
-* The layout follows `TauCeti.GroupTheory.SpecificGroups.CFSG.TwistedE6`, the graph-twisted
+* The layout follows `TauCeti.GroupTheory.SpecificGroups.CFSG.TwistedE6.Basic`, the graph-twisted
   branch on the doubled `E₆` carrier, with the involution there replaced by triality.
 * K. Morrison and Claude Code,
   [Tau Ceti PR #6676](https://github.com/TauCetiProject/TauCeti/pull/6676), whose construction of

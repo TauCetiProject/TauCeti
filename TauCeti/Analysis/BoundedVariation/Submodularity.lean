@@ -176,9 +176,8 @@ theorem totalVariationOn_mul_add_totalVariationOn_add_sub_mul_le
     totalVariationOn μ Ω (u * v) + totalVariationOn μ Ω (u + v - u * v) ≤
       totalVariationOn μ Ω u + totalVariationOn μ Ω v := by
   -- Pass to representatives that are locally integrable and everywhere `[0, 1]`-valued.
-  have hΩ : MeasurableSet (Ω : Set E) := Ω.isOpen.measurableSet
-  obtain ⟨u', hu', hu'01, hu'u⟩ := exists_locallyIntegrable_mem_Icc_ae_eq hΩ hu hu01
-  obtain ⟨v', hv', hv'01, hv'v⟩ := exists_locallyIntegrable_mem_Icc_ae_eq hΩ hv hv01
+  obtain ⟨u', hu', hu'01, hu'u⟩ := exists_locallyIntegrable_mem_Icc_ae_eq hu hu01
+  obtain ⟨v', hv', hv'01, hv'v⟩ := exists_locallyIntegrable_mem_Icc_ae_eq hv hv01
   rw [← totalVariationOn_congr_ae (hu'u.mul hv'v),
     ← totalVariationOn_congr_ae ((hu'u.add hv'v).sub (hu'u.mul hv'v)),
     ← totalVariationOn_congr_ae hu'u, ← totalVariationOn_congr_ae hv'v,

@@ -346,7 +346,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
 
 section MulInvariantExp
 
-variable [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+variable [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
   [BoundarylessManifold I G]
 
 /-- **Initial velocity of a right exponential orbit.** In the tangent bundle, the tangent map of

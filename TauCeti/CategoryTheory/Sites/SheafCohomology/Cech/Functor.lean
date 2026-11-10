@@ -37,6 +37,9 @@ from the opens contained in `Y` along `V ↦ Y ∩ V`, which preserves intersect
   natural in the presheaf.
 * `TauCeti.CategoryTheory.cechComplexMap_comp_cechComplexCompIso_hom`: this isomorphism commutes
   with refinement maps, retaining their actual index functions.
+* `TauCeti.CategoryTheory.cechComplexMapHomotopy_hom_comp_cechComplexCompIso_hom`: this
+  isomorphism carries the homotopy between the maps induced by two refinement maps to the
+  corresponding homotopy.
 * `TauCeti.CategoryTheory.cechAugmentation_comp_cechComplexCompIso_hom`: this isomorphism is
   compatible with the augmentations.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_op_comp_iff`: the augmented Čech complex of
@@ -214,6 +217,63 @@ theorem cechComplexMap_comp_cechComplexCompIso_hom {κ : Type w} {V : κ → C}
     rw [← Q.map_comp, ← Q.map_comp]
     exact congrArg Q.map (Subsingleton.elim _ _)
   exact (Category.assoc _ _ _).trans ((_ ≫= hm).trans (Category.assoc _ _ _).symm)
+
+omit [Preadditive A] in
+/-- In the thin category `D`, the restrictions to the same object from two factors of a Čech term
+indexed by equal tuples agree. -/
+private lemma π_comp_map_eq_of_eq {κ : Type w} {W : κ → D} {m : ℕ} {b b' : Fin (m + 1) → κ}
+    (h : b = b') {X : D} (f : X ⟶ ∏ᶜ fun j ↦ W (b j)) (f' : X ⟶ ∏ᶜ fun j ↦ W (b' j)) :
+    Pi.π (fun c : Fin (m + 1) → κ ↦ Q.obj (op (∏ᶜ fun j ↦ W (c j)))) b ≫ Q.map f.op =
+      Pi.π (fun c : Fin (m + 1) → κ ↦ Q.obj (op (∏ᶜ fun j ↦ W (c j)))) b' ≫ Q.map f'.op := by
+  subst h
+  rw [Subsingleton.elim f f']
+
+omit [HasProducts A] in
+/-- An identity between composites with negated alternating sums, as in the prism formula
+(`cechComplexMapHomotopy_hom_π`), follows from the identities between the summands. -/
+private lemma neg_sum_zsmul_comp_eq_comp_neg_sum_zsmul {X Y Y' Z : A} {m : ℕ}
+    {f : Fin m → (X ⟶ Y)} {g : Y ⟶ Z} {f' : X ⟶ Y'} {g' : Fin m → (Y' ⟶ Z)}
+    (h : ∀ k, f k ≫ g = f' ≫ g' k) :
+    (-∑ k : Fin m, ((-1 : ℤ) ^ (k : ℕ)) • f k) ≫ g =
+      f' ≫ (-∑ k : Fin m, ((-1 : ℤ) ^ (k : ℕ)) • g' k) := by
+  simp only [Preadditive.neg_comp, Preadditive.comp_neg, Preadditive.sum_comp,
+    Preadditive.comp_sum, Preadditive.zsmul_comp, Preadditive.comp_zsmul, h]
+
+/-- The comparison along `G` carries the homotopy between the maps induced by two refinement maps
+`φ` and `ψ` (`cechComplexMapHomotopy`) for `Q` and the family `G ∘ U` to the corresponding
+homotopy for `G.op ⋙ Q` and the family `U`. -/
+@[reassoc]
+theorem cechComplexMapHomotopy_hom_comp_cechComplexCompIso_hom {κ : Type w} {V : κ → C}
+    (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (hV : ∀ (n : ℕ) (a : Fin (n + 1) → κ),
+      Nonempty ((∏ᶜ fun j ↦ G.obj (V (a j))) ⟶ G.obj (∏ᶜ fun j ↦ V (a j)))) (i j : ℕ) :
+    (cechComplexMapHomotopy Q
+      (⟨φ.f, fun i ↦ G.map (φ.φ i)⟩ : FormalCoproduct.mk _ (fun i ↦ G.obj (U i)) ⟶
+        FormalCoproduct.mk _ (fun i ↦ G.obj (V i)))
+      ⟨ψ.f, fun i ↦ G.map (ψ.φ i)⟩).hom i j ≫ (cechComplexCompIso G U Q hG).hom.f j =
+      (cechComplexCompIso G V Q hV).hom.f i ≫
+        (cechComplexMapHomotopy (G.op ⋙ Q) φ ψ).hom i j := by
+  obtain rfl | h := eq_or_ne i (j + 1)
+  swap
+  · have hji : ¬ (ComplexShape.up ℕ).Rel j i := fun h' ↦ h h'.symm
+    rw [Homotopy.zero _ i j hji, Homotopy.zero _ i j hji, zero_comp, comp_zero]
+  -- Give the product explicitly: the native Čech term is this product only after unfolding.
+  refine Pi.hom_ext (f := fun a : Fin (j + 1) → ι ↦
+    Q.obj (op (G.obj (∏ᶜ fun l ↦ U (a l))))) _ _ fun a ↦ ?_
+  refine ((Category.assoc _ _ _).trans (_ ≫= cechComplexCompIso_hom_f_π G U Q hG j a)).trans ?_
+  refine ((Category.assoc _ _ _).symm.trans
+    (cechComplexMapHomotopy_hom_π_assoc Q _ _ j a _)).trans ?_
+  refine Eq.trans ?_ ((Category.assoc _ _ _).trans
+    (_ ≫= cechComplexMapHomotopy_hom_π (G.op ⋙ Q) φ ψ j a)).symm
+  refine neg_sum_zsmul_comp_eq_comp_neg_sum_zsmul fun k ↦ ?_
+  -- both sides restrict along morphisms in the thin category `D` from factors indexed by the
+  -- same prism tuple
+  refine ((Category.assoc _ _ _).trans (_ ≫= (Q.map_comp _ _).symm)).trans ?_
+  refine Eq.trans ?_ ((Category.assoc _ _ _).symm.trans
+    (cechComplexCompIso_hom_f_π G V Q hV (j + 1) _ =≫ _)).symm
+  refine Eq.trans ?_ (Category.assoc _ _ _).symm
+  refine Eq.trans ?_ (_ ≫= (Q.map_comp _ _))
+  exact π_comp_map_eq_of_eq Q (funext fun l ↦ by split_ifs <;> rfl) _ _
 
 variable [HasZeroObject A] {T : C} (hT : IsTerminal T) (hGT : IsTerminal (G.obj T))
 

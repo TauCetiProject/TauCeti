@@ -16,9 +16,9 @@ For an algebra `A` over a field, with `A` a topological ring, the third partial 
 `NormedSpace.expSeries` is `1 + x + 2⁻¹ • x ^ 2`. This identity needs no norm or completeness
 assumption.
 In a complete normed algebra, the exponential agrees with this quadratic truncation to third
-order at the origin, and it is multiplicative on scalar multiples of a fixed element
-(`NormedSpace.exp_add_smul`). This file records that estimate in `Asymptotics.IsBigO` form.
-It also bounds the norm of the exponential by a scalar exponential, comparing the exponential
+order at the origin; this file records that estimate in `Asymptotics.IsBigO` form. The exponential
+is also multiplicative on scalar multiples of a fixed element (`NormedSpace.exp_add_smul`).
+The file also bounds the norm of the exponential by a scalar exponential, comparing the exponential
 series termwise with the series of `Real.exp`.
 
 The exponential is analytic at `0` with power series `NormedSpace.expSeries`, so the statement is
@@ -40,7 +40,9 @@ Baker--Campbell--Hausdorff expansion.
   (`TauCeti.norm_exp_le_exp_norm`, with the scalar-multiple form `TauCeti.norm_exp_smul_le`), and
   power-bounded elements satisfy `‖exp (s • b)‖ ≤ M * Real.exp ‖s‖`
   (`TauCeti.norm_exp_smul_le_mul_exp_of_norm_pow_le`).
-* `TauCeti.exp_smul_one`: the exponential of a scalar multiple of the unit.
+* `TauCeti.norm_exp_smul_le_mul_exp_norm_of_norm_exp_pow_le`: if the powers of `exp x` are
+  bounded by `C`, then `‖exp (t • x)‖ ≤ C * Real.exp ‖x‖` uniformly in `t ≥ 0`.
+* `TauCeti.norm_exp_smul_one_le`: `‖exp (c • 1)‖ ≤ Real.exp c` for real `c` when `‖1‖ ≤ 1`.
 -/
 
 public section
@@ -72,7 +74,7 @@ variable (𝕂 : Type*) {A : Type*} [NontriviallyNormedField 𝕂] [NormedRing A
 
 /-- The exponential on a complete normed algebra is smooth of every order, including analytic. -/
 theorem contDiff_exp {k : ℕ∞ω} : ContDiff 𝕂 k (exp : A → A) :=
-  contDiff_iff_contDiffAt.mpr fun x ↦ (exp_analytic (𝕂 := 𝕂) x).contDiffAt.of_le le_top
+  AnalyticOnNhd.contDiff fun x _ ↦ exp_analytic x
 
 include 𝕂 in
 /-- The exponential on a complete normed algebra is continuous at `0`, with value `1`. -/
@@ -116,15 +118,12 @@ variable {𝔸 : Type*} [NormedRing 𝔸]
 `‖exp x‖ ≤ M * Real.exp r`. -/
 theorem norm_exp_le_mul_exp_of_norm_pow_le [NormedAlgebra ℚ 𝔸] {x : 𝔸} {M r : ℝ}
     (h : ∀ n : ℕ, ‖x ^ n‖ ≤ M * r ^ n) : ‖exp x‖ ≤ M * Real.exp r := by
-  have hr := (exp_series_hasSum_exp' (𝕂 := ℝ) (𝔸 := ℝ) r).mul_left M
   rw [exp_eq_tsum ℚ, Real.exp_eq_exp_ℝ]
-  refine tsum_of_norm_bounded hr fun n => ?_
-  have hfact : ‖((n ! : ℚ))⁻¹‖ = ((n ! : ℝ))⁻¹ := by
-    rw [← Rat.norm_cast_real]
-    simp
-  rw [norm_smul, hfact, smul_eq_mul, mul_left_comm]
+  refine tsum_of_norm_bounded ((exp_series_hasSum_exp' (𝕂 := ℝ) r).mul_left M) fun n ↦ ?_
+  rw [norm_smul, smul_eq_mul, mul_left_comm, ← Rat.norm_cast_real]
   gcongr
-  exact h n
+  · simp
+  · exact h n
 
 /-- In a normed `ℚ`-algebra whose unit has norm at most one, the exponential is norm-bounded by
 the scalar exponential of the norm: `‖exp x‖ ≤ Real.exp ‖x‖`. -/
@@ -158,11 +157,24 @@ theorem norm_exp_smul_le_mul_exp_of_norm_pow_le {b : 𝔸} {M : ℝ} (s : 𝕜)
   gcongr
   exact hpow n
 
-/-- The exponential of a scalar multiple of the unit is the corresponding scalar exponential
-times the unit. -/
-@[simp]
-theorem exp_smul_one (c : 𝕜) : exp (c • (1 : 𝔸)) = exp c • 1 := by
-  rw [← Algebra.algebraMap_eq_smul_one, ← Algebra.algebraMap_eq_smul_one, ← algebraMap_exp_comm]
+/-- If every power of `exp x` has norm at most `C`, then `‖exp (t • x)‖ ≤ C * Real.exp ‖x‖` for
+every real `t ≥ 0`. -/
+theorem norm_exp_smul_le_mul_exp_norm_of_norm_exp_pow_le [CompleteSpace 𝔸]
+    (h_one : ‖(1 : 𝔸)‖ ≤ 1) {x : 𝔸} {C : ℝ} (hC : ∀ n : ℕ, ‖exp x ^ n‖ ≤ C) {t : ℝ}
+    (ht : 0 ≤ t) : ‖exp ((t : 𝕜) • x)‖ ≤ C * Real.exp ‖x‖ := by
+  let +nondep : NormedAlgebra ℚ 𝔸 := .restrictScalars ℚ 𝕜 𝔸
+  -- Write `t = n + s` with `n = ⌊t⌋₊` and `0 ≤ s ≤ 1`, so that
+  -- `exp (t • x) = (exp x) ^ n * exp (s • x)`.
+  have hs0 : 0 ≤ t - ⌊t⌋₊ := sub_nonneg.mpr (Nat.floor_le ht)
+  have hs1 : t - ⌊t⌋₊ ≤ 1 := by linarith [Nat.lt_floor_add_one t]
+  have hsplit : (t : 𝕜) = (⌊t⌋₊ : 𝕜) + ((t - ⌊t⌋₊ : ℝ) : 𝕜) := by push_cast; ring
+  rw [hsplit, add_smul, exp_add_of_commute (((Commute.refl x).smul_left _).smul_right _),
+    Nat.cast_smul_eq_nsmul, exp_nsmul]
+  refine (norm_mul_le _ _).trans (mul_le_mul (hC _) ?_ (norm_nonneg _)
+    ((norm_nonneg _).trans (hC 0)))
+  refine (norm_exp_smul_le h_one x _).trans ?_
+  rw [Real.exp_le_exp, RCLike.norm_ofReal, abs_of_nonneg hs0]
+  nlinarith [norm_nonneg x]
 
 end RCLike
 
@@ -170,7 +182,8 @@ end RCLike
 of the unit is at most the corresponding scalar exponential. -/
 theorem norm_exp_smul_one_le [NormedAlgebra ℝ 𝔸] (h_one : ‖(1 : 𝔸)‖ ≤ 1) (c : ℝ) :
     ‖exp (c • (1 : 𝔸))‖ ≤ Real.exp c := by
-  rw [exp_smul_one, ← Real.exp_eq_exp_ℝ, norm_smul, Real.norm_of_nonneg (Real.exp_nonneg c)]
+  rw [← Algebra.algebraMap_eq_smul_one, ← algebraMap_exp_comm, ← Real.exp_eq_exp_ℝ,
+    norm_algebraMap, Real.norm_of_nonneg (Real.exp_nonneg c)]
   exact mul_le_of_le_one_right (Real.exp_nonneg c) h_one
 
 end TauCeti

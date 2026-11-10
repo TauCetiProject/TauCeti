@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.HarishChandra
 public import TauCeti.Algebra.Lie.Killing.CartanRestriction
-public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Basic
 -- Non-public: commutators lower the PBW degree, used only inside the proofs.
 import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.AssociatedGraded
 
