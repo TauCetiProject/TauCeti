@@ -86,4 +86,30 @@ lemma _root_.CategoryTheory.ShortComplex.ShortExact.boundedSingleTriangle_distin
   (DerivedCategory.Bounded.ι.map_distinguished_iff _).1 <|
     isomorphic_distinguished _ hS.singleTriangle_distinguished _ hS.boundedSingleTriangleιIso
 
+/-- **The connecting morphism of the bounded single triangle is natural** in morphisms of short
+exact sequences. -/
+@[reassoc]
+lemma _root_.CategoryTheory.ShortComplex.ShortExact.boundedSingleTriangle_mor₃_naturality
+    {S₁ S₂ : ShortComplex A} (φ : S₁ ⟶ S₂) (h₁ : S₁.ShortExact) (h₂ : S₂.ShortExact) :
+    (DerivedCategory.Bounded.singleFunctor A 0).map φ.τ₃ ≫ h₂.boundedSingleTriangle.mor₃ =
+      h₁.boundedSingleTriangle.mor₃ ≫
+        ((DerivedCategory.Bounded.singleFunctor A 0).map φ.τ₁)⟦(1 : ℤ)⟧' := by
+  apply DerivedCategory.Bounded.ι.map_injective
+  have h := (ShortComplex.ShortExact.singleTriangle.map h₁ h₂ φ).comm₃
+  simp only [ShortComplex.ShortExact.singleTriangle_mor₃,
+    ShortComplex.ShortExact.singleTriangle.map_hom₁,
+    ShortComplex.ShortExact.singleTriangle.map_hom₃] at h
+  have k := (DerivedCategory.Bounded.ι.commShiftIso (1 : ℤ)).inv.naturality
+    ((DerivedCategory.Bounded.singleFunctor A 0).map φ.τ₁)
+  simp only [Functor.comp_map] at k
+  simp only [Functor.map_comp, ShortComplex.ShortExact.boundedSingleTriangle_mor₃]
+  -- Both sides are composites in `D(A)`, where they agree by the naturality of `singleδ`.
+  calc _ = (DerivedCategory.singleFunctor A 0).map φ.τ₃ ≫ h₂.singleδ ≫
+        (DerivedCategory.Bounded.ι.commShiftIso (1 : ℤ)).inv.app
+          ((DerivedCategory.Bounded.singleFunctor A 0).obj S₂.X₁) := rfl
+    _ = h₁.singleδ ≫ ((DerivedCategory.Bounded.singleFunctor A 0).map φ.τ₁).hom⟦(1 : ℤ)⟧' ≫
+        (DerivedCategory.Bounded.ι.commShiftIso (1 : ℤ)).inv.app
+          ((DerivedCategory.Bounded.singleFunctor A 0).obj S₂.X₁) := ((reassoc_of% h) _).symm
+    _ = _ := (congrArg (h₁.singleδ ≫ ·) k).trans (Category.assoc _ _ _).symm
+
 end TauCeti
