@@ -19,7 +19,9 @@ For a measure `π` on `α × β` with measurable singletons, the mass that the f
 over `x`, when `β` is finite, and symmetrically for the second marginal. Mathlib records this for
 the extended masses (`MeasureTheory.measure_preimage_fst_singleton_eq_sum`); this file states it
 for the real masses `Measure.real`. A set of zero first-marginal mass carries no mass in any
-rectangle over it (`MeasureTheory.Measure.measure_prod_eq_zero_of_fst_eq_zero`).
+rectangle over it (`MeasureTheory.Measure.measure_prod_eq_zero_of_fst_eq_zero`). The graph
+`{z | z.2 = f z.1}` of a measurable function is null for `μ.prod ν` whenever `ν` gives no mass to
+points (`MeasureTheory.Measure.prod_graph_eq_zero`).
 For a probability measure `μ`, the pairs with a coordinate in a set `s` have `μ.prod μ`-measure
 at most `2 * μ s` (`MeasureTheory.Measure.prod_self_union_le_two_mul`). Weighting by a function
 of the first coordinate commutes with taking the first marginal (`fst_withDensity`).
@@ -80,6 +82,15 @@ theorem measure_prod_eq_zero_of_fst_eq_zero {α β : Type*} [MeasurableSpace α]
     σ (t ×ˢ s) = 0 :=
   measure_mono_null (Set.prod_subset_preimage_fst t s)
     (preimage_null_of_map_null measurable_fst.aemeasurable ht)
+
+/-- The graph of a measurable function is null for a product measure whose second factor gives
+no mass to points, since each vertical section of the graph is a single point. No
+sigma-finiteness assumption is needed. -/
+theorem prod_graph_eq_zero {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    [MeasurableEq β] {μ : Measure α} {ν : Measure β} [NullSingletonClass ν] {f : α → β}
+    (hf : Measurable f) : μ.prod ν {z : α × β | z.2 = f z.1} = 0 :=
+  measure_prod_null_of_ae_null (measurableSet_eq_fun measurable_snd (hf.comp measurable_fst))
+    (Filter.Eventually.of_forall fun x ↦ by simp)
 
 /-- For a probability measure `μ` and any set `s`, the pairs having a first or a second coordinate
 in `s` have `μ.prod μ`-measure at most twice `μ s`. No measurability is needed. -/
