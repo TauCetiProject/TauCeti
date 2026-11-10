@@ -94,7 +94,7 @@ end FiniteDimensional
 section LinearOrder
 
 variable {K E : Type*} [Field K] [LinearOrder K] [IsOrderedAddMonoid K]
-variable [AddCommGroup E] [Module K E] [FiniteDimensional K E]
+variable [AddCommGroup E] [Module K E]
 variable (Q : QuadraticForm K E)
 
 /-- If `Q(v) + Q(Jv)` is positive for every nonzero `v`, for a linear endomorphism `J`, then twice
@@ -102,6 +102,13 @@ the negative index of inertia of `Q` is at most the dimension of `E`. -/
 theorem two_mul_sigNeg_le_finrank_of_add_comp_posDef (J : E →ₗ[K] E)
     (hQJ : (Q + Q.comp J).PosDef) :
     2 * sigNeg Q ≤ finrank K E := by
+  by_cases hE : Module.Finite K E
+  swap
+  · have h : sigNeg Q ≤ finrank K E := by
+      rw [← sigPos_neg]
+      exact sigPos_le_finrank (-Q)
+    rw [Module.finrank_of_not_finite hE] at h ⊢
+    omega
   obtain ⟨W, hWdim, hWneg⟩ := exists_finrank_eq_sigNeg_and_negDef Q
   rw [← hWdim]
   exact Q.two_mul_finrank_le_of_add_comp_posDef J hQJ fun v hv ↦ by

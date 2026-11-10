@@ -39,7 +39,7 @@ open Module
 
 namespace TauCeti.AlmostComplexStructure
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable (J : TauCeti.AlmostComplexStructure E) (f : E → ℝ) (x : E)
 
 /-- Positivity of the sum of the Hessian quadratic form and its pullback by `J` bounds the Morse
