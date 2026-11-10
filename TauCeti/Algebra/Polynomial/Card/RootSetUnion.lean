@@ -131,6 +131,6 @@ theorem ncard_biUnion_roots_natDegree_le_coeff_mem_pi_le (m : R →+* S) (n : �
     (⋃ (f : R[X]) (_ : f.natDegree ≤ n ∧ ∀ i : Fin (n + 1), f.coeff i ∈ s i),
         ((f.map m).roots.toFinset : Set S)).ncard ≤ (∏ i, (s i).card) * n :=
   (ncard_biUnion_roots_map_le m (finite_setOf_natDegree_le_coeff_mem_pi n s) fun _ hf ↦ hf.1).trans
-    (by gcongr; exact ncard_natDegree_le_coeff_mem_pi_le n s)
+    (by gcongr; exact (ncard_natDegree_le_coeff_mem_pi n s).le)
 
 end TauCeti.Polynomial
