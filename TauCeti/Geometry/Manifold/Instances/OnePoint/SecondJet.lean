@@ -443,17 +443,13 @@ theorem writtenInExtChartAt_pgl_mul_eventuallyEq_comp (g : PGL(2, 𝕜)) {h : PG
     writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) ((0 : 𝕜) : OnePoint 𝕜) (fun x ↦ (g * h) • x) =ᶠ[𝓝 0]
       writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) ((0 : 𝕜) : OnePoint 𝕜) (fun x ↦ g • x) ∘
         writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) ((0 : 𝕜) : OnePoint 𝕜) (fun x ↦ h • x) := by
-  have hcont : Continuous fun z : 𝕜 ↦ h • (z : OnePoint 𝕜) :=
-    (contMDiff_const_smul (I := 𝓘(𝕜)) (n := ⊤) h).continuous.comp continuous_coe
-  have hne : h • (((0 : 𝕜) : 𝕜) : OnePoint 𝕜) ≠ ∞ := by
-    rw [hh]
-    exact coe_ne_infty 0
-  filter_upwards [hcont.continuousAt.eventually_ne hne] with z hz
-  have hz' := affineChart.left_inv (x := h • (z : OnePoint 𝕜)) (by simpa using hz)
-  rw [affineChart_symm_apply] at hz'
-  rw [Function.comp_apply, writtenInExtChartAt_pgl_smul_zero_apply,
-    writtenInExtChartAt_pgl_smul_zero_apply, writtenInExtChartAt_pgl_smul_zero_apply, mul_smul,
-    mul_smul, hh, chartAt_coe, hz']
+  have hcomp := writtenInExtChartAt_comp (I := 𝓘(𝕜)) (I' := 𝓘(𝕜)) (I'' := 𝓘(𝕜))
+    (g := fun x ↦ g • x) (s := univ)
+    ((contMDiff_const_smul (I := 𝓘(𝕜)) (n := ⊤) h).continuous.continuousWithinAt
+      (x := ((0 : 𝕜) : OnePoint 𝕜)))
+  simp only [preimage_univ, univ_inter, modelWithCornersSelf_coe, range_id, nhdsWithin_univ,
+    extChartAt_coe, Function.comp_apply, id_eq, chartAt_coe, affineChart_coe, hh] at hcomp
+  simpa only [Function.comp_def, ← mul_smul] using hcomp
 
 /-- **First jets under the stabilizer of `0`**: precomposing with `h` fixing `0` multiplies the
 first derivative at `0` by that of `h`. -/
