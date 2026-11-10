@@ -161,11 +161,7 @@ theorem maslovIndex_eq_of_homotopy (Λ₀ Λ₁ : TotallyRealLoop E) {L₀ : Sub
   -- `L₀` is maximal totally real, being carried to the maximal `Λ₀ 0` by a complex-linear
   -- automorphism.
   have hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀ := by
-    have := (Λ₀.isMaximalTotallyReal 0).map_linearEquiv (A (0, 0)).toLinearEquiv.symm
-    rwa [h₀ 0, ← Submodule.map_comp,
-      show ((((A (0, 0)).toLinearEquiv.symm : E ≃ₗ[ℂ] E) : E →ₗ[ℂ] E).restrictScalars ℝ) ∘ₗ
-        (((A (0, 0)).toLinearEquiv : E →ₗ[ℂ] E).restrictScalars ℝ) = LinearMap.id from
-        LinearMap.ext fun x => by simp, Submodule.map_id] at this
+    exact (Λ₀.isMaximalTotallyReal 0).of_map_linearEquiv (A (0, 0)).toLinearEquiv (h₀ 0)
   -- The homotopy of Maslov phases `ρ(L₀, A (s, t) L₀) = det A (s, t) / conj (det A (s, t))`.
   let F : C(I × I, Circle) :=
     ⟨fun p => ⟨hL₀.maslovPhase (hL₀.map_linearEquiv (A p).toLinearEquiv),
@@ -196,11 +192,7 @@ theorem sub_eq_maslovIndex_mul_pi {L₀ : Submodule ℝ E}
     φ 1 - φ 0 = Λ.maslovIndex * π := by
   -- `L₀` is maximal totally real, being carried to the maximal `Λ 0` by `A 0`.
   have hL₀ : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) L₀ := by
-    have := (Λ.isMaximalTotallyReal 0).map_linearEquiv (A 0).symm
-    rwa [hA 0, ← Submodule.map_comp,
-      show ((((A 0).symm : E ≃ₗ[ℂ] E) : E →ₗ[ℂ] E).restrictScalars ℝ) ∘ₗ
-        (((A 0) : E →ₗ[ℂ] E).restrictScalars ℝ) = LinearMap.id from
-        LinearMap.ext fun x => by simp, Submodule.map_id] at this
+    exact (Λ.isMaximalTotallyReal 0).of_map_linearEquiv (A 0) (hA 0)
   have hphase (t : I) : Complex.exp ((2 * φ t : ℝ) * Complex.I) =
       hL₀.maslovPhase (Λ.isMaximalTotallyReal t) := by
     rw [hL₀.maslovPhase_congr (Λ.isMaximalTotallyReal t) (hL₀.map_linearEquiv (A t)) (hA t),
