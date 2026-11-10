@@ -276,14 +276,11 @@ theorem connectedComponentIn_ball_diff_sphere_eq_ball_diff_closedBall
   rcases lt_or_ge 0 ρ with hρ | hρ
   swap
   · -- a degenerate crosscut misses the disc, which is its own component
-    have hdisj : ball c r \ sphere ζ ρ = ball c r := by
-      refine sdiff_eq_left.mpr (disjoint_left.mpr fun w hw hws => ?_)
-      have : w = ζ := dist_le_zero.mp (by rw [mem_sphere.mp hws]; exact hρ)
-      exact absurd (mem_ball.mp (this ▸ hw)) (by rw [hζ]; exact lt_irrefl _)
-    have hdisj' : ball c r \ closedBall ζ ρ = ball c r := by
-      refine sdiff_eq_left.mpr (disjoint_left.mpr fun w hw hws => ?_)
-      have : w = ζ := dist_le_zero.mp (mem_closedBall.mp hws |>.trans hρ)
-      exact absurd (mem_ball.mp (this ▸ hw)) (by rw [hζ]; exact lt_irrefl _)
+    have hd : Disjoint (ball c r) (closedBall ζ ρ) :=
+      ball_disjoint_closedBall (by rw [dist_comm c ζ, hζ]; linarith)
+    have hdisj' : ball c r \ closedBall ζ ρ = ball c r := sdiff_eq_left.mpr hd
+    have hdisj : ball c r \ sphere ζ ρ = ball c r :=
+      sdiff_eq_left.mpr (hd.mono_right sphere_subset_closedBall)
     rw [hdisj, hdisj']
     exact (convex_ball c r).isPreconnected.connectedComponentIn (hdisj' ▸ hz)
   have hsub : ball c r \ closedBall ζ ρ ⊆ ball c r \ sphere ζ ρ :=
