@@ -38,9 +38,10 @@ point of the boundary `S⁰` of the `1`-disk is determined by its coordinate
 `TauCeti.diskBoundaryNeg`.  More generally, a linear isometry `e` of `EuclideanSpace ℝ (Fin n)`
 induces homeomorphisms of the disk and of its boundary sphere, compatible with the boundary
 inclusion (`LinearIsometryEquiv.diskIso`, `LinearIsometryEquiv.diskBoundaryIso`); these are the
-orthogonal reparametrizations of attached cells.  Similarly, the closed unit ball of
-`EuclideanSpace ℝ ι` is homeomorphic to the disk `TopCat.disk k` for any reindexing `ι ≃ Fin k` of
-the coordinates (`TauCeti.closedBallHomeomorphDisk`).
+orthogonal reparametrizations of attached cells. Likewise a linear isometry of a normed space onto
+`EuclideanSpace ℝ (Fin n)` identifies its closed unit ball with the disk
+(`LinearIsometryEquiv.closedBallHomeomorphDisk`), which relabels the coordinates of balls in
+`EuclideanSpace ℝ ι` for a finite index type `ι` of cardinality `n`.
 
 The disk is also homeomorphic to the closed unit ball of the sup norm on `Fin n → ℝ`, with its
 boundary going to the unit sphere (`TauCeti.diskHomeomorphClosedBall`); this is how the disk is
@@ -111,6 +112,12 @@ lemma coe_diskBoundaryInclusion_apply_down (n : ℕ) (s : TopCat.diskBoundary.{u
       ((s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
         EuclideanSpace ℝ (Fin n)) :=
   rfl
+
+/-- A point of the boundary sphere has norm `1` in the disk. -/
+@[simp]
+theorem norm_diskBoundaryInclusion {n : ℕ} (s : TopCat.diskBoundary.{u} n) :
+    ‖(TopCat.diskBoundaryInclusion n s).down.1‖ = 1 :=
+  mem_sphere_zero_iff_norm.1 s.down.2
 
 end TauCeti.TopCat
 
@@ -186,45 +193,6 @@ lemma diskBoundaryHomeomorph_symm_apply_down_apply {n : ℕ}
         EuclideanSpace ℝ (Fin n)) i = (v : EuclideanSpace ℝ (ULift.{u} (Fin n))) (ULift.up i) := by
   rw [diskBoundaryHomeomorph]
   rfl
-
-/-- The closed unit ball of `EuclideanSpace ℝ ι` is homeomorphic to the disk `TopCat.disk k`, for
-a reindexing `e : ι ≃ Fin k` of the coordinates, by the linear isometry
-`LinearIsometryEquiv.piLpCongrLeft` (`TauCeti.coe_closedBallHomeomorphDisk_apply_down`). -/
-def closedBallHomeomorphDisk {ι : Type*} [Fintype ι] {k : ℕ} (e : ι ≃ Fin k) :
-    Metric.closedBall (0 : EuclideanSpace ℝ ι) 1 ≃ₜ TopCat.disk.{u} k :=
-  ((LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e).toHomeomorph.subtype fun x ↦ by simp).trans
-    Homeomorph.ulift.symm
-
-/-- The point of the disk corresponding to a point of the closed unit ball under
-`TauCeti.closedBallHomeomorphDisk e` has the same coordinates, reindexed by `e`. -/
-@[simp]
-lemma coe_closedBallHomeomorphDisk_apply_down {ι : Type*} [Fintype ι] {k : ℕ} (e : ι ≃ Fin k)
-    (x : Metric.closedBall (0 : EuclideanSpace ℝ ι) 1) :
-    ((closedBallHomeomorphDisk.{u} e x : ULift.{u} (Metric.closedBall
-      (0 : EuclideanSpace ℝ (Fin k)) 1)).down : EuclideanSpace ℝ (Fin k)) =
-      LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e x :=
-  -- `Homeomorph.subtype` keeps the underlying vector and `Homeomorph.ulift.symm` is `ULift.up`.
-  (rfl)
-
-/-- The homeomorphism `TauCeti.closedBallHomeomorphDisk e` preserves the Euclidean norm. -/
-lemma norm_closedBallHomeomorphDisk_apply_down {ι : Type*} [Fintype ι] {k : ℕ} (e : ι ≃ Fin k)
-    (x : Metric.closedBall (0 : EuclideanSpace ℝ ι) 1) :
-    ‖((closedBallHomeomorphDisk.{u} e x : ULift.{u} (Metric.closedBall
-      (0 : EuclideanSpace ℝ (Fin k)) 1)).down : EuclideanSpace ℝ (Fin k))‖ =
-      ‖(x : EuclideanSpace ℝ ι)‖ := by
-  rw [coe_closedBallHomeomorphDisk_apply_down, LinearIsometryEquiv.norm_map]
-
-/-- The point of the closed unit ball corresponding to a point of the disk under
-`TauCeti.closedBallHomeomorphDisk e` has the same coordinates, reindexed by `e.symm`. -/
-@[simp]
-lemma coe_closedBallHomeomorphDisk_symm_apply {ι : Type*} [Fintype ι] {k : ℕ} (e : ι ≃ Fin k)
-    (y : TopCat.disk.{u} k) :
-    ((closedBallHomeomorphDisk.{u} e).symm y : EuclideanSpace ℝ ι) =
-      (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e).symm
-        ((y : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin k)) 1)).down :
-          EuclideanSpace ℝ (Fin k)) :=
-  -- `Homeomorph.ulift` is `ULift.down` and `Homeomorph.subtype` keeps the underlying vector.
-  (rfl)
 
 /-- The antipodal map `x ↦ -x` of the boundary sphere `TopCat.diskBoundary n` of the `n`-disk. -/
 def diskBoundaryNeg (n : ℕ) : TopCat.diskBoundary.{u} n ⟶ TopCat.diskBoundary.{u} n :=
@@ -552,6 +520,30 @@ end CubePair
 end TauCeti
 
 namespace LinearIsometryEquiv
+
+section ClosedBall
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {n : ℕ}
+  (e : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
+
+/-- The homeomorphism `x ↦ e x` from the closed unit ball of `E` onto the disk `TopCat.disk n`
+induced by a linear isometry `e` of `E` onto `EuclideanSpace ℝ (Fin n)`. For instance, through
+`LinearIsometryEquiv.piLpCongrLeft`, a bijection `ι ≃ Fin n` of coordinates identifies the closed
+unit ball of `EuclideanSpace ℝ ι` with the disk. -/
+def closedBallHomeomorphDisk : Metric.closedBall (0 : E) 1 ≃ₜ TopCat.disk.{u} n :=
+  (e.toHomeomorph.subtype fun x ↦ by simp).trans Homeomorph.ulift.symm
+
+@[simp]
+lemma coe_closedBallHomeomorphDisk_apply_down (x : Metric.closedBall (0 : E) 1) :
+    ((e.closedBallHomeomorphDisk.{u} x).down : EuclideanSpace ℝ (Fin n)) = e x :=
+  (rfl)
+
+@[simp]
+lemma coe_closedBallHomeomorphDisk_symm_apply (z : TopCat.disk.{u} n) :
+    (e.closedBallHomeomorphDisk.symm z : E) = e.symm z.down :=
+  (rfl)
+
+end ClosedBall
 
 variable {n : ℕ} (e : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))
 

@@ -29,17 +29,25 @@ closed counterpart of Mathlib's `Metric.mem_thickening_iff_infDist_lt`, and desc
 thickenings as sublevel sets of the distance function, and their complements as strict
 superlevel sets (`TauCeti.compl_cthickening_eq_setOf_lt_infDist`).
 
+A closed set in a pseudometric space is the intersection of an antitone sequence of open sets
+inside any set whose interior contains it, namely the intersections of that interior with
+thickenings of radii `1 / (n + 1)` (`IsClosed.exists_antitone_isOpen_iInter_eq`).
+
 On the real line, the terms of an injective two-sided sequence tending to `-∞` and `+∞` at its two
 ends have pairwise disjoint closed intervals around them forming a locally finite family
 (`TauCeti.exists_closedBall_pairwiseDisjoint_locallyFinite`). An open subset of `X × ℝ` containing
 a vertical line contains a tube around it, whose radius is locally bounded below by positive
 constants (`IsOpen.exists_tube_subset`).
+
+Under a `K`-Lipschitz map, the `R / K`-thickening of a preimage lies in the preimage of the
+`R`-thickening (`LipschitzWith.thickening_preimage_subset_preimage_thickening`), and likewise for
+closed thickenings (`LipschitzWith.cthickening_preimage_subset_preimage_cthickening`).
 -/
 
 public section
 
 open Set Metric Function
-open scoped Topology
+open scoped Topology NNReal ENNReal
 
 namespace TauCeti
 
@@ -74,7 +82,70 @@ theorem compl_cthickening_eq_setOf_lt_infDist {X : Type*} [PseudoMetricSpace X] 
   ext x
   simp [mem_cthickening_iff_infDist_le hs hδ]
 
+/-- Under a `K`-Lipschitz map, the `R / K`-thickening of a preimage lies in the preimage of the
+`R`-thickening. -/
+theorem _root_.LipschitzWith.thickening_preimage_subset_preimage_thickening
+    {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y] {f : X → Y} {K : ℝ≥0} {R : ℝ}
+    (hf : LipschitzWith K f) (S : Set Y) : thickening (R / K) (f ⁻¹' S) ⊆ f ⁻¹' thickening R S := by
+  rcases eq_or_ne K 0 with rfl | hK
+  · simp [thickening_of_nonpos]
+  intro y hy
+  obtain ⟨z, hz, hyz⟩ := mem_thickening_iff.1 hy
+  refine mem_thickening_iff.2 ⟨f z, mem_preimage.1 hz, (hf.dist_le_mul y z).trans_lt ?_⟩
+  have hK' : (0 : ℝ) < K := by positivity
+  calc (K : ℝ) * dist y z < K * (R / K) := by gcongr
+    _ = R := by field_simp
+
+/-- Under a `K`-Lipschitz map, the closed `R / K`-thickening of a preimage lies in the preimage of
+the closed `R`-thickening. -/
+theorem _root_.LipschitzWith.cthickening_preimage_subset_preimage_cthickening
+    {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y] {f : X → Y} {K : ℝ≥0} {R : ℝ}
+    (hf : LipschitzWith K f) (S : Set Y) :
+    cthickening (R / K) (f ⁻¹' S) ⊆ f ⁻¹' cthickening R S := by
+  intro x hx
+  rcases eq_or_ne K 0 with rfl | hK
+  · -- `f` is constant, so `f x ∈ S` as soon as the preimage of `S` is nonempty.
+    obtain ⟨y, hy⟩ : (f ⁻¹' S).Nonempty := by
+      by_contra h
+      rw [not_nonempty_iff_eq_empty] at h
+      simp [h] at hx
+    have h0 : f x ∈ cthickening 0 S :=
+      mem_cthickening_of_dist_le (f x) (f y) 0 S hy (by simpa using hf.dist_le_mul x y)
+    rcases le_total 0 R with hR | hR
+    · exact cthickening_mono hR S h0
+    · rw [cthickening_zero] at h0
+      rwa [mem_preimage, cthickening_of_nonpos hR]
+  rw [mem_cthickening_iff] at hx
+  rw [mem_preimage, mem_cthickening_iff]
+  have hK0 : (K : ℝ≥0∞) ≠ 0 := by simpa using hK
+  have hle : infEDist (f x) S ≤ K * infEDist x (f ⁻¹' S) := by
+    simp only [infEDist, ENNReal.mul_iInf_of_ne hK0 ENNReal.coe_ne_top]
+    refine le_iInf₂ fun y hy ↦ ?_
+    exact (infEDist_le_edist_of_mem (mem_preimage.1 hy)).trans (hf.edist_le_mul x y)
+  refine hle.trans ((mul_le_mul' le_rfl hx).trans ?_)
+  rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul K.coe_nonneg,
+    mul_div_cancel₀ _ (by simpa using hK)]
+
 end TauCeti
+
+/-- A closed set `K` in a pseudometric space contained in the interior of a set `L` is the
+intersection of an antitone sequence of open sets `W n` with `K ⊆ W n ⊆ L`. -/
+theorem IsClosed.exists_antitone_isOpen_iInter_eq {X : Type*} [PseudoMetricSpace X]
+    {K L : Set X} (hK : IsClosed K) (hKL : K ⊆ interior L) :
+    ∃ W : ℕ → Set X, (∀ n, IsOpen (W n)) ∧ (∀ n, W n ⊆ L) ∧ (∀ n, K ⊆ W n) ∧ Antitone W ∧
+      ⋂ n, W n = K := by
+  set W : ℕ → Set X := fun n => interior L ∩ thickening (1 / ((n : ℝ) + 1)) K
+  have hKW (n : ℕ) : K ⊆ W n := subset_inter hKL (self_subset_thickening (by positivity) K)
+  refine ⟨W, fun n => isOpen_interior.inter isOpen_thickening,
+    fun n => inter_subset_left.trans interior_subset, hKW, fun m n hmn =>
+    inter_subset_inter_right _ (thickening_mono (one_div_le_one_div_of_le (by positivity)
+      (by exact_mod_cast Nat.add_le_add_right hmn 1)) K), ?_⟩
+  refine Subset.antisymm (fun x hx => ?_) (subset_iInter hKW)
+  rw [← hK.closure_eq, Metric.mem_closure_iff]
+  intro ε hε
+  obtain ⟨n, hn⟩ := exists_nat_one_div_lt hε
+  obtain ⟨y, hy, hxy⟩ := mem_thickening_iff.1 (mem_iInter.1 hx n).2
+  exact ⟨y, hy, hxy.trans hn⟩
 
 namespace LocallyFinite
 

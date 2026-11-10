@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Morse.Cell.Attachment
 public import TauCeti.Geometry.Manifold.Morse.Cell.Map
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Defs
 public import TauCeti.Analysis.Real.Sqrt
-import TauCeti.Topology.Category.TopCat.ClosedCover
 import TauCeti.Topology.Category.TopCat.OpenEmbedding
 import TauCeti.Topology.Category.TopCat.Pushout
 
