@@ -20,7 +20,15 @@ contribution to the homotopy equation. Only the terminal--initial branch is trea
 
 The geometric input is
 `GridDiagram.existsUnique_crossingChangeUnpairedHexagonComposite_of_terminalInitialPentagonPair`.
-The finite-sum argument uses `Finset.sum_bij_of_rel`, as in the commutation homotopy's
+
+## Main definitions and results
+
+* `GridDiagram.crossingChangeTerminalInitialPairs`: the counted terminal--initial pairs.
+* `GridDiagram.crossingChangeTerminalInitialPartners`: their exact image among unpaired composites.
+* The terminal--initial branch sum equals its partner sum off the diagonal, for distinct turn
+  rows and an annulus without `X` markings.
+
+The finite-sum organization follows the commutation homotopy's
 `GridDiagram.sum_pentagonPairWeight_mixedSide_eq_sum_partners`.
 
 ## References
@@ -84,10 +92,11 @@ theorem crossingChangeTerminalInitialPartners_subset (x z : GridState n) :
       G.crossingChangeUnpairedHexagonComposites C t x z :=
   fun F hF => ((G.mem_crossingChangeTerminalInitialPartners C t F).mp hF).1
 
-/-- The terminal--initial terms of the round-trip coefficient sum have exactly the total
-weight of their unpaired hexagon-composite partners. No characteristic-two assumption is needed
-for this matching; it holds over every commutative semiring. -/
-theorem sum_terminalInitialPentagonWeight_eq_sum_crossingChangePartners
+/-- Off the diagonal (`z ≠ x`), for distinct turn rows and with no `X` marking in the
+crossing-change annulus, the terminal--initial terms of the round-trip coefficient sum have the
+same total weight as their unpaired hexagon-composite partners. No characteristic-two assumption
+is needed for this matching; it holds over every commutative semiring. -/
+theorem sum_rename_pentagonCoefficient_mul_eq_sum_crossingChangeTerminalInitialPartners
     (R : Type*) [CommSemiring R] (hst : C.turnRow ≠ t)
     (hX : Disjoint (crossingChangeAnnulusSquares C t) G.XSet)
     {x z : GridState n} (hzx : z ≠ x) :
@@ -102,17 +111,8 @@ theorem sum_terminalInitialPentagonWeight_eq_sum_crossingChangePartners
     ⟨D.middle, D.first.toGridRectangleBetween, D.second.toGridRectangleBetween⟩
   have hinj : Function.Injective rect := by
     intro D E h
-    -- Embed into the existing sum-of-turn-sides carrier to reuse its forgetting injectivity.
-    have hpair := GridPentagonPairDecomposition.toRectangleDecomposition_injective
-      (a₁ := ⟨D.middle, .inl D.first, .inr D.second⟩)
-      (a₂ := ⟨E.middle, .inl E.first, .inr E.second⟩) (by
-        simpa only [GridPentagonPairDecomposition.toRectangleDecomposition,
-          GridCommutationPentagonBetween.toGridRectangleBetween_inl,
-          GridCommutationPentagonBetween.toGridRectangleBetween_inr] using h)
-    cases D
-    cases E
-    cases hpair
-    rfl
+    exact GridTwoStepDecomposition.ext_of_middle_eq
+      (congrArg (fun F : GridRectangleDecomposition x z => F.middle) h)
   have hcounted {F} (hF : F ∈ G.crossingChangeTerminalInitialPartners C t x z) :=
     ((G.mem_crossingChangeUnpairedHexagonComposites C t F).mp
       (G.crossingChangeTerminalInitialPartners_subset C t x z hF)).1
