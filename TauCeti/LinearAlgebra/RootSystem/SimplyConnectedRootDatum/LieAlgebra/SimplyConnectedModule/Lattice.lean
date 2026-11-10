@@ -221,18 +221,14 @@ theorem scWeightBasis_def :
 /-- The weight of each vector of the weight basis of the full-weight lattice, in the
 fundamental-weight coordinates `μ ↦ (μ(hⱼ))ⱼ`. -/
 noncomputable def scWeight : Fin (t.scWeightBasisCard ht) → Fin t.rank → ℤ :=
-  kostantWeightFin (LieAlgebra.Basis.rootGenerator (t.lieBasis ht)) (t.lieBasis ht).h
-    (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
-    (t.kostantForm_apply_mem_scLattice ht)
-    (fun x => t.mem_iSup_jointWeightSpace_of_mem_scLattice ht x.2)
+  kostantWeightFin (t.lieBasis ht).h (representation ℚ (t.lieAlgebra ht) (t.scModule ht))
+    (t.scLattice ht).toAddSubgroup
 
 /-- The defining equation of `TauCeti.DynkinType.scWeight`. -/
 theorem scWeight_def :
     t.scWeight ht =
-      kostantWeightFin (LieAlgebra.Basis.rootGenerator (t.lieBasis ht)) (t.lieBasis ht).h
-        (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
-        (t.kostantForm_apply_mem_scLattice ht)
-        (fun x => t.mem_iSup_jointWeightSpace_of_mem_scLattice ht x.2) :=
+      kostantWeightFin (t.lieBasis ht).h (representation ℚ (t.lieAlgebra ht) (t.scModule ht))
+        (t.scLattice ht).toAddSubgroup :=
   (rfl)
 
 /-- **The weight basis of the full-weight lattice consists of weight vectors**: the Cartan
