@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Operator.Banach
 public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 
 /-!
 # Elliptic homogeneous symbols and their inverses
@@ -218,21 +219,11 @@ theorem fderiv_coefficient_inverse {p : X × E} (hp : p.2 ≠ 0) (q : X × E) :
     fderiv ℝ (a.inverse ha).coefficient p q =
       -((a.inverse ha).coefficient p ∘L (fderiv ℝ a.coefficient p q ∘L
         (a.inverse ha).coefficient p)) := by
-  obtain ⟨x, ξ⟩ := p
-  -- Near `p`, `a⁻¹ ∘ a` is the constant identity, so the product rule for it vanishes.
-  have hloc : ((a.inverse ha).comp a).coefficient =ᶠ[𝓝 (x, ξ)]
-      fun _ ↦ ContinuousLinearMap.id ℂ V := by
-    filter_upwards [(isOpen_compl_singleton.preimage continuous_snd).mem_nhds hp] with q hq
-    rw [coefficient_comp]
-    exact coefficient_inverse_comp_coefficient a ha (x := q.1) (ξ := q.2) hq
-  have hzero := fderiv_coefficient_comp (a.inverse ha) a hp q
-  rw [hloc.fderiv_eq, fderiv_const_apply, zero_apply] at hzero
-  -- Compose `0 = (a⁻¹)' q ∘ a + a⁻¹ ∘ a' q` on the right with `a⁻¹`.
-  have h := congrArg (· ∘L (a.inverse ha).coefficient (x, ξ)) hzero
-  simp only [ContinuousLinearMap.zero_comp, ContinuousLinearMap.add_comp,
-    ContinuousLinearMap.comp_assoc, coefficient_comp_coefficient_inverse a ha hp,
-    ContinuousLinearMap.comp_id] at h
-  exact eq_neg_of_add_eq_zero_left h.symm
+  refine fderiv_eq_neg_comp_of_comp_eq_id ((a.inverse ha).differentiableAt_coefficient hp)
+    (a.differentiableAt_coefficient hp) ?_ (coefficient_comp_coefficient_inverse a ha hp) q
+  -- Near `p`, `a⁻¹ ∘ a` is the identity.
+  filter_upwards [(isOpen_compl_singleton.preimage continuous_snd).mem_nhds hp] with q hq
+  exact coefficient_inverse_comp_coefficient a ha (x := q.1) (ξ := q.2) hq
 
 /-- The spatial derivative of the inverse of an elliptic symbol is `-(a⁻¹ ∘ ∂ₓa ∘ a⁻¹)`. -/
 theorem spatialDeriv_inverse (v : X) :

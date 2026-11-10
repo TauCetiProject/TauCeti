@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Data.List.Sublists
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
@@ -45,7 +46,9 @@ of `α` (`α.sublists'.revzip`), of `B (∂^s f x) (∂^t g x)`
 (`ContinuousLinearMap.coordinateDeriv_of_bilinear`,
 `ContinuousLinearMap.mixedDeriv_of_bilinear`). This is what gives the product estimates of the
 symbol calculus. Its first-order case for a pointwise composition of continuous linear maps is
-`TauCeti.coordinateDeriv_singleton_clm_comp`.
+`TauCeti.coordinateDeriv_singleton_clm_comp`. The derivative `∂_j φ = -φ (∂_j ψ) φ` of a family
+`φ` of inverses of `ψ` is `TauCeti.coordinateDeriv_eq_neg_comp_of_comp_eq_id`, the coordinate form
+of `TauCeti.fderiv_eq_neg_comp_of_comp_eq_id`.
 
 ## Main declarations
 
@@ -834,6 +837,19 @@ theorem coordinateDeriv_singleton_clm_comp {𝕜 : Type*} [NontriviallyNormedFie
   have h := ((ContinuousLinearMap.compL 𝕜 E₁ E₂ E₃).bilinearRestrictScalars ℝ)
     |>.coordinateDeriv_of_bilinear (α := [j]) hf hg x
   simpa [List.revzip, add_comm] using h
+
+/-- The first-order derivative of a family of inverses: if `φ y ∘ ψ y = id` for `y` near `z` and
+`ψ z ∘ φ z = id`, then `∂_j φ (z) = -(φ z ∘ ∂_j ψ (z) ∘ φ z)`. This is the coordinate form of
+`TauCeti.fderiv_eq_neg_comp_of_comp_eq_id`. -/
+theorem coordinateDeriv_eq_neg_comp_of_comp_eq_id {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAlgebra ℝ 𝕜] {E₁ E₂ : Type*} [NormedAddCommGroup E₁] [NormedSpace 𝕜 E₁]
+    [NormedAddCommGroup E₂] [NormedSpace 𝕜 E₂] [NormedSpace ℝ E₁] [IsScalarTower ℝ 𝕜 E₁]
+    [NormedSpace ℝ E₂] [IsScalarTower ℝ 𝕜 E₂] {φ : CoordinateSpace n → E₂ →L[𝕜] E₁}
+    {ψ : CoordinateSpace n → E₁ →L[𝕜] E₂} {z : CoordinateSpace n} (hφ : DifferentiableAt ℝ φ z)
+    (hψ : DifferentiableAt ℝ ψ z) (hl : ∀ᶠ y in nhds z, φ y ∘L ψ y = .id 𝕜 E₁)
+    (hr : ψ z ∘L φ z = .id 𝕜 E₂) (j : Fin n) :
+    coordinateDeriv [j] φ z = -(φ z ∘L (coordinateDeriv [j] ψ z ∘L φ z)) :=
+  fderiv_eq_neg_comp_of_comp_eq_id hφ hψ hl hr _
 
 end Leibniz
 
