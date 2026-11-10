@@ -27,7 +27,7 @@ Constructing a continuous accumulated-energy process from a general integrand is
 
 The pathwise and stopping-time results use general ordered time and value spaces, with time
 starting at its bottom element. Only the exhaustion and localizing-sequence results require
-extended-nonnegative values for their natural-number levels.
+extended-nonnegative values, with level sequences tending to infinity.
 
 ## References
 
@@ -84,29 +84,30 @@ theorem hittingAfter_Ici_pos (hmono : Monotone (A · ω))
     (⊥ : ι) < hittingAfter A (Ici c) ⊥ ω := by
   exact (lt_hittingAfter_Ici_iff hmono hcont).2 hzero
 
-variable {A : ι → Ω → ℝ≥0∞}
+variable {A : ι → Ω → ℝ≥0∞} {c : ℕ → ℝ≥0∞}
 
-/-- At any time where the process is finite, all sufficiently high level times exceed that
-time. In particular their minima with a fixed finite horizon eventually equal that horizon. -/
-theorem eventually_lt_hittingAfter_Ici_nat (hmono : Monotone (A · ω))
-    (hcont : ∀ s, ContinuousWithinAt (A · ω) (Ici s) s) (hfinite : A t ω ≠ ⊤) :
-    ∀ᶠ n : ℕ in atTop, (t : WithTop ι) <
-      hittingAfter A (Ici (n + 1 : ℝ≥0∞)) ⊥ ω := by
-  obtain ⟨N, hN⟩ := ENNReal.exists_nat_gt hfinite
-  filter_upwards [eventually_ge_atTop N] with n hn
-  apply (lt_hittingAfter_Ici_iff hmono hcont).2
-  exact hN.trans_le (by exact_mod_cast (Nat.le_succ_of_le hn))
+/-- At any time where the process is finite, level times for levels tending to infinity
+eventually exceed that time. In particular their minima with a fixed finite horizon eventually
+equal that horizon. -/
+theorem eventually_lt_hittingAfter_Ici (hmono : Monotone (A · ω))
+    (hcont : ∀ s, ContinuousWithinAt (A · ω) (Ici s) s) (hfinite : A t ω ≠ ⊤)
+    (hc : Tendsto c atTop (𝓝 ⊤)) :
+    ∀ᶠ n in atTop, (t : WithTop ι) < hittingAfter A (Ici (c n)) ⊥ ω := by
+  filter_upwards [hc.eventually (eventually_gt_nhds (lt_top_iff_ne_top.mpr hfinite))]
+    with n hn
+  exact (lt_hittingAfter_Ici_iff hmono hcont).2 hn
 
-/-- If all finite-time values are finite, the first entrance times of the levels `n + 1`
-tend to infinity. This is a pathwise exhaustion statement. -/
-theorem tendsto_hittingAfter_Ici_nat (hmono : Monotone (A · ω))
-    (hcont : ∀ s, ContinuousWithinAt (A · ω) (Ici s) s) (hfinite : ∀ t, A t ω ≠ ⊤) :
-    Tendsto (fun n : ℕ => hittingAfter A (Ici (n + 1 : ℝ≥0∞)) ⊥ ω) atTop (𝓝 ⊤) := by
+/-- If all finite-time values are finite, the first entrance times of any levels tending to
+infinity tend to infinity. This is a pathwise exhaustion statement. -/
+theorem tendsto_hittingAfter_Ici (hmono : Monotone (A · ω))
+    (hcont : ∀ s, ContinuousWithinAt (A · ω) (Ici s) s) (hfinite : ∀ t, A t ω ≠ ⊤)
+    (hc : Tendsto c atTop (𝓝 ⊤)) :
+    Tendsto (fun n => hittingAfter A (Ici (c n)) ⊥ ω) atTop (𝓝 ⊤) := by
   apply tendsto_order.2
   constructor
   · intro b hb
     lift b to ι using hb.ne with b
-    exact eventually_lt_hittingAfter_Ici_nat hmono hcont (hfinite b)
+    exact eventually_lt_hittingAfter_Ici hmono hcont (hfinite b) hc
   · intro b hb
     exact (not_lt_of_ge le_top hb).elim
 
@@ -117,7 +118,7 @@ namespace Continuous
 variable {Ω ι β : Type*} [ConditionallyCompleteLinearOrderBot ι]
   [TopologicalSpace ι] [OrderTopology ι] [DenselyOrdered ι]
   [ConditionallyCompleteLinearOrder β] [TopologicalSpace β] [OrderTopology β]
-  [DenselyOrdered β] {A : ι → Ω → β} {ω : Ω} {c : β} {t : ι}
+  {A : ι → Ω → β} {ω : Ω} {c : β} {t : ι}
 
 /-- A continuous increasing process starting at or below a level hits it exactly, whenever
 the entrance time is finite. No finite-valuedness assumption on the path is needed. -/
@@ -131,16 +132,11 @@ theorem apply_untopA_hittingAfter_Ici_eq (hcont : Continuous (A · ω))
   rw [WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
   have hcs : c ≤ A s ω :=
     (hmono.hittingAfter_Ici_le_iff hright).1 (by rw [hs])
-  apply le_antisymm _ hcs
-  by_contra hn
-  have hlt : c < A s ω := lt_of_not_ge hn
-  obtain ⟨d, hcd, hds⟩ := exists_between hlt
   obtain ⟨u, hu, heq⟩ := intermediate_value_Icc (bot_le : ⊥ ≤ s) hcont.continuousOn
-    ⟨hzero.trans hcd.le, hds.le⟩
+    ⟨hzero, hcs⟩
   have hsu : s ≤ u := WithTop.coe_le_coe.mp
-    (hs ▸ (hmono.hittingAfter_Ici_le_iff hright).2 (hcd.le.trans heq.ge))
-  have hus : u < s := lt_of_le_of_ne hu.2 (by intro h; subst u; exact hds.ne heq.symm)
-  exact (not_lt_of_ge hsu) hus
+    (hs ▸ (hmono.hittingAfter_Ici_le_iff hright).2 heq.ge)
+  simpa only [le_antisymm hu.2 hsu] using heq
 
 /-- Stopping at a level bounds the whole stopped increasing process by that level. -/
 theorem stoppedProcess_hittingAfter_Ici_le (hcont : Continuous (A · ω))
@@ -174,21 +170,22 @@ theorem isStoppingTime_hittingAfter_Ici_of_monotone (hA : Adapted F A)
   simp_rw [(hmono _).hittingAfter_Ici_le_iff (hcont _)]
   exact measurableSet_Ici.preimage (hA t)
 
-variable {A : ι → Ω → ℝ≥0∞}
+variable {A : ι → Ω → ℝ≥0∞} {c : ℕ → ℝ≥0∞}
 
-/-- The level times of an increasing right-continuous adapted process form a native localizing
-sequence when its finite-time values are almost surely finite. No moment assumption is used. -/
+/-- The level times of an increasing right-continuous adapted process at increasing levels
+tending to infinity form a native localizing sequence when its finite-time values are almost
+surely finite. No moment assumption is used. -/
 theorem isLocalizingSequence_hittingAfter_Ici (hA : Adapted F A)
     (hcont : ∀ ω s, ContinuousWithinAt (A · ω) (Ici s) s)
     (hmono : ∀ ω, Monotone (A · ω))
-    (P : Measure Ω) (hfinite : ∀ᵐ ω ∂P, ∀ t, A t ω ≠ ⊤) :
+    (P : Measure Ω) (hfinite : ∀ᵐ ω ∂P, ∀ t, A t ω ≠ ⊤)
+    (hc : Tendsto c atTop (𝓝 ⊤)) (hcm : Monotone c) :
     ProbabilityTheory.IsLocalizingSequence F
-      (fun n => hittingAfter A (Ici (n + 1 : ℝ≥0∞)) ⊥) P where
-  isStoppingTime n := hA.isStoppingTime_hittingAfter_Ici_of_monotone hcont hmono _
+      (fun n => hittingAfter A (Ici (c n)) ⊥) P where
+  isStoppingTime _ := hA.isStoppingTime_hittingAfter_Ici_of_monotone hcont hmono _
   tendsto_top := hfinite.mono fun ω hω =>
-    (hmono ω).tendsto_hittingAfter_Ici_nat (hcont ω) hω
-  mono := ae_of_all _ fun ω i j hij =>
-    hittingAfter_apply_anti A ⊥ ω (Ici_subset_Ici.mpr
-      (by exact_mod_cast Nat.add_le_add_right hij 1))
+    (hmono ω).tendsto_hittingAfter_Ici (hcont ω) hω hc
+  mono := ae_of_all _ fun ω _ _ hij =>
+    hittingAfter_apply_anti A ⊥ ω (Ici_subset_Ici.mpr (hcm hij))
 
 end MeasureTheory.Adapted
