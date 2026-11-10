@@ -139,7 +139,7 @@ which, read in the split coordinates `(u, v)` of `φ`, is a map `ψ` of the expa
 `ψ 0 = (u, v)(y)`, strictly differentiable at `0`, whose derivative is a section of the expanding
 coordinate `v`. -/
 theorem exists_hasStrictFDerivAt_mem_unstableSet (hMS : hX.IsMorseSmale)
-    (hf : IsMorse 𝓘(ℝ, E) f) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (φ : MorseChart E f x)
+    (hf : IsMorse 𝓘(ℝ, E) f) (φ : MorseChart E f x)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i)) :
     ∃ ε > 0, ∀ ⦃a y : M⦄, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0 →
@@ -162,7 +162,7 @@ theorem exists_hasStrictFDerivAt_mem_unstableSet (hMS : hX.IsMorseSmale)
   -- Near `x`, the stable set of `x` is the kernel of the expanding coordinate `v`.
   refine exists_hasStrictFDerivAt_splitCoord φ (fun v ↦ ⟨WithLp.toLp 2 (0, v), rfl⟩)
     (fun z hz hzε ↦ (hεs z hz hzε).trans ?_) hq hsq hyφ hyε hyq hy.1 hy.2
-    (hMS.span_mtangentConeAt_sup_eq_top ha hx hy)
+    (hMS.span_mtangentConeAt_sup_eq_top hy)
   simp [funext_iff, φ.weight_ne_one_iff]
 
 /-- **The stable manifold of `b` crosses a Morse box at `x` in transverse discs.** Let `φ` be a
@@ -200,7 +200,7 @@ theorem exists_hasStrictFDerivAt_mem_stableSet (hMS : hX.IsMorseSmale)
   -- Near `x`, the unstable set of `x` is the kernel of the contracting coordinate `u`.
   refine exists_hasStrictFDerivAt_splitCoord φ (fun u ↦ ⟨WithLp.toLp 2 (u, 0), rfl⟩)
     (fun z hz hzε ↦ (hεs z hz hzε).trans ?_) hq hsq hyφ hyε hyq hy.2 hy.1
-    (by rw [sup_comm]; exact hMS.span_mtangentConeAt_sup_eq_top hx hb hy)
+    (by rw [sup_comm]; exact hMS.span_mtangentConeAt_sup_eq_top hy)
   simp [funext_iff, φ.weight_eq_one_iff]
 
 end IsMorseSmale

@@ -386,7 +386,7 @@ theorem exists_nhds_homeomorph_of_mem_morseTrajectoryPairs {p r : M}
   obtain ⟨Φ, hΦ⟩ := hX.exists_homeomorph_morseTrajectoryPairs
     (hf.contMDiff.mdifferentiable (by simp)) hpr hr₂ (h₂₁.trans h₁p)
   -- The level slice is a manifold modelled on a line `L`.
-  obtain ⟨L, hL, C, -, -⟩ := h.exists_unstableSet_inter_stableSet_level_isManifold hf hp hr hpr
+  obtain ⟨L, hL, C, -, -⟩ := h.exists_unstableSet_inter_stableSet_level_isManifold hf hpr
     ⟨w.1, hwP.1, hwP.2.1⟩
   let _ := C
   have hL1 : Module.finrank ℝ L = Module.finrank ℝ ℝ := by rw [Module.finrank_self]; omega

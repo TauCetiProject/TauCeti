@@ -264,7 +264,7 @@ private theorem IsMorseSmale.exists_gluingArc {hX : IsAdaptedPseudoGradient f X}
   have hU : U ∈ 𝓝 y₁ := hA₁.mono fun w ⟨h₁, _, h₂, h₃⟩ ↦ ⟨h₁, h₂, h₃⟩
   have hV : V ∈ 𝓝 y₂ := hA₂.mono fun w ⟨h₁, _, h₂, h₃⟩ ↦ ⟨h₁, h₃, h₂⟩
   obtain ⟨r₀, hr₀, g, k, ⟨e, he, he₀⟩, hcl, hpairs, hexh⟩ :=
-    h.exists_homeomorph_closure_splitGluingPairs hf hp hq hr hpq hqr φ hy₁ hy₁φ hy₂ hy₂φ hloc₁
+    h.exists_homeomorph_closure_splitGluingPairs hf hp hq hpq hqr φ hy₁ hy₁φ hy₂ hy₂φ hloc₁
       hloc₂ hε hy₁ε hy₂ε hU hV
   -- The orbits through the points of the gluing pairs run from `p` to `r`.
   have hP : ∀ z ∈ splitGluingPairs ε r₀ g k,

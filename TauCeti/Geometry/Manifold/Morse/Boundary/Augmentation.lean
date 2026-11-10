@@ -155,7 +155,7 @@ private theorem sum_ncard_morseTrajectorySlice_of_add_one_eq_finrank {q : M}
   have hTa (i : Fin 2) : a i ∈ T := by
     refine (hT _).2 ⟨ha i, le_antisymm manifoldMorseIndex_le_finrank ?_⟩
     have := hX.manifoldMorseIndex_lt_of_mem_unstableSet_inter_stableSet hf (haq i)
-      (hmem i) (h.span_mtangentConeAt_sup_eq_top (ha i) hq (hmem i))
+      (hmem i) (h.span_mtangentConeAt_sup_eq_top (hmem i))
     omega
   -- The `i`-th orbit crosses the middle level between `a i` and `q` at the time `τ i`.
   have hcross (i : Fin 2) : ∃ t, f (hX.flow t (y i)) = (f (a i) + f q) / 2 :=

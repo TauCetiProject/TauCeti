@@ -331,8 +331,7 @@ theorem span_mtangentConeAt_unstableSet_inter_stableSet_sup_ker_eq_top
 /-- Under transversality, the level slice through `y` is cut out of `W^u(a) ∩ W^s(b)` by a
 transverse regular level set: it is flattened by a chart of the maximal atlas, and its tangent
 space is that of `W^u(a) ∩ W^s(b)` cut by `ker df_y`. -/
-private theorem level_slice (hf : IsMorse 𝓘(ℝ, E) f) (ha : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0)
-    (hb : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f b = 0) (hab : a ≠ b)
+private theorem level_slice (hf : IsMorse 𝓘(ℝ, E) f) (hab : a ≠ b)
     (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b)
     (htr : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y) ⊔
       Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) = ⊤)
@@ -348,8 +347,8 @@ private theorem level_slice (hf : IsMorse 𝓘(ℝ, E) f) (ha : mfderiv 𝓘(ℝ
       Submodule.span ℝ
           (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y) ⊓
         (mvfderiv 𝓘(ℝ, E) f y).ker := by
-  obtain ⟨q, hyq, hq, hs⟩ := hX.exists_unstableSet_inter_stableSet_chart hf ha hb hy htr
-  rw [← hX.span_mtangentConeAt_unstableSet_inter_stableSet hf ha hb hy htr] at hs
+  obtain ⟨q, hyq, hq, hs⟩ := hX.exists_unstableSet_inter_stableSet_chart hf hy htr
+  rw [← hX.span_mtangentConeAt_unstableSet_inter_stableSet hf hy htr] at hs
   -- The level `{f = c}` is a regular level set near `y`, since `df_y (X y) < 0`.
   have hlevel : {x | f x = c} = f ⁻¹' {c} := by
     ext
@@ -377,8 +376,7 @@ transversally at `y`, and `f y = c`, then near `y` a chart of the maximal atlas 
 slice `W^u(a) ∩ W^s(b) ∩ {f = c}` onto the intersection of the tangent spaces of `W^u(a)` and
 `W^s(b)` with `ker df_y`. -/
 theorem exists_unstableSet_inter_stableSet_level_chart (hf : IsMorse 𝓘(ℝ, E) f)
-    (ha : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0) (hb : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f b = 0) (hab : a ≠ b)
-    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b)
+    (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b)
     (htr : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y) ⊔
       Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) = ⊤)
     (hyc : f y = c) :
@@ -388,8 +386,8 @@ theorem exists_unstableSet_inter_stableSet_level_chart (hf : IsMorse 𝓘(ℝ, E
           Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) ⊓
           (mvfderiv 𝓘(ℝ, E) f y).ker : Submodule ℝ E) : Set E)
         (hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {x | f x = c}) := by
-  obtain ⟨⟨q, hyq, hq, hs⟩, -⟩ := hX.level_slice hf ha hb hab hy htr hyc
-  rw [hX.span_mtangentConeAt_unstableSet_inter_stableSet hf ha hb hy htr] at hs
+  obtain ⟨⟨q, hyq, hq, hs⟩, -⟩ := hX.level_slice hf hab hy htr hyc
+  rw [hX.span_mtangentConeAt_unstableSet_inter_stableSet hf hy htr] at hs
   exact ⟨q, hyq, hq, hs⟩
 
 /-- **The tangent space of a transverse level slice.** If the unstable manifold of a critical point
@@ -397,8 +395,7 @@ theorem exists_unstableSet_inter_stableSet_level_chart (hf : IsMorse 𝓘(ℝ, E
 `f y = c`, then the tangent space of the level slice `W^u(a) ∩ W^s(b) ∩ {f = c}` at `y` is the
 intersection of the tangent spaces of `W^u(a)` and `W^s(b)` with `ker df_y`. -/
 theorem span_mtangentConeAt_unstableSet_inter_stableSet_level (hf : IsMorse 𝓘(ℝ, E) f)
-    (ha : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0) (hb : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f b = 0) (hab : a ≠ b)
-    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b)
+    (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b)
     (htr : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y) ⊔
       Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) = ⊤)
     (hyc : f y = c) :
@@ -407,8 +404,8 @@ theorem span_mtangentConeAt_unstableSet_inter_stableSet_level (hf : IsMorse 𝓘
       Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y) ⊓
         Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) ⊓
         (mvfderiv 𝓘(ℝ, E) f y).ker := by
-  rw [(hX.level_slice hf ha hb hab hy htr hyc).2,
-    hX.span_mtangentConeAt_unstableSet_inter_stableSet hf ha hb hy htr]
+  rw [(hX.level_slice hf hab hy htr hyc).2,
+    hX.span_mtangentConeAt_unstableSet_inter_stableSet hf hy htr]
 
 /-- **The level slice has dimension the index difference minus one.** If the unstable manifold of a
 critical point `a` and the stable manifold of a different critical point `b` meet transversally at
@@ -416,8 +413,7 @@ critical point `a` and the stable manifold of a different critical point `b` mee
 `ind a - ind b - 1`. -/
 theorem finrank_span_mtangentConeAt_unstableSet_inter_stableSet_level_add_manifoldMorseIndex
     (hf : IsMorse 𝓘(ℝ, E) f)
-    (ha : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0) (hb : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f b = 0) (hab : a ≠ b)
-    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b)
+    (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b)
     (htr : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y) ⊔
       Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) = ⊤)
     (hyc : f y = c) :
@@ -425,7 +421,7 @@ theorem finrank_span_mtangentConeAt_unstableSet_inter_stableSet_level_add_manifo
         (hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {x | f x = c}) y)) +
       manifoldMorseIndex 𝓘(ℝ, E) f b + 1 = manifoldMorseIndex 𝓘(ℝ, E) f a := by
   have hsup := hX.span_mtangentConeAt_unstableSet_inter_stableSet_sup_ker_eq_top hab hy
-  have hslice := (hX.level_slice hf ha hb hab hy htr hyc).2
+  have hslice := (hX.level_slice hf hab hy htr hyc).2
   rw [TauCeti.ker_mvfderiv_eq_ker_fderiv_comp_chartAt_symm] at hsup hslice
   -- Cutting by the hyperplane `ker df_y`, which is transverse, lowers the dimension by one.
   have hdim := Submodule.finrank_sup_add_finrank_inf_eq
@@ -447,7 +443,6 @@ and `b` differ by one and the unstable manifold of `a` meets the stable manifold
 transversally at every point of the level slice `W^u(a) ∩ W^s(b) ∩ {f = c}`, then the slice is
 discrete: each of the trajectories it parametrizes is isolated. -/
 theorem isDiscrete_unstableSet_inter_stableSet_level (hf : IsMorse 𝓘(ℝ, E) f)
-    (ha : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0) (hb : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f b = 0)
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f a = manifoldMorseIndex 𝓘(ℝ, E) f b + 1)
     (htr : ∀ y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {x | f x = c},
       Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y) ⊔
@@ -459,14 +454,14 @@ theorem isDiscrete_unstableSet_inter_stableSet_level (hf : IsMorse 𝓘(ℝ, E) 
   obtain ⟨hyab, hyc⟩ := hy
   -- The slice is zero-dimensional, so the chart at `y` flattens it onto the point `0`.
   have hdim :=
-    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_level_add_manifoldMorseIndex hf ha
-      hb hab hyab htry hyc
+    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_level_add_manifoldMorseIndex hf
+      hab hyab htry hyc
   obtain ⟨q, hyq, -, hq⟩ :=
-    hX.exists_unstableSet_inter_stableSet_level_chart hf ha hb hab hyab htry hyc
+    hX.exists_unstableSet_inter_stableSet_level_chart hf hab hyab htry hyc
   have h0 : Module.finrank ℝ (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E)
       (hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {x | f x = c}) y)) = 0 := by
     omega
-  rw [← hX.span_mtangentConeAt_unstableSet_inter_stableSet_level hf ha hb hab hyab htry hyc,
+  rw [← hX.span_mtangentConeAt_unstableSet_inter_stableSet_level hf hab hyab htry hyc,
     Submodule.finrank_eq_zero.1 h0, Submodule.bot_coe] at hq
   exact ⟨q, hyq, hq⟩
 
@@ -478,8 +473,7 @@ modelled on a subspace of dimension `ind a - ind b - 1`, with its subspace topol
 inclusion into `M`. -/
 theorem IsMorseSmale.exists_unstableSet_inter_stableSet_level_isManifold
     {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
-    (ha : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0) (hb : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f b = 0) (hab : a ≠ b)
-    (hne : (hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {x | f x = c}).Nonempty) :
+    (hab : a ≠ b) (hne : (hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {x | f x = c}).Nonempty) :
     ∃ L : Submodule ℝ E,
       Module.finrank ℝ L + manifoldMorseIndex 𝓘(ℝ, E) f b + 1 =
         manifoldMorseIndex 𝓘(ℝ, E) f a ∧
@@ -489,22 +483,22 @@ theorem IsMorseSmale.exists_unstableSet_inter_stableSet_level_isManifold
         ContMDiff 𝓘(ℝ, L) 𝓘(ℝ, E) ∞
           (Subtype.val : ↥(hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {x | f x = c}) → M) := by
   obtain ⟨y₀, hy₀, hy₀c⟩ := hne
-  have htr₀ := h.span_mtangentConeAt_sup_eq_top ha hb hy₀
+  have htr₀ := h.span_mtangentConeAt_sup_eq_top hy₀
   have hdim₀ :=
-    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_level_add_manifoldMorseIndex hf ha
-      hb hab hy₀ htr₀ hy₀c
+    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_level_add_manifoldMorseIndex hf
+      hab hy₀ htr₀ hy₀c
   -- Every tangent space of the slice has dimension `ind a - ind b - 1`; model it on one of them.
   refine ⟨Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E)
       (hX.flow.unstableSet a ∩ hX.flow.stableSet b ∩ {x | f x = c}) y₀), hdim₀,
     exists_isManifold_of_finrankSubspaceCharts fun y hy ↦ ?_⟩
   obtain ⟨hyab, hyc⟩ := hy
-  have htry := h.span_mtangentConeAt_sup_eq_top ha hb hyab
+  have htry := h.span_mtangentConeAt_sup_eq_top hyab
   obtain ⟨q, hyq, hq, hs⟩ :=
-    hX.exists_unstableSet_inter_stableSet_level_chart hf ha hb hab hyab htry hyc
+    hX.exists_unstableSet_inter_stableSet_level_chart hf hab hyab htry hyc
   have hdim :=
-    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_level_add_manifoldMorseIndex hf ha
-      hb hab hyab htry hyc
-  rw [hX.span_mtangentConeAt_unstableSet_inter_stableSet_level hf ha hb hab hyab htry
+    hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_level_add_manifoldMorseIndex hf
+      hab hyab htry hyc
+  rw [hX.span_mtangentConeAt_unstableSet_inter_stableSet_level hf hab hyab htry
     hyc] at hdim
   exact ⟨q, _, hyq, fun z hz ↦ contMDiffAt_of_mem_maximalAtlas hq hz,
     fun z hz ↦ contMDiffAt_symm_of_mem_maximalAtlas hq hz, isSliceChart_iff.1 hs, by omega⟩

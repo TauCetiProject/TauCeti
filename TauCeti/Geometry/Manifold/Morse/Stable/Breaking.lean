@@ -296,8 +296,8 @@ theorem IsMorseSmale.finite_unstableSet_inter_stableSet_inter_level
     (hX.flow.unstableSet p ∩ hX.flow.stableSet q ∩ {z | f z = c}).Finite := by
   by_cases hc : f q < c ∧ c < f p
   · exact (h.isClosed_unstableSet_inter_stableSet_inter_level hf hp hq hind hc).isCompact.finite
-      (hX.isDiscrete_unstableSet_inter_stableSet_level hf hp hq hind
-        fun _ hy ↦ h.span_mtangentConeAt_sup_eq_top hp hq hy.1)
+      (hX.isDiscrete_unstableSet_inter_stableSet_level hf hind
+        fun _ hy ↦ h.span_mtangentConeAt_sup_eq_top hy.1)
   · -- Outside `(f q, f p)` the slice is empty.
     have hpq : p ≠ q := by rintro rfl; omega
     refine finite_empty.subset fun y hy ↦ hc ?_
