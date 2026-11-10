@@ -243,7 +243,7 @@ theorem isDemushkin_marked_of_q_two_even_twisted (hG : IsDemushkin 2 G)
   obtain ⟨e₁⟩ :=
     hG.exists_continuousMulEquiv_presentedProP_demushkinWordNeTwo_of_range_eq heven hg hw hrange
   obtain ⟨e₂⟩ := nonempty_continuousMulEquiv_presentedProP_demushkinWordTwoEven_of_not_dvd heven
-    (by omega) hg hag hag' hgf
+    hg hag hag' hgf
   obtain ⟨hsecond, hfourth, htrivial⟩ :=
     demushkinCharacter_apply_equiv_symm_of_equiv_demushkinWordTwoEven hG
       ((dvd_pow_self 2 (by omega : g ≠ 0)).trans hag) (by omega) heven (by omega)

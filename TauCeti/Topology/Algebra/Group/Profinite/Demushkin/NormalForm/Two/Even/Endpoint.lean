@@ -85,7 +85,7 @@ pro-`2` group on an even number `n` of generators presenting a Demushkin group
 `G = ⟨x₁, …, x_n ∣ r⟩` whose canonical character has image `{±1}`. Then a continuous automorphism
 of `F` carries `r` to `x₁² (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`. -/
 theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq_zpowers_neg_one
-    (hn : Even n) {r : freeProP 2 (Fin n)} (hr : r ∈ proPFrattini 2 (freeProP 2 (Fin n)))
+    (hn : Even n) {r : freeProP 2 (Fin n)}
     (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r}))
     (hA : (demushkinCharacter hG).toMonoidHom.range = zpowers (-1 : ℤ_[2]ˣ)) :
     ∃ e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n),
@@ -96,7 +96,7 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq_zpower
     omega
   obtain ⟨e, α, q, hα, hq, he⟩ :=
     IsDemushkin.exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkinWordNeTwo
-      hn hr hG
+      hn hG
       (demushkinQ_eq_two_of_neg_one_mem_range_demushkinCharacter hG (hA ▸ mem_zpowers _))
   rw [← demushkinWordTwoEvenPadic_eq_padicPow_mul_labuteComm_mul _ _ _ _ _] at he
   -- The image `{±1}` pins `α = 0`, and `q = 0` when the factor `x₃^q` is present.
@@ -109,17 +109,16 @@ free pro-`2` group on an even number `n` of generators presenting Demushkin grou
 characters both have image `{±1}`. Then a continuous automorphism of `F` carries `r` to `r'`; in
 particular the closed normal closures of `r` and `r'` are carried to each other. -/
 theorem exists_continuousMulEquiv_apply_eq_of_range_eq_zpowers_neg_one (hn : Even n)
-    {r r' : freeProP 2 (Fin n)} (hr : r ∈ proPFrattini 2 (freeProP 2 (Fin n)))
-    (hr' : r' ∈ proPFrattini 2 (freeProP 2 (Fin n)))
+    {r r' : freeProP 2 (Fin n)}
     (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r}))
     (hG' : IsDemushkin 2 (presentedProP 2 (Fin n) {r'}))
     (hA : (demushkinCharacter hG).toMonoidHom.range = zpowers (-1 : ℤ_[2]ˣ))
     (hA' : (demushkinCharacter hG').toMonoidHom.range = zpowers (-1 : ℤ_[2]ˣ)) :
     ∃ e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n), e r = r' := by
   obtain ⟨e, he⟩ :=
-    exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq_zpowers_neg_one hn hr hG hA
+    exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq_zpowers_neg_one hn hG hA
   obtain ⟨e', he'⟩ :=
-    exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq_zpowers_neg_one hn hr' hG' hA'
+    exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq_zpowers_neg_one hn hG' hA'
   exact ⟨e.trans e'.symm, by rw [ContinuousMulEquiv.trans_apply, he, ← he', e'.symm_apply_apply]⟩
 
 end freeProP
@@ -147,7 +146,7 @@ theorem nonempty_continuousMulEquiv_presentedProP_demushkinWordNeTwo_of_range_eq
     rw [range_demushkinCharacter_of_equiv hG hG' e.symm, hA]
   obtain ⟨e', he'⟩ :=
     freeProP.exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq_zpowers_neg_one hn
-      hr hG' hA'
+      hG' hA'
   exact ⟨e.symm.trans (presentedProP.congrSingleton e' he')⟩
 
 /-- **Uniqueness of the dyadic Demushkin groups of even rank with image `{±1}`** (Labute,

@@ -568,7 +568,7 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq
     omega
   -- Step 1: the exact normal form `x₁^{2+α} (x₁, x₂) x₃^{q} (x₃, x₄) ⋯` of the relator.
   obtain ⟨e₀, α, q, hα, hq', he₀⟩ :=
-    hG.exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkinWordNeTwo hn hr hq
+    hG.exists_continuousMulEquiv_apply_eq_padicPow_mul_labuteComm_mul_demushkinWordNeTwo hn hq
   set rex := (isProP_freeProP 2 (Fin n)).padicPow (freeProPGen 2 n 0) (2 + α) *
     labuteComm (freeProPGen 2 n 0) (freeProPGen 2 n 1) *
     demushkinWordNeTwo q (n - 2) (fun i ↦ freeProPGen 2 n (i + 2)) with hrex
@@ -606,13 +606,14 @@ of generators presenting a Demushkin group whose canonical character has image `
 finite. Then `⟨x₁, …, x_n ∣ r⟩` is topologically isomorphic to
 `⟨x₁, …, x_n ∣ x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)⟩`. -/
 theorem exists_continuousMulEquiv_presentedProP_demushkinWordTwoEven_of_range_eq
-    {r : freeProP 2 (Fin n)} (hr : r ∈ proPFrattini 2 (freeProP 2 (Fin n)))
+    {r : freeProP 2 (Fin n)}
     (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r})) (hn : Even n) (hn3 : 3 < n) {f : ℕ}
     (hf : 2 ≤ f) (hA : (demushkinCharacter hG).toMonoidHom.range = unitsPlusMinus f) :
     Nonempty (presentedProP 2 (Fin n) {r} ≃ₜ*
       presentedProP 2 (Fin n) {demushkinWordTwoEven 0 f n (freeProPGen 2 n)}) := by
   obtain ⟨e, he⟩ :=
-    exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq hr hG hn hn3 hf hA
+    exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq
+      hG.mem_proPFrattini_of_presentedProP_singleton hG hn hn3 hf hA
   exact ⟨presentedProP.congrSingleton e he⟩
 
 end freeProP
@@ -638,7 +639,7 @@ theorem IsDemushkin.exists_continuousMulEquiv_presentedProP_demushkinWordTwoEven
   have hA' : (demushkinCharacter hG').toMonoidHom.range = unitsPlusMinus f := by
     rw [range_demushkinCharacter_of_equiv hG hG' e.symm, hA]
   obtain ⟨e'⟩ :=
-    freeProP.exists_continuousMulEquiv_presentedProP_demushkinWordTwoEven_of_range_eq hr hG' hn
+    freeProP.exists_continuousMulEquiv_presentedProP_demushkinWordTwoEven_of_range_eq hG' hn
       hn3 hf hA'
   exact ⟨e.symm.trans e'⟩
 
