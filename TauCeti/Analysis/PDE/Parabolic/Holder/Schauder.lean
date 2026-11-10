@@ -203,19 +203,6 @@ private theorem exists_norm_euclideanCoeff_le (K : ℝ≥0) :
     (norm_euclideanFirstOrderCoeff_le _).trans <| by
       simpa using Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) ↦ hb i⟩⟩
 
-/-- The arithmetic of the absorption step: if `X ≤ Ct (P + F + L + R)`, where the errors `F` and
-`L` contain `X` with coefficients whose products with `Ct` are at most `1 / 4`, then `X` is bounded
-by `P`, `R` and `V` alone. -/
-private theorem absorb_aux {X V P R F L Ct e₁ e₂ cf kl k : ℝ} (hX : 0 ≤ X) (hV : 0 ≤ V)
-    (hP : 0 ≤ P) (hR : 0 ≤ R) (hCt : 0 ≤ Ct) (hcf : 0 ≤ cf) (hkl : 0 ≤ kl) (hk : 0 ≤ k)
-    (h : X ≤ Ct * (P + F + L + R)) (hF : F ≤ e₁ * X + cf * V) (hL : L ≤ k * (e₂ * X + kl * V))
-    (h₁ : Ct * e₁ ≤ 1 / 4) (h₂ : Ct * (k * e₂) ≤ 1 / 4) :
-    X ≤ 2 * Ct * (1 + cf + k * kl) * (P + R + V) := by
-  nlinarith [mul_le_mul_of_nonneg_left hF hCt, mul_le_mul_of_nonneg_left hL hCt,
-    mul_le_mul_of_nonneg_right h₁ hX, mul_le_mul_of_nonneg_right h₂ hX,
-    mul_nonneg (mul_nonneg hCt (add_nonneg hcf (mul_nonneg hk hkl))) (add_nonneg hP hR),
-    mul_nonneg hCt hV]
-
 /-- **The Schauder estimate for maps of small support.** For `0 < α < 1`, ellipticity constants
 `λ > 0` and `Λ`, a bound `K` on the Hölder norms of the coefficients and a bound `T₀` on the
 horizon, there are a radius `r₀ > 0` and a constant `C` with the following property. On
@@ -301,18 +288,14 @@ theorem exists_norm_le_euclideanParabolicOperatorL_add_of_forall_lt_dist (hα₀
       (le_add_of_nonneg_right zero_le_one : KB + K ≤ KB + K + 1) hk₀ (by positivity)
     rw [mul_one_div, mul_div_assoc', div_le_div_iff₀ (by positivity) (by positivity)]
     linarith
-  exact absorb_aux (norm_nonneg w) (norm_nonneg _) (norm_nonneg _) (norm_nonneg _) hCt₀ hCf hKl₀
-    (add_nonneg hKB₀ K.coe_nonneg) h₁ hF' hL hq₁ hq₂
-
-/-- The arithmetic of the patching step: if `X ≤ c₁ (c₂ (A P + η X + B V))` with `c₁ c₂ η ≤ 1 / 2`,
-then `X` is bounded by `P` and `V` alone. -/
-private theorem absorb_aux₂ {X P V A B η c₁ c₂ : ℝ} (hX : 0 ≤ X) (hP : 0 ≤ P) (hV : 0 ≤ V)
-    (hA : 0 ≤ A) (hB : 0 ≤ B) (hc₁ : 0 ≤ c₁) (hc₂ : 0 ≤ c₂)
-    (h : X ≤ c₁ * (c₂ * (A * P + η * X + B * V))) (hη : c₁ * c₂ * η ≤ 1 / 2) :
-    X ≤ 2 * c₁ * c₂ * (A + B + 1) * (P + V) := by
-  have hc : 0 ≤ c₁ * c₂ := mul_nonneg hc₁ hc₂
-  nlinarith [mul_le_mul_of_nonneg_right hη hX, mul_nonneg hc (mul_nonneg hA hV),
-    mul_nonneg hc (mul_nonneg hB hP), mul_nonneg hc hP, mul_nonneg hc hV]
+  -- Each error contributes at most a quarter of `‖w‖`, which is moved to the left.
+  have hk₀ : 0 ≤ KB + K := add_nonneg hKB₀ K.coe_nonneg
+  linarith [mul_le_mul_of_nonneg_left hF' hCt₀, mul_le_mul_of_nonneg_left hL hCt₀,
+    mul_le_mul_of_nonneg_right hq₁ (norm_nonneg w), mul_le_mul_of_nonneg_right hq₂ (norm_nonneg w),
+    mul_nonneg (mul_nonneg hCt₀ (add_nonneg hCf (mul_nonneg hk₀ hKl₀)))
+      (add_nonneg (norm_nonneg (euclideanParabolicOperatorL hα₁.le a b c w))
+        (norm_nonneg (w.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩))),
+    mul_nonneg hCt₀ (norm_nonneg (valueL w))]
 
 /-- **The Schauder estimate with zero initial values.** Localizing the estimate for maps of small
 support by cutoffs centred at every point gives `‖u‖_{2+α,par} ≤ C (‖P u‖_{α,par} + ‖u‖_∞)` for
@@ -384,23 +367,14 @@ private theorem exists_norm_le_euclideanParabolicOperatorL_add_of_spatialTrace_e
   have hη : Cp * C₁ * (1 / (2 * Cp * (C₁ + 1))) ≤ 1 / 2 := by
     rw [mul_one_div, div_le_div_iff₀ (by positivity) (by positivity)]
     nlinarith
-  exact absorb_aux₂ (norm_nonneg u) (norm_nonneg _) (norm_nonneg _) (by positivity)
-    (by positivity) hCp₀.le hC₁ hpatch hη
-
-/-- The arithmetic of the reduction to zero initial values: if `u = v + z` with
-`‖v‖ ≤ C₂ (‖P v‖ + ‖v‖_∞)`, `‖P v‖ ≤ ‖P u‖ + N ‖z‖`, `‖v‖_∞ ≤ ‖u‖_∞ + ‖z‖` and `‖z‖ ≤ C_z ‖g‖`,
-then `‖u‖` is bounded by `‖P u‖`, `‖g‖` and `‖u‖_∞`. -/
-private theorem norm_le_aux {X Y Z P Pv V Vv G C₂ N Cz : ℝ} (hC₂ : 0 ≤ C₂) (hN : 0 ≤ N)
-    (hP : 0 ≤ P) (hV : 0 ≤ V) (hX : X ≤ Y + Z) (hY : Y ≤ C₂ * (Pv + Vv)) (hPv : Pv ≤ P + N * Z)
-    (hVv : Vv ≤ V + Z) (hZ : Z ≤ Cz * G) (hCz : 0 ≤ Cz) (hG : 0 ≤ G) :
-    X ≤ (C₂ + (C₂ * (N + 1) + 1) * Cz) * (P + G + V) := by
-  have h : X ≤ C₂ * (P + V) + (C₂ * (N + 1) + 1) * Z := by
-    nlinarith [mul_le_mul_of_nonneg_left (add_le_add hPv hVv) hC₂]
-  have hk : 0 ≤ C₂ * (N + 1) + 1 := by positivity
-  have hZG : (C₂ * (N + 1) + 1) * Z ≤ (C₂ * (N + 1) + 1) * (Cz * G) :=
-    mul_le_mul_of_nonneg_left hZ hk
-  nlinarith [mul_nonneg hC₂ hG, mul_nonneg (mul_nonneg hk hCz) hP,
-    mul_nonneg (mul_nonneg hk hCz) hV]
+  -- The `‖u‖` term on the right costs at most half of `‖u‖`, which is moved to the left.
+  have hc : 0 ≤ Cp * C₁ := mul_nonneg hCp₀.le hC₁
+  have hP₀ := norm_nonneg (euclideanParabolicOperatorL hα₁.le a b c u)
+  have hV₀ := norm_nonneg (valueL u)
+  have hA₀ : (0 : ℝ) ≤ 24 * Cχ := by positivity
+  have hB₀ : 0 ≤ K₃ + 1 := by positivity
+  nlinarith [mul_le_mul_of_nonneg_right hη (norm_nonneg u), mul_nonneg hc (mul_nonneg hA₀ hV₀),
+    mul_nonneg hc (mul_nonneg hB₀ hP₀), mul_nonneg hc hP₀, mul_nonneg hc hV₀]
 
 /-- **The global Schauder estimate with the supremum norm.** For `0 < α < 1`, ellipticity
 constants `λ > 0` and `Λ`, a bound `K` on the Hölder norms of the coefficients and a bound `T₀` on
@@ -465,8 +439,15 @@ theorem exists_norm_le_euclideanParabolicOperatorL_add (hα₀ : 0 < α) (hα₁
     exact (norm_sub_le _ _).trans (add_le_add le_rfl (norm_valueL_le z))
   have hX : ‖u‖ ≤ ‖u - z‖ + ‖z‖ := by
     simpa using norm_add_le (u - z) z
-  exact norm_le_aux hC₂ hN₀ (norm_nonneg _) (norm_nonneg _) hX hv hPv hVv hzn (by positivity)
-    (norm_nonneg _)
+  -- Combine the four bounds.
+  have hk : 0 ≤ C₂ * (N + 1) + 1 := by positivity
+  have hP₀ := norm_nonneg (euclideanParabolicOperatorL hα₁.le a b c u)
+  have hV₀ := norm_nonneg (valueL u)
+  have hG₀ := norm_nonneg (u.spatialTrace ⟨0, left_mem_Icc.2 hT.le⟩)
+  nlinarith [mul_le_mul_of_nonneg_left (add_le_add hPv hVv) hC₂,
+    mul_le_mul_of_nonneg_left hzn hk, mul_nonneg hC₂ hG₀,
+    mul_nonneg (mul_nonneg hk (by positivity : (0 : ℝ) ≤ Cs * (1 + T₀))) hP₀,
+    mul_nonneg (mul_nonneg hk (by positivity : (0 : ℝ) ≤ Cs * (1 + T₀))) hV₀]
 
 /-- **The global Schauder estimate.** For `0 < α < 1`, ellipticity constants `λ > 0` and `Λ`, a
 bound `K` on the Hölder norms of the coefficients and a bound `T₀` on the horizon, there is a
