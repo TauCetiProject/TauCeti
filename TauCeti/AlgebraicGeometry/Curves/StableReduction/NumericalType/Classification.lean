@@ -820,7 +820,7 @@ private lemma topologicalGenus_pos_or_chain_of_card_eq
         ∀ i < t, ∀ j < t, i ≠ j → i + 1 ≠ j → j + 1 ≠ i → T.intersection (c i) (c j) = 0) := by
   by_cases hends : 2 < t ∧ 0 < T.intersection (c 0) (c (t - 1))
   · exact .inl (hc.topologicalGenus_pos_of_card_eq_of_intersection_pos hcard hends.1 hends.2)
-  · refine .inr ⟨by omega, hcard, hc, hc.intersection_eq_zero_of_card_eq ?_⟩
+  · refine .inr ⟨by omega, hcard, hc, hc.intersection_eq_zero_of_endpoints_eq_zero ?_⟩
     intro ht2
     have hle : T.intersection (c 0) (c (t - 1)) ≤ 0 := not_lt.mp fun h ↦ hends ⟨ht2, h⟩
     exact le_antisymm hle (T.offDiagonal_nonneg _ _ (hc.ne (by omega) (by omega) (by omega)))

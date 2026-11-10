@@ -420,7 +420,8 @@ private lemma IsSelfIntersectionMinusTwoChain.false_of_cycle {t : ℕ} {c : ℕ 
     (hclose : T.intersection (c (t - 1)) (c 0) = W) : False := by
   -- The cycle is affine: the all-ones vector makes every row of the intersection form vanish,
   -- which negative definiteness on a proper subset of the components forbids.
-  refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c) hcard
+  refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c)
+    (T.exists_forall_lt_ne_of_lt_card hcard)
     (y := fun _ ↦ (1 : ℤ)) (fun _ _ ↦ by norm_num) ⟨0, by omega, one_pos⟩ ?_
   intro i hi
   simp only [mul_one]
@@ -599,7 +600,7 @@ theorem IsSelfIntersectionMinusTwoChain.right_sum_eq {t : ℕ} {c : ℕ → T.Co
         hc.intersection_eq_zero hcard hj (by omega) (by omega) (by omega) (by omega), zero_mul])
     rfl
 
-/-- At a constant-weight interior triple of a proper chain, a fibre relation with an
+/-- At a constant-weight interior triple of a chain, a fibre relation with an
 external contribution `w * b` gives the unweighted multiplicity recurrence. The coefficients
 `y` may be any integers satisfying that relation. -/
 lemma IsSelfIntersectionMinusTwoChain.interior_relation_of_weight_eq
@@ -939,7 +940,8 @@ private lemma IsSelfIntersectionMinusTwoChain.false_of_end_factors
     have e₁ : j ≠ 0 := by omega
     have e₂ : j ≠ t - 1 := by omega
     simp [hydef, e₁, e₂]
-  refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c) hcard
+  refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c)
+    (T.exists_forall_lt_ne_of_lt_card hcard)
     (y := y) ?_ ⟨0, by omega, by rw [hy₀]; exact hα⟩
     (hc.sum_intersection_mul_nonneg_of_end_factors hcard h4 hy₀ hyₗ hy₂ hint hmidedge hα₁ hα₂
       hγ₁ hγ₂)
@@ -1024,7 +1026,7 @@ theorem IsSelfIntersectionMinusTwoChain.exists_weight_eq_except_one_end {t : ℕ
 /-- In a chain, any two nonconsecutive components
 other than the pair of endpoints do not meet, because the subchain between them is proper. If the
 endpoints do not meet when `2 < t`, then no two nonconsecutive components meet. -/
-lemma IsSelfIntersectionMinusTwoChain.intersection_eq_zero_of_card_eq
+lemma IsSelfIntersectionMinusTwoChain.intersection_eq_zero_of_endpoints_eq_zero
     {t : ℕ} {c : ℕ → T.Component} (hc : T.IsSelfIntersectionMinusTwoChain t c)
     (hends : 2 < t → T.intersection (c 0) (c (t - 1)) = 0) (i : ℕ) (hi : i < t) (j : ℕ)
     (hj : j < t) (hij : i ≠ j) (hij₁ : i + 1 ≠ j) (hji₁ : j + 1 ≠ i) :

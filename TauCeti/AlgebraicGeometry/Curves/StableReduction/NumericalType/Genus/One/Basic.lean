@@ -221,7 +221,8 @@ private lemma forall_sum_intersection_eq_zero (hself : ∀ i, -(2 * (T.weight i 
     refine T.not_forall_fintype_sum_intersection_mul_nonneg_of_pos (I := s) (e := Subtype.val)
       ?_ (y := fun _ ↦ 1) (fun _ ↦ zero_le_one) ⟨⟨i₀, hi₀⟩, one_pos⟩
       fun i ↦ ?_
-    · rw [Fintype.card_coe]
+    · refine T.exists_forall_ne_of_card_lt ?_
+      rw [Fintype.card_coe]
       exact (card_lt_iff_ne_univ s).mpr hsu
     · have h := hrow i i.2
       rw [← sum_attach] at h
