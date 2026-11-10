@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.ODE.EnergyEstimate.Index
 import Mathlib.Analysis.ODE.Gronwall
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 
@@ -133,20 +134,6 @@ theorem squareIntegrableSolutions_sub_smul_id_le {A : ℝ → F →L[ℝ] F} {w 
     exact hm ⟨s, rfl⟩
 
 end Normed
-
-/-- A continuous path with limits at `-∞` and `+∞` is bounded. -/
-private theorem exists_forall_norm_le_of_tendsto {X : Type*} [NormedAddCommGroup X] {f : ℝ → X}
-    (hf : Continuous f) {a b : X} (hbot : Tendsto f atBot (𝓝 a)) (htop : Tendsto f atTop (𝓝 b)) :
-    ∃ M, ∀ s, ‖f s‖ ≤ M := by
-  obtain ⟨r, hr⟩ := eventually_atBot.mp (hbot.norm.eventually (Iic_mem_nhds (lt_add_one ‖a‖)))
-  obtain ⟨R, hR⟩ := eventually_atTop.mp (htop.norm.eventually (Iic_mem_nhds (lt_add_one ‖b‖)))
-  obtain ⟨K, hK⟩ := (isCompact_Icc (a := r) (b := R)).exists_bound_of_continuousOn hf.continuousOn
-  refine ⟨max K (max (‖a‖ + 1) (‖b‖ + 1)), fun s ↦ ?_⟩
-  rcases le_total s r with hs | hs
-  · exact (hr s hs).trans (le_max_of_le_right (le_max_left _ _))
-  rcases le_total s R with hs' | hs'
-  · exact (hK s ⟨hs, hs'⟩).trans (le_max_left _ _)
-  · exact (hR s hs').trans (le_max_of_le_right (le_max_right _ _))
 
 section Hyperbolic
 
