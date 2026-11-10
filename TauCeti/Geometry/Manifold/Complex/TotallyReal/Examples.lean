@@ -44,11 +44,7 @@ theorem isTotallyRealEmbedding_realLocus {ι : Type*} [Fintype ι] (n : ℕ∞ω
       (AlmostComplexStructure.ofComplexModule (ι → ℂ)).constSmooth.almostComplexStructureAt
       (ContinuousLinearMap.piMap fun _ : ι ↦ Complex.ofRealCLM) := by
   let L : (ι → ℝ) →L[ℝ] (ι → ℂ) := ContinuousLinearMap.piMap fun _ ↦ Complex.ofRealCLM
-  have hinj : Function.Injective L := by
-    intro x y h
-    funext i
-    apply Complex.ofReal_injective
-    simpa [L] using congrFun h i
+  have hinj : Function.Injective L := Function.Injective.piMap fun _ ↦ Complex.ofReal_injective
   rw [ContinuousLinearMap.isTotallyRealEmbedding_iff]
   refine ⟨by simp [Module.finrank_pi_fintype, Nat.mul_comm], ?_⟩
   have hJ : (AlmostComplexStructure.ofComplexModule (ι → ℂ)).toLinearMap =
@@ -137,19 +133,6 @@ section Lagrangian
 
 variable {ι : Type*} [Fintype ι]
 
-/-- The real locus in complex coordinate space is a smooth embedding. -/
-theorem isSmoothEmbedding_realLocus :
-    Manifold.IsSmoothEmbedding 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℂ) ∞
-      (ContinuousLinearMap.piMap fun _ : ι ↦ Complex.ofRealCLM) := by
-  let L : (ι → ℝ) →L[ℝ] (ι → ℂ) := ContinuousLinearMap.piMap fun _ ↦ Complex.ofRealCLM
-  have hinj : Function.Injective L := by
-    intro x y h
-    funext i
-    apply Complex.ofReal_injective
-    simpa [L] using congrFun h i
-  exact ⟨(ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional hinj).isImmersion,
-    (LinearMap.isClosedEmbedding_of_injective (LinearMap.ker_eq_bot.mpr hinj)).isEmbedding⟩
-
 /-- The real locus in complex coordinate space is a Lagrangian embedding for the standard
 symplectic form `Σ_j ds_j ∧ dt_j`. -/
 theorem isLagrangianEmbedding_realLocus :
@@ -157,7 +140,7 @@ theorem isLagrangianEmbedding_realLocus :
         (stdComplexPiSymplecticForm ι)).IsLagrangianEmbedding
       𝓘(ℝ, ι → ℝ) (ContinuousLinearMap.piMap fun _ : ι ↦ Complex.ofRealCLM) :=
   (SmoothTwoForm.IsNondegenerate.isLagrangianEmbedding_iff_of_isSmoothEmbedding
-    isSmoothEmbedding_realLocus).2
+    (isTotallyRealEmbedding_realLocus ∞).isSmoothEmbedding).2
     ((SymplecticForm.isLagrangianMap_continuousLinearMap_iff _ _).2
       isLagrangian_stdComplexPiSymplecticForm_range_ofReal)
 
@@ -168,25 +151,24 @@ theorem isLagrangianEmbedding_realLocus_rescale_neg_one :
         ((stdComplexPiSymplecticForm ι).rescale (-1) neg_one_lt_zero.ne)).IsLagrangianEmbedding
       𝓘(ℝ, ι → ℝ) (ContinuousLinearMap.piMap fun _ : ι ↦ Complex.ofRealCLM) :=
   (SmoothTwoForm.IsNondegenerate.isLagrangianEmbedding_iff_of_isSmoothEmbedding
-    isSmoothEmbedding_realLocus).2
+    (isTotallyRealEmbedding_realLocus ∞).isSmoothEmbedding).2
     ((SymplecticForm.isLagrangianMap_continuousLinearMap_iff _ _).2
       ((SymplecticForm.isLagrangian_rescale_iff _ _).2
         isLagrangian_stdComplexPiSymplecticForm_range_ofReal))
 
-/-- The Lagrangian comparison: the real locus, Lagrangian for `Σ_j ds_j ∧ dt_j`, is totally real
-for multiplication by `I`, which that form tames. This recovers the smooth case of
-`isTotallyRealEmbedding_realLocus`. -/
-theorem isTotallyRealEmbedding_realLocus_of_isLagrangianEmbedding :
+/-! The Lagrangian comparison recovers the smooth case of `isTotallyRealEmbedding_realLocus`:
+the real locus, Lagrangian for `Σ_j ds_j ∧ dt_j`, is totally real for multiplication by `I`,
+which that form tames, and, Lagrangian for `-Σ_j ds_j ∧ dt_j`, is totally real for
+multiplication by `-I`, which the reversed form tames. -/
+
+example :
     IsTotallyRealEmbedding 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℂ) ∞
       (AlmostComplexStructure.ofComplexModule (ι → ℂ)).constSmooth.almostComplexStructureAt
       (ContinuousLinearMap.piMap fun _ : ι ↦ Complex.ofRealCLM) :=
   isLagrangianEmbedding_realLocus.isTotallyRealEmbedding
     (SymplecticForm.tames_constSmooth_iff.2 stdComplexPiSymplecticForm_tames)
 
-/-- The Lagrangian comparison for the opposite structure: the real locus, Lagrangian for
-`-Σ_j ds_j ∧ dt_j`, is totally real for multiplication by `-I`, which the reversed form tames.
-This agrees with `isTotallyRealEmbedding_neg_iff` applied to `isTotallyRealEmbedding_realLocus`. -/
-theorem isTotallyRealEmbedding_realLocus_neg_of_isLagrangianEmbedding :
+example :
     IsTotallyRealEmbedding 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℂ) ∞
       (-AlmostComplexStructure.ofComplexModule (ι → ℂ)).constSmooth.almostComplexStructureAt
       (ContinuousLinearMap.piMap fun _ : ι ↦ Complex.ofRealCLM) :=

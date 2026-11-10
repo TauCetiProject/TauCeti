@@ -94,11 +94,7 @@ theorem isLagrangian_stdComplexPiSymplecticForm_range_ofReal :
     (stdComplexPiSymplecticForm ι).IsLagrangian
       (LinearMap.range (ContinuousLinearMap.piMap fun _ : ι ↦ Complex.ofRealCLM).toLinearMap) := by
   let L : (ι → ℝ) →L[ℝ] (ι → ℂ) := ContinuousLinearMap.piMap fun _ ↦ Complex.ofRealCLM
-  have hinj : Function.Injective L := by
-    intro x y h
-    funext i
-    apply Complex.ofReal_injective
-    simpa [L] using congrFun h i
+  have hinj : Function.Injective L := Function.Injective.piMap fun _ ↦ Complex.ofReal_injective
   have hi : (stdComplexPiSymplecticForm ι).IsIsotropic (LinearMap.range L.toLinearMap) := by
     rw [SymplecticForm.isIsotropic_iff]
     rintro _ ⟨x, rfl⟩ _ ⟨y, rfl⟩
