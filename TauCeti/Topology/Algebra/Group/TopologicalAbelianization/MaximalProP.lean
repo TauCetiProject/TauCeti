@@ -28,13 +28,16 @@ namespace TauCeti
 
 variable {p : ℕ} {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {A : Type*} [CommGroup A] [TopologicalSpace A] [IsTopologicalGroup A]
-  [T1Space A] [CompactSpace A] [TotallyDisconnectedSpace A]
+  [CompactSpace A] [TotallyDisconnectedSpace A]
 
 /-- Every continuous homomorphism from `G` to a commutative pro-`p` group kills the elements
 that die in the maximal pro-`p` quotient of the topological abelianization of `G`. -/
 theorem eq_one_of_maximalProPQuotient_mk_eq_one (hA : IsProP p A) (f : G →ₜ* A) {g : G}
     (hg : maximalProPQuotient.mk p (TopologicalAbelianization G)
       (g : TopologicalAbelianization G) = 1) : f g = 1 := by
+  -- a totally disconnected space is `T₁`: the closure of a point is preconnected
+  have : T1Space A := ⟨fun x ↦ closure_subset_iff_isClosed.mp fun y hy ↦
+    (isPreconnected_singleton.closure.subsingleton hy (subset_closure rfl))⟩
   let fab := TopologicalAbelianization.lift f
   have h := congrArg (maximalProPQuotient.lift hA fab.toMonoidHom fab.continuous) hg
   rw [maximalProPQuotient.mk_apply, maximalProPQuotient.lift_mk, map_one] at h
