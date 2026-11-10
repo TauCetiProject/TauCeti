@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Analysis.Normed.Group.NullSubmodule
 public import TauCeti.Analysis.InnerProductSpace.Positive.VectorFunctional
 import Mathlib.Analysis.Complex.Order
+import TauCeti.Algebra.Star.Basic
 
 /-!
 # Algebraic GNS representations
@@ -132,15 +133,11 @@ variable [StarModule ℂ A] [IsScalarTower ℂ A A]
 
 /-- Positivity implies conjugate symmetry of the associated sesquilinear form. -/
 theorem star_apply_star_mul (a b : A) : star (φ (star a * b)) = φ (star b * a) := by
-  -- Scalars commute with left multiplication: apply `star` to the scalar tower identity.
-  have hcomm (c : ℂ) (x y : A) : x * (c • y) = c • (x * y) := by
-    apply star_injective
-    rw [star_mul, star_smul, smul_mul_assoc, star_smul, star_mul]
   have him (x : A) : (φ (star x * x)).im = 0 := (φ.square_nonneg x).2.symm
   have hsum := him (a + b)
   have hI := him (a + Complex.I • b)
   simp [add_mul, mul_add, him] at hsum
-  simp [add_mul, mul_add, smul_mul_assoc, hcomm, him] at hI
+  simp [add_mul, mul_add, smul_mul_assoc, mul_smul_comm_of_starModule, him] at hI
   rw [Complex.ext_iff]
   simp only [Complex.star_def, Complex.conj_re, Complex.conj_im]
   constructor <;> linarith
