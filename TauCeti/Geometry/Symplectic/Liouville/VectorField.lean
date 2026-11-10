@@ -123,10 +123,8 @@ theorem mlieDerivForm_eq_self_of_interior_eq [IsManifold I 1 M] {α : RoughForm 
     (hZ : MDifferentiable I I.tangent (fun y ↦ (Z y : TangentBundle I M)))
     (h : (mextDeriv α).interior Z = α) :
     mlieDerivForm Z α = α := by
-  have h0 : α.interior Z = 0 := by
-    rw [← h]
-    exact RoughForm.interior_self Z (mextDeriv α)
-  rw [mlieDerivForm_eq_interior_mextDeriv_add hα hZ, h0, mextDeriv_zero, add_zero, h]
+  rw [mlieDerivForm_eq_interior_mextDeriv_add hα hZ,
+    RoughForm.interior_eq_zero_of_interior_eq h, mextDeriv_zero, add_zero, h]
 
 /-! ### Normed spaces -/
 

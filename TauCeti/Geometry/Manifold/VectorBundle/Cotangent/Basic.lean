@@ -37,6 +37,8 @@ the derivative of the inverse change of charts at `φ q`
 pushed-forward tangent vector as the old covector pairs with the original one
 (`TauCeti.CotangentBundle.extChartAt_extChartAt_symm_snd_apply_fderivWithin`).
 This is the transformation law of covector components, dual to that of tangent vectors.
+A map into the single fibre over a fixed point `q` moves only the fibre coordinate in these
+charts, so its derivative is that of its covector part (`TauCeti.CotangentBundle.hasMFDerivAt_mk`).
 
 Covectors pull back along the differential of a map `f : M → N`: a covector `p` at `f x` gives the
 covector `p ∘ df_x` at `x`. For a family of covectors over a parameter manifold this is smooth:
@@ -187,6 +189,38 @@ theorem contMDiffOn_mk_comp_continuousLinearMapAt {n : WithTop ℕ∞}
   ext v
   simp [eh, e', α, Bundle.Trivialization.continuousLinearMap_apply,
     Trivial.eq_trivialization M 𝕜, e.continuousLinearMapAt_symmL (hU' hy)]
+
+variable {EX HX X : Type*} [NormedAddCommGroup EX] [NormedSpace 𝕜 EX] [TopologicalSpace HX]
+  {IX : ModelWithCorners 𝕜 EX HX} [TopologicalSpace X] [ChartedSpace HX X] in
+/-- **The derivative of a map into one fibre.** If `c : X → E →L[𝕜] 𝕜` has derivative `c'` at `y`,
+then `y ↦ (q, c y)`, a map into the fibre of the cotangent bundle over the fixed point `q`, has
+derivative `w ↦ (0, c' w)` at `y`, read in the preferred chart at `(q, c y)`: the base coordinate
+does not move, and over `q` the tangent trivialization at `q` is the identity. -/
+theorem hasMFDerivAt_mk (q : M) {c : X → E →L[𝕜] 𝕜} {y : X}
+    {c' : TangentSpace IX y →L[𝕜] E →L[𝕜] 𝕜} (hc : HasMFDerivAt IX 𝓘(𝕜, E →L[𝕜] 𝕜) c y c') :
+    HasMFDerivAt IX (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜))
+      (fun y ↦ TotalSpace.mk' (E →L[𝕜] 𝕜) (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) q (c y)) y
+      ((ContinuousLinearMap.inr 𝕜 E (E →L[𝕜] 𝕜)).comp c') := by
+  set e := trivializationAt (E →L[𝕜] 𝕜) (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) q
+  have hq : q ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt _ _ q
+  refine ⟨(FiberBundle.continuousAt_totalSpace _ _).2 ⟨continuousAt_const, ?_⟩, ?_⟩
+  · -- In the trivialization at `q`, the fibre coordinate is a continuous linear image of `c`.
+    have hcoord : (fun y' ↦ (e (TotalSpace.mk' (E →L[𝕜] 𝕜) q (c y'))).2) =
+        fun y' ↦ e.continuousLinearMapAt 𝕜 q (c y') :=
+      funext fun y' ↦ (e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hq _).symm
+    exact hcoord ▸ (e.continuousLinearMapAt 𝕜 q).continuous.continuousAt.comp hc.1
+  · -- In charts the map is `u ↦ (φ q, c u)`, where `φ` is the extended chart at `q`.
+    have hw : writtenInExtChartAt IX (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) y
+        (fun y ↦ TotalSpace.mk' (E →L[𝕜] 𝕜) (E := fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) q (c y)) =
+        fun u ↦ (extChartAt I q q, writtenInExtChartAt IX 𝓘(𝕜, E →L[𝕜] 𝕜) y c u) := by
+      funext u
+      refine Prod.ext rfl (ContinuousLinearMap.ext fun w ↦ ?_)
+      simp only [writtenInExtChartAt, Function.comp_apply, extChartAt_apply,
+        extChartAt_model_space_eq_id, PartialEquiv.refl_coe, id_eq]
+      exact congrArg _ (TauCeti.Manifold.symmL_trivializationAt_self q w)
+    rw [hw]
+    exact ((hasFDerivWithinAt_const _ _ _).prodMk hc.2).congr_fderiv
+      (ContinuousLinearMap.ext fun _ ↦ rfl)
 
 section Pullback
 

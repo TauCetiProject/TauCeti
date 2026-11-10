@@ -36,7 +36,7 @@ is a homeomorphism followed by the (open) inclusions of the members of the famil
 
 ## Main declarations
 
-* `TauCeti.Sym.isOpenEmbedding_sumSubtype`: for a pairwise disjoint family of open sets,
+* `Sym.isOpenEmbedding_sumSubtype`: for a pairwise disjoint family of open sets,
   concatenation identifies the product of the symmetric powers of the members with an open
   subspace of `Sym α n`.
 * `Finset.exists_mem_range_sumSubtype_of_t2`: in a Hausdorff space, one disjoint family of
@@ -47,8 +47,6 @@ is a homeomorphism followed by the (open) inclusions of the members of the famil
 public section
 
 open Topology
-
-namespace TauCeti
 
 namespace Sym
 
@@ -72,7 +70,7 @@ omit [Fintype ι] in
 private theorem isOpenMap_regroup (hU : ∀ i, IsOpen (U i)) (e : (Σ i, Fin (m i)) ≃ Fin n) :
     IsOpenMap (regroup U m e) := by
   let R : (∀ i, Fin (m i) → U i) ≃ₜ (∀ j : Fin n, ↥(U (e.symm j).1)) :=
-    piSigmaHomeomorph (fun i _ => ↥(U i)) e
+    TauCeti.piSigmaHomeomorph (fun i _ => ↥(U i)) e
   have hfun : regroup U m e
       = (Pi.map fun j : Fin n => (Subtype.val : ↥(U (e.symm j).1) → α)) ∘ R := by
     funext f j
@@ -82,19 +80,19 @@ private theorem isOpenMap_regroup (hU : ∀ i, IsOpen (U i)) (e : (Σ i, Fin (m 
 
 omit [Fintype ι] in
 private theorem isOpenQuotientMap_piMap_ofFn :
-    IsOpenQuotientMap (Pi.map fun i => (Sym.ofFn : (Fin (m i) → U i) → Sym (U i) (m i))) :=
+    IsOpenQuotientMap (Pi.map fun i => (ofFn : (Fin (m i) → U i) → Sym (U i) (m i))) :=
   IsOpenQuotientMap.piMap fun _ => isOpenQuotientMap_ofFn
 
 omit [TopologicalSpace α] in
 private theorem sumSubtype_comp_piMap_ofFn (hn : ∑ i, m i = n) (e : (Σ i, Fin (m i)) ≃ Fin n) :
-    Sym.sumSubtype U m hn ∘ (Pi.map fun i => (Sym.ofFn : (Fin (m i) → U i) → Sym (U i) (m i)))
-      = Sym.ofFn ∘ regroup U m e :=
-  funext fun f => Sym.sumSubtype_ofFn hn e f
+    sumSubtype U m hn ∘ (Pi.map fun i => (ofFn : (Fin (m i) → U i) → Sym (U i) (m i)))
+      = ofFn ∘ regroup U m e :=
+  funext fun f => sumSubtype_ofFn hn e f
 
 /-- Concatenating unordered tuples of points of the members of a family is continuous. -/
 @[continuity, fun_prop]
-theorem continuous_sumSubtype (hn : ∑ i, m i = n) : Continuous (Sym.sumSubtype U m hn) := by
-  obtain ⟨e⟩ := nonempty_sigmaFinEquiv hn
+theorem continuous_sumSubtype (hn : ∑ i, m i = n) : Continuous (sumSubtype U m hn) := by
+  obtain ⟨e⟩ := TauCeti.nonempty_sigmaFinEquiv hn
   rw [isOpenQuotientMap_piMap_ofFn.isQuotientMap.continuous_iff,
     sumSubtype_comp_piMap_ofFn hn e]
   exact continuous_ofFn.comp (continuous_regroup e)
@@ -102,8 +100,8 @@ theorem continuous_sumSubtype (hn : ∑ i, m i = n) : Continuous (Sym.sumSubtype
 /-- For a family of open sets, concatenating unordered tuples of points of its members is an open
 map. -/
 theorem isOpenMap_sumSubtype (hU : ∀ i, IsOpen (U i)) (hn : ∑ i, m i = n) :
-    IsOpenMap (Sym.sumSubtype U m hn) := by
-  obtain ⟨e⟩ := nonempty_sigmaFinEquiv hn
+    IsOpenMap (sumSubtype U m hn) := by
+  obtain ⟨e⟩ := TauCeti.nonempty_sigmaFinEquiv hn
   rw [isOpenQuotientMap_piMap_ofFn.isOpenMap_iff, sumSubtype_comp_piMap_ofFn hn e]
   exact isOpenMap_ofFn.comp (isOpenMap_regroup hU e)
 
@@ -113,13 +111,11 @@ of `Sym α n`, namely the unordered tuples supported in the union of the family 
 of their points in `U i` (`Sym.mem_range_sumSubtype`). -/
 theorem isOpenEmbedding_sumSubtype (hU : ∀ i, IsOpen (U i))
     (h : Pairwise (Function.onFun Disjoint U)) (hn : ∑ i, m i = n) :
-    IsOpenEmbedding (Sym.sumSubtype U m hn) :=
-  .of_continuous_injective_isOpenMap (continuous_sumSubtype hn) (Sym.sumSubtype_injective h hn)
+    IsOpenEmbedding (sumSubtype U m hn) :=
+  .of_continuous_injective_isOpenMap (continuous_sumSubtype hn) (sumSubtype_injective h hn)
     (isOpenMap_sumSubtype hU hn)
 
 end Sym
-
-end TauCeti
 
 /-! ### A common family for tuples supported in a finite set -/
 

@@ -353,6 +353,12 @@ theorem le : ∀ _start : G.EarStart H, H ≤ G
   | .cycle walk isCycle => walk.walkGraph_le_of_pos <|
       Nat.pos_of_ne_zero fun h ↦ isCycle.not_nil (Walk.length_eq_zero_iff.mp h)
 
+/-- Every permitted initial graph of an ear decomposition has an actual vertex. -/
+theorem vertexSet_nonempty (start : G.EarStart H) : V(H).Nonempty := by
+  cases start with
+  | vertex x => exact ⟨x, by simp⟩
+  | @cycle x p hp => exact ⟨x, by rw [p.vertexSet_walkGraph]; exact p.start_mem_support⟩
+
 end EarStart
 
 /-- A finite ear decomposition in `G`, indexed by its final graph `H`.
@@ -425,6 +431,15 @@ theorem walkAt_eq (d : G.EarDecomposition H) (i : Fin d.length) :
 def IsOpen (d : G.EarDecomposition H) : Prop :=
   d.start.IsCycle ∧ ∀ i, d.kindAt i = .open
 
+/-- An ear decomposition starts from a single actual vertex rather than from a cycle. -/
+def IsVertexStart (d : G.EarDecomposition H) : Prop :=
+  ∃ v : V(G), d.initial = Graph.noEdge {v.1} β
+
+/-- Characterization of a vertex-starting ear decomposition by its initial graph. -/
+theorem isVertexStart_iff (d : G.EarDecomposition H) :
+    d.IsVertexStart ↔ ∃ v : V(G), d.initial = Graph.noEdge {v.1} β :=
+  Iff.rfl
+
 /-- Characterization of an open ear decomposition by its initial data and ear kinds. -/
 theorem isOpen_iff (d : G.EarDecomposition H) :
     d.IsOpen ↔ d.start.IsCycle ∧ ∀ i, d.kindAt i = .open :=
@@ -452,6 +467,16 @@ def vertex (v : V(G)) : G.EarDecomposition (Graph.noEdge {v.1} β) where
 
 @[simp]
 theorem length_vertex (v : V(G)) : (vertex v).length = 0 := (rfl)
+
+@[simp]
+theorem graphAfter_vertex_zero (v : V(G)) :
+    (vertex v).graphAfter 0 = Graph.noEdge {v.1} β :=
+  by rw [vertex]
+
+/-- A decomposition consisting only of one vertex starts from a vertex. -/
+@[simp]
+theorem isVertexStart_vertex (v : V(G)) : (vertex v).IsVertexStart :=
+  ⟨v, rfl⟩
 
 /-- A decomposition consisting only of one cycle. -/
 def cycle {s : α} (walk : G.Walk s s) (isCycle : walk.IsCycle) :
@@ -508,6 +533,18 @@ theorem graphAfter_snoc_castSucc (d : G.EarDecomposition H) (ear : G.Ear H)
     -- Projection reduction exposes `Fin.lastCases`; rewriting cannot unfold the opaque `snoc` body.
     change Fin.lastCases ear.add d.graphAfter (Fin.cast rfl i).castSucc = d.graphAfter i
     rw [Fin.cast_eq_self, Fin.lastCases_castSucc]
+
+/-- Adjoining an ear does not change the initial graph of a decomposition. -/
+@[simp]
+theorem graphAfter_snoc_zero (d : G.EarDecomposition H) (ear : G.Ear H) :
+    (d.snoc ear).graphAfter 0 = d.graphAfter 0 := by
+  exact snoc_graphAfter_zero d ear
+
+/-- Adjoining an ear preserves the property of starting from a single vertex. -/
+@[simp]
+theorem isVertexStart_snoc (d : G.EarDecomposition H) (ear : G.Ear H) :
+    (d.snoc ear).IsVertexStart ↔ d.IsVertexStart := by
+  simp only [isVertexStart_iff, initial_eq_graphAfter, graphAfter_snoc_zero]
 
 @[simp]
 theorem earAt_snoc_castSucc (d : G.EarDecomposition H) (ear : G.Ear H)
@@ -624,6 +661,16 @@ theorem graphAfter_induction (d : G.EarDecomposition H) {P : Graph α β → Pro
   · intro j ih
     rw [d.graphAfter_succ]
     exact snoc j ih
+
+/-- The final graph of every ear decomposition has an actual vertex. -/
+theorem vertexSet_nonempty (d : G.EarDecomposition H) : V(H).Nonempty := by
+  rw [← d.graphAfter_last]
+  apply d.graphAfter_induction (P := fun L ↦ V(L).Nonempty)
+  · rw [d.initial_eq_graphAfter]
+    exact d.start.vertexSet_nonempty
+  · intro i hi
+    rw [← d.earAt_fst i] at hi
+    exact hi.mono (d.earAt i).2.base_le_add.vertexSet_mono
 
 /-- A prefix decomposition contains exactly as many ears as its index. -/
 @[simp]

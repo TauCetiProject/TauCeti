@@ -62,14 +62,15 @@ theorem existsUnique_norm_zpow_mul_mem_Ioc (q u : Kˣ) (hq : ‖(q : K)‖ < 1) 
     hnorm] using h
 
 /-- Two units in the fundamental annulus representing the same coset modulo `q^ℤ` are equal. -/
-theorem eq_of_norm_mem_Ioc_of_quotient_zpowers_eq (q : Kˣ) (hq : ‖(q : K)‖ < 1)
+theorem eq_of_norm_mem_Ioc_of_quotient_zpowers_eq (q : Kˣ)
     {u v : Kˣ} (hu : ‖(q : K)‖ < ‖(u : K)‖ ∧ ‖(u : K)‖ ≤ 1)
     (hv : ‖(q : K)‖ < ‖(v : K)‖ ∧ ‖(v : K)‖ ≤ 1)
     (huv : (u : Kˣ ⧸ Subgroup.zpowers q) = (v : Kˣ ⧸ Subgroup.zpowers q)) : u = v := by
   obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp (QuotientGroup.eq_iff_div_mem.mp huv)
   have hnu : q ^ n * v = u := by
     rw [hn, div_mul_cancel]
-  obtain ⟨m, hm, hm_unique⟩ := existsUnique_norm_zpow_mul_mem_Ioc q v hq
+  obtain ⟨m, hm, hm_unique⟩ :=
+    existsUnique_norm_zpow_mul_mem_Ioc q v (hu.1.trans_le hu.2)
   have hn0 : n = 0 := (hm_unique n (by simpa [hnu] using hu)).trans
     (hm_unique 0 (by simpa using hv)).symm
   simpa [hn0] using hnu.symm
@@ -79,7 +80,7 @@ theorem notMem_zpowers_of_norm_lt_of_norm_lt_one {q u : Kˣ} (hqu : ‖(q : K)�
     (hu : ‖(u : K)‖ < 1) : u ∉ Subgroup.zpowers q := by
   intro hmem
   have hq := hqu.trans hu
-  have h := eq_of_norm_mem_Ioc_of_quotient_zpowers_eq q hq (v := 1) ⟨hqu, hu.le⟩
+  have h := eq_of_norm_mem_Ioc_of_quotient_zpowers_eq q (v := 1) ⟨hqu, hu.le⟩
     (by simpa using hq) (by rw [(QuotientGroup.eq_one_iff u).mpr hmem, QuotientGroup.mk_one])
   simp [h] at hu
 
@@ -119,7 +120,7 @@ noncomputable def unitsQuotientZPowersEquivAnnulus (q : Kˣ) (hq : ‖(q : K)‖
   (Equiv.ofBijective (fun u : {u : Kˣ // ‖(q : K)‖ < ‖(u : K)‖ ∧ ‖(u : K)‖ ≤ 1} ↦
     (u.val : Kˣ ⧸ Subgroup.zpowers q)) ⟨by
       intro u v h
-      exact Subtype.ext (eq_of_norm_mem_Ioc_of_quotient_zpowers_eq q hq u.prop v.prop h), by
+      exact Subtype.ext (eq_of_norm_mem_Ioc_of_quotient_zpowers_eq q u.prop v.prop h), by
       intro x
       obtain ⟨u, rfl⟩ := QuotientGroup.mk_surjective x
       obtain ⟨n, hn, _⟩ := existsUnique_norm_zpow_mul_mem_Ioc q u hq
@@ -180,7 +181,7 @@ theorem infinite_range_sq_quotient_zpowers [IsUltrametricDist K] (q : Kˣ)
   subst hj
   -- The squares of `u k` and `u j` agree, so `u k = ± u j`.
   refine ((Set.toFinite {u j, -u j}).preimage hu.injOn).subset fun k hk ↦ ?_
-  have h : u k ^ 2 = u j ^ 2 := eq_of_norm_mem_Ioc_of_quotient_zpowers_eq q hq (hmem k) (hmem j)
+  have h : u k ^ 2 = u j ^ 2 := eq_of_norm_mem_Ioc_of_quotient_zpowers_eq q (hmem k) (hmem j)
     (by simpa only [QuotientGroup.mk_pow, Set.mem_preimage, Set.mem_singleton_iff,
       Function.comp_apply] using hk)
   rcases sq_eq_sq_iff_eq_or_eq_neg.mp (congrArg Units.val h) with h' | h'

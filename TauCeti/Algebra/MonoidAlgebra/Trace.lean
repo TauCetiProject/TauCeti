@@ -98,12 +98,13 @@ theorem regularTraceForm_apply {k G : Type*} [CommRing k] [Monoid G] [IsRightCan
   rw [Algebra.regularTraceForm_apply, ← trace_mulLeft]
   exact congrArg _ (LinearMap.ext fun z => by simp [mul_assoc])
 
-/-- **The regular trace form of a group algebra is nondegenerate when `|G| ≠ 0`.** For a finite
-group `G` whose order is nonzero in the ring `k` without zero divisors, the regular trace form
-`(x, y) ↦ |G| * (x * y)_1` of `k[G]` is nondegenerate. -/
+/-- **The regular trace form of a group algebra is nondegenerate when `|G| ≠ 0`.** For a group `G`
+whose order is nonzero in the ring `k` without zero divisors (so `G` is finite), the regular trace
+form `(x, y) ↦ |G| * (x * y)_1` of `k[G]` is nondegenerate. -/
 theorem nondegenerate_regularTraceForm {k G : Type*} [CommRing k] [NoZeroDivisors k] [Group G]
-    [Finite G] [NeZero (Nat.card G : k)] :
+    [NeZero (Nat.card G : k)] :
     (Algebra.regularTraceForm k (MonoidAlgebra k G)).Nondegenerate := by
+  have : Finite G := Nat.finite_of_card_ne_zero fun h ↦ NeZero.ne (Nat.card G : k) (by simp [h])
   refine ⟨fun x hx => ?_, fun y hy => ?_⟩ <;> ext g
   · have := hx (single g⁻¹ 1)
     rw [regularTraceForm_apply] at this

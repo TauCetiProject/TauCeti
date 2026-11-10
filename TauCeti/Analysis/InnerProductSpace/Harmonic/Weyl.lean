@@ -187,6 +187,7 @@ theorem HasWeakFDerivOn.weaklyHarmonicOn {W : E → E →L[ℝ] F}
     h.locallyIntegrableOn_deriv φ) v]
   exact (h.hasWeakLineDerivOn v).weaklyHarmonicOn hw |>.integral_laplacian_smul_eq_zero φ
 
+omit [OpensMeasurableSpace E] in
 /-- Replacing `w` by a function agreeing with it almost everywhere on `Ω` preserves weak
 harmonicity: only the restriction of `w` to `Ω` is seen. -/
 theorem WeaklyHarmonicOn.congr_ae {w' : E → F} (h : WeaklyHarmonicOn μ Ω w)
@@ -194,7 +195,7 @@ theorem WeaklyHarmonicOn.congr_ae {w' : E → F} (h : WeaklyHarmonicOn μ Ω w)
   refine ⟨h.locallyIntegrableOn.congr hw, fun φ ↦ ?_⟩
   rw [← h.integral_laplacian_smul_eq_zero φ]
   refine integral_congr_ae ?_
-  filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 hw] with x hx
+  filter_upwards [ae_imp_of_ae_restrict hw] with x hx
   by_cases hxΩ : x ∈ (Ω : Set E)
   · rw [hx hxΩ]
   · rw [image_eq_zero_of_notMem_tsupport fun h' ↦
