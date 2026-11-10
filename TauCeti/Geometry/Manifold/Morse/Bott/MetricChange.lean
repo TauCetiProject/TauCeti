@@ -261,26 +261,20 @@ theorem exists_contMDiffOn_normalMetricChange {k : ℕ∞ω} [IsManifold I (k + 
   -- The change of metric is invertible, with inverse the inverse change of metric read in the
   -- trivialization, so its inverse is `C^k` as well.
   let v (s : S) (hs : s ∈ V) : (P →L[ℝ] P)ˣ :=
-    { val := C s hs (h.normalMetricChange hn g g' s)
-      inv := C s hs (h.normalMetricChange hn g g' s).symm
-      val_inv := by
-        ext u
-        simp only [C, mul_apply_eq_comp, one_apply_eq_self, LinearMap.coe_toContinuousLinearMap',
-          LinearEquiv.conj_apply_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply,
-          LinearEquiv.apply_symm_apply]
-      inv_val := by
-        ext u
-        simp only [C, mul_apply_eq_comp, one_apply_eq_self, LinearMap.coe_toContinuousLinearMap',
-          LinearEquiv.conj_apply_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply,
-          LinearEquiv.apply_symm_apply] }
+    ((e.linearEquivAt ℝ s hs.2).symm ≪≫ₗ h.normalMetricChange hn g g' s ≪≫ₗ
+      e.linearEquivAt ℝ s hs.2).toContinuousLinearEquiv.toUnit
+  have hv (s : S) (hs : s ∈ V) : (v s hs : P →L[ℝ] P) = A s := by rw [hAC s hs]; rfl
   refine ⟨A, fun s ↦ Ring.inverse (A s), hA, fun s hs ↦ ?_, fun s hs u ↦ ⟨?_, ?_⟩⟩
   · have hinv := contDiffAt_ringInverse ℝ (n := k) (v s hs)
-    rw [show (v s hs : P →L[ℝ] P) = A s from (hAC s hs).symm] at hinv
+    rw [hv s hs] at hinv
     exact hinv.comp_contMDiffWithinAt (hA s hs)
   · rw [hAC s hs, hC s hs, LinearEquiv.coe_coe]
   · beta_reduce
-    rw [show A s = v s hs from hAC s hs, Ring.inverse_unit]
-    exact hC s hs _ u
+    rw [← hv s hs, Ring.inverse_unit]
+    change e.symm s (((e.linearEquivAt ℝ s hs.2).symm ≪≫ₗ h.normalMetricChange hn g g' s ≪≫ₗ
+      e.linearEquivAt ℝ s hs.2).symm u) = _
+    simp only [LinearEquiv.trans_symm, LinearEquiv.symm_symm, LinearEquiv.trans_apply,
+      ← Trivialization.linearEquivAt_symm_apply (R := ℝ) e s hs.2, LinearEquiv.symm_apply_apply]
 
 end Smooth
 
