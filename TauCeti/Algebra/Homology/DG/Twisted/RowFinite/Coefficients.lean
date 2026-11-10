@@ -93,17 +93,11 @@ theorem finsuppScalarRight_symm_mem_grading {n : ℤ} {f : P →₀ M}
   rw [mem_rowFiniteTotalGrading_iff] at hf
   rw [finsuppScalarRight_symm_apply, Finsupp.sum]
   refine Submodule.sum_mem _ fun x _ ↦ ?_
-  have hsingle : Finsupp.single x (1 : A) ∈ rowFiniteTotalGrading 𝒜 ind (-ind x) := by
-    rw [mem_rowFiniteTotalGrading_iff]
-    intro y
-    by_cases hxy : x = y
-    · subst y
-      simpa using SetLike.one_mem_graded 𝒜
-    · simp [Finsupp.single_eq_of_ne (Ne.symm hxy)]
   have := tmul_mem_grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
     (InternalGrading.ofDecomposition (rowFiniteTotalGrading 𝒜 ind))
     (by simpa only [InternalGrading.ofDecomposition_piece] using hf x)
-    (by simpa only [InternalGrading.ofDecomposition_piece] using hsingle)
+    (by simpa only [InternalGrading.ofDecomposition_piece] using
+      single_one_mem_rowFiniteTotalGrading 𝒜 ind x)
   simpa only [add_neg_cancel_right] using this
 
 /-- The tensor grading is exactly the finite-support total grading under `finsuppScalarRight`. -/

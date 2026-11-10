@@ -162,9 +162,10 @@ theorem map_decompose_eq_zero (hM : IsDGLeftModule h ℳ dM) {x : M} (hx : dM x 
   rw [hM.map_decompose, hx, DirectSum.decompose_zero, DirectSum.zero_apply,
     ZeroMemClass.coe_zero]
 
-/-- Conversely, if every **homogeneous** relative cycle of a degree-zero map `f` is a relative
-boundary, then so is every relative cycle: the homogeneous components of a relative cycle are
-relative cycles, and the relative boundaries bounding them add up. -/
+/-- The converse of `exists_mem_of_forall_exists`: if every **homogeneous** relative cycle of a
+degree-zero map `f` is a relative boundary, then so is every relative cycle. The homogeneous
+components of a relative cycle are relative cycles, and the relative boundaries bounding them add
+up. -/
 theorem exists_of_forall_mem_exists {N : Type*} [AddCommGroup N] [Module R N] [Module A N]
     [IsScalarTower R A N] {𝒩 : ℤ → Submodule R N} [SetLike.GradedSMul 𝒜 𝒩]
     [DirectSum.Decomposition 𝒩] {dN : N →ₗ[R] N} (hM : IsDGLeftModule h ℳ dM)

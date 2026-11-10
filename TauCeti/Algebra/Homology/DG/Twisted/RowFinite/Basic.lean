@@ -110,6 +110,17 @@ theorem mapDomain_mem_rowFiniteTotalGrading_iff {P' : Type uP'} {ind' : P' → �
     simpa [Finsupp.mapDomain_apply_of_injective he, hind] using h x
   · simp [Finsupp.mapDomain_of_notMem_range _ _ hy]
 
+/-- The generator `x`, with unit coefficient, has total degree `-ind x`. -/
+theorem single_one_mem_rowFiniteTotalGrading [One A] [SetLike.GradedOne 𝒜] (x : P) :
+    Finsupp.single x (1 : A) ∈ rowFiniteTotalGrading 𝒜 ind (-ind x) := by
+  classical
+  rw [mem_rowFiniteTotalGrading_iff]
+  intro y
+  by_cases hxy : x = y
+  · subst y
+    simpa using SetLike.one_mem_graded 𝒜
+  · simp [Finsupp.single_eq_of_ne (Ne.symm hxy)]
+
 /-- The actual finite direct-sum/function equivalence preserves total degrees. -/
 theorem mem_rowFiniteTotalGrading_iff_twistedTotalGrading [Finite P] (n : ℤ) (f : P →₀ A) :
     f ∈ rowFiniteTotalGrading 𝒜 ind n ↔
