@@ -97,9 +97,7 @@ theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
     -- Inverse reciprocity intertwines the action after reading its carrier additively.
     change ofMul (eR.symm (t • x.toMul)) =
       MonoidAlgebra.single t (1 : ℤ_[p]) • ofMul (eR.symm x.toMul)
-    rw [padicCompletionUnits_single_smul, one_smul]
-    exact congrArg ofMul
-      (padicCompletionUnitsEquivAbelianizationProP_symm_galois_smul p K L j t x.toMul)
+    exact ofMul_padicCompletionUnitsEquivAbelianizationProP_symm_galois_smul p K L j t x
   let f := relationModuleToAbelianizationProPEquivariant p K L hg β j
   let hf := f.continuous_toAdditive
     (continuous_relationModuleToAbelianizationProPEquivariant p K L hg β j)
@@ -111,31 +109,20 @@ theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
     simp only [MulDistribMulActionHom.toAdditive_apply, ModuleCat.hom_ofHom]
     -- The representation morphism has underlying map β; scalar restriction keeps its carrier.
     change ofMul (eR.symm (f x.toMul)) = β (eL x)
-    rw [relationModuleToAbelianizationProPEquivariant_apply,
-      relationModuleToAbelianizationProP_apply]
-    exact congrArg ofMul (eR.symm_apply_apply _)
-  have hL :=
-    freeProfiniteGroup.explicitH2EquivRelationModule_eq_explicitH2AddEquivGroupCohomology
-      p hg ψ hψ rfl
-  have hR := explicitH2EquivPadicCompletionUnits_eq_explicitH2AddEquivGroupCohomology
-    p K L j χ hχ rfl
+    exact ofMul_symm_apply_relationModuleToAbelianizationProPEquivariant p K L hg β j x
   dsimp only
   intro x
-  let T : _root_.groupCohomology B 2 → _root_.groupCohomology C 2 :=
-    ((_root_.groupCohomology.functor ℤ_[p] (L ≃ₐ[K] L) 2).map F).hom
-  have hx := congrArg (fun e => e x) hL
-  have hTx := congrArg T hx
-  calc
-    _ = explicitH2AddEquivGroupCohomology (.refl (L ≃ₐ[K] L)) χ hχ
-        (explicitCoeff2 (L ≃ₐ[K] L) _ f.toAdditive hf x) :=
-      congrArg (fun e => e (explicitCoeff2 (L ≃ₐ[K] L) _ f.toAdditive hf x)) hR
-    _ = groupCohomology.map (MonoidHom.id (L ≃ₐ[K] L)) F 2
-        (explicitH2AddEquivGroupCohomology (.refl (L ≃ₐ[K] L)) ψ hψ x) :=
-      explicitH2AddEquivGroupCohomology_explicitCoeff2
-        (.refl (L ≃ₐ[K] L)) ψ χ hψ hχ f.toAdditive hf F hF x
-    _ = _ := by
-      rw [← _root_.groupCohomology.functor_map]
-      exact hTx.symm
+  have heN := explicitH2EquivPadicCompletionUnits_eq_explicitH2AddEquivGroupCohomology p K L j χ hχ
+    rfl
+  have heM := freeProfiniteGroup.explicitH2EquivRelationModule_eq_explicitH2AddEquivGroupCohomology
+    p hg ψ hψ rfl
+  have hnat := explicitH2AddEquivGroupCohomology_explicitCoeff2 (.refl (L ≃ₐ[K] L)) ψ χ hψ hχ
+    f.toAdditive hf F hF x
+  refine (DFunLike.congr_fun heN _).trans (hnat.trans ?_)
+  rw [DFunLike.congr_fun heM x]
+  -- `groupCohomology.functor` is defined with `map := groupCohomology.map (MonoidHom.id _)`, so
+  -- the two sides agree by unfolding the functor's `map` field.
+  rfl
 
 /-- A surjective arithmetic relation-module map with projective kernel induces a bijection
 on explicit second cohomology after transport through Lyndon and local reciprocity. -/

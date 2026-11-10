@@ -195,9 +195,9 @@ def quantizeUniformCLM (a : Symbol n V W m) (ha : a.IsUniform) :
     𝓢(CoordinateSpace n, V) →L[ℂ] 𝓢(CoordinateSpace n, W) :=
   SchwartzMap.mkCLM (fun u ↦ quantizeSchwartzValue a.coefficient u)
     (fun u v x ↦ by
-      obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient {x} isCompact_singleton
+      obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
       exact quantizeSchwartzValue_add_right
-        (a.continuous_coefficient_slice x).aestronglyMeasurable (hC x rfl) u v)
+        (a.continuous_coefficient_slice x).aestronglyMeasurable hC u v)
     (fun c u _ ↦ quantizeSchwartzValue_smul_right c u)
     (fun u ↦ a.contDiff_quantizeSchwartzValue u)
     (fun p ↦ exists_bound_quantizeSchwartzValue ha p.1 p.2)
@@ -217,11 +217,11 @@ theorem quantizeUniformCLM_apply (a : Symbol n V W m) (ha : a.IsUniform)
 theorem quantizeUniformCLM_add {a b : Symbol n V W m} (ha : a.IsUniform) (hb : b.IsUniform) :
     quantizeUniformCLM (a + b) (ha.add hb) = quantizeUniformCLM a ha + quantizeUniformCLM b hb := by
   ext u x
-  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient {x} isCompact_singleton
-  obtain ⟨C', -, hC'⟩ := b.exists_bound_coefficient {x} isCompact_singleton
+  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
+  obtain ⟨C', -, hC'⟩ := b.exists_bound_coefficient_slice x
   simpa using quantizeSchwartzValue_add_left
-    (a.continuous_coefficient_slice x).aestronglyMeasurable (hC x rfl)
-    (b.continuous_coefficient_slice x).aestronglyMeasurable (hC' x rfl) u
+    (a.continuous_coefficient_slice x).aestronglyMeasurable hC
+    (b.continuous_coefficient_slice x).aestronglyMeasurable hC' u
 
 /-- The quantization is homogeneous in the symbol. -/
 theorem quantizeUniformCLM_smul {a : Symbol n V W m} (ha : a.IsUniform) (c : ℂ) :
