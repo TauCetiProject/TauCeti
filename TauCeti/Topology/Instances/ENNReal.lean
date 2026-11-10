@@ -23,8 +23,9 @@ subtraction-based estimates are unavailable, and the superadditivity of the lowe
   constant vanishes as `h → 0`.
 * `TauCeti.tendsto_of_le_add_of_le_add`: a family within `wᵢ` of `b` from both sides converges
   to `b` when `wᵢ → 0`.
-* `TauCeti.tendsto_ofReal_div_mul_add_mul_enorm_sub`: the bounds `K / m i * T + M * ‖s i - a‖ₑ`
-  converge to `K / m₀ * T` along a filter on which `m i → m₀ > 0` and `s i → a`, for finite `M`.
+* `TauCeti.tendsto_ofReal_div_mul_add_mul_enorm_sub`: the bounds
+  `ENNReal.ofReal (K / m i) * T + M * ‖s i - a‖ₑ` converge to `ENNReal.ofReal (K / m₀) * T` along
+  a filter on which `m i → m₀ > 0` and `s i → a`, for finite `M`.
 * `ENNReal.le_liminf_add` and `ENNReal.sum_liminf_le_liminf_sum`: the sum of the lower limits of
   finitely many `ℝ≥0∞`-valued families is at most the lower limit of their sum.
 * `ENNReal.le_add_of_forall_one_lt_le_add_mul`: if `a ≤ b + t c` for every `t > 1`, then
@@ -137,8 +138,10 @@ theorem truncated_cost_le_add_of_label_eq {X Y ι κ : Type*} [PseudoMetricSpace
     rw [hc', hc', ite_eq_right (by simpa using hxy), ite_eq_right (by simpa using hxy')]
     exact le_self_add
 
-/-- The bounds `K / m i * T + M * ‖s i - a‖` converge to `K / m₀ * T` along a filter on which
-`m i → m₀ > 0` and `s i → a`, for finite `M`. -/
+/-- The bounds `ENNReal.ofReal (K / m i) * T + M * ‖s i - a‖ₑ` converge to
+`ENNReal.ofReal (K / m₀) * T` along a filter on which `m i → m₀ > 0` and `s i → a`, for finite
+`M`. The real constant `K` may be negative; the quotients are truncated at `0` by
+`ENNReal.ofReal`. -/
 theorem tendsto_ofReal_div_mul_add_mul_enorm_sub {ι F : Type*} [NormedAddCommGroup F]
     {l : Filter ι} {K m₀ : ℝ} {a : F} {m : ι → ℝ} {s : ι → F} {T M : ℝ≥0∞} (hm₀ : 0 < m₀)
     (hm : Filter.Tendsto m l (𝓝 m₀)) (hs : Filter.Tendsto s l (𝓝 a)) (hM : M ≠ ∞) :
