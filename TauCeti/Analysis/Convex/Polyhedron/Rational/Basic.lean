@@ -342,7 +342,7 @@ theorem isRationalNormalPolyhedron_setOf_le {h : TauCeti.Toric.IsIntegralLattice
 
 section Point
 
-variable {N V : Type*} [AddCommGroup N] [NormedAddCommGroup V] [NormedSpace ℝ V] {i : N →+ V}
+variable [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V]
 
 /-- A point is a rational-normal polyhedron: it is cut out by the two half-spaces of each
 coordinate character of an integral basis. -/
