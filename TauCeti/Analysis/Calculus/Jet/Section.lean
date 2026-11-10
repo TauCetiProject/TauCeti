@@ -117,14 +117,15 @@ theorem exists_section_coordinates_mem {x : E} (j : F × (E →L[𝕜] F))
 /-- Coordinates identify section-equivalence classes with all value/derivative pairs.
 The inverse is represented by an affine section; this is a chart-dependent identification. -/
 def coordinatesEquiv (x : E) : FirstJetAt 𝕜 F x ≃ F × (E →L[𝕜] F) :=
-  Setoid.quotientKerEquivOfSurjective _ fun j ↦ by
-    obtain ⟨s, hs, hj⟩ := exists_section_coordinates x j
-    exact ⟨⟨s, hs.contDiffAt⟩, hj⟩
+  Setoid.quotientKerEquivOfRightInverse _
+    (fun j ↦ ⟨(exists_section_coordinates x j).choose,
+      (exists_section_coordinates x j).choose_spec.1.contDiffAt⟩)
+    (fun j ↦ (exists_section_coordinates x j).choose_spec.2)
 
 @[simp]
 theorem coordinatesEquiv_apply {x : E} (j : FirstJetAt 𝕜 F x) :
     coordinatesEquiv x j = coordinates j :=
-  (rfl)
+  Setoid.quotientKerEquivOfRightInverse_apply _ _ _ j
 
 @[simp]
 theorem coordinates_coordinatesEquiv_symm (x : E) (j : F × (E →L[𝕜] F)) :
@@ -151,44 +152,23 @@ theorem value_surjective (x : E) : Function.Surjective (value : FirstJetAt 𝕜 
   intro v
   exact ⟨mk (fun _ ↦ v) contDiffAt_const, rfl⟩
 
-/-- Apply a base change and a base-dependent nonlinear fibre map to a first jet.
-Smoothness of the fibre map is needed only near this jet's value. -/
-def map {x : E'} (h : E' → E) (g : E' × F → G) (j : FirstJetAt 𝕜 F (h x))
-    (hh : ContDiffAt 𝕜 ∞ h x) (hg : ContDiffAt 𝕜 ∞ g (x, value j)) :
-    FirstJetAt 𝕜 G x := by
-  let s := (exists_section j).choose
-  have hs := (exists_section j).choose_spec.choose
-  have hj := (exists_section j).choose_spec.choose_spec
-  have hv : s (h x) = value j := (value_mk _ _).symm.trans (congrArg value hj)
-  have hgs : ContDiffAt 𝕜 ∞ g (x, s (h x)) := by
-    rw [hv]
-    exact hg
-  exact mk (fun y ↦ g (y, s (h y)))
-    (hgs.comp x (contDiffAt_id.prodMk (hs.contDiffAt.comp x hh)))
+/-- Apply the first-jet coordinate formula for a base change and a base-dependent
+nonlinear fibre map. For smooth maps this agrees with transforming sections, as in `map_mk`. -/
+def map {x : E'} (h : E' → E) (g : E' × F → G) (j : FirstJetAt 𝕜 F (h x)) :
+    FirstJetAt 𝕜 G x :=
+  (coordinatesEquiv x).symm (firstJetCoordChange h g x (coordinates j))
 
 /-- Nonlinear coordinate changes on the quotient have the usual first-jet coordinates. -/
 @[simp]
 theorem coordinates_map {x : E'} (h : E' → E) (g : E' × F → G)
-    (j : FirstJetAt 𝕜 F (h x)) (hh : ContDiffAt 𝕜 ∞ h x)
-    (hg : ContDiffAt 𝕜 ∞ g (x, value j)) :
-    coordinates (map h g j hh hg) = firstJetCoordChange h g x (coordinates j) := by
-  let s := (exists_section j).choose
-  have hs := (exists_section j).choose_spec.choose
-  have hj := (exists_section j).choose_spec.choose_spec
-  have hv : s (h x) = value j := (value_mk _ _).symm.trans (congrArg value hj)
-  have hgs : ContDiffAt 𝕜 ∞ g (x, s (h x)) := by
-    rw [hv]
-    exact hg
-  rw [map, coordinates_mk, ← firstJetCoordChange_fderiv
-    (hh.differentiableAt (by simp)) (hgs.differentiableAt (by simp))
-    (hs.contDiffAt.differentiableAt (by simp))]
-  rw [← coordinates_mk s hs.contDiffAt, hj]
+    (j : FirstJetAt 𝕜 F (h x)) :
+    coordinates (map h g j) = firstJetCoordChange h g x (coordinates j) :=
+  coordinates_coordinatesEquiv_symm _ _
 
 @[simp]
 theorem value_map {x : E'} (h : E' → E) (g : E' × F → G)
-    (j : FirstJetAt 𝕜 F (h x)) (hh : ContDiffAt 𝕜 ∞ h x)
-    (hg : ContDiffAt 𝕜 ∞ g (x, value j)) :
-    value (map h g j hh hg) = g (x, value j) := by
+    (j : FirstJetAt 𝕜 F (h x)) :
+    value (map h g j) = g (x, value j) := by
   simp [value]
 
 /-- Computing the jet before or after transforming an actual local section agrees.
@@ -197,7 +177,7 @@ In particular the transformed section depends only on its input jet. -/
 theorem map_mk {x : E'} (h : E' → E) (g : E' × F → G) (s : E → F)
     (hs : ContDiffAt 𝕜 ∞ s (h x)) (hh : ContDiffAt 𝕜 ∞ h x)
     (hg : ContDiffAt 𝕜 ∞ g (x, s (h x))) :
-    map h g (mk s hs) hh (by simpa using hg) =
+    map h g (mk s hs) =
       mk (fun y ↦ g (y, s (h y))) (hg.comp x (contDiffAt_id.prodMk (hs.comp x hh))) := by
   apply ext
   simpa only [coordinates_map, coordinates_mk] using
@@ -207,7 +187,7 @@ theorem map_mk {x : E'} (h : E' → E) (g : E' × F → G) (s : E → F)
 /-- Identity coordinate changes induce the identity on section-equivalence classes. -/
 @[simp]
 theorem map_id {x : E} (j : FirstJetAt 𝕜 F x) :
-    map id Prod.snd j contDiffAt_id contDiffAt_snd = j := by
+    map id Prod.snd j = j := by
   apply ext
   simp
 
@@ -217,11 +197,8 @@ theorem map_comp {y : E''} (h : E' → E) (k : E'' → E')
     (hh : ContDiffAt 𝕜 ∞ h (k y)) (hk : ContDiffAt 𝕜 ∞ k y)
     (hg : ContDiffAt 𝕜 ∞ g (k y, value j))
     (hl : ContDiffAt 𝕜 ∞ l (y, g (k y, value j))) :
-    map k l (map h g j hh hg) hk (by simpa using hl) =
-      map (h ∘ k) (fun p : E'' × F ↦ l (p.1, g (k p.1, p.2))) j
-        (hh.comp y hk)
-        (hl.comp (y, value j) (contDiffAt_fst.prodMk
-          (hg.comp (y, value j) ((hk.comp _ contDiffAt_fst).prodMk contDiffAt_snd)))) := by
+    map k l (map h g j) =
+      map (h ∘ k) (fun p : E'' × F ↦ l (p.1, g (k p.1, p.2))) j := by
   apply ext
   simp only [coordinates_map]
   exact firstJetCoordChange_comp _ (hh.differentiableAt (by simp))
@@ -238,7 +215,7 @@ theorem coordinates_map_inverse {x : E} (h : E' → E) (k : E → E')
     (hl : ContDiffAt 𝕜 ∞ l (x, g (k x, value j)))
     (hbase : h ∘ k =ᶠ[𝓝 x] id)
     (hfibre : (fun p : E × F ↦ l (p.1, g (k p.1, p.2))) =ᶠ[𝓝 (x, value j)] Prod.snd) :
-    coordinates (map k l (map h g j hh hg) hk (by simpa using hl)) = coordinates j := by
+    coordinates (map k l (map h g j)) = coordinates j := by
   simp only [coordinates_map]
   exact firstJetCoordChange_inverse _ (hh.differentiableAt (by simp))
     (hk.differentiableAt (by simp)) (hg.differentiableAt (by simp))
