@@ -69,39 +69,6 @@ section Increasing
 
 variable (F : ℤ → Subobject K) (hF : Monotone F)
 
-/-- The elementwise form of the vanishing of `H^m(F_{i+1}/F_i)`: a cycle of `K` lying in `F_{i+1}`
-is, up to an element of `F_i`, the boundary of an element of `F_{i+1}`. -/
-private lemma exists_sub_d_mem_of_isZero_homology_cokernel {i m : ℤ}
-    (h : IsZero ((cokernel (Subobject.ofLE (F i) (F (i + 1)) (hF (Int.le_add_one le_rfl)))).homology
-      m))
-    {z : K.X m} (hz : z ∈ LinearMap.range ((F (i + 1)).arrow.f m).hom)
-    (hdz : K.d m (m + 1) z = 0) :
-    ∃ y ∈ LinearMap.range ((F (i + 1)).arrow.f (m - 1)).hom,
-      z - K.d (m - 1) m y ∈ LinearMap.range ((F i).arrow.f m).hom := by
-  obtain ⟨z, rfl⟩ := hz
-  set φ := Subobject.ofLE (F i) (F (i + 1)) (hF (Int.le_add_one le_rfl))
-  have hdz' : (F (i + 1) : CochainComplex (ModuleCat R) ℤ).d m (m + 1) z = 0 := by
-    apply (ModuleCat.mono_iff_injective ((F (i + 1)).arrow.f (m + 1))).1 inferInstance
-    rw [map_zero, ← HomologicalComplex.Hom.comm_apply]
-    exact hdz
-  have hc : (cokernel φ).d m (m + 1) ((cokernel.π φ).f m z) = 0 := by
-    rw [HomologicalComplex.Hom.comm_apply, hdz', map_zero]
-  have hQ := ((cokernel φ).exactAt_iff' (m - 1) m (m + 1) (by simp) (by simp)).1
-    (((cokernel φ).exactAt_iff_isZero_homology m).2 h)
-  rw [ShortComplex.moduleCat_exact_iff] at hQ
-  obtain ⟨w, hw⟩ := hQ ((cokernel.π φ).f m z) hc
-  obtain ⟨w, rfl⟩ := (ModuleCat.epi_iff_surjective ((cokernel.π φ).f (m - 1))).1 inferInstance w
-  have hS :=
-    (HomologicalComplex.exact_iff_degreewise_exact _).1 (ShortComplex.exact_cokernel φ) m
-  rw [ShortComplex.moduleCat_exact_iff] at hS
-  obtain ⟨u, hu⟩ := hS (z - (F (i + 1) : CochainComplex (ModuleCat R) ℤ).d (m - 1) m w) (by
-    dsimp at hw ⊢
-    rw [map_sub, ← HomologicalComplex.Hom.comm_apply (cokernel.π φ), hw, sub_self])
-  refine ⟨(F (i + 1)).arrow.f (m - 1) w, ⟨w, rfl⟩, u, ?_⟩
-  dsimp at hu
-  rw [← Subobject.ofLE_arrow (hF (Int.le_add_one le_rfl)), HomologicalComplex.comp_f,
-    ModuleCat.comp_apply, hu, map_sub, ← HomologicalComplex.Hom.comm_apply (F (i + 1)).arrow]
-
 /-- **The stages of a complete filtration with vanishing graded cohomology are acyclic.** Let `F`
 be an increasing filtration of a complex of modules `K`. Suppose that the stages `F_{a-k}`,
 `k ≥ 0`, cut out a complete filtration of `K^{m-1}`, that the filtration of `K^m` is separated,
@@ -141,8 +108,10 @@ theorem isZero_homology_of_isCompleteFiltration {a m : ℤ}
       exact Submodule.mem_comap.2 (Subobject.d_mem_range_arrow_f_hom _ (m - 1) m hy))
     (fun k z hz ↦ by
       have e : a - ((k + 1 : ℕ) : ℤ) + 1 = a - k := by lia
-      obtain ⟨y, hy, hzy⟩ := exists_sub_d_mem_of_isZero_homology_cokernel F hF
-        (h (a - (k + 1 : ℕ)) (by lia)) (e ▸ Submodule.mem_comap.1 hz) z.2
+      obtain ⟨y, hy, hzy⟩ :=
+        Subobject.exists_sub_d_mem_range_arrow_f_hom_of_isZero_homology_cokernel _
+          (i := m - 1) (k := m + 1) (by simp) (by simp) (h (a - (k + 1 : ℕ)) (by lia))
+          (e ▸ Submodule.mem_comap.1 hz) z.2
       exact ⟨y, e ▸ hy, Submodule.mem_comap.2 hzy⟩)
     hx₀
   obtain ⟨y, rfl⟩ := Subobject.range_arrow_f_hom_le (hF e₀.le) (m - 1) hy₀

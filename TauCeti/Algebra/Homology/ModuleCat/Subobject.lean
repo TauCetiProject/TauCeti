@@ -10,6 +10,9 @@ public import Mathlib.Algebra.Homology.HomologicalComplex
 public import Mathlib.CategoryTheory.Subobject.FactorThru
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
+public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
+import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
 /-!
@@ -22,7 +25,10 @@ corresponding component of `S.arrow` (`CategoryTheory.Subobject.factors_of_foral
 
 The degreewise ranges are monotone in the subcomplex
 (`CategoryTheory.Subobject.range_arrow_f_hom_le`) and stable under the differentials of `L`
-(`CategoryTheory.Subobject.d_mem_range_arrow_f_hom`).
+(`CategoryTheory.Subobject.d_mem_range_arrow_f_hom`). When `S ≤ T` and the quotient complex `T/S`
+is exact in degree `j`, a cycle of `L` lying in `T` is a boundary of an element of `T` up to an
+element of `S`
+(`CategoryTheory.Subobject.exists_sub_d_mem_range_arrow_f_hom_of_isZero_homology_cokernel`).
 
 ## Main results
 
@@ -32,7 +38,7 @@ The degreewise ranges are monotone in the subcomplex
 
 public section
 
-open CategoryTheory
+open CategoryTheory Limits
 
 namespace CategoryTheory.Subobject
 
@@ -85,5 +91,38 @@ theorem d_mem_range_arrow_f_hom (i j : ι) {x : L.X i}
   obtain ⟨y, rfl⟩ := hx
   exact ⟨((S : HomologicalComplex (ModuleCat R) c).d i j).hom y, by
     rw [← HomologicalComplex.Hom.comm_apply]⟩
+
+variable {S} in
+/-- The elementwise form of the vanishing of `H^j(T/S)` for subcomplexes `S ≤ T`: a cycle of `L`
+lying in `T` is, up to an element of `S`, the boundary of an element of `T`. -/
+theorem exists_sub_d_mem_range_arrow_f_hom_of_isZero_homology_cokernel {T : Subobject L}
+    (h : S ≤ T) {i j k : ι} (hi : c.prev j = i) (hk : c.next j = k)
+    (hH : IsZero ((cokernel (Subobject.ofLE S T h)).homology j))
+    {z : L.X j} (hz : z ∈ LinearMap.range (T.arrow.f j).hom) (hdz : (L.d j k).hom z = 0) :
+    ∃ y ∈ LinearMap.range (T.arrow.f i).hom,
+      z - (L.d i j).hom y ∈ LinearMap.range (S.arrow.f j).hom := by
+  obtain ⟨z, rfl⟩ := hz
+  set φ := Subobject.ofLE S T h
+  have hdz' : ((T : HomologicalComplex (ModuleCat R) c).d j k).hom z = 0 := by
+    apply (ModuleCat.mono_iff_injective (T.arrow.f k)).1 inferInstance
+    rw [map_zero, ← HomologicalComplex.Hom.comm_apply]
+    exact hdz
+  have hc : ((cokernel φ).d j k).hom ((cokernel.π φ).f j z) = 0 := by
+    rw [HomologicalComplex.Hom.comm_apply, hdz', map_zero]
+  have hQ := ((cokernel φ).exactAt_iff' i j k hi hk).1
+    (((cokernel φ).exactAt_iff_isZero_homology j).2 hH)
+  rw [ShortComplex.moduleCat_exact_iff] at hQ
+  obtain ⟨w, hw⟩ := hQ ((cokernel.π φ).f j z) hc
+  obtain ⟨w, rfl⟩ := (ModuleCat.epi_iff_surjective ((cokernel.π φ).f i)).1 inferInstance w
+  have hS :=
+    (HomologicalComplex.exact_iff_degreewise_exact _).1 (ShortComplex.exact_cokernel φ) j
+  rw [ShortComplex.moduleCat_exact_iff] at hS
+  obtain ⟨u, hu⟩ := hS (z - ((T : HomologicalComplex (ModuleCat R) c).d i j).hom w) (by
+    dsimp at hw ⊢
+    rw [map_sub, ← HomologicalComplex.Hom.comm_apply (cokernel.π φ), hw, sub_self])
+  refine ⟨(T.arrow.f i).hom w, ⟨w, rfl⟩, u, ?_⟩
+  dsimp at hu
+  rw [← Subobject.ofLE_arrow h, HomologicalComplex.comp_f, ModuleCat.comp_apply, hu, map_sub,
+    ← HomologicalComplex.Hom.comm_apply T.arrow]
 
 end CategoryTheory.Subobject
