@@ -310,9 +310,6 @@ theorem intersectionNumber_inv (a : LineBundleClass X) :
 discrete valuation rings, as a homomorphism `Pic X →+ ℤ` on the additively written Picard
 group. -/
 def intersectionNumberHom : Additive (LineBundleClass X) →+ ℤ :=
-  have : IsLocallyNoetherian C := LocallyOfFiniteType.isLocallyNoetherian (C ↘ Spec (.of k))
-  have : CompactSpace C := QuasiCompact.compactSpace_of_compactSpace (C ↘ Spec (.of k))
-  have : IsNoetherian C := {}
   have : Fact (∀ y : C, Order.coheight y ≤ 1) :=
     ⟨coheight_le_of_relativeDimensionLE_of_field (d := 1) (C ↘ Spec (.of k))⟩
   (eulerDegreeHom k C).comp (MonoidHom.toAdditive (pullbackHom ι))

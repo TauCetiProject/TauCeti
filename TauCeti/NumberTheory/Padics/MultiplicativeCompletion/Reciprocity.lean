@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.ClassModule
 public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.ArtinMap
 public import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.ProfiniteCompletion
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.GroupCohomologyIso.Basic
+public import Mathlib.NumberTheory.Padics.LocalField
 public import Mathlib.RepresentationTheory.Rep.Iso
 
 /-!

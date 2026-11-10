@@ -105,7 +105,7 @@ by its image under the specified presentation homomorphism. -/
 theorem presentation_length_eq_inversions (w : (coxeterMatrixOfBase P b).Group) :
     (coxeterMatrixOfBase P b).toCoxeterSystem.length w =
       (inversions P b (weylCoxeterHom P b w)).ncard := by
-  have h := length_map (coxeterMatrixOfBase P b).toCoxeterSystem
+  have h := CoxeterSystem.length_map (coxeterMatrixOfBase P b).toCoxeterSystem
     (weylCoxeterSystem P b).mulEquiv.symm w
   simpa only [toCoxeterSystem_map_weylCoxeterSystem_mulEquiv_symm, length_weylCoxeterSystem_eq,
     weylCoxeterSystem_mulEquiv_symm_apply] using h.symm

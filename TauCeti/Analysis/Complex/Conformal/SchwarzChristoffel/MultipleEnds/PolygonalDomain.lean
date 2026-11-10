@@ -156,8 +156,7 @@ private theorem exists_inverted_coordinate_of_polygonal_ends {ι : Type*} [Finit
     by_cases hv : ∃ i, w = v i
     · obtain ⟨i, rfl⟩ := hv
       obtain ⟨ρ, hρ, b, hb, hU⟩ := hcorner i
-      exact isPreconnectedApproachAt_of_forall_mem_iff_abs_arg_lt hρ hb
-        (by nlinarith [Real.pi_pos, (he i).2]) hU
+      exact isPreconnectedApproachAt_of_forall_mem_iff_abs_arg_lt hρ hb hU
     · obtain ⟨ρ, hρ, p, b, -, hU⟩ := hside w hw fun i hi => hv ⟨i, hi⟩
       exact isPreconnectedApproachAt_of_forall_mem_iff_im_div_pos hρ hU
   obtain ⟨f, g, -, hfU, hgc, hgd, hgf, hgne, -, hgr, hginf, hgi, hwg⟩ :=
@@ -425,7 +424,7 @@ theorem exponent_sum_eq_neg_two_of_polygonal_ends
     deriv_ne_zero_of_injOn hfd isOpen_upperHalfPlaneSet hfB.injOn hz
   -- `f` is an affine image of the primitive, so its pre-Schwarzian is the partial-fraction sum
   have hpre := (exists_eqOn_const_mul_schwarzChristoffelPrimitive_add_iff _ _ UpperHalfPlane.I
-    hfd hfn).mp ⟨_, div_ne_zero (hfn _ UpperHalfPlane.I.im_pos)
+    hfn).mp ⟨_, div_ne_zero (hfn _ UpperHalfPlane.I.im_pos)
       (schwarzChristoffelIntegrand_ne_zero _ _ UpperHalfPlane.I.im_pos), _, hform⟩
   have hsum := exponent_sum_eq_of_logDeriv_deriv_eqOn (fun l => ((Sum.elim a a' l : ℝ) : ℂ))
     (fun l => ((Sum.elim e e' l : ℝ) : ℂ)) hpre hinfty

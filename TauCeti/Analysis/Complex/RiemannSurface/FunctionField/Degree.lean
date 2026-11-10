@@ -57,6 +57,12 @@ exactly `n` over `ℂ(t)`, and such a function exists as soon as the points of t
 pairwise separated by meromorphic functions
 (`TauCeti.RiemannSurface.MeromorphicFunction.exists_natDegree_minpoly_ratFunc_eq_degree`).
 
+Finally, the first symmetric function, the trace `c₁`, shows that a meromorphic function `f`
+taking a single value along all but finitely many fibres of `β` is a pullback along `β`: off
+finitely many fibres, `c₁` takes the value `deg β · f(x)` at `β x`, so `f` is the pullback of
+`c₁ / deg β`
+(`TauCeti.RiemannSurface.MeromorphicFunction.exists_comap_eq_of_eventually_subsingleton_image`).
+
 ## Main results
 
 * `TauCeti.RiemannSurface.MeromorphicFunction.meromorphicAt_esymm_map_finitePart_fiberMultiset`:
@@ -65,6 +71,9 @@ pairwise separated by meromorphic functions
 * `TauCeti.RiemannSurface.MeromorphicFunction.exists_monic_natDegree_eq_degree_eval₂_eq_zero`:
   a meromorphic function on `X` is a root of a monic polynomial of degree `deg β` over
   `M(OnePoint ℂ)`, pulled back along `β`.
+* `TauCeti.RiemannSurface.MeromorphicFunction.exists_comap_eq_of_eventually_subsingleton_image`:
+  a meromorphic function constant along all but finitely many fibres of `β` is a pullback along
+  `β`.
 * `TauCeti.RiemannSurface.MeromorphicFunction.isIntegral_ratFunc` and
   `TauCeti.RiemannSurface.MeromorphicFunction.natDegree_minpoly_ratFunc_le`: for the
   `ℂ(t)`-algebra structure on `M(X)` given by `β`, every meromorphic function is integral, of degree
@@ -255,6 +264,41 @@ theorem exists_monic_natDegree_eq_degree_eval₂_eq_zero :
   refine congrArg _ (Multiset.prod_eq_zero (Multiset.mem_map.2 ⟨f.finitePart x, ?_, by simp⟩))
   exact Multiset.mem_map_of_mem _ ((mem_fiberMultiset (β.finite_fiber (β x))).2
     ⟨rfl, localMultiplicity_pos β x⟩)
+
+/-! ### Functions constant along the fibres are pullbacks -/
+
+/-- **A meromorphic function constant along the fibres of `β` is a pullback along `β`.** If a
+meromorphic function `f` on `X` takes a single value along all but finitely many fibres of `β`,
+then `f` is the pullback along `β` of a meromorphic function on the sphere. -/
+theorem exists_comap_eq_of_eventually_subsingleton_image
+    (hf : ∀ᶠ y in cofinite, (f '' (β ⁻¹' {y})).Subsingleton) :
+    ∃ g : MeromorphicFunction (OnePoint ℂ), comap β β.holomorphic β.nonconstant g = f := by
+  set n := degree β
+  have hmero (y : OnePoint ℂ) : MeromorphicAt
+      (fun y ↦ (n : ℂ)⁻¹ * ((fiberMultiset β y).map f.finitePart).esymm 1) y :=
+    (meromorphicAt_const _ y).mul (meromorphicAt_esymm_map_finitePart_fiberMultiset β f 1 y)
+  refine ⟨ofMeromorphic hmero, ?_⟩
+  -- Compare values at the points whose fibre carries a single value of `f`, and no pole.
+  refine eq_of_forall_apply_eq (p := fun x ↦ (f '' (β ⁻¹' {β x})).Subsingleton ∧
+    ∀ x' ∈ β ⁻¹' {β x}, f x' ≠ ∞) (fun x₀ ↦ ?_) fun x hx ↦ ?_
+  · have hB : (β ⁻¹' ({y | ¬(f '' (β ⁻¹' {y})).Subsingleton} ∪ β '' {x | f x = ∞})).Finite :=
+      ((eventually_cofinite.1 hf).union (f.finite_setOf_eq_infty.image β)).preimage'
+        fun y _ ↦ β.finite_fiber y
+    filter_upwards [mem_codiscrete_iff_forall_mem_nhdsNE.1 hB.compl_mem_codiscrete x₀]
+      with x hx
+    simp only [mem_compl_iff, mem_preimage, mem_union, mem_ofPred_eq, not_or, not_not] at hx
+    exact ⟨hx.1, fun x' hx' hfx' ↦ hx.2 ⟨x', hfx', hx'⟩⟩
+  -- At such a point, the values of `f` along the fibre all equal `f x`.
+  have hfib : (fiberMultiset β (β x)).map f.finitePart = Multiset.replicate n (f.finitePart x) := by
+    refine Multiset.eq_replicate.2 ⟨by rw [Multiset.card_map, β.card_fiberMultiset], ?_⟩
+    rintro _ hv
+    obtain ⟨x', hx', rfl⟩ := Multiset.mem_map.1 hv
+    rw [finitePart_def, finitePart_def,
+      hx.1 ⟨x', ((mem_fiberMultiset (β.finite_fiber _)).1 hx').1, rfl⟩ ⟨x, rfl, rfl⟩]
+  have hn : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (degree_pos β).ne'
+  rw [comap_apply, ofMeromorphic_apply_of_continuousAt _
+    (continuousAt_const.mul (continuousAt_esymm β f hx.2 1)), ← coe_finitePart (hx.2 x rfl)]
+  simp [hfib, Multiset.esymm, Multiset.powersetCard_one, hn]
 
 /-! ### Distinct values along a fibre bound the degree from below -/
 

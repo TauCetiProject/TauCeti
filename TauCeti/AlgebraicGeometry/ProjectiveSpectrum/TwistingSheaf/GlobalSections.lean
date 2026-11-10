@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.BasicOpen
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
 
 /-!
 # Global sections of the twisting sheaves on projective space
@@ -184,9 +185,8 @@ theorem val_baseRingToGlobalSections_apply (c : R) (x : (⊤ : (Proj 𝒜).Opens
     ((Scheme.Modules.baseRingToGlobalSections R (Proj 𝒜) c).1 x).val =
       Localization.mk (algebraMap R (_root_.SymmetricAlgebra R M) c) 1 := by
   rw [Scheme.Modules.baseRingToGlobalSections_apply, over_eq_projToSpec, projToSpec_def,
-    Scheme.Hom.comp_appTop, CommRingCat.comp_apply, ← CommRingCat.comp_apply _ (Spec.map _).appTop,
-    ← Scheme.ΓSpecIso_inv_naturality, CommRingCat.comp_apply, Proj.val_toSpecZero_appTop_apply,
-    CommRingCat.ofHom_apply, SetLike.GradeZero.coe_algebraMap]
+    ← Proj.toSpecCoeff_def]
+  exact Proj.val_toSpecCoeff_appTop_apply _ c x
 
 /-- The global sections `r / 1` of `𝒪(n)` on `Proj (Sym M)` are linear over the base ring. -/
 theorem toTwistingSheaf_top_smul {n : ℤ} {j : ℕ} (h : (j : ℤ) = n) (c : R) (r : 𝒜 j) :

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Basic
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
@@ -48,7 +49,8 @@ noncomputable section
 
 namespace TauCeti.Vortex
 
-open Complex
+open Complex Filter
+open scoped Topology
 
 /-- The three real defects of the plane vortex equation in the coordinates
 `a = i (x₀ ds + x₁ dt)`, `α = 2 (x₂ + i x₃)`. -/
@@ -73,6 +75,24 @@ theorem sectionValue_sub (x y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     sectionValue (x - y) z = sectionValue x z - sectionValue y z := by
   simp only [sectionValue_apply, Pi.sub_apply, PiLp.sub_apply, ofReal_sub]
   ring
+
+/-- Two fields agree at a point when their connection coordinates and their sections agree
+there. -/
+theorem apply_eq_of_sectionValue_eq {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (h₀ : x z 0 = y z 0) (h₁ : x z 1 = y z 1) (hs : sectionValue x z = sectionValue y z) :
+    x z = y z := by
+  have h₂ := congrArg re hs
+  have h₃ := congrArg im hs
+  simp only [sectionValue_apply, mul_re, mul_im, add_re, add_im, ofReal_re, ofReal_im, I_re,
+    I_im, re_ofNat, im_ofNat] at h₂ h₃
+  ext i
+  fin_cases i
+  · exact h₀
+  · exact h₁
+  · simp only [Fin.reduceFinMk, Fin.isValue]
+    linarith
+  · simp only [Fin.reduceFinMk, Fin.isValue]
+    linarith
 
 /-- The squared modulus `|α|² = 4 (p² + q²)` of the section in the real field coordinates. -/
 theorem sq_norm_sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
@@ -161,6 +181,14 @@ theorem contDiff_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {n : With
   rw [sectionValue_eq_ofRealCLM]
   exact contDiff_const.mul ((ofRealCLM.contDiff.comp hp).add
     ((ofRealCLM.contDiff.comp hq).mul contDiff_const))
+
+/-- The section `α = 2 (p + i q)` is differentiable wherever its real coordinates are. -/
+theorem differentiableAt_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
+    DifferentiableAt ℝ (sectionValue x) z := by
+  rw [sectionValue_eq_ofRealCLM]
+  exact (differentiableAt_const _).mul ((ofRealCLM.differentiableAt.comp z hp).add
+    ((ofRealCLM.differentiableAt.comp z hq).mul_const I))
 
 /-- The derivative of the section `α = 2 (p + i q)` in terms of those of its real coordinates. -/
 theorem fderiv_sectionValue_apply {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
@@ -290,6 +318,31 @@ theorem equation_apply_two (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     equation x z 2 = fderiv ℝ (fun w ↦ x w 3) z 1 + fderiv ℝ (fun w ↦ x w 2) z I +
       x z 0 * x z 2 - x z 1 * x z 3 := by
   rfl
+
+/-- The vortex defects at a point depend only on the germ of the field there. -/
+theorem equation_congr_nhds {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (h : x =ᶠ[𝓝 z] y) :
+    equation x z = equation y z := by
+  have hi (i : Fin 4) : (fun w ↦ x w i) =ᶠ[𝓝 z] fun w ↦ y w i := h.mono fun w hw ↦ by simp only [hw]
+  simp only [equation, h.eq_of_nhds, (hi _).fderiv_eq]
+
+/-- The vortex defects of a `Cⁿ⁺¹` field form a `Cⁿ` field. -/
+theorem contDiff_equation {x : ℂ → EuclideanSpace ℝ (Fin 4)} {n m : WithTop ℕ∞}
+    (hx : ContDiff ℝ n x) (hmn : m + 1 ≤ n) : ContDiff ℝ m (equation x) := by
+  have hc (i : Fin 4) : ContDiff ℝ n (fun w ↦ x w i) :=
+    (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).contDiff.comp hx
+  have hv (i : Fin 4) : ContDiff ℝ m (fun w ↦ x w i) :=
+    (hc i).of_le (le_self_add.trans hmn)
+  have hd (i : Fin 4) (v : ℂ) : ContDiff ℝ m (fun w ↦ fderiv ℝ (fun w ↦ x w i) w v) :=
+    ((hc i).fderiv_right hmn).clm_apply contDiff_const
+  refine contDiff_piLp 2 |>.2 fun j ↦ ?_
+  fin_cases j
+  · simp only [Fin.zero_eta, equation_apply_zero]
+    exact ((hd 0 I).sub (hd 1 1)).add
+      (((contDiff_const.mul (((hv 2).pow 2).add ((hv 3).pow 2))).sub contDiff_const).div_const _)
+  · simp only [Fin.mk_one, equation_apply_one]
+    exact (((hd 2 1).sub (hd 3 I)).sub ((hv 0).mul (hv 3))).sub ((hv 1).mul (hv 2))
+  · simp only [Fin.reduceFinMk, equation_apply_two]
+    exact (((hd 3 1).add (hd 2 I)).add ((hv 0).mul (hv 2))).sub ((hv 1).mul (hv 3))
 
 /-- At a solution of the vortex equation the curvature coefficient `∂₁ b₂ - ∂₂ b₁` of
 `F_a = i (∂₁ b₂ - ∂₂ b₁) ds ∧ dt` is `-(1 - |α|²) / 8`. -/

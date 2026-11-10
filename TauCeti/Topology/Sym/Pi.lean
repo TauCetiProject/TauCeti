@@ -13,7 +13,7 @@ import TauCeti.Topology.Homeomorph.SetCongr
 /-!
 # The subspace of unordered tuples with one point in each member of a family
 
-`TauCeti.Sym.pi A` is the set of unordered `n`-tuples having one point in each member of a family
+`Sym.pi A` is the set of unordered `n`-tuples having one point in each member of a family
 `A : Fin n → Set α` of subsets. This file gives it its topology, as a subspace of the symmetric
 power `Sym α n`: it is closed when the members of the family are, compact when they are, and, for a
 pairwise disjoint family of compact sets in a Hausdorff space, homeomorphic to the product
@@ -25,15 +25,15 @@ pairwise disjoint attaching circles of a Heegaard diagram on a surface `Σ` (Ozs
 compact and pairwise disjoint, so `T_α` really is an embedded `g`-torus and not merely a continuous
 image of one. The companion open-range statement, where the members of the family are open rather
 than compact and the product is an open subspace, is
-`TauCeti.Sym.isOpenEmbedding_ofFn_map`.
+`Sym.isOpenEmbedding_ofFn_map`.
 
 ## Main declarations
 
-* `TauCeti.Sym.isClosed_pi` and `TauCeti.Sym.isCompact_pi`: the subspace is closed, respectively
+* `Sym.isClosed_pi` and `Sym.isCompact_pi`: the subspace is closed, respectively
   compact, when the members of the family are.
-* `TauCeti.Sym.isClosedEmbedding_ofFn_subtypeVal`: for a pairwise disjoint family of compact sets
+* `Sym.isClosedEmbedding_ofFn_subtypeVal`: for a pairwise disjoint family of compact sets
   in a Hausdorff space, the parametrization by ordered tuples is a closed embedding.
-* `TauCeti.Sym.piHomeomorph`: the resulting homeomorphism with the product of the members.
+* `Sym.piHomeomorph`: the resulting homeomorphism with the product of the members.
 
 ## References
 
@@ -44,15 +44,13 @@ than compact and the product is an open subspace, is
 
 public section
 
-namespace TauCeti
-
 open Topology
 
 namespace Sym
 
 variable {α : Type*} [TopologicalSpace α] {n : ℕ} {A : Fin n → Set α}
 
-/-- The parametrization of `TauCeti.Sym.pi A` by ordered tuples is continuous. -/
+/-- The parametrization of `Sym.pi A` by ordered tuples is continuous. -/
 @[continuity, fun_prop]
 theorem continuous_ofFn_subtypeVal :
     Continuous fun x : ∀ i, ↥(A i) => ofFn fun i => (x i : α) :=
@@ -81,15 +79,15 @@ theorem isClosedEmbedding_ofFn_subtypeVal (hA : ∀ i, IsCompact (A i))
   have (i : Fin n) : CompactSpace ↥(A i) := isCompact_iff_compactSpace.1 (hA i)
   continuous_ofFn_subtypeVal.isClosedEmbedding (ofFn_subtypeVal_injective h)
 
-/-- **The subspace `TauCeti.Sym.pi A` is the product of the members of the family**, for a pairwise
+/-- **The subspace `Sym.pi A` is the product of the members of the family**, for a pairwise
 disjoint family of compact sets in a Hausdorff space: the topological refinement of
-`TauCeti.Sym.piEquiv`. -/
+`Sym.piEquiv`. -/
 noncomputable def piHomeomorph (hA : ∀ i, IsCompact (A i))
     (h : Pairwise (Function.onFun Disjoint A)) : (∀ i, ↥(A i)) ≃ₜ ↥(pi A) :=
   ((isClosedEmbedding_ofFn_subtypeVal hA h).isEmbedding.toHomeomorph).trans
     (Homeomorph.setCongr (pi_eq_range A).symm)
 
-/-- The homeomorphism underlying `TauCeti.Sym.piHomeomorph` is the parametrization by ordered
+/-- The homeomorphism underlying `Sym.piHomeomorph` is the parametrization by ordered
 tuples. -/
 @[simp]
 theorem coe_piHomeomorph_apply (hA : ∀ i, IsCompact (A i))
@@ -102,5 +100,3 @@ theorem coe_piHomeomorph_apply (hA : ∀ i, IsCompact (A i))
     IsEmbedding.toHomeomorph_apply_coe]
 
 end Sym
-
-end TauCeti
