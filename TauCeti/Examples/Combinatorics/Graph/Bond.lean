@@ -6,6 +6,7 @@ Authors: Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Connectivity.Bond
+public import TauCeti.Combinatorics.Graph.Connectivity.Bridge.Basic
 public import TauCeti.Combinatorics.Graph.Union
 public import Mathlib.Tactic.FinCases
 
@@ -122,13 +123,12 @@ theorem isBridge_pendant : graph.IsBridge 2 :=
 
 /-- Neither edge of the parallel pair is itself a bridge. -/
 theorem not_isBridge_of_ne_two {e : Fin 3} (he : e ≠ 2) : ¬graph.IsBridge e := by
-  intro h
-  have hepair : e ∈ ({0, 1} : Set (Fin 3)) := by
-    fin_cases e <;> simp_all
-  have heq : ({e} : Set (Fin 3)) = {0, 1} :=
-    isBond_parallel_pair.eq_of_subset ⟨h.isBond_singleton.isEdgeCut, by simp⟩
-      (by simpa using hepair)
-  simpa using congrArg Set.ncard heq
+  fin_cases e
+  · exact Graph.IsLink.not_isBridge_of_isLink_of_ne (f := 1) (x := 0) (y := 1)
+      (by simp) (by simp) (by decide)
+  · exact Graph.IsLink.not_isBridge_of_isLink_of_ne (f := 0) (x := 0) (y := 1)
+      (by simp) (by simp) (by decide)
+  · exact (he rfl).elim
 
 /-- All three edges form a cut, but not a bond: they properly contain the pendant bond. -/
 theorem not_isBond_all : ¬graph.IsBond Set.univ := by
