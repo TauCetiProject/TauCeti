@@ -51,7 +51,7 @@ def timeScale (a : ℝ) : (ℝ × E) →L[ℝ] ℝ × E :=
     timeScale a x = (a * x.1, x.2) := (rfl)
 
 /-- Expand a time-dilated multilinear term by its subset of time-direction slots. -/
-theorem _root_.ContinuousMultilinearMap.map_timeScale_eq_sum_pow_card_smul {m : ℕ}
+theorem map_timeScale_eq_sum_pow_card_smul {m : ℕ}
     (A : (ℝ × E) [×m]→L[ℝ] F) (a : ℝ) (v : Fin m → ℝ × E) :
     A (fun i ↦ timeScale a (v i)) =
       ∑ s : Finset (Fin m), a ^ s.card •
@@ -75,7 +75,7 @@ theorem _root_.ContinuousMultilinearMap.map_timeScale_eq_sum_pow_card_smul {m : 
 
 /-- For multilinear order `m < K`, the coefficient-weighted sum of a multilinear map
 precomposed with the reflection time dilations equals the original map. -/
-theorem _root_.ContinuousMultilinearMap.sum_smul_compContinuousLinearMap_timeScale
+theorem sum_higherReflectionCoeff_smul_compContinuousLinearMap_timeScale
     {K m : ℕ} (A : (ℝ × E) [×m]→L[ℝ] F) (hm : m < K) :
     (∑ j, higherReflectionCoeff K j •
       A.compContinuousLinearMap (fun _ ↦ timeScale (higherReflectionNode j))) = A := by
@@ -83,7 +83,7 @@ theorem _root_.ContinuousMultilinearMap.sum_smul_compContinuousLinearMap_timeSca
   ext v
   simp only [sum_apply, smul_apply,
     ContinuousMultilinearMap.compContinuousLinearMap_apply]
-  simp_rw [ContinuousMultilinearMap.map_timeScale_eq_sum_pow_card_smul, Finset.smul_sum, smul_smul]
+  simp_rw [map_timeScale_eq_sum_pow_card_smul, Finset.smul_sum, smul_smul]
   rw [Finset.sum_comm]
   simp_rw [← Finset.sum_smul]
   have hmoment (s : Finset (Fin m)) :
@@ -134,8 +134,7 @@ omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
 /-- The two closed time half-spaces cover the whole product space. -/
 theorem upperHalfSpace_union_lowerHalfSpace : upperHalfSpace E ∪ lowerHalfSpace E = univ := by
   ext x
-  simp only [upperHalfSpace, lowerHalfSpace, mem_union, mem_prod, mem_Ici, mem_Iic,
-    mem_univ, and_true, iff_true]
+  simp only [mem_union, mem_upperHalfSpace, mem_lowerHalfSpace, mem_univ, iff_true]
   exact le_total 0 x.1
 
 /-- Reflection of each time slice extends a function from the upper half-space. -/
@@ -160,21 +159,23 @@ omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
 /-- Reflection extends the input on the closed upper half-space. -/
 theorem halfSpaceReflection_eqOn_upperHalfSpace (K : ℕ) (f : ℝ × E → F) :
     EqOn (halfSpaceReflection K f) f (upperHalfSpace E) :=
-  fun _ hx ↦ halfSpaceReflection_of_nonneg K f hx.1
+  fun _ hx ↦ halfSpaceReflection_of_nonneg K f (mem_upperHalfSpace.mp hx)
 
 /-- Reflecting a nonpositive time at a negative node lands in the upper half-space. -/
 theorem timeScale_higherReflectionNode_mem_upperHalfSpace {K : ℕ} (j : Fin K)
     {x : ℝ × E} (hx : x.1 ≤ 0) : timeScale (higherReflectionNode j) x ∈ upperHalfSpace E :=
-  ⟨mul_nonneg_of_nonpos_of_nonpos (higherReflectionNode_neg j).le hx, mem_univ _⟩
+  mem_upperHalfSpace.mpr (mul_nonneg_of_nonpos_of_nonpos (higherReflectionNode_neg j).le hx)
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
 /-- Reflection depends only on the input on the upper half-space. -/
 theorem halfSpaceReflection_congr {K : ℕ} {f g : ℝ × E → F}
     (hfg : EqOn f g (upperHalfSpace E)) : halfSpaceReflection K f = halfSpaceReflection K g := by
   funext x
-  exact congrFun (higherReflection_congr (fun t ht ↦ hfg ⟨ht, mem_univ _⟩)) x.1
+  exact congrFun (higherReflection_congr
+    (fun t ht ↦ hfg ((mem_upperHalfSpace (x := (t, x.2))).mpr ht))) x.1
 
-/-- The canonical higher reflection of a Cᵏ map on the closed upper half-space is globally Cᵏ. -/
+/-- The `K`-term reflection of a Cⁿ map on the closed upper half-space is globally Cⁿ
+whenever `n < K`. -/
 theorem contDiff_halfSpaceReflection {n K : ℕ} (hn : n < K)
     (f : ℝ × E → F)
     (hf : ContDiffOn ℝ n f (upperHalfSpace E)) :
@@ -196,26 +197,26 @@ theorem contDiff_halfSpaceReflection {n K : ℕ} (hn : n < K)
     apply ((hp.compContinuousLinearMap (timeScale (higherReflectionNode j))).const_smul
       (higherReflectionCoeff K j)).mono
     intro x hx
-    exact timeScale_higherReflectionNode_mem_upperHalfSpace j hx.1
+    exact timeScale_higherReflectionNode_mem_upperHalfSpace j (mem_lowerHalfSpace.mp hx)
   have hmatch : ∀ x ∈ upperHalfSpace E ∩ lowerHalfSpace E,
       ∀ m : ℕ, m ≤ (n : ℕ∞) → p x m = q x m := by
     intro x hx m hm
-    have htime : x.1 = 0 := le_antisymm hx.2.1 hx.1.1
+    have htime : x.1 = 0 := le_antisymm (mem_lowerHalfSpace.mp hx.2) (mem_upperHalfSpace.mp hx.1)
     have hscale (j : Fin K) : timeScale (higherReflectionNode j) x = x := by
       ext <;> simp [htime]
     dsimp only [q]
     simp_rw [hscale]
-    exact ((p x m).sum_smul_compContinuousLinearMap_timeScale (by
+    exact (sum_higherReflectionCoeff_smul_compContinuousLinearMap_timeScale (p x m) (by
       exact lt_of_le_of_lt (by exact_mod_cast hm) hn)).symm
   have hglue := hp.contDiff_piecewise hq isClosed_upperHalfSpace isClosed_lowerHalfSpace
     upperHalfSpace_union_lowerHalfSpace hmatch
   convert hglue using 1
   funext x
   by_cases hx : 0 ≤ x.1
-  · simp only [halfSpaceReflection_of_nonneg _ _ hx, Set.piecewise, mem_upperHalfSpace,
-      hx, ite_true]
-  · simp only [halfSpaceReflection_of_neg _ _ (lt_of_not_ge hx),
-      Set.piecewise, mem_upperHalfSpace, hx, ite_false, g]
+  · rw [halfSpaceReflection_of_nonneg _ _ hx,
+      Set.piecewise_eq_of_mem _ _ _ (mem_upperHalfSpace.mpr hx)]
+  · rw [halfSpaceReflection_of_neg _ _ (lt_of_not_ge hx),
+      Set.piecewise_eq_of_notMem _ _ _ (fun h ↦ hx (mem_upperHalfSpace.mp h))]
 
 /-- Every Cᵏ function on the closed upper half-space admits a constructed global Cᵏ extension. -/
 theorem exists_contDiff_extension_halfSpace (k : ℕ) (f : ℝ × E → F)
@@ -258,7 +259,7 @@ theorem exists_local_contDiff_extension_halfSpace [HasContDiffBump (ℝ × E)]
   obtain ⟨g, hg, hgeq⟩ := exists_contDiff_extension_halfSpace k H hH
   refine ⟨g, hg, ?_⟩
   filter_upwards [Metric.ball_mem_nhds ((0 : ℝ), p) β.rIn_pos] with z hz htime
-  rw [hgeq ⟨htime, mem_univ _⟩]
+  rw [hgeq (mem_upperHalfSpace.mpr htime)]
   dsimp only [H]
   rw [β.one_of_mem_closedBall (Metric.ball_subset_closedBall hz), one_smul]
 
@@ -287,10 +288,11 @@ theorem halfSpaceReflection_eventuallyEq_nhds_boundary {K : ℕ} {f g : ℝ × E
     apply Finset.sum_congr rfl
     intro j _
     exact congrArg (fun v : F ↦ higherReflectionCoeff K j • v)
-      (hzs j (timeScale_higherReflectionNode_mem_upperHalfSpace j hneg.le).1)
+      (hzs j (mem_upperHalfSpace.mp
+        (timeScale_higherReflectionNode_mem_upperHalfSpace j hneg.le)))
 
-/-- The actual moment-matched reflected extension is Cᵏ at the time-zero boundary using local
-upper-side regularity. -/
+/-- If `f` is Cⁿ on the upper half-space near `(0, p)` and `n < K`, then
+`halfSpaceReflection K f` is Cⁿ at `(0, p)`. -/
 theorem contDiffAt_halfSpaceReflection_boundary [HasContDiffBump (ℝ × E)]
     {n K : ℕ} (hn : n < K)
     (f : ℝ × E → F) {V : Set (ℝ × E)} (hV : IsOpen V)
@@ -301,8 +303,8 @@ theorem contDiffAt_halfSpaceReflection_boundary [HasContDiffBump (ℝ × E)]
   exact halfSpaceReflection_eventuallyEq_nhds_boundary
     (hgeq.mono (fun _ h htime ↦ (h htime).symm))
 
-/-- A forward-time Cᵏ function on an open spatial domain has a Cᵏ reflected extension on a
-two-sided time slab `Ioo (-T) T ×ˢ A`. -/
+/-- If `n < K`, the `K`-term reflection of a forward-time Cⁿ function on an open spatial
+domain is Cⁿ on the two-sided slab `Ioo (-T) T ×ˢ A`. -/
 theorem contDiffOn_halfSpaceReflection_slab [HasContDiffBump (ℝ × E)]
     {n K : ℕ} (hn : n < K)
     (f : ℝ × E → F) {T : ℝ} {A : Set E} (hA : IsOpen A)
@@ -341,7 +343,7 @@ theorem contDiffOn_halfSpaceReflection_slab [HasContDiffBump (ℝ × E)]
     exact halfSpaceReflection_of_neg K f hz
   · subst t
     have hf0 : ContDiffOn ℝ n f (upperHalfSpace E ∩ (Iio T ×ˢ A)) :=
-      hf.mono (fun _ hz ↦ ⟨⟨hz.1.1, hz.2.1⟩, hz.2.2⟩)
+      hf.mono (fun _ hz ↦ ⟨⟨mem_upperHalfSpace.mp hz.1, hz.2.1⟩, hz.2.2⟩)
     exact contDiffAt_halfSpaceReflection_boundary hn f
       (isOpen_Iio.prod hA) hf0 x ⟨ht.1.2, ht.2⟩
   · have hft : ContDiffAt ℝ n f (t, x) :=
