@@ -32,9 +32,9 @@ inversion charts of the closed unit balls of two inner product spaces along a li
 For a nonzero radius `R`, the derivative of the inversion at a point `x ≠ c` is a positive
 multiple of the reflection in the hyperplane orthogonal to `x - c` (`hasFDerivAt_inversion`). So
 inversion is conformal, and it preserves the metric `⟪u, v⟫ / dist x c ^ 2` on the complement of
-`c`, the product metric of a cylinder in polar coordinates about `c`. In finite dimension `n` the
-determinant of the derivative is `-(R / dist x c) ^ (2 * n)`, which is negative away from the
-centre: inversion reverses orientation. A transition
+`c`, the product metric of a cylinder in polar coordinates about `c`. In finite positive dimension
+`n` the determinant of the derivative is `-(R / dist x c) ^ (2 * n)`, which is negative away from
+the centre: inversion reverses orientation. A transition
 between two inversion charts whose linear isometries lie in the same orientation class is a
 composite of two inversions and a linear isometry of positive determinant, so it preserves
 orientation. This is how the inversion charts of the closed unit ball attached to the isometries
@@ -176,11 +176,12 @@ theorem inner_fderiv_inversion_div_dist_sq {V : Type*} [NormedAddCommGroup V]
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
 
-/-- **The Jacobian determinant of inversion**: in a nontrivial space of finite dimension `n`, the
-derivative of the inversion in the sphere of centre `c` and radius `R` has determinant
-`-(R / dist x c) ^ (2 * n)` at every point `x`. Away from the centre the derivative is
-`(R / dist x c) ^ 2` times the reflection in the hyperplane orthogonal to `x - c`, whose
-determinant is `-1`; at the centre both sides vanish. -/
+/-- **The Jacobian determinant of inversion**: in a nontrivial space of finite dimension `n`,
+`LinearMap.det (fderiv ℝ (inversion c R) x) = -(R / dist x c) ^ (2 * n)` for every point `x` and
+every radius `R`. Away from the centre the derivative is `(R / dist x c) ^ 2` times the reflection
+in the hyperplane orthogonal to `x - c`, whose determinant is `-1`. At the centre `fderiv` is `0`
+and both sides vanish: for `R ≠ 0` the inversion is not differentiable there, so `fderiv` takes
+its default value `0`, while for `R = 0` the inversion is constant. -/
 theorem det_fderiv_inversion [Nontrivial F] (c x : F) (R : ℝ) :
     LinearMap.det (fderiv ℝ (inversion c R) x : F →ₗ[ℝ] F) =
       -(R / dist x c) ^ (2 * Module.finrank ℝ F) := by
@@ -190,8 +191,10 @@ theorem det_fderiv_inversion [Nontrivial F] (c x : F) (R : ℝ) :
     rw [Submodule.orthogonal_orthogonal, finrank_span_singleton (sub_ne_zero.2 hx)]
   have hrefl : (((ℝ ∙ (x - c))ᗮ.reflection : F →L[ℝ] F) : F →ₗ[ℝ] F) =
       (ℝ ∙ (x - c))ᗮ.reflection.toLinearMap := LinearMap.ext fun v ↦ by simp
-  rw [fderiv_inversion, ContinuousLinearMap.toLinearMap_smul, LinearMap.det_smul, hrefl,
-    Submodule.det_reflection, hK, pow_one, mul_neg_one, pow_mul]
+  have hdet : LinearMap.det (((ℝ ∙ (x - c))ᗮ.reflection : F →L[ℝ] F) : F →ₗ[ℝ] F) = -1 := by
+    rw [hrefl, Submodule.det_reflection, hK, pow_one]
+  rw [fderiv_inversion, ContinuousLinearMap.toLinearMap_smul, LinearMap.det_smul, hdet]
+  ring
 
 /-- **Inversion reverses orientation**: away from its centre, the derivative of the inversion in a
 sphere of nonzero radius has negative determinant. -/
