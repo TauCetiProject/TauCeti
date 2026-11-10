@@ -299,9 +299,15 @@ theorem uniformEquicontinuous_ballAverage {ι : Type*} {u : ι → E → F}
   rw [dist_eq_norm, ← norm_neg, neg_sub]
   linarith
 
-/-- At every positive scale, the ball average of an `Lᵖ` function is continuous. -/
-theorem continuous_ballAverage (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : MemLp f p mu)
-    (hr : 0 < r) : Continuous (ballAverage mu r f) := by
+/-- The ball average of an `Lᵖ` function is continuous. For `r ≤ 0` the balls are empty and the
+ball average is zero. -/
+theorem continuous_ballAverage (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : MemLp f p mu) :
+    Continuous (ballAverage mu r f) := by
+  rcases le_or_gt r 0 with hr | hr
+  · have : ballAverage mu r f = fun _ => 0 := funext fun x => by
+      simp [ballAverage, Metric.ball_eq_empty.2 hr]
+    rw [this]
+    exact continuous_const
   rw [continuous_iff_continuousAt]
   intro x
   rw [ContinuousAt, tendsto_iff_edist_tendsto_0]

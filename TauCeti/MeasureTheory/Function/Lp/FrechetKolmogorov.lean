@@ -196,7 +196,7 @@ private theorem exists_closedBall_tail_le (hp : 1 ≤ p) (hp' : p ≠ ∞)
     {S : Set (Lp F p mu)} {r : ℝ} {ε₁ B : ℝ≥0∞} (hε₁ : 0 < ε₁) (hB : B ≠ ∞)
     {s : Set E} (hmeasS : MeasurableSet s) (hmuS : mu s < ∞)
     (htailS : ∀ i : S, eLpNorm (sᶜ.indicator ⇑(i : Lp F p mu)) p mu ≤ ε₁)
-    (hsmooth : ∀ g ∈ S, eLpNorm (ballAverage mu r ⇑g - ⇑g) p mu ≤ ε₁) (hr : 0 < r)
+    (hsmooth : ∀ g ∈ S, eLpNorm (ballAverage mu r ⇑g - ⇑g) p mu ≤ ε₁)
     (hgB : ∀ i : S, ∀ x : E,
       ballAverage mu r ⇑(i : Lp F p mu) x ∈ closedBall (0 : F) B.toReal) :
     ∃ R : ℝ, ∀ f ∈ S, eLpNorm ((closedBall (0 : E) R)ᶜ.indicator ⇑f) p mu ≤ ε₁ + ε₁ + ε₁ := by
@@ -220,14 +220,14 @@ private theorem exists_closedBall_tail_le (hp : 1 ≤ p) (hp' : p ≠ ∞)
   refine ⟨R, fun f hf => ?_⟩
   exact eLpNorm_indicator_compl_le_of_approx_of_bound hp hp' measurableSet_closedBall hmeasS
     (Lp.aestronglyMeasurable f)
-    ((continuous_ballAverage hp hp' (Lp.memLp f) hr).aestronglyMeasurable) hB
+    ((continuous_ballAverage hp hp' (Lp.memLp f)).aestronglyMeasurable) hB
     (htailS ⟨f, hf⟩) (hsmooth f hf) (hgB ⟨f, hf⟩) hR.le
 
 omit [Fact (1 ≤ p)] in
 /-- The final comparison in the Fréchet--Kolmogorov argument: two functions whose ball averages
 are `η`-close on `K`, with small smoothing errors and small tails off `K`, are `ε`-close in `Lᵖ`. -/
 private theorem dist_lt_of_ballAverage_close_on (hp : 1 ≤ p) (hp' : p ≠ ∞) {K : Set E}
-    (hK : MeasurableSet K) {r ε η : ℝ} (hr : 0 < r) (hε : 0 < ε) (hη : 0 ≤ η)
+    (hK : MeasurableSet K) {r ε η : ℝ} (hε : 0 < ε) (hη : 0 ≤ η)
     {f f' : Lp F p mu}
     (hsf : eLpNorm (ballAverage mu r ⇑f - ⇑f) p mu ≤ ENNReal.ofReal (ε / 16))
     (hsf' : eLpNorm (ballAverage mu r ⇑f' - ⇑f') p mu ≤ ENNReal.ofReal (ε / 16))
@@ -239,9 +239,9 @@ private theorem dist_lt_of_ballAverage_close_on (hp : 1 ≤ p) (hp' : p ≠ ∞)
     (hmid : ∀ x ∈ K, dist (ballAverage mu r ⇑f x) (ballAverage mu r ⇑f' x) ≤ η) :
     dist f f' < ε := by
   have hAm : AEStronglyMeasurable (ballAverage mu r ⇑f) mu :=
-    (continuous_ballAverage hp hp' (Lp.memLp f) hr).aestronglyMeasurable
+    (continuous_ballAverage hp hp' (Lp.memLp f)).aestronglyMeasurable
   have hA'm : AEStronglyMeasurable (ballAverage mu r ⇑f') mu :=
-    (continuous_ballAverage hp hp' (Lp.memLp f') hr).aestronglyMeasurable
+    (continuous_ballAverage hp hp' (Lp.memLp f')).aestronglyMeasurable
   have hmain : eLpNorm (⇑f - ⇑f') p mu ≤ ENNReal.ofReal (3 * ε / 4) := by
     calc eLpNorm (⇑f - ⇑f') p mu
         ≤ eLpNorm (ballAverage mu r ⇑f - ⇑f) p mu +
@@ -306,7 +306,7 @@ theorem totallyBounded_of_comp_add_sub_of_unifTight (hp' : p ≠ ∞)
     intro g hg
     exact eLpNorm_ballAverage_sub_le hp hp' (Lp.memLp g) hr
       (fun e he => hrS g hg e (by simpa [dist_eq_norm] using he))
-  obtain ⟨R, hRS⟩ := exists_closedBall_tail_le hp hp' hε₁ hBₑt hmeasS hmuS htailS hsmooth hr hgB
+  obtain ⟨R, hRS⟩ := exists_closedBall_tail_le hp hp' hε₁ hBₑt hmeasS hmuS htailS hsmooth hgB
   set K : Set E := closedBall (0 : E) R
   -- The scale of the uniform approximation on `K`, calibrated by the measure of `K`.
   have hWt : mu K ^ (1 / p.toReal) ≠ ∞ :=
@@ -326,7 +326,7 @@ theorem totallyBounded_of_comp_add_sub_of_unifTight (hp' : p ≠ ∞)
   refine ⟨Subtype.val '' t, htfin.image (fun i : S => (i : Lp F p mu)), fun f hf => ?_⟩
   obtain ⟨j, hjt, hmid⟩ := ht ⟨f, hf⟩
   refine mem_iUnion₂.2 ⟨(j : Lp F p mu), ⟨j, hjt, rfl⟩, ?_⟩
-  exact dist_lt_of_ballAverage_close_on hp hp' measurableSet_closedBall hr hε hη.le
+  exact dist_lt_of_ballAverage_close_on hp hp' measurableSet_closedBall hε hη.le
     (hsmooth f hf) (hsmooth _ j.2) (hRS f hf) (hRS _ j.2) hWη fun x hx ↦ (hmid x hx).le
 
 /-- **Relative compactness in `Lᵖ` under the Fréchet--Kolmogorov hypotheses**: the closure of an

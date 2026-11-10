@@ -48,8 +48,8 @@ counting measure, or of a Haar measure on a discrete group, consists of all boun
 * `BoundedContinuousFunction.norm_toLpTop`: `‖[f]‖ = ‖f‖` when `μ` is positive on open sets.
 * `BoundedContinuousFunction.toLpTop_le_toLpTop_iff`: for such `μ`, the map is an order
   embedding on real-valued functions.
-* `BoundedContinuousFunction.toLpTop_surjective`: on a discrete space, for a measure charging
-  every point, every class in `L∞` is the class of a bounded function.
+* `BoundedContinuousFunction.toLpTop_surjective`: on a discrete space, every class in `L∞` is the
+  class of a bounded function.
 * `BoundedContinuousFunction.toLpTop_one`: the constant function one goes to the constant one.
 -/
 
@@ -130,14 +130,20 @@ section Discrete
 
 variable [DiscreteTopology α]
 
-/-- On a discrete space, if `μ` charges every point, every class in `L∞` is the class of a
-bounded function. -/
+omit [μ.IsOpenPosMeasure] in
+/-- On a discrete space, every class in `L∞` is the class of a bounded function. -/
 theorem toLpTop_surjective :
     Function.Surjective (toLpTop μ 𝕜 : (α →ᵇ E) →L[𝕜] Lp E ∞ μ) := by
   intro φ
-  have h := ae_le_lpNorm_exponent_top (Lp.memLp φ)
-  rw [ae_eq_top_of_discreteTopology, eventually_top] at h
-  exact ⟨ofNormedAddCommGroupDiscrete φ _ h, Lp.ext (coeFn_toLpTop μ _)⟩
+  obtain ⟨C, hC⟩ : ∃ C : ℝ, ∀ᵐ x ∂μ, ‖φ x‖ ≤ C := ⟨_, ae_le_lpNorm_exponent_top (Lp.memLp φ)⟩
+  have hψ : ∀ x, ‖(if ‖φ x‖ ≤ C then φ x else 0)‖ ≤ max C 0 := fun x => by
+    split_ifs with hx
+    · exact hx.trans (le_max_left _ _)
+    · simp
+  refine ⟨ofNormedAddCommGroupDiscrete (fun x => if ‖φ x‖ ≤ C then φ x else 0) _ hψ,
+    Lp.ext ((coeFn_toLpTop μ _).trans ?_)⟩
+  filter_upwards [hC] with x hx
+  simp [hx]
 
 variable (𝕜) in
 /-- On a discrete space, if `μ` charges every point, taking classes identifies bounded functions
