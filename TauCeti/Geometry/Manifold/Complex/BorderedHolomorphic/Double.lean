@@ -151,7 +151,7 @@ private theorem im_model_comp_eq_zero (he : PreservesRealAxis e) {z : ℂ}
     ((closedUpperHalfPlaneModel ∘ e ∘ closedUpperHalfPlaneModel.symm) z).im = 0 := by
   have hz' : closedUpperHalfPlaneModel.symm z = fold z :=
     closedUpperHalfPlaneModel_symm_eq_fold hz0.ge
-  simpa [hz', hz0] using (he _ hz).1 (by simp [hz0])
+  simpa [hz', hz0] using (he.im_eq_zero_iff hz).1 (by simp [hz0])
 
 /-- The reflected chart change is continuous on the preimage of the source under the fold. -/
 private theorem continuousOn_schwarzReflection_fold_preimage (he : PreservesRealAxis e) :

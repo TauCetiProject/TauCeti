@@ -312,12 +312,15 @@ theorem closedUpperHalfPlaneModel_symm_eq_fold {z : ℂ} (hz : 0 ≤ z.im) :
 sends a point of its source to the real axis exactly when the point is real. Members of
 `contDiffGroupoid n closedUpperHalfPlaneModel` with `n ≠ 0` do so
 (`ClosedUpperHalfPlane.preservesRealAxis_of_mem_contDiffGroupoid`). -/
-@[expose]
 def PreservesRealAxis (e : OpenPartialHomeomorph ClosedUpperHalfPlane ClosedUpperHalfPlane) :
     Prop :=
   ∀ z ∈ e.source, (z : ℂ).im = 0 ↔ (e z : ℂ).im = 0
 
 variable {e e' : OpenPartialHomeomorph ClosedUpperHalfPlane ClosedUpperHalfPlane}
+
+theorem preservesRealAxis_iff :
+    PreservesRealAxis e ↔ ∀ z ∈ e.source, (z : ℂ).im = 0 ↔ (e z : ℂ).im = 0 :=
+  Iff.rfl
 
 theorem preservesRealAxis_of_mem_contDiffGroupoid {n : ℕ∞ω}
     (he : e ∈ contDiffGroupoid n closedUpperHalfPlaneModel) (hn : n ≠ 0) :
@@ -325,6 +328,12 @@ theorem preservesRealAxis_of_mem_contDiffGroupoid {n : ℕ∞ω}
 
 
 namespace PreservesRealAxis
+
+/-- A chart change preserving the real axis sends a point of its source to the real axis exactly
+when the point is real. -/
+theorem im_eq_zero_iff (he : PreservesRealAxis e) {z : ClosedUpperHalfPlane}
+    (hz : z ∈ e.source) : (z : ℂ).im = 0 ↔ (e z : ℂ).im = 0 :=
+  he z hz
 
 /-- A chart change preserving the real axis sends points of positive imaginary part, and only
 those, to points of positive imaginary part. -/
