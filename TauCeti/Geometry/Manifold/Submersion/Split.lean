@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+import Mathlib.Logic.Function.Const
 import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
@@ -83,24 +84,16 @@ theorem IsDiffSubmersionAt.comp {g : N → M'}
       exact ContinuousLinearMap.HasRightInverse.comp hg hf
     · -- `mfderiv J K g (f x) = 0` has a right inverse, so the target `E'` is trivial.
       rw [isDiffSubmersionAt_iff, mfderiv_zero_of_not_mdifferentiableAt hgd] at hg
-      obtain ⟨s, hs⟩ := hg
-      have : Subsingleton (TangentSpace K ((g ∘ f) x)) := ⟨fun a b ↦ by
-        have ha := hs a
-        have hb := hs b
-        simp only [zero_apply] at ha hb
-        exact ha.symm.trans hb⟩
+      have : Subsingleton (TangentSpace K ((g ∘ f) x)) :=
+        (Function.Surjective.isConst_iff hg.surjective).mp fun a b ↦ by simp
       exact ⟨0, fun v ↦ Subsingleton.elim _ _⟩
   · -- `mfderiv I J f x = 0` has a right inverse, so `F` is trivial, and so is `E'`.
     rw [isDiffSubmersionAt_iff, mfderiv_zero_of_not_mdifferentiableAt hfd] at hf
-    obtain ⟨s, hs⟩ := hf
-    have hF : Subsingleton (TangentSpace J (f x)) := ⟨fun a b ↦ by
-      have ha := hs a
-      have hb := hs b
-      simp only [zero_apply] at ha hb
-      exact ha.symm.trans hb⟩
-    obtain ⟨t, ht⟩ := hg
-    have : Subsingleton (TangentSpace K ((g ∘ f) x)) := ⟨fun a b ↦ by
-      rw [← ht a, ← ht b, Subsingleton.elim (t a) (t b)]⟩
+    rw [isDiffSubmersionAt_iff] at hg
+    have : Subsingleton (TangentSpace J (f x)) :=
+      (Function.Surjective.isConst_iff hf.surjective).mp fun a b ↦ by simp
+    have : Subsingleton (TangentSpace K ((g ∘ f) x)) :=
+      Function.Surjective.subsingleton hg.surjective
     exact ⟨0, fun v ↦ Subsingleton.elim _ _⟩
 
 /-- For finite-dimensional targets, splitting the derivative is equivalent to being a regular
