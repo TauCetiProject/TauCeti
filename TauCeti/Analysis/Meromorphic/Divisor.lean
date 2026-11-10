@@ -60,8 +60,7 @@ theorem AnalyticAt.divisor_apply_eq_zero {𝕜 E : Type*} [NontriviallyNormedFie
   by_cases hm : MeromorphicOn f U
   · by_cases hz : z ∈ U
     · rw [hm.divisor_eq_analyticOrderNatAt hf hz, analyticOrderNatAt,
-        hf.analyticOrderAt_eq_zero.mpr hfz]
-      rfl
+        hf.analyticOrderAt_eq_zero.mpr hfz, ENat.toNat_zero, Nat.cast_zero]
     · simp [hz]
   · exact MeromorphicOn.divisor_eq_zero_of_not_meromorphicOn hm
 

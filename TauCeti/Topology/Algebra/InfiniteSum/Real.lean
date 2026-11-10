@@ -21,7 +21,11 @@ number of indices `k` with `N k ≤ n`, where the tail of `|a|` beyond `N k` is 
 
 Natural multiplicities can also be expressed by repeating each nonnegative real term
 through a finite fiber. Summability of the repeated family is equivalent to summability of
-the original family weighted by those multiplicities.
+the original family weighted by those multiplicities, and the finite partial sums of the
+repeated family are cofinal among its finite subsets.
+
+A square-summable real family is eventually small: `b i * C ≤ 1` for all but finitely many
+`i`, for any fixed real `C`.
 
 ## Main results
 
@@ -120,5 +124,28 @@ theorem summable_sigma_fin_iff {ι : Type*} {a : ι → ℝ} (ha : ∀ i, 0 ≤ 
   · intro h
     refine ⟨fun _ ↦ Summable.of_finite, ?_⟩
     simpa using h
+
+/-- Filling each fiber of a finite subset of the base gives finite subsets of the sigma type
+that are cofinal: every finite subset of `Σ i, κ i` is eventually contained in them. -/
+theorem tendsto_finset_sigma_univ_atTop {ι : Type*} {κ : ι → Type*} [∀ i, Fintype (κ i)] :
+    Tendsto (fun s : Finset ι ↦ s.sigma fun i ↦ (Finset.univ : Finset (κ i))) atTop atTop := by
+  classical
+  refine tendsto_atTop.mpr fun t ↦ eventually_atTop.mpr ⟨t.image Sigma.fst, ?_⟩
+  intro s hs p hp
+  exact Finset.mem_sigma.mpr ⟨hs (Finset.mem_image.mpr ⟨p, hp, rfl⟩), Finset.mem_univ _⟩
+
+/-- A family with summable squares eventually satisfies `b i * C ≤ 1`, for any real `C`. -/
+theorem eventually_mul_le_one_of_summable_sq {ι : Type*} {b : ι → ℝ}
+    (hb : Summable (fun i ↦ b i ^ 2)) (C : ℝ) : ∀ᶠ i in cofinite, b i * C ≤ 1 := by
+  filter_upwards [hb.tendsto_cofinite_zero.eventually
+    (ge_mem_nhds (show (0 : ℝ) < (C ^ 2 + 1)⁻¹ by positivity))] with i hi
+  have hsq : (b i * C) ^ 2 ≤ 1 :=
+    calc
+      _ = b i ^ 2 * C ^ 2 := by ring
+      _ ≤ (C ^ 2 + 1)⁻¹ * C ^ 2 := by gcongr
+      _ ≤ 1 := by
+        rw [inv_mul_le_iff₀ (by positivity)]
+        linarith
+  nlinarith
 
 end TauCeti

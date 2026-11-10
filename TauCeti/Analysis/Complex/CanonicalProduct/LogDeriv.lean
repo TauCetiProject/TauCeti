@@ -44,22 +44,9 @@ private theorem exists_summable_logDerivWeierstrassFactorOneMul_majorant
       ‖logDerivWeierstrassFactorOneMul (a i) z‖ ≤ u i := by
   obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn continuous_id.continuousOn
   let C : ℝ := max M 1
-  have hC : 0 ≤ C := le_trans zero_le_one (le_max_right _ _)
   refine ⟨fun i ↦ (2 * C) * ‖a i‖ ^ 2, ha.mul_left _, ?_⟩
-  have he : ∀ᶠ i in cofinite, ‖a i‖ ^ 2 ≤ ((2 * C) ^ 2 + 1)⁻¹ :=
-    ha.tendsto_cofinite_zero.eventually (ge_mem_nhds (by positivity))
-  filter_upwards [he] with i hi z hz
+  filter_upwards [TauCeti.eventually_mul_le_one_of_summable_sq ha (2 * C)] with i hsmall z hz
   have hzC : ‖z‖ ≤ C := (hM z hz).trans (le_max_left _ _)
-  have hsmall : ‖a i‖ * (2 * C) ≤ 1 := by
-    have hp := mul_le_mul_of_nonneg_right hi (sq_nonneg (2 * C))
-    have hp' : (‖a i‖ * (2 * C)) ^ 2 ≤ 1 := by
-      calc
-        _ = (‖a i‖ ^ 2) * (2 * C) ^ 2 := by ring
-        _ ≤ ((2 * C) ^ 2 + 1)⁻¹ * (2 * C) ^ 2 := hp
-        _ ≤ 1 := by
-          rw [inv_mul_le_iff₀ (by positivity)]
-          linarith
-    nlinarith [mul_nonneg (norm_nonneg (a i)) (show 0 ≤ 2 * C by positivity)]
   have hzsmall : ‖a i * z‖ ≤ 1 / 2 := by
     rw [norm_mul]
     have ht := mul_le_mul_of_nonneg_left hzC (norm_nonneg (a i))
@@ -126,18 +113,13 @@ theorem hasSumUniformlyOn_natCast_mul_logDerivWeierstrassFactorOneMul
     {K : Set ℂ} (hK : IsCompact K) :
     HasSumUniformlyOn (fun i z ↦ (m i : ℂ) * (logDerivWeierstrassFactorOneMul (a i) z))
       (fun z ↦ ∑' i, (m i : ℂ) * (logDerivWeierstrassFactorOneMul (a i) z)) K := by
-  classical
-  have ht : Tendsto (fun s : Finset ι ↦ s.sigma (fun i ↦ Finset.univ : ∀ i, Finset (Fin (m i))))
-      atTop atTop := by
-    refine tendsto_atTop.mpr fun t ↦ eventually_atTop.mpr ⟨t.image Sigma.fst, ?_⟩
-    intro s hs p hp
-    exact Finset.mem_sigma.mpr ⟨hs (Finset.mem_image.mpr ⟨p, hp, rfl⟩), Finset.mem_univ _⟩
   have h0 := HasSumUniformlyOn.tendstoUniformlyOn
     (hasSumUniformlyOn_logDerivWeierstrassFactorOneMul (fun p : Σ i, Fin (m i) ↦ a p.1)
       ((TauCeti.summable_sigma_fin_iff (fun i ↦ sq_nonneg ‖a i‖) m).mpr hm) hK)
   rw [hasSumUniformlyOn_iff_tendstoUniformlyOn]
   intro u hu
-  filter_upwards [ht.eventually (h0 u hu)] with s hs z hz
+  filter_upwards [(TauCeti.tendsto_finset_sigma_univ_atTop (κ := fun i ↦ Fin (m i))).eventually
+    (h0 u hu)] with s hs z hz
   have hsz := hs z hz
   simpa only [← tsum_natCast_mul_logDerivWeierstrassFactorOneMul_eq_sigma a m hm,
     Finset.sum_sigma, Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul] using hsz

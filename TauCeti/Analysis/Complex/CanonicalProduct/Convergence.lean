@@ -49,24 +49,11 @@ theorem hasProdUniformlyOn_weierstrassFactorOne {K : Set ℂ} (hK : IsCompact K)
       (fun z ↦ ∏' i, weierstrassFactorOne (a i * z)) K := by
   obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn continuous_id.continuousOn
   let C : ℝ := max M 1
-  have hC : 0 ≤ C := le_trans zero_le_one (le_max_right _ _)
   have hu : Summable (fun i ↦ (3 * C ^ 2) * ‖a i‖ ^ 2) := ha.mul_left _
-  have he : ∀ᶠ i in cofinite, ‖a i‖ ^ 2 ≤ (C ^ 2 + 1)⁻¹ :=
-    ha.tendsto_cofinite_zero.eventually (ge_mem_nhds (by positivity))
   have hbound : ∀ᶠ i in cofinite, ∀ z ∈ K,
       ‖weierstrassFactorOne (a i * z) - 1‖ ≤ (3 * C ^ 2) * ‖a i‖ ^ 2 := by
-    filter_upwards [he] with i hi z hz
+    filter_upwards [TauCeti.eventually_mul_le_one_of_summable_sq ha C] with i hsmall z hz
     have hzC : ‖z‖ ≤ C := (hM z hz).trans (le_max_left _ _)
-    have hsmall : ‖a i‖ * C ≤ 1 := by
-      have hp := mul_le_mul_of_nonneg_right hi (sq_nonneg C)
-      have hp' : (‖a i‖ * C) ^ 2 ≤ 1 := by
-        calc
-          _ = (‖a i‖ ^ 2) * C ^ 2 := by ring
-          _ ≤ (C ^ 2 + 1)⁻¹ * C ^ 2 := hp
-          _ ≤ 1 := by
-            rw [inv_mul_le_iff₀ (by positivity)]
-            linarith
-      nlinarith [mul_nonneg (norm_nonneg (a i)) hC]
     have hzsmall : ‖a i * z‖ ≤ 1 := by
       rw [norm_mul]
       exact (mul_le_mul_of_nonneg_left hzC (norm_nonneg _)).trans hsmall
@@ -271,18 +258,13 @@ theorem analyticOrderAt_tprod_weierstrassFactorOne_pow_of_injective {z : ℂ} {i
 theorem hasProdUniformlyOn_weierstrassFactorOne_pow {K : Set ℂ} (hK : IsCompact K) :
     HasProdUniformlyOn (fun i z ↦ weierstrassFactorOne (a i * z) ^ m i)
       (fun z ↦ ∏' i, weierstrassFactorOne (a i * z) ^ m i) K := by
-  classical
-  have ht : Tendsto (fun s : Finset ι ↦ s.sigma (fun i ↦ Finset.univ : ∀ i, Finset (Fin (m i))))
-      atTop atTop := by
-    refine tendsto_atTop.mpr fun t ↦ eventually_atTop.mpr ⟨t.image Sigma.fst, ?_⟩
-    intro s hs p hp
-    exact Finset.mem_sigma.mpr ⟨hs (Finset.mem_image.mpr ⟨p, hp, rfl⟩), Finset.mem_univ _⟩
   have h0 := HasProdUniformlyOn.tendstoUniformlyOn
     (hasProdUniformlyOn_weierstrassFactorOne
       (fun p : Σ i, Fin (m i) ↦ a p.1) (summable_sigma_norm_sq_weierstrass a m hm) hK)
   rw [hasProdUniformlyOn_iff_tendstoUniformlyOn]
   intro u hu
-  filter_upwards [ht.eventually (h0 u hu)] with s hs z hz
+  filter_upwards [(TauCeti.tendsto_finset_sigma_univ_atTop (κ := fun i ↦ Fin (m i))).eventually
+    (h0 u hu)] with s hs z hz
   have hsz := hs z hz
   simpa only [← tprod_weierstrassFactorOne_pow_eq_sigma a m hm,
     Finset.prod_sigma, Finset.prod_const, Finset.card_univ, Fintype.card_fin] using hsz
