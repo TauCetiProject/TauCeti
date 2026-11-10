@@ -168,6 +168,67 @@ private theorem ker_fderiv_fderiv_comp_le_range_inl (hi : i.IsNondegenerateCriti
     hi.ker_criticalHessian hn s, LinearMap.finrank_range_of_inj LinearMap.inl_injective]
   exact (LinearMap.finrank_range_of_inj (i.isImmersion.mfderiv_injective hn s)).le
 
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I 2 M] [J.Boundaryless] in
+/-- In slice charts `h` of `i` at `s`, the points of the zero section over the chart of `S` are the
+points of the submanifold: for `b` in the target of `φ = h.domChart.extend J`, the point
+`i (φ⁻¹ b)` lies in the chart `e = h.codChart` and corresponds to `h.equiv (b, 0)`. -/
+private theorem mem_codChart_source_and_extend_eq (h : IsImmersionAtOfComplement F J I n i s)
+    {b : E'} (hb : b ∈ (h.domChart.extend J).target) :
+    i ((h.domChart.extend J).symm b) ∈ h.codChart.source ∧
+      h.codChart.extend I (i ((h.domChart.extend J).symm b)) = h.equiv (b, 0) ∧
+      (h.codChart.extend I).symm (h.equiv (b, 0)) = i ((h.domChart.extend J).symm b) ∧
+      h.equiv (b, 0) ∈ (h.codChart.extend I).target := by
+  have hsrc : (h.domChart.extend J).symm b ∈ h.domChart.source := by
+    simpa using (h.domChart.extend J).map_target hb
+  have hy : i ((h.domChart.extend J).symm b) ∈ h.codChart.source :=
+    h.source_subset_preimage_source hsrc
+  have hw : h.codChart.extend I (i ((h.domChart.extend J).symm b)) = h.equiv (b, 0) :=
+    h.writtenInCharts hb
+  refine ⟨hy, hw, ?_, h.target_subset_preimage_target hb⟩
+  rw [← hw, (h.codChart.extend I).left_inv (by simpa using hy)]
+
+/-- In slice charts `h` of a Morse–Bott critical submanifold at `s`, with `i` of class `C²`, write
+`a = h.domChart.extend J s` and `g = f ∘ (h.codChart.extend I).symm ∘ h.equiv`. Then `i s` lies in
+the chart of `M` and corresponds to `(a, 0)`, `g` is `C²` at `(a, 0)`, the zero section is critical
+for `g` near `a`, and the kernel of the Hessian of `g` at `(a, 0)` consists of base directions. -/
+private theorem sliceChart_criticalZeroSection (hi : i.IsNondegenerateCriticalSubmanifold f)
+    (h : IsImmersionAtOfComplement F J I n i s) (hn : 2 ≤ n) :
+    i s ∈ h.codChart.source ∧
+      h.codChart.extend I (i s) = h.equiv (h.domChart.extend J s, 0) ∧
+      ContDiffAt ℝ 2 (f ∘ (h.codChart.extend I).symm ∘ h.equiv) (h.domChart.extend J s, 0) ∧
+      (∀ᶠ b in 𝓝 (h.domChart.extend J s),
+        fderiv ℝ (f ∘ (h.codChart.extend I).symm ∘ h.equiv) (b, 0) = 0) ∧
+      (fderiv ℝ (fderiv ℝ (f ∘ (h.codChart.extend I).symm ∘ h.equiv))
+        (h.domChart.extend J s, 0)).ker ≤ LinearMap.range (LinearMap.inl ℝ E' F) := by
+  set φ := h.domChart.extend J with hφ
+  set ξ := h.codChart.extend I with hξ
+  set L := h.equiv with hL
+  set g := f ∘ ξ.symm ∘ L with hg
+  set a := φ s with ha
+  have he2 : h.codChart ∈ IsManifold.maximalAtlas I 2 M :=
+    IsManifold.maximalAtlas_subset_of_le hn h.codChart_mem_maximalAtlas
+  have he1 : h.codChart ∈ IsManifold.maximalAtlas I 1 M :=
+    IsManifold.maximalAtlas_subset_of_le (by norm_num) he2
+  have hsφ : s ∈ φ.source := by simpa [hφ] using h.mem_domChart_source
+  have haφ : a ∈ φ.target := φ.map_source hsφ
+  have hx := mem_codChart_source_and_extend_eq h haφ
+  rw [ha, φ.left_inv hsφ] at hx
+  -- The zero section consists of critical points of `g`.
+  have hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ g (b, 0) = 0 := by
+    filter_upwards [h.domChart.isOpen_extend_target.mem_nhds haφ] with b hb
+    obtain ⟨hy, hw, -, -⟩ := mem_codChart_source_and_extend_eq h hb
+    have hzero : fderiv ℝ (f ∘ ξ.symm) (ξ (i (φ.symm b))) = 0 :=
+      (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero he1 hy).mp
+        (mem_criticalPoints.mp (hi.mem_criticalPoints (φ.symm b)))
+    rw [hg, ← comp_assoc, L.comp_right_fderiv, ← hw, hzero, ContinuousLinearMap.zero_comp]
+  have hga : ContDiffAt ℝ 2 g (a, 0) := by
+    have hQ2 : ContDiffAt ℝ 2 (f ∘ ξ.symm) (L (a, 0)) := by
+      rw [← hx.2.1]
+      exact (contMDiffAt_iff_contDiffAt_comp_extend_symm he2 hx.1).mp (hi.contMDiffAt s)
+    exact hQ2.comp (a, 0) L.contDiff.contDiffAt
+  exact ⟨hx.1, hx.2.1, hga, hcrit, hi.ker_fderiv_fderiv_comp_le_range_inl
+    (by rintro rfl; simp at hn) he2 hx.1 hx.2.1 hcrit⟩
+
 /-- **The Morse–Bott lemma.** Let `i : S → M` be a Morse–Bott critical submanifold of `f`, with
 slice charts `h.domChart` of `S` and `h.codChart` of `M` at `s` and `h.equiv : E' × F ≃ E` in which
 `i` reads `b ↦ (b, 0)`, and let `f` be `C^{k+2}` near `i s` with `1 ≤ k` and `k + 2 ≤ n`. Write
@@ -202,14 +263,9 @@ theorem exists_morseBott_chart (hi : i.IsNondegenerateCriticalSubmanifold f)
   set L := h.equiv with hL
   set g := f ∘ ξ.symm ∘ L with hg
   set a := φ s with ha
-  have hn : n ≠ 0 := fun h0 ↦ by simp [h0] at hkn
   have hk2 : (2 : ℕ∞ω) ≤ k + 2 := le_add_self
   have he : h.codChart ∈ IsManifold.maximalAtlas I (k + 2) M :=
     IsManifold.maximalAtlas_subset_of_le hkn h.codChart_mem_maximalAtlas
-  have he2 : h.codChart ∈ IsManifold.maximalAtlas I 2 M :=
-    IsManifold.maximalAtlas_subset_of_le hk2 he
-  have he1 : h.codChart ∈ IsManifold.maximalAtlas I 1 M :=
-    IsManifold.maximalAtlas_subset_of_le (by norm_num) he2
   have hsφ : s ∈ φ.source := by simpa [hφ] using h.mem_domChart_source
   have haφ : a ∈ φ.target := φ.map_source hsφ
   have hφopen : IsOpen φ.target := h.domChart.isOpen_extend_target
@@ -217,14 +273,8 @@ theorem exists_morseBott_chart (hi : i.IsNondegenerateCriticalSubmanifold f)
   -- Points of the zero section over the chart of `S` are the points of the submanifold.
   have hsec {b : E'} (hb : b ∈ φ.target) :
       i (φ.symm b) ∈ h.codChart.source ∧ ξ (i (φ.symm b)) = L (b, 0) ∧
-        ξ.symm (L (b, 0)) = i (φ.symm b) ∧ L (b, 0) ∈ ξ.target := by
-    have hsrc : φ.symm b ∈ h.domChart.source := by
-      simpa [hφ] using φ.map_target hb
-    have hy : i (φ.symm b) ∈ h.codChart.source := h.source_subset_preimage_source hsrc
-    have hw : ξ (i (φ.symm b)) = L (b, 0) := h.writtenInCharts hb
-    have hyξ : i (φ.symm b) ∈ ξ.source := by simpa [hξ] using hy
-    refine ⟨hy, hw, ?_, h.target_subset_preimage_target hb⟩
-    rw [← hw, ξ.left_inv hyξ]
+        ξ.symm (L (b, 0)) = i (φ.symm b) ∧ L (b, 0) ∈ ξ.target :=
+    mem_codChart_source_and_extend_eq h hb
   have hx := hsec haφ
   rw [ha, φ.left_inv hsφ] at hx
   -- The coordinate expression of `f` in the chart of `M` is `C^{k+2}` near `L (a, 0)`.
@@ -246,16 +296,7 @@ theorem exists_morseBott_chart (hi : i.IsNondegenerateCriticalSubmanifold f)
     have h1 := hQ hz' hz.2
     rw [ξ.right_inv hz.1.2] at h1
     exact (h1.comp z L.contDiff.contDiffAt).contDiffWithinAt
-  -- The zero section consists of critical points of `g`.
-  have hcrit_g {b : E'} (hb : b ∈ φ.target) : fderiv ℝ g (b, 0) = 0 := by
-    obtain ⟨hy, hw, -, -⟩ := hsec hb
-    have hzero : fderiv ℝ (f ∘ ξ.symm) (ξ (i (φ.symm b))) = 0 :=
-      (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero he1 hy).mp
-        (mem_criticalPoints.mp (hi.mem_criticalPoints (φ.symm b)))
-    rw [hg, ← comp_assoc, L.comp_right_fderiv, ← hw, hzero, ContinuousLinearMap.zero_comp]
-  have hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ g (b, 0) = 0 :=
-    Filter.mem_of_superset (hφopen.mem_nhds haφ) fun b hb ↦ hcrit_g hb
-  have hker := hi.ker_fderiv_fderiv_comp_le_range_inl hn he2 hx.1 hx.2.1 hcrit
+  obtain ⟨-, -, -, hcrit, hker⟩ := hi.sliceChart_criticalZeroSection h (hk2.trans hkn)
   have : FiniteDimensional ℝ (E' × F) := L.symm.toLinearEquiv.finiteDimensional
   have : FiniteDimensional ℝ E' :=
     Module.Finite.of_surjective (LinearMap.fst ℝ E' F) LinearMap.fst_surjective
@@ -336,26 +377,19 @@ theorem exists_normalized_morseBott_chart (hi : i.IsNondegenerateCriticalSubmani
     have h1 := (contMDiffAt_iff_contDiffAt_comp_extend_symm he hy).mp hz
     rw [hyz] at h1
     exact h1.comp z L.contDiff.contDiffAt
-  -- The zero section over `U` consists of critical points of `g`.
-  have hcrit_g {b : E'} (hb : b ∈ U) : fderiv ℝ (f ∘ ξ.symm) (L (b, 0)) = 0 := by
-    obtain ⟨hy, hyz⟩ := hpt (hUVξ (mk_mem_prod hb h0V))
-    rw [hsec b hb] at hy hyz
-    rw [← hyz]
-    exact (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero he1 hy).mp
-      (mem_criticalPoints.mp (hi.mem_criticalPoints (φ.symm b)))
-  have hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ g (b, 0) = 0 := by
-    filter_upwards [hU.mem_nhds haU] with b hb
-    rw [hg, ← Function.comp_assoc, L.comp_right_fderiv, hcrit_g hb,
-      ContinuousLinearMap.zero_comp]
+  -- The zero section consists of critical points of `g`.
+  obtain ⟨hx, hxz, -, hcrit, -⟩ := hi.sliceChart_criticalZeroSection h (le_add_self.trans hkn)
+  have hcrit_a : fderiv ℝ (f ∘ ξ.symm) (L (a, 0)) = 0 := by
+    rw [← hxz]
+    exact (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero he1 hx).mp
+      (mem_criticalPoints.mp (hi.mem_criticalPoints s))
   -- The Morse index of `f` at `i s` is the index of the vertical Hessian of `g` at `a`.
   have hidx : morseIndex (fun v ↦ g (a, v)) 0 = manifoldMorseIndex I f (i s) := by
-    obtain ⟨hx, hxz⟩ := hpt (hUVξ ha0)
-    rw [hsa] at hx hxz
     have hQ2 : ContDiffAt ℝ 2 (f ∘ ξ.symm) (L (a, 0)) := by
       rw [← hxz]
       exact (contMDiffAt_iff_contDiffAt_comp_extend_symm he2 hx).mp (hi.contMDiffAt s)
     rw [morseIndex_slice_right (hgC.self_of_nhds.of_le le_add_self) hcrit, hg,
-      ← Function.comp_assoc, morseIndex_comp hQ2 L.contDiff.contDiffAt (hcrit_g haU)
+      ← Function.comp_assoc, morseIndex_comp hQ2 L.contDiff.contDiffAt hcrit_a
         (by rw [L.fderiv]; exact ⟨L, rfl⟩), ← hxz]
     exact (manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas he2 hx (hi.contMDiffAt s)
       (mem_criticalPoints.mp (hi.mem_criticalPoints s))).symm
@@ -381,20 +415,12 @@ theorem eventually_mem_range_of_mem_criticalPoints (hi : i.IsNondegenerateCritic
   set L := h.equiv with hL
   set g := f ∘ ξ.symm ∘ L with hg
   set a := φ s with ha
-  have he2 : h.codChart ∈ IsManifold.maximalAtlas I 2 M :=
-    IsManifold.maximalAtlas_subset_of_le hn h.codChart_mem_maximalAtlas
   have he1 : h.codChart ∈ IsManifold.maximalAtlas I 1 M :=
-    IsManifold.maximalAtlas_subset_of_le (by norm_num) he2
-  have hsφ : s ∈ φ.source := by simpa [hφ] using h.mem_domChart_source
-  have haφ : a ∈ φ.target := φ.map_source hsφ
+    IsManifold.maximalAtlas_subset_of_le (by norm_num) (IsManifold.maximalAtlas_subset_of_le hn
+      h.codChart_mem_maximalAtlas)
+  have haφ : a ∈ φ.target := φ.map_source (by simpa [hφ] using h.mem_domChart_source)
   have hφopen : IsOpen φ.target := h.domChart.isOpen_extend_target
-  -- Points of the zero section over the chart of `S` are the points of the submanifold.
-  have hsec {b : E'} (hb : b ∈ φ.target) :
-      i (φ.symm b) ∈ h.codChart.source ∧ ξ (i (φ.symm b)) = L (b, 0) := by
-    have hsrc : φ.symm b ∈ h.domChart.source := by simpa [hφ] using φ.map_target hb
-    exact ⟨h.source_subset_preimage_source hsrc, h.writtenInCharts hb⟩
-  have hx := hsec haφ
-  rw [ha, φ.left_inv hsφ] at hx
+  obtain ⟨hxe, hxL, hga, hcrit, hker⟩ := hi.sliceChart_criticalZeroSection h hn
   -- A point of the chart domain is critical for `f` exactly when its coordinates are critical
   -- for `g`.
   have hcrit_iff {x : M} (hx : x ∈ h.codChart.source) :
@@ -405,35 +431,24 @@ theorem eventually_mem_range_of_mem_criticalPoints (hi : i.IsNondegenerateCritic
     simpa only [ContinuousLinearMap.comp_assoc, ContinuousLinearEquiv.coe_comp_coe_symm,
       ContinuousLinearMap.comp_id, ContinuousLinearMap.zero_comp] using
       congrArg (· ∘L (L.symm : E →L[ℝ] E' × F)) h0
-  -- The zero section consists of critical points of `g`.
-  have hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ g (b, 0) = 0 := by
-    filter_upwards [hφopen.mem_nhds haφ] with b hb
-    obtain ⟨hy, hw⟩ := hsec hb
-    simpa [hw] using (hcrit_iff hy).1 (hi.mem_criticalPoints (φ.symm b))
-  have hga : ContDiffAt ℝ 2 g (a, 0) := by
-    have hQ2 : ContDiffAt ℝ 2 (f ∘ ξ.symm) (L (a, 0)) := by
-      rw [← hx.2]
-      exact (contMDiffAt_iff_contDiffAt_comp_extend_symm he2 hx.1).mp (hi.contMDiffAt s)
-    exact hQ2.comp (a, 0) L.contDiff.contDiffAt
-  have hker := hi.ker_fderiv_fderiv_comp_le_range_inl (by rintro rfl; simp at hn) he2 hx.1 hx.2
-    hcrit
   have : FiniteDimensional ℝ (E' × F) := L.symm.toLinearEquiv.finiteDimensional
   have : FiniteDimensional ℝ F :=
     Module.Finite.of_surjective (LinearMap.snd ℝ E' F) LinearMap.snd_surjective
   -- Near `(a, 0)` the critical points of `g` lie on the zero section. Read this in `M` through
   -- the coordinates `x ↦ L⁻¹ (ξ x)`, which send `i s` to `(a, 0)`.
   have hκ : Tendsto (fun x ↦ L.symm (ξ x)) (𝓝 (i s)) (𝓝 (a, 0)) := by
-    have hc := L.symm.continuous.continuousAt.comp (h.codChart.continuousAt_extend (I := I) hx.1)
-    rw [ContinuousAt, Function.comp_apply, hx.2, L.symm_apply_apply] at hc
+    have hc := L.symm.continuous.continuousAt.comp (h.codChart.continuousAt_extend (I := I) hxe)
+    rw [ContinuousAt, Function.comp_apply, hxL, L.symm_apply_apply] at hc
     exact hc
   filter_upwards [hκ.eventually (eventually_fderiv_eq_zero_iff_snd_eq_zero hga hcrit hker),
     hκ.eventually ((hφopen.preimage continuous_fst).mem_nhds haφ),
-    h.codChart.open_source.mem_nhds hx.1] with x hxz hxφ hxe hcx
+    h.codChart.open_source.mem_nhds hxe] with x hxz hxφ hxe hcx
   have hz : L.symm (ξ x) = ((L.symm (ξ x)).1, 0) :=
     Prod.ext rfl (hxz.1 ((hcrit_iff hxe).1 hcx))
-  refine ⟨φ.symm (L.symm (ξ x)).1, ξ.injOn (by simpa [hξ] using (hsec hxφ).1)
+  obtain ⟨hy, hw, -, -⟩ := mem_codChart_source_and_extend_eq h hxφ
+  refine ⟨φ.symm (L.symm (ξ x)).1, ξ.injOn (by simpa [hφ, hξ] using hy)
     (by simpa [hξ] using hxe) ?_⟩
-  rw [(hsec hxφ).2, ← hz, L.apply_symm_apply]
+  rw [hw, ← hz, L.apply_symm_apply]
 
 /-- **The image of a Morse–Bott critical submanifold is open in the critical set**: it is cut out
 of the critical set by an open subset of `M`. -/
@@ -449,8 +464,9 @@ theorem exists_isOpen_criticalPoints_inter_eq_range (hi : i.IsNondegenerateCriti
     exact ⟨hi.mem_criticalPoints s, mem_iUnion.2 ⟨s, hsU s⟩⟩
 
 /-- **A closed connected Morse–Bott critical submanifold is a connected component of the critical
-set.** If `S` is preconnected and the image of `i` is closed, for instance when `S` is compact, then
-the image of `i` is the connected component of the critical set through any of its points. -/
+set.** If `S` is preconnected and the image of `i` is closed, for instance when `S` is compact and
+`M` is Hausdorff, then the image of `i` is the connected component of the critical set through any
+of its points. -/
 theorem range_eq_connectedComponentIn (hi : i.IsNondegenerateCriticalSubmanifold f)
     (hn : 2 ≤ n) [PreconnectedSpace S] (hclosed : IsClosed (range i)) (s : S) :
     range i = connectedComponentIn (criticalPoints I f) (i s) := by

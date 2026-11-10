@@ -43,10 +43,11 @@ many (`TauCeti.IsMorseBottFamily.finite`). Each piece is closed
 (`TauCeti.IsMorseBottFamily.isClosed_range`). The same family exhibits `-f` as a Morse–Bott
 function (`TauCeti.IsMorseBottFamily.neg`).
 
-Conversely, the last two conditions come for free from the others. A Morse–Bott critical submanifold
-is isolated in the critical set, so if the images of `C²` nondegenerate critical submanifolds with
-nonempty preconnected sources are pairwise disjoint and cover the critical set, each image is
-closed, hence a connected component of the critical set, and the family is locally finite
+Conversely, the last two conditions follow from the first three once the pieces are known to
+partition the critical set. A Morse–Bott critical submanifold is isolated in the critical set, so
+if `f` is smooth and the images of `C²` nondegenerate critical submanifolds with nonempty
+preconnected sources are pairwise disjoint and cover the critical set, each image is closed, hence
+a connected component of the critical set, and the family is locally finite
 (`TauCeti.IsMorseBottFamily.of_pairwise_disjoint`). This is how a Morse–Bott family is built from
 a description of the critical set as a disjoint union of nondegenerate critical submanifolds.
 
