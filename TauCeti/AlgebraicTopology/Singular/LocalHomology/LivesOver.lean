@@ -134,8 +134,9 @@ For a fibration over an `n`-manifold the target is identified with `Hₖ₋ₙ(p
 localization with the shriek map of the inclusion of `b`
 (Barraud–Damian–Humilière–Oancea, Lemma 2.9), so this is their Definition 2.3 for the local
 system of chains on the fibre (their Example 2.4). For the identity of a compact connected
-oriented manifold the classes living over the fundamental class are the nonzero multiples of the
-fundamental class (`TauCeti.HomologicalOrientation.livesOverFundamentalClass_id_iff`). -/
+oriented `n`-manifold and integer coefficients, the classes of `Hₙ(M; ℤ)` living over the
+fundamental class are the nonzero multiples of the fundamental class
+(`TauCeti.HomologicalOrientation.livesOverFundamentalClass_id_iff`). -/
 def LivesOverFundamentalClass (p : E → M) (b : M) {k : ℕ}
     (α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ)) : Prop :=
   (fiberLocalization R p b k).hom α ≠ 0
@@ -146,16 +147,17 @@ theorem livesOverFundamentalClass_iff (p : E → M) (b : M) {k : ℕ}
   Iff.rfl
 
 /-- The zero class does not live over the fundamental class. -/
+@[simp]
 theorem not_livesOverFundamentalClass_zero (p : E → M) (b : M) (k : ℕ) :
     ¬LivesOverFundamentalClass R p b
       (0 : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ)) :=
   fun h ↦ h (map_zero _)
 
-/-- A class lives over the fundamental class at `b` if one of its integer multiples does. -/
+/-- A class lives over the fundamental class at `b` if one of its scalar multiples does. -/
 theorem LivesOverFundamentalClass.of_smul {p : E → M} {b : M} {k : ℕ}
-    {α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ)} (c : ℤ)
+    {α : ((TopCat.toSSet.obj (TopCat.of E)).homology R k : ModuleCat.{w} Λ)} (c : Λ)
     (h : LivesOverFundamentalClass R p b (c • α)) : LivesOverFundamentalClass R p b α :=
-  fun h' ↦ h (by rw [map_zsmul, h', smul_zero])
+  fun h' ↦ h (by rw [map_smul, h', smul_zero])
 
 /-- **Classes living over the fundamental class pull back along maps over the base.** If
 `σ : E → E'` satisfies `p' ∘ σ = p` and `σ_* α` lives over the fundamental class at `b` for `p'`,
@@ -196,6 +198,7 @@ include hn in
 multiple `d • [M]` of the fundamental class lives over the fundamental class at any point exactly
 when `d ≠ 0`: its localization at `b` is `d` times the local orientation at `b`, which has
 infinite order. -/
+@[simp]
 theorem livesOverFundamentalClass_id_zsmul_fundamentalClass_iff (b : M) (d : ℤ) :
     LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ)) id b (d • o.fundamentalClass hn) ↔
       d ≠ 0 := by
@@ -208,6 +211,7 @@ theorem livesOverFundamentalClass_id_zsmul_fundamentalClass_iff (b : M) (d : ℤ
 
 include hn in
 /-- The fundamental class of a compact oriented manifold lives over itself at every point. -/
+@[simp]
 theorem livesOverFundamentalClass_id_fundamentalClass (b : M) :
     LivesOverFundamentalClass (ModuleCat.of ℤ (ULift.{0} ℤ)) id b (o.fundamentalClass hn) := by
   simpa using (o.livesOverFundamentalClass_id_zsmul_fundamentalClass_iff hn b 1).2 one_ne_zero
