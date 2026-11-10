@@ -28,8 +28,8 @@ field `k`:
 
 * the lines `[1 : 0]` and `[0 : 1]` through the two standard basis vectors are fixed by the whole
   group scheme, so their orbits are single closed points;
-* the orbit of `[1 : 1]` is dense in `ℙ¹` (over any domain) and consists of all points except the
-  two fixed points, so it is not closed;
+* the orbit of `[1 : 1]` is dense in `ℙ¹` (over any commutative ring) and consists of all points
+  except the two fixed points, so it is not closed;
 * hence the boundary of that orbit, its closure minus the orbit, is exactly the two fixed points.
 
 This is the standard example of the closed-orbit lemma: the open orbit has a boundary made of
