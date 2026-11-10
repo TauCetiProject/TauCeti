@@ -137,33 +137,13 @@ section Fourier
 
 variable {b : Symbol n V W m}
 
-/-- The Fourier transform in the position of an iterated position derivative `∂_x^J b` is
-`∏_{j ∈ J} 2πi ηⱼ b̂(η, ξ)`. -/
-private theorem exists_fourier_mixedDeriv_slice (J : List (Fin n)) :
-    ∀ {b : Symbol n V W m}, b.HasCompactSpatialSupport → ∃ c : Symbol n V W m,
-      c.HasCompactSpatialSupport ∧
-      (∀ x ξ, c.coefficient (x, ξ) = mixedDeriv J [] b.coefficient x ξ) ∧
-      ∀ η ξ, 𝓕 (fun y ↦ c.coefficient (y, ξ)) η =
-        (J.map fun j ↦ 2 * π * Complex.I * (⟪η, EuclideanSpace.single j (1 : ℝ)⟫ : ℂ)).prod •
-          𝓕 (fun y ↦ b.coefficient (y, ξ)) η := by
-  induction J using List.reverseRecOn with
-  | nil => exact fun {b} hb ↦ ⟨b, hb, fun x ξ ↦ (mixedDeriv_nil_nil _ x ξ).symm, fun η ξ ↦ by simp⟩
-  | append_singleton J j ih =>
-    intro b hb
-    obtain ⟨c, hc, hcoef, hF⟩ := ih (hb.spatialDeriv j)
-    refine ⟨c, hc, fun x ξ ↦ by rw [hcoef, mixedDeriv_spatialDeriv], fun η ξ ↦ ?_⟩
-    rw [hF, hb.fourier_spatialDeriv_slice, smul_smul, List.map_append, List.prod_append]
-    simp
-
 /-- The integrand `exp(2πi ⟪η, x⟫) (∏ᵢ 2π η_{r i}) b̂(η, ξ)` is `(-i)ᵏ` times the Fourier inversion
 integrand of `∂_x^r b`. -/
-private theorem exists_fourierChar_smul_prod_smul_fourier_slice (hb : b.HasCompactSpatialSupport)
-    {k : ℕ} (r : Fin k → Fin n) : ∃ c : Symbol n V W m, c.HasCompactSpatialSupport ∧
-      (∀ x ξ, c.coefficient (x, ξ) = mixedDeriv (List.ofFn r) [] b.coefficient x ξ) ∧
-      ∀ x ξ η, (𝐞 ⟪η, x⟫ : ℂ) • ((∏ i, 2 * π * η (r i)) • 𝓕 (fun y ↦ b.coefficient (y, ξ)) η) =
-        (-Complex.I) ^ k • 𝐞 ⟪η, x⟫ • 𝓕 (fun y ↦ c.coefficient (y, ξ)) η := by
-  obtain ⟨c, hc, hcoef, hF⟩ := exists_fourier_mixedDeriv_slice (List.ofFn r) hb
-  refine ⟨c, hc, hcoef, fun x ξ η ↦ ?_⟩
+private theorem fourierChar_smul_prod_smul_fourier_slice (hb : b.HasCompactSpatialSupport)
+    {k : ℕ} (r : Fin k → Fin n) (x ξ η : CoordinateSpace n) :
+    (𝐞 ⟪η, x⟫ : ℂ) • ((∏ i, 2 * π * η (r i)) • 𝓕 (fun y ↦ b.coefficient (y, ξ)) η) =
+      (-Complex.I) ^ k • 𝐞 ⟪η, x⟫ •
+        𝓕 (fun y ↦ (iteratedSpatialDeriv r b).coefficient (y, ξ)) η := by
   have hI : (-Complex.I) ^ k * Complex.I ^ k = 1 := by
     rw [← mul_pow]
     simp
@@ -173,10 +153,9 @@ private theorem exists_fourierChar_smul_prod_smul_fourier_slice (hb : b.HasCompa
       Complex.ofReal_mul, Complex.ofReal_ofNat]
     rw [← Fin.prod_const, ← Finset.prod_mul_distrib]
     exact Finset.prod_congr rfl fun i _ ↦ by ring
-  rw [hF, Circle.smul_def, ← Complex.coe_smul, smul_smul, smul_smul, smul_smul, List.map_ofFn,
-    List.prod_ofFn]
+  rw [hb.fourier_iteratedSpatialDeriv_slice, Circle.smul_def, ← Complex.coe_smul, smul_smul,
+    smul_smul, smul_smul]
   congr 1
-  simp only [Function.comp_def]
   rw [hP]
   linear_combination -(↑(𝐞 ⟪η, x⟫) * ((∏ i, 2 * π * η (r i) : ℝ) : ℂ)) * hI
 
@@ -197,13 +176,11 @@ private theorem integrable_taylorTerm_and_integral_eq [CompleteSpace W] [Complet
     (hb : b.HasCompactSpatialSupport) (k : ℕ) (x ξ : CoordinateSpace n) :
     Integrable (taylorTerm a b k x ξ) ∧
       ∫ η, taylorTerm a b k x ξ η = (sharpTerm k a b).coefficient (x, ξ) := by
-  choose c hc hcoef hfun using fun r : Fin k → Fin n ↦
-    exists_fourierChar_smul_prod_smul_fourier_slice hb r
   set D : (Fin k → Fin n) → W →L[ℂ] U := fun r ↦ mixedDeriv [] (List.ofFn r) a.coefficient x ξ
   set g : (Fin k → Fin n) → CoordinateSpace n → V →L[ℂ] W :=
-    fun r η ↦ 𝐞 ⟪η, x⟫ • 𝓕 (fun y ↦ (c r).coefficient (y, ξ)) η
+    fun r η ↦ 𝐞 ⟪η, x⟫ • 𝓕 (fun y ↦ (iteratedSpatialDeriv r b).coefficient (y, ξ)) η
   have hg (r : Fin k → Fin n) : Integrable (g r) :=
-    (hc r).integrable_fourierChar_smul_fourier_slice x ξ
+    (hb.iteratedSpatialDeriv r).integrable_fourierChar_smul_fourier_slice x ξ
   have hD (r : Fin k → Fin n) : iteratedFDeriv ℝ k (fun ζ ↦ a.coefficient (x, ζ)) ξ
       (fun i ↦ EuclideanSpace.single (r i) 1) = D r := by
     rw [← coordinateDeriv_ofFn_eq_iteratedFDeriv r (f := fun ζ ↦ a.coefficient (x, ζ))
@@ -217,7 +194,8 @@ private theorem integrable_taylorTerm_and_integral_eq [CompleteSpace W] [Complet
     rw [ContinuousLinearMap.smul_comp, ← ContinuousLinearMap.compL_apply,
       ← ContinuousLinearMap.flip_apply, map_sum, Finset.smul_sum, Finset.smul_sum]
     refine Finset.sum_congr rfl fun r _ ↦ ?_
-    conv_rhs => rw [mul_smul, ← ContinuousLinearMap.comp_smul, ← hfun r x ξ η]
+    conv_rhs => rw [mul_smul, ← ContinuousLinearMap.comp_smul,
+      ← fourierChar_smul_prod_smul_fourier_slice hb r x ξ η]
     simp only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply, PiLp.smul_apply,
       smul_eq_mul, ← Complex.coe_smul, ContinuousLinearMap.comp_smul,
       ContinuousLinearMap.smul_comp, smul_smul]
@@ -235,7 +213,8 @@ private theorem integrable_taylorTerm_and_integral_eq [CompleteSpace W] [Complet
   rw [integral_finsetSum (f := F) _ fun r _ ↦ hint r, coefficient_sharpTerm, Finset.smul_sum]
   refine Finset.sum_congr rfl fun r _ ↦ ?_
   rw [integral_smul, ContinuousLinearMap.integral_comp_comm _ (hg r),
-    (hc r).integral_fourierChar_smul_fourier_slice, hcoef, ContinuousLinearMap.compL_apply,
+    (hb.iteratedSpatialDeriv r).integral_fourierChar_smul_fourier_slice,
+    coefficient_iteratedSpatialDeriv, ContinuousLinearMap.compL_apply,
     div_eq_inv_mul]
 
 /-- **Taylor's formula** for the integrand of `a # b`: after the first `M + 1` Taylor terms of

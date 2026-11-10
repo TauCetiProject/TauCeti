@@ -63,7 +63,9 @@ Since the `H^s` norm is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`, this is the est
   (`TauCeti.Symbol.HasCompactSpatialSupport.hasFDerivAt_fourier_slice`,
   `TauCeti.Symbol.HasCompactSpatialSupport.coordinateDeriv_fourier_slice`), and
   `(∂_{x_j} a)^(η, ξ) = 2πi ηⱼ â(η, ξ)`
-  (`TauCeti.Symbol.HasCompactSpatialSupport.fourier_spatialDeriv_slice`).
+  (`TauCeti.Symbol.HasCompactSpatialSupport.fourier_spatialDeriv_slice`), with its iterate
+  `(∂_x^r a)^(η, ξ) = ∏ᵢ 2πi η_{r i} â(η, ξ)`
+  (`TauCeti.Symbol.HasCompactSpatialSupport.fourier_iteratedSpatialDeriv_slice`).
 * `TauCeti.Symbol.HasCompactSpatialSupport.integral_fourierChar_smul_fourier_slice`: Fourier
   inversion `∫ exp(2πi ⟪η, x⟫) â(η, ξ) dη = a(x, ξ)` of the position slices.
 * `TauCeti.Symbol.HasCompactSpatialSupport.fourier_quantizeSchwartzValue`: the Fourier transform
@@ -270,6 +272,25 @@ theorem HasCompactSpatialSupport.fourier_spatialDeriv_slice (ha : a.HasCompactSp
       ha.coe_sliceSchwartz, fderiv_coefficient_single]
   rw [← hd, ← SchwartzMap.fourier_coe, SchwartzMap.fourier_lineDerivOp_apply,
     ha.fourier_sliceSchwartz]
+
+/-- The Fourier transform in the position of the iterated spatial derivative `∂_x^r a` is
+`∏ᵢ 2πi η_{r i} â(η, ξ)`. -/
+theorem HasCompactSpatialSupport.fourier_iteratedSpatialDeriv_slice
+    (ha : a.HasCompactSpatialSupport) {k : ℕ} (r : Fin k → Fin n) (η ξ : CoordinateSpace n) :
+    𝓕 (fun y ↦ (Symbol.iteratedSpatialDeriv r a).coefficient (y, ξ)) η =
+      (∏ i, (2 * π * Complex.I) * ⟪η, EuclideanSpace.single (r i) (1 : ℝ)⟫) •
+        𝓕 (fun y ↦ a.coefficient (y, ξ)) η := by
+  induction k generalizing a with
+  | zero => simp
+  | succ k ih =>
+    have h : (fun y ↦ (Symbol.iteratedSpatialDeriv r a).coefficient (y, ξ)) = fun y ↦
+        (Symbol.iteratedSpatialDeriv (fun i ↦ r i.castSucc)
+          (Symbol.spatialDeriv (r (Fin.last k)) a)).coefficient (y, ξ) := by
+      funext y
+      simp only [coefficient_iteratedSpatialDeriv, mixedDeriv_spatialDeriv, List.ofFn_succ',
+        List.concat_eq_append]
+    rw [h, ih (ha.spatialDeriv _), ha.fourier_spatialDeriv_slice, smul_smul,
+      Fin.prod_univ_castSucc]
 
 /-- **Differentiation in the frequency.** The Fourier transform `â(η, ξ)` of the position slice
 of a symbol with compact spatial support is differentiable in `ξ`, with the Fourier transform of
