@@ -58,6 +58,8 @@ terms cancel.
 
 * `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedTruncation`: the
   energy identity on the truncation `Σ_R` of the plumbed sphere, for a manifold target.
+* `SmoothTwoForm.IsNondegenerate.integrableOn_plumbedTruncation`: the energy, area and curvature
+  densities are integrable over `Σ_R`.
 * `SmoothTwoForm.IsNondegenerate.abs_integral_floerEnergyDensity_plumbedTruncation_sub_sum_le`:
   the energy over `Σ_R` differs from the area plus the Hamiltonian terms of its four boundary
   loops by at most the sum of the six end bounds.
@@ -332,6 +334,45 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation_
   rw [hcut, ← hab, hB, endSign_inf]
   ring
 
+/-- **Integrability on the truncated plumbed four-punctured sphere, for a manifold target.** Under
+the hypotheses of `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_plumbedTruncation`,
+the Floer energy density, the symplectic area density and the curvature of the plumbed
+perturbation are integrable over the truncated plumbed sphere `Σ_R = q.plumbedTruncation L R`. -/
+theorem IsNondegenerate.integrableOn_plumbedTruncation (hω : ω.IsNondegenerate) (hq : q ≠ inf)
+    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHas : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Ha r)))
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r)))
+    (hab : Hb q = Ha inf) (hL : 4 < L) {R : ℝ} (hR : L / 2 ≤ R) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1) ∧
+      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}) :
+    IntegrableOn (ω.floerEnergyDensity
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u) (Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R) ∧
+      IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ))
+        (Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R) ∧
+      IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+          z (u z))
+        (Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R) := by
+  obtain ⟨⟨hEA, hRA⟩, -⟩ :=
+    hω.integral_floerEnergyDensity_plumbedPerturbation_receiving hq hHb hHbs hab hL hR hu
+  obtain ⟨⟨hEB, hRB⟩, -⟩ :=
+    hω.integral_floerEnergyDensity_plumbedPerturbation_inserted hq hHa hHb hHas hHbs hab hL hR hu
+  -- The area density is continuous on the four-punctured sphere, which contains the compact set
+  -- `Σ_R`, so it is integrable over `Σ_R`.
+  have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv
+    (isOpen_plumbedSphere q L) hu stdComplexLineReal stdComplexLineImag
+  simp only [← SmoothBundleForm.eval₂_apply] at harea
+  refine ⟨?_, (harea.mono fun z hz ↦ plumbedTruncation_subset hq (by linarith) R
+    hz).integrableOn_compact (isCompact_preimage_plumbedTruncation q L R), ?_⟩ <;>
+    rw [preimage_plumbedTruncation hq L R]
+  exacts [hEA.union hEB, hRA.union hRB]
+
 /-- **The energy identity on the truncated plumbed four-punctured sphere, for a manifold target.**
 Plumb the output end of a pair of pants with period-one `C¹` Hamiltonians `Ha` into the input end
 `q` of one with period-one `C¹` Hamiltonians `Hb`, along a neck of length `L > 4`, where
@@ -378,13 +419,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_plumbedTruncation (hω : ω.
     hω.integral_floerEnergyDensity_plumbedPerturbation_receiving hq hHb hHbs hab hL hR hu
   obtain ⟨⟨hEB, hRB⟩, hB⟩ :=
     hω.integral_floerEnergyDensity_plumbedPerturbation_inserted hq hHa hHb hHas hHbs hab hL hR hu
-  -- The area density is continuous on the four-punctured sphere, which contains the compact set
-  -- `Σ_R`, so it is integrable over `Σ_R`.
-  have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv
-    (isOpen_plumbedSphere q L) hu stdComplexLineReal stdComplexLineImag
-  simp only [← SmoothBundleForm.eval₂_apply] at harea
-  replace harea := (harea.mono fun z hz ↦ plumbedTruncation_subset hq (by linarith) R
-    hz).integrableOn_compact (μ := volume) (isCompact_preimage_plumbedTruncation q L R)
+  obtain ⟨-, harea, -⟩ :=
+    hω.integrableOn_plumbedTruncation hq hHa hHb hHas hHbs hab hL hR hu
   rw [preimage_plumbedTruncation hq L R] at harea ⊢
   -- Split `Σ_R` into its receiving and inserted parts, which meet in a null set.
   have hψBm : MeasurableSet (realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹'
