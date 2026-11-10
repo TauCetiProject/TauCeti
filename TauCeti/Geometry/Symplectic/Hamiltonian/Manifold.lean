@@ -63,12 +63,13 @@ back form (`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mpullback`). On a pro
 the product form, the product of Hamiltonian vector fields of `f` and `g` is a Hamiltonian vector
 field of `(x, y) ↦ f x + g y` (`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.prod`).
 
-Both constructions are natural. Pointwise, a linear map `D` between tangent spaces that pulls a
-nondegenerate form back to a nondegenerate form is surjective when the two tangent spaces share a
-model (`TauCeti.SmoothTwoForm.IsNondegenerate.surjective_of_eval₂_map`); if `D` is surjective and
-`dg ∘ D = df`, then `D` carries `X_f` to `X_g`
-(`TauCeti.SmoothTwoForm.IsNondegenerate.map_hamiltonianVectorField_of_eval₂`). Hence a smooth map
-`φ` pulling a nondegenerate form `σ₂` back to `σ`
+Both constructions are natural. Pointwise, if a surjective linear map `D` from `T_x M` to
+`T_y M₂` satisfies `σ₂_y(D u, D v) = σ_x(u, v)` and `dg_y ∘ D = df_x` for nondegenerate `σ` and
+`σ₂`, then `D` carries `X_f(x)` to `X_g(y)`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.map_hamiltonianVectorField_of_eval₂`). Surjectivity is
+automatic when `M₂ = M` and `σ₂ = σ`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.surjective_of_eval₂_map`). Hence a smooth map `φ` pulling
+a nondegenerate form `σ₂` back to `σ`
 carries the Hamiltonian vector field of `g ∘ φ` to that of `g`, wherever its differential is
 surjective (`TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp`), and so
 `{g ∘ φ, k ∘ φ} = {g, k} ∘ φ` there (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp`).
@@ -102,10 +103,8 @@ Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
   `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_mvfderiv`: `{f, g} = df(X_g)`, and
   `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_poissonBracket`: the Poisson bracket of
   `C^(n+1)` functions is `C^n`.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.surjective_of_eval₂_map`,
-  `TauCeti.SmoothTwoForm.IsNondegenerate.map_hamiltonianVectorField_of_eval₂`: linear maps
-  preserving nondegenerate forms are surjective and carry Hamiltonian vectors to Hamiltonian
-  vectors.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.map_hamiltonianVectorField_of_eval₂`: a surjective
+  linear map `D` with `σ₂(D u, D v) = σ(u, v)` and `dg ∘ D = df` carries `X_f(x)` to `X_g(y)`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp`,
   `TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField` and
   `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp`: naturality of Hamiltonian vector
@@ -576,19 +575,6 @@ variable {E₂ H₂ M₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E�
   {x : M}
 
 namespace IsNondegenerate
-
-/-- **Linear maps preserving a nondegenerate form are surjective.** A linear map `D` from the
-tangent space at `x` to the tangent space at `y` with `σ_y(D u, D v) = σ_x(u, v)` is injective
-because `σ` is nondegenerate, hence surjective in finite dimension. -/
-theorem surjective_of_eval₂_map (hσ : σ.IsNondegenerate) {y : M}
-    {D : TangentSpace I x →L[ℝ] TangentSpace I y}
-    (hD : ∀ u v, SmoothBundleForm.eval₂ σ y (D u) (D v) = SmoothBundleForm.eval₂ σ x u v) :
-    Function.Surjective D := by
-  have hinj : Function.Injective D :=
-    (injective_iff_map_eq_zero D).2 fun u hu ↦
-      isNondegenerate_iff_separatingLeft.1 hσ x u fun w ↦ by
-        rw [← hD, hu, ← flat_apply, map_zero, zero_apply]
-  exact (LinearMap.injective_iff_surjective (f := (D.toLinearMap : E →ₗ[ℝ] E))).1 hinj
 
 /-- **Linear maps preserving nondegenerate forms carry Hamiltonian vectors.** Let `D` be a
 surjective linear map from the tangent space of `M` at `x` to the tangent space of `M₂` at `y`
