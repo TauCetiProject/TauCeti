@@ -119,9 +119,7 @@ theorem exists_target_isEmpty_and_isEmpty_iff :
     exact ⟨by simpa only [hP, P.right_eq] using P.lower_mem,
       by simpa only [P.right_eq] using P.upper_mem⟩
   · rintro ⟨hs, ht⟩
-    have ha : a ≠ finRotate n a := fun h => by
-      rw [← h, Grid.cIco_self] at hs
-      exact absurd hs (Finset.notMem_empty _)
+    have ha : a ≠ finRotate n a := fun h => Grid.ne_of_mem_cIco hs (congrArg _ h)
     let P := GridHexagonBetween.ofSwapColumns x a ha hs ht
     let r := GridRectangleBetween.ofSwapColumns (x.swapColumns a (finRotate n a)) x a
       (finRotate n a) ha (GridState.swapColumns_swapColumns _ _ _).symm
@@ -145,9 +143,7 @@ theorem exists_source_isEmpty_and_isEmpty_iff :
     have hr : y P.right = x a := by rw [← hright, r.map_right, hP.1, hP.2]
     exact ⟨by simpa only [hl, hr] using P.lower_mem, by simpa only [hr] using P.upper_mem⟩
   · rintro ⟨hs, ht⟩
-    have ha : a ≠ finRotate n a := fun h => by
-      rw [← h, Grid.cIco_self] at hs
-      exact absurd hs (Finset.notMem_empty _)
+    have ha : a ≠ finRotate n a := fun h => Grid.ne_of_mem_cIco hs (congrArg _ h.symm)
     -- The hexagon occupies column `a` and reads the exchanged rows of `a` and the next column.
     let m := x.swapColumns a (finRotate n a)
     let r := GridRectangleBetween.ofSwapColumns x m a (finRotate n a) ha rfl
@@ -252,9 +248,8 @@ theorem exists_target_isEmpty_and_isEmpty_iff :
     exact ⟨by simpa only [P.left_eq, hP] using P.lower_mem,
       by simpa only [hP] using P.upper_mem⟩
   · rintro ⟨hs, ht⟩
-    have hbc : finRotate n a ≠ finRotate n (finRotate n a) := fun h => by
-      rw [← h, Grid.cIco_self] at hs
-      exact absurd hs (Finset.notMem_empty _)
+    have hbc : finRotate n a ≠ finRotate n (finRotate n a) :=
+      fun h => Grid.ne_of_mem_cIco hs (congrArg _ h)
     let P := ofSwapColumns x (finRotate n (finRotate n a)) hbc.symm hs ht
     let r := GridRectangleBetween.ofSwapColumns
       (x.swapColumns (finRotate n a) (finRotate n (finRotate n a))) x (finRotate n a)
@@ -281,9 +276,8 @@ theorem exists_source_isEmpty_and_isEmpty_iff :
     have hr : y P.right = x (finRotate n a) := by rw [← hright, r.map_right, hP.1, P.left_eq]
     exact ⟨by simpa only [hl, hr] using P.lower_mem, by simpa only [hr] using P.upper_mem⟩
   · rintro ⟨hs, ht⟩
-    have hbc : finRotate n a ≠ finRotate n (finRotate n a) := fun h => by
-      rw [← h, Grid.cIco_self] at hs
-      exact absurd hs (Finset.notMem_empty _)
+    have hbc : finRotate n a ≠ finRotate n (finRotate n a) :=
+      fun h => Grid.ne_of_mem_cIco hs (congrArg _ h.symm)
     -- The hexagon occupies the column after `a` and reads the exchanged rows of that column and
     -- the next one.
     let m := x.swapColumns (finRotate n a) (finRotate n (finRotate n a))
