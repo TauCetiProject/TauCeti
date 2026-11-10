@@ -68,15 +68,15 @@ theorem pi_mul_div_two_lt_pi {β : ℝ} (hβ : β < 2) :
 /-- The closed upper part of the corner stays in the closed sector: the argument condition on the
 open upper part passes to its closure by continuity of `f`. -/
 theorem arg_sub_mem_Icc_of_arg_mem_sector {Ω : Set ℂ} {f : ℂ → ℂ} {w : ℂ} {β : ℝ}
-    (hΩopen : IsOpen Ω) (hβ : β ∈ Ioo (0 : ℝ) 2)
+    (hΩopen : IsOpen Ω) (hβ : β ∈ Icc (0 : ℝ) 2)
     (hfcont : ContinuousOn f (Ω ∩ {z : ℂ | 0 ≤ z.im}))
     (hsector_open : ∀ z ∈ Ω ∩ {z : ℂ | 0 < z.im},
       (f z - w).arg ∈ Ioo (-(Real.pi * β / 2)) (Real.pi * β / 2))
     {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}) :
     (f z - w).arg ∈ Icc (-(Real.pi * β / 2)) (Real.pi * β / 2) := by
   have hangle : Real.pi * β / 2 ∈ Icc (0 : ℝ) Real.pi :=
-    ⟨div_nonneg (mul_nonneg Real.pi_pos.le hβ.1.le) (by norm_num),
-      (pi_mul_div_two_lt_pi hβ.2).le⟩
+    ⟨div_nonneg (mul_nonneg Real.pi_pos.le hβ.1) (by norm_num),
+      by nlinarith [Real.pi_pos, hβ.2]⟩
   have hzclosure : z ∈ closure (Ω ∩ {y : ℂ | 0 < y.im}) := by
     apply hΩopen.inter_closure
     exact ⟨hz.1, by simpa only [Complex.closure_setOfPred_lt_im, mem_ofPred_eq] using hz.2⟩

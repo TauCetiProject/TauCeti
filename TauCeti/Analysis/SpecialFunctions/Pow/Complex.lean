@@ -194,8 +194,8 @@ theorem cpow_inv_cpow_of_arg_mem_Ioc {u : ℂ} {r : ℝ} (hr : 0 < r)
       u.arg * r⁻¹ ≤ (r * Real.pi) * r⁻¹ := mul_le_mul_of_nonneg_right harg.2 (inv_nonneg.mpr hr.le)
       _ = Real.pi := by field_simp
 
-/-- The power coordinate `I * f ^ (1 / β)` is injective on a set where `f` is injective and the
-principal `β`-th root of `f` can be recovered by the `β`-th power. -/
+/-- The power coordinate `I * f ^ (1 / β)` is injective on a set where `f` is injective and
+`f` is recovered by raising its principal `β`-th root to the `β`-th power. -/
 theorem injOn_I_mul_cpow_inv {S : Set ℂ} {f : ℂ → ℂ} {β : ℝ} (hinj : Set.InjOn f S)
     (hrecover : ∀ z ∈ S, (f z ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z) :
     Set.InjOn (fun z => I * f z ^ ((β⁻¹ : ℝ) : ℂ)) S := fun z hz w hw hzw => by
