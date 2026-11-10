@@ -384,6 +384,7 @@ theorem integral_smul (c : ℂ) (f : C(T, Symbol n V W m)) :
   simpa using MeasureTheory.integral_smul c fun t => (f t).coefficient p
 
 /-- The integral of a constant family is the symbol multiplied by the total mass. -/
+@[simp]
 theorem integral_const (a : Symbol n V W m) :
     integral μ (ContinuousMap.const T a) = (μ.real univ : ℂ) • a := by
   refine Symbol.ext (funext fun p => ?_)
@@ -464,8 +465,8 @@ theorem seminorm_average_le (a : Symbol n V W m) {K : Compacts (CoordinateSpace 
   have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB 1)
   refine seminorm_integral_le μ _ fun g => seminorm_le_bound K α β _ (by positivity)
     fun x hx ξ => ?_
-  rw [coefficient_conjFamily, show conjCLM (σW g) (σV g⁻¹) ∘ a.coefficient =
-      (conjCLM (σW g) (σV g⁻¹)).restrictScalars ℝ ∘ a.coefficient from rfl,
+  rw [coefficient_conjFamily,
+    ← ContinuousLinearMap.coe_restrictScalars' (R := ℝ) (conjCLM (σW g) (σV g⁻¹)),
     ContinuousLinearMap.mixedDeriv_comp_left _ a.contDiff_coefficient,
     ContinuousLinearMap.coe_restrictScalars', conjCLM_apply]
   calc ‖σW g ∘L mixedDeriv α β a.coefficient x ξ ∘L σV g⁻¹‖
@@ -507,6 +508,7 @@ theorem average_eq_self [IsProbabilityMeasure μ] (a : Symbol n V W m)
 
 /-- For a left-invariant probability measure, such as the normalized Haar measure, averaging is a
 projection onto the invariant symbols. -/
+@[simp]
 theorem average_average [IsProbabilityMeasure μ] [μ.IsMulLeftInvariant] (a : Symbol n V W m) :
     average μ σV σW (average μ σV σW a) = average μ σV σW a :=
   average_eq_self μ σV σW _ (comp_coefficient_average_comp μ σV σW a)
