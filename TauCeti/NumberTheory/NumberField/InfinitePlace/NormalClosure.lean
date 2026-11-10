@@ -44,14 +44,12 @@ unramified at infinite places. -/
 theorem _root_.AlgHom.isUnramifiedAtInfinitePlaces_fieldRange (f : L →ₐ[K] M)
     [IsUnramifiedAtInfinitePlaces K L] :
     IsUnramifiedAtInfinitePlaces K f.fieldRange := by
-  refine ⟨fun w ↦ isUnramified_iff.mpr ?_⟩
+  refine ⟨fun w ↦ ?_⟩
   let e := f.equivFieldRange
-  rcases isUnramified_iff.mp ((w.comap e.toRingHom).isUnramified K) with h | h
-  · exact .inl ((isReal_comap_iff e.toRingEquiv).mp h)
-  · right
-    have he : e.toRingHom.comp (algebraMap K L) = algebraMap K f.fieldRange :=
-      e.toAlgHom.comp_algebraMap
-    simpa only [← comap_comp, he] using h
+  have he : e.toRingHom.comp (e.symm.toAlgHom : f.fieldRange →+* L) = RingHom.id _ :=
+    e.toRingEquiv.comp_symm
+  simpa only [← comap_comp, he, comap_id] using
+    ((w.comap e.toRingHom).isUnramified K).comap_algHom e.symm.toAlgHom
 
 variable [Algebra.IsAlgebraic K M]
 
