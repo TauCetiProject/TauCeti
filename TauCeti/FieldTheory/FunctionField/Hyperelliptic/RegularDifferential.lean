@@ -189,9 +189,9 @@ theorem weilDifferentialDivisor_repartitionDualMul_inv_weilDifferentialCotrace_o
   rw [Q.ord_pow, Place.ord_algebraMap_restrict k (RatFunc k)] at hord
   have hx := Place.ord_algebraMap_restrict k (RatFunc k) Q RatFunc.X
   have he := Place.ramificationIdx_eq_of_pow_eq_of_prime k (RatFunc k) (P' := Q)
-    Nat.prime_two hgen hy (by exact_mod_cast h2) (RatFunc.algebraMap_ne_zero hf.ne_zero)
+    Nat.prime_two hgen hy (by exact_mod_cast h2)
   have hd := Place.differentExponent_eq_of_pow_eq_of_prime k (RatFunc k) (P' := Q)
-    Nat.prime_two hgen hy (by exact_mod_cast h2) (RatFunc.algebraMap_ne_zero hf.ne_zero)
+    Nat.prime_two hgen hy (by exact_mod_cast h2)
   -- Case on the place below `Q`, and then on the parities deciding `e` and the different
   -- exponent: in each case every term is an explicit multiple of `ord_Q y` or of `deg f`.
   rcases Place.eq_infty_or_exists_eq_adicOfIrreducible (Q.restrict k (RatFunc k)) with

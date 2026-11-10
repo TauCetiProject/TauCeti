@@ -26,6 +26,8 @@ plus half of itself is at most `2 b`.
 * `ENNReal.toNNReal_one_sub_div_pos`: `0 < (1 - a / b).toNNReal` for `a < b`.
 * `ENNReal.exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one`: for `r > 1` and `n > 0` with
   `n (2 - r) < 2 r`, a finite exponent `t ≥ 2` with `1/2 - 1/t < 1/n` and `1/r + 1/t ≤ 1`.
+* `ENNReal.exists_inv_lt_inv_add_inv_two_and_inv_add_inv_le_iff`: for `0 < q < 2`, an exponent
+  `s` with `q⁻¹ < s⁻¹ + 2⁻¹` and `p⁻¹ + s⁻¹ ≤ q⁻¹` exists exactly when `2 < p`.
 * `ENNReal.le_mul_two_of_le_add_div_two`: the absorption step `a ≤ b + a / 2 → a ≤ 2 b` for
   finite `a`, as used in elliptic estimates.
 * `ENNReal.ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul`: the cancellation
@@ -78,6 +80,35 @@ theorem exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one {n : ℝ} (hn : 0 < n
     exact_mod_cast this
   · linarith [inv_pos.2 hn]
   · linarith
+
+/-- For `0 < q < 2`, an exponent `s` with `q⁻¹ < s⁻¹ + 2⁻¹` and `p⁻¹ + s⁻¹ ≤ q⁻¹` exists exactly
+when `2 < p`: at `p = 2` the two conditions would force `q⁻¹ < q⁻¹`.
+
+This is the exponent bookkeeping for the compactness of multiplication by `α ∈ L^p` from
+`W^{1,q}` to `L^q` in dimension two, for `1 < q < 2` on a compact surface or a bounded domain
+with Lipschitz boundary (the local form of McDuff–Salamon, *J-holomorphic Curves and Symplectic
+Topology*, Lemma C.2.2). There `W^{1,q}` embeds compactly in `L^s` for every `s` below the
+Sobolev exponent `2q/(2-q)`, that is for `q⁻¹ < s⁻¹ + 2⁻¹`, and Hölder's inequality on the finite
+measure space maps `L^p × L^s` to `L^q` when `p⁻¹ + s⁻¹ ≤ q⁻¹`. The arithmetic itself needs
+neither a domain nor `1 < q`. -/
+theorem exists_inv_lt_inv_add_inv_two_and_inv_add_inv_le_iff {p q : ℝ≥0∞} (hq0 : q ≠ 0)
+    (hq2 : q < 2) :
+    (∃ s : ℝ≥0∞, q⁻¹ < s⁻¹ + 2⁻¹ ∧ p⁻¹ + s⁻¹ ≤ q⁻¹) ↔ 2 < p := by
+  have hqtop : q⁻¹ ≠ ∞ := inv_ne_top.2 hq0
+  have h2q : (2 : ℝ≥0∞)⁻¹ < q⁻¹ := ENNReal.inv_lt_inv.2 hq2
+  constructor
+  · rintro ⟨s, hlt, hle⟩
+    have hstop : s⁻¹ ≠ ∞ := ne_top_of_le_ne_top hqtop (le_add_self.trans hle)
+    have h : s⁻¹ + p⁻¹ < s⁻¹ + 2⁻¹ := by rw [add_comm]; exact hle.trans_lt hlt
+    exact ENNReal.inv_lt_inv.1 ((ENNReal.add_lt_add_iff_left hstop).1 h)
+  · intro hp
+    have hp2 : p⁻¹ < 2⁻¹ := ENNReal.inv_lt_inv.2 hp
+    have hpq : p⁻¹ ≤ q⁻¹ := (hp2.trans h2q).le
+    refine ⟨(q⁻¹ - p⁻¹)⁻¹, ?_, ?_⟩
+    · rw [inv_inv]
+      calc q⁻¹ = q⁻¹ - p⁻¹ + p⁻¹ := (tsub_add_cancel_of_le hpq).symm
+        _ < q⁻¹ - p⁻¹ + 2⁻¹ := ENNReal.add_lt_add_left (sub_ne_top hqtop) hp2
+    · rw [inv_inv, add_tsub_cancel_of_le hpq]
 
 /-- Cancelling a finite nonzero denominator `m` against the factor `n` of a product:
 `ofReal (d ^ n / n) / m * ofReal (n * a) = ofReal (a * d ^ n / m)`. -/

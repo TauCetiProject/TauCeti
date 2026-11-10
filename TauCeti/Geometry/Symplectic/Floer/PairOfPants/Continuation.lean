@@ -68,13 +68,18 @@ its topological part plus that constant.
   the collar, where `σ ≥ max 2 (L_q + 1)`, it is `H_q(t) dt`, so there it is the pair-of-pants
   perturbation of `H`
   (`TauCeti.Floer.pairOfPantsContinuationPerturbation_eq_pairOfPantsPerturbation_of_le`).
+  `TauCeti.Floer.pairOfPantsContinuationPerturbation_eq_smul_endAngularForm_of_le`: beyond the
+  single height `2 + ∑ q, |L_q|`, past every neck, it is `H_q(t) dt` on each end.
 * `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le`,
   `SmoothTwoForm.abs_setIntegral_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le`:
   for Hamiltonians on a manifold `M` with a two-form `ω`, such as a closed symplectic manifold,
   the integrated curvature is at most `∑ q, (B_q + D_q)`, uniformly in the neck positions.
-  `SymplecticForm.lintegral_enorm_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le` and
-  `SymplecticForm.abs_setIntegral_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le` are
-  the vector-space cases, for the constant form `TauCeti.SymplecticForm.constSmooth`.
+  `SymplecticForm.lintegral_enorm_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le`,
+  `SymplecticForm.abs_setIntegral_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le` and
+  `SymplecticForm.abs_integral_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le` are
+  the vector-space cases, for the constant form `TauCeti.SymplecticForm.constSmooth`;
+  `SymplecticForm.integrable_hamiltonianCurvature_pairOfPantsContinuationPerturbation`: along a
+  map continuous on `S` the vector-space curvature is integrable.
 
 ## References
 
@@ -215,6 +220,17 @@ theorem pairOfPantsContinuationPerturbation_eq_pairOfPantsPerturbation_of_le {r 
     pairOfPantsContinuationPerturbation G H L w x = pairOfPantsPerturbation H w x := by
   rw [pairOfPantsContinuationPerturbation_eq_smul_endAngularForm hw hwL,
     pairOfPantsPerturbation_eq_smul_endAngularForm hw]
+
+/-- Beyond the height `2 + ∑ q, |L_q|` on each end, past every neck and collar, the perturbation
+is `H_q(t) dt`. -/
+theorem pairOfPantsContinuationPerturbation_eq_smul_endAngularForm_of_le {r : Puncture}
+    {w : ℂ} (hw : 2 + ∑ q, |L q| ≤ r.endSign * (r.endCoord w).re) (x : M) :
+    pairOfPantsContinuationPerturbation G H L w x = H r (r.endCoord w).im x • r.endAngularForm w :=
+  have hL : L r ≤ ∑ q, |L q| :=
+    (le_abs_self _).trans (Finset.single_le_sum (fun q _ ↦ abs_nonneg (L q)) (Finset.mem_univ r))
+  pairOfPantsContinuationPerturbation_eq_smul_endAngularForm
+    (by linarith [Finset.sum_nonneg fun q (_ : q ∈ Finset.univ) ↦ abs_nonneg (L q)])
+    (by linarith) x
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace F]
   {I : ModelWithCorners ℝ E F} [TopologicalSpace M] [ChartedSpace F M]
@@ -527,6 +543,34 @@ theorem lintegral_enorm_hamiltonianCurvature_pairOfPantsContinuationPerturbation
       (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hGs q).contMDiff)
       (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) hGB hHB hD L u
 
+/-- **The curvature of the pair of pants with continuation necks is integrable.** If
+`|G_q|, |H_q| ≤ B_q` and `|H_q - G_q| ≤ D_q`, then along any map continuous on
+`S = ℂ ∖ {0, 1}` the curvature term `R_K(u)` is integrable over the plane, for all neck
+positions. -/
+theorem integrable_hamiltonianCurvature_pairOfPantsContinuationPerturbation (ω : SymplecticForm V)
+    (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
+    (hGs : ∀ q, ContDiff ℝ 1 (uncurry (G q))) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    {B D : Puncture → ℝ} (hGB : ∀ q t x, |G q t x| ≤ B q) (hHB : ∀ q t x, |H q t x| ≤ B q)
+    (hD : ∀ q t x, |H q t x - G q t x| ≤ D q) (L : Puncture → ℝ) {u : ℝ × ℝ → V}
+    (hu : ContinuousOn u thricePuncturedSphereReal) :
+    Integrable fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦
+        pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z (u z) := by
+  have hK (v : ℂ) : ContDiffOn ℝ 1
+      (uncurry fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z)
+        x v) (thricePuncturedSphereReal ×ˢ univ) := fun p hp ↦
+    (contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH hGs hHs L hp.1 p.2
+      v).contDiffWithinAt
+  refine ⟨?_, (lintegral_enorm_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le ω hG
+    hH hGs hHs hGB hHB hD L u).trans_lt (ENNReal.sum_lt_top.2 fun q _ ↦
+      ENNReal.add_lt_top.2 ⟨ENNReal.ofReal_lt_top, ENNReal.ofReal_lt_top⟩)⟩
+  -- The curvature is continuous on `S`, whose complement is null.
+  rw [← Measure.restrict_eq_self_of_ae_mem ae_mem_thricePuncturedSphereReal]
+  exact (ω.continuousOn_hamiltonianCurvature_comp isOpen_thricePuncturedSphereReal hu (hK 1)
+    (hK Complex.I)).aestronglyMeasurable isOpen_thricePuncturedSphereReal.measurableSet
+
 /-- The integral of the curvature of the pair-of-pants perturbation with continuation necks along
 any map, over any set, has absolute value at most `∑ q, (B_q + D_q)` when `|G_q|, |H_q| ≤ B_q`
 and `|H_q - G_q| ≤ D_q`, for all neck positions. -/
@@ -546,6 +590,24 @@ theorem abs_setIntegral_hamiltonianCurvature_pairOfPantsContinuationPerturbation
     ω.constSmooth.abs_setIntegral_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le hG
       hH (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hGs q).contMDiff)
       (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) hGB hHB hD L u s
+
+/-- The integral over the plane of the curvature of the pair-of-pants perturbation with
+continuation necks along any map has absolute value at most `∑ q, (B_q + D_q)` when
+`|G_q|, |H_q| ≤ B_q` and `|H_q - G_q| ≤ D_q`, for all neck positions. -/
+theorem abs_integral_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le
+    (ω : SymplecticForm V) (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
+    (hGs : ∀ q, ContDiff ℝ 1 (uncurry (G q))) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    {B D : Puncture → ℝ} (hGB : ∀ q t x, |G q t x| ≤ B q) (hHB : ∀ q t x, |H q t x| ≤ B q)
+    (hD : ∀ q t x, |H q t x - G q t x| ≤ D q) (L : Puncture → ℝ) (u : ℝ × ℝ → V) :
+    |∫ z, ω.hamiltonianCurvature
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)| ≤ ∑ q, (B q + D q) := by
+  simpa only [setIntegral_univ] using
+    abs_setIntegral_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le ω hG hH hGs hHs hGB
+      hHB hD L u univ
 
 end SymplecticForm
 

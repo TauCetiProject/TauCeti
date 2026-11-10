@@ -172,8 +172,8 @@ theorem exists_mem_proPFrattini_continuousMulEquiv_presentedProP (X : Type u) [F
     exact hG.finrank_cohomFp_two
   have hfin : Finite (H2 G (ZMod p)) :=
     (cohomFpLinearEquivH2 p G htriv).toEquiv.finite_iff.1 hG.finite_cohomFp_two
-  have hfg := (presentedProP.finite_H2_iff rels hrels e htriv).1 hfin
-  obtain ⟨s, hs, hsR⟩ := (presentedProP.finrank_H2_le_iff rels hrels e htriv hfg 1).1 h2.le
+  have hfg := (presentedProP.finite_H2_iff rels hrels e).1 hfin
+  obtain ⟨s, hs, hsR⟩ := (presentedProP.finrank_H2_le_iff rels hrels e hfg 1).1 h2.le
   obtain ⟨x, hx⟩ := Finset.card_le_one_iff_subset_singleton.1 hs
   -- The closed normal closure of the relators is that of the single relator `x`.
   have hR : (normalClosure rels).topologicalClosure =
