@@ -38,7 +38,7 @@ for the Chinese Remainder decomposition of `K[X] ⧸ (f)` into the fields `K[X] 
 
 * `Polynomial.Factors.finite`: a nonzero polynomial has finitely many factors.
 * `Polynomial.Factors.infinite_zero`, `Polynomial.Factors.finite_iff`: the zero polynomial has
-  infinitely many factors, so finiteness characterizes nonzero polynomials.
+  infinitely many factors (an instance), so finiteness characterizes nonzero polynomials.
 * `Polynomial.Factors.normalizedFactors_eq_map_univ_val`: for a nonzero squarefree polynomial,
   its normalized factors are precisely the distinct monic irreducible factors.
 * `Polynomial.Factors.subsingleton_iff_exists_associated_pow`: a polynomial has at most one factor
@@ -114,7 +114,7 @@ lemma normalizedFactors_eq_map_univ_val [Fintype f.Factors] [DecidableEq K]
 
 /-- The zero polynomial has infinitely many distinct monic irreducible factors, since every monic
 irreducible polynomial divides it. -/
-lemma infinite_zero : Infinite (0 : K[X]).Factors := by
+instance infinite_zero : Infinite (0 : K[X]).Factors := by
   classical
   refine Infinite.of_not_fintype fun hfin : Fintype (0 : K[X]).Factors ↦ ?_
   -- Euclid's argument: `X` times the product of the factors, plus one, has a new factor.
@@ -136,7 +136,6 @@ lemma infinite_zero : Infinite (0 : K[X]).Factors := by
 lemma finite_iff : Finite f.Factors ↔ f ≠ 0 :=
   ⟨fun h hf ↦ by
     subst hf
-    have := infinite_zero (K := K)
     exact _root_.not_finite (Factors (0 : K[X])), finite⟩
 
 lemma nonempty (hu : ¬ IsUnit f) : Nonempty f.Factors :=

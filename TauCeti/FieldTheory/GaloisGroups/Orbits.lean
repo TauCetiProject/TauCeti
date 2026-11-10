@@ -529,8 +529,7 @@ theorem natCard_orbitQuotient :
     Nat.card (MulAction.orbitRel.Quotient p.Gal (p.rootSet E))
       = Nat.card p.Factors := by
   rcases eq_or_ne p 0 with rfl | hp
-  · have := Polynomial.Factors.infinite_zero (K := F)
-    rw [Nat.card_eq_zero_of_infinite (α := (0 : F[X]).Factors)]
+  · rw [Nat.card_eq_zero_of_infinite (α := (0 : F[X]).Factors)]
     have : IsEmpty ((0 : F[X]).rootSet E) := by rw [rootSet_zero]; infer_instance
     rw [Nat.card_of_isEmpty]
   · exact Nat.card_congr (orbitQuotientEquivFactors p E hp)
