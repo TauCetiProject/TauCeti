@@ -28,7 +28,8 @@ public section
 
 namespace TauCeti.AlgFiltration
 
-variable {R A B : Type*} [CommSemiring R] [Ring A] [Algebra R A] [Ring B] [Algebra R B]
+variable {R A B C : Type*} [CommSemiring R]
+  [Ring A] [Algebra R A] [Ring B] [Algebra R B] [Ring C] [Algebra R C]
   (F : TauCeti.AlgFiltration A) (G : TauCeti.AlgFiltration B)
 
 /-- Compatible quotient families form a subalgebra of the product of the quotient algebras. -/
@@ -101,5 +102,34 @@ theorem projection_mapCompletionₐ (k : ℕ) (x : F.completion) :
 theorem mapCompletionₐ_toCompletion (a : A) :
     F.mapCompletionₐ G f l hl hf (F.toCompletion a) = G.toCompletion (f a) :=
   F.mapCompletion_toCompletion G (f : A →+* B) l hl hf a
+
+/-- Any two valid cutoff moduli induce the same algebra homomorphism on completions. -/
+theorem mapCompletionₐ_eq (m : ℕ → ℕ) (hm : Monotone m)
+    (hfm : ∀ k, F.ideal (m k + 1) ≤ (G.ideal (k + 1)).comap f) :
+    F.mapCompletionₐ G f l hl hf = F.mapCompletionₐ G f m hm hfm := by
+  apply AlgHom.toRingHom_injective
+  exact F.mapCompletion_eq G (f : A →+* B) hl hf m hm hfm
+
+/-- Completing the identity algebra map gives the identity algebra map. -/
+@[simp]
+theorem mapCompletionₐ_id :
+    F.mapCompletionₐ F (AlgHom.id R A) id monotone_id (fun _ => by simp) =
+      AlgHom.id R F.completion := by
+  apply AlgHom.toRingHom_injective
+  exact F.mapCompletion_id
+
+variable (H : TauCeti.AlgFiltration C) (g : B →ₐ[R] C) (m : ℕ → ℕ) (hm : Monotone m)
+  (hg : ∀ k, G.ideal (m k + 1) ≤ (H.ideal (k + 1)).comap g)
+
+/-- Successive algebra completion maps compose with cutoff modulus `l ∘ m`. -/
+theorem mapCompletionₐ_comp :
+    F.mapCompletionₐ H (g.comp f) (l ∘ m) (hl.comp hm)
+      (fun k => by
+        rw [← Ideal.comap_comapₐ]
+        exact (hf (m k)).trans (Ideal.comap_mono (hg k))) =
+      (G.mapCompletionₐ H g m hm hg).comp (F.mapCompletionₐ G f l hl hf) := by
+  apply AlgHom.toRingHom_injective
+  simpa only [AlgHom.comp_toRingHom, coe_mapCompletionₐ] using
+    F.mapCompletion_comp G (f : A →+* B) hl hf H (g : B →+* C) m hm hg
 
 end TauCeti.AlgFiltration
