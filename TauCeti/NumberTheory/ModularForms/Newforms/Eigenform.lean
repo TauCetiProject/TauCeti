@@ -178,6 +178,22 @@ theorem qExpansion_coeff_eq_eigenvalue_mul_coeff_one (f : Eigenform N k) (n : �
     PowerSeries.coeff_smul, smul_eq_mul] at h
   simpa using h.symm
 
+/-- **The first coefficient of a full eigenform is nonzero.** Otherwise every `a_n` is
+`eigenvalue n * a₁ = 0`, so the `q`-expansion, and with it the form, would vanish. -/
+theorem qExpansion_coeff_one_ne_zero (f : Eigenform N k) :
+    (qExpansion 1 f.toCuspForm).coeff 1 ≠ 0 := by
+  intro hc
+  refine f.ne_zero (DFunLike.ext' ?_)
+  have h0 : qExpansion 1 f.toCuspForm = 0 := by
+    ext n
+    rcases Nat.eq_zero_or_pos n with rfl | hn
+    · simpa using CuspFormClass.qExpansion_coeff_zero f.toCuspForm one_pos
+        (TauCeti.one_mem_strictPeriods_Gamma1_map N)
+    · simpa [hc] using f.qExpansion_coeff_eq_eigenvalue_mul_coeff_one ⟨n, hn⟩
+  simpa using congrArg DFunLike.coe
+    ((ModularForm.qExpansion_eq_zero_iff one_pos (TauCeti.one_mem_strictPeriods_Gamma1_map N)
+      (ModularFormClass.modularForm f.toCuspForm)).mp h0)
+
 /-! ### The eigenvalue system -/
 
 /-- Two scalars acting alike on a full eigenform are equal. -/

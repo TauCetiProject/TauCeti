@@ -25,8 +25,9 @@ including its bad-prime eigenrelations, gives the newform Euler product.
 
 Since the Euler product converges absolutely, the L-function does not vanish on its half-plane
 of absolute convergence (`HeckeRing.GL2.Eigenform.LSeries_ne_zero_of_lt_re`,
-`HeckeRing.GL2.Newform.L_ne_zero_of_lt_re`). In particular, the critical values `L(f, m)` of a
-normalized full eigenform with `k/2 + 1 < m` are nonzero.
+`HeckeRing.GL2.Newform.L_ne_zero_of_lt_re`). This holds for any full eigenform, since the Euler
+product applies after dividing by its nonzero first coefficient. In particular, the critical
+values `L(f, m)` of a full eigenform with `k/2 + 1 < m` are nonzero.
 
 ## References
 
@@ -156,18 +157,7 @@ theorem LSeries_ne_zero_of_lt_re (f : Eigenform N k) {s : ℂ}
     (hs : ((k : ℝ) + 1) / 2 < s.re) :
     LSeries (fun n ↦ (qExpansion 1 f.toCuspForm).coeff n) s ≠ 0 := by
   have hcoe := f.qExpansion_coeff_eq_eigenvalue_mul_coeff_one
-  have hc : (qExpansion 1 f.toCuspForm).coeff 1 ≠ 0 := by
-    intro hc
-    refine f.ne_zero (DFunLike.ext' ?_)
-    have h0 : qExpansion 1 f.toCuspForm = 0 := by
-      ext n
-      rcases Nat.eq_zero_or_pos n with rfl | hn
-      · simpa using CuspFormClass.qExpansion_coeff_zero f.toCuspForm one_pos
-          (TauCeti.one_mem_strictPeriods_Gamma1_map N)
-      · simpa [hc] using hcoe ⟨n, hn⟩
-    simpa using congrArg DFunLike.coe
-      ((ModularForm.qExpansion_eq_zero_iff one_pos (TauCeti.one_mem_strictPeriods_Gamma1_map N)
-        (ModularFormClass.modularForm f.toCuspForm)).mp h0)
+  have hc := f.qExpansion_coeff_one_ne_zero
   have hsum := CuspForm.LSeriesSummable_qExpansion_coeff f.toCuspForm hs
   rw [strictWidthInfty_Gamma1] at hsum
   have hnorm : ∀ n : ℕ+, ((qExpansion 1 f.toCuspForm).coeff 1)⁻¹ *

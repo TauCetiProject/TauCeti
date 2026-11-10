@@ -9,6 +9,7 @@ import Mathlib.Analysis.Analytic.Order
 import Mathlib.NumberTheory.LSeries.Injectivity
 public import Mathlib.NumberTheory.ModularForms.LFunction
 public import TauCeti.NumberTheory.LSeries.EntireExtension
+import TauCeti.NumberTheory.ModularForms.FiniteDimensional
 import TauCeti.NumberTheory.LSeries.MeanSquare
 
 /-!
@@ -41,7 +42,7 @@ API and Mathlib's `LSeries` of the `q`-expansion coefficients:
 * `ModularForm.Λ_natCast_add_one`: `Λ(f, n + 1) = n! / (2π)ⁿ⁺¹ · L(f, n + 1)` at the positive
   integers, so that there `Λ` and `L` vanish together (`ModularForm.Λ_natCast_add_one_eq_zero_iff`).
 * `CuspForm.hasEntireExtension_qExpansion_coeff`: the coefficient series of a cusp form
-  has an entire extension (the Layer-7 continuation milestone).
+  has an entire extension.
 * `CuspForm.L_ne_zero_of_qExpansion_coeff_ne_zero`: a nonzero coefficient makes
   the entire L-function nonzero.
 * `CuspForm.eq_strictWidthInfty_cpow_mul_L`: uniqueness of the width-normalized entire
@@ -88,11 +89,13 @@ private lemma LSeries_eq_of_hasSum {a : ℕ → ℂ} {v : ℂ} (hs0 : s ≠ 0)
 
 namespace ModularForm
 
-/-- A modular form of negative weight is zero. -/
-private lemma coe_eq_zero_of_neg_weight [ModularFormClass F Γ k] (hk : k < 0) (f : F) :
-    (f : ℍ → ℂ) = 0 := by
-  simpa using congrArg DFunLike.coe
-    (isZero_of_neg_weight hk (ModularFormClass.modularForm f))
+/-- In negative weight the `q`-expansion coefficients of a modular form are all zero, since the
+form is zero. -/
+lemma qExpansion_coeff_eq_zero_of_neg_weight [ModularFormClass F Γ k] (hk : k < 0) (f : F) :
+    (fun n ↦ (qExpansion Γ.strictWidthInfty f).coeff n) = 0 := by
+  rw [coe_eq_zero_of_neg_weight hk f, qExpansion_zero]
+  funext n
+  simp
 
 /-- **Hecke's abscissa bound for modular forms**: the Dirichlet series of the `q`-expansion
 coefficients converges absolutely for `Re s > k + 1` (from `aₙ = O(nᵏ)` for `k ≥ 0`; in negative
@@ -105,10 +108,9 @@ theorem abscissaOfAbsConv_qExpansion_coeff_le [ModularFormClass F Γ k] (f : F) 
     refine (ModularFormClass.qExpansion_isBigO hk f).congr' EventuallyEq.rfl
       (Eventually.of_forall fun n ↦ ?_)
     simp only [Real.rpow_intCast]
-  · have hf := coe_eq_zero_of_neg_weight (lt_of_not_ge hk) f
-    refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y _ ↦ ?_
-    rw [hf, qExpansion_zero]
-    simpa only [map_zero, Pi.zero_def] using (LSeriesSummable_zero (s := (y : ℂ)))
+  · refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y _ ↦ ?_
+    rw [qExpansion_coeff_eq_zero_of_neg_weight (lt_of_not_ge hk) f]
+    exact LSeriesSummable_zero
 
 /-- On the half-plane `Re s > k + 1`, the Dirichlet series of the `q`-expansion
 coefficients is Mathlib's `ModularForm.L`, up to the width factor. Not `@[simp]`: the
@@ -149,20 +151,13 @@ end ModularForm
 
 namespace CuspForm
 
-/-- A cusp form of nonpositive weight is zero: in weight zero it is constant by
-`ModularForm.eq_const_of_weight_zero`, and the constant vanishes at infinity. -/
-lemma coe_eq_zero_of_weight_nonpos [CuspFormClass F Γ k] (hk : k ≤ 0) (f : F) :
-    (f : ℍ → ℂ) = 0 := by
-  rcases hk.lt_or_eq with hk | rfl
-  · exact ModularForm.coe_eq_zero_of_neg_weight hk f
-  · obtain ⟨c, hc⟩ := ModularForm.eq_const_of_weight_zero (ModularFormClass.modularForm f)
-    have : Fact (IsCusp OnePoint.infty Γ) :=
-      ⟨Γ.isCusp_of_mem_strictPeriods Γ.strictWidthInfty_pos Γ.strictWidthInfty_mem_strictPeriods⟩
-    have hc' : (f : ℍ → ℂ) = Function.const ℍ c := hc
-    have h0 : c = 0 := tendsto_nhds_unique tendsto_const_nhds
-      (hc' ▸ CuspFormClass.zero_at_infty f)
-    rw [hc', h0]
-    rfl
+/-- For nonpositive weight the `q`-expansion coefficients of a cusp form are all zero, since the
+form is zero. -/
+lemma qExpansion_coeff_eq_zero_of_weight_nonpos [CuspFormClass F Γ k] (hk : k ≤ 0) (f : F) :
+    (fun n ↦ (qExpansion Γ.strictWidthInfty f).coeff n) = 0 := by
+  rw [coe_eq_zero_of_weight_nonpos hk f, qExpansion_zero]
+  funext n
+  simp
 
 /-- **The mean-square abscissa bound for cusp forms**: the Dirichlet series of the
 `q`-expansion coefficients converges absolutely for `Re s > (k+1)/2`. In particular its
@@ -181,10 +176,9 @@ theorem abscissaOfAbsConv_qExpansion_coeff_le [CuspFormClass F Γ k] (f : F) :
     simpa only [Int.cast_natCast] using
       TauCeti.LSeries.abscissaOfAbsConv_le_of_sum_norm_sq_bigO hO
         (le_trans (by norm_num) (Nat.cast_nonneg k))
-  · have hf := ModularForm.coe_eq_zero_of_neg_weight (lt_of_not_ge hk) f
-    refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y _ ↦ ?_
-    rw [hf, qExpansion_zero]
-    simpa only [map_zero, Pi.zero_def] using (LSeriesSummable_zero (s := (y : ℂ)))
+  · refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y _ ↦ ?_
+    rw [qExpansion_coeff_eq_zero_of_weight_nonpos (le_of_lt (lt_of_not_ge hk)) f]
+    exact LSeriesSummable_zero
 
 /-- The Dirichlet series of the `q`-expansion coefficients of a cusp form converges absolutely
 on the half-plane `Re s > (k+1)/2`. -/
@@ -208,10 +202,10 @@ theorem LSeries_qExpansion_coeff_eq (hk : 0 < k) [CuspFormClass F Γ k] (f : F)
     linarith
   exact LSeries_eq_of_hasSum hs0 (hasSum_L hk f hs)
 
-/-- **Entire continuation of the L-series of a cusp form** — the roadmap's Layer-7
-continuation milestone: the Dirichlet series of the `q`-expansion coefficients of a cusp
-form has an entire extension, namely `s ↦ (Γ.strictWidthInfty : ℂ) ^ (-s) * L hk f s` in
-positive weight (in nonpositive weight the form is zero). -/
+/-- **Entire continuation of the L-series of a cusp form**: the Dirichlet series of the
+`q`-expansion coefficients of a cusp form has an entire extension, namely
+`s ↦ (Γ.strictWidthInfty : ℂ) ^ (-s) * L hk f s` in positive weight (in nonpositive weight the
+form is zero). -/
 theorem hasEntireExtension_qExpansion_coeff [CuspFormClass F Γ k] (f : F) :
     LSeries.HasEntireExtension (fun n ↦ (qExpansion Γ.strictWidthInfty f).coeff n) := by
   rcases lt_or_ge 0 k with hk | hk
@@ -223,7 +217,7 @@ theorem hasEntireExtension_qExpansion_coeff [CuspFormClass F Γ k] (f : F) :
         (Or.inl (Complex.ofReal_ne_zero.mpr Γ.strictWidthInfty_pos.ne'))).mul
         (differentiable_L hk f)
   · refine LSeries.hasEntireExtension_of_support_finite ?_
-    rw [coe_eq_zero_of_weight_nonpos hk f, qExpansion_zero]
+    rw [qExpansion_coeff_eq_zero_of_weight_nonpos hk f]
     simp
 
 /-- The entire L-function of a positive-weight cusp form is nonzero if one of its

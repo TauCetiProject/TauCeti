@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.Fricke.Normalized
 public import TauCeti.NumberTheory.ModularForms.LFunction.Basic
 public import TauCeti.NumberTheory.ModularForms.ResToImagAxis
+import TauCeti.NumberTheory.ModularForms.FiniteDimensional
 
 /-!
 # The Fricke functional equation of a cusp form
