@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 
 /-!
@@ -304,10 +305,9 @@ theorem wittenExtDerivₗ_expSMulEquiv_neg_ofFunction_one :
     wittenExtDerivₗ f t 0 (expSMulEquiv 0 f (-t) (SmoothForm.ofFunction (ContMDiffMap.const 1))) =
       0 := by
   rw [wittenExtDerivₗ_apply_eq_zero_iff_isLocallyConstant, coe_expSMulEquiv]
-  have hconst : ∀ x, (ContMDiffMap.const 1 : C^∞⟮I, M; ℝ⟯) x = 1 := fun _ ↦ rfl
   simp only [ContinuousAlternatingMap.smul_apply, SmoothForm.coe_ofFunction,
-    RoughForm.ofFunction_apply, hconst, smul_eq_mul, mul_one, ← Real.exp_add, neg_mul,
-    add_neg_cancel, Real.exp_zero]
+    RoughForm.ofFunction_apply, ContMDiffMap.const_apply, smul_eq_mul, mul_one, ← Real.exp_add,
+    neg_mul, add_neg_cancel, Real.exp_zero]
   exact IsLocallyConstant.const 1
 
 end SmoothForm

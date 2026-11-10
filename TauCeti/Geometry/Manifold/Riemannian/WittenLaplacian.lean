@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.Witten
 public import TauCeti.Geometry.Manifold.Riemannian.Codifferential
+import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 
 /-!
 # The Witten codifferential and the Witten Laplacian
@@ -382,11 +383,10 @@ theorem wittenLaplacian_eq_zero_iff_exists_eq_smul [CompactSpace M] [ConnectedSp
     obtain ⟨x₀⟩ := (inferInstance : Nonempty M)
     refine ⟨Real.exp (t * f x₀) * g.1 x₀ 0, Subtype.ext <| funext fun x ↦ ?_⟩
     ext v
-    have hconst : (ContMDiffMap.const 1 : C^∞⟮I, M; ℝ⟯) x = 1 := rfl
     rw [Subsingleton.elim v 0, ← hc.apply_eq_of_preconnectedSpace x]
     simp only [Submodule.coe_smul, Pi.smul_apply, coe_expSMulEquiv,
       ContinuousAlternatingMap.smul_apply, SmoothForm.coe_ofFunction, RoughForm.ofFunction_apply,
-      hconst, smul_eq_mul, mul_one]
+      ContMDiffMap.const_apply, smul_eq_mul, mul_one]
     rw [mul_right_comm, ← Real.exp_add]
     simp
   · rintro ⟨c, rfl⟩
