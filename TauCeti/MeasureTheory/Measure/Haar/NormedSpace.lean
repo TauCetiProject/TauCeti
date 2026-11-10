@@ -13,7 +13,6 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Measure.Prod
-
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Measure.Real
@@ -565,29 +564,30 @@ namespace TauCeti
 
 section Rescale
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
-  [NormedSpace ℝ F]
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
 
 /-- Integrals of functions of the rescaled coordinate `Ψ y = t⁻¹ • L (y - x)` are integrals over
 the target scaled by `t ^ n / ρ`, when `L` carries the measure `μ` to `ρ⁻¹` times a Haar measure
-`ν` of the target (here `n` is the dimension of the target). -/
+`ν` of the target (here `n` is the dimension of the target). The integrand may take values in any
+real normed space. -/
 theorem integral_comp_rescale_eq [FiniteDimensional ℝ F] [MeasurableSpace E] [BorelSpace E]
     [MeasurableSpace F] [BorelSpace F] {μ : Measure E} [μ.IsAddRightInvariant]
     {ν : Measure F} [ν.IsAddHaarMeasure] {ρ t : ℝ} (hρ : 0 < ρ) (ht0 : 0 < t) (L : E ≃L[ℝ] F)
     (hmap : Measure.map L μ = ρ⁻¹.toNNReal • ν) (x : E) {Ψ : E → F}
-    (hΨ : Ψ = fun y ↦ t⁻¹ • L (y - x)) (k : F → ℝ) :
-    ∫ y, k (Ψ y) ∂μ = ρ⁻¹ * (t ^ finrank ℝ F * ∫ z, k z ∂ν) := by
+    (hΨ : Ψ = fun y ↦ t⁻¹ • L (y - x)) (k : F → G) :
+    ∫ y, k (Ψ y) ∂μ = (ρ⁻¹ * t ^ finrank ℝ F) • ∫ z, k z ∂ν := by
   subst hΨ
   have h := integral_map_equiv L.toHomeomorph.toMeasurableEquiv (μ := μ) fun z ↦ k (t⁻¹ • z)
   simp only [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph] at h
   calc ∫ y, k (t⁻¹ • L (y - x)) ∂μ
       = ∫ z, k (t⁻¹ • z) ∂Measure.map L μ := by
         rw [integral_sub_right_eq_self (fun y ↦ k (t⁻¹ • L y)) x, h]
-    _ = ρ⁻¹ * ∫ z, k (t⁻¹ • z) ∂ν := by
+    _ = ρ⁻¹ • ∫ z, k (t⁻¹ • z) ∂ν := by
         rw [hmap, integral_smul_nnreal_measure]
         simp [NNReal.smul_def, hρ.le]
-    _ = ρ⁻¹ * (t ^ finrank ℝ F * ∫ z, k z ∂ν) := by
-        rw [Measure.integral_comp_inv_smul_of_nonneg _ _ ht0.le, smul_eq_mul]
+    _ = (ρ⁻¹ * t ^ finrank ℝ F) • ∫ z, k z ∂ν := by
+        rw [Measure.integral_comp_inv_smul_of_nonneg _ _ ht0.le, smul_smul]
 
 end Rescale
 

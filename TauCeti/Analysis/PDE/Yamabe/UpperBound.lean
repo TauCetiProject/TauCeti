@@ -9,6 +9,8 @@ public import TauCeti.Analysis.PDE.Yamabe.Quotient
 public import TauCeti.Analysis.PDE.Yamabe.SphereConstant
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.Analysis.Normed.Group.CompactSupport
+import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
 import TauCeti.Analysis.PDE.Yamabe.Bubble.Cutoff
 import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
@@ -457,19 +459,10 @@ private theorem exists_isCompact_subset_ball_forall_mem_tsupport {X Y : Type*}
     {v : Y → ℝ} (hvc : HasCompactSupport v) (hvsupp : tsupport v ⊆ ball 0 1) {Ψ : X → Y}
     (hΨ : Ψ = fun y ↦ t⁻¹ • L (y - x)) :
     ∃ K : Set X, IsCompact K ∧ K ⊆ ball x R ∧ ∀ y, Ψ y ∈ tsupport v → y ∈ K := by
-  set C := ‖(L.symm : Y →L[ℝ] X)‖
   have hΨ_eq (y : X) : y = x + L.symm (t • Ψ y) := by
     simp [hΨ, smul_smul, ht0.ne']
-  refine ⟨(fun z ↦ x + L.symm (t • z)) '' tsupport v, hvc.isCompact.image (by fun_prop), ?_,
-    fun y hy ↦ ⟨Ψ y, hy, (hΨ_eq y).symm⟩⟩
-  rintro _ ⟨z, hz, rfl⟩
-  have hz1 : ‖z‖ < 1 := mem_ball_zero_iff.1 (hvsupp hz)
-  rw [mem_ball, dist_eq_norm, add_sub_cancel_left]
-  calc ‖L.symm (t • z)‖
-      ≤ C * ‖t • z‖ := (L.symm : Y →L[ℝ] X).le_opNorm _
-    _ = t * C * ‖z‖ := by rw [norm_smul, Real.norm_of_nonneg ht0.le]; ring
-    _ ≤ t * C := mul_le_of_le_one_right (by positivity) hz1.le
-    _ < R := htR
+  refine ⟨(fun z ↦ x + L.symm (t • z)) '' tsupport v, hvc.isCompact.image (by fun_prop),
+    L.image_add_symm_smul_subset_ball x ht0.le htR hvsupp, fun y hy ↦ ⟨Ψ y, hy, (hΨ_eq y).symm⟩⟩
 
 /-- A continuous function of the rescaled coordinate `Ψ`, vanishing outside a set `T`, is
 integrable and supported in the ball of radius `R`, when the preimage of `T` under the continuous
@@ -481,7 +474,7 @@ private theorem integrable_comp_and_support_subset_ball {X Y : Type*} [NormedAdd
     (hΨK : ∀ y, Ψ y ∈ T → y ∈ K) {k : Y → ℝ} (hk : Continuous k) (hkz : ∀ z ∉ T, k z = 0) :
     Integrable (fun y ↦ k (Ψ y)) μ ∧ Function.support (fun y ↦ k (Ψ y)) ⊆ ball x R :=
   ⟨(hk.comp hΨc).integrable_of_hasCompactSupport
-    (HasCompactSupport.intro hK fun y hy ↦ hkz _ fun h ↦ hy (hΨK y h)),
+    (HasCompactSupport.comp_of_forall_mem_imp_mem hK hΨK hkz),
     fun y hy ↦ hKR (hΨK y (by_contra fun h ↦ hy (hkz _ h)))⟩
 
 omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
@@ -545,7 +538,7 @@ private lemma exists_transplant_bounds (p : M) {R t η : ℝ} {U : Set M} (hn : 
   have hcv (k : EuclideanSpace ℝ (Fin (finrank ℝ E)) → ℝ) :
       ∫ y, k (Ψ y) ∂(finBasis ℝ E).addHaar =
         (chartVolumeDensity (I := I) p p)⁻¹ * (t ^ finrank ℝ E * ∫ z, k z) := by
-    simpa only [finrank_euclideanSpace_fin] using
+    simpa only [finrank_euclideanSpace_fin, smul_eq_mul, mul_assoc] using
       integral_comp_rescale_eq (μ := (finBasis ℝ E).addHaar) hρp ht0 L hmap (extChartAt I p p) hΨ k
   exact ⟨u, hu, huc, huU, hu0, hsup,
     integral_norm_mgradient_sq_le p hn ht0 hη0 hρp hballt hv hu huc hsup
