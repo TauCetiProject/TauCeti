@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Ring.Finite
-public import Mathlib.NumberTheory.DirichletCharacter.Basic
+public import Mathlib.NumberTheory.MulChar.Basic
 
 /-!
 # Real multiplicative characters are quadratic
@@ -22,7 +22,8 @@ in Montgomery–Vaughan, *Multiplicative Number Theory I*, §9.3, p. 295, where 
 exact order two and so excludes the principal character.
 
 Dirichlet characters of every level `N`, including `N = 0`, are covered, since `(ZMod N)ˣ` is
-finite.
+finite: for a complex Dirichlet character `χ`, `MulChar.isQuadratic_iff_forall_im_eq_zero` reads
+`χ.IsQuadratic ↔ ∀ a, (χ a).im = 0`, as `RCLike.im` on `ℂ` is `Complex.im`.
 
 ## Main results
 
@@ -31,8 +32,6 @@ finite.
 * `MulChar.isQuadratic_iff_forall_conj_eq`: a character with finitely many units in its domain
   is quadratic iff it is fixed by complex conjugation.
 * `MulChar.isQuadratic_iff_forall_im_eq_zero`: the same with the imaginary parts of its values.
-* `DirichletCharacter.isQuadratic_iff_forall_im_eq_zero`: a complex Dirichlet character is
-  quadratic iff all its values are real.
 -/
 
 public section
@@ -75,9 +74,3 @@ theorem isQuadratic_iff_forall_im_eq_zero {χ : MulChar R K} :
   simp_rw [isQuadratic_iff_forall_conj_eq, RCLike.conj_eq_iff_im]
 
 end MulChar
-
-/-- A complex Dirichlet character of any level is quadratic iff all its values are real. This
-includes the principal character. -/
-theorem DirichletCharacter.isQuadratic_iff_forall_im_eq_zero {N : ℕ}
-    {χ : DirichletCharacter ℂ N} : χ.IsQuadratic ↔ ∀ a, (χ a).im = 0 :=
-  MulChar.isQuadratic_iff_forall_im_eq_zero
