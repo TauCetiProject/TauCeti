@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.Normal.Closure
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Ramification
 
 /-!
-# Unramifiedness at infinity in normal closures
+# Unramifiedness at infinity in composita and normal closures
 
 An extension unramified at every infinite place remains so in its normal closure. Indeed, over
 any real embedding of the base field, all embeddings of the extension are real. The subfield
@@ -20,6 +20,8 @@ This supplies the archimedean part of passing from an everywhere-unramified exte
 everywhere-unramified Galois extension. In particular it applies to the second step of a Hilbert
 class-field tower, where transfer is applied over the original ground field.
 
+The compositum theorem `IsUnramifiedAtInfinitePlaces.iSup` and preservation under embedding
+images `AlgHom.isUnramifiedAtInfinitePlaces_fieldRange` give the normal-closure result.
 The ambient field need only be algebraic over the ground field; it need not be normal or
 algebraically closed. No number-field hypothesis is needed.
 
@@ -35,16 +37,30 @@ open IntermediateField NumberField NumberField.InfinitePlace
 namespace IsUnramifiedAtInfinitePlaces
 
 variable {K L M : Type*} [Field K] [Field L] [Field M]
-  [Algebra K L] [Algebra K M] [Algebra L M] [IsScalarTower K L M]
-  [Algebra.IsAlgebraic K M]
+  [Algebra K L] [Algebra K M]
 
-omit [Algebra L M] [IsScalarTower K L M] in
-/-- Taking the normal closure inside an algebraic ambient extension creates no ramification at
-infinite places. In particular, real places cannot become complex in the normal closure if
-none becomes complex in the original extension. -/
-theorem normalClosure [IsUnramifiedAtInfinitePlaces K L] :
-    IsUnramifiedAtInfinitePlaces K (IntermediateField.normalClosure K L M) := by
-  let N := IntermediateField.normalClosure K L M
+/-- The image of an extension unramified at infinite places under a base-field algebra map is
+unramified at infinite places. -/
+theorem _root_.AlgHom.isUnramifiedAtInfinitePlaces_fieldRange (f : L →ₐ[K] M)
+    [IsUnramifiedAtInfinitePlaces K L] :
+    IsUnramifiedAtInfinitePlaces K f.fieldRange := by
+  refine ⟨fun w ↦ isUnramified_iff.mpr ?_⟩
+  let e := f.equivFieldRange
+  rcases isUnramified_iff.mp ((w.comap e.toRingHom).isUnramified K) with h | h
+  · exact .inl ((isReal_comap_iff e.toRingEquiv).mp h)
+  · right
+    have he : e.toRingHom.comp (algebraMap K L) = algebraMap K f.fieldRange :=
+      e.toAlgHom.comp_algebraMap
+    simpa only [← comap_comp, he] using h
+
+variable [Algebra.IsAlgebraic K M]
+
+/-- A compositum of intermediate extensions unramified at infinite places is unramified at
+infinite places. -/
+theorem iSup {ι : Sort*} (E : ι → IntermediateField K M)
+    [∀ i, IsUnramifiedAtInfinitePlaces K (E i)] :
+    IsUnramifiedAtInfinitePlaces K (⨆ i, E i : IntermediateField K M) := by
+  let N := ⨆ i, E i
   refine ⟨fun w ↦ isUnramified_iff.mpr ?_⟩
   by_cases hw : (w.comap (algebraMap K N)).IsReal
   · left
@@ -54,20 +70,19 @@ theorem normalClosure [IsUnramifiedAtInfinitePlaces K L] :
     have hbase : ComplexEmbedding.IsReal (φ.comp (algebraMap K M)) := by
       rw [IsScalarTower.algebraMap_eq K N M, ← RingHom.comp_assoc, hφ]
       rwa [← isReal_mk_iff, ← comap_mk, mk_embedding]
-    -- The real-value equalizer contains the ground field and every embedding image of `L`.
+    -- The real-value equalizer contains the ground field and every member of the family.
     let R : IntermediateField K M :=
       ((ComplexEmbedding.conjugate φ).eqLocusField φ).toIntermediateField fun x ↦
         congrArg (fun f : K →+* ℂ ↦ f x) (ComplexEmbedding.isReal_iff.mp hbase)
     have hN : N ≤ R := by
-      apply normalClosure_le_iff.mpr
-      intro f y hy
-      obtain ⟨x, rfl⟩ := hy
-      have hf : ComplexEmbedding.IsReal (φ.comp (f : L →+* M)) := by
+      apply iSup_le
+      intro i y hy
+      have hf : ComplexEmbedding.IsReal (φ.comp (algebraMap (E i) M)) := by
         apply (isUnramified_mk_iff_isUnmixed.mp
-          ((InfinitePlace.mk (φ.comp (f : L →+* M))).isUnramified K))
-        rw [RingHom.comp_assoc, AlgHom.comp_algebraMap]
+          ((InfinitePlace.mk (φ.comp (algebraMap (E i) M))).isUnramified K))
+        rw [RingHom.comp_assoc, ← IsScalarTower.algebraMap_eq]
         exact hbase
-      exact congrArg (fun e : L →+* ℂ ↦ e x) (ComplexEmbedding.isReal_iff.mp hf)
+      exact congrArg (fun e : E i →+* ℂ ↦ e ⟨y, hy⟩) (ComplexEmbedding.isReal_iff.mp hf)
     apply isReal_iff.mpr
     apply ComplexEmbedding.isReal_iff.mpr
     ext x
@@ -77,6 +92,19 @@ theorem normalClosure [IsUnramifiedAtInfinitePlaces K L] :
       ComplexEmbedding.lift_algebraMap_apply M w.embedding x
     simpa only [ComplexEmbedding.conjugate_coe_eq, hxφ] using hx
   · exact .inr (not_isReal_iff_isComplex.mp hw)
+
+/-- Taking the normal closure inside an algebraic ambient extension creates no ramification at
+infinite places. In particular, real places cannot become complex in the normal closure if
+none becomes complex in the original extension. -/
+@[instance]
+theorem normalClosure [IsUnramifiedAtInfinitePlaces K L] :
+    IsUnramifiedAtInfinitePlaces K (IntermediateField.normalClosure K L M) := by
+  rw [normalClosure_def]
+  let (f : L →ₐ[K] M) : IsUnramifiedAtInfinitePlaces K f.fieldRange :=
+    f.isUnramifiedAtInfinitePlaces_fieldRange
+  exact iSup _
+
+variable [Algebra L M] [IsScalarTower K L M]
 
 /-- An extension is unramified at every infinite place if and only if its normal closure in an
 algebraic ambient extension is. The reverse implication is descent to a subextension. -/
