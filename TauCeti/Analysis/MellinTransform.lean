@@ -40,6 +40,15 @@ namespace HasMellin
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
+/-- Functions agreeing on the positive half-line have the same convergent Mellin transform. -/
+theorem congr_of_eqOn_Ioi {f g : ℝ → E} {s : ℂ} {m : E} (h : HasMellin f s m)
+    (hfg : EqOn f g (Ioi 0)) : HasMellin g s m := by
+  have hweight : EqOn (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) • f t)
+      (fun t : ℝ ↦ (t : ℂ) ^ (s - 1) • g t) (Ioi 0) :=
+    fun t ht ↦ congrArg ((t : ℂ) ^ (s - 1) • ·) (hfg ht)
+  exact ⟨h.1.congr_fun hweight measurableSet_Ioi,
+    (MeasureTheory.setIntegral_congr_fun measurableSet_Ioi hweight).symm.trans h.2⟩
+
 /-- Dilation of the Mellin variable preserves convergence and multiplies the transform by
 `a^(-s)`. -/
 theorem comp_mul_right {f : ℝ → E} {s : ℂ} {m : E} (h : HasMellin f s m)

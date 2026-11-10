@@ -124,6 +124,35 @@ theorem mellinKernel_inv (D : Set (realSpace K)) (L : Submodule ℤ (mixedSpace 
   ring
 
 open scoped Classical in
+/-- For a bounded measurable surface set, the theta series at a positive radial parameter is
+integrable over that set. Boundedness on the norm-one surface bounds every coordinate away from
+zero, so a single Gaussian theta value dominates it. -/
+theorem integrableOn_latticeTheta_surfaceScale {D : Set (realSpace K)} (hDm : MeasurableSet D)
+    (hD : Bornology.IsBounded D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
+    {t : ℝ} (ht : 0 < t) :
+    IntegrableOn (fun x : normOneSurface K ↦ latticeTheta L (surfaceScale (x : realSpace K) t))
+      (Subtype.val ⁻¹' D) (surfaceHaar K) := by
+  obtain ⟨C, hC1, hC⟩ := exists_forall_mem_Icc_of_isBounded hD
+  let δ := C⁻¹ * t ^ (1 / (Module.finrank ℚ K : ℝ))
+  have hδ : 0 < δ := by positivity
+  have hmeas : AEStronglyMeasurable
+      (fun x : normOneSurface K ↦ latticeTheta L (surfaceScale (x : realSpace K) t))
+      ((surfaceHaar K).restrict (Subtype.val ⁻¹' D)) := by
+    apply Continuous.aestronglyMeasurable
+    rw [continuous_iff_continuousAt]
+    intro x
+    exact ContinuousAt.comp (g := latticeTheta L) (continuousAt_latticeTheta L
+      (surfaceScale_pos (mem_normOneSurface.mp x.2).1 ht))
+        (continuous_surfaceScale.comp
+          (continuous_subtype_val.prodMk continuous_const)).continuousAt
+  have := isFiniteMeasure_restrict.mpr (surfaceHaar_preimage_lt_top hD).ne
+  refine (integrable_const (‖latticeTheta L fun _ ↦ δ‖ : ℝ)).mono' hmeas ?_
+  filter_upwards [ae_restrict_mem (measurable_subtype_coe hDm)] with x hx
+  refine norm_latticeTheta_le L (fun _ ↦ hδ) fun w ↦ ?_
+  rw [surfaceScale_apply]
+  exact mul_le_mul_of_nonneg_right (hC x hx x.2 w).1 (Real.rpow_pos_of_pos ht _).le
+
+open scoped Classical in
 /-- **The Mellin kernel is continuous on `(0, ∞)`** for a bounded measurable set `D` of
 parameters, such as a unit fundamental domain. -/
 theorem continuousOn_mellinKernel {D : Set (realSpace K)} (hDm : MeasurableSet D)
@@ -136,9 +165,6 @@ theorem continuousOn_mellinKernel {D : Set (realSpace K)} (hDm : MeasurableSet D
   have hV : 0 < V := ZLattice.covolume_pos L
   set F : ℝ → normOneSurface K → ℂ := fun u x ↦
     latticeTheta L (surfaceScale (x : realSpace K) (u / V ^ 2))
-  have hscale (u : ℝ) : Continuous fun x : normOneSurface K ↦
-      surfaceScale (x : realSpace K) (u / V ^ 2) :=
-    continuous_surfaceScale.comp (continuous_subtype_val.prodMk continuous_const)
   -- on `S ∩ D` the coordinates are bounded below by `C⁻¹ > 0`
   obtain ⟨C, hC1, hC⟩ := exists_forall_mem_Icc_of_isBounded hD
   set δ := C⁻¹ * (u₀ / 2 / V ^ 2) ^ (1 / (Module.finrank ℚ K : ℝ))
@@ -146,10 +172,7 @@ theorem continuousOn_mellinKernel {D : Set (realSpace K)} (hDm : MeasurableSet D
   have hmeas : ∀ᶠ u in nhds u₀, AEStronglyMeasurable (F u)
       ((surfaceHaar K).restrict (Subtype.val ⁻¹' D)) := by
     filter_upwards [Ioi_mem_nhds hu₀] with u (hu : 0 < u)
-    refine (continuous_iff_continuousAt.mpr fun x : normOneSurface K ↦ ?_).aestronglyMeasurable
-    exact ContinuousAt.comp (g := latticeTheta L) (continuousAt_latticeTheta L
-      (surfaceScale_pos (mem_normOneSurface.mp x.property).1 (by positivity)))
-        (hscale u).continuousAt
+    exact (integrableOn_latticeTheta_surfaceScale hDm hD L (by positivity)).aestronglyMeasurable
   have hbound : ∀ᶠ u in nhds u₀, ∀ᵐ x ∂(surfaceHaar K).restrict (Subtype.val ⁻¹' D),
       ‖F u x‖ ≤ ‖latticeTheta L fun _ ↦ δ‖ := by
     filter_upwards [Ioi_mem_nhds (half_lt_self hu₀)] with u (hu : u₀ / 2 < u)
