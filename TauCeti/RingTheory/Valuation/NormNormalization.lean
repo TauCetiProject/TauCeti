@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.WithTop.Untop0
+public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Tactic.Linarith
 public import Mathlib.RingTheory.Valuation.Basic
@@ -16,7 +17,8 @@ public import Mathlib.RingTheory.Valuation.Basic
 Two real additive valuations recovering the same norm with specified bases greater
 than one differ by the ratio of the logarithms of those bases. The comparison includes
 zero, whose value remains infinity. In particular, fixing the base determines the
-additive valuation uniquely; no choice of scale is installed as a global instance.
+additive valuation uniquely; no choice of scale is installed as a global instance. A norm recovered
+from an additive valuation with base at least one is ultrametric.
 -/
 
 public section
@@ -55,5 +57,27 @@ theorem eq_of_norm_eq_rpow (v w : AddValuation K (WithTop ℝ))
     simp [ne_of_gt (Real.log_pos hb)]
   rw [hid, WithTop.map_id] at h
   exact h
+
+/-- A norm that is given by an additive valuation, `‖x‖ = b ^ (-v x)` for `x ≠ 0` with `1 ≤ b`, is
+ultrametric. -/
+theorem isUltrametricDist (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 ≤ b)
+    (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) : IsUltrametricDist K := by
+  refine IsUltrametricDist.isUltrametricDist_of_isNonarchimedean_norm fun x y => ?_
+  by_cases hx : x = 0
+  · simp [hx]
+  by_cases hy : y = 0
+  · simp [hy]
+  by_cases hxy : x + y = 0
+  · simp [hxy]
+  have hvxy := v.ne_top_iff.mpr hxy
+  have hmin := v.map_add x y
+  rw [hv _ hx, hv _ hy, hv _ hxy]
+  rcases le_total (v x) (v y) with h | h
+  · rw [min_eq_left h] at hmin
+    exact le_max_of_le_left (Real.rpow_le_rpow_of_exponent_le hb
+      (neg_le_neg (WithTop.untop₀_le_untop₀ hvxy hmin)))
+  · rw [min_eq_right h] at hmin
+    exact le_max_of_le_right (Real.rpow_le_rpow_of_exponent_le hb
+      (neg_le_neg (WithTop.untop₀_le_untop₀ hvxy hmin)))
 
 end AddValuation
