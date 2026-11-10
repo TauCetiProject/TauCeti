@@ -373,11 +373,11 @@ theorem exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le_lowerOrder :
   obtain ⟨C, hC0, hC⟩ := exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff (ι := ι)
   refine ⟨C, hC0, ?_⟩
   intro mu _ Omega a b c lam Lam beta gamma u k hk x₀ r R h ha hb hc hb_bound hc_bound hc_nonneg
-    hu hr hrR hball
+    hu _ hrR hball
   -- Caccioppoli's inequality for `w`, with the forcing and mass term dropped, localized to the
   -- balls.
   have hloc := hC (W1p.posPartAbove (by norm_num) hk u) (A := 2 * (2 * Lam / lam) ^ 2)
-    (B := (2 * beta / lam) ^ 2) (by positivity) (sq_nonneg _) hr hrR hball
+    (B := (2 * beta / lam) ^ 2) (by positivity) (sq_nonneg _) hrR hball
     fun ψ hψ hcpt hts =>
       h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_lowerOrder_of_nonpos ha hb hc
         hb_bound hc_bound hc_nonneg hu hk hψ hcpt hts

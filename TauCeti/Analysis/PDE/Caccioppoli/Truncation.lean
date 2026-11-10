@@ -172,7 +172,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_
       W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' w] with x hvx hzx
     rw [hvx, hzx, smul_eq_mul, smul_eq_mul]
     ring
-  exact W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise hlam w hψ hψM hgradM hE hpt
+  exact W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise hlam w hψ hgradM hE hpt
     hforce
 
 /-- **The zero-forcing Caccioppoli inequality for a positive truncation of a weak
@@ -254,10 +254,10 @@ theorem exists_setIntegral_ball_norm_gradient_posPartAbove_sq_le :
           ∫ x in ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu := by
   obtain ⟨c, hc0, hc⟩ := exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff (ι := ι)
   refine ⟨c, hc0, ?_⟩
-  intro mu _ Omega a lam Lam u k hwLp x₀ r R h ha hu hr hrR hball
+  intro mu _ Omega a lam Lam u k hwLp x₀ r R h ha hu _ hrR hball
   set w := W1p.posPartAboveOfMemLp (by norm_num) k u hwLp
   -- Caccioppoli's inequality for `w`, with zero forcing, localized to the balls.
-  have hloc := hc w (A := (2 * Lam / lam) ^ 2) (B := 0) (sq_nonneg _) le_rfl hr hrR hball
+  have hloc := hc w (A := (2 * Lam / lam) ^ 2) (B := 0) (sq_nonneg _) le_rfl hrR hball
     fun ψ hψ hcpt hts => by
       simpa using h.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_nonpos ha hu hwLp
         hψ hcpt hts

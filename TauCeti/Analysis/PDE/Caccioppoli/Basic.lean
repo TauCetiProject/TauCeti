@@ -80,7 +80,7 @@ the common measure-theoretic step for the solution and subsolution forms of the 
 the caller supplies the energy density and its comparison with the forcing term. -/
 theorem W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise (hlam : 0 < lam)
     (w : W1p mu Omega 2) {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) {M : ℝ}
-    (hψM : ∀ x, |ψ x| ≤ M) (hgradM : ∀ x, ‖∇ ψ x‖ ≤ M)
+    (hgradM : ∀ x, ‖∇ ψ x‖ ≤ M)
     {e force : EuclideanSpace ℝ ι → ℝ} (he : Integrable e (mu.restrict Omega))
     (hpointwise : ∀ᵐ x ∂mu.restrict Omega,
       lam * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) ≤
@@ -94,16 +94,26 @@ theorem W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise (hlam : 0 < lam)
     (hψ.continuous.pow 2).aestronglyMeasurable
   have hgrad2 : AEStronglyMeasurable (fun x => ‖∇ ψ x‖ ^ 2) (mu.restrict Omega) :=
     ((ContDiff.continuous_gradient hψ (by simp)).norm.pow 2).aestronglyMeasurable
-  have hI1 : Integrable (fun x => ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) (mu.restrict Omega) :=
-    (W1p.integrable_norm_gradient_sq w).bdd_mul hψ2 (c := M ^ 2) (Filter.Eventually.of_forall
-      fun x => by
-        rw [Real.norm_eq_abs, abs_pow]
-        exact pow_le_pow_left₀ (abs_nonneg _) (hψM x) 2)
   have hI2 : Integrable (fun x => ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2) (mu.restrict Omega) :=
     (Lp.memLp (W1p.value w)).integrable_sq.bdd_mul hgrad2 (c := M ^ 2) (Filter.Eventually.of_forall
       fun x => by
         rw [Real.norm_eq_abs, abs_pow, abs_norm]
         exact pow_le_pow_left₀ (norm_nonneg _) (hgradM x) 2)
+  -- The energy density is dominated, almost everywhere, by an integrable function.
+  have hI1 : Integrable (fun x => ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) (mu.restrict Omega) := by
+    refine ((he.add (hI2.const_mul (2 * Lam ^ 2 / lam))).const_mul (2 / lam)).mono'
+      (hψ2.mul (W1p.integrable_norm_gradient_sq w).aestronglyMeasurable) ?_
+    filter_upwards [hpointwise] with x hx
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+    simp only [Pi.add_apply]
+    have : lam * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) ≤
+        e x + 2 * Lam ^ 2 / lam * (‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2) +
+          lam / 2 * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) := by linarith
+    have h2 : ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 =
+        2 / lam * (lam / 2 * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2)) := by field_simp
+    rw [h2]
+    gcongr
+    linarith
   have hint : ∫ x in Omega, lam * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) ∂mu ≤
       ∫ x in Omega, (e x + lam / 2 * (ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2)
         + 2 * Lam ^ 2 / lam * (‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2)) ∂mu :=
@@ -140,7 +150,7 @@ containing the support of the cutoff. The comparison function may dominate the S
 almost everywhere. -/
 theorem W1p.setIntegral_norm_gradient_sq_mul_value_sq_le (w : W1p mu Omega 2)
     {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) {G : ℝ}
-    (hG : ∀ x, ‖∇ ψ x‖ ≤ G) {S : Set (EuclideanSpace ℝ ι)} (hS : MeasurableSet S)
+    (hG : ∀ x, ‖∇ ψ x‖ ≤ G) {S : Set (EuclideanSpace ℝ ι)}
     (hts : tsupport ψ ⊆ S) {g : EuclideanSpace ℝ ι → ℝ}
     (hg : Integrable g (mu.restrict Omega))
     (hwg : ∀ᵐ x ∂mu.restrict Omega, W1p.value w x ^ 2 ≤ g x) :
@@ -153,37 +163,47 @@ theorem W1p.setIntegral_norm_gradient_sq_mul_value_sq_le (w : W1p mu Omega 2)
       (Filter.Eventually.of_forall fun x => by
         rw [Real.norm_eq_abs, abs_pow, abs_norm]
         exact pow_le_pow_left₀ (norm_nonneg _) (hG x) 2)
-  have hright : Integrable (S.indicator g) (mu.restrict Omega) := hg.indicator hS
+  have hT : MeasurableSet (tsupport ψ) := (isClosed_tsupport ψ).measurableSet
+  have hright : Integrable ((tsupport ψ).indicator g) (mu.restrict Omega) := hg.indicator hT
+  have hg0 : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ g x := hwg.mono fun x hx => (sq_nonneg _).trans hx
   calc
     ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤
-        ∫ x in Omega, G ^ 2 * S.indicator g x ∂mu :=
+        ∫ x in Omega, G ^ 2 * (tsupport ψ).indicator g x ∂mu :=
       integral_mono_ae hleft (hright.const_mul _) (by
         filter_upwards [hwg] with x hx
-        by_cases hxS : x ∈ S
+        by_cases hxS : x ∈ tsupport ψ
         · rw [indicator_of_mem hxS]
           exact mul_le_mul (pow_le_pow_left₀ (norm_nonneg _) (hG x) 2) hx
             (sq_nonneg _) (sq_nonneg _)
         · have hfd : fderiv ℝ ψ x = 0 := Function.notMem_support.1 fun hx' =>
-            hxS (hts (support_fderiv_subset ℝ hx'))
+            hxS (support_fderiv_subset ℝ hx')
           simp [indicator_of_notMem hxS, _root_.gradient, hfd])
-    _ = G ^ 2 * ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ S, g x ∂mu := by
-      rw [integral_const_mul, setIntegral_indicator hS]
+    _ = G ^ 2 * ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ tsupport ψ, g x ∂mu := by
+      rw [integral_const_mul, setIntegral_indicator hT]
+    _ ≤ G ^ 2 * ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ S, g x ∂mu := by
+      refine mul_le_mul_of_nonneg_left (setIntegral_mono_set ?_ ?_ ?_) (sq_nonneg _)
+      · exact hg.mono_measure (Measure.restrict_mono inter_subset_left le_rfl)
+      · exact ae_mono (Measure.restrict_mono inter_subset_left le_rfl) hg0
+      · exact (inter_subset_inter_right _ hts).eventuallyLE
 
 /-- Bound the zeroth-order term of a Caccioppoli inequality by an integral over a set containing
 the support of a cutoff with `ψ² ≤ 1`. The comparison function may dominate the Sobolev value only
 almost everywhere. -/
 theorem W1p.setIntegral_sq_mul_value_sq_le (w : W1p mu Omega 2) {ψ : EuclideanSpace ℝ ι → ℝ}
-    (hψ : AEStronglyMeasurable ψ (mu.restrict Omega)) (hψ1 : ∀ x, ψ x ^ 2 ≤ 1)
+    (hψ1 : ∀ x, ψ x ^ 2 ≤ 1)
     {S : Set (EuclideanSpace ℝ ι)} (hS : MeasurableSet S) (hts : tsupport ψ ⊆ S)
     {g : EuclideanSpace ℝ ι → ℝ} (hg : Integrable g (mu.restrict Omega))
     (hwg : ∀ᵐ x ∂mu.restrict Omega, W1p.value w x ^ 2 ≤ g x) :
     ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu ≤
       ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ S, g x ∂mu := by
+  by_cases hF : Integrable (fun x => ψ x ^ 2 * W1p.value w x ^ 2) (mu.restrict Omega)
+  swap
+  · rw [integral_undef hF]
+    refine integral_nonneg_of_ae ?_
+    exact ae_mono (Measure.restrict_mono inter_subset_left le_rfl)
+      (hwg.mono fun x hx => (sq_nonneg _).trans hx)
   rw [← setIntegral_indicator hS]
-  refine integral_mono_ae ((Lp.memLp (W1p.value w)).integrable_sq.bdd_mul (hψ.pow 2) (c := 1)
-    (Filter.Eventually.of_forall fun x => by
-      rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
-      exact hψ1 x)) (hg.indicator hS) ?_
+  refine integral_mono_ae hF (hg.indicator hS) ?_
   filter_upwards [hwg] with x hx
   by_cases hxS : x ∈ S
   · rw [indicator_of_mem hxS]
@@ -246,7 +266,7 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_add_setIntegral_of_cutoff :
   -- `∇ψ` vanishes off `B(x₀, R)`, where it is bounded by `G`.
   have hright : ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu ≤
       G ^ 2 * ∫ x in ball x₀ R, W1p.value w x ^ 2 ∂mu :=
-    (W1p.setIntegral_norm_gradient_sq_mul_value_sq_le w hψ hG measurableSet_ball htsR
+    (W1p.setIntegral_norm_gradient_sq_mul_value_sq_le w hψ hG htsR
       (Lp.memLp (W1p.value w)).integrable_sq (Eventually.of_forall fun x => le_rfl)).trans_eq
       (by rw [inter_eq_right.2 hball])
   -- `ψ² ≤ 1` on `B(x₀, R)`, `ψ` vanishes off it, and `g ≥ 0`.
@@ -285,7 +305,7 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff :
     ∃ C : ℝ, 0 < C ∧ ∀ {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
       {Omega : Opens (EuclideanSpace ℝ ι)} (w : W1p mu Omega 2) {A B : ℝ}
       {x₀ : EuclideanSpace ℝ ι} {r R : ℝ},
-      0 ≤ A → 0 ≤ B → 0 < r → r < R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      0 ≤ A → 0 ≤ B → r < R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       (∀ ψ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ →
         tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
         ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu ≤
@@ -296,7 +316,10 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff :
   obtain ⟨C, hC0, hC⟩ := exists_setIntegral_ball_norm_gradient_sq_le_add_setIntegral_of_cutoff
     (ι := ι)
   refine ⟨C, hC0, ?_⟩
-  intro mu _ Omega w A B x₀ r R hA hB hr hrR hball hcacc
+  intro mu _ Omega w A B x₀ r R hA hB hrR hball hcacc
+  rcases le_or_gt r 0 with hr | hr
+  · rw [Metric.ball_eq_empty.2 hr, Measure.restrict_empty, integral_zero_measure]
+    exact mul_nonneg (by positivity) (integral_nonneg fun x => sq_nonneg _)
   have hloc := hC w (g := fun x => B * W1p.value w x ^ 2) hA
     ((Lp.memLp (W1p.value w)).integrable_sq.const_mul B)
     (Eventually.of_forall fun x => by positivity) hr hrR hball fun ψ hψ hcpt hts => by
@@ -367,7 +390,7 @@ theorem UniformlyEllipticOn.exists_setIntegral_sq_mul_norm_gradient_sq_le_energy
       W1p.value_contDiffSMul_ae hψ hM hψM' hgradM' u] with x hgv hgw hvw
     rw [hgv, hgw, hvw, smul_eq_mul]
   · rw [energyFormH1_def]
-    exact W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise hlam u hψ hψM hgradM hE hpt
+    exact W1p.setIntegral_sq_mul_norm_gradient_sq_le_of_pointwise hlam u hψ hgradM hE hpt
       le_rfl
 
 /-- **The Caccioppoli inequality.** Let `a` be measurable and uniformly elliptic on `Ω` with
