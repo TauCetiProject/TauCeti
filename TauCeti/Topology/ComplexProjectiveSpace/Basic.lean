@@ -57,7 +57,7 @@ noncomputable section
 
 /-- Complex projective `n`-space, modelled as the orbit quotient of the unit sphere of
 `EuclideanSpace ℂ (Fin (n + 1))` under scalar multiplication by unit complex numbers. -/
-def ComplexProjectiveSpace (n : ℕ) : Type :=
+@[expose] def ComplexProjectiveSpace (n : ℕ) : Type :=
   Quotient (MulAction.orbitRel (sphere (0 : ℂ) 1)
     (sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1))
 
@@ -83,7 +83,7 @@ instance instT2Space : T2Space (ComplexProjectiveSpace n) :=
     (sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1))))
 
 /-- The projection from the unit sphere onto complex projective space. -/
-def mk : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → ComplexProjectiveSpace n :=
+@[expose] def mk : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → ComplexProjectiveSpace n :=
   Quotient.mk _
 
 /-- Every point of complex projective space has a unit-vector representative. -/
