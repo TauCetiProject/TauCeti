@@ -173,12 +173,8 @@ theorem iSup_pathFromChainSkeleton_eq_top (hC : ∀ x, x ∈ C) :
     iSup_cubicalChainModuleSupportedIn_eq_top fun _ hK ↦
       exists_subset_preimageSkeleton_of_isCompact (MoorePathFrom.endpoint B b).continuous
         (range_subset_iff.2 fun _ ↦ hC _) hK
-  refine eq_top_iff.2 fun x _ ↦ ?_
-  have hx : x ∈ ⨆ q, cubicalChainModuleSupportedIn H R
-      (preimageSkeleton C (MoorePathFrom.endpoint B b) q) := h ▸ Submodule.mem_top
-  refine (iSup_le fun q ↦ ?_ : _ ≤ (⨆ q, pathFromChainSkeleton b C H R q).restrictScalars R) hx
-  rw [← restrictScalars_pathFromChainSkeleton]
-  exact Submodule.restrictScalars_mono R (le_iSup (pathFromChainSkeleton b C H R) q)
+  rw [← Submodule.restrictScalars_eq_top_iff R, Submodule.restrictScalars_iSup]
+  simpa only [restrictScalars_pathFromChainSkeleton] using h
 
 /-- **Chains of a pulled-back path fibration lie in the skeletal filtration.** If `f : E → B` sends
 `S` into the `q`-skeleton, the projection `f^*P_b B → P_b B` sends the chains supported over `S`
