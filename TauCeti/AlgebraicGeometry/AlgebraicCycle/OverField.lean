@@ -68,7 +68,7 @@ lemma map_height_comp (f : X ⟶ Y) (g : Y ⟶ Z) [f.IsOver (Spec (.of k))]
     [g.IsOver (Spec (.of k))] [QuasiCompact f] [QuasiCompact g] (α : AlgebraicCycle X R) :
     map (f ≫ g) height height α = map g height height (map f height height α) :=
   map_comp f height height g height α fun x ↦ by
-    simp only [mapCoeff_height_eq_residueDegree k, residueDegree_comp]
+    simp only [mapCoeff_height_eq_residueDegree k, Scheme.Hom.residueDegree_comp]
 
 section Degree
 

@@ -139,6 +139,12 @@ theorem fourierMultiplierCLM_add :
   ext1 f
   simp [fourierMultiplierCLM_apply, Lp.smul_add]
 
+/-- The multiplier of a finite sum of symbols is the sum of the multipliers. -/
+theorem fourierMultiplierCLM_sum {ι : Type*} (s : Finset ι)
+    (m : ι → Lp ℂ ∞ (volume : Measure E)) :
+    fourierMultiplierCLM F (∑ i ∈ s, m i) = ∑ i ∈ s, fourierMultiplierCLM F (m i) :=
+  map_sum (AddMonoidHom.mk' (fourierMultiplierCLM F) fourierMultiplierCLM_add) m s
+
 theorem fourierMultiplierCLM_smul (c : ℂ) :
     fourierMultiplierCLM F (c • m) = c • fourierMultiplierCLM F m := by
   ext1 f

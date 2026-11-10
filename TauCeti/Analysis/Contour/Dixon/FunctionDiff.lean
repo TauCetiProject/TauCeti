@@ -117,20 +117,21 @@ private theorem differentiable_dixonFunction_of_windingNumber_zero_near (hU : Is
     exact dixonFunction_eq_dixonH2_of_windingNumber_zero hγ_cont hderiv_int
       (cauchy_integrand_intervalIntegrable hf.continuousOn hγ_cont hγU hderiv_int hoff') hoff' hwz'
 
-/-- **The Dixon function is entire.** For `f` differentiable on the open set `U`, a closed curve `γ`
+/-- **The Dixon function is entire.** For `f` differentiable on the open set `U`, a curve `γ`
 that is continuous on `uIcc a b`, differentiable off a countable subset, with interval-integrable
 derivative, image in `U`, and null-homologous in `U`, the glued function `dixonFunction f U γ a b`
-is complex-differentiable on all of `ℂ`. This specialises
+is complex-differentiable on all of `ℂ`. Closedness of `γ` is not needed here: it follows from
+null-homology about any point outside `U`, and there is no such point when `U = ℂ`. This specialises
 `differentiable_dixonFunction_of_windingNumber_zero_near`, discharging its local winding hypothesis
 via `exists_ball_windingNumber_zero`. -/
 theorem differentiable_dixonFunction (hU : IsOpen U) (hf : DifferentiableOn ℂ f U)
     (hγ_cont : ContinuousOn γ (uIcc a b)) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U)
-    (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b) (hclosed : γ a = γ b)
+    (hderiv_int : IntervalIntegrable (fun t ↦ deriv γ t) volume a b)
     (hP : P.Countable) (hγ_diff : ∀ t ∈ Ioo (min a b) (max a b) \ P, DifferentiableAt ℝ γ t)
     (h_null : IsNullHomologous γ a b U) :
     Differentiable ℂ (dixonFunction f U γ a b) :=
   differentiable_dixonFunction_of_windingNumber_zero_near hU hf hγ_cont hγU hderiv_int
-    fun w hw ↦ exists_ball_windingNumber_zero hclosed hP hγ_cont hγ_diff hderiv_int
+    fun w hw ↦ exists_ball_windingNumber_zero hP hγ_cont hγ_diff hderiv_int
       (fun t ht heq ↦ hw (heq ▸ hγU t ht)) ((isNullHomologous_iff.mp h_null) w hw)
 
 end

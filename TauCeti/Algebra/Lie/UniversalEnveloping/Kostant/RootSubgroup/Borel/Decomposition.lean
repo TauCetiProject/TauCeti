@@ -79,7 +79,7 @@ theorem isComplement'_kostantSubsystemSubgroup_range_kostantTorusPoints :
     apply Subgroup.mem_bot.mpr
     apply Subtype.ext
     exact Subgroup.mem_bot.mp <| (kostantSubsystemSubgroup_inf_range_kostantTorusPoints_eq_bot
-      e h ρ M hM hnil b wt α hwt S hα hpos A) ▸ ⟨hg.1, hg.2⟩
+      e h ρ M hM hnil b wt α wt hwt S hα hpos A) ▸ ⟨hg.1, hg.2⟩
   · apply Set.eq_univ_of_forall
     intro g
     obtain ⟨u, hu, t, ht, hmul⟩ :=

@@ -526,6 +526,7 @@ theorem exists_fieldUnit_valuation_eq_and_signHom_eq
     exact hxf v hv
   rw [Valuation.map_eq_of_sub_lt (v.valuation K) hlt, hp v]
 
+omit [NumberField K] in
 /-- **A field unit which is negative at every real place.**
 
 Being negative at a real place is exactly being a nonsquare there, so this supplies, in a single

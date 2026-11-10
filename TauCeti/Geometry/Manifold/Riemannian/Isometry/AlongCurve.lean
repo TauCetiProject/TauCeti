@@ -149,10 +149,10 @@ private theorem inner_mfderiv_alongCurveWithin_eq (hf : IsLocalRiemannianIsometr
       (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (f (γ t)))
   have hsource :=
     (isMetricCompatible_leviCivitaConnection (I := I) (M := M)).derivWithin_inner_alongCurveWithin
-      hs hγ hV hXcoord
+      hγ hV hXcoord
   have htarget :=
     (isMetricCompatible_leviCivitaConnection (I := J) (M := N)).derivWithin_inner_alongCurveWithin
-      hs hfγ hfV hYcoord
+      hfγ hfV hYcoord
   have hXY (r : ℝ) : mfderiv I J f (γ r) (X (γ r)) = Y ((f ∘ γ) r) := by
     dsimp only [X, Function.comp_apply]
     exact hf.mfderiv_apply_mpullback Y (γ r)

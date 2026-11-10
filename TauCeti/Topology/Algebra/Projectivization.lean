@@ -59,6 +59,8 @@ of projective space.
 * `Projectivization.isOpen_affineOpen`: the standard affine opens are open.
 * `Projectivization.affineOpenPartialHomeomorph`: the standard affine chart as an open partial
   homeomorphism from `U_i` onto `Fin n → K`.
+* `Projectivization.interAffineOpenHomeomorph`: the affine chart identifies the part `X ∩ U_i` of a
+  set `X` with its image in `Fin n → K`.
 -/
 
 public section
@@ -272,6 +274,30 @@ theorem coe_affineOpenPartialHomeomorph (i : Fin (n + 1)) :
 theorem coe_affineOpenPartialHomeomorph_symm (i : Fin (n + 1)) :
     ⇑(affineOpenPartialHomeomorph (K := K) i).symm = (affineChart i).symm :=
   (rfl)
+
+/-- **The affine part of a subset of projective space.** The standard affine chart at the
+coordinate `i` restricts to a homeomorphism from the part `X ∩ U_i` of a set `X` inside the affine
+open `U_i = {[v] | v i ≠ 0}` onto its image `Z` in `Fin n → K`. -/
+noncomputable def interAffineOpenHomeomorph {X : Set (ℙ K (Fin (n + 1) → K))} {i : Fin (n + 1)}
+    {Z : Set (Fin n → K)} (hZ : affineChart i '' (X ∩ affineOpen i) = Z) :
+    ↥(X ∩ affineOpen i) ≃ₜ Z :=
+  (affineOpenPartialHomeomorph i).homeomorphOfImageSubsetSource (by simp) (by simpa using hZ)
+
+/-- The homeomorphism `Projectivization.interAffineOpenHomeomorph` is the affine chart. -/
+@[simp]
+theorem coe_interAffineOpenHomeomorph_apply {X : Set (ℙ K (Fin (n + 1) → K))} {i : Fin (n + 1)}
+    {Z : Set (Fin n → K)} (hZ : affineChart i '' (X ∩ affineOpen i) = Z)
+    (y : ↥(X ∩ affineOpen i)) :
+    (interAffineOpenHomeomorph hZ y : Fin n → K) = affineChart i y := by
+  simp [interAffineOpenHomeomorph]
+
+/-- The inverse of `Projectivization.interAffineOpenHomeomorph` is the inverse affine chart. -/
+@[simp]
+theorem coe_interAffineOpenHomeomorph_symm_apply {X : Set (ℙ K (Fin (n + 1) → K))}
+    {i : Fin (n + 1)} {Z : Set (Fin n → K)} (hZ : affineChart i '' (X ∩ affineOpen i) = Z)
+    (z : Z) :
+    ((interAffineOpenHomeomorph hZ).symm z : ℙ K (Fin (n + 1) → K)) = (affineChart i).symm z := by
+  simp [interAffineOpenHomeomorph]
 
 end AffineChart
 

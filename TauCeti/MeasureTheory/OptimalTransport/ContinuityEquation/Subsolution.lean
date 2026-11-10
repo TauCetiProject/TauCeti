@@ -116,7 +116,7 @@ private theorem ofReal_integral_convolution_sub_le_lintegral
   refine h.ofReal_integral_sub_integral_le_lintegral_of_fderiv_le hν hab
     (β.hasCompactSupport_normed.contDiff_convolution_left _ β.contDiff_normed hu)
     (fun _ ↦ norm_convolution_lsmul_le_of_forall_norm_le β.support_normed_eq.subset
-      β.nonneg_normed β.integral_normed hu.aestronglyMeasurable fun q _ ↦ huM q)
+      β.nonneg_normed β.integral_normed fun q _ ↦ huM q)
     (β.hasCompactSupport_normed.norm_fderiv_convolution_left_le β.contDiff_normed hu huM)
     fun t ht x w ↦ β.hasCompactSupport_normed.fderiv_convolution_left_apply_le β.contDiff_normed
       β.nonneg_normed β.integral_normed hu ?_
@@ -158,7 +158,7 @@ theorem ofReal_integral_sub_integral_le_lintegral_of_add_smul_le
   have hψM (n : ℕ) (q : ℝ × E) : |ψ n q| ≤ M := by
     simpa [Real.norm_eq_abs] using norm_convolution_lsmul_le_of_forall_norm_le
       (β n).support_normed_eq.subset (β n).nonneg_normed (β n).integral_normed
-      hloc.aestronglyMeasurable fun q _ ↦ huM q
+      fun q _ ↦ huM q
   have huM' (q : ℝ × E) : |u q| ≤ M := by simpa [Real.norm_eq_abs] using huM q
   have hψmeas (n : ℕ) (t : ℝ) : Measurable fun x : E ↦ ψ n (t, x) :=
     (((β n).hasCompactSupport_normed.continuous_convolution_left _ (β n).continuous_normed

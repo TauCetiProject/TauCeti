@@ -31,6 +31,9 @@ for the fibre sums over the range holds for the fibre sum over every value of th
 
 * `TauCeti.prod_eq_prod_image_fiber`, `TauCeti.sum_eq_sum_image_fiber`: `∏ i, F i` is the
   product, over the values `g` takes, of the products of `F` over the fibres of `g`.
+* `TauCeti.prod_pow_card_filter_eq_prod_comp`, `TauCeti.sum_card_filter_nsmul_eq_sum_comp`: for
+  `g` mapping `s` into `t`, `∏ i ∈ s, f (g i)` is the product over `j ∈ t` of `f j` raised to the
+  size of the fibre of `g` over `j`.
 * `TauCeti.sum_sum_eval_mul`: summing `(∑ i, φ i (z i)) * f z` over a finite dependent product
   regroups, coordinate by coordinate, into `∑ i, ∑ a, φ i a * ∑ z with z i = a, f z`.
 * `TauCeti.forall_prod_filter_eq_of_forall_apply`,
@@ -62,6 +65,19 @@ theorem prod_eq_prod_image_fiber {ι κ M : Type*} [Fintype ι] [DecidableEq κ]
     ∏ i, F i = ∏ k ∈ univ.image g, ∏ i : {i // g i = k}, F i := by
   rw [← prod_fiberwise_of_maps_to (g := g) fun i _ ↦ mem_image_of_mem _ (mem_univ i)]
   exact prod_congr rfl fun k _ ↦ prod_subtype _ (by simp) _
+
+/-- **A product of values along a map, counted by fibres.** If `g` maps `s` into `t`, then
+`∏ i ∈ s, f (g i)` is the product over `j ∈ t` of `f j` raised to the number of `i ∈ s` that `g`
+sends to `j`. Unlike `Finset.prod_comp`, the outer index is any `t` containing the image. -/
+@[to_additive sum_card_filter_nsmul_eq_sum_comp /-- **A sum of values along a map, counted by
+fibres.** If `g` maps `s` into `t`, then `∑ i ∈ s, f (g i)` is the sum over `j ∈ t` of `f j` taken
+as many times as there are `i ∈ s` that `g` sends to `j`. Unlike `Finset.sum_comp`, the outer index
+is any `t` containing the image. -/]
+theorem prod_pow_card_filter_eq_prod_comp {ι κ M : Type*} [DecidableEq κ] [CommMonoid M]
+    {s : Finset ι} {t : Finset κ} {g : ι → κ} (h : ∀ i ∈ s, g i ∈ t) (f : κ → M) :
+    ∏ j ∈ t, f j ^ #{i ∈ s | g i = j} = ∏ i ∈ s, f (g i) := by
+  simp_rw [← prod_const]
+  exact prod_fiberwise_of_maps_to' h f
 
 /-- **Regrouping a product-indexed sum by coordinates.** Summing `f` against a weight that is a
 sum of one-coordinate functions is the same as summing, for each coordinate `i` and each value

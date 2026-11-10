@@ -68,20 +68,29 @@ namespace MeasureTheory
 /-- If the pairs `(Y, Z)` and `(Y', Z)` have the same law, then for a measurable real observable
 `f` the conditional expectations of `f ∘ Y` and `f ∘ Y'` given `σ(Z)` agree almost everywhere.
 
-Both conditional expectations are pinned down by their integrals over the sets `Z ⁻¹' E`, and each
-such integral is an integral of `fun p => f p.1` over the slab `univ ×ˢ E` against the joint law,
-which is where the hypothesis applies. Equal laws make `f ∘ Y` integrable exactly when `f ∘ Y'` is,
-so no integrability hypothesis is needed: when it fails both sides are `0`. -/
+If `Z` is not measurable, then `σ(Z)` is not contained in the ambient σ-algebra and both
+conditional expectations are `0`, as they are when `μ` trimmed to `σ(Z)` is not `σ`-finite. When
+`Z` is measurable, equal laws give equal first marginals, so `f ∘ Y` is integrable exactly when
+`f ∘ Y'` is; if neither is, both conditional expectations are `0`. If both are, they are pinned
+down by their integrals over the sets `Z ⁻¹' E`, and each such integral is an integral of
+`fun p => f p.1` over the slab `univ ×ˢ E` against the joint law, which is where the hypothesis
+applies. So no integrability hypothesis, and no measurability of `Z`, is needed. -/
 theorem condExp_comp_ae_eq_of_pair_law_eq {Ω α β : Type*} [mΩ : MeasurableSpace Ω]
-    [MeasurableSpace α] [mβ : MeasurableSpace β] {μ : Measure Ω} [IsFiniteMeasure μ]
-    (Y Y' : Ω → α) (Z : Ω → β) (hY : Measurable Y) (hY' : Measurable Y') (hZ : Measurable Z)
+    [MeasurableSpace α] [mβ : MeasurableSpace β] {μ : Measure Ω}
+    (Y Y' : Ω → α) (Z : Ω → β) (hY : Measurable Y) (hY' : Measurable Y')
     (hpair : μ.map (fun ω => (Y ω, Z ω)) = μ.map (fun ω => (Y' ω, Z ω)))
     {f : α → ℝ} (hf : Measurable f) :
     μ[fun ω => f (Y ω) | MeasurableSpace.comap Z mβ]
       =ᵐ[μ] μ[fun ω => f (Y' ω) | MeasurableSpace.comap Z mβ] := by
-  have hmZ_le : MeasurableSpace.comap Z mβ ≤ mΩ := by
-    rintro s ⟨E, hE, rfl⟩
-    exact hZ hE
+  -- For non-measurable `Z`, `comap Z mβ ≤ mΩ` fails and both conditional expectations are `0`.
+  by_cases hZ : Measurable Z
+  case neg =>
+    rw [condExp_of_not_le (mt measurable_iff_comap_le.2 hZ),
+      condExp_of_not_le (mt measurable_iff_comap_le.2 hZ)]
+  have hmZ_le : MeasurableSpace.comap Z mβ ≤ mΩ := measurable_iff_comap_le.1 hZ
+  -- Without `σ`-finiteness of the trimmed measure both conditional expectations are `0`.
+  by_cases hsf : SigmaFinite (μ.trim hmZ_le)
+  case neg => rw [condExp_of_not_sigmaFinite hmZ_le hsf, condExp_of_not_sigmaFinite hmZ_le hsf]
   -- Equal joint laws have equal first marginals, so integrability transfers to `Y'`.
   have hmap : μ.map Y = μ.map Y' := by
     have h := congrArg (Measure.map Prod.fst) hpair
@@ -121,51 +130,34 @@ theorem condExp_comp_ae_eq_of_pair_law_eq {Ω α β : Type*} [mΩ : MeasurableSp
 -- Stated for an arbitrary conditioning σ-algebra `F` (no `F ≤ m₀`, no `[SigmaFinite (μ.trim)]`):
 -- the bound goes through Mathlib's Lᵖ contraction `eLpNorm_condExp_le_eLpNorm`, which holds at
 -- every `F` via the `condExp = 0` convention — whereas `condExpL1CLM` would require both. Proof:
--- bound `‖μ[Xlim|F] - Y‖₁` by `‖Xlim - Xn n‖₁` (triangle + `condExp_sub` + the contraction + the
--- vanishing `μ[Xn n|F] - Y` term), then let `n → ∞`. Consumed by the reverse-martingale
+-- `μ[Xlim|F] - Y` is a.e. `μ[Xlim - Xn n|F]` (`condExp_sub`), so by the contraction its `L¹` norm
+-- is at most `‖Xlim - Xn n‖₁`; then let `n → ∞`. Consumed by the reverse-martingale
 -- Lévy-downward theorem `MeasureTheory.tendsto_ae_condExp_iInf`.
 lemma condExp_ae_eq_of_forall_condExp_ae_eq_of_tendsto_eLpNorm
-    {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
-    {F : MeasurableSpace Ω} {Xlim Y : Ω → ℝ} {Xn : ℕ → Ω → ℝ}
+    {Ω E : Type*} [MeasurableSpace Ω] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    {μ : Measure Ω} {F : MeasurableSpace Ω} {Xlim Y : Ω → E} {Xn : ℕ → Ω → E}
     (hXlimint : Integrable Xlim μ) (hXn_int : ∀ n, Integrable (Xn n) μ)
     (h_condExp : ∀ n, μ[Xn n | F] =ᵐ[μ] Y)
     (hL1 : Tendsto (fun n => eLpNorm (Xlim - Xn n) 1 μ) atTop (𝓝 0)) :
     μ[Xlim | F] =ᵐ[μ] Y := by
   have h_bound (n : ℕ) : eLpNorm (μ[Xlim | F] - Y) 1 μ ≤ eLpNorm (Xlim - Xn n) 1 μ := by
-    have htri : eLpNorm (μ[Xlim | F] - Y) 1 μ
-                ≤ eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ
-                  + eLpNorm (μ[Xn n | F] - Y) 1 μ := by
-      have : μ[Xlim | F] - Y = (μ[Xlim | F] - μ[Xn n | F]) + (μ[Xn n | F] - Y) := by ring
-      rw [this]
-      exact eLpNorm_add_le le_rfl
-    have hzero : eLpNorm (μ[Xn n | F] - Y) 1 μ = 0 := by
-      have h0 : μ[Xn n | F] - Y =ᵐ[μ] 0 := by
-        filter_upwards [h_condExp n] with ω hω; simp [hω]
-      rw [eLpNorm_congr_ae h0]; simp
-    have hfirst : eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ ≤ eLpNorm (Xlim - Xn n) 1 μ := by
-      have hsub : μ[Xlim | F] - μ[Xn n | F] =ᵐ[μ] μ[Xlim - Xn n | F] :=
-        (condExp_sub hXlimint (hXn_int n) F).symm
-      rw [eLpNorm_congr_ae hsub]
-      exact eLpNorm_condExp_le_eLpNorm _ le_rfl
-    calc eLpNorm (μ[Xlim | F] - Y) 1 μ
-        ≤ eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ + eLpNorm (μ[Xn n | F] - Y) 1 μ := htri
-      _ = eLpNorm (μ[Xlim | F] - μ[Xn n | F]) 1 μ := by rw [hzero]; ring
-      _ ≤ eLpNorm (Xlim - Xn n) 1 μ := hfirst
-  have h_norm_zero : eLpNorm (μ[Xlim | F] - Y) 1 μ = 0 :=
-    le_antisymm
-      (le_of_tendsto_of_tendsto tendsto_const_nhds hL1 (Eventually.of_forall h_bound)) bot_le
-  rw [eLpNorm_eq_zero_iff one_ne_zero] at h_norm_zero
-  filter_upwards [h_norm_zero] with ω hω
-  simp only [Pi.zero_apply] at hω
-  exact sub_eq_zero.mp hω
+    refine (eLpNorm_congr_ae ?_).trans_le (eLpNorm_condExp_le_eLpNorm (m := F) _ le_rfl)
+    filter_upwards [condExp_sub hXlimint (hXn_int n) F, h_condExp n] with ω h₁ h₂
+    simp [h₁, h₂]
+  have h_zero := le_antisymm (ge_of_tendsto' hL1 h_bound) bot_le
+  filter_upwards [(eLpNorm_eq_zero_iff one_ne_zero).1 h_zero] with ω hω
+  exact sub_eq_zero.1 hω
 
 /-- Conditioning on a `μ`-trivial σ-algebra is integrating: if every `m'`-measurable set has
-measure `0` or `1`, then `μ[f | m']` is a.e. the constant `∫ f ∂μ`. -/
+measure `0` or `1`, then `μ[f | m']` is a.e. the constant `∫ f ∂μ`. For a non-integrable `f` both
+are `0`. -/
 theorem condExp_ae_eq_integral_of_forall_zero_or_one {Ω : Type*} {m0 : MeasurableSpace Ω}
     {μ : Measure Ω} {m' : MeasurableSpace Ω} (hm' : m' ≤ m0)
     (htriv : ∀ s, MeasurableSet[m'] s → μ s = 0 ∨ μ s = 1) {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [CompleteSpace E] {f : Ω → E} (hf : Integrable f μ) :
+    [NormedSpace ℝ E] [CompleteSpace E] (f : Ω → E) :
     μ[f | m'] =ᵐ[μ] fun _ => ∫ x, f x ∂μ := by
+  by_cases hf : Integrable f μ
+  case neg => rw [condExp_of_not_integrable hf, integral_undef hf]; exact EventuallyEq.rfl
   have : IsZeroOrProbabilityMeasure μ := ⟨htriv Set.univ MeasurableSet.univ⟩
   rcases eq_zero_or_isProbabilityMeasure μ with rfl | _
   · simp [Filter.EventuallyEq, ae_zero]
@@ -175,16 +167,10 @@ theorem condExp_ae_eq_integral_of_forall_zero_or_one {Ω : Type*} {m0 : Measurab
   intro s hs _
   rcases htriv s hs with h0 | h1
   · rw [setIntegral_measure_zero _ h0, setIntegral_measure_zero _ h0]
-  · have hcompl : μ sᶜ = 0 := by
-      have := measure_compl (hm' s hs) (measure_ne_top μ s)
-      rw [h1] at this
-      simpa using this
-    have hs_int : ∫ x in s, f x ∂μ = ∫ x, f x ∂μ := by
-      rw [← integral_add_compl (hm' s hs) hf, setIntegral_measure_zero _ hcompl, add_zero]
-    rw [hs_int, setIntegral_const]
-    have hsr : μ.real s = 1 := by
-      rw [Measure.real, h1, ENNReal.toReal_one]
-    rw [hsr, one_smul]
+  · -- `s` has full measure, so integrating over it is integrating over the whole space.
+    rw [Measure.restrict_eq_self_of_ae_mem
+      (mem_ae_iff.2 ((prob_compl_eq_zero_iff (hm' s hs)).2 h1))]
+    simp
 
 /-- To identify a conditional expectation given a countable-valued observation, it suffices to
 compare integrals on its fibers. The candidate must be integrable and measurable with respect to
@@ -213,12 +199,21 @@ theorem ae_eq_condExp_of_forall_setIntegral_fiber_eq
 
 /-- **Conditioning on an intermediate σ-algebra.** If conditioning `f` on `m₃` gives a.e. the same
 result as conditioning on the coarser `m₁ ≤ m₃`, then so does conditioning on any `m₂` between
-them. -/
+them. When `μ` trimmed to `m₂` is not `σ`-finite, neither is it trimmed to `m₁`, and both sides
+are `0`. -/
 theorem condExp_ae_eq_of_le_of_le {Ω E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [CompleteSpace E] {m₁ m₂ m₃ m₀ : MeasurableSpace Ω} {μ : Measure Ω} {f : Ω → E}
-    (h₁₂ : m₁ ≤ m₂) (h₂₃ : m₂ ≤ m₃) (h₃ : m₃ ≤ m₀) [SigmaFinite (μ.trim h₃)]
-    [SigmaFinite (μ.trim (h₂₃.trans h₃))] (h : μ[f | m₃] =ᵐ[μ] μ[f | m₁]) :
-    μ[f | m₂] =ᵐ[μ] μ[f | m₁] := calc
+    (h₁₂ : m₁ ≤ m₂) (h₂₃ : m₂ ≤ m₃) (h₃ : m₃ ≤ m₀)
+    (h : μ[f | m₃] =ᵐ[μ] μ[f | m₁]) :
+    μ[f | m₂] =ᵐ[μ] μ[f | m₁] := by
+  by_cases hσ : SigmaFinite (μ.trim (h₂₃.trans h₃))
+  case neg =>
+    -- If `μ` trimmed to `m₂` is not `σ`-finite, then neither is it trimmed to `m₁ ≤ m₂`.
+    have hσ₁ : ¬ SigmaFinite (μ.trim ((h₁₂.trans h₂₃).trans h₃)) := fun h' ↦
+      hσ (sigmaFiniteTrim_mono (h₂₃.trans h₃) h₁₂)
+    rw [condExp_of_not_sigmaFinite _ hσ, condExp_of_not_sigmaFinite _ hσ₁]
+  have : SigmaFinite (μ.trim h₃) := sigmaFiniteTrim_mono h₃ h₂₃
+  calc
   μ[f | m₂] =ᵐ[μ] μ[μ[f | m₃] | m₂] := (condExp_condExp_of_le h₂₃ h₃).symm
   _ =ᵐ[μ] μ[μ[f | m₁] | m₂] := condExp_congr_ae h
   _ = μ[f | m₁] := condExp_of_stronglyMeasurable (h₂₃.trans h₃)
@@ -227,13 +222,32 @@ theorem condExp_ae_eq_of_le_of_le {Ω E : Type*} [NormedAddCommGroup E] [NormedS
 /-- **Conditioning on σ-algebras that agree up to null sets.** If `m₁ ≤ m₂` and every
 `m₂`-measurable set agrees `μ`-almost everywhere with an `m₁`-measurable set, then conditioning on
 `m₂` gives a.e. the same result as conditioning on `m₁`: σ-algebras that differ only by `μ`-null
-sets cannot be told apart by conditional expectations. -/
+sets cannot be told apart by conditional expectations. No σ-finiteness hypothesis is needed: `μ`
+trimmed to `m₁` is σ-finite exactly when it is trimmed to `m₂`, and otherwise both sides are `0`. -/
 theorem condExp_ae_eq_of_forall_exists_ae_eq {Ω E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [CompleteSpace E] {m₁ m₂ m₀ : MeasurableSpace Ω} {μ : Measure Ω}
-    {f : Ω → E} (h₁₂ : m₁ ≤ m₂) (h₂ : m₂ ≤ m₀) [SigmaFinite (μ.trim (h₁₂.trans h₂))]
+    {f : Ω → E} (h₁₂ : m₁ ≤ m₂) (h₂ : m₂ ≤ m₀)
     (h : ∀ s, MeasurableSet[m₂] s → ∃ t, MeasurableSet[m₁] t ∧ s =ᵐ[μ] t) :
     μ[f | m₂] =ᵐ[μ] μ[f | m₁] := by
-  have : SigmaFinite (μ.trim h₂) := sigmaFiniteTrim_mono h₂ h₁₂
+  by_cases hσ : SigmaFinite (μ.trim h₂)
+  case neg =>
+    have hσ₁ : ¬SigmaFinite (μ.trim (h₁₂.trans h₂)) := fun _ ↦ hσ (sigmaFiniteTrim_mono h₂ h₁₂)
+    rw [condExp_of_not_sigmaFinite h₂ hσ, condExp_of_not_sigmaFinite _ hσ₁]
+  -- The `m₁`-sets a.e. equal to the spanning sets of `μ.trim h₂`, together with the null
+  -- complement of their union, cover `Ω` by `m₁`-sets of finite measure.
+  have : SigmaFinite (μ.trim (h₁₂.trans h₂)) := by
+    choose T hT hST using fun n ↦ h _ (measurableSet_spanningSets (μ.trim h₂) n)
+    have hTU : (⋃ n, T n) =ᵐ[μ] Set.univ := by
+      rw [← iUnion_spanningSets (μ.trim h₂)]
+      exact (EventuallyEqSet.countable_iUnion hST).symm
+    refine Measure.sigmaFinite_of_countable ((Set.countable_range T).insert (⋃ n, T n)ᶜ) ?_
+      (by rw [Set.sUnion_insert, Set.sUnion_range, Set.compl_union_self])
+    rintro _ (rfl | ⟨n, rfl⟩)
+    · rw [trim_measurableSet_eq _ (MeasurableSet.iUnion hT).compl, ae_eq_univ.1 hTU]
+      exact ENNReal.zero_lt_top
+    · rw [trim_measurableSet_eq _ (hT n), ← measure_congr (hST n),
+        ← trim_measurableSet_eq h₂ (measurableSet_spanningSets _ n)]
+      exact measure_spanningSets_lt_top _ n
   by_cases hf : Integrable f μ
   case neg => rw [condExp_of_not_integrable hf, condExp_of_not_integrable hf]
   -- `μ[f | m₁]` is `m₂`-measurable, and its integral over an `m₂`-set `s` is its integral over an
@@ -268,12 +282,17 @@ theorem condExp_comap_ae_eq_of_injOn {Ω β E : Type*} [NormedAddCommGroup E] [N
 
 /-- **Jensen's inequality for the conditional expectation**, as an inequality of `lintegral`s: for
 `1 ≤ p`, the `p`-th power of the norm of `μ[f | m]` integrates to at most that of `f`. Unlike
-Mathlib's `integral_norm_condExp_rpow_le`, this needs no integrability of `‖f‖ ^ p`. -/
+Mathlib's `integral_norm_condExp_rpow_le`, this needs no integrability of `‖f‖ ^ p`, nor any
+measurability of `f`. -/
 theorem lintegral_enorm_condExp_rpow_le {Ω E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [CompleteSpace E] {m m₀ : MeasurableSpace Ω} {μ : Measure Ω} {f : Ω → E}
-    (hf : AEStronglyMeasurable f μ) {p : ℝ} (hp : 1 ≤ p) :
+    [CompleteSpace E] {m m₀ : MeasurableSpace Ω} {μ : Measure Ω} (f : Ω → E)
+    {p : ℝ} (hp : 1 ≤ p) :
     ∫⁻ ω, ‖(μ[f | m]) ω‖ₑ ^ p ∂μ ≤ ∫⁻ ω, ‖f ω‖ₑ ^ p ∂μ := by
   have hp₀ : 0 < p := by linarith
+  by_cases hf : AEStronglyMeasurable f μ
+  case neg =>
+    have hfi : ¬ Integrable f μ := fun h ↦ hf h.1
+    simp [condExp_of_not_integrable hfi, hp₀]
   have h := eLpNorm_condExp_le_eLpNorm (μ := μ) (m := m) f (p := .ofReal p) (by simpa using hp)
   simpa [eLpNorm_eq_lintegral_rpow_enorm_toReal, hp₀, hp₀.le, integrable_condExp.1, hf,
     ENNReal.rpow_le_rpow_iff] using h

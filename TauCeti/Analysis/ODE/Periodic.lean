@@ -47,6 +47,13 @@ Such a solution is twisted exactly when `w d = ε • w 0`
   induces a linear equivalence from the cokernel of `L` onto the cokernel of `ε - P`
   (`TauCeti.quotientRangeTwistedLinearOperatorEquiv`).
 
+When `ε - P` is invertible the same formula gives an a priori estimate: every solution of
+`w' = M w + f` with `w d = ε • w 0` satisfies `‖w t‖ ≤ C ∫₀ᵈ ‖f‖` on `[0, d]`, with `C` depending
+only on `M`, `d` and `ε` (`TauCeti.exists_forall_norm_le_mul_integral_norm`). For `ε = 1` and the
+linearization of a Hamiltonian vector field along a nondegenerate periodic orbit, this is the
+estimate which shows that loops near the orbit are controlled by their defect from Hamilton's
+equation.
+
 So the kernel and cokernel of `d/dt - M` on twisted loops are those of the finite complex
 `ε - P : X → X`, for an arbitrary continuous periodic coefficient `M`. When `X` is
 finite-dimensional the kernel and cokernel of `L` have the same dimension
@@ -68,6 +75,8 @@ operators `∂t - J₀ S(t)` on loops twisted by the sign characters of the orbi
 
 * `TauCeti.exists_twisted_solution_iff`: the twisted problem `w' = M w + f` is solvable exactly when
   `E f` lies in the range of `ε - Ψ(d)`.
+* `TauCeti.exists_forall_norm_le_mul_integral_norm`: the a priori estimate
+  `‖w t‖ ≤ C ∫₀ᵈ ‖f‖` for twisted solutions when `ε - Ψ(d)` is invertible.
 * `TauCeti.kerTwistedLinearOperatorEquiv`: `ker L ≃ ker (ε - Ψ(d))`.
 * `TauCeti.quotientRangeTwistedLinearOperatorEquiv`: `coker L ≃ coker (ε - Ψ(d))`.
 * `TauCeti.finiteDimensional_ker_twistedLinearOperator`,
@@ -223,6 +232,60 @@ theorem forall_add_eq_smul_iff_smul_one_sub_apply_eq (hM : Continuous M)
   rw [forall_add_eq_smul_iff_apply_eq_smul hM hper hf hw,
     apply_eq_dysonSeriesLeft_apply_add hM hfc hw d, sub_apply, smul_apply, one_apply_eq_self,
     sub_eq_iff_eq_add', eq_comm]
+
+/-- **An a priori estimate for twisted solutions.** Let `Ψ = dysonSeriesLeft M` be the propagator of
+`w' = M w` and suppose that `ε - Ψ(d)` is invertible. Then there is a constant `C ≥ 0` such that
+every solution of `w' = M w + f`, with `f` continuous and `w d = ε • w 0`, satisfies
+`‖w t‖ ≤ C ∫₀ᵈ ‖f s‖ ds` for `t ∈ [0, d]`. Neither `M` nor `f` needs to be periodic. -/
+theorem exists_forall_norm_le_mul_integral_norm (hM : Continuous M) (hd : 0 ≤ d)
+    (hP : IsUnit (ε • 1 - dysonSeriesLeft M d)) :
+    ∃ C, 0 ≤ C ∧ ∀ {f w : ℝ → X}, Continuous f → (∀ t, HasDerivAt w (M t (w t) + f t) t) →
+      w d = ε • w 0 → ∀ t ∈ Icc 0 d, ‖w t‖ ≤ C * ∫ s in 0..d, ‖f s‖ := by
+  obtain ⟨A, hA⟩ := (isCompact_Icc (a := 0) (b := d)).exists_bound_of_continuousOn
+    (continuous_dysonSeriesLeft hM).continuousOn
+  obtain ⟨B, hB⟩ := (isCompact_Icc (a := 0) (b := d)).exists_bound_of_continuousOn
+    (continuous_dysonSeries hM.neg).continuousOn
+  set N := ‖(↑hP.unit⁻¹ : X →L[ℝ] X)‖
+  refine ⟨|A| * (N * |A| * |B| + |B|), by positivity, fun {f w} hf hw hwd t ht => ?_⟩
+  set I := ∫ s in 0..d, ‖f s‖
+  -- The integral term of variation of constants is bounded by `|B| I` on `[0, d]`.
+  have hint (t : ℝ) (ht : t ∈ Icc 0 d) :
+      ‖∫ s in 0..t, dysonSeries (-M) s (f s)‖ ≤ |B| * I := by
+    calc ‖∫ s in 0..t, dysonSeries (-M) s (f s)‖ ≤ ∫ s in 0..t, |B| * ‖f s‖ := by
+          refine norm_integral_le_of_norm_le ht.1 (Filter.Eventually.of_forall fun s hs => ?_)
+            ((continuous_const.mul hf.norm).intervalIntegrable _ _)
+          exact (ContinuousLinearMap.le_opNorm _ _).trans (mul_le_mul_of_nonneg_right
+            ((hB s ⟨hs.1.le, hs.2.trans ht.2⟩).trans (le_abs_self _)) (norm_nonneg _))
+      _ = |B| * ∫ s in 0..t, ‖f s‖ := integral_const_mul _ _
+      _ ≤ |B| * I := mul_le_mul_of_nonneg_left (integral_mono_interval le_rfl ht.1 ht.2
+          (Filter.Eventually.of_forall fun _ => norm_nonneg _) (hf.norm.intervalIntegrable _ _))
+          (abs_nonneg _)
+  have hΨ (t : ℝ) (ht : t ∈ Icc 0 d) (v : X) : ‖dysonSeriesLeft M t v‖ ≤ |A| * ‖v‖ :=
+    (ContinuousLinearMap.le_opNorm _ _).trans
+      (mul_le_mul_of_nonneg_right ((hA t ht).trans (le_abs_self _)) (norm_nonneg _))
+  have hd' : d ∈ Icc 0 d := ⟨hd, le_rfl⟩
+  -- Solving `(ε - Ψ(d)) (w 0) = Ψ(d) (∫₀ᵈ Ψ(s)⁻¹ (f s) ds)` for `w 0`.
+  have h0 : ‖w 0‖ ≤ N * |A| * |B| * I := by
+    have heq : (↑hP.unit : X →L[ℝ] X) (w 0) =
+        dysonSeriesLeft M d (∫ s in 0..d, dysonSeries (-M) s (f s)) := by
+      rw [hP.unit_spec, sub_apply, smul_apply, one_apply_eq_self, ← hwd,
+        apply_eq_dysonSeriesLeft_apply_add hM hf hw d, add_sub_cancel_left]
+    have hw0 : w 0 = (↑hP.unit⁻¹ : X →L[ℝ] X) (dysonSeriesLeft M d
+        (∫ s in 0..d, dysonSeries (-M) s (f s))) := by
+      rw [← heq, ← mul_apply_eq_comp, Units.inv_mul, one_apply_eq_self]
+    rw [hw0]
+    calc _ ≤ N * ‖dysonSeriesLeft M d (∫ s in 0..d, dysonSeries (-M) s (f s))‖ :=
+          ContinuousLinearMap.le_opNorm _ _
+      _ ≤ N * (|A| * (|B| * I)) := mul_le_mul_of_nonneg_left
+          ((hΨ d hd' _).trans (mul_le_mul_of_nonneg_left (hint d hd') (abs_nonneg _)))
+          (norm_nonneg _)
+      _ = N * |A| * |B| * I := by ring
+  rw [eq_dysonSeriesLeft_apply_add_integral hM hf hw t]
+  calc _ ≤ |A| * ‖w 0 + ∫ s in 0..t, dysonSeries (-M) s (f s)‖ := hΨ t ht _
+    _ ≤ |A| * (N * |A| * |B| * I + |B| * I) :=
+        mul_le_mul_of_nonneg_left ((norm_add_le _ _).trans (add_le_add h0 (hint t ht)))
+          (abs_nonneg _)
+    _ = |A| * (N * |A| * |B| + |B|) * I := by ring
 
 /-- **Solvability of the twisted problem.** For `M` continuous and periodic of period `d`, and `f`
 continuous and twisted by `ε` along `d`, the equation `w' = M w + f` has a solution twisted by `ε`

@@ -10,6 +10,7 @@ public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 public import TauCeti.LinearAlgebra.BilinearForm.Dual.Lattice
 public import TauCeti.RingTheory.Trace.Regular
+import TauCeti.RingTheory.IntegralClosure.TensorProduct
 
 /-!
 # Orders in finite-dimensional algebras
@@ -188,15 +189,8 @@ theorem isOrder_of_isIntegral [IsIntegrallyClosed R] [IsNoetherianRing R]
 theorem integralClosure_isOrder [IsDomain R] [IsIntegrallyClosed R] [IsNoetherianRing R]
     (L : Type*) [Field L] [Algebra F L] [Algebra R L] [IsScalarTower R F L] [FiniteDimensional F L]
     [Algebra.IsSeparable F L] : IsOrder F (integralClosure R L) := by
-  refine isOrder_iff.2 ⟨IsIntegralClosure.finite R F L (integralClosure R L),
-    eq_top_iff.2 fun x _ => ?_⟩
-  -- some nonzero `y : R` makes `y • x` integral, and then `x = y⁻¹ • (y • x)`
-  obtain ⟨y, hy, hyx⟩ := exists_integral_multiples R F (L := L) {x}
-  have hy' : algebraMap R F y ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective R F)).2 hy
-  have hmem : y • x ∈ span F (integralClosure R L : Set L) :=
-    subset_span (hyx x (Finset.mem_singleton_self x))
-  convert smul_mem _ (algebraMap R F y)⁻¹ hmem using 1
-  rw [← algebraMap_smul F y x, smul_smul, inv_mul_cancel₀ hy', one_smul]
+  exact isOrder_iff.2 ⟨IsIntegralClosure.finite R F L (integralClosure R L),
+    span_integralClosure_eq_top⟩
 
 end Integral
 

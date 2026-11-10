@@ -9,7 +9,11 @@ public import Mathlib.Combinatorics.SimpleGraph.Coloring.Constructions
 public import Mathlib.Logic.Equiv.Bool
 
 /-!
-# Two-colourings of a connected graph
+# Bipartite restrictions and two-colourings
+
+Restricting a graph to pairs between two sets is intersection with the corresponding
+restriction of the complete graph (`SimpleGraph.between_eq_inf_top_between`).
+Complete-graph cuts respect symmetric difference (`SimpleGraph.top_between_symmDiff`).
 
 A walk in a graph coloured by `Bool` has even length exactly when its endpoints have the same
 colour (`SimpleGraph.Coloring.even_length_iff_congr`). On a preconnected graph every two vertices
@@ -27,6 +31,31 @@ independent of the colouring up to exchanging the two classes.
 -/
 
 public section
+
+open scoped symmDiff
+
+namespace SimpleGraph
+
+variable {V : Type*}
+
+/-- Restricting a graph to pairs between two sets is intersection with the corresponding
+restriction of the complete graph. -/
+theorem between_eq_inf_top_between (G : SimpleGraph V) (s t : Set V) :
+    G.between s t = G ⊓ (⊤ : SimpleGraph V).between s t := by
+  ext u v
+  simp only [between_adj, inf_adj, top_adj]
+  exact and_congr_right fun h ↦ (and_iff_right h.ne).symm
+
+/-- The complete-graph cut of `S ∆ T` is the symmetric difference of the cuts of `S` and `T`. -/
+theorem top_between_symmDiff (S T : Set V) :
+    (⊤ : SimpleGraph V).between (S ∆ T) (S ∆ T)ᶜ =
+      (⊤ : SimpleGraph V).between S Sᶜ ∆ (⊤ : SimpleGraph V).between T Tᶜ := by
+  ext u v
+  simp only [between_adj, top_adj, Set.mem_compl_iff, symmDiff_def, Set.mem_union,
+    Set.mem_sdiff, sup_adj, sdiff_adj]
+  tauto
+
+end SimpleGraph
 
 namespace SimpleGraph.Coloring
 

@@ -67,10 +67,10 @@ the trace `Coind_V^G M → M`, a `G`-equivariant surjection, vanishes on the `G`
 induced map `H⁰(G, Coind_V^G M) → H⁰(G, M)` is zero. -/
 theorem IsProP.exists_isOpen_trace_eq_zero_of_mem_H0 (hG : IsProP p G) (M : Type v)
     [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M] [DistribMulAction G M]
-    [ContinuousSMul G M] [Finite M] (hM : IsPPrimaryTorsion p M) :
+    [ContinuousSMul G M] [Finite M] (hM : IsAddPGroup p M) :
     ∃ (V : Subgroup G) (_ : V.FiniteIndex), IsOpen (V : Set G) ∧
       ∀ f ∈ H0 G (DiscreteCoind G V M), DiscreteCoind.trace G V M f = 0 := by
-  obtain ⟨k, hk⟩ := hM.exists_pow_smul_eq_zero
+  obtain ⟨k, hk⟩ := isAddPGroup_iff_exists_pow_nsmul_eq_zero.1 hM
   obtain ⟨U, hU⟩ := exists_openNormalSubgroup_smul_eq_self_range (G := G) (id : M → M)
   obtain ⟨V, hVU, hdvd⟩ := hG.exists_openNormalSubgroup_le_pow_dvd_relIndex U k
   have : V.toSubgroup.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient

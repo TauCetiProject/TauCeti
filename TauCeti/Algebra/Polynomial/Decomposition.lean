@@ -51,7 +51,7 @@ theorem natDegree_pow_sub_pow_of_monic {p q : R[X]} (hp : p.Monic) (hq : q.Monic
     (hdeg : p.natDegree = q.natDegree) (hpq : p ≠ q)
     {n : ℕ} (hn : 0 < n) :
     (p ^ n - q ^ n).natDegree = (n - 1) * p.natDegree + (p - q).natDegree := by
-  have hs := natDegree_geom_sum₂ hp hq hdeg hn
+  have hs := natDegree_geom_sum₂ hp hq hdeg n
   obtain rfl | hn' := eq_or_lt_of_le (Nat.succ_le_of_lt hn)
   · simp
   have hpos : 0 < p.natDegree := by

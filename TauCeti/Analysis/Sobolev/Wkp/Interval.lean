@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import TauCeti.Analysis.Sobolev.W1p.Zero
-import TauCeti.Analysis.Sobolev.W1p.Interval
+import TauCeti.Analysis.Sobolev.W1p.Interval.Basic
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv

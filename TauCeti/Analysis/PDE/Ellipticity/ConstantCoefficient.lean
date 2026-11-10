@@ -14,6 +14,7 @@ import Mathlib.Analysis.Matrix.Order
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Deriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
 import TauCeti.Analysis.PDE.Ellipticity.Basic
 
 /-!
@@ -110,18 +111,8 @@ theorem exists_continuousLinearEquiv_laplacian_comp_eq {A : Matrix ι ι ℝ} {l
     simpa [Matrix.toQuadraticForm'_apply, EuclideanSpace.inner_eq_star_dotProduct, hTt,
       dotProduct_comm] using h
   refine ⟨e, fun x => ?_, fun y => ?_, fun u y hu => ?_⟩
-  · -- `√λ ‖y‖ ≤ ‖e y‖`, applied to `y = e⁻¹ x`.
-    have h := hA (e.symm x)
-    rw [← hnorm, e.apply_symm_apply] at h
-    have hl : √lam * ‖e.symm x‖ ≤ ‖x‖ := by
-      rw [← Real.sqrt_sq (norm_nonneg x), ← Real.sqrt_sq (norm_nonneg (e.symm x)),
-        ← Real.sqrt_mul hlam.le]
-      exact Real.sqrt_le_sqrt h
-    rw [inv_mul_eq_div, le_div_iff₀' (Real.sqrt_pos.2 hlam)]
-    exact hl
-  · rw [← Real.sqrt_sq (norm_nonneg (e y)), hnorm, ← Real.sqrt_sq (norm_nonneg y),
-      ← Real.sqrt_mul' _ (sq_nonneg _)]
-    exact Real.sqrt_le_sqrt (hA' y)
+  · exact e.norm_symm_apply_le_inv_sqrt_mul_norm hlam (fun y => (hnorm y).symm ▸ hA y) x
+  · exact Real.le_sqrt_mul_of_sq_le_mul (norm_nonneg y) ((hnorm y).le.trans (hA' y))
   · -- Only the symmetric part of `A` enters, because the second derivative is symmetric.
     have hsymm := hu.isSymmSndFDerivAt (by simp)
     rw [laplacian_comp_toEuclideanCLE_apply, hTt, hTT]

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Tower
 
 /-!
@@ -50,6 +51,9 @@ there is no residue field, and no congruence `σ x ≡ x ^ q`.
   `TauCeti.NumberField.complexConjugationAt_restrictNormal_eq_one_of_isReal`: restriction to an
   intermediate field, in both branches. The restriction is the conjugation at the induced place
   when that place stays complex, and is trivial when the induced place is real.
+* `TauCeti.NumberField.isTotallyComplex_fixedField_of_complexConjugationAt_notMem`: the fixed field
+  of a subgroup of the Galois group of a totally complex field, containing no complex
+  conjugation, is totally complex.
 
 The general tower facts these rest on — equivariance of the action along the tower, and the
 ramification of a complex induced place — are in
@@ -189,6 +193,35 @@ theorem complexConjugationAt_restrictNormal_of_isComplex [Normal K F] (w : Infin
     exact complexConjugationAt_ne_one K w hw
       (eq_one_of_restrictNormal_eq_one K (isUnramified_iff.mpr (Or.inr hv))
         (complexConjugationAt_smul_self K w hw) h1)
+
+/-- The fixed field of a subgroup of the Galois group of a totally complex number field `L`
+over `K` is totally complex as soon as the subgroup contains no complex conjugation of a place of
+`L` ramified over `K`. -/
+theorem isTotallyComplex_fixedField_of_complexConjugationAt_notMem [NumberField K] [NumberField L]
+    [IsTotallyComplex L] (H : Subgroup (L ≃ₐ[K] L))
+    (hH : ∀ (w : InfinitePlace L) (hw : w.IsRamified K), complexConjugationAt K w hw ∉ H) :
+    IsTotallyComplex (IntermediateField.fixedField H) := ⟨fun v ↦ by
+  rw [← not_isReal_iff_isComplex]
+  intro hv
+  obtain ⟨w, hw⟩ := InfinitePlace.comap_surjective (K := L) v
+  have hwreal : (w.comap (algebraMap (IntermediateField.fixedField H) L)).IsReal := by
+    simpa only [hw] using hv
+  have hbase : (w.comap (algebraMap K L)).IsReal := by
+    simpa only [InfinitePlace.comap_comp, IsScalarTower.algebraMap_eq K
+      (IntermediateField.fixedField H) L] using hwreal.comap (algebraMap K _)
+  have hram : w.IsRamified K := isRamified_iff.mpr ⟨IsTotallyComplex.isComplex w, hbase⟩
+  refine hH w hram ?_
+  rw [← IntermediateField.fixingSubgroup_fixedField H, IntermediateField.mem_fixingSubgroup_iff]
+  intro x hx
+  -- The embedding of `w` is real on the fixed field, so conjugating it there changes nothing.
+  have hreal := ComplexEmbedding.isReal_iff.mp
+    (InfinitePlace.isReal_iff.mp hwreal)
+  rw [InfinitePlace.comap_embedding_of_isReal _ hwreal] at hreal
+  have hconj := (isConj_complexConjugationAt K w hram).eq
+  refine w.embedding.injective ?_
+  have h2 := RingHom.congr_fun hreal ⟨x, hx⟩
+  rw [hconj x]
+  simpa [ComplexEmbedding.conjugate_coe_eq] using h2⟩
 
 end Tower
 

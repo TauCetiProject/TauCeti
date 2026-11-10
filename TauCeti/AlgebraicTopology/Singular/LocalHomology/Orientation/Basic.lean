@@ -271,8 +271,10 @@ def localOrientationOfZeroDimChart {M E : Type w} [TopologicalSpace M] [T2Space 
 
 /-- Every point of a zero-dimensional finite-dimensional charted space has a local orientation. -/
 theorem exists_localOrientation_of_zero_dim_chart {M E : Type w} [TopologicalSpace M]
-    [T2Space M] [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [ChartedSpace E M] (x : M) (hn : finrank ℝ E = 0) : Nonempty (LocalOrientation M x 0) :=
+  haveI : Subsingleton E := Module.finrank_zero_iff.1 hn
+  haveI : DiscreteTopology M := ChartedSpace.discreteTopology (H := E) M
   ⟨localOrientationOfZeroDimChart (chartAt E x) (mem_chart_source E x) hn⟩
 
 end TauCeti
