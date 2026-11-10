@@ -41,6 +41,7 @@ quadratic forms with the subgroup preserving both summands.
 * `LinearEquiv.nonempty_linearEquiv_of_isUnit_snd_comp_inr`: a linear equivalence `M × P ≃ N × P`
   whose lower-right block is invertible gives `M ≃ N`.
 * `LinearMap.finrank_graph`: the graph of a linear map `M → M₂` has the dimension of `M`.
+* `LinearMap.apply_eq_fst_smul_add_snd_smul`: a linear map on `R × R` in coordinates.
 * `LinearMap.coprod_comp_prodComm`: precomposing `f.coprod g` with the exchange of factors gives
   `g.coprod f`, the linear version of `ContinuousLinearMap.coprod_comp_prodComm`.
 * `LinearMap.coprod_neg_comp_prodComm`, `LinearMap.map_prodComm_ker_coprod_neg`,
@@ -208,6 +209,13 @@ variable {R M₁ M₂ M₃ : Type*} [Semiring R] [AddCommMonoid M₁] [Module R 
 theorem coprod_comp_prodComm (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₃) :
     f.coprod g ∘ₗ (LinearEquiv.prodComm R M₂ M₁).toLinearMap = g.coprod f := by
   ext <;> simp
+
+/-- A linear map on `R × R` in coordinates: `ℓ v = v₁ • ℓ (1, 0) + v₂ • ℓ (0, 1)`. This is the
+product analogue of `LinearMap.pi_apply_eq_sum_univ`. -/
+theorem apply_eq_fst_smul_add_snd_smul (ℓ : R × R →ₗ[R] M₁) (v : R × R) :
+    ℓ v = v.1 • ℓ (1, 0) + v.2 • ℓ (0, 1) := by
+  have hv : v = v.1 • ((1 : R), (0 : R)) + v.2 • ((0 : R), (1 : R)) := by ext <;> simp
+  conv_lhs => rw [hv, map_add, map_smul, map_smul]
 
 end Semiring
 

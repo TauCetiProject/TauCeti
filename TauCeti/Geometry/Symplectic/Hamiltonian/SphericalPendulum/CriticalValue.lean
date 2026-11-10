@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.RegularValue.Level
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum
 
+import TauCeti.LinearAlgebra.Prod
+
 /-!
 # The critical values of the spherical pendulum
 
@@ -40,12 +42,6 @@ This file computes the critical points and the critical values of the energy–m
   `TauCeti.mk_mem_image_sphericalPendulumEnergyMomentum_iff_of_isMinOn`. Every other value is a
   regular value. This locates the regular fibres of the pendulum, its Liouville tori, and the
   focus–focus value `(1, 0)` around which its Hamiltonian monodromy is computed.
-
-The proof is the Lagrange multiplier rule. The differential of `F` fails to map
-`T_x(T*S²) = ker dg_x` onto `ℝ²` exactly when some nonzero combination `a dH + b dJ` vanishes on
-`ker dg_x`, that is, since `dg_x` is surjective, when `a dH + b dJ = c d(‖q‖²) + d d⟪q, p⟫` for some
-multipliers `c, d`. Testing this identity on coordinate vectors gives six polynomial equations,
-which are solved explicitly.
 
 ## Main results
 
@@ -201,6 +197,12 @@ theorem range_mvfderiv_subtypeVal_sphericalPendulumConstraint
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
   exact ⟨fun ⟨v, hv, hvw⟩ ↦ hvw ▸ hv, fun hw ↦ ⟨e.symm w, by simpa [e] using hw, by simp [e]⟩⟩
 
+/- The critical points are found by the Lagrange multiplier rule. The differential of `F` fails
+to map `T_x(T*S²) = ker dg_x` onto `ℝ²` exactly when some nonzero combination `a dH + b dJ`
+vanishes on `ker dg_x`, that is, since `dg_x` is surjective, when
+`a dH + b dJ = c d(‖q‖²) + d d⟪q, p⟫` for some multipliers `c, d`. Testing this identity on
+coordinate vectors gives six polynomial equations, which are solved explicitly. -/
+
 /-- The six coordinate equations of a Lagrange multiplier relation
 `a dH + b dJ = c d(‖q‖²) + d d⟪q, p⟫` with `(a, b) ≠ 0`, tested on the coordinate vectors, force
 the critical-point condition. -/
@@ -261,16 +263,6 @@ private theorem exists_multipliers {q₀ q₁ q₂ p₀ p₁ p₂ : ℝ}
     · linear_combination q₂ * p₀ * hqp - q₀ * hcrit - q₀ * hq
     · linear_combination q₂ * p₁ * hqp - q₁ * hcrit - q₁ * hq
 
-/-- A linear form on `ℝ × ℝ` in coordinates. -/
-private theorem linearMap_prod_apply (ℓ : ℝ × ℝ →ₗ[ℝ] ℝ) (v : ℝ × ℝ) :
-    ℓ v = ℓ (1, 0) * v.1 + ℓ (0, 1) * v.2 := by
-  conv_lhs => rw [show v = v.1 • ((1 : ℝ), (0 : ℝ)) + v.2 • ((0 : ℝ), (1 : ℝ)) by ext <;> simp]
-  rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul, mul_comm, mul_comm v.2]
-
-private theorem inner_coords (u v : E) : ⟪u, v⟫_ℝ = u 0 * v 0 + u 1 * v 1 + u 2 * v 2 := by
-  simp only [PiLp.inner_apply, Fin.sum_univ_three, RCLike.inner_apply, conj_trivial]
-  ring
-
 /-- **The Lagrange multiplier rule.** If the differential of `F = (H, J)` does not map the kernel
 of the differential of the constraint map onto `ℝ²`, then some nonzero combination `a dF₁ + b dF₂`
 factors through the differential of the constraint map. -/
@@ -297,9 +289,12 @@ private theorem exists_multiplier_relation {x : E × E} (hx : x ∈ sphericalPen
   let μ := (g' : E × E →ₗ[ℝ] ℝ × ℝ).liftOfSurjective
     (surjective_fderiv_sphericalPendulumConstraint hx) ⟨_, hker⟩
   refine ⟨ℓ (1, 0), ℓ (0, 1), μ (1, 0), μ (0, 1), fun ⟨h₁, h₂⟩ ↦
-    hℓ (LinearMap.ext fun v ↦ by rw [linearMap_prod_apply, h₁, h₂]; simp), fun w ↦ ?_⟩
-  rw [← linearMap_prod_apply, ← linearMap_prod_apply]
-  exact LinearMap.equivOfSurjective_apply _ hker
+    hℓ (LinearMap.ext fun v ↦ by simp [LinearMap.apply_eq_fst_smul_add_snd_smul ℓ v, h₁, h₂]),
+    fun w ↦ ?_⟩
+  have h : μ (g' w) = ℓ (F' w) := LinearMap.equivOfSurjective_apply _ hker
+  rw [LinearMap.apply_eq_fst_smul_add_snd_smul μ, LinearMap.apply_eq_fst_smul_add_snd_smul ℓ] at h
+  simp only [smul_eq_mul] at h
+  linear_combination h
 
 /-- The linear criterion: at a point of `T*S²`, the differential of `(H, J)` maps the kernel of the
 differential of the constraint onto `ℝ²` exactly away from the critical points. -/
@@ -309,7 +304,9 @@ private theorem forall_exists_fderiv_iff {x : E × E} (hx : x ∈ sphericalPendu
       ¬(x.2 2 = 0 ∧ x.1 2 * ‖x.2‖ ^ 2 = x.1 2 ^ 2 - 1) := by
   obtain ⟨hq, hqp⟩ := mem_sphericalPendulumPhaseSpace_iff_coords.1 hx
   have hp : ‖x.2‖ ^ 2 = x.2 0 ^ 2 + x.2 1 ^ 2 + x.2 2 ^ 2 := by
-    rw [← real_inner_self_eq_norm_sq, inner_coords]; ring
+    rw [← real_inner_self_eq_norm_sq, EuclideanSpace.inner_eq_star_dotProduct,
+      Matrix.vec3_dotProduct, star_trivial]
+    ring
   rw [hp]
   constructor
   · -- At a critical point, the explicit multipliers confine the image of `ker dg` to a line.
@@ -320,7 +317,7 @@ private theorem forall_exists_fderiv_iff {x : E × E} (hx : x ∈ sphericalPendu
         b * (fderiv ℝ sphericalPendulumEnergyMomentum x w).2 =
           c * (fderiv ℝ sphericalPendulumConstraint x w).1 := by
       rw [fderiv_sphericalPendulumEnergyMomentum_apply, fderiv_sphericalPendulumConstraint_apply]
-      simp only [inner_coords]
+      simp only [EuclideanSpace.inner_eq_star_dotProduct, Matrix.vec3_dotProduct, star_trivial]
       linear_combination w.2 0 * e₁ + w.2 1 * e₂ + w.2 2 * e₃ + w.1 0 * e₄ + w.1 1 * e₅ +
         w.1 2 * e₆
     rw [hw, hw₀, Prod.fst_zero, mul_zero] at key
@@ -385,7 +382,9 @@ private theorem crit_value {q p : E} {c : ℝ × ℝ} (hx : (q, p) ∈ spherical
         sphericalPendulumEffectivePotential c.2 z = c.1) := by
   obtain ⟨hq', hqp⟩ := mem_sphericalPendulumPhaseSpace_iff_coords.1 hx
   have hp : ‖p‖ ^ 2 = p 0 ^ 2 + p 1 ^ 2 + p 2 ^ 2 := by
-    rw [← real_inner_self_eq_norm_sq, inner_coords]; ring
+    rw [← real_inner_self_eq_norm_sq, EuclideanSpace.inner_eq_star_dotProduct,
+      Matrix.vec3_dotProduct, star_trivial]
+    ring
   rw [sphericalPendulumEnergyMomentum_apply] at hF
   subst hF
   simp only at hqp
