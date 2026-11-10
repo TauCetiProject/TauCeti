@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Finsupp.Order
 public import Mathlib.Order.Preorder.Chain
 public import TauCeti.Data.Finsupp.Order
 import Mathlib.Data.Finset.Max
