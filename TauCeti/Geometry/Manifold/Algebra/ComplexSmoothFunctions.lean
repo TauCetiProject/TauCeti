@@ -99,6 +99,24 @@ theorem compRightComplexAlgHom_apply (φ : C^n⟮J, N; I, M⟯)
     (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : compRightComplexAlgHom φ f = f.comp φ := by
   simp [compRightComplexAlgHom]
 
+/-- Pullback along the identity is the identity algebra homomorphism. -/
+@[simp]
+theorem compRightComplexAlgHom_id :
+    compRightComplexAlgHom (ContMDiffMap.id : C^n⟮I, M; I, M⟯) = AlgHom.id ℂ _ := by
+  ext f x
+  simp only [compRightComplexAlgHom_apply, AlgHom.id_apply, comp_apply]
+  rfl
+
+/-- Pullback along a composite reverses the order of the algebra homomorphisms. -/
+theorem compRightComplexAlgHom_comp {E'' H'' P : Type*}
+    [NormedAddCommGroup E''] [NormedSpace ℝ E''] [TopologicalSpace H'']
+    {K : ModelWithCorners ℝ E'' H''} [TopologicalSpace P] [ChartedSpace H'' P]
+    (φ : C^n⟮J, N; I, M⟯) (ψ : C^n⟮K, P; J, N⟯) :
+    compRightComplexAlgHom (φ.comp ψ) =
+      (compRightComplexAlgHom ψ).comp (compRightComplexAlgHom φ) := by
+  ext f x
+  simp
+
 end Pullback
 
 /-- Restricting complex scalars recovers the native real scalar action. -/
