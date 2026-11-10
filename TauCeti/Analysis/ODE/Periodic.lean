@@ -528,17 +528,6 @@ section FiniteDimensional
 
 variable [FiniteDimensional ℝ X]
 
-/-- In finite dimension, `ε - Ψ(d)` is invertible as soon as the return map `Ψ(d)` has no
-eigenvector of eigenvalue `ε`. This is the hypothesis of the a priori estimates
-`TauCeti.exists_forall_norm_le_mul_integral_norm` and
-`TauCeti.exists_integral_norm_sq_le_mul_integral_norm_sq`. -/
-theorem isUnit_smul_one_sub_dysonSeriesLeft (h : ∀ v, dysonSeriesLeft M d v = ε • v → v = 0) :
-    IsUnit (ε • 1 - dysonSeriesLeft M d : X →L[ℝ] X) := by
-  refine ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.2
-    ((LinearMap.isUnit_iff_ker_eq_bot _).2 (LinearMap.ker_eq_bot'.2 fun v hv ↦ h v ?_))
-  have hv' : ε • v - dysonSeriesLeft M d v = 0 := by simpa using hv
-  exact (sub_eq_zero.1 hv').symm
-
 /-- In finite dimension, the kernel of `L = d/dt - M` on maps twisted by `ε` is
 finite-dimensional. -/
 instance finiteDimensional_ker_twistedLinearOperator (hM : Continuous M)

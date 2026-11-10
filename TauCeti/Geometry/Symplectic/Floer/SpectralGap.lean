@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.Periodic
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
+import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Geometry.Symplectic.CompatibleMetric
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Integral.Rectangle
@@ -111,7 +112,7 @@ theorem exists_integral_associatedBilinForm_le_mul_integral_asymptoticOperator
   obtain ⟨a, ha, M, hM, hg⟩ :=
     SymplecticForm.exists_pos_forall_mul_norm_sq_le_and_le_mul_norm_sq isCompact_Icc hJc hJ
   have hunit : IsUnit ((1 : ℝ) • (1 : V →L[ℝ] V) - dysonSeriesLeft S 1) :=
-    isUnit_smul_one_sub_dysonSeriesLeft fun v hv ↦ hnd v (by simpa using hv)
+    ContinuousLinearMap.isUnit_smul_one_sub fun v hv ↦ hnd v (by simpa using hv)
   obtain ⟨C₀, hC₀, hest⟩ := exists_integral_norm_sq_le_mul_integral_norm_sq hSc zero_le_one hunit
   refine ⟨M * C₀ / a, by positivity, fun ζ hζ hζ1 ↦ ?_⟩
   set f : ℝ → V := fun t ↦ deriv ζ t - S t (ζ t)

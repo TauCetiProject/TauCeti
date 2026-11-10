@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.ODE.Periodic
 public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder
 import TauCeti.Analysis.Calculus.FDeriv.Remainder
+import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Analysis.SpecificLimits.DiscreteGronwall
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
@@ -125,7 +126,7 @@ theorem exists_forall_norm_sub_le_mul_integral_of_nondegenerate (hH : ContDiff �
   have hS : Continuous S := ω.continuous_fderiv_hamiltonianVectorField_comp hH hxc
   -- The a priori estimate for periodic solutions of `ξ' = S ξ + f`.
   have hunit : IsUnit ((1 : ℝ) • (1 : V →L[ℝ] V) - dysonSeriesLeft S 1) :=
-    isUnit_smul_one_sub_dysonSeriesLeft fun v hv ↦ hnd v (by simpa using hv)
+    ContinuousLinearMap.isUnit_smul_one_sub fun v hv ↦ hnd v (by simpa using hv)
   obtain ⟨C₀, hC₀, hA⟩ := exists_forall_norm_le_mul_integral_norm hS zero_le_one hunit
   -- The linearization error `r` is at most `ε₁ ‖ξ‖`, small enough to be absorbed.
   set ε₁ : ℝ := 1 / (2 * (C₀ + 1))
