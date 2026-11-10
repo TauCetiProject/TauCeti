@@ -55,6 +55,8 @@ subsequence. Forgetting the highest derivative of every component gives the cont
   components of a section exactly when its chart data satisfy the cocycle relations.
 * `TauCeti.isClosed_sobolevSections`, `TauCeti.SobolevSection.instCompleteSpace`: completeness.
 * `TauCeti.SobolevSection.lowerOrderL`: the continuous inclusion `W^{k+1,p}(V) → W^{k,p}(V)`.
+* `TauCeti.SobolevSection.eq_of_ae_eq_coord`: an element of `W^{k,p}(V)` is determined by the
+  section whose coordinates its chart data are.
 
 ## References
 
@@ -121,6 +123,20 @@ theorem chartValueL_apply_ae (i : Fin A.n) (w : SobolevData A μ p k) :
   filter_upwards [hsum, ae_all_iff.2 hj] with y hy hy'
   rw [heq, hy, Finset.sum_apply]
   exact Finset.sum_congr rfl fun j _ ↦ by simp [hy' j]
+
+omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
+variable {A μ p k} in
+/-- The components of the chart data of a tuple of Sobolev functions are the values of its
+entries: if the chart data in chart `i` agree with `A.coord i s`, then the `j`th component of
+`A.coord i s` in the basis `Module.finBasis ℝ F` is the value of the entry `w i j`, almost
+everywhere on `A.image i`. -/
+theorem value_ae_eq_repr_coord {w : SobolevData A μ p k} {s : ∀ x, V x} {i : Fin A.n}
+    (hs : A.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s)
+    (j : Fin (finrank ℝ F)) :
+    (Wkp.value k (w i j) : E → ℝ) =ᵐ[μ.restrict (A.image i)]
+      fun y ↦ (finBasis ℝ F).repr (A.coord i s y) j := by
+  filter_upwards [A.chartValueL_apply_ae μ p k i w, hs] with y hy hy'
+  rw [← hy', hy, (finBasis ℝ F).repr_sum_self]
 
 omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
 /-- Forgetting the highest derivative of every component does not change the chart data. -/
@@ -286,6 +302,18 @@ theorem ext {w w' : SobolevSection A μ p k}
     (h : ∀ i j, Wkp.value k ((w : SobolevData A μ p k) i j) =
       Wkp.value k ((w' : SobolevData A μ p k) i j)) : w = w' :=
   Subtype.ext <| funext fun i ↦ funext fun j ↦ Wkp.ext k (h i j)
+
+omit [IsManifold 𝓘(ℝ, E) 1 M] in
+variable {A μ p k} in
+/-- **Uniqueness.** Two elements of `W^{k,p}(V)` whose chart data are the coordinates of the same
+section are equal. -/
+theorem eq_of_ae_eq_coord {w w' : SobolevSection A μ p k} {s : ∀ x, V x}
+    (hw : ∀ i, A.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s)
+    (hw' : ∀ i, A.chartValueL μ p k i w' =ᵐ[μ.restrict (A.image i)] A.coord i s) :
+    w = w' :=
+  ext A μ p k fun i j ↦ Lp.ext <|
+    (FiniteBundleAtlas.value_ae_eq_repr_coord (hw i) j).trans
+      (FiniteBundleAtlas.value_ae_eq_repr_coord (hw' i) j).symm
 
 /-- The continuous inclusion `W^{k+1,p}(V) → W^{k,p}(V)`, forgetting the highest derivative of
 every component. -/

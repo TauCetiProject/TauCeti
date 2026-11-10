@@ -49,8 +49,6 @@ classes under changes of variables and is not treated here.
 * `TauCeti.SobolevSection.exists_ae_eq_coord_of_memWkpLoc`: a section whose chart expressions are
   in `MemWkpLoc` on neighbourhoods of the closures of the chart images defines an element of
   `W^{k,p}(V)`.
-* `TauCeti.SobolevSection.eq_of_ae_eq_coord`: an element of `W^{k,p}(V)` is determined by its
-  section.
 * `TauCeti.FiniteBundleAtlas.memWkpLoc_coord_of_contMDiff`: the chart expressions of a `Cᵏ` section
   are in `MemWkpLoc` up to the boundary of the chart images.
 
@@ -100,19 +98,6 @@ namespace SobolevSection
 
 variable {A} {p : ℝ≥0∞} [Fact (1 ≤ p)] {k : ℕ}
 
-omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
-/-- The components of the chart data of a tuple of Sobolev functions are the values of its
-entries: if the chart data in chart `i` agree with `A.coord i s`, then the `j`th component of
-`A.coord i s` in the basis `Module.finBasis ℝ F` is the value of the entry `w i j`, almost
-everywhere on `A.image i`. -/
-private theorem value_ae_eq_repr_coord {w : SobolevData A volume p k} {s : ∀ x, V x}
-    {i : Fin A.n} (hs : A.chartValueL volume p k i w =ᵐ[volume.restrict (A.image i)] A.coord i s)
-    (j : Fin (finrank ℝ F)) :
-    (Wkp.value k (w i j) : ℂ → ℝ) =ᵐ[volume.restrict (A.image i)]
-      fun y ↦ (finBasis ℝ F).repr (A.coord i s y) j := by
-  filter_upwards [A.chartValueL_apply_ae volume p k i w, hs] with y hy hy'
-  rw [← hy', hy, (finBasis ℝ F).repr_sum_self]
-
 /-- **Localization.** If the chart data of an element `w` of `W^{k,p}(V)` are the coordinates of
 the section `s`, then in every chart `i` the chart expression `A.coord i s` lies in the local
 Sobolev class `MemWkpLoc p (A.image i) k`. -/
@@ -133,15 +118,6 @@ theorem exists_section_memWkpLoc (w : SobolevSection A volume p k) :
       A.coord i s) ∧ ∀ i, MemWkpLoc p (A.image i) k (A.coord i s) := by
   obtain ⟨s, hs⟩ := w.exists_section
   exact ⟨s, hs, memWkpLoc_coord w hs⟩
-
-/-- **Uniqueness.** Two elements of `W^{k,p}(V)` whose chart data are the coordinates of the same
-section are equal. -/
-theorem eq_of_ae_eq_coord {w w' : SobolevSection A volume p k} {s : ∀ x, V x}
-    (hw : ∀ i, A.chartValueL volume p k i w =ᵐ[volume.restrict (A.image i)] A.coord i s)
-    (hw' : ∀ i, A.chartValueL volume p k i w' =ᵐ[volume.restrict (A.image i)] A.coord i s) :
-    w = w' :=
-  ext A volume p k fun i j ↦ Lp.ext <|
-    (value_ae_eq_repr_coord (hw i) j).trans (value_ae_eq_repr_coord (hw' i) j).symm
 
 /-- **Sobolev sections from local classes.** Let `s` be a section of `V` whose chart expression
 `A.coord i s` lies, for every chart `i`, in the local Sobolev class `MemWkpLoc p O k` on some open
