@@ -16,14 +16,15 @@ import TauCeti.Data.Set.Restrict
 
 Let `K` and `E` be number fields, `T` a set of height-one primes of `𝓞 E` and `S` one of `𝓞 K`,
 and let `π` send each prime of `E` to a prime of `K`. Suppose that `π` maps `T` into `S`, that it
-preserves absolute norms on `T`, and that every `𝔭 ∈ S` has exactly `c ≠ 0` preimages in `T`.
+preserves absolute norms on `T`, and that every `𝔭 ∈ S` has exactly `c` preimages in `T`.
 Then, for every real `s`,
 
 ```text
 ∑_{𝔓 ∈ T} N𝔓 ^ (-s) = c * ∑_{𝔭 ∈ S} N𝔭 ^ (-s),
 ```
 
-and consequently `T` has Dirichlet density `δ` exactly when `S` has Dirichlet density `δ / c`.
+and, if `c ≠ 0`, `T` has Dirichlet density `δ` exactly when `S` has Dirichlet density
+`δ / c`.
 
 The fibre count only matters away from a set of density zero. If `π` does not increase norms and
 has boundedly many preimages in `T` over each prime of `S`, the prime sum over `T` is bounded by a
@@ -40,10 +41,10 @@ theorem, where a relative Frobenius fibre over the fixed field of a cyclic subgr
 over the primes of the base field.
 
 The same fibre count multiplies the prime counts: for every cutoff `x`, `π_T(x) = c π_S(x)` and
-`ϑ_T(x) = c ϑ_S(x)`, with no error term and without the hypothesis `c ≠ 0`. By the prime ideal
-theorem the ordinary prime counts of both fields are asymptotic to `x / log x` (and the weighted
-counts `ϑ` to `x`), so the transfer, its bounded-fibre variant, and the contraction form hold for
-natural density as well.
+`ϑ_T(x) = c ϑ_S(x)`, with no error term, for every `c`, as for the prime-sum identity. By the
+prime ideal theorem the ordinary prime counts of both fields are asymptotic to `x / log x` (and
+the weighted counts `ϑ` to `x`), so the transfer, its bounded-fibre variant, and the contraction
+form hold for natural density as well.
 
 ## Main results
 
