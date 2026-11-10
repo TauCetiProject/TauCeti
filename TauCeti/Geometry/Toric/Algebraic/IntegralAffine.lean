@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Toric.Algebraic.RationalFunctional
 public import Mathlib.Analysis.Normed.Affine.AddTorsorBases
+public import Mathlib.Analysis.Normed.Module.Connected
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
 # Integral affine equivalences
@@ -15,7 +17,9 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 An integral affine equivalence is a real affine equivalence together with an
 isomorphism of the integral lattices compatible with its linear part. Its
 translation is arbitrary. The self-equivalences of a fixed lattice form a group acting on the
-ambient space, and equivalences agreeing on a nonempty open set are equal. Both directions pull
+ambient space, and equivalences agreeing on a nonempty open set are equal. Consequently a map
+that is locally a global integral affine equivalence on a connected open set agrees there with
+a unique one. Both directions pull
 rational functionals back to rational functionals. In normed spaces the integral lattice supplies
 finite dimensionality and hence continuity without further assumptions. These equivalences
 transport affine inequalities by composition with their inverses.
@@ -257,6 +261,52 @@ theorem eq_of_eqOn_open {e f : IntegralAffineEquiv h h'} {s : Set V}
     (hs : IsOpen s) (hne : s.Nonempty) (he : Set.EqOn e f s) : e = f := by
   apply toAffineEquiv_injective
   exact AffineEquiv.ext_on (hs.affineSpan_eq_top hne) e.toAffineEquiv f.toAffineEquiv he
+
+open Set Filter Topology
+
+/-- On a nonempty connected open set, a map that near each point agrees with one global integral
+affine equivalence agrees with a unique global integral affine equivalence on the whole set. -/
+theorem existsUnique_extension {f : V → V'} {s : Set V}
+    (hf : ∀ x ∈ s, ∃ e : IntegralAffineEquiv h h', f =ᶠ[𝓝 x] e) (hs : IsOpen s)
+    (hc : IsConnected s) : ∃! e : IntegralAffineEquiv h h', EqOn f e s := by
+  classical
+  have hw : ∀ x ∈ s, ∃ e : IntegralAffineEquiv h h', ∃ u : Set V,
+      IsOpen u ∧ x ∈ u ∧ EqOn f e u := fun x hx => by
+    obtain ⟨e, he⟩ := hf x hx
+    obtain ⟨u, hu, hu', hxu⟩ := eventually_nhds_iff.mp he
+    exact ⟨e, u, hu', hxu, hu⟩
+  choose E U hU hxU hEq using fun x : s => hw x.val x.property
+  have hE : IsLocallyConstant E := by
+    apply (IsLocallyConstant.iff_exists_open E).mpr
+    intro x
+    refine ⟨Subtype.val ⁻¹' U x, (hU x).preimage continuous_subtype_val, hxU x, ?_⟩
+    intro y hy
+    apply eq_of_eqOn_open (hs.inter ((hU x).inter (hU y)))
+      ⟨y.val, y.property, hy, hxU y⟩
+    intro z hz
+    exact (hEq y hz.2.2).symm.trans (hEq x hz.2.1)
+  let : PreconnectedSpace s := Subtype.preconnectedSpace hc.isPreconnected
+  obtain ⟨x, hx⟩ := hc.nonempty
+  let e := E ⟨x, hx⟩
+  have he : EqOn f e s := by
+    intro y hy
+    have hEy := hE.apply_eq_of_preconnectedSpace ⟨y, hy⟩ ⟨x, hx⟩
+    exact (hEq ⟨y, hy⟩ (hxU ⟨y, hy⟩)).trans
+      (congrArg (fun a : IntegralAffineEquiv h h' => a y) hEy)
+  refine ⟨e, he, ?_⟩
+  intro e' he'
+  exact eq_of_eqOn_open hs hc.nonempty
+    (fun y hy => (he' hy).symm.trans (he hy))
+
+/-- Every connected component of an open set has its own unique global extension of a map that
+is locally a global integral affine equivalence. -/
+theorem existsUnique_extension_connectedComponentIn {f : V → V'} {s : Set V}
+    (hf : ∀ x ∈ s, ∃ e : IntegralAffineEquiv h h', f =ᶠ[𝓝 x] e) (hs : IsOpen s) {x : V}
+    (hx : x ∈ s) :
+    ∃! e : IntegralAffineEquiv h h', EqOn f e (connectedComponentIn s x) :=
+  existsUnique_extension
+    (fun y hy => hf y (connectedComponentIn_subset s x hy))
+    hs.connectedComponentIn (isConnected_connectedComponentIn_iff.mpr hx)
 
 end Rigidity
 
