@@ -37,7 +37,8 @@ singular.
 * `TauCeti.Place.IsWeierstrassCoordinates.adjoin_div_eq_top_of_isSingular`: at a rational
   singular point `(x₀, y₀)` of `W`, the slope `(y - y₀) / (x - x₀)` generates `F`.
 * `TauCeti.Place.IsWeierstrassCoordinates.transcendental_div_of_isSingular`: that slope is
-  transcendental, so `F` is a rational function field.
+  transcendental, since `x ∈ k(z)` and `x` is transcendental. For a function field `F` with a place
+  of degree one, together with the previous theorem this makes `F` a rational function field.
 * `TauCeti.Place.IsWeierstrassCoordinates.genus_eq_zero_of_isSingular`: so `F` has genus zero.
 * `TauCeti.Place.IsWeierstrassCoordinates.isElliptic`: over a perfect field, the Weierstrass
   curve of a function field of nonzero genus is elliptic.
@@ -120,7 +121,7 @@ theorem adjoin_div_eq_top_of_isSingular (hF : IsFunctionField k F) (hP : P.degre
   exact Set.insert_subset_iff.mpr ⟨hxK, Set.singleton_subset_iff.mpr hyK⟩
 
 /-- At a rational singular point `(x₀, y₀)` of `W`, the slope `(y - y₀) / (x - x₀)` is
-transcendental over `k`: it generates `F`, which contains the transcendental `x`. -/
+transcendental over `k`: the transcendental `x` lies in `k(z)` for the slope `z`. -/
 theorem transcendental_div_of_isSingular
     {x₀ y₀ : k} (hs : W.toAffine.IsSingular x₀ y₀) :
     Transcendental k ((y - algebraMap k F y₀) / (x - algebraMap k F x₀)) := by
