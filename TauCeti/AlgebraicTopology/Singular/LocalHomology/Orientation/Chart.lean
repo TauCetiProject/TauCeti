@@ -21,6 +21,10 @@ Composing this generator with the chart computation of local homology gives the 
 selected by an oriented chart. This connects tangent-space orientations with the local homology
 orientations used to construct fundamental classes.
 
+The oriented local homology isomorphism of any chart factors through that of the identity chart of
+the model, which is read through the connecting morphism and radial projection about the point.
+Translations of the model preserve the local orientations selected in the identity chart.
+
 The local generator is the one associated to an oriented coordinate chart in Hatcher's
 *Algebraic Topology*, Section 3.3.
 -/
@@ -158,6 +162,39 @@ theorem singularHomologyComplSingletonIsoOfOrientation_neg_inv
           (singularHomologyComplSingletonIsoOfOrientation R φ hx o hE).hom := by
       rw [Preadditive.neg_comp, Iso.inv_hom_id]
 
+/-- The oriented local homology isomorphism of the identity chart of the model at `p` is the
+connecting morphism of the pair `(E, E ∖ {p})`, followed by radial projection about `p` and the
+sphere generator selected by the orientation. -/
+theorem singularHomologyComplSingletonIsoOfOrientation_refl_hom {p : E}
+    (hp : p ∈ (OpenPartialHomeomorph.refl E).source) {n : ℕ}
+    (o : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1) :
+    (singularHomologyComplSingletonIsoOfOrientation R (OpenPartialHomeomorph.refl E) hp o
+        hE).hom =
+      (TopPair.ofSubset ({p}ᶜ : Set (TopCat.of E))).reducedSingularHomologyδ R n ≫
+        (reducedSingularHomologyFunctor R n).map
+          (TopCat.ofHom (complSingletonHomotopyEquivSphere p).toFun) ≫
+        (reducedSingularHomologySphereIsoOfOrientation R o hE).hom := by
+  rw [singularHomologyComplSingletonIsoOfOrientation_hom, singularHomologyComplSingletonIso_hom,
+    singularHomologyComplSingletonIsoOfChart_refl R hp, Iso.refl_hom]
+  -- The identity chart sends `p` to `p` by definition, so the composite is only type-correct
+  -- after unfolding it.
+  erw [Category.id_comp, Category.assoc]
+  rfl
+
+/-- The oriented local homology isomorphism of a chart `φ` at `x` is the chart isomorphism of `φ`
+followed by the oriented local homology isomorphism of the identity chart of the model at
+`φ x`. -/
+theorem singularHomologyComplSingletonIsoOfOrientation_hom_eq (φ : OpenPartialHomeomorph M E)
+    {x : M} (hx : x ∈ φ.source) (hφx : φ x ∈ (OpenPartialHomeomorph.refl E).source) {n : ℕ}
+    (o : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1) :
+    (singularHomologyComplSingletonIsoOfOrientation R φ hx o hE).hom =
+      (singularHomologyComplSingletonIsoOfChart R φ hx (n + 1)).hom ≫
+        (singularHomologyComplSingletonIsoOfOrientation R (OpenPartialHomeomorph.refl E) hφx o
+          hE).hom := by
+  rw [singularHomologyComplSingletonIsoOfOrientation_refl_hom,
+    singularHomologyComplSingletonIsoOfOrientation_hom, singularHomologyComplSingletonIso_hom,
+    Category.assoc, Category.assoc]
+
 end Chart
 
 section Integral
@@ -174,6 +211,17 @@ def _root_.OpenPartialHomeomorph.localOrientationOfOrientedChart
       φ hx o hE).inv 1,
     isLocalOrientation_inv_one _⟩
 
+/-- The local orientation selected by an oriented chart is the preimage of `1` under the oriented
+local homology isomorphism. -/
+theorem _root_.OpenPartialHomeomorph.coe_localOrientationOfOrientedChart
+    (φ : OpenPartialHomeomorph M E) {x : M}
+    (hx : x ∈ φ.source) {n : ℕ} (o : Orientation ℝ E (Fin (n + 1)))
+    (hE : finrank ℝ E = n + 1) :
+    (φ.localOrientationOfOrientedChart hx o hE).val =
+      (singularHomologyComplSingletonIsoOfOrientation (ModuleCat.of ℤ (ULift.{w} ℤ))
+        φ hx o hE).inv 1 :=
+  (rfl)
+
 /-- Reversing the chart-model orientation reverses the selected local orientation. -/
 @[simp]
 theorem _root_.OpenPartialHomeomorph.localOrientationOfOrientedChart_neg
@@ -188,6 +236,70 @@ theorem _root_.OpenPartialHomeomorph.localOrientationOfOrientedChart_neg
     (ModuleCat.of ℤ (ULift.{w} ℤ)) φ hx o hE)
 
 end Integral
+
+section Translation
+
+variable {E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- Translation `y ↦ c + (y - p)` followed by radial projection about `c` is radial projection
+about `p`. -/
+private theorem snd_ofSubsetMap_translate_comp_complSingletonHomotopyEquivSphere (p c : E) :
+    TopPair.Hom.snd (TopPair.ofSubsetMap (X := TopCat.of E) (Y := TopCat.of E)
+        (TopCat.ofHom ⟨fun y : E ↦ c + (y - p), by fun_prop⟩) (B := {p}ᶜ) (B' := {c}ᶜ)
+        (fun y hy h ↦ hy (sub_eq_zero.1 (add_eq_left.1 h)))) ≫
+      TopCat.ofHom (complSingletonHomotopyEquivSphere c).toFun =
+    TopCat.ofHom (complSingletonHomotopyEquivSphere p).toFun := by
+  ext z
+  -- The subspace of `TopPair.ofSubset` is the subtype only after unfolding the pair.
+  erw [ConcreteCategory.comp_apply]
+  refine ((coe_complSingletonHomotopyEquivSphere_apply c _).trans ?_).trans
+    (coe_complSingletonHomotopyEquivSphere_apply p z).symm
+  erw [TopPair.ofSubsetMap_snd_apply]
+  simp
+
+/-- Translation `y ↦ c + (y - p)` commutes with the connecting morphisms and radial projections
+used to read local homology at `p` and at `c`. -/
+@[reassoc]
+private theorem localHomologyMap_translate_comp_reducedSingularHomologyδ (p c : E)
+    (h : (⟨fun y ↦ c + (y - p), by fun_prop⟩ : C(E, E)) ⁻¹' {c} ⊆ {p}) (k : ℕ) :
+    localHomologyMap R (⟨fun y ↦ c + (y - p), by fun_prop⟩ : C(E, E)) h (k + 1) ≫
+        (TopPair.ofSubset ({c}ᶜ : Set (TopCat.of E))).reducedSingularHomologyδ R k ≫
+          (reducedSingularHomologyFunctor R k).map
+            (TopCat.ofHom (complSingletonHomotopyEquivSphere c).toFun) =
+      (TopPair.ofSubset ({p}ᶜ : Set (TopCat.of E))).reducedSingularHomologyδ R k ≫
+        (reducedSingularHomologyFunctor R k).map
+          (TopCat.ofHom (complSingletonHomotopyEquivSphere p).toFun) := by
+  rw [localHomologyMap_def, ← TopPair.reducedSingularHomologyδ_naturality_assoc]
+  congr 1
+  -- The composite is only type-correct after unfolding the subspace of the pair.
+  erw [← Functor.map_comp, snd_ofSubsetMap_translate_comp_complSingletonHomotopyEquivSphere]
+
+/-- **Translations preserve the model local orientations.** The translation `y ↦ c + (y - p)` of
+the model carries the local orientation at `p` selected by `o` in the identity chart to the one
+at `c`. -/
+theorem localHomologyMap_translate_localOrientationOfOrientedChart_refl {p c : E}
+    (hp : p ∈ (OpenPartialHomeomorph.refl E).source)
+    (hc : c ∈ (OpenPartialHomeomorph.refl E).source)
+    (h : (⟨fun y ↦ c + (y - p), by fun_prop⟩ : C(E, E)) ⁻¹' {c} ⊆ {p}) {n : ℕ}
+    (o : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1) :
+    localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) (⟨fun y ↦ c + (y - p), by fun_prop⟩ : C(E, E)) h
+        (n + 1)
+        ((OpenPartialHomeomorph.refl E).localOrientationOfOrientedChart hp o hE).val =
+      ((OpenPartialHomeomorph.refl E).localOrientationOfOrientedChart hc o hE).val := by
+  let e {x : E} (hx : x ∈ (OpenPartialHomeomorph.refl E).source) :=
+    singularHomologyComplSingletonIsoOfOrientation (ModuleCat.of ℤ (ULift.{w} ℤ))
+      (OpenPartialHomeomorph.refl E) hx o hE
+  have he : localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ))
+      (⟨fun y ↦ c + (y - p), by fun_prop⟩ : C(E, E)) h (n + 1) ≫ (e hc).hom = (e hp).hom := by
+    simp only [e, singularHomologyComplSingletonIsoOfOrientation_refl_hom]
+    exact localHomologyMap_translate_comp_reducedSingularHomologyδ_assoc _ p c h n _
+  rw [OpenPartialHomeomorph.coe_localOrientationOfOrientedChart,
+    OpenPartialHomeomorph.coe_localOrientationOfOrientedChart]
+  apply (ConcreteCategory.bijective_of_isIso (e hc).hom).1
+  rw [← ConcreteCategory.comp_apply, he]
+  exact ((e hp).inv_hom_id_apply 1).trans ((e hc).inv_hom_id_apply 1).symm
+
+end Translation
 
 section Manifold
 

@@ -48,7 +48,9 @@ flow of a vector field `X` with `df(X) = -1` on the band. The sublevels form the
 topology across the band. The band itself, relative to its lower level, is the pair
 `TauCeti.bandPair f : (f⁻¹[a, b], f⁻¹(a))`, which includes into the sublevel pair by
 `TauCeti.bandPairInclusion`; when `f⁻¹[a, b]` is a cobordism between regular levels, this is the
-cobordism relative to its incoming boundary. All sublevels together form the functor
+cobordism relative to its incoming boundary. Relative to its upper level, the band is the pair
+`TauCeti.upperBandPair f : (f⁻¹[a, b], f⁻¹(b))`, the cobordism relative to its outgoing boundary;
+negating `f` exchanges the two (`TauCeti.bandPair_neg`). All sublevels together form the functor
 `TauCeti.sublevelFunctor f` from the levels to spaces, with the cocone `TauCeti.sublevelCocone f`
 of their inclusions into `X`.
 
@@ -229,6 +231,13 @@ abbrev bandPair {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β] (f :
   TopPair.ofInclusion (X := TopCat.of X) (preimage_mono (singleton_subset_iff.2 ⟨le_rfl, hab⟩) :
     f ⁻¹' {a} ⊆ f ⁻¹' Icc a b)
 
+/-- The upper band pair `(f⁻¹[a, b], f⁻¹(b))` of a function `f` for `a ≤ b`: the band of values
+between `a` and `b`, relative to its upper level. -/
+abbrev upperBandPair {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β] (f : X → β)
+    {a b : β} (hab : a ≤ b) : TopPair :=
+  TopPair.ofInclusion (X := TopCat.of X) (preimage_mono (singleton_subset_iff.2 ⟨hab, le_rfl⟩) :
+    f ⁻¹' {b} ⊆ f ⁻¹' Icc a b)
+
 /-- The inclusion `(f⁻¹[a, b], f⁻¹(a)) ⟶ ({f ≤ b}, {f ≤ a})` of the band pair into the sublevel
 pair. -/
 def bandPairInclusion {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β] (f : X → β)
@@ -245,6 +254,35 @@ theorem bandPairInclusion_fst {X : Type*} [TopologicalSpace X] {β : Type*} [Pre
       TopCat.ofHom (ContinuousMap.inclusion fun _ hx ↦ (hx : f _ ∈ Icc a b).2) := by
   ext x
   exact TopPair.ofInclusionMap_fst_apply _ _ x
+
+section Neg
+
+variable {X : Type*} [TopologicalSpace X] {β : Type*} [AddCommGroup β] [PartialOrder β]
+  [IsOrderedAddMonoid β] (f : X → β)
+
+omit [TopologicalSpace X] in
+/-- The band `(-f)⁻¹[-b, -a]` of `-f` is the band `f⁻¹[a, b]` of `f`. -/
+@[simp]
+theorem preimage_neg_Icc_neg (a b : β) : (-f) ⁻¹' Icc (-b) (-a) = f ⁻¹' Icc a b := by
+  ext x
+  simp only [mem_preimage, Pi.neg_apply, mem_Icc, neg_le_neg_iff]
+  exact and_comm
+
+/-- Negating a function exchanges the two levels of a band: the band pair
+`((-f)⁻¹[-b, -a], (-f)⁻¹(-b))` of `-f` is the upper band pair `(f⁻¹[a, b], f⁻¹(b))` of `f`. -/
+theorem bandPair_neg {a b : β} (hab : a ≤ b) :
+    bandPair (-f) (neg_le_neg hab) = upperBandPair f hab := by
+  have hlevel : (-f) ⁻¹' {-b} = f ⁻¹' {b} := by
+    ext x
+    simp
+  -- Pairs of nested subsets agree when the subsets do; the inclusion proofs are irrelevant.
+  have key {s t s' t' : Set X} (h : s ⊆ t) (h' : s' ⊆ t') (hs : s = s') (ht : t = t') :
+      TopPair.ofInclusion (X := TopCat.of X) h = TopPair.ofInclusion (X := TopCat.of X) h' := by
+    subst hs ht
+    rfl
+  exact key _ _ hlevel (preimage_neg_Icc_neg f a b)
+
+end Neg
 
 section Functor
 

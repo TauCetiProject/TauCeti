@@ -140,7 +140,7 @@ private theorem absoluteGaloisGroupRestrictEquiv_apply_of_pow_natCard_pow_eq_sel
   let := algebraicExtensionNormedFieldTopology K (𝓤 f)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 f)
   have := algebraicExtension_valuativeExtension K (𝓤 f)
-  have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension hf
+  have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension
   let : CommGroup Gal(𝓤 f/K) := IsCyclic.commGroup
   have hmem : x ∈ 𝓤 f := rootSet_subset_unramifiedExtension K _ f <| by
     rw [mem_rootSet]
@@ -400,7 +400,7 @@ theorem exists_localCyclotomicCharacter_eq_and_apply_of_pow_eq_one (u : ℤ_[p]�
   obtain ⟨ρ₀, hρ₀⟩ := surjective_localCyclotomicCharacter_ratPadic p u
   -- `τ` restricts to the Frobenius of `F`, which generates `Gal(F/ℚ_p)`.
   obtain ⟨j, hj⟩ : ∃ j : ℤ, r τ ^ j = r ρ₀ := Subgroup.mem_zpowers_iff.1
-    ((hτF.zpowers_restrictNormalHom_unramifiedExtension hf).symm ▸ Subgroup.mem_top (r ρ₀))
+    ((hτF.zpowers_restrictNormalHom_unramifiedExtension).symm ▸ Subgroup.mem_top (r ρ₀))
   refine ⟨ρ₀ * (τ ^ j)⁻¹ * τ, ?_, fun z hz ↦ ?_⟩
   · rw [map_mul, map_mul, map_inv, map_zpow, hρ₀, hτχ, one_zpow, inv_one, mul_one, mul_one]
   · have hr : r (ρ₀ * (τ ^ j)⁻¹ * τ) = r τ := by
