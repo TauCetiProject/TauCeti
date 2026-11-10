@@ -27,7 +27,7 @@ The point-keyed API lives in the `UpperHalfPlane` namespace: `UpperHalfPlane.clo
 `UpperHalfPlane.triangle`. Membership is read off with
 `UpperHalfPlane.mem_closedSide_iff` and `UpperHalfPlane.mem_triangle_iff`. A triangle contains its
 vertices (`UpperHalfPlane.left_mem_triangle`), is invariant under cyclic permutation of them
-(`UpperHalfPlane.triangle_rotate`) and, when nondegenerate, under every transposition
+(`UpperHalfPlane.triangle_rotate`) and under every transposition
 (`UpperHalfPlane.triangle_swap_left`, `UpperHalfPlane.triangle_swap_right`,
 `UpperHalfPlane.triangle_reverse`). An interior angle is the Euclidean angle between any positive
 multiples of the two velocities (`interiorAngle_eq_angle_of_velocity_eq`).
@@ -175,36 +175,80 @@ theorem left_mem_triangle (A B C : ℍ) : A ∈ triangle A B C :=
     (mem_range_geodesicLine_geodesicBetween_left A B), mem_closedSide_self B C A,
     range_geodesicLine_subset_closedSide _ _ _ (mem_range_geodesicLine_geodesicBetween_right C A)⟩
 
-/-- The triangle does not depend on the order of its first two vertices, as long as the third is
-off the line through them. -/
-theorem triangle_swap_left {A B C : ℍ}
-    (hC : C ∉ Set.range (geodesicLine (geodesicBetween A B))) :
-    triangle B A C = triangle A B C := by
+/-- The triangle does not depend on the order of its first two vertices. -/
+theorem triangle_swap_left {A B C : ℍ} : triangle B A C = triangle A B C := by
   rcases eq_or_ne A B with rfl | hAB
   · rfl
-  -- `B` is off the line `A C`, and `A` is off the line `C B`: otherwise that line would be `A B`
-  have hB : B ∉ Set.range (geodesicLine (geodesicBetween A C)) := fun hB ↦ hC
-    ((range_geodesicLine_geodesicBetween_of_mem (mem_range_geodesicLine_geodesicBetween_left A C)
-      hB hAB).symm ▸ mem_range_geodesicLine_geodesicBetween_right A C)
-  have hA : A ∉ Set.range (geodesicLine (geodesicBetween C B)) := fun hA ↦ hC
-    ((range_geodesicLine_geodesicBetween_of_mem hA
-      (mem_range_geodesicLine_geodesicBetween_right C B) hAB).symm ▸
-      mem_range_geodesicLine_geodesicBetween_left C B)
-  rw [triangle, triangle, closedSide_swap hC, closedSide_swap hB, closedSide_swap hA,
-    Set.inter_right_comm]
+  by_cases hC : C ∉ Set.range (geodesicLine (geodesicBetween A B))
+  · -- `B` is off the line `A C`, and `A` is off the line `C B`: otherwise that line would be `A B`
+    have hB : B ∉ Set.range (geodesicLine (geodesicBetween A C)) := fun hB ↦ hC
+      ((range_geodesicLine_geodesicBetween_of_mem
+        (mem_range_geodesicLine_geodesicBetween_left A C) hB hAB).symm ▸
+        mem_range_geodesicLine_geodesicBetween_right A C)
+    have hA : A ∉ Set.range (geodesicLine (geodesicBetween C B)) := fun hA ↦ hC
+      ((range_geodesicLine_geodesicBetween_of_mem hA
+        (mem_range_geodesicLine_geodesicBetween_right C B) hAB).symm ▸
+        mem_range_geodesicLine_geodesicBetween_left C B)
+    rw [triangle, triangle, closedSide_swap hC, closedSide_swap hB, closedSide_swap hA,
+      Set.inter_right_comm]
+  rw [not_not] at hC
+  -- `C` lies on the line `A B`: if it is a vertex the two triangles have the same three sides
+  rcases eq_or_ne C A with rfl | hCA
+  · ext x
+    simp only [mem_triangle_iff]
+    tauto
+  rcases eq_or_ne C B with rfl | hCB
+  · ext x
+    simp only [mem_triangle_iff]
+    tauto
+  -- otherwise all three vertices lie on one line `g`, at distinct parameters
+  obtain ⟨c, hc⟩ := hC
+  have hA := geodesicLine_geodesicBetween_zero A B
+  have hB := geodesicLine_geodesicBetween_dist A B
+  generalize dist A B = d at hB
+  generalize geodesicBetween A B = g at hA hB hc
+  subst hA hB hc
+  have hside (s t u : ℝ) (hst : s ≠ t) :
+      closedSide (geodesicLine g s) (geodesicLine g t) (geodesicLine g u) =
+        if s < t then closure (leftHalfPlane g) else closure (rightHalfPlane g) := by
+    have hu : geodesicLine g u ∈ Set.range (geodesicLine g) := ⟨u, rfl⟩
+    rcases lt_or_gt_of_ne hst with h | h
+    · have hnot := Set.disjoint_right.1 (disjoint_rightHalfPlane_range_geodesicLine g) hu
+      rw [closedSide_def, rightHalfPlane_geodesicBetween_geodesicLine_of_lt g h,
+        leftHalfPlane_geodesicBetween_geodesicLine_of_lt g h]
+      simp only [hnot, h, ↓reduceIte]
+    · have hne : geodesicLine g t ≠ geodesicLine g s := (geodesicLine_injective g).ne h.ne
+      have hnot := Set.disjoint_right.1 (disjoint_leftHalfPlane_range_geodesicLine g) hu
+      rw [closedSide_def, rightHalfPlane_geodesicBetween_swap hne,
+        leftHalfPlane_geodesicBetween_swap hne,
+        leftHalfPlane_geodesicBetween_geodesicLine_of_lt g h,
+        rightHalfPlane_geodesicBetween_geodesicLine_of_lt g h]
+      simp only [hnot, h.not_gt, ↓reduceIte]
+  -- the three sides run along the line, and cyclically they cannot all run the same way, so
+  -- every ordering of three distinct points of a line gives the same triangle
+  have htri (a b c : ℝ) (hab : a ≠ b) (hbc : b ≠ c) (hca : c ≠ a) :
+      triangle (geodesicLine g a) (geodesicLine g b) (geodesicLine g c) =
+        closure (leftHalfPlane g) ∩ closure (rightHalfPlane g) := by
+    rw [triangle_def, hside a b c hab, hside b c a hbc, hside c a b hca]
+    rcases lt_or_gt_of_ne hab with h1 | h1 <;> rcases lt_or_gt_of_ne hbc with h2 | h2 <;>
+      rcases lt_or_gt_of_ne hca with h3 | h3 <;>
+      simp only [h1, h2, h3, h1.not_gt, h2.not_gt, h3.not_gt, ite_true, ite_false] <;>
+      first
+        | (exfalso; linarith)
+        | (ext x; simp only [Set.mem_inter_iff]; tauto)
+  have hd : (0 : ℝ) ≠ d := fun h ↦ hAB (h ▸ rfl)
+  have hc0 : c ≠ 0 := fun h ↦ hCA (h ▸ rfl)
+  have hcd : c ≠ d := fun h ↦ hCB (h ▸ rfl)
+  rw [htri d 0 c hd.symm hc0.symm hcd, htri 0 d c hd hcd.symm hc0]
 
-/-- The nondegenerate triangle does not depend on the order of its last two vertices. -/
-theorem triangle_swap_right {A B C : ℍ}
-    (hC : C ∉ Set.range (geodesicLine (geodesicBetween A B))) :
-    triangle A C B = triangle A B C := by
-  rw [triangle_rotate B A C, triangle_swap_left hC]
+/-- The triangle does not depend on the order of its last two vertices. -/
+theorem triangle_swap_right {A B C : ℍ} : triangle A C B = triangle A B C := by
+  rw [triangle_rotate B A C, triangle_swap_left]
 
-/-- The nondegenerate triangle does not depend on the order of its first and last vertices: it
-is unchanged by reversing the order of the vertices. -/
-theorem triangle_reverse {A B C : ℍ}
-    (hC : C ∉ Set.range (geodesicLine (geodesicBetween A B))) :
-    triangle C B A = triangle A B C := by
-  rw [triangle_rotate A C B, triangle_swap_right hC]
+/-- The triangle does not depend on the order of its first and last vertices: it is unchanged by
+reversing the order of the vertices. -/
+theorem triangle_reverse {A B C : ℍ} : triangle C B A = triangle A B C := by
+  rw [triangle_rotate A C B, triangle_swap_right]
 
 end UpperHalfPlane
 
@@ -670,10 +714,7 @@ theorem volume_triangle {A B C : ℍ} (hAB : A ≠ B)
   · rw [hA, hB, volume_triangle_I_geodesicLine_one hd hCre, ← hA, ← hB,
       interiorAngle_smul h hAB hAC, interiorAngle_smul h hBC hAB.symm,
       interiorAngle_smul h hAC.symm hBC.symm]
-  · have hC' : h • C ∉ Set.range (geodesicLine (geodesicBetween (h • A) (h • B))) := by
-      rw [geodesicBetween_smul h hAB, ← smul_range_geodesicLine, Set.smul_mem_smul_set_iff]
-      exact hC
-    rw [← triangle_swap_left hC', hB, hA, volume_triangle_I_geodesicLine_one hd hCre, ← hB,
+  · rw [← triangle_swap_left, hB, hA, volume_triangle_I_geodesicLine_one hd hCre, ← hB,
       ← hA, interiorAngle_smul h hAB.symm hBC, interiorAngle_smul h hAC hAB,
       interiorAngle_smul h hBC.symm hAC.symm, interiorAngle_comm B C A, interiorAngle_comm A B C,
       interiorAngle_comm C A B]
