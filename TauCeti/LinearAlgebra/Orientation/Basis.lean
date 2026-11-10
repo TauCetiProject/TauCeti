@@ -131,6 +131,16 @@ theorem _root_.AlternatingMap.signBasis_mul_apply_eq_abs_det_mul (f : E [⋀^ι]
   rw [habs, hf]
   ring
 
+/-- A top-degree alternating form positive on a basis `b₀` is positive on every basis with the
+orientation of `b₀`: the two values differ by the positive change-of-basis determinant. -/
+theorem _root_.AlternatingMap.apply_pos_of_orientation_eq (f : E [⋀^ι]→ₗ[R] R)
+    {b₀ b : Module.Basis ι R E} (hb : b.orientation = b₀.orientation) (h : 0 < f b₀) :
+    0 < f b := by
+  have key := f.signBasis_mul_apply_eq_abs_det_mul b₀ b
+  rw [← hb, signBasis_orientation, Units.val_one, Int.cast_one, one_mul] at key
+  rw [key]
+  exact mul_pos (abs_pos.2 (b₀.isUnit_det b).ne_zero) h
+
 end CommRing
 
 section Field

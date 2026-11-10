@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Orientation.Cover.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
 public import TauCeti.Geometry.Manifold.Instances.Comap
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 
 /-!
 # The canonical orientation of the smooth orientation cover
@@ -71,6 +72,11 @@ instance instIsManifold {n : ℕ∞ω} [IsManifold I n M] :
 theorem isLocalDiffeomorph_proj {n : ℕ∞ω} :
     IsLocalDiffeomorph I I n (VectorBundleOrientationCover.proj : OrientationCover I M → M) :=
   (isCoveringMap_proj I M).isLocalHomeomorph.isLocalDiffeomorph_chartedSpaceComap
+
+/-- The orientation cover of a boundaryless manifold is boundaryless. -/
+instance instBoundarylessManifold [BoundarylessManifold I M] :
+    BoundarylessManifold I (OrientationCover I M) :=
+  (isLocalDiffeomorph_proj (n := 1)).boundarylessManifold one_ne_zero
 
 /-- The projection of the orientation cover is smooth. -/
 theorem contMDiff_proj {n : ℕ∞ω} :

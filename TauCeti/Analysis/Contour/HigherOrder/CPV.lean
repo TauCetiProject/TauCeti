@@ -148,7 +148,7 @@ theorem IsPwC1ImmersionOn.hasCauchyPVAt_pow_inv {γ : ℝ → ℂ} {a b : ℝ} {
   have h_int_tr : ∀ ε : ℝ, 0 < ε → IntervalIntegrable
       (fun t => if ‖γ t - s‖ > ε then c / (γ t - s) ^ k * deriv γ t else 0)
       MeasureTheory.volume a b :=
-    fun _ hε => intervalIntegrable_pow_inv_mul_deriv_truncated c k h_imm.continuousOn
+    fun _ hε => intervalIntegrable_pow_inv_mul_deriv_truncated c k
       h_imm.isPiecewiseC1On.intervalIntegrable_deriv hε
   have h_plain := fun l u =>
     plain_piece_integral_eq (s := s) h_imm hk c (l := l) (u := u)

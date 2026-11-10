@@ -453,10 +453,6 @@ theorem exists_radius_hasCauchyPVAt_exitCapWindow {γ : ℝ → ℂ} {s : ℂ} {
   refine HasCauchyPVAt.intro ?_ ?_
   · filter_upwards [self_mem_nhdsWithin] with η hη
     exact intervalIntegrable_inv_sub_truncated
-      (h_imm.continuousOn.mono (by
-        rw [uIcc_of_le hab.le, uIcc_of_le (hlt.le.trans htu.le)]
-        exact Icc_subset_Icc (by linarith [ha, hlower_mem.1])
-          (hupper_mem.2.trans hb)))
       (h_imm.isPiecewiseC1On.intervalIntegrable_deriv.mono_set (by
         rw [uIcc_of_le (hlt.le.trans htu.le), uIcc_of_le hab.le]
         exact Icc_subset_Icc (by linarith [ha, hlower_mem.1]) (hupper_mem.2.trans hb))) hη

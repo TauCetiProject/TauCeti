@@ -92,7 +92,7 @@ theorem le_of_mem_newtonSlopes_of_isDistinguished {P : K[X]} {σ : ℝ}
     isSupportingLine_iff.mpr (PowerSeries.supportingValue_addValuation_coeff_eq_neg_logb_gaussNorm
       (P : K⟦X⟧) v hb hv hfn hP0).ge
   have hj_coeff : P.natDegree ∈ supportingFace (fun n => v ((P : K⟦X⟧).coeff n)) σ c :=
-    ((PowerSeries.isDistinguished_iff_isGreatest_supportingFace (P : K⟦X⟧) v hb hv hfn hP0
+    ((PowerSeries.isDistinguished_iff_isGreatest_supportingFace (P : K⟦X⟧) v hb hv hfn
       P.natDegree).mp hPd).1
   have henv := P.isLowerConvexEnvelope_newtonPolygon v
   have hc_poly : IsSupportingLine (P.newtonPolygon v) σ c := by
@@ -201,7 +201,7 @@ theorem isDistinguished_of_isFiniteFace {f : K⟦X⟧} {σ : ℝ} {l j : ℕ}
   have hc_eq : c = -Real.logb b (f.gaussNorm norm (b ^ σ)) := EReal.coe_injective <| by
     rw [← supportingValue_eq_coe_of_mem_supportingFace hc_coeff hj_coeff,
       supportingValue_addValuation_coeff_eq_neg_logb_gaussNorm f v hb hv hfn hf0]
-  rw [isDistinguished_iff_isGreatest_supportingFace f v hb hv hfn hf0, ← hc_eq]
+  rw [isDistinguished_iff_isGreatest_supportingFace f v hb hv hfn, ← hc_eq]
   exact ⟨hj_coeff, fun m hm => (Set.mem_Icc.mp (hset ▸ henv.supportingFace_subset hc_coeff hm)).2⟩
 
 /-- When `f` is distinguished of degree `j` at `b ^ σ`, slopes `τ > σ` contribute at most the
@@ -213,7 +213,7 @@ private theorem supportingValue_add_le_of_isDistinguished_of_lt {f : K⟦X⟧} {
   have hfn := hf.hasGaussNorm
   set cf := -Real.logb b (f.gaussNorm norm (b ^ σ))
   have hj_coeff :=
-    ((isDistinguished_iff_isGreatest_supportingFace f v hb hv hfn hf.ne_zero j).mp hf).1
+    ((isDistinguished_iff_isGreatest_supportingFace f v hb hv hfn j).mp hf).1
   have hcf : IsSupportingLine (fun k => v (f.coeff k)) σ cf :=
     isSupportingLine_iff.mpr (supportingValue_addValuation_coeff_eq_neg_logb_gaussNorm
       f v hb hv hfn hf.ne_zero).ge

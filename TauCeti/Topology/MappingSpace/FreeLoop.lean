@@ -23,12 +23,13 @@ compatibly with evaluation at `1 ∈ S¹`, constant loops, and the based loop fi
 
 Its subspace `𝓛₀Q` of **contractible** loops (`TauCeti.contractibleLoops`) consists of the loops
 joined by a path in the free loop space to a constant loop, equivalently to the constant loop at
-their own basepoint (`mem_contractibleLoops_iff_joined_const`). The constant loops embed in `𝓛₀Q`
-(`TauCeti.isEmbedding_constContractibleLoop`), with retraction `TauCeti.basepointContractibleLoop`
-given by evaluation at `1`. A path in the free loop space that starts at a constant loop stays in
-`𝓛₀Q` (`TauCeti.constLoopPath_mem_contractibleLoops`), so the paths from a constant loop to a
-constant loop, `TauCeti.ConstLoopPath`, are the same as such paths in `𝓛₀Q`
-(`TauCeti.constLoopPathHomeomorph`).
+their own basepoint (`mem_contractibleLoops_iff_joined_const`), so `𝓛₀Q` is the union of the
+path components of the constant loops (`pathComponent_const_subset_contractibleLoops`). The
+constant loops embed in `𝓛₀Q` (`TauCeti.isEmbedding_constContractibleLoop`), with retraction
+`TauCeti.basepointContractibleLoop` given by evaluation at `1`. A path in the free loop space
+that starts at a constant loop stays in `𝓛₀Q` (`TauCeti.constLoopPath_mem_contractibleLoops`),
+so the paths from a constant loop to a constant loop, `TauCeti.ConstLoopPath`, are the same as
+such paths in `𝓛₀Q` (`TauCeti.constLoopPathHomeomorph`).
 
 ## Main declarations
 
@@ -280,6 +281,11 @@ theorem basepointContractibleLoop_constContractibleLoop (q : Q) :
 theorem basepointContractibleLoop_comp_constContractibleLoop :
     (basepointContractibleLoop (Q := Q)).comp constContractibleLoop = ContinuousMap.id Q :=
   ContinuousMap.ext basepointContractibleLoop_constContractibleLoop
+
+/-- The contractible free loops contain the path component of every constant loop. -/
+theorem pathComponent_const_subset_contractibleLoops (q : Q) :
+    pathComponent (ContinuousMap.const Circle q) ⊆ contractibleLoops Q :=
+  fun _ h ↦ mem_contractibleLoops_iff.2 ⟨q, h.symm⟩
 
 /-- A circle loop is contractible if and only if it is joined in `C(Circle, Q)` to the constant
 loop at its own basepoint `γ 1`. -/
