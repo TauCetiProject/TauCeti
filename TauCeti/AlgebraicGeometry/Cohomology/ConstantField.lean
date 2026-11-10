@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.EulerCharacteristic
-public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
-public import TauCeti.AlgebraicGeometry.LineBundle.Basic
+public import TauCeti.AlgebraicGeometry.Cohomology.Trivial
 
 /-!
 # Cohomology over the field of constants
@@ -18,7 +17,9 @@ for instance a reduced connected scheme universally closed over `k`
 irreducible component of the special fibre of a proper model of a curve with its reduced
 structure. Every cohomology group `Hⁱ(X, M)` is a vector space over `κ`
 (`AlgebraicGeometry.Scheme.Modules.cohomologyModule`), and its `k`-structure is the restriction of
-scalars along `k → κ`. Since `H⁰(X, 𝒪_X) = κ` is one-dimensional over `κ`, the tower law reads
+scalars along `k → κ`. Since `H⁰(X, 𝒪_X) = κ` is one-dimensional over `κ`
+(`AlgebraicGeometry.Scheme.Modules.finrank_globalSections_cohomology_zero_trivial_eq_one`), the
+tower law reads
 
 `dim_k Hⁱ(X, M) = dim_k H⁰(X, 𝒪_X) · dim_κ Hⁱ(X, M)`.
 
@@ -35,8 +36,6 @@ both sides use Mathlib's `finrank`, which is zero on an infinite-dimensional spa
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.Modules.finrank_globalSections_cohomology_zero_trivial_eq_one`:
-  `H⁰(X, 𝒪_X)` has rank one over the global functions.
 * `AlgebraicGeometry.Scheme.Modules.finrank_cohomology_eq_finrank_cohomology_zero_trivial_mul`:
   `dim_k Hⁱ(X, M) = dim_k H⁰(X, 𝒪_X) · dim_κ Hⁱ(X, M)` when `κ = Γ(X, 𝒪_X)` is a field.
 * `AlgebraicGeometry.Scheme.Modules.finrank_cohomology_zero_trivial_dvd_finrank_cohomology` and
@@ -61,25 +60,6 @@ noncomputable section
 namespace AlgebraicGeometry.Scheme.Modules
 
 variable {X : Scheme.{u}}
-
-/-- On a nonempty scheme, `H⁰(X, 𝒪_X)` is free of rank one over the ring `Γ(X, 𝒪_X)` of global
-functions: it is identified with `Γ(X, 𝒪_X)` itself. -/
-theorem finrank_globalSections_cohomology_zero_trivial_eq_one
-    [Nonempty X] :
-    finrank Γ(X, ⊤) (Cohomology (InvertibleSheaf.trivial X).obj 0) = 1 := by
-  let M : X.Modules := SheafOfModules.unit X.ringCatSheaf
-  let e : (InvertibleSheaf.trivial X).obj ≅ M :=
-    eqToIso (InvertibleSheaf.trivial_obj X) ≪≫ TauCeti.SheafOfModules.freePUnitIsoUnit _
-  let f : Cohomology (InvertibleSheaf.trivial X).obj 0 ≃ₗ[Γ(X, ⊤)] Cohomology M 0 :=
-    .ofLinearMap (cohomologyMapLinear e.hom 0) (cohomologyMapLinear e.inv 0)
-      (by rw [← cohomologyMapLinear_comp, e.inv_hom_id, cohomologyMapLinear_id])
-      (by rw [← cohomologyMapLinear_comp, e.hom_inv_id, cohomologyMapLinear_id])
-  rw [f.finrank_eq, (cohomologyZeroLinearEquiv M).finrank_eq]
-  -- The global sections of the structure sheaf, as a module over the global functions, are the
-  -- global functions acting on themselves.
-  have : Nonempty (⊤ : X.Opens) := ⟨⟨Classical.arbitrary X, trivial⟩⟩
-  have : Nontrivial Γ(X, ⊤) := X.component_nontrivial ⊤
-  exact Module.finrank_self Γ(X, ⊤)
 
 variable (k : Type u) [Field k] [X.Over (Spec (.of k))]
 
