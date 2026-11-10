@@ -165,11 +165,13 @@ theorem spinGenerator_apply (j k : Fin n) (s t : Fin n → Bool) :
 /-- Left multiplication by a generator matrix caps the strands `j` and `k` of the row index: the
 row `s` of the product is `cup (s j, s k)` times the `cap`-weighted sum of the rows of `X` at the
 configurations obtained from `s` by resetting the spins on `j` and `k`. -/
-theorem spinGenerator_mul_apply {j k : Fin n} (hjk : j ≠ k)
+theorem spinGenerator_mul_apply {j k : Fin n}
     (X : Matrix (Fin n → Bool) (Fin n → Bool) R) (s u : Fin n → Bool) :
     (spinGenerator q j k * X) s u =
       spinCup q (s j) (s k) * ∑ b, ∑ c, spinCap q b c * X (update (update s j b) k c) u := by
   classical
+  rcases eq_or_ne j k with rfl | hjk
+  · simp [Matrix.mul_apply, spinGenerator_apply]
   rw [Matrix.mul_apply]
   simp only [spinGenerator_apply, ite_mul, zero_mul]
   rw [← Finset.sum_filter]
@@ -204,23 +206,25 @@ theorem spinGenerator_mul_apply {j k : Fin n} (hjk : j ≠ k)
 
 /-- A generator matrix does not see the row spins on the strands it caps, except through the
 cup. -/
-theorem spinGenerator_update_update_apply {j k : Fin n} (hjk : j ≠ k) (s u : Fin n → Bool)
+theorem spinGenerator_update_update_apply {j k : Fin n} (s u : Fin n → Bool)
     (b c : Bool) :
     spinGenerator q j k (update (update s j b) k c) u =
       if ∀ l ∉ ({j, k} : Finset (Fin n)), s l = u l
       then spinCup q b c * spinCap q (u j) (u k) else 0 := by
+  rcases eq_or_ne j k with rfl | hjk
+  · simp [spinGenerator_apply]
   simp only [spinGenerator_apply,
     forall_notMem_update_eq_iff_of_mem (show k ∈ ({j, k} : Finset (Fin n)) by simp),
     forall_notMem_update_eq_iff_of_mem (show j ∈ ({j, k} : Finset (Fin n)) by simp)]
   simp [update_of_ne hjk]
 
 /-- Closing a loop multiplies a generator matrix by the loop value `-(q + q⁻¹)`. -/
-theorem spinGenerator_mul_self {j k : Fin n} (hjk : j ≠ k) :
+theorem spinGenerator_mul_self {j k : Fin n} :
     spinGenerator q j k * spinGenerator q j k =
       (-((q : R) + ((q⁻¹ : Rˣ) : R))) • spinGenerator q j k := by
   ext s u
-  rw [spinGenerator_mul_apply q hjk, Matrix.smul_apply, spinGenerator_apply]
-  simp_rw [spinGenerator_update_update_apply q hjk]
+  rw [spinGenerator_mul_apply q, Matrix.smul_apply, spinGenerator_apply]
+  simp_rw [spinGenerator_update_update_apply q]
   split_ifs
   · simp
     ring
@@ -228,12 +232,14 @@ theorem spinGenerator_mul_self {j k : Fin n} (hjk : j ≠ k) :
 
 /-- The zigzag relation for two generator matrices sharing the strand `k`, with the first one
 on the left. -/
-theorem spinGenerator_zigzag_left {j k l : Fin n} (hjk : j ≠ k) (hkl : k ≠ l)
-    (hjl : j ≠ l) :
+theorem spinGenerator_zigzag_left {j k l : Fin n} (hkl : k ≠ l) (hjl : j ≠ l) :
     spinGenerator q j k * spinGenerator q k l * spinGenerator q j k = spinGenerator q j k := by
+  rcases eq_or_ne j k with rfl | hjk
+  · have h0 : spinGenerator q j j = 0 := by ext s t; simp [spinGenerator_apply]
+    simp [h0]
   ext s u
-  rw [mul_assoc, spinGenerator_mul_apply q hjk]
-  simp_rw [spinGenerator_mul_apply q hkl]
+  rw [mul_assoc, spinGenerator_mul_apply q]
+  simp_rw [spinGenerator_mul_apply q]
   have hl : l ∉ ({j, k} : Finset (Fin n)) := by simp [hjl.symm, hkl.symm]
   simp only [spinGenerator_apply, forall_notMem_update_eq_iff_of_notMem hl,
     forall_notMem_update_eq_iff_of_mem (show k ∈ insert l ({j, k} : Finset (Fin n)) by simp),
@@ -249,12 +255,14 @@ theorem spinGenerator_zigzag_left {j k l : Fin n} (hjk : j ≠ k) (hkl : k ≠ l
 
 /-- The zigzag relation for two generator matrices sharing the strand `k`, with the second one
 on the left. -/
-theorem spinGenerator_zigzag_right {j k l : Fin n} (hjk : j ≠ k) (hkl : k ≠ l)
-    (hjl : j ≠ l) :
+theorem spinGenerator_zigzag_right {j k l : Fin n} (hjk : j ≠ k) (hjl : j ≠ l) :
     spinGenerator q k l * spinGenerator q j k * spinGenerator q k l = spinGenerator q k l := by
+  rcases eq_or_ne k l with rfl | hkl
+  · have h0 : spinGenerator q k k = 0 := by ext s t; simp [spinGenerator_apply]
+    simp [h0]
   ext s u
-  rw [mul_assoc, spinGenerator_mul_apply q hkl]
-  simp_rw [spinGenerator_mul_apply q hjk]
+  rw [mul_assoc, spinGenerator_mul_apply q]
+  simp_rw [spinGenerator_mul_apply q]
   have hj : j ∉ ({k, l} : Finset (Fin n)) := by simp [hjk, hjl]
   simp only [spinGenerator_apply,
     forall_notMem_update_eq_iff_of_mem (show k ∈ ({k, l} : Finset (Fin n)) by simp),
@@ -271,11 +279,17 @@ theorem spinGenerator_zigzag_right {j k l : Fin n} (hjk : j ≠ k) (hkl : k ≠ 
   · simp only [eq_false hA, false_and, ite_false, mul_zero, Finset.sum_const_zero]
 
 /-- Generator matrices on disjoint pairs of strands commute. -/
-theorem spinGenerator_mul_spinGenerator_comm {j k l m : Fin n} (hjk : j ≠ k) (hlm : l ≠ m)
-    (hjl : j ≠ l) (hjm : j ≠ m) (hkl : k ≠ l) (hkm : k ≠ m) :
+theorem spinGenerator_mul_spinGenerator_comm {j k l m : Fin n} (hjl : j ≠ l) (hjm : j ≠ m)
+    (hkl : k ≠ l) (hkm : k ≠ m) :
     spinGenerator q j k * spinGenerator q l m = spinGenerator q l m * spinGenerator q j k := by
+  rcases eq_or_ne j k with rfl | hjk
+  · have h0 : spinGenerator q j j = 0 := by ext s t; simp [spinGenerator_apply]
+    simp [h0]
+  rcases eq_or_ne l m with rfl | hlm
+  · have h0 : spinGenerator q l l = 0 := by ext s t; simp [spinGenerator_apply]
+    simp [h0]
   ext s u
-  rw [spinGenerator_mul_apply q hjk, spinGenerator_mul_apply q hlm]
+  rw [spinGenerator_mul_apply q, spinGenerator_mul_apply q]
   have hk : k ∉ ({l, m} : Finset (Fin n)) := by simp [hkl, hkm]
   have hj : j ∉ insert k ({l, m} : Finset (Fin n)) := by simp [hjk, hjl, hjm]
   have hm : m ∉ ({j, k} : Finset (Fin n)) := by simp [hjm.symm, hkm.symm]
@@ -303,16 +317,16 @@ variable {δ : R} (hδ : δ = -((q : R) + ((q⁻¹ : Rˣ) : R)))
 `i + 1`. -/
 def spinRep : TemperleyLieb R δ n →ₐ[R] Matrix (Fin n → Bool) (Fin n → Bool) R :=
   lift (fun i ↦ spinGenerator q ⟨i, by omega⟩ ⟨i + 1, by omega⟩)
-    (fun i ↦ by rw [hδ]; exact spinGenerator_mul_self q (by grind))
+    (fun i ↦ by rw [hδ]; exact spinGenerator_mul_self q)
     (fun {i j} h ↦ by
       obtain ⟨i, hi⟩ := i
       obtain ⟨j, hj⟩ := j
       simp only at h ⊢
       rcases h with rfl | rfl
-      · exact spinGenerator_zigzag_left q (by grind) (by grind) (by grind)
-      · exact spinGenerator_zigzag_right q (by grind) (by grind) (by grind))
+      · exact spinGenerator_zigzag_left q (by grind) (by grind)
+      · exact spinGenerator_zigzag_right q (by grind) (by grind))
     (fun {i j} h ↦ spinGenerator_mul_spinGenerator_comm q (by grind) (by grind) (by grind)
-      (by grind) (by grind) (by grind))
+      (by grind))
 
 /-- The spin representation sends the generator `e i` to the generator matrix on the strands `i`
 and `i + 1`. -/
@@ -440,7 +454,7 @@ theorem trace_diagonal_spinWeight_mul_extendLast_mul_spinGenerator
       spinGenerator q (Fin.last m).castSucc (Fin.last (m + 1)))) =
       trace (diagonal (spinWeight q) * X) := by
   rw [← mul_assoc, trace_mul_comm, trace]
-  simp only [Matrix.diag_apply, spinGenerator_mul_apply q (Fin.castSucc_lt_last _).ne, diagonal_mul,
+  simp only [Matrix.diag_apply, spinGenerator_mul_apply q, diagonal_mul,
     extendLast_apply, update_self, Fin.init_update_last, Fin.init_update_castSucc]
   rw [← (Fin.snocEquiv fun _ ↦ Bool).sum_comp, Fintype.sum_prod_type, Finset.sum_comm]
   simp only [Fin.snocEquiv, Equiv.coe_fn_mk, Fin.snoc_last, Fin.snoc_castSucc, Fin.init_snoc,
