@@ -496,6 +496,22 @@ theorem zigzagVolume_smul_left_injective {i j : V} (h : G.Adj i j) :
     (volumePath G i)
   simpa only [coe_pathAlgebraBasis] using hproj
 
+/-- Scalar multiplication of an arrow class is injective, whatever the rest of the graph does: the
+arrow has length one, so it survives the coordinate map. -/
+theorem zigzagMk_ofArrow_smul_left_injective (d : G.Dart) :
+    Function.Injective fun r : k ↦ r • zigzagMk k G (ofArrow (arrow G d.adj)) := by
+  intro r s hrs
+  beta_reduce at hrs
+  rw [← map_smul, ← map_smul] at hrs
+  have hmem : r • ofArrow (arrow G d.adj) - s • ofArrow (arrow G d.adj) ∈ zigzagIdeal k G :=
+    (zigzagMk_eq_zero_iff k G).mp (by rw [map_sub, hrs, sub_self])
+  have hproj := shortProj_eq_zero_of_mem_zigzagIdeal k G hmem
+  rw [map_sub, map_smul, map_smul, ofArrow_eq_ofPath_arrowPath,
+    shortProj_ofPath_of_length_le_one k G _ (by simp), sub_eq_zero] at hproj
+  apply (pathAlgebraBasis k (DoubledQuiver G)).linearIndependent.smul_left_injective
+    ⟨vertex G d.fst, vertex G d.snd, arrowPath G d.adj⟩
+  simpa only [coe_pathAlgebraBasis] using hproj
+
 /-! ### The dimension -/
 
 /-- **The dimension of a zigzag algebra.** A finite simple graph with no isolated vertex has
