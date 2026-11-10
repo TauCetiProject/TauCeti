@@ -26,7 +26,8 @@ function. `DifferentiableAt.extDerivWithin` is the exterior-derivative version o
 `DifferentiableAt.fderivWithin`, and `TauCeti.tsupport_extDeriv_subset` and
 `HasCompactSupport.extDeriv` are the versions of `tsupport_fderiv_subset` and
 `HasCompactSupport.fderiv`. `TauCeti.extDerivWithin_of_isOpen` is the version of
-`fderivWithin_of_isOpen`.
+`fderivWithin_of_isOpen`. `TauCeti.extDeriv_apply_pair_eq_sum` writes the exterior derivative of a
+one-form `∑ᵢ ωᵢ dxᵢ` on `ι → 𝕜` as `∑ᵢ dωᵢ ∧ dxᵢ`.
 -/
 
 public section
@@ -74,6 +75,26 @@ theorem extDeriv_apply_pair_of_differentiableAt {ω : E → E [⋀^Fin 1]→L[�
     extDeriv ω x ![v, w] = fderiv 𝕜 (fun y ↦ ω y (fun _ ↦ w)) x v -
       fderiv 𝕜 (fun y ↦ ω y (fun _ ↦ v)) x w := by
   simp [extDeriv_apply_pair, fderiv_continuousAlternatingMap_apply_const_apply hω]
+
+/-- The exterior derivative of a one-form `ω = ∑ᵢ ωᵢ dxᵢ` on `ι → 𝕜`, differentiable at `x`, in
+terms of its coefficient functions `ωᵢ = ω(eᵢ)` on the standard basis: `dω = ∑ᵢ dωᵢ ∧ dxᵢ`. -/
+theorem extDeriv_apply_pair_eq_sum {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {ω : (ι → 𝕜) → (ι → 𝕜) [⋀^Fin 1]→L[𝕜] F} {x : ι → 𝕜} (hω : DifferentiableAt 𝕜 ω x)
+    (v w : ι → 𝕜) :
+    extDeriv ω x ![v, w] = ∑ i, (w i • fderiv 𝕜 (fun y ↦ ω y fun _ ↦ Pi.single i 1) x v -
+      v i • fderiv 𝕜 (fun y ↦ ω y fun _ ↦ Pi.single i 1) x w) := by
+  -- Expand a one-form in the standard basis: `f(u) = ∑ᵢ uᵢ f(eᵢ)`.
+  have h (f : (ι → 𝕜) [⋀^Fin 1]→L[𝕜] F) (u : ι → 𝕜) :
+      f (fun _ ↦ u) = ∑ i, u i • f (fun _ ↦ Pi.single i 1) := by
+    have h := ((ContinuousAlternatingMap.ofSubsingleton 𝕜 (ι → 𝕜) F (0 : Fin 1)).symm
+      f).toLinearMap.pi_apply_eq_sum_univ u
+    simp only [ContinuousLinearMap.coe_coe,
+      ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply] at h
+    rw [h]
+    congr! with i _ _ j
+    simp [Pi.single_apply, eq_comm]
+  simp only [extDeriv_apply_pair, fderiv_continuousAlternatingMap_apply_const_apply hω,
+    h (fderiv 𝕜 ω x v) w, h (fderiv 𝕜 ω x w) v, Finset.sum_sub_distrib]
 
 /-- The exterior derivative of a difference of two forms differentiable at `x` is the difference of
 their exterior derivatives. -/

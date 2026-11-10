@@ -145,27 +145,13 @@ theorem exists_contDiffOn_eval₂_mfderiv_hamiltonianFlowAction_section_eq_zero
     congr 1
     funext i
     fin_cases i <;> simp [mfderivWithin_of_isOpen ht hct]
-  -- `dhᵢ(w) = -dβ(w)(eᵢ)`, so `dh(w) ⬝ᵥ w' = -dβ(w)(w')`.
-  have h3 (w w' : ι → ℝ) : fderiv ℝ h c w ⬝ᵥ w' = -fderiv ℝ β c w (fun _ ↦ w') := by
-    have hd : HasFDerivAt h (ContinuousLinearMap.pi fun i ↦
-        -((ContinuousAlternatingMap.apply ℝ (ι → ℝ) ℝ fun _ ↦ Pi.single i 1).comp
-          (fderiv ℝ β c))) c :=
-      hasFDerivAt_pi'.2 fun i ↦ ((ContinuousAlternatingMap.apply ℝ (ι → ℝ) ℝ _).hasFDerivAt.comp
-        c ((hβs.differentiableOn (by simp)).differentiableAt (ht.mem_nhds hct)).hasFDerivAt).neg
-    -- Expand the one-form `dβ(w)` in the standard basis: `dβ(w)(w') = ∑ᵢ w'ᵢ dβ(w)(eᵢ)`.
-    have hA : fderiv ℝ β c w (fun _ ↦ w') =
-        ∑ i, w' i * fderiv ℝ β c w (fun _ ↦ Pi.single i 1) := by
-      have h := ((ContinuousAlternatingMap.ofSubsingleton ℝ (ι → ℝ) ℝ (0 : Fin 1)).symm
-        (fderiv ℝ β c w)).toLinearMap.pi_apply_eq_sum_univ w'
-      simp only [ContinuousLinearMap.coe_coe,
-        ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply, smul_eq_mul] at h
-      rw [h]
-      congr! with i _ _ j
-      simp [Pi.single_apply, eq_comm]
-    rw [hd.fderiv, hA, dotProduct, ← Finset.sum_neg_distrib]
-    simp [mul_comm]
-  rw [h1, extDeriv_apply_pair, h3, h3]
-  ring
+  -- `dhᵢ = -dβᵢ` for the coefficients `βᵢ = β(eᵢ)`, and `dβ = ∑ᵢ dβᵢ ∧ dcᵢ`.
+  have hβd := (hβs.differentiableOn (by simp)).differentiableAt (ht.mem_nhds hct)
+  have hd : HasFDerivAt h (ContinuousLinearMap.pi fun i ↦
+      -fderiv ℝ (fun y ↦ β y fun _ ↦ Pi.single i 1) c) c :=
+    hasFDerivAt_pi'.2 fun i ↦ (hβd.continuousAlternatingMap_apply_const _).hasFDerivAt.neg
+  rw [h1, extDeriv_apply_pair_eq_sum hβd, hd.fderiv]
+  simp [dotProduct, Finset.sum_sub_distrib, mul_comm]
 
 /-- **Isotropic sections through regular points.** Every regular point `x` of `F` lies on an
 isotropic smooth local section of `F`: there are an open set `t ∋ F x` and a smooth section `s` of
