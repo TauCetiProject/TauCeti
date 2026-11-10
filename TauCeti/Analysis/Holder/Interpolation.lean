@@ -87,7 +87,8 @@ linear approximation error by the difference of the Hessians.
   `HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove`: the absorbed bounds on the two
   derivatives above `D^k f`, and
   `HolderWith.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le`: both bounds with
-  one constant, for scales `ε ≤ 1`.
+  one constant, for scales `ε ≤ 1`, and `HolderWith.norm_fderiv_le_and_norm_iteratedFDeriv_two_le`:
+  its specialisation to `k = 0`, stated for a function bounded in norm.
 * `HolderOnWith.norm_image_sub_sub_sub_le_of_hasFDerivWithinAt`: the second-order Taylor bound
   for a Hölder second derivative.
 * `HolderOnWith.norm_le_of_hasFDerivWithinAt_of_closedBall_subset` and
@@ -590,6 +591,24 @@ theorem norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le {f : E �
   constructor
   · nlinarith [H.coe_nonneg]
   · linarith
+
+/-- **Absorbed interpolation inequalities for the first two derivatives.** If `f` is `C²` with
+`‖f‖ ≤ M`, and `D²f` is bounded and globally `α`-Hölder with constant `H`, then for every scale
+`0 < ε ≤ 1` both `‖Df x‖` and `‖D²f x‖` are at most `(34 / ε + 32 / ε²) M + 2 H ε^α`. -/
+theorem norm_fderiv_le_and_norm_iteratedFDeriv_two_le {f : E → F} {H α : ℝ≥0}
+    (hH : HolderWith H α (iteratedFDeriv ℝ 2 f)) (hf : ContDiff ℝ 2 f) {M : ℝ}
+    (hM : ∀ y, ‖f y‖ ≤ M) (hbdd : BddAbove (range fun y => ‖iteratedFDeriv ℝ 2 f y‖)) {ε : ℝ}
+    (hε : 0 < ε) (hε1 : ε ≤ 1) :
+    (∀ x, ‖fderiv ℝ f x‖ ≤ (34 / ε + 32 / ε ^ 2) * M + 2 * H * ε ^ (α : ℝ)) ∧
+      ∀ x, ‖iteratedFDeriv ℝ 2 f x‖ ≤ (34 / ε + 32 / ε ^ 2) * M + 2 * H * ε ^ (α : ℝ) := by
+  have hM0 (y : E) : ‖iteratedFDeriv ℝ 0 f y‖ ≤ M := by
+    simpa only [norm_iteratedFDeriv_zero] using hM y
+  refine ⟨fun x => ?_, fun x => ?_⟩
+  · have h := (hH.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le (k := 0) hf hM0
+      hbdd hε hε1 x).1
+    rwa [zero_add, norm_iteratedFDeriv_one] at h
+  · exact (hH.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le (k := 0) hf hM0 hbdd
+      hε hε1 x).2
 
 end HolderWith
 

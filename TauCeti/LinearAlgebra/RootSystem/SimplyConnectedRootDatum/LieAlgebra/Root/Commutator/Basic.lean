@@ -54,6 +54,9 @@ hypotheses are derived from the root datum rather than assumed.
   commutator formula.
 * `TauCeti.DynkinType.commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add`: the
   two-factor commutator formula along the root string `β`, `α + β`, `2α + β`.
+* `TauCeti.DynkinType.chevalleyRootSubgroup_mul_of_add`: the single-term product relation
+  `x_α(u) x_β(v) = x_β(v) x_{α+β}(N_{α,β} u v) x_α(u)` when `e_{α+β}` commutes with `e_α` and
+  `e_β`, for every Dynkin type.
 
 ## References
 
@@ -244,6 +247,24 @@ theorem commutatorElement_chevalleyRootSubgroup_of_root_eq_two_nsmul_add
       (commute_chevalleyRootSubgroup ρ M hM hnil hβδ hβδ₀ A v ((d : A) * (u ^ 2 * v)))
   rw [commutatorElement_def, hprod, mul_inv_cancel_right, mul_assoc (chevalleyRootSubgroup ρ M hM
     hnil β A (Multiplicative.ofAdd v)), hcomm.eq, mul_inv_cancel_right]
+
+/-- The single-term Chevalley product relation, when the sum-root vector commutes with both
+input vectors. No restriction on Dynkin type or root lengths is required. -/
+theorem chevalleyRootSubgroup_mul_of_add
+    {i j k : Fin t.numRoots}
+    (hij : (t.simplyConnectedRootDatum ht).root k =
+      (t.simplyConnectedRootDatum ht).root i + (t.simplyConnectedRootDatum ht).root j)
+    (hik : ⁅t.chevalleySystem ht i, t.chevalleySystem ht k⁆ = 0)
+    (hjk : ⁅t.chevalleySystem ht j, t.chevalleySystem ht k⁆ = 0)
+    (A : CommAlgCat ℤ) (u v : A) :
+    chevalleyRootSubgroup ρ M hM hnil i A (Multiplicative.ofAdd u) *
+        chevalleyRootSubgroup ρ M hM hnil j A (Multiplicative.ofAdd v) =
+      chevalleyRootSubgroup ρ M hM hnil j A (Multiplicative.ofAdd v) *
+        chevalleyRootSubgroup ρ M hM hnil k A
+          (Multiplicative.ofAdd ((t.structureConstant ht i j : A) * (u * v))) *
+        chevalleyRootSubgroup ρ M hM hnil i A (Multiplicative.ofAdd u) :=
+  chevalleyRootSubgroup_mul_of_lie_eq ρ M hM hnil
+    (lie_chevalleySystem_eq_structureConstant_zsmul hij) hik hjk A u v
 
 end
 

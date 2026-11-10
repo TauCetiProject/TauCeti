@@ -340,6 +340,36 @@ theorem HolomorphicAt.apply_eq_of_eventually [IsManifold 𝓘(ℂ) 1 X] (hω : �
   have h₂ := (coeff_eq_iff η (chart_mem_maximalAtlas x) hcx).1 rfl
   rw [← h₁, ← h₂, hc]
 
+/-- A `1`-form meromorphic at `x` is holomorphic on a punctured neighbourhood of `x`. -/
+theorem MeromorphicAt.eventually_holomorphicAt [IsManifold 𝓘(ℂ) 1 X]
+    (hω : ω.MeromorphicAt x) :
+    ∀ᶠ y in 𝓝[≠] x, ω.HolomorphicAt y := by
+  filter_upwards [(tendsto_chartAt_nhdsNE x).eventually
+      ((meromorphicAt_def ω x).1 hω).eventually_analyticAt,
+    nhdsWithin_le_nhds ((chartAt ℂ x).open_source.mem_nhds (mem_chart_source ℂ x))] with y hy hys
+  exact (holomorphicAt_iff_of_mem_maximalAtlas (chart_mem_maximalAtlas x) hys).2 hy
+
+/-- A `1`-form meromorphic and of finite order at `x` does not vanish on a punctured
+neighbourhood of `x`. -/
+theorem MeromorphicAt.eventually_apply_ne_zero [IsManifold 𝓘(ℂ) 1 X]
+    (hω : ω.MeromorphicAt x) (hx : ω.order x ≠ ⊤) :
+    ∀ᶠ y in 𝓝[≠] x, ω y ≠ 0 := by
+  filter_upwards [(tendsto_chartAt_nhdsNE x).eventually
+      ((meromorphicOrderAt_ne_top_iff_eventually_ne_zero ((meromorphicAt_def ω x).1 hω)).1
+        (by rwa [order_def] at hx)),
+    nhdsWithin_le_nhds ((chartAt ℂ x).open_source.mem_nhds (mem_chart_source ℂ x))]
+    with y hy hys h0
+  exact hy ((coeff_eq_iff ω (chart_mem_maximalAtlas x) hys).2 (by rw [h0]; exact zero_smul ℂ _))
+
+/-- A `1`-form of infinite order at `x` vanishes on a punctured neighbourhood of `x`. -/
+theorem eventually_apply_eq_zero_of_order_eq_top [IsManifold 𝓘(ℂ) 1 X] (hx : ω.order x = ⊤) :
+    ∀ᶠ y in 𝓝[≠] x, ω y = 0 := by
+  filter_upwards [(tendsto_chartAt_nhdsNE x).eventually (meromorphicOrderAt_eq_top_iff.1
+      (by rwa [order_def] at hx)),
+    nhdsWithin_le_nhds ((chartAt ℂ x).open_source.mem_nhds (mem_chart_source ℂ x))]
+    with y hy hys
+  exact ((coeff_eq_iff ω (chart_mem_maximalAtlas x) hys).1 hy).symm.trans (zero_smul ℂ _)
+
 end Local
 
 /-! ### Algebra -/

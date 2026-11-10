@@ -34,6 +34,9 @@ to define the Riemannian exponential map by evaluation at time one.
   theorem for any open-interval geodesic witness.
 * `TauCeti.Manifold.IsGeodesicCurveOnFrom.eq_maximalGeodesic_of_univ` specializes uniqueness to
   geodesics defined for all time.
+* `TauCeti.Manifold.IsGeodesicCurveOn.maximalGeodesic_sub_eq`: a geodesic `γ` on an open
+  interval is a translate of a piece of the maximal geodesic with initial data `(γ τ, γ'(τ))`, for
+  any interior parameter `τ`.
 * `TauCeti.Manifold.maximalGeodesic_smul` is homogeneity in the initial velocity and time.
 * `TauCeti.Manifold.maximalIntegralCurve_geodesicSpray` identifies the maximal integral curve of
   the geodesic spray with the velocity lift of the maximal geodesic.
@@ -201,6 +204,16 @@ theorem IsGeodesicCurveOnFrom.eq_maximalGeodesic_of_univ
   have hc : (0 : ℝ) < |t| + 1 := by positivity
   exact (hγ.mono (uniqueDiffOn_Ioo _ _) (subset_univ _) ⟨neg_lt_zero.2 hc, hc⟩).eqOn_maximalGeodesic
     (abs_lt.1 (lt_add_one |t|))
+
+/-- **A geodesic is a translate of a piece of a maximal geodesic.** For a geodesic `γ` on an open
+interval `(a, b)` and `τ, t ∈ (a, b)`, the maximal geodesic with initial data `(γ τ, γ'(τ))` takes
+the value `γ t` at time `t - τ`. -/
+theorem IsGeodesicCurveOn.maximalGeodesic_sub_eq {γ : ℝ → M} {a b τ t : ℝ}
+    (hγ : IsGeodesicCurveOn I γ (Ioo a b)) (hτ : τ ∈ Ioo a b) (ht : t ∈ Ioo a b) :
+    maximalGeodesic I M (γ τ) (curveVelocity I γ τ) (t - τ) = γ t := by
+  simpa only [comp_apply, sub_add_cancel] using
+    (hγ.isGeodesicCurveOnFrom_comp_add_const hτ).eqOn_maximalGeodesic
+      ⟨sub_lt_sub_right ht.1 τ, sub_lt_sub_right ht.2 τ⟩
 
 /-- The maximal geodesic with zero initial velocity is the constant curve. -/
 @[simp] theorem maximalGeodesic_zero_velocity (p : M) :
