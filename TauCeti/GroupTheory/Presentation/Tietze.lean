@@ -36,6 +36,17 @@ namespace PresentedGroup
 
 variable {α β : Type*}
 
+private def generatorWordHom {R : Set (FreeGroup α)} {S : Set (FreeGroup β)}
+    (u : α → FreeGroup β) (hu : ∀ r ∈ R, mk S (FreeGroup.lift u r) = 1) :
+    PresentedGroup R →* PresentedGroup S :=
+  QuotientGroup.map _ _ (FreeGroup.lift u)
+    (Subgroup.normalClosure_le_normal fun r hr ↦ mk_eq_one_iff.mp (hu r hr))
+
+private theorem generatorWordHom_mk {R : Set (FreeGroup α)} {S : Set (FreeGroup β)}
+    (u : α → FreeGroup β) (hu : ∀ r ∈ R, mk S (FreeGroup.lift u r) = 1)
+    (w : FreeGroup α) : generatorWordHom u hu (mk R w) = mk S (FreeGroup.lift u w) :=
+  QuotientGroup.map_mk _ _ _ _ w
+
 section GeneratorWords
 
 variable {R : Set (FreeGroup α)} {S : Set (FreeGroup β)}
@@ -53,16 +64,12 @@ All four checks take place modulo the actual defining relations. Recovery only i
 image is insufficient, while equality of the substitutions in the free groups is unnecessary.
 Neither the generator types nor the relation sets need to be finite. -/
 def equivOfGeneratorWords : PresentedGroup R ≃* PresentedGroup S := by
-  let f : PresentedGroup R →* PresentedGroup S :=
-    QuotientGroup.map _ _ (FreeGroup.lift u)
-      (Subgroup.normalClosure_le_normal fun r hr ↦ mk_eq_one_iff.mp (hu r hr))
-  let g : PresentedGroup S →* PresentedGroup R :=
-    QuotientGroup.map _ _ (FreeGroup.lift v)
-      (Subgroup.normalClosure_le_normal fun s hs ↦ mk_eq_one_iff.mp (hv s hs))
+  let f := generatorWordHom u hu
+  let g := generatorWordHom v hv
   have hf (w : FreeGroup α) : f (mk R w) = mk S (FreeGroup.lift u w) :=
-    QuotientGroup.map_mk _ _ _ _ w
+    generatorWordHom_mk u hu w
   have hg (w : FreeGroup β) : g (mk S w) = mk R (FreeGroup.lift v w) :=
-    QuotientGroup.map_mk _ _ _ _ w
+    generatorWordHom_mk v hv w
   apply MonoidHom.toMulEquiv f g
   · apply PresentedGroup.ext
     intro a
@@ -83,10 +90,7 @@ def equivOfGeneratorWords : PresentedGroup R ≃* PresentedGroup S := by
 @[simp]
 theorem equivOfGeneratorWords_mk (w : FreeGroup α) :
     equivOfGeneratorWords u v hu hv hvu huv (mk R w) = mk S (FreeGroup.lift u w) := by
-  -- The forward function of MonoidHom.toMulEquiv is definitionally its first homomorphism.
-  exact QuotientGroup.map_mk (Subgroup.normalClosure R) (Subgroup.normalClosure S)
-    (FreeGroup.lift u)
-    (Subgroup.normalClosure_le_normal fun r hr ↦ mk_eq_one_iff.mp (hu r hr)) w
+  rw [equivOfGeneratorWords, MonoidHom.toMulEquiv_apply, generatorWordHom_mk]
 
 /-- The forward generator dictionary of a change of presentation. -/
 @[simp]
@@ -98,10 +102,7 @@ theorem equivOfGeneratorWords_of (a : α) :
 @[simp]
 theorem equivOfGeneratorWords_symm_mk (w : FreeGroup β) :
     (equivOfGeneratorWords u v hu hv hvu huv).symm (mk S w) = mk R (FreeGroup.lift v w) := by
-  -- The inverse function of MonoidHom.toMulEquiv is definitionally its second homomorphism.
-  exact QuotientGroup.map_mk (Subgroup.normalClosure S) (Subgroup.normalClosure R)
-    (FreeGroup.lift v)
-    (Subgroup.normalClosure_le_normal fun s hs ↦ mk_eq_one_iff.mp (hv s hs)) w
+  rw [equivOfGeneratorWords, MonoidHom.toMulEquiv_symm_apply, generatorWordHom_mk]
 
 /-- The recovery generator dictionary of a change of presentation. -/
 @[simp]
