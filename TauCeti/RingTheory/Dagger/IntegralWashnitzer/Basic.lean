@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPowerSeries.PiTopology
 public import Mathlib.RingTheory.Polynomial.Quotient
+public import TauCeti.Analysis.Normed.Ring.UnitBall
 public import TauCeti.Analysis.Normed.Ring.Ultra
 public import TauCeti.RingTheory.Dagger.GaussNorm
 public import TauCeti.RingTheory.AdicCompletion.AlgHom
@@ -777,10 +778,8 @@ theorem mem_span_algebraMap_pow_iff {ϖ : K°} (n : ℕ)
   · rcases n with _ | n
     · simpa using norm_coeff_le_one f
     · rw [map_zero, Ideal.span_singleton_zero, Ideal.bot_pow n.succ_ne_zero, Ideal.mem_bot,
-        Subtype.ext_iff]
-      simp only [ZeroMemClass.coe_zero, MvPowerSeries.ext_iff, map_zero, norm_zero, ne_eq,
-        add_eq_zero, one_ne_zero, and_false, not_false_eq_true, zero_pow]
-      exact forall_congr' fun t ↦ norm_le_zero_iff.symm
+        ← ZeroMemClass.coe_eq_zero, MvPowerSeries.ext_iff]
+      simp
   have hϖ0 : (ϖ : K) ≠ 0 := by simpa using hϖ
   rw [Ideal.span_singleton_pow, ← map_pow, Ideal.mem_span_singleton']
   constructor
@@ -846,17 +845,16 @@ theorem quotientMap_toTate_bijective {ϖ : K°} (hϖ : ϖ ≠ 0) (n : ℕ) :
       rw [Ideal.quotientMap_mk, Ideal.Quotient.eq, mem_span_toTate_algebraMap_pow_iff hϖ hϖ1]
       exact hw.le
   · -- If `‖ϖ‖ = 1` then `ϖ` is a unit, so both quotients are trivial.
-    have hu : IsUnit ϖ := IsUnit.of_mul_eq_one ⟨(ϖ : K)⁻¹, by simp [hϖ1]⟩
-      (Subtype.ext (mul_inv_cancel₀ (by simpa using hϖ)))
+    have hu : IsUnit ϖ := isUnit_unitClosedBall_iff_norm_eq_one.2 hϖ1
     have hJ : Ideal.span {algebraMap K° (intWashnitzerAlgebra σ K) ϖ} ^ n = ⊤ := by
       rw [Ideal.span_singleton_pow, Ideal.span_singleton_eq_top]
       exact (hu.map _).pow n
     have hI : Ideal.span {toTate σ K (algebraMap K° _ ϖ)} ^ n = ⊤ := by
       rw [Ideal.span_singleton_pow, Ideal.span_singleton_eq_top]
       exact ((hu.map _).map _).pow n
-    have h1 := Ideal.Quotient.subsingleton_iff.2 hJ
-    have h2 := Ideal.Quotient.subsingleton_iff.2 hI
-    exact ⟨fun a b _ ↦ Subsingleton.elim a b, fun y ↦ ⟨0, Subsingleton.elim _ _⟩⟩
+    have := Ideal.Quotient.subsingleton_iff.2 hJ
+    have := Ideal.Quotient.subsingleton_iff.2 hI
+    exact Function.bijective_of_subsingleton' _
 
 variable [CompleteSpace K]
 
