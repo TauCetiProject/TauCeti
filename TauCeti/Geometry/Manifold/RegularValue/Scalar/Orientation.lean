@@ -83,20 +83,48 @@ variable {n : ℕ} {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [T
   (hn : finrank ℝ E = n + 1)
 
 omit [I.Boundaryless] [FiniteDimensional ℝ E] [IsManifold I 1 M] in
-/-- Let `s ⊆ M` carry a manifold structure whose inclusion is differentiable at `x`, with
-derivative the equivalence `D`, and let `f` be differentiable at `x`. Then the derivative of `f`
-on `s`, evaluated at `D⁻¹ v`, is the derivative of `f` on `M` evaluated at `v`. -/
-private theorem mvfderiv_coe_symm_apply {s : Set M} [ChartedSpace (EuclideanHalfSpace (n + 1)) s]
+/-- Let `s ⊆ M` carry a manifold structure whose inclusion is differentiable at `x`, and let `f`
+be differentiable at `x`. Then the derivative of `f` on `s`, evaluated at `w`, is the derivative of
+`f` on `M` evaluated at the image of `w` under the derivative of the inclusion. -/
+private theorem mvfderiv_coe_apply {s : Set M} [ChartedSpace (EuclideanHalfSpace (n + 1)) s]
     {x : s} (hfx : MDifferentiableAt I 𝓘(ℝ) f x)
     (hx : MDifferentiableAt (𝓡∂ (n + 1)) I (Subtype.val : s → M) x)
-    (D : TangentSpace (𝓡∂ (n + 1)) x ≃L[ℝ] TangentSpace I (x : M))
-    (hD : (D : TangentSpace (𝓡∂ (n + 1)) x →L[ℝ] TangentSpace I (x : M)) =
-      mfderiv (𝓡∂ (n + 1)) I (Subtype.val : s → M) x)
-    (v : TangentSpace I (x : M)) :
-    mvfderiv (𝓡∂ (n + 1)) (fun w : s ↦ f w) x (D.symm v) = mvfderiv I f x v := by
-  rw [mvfderiv_apply_eq_mfderiv_apply, show (fun w : s ↦ f w) = f ∘ Subtype.val from rfl,
-    mfderiv_comp_apply _ hfx hx, ← hD,
-    ContinuousLinearEquiv.coe_coe, D.apply_symm_apply, ← mvfderiv_apply_eq_mfderiv_apply]
+    (w : TangentSpace (𝓡∂ (n + 1)) x) :
+    mvfderiv (𝓡∂ (n + 1)) (fun w : s ↦ f w) x w =
+      mvfderiv I f x (mfderiv (𝓡∂ (n + 1)) I (Subtype.val : s → M) x w) := by
+  simp only [mvfderiv_apply_eq_mfderiv_apply]
+  -- `fun w ↦ f w` is `f ∘ Subtype.val` by unfolding `Function.comp`.
+  exact mfderiv_comp_apply _ hfx hx w
+
+omit [I.Boundaryless] in
+/-- Let `s ⊆ M` carry a manifold structure modelled on a half-space whose inclusion is `C¹` with
+invertible derivative everywhere, and let `o` orient `M`. At a boundary point `x` of `s`, let `v`
+be a tangent vector of `M` all of whose preimages under the derivative of the inclusion are
+outward. Then a basis `e` of the tangent space of the boundary at `x` is positively oriented for
+the boundary orientation of the pullback of `o` exactly when `v`, followed by the images of `e` in
+the tangent space of `M`, is positively oriented for `o`. -/
+private theorem boundaryOrientation_pullback_subtypeVal_spec {s : Set M}
+    [ChartedSpace (EuclideanHalfSpace (n + 1)) s] [IsManifold (𝓡∂ (n + 1)) 1 s]
+    (o : Manifold.Orientation I M (Fin (n + 1)))
+    (hs : ContMDiff (𝓡∂ (n + 1)) I 1 (Subtype.val : s → M))
+    (hds : ∀ x : s, (mfderiv (𝓡∂ (n + 1)) I (Subtype.val : s → M) x).IsInvertible)
+    (x : (𝓡∂ (n + 1)).boundary s) {v : TangentSpace I ((x : s) : M)}
+    (hv : ∀ w, mfderiv (𝓡∂ (n + 1)) I (Subtype.val : s → M) x w = v →
+      IsOutwardPointing (x : s) w)
+    (e : Basis (Fin n) ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) x))
+    (e' : Basis (Fin (n + 1)) ℝ (TangentSpace I ((x : s) : M)))
+    (he' : ⇑e' = Fin.cons v fun i ↦ mfderiv (𝓡∂ (n + 1)) I (Subtype.val : s → M) x
+      (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+        (Subtype.val : (𝓡∂ (n + 1)).boundary s → s) x (e i))) :
+    e.orientation = (boundaryOrientation (o.pullback hs hds (by simp))).orientationAt x ↔
+      e'.orientation = o.orientationAt ((x : s) : M) := by
+  obtain ⟨D, hD⟩ := hds (x : s)
+  refine boundaryOrientation_spec_of_linearEquiv _ x D.toLinearEquiv (v := v)
+    (Manifold.Orientation.map_orientationAt_pullback _ _ _ _ _ D hD) (hv _ ?_) e e' ?_
+  · rw [← hD]
+    simp
+  · rw [he', ← hD]
+    simp
 
 section Sublevel
 
@@ -118,6 +146,8 @@ variable (o : Manifold.Orientation I M (Fin (n + 1)))
 
 /-- The inclusion of the sublevel preserves orientation at every point, from the induced
 orientation to `o`. -/
+-- Not `@[simp]`, unlike the band version: simp rewrites the membership `x ∈ {x | f x ≤ a}` in the
+-- type of `Subtype.val`, so the left-hand side is not in simp normal form.
 theorem isOrientationPreservingAt_scalarRegularSublevelOrientation (x : {x | f x ≤ a}) :
     letI := scalarRegularSublevelChartedSpace hf hreg hn
     haveI := isManifold_scalarRegularSublevel hreg hn le_rfl hf
@@ -174,17 +204,12 @@ theorem boundaryOrientation_scalarRegularSublevelOrientation_spec
       e'.orientation = o.orientationAt ((x : {x | f x ≤ a}) : M) := by
   let := scalarRegularSublevelChartedSpace hf hreg hn
   have := isManifold_scalarRegularSublevel hreg hn le_rfl hf
-  obtain ⟨D, hD⟩ := isInvertible_mfderiv_coe_scalarRegularSublevel hf hreg hn (x : {x | f x ≤ a})
   have hx : f x = a := (boundary_scalarRegularSublevel hreg hn le_rfl hf).subset x.2
   have hcoe := (contMDiff_coe_scalarRegularSublevel hreg hn le_rfl hf x).mdifferentiableAt
     one_ne_zero
-  refine boundaryOrientation_spec_of_linearEquiv _ x D.toLinearEquiv (v := v)
-    (Manifold.Orientation.map_orientationAt_pullback _ _ _ _ _ D hD)
-    ((isOutwardPointing_scalarRegularSublevel_iff hf hn hreg hx _).2 ?_) e e' ?_
-  · rwa [ContinuousLinearEquiv.coe_symm_toLinearEquiv,
-      mvfderiv_coe_symm_apply (hf.mdifferentiableAt one_ne_zero) hcoe D hD]
-  · rw [he', ← hD]
-    simp
+  refine boundaryOrientation_pullback_subtypeVal_spec o _ _ x (fun w hw ↦ ?_) e e' he'
+  rwa [isOutwardPointing_scalarRegularSublevel_iff hf hn hreg hx,
+    mvfderiv_coe_apply (hf.mdifferentiableAt one_ne_zero) hcoe, hw]
 
 end Sublevel
 
@@ -265,17 +290,11 @@ theorem boundaryOrientation_scalarRegularBandOrientation_spec_of_eq_left
       e'.orientation = o.orientationAt ((x : f ⁻¹' Icc a b) : M) := by
   let := scalarRegularBandChartedSpace hf hn ha hb hab
   have := isManifold_scalarRegularBand hn ha hb le_rfl hf hab
-  obtain ⟨D, hD⟩ := isInvertible_mfderiv_coe_scalarRegularBand hf hn ha hb hab
-    (x : f ⁻¹' Icc a b)
   have hcoe := (contMDiff_coe_scalarRegularBand hn ha hb le_rfl hf hab x).mdifferentiableAt
     one_ne_zero
-  refine boundaryOrientation_spec_of_linearEquiv _ x D.toLinearEquiv (v := v)
-    (Manifold.Orientation.map_orientationAt_pullback _ _ _ _ _ D hD)
-    ((isOutwardPointing_scalarRegularBand_iff_of_eq_left hf hn ha hb hab hx _).2 ?_) e e' ?_
-  · rwa [ContinuousLinearEquiv.coe_symm_toLinearEquiv,
-      mvfderiv_coe_symm_apply (hf.mdifferentiableAt one_ne_zero) hcoe D hD]
-  · rw [he', ← hD]
-    simp
+  refine boundaryOrientation_pullback_subtypeVal_spec o _ _ x (fun w hw ↦ ?_) e e' he'
+  rwa [isOutwardPointing_scalarRegularBand_iff_of_eq_left hf hn ha hb hab hx,
+    mvfderiv_coe_apply (hf.mdifferentiableAt one_ne_zero) hcoe, hw]
 
 /-- **The induced orientation of the upper boundary level of a regular band.** Let `o` orient `M`,
 and let `x` be a point of the boundary of the band `f⁻¹([a, b])` on the upper level `f⁻¹(b)`. For
@@ -303,17 +322,11 @@ theorem boundaryOrientation_scalarRegularBandOrientation_spec_of_eq_right
       e'.orientation = o.orientationAt ((x : f ⁻¹' Icc a b) : M) := by
   let := scalarRegularBandChartedSpace hf hn ha hb hab
   have := isManifold_scalarRegularBand hn ha hb le_rfl hf hab
-  obtain ⟨D, hD⟩ := isInvertible_mfderiv_coe_scalarRegularBand hf hn ha hb hab
-    (x : f ⁻¹' Icc a b)
   have hcoe := (contMDiff_coe_scalarRegularBand hn ha hb le_rfl hf hab x).mdifferentiableAt
     one_ne_zero
-  refine boundaryOrientation_spec_of_linearEquiv _ x D.toLinearEquiv (v := v)
-    (Manifold.Orientation.map_orientationAt_pullback _ _ _ _ _ D hD)
-    ((isOutwardPointing_scalarRegularBand_iff_of_eq_right hf hn ha hb hab hx _).2 ?_) e e' ?_
-  · rwa [ContinuousLinearEquiv.coe_symm_toLinearEquiv,
-      mvfderiv_coe_symm_apply (hf.mdifferentiableAt one_ne_zero) hcoe D hD]
-  · rw [he', ← hD]
-    simp
+  refine boundaryOrientation_pullback_subtypeVal_spec o _ _ x (fun w hw ↦ ?_) e e' he'
+  rwa [isOutwardPointing_scalarRegularBand_iff_of_eq_right hf hn ha hb hab hx,
+    mvfderiv_coe_apply (hf.mdifferentiableAt one_ne_zero) hcoe, hw]
 
 end Band
 
