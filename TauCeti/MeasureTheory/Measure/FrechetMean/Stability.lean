@@ -241,31 +241,39 @@ private theorem exists_isCompact_eventually_mem {ι : Type v} {l : Filter ι} [l
   exact ENNReal.toReal_le_of_le_ofReal (by positivity) hj.le
 
 /-- **Fréchet barycenters converge along a subsequence.** On a proper metric space, if probability
-laws `μₙ` converge in `W_p` to a probability law `μ` and `bₙ` is a Fréchet barycenter of `μₙ` for
-all large `n`, then some subsequence of the barycenters converges to a Fréchet barycenter of
-`μ`. -/
+laws `μₙ` converge in `W_p` to a law `μ` (which is then a probability law) and `bₙ` is a Fréchet
+barycenter of `μₙ` for all large `n`, then some subsequence of the barycenters converges to a
+Fréchet barycenter of `μ`. -/
 theorem exists_isFrechetBarycenter_tendsto_comp {μs : ℕ → Measure Y}
-    [∀ n, IsProbabilityMeasure (μs n)] {μ : Measure Y} [IsProbabilityMeasure μ] {b : ℕ → Y}
+    [∀ n, IsProbabilityMeasure (μs n)] {μ : Measure Y} {b : ℕ → Y}
     (hμ : Tendsto (fun n ↦ wassersteinEDist p (μs n) μ) atTop (𝓝 0))
     (hb : ∀ᶠ n in atTop, IsFrechetBarycenter p (μs n) (b n)) :
     ∃ c, IsFrechetBarycenter p μ c ∧
       ∃ φ : ℕ → ℕ, StrictMono φ ∧ Tendsto (b ∘ φ) atTop (𝓝 c) := by
+  -- Finite `W_p`-distance to the probability law `μs n` forces `μ` to be a probability law.
+  obtain ⟨n, hn⟩ := (hμ.eventually (gt_mem_nhds zero_lt_one)).exists
+  obtain ⟨π, hπ⟩ := exists_isCoupling_of_wassersteinEDist_ne_top hn.ne_top
+  have := hπ.isProbabilityMeasure_right
   obtain ⟨K, hK, hbK⟩ := exists_isCompact_eventually_mem hp hμ hb
   obtain ⟨c, -, φ, hφ, hbφ⟩ := tendsto_subseq_of_frequently_bounded hK.isBounded hbK.frequently
   exact ⟨c, isFrechetBarycenter_of_mapClusterPt hp hμ hb
     (hbφ.mapClusterPt.of_comp hφ.tendsto_atTop), φ, hφ, hbφ⟩
 
 /-- **Fréchet barycenters converge to a unique limit barycenter.** On a proper metric space, if
-probability laws `μᵢ` converge in `W_p` to a probability law `μ` whose only Fréchet barycenter is
-`c`, and `bᵢ` is eventually a Fréchet barycenter of `μᵢ`, then `bᵢ → c`. -/
+probability laws `μᵢ` converge in `W_p` to a law `μ` (which is then a probability law) whose only
+Fréchet barycenter is `c`, and `bᵢ` is eventually a Fréchet barycenter of `μᵢ`, then `bᵢ → c`. -/
 theorem tendsto_of_isFrechetBarycenter {ι : Type v} {l : Filter ι} {μs : ι → Measure Y}
-    [∀ i, IsProbabilityMeasure (μs i)] {μ : Measure Y} [IsProbabilityMeasure μ] {b : ι → Y}
+    [∀ i, IsProbabilityMeasure (μs i)] {μ : Measure Y} {b : ι → Y}
     {c : Y} (hμ : Tendsto (fun i ↦ wassersteinEDist p (μs i) μ) l (𝓝 0))
     (hb : ∀ᶠ i in l, IsFrechetBarycenter p (μs i) (b i))
     (hc : IsFrechetBarycenter p μ c) (hu : (frechetBarycenters p μ).Subsingleton) :
     Tendsto b l (𝓝 c) := by
   rcases l.eq_or_neBot with rfl | hl
   · exact tendsto_bot
+  -- Finite `W_p`-distance to the probability law `μs i` forces `μ` to be a probability law.
+  obtain ⟨i, hi⟩ := (hμ.eventually (gt_mem_nhds zero_lt_one)).exists
+  obtain ⟨π, hπ⟩ := exists_isCoupling_of_wassersteinEDist_ne_top hi.ne_top
+  have := hπ.isProbabilityMeasure_right
   obtain ⟨K, hK, hbK⟩ := exists_isCompact_eventually_mem hp hμ hb
   exact hK.tendsto_nhds_of_unique_mapClusterPt hbK fun y _ hy ↦
     hu (mem_frechetBarycenters.2 (isFrechetBarycenter_of_mapClusterPt hp hμ hb hy))
