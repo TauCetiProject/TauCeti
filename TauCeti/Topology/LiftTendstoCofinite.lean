@@ -66,8 +66,9 @@ theorem exists_lift_tendsto_cofinite_nhds {m₀ : M} {n₀ : N} [(𝓝 m₀).IsC
     ∃ f : ι → M, (∀ α, φ (f α) = g α) ∧ Tendsto f (Filter.cofinite : Filter ι) (𝓝 m₀) := by
   obtain ⟨V, hV⟩ := (𝓝 m₀).exists_antitone_basis
   have hVmem : ∀ i, φ '' V i ∈ 𝓝 n₀ := fun i ↦ hmap (Filter.image_mem_map (hV.mem i))
-  obtain ⟨f, hf, hbound⟩ := exists_lift_eventually_mem_cofinite φ hsurj
-    (fun i _ ↦ V i) (fun _ ↦ hV.antitone) g (fun i ↦ hg.eventually_mem (hVmem i))
+  obtain ⟨f, hf, hbound⟩ := exists_lift_eventually_mem_cofinite φ
+    (fun i _ ↦ V i) (fun _ ↦ hV.antitone) g (fun α ↦ hsurj (g α))
+    (fun i ↦ hg.eventually_mem (hVmem i))
   exact ⟨f, hf, hV.toHasBasis.tendsto_right_iff.mpr fun i _ ↦ hbound i⟩
 
 end
