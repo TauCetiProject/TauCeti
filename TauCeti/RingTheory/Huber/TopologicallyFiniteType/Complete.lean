@@ -112,10 +112,23 @@ theorem IsTopologicallyFiniteType.isClosed_ideal (hφ : IsTopologicallyFiniteTyp
 omit [IsTopologicalRing B] in
 /-- **An algebra topologically of finite type over a strongly noetherian Tate ring is Hausdorff**
 (Wedhorn, Proposition 5.58, over a field): `{0}` is closed in it, because it is the zero ideal
-(`IsTopologicallyFiniteType.isClosed_ideal`). Only the additive group of `B` need be
-topological. -/
-theorem IsTopologicallyFiniteType.t2Space [IsTopologicalAddGroup B]
-    (hφ : IsTopologicallyFiniteType φ) : T2Space B := by
+(`IsTopologicallyFiniteType.isClosed_ideal`). No compatibility of the topology of `B` with its
+ring structure is assumed: its addition is continuous, because `B` is an open quotient of a
+topological ring. -/
+theorem IsTopologicallyFiniteType.t2Space (hφ : IsTopologicallyFiniteType φ) : T2Space B := by
+  obtain ⟨k, T, -, hT, π, hπ, -⟩ := isTopologicallyFiniteType_iff.mp hφ
+  -- addition and negation on `B` are continuous because they lift along the open quotient map `π`
+  have hadd : ContinuousAdd B := ⟨by
+    rw [← (IsOpenQuotientMap.prodMap hπ hπ).continuous_comp_iff]
+    convert hπ.continuous.comp continuous_add using 1
+    ext ⟨a, b⟩
+    simp⟩
+  have hneg : ContinuousNeg B := ⟨by
+    rw [← hπ.continuous_comp_iff]
+    convert hπ.continuous.comp continuous_neg using 1
+    ext a
+    simp⟩
+  have : IsTopologicalAddGroup B := ⟨⟩
   have : T1Space B := IsTopologicalAddGroup.t1Space B (by simpa using hφ.isClosed_ideal ⊥)
   infer_instance
 
