@@ -37,12 +37,8 @@ Lemma 58.21.3 (0BMA)).
 
 ## Main definitions
 
-* `TauCeti.IsLocalRing.pullbackPunctured`: pullback of finite étale covers from the punctured
-  spectrum of `A` to the punctured spectrum of `A'`.
-* `TauCeti.IsLocalRing.restrictPuncturedCompPullbackIso`: restriction to the punctured spectrum
-  commutes with this pullback.
-* `TauCeti.IsLocalRing.restrictPuncturedQuotient`: the case `A' = A ⧸ I`, restriction to the
-  punctured spectrum of `A ⧸ I`.
+* `TauCeti.IsLocalRing.restrictPuncturedQuotient`: the case `A' = A ⧸ I` of the pullback
+  `TauCeti.IsLocalRing.pullbackPunctured`, restriction to the punctured spectrum of `A ⧸ I`.
 
 ## Main results
 
@@ -79,38 +75,7 @@ section Pullback
 
 variable {A A' : Type u} [CommRing A] [IsLocalRing A] [CommRing A'] [IsLocalRing A']
   [Algebra A A'] (h : ((maximalIdeal A).map (algebraMap A A')).radical = maximalIdeal A')
-
-/-- Pullback of finite étale covers from the punctured spectrum of `A` to the punctured spectrum
-of `A'`, along the restriction of `Spec A' ⟶ Spec A`. This requires the closed point to be the
-only point of `Spec A'` over the closed point of `Spec A`. -/
-abbrev pullbackPunctured :
-    FiniteEtaleScheme (puncturedSpectrum A).toScheme ⥤
-      FiniteEtaleScheme (puncturedSpectrum A').toScheme :=
-  FiniteEtaleScheme.pullback ((Spec.map (CommRingCat.ofHom (algebraMap A A'))).resLE
-    (puncturedSpectrum A) (puncturedSpectrum A') (preimage_puncturedSpectrum h).ge)
-
-/-- Restriction to the punctured spectrum commutes with pullback along `Spec A' ⟶ Spec A`: both
-composites are pullback along the inclusion of the punctured spectrum of `A'` into `Spec A`. -/
-def restrictPuncturedCompPullbackIso :
-    restrictPunctured A ⋙ pullbackPunctured h ≅
-      FiniteEtaleScheme.pullback (Spec.map (CommRingCat.ofHom (algebraMap A A'))) ⋙
-        restrictPunctured A' :=
-  (FiniteEtaleScheme.pullbackComp _ _).symm ≪≫
-    eqToIso (congrArg FiniteEtaleScheme.pullback (Scheme.Hom.resLE_comp_ι _ _)) ≪≫
-    FiniteEtaleScheme.pullbackComp _ _
-
-/-- If a finite étale cover of the punctured spectrum of `A` extends across the closed point,
-then so does its pullback to the punctured spectrum of `A'`. -/
-theorem extends_pullbackPunctured_of_extends
-    {V : FiniteEtaleScheme (puncturedSpectrum A).toScheme}
-    (hV : ∃ Y : FiniteEtaleScheme (Spec (.of A)), Nonempty ((restrictPunctured A).obj Y ≅ V)) :
-    ∃ Y' : FiniteEtaleScheme (Spec (.of A')),
-      Nonempty ((restrictPunctured A').obj Y' ≅ (pullbackPunctured h).obj V) := by
-  obtain ⟨Y, ⟨e⟩⟩ := hV
-  exact ⟨(FiniteEtaleScheme.pullback (Spec.map (CommRingCat.ofHom (algebraMap A A')))).obj Y,
-    ⟨((restrictPuncturedCompPullbackIso h).app Y).symm ≪≫ (pullbackPunctured h).mapIso e⟩⟩
-
-variable [(FiniteEtaleScheme.pullback (Spec.map (CommRingCat.ofHom (algebraMap A A')))).EssSurj]
+  [(FiniteEtaleScheme.pullback (Spec.map (CommRingCat.ofHom (algebraMap A A')))).EssSurj]
   [(pullbackPunctured h).Full] [(pullbackPunctured h).Faithful]
 
 /-- Suppose every finite étale scheme over `Spec A'` is a pullback from `Spec A`, and pullback of
@@ -150,14 +115,6 @@ end Pullback
 
 section Quotient
 
-/-- For a surjection of local rings `A → A'`, the closed point is the only point of `Spec A'`
-over the closed point of `Spec A`. -/
-theorem radical_map_maximalIdeal_of_surjective {A A' : Type u} [CommRing A] [IsLocalRing A]
-    [CommRing A'] [IsLocalRing A'] [Algebra A A'] (hf : Function.Surjective (algebraMap A A')) :
-    ((maximalIdeal A).map (algebraMap A A')).radical = maximalIdeal A' := by
-  rw [map_maximalIdeal_of_surjective _ hf]
-  exact (maximalIdeal.isMaximal _).isPrime.radical
-
 variable {A : Type u} [CommRing A] [IsLocalRing A] (I : Ideal A) [IsLocalRing (A ⧸ I)]
 
 /-- Restriction of finite étale covers from the punctured spectrum of `A` to the punctured
@@ -166,10 +123,19 @@ restriction to the punctured spectrum of the hypersurface section `f = 0`. -/
 abbrev restrictPuncturedQuotient :
     FiniteEtaleScheme (puncturedSpectrum A).toScheme ⥤
       FiniteEtaleScheme (puncturedSpectrum (A ⧸ I)).toScheme :=
-  pullbackPunctured (radical_map_maximalIdeal_of_surjective Ideal.Quotient.mk_surjective)
+  pullbackPunctured (radical_map_maximalIdeal_of_surjective
+    (Ideal.Quotient.algebraMap_eq I ▸ Ideal.Quotient.mk_surjective))
 
-variable [HenselianRing A I] [(restrictPuncturedQuotient I).Full]
-  [(restrictPuncturedQuotient I).Faithful]
+variable [HenselianRing A I]
+
+/-- `TauCeti.FiniteEtaleScheme.essSurj_pullback_quotient`, stated for `algebraMap A (A ⧸ I)`,
+which is `Ideal.Quotient.mk I`. -/
+local instance : (FiniteEtaleScheme.pullback
+    (Spec.map (CommRingCat.ofHom (algebraMap A (A ⧸ I))))).EssSurj := by
+  rw [Ideal.Quotient.algebraMap_eq]
+  infer_instance
+
+variable [(restrictPuncturedQuotient I).Full] [(restrictPuncturedQuotient I).Faithful]
 
 /-- **Extension from a henselian section.** Let `(A, I)` be a henselian pair with `A` local, and
 suppose restriction of finite étale covers from the punctured spectrum of `A` to that of `A ⧸ I`
@@ -182,18 +148,12 @@ theorem extends_iff_extends_quotient (V : FiniteEtaleScheme (puncturedSpectrum A
       ∃ Y₀ : FiniteEtaleScheme (Spec (.of (A ⧸ I))),
         Nonempty ((restrictPunctured (A ⧸ I)).obj Y₀ ≅
           (restrictPuncturedQuotient I).obj V) :=
-  have : (FiniteEtaleScheme.pullback
-      (Spec.map (CommRingCat.ofHom (algebraMap A (A ⧸ I))))).EssSurj :=
-    FiniteEtaleScheme.essSurj_pullback_quotient A I
   extends_iff_extends_pullback _ V
 
 /-- **Purity from a henselian section.** Let `(A, I)` be a henselian pair with `A` local, and
 suppose restriction of finite étale covers from the punctured spectrum of `A` to that of `A ⧸ I`
 is fully faithful. If purity holds for `A ⧸ I`, then purity holds for `A`. -/
 theorem purityHolds_of_purityHolds_quotient (hI : PurityHolds (A ⧸ I)) : PurityHolds A :=
-  have : (FiniteEtaleScheme.pullback
-      (Spec.map (CommRingCat.ofHom (algebraMap A (A ⧸ I))))).EssSurj :=
-    FiniteEtaleScheme.essSurj_pullback_quotient A I
   purityHolds_of_purityHolds_of_fullyFaithful _ hI
 
 end Quotient
