@@ -170,7 +170,10 @@ private theorem subsingleton_homotopyGroup_option {X : Type*} [TopologicalSpace 
     (h : Subsingleton (π_ (k + 1) X x)) : Subsingleton (HomotopyGroup (Option (Fin k)) X x) :=
   (HomotopyGroup.congrEquiv (finSuccEquiv k).symm).subsingleton
 
-/-- The fibre inclusion `p⁻¹(b) → E` as the inclusion of a subspace. -/
+/-- The fibre inclusion `p⁻¹(b) → E` as the inclusion of a subspace. Unlike
+`ContinuousMap.subtypeVal (p ⁻¹' {b})`, whose domain is `Set.Elem` with the subtype topology, its
+domain is the `TopCat` fibre `p.fiber b`, so it matches `p.fiberι b` and the homotopy groups of
+`p.fiber b` under `rw`, and its value at `e` reduces to `e.1`. -/
 private abbrev fiberVal (p : E ⟶ B) (b : B) : C(p.fiber b, E) :=
   ⟨Subtype.val, continuous_subtype_val⟩
 
@@ -182,12 +185,8 @@ value at a point of the fibre is the underlying point of `E`. -/
 private theorem homotopyGroupMap_fiberι_eq {N : Type*} {e : p.fiber b}
     (a : HomotopyGroup N (p.fiber b) e) :
     HomotopyGroup.map (p.fiberι b).hom (TopCat.Hom.fiberι_apply p b e) a =
-      HomotopyGroup.map (fiberVal p b) rfl a := by
-  have key : ∀ (f g : C(p.fiber b, E)) (_ : f = g) (hf : f e = e.1) (hg : g e = e.1),
-      HomotopyGroup.map f hf a = HomotopyGroup.map g hg a := by
-    rintro f g rfl hf hg
-    rfl
-  exact key _ _ fiberι_hom_eq_fiberVal _ _
+      HomotopyGroup.map (fiberVal p b) rfl a :=
+  HomotopyGroup.map_congr fiberι_hom_eq_fiberVal _ _ a
 
 /-- **Injectivity on path components of the fibre inclusion.** If `π_1(B, b)` is trivial, two
 points of the fibre over `b` that are joined in `E` are joined in the fibre. -/
