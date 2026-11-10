@@ -121,18 +121,9 @@ theorem covariantDerivative_extend_eq_christoffelMap (b : Basis ι 𝕜 E) (v w 
         (s := (trivializationAt E (TangentSpace I) x).baseSet)) x w v := by
   have hx : x ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
     FiberBundle.mem_baseSet_trivializationAt' x
-  -- The extension of `w` has constant coordinates `w` in the trivialization at `x`, which is the
-  -- identity over `x`.
-  have hw : (trivializationAt E (TangentSpace I) x ⟨x, w⟩).2 = w := by
-    rw [← (trivializationAt E (TangentSpace I) x).continuousLinearMapAt_apply_of_mem (R := 𝕜) hx]
-    exact continuousLinearMapAt_trivializationAt_self x w
-  have hext : FiberBundle.extend E w =
-      fun y ↦ (trivializationAt E (TangentSpace I) x).symm y w := by
-    funext y
-    simp only [FiberBundle.extend, hw]
   have h := covariantDerivative_symm_apply_symm b (cov.isCovariantDerivativeOn
     (s := (trivializationAt E (TangentSpace I) x).baseSet)) hx w v
-  rw [← hext, TangentBundle.trivializationAt_symm_apply_self] at h
+  rw [← extend_eq_trivializationAt_symm, TangentBundle.trivializationAt_symm_apply_self] at h
   exact (congrArg (cov (FiberBundle.extend E w) x)
     (TangentBundle.trivializationAt_symm_apply_self (I := I) x (v : E)).symm).trans h
 

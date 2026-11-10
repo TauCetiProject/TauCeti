@@ -12,9 +12,9 @@ public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 # Riemannian and intrinsic Hessians
 
 For a metric-compatible connection `∇` and a function `f` which is `C²` at a point `x`, the
-covariant derivative of the gradient of `f`, paired with the metric, is the intrinsic critical
-Hessian of `f` at `x`, the second derivative of `f` in the preferred chart at `x`, corrected by a
-first-order term:
+covariant derivative of the gradient of `f`, paired with the metric, is the critical Hessian of
+`f` at `x`, the second derivative of `f` in the preferred chart at `x`, corrected by a first-order
+term:
 
 `⟪∇_v grad f, w⟫ = criticalHessian f x v w - df_x(∇_v W)`,
 
@@ -22,7 +22,8 @@ where `W = FiberBundle.extend E w` is the vector field with constant coordinates
 preferred chart at `x`. The correction `∇_v W` is the Christoffel map of `∇` in that chart
 (`TauCeti.Manifold.covariantDerivative_extend_eq_christoffelMap`), so away from critical points
 the connection, and for the Levi–Civita connection the metric, enters the Hessian through the term
-`df_x(Γ(w, v))`. No torsion assumption is needed.
+`df_x(Γ(w, v))`. Away from critical points both terms on the right depend on the preferred chart;
+only their difference is coordinate-free. No torsion assumption is needed.
 
 At a critical point `df_x = 0` and the correction vanishes: the pairing is the critical Hessian
 for every metric-compatible connection. In particular the Riemannian Hessian defined using the
