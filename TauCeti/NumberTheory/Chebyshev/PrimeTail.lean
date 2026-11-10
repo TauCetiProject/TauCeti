@@ -29,6 +29,10 @@ open scoped Topology
 
 namespace TauCeti
 
+private theorem sum_prime_log_eq_theta (t : ℝ) :
+    ∑ n ∈ Icc 0 ⌊t⌋₊, (if n.Prime then Real.log n else 0) = Chebyshev.theta t := by
+  simp [Chebyshev.theta_eq_sum_Icc, sum_filter]
+
 /-- Partial summation for the logarithmic prime sum on `(a, b]`. -/
 theorem sum_primesLE_log_div_sq_eq {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
     ∑ p ∈ (Nat.primesLE ⌊b⌋₊).filter (fun p : ℕ ↦ a < (p : ℝ)),
@@ -36,8 +40,6 @@ theorem sum_primesLE_log_div_sq_eq {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
       Chebyshev.theta b / b ^ 2 - Chebyshev.theta a / a ^ 2 +
         ∫ t in a..b, 2 * Chebyshev.theta t / t ^ 3 := by
   let c : ℕ → ℝ := fun n ↦ if n.Prime then Real.log n else 0
-  have hsum (t : ℝ) : ∑ n ∈ Icc 0 ⌊t⌋₊, c n = Chebyshev.theta t := by
-    simp [c, Chebyshev.theta_eq_sum_Icc, sum_filter]
   have hd (t : ℝ) (ht : t ≠ 0) :
       deriv (fun u : ℝ ↦ (u ^ 2)⁻¹) t = -(2 / t ^ 3) := by
     convert (((hasDerivAt_id' (x := t)).fun_pow 2).inv (pow_ne_zero 2 ht)).deriv using 1
@@ -70,44 +72,49 @@ theorem sum_primesLE_log_div_sq_eq {a b : ℝ} (ha : 0 < a) (hab : a ≤ b) :
       tauto
     · intro n _
       simp [div_eq_mul_inv, mul_comm]
-  rw [hleft, hsum, hsum, ← intervalIntegral.integral_of_le hab] at h
+  rw [hleft, sum_prime_log_eq_theta, sum_prime_log_eq_theta,
+    ← intervalIntegral.integral_of_le hab] at h
   have heq : (∫ t in a..b, deriv (fun u : ℝ ↦ (u ^ 2)⁻¹) t *
       ∑ k ∈ Icc 0 ⌊t⌋₊, c k) = -(∫ t in a..b, 2 * Chebyshev.theta t / t ^ 3) := by
     rw [← intervalIntegral.integral_neg]
     apply intervalIntegral.integral_congr
     intro t ht
     dsimp only
-    rw [hd t (ne_of_gt (ha.trans_le ((Set.uIcc_of_le hab) ▸ ht).1)), hsum]
+    rw [hd t (ne_of_gt (ha.trans_le ((Set.uIcc_of_le hab) ▸ ht).1)),
+      sum_prime_log_eq_theta]
     ring
   rw [h, heq]
   ring
 
-/-- A finite strict prime tail is bounded by an absolute reciprocal cutoff. -/
-theorem sum_primesLE_log_div_sq_le {a b : ℝ} (ha : 0 < a) :
-    ∑ p ∈ (Nat.primesLE ⌊b⌋₊).filter (fun p : ℕ ↦ a < (p : ℝ)),
-        Real.log p / (p : ℝ) ^ 2 ≤ 2 * Real.log 4 / a := by
-  by_cases hab : a ≤ b
-  · have hb : 0 < b := ha.trans_le hab
-    have hcont : ContinuousOn (fun t : ℝ ↦ (2 * Real.log 4) / t ^ 2) (Set.Icc a b) :=
-      continuousOn_const.div (continuousOn_id.pow 2)
-        (fun t ht ↦ pow_ne_zero 2 (ne_of_gt (ha.trans_le ht.1)))
-    -- Abel summation reduces the finite tail to a Chebyshev boundary term and integral.
-    have hint : IntervalIntegrable (fun t ↦ 2 * Chebyshev.theta t / t ^ 3) volume a b := by
-      rw [intervalIntegrable_iff_integrableOn_Icc_of_le hab]
-      have := integrableOn_mul_sum_Icc (m := 0)
-        (fun n : ℕ ↦ if n.Prime then Real.log n else 0) ha.le
-        (show IntegrableOn (fun t : ℝ ↦ 2 / t ^ 3) (Set.Icc a b) from
-          ContinuousOn.integrableOn_Icc (by
-            intro t ht
-            have : 0 < t := ha.trans_le ht.1
-            fun_prop (disch := positivity)))
-      simpa [Chebyshev.theta_eq_sum_Icc, sum_filter, div_eq_mul_inv, mul_comm,
-        mul_assoc] using this
-    have hcint : IntervalIntegrable (fun t : ℝ ↦ (2 * Real.log 4) / t ^ 2) volume a b :=
-      hcont.intervalIntegrable_of_Icc hab
-    have hbound : (∫ t in a..b, 2 * Chebyshev.theta t / t ^ 3) ≤
-        ∫ t in a..b, (2 * Real.log 4) / t ^ 2 := by
-      refine intervalIntegral.integral_mono_on hab hint hcint ?_
+-- Integrability of the remainder in the partial-summation formula.
+private theorem intervalIntegrable_two_mul_theta_div_cube {a b : ℝ}
+    (ha : 0 < a) (hab : a ≤ b) :
+    IntervalIntegrable (fun t ↦ 2 * Chebyshev.theta t / t ^ 3) volume a b := by
+  rw [intervalIntegrable_iff_integrableOn_Icc_of_le hab]
+  have hint := integrableOn_mul_sum_Icc (m := 0)
+    (fun n : ℕ ↦ if n.Prime then Real.log n else 0) ha.le
+    (show IntegrableOn (fun t : ℝ ↦ 2 / t ^ 3) (Set.Icc a b) from
+      ContinuousOn.integrableOn_Icc (by
+        intro t ht
+        have : 0 < t := ha.trans_le ht.1
+        fun_prop (disch := positivity)))
+  simp_rw [sum_prime_log_eq_theta] at hint
+  exact hint.congr_fun (fun t _ ↦ by ring) measurableSet_Icc
+
+-- Chebyshev bounds the remainder by an elementary power integral.
+private theorem integral_two_mul_theta_div_cube_le {a b : ℝ}
+    (ha : 0 < a) (hab : a ≤ b) :
+    (∫ t in a..b, 2 * Chebyshev.theta t / t ^ 3) ≤
+      2 * Real.log 4 * (a⁻¹ - b⁻¹) := by
+  have hb : 0 < b := ha.trans_le hab
+  have hcont : ContinuousOn (fun t : ℝ ↦ (2 * Real.log 4) / t ^ 2) (Set.Icc a b) :=
+    continuousOn_const.div (continuousOn_id.pow 2)
+      (fun t ht ↦ pow_ne_zero 2 (ne_of_gt (ha.trans_le ht.1)))
+  calc
+    _ ≤ ∫ t in a..b, (2 * Real.log 4) / t ^ 2 := by
+      refine intervalIntegral.integral_mono_on hab
+        (intervalIntegrable_two_mul_theta_div_cube ha hab)
+        (hcont.intervalIntegrable_of_Icc hab) ?_
       intro t ht
       have ht0 : 0 < t := ha.trans_le ht.1
       calc
@@ -115,28 +122,37 @@ theorem sum_primesLE_log_div_sq_le {a b : ℝ} (ha : 0 < a) :
           gcongr
           exact Chebyshev.theta_le_log4_mul_x ht0.le
         _ = (2 * Real.log 4) / t ^ 2 := by field_simp
-    -- The remaining comparison integral has an elementary power antiderivative.
-    have heval : (∫ t in a..b, (2 * Real.log 4) / t ^ 2) =
-        2 * Real.log 4 * (a⁻¹ - b⁻¹) := by
+    _ = 2 * Real.log 4 * (a⁻¹ - b⁻¹) := by
       simp_rw [div_eq_mul_inv, ← zpow_natCast, ← zpow_neg]
       norm_num only [Nat.cast_ofNat]
       rw [intervalIntegral.integral_const_mul,
         integral_zpow (n := -2) (Or.inr ⟨by norm_num, Set.notMem_uIcc_of_lt ha hb⟩)]
       norm_num
       ring
+
+/-- For `a > 0`, the sum of `log p / p²` over primes `a < p ≤ b` is at most
+`2 log 4 / a`. -/
+theorem sum_primesLE_log_div_sq_le {a b : ℝ} (ha : 0 < a) :
+    ∑ p ∈ (Nat.primesLE ⌊b⌋₊).filter (fun p : ℕ ↦ a < (p : ℝ)),
+        Real.log p / (p : ℝ) ^ 2 ≤ 2 * Real.log 4 / a := by
+  by_cases hab : a ≤ b
+  · have hb : 0 < b := ha.trans_le hab
+    -- Abel summation reduces the finite tail to a Chebyshev boundary term and integral.
+    have hbound := integral_two_mul_theta_div_cube_le ha hab
     rw [sum_primesLE_log_div_sq_eq ha hab]
     have htheta := Chebyshev.theta_le_log4_mul_x hb.le
     have hnonneg := Chebyshev.theta_nonneg a
     have hlog : 0 ≤ Real.log 4 := Real.log_nonneg (by norm_num)
-    rw [heval] at hbound
     have htop : Chebyshev.theta b / b ^ 2 ≤ Real.log 4 / b := by
       apply (div_le_iff₀ (sq_pos_of_pos hb)).2
       convert htheta using 1
       field_simp
     have hbottom : 0 ≤ Chebyshev.theta a / a ^ 2 := by positivity
-    have : 0 ≤ Real.log 4 / b := by positivity
-    simp only [div_eq_mul_inv] at *
-    nlinarith
+    have hlogb : 0 ≤ Real.log 4 / b := by positivity
+    calc
+      _ ≤ Real.log 4 / b + 2 * Real.log 4 * (a⁻¹ - b⁻¹) := by linarith
+      _ = 2 * Real.log 4 / a - Real.log 4 / b := by ring
+      _ ≤ 2 * Real.log 4 / a := sub_le_self _ hlogb
   · have hempty : (Nat.primesLE ⌊b⌋₊).filter (fun p : ℕ ↦ a < (p : ℝ)) = ∅ := by
       apply filter_eq_empty_iff.mpr
       intro p hp hpa
@@ -149,7 +165,8 @@ theorem sum_primesLE_log_div_sq_le {a b : ℝ} (ha : 0 < a) :
     rw [hempty, sum_empty]
     positivity
 
-/-- The same absolute bound holds for any finite set of primes at or above `y`. -/
+/-- For `y > 0`, the sum of `log p / p²` over any finite set of primes `p ≥ y`
+is at most `2 log 4 / y`. -/
 theorem sum_log_div_sq_le_of_prime {s : Finset ℕ} {y : ℝ} (hy : 0 < y)
     (hs : ∀ p ∈ s, p.Prime) (hys : ∀ p ∈ s, y ≤ (p : ℝ)) :
     ∑ p ∈ s, Real.log p / (p : ℝ) ^ 2 ≤ 2 * Real.log 4 / y := by
@@ -183,7 +200,24 @@ theorem summable_prime_log_div_sq :
         exact_mod_cast (mem_filter.mp hp).2.two_le) using 1
     norm_num
 
-/-- The inclusive logarithmic prime tail, including a prime at the lower endpoint. -/
+private theorem summable_prime_log_div_sq_of_pred (P : ℕ → Prop) [DecidablePred P] :
+    Summable (fun n : ℕ ↦ if n.Prime ∧ P n then Real.log n / (n : ℝ) ^ 2 else 0) := by
+  refine (summable_prime_log_div_sq.indicator {n : ℕ | P n}).congr fun n ↦ ?_
+  simp only [Set.indicator_apply, Set.mem_ofPred_eq]
+  split_ifs <;> tauto
+
+/-- The series with terms `log p / p²` over primes `p ≥ y` is summable. -/
+theorem summable_prime_log_div_sq_ge (y : ℝ) :
+    Summable (fun n : ℕ ↦ if n.Prime ∧ y ≤ (n : ℝ) then Real.log n / (n : ℝ) ^ 2 else 0) :=
+  summable_prime_log_div_sq_of_pred (fun n ↦ y ≤ (n : ℝ))
+
+/-- The series with terms `log p / p²` over primes `p > y` is summable. -/
+theorem summable_prime_log_div_sq_gt (y : ℝ) :
+    Summable (fun n : ℕ ↦ if n.Prime ∧ y < (n : ℝ) then Real.log n / (n : ℝ) ^ 2 else 0) :=
+  summable_prime_log_div_sq_of_pred (fun n ↦ y < (n : ℝ))
+
+/-- For `y > 0`, the sum of `log p / p²` over primes `p ≥ y` is at most
+`2 log 4 / y`, including a prime at the lower endpoint. -/
 theorem tsum_prime_log_div_sq_ge_le {y : ℝ} (hy : 0 < y) :
     (∑' n : ℕ, if n.Prime ∧ y ≤ (n : ℝ) then Real.log n / (n : ℝ) ^ 2 else 0) ≤
       2 * Real.log 4 / y := by
@@ -195,7 +229,8 @@ theorem tsum_prime_log_div_sq_ge_le {y : ℝ} (hy : 0 < y) :
     exact sum_log_div_sq_le_of_prime hy
       (fun p hp ↦ (mem_filter.mp hp).2.1) (fun p hp ↦ (mem_filter.mp hp).2.2)
 
-/-- The strict logarithmic prime tail obeys the same bound as the inclusive tail. -/
+/-- For `y > 0`, the sum of `log p / p²` over primes `p > y` is at most
+`2 log 4 / y`. -/
 theorem tsum_prime_log_div_sq_gt_le {y : ℝ} (hy : 0 < y) :
     (∑' n : ℕ, if n.Prime ∧ y < (n : ℝ) then Real.log n / (n : ℝ) ^ 2 else 0) ≤
       2 * Real.log 4 / y := by
@@ -212,12 +247,7 @@ theorem tsum_prime_log_div_sq_ge_eq {p : ℕ} (hp : p.Prime) :
     (∑' n : ℕ, if n.Prime ∧ (p : ℝ) ≤ n then Real.log n / (n : ℝ) ^ 2 else 0) =
       Real.log p / (p : ℝ) ^ 2 +
         ∑' n : ℕ, if n.Prime ∧ (p : ℝ) < n then Real.log n / (n : ℝ) ^ 2 else 0 := by
-  have hs : Summable (fun n : ℕ ↦
-      if n.Prime ∧ (p : ℝ) ≤ n then Real.log n / (n : ℝ) ^ 2 else 0) := by
-    refine (summable_prime_log_div_sq.indicator {n : ℕ | (p : ℝ) ≤ n}).congr fun n ↦ ?_
-    simp only [Set.indicator_apply, Set.mem_ofPred_eq]
-    split_ifs <;> tauto
-  rw [hs.tsum_eq_add_tsum_ite p]
+  rw [(summable_prime_log_div_sq_ge p).tsum_eq_add_tsum_ite p]
   simp only [hp, le_refl, and_self, ite_true]
   congr 1
   apply tsum_congr
@@ -231,12 +261,7 @@ theorem sum_primesLE_log_div_sq_add_tsum_gt {a b : ℝ} (ha : 0 ≤ a) (hab : a 
       Real.log p / (p : ℝ) ^ 2) +
       (∑' n : ℕ, if n.Prime ∧ b < (n : ℝ) then Real.log n / (n : ℝ) ^ 2 else 0) =
       ∑' n : ℕ, if n.Prime ∧ a < (n : ℝ) then Real.log n / (n : ℝ) ^ 2 else 0 := by
-  have hs (y : ℝ) : Summable (fun n : ℕ ↦
-      if n.Prime ∧ y < (n : ℝ) then Real.log n / (n : ℝ) ^ 2 else 0) := by
-    refine (summable_prime_log_div_sq.indicator {n : ℕ | y < n}).congr fun n ↦ ?_
-    simp only [Set.indicator_apply, Set.mem_ofPred_eq]
-    split_ifs <;> tauto
-  have hdiff := (hs a).tsum_sub (hs b)
+  have hdiff := (summable_prime_log_div_sq_gt a).tsum_sub (summable_prime_log_div_sq_gt b)
   have hfinite : (∑' n : ℕ,
       ((if n.Prime ∧ a < (n : ℝ) then Real.log n / (n : ℝ) ^ 2 else 0) -
       (if n.Prime ∧ b < (n : ℝ) then Real.log n / (n : ℝ) ^ 2 else 0))) =
