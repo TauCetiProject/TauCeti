@@ -531,11 +531,7 @@ theorem morseCellComparison_injective (hφ : Pairwise (Disjoint on fun i ↦ (φ
   TopCat.injective_of_isPushout_sigma
     (fun x y h ↦ Subtype.ext (by simpa using congr(($h : M))))
     (χ := fun i ↦ (φ i).morseCharacteristicMap (hk i) hε.le (hball i) (hf i))
-    (fun i v w hvw ↦ ULift.ext <| Subtype.ext <|
-      (φ i).injOn_morseCellMap (hball i) (hk i) hε v.down.2 w.down.2 (by
-        rw [← OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball i) (hf i) (hk i) hε.le,
-          ← OpenPartialHomeomorph.coe_morseCharacteristicMap_apply (hball i) (hf i) (hk i) hε.le,
-          hvw]))
+    (fun i ↦ (φ i).injective_morseCharacteristicMap (hball i) (hf i) (hk i) hε)
     (pairwise_disjoint_range_morseCharacteristicMap φ k hk hball hf hφ hε.le)
     (mem_range_diskBoundaryInclusion_of_morseCharacteristicMap φ k hk hball hf hε)
     (isPushout_morseCellAttachment φ k hk hball hf hε.le)
