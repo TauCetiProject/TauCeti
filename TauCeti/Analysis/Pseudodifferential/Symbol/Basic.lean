@@ -1157,6 +1157,17 @@ theorem HasCompactSpatialSupport.map {a : Symbol n V W m} (ha : a.HasCompactSpat
   obtain ⟨K, hK, hKa⟩ := ha
   exact ⟨K, hK, fun x hx ξ ↦ by rw [coefficient_map, hKa x hx ξ, map_zero]⟩
 
+/-- The image of a symbol with estimates uniform in the position under a continuous linear map of
+the coefficient spaces again has estimates uniform in the position. -/
+theorem IsUniform.map {a : Symbol n V W m} (ha : a.IsUniform)
+    (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).IsUniform := by
+  intro α β
+  obtain ⟨C, hC0, hC⟩ := ha α β
+  refine ⟨‖Φ‖ * C, by positivity, fun x ξ ↦ ?_⟩
+  rw [show (a.map Φ).coefficient = Φ ∘ a.coefficient from funext (coefficient_map Φ a),
+    Φ.mixedDeriv_comp_left a.contDiff_coefficient, mul_assoc]
+  exact Φ.le_opNorm_of_le (hC x ξ)
+
 end Map
 
 end Symbol
