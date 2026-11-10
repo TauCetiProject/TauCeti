@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.FiniteMeasure
-import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 
 /-!

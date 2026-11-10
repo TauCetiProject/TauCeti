@@ -22,6 +22,11 @@ The truncations `min f M` of a function `f : α → ℝ≥0∞` at finite levels
 monotone convergence their Lebesgue integrals tend to that of `f` as `M → ∞`. Neither `f` nor its
 integral needs to be finite.
 
+A function `f : α → ℝ≥0∞` of finite Lebesgue integral exceeds a large constant `M` only by an
+amount of small integral: `∫⁻ x, f x - M ∂μ → 0` as `M → ∞`. The excess and the truncation
+`min f M` add up to `f`, so by superadditivity of the integral the integral of the excess is at
+most `∫⁻ f - ∫⁻ min f M`, which tends to `0` by monotone convergence for the truncations.
+
 Cutting the truncations off outside the sets spanning a σ-finite measure also makes every
 power of them integrable, so a bound on `∫⁻ φ ^ q` proved for all `φ ≤ G` with `∫⁻ φ ^ q`
 finite passes to `∫⁻ G ^ q`. This is the usual way to divide an inequality by a power of the
@@ -30,6 +35,8 @@ quantity being estimated.
 ## Main statements
 
 * `TauCeti.tendsto_lintegral_min_atTop`: `∫⁻ x, min (f x) M ∂μ → ∫⁻ x, f x ∂μ` as `M → ∞`.
+* `TauCeti.tendsto_lintegral_tsub_atTop`: the integral of the excess of `f` over the constant `M`
+  tends to `0` as `M → ∞`.
 * `TauCeti.lintegral_enorm_rpow_eq_setLIntegral`: the `q`-th power integral of a truncation to a
   measurable set is the truncated integral.
 * `TauCeti.lintegral_rpow_le_of_forall_le`: a bound on `∫⁻ φ ^ q` for the measurable `φ ≤ G` with
@@ -65,6 +72,20 @@ theorem tendsto_lintegral_min_atTop {f : α → ℝ≥0∞} :
     tendsto_const_nhds (fun M ↦ lintegral_mono fun x ↦ min_le_min (hgf x) ?_)
     fun _ ↦ (lintegral_mono fun _ ↦ min_le_left _ _).trans_eq hint
   simpa using ENNReal.coe_le_coe.2 (Nat.floor_le (a := M) zero_le)
+
+/-- **Uniformly small tails.** If `f : α → ℝ≥0∞` has finite Lebesgue integral, then the integral
+of its excess `f x - M` over a finite level `M` tends to `0` as `M → ∞`. -/
+theorem tendsto_lintegral_tsub_atTop {f : α → ℝ≥0∞} (hfi : ∫⁻ x, f x ∂μ ≠ ∞) :
+    Tendsto (fun M : ℝ≥0 ↦ ∫⁻ x, f x - M ∂μ) atTop (𝓝 0) := by
+  -- The excess and the truncation at level `M` add up to `f`, and the integral is superadditive.
+  have hle (M : ℝ≥0) : ∫⁻ x, f x - M ∂μ ≤ ∫⁻ x, f x ∂μ - ∫⁻ x, min (f x) M ∂μ :=
+    ENNReal.le_sub_of_add_le_right
+      (ne_top_of_le_ne_top hfi (lintegral_mono fun _ ↦ min_le_left _ _))
+      ((le_lintegral_add _ _).trans (lintegral_mono fun x ↦ (tsub_add_min (a := f x)).le))
+  have h := ENNReal.Tendsto.sub (tendsto_const_nhds (x := ∫⁻ x, f x ∂μ))
+    (tendsto_lintegral_min_atTop (f := f) (μ := μ)) (.inl hfi)
+  rw [tsub_self] at h
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h (fun _ ↦ zero_le) hle
 
 /-- The `q`-th power integral of a truncation of `f` is a truncated integral of `‖f‖ ^ q`. -/
 theorem lintegral_enorm_rpow_eq_setLIntegral {E : Type*} [TopologicalSpace E]
@@ -126,14 +147,13 @@ private theorem lintegral_rpow_le_of_forall_le_of_measurable [SigmaFinite μ] {G
 
 /-- **Monotone convergence through truncations.** For a σ-finite measure `μ` and `0 < q`, if
 `∫⁻ φ ^ q ≤ C` for every measurable `φ ≤ G` with `∫⁻ φ ^ q` finite, then `∫⁻ G ^ q ≤ C`, with no
-measurability assumption on `G`.
-
-The integral of `G ^ q` is a supremum of integrals of simple functions `s ≤ G ^ q`, and
-`s ^ (1 / q)` is a measurable minorant of `G`. -/
+measurability assumption on `G`. -/
 theorem lintegral_rpow_le_of_forall_le [SigmaFinite μ] {G : α → ℝ≥0∞} {q : ℝ} (hq : 0 < q)
     {C : ℝ≥0∞} (h : ∀ φ : α → ℝ≥0∞, Measurable φ → (∀ x, φ x ≤ G x) →
       ∫⁻ x, φ x ^ q ∂μ ≠ ∞ → ∫⁻ x, φ x ^ q ∂μ ≤ C) :
     ∫⁻ x, G x ^ q ∂μ ≤ C := by
+  -- The integral of `G ^ q` is a supremum of integrals of simple functions `s ≤ G ^ q`, and
+  -- `s ^ (1 / q)` is a measurable minorant of `G`.
   rw [lintegral_def]
   refine iSup₂_le fun s hs => ?_
   rw [← SimpleFunc.lintegral_eq_lintegral]
