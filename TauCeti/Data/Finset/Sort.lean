@@ -29,7 +29,8 @@ Consecutive entries of the sorted list of `s` are the pairs of positions of `s` 
 pairs.
 
 The `m`-th element of a finset `s` in increasing order, `s.orderEmbOfFin h m`, has exactly `m`
-elements of `s` below it.
+elements of `s` below it. Hence it satisfies a downward-closed predicate exactly when more than
+`m` elements of `s` do, and for a finset of `Fin n` its value is at least `m`.
 
 Mapping the sorted list of `s` along an embedding that is strictly antitone on `s` gives the
 sorted list of the image in reversed order; in particular, sorting the points of a finset of
@@ -289,6 +290,31 @@ theorem card_filter_lt_orderEmbOfFin (s : Finset α) {k : ℕ} (h : #s = k) (m :
   rw [filter_map, card_map]
   simp only [Function.comp_def, RelEmbedding.coe_toEmbedding, OrderEmbedding.lt_iff_lt,
     filter_gt_eq_Iio, Fin.card_Iio]
+
+/-- For a downward-closed predicate `p`, the `m`-th element of `s` in increasing order satisfies
+`p` exactly when more than `m` elements of `s` do. -/
+theorem lt_card_filter_iff_orderEmbOfFin (s : Finset α) {k : ℕ} (h : #s = k) (m : Fin k)
+    (p : α → Prop) [DecidablePred p] (hp : ∀ x y, y ≤ x → p x → p y) :
+    (m : ℕ) < #{x ∈ s | p x} ↔ p (s.orderEmbOfFin h m) := by
+  rw [← s.card_filter_lt_orderEmbOfFin h m]
+  constructor
+  · intro hlt
+    by_contra hm
+    refine hlt.not_ge (card_le_card fun x hx ↦ ?_)
+    obtain ⟨hxs, hx⟩ := mem_filter.1 hx
+    exact mem_filter.2 ⟨hxs, lt_of_not_ge fun hle ↦ hm (hp _ _ hle hx)⟩
+  · intro hm
+    refine card_lt_card ⟨fun x hx ↦ ?_, fun hsub ↦ ?_⟩
+    · obtain ⟨hxs, hx⟩ := mem_filter.1 hx
+      exact mem_filter.2 ⟨hxs, hp _ _ hx.le hm⟩
+    · exact lt_irrefl _ (mem_filter.1 (hsub (mem_filter.2 ⟨s.orderEmbOfFin_mem h m, hm⟩))).2
+
+/-- The `m`-th element of a finset of `Fin n` in increasing order is at least `m`. -/
+theorem val_le_val_orderEmbOfFin {n : ℕ} (s : Finset (Fin n)) {k : ℕ} (h : #s = k) (m : Fin k) :
+    (m : ℕ) ≤ s.orderEmbOfFin h m :=
+  calc (m : ℕ) = #{x ∈ s | x < s.orderEmbOfFin h m} := (s.card_filter_lt_orderEmbOfFin h m).symm
+    _ ≤ #(Iio (s.orderEmbOfFin h m)) := card_le_card fun _ hx ↦ mem_Iio.2 (mem_filter.1 hx).2
+    _ = s.orderEmbOfFin h m := Fin.card_Iio _
 
 /-- Sorting the points of a finset `B` of `Fin n` moved along the reversal `Fin.revPerm` lists the
 images under `Fin.rev` of the sorted points of `B` in reversed order. -/
