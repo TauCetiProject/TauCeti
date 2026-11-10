@@ -11,8 +11,6 @@ public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.Field.ULift
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.Geometry.Manifold.Instances.Sphere
-import TauCeti.AlgebraicTopology.Sphere.Zero
-import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # The complement of an embedded sphere and the Jordan–Brouwer separation theorem
