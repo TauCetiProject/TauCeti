@@ -234,16 +234,9 @@ theorem isSl2Triple_rep_rootGenerator (i : Fin n) :
       _root_.IsSl2Triple
         (TauCeti.serreH ℚ (CartanMatrix.D n) i)
         (TauCeti.serreE ℚ (CartanMatrix.D n) i)
-        (TauCeti.serreF ℚ (CartanMatrix.D n) i) := {
-    h_ne_zero := fun hzero ↦ hh (by simp [hzero])
-    lie_e_f := TauCeti.lie_serreE_serreF_self ℚ (CartanMatrix.D n) i
-    lie_h_e_nsmul := by
-      rw [TauCeti.lie_serreH_serreE, CartanMatrix.D_diag]
-      rfl
-    lie_h_f_nsmul := by
-      rw [TauCeti.lie_serreH_serreF, CartanMatrix.D_diag]
-      rfl
-  }
+        (TauCeti.serreF ℚ (CartanMatrix.D n) i) :=
+    (TauCeti.isSerreSystem_serre ℚ (CartanMatrix.D n)).isSl2Triple
+      (CartanMatrix.D_diag n i) (fun hzero ↦ hh (by simp [hzero]))
   have htriple := hsource.map φ hh
   simpa only [φ, rep, TauCeti.serreRootGenerator_inl,
     TauCeti.serreRootGenerator_inr,
