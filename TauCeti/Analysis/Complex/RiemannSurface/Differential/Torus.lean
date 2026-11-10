@@ -83,9 +83,9 @@ private theorem mfderiv_torusMk_eq {z w : ℂ}
   rw [ht, mfderiv_eq_fderiv, fderiv_const_add, fderiv_fun_id]
   rfl
 
-/-- **The pullback of `dz` to `ℂ` is `dz`**: on the differential of the projection
-`ℂ → ℂ / L` at any representative `z` of `x`, the form `torusDifferential L` at `x` is the
-identity. -/
+/-- **The torus differential inverts the projection's differential**: on the differential of the
+projection `ℂ → ℂ / L` at any representative `z` of `x`, the form `torusDifferential L` at `x` is
+the identity. -/
 theorem torusDifferential_apply_mfderiv {x : AddAction.orbitRel.Quotient L ℂ} {z : ℂ}
     (h : Quotient.mk (AddAction.orbitRel L ℂ) z = x) (v : ℂ) :
     torusDifferential L x (mfderiv 𝓘(ℂ) 𝓘(ℂ) (Quotient.mk (AddAction.orbitRel L ℂ)) z v) = v := by
