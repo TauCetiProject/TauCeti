@@ -36,7 +36,7 @@ theorem map_coe_equivIco_haarAddCircle (a : ℝ) :
     (AddCircle.haarAddCircle : Measure (AddCircle T)).map
         (fun θ ↦ (AddCircle.equivIco T a θ : ℝ)) = uniformMeasure a (a + T) := by
   have h := AddCircle.map_coe_equivIco_withDensity_haarAddCircle (T := T) a
-    (f := fun _ ↦ 1) measurable_const
+    (f := fun _ ↦ 1)
   simpa [uniformMeasure_eq_smul, Measure.restrict_congr_set Ico_ae_eq_Ioc,
     withDensity_const] using h
 

@@ -775,7 +775,7 @@ theorem IsWordPathCompatible.gradedCoderiv_mem_composableWords (ht : IsWordPathC
       have h := of_tprod_mem_composableWords (by omega)
         (replaceBlock_mem_range_homInclusion (twistNat_mem c q hz p) he hpd)
         (hab.replaceBlock hd hpd)
-      rwa [replaceBlock_last a hd hpd, replaceBlock_zero] at h
+      rwa [replaceBlock_last a hpd, replaceBlock_zero] at h
     · rw [splice_eq_zero_of_not_fits R _ _ hfit]
       exact zero_mem _
   | zero => simp
@@ -801,7 +801,7 @@ theorem IsWordPathCompatible.gradedCoderiv_mem_nonComposableWords (ht : IsWordPa
         rw [twistedTuple_eq_twistNat, splice_eq_of_tprod_replaceBlock R _ hd hpd]
         exact of_tprod_mem_nonComposableWords _
           (replaceBlock_mem_range_homInclusion (twistNat_mem c q hz p) he hpd)
-          ((not_isComposableString_block_or_replaceBlock hab hpd).resolve_left (not_not.2 hblock))
+          ((not_isComposableString_block_or_replaceBlock hab).resolve_left (not_not.2 hblock))
       · rw [ht.eq_zero_of_mem_nonComposableWords (subword_mem_nonComposableWords hz hblock hpd),
           splice_zero]
         exact zero_mem _

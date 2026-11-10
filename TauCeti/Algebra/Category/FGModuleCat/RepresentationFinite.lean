@@ -11,6 +11,7 @@ public import TauCeti.CategoryTheory.Preadditive.Radical.Basic
 public import TauCeti.CategoryTheory.Preadditive.Radical.IrreducibleComposite
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.RingTheory.Artinian.Defs
+public import Mathlib.RingTheory.Length
 import Mathlib.RingTheory.HopkinsLevitzki
 import TauCeti.Algebra.Category.FGModuleCat.KrullSchmidt
 import TauCeti.Algebra.Category.ModuleCat.Algebra
@@ -37,7 +38,9 @@ and `TauCeti.mem_closure_isIrreducibleComposite_of_finite_indecomposables`. The 
 `FGModuleCat A` is `R`-linear through `A` (`ModuleCat.Algebra.instLinear`), it is abelian and hence
 idempotent complete, and its morphism modules are finitely generated over `R`
 (`FGModuleCat.finite_hom`). Representation-finiteness provides finitely many modules `P i` that
-represent every indecomposable object (`TauCeti.IsRepresentationFinite.exists_indecomposable_iso`).
+represent every indecomposable object (`TauCeti.IsRepresentationFinite.exists_indecomposable_iso`),
+so the finitely generated indecomposable modules have bounded length
+(`TauCeti.IsRepresentationFinite.exists_length_le`).
 
 ## References
 
@@ -79,6 +82,26 @@ theorem IsRepresentationFinite.exists_indecomposable_iso [IsNoetherianRing A]
   refine ⟨e (toSkeleton Y), ⟨(ObjectProperty.fullyFaithfulι _).preimageIso ?_⟩⟩
   simp only [Equiv.symm_apply_apply]
   exact (Q.ι.mapIso (fromSkeletonToSkeletonIso Y)).symm
+
+/-- A representation-finite Artinian ring has a bound on the lengths of its finitely generated
+indecomposable modules. -/
+theorem IsRepresentationFinite.exists_length_le [IsArtinianRing A]
+    (h : IsRepresentationFinite.{w} A) :
+    ∃ b : ℕ, ∀ M : ModuleCat.{w} A, Module.Finite A M → Indecomposable M →
+      Module.length A M ≤ b := by
+  obtain ⟨m, P, hP⟩ := h.exists_indecomposable_iso
+  refine ⟨Finset.univ.sup fun i ↦ (Module.length A (P i).obj).toNat, fun M hf hi ↦ ?_⟩
+  let X : FGModuleCat.{w} A := ⟨M, (ModuleCat.isFG_iff _).mpr hf⟩
+  have : IsLocalRing (End X) := FGModuleCat.isLocalRing_end_of_indecomposable hi
+  have : HasFiniteBiproducts (FGModuleCat.{w} A) := .of_hasFiniteProducts
+  obtain ⟨j, ⟨e⟩⟩ := hP X indecomposable_of_isLocalRing_end
+  have he : Module.length A M = Module.length A (P j).obj :=
+    ((ObjectProperty.ι _).mapIso e).toLinearEquiv.length_eq
+  have hfin : Module.length A (P j).obj ≠ ⊤ := by
+    rw [Module.length_ne_top_iff]
+    exact isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩
+  rw [he, ← ENat.natCast_toNat hfin]
+  exact_mod_cast Finset.le_sup (f := fun i ↦ (Module.length A (P i).obj).toNat) (Finset.mem_univ j)
 
 open ModuleCat.Algebra in
 include R in

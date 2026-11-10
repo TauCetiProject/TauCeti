@@ -107,8 +107,8 @@ private theorem exists_mem_unitValueSet_binary_and_neg_mem_of_not_isSquare (a b 
     ∃ x : Kˣ, x ∈ unitValueSet (weightedSumSquares K ![(a : K), (b : K)]) ∧
       -x ∈ unitValueSet (weightedSumSquares K ![(c : K), (d : K)]) := by
   have h2 : (2 : K) ≠ 0 := Invertible.ne_zero 2
-  have hab : hilbertSymbol a (-(a * b)) = hilbertSymbol a b := hilbertSymbol_neg_self_mul h2 a b
-  have hcd : hilbertSymbol c (-(c * d)) = hilbertSymbol c d := hilbertSymbol_neg_self_mul h2 c d
+  have hab : hilbertSymbol a (-(a * b)) = hilbertSymbol a b := hilbertSymbol_neg_self_mul a b
+  have hcd : hilbertSymbol c (-(c * d)) = hilbertSymbol c d := hilbertSymbol_neg_self_mul c d
   simp only [mem_unitValueSet_binary_iff_hilbertSymbol_eq]
   by_cases hab' : IsSquare (-(a * b))
   · -- `⟨a, b⟩` is a hyperbolic plane and represents every unit, in particular `-c`.
@@ -151,7 +151,7 @@ theorem not_anisotropic_presentedForm_four_iff_of_isSquare (w : Fin 4 → Kˣ)
   have hlast : presentedForm ⟨2, fun i => w (Fin.natAdd 2 i)⟩ =
       weightedSumSquares K ![(w 2 : K), (w 3 : K)] := presentedForm_two _
   have hab : hilbertSymbol (w 0) (-(w 0 * w 1)) = hilbertSymbol (w 0) (w 1) :=
-    hilbertSymbol_neg_self_mul h2 (w 0) (w 1)
+    hilbertSymbol_neg_self_mul (w 0) (w 1)
   -- `⟨w₀, w₁⟩ ⊥ ⟨w₂, w₃⟩` is isotropic exactly when `⟨w₀, w₁⟩` has a unit value `x` with `-x` a
   -- value of `⟨w₂, w₃⟩`. Since `-w₀w₁` and `-w₂w₃` lie in the same square class, the two
   -- characters `(·, -w₀w₁)_K` and `(·, -w₂w₃)_K` agree, and `w₀` itself is a value of

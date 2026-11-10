@@ -38,18 +38,12 @@ both points into one fibre by path lifting, then using exactness at `π_0` of th
 with surjectivity of `g` on fundamental groups. Every fibre is used, not only the fibre over a
 chosen base point, since `B` need not be path connected.
 
-Two special cases:
-
-* **Base change along a weak homotopy equivalence.** The base change of a Serre fibration
-  `p : E → B` along a weak homotopy equivalence `g : B' → B` has total space weakly equivalent to
-  `E` (`TauCeti.TopCat.isWeakHomotopyEquivalence_pullbackSnd`): the base change has the same
-  fibres (`TopCat.Hom.fiberPullbackFstIso`). Pulling back along a CW approximation of the base
-  in this way replaces a Serre fibration over an arbitrary base by one over a CW complex,
-  without changing the weak homotopy type of the total space.
-* **Weakly contractible fibres.** A Serre fibration whose fibres are all path connected, with
-  trivial higher homotopy groups, is a weak homotopy equivalence
-  (`TauCeti.TopCat.isWeakHomotopyEquivalence_of_forall_fiber`). Nonemptiness of every fibre,
-  which is part of path connectedness, is needed: otherwise `p` misses a point of `B`.
+A special case is **base change along a weak homotopy equivalence**. The base change of a Serre
+fibration `p : E → B` along a weak homotopy equivalence `g : B' → B` has total space weakly
+equivalent to `E` (`TauCeti.TopCat.isWeakHomotopyEquivalence_pullbackSnd`): the base change has
+the same fibres (`TopCat.Hom.fiberPullbackFstIso`). Pulling back along a CW approximation of the
+base in this way replaces a Serre fibration over an arbitrary base by one over a CW complex,
+without changing the weak homotopy type of the total space.
 
 ## Main results
 
@@ -57,8 +51,6 @@ Two special cases:
   homotopy equivalence on the bases and on every fibre is one on the total spaces.
 * `TauCeti.TopCat.isWeakHomotopyEquivalence_pullbackSnd`: base change of a Serre fibration along a
   weak homotopy equivalence.
-* `TauCeti.TopCat.isWeakHomotopyEquivalence_of_forall_fiber`: a Serre fibration with weakly
-  contractible fibres is a weak homotopy equivalence.
 
 ## References
 
@@ -277,26 +269,5 @@ theorem isWeakHomotopyEquivalence_pullbackSnd (hp : serreFibrations p) {B' : Top
       ((TopCat.pullbackSnd_apply g p x.1).trans (p.fiberPullbackFstIso_hom_apply_coe g b' x).symm)
   rw [h₁]
   exact (mem_weakEquivalences_iff _).1 (weakEquivalences.of_isIso _)
-
-/-- **A Serre fibration with weakly contractible fibres is a weak homotopy equivalence.** If every
-fibre of the Serre fibration `p : E → B` is path connected (in particular nonempty) and has
-trivial homotopy groups in positive degrees, then `p` is a weak homotopy equivalence. -/
-theorem isWeakHomotopyEquivalence_of_forall_fiber (hp : serreFibrations p)
-    (hconn : ∀ b, PathConnectedSpace (p.fiber b))
-    (hπ : ∀ b (x : p.fiber b) n, Subsingleton (HomotopyGroup (Fin (n + 1)) (p.fiber b) x)) :
-    p.hom.IsWeakHomotopyEquivalence := by
-  let sq : CommSq p p (𝟙 B) (𝟙 B) := ⟨rfl⟩
-  refine isWeakHomotopyEquivalence_of_commSq hp (MorphismProperty.id_mem _ B) sq
-    ((mem_weakEquivalences_iff _).1 (weakEquivalences.id_mem B)) fun b ↦ ?_
-  -- The fibre of the identity is a point, so the fibre map is a weak homotopy equivalence
-  -- exactly when the fibre of `p` is weakly contractible.
-  have : Subsingleton (TopCat.Hom.fiber (𝟙 B) ((𝟙 B : B ⟶ B) b)) :=
-    ⟨fun x y ↦ Subtype.ext <| by
-      simpa using (Set.mem_singleton_iff.1 x.2).trans (Set.mem_singleton_iff.1 y.2).symm⟩
-  refine ContinuousMap.isWeakHomotopyEquivalence_iff_joined.2
-    ⟨fun y ↦ ⟨Classical.arbitrary _, Subsingleton.elim _ y ▸ Joined.refl _⟩,
-      fun _ _ _ ↦ PathConnectedSpace.joined _ _, fun n x ↦ ?_⟩
-  have := hπ b x n
-  exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨default, Subsingleton.elim _ _⟩⟩
 
 end TauCeti.TopCat

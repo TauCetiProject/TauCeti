@@ -56,7 +56,7 @@ theorem map_card_inter_uniformOn_powersetCard (s t : Finset α) (n : ℕ) :
   intro k
   rw [Measure.map_apply_of_aemeasurable (aemeasurable_uniformOn_finset _ _)
     (measurableSet_singleton k),
-    TauCeti.Probability.hypergeometricMeasure_singleton hmarked hn]
+    TauCeti.Probability.hypergeometricMeasure_singleton hmarked]
   have hfiber : (s.powersetCard n : Set (Finset α)) ∩
       (fun u ↦ #(u ∩ t)) ⁻¹' {k} =
         (((s.powersetCard n).filter fun u ↦ #(u ∩ t) = k) : Set (Finset α)) := by

@@ -156,6 +156,31 @@ lemma singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfCh
     ← Category.assoc, ← TopPair.singularHomologyMap_comp, Iso.inv_hom_id,
     TopPair.singularHomologyMap_id, Category.id_comp]
 
+/-- The local homology isomorphism of the identity chart of `E` is the identity. -/
+@[simp]
+lemma singularHomologyComplSingletonIsoOfChart_refl {p : E}
+    (hp : p ∈ (OpenPartialHomeomorph.refl E).source) (k : ℕ) :
+    singularHomologyComplSingletonIsoOfChart R (OpenPartialHomeomorph.refl E) hp k =
+      Iso.refl _ := by
+  ext : 1
+  have := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset R (X := TopCat.of E)
+    (OpenPartialHomeomorph.refl E).open_source isClosed_singleton (Set.singleton_subset_iff.2 hp) k
+  rw [← cancel_epi (TopPair.singularHomologyMap
+    (TopPair.excisionMap (X := TopCat.of E) (OpenPartialHomeomorph.refl E).source {p}ᶜ) R k),
+    singularHomologyMap_excisionMap_comp_singularHomologyComplSingletonIsoOfChart_hom,
+    ← TopPair.singularHomologyMap_comp]
+  -- The identity chart sends `p` to `p` only after unfolding, so the composite is type-correct
+  -- only up to that unfolding.
+  erw [Iso.refl_hom, Category.comp_id]
+  congr 1
+  -- The homeomorphism of the identity chart is the identity on the ambient space.
+  apply TopPair.hom_ext_of_fst
+  ext z
+  rw [TopPair.Hom.fst_comp]
+  erw [ConcreteCategory.comp_apply, TopPair.excisionMap_fst_apply, TopPair.excisionMap_fst_apply,
+    TopPair.ofSubsetIso_hom, TopPair.ofSubsetMap_fst_apply]
+  rfl
+
 end Chart
 
 variable {M : Type w} [TopologicalSpace M] [T1Space M] {E : Type w} [NormedAddCommGroup E]
@@ -508,12 +533,19 @@ theorem isIso_singularHomologyMap_compl_of_chart (hx : x ∈ φ.source) (hK : St
 for `K` as in `TauCeti.isIso_singularHomologyMap_compl_of_chart` and `E` of finite dimension `n`,
 the relative homology `Hₖ(M, M ∖ φ.symm '' K)` vanishes for `k ≠ n`. -/
 theorem isZero_singularHomology_compl_symm_image_of_ne [FiniteDimensional ℝ E] {n k : ℕ}
-    (hx : x ∈ φ.source) (hK : StarConvex ℝ (φ x) K) (hxK : φ x ∈ K)
+    (hx : x ∈ φ.source) (hK : StarConvex ℝ (φ x) K)
     (hKb : Bornology.IsBounded K) (hKc : IsClosed K) (hLc : IsClosed (φ.symm '' K))
     (hKφ : K ⊆ φ.target) (h : finrank ℝ E = n) (hk : k ≠ n) :
-    IsZero ((TopPair.ofSubset ((φ.symm '' K)ᶜ : Set (TopCat.of M))).singularHomology R k) :=
+    IsZero ((TopPair.ofSubset ((φ.symm '' K)ᶜ : Set (TopCat.of M))).singularHomology R k) := by
+  rcases K.eq_empty_or_nonempty with rfl | hne
+  · -- the subspace is everything, so the identity of the pair factors through the subspace
+    rw [IsZero.iff_id_eq_zero, ← TopPair.singularHomologyMap_id]
+    exact TopPair.singularHomologyMap_eq_zero_of_fac _ R
+      (TopCat.ofHom (⟨fun m ↦ ⟨m, by simp⟩, by fun_prop⟩ :
+        C(M, ((φ.symm '' (∅ : Set E))ᶜ : Set M)))) rfl k
+  have hxK := hK.mem hne
   have := isIso_singularHomologyMap_compl_of_chart R φ hx hK hxK hKb hKc hLc hKφ k
-  (isZero_singularHomology_complSingleton_of_ne R φ hx h hk).of_iso
+  exact (isZero_singularHomology_complSingleton_of_ne R φ hx h hk).of_iso
     (asIso (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of M))
       (φ.mapsTo_id_compl_symm_image hx hxK)) R k))
 
