@@ -272,13 +272,31 @@ theorem mpullbackWithin_extChartAt_symm_apply (V : (x : M) → TangentSpace I x)
   exact (Trivialization.symmL_continuousLinearMapAt (R := 𝕜)
     (trivializationAt E (TangentSpace I) x) (by simpa using hy') _).symm
 
+open scoped Topology in
+omit [IsManifold I 1 M] in
 /-- At the centre of the preferred chart, the inverse-chart pullback of a vector field is the
-value of the field. -/
+value of the field. Only the chart at `x` enters, so no compatibility of the atlas is needed. -/
 theorem mpullbackWithin_extChartAt_symm_self (V : (x : M) → TangentSpace I x) (x : M) :
     VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (range I)
       (extChartAt I x x) = V x := by
-  rw [VectorField.mpullbackWithin_apply, extChartAt_to_inv]
-  exact mfderivWithin_extChartAt_symm_inverse_apply _
+  -- Read in the chart at `x`, the inverse chart is the identity near the chart point.
+  have h : HasMFDerivWithinAt 𝓘(𝕜, E) I (extChartAt I x).symm (range I) (extChartAt I x x)
+      (ContinuousLinearMap.id 𝕜 E) := by
+    refine ⟨(continuousAt_extChartAt_symm'' (mem_extChartAt_target x)).continuousWithinAt, ?_⟩
+    simp only [writtenInExtChartAt, extChartAt_to_inv, extChartAt_model_space_eq_id,
+      PartialEquiv.refl_coe, PartialEquiv.refl_symm, preimage_id, modelWithCornersSelf_coe,
+      range_id, inter_univ]
+    have hev : (extChartAt I x ∘ (extChartAt I x).symm ∘ id) =ᶠ[𝓝[range I] (extChartAt I x x)]
+        id := by
+      filter_upwards [extChartAt_target_mem_nhdsWithin_of_mem (mem_extChartAt_target x)] with u hu
+      exact (extChartAt I x).right_inv hu
+    exact (hasFDerivWithinAt_id _ _).congr_of_eventuallyEq hev
+      ((extChartAt I x).right_inv (mem_extChartAt_target x))
+  have hu : UniqueMDiffWithinAt 𝓘(𝕜, E) (range I) (extChartAt I x x) :=
+    uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.2
+      (I.uniqueDiffOn _ (extChartAt_target_subset_range x (mem_extChartAt_target x)))
+  rw [VectorField.mpullbackWithin_apply, extChartAt_to_inv, h.mfderivWithin hu]
+  exact congrArg (fun L : E →L[𝕜] E ↦ L (V x)) ContinuousLinearMap.inverse_id
 
 open scoped Topology in
 /-- Along the inverse of the extended chart at `x`, the vector field with constant coordinates

@@ -32,7 +32,9 @@ the symbol calculus needs:
 * the dilated cutoffs `ξ ↦ χ (t⁻¹ • ξ)`, `t ≥ 1`, which vanish for `‖ξ‖ ≤ t` and equal `1` for
   `‖ξ‖ ≥ 2 t`, satisfy the order-zero symbol estimates `‖D^k (χ (t⁻¹ • ·)) ξ‖ ≤ C ⟨ξ⟩^(-k)`
   uniformly in `t` (`FrequencyCutoff.exists_norm_iteratedFDeriv_comp_inv_smul_le`); cutoffs at
-  growing radii are how asymptotic sums of symbols are built.
+  growing radii are how asymptotic sums of symbols are built;
+* the pointwise product of two cutoffs is a cutoff, which is how the cut-off expansions of two
+  classical symbols multiply.
 
 ## References
 
@@ -261,6 +263,24 @@ theorem ofContDiffBump_apply [HasContDiffBump E] (f : ContDiffBump (0 : E)) (h�
 /-- Frequency cutoffs exist on every space with smooth bump functions. -/
 noncomputable instance [HasContDiffBump E] : Inhabited (FrequencyCutoff E) :=
   ⟨ofContDiffBump ⟨1, 2, one_pos, one_lt_two⟩ le_rfl le_rfl⟩
+
+/-- The pointwise product of two frequency cutoffs is a frequency cutoff. -/
+instance : Mul (FrequencyCutoff E) where
+  mul χ χ' :=
+    { toFun := χ * χ'
+      contDiff' := χ.contDiff.mul χ'.contDiff
+      eq_zero_of_norm_le_one' ξ hξ := by simp [χ.apply_eq_zero_of_norm_le_one hξ]
+      eq_one_of_two_le_norm' ξ hξ := by
+        simp [χ.apply_eq_one_of_two_le_norm hξ, χ'.apply_eq_one_of_two_le_norm hξ]
+      nonneg' ξ := mul_nonneg (χ.nonneg ξ) (χ'.nonneg ξ)
+      le_one' ξ := (mul_le_of_le_one_right (χ.nonneg ξ) (χ'.le_one ξ)).trans (χ.le_one ξ) }
+
+@[simp]
+theorem coe_mul (χ χ' : FrequencyCutoff E) : ⇑(χ * χ') = χ * χ' :=
+  (rfl)
+
+theorem mul_apply (χ χ' : FrequencyCutoff E) (ξ : E) : (χ * χ') ξ = χ ξ * χ' ξ :=
+  (rfl)
 
 end FrequencyCutoff
 
