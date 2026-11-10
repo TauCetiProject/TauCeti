@@ -39,10 +39,10 @@ namespace TauCeti
 
 section Approximation
 
-variable {U V : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U] [NormedAddCommGroup V]
-  [NormedSpace ℝ V] {f : U → V} {p : Set U} {A : U →L[ℝ] V} {δ : ℝ}
+variable {U V 𝓕 : Type*} [SeminormedAddCommGroup U] [SeminormedAddCommGroup V] [FunLike 𝓕 U V]
+  [AddMonoidHomClass 𝓕 U V] {f : U → V} {p : Set U} {A : 𝓕} {δ : ℝ}
 
-/-- A map within relative error `δ` of a linear map `A` on `p` satisfies
+/-- A map within relative error `δ` of an additive map `A` on `p` satisfies
 `(1 - δ) ‖A x - A y‖ ≤ ‖f x - f y‖` there. -/
 theorem one_sub_mul_norm_sub_le_norm_sub
     (happ : ∀ x ∈ p, ∀ y ∈ p, ‖f x - f y - A (x - y)‖ ≤ δ * ‖A (x - y)‖) {x y : U} (hx : x ∈ p)
@@ -53,7 +53,7 @@ theorem one_sub_mul_norm_sub_le_norm_sub
   rw [norm_sub_rev (A x - A y)] at this
   linarith
 
-/-- A map within relative error `δ` of a linear map `A` on `p` satisfies
+/-- A map within relative error `δ` of an additive map `A` on `p` satisfies
 `‖f x - f y‖ ≤ (1 + δ) ‖A x - A y‖` there. -/
 theorem norm_sub_le_one_add_mul_norm_sub
     (happ : ∀ x ∈ p, ∀ y ∈ p, ‖f x - f y - A (x - y)‖ ≤ δ * ‖A (x - y)‖) {x y : U} (hx : x ∈ p)
@@ -63,10 +63,11 @@ theorem norm_sub_le_one_add_mul_norm_sub
   have := norm_sub_norm_le (f x - f y) (A x - A y)
   linarith
 
-/-- A map `f` within relative error `ε < 1` of an injective linear map `A` on `p`, read through
+/-- A map `f` within relative error `ε < 1` of an injective additive map `A` on `p`, read through
 `A`, is `(1 + ε)`-Lipschitz on `A '' p` with `(1 - ε)⁻¹`-Lipschitz inverse. -/
-theorem lipschitzOnWith_and_antilipschitzWith_of_approx {ε : ℝ≥0} (hA : Injective A)
-    (hε : ε < 1) (happ : ∀ x ∈ p, ∀ y ∈ p, ‖f x - f y - A (x - y)‖ ≤ ε * ‖A (x - y)‖) :
+theorem _root_.Function.Injective.lipschitzOnWith_and_antilipschitzWith_of_approx {ε : ℝ≥0}
+    (hA : Injective A) (hε : ε < 1)
+    (happ : ∀ x ∈ p, ∀ y ∈ p, ‖f x - f y - A (x - y)‖ ≤ ε * ‖A (x - y)‖) :
     LipschitzOnWith (1 + ε) (f ∘ invFun A) (A '' p) ∧
       AntilipschitzWith (1 - ε)⁻¹ ((A '' p).domRestrict (f ∘ invFun A)) := by
   have hinv (x : U) : invFun A (A x) = x := leftInverse_invFun hA x
@@ -80,15 +81,20 @@ theorem lipschitzOnWith_and_antilipschitzWith_of_approx {ε : ℝ≥0} (hA : Inj
     rw [le_inv_mul_iff₀ hε', NNReal.coe_sub hε.le, NNReal.coe_one]
     exact one_sub_mul_norm_sub_le_norm_sub happ hx hy
 
+end Approximation
+
 /-- A map within relative error `δ < 1` of an injective linear map on `p` has a Lipschitz inverse
 on `p`. -/
-theorem exists_antilipschitzWith_domRestrict_of_approx [FiniteDimensional ℝ U]
+theorem exists_antilipschitzWith_domRestrict_of_approx {𝕜 U V 𝓕 : Type*}
+    [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [NormedAddCommGroup U] [NormedSpace 𝕜 U]
+    [FiniteDimensional 𝕜 U] [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FunLike 𝓕 U V]
+    [LinearMapClass 𝓕 𝕜 U V] {f : U → V} {p : Set U} {A : 𝓕} {δ : ℝ}
     (hA : p.Nonempty → Injective A) (hδ : δ < 1)
     (happ : ∀ x ∈ p, ∀ y ∈ p, ‖f x - f y - A (x - y)‖ ≤ δ * ‖A (x - y)‖) :
     ∃ L : ℝ≥0, AntilipschitzWith L (p.domRestrict f) := by
   rcases p.eq_empty_or_nonempty with rfl | hp
   · exact ⟨1, fun x ↦ x.2.elim⟩
-  obtain ⟨c, -, hAc⟩ := (A : U →ₗ[ℝ] V).injective_iff_antilipschitz.mp (hA hp)
+  obtain ⟨c, -, hAc⟩ := (A : U →ₗ[𝕜] V).injective_iff_antilipschitz.mp (hA hp)
   have hδ' : 0 < 1 - δ := sub_pos.2 hδ
   refine ⟨c * (Real.toNNReal (1 - δ))⁻¹, AntilipschitzWith.of_le_mul_dist fun x y ↦ ?_⟩
   have hxy : ‖(x : U) - y‖ ≤ c * ‖A x - A y‖ := by
@@ -106,9 +112,12 @@ theorem exists_antilipschitzWith_domRestrict_of_approx [FiniteDimensional ℝ U]
 measurable partition into pieces `p n`, each with a linear map `A n` that is injective whenever
 the piece is nonempty and satisfies `‖f x - f y - A n (x - y)‖ ≤ δ ‖A n (x - y)‖` on the piece.
 No global Lipschitz assumption is needed. -/
-theorem exists_partition_linear_approximation_of_hasFDerivWithinAt [FiniteDimensional ℝ U]
-    [MeasurableSpace U] [BorelSpace U] [SecondCountableTopology V] {s : Set U}
-    {f' : U → U →L[ℝ] V} (hs : MeasurableSet s) (hd : ∀ x ∈ s, HasFDerivWithinAt f (f' x) s x)
+theorem exists_partition_linear_approximation_of_hasFDerivWithinAt
+    {U V : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U] [FiniteDimensional ℝ U]
+    [MeasurableSpace U] [BorelSpace U]
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [SecondCountableTopology V]
+    {f : U → V} {s : Set U} {f' : U → U →L[ℝ] V} {δ : ℝ}
+    (hs : MeasurableSet s) (hd : ∀ x ∈ s, HasFDerivWithinAt f (f' x) s x)
     (hinj : ∀ x ∈ s, Injective (f' x)) (hδ : 0 < δ) :
     ∃ (p : ℕ → Set U) (A : ℕ → U →L[ℝ] V),
       (∀ n, MeasurableSet (p n)) ∧ Pairwise (Disjoint on p) ∧ (⋃ n, p n) = s ∧
@@ -143,8 +152,6 @@ theorem exists_partition_linear_approximation_of_hasFDerivWithinAt [FiniteDimens
         have hc0 := (NNReal.coe_pos.2 (hc (A n))).ne'
         simp only [r, NNReal.coe_div, Real.coe_toNNReal _ hδ.le]
         field_simp
-
-end Approximation
 
 /-- A measurable set on which the derivative is injective has a countable measurable
 partition into bi-Lipschitz pieces. No global Lipschitz assumption is needed. -/
