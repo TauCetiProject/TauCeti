@@ -150,13 +150,11 @@ private lemma affine_interior_sum_eq_zero (hf : T.IsSelfIntersectionMinusTwoFork
     (hedge : ∀ i, 0 < i → i + 1 < t → T.intersection (c i) (c (i + 1)) = w)
     {i : ℕ} (hi : 1 < i) (hit : i < t) (hic : i ≠ t - 2) (hilast : i ≠ t - 1) :
     ∑ j ∈ range (t + 1), T.intersection (d i) (d j) * y j = 0 := by
-  have hforkCard := hf.toIsSelfIntersectionMinusTwoChain.le_card_snoc hf.branch_ne
-  have hchainCard : t < Fintype.card T.Component := by omega
   have hprev : T.intersection (c (i - 1)) (c i) = w := by
     have hprev_succ : i - 1 + 1 = i := by omega
     simpa only [hprev_succ] using hedge (i - 1) (by omega) (by omega)
   rw [sum_range_succ, hd_lt hit, hd_t, sum_range_intersection_d_eq y hd_lt (c i),
-    hf.toIsSelfIntersectionMinusTwoChain.interior_sum_eq hchainCard y (by omega) (by omega),
+    hf.toIsSelfIntersectionMinusTwoChain.interior_sum_eq y (by omega) (by omega),
     hyInterior (j := i - 1) (by omega) (by omega), hyInterior (j := i) (by omega) (by omega),
     hyInterior (j := i + 1) (by omega) (by omega), T.intersection_comm, hprev,
     hf.intersection_self i hit, hinterior i (by omega) (by omega), hedge i (by omega) (by omega),
@@ -198,14 +196,14 @@ private lemma affine_left_row_nonneg (hf : T.IsSelfIntersectionMinusTwoFork t c 
 
 /-- The second row of the affine fork certificate is nonnegative. -/
 private lemma affine_next_left_row_nonneg (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
-    (ht : 4 < t) (hchainCard : t < Fintype.card T.Component) (α : ℤ) (d : ℕ → T.Component)
+    (ht : 4 < t) (α : ℤ) (d : ℕ → T.Component)
     (y : ℕ → ℤ) (hd_lt : ∀ {i}, i < t → d i = c i) (hd_t : d t = branch) (hy0 : y 0 = α)
     (hyInterior : ∀ {i}, 0 < i → i + 1 < t → y i = 2)
     (hrow1 : T.intersection (c 1) (c 0) * α + T.intersection (c 1) (c 1) * 2 +
       T.intersection (c 1) (c 2) * 2 = 0) :
     0 ≤ ∑ j ∈ range (t + 1), T.intersection (d 1) (d j) * y j := by
   rw [sum_range_succ, hd_lt (by omega), hd_t, sum_range_intersection_d_eq y hd_lt,
-    hf.toIsSelfIntersectionMinusTwoChain.interior_sum_eq hchainCard y
+    hf.toIsSelfIntersectionMinusTwoChain.interior_sum_eq y
       (i := 1) (by omega) (by omega),
     hy0, hyInterior (i := 1) (by omega) (by omega),
     hyInterior (i := 2) (by omega) (by omega)]
@@ -214,7 +212,7 @@ private lemma affine_next_left_row_nonneg (hf : T.IsSelfIntersectionMinusTwoFork
 
 /-- The row of the affine fork certificate at the branch point `c (t - 2)` is nonnegative. -/
 private lemma affine_fork_row_nonneg (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
-    (ht : 4 < t) (hchainCard : t < Fintype.card T.Component) {w : ℕ+} (d : ℕ → T.Component)
+    (ht : 4 < t) {w : ℕ+} (d : ℕ → T.Component)
     (y : ℕ → ℤ) (hd_lt : ∀ {i}, i < t → d i = c i) (hd_t : d t = branch)
     (hyInterior : ∀ {i}, 0 < i → i + 1 < t → y i = 2) (hyLast : y (t - 1) = 1)
     (hyt : y t = 1) (hw₂ : (T.weight (c (t - 2)) : ℤ) = w)
@@ -225,7 +223,7 @@ private lemma affine_fork_row_nonneg (hf : T.IsSelfIntersectionMinusTwoFork t c 
   have hthird_last : t - 2 - 1 = t - 3 := by omega
   have hpenultimate_succ : t - 2 + 1 = t - 1 := by omega
   rw [sum_range_succ, hd_lt (by omega), hd_t, sum_range_intersection_d_eq y hd_lt,
-    hf.toIsSelfIntersectionMinusTwoChain.interior_sum_eq hchainCard y
+    hf.toIsSelfIntersectionMinusTwoChain.interior_sum_eq y
       (i := t - 2) (by omega) (by omega),
     hthird_last, hpenultimate_succ,
     hyInterior (i := t - 3) (by omega) (by omega),
@@ -277,9 +275,9 @@ private lemma affine_sum_nonneg (hf : T.IsSelfIntersectionMinusTwoFork t c branc
   rcases Nat.eq_zero_or_pos i with rfl | hi0
   · exact affine_left_row_nonneg hf ht hchainCard α d y hd_lt hd_t hy0 hyInterior hrow0
   rcases eq_or_lt_of_le (Nat.succ_le_of_lt hi0) with rfl | hi1
-  · exact affine_next_left_row_nonneg hf ht hchainCard α d y hd_lt hd_t hy0 hyInterior hrow1
+  · exact affine_next_left_row_nonneg hf ht α d y hd_lt hd_t hy0 hyInterior hrow1
   by_cases hic : i = t - 2
-  · simpa only [hic] using affine_fork_row_nonneg hf ht hchainCard d y hd_lt hd_t hyInterior
+  · simpa only [hic] using affine_fork_row_nonneg hf ht d y hd_lt hd_t hyInterior
       hyLast hyt hw₂ ha₃₂ ha₂₁ ha₂b
   by_cases hilast : i = t - 1
   · simpa only [hilast] using affine_last_row_nonneg hf ht hchainCard d y hd_lt hd_t
@@ -353,13 +351,11 @@ private lemma left_weight_eq (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
     have hyt : y t = 1 := by
       have ht_ne_zero : t ≠ 0 := by omega
       simp [y, ht_ne_zero]
-    have hinj : ∀ i < t + 1, ∀ j < t + 1, d i = d j → i = j := by
-      simpa only [d] using hf.toIsSelfIntersectionMinusTwoChain.injOn_snoc hf.branch_ne
     have hrow : ∀ i < t + 1,
         0 ≤ ∑ j ∈ range (t + 1), T.intersection (d i) (d j) * y j :=
       affine_sum_nonneg hf ht α d y hd_lt hd_t hy0 hyInterior hyLast hyt
         hinterior hedge hwb hw₁ ha₂b hrow0 hrow1
-    exact (T.not_forall_sum_intersection_mul_nonneg_of_pos hinj hcard
+    exact (T.not_forall_sum_intersection_mul_nonneg_of_pos hcard
       (y := y) (fun i _ ↦ by simp only [y]; split_ifs <;> omega)
       ⟨0, by omega, by rw [hy0]; exact hαpos⟩) hrow
 
@@ -561,7 +557,7 @@ lemma interior_fiber_relation (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
         T.multiplicity (c i) * T.intersection (c i) (c i) +
       T.multiplicity (c (i + 1)) * T.intersection (c i) (c (i + 1)) = 0 := by
   have h := hf.sum_range_intersection_mul_multiplicity hcard (c i)
-  rw [hf.interior_sum_eq (by omega) _ hi hit,
+  rw [hf.interior_sum_eq _ hi hit,
     hf.branch_intersection_eq_zero (by omega) hifork] at h
   linarith
 
@@ -577,7 +573,7 @@ lemma fork_fiber_relation (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
   have h := hf.sum_range_intersection_mul_multiplicity hcard (c (t - 2))
   have ht₃ : t - 2 - 1 = t - 3 := by omega
   have ht₁ : t - 2 + 1 = t - 1 := by omega
-  rw [hf.interior_sum_eq (by omega) _ (i := t - 2) (by omega) (by omega), ht₃, ht₁] at h
+  rw [hf.interior_sum_eq _ (i := t - 2) (by omega) (by omega), ht₃, ht₁] at h
   linarith
 
 /-- For a fork exhausting a numerical type, the fibre relation at the terminal chain component

@@ -113,11 +113,6 @@ private theorem false_of_affine_e6 (hcard : 7 < Fintype.card T.Component)
     (h₅ : T.intersection c₅ c₅ = -(2 * (T.weight c₅ : ℤ)))
     (h₆ : T.intersection c₆ c₆ = -(2 * (T.weight c₆ : ℤ)))
     (h₇ : T.intersection c₇ c₇ = -(2 * (T.weight c₇ : ℤ)))
-    (h₁₂ : c₁ ≠ c₂) (h₁₃ : c₁ ≠ c₃) (h₁₄ : c₁ ≠ c₄) (h₁₅ : c₁ ≠ c₅) (h₁₆ : c₁ ≠ c₆)
-    (h₁₇ : c₁ ≠ c₇) (h₂₃ : c₂ ≠ c₃) (h₂₄ : c₂ ≠ c₄) (h₂₅ : c₂ ≠ c₅) (h₂₆ : c₂ ≠ c₆)
-    (h₂₇ : c₂ ≠ c₇) (h₃₄ : c₃ ≠ c₄) (h₃₅ : c₃ ≠ c₅) (h₃₆ : c₃ ≠ c₆) (h₃₇ : c₃ ≠ c₇)
-    (h₄₅ : c₄ ≠ c₅) (h₄₆ : c₄ ≠ c₆) (h₄₇ : c₄ ≠ c₇) (h₅₆ : c₅ ≠ c₆) (h₅₇ : c₅ ≠ c₇)
-    (h₆₇ : c₆ ≠ c₇)
     (hw₁ : (T.weight c₁ : ℤ) = w) (hw₂ : (T.weight c₂ : ℤ) = w) (hw₃ : (T.weight c₃ : ℤ) = w)
     (hw₄ : (T.weight c₄ : ℤ) = w) (hw₅ : (T.weight c₅ : ℤ) = w) (hw₆ : (T.weight c₆ : ℤ) = w)
     (hw₇ : (T.weight c₇ : ℤ) = w)
@@ -140,15 +135,8 @@ private theorem false_of_affine_e6 (hcard : 7 < Fintype.card T.Component)
   let y : ℕ → ℤ := fun i ↦
     if i = 0 then 1 else if i = 1 then 2 else if i = 2 then 3 else if i = 3 then 2
       else if i = 4 then 1 else if i = 5 then 2 else 1
-  refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c) ?_ hcard (y := y) ?_
+  refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c) hcard (y := y) ?_
     ⟨0, by omega, by simp [y]⟩ ?_
-  · intro i hi j hj hij
-    interval_cases i <;> interval_cases j <;>
-      simp [c, h₁₂, h₁₃, h₁₄, h₁₅, h₁₆, h₁₇, h₂₃, h₂₄, h₂₅, h₂₆, h₂₇, h₃₄,
-        h₃₅, h₃₆, h₃₇, h₄₅, h₄₆, h₄₇, h₅₆, h₅₇, h₆₇, h₁₂.symm, h₁₃.symm,
-        h₁₄.symm, h₁₅.symm, h₁₆.symm, h₁₇.symm, h₂₃.symm, h₂₄.symm, h₂₅.symm,
-        h₂₆.symm, h₂₇.symm, h₃₄.symm, h₃₅.symm, h₃₆.symm, h₃₇.symm, h₄₅.symm,
-        h₄₆.symm, h₄₇.symm, h₅₆.symm, h₅₇.symm, h₆₇.symm] at hij ⊢
   · intro i hi
     interval_cases i <;> norm_num [y]
   · intro i hi
@@ -221,8 +209,7 @@ theorem intersection_eq_zero_of_branch_six (hcard : 7 < Fintype.card T.Component
   have hw₇ : (T.weight c₇ : ℤ) = w := hw₇'.trans hww
   have a₆₇' : T.intersection c₆ c₇ = w := by rw [a₆₇, hww]
   have z₄₇ : T.intersection c₄ c₇ = 0 := by rw [T.intersection_comm c₄ c₇]; exact z₇₄
-  exact T.false_of_affine_e6 hcard h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₁₂ h₁₃ h₁₄ h₁₅ h₁₆ h₁₇ h₂₃ h₂₄ h₂₅
-    h₂₆ h₂₇ h₃₄ h₃₅ h₃₆ h₃₇ h₄₅ h₄₆ h₄₇ h₅₆ h₅₇ h₆₇ hw₁ hw₂ hw₃ hw₄ hw₅ hw₆ hw₇ a₁₂ a₂₃ a₃₄
+  exact T.false_of_affine_e6 hcard h₁ h₂ h₃ h₄ h₅ h₆ h₇ hw₁ hw₂ hw₃ hw₄ hw₅ hw₆ hw₇ a₁₂ a₂₃ a₃₄
     a₄₅ a₃₆ a₆₇' z₁₃ z₁₄ z₁₅ z₁₆ z₁₇ z₂₄ z₂₅ z₂₆ z₂₇ z₃₅ z₃₇ z₄₆ z₄₇ z₅₆ z₅₇
 end NumericalType
 

@@ -219,7 +219,7 @@ private lemma forall_sum_intersection_eq_zero (hself : ∀ i, -(2 * (T.weight i 
     by_contra hsu
     obtain ⟨i₀, hi₀⟩ := hne
     refine T.not_forall_fintype_sum_intersection_mul_nonneg_of_pos (I := s) (e := Subtype.val)
-      Subtype.val_injective ?_ (y := fun _ ↦ 1) (fun _ ↦ zero_le_one) ⟨⟨i₀, hi₀⟩, one_pos⟩
+      ?_ (y := fun _ ↦ 1) (fun _ ↦ zero_le_one) ⟨⟨i₀, hi₀⟩, one_pos⟩
       fun i ↦ ?_
     · rw [Fintype.card_coe]
       exact (card_lt_iff_ne_univ s).mpr hsu

@@ -45,7 +45,7 @@ multiplicities of a minimal numerical type.
 * `TauCeti.NumericalType.sum_sum_intersection_mul_neg`: the same sum is negative for a nonzero
   vector on a proper finite set of components.
 * `TauCeti.NumericalType.not_forall_fintype_sum_intersection_mul_nonneg_of_pos`: a nonnegative,
-  nonzero vector on a proper finite family of distinct components has a row with negative
+  nonzero vector on a proper finite family of components has a row with negative
   intersection sum.
 * `TauCeti.NumericalType.not_forall_sum_intersection_mul_nonneg_of_pos`: the specialization to a
   family indexed by an initial segment of the natural numbers.
@@ -201,55 +201,60 @@ theorem sum_sum_intersection_mul_neg {s : Finset T.Component} (hs : s ≠ univ)
   have hneg := T.dotProduct_intersection_mulVec_neg hxne (hx m hm)
   rwa [T.dotProduct_intersection_mulVec_of_support_subset hx, heq] at hneg
 
-/-- A nonnegative, nonzero integral vector on a proper finite family of distinct components cannot
+/-- A nonnegative, nonzero integral vector on a proper finite family of components cannot
 have every row of the intersection form nonnegative. This excludes affine configurations whose
 intersection matrix has a positive kernel vector. -/
 theorem not_forall_fintype_sum_intersection_mul_nonneg_of_pos {I : Type*} [Fintype I]
-    {e : I → T.Component} (he : Function.Injective e)
-    (hcard : Fintype.card I < Fintype.card T.Component) {y : I → ℤ} (hy : ∀ i, 0 ≤ y i)
-    (hypos : ∃ i, 0 < y i) :
+    {e : I → T.Component} (hcard : Fintype.card I < Fintype.card T.Component) {y : I → ℤ}
+    (hy : ∀ i, 0 ≤ y i) (hypos : ∃ i, 0 < y i) :
     ¬ ∀ i, 0 ≤ ∑ j, T.intersection (e i) (e j) * y j := by
   classical
   intro hrow
-  let s : Finset T.Component := univ.image e
-  have hs : s ≠ univ := by
-    intro hs
-    have hcards : s.card = Fintype.card I := by
-      simp only [s, card_image_of_injective univ he, card_univ]
-    rw [hs, card_univ] at hcards
+  obtain ⟨m, hm⟩ : ∃ m, m ∉ univ.image e := by
+    by_contra h
+    have h1 := card_image_le (s := (univ : Finset I)) (f := e)
+    rw [eq_univ_of_forall fun m ↦ not_not.mp fun hm ↦ h ⟨m, hm⟩, card_univ, card_univ] at h1
     omega
   let x : T.Component → ℤ := fun k ↦ ∑ i, if e i = k then y i else 0
-  have hxe (i : I) : x (e i) = y i := by
-    simp [x, he.eq_iff]
+  have hxs (k : T.Component) (hk : k ∉ univ.image e) : x k = 0 :=
+    sum_eq_zero fun i _ ↦
+      ite_eq_right_iff.mpr fun h ↦ absurd (mem_image.mpr ⟨i, mem_univ _, h⟩) hk
+  have hxe (i : I) : y i ≤ x (e i) := by
+    have := single_le_sum (f := fun i' ↦ if e i' = e i then y i' else 0)
+      (fun i' _ ↦ by split_ifs; exacts [hy i', le_rfl]) (mem_univ i)
+    simpa using this
+  have hreg (h : T.Component → ℤ) : ∑ k, x k * h k = ∑ i, y i * h (e i) := by
+    simp only [x, sum_mul]
+    rw [sum_comm]
+    exact sum_congr rfl fun i _ ↦ by simp [ite_mul]
   obtain ⟨i, hyi⟩ := hypos
-  have hne : ∃ k ∈ s, x k ≠ 0 :=
-    ⟨e i, mem_image_of_mem e (mem_univ i), by rw [hxe]; exact hyi.ne'⟩
-  have key := T.sum_sum_intersection_mul_neg hs hne
-  have hinjOn : Set.InjOn e ↑(univ : Finset I) := fun _ _ _ _ h ↦ he h
-  simp only [s, sum_image hinjOn] at key
-  have heq : ∑ i, ∑ j, T.intersection (e i) (e j) * x (e i) * x (e j) =
+  have hxne : x ≠ 0 := fun h ↦ by
+    have := hyi.trans_le (hxe i)
+    rw [h] at this
+    simp at this
+  have hneg := T.dotProduct_intersection_mulVec_neg hxne (hxs m hm)
+  have hrow' (k : T.Component) :
+      ∑ l, T.intersection k l * x l = ∑ j, T.intersection k (e j) * y j := by
+    simp_rw [mul_comm (T.intersection k _) (x _)]
+    rw [hreg]
+    simp_rw [mul_comm (y _)]
+  have hquad : x ⬝ᵥ T.intersection *ᵥ x =
       ∑ i, y i * ∑ j, T.intersection (e i) (e j) * y j := by
-    refine sum_congr rfl fun i _ ↦ ?_
-    rw [mul_sum]
-    refine sum_congr rfl fun j _ ↦ ?_
-    rw [hxe, hxe]
-    ring_nf
-  rw [heq] at key
-  exact absurd key (not_lt.mpr (sum_nonneg fun i _ ↦ mul_nonneg (hy i) (hrow i)))
+    simp only [dotProduct, mulVec, hrow']
+    exact hreg fun k ↦ ∑ j, T.intersection k (e j) * y j
+  rw [hquad] at hneg
+  exact absurd hneg (not_lt.mpr (sum_nonneg fun i _ ↦ mul_nonneg (hy i) (hrow i)))
 
-/-- A nonnegative, nonzero integral vector on a proper family of distinct components indexed by
+/-- A nonnegative, nonzero integral vector on a proper family of components indexed by
 an initial segment of the natural numbers cannot have every row of the intersection form
 nonnegative. -/
 theorem not_forall_sum_intersection_mul_nonneg_of_pos {t : ℕ} {c : ℕ → T.Component}
-    (hinj : ∀ i < t, ∀ j < t, c i = c j → i = j)
     (hcard : t < Fintype.card T.Component) {y : ℕ → ℤ} (hy : ∀ i < t, 0 ≤ y i)
     (hypos : ∃ i < t, 0 < y i) :
     ¬ ∀ i < t, 0 ≤ ∑ j ∈ range t, T.intersection (c i) (c j) * y j := by
   intro hrow
   apply T.not_forall_fintype_sum_intersection_mul_nonneg_of_pos
     (e := fun i : Fin t ↦ c i) (y := fun i : Fin t ↦ y i)
-  · intro i j hij
-    exact Fin.ext (hinj i i.isLt j j.isLt hij)
   · simpa using hcard
   · exact fun i ↦ hy i i.isLt
   · obtain ⟨i, hi, hyi⟩ := hypos

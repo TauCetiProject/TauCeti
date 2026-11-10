@@ -192,13 +192,13 @@ theorem not_affineE8 {c : ℕ → T.Component}
     (hbranch_ne : ∀ i < 8, branch ≠ c i)
     (hbranch_self : T.intersection branch branch = -(2 * (T.weight branch : ℤ)))
     (hbranch_pos : 0 < T.intersection (c 5) branch) : False := by
-  obtain ⟨w, hweight, hwb, hedge', hab, hbranch_zero⟩ :=
+  obtain ⟨w, hweight, hwb, -, hab, hbranch_zero⟩ :=
     hc.exists_weight_intersection_affineE8_eq hbranch_ne hbranch_self hbranch_pos
   have hentry {i j : ℕ} (hi : i < 8) (hj : j < 8) :
       T.intersection (c i) (c j) =
         if i = j then -(2 * (w : ℤ))
         else if i + 1 = j ∨ j + 1 = i then w else 0 := by
-    exact hc.intersection_eq_ite (by omega) hweight hedge' hi hj
+    exact hc.intersection_eq_ite (by omega) hweight hi hj
   have hbranch_entry {i : ℕ} (hi : i < 8) :
       T.intersection (c i) branch = if i = 5 then (w : ℤ) else 0 := by
     split_ifs with h
@@ -211,9 +211,7 @@ theorem not_affineE8 {c : ℕ → T.Component}
   let e : Fin 9 → Fin AffineDynkinType.E8.nodes := ![8, 7, 6, 5, 4, 0, 2, 3, 1]
   let y : ℕ → ℤ := fun i ↦
     if hi : i < 9 then AffineDynkinType.E8.marks (e ⟨i, hi⟩) else 0
-  have hd_inj : ∀ i < 9, ∀ j < 9, d i = d j → i = j := by
-    simpa only [d] using hc.injOn_snoc hbranch_ne
-  refine T.not_forall_sum_intersection_mul_nonneg_of_pos hd_inj hcard (y := y) ?_ ?_ ?_
+  refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := d) hcard (y := y) ?_ ?_ ?_
   · intro i hi
     simpa [y, hi] using (AffineDynkinType.marks_pos (e ⟨i, hi⟩)).le
   · refine ⟨0, by omega, ?_⟩

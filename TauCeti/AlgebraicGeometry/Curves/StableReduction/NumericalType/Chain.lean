@@ -183,6 +183,11 @@ lemma card_image_range (hc : T.IsSelfIntersectionMinusTwoChain t c) :
   rw [card_image_of_injOn fun i hi j hj h ↦
     hc.injOn i (mem_range.mp hi) j (mem_range.mp hj) h, card_range]
 
+/-- A chain of length `t` has at most as many components as the numerical type. -/
+lemma le_card (hc : T.IsSelfIntersectionMinusTwoChain t c) : t ≤ Fintype.card T.Component := by
+  classical
+  simpa [hc.card_image_range] using card_le_univ ((range t).image c)
+
 end IsSelfIntersectionMinusTwoChain
 
 /-- Nonconsecutive vanishing intersections are preserved by reversing the index order. -/
@@ -415,7 +420,7 @@ private lemma IsSelfIntersectionMinusTwoChain.false_of_cycle {t : ℕ} {c : ℕ 
     (hclose : T.intersection (c (t - 1)) (c 0) = W) : False := by
   -- The cycle is affine: the all-ones vector makes every row of the intersection form vanish,
   -- which negative definiteness on a proper subset of the components forbids.
-  refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c) hc.injOn hcard
+  refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c) hcard
     (y := fun _ ↦ (1 : ℤ)) (fun _ _ ↦ by norm_num) ⟨0, by omega, one_pos⟩ ?_
   intro i hi
   simp only [mul_one]
@@ -524,10 +529,13 @@ lemma eq_of_intersection_pos {t : ℕ} {c : ℕ → T.Component}
 theorem intersection_eq_ite {t : ℕ} {c : ℕ → T.Component} {w : ℤ}
     (hc : T.IsSelfIntersectionMinusTwoChain t c) (hcard : t < Fintype.card T.Component)
     (hweight : ∀ i < t, (T.weight (c i) : ℤ) = w)
-    (hedge : ∀ i, i + 1 < t → T.intersection (c i) (c (i + 1)) = w)
     {i j : ℕ} (hi : i < t) (hj : j < t) :
     T.intersection (c i) (c j) =
       if i = j then -(2 * w) else if i + 1 = j ∨ j + 1 = i then w else 0 := by
+  have hedge : ∀ i, i + 1 < t → T.intersection (c i) (c (i + 1)) = w := fun i hit ↦ by
+    rw [T.intersection_eq_max_weight (by omega) (hc.intersection_self i (by omega))
+      (hc.intersection_self (i + 1) hit) (hc.intersection_succ_pos i hit),
+      hweight i (by omega), hweight (i + 1) hit, max_self]
   by_cases hij : i = j
   · subst j
     simp only [↓reduceIte]
@@ -557,20 +565,24 @@ theorem IsSelfIntersectionMinusTwoChain.left_sum_eq {t : ℕ} {c : ℕ → T.Com
       rw [hc.intersection_eq_zero hcard (by omega) hj (by omega) (by omega) (by omega), zero_mul])
     rfl
 
-/-- In a proper chain, an interior row of an intersection sum has only its two adjacent terms
+/-- In a chain, an interior row of an intersection sum has only its two adjacent terms
 and its diagonal term. -/
 theorem IsSelfIntersectionMinusTwoChain.interior_sum_eq {t : ℕ} {c : ℕ → T.Component}
-    (hc : T.IsSelfIntersectionMinusTwoChain t c) (hcard : t < Fintype.card T.Component)
+    (hc : T.IsSelfIntersectionMinusTwoChain t c)
     (y : ℕ → ℤ) {i : ℕ} (hi : 0 < i) (hit : i + 1 < t) :
     ∑ j ∈ range t, T.intersection (c i) (c j) * y j =
       T.intersection (c i) (c (i - 1)) * y (i - 1) +
         T.intersection (c i) (c i) * y i + T.intersection (c i) (c (i + 1)) * y (i + 1) := by
+  have hle := hc.le_card
   exact sum_range_eq_of_eq_zero_off_triple (by omega) (by omega) (by omega)
     (by omega) (by omega) (by omega) (fun j hj hprev hself hnext ↦ by
       rcases lt_or_gt_of_ne hself with hji | hji
-      · rw [T.intersection_comm,
-          hc.intersection_eq_zero hcard hj (by omega) (by omega) (by omega) (by omega), zero_mul]
-      · rw [hc.intersection_eq_zero hcard (by omega) hj (by omega) (by omega) (by omega), zero_mul])
+      · rw [T.intersection_comm, (hc.mono (s := i + 1) (by omega)).intersection_eq_zero
+          (by omega) (by omega) (by omega) (by omega) (by omega) (by omega), zero_mul]
+      · have h0 := (hc.shift (r := i) (s := t - i) (by omega)).intersection_eq_zero (by omega)
+          (p := 0) (q := j - i) (by omega) (by omega) (by omega) (by omega) (by omega)
+        rw [show i + (j - i) = j by omega, Nat.add_zero] at h0
+        rw [h0, zero_mul])
     rfl
 
 /-- In a proper chain with at least two components, the right-end row of an intersection sum
@@ -592,12 +604,13 @@ external contribution `w * b` gives the unweighted multiplicity recurrence. The 
 `y` may be any integers satisfying that relation. -/
 lemma IsSelfIntersectionMinusTwoChain.interior_relation_of_weight_eq
     {t : ℕ} {c : ℕ → T.Component} (hc : T.IsSelfIntersectionMinusTwoChain t c)
-    (hcard : t < Fintype.card T.Component) {i : ℕ} (hi : 0 < i) (hit : i + 1 < t)
+    {i : ℕ} (hi : 0 < i) (hit : i + 1 < t)
     {w : ℕ+} (hprev : (T.weight (c (i - 1)) : ℤ) = w)
     (hself : (T.weight (c i) : ℤ) = w) (hnext : (T.weight (c (i + 1)) : ℤ) = w)
     {y : ℕ → ℤ} {b : ℤ}
     (hfib : ∑ j ∈ range t, T.intersection (c i) (c j) * y j + w * b = 0) :
     y (i - 1) + y (i + 1) + b = 2 * y i := by
+  have hle := hc.le_card
   have hleft := T.intersection_eq_max_weight (by omega)
     (hc.intersection_self (i - 1) (by omega)) (hc.intersection_self i (by omega))
     (hc.intersection_pos (by omega) (by omega))
@@ -606,7 +619,7 @@ lemma IsSelfIntersectionMinusTwoChain.interior_relation_of_weight_eq
     (hc.intersection_succ_pos i hit)
   rw [hprev, hself, max_self] at hleft
   rw [hself, hnext, max_self] at hright
-  rw [hc.interior_sum_eq hcard y hi hit, T.intersection_comm (c i) (c (i - 1)),
+  rw [hc.interior_sum_eq y hi hit, T.intersection_comm (c i) (c (i - 1)),
     hleft, hc.intersection_self i (by omega), hself, hright] at hfib
   exact mul_left_cancel₀ (show (w : ℤ) ≠ 0 by positivity) (by linear_combination hfib)
 
@@ -636,7 +649,7 @@ lemma IsSelfIntersectionMinusTwoChain.right_end_relation_of_weight_eq
     (hc.intersection_self (t - 1) (by omega))
     (hc.intersection_pos (by omega) (by omega))
   rw [hpen] at hlast_edge
-  rw [hc.interior_sum_eq hcard y (by omega) (by omega), hprev_index, hnext_index,
+  rw [hc.interior_sum_eq y (by omega) (by omega), hprev_index, hnext_index,
     T.intersection_comm (c (t - 2)) (c (t - 3)), hedge,
     hc.intersection_self (t - 2) (by omega), hpen] at hfib_pen
   rw [hc.right_sum_eq hcard (by omega) y, T.intersection_comm (c (t - 1)) (c (t - 2)),
@@ -698,17 +711,26 @@ theorem sum_range_add_sum_intersection_mul_multiplicity_eq_zero {t : ℕ} {c : �
   rw [← h]
   congr 1 <;> exact sum_congr rfl fun _ _ ↦ mul_comm _ _
 
-/-- For a sequence of at least two components which are distinct below `t`, exhaust a numerical
+/-- For a nonempty sequence of components which are distinct below `t`, exhaust a numerical
 type and meet only when consecutive, the fibre relation at the left end has only its diagonal
 and adjacent terms. -/
 theorem left_fiber_relation {t : ℕ} {c : ℕ → T.Component}
     (hinj : ∀ i < t, ∀ j < t, c i = c j → i = j)
-    (hcard : Fintype.card T.Component = t) (ht : 2 ≤ t)
+    (hcard : Fintype.card T.Component = t)
     (hzero : ∀ i < t, ∀ j < t, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
       T.intersection (c i) (c j) = 0) :
     (T.multiplicity (c 0) : ℤ) * T.intersection (c 0) (c 0) +
       T.multiplicity (c 1) * T.intersection (c 0) (c 1) = 0 := by
   have h := sum_range_multiplicity_mul_intersection_eq_zero hinj hcard 0
+  rcases lt_or_ge t 2 with ht | ht
+  · obtain rfl : t = 1 := by
+      by_contra hne
+      obtain rfl : t = 0 := by omega
+      exact (Fintype.card_eq_zero_iff.mp hcard).false (c 0)
+    have hsub : Subsingleton T.Component := Fintype.card_le_one_iff_subsingleton.mp hcard.le
+    rw [Subsingleton.elim (c 1) (c 0)]
+    simp only [sum_range_one] at h
+    linarith
   rw [sum_range_eq_of_eq_zero_off_pair (a := 0) (b := 1) (by omega) (by omega) (by omega)
     (fun j hj hj0 hj1 ↦ by rw [hzero 0 (by omega) j hj hj0.symm (by omega) (by omega), mul_zero])
     rfl] at h
@@ -732,17 +754,25 @@ theorem interior_fiber_relation {t : ℕ} {c : ℕ → T.Component}
       rw [hzero i (by omega) j hj hself.symm (by omega) (by omega), mul_zero]) rfl] at h
   exact h
 
-/-- For a sequence of at least two components which are distinct below `t`, exhaust a numerical
+/-- For a nonempty sequence of components which are distinct below `t`, exhaust a numerical
 type and meet only when consecutive, the fibre relation at the right end has only its diagonal
 and adjacent terms. -/
 theorem right_fiber_relation {t : ℕ} {c : ℕ → T.Component}
     (hinj : ∀ i < t, ∀ j < t, c i = c j → i = j)
-    (hcard : Fintype.card T.Component = t) (ht : 2 ≤ t)
+    (hcard : Fintype.card T.Component = t)
     (hzero : ∀ i < t, ∀ j < t, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
       T.intersection (c i) (c j) = 0) :
     (T.multiplicity (c (t - 2)) : ℤ) * T.intersection (c (t - 1)) (c (t - 2)) +
       T.multiplicity (c (t - 1)) * T.intersection (c (t - 1)) (c (t - 1)) = 0 := by
   have h := sum_range_multiplicity_mul_intersection_eq_zero hinj hcard (t - 1)
+  rcases lt_or_ge t 2 with ht | ht
+  · obtain rfl : t = 1 := by
+      by_contra hne
+      obtain rfl : t = 0 := by omega
+      exact (Fintype.card_eq_zero_iff.mp hcard).false (c 0)
+    simp only [sum_range_one] at h
+    norm_num only
+    linarith
   rw [sum_range_eq_of_eq_zero_off_pair (a := t - 2) (b := t - 1)
     (by omega) (by omega) (by omega)
     (fun j hj hprev hself ↦ by
@@ -857,13 +887,13 @@ private lemma IsSelfIntersectionMinusTwoChain.sum_intersection_mul_nonneg_of_end
       hc.intersection_self 0 (by omega)]
     linarith [hα₁]
   rcases eq_or_lt_of_le (Nat.succ_le_of_lt h1) with rfl | h2
-  · rw [hc.interior_sum_eq hcard y (i := 1) (by omega) (by omega),
+  · rw [hc.interior_sum_eq y (i := 1) (by omega) (by omega),
       T.intersection_comm (c 1) (c 0), hy₀, hy₂ 1 (by omega) (by omega),
       hy₂ 2 (by omega) (by omega), hc.intersection_self 1 (by omega),
       hint 1 (by omega) (by omega), hmidedge 1 2 (by omega) (by omega) (by omega)]
     linarith [hα₂]
   rcases lt_or_ge i (t - 2) with h3 | h3
-  · rw [hc.interior_sum_eq hcard y (i := i) (by omega) (by omega),
+  · rw [hc.interior_sum_eq y (i := i) (by omega) (by omega),
       T.intersection_comm (c i) (c (i - 1)), hy₂ (i - 1) (by omega) (by omega),
       hy₂ i (by omega) (by omega), hy₂ (i + 1) (by omega) (by omega),
       hmidedge (i - 1) i (by omega) (by omega) (by omega),
@@ -875,7 +905,7 @@ private lemma IsSelfIntersectionMinusTwoChain.sum_intersection_mul_nonneg_of_end
   · obtain rfl : i = t - 2 := h4.symm
     have hthird_last : t - 2 - 1 = t - 3 := by omega
     have hpenultimate_succ : t - 2 + 1 = t - 1 := by omega
-    rw [hc.interior_sum_eq hcard y (i := t - 2) (by omega) (by omega),
+    rw [hc.interior_sum_eq y (i := t - 2) (by omega) (by omega),
       hthird_last, hpenultimate_succ,
       T.intersection_comm (c (t - 2)) (c (t - 3)),
       T.intersection_comm (c (t - 2)) (c (t - 1)),
@@ -909,7 +939,7 @@ private lemma IsSelfIntersectionMinusTwoChain.false_of_end_factors
     have e₁ : j ≠ 0 := by omega
     have e₂ : j ≠ t - 1 := by omega
     simp [hydef, e₁, e₂]
-  refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c) hc.injOn hcard
+  refine T.not_forall_sum_intersection_mul_nonneg_of_pos (c := c) hcard
     (y := y) ?_ ⟨0, by omega, by rw [hy₀]; exact hα⟩
     (hc.sum_intersection_mul_nonneg_of_end_factors hcard h4 hy₀ hyₗ hy₂ hint hmidedge hα₁ hα₂
       hγ₁ hγ₂)
@@ -991,15 +1021,15 @@ theorem IsSelfIntersectionMinusTwoChain.exists_weight_eq_except_one_end {t : ℕ
       ((T.weight (c 0) : ℤ) = W ∨ (T.weight (c (t - 1)) : ℤ) = W) :=
   T.exists_weight_eq_except_one_end_aux t c hc hcard ht
 
-/-- In a chain exhausting all components of a numerical type, any two nonconsecutive components
+/-- In a chain, any two nonconsecutive components
 other than the pair of endpoints do not meet, because the subchain between them is proper. If the
 endpoints do not meet when `2 < t`, then no two nonconsecutive components meet. -/
 lemma IsSelfIntersectionMinusTwoChain.intersection_eq_zero_of_card_eq
     {t : ℕ} {c : ℕ → T.Component} (hc : T.IsSelfIntersectionMinusTwoChain t c)
-    (hcard : Fintype.card T.Component = t)
     (hends : 2 < t → T.intersection (c 0) (c (t - 1)) = 0) (i : ℕ) (hi : i < t) (j : ℕ)
     (hj : j < t) (hij : i ≠ j) (hij₁ : i + 1 ≠ j) (hji₁ : j + 1 ≠ i) :
     T.intersection (c i) (c j) = 0 := by
+  have hle := hc.le_card
   have hlt : ∀ u v : ℕ, u + 1 < v → v < t → T.intersection (c u) (c v) = 0 := by
     intro u v huv hv
     by_cases he : u = 0 ∧ v = t - 1

@@ -74,27 +74,6 @@ private def doubleForkExtra (T : NumericalType) (left right : T.Component) (n : 
   | .inr (.inr i), .inl j => if i = 1 ∧ j = 1 then T.intersection right left else 0
   | _, _ => 0
 
-private lemma doubleForkEmbedding_injective
-    (hr : T.IsSelfIntersectionMinusTwoFork t c right)
-    (ht : 3 < t) (hleftRight : left ≠ right)
-    (hleft_ne_chain : ∀ i < t, left ≠ c i) :
-    Function.Injective (doubleForkEmbedding t c left right) := by
-  intro i j hij
-  -- In each case `hij` equates two of `c 0`, `c (k + 1)`, `c (t - 1)`, `left` and `right`.
-  rcases i with i | i | i <;> rcases j with j | j | j <;> (try fin_cases i) <;>
-    (try fin_cases j) <;>
-    simp only [doubleForkEmbedding, Fin.zero_eta, Fin.isValue, Fin.mk_one, one_ne_zero,
-      zero_ne_one, ↓reduceIte, Sum.inl.injEq, Sum.inr.injEq, reduceCtorEq] at hij ⊢
-  all_goals first
-    | exact absurd hij (hleft_ne_chain _ (by omega))
-    | exact absurd hij.symm (hleft_ne_chain _ (by omega))
-    | exact absurd hij (hr.branch_ne _ (by omega))
-    | exact absurd hij.symm (hr.branch_ne _ (by omega))
-    | exact absurd hij hleftRight
-    | exact absurd hij.symm hleftRight
-    -- two chain components: `injOn` equates their positions, which settles the case
-    | (have := hr.injOn _ (by omega) _ (by omega) hij; omega)
-
 /-- The extra intersection block of the double-fork matrix is symmetric. -/
 private lemma doubleForkExtra_comm (left right : T.Component) (n : ℕ)
     (k l : DoubleForkIndex n) :
@@ -339,7 +318,7 @@ private lemma exists_weight_intersection_entries
   have hchainCard : t < Fintype.card T.Component := by omega
   have hreversePenultimate : t - 1 - (t - 2) = 1 := by omega
   -- Classifying the two forks fixes one common weight, every chain edge, and the two leaf edges.
-  obtain ⟨w, hw, hwright, hedge, hrightEdge⟩ := hr.exists_weight_intersection_eq hcard
+  obtain ⟨w, hw, hwright, -, hrightEdge⟩ := hr.exists_weight_intersection_eq hcard
   obtain ⟨w', hw', hwleft', -, hleftEdge'⟩ := hl.exists_weight_intersection_eq hcard
   have hreverseLast : t - 1 - 0 = t - 1 := by omega
   have hww : (w' : ℤ) = w := by
@@ -355,7 +334,7 @@ private lemma exists_weight_intersection_entries
     simpa only [hreverse] using
       hl.branch_intersection_eq_zero (i := t - 1 - i) (by omega) hreverse_ne
   refine ⟨w, hwright, hwleft'.trans hww,
-    fun i j hi hj ↦ hr.intersection_eq_ite hchainCard hw hedge hi hj, fun i hi ↦ ?_,
+    fun i j hi hj ↦ hr.intersection_eq_ite hchainCard hw hi hj, fun i hi ↦ ?_,
     fun i hi ↦ ?_⟩
   · split_ifs with hit
     · subst i
@@ -366,12 +345,11 @@ private lemma exists_weight_intersection_entries
       exact hleftEdge
     · exact hleftZero hi hi1
 
-/-- If an injective `doubleForkEmbedding` with distinct leaves misses some component, and its
+/-- If a `doubleForkEmbedding` with distinct leaves misses some component, and its
 intersection numbers are `-w` times the affine-`D` Cartan matrix plus the leaf block
 `doubleForkExtra`, then the affine-`D` marks give nonnegative row sums, which is impossible. -/
 private lemma false_of_intersection_doubleForkEmbedding_eq
     (ht : 3 < t) (hleftRight : left ≠ right)
-    (he : Function.Injective (doubleForkEmbedding t c left right))
     (hcard : t + 2 < Fintype.card T.Component) {w : ℤ}
     (hmatrix : ∀ i j : DoubleForkIndex (t - 4),
       T.intersection (doubleForkEmbedding t c left right i)
@@ -423,7 +401,7 @@ private lemma false_of_intersection_doubleForkEmbedding_eq
   have hindexCard : Fintype.card (DoubleForkIndex n) = t + 2 := by
     simp [n]
     omega
-  exact (T.not_forall_fintype_sum_intersection_mul_nonneg_of_pos (y := mark) he
+  exact (T.not_forall_fintype_sum_intersection_mul_nonneg_of_pos (y := mark)
     (by rw [hindexCard]; exact hcard) (fun i ↦ by
       rcases i with _ | _ | _ <;> simp [mark]) ⟨Sum.inl 0, by simp [mark]⟩) hrow
 
@@ -435,11 +413,10 @@ theorem not_oppositeFork (hr : T.IsSelfIntersectionMinusTwoFork t c right)
     (hl : T.IsSelfIntersectionMinusTwoFork t (fun i ↦ c (t - 1 - i)) left)
     (ht : 3 < t) (hcard : t + 2 < Fintype.card T.Component) : False := by
   have hleftRight := hr.opposite_branch_ne hl ht
-  have hleft_ne_chain : ∀ i < t, left ≠ c i := fun _ hi ↦ hl.branch_ne_reverse hi
   obtain ⟨w, hwright, hwleft, hchainEntry, hrightEntry, hleftEntry⟩ :=
     exists_weight_intersection_entries hr hl (by omega)
   exact false_of_intersection_doubleForkEmbedding_eq ht hleftRight
-    (doubleForkEmbedding_injective hr ht hleftRight hleft_ne_chain) hcard
+    hcard
     (intersection_doubleForkEmbedding_eq hr hl ht w hwright hwleft hchainEntry hrightEntry
       hleftEntry)
 
