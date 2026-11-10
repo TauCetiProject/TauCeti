@@ -214,10 +214,11 @@ protected theorem IsPath.dropUntil {p : G.Walk x y} (hp : p.IsPath)
 
 end Split
 
-/-- A path to a vertex in a vertex set has an initial segment whose endpoint is the first visited
-vertex in the set (the trivial segment when the path already starts in the set).  Every other vertex
-of the segment is outside the set, and the segment uses only vertices and edge identities of the
-original path. -/
+/-- A path to a vertex in a vertex set has an initial segment that is a path ending at a vertex `z`
+of the set, all of whose vertices other than its start `x` and `z` are outside the set. If the
+path starts outside the set, `z` is the first visited vertex in the set; the start is exempted
+from the interior condition, so no first-hit claim is made when it lies in the set. The segment
+uses only vertices and edge identities of the original path. -/
 theorem IsPath.exists_initialSegment_to_set {p : G.Walk x y} (hp : p.IsPath)
     {S : Set α} (hy : y ∈ S) :
     ∃ (z : α) (q : G.Walk x z), q.IsPath ∧ z ∈ S ∧
