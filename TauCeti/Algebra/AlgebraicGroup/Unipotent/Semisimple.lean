@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Semisimple
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
+public import TauCeti.LinearAlgebra.GeneralLinearGroup.Basic
 public import TauCeti.RingTheory.FiniteType.PointSeparation
 
 /-!
@@ -61,9 +62,9 @@ theorem IsSemisimplePoint.eq_one_of_isUnipotent {g : WithConv (H →ₐ[k] L)}
     g = 1 := by
   apply Tannaka.fgPoint_ext_of_forall_ofLinearEquiv_pointsAction k H L
   intro M
-  rw [map_one]
-  exact (((isSemisimplePoint_def g).mp hsemisimple M).eq_one_of_isUnipotent
-    ((isUnipotentPoint_def g).mp hunipotent M)).trans rfl
+  rw [map_one, LinearMap.GeneralLinearGroup.ofLinearEquiv_one]
+  exact ((isSemisimplePoint_def g).mp hsemisimple M).eq_one_of_isUnipotent
+    ((isUnipotentPoint_def g).mp hunipotent M)
 
 end HopfAlgebra
 
