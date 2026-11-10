@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Data.List.Sublists
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
@@ -252,16 +253,15 @@ theorem norm_iteratedFDeriv_succ_le_sum_coordinateDeriv {k : ℕ} {f : Coordinat
 /-- Two coordinate derivatives of a `C²` function commute: `∂ᵢ ∂ⱼ f = ∂ⱼ ∂ᵢ f`. -/
 theorem coordinateDeriv_pair_comm {f : CoordinateSpace n → A} (hf : ContDiff ℝ 2 f)
     (i j : Fin n) : coordinateDeriv [i, j] f = coordinateDeriv [j, i] f := by
+  have h (l : Fin n) :
+      coordinateDeriv [l] f = iteratedFDerivAlong ℝ [EuclideanSpace.single l 1] f := by
+    funext y
+    rw [coordinateDeriv_cons, iteratedFDerivAlong_cons_apply, iteratedFDerivAlong_nil]
+    rfl
   funext x
-  have hd : Differentiable ℝ (fderiv ℝ f) :=
-    (hf.fderiv_right (m := 1) (by norm_num)).differentiable (by simp)
-  have hs := hf.contDiffAt.isSymmSndFDerivAt (x := x) (by simp)
-  have h (l : Fin n) : coordinateDeriv [l] f = fun y ↦ fderiv ℝ f y (EuclideanSpace.single l 1) :=
-    funext fun y ↦ coordinateDeriv_cons l [] f y
-  rw [coordinateDeriv_cons, coordinateDeriv_cons, h, h,
-    fderiv_clm_apply (hd x) (differentiableAt_const _),
-    fderiv_clm_apply (hd x) (differentiableAt_const _)]
-  simpa using hs _ _
+  rw [coordinateDeriv_cons, coordinateDeriv_cons, h, h]
+  simpa using congrFun (iteratedFDerivAlong_swap hf (EuclideanSpace.single i 1)
+    (EuclideanSpace.single j 1) [] (by simp)) x
 
 theorem coordinateDeriv_add (α : List (Fin n)) {f g : CoordinateSpace n → A}
     (hf : ContDiff ℝ α.length f) (hg : ContDiff ℝ α.length g) :
