@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.RootSubgroup
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Subgroup
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.OrderedProduct
 import TauCeti.Algebra.Group.Hom.Rational
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnectedModule.RootSubgroup
@@ -45,13 +45,13 @@ variable (t : DynkinType) (ht : t.Valid)
 /-- In the full-weight Chevalley point group, an ordered product of distinct positive
 root elements determines exactly the parameters of the roots occurring in the list.
 The order is arbitrary and the value ring may have nilpotents or positive characteristic. -/
-theorem list_prod_map_scChevalleyDatum_rootSubgroup_inj (A : Type*) [CommRing A]
+theorem list_prod_map_scChevalleyDatum_rootSubgroupPoints_inj (A : Type*) [CommRing A]
     {l : List (Fin t.numRoots)} (hl : l.Nodup)
     (hpos : ∀ γ ∈ l, γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
     {u v : Fin t.numRoots → A} :
-    (l.map fun γ => (t.scChevalleyDatum ht).rootSubgroup γ A
+    (l.map fun γ => (t.scChevalleyDatum ht).rootSubgroupPoints γ A
       (Multiplicative.ofAdd (u γ))).prod =
-        (l.map fun γ => (t.scChevalleyDatum ht).rootSubgroup γ A
+        (l.map fun γ => (t.scChevalleyDatum ht).rootSubgroupPoints γ A
           (Multiplicative.ofAdd (v γ))).prod ↔ ∀ γ ∈ l, u γ = v γ := by
   obtain ⟨n, degree, hn, hdegree⟩ := (t.weightDegree ht).exists_pos_nat_mul_eq_intCast
   have hposdegree (γ : Fin t.numRoots) (hγ : γ ∈ l) :
@@ -85,7 +85,7 @@ theorem list_prod_map_scChevalleyDatum_rootSubgroup_inj (A : Type*) [CommRing A]
       (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective
     have hmat := congrArg (D.points A).subtype huv
     simpa only [map_list_prod, List.map_map, Function.comp_def, Subgroup.subtype_apply,
-      ChevalleyDatum.coe_rootSubgroup, MulEquiv.toMonoidHom_eq_coe, D] using hmat
+      ChevalleyDatum.coe_rootSubgroupPoints, MulEquiv.toMonoidHom_eq_coe, D] using hmat
   · intro huv
     exact congrArg List.prod (List.map_congr_left fun γ hγ => by rw [huv γ hγ])
 

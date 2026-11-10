@@ -136,9 +136,12 @@ theorem exists_isPrimitive_chevalleySystem_apply (γ : Fin t.numRoots) :
   exact exists_isPrimitive_chevalleySystem_apply_of_simple ρ M
     (t.kostantForm_apply_mem_scLattice ht)
     (t.isNilpotent_representation_scModule_rootGenerator ht)
-    (fun i => (exists_primitive_step t ht (.inl i)).elim fun v hv =>
-      hv.elim fun w hw => ⟨v, w,
-        by simpa only [LieAlgebra.Basis.rootGenerator_inl] using hw.1, hw.2.2⟩) γ
+    (fun i => (t.exists_isPrimitive_kostantRootOperator_scLattice ht (.inl i)).elim fun v hv =>
+      ⟨v, rootOp (.inl i) v,
+        by simpa only [LieAlgebra.Basis.rootGenerator_inl] using
+          (coe_kostantRootOperator_apply e h ρ M
+            (t.kostantForm_apply_mem_scLattice ht) (.inl i) v).symm,
+        hv.2⟩) γ
 
 /-- Every all-root operator on the full-weight lattice remains faithful after arbitrary
 commutative scalar extension. This includes nonreduced rings and characteristics two and three. -/
