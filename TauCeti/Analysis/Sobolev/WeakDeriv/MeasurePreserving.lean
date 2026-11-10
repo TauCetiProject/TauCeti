@@ -52,7 +52,7 @@ multiplied by a Lipschitz constant of `Φ` on `closure W`, and these tend to zer
 
 * `TauCeti.HasWeakFDerivOn.comp_measurePreserving`: the weak chain rule.
 * `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv`,
-  `TauCeti.hasWeakFDerivOn_comp_continuousLinearEquiv_iff`: the case of a measure-preserving
+  `ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff`: the case of a measure-preserving
   continuous linear equivalence, such as a linear isometry between inner product spaces.
 
 ## References
@@ -240,8 +240,8 @@ theorem HasWeakFDerivOn.comp_continuousLinearEquiv {U : Opens E} {V : Opens E'} 
 /-- **Weak derivatives through a linear change of variables.** If the continuous linear
 equivalence `e` carries `μ` to `ν` and `U = e ⁻¹' V`, then `u ∘ e` has weak derivative
 `x ↦ D (e x) ∘L e` on `U` exactly when `u` has weak derivative `D` on `V`. -/
-theorem hasWeakFDerivOn_comp_continuousLinearEquiv_iff {U : Opens E} {V : Opens E'} {u : E' → F}
-    {D : E' → E' →L[ℝ] F} (e : E ≃L[ℝ] E') (he : MeasurePreserving e μ ν)
+theorem _root_.ContinuousLinearEquiv.hasWeakFDerivOn_comp_iff {U : Opens E} {V : Opens E'}
+    {u : E' → F} {D : E' → E' →L[ℝ] F} (e : E ≃L[ℝ] E') (he : MeasurePreserving e μ ν)
     (hUV : (U : Set E) = e ⁻¹' V) :
     HasWeakFDerivOn μ U (u ∘ e) (fun x => (D (e x)).comp (e : E →L[ℝ] E')) ↔
       HasWeakFDerivOn ν V u D := by
