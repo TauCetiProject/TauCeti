@@ -120,12 +120,16 @@ may take the value `⊤`, where the stopped value is the process at the junk ind
 `(⊤ : WithTop ι).untopA`. The countability assumption is on the range of the time, not on all
 times. -/
 theorem StronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range
-    {E : Type*} [TopologicalSpace E] [Zero E] [LinearOrder ι]
+    {E : Type*} [TopologicalSpace E] [Zero E] [PartialOrder ι]
     {ℱ : Filtration ι m} {X : ι → Ω → E} (hX : StronglyAdapted ℱ X)
     (hτ : IsStoppingTime ℱ τ) (hc : (Set.range τ).Countable) :
     StronglyMeasurable[hτ.measurableSpace] (stoppedValue X τ) := by
   classical
   have := hc.to_subtype
+  -- each level set of `τ` is measurable for the stopping sigma algebra, by transport of the slice
+  have hmeas (i : ι) : MeasurableSet[hτ.measurableSpace] {ω | τ ω = i} := by
+    rw [← Set.univ_inter {ω | τ ω = i}, hτ.measurableSet_inter_eq_iff, Set.univ_inter]
+    exact hτ.measurableSet_eq_of_countable_range hc i
   let R : Set ι := {i | (i : WithTop ι) ∈ Set.range τ}
   have hR : R.Countable := hc.preimage WithTop.coe_injective
   let s : Set.range τ → Set Ω := fun v ↦ {ω | τ ω = v.val}
@@ -142,7 +146,7 @@ theorem StronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range
       | coe i =>
         simpa [h, R] using (⟨ω, h⟩ : ∃ y, τ y = (i : WithTop ι))
     rw [this]
-    exact (MeasurableSet.biUnion hR fun i _ ↦ hτ.measurableSet_eq_of_countable_range' hc i).compl
+    exact (MeasurableSet.biUnion hR fun i _ ↦ hmeas i).compl
   have hind (v : Set.range τ) :
       StronglyMeasurable[hτ.measurableSpace] ((s v).indicator (X v.val.untopA)) := by
     obtain ⟨v, hv⟩ := v
@@ -169,7 +173,7 @@ theorem StronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range
     obtain ⟨v, hv⟩ := v
     induction v using WithTop.recTopCoe with
     | top => exact htop
-    | coe i => exact hτ.measurableSet_eq_of_countable_range' hc i
+    | coe i => exact hmeas i
   let : MeasurableSpace Ω := hτ.measurableSpace
   convert hs.stronglyMeasurable_piecewise hm hind using 1
   ext ω
