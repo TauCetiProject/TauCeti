@@ -210,16 +210,10 @@ theorem isIso_morphismRestrict_fromNormalization_of_isIntegrallyClosed [IsIntegr
         (integralClosure Γ(Y, U) Γ(Spec Y.functionField, f ⁻¹ᵁ U)))) :=
       (ConcreteCategory.isIso_iff_bijective _).mpr h
     infer_instance
-  by_cases hη : genericPoint Y ∈ U
-  · have : Nonempty U := ⟨⟨_, hη⟩⟩
-    have := Scheme.isFractionRing_app_fromSpecStalk_genericPoint hU
-    refine ⟨fun a b hab ↦ IsFractionRing.injective Γ(Y, U) _ (congrArg Subtype.val hab),
-      fun ⟨x, hx⟩ ↦ ?_⟩
-    obtain ⟨a, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp hx
-    exact ⟨a, Subtype.ext (IsScalarTower.algebraMap_apply _ _ _ a).symm⟩
-  · -- Otherwise `U` is empty and all the rings involved are zero.
-    have := Scheme.subsingleton_of_genericPoint_notMem hη
-    have := Scheme.subsingleton_preimage_of_genericPoint_notMem f hη
-    exact Function.bijective_of_subsingleton' _
+  have := Scheme.isFractionRing_app_fromSpecStalk_genericPoint hU
+  refine ⟨fun a b hab ↦ IsFractionRing.injective Γ(Y, U) _ (congrArg Subtype.val hab),
+    fun ⟨x, hx⟩ ↦ ?_⟩
+  obtain ⟨a, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp hx
+  exact ⟨a, Subtype.ext (IsScalarTower.algebraMap_apply _ _ _ a).symm⟩
 
 end TauCeti.AlgebraicGeometry

@@ -131,7 +131,7 @@ theorem acceleration_const (x : M) (t : 𝕜) : acceleration cov (fun _ : 𝕜 �
 /-- The covariant acceleration vanishes exactly when the curve read in the extended chart at the
 current point solves the second-order equation `u'' + Γ (u', u') = 0` there. -/
 theorem accelerationWithin_eq_zero_iff {s : Set 𝕜} {t : 𝕜}
-    (hs : UniqueDiffOn 𝕜 s) (hγ : MDifferentiableOn 𝓘(𝕜, 𝕜) I γ s) (ht : t ∈ s) :
+    (hγ : MDifferentiableOn 𝓘(𝕜, 𝕜) I γ s) (ht : t ∈ s) :
     accelerationWithin cov γ s t = 0 ↔
       derivWithin (derivWithin (extChartAt I (γ t) ∘ γ) s) s t +
         christoffelMap (Module.finBasis 𝕜 E)
@@ -143,7 +143,7 @@ theorem accelerationWithin_eq_zero_iff {s : Set 𝕜} {t : 𝕜}
   have hmem : γ t ∈ e.baseSet :=
     FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)
   rw [accelerationWithin_def, alongCurveWithin_apply,
-    alongCurveInChartWithin_curveVelocityWithin cov γ hs hγ ht hmem]
+    alongCurveInChartWithin_curveVelocityWithin cov γ hγ ht hmem]
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, map_zero]⟩
   -- The coordinate formula is transported by a fibrewise linear equivalence, so its vanishing is
   -- equivalent to the vanishing of its reading in the chart.
@@ -219,7 +219,7 @@ theorem accelerationWithin_eq_symmL {x : M} {s : Set 𝕜} {t : 𝕜} (hs : Uniq
               (s := (trivializationAt E (TangentSpace I) x).baseSet)) (γ t)
             (derivWithin (extChartAt I x ∘ γ) s t) (derivWithin (extChartAt I x ∘ γ) s t)) := by
   have hγd : MDifferentiableOn 𝓘(𝕜, 𝕜) I γ s := hγ.mdifferentiableOn (by norm_num)
-  rw [← alongCurveInChartWithin_curveVelocityWithin cov γ hs hγd ht hx,
+  rw [← alongCurveInChartWithin_curveVelocityWithin cov γ hγd ht hx,
     symmL_alongCurveInChartWithin cov γ _ hx (hs t ht) (hγd t ht)
       (differentiableWithinAt_sectionCoord_curveVelocityWithin γ hs hγ ht
         (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))),

@@ -88,4 +88,45 @@ theorem mem_sectorSet_iff_notMem_image_card_lt
       exact Finset.mem_image_of_mem _ (Finset.mem_univ i)
     exact lt_of_le_of_ne (le_of_not_gt fun h ↦ hi.not_gt ((hlt i).1 h)) hni.symm
 
+section Cylinder
+
+variable {n : ℕ} {S : Set (Fin n → α)} {θ : Fin k → S → α}
+
+/-- A section in ambient coordinates is the cylinder over the base intersected with its
+finite-height membership and rank condition. The height set need agree with the stack only
+on the base. -/
+theorem image_cylinder_sectionSet_eq_setOf_mem_card_lt
+    (Z : (Fin n → α) → Finset α)
+    (hZ : ∀ x : S, Z x = Finset.univ.image (fun l ↦ θ l x))
+    (hθ : ∀ x, StrictMono fun l ↦ θ l x) (i : Fin k) :
+    cylinder S '' sectionSet θ i = {y : Fin (n + 1) → α | Fin.tail y ∈ S} ∩
+      {y : Fin (n + 1) → α |
+        y 0 ∈ Z (Fin.tail y) ∧ ((Z (Fin.tail y)).filter (· < y 0)).card = i.val} := by
+  classical
+  have hcell (x : S) (t : α) : (x, t) ∈ sectionSet θ i ↔
+      t ∈ Z x ∧ ((Z x).filter (· < t)).card = i.val := by
+    rw [hZ x]
+    exact mem_sectionSet_iff_mem_image_card_lt i (x, t) (hθ x)
+  ext y
+  simp only [mem_image_cylinder, Set.mem_inter_iff, Set.mem_ofPred_eq, hcell, exists_prop]
+
+/-- A sector in ambient coordinates is the cylinder over the base intersected with its
+finite-height nonmembership and rank condition, including the unbounded sectors. -/
+theorem image_cylinder_sectorSet_eq_setOf_notMem_card_lt
+    (Z : (Fin n → α) → Finset α)
+    (hZ : ∀ x : S, Z x = Finset.univ.image (fun l ↦ θ l x))
+    (hθ : ∀ x, StrictMono fun l ↦ θ l x) (j : Fin (k + 1)) :
+    cylinder S '' sectorSet θ j = {y : Fin (n + 1) → α | Fin.tail y ∈ S} ∩
+      {y : Fin (n + 1) → α |
+        y 0 ∉ Z (Fin.tail y) ∧ ((Z (Fin.tail y)).filter (· < y 0)).card = j.val} := by
+  classical
+  have hcell (x : S) (t : α) : (x, t) ∈ sectorSet θ j ↔
+      t ∉ Z x ∧ ((Z x).filter (· < t)).card = j.val := by
+    rw [hZ x]
+    exact mem_sectorSet_iff_notMem_image_card_lt j (x, t) (hθ x)
+  ext y
+  simp only [mem_image_cylinder, Set.mem_inter_iff, Set.mem_ofPred_eq, hcell, exists_prop]
+
+end Cylinder
+
 end TauCeti
