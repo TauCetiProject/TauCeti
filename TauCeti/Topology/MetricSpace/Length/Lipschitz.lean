@@ -47,7 +47,7 @@ theorem IsLengthSpace.exists_lipschitz_path [IsLengthSpace X] {x y : X} {r : ℝ
     calc
       _ ≤ (ENNReal.ofReal r).toReal := ENNReal.toReal_mono ENNReal.ofReal_ne_top hlen.le
       _ = r := ENNReal.toReal_ofReal (dist_nonneg.trans_lt hr).le
-  obtain ⟨g, hg, hfactor, -⟩ := hBV.exists_arclength_factorization hγ.continuousOn zero_le_one
+  obtain ⟨g, hg, hfactor, -⟩ := hBV.exists_arclength_factorization hγ.continuousOn
   have harg (t : I) : L * (t : ℝ) ∈ Icc 0 L :=
     ⟨mul_nonneg hL t.2.1, mul_le_of_le_one_right hL t.2.2⟩
   have hLip : LipschitzWith r.toNNReal (fun t : I ↦ g (L * (t : ℝ))) := by
