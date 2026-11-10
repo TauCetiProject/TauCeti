@@ -67,6 +67,8 @@ smoothness of the action is asserted.
   `TauCeti.Vortex.exp_mem_sobolevGaugeGroup`: compactly supported smooth gauges lie in `G_s`.
 * `TauCeti.Vortex.contDiff_of_mem_sobolevGaugeGroup`: elements of `G_s` are `C^k` for
   `s > k + 1`.
+* `TauCeti.Vortex.differentiable_of_mem_sobolevGaugeGroup`: elements of `G_s` are differentiable
+  for `s > 2`.
 * `TauCeti.Vortex.gaugeForm_apply_mem_realSobolevFunctions`: for a gauge in `G_(s+1)`,
   `Im (u⁻¹ du)` has coefficients in `H^s`.
 * `TauCeti.Vortex.gaugeLinearAction_mem_sobolevFields_iff`: the linear action of `G_s` preserves
@@ -240,6 +242,14 @@ theorem contDiff_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {k : ℕ} (hk :
   exact ((ofRealCLM.contDiff.comp hre).add contDiff_const).add
     ((ofRealCLM.contDiff.comp him).mul contDiff_const)
 
+/-- **Sobolev gauges are differentiable.** For `s > 2`, every element of `G_s` is differentiable,
+as it is `C¹` by `contDiff_of_mem_sobolevGaugeGroup`. This is the hypothesis `gaugeTransform_mul`
+needs. -/
+theorem differentiable_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} (h2 : 2 < s)
+    {u : ℂ → Circle} (hu : u ∈ sobolevGaugeGroup hs) : Differentiable ℝ (fun z ↦ (u z : ℂ)) :=
+  (contDiff_of_mem_sobolevGaugeGroup (k := 1) (by push_cast; linarith) hu).differentiable
+    one_ne_zero
+
 /-- **The connection increment of a Sobolev gauge.** For `s > 1` and a gauge `u ∈ G_(s+1)`, which
 is `C¹` by `contDiff_of_mem_sobolevGaugeGroup`, the real one-form `Im (u⁻¹ du)` has coefficients in
 `H^s`: in each direction `v`, `Im (u⁻¹ du) (v) = Re u · ∂_v Im u - Im u · ∂_v Re u`, a combination
@@ -389,13 +399,10 @@ theorem gaugeTransform_mem_framedFieldSpace_iff {k : ℕ} (hk : 1 < k) {hs : 1 <
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} :
     gaugeTransform u x ∈ framedFieldSpace f m k ↔ x ∈ framedFieldSpace f m k := by
   refine ⟨fun h ↦ ?_, gaugeTransform_mem_framedFieldSpace hk hu⟩
-  have hk' : (1 : ℝ) < k := by exact_mod_cast hk
-  have hd {v : ℂ → Circle} (hv : v ∈ sobolevGaugeGroup hs) :
-      Differentiable ℝ (fun z ↦ (v z : ℂ)) :=
-    (contDiff_of_mem_sobolevGaugeGroup (k := 1) (by push_cast; linarith) hv).differentiable
-      one_ne_zero
+  have h2 : 2 < (k : ℝ) + 1 := by linarith [(by exact_mod_cast hk : (1 : ℝ) < k)]
   have h' := gaugeTransform_mem_framedFieldSpace hk (inv_mem hu) h
-  rwa [← gaugeTransform_mul (hd (inv_mem hu)) (hd hu), inv_mul_cancel, gaugeTransform_one] at h'
+  rwa [← gaugeTransform_mul (differentiable_of_mem_sobolevGaugeGroup h2 (inv_mem hu))
+    (differentiable_of_mem_sobolevGaugeGroup h2 hu), inv_mul_cancel, gaugeTransform_one] at h'
 
 /-- **The action of `G_(k+1)` on `A_m^k`**, for an integer `k > 1`: a gauge `u` acts on a framed
 field by the charge-one transformation `(a, α) ↦ (a - u⁻¹ du, u α)`. The action laws are
@@ -406,11 +413,9 @@ instance {k : ℕ} [Fact (1 < k)] {hs : 1 < (k : ℝ) + 1} {f : ContDiffBump (0 
   smul u x := ⟨gaugeTransform u x, gaugeTransform_mem_framedFieldSpace Fact.out u.2 x.2⟩
   one_smul x := Subtype.ext (gaugeTransform_one x)
   mul_smul u v x := by
-    have hk' : (1 : ℝ) < k := by exact_mod_cast (Fact.out : 1 < k)
-    have hd (v : sobolevGaugeGroup hs) : Differentiable ℝ (fun z ↦ (v.1 z : ℂ)) :=
-      (contDiff_of_mem_sobolevGaugeGroup (k := 1) (by push_cast; linarith) v.2).differentiable
-        one_ne_zero
-    exact Subtype.ext (gaugeTransform_mul (hd u) (hd v) x)
+    have h2 : 2 < (k : ℝ) + 1 := by linarith [(by exact_mod_cast Fact.out : (1 : ℝ) < k)]
+    exact Subtype.ext (gaugeTransform_mul (differentiable_of_mem_sobolevGaugeGroup h2 u.2)
+      (differentiable_of_mem_sobolevGaugeGroup h2 v.2) x)
 
 /-- The bundled action of `G_(k+1)` on `A_m^k` is the charge-one coordinate transformation. -/
 @[simp]

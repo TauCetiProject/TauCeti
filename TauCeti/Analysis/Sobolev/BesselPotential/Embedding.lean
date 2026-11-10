@@ -10,7 +10,6 @@ public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import Mathlib.Analysis.Fourier.RiemannLebesgueLemma
-import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
@@ -230,16 +229,8 @@ theorem MemSobolev.exists_contDiff_ae_eq {s : ℝ} {k : ℕ} (hs : finrank ℝ E
   have hL2 : MemLp (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * v ξ) 2 := by
     simpa only [Complex.real_smul] using hu.memLp_one_add_norm_sq_rpow_smul hv
   -- The weight `(1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2)` is square integrable since `2 (s - k) > dim E`.
-  have hw : MemLp (fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2) : ℝ) : ℂ)) 2 := by
-    refine MemLp.ofReal (K := ℂ) (f := fun ξ : E ↦ (1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2))
-      ((memLp_two_iff_integrable_sq (Measurable.aestronglyMeasurable (by fun_prop))).2 ?_)
-    refine (integrable_rpow_neg_one_add_norm_sq (r := 2 * (s - k)) (by linarith)).congr
-      (Eventually.of_forall fun ξ ↦ ?_)
-    dsimp only
-    rw [← Real.rpow_mul_natCast (by positivity)]
-    congr 1
-    push_cast
-    ring
+  have hw : MemLp (fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2) : ℝ) : ℂ)) 2 :=
+    (TauCeti.memLp_rpow_neg_one_add_norm_sq volume (s := s - k) (by linarith)).ofReal
   have hprod := hw.integrable_mul hL2
   -- Cauchy–Schwarz: `‖ξ‖ ^ n |v ξ| ≤ (1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2) (1 + ‖ξ‖ ^ 2) ^ (s / 2) |v ξ|`.
   have hmom (n : ℕ) (hn : n ≤ k) : Integrable (fun ξ ↦ ‖ξ‖ ^ n * ‖(v : E → ℂ) ξ‖) := by
