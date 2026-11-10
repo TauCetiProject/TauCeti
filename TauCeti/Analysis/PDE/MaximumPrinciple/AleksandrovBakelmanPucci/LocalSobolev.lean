@@ -55,11 +55,12 @@ replacing `f` with `min f (∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu)`.
 
 For a strong solution, fix `ε > 0`. Since `v` is uniformly continuous on the compact set
 `closure Ω` and `v ≤ m` on the frontier, `v ≤ m + ε` on a boundary layer
-`{y ∈ Ω : dist(y, Ωᶜ) < ρ}` (`TauCeti.exists_pos_forall_infDist_compl_lt_le_add`). Inside it
-lies the open set `V = {y : dist(y, Ωᶜ) > r}`, `r < ρ`, whose closure is a compact subset of
-the open set `W = {y : dist(y, Ωᶜ) > r / 2}`, itself with compact closure in `Ω`. Mollifiers `w`
-of `v` converge to `v` uniformly on `closure V`, and their Hessians converge in `Lⁿ` to the weak
-Hessian `D²v` of the element of `W^{2,n}(W)` representing `v`
+`{y ∈ Ω : dist(y, Ωᶜ) < ρ}` (`TauCeti.exists_pos_forall_infDist_compl_lt_le_add`). Work on the
+inner subdomain `V = {y : dist(y, Ωᶜ) > r}`, `0 < r < ρ`, whose frontier lies in that boundary
+layer and whose closure is a compact subset of the open set `W = {y : dist(y, Ωᶜ) > r / 2}`,
+itself with compact closure in `Ω`. Mollifiers `w` of `v` converge to `v` uniformly on
+`closure V`, and their Hessians converge in `Lⁿ` to the weak Hessian `D²v` of the element of
+`W^{2,n}(W)` representing `v`
 (`TauCeti.Wkp.exists_contDiff_tendstoUniformlyOn_tendsto_eLpNorm_iteratedGradientChain_sub`). As
 `|aⁱʲ| ≤ Λ` and `D* ≥ λ`, the function `w` satisfies
 
