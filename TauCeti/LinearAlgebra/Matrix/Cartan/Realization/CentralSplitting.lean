@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Basic
 /-!
 # Central splittings of Cartan realizations
 
-Every finite-dimensional realization contains a minimal sub-realization, with a complementary
+Every realization contains a minimal sub-realization, with a complementary
 subspace annihilated by all simple roots. Thus an arbitrary realization differs from a minimal
 one only by central directions. We compute the dimension of these extra central directions.
 
@@ -33,6 +33,7 @@ variable {I K H : Type*} [Fintype I] [Field K] [AddCommGroup H] [Module K H]
 
 variable [FiniteDimensional K H]
 
+omit [FiniteDimensional K H] in
 /-- A sub-realization is minimal exactly when its central vectors already lie in the
 original coroot span. -/
 theorem isMinimal_restrict_iff (M : Submodule K H) (hc : R.corootSpan ≤ M)
@@ -43,7 +44,8 @@ theorem isMinimal_restrict_iff (M : Submodule K H) (hc : R.corootSpan ≤ M)
     corootSpan_restrict_map_subtype, cartanCenter_restrict, Submodule.map_comap_eq,
     Submodule.range_subtype, inf_comm]
 
-/-- Every finite-dimensional realization is a minimal sub-realization plus a central
+omit [FiniteDimensional K H] in
+/-- Every realization is a minimal sub-realization plus a central
 summand. The roots of the sub-realization are restrictions, and its coroots are the original
 coroots, rather than merely abstractly isomorphic families. -/
 theorem exists_isMinimal_restrict_isCompl :
