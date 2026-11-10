@@ -24,8 +24,8 @@ bundle (`TauCeti.stiefelRotationFamily`, defined in
 `τ : T¹Sⁿ × S¹ → Sⁿ × Sⁿ`, `τ ((u, v), z) = (u, Re z • u + Im z • v)`.
 
 Both sides have dimension `2n`. The derivative of `τ` is computed in
-`TauCeti.mvfderiv_coe_stiefelRotationFamily_fst_apply` and
-`TauCeti.mvfderiv_coe_stiefelRotationFamily_snd_apply`. It is injective, hence invertible, at every
+`TauCeti.mvfderiv_coe_fst_stiefelRotationFamily_apply` and
+`TauCeti.mvfderiv_coe_snd_stiefelRotationFamily_apply`. It is injective, hence invertible, at every
 point with `Im z ≠ 0` (`TauCeti.injective_mfderiv_stiefelRotationFamily`,
 `TauCeti.isInvertible_mfderiv_stiefelRotationFamily`), while the points with
 `Im z = 0` are sent to the diagonal and the antidiagonal of `Sⁿ × Sⁿ`. So every pair `(u, w)` with
@@ -47,8 +47,8 @@ carries its level-set structure, modelled on `ℝ^(2 (m + 2) - 3)`.
 
 * `TauCeti.ncard_preimage_stiefelRotationFamily`: a pair `(u, w)` with `w ≠ ±u` has exactly two
   preimages.
-* `TauCeti.mvfderiv_coe_stiefelRotationFamily_fst_apply`,
-  `TauCeti.mvfderiv_coe_stiefelRotationFamily_snd_apply`: the derivative, read in `E`.
+* `TauCeti.mvfderiv_coe_fst_stiefelRotationFamily_apply`,
+  `TauCeti.mvfderiv_coe_snd_stiefelRotationFamily_apply`: the derivative, read in `E`.
 * `TauCeti.injective_mfderiv_stiefelRotationFamily`,
   `TauCeti.isInvertible_mfderiv_stiefelRotationFamily`: the derivative is injective, hence
   invertible, where `Im z ≠ 0`.
@@ -132,7 +132,7 @@ private theorem mvfderiv_frameVector_apply (x : stiefel E 2 × sphere (0 : ℂ) 
 /-- The derivative of the first component of the rotation family of the unit tangent bundle, read
 in `E`: a tangent vector `(a, b)` at `((u, v), z)` is sent to the first vector `a₀` of `a`, where
 `a = (a₀, a₁)` is read in `E × E` through the derivative of the inclusion. -/
-theorem mvfderiv_coe_stiefelRotationFamily_fst_apply (x : stiefel E 2 × sphere (0 : ℂ) 1)
+theorem mvfderiv_coe_fst_stiefelRotationFamily_apply (x : stiefel E 2 × sphere (0 : ℂ) 1)
     (w : TangentSpace (𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ).prod (𝓡 1)) x) :
     mvfderiv (𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ).prod (𝓡 1))
         (fun y ↦ ((stiefelRotationFamily y).1 : E)) x w =
@@ -145,7 +145,7 @@ theorem mvfderiv_coe_stiefelRotationFamily_fst_apply (x : stiefel E 2 × sphere 
 in `E`. A tangent vector `(a, b)` at `((u, v), z)` is sent to
 `Re b • u + Im b • v + Re z • a₀ + Im z • a₁`, where `a = (a₀, a₁)` and `b` are read in `E × E` and
 in `ℂ` through the derivatives of the inclusions. -/
-theorem mvfderiv_coe_stiefelRotationFamily_snd_apply (x : stiefel E 2 × sphere (0 : ℂ) 1)
+theorem mvfderiv_coe_snd_stiefelRotationFamily_apply (x : stiefel E 2 × sphere (0 : ℂ) 1)
     (w : TangentSpace (𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ).prod (𝓡 1)) x) :
     mvfderiv (𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ).prod (𝓡 1))
         (fun y ↦ ((stiefelRotationFamily y).2 : E)) x w =
@@ -167,17 +167,6 @@ theorem mvfderiv_coe_stiefelRotationFamily_snd_apply (x : stiefel E 2 × sphere 
       (𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ).prod (𝓡 1)) 𝓘(ℝ)
       (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ L (y.2 : ℂ)) x :=
     (L.mdifferentiableAt.comp x.2 hκ).comp x mdifferentiableAt_snd
-  have hL' (L : ℂ →L[ℝ] ℝ) : mvfderiv
-      (𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ).prod (𝓡 1))
-      (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ L (y.2 : ℂ)) x w =
-      L (mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) x.2
-        (Manifold.tangentSpaceProdEquiv x w).2) := by
-    -- `mvfderiv_comp_snd_apply` rewrites the derivative of a composition `g ∘ Prod.snd`, so the
-    -- map, a lambda, is first written definitionally in that form.
-    rw [show (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ L (y.2 : ℂ)) =
-      (L ∘ ((↑) : sphere (0 : ℂ) 1 → ℂ)) ∘ Prod.snd from rfl, mvfderiv_comp_snd_apply,
-      Manifold.tangentSpaceProdEquiv_apply]
-    exact L.mvfderiv_comp_apply hκ _
   -- Write the map as a sum of products of scalar and vector-valued functions.
   rw [show (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ ((stiefelRotationFamily y).2 : E)) =
     ((fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ Complex.reCLM (y.2 : ℂ)) •
@@ -187,8 +176,8 @@ theorem mvfderiv_coe_stiefelRotationFamily_snd_apply (x : stiefel E 2 × sphere 
     mvfderiv_add ((hL _).smul (hv 0)) ((hL _).smul (hv 1)),
     mvfderiv_smul (hL _) (hv 0), mvfderiv_smul (hL _) (hv 1)]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply]
-  rw [hL' Complex.reCLM, hL' Complex.imCLM, mvfderiv_frameVector_apply,
-    mvfderiv_frameVector_apply]
+  rw [Complex.reCLM.mvfderiv_comp_snd_apply hκ, Complex.imCLM.mvfderiv_comp_snd_apply hκ,
+    mvfderiv_frameVector_apply, mvfderiv_frameVector_apply, Manifold.tangentSpaceProdEquiv_apply]
   simp only [Complex.reCLM_apply, Complex.imCLM_apply]
   abel
 
@@ -216,8 +205,8 @@ theorem injective_mfderiv_stiefelRotationFamily {x : stiefel E 2 × sphere (0 : 
   have h₁ := mvfderiv_comp_apply x (hd Prod.fst contMDiff_fst) hτ w
   have h₂ := mvfderiv_comp_apply x (hd Prod.snd contMDiff_snd) hτ w
   rw [hw, map_zero] at h₁ h₂
-  have h₁' := (mvfderiv_coe_stiefelRotationFamily_fst_apply x w).symm.trans h₁
-  have h₂' := (mvfderiv_coe_stiefelRotationFamily_snd_apply x w).symm.trans h₂
+  have h₁' := (mvfderiv_coe_fst_stiefelRotationFamily_apply x w).symm.trans h₁
+  have h₂' := (mvfderiv_coe_snd_stiefelRotationFamily_apply x w).symm.trans h₂
   set a := mvfderiv 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ)
     ((↑) : stiefel E 2 → Fin 2 → E) x.1 (Manifold.tangentSpaceProdEquiv x w).1 with ha
   set b := mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) x.2
