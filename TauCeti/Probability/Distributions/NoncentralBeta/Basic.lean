@@ -402,12 +402,8 @@ theorem hasLaw_noncentralBeta_of_noncentralChiSquared (hb : 0 < b)
     HasLaw (fun ω ↦ X ω / (X ω + Y ω)) (noncentralBetaMeasure a b l) P := by
   rcases lt_or_ge a 0 with ha | ha
   · have hP : P = 0 := by
-      have h := hX.map_eq
-      rw [noncentralChiSquaredMeasure_of_neg (by linarith)] at h
-      refine Measure.measure_univ_eq_zero.mp ?_
-      have h1 := Measure.map_apply_of_aemeasurable hX.aemeasurable MeasurableSet.univ
-      rw [h, Set.preimage_univ] at h1
-      simpa using h1.symm
+      rw [← Measure.map_eq_zero_iff hX.aemeasurable, hX.map_eq,
+        noncentralChiSquaredMeasure_of_neg (by linarith)]
     subst hP
     rw [noncentralBetaMeasure_of_not (fun h => ha.not_ge h.1)]
     exact ⟨aemeasurable_zero_measure, Measure.map_zero _⟩
