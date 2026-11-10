@@ -125,6 +125,7 @@ theorem lintegral_normDet_fderiv_mul_eq_lintegral_tsum_of_injective_fderiv
   intro i _ j _ hij
   exact (hpd hij).mono inter_subset_left inter_subset_left
 
+omit [MeasurableSpace U] [BorelSpace U] in
 /-- Restricting the parameters of a Lipschitz map to its differentiability points with
 nonzero Jacobian preserves weighted fiber sums almost everywhere for normalized Hausdorff
 measure. Neither the parameter set nor the weight needs to be measurable. -/
@@ -133,6 +134,8 @@ theorem tsum_fiber_inter_setOf_regular_ae_eq (s : Set U) (g : U → ℝ≥0∞)
     (fun y ↦ ∑' x : ↥((s ∩ {x | DifferentiableAt ℝ f x ∧
       (fderiv ℝ f x).normDet ≠ 0}) ∩ f ⁻¹' {y}), g x) =ᵐ[μHE[finrank ℝ U]]
       fun y ↦ ∑' x : ↥(s ∩ f ⁻¹' {y}), g x := by
+  let _ : MeasurableSpace U := borel U
+  have : BorelSpace U := ⟨rfl⟩
   filter_upwards [measure_eq_zero_iff_ae_notMem.mp
     hf.euclideanHausdorffMeasure_image_compl_setOf_regular] with y hy
   apply tsum_congr_set_coe g
