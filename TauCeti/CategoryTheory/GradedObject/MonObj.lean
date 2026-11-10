@@ -49,7 +49,8 @@ passes to sheaves along sheafification.
   multiplication of homogeneous components;
 * `CategoryTheory.Mon.mul` and `CategoryTheory.Mon.one`: the homogeneous multiplication
   and degree-zero unit extracted from a monoid object in graded objects, together with their
-  associativity, unit, and functoriality laws; `CategoryTheory.CommMon.mul_comm` is their
+  associativity, unit, and functoriality laws, and their compatibility with the transports
+  identifying degrees; `CategoryTheory.CommMon.mul_comm` is their
   graded commutativity for a commutative monoid object;
 * `CategoryTheory.Mon.hom_ext_of_epi_mul`: morphisms out of an `ℕ`-graded monoid object
   generated in degree one, in the sense that its unit and the multiplications
@@ -498,6 +499,24 @@ theorem mul_assoc (A : Mon (GradedObject I C)) (i j k : I) :
     GradedObject.Monoidal.ι_tensorHom_assoc] at h
   simpa only [mul, GradedObject.categoryOfGradedObjects_id, tensorHom_id, id_tensorHom,
     comp_whiskerRight, whiskerLeft_comp, Category.assoc] using h
+
+/-- Homogeneous multiplication commutes with the transport identifying the degree of its left
+factor. -/
+@[reassoc]
+theorem eqToHom_whiskerRight_mul (A : Mon (GradedObject I C)) {i i' : I} (h : i = i') (j : I) :
+    (eqToHom (congrArg A.X h) ▷ A.X j) ≫ A.mul i' j =
+      A.mul i j ≫ eqToHom (congrArg A.X (congrArg (· + j) h)) := by
+  subst h
+  simp
+
+/-- Homogeneous multiplication commutes with the transport identifying the degree of its right
+factor. -/
+@[reassoc]
+theorem whiskerLeft_eqToHom_mul (A : Mon (GradedObject I C)) (i : I) {j j' : I} (h : j = j') :
+    (A.X i ◁ eqToHom (congrArg A.X h)) ≫ A.mul i j' =
+      A.mul i j ≫ eqToHom (congrArg A.X (congrArg (i + ·) h)) := by
+  subst h
+  simp
 
 /-- A morphism of monoid objects in graded objects commutes with multiplication on every pair of
 homogeneous components. -/
