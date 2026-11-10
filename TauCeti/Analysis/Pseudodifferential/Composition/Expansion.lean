@@ -40,6 +40,9 @@ the position and the frequency.
 * `TauCeti.Symbol.sharpTerm`: the terms of the expansion, with their closed form
   `TauCeti.Symbol.coefficient_sharpTerm` and the Leibniz rules
   `TauCeti.Symbol.spatialDeriv_sharpTerm` and `TauCeti.Symbol.coefficient_frequencyDeriv_sharpTerm`.
+  The terms are bilinear (`TauCeti.Symbol.sharpTerm_add`, `TauCeti.Symbol.add_sharpTerm` and
+  their companions) and commute with the inclusions of symbol classes
+  (`TauCeti.Symbol.sharpTerm_inclusion`, `TauCeti.Symbol.inclusion_sharpTerm`).
 * `TauCeti.Symbol.sharpRemainder a b hb N`: the remainder `a # b - ∑_{k < N} sharpTerm a b k`, a
   symbol of order `m' + m - N`.
 * `TauCeti.Symbol.sharp_eq_sum_sharpTerm_add_sharpRemainder`: **the composition expansion**
@@ -187,6 +190,52 @@ theorem coefficient_frequencyDeriv_sharpTerm (l : Fin n) (a : Symbol n W U m')
       ← Finset.sum_add_distrib]
     refine congrArg _ (Finset.sum_congr rfl fun j _ ↦ ?_)
     rw [ih, frequencyDeriv_comm, spatialDeriv_frequencyDeriv_comm]
+
+/-! The terms are bilinear and compatible with the inclusions of symbol classes. -/
+
+theorem add_sharpTerm (a₁ a₂ : Symbol n W U m') (b : Symbol n V W m) (k : ℕ) :
+    (a₁ + a₂).sharpTerm b k = a₁.sharpTerm b k + a₂.sharpTerm b k := by
+  induction k generalizing m m' with
+  | zero => simp [sharpTerm_zero, add_comp]
+  | succ k ih => simp [sharpTerm_succ, ih, Finset.sum_add_distrib]
+
+theorem sharpTerm_add (a : Symbol n W U m') (b₁ b₂ : Symbol n V W m) (k : ℕ) :
+    a.sharpTerm (b₁ + b₂) k = a.sharpTerm b₁ k + a.sharpTerm b₂ k := by
+  induction k generalizing m m' with
+  | zero => simp [sharpTerm_zero, comp_add]
+  | succ k ih => simp [sharpTerm_succ, ih, Finset.sum_add_distrib]
+
+theorem smul_sharpTerm (c : ℂ) (a : Symbol n W U m') (b : Symbol n V W m) (k : ℕ) :
+    (c • a).sharpTerm b k = c • a.sharpTerm b k := by
+  induction k generalizing m m' with
+  | zero => simp [sharpTerm_zero, smul_comp]
+  | succ k ih => simp [sharpTerm_succ, ih, Finset.smul_sum, smul_comm c]
+
+theorem sharpTerm_smul (c : ℂ) (a : Symbol n W U m') (b : Symbol n V W m) (k : ℕ) :
+    a.sharpTerm (c • b) k = c • a.sharpTerm b k := by
+  induction k generalizing m m' with
+  | zero => simp [sharpTerm_zero, comp_smul]
+  | succ k ih => simp [sharpTerm_succ, ih, Finset.smul_sum, smul_comm c]
+
+theorem sum_sharpTerm {ι : Type*} (s : Finset ι) (a : ι → Symbol n W U m') (b : Symbol n V W m)
+    (k : ℕ) : (∑ i ∈ s, a i).sharpTerm b k = ∑ i ∈ s, (a i).sharpTerm b k :=
+  map_sum (AddMonoidHom.mk' (sharpTerm · b k) fun a₁ a₂ ↦ add_sharpTerm a₁ a₂ b k) a s
+
+theorem sharpTerm_sum {ι : Type*} (s : Finset ι) (a : Symbol n W U m') (b : ι → Symbol n V W m)
+    (k : ℕ) : a.sharpTerm (∑ i ∈ s, b i) k = ∑ i ∈ s, a.sharpTerm (b i) k :=
+  map_sum (AddMonoidHom.mk' (a.sharpTerm · k) fun b₁ b₂ ↦ sharpTerm_add a b₁ b₂ k) b s
+
+theorem inclusion_sharpTerm {m'' : ℝ} (h : m' ≤ m'') (a : Symbol n W U m') (b : Symbol n V W m)
+    (k : ℕ) : (inclusion h a).sharpTerm b k = inclusion (by linarith) (a.sharpTerm b k) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp [coefficient_sharpTerm]
+
+theorem sharpTerm_inclusion {m'' : ℝ} (h : m ≤ m'') (a : Symbol n W U m') (b : Symbol n V W m)
+    (k : ℕ) : a.sharpTerm (inclusion h b) k = inclusion (by linarith) (a.sharpTerm b k) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp [coefficient_sharpTerm]
 
 end Term
 
