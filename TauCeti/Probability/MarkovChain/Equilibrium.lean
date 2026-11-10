@@ -12,7 +12,7 @@ public import TauCeti.Probability.MarkovChain.Transient.Occupation
 /-!
 # Convergence to an invariant probability
 
-An irreducible aperiodic kernel on a countable state space converges in total variation
+An irreducible aperiodic kernel converges in total variation
 to any invariant probability, from every initial probability law. This also holds for
 the coordinate laws of any realization of the chain on an arbitrary measurable sample
 space. The theorem assumes an invariant probability, not a finite return-time mean;
@@ -77,7 +77,6 @@ theorem tendsto_tvDist_map_of_invariant
     (hX : HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) P)
     (hπ : κ.Invariant π) (hκ : κ.IsAperiodic) :
     Tendsto (fun n : ℕ => tvDist (P.map (X n)) π) atTop (𝓝 0) := by
-  have := Kernel.countable_of_isIrreducible_count (κ := κ)
   simpa only [(hX.eval_markovChainLaw ν κ _).map_eq] using hπ.tendsto_tvDist_pow_comp hκ ν
 
 end ProbabilityTheory.HasLaw

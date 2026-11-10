@@ -17,7 +17,7 @@ public import TauCeti.Analysis.SpecificLimits.MovingAverage
 /-!
 # Pointwise decay at states with infinite mean return time
 
-For an irreducible aperiodic countable-state chain, an infinite extended mean positive
+For an irreducible aperiodic chain, an infinite extended mean positive
 return time at `y` implies that the time-`n` mass of `y` tends to zero from every initial
 probability law. This includes null recurrent states and states with a positive chance
 of never returning: the hypothesis uses an `ℝ≥0∞`-valued mean, with infinity on nonreturn.
@@ -27,7 +27,7 @@ implies decay by summability of squared transition masses. In the recurrent case
 meeting-time coupling makes every fixed time shift asymptotically indistinguishable.
 The uniform occupation bound and the occupation strong law then force pointwise decay.
 The recurrent-square criterion is also exposed with a zero Cesàro return-mass hypothesis,
-without countability or an aperiodicity assumption on the original kernel.
+without an aperiodicity assumption on the original kernel.
 
 Only singleton convergence is asserted, not convergence in total variation to zero.
 The infinite-mean decay theorem transfers to arbitrary realizations of the chain through
@@ -116,7 +116,6 @@ theorem tendsto_measureReal_apply_eq_of_isAperiodic_of_lintegral_return_eq_top
   have heq (n : ℕ) : P.real {ω | X n ω = y} = ((κ ^ n) ∘ₘ ν).real {y} :=
     (hX.eval_markovChainLaw ν κ n).measureReal_eq (measurableSet_singleton y)
   simp_rw [heq]
-  have := Kernel.countable_of_isIrreducible_count (κ := κ)
   exact κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_top hκ hy ν
 
 end ProbabilityTheory.HasLaw
