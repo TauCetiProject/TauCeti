@@ -106,6 +106,12 @@ theorem coe_oneSubVecMulVecGL (t : Rˣ) (u v : α → R) (h : v ⬝ᵥ u = (t : 
     (oneSubVecMulVecGL t u v h : Matrix α α R) = 1 - vecMulVec u v :=
   (rfl)
 
+/-- The matrix underlying the inverse of `TauCeti.oneSubVecMulVecGL`. -/
+@[simp]
+theorem coe_oneSubVecMulVecGL_inv (t : Rˣ) (u v : α → R) (h : v ⬝ᵥ u = (t : R) + 1) :
+    (↑(oneSubVecMulVecGL t u v h)⁻¹ : Matrix α α R) = 1 - vecMulVec u (((t⁻¹ : Rˣ) : R) • v) :=
+  (rfl)
+
 end Ring
 
 variable [CommRing R]
