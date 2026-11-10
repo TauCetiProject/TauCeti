@@ -303,23 +303,30 @@ end Definition
 
 section Growth
 
-variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E]
 
 /-- A potential whose negative part grows at most quadratically has potential energy `≠ ⊥`
 against every finite measure with finite second moment. -/
 theorem potentialEnergy_ne_bot_of_hasFiniteMoment {V : E → ℝ} {μ : Measure E} [IsFiniteMeasure μ]
     (hμ : HasFiniteMoment 2 μ) {A B : ℝ} (hVAB : ∀ x, -(A + B * ‖x‖ ^ 2) ≤ V x) :
     potentialEnergy V μ ≠ ⊥ := by
-  have hnorm : AEStronglyMeasurable (fun x : E ↦ ‖x‖) μ :=
-    continuous_norm.measurable.aestronglyMeasurable
-  have hmem : MemLp (fun x : E ↦ ‖x‖) 2 μ :=
-    (memLp_congr_enorm hnorm measurable_edist_right.aestronglyMeasurable
-      (.of_forall fun x ↦ by simp [edist_eq_enorm_sub])).2
-      (hμ.memLp (x := 0) measurable_edist_right.aestronglyMeasurable)
-  have hsq := (memLp_two_iff_integrable_sq_norm hnorm).1 hmem
-  simp only [norm_norm] at hsq
-  exact potentialEnergy_ne_bot_of_le ((integrable_const A).add (hsq.const_mul B)).neg
-    (.of_forall hVAB)
+  obtain ⟨x₀, hx₀⟩ := hasFiniteMoment_def.1 hμ
+  have hmem : MemLp (fun y ↦ dist y x₀) 2 μ := memLp_dist_iff_memLp_edist.2 hx₀
+  have hsq := (memLp_two_iff_integrable_sq_norm hmem.aestronglyMeasurable).1 hmem
+  simp only [Real.norm_eq_abs, sq_abs] at hsq
+  -- Bound `‖y‖ ^ 2 ≤ 2 d(y, x₀) ^ 2 + 2 ‖x₀‖ ^ 2` and use the integrable lower bound.
+  refine potentialEnergy_ne_bot_of_le
+    (W := fun y ↦ -(A + |B| * (2 * dist y x₀ ^ 2 + 2 * ‖x₀‖ ^ 2)))
+    ((integrable_const A).add ((hsq.const_mul 2).add (integrable_const _) |>.const_mul _)).neg
+    (.of_forall fun y ↦ ?_)
+  refine le_trans ?_ (hVAB y)
+  have hy : ‖y‖ ^ 2 ≤ 2 * dist y x₀ ^ 2 + 2 * ‖x₀‖ ^ 2 := by
+    rw [dist_eq_norm]
+    nlinarith [sq_nonneg (‖y - x₀‖ - ‖x₀‖), norm_le_norm_add_norm_sub' y x₀,
+      norm_nonneg y, norm_nonneg (y - x₀), norm_nonneg x₀]
+  have := mul_le_mul_of_nonneg_left hy (abs_nonneg B)
+  have := neg_abs_le B
+  nlinarith [sq_nonneg ‖y‖, abs_nonneg B, le_abs_self B]
 
 end Growth
 
