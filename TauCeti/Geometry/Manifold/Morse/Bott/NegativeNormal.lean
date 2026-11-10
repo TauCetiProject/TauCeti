@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Spectral.Inertia
-public import TauCeti.Analysis.InnerProductSpace.Spectral.Projection
 public import TauCeti.Analysis.InnerProductSpace.Spectral.RelativeProjection
 public import TauCeti.Geometry.Manifold.Morse.Bott.Coordinates
 import TauCeti.Analysis.InnerProductSpace.Dual
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.SpectralSubbundle
 
 /-!
 # Local negative and positive normal projections of a Morse–Bott submanifold
@@ -239,12 +239,8 @@ theorem exists_contMDiffOn_negativeNormalProjection {k : ℕ∞ω} [IsManifold I
   have hsymm (u v : P) : Q s u v = Q s v u := (hQrep u v).2
   have hN (u v : P) : h.normalHessian hn s (e.symm s u) (e.symm s v) = Q s u v := (hQrep u v).1
   -- The inverse trivialization at `s` is an isometry from `Q s` to the normal Hessian.
-  let L : QuadraticMap.IsometryEquiv (Q s).toBilinForm.toQuadraticMap
-      (h.normalHessian hn s).toQuadraticMap :=
-    { (e.linearEquivAt ℝ s hs.1).symm with
-      map_app' := fun u ↦ by
-        simp only [LinearEquiv.toFun_eq_coe, Trivialization.linearEquivAt_symm_apply,
-          LinearMap.BilinMap.toQuadraticMap_apply, ContinuousLinearMap.toBilinForm_apply, hN] }
+  have hL := h.equivalent_toQuadraticMap hn (e.linearEquivAt ℝ s hs.1).symm
+    (by simpa only [Trivialization.linearEquivAt_symm_apply] using hN)
   refine ⟨ContinuousLinearMap.isIdempotentElem_negativeSpectralProjection hs.2,
     ContinuousLinearMap.metric_apply_negativeSpectralProjection_apply_sub_eq_zero hs.2,
     fun u v ↦ ?_, fun u hu ↦ ?_, fun u hu ↦ ?_, ?_, ?_⟩
@@ -256,9 +252,9 @@ theorem exists_contMDiffOn_negativeNormalProjection {k : ℕ∞ω} [IsManifold I
     exact ContinuousLinearMap.apply_sub_negativeSpectralProjection_apply_self_pos hs.2
       hsymm hinj hu
   · rw [ContinuousLinearMap.finrank_range_negativeSpectralProjection hs.2 hsymm,
-      QuadraticMap.Equivalent.sigNeg_eq ⟨L⟩, h.sigNeg_normalHessian hn s]
+      hL.sigNeg_eq, h.sigNeg_normalHessian hn s]
   · rw [ContinuousLinearMap.finrank_ker_negativeSpectralProjection hs.2 hsymm hinj,
-      QuadraticMap.Equivalent.sigPos_eq ⟨L⟩, h.sigPos_normalHessian hn s]
+      hL.sigPos_eq, h.sigPos_normalHessian hn s]
 
 /-- **The spectral splitting of the normal Hessian is `C^k`.** Let `i` be a Morse–Bott critical
 submanifold of `f`, with `f` of class `C^{k+2}` at every point of the submanifold and `k ≤ n`.
@@ -299,21 +295,15 @@ theorem exists_contMDiffOn_starProjection_pointSpectralSubspace {k : ℕ∞ω}
   obtain ⟨Q, hQ, hrep⟩ :=
     h.exists_contMDiffOn_normalHessian_normalSpaceTrivialization hn hk hf hdim s₀
   -- Over the base set the Riesz operators are `C^k`, self-adjoint and invertible.
-  set T : Set (P →L[ℝ] P) := {A | IsSelfAdjoint A ∧ IsUnit A}
-  have hT (s : S) (hs : s ∈ e.baseSet) : (Q s)♯ ∈ T :=
-    ⟨InnerProductSpace.isSelfAdjoint_continuousLinearMapOfBilin fun u v ↦ ((hrep s hs).1 u v).2,
-      InnerProductSpace.isUnit_continuousLinearMapOfBilin (hrep s hs).2⟩
+  have hself (s : S) (hs : s ∈ e.baseSet) : IsSelfAdjoint (Q s)♯ :=
+    InnerProductSpace.isSelfAdjoint_continuousLinearMapOfBilin fun u v ↦ ((hrep s hs).1 u v).2
+  have hunit (s : S) (hs : s ∈ e.baseSet) : IsUnit (Q s)♯ :=
+    InnerProductSpace.isUnit_continuousLinearMapOfBilin (hrep s hs).2
   have hsharp : ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P) k (fun s ↦ (Q s)♯) e.baseSet := fun s hs ↦
     contDiff_continuousLinearMapOfBilin.comp_contMDiffWithinAt (hQ s hs)
-  have hneg := (contDiffOn_id (n := k) (s := T)).starProjection_pointSpectralSubspace_Iio_zero
-    (fun _ hA ↦ hA.1) (fun _ hA ↦ hA.2)
-  have hpos := (contDiffOn_id (n := k) (s := T)).starProjection_pointSpectralSubspace_Ioi_zero
-    (fun _ hA ↦ hA.1) (fun _ hA ↦ hA.2)
-  refine ⟨Q, hQ, fun s hs u v ↦ ((hrep s hs).1 u v).1, fun s hs ↦ ?_, fun s hs ↦ ?_⟩
-  · exact ContDiffWithinAt.comp_contMDiffWithinAt (f := fun s ↦ (Q s)♯) (hneg _ (hT s hs))
-      (hsharp s hs) hT
-  · exact ContDiffWithinAt.comp_contMDiffWithinAt (f := fun s ↦ (Q s)♯) (hpos _ (hT s hs))
-      (hsharp s hs) hT
+  exact ⟨Q, hQ, fun s hs u v ↦ ((hrep s hs).1 u v).1,
+    hsharp.starProjection_pointSpectralSubspace_Iio_zero hself hunit,
+    hsharp.starProjection_pointSpectralSubspace_Ioi_zero hself hunit⟩
 
 end IsNondegenerateCriticalSubmanifold
 
