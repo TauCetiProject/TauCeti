@@ -115,20 +115,9 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] in
 `w ↦ u (w + c)` at `w` is the derivative of `u` at `w + c`. No differentiability is needed. -/
 theorem mfderiv_comp_add_right_apply (u : F → M) (c w v : F) :
     mfderiv 𝓘(𝕜, F) I (fun w ↦ u (w + c)) w v = mfderiv 𝓘(𝕜, F) I u (w + c) v := by
-  have hφ : HasMFDerivAt 𝓘(𝕜, F) 𝓘(𝕜, F) (· + c) w (ContinuousLinearMap.id 𝕜 F) :=
-    ((hasFDerivAt_id w).add_const c).hasMFDerivAt
-  by_cases hu : MDifferentiableAt 𝓘(𝕜, F) I u (w + c)
-  · have h := (hu.hasMFDerivAt.comp w hφ).mfderiv
-    rw [Function.comp_def] at h
-    rw [h]
-    rfl
-  -- Otherwise neither map is differentiable: `u` is the translate composed with `y ↦ y - c`.
-  have hu' : ¬MDifferentiableAt 𝓘(𝕜, F) I (fun w ↦ u (w + c)) w := fun h ↦ by
-    have hψ : MDifferentiableAt 𝓘(𝕜, F) 𝓘(𝕜, F) (fun y ↦ y - c) (w + c) :=
-      (differentiableAt_id.sub_const c).mdifferentiableAt
-    have h' : MDifferentiableAt 𝓘(𝕜, F) I (fun w ↦ u (w + c)) ((w + c) - c) := by simpa using h
-    exact hu (by simpa [Function.comp_def] using h'.comp (w + c) hψ)
-  rw [mfderiv_zero_of_not_mdifferentiableAt hu, mfderiv_zero_of_not_mdifferentiableAt hu']
-  rfl
+  have h := mfderiv_comp_const_add_smul_apply (I := I) u c w (1 : 𝕜) v
+  have hu : (fun w ↦ u (c + (1 : 𝕜) • w)) = fun w ↦ u (w + c) := by simp [add_comm]
+  rw [hu, one_smul, one_smul, add_comm c] at h
+  exact h
 
 end TauCeti
