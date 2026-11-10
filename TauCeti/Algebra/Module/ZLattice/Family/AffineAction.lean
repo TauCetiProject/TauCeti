@@ -263,10 +263,44 @@ theorem faithfulSMul_torusFamilyAffineMulAction [FaithfulSMul Γ Y] :
 
 /-! ### Iterates of translations -/
 
+include hb in
+/-- The value of the translation section at `1` lies over `y`: it is the class of `(y, c)` for
+some `c`. -/
+theorem exists_translationSection_one_eq_mk (y : Y) :
+    letI := periodAddAction P
+    ∃ c : E, b 1 y = Quotient.mk _ (y, c) := by
+  let _ := periodAddAction P
+  obtain ⟨⟨y', c⟩, hq⟩ := Quotient.exists_rep (b 1 y)
+  have hy' : y' = y := by
+    have := hb 1 y
+    rwa [← hq, torusFamilyProjection_mk, one_smul] at this
+  subst hy'
+  exact ⟨c, hq.symm⟩
+
+include hone hb hbmul in
+/-- **The translation section at `1` is the zero section.** The cocycle law
+`b (1 * 1) = A_1 (b 1)` and `R 1 = id` force `b 1 y = [y, 0]`, so the hypothesis `hbone` of
+`TauCeti.torusFamilyAffineMulAction` is a consequence of the others. -/
+theorem translationSection_one_eq_mk_zero (y : Y) :
+    letI := periodAddAction P
+    b 1 y = Quotient.mk _ (y, 0) := by
+  let _ := periodAddAction P
+  obtain ⟨c, hq'⟩ := exists_translationSection_one_eq_mk P b hb y
+  have hq := hq'.symm
+  have hβ : b 1 y = Quotient.mk _ ((1 : Γ) • y, c) := by rw [one_smul, ← hq]
+  have h := hbmul 1 1 y
+  rw [mul_one, ← hq, torusFamilyAffineMap_mk_of_eq R P ρ hP b hb hβ c, hone, one_smul] at h
+  have hc : c ∈ LinearMap.range (P y) := by
+    simpa using ((mem_orbit_periodAddAction_iff P).1
+      (AddAction.orbitRel_apply.1 (Quotient.exact h))).2
+  rw [← hq]
+  exact Quotient.sound (AddAction.orbitRel_apply.2 ((mem_orbit_periodAddAction_iff P).2
+    ⟨rfl, by simpa using hc⟩))
+
 include hbmul in
 /-- **The translation section along powers.** The value of the translation section at `g ^ k` is
 the `k`-th iterate of the affine map of `g` applied to the value at `1`. -/
-theorem torusFamilyAffineMap_iterate_b_one (g : Γ) (k : ℕ) (y : Y) :
+theorem torusFamilyAffineMap_iterate_translationSection_one (g : Γ) (k : ℕ) (y : Y) :
     (torusFamilyAffineMap R P ρ hP b hb g)^[k] (b 1 y) = b (g ^ k) y := by
   induction k with
   | zero => simp
@@ -300,13 +334,9 @@ sum `∑ j < m, β (g ^ j • y)` is a period at `y`. -/
 theorem birkhoffSum_translation_mem_range_of_pow_eq_one {m : ℕ} (hg : g ^ m = 1) (y : Y) :
     birkhoffSum (g • ·) β m y ∈ LinearMap.range (P y) := by
   let _ := periodAddAction P
-  obtain ⟨⟨y', c⟩, hq⟩ := Quotient.exists_rep (b 1 y)
-  have hy' : y' = y := by
-    have := hb 1 y
-    rwa [← hq, torusFamilyProjection_mk, one_smul] at this
-  rw [hy'] at hq
-  have h := torusFamilyAffineMap_iterate_b_one R P ρ hP b hb hbmul g m y
-  rw [hg, ← hq, torusFamilyAffineMap_iterate_mk_of_translation R P ρ hP b hb hR hβ m y c, hg,
+  obtain ⟨c, hq⟩ := exists_translationSection_one_eq_mk P b hb y
+  have h := torusFamilyAffineMap_iterate_translationSection_one R P ρ hP b hb hbmul g m y
+  rw [hg, hq, torusFamilyAffineMap_iterate_mk_of_translation R P ρ hP b hb hR hβ m y c, hg,
     one_smul] at h
   simpa using ((mem_orbit_periodAddAction_iff P).1 (Quotient.exact h)).2
 
@@ -374,8 +404,9 @@ variable [TopologicalSpace Y] [T2Space Y] [LocallyCompactSpace Y] [PreconnectedS
 
 include hbmul in
 /-- **The orbit sum of a translation is a constant period.** Over a preconnected base, let `g`
-act on a continuous family of full lattices by an affine action with trivial linear part, with
-translation section lifting to a continuous `β`, `b g y = [g • y, β y]`. If `g ^ m = 1`, there
+act on a continuous family of full lattices by an affine map with trivial linear part, with
+translation section lifting to a continuous `β`, `b g y = [g • y, β y]`, and `b (g * h) y` the
+image of `b h y` under the affine map of `g`. If `g ^ m = 1`, there
 is one `l : Λ` with `∑ j < m, β (g ^ j • y) = P y l` for every `y`. -/
 theorem exists_birkhoffSum_translation_eq_period (hcont : ∀ l, Continuous fun y ↦ P y l)
     (hinj : ∀ y, Function.Injective (P y)) {g : Γ} (hR : ∀ y v, R g y v = v) {β : Y → E}

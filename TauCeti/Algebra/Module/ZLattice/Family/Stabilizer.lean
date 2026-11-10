@@ -191,6 +191,13 @@ theorem torusFamilyFiberTranslationPart_eq_mk {g : Γ} {y : Y} (hy : g • y = y
   torusFamilyFiberMap_injective P y <| by
     rw [torusFamilyFiberMap_fiberTranslationPart, torusFamilyFiberMap_mk, hβ]
 
+/-- Conversely, if the translation part on the fibre over a fixed point `y` of `g` is the class
+of `β`, then `β` represents `b g y`. -/
+theorem eq_mk_of_torusFamilyFiberTranslationPart_eq_mk {g : Γ} {y : Y} (hy : g • y = y) {β : E}
+    (hβ : torusFamilyFiberTranslationPart P b hb hy = Quotient.mk _ β) :
+    b g y = Quotient.mk _ (g • y, β) := by
+  rw [hy, ← torusFamilyFiberMap_fiberTranslationPart P b hb hy, hβ, torusFamilyFiberMap_mk]
+
 /-- **The action on a fibre over a fixed point is affine.** If `g • y = y`, the affine map of `g`
 acts on the fibre `E / LinearMap.range (P y)` by `AddEquiv.affineEquiv A t`, with linear part
 `A = TauCeti.torusFamilyFiberLinearPart` and translation part
@@ -202,8 +209,7 @@ theorem torusFamilyAffineMap_fiberMap {g : Γ} {y : Y} (hy : g • y = y)
         (torusFamilyFiberLinearPart R hone hmul P ρ hP hy)
         (torusFamilyFiberTranslationPart P b hb hy) z) := by
   obtain ⟨β, hβ⟩ := Quotient.exists_rep (torusFamilyFiberTranslationPart P b hb hy)
-  have hbβ : b g y = Quotient.mk _ (g • y, β) := by
-    rw [hy, ← torusFamilyFiberMap_fiberTranslationPart P b hb hy, ← hβ, torusFamilyFiberMap_mk]
+  have hbβ := eq_mk_of_torusFamilyFiberTranslationPart_eq_mk P b hb hy hβ.symm
   induction z using Quotient.inductionOn with
   | h v =>
     rw [torusFamilyFiberMap_mk, torusFamilyAffineMap_mk_of_eq R P ρ hP b hb hbβ,
@@ -267,24 +273,7 @@ theorem affineEquiv_torusFamilyFiber_iterate_eq_id_of_pow_eq_one {g : Γ} {y : Y
     (hy : g • y = y) {m : ℕ} (hm : g ^ m = 1) :
     (⇑(AddEquiv.affineEquiv (torusFamilyFiberLinearPart R hone hmul P ρ hP hy)
       (torusFamilyFiberTranslationPart P b hb hy)))^[m] = id := by
-  let _ := periodAddAction P
-  -- The cocycle law `b (1 * 1) = A_1 (b 1)` and `R 1 = id` force `b 1 y = [y, 0]`.
-  have hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0) := by
-    intro y
-    obtain ⟨⟨y', c⟩, hq⟩ := Quotient.exists_rep (b 1 y)
-    have hy' : y' = y := by
-      have := hb 1 y
-      rwa [← hq, torusFamilyProjection_mk, one_smul] at this
-    rw [hy'] at hq
-    have hβ : b 1 y = Quotient.mk _ ((1 : Γ) • y, c) := by rw [one_smul, ← hq]
-    have h := hbmul 1 1 y
-    rw [mul_one, ← hq, torusFamilyAffineMap_mk_of_eq R P ρ hP b hb hβ c, hone, one_smul] at h
-    have hc : c ∈ LinearMap.range (P y) := by
-      simpa using ((mem_orbit_periodAddAction_iff P).1
-        (AddAction.orbitRel_apply.1 (Quotient.exact h))).2
-    rw [← hq]
-    exact Quotient.sound (AddAction.orbitRel_apply.2 ((mem_orbit_periodAddAction_iff P).2
-      ⟨rfl, by simpa using hc⟩))
+  have hbone := translationSection_one_eq_mk_zero R hone P ρ hP b hb hbmul
   let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
   funext z
   apply torusFamilyFiberMap_injective P y
@@ -299,8 +288,7 @@ theorem nsmul_torusFamilyFiberTranslationPart_eq_zero {g : Γ} {y : Y} (hy : g �
     m • torusFamilyFiberTranslationPart P b hb hy = 0 := by
   let _ := periodAddAction P
   obtain ⟨β, hβ⟩ := Quotient.exists_rep (torusFamilyFiberTranslationPart P b hb hy)
-  have hbβ : b g y = Quotient.mk _ (g • y, β) := by
-    rw [hy, ← torusFamilyFiberMap_fiberTranslationPart P b hb hy, ← hβ, torusFamilyFiberMap_mk]
+  have hbβ := eq_mk_of_torusFamilyFiberTranslationPart_eq_mk P b hb hy hβ.symm
   -- Iterating the translation `[y, v] ↦ [y, v + β]` `k` times adds `k • β`.
   have hiter : ∀ k : ℕ, (torusFamilyAffineMap R P ρ hP b hb g)^[k] (Quotient.mk _ (y, 0)) =
       Quotient.mk _ (y, k • β) := by
@@ -310,7 +298,7 @@ theorem nsmul_torusFamilyFiberTranslationPart_eq_zero {g : Γ} {y : Y} (hy : g �
     | succ k ih =>
       rw [Function.iterate_succ_apply', ih, torusFamilyAffineMap_mk_of_eq R P ρ hP b hb hbβ, hR,
         hy, succ_nsmul]
-  have h := torusFamilyAffineMap_iterate_b_one R P ρ hP b hb hbmul g m y
+  have h := torusFamilyAffineMap_iterate_translationSection_one R P ρ hP b hb hbmul g m y
   rw [hm, hbone, hiter] at h
   have hmem : m • β ∈ LinearMap.range (P y) := by
     simpa using ((mem_orbit_periodAddAction_iff P).1

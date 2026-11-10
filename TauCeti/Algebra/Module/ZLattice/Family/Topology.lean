@@ -76,10 +76,7 @@ private theorem isEmpty_or_free_and_finite (hinj : ∀ y, Injective (P y)) :
     IsEmpty Y ∨ Module.Free ℤ Λ ∧ Module.Finite ℤ Λ := by
   rcases isEmpty_or_nonempty Y with hY | ⟨⟨y⟩⟩
   · exact Or.inl hY
-  · have := ZLattice.module_free ℝ (LinearMap.range (P y))
-    have := ZLattice.module_finite ℝ (LinearMap.range (P y))
-    exact Or.inr ⟨Module.Free.of_equiv (LinearEquiv.ofInjective (P y) (hinj y)).symm,
-      Module.Finite.equiv (LinearEquiv.ofInjective (P y) (hinj y)).symm⟩
+  · exact Or.inr (ZLattice.module_free_and_finite_of_injective ℝ (P y) (hinj y))
 
 /-- The projection of the family is the first projection of `Y × T` read through a homeomorphism
 over `Y`, where `T` is the standard torus `ℝ^ι/ℤ^ι` of a lattice basis of `Λ`, in its orbit-space
