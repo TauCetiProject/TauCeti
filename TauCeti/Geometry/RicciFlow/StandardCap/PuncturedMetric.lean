@@ -6,15 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.RicciFlow.StandardCap.Profile
-public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Curvature
-public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.WarpedProd.Scalar
-import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Geometry.Manifold.Riemannian.Hessian.Isometry
-import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
-import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
-import TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.VectorSpace
+public import TauCeti.Geometry.Manifold.Riemannian.Sphere.WarpedProd
 
 /-!
 # The standard cap away from its tip
@@ -43,6 +35,9 @@ open Bundle Set Real TopologicalSpace
 open TauCeti.Manifold
 open scoped ContDiff Manifold InnerProductSpace Topology
 
+/-- The open radial half-line used for punctured standard caps. -/
+abbrev TauCeti.standardCapRadialDomain : Opens ℝ := ⟨Ioi 0, isOpen_Ioi⟩
+
 namespace TauCeti.IsStandardCapProfile
 
 variable {f : ℝ → ℝ} (hf : TauCeti.IsStandardCapProfile f)
@@ -53,10 +48,10 @@ variable {f : ℝ → ℝ} (hf : TauCeti.IsStandardCapProfile f)
 radial coordinate first. The sphere is the unit sphere in `V`. -/
 def puncturedMetric :
     ContMDiffRiemannianMetric (𝓘(ℝ).prod (𝓡 n)) ∞ (ℝ × EuclideanSpace ℝ (Fin n))
-      (fun p : (⟨Ioi (0 : ℝ), isOpen_Ioi⟩ : Opens ℝ) × Metric.sphere (0 : V) 1 ↦
+      (fun p : standardCapRadialDomain × Metric.sphere (0 : V) 1 ↦
         TangentSpace (𝓘(ℝ).prod (𝓡 n)) p) :=
   (((riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top).restrictOpenTangentSpace
-    ⟨Ioi 0, isOpen_Ioi⟩).warpedProdTangentSpace (fun r ↦ f r)
+    standardCapRadialDomain).warpedProdTangentSpace (fun r ↦ f r)
       (hf.contDiff.contMDiff.comp contMDiff_subtype_val)
       (fun r ↦ (hf.apply_pos r.property).ne')
       ((sphereRoundMetric (E := V)).ofLE (m := ∞) le_top)
@@ -67,11 +62,11 @@ variable {V}
 round sphere metric multiplied by `f(r)²`. -/
 @[simp]
 theorem puncturedMetric_inner
-    (p : (⟨Ioi (0 : ℝ), isOpen_Ioi⟩ : Opens ℝ) × Metric.sphere (0 : V) 1)
+    (p : standardCapRadialDomain × Metric.sphere (0 : V) 1)
     (v w : TangentSpace (𝓘(ℝ).prod (𝓡 n)) p) :
     (hf.puncturedMetric (n := n) V).inner p v w =
       (((riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top).restrictOpenTangentSpace
-        ⟨Ioi 0, isOpen_Ioi⟩).inner p.1 (tangentSpaceProdEquiv p v).1
+        standardCapRadialDomain).inner p.1 (tangentSpaceProdEquiv p v).1
           (tangentSpaceProdEquiv p w).1 +
       f p.1 ^ 2 * ((sphereRoundMetric (E := V)).ofLE (m := ∞) le_top).inner p.2
         (tangentSpaceProdEquiv p v).2 (tangentSpaceProdEquiv p w).2 := by
@@ -81,50 +76,19 @@ theorem puncturedMetric_inner
 For a two-dimensional sphere fibre the two terms are
 `2(1-f'²)/f² - 4f''/f`. -/
 theorem scalarCurvature_puncturedMetric
-    (p : (⟨Ioi (0 : ℝ), isOpen_Ioi⟩ : Opens ℝ) × Metric.sphere (0 : V) 1) :
+    (p : standardCapRadialDomain × Metric.sphere (0 : V) 1) :
     (hf.puncturedMetric (n := n) V).scalarCurvature p =
       (n : ℝ) * (n - 1) * (1 - deriv f p.1 ^ 2) / f p.1 ^ 2 -
         2 * n * deriv (deriv f) p.1 / f p.1 := by
-  let U : Opens ℝ := ⟨Ioi 0, isOpen_Ioi⟩
-  let g := (riemannianMetricVectorSpace ℝ).ofLE (m := ∞) le_top
-  let gU := g.restrictOpenTangentSpace U
-  have hg : g.scalarCurvature (p.1 : ℝ) = 0 := by
-    rw [ContMDiffRiemannianMetric.scalarCurvature_eq_scalarCurvature_leviCivitaConnection g
-      (ContMDiffRiemannianMetric.toRiemannianMetric_ofLE _ _).symm,
-      scalarCurvature_leviCivitaConnection_model_space]
-  let : RiemannianBundle (fun x : U ↦ TangentSpace 𝓘(ℝ) x) := ⟨gU.toRiemannianMetric⟩
-  let : RiemannianBundle (fun x : ℝ ↦ TangentSpace 𝓘(ℝ) x) := ⟨g.toRiemannianMetric⟩
-  let := Bundle.instIsContMDiffRiemannianBundle gU
-  let := Bundle.instIsContMDiffRiemannianBundle g
-  have hgeq : g.toRiemannianMetric = (riemannianMetricVectorSpace ℝ).toRiemannianMetric :=
-    ContMDiffRiemannianMetric.toRiemannianMetric_ofLE _ _
-  have hi := g.isLocalRiemannianIsometry_restrictOpenTangentSpace U
-  have hΔ : laplaceBeltrami 𝓘(ℝ) (fun r : U ↦ f r) p.1 = deriv (deriv f) p.1 := by
-    have h := hi.laplaceBeltrami_comp (u := f) (x := p.1)
-      (hf.contDiff.contMDiff.contMDiffAt.of_le (by simp))
-    simp only [Function.comp_def] at h
-    rw [h, laplaceBeltrami_eq_laplacian_of_eq hgeq
-        ((hf.contDiff.of_le (by simp : (2 : ℕ∞ω) ≤ ∞)).gradient_right
-          (m := 1) (by norm_num) |>.differentiable (by norm_num) _),
-      InnerProductSpace.laplacian_eq_iteratedDeriv_real]
-    simp [iteratedDeriv_succ]
-  have hgrad : ‖mgradient 𝓘(ℝ) (fun r : U ↦ f r) p.1‖ ^ 2 = deriv f p.1 ^ 2 := by
-    obtain ⟨e, he⟩ := hi.exists_linearIsometryEquiv_eq_mfderiv p.1
-    have h := hi.mfderiv_mgradient_comp (φ := f) (x := p.1)
-      ((hf.differentiable (p.1 : ℝ)).mdifferentiableAt)
-    simp only [Function.comp_def] at h
-    rw [← e.norm_map, he, h, norm_mgradient_eq_norm_gradient_of_eq hgeq,
-      gradient_eq_deriv', Real.norm_eq_abs, sq_abs]
-  rw [puncturedMetric, ContMDiffRiemannianMetric.scalarCurvature_warpedProdTangentSpace,
-    ContMDiffRiemannianMetric.scalarCurvature_restrictOpenTangentSpace,
-    scalarCurvature_sphereRoundMetric_ofLE, hg, hΔ, hgrad]
-  simp only [finrank_euclideanSpace_fin]
-  ring
+  rw [puncturedMetric]
+  exact scalarCurvature_warpedProd_real_sphere standardCapRadialDomain
+    (hf.contDiff.contMDiff.comp contMDiff_subtype_val)
+    (fun r ↦ (hf.apply_pos r.property).ne') p
 
 /-- The punctured standard cap has nonnegative scalar curvature in every
 sphere dimension. -/
 theorem scalarCurvature_puncturedMetric_nonneg
-    (p : (⟨Ioi (0 : ℝ), isOpen_Ioi⟩ : Opens ℝ) × Metric.sphere (0 : V) 1) :
+    (p : standardCapRadialDomain × Metric.sphere (0 : V) 1) :
     0 ≤ (hf.puncturedMetric (n := n) V).scalarCurvature p := by
   rw [hf.scalarCurvature_puncturedMetric (n := n)]
   have h₀ := hf.deriv_nonneg p.1.property.le
@@ -135,14 +99,17 @@ theorem scalarCurvature_puncturedMetric_nonneg
   | zero => simp
   | succ n =>
     have hn : (0 : ℝ) ≤ (n + 1 : ℕ) - 1 := by simp
-    exact sub_nonneg.2 (le_trans (div_nonpos_of_nonpos_of_nonneg
-      (mul_nonpos_of_nonneg_of_nonpos (by positivity) h₂) hpos.le)
-      (div_nonneg (mul_nonneg (mul_nonneg (by positivity) hn) (by nlinarith)) (sq_nonneg _)))
+    have hderiv : 0 ≤ 1 - deriv f p.1 ^ 2 := by nlinarith
+    have hfirst : 0 ≤ ((n + 1 : ℕ) : ℝ) * ((n + 1 : ℕ) - 1) *
+        (1 - deriv f p.1 ^ 2) / f p.1 ^ 2 := by positivity
+    have hsecond : 2 * ((n + 1 : ℕ) : ℝ) * deriv (deriv f) p.1 / f p.1 ≤ 0 :=
+      div_nonpos_of_nonpos_of_nonneg (by nlinarith) hpos.le
+    linarith
 
 /-- On a sufficiently far cylindrical end, scalar curvature is `n(n-1)/2`.
 In particular it is one for the punctured three-dimensional cap. -/
 theorem exists_scalarCurvature_puncturedMetric_eq_cylinder :
-    ∃ R > 0, ∀ p : (⟨Ioi (0 : ℝ), isOpen_Ioi⟩ : Opens ℝ) × Metric.sphere (0 : V) 1,
+    ∃ R > 0, ∀ p : standardCapRadialDomain × Metric.sphere (0 : V) 1,
       R ≤ (p.1 : ℝ) →
       (hf.puncturedMetric (n := n) V).scalarCurvature p = (n : ℝ) * (n - 1) / 2 := by
   obtain ⟨R, hR⟩ := hf.exists_eq_sqrt_two
@@ -160,7 +127,7 @@ theorem exists_scalarCurvature_puncturedMetric_eq_cylinder :
 /-- Near its missing tip, the punctured metric has scalar curvature `n(n+1)/4`,
 the scalar curvature of a round sphere of sectional curvature `1/4`. -/
 theorem exists_scalarCurvature_puncturedMetric_eq_round :
-    ∃ r₀ > 0, ∀ p : (⟨Ioi (0 : ℝ), isOpen_Ioi⟩ : Opens ℝ) × Metric.sphere (0 : V) 1,
+    ∃ r₀ > 0, ∀ p : standardCapRadialDomain × Metric.sphere (0 : V) 1,
       (p.1 : ℝ) < r₀ →
       (hf.puncturedMetric (n := n) V).scalarCurvature p = (n : ℝ) * (n + 1) / 4 := by
   obtain ⟨r₀, hr₀, h⟩ := hf.exists_eq_two_mul_sin

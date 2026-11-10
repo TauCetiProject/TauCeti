@@ -12,7 +12,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
 # Naturality of the Riemannian gradient under local isometries
 
 The differential of a local Riemannian isometry carries the gradient of a pulled-back real
-function to its target gradient. Differentiability is required only at the target point.
+function to its target gradient, and preserves its norm. Differentiability is required only at
+the target point.
 
 See J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapter 2.
 -/
@@ -45,5 +46,12 @@ theorem mfderiv_mgradient_comp (hf : IsLocalRiemannianIsometry I J f)
   intro v
   obtain ⟨w, rfl⟩ := hf.mfderiv_surjective x v
   rw [hf.inner_mfderiv, inner_mgradient_comp hφ (hf.mdifferentiableAt x)]
+
+/-- A local isometry preserves the norm of the gradient of a pulled-back function. -/
+theorem norm_mgradient_comp (hf : IsLocalRiemannianIsometry I J f)
+    {φ : N → ℝ} {x : M} (hφ : MDifferentiableAt J 𝓘(ℝ) φ (f x)) :
+    ‖mgradient I (φ ∘ f) x‖ = ‖mgradient J φ (f x)‖ := by
+  obtain ⟨e, he⟩ := hf.exists_linearIsometryEquiv_eq_mfderiv x
+  rw [← e.norm_map, he, hf.mfderiv_mgradient_comp hφ]
 
 end TauCeti.IsLocalRiemannianIsometry
