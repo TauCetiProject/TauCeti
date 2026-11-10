@@ -98,11 +98,13 @@ theorem not_isSplitCompletely_iff_ncard_lt (P : Place k F) :
   have hle := ncard_setOf_restrict_eq_le_finrank (k' := k') (F' := F') k F P
   omega
 
+omit [FiniteDimensional F F'] in
 private theorem IsSplitCompletely.ramificationIdx_eq_one_and_relativeDegree_eq_one
     {P : Place k F} (hP : P.IsSplitCompletely (k' := k') (F' := F'))
     {P' : Place k' F'} (hP' : P'.restrict k F = P) :
     ramificationIdx F P' = 1 ∧ relativeDegree k F P' = 1 := by
   classical
+  have := hP.1
   let s := (finite_setOf_restrict_eq (k' := k') (F' := F') k F P).toFinset
   have hs : ∀ Q : Place k' F', Q ∈ s ↔ Q.restrict k F = P :=
     fun Q ↦ Set.Finite.mem_toFinset _
@@ -125,6 +127,7 @@ private theorem IsSplitCompletely.ramificationIdx_eq_one_and_relativeDegree_eq_o
   exact ⟨Nat.eq_one_of_mul_eq_one_right hterm.symm,
     Nat.eq_one_of_mul_eq_one_left hterm.symm⟩
 
+omit [FiniteDimensional F F'] in
 /-- A place above a completely split place has ramification index one. -/
 theorem IsSplitCompletely.ramificationIdx_eq_one {P : Place k F}
     (hP : P.IsSplitCompletely (k' := k') (F' := F')) {P' : Place k' F'}
@@ -132,6 +135,7 @@ theorem IsSplitCompletely.ramificationIdx_eq_one {P : Place k F}
     ramificationIdx F P' = 1 :=
   (hP.ramificationIdx_eq_one_and_relativeDegree_eq_one hP').1
 
+omit [FiniteDimensional F F'] in
 /-- A place above a completely split place has relative residue degree one. -/
 theorem IsSplitCompletely.relativeDegree_eq_one {P : Place k F}
     (hP : P.IsSplitCompletely (k' := k') (F' := F')) {P' : Place k' F'}
@@ -139,6 +143,7 @@ theorem IsSplitCompletely.relativeDegree_eq_one {P : Place k F}
     relativeDegree k F P' = 1 :=
   (hP.ramificationIdx_eq_one_and_relativeDegree_eq_one hP').2
 
+omit [FiniteDimensional F F'] in
 /-- At a place above a completely split place, the map between residue fields is bijective. -/
 theorem IsSplitCompletely.bijective_algebraMap_residueField (P' : Place k' F')
     (hP : (P'.restrict k F).IsSplitCompletely (k' := k') (F' := F')) :

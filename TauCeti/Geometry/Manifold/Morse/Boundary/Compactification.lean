@@ -18,8 +18,8 @@ adapted to `f` satisfying the Morse–Smale condition, and `p`, `r` critical poi
 `ind p = ind r + 2`. This file embeds the one-dimensional space of trajectories from `p` to `r`
 in the compact space `M × M` and studies its closure there. It shows that the closure adds only
 trajectories broken once, at a critical point `q` of intermediate index, that it adds finitely many
-points, and that it is one-dimensional at the unbroken trajectories. It does not show that every
-broken trajectory is a limit of unbroken ones.
+points, and that it is one-dimensional at the unbroken trajectories. That every broken trajectory
+is a limit of unbroken ones is proved in `TauCeti.Geometry.Manifold.Morse.Boundary.Gluing`.
 
 A trajectory is recorded by its points on two levels `c₁` and `c₂` with
 `f r < c₂ < c₁ < f p`, chosen so that every critical value strictly between `f r` and `f p` lies
@@ -42,10 +42,12 @@ pairs in `M × M`; it is compact as a closed subset of the compact space `M × M
   `W^u(p) ∩ W^s(r) ∩ {f = c₁}`, so each of them has a neighbourhood homeomorphic to an open
   subset of `ℝ`.
 
-The converse inclusion, that every broken trajectory is a limit of unbroken ones and has a
-neighbourhood homeomorphic to a half-open interval, is the gluing theorem and is not proved here.
-Together with `TauCeti.even_ncard_of_forall_exists_homeomorph_Ico` it would show that the broken
-trajectories are even in number, which is `∂ ∘ ∂ = 0` by
+The converse inclusion, that every broken trajectory is a limit of unbroken ones, is
+`IsMorseSmale.morseBrokenTrajectoryPairs_subset_closure`. Each broken trajectory moreover has a
+neighbourhood homeomorphic to a half-open interval, by
+`IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet`. Together with
+`TauCeti.even_ncard_of_forall_exists_homeomorph_Ico` this would show that the broken trajectories
+are even in number, which is `∂ ∘ ∂ = 0` by
 `IsMorseSmale.morseBoundary_comp_morseBoundary_eq_zero_iff`.
 
 ## Main declarations

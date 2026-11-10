@@ -23,12 +23,12 @@ shape, possibly unbounded in both directions or cyclic.
   `HomologicalComplex.Acyclic.nonempty_homotopy_id_zero_of_projective_cycles` in
   `TauCeti.Algebra.Homology.Split`.)
 * In an abelian category, a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of complexes with `X₃`
-  exact at a degree `j` which is the target of a relation induces a short exact sequence of cycles
-  in degree `j`. When the cycles of `X₂` in degree `j` have projective dimension `< n`, those of
-  `X₁` do as soon as those of `X₃` have projective dimension `< n + 1`. In particular, when the
-  cycles of `X₂` are projective, those of `X₁` are syzygies of those of `X₃`, and their projective
-  dimension drops by one. Likewise, along an exact range of projectives the projective dimension
-  of the cycles drops by one in each degree.
+  exact at a degree `j` induces a short exact sequence of cycles in degree `j`. When the cycles
+  of `X₂` in degree `j` have projective dimension `< n`, those of `X₁` do as soon as those of `X₃`
+  have projective dimension `< n + 1`. In particular, when the cycles of `X₂` are projective,
+  those of `X₁` are syzygies of those of `X₃`, and their projective dimension drops by one.
+  Likewise, along an exact range of projectives the projective dimension of the cycles drops by
+  one in each degree.
 * With enough projectives, and when every index is both the source and the target of a relation
   of the shape, every complex receives a degreewise epimorphism from a contractible complex with
   projective terms, the mapping cone of the identity of a complex with zero differential made of
@@ -84,20 +84,20 @@ end Homotopy
 
 variable [Abelian C]
 
-/-- Let `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` be a short exact sequence of complexes and `i → j` a relation of
-the shape, where `X₃` is exact at `j`. It gives a short exact sequence
+/-- Let `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` be a short exact sequence of complexes where `X₃` is exact at
+the degree `j`. It gives a short exact sequence
 `0 ⟶ Z(X₁) ⟶ Z(X₂) ⟶ Z(X₃) ⟶ 0` of cycles in degree `j`, so the cycles of `X₁` have projective
 dimension `< n` when those of `X₂` have projective dimension `< n` and those of `X₃` have
 projective dimension `< n + 1`. -/
 lemma CategoryTheory.ShortComplex.ShortExact.hasProjectiveDimensionLT_cycles_X₁
-    {S : ShortComplex (HomologicalComplex C c)} (hS : S.ShortExact) {i j : ι} (hij : c.Rel i j)
+    {S : ShortComplex (HomologicalComplex C c)} (hS : S.ShortExact) {j : ι}
     (h₃ : S.X₃.ExactAt j) (n : ℕ) (h₂ : HasProjectiveDimensionLT (S.X₂.cycles j) n)
     (hZ : HasProjectiveDimensionLT (S.X₃.cycles j) (n + 1)) :
     HasProjectiveDimensionLT (S.X₁.cycles j) n := by
   have := hS.mono_f
-  have : Epi (S.g.f i) :=
-    ((HomologicalComplex.shortExact_iff_degreewise_shortExact S).mp hS i).epi_g
-  have := HomologicalComplex.epi_cyclesMap_of_exactAt S.g hij h₃
+  have : Epi (S.g.f (c.prev j)) :=
+    ((HomologicalComplex.shortExact_iff_degreewise_shortExact S).mp hS (c.prev j)).epi_g
+  have := HomologicalComplex.epi_cyclesMap_of_exactAt S.g rfl h₃
   have hT : (ShortComplex.mk _ _ (by rw [← HomologicalComplex.cyclesMap_comp, S.zero,
       HomologicalComplex.cyclesMap_zero] : HomologicalComplex.cyclesMap S.f j ≫
         HomologicalComplex.cyclesMap S.g j = 0)).ShortExact :=
