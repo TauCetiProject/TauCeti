@@ -81,9 +81,8 @@ theorem exists_equiv_tietzeCyclicFive_square :
     exact h
   have hpow (k : ℕ) : ∀ r ∈ R, mk R (FreeGroup.lift (fun _ : Unit ↦ a ^ k) r) = 1 := by
     rintro r (rfl : r = a ^ 5)
-    rw [map_pow, a, FreeGroup.lift_apply_of, map_pow, map_pow, ← pow_mul,
-      Nat.mul_comm k 5, pow_mul]
-    simpa only [of, one_pow] using congrArg (· ^ k) h5
+    simpa only [a, map_pow, FreeGroup.lift_apply_of, ← pow_mul, Nat.mul_comm k 5, of,
+      one_pow] using congrArg (· ^ k) h5
   have h6 : (of () : PresentedGroup R) ^ 6 = of () := by
     rw [pow_succ, h5, one_mul]
   let e := equivOfGeneratorWords (R := R) (S := R)
@@ -92,9 +91,9 @@ theorem exists_equiv_tietzeCyclicFive_square :
     (fun () ↦ by simpa [a, of, ← pow_mul] using h6)
   refine ⟨e, ?_, ?_⟩
   · rw [equivOfGeneratorWords_of, map_pow]
-    rfl
+    simp only [a, of, R]
   · rw [equivOfGeneratorWords_symm_of, map_pow]
-    rfl
+    simp only [a, of, R]
 
 -- No finiteness or nonemptiness assumption on the generator families is needed.
 example (w : Empty → FreeGroup Empty) (R : Set (FreeGroup (Empty ⊕ Empty))) :

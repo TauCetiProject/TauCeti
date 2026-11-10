@@ -59,19 +59,23 @@ def equivOfGeneratorWords : PresentedGroup R ≃* PresentedGroup S := by
   let g : PresentedGroup S →* PresentedGroup R :=
     QuotientGroup.map _ _ (FreeGroup.lift v)
       (Subgroup.normalClosure_le_normal fun s hs ↦ mk_eq_one_iff.mp (hv s hs))
-  have hf (w : FreeGroup α) : f (mk R w) = mk S (FreeGroup.lift u w) := rfl
-  have hg (w : FreeGroup β) : g (mk S w) = mk R (FreeGroup.lift v w) := rfl
+  have hf (w : FreeGroup α) : f (mk R w) = mk S (FreeGroup.lift u w) :=
+    QuotientGroup.map_mk _ _ _ _ w
+  have hg (w : FreeGroup β) : g (mk S w) = mk R (FreeGroup.lift v w) :=
+    QuotientGroup.map_mk _ _ _ _ w
   apply MonoidHom.toMulEquiv f g
   · apply PresentedGroup.ext
     intro a
     calc
-      (g.comp f) (of a) = g (f (mk R (FreeGroup.of a))) := rfl
+      (g.comp f) (of a) = g (f (mk R (FreeGroup.of a))) := by
+        rw [MonoidHom.comp_apply, of]
       _ = mk R (FreeGroup.lift v (u a)) := by rw [hf, FreeGroup.lift_apply_of, hg]
       _ = of a := hvu a
   · apply PresentedGroup.ext
     intro b
     calc
-      (f.comp g) (of b) = f (g (mk S (FreeGroup.of b))) := rfl
+      (f.comp g) (of b) = f (g (mk S (FreeGroup.of b))) := by
+        rw [MonoidHom.comp_apply, of]
       _ = mk S (FreeGroup.lift u (v b)) := by rw [hg, FreeGroup.lift_apply_of, hf]
       _ = of b := huv b
 
@@ -79,7 +83,10 @@ def equivOfGeneratorWords : PresentedGroup R ≃* PresentedGroup S := by
 @[simp]
 theorem equivOfGeneratorWords_mk (w : FreeGroup α) :
     equivOfGeneratorWords u v hu hv hvu huv (mk R w) = mk S (FreeGroup.lift u w) := by
-  rfl
+  -- The forward function of MonoidHom.toMulEquiv is definitionally its first homomorphism.
+  exact QuotientGroup.map_mk (Subgroup.normalClosure R) (Subgroup.normalClosure S)
+    (FreeGroup.lift u)
+    (Subgroup.normalClosure_le_normal fun r hr ↦ mk_eq_one_iff.mp (hu r hr)) w
 
 /-- The forward generator dictionary of a change of presentation. -/
 @[simp]
@@ -91,7 +98,10 @@ theorem equivOfGeneratorWords_of (a : α) :
 @[simp]
 theorem equivOfGeneratorWords_symm_mk (w : FreeGroup β) :
     (equivOfGeneratorWords u v hu hv hvu huv).symm (mk S w) = mk R (FreeGroup.lift v w) := by
-  rfl
+  -- The inverse function of MonoidHom.toMulEquiv is definitionally its second homomorphism.
+  exact QuotientGroup.map_mk (Subgroup.normalClosure S) (Subgroup.normalClosure R)
+    (FreeGroup.lift v)
+    (Subgroup.normalClosure_le_normal fun s hs ↦ mk_eq_one_iff.mp (hv s hs)) w
 
 /-- The recovery generator dictionary of a change of presentation. -/
 @[simp]
@@ -137,56 +147,38 @@ def eliminateGenerators (w : β → FreeGroup α) (R : Set (FreeGroup (α ⊕ β
     rintro _ ⟨r, hr, rfl⟩
     rw [← MonoidHom.comp_apply, hισ]
     exact one_of_mem (Or.inr hr)
-  let f : PresentedGroup S →* PresentedGroup Q :=
-    toGroup (f := fun x ↦ ((mk Q).comp σ) (FreeGroup.of x)) (by
-      have h : FreeGroup.lift (fun x ↦ ((mk Q).comp σ) (FreeGroup.of x)) =
-          (mk Q).comp σ := by ext x; simp
-      simpa only [h] using hf)
-  let g : PresentedGroup Q →* PresentedGroup S :=
-    toGroup (f := fun a ↦ ((mk S).comp ι) (FreeGroup.of a)) (by
-      have h : FreeGroup.lift (fun a ↦ ((mk S).comp ι) (FreeGroup.of a)) =
-          (mk S).comp ι := by ext a; simp
-      simpa only [h] using hg)
-  -- Compare the two composites on free words, then on the presented generators.
-  have hfmk : f.comp (mk S) = (mk Q).comp σ := by
-    apply FreeGroup.ext_hom
-    intro x
-    dsimp only [f, MonoidHom.comp_apply]
-    rw [← of, toGroup.of]
-  have hgmk : g.comp (mk Q) = (mk S).comp ι := by
-    apply FreeGroup.ext_hom
-    intro a
-    dsimp only [g, MonoidHom.comp_apply]
-    rw [← of, toGroup.of]
-  apply MonoidHom.toMulEquiv f g
-  · have h : (g.comp f).comp (mk S) = mk S := by
-      rw [MonoidHom.comp_assoc, hfmk, ← MonoidHom.comp_assoc, hgmk, hισ]
-    exact PresentedGroup.ext fun x ↦ DFunLike.congr_fun h (FreeGroup.of x)
-  · have h : (f.comp g).comp (mk Q) = mk Q := by
-      rw [MonoidHom.comp_assoc, hgmk, ← MonoidHom.comp_assoc, hfmk,
-        MonoidHom.comp_assoc, hσι, MonoidHom.comp_id]
-    exact PresentedGroup.ext fun a ↦ DFunLike.congr_fun h (FreeGroup.of a)
+  have hι : FreeGroup.lift (fun a ↦ FreeGroup.of (Sum.inl a)) = ι :=
+    FreeGroup.map_eq_lift.symm
+  refine equivOfGeneratorWords (Sum.elim FreeGroup.of w) (fun a ↦ FreeGroup.of (Sum.inl a))
+    hf ?_ ?_ ?_
+  · simpa only [hι, MonoidHom.comp_apply] using hg
+  · intro x
+    simpa only [hι, MonoidHom.comp_apply, σ, FreeGroup.lift_apply_of, of]
+      using DFunLike.congr_fun hισ (FreeGroup.of x)
+  · intro a
+    simp [of]
 
 /-- A retained generator maps to the corresponding generator after elimination. -/
 @[simp]
 theorem eliminateGenerators_of_inl (w : β → FreeGroup α) (R : Set (FreeGroup (α ⊕ β)))
     (a : α) : eliminateGenerators w R (of (Sum.inl a)) = of a := by
-  simp [eliminateGenerators, MonoidHom.toMulEquiv]
-  rfl
+  dsimp only [eliminateGenerators]
+  apply equivOfGeneratorWords_of
 
 /-- An auxiliary generator maps to its defining word after elimination. -/
 @[simp]
 theorem eliminateGenerators_of_inr (w : β → FreeGroup α) (R : Set (FreeGroup (α ⊕ β)))
     (b : β) : eliminateGenerators w R (of (Sum.inr b)) =
       mk (FreeGroup.lift (Sum.elim FreeGroup.of w) '' R) (w b) := by
-  simp [eliminateGenerators, MonoidHom.toMulEquiv]
+  dsimp only [eliminateGenerators]
+  apply equivOfGeneratorWords_of
 
 /-- The inverse of elimination includes the retained generators in the original presentation. -/
 @[simp]
 theorem eliminateGenerators_symm_of (w : β → FreeGroup α) (R : Set (FreeGroup (α ⊕ β)))
     (a : α) : (eliminateGenerators w R).symm (of a) = of (Sum.inl a) := by
-  simp [eliminateGenerators, MonoidHom.toMulEquiv]
-  rfl
+  dsimp only [eliminateGenerators]
+  apply equivOfGeneratorWords_symm_of
 
 /-- On an arbitrary word, elimination evaluates the word after substituting the definitions. -/
 @[simp]
@@ -194,24 +186,16 @@ theorem eliminateGenerators_mk (w : β → FreeGroup α) (R : Set (FreeGroup (α
     (r : FreeGroup (α ⊕ β)) :
     eliminateGenerators w R (mk _ r) =
       mk _ (FreeGroup.lift (Sum.elim FreeGroup.of w) r) := by
-  have h : (eliminateGenerators w R).toMonoidHom.comp (mk _) =
-      (mk _).comp (FreeGroup.lift (Sum.elim FreeGroup.of w)) := by
-    apply FreeGroup.ext_hom
-    rintro (a | b)
-    · simpa [of] using eliminateGenerators_of_inl w R a
-    · simpa [of] using eliminateGenerators_of_inr w R b
-  exact DFunLike.congr_fun h r
+  dsimp only [eliminateGenerators]
+  apply equivOfGeneratorWords_mk
 
 /-- On an arbitrary word in the retained generators, the inverse is induced by inclusion. -/
 @[simp]
 theorem eliminateGenerators_symm_mk (w : β → FreeGroup α) (R : Set (FreeGroup (α ⊕ β)))
     (r : FreeGroup α) :
     (eliminateGenerators w R).symm (mk _ r) = mk _ (FreeGroup.map Sum.inl r) := by
-  have h : (eliminateGenerators w R).symm.toMonoidHom.comp (mk _) =
-      (mk _).comp (FreeGroup.map Sum.inl) := by
-    apply FreeGroup.ext_hom
-    intro a
-    simpa [of] using eliminateGenerators_symm_of w R a
-  exact DFunLike.congr_fun h r
+  conv_rhs => arg 2; rw [FreeGroup.map_eq_lift]
+  dsimp only [eliminateGenerators]
+  apply equivOfGeneratorWords_symm_mk
 
 end PresentedGroup
