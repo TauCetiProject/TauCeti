@@ -5,7 +5,7 @@ Authors: Claude
 -/
 module
 
-public import TauCeti.Probability.Distributions.LKJ.Entry.Variance
+public import TauCeti.Probability.Distributions.LKJ.EntryVariance
 public import TauCeti.Probability.Distributions.LKJ.PartialCorrelation
 public import TauCeti.Probability.Distributions.LKJ.PrincipalBlock
 public import TauCeti.Probability.Distributions.LKJ.Symmetry

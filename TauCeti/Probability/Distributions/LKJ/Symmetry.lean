@@ -211,22 +211,6 @@ theorem integral_id_lkjMeasure (hη : 0 < η) :
   simp only [symmetricCoordinates_apply]
   exact integral_coe_apply_lkjMeasure hη ij.1.1 ij.1.2
 
-/-! ### Covariance -/
-
-/-- Distinct strictly lower positions `ij ≠ kl` have an index of `ij` that is not an index of
-`kl`. Flipping the sign of that axis negates entry `ij` and fixes entry `kl`. -/
-private theorem exists_index_ne_ne_of_ne {ij kl : strictLowerTriangle p} (hne : ij ≠ kl) :
-    ∃ v : Fin p, (v = ij.1.1 ∨ v = ij.1.2) ∧ v ≠ kl.1.1 ∧ v ≠ kl.1.2 := by
-  have hp : ij.1 ≠ kl.1 := Subtype.coe_injective.ne hne
-  have hij := ij.2
-  have hkl := kl.2
-  by_cases h : ij.1.1 = kl.1.1 ∨ ij.1.1 = kl.1.2
-  · refine ⟨ij.1.2, Or.inr rfl, ?_, ?_⟩
-    all_goals rcases h with h | h
-    all_goals intro h'
-    all_goals first | exact hp (Prod.ext h h') | omega
-  · exact ⟨ij.1.1, Or.inl rfl, fun h' ↦ h (Or.inl h'), fun h' ↦ h (Or.inr h')⟩
-
 /-! ### Sign symmetry and moments of partial-correlation Gram laws -/
 
 /-- Independent negation-invariant partial correlations give a Gram law invariant under
@@ -280,6 +264,20 @@ theorem integral_apply_map_partialCorrelationGram_pi_of_ne
   simp only [Matrix.of_apply] at h
   simp only [s, ite_true, ite_eq_right (Ne.symm hij), neg_one_mul, mul_one, integral_neg] at h
   linarith
+
+/-- Distinct strictly lower positions `ij ≠ kl` have an index of `ij` that is not an index of
+`kl`. Flipping the sign of that axis negates entry `ij` and fixes entry `kl`. -/
+private theorem exists_index_ne_ne_of_ne {ij kl : strictLowerTriangle p} (hne : ij ≠ kl) :
+    ∃ v : Fin p, (v = ij.1.1 ∨ v = ij.1.2) ∧ v ≠ kl.1.1 ∧ v ≠ kl.1.2 := by
+  have hp : ij.1 ≠ kl.1 := Subtype.coe_injective.ne hne
+  have hij := ij.2
+  have hkl := kl.2
+  by_cases h : ij.1.1 = kl.1.1 ∨ ij.1.1 = kl.1.2
+  · refine ⟨ij.1.2, Or.inr rfl, ?_, ?_⟩
+    all_goals rcases h with h | h
+    all_goals intro h'
+    all_goals first | exact hp (Prod.ext h h') | omega
+  · exact ⟨ij.1.1, Or.inl rfl, fun h' ↦ h (Or.inl h'), fun h' ↦ h (Or.inr h')⟩
 
 /-- Distinct strictly lower entries of a Gram law with independent negation-invariant
 marginals have zero covariance. The marginals need only be sigma-finite; the integrals in
