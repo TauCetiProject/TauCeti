@@ -132,7 +132,7 @@ variable {ι κ : Type*} [Fintype κ] [DecidableEq κ]
 
 /-- The conditional covariance of a positive-semidefinite block matrix is positive semidefinite,
 including when the observed block is singular. -/
-theorem Matrix.PosSemidef.gaussianCondCov [Finite ι] {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
+theorem Matrix.PosSemidef.gaussianCondCov {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
     (hS : S.PosSemidef) : (S.gaussianCondCov).PosSemidef := by
   have hS₂₁ : S.submatrix Sum.inr Sum.inl = (S.submatrix Sum.inl Sum.inr)ᴴ := by
     ext i j
