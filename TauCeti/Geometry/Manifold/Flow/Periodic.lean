@@ -335,11 +335,11 @@ theorem finite_periodicSolutions [FiniteDimensional ℝ E] [CompactSpace M] [T2S
 
 /-- **Finiteness of nondegenerate contractible periodic solutions.** Let `X` be a jointly `C¹`
 time-dependent vector field on a compact boundaryless manifold (whose model space is then
-automatically finite-dimensional), `T`-periodic in time with `0 < T`. If every contractible
-`T`-periodic solution `γ` is nondegenerate, in the sense that `γ s` is a nondegenerate fixed point
-of the return map `timeDependentFlowOf X s (s + T)`, then `X` has only finitely many contractible
-`T`-periodic solutions. Noncontractible solutions may be degenerate, and there may be infinitely
-many of them. -/
+automatically finite-dimensional if the manifold is nonempty), `T`-periodic in time with
+`0 < T`. If every contractible `T`-periodic solution `γ` is nondegenerate, in the sense that
+`γ s` is a nondegenerate fixed point of the return map `timeDependentFlowOf X s (s + T)`, then
+`X` has only finitely many contractible `T`-periodic solutions. Noncontractible solutions may be
+degenerate, and there may be infinitely many of them. -/
 theorem finite_contractiblePeriodicSolutions [CompactSpace M] [T2Space M]
     [IsManifold I 1 M] [BoundarylessManifold I M]
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
