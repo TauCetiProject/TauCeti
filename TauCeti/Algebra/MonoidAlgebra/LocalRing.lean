@@ -78,17 +78,11 @@ variable {R : Type*} [CommRing R] [IsLocalRing R] {p : ℕ} [Fact p.Prime] {Q : 
 /-- Every maximal ideal of `R[Q]` contains `q - 1` for each `q` in the `p`-group `Q`. -/
 private theorem single_sub_one_mem_of_isMaximal (hp : ¬IsUnit (p : R)) (hQ : IsPGroup p Q)
     (𝔐 : Ideal (MonoidAlgebra R Q)) [𝔐.IsMaximal] (q : Q) : single q (1 : R) - 1 ∈ 𝔐 := by
-  -- `R[Q]` is integral over `R`: each group element is a root of `X ^ (p ^ k) - 1`.
-  have : Algebra.IsIntegral R (MonoidAlgebra R Q) := by
-    refine ⟨fun x ↦ ?_⟩
-    induction x using MonoidAlgebra.induction_on with
-    | of m =>
+  -- `R[Q]` is integral over `R`: each group element has order a power of `p`.
+  have : Algebra.IsIntegral R (MonoidAlgebra R Q) :=
+    MonoidAlgebra.isIntegral_of_isTorsion fun m ↦ by
       obtain ⟨k, hk⟩ := hQ m
-      refine IsIntegral.of_pow (pow_pos (Fact.out : p.Prime).pos k) ?_
-      rw [← map_pow, hk, map_one]
-      exact isIntegral_one
-    | add x y hx hy => exact hx.add hy
-    | smul r x hx => exact hx.smul r
+      exact isOfFinOrder_iff_pow_eq_one.2 ⟨p ^ k, pow_pos (Fact.out : p.Prime).pos k, hk⟩
   -- `𝔐` lies over the maximal ideal of `R`, which contains `p`.
   have hcomap : 𝔐.comap (algebraMap R (MonoidAlgebra R Q)) = maximalIdeal R :=
     IsLocalRing.eq_maximalIdeal (Ideal.isMaximal_under_of_isIntegral_of_isMaximal 𝔐)

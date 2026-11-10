@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.Algebra.MonoidAlgebra.Module
+public import Mathlib.GroupTheory.Torsion
 public import Mathlib.RingTheory.Ideal.Maps
+public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 
 /-!
 # Basic facts about monoid algebras
@@ -33,6 +35,8 @@ none of the further theory built on it.
   `R[M]` inherits the absence of additive torsion from its coefficients, as `M →₀ R` does in
   Mathlib.
 * The `Finite (MonoidAlgebra R M)` instance: `R[M]` is finite when `R` and `M` are.
+* `MonoidAlgebra.isIntegral_of_isTorsion`: the monoid algebra of a commutative torsion monoid is
+  integral over its coefficient ring.
 * `MonoidAlgebra.singleOneUnit`: in a group algebra, `single g 1` as a unit with inverse
   `single g⁻¹ 1`, and `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by it
   conjugates the indices of the coefficients.
@@ -215,5 +219,19 @@ omit [CommSemiring R] in
 theorem coeff_single_mul_mul_single_inv [Semiring R] (g h : G) (x : MonoidAlgebra R G) :
     (single g (1 : R) * x * single g⁻¹ 1).coeff h = x.coeff (g⁻¹ * h * g) := by
   simp [mul_assoc]
+
+/-- **The monoid algebra of a commutative torsion monoid is integral over its coefficients.**
+Every basis element `single g 1` with `g ^ n = 1` is a root of the monic polynomial `X ^ n - 1`. -/
+theorem isIntegral_of_isTorsion {R G : Type*} [CommRing R] [CommMonoid G] (hG : IsMulTorsion G) :
+    Algebra.IsIntegral R (MonoidAlgebra R G) := by
+  refine ⟨fun x ↦ ?_⟩
+  induction x using MonoidAlgebra.induction_on with
+  | of m =>
+    obtain ⟨n, hn, hnm⟩ := isOfFinOrder_iff_pow_eq_one.1 (hG m)
+    refine IsIntegral.of_pow hn ?_
+    rw [← map_pow, hnm, map_one]
+    exact isIntegral_one
+  | add x y hx hy => exact hx.add hy
+  | smul r x hx => exact hx.smul r
 
 end MonoidAlgebra
