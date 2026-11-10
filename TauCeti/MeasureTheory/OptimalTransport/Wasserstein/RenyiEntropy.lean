@@ -124,7 +124,7 @@ def renyiEntropy (N : ℝ) (m μ : Measure X) : EReal :=
 theorem renyiEntropy_def (N : ℝ) (m μ : Measure X) :
     renyiEntropy N m μ = internalEnergy (fun r ↦ -(r * r ^ (-N⁻¹))) m μ := (rfl)
 
-/-- The recession constant of the Rényi integrand vanishes: `-r^{-1/N} → 0`. -/
+/-- The recession constant of the Rényi integrand vanishes for `N > 0`: `-r^{-1/N} → 0`. -/
 private theorem recessionConstant_neg_mul_rpow_neg (hN : 0 < N) :
     recessionConstant (fun r ↦ -(r * r ^ (-N⁻¹))) = 0 := by
   refine recessionConstant_eq_of_tendsto ?_
@@ -137,16 +137,42 @@ private theorem recessionConstant_neg_mul_rpow_neg (hN : 0 < N) :
   rw [neg_div, mul_div_cancel_left₀ _ hs.ne']
 
 /-- The real and extended forms of the Rényi integrand agree everywhere, including at `0` and `∞`,
-where both vanish. -/
-private theorem ofReal_toReal_mul_rpow_neg (hN : 0 < N) (x : ℝ≥0∞) :
+where both vanish, provided `N > 0` or `x` is finite. -/
+private theorem ofReal_toReal_mul_rpow_neg {x : ℝ≥0∞} (h : 0 < N ∨ x ≠ ∞) :
     ENNReal.ofReal (x.toReal * x.toReal ^ (-N⁻¹)) = x * x ^ (-N⁻¹) := by
-  have hN' : -N⁻¹ < 0 := neg_neg_of_pos (inv_pos.2 hN)
   rcases eq_or_ne x ∞ with rfl | hx
-  · simp [ENNReal.top_rpow_of_neg hN']
+  · have hN : 0 < N := h.resolve_right (by simp)
+    simp [ENNReal.top_rpow_of_neg (neg_neg_of_pos (inv_pos.2 hN))]
   rcases eq_or_ne x 0 with rfl | hx₀
   · simp
   rw [ENNReal.ofReal_mul ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hx, ENNReal.toReal_rpow,
     ENNReal.ofReal_toReal (ENNReal.rpow_ne_top_of_ne_zero hx₀ hx)]
+
+/-- The positive part of the recession constant of the Rényi integrand vanishes, for every `N`. -/
+private theorem toENNReal_recessionConstant_neg_mul_rpow_neg (N : ℝ) :
+    (recessionConstant fun r : ℝ ↦ -(r * r ^ (-N⁻¹))).toENNReal = 0 := by
+  refine EReal.toENNReal_of_nonpos ?_
+  rw [recessionConstant_def]
+  refine limsup_le_of_le (by isBoundedDefault) ?_
+  filter_upwards [eventually_gt_atTop 0] with s hs
+  exact_mod_cast div_nonpos_of_nonpos_of_nonneg
+    (neg_nonpos.2 (mul_nonneg hs.le (Real.rpow_nonneg hs.le _))) hs.le
+
+/-- For every `N`, the Rényi entropy is the negative of the integral of the real Rényi integrand
+`ρ · ρ^{-1/N}` plus the singular part of `μ` weighted by the negative of the recession constant:
+the integrand is nonpositive, so the positive part of the recession constant does not
+contribute. -/
+private theorem renyiEntropy_eq_neg_lintegral_add (N : ℝ) (m μ : Measure X) :
+    renyiEntropy N m μ = -((∫⁻ x, ENNReal.ofReal ((μ.rnDeriv m x).toReal *
+      (μ.rnDeriv m x).toReal ^ (-N⁻¹)) ∂m + (-recessionConstant fun r : ℝ ↦
+        -(r * r ^ (-N⁻¹))).toENNReal * μ.singularPart m univ : ℝ≥0∞) : EReal) := by
+  have hpos (x : X) : ENNReal.ofReal (-((μ.rnDeriv m x).toReal *
+      (μ.rnDeriv m x).toReal ^ (-N⁻¹))) = 0 :=
+    ENNReal.ofReal_eq_zero.2 <| neg_nonpos.2 <|
+      mul_nonneg ENNReal.toReal_nonneg (Real.rpow_nonneg ENNReal.toReal_nonneg _)
+  rw [renyiEntropy_def, internalEnergy_def]
+  simp only [toENNReal_recessionConstant_neg_mul_rpow_neg N, hpos, neg_neg, lintegral_zero,
+    zero_mul, add_zero, ENNReal.zero_ne_top, ↓reduceIte, EReal.coe_ennreal_zero, zero_sub]
 
 /-- For `N > 0`, the Rényi entropy is `S_N(μ | m) = -∫⁻ ρ · ρ^{-1/N} dm`, where `ρ` is the
 Radon–Nikodym derivative of `μ` with respect to `m`; the singular part of `μ` does not
@@ -154,14 +180,9 @@ contribute. -/
 theorem renyiEntropy_eq_neg_lintegral (hN : 0 < N) :
     renyiEntropy N m μ =
       -((∫⁻ x, μ.rnDeriv m x * μ.rnDeriv m x ^ (-N⁻¹) ∂m : ℝ≥0∞) : EReal) := by
-  have hpos (x : X) : ENNReal.ofReal (-((μ.rnDeriv m x).toReal *
-      (μ.rnDeriv m x).toReal ^ (-N⁻¹))) = 0 :=
-    ENNReal.ofReal_eq_zero.2 <| neg_nonpos.2 <|
-      mul_nonneg ENNReal.toReal_nonneg (Real.rpow_nonneg ENNReal.toReal_nonneg _)
-  rw [renyiEntropy_def, internalEnergy_def]
-  simp only [recessionConstant_neg_mul_rpow_neg hN, hpos, neg_neg, ofReal_toReal_mul_rpow_neg hN,
-    lintegral_zero, neg_zero, EReal.toENNReal_zero, zero_mul, add_zero, ENNReal.zero_ne_top,
-    ↓reduceIte, EReal.coe_ennreal_zero, zero_sub]
+  rw [renyiEntropy_eq_neg_lintegral_add, recessionConstant_neg_mul_rpow_neg hN]
+  simp only [ofReal_toReal_mul_rpow_neg (Or.inl hN), neg_zero, EReal.toENNReal_zero, zero_mul,
+    add_zero]
 
 /-- For `N > 1` and σ-finite `μ`, the Rényi entropy is `S_N(μ | m) = -∫⁻ ρ^{1-1/N} dm`. -/
 theorem renyiEntropy_eq_neg_lintegral_rpow [SigmaFinite μ] (hN : 1 < N) :
@@ -184,36 +205,9 @@ theorem renyiEntropy_eq_neg_lintegral_rpow_neg [μ.HaveLebesgueDecomposition m] 
   rw [renyiEntropy_eq_neg_lintegral hN,
     lintegral_rnDeriv_mul hμ ((Measure.measurable_rnDeriv μ m).pow_const _).aemeasurable]
 
-/-- The positive part of the recession constant of the Rényi integrand vanishes, for every `N`. -/
-private theorem toENNReal_recessionConstant_neg_mul_rpow_neg (N : ℝ) :
-    (recessionConstant fun r : ℝ ↦ -(r * r ^ (-N⁻¹))).toENNReal = 0 := by
-  refine EReal.toENNReal_of_nonpos ?_
-  rw [recessionConstant_def]
-  refine limsup_le_of_le (by isBoundedDefault) ?_
-  filter_upwards [eventually_gt_atTop 0] with s hs
-  exact_mod_cast div_nonpos_of_nonpos_of_nonneg
-    (neg_nonpos.2 (mul_nonneg hs.le (Real.rpow_nonneg hs.le _))) hs.le
-
-/-- The Rényi entropy is the negative of a nonnegative extended real: the Rényi integrand is
-nonpositive, so the positive part of the energy vanishes. -/
-private theorem exists_renyiEntropy_eq_neg (N : ℝ) (m μ : Measure X) :
-    ∃ b : ℝ≥0∞, renyiEntropy N m μ = -(b : EReal) := by
-  have hpos (x : X) : ENNReal.ofReal (-((μ.rnDeriv m x).toReal *
-      (μ.rnDeriv m x).toReal ^ (-N⁻¹))) = 0 :=
-    ENNReal.ofReal_eq_zero.2 <| neg_nonpos.2 <|
-      mul_nonneg ENNReal.toReal_nonneg (Real.rpow_nonneg ENNReal.toReal_nonneg _)
-  have hrc := toENNReal_recessionConstant_neg_mul_rpow_neg N
-  refine ⟨∫⁻ x, ENNReal.ofReal (-(-((μ.rnDeriv m x).toReal *
-      (μ.rnDeriv m x).toReal ^ (-N⁻¹)))) ∂m + (-recessionConstant fun r : ℝ ↦
-        -(r * r ^ (-N⁻¹))).toENNReal * μ.singularPart m univ, ?_⟩
-  rw [renyiEntropy_def, internalEnergy_def]
-  simp only [hpos, hrc, lintegral_zero, zero_mul, add_zero, ENNReal.zero_ne_top, ↓reduceIte,
-    EReal.coe_ennreal_zero, zero_sub]
-
 /-- The Rényi entropy is nonpositive. -/
 theorem renyiEntropy_nonpos : renyiEntropy N m μ ≤ 0 := by
-  obtain ⟨b, hb⟩ := exists_renyiEntropy_eq_neg N m μ
-  rw [hb, EReal.neg_le, neg_zero]
+  rw [renyiEntropy_eq_neg_lintegral_add, EReal.neg_le, neg_zero]
   exact EReal.coe_ennreal_nonneg _
 
 /-- The Rényi entropy is never `⊤`. -/
@@ -231,14 +225,21 @@ theorem renyiEntropy_zero_measure (N : ℝ) (m : Measure X) : renyiEntropy N m 0
   internalEnergy_zero_measure (by simp) m
 
 /-- The Rényi entropy of an absolutely continuous measure does not depend on the choice of density:
-for `N > 0` and every almost everywhere measurable density `f`,
-`S_N(f m | m) = -∫⁻ f · f^{-1/N} dm`. -/
-theorem renyiEntropy_withDensity [SigmaFinite m] (hN : 0 < N) {f : X → ℝ≥0∞}
-    (hf : AEMeasurable f m) :
+for every almost everywhere measurable density `f` that is finite `m`-almost everywhere or has
+`N > 0`, `S_N(f m | m) = -∫⁻ f · f^{-1/N} dm`. -/
+theorem renyiEntropy_withDensity [SigmaFinite m] {f : X → ℝ≥0∞} (hf : AEMeasurable f m)
+    (h : 0 < N ∨ ∀ᵐ x ∂m, f x ≠ ∞) :
     renyiEntropy N m (m.withDensity f) = -((∫⁻ x, f x * f x ^ (-N⁻¹) ∂m : ℝ≥0∞) : EReal) := by
-  rw [renyiEntropy_eq_neg_lintegral hN]
+  have hfin : ∀ᵐ x ∂m, 0 < N ∨ f x ≠ ∞ := by
+    rcases h with hN | h
+    · exact ae_of_all _ fun _ ↦ Or.inl hN
+    · exact h.mono fun _ hx ↦ Or.inr hx
+  rw [renyiEntropy_eq_neg_lintegral_add,
+    (Measure.singularPart_eq_zero _ m).2 (withDensity_absolutelyContinuous m f), FunLike.coe_zero,
+    Pi.zero_apply, mul_zero, add_zero]
   congr 2
-  exact lintegral_congr_ae <| (Measure.rnDeriv_withDensity₀ m hf).mono fun x hx ↦ by simp only [hx]
+  exact lintegral_congr_ae <| ((Measure.rnDeriv_withDensity₀ m hf).and hfin).mono
+    fun x ⟨hx, hx'⟩ ↦ by simp only [hx]; exact ofReal_toReal_mul_rpow_neg hx'
 
 /-- For `N > 0`, a measure singular with respect to `m` has Rényi entropy `0`. -/
 theorem renyiEntropy_of_mutuallySingular (hN : 0 < N) (h : μ ⟂ₘ m) :
@@ -327,42 +328,14 @@ theorem renyiEntropy_ne_bot [IsFiniteMeasure m] [IsFiniteMeasure μ] (hN : 1 ≤
     renyiEntropy N m μ ≠ ⊥ :=
   renyiEntropy_ne_bot_of_measure_compl_eq_zero hN (A := univ) (by simp) (measure_ne_top m univ)
 
-/-- For a density `f` that is finite `m`-almost everywhere, the Rényi entropy of `f m` is
-`-∫⁻ f · f^{-1/N} dm`, for every `N`. -/
-private theorem renyiEntropy_withDensity_of_ae_lt_top [SigmaFinite m] {f : X → ℝ≥0∞}
-    (hf : AEMeasurable f m) (hlt : ∀ᵐ x ∂m, f x < ∞) :
-    renyiEntropy N m (m.withDensity f) = -((∫⁻ x, f x * f x ^ (-N⁻¹) ∂m : ℝ≥0∞) : EReal) := by
-  have hpos (x : X) : ENNReal.ofReal (-(((m.withDensity f).rnDeriv m x).toReal *
-      ((m.withDensity f).rnDeriv m x).toReal ^ (-N⁻¹))) = 0 :=
-    ENNReal.ofReal_eq_zero.2 <| neg_nonpos.2 <|
-      mul_nonneg ENNReal.toReal_nonneg (Real.rpow_nonneg ENNReal.toReal_nonneg _)
-  have hs : (m.withDensity f).singularPart m = 0 :=
-    (Measure.singularPart_eq_zero _ m).2 (withDensity_absolutelyContinuous m f)
-  have hint : ∫⁻ x, ENNReal.ofReal (-(-(((m.withDensity f).rnDeriv m x).toReal *
-      ((m.withDensity f).rnDeriv m x).toReal ^ (-N⁻¹)))) ∂m =
-        ∫⁻ x, f x * f x ^ (-N⁻¹) ∂m := by
-    refine lintegral_congr_ae <|
-      ((Measure.rnDeriv_withDensity₀ m hf).and hlt).mono fun x ⟨hx, hx'⟩ ↦ ?_
-    beta_reduce
-    rw [neg_neg, hx]
-    rcases eq_or_ne (f x) 0 with h₀ | h₀
-    · simp [h₀]
-    rw [ENNReal.ofReal_mul ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hx'.ne,
-      ENNReal.toReal_rpow, ENNReal.ofReal_toReal (ENNReal.rpow_ne_top_of_ne_zero h₀ hx'.ne)]
-  have hrc := toENNReal_recessionConstant_neg_mul_rpow_neg N
-  rw [renyiEntropy_def, internalEnergy_def]
-  simp only [hpos, hs, hint, hrc, lintegral_zero, add_zero, ENNReal.zero_ne_top,
-    ↓reduceIte, EReal.coe_ennreal_zero, zero_sub, FunLike.coe_zero, Pi.zero_apply, mul_zero]
-
 /-- The uniform law `m(A)⁻¹ m|_A` on a measurable set of finite positive measure has Rényi entropy
 `-m(A)^{1/N}`, so the bound `TauCeti.neg_rpow_mul_rpow_le_renyiEntropy` is attained. -/
 theorem renyiEntropy_smul_restrict [SigmaFinite m] {A : Set X} (hA : MeasurableSet A)
     (h₀ : m A ≠ 0) (h₁ : m A ≠ ∞) :
     renyiEntropy N m ((m A)⁻¹ • m.restrict A) = -((m A ^ N⁻¹ : ℝ≥0∞) : EReal) := by
   rw [← withDensity_const, ← withDensity_indicator hA,
-    renyiEntropy_withDensity_of_ae_lt_top (aemeasurable_const.indicator hA)
-      (ae_of_all _ fun x ↦ by
-        by_cases hx : x ∈ A <;> simp [hx, zero_lt_iff.2 h₀])]
+    renyiEntropy_withDensity (aemeasurable_const.indicator hA)
+      (Or.inr (ae_of_all _ fun x ↦ by by_cases hx : x ∈ A <;> simp [hx, h₀]))]
   have h : (fun x ↦ A.indicator (fun _ ↦ (m A)⁻¹) x * A.indicator (fun _ ↦ (m A)⁻¹) x ^ (-N⁻¹))
       = A.indicator fun _ ↦ (m A)⁻¹ * ((m A)⁻¹) ^ (-N⁻¹) := by
     ext x
@@ -501,7 +474,7 @@ private theorem mul_renyiEntropy_add_eq [IsFiniteMeasure μ] [μ.HaveLebesgueDec
   have hI : I ≠ ∞ := fun h ↦
     renyiEntropy_ne_bot_of_measure_compl_eq_zero hN hA hmA ((renyiEntropy_eq_bot_iff hN₀).2 h)
   have hpow (x : X) : ρ x * ρ x ^ (-N⁻¹) = (μ.rnDeriv m x * μ.rnDeriv m x ^ (-N⁻¹)).toReal := by
-    rw [← ofReal_toReal_mul_rpow_neg hN₀, ENNReal.toReal_ofReal
+    rw [← ofReal_toReal_mul_rpow_neg (Or.inl hN₀), ENNReal.toReal_ofReal
       (mul_nonneg ENNReal.toReal_nonneg (Real.rpow_nonneg ENNReal.toReal_nonneg _))]
   have hpm : Measurable fun x ↦ μ.rnDeriv m x * μ.rnDeriv m x ^ (-N⁻¹) := by
     have := Measure.measurable_rnDeriv μ m
@@ -520,7 +493,7 @@ private theorem mul_renyiEntropy_add_eq [IsFiniteMeasure μ] [μ.HaveLebesgueDec
   have hpint : ∫ x, ρ x * ρ x ^ (-N⁻¹) ∂m = I.toReal := by
     simp_rw [hpow]
     refine integral_toReal hpm.aemeasurable (ae_of_all _ fun x ↦ ?_)
-    rw [← ofReal_toReal_mul_rpow_neg hN₀]
+    rw [← ofReal_toReal_mul_rpow_neg (Or.inl hN₀)]
     exact ENNReal.ofReal_lt_top
   have hFi : Integrable (fun x ↦ renyiGap N (ρ x)) m := (hρi.sub hpi).const_mul N
   have hint : ∫ x, (renyiGap N (ρ x) + B.indicator 1 x) ∂m =

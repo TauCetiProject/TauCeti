@@ -221,7 +221,7 @@ private theorem exists_lintegral_setLIntegral_edist_rpow_le [Fact (1 ≤ p)] (hp
     simpa using wassersteinEDist_comp_le_mul hp hp_top (hmom _ (hPmom n)) (hmom _ hQmom) hκL
   -- They form a compact set, so their moment tails are uniformly small.
   have hK := hm.isCompact_insert_range
-  obtain ⟨R, hR⟩ := exists_setLIntegral_edist_rpow_le_of_isCompact_closure hp_top
+  obtain ⟨R, hR⟩ := exists_setLIntegral_edist_rpow_le_of_isCompact_closure
     (hK.isClosed.closure_eq.symm ▸ hK) x hε
   refine ⟨R, fun n ↦ ?_⟩
   have hA : MeasurableSet {y : X | R ≤ nndist x y} :=

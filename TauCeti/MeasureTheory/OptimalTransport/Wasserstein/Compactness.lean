@@ -142,7 +142,7 @@ finite exponent `1 ≤ p < ∞`, the `p`-moments about any basepoint of the laws
 compact set of `P_p (X)` have uniformly small tails: for every `ε > 0` there is a radius `R` such
 that, for every law of the set, the part of its `p`-moment coming from distance at least `R` is at
 most `ε`. -/
-theorem exists_setLIntegral_edist_rpow_le_of_isCompact_closure (hp : p ≠ ∞)
+theorem exists_setLIntegral_edist_rpow_le_of_isCompact_closure
     {S : Set (WassersteinSpace p X)} (hS : IsCompact (closure S)) (x : X) {ε : ℝ≥0∞}
     (hε : 0 < ε) :
     ∃ R : ℝ≥0, ∀ μ ∈ S, ∫⁻ y in {y | R ≤ nndist x y}, edist x y ^ p.toReal
@@ -152,7 +152,7 @@ theorem exists_setLIntegral_edist_rpow_le_of_isCompact_closure (hp : p ≠ ∞)
   -- which the tails beyond some fixed radius are eventually at most `ε`.
   choose μ hμS hμ using fun n : ℕ ↦ h n
   obtain ⟨ν, -, φ, hφ, hlim⟩ := hS.tendsto_subseq fun n ↦ subset_closure (hμS n)
-  obtain ⟨R, hR⟩ := exists_setLIntegral_edist_rpow_le hp hlim x hε
+  obtain ⟨R, hR⟩ := exists_setLIntegral_edist_rpow_le hlim x hε
   obtain ⟨n, hn, hRn⟩ := (hR.and (hφ.tendsto_atTop.eventually_ge_atTop ⌈R⌉₊)).exists
   refine (hμ (φ n)).not_ge ((lintegral_mono_set fun y hy ↦ ?_).trans hn)
   exact (Nat.le_ceil R).trans ((Nat.cast_le.2 hRn).trans hy)
@@ -236,7 +236,7 @@ theorem isCompact_closure_iff_isTightMeasureSet_and_exists_setLIntegral_edist_rp
         ∀ ε : ℝ≥0∞, 0 < ε → ∃ R : ℝ≥0, ∀ μ ∈ S, ∫⁻ y in {y | R ≤ nndist x y},
           edist x y ^ p.toReal ∂((μ : ProbabilityMeasure X) : Measure X) ≤ ε :=
   ⟨fun h ↦ ⟨isTightMeasureSet_of_isCompact_closure h,
-      fun _ hε ↦ exists_setLIntegral_edist_rpow_le_of_isCompact_closure hp h x hε⟩,
+      fun _ hε ↦ exists_setLIntegral_edist_rpow_le_of_isCompact_closure h x hε⟩,
     fun h ↦ isCompact_closure_of_isTightMeasureSet_of_exists_setLIntegral_edist_rpow_le hp x h.1
       h.2⟩
 

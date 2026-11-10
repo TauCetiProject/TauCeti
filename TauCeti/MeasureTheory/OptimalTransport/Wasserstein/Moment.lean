@@ -79,11 +79,42 @@ variable {X : Type*} [PseudoMetricSpace X]
 variable [MeasurableSpace X] [OpensMeasurableSpace X]
   {p : ℝ≥0∞} {γ : Type*} {L : Filter γ} {μs : γ → ProbabilityMeasure X} {μ : ProbabilityMeasure X}
 
+/-- The mass of the closed region at distance at least `n` from a basepoint tends to `0` as `n`
+tends to infinity. -/
+theorem tendsto_measure_nndist_ge_atTop (μ : Measure X) [IsFiniteMeasure μ] (x : X) :
+    Tendsto (fun n : ℕ ↦ μ {y | (n : ℝ≥0) ≤ nndist x y}) atTop (𝓝 0) := by
+  have := tendsto_measure_iInter_atTop (μ := μ)
+    (s := fun n : ℕ ↦ {y | (n : ℝ≥0) ≤ nndist x y})
+    (fun n ↦ (isClosed_le continuous_const
+      (continuous_const.nndist continuous_id)).measurableSet.nullMeasurableSet)
+    (fun m n hmn y hy ↦ (Nat.cast_le.2 hmn).trans hy) ⟨0, measure_ne_top _ _⟩
+  have hempty : (⋂ n : ℕ, {y | (n : ℝ≥0) ≤ nndist x y}) = ∅ := by
+    refine eq_empty_iff_forall_notMem.2 fun y hy ↦ ?_
+    obtain ⟨n, hn⟩ := exists_nat_gt (nndist x y)
+    exact (not_le.2 hn) (mem_iInter.1 hy n)
+  simpa [hempty, Function.comp_def] using this
+
+/-- **Tightness of a weakly convergent family around a point.** Along a weakly convergent family
+of probability measures, for every `ε > 0` there is a radius `R` such that eventually the mass
+outside the ball of radius `R` about a basepoint is at most `ε`. -/
+theorem exists_measure_nndist_ge_le_of_tendsto (h : Tendsto μs L (𝓝 μ)) (x : X) {ε : ℝ≥0∞}
+    (hε : 0 < ε) :
+    ∃ R : ℝ≥0, ∀ᶠ i in L, (μs i : Measure X) {y | R ≤ nndist x y} ≤ ε := by
+  have hS (r : ℝ≥0) : IsClosed {y | r ≤ nndist x y} :=
+    isClosed_le continuous_const (continuous_const.nndist continuous_id)
+  obtain ⟨n, hn⟩ := ((tendsto_measure_nndist_ge_atTop (μ : Measure X) x).eventually
+    (gt_mem_nhds hε)).exists
+  refine ⟨n, ?_⟩
+  have hlt := lt_of_le_of_lt
+    (ProbabilityMeasure.limsup_measure_closed_le_of_tendsto h (hS n)) hn
+  filter_upwards [Filter.eventually_lt_of_limsup_lt hlt] with i hi using hi.le
+
 /-- **Uniformly small moment tails.** Along a weakly convergent family of probability measures
 whose `p`-moments about a basepoint converge to the finite `p`-moment of the limit, the
 `p`-moments have uniformly small tails: for every `ε > 0` there is a radius `R` such that
 eventually the part of the `p`-moment coming from distance at least `R` is at most `ε`. For
-`p = 0` and `p = ∞`, where `p.toReal = 0`, this is the tightness of the family. -/
+`p = 0` and `p = ∞`, where `p.toReal = 0`, it says that eventually the measures put mass at most
+`ε` outside some ball about `x`. -/
 theorem exists_setLIntegral_edist_rpow_le_of_tendsto_lintegral
     (h : Tendsto μs L (𝓝 μ)) (x : X) (hμ : ∫⁻ y, edist x y ^ p.toReal ∂(μ : Measure X) ≠ ∞)
     (hlim : Tendsto (fun i ↦ ∫⁻ y, edist x y ^ p.toReal ∂(μs i : Measure X)) L
@@ -95,24 +126,7 @@ theorem exists_setLIntegral_edist_rpow_le_of_tendsto_lintegral
   · -- For `p = 0` and `p = ∞` the integrand is `1`, and the claim is a tail bound for the measures.
     have h0 : p.toReal = 0 := le_antisymm (not_lt.1 hq) ENNReal.toReal_nonneg
     simp only [h0, ENNReal.rpow_zero, lintegral_const, one_mul, Measure.restrict_apply_univ]
-    have hS (r : ℝ≥0) : IsClosed {y | r ≤ nndist x y} :=
-      isClosed_le continuous_const (continuous_const.nndist continuous_id)
-    have hlim0 : Tendsto (fun n : ℕ ↦ (μ : Measure X) {y | (n : ℝ≥0) ≤ nndist x y}) atTop
-        (𝓝 0) := by
-      have := tendsto_measure_iInter_atTop (μ := (μ : Measure X))
-        (s := fun n : ℕ ↦ {y | (n : ℝ≥0) ≤ nndist x y})
-        (fun n ↦ (hS n).measurableSet.nullMeasurableSet)
-        (fun m n hmn y hy ↦ (Nat.cast_le.2 hmn).trans hy) ⟨0, measure_ne_top _ _⟩
-      have hempty : (⋂ n : ℕ, {y | (n : ℝ≥0) ≤ nndist x y}) = ∅ := by
-        refine eq_empty_iff_forall_notMem.2 fun y hy ↦ ?_
-        obtain ⟨n, hn⟩ := exists_nat_gt (nndist x y)
-        exact (not_le.2 hn) (mem_iInter.1 hy n)
-      simpa [hempty, Function.comp_def] using this
-    obtain ⟨n, hn⟩ := (hlim0.eventually (gt_mem_nhds hε)).exists
-    refine ⟨n, ?_⟩
-    have hlt := lt_of_le_of_lt
-      (ProbabilityMeasure.limsup_measure_closed_le_of_tendsto h (hS n)) hn
-    filter_upwards [Filter.eventually_lt_of_limsup_lt hlt] with i hi using hi.le
+    exact exists_measure_nndist_ge_le_of_tendsto h x hε
   set g : X → ℝ≥0 := fun y ↦ nndist x y ^ p.toReal
   have hg : Continuous g := continuous_nndist_rpow_const hq.le x
   have hcoe (y : X) : (g y : ℝ≥0∞) = edist x y ^ p.toReal :=
@@ -219,21 +233,25 @@ theorem continuous_lintegral_edist_rpow (x : X) :
   exact (ENNReal.continuous_rpow_const).comp (continuous_eLpNorm_edist x)
 
 omit [SecondCountableTopology X] [StandardBorelSpace X] in
-/-- The `p`-moment of a finite-moment law about any basepoint is finite. -/
-private theorem lintegral_edist_rpow_ne_top (hp : p ≠ ∞) (μ : WassersteinSpace p X) (x : X) :
+/-- The `p`-moment of a finite-moment law about any basepoint is finite. For `p = ∞` it is the
+constant `1`, since `p.toReal = 0`. -/
+private theorem lintegral_edist_rpow_ne_top (μ : WassersteinSpace p X) (x : X) :
     ∫⁻ y, edist x y ^ p.toReal ∂((μ : ProbabilityMeasure X) : Measure X) ≠ ∞ := by
+  rcases eq_or_ne p ∞ with rfl | hp
+  · simp
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
   exact hasFiniteMoment_iff_lintegral_edist_rpow_ne_top hp0 hp x _ |>.1 (hasFiniteMoment μ)
 
 omit [SecondCountableTopology X] [StandardBorelSpace X] [Fact (1 ≤ p)] in
-/-- For a finite exponent, the `p`-th power of the distance to a basepoint is integrable against
-every law with finite `p`-moment. -/
-theorem integrable_dist_rpow (hp : p ≠ ∞) (μ : WassersteinSpace p X) (x : X) :
+/-- The `p`-th power of the distance to a basepoint is integrable against every law with finite
+`p`-moment. For `p = 0` and `p = ∞`, where `p.toReal = 0`, it is the constant `1`. -/
+theorem integrable_dist_rpow (μ : WassersteinSpace p X) (x : X) :
     Integrable (fun y ↦ dist y x ^ p.toReal) ((μ : ProbabilityMeasure X) : Measure X) := by
-  by_cases hp0 : p = 0
-  · subst hp0
-    simp only [ENNReal.toReal_zero, Real.rpow_zero]
+  by_cases hq : p.toReal = 0
+  · simp only [hq, Real.rpow_zero]
     exact integrable_const _
+  have hp0 : p ≠ 0 := fun h ↦ hq (by simp [h])
+  have hp : p ≠ ∞ := fun h ↦ hq (by simp [h])
   simpa only [Real.norm_eq_abs, abs_dist] using
     (memLp_dist_iff_memLp_edist.2 ((hasFiniteMoment μ).memLp
       measurable_edist_right.aestronglyMeasurable)).integrable_norm_rpow hp0 hp
@@ -244,36 +262,31 @@ continuous real function on the `p`-Wasserstein space. For `p = ∞` it is the c
 theorem continuous_integral_dist_rpow (x : X) :
     Continuous fun μ : WassersteinSpace p X ↦
       ∫ y, dist y x ^ p.toReal ∂((μ : ProbabilityMeasure X) : Measure X) := by
-  by_cases hp : p = ∞
-  · subst hp
-    simp only [ENNReal.toReal_top, Real.rpow_zero, integral_const, probReal_univ,
-      one_smul]
-    exact continuous_const
   have h : ∀ μ : WassersteinSpace p X,
       ∫ y, dist y x ^ p.toReal ∂((μ : ProbabilityMeasure X) : Measure X) =
         (∫⁻ y, edist x y ^ p.toReal ∂((μ : ProbabilityMeasure X) : Measure X)).toReal := by
     intro μ
     rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ fun _ ↦ by positivity)
-      (integrable_dist_rpow hp μ x).aestronglyMeasurable]
+      (integrable_dist_rpow μ x).aestronglyMeasurable]
     congr 1
     refine lintegral_congr fun y ↦ ?_
     rw [← ENNReal.ofReal_rpow_of_nonneg dist_nonneg ENNReal.toReal_nonneg, edist_dist,
       dist_comm]
   simp_rw [h]
   exact ENNReal.continuousOn_toReal.comp_continuous (continuous_lintegral_edist_rpow x)
-    fun μ ↦ lintegral_edist_rpow_ne_top hp μ x
+    fun μ ↦ lintegral_edist_rpow_ne_top μ x
 
 /-- **Uniform integrability of moments along a `W_p`-convergent family.** For a finite exponent
 `1 ≤ p < ∞`, along a family converging in the `p`-Wasserstein distance the `p`-moments about any
 basepoint have uniformly small tails: for every `ε > 0` there is a radius `R` such that eventually
 the part of the `p`-moment coming from distance at least `R` is at most `ε`. -/
-theorem exists_setLIntegral_edist_rpow_le (hp : p ≠ ∞) {γ : Type*} {L : Filter γ}
+theorem exists_setLIntegral_edist_rpow_le {γ : Type*} {L : Filter γ}
     {μs : γ → WassersteinSpace p X} {μ : WassersteinSpace p X} (h : Tendsto μs L (𝓝 μ)) (x : X)
     {ε : ℝ≥0∞} (hε : 0 < ε) :
     ∃ R : ℝ≥0, ∀ᶠ i in L, ∫⁻ y in {y | R ≤ nndist x y}, edist x y ^ p.toReal
       ∂((μs i : ProbabilityMeasure X) : Measure X) ≤ ε :=
   exists_setLIntegral_edist_rpow_le_of_tendsto_lintegral
-    ((continuous_toProbabilityMeasure.tendsto μ).comp h) x (lintegral_edist_rpow_ne_top hp μ x)
+    ((continuous_toProbabilityMeasure.tendsto μ).comp h) x (lintegral_edist_rpow_ne_top μ x)
     (((continuous_lintegral_edist_rpow x).tendsto μ).comp h) hε
 
 end WassersteinSpace
@@ -379,7 +392,7 @@ theorem tendsto_iff_tendsto_toProbabilityMeasure_and_lintegral (hp : p ≠ ∞) 
   simpa only [edist_def] using
     tendsto_wassersteinEDist_of_tendsto_probabilityMeasure_of_tendsto_lintegral
       (zero_lt_one.trans_le Fact.out).ne' hp hw x
-      (lintegral_edist_rpow_ne_top hp μ x) hm
+      (lintegral_edist_rpow_ne_top μ x) hm
 
 end WassersteinSpace
 
