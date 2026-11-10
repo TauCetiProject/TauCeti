@@ -41,8 +41,8 @@ Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th
   when it fixes the chosen primitive root.
 * `IsPrimitiveRoot.coe_autToPow_eq_natCast_iff`: an automorphism has cyclotomic character `k`
   exactly when it raises the primitive root to the `k`-th power.
-* `IsPrimitiveRoot.cast_autToPow_eq_natCast`: modulo a divisor `d` of the level, the cyclotomic
-  character is read off from the action on a primitive `d`-th root of unity.
+* `IsPrimitiveRoot.cast_autToPow_eq_natCast_iff`: modulo a divisor `d` of the level, the
+  cyclotomic character is read off from the action on a primitive `d`-th root of unity.
 * `IsPrimitiveRoot.cast_autToPow_restrictNormalHom_eq`: the same for the restriction of an
   automorphism of an extension field to a normal intermediate field containing the root.
 * `AlgEquiv.apply_eq_apply_of_abelianization_of_eq`: two automorphisms with the same image in the
@@ -136,20 +136,19 @@ theorem _root_.IsPrimitiveRoot.autToPow_eq_one_iff {K M : Type*} [CommRing K] [C
     (x : M ≃ₐ[K] M) : hζ.autToPow K x = 1 ↔ x ζ = ζ := by
   rw [← Units.val_eq_one, ← Nat.cast_one, hζ.coe_autToPow_eq_natCast_iff, pow_one]
 
-/-- **The cyclotomic character modulo a divisor.** Let `d ∣ m`. An automorphism raising the
-primitive `d`-th root of unity `ζ ^ (m / d)` to the `c`-th power has cyclotomic character
-congruent to `c` modulo `d`. -/
-theorem _root_.IsPrimitiveRoot.cast_autToPow_eq_natCast {K M : Type*} [CommRing K] [CommRing M]
-    [IsDomain M] [Algebra K M] {m d : ℕ} [NeZero m] (hd : d ∣ m) {ζ : M}
-    (hζ : IsPrimitiveRoot ζ m) {x : M ≃ₐ[K] M} {c : ℕ}
-    (hx : x (ζ ^ (m / d)) = (ζ ^ (m / d)) ^ c) :
-    ((hζ.autToPow K x : ZMod m).cast : ZMod d) = c := by
+/-- **The cyclotomic character modulo a divisor.** Let `d ∣ m`. An automorphism has cyclotomic
+character congruent to `k` modulo `d` exactly when it raises the primitive `d`-th root of unity
+`ζ ^ (m / d)` to the `k`-th power. -/
+theorem _root_.IsPrimitiveRoot.cast_autToPow_eq_natCast_iff {K M : Type*} [CommRing K]
+    [CommRing M] [IsDomain M] [Algebra K M] {m d : ℕ} [NeZero m] (hd : d ∣ m) {ζ : M}
+    (hζ : IsPrimitiveRoot ζ m) {x : M ≃ₐ[K] M} {k : ℕ} :
+    ((hζ.autToPow K x : ZMod m).cast : ZMod d) = k ↔ x (ζ ^ (m / d)) = (ζ ^ (m / d)) ^ k := by
   have : NeZero d := ⟨ne_zero_of_dvd_ne_zero (NeZero.ne m) hd⟩
   have ht := hζ.pow_of_dvd (Nat.div_ne_zero_iff_of_dvd hd |>.2 ⟨NeZero.ne m, NeZero.ne d⟩)
     (Nat.div_dvd_of_dvd hd)
   rw [Nat.div_div_self hd (NeZero.ne m)] at ht
-  -- Both `c` and the exponent of `x` on `ζ` are the exponent of `x` on `ζ ^ (m / d)`.
-  rw [ZMod.cast_eq_val, ← ht.coe_autToPow_eq_natCast_iff.2 hx,
+  -- The exponent of `x` on `ζ`, read modulo `d`, is the exponent of `x` on `ζ ^ (m / d)`.
+  rw [ZMod.cast_eq_val, ← ht.coe_autToPow_eq_natCast_iff,
     (ht.coe_autToPow_eq_natCast_iff (k := (hζ.autToPow K x : ZMod m).val)).2]
   rw [map_pow, ← hζ.autToPow_spec K x, ← pow_mul, ← pow_mul, mul_comm]
 
@@ -162,7 +161,7 @@ theorem _root_.IsPrimitiveRoot.cast_autToPow_restrictNormalHom_eq {K L : Type*} 
     (hζ' : IsPrimitiveRoot ζ' m) {d c : ℕ} (hd : d ∣ m) (κ : L ≃ₐ[K] L)
     (hκ : ∀ t : L, t ^ d = 1 → κ t = t ^ c) :
     ((hζ'.autToPow K (AlgEquiv.restrictNormalHom E κ) : ZMod m).cast : ZMod d) = c :=
-  hζ'.cast_autToPow_eq_natCast hd <| Subtype.ext <|
+  (hζ'.cast_autToPow_eq_natCast_iff hd).2 <| Subtype.ext <|
     (AlgEquiv.restrictNormalHom_apply E κ _).trans <| by
       rw [IntermediateField.coe_pow, IntermediateField.coe_pow]
       exact hκ _ (by rw [← pow_mul, Nat.div_mul_cancel hd,
