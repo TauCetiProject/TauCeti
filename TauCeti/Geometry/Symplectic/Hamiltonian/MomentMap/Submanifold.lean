@@ -48,7 +48,7 @@ reduction, on which the stabilizer of `c` acts and whose quotient carries the re
 
 For a coadjoint-equivariant moment map of a Lie group action, regularity of `c` propagates to every
 point over the coadjoint orbit of `c`
-(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.surjective_differential_of_apply_eq`), so the
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.differential_surjective_of_apply_eq`), so the
 regular-value hypothesis here holds at every value in that orbit.
 
 ## References
