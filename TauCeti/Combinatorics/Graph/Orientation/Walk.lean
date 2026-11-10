@@ -151,6 +151,7 @@ theorem orientation_cons_tail {x y z : α} (e : β) (h : G.IsLink e x y)
   simpa using h
 
 /-- A trail follows the orientation obtained by directing its successive edges forward. -/
+@[simp]
 theorem followsOrientation_orientation {x y : α} (p : G.Walk x y) (hp : p.edges.Nodup) :
     p.FollowsOrientation (p.orientation hp) := by
   induction p with

@@ -46,6 +46,7 @@ noncomputable def toGraphOrientation (ear : G.Ear H) : ear.toGraph.Orientation :
 
 /-- The underlying walk of an ear, restricted to its traced graph, follows the canonical
 orientation of that trace. -/
+@[simp]
 theorem followsOrientation_toGraphOrientation (ear : G.Ear H) :
     (ear.toWalk.2.2.transfer ear.toGraph_le fun e he ↦
       (by rw [ear.edgeSet_toGraph]; exact he)).FollowsOrientation
