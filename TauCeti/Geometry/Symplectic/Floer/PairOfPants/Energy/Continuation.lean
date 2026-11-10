@@ -16,16 +16,17 @@ perturbation with continuation necks at the positions `L_q` from inner Hamiltoni
 Hamiltonians `H_q` on the three ends of `S = ℂ ∖ {0, 1}`. Far out on each end it is `H_q(t) dt`, so
 the energy identity of `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity` applies to
 it. For a solution `u` of the Floer equation `(du - X_K)^{0,1} = 0` with tame almost complex
-structures, into a symplectic vector space, whose end loops `t ↦ u(φ_q(s, t))` have actions
-converging to `a_q` as `±s → ∞`, the energy is
+structures, into a symplectic vector space, whose curvature term `R_K(u)` is integrable and whose
+end loops `t ↦ u(φ_q(s, t))` have actions converging to `a_q` as `±s → ∞`, the energy is
 
 `E(u) = a_0 + a_1 - a_∞ - ∫_S R_K(u)`,
 
 where the actions are those of the outer Hamiltonians `H_q`
 (`SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_eq`).
 
-If `|G_q|, |H_q| ≤ B_q` and `|H_q - G_q| ≤ D_q`, the curvature along every map continuous on `S` is
-integrable (`SymplecticForm.integrable_hamiltonianCurvature_pairOfPantsContinuationPerturbation`)
+If `|G_q|, |H_q| ≤ B_q` and `|H_q - G_q| ≤ D_q`, this integrability hypothesis holds
+automatically: the curvature along every map continuous on `S` is integrable
+(`SymplecticForm.integrable_hamiltonianCurvature_pairOfPantsContinuationPerturbation`)
 with integral at most `∑ q, (B_q + D_q)` in absolute value, whatever the neck positions. This gives
 the energy bound `E(u) ≤ a_0 + a_1 - a_∞ + ∑ q, (B_q + D_q)`
 (`SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_le`) and the
