@@ -330,19 +330,13 @@ private theorem fderiv_propagatorField_apply_stdComplexLineReal (hScont : Contin
   rw [hf.fderiv]
   simp [stdComplexLineReal_eq]
 
-/-- The propagator field of `v` lies in the kernel of `D`. -/
-private theorem orbitTorusOperator_propagatorField (hJ₀sq : ∀ x, J₀ (J₀ x) = -x)
-    (hScont : Continuous S) (v : V) (z : ℝ × ℝ) :
-    orbitTorusOperator J₀ S (propagatorField J₀ S v) z = 0 :=
-  orbitTorusOperator_dysonSeriesLeft_apply_eq_zero hJ₀sq hScont v z
-
 /-- The propagator field of `v` is independent of `s`, so it also lies in the kernel of `D†`. -/
 private theorem orbitTorusAdjoint_propagatorField (hJ₀sq : ∀ x, J₀ (J₀ x) = -x)
     (hScont : Continuous S) (v : V) (z : ℝ × ℝ) :
     orbitTorusAdjoint J₀ S (propagatorField J₀ S v) z = 0 := by
   rw [orbitTorusAdjoint_eq_orbitTorusOperator
-    (fderiv_propagatorField_apply_stdComplexLineReal hScont v z),
-    orbitTorusOperator_propagatorField hJ₀sq hScont]
+    (fderiv_propagatorField_apply_stdComplexLineReal hScont v z)]
+  exact orbitTorusOperator_dysonSeriesLeft_apply_eq_zero hJ₀sq hScont v z
 
 /-- For `v` in the `ε₂`-eigenspace of `Ψ(d) ^ n`, the propagator field of `v` is a `C²` map
 periodic along `(k ℓ, 0)` and twisted by `ε₂` along `(a ℓ, n d)`. -/
@@ -451,7 +445,8 @@ def kerOrbitTorusOperatorEquiv (hℓ : 0 < ℓ) (hd : 0 < d) (hJ₀ : ∀ x y, �
   map_smul' _ _ := rfl
   invFun v :=
     ⟨⟨propagatorField J₀ S v, propagatorField_mem hS1 hper k a (apply_eq_smul_of_mem_ker v.2)⟩,
-      mem_ker_orbitTorusOperatorₗ.2 (orbitTorusOperator_propagatorField hJ₀sq hS1.continuous v)⟩
+      mem_ker_orbitTorusOperatorₗ.2
+        (orbitTorusOperator_dysonSeriesLeft_apply_eq_zero hJ₀sq hS1.continuous v)⟩
   left_inv u := by
     ext1; ext1
     exact (of_mem_ker hℓ hd hJ₀ hJ₀sq hS hS1.continuous hper (one_pow 2) hε₂ hk hn u.1.2
