@@ -25,8 +25,8 @@ quadratic fold coefficient `κ`, the component `β` of a gradient trajectory alo
 
 `β' = -κ β² + o(β²)` as `s → +∞`.
 
-This file shows that such an amplitude which tends to `0` and is not eventually zero decays
-polynomially rather than exponentially, at the exact rate of the model solution
+This file shows that, when `κ > 0`, such an amplitude which tends to `0` and is not eventually
+zero decays polynomially rather than exponentially, at the exact rate of the model solution
 `β(s) = (κ s)⁻¹` of `β' = -κ β²`:
 
 * it is eventually positive (`IsCenterEquationSolution.eventually_pos`); without the
@@ -44,9 +44,11 @@ manifold reduction since `β → 0` (`Asymptotics.IsBigO.trans_isLittleO`). It m
 that the transverse components of the trajectory can enter it.
 
 For an autonomous equation `β' = f(β)` with `f(0) = f'(0) = 0` and `f''(0) = -2κ`, every
-solution tending to `0` solves the center equation (`TauCeti.isCenterEquationSolution_comp`), and
-the second derivative `β'' = f'(β) f(β)` is equivalent to `2 (κ s³)⁻¹`, the second derivative of
-the model solution (`IsCenterEquationSolution.isEquivalent_comp_mul_comp`), so `β'' =Θ s⁻³`.
+solution tending to `0` solves the center equation (`TauCeti.isCenterEquationSolution_comp`). If
+moreover `κ > 0` and the solution is not eventually zero, the second derivative
+`β'' = f'(β) f(β)` is equivalent to `2 (κ s³)⁻¹`, the second derivative of the model solution
+(`IsCenterEquationSolution.isEquivalent_comp_mul_comp`), so `β'' =Θ s⁻³`
+(`IsCenterEquationSolution.isTheta_comp_mul_comp`).
 
 ## Main definitions
 
@@ -266,12 +268,8 @@ theorem isEquivalent_comp_mul_comp (h : IsCenterEquationSolution κ β fun s ↦
     (fun s ↦ f' (β s) * f (β s)) ~[atTop] fun s ↦ 2 * (κ * s ^ 3)⁻¹ := by
   -- `f' x ~ -2 κ x` at `0`, hence `f'(β) ~ -2 κ β ~ -2 κ (κ s)⁻¹`.
   have hf'eq : f' ~[𝓝 0] fun x ↦ -(2 * κ) * x := by
-    have h₀ := hasDerivAt_iff_isLittleO.1 hf'
-    simp only [hf'₀, sub_zero, smul_eq_mul] at h₀
-    refine (h₀.trans_isBigO ((isTheta_const_mul_left (neg_ne_zero.2 (by positivity))).2
-      (isTheta_refl _ _)).2).congr_left fun x ↦ ?_
-    simp only [Pi.sub_apply]
-    ring
+    simpa [hf'₀, Function.comp_def, mul_comm] using
+      hf'.isEquivalent_sub (neg_ne_zero.2 (by positivity))
   have h₁ : (fun s ↦ f' (β s)) ~[atTop] fun s ↦ -(2 * κ) * (κ * s)⁻¹ :=
     (hf'eq.comp_tendsto h.tendsto).trans
       ((IsEquivalent.refl (u := fun _ ↦ -(2 * κ))).mul (h.isEquivalent hκ hne))
