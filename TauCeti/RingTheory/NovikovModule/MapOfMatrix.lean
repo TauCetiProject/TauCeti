@@ -29,7 +29,7 @@ obeys a potential bound, so it has a Novikov-linear map
 (`TauCeti.NovikovModule.novikovMapOfMatrix`), given in reference coordinates by
 `cₖ = ∑ᵢ aᵢ Mᵢₖ`. Relative to the reference bases it is Mathlib's `Matrix.toLin` of the transpose
 of `M` (`TauCeti.NovikovModule.novikovMapOfMatrix_eq_toLin`), so it is linear in `M`, composition
-of maps is multiplication of matrices (`TauCeti.NovikovModule.novikovMapOfMatrix_comp`), and the
+of maps is multiplication of matrices (`TauCeti.NovikovModule.novikovMapOfMatrix_mul`), and the
 identity matrix gives the identity map.
 
 This is the one-input counterpart of `TauCeti.NovikovModule.kernelOfMatrix` and
@@ -58,7 +58,7 @@ which is the form that the energy estimate takes for class-indexed counts.
   its transpose for the reference bases.
 * `TauCeti.NovikovModule.novikovMapOfMatrix_add`, `TauCeti.NovikovModule.novikovMapOfMatrix_smul`:
   the map of a matrix is linear in the matrix.
-* `TauCeti.NovikovModule.novikovMapOfMatrix_comp`, `TauCeti.NovikovModule.novikovMapOfMatrix_one`:
+* `TauCeti.NovikovModule.novikovMapOfMatrix_mul`, `TauCeti.NovikovModule.novikovMapOfMatrix_one`:
   the map of a product of matrices is the composite of their maps, and the identity matrix gives
   the identity.
 
@@ -276,12 +276,12 @@ theorem novikovMapOfMatrix_smul (c : NovikovSeries R H N)
   have := Fintype.ofFinite ι₁
   simp only [novikovMapOfMatrix_eq_toLin, Matrix.transpose_smul, map_smul]
 
-/-- **Composition is matrix multiplication.** The composite of the maps of matrices `A` and `B`
-is the map of the matrix product `A * B`. -/
-theorem novikovMapOfMatrix_comp [Fintype ι₀] [Finite ι₂] (A : Matrix ι₁ ι₀ (NovikovSeries R H N))
+/-- **Matrix multiplication is composition.** The map of the matrix product `A * B` is the
+composite of the maps of `A` and `B`. -/
+theorem novikovMapOfMatrix_mul [Fintype ι₀] [Finite ι₂] (A : Matrix ι₁ ι₀ (NovikovSeries R H N))
     (B : Matrix ι₀ ι₂ (NovikovSeries R H N)) :
-    (novikovMapOfMatrix hF₀ hF₂ r₀ r₂ B).comp (novikovMapOfMatrix hF₁ hF₀ r₁ r₀ A) =
-      novikovMapOfMatrix hF₁ hF₂ r₁ r₂ (A * B) := by
+    novikovMapOfMatrix hF₁ hF₂ r₁ r₂ (A * B) =
+      (novikovMapOfMatrix hF₀ hF₂ r₀ r₂ B).comp (novikovMapOfMatrix hF₁ hF₀ r₁ r₀ A) := by
   have := Fintype.ofFinite ι₁
   let := module (R := R) hF₁
   let := module (R := R) hF₂
