@@ -100,7 +100,7 @@ theorem wrappedNormalPDFReal_coe_eq_gaussianLatticeSum (a : ℝ) (v : ℝ≥0) (
   rcases eq_or_ne v 0 with rfl | hv
   · simp
   rw [wrappedNormalPDFReal_def, ← AddCircle.coe_sub, AddCircle.automorphize_coe,
-    (hasSum_gaussianPDFReal_add_zsmul 0 hv two_pi_pos.ne' (x - a)).tsum_eq, zero_sub, neg_sub,
+    (hasSum_gaussianPDFReal_add_zsmul 0 v two_pi_pos.ne' (x - a)).tsum_eq, zero_sub, neg_sub,
     sqrt_mul two_pi_pos.le, ← mul_assoc, mul_inv, ← mul_assoc]
   congr 1
   rw [← div_eq_mul_inv (2 * π), Real.div_sqrt, div_eq_mul_inv]

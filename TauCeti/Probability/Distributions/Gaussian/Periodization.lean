@@ -16,10 +16,10 @@ of a point by a nonzero period `T` gives a rescaled Gaussian lattice sum:
 
 `∑ k : ℤ, gaussianPDFReal m v (x + k • T) = (√(2 * π * v))⁻¹ * Z((m - x) / T, √v / T)`,
 
-where `Z` is `Real.gaussianLatticeSum`. At variance zero every term vanishes, so the periodized
-density is summable at every variance. The direct density series converges locally uniformly in
-`x`, so it can be integrated term by term on compact intervals when computing wrapped Gaussian
-probabilities.
+where `Z` is `Real.gaussianLatticeSum`. At variance zero every term vanishes and both sides are
+zero, so the periodized density is summable at every variance. The direct density series converges
+locally uniformly in `x`, so it can be integrated term by term on compact intervals when computing
+wrapped Gaussian probabilities.
 -/
 
 public section
@@ -41,11 +41,13 @@ private theorem gaussianPDFReal_add_zsmul_eq (m : ℝ) {v : ℝ≥0} (hv : v ≠
   field_simp
   ring
 
-/-- Periodizing a Gaussian density with nonzero variance gives a rescaled Gaussian lattice sum. -/
-theorem hasSum_gaussianPDFReal_add_zsmul (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) {T : ℝ} (hT : T ≠ 0)
-    (x : ℝ) :
+/-- Periodizing a Gaussian density gives a rescaled Gaussian lattice sum. At variance zero both
+sides vanish. -/
+theorem hasSum_gaussianPDFReal_add_zsmul (m : ℝ) (v : ℝ≥0) {T : ℝ} (hT : T ≠ 0) (x : ℝ) :
     HasSum (fun k : ℤ ↦ gaussianPDFReal m v (x + k • T))
       ((√(2 * π * v))⁻¹ * gaussianLatticeSum ((m - x) / T) (√(v : ℝ) / T)) := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp [gaussianPDFReal_zero_var]
   have hv' : (0 : ℝ) < v := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hv)
   have hs : √(v : ℝ) / T ≠ 0 := div_ne_zero (sqrt_ne_zero'.mpr hv') hT
   exact ((hasSum_gaussianLatticeSum _ hs).mul_left (√(2 * π * v))⁻¹).congr_fun
@@ -54,10 +56,8 @@ theorem hasSum_gaussianPDFReal_add_zsmul (m : ℝ) {v : ℝ≥0} (hv : v ≠ 0) 
 /-- The translates of a point by the multiples of a nonzero period give a summable family of
 Gaussian densities, at every variance. -/
 theorem summable_gaussianPDFReal_add_zsmul (m : ℝ) (v : ℝ≥0) {T : ℝ} (hT : T ≠ 0) (x : ℝ) :
-    Summable fun k : ℤ ↦ gaussianPDFReal m v (x + k • T) := by
-  rcases eq_or_ne v 0 with rfl | hv
-  · simp [gaussianPDFReal_zero_var]
-  exact (hasSum_gaussianPDFReal_add_zsmul m hv hT x).summable
+    Summable fun k : ℤ ↦ gaussianPDFReal m v (x + k • T) :=
+  (hasSum_gaussianPDFReal_add_zsmul m v hT x).summable
 
 /-- The direct periodized Gaussian density series converges locally uniformly to the rescaled
 Gaussian lattice sum. This includes variance zero, when every density term vanishes. -/
