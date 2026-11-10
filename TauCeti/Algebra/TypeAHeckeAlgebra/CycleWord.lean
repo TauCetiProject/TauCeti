@@ -103,8 +103,9 @@ theorem cosetRep_eq_smul_shift_cycleWord {a n : ℕ} :
   by_cases han : a ≤ n
   · simp [cycleWord_def, show n + 1 - a - 1 = n - a by omega, Nat.sub_add_cancel han, smul_smul,
       ← mul_pow]
-  · simp [cosetRep_of_le (show n ≤ a by omega), show n - a = 0 by omega,
-      show n + 1 - a = 0 by omega]
+  · have h1 : n - a = 0 := by omega
+    have h2 : n + 1 - a = 0 := by omega
+    simp [cosetRep_of_le (by omega : n ≤ a), h1, h2]
 
 end CycleWord
 
