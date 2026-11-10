@@ -45,6 +45,10 @@ identified with the sign of the Jacobian.
   finite fibre is the sum of the local indices over the fibre.
 * `TauCeti.HomologicalOrientation.degree_eq_sum_localIndex`: the degree of a proper map onto a
   preconnected manifold is the sum of the local indices over any finite fibre.
+* `TauCeti.HomologicalOrientation.isUnit_localIndex_of_isOpenEmbedding`: at a point near which
+  the map is an open embedding, the local index is `±1`.
+* `TauCeti.HomologicalOrientation.isUnit_degree_of_isOpenEmbedding`: a proper map with a fibre
+  consisting of a single such point has degree `±1`.
 
 ## References
 
@@ -330,6 +334,41 @@ include hE in
 @[simp]
 theorem localIndex_id (x : M) : o.localIndex o (ContinuousMap.id M) x = 1 := by
   rw [← o.localDegree_eq_localIndex o hE hE _ (preimage_id (s := {x})), localDegree_id]
+
+include hF in
+/-- **A local homeomorphism has local index `±1`.** If `f` restricts to an open embedding on an
+open neighbourhood `U` of `x`, the local index of `f` at `x` is a unit of `ℤ`: the open embedding
+identifies the local homology of `M` at `x` with that of `N` at `f x`, so it carries the local
+orientation `o x` to one of the two local orientations `± o' (f x)`. -/
+theorem isUnit_localIndex_of_isOpenEmbedding (f : C(M, N)) {x : M} {U : Set M} (hUo : IsOpen U)
+    (hx : x ∈ U) (hfU : IsOpenEmbedding (f.restrict U)) : IsUnit (o.localIndex o' f x) := by
+  have hU : ∀ z ∈ U, f z = f x → z = x := fun z hz hfz ↦
+    congrArg Subtype.val (hfU.injective (a₁ := ⟨z, hz⟩) (a₂ := ⟨x, hx⟩) hfz)
+  -- The image of the local orientation `o x`, read in `U`, is a local orientation at `f x`.
+  set w := hfU.localOrientationEquiv ⟨x, hx⟩ n
+    ((hUo.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨x, hx⟩ n).symm (o x))
+  have hw : w.val = o.localIndex o' f x • (o' (f x)).val := by
+    rw [IsOpenEmbedding.coe_localOrientationEquiv, localHomologyIsoOfIsOpenEmbedding_hom]
+    exact o.localHomologyMap_restrict_localOrientationEquiv_symm o' f rfl hUo hx hU
+  subst hF
+  rcases IsLocalOrientation.eq_or_eq_neg
+      (singularHomologyComplSingletonFinrankIso _ (chartAt F (f x)) (mem_chart_source F (f x)))
+      (o' (f x)).property w.property with h | h
+  · rw [h] at hw
+    exact o'.zsmul_left_injective rfl (f x) ((one_zsmul _).trans hw) ▸ isUnit_one
+  · rw [h] at hw
+    exact o'.zsmul_left_injective rfl (f x) ((neg_one_zsmul _).trans hw) ▸ isUnit_one.neg
+
+include hF in
+/-- **A map with a single, locally homeomorphic, point in a fibre has degree `±1`.** Let `f` be a
+proper map onto a preconnected manifold, `x` the only point of `M` sent to `f x`, and `U` an open
+neighbourhood of `x` on which `f` restricts to an open embedding. Then the degree of `f` is a unit
+of `ℤ`. -/
+theorem isUnit_degree_of_isOpenEmbedding [PreconnectedSpace N] {f : C(M, N)}
+    (hf : IsProperMap f) {x : M} (hx : f ⁻¹' {f x} = {x}) {U : Set M} (hUo : IsOpen U)
+    (hxU : x ∈ U) (hfU : IsOpenEmbedding (f.restrict U)) : IsUnit (o.degree o' hE f) := by
+  rw [← o.localDegree_eq_degree o' hE hF hf (f x), o.localDegree_eq_localIndex o' hE hF f hx]
+  exact o.isUnit_localIndex_of_isOpenEmbedding o' hF f hUo hxU hfU
 
 end HomologicalOrientation
 
