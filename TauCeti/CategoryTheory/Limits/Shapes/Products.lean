@@ -25,10 +25,12 @@ and no biproducts; it is how products of skyscraper presheaves are shown to be f
 
 ## Reindexing a coproduct along an injection is split
 
-Let `X : I → C` be a family of objects of a category with zero morphisms and coproducts, and let
-`f : J → I` be injective.  Reindexing along `f` gives a map `∐ (X ∘ f) ⟶ ∐ X`, and this file
-shows that it is a split monomorphism: the retraction sends the summand indexed by `f j` back to
-the one indexed by `j`, and kills the summands indexed outside the range of `f`.
+Let `X : I → C` be a family of objects of a category with zero morphisms, and let `f : J → I` be
+injective.  When both coproducts exist, reindexing along `f` gives a map `∐ (X ∘ f) ⟶ ∐ X`, and
+this file shows that it is a split monomorphism (`TauCeti.isSplitMono_sigmaMap'`): the retraction
+sends the summand indexed by `f j` back to the one indexed by `j`, and kills the summands indexed
+outside the range of `f`.  The index types may live in any universes, and no other coproducts are
+needed.
 
 Mathlib's `CategoryTheory.Limits.MonoCoprod.mono_map'_of_injective` proves the same map is a
 monomorphism in a category satisfying `MonoCoprod`; the splitting below needs zero morphisms
@@ -95,8 +97,6 @@ public section
 
 open CategoryTheory Limits
 
-universe w
-
 namespace TauCeti
 
 section PiMap
@@ -113,11 +113,12 @@ end PiMap
 
 section Reindex
 
-variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasCoproducts.{w} C]
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] {I J : Type*}
 
 open scoped Classical in
 /-- Reindexing a coproduct along an injective map of index types is a split monomorphism. -/
-instance isSplitMono_sigmaMap' {I J : Type w} (X : I → C) (f : J ⟶ I) [Mono f] :
+theorem isSplitMono_sigmaMap' (X : I → C) (f : J → I) (hf : Function.Injective f)
+    [HasCoproduct X] [HasCoproduct (X ∘ f)] :
     IsSplitMono (Sigma.map' f fun j ↦ 𝟙 ((X ∘ f) j)) :=
   IsSplitMono.mk'
     { retraction := Sigma.desc fun i ↦
@@ -127,20 +128,15 @@ instance isSplitMono_sigmaMap' {I J : Type w} (X : I → C) (f : J ⟶ I) [Mono 
       id := by
         refine Sigma.hom_ext _ _ fun j ↦ ?_
         have h : f j ∈ Set.range f := ⟨j, rfl⟩
-        have hj : h.choose = j := (mono_iff_injective f).1 ‹_› h.choose_spec
+        have hj : h.choose = j := hf h.choose_spec
         rw [← Category.assoc, Sigma.ι_comp_map', Category.id_comp, Sigma.ι_comp_desc,
           dite_eq_left h, Category.comp_id]
         exact Sigma.eqToHom_comp_ι (X ∘ f) hj }
 
-end Reindex
-
-section ReindexPi
-
-variable {C : Type*} [Category* C] [HasZeroMorphisms C] [HasProducts.{w} C]
-
 open scoped Classical in
 /-- Reindexing a product along an injective map of index types is a split epimorphism. -/
-instance isSplitEpi_piMap' {I J : Type w} (X : I → C) (f : J ⟶ I) [Mono f] :
+theorem isSplitEpi_piMap' (X : I → C) (f : J → I) (hf : Function.Injective f)
+    [HasProduct X] [HasProduct (X ∘ f)] :
     IsSplitEpi (Pi.map' f fun j ↦ 𝟙 ((X ∘ f) j)) :=
   IsSplitEpi.mk'
     { section_ := Pi.lift fun i ↦
@@ -150,17 +146,17 @@ instance isSplitEpi_piMap' {I J : Type w} (X : I → C) (f : J ⟶ I) [Mono f] :
       id := by
         refine Pi.hom_ext _ _ fun j ↦ ?_
         have h : f j ∈ Set.range f := ⟨j, rfl⟩
-        have hj : h.choose = j := (mono_iff_injective f).1 ‹_› h.choose_spec
+        have hj : h.choose = j := hf h.choose_spec
         simp only [Category.assoc, Pi.map'_comp_π, Function.comp_apply, Category.comp_id,
           Pi.lift_comp_π, dite_eq_left h, Category.id_comp]
         exact Pi.π_comp_eqToHom (X ∘ f) hj }
 
-end ReindexPi
+end Reindex
 
 noncomputable section Codiagonal
 
-variable {C : Type*} [Category* C] [Preadditive C] [HasCoproducts.{w} C] (R : C) {ι : Type w}
-  (i₀ : ι)
+variable {C : Type*} [Category* C] [Preadditive C] (R : C) {ι : Type*} (i₀ : ι)
+  [HasCoproduct fun _ : ι ↦ R] [HasCoproduct fun _ : {i // i ≠ i₀} ↦ R]
 
 /-- The morphism `∐_{i ≠ i₀} R ⟶ ∐_ι R` whose component at `i` is the difference `ι_i - ι_{i₀}`
 of coproduct inclusions.  It is a kernel of the codiagonal `∐_ι R ⟶ R`
