@@ -27,8 +27,9 @@ multiplicity. A domain from `y` to itself is a periodic domain plus `n_z` copies
 surface `Σ`, which has Maslov index two, so strong admissibility at `y` is the statement that
 no nonzero nonnegative domain from `y` to itself has Maslov index zero, and Dickson's lemma turns
 this into finiteness
-(`TauCeti.HeegaardRegionSystem.forall_finite_setOf_isDomainBetween_nonneg_index_iff`). This is the finiteness needed for differentials that count holomorphic
-disks of every basepoint multiplicity, recording `n_z` as a power of a formal variable `U`.
+(`TauCeti.HeegaardRegionSystem.forall_finite_setOf_isDomainBetween_nonneg_index_iff`). This is
+the finiteness needed for differentials that count holomorphic disks of every basepoint
+multiplicity, recording `n_z` as a power of a formal variable `U`.
 
 ## Main definitions
 
