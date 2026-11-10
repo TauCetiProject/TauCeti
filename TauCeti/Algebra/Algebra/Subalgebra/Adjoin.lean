@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dimension.Basic
 public import Mathlib.RingTheory.Adjoin.Basic
 import Mathlib.Algebra.Algebra.Subalgebra.Tower
+import TauCeti.Algebra.Algebra.Subalgebra.Basic
 
 /-!
 # Generators and vector subspaces of generated algebras
@@ -92,16 +93,16 @@ theorem rank_adjoin_eq_rank_adjoin_range (s : Set F') :
     Module.rank F (Algebra.adjoin F s) =
       Module.rank (IsScalarTower.toAlgHom k F F').range
         (Algebra.adjoin (IsScalarTower.toAlgHom k F F').range s) := by
-  have heq : (Algebra.adjoin F s).toSubsemiring =
-      (Algebra.adjoin (IsScalarTower.toAlgHom k F F').range s).toSubsemiring :=
-    congrArg Subalgebra.toSubsemiring
-      (IsScalarTower.adjoin_range_toAlgHom (R := k) (S := F) (A := F') s).symm
+  have heq : ((Algebra.adjoin F s : Subalgebra F F') : Set F') =
+      (Algebra.adjoin (IsScalarTower.toAlgHom k F F').range s : Subalgebra _ F') :=
+    congrArg (fun S : Subsemiring F' ↦ (S : Set F'))
+      (congrArg Subalgebra.toSubsemiring
+        (IsScalarTower.adjoin_range_toAlgHom (R := k) (S := F) (A := F') s).symm)
   let i : F ≃ₐ[k] (IsScalarTower.toAlgHom k F F').range :=
     AlgEquiv.ofInjectiveField (IsScalarTower.toAlgHom k F F')
-  exact rank_eq_of_equiv_equiv i (RingEquiv.subsemiringCongr heq).toAddEquiv
+  exact rank_eq_of_equiv_equiv i (Subalgebra.ringEquivOfSetEq _ _ heq).toAddEquiv
     i.bijective fun a ⟨x, hx⟩ ↦ by
       ext
-      simp_rw [Algebra.smul_def]
-      rfl
+      simp [Algebra.smul_def, i, AlgEquiv.ofInjectiveField, AlgEquiv.ofInjective_apply]
 
 end TauCeti
