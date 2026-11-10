@@ -82,7 +82,7 @@ theorem ncard_edgeSet_matchingSubgraph (M : Set E(Graph.ofSimpleGraph H)) :
 
 /-- The selected actual edges corresponding to the edges of a simple-graph subgraph. -/
 def Subgraph.toGraphEdgeSet (S : H.Subgraph) : Set E(Graph.ofSimpleGraph H) :=
-  {e | (e : Sym2 V) ∈ S.edgeSet}
+  Subtype.val ⁻¹' S.edgeSet
 
 /-- Membership in the selected actual edge set is membership of the underlying unordered pair in
 the subgraph edge set. -/
@@ -95,9 +95,7 @@ theorem Subgraph.mem_toGraphEdgeSet {S : H.Subgraph} {e : E(Graph.ofSimpleGraph 
 edge set. -/
 theorem Subgraph.edgeSet_matchingSubgraph_toGraphEdgeSet (S : H.Subgraph) :
     (H.matchingSubgraph S.toGraphEdgeSet).edgeSet = S.edgeSet := by
-  rw [edgeSet_matchingSubgraph, Subgraph.toGraphEdgeSet]
-  change Subtype.val '' (Subtype.val ⁻¹' S.edgeSet) = S.edgeSet
-  rw [Subtype.image_preimage_coe]
+  rw [edgeSet_matchingSubgraph, Subgraph.toGraphEdgeSet, Subtype.image_preimage_coe]
   exact Set.inter_eq_right.mpr S.edgeSet_subset
 
 /-- Converting selected multigraph edge identities to a subgraph and back recovers the selected
@@ -105,9 +103,8 @@ edge set. -/
 @[simp]
 theorem toGraphEdgeSet_matchingSubgraph (M : Set E(Graph.ofSimpleGraph H)) :
     (H.matchingSubgraph M).toGraphEdgeSet = M := by
-  rw [Subgraph.toGraphEdgeSet, edgeSet_matchingSubgraph]
-  change Subtype.val ⁻¹' (Subtype.val '' M) = M
-  rw [Set.preimage_image_eq _ Subtype.val_injective]
+  rw [Subgraph.toGraphEdgeSet, edgeSet_matchingSubgraph,
+    Set.preimage_image_eq _ Subtype.val_injective]
 
 /-- Converting a simple-graph subgraph's edges to multigraph edge identities preserves their
 cardinality. -/
@@ -125,9 +122,8 @@ theorem matchingSubgraph_isMatching_iff (M : Set E(Graph.ofSimpleGraph H)) :
   · intro hM
     rw [Graph.isMatching_def]
     constructor
-    · intro e he x hloop
-      rw [Graph.IsLoopAt, Graph.ofSimpleGraph_isLink] at hloop
-      exact H.loopless.irrefl x (by rw [← H.mem_edgeSet, ← hloop.1]; exact hloop.2)
+    · intro e _ x
+      exact (Graph.ofSimpleGraph H).not_isLoopAt e x
     · intro e he f hf hef x hinc
       obtain ⟨y, hey⟩ := ((Graph.inc_ofSimpleGraph H).mp hinc.1).2
       obtain ⟨z, hfz⟩ := ((Graph.inc_ofSimpleGraph H).mp hinc.2).2
@@ -135,9 +131,7 @@ theorem matchingSubgraph_isMatching_iff (M : Set E(Graph.ofSimpleGraph H)) :
       have hfxz : (H.matchingSubgraph M).Adj x z := ⟨f, hf, hfz⟩
       have hyz : y = z := (hM hexy.fst_mem).unique hexy hfxz
       exact hef (Subtype.ext (hey.trans (hyz ▸ hfz.symm)))
-  · intro hM
-    have hM' := (Graph.isMatching_def.mp hM)
-    intro x hx
+  · intro hM x hx
     obtain ⟨e, he, hxe⟩ := hx
     obtain ⟨y, hey⟩ := Sym2.mem_iff_exists.mp hxe
     refine ⟨y, ⟨e, he, hey⟩, ?_⟩
@@ -147,9 +141,7 @@ theorem matchingSubgraph_isMatching_iff (M : Set E(Graph.ofSimpleGraph H)) :
       (Graph.inc_ofSimpleGraph H).mpr ⟨e.2, hxe⟩
     have hfx : (Graph.ofSimpleGraph H).Inc f x :=
       (Graph.inc_ofSimpleGraph H).mpr ⟨f.2, hfz.symm ▸ Sym2.mem_mk_left x z⟩
-    have hef : e = f := by
-      by_contra hef
-      exact hM'.2 e he f hf hef x ⟨hex, hfx⟩
+    have hef : e = f := hM.eq_of_inc he hf hex hfx
     apply Sym2.congr_right.mp
     exact hfz.symm.trans ((congrArg Subtype.val hef).symm.trans hey)
 
