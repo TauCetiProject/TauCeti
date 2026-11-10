@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Algebra.MonoidAlgebra.Basis
 public import TauCeti.RingTheory.Trace.Regular
 
+import TauCeti.LinearAlgebra.Trace.Basic
+
 /-!
 # The trace of multiplication by an element of a finite monoid algebra
 
@@ -62,18 +64,17 @@ theorem trace_leftMulMatrix {k G : Type*} [CommSemiring k] [Monoid G]
     simpa using x.coeff_mul_single_eq_coeff_mul (m₁ := g) (r := 1) 1 (by simp)
   simp [Matrix.trace, Matrix.diag, Algebra.leftMulMatrix_eq_repr_mul, hdiag, Finset.card_univ]
 
-/-- **The trace on an infinite monoid algebra vanishes.** The module `k[G]` has no finite basis
-when `G` is infinite, so `LinearMap.trace` is the zero map by convention. -/
+/-- **The trace on an infinite monoid algebra vanishes.** If `k` is nontrivial and `G` is
+infinite, the basis of monoid elements is infinite, so `k[G]` is not a finite `k`-module and
+`LinearMap.trace` is the zero map by convention. If `k` is trivial, every linear map on `k[G]` is
+zero, so the trace vanishes trivially. -/
+@[simp]
 theorem trace_eq_zero_of_infinite {k G : Type*} [CommSemiring k] [Infinite G] :
     LinearMap.trace k (MonoidAlgebra k G) = 0 := by
   rcases subsingleton_or_nontrivial k with hk | hk
   · exact Subsingleton.elim _ _
-  by_cases H : ∃ s : Finset (MonoidAlgebra k G), Nonempty (Module.Basis s k (MonoidAlgebra k G))
-  · obtain ⟨s, ⟨b⟩⟩ := H
-    have : Module.Finite k (MonoidAlgebra k G) := Module.Finite.of_basis b
-    have := Module.Finite.finite_basis (MonoidAlgebra.basis G k)
-    exact (not_finite G).elim
-  · simp [LinearMap.trace, H]
+  exact TauCeti.LinearMap.trace_eq_zero_of_not_finite
+    (Module.not_finite_of_infinite_basis (MonoidAlgebra.basis G k))
 
 /-- **The trace of right multiplication on a monoid algebra.** Multiplication on the right
 by `x` has trace `|G| * x_1`, where `|G|` is `Nat.card G`, so both sides vanish for infinite `G`. -/
@@ -85,7 +86,7 @@ theorem trace_mulRight {k G : Type*} [CommSemiring k] [Monoid G]
   classical
   rcases finite_or_infinite G with hG | hG
   swap
-  · simp [trace_eq_zero_of_infinite]
+  · simp
   have : Fintype G := Fintype.ofFinite G
   have hdiag : ∀ g : G, (MonoidAlgebra.single g (1 : k) * x).coeff g = x.coeff 1 := fun g => by
     simpa using x.coeff_single_mul_eq_mul_coeff (m₁ := g) (r := 1) 1 (by simp)
@@ -105,7 +106,7 @@ theorem trace_mulLeft {k G : Type*} [CommSemiring k] [Monoid G]
   classical
   rcases finite_or_infinite G with hG | hG
   swap
-  · simp [trace_eq_zero_of_infinite]
+  · simp
   have : Fintype G := Fintype.ofFinite G
   rw [LinearMap.trace_eq_matrix_trace k (MonoidAlgebra.basis G k), Algebra.toMatrix_lmul_eq,
     trace_leftMulMatrix, Nat.card_eq_fintype_card]
