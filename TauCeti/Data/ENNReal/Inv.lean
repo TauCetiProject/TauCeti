@@ -24,6 +24,9 @@ is at most `2 b`.
 
 ## Main declarations
 
+* `ENNReal.monotone_indicator_inv_natCast_add_one_le`: the restrictions of `f` to
+  `{x | (n + 1)⁻¹ ≤ f x}` are monotone in `n`.
+* `ENNReal.iSup_indicator_inv_natCast_add_one_le`: the supremum of these restrictions is `f`.
 * `ENNReal.toReal_one_sub_div`: `(1 - a / b).toReal = 1 - a.toReal / b.toReal` for `a ≤ b`.
 * `ENNReal.toNNReal_one_sub_div_pos`: `0 < (1 - a / b).toNNReal` for `a < b`.
 * `ENNReal.exists_nnreal_two_le_inv_sub_lt_and_inv_add_le_one`: for `r > 1` and `n > 0` with
