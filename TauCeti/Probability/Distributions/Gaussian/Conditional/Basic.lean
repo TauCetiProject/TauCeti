@@ -229,19 +229,13 @@ theorem gaussianCondKernel_of_submatrix_eq_zero (m : EuclideanSpace ℝ (ι ⊕ 
 /-- Scaling the joint covariance by `τ⁻¹` leaves the Gaussian regression mean unchanged and
 scales the conditional covariance by `τ⁻¹`. -/
 theorem gaussianCondKernel_inv_smul (m : EuclideanSpace ℝ (ι ⊕ κ))
-    {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} (hS₂₂ : (S.submatrix Sum.inr Sum.inr).PosDef) {τ : ℝ}
-    (hτ : 0 < τ) (x₂ : EuclideanSpace ℝ κ) :
+    {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ} {τ : ℝ} (hτ : 0 < τ) (x₂ : EuclideanSpace ℝ κ) :
     m.gaussianCondKernel (τ⁻¹ • S) x₂ =
       multivariateGaussian (m.gaussianCondMean S x₂) (τ⁻¹ • S.gaussianCondCov) := by
-  have hS₂₂' : ((τ⁻¹ • S).submatrix Sum.inr Sum.inr).PosDef := by
-    simpa only [Matrix.submatrix_smul, Pi.smul_apply] using hS₂₂.smul (inv_pos.mpr hτ)
-  have hinv : (τ⁻¹ • S.submatrix Sum.inr Sum.inr)⁻¹ = τ • (S.submatrix Sum.inr Sum.inr)⁻¹ := by
-    simpa [Units.smul_def] using Matrix.inv_smul' (S.submatrix Sum.inr Sum.inr)
-      (Units.mk0 _ (inv_pos.mpr hτ).ne') hS₂₂.det_pos.ne'.isUnit
-  rw [gaussianCondKernel_apply, gaussianCondMean_of_posDef m hS₂₂',
-    Matrix.gaussianCondCov_of_posDef hS₂₂', gaussianCondMean_of_posDef m hS₂₂,
-    Matrix.gaussianCondCov_of_posDef hS₂₂]
-  simp only [Matrix.submatrix_smul, Pi.smul_apply, hinv]
+  rw [gaussianCondKernel_apply, gaussianCondMean_def, gaussianCondMean_def,
+    Matrix.gaussianCondCov_def, Matrix.gaussianCondCov_def]
+  simp only [Matrix.submatrix_smul, Pi.smul_apply,
+    Matrix.covariancePseudoInverse_smul _ (inv_pos.mpr hτ), inv_inv]
   congr 2
   · simp only [Matrix.smul_mul, Matrix.mul_smul, smul_smul, mul_inv_cancel₀ hτ.ne', one_smul]
   · simp only [Matrix.smul_mul, Matrix.mul_smul, smul_smul, smul_sub, mul_inv_cancel₀ hτ.ne',
@@ -500,31 +494,42 @@ theorem _root_.EuclideanSpace.map_snd_fst_multivariateGaussian
   ext <;> simp
 
 /-- The centered regression residual of a jointly Gaussian vector is independent of its
-observed block, even when that block has singular covariance. -/
+observed block, even when that block has singular covariance. If `S` is not positive
+semidefinite the law is a Dirac mass and both functions are almost surely constant. -/
 theorem _root_.ProbabilityTheory.HasLaw.indepFun_gaussianResidual {Ω : Type*}
     [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → EuclideanSpace ℝ (ι ⊕ κ)}
     {m : EuclideanSpace ℝ (ι ⊕ κ)} {S : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ}
-    (hX : HasLaw X (multivariateGaussian m S) P) (hS : S.PosSemidef) :
+    (hX : HasLaw X (multivariateGaussian m S) P) :
     IndepFun
       (fun ω => (EuclideanSpace.sumEquivProd (X ω)).1 - (EuclideanSpace.sumEquivProd m).1 -
         (S.submatrix Sum.inl Sum.inr *
           (S.submatrix Sum.inr Sum.inr).covariancePseudoInverse).toEuclideanLin
             ((EuclideanSpace.sumEquivProd (X ω)).2 - (EuclideanSpace.sumEquivProd m).2))
       (fun ω => (EuclideanSpace.sumEquivProd (X ω)).2) P := by
-  let : IsProbabilityMeasure P := hX.isProbabilityMeasure
-  have hprod := ((indepFun_gaussianSnd_gaussianResidual m hS).hasLaw_prod
-    (gaussianSnd_hasLaw m hS) (gaussianResidual_hasLaw m hS)).comp hX
-  have hindep := (indepFun_iff_hasLaw_prodMk_prod
-    ((gaussianSnd_hasLaw m hS).comp hX) ((gaussianResidual_hasLaw m hS).comp hX)).mpr hprod
-  have hcenter := hindep.symm.comp
-    (φ := fun r => r - (gaussianResidualMatrix S).toEuclideanLin m) (ψ := id)
-    (by fun_prop) measurable_id
-  convert hcenter using 1
-  · funext ω
-    simp only [Function.comp_apply, gaussianResidualMatrix_mulVec, gaussianRegressionMatrix,
-      map_sub]
-    abel
-  · rfl
+  by_cases hS : S.PosSemidef
+  · let : IsProbabilityMeasure P := hX.isProbabilityMeasure
+    have hprod := ((indepFun_gaussianSnd_gaussianResidual m hS).hasLaw_prod
+      (gaussianSnd_hasLaw m hS) (gaussianResidual_hasLaw m hS)).comp hX
+    have hindep := (indepFun_iff_hasLaw_prodMk_prod
+      ((gaussianSnd_hasLaw m hS).comp hX) ((gaussianResidual_hasLaw m hS).comp hX)).mpr hprod
+    have hcenter := hindep.symm.comp
+      (φ := fun r => r - (gaussianResidualMatrix S).toEuclideanLin m) (ψ := id)
+      (by fun_prop) measurable_id
+    convert hcenter using 1
+    · funext ω
+      simp only [Function.comp_apply, gaussianResidualMatrix_mulVec, gaussianRegressionMatrix,
+        map_sub]
+      abel
+    · rfl
+  · have hP : IsProbabilityMeasure P := by
+      rw [multivariateGaussian_of_not_posSemidef m hS] at hX
+      exact hX.isProbabilityMeasure
+    rw [multivariateGaussian_of_not_posSemidef m hS] at hX
+    have hae := hX.ae_eq_of_dirac
+    refine (indepFun_const_left (μ := P) (0 : EuclideanSpace ℝ ι) _).congr ?_
+      Filter.EventuallyEq.rfl
+    filter_upwards [hae] with ω hω
+    simp [hω]
 
 /-- For a jointly Gaussian vector with positive-semidefinite covariance, the regular conditional
 law of the first block given the second is Gaussian with the generalized Schur complement and

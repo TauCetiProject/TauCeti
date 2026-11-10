@@ -129,6 +129,26 @@ theorem eq_covariancePseudoInverse_of_penrose {C D : Matrix ι ι ℝ} (hC : C.P
   toEuclideanLin.injective ((isMoorePenroseInverse_toEuclideanLin_of_penrose h₁ h₂ h₃ h₄).unique
     (isMoorePenroseInverse_covariancePseudoInverse hC))
 
+/-- The covariance pseudoinverse of a positive multiple scales by the reciprocal. -/
+theorem covariancePseudoInverse_smul (C : Matrix ι ι ℝ) {c : ℝ} (hc : 0 < c) :
+    (c • C).covariancePseudoInverse = c⁻¹ • C.covariancePseudoInverse := by
+  by_cases hC : C.PosSemidef
+  · have hc' : c * c⁻¹ = 1 := mul_inv_cancel₀ hc.ne'
+    have hc'' : c⁻¹ * c = 1 := inv_mul_cancel₀ hc.ne'
+    refine (eq_covariancePseudoInverse_of_penrose (hC.smul hc.le) ?_ ?_ ?_ ?_).symm
+    · have h := congrArg (c • ·) (mul_covariancePseudoInverse_mul hC)
+      simpa [Matrix.smul_mul, Matrix.mul_smul, smul_smul, hc', hc''] using h
+    · have h := congrArg (c⁻¹ • ·) (covariancePseudoInverse_mul_self_mul C)
+      simpa [Matrix.smul_mul, Matrix.mul_smul, smul_smul, hc', hc''] using h
+    · simpa [Matrix.smul_mul, Matrix.mul_smul, smul_smul, hc', hc''] using
+        (isHermitian_mul_covariancePseudoInverse C)
+    · simpa [Matrix.smul_mul, Matrix.mul_smul, smul_smul, hc', hc''] using
+        (isHermitian_covariancePseudoInverse_mul C)
+  · have hcC : ¬ (c • C).PosSemidef := fun h => hC (by
+      simpa [smul_smul, hc.ne'] using h.smul (inv_pos.mpr hc).le)
+    rw [covariancePseudoInverse_of_not_posSemidef hC, covariancePseudoInverse_of_not_posSemidef hcC,
+      smul_zero]
+
 /-- The covariance construction agrees with the existing Moore–Penrose inverse of the
 Euclidean operator. -/
 theorem toEuclideanLin_covariancePseudoInverse {C : Matrix ι ι ℝ} (hC : C.PosSemidef) :
