@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Continuation
 public import TauCeti.Geometry.Symplectic.Floer.CylinderAction
 import TauCeti.MeasureTheory.Integral.Rectangle
 
@@ -26,8 +25,10 @@ The energy identity for a family of Hamiltonians on a manifold target
 measures the Floer energy of `u` over `[a, b] × [0, 1]`, corrected by the integrated curvature,
 against the capped action
 `A_H(γ, v) = ∫ v^* ω - ∫₀¹ H(t, γ(t)) dt` (`TauCeti.cylinderAction`). Write `γ_a = u(a, ·)` and
-`γ_b = u(b, ·)`, let `v` be a map with `v(0, ·) = γ_b` (a cap of `γ_b`), and let `w # v` be the
-cap of `γ_a` obtained by gluing `u|_{[a, b]}` to `v`. If `H₀ - H₁ ≤ B` along `u`, then
+`γ_b = u(b, ·)`, let `v` be a map with `v(0, ·) = γ_b`, and let `w # v` be the map with
+`(w # v)(0, ·) = γ_a` obtained by gluing `u|_{[a, b]}` to `v`. When `u` is a cylinder of loops
+and `v` is a cap of `γ_b`, `w # v` is a cap of `γ_a` and both actions below are capped actions.
+If `H₀ - H₁ ≤ B` along `u`, then
 
 `E(u) ≤ A_{H(a, ·)}(γ_a, w # v) - A_{H(b, ·)}(γ_b, v) + (β(b) - β(a)) ∫₀¹ B`
 
