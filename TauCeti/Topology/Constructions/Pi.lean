@@ -99,13 +99,18 @@ theorem exists_univ_pi_subset {I κ : Type*} [Finite κ] {V : I → Set X}
 can be shrunk to nonempty open sets `W i ⊆ V i` so that for each of finitely many dense open sets
 `U c ⊆ κ c → X`, every box `∏ j, W (t j)` along an injective tuple `t : κ c → I` lies in `U c`. -/
 theorem exists_forall_univ_pi_subset {I C : Type*} [Finite I] [Finite C] {κ : C → Type*}
-    [∀ c, Finite (κ c)] {V : I → Set X} (hVo : ∀ i, IsOpen (V i)) (hVne : ∀ i, (V i).Nonempty)
+    {V : I → Set X} (hVo : ∀ i, IsOpen (V i)) (hVne : ∀ i, (V i).Nonempty)
     {U : ∀ c, Set (κ c → X)} (hUo : ∀ c, IsOpen (U c)) (hUd : ∀ c, Dense (U c)) :
     ∃ W : I → Set X, (∀ i, IsOpen (W i)) ∧ (∀ i, (W i).Nonempty) ∧ (∀ i, W i ⊆ V i) ∧
       ∀ c (t : κ c → I), Injective t → univ.pi (fun j => W (t j)) ⊆ U c := by
   classical
   -- treat the finitely many pairs of a set `U c` and an injective tuple one at a time
   let Q := Σ c, {t : κ c → I // Injective t}
+  have : ∀ c, Finite {t : κ c → I // Injective t} := fun c ↦ by
+    rcases isEmpty_or_nonempty {t : κ c → I // Injective t} with h | ⟨⟨t, ht⟩⟩
+    · infer_instance
+    · have := Finite.of_injective t ht
+      infer_instance
   have : Fintype Q := Fintype.ofFinite Q
   suffices h : ∀ s : Finset Q, ∃ W : I → Set X, (∀ i, IsOpen (W i)) ∧ (∀ i, (W i).Nonempty) ∧
       (∀ i, W i ⊆ V i) ∧ ∀ q ∈ s, univ.pi (fun j => W (q.2.1 j)) ⊆ U q.1 by
@@ -116,6 +121,7 @@ theorem exists_forall_univ_pi_subset {I C : Type*} [Finite I] [Finite C] {κ : C
   | empty => exact ⟨V, hVo, hVne, fun _ => subset_rfl, by simp⟩
   | insert q s _ ih =>
     obtain ⟨W, hWo, hWne, hWV, hW⟩ := ih
+    have := Finite.of_injective q.2.1 q.2.2
     obtain ⟨W', hW'o, hW'ne, hW'W, hW'⟩ :=
       exists_univ_pi_subset hWo hWne q.2.2 (hUo q.1) (hUd q.1)
     refine ⟨W', hW'o, hW'ne, fun i => (hW'W i).trans (hWV i), fun q' hq' => ?_⟩
