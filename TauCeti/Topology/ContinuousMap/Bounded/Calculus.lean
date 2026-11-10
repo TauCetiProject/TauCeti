@@ -19,6 +19,10 @@ A uniform bound on the second pointwise time derivative controls the Taylor rema
 supremum norm. Consequently a compactly supported `C²` function on space-time defines a
 differentiable curve of bounded continuous functions, whose derivative is its time partial.
 The target need not be complete, and the general lifting theorem permits an empty index space.
+
+Formalization references:
+[lean-eval-submissions](https://github.com/frenzymath/lean-eval-submissions)
+and [PoincareConjecture](https://github.com/frenzymath/PoincareConjecture).
 -/
 
 public section
