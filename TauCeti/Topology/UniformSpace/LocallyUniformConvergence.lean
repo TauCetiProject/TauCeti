@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 public import Mathlib.Topology.MetricSpace.Pseudo.Basic
 public import Mathlib.Analysis.Normed.Group.Continuity
+public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
 # Locally uniform convergence of metric-valued functions on compact sets
@@ -19,12 +21,14 @@ every `ε > 0`, eventually `dist (F k x) (u x) < ε` for all `x ∈ K`. For real
 
 Conversely, if the values of `F m` at one point of `s` have norms tending to infinity, then no
 subsequence of `F` converges locally uniformly on `s`
-(`TauCeti.not_tendstoLocallyUniformlyOn_comp_of_tendsto_norm_atTop`).
+(`TauCeti.not_tendstoLocallyUniformlyOn_comp_of_tendsto_norm_atTop`), while dividing a fixed
+continuous function by `m` gives a sequence tending to `0` locally uniformly
+(`TauCeti.tendstoLocallyUniformly_div_natCast`).
 -/
 
 public section
 
-open Filter Set
+open Filter Set Topology
 
 variable {α β ι : Type*} [TopologicalSpace α] [PseudoMetricSpace β] {l : Filter ι}
   {F : ι → α → β} {u : α → β} {s : Set α}
@@ -51,5 +55,17 @@ theorem not_tendstoLocallyUniformlyOn_comp_of_tendsto_norm_atTop {E : Type*}
   intro h
   exact not_tendsto_nhds_of_tendsto_atTop (hF.comp hφ.tendsto_atTop) ‖g z‖
     ((h.tendsto_at hz).norm)
+
+/-- For a continuous `g` with values in `ℝ` or `ℂ`, the maps `z ↦ g z / m` tend to `0` locally
+uniformly. -/
+theorem tendstoLocallyUniformly_div_natCast {𝕜 : Type*} [RCLike 𝕜] {g : α → 𝕜}
+    (hg : Continuous g) :
+    TendstoLocallyUniformly (fun (m : ℕ) z ↦ g z / m) (fun _ ↦ 0) atTop := by
+  have hinv : Tendsto (fun m : ℕ ↦ (m : 𝕜)⁻¹) atTop (𝓝 0) := tendsto_inv_atTop_nhds_zero_nat
+  have hg' : TendstoLocallyUniformly (fun (_ : ℕ) z ↦ g z) g atTop :=
+    (tendstoUniformly_iff_tendsto.2
+      (tendsto_diag_uniformity (fun q : ℕ × α ↦ g q.2) _)).tendstoLocallyUniformly
+  simpa [div_eq_mul_inv] using
+    hg'.fun_mul₀ hinv.tendstoUniformly_const.tendstoLocallyUniformly hg continuous_const
 
 end TauCeti

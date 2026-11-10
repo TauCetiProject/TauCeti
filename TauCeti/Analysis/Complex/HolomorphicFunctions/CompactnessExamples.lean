@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
-public import TauCeti.Topology.Closure
 public import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
@@ -148,16 +147,6 @@ theorem mapsTo_div_natCast_ball (m : ℕ) :
   rcases m.eq_zero_or_pos with rfl | hm
   · simp
   · exact (div_le_one (Nat.cast_pos.2 hm)).2 (hz.le.trans (Nat.one_le_cast.2 hm))
-
-/-- For a continuous `g`, the maps `z ↦ g z / m` tend to `0` locally uniformly on `ℂ`. -/
-theorem tendstoLocallyUniformly_div_natCast {g : ℂ → ℂ} (hg : Continuous g) :
-    TendstoLocallyUniformly (fun (m : ℕ) z ↦ g z / m) (fun _ ↦ 0) atTop := by
-  have hinv : Tendsto (fun m : ℕ ↦ (m : ℂ)⁻¹) atTop (𝓝 0) := tendsto_inv_atTop_nhds_zero_nat
-  have hg' : TendstoLocallyUniformly (fun (_ : ℕ) z ↦ g z) g atTop :=
-    (tendstoUniformly_iff_tendsto.2
-      (tendsto_diag_uniformity (fun q : ℕ × ℂ ↦ g q.2) _)).tendstoLocallyUniformly
-  simpa [div_eq_mul_inv] using
-    hg'.fun_mul₀ hinv.tendstoUniformly_const.tendstoLocallyUniformly hg continuous_const
 
 /-- The maps `z ↦ z / m` converge to `0` in `C^∞` on compact sets: every iterated derivative
 tends to `0` locally uniformly on `ℂ`. -/
