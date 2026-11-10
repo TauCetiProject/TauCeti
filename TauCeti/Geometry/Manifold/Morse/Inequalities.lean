@@ -284,7 +284,8 @@ private theorem MorseInequalities.trans {a m b : ℝ} {ham : a ≤ m} {hmb : m �
   · refine (T.finrank_singularHomology_totalPair_le V n).trans ?_
     rw [hcount, add_mul]
     exact add_le_add hw₁ hw₂
-  · refine (T.sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_le V n).trans ?_
+  · refine (T.sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_le V n
+      (fun i _ ↦ (h₁ i).1) (fun i _ ↦ (h₂ i).1)).trans ?_
     rw [hsum, mul_add]
     exact add_le_add hs₁ hs₂
   · -- Above the dimension of `M`, `Hₙ₊₁({f ≤ b}, {f ≤ m})` vanishes by the weak inequality.
@@ -299,7 +300,8 @@ private theorem MorseInequalities.trans {a m b : ℝ} {ham : a ≤ m} {hmb : m �
             finrank k ((sublevelPair f ham).singularHomology V i : ModuleCat k) +
           ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i *
             finrank k ((sublevelPair f hmb).singularHomology V i : ModuleCat k) :=
-      T.sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_eq V n hzero
+      T.sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_eq V n
+        (fun i _ ↦ (h₁ i).1) (fun i _ ↦ (h₂ i).1) hzero
     rw [h, he₁ hn, he₂ hn, hsum, mul_add]
 
 /-- **The Morse inequalities across a compact band between regular values**, by induction over its

@@ -23,7 +23,7 @@ a module over a division ring `k`. For `a ≤ b`, compare the relative singular 
   `Hₙ(X b, X a)`, and `bₙ ≤ cₙ`
   (`Monotone.finite_singularHomology_ofInclusion_of_forall_mem_Ico` and
   `Monotone.finrank_singularHomology_ofInclusion_le_sum`);
-* **strong inequalities**: if the homology of the steps is finite-dimensional in every degree,
+* **strong inequalities**: if the homology of the steps is finite-dimensional in degrees `≤ n`,
   then `bₙ - bₙ₋₁ + ⋯ ± b₀ ≤ cₙ - cₙ₋₁ + ⋯ ± c₀`
   (`Monotone.sum_range_neg_one_pow_mul_finrank_singularHomology_ofInclusion_le`);
 * **Euler's equality**: if moreover `Hₙ₊₁` of every step vanishes, then
@@ -134,13 +134,12 @@ theorem finrank_singularHomology_ofInclusion_le_sum {a b : ℤ} (hab : a ≤ b) 
       (Nat.add_le_add_right (ih h') _)
 
 /-- **The strong inequalities along a filtration.** If the steps `(X (q + 1), X q)`, `a ≤ q < b`,
-have finite-dimensional relative homology in every degree, then the alternating sum
+have finite-dimensional relative homology in degrees `≤ n`, then the alternating sum
 `dim Hₙ(X b, X a) - dim Hₙ₋₁(X b, X a) + ⋯ ± dim H₀(X b, X a)` is at most the corresponding
 alternating sum of the summed dimensions `∑_q dim Hᵢ(X (q + 1), X q)`. -/
 theorem sum_range_neg_one_pow_mul_finrank_singularHomology_ofInclusion_le {a b : ℤ}
-    (hab : a ≤ b) (h : ∀ q ∈ Finset.Ico a b, ∀ i, Module.Finite k
-      ((TopPair.ofInclusion (hX (lt_add_one q).le)).singularHomology V i : ModuleCat k))
-    (n : ℕ) :
+    (hab : a ≤ b) (n : ℕ) (h : ∀ q ∈ Finset.Ico a b, ∀ i ≤ n, Module.Finite k
+      ((TopPair.ofInclusion (hX (lt_add_one q).le)).singularHomology V i : ModuleCat k)) :
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) *
         finrank k ((TopPair.ofInclusion (hX hab)).singularHomology V i : ModuleCat k) ≤
       ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ (n - i) * ∑ q ∈ Finset.Ico a b,
@@ -152,26 +151,22 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_ofInclusion_le {a b :
       (TopPair.isZero_singularHomology_ofInclusion_self (X a) V i)
     simp [finrank_zero_of_subsingleton]
   | succ b hab ih =>
-    have h' : ∀ q ∈ Finset.Ico a b, ∀ i, Module.Finite k
+    have h' : ∀ q ∈ Finset.Ico a b, ∀ i ≤ n, Module.Finite k
         ((TopPair.ofInclusion (hX (lt_add_one q).le)).singularHomology V i : ModuleCat k) :=
       fun q hq ↦ h q (Finset.Ico_subset_Ico_right (lt_add_one b).le hq)
-    have : ∀ i, Module.Finite k ((TopTriple.innerPair.obj (stepTriple hX hab)).singularHomology
-        V i : ModuleCat k) := fun i ↦
-      hX.finite_singularHomology_ofInclusion_of_forall_mem_Ico V hab i fun q hq ↦ h' q hq i
-    have : ∀ i, Module.Finite k ((TopTriple.outerPair.obj (stepTriple hX hab)).singularHomology
-        V i : ModuleCat k) := h b (Finset.mem_Ico.2 ⟨hab, lt_add_one b⟩)
     refine ((stepTriple hX hab).sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_le
-      V n).trans ?_
+      V n (fun i hi ↦ hX.finite_singularHomology_ofInclusion_of_forall_mem_Ico V hab i
+        fun q hq ↦ h' q hq i hi) (h b (Finset.mem_Ico.2 ⟨hab, lt_add_one b⟩))).trans ?_
     simp only [← Finset.sum_Ico_add_eq_sum_Ico_add_one hab, mul_add, Finset.sum_add_distrib]
     exact add_le_add_left (ih h') _
 
 /-- **Euler's equality along a filtration.** If the steps `(X (q + 1), X q)`, `a ≤ q < b`, have
-finite-dimensional relative homology in every degree and vanishing homology in degree `n + 1`,
+finite-dimensional relative homology in degrees `≤ n` and vanishing homology in degree `n + 1`,
 then `∑ᵢ₌₀ⁿ (-1)ⁱ dim Hᵢ(X b, X a) = ∑ᵢ₌₀ⁿ (-1)ⁱ ∑_q dim Hᵢ(X (q + 1), X q)`. -/
 theorem sum_range_neg_one_pow_mul_finrank_singularHomology_ofInclusion_eq {a b : ℤ}
-    (hab : a ≤ b) (h : ∀ q ∈ Finset.Ico a b, ∀ i, Module.Finite k
+    (hab : a ≤ b) {n : ℕ} (h : ∀ q ∈ Finset.Ico a b, ∀ i ≤ n, Module.Finite k
       ((TopPair.ofInclusion (hX (lt_add_one q).le)).singularHomology V i : ModuleCat k))
-    {n : ℕ} (hn : ∀ q ∈ Finset.Ico a b,
+    (hn : ∀ q ∈ Finset.Ico a b,
       IsZero ((TopPair.ofInclusion (hX (lt_add_one q).le)).singularHomology V (n + 1))) :
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i *
         finrank k ((TopPair.ofInclusion (hX hab)).singularHomology V i : ModuleCat k) =
@@ -187,26 +182,22 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_ofInclusion_eq {a b :
     have hsub : Finset.Ico a b ⊆ Finset.Ico a (b + 1) :=
       Finset.Ico_subset_Ico_right (lt_add_one b).le
     have hb : b ∈ Finset.Ico a (b + 1) := Finset.mem_Ico.2 ⟨hab, lt_add_one b⟩
-    have : ∀ i, Module.Finite k ((TopTriple.innerPair.obj (stepTriple hX hab)).singularHomology
-        V i : ModuleCat k) := fun i ↦
-      hX.finite_singularHomology_ofInclusion_of_forall_mem_Ico V hab i fun q hq ↦ h q (hsub hq) i
-    have : ∀ i, Module.Finite k ((TopTriple.outerPair.obj (stepTriple hX hab)).singularHomology
-        V i : ModuleCat k) := h b hb
     refine ((stepTriple hX hab).sum_range_neg_one_pow_mul_finrank_singularHomology_totalPair_eq V
-      n (hn b hb)).trans ?_
+      n (fun i hi ↦ hX.finite_singularHomology_ofInclusion_of_forall_mem_Ico V hab i
+        fun q hq ↦ h q (hsub hq) i hi) (h b hb) (hn b hb)).trans ?_
     simp only [← Finset.sum_Ico_add_eq_sum_Ico_add_one hab, mul_add, Finset.sum_add_distrib]
     exact congrArg (· + _) (ih (fun q hq ↦ h q (hsub hq)) fun q hq ↦ hn q (hsub hq))
 
 /-- **The Morse polynomial identity along a filtration.** Let the steps `(X (q + 1), X q)`,
-`a ≤ q < b`, have finite-dimensional relative homology in every degree and vanishing homology in
-degree `n + 1`. Write `bᵢ = dim Hᵢ(X b, X a)` and `cᵢ = ∑_q dim Hᵢ(X (q + 1), X q)`. Then
+`a ≤ q < b`, have finite-dimensional relative homology in degrees `≤ n` and vanishing homology
+in degree `n + 1`. Write `bᵢ = dim Hᵢ(X b, X a)` and `cᵢ = ∑_q dim Hᵢ(X (q + 1), X q)`. Then
 `∑ᵢ₌₀ⁿ cᵢ tⁱ = ∑ᵢ₌₀ⁿ bᵢ tⁱ + (1 + t) Q(t)` for a polynomial `Q` with natural number coefficients
 whose coefficient of `tⁱ` is, for `i < n`, the gap `(cᵢ - cᵢ₋₁ + ⋯ ± c₀) - (bᵢ - bᵢ₋₁ + ⋯ ± b₀)`
 in the `i`-th strong inequality, and is zero for `i ≥ n`. -/
 theorem exists_sum_range_monomial_singularHomology_ofInclusion_eq_add_mul {a b : ℤ}
-    (hab : a ≤ b) (h : ∀ q ∈ Finset.Ico a b, ∀ i, Module.Finite k
+    (hab : a ≤ b) {n : ℕ} (h : ∀ q ∈ Finset.Ico a b, ∀ i ≤ n, Module.Finite k
       ((TopPair.ofInclusion (hX (lt_add_one q).le)).singularHomology V i : ModuleCat k))
-    {n : ℕ} (hn : ∀ q ∈ Finset.Ico a b,
+    (hn : ∀ q ∈ Finset.Ico a b,
       IsZero ((TopPair.ofInclusion (hX (lt_add_one q).le)).singularHomology V (n + 1))) :
     ∃ Q : ℕ[X], ∑ i ∈ Finset.range (n + 1), monomial i (∑ q ∈ Finset.Ico a b,
         finrank k ((TopPair.ofInclusion (hX (lt_add_one q).le)).singularHomology V i :
@@ -226,9 +217,10 @@ theorem exists_sum_range_monomial_singularHomology_ofInclusion_eq_add_mul {a b :
     (c := fun i ↦ ∑ q ∈ Finset.Ico a b,
       finrank k ((TopPair.ofInclusion (hX (lt_add_one q).le)).singularHomology V i :
         ModuleCat k)) (n := n)
-    (fun m _ ↦ by
+    (fun m hm ↦ by
       simpa only [Nat.cast_sum] using
-        hX.sum_range_neg_one_pow_mul_finrank_singularHomology_ofInclusion_le V hab h m)
+        hX.sum_range_neg_one_pow_mul_finrank_singularHomology_ofInclusion_le V hab m
+          fun q hq i hi ↦ h q hq i (hi.trans hm.le))
     (by
       simpa only [Nat.cast_sum] using
         hX.sum_range_neg_one_pow_mul_finrank_singularHomology_ofInclusion_eq V hab h hn)
@@ -259,6 +251,7 @@ theorem finrank_singularHomology_ofInclusion_eq_sum_of_eq_zero_or {a b : ℤ} (h
         ModuleCat k))
     (fun m ↦ by
       simpa only [Nat.cast_sum] using
-        hX.sum_range_neg_one_pow_mul_finrank_singularHomology_ofInclusion_le V hab h m) hc) n
+        hX.sum_range_neg_one_pow_mul_finrank_singularHomology_ofInclusion_le V hab m
+          fun q hq i _ ↦ h q hq i) hc) n
 
 end Monotone
