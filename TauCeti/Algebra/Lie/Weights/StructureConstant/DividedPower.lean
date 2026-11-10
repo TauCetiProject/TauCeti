@@ -54,27 +54,29 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebr
   (hab : (α : H → K) + β ≠ 0)
 
 /-- The integer coefficient `M_{α,β,n}` of the divided iterated bracket at the root
-`γ = β + n α`. The source roots are nonzero and nonopposite. -/
+`γ = β + n α`. The source weights are nonopposite; the lemmas characterising the coefficient
+assume that both are nonzero, and otherwise it is a junk integer. -/
 noncomputable def intDividedStructureConstant
     (γ : Weight K H L) (n : ℕ) (hγ : (γ : H → K) = (β : H → K) + (n : K) • (α : H → K)) : ℤ :=
-  Classical.choose (hx.exists_int_inv_factorial_smul_ad_pow_eq_zsmul α β hα hβ hab γ n hγ)
+  Classical.choose (hx.exists_int_inv_factorial_smul_ad_pow_eq_zsmul α β hab γ n hγ)
 
 /-- The divided iterated bracket is the integer coefficient times its root vector. -/
 theorem inv_factorial_smul_ad_pow_eq_intDividedStructureConstant_zsmul
     (γ : Weight K H L) (n : ℕ) (hγ : (γ : H → K) = (β : H → K) + (n : K) • (α : H → K)) :
     (n.factorial : K)⁻¹ • ((ad K L (x α)) ^ n) (x β) =
-      hx.intDividedStructureConstant α β hα hβ hab γ n hγ • x γ :=
-  Classical.choose_spec (hx.exists_int_inv_factorial_smul_ad_pow_eq_zsmul α β hα hβ hab γ n hγ)
+      hx.intDividedStructureConstant α β hab γ n hγ • x γ :=
+  Classical.choose_spec (hx.exists_int_inv_factorial_smul_ad_pow_eq_zsmul α β hab γ n hγ)
 
+include hα hβ in
 /-- The coefficient is uniquely determined by the divided iterated bracket equation. -/
 @[simp]
 theorem eq_intDividedStructureConstant_iff
     (γ : Weight K H L) (n : ℕ) (hγ : (γ : H → K) = (β : H → K) + (n : K) • (α : H → K))
     (z : ℤ) :
-    z = hx.intDividedStructureConstant α β hα hβ hab γ n hγ ↔
+    z = hx.intDividedStructureConstant α β hab γ n hγ ↔
       (n.factorial : K)⁻¹ • ((ad K L (x α)) ^ n) (x β) = z • x γ := by
   have hγnz := γ.isNonZero_of_coe_eq_add_natCast_smul hα hβ hab hγ
-  rw [hx.inv_factorial_smul_ad_pow_eq_intDividedStructureConstant_zsmul α β hα hβ hab γ n hγ]
+  rw [hx.inv_factorial_smul_ad_pow_eq_intDividedStructureConstant_zsmul α β hab γ n hγ]
   constructor
   · rintro rfl
     rfl
@@ -83,10 +85,11 @@ theorem eq_intDividedStructureConstant_iff
     apply smul_left_injective K (hx.toIsSl2System.ne_zero γ hγnz)
     simpa only [Int.cast_smul_eq_zsmul] using hz.symm
 
+include hα hβ in
 /-- Degree zero has coefficient one. -/
 @[simp]
 theorem intDividedStructureConstant_zero :
-    hx.intDividedStructureConstant α β hα hβ hab β 0 (by simp) = 1 := by
+    hx.intDividedStructureConstant α β hab β 0 (by simp) = 1 := by
   symm
   apply (hx.eq_intDividedStructureConstant_iff α β hα hβ hab β 0 _ 1).2
   simp
@@ -95,7 +98,7 @@ theorem intDividedStructureConstant_zero :
 @[simp]
 theorem intDividedStructureConstant_one
     (γ : Weight K H L) (hγ : (γ : H → K) = (α : H → K) + β) :
-    hx.intDividedStructureConstant α β hα hβ hab γ 1 (by simpa [add_comm] using hγ) =
+    hx.intDividedStructureConstant α β hab γ 1 (by simpa [add_comm] using hγ) =
       hx.intStructureConstant α β γ
         (γ.isNonZero_of_coe_eq_add_natCast_smul hα hβ hab (n := 1)
           (by simpa [add_comm] using hγ)) hγ := by
@@ -113,8 +116,8 @@ theorem succ_mul_intDividedStructureConstant
     (γ δ : Weight K H L) (n : ℕ)
     (hγ : (γ : H → K) = (β : H → K) + (n : K) • (α : H → K))
     (hδ : (δ : H → K) = (β : H → K) + ((n + 1 : ℕ) : K) • (α : H → K)) :
-    (n + 1 : ℤ) * hx.intDividedStructureConstant α β hα hβ hab δ (n + 1) hδ =
-      hx.intDividedStructureConstant α β hα hβ hab γ n hγ *
+    (n + 1 : ℤ) * hx.intDividedStructureConstant α β hab δ (n + 1) hδ =
+      hx.intDividedStructureConstant α β hab γ n hγ *
         hx.intStructureConstant α γ δ
           (δ.isNonZero_of_coe_eq_add_natCast_smul hα hβ hab hδ)
           (δ.coe_eq_add_of_coe_eq_add_natCast_smul_succ hγ hδ) := by
@@ -128,14 +131,15 @@ theorem succ_mul_intDividedStructureConstant
   simp only [Int.cast_mul, Int.cast_add, Int.cast_natCast, Int.cast_one, mul_smul,
     Int.cast_smul_eq_zsmul]
   rw [← hx.inv_factorial_smul_ad_pow_eq_intDividedStructureConstant_zsmul
-      α β hα hβ hab δ (n + 1) hδ,
+      α β hab δ (n + 1) hδ,
     ← hx.lie_eq_intStructureConstant_zsmul α γ δ hδnz hstep, ← lie_zsmul,
-    ← hx.inv_factorial_smul_ad_pow_eq_intDividedStructureConstant_zsmul α β hα hβ hab γ n hγ]
+    ← hx.inv_factorial_smul_ad_pow_eq_intDividedStructureConstant_zsmul α β hab γ n hγ]
   simp only [hpow, lie_smul, smul_smul, Nat.factorial_succ, Nat.cast_mul,
     Nat.cast_add, Nat.cast_one]
   congr 1
   field_simp
 
+include hα hβ in
 /-- Along a finite root string, the product of the successive integral bracket
 coefficients is `n!` times the divided coefficient. Only the portion `0, …, n` of
 `γ` is required to be a root string. In particular, this does not assert the
@@ -144,13 +148,13 @@ theorem factorial_mul_intDividedStructureConstant_eq_prod
     (γ : ℕ → Weight K H L) (N : ℕ → ℤ) (n : ℕ)
     (hγ : ∀ k ≤ n, (γ k : H → K) = (β : H → K) + (k : K) • (α : H → K))
     (hN : ∀ k < n, ⁅x α, x (γ k)⁆ = N k • x (γ (k + 1))) :
-    (n.factorial : ℤ) * hx.intDividedStructureConstant α β hα hβ hab (γ n) n (hγ n le_rfl) =
+    (n.factorial : ℤ) * hx.intDividedStructureConstant α β hab (γ n) n (hγ n le_rfl) =
       ∏ k ∈ Finset.range n, N k := by
   induction n with
   | zero =>
     have hzero : γ 0 = β := DFunLike.coe_injective (by simpa using hγ 0 le_rfl)
     subst_vars
-    simp
+    simpa using hx.intDividedStructureConstant_zero α (γ 0) hα hβ hab
   | succ n ih =>
     have hγn := hγ n (by omega)
     have hγs := hγ (n + 1) le_rfl
