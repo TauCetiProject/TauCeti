@@ -187,20 +187,35 @@ theorem isMulDistinguished_monomial [Nontrivial R] (hc : 0 < c) {a : R} (ha : Is
   ⟨isDistinguished_monomial hc ha.isUnit.ne_zero n, by
     rwa [PowerSeries.coeff_monomial_same]⟩
 
-/-- **Weierstrass polynomials at a radius.** Over a norm-one ring, a monic polynomial of degree `s`
-is multiplicatively distinguished of degree `s` at a positive radius `c` exactly when its Gauss
+/-- **Weierstrass polynomials at a radius.** A monic polynomial of degree `s` is
+multiplicatively distinguished of degree `s` at a positive radius `c` exactly when its Gauss
 norm at `c` is `c ^ s`, the weighted norm of its leading term. This is the normalisation of the
 polynomial factor in Weierstrass preparation. Lower coefficients may tie with the leading one, as
 for `X - 1` at the radius `1`. -/
-theorem isMulDistinguished_iff_gaussNorm_eq [NormOneClass R] (hc : 0 < c) {p : Polynomial R}
+theorem isMulDistinguished_iff_gaussNorm_eq (hc : 0 < c) {p : Polynomial R}
     (hp : p.IsMonicOfDegree s) :
     IsMulDistinguished c s (p : PowerSeries R) ↔ (p : PowerSeries R).gaussNorm norm c = c ^ s := by
   have hs := hp.coeff_coe_self
-  refine ⟨fun h ↦ by rw [← h.norm_coeff_mul_pow_eq, hs, norm_one, one_mul], fun h ↦
-    ⟨isDistinguished_of_isMonicOfDegree hc hp fun k _ ↦ ?_, by rw [hs]; exact isNormMulUnit_one⟩⟩
-  rw [← h, ← Polynomial.coeff_coe]
-  exact PowerSeries.le_gaussNorm norm c _
-    (hasGaussNorm_of_isRestricted (isRestricted_polynomial p)) k
+  have hb := hasGaussNorm_of_isRestricted (isRestricted_polynomial (c := c) p)
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have := h.normOneClass
+    rw [← h.norm_coeff_mul_pow_eq, hs, norm_one, one_mul]
+  · have hcs : 0 < c ^ s := pow_pos hc s
+    have hle : ‖(1 : R)‖ * c ^ s ≤ c ^ s := by
+      simpa [hs, h] using PowerSeries.le_gaussNorm norm c (p : PowerSeries R) hb s
+    have hnt : Nontrivial R := by
+      refine not_subsingleton_iff_nontrivial.mp fun hsub ↦ ?_
+      have h0 : (p : PowerSeries R).gaussNorm norm c = 0 := by
+        simp [PowerSeries.gaussNorm_eq, Subsingleton.elim _ (0 : R)]
+      exact hcs.ne (h0.symm.trans h)
+    have hpos : 0 < ‖(1 : R)‖ := norm_pos_iff.2 one_ne_zero
+    have hmul : ‖(1 : R)‖ ≤ ‖(1 : R)‖ * ‖(1 : R)‖ := by simpa using norm_mul_le (1 : R) 1
+    have : NormOneClass R :=
+      ⟨le_antisymm ((mul_le_iff_le_one_left hcs).1 hle) (by nlinarith)⟩
+    refine ⟨isDistinguished_of_isMonicOfDegree hc hp fun k _ ↦ ?_,
+      by rw [hs]; exact isNormMulUnit_one⟩
+    rw [← h, ← Polynomial.coeff_coe]
+    exact PowerSeries.le_gaussNorm norm c _ hb k
 
 variable [IsUltrametricDist R]
 
@@ -222,13 +237,69 @@ theorem IsMulDistinguished.gaussNorm_mul (hg : IsMulDistinguished c s g) (hc : 0
   exact hg.toIsDistinguished.gaussNorm_mul hk hc (hg.isNormMulUnit_coeff.norm_mul _)
 
 /-- Multiplying a restricted series by `X - a`, for `a` in the closed disc of radius `c > 0`,
-multiplies its Gauss norm at `c` by `c`. -/
-theorem gaussNorm_X_sub_C_mul [NormOneClass R] (hc : 0 < c) {a : R} (ha : ‖a‖ ≤ c)
+multiplies its Gauss norm at `c` by `c`. No normalisation `‖1‖ = 1` of the coefficient ring is
+needed. -/
+theorem gaussNorm_X_sub_C_mul (hc : 0 < c) {a : R} (ha : ‖a‖ ≤ c)
     (hq : q.IsRestricted c) :
     ((PowerSeries.X - PowerSeries.C a) * q).gaussNorm norm c = c * q.gaussNorm norm c := by
-  have hd := isMulDistinguished_X_sub_C hc ha
-  rw [hd.gaussNorm_mul hc hq, ← hd.norm_coeff_mul_pow_eq]
-  simp
+  rcases eq_or_ne q 0 with rfl | hq0
+  · simp [PowerSeries.gaussNorm_zero norm c (norm_zero : ‖(0 : R)‖ = 0)]
+  obtain ⟨k, hk⟩ := exists_isDistinguished hc hq hq0
+  have hqle (m : ℕ) : ‖q.coeff m‖ * c ^ m ≤ q.gaussNorm norm c :=
+    PowerSeries.le_gaussNorm norm c q hk.hasGaussNorm m
+  -- the coefficients of the product
+  have hcoeff (m : ℕ) : ((PowerSeries.X - PowerSeries.C a) * q).coeff (m + 1) =
+      q.coeff m - a * q.coeff (m + 1) := by
+    rw [sub_mul, map_sub, PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_C_mul]
+  have hcoeff0 : ((PowerSeries.X - PowerSeries.C a) * q).coeff 0 = -(a * q.coeff 0) := by
+    rw [sub_mul, map_sub, PowerSeries.coeff_zero_X_mul, PowerSeries.coeff_C_mul, zero_sub]
+  -- the cross term is dominated by `c` times the weighted norm one degree up
+  have hcross (m : ℕ) : ‖a * q.coeff m‖ * c ^ m ≤ c * (‖q.coeff m‖ * c ^ m) := by
+    calc ‖a * q.coeff m‖ * c ^ m ≤ (‖a‖ * ‖q.coeff m‖) * c ^ m :=
+          mul_le_mul_of_nonneg_right (norm_mul_le _ _) (pow_nonneg hc.le m)
+      _ ≤ (c * ‖q.coeff m‖) * c ^ m :=
+          mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right ha (norm_nonneg _))
+            (pow_nonneg hc.le m)
+      _ = c * (‖q.coeff m‖ * c ^ m) := by ring
+  have hupper (m : ℕ) : ‖((PowerSeries.X - PowerSeries.C a) * q).coeff m‖ * c ^ m ≤
+      c * q.gaussNorm norm c := by
+    rcases m with _ | m
+    · rw [hcoeff0, norm_neg]
+      exact (hcross 0).trans (mul_le_mul_of_nonneg_left (hqle 0) hc.le)
+    · rw [hcoeff]
+      have hsub : ‖q.coeff m - a * q.coeff (m + 1)‖ ≤ max ‖q.coeff m‖ ‖a * q.coeff (m + 1)‖ := by
+        simpa [sub_eq_add_neg] using IsUltrametricDist.norm_add_le_max (q.coeff m)
+          (-(a * q.coeff (m + 1)))
+      refine (mul_le_mul_of_nonneg_right hsub (pow_nonneg hc.le (m + 1))).trans ?_
+      rw [max_mul_of_nonneg _ _ (by positivity)]
+      refine max_le ?_ ((hcross (m + 1)).trans (mul_le_mul_of_nonneg_left (hqle _) hc.le))
+      calc ‖q.coeff m‖ * c ^ (m + 1) = c * (‖q.coeff m‖ * c ^ m) := by ring
+        _ ≤ c * q.gaussNorm norm c := mul_le_mul_of_nonneg_left (hqle m) hc.le
+  have hlower : c * q.gaussNorm norm c ≤
+      ‖((PowerSeries.X - PowerSeries.C a) * q).coeff (k + 1)‖ * c ^ (k + 1) := by
+    have hlt : ‖a * q.coeff (k + 1)‖ * c ^ (k + 1) < ‖q.coeff k‖ * c ^ (k + 1) := by
+      calc ‖a * q.coeff (k + 1)‖ * c ^ (k + 1) ≤ c * (‖q.coeff (k + 1)‖ * c ^ (k + 1)) :=
+            hcross _
+        _ < c * q.gaussNorm norm c :=
+            mul_lt_mul_of_pos_left (hk.norm_coeff_mul_pow_lt _ (Nat.lt_succ_self k)) hc
+        _ = ‖q.coeff k‖ * c ^ (k + 1) := by
+            rw [← hk.norm_coeff_mul_pow_eq, pow_succ]; ring
+    have hq' : ‖q.coeff k‖ ≤ ‖((PowerSeries.X - PowerSeries.C a) * q).coeff (k + 1)‖ := by
+      by_contra hcon
+      rw [not_le, hcoeff] at hcon
+      have hle := IsUltrametricDist.norm_add_le_max (q.coeff k - a * q.coeff (k + 1))
+        (a * q.coeff (k + 1))
+      rw [sub_add_cancel] at hle
+      have hlt' : ‖a * q.coeff (k + 1)‖ < ‖q.coeff k‖ :=
+        lt_of_mul_lt_mul_right hlt (pow_nonneg hc.le _)
+      exact absurd hle (not_le.mpr (max_lt hcon hlt'))
+    calc c * q.gaussNorm norm c = ‖q.coeff k‖ * c ^ (k + 1) := by
+          rw [← hk.norm_coeff_mul_pow_eq, pow_succ]; ring
+      _ ≤ _ := mul_le_mul_of_nonneg_right hq' (pow_nonneg hc.le _)
+  have hb : ((PowerSeries.X - PowerSeries.C a) * q).HasGaussNorm norm c :=
+    ⟨_, Set.forall_mem_range.mpr hupper⟩
+  exact le_antisymm ((PowerSeries.gaussNorm_eq _ _ _).trans_le (ciSup_le hupper))
+    (hlower.trans (PowerSeries.le_gaussNorm norm c _ hb _))
 
 end NormedRing
 
