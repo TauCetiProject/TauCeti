@@ -39,9 +39,9 @@ strip around the real axis has exponentially decaying Fourier coefficients, by C
   `(1 + ‖v‖) ^ k`.
 * `TauCeti.pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv`: if `f` is `C^N` and its
   derivatives up to order `N` are integrable, then `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`.
-* `TauCeti.one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset`: if `f` is `C^N`, vanishes
-  outside a set `S` of finite volume and has derivatives of order at most `N` bounded by `C`, then
-  `(1 + ‖w‖) ^ N ‖𝓕 f w‖ ≤ 2 ^ N C vol(S)`.
+* `TauCeti.one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset`: if `f` is `C^N`, its closed
+  support `tsupport f` is contained in a measurable set `S` of finite volume and its derivatives of
+  order at most `N` are bounded by `C`, then `(1 + ‖w‖) ^ N ‖𝓕 f w‖ ≤ 2 ^ N C vol(S)`.
 * `TauCeti.fourier_fderiv_apply`: the Fourier transform of the directional derivative `∂_v f` of an
   integrable differentiable function with integrable derivative is `2πi ⟪w, v⟫ 𝓕 f w`.
 * `TauCeti.integral_exp_smul_eq_fourier`: the integral `∫ exp(-i ⟪v, ξ⟫) f v dv` in angular
@@ -121,8 +121,9 @@ theorem pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv {N : ℕ} (hf : Con
   · exact le_of_mul_le_mul_right (heq ▸ hle) (lt_of_le_of_ne (by positivity) (Ne.symm h))
 
 open MeasureTheory Real in
-/-- **Explicit decay of the Fourier transform.** If `f` is `C^N`, vanishes outside a measurable
-set `S` of finite volume, and its derivatives of order at most `N` are bounded by `C`, then
+/-- **Explicit decay of the Fourier transform.** If `f` is `C^N`, its closed support `tsupport f`
+is contained in a measurable set `S` of finite volume, and its derivatives of order at most `N` are
+bounded by `C`, then
 `(1 + ‖w‖) ^ N ‖𝓕 f w‖ ≤ 2 ^ N * (C * vol(S))`. The constant depends on `f` only through `C`
 and `S`, so the bound is uniform over families of functions with common such data. -/
 theorem one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset {N : ℕ} (hf : ContDiff ℝ N f)

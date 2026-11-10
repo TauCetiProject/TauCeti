@@ -9,13 +9,13 @@ public import Mathlib.Analysis.Fourier.LpSpace
 import Mathlib.Analysis.PSeries
 public import TauCeti.Analysis.Pseudodifferential.Quantization
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
-public import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.CotlarStein
+import TauCeti.Analysis.Pseudodifferential.Sobolev
 import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
 import TauCeti.MeasureTheory.Function.Lp.Operator.Integral.Adjoint
 import TauCeti.Topology.Algebra.InfiniteSum.PiProd
@@ -415,7 +415,8 @@ private theorem pieceKernel_comp_adjoint_pieceKernel (a : Symbol n V W 0)
   push_cast
   ring
 
-/-- The kernel `∫ x, (G_ν x ζ')† G_μ x ζ` of `T_ν† T_μ` is a Fourier transform in the position. -/
+/-- The kernel `∫ x, (pieceKernel a ν x ζ')† pieceKernel a μ x ζ` of `G_ν† G_μ` is a Fourier
+transform in the position. -/
 private theorem integral_adjoint_pieceKernel_comp (a : Symbol n V W 0)
     (ν μ : (Fin n → ℤ) × (Fin n → ℤ)) (ζ' ζ : CoordinateSpace n) :
     ∫ x, adjoint (pieceKernel a ν x ζ') ∘L pieceKernel a μ x ζ =
@@ -426,8 +427,8 @@ private theorem integral_adjoint_pieceKernel_comp (a : Symbol n V W 0)
   simp_rw [adjoint_pieceKernel_comp_pieceKernel]
   rw [integral_smul, Real.fourier_eq]
 
-/-- The kernel `∫ ζ, G_ν x ζ (G_μ y ζ)†` of `T_ν T_μ†` is a Fourier transform in the
-frequency. -/
+/-- The kernel `∫ ζ, pieceKernel a ν x ζ (pieceKernel a μ y ζ)†` of `G_ν G_μ†` is a Fourier
+transform in the frequency. -/
 private theorem integral_pieceKernel_comp_adjoint (a : Symbol n V W 0)
     (ν μ : (Fin n → ℤ) × (Fin n → ℤ)) (x y : CoordinateSpace n) :
     ∫ ζ, pieceKernel a ν x ζ ∘L adjoint (pieceKernel a μ y ζ) =
@@ -440,7 +441,7 @@ private theorem integral_pieceKernel_comp_adjoint (a : Symbol n V W 0)
 
 /-! ### Almost orthogonality of the pieces -/
 
-/-- The kernel of `T_ν† T_μ` decays in the frequency displacement and vanishes unless the
+/-- The kernel of `G_ν† G_μ` decays in the frequency displacement and vanishes unless the
 position cells of `ν` and `μ` are neighbours. -/
 private theorem norm_integral_adjoint_pieceKernel_comp_le (a : Symbol n V W 0) {Cχ C : ℝ}
     (hχ : ∀ p ≤ 4 * n, ∀ x, ‖iteratedFDeriv ℝ p (latticeBump n) x‖ ≤ Cχ)
@@ -456,7 +457,7 @@ private theorem norm_integral_adjoint_pieceKernel_comp_le (a : Symbol n V W 0) {
       rw [one_mul]; exact norm_adjointCompL_apply_le S T)
     (hf _) (hf _) hχ (fun p hp x ↦ hC p hp x _) (fun p hp x ↦ hC p hp x _) ν.1 μ.1 ν.2 μ.2 rfl
 
-/-- The kernel of `T_ν T_μ†` decays in the position displacement and vanishes unless the
+/-- The kernel of `G_ν G_μ†` decays in the position displacement and vanishes unless the
 frequency cells of `ν` and `μ` are neighbours. -/
 private theorem norm_integral_pieceKernel_comp_adjoint_le (a : Symbol n V W 0) {Cχ C : ℝ}
     (hχ : ∀ p ≤ 4 * n, ∀ x, ‖iteratedFDeriv ℝ p (latticeBump n) x‖ ≤ Cχ)
@@ -484,7 +485,7 @@ private theorem norm_integral_pieceKernel_comp_adjoint_le (a : Symbol n V W 0) {
 
 /-! ### The pieces as operators on `L²` -/
 
-/-- The phase-space piece of `a` at `ν`, as the integral operator on `L²` with kernel
+/-- The phase-space piece `G_ν` of `a` at `ν`, as the integral operator on `L²` with kernel
 `pieceKernel a ν`. Composed with the Fourier transform it is the quantization of the symbol
 `χ(x - j) χ(ξ / 2π - k) a(x, ξ)`. -/
 private def pieceOp (a : Symbol n V W 0) {C : ℝ≥0} (hC : ∀ p, ‖a.coefficient p‖ ≤ C)
@@ -686,9 +687,10 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace
 spaces. The quantization of a symbol of order `0` whose estimates hold uniformly in the position
 extends from Schwartz functions to a bounded operator `H⁰(ℝⁿ; V) → H⁰(ℝⁿ; W)`.
 
-The norms of `V` and `W` need not come from inner products: as for
-`TauCeti.Symbol.exists_quantizeSobolev`, isomorphisms `e₁ : V ≃L[ℂ] ℂ^k` and `e₂ : W ≃L[ℂ] ℂ^l`
-reduce the statement to `TauCeti.Symbol.exists_quantizeUniformOrderZeroLp`. -/
+The norms of `V` and `W` need not come from inner products: isomorphisms `e₁ : V ≃L[ℂ] ℂ^k` and
+`e₂ : W ≃L[ℂ] ℂ^l` reduce the statement
+(`TauCeti.Symbol.exists_quantizeSobolev_of_map_arrowCongr`) to
+`TauCeti.Symbol.exists_quantizeUniformOrderZeroLp` for the conjugated symbol `e₂ a e₁⁻¹`. -/
 theorem exists_quantizeUniformOrderZero (a : Symbol n V W 0) (ha : a.IsUniform) :
     ∃ T : H^{0}(CoordinateSpace n, V) →L[ℂ] H^{0}(CoordinateSpace n, W),
       ∀ (u : 𝓢(CoordinateSpace n, V)) (φ : 𝓢(CoordinateSpace n, ℂ)),
@@ -699,36 +701,24 @@ theorem exists_quantizeUniformOrderZero (a : Symbol n V W 0) (ha : a.IsUniform) 
     ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
   let e₂ : W ≃L[ℂ] EuclideanSpace ℂ (Fin (Module.finrank ℂ W)) :=
     ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
-  let Φ := (e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ
-  obtain ⟨T₀, hT₀⟩ := (a.map Φ).exists_quantizeUniformOrderZeroLp (ha.map Φ)
   set V' := EuclideanSpace ℂ (Fin (Module.finrank ℂ V))
   set W' := EuclideanSpace ℂ (Fin (Module.finrank ℂ W))
-  refine ⟨BesselPotentialSpace.postcomp _ _ 2 (e₂.symm : W' →L[ℂ] W) ∘L
-    ((BesselPotentialSpace.toLpₗᵢ (CoordinateSpace n) W' 0 2).symm.toContinuousLinearEquiv :
+  set b := a.map ((e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ)
+  obtain ⟨T₀, hT₀⟩ := b.exists_quantizeUniformOrderZeroLp (ha.map _)
+  -- On `H⁰ = L²` the operator is `T₀`.
+  refine a.exists_quantizeSobolev_of_map_arrowCongr e₁ e₂
+    ⟨((BesselPotentialSpace.toLpₗᵢ (CoordinateSpace n) W' 0 2).symm.toContinuousLinearEquiv :
       Lp W' 2 (volume : Measure (CoordinateSpace n)) →L[ℂ] H^{0}(CoordinateSpace n, W')) ∘L
     T₀ ∘L ((BesselPotentialSpace.toLpₗᵢ (CoordinateSpace n) V' 0 2).toContinuousLinearEquiv :
-      H^{0}(CoordinateSpace n, V') →L[ℂ] Lp V' 2 (volume : Measure (CoordinateSpace n))) ∘L
-    BesselPotentialSpace.postcomp _ 0 2 (e₁ : V →L[ℂ] V'), fun u φ ↦ ?_⟩
-  have hc : (a.map Φ).coefficient = fun p ↦ e₁.arrowCongr e₂ (a.coefficient p) :=
-    funext fun p ↦ by simp [Φ]
-  have hq (x : CoordinateSpace n) :
-      quantizeSchwartzValue (a.map Φ).coefficient (u.postcompCLM (e₁ : V →L[ℂ] V')) x =
-        e₂ (quantizeSchwartzValue a.coefficient u x) := by
-    rw [hc, quantizeSchwartzValue_arrowCongr]
-  have hlp : (SchwartzMap.toBesselPotentialSpaceCLM 0 2
-      (u.postcompCLM (e₁ : V →L[ℂ] V'))).toLp = (u.postcompCLM (e₁ : V →L[ℂ] V')).toLp 2 := by
-    simp [SchwartzMap.fourierMultiplierCLM_const]
-  simp only [ContinuousLinearMap.comp_apply, ← SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM,
-    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    BesselPotentialSpace.toLpₗᵢ_apply, hlp, BesselPotentialSpace.toDistr_postcomp_apply]
-  rw [BesselPotentialSpace.toLpₗᵢ_symm_apply, neg_zero, TemperedDistribution.besselPotential_zero,
-    ContinuousLinearMap.id_apply, Lp.toTemperedDistribution_apply,
-    integral_congr_ae (g := fun x ↦ φ x • quantizeSchwartzValue (a.map Φ).coefficient
-      (u.postcompCLM (e₁ : V →L[ℂ] V')) x) (by
-        filter_upwards [hT₀ (u.postcompCLM (e₁ : V →L[ℂ] V'))] with x hx
-        rw [hx])]
-  simp only [hq, ← map_smul, ContinuousLinearEquiv.integral_comp_comm,
-    ContinuousLinearEquiv.symm_apply_apply]
+      H^{0}(CoordinateSpace n, V') →L[ℂ] Lp V' 2 (volume : Measure (CoordinateSpace n))),
+    fun u φ ↦ ?_⟩
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, BesselPotentialSpace.toLpₗᵢ_apply,
+    SchwartzMap.toLp_toBesselPotentialSpaceCLM_zero,
+    BesselPotentialSpace.toDistr_toLpₗᵢ_zero_symm_apply, Lp.toTemperedDistribution_apply]
+  exact integral_congr_ae (by filter_upwards [hT₀ u] with x hx; rw [hx])
 
 end FiniteDimensional
 
