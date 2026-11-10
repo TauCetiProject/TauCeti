@@ -47,9 +47,9 @@ of the trivial group. Let a group `G` act on `V` through a continuous representa
 operators form a bounded set, as for a finite group or a compact group acting continuously, and
 let `x₀` be fixed by `G`; after Bochner linearization this is the model of a compact group acting
 near a fixed point. If the forms and the primitive are `ρ`-invariant, then the Moser field is
-`ρ`-equivariant, by uniqueness of the solution of `ι_{Xₜ} ωₜ = -α`, and so is its flow on a small
-invariant neighbourhood of `x₀`, by uniqueness of solutions of the flow equation. This gives the
-**equivariant Moser lemma**
+`ρ`-equivariant, by uniqueness of the solution of `ι_{Xₜ} ωₜ = -α`
+(`TauCeti.moserField_map_eq`), and so is its flow on a small invariant neighbourhood of `x₀`, by
+uniqueness of solutions of the flow equation. This gives the **equivariant Moser lemma**
 (`TauCeti.exists_equivariant_diffeomorph_compContinuousLinearMap_fderiv_eq_of_extDeriv_eq`). The
 invariant Poincaré lemma (`StarConvex.exists_invariant_contDiffOn_forall_extDeriv_eq`) supplies an
 invariant primitive on an invariant convex neighbourhood
@@ -57,7 +57,8 @@ invariant primitive on an invariant convex neighbourhood
 nondegenerate at `x₀` is constant in coordinates which are `ρ`-equivariant on an invariant
 neighbourhood of `x₀`: this is the **equivariant Darboux theorem**
 (`TauCeti.exists_equivariant_diffeomorph_compContinuousLinearMap_fderiv_eq`). Choosing a
-`ρ`-invariant symplectic basis of `ω(x₀)` is again a separate linear step.
+symplectic basis of `ω(x₀)` then conjugates `ρ` into a representation by linear symplectic maps
+of the standard symplectic space; the basis itself need not be `ρ`-invariant.
 
 Forms are Mathlib's continuous alternating maps, `V [⋀^Fin 2]→L[ℝ] ℝ`, with Mathlib's exterior
 derivative `extDeriv`, and the pullback of `ω` along `ψ` at `x` is
@@ -85,25 +86,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 section Equivariant
 
 variable {G : Type*} [Group G] {ρ : ContRepresentation ℝ G V}
-
-omit [FiniteDimensional ℝ V] in
-/-- The solution of a Moser equation whose data are invariant under an invertible operator
-`ρ g` is equivariant: if `X p` is characterized, at every point `p ∈ T ×ˢ U`, as the unique `v`
-with `A p v w = -a p.2 w` for all `w`, and `A` and `a` are invariant under `ρ g` at `y`, then
-`X (t, ρ g y) = ρ g (X (t, y))`. -/
-private theorem moserField_map_eq {A : ℝ × V → V →L[ℝ] V →L[ℝ] ℝ} {a : V → V →L[ℝ] ℝ}
-    {X : ℝ × V → V} {T : Set ℝ} {U : Set V}
-    (hXeq : ∀ p ∈ T ×ˢ U, ∀ v : V, (∀ w : V, A p v w = -a p.2 w) ↔ v = X p) {t : ℝ} (ht : t ∈ T)
-    (g : G) {y : V} (hy : y ∈ U) (hgy : ρ g y ∈ U)
-    (hA : ∀ v w, A (t, ρ g y) (ρ g v) (ρ g w) = A (t, y) v w)
-    (ha : ∀ w, a (ρ g y) (ρ g w) = a y w) :
-    X (t, ρ g y) = ρ g (X (t, y)) := by
-  refine ((hXeq (t, ρ g y) ⟨ht, hgy⟩ _).1 fun w ↦ ?_).symm
-  -- Every vector is `ρ g u` for `u = ρ g⁻¹ w`.
-  obtain ⟨u, rfl⟩ : ∃ u, ρ g u = w :=
-    ⟨ρ g⁻¹ w, by rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one, one_apply_eq_self]⟩
-  rw [hA, ha]
-  exact (hXeq (t, y) ⟨ht, hy⟩ _).2 rfl u
 
 /-- **Moser's lemma**, local equivariant form. Let a group `G` act on a finite-dimensional real
 normed space through a continuous representation `ρ` whose operators form a bounded set (for
@@ -177,7 +159,10 @@ theorem exists_equivariant_diffeomorph_compContinuousLinearMap_fderiv_eq_of_extD
   -- The Moser field is equivariant at the points `y` with `y, ρ g y ∈ U`.
   have hXρ (t : ℝ) (ht : t ∈ T) (g : G) (y : V) (hy : y ∈ U) (hgy : ρ g y ∈ U) :
       X (t, ρ g y) = ρ g (X (t, y)) := by
-    refine moserField_map_eq hXeq ht g hy hgy (fun v w ↦ ?_) fun w ↦ ?_
+    -- Every vector is `ρ g u` for `u = ρ g⁻¹ w`.
+    have hρs : Function.Surjective (ρ g) := fun w ↦
+      ⟨ρ g⁻¹ w, by rw [← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one, one_apply_eq_self]⟩
+    refine moserField_map_eq hXeq ht hρs hy hgy (fun v w ↦ ?_) fun w ↦ ?_
     · have hvw : ρ g ∘ ![v, w] = ![ρ g v, ρ g w] := by
         funext i
         fin_cases i <;> rfl
