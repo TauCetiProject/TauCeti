@@ -24,7 +24,9 @@ The homogeneous terms enter the expansion through their cut-off terms
 `TauCeti.HomogeneousSymbol.cutoffSymbol χ a`, the symbols `χ(ξ) a(x, ξ)` of
 `TauCeti/Analysis/Pseudodifferential/Symbol/Homogeneous.lean`. This file defines the carrier
 `TauCeti.ClassicalSymbol n V W m` of classical symbols, with an actual remainder symbol
-`TauCeti.ClassicalSymbol.remainder χ N` of order `m - N` after `N` terms, and proves:
+`TauCeti.ClassicalSymbol.remainder χ N` of order `m - N` after `N` terms
+(`TauCeti.ClassicalSymbol.inclusion_remainder` states it as an identity of symbols of order `m`),
+and proves:
 
 * `TauCeti.ClassicalSymbol.exists_remainder`: the expansion holds for every frequency cutoff, not
   only for the one used to define the symbol;
@@ -138,6 +140,13 @@ theorem coefficient_remainder (N : ℕ) (p : CoordinateSpace n × CoordinateSpac
     (a.remainder χ N).coefficient p =
       a.toSymbol.coefficient p - ∑ j ∈ Finset.range N, χ p.2 • (a.term j).coefficient p :=
   (a.exists_remainder χ N).choose_spec p
+
+/-- The remainder after `N` terms, included in the symbols of order `m`, is the full symbol minus
+the first `N` cut-off terms. -/
+theorem inclusion_remainder (N : ℕ) :
+    Symbol.inclusion (by simp) (a.remainder χ N) =
+      a.toSymbol - ∑ k ∈ Finset.range N, Symbol.inclusion (by simp) (cutoffSymbol χ (a.term k)) :=
+  Symbol.ext <| funext fun p => by simp
 
 end Remainder
 
@@ -711,14 +720,6 @@ end Comp
 /-! ### Derivatives -/
 
 section Deriv
-
-/-- The remainder after `N` terms, included in the symbols of order `m`, is the full symbol minus
-the first `N` cut-off terms. -/
-private theorem inclusion_remainder (a : ClassicalSymbol n V W m)
-    (χ : FrequencyCutoff (CoordinateSpace n)) (N : ℕ) :
-    Symbol.inclusion (by simp) (a.remainder χ N) =
-      a.toSymbol - ∑ k ∈ Finset.range N, Symbol.inclusion (by simp) (cutoffSymbol χ (a.term k)) :=
-  Symbol.ext <| funext fun p => by simp
 
 /-- The spatial derivative `∂_{x_j} a` of a classical symbol of order `m`: a classical symbol of
 order `m`, whose homogeneous terms are the spatial derivatives `∂_{x_j} a_{m-k}` of those of
