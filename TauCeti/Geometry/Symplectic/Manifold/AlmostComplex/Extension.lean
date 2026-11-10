@@ -79,6 +79,7 @@ theorem cutoffInterp_of_mem {n : N} (h : n ∈ W) :
   dite_eq_left h
 
 /-- Outside `W`, cutoff interpolation is the background structure. -/
+@[simp]
 theorem cutoffInterp_of_notMem {n : N} (h : n ∉ W) :
     cutoffInterp hσn hK₀ hK₁ ρ hρ n = K₀ n :=
   dite_eq_right h
@@ -93,6 +94,7 @@ theorem compatible_cutoffInterp (n : N) :
     exact hK₀ n
 
 /-- Where the weight vanishes, cutoff interpolation is the background structure. -/
+@[simp]
 theorem cutoffInterp_of_eq_zero {n : N} (h : ρ n = 0) :
     cutoffInterp hσn hK₀ hK₁ ρ hρ n = K₀ n := by
   by_cases hW : n ∈ W
@@ -102,6 +104,7 @@ theorem cutoffInterp_of_eq_zero {n : N} (h : ρ n = 0) :
   · exact cutoffInterp_of_notMem hσn hK₀ hK₁ ρ hρ hW
 
 /-- Over `W`, where the weight is one, cutoff interpolation is the prescribed structure. -/
+@[simp]
 theorem cutoffInterp_of_eq_one {n : N} (hW : n ∈ W) (h : ρ n = 1) :
     cutoffInterp hσn hK₀ hK₁ ρ hρ n = K₁ n := by
   rw [cutoffInterp_of_mem hσn hK₀ hK₁ ρ hρ hW]
