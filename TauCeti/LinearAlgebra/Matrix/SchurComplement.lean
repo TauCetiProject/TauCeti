@@ -91,6 +91,8 @@ theorem PosSemidef.schur_complement₂₂ [Fintype n]
       Matrix.add_mul, Matrix.neg_mul, Matrix.mul_neg,
       ← Matrix.mul_assoc, hcancel]
     abel
+  -- The support helper states its goal for `Matrix.of fun a b ↦ (A - B * P * Bᴴ) a b`, which is
+  -- `(A - B * P * Bᴴ).submatrix e e` by definition (both are `fun a b ↦ _ (e a) (e b)`).
   change ((A - B * P * Bᴴ).submatrix e e).PosSemidef
   rw [← hcompress, ← hmat]
   exact (h.submatrix _).mul_mul_conjTranspose_same _
