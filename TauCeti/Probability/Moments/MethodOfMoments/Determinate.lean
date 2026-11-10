@@ -272,9 +272,12 @@ theorem tendsto_of_tendsto_integral_pow_of_determined_moments
   let B : ℝ := (∫ x, x ^ 2 ∂(μ : Measure ℝ)) + 1
   let s : Set ι := {n | Integrable (fun x : ℝ => x ^ 2) (μn n : Measure ℝ) ∧
     ∫ x, x ^ 2 ∂(μn n : Measure ℝ) ≤ B}
+  have hμ2_lt_B : ∫ x, x ^ 2 ∂(μ : Measure ℝ) < B := by
+    dsimp [B]
+    linarith
   have hs : s ∈ l := by
     filter_upwards [hint 2, (hlim 2).eventually
-      (Iio_mem_nhds (show (∫ x, x ^ 2 ∂(μ : Measure ℝ)) < B by dsimp [B]; linarith))] with n hi hb
+      (Iio_mem_nhds hμ2_lt_B)] with n hi hb
     exact ⟨hi, hb.le⟩
   have htight : IsTightMeasureSet
       ((fun p : ProbabilityMeasure ℝ => (p : Measure ℝ)) '' (μn '' s)) := by

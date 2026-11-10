@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Tight
 public import Mathlib.Topology.Metrizable.CompletelyMetrizable
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Probability.Moments.Chebyshev
 
 /-!
 # Basic tightness criteria for measures
@@ -86,21 +87,31 @@ theorem isTightMeasureSet_of_integral_sq_le {S : Set (Measure ℝ)} {B : ℝ}
     tendsto_const_nhds.div_atTop (tendsto_pow_atTop two_ne_zero)
   obtain ⟨R, hR1, hR0⟩ := ((hlim.eventually (gt_mem_nhds hε')).and (eventually_gt_atTop 0)).exists
   refine ⟨Icc (-R) R, isCompact_Icc, fun ρ hρ => ?_⟩
-  obtain ⟨hfin, hint, hB⟩ := hS ρ hρ
-  have : IsFiniteMeasure ρ := hfin
-  have hmarkov := mul_meas_ge_le_integral_of_nonneg (μ := ρ) (f := fun x : ℝ => x ^ 2)
-    (ae_of_all _ fun x => sq_nonneg x) hint (R ^ 2)
-  have hsub : (Icc (-R) R)ᶜ ⊆ {x : ℝ | R ^ 2 ≤ x ^ 2} := fun x hx => by
+  obtain ⟨_, hint, hB⟩ := hS ρ hρ
+  have hY : Integrable (fun x : ℝ => ‖id x‖ ^ 2) ρ := by
+    simpa only [id_eq, Real.norm_eq_abs, sq_abs] using hint
+  have hmoment : (∫ x, ‖id x‖ ^ 2 ∂ρ) ≤ B := by
+    simpa only [id_eq, Real.norm_eq_abs, sq_abs] using hB
+  have hsub : (Icc (-R) R)ᶜ ⊆ {x : ℝ | R ≤ ‖id x‖} := by
+    intro x hx
     simp only [mem_compl_iff, mem_Icc, not_and_or, not_le] at hx
-    simp only [mem_ofPred_eq]
-    rcases hx with hx | hx <;> nlinarith
-  have hreal : ρ.real (Icc (-R) R)ᶜ ≤ B / R ^ 2 := by
-    rw [le_div_iff₀ (by positivity)]
-    nlinarith [measureReal_mono (μ := ρ) hsub,
-      measureReal_nonneg (μ := ρ) (s := (Icc (-R) R)ᶜ), sq_nonneg R]
-  refine (ENNReal.le_ofReal_iff_toReal_le (measure_ne_top _ _) hε'.le).2 ?_ |>.trans_eq
-    (ENNReal.ofReal_toReal hεtop)
-  exact hreal.trans hR1.le
+    simp only [Set.mem_ofPred_eq, id_eq, Real.norm_eq_abs]
+    rcases hx with hx | hx
+    · rw [abs_of_nonpos (by linarith : x ≤ 0)]
+      linarith
+    · rw [abs_of_nonneg (by linarith : 0 ≤ x)]
+      linarith
+  have htail : ρ (Icc (-R) R)ᶜ ≤ ENNReal.ofReal (B / R ^ 2) := by
+    calc
+      ρ (Icc (-R) R)ᶜ ≤ ρ {x : ℝ | R ≤ ‖id x‖} := measure_mono hsub
+      _ ≤ ENNReal.ofReal ((∫ x, ‖id x‖ ^ 2 ∂ρ) / R ^ 2) :=
+        TauCeti.meas_ge_le_integral_norm_sq_div_sq (Y := id) hY hR0
+      _ ≤ ENNReal.ofReal (B / R ^ 2) :=
+        ENNReal.ofReal_le_ofReal (div_le_div_of_nonneg_right hmoment (by positivity))
+  calc
+    ρ (Icc (-R) R)ᶜ ≤ ENNReal.ofReal (B / R ^ 2) := htail
+    _ ≤ ENNReal.ofReal ε.toReal := ENNReal.ofReal_le_ofReal hR1.le
+    _ = ε := ENNReal.ofReal_toReal hεtop
 
 end TauCeti
 
