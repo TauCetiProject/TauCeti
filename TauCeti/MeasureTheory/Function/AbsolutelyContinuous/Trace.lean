@@ -24,6 +24,7 @@ namespace AbsolutelyContinuousOnInterval
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {γ : ℝ → E} {a b : ℝ}
 
+omit [FiniteDimensional ℝ E] in
 /-- The trace of an absolutely continuous curve is additive-Haar-null in ambient dimension
 greater than one. -/
 theorem addHaar_image_uIcc_eq_zero (hγ : AbsolutelyContinuousOnInterval γ a b)
