@@ -545,15 +545,20 @@ private theorem im_quadratic_log_le_of_re_neg {M C η : ℝ} {z : ℂ} (hC : C <
     linarith [neg_abs_le M]
   nlinarith [mul_neg_of_neg_of_pos hsx hz, mul_le_mul_of_nonneg_left hJ (neg_nonneg.mpr hC.le)]
 
-/-- **The band omitted by the quadratic comparison function.** For real `M` and `C < 0`, far out
+/-- **The band omitted by the quadratic comparison function.** For real `M` and `C`, far out
 in the upper half-plane, the comparison function `z ^ 2 / 2 - M * z + C * log z` takes no value
-with real part greater than `1 / 2` and height strictly between `π * C + η` and `-η`. Its imaginary
-part is `(re z - M) * im z + C * arg z`; inside the band `im z` is bounded, so Jordan's inequality
-puts `arg z` near `0` or `π`, which pushes the imaginary part out of the band. -/
-theorem exists_forall_im_quadratic_log_notMem_Ioo {M C η : ℝ} (hC : C < 0) (hη : 0 < η) :
+with real part greater than `1 / 2` and height strictly between `π * C + η` and `-η`. For
+`C ≥ 0` the band is empty. For `C < 0`, the imaginary part is `(re z - M) * im z + C * arg z`;
+inside the band `im z` is bounded, so Jordan's inequality puts `arg z` near `0` or `π`, which
+pushes the imaginary part out of the band. -/
+theorem exists_forall_im_quadratic_log_notMem_Ioo {M C η : ℝ} (hη : 0 < η) :
     ∃ R : ℝ, ∀ z : ℂ, 0 < z.im → R ≤ ‖z‖ →
       1 / 2 < (z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z).re →
         (z ^ 2 / 2 - (M : ℂ) * z + (C : ℂ) * log z).im ∉ Ioo (Real.pi * C + η) (-η) := by
+  obtain hC | hC := lt_or_ge C 0
+  swap
+  · exact ⟨0, fun _ _ _ _ hband => by
+      nlinarith [mul_nonneg Real.pi_pos.le hC, hband.1, hband.2]⟩
   refine ⟨max 1 (max (-(Real.pi * C) + |M| + 1) (Real.pi ^ 2 * C ^ 2 / η + 1)),
     fun z hz hzR hre => ?_⟩
   rw [re_quadratic_log] at hre
