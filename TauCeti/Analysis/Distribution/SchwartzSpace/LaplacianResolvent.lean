@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 public import TauCeti.Analysis.Normed.Module.Complexification
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 
 /-!
 # The resolvent of the Laplacian on Schwartz space
@@ -171,10 +172,10 @@ theorem laplacianResolvent_laplacian {c : ℝ} (f : 𝓢(E, G)) :
   · have h : fourierMultiplierCLM (TauCeti.Complexification G)
         (fun ξ : E ↦ ((2 * π) ^ 2 * ‖ξ‖ ^ 2 + c)⁻¹) = 0 := by
       ext1 φ
-      simp [fourierMultiplierCLM_apply, smulLeftCLM, hg]
+      simp [fourierMultiplierCLM_apply, smulLeftCLM_of_not_hasTemperateGrowth hg]
     simp only [laplacianResolvent, h, ContinuousLinearMap.comp_zero,
       ContinuousLinearMap.zero_comp, zero_apply]
-    exact (map_zero (LineDeriv.laplacianCLM ℝ E 𝓢(E, G))).symm
+    rw [← laplacianCLM_eq', map_zero]
 
 /-- The resolvent of the Laplacian is a left inverse of `-Δ + c`, for `c > 0`. -/
 @[simp]

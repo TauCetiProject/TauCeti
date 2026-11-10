@@ -193,6 +193,7 @@ section Hilbert
 
 variable [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
+omit [CompleteSpace H] in
 /-- **The tail of the kernel of a band-limited symbol.** Let `b` be an orthonormal basis of the
 `n`-dimensional space `V` and `2N > n`. There is a constant `C ≥ 0` such that, whenever a
 Schwartz function `σ` vanishes outside `closedBall 0 t` and its `N`-th derivatives along `b` are
@@ -201,12 +202,31 @@ bounded by `A t ^ (-N)`,
 `∫_{‖x‖ > R} ‖𝓕⁻ σ x‖ dx ≤ C A (t R) ^ (n/2 - N)` for every `R > 0`. -/
 theorem exists_setIntegral_norm_fourierInv_le_of_support_subset {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ V) {N : ℕ} (hN : finrank ℝ V < 2 * N) :
-    ∃ C, 0 ≤ C ∧ ∀ (σ : 𝓢(V, H)) {t A : ℝ}, 0 < t → 0 ≤ A → support σ ⊆ closedBall 0 t →
+    ∃ C, 0 ≤ C ∧ ∀ (σ : 𝓢(V, H)) {t A : ℝ}, 0 < t → support σ ⊆ closedBall 0 t →
       (∀ i ξ, ‖(∂_{b i})^[N] σ ξ‖ ≤ A / t ^ N) → ∀ R, 0 < R →
         ∫ x in {x | R < ‖x‖}, ‖𝓕⁻ σ x‖ ≤ C * A * (t * R) ^ ((finrank ℝ V : ℝ) / 2 - N) := by
+  by_cases hH : CompleteSpace H
+  swap
+  · refine ⟨0, le_rfl, fun σ _ _ _ _ _ R _ ↦ ?_⟩
+    simp [fourierInv_eq_zero_of_not_completeSpace hH]
+  cases isEmpty_or_nonempty ι with
+  | inl _ =>
+    -- `V` is the zero space, so the set `{x | R < ‖x‖}` is empty.
+    refine ⟨0, le_rfl, fun σ _ _ _ _ _ R hR ↦ ?_⟩
+    have : Subsingleton V := Module.finrank_zero_iff.mp (by
+      rw [Module.finrank_eq_card_basis b.toBasis, Fintype.card_eq_zero])
+    have hs : {x : V | R < ‖x‖} = ∅ := Set.eq_empty_of_forall_notMem fun x hx ↦ by
+      rw [Set.mem_ofPred_eq, Subsingleton.elim x 0, norm_zero] at hx
+      exact absurd hx (not_lt.2 hR.le)
+    simp [hs]
+  | inr _ =>
+  obtain ⟨i₀⟩ : Nonempty ι := inferInstance
   obtain ⟨C₀, hC₀, hC⟩ := exists_setIntegral_norm_fourierInv_le (H := H) b hN
   refine ⟨C₀ * √(Fintype.card ι) * √(volume.real (ball (0 : V) 1)), by positivity,
-    fun σ t A ht hA hσ hσN R hR ↦ ?_⟩
+    fun σ t A ht hσ hσN R hR ↦ ?_⟩
+  have hA : 0 ≤ A := by
+    have h0 : 0 ≤ A / t ^ N := (norm_nonneg _).trans (hσN i₀ 0)
+    exact (div_nonneg_iff.1 h0).elim (·.1) fun h ↦ absurd h.2 (not_le.2 (pow_pos ht N))
   have hsum := sqrt_sum_norm_toLp_iterate_lineDerivOp_sq_le b σ N ht.le (by positivity)
     (closure_minimal hσ isClosed_closedBall) hσN
   have hte : t ^ ((finrank ℝ V : ℝ) / 2 - N) = t ^ ((finrank ℝ V : ℝ) / 2) / t ^ N := by
@@ -230,10 +250,7 @@ theorem exists_integral_norm_fourierInv_le_of_support_subset {ι : Type*} [Finty
   by_cases hH : CompleteSpace H
   swap
   · refine ⟨0, le_rfl, fun σ _ _ _ _ _ _ ↦ ?_⟩
-    have h : 𝓕⁻ σ = 0 := by
-      ext ξ
-      simp [fourierInv_coe, Real.fourierInv_eq, integral_of_not_completeSpace hH]
-    simp [h]
+    simp [fourierInv_eq_zero_of_not_completeSpace hH]
   obtain ⟨C₀, hC₀, hC⟩ := exists_integral_norm_fourierInv_le (H := H) b hN
   refine ⟨C₀ * √(volume.real (ball (0 : V) 1)) * (1 + √(Fintype.card ι)), by positivity,
     fun σ t A ht hσ hσA hσN ↦ ?_⟩
@@ -251,6 +268,7 @@ theorem exists_integral_norm_fourierInv_le_of_support_subset {ι : Type*} [Finty
   refine le_of_eq ?_
   field_simp
 
+omit [CompleteSpace H] in
 /-- **The smoothness of the kernel of a band-limited symbol.** Let `b` be an orthonormal basis of
 the `n`-dimensional space `V` and `2N > n`. There is a constant `C ≥ 0` such that, whenever a
 Schwartz function `σ` vanishes outside `closedBall 0 t` and its derivatives of order `k ≤ N` along
@@ -262,6 +280,10 @@ theorem exists_integral_norm_fourierInv_add_sub_le_of_support_subset {ι : Type*
     ∃ C, 0 ≤ C ∧ ∀ (σ : 𝓢(V, H)) {t A : ℝ}, 0 < t → support σ ⊆ closedBall 0 t →
       (∀ k ≤ N, ∀ i ξ, ‖(∂_{b i})^[k] σ ξ‖ ≤ A / t ^ k) → ∀ h,
         ∫ x, ‖𝓕⁻ σ (x + h) - 𝓕⁻ σ x‖ ≤ C * A * (t * ‖h‖) := by
+  by_cases hH : CompleteSpace H
+  swap
+  · refine ⟨0, le_rfl, fun σ _ _ _ _ _ _ ↦ ?_⟩
+    simp [fourierInv_eq_zero_of_not_completeSpace hH]
   obtain ⟨M, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (by omega : N ≠ 0)
   obtain ⟨C₁, hC₁, hC⟩ := exists_integral_norm_fourierInv_le (H := H) b hN
   refine ⟨2 * π * C₁ * √(volume.real (ball (0 : V) 1)) * (1 + √(Fintype.card ι) * (M + 2)),
@@ -319,10 +341,7 @@ theorem exists_setIntegral_norm_fourierInv_sub_sub_le_of_support_subset {ι : Ty
   by_cases hH : CompleteSpace H
   swap
   · refine ⟨0, le_rfl, fun σ _ _ _ _ _ _ _ ↦ ?_⟩
-    have h : 𝓕⁻ σ = 0 := by
-      ext ξ
-      simp [fourierInv_coe, Real.fourierInv_eq, integral_of_not_completeSpace hH]
-    simp [h]
+    simp [fourierInv_eq_zero_of_not_completeSpace hH]
   obtain ⟨C₁, hC₁, hC₁'⟩ := exists_setIntegral_norm_fourierInv_le_of_support_subset (H := H) b hN
   obtain ⟨C₂, hC₂, hC₂'⟩ :=
     exists_integral_norm_fourierInv_add_sub_le_of_support_subset (H := H) b hN
@@ -346,7 +365,7 @@ theorem exists_setIntegral_norm_fourierInv_sub_sub_le_of_support_subset {ι : Ty
         ≤ 2 * ∫ x in {x | ‖h‖ < ‖x‖}, ‖𝓕⁻ σ x‖ := hK.setIntegral_norm_comp_sub_sub_le h
       _ ≤ 2 * (C₁ * A * (t * ‖h‖) ^ ((finrank ℝ V : ℝ) / 2 - N)) := by
           gcongr
-          exact hC₁' σ ht hA hσ (hσk N le_rfl) ‖h‖ (norm_pos_iff.2 hh)
+          exact hC₁' σ ht hσ (hσk N le_rfl) ‖h‖ (norm_pos_iff.2 hh)
       _ ≤ max (2 * C₁) C₂ * A * (t * ‖h‖) ^ ((finrank ℝ V : ℝ) / 2 - N) := by
           rw [← mul_assoc, ← mul_assoc]
           gcongr

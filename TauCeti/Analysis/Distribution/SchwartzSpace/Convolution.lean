@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Fourier.Convolution
 import TauCeti.Analysis.Convolution.Young
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 
 /-!
 # Convolution and the Fourier transform on Schwartz space
@@ -76,10 +77,7 @@ theorem fourierMultiplierCLM_eq_convolution (σ : 𝓢(E, ℂ)) :
     congr 1
     ext ξ
     simp [smulLeftCLM_apply_apply σ.hasTemperateGrowth]
-  · have h : 𝓕 φ = 0 := by
-      ext ξ
-      simp [fourier_coe, Real.fourier_eq, integral_of_not_completeSpace hF]
-    simp [fourierMultiplierCLM_apply, convolution, h]
+  · simp [fourierMultiplierCLM_apply, convolution, fourier_eq_zero_of_not_completeSpace hF]
 
 /-- The multiplier with a Schwartz symbol `σ` on Schwartz functions, as an integral against the
 kernel `𝓕⁻ σ`: `T_σ φ x = ∫ 𝓕⁻ σ (x - y) • φ y`. -/
@@ -88,10 +86,8 @@ theorem fourierMultiplierCLM_apply_eq_integral (σ : 𝓢(E, ℂ)) (φ : 𝓢(E,
   by_cases hF : CompleteSpace F
   · rw [fourierMultiplierCLM_eq_convolution, convolution_apply, MeasureTheory.convolution_eq_swap]
     simp only [lsmul_apply]
-  · have h : 𝓕 φ = 0 := by
-      ext ξ
-      simp [fourier_coe, Real.fourier_eq, integral_of_not_completeSpace hF]
-    simp [fourierMultiplierCLM_apply, h, integral_of_not_completeSpace hF]
+  · simp [fourierMultiplierCLM_apply, fourier_eq_zero_of_not_completeSpace hF,
+      integral_of_not_completeSpace hF]
 
 /-- **`Lᵖ` bound for a multiplier with Schwartz symbol.** For `1 ≤ p ≤ ∞` the multiplier with a
 Schwartz symbol `σ` satisfies `‖T_σ φ‖_p ≤ ‖𝓕⁻ σ‖₁ ‖φ‖_p` on Schwartz functions. -/
@@ -133,20 +129,10 @@ theorem fourierInv_convolution_apply [CompleteSpace F₃] (B : F₁ →L[ℂ] F�
       rw [fourierInv_coe, fourierInv_coe, fourierInv_coe, hconv, Real.fourierInv_eq_fourier_neg,
         Real.fourierInv_eq_fourier_neg, Real.fourierInv_eq_fourier_neg,
         Real.fourier_bilin_convolution_eq B f.integrable g.integrable]
-    · have h : 𝓕 g = 0 := by
-        ext ξ
-        simp [fourier_coe, Real.fourier_eq, integral_of_not_completeSpace hF₂]
-      have h' : 𝓕⁻ g = 0 := by
-        ext ξ
-        simp [fourierInv_coe, Real.fourierInv_eq, integral_of_not_completeSpace hF₂]
-      simp [convolution, h, h']
-  · have h : 𝓕 f = 0 := by
-      ext ξ
-      simp [fourier_coe, Real.fourier_eq, integral_of_not_completeSpace hF₁]
-    have h' : 𝓕⁻ f = 0 := by
-      ext ξ
-      simp [fourierInv_coe, Real.fourierInv_eq, integral_of_not_completeSpace hF₁]
-    simp [convolution, h, h']
+    · simp [convolution, fourier_eq_zero_of_not_completeSpace hF₂,
+        fourierInv_eq_zero_of_not_completeSpace hF₂]
+  · simp [convolution, fourier_eq_zero_of_not_completeSpace hF₁,
+      fourierInv_eq_zero_of_not_completeSpace hF₁]
 
 /-- The inverse Fourier transform of a convolution of Schwartz functions is the pairing of their
 inverse Fourier transforms. -/
@@ -168,8 +154,8 @@ theorem fourier_pairing [CompleteSpace F₁] [CompleteSpace F₂] (B : F₁ →L
       _ = 𝓕 (𝓕⁻ (convolution B (𝓕 f) (𝓕 g))) := by rw [fourierInv_convolution]
       _ = convolution B (𝓕 f) (𝓕 g) := fourier_fourierInv_eq _
   · ext ξ
-    simp [convolution, fourier_coe, Real.fourier_eq, fourierInv_coe, Real.fourierInv_eq,
-      integral_of_not_completeSpace hF]
+    simp [convolution, fourier_eq_zero_of_not_completeSpace hF,
+      fourierInv_eq_zero_of_not_completeSpace hF]
 
 /-- The Fourier transform of a pointwise product of Schwartz functions, as an integral:
 `𝓕 (B (f ·) (g ·)) ξ = ∫ t, B (𝓕 f t) (𝓕 g (ξ - t))`. -/
@@ -178,7 +164,7 @@ theorem fourier_pairing_apply [CompleteSpace F₁] [CompleteSpace F₂] (B : F�
     𝓕 (pairing B f g) ξ = ∫ t, B (𝓕 f t) (𝓕 g (ξ - t)) := by
   by_cases hF : CompleteSpace F₃
   · rw [fourier_pairing, convolution_apply, MeasureTheory.convolution_def]
-  · simp [fourier_coe, Real.fourier_eq, integral_of_not_completeSpace hF]
+  · simp [fourier_eq_zero_of_not_completeSpace hF, integral_of_not_completeSpace hF]
 
 /-- The Fourier transform of the product of a Schwartz function `f` by a scalar Schwartz function
 `φ` is the convolution `𝓕 (φ • f) ξ = ∫ t, 𝓕 φ t • 𝓕 f (ξ - t)`. -/
@@ -190,7 +176,7 @@ theorem fourier_smulLeftCLM_apply (φ : 𝓢(E, ℂ)) (f : 𝓢(E, F)) (ξ : E) 
       simp [smulLeftCLM_apply_apply φ.hasTemperateGrowth]
     rw [h, fourier_pairing_apply]
     simp only [lsmul_apply]
-  · simp [fourier_coe, Real.fourier_eq, integral_of_not_completeSpace hF]
+  · simp [fourier_eq_zero_of_not_completeSpace hF]
 
 end Bilinear
 

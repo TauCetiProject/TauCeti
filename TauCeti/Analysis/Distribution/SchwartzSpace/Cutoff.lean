@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import TauCeti.Analysis.Calculus.ContDiff.Scaling
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 
 /-!
 # Cutting off a Schwartz function
@@ -79,7 +80,7 @@ theorem hasCompactSupport_smulLeftCLM_comp_inv_smul
         hg.comp (R • ContinuousLinearMap.id ℝ E).hasTemperateGrowth
     rw [funext (smulLeftCLM_comp_inv_smul_apply hχ R f)]
     exact (hsupp.comp_smul (inv_ne_zero hR)).smul_right
-  · simpa [smulLeftCLM, hg] using HasCompactSupport.zero
+  · simpa [smulLeftCLM_of_not_hasTemperateGrowth hg] using HasCompactSupport.zero
 
 /-- Where `‖x‖ ≥ ρ > 0`, one power of `‖x‖` can be traded for `ρ⁻¹` against the next seminorm. -/
 private lemma pow_mul_norm_iteratedFDeriv_le_div (f : 𝓢(E, F)) (k j : ℕ) {ρ : ℝ} (hρ : 0 < ρ)

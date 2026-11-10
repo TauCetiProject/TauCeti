@@ -91,6 +91,25 @@ namespace SchwartzMap
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F]
 
+section NotCompleteSpace
+
+variable [NormedSpace ℂ F]
+
+/-- Into a space which is not complete, the Fourier transform of a Schwartz function is `0`: the
+Bochner integral defining it is `0`. -/
+theorem fourier_eq_zero_of_not_completeSpace (hF : ¬CompleteSpace F) (f : 𝓢(E, F)) : 𝓕 f = 0 := by
+  ext ξ
+  simp [fourier_coe, Real.fourier_eq, integral_of_not_completeSpace hF]
+
+/-- Into a space which is not complete, the inverse Fourier transform of a Schwartz function is
+`0`. -/
+theorem fourierInv_eq_zero_of_not_completeSpace (hF : ¬CompleteSpace F) (f : 𝓢(E, F)) :
+    𝓕⁻ f = 0 := by
+  ext ξ
+  simp [fourierInv_coe, Real.fourierInv_eq, integral_of_not_completeSpace hF]
+
+end NotCompleteSpace
+
 section FourierMultiplier
 
 variable {𝕜 : Type*} [RCLike 𝕜] [NormedSpace ℂ F] [NormedSpace 𝕜 F]
