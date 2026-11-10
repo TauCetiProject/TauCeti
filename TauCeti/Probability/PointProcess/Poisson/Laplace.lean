@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.PointProcess.Poisson.Basic
 public import TauCeti.Probability.RandomMeasure.LaplaceFunctional
 import TauCeti.Probability.Distributions.Poisson.Laplace
-import TauCeti.Data.ENNReal.Inv
+import TauCeti.Data.ENNReal.Indicator
 import Mathlib.Probability.Independence.Integration
 
 /-!
@@ -150,7 +150,7 @@ theorem IsPoissonRandomMeasure.laplaceFunctional_eq_expNeg
       (top_unique (not_lt.mp hn))
   let g (n : ℕ) := (A n).indicator f
   have hg (n : ℕ) : Measurable (g n) := hf.indicator (hA n)
-  rw [← ENNReal.iSup_indicator_inv_natCast_add_one_le f]
+  rw [← ENNReal.iSup_indicator_inv_natCast_add_one_le_eq_self f]
   apply poisson_laplace_monotone h.measurable hg
     (ENNReal.monotone_indicator_inv_natCast_add_one_le f)
   intro n

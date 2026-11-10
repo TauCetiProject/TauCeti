@@ -27,12 +27,9 @@ namespace TauCeti.Probability
 theorem lintegral_expNeg_mul_natCast_poissonMeasure (r : ℝ≥0) (c : ℝ≥0∞) :
     ∫⁻ k : ℕ, (ENNReal.expNeg (c * k) : ℝ≥0∞) ∂poissonMeasure r =
       (ENNReal.expNeg ((r : ℝ≥0∞) * (1 - (ENNReal.expNeg c : ℝ≥0∞))) : ℝ≥0∞) := by
-  simp_rw [ENNReal.expNeg_mul_natCast]
-  have hpow (k : ℕ) : ((ENNReal.expNeg c : ℝ≥0) ^ k : ℝ≥0∞) =
-      ENNReal.ofReal ((ENNReal.expNeg c : ℝ) ^ k) := by simp
-  simp_rw [ENNReal.coe_pow, hpow]
-  rw [lintegral_ofReal_poissonMeasure (fun _ => by positivity) r
-    (hasSum_pow_poissonMeasure r (ENNReal.expNeg c : ℝ))]
+  simp_rw [ENNReal.expNeg_mul_natCast, ENNReal.coe_pow]
+  rw [lintegral_pow_poissonMeasure r ENNReal.coe_ne_top]
+  simp only [ENNReal.coe_toReal]
   have harg : (r : ℝ≥0∞) * (1 - (ENNReal.expNeg c : ℝ≥0∞)) =
       ((r * (1 - ENNReal.expNeg c) : ℝ≥0) : ℝ≥0∞) := by simp [ENNReal.coe_sub]
   rw [harg, ENNReal.expNeg_coe]

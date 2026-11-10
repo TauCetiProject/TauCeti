@@ -31,7 +31,7 @@ moment-generating function.
 public section
 
 open MeasureTheory ProbabilityTheory Real
-open scoped NNReal Nat
+open scoped ENNReal NNReal Nat
 
 namespace TauCeti.Probability
 
@@ -110,6 +110,18 @@ theorem lintegral_ofReal_poissonMeasure {f : ℕ → ℝ} (hf : 0 ≤ f) (r : �
     ENNReal.ofReal_tsum_of_nonneg (fun k ↦ mul_nonneg (by positivity) (hf k)) ha.summable]
   refine tsum_congr fun k ↦ ?_
   rw [poissonMeasure_singleton, mul_comm, ENNReal.ofReal_mul (by positivity)]
+
+/-- The extended nonnegative generating function of a Poisson count at any finite argument. -/
+theorem lintegral_pow_poissonMeasure (r : ℝ≥0) {a : ℝ≥0∞} (ha : a ≠ ∞) :
+    ∫⁻ k : ℕ, a ^ k ∂poissonMeasure r =
+      ENNReal.ofReal (Real.exp ((r : ℝ) * (a.toReal - 1))) := by
+  have hpow (k : ℕ) : a ^ k = ENNReal.ofReal (a.toReal ^ k) := by
+    rw [ENNReal.ofReal_pow ENNReal.toReal_nonneg, ENNReal.ofReal_toReal ha]
+  simp_rw [hpow]
+  convert lintegral_ofReal_poissonMeasure (fun _ => by positivity) r
+    (hasSum_pow_poissonMeasure r a.toReal) using 1
+  congr 2
+  ring
 
 /-- The probability-generating function of a Poisson distribution. -/
 @[simp]

@@ -143,14 +143,7 @@ theorem lintegral_exp_neg_finitePoissonLaw (r : ℝ≥0) (Q : Measure X)
         lintegral_mono fun x =>
         EReal.exp_le_one_iff.mpr (EReal.neg_le_zero.mpr (EReal.coe_ennreal_nonneg _))
       _ = 1 := by simp
-  have hpow (n : ℕ) : a ^ n = ENNReal.ofReal (a.toReal ^ n) := by
-    rw [ENNReal.ofReal_pow (ENNReal.toReal_nonneg), ENNReal.ofReal_toReal (ne_top_of_le_ne_top
-      ENNReal.one_ne_top ha)]
-  simp_rw [hpow]
-  convert lintegral_ofReal_poissonMeasure (fun n => by positivity) r
-    (hasSum_pow_poissonMeasure r a.toReal) using 1
-  congr 2
-  ring
+  exact lintegral_pow_poissonMeasure r (ne_top_of_le_ne_top ENNReal.one_ne_top ha)
 
 /-- Set probabilities can be computed directly from the independent sample representation. -/
 theorem finitePoissonLaw_apply (r : ℝ≥0) (Q : Measure X) [IsProbabilityMeasure Q]
